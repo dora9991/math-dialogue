@@ -57,10 +57,14 @@ export function isGiveUp(input) {
 export const SCRIPTED = {
   // ★ 看板レッスン：マッチ棒（文字式の必要性）
   "c2-1": {
+    // 導入の語り（問題を提示するまで）。このあと自分で考える時間に入る。
     intro:
-      "今日はマッチ棒で正方形をつくっていくよ。いきなり5個ぶんを数えてもいいけど…その前に、しくみを一緒に見つけよう。",
+      "今日はマッチ棒で正方形をつくっていくよ。図を見てね。マッチ棒を並べて、正方形を横にずらっとつなげていく。",
+    // 自分で考えるときに黒板に出しておく「本問題」
+    problem: "正方形が5個のとき、マッチ棒は何本いるだろう？",
     board: [
-      { text: "□ □ □ □ □  ← 正方形をならべる", kind: "problem" },
+      { text: "【問題】マッチ棒で正方形をならべる", kind: "problem" },
+      { text: "正方形が5個のとき、マッチ棒は何本？", kind: "problem" },
     ],
     steps: [
       {
@@ -120,47 +124,82 @@ export const SCRIPTED = {
 };
 
 // ── エンジン本体 ───────────────────────────────────────
-// 画面はこの3つの関数だけを使う。中身を将来 Claude API に変えてもOK。
+// 画面が使う関数：startLesson / respond（文字・音声）/ showWork（手書きを見せる）
+// 中身を将来 Claude API に差し替えてもOK（画面は state の {messages, board, phase, done} だけ見る）。
+
+// 「まず自分で考えてみよう」の誘い文句（手書き提出を促す）
+const SELF_THINK =
+  "この問題について、少し時間をとるよ。まずは自分で考えてみよう！ 数えてもいいし、図をかいてもいい。" +
+  "考えがまとまったら、下のノートに手書きで書いて、「✏️ 見せる」で先生に見せてね。";
+
+// 手書き／考えを見せてくれたあとの受け止め（ここから一緒に確認＝補助発問へ）
+const ACK_WORK =
+  "見せてくれてありがとう！ じっくり考えた跡があるね。いいぞ。じゃあ、ここから一緒に確かめていこう。";
 
 export function startLesson(lesson) {
   const script = SCRIPTED[lesson.id];
   if (script) {
-    const board = [...script.board];
-    const first = script.steps[0];
-    if (first?.boardOnAsk) board.push({ ...first.boardOnAsk });
     return {
       mode: "scripted",
       lessonId: lesson.id,
+      phase: "think",       // think（自分で考える）→ guided（補助発問）→ done
       stepIndex: 0,
       hintIndex: 0,
-      board,
-      // 冒頭は「導入＋最初の本発問」を1つの吹き出しにまとめて提示
-      messages: [{ who: "teacher", text: script.intro + "\n\n" + first.ask }],
+      board: [...script.board],
+      // 問題提示 → 自分で考える時間。発問の核心はまだ言わない。
+      messages: [{ who: "teacher", text: script.intro + "\n\n" + script.problem + "\n\n" + SELF_THINK }],
     };
   }
-  // 台本がないレッスン：発問だけ出して、ねらいに沿って軽く対話する汎用モード
+  // 台本がないレッスン：発問を提示 → 自分で考える → 軽く対話する汎用モード
   return {
     mode: "generic",
     lessonId: lesson.id,
+    phase: "think",
     turn: 0,
     board: [{ text: lesson.hatsumon, kind: "problem" }],
-    messages: [
-      { who: "teacher", text: "今日の問題はこれ。まずは、どうなると思う？ 思いついたことを言ってみて。" },
-    ],
+    messages: [{ who: "teacher", text: lesson.hatsumon + "\n\n" + SELF_THINK }],
   };
 }
 
-// 本発問・補助発問を「次の先生のひとこと」として取り出す（scripted用）
-export function nextPrompt(state, lesson) {
+// 手書き（または「考えを見せる」）を受け取る。dataUrl は手書き画像、無ければ省略可。
+export function showWork(state, lesson, dataUrl) {
+  const board = [...state.board];
+  if (dataUrl) board.push({ image: dataUrl, kind: "student", label: "あなたの考え" });
+  const messages = [...state.messages, { who: "student", text: "（手書きを見せた）", image: dataUrl }];
+
+  // まだ「自分で考える」段階なら、受け止めて補助発問フェーズへ進む
+  if (state.phase === "think") {
+    messages.push({ who: "teacher", text: ACK_WORK });
+    if (state.mode === "generic") {
+      return { ...state, phase: "talk", board, messages };
+    }
+    return enterFirstStep(state, lesson, board, messages);
+  }
+  // 途中（guided/talk）に見せてくれたとき＝スクラッチとして受け止めるだけ（進行は文字の答えで）
+  messages.push({ who: "teacher", text: "なるほど、書いてくれたんだね。その調子。続きを言葉でも教えて。" });
+  return { ...state, board, messages };
+}
+
+// think → guided：最初の補助発問を提示する
+function enterFirstStep(state, lesson, board, messages) {
   const script = SCRIPTED[lesson.id];
-  const step = script.steps[state.stepIndex];
-  if (!step) return null;
-  return step.ask;
+  const first = script.steps[0];
+  const b = [...board];
+  if (first.boardOnAsk) b.push({ ...first.boardOnAsk });
+  messages.push({ who: "teacher", text: first.ask });
+  return { ...state, phase: "guided", stepIndex: 0, hintIndex: 0, board: b, messages };
 }
 
 // 生徒の入力を処理して、新しい state を返す
 export function respond(state, lesson, input) {
   if (state.mode === "generic") return respondGeneric(state, lesson, input);
+
+  // 「自分で考える」段階で文字でも答えてきたら、見せてくれたものとして受け止め補助発問へ
+  if (state.phase === "think") {
+    const board = [...state.board, { text: "あなたの考え：" + input.slice(0, 28), kind: "student" }];
+    const messages = [...state.messages, { who: "student", text: input }, { who: "teacher", text: ACK_WORK }];
+    return enterFirstStep(state, lesson, board, messages);
+  }
 
   const script = SCRIPTED[lesson.id];
   const step = script.steps[state.stepIndex];
@@ -206,7 +245,13 @@ function advance(state, lesson, script, board, messages) {
 function respondGeneric(state, lesson, input) {
   const board = [...state.board];
   const messages = [...state.messages, { who: "student", text: input }];
-  const turn = state.turn + 1;
+  // 「自分で考える」段階で文字で答えてきた → 受け止めて対話へ
+  if (state.phase === "think") {
+    board.push({ text: "あなたの考え：" + input.slice(0, 28), kind: "student" });
+    messages.push({ who: "teacher", text: ACK_WORK + " なぜそうなると思う？ 根拠も言えるかな？" });
+    return { ...state, phase: "talk", turn: 1, board, messages };
+  }
+  const turn = (state.turn || 0) + 1;
   if (turn === 1) {
     board.push({ text: "きみの考え：" + input.slice(0, 24), kind: "student" });
     messages.push({

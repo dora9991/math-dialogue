@@ -9,7 +9,7 @@
 import { useState, useEffect, useRef } from "react";
 import Header from "../components/Header.jsx";
 import bank from "../data/dialogue/questionBank.json";
-import { startLesson, respond, isScripted } from "../data/dialogue/teacher.js";
+import { startLesson, respond, showWork, isScripted } from "../data/dialogue/teacher.js";
 
 // 図(png)をURLとして解決（Viteのglob）。questionBank の "figures/xxx.png" と突き合わせる
 const FIG_URLS = import.meta.glob("../data/dialogue/figures/*.png", { eager: true, query: "?url", import: "default" });
@@ -109,6 +109,8 @@ function Board({ player, lesson, onExit }) {
   const [input, setInput] = useState("");
   const [voiceOn, setVoiceOn] = useState(true);   // 先生の声（音声合成）
   const [listening, setListening] = useState(false);
+  // 手書きパッド。最初の「自分で考える」段階では自動で開く
+  const [padOpen, setPadOpen] = useState(() => state.phase === "think");
   const boardRef = useRef(null);
   const recogRef = useRef(null);
 
@@ -136,6 +138,13 @@ function Board({ player, lesson, onExit }) {
     if (!t || state.done) return;
     setState((s) => respond(s, lesson, t));
     setInput("");
+  };
+
+  // 手書きを「見せる」：画像を黒板へ載せ、先生が受け止めて次へ進む
+  const submitWork = (dataUrl) => {
+    if (state.done) return;
+    setState((s) => showWork(s, lesson, dataUrl));
+    setPadOpen(false);
   };
 
   // 音声入力（Web Speech API）。非対応なら黙って無効。
@@ -183,9 +192,16 @@ function Board({ player, lesson, onExit }) {
           }}>
             {fig && <img src={fig} alt="" style={{ maxWidth: "62%", borderRadius: 8, marginBottom: 14, background: "rgba(255,255,255,.92)", padding: 6 }} />}
             {state.board.map((ln, i) => (
-              <div key={i} style={{ marginBottom: 11, fontSize: 17, lineHeight: 1.5, letterSpacing: ".02em", ...LINE_STYLE[ln.kind], animation: "fadeUp .35s both" }}>
-                {ln.mark && <span style={{ marginRight: 6 }}>{ln.mark}</span>}{ln.text}
-              </div>
+              ln.image ? (
+                <div key={i} style={{ marginBottom: 13, animation: "fadeUp .35s both" }}>
+                  {ln.label && <div style={{ fontSize: 12, fontWeight: 800, color: "#fff", marginBottom: 4 }}>✏️ {ln.label}</div>}
+                  <img src={ln.image} alt="手書き" style={{ maxWidth: "78%", borderRadius: 8, border: "2px solid rgba(255,255,255,.85)", background: "#fff" }} />
+                </div>
+              ) : (
+                <div key={i} style={{ marginBottom: 11, fontSize: 17, lineHeight: 1.5, letterSpacing: ".02em", ...LINE_STYLE[ln.kind], animation: "fadeUp .35s both" }}>
+                  {ln.mark && <span style={{ marginRight: 6 }}>{ln.mark}</span>}{ln.text}
+                </div>
+              )
             ))}
           </div>
 
@@ -199,40 +215,153 @@ function Board({ player, lesson, onExit }) {
           </div>
         </div>
 
-        {/* 下：生徒の応答（音声・文字） */}
+        {/* 下：生徒の応答（手書き・音声・文字） */}
         <div style={{ marginTop: 10 }}>
           {state.done ? (
             <button className="nb-btn" onClick={onExit} style={{ background: "linear-gradient(135deg,#22c55e,#10b981)", color: "#fff", fontWeight: 900, fontSize: 15, padding: 14 }}>
               🎉 授業おわり！ ほかの授業をえらぶ
             </button>
           ) : (
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <button onClick={toggleMic} title="音声で答える" style={{
-                width: 52, height: 48, borderRadius: 12, flexShrink: 0, cursor: "pointer", fontSize: 22,
-                border: "none", color: "#fff", background: listening ? "linear-gradient(135deg,#ef4444,#f97316)" : "rgba(255,255,255,.1)",
-                animation: listening ? "pulse 1s infinite" : "none",
-              }}>🎤</button>
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && send()}
-                placeholder={listening ? "聞いています…" : "ここに答えを書く（声でもOK）"}
-                style={{ flex: 1, padding: "13px 14px", borderRadius: 12, fontSize: 15, fontFamily: "inherit",
-                  border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.06)", color: "#fff", outline: "none" }}
-              />
-              <button onClick={() => send()} data-sfx="none" style={{
-                padding: "0 18px", height: 48, borderRadius: 12, flexShrink: 0, cursor: "pointer", fontWeight: 900, fontSize: 15,
-                border: "none", color: "#fff", background: "linear-gradient(135deg,#6366f1,#818cf8)" }}>送信</button>
-            </div>
-          )}
-          {!state.done && (
-            <button onClick={() => send("わからない")} style={{
-              marginTop: 7, fontSize: 11.5, color: "rgba(255,255,255,.5)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
-              うーん、ヒントがほしい（補助発問をもらう）
-            </button>
+            <>
+              {/* 自分で考える段階では「まず手書きで」を促す */}
+              {state.phase === "think" && (
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#fde68a", marginBottom: 7 }}>
+                  ✍️ まずは自分で考えて、ノートに手書きしてみよう。できたら「✏️ 見せる」！
+                </div>
+              )}
+
+              {/* 手書きノート（開いているとき） */}
+              {padOpen && <HandwritingPad onShow={submitWork} onClose={() => setPadOpen(false)} />}
+
+              {/* 入力ツールバー：手書き切替・音声・文字 */}
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <button onClick={() => setPadOpen((v) => !v)} title="手書きノート" style={{
+                  width: 52, height: 48, borderRadius: 12, flexShrink: 0, cursor: "pointer", fontSize: 20,
+                  border: padOpen ? "2px solid #fbbf24" : "none", color: "#fff",
+                  background: padOpen ? "rgba(251,191,36,.25)" : "rgba(255,255,255,.1)" }}>✏️</button>
+                <button onClick={toggleMic} title="音声で答える" style={{
+                  width: 52, height: 48, borderRadius: 12, flexShrink: 0, cursor: "pointer", fontSize: 22,
+                  border: "none", color: "#fff", background: listening ? "linear-gradient(135deg,#ef4444,#f97316)" : "rgba(255,255,255,.1)",
+                  animation: listening ? "pulse 1s infinite" : "none",
+                }}>🎤</button>
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && send()}
+                  placeholder={listening ? "聞いています…" : state.phase === "think" ? "言葉で説明してもOK" : "ここに答えを書く（声でもOK）"}
+                  style={{ flex: 1, padding: "13px 14px", borderRadius: 12, fontSize: 15, fontFamily: "inherit",
+                    border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.06)", color: "#fff", outline: "none" }}
+                />
+                <button onClick={() => send()} data-sfx="none" style={{
+                  padding: "0 18px", height: 48, borderRadius: 12, flexShrink: 0, cursor: "pointer", fontWeight: 900, fontSize: 15,
+                  border: "none", color: "#fff", background: "linear-gradient(135deg,#6366f1,#818cf8)" }}>送信</button>
+              </div>
+
+              {state.phase !== "think" && (
+                <button onClick={() => send("わからない")} style={{
+                  marginTop: 7, fontSize: 11.5, color: "rgba(255,255,255,.5)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                  うーん、ヒントがほしい（補助発問をもらう）
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── 手書きノート（指・マウスで書ける。「見せる」で画像を提出） ──────────
+function HandwritingPad({ onShow, onClose }) {
+  const canvasRef = useRef(null);
+  const ctxRef = useRef(null);
+  const drawing = useRef(false);
+  const [tool, setTool] = useState("pen"); // pen | eraser
+  const [hasInk, setHasInk] = useState(false);
+
+  // 初期化：白い紙にする（DPR対応で線をくっきり）
+  useEffect(() => {
+    const c = canvasRef.current;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = c.getBoundingClientRect();
+    c.width = Math.round(rect.width * dpr);
+    c.height = Math.round(rect.height * dpr);
+    const ctx = c.getContext("2d");
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, rect.width, rect.height);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctxRef.current = ctx;
+  }, []);
+
+  const pos = (e) => {
+    const r = canvasRef.current.getBoundingClientRect();
+    const p = e.touches ? e.touches[0] : e;
+    return { x: p.clientX - r.left, y: p.clientY - r.top };
+  };
+  const start = (e) => {
+    e.preventDefault();
+    drawing.current = true;
+    const ctx = ctxRef.current;
+    const { x, y } = pos(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+  const move = (e) => {
+    if (!drawing.current) return;
+    e.preventDefault();
+    const ctx = ctxRef.current;
+    ctx.strokeStyle = tool === "eraser" ? "#fff" : "#1f2937";
+    ctx.lineWidth = tool === "eraser" ? 24 : 2.8;
+    const { x, y } = pos(e);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    if (!hasInk) setHasInk(true);
+  };
+  const end = () => { drawing.current = false; };
+
+  const clear = () => {
+    const c = canvasRef.current, ctx = ctxRef.current;
+    const dpr = window.devicePixelRatio || 1;
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, c.width / dpr, c.height / dpr);
+    setHasInk(false);
+  };
+
+  const Tbtn = ({ id, label }) => (
+    <button onClick={() => setTool(id)} style={{
+      padding: "6px 11px", borderRadius: 9, cursor: "pointer", fontSize: 12.5, fontWeight: 800,
+      border: tool === id ? "2px solid #6366f1" : "1px solid rgba(255,255,255,.18)",
+      background: tool === id ? "rgba(99,102,241,.25)" : "rgba(255,255,255,.06)", color: "#fff",
+    }}>{label}</button>
+  );
+
+  return (
+    <div style={{ marginBottom: 9, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.12)", borderRadius: 12, padding: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 7 }}>
+        <span style={{ fontSize: 11.5, fontWeight: 900, color: "rgba(255,255,255,.6)" }}>📝 あなたのノート</span>
+        <Tbtn id="pen" label="✏️ ペン" />
+        <Tbtn id="eraser" label="⌫ 消しゴム" />
+        <button onClick={clear} style={{ padding: "6px 11px", borderRadius: 9, cursor: "pointer", fontSize: 12.5, fontWeight: 800,
+          border: "1px solid rgba(255,255,255,.18)", background: "rgba(255,255,255,.06)", color: "#fff" }}>🗑 全消し</button>
+        <div style={{ flex: 1 }} />
+        <button onClick={onClose} title="閉じる" style={{ padding: "6px 10px", borderRadius: 9, cursor: "pointer", fontSize: 12.5,
+          border: "none", background: "rgba(255,255,255,.08)", color: "rgba(255,255,255,.7)" }}>閉じる</button>
+      </div>
+      <canvas
+        ref={canvasRef}
+        onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end}
+        onTouchStart={start} onTouchMove={move} onTouchEnd={end}
+        style={{ width: "100%", height: 170, borderRadius: 8, background: "#fff", touchAction: "none", cursor: "crosshair", display: "block" }}
+      />
+      <button onClick={() => onShow(canvasRef.current.toDataURL("image/png"))} disabled={!hasInk}
+        data-sfx="none" style={{
+          width: "100%", marginTop: 8, padding: "11px", borderRadius: 10, fontWeight: 900, fontSize: 14.5,
+          cursor: hasInk ? "pointer" : "not-allowed", border: "none", color: "#fff",
+          background: hasInk ? "linear-gradient(135deg,#f59e0b,#f97316)" : "rgba(255,255,255,.12)",
+          opacity: hasInk ? 1 : .6,
+        }}>✏️ これを先生に見せる</button>
     </div>
   );
 }
