@@ -1,6 +1,11 @@
 # 依存パッケージ（npm install で復元できるので追跡しない）
 node_modules/
 
+# APIキーなどの秘密（絶対にgitに上げない）
+.env
+.env.local
+.env.*.local
+
 # ビルド成果物（npm run build / deploy で生成。gh-pages ブランチに公開される）
 dist/
 

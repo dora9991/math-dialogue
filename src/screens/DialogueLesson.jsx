@@ -10,6 +10,7 @@ import { useState, useEffect, useRef } from "react";
 import Header from "../components/Header.jsx";
 import bank from "../data/dialogue/questionBank.json";
 import { startLesson, respond, showWork, isScripted } from "../data/dialogue/teacher.js";
+import { aiHealth, aiRespond } from "../data/dialogue/aiTeacher.js";
 
 // 図(png)をURLとして解決（Viteのglob）。questionBank の "figures/xxx.png" と突き合わせる
 const FIG_URLS = import.meta.glob("../data/dialogue/figures/*.png", { eager: true, query: "?url", import: "default" });
@@ -111,8 +112,14 @@ function Board({ player, lesson, onExit }) {
   const [listening, setListening] = useState(false);
   // 手書きパッド。最初の「自分で考える」段階では自動で開く
   const [padOpen, setPadOpen] = useState(() => state.phase === "think");
+  const [aiMode, setAiMode] = useState(false);     // 本物のAI先生が使えるか（中継サーバー稼働＋キー）
   const boardRef = useRef(null);
   const recogRef = useRef(null);
+  const stateRef = useRef(state);                  // 非同期処理から最新stateを読むため
+  useEffect(() => { stateRef.current = state; });
+
+  // 起動時にAI先生が使えるか確認（使えなければ台本モードのまま）
+  useEffect(() => { aiHealth().then(setAiMode); }, []);
 
   const lastTeacher = [...state.messages].reverse().find((m) => m.who === "teacher");
 
@@ -133,18 +140,50 @@ function Board({ player, lesson, onExit }) {
     return () => { try { window.speechSynthesis.cancel(); } catch {} };
   }, [state.messages.length, voiceOn]); // eslint-disable-line
 
+  // 本物のAI先生に1ターン投げる（文字 or 手書き画像）。返答で板書・吹き出しを更新。
+  const aiTurn = async (studentText, studentImage) => {
+    // まず生徒の入力を画面に反映（楽観的更新）＋「考え中」に
+    setState((s) => {
+      const board = [...s.board];
+      if (studentImage) board.push({ image: studentImage, kind: "student", label: "あなたの考え" });
+      const messages = [...s.messages, { who: "student", text: studentImage ? "（手書きを見せた）" : studentText }];
+      return { ...s, phase: "guided", board, messages, thinking: true };
+    });
+    try {
+      const cur = stateRef.current;
+      const r = await aiRespond({
+        lesson: { shosetsu: lesson.shosetsu, hatsumon: lesson.hatsumon, nerai: lesson.nerai, title: lesson.title },
+        board: cur.board.filter((b) => b.text).map((b) => b.text),
+        history: cur.messages.map((m) => ({ role: m.who, text: m.text })),
+        studentText: studentImage ? "" : studentText,
+        studentImage: studentImage || null,
+        phase: cur.phase,
+      });
+      setState((s) => {
+        const board = [...s.board];
+        if (r.board_add) board.push({ text: r.board_add, kind: r.done ? "result" : "work", mark: r.done ? "★" : undefined });
+        const text = (r.reaction ? r.reaction + " " : "") + (r.message || "");
+        return { ...s, board, messages: [...s.messages, { who: "teacher", text }], thinking: false, done: !!r.done };
+      });
+    } catch (e) {
+      setState((s) => ({ ...s, thinking: false, messages: [...s.messages, { who: "teacher", text: "（通信エラー：先生サーバーが動いているか確認してね）" }] }));
+    }
+  };
+
   const send = (text) => {
     const t = (text ?? input).trim();
-    if (!t || state.done) return;
-    setState((s) => respond(s, lesson, t));
+    if (!t || state.done || state.thinking) return;
     setInput("");
+    if (aiMode) aiTurn(t, null);
+    else setState((s) => respond(s, lesson, t));
   };
 
   // 手書きを「見せる」：画像を黒板へ載せ、先生が受け止めて次へ進む
   const submitWork = (dataUrl) => {
-    if (state.done) return;
-    setState((s) => showWork(s, lesson, dataUrl));
+    if (state.done || state.thinking) return;
     setPadOpen(false);
+    if (aiMode) aiTurn(null, dataUrl);
+    else setState((s) => showWork(s, lesson, dataUrl));
   };
 
   // 音声入力（Web Speech API）。非対応なら黙って無効。
@@ -160,7 +199,7 @@ function Board({ player, lesson, onExit }) {
     recogRef.current = r; setListening(true); r.start();
   };
 
-  const teacherFace = state.done ? "🎉" : (lastTeacher?.text.includes("（補助）") || lastTeacher?.text.includes("ヒント")) ? "🤔" : "🧑‍🏫";
+  const teacherFace = state.thinking ? "🤔" : state.done ? "🎉" : (lastTeacher?.text.includes("（補助）") || lastTeacher?.text.includes("ヒント")) ? "🤔" : "🧑‍🏫";
   const fig = lesson.figures?.[0] ? figUrl(lesson.figures[0]) : null;
 
   return (
@@ -175,6 +214,12 @@ function Board({ player, lesson, onExit }) {
               📌 めあて：{(lesson.nerai || "").split("／")[0]}
             </div>
           </div>
+          <span title={aiMode ? "本物のAI先生と対話中" : "台本モード（中継サーバー未起動）"} style={{
+            fontSize: 10.5, fontWeight: 900, padding: "4px 8px", borderRadius: 8, whiteSpace: "nowrap",
+            color: aiMode ? "#86efac" : "rgba(255,255,255,.45)",
+            border: `1px solid ${aiMode ? "rgba(134,239,172,.5)" : "rgba(255,255,255,.15)"}`,
+            background: aiMode ? "rgba(134,239,172,.12)" : "transparent",
+          }}>{aiMode ? "✨ AI先生" : "台本"}</span>
           <button className="back-btn" onClick={() => setVoiceOn((v) => !v)} title="先生の声">
             {voiceOn ? "🔊 声ON" : "🔇 声OFF"}
           </button>
@@ -210,7 +255,9 @@ function Board({ player, lesson, onExit }) {
             <div style={{ textAlign: "center", fontSize: 64, lineHeight: 1, filter: "drop-shadow(0 4px 10px rgba(0,0,0,.4))" }}>{teacherFace}</div>
             <div className="glass" style={{ flex: 1, padding: 13, fontSize: 13.5, lineHeight: 1.65, position: "relative", overflowY: "auto" }}>
               <div style={{ fontSize: 10, fontWeight: 900, color: "#a5b4fc", marginBottom: 5 }}>先生</div>
-              {lastTeacher?.text.replace(/（補助）/g, "💡 ")}
+              {state.thinking
+                ? <span style={{ color: "rgba(255,255,255,.6)", fontStyle: "italic" }}>うーん、なるほど…考え中 💭</span>
+                : lastTeacher?.text.replace(/（補助）/g, "💡 ")}
             </div>
           </div>
         </div>
