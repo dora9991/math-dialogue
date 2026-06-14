@@ -103,6 +103,40 @@ export default function Lesson({ player, unit, media, onBack }) {
     return () => { cancelled = true; };
   }, [page, numPages, wrapW]);
 
+  // PDF未設定の単元でも「白紙のプリント」に手書きできるようにする（素材が届く前のフォールバック）。
+  //  ワークシートPDFが OVERRIDES に入れば上の通常描画に切り替わる。
+  useEffect(() => {
+    if (pdfUrl || !wrapRef.current) return; // PDFがある単元はこの処理は不要
+    const avail = wrapW || wrapRef.current.clientWidth || 0;
+    if (avail <= 0) return;
+    const cssW = Math.min(avail, 720);
+    const cssH = Math.round(cssW * 1.414); // A4縦のおおよその比率
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const pc = pdfCanvasRef.current, dc = drawCanvasRef.current;
+    if (!pc || !dc) return;
+    for (const c of [pc, dc]) {
+      c.width = Math.round(cssW * dpr);
+      c.height = Math.round(cssH * dpr);
+      c.style.width = cssW + "px";
+      c.style.height = cssH + "px";
+    }
+    const ctx = pc.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, cssW, cssH);
+    const dctx = dc.getContext("2d");
+    dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    dctx.lineCap = "round"; dctx.lineJoin = "round";
+    dctx.clearRect(0, 0, cssW, cssH);
+    drawCtxRef.current = dctx;
+    const saved = strokesRef.current[1]; // 白紙は1ページ扱い
+    if (saved) {
+      const img = new Image();
+      img.onload = () => dctx.drawImage(img, 0, 0, cssW, cssH);
+      img.src = saved;
+    }
+  }, [pdfUrl, wrapW]);
+
   // ラッパーの実幅を監視（レイアウト確定後に正しい幅で描画する）
   useEffect(() => {
     if (!wrapRef.current) return;
@@ -225,7 +259,14 @@ export default function Lesson({ player, unit, media, onBack }) {
           <button data-sfx="none" onClick={saveImage} style={{ ...toolBtn, background: "#16a34a" }}>💾 保存</button>
         </div>
 
-        {/* ── 下：ワークシート（PDF＋手書き） ── */}
+        {/* PDF未設定の単元は白紙に書ける（プリントが入ると自動で表示） */}
+        {!pdfUrl && !loadErr && (
+          <div className="glass" style={{ padding: "8px 12px", fontSize: 11.5, color: "rgba(255,255,255,.72)", marginTop: 10, textAlign: "center", lineHeight: 1.6 }}>
+            📝 この単元のワークシートは準備中です。動画を見ながら、下の白紙に計算や考えを書きこめます。
+          </div>
+        )}
+
+        {/* ── 下：ワークシート（PDF＋手書き／PDFが無ければ白紙） ── */}
         <div ref={wrapRef} style={{ marginTop: 10, width: "100%", textAlign: "center" }}>
           {loadErr ? (
             <div className="glass" style={{ padding: 16, color: "#fca5a5", fontSize: 12 }}>プリントを読み込めませんでした：{loadErr}</div>
@@ -255,10 +296,12 @@ export default function Lesson({ player, unit, media, onBack }) {
           </div>
         )}
 
-        <div style={{ fontSize: 10.5, color: "rgba(255,255,255,.4)", textAlign: "center", marginTop: 14, lineHeight: 1.6 }}>
-          ※ いまのプリントは差し替え用のサンプルです。葉一さんのプリントは、許可を得たうえで
-          public/worksheets/ に置いて差し替えてください。
-        </div>
+        {pdfUrl && (
+          <div style={{ fontSize: 10.5, color: "rgba(255,255,255,.4)", textAlign: "center", marginTop: 14, lineHeight: 1.6 }}>
+            ※ いまのプリントは差し替え用のサンプルです。葉一さんのプリントは、許可を得たうえで
+            public/worksheets/ に置いて差し替えてください。
+          </div>
+        )}
       </div>
     </div>
   );

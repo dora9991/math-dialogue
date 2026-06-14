@@ -70,10 +70,25 @@ function buildUserContent(d) {
     ? "（生徒が手書きで考えを見せました。画像を読み取って反応してください）"
     : "生徒の答え：" + (d.studentText || "");
 
+  // 発問の木（指導案）があれば、中心発問・期待される答え・想定誤答・補助発問を渡す
+  let planText = "";
+  if (d.plan && Array.isArray(d.plan.central) && d.plan.central.length) {
+    const steps = d.plan.central.map((c, i) => {
+      const mis = (c.misconceptions || []).map((m) => `${m.wrong}（誤概念:${m.concept}）`).join(" / ");
+      const aids = (c.aids || []).map((a) => `${a.step}:${a.prompt}${a.choices ? "［" + a.choices.join("/") + "］" : ""}`).join(" → ");
+      return `中心発問${i + 1}: ${c.prompt}\n  期待: ${(c.expected || []).join(" / ")}\n  飛ばし条件: ${c.skipIf || "なし"}\n  想定誤答: ${mis || "なし"}\n  補助発問(階段): ${aids || "なし"}`;
+    }).join("\n");
+    planText =
+      `\n\n【この授業の指導案（あなたの発問の木。これに沿って進める）】\n${steps}\n` +
+      `※生徒の答えを「期待」と照らして判定し、reactionで率直に返す（合えば「正解！」、近ければ「惜しい！」）。` +
+      `つまずいたら「補助発問(階段)」を上から1段ずつ降ろす。できている子は「飛ばし条件」で次の中心発問へ飛ばす。`;
+  }
+
   const text =
     `【単元】${lesson.shosetsu || ""}\n` +
     `【今日の課題（生徒に出した発問）】${lesson.hatsumon || ""}\n` +
-    `【ねらい（あなたが導くゴール）】${lesson.nerai || ""}\n\n` +
+    `【ねらい（あなたが導くゴール）】${lesson.nerai || ""}\n` +
+    planText + `\n\n` +
     `【黒板の現在の状態】\n${board}\n\n` +
     `【これまでのやりとり】\n${history}\n\n` +
     `【今の場面】\n${latest}`;

@@ -838,6 +838,20 @@ export default function App() {
   // 画面の振り分け
   const goChapter = (m) => { setMode(m); setScreen("chapter"); };
 
+  // あんしん／じっくりのクリア後に「バトルで実践」へ進む導線。
+  //  その単元のモンスターが解放済み（あんしんで easy★1 が付くと解放される）なら直接対戦、
+  //  まだなら相手選択画面（バトルモード）へ。流れ：あんしん→学び直し→バトル。
+  function goBattleForUnit(unit) {
+    const monster = unit && MONSTERS.find((m) => m.kind === "unit" && m.unitId === unit.id);
+    if (monster && isUnitMonsterUnlocked(data.player, monster)) {
+      setBattleMonster(monster);
+      setBattleKey((k) => k + 1);
+    } else {
+      setBattleMonster(null); // 未解放／該当なし → 相手選択へ
+    }
+    setScreen("battle");
+  }
+
   const renderScreen = () => {
   if (screen === "start") {
     return <StartScreen onStart={() => setScreen(needsOnboard ? "transfer" : "title")} />;
@@ -981,6 +995,8 @@ export default function App() {
         onComplete={saveSlowResult}
         onBackToMap={() => setScreen("chapter")}
         onHome={() => setScreen("home")}
+        onRelearn={() => setScreen("relearn")}
+        onBattle={() => goBattleForUnit(sel.unit)}
       />
     );
   }
@@ -997,6 +1013,8 @@ export default function App() {
         onComplete={saveSlowResult}
         onBackToMap={() => setScreen("chapter")}
         onHome={() => setScreen("home")}
+        onRelearn={() => setScreen("relearn")}
+        onBattle={() => goBattleForUnit(sel.unit)}
       />
     );
   }

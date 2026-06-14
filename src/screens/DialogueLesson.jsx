@@ -9,7 +9,8 @@
 import { useState, useEffect, useRef } from "react";
 import Header from "../components/Header.jsx";
 import bank from "../data/dialogue/questionBank.json";
-import { startLesson, respond, showWork, isScripted } from "../data/dialogue/teacher.js";
+import { startLesson, respond, showWork } from "../data/dialogue/teacher.js";
+import { startTreeLesson, respondTree, showWorkTree, hintTree, hasTree, findTree } from "../data/dialogue/treeTeacher.js";
 import { aiHealth, aiRespond } from "../data/dialogue/aiTeacher.js";
 
 // 図(png)をURLとして解決（Viteのglob）。questionBank の "figures/xxx.png" と突き合わせる
@@ -62,7 +63,7 @@ function Picker({ player, onPick, onBack }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               {chapters.map((c) => {
                 const ls = lessonsOf(c.chapterId);
-                const ready = ls.filter((l) => isScripted(l.id)).length;
+                const ready = ls.filter((l) => hasTree(l.id)).length;
                 return (
                   <button key={c.chapterId} className="mode-card" onClick={() => setChap(c)}
                     style={{ background: "rgba(255,255,255,.05)", alignItems: "flex-start", textAlign: "left", padding: 14 }}>
@@ -81,13 +82,13 @@ function Picker({ player, onPick, onBack }) {
             <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 8 }}>{CHAP_NAME(chap.title)}</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {lessonsOf(chap.chapterId).map((l) => {
-                const ready = isScripted(l.id);
+                const ready = hasTree(l.id);
                 return (
                   <button key={l.id} onClick={() => onPick(l)} className="nb-btn"
                     style={{ textAlign: "left", display: "flex", gap: 10, alignItems: "center",
                       borderColor: ready ? "rgba(134,239,172,.4)" : "rgba(255,255,255,.11)" }}>
                     <span style={{ fontSize: 11, fontWeight: 900, color: ready ? "#86efac" : "rgba(255,255,255,.4)", whiteSpace: "nowrap" }}>
-                      {ready ? "対話✨" : "発問のみ"}
+                      {ready ? "対話✨" : "演習"}
                     </span>
                     <span style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ fontSize: 12.5, fontWeight: 700, display: "block" }}>{l.shosetsu}</span>
@@ -106,7 +107,8 @@ function Picker({ player, onPick, onBack }) {
 
 // ── 黒板＋先生＋入力 ───────────────────────────────────
 function Board({ player, lesson, onExit }) {
-  const [state, setState] = useState(() => startLesson(lesson));
+  const tree = hasTree(lesson.id);  // 発問の木がある授業か（演習回は無い）
+  const [state, setState] = useState(() => (tree ? startTreeLesson(lesson) : startLesson(lesson)));
   const [input, setInput] = useState("");
   const [voiceOn, setVoiceOn] = useState(true);   // 先生の声（音声合成）
   const [listening, setListening] = useState(false);
@@ -158,6 +160,7 @@ function Board({ player, lesson, onExit }) {
         studentText: studentImage ? "" : studentText,
         studentImage: studentImage || null,
         phase: cur.phase,
+        plan: findTree(lesson.id),   // 発問の木をAIの“指導案”として渡す（判定・補助発問の根拠）
       });
       setState((s) => {
         const board = [...s.board];
@@ -175,6 +178,7 @@ function Board({ player, lesson, onExit }) {
     if (!t || state.done || state.thinking) return;
     setInput("");
     if (aiMode) aiTurn(t, null);
+    else if (state.mode === "tree") setState((s) => respondTree(s, lesson, t));
     else setState((s) => respond(s, lesson, t));
   };
 
@@ -183,7 +187,16 @@ function Board({ player, lesson, onExit }) {
     if (state.done || state.thinking) return;
     setPadOpen(false);
     if (aiMode) aiTurn(null, dataUrl);
+    else if (state.mode === "tree") setState((s) => showWorkTree(s, lesson, dataUrl));
     else setState((s) => showWork(s, lesson, dataUrl));
+  };
+
+  // 「ヒント」：木モードは補助発問を1段ずつ／AIモードはAIに補助を頼む／その他は従来通り
+  const hint = () => {
+    if (state.done || state.thinking) return;
+    if (aiMode) send("ヒントがほしい");
+    else if (state.mode === "tree") setState((s) => hintTree(s, lesson));
+    else send("わからない");
   };
 
   // 音声入力（Web Speech API）。非対応なら黙って無効。
@@ -305,7 +318,7 @@ function Board({ player, lesson, onExit }) {
               </div>
 
               {state.phase !== "think" && (
-                <button onClick={() => send("わからない")} style={{
+                <button onClick={hint} style={{
                   marginTop: 7, fontSize: 11.5, color: "rgba(255,255,255,.5)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
                   うーん、ヒントがほしい（補助発問をもらう）
                 </button>

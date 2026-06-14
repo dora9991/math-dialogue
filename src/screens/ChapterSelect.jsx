@@ -86,11 +86,11 @@ export default function ChapterSelect({ player, mode, chapters = CHAPTERS, onSta
                     )}
                   </div>
                 </button>
-                {unlocked && onLesson && hasLessonMedia(u.id) ? (
+                {onLesson && hasLessonMedia(u.id) ? (
                   <button
                     onClick={() => onLesson(u)}
                     data-sfx="none"
-                    title="動画を見ながらプリントに書き込む"
+                    title="動画を見ながらプリントに書き込む（学習はいつでもOK）"
                     style={{ width: 56, flexShrink: 0, borderRadius: 14, border: "1px solid rgba(99,102,241,.5)", background: "rgba(99,102,241,.16)", color: "#c7d2fe", cursor: "pointer", fontSize: 10, fontWeight: 800, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2 }}
                   >
                     <span style={{ fontSize: 18 }}>📺✏️</span>動画＋<br />プリント

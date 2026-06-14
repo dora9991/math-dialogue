@@ -29,7 +29,7 @@ const hasChoices = (q) => Array.isArray(q.choices) && q.choices.length > 0;
 const choicesFor = (q) => (hasChoices(q) ? shuffle([...q.choices]) : makeChoices(q.ans));
 const ansEq = (val, q) => (hasChoices(q) ? String(val).replace(/\s/g, "") === String(q.ans).replace(/\s/g, "") : isCorrect(val, q.ans));
 
-export default function SlowMode({ player, chapter, unit, level, anshin = false, onComplete, onBackToMap, onHome }) {
+export default function SlowMode({ player, chapter, unit, level, anshin = false, onComplete, onBackToMap, onHome, onRelearn, onBattle }) {
   const target = anshin ? ANSHIN_TARGET : SLOW_TARGET[level];
   // ★2 あんしんモードは最初の1問を必ず「かんたん」から出す
   const [q, setQ] = useState(() => genProblem(unit, anshin ? "easy" : level));
@@ -132,9 +132,17 @@ export default function SlowMode({ player, chapter, unit, level, anshin = false,
               <div className="stat-box"><div className="stat-n" style={{ color: "#d97706" }}>{streak}</div><div className="stat-l">最高連続</div></div>
               <div className="stat-box"><div className="stat-n" style={{ color: "#94a3b8" }}>{total}</div><div className="stat-l">挑戦</div></div>
             </div>
+            {/* つぎのステップ（あんしん→学び直し→バトルの流れを案内） */}
+            {(onRelearn || onBattle) && (
+              <div style={{ marginTop: 2, marginBottom: 9, textAlign: "center", fontSize: 12.5, fontWeight: 800, color: "#475569", lineHeight: 1.6 }}>
+                つぎは…　{onRelearn ? "📖 学び直しで確認" : ""}{onRelearn && onBattle ? " → " : ""}{onBattle ? "⚔️ バトルで実践！" : ""}
+              </div>
+            )}
             <div className="res-acts">
+              {onRelearn && <button className="rbtn s" onClick={onRelearn}>📖 学び直し</button>}
+              {onBattle && <button className="rbtn p" onClick={onBattle}>⚔️ バトルで実践！</button>}
               <button className="rbtn s" onClick={onBackToMap}>🗺️ 単元へ</button>
-              <button className="rbtn p" onClick={onHome}>🏠 ホーム</button>
+              <button className="rbtn s" onClick={onHome}>🏠 ホーム</button>
             </div>
           </div>
         </div>
