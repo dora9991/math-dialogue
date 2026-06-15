@@ -14,7 +14,7 @@ const itemName = (id) => findItem(id)?.name ?? "";
 const GRADE_LABEL = { 1: "中1", 2: "中2", 3: "中3" };
 const GRADE_COLOR = { 1: "#818cf8", 2: "#f43f5e", 3: "#fbbf24" }; // 中1=藍 中2=赤 中3=黄
 
-export default function Home({ player, records, mistakeCount, grade = 1, onSetGrade, onAnshin, onTimeAttack, onChallenge, onBattle, onRelearn, onDialogue, onClinic, onStartGolden, onShop, onSkill, onCollection, onPartners, onDetail, onHowTo, onCharacter }) {
+export default function Home({ player, records, mistakeCount, grade = 1, onSetGrade, onAnshin, onTimeAttack, onChallenge, onBattle, onRelearn, onDialogue, onHaichi, onClinic, onStartGolden, onShop, onSkill, onCollection, onPartners, onDetail, onHowTo, onCharacter }) {
   const availGrades = gradesWithChapters();
   const [msg] = useState(() => voice("open"));
   const greeting = player.name ? `${player.name}、${msg}` : msg;
@@ -139,6 +139,24 @@ export default function Home({ player, records, mistakeCount, grade = 1, onSetGr
             <span>
               <span style={{ fontSize: 17, fontWeight: 900, display: "block" }}>AIと対話する授業 <span style={{ fontSize: 11, opacity: .85 }}>NEW</span></span>
               <span style={{ fontSize: 12, fontWeight: 700, opacity: .92 }}>黒板を見ながら、先生の問いに声や文字で答えよう</span>
+            </span>
+          </button>
+        )}
+
+        {/* ★ はいちモード：葉一さん（19ch）の授業を見て、リンクした問題を解く */}
+        {onHaichi && (
+          <button
+            onClick={onHaichi}
+            style={{
+              width: "100%", marginBottom: 12, padding: "14px 16px", borderRadius: 16, border: "2px solid rgba(255,255,255,.25)",
+              background: "linear-gradient(135deg,#ef4444,#f59e0b)", color: "#fff", cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 12, textAlign: "left", boxShadow: "0 6px 18px rgba(239,68,68,.35)",
+            }}
+          >
+            <span style={{ fontSize: 38, lineHeight: 1 }}>📺</span>
+            <span>
+              <span style={{ fontSize: 17, fontWeight: 900, display: "block" }}>はいちモード <span style={{ fontSize: 11, opacity: .85 }}>NEW</span></span>
+              <span style={{ fontSize: 12, fontWeight: 700, opacity: .92 }}>葉一さんの授業を見ながらプリント→リンク問題で確認</span>
             </span>
           </button>
         )}

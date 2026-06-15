@@ -1,21 +1,26 @@
 // ============================================================
-// Lesson.jsx — 「上で動画を見ながら、下のワークシートに書き込む」画面（試作）
+// Lesson.jsx — 「動画を見ながら、19chのワークシートに書きこむ」画面
 //  ・上：YouTube 埋め込みプレイヤー（動画IDがあれば再生。無ければ19chを開くボタン）
-//  ・下：PDFワークシートを pdf.js で表示し、その上に手書きレイヤーを重ねる
-//      ✏️ペン（色）／🧽消しゴム／🖐️移動（スクロール）／ページ送り／保存。
-//  ※ ワークシートPDFは public/worksheets/ に置いたもの。著作物は許可を得て差し替える。
+//  ・下：19ch の無料プリント(PDF)を “読み込み式” で表示し、その上に手書きを重ねる。
+//      └ PDFは再ホストせず、19ch のURLを Google ドキュメントビューア経由の iframe で表示。
+//        （CORS非対応・ブラウザ差を避けるため。動画は公式埋め込み＝再生/広告は葉一さんに計上）
+//  ・操作モード👆＝動画再生・PDFスクロール／書くモード✏️＝プリントの上に手書き。
+//  ※ 著作権は葉一「とある男が授業をしてみた」／プリント出典 19ch.tv に帰属。
 // ============================================================
 import { useEffect, useRef, useState } from "react";
-import * as pdfjsLib from "pdfjs-dist";
-import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import Header from "../components/Header.jsx";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
-
 const PEN_COLORS = ["#1e1b4b", "#ef4444", "#2563eb", "#16a34a", "#f59e0b"];
+const PEN_SIZES = [
+  { label: "細", size: 1.6 },
+  { label: "中", size: 3 },
+  { label: "太", size: 6 },
+];
+// 19ch のPDFをそのまま埋め込み表示するためのビューア（再ホストしない読み込み式）
+const viewerSrc = (pdf) => "https://docs.google.com/viewer?embedded=true&url=" + encodeURIComponent(pdf);
 
-export default function Lesson({ player, unit, media, onBack }) {
-  const { youtubeId, playlistId, pdfUrl, videoPage } = media || {};
+export default function Lesson({ player, unit, media, onBack, onPractice }) {
+  const { youtubeId, playlistId, worksheetUrl, videoPage } = media || {};
   // 埋め込みURL：再生リストがあれば章まるごと（中の動画を選べる）、無ければ単独動画。
   const embedSrc = playlistId
     ? `https://www.youtube.com/embed/${youtubeId || "videoseries"}?list=${playlistId}&rel=0&modestbranding=1`
@@ -24,187 +29,89 @@ export default function Lesson({ player, unit, media, onBack }) {
       : null;
 
   // ── 手書き設定 ──
-  const [mode, setMode] = useState("pen");   // pen | erase | move（moveのときは下がスクロールできる）
+  //  mode: "move"=操作（動画/PDFを触れる）／"pen"=ペン／"erase"=消しゴム
+  const [mode, setMode] = useState("move");
   const [color, setColor] = useState(PEN_COLORS[0]);
-  const [page, setPage] = useState(1);
-  const [numPages, setNumPages] = useState(0);
-  const [loadErr, setLoadErr] = useState(null);
-  const [wrapW, setWrapW] = useState(0); // ワークシート表示エリアの実幅（px）
+  const [size, setSize] = useState(PEN_SIZES[0].size);
 
-  const wrapRef = useRef(null);     // 横幅の計測用
-  const pdfCanvasRef = useRef(null);
-  const drawCanvasRef = useRef(null);
-  const pdfDocRef = useRef(null);
-  const drawCtxRef = useRef(null);
+  const paneRef = useRef(null);     // ワークシート枠（PDFと手書きを重ねる親）
+  const boardRef = useRef(null);    // 手書きキャンバス
+  const ctxRef = useRef(null);
   const drawing = useRef(false);
-  const lastPt = useRef({ x: 0, y: 0 });
-  const strokesRef = useRef({});    // { [page]: dataURL } ページごとの手書きを保持
-  const modeRef = useRef(mode);
-  const colorRef = useRef(color);
+  const strokesRef = useRef([]);    // [{ color, size, erasing, w0, points:[{fx,fy}] }]
+  const curRef = useRef(null);
+  const modeRef = useRef(mode), colorRef = useRef(color), sizeRef = useRef(size);
   useEffect(() => { modeRef.current = mode; }, [mode]);
   useEffect(() => { colorRef.current = color; }, [color]);
+  useEffect(() => { sizeRef.current = size; }, [size]);
 
-  // PDFを読み込む
-  useEffect(() => {
-    if (!pdfUrl) return;
-    let alive = true;
-    setLoadErr(null);
-    pdfjsLib.getDocument(pdfUrl).promise.then((doc) => {
-      if (!alive) return;
-      pdfDocRef.current = doc;
-      setNumPages(doc.numPages);
-      setPage(1);
-    }).catch((e) => { if (alive) setLoadErr(String(e?.message || e)); });
-    return () => { alive = false; };
-  }, [pdfUrl]);
-
-  // ページ／幅が変わったら描画
-  useEffect(() => {
-    const doc = pdfDocRef.current;
-    if (!doc || !wrapRef.current) return;
-    const avail = wrapW || wrapRef.current.clientWidth || 0;
-    if (avail <= 0) return; // 幅が未確定のうちは描かない（ResizeObserverで再実行）
-    let cancelled = false;
-    (async () => {
-      const pdfPage = await doc.getPage(page);
-      if (cancelled) return;
-      const cssW = Math.min(avail, 720);
-      const base = pdfPage.getViewport({ scale: 1 });
-      const scale = cssW / base.width;
-      const vp = pdfPage.getViewport({ scale });
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-      const pc = pdfCanvasRef.current, dc = drawCanvasRef.current;
-      for (const c of [pc, dc]) {
-        c.width = Math.round(vp.width * dpr);
-        c.height = Math.round(vp.height * dpr);
-        c.style.width = vp.width + "px";
-        c.style.height = vp.height + "px";
-      }
-      const ctx = pc.getContext("2d");
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(0, 0, vp.width, vp.height);
-      await pdfPage.render({ canvasContext: ctx, viewport: vp }).promise;
-
-      // 手書きレイヤー初期化（このページの保存があれば復元）
-      const dctx = dc.getContext("2d");
-      dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      dctx.lineCap = "round"; dctx.lineJoin = "round";
-      dctx.clearRect(0, 0, vp.width, vp.height);
-      drawCtxRef.current = dctx;
-      const saved = strokesRef.current[page];
-      if (saved) {
-        const img = new Image();
-        img.onload = () => dctx.drawImage(img, 0, 0, vp.width, vp.height);
-        img.src = saved;
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [page, numPages, wrapW]);
-
-  // PDF未設定の単元でも「白紙のプリント」に手書きできるようにする（素材が届く前のフォールバック）。
-  //  ワークシートPDFが OVERRIDES に入れば上の通常描画に切り替わる。
-  useEffect(() => {
-    if (pdfUrl || !wrapRef.current) return; // PDFがある単元はこの処理は不要
-    const avail = wrapW || wrapRef.current.clientWidth || 0;
-    if (avail <= 0) return;
-    const cssW = Math.min(avail, 720);
-    const cssH = Math.round(cssW * 1.414); // A4縦のおおよその比率
+  // ── キャンバスのサイズ合わせ＋再描画（幅基準の正規化座標で保持＝拡大縮小に追従） ──
+  function redraw() {
+    const cv = boardRef.current, ctx = ctxRef.current;
+    if (!cv || !ctx) return;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    for (const s of strokesRef.current) {
+      if (!s.points.length) continue;
+      const X = (p) => p.fx * cv.width, Y = (p) => p.fy * cv.width; // x,yとも幅基準＝均一スケール
+      const lw = (s.erasing ? s.size * 3 : s.size) * (cv.width / (s.w0 || 1));
+      ctx.save();
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.globalCompositeOperation = s.erasing ? "destination-out" : "source-over";
+      ctx.strokeStyle = s.color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(X(s.points[0]), Y(s.points[0]));
+      for (let i = 1; i < s.points.length; i++) ctx.lineTo(X(s.points[i]), Y(s.points[i]));
+      if (s.points.length === 1) ctx.lineTo(X(s.points[0]) + 0.1, Y(s.points[0]) + 0.1);
+      ctx.stroke(); ctx.restore();
+    }
+  }
+  function resizeBoard() {
+    const cv = boardRef.current;
+    if (!cv) return;
+    const r = cv.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const pc = pdfCanvasRef.current, dc = drawCanvasRef.current;
-    if (!pc || !dc) return;
-    for (const c of [pc, dc]) {
-      c.width = Math.round(cssW * dpr);
-      c.height = Math.round(cssH * dpr);
-      c.style.width = cssW + "px";
-      c.style.height = cssH + "px";
-    }
-    const ctx = pc.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, cssW, cssH);
-    const dctx = dc.getContext("2d");
-    dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    dctx.lineCap = "round"; dctx.lineJoin = "round";
-    dctx.clearRect(0, 0, cssW, cssH);
-    drawCtxRef.current = dctx;
-    const saved = strokesRef.current[1]; // 白紙は1ページ扱い
-    if (saved) {
-      const img = new Image();
-      img.onload = () => dctx.drawImage(img, 0, 0, cssW, cssH);
-      img.src = saved;
-    }
-  }, [pdfUrl, wrapW]);
-
-  // ラッパーの実幅を監視（レイアウト確定後に正しい幅で描画する）
+    cv.width = Math.max(1, Math.round(r.width * dpr));
+    cv.height = Math.max(1, Math.round(r.height * dpr));
+    ctxRef.current = cv.getContext("2d");
+    redraw();
+  }
   useEffect(() => {
-    if (!wrapRef.current) return;
-    // 初期計測（レイアウト確定直後に1回。ResizeObserverが発火しない環境の保険）
-    const measure = () => { const w = wrapRef.current?.clientWidth || 0; if (w > 0) setWrapW((p) => (p === w ? p : w)); };
-    measure();
-    const raf = requestAnimationFrame(measure);
-    const ro = new ResizeObserver((ents) => {
-      const w = Math.round(ents[0].contentRect.width);
-      if (w > 0) setWrapW((p) => (p === w ? p : w));
-    });
-    ro.observe(wrapRef.current);
-    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
-  }, []);
+    resizeBoard();
+    const onR = () => requestAnimationFrame(resizeBoard);
+    window.addEventListener("resize", onR);
+    let ro;
+    if (window.ResizeObserver && paneRef.current) {
+      ro = new ResizeObserver(() => requestAnimationFrame(resizeBoard));
+      ro.observe(paneRef.current);
+    }
+    return () => { window.removeEventListener("resize", onR); ro && ro.disconnect(); };
+  }, []); // eslint-disable-line
 
-  // ── 手書きハンドラ ──
-  function ptOf(e) {
-    const r = drawCanvasRef.current.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  // ── 手書きハンドラ（ペン／マウス／タッチ共通） ──
+  function posOf(e) {
+    const cv = boardRef.current, r = cv.getBoundingClientRect();
+    const w = r.width || 1;
+    return { fx: (e.clientX - r.left) / w, fy: (e.clientY - r.top) / w }; // 幅で正規化
   }
   function down(e) {
-    if (modeRef.current === "move") return; // 移動モードはスクロールに任せる
+    if (modeRef.current === "move") return; // 操作モードはiframeに任せる
     e.preventDefault();
-    drawCanvasRef.current.setPointerCapture?.(e.pointerId);
+    boardRef.current.setPointerCapture?.(e.pointerId);
     drawing.current = true;
-    lastPt.current = ptOf(e);
-    const ctx = drawCtxRef.current;
-    ctx.globalCompositeOperation = modeRef.current === "erase" ? "destination-out" : "source-over";
-    ctx.strokeStyle = colorRef.current;
-    ctx.lineWidth = modeRef.current === "erase" ? 22 : 3;
-    // 点でも描けるように小さな円
-    ctx.beginPath(); ctx.arc(lastPt.current.x, lastPt.current.y, ctx.lineWidth / 2, 0, Math.PI * 2);
-    ctx.fillStyle = modeRef.current === "erase" ? "rgba(0,0,0,1)" : colorRef.current;
-    ctx.fill();
+    const w0 = boardRef.current.getBoundingClientRect().width;
+    curRef.current = { color: colorRef.current, size: sizeRef.current, erasing: modeRef.current === "erase", w0, points: [posOf(e)] };
+    strokesRef.current.push(curRef.current);
+    redraw();
   }
   function move(e) {
-    if (!drawing.current) return;
+    if (!drawing.current || modeRef.current === "move") return;
     e.preventDefault();
-    const p = ptOf(e);
-    const ctx = drawCtxRef.current;
-    ctx.beginPath(); ctx.moveTo(lastPt.current.x, lastPt.current.y); ctx.lineTo(p.x, p.y); ctx.stroke();
-    lastPt.current = p;
+    curRef.current.points.push(posOf(e));
+    redraw();
   }
-  function up() {
-    if (!drawing.current) return;
-    drawing.current = false;
-    // このページの手書きを保存
-    strokesRef.current[page] = drawCanvasRef.current.toDataURL("image/png");
-  }
-  function clearPage() {
-    const ctx = drawCtxRef.current;
-    if (!ctx) return;
-    const dc = drawCanvasRef.current;
-    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, dc.width, dc.height); ctx.restore();
-    delete strokesRef.current[page];
-  }
-  function saveImage() {
-    const pc = pdfCanvasRef.current, dc = drawCanvasRef.current;
-    const out = document.createElement("canvas");
-    out.width = pc.width; out.height = pc.height;
-    const c = out.getContext("2d");
-    c.drawImage(pc, 0, 0); c.drawImage(dc, 0, 0);
-    const a = document.createElement("a");
-    a.href = out.toDataURL("image/png");
-    a.download = `worksheet-${unit?.id || "page"}-${page}.png`;
-    a.click();
-  }
+  function up() { drawing.current = false; }
+  function clearBoard() { strokesRef.current = []; redraw(); }
 
+  const drawMode = mode !== "move";
   const tabBtn = (id, label) => (
     <button data-sfx="none" onClick={() => setMode(id)}
       style={{ ...toolBtn, background: mode === id ? "#6366f1" : "rgba(255,255,255,.08)" }}>{label}</button>
@@ -215,7 +122,27 @@ export default function Lesson({ player, unit, media, onBack }) {
       <Header player={player} back="もどる" onBack={onBack} />
       <div className="content" style={{ paddingBottom: 24 }}>
         <div className="pg-ttl" style={{ fontSize: 18 }}>📺 {unit?.name || "解説と練習"}</div>
-        <div className="pg-sub">動画を見ながら、下のプリントに書きこもう</div>
+        <div className="pg-sub">動画を見ながら、下のプリントに書きこもう（葉一さん／19ch）</div>
+
+        {/* はいちモード：学んだこととリンクした練習問題への導線 */}
+        {onPractice && (
+          <button
+            data-sfx="none"
+            onClick={onPractice}
+            style={{
+              width: "100%", margin: "2px 0 12px", padding: "12px 14px", borderRadius: 14, cursor: "pointer",
+              border: "2px solid rgba(255,255,255,.22)", color: "#fff", textAlign: "left",
+              background: "linear-gradient(135deg,#22c55e,#10b981)", display: "flex", alignItems: "center", gap: 12,
+              boxShadow: "0 5px 16px rgba(16,185,129,.32)",
+            }}
+          >
+            <span style={{ fontSize: 30, lineHeight: 1 }}>📝</span>
+            <span>
+              <span style={{ fontSize: 15, fontWeight: 900, display: "block" }}>この単元の練習問題を解く</span>
+              <span style={{ fontSize: 11.5, fontWeight: 700, opacity: .92 }}>動画で学んだことを、リンクした問題で確かめよう</span>
+            </span>
+          </button>
+        )}
 
         {/* ── 上：動画（アプリ内で埋め込み再生） ── */}
         {embedSrc ? (
@@ -231,7 +158,7 @@ export default function Lesson({ player, unit, media, onBack }) {
         ) : (
           <div className="glass" style={{ padding: "14px 16px", textAlign: "center" }}>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,.75)", lineHeight: 1.6, marginBottom: 10 }}>
-              この単元の動画IDが未設定です。<br />
+              この単元の埋め込み動画IDは未設定です。<br />
               <span style={{ fontSize: 11, color: "rgba(255,255,255,.5)" }}>（data/lessonMedia.js に YouTube動画IDを入れると、ここで埋め込み再生できます）</span>
             </div>
             {videoPage && (
@@ -245,63 +172,74 @@ export default function Lesson({ player, unit, media, onBack }) {
 
         {/* ── 道具バー ── */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center", marginTop: 12 }}>
+          {tabBtn("move", "👆 操作")}
           {tabBtn("pen", "✏️ ペン")}
           {tabBtn("erase", "🧽 消す")}
-          {tabBtn("move", "🖐️ 移動")}
           <div style={{ display: "flex", gap: 5, marginLeft: 4 }}>
             {PEN_COLORS.map((c) => (
               <button key={c} data-sfx="none" onClick={() => { setColor(c); setMode("pen"); }}
                 style={{ width: 24, height: 24, borderRadius: "50%", background: c, cursor: "pointer", border: color === c && mode === "pen" ? "3px solid #fff" : "2px solid rgba(255,255,255,.25)" }} />
             ))}
           </div>
-          <div style={{ flex: 1 }} />
-          <button data-sfx="none" onClick={clearPage} style={toolBtn}>このページを消す</button>
-          <button data-sfx="none" onClick={saveImage} style={{ ...toolBtn, background: "#16a34a" }}>💾 保存</button>
-        </div>
-
-        {/* PDF未設定の単元は白紙に書ける（プリントが入ると自動で表示） */}
-        {!pdfUrl && !loadErr && (
-          <div className="glass" style={{ padding: "8px 12px", fontSize: 11.5, color: "rgba(255,255,255,.72)", marginTop: 10, textAlign: "center", lineHeight: 1.6 }}>
-            📝 この単元のワークシートは準備中です。動画を見ながら、下の白紙に計算や考えを書きこめます。
+          <div style={{ display: "flex", gap: 4, marginLeft: 4 }}>
+            {PEN_SIZES.map((s) => (
+              <button key={s.label} data-sfx="none" onClick={() => { setSize(s.size); if (mode === "move") setMode("pen"); }}
+                style={{ ...toolBtn, padding: "6px 10px", background: size === s.size && mode !== "move" ? "#4f46e5" : "rgba(255,255,255,.08)" }}>{s.label}</button>
+            ))}
           </div>
-        )}
-
-        {/* ── 下：ワークシート（PDF＋手書き／PDFが無ければ白紙） ── */}
-        <div ref={wrapRef} style={{ marginTop: 10, width: "100%", textAlign: "center" }}>
-          {loadErr ? (
-            <div className="glass" style={{ padding: 16, color: "#fca5a5", fontSize: 12 }}>プリントを読み込めませんでした：{loadErr}</div>
-          ) : (
-            <div style={{
-              position: "relative", display: "inline-block", borderRadius: 10, overflow: "hidden",
-              boxShadow: "0 8px 24px rgba(0,0,0,.4)", background: "#fff", maxWidth: "100%",
-              // 移動モード以外はキャンバスのタッチを手書きに使う（スクロール抑制）
-              touchAction: mode === "move" ? "auto" : "none",
-            }}>
-              <canvas ref={pdfCanvasRef} style={{ display: "block" }} />
-              <canvas
-                ref={drawCanvasRef}
-                onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onPointerLeave={up}
-                style={{ position: "absolute", left: 0, top: 0, cursor: mode === "move" ? "grab" : "crosshair", pointerEvents: mode === "move" ? "none" : "auto" }}
-              />
-            </div>
+          <div style={{ flex: 1 }} />
+          <button data-sfx="none" onClick={clearBoard} style={toolBtn}>全消し</button>
+          {worksheetUrl && (
+            <button data-sfx="none" onClick={() => window.open(worksheetUrl, "_blank", "noopener")} style={toolBtn}>↗ 別タブ</button>
           )}
         </div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,.55)", margin: "8px 2px 0", lineHeight: 1.6 }}>
+          {drawMode
+            ? "✏️ 書くモード：プリントの上に手書きできます（スクロールは「👆操作」へ）"
+            : "👆 操作モード：プリントのスクロール・動画の再生ができます（書くときは「✏️ペン」へ）"}
+        </div>
 
-        {/* ページ送り */}
-        {numPages > 1 && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginTop: 12 }}>
-            <button data-sfx="none" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} style={toolBtn}>◀ 前</button>
-            <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,.8)" }}>{page} / {numPages}</span>
-            <button data-sfx="none" disabled={page >= numPages} onClick={() => setPage((p) => Math.min(numPages, p + 1))} style={toolBtn}>次 ▶</button>
+        {/* ── 下：ワークシート（19chのPDFを読み込み＋手書きを重ねる） ── */}
+        <div
+          ref={paneRef}
+          style={{
+            position: "relative", marginTop: 10, width: "100%", height: "72vh",
+            borderRadius: 12, overflow: "hidden", background: "#fff",
+            boxShadow: "0 8px 24px rgba(0,0,0,.4)", border: "1px solid rgba(255,255,255,.12)",
+          }}
+        >
+          {worksheetUrl ? (
+            <iframe
+              title="ワークシート"
+              src={viewerSrc(worksheetUrl)}
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0, background: "#fff" }}
+            />
+          ) : (
+            // 19chのプリントが対応づいていない単元は、白紙に書ける
+            <div style={{ position: "absolute", inset: 0, background: "#fff" }} />
+          )}
+          <canvas
+            ref={boardRef}
+            onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
+            style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%",
+              touchAction: drawMode ? "none" : "auto",
+              pointerEvents: drawMode ? "auto" : "none",
+              cursor: drawMode ? "crosshair" : "default",
+            }}
+          />
+        </div>
+        {!worksheetUrl && (
+          <div className="glass" style={{ padding: "8px 12px", fontSize: 11.5, color: "rgba(255,255,255,.72)", marginTop: 10, textAlign: "center", lineHeight: 1.6 }}>
+            📝 この単元のプリントはまだ対応づいていません。動画を見ながら、上の白紙に計算や考えを書きこめます。
           </div>
         )}
 
-        {pdfUrl && (
-          <div style={{ fontSize: 10.5, color: "rgba(255,255,255,.4)", textAlign: "center", marginTop: 14, lineHeight: 1.6 }}>
-            ※ いまのプリントは差し替え用のサンプルです。葉一さんのプリントは、許可を得たうえで
-            public/worksheets/ に置いて差し替えてください。
-          </div>
-        )}
+        <div style={{ fontSize: 10.5, color: "rgba(255,255,255,.4)", textAlign: "center", marginTop: 14, lineHeight: 1.6 }}>
+          ※ 動画は <b>YouTube公式埋め込み</b>（再生・広告は葉一さんのチャンネルに計上）、プリントは
+          <b> 19ch のPDFを読み込み表示</b>（再ホストしません）。著作権は
+          葉一「とある男が授業をしてみた」／出典 19ch.tv に帰属します。
+        </div>
       </div>
     </div>
   );

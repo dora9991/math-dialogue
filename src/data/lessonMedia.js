@@ -16,11 +16,34 @@
 //    ・youtubeId / playlistId が無い単元は、19ch ページへのリンク（videoPage）に自動フォールバック。
 //    ・pdf が無い単元は、白紙キャンバスに手書きできる（Lesson 側で対応）。
 // ============================================================
-import { videoUrlFor } from "./videoLinks.js";
+import { videoUrlFor, worksheetUrlFor } from "./videoLinks.js";
 import { allChapters } from "./index.js";
 
 // 中2「式の計算」章の再生リスト（式の計算①〜：単項式と多項式／加法・減法／乗法・除法 ほか）
 const G2C1_PLAYLIST = "PLKRhhk0lEyzPfFN5LF8JNRXhzt8kF7iKc";
+
+// ── 【はいちモード】葉一さんのYouTube動画ID 記入表 ───────────────────
+//  ここに「単元ID: '動画ID'」を1行足すと、はいちモード／レッスン画面で
+//  その単元の動画がアプリ内に埋め込み再生されます（葉一さんから埋め込み許可済み）。
+//   ・動画ID＝ YouTube URL の v= のあと、または youtu.be/ のあとの11文字。
+//     例) https://www.youtube.com/watch?v=7W71Q4nwX2U → '7W71Q4nwX2U'
+//   ・未記入（''）の単元は、19chの該当ページを「▶19chで見る」ボタンで開くフォールバックになります。
+//  ★ 単元IDの一覧と内容は data/videoLinks.js のコメント（各19chレッスンの対応）を参照。
+//  ★ 取得は19chの各ページ内のYouTube埋め込みを確認するのが確実（葉一さん本人のID一覧があれば一括で埋められます）。
+const HAICHI_VIDEO_IDS = {
+  // ── 中1 ──
+  u1: "", u2: "", u3: "", u4: "", u5: "", u6: "",        // 正負の数
+  v1: "", v2: "", v3: "", v4: "", v5: "",                // 文字式
+  e1: "", e2: "", e3: "", e4: "", e5: "",                // 方程式
+  h1: "", h2: "", h3: "", h4: "", h5: "",                // 比例・反比例
+  z1: "", z2: "", z3: "", z4: "",                        // 平面図形
+  k1: "", k2: "", k3: "", k4: "",                        // 空間図形
+  d1: "", d2: "", d3: "",                                // データの活用
+  // ── 中2 ──（g2c1u1 は判明分。残りは要確認）
+  g2c1u1: "7W71Q4nwX2U",
+  // g2c1u2: "", ...（必要に応じて追加）
+  // ── 中3 ──（要確認）
+};
 
 // ── 実素材の上書き表（素材が届いたらここに足す） ───────────────
 //  形式：単元ID: { youtubeId?, playlistId?, pdf? }
@@ -52,6 +75,12 @@ const MEDIA = (() => {
   for (const id of allUnitIds()) m[id] = { ...base, ...(OVERRIDES[id] || {}) };
   // index に載っていないID（u1 サンプル等）も拾う
   for (const id of Object.keys(OVERRIDES)) if (!m[id]) m[id] = { ...base, ...OVERRIDES[id] };
+  // 【はいちモード】記入表のYouTube動画ID（空でない分だけ）を youtubeId に反映
+  for (const [id, vid] of Object.entries(HAICHI_VIDEO_IDS)) {
+    if (!vid) continue;
+    if (!m[id]) m[id] = { ...base };
+    m[id] = { ...m[id], youtubeId: vid };
+  }
   return m;
 })();
 
@@ -65,6 +94,10 @@ export function lessonMediaFor(unitId) {
   return {
     youtubeId: m.youtubeId || "",
     playlistId: m.playlistId || "",
+    // ★ワークシートは再ホストせず、19ch のPDFをそのまま読み込んで表示する（事前DLしない）。
+    //   Lesson 側で Google ドキュメントビューア経由の iframe に渡す。
+    worksheetUrl: worksheetUrlFor(unitId),
+    // ローカルにPDFを置いた単元だけのフォールバック（基本は使わない）。
     pdfUrl: m.pdf ? import.meta.env.BASE_URL + "worksheets/" + m.pdf : null,
     videoPage: videoUrlFor(unitId), // 埋め込みが無いときのフォールバック（別タブで19ch）
   };

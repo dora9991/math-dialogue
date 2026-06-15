@@ -102,3 +102,17 @@ export function videoUrlFor(unitId) {
   const p = PATHS[unitId];
   return p ? BASE + p : null;
 }
+
+/** 単元IDに対応する19chの無料プリント(PDF)の直URL（無ければ null）。
+ *  再ホストはせず、19ch のPDFをそのまま読み込んで表示するためのURL。
+ *  ページパスから機械的に導出する：
+ *    ページ  cX/cXm/<name>.html   →   プリント  cX/cXm/cXtext/ma/<name>.pdf
+ *  例: c1/c1m/c1m4.html → c1/c1m/c1text/ma/c1m4.pdf（全学年でこの規則を確認済み）。 */
+export function worksheetUrlFor(unitId) {
+  const p = PATHS[unitId];
+  if (!p) return null;
+  const m = p.match(/^([^/]+)\/([^/]+)\/([^/]+)\.html$/);
+  if (!m) return null;
+  const [, a, b, name] = m; // a="c1", b="c1m", name="c1m4"
+  return `${BASE}${a}/${b}/${a}text/ma/${name}.pdf`;
+}
