@@ -12,7 +12,7 @@
 // ============================================================
 import { useState } from "react";
 import Header from "../components/Header.jsx";
-import Lesson from "./Lesson.jsx";
+import HaichiStudio from "./HaichiStudio.jsx";
 import StepUpSimple from "./StepUpSimple.jsx";
 import { HAICHI_COURSE } from "../data/haichiCourse.js";
 import { findUnitById, gradesWithChapters } from "../data/index.js";
@@ -40,20 +40,20 @@ export default function HaichiMode({ player, grade = 1, onSetGrade, onAttempt, o
     setSection(null); setLesson(null); setView("sections");
   }
 
-  // ── ③ スタジオ（動画＋ワークシート＋手書き）。Lesson画面を再利用 ──
+  // ── ③ スタジオ（デモ準拠の高機能ビューア） ──
   if (view === "studio" && lesson && section) {
-    const key = lessonKey(grade, lesson.n);
-    const hasPractice = (lesson.u || []).length > 0;
     return (
-      <Lesson
+      <HaichiStudio
         player={player}
-        unit={{ name: lesson.t }}
-        media={{ youtubeId: lesson.yt, playlistId: "", worksheetUrl: lesson.pdf, pdfUrl: null, videoPage: null }}
+        grade={grade}
+        section={section}
+        lesson={lesson}
+        watchedMap={watchedMap}
+        passedMap={passedMap}
+        onChangeLesson={(L) => setLesson(L)}
+        onWatched={(key) => onWatched?.(key)}
+        onPractice={(L) => { setLesson(L); setView("practice"); }}
         onBack={() => setView("lessons")}
-        onPractice={hasPractice ? () => setView("practice") : undefined}
-        onWatched={() => onWatched?.(key)}
-        watched={!!watchedMap[key]}
-        passed={!!passedMap[key]}
       />
     );
   }
