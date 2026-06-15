@@ -62,6 +62,10 @@ import { rollGacha, findGear, defaultGacha, GACHA_COST } from "./engine/gear.js"
 
 const todayStr = () => new Date().toLocaleDateString("ja-JP");
 
+// はいちモードの報酬（動画ごとに1回だけ）：視聴ボーナス／練習合格ボーナス
+const HAICHI_WATCH_XP = 20, HAICHI_WATCH_COIN = 10;
+const HAICHI_PASS_XP = 30, HAICHI_PASS_COIN = 30;
+
 export default function App() {
   const [data, setData] = useState(() => store.load());
   const [screen, setScreen] = useState("start");
@@ -371,6 +375,27 @@ export default function App() {
     } else {
       addXp(ok ? 10 : 0); // ステップアップ／じっくりは1問10XP
     }
+  }
+
+  // はいちモード：葉一さんの動画を一定割合見たら、その動画につき1回だけポイント付与
+  function markHaichiWatched(key) {
+    if (!key || data.player.haichiWatched?.[key]) return; // 動画ごとに1回だけ
+    updatePlayer((p) => ({
+      ...p,
+      haichiWatched: { ...(p.haichiWatched || {}), [key]: todayStr() },
+      coins: (p.coins ?? 0) + HAICHI_WATCH_COIN,
+    }));
+    addXp(HAICHI_WATCH_XP);
+  }
+  // はいちモード：その動画専用の練習で合格（正答率80%以上）したら、1回だけポイント付与
+  function markHaichiPassed(key) {
+    if (!key || data.player.haichiPassed?.[key]) return; // 動画ごとに1回だけ
+    updatePlayer((p) => ({
+      ...p,
+      haichiPassed: { ...(p.haichiPassed || {}), [key]: todayStr() },
+      coins: (p.coins ?? 0) + HAICHI_PASS_COIN,
+    }));
+    addXp(HAICHI_PASS_XP);
   }
 
   // チャレンジ：難問を初クリアしたとき（段位の元を保存＋難易度比例XP）
@@ -934,6 +959,8 @@ export default function App() {
         grade={grade}
         onSetGrade={setWorld}
         onAttempt={recordStepAttempt}
+        onWatched={markHaichiWatched}
+        onPass={markHaichiPassed}
         onBack={() => setScreen("home")}
       />
     );

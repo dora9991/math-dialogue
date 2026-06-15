@@ -26,7 +26,7 @@ const hasChoices = (q) => Array.isArray(q.choices) && q.choices.length > 0;
 const choicesFor = (q) => hasChoices(q) ? shuffle([...q.choices]) : makeChoices(q.ans);
 const ansEq = (val, q) => hasChoices(q) ? String(val).replace(/\s/g, "") === String(q.ans).replace(/\s/g, "") : isCorrect(val, q.ans);
 
-export default function StepUpSimple({ player, units = [], title = "ステップアップ", onAttempt, onHome, roundSize = ROUND_SIZE }) {
+export default function StepUpSimple({ player, units = [], title = "ステップアップ", onAttempt, onHome, roundSize = ROUND_SIZE, passRate = null, onRoundEnd }) {
   const ROUND = roundSize > 0 ? roundSize : ROUND_SIZE;
   const recentRef = useRef([]);
   const advanceTimer = useRef(null);
@@ -96,6 +96,7 @@ export default function StepUpSimple({ player, units = [], title = "ステップ
     const r = roundRef.current;
     setResult({ seen: r.n, correct: r.correct, points: r.correct * POINT_PER_CORRECT });
     setPhase("result");
+    onRoundEnd?.({ correct: r.correct, seen: r.n }); // 合格判定など（はいちモードで使用）
   }
   function proceed() { if (roundRef.current.n >= ROUND) finishRound(); else next(); }
   function startRound() {
@@ -124,6 +125,23 @@ export default function StepUpSimple({ player, units = [], title = "ステップ
               <div style={{ fontSize: 20, fontWeight: 900, color: "#fbbf24" }}>+{result.points}</div>
               <div style={{ fontSize: 10, color: "rgba(255,255,255,.45)" }}>獲得ポイント</div>
             </div>
+
+            {/* 合格判定（はいちモード：正答率が基準以上で「合格」） */}
+            {passRate != null && (
+              <div style={{ marginTop: 16 }}>
+                {rate >= passRate ? (
+                  <div style={{ padding: "12px 14px", borderRadius: 12, background: "linear-gradient(135deg,#22c55e,#10b981)", color: "#fff" }}>
+                    <div style={{ fontSize: 22, fontWeight: 900 }}>🏅 合格！</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2 }}>正答率{passRate}%以上クリア！この動画はバッチリだね</div>
+                  </div>
+                ) : (
+                  <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(251,146,60,.18)", border: "1px solid rgba(251,146,60,.5)", color: "#fdba74" }}>
+                    <div style={{ fontSize: 15, fontWeight: 900 }}>あと少しで合格！</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2 }}>正答率{passRate}%以上で合格。もう一度挑戦しよう（動画を見直すのも◎）</div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* 小単元の理解度メーター（OK!ラインを超えると「習得」） */}
             {um && (

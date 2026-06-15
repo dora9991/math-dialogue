@@ -15,18 +15,24 @@ import Header from "../components/Header.jsx";
 import Lesson from "./Lesson.jsx";
 import StepUpSimple from "./StepUpSimple.jsx";
 import { HAICHI_COURSE } from "../data/haichiCourse.js";
-import { findChapterById, gradesWithChapters } from "../data/index.js";
+import { findUnitById, gradesWithChapters } from "../data/index.js";
 
 const GRADE_LABEL = { 1: "中1", 2: "中2", 3: "中3" };
 const GRADE_COLOR = { 1: "#818cf8", 2: "#f43f5e", 3: "#fbbf24" };
+const PASS_RATE = 80; // 練習の合格ライン（正答率%）
 
-export default function HaichiMode({ player, grade = 1, onSetGrade, onAttempt, onBack }) {
+// レッスンの識別キー（視聴・合格の記録に使う）
+const lessonKey = (grade, n) => `g${grade}m${n}`;
+
+export default function HaichiMode({ player, grade = 1, onSetGrade, onAttempt, onWatched, onPass, onBack }) {
   const availGrades = gradesWithChapters();
   const [view, setView] = useState("sections"); // sections | lessons | studio | practice
   const [section, setSection] = useState(null);  // 選択中の大単元
   const [lesson, setLesson] = useState(null);     // 選択中のレッスン
 
   const sections = HAICHI_COURSE[grade] || [];
+  const watchedMap = player.haichiWatched || {};
+  const passedMap = player.haichiPassed || {};
 
   function pickGrade(g) {
     if (!availGrades.includes(g)) return;
@@ -36,29 +42,36 @@ export default function HaichiMode({ player, grade = 1, onSetGrade, onAttempt, o
 
   // ── ③ スタジオ（動画＋ワークシート＋手書き）。Lesson画面を再利用 ──
   if (view === "studio" && lesson && section) {
+    const key = lessonKey(grade, lesson.n);
+    const hasPractice = (lesson.u || []).length > 0;
     return (
       <Lesson
         player={player}
         unit={{ name: lesson.t }}
         media={{ youtubeId: lesson.yt, playlistId: "", worksheetUrl: lesson.pdf, pdfUrl: null, videoPage: null }}
         onBack={() => setView("lessons")}
-        onPractice={section.practiceChapter ? () => setView("practice") : undefined}
+        onPractice={hasPractice ? () => setView("practice") : undefined}
+        onWatched={() => onWatched?.(key)}
+        watched={!!watchedMap[key]}
+        passed={!!passedMap[key]}
       />
     );
   }
 
-  // ── 練習問題（学んだこととリンク）。その大単元に対応する章の問題を出題 ──
-  if (view === "practice" && section?.practiceChapter) {
-    const ch = findChapterById(section.practiceChapter);
-    const units = ch?.units || [];
+  // ── 練習問題（学んだこととリンク）。その動画専用の単元から出題＋合格判定 ──
+  if (view === "practice" && lesson) {
+    const key = lessonKey(grade, lesson.n);
+    const units = (lesson.u || []).map(findUnitById).filter(Boolean);
     if (units.length > 0) {
       return (
         <StepUpSimple
-          key={"haichi-" + section.practiceChapter}
+          key={"haichi-" + key}
           player={player}
           units={units}
-          title={`練習：${section.name}`}
+          title={`練習：${lesson.t}`}
+          passRate={PASS_RATE}
           onAttempt={onAttempt}
+          onRoundEnd={({ correct, seen }) => { if (seen > 0 && (correct / seen) * 100 >= PASS_RATE) onPass?.(key); }}
           onHome={() => setView("studio")}
         />
       );
@@ -76,7 +89,10 @@ export default function HaichiMode({ player, grade = 1, onSetGrade, onAttempt, o
           <div className="pg-sub">見たい授業をえらぼう（全{section.lessons.length}本・葉一さん／19ch）</div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10, marginTop: 6 }}>
-            {section.lessons.map((L) => (
+            {section.lessons.map((L) => {
+              const key = lessonKey(grade, L.n);
+              const w = !!watchedMap[key], p = !!passedMap[key];
+              return (
               <button
                 key={L.n}
                 data-sfx="none"
@@ -84,7 +100,7 @@ export default function HaichiMode({ player, grade = 1, onSetGrade, onAttempt, o
                 style={{
                   display: "flex", flexDirection: "column", textAlign: "left", padding: 0, overflow: "hidden",
                   borderRadius: 12, cursor: "pointer", color: "#fff",
-                  background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.12)",
+                  background: "rgba(255,255,255,.05)", border: p ? "1px solid rgba(251,191,36,.6)" : "1px solid rgba(255,255,255,.12)",
                 }}>
                 <span style={{ position: "relative", display: "block", width: "100%", paddingBottom: "56.25%", background: "#000" }}>
                   <img
@@ -97,6 +113,12 @@ export default function HaichiMode({ player, grade = 1, onSetGrade, onAttempt, o
                     position: "absolute", left: 6, top: 6, fontSize: 10, fontWeight: 900, padding: "2px 6px",
                     borderRadius: 6, background: "rgba(0,0,0,.7)", color: "#fff",
                   }}>{GRADE_LABEL[grade]}-{L.n}</span>
+                  {(w || p) && (
+                    <span style={{ position: "absolute", right: 6, top: 6, display: "flex", gap: 4 }}>
+                      {w && <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 6, background: "rgba(0,0,0,.7)", color: "#7dd3fc", fontWeight: 900 }}>👁視聴</span>}
+                      {p && <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 6, background: "rgba(245,158,11,.9)", color: "#fff", fontWeight: 900 }}>🏅合格</span>}
+                    </span>
+                  )}
                   <span style={{
                     position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 30, color: "#fff", textShadow: "0 2px 8px rgba(0,0,0,.6)",
@@ -104,10 +126,11 @@ export default function HaichiMode({ player, grade = 1, onSetGrade, onAttempt, o
                 </span>
                 <span style={{ padding: "8px 9px 10px" }}>
                   <span style={{ fontSize: 12.5, fontWeight: 800, display: "block", lineHeight: 1.4 }}>{L.t}</span>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,.5)", display: "block", marginTop: 3 }}>葉一さん／19ch・プリント付き</span>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,.5)", display: "block", marginTop: 3 }}>葉一さん／19ch{(L.u || []).length ? "・練習あり" : ""}</span>
                 </span>
               </button>
-            ))}
+              );
+            })}
           </div>
 
           <div style={{ fontSize: 10.5, color: "rgba(255,255,255,.4)", textAlign: "center", marginTop: 16, lineHeight: 1.7 }}>

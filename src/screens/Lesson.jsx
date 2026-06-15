@@ -19,13 +19,33 @@ const PEN_SIZES = [
 // 19ch のPDFをそのまま埋め込み表示するためのビューア（再ホストしない読み込み式）
 const viewerSrc = (pdf) => "https://docs.google.com/viewer?embedded=true&url=" + encodeURIComponent(pdf);
 
-export default function Lesson({ player, unit, media, onBack, onPractice }) {
+// YouTube IFrame Player API を一度だけ読み込み、使える状態になったら解決する
+function loadYT() {
+  return new Promise((resolve) => {
+    if (window.YT && window.YT.Player) return resolve(window.YT);
+    if (!document.getElementById("yt-iframe-api")) {
+      const s = document.createElement("script");
+      s.id = "yt-iframe-api";
+      s.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(s);
+    }
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { prev && prev(); resolve(window.YT); };
+    const iv = setInterval(() => { if (window.YT && window.YT.Player) { clearInterval(iv); resolve(window.YT); } }, 300);
+  });
+}
+
+export default function Lesson({ player, unit, media, onBack, onPractice, onWatched, watched = false, passed = false }) {
   const { youtubeId, playlistId, worksheetUrl, videoPage } = media || {};
+  // 視聴ポイント：単独動画＋onWatchedがあるとき（はいちモード）だけ、再生時間を計測して
+  //  一定割合見たら1回だけポイント付与する。そのためJS API(enablejsapi)を有効にする。
+  const trackWatch = !!onWatched && !!youtubeId && !playlistId && !watched;
+  const frameId = "haichi-yt-player";
   // 埋め込みURL：再生リストがあれば章まるごと（中の動画を選べる）、無ければ単独動画。
   const embedSrc = playlistId
     ? `https://www.youtube.com/embed/${youtubeId || "videoseries"}?list=${playlistId}&rel=0&modestbranding=1`
     : youtubeId
-      ? `https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1`
+      ? `https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1&enablejsapi=1`
       : null;
 
   // ── 手書き設定 ──
@@ -86,6 +106,43 @@ export default function Lesson({ player, unit, media, onBack, onPractice }) {
     return () => { window.removeEventListener("resize", onR); ro && ro.disconnect(); };
   }, []); // eslint-disable-line
 
+  // ── 視聴ポイント：動画を一定割合（約6割）見たら、1回だけ onWatched を呼ぶ ──
+  const watchedFiredRef = useRef(false);
+  useEffect(() => {
+    if (!trackWatch || !embedSrc) return;
+    let player, poll, sec = 0, alive = true;
+    loadYT().then((YT) => {
+      if (!alive || !YT) return;
+      try {
+        player = new YT.Player(frameId, {
+          events: {
+            onStateChange: (e) => {
+              if (e.data === YT.PlayerState.PLAYING) {
+                clearInterval(poll);
+                poll = setInterval(() => {
+                  sec += 1;
+                  const dur = (player.getDuration && player.getDuration()) || 0;
+                  const need = dur > 0 ? Math.min(dur * 0.6, dur - 5) : 120; // 6割 or 最大2分で達成
+                  if (!watchedFiredRef.current && sec >= need) {
+                    watchedFiredRef.current = true;
+                    clearInterval(poll);
+                    onWatched && onWatched();
+                  }
+                }, 1000);
+              } else {
+                clearInterval(poll);
+                if (e.data === YT.PlayerState.ENDED && !watchedFiredRef.current) {
+                  watchedFiredRef.current = true; onWatched && onWatched();
+                }
+              }
+            },
+          },
+        });
+      } catch {}
+    });
+    return () => { alive = false; clearInterval(poll); try { player && player.destroy && player.destroy(); } catch {} };
+  }, [trackWatch, embedSrc]); // eslint-disable-line
+
   // ── 手書きハンドラ（ペン／マウス／タッチ共通） ──
   function posOf(e) {
     const cv = boardRef.current, r = cv.getBoundingClientRect();
@@ -124,30 +181,11 @@ export default function Lesson({ player, unit, media, onBack, onPractice }) {
         <div className="pg-ttl" style={{ fontSize: 18 }}>📺 {unit?.name || "解説と練習"}</div>
         <div className="pg-sub">動画を見ながら、下のプリントに書きこもう（葉一さん／19ch）</div>
 
-        {/* はいちモード：学んだこととリンクした練習問題への導線 */}
-        {onPractice && (
-          <button
-            data-sfx="none"
-            onClick={onPractice}
-            style={{
-              width: "100%", margin: "2px 0 12px", padding: "12px 14px", borderRadius: 14, cursor: "pointer",
-              border: "2px solid rgba(255,255,255,.22)", color: "#fff", textAlign: "left",
-              background: "linear-gradient(135deg,#22c55e,#10b981)", display: "flex", alignItems: "center", gap: 12,
-              boxShadow: "0 5px 16px rgba(16,185,129,.32)",
-            }}
-          >
-            <span style={{ fontSize: 30, lineHeight: 1 }}>📝</span>
-            <span>
-              <span style={{ fontSize: 15, fontWeight: 900, display: "block" }}>この単元の練習問題を解く</span>
-              <span style={{ fontSize: 11.5, fontWeight: 700, opacity: .92 }}>動画で学んだことを、リンクした問題で確かめよう</span>
-            </span>
-          </button>
-        )}
-
         {/* ── 上：動画（アプリ内で埋め込み再生） ── */}
         {embedSrc ? (
           <div style={{ position: "relative", width: "100%", paddingBottom: "56.25%", borderRadius: 14, overflow: "hidden", background: "#000", border: "1px solid rgba(255,255,255,.12)" }}>
             <iframe
+              id={frameId}
               title="解説動画"
               src={embedSrc}
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
@@ -233,6 +271,30 @@ export default function Lesson({ player, unit, media, onBack, onPractice }) {
           <div className="glass" style={{ padding: "8px 12px", fontSize: 11.5, color: "rgba(255,255,255,.72)", marginTop: 10, textAlign: "center", lineHeight: 1.6 }}>
             📝 この単元のプリントはまだ対応づいていません。動画を見ながら、上の白紙に計算や考えを書きこめます。
           </div>
+        )}
+
+        {/* はいちモード：ワークシートの下に「この動画の練習問題」への導線（合格でバッジ） */}
+        {onPractice && (
+          <button
+            data-sfx="none"
+            onClick={onPractice}
+            style={{
+              width: "100%", margin: "14px 0 2px", padding: "14px 16px", borderRadius: 14, cursor: "pointer",
+              border: "2px solid rgba(255,255,255,.22)", color: "#fff", textAlign: "left",
+              background: passed ? "linear-gradient(135deg,#f59e0b,#fbbf24)" : "linear-gradient(135deg,#22c55e,#10b981)",
+              display: "flex", alignItems: "center", gap: 12, boxShadow: "0 5px 16px rgba(16,185,129,.32)",
+            }}
+          >
+            <span style={{ fontSize: 32, lineHeight: 1 }}>{passed ? "🏅" : "📝"}</span>
+            <span>
+              <span style={{ fontSize: 16, fontWeight: 900, display: "block" }}>
+                {passed ? "合格済み！もう一度この動画の問題を解く" : "この動画の練習問題を解く"}
+              </span>
+              <span style={{ fontSize: 11.5, fontWeight: 700, opacity: .92 }}>
+                {passed ? "復習にもう一回チャレンジしてもOK" : "動画で学んだ内容にピッタリ合った問題で確かめよう"}
+              </span>
+            </span>
+          </button>
         )}
 
         <div style={{ fontSize: 10.5, color: "rgba(255,255,255,.4)", textAlign: "center", marginTop: 14, lineHeight: 1.6 }}>
