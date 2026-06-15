@@ -1,33 +1,131 @@
 // ============================================================
-// HaichiMode.jsx — 「はいちモード」：葉一さん（19ch）のレッスン一覧から学ぶ入口
-//  ・葉一さんの単元・小単元の並びに沿って、学年→大単元（章）→小単元 を一覧表示。
-//  ・小単元を選ぶと Lesson 画面へ（YouTube動画の埋め込み＋19chワークシート＋手書き）。
-//  ・Lesson から「この単元の練習問題」へ進める（学んだこととリンクした問題）。
+// HaichiMode.jsx — 「はいちモード」：葉一さん（19ch）のレッスンで学ぶ
+//  3階層のUI：
+//   ① 大単元えらび（学年→大単元の一覧）
+//   ② レッスン一覧（その大単元の葉一さんの動画をサムネ付きカードで一覧）
+//   ③ スタジオ（動画をアプリ内に埋め込み再生＋19chワークシート＋手書き）
+//      └「この単元の練習問題を解く」で、学んだ内容にリンクした問題へ
 //
-//  動画・プリントは「とある男が授業をしてみた／葉一」さん（19ch.tv）のもの。
-//  葉一さんからYouTube埋め込み・ワークシート表示の正式な許可を得て掲載。
+//  データは data/haichiCourse.js（19ch.tv から収集した実データ：
+//   再生順・実YouTube動画ID・無料プリントPDF）。
+//  葉一さんの許可を得て、YouTube公式埋め込み・プリント表示を行う。
 // ============================================================
 import { useState } from "react";
 import Header from "../components/Header.jsx";
-import { chaptersForGrade, gradesWithChapters } from "../data/index.js";
-import { lessonMediaFor } from "../data/lessonMedia.js";
+import Lesson from "./Lesson.jsx";
+import StepUpSimple from "./StepUpSimple.jsx";
+import { HAICHI_COURSE } from "../data/haichiCourse.js";
+import { findChapterById, gradesWithChapters } from "../data/index.js";
 
 const GRADE_LABEL = { 1: "中1", 2: "中2", 3: "中3" };
 const GRADE_COLOR = { 1: "#818cf8", 2: "#f43f5e", 3: "#fbbf24" };
 
-export default function HaichiMode({ player, grade = 1, onSetGrade, onOpenLesson, onBack }) {
+export default function HaichiMode({ player, grade = 1, onSetGrade, onAttempt, onBack }) {
   const availGrades = gradesWithChapters();
-  const [openChap, setOpenChap] = useState(null); // 開いている大単元（章）id。null=全部閉じる前の初期
-  const chapters = chaptersForGrade(grade);
+  const [view, setView] = useState("sections"); // sections | lessons | studio | practice
+  const [section, setSection] = useState(null);  // 選択中の大単元
+  const [lesson, setLesson] = useState(null);     // 選択中のレッスン
 
+  const sections = HAICHI_COURSE[grade] || [];
+
+  function pickGrade(g) {
+    if (!availGrades.includes(g)) return;
+    onSetGrade?.(g);
+    setSection(null); setLesson(null); setView("sections");
+  }
+
+  // ── ③ スタジオ（動画＋ワークシート＋手書き）。Lesson画面を再利用 ──
+  if (view === "studio" && lesson && section) {
+    return (
+      <Lesson
+        player={player}
+        unit={{ name: lesson.t }}
+        media={{ youtubeId: lesson.yt, playlistId: "", worksheetUrl: lesson.pdf, pdfUrl: null, videoPage: null }}
+        onBack={() => setView("lessons")}
+        onPractice={section.practiceChapter ? () => setView("practice") : undefined}
+      />
+    );
+  }
+
+  // ── 練習問題（学んだこととリンク）。その大単元に対応する章の問題を出題 ──
+  if (view === "practice" && section?.practiceChapter) {
+    const ch = findChapterById(section.practiceChapter);
+    const units = ch?.units || [];
+    if (units.length > 0) {
+      return (
+        <StepUpSimple
+          key={"haichi-" + section.practiceChapter}
+          player={player}
+          units={units}
+          title={`練習：${section.name}`}
+          onAttempt={onAttempt}
+          onHome={() => setView("studio")}
+        />
+      );
+    }
+    setView("studio"); // 念のため（問題が無い場合は戻す）
+  }
+
+  // ── ② レッスン一覧（葉一さんの動画カード・サムネ付き）──
+  if (view === "lessons" && section) {
+    return (
+      <div className="app">
+        <Header player={player} back="単元一覧" onBack={() => setView("sections")} />
+        <div className="content">
+          <div className="pg-ttl" style={{ color: section.color }}>{section.emoji} {section.name}</div>
+          <div className="pg-sub">見たい授業をえらぼう（全{section.lessons.length}本・葉一さん／19ch）</div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10, marginTop: 6 }}>
+            {section.lessons.map((L) => (
+              <button
+                key={L.n}
+                data-sfx="none"
+                onClick={() => { setLesson(L); setView("studio"); }}
+                style={{
+                  display: "flex", flexDirection: "column", textAlign: "left", padding: 0, overflow: "hidden",
+                  borderRadius: 12, cursor: "pointer", color: "#fff",
+                  background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.12)",
+                }}>
+                <span style={{ position: "relative", display: "block", width: "100%", paddingBottom: "56.25%", background: "#000" }}>
+                  <img
+                    loading="lazy"
+                    src={`https://i.ytimg.com/vi/${L.yt}/mqdefault.jpg`}
+                    alt=""
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                  <span style={{
+                    position: "absolute", left: 6, top: 6, fontSize: 10, fontWeight: 900, padding: "2px 6px",
+                    borderRadius: 6, background: "rgba(0,0,0,.7)", color: "#fff",
+                  }}>{GRADE_LABEL[grade]}-{L.n}</span>
+                  <span style={{
+                    position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 30, color: "#fff", textShadow: "0 2px 8px rgba(0,0,0,.6)",
+                  }}>▶</span>
+                </span>
+                <span style={{ padding: "8px 9px 10px" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 800, display: "block", lineHeight: 1.4 }}>{L.t}</span>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,.5)", display: "block", marginTop: 3 }}>葉一さん／19ch・プリント付き</span>
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 10.5, color: "rgba(255,255,255,.4)", textAlign: "center", marginTop: 16, lineHeight: 1.7 }}>
+            ※ 動画は葉一さん（とある男が授業をしてみた）の YouTube 公式埋め込み、プリントは 19ch.tv の無料プリント。
+            著作権は葉一さん／19ch.tv に帰属。許可を得て掲載しています。
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── ① 大単元えらび（学年→大単元）──
   return (
     <div className="app">
       <Header player={player} back="ホーム" onBack={onBack} />
       <div className="content">
         <div className="pg-ttl" style={{ fontSize: 20 }}>📺 はいちモード</div>
-        <div className="pg-sub">
-          葉一さん（19ch）の授業を見ながらプリントに書きこみ、学んだ単元の練習問題を解こう
-        </div>
+        <div className="pg-sub">葉一さん（19ch）の授業を見ながらプリントに書きこみ、学んだ単元の練習問題を解こう</div>
 
         {/* 学年えらび */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0 14px" }}>
@@ -37,7 +135,7 @@ export default function HaichiMode({ player, grade = 1, onSetGrade, onOpenLesson
             const sel = grade === g;
             const c = GRADE_COLOR[g];
             return (
-              <button key={g} onClick={() => ready && onSetGrade?.(g)} disabled={!ready} data-sfx="none"
+              <button key={g} onClick={() => pickGrade(g)} disabled={!ready} data-sfx="none"
                 style={{
                   flex: 1, padding: "8px 4px", borderRadius: 10, cursor: ready ? "pointer" : "not-allowed",
                   fontSize: 13, fontWeight: 900,
@@ -52,71 +150,32 @@ export default function HaichiMode({ player, grade = 1, onSetGrade, onOpenLesson
           })}
         </div>
 
-        {/* 大単元（章）→ 小単元（単元）一覧。章ヘッダーで開閉。 */}
-        {chapters.map((chapter, ci) => {
-          const isOpen = openChap == null ? ci === 0 : openChap === chapter.id; // 初期は先頭章を開く
-          return (
-            <div key={chapter.id} style={{ marginBottom: 10 }}>
-              <button
-                data-sfx="none"
-                onClick={() => setOpenChap(isOpen ? "__none__" : chapter.id)}
-                style={{
-                  width: "100%", display: "flex", alignItems: "center", gap: 10, textAlign: "left",
-                  padding: "12px 14px", borderRadius: 12, cursor: "pointer",
-                  background: `linear-gradient(135deg, ${chapter.color}28, ${chapter.color}12)`,
-                  border: `1.5px solid ${chapter.color}77`, color: "#fff",
-                }}>
-                <span style={{ fontSize: 24, lineHeight: 1 }}>{chapter.emoji}</span>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ fontSize: 15, fontWeight: 900, display: "block", color: chapter.color }}>{chapter.name}</span>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,.6)" }}>小単元 {chapter.units.length} ・タップで{isOpen ? "閉じる" : "ひらく"}</span>
-                </span>
-                <span style={{ fontSize: 14, color: "rgba(255,255,255,.6)" }}>{isOpen ? "▲" : "▼"}</span>
-              </button>
-
-              {isOpen && (
-                <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 6 }}>
-                  {chapter.units.map((u, ui) => {
-                    const media = lessonMediaFor(u.id);
-                    const canEmbed = !!(media && (media.youtubeId || media.playlistId));
-                    return (
-                      <button
-                        key={u.id}
-                        data-sfx="none"
-                        onClick={() => onOpenLesson(chapter, u)}
-                        style={{
-                          display: "flex", alignItems: "center", gap: 10, textAlign: "left",
-                          padding: "11px 13px", borderRadius: 11, cursor: "pointer",
-                          background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.12)", color: "#fff",
-                        }}>
-                        <span style={{
-                          width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          background: `${chapter.color}33`, color: chapter.color, fontSize: 12, fontWeight: 900,
-                        }}>{ui + 1}</span>
-                        <span style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ fontSize: 14, fontWeight: 800, display: "block" }}>{u.emoji} {u.name}</span>
-                          {u.desc && <span style={{ fontSize: 11, color: "rgba(255,255,255,.55)" }}>{u.desc}</span>}
-                        </span>
-                        <span style={{
-                          fontSize: 10, fontWeight: 800, padding: "3px 7px", borderRadius: 999, flexShrink: 0,
-                          background: canEmbed ? "rgba(239,68,68,.22)" : "rgba(255,255,255,.08)",
-                          color: canEmbed ? "#fca5a5" : "rgba(255,255,255,.55)",
-                          border: canEmbed ? "1px solid rgba(239,68,68,.5)" : "1px solid rgba(255,255,255,.15)",
-                        }}>{canEmbed ? "▶ 動画" : "📺 19ch"}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {/* 大単元の一覧 */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+          {sections.map((sec) => (
+            <button
+              key={sec.name}
+              data-sfx="none"
+              onClick={() => { setSection(sec); setLesson(null); setView("lessons"); }}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left",
+                padding: "13px 15px", borderRadius: 14, cursor: "pointer", color: "#fff",
+                background: `linear-gradient(135deg, ${sec.color}28, ${sec.color}10)`,
+                border: `1.5px solid ${sec.color}77`,
+              }}>
+              <span style={{ fontSize: 28, lineHeight: 1 }}>{sec.emoji}</span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: 16, fontWeight: 900, display: "block", color: sec.color }}>{sec.name}</span>
+                <span style={{ fontSize: 11.5, color: "rgba(255,255,255,.6)" }}>葉一さんの授業 全{sec.lessons.length}本{sec.practiceChapter ? "・練習問題あり" : ""}</span>
+              </span>
+              <span style={{ fontSize: 15, color: "rgba(255,255,255,.55)" }}>›</span>
+            </button>
+          ))}
+        </div>
 
         <div style={{ fontSize: 10.5, color: "rgba(255,255,255,.4)", textAlign: "center", marginTop: 16, lineHeight: 1.7 }}>
-          ※ 動画は <b>葉一さん（とある男が授業をしてみた）の YouTube 公式埋め込み</b>、
-          プリントは <b>19ch.tv の無料プリントを読み込み表示</b>。著作権は葉一さん／19ch.tv に帰属します。
-          葉一さんの許可を得て掲載しています。
+          ※ 動画は葉一さん（とある男が授業をしてみた）の YouTube 公式埋め込み、プリントは 19ch.tv の無料プリント。
+          著作権は葉一さん／19ch.tv に帰属。許可を得て掲載しています。
         </div>
       </div>
     </div>

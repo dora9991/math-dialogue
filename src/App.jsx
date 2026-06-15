@@ -85,7 +85,6 @@ export default function App() {
   const [battleKey, setBattleKey] = useState(0); // 「もう一度」で戦闘をやり直す用
   const [utChapter, setUtChapter] = useState(null); // 単元テストの対象章
   const [lessonUnit, setLessonUnit] = useState(null); // 「動画＋ワークシート」レッスンの対象単元
-  const [lessonReturn, setLessonReturn] = useState("chapter"); // レッスンを閉じたときの戻り先（"chapter"=単元選択 / "haichi"=はいちモード）
   const [levelUpTo, setLevelUpTo] = useState(null); // レベルアップ演出（上がった先のレベル）
   const [loginBonus, setLoginBonus] = useState(null); // ログインボーナス演出 { reward, streak, isFifth }
   const loginCheckedRef = useRef(false);              // 今セッションでログイン判定済みか
@@ -807,7 +806,6 @@ export default function App() {
     if (screen === "slow" || screen === "anshin") { bgm.play("slow"); return; }
     if (screen === "stepUp") { bgm.play("slow"); return; }
     if (screen === "relearnPractice") { bgm.play("slow"); return; } // 学び直しの練習はステップアップのBGM
-    if (screen === "haichiPractice") { bgm.play("slow"); return; } // はいちモードの練習もステップアップのBGM
     if (screen === "challenge" || screen === "calcKingPick") { bgm.play("unittest"); return; } // 計算王への道は単元テストの音源
     if (screen === "unitTest") { bgm.play(utChapter ? "unittest" : "menu"); return; }
     if (screen === "battle") {
@@ -921,35 +919,22 @@ export default function App() {
           setSel({ chapter, unit, level });
           setScreen(mode); // "timeAttack" など
         }}
-        onLesson={(unit) => { setLessonReturn("chapter"); setLessonUnit(unit); setScreen("lesson"); }}
+        onLesson={(unit) => { setLessonUnit(unit); setScreen("lesson"); }}
         onBack={() => setScreen("home")}
       />
     );
   }
 
-  // はいちモード：葉一さんのレッスン一覧（学年→大単元→小単元）
+  // はいちモード：葉一さんのレッスン（大単元→動画一覧→スタジオ→リンク練習）
+  //  画面遷移（一覧・スタジオ・練習）は HaichiMode 内部で完結。学習記録だけ App に渡す。
   if (screen === "haichi") {
     return (
       <HaichiMode
         player={data.player}
         grade={grade}
         onSetGrade={setWorld}
-        onOpenLesson={(chapter, unit) => { setLessonReturn("haichi"); setLessonUnit(unit); setScreen("lesson"); }}
-        onBack={() => setScreen("home")}
-      />
-    );
-  }
-
-  // はいちモード：レッスンで学んだ単元のリンク練習問題（StepUpSimpleを流用）
-  if (screen === "haichiPractice" && practiceUnit) {
-    return (
-      <StepUpSimple
-        key={"haichi-" + practiceUnit.id}
-        player={data.player}
-        units={[practiceUnit]}
-        title={`練習：${practiceUnit.name}`}
         onAttempt={recordStepAttempt}
-        onHome={() => setScreen("lesson")}
+        onBack={() => setScreen("home")}
       />
     );
   }
@@ -961,8 +946,7 @@ export default function App() {
           player={data.player}
           unit={lessonUnit}
           media={lessonMediaFor(lessonUnit.id)}
-          onBack={() => setScreen(lessonReturn)}
-          onPractice={lessonReturn === "haichi" ? () => { setPracticeUnit(lessonUnit); setScreen("haichiPractice"); } : undefined}
+          onBack={() => setScreen("chapter")}
         />
       </Suspense>
     );
