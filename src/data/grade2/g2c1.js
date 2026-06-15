@@ -150,11 +150,28 @@ function genSolve(r, level) {
   return { q, ans, choices: exprChoices(ans, variants, fill, r), h1: H.solve.h1, h2: H.solve.h2 };
 }
 
+// 🔥鬼：累乗を含む乗除混合 (k·xᵃy)² × m·x ÷ (n·xᶜ)。発展の上の難問。
+function genOni(r) {
+  const A = { c: rnz(r, -4, 4), v: { x: rnz(r, 1, 2), y: 1 } };
+  const num = mulMono(mulMono(A, A), { c: rnz(r, -4, 4), v: { x: 1 } }); // A² × (mx)
+  const C = { c: rnz(r, 2, 4), v: { x: rnz(r, 1, 2) } };
+  const R = divMono(num, C);
+  if (!R) return { skip: true };
+  const B = { c: num.c / (A.c * A.c), v: { x: 1 } }; // 表示用に取り出した mx
+  const ans = monoStr(R.c, R.v);
+  const q = `(${monoStr(A.c, A.v)})² × ${fac(B.c, B.v)} ÷ ${fac(C.c, C.v)} を計算しなさい。`;
+  const wrongPow = {}; for (const k in R.v) wrongPow[k] = 1;
+  const variants = [monoStr(-R.c, R.v), monoStr(R.c, wrongPow), monoStr(R.c * 2, R.v)];
+  const fill = [monoStr(R.c + 1, R.v), monoStr(R.c - 1, R.v), monoStr(-R.c + 1, R.v)];
+  return { q, ans, choices: exprChoices(ans, variants, fill, r), h1: "累乗を先に計算→かけ算・わり算を前から順に", h2: "( )²は係数も指数も2倍。約分・符号に注意" };
+}
+
 // 各単元：難易度ごとに生成テンプレを置く（1テンプレで毎回ちがう問題を生成）
 const lv = (fn, idp, skill) => ({
   easy: [p(idp + "e", (r) => fn(r, "easy"), skill)],
   standard: [p(idp + "s", (r) => fn(r, "standard"), skill)],
   advanced: [p(idp + "a", (r) => fn(r, "advanced"), skill)],
+  oni: [p(idp + "o", (r) => genOni(r), skill)], // 🔥鬼（全単元共通：累乗を含む乗除混合）
 });
 
 export const chapter = {

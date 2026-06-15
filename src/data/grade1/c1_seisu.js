@@ -190,3 +190,14 @@ export const chapter = {
     },
   ],
 };
+
+// 🔥鬼：四則混合＋累乗（発展の上）。全単元共通の難問。答えは数値（4択は自動生成）。
+function genOniC1(r) {
+  const A = (r(0, 1) ? 1 : -1) * r(2, 6);
+  const B = r(2, 6);
+  const C = (r(0, 1) ? 1 : -1) * r(2, 6);
+  const D = r(2, 9);
+  const ans = A * A - B * C + D; // (A)² − B×(C) + D（累乗→積→和の順）
+  return { q: `(${A})² − ${B} × (${C}) + ${D} を計算しなさい。`, ans, h1: "累乗→かけ算→たし算・ひき算 の順で計算する", h2: `(${A})²=${A * A}、${B}×(${C})=${B * C}` };
+}
+chapter.units.forEach((u) => { u.problems.oni = [p(u.id + "oni", genOniC1, "S-NEG-051")]; });

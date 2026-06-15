@@ -146,3 +146,21 @@ export const chapter = {
     },
   ],
 };
+
+// 🔥鬼：かっこを含む1次方程式（整数解）。全単元共通の難問。答えは数値（4択は自動生成）。
+function fmtLin(b, q) {
+  if (b === 0) return "" + q;
+  let s = b === 1 ? "x" : b === -1 ? "−x" : b + "x";
+  if (q !== 0) s += (q > 0 ? "+" + q : "−" + (-q));
+  return s;
+}
+function genOniC3(r) {
+  const x0 = (r(0, 1) ? 1 : -1) * r(1, 7);
+  const a = r(2, 5);
+  let b; do { b = (r(0, 1) ? 1 : -1) * r(0, 4); } while (b === a);
+  let p0 = 0; while (p0 === 0) p0 = (r(0, 1) ? 1 : -1) * r(1, 5);
+  const q0 = (a - b) * x0 + a * p0;     // a(x+p0)=bx+q0 が x=x0 を解にもつ
+  const lhs = `${a}(x${p0 > 0 ? "+" + p0 : "−" + (-p0)})`;
+  return { q: `${lhs} = ${fmtLin(b, q0)} を解きなさい。`, ans: x0, h1: "かっこを展開してから、xを左・数を右に移項する", h2: "移項で符号が変わる。最後にxの係数で割る" };
+}
+chapter.units.forEach((u) => { u.problems.oni = [p(u.id + "oni", genOniC3)]; });

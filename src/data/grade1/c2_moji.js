@@ -156,3 +156,16 @@ export const chapter = {
     },
   ],
 };
+
+// 🔥鬼：負の数をまじえた式の値（代入）。全単元共通の難問。答えは数値（4択は自動生成）。
+function fmtQuad(a, b, c) {
+  const t = (co, s) => (co === 0 ? "" : (co > 0 ? "+" : "−") + (Math.abs(co) === 1 && s ? "" : Math.abs(co)) + s);
+  return (a < 0 ? "−" : "") + (Math.abs(a) === 1 ? "" : Math.abs(a)) + "x²" + t(b, "x") + t(c, "");
+}
+function genOniC2(r) {
+  const X = (r(0, 1) ? 1 : -1) * r(2, 5);
+  const a = (r(0, 1) ? 1 : -1) * r(2, 4), b = (r(0, 1) ? 1 : -1) * r(2, 5), c = (r(0, 1) ? 1 : -1) * r(2, 6);
+  const ans = a * X * X + b * X + c;
+  return { q: `x=${X < 0 ? "(" + X + ")" : X} のとき、${fmtQuad(a, b, c)} の値を求めなさい。`, ans, h1: "負の数を代入するときは ( ) をつける", h2: `x=${X} を代入（累乗→積→和の順）` };
+}
+chapter.units.forEach((u) => { u.problems.oni = [p(u.id + "oni", genOniC2)]; });

@@ -11,12 +11,12 @@ export function getStars(playerState, unitId, level) {
 
 /**
  * 単元が解放されているか。
- * ルール：先頭の単元は常に解放。以降は「1つ前の単元の easy で星1以上」なら解放。
+ *  すべての小単元を最初から開放する。以前は「前の単元を★1クリアで解放」だったが、
+ *  苦手な子が途中で詰まると先に進めず離脱しやすかったため、順番不問でどこからでも
+ *  挑戦できるようにした（得意/苦手の可視化と「苦手ミックス」での復習を活かす方針）。
  */
-export function isUnitUnlocked(playerState, chapter, unitIndex) {
-  if (unitIndex === 0) return true;
-  const prev = chapter.units[unitIndex - 1];
-  return getStars(playerState, prev.id, "easy") >= 1;
+export function isUnitUnlocked() {
+  return true;
 }
 
 /** ある単元を「簡単・普通・難しい」全て★1以上で取れているか（仲間にする条件） */

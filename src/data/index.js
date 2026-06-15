@@ -45,9 +45,13 @@ export function gradesWithChapters() {
 }
 
 // 難易度の共通定義（画面でラベル・色に使う）
+// 進行・習得の基準になる3段階（★ここは変えない。全難易度クリア＝この3つ）
 export const LEVEL_KEYS = ["easy", "standard", "advanced"];
-export const LEVEL_LABEL = { easy: "かんたん", standard: "ふつう", advanced: "発展" };
-export const LEVEL_COLOR = { easy: "#4ade80", standard: "#fb923c", advanced: "#f87171" };
+// 「鬼」は得意な子向けの“発展の上”の挑戦枠。LEVEL_KEYS には入れない（進行判定に影響させない）。
+//  unit.problems.oni を持つ単元だけ、難易度選択に4枚目のカードとして出る。
+export const ONI = "oni";
+export const LEVEL_LABEL = { easy: "かんたん", standard: "ふつう", advanced: "発展", oni: "鬼" };
+export const LEVEL_COLOR = { easy: "#4ade80", standard: "#fb923c", advanced: "#f87171", oni: "#a855f7" };
 
 /** 章ID・単元IDから単元を探す（全学年から） */
 export function findUnit(chapterId, unitId) {

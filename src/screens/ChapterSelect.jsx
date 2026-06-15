@@ -23,17 +23,20 @@ export default function ChapterSelect({ player, mode, chapters = CHAPTERS, onSta
         <div className="content">
           <div className="pg-ttl">{unit.emoji} {unit.name}</div>
           <div className="pg-sub">{unit.desc} ・ 難易度をえらぼう</div>
-          {LEVEL_KEYS.map((lv) => {
+          {/* 「鬼」は unit.problems.oni を持つ単元だけ、発展の下に4枚目として出す */}
+          {[...LEVEL_KEYS, ...(unit.problems?.oni ? ["oni"] : [])].map((lv) => {
             const cls = lv === "easy" ? "easy-bg" : lv === "standard" ? "std-bg" : "adv-bg";
             const st = getStars(player, unit.id, lv);
+            const isOni = lv === "oni";
+            const em = lv === "easy" ? "🌱" : lv === "standard" ? "🔥" : lv === "advanced" ? "⚡" : "👹";
+            const sub = lv === "easy" ? "基本をしっかり" : lv === "standard" ? "応用に挑戦" : lv === "advanced" ? "難問に全力" : "発展の上・限界に挑戦";
             return (
-              <button key={lv} className={`lv-card ${cls}`} onClick={() => onStart(chapter, unit, lv)}>
-                <div className="lv-em">{lv === "easy" ? "🌱" : lv === "standard" ? "🔥" : "⚡"}</div>
+              <button key={lv} className={`lv-card ${cls}`} onClick={() => onStart(chapter, unit, lv)}
+                style={isOni ? { background: "linear-gradient(135deg,#6b21a8,#a855f7)", border: "1px solid rgba(216,180,254,.5)" } : undefined}>
+                <div className="lv-em">{em}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 900 }}>{LEVEL_LABEL[lv]}</div>
-                  <div style={{ fontSize: 11, opacity: 0.75 }}>
-                    {lv === "easy" ? "基本をしっかり" : lv === "standard" ? "応用に挑戦" : "難問に全力"}
-                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 900 }}>{LEVEL_LABEL[lv]}{isOni && " 🔥"}</div>
+                  <div style={{ fontSize: 11, opacity: 0.75 }}>{sub}</div>
                   <div style={{ marginTop: 4 }}><Stars count={st} size={12} /></div>
                 </div>
               </button>
