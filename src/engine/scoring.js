@@ -10,7 +10,7 @@
 //
 //  次のレベルに必要なXP（増分）= min(INC_A + INC_B*(lv-1), INC_MAX)
 //    Lv1→2:150, Lv2→3:170, Lv3→4:190, … と20ずつ増え、1000で頭打ち
-export const MAX_LEVEL = 99;
+export const MAX_LEVEL = 999;
 const INC_A = 130;    // Lv1→2の増分が INC_A+INC_B=150 になるよう設定
 const INC_B = 20;     // 1レベルごとに増える量
 const INC_MAX = 1000; // 増分の上限（1000で頭打ち＝フラットに）
@@ -60,8 +60,14 @@ export function levelProgress(xp) {
   return ((xp - lo) / (hi - lo)) * 100;
 }
 
-// レベル帯ごとの称号と色（99レベルを帯でまとめる）
+// レベル帯ごとの称号と色（Lv999まで。高レベルほど豪華な称号）
 const LEVEL_TIERS = [
+  { min: 500, name: "全知全能", color: "#ffffff" },
+  { min: 350, name: "創造主", color: "#fef9c3" },
+  { min: 250, name: "超越神", color: "#fde68a" },
+  { min: 180, name: "破壊神", color: "#fb923c" },
+  { min: 130, name: "覇王", color: "#f43f5e" },
+  { min: 100, name: "数学の化身", color: "#e879f9" },
   { min: 99, name: "数学神", color: "#fde047" },
   { min: 80, name: "神話", color: "#dc2626" },
   { min: 60, name: "伝説", color: "#ef4444" },

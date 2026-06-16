@@ -7,7 +7,7 @@
 // ============================================================
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { GEAR, GEAR_RARITY, GACHA_COST, gearOfType, defaultGacha } from "../engine/gear.js";
+import { GEAR, GEAR_RARITY, GACHA_COST, gearOfType, defaultGacha, gearSpecialText } from "../engine/gear.js";
 
 // ガチャマシンのドーム内に飾るカプセル（見た目だけ）
 const DOME_CAPS = [
@@ -99,6 +99,9 @@ export default function GachaBox({ player, onPull, onEquip }) {
                   <div style={{ fontSize: 10, color: rar.color, fontWeight: 700 }}>
                     {type === "weapon" ? "攻撃" : "HP"} {has ? `+${Math.round(item.pct * 100)}%` : "+？？？"}{has && owned[item.id] > 1 ? ` ×${owned[item.id]}` : ""}
                   </div>
+                  {has && item.special && (
+                    <div style={{ fontSize: 8.5, color: "#fde047", fontWeight: 800, marginTop: 2, lineHeight: 1.3 }}>{gearSpecialText(item)}</div>
+                  )}
                   {has && (
                     <button onClick={() => onEquip?.(type, equipped ? null : item.id)} data-sfx="none"
                       style={{
@@ -152,6 +155,9 @@ export default function GachaBox({ player, onPull, onEquip }) {
                 <div style={{ fontSize: 12, fontWeight: 800, color: reveal.color, marginTop: 3 }}>
                   {reveal.type === "weapon" ? "攻撃力" : "最大HP"} +{Math.round(reveal.pct * 100)}%
                 </div>
+                {reveal.special && (
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "#fde047", marginTop: 3 }}>{gearSpecialText(reveal)}</div>
+                )}
               </div>
             )}
 

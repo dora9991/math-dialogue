@@ -258,11 +258,20 @@ export default function App() {
     //     必要な「ふつう・発展」の星はタイムアタック等で正規に取る必要があり、バランスは保たれる。
     //   ・これで苦手な子も「あんしんで遊ぶ→その単元のモンスターが解放される」進行実感が得られる。
     const rescueKey = `${unit.id}-easy`;
+    const levelKey = `${unit.id}-${level}`; // 実際に選んだ難易度（鬼など）
     // くり返しXP用の履歴を更新（じっくり／あんしんは到達＝クリア）＋あんしんなら救済★
     updatePlayer((p) => {
       const key = `${unit.id}-${level}`;
       const next = { ...p, playLog: { ...(p.playLog || {}), [key]: { cleared: true, lastDate: todayStr() } } };
-      if (anshin) next.stars = { ...p.stars, [rescueKey]: Math.max(p.stars?.[rescueKey] || 0, 1) };
+      // あんしんでクリアしたら「選んだ難易度」に★1を付ける（鬼をクリア→鬼が★1＝クリア表示）。
+      //  併せて easy にも★1（モンスター解放の救済＝従来動作を維持）。
+      if (anshin) {
+        next.stars = {
+          ...p.stars,
+          [levelKey]: Math.max(p.stars?.[levelKey] || 0, 1),
+          [rescueKey]: Math.max(p.stars?.[rescueKey] || 0, 1),
+        };
+      }
       return next;
     });
     // 間違いを学び直しノートへ（あんしん／じっくり両方。直近3問まで＝タイムアタックと同じ扱い）
@@ -595,7 +604,7 @@ export default function App() {
   // ── 管理用モード（先生向け）：値を自由に設定する ──
   const admin = {
     setLevel: (lv) => {
-      const L = Math.max(1, Math.min(99, Math.round(lv) || 1));
+      const L = Math.max(1, Math.min(999, Math.round(lv) || 1));
       updatePlayer((p) => {
         const w = p.world || 1;
         return { ...p, worldXp: { ...(p.worldXp || { 1: 0, 2: 0, 3: 0 }), [w]: xpForLevel(L) } };
@@ -693,7 +702,7 @@ export default function App() {
     // モンスターを「初めて」たおしたら、スキルガチャ用のクリスタルを入手
     //  通常モンスター=5個・ボス（章ボス/ラスボス）=10個。再戦（撃破済み）ではもらえない。
     if (win && !alreadyCleared) {
-      const isBoss = battleMonster.kind === "chapterBoss" || battleMonster.kind === "finalBoss";
+      const isBoss = battleMonster.kind === "chapterBoss" || battleMonster.kind === "finalBoss" || battleMonster.kind === "secretBoss";
       const amount = (isBoss ? 10 : 5) * eventCrystalMult(); // 日曜=クリスタルデーは2倍
       updatePlayer((p) => ({ ...p, crystals: (p.crystals ?? 0) + amount }));
       setTimeout(() => setCrystalGet({ amount }), 1700); // 勝利演出のあとに入手演出
@@ -834,7 +843,7 @@ export default function App() {
     if (screen === "challenge" || screen === "calcKingPick") { bgm.play("unittest"); return; } // 計算王への道は単元テストの音源
     if (screen === "unitTest") { bgm.play(utChapter ? "unittest" : "menu"); return; }
     if (screen === "battle") {
-      if (battleMonster) bgm.play((battleMonster.kind === "chapterBoss" || battleMonster.kind === "finalBoss") ? "boss" : "battle");
+      if (battleMonster) bgm.play((battleMonster.kind === "chapterBoss" || battleMonster.kind === "finalBoss" || battleMonster.kind === "secretBoss") ? "boss" : "battle");
       else bgm.play("menu");
       return;
     }

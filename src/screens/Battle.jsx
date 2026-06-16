@@ -15,6 +15,7 @@ import MathText from "../components/MathText.jsx";
 import * as bgm from "../audio/bgm.js";
 import * as sfx from "../audio/sfx.js";
 import { getPlayerBattleStats, calcDamage, genBattleProblem, getEquippedSkills, SP_MAX, ultimateDamage, enemyDecide, battleBonuses } from "../engine/battle.js";
+import { gearSpecials } from "../engine/gear.js";
 import { allyStats, partnerHpLv, partnerAtkLv } from "../engine/partners.js";
 import { findItem } from "../engine/items.js";
 import { isCorrect, playerLevel } from "../engine/scoring.js";
@@ -30,6 +31,7 @@ const ansEq = (val, q) => (hasChoices(q)
 
 export default function Battle({ player, monster, ally = null, onResult, onSpChange, onItemUse, onUseBait, onHpChange, onWinBonus, onExit, onMistake }) {
   const lv = playerLevel(player); // 現在ワールド（学年）のレベルでバトル能力が決まる
+  const specials = useRef(gearSpecials(player)).current; // 装備の特殊効果（lifesteal/regenPct/startSp/critPct）
   // 制限時間 = 基本の制限時間 × (自分のレベル+10) ÷ (敵の適正レベル+10)（切り上げ）
   //  +10で格差をマイルドに。自分が強いほど長く、格上の敵だと短くなる。最低1秒。
   const stats = useRef((() => {
@@ -46,7 +48,7 @@ export default function Battle({ player, monster, ally = null, onResult, onSpCha
   const [q, setQ] = useState(() => genBattleProblem(monster));
   const [timer, setTimer] = useState(stats.timer);
   const [combo, setCombo] = useState(0);
-  const [sp, setSp] = useState(() => Math.min(SP_MAX, player.sp ?? 0)); // スキルポイント（永続）
+  const [sp, setSp] = useState(() => Math.min(SP_MAX, (player.sp ?? 0) + (gearSpecials(player).startSp || 0))); // スキルポイント（永続）＋防具の開始SPボーナス
   const [skillFx, setSkillFx] = useState(null);  // 発動中スキル/アイテムの画面演出 { name, icon, color }
   const [item, setItem] = useState(player.item || null); // 所持アイテム（1つ）
   const [atkBuff, setAtkBuff] = useState(null); // 攻撃バフ { turns, mult }（アイテム/スキル）
@@ -176,6 +178,11 @@ export default function Battle({ player, monster, ally = null, onResult, onSpCha
   }, []); // eslint-disable-line
 
   function nextQuestion() {
+    // 防具の特殊効果「再生」：毎問、最大HPの一定割合を自動回復（常時）
+    if (specials.regenPct > 0) {
+      const amt = Math.max(1, Math.round(stats.maxHp * specials.regenPct));
+      setPlayerHp((hp) => Math.min(stats.maxHp, hp + amt));
+    }
     // 継続回復（リジェネ）：1ターンごとに少しずつ回復し、残りターンを減らす
     const rg = regenRef.current;
     if (rg && rg.turns > 0) {
@@ -397,6 +404,9 @@ export default function Battle({ player, monster, ally = null, onResult, onSpCha
       setEnemyIntent({ text: "🪦 不死の力で復活した！", color: "#e879f9" });
       setLog(`${monster.name} は不死の力で復活した…！`);
       sfx.skill({ ult: true });
+      // ★復活後はバトルを続行する（ロック解除＋次の問題）。
+      //  これが無いと、トドメ→復活のあと入力がロックされたまま固まる（魔王フリーズの原因）。
+      setTimeout(() => { if (!endedRef.current && phaseRef.current === "fight") nextQuestion(); }, 1000);
       return;
     }
     endedRef.current = true;
@@ -701,6 +711,8 @@ export default function Battle({ player, monster, ally = null, onResult, onSpCha
       setCombo(newCombo);
       changeSp(sp + 1); // 正解でSP+1（5でスキル1、10でスキル2）
       let dmg = calcDamage(stats.atk, newCombo);
+      // 武器の特殊効果「会心」：3コンボ以上でさらに会心ボーナスを上乗せ
+      if (specials.critPct > 0 && newCombo >= 3) dmg += Math.floor(stats.atk * specials.critPct);
       let boosted = false, crit = false, doubled = false, cursed = false, exposed = false;
       // クリティカル：コンボ会心ボーナス（atk×0.5）をもう一段ぶん上乗せ
       const cr = critRef.current;
@@ -735,6 +747,11 @@ export default function Battle({ player, monster, ally = null, onResult, onSpCha
         toHp -= absorbed;
       }
       setMonDmg(absorbed > 0 && toHp === 0 ? "🔰" : `-${toHp || dmg}`); setDmgKey((k) => k + 1);
+      // 武器の特殊効果「ドレイン（lifesteal）」：与えたダメージの割合ぶんHP回復
+      if (specials.lifesteal > 0 && toHp > 0) {
+        const heal = Math.max(1, Math.round(toHp * specials.lifesteal));
+        setPlayerHp((hp) => Math.min(stats.maxHp, hp + heal));
+      }
       setLog(
         (doubled ? "✌️ダブルアップ！ " : "") + (crit ? "🎯会心！ " : "") + (exposed ? "💥弱点ヒット！ " : "") + (boosted ? "💪パワーアップ！ " : "") + (cursed ? "💀呪いで弱体… " : "") + (absorbed > 0 ? "🔰バリアが防いだ！ " : "") +
         (newCombo >= 3 ? `正解！🔥${newCombo}コンボ ${dmg}ダメージ！` : `正解！${dmg}ダメージ！`)

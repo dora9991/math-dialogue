@@ -52,8 +52,13 @@ export default function BattleSelect({ player, clearedIds, onSelect, onBack, onS
     if (newly.size && onSeen) onSeen([...newly]);
   }, []); // eslint-disable-line
 
-  // このワールドの最終ボス・サンプル・章
+  // このワールドの最終ボス・サンプル・章・裏ボス
   const finalBoss = MONSTERS.find((m) => m.kind === "finalBoss" && m.grade === world);
+  const secretBosses = MONSTERS
+    .filter((m) => m.kind === "secretBoss" && m.grade === world)
+    .sort((a, b) => a.secretTier - b.secretTier);
+  // 裏ボスの入口は魔王を倒してから見せる（それまでは存在を隠す）
+  const maouCleared = finalBoss ? cleared.has(finalBoss.id) : false;
   const sample = MONSTERS.find((m) => m.kind === "sample" && m.grade === world);
   const chapters = allChapters().filter((c) => c.grade === world);
   const GRADE_LABEL = { 1: "中1", 2: "中2", 3: "中3" };
@@ -196,6 +201,18 @@ export default function BattleSelect({ player, clearedIds, onSelect, onBack, onS
               <span style={{ fontSize: 14, fontWeight: 900, color: "#e879f9" }}>最終決戦</span>
             </div>
             <MonsterCard m={finalBoss} />
+          </div>
+        )}
+
+        {/* 裏ボス（隠しボス）：魔王を倒すと出現。段階的に解放される“もっと強い敵” */}
+        {maouCleared && secretBosses.length > 0 && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "16px 2px 6px", borderBottom: "1px solid rgba(244,114,182,.4)", paddingBottom: 4 }}>
+              <span style={{ fontSize: 18 }}>💀</span>
+              <span style={{ fontSize: 14, fontWeight: 900, color: "#f472b6" }}>裏ボス（隠しボス）</span>
+              <span style={{ fontSize: 10, color: "#88aa88" }}>推奨Lv80〜300・段階的に出現</span>
+            </div>
+            {secretBosses.map((m) => <MonsterCard key={m.id} m={m} />)}
           </div>
         )}
       </div>

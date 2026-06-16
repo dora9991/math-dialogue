@@ -21,7 +21,7 @@ export const BAIT_COST = 500;
 export const RECRUIT_CHANCE = { zako: 0.5, boss: 0.25 };
 
 // なかまレベルの上限（ティアが高いほど高くまで育つ＝ボスは強い仲間になる）
-export const PARTNER_MAX_LEVEL = { unit: 15, boss: 25, final: 30 };
+export const PARTNER_MAX_LEVEL = { unit: 25, boss: 40, final: 50 };
 
 /** モンスターのティア（"unit" | "boss" | "final"）。monster.kind から判定。 */
 export function partnerTierOf(monster) {
@@ -53,8 +53,9 @@ export function allyStats(monster, hpLv = 1, atkLv = 1) {
   const base = Math.max(4, monster?.atk || 8);
   const hL = Math.max(1, hpLv);
   const aL = Math.max(1, atkLv);
-  const atk = Math.max(1, Math.round(base * (0.5 + (aL - 1) * 0.07)));
-  const maxHp = Math.max(8, Math.round(base * 4 * (0.6 + (hL - 1) * 0.09)));
+  // ★要望により仲間を強化（攻撃・HPの基礎値と育成の伸びを引き上げ）
+  const atk = Math.max(1, Math.round(base * (0.9 + (aL - 1) * 0.12)));
+  const maxHp = Math.max(12, Math.round(base * 5 * (0.9 + (hL - 1) * 0.14)));
   return { maxHp, atk };
 }
 

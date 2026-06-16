@@ -49,6 +49,8 @@ export function isUnlocked(player, clearedIds, monster) {
   if (monster.kind === "unit") return isUnitMonsterUnlocked(player, monster);
   if (monster.kind === "chapterBoss") return isChapterBossUnlocked(player, monster.chapterId);
   if (monster.kind === "finalBoss") return isFinalBossUnlocked(clearedIds, monster.grade ?? null);
+  // 裏ボス：前の裏ボス（tier0 は魔王）を倒すと解放（段階的に出現）
+  if (monster.kind === "secretBoss") return clearedIds.has(monster.prevId);
   return true;
 }
 
@@ -68,6 +70,11 @@ export function unlockHint(monster) {
   }
   if (monster.kind === "finalBoss") {
     return "すべての章ボスをたおすと出現！";
+  }
+  if (monster.kind === "secretBoss") {
+    return monster.secretTier === 0
+      ? "数学の魔王をたおすと、裏ボスへの道がひらく！"
+      : "前の裏ボスをたおすと、次の裏ボスが出現！";
   }
   return "";
 }

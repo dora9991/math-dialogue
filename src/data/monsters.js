@@ -30,6 +30,18 @@ const TOTAL_UNITS = RPG_CHAPTERS.reduce((s, c) => s + c.units.length, 0);
 // 自然に到達できる推奨レベルにする（バトル報酬XPも増えるため噛み合う）。
 const UNIT_MAX_LV = 42;  // 最深部の小単元モンスターの推奨レベル
 const MAOU_LV = 48;      // 魔王（最終ボス）の推奨レベル＝全章クリアで届く範囲
+
+// ── 裏ボス（隠しボス）：魔王を倒したあと、段階的に解放される“もっと強い敵” ──
+//   推奨レベルは 80 → 300 まで。各学年ワールドに同じ並びで用意（worldXp は学年独立なので
+//   それぞれの世界でLvを上げて挑戦できる）。前の裏ボス（最初は魔王）を倒すと次が解放される。
+const SECRET_TIERS = [
+  { lv: 80,  name: "深淵の番人",   color: "#22d3ee" },
+  { lv: 100, name: "混沌の使者",   color: "#a78bfa" },
+  { lv: 150, name: "虚無の王",     color: "#f472b6" },
+  { lv: 200, name: "破壊神オメガ", color: "#fb923c" },
+  { lv: 250, name: "時空の支配者", color: "#f43f5e" },
+  { lv: 300, name: "数学の真神",   color: "#fde047" },
+];
 /** 通し番号 gi（0始まり）から推奨レベルを均等配分で求める */
 function unitMinLv(gi) {
   if (TOTAL_UNITS <= 1) return 1;
@@ -381,6 +393,55 @@ for (const g of GRADE_WORLDS) {
     idleExtra: ART.boss.idleExtra,
     deathColors: ART.boss.deathColors,
   });
+
+  // ── 裏ボス（隠しボス）：魔王のあと段階的に解放。推奨Lv80〜300の高難度。──
+  let prevSecretId = `boss_maou_${g}`; // tier0 は魔王を倒すと解放
+  SECRET_TIERS.forEach((t, ti) => {
+    const id = `secret_${g}_${ti}`;
+    const playerAtk = playerAtkForLevel(t.lv);
+    MONSTERS.push({
+      id,
+      kind: "secretBoss",
+      grade: g,
+      secretTier: ti,
+      prevId: prevSecretId,        // これを倒すと解放（unlock.js が参照）
+      name: `裏ボス・${t.name}（中${g}）`,
+      unit: `中${g}・全単元の発展（極）`,
+      hp: Math.round(playerAtk * (26 + ti * 5)),     // 段階ごとにどんどん硬く
+      atk: Math.round(playerHpForLevel(t.lv) / 4.5), // 推奨レベルで約4〜5発。手強い
+      reward: 3000 + ti * 3000,                      // 大量XP（高レベルを目指せる）
+      minLv: t.lv,
+      ai: "super",
+      role: "boss",
+      roleTag: `裏ボス・推奨Lv${t.lv}`,
+      superMult: 6 + ti,           // 上位ほど超必殺が強い
+      chargeNeed: 1,
+      exposeOnCharge: true,
+      enrage: 1.6,
+      revive: ti >= 2,             // 上位は不死（一度だけ復活。フリーズは修正済み）
+      moves: [
+        { id: "crit", chance: 0.32 },
+        { id: "multi", chance: 0.28 },
+        { id: "pierce", chance: 0.24 },
+        { id: "silence", chance: 0.22 },
+        { id: "curse", chance: 0.22 },
+        { id: "timesteal", chance: 0.22 },
+        { id: "hardnext", chance: 0.2 },
+        { id: "spdrain", chance: 0.2 },
+        { id: "decoy", chance: 0.22 },
+        { id: "eregen", chance: 0.2 },
+      ],
+      color: t.color,
+      pools: allUnitsG,
+      bossAdvancedOnly: true,
+      art: "boss",
+      svgDefs: ART.boss.svgDefs,
+      svg: ART.boss.svg,
+      idleExtra: ART.boss.idleExtra,
+      deathColors: ART.boss.deathColors,
+    });
+    prevSecretId = id;
+  });
 }
 
 // 入門用サンプル（最初から戦える・とても弱い＝チュートリアル兼）。中1ワールドの先頭に1体だけ。
@@ -422,8 +483,12 @@ for (const m of MONSTERS) {
     m.kind === "finalBoss" ? "maou" :
     m.kind === "sample" ? "sample" :
     m.kind === "chapterBoss" ? "boss" :
+    m.kind === "secretBoss" ? "maou" :   // 裏ボスは魔王の画像を、tierごとに色違いで使う
     m.art;
-  m.imgHue = (m.kind === "finalBoss" || m.kind === "sample") ? 0 : hueFromId(m.id);
+  m.imgHue =
+    (m.kind === "finalBoss" || m.kind === "sample") ? 0 :
+    m.kind === "secretBoss" ? (40 + m.secretTier * 50) : // tierごとに色を変えて差別化
+    hueFromId(m.id);
 }
 
 /** id からモンスター定義を引く（なかま育成・図鑑などで使用） */

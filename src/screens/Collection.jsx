@@ -9,7 +9,7 @@ import MonsterSprite from "../components/MonsterSprite.jsx";
 import { MONSTERS } from "../data/monsters.js";
 
 const GRADE_LABEL = { 1: "中1", 2: "中2", 3: "中3" };
-const KIND_LABEL = { sample: "れんしゅう", unit: "ザコ", chapterBoss: "章ボス", finalBoss: "魔王" };
+const KIND_LABEL = { sample: "れんしゅう", unit: "ザコ", chapterBoss: "章ボス", finalBoss: "魔王", secretBoss: "裏ボス" };
 
 export default function Collection({ player, records, onPartners, onBack }) {
   // 撃破済みモンスターidの集合（バトルの勝利記録から）
@@ -62,7 +62,7 @@ export default function Collection({ player, records, onPartners, onBack }) {
                 {list.map((m) => {
                   const has = defeated.has(m.id);
                   const got = recruited.has(m.id); // 仲間にした
-                  const isBoss = m.kind === "chapterBoss" || m.kind === "finalBoss";
+                  const isBoss = m.kind === "chapterBoss" || m.kind === "finalBoss" || m.kind === "secretBoss";
                   return (
                     <div key={m.id} style={{
                       position: "relative",

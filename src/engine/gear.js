@@ -23,12 +23,22 @@ const TIER_DEF = [
   { key: "t8",  label: "エピック",       color: "#f472b6", weight: 8,  pct: 0.26 },
   { key: "t9",  label: "レジェンド",     color: "#fb923c", weight: 8,  pct: 0.33 },
   { key: "t10", label: "ミシック",       color: "#fde047", weight: 4,  pct: 0.40 },
+  // ── ここから特殊効果つきの上位レア（とてもレア）。pctに加えて special 効果を持つ ──
+  { key: "t11", label: "エンシェント",   color: "#34d399", weight: 3,   pct: 0.46 },
+  { key: "t12", label: "セレスティアル", color: "#22d3ee", weight: 2,   pct: 0.52 },
+  { key: "t13", label: "アビサル",       color: "#f472b6", weight: 1.5, pct: 0.60 },
+  { key: "t14", label: "ジェネシス",     color: "#fef08a", weight: 1,   pct: 0.70 },
 ];
 
 export const GEAR_RARITY = Object.fromEntries(TIER_DEF.map((t) => [t.key, t]));
 export const RARITY_ORDER = TIER_DEF.map((t) => t.key);
 
-// 各段階の名前・アイコン（tier1→tier10）
+// 各段階の名前・アイコン（tier1→tier14）。
+//  ・special … 武器/防具の特殊効果（バトルで効く）。
+//      lifesteal : 与えたダメージの割合ぶんHP回復（武器）
+//      critPct   : コンボ会心ボーナスを上乗せ（武器）
+//      regenPct  : 毎問 最大HPの割合ぶん自動回復（防具）
+//      startSp   : バトル開始時のSPを増やす（防具）
 const WEAPONS = [
   { name: "木のぼう",     icon: "🪵" },
   { name: "銅のつるぎ",   icon: "🗡️" },
@@ -40,6 +50,10 @@ const WEAPONS = [
   { name: "氷結の剣",     icon: "❄️" },
   { name: "竜殺しの剣",   icon: "🐲" },
   { name: "神話の剣",     icon: "🌟" },
+  { name: "業火の大剣",   icon: "🌋", special: { lifesteal: 0.12 } },
+  { name: "天空の聖剣",   icon: "⚜️", special: { lifesteal: 0.18 } },
+  { name: "破滅の魔剣",   icon: "🔱", special: { lifesteal: 0.25 } },
+  { name: "創世の剣",     icon: "🌠", special: { lifesteal: 0.30, critPct: 0.3 } },
 ];
 const ARMORS = [
   { name: "ぬののふく",   icon: "👕" },
@@ -52,12 +66,16 @@ const ARMORS = [
   { name: "竜鱗の鎧",     icon: "🐉" },
   { name: "不滅の鎧",     icon: "💠" },
   { name: "神話の鎧",     icon: "👑" },
+  { name: "再生の鎧",     icon: "🌿", special: { regenPct: 0.05 } },
+  { name: "守護神の鎧",   icon: "🛡️", special: { regenPct: 0.08, startSp: 2 } },
+  { name: "不死鳥の鎧",   icon: "🔥", special: { regenPct: 0.10, startSp: 3 } },
+  { name: "創世の鎧",     icon: "🌌", special: { regenPct: 0.12, startSp: 4 } },
 ];
 
-/** 装備一覧（武器10種・防具10種＝計20種） */
+/** 装備一覧（武器14種・防具14種＝計28種。t11以降は special 効果つき） */
 export const GEAR = TIER_DEF.flatMap((t, i) => [
-  { id: `w${i + 1}`, type: "weapon", rarity: t.key, name: WEAPONS[i].name, icon: WEAPONS[i].icon, pct: t.pct, color: t.color },
-  { id: `a${i + 1}`, type: "armor",  rarity: t.key, name: ARMORS[i].name,  icon: ARMORS[i].icon,  pct: t.pct, color: t.color },
+  { id: `w${i + 1}`, type: "weapon", rarity: t.key, name: WEAPONS[i].name, icon: WEAPONS[i].icon, pct: t.pct, color: t.color, special: WEAPONS[i].special || null },
+  { id: `a${i + 1}`, type: "armor",  rarity: t.key, name: ARMORS[i].name,  icon: ARMORS[i].icon,  pct: t.pct, color: t.color, special: ARMORS[i].special || null },
 ]);
 
 /** id から装備定義を引く */
@@ -97,4 +115,29 @@ export function gearBonuses(player) {
   const w = findGear(g.weapon);
   const a = findGear(g.armor);
   return { atkPct: w ? w.pct : 0, hpPct: a ? a.pct : 0 };
+}
+
+/** 装備中の武器・防具の特殊効果を合算して返す（バトルで使う）。
+ *  lifesteal/critPct（武器）＋ regenPct/startSp（防具）を足し合わせる。 */
+export function gearSpecials(player) {
+  const g = player?.gacha || {};
+  const out = { lifesteal: 0, critPct: 0, regenPct: 0, startSp: 0 };
+  for (const id of [g.weapon, g.armor]) {
+    const sp = findGear(id)?.special;
+    if (!sp) continue;
+    for (const k of Object.keys(out)) out[k] += sp[k] || 0;
+  }
+  return out;
+}
+
+/** 特殊効果を日本語の短い説明にする（ショップ・図鑑の表示用） */
+export function gearSpecialText(gear) {
+  const s = gear?.special;
+  if (!s) return "";
+  const parts = [];
+  if (s.lifesteal) parts.push(`🧛 与ダメの${Math.round(s.lifesteal * 100)}%HP回復`);
+  if (s.critPct) parts.push("🎯 会心ボーナス強化");
+  if (s.regenPct) parts.push(`🌿 毎問HP+${Math.round(s.regenPct * 100)}%`);
+  if (s.startSp) parts.push(`⚡ 開始SP+${s.startSp}`);
+  return parts.join(" ・ ");
 }
