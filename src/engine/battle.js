@@ -332,6 +332,8 @@ export const ENEMY_MOVES = {
   // 問題に干渉
   hardnext:  { kind: "hardnext", turns: 2, chip: 0.4, label: "が問題を難しくした！", icon: "📈", color: "#fb923c" },
   fog:       { kind: "fog",      turns: 1, chip: 0.4, label: "が霧で問題をかくした！", icon: "🌫️", color: "#cbd5e1" },
+  // 超難問：次の数問を「鬼」級（無ければ発展）の超難しい計算にする（裏ボスの目玉ギミック）
+  gigacalc:  { kind: "gigacalc", turns: 2, chip: 0.6, label: "が超難問をぶつけてきた！", icon: "🧮", color: "#f43f5e" },
   // 敵の自己強化
   barrier:   { kind: "barrier", pct: 0.25, label: "がバリアを張った！", icon: "🔰", color: "#60a5fa" },
   decoy:     { kind: "decoy",   pct: 0.35, label: "はみがわりを出した！", icon: "🎎", color: "#f9a8d4" },

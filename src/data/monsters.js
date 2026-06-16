@@ -407,29 +407,34 @@ for (const g of GRADE_WORLDS) {
       prevId: prevSecretId,        // これを倒すと解放（unlock.js が参照）
       name: `裏ボス・${t.name}（中${g}）`,
       unit: `中${g}・全単元の発展（極）`,
-      hp: Math.round(playerAtk * (26 + ti * 5)),     // 段階ごとにどんどん硬く
-      atk: Math.round(playerHpForLevel(t.lv) / 4.5), // 推奨レベルで約4〜5発。手強い
+      hp: Math.round(playerAtk * (28 + ti * 6)),     // 段階ごとにどんどん硬く
+      atk: Math.round(playerHpForLevel(t.lv) / 3.4 * (1 + ti * 0.06)), // 推奨レベルでも3〜4発。上位ほど痛い
       reward: 3000 + ti * 3000,                      // 大量XP（高レベルを目指せる）
       minLv: t.lv,
       ai: "super",
       role: "boss",
       roleTag: `裏ボス・推奨Lv${t.lv}`,
-      superMult: 6 + ti,           // 上位ほど超必殺が強い
+      superMult: 7 + ti * 1.5,     // 上位ほど超必殺が強烈
       chargeNeed: 1,
       exposeOnCharge: true,
-      enrage: 1.6,
+      enrage: 1.8,                 // 半分以下で大暴走
       revive: ti >= 2,             // 上位は不死（一度だけ復活。フリーズは修正済み）
+      // ギミック多め。目玉は「超難問(gigacalc)」＝途中で鬼級の計算をぶつけてくる（上位ほど高確率）。
       moves: [
-        { id: "crit", chance: 0.32 },
-        { id: "multi", chance: 0.28 },
-        { id: "pierce", chance: 0.24 },
-        { id: "silence", chance: 0.22 },
-        { id: "curse", chance: 0.22 },
-        { id: "timesteal", chance: 0.22 },
-        { id: "hardnext", chance: 0.2 },
-        { id: "spdrain", chance: 0.2 },
+        { id: "gigacalc", chance: 0.16 + ti * 0.04 },
+        { id: "crit", chance: 0.34 },
+        { id: "multi", chance: 0.30 },
+        { id: "pierce", chance: 0.26 },
+        { id: "silence", chance: 0.24 },
+        { id: "comboseal", chance: 0.22 },
+        { id: "curse", chance: 0.24 },
+        { id: "timesteal", chance: 0.24 },
+        { id: "timecrush", chance: 0.2 + ti * 0.02 },
+        { id: "hardnext", chance: 0.22 },
+        { id: "spdrain", chance: 0.22 },
+        { id: "fog", chance: 0.18 },
         { id: "decoy", chance: 0.22 },
-        { id: "eregen", chance: 0.2 },
+        { id: "eregen", chance: 0.22 },
       ],
       color: t.color,
       pools: allUnitsG,

@@ -29,6 +29,11 @@ const ansEq = (val, q) => (hasChoices(q)
   ? String(val).replace(/\s/g, "") === String(q.ans).replace(/\s/g, "")
   : isCorrect(val, q.ans));
 
+// 超難問：まず「鬼」級を出し、その単元に鬼が無ければ発展でフォールバックする
+function genHardProblem(monster, lastId) {
+  return genBattleProblem(monster, lastId, "oni") || genBattleProblem(monster, lastId, "advanced");
+}
+
 export default function Battle({ player, monster, ally = null, onResult, onSpChange, onItemUse, onUseBait, onHpChange, onWinBonus, onExit, onMistake }) {
   const lv = playerLevel(player); // 現在ワールド（学年）のレベルでバトル能力が決まる
   const specials = useRef(gearSpecials(player)).current; // 装備の特殊効果（lifesteal/regenPct/startSp/critPct）
@@ -115,6 +120,7 @@ export default function Battle({ player, monster, ally = null, onResult, onSpCha
   const silenceRef = useRef(null);    // { turns } スキルが使えない（封印）
   const curseRef = useRef(null);      // { turns, mult<1 } 与ダメージ低下（呪い）
   const forceHardRef = useRef(null);  // { turns } 出題が必ず発展になる（難問化）
+  const forceMaxRef = useRef(null);   // { turns } 出題が「鬼」級の超難問になる（gigacalc）
   const fogRef = useRef(null);        // { turns } 問題が一瞬かくれる（沈黙の霧）
   const enemyRegenRef = useRef(null); // { turns, pct } 敵が毎ターン自己回復（再生）
   const enemyRevivedRef = useRef(false); // 不死：一度だけ復活したか
@@ -134,6 +140,7 @@ export default function Battle({ player, monster, ally = null, onResult, onSpCha
     if (silenceRef.current) tags.push({ icon: "🔇", color: "#94a3b8" });
     if (curseRef.current) tags.push({ icon: "💀", color: "#a78bfa" });
     if (forceHardRef.current) tags.push({ icon: "📈", color: "#fb923c" });
+    if (forceMaxRef.current) tags.push({ icon: "🧮", color: "#f43f5e" });
     setDebuffTags(tags);
   }
   const setMonsterShieldBoth = (v) => { const n = Math.max(0, Math.round(v)); monsterShieldRef.current = n; setMonsterShield(n); };
@@ -210,11 +217,13 @@ export default function Battle({ player, monster, ally = null, onResult, onSpCha
       setMonsterHp((hp) => Math.min(monster.hp, hp + amt));
       enemyRegenRef.current = er.turns - 1 > 0 ? { ...er, turns: er.turns - 1 } : null;
     }
-    // 難問化（敵デバフ）：残っていれば次の問題を必ず発展で出す
+    // 超難問(gigacalc)＞難問化(hardnext)の優先で次の問題の難易度を決める
+    const fm = forceMaxRef.current;
     const fh = forceHardRef.current;
-    const forceLevel = fh && fh.turns > 0 ? "advanced" : null;
-    if (fh && fh.turns > 0) forceHardRef.current = fh.turns - 1 > 0 ? { ...fh, turns: fh.turns - 1 } : null;
-    setQ((cur) => genBattleProblem(monster, cur?.id, forceLevel));
+    let mode = null; // "max"（鬼級）/ "advanced"（発展）/ null
+    if (fm && fm.turns > 0) { mode = "max"; forceMaxRef.current = fm.turns - 1 > 0 ? { ...fm, turns: fm.turns - 1 } : null; }
+    else if (fh && fh.turns > 0) { mode = "advanced"; forceHardRef.current = fh.turns - 1 > 0 ? { ...fh, turns: fh.turns - 1 } : null; }
+    setQ((cur) => (mode === "max" ? genHardProblem(monster, cur?.id) : genBattleProblem(monster, cur?.id, mode)));
     setInput("");
     setLocked(false); lockedRef.current = false;
     // 制限時間：時間バフ（しゅうちゅう等）で伸ばし、敵デバフ（時間どろぼう等）で縮める
@@ -649,6 +658,15 @@ export default function Battle({ player, monster, ally = null, onResult, onSpCha
         setLog(tag);
         chip ? enemyHit(chip, tag, mfx) : showEnemyFx(mfx);
         return true;
+      case "gigacalc":
+        // 次の数問を「鬼」級の超難問にする（裏ボスの目玉ギミック）
+        forceMaxRef.current = { turns: act.turns ?? 2 };
+        forceHardRef.current = null; // 難問化より強いので上書き
+        refreshDebuffTags();
+        setEnemyIntent({ text: "🧮 次は超難問がくる…！", color: "#f43f5e" });
+        setLog(tag);
+        chip ? enemyHit(chip, tag, mfx) : showEnemyFx(mfx);
+        return true;
       // ── 敵の自己強化（プレイヤーへの直接ダメージなし）──
       case "barrier":
       case "decoy":
@@ -960,7 +978,7 @@ export default function Battle({ player, monster, ally = null, onResult, onSpCha
         <div className="bt-q-panel">
           {q ? (
             <>
-              <span className="bt-q-theme">{q.unitName} ・ {q.level === "advanced" ? "発展" : "標準"}</span>
+              <span className="bt-q-theme">{q.unitName} ・ {q.level === "oni" ? "🧮 超難問" : q.level === "advanced" ? "発展" : "標準"}</span>
               {fogOn ? (
                 <div className="bt-q-text" style={{ color: "#cbd5e1", letterSpacing: 4 }}>🌫️ ？？？？？</div>
               ) : (
