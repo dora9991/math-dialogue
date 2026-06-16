@@ -84,6 +84,8 @@ export default function App() {
   const [mode, setMode] = useState("timeAttack"); // どのモードで章選択に来たか
   // 選択中の学年＝現在いる「ワールド」。完全ワールド分離でレベル(atk/HP)もこの学年のもの。
   const [grade, setGrade] = useState(() => data.player.world || 1);
+  // ホームのメニュー系統："hub"=モード選択 / "game" / "learn"。前回選んだモードから始める（初回はハブ）。
+  const [homeMode, setHomeMode] = useState(() => data.player.lastMode || "hub");
   const [sel, setSel] = useState({ chapter: null, unit: null, level: null });
   const [battleMonster, setBattleMonster] = useState(null); // 選択中のモンスター
   const [battleKey, setBattleKey] = useState(0); // 「もう一度」で戦闘をやり直す用
@@ -117,6 +119,12 @@ export default function App() {
     const w = [1, 2, 3].includes(g) ? g : 1;
     setGrade(w);
     updatePlayer((p) => (p.world === w ? p : { ...p, world: w }));
+  }
+
+  // ホームのモード（ゲーム／学習）を切り替え、選んだら次回起動用に lastMode を保存
+  function chooseHomeMode(m) {
+    setHomeMode(m);
+    if (m === "game" || m === "learn") updatePlayer((p) => (p.lastMode === m ? p : { ...p, lastMode: m }));
   }
 
   // 小単元の習得確認ポイントを更新（bools = その単元の正誤を時系列で並べた配列）
@@ -1275,7 +1283,11 @@ export default function App() {
       onRelearn={() => setScreen("relearn")}
       onDialogue={() => setScreen("dialogue")}
       onHaichi={() => setScreen("haichi")}
-      onClinic={null /* 困り感クリニックは当面非表示。() => setScreen("clinic") に戻せば復活（機能コード・ルーティング・saveClinicResult は保持） */}
+      onClinic={() => setScreen("clinic")}
+      onUnitTest={() => { setUtChapter(null); setScreen("unitTest"); }}
+      onStepUp={() => setScreen("stepUp")}
+      mode={homeMode}
+      onSetMode={chooseHomeMode}
       onStartGolden={startGolden}
       onShop={() => setScreen("shop")}
       onSkill={() => setScreen("skill")}

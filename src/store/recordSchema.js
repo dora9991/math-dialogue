@@ -109,6 +109,7 @@ export function initialPlayerState(studentId) {
     partners: {},      // なかま（エサで仲間にしたモンスター）{ monsterId: { lv } }。コイン/クリスタルで育成
     party: [],         // ストック（編成）monsterId配列・最大4体。先頭(activePartner)だけバトル参戦
     activePartner: null, // バトルに参戦する仲間1体のmonsterId（party内の1体）
+    lastMode: null,    // 最後に選んだメニュー系統 "game"=ゲーム / "learn"=学習（次回起動時にそこから始める）
     updatedAt: now(),
   };
 }
@@ -173,6 +174,7 @@ export function normalizePlayerState(p) {
   if (!ownH.includes("hero10")) ownH.push("hero10");
   if (av.type === "hero" && !ownH.includes(av.id)) ownH.push(av.id);
   out.ownedHeroes = [...new Set(ownH)];
+  out.lastMode = ["game", "learn"].includes(p.lastMode) ? p.lastMode : null;
   out.equip = { ...base.equip, ...(p.equip || {}) };
   // 装備中スキルが未所持なら基本スキルへフォールバック
   if (!out.ownedSkills.includes(out.equip[1])) out.equip[1] = base.equip[1];
