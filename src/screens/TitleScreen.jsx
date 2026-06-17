@@ -68,22 +68,28 @@ export default function TitleScreen({ onEnter, onAdmin, onHowTo, onCharacter }) 
           animation: `sparkTwinkle ${2.4 + (i % 3) * 0.7}s ease-in-out ${p.d}s infinite`, pointerEvents: "none" }} />
       ))}
 
-      {/* 前面コンテンツ：上にタイトル／下にボタン */}
+      {/* 前面コンテンツ：タイトルとボタンを画面の上下中央寄りにまとめて配置 */}
       <div style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: 480, margin: "0 auto", minHeight: "100dvh",
-        display: "flex", flexDirection: "column", alignItems: "center",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
         padding: "calc(env(safe-area-inset-top, 0px) + 30px) 22px calc(env(safe-area-inset-bottom, 0px) + 26px)" }}>
 
-        {/* タイトル（星空に浮かぶ） */}
-        <div onClick={secretTap} style={{ cursor: "default", userSelect: "none", textAlign: "center", animation: "titleFloat 5.5s ease-in-out infinite" }}>
-          <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: 1,
-            background: "linear-gradient(135deg,#c4b5fd,#67e8f9 55%,#a78bfa)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
-            textShadow: "0 2px 18px rgba(0,0,0,.6)", animation: "titleGlow 4s ease-in-out infinite" }}>数学ラボ</div>
-          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 3, color: "rgba(226,232,255,.92)", marginTop: 2, textShadow: "0 2px 8px rgba(0,0,0,.8)" }}>～ MATH LAB ～</div>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: "rgba(186,230,253,.95)", marginTop: 8, textShadow: "0 2px 8px rgba(0,0,0,.85)" }}>解いて、戦って、レベルアップ！</div>
+        {/* タイトル（暗いガラスのバナーを敷いて、明るい背景の上でもくっきり読める） */}
+        <div onClick={secretTap} style={{ cursor: "default", userSelect: "none", textAlign: "center", animation: "titleFloat 5.5s ease-in-out infinite",
+          padding: "14px 26px 16px", borderRadius: 22,
+          background: "rgba(8,6,26,.58)", backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)",
+          border: "1px solid rgba(255,255,255,.18)", boxShadow: "0 10px 32px rgba(0,0,0,.5)" }}>
+          {/* 数学ラボ：明るい単色＋黒フチ＋発光で最も視認性を優先 */}
+          <div style={{ fontSize: 46, fontWeight: 900, letterSpacing: 1, color: "#f5f7ff", lineHeight: 1.1,
+            WebkitTextStroke: "1.5px rgba(6,4,20,.92)", paintOrder: "stroke fill",
+            textShadow: "0 2px 4px rgba(0,0,0,.95), 0 0 16px rgba(125,211,252,.7), 0 0 28px rgba(167,139,250,.55)",
+            animation: "titleGlow 4s ease-in-out infinite" }}>数学ラボ</div>
+          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 3, color: "#cbd5ff", marginTop: 4, textShadow: "0 1px 4px rgba(0,0,0,.95)" }}>～ MATH LAB ～</div>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#dbeafe", marginTop: 8, textShadow: "0 1px 4px rgba(0,0,0,.95)" }}>解いて、戦って、レベルアップ！</div>
         </div>
 
-        {/* 中央（背景のリングを見せる空間） */}
-        <div style={{ flex: 1, minHeight: 40 }} />
+        {/* タイトルとボタンの間の余白（背景のリングを少し見せる。固定幅にして
+            両方が画面中央付近に集まるようにする） */}
+        <div style={{ height: "13vh", minHeight: 70, maxHeight: 150 }} />
 
         {/* 下部：祭壇の上にボタン */}
         <button onClick={onEnter} style={{
