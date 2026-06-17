@@ -36,17 +36,24 @@ export default function Opening({ onDone }) {
     <div
       onClick={finish}
       style={{
-        position: "fixed", inset: 0, background: "#000", zIndex: 9999,
-        display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+        // ビューポート単位で直接サイズ指定（祖先の transform 影響で position:fixed が
+        // ビューポート基準にならず高さが潰れるのを防ぐ）。
+        position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+        background: "#000", zIndex: 9999, cursor: "pointer", overflow: "hidden",
       }}
     >
+      {/* 画面いっぱいに動画を表示（絶対配置で確実に高さを確保する）。
+          objectFit: contain で映像全体が切れずに中央表示される。 */}
       <video
         ref={videoRef}
         src={SRC}
         autoPlay
         playsInline
         onEnded={finish}
-        style={{ width: "100%", height: "100%", objectFit: "contain", background: "#000" }}
+        style={{
+          position: "absolute", inset: 0, width: "100%", height: "100%",
+          objectFit: "contain", background: "#000",
+        }}
       />
 
       {/* タップでスキップの案内（ブラックアウト中は隠す） */}
