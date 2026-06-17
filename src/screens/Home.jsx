@@ -81,18 +81,18 @@ export default function Home({
             <CharBubble text={greeting} avatar={player.avatar} onAvatar={onCharacter} />
           </div>
           {gActive ? (
-            <div style={{ flexShrink: 0, width: 78, padding: "8px 6px", borderRadius: 12, textAlign: "center", lineHeight: 1.3,
+            <div style={{ flexShrink: 0, width: 104, whiteSpace: "nowrap", padding: "8px 6px", borderRadius: 12, textAlign: "center", lineHeight: 1.3,
               background: "rgba(251,191,36,.18)", border: "1px solid rgba(251,191,36,.5)", color: "#fde047", fontWeight: 800, fontSize: 10.5 }}>
               ✨XP1.2倍<br />あと{gMin}分
             </div>
           ) : !gStartedToday && onStartGolden ? (
             <button onClick={onStartGolden} data-sfx="none" title="15分間 XP1.2倍"
-              style={{ flexShrink: 0, width: 78, padding: "9px 6px", borderRadius: 12, cursor: "pointer", lineHeight: 1.3, textAlign: "center",
+              style={{ flexShrink: 0, width: 104, whiteSpace: "nowrap", padding: "9px 6px", borderRadius: 12, cursor: "pointer", lineHeight: 1.3, textAlign: "center",
                 background: "linear-gradient(135deg,#fbbf24,#f59e0b)", border: "1px solid rgba(251,191,36,.6)", color: "#3a2a00", fontWeight: 900, fontSize: 11 }}>
               ✨ゴールデン<br />タイム開始
             </button>
           ) : gEnded ? (
-            <div style={{ flexShrink: 0, width: 78, padding: "8px 6px", borderRadius: 12, textAlign: "center", lineHeight: 1.3,
+            <div style={{ flexShrink: 0, width: 104, whiteSpace: "nowrap", padding: "8px 6px", borderRadius: 12, textAlign: "center", lineHeight: 1.3,
               border: "1px solid rgba(255,255,255,.12)", color: "rgba(255,255,255,.4)", fontWeight: 700, fontSize: 10 }}>
               ✨また<br />あした！
             </div>
