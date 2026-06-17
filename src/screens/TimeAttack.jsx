@@ -462,6 +462,16 @@ export default function TimeAttack({ player, chapter, unit, level, onComplete, o
 
         {streak >= 3 && <div style={{ textAlign: "center", color: "#fbbf24", fontWeight: 700, fontSize: 13, marginBottom: 8 }}>🔥 {streak}連続！</div>}
 
+        {/* プレイ中も：葉一さんの動画＋プリント（書き込み）で確認できる */}
+        {onHaichi && unit && hasHaichiLessonForUnit(unit.id) && (
+          <button data-sfx="none" onClick={() => onHaichi(unit)}
+            style={{ width: "100%", marginBottom: 8, padding: "9px 12px", borderRadius: 11, cursor: "pointer",
+              fontSize: 12.5, fontWeight: 900, color: "#fff", border: "1px solid rgba(255,255,255,.25)",
+              background: "linear-gradient(135deg,#ef4444,#f59e0b)" }}>
+            📺 わからない時は…葉一さんの動画＋プリント
+          </button>
+        )}
+
         <div className="qcard">
           <span className="q-pill">{unit.name}</span>
           <div className="q-text"><QuestionText text={q.q} furigana={!!player.furigana} readAloud={false} /></div>
