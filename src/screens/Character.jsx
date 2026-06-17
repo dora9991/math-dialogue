@@ -32,12 +32,20 @@ function squashImage(src, cb) {
 
 const PEN_COLORS = ["#1e1b4b", "#ef4444", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7", "#ec4899", "#000000"];
 
+// ペンの太さ（線幅px）。極細・細・太から選べる。
+const PEN_SIZES = [
+  { id: "xfine", label: "極細", w: 2 },
+  { id: "fine", label: "細", w: 5 },
+  { id: "thick", label: "太", w: 11 },
+];
+
 export default function Character({ player, onSetAvatar, onSetName, onBuyHero, onBack }) {
   const coins = player.coins ?? 0;
   const ownedHeroes = player.ownedHeroes || [STARTER_HERO_ID];
   const [tab, setTab] = useState("hero"); // hero | draw | upload
   const [nameInput, setNameInput] = useState(player.name || "");
   const [color, setColor] = useState(PEN_COLORS[0]);
+  const [penW, setPenW] = useState(PEN_SIZES[1].w); // ペンの太さ（既定＝細）
   const [erasing, setErasing] = useState(false); // 消しゴムモード（白で上書き）
   const [preview, setPreview] = useState(null); // 取り込み中のプレビュー（dataURL）
 
@@ -48,6 +56,8 @@ export default function Character({ player, onSetAvatar, onSetName, onBuyHero, o
   const last = useRef({ x: 0, y: 0 });
   const colorRef = useRef(color);
   useEffect(() => { colorRef.current = color; }, [color]);
+  const penWRef = useRef(penW);
+  useEffect(() => { penWRef.current = penW; }, [penW]);
   const erasingRef = useRef(erasing);
   useEffect(() => { erasingRef.current = erasing; }, [erasing]);
 
@@ -80,7 +90,7 @@ export default function Character({ player, onSetAvatar, onSetName, onBuyHero, o
     const ctx = ctxRef.current;
     const er = erasingRef.current;
     ctx.fillStyle = er ? "#fff" : colorRef.current;
-    ctx.beginPath(); ctx.arc(last.current.x, last.current.y, er ? 12 : 2.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(last.current.x, last.current.y, er ? 12 : penWRef.current / 2, 0, Math.PI * 2); ctx.fill();
   }
   function move(e) {
     if (!drawing.current) return;
@@ -89,7 +99,7 @@ export default function Character({ player, onSetAvatar, onSetName, onBuyHero, o
     const ctx = ctxRef.current;
     const er = erasingRef.current;
     ctx.strokeStyle = er ? "#fff" : colorRef.current;
-    ctx.lineWidth = er ? 24 : 5; // 消しゴムは太く
+    ctx.lineWidth = er ? 24 : penWRef.current; // 消しゴムは太く／ペンは選んだ太さ
     ctx.beginPath(); ctx.moveTo(last.current.x, last.current.y); ctx.lineTo(p.x, p.y); ctx.stroke();
     last.current = p;
   }
@@ -221,6 +231,22 @@ export default function Character({ player, onSetAvatar, onSetName, onBuyHero, o
                 style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 999, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, fontWeight: 900, color: "#fff", background: erasing ? "#6366f1" : "rgba(255,255,255,.08)", border: erasing ? "2px solid #fff" : "2px solid rgba(255,255,255,.25)" }}>
                 🧽 消しゴム
               </button>
+            </div>
+            {/* ペンの太さ：極細・細・太 */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
+              <span style={{ fontSize: 11.5, fontWeight: 800, color: "rgba(255,255,255,.55)", marginRight: 2 }}>太さ</span>
+              {PEN_SIZES.map((s) => {
+                const active = !erasing && penW === s.w;
+                return (
+                  <button key={s.id} data-sfx="none" onClick={() => { setPenW(s.w); setErasing(false); }}
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, fontWeight: 900, color: "#fff", background: active ? "#6366f1" : "rgba(255,255,255,.08)", border: active ? "2px solid #fff" : "2px solid rgba(255,255,255,.25)" }}>
+                    <span style={{ width: 16, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ width: 14, height: s.w, borderRadius: 999, background: active ? "#fff" : "rgba(255,255,255,.7)" }} />
+                    </span>
+                    {s.label}
+                  </button>
+                );
+              })}
             </div>
             <canvas
               ref={canvasRef}
