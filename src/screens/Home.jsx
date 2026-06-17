@@ -75,7 +75,29 @@ export default function Home({
       <MathBackdrop />
       <Header player={player} />
       <div className="content" style={{ position: "relative", zIndex: 1 }}>
-        <CharBubble text={greeting} avatar={player.avatar} onAvatar={onCharacter} />
+        {/* あいさつ吹き出し ＋ 右側に小さめのゴールデンタイムボタン */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <CharBubble text={greeting} avatar={player.avatar} onAvatar={onCharacter} />
+          </div>
+          {gActive ? (
+            <div style={{ flexShrink: 0, width: 78, padding: "8px 6px", borderRadius: 12, textAlign: "center", lineHeight: 1.3,
+              background: "rgba(251,191,36,.18)", border: "1px solid rgba(251,191,36,.5)", color: "#fde047", fontWeight: 800, fontSize: 10.5 }}>
+              ✨XP1.2倍<br />あと{gMin}分
+            </div>
+          ) : !gStartedToday && onStartGolden ? (
+            <button onClick={onStartGolden} data-sfx="none" title="15分間 XP1.2倍"
+              style={{ flexShrink: 0, width: 78, padding: "9px 6px", borderRadius: 12, cursor: "pointer", lineHeight: 1.3, textAlign: "center",
+                background: "linear-gradient(135deg,#fbbf24,#f59e0b)", border: "1px solid rgba(251,191,36,.6)", color: "#3a2a00", fontWeight: 900, fontSize: 11 }}>
+              ✨ゴールデン<br />タイム開始
+            </button>
+          ) : gEnded ? (
+            <div style={{ flexShrink: 0, width: 78, padding: "8px 6px", borderRadius: 12, textAlign: "center", lineHeight: 1.3,
+              border: "1px solid rgba(255,255,255,.12)", color: "rgba(255,255,255,.4)", fontWeight: 700, fontSize: 10 }}>
+              ✨また<br />あした！
+            </div>
+          ) : null}
+        </div>
 
         {/* 今日の曜日イベント（共通） */}
         {ev && (
@@ -172,23 +194,7 @@ export default function Home({
               </button>
             )}
 
-            {/* ゴールデンタイム（XPブースト＝稼ぎ向けなのでゲーム側） */}
-            {gActive ? (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, margin: "0 0 11px", padding: "9px 12px", borderRadius: 12,
-                background: "linear-gradient(135deg,rgba(251,191,36,.22),rgba(245,158,11,.22))", border: "1px solid rgba(251,191,36,.5)", color: "#fde047", fontWeight: 800, fontSize: 13 }}>
-                ✨ ゴールデンタイム中！あと約{gMin}分は <span style={{ color: "#fbbf24" }}>XP1.2倍</span>
-              </div>
-            ) : !gStartedToday && onStartGolden ? (
-              <button onClick={onStartGolden} data-sfx="none" style={{ width: "100%", margin: "0 0 11px", padding: "11px 12px", borderRadius: 12, cursor: "pointer",
-                background: "linear-gradient(135deg,rgba(251,191,36,.22),rgba(245,158,11,.22))", border: "1px solid rgba(251,191,36,.5)", color: "#fde047", fontWeight: 900, fontSize: 13.5 }}>
-                ✨ ゴールデンタイムを始める（15分間 XP1.2倍）→ 準備ができたら押そう
-              </button>
-            ) : gEnded ? (
-              <div style={{ margin: "0 0 11px", padding: "8px 12px", borderRadius: 12, textAlign: "center", border: "1px solid rgba(255,255,255,.12)", color: "rgba(255,255,255,.5)", fontSize: 12, fontWeight: 700 }}>
-                今日のゴールデンタイムは終了しました（また明日！）
-              </div>
-            ) : null}
-
+            {/* ゴールデンタイムは、あいさつ吹き出しの右の小ボタンに移動済み */}
             <div className="mode-grid">
               <button className="mode-card mta" onClick={onTimeAttack}>
                 <span style={{ fontSize: 36 }}>⏱️</span>
