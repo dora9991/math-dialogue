@@ -19,7 +19,6 @@ import QuestionText from "../components/QuestionText.jsx";
 import * as sfx from "../audio/sfx.js";
 import { genProblem, makeChoices } from "../engine/generator.js";
 import { isCorrect, SLOW_TARGET, slowXp, xpRepeatMultiplier } from "../engine/scoring.js";
-import { hasHaichiLessonForUnit } from "../data/haichiCourse.js";
 
 const todayStr = () => new Date().toLocaleDateString("ja-JP");
 const ANSHIN_TARGET = 5; // あんしんモードの「できた！の階段」目標（正解の累計）
@@ -186,16 +185,6 @@ export default function SlowMode({ player, chapter, unit, level, anshin = false,
             ))}
           </div>
         </div>
-
-        {/* 葉一さんの動画＋プリント（書き込み）で、わからない時に確認できる */}
-        {onHaichi && hasHaichiLessonForUnit(unit.id) && (
-          <button data-sfx="none" onClick={() => onHaichi(unit)}
-            style={{ width: "100%", marginBottom: 11, padding: "11px 12px", borderRadius: 12, cursor: "pointer",
-              fontSize: 13.5, fontWeight: 900, color: "#fff", border: "2px solid rgba(255,255,255,.22)",
-              background: "linear-gradient(135deg,#ef4444,#f59e0b)", boxShadow: "0 4px 14px rgba(239,68,68,.3)" }}>
-            📺 わからない時は…葉一さんの動画＋プリントで確認
-          </button>
-        )}
 
         {/* 一問ごとのひとこと */}
         <CharBubble text={msg} />
