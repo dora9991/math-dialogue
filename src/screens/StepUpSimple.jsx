@@ -14,6 +14,7 @@ import QuestionText from "../components/QuestionText.jsx";
 import * as sfx from "../audio/sfx.js";
 import { genProblem, makeChoices } from "../engine/generator.js";
 import { isCorrect } from "../engine/scoring.js";
+import ResultReview from "../components/ResultReview.jsx";
 
 const LEVELS = ["easy", "standard", "advanced"];
 const AUTO_NEXT_MS = 750;
@@ -26,7 +27,7 @@ const hasChoices = (q) => Array.isArray(q.choices) && q.choices.length > 0;
 const choicesFor = (q) => hasChoices(q) ? shuffle([...q.choices]) : makeChoices(q.ans);
 const ansEq = (val, q) => hasChoices(q) ? String(val).replace(/\s/g, "") === String(q.ans).replace(/\s/g, "") : isCorrect(val, q.ans);
 
-export default function StepUpSimple({ player, units = [], title = "ステップアップ", onAttempt, onHome, roundSize = ROUND_SIZE, passRate = null, onRoundEnd }) {
+export default function StepUpSimple({ player, units = [], title = "ステップアップ", onAttempt, onHome, roundSize = ROUND_SIZE, passRate = null, onRoundEnd, weakUnits = [], onRelearn, onHaichi, onOpenRelearnList }) {
   const ROUND = roundSize > 0 ? roundSize : ROUND_SIZE;
   const recentRef = useRef([]);
   const advanceTimer = useRef(null);
@@ -46,7 +47,7 @@ export default function StepUpSimple({ player, units = [], title = "ステップ
   const [phase, setPhase] = useState("play"); // play | result
   const [done, setDone] = useState(0);
   const [result, setResult] = useState(null);
-  const roundRef = useRef({ n: 0, correct: 0 });
+  const roundRef = useRef({ n: 0, correct: 0, wrongs: [] });
 
   function next() {
     clearTimeout(advanceTimer.current);
@@ -83,6 +84,7 @@ export default function StepUpSimple({ player, units = [], title = "ステップ
 
     const r = roundRef.current;
     r.n += 1; if (ok) r.correct += 1;
+    if (!ok) (r.wrongs ||= []).push({ q: problem.q, ans: problem.ans, unitId: unit.id, unitName: unit.name, level });
     setDone(r.n);
     const roundDone = r.n >= ROUND;
 
@@ -94,13 +96,13 @@ export default function StepUpSimple({ player, units = [], title = "ステップ
   function finishRound() {
     clearTimeout(advanceTimer.current);
     const r = roundRef.current;
-    setResult({ seen: r.n, correct: r.correct, points: r.correct * POINT_PER_CORRECT });
+    setResult({ seen: r.n, correct: r.correct, points: r.correct * POINT_PER_CORRECT, wrongs: (r.wrongs || []).slice() });
     setPhase("result");
     onRoundEnd?.({ correct: r.correct, seen: r.n }); // 合格判定など（はいちモードで使用）
   }
   function proceed() { if (roundRef.current.n >= ROUND) finishRound(); else next(); }
   function startRound() {
-    roundRef.current = { n: 0, correct: 0 };
+    roundRef.current = { n: 0, correct: 0, wrongs: [] };
     setDone(0); setResult(null); setPhase("play"); next();
   }
 
@@ -162,6 +164,18 @@ export default function StepUpSimple({ player, units = [], title = "ステップ
               </div>
             )}
           </div>
+
+          {/* まちがい直し・復習導線（はいちモードの合否画面では出さない） */}
+          {passRate == null && (
+            <ResultReview
+              wrongs={result.wrongs || []}
+              weakUnits={weakUnits}
+              onRelearn={onRelearn}
+              onHaichi={onHaichi}
+              onOpenRelearnList={onOpenRelearnList}
+            />
+          )}
+
           <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
             <button onClick={onHome} data-sfx="back" style={{ flex: 1, padding: "14px", borderRadius: 12, border: "1px solid rgba(255,255,255,.2)", background: "rgba(255,255,255,.06)", color: "#fff", fontWeight: 800, cursor: "pointer", fontSize: 15 }}>やめる</button>
             <button onClick={startRound} data-sfx="none" style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: "#6366f1", color: "#fff", fontWeight: 900, cursor: "pointer", fontSize: 15 }}>続ける →</button>

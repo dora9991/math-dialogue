@@ -9,9 +9,11 @@ import { BigWord } from "../components/Decorations.jsx";
 import * as sfx from "../audio/sfx.js";
 import { genUnitTest, unitTestTimeLimit, formatTime } from "../engine/unitTest.js";
 import { isCorrect, unitTestXp } from "../engine/scoring.js";
+import ResultReview from "../components/ResultReview.jsx";
 
-export default function UnitTest({ player, chapter, onComplete, onBack }) {
-  const [questions] = useState(() => genUnitTest(chapter));
+export default function UnitTest({ player, chapter, onComplete, onBack, weakUnits = [], onRelearn, onHaichi, onOpenRelearnList }) {
+  // 章を網羅：各小単元から標準・発展を複数問（DB由来の実問題を優先・重複回避）
+  const [questions] = useState(() => genUnitTest(chapter, { perUnitPerLevel: 2 }));
   const limit = useRef(unitTestTimeLimit(questions.length)).current; // 制限時間（秒）
   const [timeLeft, setTimeLeft] = useState(limit);
   const [idx, setIdx] = useState(0);
@@ -104,18 +106,14 @@ export default function UnitTest({ player, chapter, onComplete, onBack }) {
               );
             })}
 
-            {wrongs.length > 0 && (
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", marginBottom: 6 }}>まちがえた問題（ノートに保存）</div>
-                {wrongs.slice(0, 6).map((w, i) => (
-                  <div key={i} className="wrong-item">
-                    <div style={{ fontSize: 9, color: "#818cf8", fontWeight: 700 }}>{w.unitName} ・ {w.level === "advanced" ? "発展" : "標準"}</div>
-                    <div className="wrong-q">{w.q}</div>
-                    <div className="wrong-a">あなた: {Number.isNaN(w.userAns) ? "—" : w.userAns} ／ 正解: <strong style={{ color: "#16a34a" }}>{w.ans}</strong></div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* まちがい直し・復習導線（小単元ごとに学び直し／葉一さんの解説へ） */}
+            <ResultReview
+              wrongs={wrongs}
+              weakUnits={weakUnits}
+              onRelearn={onRelearn}
+              onHaichi={onHaichi}
+              onOpenRelearnList={onOpenRelearnList}
+            />
 
             <div className="res-acts" style={{ marginTop: 12 }}>
               <button className="rbtn s" onClick={onBack}>📝 章を選ぶ</button>

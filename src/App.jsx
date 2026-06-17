@@ -1080,6 +1080,8 @@ export default function App() {
         onHaichi={() => openHaichiStudio(sel.unit, "timeAttack")}
         weakUnits={getWeakUnits(data.player, data.mistakes, data.records)}
         onWeakStart={startWeakTA}
+        onRelearn={(unit) => { setPracticeUnit(unit); setScreen("relearnPractice"); }}
+        onOpenRelearnList={() => setScreen("relearn")}
       />
     );
   }
@@ -1256,6 +1258,10 @@ export default function App() {
         title={`じっくり：${practiceUnit.name}`}
         onAttempt={recordStepAttempt}
         onHome={() => setScreen("calcPick")}
+        weakUnits={getWeakUnits(data.player, data.mistakes, data.records)}
+        onRelearn={(unit) => { setPracticeUnit(unit); setScreen("relearnPractice"); }}
+        onHaichi={(unit) => openHaichiStudio(unit, "calcPractice")}
+        onOpenRelearnList={() => setScreen("relearn")}
       />
     );
   }
@@ -1281,6 +1287,10 @@ export default function App() {
         title={`ステップアップ（中${grade}）`}
         onAttempt={recordStepAttempt}
         onHome={() => setScreen("home")}
+        weakUnits={getWeakUnits(data.player, data.mistakes, data.records)}
+        onRelearn={(unit) => { setPracticeUnit(unit); setScreen("relearnPractice"); }}
+        onHaichi={(unit) => openHaichiStudio(unit, "stepUp")}
+        onOpenRelearnList={() => setScreen("relearn")}
       />
     );
   }
@@ -1330,7 +1340,7 @@ export default function App() {
   // 単元テスト：章選択 → テスト
   if (screen === "unitTest") {
     if (!utChapter) {
-      return <UnitTestSelect player={data.player} onStart={(c) => setUtChapter(c)} onBack={() => setScreen("home")} />;
+      return <UnitTestSelect player={data.player} grade={grade} onStart={(c) => setUtChapter(c)} onBack={() => setScreen("home")} />;
     }
     return (
       <UnitTest
@@ -1339,6 +1349,10 @@ export default function App() {
         chapter={utChapter}
         onComplete={saveUnitTestResult}
         onBack={() => setUtChapter(null)}
+        weakUnits={getWeakUnits(data.player, data.mistakes, data.records)}
+        onRelearn={(unit) => { setPracticeUnit(unit); setScreen("relearnPractice"); }}
+        onHaichi={(unit) => openHaichiStudio(unit, "unitTest")}
+        onOpenRelearnList={() => setScreen("relearn")}
       />
     );
   }

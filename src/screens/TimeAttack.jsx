@@ -16,6 +16,7 @@ import MathText from "../components/MathText.jsx";
 import QuestionText from "../components/QuestionText.jsx";
 import MonsterSprite from "../components/MonsterSprite.jsx";
 import HeroImg from "../components/HeroImg.jsx";
+import ResultReview from "../components/ResultReview.jsx";
 import { heroImageFor } from "../data/heroes.js";
 import { MONSTERS } from "../data/monsters.js";
 import { monsterImageUrl } from "../data/monsterImages.js";
@@ -71,7 +72,7 @@ const hitsToKill = (k) => Math.min(4, 2 + Math.floor(k / 4));
 
 // 応援メッセージは data/cheers.js に集約（バトルと共通・バリエーション多め）。
 
-export default function TimeAttack({ player, chapter, unit, level, onComplete, onBackToMap, onHome, weak = false, weakUnits = [], onWeakStart, onHaichi }) {
+export default function TimeAttack({ player, chapter, unit, level, onComplete, onBackToMap, onHome, weak = false, weakUnits = [], onWeakStart, onHaichi, onRelearn, onOpenRelearnList }) {
   const quizTime = taTimeFor(chapter, unit);
   // 通常TAは「暗算が非常に厳しい問題」を除外して出題（計算王の単元別じっくりで扱う）。
   const genGood = (recent) => {
@@ -339,30 +340,19 @@ export default function TimeAttack({ player, chapter, unit, level, onComplete, o
               </div>
             )}
 
-            {/* 通常モード：あなたの苦手単元＋「苦手だけ挑戦」への導線 */}
-            {!weak && weakUnits.length > 0 && (
-              <div className="glass" style={{ padding: "10px 12px", margin: "4px 0 10px", textAlign: "left" }}>
-                <div style={{ fontSize: 12, fontWeight: 900, color: "#b45309", marginBottom: 6 }}>🎯 あなたの苦手</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: onWeakStart ? 8 : 0 }}>
-                  {weakUnits.slice(0, 3).map((w) => (
-                    <span key={w.unitId} style={{ fontSize: 11, fontWeight: 800, color: "#92400e", background: "rgba(251,191,36,.18)", borderRadius: 999, padding: "3px 9px" }}>
-                      {w.unit.name}
-                    </span>
-                  ))}
-                </div>
-                {onWeakStart && (
-                  <button className="rbtn p" style={{ width: "100%" }} onClick={onWeakStart}>🎯 苦手だけタイムアタック</button>
-                )}
-              </div>
+            {/* 通常モード：まちがい直し・復習導線（苦手チップ／学び直す／葉一解説） */}
+            {!weak && (
+              <ResultReview
+                wrongs={results.filter((r) => !r.ok)}
+                unit={unit}
+                weakUnits={weakUnits}
+                onRelearn={onRelearn}
+                onHaichi={onHaichi}
+                onOpenRelearnList={onOpenRelearnList}
+              />
             )}
-
-            {/* 葉一さんの動画＋プリント（書き込み）でこの単元を復習 */}
-            {!weak && onHaichi && unit && hasHaichiLessonForUnit(unit.id) && (
-              <button className="rbtn" onClick={() => onHaichi(unit)}
-                style={{ width: "100%", marginBottom: 8, color: "#fff", border: "none",
-                  background: "linear-gradient(135deg,#ef4444,#f59e0b)" }}>
-                📺 葉一さんの動画＋プリントで復習
-              </button>
+            {!weak && onWeakStart && weakUnits.length > 0 && (
+              <button className="rbtn p" style={{ width: "100%", marginBottom: 8 }} onClick={onWeakStart}>🎯 苦手だけタイムアタック</button>
             )}
 
             <div className="res-acts">
