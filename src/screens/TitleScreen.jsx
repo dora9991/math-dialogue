@@ -76,8 +76,8 @@ export default function TitleScreen({ onEnter, onAdmin, onHowTo, onCharacter }) 
         {/* タイトル（暗いガラスのバナーを敷いて、明るい背景の上でもくっきり読める） */}
         <div onClick={secretTap} style={{ cursor: "default", userSelect: "none", textAlign: "center", animation: "titleFloat 5.5s ease-in-out infinite",
           padding: "14px 26px 16px", borderRadius: 22,
-          background: "rgba(8,6,26,.58)", backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)",
-          border: "1px solid rgba(255,255,255,.18)", boxShadow: "0 10px 32px rgba(0,0,0,.5)" }}>
+          background: "rgba(8,6,26,.42)", backdropFilter: "blur(5px)", WebkitBackdropFilter: "blur(5px)",
+          border: "1px solid rgba(255,255,255,.15)", boxShadow: "0 10px 32px rgba(0,0,0,.4)" }}>
           {/* 数学ラボ：明るい単色＋黒フチ＋発光で最も視認性を優先 */}
           <div style={{ fontSize: 46, fontWeight: 900, letterSpacing: 1, color: "#f5f7ff", lineHeight: 1.1,
             WebkitTextStroke: "1.5px rgba(6,4,20,.92)", paintOrder: "stroke fill",
