@@ -1,6 +1,6 @@
 // ============================================================
 // StartScreen.jsx — 一番最初の画面。「ゲームスタート」を押すと
-//  音声が解禁され、タイトル画面（OP曲）へ進む。
+//  音声が解禁され、オープニング映像へ進む。
 // ============================================================
 import { MathBackdrop } from "../components/Decorations.jsx";
 import * as bgm from "../audio/bgm.js";
@@ -11,9 +11,8 @@ export default function StartScreen({ onStart }) {
     bgm.unlock();      // ユーザー操作で音声解禁
     sfx.unlock();      // 効果音も解禁
     sfx.confirm();     // ピッという決定音
-    // OPは少し遅らせて鳴らす（同時だとピッ音がかき消されるため）
-    setTimeout(() => bgm.play("op"), 280);
-    onStart();         // タイトルへ
+    // OP曲はオープニング映像と被るのでここでは鳴らさない（映像のあと、タイトルで再生）。
+    onStart();         // オープニング映像へ
   }
   return (
     <div className="app" style={{ alignItems: "center", justifyContent: "center" }}>

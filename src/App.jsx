@@ -14,6 +14,7 @@ import * as bgm from "./audio/bgm.js";
 import * as sfx from "./audio/sfx.js";
 
 import StartScreen from "./screens/StartScreen.jsx";
+import Opening from "./screens/Opening.jsx";
 import Transfer from "./screens/Transfer.jsx";
 import LoginBonusOverlay from "./components/LoginBonusOverlay.jsx";
 import { computeLogin, canClaimLogin, goldenMultiplier, eventXpMult, eventCoinMult, eventCrystalMult, eventRelearnMult, eventCalcMult, eventTaCoinMult, eventGachaBonus } from "./engine/daily.js";
@@ -885,6 +886,7 @@ export default function App() {
   // 画面に合わせてBGMを切り替える（勝利/敗北/タイムアタック終了は各画面で再生）
   useEffect(() => {
     if (screen === "start") { bgm.stop(); return; }
+    if (screen === "opening") { bgm.stop(); return; } // オープニング映像は映像側の音を使う（OP曲は止める）
     if (screen === "title") { bgm.play("op"); return; }
     if (screen === "timeAttack") { bgm.play("timeattack"); return; }
     if (screen === "slow" || screen === "anshin") { bgm.play("slow"); return; }
@@ -939,7 +941,12 @@ export default function App() {
 
   const renderScreen = () => {
   if (screen === "start") {
-    return <StartScreen onStart={() => setScreen(needsOnboard ? "transfer" : "title")} />;
+    return <StartScreen onStart={() => setScreen("opening")} />;
+  }
+
+  // オープニング映像（タップでスキップ可）→ ブラックアウト→1秒後にタイトル（初回は引き継ぎ画面）へ
+  if (screen === "opening") {
+    return <Opening onDone={() => setScreen(needsOnboard ? "transfer" : "title")} />;
   }
 
   // 初回起動：v4からの引き継ぎ（別ホストなのでバックアップファイルで移行）
