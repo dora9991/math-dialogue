@@ -1003,7 +1003,12 @@ export default function App() {
           setSel({ chapter, unit, level });
           setScreen(mode); // "timeAttack" など
         }}
-        onLesson={(unit) => { setLessonUnit(unit); setScreen("lesson"); }}
+        onLesson={(unit) => {
+          // 単元選択の「動画＋プリント」→ ページ形式の新スタジオ（前/次・表示切替など）へ。
+          //  対応する葉一さんのレッスンが無い単元だけ、従来の簡易ページにフォールバック。
+          if (findHaichiLessonForUnit(unit.id)) openHaichiStudio(unit, "chapter");
+          else { setLessonUnit(unit); setScreen("lesson"); }
+        }}
         onBack={() => setScreen("home")}
       />
     );
