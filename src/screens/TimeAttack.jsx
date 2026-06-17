@@ -19,6 +19,7 @@ import HeroImg from "../components/HeroImg.jsx";
 import { heroImageFor } from "../data/heroes.js";
 import { MONSTERS } from "../data/monsters.js";
 import { monsterImageUrl } from "../data/monsterImages.js";
+import { hasHaichiLessonForUnit } from "../data/haichiCourse.js";
 import { pickHitCheer, pickMissCheer, pickKillCheer } from "../data/cheers.js";
 import * as bgm from "../audio/bgm.js";
 import * as sfx from "../audio/sfx.js";
@@ -70,7 +71,7 @@ const hitsToKill = (k) => Math.min(4, 2 + Math.floor(k / 4));
 
 // 応援メッセージは data/cheers.js に集約（バトルと共通・バリエーション多め）。
 
-export default function TimeAttack({ player, chapter, unit, level, onComplete, onBackToMap, onHome, weak = false, weakUnits = [], onWeakStart }) {
+export default function TimeAttack({ player, chapter, unit, level, onComplete, onBackToMap, onHome, weak = false, weakUnits = [], onWeakStart, onHaichi }) {
   const quizTime = taTimeFor(chapter, unit);
   // 通常TAは「暗算が非常に厳しい問題」を除外して出題（計算王の単元別じっくりで扱う）。
   const genGood = (recent) => {
@@ -353,6 +354,15 @@ export default function TimeAttack({ player, chapter, unit, level, onComplete, o
                   <button className="rbtn p" style={{ width: "100%" }} onClick={onWeakStart}>🎯 苦手だけタイムアタック</button>
                 )}
               </div>
+            )}
+
+            {/* 葉一さんの動画＋プリント（書き込み）でこの単元を復習 */}
+            {!weak && onHaichi && unit && hasHaichiLessonForUnit(unit.id) && (
+              <button className="rbtn" onClick={() => onHaichi(unit)}
+                style={{ width: "100%", marginBottom: 8, color: "#fff", border: "none",
+                  background: "linear-gradient(135deg,#ef4444,#f59e0b)" }}>
+                📺 葉一さんの動画＋プリントで復習
+              </button>
             )}
 
             <div className="res-acts">

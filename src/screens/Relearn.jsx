@@ -14,10 +14,11 @@ import Header from "../components/Header.jsx";
 import MathText from "../components/MathText.jsx";
 import { findUnitById, findChapterByUnitId } from "../data/index.js";
 import { videoUrlFor } from "../data/videoLinks.js";
+import { hasHaichiLessonForUnit } from "../data/haichiCourse.js";
 
 const GRADE_LABEL = { 1: "中1", 2: "中2", 3: "中3" };
 
-export default function Relearn({ player, mistakes = [], onRelearn, onRemove, onBack }) {
+export default function Relearn({ player, mistakes = [], onRelearn, onHaichi, onRemove, onBack }) {
   // ★4 間違い＝宝：直して「できた！」にしたら、たからもの演出（ごほうび＝コイン）
   const [treasure, setTreasure] = useState(null); // { reward }
   function fixMistake(id) {
@@ -89,14 +90,21 @@ export default function Relearn({ player, mistakes = [], onRelearn, onRemove, on
                       ✏️ この単元を学び直す
                     </button>
                   )}
-                  {vurl && (
+                  {unit && onHaichi && hasHaichiLessonForUnit(key) ? (
+                    <button data-sfx="none" onClick={() => onHaichi(unit)} title="葉一さんの動画＋プリントに書き込み"
+                      style={{ flexShrink: 0, padding: "10px 12px", borderRadius: 10, cursor: "pointer",
+                        fontSize: 12.5, fontWeight: 800, color: "#fca5a5",
+                        border: "1px solid rgba(239,68,68,.4)", background: "rgba(239,68,68,.12)" }}>
+                      📺 動画＋プリント
+                    </button>
+                  ) : vurl ? (
                     <button data-sfx="none" onClick={() => window.open(vurl, "_blank", "noopener")} title="19chの解説動画"
                       style={{ flexShrink: 0, padding: "10px 14px", borderRadius: 10, cursor: "pointer",
                         fontSize: 13, fontWeight: 800, color: "#fca5a5",
                         border: "1px solid rgba(239,68,68,.4)", background: "rgba(239,68,68,.12)" }}>
                       📺 解説
                     </button>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* 間違えた問題たち */}

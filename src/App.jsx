@@ -23,6 +23,8 @@ import LevelUpOverlay from "./components/LevelUpOverlay.jsx";
 import Home from "./screens/Home.jsx";
 import ChapterSelect from "./screens/ChapterSelect.jsx";
 import HaichiMode from "./screens/HaichiMode.jsx"; // はいちモード（葉一さんのレッスン一覧）
+import HaichiStudio from "./screens/HaichiStudio.jsx"; // 動画＋ワークシートのスタジオ（他モードからも開く）
+import { findHaichiLessonForUnit } from "./data/haichiCourse.js";
 const Lesson = lazy(() => import("./screens/Lesson.jsx")); // pdf.jsが重いので開いた時だけ読み込む
 import { lessonMediaFor } from "./data/lessonMedia.js";
 import TimeAttack from "./screens/TimeAttack.jsx";
@@ -93,6 +95,7 @@ export default function App() {
   const [battleKey, setBattleKey] = useState(0); // 「もう一度」で戦闘をやり直す用
   const [utChapter, setUtChapter] = useState(null); // 単元テストの対象章
   const [lessonUnit, setLessonUnit] = useState(null); // 「動画＋ワークシート」レッスンの対象単元
+  const [haichiStudio, setHaichiStudio] = useState(null); // 他モードから開く動画スタジオ { grade, section, lesson, ret }
   const [levelUpTo, setLevelUpTo] = useState(null); // レベルアップ演出（上がった先のレベル）
   const [loginBonus, setLoginBonus] = useState(null); // ログインボーナス演出 { reward, streak, isFifth }
   const loginCheckedRef = useRef(false);              // 今セッションでログイン判定済みか
@@ -127,6 +130,15 @@ export default function App() {
   function chooseHomeMode(m) {
     setHomeMode(m);
     if (m === "game" || m === "learn") updatePlayer((p) => (p.lastMode === m ? p : { ...p, lastMode: m }));
+  }
+
+  // 他モード（学び直し／タイムアタック／あんしん）から、その単元に対応する
+  //  葉一さんの「動画＋ワークシート（書き込み）」スタジオを開く。ret=閉じたときの戻り先screen。
+  function openHaichiStudio(unit, ret) {
+    const found = unit && findHaichiLessonForUnit(unit.id);
+    if (!found) return; // 対応する動画が無ければ何もしない（ボタンは対応がある時だけ出す）
+    setHaichiStudio({ ...found, ret });
+    setScreen("haichiStudio");
   }
 
   // 周回（プレステージ）：その学年の魔王を「今の周回で」倒したか
@@ -1013,6 +1025,23 @@ export default function App() {
     );
   }
 
+  // 他モードから開いた動画スタジオ（動画＋ワークシート＋手書き）。閉じたら呼び出し元へ戻る。
+  if (screen === "haichiStudio" && haichiStudio) {
+    return (
+      <HaichiStudio
+        player={data.player}
+        grade={haichiStudio.grade}
+        section={haichiStudio.section}
+        lesson={haichiStudio.lesson}
+        watchedMap={data.player.haichiWatched || {}}
+        passedMap={data.player.haichiPassed || {}}
+        onChangeLesson={(L) => setHaichiStudio((s) => ({ ...s, lesson: L }))}
+        onWatched={(key) => markHaichiWatched(key)}
+        onBack={() => setScreen(haichiStudio.ret || "home")}
+      />
+    );
+  }
+
   if (screen === "lesson" && lessonUnit) {
     return (
       <Suspense fallback={<div className="app"><div className="content"><div className="glass" style={{ padding: 20, textAlign: "center" }}>読み込み中…</div></div></div>}>
@@ -1036,6 +1065,7 @@ export default function App() {
         onComplete={saveTimeAttackResult}
         onBackToMap={() => setScreen("chapter")}
         onHome={() => setScreen("home")}
+        onHaichi={() => openHaichiStudio(sel.unit, "timeAttack")}
         weakUnits={getWeakUnits(data.player, data.mistakes, data.records)}
         onWeakStart={startWeakTA}
       />
@@ -1086,6 +1116,7 @@ export default function App() {
         onHome={() => setScreen("home")}
         onRelearn={() => setScreen("relearn")}
         onBattle={() => goBattleForUnit(sel.unit)}
+        onHaichi={() => openHaichiStudio(sel.unit, "slow")}
       />
     );
   }
@@ -1104,6 +1135,7 @@ export default function App() {
         onHome={() => setScreen("home")}
         onRelearn={() => setScreen("relearn")}
         onBattle={() => goBattleForUnit(sel.unit)}
+        onHaichi={() => openHaichiStudio(sel.unit, "anshin")}
       />
     );
   }
@@ -1115,6 +1147,7 @@ export default function App() {
         player={data.player}
         mistakes={data.mistakes}
         onRelearn={(unit) => { setPracticeUnit(unit); setScreen("relearnPractice"); }}
+        onHaichi={(unit) => openHaichiStudio(unit, "relearn")}
         onRemove={removeNote}
         onBack={() => setScreen("home")}
       />

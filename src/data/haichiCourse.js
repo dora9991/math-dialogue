@@ -306,3 +306,21 @@ export const HAICHI_COURSE = {
     ] },
   ],
 };
+
+// アプリの単元ID → その内容に対応する葉一さんのレッスンを探す（学び直し等から動画を開くのに使う）。
+//  各レッスンの u:[単元ID...] を逆引きして、最初に一致したものを返す（無ければ null）。
+export function findHaichiLessonForUnit(unitId) {
+  if (!unitId) return null;
+  for (const grade of [1, 2, 3]) {
+    for (const section of HAICHI_COURSE[grade] || []) {
+      const lesson = section.lessons.find((l) => (l.u || []).includes(unitId));
+      if (lesson) return { grade, section, lesson };
+    }
+  }
+  return null;
+}
+
+/** その単元に対応する葉一さんの解説動画があるか */
+export function hasHaichiLessonForUnit(unitId) {
+  return !!findHaichiLessonForUnit(unitId);
+}
