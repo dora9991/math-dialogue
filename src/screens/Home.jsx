@@ -195,6 +195,12 @@ export default function Home({
                 <span style={{ fontSize: 15, fontWeight: 900 }}>タイムアタック</span>
                 <span style={{ fontSize: 11, opacity: 0.8, lineHeight: 1.5 }}>限られた時間で<br />何問解ける？</span>
               </button>
+              <button className="mode-card mut" onClick={onRelearn} style={{ position: "relative" }}>
+                {mistakeCount > 0 && <span className="nb-badge" style={{ position: "absolute", top: 8, right: 8 }}>{mistakeCount}</span>}
+                <span style={{ fontSize: 36 }}>📖</span>
+                <span style={{ fontSize: 15, fontWeight: 900 }}>学び直し</span>
+                <span style={{ fontSize: 11, opacity: 0.8, lineHeight: 1.5 }}>間違えた問題を<br />動画と練習で克服</span>
+              </button>
               <button className="mode-card mba" onClick={onBattle}>
                 <span style={{ fontSize: 36 }}>⚔️</span>
                 <span style={{ fontSize: 15, fontWeight: 900 }}>バトルモード</span>
@@ -217,12 +223,13 @@ export default function Home({
                 <span style={{ fontSize: 15, fontWeight: 900 }}>スキル</span>
                 <span style={{ fontSize: 11, opacity: 0.8, lineHeight: 1.5 }}>バトルで使う<br />スキルをセット</span>
               </button>
-              <button className="mode-card" style={{ background: "linear-gradient(135deg,#0ea5e9,#22d3ee)" }} onClick={onCollection}>
-                <span style={{ fontSize: 36 }}>📖</span>
-                <span style={{ fontSize: 15, fontWeight: 900 }}>モンスター図鑑</span>
-                <span style={{ fontSize: 11, opacity: 0.85, lineHeight: 1.5 }}>倒した敵を集めよう</span>
-              </button>
             </div>
+
+            {onCollection && (
+              <button className="nb-btn" onClick={onCollection} style={{ marginTop: 10, background: "linear-gradient(135deg,#0ea5e9,#22d3ee)", color: "#fff" }}>
+                📖 モンスター図鑑（倒したモンスターを集めよう）
+              </button>
+            )}
 
             {onPartners && (
               <button className="nb-btn" onClick={onPartners} style={{ marginTop: 10, background: "linear-gradient(135deg,#f59e0b,#f472b6)", color: "#fff" }}>
@@ -237,42 +244,41 @@ export default function Home({
           <>
             <ModeSwitch />
 
-            {onAnshin && bigBtn(onAnshin, "🛟", "あんしんモード", "タイマーなし・まちがえても大丈夫。まずはここから！",
-              "linear-gradient(135deg,#22c55e,#10b981)", "0 6px 18px rgba(16,185,129,.35)")}
-            {onHaichi && bigBtn(onHaichi, "📺", "はいちモード", "葉一さんの授業を見ながらプリント→リンク問題で確認",
-              "linear-gradient(135deg,#ef4444,#f59e0b)", "0 6px 18px rgba(239,68,68,.35)", "NEW")}
-            {onDialogue && bigBtn(onDialogue, "🧑‍🏫", "AIと対話する授業", "黒板を見ながら、先生の問いに声や文字で答えよう",
-              "linear-gradient(135deg,#6366f1,#0ea5e9)", "0 6px 18px rgba(99,102,241,.35)", "NEW")}
-
-            <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.55)", margin: "4px 2px 8px" }}>📝 もっと学ぶ・苦手をこくふく</div>
             <div className="mode-grid">
+              {/* 1段目：左=はいちモード／右=学び直し */}
+              <button className="mode-card" style={{ background: "linear-gradient(135deg,#ef4444,#f59e0b)" }} onClick={onHaichi}>
+                <span style={{ fontSize: 36 }}>📺</span>
+                <span style={{ fontSize: 15, fontWeight: 900 }}>はいちモード</span>
+                <span style={{ fontSize: 11, opacity: 0.85, lineHeight: 1.5 }}>葉一さんの授業→<br />リンク問題で確認</span>
+              </button>
               <button className="mode-card mut" onClick={onRelearn} style={{ position: "relative" }}>
                 {mistakeCount > 0 && <span className="nb-badge" style={{ position: "absolute", top: 8, right: 8 }}>{mistakeCount}</span>}
                 <span style={{ fontSize: 36 }}>📖</span>
                 <span style={{ fontSize: 15, fontWeight: 900 }}>学び直し</span>
                 <span style={{ fontSize: 11, opacity: 0.8, lineHeight: 1.5 }}>間違えた問題を<br />動画と練習で克服</span>
               </button>
-              {onStepUp && (
-                <button className="mode-card" style={{ background: "linear-gradient(135deg,#10b981,#34d399)" }} onClick={onStepUp}>
-                  <span style={{ fontSize: 36 }}>🌱</span>
-                  <span style={{ fontSize: 15, fontWeight: 900 }}>ステップアップ</span>
-                  <span style={{ fontSize: 11, opacity: 0.85, lineHeight: 1.5 }}>弱点を1問ずつ<br />じっくり練習</span>
-                </button>
-              )}
-              {onUnitTest && (
-                <button className="mode-card" style={{ background: "linear-gradient(135deg,#0ea5e9,#6366f1)" }} onClick={onUnitTest}>
-                  <span style={{ fontSize: 36 }}>📝</span>
-                  <span style={{ fontSize: 15, fontWeight: 900 }}>単元テスト</span>
-                  <span style={{ fontSize: 11, opacity: 0.85, lineHeight: 1.5 }}>章のまとめ<br />力だめし</span>
-                </button>
-              )}
-              {onClinic && (
-                <button className="mode-card" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }} onClick={onClinic}>
-                  <span style={{ fontSize: 36 }}>🩺</span>
-                  <span style={{ fontSize: 15, fontWeight: 900 }}>こまり感クリニック</span>
-                  <span style={{ fontSize: 11, opacity: 0.85, lineHeight: 1.5 }}>つまずき診断→<br />処方ドリル</span>
-                </button>
-              )}
+              {/* 2段目：左=あんしんモード／右=計算王への道 */}
+              <button className="mode-card" style={{ background: "linear-gradient(135deg,#22c55e,#10b981)" }} onClick={onAnshin}>
+                <span style={{ fontSize: 36 }}>🛟</span>
+                <span style={{ fontSize: 15, fontWeight: 900 }}>あんしんモード</span>
+                <span style={{ fontSize: 11, opacity: 0.85, lineHeight: 1.5 }}>タイマーなし・<br />まちがえてもOK</span>
+              </button>
+              <button className="mode-card mch" onClick={onChallenge}>
+                <span style={{ fontSize: 36 }}>🧮</span>
+                <span style={{ fontSize: 15, fontWeight: 900 }}>計算王への道</span>
+                <span style={{ fontSize: 11, opacity: 0.8, lineHeight: 1.5 }}>連続正解で<br />自己ベストに挑戦</span>
+              </button>
+              {/* 3段目：左=単元テスト／右=タイムアタック */}
+              <button className="mode-card" style={{ background: "linear-gradient(135deg,#0ea5e9,#6366f1)" }} onClick={onUnitTest}>
+                <span style={{ fontSize: 36 }}>📝</span>
+                <span style={{ fontSize: 15, fontWeight: 900 }}>単元テスト</span>
+                <span style={{ fontSize: 11, opacity: 0.85, lineHeight: 1.5 }}>章のまとめ<br />力だめし</span>
+              </button>
+              <button className="mode-card mta" onClick={onTimeAttack}>
+                <span style={{ fontSize: 36 }}>⏱️</span>
+                <span style={{ fontSize: 15, fontWeight: 900 }}>タイムアタック</span>
+                <span style={{ fontSize: 11, opacity: 0.8, lineHeight: 1.5 }}>限られた時間で<br />何問解ける？</span>
+              </button>
             </div>
 
             {/* 学習の記録（ダッシュボード） */}
