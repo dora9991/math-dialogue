@@ -86,6 +86,8 @@ export default function App() {
   const [grade, setGrade] = useState(() => data.player.world || 1);
   // ホームのメニュー系統："hub"=モード選択 / "game" / "learn"。前回選んだモードから始める（初回はハブ）。
   const [homeMode, setHomeMode] = useState(() => data.player.lastMode || "hub");
+  const [prestigeAsk, setPrestigeAsk] = useState(false);    // 「もう一周」確認ダイアログ
+  const [prestigeDone, setPrestigeDone] = useState(null);   // 周回開始の演出（何周目か）
   const [sel, setSel] = useState({ chapter: null, unit: null, level: null });
   const [battleMonster, setBattleMonster] = useState(null); // 選択中のモンスター
   const [battleKey, setBattleKey] = useState(0); // 「もう一度」で戦闘をやり直す用
@@ -125,6 +127,31 @@ export default function App() {
   function chooseHomeMode(m) {
     setHomeMode(m);
     if (m === "game" || m === "learn") updatePlayer((p) => (p.lastMode === m ? p : { ...p, lastMode: m }));
+  }
+
+  // 周回（プレステージ）：その学年の魔王を「今の周回で」倒したか
+  const curPrestige = (g) => (data.player.prestige && data.player.prestige[g]) || 0;
+  function maouCleared(g) {
+    const cp = curPrestige(g);
+    return (data.records || []).some((r) => r.mode === "battle" && r.extra?.result === "win" && r.extra.monsterId === `boss_maou_${g}` && (r.extra.prestige || 0) === cp);
+  }
+  // 「もう一周」：その学年の星と撃破報酬だけリセット（お金/クリスタルがまた入る）。
+  //  強さ(worldXp)・お金・クリスタル・装備・アイテム・スキル・仲間・図鑑(記録)は維持。
+  function doPrestige() {
+    const g = grade;
+    let lap = 2;
+    updatePlayer((p) => {
+      const stars = { ...(p.stars || {}) };
+      for (const ch of chaptersForGrade(g)) for (const u of ch.units) for (const l of LEVEL_KEYS) delete stars[`${u.id}-${l}`];
+      const prestige = { ...(p.prestige || {}) };
+      prestige[g] = (prestige[g] || 0) + 1;
+      lap = prestige[g] + 1; // 「いま何周目」（1周クリア→2周目）
+      return { ...p, stars, prestige, currentHp: null }; // HP全回復してスタート
+    });
+    setPrestigeAsk(false);
+    setHomeMode("game");
+    setScreen("home");
+    setTimeout(() => setPrestigeDone(lap), 300);
   }
 
   // 小単元の習得確認ポイントを更新（bools = その単元の正誤を時系列で並べた配列）
@@ -685,18 +712,21 @@ export default function App() {
     const win = outcome === true;
     const correct = stats.correct || 0;
     const wrong = stats.wrong || 0;
-    // この勝利より前に同じモンスターを倒したことがあるか
+    // 周回（プレステージ）：同じ周回の中で既に倒したか？で報酬を判定。
+    //  「もう一周」で grade の周回数が上がると、過去の撃破は前の周回扱い→報酬がまた満額＆初撃破クリスタルも再開放。
+    const monGrade = battleMonster.grade ?? 1;
+    const curPrestige = (data.player.prestige && data.player.prestige[monGrade]) || 0;
     const alreadyCleared = (data.records || []).some(
-      (r) => r.mode === "battle" && r.extra && r.extra.result === "win" && r.extra.monsterId === battleMonster.id
+      (r) => r.mode === "battle" && r.extra && r.extra.result === "win" && r.extra.monsterId === battleMonster.id && (r.extra.prestige || 0) === curPrestige
     );
-    // 撃破済みなら報酬は半分（切り上げ）
+    // 撃破済み（同じ周回内）なら報酬は半分（切り上げ）
     const gained = win ? (alreadyCleared ? Math.ceil(battleMonster.reward / 2) : battleMonster.reward) : 0;
     store.addRecord(makeRecord({
       studentId: data.player.studentId, mode: "battle",
       chapterId: battleMonster.chapterId ?? null, unitId: battleMonster.unitId ?? null,
       correct, wrong, // ★学習記録（日々の解答数・正解数）にバトルも反映
       xp: gained,
-      extra: { monsterId: battleMonster.id, result: win ? "win" : "lose" },
+      extra: { monsterId: battleMonster.id, result: win ? "win" : "lose", prestige: curPrestige },
     }));
     setData((d) => ({ ...d, records: store.load().records }));
     if (win) addXp(gained);
@@ -1288,6 +1318,9 @@ export default function App() {
       onStepUp={() => setScreen("stepUp")}
       mode={homeMode}
       onSetMode={chooseHomeMode}
+      canPrestige={maouCleared(grade)}
+      prestige={curPrestige(grade)}
+      onPrestige={() => setPrestigeAsk(true)}
       onStartGolden={startGolden}
       onShop={() => setScreen("shop")}
       onSkill={() => setScreen("skill")}
@@ -1340,6 +1373,33 @@ export default function App() {
         />
       )}
       {newMonster && <NewMonsterOverlay monster={newMonster} onDone={() => setNewMonster(null)} />}
+      {prestigeAsk && (
+        <div onClick={() => setPrestigeAsk(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.72)", zIndex: 215, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div onClick={(e) => e.stopPropagation()} className="glass" style={{ maxWidth: 350, padding: "22px 22px", textAlign: "center", border: "2px solid #fbbf24" }}>
+            <div style={{ fontSize: 13, fontWeight: 900, color: "#fde047", letterSpacing: 1 }}>👑 もう一周（周回）</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: "#fff", margin: "8px 0 12px" }}>中{grade}を もう一周する？</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,.8)", lineHeight: 1.8, textAlign: "left", background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "10px 12px" }}>
+              ✅ <b>そのまま残る</b>：レベル/強さ・お金・クリスタル・装備・アイテム・スキル・仲間・図鑑<br />
+              🔄 <b>リセット</b>：星（タイムアタックのクリア）とモンスター撃破報酬<br />
+              <span style={{ color: "#fde047", fontWeight: 800 }}>→ お金とクリスタルがまた稼げる！</span>
+            </div>
+            <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+              <button onClick={() => setPrestigeAsk(false)} data-sfx="back" style={{ flex: 1, padding: "12px", borderRadius: 12, border: "1px solid rgba(255,255,255,.2)", background: "rgba(255,255,255,.06)", color: "#fff", fontWeight: 800, cursor: "pointer" }}>やめる</button>
+              <button onClick={doPrestige} data-sfx="none" style={{ flex: 1, padding: "12px", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#f59e0b,#fbbf24)", color: "#3a2a00", fontWeight: 900, cursor: "pointer" }}>もう一周する！</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {prestigeDone && (
+        <div onClick={() => setPrestigeDone(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.72)", zIndex: 215, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div className="glass" style={{ maxWidth: 330, padding: "26px 24px", textAlign: "center", border: "2px solid #fbbf24", animation: "rankUpPop .5s cubic-bezier(.2,1.4,.4,1) both" }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: "#fde047", letterSpacing: 2 }}>👑 つよくて もう一周！</div>
+            <div style={{ fontSize: 46, margin: "8px 0" }}>🔄✨</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>中{grade} {prestigeDone}周目スタート！</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,.7)", marginTop: 10, lineHeight: 1.6 }}>強さ・装備・仲間はそのまま！<br />お金とクリスタルをまた稼ごう！（タップで閉じる）</div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

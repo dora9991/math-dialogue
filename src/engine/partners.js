@@ -53,9 +53,10 @@ export function allyStats(monster, hpLv = 1, atkLv = 1) {
   const base = Math.max(4, monster?.atk || 8);
   const hL = Math.max(1, hpLv);
   const aL = Math.max(1, atkLv);
-  // ★要望により仲間を強化（攻撃・HPの基礎値と育成の伸びを引き上げ）
-  const atk = Math.max(1, Math.round(base * (0.9 + (aL - 1) * 0.12)));
-  const maxHp = Math.max(12, Math.round(base * 5 * (0.9 + (hL - 1) * 0.14)));
+  // ★要望により仲間をさらに強化。仲間にした直後（Lv1）の基礎値と育成の伸びを引き上げ。
+  //   攻撃 = base × (1.25 + (atkLv-1)*0.16)     HP = base × 6 × (1.15 + (hpLv-1)*0.18)
+  const atk = Math.max(1, Math.round(base * (1.25 + (aL - 1) * 0.16)));
+  const maxHp = Math.max(12, Math.round(base * 6 * (1.15 + (hL - 1) * 0.18)));
   return { maxHp, atk };
 }
 

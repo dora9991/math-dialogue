@@ -23,6 +23,7 @@ const LEARN_COLOR = "#22c55e"; // 学習モードのテーマ色
 export default function Home({
   player, records, mistakeCount, grade = 1, onSetGrade,
   mode = "hub", onSetMode,
+  canPrestige = false, prestige = 0, onPrestige,
   onAnshin, onTimeAttack, onChallenge, onBattle, onRelearn, onDialogue, onHaichi,
   onClinic, onUnitTest, onStepUp, onStartGolden, onShop, onSkill, onCollection, onPartners,
   onDetail, onHowTo, onCharacter,
@@ -155,6 +156,21 @@ export default function Home({
         {mode === "game" && (
           <>
             <ModeSwitch />
+
+            {/* 👑 もう一周（周回）：魔王を倒したら、強さ等は残してお金/クリスタルをまた稼げる */}
+            {canPrestige && onPrestige && (
+              <button onClick={onPrestige} data-sfx="none" style={{
+                width: "100%", margin: "0 0 11px", padding: "12px 14px", borderRadius: 14, cursor: "pointer", textAlign: "left",
+                background: "linear-gradient(135deg,#f59e0b,#fbbf24)", color: "#3a2a00", border: "2px solid rgba(255,255,255,.35)",
+                display: "flex", alignItems: "center", gap: 12, boxShadow: "0 5px 16px rgba(245,158,11,.4)",
+              }}>
+                <span style={{ fontSize: 32, lineHeight: 1 }}>👑</span>
+                <span>
+                  <span style={{ fontSize: 15.5, fontWeight: 900, display: "block" }}>中{[1, 2, 3].includes(grade) ? grade : 1}の魔王を撃破！もう一周する{prestige > 0 ? `（${prestige}周クリア）` : ""}</span>
+                  <span style={{ fontSize: 11.5, fontWeight: 800, opacity: .85 }}>強さ・装備・仲間はそのまま／お金とクリスタルがまた稼げる！</span>
+                </span>
+              </button>
+            )}
 
             {/* ゴールデンタイム（XPブースト＝稼ぎ向けなのでゲーム側） */}
             {gActive ? (

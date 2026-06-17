@@ -110,6 +110,7 @@ export function initialPlayerState(studentId) {
     party: [],         // ストック（編成）monsterId配列・最大4体。先頭(activePartner)だけバトル参戦
     activePartner: null, // バトルに参戦する仲間1体のmonsterId（party内の1体）
     lastMode: null,    // 最後に選んだメニュー系統 "game"=ゲーム / "learn"=学習（次回起動時にそこから始める）
+    prestige: {},      // 周回数 { grade: 回数 }。魔王撃破後に「もう一周」で+1。星・撃破報酬が再開放（強さ/お金/装備/スキル/仲間は維持）
     updatedAt: now(),
   };
 }
@@ -175,6 +176,7 @@ export function normalizePlayerState(p) {
   if (av.type === "hero" && !ownH.includes(av.id)) ownH.push(av.id);
   out.ownedHeroes = [...new Set(ownH)];
   out.lastMode = ["game", "learn"].includes(p.lastMode) ? p.lastMode : null;
+  out.prestige = (p.prestige && typeof p.prestige === "object") ? p.prestige : {};
   out.equip = { ...base.equip, ...(p.equip || {}) };
   // 装備中スキルが未所持なら基本スキルへフォールバック
   if (!out.ownedSkills.includes(out.equip[1])) out.equip[1] = base.equip[1];
