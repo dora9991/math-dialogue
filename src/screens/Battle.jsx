@@ -810,6 +810,18 @@ export default function Battle({ player, monster, ally = null, onResult, onSpCha
     setTimeout(() => { if (phaseRef.current === "fight") { setMonState("idle"); nextQuestion(); } }, 850);
   };
 
+  // 解答欄のキー補助（OSキーボードで −・/ を探しにくい子向け）。タップで挿入。
+  function pressKey(k) {
+    if (locked) return;
+    setInput((v) => {
+      if (k === "back") return v.slice(0, -1);
+      if (k === "-") return v.startsWith("-") ? v.slice(1) : "-" + v; // 先頭の符号をトグル
+      if (k === "/") return v.includes("/") || v === "" ? v : v + "/"; // 分数バー（1個だけ・先頭は不可）
+      return v + k;
+    });
+    inputRef.current?.focus();
+  }
+
   const monHpPct = Math.max(0, (monsterHp / monster.hp) * 100);
   const plHpPct = Math.max(0, (playerHp / stats.maxHp) * 100);
   const timePct = (timer / stats.timer) * 100;
@@ -1000,17 +1012,27 @@ export default function Battle({ player, monster, ally = null, onResult, onSpCha
                   ))}
                 </div>
               ) : (
-                /* 中1：数値は文字入力 */
-                <div className={"ans-row" + (shakeAns ? " answer-shake" : "")}>
-                  <input
-                    ref={inputRef} className="ans-in" type="text" inputMode="text" value={input}
-                    disabled={locked}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") answer(input); }}
-                    placeholder="例: -5 や 1/2"
-                  />
-                  <button className="ok-btn" data-sfx="none" disabled={locked || input === ""} onClick={() => answer(input)}>⚔️</button>
-                </div>
+                /* 中1：数値は文字入力（−・/ はタップでも入れられる） */
+                <>
+                  <div className={"ans-row" + (shakeAns ? " answer-shake" : "")}>
+                    <input
+                      ref={inputRef} className="ans-in" type="text" inputMode="text" value={input}
+                      disabled={locked}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") answer(input); }}
+                      placeholder="例: -5 や 1/2"
+                    />
+                    <button className="ok-btn" data-sfx="none" disabled={locked || input === ""} onClick={() => answer(input)}>⚔️</button>
+                  </div>
+                  <div className="ans-keys">
+                    {[["−", "-"], ["／", "/"], ["⌫", "back"]].map(([label, k]) => (
+                      <button
+                        key={k} type="button" className="ans-key" data-sfx="none" disabled={locked}
+                        onMouseDown={(e) => e.preventDefault()} onClick={() => pressKey(k)}
+                      >{label}</button>
+                    ))}
+                  </div>
+                </>
               )}
             </>
           ) : <div style={{ color: "#cceebb" }}>問題を準備中…</div>}
