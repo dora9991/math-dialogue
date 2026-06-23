@@ -29,15 +29,20 @@ const SPARKS = [
 export default function TitleScreen({ onEnter, onAdmin, onHowTo, onCharacter }) {
   useEffect(() => { bgm.play("op"); }, []);
 
-  // 隠しコマンド：タイトル文字を5回すばやくタップで管理用モードへ
+  // 隠しコマンド：管理用モードへの入口（子に見えない／大人が確実に開ける）
+  //  ・タイトル文字を 5回タップ（1.5秒以内ならカウント継続。以前は0.8秒でシビアだった）
+  //  ・または タイトル文字を 約1.1秒 長押し（タップが効きにくい端末向けの確実ルート）
   const tapRef = useRef({ n: 0, t: 0 });
+  const holdRef = useRef(null);
   function secretTap() {
     const now = Date.now();
     const s = tapRef.current;
-    s.n = now - s.t < 800 ? s.n + 1 : 1;
+    s.n = now - s.t < 1500 ? s.n + 1 : 1;
     s.t = now;
     if (s.n >= 5) { s.n = 0; onAdmin?.(); }
   }
+  function holdStart() { clearTimeout(holdRef.current); holdRef.current = setTimeout(() => { tapRef.current.n = 0; onAdmin?.(); }, 1100); }
+  function holdCancel() { clearTimeout(holdRef.current); }
 
   return (
     <div className="app title-art" style={{ position: "relative", overflow: "hidden", alignItems: "stretch", justifyContent: "stretch" }}>
@@ -74,7 +79,9 @@ export default function TitleScreen({ onEnter, onAdmin, onHowTo, onCharacter }) 
         padding: "calc(env(safe-area-inset-top, 0px) + 30px) 22px calc(env(safe-area-inset-bottom, 0px) + 26px)" }}>
 
         {/* タイトル（暗いガラスのバナーを敷いて、明るい背景の上でもくっきり読める） */}
-        <div onClick={secretTap} style={{ cursor: "default", userSelect: "none", textAlign: "center", animation: "titleFloat 5.5s ease-in-out infinite",
+        <div onClick={secretTap}
+          onPointerDown={holdStart} onPointerUp={holdCancel} onPointerLeave={holdCancel} onPointerCancel={holdCancel}
+          style={{ cursor: "default", userSelect: "none", touchAction: "manipulation", textAlign: "center", animation: "titleFloat 5.5s ease-in-out infinite",
           padding: "14px 26px 16px", borderRadius: 22,
           background: "rgba(8,6,26,.42)", backdropFilter: "blur(5px)", WebkitBackdropFilter: "blur(5px)",
           border: "1px solid rgba(255,255,255,.15)", boxShadow: "0 10px 32px rgba(0,0,0,.4)" }}>
