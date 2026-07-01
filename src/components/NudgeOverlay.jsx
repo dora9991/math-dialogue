@@ -11,7 +11,7 @@
 // ============================================================
 import { useEffect, useRef, useState } from "react";
 
-const TEST_PERIOD = true;      // ← 期末テストが終わったら false にする
+const TEST_PERIOD = false;     // ← 期末テストが終わったので false（ログイン直後のテスト期間メッセージを止める）
 const REST_AFTER_MIN = 30;     // 何分プレイしたら「そろそろ休もう」を出すか
 
 const LOGIN_TITLE = "📣 先生からのメッセージ";
@@ -21,9 +21,8 @@ const LOGIN_MSG =
 
 const REST_TITLE = "🍵 ひとやすみしよう";
 const REST_MSG =
-  "たくさん遊んでくれてありがとう＾＾　そろそろ他の勉強もはじめてみてはどうかな？\n\n" +
-  "楽しんでくれていることはとても嬉しいけれど、まだまだあなたは隠れた力を持っています。\n" +
-  "最大限発揮するためにも、できることを頑張ってみよう！";
+  "たくさんプレイしてくれてありがとう！\n" +
+  "一回休憩して、他の勉強も頑張ってみてください。";
 
 // 今日の日付（1日1回判定用）
 const ymd = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
