@@ -528,9 +528,9 @@ export default function App() {
   }
 
   // ショップ：ガチャを1回引く（コイン消費・武器/防具をコレクションに追加）。引いた装備を返す（演出用）
-  function pullGacha() {
+  function pullGacha(type = null) {
     if ((data.player.coins ?? 0) < GACHA_COST) return null;
-    const id = rollGacha(); // 当たりを先に決め、結果を即返す（演出のため）
+    const id = rollGacha(Math.random, type); // 当たり（種類指定可）を先に決め、結果を即返す（演出のため）
     updatePlayer((p) => {
       if ((p.coins ?? 0) < GACHA_COST) return p; // 二重引き防止
       const g = defaultGacha(p.gacha);

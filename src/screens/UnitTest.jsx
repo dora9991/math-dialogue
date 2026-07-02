@@ -163,7 +163,7 @@ export default function UnitTest({ player, chapter, onComplete, onBack, weakUnit
           <div className="q-text">{q.q}</div>
           <div className="ans-row">
             <input
-              ref={inputRef} className="ans-in" type="number" inputMode="decimal" value={input}
+              ref={inputRef} className="ans-in" type="text" inputMode="text" value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && input !== "") submit(); }}
               placeholder="答えを入力…"

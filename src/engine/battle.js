@@ -151,8 +151,8 @@ export const BATTLE_SKILLS = [
     name: "アイアンウォール", icon: "🧱", color: "#3b82f6", desc: "3ターン 受けるダメージが約1/3" },
   { id: "doubleup",  slot: 1, cost: 5, rarity: "r", kind: "doublenext",
     name: "ダブルアップ", icon: "✌️", color: "#facc15", desc: "次の正解のダメージを2回ぶん" },
-  { id: "poison",    slot: 1, cost: 5, rarity: "r", kind: "poison", turns: 3, mult: 1.2,
-    name: "ポイズン", icon: "☠️", color: "#a3e635", desc: "敵に毒：3ターン継続ダメージ" },
+  { id: "poison",    slot: 1, cost: 5, rarity: "r", kind: "poison", turns: 3, mult: 0.6,
+    name: "ポイズン", icon: "☠️", color: "#a3e635", desc: "敵に毒：3ターン 毎ターン少しずつ継続ダメージ" },
   { id: "combokeep", slot: 1, cost: 5, rarity: "r", kind: "combokeep", turns: 3,
     name: "コンボキープ", icon: "🔗", color: "#fbbf24", desc: "3ターン 1回ミスしてもコンボ維持" },
 

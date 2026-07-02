@@ -32,18 +32,20 @@ export default function GachaBox({ player, onPull, onEquip }) {
 
   const [stage, setStage] = useState(null);   // null | machine | spin | flash | done
   const [reveal, setReveal] = useState(null);  // 当たった装備
+  const [pullType, setPullType] = useState("weapon"); // 引いているガチャの種類（武器/防具）
   const timers = useRef([]);
   const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   useEffect(() => () => clearTimers(), []);
 
-  function open() {
+  function open(type) {
     if (!afford) return;
     clearTimers();
+    setPullType(type);
     setReveal(null);
     setStage("machine");
   }
   function spin() {
-    const gear = onPull?.();
+    const gear = onPull?.(pullType);
     if (!gear) { setStage(null); return; } // コイン不足など
     clearTimers();
     setReveal(gear);
@@ -62,18 +64,33 @@ export default function GachaBox({ player, onPull, onEquip }) {
         <div style={{ fontSize: 11, color: "rgba(255,255,255,.5)" }}>図鑑 {collected}/{GEAR.length}</div>
       </div>
       <div style={{ fontSize: 11, color: "rgba(255,255,255,.55)", lineHeight: 1.6, marginBottom: 10 }}>
-        武器（攻撃力アップ）か防具（最大HPアップ）がランダムで出ます。
+        武器ガチャ（攻撃力アップ）と防具ガチャ（最大HPアップ）に分かれています。ほしい方を選んで引こう。
         <b style={{ color: "#fbbf24" }}>ウルトラレアは1/20</b>！集めて装備しよう。
       </div>
 
-      <button onClick={open} disabled={!afford} data-sfx="none"
-        style={{
-          width: "100%", padding: "12px", borderRadius: 12, border: "none",
-          cursor: !afford ? "not-allowed" : "pointer", fontSize: 15, fontWeight: 900, color: "#fff",
-          background: !afford ? "rgba(255,255,255,.12)" : "linear-gradient(135deg,#a855f7,#ec4899)",
-        }}>
-        {afford ? `🎲 ガチャを引く（💰${GACHA_COST}）` : `コインが足りない（💰${GACHA_COST}）`}
-      </button>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <button onClick={() => open("weapon")} disabled={!afford} data-sfx="none"
+          style={{
+            padding: "12px 8px", borderRadius: 12, border: "none",
+            cursor: !afford ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 900, color: "#fff",
+            background: !afford ? "rgba(255,255,255,.12)" : "linear-gradient(135deg,#ef4444,#f97316)",
+          }}>
+          ⚔️ 武器ガチャ<br /><span style={{ fontSize: 11, opacity: .9 }}>💰{GACHA_COST}</span>
+        </button>
+        <button onClick={() => open("armor")} disabled={!afford} data-sfx="none"
+          style={{
+            padding: "12px 8px", borderRadius: 12, border: "none",
+            cursor: !afford ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 900, color: "#fff",
+            background: !afford ? "rgba(255,255,255,.12)" : "linear-gradient(135deg,#3b82f6,#06b6d4)",
+          }}>
+          🛡️ 防具ガチャ<br /><span style={{ fontSize: 11, opacity: .9 }}>💰{GACHA_COST}</span>
+        </button>
+      </div>
+      {!afford && (
+        <div style={{ fontSize: 11, color: "#fca5a5", fontWeight: 800, textAlign: "center", marginTop: 6 }}>
+          コインが足りない（💰{GACHA_COST}）
+        </div>
+      )}
 
       {/* 図鑑（武器・防具ごと） */}
       {["weapon", "armor"].map((type) => (
@@ -165,7 +182,7 @@ export default function GachaBox({ player, onPull, onEquip }) {
             <div style={{ position: "relative", zIndex: 6, width: "100%", display: "flex", gap: 8, justifyContent: "center", marginTop: 16 }}>
               {stage === "machine" && (<>
                 <button onClick={close} data-sfx="none" style={btnGhost}>やめる</button>
-                <button onClick={spin} data-sfx="none" style={btnGo}>🔄 ガチャを回す（💰{GACHA_COST}）</button>
+                <button onClick={spin} data-sfx="none" style={btnGo}>{pullType === "weapon" ? "⚔️ 武器ガチャを回す" : "🛡️ 防具ガチャを回す"}（💰{GACHA_COST}）</button>
               </>)}
               {stage === "done" && (<>
                 <button onClick={close} data-sfx="none" style={btnGhost}>とじる</button>

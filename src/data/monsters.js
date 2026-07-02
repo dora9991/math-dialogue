@@ -35,12 +35,27 @@ const MAOU_LV = 48;      // 魔王（最終ボス）の推奨レベル＝全章�
 //   推奨レベルは 80 → 300 まで。各学年ワールドに同じ並びで用意（worldXp は学年独立なので
 //   それぞれの世界でLvを上げて挑戦できる）。前の裏ボス（最初は魔王）を倒すと次が解放される。
 const SECRET_TIERS = [
-  { lv: 80,  name: "深淵の番人",   color: "#22d3ee" },
-  { lv: 100, name: "混沌の使者",   color: "#a78bfa" },
-  { lv: 150, name: "虚無の王",     color: "#f472b6" },
-  { lv: 200, name: "破壊神オメガ", color: "#fb923c" },
-  { lv: 250, name: "時空の支配者", color: "#f43f5e" },
-  { lv: 300, name: "数学の真神",   color: "#fde047" },
+  { lv: 80,   name: "深淵の番人",     color: "#22d3ee" },
+  { lv: 100,  name: "混沌の使者",     color: "#a78bfa" },
+  { lv: 150,  name: "虚無の王",       color: "#f472b6" },
+  { lv: 200,  name: "破壊神オメガ",   color: "#fb923c" },
+  { lv: 250,  name: "時空の支配者",   color: "#f43f5e" },
+  { lv: 300,  name: "数学の真神",     color: "#fde047" },
+  // ── 超高難度の追加裏ボス（推奨Lv400〜1500）──
+  //  最大レベルは999のままなので、これらは「レベルで届く」のではなく
+  //  装備・スキル・計算王ボーナスを極めて挑む“真の極限”。tiが進むほど硬く・痛く・凶悪に。
+  { lv: 400,  name: "終焉の竜帝",     color: "#ef4444" },
+  { lv: 500,  name: "星喰らいの魔王", color: "#8b5cf6" },
+  { lv: 600,  name: "次元の裂け目",   color: "#06b6d4" },
+  { lv: 700,  name: "永劫の支配者",   color: "#f59e0b" },
+  { lv: 800,  name: "無限の審判者",   color: "#ec4899" },
+  { lv: 900,  name: "創世の破壊者",   color: "#10b981" },
+  { lv: 1000, name: "概念崩壊オメガ", color: "#fbbf24" },
+  { lv: 1100, name: "虚数界の覇王",   color: "#a855f7" },
+  { lv: 1200, name: "絶対零度の神",   color: "#38bdf8" },
+  { lv: 1300, name: "全方程式の頂点", color: "#f43f5e" },
+  { lv: 1400, name: "数理の終局",     color: "#e879f9" },
+  { lv: 1500, name: "究極存在アレフ", color: "#ffffff" },
 ];
 /** 通し番号 gi（0始まり）から推奨レベルを均等配分で求める */
 function unitMinLv(gi) {
@@ -398,7 +413,11 @@ for (const g of GRADE_WORLDS) {
   let prevSecretId = `boss_maou_${g}`; // tier0 は魔王を倒すと解放
   SECRET_TIERS.forEach((t, ti) => {
     const id = `secret_${g}_${ti}`;
-    const playerAtk = playerAtkForLevel(t.lv);
+    // 推奨Lvが上限(999)を超える裏ボスは、ステータス計算だけ999で頭打ちにする。
+    //  （表示上の推奨Lvは t.lv のまま。届かないレベル基準で攻撃力が暴れて
+    //    一撃死＝攻略不能になるのを防ぎつつ、強さは ti でさらに上げる）
+    const statLv = Math.min(t.lv, 999);
+    const playerAtk = playerAtkForLevel(statLv);
     MONSTERS.push({
       id,
       kind: "secretBoss",
@@ -408,7 +427,7 @@ for (const g of GRADE_WORLDS) {
       name: `裏ボス・${t.name}（中${g}）`,
       unit: `中${g}・全単元の発展（極）`,
       hp: Math.round(playerAtk * (28 + ti * 6)),     // 段階ごとにどんどん硬く
-      atk: Math.round(playerHpForLevel(t.lv) / 3.4 * (1 + ti * 0.06)), // 推奨レベルでも3〜4発。上位ほど痛い
+      atk: Math.round(playerHpForLevel(statLv) / 3.4 * (1 + ti * 0.06)), // 推奨レベルでも3〜4発。上位ほど痛い
       reward: 3000 + ti * 3000,                      // 大量XP（高レベルを目指せる）
       minLv: t.lv,
       ai: "super",

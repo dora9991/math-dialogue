@@ -90,17 +90,19 @@ export function gearOfType(type) {
 
 /**
  * ガチャを1回引く → 当たった装備id。
- *  レアリティを重みで抽選 → 武器/防具を50%ずつ → その段階の装備を返す。
+ *  レアリティを重みで抽選 → 種類を決定 → その段階の装備を返す。
+ *  type に "weapon" / "armor" を渡すと、その種類だけを引く（武器ガチャ・防具ガチャ）。
+ *  未指定（null）なら従来どおり武器/防具を50%ずつ。
  */
-export function rollGacha(rand = Math.random) {
+export function rollGacha(rand = Math.random, type = null) {
   const total = TIER_DEF.reduce((s, t) => s + t.weight, 0);
   let t = rand() * total;
   let chosen = TIER_DEF[0];
   for (const tier of TIER_DEF) {
     if ((t -= tier.weight) < 0) { chosen = tier; break; }
   }
-  const type = rand() < 0.5 ? "weapon" : "armor";
-  const pool = GEAR.filter((g) => g.rarity === chosen.key && g.type === type);
+  const gtype = type === "weapon" || type === "armor" ? type : (rand() < 0.5 ? "weapon" : "armor");
+  const pool = GEAR.filter((g) => g.rarity === chosen.key && g.type === gtype);
   return (pool[Math.floor(rand() * pool.length)] || GEAR[0]).id;
 }
 

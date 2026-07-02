@@ -192,9 +192,13 @@ export function parseAnswer(s) {
   return parseFloat(str);
 }
 
-/** 答え合わせ（小数誤差を許容。分数・マイナス入力もOK） */
+/** 答え合わせ（小数誤差を許容。分数・マイナス入力もOK）
+ *  正解側(ans)が "5/4" や "-3/2" のような分数文字列でも数値化して比較する。 */
 export function isCorrect(userAnswer, ans) {
-  return Math.abs(parseAnswer(userAnswer) - ans) < 0.05;
+  const u = parseAnswer(userAnswer);
+  const a = typeof ans === "number" ? ans : parseAnswer(ans);
+  if (Number.isNaN(u) || Number.isNaN(a)) return false;
+  return Math.abs(u - a) < 0.05;
 }
 
 // 同じ問題（単元×難易度ごと）をくり返したときのXP倍率
