@@ -8,8 +8,8 @@
   :root{
     --bg:#f4f6fb; --card:#ffffff; --ink:#1e2a3a; --sub:#68788e;
     --accent:#3b6fe0; --accent-soft:#e7eeff;
-    --a:#2fa25f; --b:#e8a13c; --c:#d9534f;
-    --line:#e3e8f2; --flag:#fdecec;
+    --v4:#2fa25f; --v3:#2f9e8f; --v2:#e8a13c; --v1:#d9534f;
+    --line:#e3e8f2; --flag:#fdecec; --good-bg:#e6f5ec;
     --radius:14px;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
@@ -22,8 +22,9 @@
   .mode-switch button.active{background:var(--accent); color:#fff;}
   main{max-width:960px; margin:0 auto; padding:16px;}
   .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:16px;}
-  .card h2{font-size:15px; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+  .card h2{font-size:15px; margin-bottom:12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
   .card h2 .tag{font-size:11px; background:var(--accent-soft); color:var(--accent); border-radius:6px; padding:2px 8px; font-weight:normal;}
+  .card h2 .tag.good-tag{background:var(--good-bg); color:var(--v4);}
   label{display:block; font-size:13px; color:var(--sub); margin-bottom:4px;}
   select,input[type=date],input[type=number],textarea{
     width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 12px; font-size:15px; font-family:inherit; background:#fff; color:var(--ink);
@@ -34,9 +35,10 @@
   .field{margin-bottom:14px;}
   .abc{display:flex; gap:8px;}
   .abc button{flex:1; border:1.5px solid var(--line); background:#fff; border-radius:10px; padding:10px 0; font-size:16px; font-weight:bold; cursor:pointer; color:var(--sub);}
-  .abc button.selA{border-color:var(--a); background:var(--a); color:#fff;}
-  .abc button.selB{border-color:var(--b); background:var(--b); color:#fff;}
-  .abc button.selC{border-color:var(--c); background:var(--c); color:#fff;}
+  .abc button.sel4{border-color:var(--v4); background:var(--v4); color:#fff;}
+  .abc button.sel3{border-color:var(--v3); background:var(--v3); color:#fff;}
+  .abc button.sel2{border-color:var(--v2); background:var(--v2); color:#fff;}
+  .abc button.sel1{border-color:var(--v1); background:var(--v1); color:#fff;}
   .abc-note{font-size:11.5px; color:var(--sub); margin-top:4px;}
   .submit{width:100%; border:none; background:var(--accent); color:#fff; font-size:16px; font-weight:bold; border-radius:12px; padding:13px 0; cursor:pointer;}
   .submit:active{opacity:.85;}
@@ -47,24 +49,31 @@
   .stat .lbl{font-size:12px; color:var(--sub);}
   .chips{display:flex; gap:4px; justify-content:center; margin-top:2px;}
   .chip{width:18px; height:18px; border-radius:5px; font-size:11px; font-weight:bold; color:#fff; display:flex; align-items:center; justify-content:center;}
-  .chip.A{background:var(--a);} .chip.B{background:var(--b);} .chip.C{background:var(--c);} .chip.none{background:#cfd8e6;}
+  .chip.v4{background:var(--v4);} .chip.v3{background:var(--v3);} .chip.v2{background:var(--v2);} .chip.v1{background:var(--v1);} .chip.none{background:#cfd8e6;}
   table{width:100%; border-collapse:collapse; font-size:13.5px;}
   th,td{padding:9px 8px; border-bottom:1px solid var(--line); text-align:center; white-space:nowrap;}
   th{color:var(--sub); font-weight:normal; font-size:12px; background:#fafbfe; position:sticky; top:0;}
   td.name{text-align:left; font-weight:bold; cursor:pointer; color:var(--accent);}
   tr.flagged{background:var(--flag);}
+  tr.goodrow{background:var(--good-bg);}
   .table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .sign-badge{border:none; border-radius:8px; padding:4px 10px; font-size:12.5px; font-weight:bold; cursor:pointer;}
+  .sign-badge.flag{background:var(--flag); color:var(--v1);}
+  .sign-badge.good{background:var(--good-bg); color:var(--v4);}
   .entry{border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px;}
+  .entry.is-flag{border-color:var(--v1); background:var(--flag);}
+  .entry.is-good{border-color:var(--v4); background:var(--good-bg);}
   .entry .head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px; font-size:13px; color:var(--sub);}
   .entry .head b{color:var(--ink); font-size:14px;}
   .entry .txt{font-size:14px; margin:4px 0;}
   .entry .txt span.lb{font-size:11.5px; color:var(--sub); display:block;}
   .checks{display:flex; gap:5px; flex-wrap:wrap; margin-top:8px;}
   .ck{font-size:11px; border-radius:99px; padding:3px 10px; background:#eef1f7; color:#9aa7ba; border:1px solid var(--line);}
-  .ck.on{background:#e6f5ec; color:var(--a); border-color:#bfe3cd; font-weight:bold;}
+  .ck.on{background:#e6f5ec; color:var(--v4); border-color:#bfe3cd; font-weight:bold;}
   .toikaeshi{margin-top:8px; font-size:13px; background:#fff8e8; border:1px solid #f3e3b8; border-radius:10px; padding:8px 12px;}
   .toikaeshi::before{content:"🤖 AIからの問い返し："; font-size:11.5px; color:#a07a1e; display:block;}
-  .flagnote{margin-top:6px; font-size:12.5px; color:var(--c); font-weight:bold;}
+  .flagnote{margin-top:6px; font-size:12.5px; color:var(--v1); font-weight:bold;}
+  .goodnote{margin-top:6px; font-size:12.5px; color:var(--v4); font-weight:bold;}
   .result-pop{border:2px solid var(--accent); background:var(--accent-soft);}
   .muted{color:var(--sub); font-size:13px;}
   .back{background:none; border:none; color:var(--accent); font-size:14px; cursor:pointer; padding:0; margin-bottom:10px;}
@@ -73,9 +82,12 @@
   .bar{flex:1; background:var(--accent); border-radius:3px 3px 0 0; min-width:6px; max-width:22px;}
   .demo-note{font-size:12px; color:var(--sub); text-align:center; margin:4px 0 12px;}
   .demo-note button{border:none; background:none; color:var(--accent); cursor:pointer; font-size:12px; text-decoration:underline;}
+  .filter-tabs{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
+  .filter-tabs button{border:1.5px solid var(--line); background:#fff; border-radius:99px; padding:6px 14px; font-size:13px; cursor:pointer; color:var(--sub);}
+  .filter-tabs button.active{background:var(--accent); border-color:var(--accent); color:#fff;}
   @media (prefers-color-scheme: dark){
-    :root{--bg:#141a24; --card:#1d2532; --ink:#e8edf5; --sub:#93a2b8; --line:#2c3648; --accent-soft:#22304c; --flag:#3a2426;}
-    select,input,textarea,.abc button{background:#151c28; color:var(--ink);}
+    :root{--bg:#141a24; --card:#1d2532; --ink:#e8edf5; --sub:#93a2b8; --line:#2c3648; --accent-soft:#22304c; --flag:#3a2426; --good-bg:#1f3226;}
+    select,input,textarea,.abc button,.filter-tabs button{background:#151c28; color:var(--ink);}
     th{background:#1a2230;}
     .ck{background:#232c3c;}
     .toikaeshi{background:#2e2a1a; border-color:#4a4128;}
@@ -102,9 +114,8 @@
 
 <script>
 "use strict";
-const KEY = "hurikaeri_data_v1";
+const KEY = "hurikaeri_data_v2";
 const KANTEN = ["まとめの具体性","つまづきの自覚","次の一手","問いの発生","前回との接続"];
-const SCORE = {A:3,B:2,C:1};
 
 /* ---------- データ ---------- */
 function load(){
@@ -120,25 +131,25 @@ function seed(){
     {id:4,name:"4番 えま"},{id:5,name:"5番 おうすけ"},{id:6,name:"6番 かなた"},
   ];
   const raw = [
-    // [studentId, 日付, 分, 理解, 意欲, まとめ, 振り返り]
-    [1,"2026-07-06",30,"A","A","正負の数のたし算は、符号が同じなら絶対値をたして同じ符号をつける。","符号のルールを自分の言葉で言えるようになった。次は減法もやってみたい。"],
-    [1,"2026-07-08",45,"A","A","減法は「ひく数の符号を変えてたす」に直せば加法と同じ。","前回やりたいと言っていた減法ができた。かっこが多い式で少し迷ったので、明日ラボで練習する。なぜ符号を変えるとたし算になるんだろう？"],
-    [1,"2026-07-10",40,"B","A","加減の混じった式は項を並べかえて計算できる。","かっこの前のマイナスで1問間違えた。昨日決めた練習はやった。次は間違えた形だけ3問やり直す。"],
-    [2,"2026-07-06",20,"B","B","マイナスの数のたし算をやった。","だいたいわかった。"],
-    [2,"2026-07-08",15,"C","B","ひき算のやり方。","かっこのところがよくわからなかった。"],
-    [2,"2026-07-10",25,"B","B","ひき算はたし算に直す。","前にわからなかったかっこの問題が今日は少しできた。次は数直線を使って確かめたい。"],
-    [3,"2026-07-06",10,"C","C","たし算。","むずかしかった。"],
-    [3,"2026-07-08",5,"C","C","ひき算。","よくわからない。もうむり。"],
-    [3,"2026-07-10",10,"C","B","マイナスのひき算。","友だちに教えてもらったら少しわかった。どこがわからないか言えなかったので、次は質問を書いてくる。"],
-    [4,"2026-07-06",50,"A","B","同符号・異符号で計算のしかたが変わることをまとめた。","問題は解けるけど、なぜ異符号だと絶対値の差になるのか気になる。"],
-    [4,"2026-07-08",40,"A","A","数直線で考えると異符号の和が差になる理由が説明できる。","前回の疑問が数直線で解決した。今度は自分で誰かに説明してみる。"],
-    [4,"2026-07-10",35,"A","A","加減混合は項だけの式に直すと速い。","説明する練習をしたら自分の理解のあいまいな所が見つかった。テスト前に符号ミスの見直しリストを作る。"],
-    [5,"2026-07-06",25,"B","A","正負の数のたし算のルール。","計算は好き。もっと難しい問題がやりたい。"],
-    [5,"2026-07-08",30,"B","B","ひき算のルール。","スピードを上げたら符号ミスが増えた。次はゆっくり確かめながらやる。"],
-    [5,"2026-07-10",30,"A","A","加減混合の計算。","前回決めた「確かめながら」をやったらミスが減った！なぜ急ぐとミスするのか不思議。"],
-    [6,"2026-07-06",15,"B","B","マイナスどうしのたし算。","ふつうにできた。"],
-    [6,"2026-07-08",20,"B","C","ひき算。","眠かった。あまりやる気が出なかった。"],
-    [6,"2026-07-10",20,"B","B","たし算とひき算のまじった計算。","途中の式を書いたら間違いが減った。次も式を書く。"],
+    // [studentId, 日付, 分, 理解(4-1), 意欲(4-1), まとめ, 振り返り]
+    [1,"2026-07-06",30,4,4,"正負の数のたし算は、符号が同じなら絶対値をたして同じ符号をつける。","符号のルールを自分の言葉で言えるようになった。次は減法もやってみたい。"],
+    [1,"2026-07-08",45,4,4,"減法は「ひく数の符号を変えてたす」に直せば加法と同じ。","前回やりたいと言っていた減法ができた。かっこが多い式で少し迷ったので、明日ラボで練習する。なぜ符号を変えるとたし算になるんだろう？"],
+    [1,"2026-07-10",40,3,4,"加減の混じった式は項を並べかえて計算できる。","かっこの前のマイナスで1問間違えた。昨日決めた練習はやった。次は間違えた形だけ3問やり直す。"],
+    [2,"2026-07-06",20,3,3,"マイナスの数のたし算をやった。","だいたいわかった。"],
+    [2,"2026-07-08",15,2,3,"ひき算のやり方。","かっこのところがよくわからなかった。"],
+    [2,"2026-07-10",25,3,3,"ひき算はたし算に直す。","前にわからなかったかっこの問題が今日は少しできた。次は数直線を使って確かめたい。"],
+    [3,"2026-07-06",10,1,1,"たし算。","むずかしかった。"],
+    [3,"2026-07-08",5,1,1,"ひき算。","よくわからない。もうむり。"],
+    [3,"2026-07-10",10,2,3,"マイナスのひき算。","友だちに教えてもらったら少しわかった。どこがわからないか言えなかったので、次は質問を書いてくる。"],
+    [4,"2026-07-06",50,4,3,"同符号・異符号で計算のしかたが変わることをまとめた。","問題は解けるけど、なぜ異符号だと絶対値の差になるのか気になる。"],
+    [4,"2026-07-08",40,4,4,"数直線で考えると異符号の和が差になる理由が説明できる。","前回の疑問が数直線で解決した。今度は自分で誰かに説明してみる。"],
+    [4,"2026-07-10",35,4,4,"加減混合は項だけの式に直すと速い。","説明する練習をしたら自分の理解のあいまいな所が見つかった。テスト前に符号ミスの見直しリストを作る。"],
+    [5,"2026-07-06",25,3,4,"正負の数のたし算のルール。","計算は好き。もっと難しい問題がやりたい。"],
+    [5,"2026-07-08",30,3,3,"ひき算のルール。","スピードを上げたら符号ミスが増えた。次はゆっくり確かめながらやる。"],
+    [5,"2026-07-10",30,4,4,"加減混合の計算は項を並べかえるとはやく処理できる。","前回決めた「確かめながら」をやったらミスが減った！なぜ急ぐとミスするのか不思議。"],
+    [6,"2026-07-06",15,3,3,"マイナスどうしのたし算。","ふつうにできた。"],
+    [6,"2026-07-08",20,3,1,"ひき算。","眠かった。あまりやる気が出なかった。"],
+    [6,"2026-07-10",20,3,3,"たし算とひき算のまじった計算。","途中の式を書いたら間違いが減った。次も式を書く。"],
   ];
   const entries = raw.map(r=>{
     const e = {studentId:r[0], date:r[1], minutes:r[2], rikai:r[3], iyoku:r[4], matome:r[5], furikaeri:r[6]};
@@ -166,11 +177,15 @@ function analyze(e, prevEntries){
   // ⑤ 前回との接続：前回の記述への言及
   checks.push(prevEntries.length>0 && /(前回|この前|昨日|先週|前に|決めた|言っていた|疑問が)/.test(f));
   e.checks = checks;
+  const ckCount = checks.filter(Boolean).length;
   // 教師向けフラグ：SOS・空回り
   e.flag = /(むり|無理|嫌だ|つらい|しんどい|意味ない|やる気が出な|もうやだ)/.test(all)
-        || (e.rikai==="C" && f.replace(/\s/g,"").length<12);
+        || (e.rikai===1 && f.replace(/\s/g,"").length<12);
+  // 得意サイン：発展的な挑戦・自分の言葉での説明・高い自己調整を伴う高評価
+  e.good = /(もっと(難しい|上級|発展)|人に(説明|教え)|友達に教え|挑戦したい|自分で気づいた|応用|得意)/.test(all)
+        || (e.rikai===4 && e.iyoku>=3 && ckCount>=4);
   // 問い返し（サンプルはルールベース。本番はAI生成）
-  if(!checks[1] && e.rikai!=="A") e.toikaeshi = "「難しかった」のはどの問題の、どの瞬間だった？1つだけ思い出して書いてみよう。";
+  if(!checks[1] && e.rikai<4) e.toikaeshi = "「難しかった」のはどの問題の、どの瞬間だった？1つだけ思い出して書いてみよう。";
   else if(!checks[2]) e.toikaeshi = "今日の気づきを、明日の自分への「ひとこと作戦」にすると何になる？";
   else if(!checks[3]) e.toikaeshi = "今日の内容で「なぜ？」と聞きたくなるところを1つ探すとしたらどこ？";
   else if(checks[4]) e.toikaeshi = "前回の自分とのつながりが書けているのが素晴らしい。次の目標を1つ挙げるなら？";
@@ -182,17 +197,18 @@ const D = load();
 let mode = "student";
 let currentStudent = D.students[0].id;
 let teacherDetail = null;
+let filterMode = null; // null | 'flag' | 'good'
 let lastResult = null;
 
 const $ = s=>document.querySelector(s);
 const esc = s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const byStudent = id=>D.entries.filter(e=>e.studentId===id).sort((a,b)=>a.date<b.date?-1:1);
 const avg = arr=>arr.length? arr.reduce((s,x)=>s+x,0)/arr.length : 0;
-const gradeFromAvg = v=> v>=2.5?"A": v>=1.7?"B":"C";
+const formatAvg = v=> v.toFixed(1);
 function chipRow(entries, key, n=6){
   const last = entries.slice(-n);
   let html = '<div class="chips">';
-  for(const e of last) html += `<div class="chip ${e[key]}">${e[key]}</div>`;
+  for(const e of last) html += `<div class="chip v${e[key]}">${e[key]}</div>`;
   if(!last.length) html += '<div class="chip none">-</div>';
   return html+'</div>';
 }
@@ -200,20 +216,22 @@ function summarize(entries){
   return {
     count: entries.length,
     total: entries.reduce((s,e)=>s+(+e.minutes||0),0),
-    rikaiAvg: avg(entries.map(e=>SCORE[e.rikai])),
-    iyokuAvg: avg(entries.map(e=>SCORE[e.iyoku])),
+    rikaiAvg: avg(entries.map(e=>e.rikai)),
+    iyokuAvg: avg(entries.map(e=>e.iyoku)),
     ckTotal: entries.reduce((s,e)=>s+e.checks.filter(Boolean).length,0),
     ckMax: entries.length*5,
     flags: entries.filter(e=>e.flag).length,
+    goods: entries.filter(e=>e.good).length,
   };
 }
 
 /* ---------- 描画 ---------- */
-function setMode(m){ mode=m; teacherDetail=null; lastResult=null;
+function setMode(m){ mode=m; teacherDetail=null; filterMode=null; lastResult=null;
   $("#btnStudent").classList.toggle("active",m==="student");
   $("#btnTeacher").classList.toggle("active",m==="teacher");
   render();
 }
+function openDetail(id, filter){ teacherDetail=id; filterMode=filter||null; render(); }
 
 function render(){
   $("#app").innerHTML = mode==="student" ? renderStudent() : renderTeacher();
@@ -240,11 +258,11 @@ function renderStudent(){
     <div class="row">
       <div class="field"><label>授業の理解度</label>
         <div class="abc" id="fRikai">${abcBtns("rikai")}</div>
-        <div class="abc-note">A:人に説明できる　B:自分では解ける　C:まだ手が止まる</div>
+        <div class="abc-note">4:人に説明できる　3:自分で解けた　2:ヒントで解けた　1:まだ手が止まる</div>
       </div>
       <div class="field"><label>意欲</label>
         <div class="abc" id="fIyoku">${abcBtns("iyoku")}</div>
-        <div class="abc-note">A:進んで取り組めた　B:取り組めた　C:気持ちが向かなかった</div>
+        <div class="abc-note">4:進んで取り組めた　3:取り組めた　2:あまり気が乗らなかった　1:気持ちが向かなかった</div>
       </div>
     </div>
     <div class="field"><label>まとめ（今日わかったことを自分の言葉で）</label>
@@ -270,8 +288,8 @@ function renderStudent(){
     <div class="stats">
       <div class="stat"><div class="num">${sm.total}<small> 分</small></div><div class="lbl">学習合計時間</div></div>
       <div class="stat"><div class="num">${sm.count}<small> 回</small></div><div class="lbl">記入回数</div></div>
-      <div class="stat"><div class="num">${es.length?gradeFromAvg(sm.rikaiAvg):"-"}</div><div class="lbl">理解度（平均）</div>${chipRow(es,"rikai")}</div>
-      <div class="stat"><div class="num">${es.length?gradeFromAvg(sm.iyokuAvg):"-"}</div><div class="lbl">意欲（平均）</div>${chipRow(es,"iyoku")}</div>
+      <div class="stat"><div class="num">${es.length?formatAvg(sm.rikaiAvg):"-"}</div><div class="lbl">理解度（平均）</div>${chipRow(es,"rikai")}</div>
+      <div class="stat"><div class="num">${es.length?formatAvg(sm.iyokuAvg):"-"}</div><div class="lbl">意欲（平均）</div>${chipRow(es,"iyoku")}</div>
       <div class="stat"><div class="num">${sm.ckTotal}<small> / ${sm.ckMax}</small></div><div class="lbl">観点チェック累計</div></div>
     </div>
     <div class="legend">学習時間のうつりかわり（1本＝1回）</div>
@@ -279,12 +297,12 @@ function renderStudent(){
   </div>
   <div class="card">
     <h2>これまでの振り返り</h2>
-    ${es.slice().reverse().map(entryCard).join("")||'<div class="muted">まだ記録がありません</div>'}
+    ${es.slice().reverse().map(e=>entryCard(e,false)).join("")||'<div class="muted">まだ記録がありません</div>'}
   </div>`;
   return html;
 }
 function abcBtns(group){
-  return ["A","B","C"].map(v=>`<button type="button" data-v="${v}" onclick="pickABC('${group}','${v}',this)">${v}</button>`).join("");
+  return [4,3,2,1].map(v=>`<button type="button" data-v="${v}" onclick="pickABC('${group}',${v},this)">${v}</button>`).join("");
 }
 const picked = {rikai:null, iyoku:null};
 function pickABC(group,v,btn){
@@ -296,7 +314,7 @@ function submitEntry(){
   const date=$("#fDate").value, minutes=+$("#fMin").value;
   const matome=$("#fMatome").value.trim(), furi=$("#fFuri").value.trim();
   if(!date){alert("日付を入れてください"); return;}
-  if(!picked.rikai||!picked.iyoku){alert("理解度と意欲のA/B/Cを選んでください"); return;}
+  if(!picked.rikai||!picked.iyoku){alert("理解度と意欲を選んでください"); return;}
   if(!matome&&!furi){alert("まとめか振り返りを書いてください"); return;}
   const e={studentId:currentStudent, date, minutes, rikai:picked.rikai, iyoku:picked.iyoku, matome, furikaeri:furi};
   analyze(e, byStudent(currentStudent).filter(x=>x.date<date));
@@ -306,15 +324,17 @@ function submitEntry(){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function entryCard(e, forTeacher){
-  return `<div class="entry">
+  const cls = forTeacher ? (e.flag?" is-flag":"")+(e.good?" is-good":"") : "";
+  return `<div class="entry${cls}">
     <div class="head"><b>${e.date}</b><span>🕐 ${e.minutes}分</span>
-      <span class="chip ${e.rikai}" title="理解度">${e.rikai}</span><span style="font-size:11px">理解</span>
-      <span class="chip ${e.iyoku}" title="意欲">${e.iyoku}</span><span style="font-size:11px">意欲</span></div>
+      <span class="chip v${e.rikai}" title="理解度">${e.rikai}</span><span style="font-size:11px">理解</span>
+      <span class="chip v${e.iyoku}" title="意欲">${e.iyoku}</span><span style="font-size:11px">意欲</span></div>
     <div class="txt"><span class="lb">まとめ</span>${esc(e.matome)||"<span class='muted'>（未記入）</span>"}</div>
     <div class="txt"><span class="lb">振り返り</span>${esc(e.furikaeri)||"<span class='muted'>（未記入）</span>"}</div>
     <div class="checks">${KANTEN.map((k,i)=>`<span class="ck ${e.checks[i]?"on":""}">${e.checks[i]?"✓ ":""}${k}</span>`).join("")}</div>
     ${e.toikaeshi?`<div class="toikaeshi">${esc(e.toikaeshi)}</div>`:""}
     ${forTeacher&&e.flag?`<div class="flagnote">⚠ 要精読フラグ：SOSの可能性・記述の停滞</div>`:""}
+    ${forTeacher&&e.good?`<div class="goodnote">⭐ 得意のサイン：発展的な挑戦・自分の言葉での説明</div>`:""}
   </div>`;
 }
 
@@ -326,44 +346,54 @@ function renderTeacher(){
     return {st,es,sm,last};
   });
   const totalFlags = rows.reduce((s,r)=>s+r.sm.flags,0);
+  const totalGoods = rows.reduce((s,r)=>s+r.sm.goods,0);
   return `
   <div class="card">
-    <h2>クラス一覧 <span class="tag">⚠ 要精読 ${totalFlags} 件</span></h2>
+    <h2>クラス一覧 <span class="tag">⚠ 要精読 ${totalFlags}件</span><span class="tag good-tag">⭐ 得意 ${totalGoods}件</span></h2>
     <div class="table-wrap"><table>
-      <tr><th style="text-align:left">生徒</th><th>記入</th><th>合計時間</th><th>理解度<br>(平均/直近)</th><th>意欲<br>(平均/直近)</th><th>観点チェック<br>累計</th><th>最終記入</th><th>フラグ</th></tr>
-      ${rows.map(r=>`
-      <tr class="${r.last&&r.last.flag?"flagged":""}">
-        <td class="name" onclick="teacherDetail=${r.st.id};render()">${esc(r.st.name)}</td>
+      <tr><th style="text-align:left">生徒</th><th>記入</th><th>合計時間</th><th>理解度<br>(平均/直近)</th><th>意欲<br>(平均/直近)</th><th>観点チェック<br>累計</th><th>最終記入</th><th>⚠<br>つまづき</th><th>⭐<br>得意</th></tr>
+      ${rows.map(r=>{
+        const rowCls = r.last&&r.last.flag ? "flagged" : (r.last&&r.last.good ? "goodrow" : "");
+        return `
+      <tr class="${rowCls}">
+        <td class="name" onclick="openDetail(${r.st.id})">${esc(r.st.name)}</td>
         <td>${r.sm.count}回</td>
         <td>${r.sm.total}分</td>
-        <td>${r.es.length?gradeFromAvg(r.sm.rikaiAvg):"-"}${chipRow(r.es,"rikai",4)}</td>
-        <td>${r.es.length?gradeFromAvg(r.sm.iyokuAvg):"-"}${chipRow(r.es,"iyoku",4)}</td>
+        <td>${r.es.length?formatAvg(r.sm.rikaiAvg):"-"}${chipRow(r.es,"rikai",4)}</td>
+        <td>${r.es.length?formatAvg(r.sm.iyokuAvg):"-"}${chipRow(r.es,"iyoku",4)}</td>
         <td>${r.sm.ckTotal} / ${r.sm.ckMax}</td>
         <td>${r.last?r.last.date:"-"}</td>
-        <td>${r.sm.flags?`<span style="color:var(--c);font-weight:bold">⚠ ${r.sm.flags}</span>`:"—"}</td>
-      </tr>`).join("")}
+        <td>${r.sm.flags?`<button class="sign-badge flag" onclick="openDetail(${r.st.id},'flag')">⚠ ${r.sm.flags}</button>`:"—"}</td>
+        <td>${r.sm.goods?`<button class="sign-badge good" onclick="openDetail(${r.st.id},'good')">⭐ ${r.sm.goods}</button>`:"—"}</td>
+      </tr>`;}).join("")}
     </table></div>
-    <div class="legend">行の色つき＝直近の記述に要精読フラグ。名前をタップすると個人の履歴が開きます。観点チェック＝AIによる5観点（具体性/つまづき/次の一手/問い/接続）の✓数。</div>
+    <div class="legend">⚠はSOS・記述停滞の可能性、⭐は発展的な挑戦や自分の言葉での説明など「得意」の兆候。数字をタップすると該当する記録だけを個人ページで確認できます。名前をタップすると全履歴が開きます。観点チェック＝AIによる5観点（具体性/つまづき/次の一手/問い/接続）の✓数。</div>
   </div>`;
 }
 function renderTeacherDetail(){
   const st=D.students.find(s=>s.id===teacherDetail);
   const es=byStudent(st.id), sm=summarize(es);
+  const filtered = filterMode==="flag" ? es.filter(e=>e.flag) : filterMode==="good" ? es.filter(e=>e.good) : es;
   return `
-  <button class="back" onclick="teacherDetail=null;render()">← 一覧にもどる</button>
+  <button class="back" onclick="teacherDetail=null;filterMode=null;render()">← 一覧にもどる</button>
   <div class="card">
     <h2>${esc(st.name)} の記録</h2>
     <div class="stats">
       <div class="stat"><div class="num">${sm.total}<small> 分</small></div><div class="lbl">学習合計時間</div></div>
       <div class="stat"><div class="num">${sm.count}<small> 回</small></div><div class="lbl">記入回数</div></div>
-      <div class="stat"><div class="num">${es.length?gradeFromAvg(sm.rikaiAvg):"-"}</div><div class="lbl">理解度（平均）</div>${chipRow(es,"rikai")}</div>
-      <div class="stat"><div class="num">${es.length?gradeFromAvg(sm.iyokuAvg):"-"}</div><div class="lbl">意欲（平均）</div>${chipRow(es,"iyoku")}</div>
+      <div class="stat"><div class="num">${es.length?formatAvg(sm.rikaiAvg):"-"}</div><div class="lbl">理解度（平均）</div>${chipRow(es,"rikai")}</div>
+      <div class="stat"><div class="num">${es.length?formatAvg(sm.iyokuAvg):"-"}</div><div class="lbl">意欲（平均）</div>${chipRow(es,"iyoku")}</div>
       <div class="stat"><div class="num">${sm.ckTotal}<small> / ${sm.ckMax}</small></div><div class="lbl">観点チェック累計</div></div>
+    </div>
+    <div class="filter-tabs">
+      <button class="${filterMode===null?"active":""}" onclick="filterMode=null;render()">すべて (${es.length})</button>
+      <button class="${filterMode==="flag"?"active":""}" onclick="filterMode='flag';render()">⚠ つまづき (${sm.flags})</button>
+      <button class="${filterMode==="good"?"active":""}" onclick="filterMode='good';render()">⭐ 得意 (${sm.goods})</button>
     </div>
   </div>
   <div class="card">
-    <h2>振り返りの履歴（新しい順）</h2>
-    ${es.slice().reverse().map(e=>entryCard(e,true)).join("")||'<div class="muted">記録なし</div>'}
+    <h2>振り返りの履歴（新しい順）${filterMode?`<span class="tag ${filterMode==="good"?"good-tag":""}">${filterMode==="flag"?"⚠ つまづきのみ表示中":"⭐ 得意のみ表示中"}</span>`:""}</h2>
+    ${filtered.slice().reverse().map(e=>entryCard(e,true)).join("")||'<div class="muted">該当する記録はありません</div>'}
   </div>`;
 }
 
