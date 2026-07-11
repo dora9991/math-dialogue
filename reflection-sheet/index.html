@@ -28,8 +28,12 @@
   .card h2 .tag.dup-tag{background:var(--dup-bg); color:var(--sub);}
   label{display:block; font-size:13px; color:var(--sub); margin-bottom:4px;}
   select,input[type=date],input[type=number],textarea{
-    width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 12px; font-size:15px; font-family:inherit; background:#fff; color:var(--ink);
+    width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 12px; font-size:15px; font-family:inherit; background:#fff; color:#14181f; -webkit-text-fill-color:#14181f; color-scheme:light; font-weight:500;
   }
+  input[type=date]::-webkit-datetime-edit-text,
+  input[type=date]::-webkit-datetime-edit-month-field,
+  input[type=date]::-webkit-datetime-edit-day-field,
+  input[type=date]::-webkit-datetime-edit-year-field{ color:#14181f; }
   textarea{min-height:76px; resize:vertical;}
   .row{display:flex; gap:12px; flex-wrap:wrap;}
   .row>div{flex:1; min-width:140px;}
@@ -95,7 +99,7 @@
   .filter-tabs button.active{background:var(--accent); border-color:var(--accent); color:#fff;}
   @media (prefers-color-scheme: dark){
     :root{--bg:#141a24; --card:#1d2532; --ink:#e8edf5; --sub:#93a2b8; --line:#2c3648; --accent-soft:#22304c; --flag:#3a2426; --good-bg:#1f3226; --dup-bg:#20293a;}
-    select,input,textarea,.abc button,.filter-tabs button{background:#151c28; color:var(--ink);}
+    select,input:not([type=date]):not([type=number]),textarea,.abc button,.filter-tabs button{background:#151c28; color:var(--ink);}
     th{background:#1a2230;}
     .ck{background:#232c3c;}
     .toikaeshi{background:#2e2a1a; border-color:#4a4128;}
