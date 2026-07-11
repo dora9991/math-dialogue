@@ -84,6 +84,8 @@
   .checks{display:flex; gap:5px; flex-wrap:wrap; margin-top:8px;}
   .ck{font-size:11px; border-radius:99px; padding:3px 10px; background:#eef1f7; color:#9aa7ba; border:1px solid var(--line);}
   .ck.on{background:#e6f5ec; color:var(--v4); border-color:#bfe3cd; font-weight:bold;}
+  .advice-row{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;}
+  .ck.advice{background:#fdf1de; color:#a5680f; border-color:#f0d4a0; font-weight:bold;}
   .toikaeshi{margin-top:8px; font-size:13px; background:#fff8e8; border:1px solid #f3e3b8; border-radius:10px; padding:8px 12px;}
   .toikaeshi::before{content:"🤖 AIからの問い返し："; font-size:11.5px; color:#a07a1e; display:block;}
   .flagnote{margin-top:6px; font-size:12.5px; color:var(--v1); font-weight:bold;}
@@ -111,6 +113,7 @@
     select,input[type=text],textarea,.abc button,.filter-tabs button{background:#151c28; color:var(--ink);}
     th{background:#1a2230;}
     .ck{background:#232c3c;}
+    .ck.advice{background:#3a2e18; color:#e8a13c; border-color:#5a4726;}
     .toikaeshi{background:#2e2a1a; border-color:#4a4128;}
   }
 </style>
@@ -137,6 +140,7 @@
 const KANTEN = ["まとめの具体性","つまづきの自覚","次の一手","問いの発生","前回との接続","学び方の工夫"];
 const DUP_SIM_THRESHOLD = 0.85;
 const DUP_MIN_LEN = 20;
+const SHORT_LEN_THRESHOLD = 20;
 
 /* ---------- 出席番号（学年・組・番号→4桁）＋合言葉。quiz/ツールの番号方式＋簡易ログイン ---------- */
 const ID_CONFIG = { GRADES:[1,2,3], CLASSES:[1,2,3,4,5,6], CLASS_SIZE:40 };
@@ -164,6 +168,13 @@ function textSimilarity(a,b){
   let common=0;
   ba.forEach(g=>{ if(counts[g]>0){ common++; counts[g]--; } });
   return (2*common)/(ba.length+bb.length);
+}
+// サーバーから読み込んだ既存記録にも同じ文字数/具体性アドバイスを適用する（DBには保存せず毎回導出）
+function deriveAdvice(e){
+  if(e.duplicate || !e.checks) return;
+  const len = ((e.matome||"")+(e.furikaeri||"")).replace(/\s/g,"").length;
+  e.tooShort = len < SHORT_LEN_THRESHOLD;
+  e.tooVague = !e.tooShort && !e.checks[0];
 }
 function findDuplicate(nowText, prevEntries){
   const now = nowText.replace(/\s/g,"");
@@ -195,6 +206,9 @@ function analyze(e, prevEntries){
   e.duplicateDate = null;
   e.warning = null;
 
+  // 文字数・具体性のアドバイス（観点チェックとは別に、書く量・質そのものへの声かけ）
+  e.tooShort = all.replace(/\s/g,"").length < SHORT_LEN_THRESHOLD;
+
   const checks = [];
   // ① まとめの具体性：内容語を含みある程度の長さで再構成しているか
   checks.push(m.replace(/\s/g,"").length>=15 && /[はがをにでとなら]/.test(m));
@@ -209,6 +223,7 @@ function analyze(e, prevEntries){
   // ⑥ 学び方の工夫：やりやすさへの気づき・人や友達に聞いて解決・図表や声出しなどの工夫発見
   checks.push(/(友(達|だち)に(聞い|教え)|人に(聞い|教え)|先生に(聞い|教え)|一緒に(考え|やっ|勉強)|やりやすい|考えやすい|わかりやすい|理解しやすい|式を書い|図に(かい|して)|表に(し|まとめ)|声に出し|書き出し|順番を変え|やり方を変え|工夫したら|コツが|に気づいた)/.test(all));
   e.checks = checks;
+  e.tooVague = !e.tooShort && !checks[0]; // 量は足りているが「まとめ」が具体的な文になっていない
   const ckCoreCount = checks.slice(0,5).filter(Boolean).length; // 得意サイン判定は元の5観点ベースを維持（学び方は別軸）
   // 教師向けフラグ：SOS・空回り
   e.flag = /(むり|無理|嫌だ|つらい|しんどい|意味ない|やる気が出な|もうやだ)/.test(all)
@@ -217,7 +232,9 @@ function analyze(e, prevEntries){
   e.good = /(もっと(難しい|上級|発展)|人に(説明|教え)|友達に教え|挑戦したい|自分で気づいた|応用|得意)/.test(all)
         || (e.rikai===4 && e.iyoku>=3 && ckCoreCount>=4);
   // 問い返し（サンプルはルールベース。本番はAI生成）
-  if(!checks[1] && e.rikai<4) e.toikaeshi = "「難しかった」のはどの問題の、どの瞬間だった？1つだけ思い出して書いてみよう。";
+  if(e.tooShort) e.toikaeshi = "文字数がすこし少ないかも。今日の授業で分かったことを、もう一言足してみよう。";
+  else if(e.tooVague) e.toikaeshi = "「わかった」をもう少しくわしく——何が、どうしてわかったのかを書いてみよう。";
+  else if(!checks[1] && e.rikai<4) e.toikaeshi = "「難しかった」のはどの問題の、どの瞬間だった？1つだけ思い出して書いてみよう。";
   else if(!checks[2]) e.toikaeshi = "今日の気づきを、明日の自分への「ひとこと作戦」にすると何になる？";
   else if(!checks[3]) e.toikaeshi = "今日の内容で「なぜ？」と聞きたくなるところを1つ探すとしたらどこ？";
   else if(checks[5]) e.toikaeshi = "「こうしたらやりやすかった」——自分に合う学び方を見つけているね。次はどんな工夫を試したい？";
@@ -303,6 +320,7 @@ async function loadMine(){
     }
     if(res.error) throw new Error(res.error);
     myEntries = res.entries || [];
+    myEntries.forEach(deriveAdvice);
     myError = null;
   }catch(err){
     myError = "読み込みに失敗しました。通信環境を確認してください。";
@@ -364,6 +382,7 @@ function renderStudent(){
       html += `
       <div class="card result-pop">
         <h2>✅ きろくしました（AIチェック）</h2>
+        ${(e.tooShort||e.tooVague)?`<div class="advice-row">${e.tooShort?'<span class="ck advice">✏️ もっとしっかり書こう</span>':''}${e.tooVague?'<span class="ck advice">🔍 もっと具体的に書こう</span>':''}</div>`:""}
         <div class="checks">${KANTEN.map((k,i)=>`<span class="ck ${e.checks[i]?"on":""}">${e.checks[i]?"✓ ":""}${k}</span>`).join("")}</div>
         <div class="toikaeshi">${esc(e.toikaeshi)}</div>
       </div>`;
@@ -486,7 +505,8 @@ function entryCard(e, forTeacher){
   const cls = (e.duplicate?" is-dup":"") + (forTeacher ? (e.flag?" is-flag":"")+(e.good?" is-good":"") : "");
   const evalBlock = e.duplicate
     ? `<div class="dupwarning">${esc(e.warning)}</div>${forTeacher?`<div class="dupnote">📋 コピー疑い：${e.duplicateDate}の記録と酷似のため評価スキップ</div>`:""}`
-    : `<div class="checks">${KANTEN.map((k,i)=>`<span class="ck ${e.checks[i]?"on":""}">${e.checks[i]?"✓ ":""}${k}</span>`).join("")}</div>
+    : `${(e.tooShort||e.tooVague)?`<div class="advice-row">${e.tooShort?'<span class="ck advice">✏️ もっとしっかり書こう</span>':''}${e.tooVague?'<span class="ck advice">🔍 もっと具体的に書こう</span>':''}</div>`:""}
+       <div class="checks">${KANTEN.map((k,i)=>`<span class="ck ${e.checks[i]?"on":""}">${e.checks[i]?"✓ ":""}${k}</span>`).join("")}</div>
        ${e.toikaeshi?`<div class="toikaeshi">${esc(e.toikaeshi)}</div>`:""}
        ${forTeacher&&e.flag?`<div class="flagnote">⚠ 要精読フラグ：SOSの可能性・記述の停滞</div>`:""}
        ${forTeacher&&e.good?`<div class="goodnote">⭐ 得意のサイン：発展的な挑戦・自分の言葉での説明</div>`:""}`;
@@ -542,6 +562,7 @@ async function loadTeacherData(){
       throw new Error(res.error);
     }
     teacherEntries = res.entries || [];
+    teacherEntries.forEach(deriveAdvice);
     teacherError = null;
   }catch(err){
     teacherError = "読み込みに失敗しました。通信環境を確認してください。";
@@ -588,7 +609,7 @@ function renderTeacher(){
         <td>${r.sm.dups?`<button class="sign-badge dup" onclick="openDetail('${r.code}','dup')">📋 ${r.sm.dups}</button>`:"—"}</td>
       </tr>`;}).join("")}
     </table></div>`}
-    <div class="legend">⚠はSOS・記述停滞の可能性、⭐は発展的な挑戦や自分の言葉での説明など「得意」の兆候、📋は前回までの振り返りとほぼ同じ文章＝コピーの疑い（この回はAI評価をスキップ）。数字をタップすると該当する記録だけを個人ページで確認できます。出席番号をタップすると全履歴が開きます。観点チェック＝AIによる6観点（具体性/つまづき/次の一手/問い/接続/学び方）の✓数（コピー疑いの回は集計対象外）。</div>
+    <div class="legend">⚠はSOS・記述停滞の可能性、⭐は発展的な挑戦や自分の言葉での説明など「得意」の兆候、📋は前回までの振り返りとほぼ同じ文章＝コピーの疑い（この回はAI評価をスキップ）。数字をタップすると該当する記録だけを個人ページで確認できます。出席番号をタップすると全履歴が開きます。観点チェック＝AIによる6観点（具体性/つまづき/次の一手/問い/接続/学び方）の✓数（コピー疑いの回は集計対象外）。オレンジのバッジ（✏️もっとしっかり書こう／🔍もっと具体的に書こう）は文字数・具体性が不足している記録への声かけ。</div>
   </div>`;
 }
 function renderTeacherGate(){
