@@ -9,7 +9,7 @@
     --bg:#f4f6fb; --card:#ffffff; --ink:#1e2a3a; --sub:#68788e;
     --accent:#3b6fe0; --accent-soft:#e7eeff;
     --v4:#2fa25f; --v3:#2f9e8f; --v2:#e8a13c; --v1:#d9534f;
-    --line:#e3e8f2; --flag:#fdecec; --good-bg:#e6f5ec;
+    --line:#e3e8f2; --flag:#fdecec; --good-bg:#e6f5ec; --dup-bg:#eef1f7;
     --radius:14px;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
@@ -25,6 +25,7 @@
   .card h2{font-size:15px; margin-bottom:12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
   .card h2 .tag{font-size:11px; background:var(--accent-soft); color:var(--accent); border-radius:6px; padding:2px 8px; font-weight:normal;}
   .card h2 .tag.good-tag{background:var(--good-bg); color:var(--v4);}
+  .card h2 .tag.dup-tag{background:var(--dup-bg); color:var(--sub);}
   label{display:block; font-size:13px; color:var(--sub); margin-bottom:4px;}
   select,input[type=date],input[type=number],textarea{
     width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 12px; font-size:15px; font-family:inherit; background:#fff; color:var(--ink);
@@ -56,13 +57,16 @@
   td.name{text-align:left; font-weight:bold; cursor:pointer; color:var(--accent);}
   tr.flagged{background:var(--flag);}
   tr.goodrow{background:var(--good-bg);}
+  tr.duprow{background:var(--dup-bg);}
   .table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch;}
   .sign-badge{border:none; border-radius:8px; padding:4px 10px; font-size:12.5px; font-weight:bold; cursor:pointer;}
   .sign-badge.flag{background:var(--flag); color:var(--v1);}
   .sign-badge.good{background:var(--good-bg); color:var(--v4);}
+  .sign-badge.dup{background:var(--dup-bg); color:var(--sub);}
   .entry{border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px;}
   .entry.is-flag{border-color:var(--v1); background:var(--flag);}
   .entry.is-good{border-color:var(--v4); background:var(--good-bg);}
+  .entry.is-dup{border-style:dashed; border-color:var(--sub); background:var(--dup-bg);}
   .entry .head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px; font-size:13px; color:var(--sub);}
   .entry .head b{color:var(--ink); font-size:14px;}
   .entry .txt{font-size:14px; margin:4px 0;}
@@ -74,7 +78,11 @@
   .toikaeshi::before{content:"🤖 AIからの問い返し："; font-size:11.5px; color:#a07a1e; display:block;}
   .flagnote{margin-top:6px; font-size:12.5px; color:var(--v1); font-weight:bold;}
   .goodnote{margin-top:6px; font-size:12.5px; color:var(--v4); font-weight:bold;}
+  .dupnote{margin-top:6px; font-size:12.5px; color:var(--sub); font-weight:bold;}
+  .dupwarning{margin-top:8px; font-size:13px; background:var(--dup-bg); border:1px dashed #b7c0d1; border-radius:10px; padding:8px 12px; color:var(--sub);}
+  .dupwarning::before{content:"📋 コピーの疑いがあります："; font-size:11.5px; color:var(--sub); display:block; font-weight:bold;}
   .result-pop{border:2px solid var(--accent); background:var(--accent-soft);}
+  .result-pop.is-dup{border-color:var(--sub); background:var(--dup-bg);}
   .muted{color:var(--sub); font-size:13px;}
   .back{background:none; border:none; color:var(--accent); font-size:14px; cursor:pointer; padding:0; margin-bottom:10px;}
   .legend{font-size:11.5px; color:var(--sub); margin-top:8px;}
@@ -86,7 +94,7 @@
   .filter-tabs button{border:1.5px solid var(--line); background:#fff; border-radius:99px; padding:6px 14px; font-size:13px; cursor:pointer; color:var(--sub);}
   .filter-tabs button.active{background:var(--accent); border-color:var(--accent); color:#fff;}
   @media (prefers-color-scheme: dark){
-    :root{--bg:#141a24; --card:#1d2532; --ink:#e8edf5; --sub:#93a2b8; --line:#2c3648; --accent-soft:#22304c; --flag:#3a2426; --good-bg:#1f3226;}
+    :root{--bg:#141a24; --card:#1d2532; --ink:#e8edf5; --sub:#93a2b8; --line:#2c3648; --accent-soft:#22304c; --flag:#3a2426; --good-bg:#1f3226; --dup-bg:#20293a;}
     select,input,textarea,.abc button,.filter-tabs button{background:#151c28; color:var(--ink);}
     th{background:#1a2230;}
     .ck{background:#232c3c;}
@@ -114,8 +122,10 @@
 
 <script>
 "use strict";
-const KEY = "hurikaeri_data_v2";
+const KEY = "hurikaeri_data_v3";
 const KANTEN = ["まとめの具体性","つまづきの自覚","次の一手","問いの発生","前回との接続"];
+const DUP_SIM_THRESHOLD = 0.85;
+const DUP_MIN_LEN = 20;
 
 /* ---------- データ ---------- */
 function load(){
@@ -138,6 +148,7 @@ function seed(){
     [2,"2026-07-06",20,3,3,"マイナスの数のたし算をやった。","だいたいわかった。"],
     [2,"2026-07-08",15,2,3,"ひき算のやり方。","かっこのところがよくわからなかった。"],
     [2,"2026-07-10",25,3,3,"ひき算はたし算に直す。","前にわからなかったかっこの問題が今日は少しできた。次は数直線を使って確かめたい。"],
+    [2,"2026-07-11",20,3,3,"ひき算はたし算に直す。","前にわからなかったかっこの問題が今日は少しできた。次は数直線を使って確かめたい。"],
     [3,"2026-07-06",10,1,1,"たし算。","むずかしかった。"],
     [3,"2026-07-08",5,1,1,"ひき算。","よくわからない。もうむり。"],
     [3,"2026-07-10",10,2,3,"マイナスのひき算。","友だちに教えてもらったら少しわかった。どこがわからないか言えなかったので、次は質問を書いてくる。"],
@@ -158,13 +169,53 @@ function seed(){
   });
   return {students, entries};
   function entriesBefore(raw, r){
-    return raw.filter(x=>x[0]===r[0] && x[1]<r[1]).map(x=>({furikaeri:x[6]}));
+    return raw.filter(x=>x[0]===r[0] && x[1]<r[1]).map(x=>({date:x[1], matome:x[5], furikaeri:x[6]}));
   }
+}
+
+/* ---------- コピー使い回し検知（2文字bigramのDice係数） ---------- */
+function textSimilarity(a,b){
+  if(a===b) return 1;
+  if(!a.length || !b.length) return 0;
+  const bigrams = s=>{ const arr=[]; for(let i=0;i<s.length-1;i++) arr.push(s.substr(i,2)); return arr; };
+  const ba=bigrams(a), bb=bigrams(b);
+  if(!ba.length || !bb.length) return a===b?1:0;
+  const counts={};
+  bb.forEach(g=>counts[g]=(counts[g]||0)+1);
+  let common=0;
+  ba.forEach(g=>{ if(counts[g]>0){ common++; counts[g]--; } });
+  return (2*common)/(ba.length+bb.length);
+}
+function findDuplicate(nowText, prevEntries){
+  const now = nowText.replace(/\s/g,"");
+  if(now.length < DUP_MIN_LEN) return null;
+  for(const p of prevEntries){
+    const prevText = ((p.matome||"")+(p.furikaeri||"")).replace(/\s/g,"");
+    if(prevText.length < DUP_MIN_LEN) continue;
+    if(textSimilarity(now, prevText) >= DUP_SIM_THRESHOLD) return p;
+  }
+  return null;
 }
 
 /* ---------- 簡易AI分析（本番はClaude APIに置き換え） ---------- */
 function analyze(e, prevEntries){
   const m = e.matome||"", f = e.furikaeri||"", all = m+f;
+
+  const dup = findDuplicate(all, prevEntries);
+  if(dup){
+    e.duplicate = true;
+    e.duplicateDate = dup.date;
+    e.checks = null;
+    e.flag = false;
+    e.good = false;
+    e.toikaeshi = null;
+    e.warning = `${dup.date}の振り返りとほぼ同じ内容です。コピーではなく、今日の授業で気づいたことを自分の言葉で書いてみましょう。`;
+    return;
+  }
+  e.duplicate = false;
+  e.duplicateDate = null;
+  e.warning = null;
+
   const checks = [];
   // ① まとめの具体性：内容語を含みある程度の長さで再構成しているか
   checks.push(m.replace(/\s/g,"").length>=15 && /[はがをにでとなら]/.test(m));
@@ -197,7 +248,7 @@ const D = load();
 let mode = "student";
 let currentStudent = D.students[0].id;
 let teacherDetail = null;
-let filterMode = null; // null | 'flag' | 'good'
+let filterMode = null; // null | 'flag' | 'good' | 'dup'
 let lastResult = null;
 
 const $ = s=>document.querySelector(s);
@@ -213,15 +264,17 @@ function chipRow(entries, key, n=6){
   return html+'</div>';
 }
 function summarize(entries){
+  const evaluable = entries.filter(e=>e.checks);
   return {
     count: entries.length,
     total: entries.reduce((s,e)=>s+(+e.minutes||0),0),
     rikaiAvg: avg(entries.map(e=>e.rikai)),
     iyokuAvg: avg(entries.map(e=>e.iyoku)),
-    ckTotal: entries.reduce((s,e)=>s+e.checks.filter(Boolean).length,0),
-    ckMax: entries.length*5,
+    ckTotal: evaluable.reduce((s,e)=>s+e.checks.filter(Boolean).length,0),
+    ckMax: evaluable.length*5,
     flags: entries.filter(e=>e.flag).length,
     goods: entries.filter(e=>e.good).length,
+    dups: entries.filter(e=>e.duplicate).length,
   };
 }
 
@@ -274,12 +327,20 @@ function renderStudent(){
 
   if(lastResult){
     const e = lastResult;
-    html += `
-    <div class="card result-pop">
-      <h2>✅ きろくしました（AIチェック）</h2>
-      <div class="checks">${KANTEN.map((k,i)=>`<span class="ck ${e.checks[i]?"on":""}">${e.checks[i]?"✓ ":""}${k}</span>`).join("")}</div>
-      <div class="toikaeshi">${esc(e.toikaeshi)}</div>
-    </div>`;
+    if(e.duplicate){
+      html += `
+      <div class="card result-pop is-dup">
+        <h2>📋 きろくしました（コピーの疑い）</h2>
+        <div class="dupwarning">${esc(e.warning)}</div>
+      </div>`;
+    }else{
+      html += `
+      <div class="card result-pop">
+        <h2>✅ きろくしました（AIチェック）</h2>
+        <div class="checks">${KANTEN.map((k,i)=>`<span class="ck ${e.checks[i]?"on":""}">${e.checks[i]?"✓ ":""}${k}</span>`).join("")}</div>
+        <div class="toikaeshi">${esc(e.toikaeshi)}</div>
+      </div>`;
+    }
   }
 
   html += `
@@ -324,17 +385,20 @@ function submitEntry(){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function entryCard(e, forTeacher){
-  const cls = forTeacher ? (e.flag?" is-flag":"")+(e.good?" is-good":"") : "";
+  const cls = (e.duplicate?" is-dup":"") + (forTeacher ? (e.flag?" is-flag":"")+(e.good?" is-good":"") : "");
+  const evalBlock = e.duplicate
+    ? `<div class="dupwarning">${esc(e.warning)}</div>${forTeacher?`<div class="dupnote">📋 コピー疑い：${e.duplicateDate}の記録と酷似のため評価スキップ</div>`:""}`
+    : `<div class="checks">${KANTEN.map((k,i)=>`<span class="ck ${e.checks[i]?"on":""}">${e.checks[i]?"✓ ":""}${k}</span>`).join("")}</div>
+       ${e.toikaeshi?`<div class="toikaeshi">${esc(e.toikaeshi)}</div>`:""}
+       ${forTeacher&&e.flag?`<div class="flagnote">⚠ 要精読フラグ：SOSの可能性・記述の停滞</div>`:""}
+       ${forTeacher&&e.good?`<div class="goodnote">⭐ 得意のサイン：発展的な挑戦・自分の言葉での説明</div>`:""}`;
   return `<div class="entry${cls}">
     <div class="head"><b>${e.date}</b><span>🕐 ${e.minutes}分</span>
       <span class="chip v${e.rikai}" title="理解度">${e.rikai}</span><span style="font-size:11px">理解</span>
       <span class="chip v${e.iyoku}" title="意欲">${e.iyoku}</span><span style="font-size:11px">意欲</span></div>
     <div class="txt"><span class="lb">まとめ</span>${esc(e.matome)||"<span class='muted'>（未記入）</span>"}</div>
     <div class="txt"><span class="lb">振り返り</span>${esc(e.furikaeri)||"<span class='muted'>（未記入）</span>"}</div>
-    <div class="checks">${KANTEN.map((k,i)=>`<span class="ck ${e.checks[i]?"on":""}">${e.checks[i]?"✓ ":""}${k}</span>`).join("")}</div>
-    ${e.toikaeshi?`<div class="toikaeshi">${esc(e.toikaeshi)}</div>`:""}
-    ${forTeacher&&e.flag?`<div class="flagnote">⚠ 要精読フラグ：SOSの可能性・記述の停滞</div>`:""}
-    ${forTeacher&&e.good?`<div class="goodnote">⭐ 得意のサイン：発展的な挑戦・自分の言葉での説明</div>`:""}
+    ${evalBlock}
   </div>`;
 }
 
@@ -347,13 +411,14 @@ function renderTeacher(){
   });
   const totalFlags = rows.reduce((s,r)=>s+r.sm.flags,0);
   const totalGoods = rows.reduce((s,r)=>s+r.sm.goods,0);
+  const totalDups = rows.reduce((s,r)=>s+r.sm.dups,0);
   return `
   <div class="card">
-    <h2>クラス一覧 <span class="tag">⚠ 要精読 ${totalFlags}件</span><span class="tag good-tag">⭐ 得意 ${totalGoods}件</span></h2>
+    <h2>クラス一覧 <span class="tag">⚠ 要精読 ${totalFlags}件</span><span class="tag good-tag">⭐ 得意 ${totalGoods}件</span><span class="tag dup-tag">📋 使い回し ${totalDups}件</span></h2>
     <div class="table-wrap"><table>
-      <tr><th style="text-align:left">生徒</th><th>記入</th><th>合計時間</th><th>理解度<br>(平均/直近)</th><th>意欲<br>(平均/直近)</th><th>観点チェック<br>累計</th><th>最終記入</th><th>⚠<br>つまづき</th><th>⭐<br>得意</th></tr>
+      <tr><th style="text-align:left">生徒</th><th>記入</th><th>合計時間</th><th>理解度<br>(平均/直近)</th><th>意欲<br>(平均/直近)</th><th>観点チェック<br>累計</th><th>最終記入</th><th>⚠<br>つまづき</th><th>⭐<br>得意</th><th>📋<br>使い回し</th></tr>
       ${rows.map(r=>{
-        const rowCls = r.last&&r.last.flag ? "flagged" : (r.last&&r.last.good ? "goodrow" : "");
+        const rowCls = r.last&&r.last.flag ? "flagged" : (r.last&&r.last.good ? "goodrow" : (r.last&&r.last.duplicate ? "duprow" : ""));
         return `
       <tr class="${rowCls}">
         <td class="name" onclick="openDetail(${r.st.id})">${esc(r.st.name)}</td>
@@ -365,15 +430,23 @@ function renderTeacher(){
         <td>${r.last?r.last.date:"-"}</td>
         <td>${r.sm.flags?`<button class="sign-badge flag" onclick="openDetail(${r.st.id},'flag')">⚠ ${r.sm.flags}</button>`:"—"}</td>
         <td>${r.sm.goods?`<button class="sign-badge good" onclick="openDetail(${r.st.id},'good')">⭐ ${r.sm.goods}</button>`:"—"}</td>
+        <td>${r.sm.dups?`<button class="sign-badge dup" onclick="openDetail(${r.st.id},'dup')">📋 ${r.sm.dups}</button>`:"—"}</td>
       </tr>`;}).join("")}
     </table></div>
-    <div class="legend">⚠はSOS・記述停滞の可能性、⭐は発展的な挑戦や自分の言葉での説明など「得意」の兆候。数字をタップすると該当する記録だけを個人ページで確認できます。名前をタップすると全履歴が開きます。観点チェック＝AIによる5観点（具体性/つまづき/次の一手/問い/接続）の✓数。</div>
+    <div class="legend">⚠はSOS・記述停滞の可能性、⭐は発展的な挑戦や自分の言葉での説明など「得意」の兆候、📋は前回までの振り返りとほぼ同じ文章＝コピーの疑い（この回はAI評価をスキップ）。数字をタップすると該当する記録だけを個人ページで確認できます。名前をタップすると全履歴が開きます。観点チェック＝AIによる5観点（具体性/つまづき/次の一手/問い/接続）の✓数（コピー疑いの回は集計対象外）。</div>
   </div>`;
 }
 function renderTeacherDetail(){
   const st=D.students.find(s=>s.id===teacherDetail);
   const es=byStudent(st.id), sm=summarize(es);
-  const filtered = filterMode==="flag" ? es.filter(e=>e.flag) : filterMode==="good" ? es.filter(e=>e.good) : es;
+  const filtered = filterMode==="flag" ? es.filter(e=>e.flag)
+                  : filterMode==="good" ? es.filter(e=>e.good)
+                  : filterMode==="dup" ? es.filter(e=>e.duplicate)
+                  : es;
+  const filterLabel = filterMode==="flag" ? "⚠ つまづきのみ表示中"
+                     : filterMode==="good" ? "⭐ 得意のみ表示中"
+                     : filterMode==="dup" ? "📋 使い回しのみ表示中" : "";
+  const filterTagCls = filterMode==="good" ? "good-tag" : filterMode==="dup" ? "dup-tag" : "";
   return `
   <button class="back" onclick="teacherDetail=null;filterMode=null;render()">← 一覧にもどる</button>
   <div class="card">
@@ -389,10 +462,11 @@ function renderTeacherDetail(){
       <button class="${filterMode===null?"active":""}" onclick="filterMode=null;render()">すべて (${es.length})</button>
       <button class="${filterMode==="flag"?"active":""}" onclick="filterMode='flag';render()">⚠ つまづき (${sm.flags})</button>
       <button class="${filterMode==="good"?"active":""}" onclick="filterMode='good';render()">⭐ 得意 (${sm.goods})</button>
+      <button class="${filterMode==="dup"?"active":""}" onclick="filterMode='dup';render()">📋 使い回し (${sm.dups})</button>
     </div>
   </div>
   <div class="card">
-    <h2>振り返りの履歴（新しい順）${filterMode?`<span class="tag ${filterMode==="good"?"good-tag":""}">${filterMode==="flag"?"⚠ つまづきのみ表示中":"⭐ 得意のみ表示中"}</span>`:""}</h2>
+    <h2>振り返りの履歴（新しい順）${filterMode?`<span class="tag ${filterTagCls}">${filterLabel}</span>`:""}</h2>
     ${filtered.slice().reverse().map(e=>entryCard(e,true)).join("")||'<div class="muted">該当する記録はありません</div>'}
   </div>`;
 }
