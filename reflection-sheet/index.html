@@ -133,19 +133,19 @@ const KANTEN = ["まとめの具体性","つまづきの自覚","次の一手","
 const DUP_SIM_THRESHOLD = 0.85;
 const DUP_MIN_LEN = 20;
 
-/* ---------- 出席番号（学年・組・番号→4桁）。quiz/ツールと同じ方式 ---------- */
+/* ---------- 出席番号（学年・組・番号→4桁）＋合言葉。quiz/ツールの番号方式＋簡易ログイン ---------- */
 const ID_CONFIG = { GRADES:[1,2,3], CLASSES:[1,2,3,4,5,6], CLASS_SIZE:40 };
 const STUDENT_KEY = "reflection:student";
 const makeSid = (g,c,n) => `${g}${c}${String(n).padStart(2,"0")}`;
 const readSid = sid => ({ g:+sid[0], c:+sid[1], n:+sid.slice(2) });
 const sidLabel = sid => { const {g,c,n}=readSid(sid); return `${g}年${c}組${n}番`; };
-function loadStudentCode(){
+function loadStudentLogin(){
   try{ const v=JSON.parse(localStorage.getItem(STUDENT_KEY)||"null");
-    return (v && /^[0-9]{3,6}$/.test(v.code)) ? v.code : null;
+    return (v && /^[0-9]{3,6}$/.test(v.code) && v.passphrase) ? v : null;
   }catch(e){ return null; }
 }
-function saveStudentCode(code){ localStorage.setItem(STUDENT_KEY, JSON.stringify({code})); }
-function clearStudentCode(){ localStorage.removeItem(STUDENT_KEY); }
+function saveStudentLogin(code, passphrase){ localStorage.setItem(STUDENT_KEY, JSON.stringify({code, passphrase})); }
+function clearStudentLogin(){ localStorage.removeItem(STUDENT_KEY); }
 
 /* ---------- コピー使い回し検知（2文字bigramのDice係数） ---------- */
 function textSimilarity(a,b){
@@ -222,11 +222,14 @@ function analyze(e, prevEntries){
 
 /* ---------- 共通ヘルパー ---------- */
 let mode = "student";
-let studentCode = loadStudentCode();
+let studentLogin = loadStudentLogin();
+let studentCode = studentLogin ? studentLogin.code : null;
+let studentPassphrase = studentLogin ? studentLogin.passphrase : null;
 let myEntries = [];
 let myLoading = false;
 let myFetched = false;
 let myError = null;
+let loginError = null;
 let lastResult = null;
 
 let teacherPin = sessionStorage.getItem("reflection:teacherPin") || null;
@@ -281,10 +284,18 @@ function render(){
 
 /* ----- 生徒: 出席番号の取得 ----- */
 async function loadMine(){
-  if(!studentCode) return;
+  if(!studentCode || !studentPassphrase) return;
   myLoading = true; render();
   try{
-    const res = await Reflection.rpc("reflection_get_mine", {p_student: studentCode});
+    const res = await Reflection.rpc("reflection_get_mine", {p_student: studentCode, p_passphrase: studentPassphrase});
+    if(res.error === "bad_auth"){
+      // 合言葉が一致しない＝端末の記憶が古い/不正。ログアウトしてやり直させる。
+      clearStudentLogin();
+      studentCode = null; studentPassphrase = null; myFetched = false;
+      myError = null;
+      render();
+      return;
+    }
     if(res.error) throw new Error(res.error);
     myEntries = res.entries || [];
     myError = null;
@@ -295,8 +306,8 @@ async function loadMine(){
 }
 function changeStudent(){
   if(!confirm("出席番号を変更しますか？（この端末の記憶を消します）")) return;
-  clearStudentCode();
-  studentCode = null; myEntries = []; myFetched = false; lastResult = null;
+  clearStudentLogin();
+  studentCode = null; studentPassphrase = null; myEntries = []; myFetched = false; lastResult = null;
   render();
 }
 
@@ -374,35 +385,58 @@ function renderStudent(){
   return html;
 }
 
-/* ----- 生徒: 初回の出席番号選択 ----- */
+/* ----- 生徒: 初回の出席番号＋合言葉ログイン ----- */
+const pickerState = { g:ID_CONFIG.GRADES[0], c:ID_CONFIG.CLASSES[0], n:"", pass:"" };
 function renderPicker(){
-  const opt=(arr,suf)=>arr.map(v=>`<option value="${v}">${v}${suf}</option>`).join("");
+  const opt=(arr,sel,suf)=>arr.map(v=>`<option value="${v}" ${String(v)===String(sel)?"selected":""}>${v}${suf}</option>`).join("");
   return `
   <div class="card">
-    <h2>はじめに：出席番号を選んでください</h2>
+    <h2>はじめに：出席番号と合言葉</h2>
     <div class="row">
-      <div class="field"><label>学年</label><select id="pkG" onchange="updatePickerPreview()">${opt(ID_CONFIG.GRADES,"年")}</select></div>
-      <div class="field"><label>組</label><select id="pkC" onchange="updatePickerPreview()">${opt(ID_CONFIG.CLASSES,"組")}</select></div>
+      <div class="field"><label>学年</label><select id="pkG" onchange="updatePickerPreview()">${opt(ID_CONFIG.GRADES,pickerState.g,"年")}</select></div>
+      <div class="field"><label>組</label><select id="pkC" onchange="updatePickerPreview()">${opt(ID_CONFIG.CLASSES,pickerState.c,"組")}</select></div>
       <div class="field"><label>番号</label><select id="pkN" onchange="updatePickerPreview()">
-        <option value="">選ぶ</option>${opt(Array.from({length:ID_CONFIG.CLASS_SIZE},(_,i)=>i+1),"番")}
+        <option value="">選ぶ</option>${opt(Array.from({length:ID_CONFIG.CLASS_SIZE},(_,i)=>i+1),pickerState.n,"番")}
       </select></div>
     </div>
-    <div class="field">プレビュー：<span class="idpreview" id="pkPreview">----</span></div>
-    <button class="submit" onclick="confirmPicker()">この番号ではじめる</button>
-    <div class="legend">出席番号は「学年・組・番号」をつなげた4桁です（例：1年3組4番→1304）。共有端末で使う場合は、使い終わったら「番号を変更」から切り替えてください。</div>
+    <div class="field">プレビュー：<span class="idpreview" id="pkPreview">${pickerState.n?makeSid(pickerState.g,pickerState.c,pickerState.n):"----"}</span></div>
+    <div class="field"><label>合言葉</label><input type="text" id="pkPass" value="${esc(pickerState.pass)}" placeholder="はじめての人はここで自分の合言葉を決める"></div>
+    ${loginError?`<div class="error-card" style="border:1px solid var(--v1); border-radius:10px; padding:10px 12px; margin-bottom:10px; font-size:13.5px">${esc(loginError)}</div>`:""}
+    <button class="submit" id="pkBtn" onclick="confirmPicker()">この番号と合言葉ではじめる</button>
+    <div class="legend">出席番号は「学年・組・番号」をつなげた4桁です（例：1年3組4番→1304）。
+      合言葉は<b>はじめて使うときに自分で決める</b>もの。次に別の端末で開いたときも同じ番号・同じ合言葉を入れれば
+      続きが見られます。他の人はこの合言葉を知らないとあなたの記録を読めません。共有端末では使い終わったら
+      「番号を変更」から切り替えてください。</div>
   </div>`;
 }
 function updatePickerPreview(){
-  const g=$("#pkG").value, c=$("#pkC").value, n=$("#pkN").value;
-  $("#pkPreview").textContent = n ? makeSid(g,c,n) : "----";
+  pickerState.g=$("#pkG").value; pickerState.c=$("#pkC").value; pickerState.n=$("#pkN").value;
+  $("#pkPreview").textContent = pickerState.n ? makeSid(pickerState.g,pickerState.c,pickerState.n) : "----";
 }
-function confirmPicker(){
-  const g=$("#pkG").value, c=$("#pkC").value, n=$("#pkN").value;
+async function confirmPicker(){
+  pickerState.g=$("#pkG").value; pickerState.c=$("#pkC").value; pickerState.n=$("#pkN").value;
+  pickerState.pass=$("#pkPass").value.trim();
+  const {g,c,n,pass} = pickerState;
   if(!n){ alert("番号を選んでください"); return; }
+  if(!pass || pass.length<2){ alert("合言葉を2文字以上で入力してください"); return; }
   const code = makeSid(g,c,n);
-  saveStudentCode(code);
-  studentCode = code; myEntries = []; myFetched = false;
-  render();
+  const btn = $("#pkBtn");
+  btn.disabled = true; btn.textContent = "確認中…";
+  try{
+    const res = await Reflection.rpc("reflection_login", {p_student: code, p_passphrase: pass});
+    if(res.ok){
+      saveStudentLogin(code, pass);
+      studentCode = code; studentPassphrase = pass; myEntries = []; myFetched = false; loginError = null;
+      pickerState.pass = "";
+      render();
+    }else{
+      loginError = "合言葉が違います。前回と同じ合言葉を入力してください（分からない場合は先生に相談してください）。";
+      render();
+    }
+  }catch(err){
+    loginError = "通信エラーです。通信環境を確認してもう一度お試しください。";
+    render();
+  }
 }
 
 function abcBtns(group){
@@ -428,9 +462,10 @@ async function submitEntry(){
   btn.disabled = true; btn.textContent = "送信中…";
   try{
     const res = await Reflection.rpc("reflection_submit", {
-      p_student: studentCode, p_date: date, p_minutes: minutes, p_rikai: e.rikai, p_iyoku: e.iyoku,
-      p_matome: matome, p_furikaeri: furi, p_checks: e.checks, p_flag: e.flag, p_good: e.good,
-      p_duplicate: e.duplicate, p_duplicate_date: e.duplicateDate, p_toikaeshi: e.toikaeshi, p_warning: e.warning,
+      p_student: studentCode, p_passphrase: studentPassphrase, p_date: date, p_minutes: minutes,
+      p_rikai: e.rikai, p_iyoku: e.iyoku, p_matome: matome, p_furikaeri: furi, p_checks: e.checks,
+      p_flag: e.flag, p_good: e.good, p_duplicate: e.duplicate, p_duplicate_date: e.duplicateDate,
+      p_toikaeshi: e.toikaeshi, p_warning: e.warning,
     });
     if(res.error) throw new Error(res.error);
     const idx = myEntries.findIndex(x=>x.date===date);
@@ -473,6 +508,16 @@ async function verifyTeacherPin(){
     }else{
       alert("PINが違います");
     }
+  }catch(err){
+    alert("通信エラーです。通信環境を確認してください。");
+  }
+}
+async function resetStudentLogin(code){
+  if(!confirm(`${code}（${sidLabel(code)}）の合言葉をリセットします。本人は次回ログイン時に新しい合言葉を決め直せます。よろしいですか？`)) return;
+  try{
+    const res = await Reflection.rpc("reflection_reset_login", {p_pin: teacherPin, p_student: code});
+    if(res.error){ alert("リセットに失敗しました"); return; }
+    alert("リセットしました。本人に伝えてください。");
   }catch(err){
     alert("通信エラーです。通信環境を確認してください。");
   }
@@ -562,7 +607,9 @@ function renderTeacherDetail(){
   return `
   <button class="back" onclick="teacherDetail=null;filterMode=null;render()">← 一覧にもどる</button>
   <div class="card">
-    <h2>${esc(teacherDetail)}（${esc(sidLabel(teacherDetail))}） の記録</h2>
+    <h2>${esc(teacherDetail)}（${esc(sidLabel(teacherDetail))}） の記録
+      <button class="back" style="margin:0;margin-left:auto;font-size:12.5px" onclick="resetStudentLogin('${teacherDetail}')">合言葉をリセット</button></h2>
+    <div class="legend">合言葉を忘れた・他の生徒が先に番号を登録してしまった場合はリセットしてください。本人が次回ログイン時に新しい合言葉を決め直せます（それまでの記録は消えません）。</div>
     <div class="stats">
       <div class="stat"><div class="num">${sm.total}<small> 分</small></div><div class="lbl">学習合計時間</div></div>
       <div class="stat"><div class="num">${sm.count}<small> 回</small></div><div class="lbl">記入回数</div></div>
