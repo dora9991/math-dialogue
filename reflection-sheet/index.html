@@ -27,7 +27,7 @@
   .card h2 .tag.good-tag{background:var(--good-bg); color:var(--v4);}
   .card h2 .tag.dup-tag{background:var(--dup-bg); color:var(--sub);}
   label{display:block; font-size:13px; color:var(--sub); margin-bottom:4px;}
-  select,input[type=date],input[type=number],textarea{
+  select,input[type=date],input[type=number],input[type=text],textarea{
     width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 12px; font-size:15px; font-family:inherit; background:#fff; color:#14181f; -webkit-text-fill-color:#14181f; color-scheme:light; font-weight:500;
   }
   input[type=date]::-webkit-datetime-edit-text,
@@ -47,6 +47,7 @@
   .abc-note{font-size:11.5px; color:var(--sub); margin-top:4px;}
   .submit{width:100%; border:none; background:var(--accent); color:#fff; font-size:16px; font-weight:bold; border-radius:12px; padding:13px 0; cursor:pointer;}
   .submit:active{opacity:.85;}
+  .submit:disabled{opacity:.6; cursor:default;}
   .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px;}
   .stat{background:var(--accent-soft); border-radius:12px; padding:12px; text-align:center;}
   .stat .num{font-size:22px; font-weight:bold; color:var(--accent);}
@@ -92,14 +93,17 @@
   .legend{font-size:11.5px; color:var(--sub); margin-top:8px;}
   .bar-wrap{display:flex; align-items:flex-end; gap:3px; height:46px; margin-top:4px;}
   .bar{flex:1; background:var(--accent); border-radius:3px 3px 0 0; min-width:6px; max-width:22px;}
-  .demo-note{font-size:12px; color:var(--sub); text-align:center; margin:4px 0 12px;}
-  .demo-note button{border:none; background:none; color:var(--accent); cursor:pointer; font-size:12px; text-decoration:underline;}
   .filter-tabs{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
   .filter-tabs button{border:1.5px solid var(--line); background:#fff; border-radius:99px; padding:6px 14px; font-size:13px; cursor:pointer; color:var(--sub);}
   .filter-tabs button.active{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .idline{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; font-size:14px;}
+  .idline b{font-family:ui-monospace,monospace; font-size:18px; letter-spacing:.04em;}
+  .idpreview{font-family:ui-monospace,monospace; font-size:26px; letter-spacing:.06em; color:var(--accent);}
+  .error-card{border-color:var(--v1); background:var(--flag); color:var(--v1);}
+  .error-card button{margin-top:8px;}
   @media (prefers-color-scheme: dark){
     :root{--bg:#141a24; --card:#1d2532; --ink:#e8edf5; --sub:#93a2b8; --line:#2c3648; --accent-soft:#22304c; --flag:#3a2426; --good-bg:#1f3226; --dup-bg:#20293a;}
-    select,input:not([type=date]):not([type=number]),textarea,.abc button,.filter-tabs button{background:#151c28; color:var(--ink);}
+    select,input:not([type=date]):not([type=number]):not([type=text]),textarea,.abc button,.filter-tabs button{background:#151c28; color:var(--ink);}
     th{background:#1a2230;}
     .ck{background:#232c3c;}
     .toikaeshi{background:#2e2a1a; border-color:#4a4128;}
@@ -118,64 +122,30 @@
 </header>
 
 <main>
-  <div class="demo-note">デモ用サンプル：データはこの端末（ブラウザ）に保存されます。
-    <button onclick="resetDemo()">デモデータを初期化</button>
-  </div>
   <div id="app"></div>
 </main>
 
+<script src="config.js"></script>
+<script src="common.js"></script>
 <script>
 "use strict";
-const KEY = "hurikaeri_data_v4";
 const KANTEN = ["まとめの具体性","つまづきの自覚","次の一手","問いの発生","前回との接続","学び方の工夫"];
 const DUP_SIM_THRESHOLD = 0.85;
 const DUP_MIN_LEN = 20;
 
-/* ---------- データ ---------- */
-function load(){
-  try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d && d.students) return d; }catch(e){}
-  const d = seed(); save(d); return d;
+/* ---------- 出席番号（学年・組・番号→4桁）。quiz/ツールと同じ方式 ---------- */
+const ID_CONFIG = { GRADES:[1,2,3], CLASSES:[1,2,3,4,5,6], CLASS_SIZE:40 };
+const STUDENT_KEY = "reflection:student";
+const makeSid = (g,c,n) => `${g}${c}${String(n).padStart(2,"0")}`;
+const readSid = sid => ({ g:+sid[0], c:+sid[1], n:+sid.slice(2) });
+const sidLabel = sid => { const {g,c,n}=readSid(sid); return `${g}年${c}組${n}番`; };
+function loadStudentCode(){
+  try{ const v=JSON.parse(localStorage.getItem(STUDENT_KEY)||"null");
+    return (v && /^[0-9]{3,6}$/.test(v.code)) ? v.code : null;
+  }catch(e){ return null; }
 }
-function save(d){ localStorage.setItem(KEY, JSON.stringify(d)); }
-function resetDemo(){ if(confirm("デモデータを初期状態に戻します。よろしいですか？")){ localStorage.removeItem(KEY); location.reload(); } }
-
-function seed(){
-  const students = [
-    {id:1,name:"1番 あおい"},{id:2,name:"2番 いつき"},{id:3,name:"3番 うみ"},
-    {id:4,name:"4番 えま"},{id:5,name:"5番 おうすけ"},{id:6,name:"6番 かなた"},
-  ];
-  const raw = [
-    // [studentId, 日付, 分, 理解(4-1), 意欲(4-1), まとめ, 振り返り]
-    [1,"2026-07-06",30,4,4,"正負の数のたし算は、符号が同じなら絶対値をたして同じ符号をつける。","符号のルールを自分の言葉で言えるようになった。次は減法もやってみたい。"],
-    [1,"2026-07-08",45,4,4,"減法は「ひく数の符号を変えてたす」に直せば加法と同じ。","前回やりたいと言っていた減法ができた。かっこが多い式で少し迷ったので、明日ラボで練習する。なぜ符号を変えるとたし算になるんだろう？"],
-    [1,"2026-07-10",40,3,4,"加減の混じった式は項を並べかえて計算できる。","かっこの前のマイナスで1問間違えた。昨日決めた練習はやった。次は間違えた形だけ3問やり直す。"],
-    [2,"2026-07-06",20,3,3,"マイナスの数のたし算をやった。","だいたいわかった。"],
-    [2,"2026-07-08",15,2,3,"ひき算のやり方。","かっこのところがよくわからなかった。"],
-    [2,"2026-07-10",25,3,3,"ひき算はたし算に直す。","前にわからなかったかっこの問題が今日は少しできた。次は数直線を使って確かめたい。"],
-    [2,"2026-07-11",20,3,3,"ひき算はたし算に直す。","前にわからなかったかっこの問題が今日は少しできた。次は数直線を使って確かめたい。"],
-    [3,"2026-07-06",10,1,1,"たし算。","むずかしかった。"],
-    [3,"2026-07-08",5,1,1,"ひき算。","よくわからない。もうむり。"],
-    [3,"2026-07-10",10,2,3,"マイナスのひき算。","友だちに教えてもらったら少しわかった。どこがわからないか言えなかったので、次は質問を書いてくる。"],
-    [4,"2026-07-06",50,4,3,"同符号・異符号で計算のしかたが変わることをまとめた。","問題は解けるけど、なぜ異符号だと絶対値の差になるのか気になる。"],
-    [4,"2026-07-08",40,4,4,"数直線で考えると異符号の和が差になる理由が説明できる。","前回の疑問が数直線で解決した。今度は自分で誰かに説明してみる。"],
-    [4,"2026-07-10",35,4,4,"加減混合は項だけの式に直すと速い。","説明する練習をしたら自分の理解のあいまいな所が見つかった。テスト前に符号ミスの見直しリストを作る。"],
-    [5,"2026-07-06",25,3,4,"正負の数のたし算のルール。","計算は好き。もっと難しい問題がやりたい。"],
-    [5,"2026-07-08",30,3,3,"ひき算のルール。","スピードを上げたら符号ミスが増えた。次はゆっくり確かめながらやる。"],
-    [5,"2026-07-10",30,4,4,"加減混合の計算は項を並べかえるとはやく処理できる。","前回決めた「確かめながら」をやったらミスが減った！なぜ急ぐとミスするのか不思議。"],
-    [6,"2026-07-06",15,3,3,"マイナスどうしのたし算。","ふつうにできた。"],
-    [6,"2026-07-08",20,3,1,"ひき算。","眠かった。あまりやる気が出なかった。"],
-    [6,"2026-07-10",20,3,3,"たし算とひき算のまじった計算。","途中の式を書いたら間違いが減った。次も式を書く。"],
-  ];
-  const entries = raw.map(r=>{
-    const e = {studentId:r[0], date:r[1], minutes:r[2], rikai:r[3], iyoku:r[4], matome:r[5], furikaeri:r[6]};
-    analyze(e, entriesBefore(raw, r));
-    return e;
-  });
-  return {students, entries};
-  function entriesBefore(raw, r){
-    return raw.filter(x=>x[0]===r[0] && x[1]<r[1]).map(x=>({date:x[1], matome:x[5], furikaeri:x[6]}));
-  }
-}
+function saveStudentCode(code){ localStorage.setItem(STUDENT_KEY, JSON.stringify({code})); }
+function clearStudentCode(){ localStorage.removeItem(STUDENT_KEY); }
 
 /* ---------- コピー使い回し検知（2文字bigramのDice係数） ---------- */
 function textSimilarity(a,b){
@@ -251,16 +221,24 @@ function analyze(e, prevEntries){
 }
 
 /* ---------- 共通ヘルパー ---------- */
-const D = load();
 let mode = "student";
-let currentStudent = D.students[0].id;
+let studentCode = loadStudentCode();
+let myEntries = [];
+let myLoading = false;
+let myFetched = false;
+let myError = null;
+let lastResult = null;
+
+let teacherPin = sessionStorage.getItem("reflection:teacherPin") || null;
+let teacherEntries = null;
+let teacherLoading = false;
+let teacherError = null;
 let teacherDetail = null;
 let filterMode = null; // null | 'flag' | 'good' | 'dup'
-let lastResult = null;
 
 const $ = s=>document.querySelector(s);
 const esc = s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const byStudent = id=>D.entries.filter(e=>e.studentId===id).sort((a,b)=>a.date<b.date?-1:1);
+const byStudentIn = (entries,id)=>entries.filter(e=>e.studentId===id).sort((a,b)=>a.date<b.date?-1:1);
 const avg = arr=>arr.length? arr.reduce((s,x)=>s+x,0)/arr.length : 0;
 const formatAvg = v=> v.toFixed(1);
 function chipRow(entries, key, n=6){
@@ -294,23 +272,49 @@ function setMode(m){ mode=m; teacherDetail=null; filterMode=null; lastResult=nul
 function openDetail(id, filter){ teacherDetail=id; filterMode=filter||null; render(); }
 
 function render(){
+  if(!window.Reflection || !Reflection.configReady()){
+    $("#app").innerHTML = `<div class="card error-card"><h2>⚠ サーバー未設定</h2><p>config.js にSupabaseの接続情報（URL・anonキー）が入っていません。schema.sql をSupabaseのSQL Editorで実行し、config.js を書き換えてください。</p></div>`;
+    return;
+  }
   $("#app").innerHTML = mode==="student" ? renderStudent() : renderTeacher();
+}
+
+/* ----- 生徒: 出席番号の取得 ----- */
+async function loadMine(){
+  if(!studentCode) return;
+  myLoading = true; render();
+  try{
+    const res = await Reflection.rpc("reflection_get_mine", {p_student: studentCode});
+    if(res.error) throw new Error(res.error);
+    myEntries = res.entries || [];
+    myError = null;
+  }catch(err){
+    myError = "読み込みに失敗しました。通信環境を確認してください。";
+  }
+  myLoading = false; myFetched = true; render();
+}
+function changeStudent(){
+  if(!confirm("出席番号を変更しますか？（この端末の記憶を消します）")) return;
+  clearStudentCode();
+  studentCode = null; myEntries = []; myFetched = false; lastResult = null;
+  render();
 }
 
 /* ----- 生徒画面 ----- */
 function renderStudent(){
-  const st = D.students.find(s=>s.id===currentStudent);
-  const es = byStudent(st.id);
+  if(!studentCode) return renderPicker();
+  if(!myFetched && !myLoading) loadMine();
+
+  const es = myEntries.slice().sort((a,b)=>a.date<b.date?-1:1);
   const sm = summarize(es);
   const today = new Date().toISOString().slice(0,10);
   let html = `
   <div class="card">
     <h2>きろくする <span class="tag">毎時間 2〜3分</span></h2>
-    <div class="field"><label>なまえ</label>
-      <select onchange="currentStudent=+this.value;lastResult=null;render()">
-        ${D.students.map(s=>`<option value="${s.id}" ${s.id===currentStudent?"selected":""}>${esc(s.name)}</option>`).join("")}
-      </select>
-    </div>
+    <div class="idline">出席番号：<b>${esc(studentCode)}</b><span class="muted">(${esc(sidLabel(studentCode))})</span>
+      <button type="button" class="back" style="margin:0" onclick="changeStudent()">番号を変更</button></div>
+    ${myError?`<div class="card error-card" style="margin-bottom:14px"><p>${esc(myError)}</p><button class="submit" onclick="loadMine()">再読み込み</button></div>`:""}
+    ${myLoading?`<div class="muted" style="margin-bottom:10px">読み込み中…</div>`:""}
     <div class="row">
       <div class="field"><label>本日の日付</label><input type="date" id="fDate" value="${today}"></div>
       <div class="field"><label>数学の学習時間（分）</label><input type="number" id="fMin" min="0" max="600" value="30"></div>
@@ -329,7 +333,7 @@ function renderStudent(){
       <textarea id="fMatome" placeholder="例：ひき算は「ひく数の符号を変えてたす」に直せば加法と同じ。"></textarea></div>
     <div class="field"><label>振り返り（つまづき・次にどうするか・疑問など）</label>
       <textarea id="fFuri" placeholder="例：かっこの前のマイナスで間違えた。次は途中の式を書く。なぜ符号が変わるんだろう？"></textarea></div>
-    <button class="submit" onclick="submitEntry()">きろくする ✍️</button>
+    <button class="submit" id="submitBtn" onclick="submitEntry()">きろくする ✍️</button>
   </div>`;
 
   if(lastResult){
@@ -369,6 +373,38 @@ function renderStudent(){
   </div>`;
   return html;
 }
+
+/* ----- 生徒: 初回の出席番号選択 ----- */
+function renderPicker(){
+  const opt=(arr,suf)=>arr.map(v=>`<option value="${v}">${v}${suf}</option>`).join("");
+  return `
+  <div class="card">
+    <h2>はじめに：出席番号を選んでください</h2>
+    <div class="row">
+      <div class="field"><label>学年</label><select id="pkG" onchange="updatePickerPreview()">${opt(ID_CONFIG.GRADES,"年")}</select></div>
+      <div class="field"><label>組</label><select id="pkC" onchange="updatePickerPreview()">${opt(ID_CONFIG.CLASSES,"組")}</select></div>
+      <div class="field"><label>番号</label><select id="pkN" onchange="updatePickerPreview()">
+        <option value="">選ぶ</option>${opt(Array.from({length:ID_CONFIG.CLASS_SIZE},(_,i)=>i+1),"番")}
+      </select></div>
+    </div>
+    <div class="field">プレビュー：<span class="idpreview" id="pkPreview">----</span></div>
+    <button class="submit" onclick="confirmPicker()">この番号ではじめる</button>
+    <div class="legend">出席番号は「学年・組・番号」をつなげた4桁です（例：1年3組4番→1304）。共有端末で使う場合は、使い終わったら「番号を変更」から切り替えてください。</div>
+  </div>`;
+}
+function updatePickerPreview(){
+  const g=$("#pkG").value, c=$("#pkC").value, n=$("#pkN").value;
+  $("#pkPreview").textContent = n ? makeSid(g,c,n) : "----";
+}
+function confirmPicker(){
+  const g=$("#pkG").value, c=$("#pkC").value, n=$("#pkN").value;
+  if(!n){ alert("番号を選んでください"); return; }
+  const code = makeSid(g,c,n);
+  saveStudentCode(code);
+  studentCode = code; myEntries = []; myFetched = false;
+  render();
+}
+
 function abcBtns(group){
   return [4,3,2,1].map(v=>`<button type="button" data-v="${v}" onclick="pickABC('${group}',${v},this)">${v}</button>`).join("");
 }
@@ -378,16 +414,31 @@ function pickABC(group,v,btn){
   btn.parentElement.querySelectorAll("button").forEach(b=>b.className="");
   btn.className="sel"+v;
 }
-function submitEntry(){
+async function submitEntry(){
   const date=$("#fDate").value, minutes=+$("#fMin").value;
   const matome=$("#fMatome").value.trim(), furi=$("#fFuri").value.trim();
   if(!date){alert("日付を入れてください"); return;}
   if(!picked.rikai||!picked.iyoku){alert("理解度と意欲を選んでください"); return;}
   if(!matome&&!furi){alert("まとめか振り返りを書いてください"); return;}
-  const e={studentId:currentStudent, date, minutes, rikai:picked.rikai, iyoku:picked.iyoku, matome, furikaeri:furi};
-  analyze(e, byStudent(currentStudent).filter(x=>x.date<date));
-  D.entries.push(e); save(D);
-  picked.rikai=picked.iyoku=null; lastResult=e;
+
+  const e={studentId:studentCode, date, minutes, rikai:picked.rikai, iyoku:picked.iyoku, matome, furikaeri:furi};
+  analyze(e, myEntries.filter(x=>x.date<date));
+
+  const btn = $("#submitBtn");
+  btn.disabled = true; btn.textContent = "送信中…";
+  try{
+    const res = await Reflection.rpc("reflection_submit", {
+      p_student: studentCode, p_date: date, p_minutes: minutes, p_rikai: e.rikai, p_iyoku: e.iyoku,
+      p_matome: matome, p_furikaeri: furi, p_checks: e.checks, p_flag: e.flag, p_good: e.good,
+      p_duplicate: e.duplicate, p_duplicate_date: e.duplicateDate, p_toikaeshi: e.toikaeshi, p_warning: e.warning,
+    });
+    if(res.error) throw new Error(res.error);
+    const idx = myEntries.findIndex(x=>x.date===date);
+    if(idx>=0) myEntries[idx]=e; else myEntries.push(e);
+    picked.rikai=picked.iyoku=null; lastResult=e;
+  }catch(err){
+    alert("送信に失敗しました。通信環境を確認してもう一度お試しください。");
+  }
   render();
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -409,43 +460,97 @@ function entryCard(e, forTeacher){
   </div>`;
 }
 
+/* ----- 教師: PINログイン ----- */
+async function verifyTeacherPin(){
+  const pin = $("#teacherPinInput").value.trim();
+  if(!pin){ alert("PINを入力してください"); return; }
+  try{
+    const res = await Reflection.rpc("reflection_verify_pin", {p_pin: pin});
+    if(res.ok){
+      teacherPin = pin;
+      sessionStorage.setItem("reflection:teacherPin", pin);
+      loadTeacherData();
+    }else{
+      alert("PINが違います");
+    }
+  }catch(err){
+    alert("通信エラーです。通信環境を確認してください。");
+  }
+}
+function logoutTeacher(){
+  sessionStorage.removeItem("reflection:teacherPin");
+  teacherPin = null; teacherEntries = null; teacherDetail = null; filterMode = null;
+  render();
+}
+async function loadTeacherData(){
+  teacherLoading = true; render();
+  try{
+    const res = await Reflection.rpc("reflection_list_teacher", {p_pin: teacherPin});
+    if(res.error){
+      sessionStorage.removeItem("reflection:teacherPin");
+      teacherPin = null;
+      throw new Error(res.error);
+    }
+    teacherEntries = res.entries || [];
+    teacherError = null;
+  }catch(err){
+    teacherError = "読み込みに失敗しました。通信環境を確認してください。";
+  }
+  teacherLoading = false; render();
+}
+
 /* ----- 教師画面 ----- */
 function renderTeacher(){
+  if(!teacherPin) return renderTeacherGate();
+  if(teacherEntries===null && !teacherLoading) loadTeacherData();
+  if(teacherLoading) return `<div class="card">読み込み中…</div>`;
+  if(teacherError) return `<div class="card error-card"><p>${esc(teacherError)}</p><button class="submit" onclick="loadTeacherData()">再読み込み</button></div>`;
   if(teacherDetail!==null) return renderTeacherDetail();
-  const rows = D.students.map(st=>{
-    const es=byStudent(st.id), sm=summarize(es), last=es[es.length-1];
-    return {st,es,sm,last};
+
+  const codes = [...new Set(teacherEntries.map(e=>e.studentId))].sort();
+  const rows = codes.map(code=>{
+    const es=byStudentIn(teacherEntries, code), sm=summarize(es), last=es[es.length-1];
+    return {code, es, sm, last};
   });
   const totalFlags = rows.reduce((s,r)=>s+r.sm.flags,0);
   const totalGoods = rows.reduce((s,r)=>s+r.sm.goods,0);
   const totalDups = rows.reduce((s,r)=>s+r.sm.dups,0);
   return `
   <div class="card">
-    <h2>クラス一覧 <span class="tag">⚠ 要精読 ${totalFlags}件</span><span class="tag good-tag">⭐ 得意 ${totalGoods}件</span><span class="tag dup-tag">📋 使い回し ${totalDups}件</span></h2>
+    <h2>クラス一覧 <span class="tag">⚠ 要精読 ${totalFlags}件</span><span class="tag good-tag">⭐ 得意 ${totalGoods}件</span><span class="tag dup-tag">📋 使い回し ${totalDups}件</span>
+      <button class="back" style="margin:0;margin-left:auto" onclick="logoutTeacher()">ログアウト</button></h2>
+    ${rows.length===0?'<div class="muted">まだ提出がありません。</div>':`
     <div class="table-wrap"><table>
-      <tr><th style="text-align:left">生徒</th><th>記入</th><th>合計時間</th><th>理解度<br>(平均/直近)</th><th>意欲<br>(平均/直近)</th><th>観点チェック<br>累計</th><th>最終記入</th><th>⚠<br>つまづき</th><th>⭐<br>得意</th><th>📋<br>使い回し</th></tr>
+      <tr><th style="text-align:left">出席番号</th><th>記入</th><th>合計時間</th><th>理解度<br>(平均/直近)</th><th>意欲<br>(平均/直近)</th><th>観点チェック<br>累計</th><th>最終記入</th><th>⚠<br>つまづき</th><th>⭐<br>得意</th><th>📋<br>使い回し</th></tr>
       ${rows.map(r=>{
         const rowCls = r.last&&r.last.flag ? "flagged" : (r.last&&r.last.good ? "goodrow" : (r.last&&r.last.duplicate ? "duprow" : ""));
         return `
       <tr class="${rowCls}">
-        <td class="name" onclick="openDetail(${r.st.id})">${esc(r.st.name)}</td>
+        <td class="name" onclick="openDetail('${r.code}')">${esc(r.code)}<br><span class="muted" style="font-weight:normal">${esc(sidLabel(r.code))}</span></td>
         <td>${r.sm.count}回</td>
         <td>${r.sm.total}分</td>
         <td>${r.es.length?formatAvg(r.sm.rikaiAvg):"-"}${chipRow(r.es,"rikai",4)}</td>
         <td>${r.es.length?formatAvg(r.sm.iyokuAvg):"-"}${chipRow(r.es,"iyoku",4)}</td>
         <td>${r.sm.ckTotal} / ${r.sm.ckMax}</td>
         <td>${r.last?r.last.date:"-"}</td>
-        <td>${r.sm.flags?`<button class="sign-badge flag" onclick="openDetail(${r.st.id},'flag')">⚠ ${r.sm.flags}</button>`:"—"}</td>
-        <td>${r.sm.goods?`<button class="sign-badge good" onclick="openDetail(${r.st.id},'good')">⭐ ${r.sm.goods}</button>`:"—"}</td>
-        <td>${r.sm.dups?`<button class="sign-badge dup" onclick="openDetail(${r.st.id},'dup')">📋 ${r.sm.dups}</button>`:"—"}</td>
+        <td>${r.sm.flags?`<button class="sign-badge flag" onclick="openDetail('${r.code}','flag')">⚠ ${r.sm.flags}</button>`:"—"}</td>
+        <td>${r.sm.goods?`<button class="sign-badge good" onclick="openDetail('${r.code}','good')">⭐ ${r.sm.goods}</button>`:"—"}</td>
+        <td>${r.sm.dups?`<button class="sign-badge dup" onclick="openDetail('${r.code}','dup')">📋 ${r.sm.dups}</button>`:"—"}</td>
       </tr>`;}).join("")}
-    </table></div>
-    <div class="legend">⚠はSOS・記述停滞の可能性、⭐は発展的な挑戦や自分の言葉での説明など「得意」の兆候、📋は前回までの振り返りとほぼ同じ文章＝コピーの疑い（この回はAI評価をスキップ）。数字をタップすると該当する記録だけを個人ページで確認できます。名前をタップすると全履歴が開きます。観点チェック＝AIによる6観点（具体性/つまづき/次の一手/問い/接続/学び方）の✓数（コピー疑いの回は集計対象外）。</div>
+    </table></div>`}
+    <div class="legend">⚠はSOS・記述停滞の可能性、⭐は発展的な挑戦や自分の言葉での説明など「得意」の兆候、📋は前回までの振り返りとほぼ同じ文章＝コピーの疑い（この回はAI評価をスキップ）。数字をタップすると該当する記録だけを個人ページで確認できます。出席番号をタップすると全履歴が開きます。観点チェック＝AIによる6観点（具体性/つまづき/次の一手/問い/接続/学び方）の✓数（コピー疑いの回は集計対象外）。</div>
+  </div>`;
+}
+function renderTeacherGate(){
+  return `
+  <div class="card">
+    <h2>教師ログイン</h2>
+    <div class="field"><label>PIN</label><input type="text" inputmode="numeric" id="teacherPinInput" placeholder="PINを入力"></div>
+    <button class="submit" onclick="verifyTeacherPin()">ログイン</button>
   </div>`;
 }
 function renderTeacherDetail(){
-  const st=D.students.find(s=>s.id===teacherDetail);
-  const es=byStudent(st.id), sm=summarize(es);
+  const es=byStudentIn(teacherEntries, teacherDetail), sm=summarize(es);
   const filtered = filterMode==="flag" ? es.filter(e=>e.flag)
                   : filterMode==="good" ? es.filter(e=>e.good)
                   : filterMode==="dup" ? es.filter(e=>e.duplicate)
@@ -457,7 +562,7 @@ function renderTeacherDetail(){
   return `
   <button class="back" onclick="teacherDetail=null;filterMode=null;render()">← 一覧にもどる</button>
   <div class="card">
-    <h2>${esc(st.name)} の記録</h2>
+    <h2>${esc(teacherDetail)}（${esc(sidLabel(teacherDetail))}） の記録</h2>
     <div class="stats">
       <div class="stat"><div class="num">${sm.total}<small> 分</small></div><div class="lbl">学習合計時間</div></div>
       <div class="stat"><div class="num">${sm.count}<small> 回</small></div><div class="lbl">記入回数</div></div>
