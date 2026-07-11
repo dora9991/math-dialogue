@@ -122,8 +122,8 @@
 
 <script>
 "use strict";
-const KEY = "hurikaeri_data_v3";
-const KANTEN = ["まとめの具体性","つまづきの自覚","次の一手","問いの発生","前回との接続"];
+const KEY = "hurikaeri_data_v4";
+const KANTEN = ["まとめの具体性","つまづきの自覚","次の一手","問いの発生","前回との接続","学び方の工夫"];
 const DUP_SIM_THRESHOLD = 0.85;
 const DUP_MIN_LEN = 20;
 
@@ -227,18 +227,21 @@ function analyze(e, prevEntries){
   checks.push(/(？|\?|なぜ|どうして|だろう|不思議|気になる|疑問)/.test(all));
   // ⑤ 前回との接続：前回の記述への言及
   checks.push(prevEntries.length>0 && /(前回|この前|昨日|先週|前に|決めた|言っていた|疑問が)/.test(f));
+  // ⑥ 学び方の工夫：やりやすさへの気づき・人や友達に聞いて解決・図表や声出しなどの工夫発見
+  checks.push(/(友(達|だち)に(聞い|教え)|人に(聞い|教え)|先生に(聞い|教え)|一緒に(考え|やっ|勉強)|やりやすい|考えやすい|わかりやすい|理解しやすい|式を書い|図に(かい|して)|表に(し|まとめ)|声に出し|書き出し|順番を変え|やり方を変え|工夫したら|コツが|に気づいた)/.test(all));
   e.checks = checks;
-  const ckCount = checks.filter(Boolean).length;
+  const ckCoreCount = checks.slice(0,5).filter(Boolean).length; // 得意サイン判定は元の5観点ベースを維持（学び方は別軸）
   // 教師向けフラグ：SOS・空回り
   e.flag = /(むり|無理|嫌だ|つらい|しんどい|意味ない|やる気が出な|もうやだ)/.test(all)
         || (e.rikai===1 && f.replace(/\s/g,"").length<12);
   // 得意サイン：発展的な挑戦・自分の言葉での説明・高い自己調整を伴う高評価
   e.good = /(もっと(難しい|上級|発展)|人に(説明|教え)|友達に教え|挑戦したい|自分で気づいた|応用|得意)/.test(all)
-        || (e.rikai===4 && e.iyoku>=3 && ckCount>=4);
+        || (e.rikai===4 && e.iyoku>=3 && ckCoreCount>=4);
   // 問い返し（サンプルはルールベース。本番はAI生成）
   if(!checks[1] && e.rikai<4) e.toikaeshi = "「難しかった」のはどの問題の、どの瞬間だった？1つだけ思い出して書いてみよう。";
   else if(!checks[2]) e.toikaeshi = "今日の気づきを、明日の自分への「ひとこと作戦」にすると何になる？";
   else if(!checks[3]) e.toikaeshi = "今日の内容で「なぜ？」と聞きたくなるところを1つ探すとしたらどこ？";
+  else if(checks[5]) e.toikaeshi = "「こうしたらやりやすかった」——自分に合う学び方を見つけているね。次はどんな工夫を試したい？";
   else if(checks[4]) e.toikaeshi = "前回の自分とのつながりが書けているのが素晴らしい。次の目標を1つ挙げるなら？";
   else e.toikaeshi = "いい振り返り！このやり方がうまくいった理由は何だと思う？";
 }
@@ -271,7 +274,7 @@ function summarize(entries){
     rikaiAvg: avg(entries.map(e=>e.rikai)),
     iyokuAvg: avg(entries.map(e=>e.iyoku)),
     ckTotal: evaluable.reduce((s,e)=>s+e.checks.filter(Boolean).length,0),
-    ckMax: evaluable.length*5,
+    ckMax: evaluable.length*KANTEN.length,
     flags: entries.filter(e=>e.flag).length,
     goods: entries.filter(e=>e.good).length,
     dups: entries.filter(e=>e.duplicate).length,
@@ -433,7 +436,7 @@ function renderTeacher(){
         <td>${r.sm.dups?`<button class="sign-badge dup" onclick="openDetail(${r.st.id},'dup')">📋 ${r.sm.dups}</button>`:"—"}</td>
       </tr>`;}).join("")}
     </table></div>
-    <div class="legend">⚠はSOS・記述停滞の可能性、⭐は発展的な挑戦や自分の言葉での説明など「得意」の兆候、📋は前回までの振り返りとほぼ同じ文章＝コピーの疑い（この回はAI評価をスキップ）。数字をタップすると該当する記録だけを個人ページで確認できます。名前をタップすると全履歴が開きます。観点チェック＝AIによる5観点（具体性/つまづき/次の一手/問い/接続）の✓数（コピー疑いの回は集計対象外）。</div>
+    <div class="legend">⚠はSOS・記述停滞の可能性、⭐は発展的な挑戦や自分の言葉での説明など「得意」の兆候、📋は前回までの振り返りとほぼ同じ文章＝コピーの疑い（この回はAI評価をスキップ）。数字をタップすると該当する記録だけを個人ページで確認できます。名前をタップすると全履歴が開きます。観点チェック＝AIによる6観点（具体性/つまづき/次の一手/問い/接続/学び方）の✓数（コピー疑いの回は集計対象外）。</div>
   </div>`;
 }
 function renderTeacherDetail(){
