@@ -547,6 +547,62 @@ async function resetStudentLogin(code){
     alert("通信エラーです。通信環境を確認してください。");
   }
 }
+/* ----- CSV出力 ----- */
+const CSV_HEADERS = [
+  {label:"出席番号", get:e=>e.studentId},
+  {label:"日付", get:e=>e.date},
+  {label:"学習時間(分)", get:e=>e.minutes},
+  {label:"理解度", get:e=>e.rikai},
+  {label:"意欲", get:e=>e.iyoku},
+  {label:"まとめ", get:e=>e.matome||""},
+  {label:"振り返り", get:e=>e.furikaeri||""},
+  {label:"まとめの具体性", get:e=>e.checks?(e.checks[0]?1:0):""},
+  {label:"つまづきの自覚", get:e=>e.checks?(e.checks[1]?1:0):""},
+  {label:"次の一手", get:e=>e.checks?(e.checks[2]?1:0):""},
+  {label:"問いの発生", get:e=>e.checks?(e.checks[3]?1:0):""},
+  {label:"前回との接続", get:e=>e.checks?(e.checks[4]?1:0):""},
+  {label:"学び方の工夫", get:e=>e.checks?(e.checks[5]?1:0):""},
+  {label:"要精読", get:e=>e.flag?1:0},
+  {label:"得意サイン", get:e=>e.good?1:0},
+  {label:"コピー疑い", get:e=>e.duplicate?1:0},
+  {label:"もっとしっかり書こう", get:e=>e.tooShort?1:0},
+  {label:"もっと具体的に書こう", get:e=>e.tooVague?1:0},
+  {label:"AIの問い返し", get:e=>e.toikaeshi||e.warning||""},
+];
+function csvEscape(v){
+  const s = String(v ?? "");
+  return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+}
+function entriesToCSV(entries){
+  const lines = [CSV_HEADERS.map(h=>csvEscape(h.label)).join(",")];
+  entries.forEach(e=>lines.push(CSV_HEADERS.map(h=>csvEscape(h.get(e))).join(",")));
+  return lines.join("\r\n");
+}
+function downloadCSV(filename, csvText){
+  const blob = new Blob(["﻿"+csvText], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function csvDateStamp(){
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
+}
+function exportClassCSV(){
+  if(!teacherEntries || !teacherEntries.length){ alert("出力できる記録がありません。"); return; }
+  downloadCSV(`振り返り_全員_${csvDateStamp()}.csv`, entriesToCSV(teacherEntries.slice().sort((a,b)=> a.studentId===b.studentId ? (a.date<b.date?-1:1) : (a.studentId<b.studentId?-1:1))));
+}
+function exportStudentCSV(){
+  const es = byStudentIn(teacherEntries, teacherDetail);
+  const filtered = filterMode==="flag" ? es.filter(e=>e.flag)
+                  : filterMode==="good" ? es.filter(e=>e.good)
+                  : filterMode==="dup" ? es.filter(e=>e.duplicate)
+                  : es;
+  if(!filtered.length){ alert("出力できる記録がありません。"); return; }
+  downloadCSV(`振り返り_${teacherDetail}_${csvDateStamp()}.csv`, entriesToCSV(filtered));
+}
 function logoutTeacher(){
   sessionStorage.removeItem("reflection:teacherPin");
   teacherPin = null; teacherEntries = null; teacherDetail = null; filterMode = null;
@@ -589,7 +645,8 @@ function renderTeacher(){
   return `
   <div class="card">
     <h2>クラス一覧 <span class="tag">⚠ 要精読 ${totalFlags}件</span><span class="tag good-tag">⭐ 得意 ${totalGoods}件</span><span class="tag dup-tag">📋 使い回し ${totalDups}件</span>
-      <button class="back" style="margin:0;margin-left:auto" onclick="logoutTeacher()">ログアウト</button></h2>
+      <button class="back" style="margin:0;margin-left:auto" onclick="exportClassCSV()">CSV出力</button>
+      <button class="back" style="margin:0" onclick="logoutTeacher()">ログアウト</button></h2>
     ${rows.length===0?'<div class="muted">まだ提出がありません。</div>':`
     <div class="table-wrap"><table>
       <tr><th style="text-align:left">出席番号</th><th>記入</th><th>合計時間</th><th>理解度<br>(平均/直近)</th><th>意欲<br>(平均/直近)</th><th>観点チェック<br>累計</th><th>最終記入</th><th>⚠<br>つまづき</th><th>⭐<br>得意</th><th>📋<br>使い回し</th></tr>
@@ -634,7 +691,8 @@ function renderTeacherDetail(){
   <button class="back" onclick="teacherDetail=null;filterMode=null;render()">← 一覧にもどる</button>
   <div class="card">
     <h2>${esc(teacherDetail)}（${esc(sidLabel(teacherDetail))}） の記録
-      <button class="back" style="margin:0;margin-left:auto;font-size:12.5px" onclick="resetStudentLogin('${teacherDetail}')">合言葉をリセット</button></h2>
+      <button class="back" style="margin:0;margin-left:auto;font-size:12.5px" onclick="exportStudentCSV()">CSV出力</button>
+      <button class="back" style="margin:0;font-size:12.5px" onclick="resetStudentLogin('${teacherDetail}')">合言葉をリセット</button></h2>
     <div class="legend">合言葉を忘れた・他の生徒が先に番号を登録してしまった場合はリセットしてください。本人が次回ログイン時に新しい合言葉を決め直せます（それまでの記録は消えません）。</div>
     <div class="stats">
       <div class="stat"><div class="num">${sm.total}<small> 分</small></div><div class="lbl">学習合計時間</div></div>
