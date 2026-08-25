@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>座席ルーレット</title>
+<style>
+  :root{
+    --ink:#1f2937; --paper:#fbf7ee; --line:#d9cfb8;
+    --green:#3f8f5f; --green-d:#2c6e46;
+    --amber:#f2a93b; --amber-d:#d98613;
+    --blue:#3d6fb4; --blue-d:#2c548c;
+    --sky:#e7f0fb; --leaf:#e6f1e7; --cream:#fff8e8;
+    --shadow:0 2px 0 rgba(0,0,0,.08), 0 8px 24px rgba(60,45,20,.10);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:
+      radial-gradient(circle at 12% 8%, #fff 0, transparent 40%),
+      radial-gradient(circle at 88% 92%, #fdf3df 0, transparent 45%),
+      var(--paper);
+    color:var(--ink);
+    font-family:"Hiragino Maru Gothic ProN","Yu Gothic UI","Yu Gothic","Meiryo",system-ui,sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1600px; margin:0 auto; padding:24px 22px 80px;}
+
+  /* 設定3枚を横並び */
+  .config-row{display:grid; grid-template-columns:1fr; gap:18px; margin-bottom:18px;}
+  @media(min-width:980px){ .config-row{grid-template-columns:1fr 1fr 1fr; align-items:start;} }
+  .config-row .panel{margin-bottom:0; height:100%;}
+  header.top{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    padding:18px 22px; margin-bottom:22px; border-radius:18px;
+    background:linear-gradient(135deg,#2c6e46,#3f8f5f);
+    color:#fff; box-shadow:var(--shadow); position:relative; overflow:hidden;
+  }
+  header.top::after{
+    content:"🎰"; position:absolute; right:18px; top:50%; transform:translateY(-50%);
+    font-size:54px; opacity:.18;
+  }
+  header.top h1{font-size:24px; margin:0; letter-spacing:.04em;}
+  header.top p{margin:2px 0 0; font-size:13px; opacity:.92;}
+
+  .panel{
+    background:#fff; border:1px solid var(--line); border-radius:16px;
+    padding:18px 20px; margin-bottom:18px; box-shadow:var(--shadow);
+  }
+  .panel h2{
+    font-size:16px; margin:0 0 14px; display:flex; align-items:center; gap:9px;
+    padding-bottom:10px; border-bottom:2px dotted var(--line);
+  }
+  .badge{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:26px; height:26px; border-radius:8px; color:#fff; font-size:14px; font-weight:700;
+  }
+  .b-green{background:var(--green);} .b-amber{background:var(--amber-d);}
+  .b-blue{background:var(--blue);} .b-ink{background:#555;}
+
+  details summary{cursor:pointer; font-weight:600; list-style:none;}
+  details summary::-webkit-details-marker{display:none;}
+  details summary::before{content:"▸ "; color:var(--green); font-weight:700;}
+  details[open] summary::before{content:"▾ ";}
+
+  textarea#names{
+    width:100%; min-height:260px; resize:vertical; padding:10px 12px;
+    border:1px solid var(--line); border-radius:10px; font-size:14px;
+    font-family:inherit; background:var(--cream);
+  }
+  .hint{font-size:12px; color:#8a7f6a; margin:6px 0 0;}
+
+  table.cfg{width:100%; border-collapse:collapse; font-size:14px;}
+  table.cfg th, table.cfg td{padding:7px 8px; border:1px solid var(--line); text-align:center;}
+  table.cfg th{background:var(--leaf); font-weight:700; font-size:13px;}
+  table.cfg tr.amber th{background:#fbe7c2;}
+  select, input[type=number]{
+    font-family:inherit; font-size:14px; padding:6px 8px;
+    border:1px solid var(--line); border-radius:8px; background:#fff; max-width:100%;
+  }
+  select{min-width:120px;}
+  .pos-label{font-size:12px; color:#7a7060;}
+
+  .controls{display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-top:6px;}
+  button{
+    font-family:inherit; cursor:pointer; border:none; border-radius:12px;
+    font-weight:700; transition:transform .08s, box-shadow .12s, filter .12s;
+  }
+  button:active{transform:translateY(2px);}
+  .btn-roll{
+    font-size:20px; padding:15px 34px; color:#fff;
+    background:linear-gradient(135deg,var(--amber),var(--amber-d));
+    box-shadow:0 4px 0 #b06d09, 0 10px 22px rgba(217,134,19,.4);
+    letter-spacing:.06em;
+  }
+  .btn-roll:active{box-shadow:0 1px 0 #b06d09;}
+  .btn-roll:disabled{filter:grayscale(.5) opacity(.7); cursor:wait;}
+  .btn-sub{
+    font-size:14px; padding:11px 18px; color:var(--ink);
+    background:#fff; border:1.5px solid var(--line); box-shadow:0 2px 0 var(--line);
+  }
+  .btn-sub:active{box-shadow:none;}
+
+  .status{font-size:13px; padding:4px 0; min-height:20px;}
+  .status.warn{color:#c0392b; font-weight:700;}
+  .status.ok{color:var(--green-d); font-weight:700;}
+
+  .views{display:grid; grid-template-columns:1fr; gap:24px;}
+
+  .board{
+    border:1px solid var(--line); border-radius:14px; padding:18px 20px 14px;
+    background:linear-gradient(#fff,#fdfbf5);
+  }
+  .board h3{
+    margin:0 0 4px; font-size:18px; text-align:center; color:var(--blue-d);
+  }
+  .board .sub{font-size:12px; text-align:center; color:#9a8f78; margin:0 0 14px;}
+
+  .grid{display:grid; grid-template-columns:repeat(7, 1fr); gap:8px;}
+  .seat{
+    position:relative; aspect-ratio:1/.62; border-radius:9px;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    font-size:16px; font-weight:600; padding:4px; line-height:1.2;
+    border:1.5px solid #cfe0cf; background:var(--leaf); color:#23402a;
+    overflow:hidden; word-break:break-word;
+    transition:background .15s, transform .15s;
+  }
+  .seat.alt{background:var(--sky); border-color:#cdddf0; color:#1f3553;}
+  .seat.pri{
+    background:linear-gradient(135deg,#ffe08a,#ffd14d);
+    border:2px solid var(--amber-d); color:#6b4a00; font-weight:700;
+  }
+  .seat.reg{
+    background:linear-gradient(135deg,#d7f0ff,#bfe4ff);
+    border:2px dashed var(--blue); color:#143a5e; font-weight:700;
+  }
+  .seat .tag{
+    position:absolute; top:2px; left:5px; font-size:12px; opacity:.65; font-weight:700;
+  }
+  .seat.spin{ animation:flip .12s; }
+  @keyframes flip{0%{transform:scale(.9); opacity:.5;}100%{transform:scale(1); opacity:1;}}
+
+  .deskrow{margin-top:14px; display:flex; justify-content:center;}
+  .desk{
+    background:linear-gradient(#fde0cf,#f9cdb2); border:1.5px solid #e0a07a;
+    color:#8a4b22; font-weight:700; font-size:15px; padding:8px 70px; border-radius:9px;
+  }
+  .frontmark{
+    text-align:center; font-size:14px; color:#c0392b; font-weight:700; margin:10px 0 2px;
+    letter-spacing:.12em;
+  }
+  .collabels{display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-bottom:6px;}
+  .collabels span{text-align:center; font-size:12px; color:#a99; }
+
+  .legend{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; margin:14px 2px 0; justify-content:center;}
+  .legend i{display:inline-block; width:14px; height:14px; border-radius:4px; vertical-align:-2px; margin-right:5px;}
+  .lg-pri{background:#ffd14d; border:1.5px solid var(--amber-d);}
+  .lg-reg{background:#bfe4ff; border:1.5px dashed var(--blue);}
+  .lg-nor{background:var(--leaf); border:1.5px solid #cfe0cf;}
+
+  @media print{
+    body{background:#fff;}
+    .noprint{display:none !important;}
+    .views{grid-template-columns:1fr 1fr;}
+    .panel{box-shadow:none;}
+    header.top{background:#2c6e46 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    .seat,.seat.pri,.seat.reg,.desk{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>座席ルーレット</h1>
+      <p>優先席（目が悪い生徒）＋ エアコン回避などの列範囲希望に対応 ／ マクロ不要</p>
+    </div>
+  </header>
+
+  <!-- 設定3枚を横並び -->
+  <div class="config-row noprint">
+  <!-- 名前入力 -->
+  <div class="panel noprint">
+    <h2><span class="badge b-green">1</span>名前を入力</h2>
+    <textarea id="names"></textarea>
+    <p class="hint">改行で区切って1行に1名（35名）。多少前後しても動きます。</p>
+  </div>
+
+  <!-- 優先席 -->
+  <div class="panel noprint">
+    <h2><span class="badge b-amber">2</span>優先席（目が悪い生徒）<span style="font-size:12px;color:#9a8f78;font-weight:400">― 最大8名・前方中央から</span></h2>
+    <table class="cfg">
+      <thead><tr class="amber"><th style="width:70px">優先席</th><th>座席位置（前が下）</th><th>生徒名</th></tr></thead>
+      <tbody id="priBody"></tbody>
+    </table>
+    <p class="hint">必要な人数だけ選択してください。選ばれた生徒は通常ルーレットから自動で外れます。</p>
+  </div>
+
+  <!-- 範囲希望 -->
+  <div class="panel noprint">
+    <h2><span class="badge b-blue">3</span>列範囲の希望（エアコン回避など）<span style="font-size:12px;color:#9a8f78;font-weight:400">― 最大6名</span></h2>
+    <table class="cfg">
+      <thead><tr><th style="width:50px">No.</th><th>生徒名</th><th>希望する列の範囲（前が下・左から）</th></tr></thead>
+      <tbody id="regBody"></tbody>
+    </table>
+    <p class="hint">例：エアコンが右側にあるなら「1列〜3列」を選択 → その範囲の中でランダムに座ります。優先席の生徒はここでは選ばないでください。</p>
+  </div>
+  </div><!-- /config-row -->
+
+  <!-- 操作 -->
+  <div class="panel noprint">
+    <div class="controls">
+      <button class="btn-roll" id="rollBtn">🎰 ルーレット！</button>
+      <button class="btn-sub" id="resetBtn">名前をリセット</button>
+      <button class="btn-sub" id="printBtn">🖨 印刷 / PDF</button>
+    </div>
+    <div class="status" id="status">「ルーレット！」を押すと座席が決まります。</div>
+  </div>
+
+  <!-- 座席表 -->
+  <div class="views">
+    <div class="board">
+      <h3>座席表（前が下）</h3>
+      <p class="sub">黒板・教卓が下。教室に立って前から見た向き</p>
+      <div class="collabels" id="colsDown"></div>
+      <div class="grid" id="gridDown"></div>
+      <div class="frontmark">▼ 前（黒板・スクリーン）▼</div>
+      <div class="deskrow"><div class="desk">📋 教卓</div></div>
+    </div>
+    <div class="board">
+      <h3>座席表（前が上）</h3>
+      <p class="sub">教室の後ろから見た向き（上下・左右反転）・印刷向き</p>
+      <div class="deskrow" style="margin:0 0 8px"><div class="desk">📋 教卓</div></div>
+      <div class="frontmark" style="margin:2px 0 8px">▲ 前（黒板・スクリーン）▲</div>
+      <div class="collabels" id="colsUp"></div>
+      <div class="grid" id="gridUp"></div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><i class="lg-pri"></i>優先席（目が悪い生徒）</span>
+    <span><i class="lg-reg"></i>列範囲の希望席</span>
+    <span><i class="lg-nor"></i>通常席</span>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   座席グリッド定義
+   grow=1=最前列, grow=5=最後列 / gcol=1=左端, gcol=7=右端（前が下の向き）
+   seat index = (grow-1)*7 + (gcol-1)  0..34
+   ============================================================ */
+const ROWS=5, COLS=7, TOTAL=35;
+const seatId=(r,c)=>(r-1)*COLS+(c-1);
+
+// 優先席の配置（前を下として）追加順
+const PRIORITY_POS=[
+  {r:1,c:4,label:"前1行・4列（中央）"},
+  {r:1,c:3,label:"前1行・3列（中央左）"},
+  {r:1,c:5,label:"前1行・5列（中央右）"},
+  {r:2,c:4,label:"前2行・4列（2列目中）"},
+  {r:2,c:3,label:"前2行・3列（2列目左）"},
+  {r:2,c:5,label:"前2行・5列（2列目右）"},
+  {r:1,c:2,label:"前1行・2列（最前左）"},
+  {r:3,c:4,label:"前3行・4列（3列目中）"},
+];
+const MAX_PRI=8, MAX_REG=6;
+
+/* ---------- 名前 ---------- */
+function defaultNames(){const a=[];for(let i=1;i<=35;i++)a.push("生徒"+String(i).padStart(2,"0"));return a;}
+function getNames(){
+  return document.getElementById("names").value
+    .split("\n").map(s=>s.trim()).filter(s=>s.length>0);
+}
+
+/* ---------- 設定UI構築 ---------- */
+function buildPriRows(){
+  const tb=document.getElementById("priBody"); tb.innerHTML="";
+  for(let i=0;i<MAX_PRI;i++){
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><b>${i+1}人目</b></td>
+      <td class="pos-label">${PRIORITY_POS[i].label}</td>
+      <td><select class="priSel" data-i="${i}"><option value="">―</option></select></td>`;
+    tb.appendChild(tr);
+  }
+}
+function buildRegRows(){
+  const tb=document.getElementById("regBody"); tb.innerHTML="";
+  for(let i=0;i<MAX_REG;i++){
+    let colOpts="";
+    for(let a=1;a<=COLS;a++)for(let b=a;b<=COLS;b++){
+      colOpts+=`<option value="${a}-${b}">${a}列 〜 ${b}列</option>`;
+    }
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${i+1}</td>
+      <td><select class="regSel" data-i="${i}"><option value="">―</option></select></td>
+      <td><select class="regRange" data-i="${i}"><option value="">範囲を選択</option>${colOpts}</select></td>`;
+    tb.appendChild(tr);
+  }
+}
+function refreshSelects(){
+  const names=getNames();
+  document.querySelectorAll(".priSel,.regSel").forEach(sel=>{
+    const cur=sel.value;
+    sel.innerHTML=`<option value="">―</option>`+names.map(n=>`<option value="${n}">${n}</option>`).join("");
+    if(names.includes(cur)) sel.value=cur; else sel.value="";
+  });
+}
+
+/* ---------- 設定の取得 ---------- */
+function readConfig(){
+  const names=getNames();
+  const pri=[]; // {name, seat}
+  document.querySelectorAll(".priSel").forEach(sel=>{
+    const i=+sel.dataset.i, n=sel.value;
+    if(n) pri.push({name:n, seat:seatId(PRIORITY_POS[i].r,PRIORITY_POS[i].c)});
+  });
+  const reg=[]; // {name, lo, hi}
+  document.querySelectorAll(".regSel").forEach(sel=>{
+    const i=+sel.dataset.i, n=sel.value;
+    const rangeSel=document.querySelector(`.regRange[data-i="${i}"]`);
+    const rg=rangeSel.value;
+    if(n&&rg){const[lo,hi]=rg.split("-").map(Number); reg.push({name:n,lo,hi});}
+  });
+  return {names,pri,reg};
+}
+
+/* ---------- 配置アルゴリズム ----------
+   1) 優先席：選ばれた生徒をその固定席へ
+   2) 範囲希望：希望列内の空席へランダム（制約のきつい順）
+   3) 残り全員：残り空席へランダム
+   実行可能になるまで最大2000回リトライ
+*/
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function colOfSeat(s){return (s%COLS)+1;}
+
+function solve(cfg){
+  const {names,pri,reg}=cfg;
+  // バリデーション
+  const errs=[];
+  if(names.length===0) errs.push("名前が入力されていません。");
+  const priNames=pri.map(p=>p.name), regNames=reg.map(r=>r.name);
+  const allAssign=[...priNames,...regNames];
+  const dup=allAssign.filter((n,i)=>allAssign.indexOf(n)!==i);
+  if(dup.length) errs.push("重複した生徒がいます: "+[...new Set(dup)].join("、"));
+  if(names.length>TOTAL) errs.push(`名前が${names.length}名です。席は${TOTAL}席までです。`);
+  if(errs.length) return {error:errs.join(" / ")};
+
+  for(let attempt=0; attempt<2000; attempt++){
+    const assign={}; // seat -> name
+    const used=new Set();
+    let ok=true;
+
+    // 1) 優先席
+    for(const p of pri){ assign[p.seat]=p.name; used.add(p.seat); }
+
+    // 2) 範囲希望（範囲が狭い＝制約がきつい順に処理）
+    const regSorted=[...reg].sort((a,b)=>(a.hi-a.lo)-(b.hi-b.lo));
+    for(const r of regSorted){
+      // 希望列内かつ空席
+      const cand=[];
+      for(let s=0;s<TOTAL;s++){
+        if(used.has(s)) continue;
+        const col=colOfSeat(s);
+        if(col>=r.lo&&col<=r.hi) cand.push(s);
+      }
+      if(cand.length===0){ok=false;break;}
+      const pick=cand[Math.floor(Math.random()*cand.length)];
+      assign[pick]=r.name; used.add(pick);
+    }
+    if(!ok) continue;
+
+    // 3) 残りの生徒を残り席へ
+    const placed=new Set([...priNames,...regNames]);
+    const rest=shuffle(names.filter(n=>!placed.has(n)));
+    const freeSeats=shuffle([...Array(TOTAL).keys()].filter(s=>!used.has(s)));
+    // 残り生徒数 ≤ 空席数 のはず
+    for(let k=0;k<rest.length;k++){
+      if(k>=freeSeats.length){ok=false;break;}
+      assign[freeSeats[k]]=rest[k];
+    }
+    if(!ok) continue;
+
+    // 成功
+    const priSeatSet=new Set(pri.map(p=>p.seat));
+    const regSeatSet=new Set();
+    for(const s in assign){ if(regNames.includes(assign[s])) regSeatSet.add(+s); }
+    return {assign, priSeatSet, regSeatSet};
+  }
+  return {error:"配置できませんでした。範囲希望が同じ列に集中しすぎている可能性があります。範囲を広げてください。"};
+}
+
+/* ---------- 描画 ----------
+   前が下：画面上から grow=5(後ろ)→grow=1(前)、列は左から1→7
+   前が上：180度回転 → 画面上から grow=1(前)→grow=5(後ろ)、列は左から7→1
+*/
+let lastResult=null;
+
+function drawCols(elId, reversed){
+  const el=document.getElementById(elId); el.innerHTML="";
+  const cols = reversed ? [7,6,5,4,3,2,1] : [1,2,3,4,5,6,7];
+  cols.forEach(c=>{const s=document.createElement("span");s.textContent=c+"列";el.appendChild(s);});
+}
+
+function render(result, spin){
+  const {assign, priSeatSet, regSeatSet}=result;
+  // 前が下
+  const gd=document.getElementById("gridDown"); gd.innerHTML="";
+  for(let dispRow=0; dispRow<ROWS; dispRow++){
+    const grow=ROWS-dispRow;           // 上から：後ろ(5)→前(1)
+    for(let dispCol=0; dispCol<COLS; dispCol++){
+      const gcol=dispCol+1;            // 左から 1→7
+      gd.appendChild(makeSeat(grow,gcol,assign,priSeatSet,regSeatSet,dispRow,dispCol,spin));
+    }
+  }
+  // 前が上（上下左右反転）
+  const gu=document.getElementById("gridUp"); gu.innerHTML="";
+  for(let dispRow=0; dispRow<ROWS; dispRow++){
+    const grow=dispRow+1;              // 上から：前(1)→後ろ(5)
+    for(let dispCol=0; dispCol<COLS; dispCol++){
+      const gcol=COLS-dispCol;         // 左から 7→1
+      gu.appendChild(makeSeat(grow,gcol,assign,priSeatSet,regSeatSet,dispRow,dispCol,spin));
+    }
+  }
+}
+function makeSeat(grow,gcol,assign,priSet,regSet,dr,dc,spin){
+  const s=seatId(grow,gcol);
+  const d=document.createElement("div");
+  d.className="seat"+(((dr+dc)%2)?" alt":"");
+  if(priSet.has(s)) d.className="seat pri";
+  else if(regSet.has(s)) d.className="seat reg";
+  const name=assign[s]||"";
+  let tag="";
+  if(priSet.has(s)) tag='<span class="tag">👁</span>';
+  else if(regSet.has(s)) tag='<span class="tag">❄</span>';
+  d.innerHTML=tag+"<span>"+(name||"")+"</span>";
+  if(spin) d.classList.add("spin");
+  return d;
+}
+
+/* ---------- ルーレット演出 ---------- */
+let rolling=false;
+function doRoulette(){
+  if(rolling) return;
+  const cfg=readConfig();
+  const final=solve(cfg);
+  const st=document.getElementById("status");
+  if(final.error){ st.className="status warn"; st.textContent="⚠ "+final.error; return; }
+
+  rolling=true;
+  document.getElementById("rollBtn").disabled=true;
+  st.className="status"; st.textContent="シャッフル中…";
+
+  const names=cfg.names.slice();
+  let ticks=0; const totalTicks=26;
+  function tick(){
+    // 演出用：名前をランダムに並べた仮配置（制約は無視して見た目だけ動かす）
+    const shuffled=shuffle(names.slice());
+    const fake={assign:{}, priSeatSet:final.priSeatSet, regSeatSet:final.regSeatSet};
+    let k=0;
+    for(let s=0;s<TOTAL;s++){ fake.assign[s]= shuffled[k++]||""; }
+    render(fake,true);
+    ticks++;
+    if(ticks<totalTicks){
+      const delay = ticks<16?55 : ticks<22?120 : 240; // だんだん遅く
+      setTimeout(tick,delay);
+    }else{
+      render(final,false);     // 最終確定（制約を満たす本物）
+      lastResult=final;
+      rolling=false;
+      document.getElementById("rollBtn").disabled=false;
+      const n=Object.values(final.assign).filter(x=>x).length;
+      st.className="status ok"; st.textContent=`✓ 座席が決まりました！（${n}名を配置）`;
+    }
+  }
+  tick();
+}
+
+/* ---------- 初期化 ---------- */
+function init(){
+  document.getElementById("names").value=defaultNames().join("\n");
+  buildPriRows(); buildRegRows(); refreshSelects();
+  drawCols("colsDown",false); drawCols("colsUp",true);
+  // 空の座席表を初期表示
+  const empty={assign:{},priSeatSet:new Set(PRIORITY_POS.slice(0,0).map(p=>seatId(p.r,p.c))),regSeatSet:new Set()};
+  const names=defaultNames();
+  for(let s=0;s<TOTAL;s++) empty.assign[s]=names[s]||"";
+  render(empty,false);
+
+  document.getElementById("names").addEventListener("input",refreshSelects);
+  document.getElementById("rollBtn").addEventListener("click",doRoulette);
+  document.getElementById("printBtn").addEventListener("click",()=>window.print());
+  document.getElementById("resetBtn").addEventListener("click",()=>{
+    document.getElementById("names").value=defaultNames().join("\n");
+    refreshSelects();
+    document.getElementById("status").className="status";
+    document.getElementById("status").textContent="名前をリセットしました。";
+  });
+}
+init();
+</script>
+</body>
+</html>
