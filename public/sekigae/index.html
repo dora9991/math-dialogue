@@ -10,7 +10,8 @@
     --green:#3f8f5f; --green-d:#2c6e46;
     --amber:#f2a93b; --amber-d:#d98613;
     --blue:#3d6fb4; --blue-d:#2c548c;
-    --sky:#e7f0fb; --leaf:#e6f1e7; --cream:#fff8e8;
+    --purple:#8a5cbf; --purple-d:#6b3fa0;
+    --sky:#e7f0fb; --leaf:#e6f1e7; --cream:#fff8e8; --lilac:#f1e8fa;
     --shadow:0 2px 0 rgba(0,0,0,.08), 0 8px 24px rgba(60,45,20,.10);
   }
   *{box-sizing:border-box;}
@@ -25,9 +26,10 @@
   }
   .wrap{max-width:1600px; margin:0 auto; padding:24px 22px 80px;}
 
-  /* 設定3枚を横並び */
+  /* 設定4枚を横並び */
   .config-row{display:grid; grid-template-columns:1fr; gap:18px; margin-bottom:18px;}
-  @media(min-width:980px){ .config-row{grid-template-columns:1fr 1fr 1fr; align-items:start;} }
+  @media(min-width:760px){ .config-row{grid-template-columns:1fr 1fr;} }
+  @media(min-width:1300px){ .config-row{grid-template-columns:1fr 1fr 1fr 1fr; align-items:start;} }
   .config-row .panel{margin-bottom:0; height:100%;}
   header.top{
     display:flex; align-items:center; gap:14px; flex-wrap:wrap;
@@ -55,7 +57,7 @@
     width:26px; height:26px; border-radius:8px; color:#fff; font-size:14px; font-weight:700;
   }
   .b-green{background:var(--green);} .b-amber{background:var(--amber-d);}
-  .b-blue{background:var(--blue);} .b-ink{background:#555;}
+  .b-blue{background:var(--blue);} .b-ink{background:#555;} .b-purple{background:var(--purple-d);}
 
   details summary{cursor:pointer; font-weight:600; list-style:none;}
   details summary::-webkit-details-marker{display:none;}
@@ -105,6 +107,7 @@
   .status.ok{color:var(--green-d); font-weight:700;}
 
   .views{display:grid; grid-template-columns:1fr; gap:24px;}
+  @media(min-width:900px){ .views{grid-template-columns:1fr 1fr;} }
 
   .board{
     border:1px solid var(--line); border-radius:14px; padding:18px 20px 14px;
@@ -133,6 +136,10 @@
     background:linear-gradient(135deg,#d7f0ff,#bfe4ff);
     border:2px dashed var(--blue); color:#143a5e; font-weight:700;
   }
+  .seat.pin{
+    background:linear-gradient(135deg,#ecdcfa,#d9bdf2);
+    border:2px solid var(--purple-d); color:#4a2d70; font-weight:700;
+  }
   .seat .tag{
     position:absolute; top:2px; left:5px; font-size:12px; opacity:.65; font-weight:700;
   }
@@ -155,7 +162,16 @@
   .legend i{display:inline-block; width:14px; height:14px; border-radius:4px; vertical-align:-2px; margin-right:5px;}
   .lg-pri{background:#ffd14d; border:1.5px solid var(--amber-d);}
   .lg-reg{background:#bfe4ff; border:1.5px dashed var(--blue);}
+  .lg-pin{background:#d9bdf2; border:1.5px solid var(--purple-d);}
   .lg-nor{background:var(--leaf); border:1.5px solid #cfe0cf;}
+
+  dialog.pri-dialog{
+    border:none; border-radius:16px; padding:20px 24px; max-width:480px; width:92vw;
+    box-shadow:var(--shadow); border:1px solid var(--line); background:var(--paper);
+  }
+  dialog.pri-dialog::backdrop{ background:rgba(30,20,10,.45); }
+  dialog.pri-dialog h3{margin:0 0 14px; font-size:16px;}
+  dialog.pri-dialog table.cfg{margin-bottom:2px;}
 
   @media print{
     body{background:#fff;}
@@ -187,12 +203,14 @@
 
   <!-- 優先席 -->
   <div class="panel noprint">
-    <h2><span class="badge b-amber">2</span>優先席（目が悪い生徒）<span style="font-size:12px;color:#9a8f78;font-weight:400">― 最大8名・前方中央から</span></h2>
+    <h2><span class="badge b-amber">2</span>優先席（目が悪い生徒）<span style="font-size:12px;color:#9a8f78;font-weight:400">― 最大8名・前方候補内でルーレット</span>
+      <button type="button" class="btn-sub" id="priSettingsBtn" style="margin-left:auto;font-size:12px;padding:6px 12px;">⚙ 設定</button>
+    </h2>
     <table class="cfg">
-      <thead><tr class="amber"><th style="width:70px">優先席</th><th>座席位置（前が下）</th><th>生徒名</th></tr></thead>
+      <thead><tr class="amber"><th style="width:70px">優先席</th><th>生徒名</th></tr></thead>
       <tbody id="priBody"></tbody>
     </table>
-    <p class="hint">必要な人数だけ選択してください。選ばれた生徒は通常ルーレットから自動で外れます。</p>
+    <p class="hint">必要な人数だけ選択してください。選ばれた生徒は、「⚙ 設定」で決めた候補席（最大8）の中でルーレットのたびにランダムに座席が決まります。選んだ人数が候補より少ないときは、設定の上から順に使われます（例：4人なら上から4つの候補）。通常ルーレットからは自動で外れます。</p>
   </div>
 
   <!-- 範囲希望 -->
@@ -202,9 +220,33 @@
       <thead><tr><th style="width:50px">No.</th><th>生徒名</th><th>希望する列の範囲（前が下・左から）</th></tr></thead>
       <tbody id="regBody"></tbody>
     </table>
-    <p class="hint">例：エアコンが右側にあるなら「1列〜3列」を選択 → その範囲の中でランダムに座ります。優先席の生徒はここでは選ばないでください。</p>
+    <p class="hint">例：エアコンが右側にあるなら「1列〜3列」を選択 → その範囲の中でランダムに座ります。優先席・指定席の生徒はここでは選ばないでください。</p>
+  </div>
+
+  <!-- 指定席（固定） -->
+  <div class="panel noprint">
+    <h2><span class="badge b-purple">4</span>座席を指定（固定）<span style="font-size:12px;color:#9a8f78;font-weight:400">― 最大6名</span></h2>
+    <table class="cfg">
+      <thead><tr><th style="width:50px">No.</th><th>生徒名</th><th>座席（前が下）</th></tr></thead>
+      <tbody id="pinBody"></tbody>
+    </table>
+    <p class="hint">指定した生徒は必ずその席になります。ルーレットを回している間もその席にずっと表示されたままになります。優先席・範囲希望の生徒はここでは選ばないでください。</p>
   </div>
   </div><!-- /config-row -->
+
+  <!-- 優先席・候補設定ダイアログ -->
+  <dialog id="priSettingsDialog" class="pri-dialog noprint">
+    <h3>⚙ 優先席の候補設定（最大8席・上から順に使われます）</h3>
+    <table class="cfg">
+      <thead><tr class="amber"><th style="width:80px">候補順位</th><th>座席（前が下）</th></tr></thead>
+      <tbody id="priSeatCfgBody"></tbody>
+    </table>
+    <p class="hint">優先席の生徒を選んだ人数分だけ、上の順位から候補として使われます（例：優先席を4人選んだ場合は上から4つの候補の中でルーレットします）。「―（使わない）」にすると、その順位は候補から外れます。設定はこの端末に保存されます。</p>
+    <div class="controls" style="margin-top:14px;">
+      <button type="button" class="btn-sub" id="priSettingsReset">既定に戻す</button>
+      <button type="button" class="btn-roll" style="font-size:14px;padding:10px 22px;" id="priSettingsClose">閉じる</button>
+    </div>
+  </dialog>
 
   <!-- 操作 -->
   <div class="panel noprint">
@@ -239,6 +281,7 @@
   <div class="legend">
     <span><i class="lg-pri"></i>優先席（目が悪い生徒）</span>
     <span><i class="lg-reg"></i>列範囲の希望席</span>
+    <span><i class="lg-pin"></i>指定席（固定）</span>
     <span><i class="lg-nor"></i>通常席</span>
   </div>
 </div>
@@ -263,7 +306,30 @@ const PRIORITY_POS=[
   {r:1,c:2,label:"前1行・2列（最前左）"},
   {r:3,c:4,label:"前3行・4列（3列目中）"},
 ];
-const MAX_PRI=8, MAX_REG=6;
+const MAX_PRI=8, MAX_REG=6, MAX_PIN=6;
+function seatLabel(r,c){return `前${r}行・${c}列`;}
+
+/* ---------- 優先席：候補席の設定（⚙ 設定ダイアログ） ---------- */
+const DEFAULT_PRIORITY_SEATS=PRIORITY_POS.map(p=>seatId(p.r,p.c)); // 既定の候補順（前1行4列 が1番目…）
+const PRI_SEATS_KEY="sekigae_prioritySeats";
+function loadPrioritySeats(){
+  try{
+    const raw=localStorage.getItem(PRI_SEATS_KEY);
+    if(raw){
+      const arr=JSON.parse(raw);
+      if(Array.isArray(arr)&&arr.length<=MAX_PRI){
+        const out=arr.slice(0,MAX_PRI).map(v=>(v===null||v===undefined||v==="")?null:+v);
+        while(out.length<MAX_PRI) out.push(null);
+        return out;
+      }
+    }
+  }catch(e){/* ignore broken storage */}
+  return DEFAULT_PRIORITY_SEATS.slice();
+}
+function savePrioritySeats(){
+  try{ localStorage.setItem(PRI_SEATS_KEY, JSON.stringify(prioritySeatOrder)); }catch(e){/* ignore */}
+}
+let prioritySeatOrder=loadPrioritySeats(); // 長さ8。各要素は座席id（0-34）またはnull（未使用）
 
 /* ---------- 名前 ---------- */
 function defaultNames(){const a=[];for(let i=1;i<=35;i++)a.push("生徒"+String(i).padStart(2,"0"));return a;}
@@ -278,7 +344,6 @@ function buildPriRows(){
   for(let i=0;i<MAX_PRI;i++){
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><b>${i+1}人目</b></td>
-      <td class="pos-label">${PRIORITY_POS[i].label}</td>
       <td><select class="priSel" data-i="${i}"><option value="">―</option></select></td>`;
     tb.appendChild(tr);
   }
@@ -297,9 +362,48 @@ function buildRegRows(){
     tb.appendChild(tr);
   }
 }
+function buildPinRows(){
+  const tb=document.getElementById("pinBody"); tb.innerHTML="";
+  let seatOpts="";
+  for(let r=1;r<=ROWS;r++){
+    for(let c=1;c<=COLS;c++){
+      seatOpts+=`<option value="${seatId(r,c)}">${seatLabel(r,c)}</option>`;
+    }
+  }
+  for(let i=0;i<MAX_PIN;i++){
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${i+1}</td>
+      <td><select class="pinSel" data-i="${i}"><option value="">―</option></select></td>
+      <td><select class="pinSeat" data-i="${i}"><option value="">席を選択</option>${seatOpts}</select></td>`;
+    tb.appendChild(tr);
+  }
+}
+function buildPriSeatCfgRows(){
+  const tb=document.getElementById("priSeatCfgBody"); tb.innerHTML="";
+  let seatOpts="";
+  for(let r=1;r<=ROWS;r++){
+    for(let c=1;c<=COLS;c++){
+      seatOpts+=`<option value="${seatId(r,c)}">${seatLabel(r,c)}</option>`;
+    }
+  }
+  for(let i=0;i<MAX_PRI;i++){
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><b>${i+1}番目</b></td>
+      <td><select class="priSeatCfg" data-i="${i}"><option value="">―（使わない）</option>${seatOpts}</select></td>`;
+    tb.appendChild(tr);
+  }
+  syncPriSeatCfgUI();
+}
+function syncPriSeatCfgUI(){
+  document.querySelectorAll(".priSeatCfg").forEach(sel=>{
+    const i=+sel.dataset.i;
+    const v=prioritySeatOrder[i];
+    sel.value=(v===null||v===undefined)?"":String(v);
+  });
+}
 function refreshSelects(){
   const names=getNames();
-  document.querySelectorAll(".priSel,.regSel").forEach(sel=>{
+  document.querySelectorAll(".priSel,.regSel,.pinSel").forEach(sel=>{
     const cur=sel.value;
     sel.innerHTML=`<option value="">―</option>`+names.map(n=>`<option value="${n}">${n}</option>`).join("");
     if(names.includes(cur)) sel.value=cur; else sel.value="";
@@ -309,10 +413,10 @@ function refreshSelects(){
 /* ---------- 設定の取得 ---------- */
 function readConfig(){
   const names=getNames();
-  const pri=[]; // {name, seat}
+  const pri=[]; // names (座席は候補プールからランダムに決まる)
   document.querySelectorAll(".priSel").forEach(sel=>{
-    const i=+sel.dataset.i, n=sel.value;
-    if(n) pri.push({name:n, seat:seatId(PRIORITY_POS[i].r,PRIORITY_POS[i].c)});
+    const n=sel.value;
+    if(n) pri.push(n);
   });
   const reg=[]; // {name, lo, hi}
   document.querySelectorAll(".regSel").forEach(sel=>{
@@ -321,7 +425,14 @@ function readConfig(){
     const rg=rangeSel.value;
     if(n&&rg){const[lo,hi]=rg.split("-").map(Number); reg.push({name:n,lo,hi});}
   });
-  return {names,pri,reg};
+  const pin=[]; // {name, seat}
+  document.querySelectorAll(".pinSel").forEach(sel=>{
+    const i=+sel.dataset.i, n=sel.value;
+    const seatSel=document.querySelector(`.pinSeat[data-i="${i}"]`);
+    const sv=seatSel.value;
+    if(n&&sv!=="") pin.push({name:n, seat:+sv});
+  });
+  return {names,pri,reg,pin};
 }
 
 /* ---------- 配置アルゴリズム ----------
@@ -334,27 +445,50 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random
 function colOfSeat(s){return (s%COLS)+1;}
 
 function solve(cfg){
-  const {names,pri,reg}=cfg;
+  const {names,pri,reg,pin}=cfg;
   // バリデーション
   const errs=[];
   if(names.length===0) errs.push("名前が入力されていません。");
-  const priNames=pri.map(p=>p.name), regNames=reg.map(r=>r.name);
-  const allAssign=[...priNames,...regNames];
+  const regNames=reg.map(r=>r.name), pinNames=pin.map(p=>p.name);
+  const allAssign=[...pri,...regNames,...pinNames];
   const dup=allAssign.filter((n,i)=>allAssign.indexOf(n)!==i);
   if(dup.length) errs.push("重複した生徒がいます: "+[...new Set(dup)].join("、"));
+  const pinSeatsRaw=pin.map(p=>p.seat);
+  const dupSeats=pinSeatsRaw.filter((s,i)=>pinSeatsRaw.indexOf(s)!==i);
+  if(dupSeats.length) errs.push("指定席が重複しています。");
   if(names.length>TOTAL) errs.push(`名前が${names.length}名です。席は${TOTAL}席までです。`);
   if(errs.length) return {error:errs.join(" / ")};
 
+  // 指定席（固定）は毎回変わらないので先に確定させる
+  const pinUsed=new Set(pinSeatsRaw);
+  // 優先席の候補：⚙設定で決めた順位の中から、指定席と重ならないものを上から選ぶ（重複設定は先頭を優先し1回だけ数える）
+  const seenPriSeat=new Set();
+  const orderedCandidates=prioritySeatOrder.filter(s=>{
+    if(s==null||pinUsed.has(s)) return false;
+    if(seenPriSeat.has(s)) return false;
+    seenPriSeat.add(s); return true;
+  });
+  if(pri.length>orderedCandidates.length){
+    return {error:`優先席の候補が足りません（設定した候補${orderedCandidates.length}席、希望${pri.length}名）。「⚙ 設定」で候補を増やすか、指定席と重ならないようにしてください。`};
+  }
+  const priPoolAll=orderedCandidates.slice(0,pri.length); // 上位N席（Nは優先席の希望人数）
+
   for(let attempt=0; attempt<2000; attempt++){
     const assign={}; // seat -> name
-    const used=new Set();
+    const used=new Set(pinUsed);
     let ok=true;
 
-    // 1) 優先席
-    for(const p of pri){ assign[p.seat]=p.name; used.add(p.seat); }
+    // 1) 指定席（固定）
+    for(const p of pin){ assign[p.seat]=p.name; }
 
-    // 2) 範囲希望（範囲が狭い＝制約がきつい順に処理）
+    // 2) 優先席：前方候補プールの中からランダムに配置（回すたびに入れ替わる）
+    const poolPick=shuffle(priPoolAll.slice()).slice(0,pri.length);
+    const priShuffled=shuffle(pri.slice());
+    priShuffled.forEach((n,idx)=>{ assign[poolPick[idx]]=n; used.add(poolPick[idx]); });
+
+    // 3) 範囲希望（範囲が狭い＝制約がきつい順に処理）
     const regSorted=[...reg].sort((a,b)=>(a.hi-a.lo)-(b.hi-b.lo));
+    const regPicked=[];
     for(const r of regSorted){
       // 希望列内かつ空席
       const cand=[];
@@ -365,12 +499,12 @@ function solve(cfg){
       }
       if(cand.length===0){ok=false;break;}
       const pick=cand[Math.floor(Math.random()*cand.length)];
-      assign[pick]=r.name; used.add(pick);
+      assign[pick]=r.name; used.add(pick); regPicked.push(pick);
     }
     if(!ok) continue;
 
-    // 3) 残りの生徒を残り席へ
-    const placed=new Set([...priNames,...regNames]);
+    // 4) 残りの生徒を残り席へ
+    const placed=new Set([...pri,...regNames,...pinNames]);
     const rest=shuffle(names.filter(n=>!placed.has(n)));
     const freeSeats=shuffle([...Array(TOTAL).keys()].filter(s=>!used.has(s)));
     // 残り生徒数 ≤ 空席数 のはず
@@ -381,12 +515,12 @@ function solve(cfg){
     if(!ok) continue;
 
     // 成功
-    const priSeatSet=new Set(pri.map(p=>p.seat));
-    const regSeatSet=new Set();
-    for(const s in assign){ if(regNames.includes(assign[s])) regSeatSet.add(+s); }
-    return {assign, priSeatSet, regSeatSet};
+    const priSeatSet=new Set(poolPick);
+    const regSeatSet=new Set(regPicked);
+    const pinSeatSet=new Set(pinUsed);
+    return {assign, priSeatSet, regSeatSet, pinSeatSet};
   }
-  return {error:"配置できませんでした。範囲希望が同じ列に集中しすぎている可能性があります。範囲を広げてください。"};
+  return {error:"配置できませんでした。範囲希望・指定席が同じ列や席に集中しすぎている可能性があります。条件を見直してください。"};
 }
 
 /* ---------- 描画 ----------
@@ -402,14 +536,15 @@ function drawCols(elId, reversed){
 }
 
 function render(result, spin){
-  const {assign, priSeatSet, regSeatSet}=result;
+  const {assign, priSeatSet, regSeatSet, pinSeatSet}=result;
+  const pinSet = pinSeatSet || new Set();
   // 前が下
   const gd=document.getElementById("gridDown"); gd.innerHTML="";
   for(let dispRow=0; dispRow<ROWS; dispRow++){
     const grow=ROWS-dispRow;           // 上から：後ろ(5)→前(1)
     for(let dispCol=0; dispCol<COLS; dispCol++){
       const gcol=dispCol+1;            // 左から 1→7
-      gd.appendChild(makeSeat(grow,gcol,assign,priSeatSet,regSeatSet,dispRow,dispCol,spin));
+      gd.appendChild(makeSeat(grow,gcol,assign,priSeatSet,regSeatSet,pinSet,dispRow,dispCol,spin));
     }
   }
   // 前が上（上下左右反転）
@@ -418,22 +553,26 @@ function render(result, spin){
     const grow=dispRow+1;              // 上から：前(1)→後ろ(5)
     for(let dispCol=0; dispCol<COLS; dispCol++){
       const gcol=COLS-dispCol;         // 左から 7→1
-      gu.appendChild(makeSeat(grow,gcol,assign,priSeatSet,regSeatSet,dispRow,dispCol,spin));
+      gu.appendChild(makeSeat(grow,gcol,assign,priSeatSet,regSeatSet,pinSet,dispRow,dispCol,spin));
     }
   }
 }
-function makeSeat(grow,gcol,assign,priSet,regSet,dr,dc,spin){
+function makeSeat(grow,gcol,assign,priSet,regSet,pinSet,dr,dc,spin){
   const s=seatId(grow,gcol);
   const d=document.createElement("div");
   d.className="seat"+(((dr+dc)%2)?" alt":"");
+  const isPinned=pinSet.has(s);
   if(priSet.has(s)) d.className="seat pri";
   else if(regSet.has(s)) d.className="seat reg";
+  else if(isPinned) d.className="seat pin";
   const name=assign[s]||"";
   let tag="";
   if(priSet.has(s)) tag='<span class="tag">👁</span>';
   else if(regSet.has(s)) tag='<span class="tag">❄</span>';
+  else if(isPinned) tag='<span class="tag">📌</span>';
   d.innerHTML=tag+"<span>"+(name||"")+"</span>";
-  if(spin) d.classList.add("spin");
+  // 指定席（固定）はルーレット中も揺れずにずっと表示させる
+  if(spin && !isPinned) d.classList.add("spin");
   return d;
 }
 
@@ -450,14 +589,20 @@ function doRoulette(){
   document.getElementById("rollBtn").disabled=true;
   st.className="status"; st.textContent="シャッフル中…";
 
-  const names=cfg.names.slice();
+  // 指定席（固定）の生徒は演出中もその席に表示され続ける。それ以外の名前だけシャッフルする。
+  const pinSeats=[...final.pinSeatSet];
+  const pinNameSet=new Set(pinSeats.map(s=>final.assign[s]));
+  const shuffleNames=cfg.names.filter(n=>!pinNameSet.has(n));
+  const freeSeatsForAnim=[...Array(TOTAL).keys()].filter(s=>!final.pinSeatSet.has(s));
+
   let ticks=0; const totalTicks=26;
   function tick(){
-    // 演出用：名前をランダムに並べた仮配置（制約は無視して見た目だけ動かす）
-    const shuffled=shuffle(names.slice());
-    const fake={assign:{}, priSeatSet:final.priSeatSet, regSeatSet:final.regSeatSet};
+    // 演出用：固定席以外の名前をランダムに並べた仮配置（制約は無視して見た目だけ動かす）
+    const shuffled=shuffle(shuffleNames.slice());
+    const fake={assign:{}, priSeatSet:final.priSeatSet, regSeatSet:final.regSeatSet, pinSeatSet:final.pinSeatSet};
+    pinSeats.forEach(s=>{ fake.assign[s]=final.assign[s]; });
     let k=0;
-    for(let s=0;s<TOTAL;s++){ fake.assign[s]= shuffled[k++]||""; }
+    for(const s of freeSeatsForAnim){ fake.assign[s]= shuffled[k++]||""; }
     render(fake,true);
     ticks++;
     if(ticks<totalTicks){
@@ -478,16 +623,36 @@ function doRoulette(){
 /* ---------- 初期化 ---------- */
 function init(){
   document.getElementById("names").value=defaultNames().join("\n");
-  buildPriRows(); buildRegRows(); refreshSelects();
+  buildPriRows(); buildRegRows(); buildPinRows(); buildPriSeatCfgRows(); refreshSelects();
   drawCols("colsDown",false); drawCols("colsUp",true);
   // 空の座席表を初期表示
-  const empty={assign:{},priSeatSet:new Set(PRIORITY_POS.slice(0,0).map(p=>seatId(p.r,p.c))),regSeatSet:new Set()};
+  const empty={assign:{},priSeatSet:new Set(),regSeatSet:new Set(),pinSeatSet:new Set()};
   const names=defaultNames();
   for(let s=0;s<TOTAL;s++) empty.assign[s]=names[s]||"";
   render(empty,false);
 
   document.getElementById("names").addEventListener("input",refreshSelects);
   document.getElementById("rollBtn").addEventListener("click",doRoulette);
+
+  // 優先席の候補設定ダイアログ
+  const priDialog=document.getElementById("priSettingsDialog");
+  document.getElementById("priSettingsBtn").addEventListener("click",()=>{
+    syncPriSeatCfgUI();
+    priDialog.showModal();
+  });
+  document.getElementById("priSettingsClose").addEventListener("click",()=>priDialog.close());
+  document.getElementById("priSeatCfgBody").addEventListener("change",e=>{
+    if(!e.target.classList.contains("priSeatCfg")) return;
+    const i=+e.target.dataset.i, v=e.target.value;
+    prioritySeatOrder[i]=(v==="")?null:+v;
+    savePrioritySeats();
+  });
+  document.getElementById("priSettingsReset").addEventListener("click",()=>{
+    prioritySeatOrder=DEFAULT_PRIORITY_SEATS.slice();
+    savePrioritySeats();
+    syncPriSeatCfgUI();
+  });
+
   document.getElementById("printBtn").addEventListener("click",()=>window.print());
   document.getElementById("resetBtn").addEventListener("click",()=>{
     document.getElementById("names").value=defaultNames().join("\n");
