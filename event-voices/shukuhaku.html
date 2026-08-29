@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<title>宿泊研修 感想ひろば</title>
+<style>
+  :root{
+    color-scheme: light;
+    --ground:#5a8a5d;
+    --ink:#2c3e2f;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; touch-action:manipulation; }
+  body{
+    font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",-apple-system,BlinkMacSystemFont,"Yu Gothic",sans-serif;
+    background:#bfe0e6;
+  }
+  #stage{ position:relative; width:100%; }
+  #scene{ width:100%; height:auto; display:block; }
+  #scene .char{ cursor:pointer; }
+  #scene .char:focus{ outline:none; }
+  #scene text{ font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",-apple-system,BlinkMacSystemFont,"Yu Gothic",sans-serif; }
+
+  header{
+    padding:10px 14px 8px; background:#bfe0e6;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    text-align:center;
+  }
+  header h1{
+    margin:0; font-size:15px; font-weight:700; color:var(--ink);
+    background:rgba(255,255,255,.82); padding:5px 14px; border-radius:999px;
+    box-shadow:0 2px 6px rgba(0,0,0,.12);
+  }
+  header p{
+    margin:0; font-size:11.5px; color:#2c3e2f;
+    background:rgba(255,255,255,.66); padding:2px 10px; border-radius:999px;
+  }
+
+  /* ---- speech bubble ---- */
+  #bubble{
+    position:absolute; z-index:10; max-width:min(78vw, 300px);
+    background:#fff; border-radius:16px; padding:12px 30px 12px 14px;
+    box-shadow:0 6px 18px rgba(0,0,0,.22);
+    font-size:14px; line-height:1.55; color:#2b2b2b;
+    transition:opacity .12s ease, transform .12s ease;
+  }
+  #bubble[hidden]{ display:none; }
+  #bubble .txt{ max-height:34vh; overflow-y:auto; white-space:pre-wrap; word-break:break-word; }
+  #bubble::after{
+    content:""; position:absolute; width:14px; height:14px; background:#fff;
+    transform:rotate(45deg); left:var(--tailX, 22px);
+  }
+  #bubble.below::after{ top:-6px; box-shadow:-2px -2px 3px rgba(0,0,0,.05); }
+  #bubble.above::after{ bottom:-6px; box-shadow:2px 2px 3px rgba(0,0,0,.05); }
+  #bubbleClose{
+    position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:50%;
+    border:none; background:#eee; color:#666; font-size:15px; line-height:1;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  #bubbleClose:active{ background:#ddd; }
+
+  /* ---- character animations ---- */
+  .cheer .pose{ transform-box:fill-box; transform-origin:50% 100%; animation:cheerBounce .85s ease-in-out infinite; }
+  @keyframes cheerBounce{
+    0%,100%{ transform:translateY(0) rotate(0deg); }
+    50%{ transform:translateY(-4px) rotate(-4deg); }
+  }
+  .idle .pose{ transform-box:fill-box; transform-origin:50% 100%; animation:idleSway 2.6s ease-in-out infinite; }
+  @keyframes idleSway{
+    0%,100%{ transform:scaleY(1); }
+    50%{ transform:scaleY(0.985); }
+  }
+  .run{
+    offset-rotate:0deg;
+    animation-name:runLoop; animation-timing-function:linear; animation-iteration-count:infinite;
+  }
+  @keyframes runLoop{ from{ offset-distance:0%; } to{ offset-distance:100%; } }
+  @supports not (offset-path: path("M0 0")){
+    .run{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏕️ 宿泊研修 感想ひろば</h1>
+  <p>波戸岬少年自然の家／気になる子をタップすると感想が出てくるよ</p>
+</header>
+
+<div id="stage">
+  <svg id="scene" viewBox="0 0 1000 760" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="dusk" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0"  stop-color="#8fc7d9"/>
+        <stop offset="1"  stop-color="#cfeaf0"/>
+      </linearGradient>
+
+      <!-- 応援ポーズ：腕を上げてぴょんぴょん（長縄ジャンプ用） -->
+      <symbol id="figure-cheer" viewBox="0 0 20 32">
+        <g class="pose">
+          <line x1="5" y1="12" x2="0" y2="4"  stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="15" y1="12" x2="20" y2="4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="10" cy="6" r="4.2" fill="currentColor"/>
+          <rect x="5.5" y="10" width="9" height="12" rx="4" fill="currentColor"/>
+          <line x1="7.5" y1="22" x2="6"  y2="31" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="12.5" y1="22" x2="14" y2="31" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+      </symbol>
+
+      <!-- 活動ポーズ：足を開いて歩く（ウォークラリー用） -->
+      <symbol id="figure-run" viewBox="0 0 20 32">
+        <g class="pose">
+          <line x1="6" y1="13" x2="1"  y2="10" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="14" y1="13" x2="19" y2="17" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="10" cy="6" r="4.2" fill="currentColor"/>
+          <rect x="5.5" y="10" width="9" height="11" rx="4" fill="currentColor" transform="rotate(8 10 15)"/>
+          <line x1="8" y1="21" x2="3"  y2="30" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="12" y1="21" x2="16" y2="28" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+      </symbol>
+
+      <!-- のんびりポーズ：たったまま（部屋・教室・広場で共通） -->
+      <symbol id="figure-idle" viewBox="0 0 20 32">
+        <g class="pose">
+          <line x1="5.5" y1="13" x2="3" y2="20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="14.5" y1="13" x2="17" y2="20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="10" cy="6" r="4.2" fill="currentColor"/>
+          <rect x="5.5" y="10" width="9" height="13" rx="4" fill="currentColor"/>
+          <line x1="7.5" y1="23" x2="7"  y2="31" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="12.5" y1="23" x2="13" y2="31" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+      </symbol>
+    </defs>
+
+    <!-- 空・海（波戸岬の立地イメージ、控えめに） -->
+    <rect x="0" y="0" width="1000" height="95" fill="url(#dusk)"/>
+    <rect x="0" y="60" width="1000" height="45" fill="#3f8fa0"/>
+    <g transform="translate(930,60)">
+      <rect x="-14" y="-4" width="28" height="12" fill="#3a4550"/>
+      <rect x="-5" y="-28" width="10" height="26" fill="#fff"/>
+      <rect x="-6" y="-32" width="12" height="6" fill="#d33"/>
+    </g>
+    <g fill="#2f4a35">
+      <g id="pines"></g>
+    </g>
+
+    <!-- 敷地全体（グラウンド） -->
+    <rect x="0" y="100" width="1000" height="660" fill="var(--ground)"/>
+
+    <!-- ウォークラリーの周回コース -->
+    <path id="trailPath" d="" fill="none" stroke="#caa06a" stroke-width="16" stroke-linecap="round" stroke-dasharray="2 16" opacity="0.9"/>
+    <g id="flags"></g>
+
+    <!-- ゾーン：宿泊室（2段ベッド） -->
+    <g id="zoneDorm"></g>
+    <!-- ゾーン：体育館（長縄） -->
+    <g id="zoneGym"></g>
+    <!-- ゾーン：オリエンテーション室（授業） -->
+    <g id="zoneOrient"></g>
+    <!-- ゾーン：憩いのひろば（集い） -->
+    <g id="zoneHiroba"></g>
+
+    <!-- 人々（JSで生成） -->
+    <g id="crowd"></g>
+  </svg>
+
+  <div id="bubble" hidden>
+    <button id="bubbleClose" aria-label="閉じる">×</button>
+    <div class="txt" id="bubbleText"></div>
+  </div>
+</div>
+
+<script src="shukuhaku-data.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var DATA = (window.EVENT_DATA || []).slice();
+  var SVGNS = "http://www.w3.org/2000/svg";
+  var XLINKNS = "http://www.w3.org/1999/xlink";
+
+  function mulberry32(seed){
+    return function(){
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var rnd = mulberry32(20260822);
+
+  var PALETTE = ["#e8654a","#f2a53c","#f2c14e","#4fa876","#3f9bd6","#7c6fd6","#e06aa0","#5aab8f","#c97a3d","#4f8fbb"];
+
+  function el(tag, attrs){
+    var e = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function useOf(id, color){
+    var u = el("use", { width: "20", height: "32" });
+    u.setAttributeNS(XLINKNS, "href", id);
+    if (color) u.setAttribute("color", color);
+    return u;
+  }
+  function personEl(dataIndex, cls, symbolId, x, y, scale, color, delay){
+    var g = el("g", { class: "char " + cls, tabindex:"0", role:"button",
+                       "aria-label":"感想を見る", "data-i": String(dataIndex) });
+    g.setAttribute("transform", "translate(" + x + "," + y + ") scale(" + scale + ")");
+    g.style.color = color;
+    g.style.animationDelay = delay;
+    g.appendChild(useOf("#" + symbolId));
+    return g;
+  }
+  function roundedRectPath(x, y, w, h, r){
+    return "M " + (x+r) + "," + y +
+      " H " + (x+w-r) + " Q " + (x+w) + "," + y + " " + (x+w) + "," + (y+r) +
+      " V " + (y+h-r) + " Q " + (x+w) + "," + (y+h) + " " + (x+w-r) + "," + (y+h) +
+      " H " + (x+r) + " Q " + x + "," + (y+h) + " " + x + "," + (y+h-r) +
+      " V " + (y+r) + " Q " + x + "," + y + " " + (x+r) + "," + y + " Z";
+  }
+  function panel(parent, x, y, w, h, fill, stroke){
+    parent.appendChild(el("rect", { x:x, y:y, width:w, height:h, rx:16, fill:fill,
+                                     stroke:stroke || "none", "stroke-width":"3" }));
+  }
+  function labelChip(parent, x, y, text){
+    var g = el("g", { transform: "translate(" + x + "," + y + ")" });
+    var t = el("text", { x:10, y:14, "font-size":"17", "font-weight":"700", fill:"#2c3e2f" });
+    t.textContent = text;
+    var w = 20 + text.length * 15;
+    g.appendChild(el("rect", { x:0, y:-6, width:w, height:26, rx:13, fill:"rgba(255,255,255,.88)" }));
+    g.appendChild(t);
+    parent.appendChild(g);
+  }
+
+  // ---- 松林 ----
+  var pines = document.getElementById("pines");
+  [40,130,230,330,430,540,630,740,840,930].forEach(function(x){
+    var g = el("g", { transform: "translate(" + x + ",100)" });
+    g.appendChild(el("polygon", { points:"-22,4 0,-26 22,4" }));
+    g.appendChild(el("rect", { x:"-3", y:"2", width:"6", height:"9" }));
+    pines.appendChild(g);
+  });
+
+  // ---- ウォークラリーの周回コース ----
+  var TRAIL = { x:30, y:130, w:940, h:600, r:50 };
+  var trailD = roundedRectPath(TRAIL.x, TRAIL.y, TRAIL.w, TRAIL.h, TRAIL.r);
+  document.getElementById("trailPath").setAttribute("d", trailD);
+
+  var flags = document.getElementById("flags");
+  [[55,155],[945,155],[945,705],[55,705],[500,130],[500,730]].forEach(function(p){
+    var g = el("g", { transform: "translate(" + p[0] + "," + p[1] + ")" });
+    g.appendChild(el("line", { x1:0, y1:0, x2:0, y2:-30, stroke:"#7a5a3a", "stroke-width":3 }));
+    g.appendChild(el("polygon", { points:"0,-30 22,-24 0,-18", fill:"#e8654a" }));
+    flags.appendChild(g);
+  });
+
+  // ---- ゾーン背景を描く ----
+  var DORM   = { x:100, y:190, w:380, h:230 };
+  var GYM    = { x:540, y:190, w:390, h:230 };
+  var ORIENT = { x:100, y:460, w:380, h:230 };
+  var HIROBA = { x:540, y:460, w:390, h:230 };
+
+  // 宿泊室
+  (function(){
+    var g = document.getElementById("zoneDorm");
+    panel(g, DORM.x, DORM.y, DORM.w, DORM.h, "#ecdfc0", "#c7ac7c");
+    function bunk(bx, by, bw, bh){
+      var b = el("g", { transform: "translate(" + bx + "," + by + ")" });
+      b.appendChild(el("rect", { x:0, y:0, width:bw, height:bh, rx:4, fill:"#c9a06a" }));
+      b.appendChild(el("line", { x1:0, y1:bh/2, x2:bw, y2:bh/2, stroke:"#8a6a42", "stroke-width":3 }));
+      b.appendChild(el("rect", { x:4, y:5, width:bw-8, height:bh/2-9, rx:3, fill:"#f4ede0" }));
+      b.appendChild(el("rect", { x:4, y:bh/2+4, width:bw-8, height:bh/2-9, rx:3, fill:"#f4ede0" }));
+      b.appendChild(el("rect", { x:-6, y:0, width:6, height:bh, fill:"#8a6a42" }));
+      // 横になっている子（演出用・タップ対象ではない）
+      b.appendChild(el("circle", { cx:bw-16, cy:bh/2-14, r:6, fill:"#e0946a" }));
+      b.appendChild(el("rect", { x:bw-40, y:bh/2-18, width:24, height:11, rx:5, fill:"#7c6fd6" }));
+      g.appendChild(b);
+    }
+    bunk(DORM.x+30, DORM.y+14, 130, 66);
+    bunk(DORM.x+190,DORM.y+14, 130, 66);
+    g.appendChild(el("rect", { x:DORM.x+30, y:DORM.y+96, width:320, height:26,
+                                fill:"#dcd3a8", stroke:"#b8ab74", "stroke-width":"1.5" }));
+    labelChip(g, DORM.x+10, DORM.y-4, "🛏 宿泊室");
+  })();
+
+  // 体育館
+  (function(){
+    var g = document.getElementById("zoneGym");
+    panel(g, GYM.x, GYM.y, GYM.w, GYM.h, "#e7cf9c", "#c9a765");
+    g.appendChild(el("rect", { x:GYM.x+18, y:GYM.y+18, width:GYM.w-36, height:GYM.h-40,
+                                fill:"none", stroke:"#fff", "stroke-width":3, opacity:0.85 }));
+    g.appendChild(el("line", { x1:GYM.x+GYM.w/2, y1:GYM.y+18, x2:GYM.x+GYM.w/2, y2:GYM.y+GYM.h-22,
+                                stroke:"#fff", "stroke-width":3, opacity:0.85 }));
+    g.appendChild(el("rect", { x:GYM.x+GYM.w-24, y:GYM.y+70, width:8, height:44, fill:"#8a6a42" }));
+    g.appendChild(el("rect", { x:GYM.x+GYM.w-46, y:GYM.y+70, width:24, height:18, fill:"#e6e6e6" }));
+    g.appendChild(el("ellipse",{ cx:GYM.x+GYM.w-56, cy:GYM.y+96, rx:11, ry:4, fill:"none", stroke:"#e8654a", "stroke-width":2.4 }));
+    var ropeY = GYM.y + 150;
+    g.appendChild(el("path", { d:"M " + (GYM.x+55) + "," + ropeY + " Q " + (GYM.x+GYM.w/2) + "," + (ropeY-46) + " " + (GYM.x+GYM.w-55) + "," + ropeY,
+                                fill:"none", stroke:"#7a5a3a", "stroke-width":3.4 }));
+    g.appendChild(useOf2(GYM.x+50, ropeY+2, "#8a8a8a"));
+    g.appendChild(useOf2(GYM.x+GYM.w-50, ropeY+2, "#8a8a8a"));
+    labelChip(g, GYM.x+10, GYM.y-4, "🤸 体育館（長縄）");
+
+    function useOf2(x,y,color){
+      var wrap = el("g", { transform:"translate(" + (x-10) + "," + (y-30) + ") scale(1.4)" });
+      var u = el("use", { width:20, height:32, color:color });
+      u.setAttributeNS(XLINKNS, "href", "#figure-idle");
+      wrap.appendChild(u);
+      return wrap;
+    }
+  })();
+
+  // オリエンテーション室
+  (function(){
+    var g = document.getElementById("zoneOrient");
+    panel(g, ORIENT.x, ORIENT.y, ORIENT.w, ORIENT.h, "#dfe7ea", "#aebac0");
+    g.appendChild(el("rect", { x:ORIENT.x+30, y:ORIENT.y+16, width:ORIENT.w-60, height:26, rx:4, fill:"#5c6b73" }));
+    g.appendChild(el("text", { x:ORIENT.x+ORIENT.w/2, y:ORIENT.y+34, "text-anchor":"middle",
+                                "font-size":"13", fill:"#eef3f4" })).textContent = "スクリーン";
+    labelChip(g, ORIENT.x+10, ORIENT.y-4, "📋 オリエンテーション室");
+  })();
+
+  // 憩いのひろば
+  (function(){
+    var g = document.getElementById("zoneHiroba");
+    panel(g, HIROBA.x, HIROBA.y, HIROBA.w, HIROBA.h, "#cbc3ac", "#a89f8c");
+    for (var i = 0; i < 90; i++){
+      g.appendChild(el("circle", {
+        cx: HIROBA.x + 14 + rnd() * (HIROBA.w-28),
+        cy: HIROBA.y + 14 + rnd() * (HIROBA.h-28),
+        r: 1.6, fill:"#948b76", opacity: 0.5
+      }));
+    }
+    labelChip(g, HIROBA.x+10, HIROBA.y-4, "🗣️ 憩いのひろば");
+  })();
+
+  // ---- 人の配置 ----
+  var ORDER = ["dorm","gym","orient","hiroba","walk"];
+  var counts = { dorm:0, gym:0, orient:0, hiroba:0, walk:0 };
+  DATA.forEach(function(_, i){ counts[ORDER[i % 5]]++; });
+
+  var crowd = document.getElementById("crowd");
+  var seatIdx = { dorm:0, gym:0, orient:0, hiroba:0, walk:0 };
+
+  var ORIENT_COLS = 7;
+
+  DATA.forEach(function(text, i){
+    var type = ORDER[i % 5];
+    var scale = 1.5 + rnd() * 0.5;
+    var n = seatIdx[type]++;
+    // ゾーンの人数(5の倍数)と PALETTE.length(10) の最大公約数が5なので、
+    // i % 10 で色を決めると各ゾーン2色しか出ない。ゾーン内カウンタ n で決める。
+    var color = PALETTE[n % PALETTE.length];
+    var g;
+
+    if (type === "dorm"){
+      var dx = DORM.x + 30 + rnd() * 320;
+      var dy = DORM.y + 132 + rnd() * 78;
+      g = personEl(i, "idle", "figure-idle", dx, dy, scale, color, (-rnd()*2.6).toFixed(2)+"s");
+    } else if (type === "gym"){
+      var gx = GYM.x + 55 + rnd() * (GYM.w - 110);
+      var gy = GYM.y + 168 + rnd() * 40;
+      g = personEl(i, "cheer", "figure-cheer", gx, gy, scale*0.9, color, (-rnd()*0.85).toFixed(2)+"s");
+    } else if (type === "orient"){
+      var cols = ORIENT_COLS;
+      var rows = Math.ceil(counts.orient / cols);
+      var col = n % cols, row = Math.floor(n / cols);
+      var ox = ORIENT.x + 42 + col * ((ORIENT.w-84) / (cols-1||1));
+      var oy = ORIENT.y + 70 + row * (130 / (rows||1));
+      g = personEl(i, "idle", "figure-idle", ox, oy, 1.35, color, (-rnd()*2.6).toFixed(2)+"s");
+    } else if (type === "hiroba"){
+      var cols2 = 8;
+      var rows2 = Math.ceil(counts.hiroba / cols2);
+      var col2 = n % cols2, row2 = Math.floor(n / cols2);
+      var hx = HIROBA.x + 34 + col2 * ((HIROBA.w-68) / (cols2-1||1)) + (rnd()*16-8);
+      var hy = HIROBA.y + 40 + row2 * (150 / (rows2||1)) + (rnd()*14-7);
+      g = personEl(i, "idle", "figure-idle", hx, hy, 1.5 + rnd()*0.4, color, (-rnd()*2.6).toFixed(2)+"s");
+    } else {
+      g = el("g", { class:"char run", tabindex:"0", role:"button",
+                     "aria-label":"感想を見る", "data-i": String(i) });
+      g.style.color = color;
+      g.style.offsetPath = "path('" + trailD + "')";
+      var dur = 46 + rnd() * 16;
+      var total = counts.walk || 1;
+      g.style.animationDuration = dur.toFixed(1) + "s";
+      g.style.animationDelay = (-(n/total) * dur).toFixed(1) + "s";
+      var wrap = el("g", { transform: "translate(-10,-16) scale(" + (scale*0.9) + ")" });
+      wrap.appendChild(useOf("#figure-run"));
+      g.appendChild(wrap);
+    }
+
+    crowd.appendChild(g);
+  });
+
+  // ---- ふきだし ----
+  var stage = document.getElementById("stage");
+  var bubble = document.getElementById("bubble");
+  var bubbleText = document.getElementById("bubbleText");
+  var openChar = null;
+
+  function closeBubble(){
+    bubble.hidden = true;
+    if (openChar) openChar.classList.remove("active");
+    openChar = null;
+  }
+
+  function showBubble(target, text){
+    if (openChar === target){ closeBubble(); return; }
+    openChar = target;
+    bubbleText.textContent = text;
+    bubble.hidden = false;
+
+    var stageRect = stage.getBoundingClientRect();
+    var r = target.getBoundingClientRect();
+    var relX = r.left + r.width/2 - stageRect.left;
+    var relY = r.top - stageRect.top;
+
+    bubble.style.left = "0px"; bubble.style.top = "0px";
+    var bw = bubble.offsetWidth, bh = bubble.offsetHeight;
+
+    var left = relX - 30;
+    left = Math.max(8, Math.min(left, stageRect.width - bw - 8));
+
+    var above = relY - bh - 14;
+    var placeAbove = above > 8;
+    var top = placeAbove ? above : (r.bottom - stageRect.top + 14);
+    top = Math.max(8, Math.min(top, stageRect.height - bh - 8));
+
+    bubble.classList.toggle("above", placeAbove);
+    bubble.classList.toggle("below", !placeAbove);
+
+    var tailX = Math.max(14, Math.min(relX - left - 7, bw - 28));
+    bubble.style.setProperty("--tailX", tailX + "px");
+    bubble.style.left = left + "px";
+    bubble.style.top = top + "px";
+  }
+
+  document.getElementById("scene").addEventListener("click", function(e){
+    var g = e.target.closest("[data-i]");
+    if (g){
+      var i = parseInt(g.getAttribute("data-i"), 10);
+      showBubble(g, DATA[i]);
+    } else {
+      closeBubble();
+    }
+  });
+  document.getElementById("scene").addEventListener("keydown", function(e){
+    if (e.key !== "Enter" && e.key !== " ") return;
+    var g = e.target.closest("[data-i]");
+    if (!g) return;
+    e.preventDefault();
+    var i = parseInt(g.getAttribute("data-i"), 10);
+    showBubble(g, DATA[i]);
+  });
+  document.getElementById("bubbleClose").addEventListener("click", closeBubble);
+})();
+</script>
+</body>
+</html>

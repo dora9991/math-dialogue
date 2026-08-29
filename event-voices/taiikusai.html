@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<title>体育大会 感想ひろば</title>
+<style>
+  :root{
+    color-scheme: light;
+    --sky1:#8ecdf5; --sky2:#d8f1ff;
+    --ground:#6fb35c; --track:#d9a15b; --trackLine:#f4e2c4;
+    --tent1:#e8654a; --tent2:#f2c14e;
+    --ink:#2c3e2f;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; touch-action:manipulation; }
+  body{
+    font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",-apple-system,BlinkMacSystemFont,"Yu Gothic",sans-serif;
+    background:var(--sky1);
+  }
+  #stage{ position:relative; width:100%; }
+  #scene{ width:100%; height:auto; display:block; }
+  #scene .char{ cursor:pointer; }
+  #scene .char:focus{ outline:none; }
+
+  header{
+    padding:10px 14px 8px; background:var(--sky1);
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    text-align:center;
+  }
+  header h1{
+    margin:0; font-size:15px; font-weight:700; color:var(--ink);
+    background:rgba(255,255,255,.78); padding:5px 14px; border-radius:999px;
+    box-shadow:0 2px 6px rgba(0,0,0,.12);
+  }
+  header p{
+    margin:0; font-size:11.5px; color:#3a4a3c;
+    background:rgba(255,255,255,.6); padding:2px 10px; border-radius:999px;
+  }
+
+  /* ---- speech bubble ---- */
+  #bubble{
+    position:absolute; z-index:10; max-width:min(78vw, 300px);
+    background:#fff; border-radius:16px; padding:12px 30px 12px 14px;
+    box-shadow:0 6px 18px rgba(0,0,0,.22);
+    font-size:14px; line-height:1.55; color:#2b2b2b;
+    transition:opacity .12s ease, transform .12s ease;
+  }
+  #bubble[hidden]{ display:none; }
+  #bubble .txt{ max-height:34vh; overflow-y:auto; white-space:pre-wrap; word-break:break-word; }
+  #bubble::after{
+    content:""; position:absolute; width:14px; height:14px; background:#fff;
+    transform:rotate(45deg); left:var(--tailX, 22px);
+  }
+  #bubble.below::after{ top:-6px; box-shadow:-2px -2px 3px rgba(0,0,0,.05); }
+  #bubble.above::after{ bottom:-6px; box-shadow:2px 2px 3px rgba(0,0,0,.05); }
+  #bubbleClose{
+    position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:50%;
+    border:none; background:#eee; color:#666; font-size:15px; line-height:1;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  #bubbleClose:active{ background:#ddd; }
+
+  /* ---- character animations ---- */
+  .cheer .pose{ transform-box:fill-box; transform-origin:50% 100%; animation:cheerBounce 1s ease-in-out infinite; }
+  @keyframes cheerBounce{
+    0%,100%{ transform:translateY(0) rotate(0deg); }
+    50%{ transform:translateY(-3px) rotate(-4deg); }
+  }
+  .idle .pose{ transform-box:fill-box; transform-origin:50% 100%; animation:idleSway 2.6s ease-in-out infinite; }
+  @keyframes idleSway{
+    0%,100%{ transform:scaleY(1); }
+    50%{ transform:scaleY(0.985); }
+  }
+  .run{
+    offset-rotate:0deg;
+    animation-name:runLoop; animation-timing-function:linear; animation-iteration-count:infinite;
+  }
+  @keyframes runLoop{ from{ offset-distance:0%; } to{ offset-distance:100%; } }
+  @supports not (offset-path: path("M0 0")){
+    .run{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏃 体育大会 感想ひろば</h1>
+  <p>気になる子をタップすると、感想がふきだしで出てくるよ</p>
+</header>
+
+<div id="stage">
+  <svg id="scene" viewBox="0 0 1000 640" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="var(--sky1)"/>
+        <stop offset="1" stop-color="var(--sky2)"/>
+      </linearGradient>
+
+      <!-- 応援ポーズ：腕を上げてぴょんぴょん -->
+      <symbol id="figure-cheer" viewBox="0 0 20 32">
+        <g class="pose">
+          <line x1="5" y1="12" x2="0" y2="4"  stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="15" y1="12" x2="20" y2="4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="10" cy="6" r="4.2" fill="currentColor"/>
+          <rect x="5.5" y="10" width="9" height="12" rx="4" fill="currentColor"/>
+          <line x1="7.5" y1="22" x2="6"  y2="31" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="12.5" y1="22" x2="14" y2="31" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+      </symbol>
+
+      <!-- 走るポーズ：足を前後に開いて -->
+      <symbol id="figure-run" viewBox="0 0 20 32">
+        <g class="pose">
+          <line x1="6" y1="13" x2="1"  y2="10" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="14" y1="13" x2="19" y2="17" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="10" cy="6" r="4.2" fill="currentColor"/>
+          <rect x="5.5" y="10" width="9" height="11" rx="4" fill="currentColor" transform="rotate(8 10 15)"/>
+          <line x1="8" y1="21" x2="3"  y2="30" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="12" y1="21" x2="16" y2="28" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+      </symbol>
+
+      <!-- ぼーっとポーズ：たったまま -->
+      <symbol id="figure-idle" viewBox="0 0 20 32">
+        <g class="pose">
+          <line x1="5.5" y1="13" x2="3" y2="20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="14.5" y1="13" x2="17" y2="20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="10" cy="6" r="4.2" fill="currentColor"/>
+          <rect x="5.5" y="10" width="9" height="13" rx="4" fill="currentColor"/>
+          <line x1="7.5" y1="23" x2="7"  y2="31" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="12.5" y1="23" x2="13" y2="31" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+      </symbol>
+    </defs>
+
+    <!-- 空 -->
+    <rect x="0" y="0" width="1000" height="640" fill="url(#sky)"/>
+    <circle cx="880" cy="70" r="42" fill="#ffd873"/>
+    <g fill="#ffffff" opacity="0.9">
+      <ellipse cx="140" cy="60" rx="46" ry="16"/><ellipse cx="180" cy="52" rx="34" ry="13"/>
+      <ellipse cx="430" cy="90" rx="40" ry="14"/><ellipse cx="465" cy="82" rx="28" ry="11"/>
+    </g>
+
+    <!-- グラウンド -->
+    <rect x="0" y="130" width="1000" height="510" fill="var(--ground)"/>
+
+    <!-- トラック -->
+    <ellipse cx="500" cy="400" rx="430" ry="185" fill="var(--track)"/>
+    <ellipse cx="500" cy="400" rx="300" ry="105" fill="var(--ground)"/>
+    <ellipse cx="500" cy="400" rx="430" ry="185" fill="none" stroke="var(--trackLine)" stroke-width="2" opacity="0.55"/>
+    <ellipse cx="500" cy="400" rx="365" ry="145" fill="none" stroke="var(--trackLine)" stroke-width="2" opacity="0.45"/>
+    <ellipse cx="500" cy="400" rx="300" ry="105" fill="none" stroke="var(--trackLine)" stroke-width="2" opacity="0.55"/>
+
+    <!-- テント（応援エリア） -->
+    <g id="tents">
+      <!-- generated by JS -->
+    </g>
+
+    <!-- 人々（JSで生成） -->
+    <g id="crowd"></g>
+  </svg>
+
+  <div id="bubble" hidden>
+    <button id="bubbleClose" aria-label="閉じる">×</button>
+    <div class="txt" id="bubbleText"></div>
+  </div>
+</div>
+
+<script src="taiikusai-data.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var DATA = (window.EVENT_DATA || []).slice();
+  var SVGNS = "http://www.w3.org/2000/svg";
+
+  // ---- 決定的な乱数（毎回同じレイアウトにして見た目を安定させる） ----
+  function mulberry32(seed){
+    return function(){
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var rnd = mulberry32(20260820);
+
+  var PALETTE = ["#e8654a","#f2a53c","#f2c14e","#4fa876","#3f9bd6","#7c6fd6","#e06aa0","#5aab8f","#c97a3d","#4f8fbb"];
+
+  // トラック中心の楕円パス（走る人の移動経路）
+  var TRACK = { cx:500, cy:400, rx:365, ry:145 };
+  function trackPathD(rx, ry){
+    var cx = TRACK.cx, cy = TRACK.cy;
+    return "M " + (cx+rx) + "," + cy +
+      " A " + rx + "," + ry + " 0 1 1 " + (cx-rx) + "," + cy +
+      " A " + rx + "," + ry + " 0 1 1 " + (cx+rx) + "," + cy + " Z";
+  }
+
+  function el(tag, attrs){
+    var e = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  // ---- テント ----
+  var tentsG = document.getElementById("tents");
+  var tentXs = [90,190,290,390,500,610,720,820,910];
+  tentXs.forEach(function(x, i){
+    var g = el("g", { transform: "translate(" + x + ",150)" });
+    g.appendChild(el("polygon", { points:"-38,26 0,-30 38,26", fill: i % 2 ? "var(--tent1)" : "var(--tent2)" }));
+    g.appendChild(el("polygon", { points:"-38,26 0,4 38,26", fill:"#fff", opacity:"0.85" }));
+    tentsG.appendChild(g);
+  });
+
+  // ---- 人の点を配る ----
+  // 内側フィールド（ぼーっと組）は楕円の内部に散らす
+  function pointInEllipse(cx, cy, rx, ry){
+    var ang = rnd() * Math.PI * 2;
+    var r = Math.sqrt(rnd());
+    return [cx + Math.cos(ang) * rx * r, cy + Math.sin(ang) * ry * r * 0.9];
+  }
+
+  var crowd = document.getElementById("crowd");
+  var n = DATA.length;
+  var order = ["cheer","run","idle"];
+
+  DATA.forEach(function(text, i){
+    var type = order[i % 3];
+    var color = PALETTE[i % PALETTE.length];
+    var scale = 1.5 + rnd() * 0.5;
+
+    var g = el("g", { class: "char " + type, tabindex: "0", role:"button",
+                       "aria-label": "感想を見る", "data-i": String(i) });
+
+    if (type === "cheer"){
+      var x = 60 + rnd() * 880;
+      var row = rnd() < 0.5 ? 0 : 1;
+      var y = 178 + row * 34 + rnd() * 10;
+      g.setAttribute("transform", "translate(" + x + "," + y + ") scale(" + scale + ")");
+      g.style.color = color;
+      g.style.animationDelay = (-rnd() * 1).toFixed(2) + "s";
+      var use = el("use", { href: "#figure-cheer", width: "20", height: "32" });
+      use.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#figure-cheer");
+      g.appendChild(use);
+    } else if (type === "run"){
+      var jr = 20 + rnd() * 40;
+      var rx = TRACK.rx + (rnd() * 2 - 1) * jr;
+      var ry = TRACK.ry + (rnd() * 2 - 1) * (jr * 0.4);
+      g.style.color = color;
+      g.style.offsetPath = "path('" + trackPathD(rx, ry) + "')";
+      var dur = 16 + rnd() * 14;
+      g.style.animationDuration = dur.toFixed(1) + "s";
+      g.style.animationDelay = (-rnd() * dur).toFixed(1) + "s";
+      var wrap = el("g", { transform: "translate(-10,-16) scale(" + (scale*0.9) + ")" });
+      var use2 = el("use", { width: "20", height: "32" });
+      use2.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#figure-run");
+      wrap.appendChild(use2);
+      g.appendChild(wrap);
+    } else {
+      var p = pointInEllipse(500, 395, 260, 85);
+      g.setAttribute("transform", "translate(" + p[0] + "," + p[1] + ") scale(" + scale + ")");
+      g.style.color = color;
+      g.style.animationDelay = (-rnd() * 2.6).toFixed(2) + "s";
+      var use3 = el("use", { width: "20", height: "32" });
+      use3.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#figure-idle");
+      g.appendChild(use3);
+    }
+
+    crowd.appendChild(g);
+  });
+
+  // ---- ふきだし ----
+  var stage = document.getElementById("stage");
+  var bubble = document.getElementById("bubble");
+  var bubbleText = document.getElementById("bubbleText");
+  var openChar = null;
+
+  function closeBubble(){
+    bubble.hidden = true;
+    if (openChar) openChar.classList.remove("active");
+    openChar = null;
+  }
+
+  function showBubble(target, text){
+    if (openChar === target){ closeBubble(); return; }
+    openChar = target;
+    bubbleText.textContent = text;
+    bubble.hidden = false;
+
+    var stageRect = stage.getBoundingClientRect();
+    var r = target.getBoundingClientRect();
+    var relX = r.left + r.width/2 - stageRect.left;
+    var relY = r.top - stageRect.top;
+
+    // 一旦表示してサイズを測る
+    bubble.style.left = "0px"; bubble.style.top = "0px";
+    var bw = bubble.offsetWidth, bh = bubble.offsetHeight;
+
+    var left = relX - 30;
+    left = Math.max(8, Math.min(left, stageRect.width - bw - 8));
+
+    var above = relY - bh - 14;
+    var placeAbove = above > 8;
+    var top = placeAbove ? above : (r.bottom - stageRect.top + 14);
+    top = Math.max(8, Math.min(top, stageRect.height - bh - 8));
+
+    bubble.classList.toggle("above", placeAbove);
+    bubble.classList.toggle("below", !placeAbove);
+
+    var tailX = Math.max(14, Math.min(relX - left - 7, bw - 28));
+    bubble.style.setProperty("--tailX", tailX + "px");
+    bubble.style.left = left + "px";
+    bubble.style.top = top + "px";
+  }
+
+  document.getElementById("scene").addEventListener("click", function(e){
+    var g = e.target.closest(".char");
+    if (g){
+      var i = parseInt(g.getAttribute("data-i"), 10);
+      showBubble(g, DATA[i]);
+    } else {
+      closeBubble();
+    }
+  });
+  document.getElementById("scene").addEventListener("keydown", function(e){
+    if (e.key !== "Enter" && e.key !== " ") return;
+    var g = e.target.closest(".char");
+    if (!g) return;
+    e.preventDefault();
+    var i = parseInt(g.getAttribute("data-i"), 10);
+    showBubble(g, DATA[i]);
+  });
+  document.getElementById("bubbleClose").addEventListener("click", closeBubble);
+})();
+</script>
+</body>
+</html>
