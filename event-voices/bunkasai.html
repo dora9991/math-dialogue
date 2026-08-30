@@ -8,22 +8,23 @@
 <style>
   :root{
     color-scheme: light;
-    --wall:#f2e6cc; --floor:#cda876; --stage:#e0bd8a; --curtain:#c0392b;
+    --floor:#cda876;
     --ink:#3a2f22;
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ margin:0; touch-action:manipulation; }
   body{
     font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",-apple-system,BlinkMacSystemFont,"Yu Gothic",sans-serif;
-    background:var(--wall);
+    background:#f2e6cc;
   }
   #stage{ position:relative; width:100%; }
   #scene{ width:100%; height:auto; display:block; }
   #scene .char{ cursor:pointer; }
   #scene .char:focus{ outline:none; }
+  #scene text{ font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",-apple-system,BlinkMacSystemFont,"Yu Gothic",sans-serif; }
 
   header{
-    padding:10px 14px 8px; background:var(--wall);
+    padding:10px 14px 8px; background:#f2e6cc;
     display:flex; flex-direction:column; align-items:center; gap:4px;
     text-align:center;
   }
@@ -61,10 +62,10 @@
   #bubbleClose:active{ background:#ddd; }
 
   /* ---- character animations ---- */
-  .cheer .pose{ transform-box:fill-box; transform-origin:50% 100%; animation:cheerBounce 1s ease-in-out infinite; }
+  .cheer .pose{ transform-box:fill-box; transform-origin:50% 100%; animation:cheerBounce .9s ease-in-out infinite; }
   @keyframes cheerBounce{
     0%,100%{ transform:translateY(0) rotate(0deg); }
-    50%{ transform:translateY(-3px) rotate(-4deg); }
+    50%{ transform:translateY(-4px) rotate(-4deg); }
   }
   .idle .pose{ transform-box:fill-box; transform-origin:50% 100%; animation:idleSway 2.6s ease-in-out infinite; }
   @keyframes idleSway{
@@ -89,9 +90,9 @@
 </header>
 
 <div id="stage">
-  <svg id="scene" viewBox="0 0 1000 640" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+  <svg id="scene" viewBox="0 0 1000 760" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <!-- 応援・盛り上げポーズ：腕を上げてぴょんぴょん（ステージ練習用） -->
+      <!-- 応援・盛り上げポーズ：腕を上げてぴょんぴょん（ステージ・演技練習用） -->
       <symbol id="figure-cheer" viewBox="0 0 20 32">
         <g class="pose">
           <line x1="5" y1="12" x2="0" y2="4"  stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
@@ -103,7 +104,7 @@
         </g>
       </symbol>
 
-      <!-- 活動ポーズ：足を開いて歩く（小道具を運ぶ用） -->
+      <!-- 活動ポーズ：足を開いて歩く（廊下を運ぶ用） -->
       <symbol id="figure-run" viewBox="0 0 20 32">
         <g class="pose">
           <line x1="6" y1="13" x2="1"  y2="10" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
@@ -115,7 +116,7 @@
         </g>
       </symbol>
 
-      <!-- のんびりポーズ：たったまま（制作テーブル用） -->
+      <!-- のんびりポーズ：たったまま（合唱・デザイン作成用） -->
       <symbol id="figure-idle" viewBox="0 0 20 32">
         <g class="pose">
           <line x1="5.5" y1="13" x2="3" y2="20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
@@ -128,47 +129,27 @@
       </symbol>
     </defs>
 
-    <!-- 壁・天井 -->
-    <rect x="0" y="0" width="1000" height="120" fill="var(--wall)"/>
+    <!-- 壁・天井（見出しバナー） -->
+    <rect x="0" y="0" width="1000" height="140" fill="#f2e6cc"/>
     <g id="bunting"></g>
-    <g transform="translate(500,72)">
-      <rect x="-118" y="-18" width="236" height="34" rx="8" fill="#e8654a"/>
-      <polygon points="-118,-18 -132,-1 -118,16" fill="#e8654a"/>
-      <polygon points="118,-18 132,-1 118,16" fill="#e8654a"/>
-      <text x="0" y="6" text-anchor="middle" font-size="19" font-weight="700" fill="#fff">文化発表会</text>
+    <g transform="translate(500,86)">
+      <rect x="-128" y="-19" width="256" height="36" rx="9" fill="#e8654a"/>
+      <polygon points="-128,-19 -143,-1 -128,17" fill="#e8654a"/>
+      <polygon points="128,-19 143,-1 128,17" fill="#e8654a"/>
+      <text x="0" y="7" text-anchor="middle" font-size="20" font-weight="700" fill="#fff">文化発表会 準備中</text>
     </g>
 
-    <!-- 床 -->
-    <rect x="0" y="120" width="1000" height="520" fill="var(--floor)"/>
-    <g stroke="#b8905e" stroke-width="2" opacity="0.35">
-      <line x1="0" y1="300" x2="1000" y2="300"/>
-      <line x1="0" y1="420" x2="1000" y2="420"/>
-      <line x1="0" y1="540" x2="1000" y2="540"/>
-    </g>
+    <!-- 校舎フロア -->
+    <rect x="0" y="140" width="1000" height="620" fill="var(--floor)"/>
 
-    <!-- ステージ -->
-    <rect x="270" y="118" width="460" height="172" fill="var(--stage)"/>
-    <rect x="270" y="282" width="460" height="10" fill="#a97c4a"/>
-    <g fill="#e6cda0" opacity="0.7">
-      <circle cx="500" cy="180" r="46"/>
-      <line x1="500" y1="134" x2="500" y2="150" stroke="#e6cda0" stroke-width="6"/>
-      <line x1="500" y1="210" x2="500" y2="226" stroke="#e6cda0" stroke-width="6"/>
-      <line x1="454" y1="180" x2="470" y2="180" stroke="#e6cda0" stroke-width="6"/>
-      <line x1="530" y1="180" x2="546" y2="180" stroke="#e6cda0" stroke-width="6"/>
-    </g>
-    <!-- 緞帳 -->
-    <path d="M 230,20 L 300,20 Q 285,150 300,290 L 230,290 Q 245,150 230,20 Z" fill="var(--curtain)"/>
-    <path d="M 770,20 L 700,20 Q 715,150 700,290 L 770,290 Q 755,150 770,20 Z" fill="var(--curtain)"/>
-    <g stroke="#96281b" stroke-width="3" opacity="0.5">
-      <path d="M 245,30 Q 235,155 248,280" fill="none"/>
-      <path d="M 270,25 Q 262,155 272,285" fill="none"/>
-      <path d="M 755,30 Q 765,155 752,280" fill="none"/>
-      <path d="M 730,25 Q 738,155 728,285" fill="none"/>
-    </g>
+    <!-- 廊下（小道具・材料を運ぶ動線） -->
+    <path id="hallPath" d="" fill="none" stroke="#a97c4a" stroke-width="14" stroke-linecap="round" stroke-dasharray="2 15" opacity="0.85"/>
 
-    <!-- 制作テーブル（左・右） -->
-    <g id="tablesLeft"></g>
-    <g id="tablesRight"></g>
+    <!-- 部屋（JSで描画） -->
+    <g id="roomHall"></g>
+    <g id="roomChoir"></g>
+    <g id="roomActing"></g>
+    <g id="roomDesign"></g>
 
     <!-- 人々（JSで生成） -->
     <g id="crowd"></g>
@@ -197,7 +178,7 @@
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   }
-  var rnd = mulberry32(20260823);
+  var rnd = mulberry32(20260824);
 
   var PALETTE = ["#e8654a","#f2a53c","#f2c14e","#4fa876","#3f9bd6","#7c6fd6","#e06aa0","#5aab8f","#c97a3d","#4f8fbb"];
 
@@ -206,102 +187,184 @@
     for (var k in attrs) e.setAttribute(k, attrs[k]);
     return e;
   }
-  function useOf(id){
-    var u = el("use", { width: "20", height: "32" });
+  function useOf(id, color){
+    var u = el("use", { width:"20", height:"32" });
     u.setAttributeNS(XLINKNS, "href", id);
+    if (color) u.setAttribute("color", color);
     return u;
   }
-  function ellipsePathD(cx, cy, rx, ry){
-    return "M " + (cx+rx) + "," + cy +
-      " A " + rx + "," + ry + " 0 1 1 " + (cx-rx) + "," + cy +
-      " A " + rx + "," + ry + " 0 1 1 " + (cx+rx) + "," + cy + " Z";
+  function personEl(dataIndex, cls, symbolId, x, y, scale, color, delay){
+    var g = el("g", { class:"char " + cls, tabindex:"0", role:"button",
+                       "aria-label":"感想を見る", "data-i": String(dataIndex) });
+    g.setAttribute("transform", "translate(" + x + "," + y + ") scale(" + scale + ")");
+    g.style.color = color;
+    g.style.animationDelay = delay;
+    g.appendChild(useOf("#" + symbolId));
+    return g;
+  }
+  function roundedRectPath(x, y, w, h, r){
+    return "M " + (x+r) + "," + y +
+      " H " + (x+w-r) + " Q " + (x+w) + "," + y + " " + (x+w) + "," + (y+r) +
+      " V " + (y+h-r) + " Q " + (x+w) + "," + (y+h) + " " + (x+w-r) + "," + (y+h) +
+      " H " + (x+r) + " Q " + x + "," + (y+h) + " " + x + "," + (y+h-r) +
+      " V " + (y+r) + " Q " + x + "," + y + " " + (x+r) + "," + y + " Z";
+  }
+  function panel(parent, x, y, w, h, fill, stroke){
+    parent.appendChild(el("rect", { x:x, y:y, width:w, height:h, rx:16, fill:fill,
+                                     stroke:stroke || "none", "stroke-width":"3" }));
+  }
+  function labelChip(parent, x, y, text){
+    var g = el("g", { transform: "translate(" + x + "," + y + ")" });
+    var t = el("text", { x:10, y:14, "font-size":"17", "font-weight":"700", fill:"#2c3e2f" });
+    t.textContent = text;
+    var w = 20 + text.length * 15;
+    g.appendChild(el("rect", { x:0, y:-6, width:w, height:26, rx:13, fill:"rgba(255,255,255,.88)" }));
+    g.appendChild(t);
+    parent.appendChild(g);
   }
 
-  // ---- 天井のバンティング（三角の飾り旗） ----
+  // ---- バンティング（三角の飾り旗） ----
   var bunting = document.getElementById("bunting");
   var buntingColors = ["#e8654a","#f2c14e","#4fa876","#3f9bd6","#7c6fd6","#e06aa0"];
   for (var bx = 20; bx <= 980; bx += 34){
-    var sag = Math.sin((bx / 1000) * Math.PI) * 14;
-    var by = 22 + sag;
+    var sag = Math.sin((bx / 1000) * Math.PI) * 13;
+    var by = 20 + sag;
     bunting.appendChild(el("polygon", {
-      points: (bx-11) + "," + by + " " + (bx+11) + "," + by + " " + bx + "," + (by+22),
+      points: (bx-11) + "," + by + " " + (bx+11) + "," + by + " " + bx + "," + (by+20),
       fill: buntingColors[Math.floor(bx / 34) % buntingColors.length]
     }));
   }
-  bunting.appendChild(el("path", {
-    d: "M 20,22 " + Array.from({length: 29}, function(_, k){
-      var x = 20 + k * 34; var y = 22 + Math.sin((x/1000)*Math.PI)*14;
-      return "L " + x + "," + y;
-    }).join(" "),
-    fill:"none", stroke:"#c9a86a", "stroke-width":"2", opacity:"0.6"
-  }));
 
-  // ---- 制作テーブル ----
-  function tableCluster(parentId, x0){
-    var g = document.getElementById(parentId);
+  // ---- 廊下（周回コース） ----
+  var HALL = { x:30, y:150, w:940, h:590, r:50 };
+  var hallD = roundedRectPath(HALL.x, HALL.y, HALL.w, HALL.h, HALL.r);
+  document.getElementById("hallPath").setAttribute("d", hallD);
+
+  // ---- 部屋の位置 ----
+  var ROOM_HALL   = { x:100, y:210, w:380, h:230 }; // 講堂／体育館（ステージ発表準備）
+  var ROOM_CHOIR  = { x:540, y:210, w:390, h:230 }; // 教室：合唱練習
+  var ROOM_ACT    = { x:100, y:480, w:380, h:230 }; // 教室：演技練習（係）
+  var ROOM_DESIGN = { x:540, y:480, w:390, h:230 }; // 教室：デザイン作成（係）
+
+  // 講堂／体育館：ステージ発表準備
+  (function(){
+    var g = document.getElementById("roomHall");
+    panel(g, ROOM_HALL.x, ROOM_HALL.y, ROOM_HALL.w, ROOM_HALL.h, "#e0bd8a", "#b8955f");
+    // ミニステージ
+    g.appendChild(el("rect", { x:ROOM_HALL.x+40, y:ROOM_HALL.y+14, width:ROOM_HALL.w-80, height:70,
+                                fill:"#caa06a", stroke:"#a97c4a", "stroke-width":"1.5" }));
+    // 緞帳（左右）
+    g.appendChild(el("path", { d:"M " + (ROOM_HALL.x+30) + "," + (ROOM_HALL.y+8) +
+                                " Q " + (ROOM_HALL.x+56) + "," + (ROOM_HALL.y+50) + " " + (ROOM_HALL.x+30) + "," + (ROOM_HALL.y+92) +
+                                " L " + (ROOM_HALL.x+16) + "," + (ROOM_HALL.y+92) +
+                                " Q " + (ROOM_HALL.x+38) + "," + (ROOM_HALL.y+50) + " " + (ROOM_HALL.x+16) + "," + (ROOM_HALL.y+8) + " Z",
+                                fill:"#c0392b" }));
+    g.appendChild(el("path", { d:"M " + (ROOM_HALL.x+ROOM_HALL.w-30) + "," + (ROOM_HALL.y+8) +
+                                " Q " + (ROOM_HALL.x+ROOM_HALL.w-56) + "," + (ROOM_HALL.y+50) + " " + (ROOM_HALL.x+ROOM_HALL.w-30) + "," + (ROOM_HALL.y+92) +
+                                " L " + (ROOM_HALL.x+ROOM_HALL.w-16) + "," + (ROOM_HALL.y+92) +
+                                " Q " + (ROOM_HALL.x+ROOM_HALL.w-38) + "," + (ROOM_HALL.y+50) + " " + (ROOM_HALL.x+ROOM_HALL.w-16) + "," + (ROOM_HALL.y+8) + " Z",
+                                fill:"#c0392b" }));
+    labelChip(g, ROOM_HALL.x+10, ROOM_HALL.y-4, "🎤 講堂（ステージ発表準備）");
+  })();
+
+  // 教室：合唱練習（ひな壇）
+  (function(){
+    var g = document.getElementById("roomChoir");
+    panel(g, ROOM_CHOIR.x, ROOM_CHOIR.y, ROOM_CHOIR.w, ROOM_CHOIR.h, "#dfe7ea", "#aebac0");
     [0,1,2].forEach(function(i){
-      var tx = x0, ty = 440 + i * 62;
-      var t = el("g", { transform: "translate(" + tx + "," + ty + ")" });
-      t.appendChild(el("rect", { x:-55, y:-16, width:110, height:32, rx:5, fill:"#8a6a45" }));
-      t.appendChild(el("rect", { x:-48, y:-24, width:22, height:14, rx:2, fill: PALETTE[(i*2)%PALETTE.length] }));
-      t.appendChild(el("rect", { x:-46, y:-27, width:22, height:14, rx:2, fill: PALETTE[(i*2+1)%PALETTE.length] }));
-      t.appendChild(el("circle", { cx:20, cy:-20, r:7, fill:"#dbe6ea" }));
-      t.appendChild(el("circle", { cx:20, cy:-20, r:3, fill:"#8a6a45" }));
-      t.appendChild(el("line", { x1:36, y1:-14, x2:48, y2:-24, stroke:"#c94", "stroke-width":3, "stroke-linecap":"round" }));
-      t.appendChild(el("line", { x1:36, y1:-24, x2:48, y2:-14, stroke:"#c94", "stroke-width":3, "stroke-linecap":"round" }));
-      g.appendChild(t);
+      g.appendChild(el("rect", {
+        x: ROOM_CHOIR.x + 24, y: ROOM_CHOIR.y + 24 + i*10, width: ROOM_CHOIR.w-48 - i*36, height: 10,
+        fill: "#c7d2d6"
+      }));
     });
-  }
-  tableCluster("tablesLeft", 150);
-  tableCluster("tablesRight", 850);
+    // ピアノ（簡略）
+    g.appendChild(el("rect", { x:ROOM_CHOIR.x+20, y:ROOM_CHOIR.y+ROOM_CHOIR.h-42, width:46, height:26, rx:3, fill:"#5c4632" }));
+    g.appendChild(el("rect", { x:ROOM_CHOIR.x+22, y:ROOM_CHOIR.y+ROOM_CHOIR.h-30, width:42, height:6, fill:"#f0ece2" }));
+    labelChip(g, ROOM_CHOIR.x+10, ROOM_CHOIR.y-4, "🎵 教室（合唱練習）");
+  })();
+
+  // 教室：演技練習（係）
+  (function(){
+    var g = document.getElementById("roomActing");
+    panel(g, ROOM_ACT.x, ROOM_ACT.y, ROOM_ACT.w, ROOM_ACT.h, "#f0ddc8", "#cbab84");
+    // 端に寄せた机
+    [0,1,2].forEach(function(i){
+      g.appendChild(el("rect", { x:ROOM_ACT.x+16, y:ROOM_ACT.y+22+i*26, width:50, height:18, rx:3,
+                                  fill:"#c9a06a", stroke:"#a97c4a", "stroke-width":"1" }));
+    });
+    // 小道具（台本・マスク風のアイコン）
+    g.appendChild(el("rect", { x:ROOM_ACT.x+ROOM_ACT.w-70, y:ROOM_ACT.y+20, width:26, height:32, rx:2,
+                                fill:"#fff", stroke:"#c7b89a", "stroke-width":"1.5" }));
+    g.appendChild(el("line", { x1:ROOM_ACT.x+ROOM_ACT.w-66, y1:ROOM_ACT.y+28, x2:ROOM_ACT.x+ROOM_ACT.w-48, y2:ROOM_ACT.y+28, stroke:"#c7b89a", "stroke-width":"1.5" }));
+    g.appendChild(el("line", { x1:ROOM_ACT.x+ROOM_ACT.w-66, y1:ROOM_ACT.y+34, x2:ROOM_ACT.x+ROOM_ACT.w-48, y2:ROOM_ACT.y+34, stroke:"#c7b89a", "stroke-width":"1.5" }));
+    labelChip(g, ROOM_ACT.x+10, ROOM_ACT.y-4, "🎬 教室（演技練習・係）");
+  })();
+
+  // 教室：デザイン作成（係）
+  (function(){
+    var g = document.getElementById("roomDesign");
+    panel(g, ROOM_DESIGN.x, ROOM_DESIGN.y, ROOM_DESIGN.w, ROOM_DESIGN.h, "#e8dcc5", "#c2ac82");
+    [[ROOM_DESIGN.x+40, ROOM_DESIGN.y+24], [ROOM_DESIGN.x+ROOM_DESIGN.w-90, ROOM_DESIGN.y+24],
+     [ROOM_DESIGN.x+40, ROOM_DESIGN.y+ROOM_DESIGN.h-52], [ROOM_DESIGN.x+ROOM_DESIGN.w-90, ROOM_DESIGN.y+ROOM_DESIGN.h-52]]
+      .forEach(function(p, i){
+        var t = el("g", { transform:"translate(" + p[0] + "," + p[1] + ")" });
+        t.appendChild(el("rect", { x:0, y:0, width:70, height:36, rx:4, fill:"#8a6a45" }));
+        t.appendChild(el("rect", { x:6, y:-8, width:16, height:11, fill: PALETTE[i % PALETTE.length] }));
+        t.appendChild(el("rect", { x:24, y:-8, width:16, height:11, fill: PALETTE[(i+2) % PALETTE.length] }));
+        t.appendChild(el("circle", { cx:56, cy:-3, r:6, fill:"#dbe6ea" }));
+        g.appendChild(t);
+      });
+    labelChip(g, ROOM_DESIGN.x+10, ROOM_DESIGN.y-4, "🎨 教室（デザイン作成・係）");
+  })();
 
   // ---- 人の配置 ----
-  var STAGE_ZONE = { x0:330, x1:670, y0:160, y1:255 };
-  var CRAFT_A = { x0:40,  y0:390, w:230, h:220 };
-  var CRAFT_B = { x0:730, y0:390, w:230, h:220 };
-  var PROP = { cx:500, cy:445, rx:315, ry:140 };
+  var ORDER = ["hall","choir","acting","design","carry"];
+  var counts = { hall:0, choir:0, acting:0, design:0, carry:0 };
+  DATA.forEach(function(_, i){ counts[ORDER[i % 5]]++; });
 
   var crowd = document.getElementById("crowd");
-  var order = ["cheer","run","idle"];
+  var seatIdx = { hall:0, choir:0, acting:0, design:0, carry:0 };
+
+  var CHOIR_COLS = 7;
 
   DATA.forEach(function(text, i){
-    var type = order[i % 3];
-    var color = PALETTE[i % PALETTE.length];
+    var type = ORDER[i % 5];
     var scale = 1.5 + rnd() * 0.5;
+    var n = seatIdx[type]++;
+    var color = PALETTE[n % PALETTE.length];
+    var g;
 
-    var g = el("g", { class: "char " + type, tabindex: "0", role:"button",
-                       "aria-label": "感想を見る", "data-i": String(i) });
-
-    if (type === "cheer"){
-      // ステージでリハーサル
-      var x = STAGE_ZONE.x0 + rnd() * (STAGE_ZONE.x1 - STAGE_ZONE.x0);
-      var y = STAGE_ZONE.y0 + rnd() * (STAGE_ZONE.y1 - STAGE_ZONE.y0);
-      g.setAttribute("transform", "translate(" + x + "," + y + ") scale(" + (scale*0.85) + ")");
+    if (type === "hall"){
+      var hx = ROOM_HALL.x + 30 + rnd() * (ROOM_HALL.w-60);
+      var hy = ROOM_HALL.y + 110 + rnd() * (ROOM_HALL.h-130);
+      g = personEl(i, "cheer", "figure-cheer", hx, hy, scale*0.85, color, (-rnd()*1).toFixed(2)+"s");
+    } else if (type === "choir"){
+      var cols = CHOIR_COLS;
+      var rows = Math.ceil(counts.choir / cols);
+      var col = n % cols, row = Math.floor(n / cols);
+      var cx2 = ROOM_CHOIR.x + 38 + col * ((ROOM_CHOIR.w-76) / (cols-1||1));
+      var cy2 = ROOM_CHOIR.y + 70 + row * (110 / (rows||1));
+      g = personEl(i, "idle", "figure-idle", cx2, cy2, 1.3, color, (-rnd()*2.6).toFixed(2)+"s");
+    } else if (type === "acting"){
+      var ax = ROOM_ACT.x + 90 + rnd() * (ROOM_ACT.w-140);
+      var ay = ROOM_ACT.y + 40 + rnd() * (ROOM_ACT.h-80);
+      g = personEl(i, "cheer", "figure-cheer", ax, ay, scale*0.85, color, (-rnd()*1).toFixed(2)+"s");
+    } else if (type === "design"){
+      var dx = ROOM_DESIGN.x + 40 + rnd() * (ROOM_DESIGN.w-80);
+      var dy = ROOM_DESIGN.y + 40 + rnd() * (ROOM_DESIGN.h-80);
+      g = personEl(i, "idle", "figure-idle", dx, dy, scale, color, (-rnd()*2.6).toFixed(2)+"s");
+    } else {
+      g = el("g", { class:"char run", tabindex:"0", role:"button",
+                     "aria-label":"感想を見る", "data-i": String(i) });
       g.style.color = color;
-      g.style.animationDelay = (-rnd() * 1).toFixed(2) + "s";
-      g.appendChild(useOf("#figure-cheer"));
-    } else if (type === "run"){
-      // 小道具・看板を運ぶ（ステージと制作コーナーの間をぐるっと）
-      var jr = 12 + rnd() * 26;
-      var rx = PROP.rx + jr;
-      var ry = PROP.ry + jr * 0.4;
-      g.style.color = color;
-      g.style.offsetPath = "path('" + ellipsePathD(PROP.cx, PROP.cy, rx, ry) + "')";
-      var dur = 20 + rnd() * 16;
+      g.style.offsetPath = "path('" + hallD + "')";
+      var dur = 44 + rnd() * 16;
+      var total = counts.carry || 1;
       g.style.animationDuration = dur.toFixed(1) + "s";
-      g.style.animationDelay = (-rnd() * dur).toFixed(1) + "s";
+      g.style.animationDelay = (-(n/total) * dur).toFixed(1) + "s";
       var wrap = el("g", { transform: "translate(-10,-16) scale(" + (scale*0.9) + ")" });
       wrap.appendChild(useOf("#figure-run"));
       g.appendChild(wrap);
-    } else {
-      // 制作コーナーで飾り・看板づくり
-      var zone = rnd() < 0.5 ? CRAFT_A : CRAFT_B;
-      var cx2 = zone.x0 + rnd() * zone.w;
-      var cy2 = zone.y0 + rnd() * zone.h;
-      g.setAttribute("transform", "translate(" + cx2 + "," + cy2 + ") scale(" + scale + ")");
-      g.style.color = color;
-      g.style.animationDelay = (-rnd() * 2.6).toFixed(2) + "s";
-      g.appendChild(useOf("#figure-idle"));
     }
 
     crowd.appendChild(g);
@@ -351,7 +414,7 @@
   }
 
   document.getElementById("scene").addEventListener("click", function(e){
-    var g = e.target.closest(".char");
+    var g = e.target.closest("[data-i]");
     if (g){
       var i = parseInt(g.getAttribute("data-i"), 10);
       showBubble(g, DATA[i]);
@@ -361,7 +424,7 @@
   });
   document.getElementById("scene").addEventListener("keydown", function(e){
     if (e.key !== "Enter" && e.key !== " ") return;
-    var g = e.target.closest(".char");
+    var g = e.target.closest("[data-i]");
     if (!g) return;
     e.preventDefault();
     var i = parseInt(g.getAttribute("data-i"), 10);
