@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<title>文化発表会 感想ひろば</title>
+<style>
+  :root{
+    color-scheme: light;
+    --wall:#f2e6cc; --floor:#cda876; --stage:#e0bd8a; --curtain:#c0392b;
+    --ink:#3a2f22;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; touch-action:manipulation; }
+  body{
+    font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",-apple-system,BlinkMacSystemFont,"Yu Gothic",sans-serif;
+    background:var(--wall);
+  }
+  #stage{ position:relative; width:100%; }
+  #scene{ width:100%; height:auto; display:block; }
+  #scene .char{ cursor:pointer; }
+  #scene .char:focus{ outline:none; }
+
+  header{
+    padding:10px 14px 8px; background:var(--wall);
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    text-align:center;
+  }
+  header h1{
+    margin:0; font-size:15px; font-weight:700; color:var(--ink);
+    background:rgba(255,255,255,.82); padding:5px 14px; border-radius:999px;
+    box-shadow:0 2px 6px rgba(0,0,0,.12);
+  }
+  header p{
+    margin:0; font-size:11.5px; color:#4a3a28;
+    background:rgba(255,255,255,.66); padding:2px 10px; border-radius:999px;
+  }
+
+  /* ---- speech bubble ---- */
+  #bubble{
+    position:absolute; z-index:10; max-width:min(78vw, 300px);
+    background:#fff; border-radius:16px; padding:12px 30px 12px 14px;
+    box-shadow:0 6px 18px rgba(0,0,0,.22);
+    font-size:14px; line-height:1.55; color:#2b2b2b;
+    transition:opacity .12s ease, transform .12s ease;
+  }
+  #bubble[hidden]{ display:none; }
+  #bubble .txt{ max-height:34vh; overflow-y:auto; white-space:pre-wrap; word-break:break-word; }
+  #bubble::after{
+    content:""; position:absolute; width:14px; height:14px; background:#fff;
+    transform:rotate(45deg); left:var(--tailX, 22px);
+  }
+  #bubble.below::after{ top:-6px; box-shadow:-2px -2px 3px rgba(0,0,0,.05); }
+  #bubble.above::after{ bottom:-6px; box-shadow:2px 2px 3px rgba(0,0,0,.05); }
+  #bubbleClose{
+    position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:50%;
+    border:none; background:#eee; color:#666; font-size:15px; line-height:1;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  #bubbleClose:active{ background:#ddd; }
+
+  /* ---- character animations ---- */
+  .cheer .pose{ transform-box:fill-box; transform-origin:50% 100%; animation:cheerBounce 1s ease-in-out infinite; }
+  @keyframes cheerBounce{
+    0%,100%{ transform:translateY(0) rotate(0deg); }
+    50%{ transform:translateY(-3px) rotate(-4deg); }
+  }
+  .idle .pose{ transform-box:fill-box; transform-origin:50% 100%; animation:idleSway 2.6s ease-in-out infinite; }
+  @keyframes idleSway{
+    0%,100%{ transform:scaleY(1); }
+    50%{ transform:scaleY(0.985); }
+  }
+  .run{
+    offset-rotate:0deg;
+    animation-name:runLoop; animation-timing-function:linear; animation-iteration-count:infinite;
+  }
+  @keyframes runLoop{ from{ offset-distance:0%; } to{ offset-distance:100%; } }
+  @supports not (offset-path: path("M0 0")){
+    .run{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎭 文化発表会 感想ひろば（サンプル）</h1>
+  <p>準備中のみんなの様子／気になる子をタップすると感想が出てくるよ</p>
+</header>
+
+<div id="stage">
+  <svg id="scene" viewBox="0 0 1000 640" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- 応援・盛り上げポーズ：腕を上げてぴょんぴょん（ステージ練習用） -->
+      <symbol id="figure-cheer" viewBox="0 0 20 32">
+        <g class="pose">
+          <line x1="5" y1="12" x2="0" y2="4"  stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="15" y1="12" x2="20" y2="4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="10" cy="6" r="4.2" fill="currentColor"/>
+          <rect x="5.5" y="10" width="9" height="12" rx="4" fill="currentColor"/>
+          <line x1="7.5" y1="22" x2="6"  y2="31" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="12.5" y1="22" x2="14" y2="31" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+      </symbol>
+
+      <!-- 活動ポーズ：足を開いて歩く（小道具を運ぶ用） -->
+      <symbol id="figure-run" viewBox="0 0 20 32">
+        <g class="pose">
+          <line x1="6" y1="13" x2="1"  y2="10" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="14" y1="13" x2="19" y2="17" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="10" cy="6" r="4.2" fill="currentColor"/>
+          <rect x="5.5" y="10" width="9" height="11" rx="4" fill="currentColor" transform="rotate(8 10 15)"/>
+          <line x1="8" y1="21" x2="3"  y2="30" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="12" y1="21" x2="16" y2="28" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+      </symbol>
+
+      <!-- のんびりポーズ：たったまま（制作テーブル用） -->
+      <symbol id="figure-idle" viewBox="0 0 20 32">
+        <g class="pose">
+          <line x1="5.5" y1="13" x2="3" y2="20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="14.5" y1="13" x2="17" y2="20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="10" cy="6" r="4.2" fill="currentColor"/>
+          <rect x="5.5" y="10" width="9" height="13" rx="4" fill="currentColor"/>
+          <line x1="7.5" y1="23" x2="7"  y2="31" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="12.5" y1="23" x2="13" y2="31" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+      </symbol>
+    </defs>
+
+    <!-- 壁・天井 -->
+    <rect x="0" y="0" width="1000" height="120" fill="var(--wall)"/>
+    <g id="bunting"></g>
+    <g transform="translate(500,72)">
+      <rect x="-118" y="-18" width="236" height="34" rx="8" fill="#e8654a"/>
+      <polygon points="-118,-18 -132,-1 -118,16" fill="#e8654a"/>
+      <polygon points="118,-18 132,-1 118,16" fill="#e8654a"/>
+      <text x="0" y="6" text-anchor="middle" font-size="19" font-weight="700" fill="#fff">文化発表会</text>
+    </g>
+
+    <!-- 床 -->
+    <rect x="0" y="120" width="1000" height="520" fill="var(--floor)"/>
+    <g stroke="#b8905e" stroke-width="2" opacity="0.35">
+      <line x1="0" y1="300" x2="1000" y2="300"/>
+      <line x1="0" y1="420" x2="1000" y2="420"/>
+      <line x1="0" y1="540" x2="1000" y2="540"/>
+    </g>
+
+    <!-- ステージ -->
+    <rect x="270" y="118" width="460" height="172" fill="var(--stage)"/>
+    <rect x="270" y="282" width="460" height="10" fill="#a97c4a"/>
+    <g fill="#e6cda0" opacity="0.7">
+      <circle cx="500" cy="180" r="46"/>
+      <line x1="500" y1="134" x2="500" y2="150" stroke="#e6cda0" stroke-width="6"/>
+      <line x1="500" y1="210" x2="500" y2="226" stroke="#e6cda0" stroke-width="6"/>
+      <line x1="454" y1="180" x2="470" y2="180" stroke="#e6cda0" stroke-width="6"/>
+      <line x1="530" y1="180" x2="546" y2="180" stroke="#e6cda0" stroke-width="6"/>
+    </g>
+    <!-- 緞帳 -->
+    <path d="M 230,20 L 300,20 Q 285,150 300,290 L 230,290 Q 245,150 230,20 Z" fill="var(--curtain)"/>
+    <path d="M 770,20 L 700,20 Q 715,150 700,290 L 770,290 Q 755,150 770,20 Z" fill="var(--curtain)"/>
+    <g stroke="#96281b" stroke-width="3" opacity="0.5">
+      <path d="M 245,30 Q 235,155 248,280" fill="none"/>
+      <path d="M 270,25 Q 262,155 272,285" fill="none"/>
+      <path d="M 755,30 Q 765,155 752,280" fill="none"/>
+      <path d="M 730,25 Q 738,155 728,285" fill="none"/>
+    </g>
+
+    <!-- 制作テーブル（左・右） -->
+    <g id="tablesLeft"></g>
+    <g id="tablesRight"></g>
+
+    <!-- 人々（JSで生成） -->
+    <g id="crowd"></g>
+  </svg>
+
+  <div id="bubble" hidden>
+    <button id="bubbleClose" aria-label="閉じる">×</button>
+    <div class="txt" id="bubbleText"></div>
+  </div>
+</div>
+
+<script src="bunkasai-data.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var DATA = (window.EVENT_DATA || []).slice();
+  var SVGNS = "http://www.w3.org/2000/svg";
+  var XLINKNS = "http://www.w3.org/1999/xlink";
+
+  function mulberry32(seed){
+    return function(){
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var rnd = mulberry32(20260823);
+
+  var PALETTE = ["#e8654a","#f2a53c","#f2c14e","#4fa876","#3f9bd6","#7c6fd6","#e06aa0","#5aab8f","#c97a3d","#4f8fbb"];
+
+  function el(tag, attrs){
+    var e = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function useOf(id){
+    var u = el("use", { width: "20", height: "32" });
+    u.setAttributeNS(XLINKNS, "href", id);
+    return u;
+  }
+  function ellipsePathD(cx, cy, rx, ry){
+    return "M " + (cx+rx) + "," + cy +
+      " A " + rx + "," + ry + " 0 1 1 " + (cx-rx) + "," + cy +
+      " A " + rx + "," + ry + " 0 1 1 " + (cx+rx) + "," + cy + " Z";
+  }
+
+  // ---- 天井のバンティング（三角の飾り旗） ----
+  var bunting = document.getElementById("bunting");
+  var buntingColors = ["#e8654a","#f2c14e","#4fa876","#3f9bd6","#7c6fd6","#e06aa0"];
+  for (var bx = 20; bx <= 980; bx += 34){
+    var sag = Math.sin((bx / 1000) * Math.PI) * 14;
+    var by = 22 + sag;
+    bunting.appendChild(el("polygon", {
+      points: (bx-11) + "," + by + " " + (bx+11) + "," + by + " " + bx + "," + (by+22),
+      fill: buntingColors[Math.floor(bx / 34) % buntingColors.length]
+    }));
+  }
+  bunting.appendChild(el("path", {
+    d: "M 20,22 " + Array.from({length: 29}, function(_, k){
+      var x = 20 + k * 34; var y = 22 + Math.sin((x/1000)*Math.PI)*14;
+      return "L " + x + "," + y;
+    }).join(" "),
+    fill:"none", stroke:"#c9a86a", "stroke-width":"2", opacity:"0.6"
+  }));
+
+  // ---- 制作テーブル ----
+  function tableCluster(parentId, x0){
+    var g = document.getElementById(parentId);
+    [0,1,2].forEach(function(i){
+      var tx = x0, ty = 440 + i * 62;
+      var t = el("g", { transform: "translate(" + tx + "," + ty + ")" });
+      t.appendChild(el("rect", { x:-55, y:-16, width:110, height:32, rx:5, fill:"#8a6a45" }));
+      t.appendChild(el("rect", { x:-48, y:-24, width:22, height:14, rx:2, fill: PALETTE[(i*2)%PALETTE.length] }));
+      t.appendChild(el("rect", { x:-46, y:-27, width:22, height:14, rx:2, fill: PALETTE[(i*2+1)%PALETTE.length] }));
+      t.appendChild(el("circle", { cx:20, cy:-20, r:7, fill:"#dbe6ea" }));
+      t.appendChild(el("circle", { cx:20, cy:-20, r:3, fill:"#8a6a45" }));
+      t.appendChild(el("line", { x1:36, y1:-14, x2:48, y2:-24, stroke:"#c94", "stroke-width":3, "stroke-linecap":"round" }));
+      t.appendChild(el("line", { x1:36, y1:-24, x2:48, y2:-14, stroke:"#c94", "stroke-width":3, "stroke-linecap":"round" }));
+      g.appendChild(t);
+    });
+  }
+  tableCluster("tablesLeft", 150);
+  tableCluster("tablesRight", 850);
+
+  // ---- 人の配置 ----
+  var STAGE_ZONE = { x0:330, x1:670, y0:160, y1:255 };
+  var CRAFT_A = { x0:40,  y0:390, w:230, h:220 };
+  var CRAFT_B = { x0:730, y0:390, w:230, h:220 };
+  var PROP = { cx:500, cy:445, rx:315, ry:140 };
+
+  var crowd = document.getElementById("crowd");
+  var order = ["cheer","run","idle"];
+
+  DATA.forEach(function(text, i){
+    var type = order[i % 3];
+    var color = PALETTE[i % PALETTE.length];
+    var scale = 1.5 + rnd() * 0.5;
+
+    var g = el("g", { class: "char " + type, tabindex: "0", role:"button",
+                       "aria-label": "感想を見る", "data-i": String(i) });
+
+    if (type === "cheer"){
+      // ステージでリハーサル
+      var x = STAGE_ZONE.x0 + rnd() * (STAGE_ZONE.x1 - STAGE_ZONE.x0);
+      var y = STAGE_ZONE.y0 + rnd() * (STAGE_ZONE.y1 - STAGE_ZONE.y0);
+      g.setAttribute("transform", "translate(" + x + "," + y + ") scale(" + (scale*0.85) + ")");
+      g.style.color = color;
+      g.style.animationDelay = (-rnd() * 1).toFixed(2) + "s";
+      g.appendChild(useOf("#figure-cheer"));
+    } else if (type === "run"){
+      // 小道具・看板を運ぶ（ステージと制作コーナーの間をぐるっと）
+      var jr = 12 + rnd() * 26;
+      var rx = PROP.rx + jr;
+      var ry = PROP.ry + jr * 0.4;
+      g.style.color = color;
+      g.style.offsetPath = "path('" + ellipsePathD(PROP.cx, PROP.cy, rx, ry) + "')";
+      var dur = 20 + rnd() * 16;
+      g.style.animationDuration = dur.toFixed(1) + "s";
+      g.style.animationDelay = (-rnd() * dur).toFixed(1) + "s";
+      var wrap = el("g", { transform: "translate(-10,-16) scale(" + (scale*0.9) + ")" });
+      wrap.appendChild(useOf("#figure-run"));
+      g.appendChild(wrap);
+    } else {
+      // 制作コーナーで飾り・看板づくり
+      var zone = rnd() < 0.5 ? CRAFT_A : CRAFT_B;
+      var cx2 = zone.x0 + rnd() * zone.w;
+      var cy2 = zone.y0 + rnd() * zone.h;
+      g.setAttribute("transform", "translate(" + cx2 + "," + cy2 + ") scale(" + scale + ")");
+      g.style.color = color;
+      g.style.animationDelay = (-rnd() * 2.6).toFixed(2) + "s";
+      g.appendChild(useOf("#figure-idle"));
+    }
+
+    crowd.appendChild(g);
+  });
+
+  // ---- ふきだし ----
+  var stageEl = document.getElementById("stage");
+  var bubble = document.getElementById("bubble");
+  var bubbleText = document.getElementById("bubbleText");
+  var openChar = null;
+
+  function closeBubble(){
+    bubble.hidden = true;
+    if (openChar) openChar.classList.remove("active");
+    openChar = null;
+  }
+
+  function showBubble(target, text){
+    if (openChar === target){ closeBubble(); return; }
+    openChar = target;
+    bubbleText.textContent = text;
+    bubble.hidden = false;
+
+    var stageRect = stageEl.getBoundingClientRect();
+    var r = target.getBoundingClientRect();
+    var relX = r.left + r.width/2 - stageRect.left;
+    var relY = r.top - stageRect.top;
+
+    bubble.style.left = "0px"; bubble.style.top = "0px";
+    var bw = bubble.offsetWidth, bh = bubble.offsetHeight;
+
+    var left = relX - 30;
+    left = Math.max(8, Math.min(left, stageRect.width - bw - 8));
+
+    var above = relY - bh - 14;
+    var placeAbove = above > 8;
+    var top = placeAbove ? above : (r.bottom - stageRect.top + 14);
+    top = Math.max(8, Math.min(top, stageRect.height - bh - 8));
+
+    bubble.classList.toggle("above", placeAbove);
+    bubble.classList.toggle("below", !placeAbove);
+
+    var tailX = Math.max(14, Math.min(relX - left - 7, bw - 28));
+    bubble.style.setProperty("--tailX", tailX + "px");
+    bubble.style.left = left + "px";
+    bubble.style.top = top + "px";
+  }
+
+  document.getElementById("scene").addEventListener("click", function(e){
+    var g = e.target.closest(".char");
+    if (g){
+      var i = parseInt(g.getAttribute("data-i"), 10);
+      showBubble(g, DATA[i]);
+    } else {
+      closeBubble();
+    }
+  });
+  document.getElementById("scene").addEventListener("keydown", function(e){
+    if (e.key !== "Enter" && e.key !== " ") return;
+    var g = e.target.closest(".char");
+    if (!g) return;
+    e.preventDefault();
+    var i = parseInt(g.getAttribute("data-i"), 10);
+    showBubble(g, DATA[i]);
+  });
+  document.getElementById("bubbleClose").addEventListener("click", closeBubble);
+})();
+</script>
+</body>
+</html>
