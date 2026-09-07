@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>応用チャレンジ 管理｜先生用</title>
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script src="problems.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --ink:#16202e; --ink-soft:#4a5768;
+  --ai:#24467d; --ai-weak:#e8eef7;
+  --shu:#c8322d; --shu-weak:#fbecea;
+  --ok:#1d6b4f; --ok-weak:#e6f2ec;
+  --paper:#fcfcfa; --rule:#d9dfe7; --grid:#e6ebf1;
+  --mincho:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;
+  --gothic:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+  --mono:"SFMono-Regular",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--gothic);color:var(--ink);background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;line-height:1.7}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px 80px}
+header.sheet{background:#fff;border:1px solid var(--rule);border-top:4px solid var(--ai);margin:20px 0 0;padding:16px 20px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+h1{font-family:var(--mincho);font-size:19px;font-weight:600;margin:0;letter-spacing:.04em}
+.sub{font-size:12.5px;color:var(--ink-soft)}
+.sub a{color:var(--ai)}
+.card{background:#fff;border:1px solid var(--rule);padding:16px 20px;margin-top:14px}
+.card h2{font-family:var(--mincho);font-size:15.5px;margin:0 0 10px;font-weight:600}
+input[type=password],select{font:inherit;font-size:14px;padding:9px 10px;border:1px solid var(--rule);background:#fff;border-radius:2px;width:100%}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--ai);outline-offset:1px}
+button{font:inherit;cursor:pointer;border-radius:2px;border:1px solid transparent}
+.btn{background:var(--ai);color:#fff;padding:10px 16px;font-weight:600;font-size:14px}
+.btn.ghost{background:#fff;color:var(--ai);border-color:var(--ai)}
+.btn.mini{padding:6px 12px;font-size:12.5px;font-weight:400}
+.btn:disabled{background:#9aa6b6;cursor:not-allowed}
+.row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.notice{border:1px solid var(--rule);background:#fff;padding:10px 13px;font-size:13px;margin-top:10px}
+.notice.warn{border-color:var(--shu);background:var(--shu-weak);color:#7d211d}
+.notice.ok{border-color:var(--ok);background:var(--ok-weak);color:#12503a}
+.tabs{display:flex;margin-top:18px;border-bottom:2px solid var(--ink);flex-wrap:wrap}
+.tabs button{background:none;border:none;padding:9px 16px;font-size:14px;color:var(--ink-soft);border-bottom:2px solid transparent;margin-bottom:-2px}
+.tabs button.on{color:var(--ink);font-weight:600;border-bottom-color:var(--shu)}
+.filters{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.filters select{width:auto;min-width:150px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:13.5px;margin-top:10px}
+th,td{border:1px solid var(--rule);padding:6px 9px;text-align:left;vertical-align:top}
+th{background:#f2f5f9;font-weight:600;font-size:12.5px;white-space:nowrap}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+td.mono{font-family:var(--mono);word-break:break-all}
+tr.lo td{background:var(--shu-weak)}
+td .bar{display:inline-block;height:9px;background:var(--ai);vertical-align:middle;margin-right:6px;min-width:1px}
+td .bar.low{background:var(--shu)}
+.scroll{overflow-x:auto}
+.clickable tbody tr{cursor:pointer}
+.clickable tbody tr:hover td{background:var(--ai-weak)}
+.badge{display:inline-block;font-size:11px;font-family:var(--mono);border:1px solid var(--rule);padding:0 6px;color:var(--ink-soft)}
+.mk-ok{color:var(--ok);font-weight:600}.mk-ng{color:var(--shu);font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
+.kpi{background:#fff;border:1px solid var(--rule);padding:12px 14px}
+.kpi .v{font-family:var(--mincho);font-size:26px;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi .k{font-size:11.5px;color:var(--ink-soft)}
+.hidden{display:none!important}
+.crumb{font-size:13px;margin-top:14px}
+.crumb a{color:var(--ai);cursor:pointer;text-decoration:underline}
+.qtext{font-size:12px;color:var(--ink-soft);margin:2px 0 0}
+@media print{.no-print,.tabs,.filters,header.sheet .btn{display:none!important}body{background:none}.card{border:none;padding:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="sheet">
+    <h1>応用チャレンジ 管理</h1>
+    <div class="sub">中学1年　第4章　比例と反比例　·　<a href="index.html">めあて一覧・QR →</a></div>
+    <div style="margin-left:auto" class="no-print">
+      <a id="logout" class="hidden" style="font-size:12px;color:var(--ink-soft);cursor:pointer;text-decoration:underline">ログアウト</a>
+    </div>
+  </header>
+
+  <div class="card hidden" id="scrConfig">
+    <h2>セットアップが必要です</h2>
+    <p class="sub">config.js に Supabase の URL と anon key を設定し、schema.sql を実行してください（README.md 参照）。</p>
+  </div>
+
+  <div class="card hidden" id="scrPin" style="max-width:420px;margin:40px auto">
+    <h2>暗証番号（PIN）を入力</h2>
+    <input type="password" id="inpPin" placeholder="教師用PIN" autocomplete="off">
+    <div class="notice warn hidden" id="errPin"></div>
+    <button class="btn" style="width:100%;margin-top:10px" id="btnPin">ログイン</button>
+  </div>
+
+  <div id="scrMain" class="hidden">
+    <div class="kpis" id="kpis"></div>
+    <div class="tabs no-print" id="tabs">
+      <button data-v="overview" class="on">セット一覧</button>
+      <button data-v="questions">問題別（間違い情報）</button>
+      <button data-v="students">生徒別</button>
+    </div>
+    <div class="filters no-print" id="filters"></div>
+    <div id="view"></div>
+    <div class="row no-print" style="margin-top:18px">
+      <button class="btn" id="xlsx">Excel に出力（.xlsx）</button>
+      <button class="btn ghost" id="reload">結果を更新</button>
+      <button class="btn ghost" id="print">この画面を印刷</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- メタ ---------- */
+const ALLSETS = window.SETS || [];
+const META = Object.fromEntries(ALLSETS.map(s=>[s.id,{no:s.no,name:s.name,theme:s.theme}]));
+const setName = id => META[id] ? `${META[id].no} ${META[id].name}` : id;
+
+/* ---------- 学籍番号ヘルパー ---------- */
+function readSid(sid){ const m=String(sid||"").match(/^(\d)(\d)(\d\d)$/); return m? {g:+m[1],c:+m[2],n:+m[3]} : null; }
+function sidLabel(sid){ const r=readSid(sid); return r? `${r.g}年${r.c}組${r.n}番` : String(sid||""); }
+function classOf(sid){ const r=readSid(sid); return r? `${r.g}-${r.c}` : "?"; }
+
+/* ---------- 状態 ---------- */
+let ROWS = [];
+let F = { cls:"", set:"" };
+let VIEW = "overview";
+let DRILL = null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const SS_KEY = "applied_teacher_pin";
+let pin = sessionStorage.getItem(SS_KEY) || "";
+function show(id,on){ document.getElementById(id).classList.toggle("hidden", !on); }
+
+/* ---------- ログイン ---------- */
+async function tryLogin(p){
+  const r = await Applied.rpc("applied_verify_pin", { p_pin: p });
+  return r && r.ok === true;
+}
+document.getElementById("btnPin").onclick = async () => {
+  const p = document.getElementById("inpPin").value;
+  const err = document.getElementById("errPin"); err.classList.add("hidden");
+  try{
+    if(await tryLogin(p)){ pin = p; sessionStorage.setItem(SS_KEY, p); enter(); }
+    else { err.textContent = "PIN が違います"; err.classList.remove("hidden"); }
+  }catch(e){ err.textContent = "通信エラー：" + e.message; err.classList.remove("hidden"); }
+};
+document.getElementById("inpPin").addEventListener("keydown", e=>{ if(e.key==="Enter") document.getElementById("btnPin").click(); });
+document.getElementById("logout").onclick = () => { sessionStorage.removeItem(SS_KEY); location.reload(); };
+
+function enter(){ show("scrPin", false); show("scrMain", true); show("logout", true); loadData(); }
+
+/* ---------- データ読み込み ---------- */
+async function loadData(){
+  try{
+    const r = await Applied.rpc("applied_get_rows", { p_pin: pin });
+    if(r && r.error) return;
+    ROWS = (r.rows || []).map(x=>({
+      timestamp: x.timestamp, jst_date: x.jst_date, student_id: x.student_id, set_id: x.set_id,
+      attempt_id: x.attempt_id, q_no: x.q_no, prompt: x.prompt || "", raw_answer: x.raw_answer || "",
+      is_correct: !!x.is_correct, score: +x.score || 0, max_score: +x.max_score || 0, elapsed_ms: +x.elapsed_ms || 0,
+    }));
+    render();
+  }catch(e){}
+}
+document.getElementById("reload").onclick = () => loadData();
+
+/* ---------- 集計ヘルパー ---------- */
+const uniq = a => [...new Set(a)].sort();
+const pct = (s,m) => m ? Math.round(s/m*100) : 0;
+const qSort = (a,b) => String(a).localeCompare(String(b),"ja",{numeric:true});
+const filtered = () => ROWS.filter(r =>
+  (!F.cls || classOf(r.student_id)===F.cls) && (!F.set || r.set_id===F.set));
+
+// 提出（生徒×セット×attempt）ごとにまとめる。同じ生徒が複数回挑戦したら「最新の回」を採用
+function latestAttempts(rows){
+  const byAtt = {};
+  for(const r of rows){
+    const k = r.attempt_id;
+    (byAtt[k] ??= { attempt_id:k, sid:r.student_id, set:r.set_id, ts:r.timestamp, score:0, max:0, rows:[] });
+    byAtt[k].score += r.score; byAtt[k].max += r.max_score; byAtt[k].rows.push(r);
+    if(String(r.timestamp) > String(byAtt[k].ts)) byAtt[k].ts = r.timestamp;
+  }
+  const bySidSet = {};
+  for(const a of Object.values(byAtt)){
+    const k = `${a.sid}|${a.set}`;
+    if(!bySidSet[k] || String(a.ts) > String(bySidSet[k].ts)) bySidSet[k] = a;
+  }
+  return Object.values(bySidSet);
+}
+// 問題別：最新の回の設問行だけ集める
+function questionStats(rows){
+  const atts = latestAttempts(rows);
+  const keep = new Set();
+  atts.forEach(a => a.rows.forEach(r => keep.add(r)));
+  const m = {};
+  for(const r of keep){
+    const k = `${r.set_id}|${r.q_no}`;
+    (m[k] ??= { set:r.set_id, q_no:r.q_no, prompt:r.prompt, n:0, ok:0, wrong:{} });
+    m[k].n++; if(r.is_correct) m[k].ok++;
+    if(!r.prompt && m[k].prompt) {} else if(r.prompt) m[k].prompt = r.prompt;
+    if(!r.is_correct){
+      const a = r.raw_answer === "" ? "（無解答）" : r.raw_answer;
+      (m[k].wrong[a] ??= { n:0, sids:[] });
+      m[k].wrong[a].n++; m[k].wrong[a].sids.push(r.student_id);
+    }
+  }
+  return Object.values(m);
+}
+
+/* ---------- 描画 ---------- */
+function render(){
+  const rows = filtered();
+  const atts = latestAttempts(rows);
+  const students = uniq(rows.map(r=>r.student_id));
+  const avg = atts.length ? Math.round(atts.reduce((t,a)=>t+pct(a.score,a.max),0)/atts.length) : 0;
+  const totalTries = new Set(rows.map(r=>r.attempt_id)).size;
+  $("#kpis").innerHTML = `
+    <div class="kpi"><div class="v">${students.length}</div><div class="k">挑戦した生徒</div></div>
+    <div class="kpi"><div class="v">${totalTries}</div><div class="k">のべ挑戦回数</div></div>
+    <div class="kpi"><div class="v">${atts.length}</div><div class="k">生徒×セット（最新の回）</div></div>
+    <div class="kpi"><div class="v">${avg}<span style="font-size:15px">%</span></div><div class="k">平均正答率</div></div>`;
+
+  const clss = uniq(ROWS.map(r=>classOf(r.student_id)));
+  const sets = uniq(ROWS.map(r=>r.set_id));
+  $("#filters").innerHTML = `
+    <select id="f-cls"><option value="">全クラス</option>${clss.map(c=>`<option ${F.cls===c?"selected":""} value="${c}">${c.replace("-","年")}組</option>`).join("")}</select>
+    <select id="f-set"><option value="">全セット</option>${sets.map(s=>`<option ${F.set===s?"selected":""} value="${s}">${esc(setName(s))}</option>`).join("")}</select>`;
+  $("#f-cls").onchange = e=>{ F.cls=e.target.value; DRILL=null; render(); };
+  $("#f-set").onchange = e=>{ F.set=e.target.value; DRILL=null; render(); };
+
+  const v = $("#view");
+  if(VIEW==="overview") v.innerHTML = vOverview(rows);
+  if(VIEW==="questions") v.innerHTML = DRILL?.q_no!=null ? vQuestionDetail(DRILL) : vQuestions(rows);
+  if(VIEW==="students") v.innerHTML = DRILL?.sid ? vStudentDetail(DRILL.sid) : vStudents(rows);
+  bindDrill();
+}
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on", x===b));
+  VIEW = b.dataset.v; DRILL = null; render();
+});
+function bar(p){ return `<span class="bar ${p<60?"low":""}" style="width:${Math.max(2,p*0.9)}px"></span>${p}%`; }
+
+function vOverview(rows){
+  const atts = latestAttempts(rows);
+  const m = {};
+  for(const a of atts){
+    (m[a.set] ??= { set:a.set, n:0, ps:[], tries:0 });
+    m[a.set].n++; m[a.set].ps.push(pct(a.score,a.max));
+  }
+  for(const r of rows){ if(m[r.set_id]) {} }
+  const triesBySet = {};
+  rows.forEach(r=>{ (triesBySet[r.set_id] ??= new Set()).add(r.attempt_id); });
+  const list = Object.values(m).sort((a,b)=>qSort(a.set,b.set));
+  if(!list.length) return `<div class="notice">まだ挑戦がありません。</div>`;
+  return `<div class="scroll"><table>
+    <thead><tr><th>セット</th><th class="num">挑戦した生徒</th><th class="num">のべ挑戦</th><th>平均正答率</th><th class="num">最低</th><th class="num">60%未満</th></tr></thead>
+    <tbody>${list.map(x=>{
+      const avg = Math.round(x.ps.reduce((t,p)=>t+p,0)/x.ps.length);
+      const lo = x.ps.filter(p=>p<60).length;
+      return `<tr><td>${esc(setName(x.set))}</td><td class="num">${x.n}</td>
+        <td class="num">${(triesBySet[x.set]||new Set()).size}</td>
+        <td>${bar(avg)}</td><td class="num">${Math.min(...x.ps)}%</td>
+        <td class="num">${lo?`<span class="mk-ng">${lo}人</span>`:"0"}</td></tr>`;
+    }).join("")}</tbody></table></div>`;
+}
+
+function vQuestions(rows){
+  const list = questionStats(rows).sort((a,b)=>{
+    const pa = pct(a.ok,a.n), pb = pct(b.ok,b.n);
+    return pa!==pb ? pa-pb : qSort(a.set+"|"+a.q_no, b.set+"|"+b.q_no);
+  });
+  if(!list.length) return `<div class="notice">まだ挑戦がありません。</div>`;
+  return `<div class="notice no-print">正答率の低い問題ほど上に赤く出ます。行をクリックすると、生徒が実際に書いた誤答が全部見られます。</div>
+  <div class="scroll"><table class="clickable" id="tbl-questions">
+    <thead><tr><th>セット</th><th>問題</th><th class="num">解答数</th><th>正答率</th><th>多い誤答（上位3）</th></tr></thead>
+    <tbody>${list.map(x=>{
+      const p = pct(x.ok,x.n);
+      const top = Object.entries(x.wrong).sort((a,b)=>b[1].n-a[1].n).slice(0,3)
+        .map(([a,v])=>`<span class="badge">${esc(a.length>18?a.slice(0,18)+"…":a)} ×${v.n}</span>`).join(" ");
+      return `<tr data-set="${esc(x.set)}" data-qno="${esc(x.q_no)}" class="${p<60?"lo":""}">
+        <td>${esc(META[x.set]?.no||x.set)}</td>
+        <td class="mono">${esc(x.q_no)}<div class="qtext">${esc((x.prompt||"").slice(0,44))}</div></td>
+        <td class="num">${x.n}</td><td>${bar(p)}</td><td>${top||"—"}</td></tr>`;
+    }).join("")}</tbody></table></div>`;
+}
+function vQuestionDetail(d){
+  const list = questionStats(filtered().filter(r=>r.set_id===d.set && r.q_no===d.q_no));
+  const x = list[0];
+  if(!x) return `<div class="crumb"><a data-back="1">← 問題別にもどる</a></div><div class="notice">データがありません。</div>`;
+  const p = pct(x.ok, x.n);
+  const wrongList = Object.entries(x.wrong).sort((a,b)=>b[1].n-a[1].n);
+  return `<div class="crumb"><a data-back="1">← 問題別にもどる</a>　<b>${esc(setName(d.set))}　${esc(d.q_no)}</b>　正答率 ${p}%（${x.n}人）</div>
+  <div class="card" style="margin-top:10px"><div style="font-size:13.5px;white-space:pre-wrap">${esc(x.prompt||"（設問文なし）")}</div></div>
+  <div class="scroll"><table>
+    <thead><tr><th>生徒が書いた誤答</th><th class="num">人数</th><th>該当する生徒</th></tr></thead>
+    <tbody>${wrongList.length ? wrongList.map(([a,v])=>`<tr>
+      <td class="mono">${esc(a)}</td><td class="num">${v.n}</td>
+      <td class="mono" style="font-size:12px">${v.sids.sort(qSort).map(esc).join(", ")}</td></tr>`).join("")
+      : `<tr><td colspan="3">誤答なし。全員正解です。</td></tr>`}
+    </tbody></table></div>`;
+}
+
+function vStudents(rows){
+  const atts = latestAttempts(rows);
+  const sets = uniq(rows.map(r=>r.set_id));
+  const m = {};
+  for(const a of atts){ (m[a.sid] ??= { sid:a.sid, per:{} }); m[a.sid].per[a.set] = pct(a.score,a.max); }
+  const list = Object.values(m).sort((a,b)=>qSort(a.sid,b.sid));
+  if(!list.length) return `<div class="notice">まだ挑戦がありません。</div>`;
+  return `<div class="notice no-print">行をクリックすると、その生徒の解答（最新の回）が見られます。数字はセットごとの正答率。</div>
+  <div class="scroll"><table class="clickable" id="tbl-students">
+    <thead><tr><th>番号</th><th>生徒</th>${sets.map(s=>`<th class="num">${esc(META[s]?.no||s)}</th>`).join("")}<th class="num">平均</th></tr></thead>
+    <tbody>${list.map(s=>{
+      const ps = Object.values(s.per);
+      const avg = ps.length ? Math.round(ps.reduce((t,p)=>t+p,0)/ps.length) : 0;
+      return `<tr data-sid="${esc(s.sid)}" class="${avg<60?"lo":""}">
+        <td class="mono">${esc(s.sid)}</td><td>${esc(sidLabel(s.sid))}</td>
+        ${sets.map(q=>`<td class="num">${s.per[q]!=null ? s.per[q]+"%" : "<span class='badge'>未</span>"}</td>`).join("")}
+        <td class="num"><b>${avg}%</b></td></tr>`;
+    }).join("")}</tbody></table></div>`;
+}
+function vStudentDetail(sid){
+  const atts = latestAttempts(filtered().filter(r=>r.student_id===sid));
+  const rows = [];
+  atts.sort((a,b)=>qSort(a.set,b.set)).forEach(a=>a.rows.sort((x,y)=>qSort(x.q_no,y.q_no)).forEach(r=>rows.push(r)));
+  return `<div class="crumb"><a data-back="1">← 生徒別にもどる</a>　<b>${esc(sidLabel(sid))}</b>（${esc(sid)}）</div>
+  <div class="scroll"><table>
+    <thead><tr><th>セット</th><th>問題</th><th>解答</th><th>設問</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr class="${r.is_correct?"":"lo"}">
+      <td>${esc(META[r.set_id]?.no||r.set_id)}</td><td class="mono">${esc(r.q_no)}</td>
+      <td class="mono">${r.is_correct?'<span class="mk-ok">○</span>':'<span class="mk-ng">×</span>'} ${esc(r.raw_answer||"（無解答）")}</td>
+      <td class="qtext" style="max-width:360px">${esc((r.prompt||"").slice(0,60))}</td></tr>`).join("")}
+    </tbody></table></div>`;
+}
+
+function bindDrill(){
+  document.querySelectorAll("#tbl-questions tbody tr").forEach(tr=>tr.onclick=()=>{ DRILL={set:tr.dataset.set, q_no:tr.dataset.qno}; render(); });
+  document.querySelectorAll("#tbl-students tbody tr").forEach(tr=>tr.onclick=()=>{ DRILL={sid:tr.dataset.sid}; render(); });
+  document.querySelectorAll("[data-back]").forEach(a=>a.onclick=()=>{ DRILL=null; render(); });
+}
+
+/* ---------- Excel 出力 ---------- */
+$("#xlsx").onclick = ()=>{
+  const rows = filtered();
+  if(!rows.length){ alert("出力するデータがありません。"); return; }
+  const wb = XLSX.utils.book_new();
+
+  const atts = latestAttempts(rows);
+  const sets = uniq(rows.map(r=>r.set_id));
+  const m = {};
+  for(const a of atts){ (m[a.sid] ??= {}); m[a.sid][a.set] = a; }
+  const s1 = [["番号","クラス", ...sets.map(s=>setName(s)+" 正答率%"), "平均%"]];
+  for(const sid of Object.keys(m).sort(qSort)){
+    const ps = []; const row = [sid, classOf(sid).replace("-","年")+"組"];
+    for(const s of sets){ const a=m[sid][s]; const p=a?pct(a.score,a.max):null; row.push(p??""); if(p!=null)ps.push(p); }
+    row.push(ps.length?Math.round(ps.reduce((t,p)=>t+p,0)/ps.length):"");
+    s1.push(row);
+  }
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s1), "正答率一覧");
+
+  const qs = questionStats(rows).sort((a,b)=>qSort(a.set+a.q_no,b.set+b.q_no));
+  const s2 = [["セット","問題","設問","解答数","正答率%","多い誤答1","人数","多い誤答2","人数","多い誤答3","人数"]];
+  for(const x of qs){
+    const top = Object.entries(x.wrong).sort((a,b)=>b[1].n-a[1].n).slice(0,3);
+    const r = [setName(x.set), x.q_no, x.prompt, x.n, pct(x.ok,x.n)];
+    for(let i=0;i<3;i++){ r.push(top[i]?.[0]??"", top[i]?.[1]?.n??""); }
+    s2.push(r);
+  }
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s2), "問題別・間違い情報");
+
+  const s3 = [["timestamp","student_id","set_id","q_no","prompt","raw_answer","is_correct","score","max_score","elapsed_ms"]];
+  for(const r of rows) s3.push([r.timestamp,r.student_id,r.set_id,r.q_no,r.prompt,r.raw_answer,r.is_correct,r.score,r.max_score,r.elapsed_ms]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s3), "生データ");
+
+  const tag = [F.cls&&F.cls.replace("-","年")+"組", F.set&&(META[F.set]?.no||F.set)].filter(Boolean).join("_") || "全体";
+  XLSX.writeFile(wb, `応用チャレンジ_${tag}_${new Date().toISOString().slice(0,10)}.xlsx`);
+};
+$("#print").onclick = ()=>window.print();
+
+/* ---------- 起動 ---------- */
+(async function init(){
+  if(!Applied.configReady()){ show("scrConfig", true); return; }
+  if(pin){
+    try{ if(await tryLogin(pin)) return enter(); }catch(e){}
+    sessionStorage.removeItem(SS_KEY); pin = "";
+  }
+  show("scrPin", true);
+})();
+</script>
+</body>
+</html>

@@ -6,6 +6,90 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 5173
+    },
+    {
+      "name": "toketa",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "../toketa", "run", "dev", "--", "--port", "5180", "--strictPort"],
+      "port": 5180
+    },
+    {
+      "name": "math-labo10",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "../math-labo10", "run", "dev", "--", "--port", "5181", "--strictPort"],
+      "port": 5181
+    },
+    {
+      "name": "数学ラボ2",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "../数学ラボ2", "run", "dev", "--", "--port", "5182", "--strictPort"],
+      "port": 5182
+    },
+    {
+      "name": "exam-maker",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8778", "--directory", "../math-labo4/tools/exam-maker"],
+      "port": 8778
+    },
+    {
+      "name": "reflection-sheet",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8781", "--directory", "reflection-sheet"],
+      "port": 8781
+    },
+    {
+      "name": "pipeline-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8779", "--directory", "pipeline/preview"],
+      "port": 8779
+    },
+    {
+      "name": "quiz",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8782", "--directory", "quiz"],
+      "port": 8782
+    },
+    {
+      "name": "event-voices",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8783", "--directory", "event-voices"],
+      "port": 8783
+    },
+    {
+      "name": "membership",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "../../membership-site", "run", "dev", "--", "--port", "5183", "--strictPort"],
+      "port": 5183
+    },
+    {
+      "name": "genie",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8787", "--directory", "/Users/kazuhisaijima/Documents/Claude/genie-clone"],
+      "port": 8787
+    },
+    {
+      "name": "genie-admin",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["wrangler", "dev", "--remote", "--port", "8790", "--ip", "127.0.0.1", "-c", "/Users/kazuhisaijima/Documents/Claude/genie-api/wrangler.toml"],
+      "port": 8790
+    },
+    {
+      "name": "chienkan-quest",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8791", "--directory", "/Users/kazuhisaijima/Downloads"],
+      "port": 8791
+    },
+    {
+      "name": "issendo",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8792", "--directory", "/Users/kazuhisaijima/Documents/Claude/Projects/issendo"],
+      "port": 8792
+    },
+    {
+      "name": "applied",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8784", "--directory", "applied"],
+      "port": 8784
     }
   ]
 }
