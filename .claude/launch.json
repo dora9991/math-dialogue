@@ -90,6 +90,12 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8784", "--directory", "applied"],
       "port": 8784
+    },
+    {
+      "name": "home",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8785", "--directory", "home"],
+      "port": 8785
     }
   ]
 }

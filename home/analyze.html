@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家庭学習の分析｜先生用</title>
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script src="studydata.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --ink:#16202e; --ink-soft:#4a5768;
+  --ai:#24467d; --ai-weak:#e8eef7;
+  --shu:#c8322d; --shu-weak:#fbecea;
+  --ok:#1d6b4f; --ok-weak:#e6f2ec;
+  --gold:#c98a2b; --gold-weak:#fbf3e3;
+  --paper:#fcfcfa; --rule:#d9dfe7; --grid:#e6ebf1;
+  --mincho:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;
+  --gothic:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+  --mono:"SFMono-Regular",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--gothic);color:var(--ink);background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;line-height:1.7}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px 80px}
+header.sheet{background:#fff;border:1px solid var(--rule);border-top:4px solid var(--ai);margin:20px 0 0;padding:16px 20px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+h1{font-family:var(--mincho);font-size:19px;font-weight:600;margin:0;letter-spacing:.04em}
+.sub{font-size:12.5px;color:var(--ink-soft)}
+.card{background:#fff;border:1px solid var(--rule);padding:16px 20px;margin-top:14px}
+.card h2{font-family:var(--mincho);font-size:15.5px;margin:0 0 10px;font-weight:600}
+input[type=password],select{font:inherit;font-size:14px;padding:9px 10px;border:1px solid var(--rule);background:#fff;border-radius:2px;width:100%}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--ai);outline-offset:1px}
+button{font:inherit;cursor:pointer;border-radius:2px;border:1px solid transparent}
+.btn{background:var(--ai);color:#fff;padding:10px 16px;font-weight:600;font-size:14px}
+.btn.ghost{background:#fff;color:var(--ai);border-color:var(--ai)}
+.row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.notice{border:1px solid var(--rule);background:#fff;padding:10px 13px;font-size:13px;margin-top:10px}
+.notice.warn{border-color:var(--shu);background:var(--shu-weak);color:#7d211d}
+.tabs{display:flex;margin-top:18px;border-bottom:2px solid var(--ink);flex-wrap:wrap}
+.tabs button{background:none;border:none;padding:9px 15px;font-size:14px;color:var(--ink-soft);border-bottom:2px solid transparent;margin-bottom:-2px}
+.tabs button.on{color:var(--ink);font-weight:600;border-bottom-color:var(--shu)}
+.filters{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.filters select{width:auto;min-width:140px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:13.5px;margin-top:10px}
+th,td{border:1px solid var(--rule);padding:6px 9px;text-align:left;vertical-align:top}
+th{background:#f2f5f9;font-weight:600;font-size:12.5px;white-space:nowrap}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+td.mono{font-family:var(--mono);word-break:break-all}
+tr.lo td{background:var(--shu-weak)}
+td .bar{display:inline-block;height:9px;background:var(--ai);vertical-align:middle;margin-right:6px;min-width:1px}
+td .bar.low{background:var(--shu)}
+.scroll{overflow-x:auto}
+.clickable tbody tr{cursor:pointer}
+.clickable tbody tr:hover td{background:var(--ai-weak)}
+.badge{display:inline-block;font-size:11px;font-family:var(--mono);border:1px solid var(--rule);padding:0 6px;color:var(--ink-soft)}
+.mk-ok{color:var(--ok);font-weight:600}.mk-ng{color:var(--shu);font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:10px}
+.kpi{background:#fff;border:1px solid var(--rule);padding:12px 14px}
+.kpi .v{font-family:var(--mincho);font-size:25px;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi .k{font-size:11.5px;color:var(--ink-soft)}
+.hidden{display:none!important}
+.crumb{font-size:13px;margin-top:14px}
+.crumb a{color:var(--ai);cursor:pointer;text-decoration:underline}
+.qtext{font-size:12px;color:var(--ink-soft);margin-top:2px}
+.trendbars{display:flex;gap:3px;align-items:flex-end;height:120px;margin-top:12px}
+.trendbars .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.trendbars .bar{width:100%;background:var(--ai);min-height:1px}
+.trendbars .lbl{font-size:9px;color:var(--ink-soft);font-family:var(--mono);white-space:nowrap}
+@media print{.no-print,.tabs,.filters{display:none!important}body{background:none}.card{border:none;padding:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="sheet">
+    <h1>家庭学習の分析</h1>
+    <div class="sub">中学1年　第4章　比例と反比例　·　<a href="index.html" style="color:var(--ai)">生徒用アプリ →</a></div>
+    <div style="margin-left:auto" class="no-print">
+      <a id="logout" class="hidden" style="font-size:12px;color:var(--ink-soft);cursor:pointer;text-decoration:underline">ログアウト</a>
+    </div>
+  </header>
+
+  <div class="card hidden" id="scrConfig">
+    <h2>セットアップが必要です</h2>
+    <p class="sub">config.js に Supabase 接続情報を設定し、schema.sql を実行してください（README.md 参照）。</p>
+  </div>
+
+  <div class="card hidden" id="scrPin" style="max-width:420px;margin:40px auto">
+    <h2>暗証番号（PIN）を入力</h2>
+    <input type="password" id="inpPin" placeholder="教師用PIN" autocomplete="off">
+    <div class="notice warn hidden" id="errPin"></div>
+    <button class="btn" style="width:100%;margin-top:10px" id="btnPin">ログイン</button>
+  </div>
+
+  <div id="scrMain" class="hidden">
+    <div class="kpis" id="kpis"></div>
+    <div class="tabs no-print" id="tabs">
+      <button data-v="students" class="on">生徒別</button>
+      <button data-v="units">プリント別</button>
+      <button data-v="questions">問題別（間違い情報）</button>
+      <button data-v="trend">学習時間の推移</button>
+    </div>
+    <div class="filters no-print" id="filters"></div>
+    <div id="view"></div>
+    <div class="row no-print" style="margin-top:18px">
+      <button class="btn" id="xlsx">Excel に出力（.xlsx）</button>
+      <button class="btn ghost" id="reload">結果を更新</button>
+      <button class="btn ghost" id="print">この画面を印刷</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// UNITS / POOL は studydata.js で定義済み（同じグローバルスコープ）
+const UMETA = Object.fromEntries(UNITS.map(u=>[u.id,u]));
+const unitName = id => UMETA[id]?.short || (id==="all"?"4章まるごと":(id==="mix"?"まぜる":id));
+const PROB = Object.fromEntries(POOL.map(p=>[p.id,p]));
+
+function readSid(s){ const m=String(s||"").match(/^(\d)(\d)(\d\d)$/); return m?{g:+m[1],c:+m[2],n:+m[3]}:null; }
+function sidLabel(s){ const r=readSid(s); return r?`${r.g}年${r.c}組${r.n}番`:String(s||""); }
+function classOf(s){ const r=readSid(s); return r?`${r.g}-${r.c}`:"?"; }
+
+let SESS = [], ITEMS = [];
+let F = { cls:"", unit:"", span:"all" };
+let VIEW = "students", DRILL = null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const SS_KEY = "study_teacher_pin";
+let pin = sessionStorage.getItem(SS_KEY) || "";
+function show(id,on){ document.getElementById(id).classList.toggle("hidden", !on); }
+const uniq = a => [...new Set(a)].sort();
+const pctf = (s,m) => m ? Math.round(s/m*100) : 0;
+const qSort = (a,b) => String(a).localeCompare(String(b),"ja",{numeric:true});
+
+async function tryLogin(p){ const r = await Study.rpc("study_verify_pin",{p_pin:p}); return r && r.ok===true; }
+document.getElementById("btnPin").onclick = async ()=>{
+  const p = document.getElementById("inpPin").value;
+  const err = document.getElementById("errPin"); err.classList.add("hidden");
+  try{
+    if(await tryLogin(p)){ pin=p; sessionStorage.setItem(SS_KEY,p); enter(); }
+    else { err.textContent="PIN が違います"; err.classList.remove("hidden"); }
+  }catch(e){ err.textContent="通信エラー："+e.message; err.classList.remove("hidden"); }
+};
+document.getElementById("inpPin").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("btnPin").click(); });
+document.getElementById("logout").onclick = ()=>{ sessionStorage.removeItem(SS_KEY); location.reload(); };
+function enter(){ show("scrPin",false); show("scrMain",true); show("logout",true); loadData(); }
+
+async function loadData(){
+  try{
+    const [rs, ri] = await Promise.all([
+      Study.rpc("study_get_sessions",{p_pin:pin}),
+      Study.rpc("study_get_items",{p_pin:pin}),
+    ]);
+    if(rs && !rs.error) SESS = (rs.sessions||[]).map(s=>({
+      id:s.id, sid:s.student_id, unit:s.unit, level:s.level, date:s.date,
+      minutes:s.minutes==null?null:+s.minutes, self:!!s.self_reported, auto:+s.auto_seconds||0,
+      solved:+s.solved||0, correct:+s.correct||0, challenge:+s.challenge||0, redo:+s.redo||0, ts:s.created_at,
+    }));
+    if(ri && !ri.error) ITEMS = (ri.items||[]).map(x=>({
+      session_id:x.session_id, sid:x.student_id, date:x.date, problem_id:x.problem_id,
+      unit:x.unit, level:x.level, prompt:x.prompt||"", raw:x.raw_answer||"",
+      ok:!!x.is_correct, redo:!!x.is_redo, attempt_no:+x.attempt_no||1, ms:+x.elapsed_ms||0,
+    }));
+    render();
+  }catch(e){}
+}
+document.getElementById("reload").onclick = loadData;
+
+function spanOK(dateStr){
+  if(F.span==="all") return true;
+  const d = new Date(dateStr+"T00:00:00"); const now = new Date();
+  const diff = (now - d)/86400000;
+  return F.span==="7" ? diff <= 7 : diff <= 30;
+}
+const fSess = () => SESS.filter(s => (!F.cls||classOf(s.sid)===F.cls) && (!F.unit||s.unit===F.unit) && spanOK(s.date));
+const fItems = () => ITEMS.filter(x => (!F.cls||classOf(x.sid)===F.cls) && (!F.unit||x.unit===F.unit) && spanOK(x.date));
+
+function render(){
+  const S = fSess(), I = fItems();
+  const students = uniq(S.map(s=>s.sid));
+  const totMin = S.reduce((t,s)=>t+(s.minutes||0),0);
+  const totSolved = S.reduce((t,s)=>t+s.solved,0);
+  const totCorrect = S.reduce((t,s)=>t+s.correct,0);
+  const totChallenge = S.reduce((t,s)=>t+s.challenge,0);
+  $("#kpis").innerHTML = `
+    <div class="kpi"><div class="v">${students.length}</div><div class="k">家庭学習した生徒</div></div>
+    <div class="kpi"><div class="v">${S.length}</div><div class="k">のべ学習回数</div></div>
+    <div class="kpi"><div class="v">${totMin}<span style="font-size:14px">分</span></div><div class="k">総学習時間（自己申告）</div></div>
+    <div class="kpi"><div class="v">${totSolved}</div><div class="k">解いた問題（のべ）</div></div>
+    <div class="kpi"><div class="v">${pctf(totCorrect,totSolved)}<span style="font-size:14px">%</span></div><div class="k">平均正答率</div></div>
+    <div class="kpi"><div class="v">${totChallenge}</div><div class="k">応用チャレンジ（のべ）</div></div>`;
+
+  const clss = uniq(SESS.map(s=>classOf(s.sid)));
+  const units = uniq(SESS.map(s=>s.unit));
+  $("#filters").innerHTML = `
+    <select id="f-cls"><option value="">全クラス</option>${clss.map(c=>`<option ${F.cls===c?"selected":""} value="${c}">${c.replace("-","年")}組</option>`).join("")}</select>
+    <select id="f-unit"><option value="">全プリント</option>${units.map(u=>`<option ${F.unit===u?"selected":""} value="${u}">${esc(unitName(u))}</option>`).join("")}</select>
+    <select id="f-span">
+      <option value="all" ${F.span==="all"?"selected":""}>すべての期間</option>
+      <option value="7" ${F.span==="7"?"selected":""}>直近7日</option>
+      <option value="30" ${F.span==="30"?"selected":""}>直近30日</option>
+    </select>`;
+  $("#f-cls").onchange = e=>{ F.cls=e.target.value; DRILL=null; render(); };
+  $("#f-unit").onchange = e=>{ F.unit=e.target.value; DRILL=null; render(); };
+  $("#f-span").onchange = e=>{ F.span=e.target.value; DRILL=null; render(); };
+
+  const v = $("#view");
+  if(VIEW==="students") v.innerHTML = DRILL?.sid ? vStudentDetail(DRILL.sid) : vStudents(S);
+  if(VIEW==="units") v.innerHTML = vUnits(S, I);
+  if(VIEW==="questions") v.innerHTML = DRILL?.pid ? vQuestionDetail(DRILL.pid) : vQuestions(I);
+  if(VIEW==="trend") v.innerHTML = vTrend(S);
+  bindDrill();
+}
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x===b));
+  VIEW=b.dataset.v; DRILL=null; render();
+});
+function bar(p){ return `<span class="bar ${p<60?"low":""}" style="width:${Math.max(2,p*0.9)}px"></span>${p}%`; }
+
+function vStudents(S){
+  const m = {};
+  for(const s of S){
+    (m[s.sid] ??= {sid:s.sid, days:new Set(), min:0, solved:0, correct:0, challenge:0, redo:0, last:""});
+    const r = m[s.sid];
+    r.days.add(s.date); r.min += s.minutes||0; r.solved += s.solved; r.correct += s.correct;
+    r.challenge += s.challenge; r.redo += s.redo;
+    if(String(s.date) > r.last) r.last = s.date;
+  }
+  const list = Object.values(m).sort((a,b)=>qSort(a.sid,b.sid));
+  if(!list.length) return `<div class="notice">この条件のデータがありません。</div>`;
+  return `<div class="notice no-print">行をクリックすると、その生徒の学習回ごとの中身が見られます。</div>
+  <div class="scroll"><table class="clickable" id="tbl-students">
+    <thead><tr><th>番号</th><th>生徒</th><th class="num">学習日数</th><th class="num">合計分</th><th class="num">問題数</th><th>正答率</th><th class="num">応用</th><th class="num">やり直し</th><th>最終学習日</th></tr></thead>
+    <tbody>${list.map(r=>{
+      const p = pctf(r.correct, r.solved);
+      return `<tr data-sid="${esc(r.sid)}" class="${p<60&&r.solved?"lo":""}">
+        <td class="mono">${esc(r.sid)}</td><td>${esc(sidLabel(r.sid))}</td>
+        <td class="num">${r.days.size}</td><td class="num">${r.min}</td><td class="num">${r.solved}</td>
+        <td>${r.solved?bar(p):"—"}</td><td class="num">${r.challenge}</td><td class="num">${r.redo}</td>
+        <td class="mono">${esc(r.last)}</td></tr>`;
+    }).join("")}</tbody></table></div>`;
+}
+function vStudentDetail(sid){
+  const rows = fSess().filter(s=>s.sid===sid).sort((a,b)=>String(b.ts).localeCompare(String(a.ts)));
+  const its = fItems().filter(x=>x.sid===sid);
+  const bySess = {};
+  its.forEach(x=>{ (bySess[x.session_id] ??= []).push(x); });
+  return `<div class="crumb"><a data-back="1">← 生徒別にもどる</a>　<b>${esc(sidLabel(sid))}</b>（${esc(sid)}）</div>
+  ${rows.map(s=>{
+    const list = (bySess[s.id]||[]).sort((a,b)=>qSort(a.problem_id,b.problem_id));
+    return `<div class="card">
+      <h2>${esc(s.date)}　${esc(unitName(s.unit))}　<span class="badge">${esc(s.level)}</span></h2>
+      <div class="sub">申告 ${s.minutes==null?"（なし）":s.minutes+"分"}　·　自動計測 ${Math.round(s.auto/60)}分　·　${s.solved}問・正解${s.correct}・応用${s.challenge}・やり直し${s.redo}</div>
+      <div class="scroll"><table><thead><tr><th>問題ID</th><th>レベル</th><th>解答（試行）</th><th>設問</th></tr></thead>
+      <tbody>${list.map(x=>`<tr class="${x.ok?"":"lo"}">
+        <td class="mono">${esc(x.problem_id)}</td><td>${esc(x.level||"")}</td>
+        <td class="mono">${x.ok?'<span class="mk-ok">○</span>':'<span class="mk-ng">×</span>'} ${esc(x.raw||"（無解答）")}${x.attempt_no>1?` <span class="badge">${x.attempt_no}回目</span>`:""}</td>
+        <td class="qtext" style="max-width:340px">${esc((x.prompt||"").slice(0,60))}</td></tr>`).join("")}</tbody></table></div>
+    </div>`;
+  }).join("") || `<div class="notice">記録がありません。</div>`}`;
+}
+
+function vUnits(S, I){
+  const m = {};
+  for(const s of S){
+    (m[s.unit] ??= {unit:s.unit, students:new Set(), sessions:0, min:0, solved:0, correct:0, challenge:0});
+    const r=m[s.unit]; r.students.add(s.sid); r.sessions++; r.min+=s.minutes||0;
+    r.solved+=s.solved; r.correct+=s.correct; r.challenge+=s.challenge;
+  }
+  const list = Object.values(m).sort((a,b)=>qSort(a.unit,b.unit));
+  if(!list.length) return `<div class="notice">この条件のデータがありません。</div>`;
+  return `<div class="scroll"><table>
+    <thead><tr><th>プリント</th><th class="num">取り組んだ生徒</th><th class="num">のべ回数</th><th class="num">合計分</th><th class="num">問題数</th><th>正答率</th><th class="num">応用</th></tr></thead>
+    <tbody>${list.map(r=>{
+      const p = pctf(r.correct, r.solved);
+      return `<tr><td>${esc(unitName(r.unit))}</td><td class="num">${r.students.size}</td><td class="num">${r.sessions}</td>
+        <td class="num">${r.min}</td><td class="num">${r.solved}</td><td>${r.solved?bar(p):"—"}</td><td class="num">${r.challenge}</td></tr>`;
+    }).join("")}</tbody></table></div>`;
+}
+
+function qStats(I){
+  const m = {};
+  for(const x of I){
+    // 生徒×問題で「最後の試行」を採用
+    const k = `${x.sid}|${x.problem_id}`;
+    (m[k] ??= x);
+    if(x.attempt_no >= m[k].attempt_no) m[k] = x;
+  }
+  const byP = {};
+  for(const x of Object.values(m)){
+    (byP[x.problem_id] ??= {pid:x.problem_id, unit:x.unit, level:x.level, prompt:x.prompt, n:0, ok:0, wrong:{}});
+    const r = byP[x.problem_id];
+    r.n++; if(x.ok) r.ok++;
+    if(x.prompt && !r.prompt) r.prompt = x.prompt;
+    if(!x.ok){ const a = x.raw==="" ? "（無解答）" : x.raw; (r.wrong[a] ??= {n:0, sids:[]}); r.wrong[a].n++; r.wrong[a].sids.push(x.sid); }
+  }
+  return Object.values(byP);
+}
+function vQuestions(I){
+  const list = qStats(I).sort((a,b)=>{ const pa=pctf(a.ok,a.n), pb=pctf(b.ok,b.n); return pa!==pb?pa-pb:qSort(a.pid,b.pid); });
+  if(!list.length) return `<div class="notice">この条件のデータがありません。</div>`;
+  return `<div class="notice no-print">生徒×問題の「最後の試行」で集計。正答率の低い問題ほど上に赤く出ます。行クリックで誤答の内訳。</div>
+  <div class="scroll"><table class="clickable" id="tbl-questions">
+    <thead><tr><th>問題</th><th>プリント / レベル</th><th class="num">解答数</th><th>正答率</th><th>多い誤答</th></tr></thead>
+    <tbody>${list.map(x=>{
+      const p = pctf(x.ok,x.n);
+      const top = Object.entries(x.wrong).sort((a,b)=>b[1].n-a[1].n).slice(0,3)
+        .map(([a,v])=>`<span class="badge">${esc(a.length>16?a.slice(0,16)+"…":a)} ×${v.n}</span>`).join(" ");
+      return `<tr data-pid="${esc(x.pid)}" class="${p<60?"lo":""}">
+        <td class="mono">${esc(x.pid)}<div class="qtext">${esc((x.prompt||PROB[x.pid]?.prompt||"").slice(0,46))}</div></td>
+        <td>${esc(unitName(x.unit))}<br><span class="badge">${esc(x.level||"")}</span></td>
+        <td class="num">${x.n}</td><td>${bar(p)}</td><td>${top||"—"}</td></tr>`;
+    }).join("")}</tbody></table></div>`;
+}
+function vQuestionDetail(pid){
+  const list = qStats(fItems().filter(x=>x.problem_id===pid));
+  const x = list[0];
+  const prob = PROB[pid];
+  if(!x) return `<div class="crumb"><a data-back="1">← 問題別にもどる</a></div><div class="notice">データなし。</div>`;
+  const p = pctf(x.ok,x.n);
+  const wl = Object.entries(x.wrong).sort((a,b)=>b[1].n-a[1].n);
+  return `<div class="crumb"><a data-back="1">← 問題別にもどる</a>　<b>${esc(pid)}</b>　正答率 ${p}%（${x.n}人）</div>
+  <div class="card"><div style="font-size:13.5px;white-space:pre-wrap">${esc(prob?.prompt || x.prompt || "")}</div>
+    ${prob?.sol?`<div class="qtext" style="border-left:2px solid var(--rule);padding-left:10px;margin-top:8px;white-space:pre-wrap">${esc(prob.sol)}</div>`:""}</div>
+  <div class="scroll"><table><thead><tr><th>生徒が書いた誤答</th><th class="num">人数</th><th>該当する生徒</th></tr></thead>
+    <tbody>${wl.length ? wl.map(([a,v])=>`<tr><td class="mono">${esc(a)}</td><td class="num">${v.n}</td>
+      <td class="mono" style="font-size:12px">${v.sids.sort(qSort).map(esc).join(", ")}</td></tr>`).join("")
+      : `<tr><td colspan="3">誤答なし。全員正解です。</td></tr>`}
+    </tbody></table></div>`;
+}
+
+function vTrend(S){
+  const days = [];
+  for(let i=13;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); days.push(d.toISOString().slice(0,10)); }
+  const byDay = {};
+  for(const s of S){ byDay[s.date] = (byDay[s.date]||0) + (s.minutes||0); }
+  const max = Math.max(10, ...days.map(d=>byDay[d]||0));
+  return `<div class="card"><h2>クラス全体の1日の学習時間（自己申告の合計・直近14日）</h2>
+    <div class="trendbars">
+      ${days.map(d=>{
+        const v = byDay[d]||0;
+        return `<div class="col"><div class="bar" style="height:${Math.round(v/max*110)}px" title="${v}分"></div>
+          <div class="lbl">${d.slice(5).replace("-","/")}</div></div>`;
+      }).join("")}
+    </div>
+    <div class="sub" style="margin-top:8px">合計 ${S.reduce((t,s)=>t+(s.minutes||0),0)}分 ／ のべ ${S.length}回</div>
+  </div>`;
+}
+
+function bindDrill(){
+  document.querySelectorAll("#tbl-students tbody tr").forEach(tr=>tr.onclick=()=>{ DRILL={sid:tr.dataset.sid}; render(); });
+  document.querySelectorAll("#tbl-questions tbody tr").forEach(tr=>tr.onclick=()=>{ DRILL={pid:tr.dataset.pid}; render(); });
+  document.querySelectorAll("[data-back]").forEach(a=>a.onclick=()=>{ DRILL=null; render(); });
+}
+
+$("#xlsx").onclick = ()=>{
+  const S = fSess(), I = fItems();
+  if(!S.length){ alert("出力するデータがありません。"); return; }
+  const wb = XLSX.utils.book_new();
+
+  const s1 = [["日付","番号","クラス","プリント","レベル","申告分","自動計測分","問題数","正解","応用チャレンジ","やり直し"]];
+  for(const s of S.slice().sort((a,b)=>String(a.ts).localeCompare(String(b.ts)))){
+    s1.push([s.date, s.sid, classOf(s.sid).replace("-","年")+"組", unitName(s.unit), s.level,
+      s.minutes==null?"":s.minutes, Math.round(s.auto/60), s.solved, s.correct, s.challenge, s.redo]);
+  }
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s1), "学習セッション");
+
+  const qs = qStats(I).sort((a,b)=>qSort(a.pid,b.pid));
+  const s2 = [["問題ID","プリント","レベル","設問","解答数","正答率%","多い誤答1","人数","多い誤答2","人数"]];
+  for(const x of qs){
+    const top = Object.entries(x.wrong).sort((a,b)=>b[1].n-a[1].n).slice(0,2);
+    const r = [x.pid, unitName(x.unit), x.level, (PROB[x.pid]?.prompt||x.prompt||"").slice(0,80), x.n, pctf(x.ok,x.n)];
+    for(let i=0;i<2;i++){ r.push(top[i]?.[0]??"", top[i]?.[1]?.n??""); }
+    s2.push(r);
+  }
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s2), "問題別");
+
+  const s3 = [["日付","番号","問題ID","レベル","解答","正誤","試行回","やり直し","設問"]];
+  for(const x of I) s3.push([x.date,x.sid,x.problem_id,x.level,x.raw,x.ok?"○":"×",x.attempt_no,x.redo?"はい":"",x.prompt]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s3), "生データ");
+
+  const tag = [F.cls&&F.cls.replace("-","年")+"組", F.unit&&unitName(F.unit)].filter(Boolean).join("_") || "全体";
+  XLSX.writeFile(wb, `家庭学習_${tag}_${new Date().toISOString().slice(0,10)}.xlsx`);
+};
+$("#print").onclick = ()=>window.print();
+
+(async function init(){
+  if(!Study.configReady()){ show("scrConfig",true); return; }
+  if(pin){
+    try{ if(await tryLogin(pin)) return enter(); }catch(e){}
+    sessionStorage.removeItem(SS_KEY); pin="";
+  }
+  show("scrPin",true);
+})();
+</script>
+</body>
+</html>
