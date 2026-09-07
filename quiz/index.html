@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>数学小テスト｜1年 4章 比例と反比例</title>
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script src="quizdata.js"></script>
+<style>
+:root{
+  --ink:#16202e;
+  --ink-soft:#4a5768;
+  --ai:#24467d;          /* 藍：主要アクション */
+  --ai-weak:#e8eef7;
+  --shu:#c8322d;         /* 朱：赤ペン */
+  --shu-weak:#fbecea;
+  --paper:#fcfcfa;
+  --rule:#d9dfe7;
+  --grid:#e6ebf1;
+  --ok:#1d6b4f;
+  --ok-weak:#e6f2ec;
+  --mincho:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP",serif;
+  --gothic:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+  --mono:"SFMono-Regular",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--gothic);
+  color:var(--ink);
+  background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+  line-height:1.75;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 96px}
+header.sheet{
+  background:#fff;border:1px solid var(--rule);border-top:4px solid var(--ai);
+  margin:20px 0 0;padding:18px 20px;
+}
+h1{font-family:var(--mincho);font-size:20px;font-weight:600;margin:0;letter-spacing:.04em}
+.sub{font-size:13px;color:var(--ink-soft);margin-top:4px}
+.card{background:#fff;border:1px solid var(--rule);padding:18px 20px;margin-top:14px}
+.card h2{font-family:var(--mincho);font-size:16px;margin:0 0 12px;font-weight:600}
+label.f{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px}
+select,input[type=text]{
+  font:inherit;font-size:16px;padding:11px 12px;width:100%;
+  border:1px solid var(--rule);background:#fff;color:var(--ink);border-radius:2px;
+}
+input[type=text]{font-family:var(--mono);}
+select:focus,input:focus,button:focus-visible{outline:2px solid var(--ai);outline-offset:1px}
+button{font:inherit;cursor:pointer;border-radius:2px;border:1px solid transparent}
+.btn{background:var(--ai);color:#fff;padding:13px 20px;font-weight:600;width:100%;font-size:16px}
+.btn:disabled{background:#9aa6b6;cursor:not-allowed}
+.btn.ghost{background:#fff;color:var(--ai);border-color:var(--ai);}
+.btn.mini{width:auto;padding:8px 14px;font-size:13px;font-weight:400}
+.tests{display:grid;gap:8px}
+.tests button{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  background:#fff;border:1px solid var(--rule);padding:14px 16px;text-align:left;width:100%;
+}
+.tests button:hover{border-color:var(--ai);background:var(--ai-weak)}
+.tests .no{font-family:var(--mono);font-size:13px;color:var(--ai);letter-spacing:.05em}
+.tests .nm{flex:1;font-size:15px}
+.tests .pg{font-size:11px;color:var(--ink-soft);font-family:var(--mono)}
+.tests .badge{font-size:11px;font-family:var(--mono);border:1px solid var(--rule);padding:1px 7px;white-space:nowrap}
+
+/* 出題画面 */
+.bar{
+  position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);
+  border-bottom:1px solid var(--rule);margin:0 -16px 0;padding:10px 16px;
+  display:flex;align-items:center;gap:12px;backdrop-filter:blur(4px);
+}
+.bar .who{font-family:var(--mono);font-size:13px;color:var(--ink-soft)}
+.bar .tm{margin-left:auto;font-family:var(--mono);font-size:19px;font-variant-numeric:tabular-nums;letter-spacing:.03em}
+.bar .tm.warn{color:var(--shu)}
+.prog{height:3px;background:var(--rule);margin:0 -16px}
+.prog i{display:block;height:100%;background:var(--ai);width:0;transition:width .25s}
+
+.q{background:#fff;border:1px solid var(--rule);padding:18px 20px;margin-top:14px}
+.q .head{display:flex;gap:10px;align-items:baseline;margin-bottom:10px}
+.q .n{font-family:var(--mono);font-size:12px;color:#fff;background:var(--ink);padding:2px 7px;letter-spacing:.05em;flex:none}
+.q .prompt{font-size:15.5px}
+.q .lead{font-size:14px;color:var(--ink-soft);margin:-4px 0 12px}
+.hint{font-size:12.5px;color:var(--ink-soft);margin-top:8px}
+.q.bonus{border-color:#c98a2b;border-top:3px solid #c98a2b;background:#fffdf7}
+.q.bonus .n{background:#c98a2b}
+.bonus-tag{display:inline-block;font-size:11px;font-family:var(--mono);color:#8a5a12;background:#f6e6c8;border:1px solid #e3c789;padding:1px 7px;margin-left:8px;white-space:nowrap}
+.bonus-note{font-size:12px;color:#8a5a12;margin:6px 0 2px}
+.r.bonusrow{background:#fffdf7;border-color:#e3c789}
+.score .bonusline{font-size:12.5px;color:#8a5a12;margin-top:6px;font-weight:600}
+.choices{display:grid;gap:8px;margin-top:10px}
+.choices button{
+  text-align:left;background:#fff;border:1px solid var(--rule);padding:12px 14px;font-size:15px;width:100%;
+}
+.choices button[aria-pressed=true]{border-color:var(--ai);background:var(--ai-weak);box-shadow:inset 3px 0 0 var(--ai)}
+.subq{display:flex;align-items:center;gap:10px;margin-top:10px}
+.subq .lb{font-family:var(--mono);font-size:13px;color:var(--ink-soft);flex:none;min-width:44px}
+.pill{display:inline-block;font-size:11px;padding:1px 6px;border:1px solid var(--rule);color:var(--ink-soft);margin-left:auto;font-family:var(--mono)}
+
+/* 方眼 */
+.gridwrap{margin:10px 0 4px;text-align:center}
+svg.gr{width:100%;max-width:360px;height:auto;touch-action:manipulation;cursor:crosshair;background:#fff}
+svg.fig{width:100%;max-width:360px;height:auto;background:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
+.chips button{
+  font-family:var(--mono);font-size:14px;padding:7px 12px;background:#fff;border:1px solid var(--rule);min-width:44px;
+}
+.chips button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chips button.done{border-color:var(--ai);color:var(--ai)}
+.chips button.done[aria-pressed=true]{background:var(--ai);color:#fff}
+.counter{font-family:var(--mono);font-size:13px;color:var(--ink-soft);margin-top:6px;text-align:center}
+
+/* 結果 */
+.score{background:#fff;border:1px solid var(--rule);border-top:4px solid var(--ai);padding:22px 20px;text-align:center;margin-top:20px}
+.score .big{font-family:var(--mincho);font-size:46px;line-height:1;font-variant-numeric:tabular-nums}
+.score .big small{font-size:20px;color:var(--ink-soft)}
+.r{background:#fff;border:1px solid var(--rule);padding:14px 16px;margin-top:8px;display:flex;gap:12px}
+.r .mk{font-size:26px;line-height:1.2;flex:none;font-family:var(--mincho)}
+.r.ok .mk{color:var(--ok)} .r.ng .mk{color:var(--shu)}
+.r .body{flex:1;min-width:0}
+.r .qn{font-family:var(--mono);font-size:11px;color:var(--ink-soft)}
+.r .txt{font-size:14px;margin:2px 0}
+.r .ans{font-family:var(--mono);font-size:14px;word-break:break-all}
+.r .yours{color:var(--shu)}
+.r .right{color:var(--ok)}
+.r .body svg{max-width:230px;margin-top:8px;display:block}
+.tools{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
+.tools button{font-size:13px;padding:8px 12px;background:#fff;border:1px solid var(--rule);color:var(--ink)}
+.tools button.on{background:var(--ai);color:#fff;border-color:var(--ai)}
+.tools button:disabled{opacity:.4;cursor:not-allowed}
+.notice{border:1px solid var(--rule);background:#fff;padding:12px 14px;font-size:13px;margin-top:12px}
+.notice.warn{border-color:var(--shu);background:var(--shu-weak);color:#7d211d}
+.notice.ok{border-color:var(--ok);background:var(--ok-weak);color:#12503a}
+.foot{display:flex;gap:8px;margin-top:16px}
+.foot button{flex:1}
+.hidden{display:none!important}
+/* 数式キーボード */
+#kb{
+  position:fixed;left:0;right:0;bottom:0;z-index:60;
+  background:#f3f5f8;border-top:1px solid var(--rule);
+  padding:5px 6px calc(6px + env(safe-area-inset-bottom));
+  box-shadow:0 -6px 20px rgba(22,32,46,.10);
+}
+#kb .kbhead{display:flex;align-items:center;gap:8px;padding:0 3px 4px;font-size:11px;color:var(--ink-soft)}
+#kb .keys{max-width:440px;margin:0 auto;display:grid;grid-template-columns:repeat(10,1fr);gap:3px}
+#kb button{
+  background:#fff;border:1px solid var(--rule);color:var(--ink);
+  font-family:var(--mono);font-size:15px;line-height:1;padding:0;height:36px;
+}
+#kb button:active{background:var(--ai-weak);border-color:var(--ai)}
+#kb button.op{color:var(--ai)}
+#kb button.fn{font-family:var(--gothic);font-size:12px;background:#e9edf3}
+#kb button.del{color:var(--shu);font-size:16px}
+#kb button.num{font-size:16px;font-weight:600}
+#kb button.var{color:var(--ai);font-style:italic}
+#kb button.span3{grid-column:span 3}
+#kb button.span10{grid-column:span 10}
+body.kbopen{padding-bottom:230px}
+
+/* 分数ビルダー */
+#frac{display:none;align-items:center;justify-content:center;gap:14px;padding:6px 0 10px}
+#frac.on{display:flex}
+#kb.fracmode .keys{display:none}
+.frac-stack{display:flex;flex-direction:column;align-items:center;gap:2px}
+.frac-in{
+  width:78px;text-align:center;font-family:var(--mono);font-size:17px;
+  border:1px solid var(--rule);background:#fff;padding:5px 2px;border-radius:2px;
+}
+.frac-in:focus{outline:2px solid var(--ai);outline-offset:1px}
+.frac-bar{width:78px;height:2px;background:var(--ink)}
+#frac button{height:34px;font-size:13px;padding:0 12px;font-family:var(--gothic);background:#e9edf3;border:1px solid var(--rule)}
+#frac button.go{background:var(--ai);color:#fff;border-color:var(--ai);font-weight:600}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="kb" class="hidden" aria-label="数式キーボード">
+  <div class="kbhead"><span id="kbhint">数式キーボード</span></div>
+  <div id="frac">
+    <div class="frac-stack">
+      <input id="frac-num" class="frac-in" inputmode="none" placeholder="分子">
+      <div class="frac-bar"></div>
+      <input id="frac-den" class="frac-in" inputmode="none" placeholder="分母">
+    </div>
+    <button type="button" id="frac-ok" class="go">✓ 挿入</button>
+    <button type="button" id="frac-cancel">やめる</button>
+  </div>
+  <div class="keys" id="kbkeys"></div>
+</div>
+
+<script>
+/* ============================================================
+   設定
+   ============================================================ */
+const CONFIG = {
+  GRADES: [1,2,3],                    // 学年
+  CLASSES: [1,2,3,4,5,6],             // 組
+  CLASS_SIZE: 40,                     // 出席番号の最大
+};
+const STUDENT_KEY = "quiz:student";   // この端末に記憶する出席番号
+const qs = new URLSearchParams(location.search);
+const CLASS_ID = qs.get("c") || "";          // 例: ?c=1-3 （出席番号選択の学年・組を固定）
+const QUIZ_ID  = qs.get("quiz") || "";       // QRコードで指定された小テストID
+
+/* ============================================================
+   保存（localStorage が使えない環境ではメモリにフォールバック）
+   ============================================================ */
+const store = (() => {
+  let mem = {};
+  let ok = false;
+  try { localStorage.setItem("__t","1"); localStorage.removeItem("__t"); ok = true; } catch(e){}
+  return {
+    get(k){ try { return ok ? localStorage.getItem(k) : (mem[k] ?? null); } catch(e){ return mem[k] ?? null; } },
+    set(k,v){ try { ok ? localStorage.setItem(k,v) : (mem[k]=v); } catch(e){ mem[k]=v; } },
+    del(k){ try { ok ? localStorage.removeItem(k) : delete mem[k]; } catch(e){ delete mem[k]; } }
+  };
+})();
+
+/* ============================================================
+   数式キーボード
+   ============================================================ */
+const KB = (()=>{
+  const el = document.getElementById("kb");
+  const keys = document.getElementById("kbkeys");
+  const hint = document.getElementById("kbhint");
+  let target = null;
+
+  const LAYOUT = [
+    ["0","0","num"],["1","1","num"],["2","2","num"],["3","3","num"],["4","4","num"],
+    ["5","5","num"],["6","6","num"],["7","7","num"],["8","8","num"],["9","9","num"],
+
+    ["a","a","var"],["b","b","var"],["c","c","var"],["n","n","var"],["m","m","var"],
+    ["r","r","var"],["x","x","var"],["y","y","var"],["z","z","var"],["π","π","op"],
+
+    ["＝","=","op"],[".","."],["＋","+","op"],["−","-","op"],["×","×","op"],
+    ["÷","÷","op"],["≦","≦","op"],["≧","≧","op"],["＜","<","op"],["＞",">","op"],
+
+    ["(","(","op"],[")",")","op"],[",",",","op"],["/","/","op"],
+    ["⌫","\b","fn del span3"],["閉じる",null,"fn span3"],
+
+    ["分数","FRAC","fn span10"],
+  ];
+
+  LAYOUT.forEach(([label,ins,cls])=>{
+    const b=document.createElement("button");
+    b.type="button"; b.textContent=label; if(cls) b.className=cls;
+    b.addEventListener("pointerdown", e=>e.preventDefault());
+    b.addEventListener("click", ()=>{
+      if(ins===null){ hide(); return; }
+      if(ins==="FRAC"){ openFrac(); return; }
+      if(ins==="\b") back(); else insert(ins);
+    });
+    keys.appendChild(b);
+  });
+
+  function insert(txt){
+    if(!target) return;
+    const s=target.selectionStart ?? target.value.length, e=target.selectionEnd ?? s;
+    target.value = target.value.slice(0,s) + txt + target.value.slice(e);
+    const p=s+txt.length;
+    try{ target.setSelectionRange(p,p); }catch(_){}
+    target.dispatchEvent(new Event("input",{bubbles:true}));
+  }
+  function back(){
+    if(!target) return;
+    let s=target.selectionStart ?? target.value.length, e=target.selectionEnd ?? s;
+    if(s===e){ if(s===0) return; s=s-1; }
+    target.value = target.value.slice(0,s) + target.value.slice(e);
+    try{ target.setSelectionRange(s,s); }catch(_){}
+    target.dispatchEvent(new Event("input",{bubbles:true}));
+  }
+  function show(input, label){
+    target=input;
+    hint.textContent = label ? `数式キーボード　—　${label}` : "数式キーボード";
+    el.classList.remove("hidden");
+    document.body.classList.add("kbopen");
+    setTimeout(()=>input.scrollIntoView({block:"center",behavior:"smooth"}), 60);
+  }
+  function hide(){
+    target=null;
+    el.classList.add("hidden");
+    document.body.classList.remove("kbopen");
+    closeFrac();
+  }
+
+  const fracEl = document.getElementById("frac");
+  const numEl = document.getElementById("frac-num");
+  const denEl = document.getElementById("frac-den");
+  let outerTarget = null, outerLabel = "";
+
+  numEl.addEventListener("focus", ()=>{ target=numEl; hint.textContent="分数　—　分子"; });
+  denEl.addEventListener("focus", ()=>{ target=denEl; hint.textContent="分数　—　分母"; });
+
+  function openFrac(){
+    if(!target || target===numEl || target===denEl) return;
+    outerTarget = target; outerLabel = hint.textContent;
+    numEl.value=""; denEl.value="";
+    fracEl.classList.add("on");
+    el.classList.add("fracmode");
+    numEl.focus();
+  }
+  function closeFrac(){
+    fracEl.classList.remove("on");
+    el.classList.remove("fracmode");
+    outerTarget=null;
+  }
+  document.getElementById("frac-ok").addEventListener("pointerdown", e=>e.preventDefault());
+  document.getElementById("frac-ok").addEventListener("click", ()=>{
+    if(!outerTarget) return;
+    const n = numEl.value.trim(), d = denEl.value.trim();
+    let txt = "";
+    if(n && d) txt = `(${n}/${d})`;
+    else if(n) txt = n;
+    else { closeFrac(); return; }
+    const t = outerTarget;
+    const s=t.selectionStart ?? t.value.length, e2=t.selectionEnd ?? s;
+    t.value = t.value.slice(0,s) + txt + t.value.slice(e2);
+    const p=s+txt.length;
+    try{ t.setSelectionRange(p,p); }catch(_){}
+    t.dispatchEvent(new Event("input",{bubbles:true}));
+    closeFrac();
+    show(t, outerLabel.replace(/^数式キーボード\s*—\s*/,""));
+  });
+  document.getElementById("frac-cancel").addEventListener("pointerdown", e=>e.preventDefault());
+  document.getElementById("frac-cancel").addEventListener("click", ()=>{
+    if(outerTarget) show(outerTarget, outerLabel.replace(/^数式キーボード\s*—\s*/,""));
+    else closeFrac();
+  });
+
+  return {
+    hide,
+    attach(input, label){
+      input.setAttribute("inputmode","none");
+      input.addEventListener("focus", ()=>show(input,label));
+    }
+  };
+})();
+
+function loadStudent(){
+  try{ const v=JSON.parse(store.get(STUDENT_KEY)||"null");
+    return (v && /^\d{4}$/.test(v.sid)) ? v.sid : null;
+  }catch(e){ return null; }
+}
+const saveStudent = sid => store.set(STUDENT_KEY, JSON.stringify({sid}));
+
+/* ============================================================
+   完了記録（この端末のキャッシュ。真の判定はサーバーの check_quiz で行う）
+   ============================================================ */
+function todayStr(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+const doneKey = (quizId,sid) => `done:${quizId}:${sid}`;
+function saveDone(quizId, score, max){
+  store.set(doneKey(quizId,S.sid), JSON.stringify({date:todayStr(), score, max}));
+}
+function loadDoneFor(quizId, sid){
+  try{ return JSON.parse(store.get(doneKey(quizId,sid))||"null"); }catch(e){ return null; }
+}
+
+/* ============================================================
+   状態
+   ============================================================ */
+let S = { test:null, sid:null, ans:{}, startedAt:0, qStart:{}, timer:null, submitted:false };
+let ACTIVE = [];       // サーバーで「配布中」になっている quiz_id の一覧
+let waitTimer = null;  // QR待ちの自動再確認タイマー
+const KEY = t => `quiz:${t}:${S.sid}`;
+const app = document.getElementById("app");
+const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const save = () => { if(S.test&&S.sid) store.set(KEY(S.test.id), JSON.stringify({ans:S.ans, startedAt:S.startedAt, qStart:S.qStart, date:todayStr()})); };
+
+/* ============================================================
+   ホーム画面
+   ============================================================ */
+async function renderHome(){
+  KB.hide();
+  clearInterval(waitTimer);
+  const saved = loadStudent();
+  const pre = CLASS_ID.match(/^(\d)-(\d)$/);
+  app.innerHTML = `
+    <header class="sheet">
+      <h1>数学　小テスト</h1>
+      <div class="sub">中学1年　第4章　比例と反比例</div>
+    </header>
+    <div class="card" id="me"></div>
+    <div class="card" id="teststate"><p class="hint">読み込み中…</p></div>
+  `;
+  const me = document.getElementById("me");
+
+  const showSaved = sid => {
+    me.innerHTML = `
+      <h2>出席番号</h2>
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <div style="font-family:var(--mono);font-size:30px;letter-spacing:.06em">${sid}</div>
+        <div style="font-size:14px;color:var(--ink-soft)">${sidLabel(sid)}</div>
+        <button class="btn mini ghost" id="chg" style="margin-left:auto">変更</button>
+      </div>
+      <div class="hint">この端末に記憶しています。次からは選び直す必要はありません。</div>`;
+    document.getElementById("chg").onclick=()=>showPicker(sid);
+    S.sid = sid;
+  };
+  const showPicker = current => {
+    const cur = current ? readSid(current) : null;
+    const opt=(arr,sel,suf)=>arr.map(v=>`<option value="${v}"${v===sel?" selected":""}>${v}${suf}</option>`).join("");
+    const g = pre ? +pre[1] : (cur?.g ?? 1);
+    const c = pre ? +pre[2] : (cur?.c ?? 1);
+    me.innerHTML = `
+      <h2>出席番号を選ぶ</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:8px">
+        <div><label class="f">学年</label>
+          <select id="g" ${pre?"disabled":""}>${opt(CONFIG.GRADES,g,"年")}</select></div>
+        <div><label class="f">組</label>
+          <select id="c" ${pre?"disabled":""}>${opt(CONFIG.CLASSES,c,"組")}</select></div>
+        <div><label class="f">番号</label>
+          <select id="n"><option value="">選ぶ</option>${opt(Array.from({length:CONFIG.CLASS_SIZE},(_,i)=>i+1), cur?.n, "番")}</select></div>
+      </div>
+      <div class="subq" style="margin-top:14px">
+        <div id="prev" style="font-family:var(--mono);font-size:22px;color:var(--ink-soft)">----</div>
+        <button class="btn mini" id="ok" style="margin-left:auto">この番号で始める</button>
+      </div>
+      <div class="hint">ID は「学年・組・番号」をつなげた4桁です（例：1年2組3番 → 1203）。共用の端末では、使い終わったら「変更」から切り替えてください。</div>`;
+    const sync=()=>{
+      const n=document.getElementById("n").value;
+      document.getElementById("prev").textContent = n
+        ? makeSid(document.getElementById("g").value, document.getElementById("c").value, n) : "----";
+    };
+    ["g","c","n"].forEach(id=>document.getElementById(id).onchange=sync);
+    sync();
+    document.getElementById("ok").onclick=()=>{
+      const n=document.getElementById("n").value;
+      if(!n){ alert("番号を選んでください。"); return; }
+      const sid = makeSid(document.getElementById("g").value, document.getElementById("c").value, n);
+      saveStudent(sid); showSaved(sid);
+      refreshTests();
+    };
+  };
+
+  if(saved) showSaved(saved); else showPicker(null);
+  await refreshTests();
+}
+
+/** サーバーで「配布中」の小テストを取得し、テスト選択カードを描く。 */
+async function refreshTests(){
+  const box = document.getElementById("teststate");
+  if(!box) return;
+  try{
+    ACTIVE = await Quiz.rpc("quiz_list_active", {});
+    if(!Array.isArray(ACTIVE)) ACTIVE = [];
+  }catch(e){
+    box.innerHTML = `<div class="notice warn">通信エラー：テストの状況を取得できませんでした。画面を再読み込みしてください。</div>`;
+    return;
+  }
+
+  if(QUIZ_ID){
+    const t = CH.find(x=>x.id===QUIZ_ID);
+    if(!t){ box.innerHTML = `<div class="notice warn">指定された小テストが見つかりません。QRコードを確認してください。</div>`; return; }
+    if(ACTIVE.includes(t.id)){
+      clearInterval(waitTimer);
+      box.innerHTML = `
+        <h2>${esc(t.no)}　${esc(t.name)}</h2>
+        <button class="btn" id="go">この小テストをはじめる</button>`;
+      document.getElementById("go").onclick=()=>startTest(t);
+    } else {
+      box.innerHTML = `
+        <h2>${esc(t.no)}　${esc(t.name)}</h2>
+        <div class="notice">先生が開始するのを待っています…（自動で確認します）</div>`;
+      clearInterval(waitTimer);
+      waitTimer = setInterval(async ()=>{
+        try{
+          const a = await Quiz.rpc("quiz_list_active", {});
+          if(Array.isArray(a) && a.includes(t.id)){ clearInterval(waitTimer); startTest(t); }
+        }catch(e){}
+      }, 4000);
+    }
+    return;
+  }
+
+  const list = CH.filter(t=>ACTIVE.includes(t.id));
+  if(!list.length){
+    box.innerHTML = `<div class="notice">現在受付中の小テストはありません。先生の指示を待つか、QRコードを読み込んでください。</div>`;
+    return;
+  }
+  box.innerHTML = `
+    <h2>テストを選ぶ</h2>
+    <div class="tests">
+      ${list.map(t=>{
+        const d = S.sid ? loadDoneFor(t.id, S.sid) : null;
+        const today = d && d.date===todayStr();
+        return `<button data-id="${t.id}">
+          <span class="no">${t.no}</span><span class="nm">${esc(t.name)}</span>
+          ${today?`<span class="badge" style="border-color:var(--ok);color:var(--ok)">✓ 本日実施</span>`:`<span class="pg">${t.pages}</span>`}
+        </button>`;
+      }).join("")}
+    </div>`;
+  box.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{
+    const t = CH.find(x=>x.id===b.dataset.id);
+    startTest(t);
+  });
+}
+
+/** 今日すでに提出済みのときに出す画面。正解や解説は出さない。 */
+function renderAlreadyDone(t, d){
+  KB.hide();
+  clearInterval(waitTimer);
+  app.innerHTML = `
+    <header class="sheet">
+      <h1>数学　小テスト</h1>
+      <div class="sub">${esc(t.no)}　${esc(t.name)}</div>
+    </header>
+    <div class="score">
+      <div style="font-size:13px;color:var(--ink-soft)">${esc(sidLabel(S.sid))}　・　今日はもう挑戦しました</div>
+      <div class="big">${d.score}<small> / ${d.max}</small></div>
+    </div>
+    <div class="notice ok" style="margin-top:14px;font-size:15px;text-align:center;padding:18px">
+      別日にもう一度チャレンジしよう！<br>
+      <span style="font-size:13px;color:var(--ink-soft)">同じテストは1日1回です。明日、また挑戦できます。</span>
+    </div>
+    <div class="foot"><button class="btn" id="back2" style="width:100%">ホームへもどる</button></div>
+  `;
+  document.getElementById("back2").onclick = renderHome;
+}
+
+/* ============================================================
+   出題
+   ============================================================ */
+async function safeCheck(quizId){
+  try{ return await Quiz.rpc("quiz_check", {p_quiz_id:quizId, p_student:S.sid}); }
+  catch(e){ alert("通信エラー：もう一度お試しください。"); return null; }
+}
+async function startTest(t){
+  if(!S.sid){ alert("先に出席番号を選んでください。"); return; }
+  clearInterval(waitTimer);
+  const check = await safeCheck(t.id);
+  if(!check) return;
+  if(check.error){ alert("エラーが発生しました。"); return; }
+  if(!check.active){ alert("このテストは現在受け付けられていません。"); renderHome(); return; }
+  if(check.already_today){ renderAlreadyDone(t, {score:check.score, max:check.max}); return; }
+
+  S.test=t; S.ans={}; S.submitted=false; S.qStart={};
+  const raw = store.get(KEY(t.id));
+  let resumed=false;
+  if(raw){
+    try{
+      const d=JSON.parse(raw);
+      if(d.date===todayStr()){
+        if(confirm("前回の解答が残っています。続きから再開しますか？")){ S.ans=d.ans||{}; S.startedAt=d.startedAt; S.qStart=d.qStart||{}; resumed=true; }
+      } else {
+        store.del(KEY(t.id));
+      }
+    }catch(e){ store.del(KEY(t.id)); }
+  }
+  if(!resumed) S.startedAt = Date.now();
+  renderTest();
+  tick();
+  S.timer = setInterval(tick, 500);
+}
+function remain(){ return S.test.limit - Math.floor((Date.now()-S.startedAt)/1000); }
+function tick(){
+  const el=document.getElementById("tm"); if(!el) return;
+  let r = remain();
+  if(r<=0){ r=0; clearInterval(S.timer); if(!S.submitted) submit(true); }
+  const m=String(Math.floor(r/60)).padStart(2,"0"), s=String(r%60).padStart(2,"0");
+  el.textContent = `${m}:${s}`;
+  el.classList.toggle("warn", r<=60);
+  const p=document.getElementById("pg");
+  if(p){ const {done,total}=progress(); p.style.width = (total? done/total*100:0)+"%"; }
+}
+function keyOf(qi,si){ return si==null? `${qi}` : `${qi}.${si}`; }
+function progress(){
+  let done=0,total=0;
+  S.test.qs.forEach((q,qi)=>{
+    if(q.type==="input"||q.type==="choice"){ q.subs.forEach((_,si)=>{ total++; const v=S.ans[keyOf(qi,si)]; if(v!==undefined&&v!==""&&v!==null) done++; }); }
+    else { total++; const v=S.ans[keyOf(qi)]; if(v&&v.length) done++; }
+  });
+  return {done,total};
+}
+function touch(qi){ if(!S.qStart[qi]) S.qStart[qi]=Date.now(); }
+
+function renderTest(){
+  KB.hide();
+  const t=S.test;
+  app.innerHTML = `
+    <div class="bar">
+      <span class="who">${esc(S.sid)}</span>
+      <span style="font-size:13px;color:var(--ink-soft)">${t.no} ${esc(t.name)}</span>
+      <span class="tm" id="tm">--:--</span>
+    </div>
+    <div class="prog"><i id="pg"></i></div>
+    <div id="qs"></div>
+    <div class="notice">解答は入力するたびにこの端末に保存されます。送信は最後に1回だけです。</div>
+    <div class="foot">
+      <button class="btn ghost" id="back">中断してもどる</button>
+      <button class="btn" id="sb">解答を提出する</button>
+    </div>
+  `;
+  const box=document.getElementById("qs");
+  t.qs.forEach((q,qi)=>box.appendChild(renderQ(q,qi)));
+  if(t.bonus) box.appendChild(renderBonus(t.bonus));
+  document.getElementById("sb").onclick=()=>{ const {done,total}=progress();
+    if(done<total && !confirm(`未解答が ${total-done} 問あります。このまま提出しますか？`)) return; submit(false); };
+  document.getElementById("back").onclick=()=>{ if(confirm("中断してホームにもどりますか？（解答はこの端末に残ります）")){ clearInterval(S.timer); renderHome(); } };
+}
+
+function renderQ(q,qi){
+  const d=document.createElement("div"); d.className="q";
+  let h=`<div class="head"><span class="n">${q.no}</span><span class="prompt">${esc(q.lead||"")}</span></div>`;
+  if(q.hint) h+=`<div class="lead">${esc(q.hint)}</div>`;
+  if(q.fig) h+=`<div class="gridwrap">${FIG[q.fig]()}</div>`;
+  d.innerHTML=h;
+
+  if(q.type==="choice"){
+    q.subs.forEach((s,si)=>{
+      const w=document.createElement("div");
+      if(s.prompt) w.innerHTML=`<div style="margin-top:12px;font-size:15px"><span style="font-family:var(--mono);color:var(--ink-soft)">${s.lb}</span> ${esc(s.prompt)}</div>`;
+      const c=document.createElement("div"); c.className="choices";
+      q.choices.forEach((txt,ci)=>{
+        const b=document.createElement("button"); b.type="button"; b.textContent=txt;
+        b.setAttribute("aria-pressed", String(S.ans[keyOf(qi,si)]===ci));
+        b.onclick=()=>{ touch(qi); S.ans[keyOf(qi,si)]=ci; save();
+          c.querySelectorAll("button").forEach((x,j)=>x.setAttribute("aria-pressed",String(j===ci))); tick(); };
+        c.appendChild(b);
+      });
+      w.appendChild(c); d.appendChild(w);
+    });
+  }
+  else if(q.type==="input"){
+    q.subs.forEach((s,si)=>{
+      const w=document.createElement("div");
+      if(s.prompt) w.innerHTML=`<div style="margin-top:12px;font-size:15px"><span style="font-family:var(--mono);color:var(--ink-soft)">${s.lb}</span> ${esc(s.prompt)}</div>`;
+      const row=document.createElement("div"); row.className="subq";
+      if(!s.prompt) row.innerHTML=`<span class="lb">${s.lb}</span>`;
+      const inp=document.createElement("input");
+      inp.type="text"; inp.placeholder=s.ph||q.ph||""; inp.autocomplete="off"; inp.spellcheck=false;
+      inp.value = S.ans[keyOf(qi,si)] ?? "";
+      inp.oninput=()=>{ touch(qi); S.ans[keyOf(qi,si)]=inp.value; save(); tick(); };
+      KB.attach(inp, `${q.no}${s.lb?" "+s.lb:""}`);
+      row.appendChild(inp); w.appendChild(row); d.appendChild(w);
+    });
+  }
+  else if(q.type==="plot")  d.appendChild(plotUI(q,qi));
+  else if(q.type==="line")  d.appendChild(lineUI(q,qi));
+  else if(q.type==="hyper") d.appendChild(hyperUI(q,qi));
+  return d;
+}
+
+/* ボーナス（応用）問題。基本問題を全問正解したときだけ +1 点になる。 */
+function renderBonus(b){
+  const d=document.createElement("div"); d.className="q bonus";
+  d.innerHTML=`<div class="head"><span class="n">★</span><span class="prompt">${esc(b.lead||"")}<span class="bonus-tag">ボーナス</span></span></div>
+    <div class="bonus-note">基本問題を全問正解すると、この問題の正解で ＋1点（例：4点満点なら 5/4）。</div>`;
+  if(b.hint) d.innerHTML+=`<div class="hint">${esc(b.hint)}</div>`;
+  const sub=b.subs[0];
+  const K=keyOf("bonus",0);
+  if(b.type==="choice"){
+    const c=document.createElement("div"); c.className="choices";
+    b.choices.forEach((txt,ci)=>{
+      const btn=document.createElement("button"); btn.type="button"; btn.textContent=txt;
+      btn.setAttribute("aria-pressed", String(S.ans[K]===ci));
+      btn.onclick=()=>{ S.ans[K]=ci; save();
+        c.querySelectorAll("button").forEach((x,j)=>x.setAttribute("aria-pressed",String(j===ci))); };
+      c.appendChild(btn);
+    });
+    d.appendChild(c);
+  } else {
+    const row=document.createElement("div"); row.className="subq";
+    const inp=document.createElement("input");
+    inp.type="text"; inp.placeholder=sub.ph||b.ph||""; inp.autocomplete="off"; inp.spellcheck=false;
+    inp.value=S.ans[K] ?? "";
+    inp.oninput=()=>{ S.ans[K]=inp.value; save(); };
+    KB.attach(inp,"★ ボーナス");
+    row.appendChild(inp); d.appendChild(row);
+  }
+  return d;
+}
+
+/* --- 方眼の共通処理：SVGを1度だけ描き、.ink レイヤーだけ更新する --- */
+function makeGrid(R){
+  const S0=400, M=26, U=(S0-2*M)/(2*R), C=S0/2;
+  const X=gx=>C+gx*U, Y=gy=>C-gy*U;
+  const svgStr = gridSVG(R,{cls:"gr", extra:()=>`<g class="ink"></g>`}).svg;
+  return { svgStr, X, Y, R,
+    at(svg,e){
+      const r=svg.getBoundingClientRect();
+      return [ ((e.clientX-r.left)/r.width*S0 - C)/U, (C - (e.clientY-r.top)/r.height*S0)/U ];
+    }};
+}
+function mountGrid(box, R){
+  const g=makeGrid(R);
+  const wrap=document.createElement("div"); wrap.className="gridwrap"; wrap.innerHTML=g.svgStr;
+  box.appendChild(wrap);
+  const svg=wrap.querySelector("svg");
+  svg.style.touchAction="none";
+  return {g, svg, ink:svg.querySelector(".ink")};
+}
+const inRange=(x,y,R)=>Math.abs(x)<=R&&Math.abs(y)<=R;
+
+function plotUI(q,qi){
+  const box=document.createElement("div");
+  const st = S.ans[keyOf(qi)] ? JSON.parse(S.ans[keyOf(qi)]) : {};
+  let cur = q.points.find(p=>!(p[0] in st))?.[0] || q.points[0][0];
+  const {g,svg,ink} = mountGrid(box,q.R);
+  const chips=document.createElement("div"); chips.className="chips";
+  const tools=document.createElement("div"); tools.className="tools";
+
+  const draw=()=>{ let s="";
+    for(const k in st){ const [x,y]=st[k];
+      s+=dot(g.X,g.Y,x,y,k===cur?"#24467d":"#c8322d")+`<text x="${g.X(x)+7}" y="${g.Y(y)-7}" font-size="13" font-weight="600">${k}</text>`; }
+    ink.innerHTML=s;
+  };
+  const sync=()=>chips.querySelectorAll("button").forEach(b=>{
+    b.setAttribute("aria-pressed",String(b.dataset.k===cur));
+    b.classList.toggle("done", b.dataset.k in st);
+  });
+  const commit=()=>{ S.ans[keyOf(qi)]=JSON.stringify(st); save(); tick(); };
+  const hitAt=(x,y)=>Object.keys(st).find(k=>st[k][0]===x&&st[k][1]===y);
+
+  let dragging=false;
+  const place=e=>{
+    const [fx,fy]=g.at(svg,e); const x=Math.round(fx), y=Math.round(fy);
+    if(!inRange(x,y,q.R)) return;
+    if(st[cur] && st[cur][0]===x && st[cur][1]===y) return;
+    if(hitAt(x,y) && hitAt(x,y)!==cur) return;
+    st[cur]=[x,y]; draw();
+  };
+  svg.addEventListener("pointerdown",e=>{
+    touch(qi); e.preventDefault(); svg.setPointerCapture(e.pointerId); dragging=true;
+    const [fx,fy]=g.at(svg,e); const x=Math.round(fx), y=Math.round(fy);
+    const h=hitAt(x,y);
+    if(h){ cur=h; sync(); draw(); return; }
+    place(e);
+  });
+  svg.addEventListener("pointermove",e=>{ if(dragging) place(e); });
+  const end=()=>{ if(!dragging) return; dragging=false; commit();
+    const nx=q.points.find(p=>!(p[0] in st)); if(nx){ cur=nx[0]; sync(); draw(); } };
+  svg.addEventListener("pointerup",end); svg.addEventListener("pointercancel",end);
+
+  q.points.forEach(([k,x,y])=>{
+    const b=document.createElement("button"); b.type="button"; b.dataset.k=k;
+    b.textContent=`${k}(${x},${y})`;
+    b.onclick=()=>{ cur=k; sync(); draw(); };
+    chips.appendChild(b);
+  });
+  const del=document.createElement("button"); del.type="button"; del.textContent="選んでいる点を消す";
+  del.onclick=()=>{ delete st[cur]; commit(); sync(); draw(); };
+  tools.appendChild(del);
+
+  sync(); draw(); box.appendChild(chips); box.appendChild(tools);
+  const c=document.createElement("div"); c.className="counter";
+  c.textContent="ラベルを選んで方眼をタップ。そのままドラッグで動かせます。";
+  box.appendChild(c);
+  return box;
+}
+
+function lineUI(q,qi){
+  const box=document.createElement("div");
+  let pt = S.ans[keyOf(qi)] ? JSON.parse(S.ans[keyOf(qi)]) : null;
+  const {g,svg,ink} = mountGrid(box,q.R);
+  const c=document.createElement("div"); c.className="counter";
+
+  const draw=()=>{
+    if(!pt){ ink.innerHTML=""; return; }
+    const [x,y]=pt;
+    if(x===0){ ink.innerHTML=dot(g.X,g.Y,x,y); return; }
+    const a=y/x, R=q.R;
+    let x1=-R,y1=a*x1,x2=R,y2=a*x2;
+    if(Math.abs(y1)>R){y1=Math.sign(y1)*R;x1=y1/a;}
+    if(Math.abs(y2)>R){y2=Math.sign(y2)*R;x2=y2/a;}
+    ink.innerHTML=`<line x1="${g.X(x1)}" y1="${g.Y(y1)}" x2="${g.X(x2)}" y2="${g.Y(y2)}" stroke="#24467d" stroke-width="2" opacity=".9"/>`+dot(g.X,g.Y,x,y);
+  };
+  const upd=()=>c.textContent = pt ? `通る点：(${pt[0]}, ${pt[1]})　ドラッグで動かせます` : "原点以外の格子点を1つタップ（そのままドラッグで移動）";
+
+  let dragging=false;
+  const place=e=>{
+    const [fx,fy]=g.at(svg,e); const x=Math.round(fx), y=Math.round(fy);
+    if(!inRange(x,y,q.R) || (x===0&&y===0)) return;
+    if(pt && pt[0]===x && pt[1]===y) return;
+    pt=[x,y]; draw(); upd();
+  };
+  svg.addEventListener("pointerdown",e=>{ touch(qi); e.preventDefault(); svg.setPointerCapture(e.pointerId); dragging=true; place(e); });
+  svg.addEventListener("pointermove",e=>{ if(dragging) place(e); });
+  const end=()=>{ if(!dragging) return; dragging=false;
+    if(pt){ S.ans[keyOf(qi)]=JSON.stringify(pt); save(); tick(); } };
+  svg.addEventListener("pointerup",end); svg.addEventListener("pointercancel",end);
+
+  draw(); upd(); box.appendChild(c);
+  return box;
+}
+
+function hyperUI(q,qi){
+  const box=document.createElement("div");
+  let pts = readHyperPts(S.ans[keyOf(qi)], q);
+  const {g,svg,ink} = mountGrid(box,q.R);
+  const c=document.createElement("div"); c.className="counter";
+
+  const draw=()=>{
+    let s="";
+    for(const side of ["pos","neg"]){
+      const [x,y] = pts[side];
+      const k = x*y, sgn = side==="pos" ? 1 : -1;
+      if(isFinite(k) && Math.abs(k)>1e-9) s += hyperPath(k, q.R, g.X, g.Y, sgn);
+      s += dot(g.X,g.Y,x,y,"#24467d",4.8);
+    }
+    ink.innerHTML=s;
+  };
+  const commit=()=>{ S.ans[keyOf(qi)]=JSON.stringify(pts); save(); tick(); };
+  const upd=()=>{ c.textContent = "点をドラッグして、正しい位置に動かしましょう。1点で曲線が決まります。"; };
+
+  let drag=null;
+  const findNear=(x,y)=>{
+    for(const side of ["pos","neg"]){
+      const [px,py]=pts[side];
+      if(Math.hypot(x-px,y-py) < 0.6) return side;
+    }
+    return null;
+  };
+  svg.addEventListener("pointerdown",e=>{
+    touch(qi); e.preventDefault(); svg.setPointerCapture(e.pointerId);
+    const [fx,fy]=g.at(svg,e);
+    drag = findNear(fx,fy);
+  });
+  svg.addEventListener("pointermove",e=>{
+    if(!drag) return;
+    const [fx,fy]=g.at(svg,e); let x=Math.round(fx), y=Math.round(fy);
+    if(!inRange(x,y,q.R) || x===0 || y===0) return;
+    if((drag==="pos" && x<0) || (drag==="neg" && x>0)) return;
+    pts[drag]=[x,y]; draw();
+  });
+  const end=()=>{ if(!drag) return; drag=null; commit(); draw(); upd(); };
+  svg.addEventListener("pointerup",end); svg.addEventListener("pointercancel",end);
+
+  draw(); upd(); box.appendChild(c);
+  return box;
+}
+function readHyperPts(raw, q){
+  const R=q.R;
+  const def = { pos:[Math.max(1,Math.round(R*0.5)),1], neg:[-Math.max(1,Math.round(R*0.5)),-1] };
+  if(!raw) return def;
+  try{ const v=JSON.parse(raw);
+    if(v && Array.isArray(v.pos) && Array.isArray(v.neg)) return v;
+    return def;
+  }catch(e){ return def; }
+}
+
+/* ============================================================
+   採点
+   ============================================================ */
+function gradeAll(){
+  const rows=[]; let score=0, max=0;
+  S.test.qs.forEach((q,qi)=>{
+    const el = S.qStart[qi] ? Date.now()-S.qStart[qi] : 0;
+    if(q.type==="choice"||q.type==="input"){
+      q.subs.forEach((s,si)=>{
+        const u = S.ans[keyOf(qi,si)];
+        const ok = q.type==="choice" ? (u===s.a) : gradeSub(s.mode, u, s.a);
+        const shown = q.type==="choice" ? (u==null?"":q.choices[u]) : (u??"");
+        const right = q.type==="choice" ? q.choices[s.a] : (s.mode==="coord"?`(${s.a[0]}, ${s.a[1]})`:(s.mode==="text"?s.a[0]:String(s.a)));
+        rows.push({q_no:`${q.no}${s.lb?" "+s.lb:""}`, label:s.prompt||q.lead, raw:String(shown), ok, right, score:ok?1:0, max:1, ms:el});
+        score+=ok?1:0; max++;
+      });
+    } else if(q.type==="plot"){
+      const st = S.ans[keyOf(qi)] ? JSON.parse(S.ans[keyOf(qi)]) : {};
+      let s=0;
+      q.points.forEach(([k,x,y])=>{ if(st[k]&&st[k][0]===x&&st[k][1]===y) s++; });
+      const ok = s===q.points.length;
+      const fig = gridSVG(q.R,{extra:({X,Y})=>{
+        let g="";
+        q.points.forEach(([k,x,y])=>{ g+=dot(X,Y,x,y,"#24467d",3.6)+`<text x="${X(x)+6}" y="${Y(y)-6}" font-size="11" fill="#24467d">${k}</text>`; });
+        for(const k in st){ const [x,y]=st[k];
+          const good = q.points.some(p=>p[0]===k&&p[1]===x&&p[2]===y);
+          if(!good) g+=`<circle cx="${X(x)}" cy="${Y(y)}" r="5" fill="none" stroke="#c8322d" stroke-width="1.8"/><text x="${X(x)+6}" y="${Y(y)+14}" font-size="11" fill="#c8322d">${k}</text>`;
+        }
+        return g;
+      }}).svg;
+      rows.push({q_no:q.no, label:"点をかき入れる", raw:JSON.stringify(st), ok, fig,
+        right:q.points.map(p=>`${p[0]}(${p[1]},${p[2]})`).join(" "), score:s, max:q.points.length, ms:el});
+      score+=s; max+=q.points.length;
+    } else if(q.type==="line"){
+      const p = S.ans[keyOf(qi)] ? JSON.parse(S.ans[keyOf(qi)]) : null;
+      const ok = !!p && !(p[0]===0&&p[1]===0) && (q.n*p[0] === q.d*p[1]);
+      const fig = gridSVG(q.R,{extra:({X,Y,R})=> linePath(q.n,q.d,R,X,Y) + (p?dot(X,Y,p[0],p[1], ok?"#1d6b4f":"#c8322d"):"") }).svg;
+      rows.push({q_no:q.no, label:"比例のグラフ", raw:p?`(${p[0]}, ${p[1]})`:"", ok, fig,
+        right:`y=${q.d===1?q.n:`${q.n}/${q.d}`}x が通る格子点`, score:ok?1:0, max:1, ms:el});
+      score+=ok?1:0; max++;
+    } else if(q.type==="hyper"){
+      const d = readHyperPts(S.ans[keyOf(qi)], q);
+      const pts = [d.pos, d.neg];
+      const s = pts.filter(([x,y])=> x!==0 && x*y===q.a).length;
+      const ok = s===2;
+      const fig = gridSVG(q.R,{extra:({X,Y,R})=>
+        hyperPath(q.a,R,X,Y) + pts.map(([x,y])=>dot(X,Y,x,y, x*y===q.a?"#1d6b4f":"#c8322d",4.2)).join("")
+      }).svg;
+      rows.push({q_no:q.no, label:"反比例のグラフ", raw:pts.map(p=>`(${p[0]},${p[1]})`).join(" "), ok, fig,
+        right:`xy=${q.a} をみたす格子点（正の側・負の側に1点ずつ）`, score:s, max:2, ms:el});
+      score+=s; max+=2;
+    }
+  });
+
+  // ボーナス（応用）問題：基本が全問正解のときだけ +1 点。max は増やさない（5/4 のような表示になる）。
+  const baseScore=score, baseMax=max;
+  const perfect = baseMax>0 && baseScore===baseMax;
+  let bonus=null, awarded=false;
+  if(S.test.bonus){
+    const b=S.test.bonus, sub=b.subs[0];
+    const u=S.ans[keyOf("bonus",0)];
+    const ok = b.type==="choice" ? (u===sub.a) : gradeSub(sub.mode, u, sub.a);
+    const shown = b.type==="choice" ? (u==null?"":b.choices[u]) : (u??"");
+    const right = b.type==="choice" ? b.choices[sub.a]
+      : (sub.mode==="coord" ? `(${sub.a[0]}, ${sub.a[1]})`
+      : (sub.mode==="text" ? sub.a[0] : String(sub.a)));
+    awarded = ok && perfect;
+    bonus = {ok, raw:String(shown), right, sol:b.sol||"", lead:b.lead||""};
+    rows.push({q_no:"★応用", label:b.lead, raw:String(shown), ok, right,
+      score: awarded?1:0, max:0, ms:0, bonus:true, sol:b.sol||""});
+    if(awarded) score += 1;
+  }
+  return {rows, score, max, bonus, awarded, perfect, baseScore, baseMax};
+}
+
+/* ============================================================
+   提出・送信（Supabase）
+   ============================================================ */
+async function submit(auto){
+  if(S.submitted) return;
+  S.submitted=true; clearInterval(S.timer);
+  const g = gradeAll();
+  saveDone(S.test.id, g.score, g.max);
+  renderResult(g, auto, "sending");
+  const res = await send(g);
+  renderResult(g, auto, res);
+}
+async function send(g){
+  try{
+    const r = await Quiz.rpc("quiz_submit", {
+      p_quiz_id: S.test.id, p_student: S.sid, p_score: g.score, p_max: g.max,
+      p_rows: g.rows.map(r=>({q_no:r.q_no, raw:r.raw, ok:r.ok, score:r.score, max:r.max, ms:r.ms})),
+    });
+    if(r.error==="already_today") return "already_today";
+    if(r.error==="inactive") return "inactive";
+    if(r.error) return "fail";
+    store.del(KEY(S.test.id));
+    return "ok";
+  }catch(e){ return "fail"; }
+}
+function csv(rows){
+  const head=["timestamp","student_id","quiz_id","q_no","raw_answer","is_correct","score","max_score","elapsed_ms"];
+  const q=v=>`"${String(v).replace(/"/g,'""')}"`;
+  const ts=new Date().toISOString();
+  return "﻿"+[head.join(",")].concat(rows.map(r=>[ts,S.sid,S.test.id,r.q_no,r.raw,r.ok,r.score,r.max,r.ms].map(q).join(","))).join("\n");
+}
+
+/* ============================================================
+   結果画面
+   ============================================================ */
+function renderResult(g, auto, state){
+  KB.hide();
+  const pct = g.max? Math.min(100, Math.round(g.baseScore/g.max*100)):0;
+  const bonusLine = g.bonus
+    ? (g.awarded
+        ? `<div class="bonusline">★ ボーナス正解！ ＋1点（${g.baseScore}/${g.baseMax} → ${g.score}/${g.baseMax}）</div>`
+        : (g.bonus.ok && !g.perfect
+            ? `<div class="bonusline">★ ボーナスは正解。基本が全問正解なら加点でした（基本 ${g.baseScore}/${g.baseMax}）</div>`
+            : (g.bonus.raw
+                ? `<div class="bonusline">★ ボーナスは不正解でした</div>`
+                : `<div class="bonusline">★ ボーナスは未解答でした</div>`)))
+    : "";
+  const banner = {
+    sending:`<div class="notice">送信しています…</div>`,
+    ok:`<div class="notice ok">送信しました。先生の画面に届いています。</div>`,
+    already_today:`<div class="notice warn">今日はすでに提出済みでした。この結果はサーバーには保存されません。</div>`,
+    inactive:`<div class="notice warn">このテストは先生によって終了されました。結果は保存されませんでした。</div>`,
+    fail:`<div class="notice warn">送信できませんでした。電波を確認して「もう一度送信」を押してください。解答はこの端末に残っています。</div>`,
+  }[state];
+
+  app.innerHTML = `
+    <div class="score">
+      <div style="font-size:13px;color:var(--ink-soft);letter-spacing:.08em">${S.test.no}　${esc(S.test.name)}</div>
+      <div class="big">${g.score}<small> / ${g.max}</small></div>
+      <div style="font-size:13px;color:var(--ink-soft);margin-top:6px">${pct}%　・　${esc(S.sid)}（${esc(sidLabel(S.sid))}）</div>
+      ${bonusLine}
+      ${auto?`<div style="font-size:12px;color:var(--shu);margin-top:8px">制限時間になったため自動で提出しました</div>`:""}
+    </div>
+    ${banner}
+    <div id="rows"></div>
+    <div class="foot">
+      <button class="btn ghost" id="csv">CSVを保存</button>
+      <button class="btn ghost ${state==="fail"?"":"hidden"}" id="re">もう一度送信</button>
+      <button class="btn" id="home">ホームへ</button>
+    </div>
+  `;
+  const box=document.getElementById("rows");
+  g.rows.forEach(r=>{
+    const d=document.createElement("div"); d.className="r "+(r.ok?"ok":"ng")+(r.bonus?" bonusrow":"");
+    const showRight = !r.ok || r.bonus;
+    d.innerHTML=`<div class="mk">${r.ok?"○":"×"}</div>
+      <div class="body">
+        <div class="qn">${r.bonus?"★応用（ボーナス）":esc(r.q_no)}${(!r.bonus&&r.max>1)?`　${r.score}/${r.max}`:""}</div>
+        <div class="txt">${esc((r.label||"").slice(0,80))}</div>
+        <div class="ans">あなた: <span class="${r.ok?"right":"yours"}">${esc(r.raw||"（無解答）")}</span></div>
+        ${showRight?`<div class="ans">正解: <span class="right">${esc(r.right)}</span></div>`:""}
+        ${r.fig && showRight && !r.bonus ? r.fig : ""}
+        ${r.bonus && r.sol ? `<div class="hint" style="border-left:2px solid var(--rule);padding-left:10px;white-space:pre-wrap;margin-top:8px">${esc(r.sol)}</div>` : ""}
+      </div>`;
+    box.appendChild(d);
+  });
+  document.getElementById("home").onclick=()=>{ S.startedAt=0; renderHome(); };
+  document.getElementById("csv").onclick=()=>{
+    const b=new Blob([csv(g.rows)],{type:"text/csv"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(b);
+    a.download=`${S.test.id}_${S.sid}.csv`; a.click(); URL.revokeObjectURL(a.href);
+  };
+  const re=document.getElementById("re");
+  if(re) re.onclick=async()=>{
+    re.disabled=true; re.textContent="送信中…";
+    const res=await send(g);
+    renderResult(g, auto, res);
+  };
+}
+
+/* ============================================================
+   起動
+   ============================================================ */
+(function boot(){
+  if(!Quiz.configReady()){
+    app.innerHTML = `<div class="card"><h2>準備中です</h2><p class="hint">このアプリはまだセットアップが終わっていません（config.js に Supabase の接続情報を設定してください）。</p></div>`;
+    return;
+  }
+  renderHome();
+})();
+</script>
+</body>
+</html>

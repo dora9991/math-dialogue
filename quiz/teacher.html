@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>小テスト管理｜先生用</title>
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script src="quizdata.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --ink:#16202e; --ink-soft:#4a5768;
+  --ai:#24467d; --ai-weak:#e8eef7;
+  --shu:#c8322d; --shu-weak:#fbecea;
+  --ok:#1d6b4f; --ok-weak:#e6f2ec;
+  --paper:#fcfcfa; --rule:#d9dfe7; --grid:#e6ebf1;
+  --mincho:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;
+  --gothic:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+  --mono:"SFMono-Regular",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:var(--gothic);color:var(--ink);background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;line-height:1.7;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px 80px}
+header.sheet{background:#fff;border:1px solid var(--rule);border-top:4px solid var(--ai);margin:20px 0 0;padding:16px 20px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+h1{font-family:var(--mincho);font-size:19px;font-weight:600;margin:0;letter-spacing:.04em}
+.sub{font-size:12.5px;color:var(--ink-soft)}
+.card{background:#fff;border:1px solid var(--rule);padding:16px 20px;margin-top:14px}
+.card h2{font-family:var(--mincho);font-size:15.5px;margin:0 0 10px;font-weight:600}
+label.f{display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px}
+input[type=text],input[type=password],select{font:inherit;font-size:14px;padding:9px 10px;border:1px solid var(--rule);background:#fff;border-radius:2px;width:100%}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--ai);outline-offset:1px}
+button{font:inherit;cursor:pointer;border-radius:2px;border:1px solid transparent}
+.btn{background:var(--ai);color:#fff;padding:10px 16px;font-weight:600;font-size:14px}
+.btn.ghost{background:#fff;color:var(--ai);border-color:var(--ai)}
+.btn.mini{padding:6px 12px;font-size:12.5px;font-weight:400}
+.btn:disabled{background:#9aa6b6;cursor:not-allowed}
+.row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.row>div{flex:1;min-width:180px}
+.notice{border:1px solid var(--rule);background:#fff;padding:10px 13px;font-size:13px;margin-top:10px}
+.notice.warn{border-color:var(--shu);background:var(--shu-weak);color:#7d211d}
+.notice.ok{border-color:var(--ok);background:var(--ok-weak);color:#12503a}
+
+.tabs{display:flex;gap:0;margin-top:18px;border-bottom:2px solid var(--ink);flex-wrap:wrap}
+.tabs button{background:none;border:none;padding:9px 16px;font-size:14px;color:var(--ink-soft);border-bottom:2px solid transparent;margin-bottom:-2px}
+.tabs button.on{color:var(--ink);font-weight:600;border-bottom-color:var(--shu)}
+.filters{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.filters select{width:auto;min-width:150px}
+
+table{border-collapse:collapse;width:100%;background:#fff;font-size:13.5px;margin-top:10px}
+th,td{border:1px solid var(--rule);padding:6px 9px;text-align:left;vertical-align:top}
+th{background:#f2f5f9;font-weight:600;font-size:12.5px;white-space:nowrap;position:sticky;top:0}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+td.mono{font-family:var(--mono);word-break:break-all}
+tr.lo td{background:var(--shu-weak)}
+tr.none td{color:var(--ink-soft);background:#f6f7f9}
+td .bar{display:inline-block;height:9px;background:var(--ai);vertical-align:middle;margin-right:6px;min-width:1px}
+td .bar.low{background:var(--shu)}
+.scroll{overflow-x:auto}
+.clickable tbody tr{cursor:pointer}
+.clickable tbody tr:hover td{background:var(--ai-weak)}
+.badge{display:inline-block;font-size:11px;font-family:var(--mono);border:1px solid var(--rule);padding:0 6px;color:var(--ink-soft)}
+.badge.on{border-color:var(--ok);color:var(--ok);background:var(--ok-weak)}
+.badge.off{color:var(--ink-soft)}
+.mk-ok{color:var(--ok);font-weight:600}.mk-ng{color:var(--shu);font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
+.kpi{background:#fff;border:1px solid var(--rule);padding:12px 14px}
+.kpi .v{font-family:var(--mincho);font-size:26px;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi .k{font-size:11.5px;color:var(--ink-soft)}
+.hidden{display:none!important}
+.crumb{font-size:13px;margin-top:14px}
+.crumb a{color:var(--ai);cursor:pointer;text-decoration:underline}
+
+/* 投影モード */
+#proj{position:fixed;inset:0;background:#fff;z-index:100;overflow:auto;padding:34px 5vw}
+#proj h2{font-family:var(--mincho);font-size:34px;margin:0 0 6px}
+#proj .sub{font-size:17px}
+#proj table{font-size:19px}
+#proj th,#proj td{padding:9px 14px}
+#proj td .bar{height:16px}
+#proj .close{position:fixed;top:14px;right:16px;font-size:15px;padding:9px 16px}
+#proj .big-kpi{display:flex;gap:34px;margin:16px 0 6px;flex-wrap:wrap}
+#proj .big-kpi div{font-family:var(--mincho);font-size:26px}
+#proj .big-kpi span{font-size:44px}
+@media print{
+  .no-print,.tabs,.filters,header.sheet .btn{display:none!important}
+  body{background:none}
+  .card{border:none;padding:0}
+}
+
+/* QRコード */
+.qr-row{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--rule);padding:10px 12px;margin-top:8px}
+.qr-row .nm{flex:1}
+.qr-row .no{font-family:var(--mono);color:var(--ai);font-size:13px;margin-right:8px}
+#qrproj{position:fixed;inset:0;background:#fff;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+#qrproj .close{position:fixed;top:14px;right:16px;font-size:15px;padding:9px 16px}
+#qrproj .cls{font-family:var(--mincho);font-size:40px}
+#qrproj .qr{padding:20px;background:#fff;border:1px solid var(--rule)}
+#qrproj .url{font-family:var(--mono);font-size:15px;color:var(--ink-soft)}
+#qrmini{padding:12px;background:#fff;border:1px solid var(--rule);display:inline-block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="sheet">
+    <h1>小テスト管理</h1>
+    <div class="sub">中学1年　第4章　比例と反比例</div>
+    <div style="margin-left:auto" class="no-print">
+      <a id="logout" class="hidden" style="font-size:12px;color:var(--ink-soft);cursor:pointer;text-decoration:underline">ログアウト</a>
+    </div>
+  </header>
+
+  <!-- 設定未完了 -->
+  <div class="card hidden" id="scrConfig">
+    <h2>セットアップが必要です</h2>
+    <p class="sub">config.js に Supabase の URL と anon key を設定してください（README.md 参照）。</p>
+  </div>
+
+  <!-- PIN -->
+  <div class="card hidden" id="scrPin" style="max-width:420px;margin:40px auto">
+    <h2>暗証番号（PIN）を入力</h2>
+    <input type="password" id="inpPin" placeholder="教師用PIN" autocomplete="off">
+    <div class="notice warn hidden" id="errPin"></div>
+    <button class="btn" style="width:100%;margin-top:10px" id="btnPin">ログイン</button>
+  </div>
+
+  <!-- メイン -->
+  <div id="scrMain" class="hidden">
+    <div class="card no-print" id="qrcard">
+      <h2>小テストの配布管理</h2>
+      <p class="notice">「配布」を押すと、そのテストのQRコードから生徒が入れるようになります。使い終わったら「停止」してください。</p>
+      <div id="quizmgr"></div>
+    </div>
+
+    <div class="kpis" id="kpis"></div>
+    <div class="tabs no-print" id="tabs">
+      <button data-v="overview" class="on">テスト一覧</button>
+      <button data-v="students">生徒別</button>
+      <button data-v="questions">問題別</button>
+      <button data-v="missing">未提出</button>
+    </div>
+    <div class="filters no-print" id="filters"></div>
+    <div id="view"></div>
+    <div class="row no-print" style="margin-top:18px">
+      <button class="btn" id="xlsx">Excel に出力（.xlsx）</button>
+      <button class="btn ghost" id="proj-open">投影モード（生徒への還元）</button>
+      <button class="btn ghost" id="reload">結果を更新</button>
+      <button class="btn ghost" id="print">この画面を印刷</button>
+    </div>
+  </div>
+</div>
+
+<div id="proj" class="hidden"></div>
+<div id="qrproj" class="hidden"></div>
+
+<script>
+const quizName = id => CH.find(t=>t.id===id) ? `${CH.find(t=>t.id===id).no} ${CH.find(t=>t.id===id).name}` : id;
+const QUIZ_META = Object.fromEntries(CH.map(t=>[t.id,{no:t.no,name:t.name}]));
+
+/* ============================================================
+   状態
+   ============================================================ */
+let ROWS = [];               // 全解答行
+let F = {cls:"", quiz:""};   // フィルタ
+let VIEW = "overview";
+let DRILL = null;
+let QSTATE = {};             // {quiz_id: is_active}
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const SS_KEY = "quiz_teacher_pin";
+let pin = sessionStorage.getItem(SS_KEY) || "";
+
+function studentUrl(quizId){
+  const u = new URL("index.html", location.href);
+  u.search = "?quiz=" + quizId;
+  return u.toString();
+}
+function show(id, on){ document.getElementById(id).classList.toggle("hidden", !on); }
+
+/* ============================================================
+   ログイン
+   ============================================================ */
+async function tryLogin(p){
+  const r = await Quiz.rpc("quiz_verify_pin", {p_pin:p});
+  return r.ok === true;
+}
+document.getElementById("btnPin").onclick = async () => {
+  const p = document.getElementById("inpPin").value;
+  const err = document.getElementById("errPin");
+  err.classList.add("hidden");
+  try{
+    if(await tryLogin(p)){
+      pin = p; sessionStorage.setItem(SS_KEY, p);
+      enter();
+    } else {
+      err.textContent = "PINが違います"; err.classList.remove("hidden");
+    }
+  }catch(e){ err.textContent = "通信エラー："+e.message; err.classList.remove("hidden"); }
+};
+document.getElementById("inpPin").addEventListener("keydown", e=>{ if(e.key==="Enter") document.getElementById("btnPin").click(); });
+document.getElementById("logout").onclick = () => { sessionStorage.removeItem(SS_KEY); location.reload(); };
+
+function enter(){
+  show("scrPin", false);
+  show("scrMain", true);
+  show("logout", true);
+  loadQuizState();
+  loadData();
+}
+
+/* ============================================================
+   小テストの配布管理
+   ============================================================ */
+async function loadQuizState(){
+  const box = document.getElementById("quizmgr");
+  try{
+    const r = await Quiz.rpc("quiz_list_state", {p_pin:pin});
+    if(r.error){ box.textContent = "取得エラー"; return; }
+    QSTATE = {};
+    (r.states||[]).forEach(s=>{ QSTATE[s.quiz_id]=s.is_active; });
+  }catch(e){ box.textContent = "通信エラー："+e.message; return; }
+  renderQuizMgr();
+}
+function renderQuizMgr(){
+  const box = document.getElementById("quizmgr");
+  box.innerHTML = CH.map(t=>{
+    const on = !!QSTATE[t.id];
+    return `<div class="qr-row">
+      <div class="nm"><span class="no">${t.no}</span>${esc(t.name)} <span class="badge ${on?"on":"off"}">${on?"配布中":"停止中"}</span></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn mini ghost" data-qr="${t.id}">QR表示</button>
+        <button class="btn mini ${on?"":"ghost"}" data-toggle="${t.id}">${on?"停止":"配布"}</button>
+      </div>
+    </div>`;
+  }).join("");
+  box.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=async ()=>{
+    const id = b.dataset.toggle;
+    b.disabled = true;
+    await Quiz.rpc("quiz_set_active", {p_pin:pin, p_quiz_id:id, p_active: !QSTATE[id]});
+    await loadQuizState();
+  });
+  box.querySelectorAll("[data-qr]").forEach(b=>b.onclick=()=>showQR(b.dataset.qr));
+}
+function showQR(quizId){
+  const url = studentUrl(quizId);
+  const t = CH.find(x=>x.id===quizId);
+  const el = document.getElementById("qrproj");
+  el.innerHTML = `
+    <button class="btn close" id="qrClose">閉じる</button>
+    <div class="cls">${esc(t.no)}　${esc(t.name)}</div>
+    <div class="qr" id="qrimg-full"></div>
+    <div class="url">${esc(url)}</div>`;
+  el.classList.remove("hidden");
+  document.getElementById("qrClose").onclick = ()=>el.classList.add("hidden");
+  new QRCode(document.getElementById("qrimg-full"), {text:url, width:320, height:320, correctLevel:QRCode.CorrectLevel.M});
+}
+
+/* ============================================================
+   結果データの読み込み
+   ============================================================ */
+async function loadData(){
+  try{
+    const r = await Quiz.rpc("quiz_get_rows", {p_pin:pin});
+    if(r.error) return;
+    ROWS = (r.rows||[]).map(x=>({
+      timestamp:x.timestamp, student_id:x.student_id, quiz_id:x.quiz_id, q_no:x.q_no,
+      raw_answer:x.raw_answer||"", is_correct:!!x.is_correct, score:+x.score||0,
+      max_score:+x.max_score||0, elapsed_ms:+x.elapsed_ms||0,
+    }));
+    render();
+  }catch(e){}
+}
+document.getElementById("reload").onclick = () => { loadQuizState(); loadData(); };
+
+/* ============================================================
+   集計
+   ============================================================ */
+const uniq = a => [...new Set(a)].sort();
+const filtered = () => ROWS.filter(r =>
+  (!F.cls || classOf(r.student_id)===F.cls) && (!F.quiz || r.quiz_id===F.quiz));
+
+function byStudentQuiz(rows){
+  const m={};
+  for(const r of rows){
+    const k=`${r.student_id}|${r.quiz_id}`;
+    (m[k] ??= {sid:r.student_id, quiz:r.quiz_id, score:0, max:0, ms:0, ts:r.timestamp});
+    m[k].score+=r.score; m[k].max+=r.max_score; m[k].ms+=r.elapsed_ms;
+    if(String(r.timestamp)>String(m[k].ts)) m[k].ts=r.timestamp;
+  }
+  return Object.values(m);
+}
+function byQuestion(rows){
+  const m={};
+  for(const r of rows){
+    const k=`${r.quiz_id}|${r.q_no}`;
+    (m[k] ??= {quiz:r.quiz_id, q_no:r.q_no, n:0, score:0, max:0, okN:0, wrong:{}});
+    m[k].n++; m[k].score+=r.score; m[k].max+=r.max_score;
+    if(r.is_correct) m[k].okN++;
+    if(!r.is_correct){
+      const a = r.raw_answer==="" ? "（無解答）" : r.raw_answer;
+      m[k].wrong[a] = (m[k].wrong[a]||0)+1;
+    }
+  }
+  return Object.values(m);
+}
+const pct = (s,m)=> m? Math.round(s/m*100) : 0;
+const med = a => { if(!a.length) return 0; const s=[...a].sort((x,y)=>x-y); return s[Math.floor(s.length/2)]; };
+const fmtMs = ms => ms>=60000 ? `${Math.floor(ms/60000)}分${Math.round(ms%60000/1000)}秒` : `${Math.round(ms/1000)}秒`;
+const qSort = (a,b)=> String(a).localeCompare(String(b),"ja",{numeric:true});
+
+/* ============================================================
+   描画
+   ============================================================ */
+function render(){
+  const rows = filtered();
+  const sq = byStudentQuiz(rows);
+  const students = uniq(rows.map(r=>r.student_id));
+  const avg = sq.length ? Math.round(sq.reduce((t,x)=>t+pct(x.score,x.max),0)/sq.length) : 0;
+  $("#kpis").innerHTML = `
+    <div class="kpi"><div class="v">${students.length}</div><div class="k">提出した生徒</div></div>
+    <div class="kpi"><div class="v">${sq.length}</div><div class="k">提出（生徒×テスト）</div></div>
+    <div class="kpi"><div class="v">${avg}<span style="font-size:15px">%</span></div><div class="k">平均得点率</div></div>
+    <div class="kpi"><div class="v">${med(sq.map(x=>x.ms))?fmtMs(med(sq.map(x=>x.ms))):"—"}</div><div class="k">所要時間の中央値</div></div>`;
+  const clss = uniq(ROWS.map(r=>classOf(r.student_id)));
+  const quizzes = uniq(ROWS.map(r=>r.quiz_id));
+  $("#filters").innerHTML = `
+    <select id="f-cls"><option value="">全クラス</option>${clss.map(c=>`<option ${F.cls===c?"selected":""} value="${c}">${c.replace("-","年")}組</option>`).join("")}</select>
+    <select id="f-quiz"><option value="">全テスト</option>${quizzes.map(q=>`<option ${F.quiz===q?"selected":""} value="${q}">${esc(quizName(q))}</option>`).join("")}</select>`;
+  $("#f-cls").onchange = e=>{F.cls=e.target.value; DRILL=null; render();};
+  $("#f-quiz").onchange = e=>{F.quiz=e.target.value; DRILL=null; render();};
+
+  const v=$("#view");
+  if(VIEW==="overview") v.innerHTML=vOverview(rows);
+  if(VIEW==="students") v.innerHTML=DRILL?.sid ? vStudentDetail(DRILL.sid) : vStudents(rows);
+  if(VIEW==="questions") v.innerHTML=DRILL?.q_no!=null ? vQuestionDetail(DRILL) : vQuestions(rows);
+  if(VIEW==="missing") v.innerHTML=vMissing(rows);
+  bindDrill();
+}
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x===b));
+  VIEW=b.dataset.v; DRILL=null; render();
+});
+function bar(p){ return `<span class="bar ${p<60?"low":""}" style="width:${Math.max(2,p*0.9)}px"></span>${p}%`; }
+
+function vOverview(rows){
+  const sq = byStudentQuiz(rows);
+  const m={};
+  for(const x of sq){
+    (m[x.quiz] ??= {quiz:x.quiz, n:0, ps:[]});
+    m[x.quiz].n++; m[x.quiz].ps.push(pct(x.score,x.max));
+  }
+  const list = Object.values(m).sort((a,b)=>qSort(a.quiz,b.quiz));
+  if(!list.length) return `<div class="notice">この条件のデータがありません。</div>`;
+  return `<div class="scroll"><table>
+    <thead><tr><th>テスト</th><th class="num">提出数</th><th>平均得点率</th><th class="num">最低</th><th class="num">最高</th><th class="num">60%未満</th></tr></thead>
+    <tbody>${list.map(x=>{
+      const avg=Math.round(x.ps.reduce((t,p)=>t+p,0)/x.ps.length);
+      const lo=x.ps.filter(p=>p<60).length;
+      return `<tr><td>${esc(quizName(x.quiz))}</td><td class="num">${x.n}</td>
+        <td>${bar(avg)}</td><td class="num">${Math.min(...x.ps)}%</td><td class="num">${Math.max(...x.ps)}%</td>
+        <td class="num">${lo?`<span class="mk-ng">${lo}人</span>`:"0"}</td></tr>`;
+    }).join("")}</tbody></table></div>`;
+}
+
+function vStudents(rows){
+  const sq = byStudentQuiz(rows);
+  const quizzes = uniq(rows.map(r=>r.quiz_id));
+  const m={};
+  for(const x of sq){ (m[x.sid] ??= {sid:x.sid, per:{}}); m[x.sid].per[x.quiz]=pct(x.score,x.max); }
+  const list = Object.values(m).sort((a,b)=>qSort(a.sid,b.sid));
+  if(!list.length) return `<div class="notice">この条件のデータがありません。</div>`;
+  return `<div class="notice no-print">行をクリックすると、その生徒の解答が見られます。</div>
+  <div class="scroll"><table class="clickable" id="tbl-students">
+    <thead><tr><th>番号</th><th>生徒</th>${quizzes.map(q=>`<th class="num">${esc(QUIZ_META[q]?.no||q)}</th>`).join("")}<th class="num">平均</th></tr></thead>
+    <tbody>${list.map(s=>{
+      const ps=Object.values(s.per);
+      const avg=ps.length?Math.round(ps.reduce((t,p)=>t+p,0)/ps.length):0;
+      return `<tr data-sid="${esc(s.sid)}" class="${avg<60?"lo":""}">
+        <td class="mono">${esc(s.sid)}</td><td>${esc(sidLabel(s.sid))}</td>
+        ${quizzes.map(q=>`<td class="num">${s.per[q]!=null? s.per[q]+"%" : "<span class='badge'>未</span>"}</td>`).join("")}
+        <td class="num"><b>${avg}%</b></td></tr>`;
+    }).join("")}</tbody></table></div>`;
+}
+function vStudentDetail(sid){
+  const rows = filtered().filter(r=>r.student_id===sid).sort((a,b)=>qSort(a.quiz_id+a.q_no,b.quiz_id+b.q_no));
+  return `<div class="crumb"><a data-back="1">← 生徒別にもどる</a>　<b>${esc(sidLabel(sid))}</b>（${esc(sid)}）</div>
+  <div class="scroll"><table>
+    <thead><tr><th>テスト</th><th>問題</th><th>解答</th><th class="num">得点</th><th class="num">時間</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr class="${r.is_correct?"":"lo"}">
+      <td>${esc(QUIZ_META[r.quiz_id]?.no||r.quiz_id)}</td><td class="mono">${esc(r.q_no)}</td>
+      <td class="mono">${r.is_correct?'<span class="mk-ok">○</span>':'<span class="mk-ng">×</span>'} ${esc(r.raw_answer||"（無解答）")}</td>
+      <td class="num">${r.score}/${r.max_score}</td><td class="num">${r.elapsed_ms?fmtMs(r.elapsed_ms):"—"}</td></tr>`).join("")}
+    </tbody></table></div>`;
+}
+
+function vQuestions(rows){
+  const list = byQuestion(rows).sort((a,b)=>qSort(a.quiz+"|"+a.q_no, b.quiz+"|"+b.q_no));
+  if(!list.length) return `<div class="notice">この条件のデータがありません。</div>`;
+  return `<div class="notice no-print">正答率の低い問題ほど上に赤く出ます。行をクリックすると誤答の内訳が見られます。</div>
+  <div class="scroll"><table class="clickable" id="tbl-questions">
+    <thead><tr><th>テスト</th><th>問題</th><th class="num">解答数</th><th>正答率</th><th>多い誤答（上位3）</th></tr></thead>
+    <tbody>${list.map(x=>{
+      const isBonus = x.max===0;
+      const p = isBonus ? Math.round(x.okN/Math.max(1,x.n)*100) : pct(x.score,x.max);
+      const cell = isBonus ? `<span class="badge">★ボーナス 正解 ${x.okN}/${x.n}人</span>` : bar(p);
+      const top=Object.entries(x.wrong).sort((a,b)=>b[1]-a[1]).slice(0,3)
+        .map(([a,n])=>`<span class="badge">${esc(a.length>18?a.slice(0,18)+"…":a)} ×${n}</span>`).join(" ");
+      return `<tr data-quiz="${esc(x.quiz)}" data-qno="${esc(x.q_no)}" class="${(!isBonus&&p<60)?"lo":""}">
+        <td>${esc(QUIZ_META[x.quiz]?.no||x.quiz)}</td><td class="mono">${esc(x.q_no)}</td>
+        <td class="num">${x.n}</td><td>${cell}</td><td>${top||"—"}</td></tr>`;
+    }).join("")}</tbody></table></div>`;
+}
+function vQuestionDetail(d){
+  const rows = filtered().filter(r=>r.quiz_id===d.quiz && r.q_no===d.q_no);
+  const wrong = rows.filter(r=>!r.is_correct);
+  const cnt={};
+  for(const r of wrong){ const a=r.raw_answer||"（無解答）"; (cnt[a] ??= {n:0, sids:[]}); cnt[a].n++; cnt[a].sids.push(r.student_id); }
+  const list = Object.entries(cnt).sort((a,b)=>b[1].n-a[1].n);
+  const totMax = rows.reduce((t,r)=>t+r.max_score,0);
+  const okN = rows.filter(r=>r.is_correct).length;
+  const headline = totMax===0
+    ? `★ボーナス　正解 ${okN}/${rows.length}人`
+    : `正答率 ${pct(rows.reduce((t,r)=>t+r.score,0), totMax)}%（${rows.length}人）`;
+  return `<div class="crumb"><a data-back="1">← 問題別にもどる</a>　<b>${esc(quizName(d.quiz))}　${esc(d.q_no)}</b>　${headline}</div>
+  <div class="scroll"><table>
+    <thead><tr><th>誤答</th><th class="num">人数</th><th>該当する生徒</th></tr></thead>
+    <tbody>${list.length? list.map(([a,v])=>`<tr>
+      <td class="mono">${esc(a)}</td><td class="num">${v.n}</td>
+      <td class="mono" style="font-size:12px">${v.sids.sort(qSort).map(esc).join(", ")}</td></tr>`).join("")
+      : `<tr><td colspan="3">誤答なし。全員正解です。</td></tr>`}
+    </tbody></table></div>`;
+}
+
+function vMissing(rows){
+  const quizzes = F.quiz ? [F.quiz] : uniq(ROWS.map(r=>r.quiz_id));
+  const clss = F.cls ? [F.cls] : uniq(ROWS.map(r=>classOf(r.student_id)));
+  const submitted = new Set(rows.map(r=>`${r.student_id}|${r.quiz_id}`));
+  const roster = {};
+  for(const r of ROWS){ const c=classOf(r.student_id); (roster[c] ??= new Set()).add(r.student_id); }
+  let html = `<div class="notice no-print">名簿はこのツールに入っていないため、「一度でも提出したことのある番号」を名簿の代わりにしています。全テスト未提出の生徒はここに出ません。</div>`;
+  for(const q of quizzes){
+    const missing=[];
+    for(const c of clss) for(const sid of roster[c]||[]) if(!submitted.has(`${sid}|${q}`)) missing.push(sid);
+    missing.sort(qSort);
+    html += `<div class="card"><h2>${esc(quizName(q))}</h2>${
+      missing.length ? missing.map(s=>`<span class="badge" style="font-size:13px;margin:2px">${esc(s)}</span>`).join(" ")
+      : `<span class="mk-ok">全員提出しています。</span>`}</div>`;
+  }
+  return html;
+}
+
+function bindDrill(){
+  document.querySelectorAll("#tbl-students tbody tr").forEach(tr=>tr.onclick=()=>{ DRILL={sid:tr.dataset.sid}; render(); });
+  document.querySelectorAll("#tbl-questions tbody tr").forEach(tr=>tr.onclick=()=>{ DRILL={quiz:tr.dataset.quiz, q_no:tr.dataset.qno}; render(); });
+  document.querySelectorAll("[data-back]").forEach(a=>a.onclick=()=>{ DRILL=null; render(); });
+}
+
+/* ============================================================
+   Excel 出力
+   ============================================================ */
+$("#xlsx").onclick = ()=>{
+  const rows = filtered();
+  const wb = XLSX.utils.book_new();
+
+  const quizzes = uniq(rows.map(r=>r.quiz_id));
+  const sq = byStudentQuiz(rows);
+  const m={};
+  for(const x of sq){ (m[x.sid] ??= {}); m[x.sid][x.quiz]=x; }
+  const sheet1 = [["番号","クラス",...quizzes.map(q=>quizName(q)+" 得点"),...quizzes.map(q=>quizName(q)+" %"),"平均%"]];
+  for(const sid of Object.keys(m).sort(qSort)){
+    const ps=[];
+    const row=[sid, classOf(sid).replace("-","年")+"組"];
+    for(const q of quizzes){ const x=m[sid][q]; row.push(x?`${x.score}/${x.max}`:""); }
+    for(const q of quizzes){ const x=m[sid][q]; const p=x?pct(x.score,x.max):null; row.push(p??""); if(p!=null)ps.push(p); }
+    row.push(ps.length?Math.round(ps.reduce((t,p)=>t+p,0)/ps.length):"");
+    sheet1.push(row);
+  }
+  const ws1=XLSX.utils.aoa_to_sheet(sheet1); ws1["!cols"]=[{wch:8},{wch:8},...Array(quizzes.length*2+1).fill({wch:14})];
+  XLSX.utils.book_append_sheet(wb, ws1, "成績一覧");
+
+  const bq = byQuestion(rows).sort((a,b)=>qSort(a.quiz+a.q_no,b.quiz+b.q_no));
+  const sheet2=[["テスト","問題","解答数","正答率%","多い誤答1","","多い誤答2","","多い誤答3",""]];
+  for(const x of bq){
+    const top=Object.entries(x.wrong).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    const r=[quizName(x.quiz), x.q_no, x.n, pct(x.score,x.max)];
+    for(let i=0;i<3;i++){ r.push(top[i]?.[0]??"", top[i]?.[1]??""); }
+    sheet2.push(r);
+  }
+  const ws2=XLSX.utils.aoa_to_sheet(sheet2); ws2["!cols"]=[{wch:22},{wch:9},{wch:8},{wch:9},{wch:18},{wch:5},{wch:18},{wch:5},{wch:18},{wch:5}];
+  XLSX.utils.book_append_sheet(wb, ws2, "問題別");
+
+  const sheet3=[["timestamp","student_id","quiz_id","q_no","raw_answer","is_correct","score","max_score","elapsed_ms"]];
+  for(const r of rows) sheet3.push([r.timestamp,r.student_id,r.quiz_id,r.q_no,r.raw_answer,r.is_correct,r.score,r.max_score,r.elapsed_ms]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet3), "生データ");
+
+  const tag = [F.cls&&F.cls.replace("-","年")+"組", F.quiz&&(QUIZ_META[F.quiz]?.no||F.quiz)].filter(Boolean).join("_") || "全体";
+  XLSX.writeFile(wb, `小テスト_${tag}_${new Date().toISOString().slice(0,10)}.xlsx`);
+};
+
+/* ============================================================
+   投影モード（生徒への還元：個人名・番号は出さない）
+   ============================================================ */
+$("#proj-open").onclick = ()=>{
+  const rows = filtered();
+  if(!rows.length){ alert("表示するデータがありません。"); return; }
+  const sq = byStudentQuiz(rows);
+  const ps = sq.map(x=>pct(x.score,x.max));
+  const avg = Math.round(ps.reduce((t,p)=>t+p,0)/ps.length);
+  const bq = byQuestion(rows).sort((a,b)=>pct(a.score,a.max)-pct(b.score,b.max));
+  const title = [F.cls&&F.cls.replace("-","年")+"組", F.quiz?quizName(F.quiz):"4章 全テスト"].filter(Boolean).join("　");
+
+  const el=$("#proj");
+  el.innerHTML = `
+    <button class="btn close" onclick="document.getElementById('proj').classList.add('hidden')">閉じる</button>
+    <h2>${esc(title)}　ふり返り</h2>
+    <div class="sub">個人の得点は各自の端末の結果画面で確認してください。</div>
+    <div class="big-kpi">
+      <div>平均　<span>${avg}%</span></div>
+      <div>提出　<span>${sq.length}</span>人</div>
+    </div>
+    <h2 style="font-size:24px;margin-top:22px">正答率の低かった問題</h2>
+    <table><thead><tr><th>テスト</th><th>問題</th><th>正答率</th><th>多かったまちがい</th></tr></thead>
+    <tbody>${bq.slice(0,7).map(x=>{
+      const p=pct(x.score,x.max);
+      const top=Object.entries(x.wrong).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([a])=>esc(a.length>22?a.slice(0,22)+"…":a)).join("　／　");
+      return `<tr class="${p<60?"lo":""}"><td>${esc(QUIZ_META[x.quiz]?.no||x.quiz)}</td><td>${esc(x.q_no)}</td>
+        <td>${bar(p)}</td><td style="font-family:var(--mono)">${top||"—"}</td></tr>`;
+    }).join("")}</tbody></table>
+    <div class="notice" style="font-size:16px;margin-top:20px">まちがいが多かった答えは「考え方のクセ」が見える大事な材料です。自分の解答と見比べてみましょう。</div>`;
+  el.classList.remove("hidden");
+};
+$("#print").onclick=()=>window.print();
+
+/* ============================================================
+   起動
+   ============================================================ */
+(async function init(){
+  if(!Quiz.configReady()){ show("scrConfig", true); return; }
+  if(pin){
+    try{ if(await tryLogin(pin)) return enter(); }catch(e){}
+    sessionStorage.removeItem(SS_KEY); pin = "";
+  }
+  show("scrPin", true);
+})();
+</script>
+</body>
+</html>
