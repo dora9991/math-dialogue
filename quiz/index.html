@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>数学小テスト｜1年 4章 比例と反比例</title>
+<title>数学小テスト・振り返り｜1年 4章 比例と反比例</title>
 <script src="config.js"></script>
 <script src="common.js"></script>
 <script src="quizdata.js"></script>
@@ -45,11 +45,13 @@ h1{font-family:var(--mincho);font-size:20px;font-weight:600;margin:0;letter-spac
 .card{background:#fff;border:1px solid var(--rule);padding:18px 20px;margin-top:14px}
 .card h2{font-family:var(--mincho);font-size:16px;margin:0 0 12px;font-weight:600}
 label.f{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px}
-select,input[type=text],input[type=password]{
+select,input[type=text],input[type=password],input[type=number],textarea{
   font:inherit;font-size:16px;padding:11px 12px;width:100%;
   border:1px solid var(--rule);background:#fff;color:var(--ink);border-radius:2px;
 }
 input[type=text],input[type=password]{font-family:var(--mono);}
+input[type=number]{font-family:var(--mono);max-width:140px}
+textarea{font-family:inherit;line-height:1.6;resize:vertical;min-height:96px}
 select:focus,input:focus,button:focus-visible{outline:2px solid var(--ai);outline-offset:1px}
 button{font:inherit;cursor:pointer;border-radius:2px;border:1px solid transparent}
 .btn{background:var(--ai);color:#fff;padding:13px 20px;font-weight:600;width:100%;font-size:16px}
@@ -396,8 +398,10 @@ function renderAccountCard(id){
     <div class="hint">この端末に記憶しています。</div>`;
   document.getElementById("logout").onclick=()=>{
     store.del(ACCOUNT_KEY); clearSavedPassword(); S.sid=null;
+    hideReflectCard();
     renderLoginForm("");
   };
+  renderReflectCard(id);
 }
 
 function renderLoginForm(prefillId, msg){
@@ -532,11 +536,12 @@ async function renderHome(){
   clearInterval(waitTimer);
   app.innerHTML = `
     <header class="sheet">
-      <h1>数学　小テスト</h1>
+      <h1>数学　小テスト・振り返り</h1>
       <div class="sub">中学1年　第4章　比例と反比例</div>
     </header>
     <div class="card" id="me"></div>
     <div class="card" id="teststate"><p class="hint">読み込み中…</p></div>
+    <div class="card hidden" id="reflect"></div>
   `;
 
   const savedId = loadAccountId();
@@ -550,6 +555,132 @@ async function renderHome(){
     renderLoginForm("");
   }
   await refreshTests();
+}
+
+/* ============================================================
+   振り返り（授業の理解度・意欲・今日の点数・記入欄）
+   ログインしていないと選べない＝ホーム画面のカードはログイン後にしか出さない。
+   ============================================================ */
+const REFLECT_UNDERSTAND = [
+  {v:4, t:"４　ばっちり！"},
+  {v:3, t:"３　まあまあ理解した"},
+  {v:2, t:"２　あまり理解できなかった"},
+  {v:1, t:"１　全くわからない（ヘルプ！）"},
+];
+const REFLECT_EFFORT = [
+  {v:4, t:"４　頑張った！"},
+  {v:3, t:"３　まあまあ頑張った"},
+  {v:2, t:"２　あまり頑張れなかった"},
+  {v:1, t:"１　頑張れなかった"},
+];
+let REFLECT_TODAY = null; // quiz_reflection_get の結果（今日の分があれば）
+
+function hideReflectCard(){
+  const box = document.getElementById("reflect");
+  if(box){ box.classList.add("hidden"); box.innerHTML=""; }
+  REFLECT_TODAY = null;
+}
+
+/** ログイン後のホーム画面に「振り返り」カードを出す。今日の分があれば編集扱いにする。 */
+async function renderReflectCard(id){
+  const box = document.getElementById("reflect");
+  if(!box) return;
+  box.classList.remove("hidden");
+  box.innerHTML = `<p class="hint">読み込み中…</p>`;
+  let r;
+  try{ r = await Quiz.rpc("quiz_reflection_get", {p_account_id:id}); }
+  catch(e){ r = null; }
+  REFLECT_TODAY = (r && r.found) ? r : null;
+  box.innerHTML = `
+    <h2>振り返り</h2>
+    ${REFLECT_TODAY ? `<div class="hint">今日はすでに記入ずみです。内容はあとから変更できます。</div>` : ""}
+    <button class="btn" id="rf-open">${REFLECT_TODAY ? "✏️ 今日の振り返りを編集する" : "📝 今日の振り返りを書く"}</button>`;
+  document.getElementById("rf-open").onclick = renderReflectionForm;
+}
+
+function levelChoicesHTML(id, levels, selected){
+  return `<div class="choices" id="${id}">${levels.map(l=>
+    `<button type="button" data-v="${l.v}" aria-pressed="${String(l.v===selected)}">${esc(l.t)}</button>`
+  ).join("")}</div>`;
+}
+function wireLevelChoices(id, onPick){
+  const box = document.getElementById(id);
+  box.querySelectorAll("button").forEach(b=>{
+    b.onclick=()=>{
+      box.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", String(x===b)));
+      onPick(+b.dataset.v);
+    };
+  });
+}
+
+function renderReflectionForm(){
+  KB.hide();
+  clearInterval(waitTimer);
+  const ex = REFLECT_TODAY;
+  const picked = { understanding: ex?.understanding ?? null, effort: ex?.effort ?? null };
+  app.innerHTML = `
+    <header class="sheet">
+      <h1>数学　小テスト・振り返り</h1>
+      <div class="sub">${esc(accountLabel(S.sid))}　・　今日の振り返り</div>
+    </header>
+    <div class="card">
+      <h2>授業の理解度</h2>
+      ${levelChoicesHTML("lv-under", REFLECT_UNDERSTAND, picked.understanding)}
+    </div>
+    <div class="card">
+      <h2>意欲・態度</h2>
+      ${levelChoicesHTML("lv-effort", REFLECT_EFFORT, picked.effort)}
+    </div>
+    <div class="card">
+      <h2>今日の小テストの点数</h2>
+      <div class="subq">
+        <input type="number" id="rf-score" inputmode="numeric" min="0" max="100" style="width:100px"
+          value="${ex && ex.score!=null ? esc(ex.score) : ""}" placeholder="例：8">
+        <span>点</span>
+      </div>
+      <div class="hint">受けていない・忘れたときは空欄のままでOKです。</div>
+    </div>
+    <div class="card">
+      <h2>振り返り記入欄</h2>
+      <textarea id="rf-comment" placeholder="今日の授業で気づいたこと、次にやってみたいことなど">${esc(ex?.comment||"")}</textarea>
+    </div>
+    <div class="foot">
+      <button class="btn ghost" id="rf-back">ホームへもどる</button>
+      <button class="btn" id="rf-save">保存する</button>
+    </div>
+  `;
+  wireLevelChoices("lv-under", v=>picked.understanding=v);
+  wireLevelChoices("lv-effort", v=>picked.effort=v);
+  document.getElementById("rf-back").onclick = ()=>renderHome();
+  document.getElementById("rf-save").onclick = async ()=>{
+    if(!picked.understanding || !picked.effort){ alert("授業の理解度と、意欲・態度をそれぞれ選んでください。"); return; }
+    const scoreRaw = document.getElementById("rf-score").value.trim();
+    const score = scoreRaw==="" ? null : Math.max(0, Math.min(100, Math.round(+scoreRaw)));
+    const comment = document.getElementById("rf-comment").value;
+    const btn = document.getElementById("rf-save");
+    btn.disabled=true; btn.textContent="保存中…";
+    let r;
+    try{
+      r = await Quiz.rpc("quiz_reflection_submit", {
+        p_account_id: S.sid, p_understanding: picked.understanding, p_effort: picked.effort,
+        p_score: score, p_comment: comment,
+      });
+    }catch(e){ btn.disabled=false; btn.textContent="保存する"; alert("通信エラーです。もう一度お試しください。"); return; }
+    if(r && r.ok){ renderReflectionDone(); }
+    else { btn.disabled=false; btn.textContent="保存する"; alert("保存できませんでした。もう一度お試しください。"); }
+  };
+}
+
+function renderReflectionDone(){
+  app.innerHTML = `
+    <header class="sheet">
+      <h1>数学　小テスト・振り返り</h1>
+      <div class="sub">${esc(accountLabel(S.sid))}</div>
+    </header>
+    <div class="notice ok" style="margin-top:14px;font-size:15px;text-align:center;padding:18px">振り返りを保存しました。</div>
+    <div class="foot"><button class="btn" id="rf-done-home" style="width:100%">ホームへもどる</button></div>
+  `;
+  document.getElementById("rf-done-home").onclick = renderHome;
 }
 
 /** サーバーで「配布中」の小テストを取得し、テスト選択カードを描く。 */
@@ -617,7 +748,7 @@ function renderAlreadyDone(t, d){
   clearInterval(waitTimer);
   app.innerHTML = `
     <header class="sheet">
-      <h1>数学　小テスト</h1>
+      <h1>数学　小テスト・振り返り</h1>
       <div class="sub">${esc(t.no)}　${esc(t.name)}</div>
     </header>
     <div class="score">

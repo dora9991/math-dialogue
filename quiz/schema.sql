@@ -186,6 +186,63 @@ exception when unique_violation then
   return jsonb_build_object('error', 'already_today');
 end $$;
 
+-- ---------- 振り返り（ログイン済みアカウントのみ・同じ日は上書き） ----------
+
+create table if not exists quiz_reflections (
+  id            bigint generated always as identity primary key,
+  account_id    text not null,
+  jst_date      date not null,
+  understanding int  not null,             -- 授業の理解度 1〜4（4が一番よい）
+  effort        int  not null,             -- 意欲・態度 1〜4（4が一番よい）
+  score         int,                       -- 今日の小テストの点数（任意）
+  comment       text,                      -- 振り返り記入欄（任意）
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  unique (account_id, jst_date)
+);
+alter table quiz_reflections enable row level security;
+-- ポリシーを一切作らない = anonキーからの直接アクセスは全拒否（RPC経由のみ）
+
+-- 今日の分の振り返りを取得（無ければ found:false）。フォームの再編集に使う
+create or replace function quiz_reflection_get(p_account_id text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_today date := (now() at time zone 'Asia/Tokyo')::date;
+  v_row record;
+begin
+  select understanding, effort, score, comment into v_row
+    from quiz_reflections where account_id = p_account_id and jst_date = v_today;
+  if not found then
+    return jsonb_build_object('found', false);
+  end if;
+  return jsonb_build_object('found', true, 'understanding', v_row.understanding,
+    'effort', v_row.effort, 'score', v_row.score, 'comment', v_row.comment);
+end $$;
+
+-- 振り返りの提出（同じアカウント×同じ日は上書き＝書き直しOK）
+create or replace function quiz_reflection_submit(
+  p_account_id text, p_understanding int, p_effort int, p_score int, p_comment text
+) returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_today date := (now() at time zone 'Asia/Tokyo')::date;
+begin
+  if coalesce(p_account_id, '') !~ '^[A-Z]-[0-9]{5,7}$' then
+    return jsonb_build_object('error', 'bad_account');
+  end if;
+  if p_understanding is null or p_understanding < 1 or p_understanding > 4
+     or p_effort is null or p_effort < 1 or p_effort > 4 then
+    return jsonb_build_object('error', 'bad_score');
+  end if;
+
+  insert into quiz_reflections (account_id, jst_date, understanding, effort, score, comment, updated_at)
+    values (p_account_id, v_today, p_understanding, p_effort, p_score, p_comment, now())
+  on conflict (account_id, jst_date) do update set
+    understanding = excluded.understanding, effort = excluded.effort,
+    score = excluded.score, comment = excluded.comment, updated_at = now();
+
+  return jsonb_build_object('ok', true);
+end $$;
+
 -- ---------- 教師用 RPC（すべてPIN必須） ----------
 
 create or replace function quiz_verify_pin(p_pin text)
