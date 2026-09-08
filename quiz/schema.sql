@@ -71,6 +71,56 @@ language sql security definer set search_path = public as $$
   );
 $$;
 
+-- ---------- アカウント（学校名を出さずにログインするための合言葉方式） ----------
+-- account_id の形式: "E-101236" のように「学校コード(例:E-10、先生が生徒に口頭で伝える合言葉)」
+--   + 「出席番号4桁(例:1236＝1年2組36番)」を連結したもの。実際の学校名はどこにも保存しない。
+-- パスワードは pgcrypto (bf=bcrypt) でハッシュ化して保存し、平文は保存しない。
+
+create extension if not exists pgcrypto;
+
+create table if not exists quiz_accounts (
+  account_id    text primary key,
+  password_hash text not null,
+  created_at    timestamptz not null default now()
+);
+alter table quiz_accounts enable row level security;
+-- ポリシーを一切作らない = anonキーからの直接アクセスは全拒否（RPC経由のみ）
+
+-- 新規登録: IDと平文パスワードを受け取り、ハッシュ化して保存する
+create or replace function quiz_register(p_account_id text, p_password text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+  if coalesce(p_account_id, '') !~ '^[A-Z]-[0-9]{5,7}$' then
+    return jsonb_build_object('error', 'bad_id');
+  end if;
+  if length(coalesce(p_password, '')) < 4 then
+    return jsonb_build_object('error', 'weak_password');
+  end if;
+  begin
+    insert into quiz_accounts (account_id, password_hash)
+      values (p_account_id, crypt(p_password, gen_salt('bf')));
+  exception when unique_violation then
+    return jsonb_build_object('error', 'id_taken');
+  end;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- ログイン確認: IDとパスワードの組が正しいかだけを返す（セッション等は持たない軽量方式）
+create or replace function quiz_login(p_account_id text, p_password text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_hash text;
+begin
+  select password_hash into v_hash from quiz_accounts where account_id = p_account_id;
+  if not found then
+    return jsonb_build_object('error', 'no_such_id');
+  end if;
+  if crypt(coalesce(p_password, ''), v_hash) <> v_hash then
+    return jsonb_build_object('error', 'bad_password');
+  end if;
+  return jsonb_build_object('ok', true);
+end $$;
+
 -- ---------- 生徒用 RPC（PIN不要） ----------
 
 -- 配布中の quiz_id 一覧（生徒のホーム画面・QR待ち画面のポーリングで使う）
@@ -103,7 +153,7 @@ declare
   v_attempt_id uuid;
   v_row jsonb;
 begin
-  if coalesce(p_student, '') !~ '^[0-9]{3,6}$' then
+  if coalesce(p_student, '') !~ '^[A-Z]-[0-9]{5,7}$' then
     return jsonb_build_object('error', 'bad_student');
   end if;
 

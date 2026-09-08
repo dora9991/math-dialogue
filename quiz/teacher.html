@@ -381,14 +381,14 @@ function vStudents(rows){
       const ps=Object.values(s.per);
       const avg=ps.length?Math.round(ps.reduce((t,p)=>t+p,0)/ps.length):0;
       return `<tr data-sid="${esc(s.sid)}" class="${avg<60?"lo":""}">
-        <td class="mono">${esc(s.sid)}</td><td>${esc(sidLabel(s.sid))}</td>
+        <td class="mono">${esc(s.sid)}</td><td>${esc(accountLabel(s.sid))}</td>
         ${quizzes.map(q=>`<td class="num">${s.per[q]!=null? s.per[q]+"%" : "<span class='badge'>未</span>"}</td>`).join("")}
         <td class="num"><b>${avg}%</b></td></tr>`;
     }).join("")}</tbody></table></div>`;
 }
 function vStudentDetail(sid){
   const rows = filtered().filter(r=>r.student_id===sid).sort((a,b)=>qSort(a.quiz_id+a.q_no,b.quiz_id+b.q_no));
-  return `<div class="crumb"><a data-back="1">← 生徒別にもどる</a>　<b>${esc(sidLabel(sid))}</b>（${esc(sid)}）</div>
+  return `<div class="crumb"><a data-back="1">← 生徒別にもどる</a>　<b>${esc(accountLabel(sid))}</b>（${esc(sid)}）</div>
   <div class="scroll"><table>
     <thead><tr><th>テスト</th><th>問題</th><th>解答</th><th class="num">得点</th><th class="num">時間</th></tr></thead>
     <tbody>${rows.map(r=>`<tr class="${r.is_correct?"":"lo"}">

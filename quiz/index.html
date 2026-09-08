@@ -45,11 +45,11 @@ h1{font-family:var(--mincho);font-size:20px;font-weight:600;margin:0;letter-spac
 .card{background:#fff;border:1px solid var(--rule);padding:18px 20px;margin-top:14px}
 .card h2{font-family:var(--mincho);font-size:16px;margin:0 0 12px;font-weight:600}
 label.f{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px}
-select,input[type=text]{
+select,input[type=text],input[type=password]{
   font:inherit;font-size:16px;padding:11px 12px;width:100%;
   border:1px solid var(--rule);background:#fff;color:var(--ink);border-radius:2px;
 }
-input[type=text]{font-family:var(--mono);}
+input[type=text],input[type=password]{font-family:var(--mono);}
 select:focus,input:focus,button:focus-visible{outline:2px solid var(--ai);outline-offset:1px}
 button{font:inherit;cursor:pointer;border-radius:2px;border:1px solid transparent}
 .btn{background:var(--ai);color:#fff;padding:13px 20px;font-weight:600;width:100%;font-size:16px}
@@ -201,8 +201,11 @@ const CONFIG = {
   GRADES: [1,2,3],                    // 学年
   CLASSES: [1,2,3,4,5,6],             // 組
   CLASS_SIZE: 40,                     // 出席番号の最大
+  GROUP_LETTERS: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), // 学校コード（アルファベット側）
+  GROUP_NUMBERS: Array.from({length:100},(_,i)=>i+1),     // 学校コード（数字側・1〜100）
 };
-const STUDENT_KEY = "quiz:student";   // この端末に記憶する出席番号
+const ACCOUNT_KEY    = "quiz:account_id"; // この端末に記憶するID（例：E-101236）
+const ACCOUNT_PW_KEY = "quiz:account_pw"; // 「パスワードを保存する」を選んだ場合のみ、この端末に平文で記憶する
 const qs = new URLSearchParams(location.search);
 const CLASS_ID = qs.get("c") || "";          // 例: ?c=1-3 （出席番号選択の学年・組を固定）
 const QUIZ_ID  = qs.get("quiz") || "";       // QRコードで指定された小テストID
@@ -341,12 +344,14 @@ const KB = (()=>{
   };
 })();
 
-function loadStudent(){
-  try{ const v=JSON.parse(store.get(STUDENT_KEY)||"null");
-    return (v && /^\d{4}$/.test(v.sid)) ? v.sid : null;
-  }catch(e){ return null; }
-}
-const saveStudent = sid => store.set(STUDENT_KEY, JSON.stringify({sid}));
+/* ============================================================
+   アカウント（学校コード＋出席番号＋パスワード）
+   ============================================================ */
+const loadAccountId     = () => store.get(ACCOUNT_KEY) || null;
+const saveAccountId     = id => store.set(ACCOUNT_KEY, id);
+const loadSavedPassword = () => store.get(ACCOUNT_PW_KEY);
+const saveSavedPassword = pw => store.set(ACCOUNT_PW_KEY, pw);
+const clearSavedPassword = () => store.del(ACCOUNT_PW_KEY);
 
 /* ============================================================
    完了記録（この端末のキャッシュ。真の判定はサーバーの check_quiz で行う）
@@ -375,13 +380,156 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;","
 const save = () => { if(S.test&&S.sid) store.set(KEY(S.test.id), JSON.stringify({ans:S.ans, startedAt:S.startedAt, qStart:S.qStart, date:todayStr()})); };
 
 /* ============================================================
-   ホーム画面
+   ホーム画面 ／ ログイン・新規登録
    ============================================================ */
+const meBox = () => document.getElementById("me");
+
+function renderAccountCard(id){
+  S.sid = id;
+  meBox().innerHTML = `
+    <h2>ログイン中</h2>
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <div style="font-family:var(--mono);font-size:18px;letter-spacing:.03em">${esc(id)}</div>
+      <div style="font-size:14px;color:var(--ink-soft)">${esc(accountLabel(id))}</div>
+      <button class="btn mini ghost" id="logout" style="margin-left:auto">ログアウト</button>
+    </div>
+    <div class="hint">この端末に記憶しています。</div>`;
+  document.getElementById("logout").onclick=()=>{
+    store.del(ACCOUNT_KEY); clearSavedPassword(); S.sid=null;
+    renderLoginForm("");
+  };
+}
+
+function renderLoginForm(prefillId, msg){
+  meBox().innerHTML = `
+    <h2>ログイン</h2>
+    ${msg?`<div class="notice warn" style="margin-bottom:10px">${esc(msg)}</div>`:""}
+    <label class="f">ID</label>
+    <input type="text" id="li-id" autocomplete="off" spellcheck="false" value="${esc(prefillId||"")}" placeholder="例：E-101236">
+    <label class="f" style="margin-top:10px">パスワード</label>
+    <input type="password" id="li-pw" autocomplete="off">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);margin-top:10px">
+      <input type="checkbox" id="li-remember"> この端末にパスワードを保存する
+    </label>
+    <button class="btn" id="li-go" style="margin-top:14px">ログイン</button>
+    <div class="hint" style="margin-top:12px">
+      はじめての方は　<button class="btn mini ghost" type="button" id="li-toreg">新規登録はこちら</button>
+    </div>`;
+  document.getElementById("li-toreg").onclick = ()=>renderRegisterForm();
+  const go = document.getElementById("li-go");
+  go.onclick = async ()=>{
+    const id = document.getElementById("li-id").value.trim().toUpperCase();
+    const pw = document.getElementById("li-pw").value;
+    const remember = document.getElementById("li-remember").checked;
+    if(!parseAccountId(id)){ alert("IDの形式が正しくありません（例：E-101236）。"); return; }
+    if(!pw){ alert("パスワードを入力してください。"); return; }
+    await tryLogin(id, pw, remember);
+  };
+}
+
+/** ID・パスワードでログインを試みる。成功時は画面をログイン済みに切り替え、失敗時はログイン画面を出し直す。 */
+async function tryLogin(id, pw, remember){
+  const go = document.getElementById("li-go");
+  if(go){ go.disabled=true; go.textContent="確認中…"; }
+  let r;
+  try{ r = await Quiz.rpc("quiz_login", {p_account_id:id, p_password:pw}); }
+  catch(e){ renderLoginForm(id, "通信エラーです。もう一度お試しください。"); return; }
+  if(r && r.ok){
+    saveAccountId(id);
+    if(remember) saveSavedPassword(pw); else clearSavedPassword();
+    renderAccountCard(id);
+    refreshTests();
+  } else {
+    const msg = (r && r.error==="no_such_id") ? "そのIDは登録されていません。「新規登録」からはじめてください。"
+                                               : "IDまたはパスワードが正しくありません。";
+    renderLoginForm(id, msg);
+  }
+}
+
+function renderRegisterForm(){
+  const pre = CLASS_ID.match(/^(\d)-(\d)$/);
+  const opt=(arr,suf)=>arr.map(v=>`<option value="${v}">${v}${suf||""}</option>`).join("");
+  meBox().innerHTML = `
+    <h2>新規登録</h2>
+    <div class="hint">先生から伝えられた「学校コード」を選んでください。</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+      <div><label class="f">学校コード（アルファベット）</label>
+        <select id="rg-l">${opt(CONFIG.GROUP_LETTERS)}</select></div>
+      <div><label class="f">学校コード（数字）</label>
+        <select id="rg-gn">${opt(CONFIG.GROUP_NUMBERS)}</select></div>
+    </div>
+    <div class="hint" style="margin-top:12px">あなたの出席番号を選んでください。</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:8px;margin-top:6px">
+      <div><label class="f">学年</label>
+        <select id="rg-g" ${pre?"disabled":""}>${opt(CONFIG.GRADES,"年")}</select></div>
+      <div><label class="f">組</label>
+        <select id="rg-c" ${pre?"disabled":""}>${opt(CONFIG.CLASSES,"組")}</select></div>
+      <div><label class="f">番号</label>
+        <select id="rg-n"><option value="">選ぶ</option>${opt(Array.from({length:CONFIG.CLASS_SIZE},(_,i)=>i+1),"番")}</select></div>
+    </div>
+    <div class="subq" style="margin-top:12px">
+      <span style="font-size:13px;color:var(--ink-soft)">あなたのID：</span>
+      <div id="rg-prev" style="font-family:var(--mono);font-size:20px;margin-left:auto">----</div>
+    </div>
+    <label class="f" style="margin-top:16px">パスワード（4文字以上）</label>
+    <input type="password" id="rg-pw" autocomplete="off">
+    <label class="f" style="margin-top:10px">パスワード（確認）</label>
+    <input type="password" id="rg-pw2" autocomplete="off">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);margin-top:10px">
+      <input type="checkbox" id="rg-remember" checked> この端末にパスワードを保存する
+    </label>
+    <button class="btn" id="rg-go" style="margin-top:14px">登録する</button>
+    <div class="hint" style="margin-top:12px">
+      登録ずみの方は　<button class="btn mini ghost" type="button" id="rg-tologin">ログインはこちら</button>
+    </div>
+    <div class="hint" style="margin-top:8px">IDとパスワードは、先生や友達に教えないでください。忘れると自分でも入れなくなります。</div>`;
+
+  if(pre){ document.getElementById("rg-g").value=+pre[1]; document.getElementById("rg-c").value=+pre[2]; }
+
+  document.getElementById("rg-tologin").onclick = ()=>renderLoginForm(loadAccountId()||"");
+  const sync = ()=>{
+    const n=document.getElementById("rg-n").value;
+    const l=document.getElementById("rg-l").value, gn=document.getElementById("rg-gn").value;
+    document.getElementById("rg-prev").textContent = n
+      ? buildAccountId(l, gn, makeSid(document.getElementById("rg-g").value, document.getElementById("rg-c").value, n))
+      : "----";
+  };
+  ["rg-l","rg-gn","rg-g","rg-c","rg-n"].forEach(id=>document.getElementById(id).onchange=sync);
+  sync();
+
+  document.getElementById("rg-go").onclick = async ()=>{
+    const n = document.getElementById("rg-n").value;
+    if(!n){ alert("出席番号を選んでください。"); return; }
+    const id = buildAccountId(
+      document.getElementById("rg-l").value, document.getElementById("rg-gn").value,
+      makeSid(document.getElementById("rg-g").value, document.getElementById("rg-c").value, n));
+    const pw = document.getElementById("rg-pw").value, pw2 = document.getElementById("rg-pw2").value;
+    const remember = document.getElementById("rg-remember").checked;
+    if(pw.length < 4){ alert("パスワードは4文字以上にしてください。"); return; }
+    if(pw !== pw2){ alert("パスワード（確認）が一致しません。"); return; }
+    const btn = document.getElementById("rg-go");
+    btn.disabled=true; btn.textContent="登録中…";
+    let r;
+    try{ r = await Quiz.rpc("quiz_register", {p_account_id:id, p_password:pw}); }
+    catch(e){ btn.disabled=false; btn.textContent="登録する"; alert("通信エラーです。もう一度お試しください。"); return; }
+    if(r && r.ok){
+      saveAccountId(id);
+      if(remember) saveSavedPassword(pw); else clearSavedPassword();
+      renderAccountCard(id);
+      refreshTests();
+    } else if(r && r.error==="id_taken"){
+      btn.disabled=false; btn.textContent="登録する";
+      alert("このIDはすでに登録されています。番号が正しいか確認するか、ログインをお試しください。");
+    } else {
+      btn.disabled=false; btn.textContent="登録する";
+      alert("登録できませんでした。入力内容を確認してください。");
+    }
+  };
+}
+
 async function renderHome(){
   KB.hide();
   clearInterval(waitTimer);
-  const saved = loadStudent();
-  const pre = CLASS_ID.match(/^(\d)-(\d)$/);
   app.innerHTML = `
     <header class="sheet">
       <h1>数学　小テスト</h1>
@@ -390,57 +538,17 @@ async function renderHome(){
     <div class="card" id="me"></div>
     <div class="card" id="teststate"><p class="hint">読み込み中…</p></div>
   `;
-  const me = document.getElementById("me");
 
-  const showSaved = sid => {
-    me.innerHTML = `
-      <h2>出席番号</h2>
-      <div style="display:flex;align-items:baseline;gap:12px">
-        <div style="font-family:var(--mono);font-size:30px;letter-spacing:.06em">${sid}</div>
-        <div style="font-size:14px;color:var(--ink-soft)">${sidLabel(sid)}</div>
-        <button class="btn mini ghost" id="chg" style="margin-left:auto">変更</button>
-      </div>
-      <div class="hint">この端末に記憶しています。次からは選び直す必要はありません。</div>`;
-    document.getElementById("chg").onclick=()=>showPicker(sid);
-    S.sid = sid;
-  };
-  const showPicker = current => {
-    const cur = current ? readSid(current) : null;
-    const opt=(arr,sel,suf)=>arr.map(v=>`<option value="${v}"${v===sel?" selected":""}>${v}${suf}</option>`).join("");
-    const g = pre ? +pre[1] : (cur?.g ?? 1);
-    const c = pre ? +pre[2] : (cur?.c ?? 1);
-    me.innerHTML = `
-      <h2>出席番号を選ぶ</h2>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:8px">
-        <div><label class="f">学年</label>
-          <select id="g" ${pre?"disabled":""}>${opt(CONFIG.GRADES,g,"年")}</select></div>
-        <div><label class="f">組</label>
-          <select id="c" ${pre?"disabled":""}>${opt(CONFIG.CLASSES,c,"組")}</select></div>
-        <div><label class="f">番号</label>
-          <select id="n"><option value="">選ぶ</option>${opt(Array.from({length:CONFIG.CLASS_SIZE},(_,i)=>i+1), cur?.n, "番")}</select></div>
-      </div>
-      <div class="subq" style="margin-top:14px">
-        <div id="prev" style="font-family:var(--mono);font-size:22px;color:var(--ink-soft)">----</div>
-        <button class="btn mini" id="ok" style="margin-left:auto">この番号で始める</button>
-      </div>
-      <div class="hint">ID は「学年・組・番号」をつなげた4桁です（例：1年2組3番 → 1203）。共用の端末では、使い終わったら「変更」から切り替えてください。</div>`;
-    const sync=()=>{
-      const n=document.getElementById("n").value;
-      document.getElementById("prev").textContent = n
-        ? makeSid(document.getElementById("g").value, document.getElementById("c").value, n) : "----";
-    };
-    ["g","c","n"].forEach(id=>document.getElementById(id).onchange=sync);
-    sync();
-    document.getElementById("ok").onclick=()=>{
-      const n=document.getElementById("n").value;
-      if(!n){ alert("番号を選んでください。"); return; }
-      const sid = makeSid(document.getElementById("g").value, document.getElementById("c").value, n);
-      saveStudent(sid); showSaved(sid);
-      refreshTests();
-    };
-  };
-
-  if(saved) showSaved(saved); else showPicker(null);
+  const savedId = loadAccountId();
+  const savedPw = loadSavedPassword();
+  if(savedId && savedPw){
+    meBox().innerHTML = `<p class="hint">ログイン確認中…</p>`;
+    await tryLogin(savedId, savedPw, true);
+  } else if(savedId){
+    renderLoginForm(savedId);
+  } else {
+    renderLoginForm("");
+  }
   await refreshTests();
 }
 
@@ -513,7 +621,7 @@ function renderAlreadyDone(t, d){
       <div class="sub">${esc(t.no)}　${esc(t.name)}</div>
     </header>
     <div class="score">
-      <div style="font-size:13px;color:var(--ink-soft)">${esc(sidLabel(S.sid))}　・　今日はもう挑戦しました</div>
+      <div style="font-size:13px;color:var(--ink-soft)">${esc(accountLabel(S.sid))}　・　今日はもう挑戦しました</div>
       <div class="big">${d.score}<small> / ${d.max}</small></div>
     </div>
     <div class="notice ok" style="margin-top:14px;font-size:15px;text-align:center;padding:18px">
@@ -533,7 +641,7 @@ async function safeCheck(quizId){
   catch(e){ alert("通信エラー：もう一度お試しください。"); return null; }
 }
 async function startTest(t){
-  if(!S.sid){ alert("先に出席番号を選んでください。"); return; }
+  if(!S.sid){ alert("先にログインしてください。"); return; }
   clearInterval(waitTimer);
   const check = await safeCheck(t.id);
   if(!check) return;
@@ -586,7 +694,7 @@ function renderTest(){
   const t=S.test;
   app.innerHTML = `
     <div class="bar">
-      <span class="who">${esc(S.sid)}</span>
+      <span class="who">${esc(accountLabel(S.sid))}</span>
       <span style="font-size:13px;color:var(--ink-soft)">${t.no} ${esc(t.name)}</span>
       <span class="tm" id="tm">--:--</span>
     </div>
@@ -980,7 +1088,7 @@ function renderResult(g, auto, state){
     <div class="score">
       <div style="font-size:13px;color:var(--ink-soft);letter-spacing:.08em">${S.test.no}　${esc(S.test.name)}</div>
       <div class="big">${g.score}<small> / ${g.max}</small></div>
-      <div style="font-size:13px;color:var(--ink-soft);margin-top:6px">${pct}%　・　${esc(S.sid)}（${esc(sidLabel(S.sid))}）</div>
+      <div style="font-size:13px;color:var(--ink-soft);margin-top:6px">${pct}%　・　${esc(accountLabel(S.sid))}</div>
       ${bonusLine}
       ${auto?`<div style="font-size:12px;color:var(--shu);margin-top:8px">制限時間になったため自動で提出しました</div>`:""}
     </div>

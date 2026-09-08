@@ -408,4 +408,21 @@ const CH = [
 const makeSid = (g,c,n) => `${g}${c}${String(n).padStart(2,"0")}`;
 const readSid = sid => ({ g:+sid[0], c:+sid[1], n:+sid.slice(2) });
 const sidLabel = sid => { const {g,c,n}=readSid(sid); return `${g}年${c}組${n}番`; };
-const classOf = sid => /^\d{4}$/.test(sid) ? `${sid[0]}-${sid[1]}` : "?";
+
+/* ---------- アカウントIDヘルパー（例：E-101236 = 学校コード"E-10" + 出席番号"1236"） ----------
+   学校コードは「アルファベット1文字」+「1〜100の数字」。生徒番号(4桁)は末尾4文字として必ず切り出せる
+   （数字部分が5〜7桁で、末尾4桁が出席番号・残りが学校コードの数字部分、という決め方のため）。 */
+const parseAccountId = id => {
+  const m = /^([A-Z])-([0-9]{5,7})$/.exec(String(id||"").trim().toUpperCase());
+  if(!m) return null;
+  const rest = m[2], sid4 = rest.slice(-4), groupNum = rest.slice(0,-4);
+  if(!groupNum || !/^\d{4}$/.test(sid4)) return null;
+  return { id:`${m[1]}-${rest}`, letter:m[1], groupNum:+groupNum, sid4 };
+};
+const buildAccountId = (letter, groupNum, sid4) => `${letter}-${groupNum}${sid4}`;
+const accountLabel = id => { const p=parseAccountId(id); return p ? sidLabel(p.sid4) : String(id||""); };
+const classOf = sid => {
+  const p = parseAccountId(sid);
+  const s4 = p ? p.sid4 : sid;
+  return /^\d{4}$/.test(s4) ? `${s4[0]}-${s4[1]}` : "?";
+};
