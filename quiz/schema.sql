@@ -87,8 +87,10 @@ alter table quiz_accounts enable row level security;
 -- ポリシーを一切作らない = anonキーからの直接アクセスは全拒否（RPC経由のみ）
 
 -- 新規登録: IDと平文パスワードを受け取り、ハッシュ化して保存する
+-- ※ Supabase では pgcrypto が public でなく extensions スキーマに入るため、
+--   search_path に extensions を含めないと crypt()/gen_salt() が見つからない。
 create or replace function quiz_register(p_account_id text, p_password text)
-returns jsonb language plpgsql security definer set search_path = public as $$
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
 begin
   if coalesce(p_account_id, '') !~ '^[A-Z]-[0-9]{5,7}$' then
     return jsonb_build_object('error', 'bad_id');
@@ -107,7 +109,7 @@ end $$;
 
 -- ログイン確認: IDとパスワードの組が正しいかだけを返す（セッション等は持たない軽量方式）
 create or replace function quiz_login(p_account_id text, p_password text)
-returns jsonb language plpgsql security definer set search_path = public as $$
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_hash text;
 begin
