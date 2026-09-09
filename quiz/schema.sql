@@ -293,6 +293,24 @@ begin
   ), '[]'::jsonb));
 end $$;
 
+-- 振り返りの全件（教師ダッシュボード用）。理解度1（要フォロー）を拾い上げるのに使う
+create or replace function quiz_reflection_list_teacher(p_pin text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+  if not quiz_check_pin(p_pin) then return jsonb_build_object('error', 'bad_pin'); end if;
+  return jsonb_build_object('rows', coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'account_id', account_id,
+      'date', to_char(jst_date, 'YYYY-MM-DD'),
+      'understanding', understanding,
+      'effort', effort,
+      'score', score,
+      'comment', comment
+    ) order by jst_date desc, understanding asc)
+    from quiz_reflections
+  ), '[]'::jsonb));
+end $$;
+
 -- ある生徒に、そのテストの「本日分」だけ再挑戦を許可する（入力ミス等の救済用）
 create or replace function quiz_allow_retry(p_pin text, p_quiz_id text, p_student text)
 returns jsonb language plpgsql security definer set search_path = public as $$

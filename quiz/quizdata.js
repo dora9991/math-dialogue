@@ -426,3 +426,5 @@ const classOf = sid => {
   const s4 = p ? p.sid4 : sid;
   return /^\d{4}$/.test(s4) ? `${s4[0]}-${s4[1]}` : "?";
 };
+/** 学校コードだけを取り出す（例：E-101236 → "E-10"）。複数校が同じサイトを使う場合の絞り込み用。 */
+const schoolOf = sid => { const p = parseAccountId(sid); return p ? `${p.letter}-${p.groupNum}` : "?"; };

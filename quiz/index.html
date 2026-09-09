@@ -642,7 +642,8 @@ function renderReflectionForm(){
     </div>
     <div class="card">
       <h2>振り返り記入欄</h2>
-      <textarea id="rf-comment" placeholder="今日の授業で気づいたこと、次にやってみたいことなど">${esc(ex?.comment||"")}</textarea>
+      <div class="hint" style="margin-top:0;margin-bottom:8px">今日の授業で気づいたこと、次にやってみたいこと、質問や困っていることなど、何でも書いてね。</div>
+      <textarea id="rf-comment" placeholder="例：分数の通分がまだ苦手です／◯◯のところがわかりませんでした など">${esc(ex?.comment||"")}</textarea>
     </div>
     <div class="foot">
       <button class="btn ghost" id="rf-back">ホームへもどる</button>
