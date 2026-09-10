@@ -137,6 +137,18 @@ td .bar.low{background:var(--shu)}
       <div id="quizmgr"></div>
     </div>
 
+    <div class="card no-print" id="pwresetcard">
+      <h2>パスワードを忘れた生徒がいたら</h2>
+      <p class="notice">IDを入力してリセットすると、そのアカウントだけが削除されます。本人は同じIDで「新規登録」から
+        新しいパスワードを設定し直せます。<b>成績や振り返りの記録は消えません。</b></p>
+      <div class="row">
+        <div><label class="f">生徒のID</label>
+          <input type="text" id="pwresetId" placeholder="例：E-101236" autocomplete="off" spellcheck="false"></div>
+        <button class="btn ghost" id="pwresetGo" style="flex:none">パスワードをリセット</button>
+      </div>
+      <div class="notice hidden" id="pwresetMsg"></div>
+    </div>
+
     <div class="kpis" id="kpis"></div>
     <div class="tabs no-print" id="tabs">
       <button data-v="overview" class="on">テスト一覧</button>
@@ -262,6 +274,33 @@ function showQR(quizId){
   document.getElementById("qrClose").onclick = ()=>el.classList.add("hidden");
   new QRCode(document.getElementById("qrimg-full"), {text:url, width:320, height:320, correctLevel:QRCode.CorrectLevel.M});
 }
+
+/* ============================================================
+   パスワードを忘れた生徒の救済（アカウントを削除し、同じIDで再登録してもらう）
+   ============================================================ */
+document.getElementById("pwresetGo").onclick = async ()=>{
+  const idInput = document.getElementById("pwresetId");
+  const msg = document.getElementById("pwresetMsg");
+  const id = idInput.value.trim().toUpperCase();
+  msg.classList.add("hidden");
+  if(!/^[A-Z]-[0-9]{5,7}$/.test(id)){ alert("IDの形式が正しくありません（例：E-101236）。"); return; }
+  if(!confirm(`${id} のパスワードをリセットします。本人は同じIDで新規登録からやり直す必要があります。よろしいですか？`)) return;
+  const btn = document.getElementById("pwresetGo");
+  btn.disabled = true; btn.textContent = "処理中…";
+  try{
+    const r = await Quiz.rpc("quiz_reset_password", {p_pin:pin, p_account_id:id});
+    if(r && r.ok){
+      msg.className = "notice ok"; msg.textContent = `${id} のパスワードをリセットしました。本人に「新規登録」から、同じIDで新しいパスワードを設定するよう伝えてください（成績・振り返りの記録はそのまま残ります）。`;
+      idInput.value = "";
+    } else {
+      msg.className = "notice warn"; msg.textContent = "リセットできませんでした。IDを確認してください。";
+    }
+  }catch(e){
+    msg.className = "notice warn"; msg.textContent = "通信エラーです。もう一度お試しください。";
+  }
+  msg.classList.remove("hidden");
+  btn.disabled = false; btn.textContent = "パスワードをリセット";
+};
 
 /* ============================================================
    結果データの読み込み

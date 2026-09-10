@@ -359,6 +359,18 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+-- パスワードを忘れた生徒の救済。アカウント(ID×パスワード)だけを削除し、本人が同じIDで
+-- 「新規登録」から新しいパスワードを設定し直せるようにする。成績(quiz_attempts)や
+-- 振り返り(quiz_reflections)はaccount_idを保持する別テーブルであり、quiz_accountsとの
+-- 外部キー制約は無いため、リセットしても過去の記録は消えない。
+create or replace function quiz_reset_password(p_pin text, p_account_id text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+  if not quiz_check_pin(p_pin) then return jsonb_build_object('error', 'bad_pin'); end if;
+  delete from quiz_accounts where account_id = p_account_id;
+  return jsonb_build_object('ok', true);
+end $$;
+
 -- ある生徒に、そのテストの「本日分」だけ再挑戦を許可する（入力ミス等の救済用）
 create or replace function quiz_allow_retry(p_pin text, p_quiz_id text, p_student text)
 returns jsonb language plpgsql security definer set search_path = public as $$

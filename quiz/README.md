@@ -55,6 +55,10 @@
     生徒の入力ミスの申告を受けたときに1件だけ消せる（`quiz_reflection_delete`、確認ダイアログあり）
   - **投影モード**：得点の集計に加えて「今日の振り返り」も表示（理解度・意欲の平均と、4〜1段階ごとの
     人数の内訳）。個人名やコメントは出さず、集計のみ（現在のフィルタ＝学校・クラス・テストに連動）
+  - **パスワードを忘れた生徒の救済**：「小テストの配布管理」の下にあるカードにIDを入力してリセットすると、
+    そのアカウント（ID×パスワード）だけが削除される。本人は同じIDで「新規登録」からやり直せば元通り
+    使える。**成績・振り返りの記録は消えない**（`quiz_accounts`と`quiz_attempts`/`quiz_reflections`は
+    account_idで緩く結びついているだけで外部キー制約が無いため）
 - **サーバー** Supabase
   - テーブルは RLS で全面ロック。読み書きはすべて `security definer` の RPC 経由
   - anon key は公開前提のキーなので config.js に直書きしてよい
@@ -97,6 +101,7 @@
 > - 2026-09-09：振り返り機能（`quiz_reflections` / `quiz_reflection_get` / `quiz_reflection_submit`）・教師用の振り返り一覧（`quiz_reflection_list_teacher`）
 > - 2026-09-10：振り返りを「その授業（quiz_id）に紐づく」形へ変更（`quiz_reflections`に`quiz_id`列を追加・一意制約を張り替え。**既存テーブルへの`alter table`を含むため必ずSQLの再実行が必要**）。やり直し機能（`quiz_my_attempts`）を追加
 > - 2026-09-10：振り返り1件の削除（`quiz_reflection_delete`）を追加
+> - 2026-09-10：パスワードを忘れた生徒の救済（`quiz_reset_password`）を追加
 
 ## 授業での使い方
 
