@@ -499,7 +499,7 @@ function vReflections(){
       : `<div class="notice ok">今日、理解度１（要フォロー）の生徒はいません。</div>`}
     <div class="notice no-print" style="margin-top:10px">理解度が１の行は赤く表示されます。「テスト」の絞り込みで授業（回）ごとに見られます。日付は新しい順、同じ日は理解度が低い順に並びます。</div>
     <div class="scroll"><table>
-      <thead><tr><th>日付</th><th>授業</th><th>生徒</th><th>理解度</th><th>意欲・態度</th><th class="num">点数</th><th>コメント（質問・困っていること含む）</th></tr></thead>
+      <thead><tr><th>日付</th><th>授業</th><th>生徒</th><th>理解度</th><th>意欲・態度</th><th class="num">点数</th><th>コメント（質問・困っていること含む）</th><th class="no-print"></th></tr></thead>
       <tbody>${list.map(x=>`
         <tr class="${x.understanding===1?"lo":""}">
           <td class="mono">${esc(x.date)}</td>
@@ -509,6 +509,7 @@ function vReflections(){
           <td>${esc(x.effort)}</td>
           <td class="num">${x.score==null?"—":esc(x.score)}</td>
           <td style="white-space:pre-wrap">${esc(x.comment||"—")}</td>
+          <td class="no-print"><button class="btn mini ghost" data-refl-del="${esc(x.account_id)}|${esc(x.quiz_id)}|${esc(x.date)}">削除</button></td>
         </tr>`).join("")}</tbody>
     </table></div>`;
 }
@@ -517,6 +518,17 @@ function bindDrill(){
   document.querySelectorAll("#tbl-students tbody tr").forEach(tr=>tr.onclick=()=>{ DRILL={sid:tr.dataset.sid}; render(); });
   document.querySelectorAll("#tbl-questions tbody tr").forEach(tr=>tr.onclick=()=>{ DRILL={quiz:tr.dataset.quiz, q_no:tr.dataset.qno}; render(); });
   document.querySelectorAll("[data-back]").forEach(a=>a.onclick=()=>{ DRILL=null; render(); });
+  document.querySelectorAll("[data-refl-del]").forEach(b=>b.onclick=async(e)=>{
+    e.stopPropagation();
+    if(!confirm("この振り返りを削除しますか？元に戻せません。")) return;
+    const [account_id, quiz_id, date] = b.dataset.reflDel.split("|");
+    b.disabled = true; b.textContent = "削除中…";
+    try{
+      const r = await Quiz.rpc("quiz_reflection_delete", {p_pin:pin, p_account_id:account_id, p_quiz_id:quiz_id, p_date:date});
+      if(r && r.ok){ await loadReflections(); }
+      else { alert("削除できませんでした。"); b.disabled=false; b.textContent="削除"; }
+    }catch(err){ alert("通信エラーです。もう一度お試しください。"); b.disabled=false; b.textContent="削除"; }
+  });
 }
 
 /* ============================================================
@@ -573,6 +585,24 @@ $("#proj-open").onclick = ()=>{
   const bq = byQuestion(rows).sort((a,b)=>pct(a.score,a.max)-pct(b.score,b.max));
   const title = [F.school, F.cls&&F.cls.replace("-","年")+"組", F.quiz?quizName(F.quiz):"4章 全テスト"].filter(Boolean).join("　");
 
+  const refl = reflectionsFiltered();
+  const avgOf = key => refl.length ? (refl.reduce((t,x)=>t+x[key],0)/refl.length).toFixed(1) : "—";
+  const countsOf = key => { const c={4:0,3:0,2:0,1:0}; refl.forEach(x=>{ if(c[x[key]]!=null) c[x[key]]++; }); return c; };
+  const uC = countsOf("understanding"), eC = countsOf("effort");
+  const reflBlock = refl.length ? `
+    <h2 style="font-size:24px;margin-top:22px">今日の振り返り</h2>
+    <div class="big-kpi">
+      <div>理解度平均　<span>${avgOf("understanding")}</span></div>
+      <div>意欲平均　<span>${avgOf("effort")}</span></div>
+      <div>記入　<span>${refl.length}</span>人</div>
+    </div>
+    <table><thead><tr><th></th><th class="num">４</th><th class="num">３</th><th class="num">２</th><th class="num">１</th></tr></thead>
+    <tbody>
+      <tr><td>理解度</td><td class="num">${uC[4]}</td><td class="num">${uC[3]}</td><td class="num">${uC[2]}</td><td class="num ${uC[1]?"mk-ng":""}">${uC[1]}</td></tr>
+      <tr><td>意欲・態度</td><td class="num">${eC[4]}</td><td class="num">${eC[3]}</td><td class="num">${eC[2]}</td><td class="num">${eC[1]}</td></tr>
+    </tbody></table>`
+    : `<div class="notice" style="font-size:15px;margin-top:16px">この条件の振り返りデータはまだありません。</div>`;
+
   const el=$("#proj");
   el.innerHTML = `
     <button class="btn close" onclick="document.getElementById('proj').classList.add('hidden')">閉じる</button>
@@ -590,7 +620,8 @@ $("#proj-open").onclick = ()=>{
       return `<tr class="${p<60?"lo":""}"><td>${esc(QUIZ_META[x.quiz]?.no||x.quiz)}</td><td>${esc(x.q_no)}</td>
         <td>${bar(p)}</td><td style="font-family:var(--mono)">${top||"—"}</td></tr>`;
     }).join("")}</tbody></table>
-    <div class="notice" style="font-size:16px;margin-top:20px">まちがいが多かった答えは「考え方のクセ」が見える大事な材料です。自分の解答と見比べてみましょう。</div>`;
+    <div class="notice" style="font-size:16px;margin-top:20px">まちがいが多かった答えは「考え方のクセ」が見える大事な材料です。自分の解答と見比べてみましょう。</div>
+    ${reflBlock}`;
   el.classList.remove("hidden");
 };
 $("#print").onclick=()=>window.print();

@@ -350,6 +350,15 @@ begin
   ), '[]'::jsonb));
 end $$;
 
+-- 振り返り1件の削除（生徒の誤入力を教師が申告を受けて消す用）
+create or replace function quiz_reflection_delete(p_pin text, p_account_id text, p_quiz_id text, p_date date)
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+  if not quiz_check_pin(p_pin) then return jsonb_build_object('error', 'bad_pin'); end if;
+  delete from quiz_reflections where account_id = p_account_id and quiz_id = p_quiz_id and jst_date = p_date;
+  return jsonb_build_object('ok', true);
+end $$;
+
 -- ある生徒に、そのテストの「本日分」だけ再挑戦を許可する（入力ミス等の救済用）
 create or replace function quiz_allow_retry(p_pin text, p_quiz_id text, p_student text)
 returns jsonb language plpgsql security definer set search_path = public as $$
