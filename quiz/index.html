@@ -401,10 +401,10 @@ function renderAccountCard(id){
     <div class="hint">この端末に記憶しています。</div>`;
   document.getElementById("logout").onclick=()=>{
     store.del(ACCOUNT_KEY); clearSavedPassword(); S.sid=null;
-    hidePracticeCard();
+    hideRecordCard();
     renderLoginForm("");
   };
-  renderPracticeCard();
+  renderRecordCard();
 }
 
 function renderLoginForm(prefillId, msg){
@@ -595,6 +595,66 @@ function wireLevelChoices(id, onPick){
 }
 
 /** 指定した小テスト(t)の、今日の振り返りを書く／編集する画面。t が配布中でなくなっていたら保存時に拒否される。 */
+/* ---------- reflection-sheet/ と同じ簡易評価ロジック（コピー使い回し検知＋6観点チェック＋問い返し） ---------- */
+const DUP_SIM_THRESHOLD = 0.85, DUP_MIN_LEN = 20, SHORT_LEN_THRESHOLD = 20;
+function reflSimilarity(a,b){
+  if(a===b) return 1;
+  if(!a.length || !b.length) return 0;
+  const bigrams = s=>{ const arr=[]; for(let i=0;i<s.length-1;i++) arr.push(s.substr(i,2)); return arr; };
+  const ba=bigrams(a), bb=bigrams(b);
+  if(!ba.length || !bb.length) return a===b?1:0;
+  const counts={}; bb.forEach(g=>counts[g]=(counts[g]||0)+1);
+  let common=0; ba.forEach(g=>{ if(counts[g]>0){ common++; counts[g]--; } });
+  return (2*common)/(ba.length+bb.length);
+}
+function reflFindDuplicate(nowText, prevEntries){
+  const now = nowText.replace(/\s/g,"");
+  if(now.length < DUP_MIN_LEN) return null;
+  for(const p of prevEntries){
+    const prevText = (p.comment||"").replace(/\s/g,"");
+    if(prevText.length < DUP_MIN_LEN) continue;
+    if(reflSimilarity(now, prevText) >= DUP_SIM_THRESHOLD) return p;
+  }
+  return null;
+}
+/** comment・理解度・意欲・本人の過去の振り返り(他のquiz_id含む)から、6観点チェック＋問い返しを算出する。 */
+function reflAnalyze(comment, understanding, effort, prevEntries){
+  const all = comment || "";
+  const e = {};
+  const dup = reflFindDuplicate(all, prevEntries);
+  if(dup){
+    e.is_duplicate = true; e.duplicate_date = dup.date;
+    e.checks = null; e.flag = false; e.good = false; e.toikaeshi = null;
+    e.warning = `${dup.date}の振り返りとほぼ同じ内容です。コピーではなく、今日の授業で気づいたことを自分の言葉で書いてみましょう。`;
+    return e;
+  }
+  e.is_duplicate = false; e.duplicate_date = null; e.warning = null;
+  const tooShort = all.replace(/\s/g,"").length < SHORT_LEN_THRESHOLD;
+  const checks = [];
+  checks.push(all.replace(/\s/g,"").length>=15 && /[はがをにでとなら]/.test(all));
+  checks.push(/(つまず|間違|ミス|わからな|できなかっ|迷っ|苦手|あいまい)/.test(all));
+  checks.push(/(次は|明日|今度|練習する|復習|やり直|見直|学び直|してみる|作る|書いてくる|やってみたい)/.test(all));
+  checks.push(/(？|\?|なぜ|どうして|だろう|不思議|気になる|疑問)/.test(all));
+  checks.push(prevEntries.length>0 && /(前回|この前|昨日|先週|前に|決めた|言っていた|疑問が)/.test(all));
+  checks.push(/(友(達|だち)に(聞い|教え)|人に(聞い|教え)|先生に(聞い|教え)|一緒に(考え|やっ|勉強)|やりやすい|考えやすい|わかりやすい|理解しやすい|式を書い|図に(かい|して)|表に(し|まとめ)|声に出し|書き出し|順番を変え|やり方を変え|工夫したら|コツが|に気づいた)/.test(all));
+  e.checks = checks;
+  const tooVague = !tooShort && !checks[0];
+  const ckCoreCount = checks.slice(0,5).filter(Boolean).length;
+  e.flag = /(むり|無理|嫌だ|つらい|しんどい|意味ない|やる気が出な|もうやだ)/.test(all)
+        || (understanding===1 && all.replace(/\s/g,"").length<12);
+  e.good = /(もっと(難しい|上級|発展)|人に(説明|教え)|友達に教え|挑戦したい|自分で気づいた|応用|得意)/.test(all)
+        || (understanding===4 && effort>=3 && ckCoreCount>=4);
+  if(tooShort) e.toikaeshi = "文字数がすこし少ないかも。今日の授業で分かったことを、もう一言足してみよう。";
+  else if(tooVague) e.toikaeshi = "「わかった」をもう少しくわしく——何が、どうしてわかったのかを書いてみよう。";
+  else if(!checks[1] && understanding<4) e.toikaeshi = "「難しかった」のはどの問題の、どの瞬間だった？1つだけ思い出して書いてみよう。";
+  else if(!checks[2]) e.toikaeshi = "今日の気づきを、明日の自分への「ひとこと作戦」にすると何になる？";
+  else if(!checks[3]) e.toikaeshi = "今日の内容で「なぜ？」と聞きたくなるところを1つ探すとしたらどこ？";
+  else if(checks[5]) e.toikaeshi = "「こうしたらやりやすかった」——自分に合う学び方を見つけているね。次はどんな工夫を試したい？";
+  else if(checks[4]) e.toikaeshi = "前回の自分とのつながりが書けているのが素晴らしい。次の目標を1つ挙げるなら？";
+  else e.toikaeshi = "いい振り返り！このやり方がうまくいった理由は何だと思う？";
+  return e;
+}
+
 async function renderReflectionForm(t){
   KB.hide();
   clearInterval(waitTimer);
@@ -652,14 +712,28 @@ async function renderReflectionForm(t){
     const comment = document.getElementById("rf-comment").value;
     const btn = document.getElementById("rf-save");
     btn.disabled=true; btn.textContent="保存中…";
+
+    // 過去の自分の振り返り（他の授業分も含む）を取得し、コピー使い回し検知・6観点チェックを行う
+    let prev = [];
+    try{
+      const hist = await Quiz.rpc("quiz_my_reflections", {p_account_id:S.sid});
+      if(hist && Array.isArray(hist.reflections)){
+        prev = hist.reflections.filter(x=>!(x.quiz_id===t.id && x.date===todayStr())); // 今回の上書き元は除く
+      }
+    }catch(e){ /* 履歴が取れなくても保存自体は続行する */ }
+    const ev = reflAnalyze(comment, picked.understanding, picked.effort, prev);
+
     let r2;
     try{
       r2 = await Quiz.rpc("quiz_reflection_submit", {
         p_account_id: S.sid, p_quiz_id: t.id, p_understanding: picked.understanding, p_effort: picked.effort,
         p_score: score, p_comment: comment,
+        p_checks: ev.checks, p_flag: ev.flag, p_good: ev.good,
+        p_is_duplicate: ev.is_duplicate, p_duplicate_date: ev.duplicate_date,
+        p_toikaeshi: ev.toikaeshi, p_warning: ev.warning,
       });
     }catch(e){ btn.disabled=false; btn.textContent="保存する"; alert("通信エラーです。もう一度お試しください。"); return; }
-    if(r2 && r2.ok){ renderReflectionDone(t); }
+    if(r2 && r2.ok){ renderReflectionDone(t, ev); }
     else if(r2 && r2.error==="inactive"){
       alert("この小テストは先生によって非公開にされたため、振り返りを保存できませんでした。");
       renderHome();
@@ -670,80 +744,115 @@ async function renderReflectionForm(t){
   };
 }
 
-function renderReflectionDone(t){
+function renderReflectionDone(t, ev){
+  const feedback = ev?.warning
+    ? `<div class="notice warn" style="margin-top:14px">${esc(ev.warning)}</div>`
+    : (ev?.toikaeshi ? `<div class="notice" style="margin-top:14px;font-size:15px">💬 ${esc(ev.toikaeshi)}</div>` : "");
   app.innerHTML = `
     <header class="sheet">
       <h1>数学　小テスト・振り返り</h1>
       <div class="sub">${esc(accountLabel(S.sid))}　・　${esc(t.no)}　${esc(t.name)}</div>
     </header>
     <div class="notice ok" style="margin-top:14px;font-size:15px;text-align:center;padding:18px">振り返りを保存しました。</div>
+    ${feedback}
     <div class="foot"><button class="btn" id="rf-done-home" style="width:100%">ホームへもどる</button></div>
   `;
   document.getElementById("rf-done-home").onclick = renderHome;
 }
 
 /* ============================================================
-   小テストのやり直し（練習モード）
-   今までに一度でも提出したことのある小テストを、何度でも練習できる。
-   結果はサーバーに送信・記録されない（配布中かどうかにも関わらず挑戦できる）。
+   記録（今までの小テストの結果＋振り返りをまとめて見る）
+   満点でない小テストは、その場でもう一度練習できる（配布中かどうかに関わらず挑戦でき、
+   結果はサーバーに送信・記録されない）。
    ============================================================ */
-function hidePracticeCard(){
+function hideRecordCard(){
   const box = document.getElementById("practice");
   if(box){ box.classList.add("hidden"); box.innerHTML=""; }
 }
-function renderPracticeCard(){
+function renderRecordCard(){
   const box = document.getElementById("practice");
   if(!box) return;
   box.classList.remove("hidden");
   box.innerHTML = `
-    <h2>やり直し</h2>
-    <div class="hint">今までに解いた小テストを、もう一度練習できます。結果は記録されません。</div>
-    <button class="btn ghost" id="pr-open">🔁 小テストのやり直し</button>`;
-  document.getElementById("pr-open").onclick = renderPracticeList;
+    <h2>記録</h2>
+    <div class="hint">今までの小テストの結果と振り返りをまとめて見られます。満点でなければその場で練習し直せます。</div>
+    <button class="btn ghost" id="pr-open">📋 今までの記録を見る</button>`;
+  document.getElementById("pr-open").onclick = renderMyRecord;
 }
-async function renderPracticeList(){
+async function renderMyRecord(){
   KB.hide();
   clearInterval(waitTimer);
   app.innerHTML = `
     <header class="sheet">
       <h1>数学　小テスト・振り返り</h1>
-      <div class="sub">${esc(accountLabel(S.sid))}　・　やり直し</div>
+      <div class="sub">${esc(accountLabel(S.sid))}　・　記録</div>
     </header>
     <div class="card"><p class="hint">読み込み中…</p></div>`;
-  let r;
-  try{ r = await Quiz.rpc("quiz_my_attempts", {p_account_id:S.sid}); }
-  catch(e){ r = null; }
-  const attempts = (r && Array.isArray(r.attempts)) ? r.attempts : [];
-  const known = attempts.map(a=>({a, t:CH.find(x=>x.id===a.quiz_id)})).filter(x=>x.t);
+  let ra, rr;
+  try{
+    [ra, rr] = await Promise.all([
+      Quiz.rpc("quiz_my_attempts", {p_account_id:S.sid}),
+      Quiz.rpc("quiz_my_reflections", {p_account_id:S.sid}),
+    ]);
+  }catch(e){ ra=null; rr=null; }
+  const attempts = (ra && Array.isArray(ra.attempts)) ? ra.attempts : [];
+  const reflections = (rr && Array.isArray(rr.reflections)) ? rr.reflections : [];
+  const reflByQuiz = {};
+  reflections.forEach(x=>{ if(!reflByQuiz[x.quiz_id] || x.date > reflByQuiz[x.quiz_id].date) reflByQuiz[x.quiz_id]=x; });
+  const attemptByQuiz = {};
+  attempts.forEach(a=>{ attemptByQuiz[a.quiz_id]=a; });
+  const known = [...new Set([...Object.keys(attemptByQuiz), ...Object.keys(reflByQuiz)])]
+    .map(id=>CH.find(x=>x.id===id)).filter(Boolean).sort((a,b)=>a.id.localeCompare(b.id));
+
   if(!known.length){
     app.innerHTML = `
       <header class="sheet">
         <h1>数学　小テスト・振り返り</h1>
-        <div class="sub">${esc(accountLabel(S.sid))}　・　やり直し</div>
+        <div class="sub">${esc(accountLabel(S.sid))}　・　記録</div>
       </header>
-      <div class="notice">まだ解いた小テストがありません。</div>
+      <div class="notice">まだ記録がありません。</div>
       <div class="foot"><button class="btn" id="pr-back" style="width:100%">ホームへもどる</button></div>`;
     document.getElementById("pr-back").onclick = renderHome;
     return;
   }
+
+  const cardHTML = t=>{
+    const a = attemptByQuiz[t.id];
+    const rf = reflByQuiz[t.id];
+    const perfect = a && a.best_max>0 && a.best_score>=a.best_max;
+    const pct = (a && a.best_max) ? Math.round(a.best_score/a.best_max*100) : null;
+    let badges = "";
+    if(rf){
+      if(rf.is_duplicate) badges += `<span class="badge">📋 前回と似た内容</span>`;
+      if(rf.flag) badges += `<span class="badge" style="border-color:var(--shu);color:var(--shu)">⚠ 要フォロー</span>`;
+      if(rf.good) badges += `<span class="badge" style="border-color:var(--ok);color:var(--ok)">⭐ よくできた振り返り</span>`;
+    }
+    return `<div class="card">
+      <h2>${esc(t.no)}　${esc(t.name)}</h2>
+      ${a ? `<div style="font-size:14px">小テスト：最高 <b>${a.best_score}/${a.best_max}</b>（${pct}%）・${a.times}回挑戦</div>`
+          : `<div class="hint">小テストはまだ受けていません。</div>`}
+      ${rf ? `
+        <div class="hint" style="margin-top:10px;margin-bottom:0">${esc(rf.date)}の振り返り　理解度${esc(rf.understanding)}・意欲${esc(rf.effort)}</div>
+        ${rf.comment ? `<div class="ans" style="margin-top:4px;white-space:pre-wrap">${esc(rf.comment)}</div>` : ""}
+        ${badges ? `<div style="margin-top:8px">${badges}</div>` : ""}
+        ${rf.warning ? `<div class="notice warn" style="margin-top:8px">${esc(rf.warning)}</div>`
+          : (rf.toikaeshi ? `<div class="notice" style="margin-top:8px">💬 ${esc(rf.toikaeshi)}</div>` : "")}
+        ` : `<div class="hint" style="margin-top:10px">振り返りはまだありません。</div>`}
+      ${a && !perfect ? `<button class="btn ghost" data-retry="${t.id}" style="margin-top:12px">🔁 もう一度挑戦する</button>` : ""}
+      ${a && perfect ? `<div class="notice ok" style="margin-top:12px">満点です！🎉</div>` : ""}
+    </div>`;
+  };
+
   app.innerHTML = `
     <header class="sheet">
       <h1>数学　小テスト・振り返り</h1>
-      <div class="sub">${esc(accountLabel(S.sid))}　・　やり直し</div>
+      <div class="sub">${esc(accountLabel(S.sid))}　・　記録</div>
     </header>
-    <div class="notice">練習用です。結果は先生には送られず、記録にも残りません。何度でも挑戦できます。</div>
-    <div class="tests">
-      ${known.map(({a,t})=>{
-        const pct = a.best_max ? Math.round(a.best_score/a.best_max*100) : 0;
-        return `<button data-id="${t.id}">
-          <span class="no">${t.no}</span><span class="nm">${esc(t.name)}</span>
-          <span class="pg">最高 ${a.best_score}/${a.best_max}（${pct}%）・${a.times}回</span>
-        </button>`;
-      }).join("")}
-    </div>
+    <div class="notice">「もう一度挑戦する」は練習です。結果は先生には送られず、記録にも残りません。</div>
+    ${known.map(cardHTML).join("")}
     <div class="foot"><button class="btn ghost" id="pr-back" style="width:100%">ホームへもどる</button></div>`;
-  app.querySelectorAll(".tests [data-id]").forEach(b=>b.onclick=()=>{
-    const t = CH.find(x=>x.id===b.dataset.id);
+  app.querySelectorAll("[data-retry]").forEach(b=>b.onclick=()=>{
+    const t = CH.find(x=>x.id===b.dataset.retry);
     startTest(t, {practice:true});
   });
   document.getElementById("pr-back").onclick = renderHome;

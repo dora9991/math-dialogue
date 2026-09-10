@@ -199,6 +199,13 @@ create table if not exists quiz_reflections (
   effort        int  not null,             -- 意欲・態度 1〜4（4が一番よい）
   score         int,                       -- 今日の小テストの点数（任意）
   comment       text,                      -- 振り返り記入欄（質問・困っていることも可・任意）
+  checks        jsonb,                     -- reflection-sheet/ と同じ6観点チェック配列（コピー疑いのときはnull）
+  flag          boolean not null default false, -- ⚠要フォロー（SOS・空回りの兆候）
+  good          boolean not null default false, -- ⭐得意サイン
+  is_duplicate  boolean not null default false, -- 📋コピー使い回しの疑い
+  duplicate_date date,                     -- 使い回し元と疑われる過去の振り返りの日付
+  toikaeshi     text,                      -- 本人への問い返し（その場のフィードバック）
+  warning       text,                      -- 本人への警告（コピー疑いなど）
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now(),
   unique (account_id, quiz_id, jst_date)
@@ -212,6 +219,14 @@ alter table quiz_reflections add column if not exists quiz_id text not null defa
 alter table quiz_reflections drop constraint if exists quiz_reflections_account_id_jst_date_key;
 alter table quiz_reflections drop constraint if exists quiz_reflections_account_id_quiz_id_jst_date_key;
 alter table quiz_reflections add constraint quiz_reflections_account_id_quiz_id_jst_date_key unique (account_id, quiz_id, jst_date);
+-- 移行: reflection-sheet/ 由来の評価カラムをまだ持たない旧テーブルに追加
+alter table quiz_reflections add column if not exists checks jsonb;
+alter table quiz_reflections add column if not exists flag boolean not null default false;
+alter table quiz_reflections add column if not exists good boolean not null default false;
+alter table quiz_reflections add column if not exists is_duplicate boolean not null default false;
+alter table quiz_reflections add column if not exists duplicate_date date;
+alter table quiz_reflections add column if not exists toikaeshi text;
+alter table quiz_reflections add column if not exists warning text;
 
 -- 今日の分の振り返りを取得（その quiz_id ・今日の分。無ければ found:false）。フォームの再編集に使う
 create or replace function quiz_reflection_get(p_account_id text, p_quiz_id text)
@@ -229,10 +244,32 @@ begin
     'effort', v_row.effort, 'score', v_row.score, 'comment', v_row.comment);
 end $$;
 
+-- 生徒本人の全振り返り（コピー使い回し判定・新しい「記録」画面の表示に使う）
+create or replace function quiz_my_reflections(p_account_id text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+  if coalesce(p_account_id, '') !~ '^[A-Z]-[0-9]{5,7}$' then
+    return jsonb_build_object('error', 'bad_account');
+  end if;
+  return jsonb_build_object('reflections', coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'quiz_id', quiz_id, 'date', to_char(jst_date,'YYYY-MM-DD'),
+      'understanding', understanding, 'effort', effort, 'score', score, 'comment', comment,
+      'checks', checks, 'flag', flag, 'good', good, 'is_duplicate', is_duplicate,
+      'duplicate_date', to_char(duplicate_date,'YYYY-MM-DD'), 'toikaeshi', toikaeshi, 'warning', warning
+    ) order by jst_date desc)
+    from quiz_reflections where account_id = p_account_id
+  ), '[]'::jsonb));
+end $$;
+
 -- 振り返りの提出（同じアカウント×同じquiz_id×同じ日は上書き＝書き直しOK）。
 -- その小テストが「配布中」でなければ拒否する＝小テストが非公開になると振り返りも書けなくなる。
+-- 6観点チェック等はクライアント側(reflection-sheet/と同じロジック)で計算済みのものをそのまま受け取って記録する。
 create or replace function quiz_reflection_submit(
-  p_account_id text, p_quiz_id text, p_understanding int, p_effort int, p_score int, p_comment text
+  p_account_id text, p_quiz_id text, p_understanding int, p_effort int, p_score int, p_comment text,
+  p_checks jsonb default null, p_flag boolean default false, p_good boolean default false,
+  p_is_duplicate boolean default false, p_duplicate_date date default null,
+  p_toikaeshi text default null, p_warning text default null
 ) returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   v_today date := (now() at time zone 'Asia/Tokyo')::date;
@@ -251,11 +288,20 @@ begin
     return jsonb_build_object('error', 'inactive');
   end if;
 
-  insert into quiz_reflections (account_id, quiz_id, jst_date, understanding, effort, score, comment, updated_at)
-    values (p_account_id, p_quiz_id, v_today, p_understanding, p_effort, p_score, p_comment, now())
+  insert into quiz_reflections (
+    account_id, quiz_id, jst_date, understanding, effort, score, comment,
+    checks, flag, good, is_duplicate, duplicate_date, toikaeshi, warning, updated_at
+  ) values (
+    p_account_id, p_quiz_id, v_today, p_understanding, p_effort, p_score, p_comment,
+    p_checks, coalesce(p_flag,false), coalesce(p_good,false), coalesce(p_is_duplicate,false),
+    p_duplicate_date, p_toikaeshi, p_warning, now()
+  )
   on conflict (account_id, quiz_id, jst_date) do update set
     understanding = excluded.understanding, effort = excluded.effort,
-    score = excluded.score, comment = excluded.comment, updated_at = now();
+    score = excluded.score, comment = excluded.comment,
+    checks = excluded.checks, flag = excluded.flag, good = excluded.good,
+    is_duplicate = excluded.is_duplicate, duplicate_date = excluded.duplicate_date,
+    toikaeshi = excluded.toikaeshi, warning = excluded.warning, updated_at = now();
 
   return jsonb_build_object('ok', true);
 end $$;
@@ -344,7 +390,11 @@ begin
       'understanding', understanding,
       'effort', effort,
       'score', score,
-      'comment', comment
+      'comment', comment,
+      'flag', flag,
+      'good', good,
+      'is_duplicate', is_duplicate,
+      'toikaeshi', toikaeshi
     ) order by jst_date desc, understanding asc)
     from quiz_reflections
   ), '[]'::jsonb));
