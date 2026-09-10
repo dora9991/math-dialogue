@@ -14,10 +14,12 @@
 
 -- どの小テスト（quiz_id は quizdata.js の CH[].id と一致）が今配布中か
 create table if not exists quiz_state (
-  quiz_id    text primary key,
-  is_active  boolean not null default false,
-  updated_at timestamptz not null default now()
+  quiz_id        text primary key,
+  is_active      boolean not null default false,
+  time_limit_sec int,                      -- 制限時間の上書き（秒）。nullならquizdata.jsの既定値を使う
+  updated_at     timestamptz not null default now()
 );
+alter table quiz_state add column if not exists time_limit_sec int;
 
 -- 提出1回＝1行（同じ生徒×テスト×日付は1回まで）
 create table if not exists quiz_attempts (
@@ -136,14 +138,17 @@ create or replace function quiz_check(p_quiz_id text, p_student text)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   v_active boolean;
+  v_limit int;
   v_today date := (now() at time zone 'Asia/Tokyo')::date;
   v_score int; v_max int; v_found boolean;
 begin
-  select coalesce((select is_active from quiz_state where quiz_id = p_quiz_id), false) into v_active;
+  select is_active, time_limit_sec into v_active, v_limit from quiz_state where quiz_id = p_quiz_id;
+  v_active := coalesce(v_active, false);
   select score, max_score into v_score, v_max from quiz_attempts
     where quiz_id = p_quiz_id and student_code = p_student and jst_date = v_today;
   v_found := found;
-  return jsonb_build_object('active', v_active, 'already_today', v_found, 'score', v_score, 'max', v_max);
+  return jsonb_build_object('active', v_active, 'already_today', v_found, 'score', v_score, 'max', v_max,
+    'time_limit_sec', v_limit);
 end $$;
 
 -- 解答提出（採点はクライアント側で完了済みのものを受け取り、そのまま記録する）
@@ -340,19 +345,24 @@ returns jsonb language plpgsql security definer set search_path = public as $$
 begin
   if not quiz_check_pin(p_pin) then return jsonb_build_object('error', 'bad_pin'); end if;
   return jsonb_build_object('states', coalesce((
-    select jsonb_agg(jsonb_build_object('quiz_id', qs.quiz_id, 'is_active', qs.is_active))
+    select jsonb_agg(jsonb_build_object('quiz_id', qs.quiz_id, 'is_active', qs.is_active,
+      'time_limit_sec', qs.time_limit_sec))
     from quiz_state qs
   ), '[]'::jsonb));
 end $$;
 
--- 配布の開始／停止（quiz_id は quizdata.js の CH[].id）
-create or replace function quiz_set_active(p_pin text, p_quiz_id text, p_active boolean)
+-- 配布の開始／停止（quiz_id は quizdata.js の CH[].id）。制限時間（秒）も同時に設定できる
+-- （p_time_limit_secがnullのときは既存の設定を変えない＝配布ON/OFFだけの操作にも使える）
+create or replace function quiz_set_active(p_pin text, p_quiz_id text, p_active boolean, p_time_limit_sec int default null)
 returns jsonb language plpgsql security definer set search_path = public as $$
 begin
   if not quiz_check_pin(p_pin) then return jsonb_build_object('error', 'bad_pin'); end if;
-  insert into quiz_state (quiz_id, is_active, updated_at)
-    values (p_quiz_id, p_active, now())
-    on conflict (quiz_id) do update set is_active = excluded.is_active, updated_at = now();
+  insert into quiz_state (quiz_id, is_active, time_limit_sec, updated_at)
+    values (p_quiz_id, p_active, p_time_limit_sec, now())
+    on conflict (quiz_id) do update set
+      is_active = excluded.is_active,
+      time_limit_sec = coalesce(excluded.time_limit_sec, quiz_state.time_limit_sec),
+      updated_at = now();
   return jsonb_build_object('ok', true);
 end $$;
 

@@ -54,6 +54,8 @@ button{font:inherit;cursor:pointer;border-radius:2px;border:1px solid transparen
 
 table{border-collapse:collapse;width:100%;background:#fff;font-size:13.5px;margin-top:10px}
 th,td{border:1px solid var(--rule);padding:6px 9px;text-align:left;vertical-align:top}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{background:var(--ai-weak)}
 th{background:#f2f5f9;font-weight:600;font-size:12.5px;white-space:nowrap;position:sticky;top:0}
 td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
 td.mono{font-family:var(--mono);word-break:break-all}
@@ -183,7 +185,9 @@ let REFLECTIONS = [];             // 振り返り全件
 let F = {cls:"", quiz:"", school:""};   // フィルタ
 let VIEW = "overview";
 let DRILL = null;
-let QSTATE = {};             // {quiz_id: is_active}
+let QSTATE = {};             // {quiz_id: {active, limitSec}}
+let REFL_QUICK = "";         // ""/"flag"/"good"/"dup" — 振り返り一覧のクイック絞り込み
+let REFL_SORT = {key:"date", dir:"desc"}; // 振り返り一覧の並び替え
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const SS_KEY = "quiz_teacher_pin";
@@ -237,29 +241,49 @@ async function loadQuizState(){
     const r = await Quiz.rpc("quiz_list_state", {p_pin:pin});
     if(r.error){ box.textContent = "取得エラー"; return; }
     QSTATE = {};
-    (r.states||[]).forEach(s=>{ QSTATE[s.quiz_id]=s.is_active; });
+    (r.states||[]).forEach(s=>{ QSTATE[s.quiz_id] = {active: s.is_active, limitSec: s.time_limit_sec ?? null}; });
   }catch(e){ box.textContent = "通信エラー："+e.message; return; }
   renderQuizMgr();
 }
 function renderQuizMgr(){
   const box = document.getElementById("quizmgr");
   box.innerHTML = CH.map(t=>{
-    const on = !!QSTATE[t.id];
+    const st = QSTATE[t.id] || {active:false, limitSec:null};
+    const on = !!st.active;
+    const mins = Math.round((st.limitSec ?? t.limit) / 60);
     return `<div class="qr-row">
       <div class="nm"><span class="no">${t.no}</span>${esc(t.name)} <span class="badge ${on?"on":"off"}">${on?"配布中":"停止中"}</span></div>
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <label style="font-size:12.5px;color:var(--ink-soft);display:flex;align-items:center;gap:4px">制限時間
+          <input type="number" min="1" max="120" data-mins="${t.id}" value="${mins}" style="width:56px;padding:6px 6px">分
+        </label>
         <button class="btn mini ghost" data-qr="${t.id}">QR表示</button>
         <button class="btn mini ${on?"":"ghost"}" data-toggle="${t.id}">${on?"停止":"配布"}</button>
+        <button class="btn mini ghost" data-viewrefl="${t.id}">振り返りを見る</button>
       </div>
     </div>`;
   }).join("");
+  const minsOf = id => Math.max(1, Math.min(120, +box.querySelector(`[data-mins="${id}"]`).value || 1)) * 60;
   box.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=async ()=>{
     const id = b.dataset.toggle;
+    const st = QSTATE[id] || {active:false};
     b.disabled = true;
-    await Quiz.rpc("quiz_set_active", {p_pin:pin, p_quiz_id:id, p_active: !QSTATE[id]});
+    await Quiz.rpc("quiz_set_active", {p_pin:pin, p_quiz_id:id, p_active: !st.active, p_time_limit_sec: minsOf(id)});
     await loadQuizState();
   });
+  box.querySelectorAll("[data-mins]").forEach(inp=>inp.onchange=async ()=>{
+    const id = inp.dataset.mins;
+    const st = QSTATE[id] || {active:false};
+    await Quiz.rpc("quiz_set_active", {p_pin:pin, p_quiz_id:id, p_active: st.active, p_time_limit_sec: minsOf(id)});
+    if(QSTATE[id]) QSTATE[id].limitSec = minsOf(id);
+  });
   box.querySelectorAll("[data-qr]").forEach(b=>b.onclick=()=>showQR(b.dataset.qr));
+  box.querySelectorAll("[data-viewrefl]").forEach(b=>b.onclick=()=>{
+    F.quiz = b.dataset.viewrefl; REFL_QUICK = ""; DRILL = null; VIEW = "reflections";
+    document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on", x.dataset.v==="reflections"));
+    render();
+    document.getElementById("view").scrollIntoView({behavior:"smooth", block:"start"});
+  });
 }
 function showQR(quizId){
   const url = studentUrl(quizId);
@@ -527,21 +551,47 @@ function vMissing(rows){
 
 /** 振り返り一覧。理解度が「１　全くわからない」の生徒を上部にピックアップし、行も赤く強調する。 */
 function vReflections(){
-  const rows = reflectionsFiltered();
-  if(!rows.length) return `<div class="notice">この条件の振り返りデータがありません。</div>`;
+  const all = reflectionsFiltered();
+  if(!all.length) return `<div class="notice">この条件の振り返りデータがありません。</div>`;
   const today = jstToday();
-  const todayLow = rows.filter(x=>x.date===today && x.understanding===1);
-  const list = [...rows].sort((a,b)=> b.date.localeCompare(a.date) || a.understanding-b.understanding);
+  const todayLow = all.filter(x=>x.date===today && x.understanding===1);
+
+  let rows = all;
+  if(REFL_QUICK==="flag") rows = rows.filter(x=>x.flag);
+  else if(REFL_QUICK==="good") rows = rows.filter(x=>x.good);
+  else if(REFL_QUICK==="dup") rows = rows.filter(x=>x.is_duplicate);
+
+  const dir = REFL_SORT.dir==="asc" ? 1 : -1;
+  const cmp = {
+    date: (a,b)=> a.date.localeCompare(b.date),
+    student: (a,b)=> a.account_id.localeCompare(b.account_id),
+    quiz: (a,b)=> String(a.quiz_id).localeCompare(String(b.quiz_id)),
+    understanding: (a,b)=> a.understanding-b.understanding,
+    effort: (a,b)=> a.effort-b.effort,
+    score: (a,b)=> (a.score??-1)-(b.score??-1),
+  }[REFL_SORT.key] || (()=>0);
+  const list = [...rows].sort((a,b)=> cmp(a,b)*dir || b.date.localeCompare(a.date));
+
+  const arrow = k => REFL_SORT.key===k ? (REFL_SORT.dir==="asc"?" ▲":" ▼") : "";
+  const th = (key,label,cls="") => `<th class="sortable${cls?" "+cls:""}" data-sort="${key}">${label}${arrow(key)}</th>`;
+  const qbtn = (v,label) => `<button class="btn mini ${REFL_QUICK===v?"":"ghost"}" data-quick="${v}">${label}</button>`;
+
   return `
     ${todayLow.length
       ? `<div class="notice warn"><b>⚠ 今日、理解度が「１　全くわからない（ヘルプ！）」だった生徒（${todayLow.length}人）</b><br>
           ${todayLow.map(x=>`<span class="badge" style="font-size:13px;margin:2px;border-color:var(--shu);color:var(--shu)">${esc(accountLabel(x.account_id))}</span>`).join(" ")}</div>`
       : `<div class="notice ok">今日、理解度１（要フォロー）の生徒はいません。</div>`}
-    <div class="notice no-print" style="margin-top:10px">理解度が１の行は赤く表示されます。「テスト」の絞り込みで授業（回）ごとに見られます。
-      バッジはreflection-sheet/と同じ簡易評価（⚠要フォロー／⭐得意サイン／📋コピー使い回しの疑い）です。
-      日付は新しい順、同じ日は理解度が低い順に並びます。</div>
+    <div class="filters no-print" style="margin-top:10px">
+      ${qbtn("", `すべて（${all.length}）`)}
+      ${qbtn("flag", `⚠要フォロー（${all.filter(x=>x.flag).length}）`)}
+      ${qbtn("good", `⭐得意（${all.filter(x=>x.good).length}）`)}
+      ${qbtn("dup", `📋コピー疑い（${all.filter(x=>x.is_duplicate).length}）`)}
+    </div>
+    <div class="notice no-print" style="margin-top:10px">列見出しをクリックすると並び替えできます。理解度が１の行は赤く表示されます。
+      バッジはreflection-sheet/と同じ簡易評価（⚠要フォロー／⭐得意サイン／📋コピー使い回しの疑い）です。</div>
+    ${!list.length ? `<div class="notice" style="margin-top:10px">この絞り込みに該当する振り返りはありません。</div>` : ""}
     <div class="scroll"><table>
-      <thead><tr><th>日付</th><th>授業</th><th>生徒</th><th>理解度</th><th>意欲・態度</th><th class="num">点数</th><th>コメント（質問・困っていること含む）</th><th class="no-print"></th></tr></thead>
+      <thead><tr>${th("date","日付")}${th("quiz","授業")}${th("student","生徒")}${th("understanding","理解度")}${th("effort","意欲・態度")}${th("score","点数","num")}<th>コメント（質問・困っていること含む）</th><th class="no-print"></th></tr></thead>
       <tbody>${list.map(x=>{
         const badges = [
           x.flag ? `<span class="badge" style="border-color:var(--shu);color:var(--shu)">⚠ 要フォロー</span>` : "",
@@ -577,6 +627,13 @@ function bindDrill(){
       if(r && r.ok){ await loadReflections(); }
       else { alert("削除できませんでした。"); b.disabled=false; b.textContent="削除"; }
     }catch(err){ alert("通信エラーです。もう一度お試しください。"); b.disabled=false; b.textContent="削除"; }
+  });
+  document.querySelectorAll("[data-quick]").forEach(b=>b.onclick=()=>{ REFL_QUICK=b.dataset.quick; render(); });
+  document.querySelectorAll("th[data-sort]").forEach(th=>th.onclick=()=>{
+    const k = th.dataset.sort;
+    if(REFL_SORT.key===k) REFL_SORT = {key:k, dir: REFL_SORT.dir==="asc"?"desc":"asc"};
+    else REFL_SORT = {key:k, dir:"desc"};
+    render();
   });
 }
 

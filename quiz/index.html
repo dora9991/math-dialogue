@@ -964,15 +964,17 @@ async function startTest(t, opts){
   clearInterval(waitTimer);
   S.practice = practice;
 
+  let effectiveTest = t;
   if(!practice){
     const check = await safeCheck(t.id);
     if(!check) return;
     if(check.error){ alert("エラーが発生しました。"); return; }
     if(!check.active){ alert("このテストは現在受け付けられていません。"); renderHome(); return; }
     if(check.already_today){ renderAlreadyDone(t, {score:check.score, max:check.max}); return; }
+    if(check.time_limit_sec) effectiveTest = {...t, limit: check.time_limit_sec}; // 先生が設定した制限時間で上書き
   }
 
-  S.test=t; S.ans={}; S.submitted=false; S.qStart={};
+  S.test=effectiveTest; S.ans={}; S.submitted=false; S.qStart={};
   let resumed=false;
   if(!practice){
     const raw = store.get(KEY(t.id));
