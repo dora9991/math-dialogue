@@ -284,7 +284,7 @@ async function loadReflections(){
     const r = await Quiz.rpc("quiz_reflection_list_teacher", {p_pin:pin});
     if(r.error) return;
     REFLECTIONS = (r.rows||[]).map(x=>({
-      account_id: x.account_id, date: x.date,
+      account_id: x.account_id, quiz_id: x.quiz_id, date: x.date,
       understanding: +x.understanding||0, effort: +x.effort||0,
       score: x.score==null ? null : +x.score, comment: x.comment||"",
     }));
@@ -302,7 +302,7 @@ const filtered = () => ROWS.filter(r =>
   (!F.cls || classOf(r.student_id)===F.cls) && (!F.quiz || r.quiz_id===F.quiz));
 const reflectionsFiltered = () => REFLECTIONS.filter(x =>
   (!F.school || schoolOf(x.account_id)===F.school) &&
-  (!F.cls || classOf(x.account_id)===F.cls));
+  (!F.cls || classOf(x.account_id)===F.cls) && (!F.quiz || x.quiz_id===F.quiz));
 function jstToday(){
   const now = new Date();
   return new Date(now.getTime() + (now.getTimezoneOffset()+9*60)*60000).toISOString().slice(0,10);
@@ -354,7 +354,7 @@ function render(){
   const schools = uniq(allIds.map(schoolOf)).filter(s=>s!=="?");
   const idsInSchool = allIds.filter(id => !F.school || schoolOf(id)===F.school);
   const clss = uniq(idsInSchool.map(classOf)).filter(c=>c!=="?");
-  const quizzes = uniq(ROWS.map(r=>r.quiz_id));
+  const quizzes = uniq([...ROWS.map(r=>r.quiz_id), ...REFLECTIONS.map(r=>r.quiz_id)]);
   $("#filters").innerHTML = `
     <select id="f-school"><option value="">全学校</option>${schools.map(s=>`<option ${F.school===s?"selected":""} value="${s}">${esc(s)}</option>`).join("")}</select>
     <select id="f-cls"><option value="">全クラス</option>${clss.map(c=>`<option ${F.cls===c?"selected":""} value="${c}">${c.replace("-","年")}組</option>`).join("")}</select>
@@ -497,12 +497,13 @@ function vReflections(){
       ? `<div class="notice warn"><b>⚠ 今日、理解度が「１　全くわからない（ヘルプ！）」だった生徒（${todayLow.length}人）</b><br>
           ${todayLow.map(x=>`<span class="badge" style="font-size:13px;margin:2px;border-color:var(--shu);color:var(--shu)">${esc(accountLabel(x.account_id))}</span>`).join(" ")}</div>`
       : `<div class="notice ok">今日、理解度１（要フォロー）の生徒はいません。</div>`}
-    <div class="notice no-print" style="margin-top:10px">理解度が１の行は赤く表示されます。日付は新しい順、同じ日は理解度が低い順に並びます。</div>
+    <div class="notice no-print" style="margin-top:10px">理解度が１の行は赤く表示されます。「テスト」の絞り込みで授業（回）ごとに見られます。日付は新しい順、同じ日は理解度が低い順に並びます。</div>
     <div class="scroll"><table>
-      <thead><tr><th>日付</th><th>生徒</th><th>理解度</th><th>意欲・態度</th><th class="num">点数</th><th>コメント（質問・困っていること含む）</th></tr></thead>
+      <thead><tr><th>日付</th><th>授業</th><th>生徒</th><th>理解度</th><th>意欲・態度</th><th class="num">点数</th><th>コメント（質問・困っていること含む）</th></tr></thead>
       <tbody>${list.map(x=>`
         <tr class="${x.understanding===1?"lo":""}">
           <td class="mono">${esc(x.date)}</td>
+          <td>${esc(quizName(x.quiz_id))}</td>
           <td>${esc(accountLabel(x.account_id))}<br><span class="mono" style="font-size:11px;color:var(--ink-soft)">${esc(x.account_id)}</span></td>
           <td>${x.understanding===1?'<span class="mk-ng">１　全くわからない</span>':esc(x.understanding)}</td>
           <td>${esc(x.effort)}</td>

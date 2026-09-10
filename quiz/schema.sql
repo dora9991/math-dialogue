@@ -186,32 +186,42 @@ exception when unique_violation then
   return jsonb_build_object('error', 'already_today');
 end $$;
 
--- ---------- 振り返り（ログイン済みアカウントのみ・同じ日は上書き） ----------
+-- ---------- 振り返り（配布中の小テストに紐づく。ログイン済みアカウントのみ・同じ日は上書き） ----------
+-- 振り返りは「今日の気分」ではなく「この授業（quiz_id）の振り返り」。小テストが配布中の間だけ書け、
+-- 停止されると（=quiz_stateのis_activeがfalseになると）新規の記入・上書きもできなくなる。
 
 create table if not exists quiz_reflections (
   id            bigint generated always as identity primary key,
   account_id    text not null,
+  quiz_id       text not null default 'unknown', -- どの授業(小テスト回)の振り返りか。quizdata.js の CH[].id と一致
   jst_date      date not null,
   understanding int  not null,             -- 授業の理解度 1〜4（4が一番よい）
   effort        int  not null,             -- 意欲・態度 1〜4（4が一番よい）
   score         int,                       -- 今日の小テストの点数（任意）
-  comment       text,                      -- 振り返り記入欄（任意）
+  comment       text,                      -- 振り返り記入欄（質問・困っていることも可・任意）
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now(),
-  unique (account_id, jst_date)
+  unique (account_id, quiz_id, jst_date)
 );
 alter table quiz_reflections enable row level security;
 -- ポリシーを一切作らない = anonキーからの直接アクセスは全拒否（RPC経由のみ）
 
--- 今日の分の振り返りを取得（無ければ found:false）。フォームの再編集に使う
-create or replace function quiz_reflection_get(p_account_id text)
+-- 移行: quiz_id 列がまだ無い旧バージョンのテーブルに追加し、一意制約を account_id×日付 から
+-- account_id×quiz_id×日付 へ張り替える（新規作成時は上のcreate tableで既に正しい形なので実質no-op）
+alter table quiz_reflections add column if not exists quiz_id text not null default 'unknown';
+alter table quiz_reflections drop constraint if exists quiz_reflections_account_id_jst_date_key;
+alter table quiz_reflections drop constraint if exists quiz_reflections_account_id_quiz_id_jst_date_key;
+alter table quiz_reflections add constraint quiz_reflections_account_id_quiz_id_jst_date_key unique (account_id, quiz_id, jst_date);
+
+-- 今日の分の振り返りを取得（その quiz_id ・今日の分。無ければ found:false）。フォームの再編集に使う
+create or replace function quiz_reflection_get(p_account_id text, p_quiz_id text)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   v_today date := (now() at time zone 'Asia/Tokyo')::date;
   v_row record;
 begin
   select understanding, effort, score, comment into v_row
-    from quiz_reflections where account_id = p_account_id and jst_date = v_today;
+    from quiz_reflections where account_id = p_account_id and quiz_id = p_quiz_id and jst_date = v_today;
   if not found then
     return jsonb_build_object('found', false);
   end if;
@@ -219,12 +229,14 @@ begin
     'effort', v_row.effort, 'score', v_row.score, 'comment', v_row.comment);
 end $$;
 
--- 振り返りの提出（同じアカウント×同じ日は上書き＝書き直しOK）
+-- 振り返りの提出（同じアカウント×同じquiz_id×同じ日は上書き＝書き直しOK）。
+-- その小テストが「配布中」でなければ拒否する＝小テストが非公開になると振り返りも書けなくなる。
 create or replace function quiz_reflection_submit(
-  p_account_id text, p_understanding int, p_effort int, p_score int, p_comment text
+  p_account_id text, p_quiz_id text, p_understanding int, p_effort int, p_score int, p_comment text
 ) returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   v_today date := (now() at time zone 'Asia/Tokyo')::date;
+  v_active boolean;
 begin
   if coalesce(p_account_id, '') !~ '^[A-Z]-[0-9]{5,7}$' then
     return jsonb_build_object('error', 'bad_account');
@@ -234,13 +246,39 @@ begin
     return jsonb_build_object('error', 'bad_score');
   end if;
 
-  insert into quiz_reflections (account_id, jst_date, understanding, effort, score, comment, updated_at)
-    values (p_account_id, v_today, p_understanding, p_effort, p_score, p_comment, now())
-  on conflict (account_id, jst_date) do update set
+  select coalesce((select is_active from quiz_state where quiz_id = p_quiz_id), false) into v_active;
+  if not v_active then
+    return jsonb_build_object('error', 'inactive');
+  end if;
+
+  insert into quiz_reflections (account_id, quiz_id, jst_date, understanding, effort, score, comment, updated_at)
+    values (p_account_id, p_quiz_id, v_today, p_understanding, p_effort, p_score, p_comment, now())
+  on conflict (account_id, quiz_id, jst_date) do update set
     understanding = excluded.understanding, effort = excluded.effort,
     score = excluded.score, comment = excluded.comment, updated_at = now();
 
   return jsonb_build_object('ok', true);
+end $$;
+
+-- 生徒本人の「今までに解いた小テスト」一覧（やり直し画面用）。パスワード再確認はしない軽量方式
+-- （このツール全体の既存方針＝ログインで入口を絞るのみ・各RPCでの再認証はしない、と同じ扱い）。
+create or replace function quiz_my_attempts(p_account_id text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+  if coalesce(p_account_id, '') !~ '^[A-Z]-[0-9]{5,7}$' then
+    return jsonb_build_object('error', 'bad_account');
+  end if;
+  return jsonb_build_object('attempts', coalesce((
+    select jsonb_agg(x order by x->>'quiz_id') from (
+      select jsonb_build_object(
+        'quiz_id', quiz_id,
+        'best_score', max(score), 'best_max', max(max_score),
+        'times', count(*), 'last_date', max(jst_date)::text
+      ) as x
+      from quiz_attempts where student_code = p_account_id
+      group by quiz_id
+    ) t
+  ), '[]'::jsonb));
 end $$;
 
 -- ---------- 教師用 RPC（すべてPIN必須） ----------
@@ -301,6 +339,7 @@ begin
   return jsonb_build_object('rows', coalesce((
     select jsonb_agg(jsonb_build_object(
       'account_id', account_id,
+      'quiz_id', quiz_id,
       'date', to_char(jst_date, 'YYYY-MM-DD'),
       'understanding', understanding,
       'effort', effort,

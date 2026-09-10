@@ -64,6 +64,9 @@ button{font:inherit;cursor:pointer;border-radius:2px;border:1px solid transparen
   background:#fff;border:1px solid var(--rule);padding:14px 16px;text-align:left;width:100%;
 }
 .tests button:hover{border-color:var(--ai);background:var(--ai-weak)}
+.testrow{display:flex;gap:8px;align-items:stretch}
+.testrow .teststart{flex:1;min-width:0}
+.testrow .rfbtn{flex:none;align-self:center;white-space:nowrap}
 .tests .no{font-family:var(--mono);font-size:13px;color:var(--ai);letter-spacing:.05em}
 .tests .nm{flex:1;font-size:15px}
 .tests .pg{font-size:11px;color:var(--ink-soft);font-family:var(--mono)}
@@ -373,13 +376,13 @@ function loadDoneFor(quizId, sid){
 /* ============================================================
    状態
    ============================================================ */
-let S = { test:null, sid:null, ans:{}, startedAt:0, qStart:{}, timer:null, submitted:false };
+let S = { test:null, sid:null, ans:{}, startedAt:0, qStart:{}, timer:null, submitted:false, practice:false };
 let ACTIVE = [];       // サーバーで「配布中」になっている quiz_id の一覧
 let waitTimer = null;  // QR待ちの自動再確認タイマー
 const KEY = t => `quiz:${t}:${S.sid}`;
 const app = document.getElementById("app");
 const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const save = () => { if(S.test&&S.sid) store.set(KEY(S.test.id), JSON.stringify({ans:S.ans, startedAt:S.startedAt, qStart:S.qStart, date:todayStr()})); };
+const save = () => { if(S.test&&S.sid&&!S.practice) store.set(KEY(S.test.id), JSON.stringify({ans:S.ans, startedAt:S.startedAt, qStart:S.qStart, date:todayStr()})); };
 
 /* ============================================================
    ホーム画面 ／ ログイン・新規登録
@@ -398,10 +401,10 @@ function renderAccountCard(id){
     <div class="hint">この端末に記憶しています。</div>`;
   document.getElementById("logout").onclick=()=>{
     store.del(ACCOUNT_KEY); clearSavedPassword(); S.sid=null;
-    hideReflectCard();
+    hidePracticeCard();
     renderLoginForm("");
   };
-  renderReflectCard(id);
+  renderPracticeCard();
 }
 
 function renderLoginForm(prefillId, msg){
@@ -541,7 +544,7 @@ async function renderHome(){
     </header>
     <div class="card" id="me"></div>
     <div class="card" id="teststate"><p class="hint">読み込み中…</p></div>
-    <div class="card hidden" id="reflect"></div>
+    <div class="card hidden" id="practice"></div>
   `;
 
   const savedId = loadAccountId();
@@ -559,7 +562,9 @@ async function renderHome(){
 
 /* ============================================================
    振り返り（授業の理解度・意欲・今日の点数・記入欄）
-   ログインしていないと選べない＝ホーム画面のカードはログイン後にしか出さない。
+   その授業（配布中の小テスト）に紐づく＝小テストが配布中の間だけ書ける。
+   小テストが非公開になると、振り返りも書けなくなる（サーバー側でも quiz_reflection_submit が拒否する）。
+   ログインしていないと選べない＝ボタン自体がログイン後にしか出ない。
    ============================================================ */
 const REFLECT_UNDERSTAND = [
   {v:4, t:"４　ばっちり！"},
@@ -573,30 +578,6 @@ const REFLECT_EFFORT = [
   {v:2, t:"２　あまり頑張れなかった"},
   {v:1, t:"１　頑張れなかった"},
 ];
-let REFLECT_TODAY = null; // quiz_reflection_get の結果（今日の分があれば）
-
-function hideReflectCard(){
-  const box = document.getElementById("reflect");
-  if(box){ box.classList.add("hidden"); box.innerHTML=""; }
-  REFLECT_TODAY = null;
-}
-
-/** ログイン後のホーム画面に「振り返り」カードを出す。今日の分があれば編集扱いにする。 */
-async function renderReflectCard(id){
-  const box = document.getElementById("reflect");
-  if(!box) return;
-  box.classList.remove("hidden");
-  box.innerHTML = `<p class="hint">読み込み中…</p>`;
-  let r;
-  try{ r = await Quiz.rpc("quiz_reflection_get", {p_account_id:id}); }
-  catch(e){ r = null; }
-  REFLECT_TODAY = (r && r.found) ? r : null;
-  box.innerHTML = `
-    <h2>振り返り</h2>
-    ${REFLECT_TODAY ? `<div class="hint">今日はすでに記入ずみです。内容はあとから変更できます。</div>` : ""}
-    <button class="btn" id="rf-open">${REFLECT_TODAY ? "✏️ 今日の振り返りを編集する" : "📝 今日の振り返りを書く"}</button>`;
-  document.getElementById("rf-open").onclick = renderReflectionForm;
-}
 
 function levelChoicesHTML(id, levels, selected){
   return `<div class="choices" id="${id}">${levels.map(l=>
@@ -613,16 +594,27 @@ function wireLevelChoices(id, onPick){
   });
 }
 
-function renderReflectionForm(){
+/** 指定した小テスト(t)の、今日の振り返りを書く／編集する画面。t が配布中でなくなっていたら保存時に拒否される。 */
+async function renderReflectionForm(t){
   KB.hide();
   clearInterval(waitTimer);
-  const ex = REFLECT_TODAY;
+  app.innerHTML = `
+    <header class="sheet">
+      <h1>数学　小テスト・振り返り</h1>
+      <div class="sub">${esc(t.no)}　${esc(t.name)}</div>
+    </header>
+    <div class="card"><p class="hint">読み込み中…</p></div>`;
+  let r;
+  try{ r = await Quiz.rpc("quiz_reflection_get", {p_account_id:S.sid, p_quiz_id:t.id}); }
+  catch(e){ r = null; }
+  const ex = (r && r.found) ? r : null;
   const picked = { understanding: ex?.understanding ?? null, effort: ex?.effort ?? null };
   app.innerHTML = `
     <header class="sheet">
       <h1>数学　小テスト・振り返り</h1>
-      <div class="sub">${esc(accountLabel(S.sid))}　・　今日の振り返り</div>
+      <div class="sub">${esc(accountLabel(S.sid))}　・　${esc(t.no)}　${esc(t.name)} の振り返り</div>
     </header>
+    ${ex ? `<div class="notice">今日はすでに記入ずみです。内容を読み込みました。変更してもう一度保存できます。</div>` : ""}
     <div class="card">
       <h2>授業の理解度</h2>
       ${levelChoicesHTML("lv-under", REFLECT_UNDERSTAND, picked.understanding)}
@@ -660,28 +652,101 @@ function renderReflectionForm(){
     const comment = document.getElementById("rf-comment").value;
     const btn = document.getElementById("rf-save");
     btn.disabled=true; btn.textContent="保存中…";
-    let r;
+    let r2;
     try{
-      r = await Quiz.rpc("quiz_reflection_submit", {
-        p_account_id: S.sid, p_understanding: picked.understanding, p_effort: picked.effort,
+      r2 = await Quiz.rpc("quiz_reflection_submit", {
+        p_account_id: S.sid, p_quiz_id: t.id, p_understanding: picked.understanding, p_effort: picked.effort,
         p_score: score, p_comment: comment,
       });
     }catch(e){ btn.disabled=false; btn.textContent="保存する"; alert("通信エラーです。もう一度お試しください。"); return; }
-    if(r && r.ok){ renderReflectionDone(); }
-    else { btn.disabled=false; btn.textContent="保存する"; alert("保存できませんでした。もう一度お試しください。"); }
+    if(r2 && r2.ok){ renderReflectionDone(t); }
+    else if(r2 && r2.error==="inactive"){
+      alert("この小テストは先生によって非公開にされたため、振り返りを保存できませんでした。");
+      renderHome();
+    } else {
+      btn.disabled=false; btn.textContent="保存する";
+      alert("保存できませんでした。もう一度お試しください。");
+    }
   };
 }
 
-function renderReflectionDone(){
+function renderReflectionDone(t){
   app.innerHTML = `
     <header class="sheet">
       <h1>数学　小テスト・振り返り</h1>
-      <div class="sub">${esc(accountLabel(S.sid))}</div>
+      <div class="sub">${esc(accountLabel(S.sid))}　・　${esc(t.no)}　${esc(t.name)}</div>
     </header>
     <div class="notice ok" style="margin-top:14px;font-size:15px;text-align:center;padding:18px">振り返りを保存しました。</div>
     <div class="foot"><button class="btn" id="rf-done-home" style="width:100%">ホームへもどる</button></div>
   `;
   document.getElementById("rf-done-home").onclick = renderHome;
+}
+
+/* ============================================================
+   小テストのやり直し（練習モード）
+   今までに一度でも提出したことのある小テストを、何度でも練習できる。
+   結果はサーバーに送信・記録されない（配布中かどうかにも関わらず挑戦できる）。
+   ============================================================ */
+function hidePracticeCard(){
+  const box = document.getElementById("practice");
+  if(box){ box.classList.add("hidden"); box.innerHTML=""; }
+}
+function renderPracticeCard(){
+  const box = document.getElementById("practice");
+  if(!box) return;
+  box.classList.remove("hidden");
+  box.innerHTML = `
+    <h2>やり直し</h2>
+    <div class="hint">今までに解いた小テストを、もう一度練習できます。結果は記録されません。</div>
+    <button class="btn ghost" id="pr-open">🔁 小テストのやり直し</button>`;
+  document.getElementById("pr-open").onclick = renderPracticeList;
+}
+async function renderPracticeList(){
+  KB.hide();
+  clearInterval(waitTimer);
+  app.innerHTML = `
+    <header class="sheet">
+      <h1>数学　小テスト・振り返り</h1>
+      <div class="sub">${esc(accountLabel(S.sid))}　・　やり直し</div>
+    </header>
+    <div class="card"><p class="hint">読み込み中…</p></div>`;
+  let r;
+  try{ r = await Quiz.rpc("quiz_my_attempts", {p_account_id:S.sid}); }
+  catch(e){ r = null; }
+  const attempts = (r && Array.isArray(r.attempts)) ? r.attempts : [];
+  const known = attempts.map(a=>({a, t:CH.find(x=>x.id===a.quiz_id)})).filter(x=>x.t);
+  if(!known.length){
+    app.innerHTML = `
+      <header class="sheet">
+        <h1>数学　小テスト・振り返り</h1>
+        <div class="sub">${esc(accountLabel(S.sid))}　・　やり直し</div>
+      </header>
+      <div class="notice">まだ解いた小テストがありません。</div>
+      <div class="foot"><button class="btn" id="pr-back" style="width:100%">ホームへもどる</button></div>`;
+    document.getElementById("pr-back").onclick = renderHome;
+    return;
+  }
+  app.innerHTML = `
+    <header class="sheet">
+      <h1>数学　小テスト・振り返り</h1>
+      <div class="sub">${esc(accountLabel(S.sid))}　・　やり直し</div>
+    </header>
+    <div class="notice">練習用です。結果は先生には送られず、記録にも残りません。何度でも挑戦できます。</div>
+    <div class="tests">
+      ${known.map(({a,t})=>{
+        const pct = a.best_max ? Math.round(a.best_score/a.best_max*100) : 0;
+        return `<button data-id="${t.id}">
+          <span class="no">${t.no}</span><span class="nm">${esc(t.name)}</span>
+          <span class="pg">最高 ${a.best_score}/${a.best_max}（${pct}%）・${a.times}回</span>
+        </button>`;
+      }).join("")}
+    </div>
+    <div class="foot"><button class="btn ghost" id="pr-back" style="width:100%">ホームへもどる</button></div>`;
+  app.querySelectorAll(".tests [data-id]").forEach(b=>b.onclick=()=>{
+    const t = CH.find(x=>x.id===b.dataset.id);
+    startTest(t, {practice:true});
+  });
+  document.getElementById("pr-back").onclick = renderHome;
 }
 
 /** サーバーで「配布中」の小テストを取得し、テスト選択カードを描く。 */
@@ -703,8 +768,12 @@ async function refreshTests(){
       clearInterval(waitTimer);
       box.innerHTML = `
         <h2>${esc(t.no)}　${esc(t.name)}</h2>
-        <button class="btn" id="go">この小テストをはじめる</button>`;
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="go" style="flex:1">この小テストをはじめる</button>
+          ${S.sid ? `<button class="btn ghost" id="go-reflect" style="flex:none">📝 振り返り</button>` : ""}
+        </div>`;
       document.getElementById("go").onclick=()=>startTest(t);
+      if(S.sid) document.getElementById("go-reflect").onclick=()=>renderReflectionForm(t);
     } else {
       box.innerHTML = `
         <h2>${esc(t.no)}　${esc(t.name)}</h2>
@@ -731,15 +800,23 @@ async function refreshTests(){
       ${list.map(t=>{
         const d = S.sid ? loadDoneFor(t.id, S.sid) : null;
         const today = d && d.date===todayStr();
-        return `<button data-id="${t.id}">
-          <span class="no">${t.no}</span><span class="nm">${esc(t.name)}</span>
-          ${today?`<span class="badge" style="border-color:var(--ok);color:var(--ok)">✓ 本日実施</span>`:`<span class="pg">${t.pages}</span>`}
-        </button>`;
+        return `<div class="testrow">
+          <button class="teststart" data-id="${t.id}">
+            <span class="no">${t.no}</span><span class="nm">${esc(t.name)}</span>
+            ${today?`<span class="badge" style="border-color:var(--ok);color:var(--ok)">✓ 本日実施</span>`:`<span class="pg">${t.pages}</span>`}
+          </button>
+          ${S.sid ? `<button class="btn mini ghost rfbtn" data-reflect="${t.id}">📝 振り返り</button>` : ""}
+        </div>`;
       }).join("")}
     </div>`;
   box.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{
     const t = CH.find(x=>x.id===b.dataset.id);
     startTest(t);
+  });
+  box.querySelectorAll("[data-reflect]").forEach(b=>b.onclick=(e)=>{
+    e.stopPropagation();
+    const t = CH.find(x=>x.id===b.dataset.reflect);
+    renderReflectionForm(t);
   });
 }
 
@@ -772,27 +849,34 @@ async function safeCheck(quizId){
   try{ return await Quiz.rpc("quiz_check", {p_quiz_id:quizId, p_student:S.sid}); }
   catch(e){ alert("通信エラー：もう一度お試しください。"); return null; }
 }
-async function startTest(t){
+async function startTest(t, opts){
+  const practice = !!(opts && opts.practice);
   if(!S.sid){ alert("先にログインしてください。"); return; }
   clearInterval(waitTimer);
-  const check = await safeCheck(t.id);
-  if(!check) return;
-  if(check.error){ alert("エラーが発生しました。"); return; }
-  if(!check.active){ alert("このテストは現在受け付けられていません。"); renderHome(); return; }
-  if(check.already_today){ renderAlreadyDone(t, {score:check.score, max:check.max}); return; }
+  S.practice = practice;
+
+  if(!practice){
+    const check = await safeCheck(t.id);
+    if(!check) return;
+    if(check.error){ alert("エラーが発生しました。"); return; }
+    if(!check.active){ alert("このテストは現在受け付けられていません。"); renderHome(); return; }
+    if(check.already_today){ renderAlreadyDone(t, {score:check.score, max:check.max}); return; }
+  }
 
   S.test=t; S.ans={}; S.submitted=false; S.qStart={};
-  const raw = store.get(KEY(t.id));
   let resumed=false;
-  if(raw){
-    try{
-      const d=JSON.parse(raw);
-      if(d.date===todayStr()){
-        if(confirm("前回の解答が残っています。続きから再開しますか？")){ S.ans=d.ans||{}; S.startedAt=d.startedAt; S.qStart=d.qStart||{}; resumed=true; }
-      } else {
-        store.del(KEY(t.id));
-      }
-    }catch(e){ store.del(KEY(t.id)); }
+  if(!practice){
+    const raw = store.get(KEY(t.id));
+    if(raw){
+      try{
+        const d=JSON.parse(raw);
+        if(d.date===todayStr()){
+          if(confirm("前回の解答が残っています。続きから再開しますか？")){ S.ans=d.ans||{}; S.startedAt=d.startedAt; S.qStart=d.qStart||{}; resumed=true; }
+        } else {
+          store.del(KEY(t.id));
+        }
+      }catch(e){ store.del(KEY(t.id)); }
+    }
   }
   if(!resumed) S.startedAt = Date.now();
   renderTest();
@@ -827,12 +911,15 @@ function renderTest(){
   app.innerHTML = `
     <div class="bar">
       <span class="who">${esc(accountLabel(S.sid))}</span>
+      ${S.practice ? `<span class="badge" style="border-color:#c98a2b;color:#8a5a12">練習</span>` : ""}
       <span style="font-size:13px;color:var(--ink-soft)">${t.no} ${esc(t.name)}</span>
       <span class="tm" id="tm">--:--</span>
     </div>
     <div class="prog"><i id="pg"></i></div>
     <div id="qs"></div>
-    <div class="notice">解答は入力するたびにこの端末に保存されます。送信は最後に1回だけです。</div>
+    ${S.practice
+      ? `<div class="notice">これは練習（やり直し）です。結果は保存・送信されません。何度でも挑戦できます。</div>`
+      : `<div class="notice">解答は入力するたびにこの端末に保存されます。送信は最後に1回だけです。</div>`}
     <div class="foot">
       <button class="btn ghost" id="back">中断してもどる</button>
       <button class="btn" id="sb">解答を提出する</button>
@@ -843,7 +930,10 @@ function renderTest(){
   if(t.bonus) box.appendChild(renderBonus(t.bonus));
   document.getElementById("sb").onclick=()=>{ const {done,total}=progress();
     if(done<total && !confirm(`未解答が ${total-done} 問あります。このまま提出しますか？`)) return; submit(false); };
-  document.getElementById("back").onclick=()=>{ if(confirm("中断してホームにもどりますか？（解答はこの端末に残ります）")){ clearInterval(S.timer); renderHome(); } };
+  document.getElementById("back").onclick=()=>{
+    const msg = S.practice ? "中断してホームにもどりますか？" : "中断してホームにもどりますか？（解答はこの端末に残ります）";
+    if(confirm(msg)){ clearInterval(S.timer); renderHome(); }
+  };
 }
 
 function renderQ(q,qi){
@@ -1168,6 +1258,7 @@ async function submit(auto){
   if(S.submitted) return;
   S.submitted=true; clearInterval(S.timer);
   const g = gradeAll();
+  if(S.practice){ renderResult(g, auto, "practice"); return; }
   saveDone(S.test.id, g.score, g.max);
   renderResult(g, auto, "sending");
   const res = await send(g);
@@ -1214,11 +1305,12 @@ function renderResult(g, auto, state){
     already_today:`<div class="notice warn">今日はすでに提出済みでした。この結果はサーバーには保存されません。</div>`,
     inactive:`<div class="notice warn">このテストは先生によって終了されました。結果は保存されませんでした。</div>`,
     fail:`<div class="notice warn">送信できませんでした。電波を確認して「もう一度送信」を押してください。解答はこの端末に残っています。</div>`,
+    practice:`<div class="notice">これは練習（やり直し）です。結果は先生には送られず、記録にも残りません。</div>`,
   }[state];
 
   app.innerHTML = `
     <div class="score">
-      <div style="font-size:13px;color:var(--ink-soft);letter-spacing:.08em">${S.test.no}　${esc(S.test.name)}</div>
+      <div style="font-size:13px;color:var(--ink-soft);letter-spacing:.08em">${S.test.no}　${esc(S.test.name)}${S.practice?"　・　練習":""}</div>
       <div class="big">${g.score}<small> / ${g.max}</small></div>
       <div style="font-size:13px;color:var(--ink-soft);margin-top:6px">${pct}%　・　${esc(accountLabel(S.sid))}</div>
       ${bonusLine}
@@ -1229,6 +1321,7 @@ function renderResult(g, auto, state){
     <div class="foot">
       <button class="btn ghost" id="csv">CSVを保存</button>
       <button class="btn ghost ${state==="fail"?"":"hidden"}" id="re">もう一度送信</button>
+      <button class="btn ghost ${state==="practice"?"":"hidden"}" id="retry">🔁 もう一度挑戦する</button>
       <button class="btn" id="home">ホームへ</button>
     </div>
   `;
@@ -1259,6 +1352,8 @@ function renderResult(g, auto, state){
     const res=await send(g);
     renderResult(g, auto, res);
   };
+  const retry=document.getElementById("retry");
+  if(retry) retry.onclick=()=>{ const t=S.test; startTest(t, {practice:true}); };
 }
 
 /* ============================================================
