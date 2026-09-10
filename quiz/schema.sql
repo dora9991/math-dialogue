@@ -14,12 +14,14 @@
 
 -- どの小テスト（quiz_id は quizdata.js の CH[].id と一致）が今配布中か
 create table if not exists quiz_state (
-  quiz_id        text primary key,
-  is_active      boolean not null default false,
-  time_limit_sec int,                      -- 制限時間の上書き（秒）。nullならquizdata.jsの既定値を使う
-  updated_at     timestamptz not null default now()
+  quiz_id           text primary key,
+  is_active         boolean not null default false, -- 小テスト本体の配布
+  reflection_active boolean not null default false, -- 振り返りだけの配布（小テストをやらない授業用）
+  time_limit_sec    int,                      -- 制限時間の上書き（秒）。nullならquizdata.jsの既定値を使う
+  updated_at        timestamptz not null default now()
 );
 alter table quiz_state add column if not exists time_limit_sec int;
+alter table quiz_state add column if not exists reflection_active boolean not null default false;
 
 -- 提出1回＝1行（同じ生徒×テスト×日付は1回まで）
 create table if not exists quiz_attempts (
@@ -131,6 +133,12 @@ end $$;
 create or replace function quiz_list_active()
 returns jsonb language sql security definer set search_path = public as $$
   select coalesce(jsonb_agg(quiz_id), '[]'::jsonb) from quiz_state where is_active;
+$$;
+
+-- 振り返りだけ配布中の quiz_id 一覧（小テストはやらないが振り返りは書かせたい授業用）
+create or replace function quiz_list_reflect_active()
+returns jsonb language sql security definer set search_path = public as $$
+  select coalesce(jsonb_agg(quiz_id), '[]'::jsonb) from quiz_state where reflection_active;
 $$;
 
 -- 特定のテストが受けられるか（配布中か／今日すでに提出済みか）を確認
@@ -288,7 +296,8 @@ begin
     return jsonb_build_object('error', 'bad_score');
   end if;
 
-  select coalesce((select is_active from quiz_state where quiz_id = p_quiz_id), false) into v_active;
+  -- 小テスト本体が配布中、または「振り返りだけ配布」のどちらかなら書ける
+  select coalesce((select (is_active or reflection_active) from quiz_state where quiz_id = p_quiz_id), false) into v_active;
   if not v_active then
     return jsonb_build_object('error', 'inactive');
   end if;
@@ -346,7 +355,7 @@ begin
   if not quiz_check_pin(p_pin) then return jsonb_build_object('error', 'bad_pin'); end if;
   return jsonb_build_object('states', coalesce((
     select jsonb_agg(jsonb_build_object('quiz_id', qs.quiz_id, 'is_active', qs.is_active,
-      'time_limit_sec', qs.time_limit_sec))
+      'reflection_active', qs.reflection_active, 'time_limit_sec', qs.time_limit_sec))
     from quiz_state qs
   ), '[]'::jsonb));
 end $$;
@@ -362,6 +371,19 @@ begin
     on conflict (quiz_id) do update set
       is_active = excluded.is_active,
       time_limit_sec = coalesce(excluded.time_limit_sec, quiz_state.time_limit_sec),
+      updated_at = now();
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- 振り返りだけの配布の開始／停止（小テストは実施しないが振り返りは書かせたい授業用）
+create or replace function quiz_set_reflection_active(p_pin text, p_quiz_id text, p_active boolean)
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+  if not quiz_check_pin(p_pin) then return jsonb_build_object('error', 'bad_pin'); end if;
+  insert into quiz_state (quiz_id, reflection_active, updated_at)
+    values (p_quiz_id, p_active, now())
+    on conflict (quiz_id) do update set
+      reflection_active = excluded.reflection_active,
       updated_at = now();
   return jsonb_build_object('ok', true);
 end $$;

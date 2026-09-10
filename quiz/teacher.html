@@ -241,24 +241,28 @@ async function loadQuizState(){
     const r = await Quiz.rpc("quiz_list_state", {p_pin:pin});
     if(r.error){ box.textContent = "取得エラー"; return; }
     QSTATE = {};
-    (r.states||[]).forEach(s=>{ QSTATE[s.quiz_id] = {active: s.is_active, limitSec: s.time_limit_sec ?? null}; });
+    (r.states||[]).forEach(s=>{ QSTATE[s.quiz_id] = {active: s.is_active, reflectActive: !!s.reflection_active, limitSec: s.time_limit_sec ?? null}; });
   }catch(e){ box.textContent = "通信エラー："+e.message; return; }
   renderQuizMgr();
 }
 function renderQuizMgr(){
   const box = document.getElementById("quizmgr");
   box.innerHTML = CH.map(t=>{
-    const st = QSTATE[t.id] || {active:false, limitSec:null};
+    const st = QSTATE[t.id] || {active:false, reflectActive:false, limitSec:null};
     const on = !!st.active;
+    const rOn = !!st.reflectActive;
     const mins = Math.round((st.limitSec ?? t.limit) / 60);
-    return `<div class="qr-row">
-      <div class="nm"><span class="no">${t.no}</span>${esc(t.name)} <span class="badge ${on?"on":"off"}">${on?"配布中":"停止中"}</span></div>
+    return `<div class="qr-row" style="flex-wrap:wrap">
+      <div class="nm"><span class="no">${t.no}</span>${esc(t.name)}
+        <span class="badge ${on?"on":"off"}">小テスト ${on?"配布中":"停止中"}</span>
+        <span class="badge ${rOn?"on":"off"}">振り返り ${rOn?"配布中":"停止中"}</span></div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <label style="font-size:12.5px;color:var(--ink-soft);display:flex;align-items:center;gap:4px">制限時間
           <input type="number" min="1" max="120" data-mins="${t.id}" value="${mins}" style="width:56px;padding:6px 6px">分
         </label>
         <button class="btn mini ghost" data-qr="${t.id}">QR表示</button>
-        <button class="btn mini ${on?"":"ghost"}" data-toggle="${t.id}">${on?"停止":"配布"}</button>
+        <button class="btn mini ${on?"":"ghost"}" data-toggle="${t.id}">小テスト${on?"停止":"配布"}</button>
+        <button class="btn mini ${rOn?"":"ghost"}" data-rtoggle="${t.id}">振り返り${rOn?"停止":"だけ配布"}</button>
         <button class="btn mini ghost" data-viewrefl="${t.id}">振り返りを見る</button>
       </div>
     </div>`;
@@ -269,6 +273,13 @@ function renderQuizMgr(){
     const st = QSTATE[id] || {active:false};
     b.disabled = true;
     await Quiz.rpc("quiz_set_active", {p_pin:pin, p_quiz_id:id, p_active: !st.active, p_time_limit_sec: minsOf(id)});
+    await loadQuizState();
+  });
+  box.querySelectorAll("[data-rtoggle]").forEach(b=>b.onclick=async ()=>{
+    const id = b.dataset.rtoggle;
+    const st = QSTATE[id] || {reflectActive:false};
+    b.disabled = true;
+    await Quiz.rpc("quiz_set_reflection_active", {p_pin:pin, p_quiz_id:id, p_active: !st.reflectActive});
     await loadQuizState();
   });
   box.querySelectorAll("[data-mins]").forEach(inp=>inp.onchange=async ()=>{

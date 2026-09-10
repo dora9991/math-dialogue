@@ -377,7 +377,8 @@ function loadDoneFor(quizId, sid){
    状態
    ============================================================ */
 let S = { test:null, sid:null, ans:{}, startedAt:0, qStart:{}, timer:null, submitted:false, practice:false };
-let ACTIVE = [];       // サーバーで「配布中」になっている quiz_id の一覧
+let ACTIVE = [];         // 小テスト本体が「配布中」の quiz_id の一覧
+let REFLECT_ACTIVE = []; // 振り返りだけ「配布中」の quiz_id の一覧
 let waitTimer = null;  // QR待ちの自動再確認タイマー
 const KEY = t => `quiz:${t}:${S.sid}`;
 const app = document.getElementById("app");
@@ -735,7 +736,7 @@ async function renderReflectionForm(t){
     }catch(e){ btn.disabled=false; btn.textContent="保存する"; alert("通信エラーです。もう一度お試しください。"); return; }
     if(r2 && r2.ok){ renderReflectionDone(t, ev); }
     else if(r2 && r2.error==="inactive"){
-      alert("この小テストは先生によって非公開にされたため、振り返りを保存できませんでした。");
+      alert("この授業の振り返りは先生によって締め切られたため、保存できませんでした。");
       renderHome();
     } else {
       btn.disabled=false; btn.textContent="保存する";
@@ -863,8 +864,12 @@ async function refreshTests(){
   const box = document.getElementById("teststate");
   if(!box) return;
   try{
-    ACTIVE = await Quiz.rpc("quiz_list_active", {});
-    if(!Array.isArray(ACTIVE)) ACTIVE = [];
+    const [a, r] = await Promise.all([
+      Quiz.rpc("quiz_list_active", {}),
+      Quiz.rpc("quiz_list_reflect_active", {}),
+    ]);
+    ACTIVE = Array.isArray(a) ? a : [];
+    REFLECT_ACTIVE = Array.isArray(r) ? r : [];
   }catch(e){
     box.innerHTML = `<div class="notice warn">通信エラー：テストの状況を取得できませんでした。画面を再読み込みしてください。</div>`;
     return;
@@ -883,6 +888,15 @@ async function refreshTests(){
         </div>`;
       document.getElementById("go").onclick=()=>startTest(t);
       if(S.sid) document.getElementById("go-reflect").onclick=()=>renderReflectionForm(t);
+    } else if(REFLECT_ACTIVE.includes(t.id)){
+      clearInterval(waitTimer);
+      box.innerHTML = `
+        <h2>${esc(t.no)}　${esc(t.name)}</h2>
+        <div class="notice">この授業は振り返りだけの提出です。</div>
+        ${S.sid
+          ? `<button class="btn" id="go-reflect" style="width:100%">📝 振り返りを書く</button>`
+          : `<div class="notice warn">先にログインしてください。</div>`}`;
+      if(S.sid) document.getElementById("go-reflect").onclick=()=>renderReflectionForm(t);
     } else {
       box.innerHTML = `
         <h2>${esc(t.no)}　${esc(t.name)}</h2>
@@ -890,30 +904,40 @@ async function refreshTests(){
       clearInterval(waitTimer);
       waitTimer = setInterval(async ()=>{
         try{
-          const a = await Quiz.rpc("quiz_list_active", {});
+          const [a, r] = await Promise.all([
+            Quiz.rpc("quiz_list_active", {}),
+            Quiz.rpc("quiz_list_reflect_active", {}),
+          ]);
           if(Array.isArray(a) && a.includes(t.id)){ clearInterval(waitTimer); startTest(t); }
+          else if(Array.isArray(r) && r.includes(t.id)){ clearInterval(waitTimer); refreshTests(); }
         }catch(e){}
       }, 4000);
     }
     return;
   }
 
-  const list = CH.filter(t=>ACTIVE.includes(t.id));
+  const list = CH.filter(t=>ACTIVE.includes(t.id) || REFLECT_ACTIVE.includes(t.id));
   if(!list.length){
-    box.innerHTML = `<div class="notice">現在受付中の小テストはありません。先生の指示を待つか、QRコードを読み込んでください。</div>`;
+    box.innerHTML = `<div class="notice">現在受付中の小テスト・振り返りはありません。先生の指示を待つか、QRコードを読み込んでください。</div>`;
     return;
   }
   box.innerHTML = `
-    <h2>テストを選ぶ</h2>
+    <h2>今日の授業</h2>
     <div class="tests">
       ${list.map(t=>{
+        const quizOn = ACTIVE.includes(t.id);
         const d = S.sid ? loadDoneFor(t.id, S.sid) : null;
         const today = d && d.date===todayStr();
         return `<div class="testrow">
-          <button class="teststart" data-id="${t.id}">
-            <span class="no">${t.no}</span><span class="nm">${esc(t.name)}</span>
-            ${today?`<span class="badge" style="border-color:var(--ok);color:var(--ok)">✓ 本日実施</span>`:`<span class="pg">${t.pages}</span>`}
-          </button>
+          ${quizOn
+            ? `<button class="teststart" data-id="${t.id}">
+                <span class="no">${t.no}</span><span class="nm">${esc(t.name)}</span>
+                ${today?`<span class="badge" style="border-color:var(--ok);color:var(--ok)">✓ 本日実施</span>`:`<span class="pg">${t.pages}</span>`}
+              </button>`
+            : `<div class="teststart" style="cursor:default">
+                <span class="no">${t.no}</span><span class="nm">${esc(t.name)}</span>
+                <span class="pg">振り返りのみ</span>
+              </div>`}
           ${S.sid ? `<button class="btn mini ghost rfbtn" data-reflect="${t.id}">📝 振り返り</button>` : ""}
         </div>`;
       }).join("")}
