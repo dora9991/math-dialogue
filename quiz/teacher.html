@@ -133,15 +133,30 @@ td .bar.low{background:var(--shu)}
 
   <!-- メイン -->
   <div id="scrMain" class="hidden">
-    <div class="card no-print" id="qrcard">
+    <div class="card no-print" id="targetcard">
+      <h2>操作するクラスを選ぶ</h2>
+      <p class="notice">配布・振り返りの操作は、ここで選んだ学校・クラスだけに効きます（他のクラスには配信されません）。</p>
+      <div id="targetHistory"></div>
+      <div class="row" style="margin-top:8px">
+        <div><label class="f">学校コード（アルファベット）</label><select id="tgLetter"></select></div>
+        <div><label class="f">学校コード（数字）</label><select id="tgGroupNum"></select></div>
+        <div><label class="f">学年</label><select id="tgGrade"></select></div>
+        <div><label class="f">組</label><select id="tgClass"></select></div>
+        <button class="btn" id="tgGo" style="flex:none">このクラスを選ぶ</button>
+      </div>
+      <div class="hint" id="tgCurrent" style="margin-top:10px;font-size:13px;color:var(--ink-soft)"></div>
+    </div>
+
+    <div class="card no-print hidden" id="qrcard">
       <h2>小テストの配布管理</h2>
       <p class="notice">「配布」を押すと、そのテストのQRコードから生徒が入れるようになります。使い終わったら「停止」してください。</p>
       <div id="quizmgr"></div>
     </div>
 
-    <div class="card no-print" id="reflectonlycard">
-      <h2>振り返りだけ実施（小テストをしない授業）</h2>
-      <p class="notice">小テストをやらない授業でも、回を選んで「配布」すれば、その回の振り返りだけを生徒に書かせられます。
+    <div class="card no-print hidden" id="reflectonlycard">
+      <h2>授業を開始（振り返りの受付）</h2>
+      <p class="notice">回を選んで「配布」すると、その回の振り返りが選んだクラスの生徒に書けるようになります。
+        小テストとは別の操作です——小テストは上の「小テストの配布管理」で別途「配布」してください。
         使い終わったら「停止」してください。</p>
       <div class="row" style="margin-bottom:8px">
         <div><label class="f">授業（回）</label>
@@ -205,6 +220,72 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;","
 const SS_KEY = "quiz_teacher_pin";
 let pin = sessionStorage.getItem(SS_KEY) || "";
 
+/* ============================================================
+   操作対象クラス（学校コード×クラス）。配布系の操作はすべてこれに従う。
+   ============================================================ */
+const TG_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const TG_NUMBERS = Array.from({length:100},(_,i)=>i+1);
+const TG_GRADES = [1,2,3];
+const TG_CLASSES = [1,2,3,4,5,6];
+const TARGET_KEY = "quiz_teacher_target";
+const TARGET_HIST_KEY = "quiz_teacher_target_history";
+let TARGET = null; // {school, class, label}
+function loadTargetHistory(){
+  try{ const v = JSON.parse(localStorage.getItem(TARGET_HIST_KEY) || "[]"); return Array.isArray(v) ? v : []; }
+  catch(e){ return []; }
+}
+function saveTargetHistory(t){
+  let h = loadTargetHistory().filter(x => !(x.school===t.school && x.class===t.class));
+  h.unshift(t);
+  h = h.slice(0, 6);
+  localStorage.setItem(TARGET_HIST_KEY, JSON.stringify(h));
+  return h;
+}
+function setTarget(t){
+  TARGET = t;
+  localStorage.setItem(TARGET_KEY, JSON.stringify(t));
+  saveTargetHistory(t);
+  renderTargetUI();
+  show("qrcard", true); show("reflectonlycard", true);
+  loadQuizState();
+}
+function renderTargetUI(){
+  const hist = loadTargetHistory();
+  const histBox = document.getElementById("targetHistory");
+  histBox.innerHTML = hist.length
+    ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:4px">最近使ったクラス</div>
+       <div style="display:flex;gap:6px;flex-wrap:wrap">${hist.map(t=>
+         `<button class="btn mini ${TARGET && TARGET.school===t.school && TARGET.class===t.class ? "" : "ghost"}" data-hist="${esc(t.school)}|${esc(t.class)}">${esc(t.label)}</button>`
+       ).join("")}</div>`
+    : "";
+  histBox.querySelectorAll("[data-hist]").forEach(b=>b.onclick=()=>{
+    const [school, cls] = b.dataset.hist.split("|");
+    setTarget({school, class:cls, label:`${school}　${cls.replace("-","年")}組`});
+  });
+  document.getElementById("tgCurrent").textContent = TARGET
+    ? `いま選択中：${TARGET.label}`
+    : "まだクラスが選ばれていません。下で選んでください。";
+}
+function initTargetPicker(){
+  const selL = document.getElementById("tgLetter"), selG = document.getElementById("tgGroupNum");
+  const selGrade = document.getElementById("tgGrade"), selClass = document.getElementById("tgClass");
+  selL.innerHTML = TG_LETTERS.map(l=>`<option value="${l}">${l}</option>`).join("");
+  selG.innerHTML = TG_NUMBERS.map(n=>`<option value="${n}">${n}</option>`).join("");
+  selGrade.innerHTML = TG_GRADES.map(g=>`<option value="${g}">${g}年</option>`).join("");
+  selClass.innerHTML = TG_CLASSES.map(c=>`<option value="${c}">${c}組</option>`).join("");
+  document.getElementById("tgGo").onclick = ()=>{
+    const school = `${selL.value}-${selG.value}`;
+    const cls = `${selGrade.value}-${selClass.value}`;
+    setTarget({school, class:cls, label:`${school}　${selGrade.value}年${selClass.value}組`});
+  };
+  try{
+    const saved = JSON.parse(localStorage.getItem(TARGET_KEY) || "null");
+    if(saved && saved.school && saved.class) TARGET = saved;
+  }catch(e){}
+  renderTargetUI();
+  if(TARGET){ show("qrcard", true); show("reflectonlycard", true); loadQuizState(); }
+}
+
 function studentUrl(quizId){
   const u = new URL("index.html", location.href);
   u.search = "?quiz=" + quizId;
@@ -239,7 +320,7 @@ function enter(){
   show("scrPin", false);
   show("scrMain", true);
   show("logout", true);
-  loadQuizState();
+  initTargetPicker();
   loadData();
   loadReflections();
 }
@@ -248,9 +329,10 @@ function enter(){
    小テストの配布管理
    ============================================================ */
 async function loadQuizState(){
+  if(!TARGET) return;
   const box = document.getElementById("quizmgr");
   try{
-    const r = await Quiz.rpc("quiz_list_state", {p_pin:pin});
+    const r = await Quiz.rpc("quiz_list_state", {p_pin:pin, p_school:TARGET.school, p_class:TARGET.class});
     if(r.error){ box.textContent = "取得エラー"; return; }
     QSTATE = {};
     (r.states||[]).forEach(s=>{ QSTATE[s.quiz_id] = {active: s.is_active, reflectActive: !!s.reflection_active, limitSec: s.time_limit_sec ?? null}; });
@@ -260,6 +342,9 @@ async function loadQuizState(){
 }
 function renderQuizMgr(){
   const box = document.getElementById("quizmgr");
+  const cardTitle = document.querySelector("#qrcard h2");
+  if(cardTitle) cardTitle.textContent = TARGET ? `小テストの配布管理　－　${TARGET.label}` : "小テストの配布管理";
+  if(!TARGET){ box.innerHTML = ""; return; }
   box.innerHTML = CH.map(t=>{
     const st = QSTATE[t.id] || {active:false, limitSec:null};
     const on = !!st.active;
@@ -281,13 +366,13 @@ function renderQuizMgr(){
     const id = b.dataset.toggle;
     const st = QSTATE[id] || {active:false};
     b.disabled = true;
-    await Quiz.rpc("quiz_set_active", {p_pin:pin, p_quiz_id:id, p_active: !st.active, p_time_limit_sec: minsOf(id)});
+    await Quiz.rpc("quiz_set_active", {p_pin:pin, p_quiz_id:id, p_active: !st.active, p_time_limit_sec: minsOf(id), p_school:TARGET.school, p_class:TARGET.class});
     await loadQuizState();
   });
   box.querySelectorAll("[data-mins]").forEach(inp=>inp.onchange=async ()=>{
     const id = inp.dataset.mins;
     const st = QSTATE[id] || {active:false};
-    await Quiz.rpc("quiz_set_active", {p_pin:pin, p_quiz_id:id, p_active: st.active, p_time_limit_sec: minsOf(id)});
+    await Quiz.rpc("quiz_set_active", {p_pin:pin, p_quiz_id:id, p_active: st.active, p_time_limit_sec: minsOf(id), p_school:TARGET.school, p_class:TARGET.class});
     if(QSTATE[id]) QSTATE[id].limitSec = minsOf(id);
   });
   box.querySelectorAll("[data-qr]").forEach(b=>b.onclick=()=>showQR(b.dataset.qr));
@@ -303,6 +388,9 @@ function renderReflectOnlyMgr(){
   const sel = document.getElementById("reflOnlySel");
   const listBox = document.getElementById("reflOnlyList");
   if(!sel || !listBox) return;
+  const cardTitle = document.querySelector("#reflectonlycard h2");
+  if(cardTitle) cardTitle.textContent = TARGET ? `授業を開始（振り返りの受付）　－　${TARGET.label}` : "授業を開始（振り返りの受付）";
+  if(!TARGET) return;
   const cur = sel.value;
   sel.innerHTML = CH.map(t=>`<option value="${t.id}">${esc(t.no)}　${esc(t.name)}</option>`).join("");
   if(cur) sel.value = cur;
@@ -322,13 +410,13 @@ function renderReflectOnlyMgr(){
     if(!id) return;
     const btn = document.getElementById("reflOnlyGo");
     btn.disabled = true;
-    await Quiz.rpc("quiz_set_reflection_active", {p_pin:pin, p_quiz_id:id, p_active:true});
+    await Quiz.rpc("quiz_set_reflection_active", {p_pin:pin, p_quiz_id:id, p_active:true, p_school:TARGET.school, p_class:TARGET.class});
     await loadQuizState();
     btn.disabled = false;
   };
   listBox.querySelectorAll("[data-refl-stop]").forEach(b=>b.onclick=async ()=>{
     b.disabled = true;
-    await Quiz.rpc("quiz_set_reflection_active", {p_pin:pin, p_quiz_id:b.dataset.reflStop, p_active:false});
+    await Quiz.rpc("quiz_set_reflection_active", {p_pin:pin, p_quiz_id:b.dataset.reflStop, p_active:false, p_school:TARGET.school, p_class:TARGET.class});
     await loadQuizState();
   });
   listBox.querySelectorAll("[data-refl-qr]").forEach(b=>b.onclick=()=>showQR(b.dataset.reflQr));

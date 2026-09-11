@@ -859,17 +859,41 @@ async function renderMyRecord(){
   document.getElementById("pr-back").onclick = renderHome;
 }
 
+/** サーバーの配布状況を取得する。小テスト（ACTIVE）と授業開始＝振り返り受付（REFLECT_ACTIVE）は独立。 */
+async function fetchDistribution(){
+  const [a, r] = await Promise.all([
+    Quiz.rpc("quiz_list_active", {p_student:S.sid}),
+    Quiz.rpc("quiz_list_reflect_active", {p_student:S.sid}),
+  ]);
+  return { active: Array.isArray(a) ? a : [], reflect: Array.isArray(r) ? r : [] };
+}
+
+/** 1回分のテスト行のHTML。小テストと振り返りは互いに独立（小テストが未配布でも授業開始済みなら振り返りだけ書ける）。 */
+function testRowHTML(t, quizOn, reflOn){
+  const d = S.sid ? loadDoneFor(t.id, S.sid) : null;
+  const today = d && d.date===todayStr();
+  const quizPart = quizOn
+    ? `<button class="teststart" data-id="${t.id}">
+        <span class="no">${t.no}</span><span class="nm">${esc(t.name)}</span>
+        ${today?`<span class="badge" style="border-color:var(--ok);color:var(--ok)">✓ 本日実施</span>`:`<span class="pg">${t.pages}</span>`}
+      </button>`
+    : `<div class="teststart" style="cursor:default;opacity:.6">
+        <span class="no">${t.no}</span><span class="nm">${esc(t.name)}</span>
+        <span class="pg">小テストは未配布</span>
+      </div>`;
+  const reflectPart = S.sid
+    ? (reflOn ? `<button class="btn mini ghost rfbtn" data-reflect="${t.id}">📝 振り返り</button>` : "")
+    : "";
+  return `<div class="testrow">${quizPart}${reflectPart}</div>`;
+}
+
 /** サーバーで「配布中」の小テストを取得し、テスト選択カードを描く。 */
 async function refreshTests(){
   const box = document.getElementById("teststate");
   if(!box) return;
   try{
-    const [a, r] = await Promise.all([
-      Quiz.rpc("quiz_list_active", {}),
-      Quiz.rpc("quiz_list_reflect_active", {}),
-    ]);
-    ACTIVE = Array.isArray(a) ? a : [];
-    REFLECT_ACTIVE = Array.isArray(r) ? r : [];
+    const d = await fetchDistribution();
+    ACTIVE = d.active; REFLECT_ACTIVE = d.reflect;
   }catch(e){
     box.innerHTML = `<div class="notice warn">通信エラー：テストの状況を取得できませんでした。画面を再読み込みしてください。</div>`;
     return;
@@ -878,25 +902,20 @@ async function refreshTests(){
   if(QUIZ_ID){
     const t = CH.find(x=>x.id===QUIZ_ID);
     if(!t){ box.innerHTML = `<div class="notice warn">指定された小テストが見つかりません。QRコードを確認してください。</div>`; return; }
-    if(ACTIVE.includes(t.id)){
+    const quizOn = ACTIVE.includes(t.id), reflOn = REFLECT_ACTIVE.includes(t.id);
+    if(quizOn || reflOn){
       clearInterval(waitTimer);
       box.innerHTML = `
         <h2>${esc(t.no)}　${esc(t.name)}</h2>
         <div style="display:flex;gap:8px">
-          <button class="btn" id="go" style="flex:1">この小テストをはじめる</button>
-          ${S.sid ? `<button class="btn ghost" id="go-reflect" style="flex:none">📝 振り返り</button>` : ""}
-        </div>`;
-      document.getElementById("go").onclick=()=>startTest(t);
-      if(S.sid) document.getElementById("go-reflect").onclick=()=>renderReflectionForm(t);
-    } else if(REFLECT_ACTIVE.includes(t.id)){
-      clearInterval(waitTimer);
-      box.innerHTML = `
-        <h2>${esc(t.no)}　${esc(t.name)}</h2>
-        <div class="notice">この授業は振り返りだけの提出です。</div>
-        ${S.sid
-          ? `<button class="btn" id="go-reflect" style="width:100%">📝 振り返りを書く</button>`
-          : `<div class="notice warn">先にログインしてください。</div>`}`;
-      if(S.sid) document.getElementById("go-reflect").onclick=()=>renderReflectionForm(t);
+          ${quizOn
+            ? `<button class="btn" id="go" style="flex:1">この小テストをはじめる</button>`
+            : `<div class="notice" style="flex:1">小テストは先生がまだ配布していません。</div>`}
+          ${S.sid && reflOn ? `<button class="btn ghost" id="go-reflect" style="flex:none">📝 振り返り</button>` : ""}
+        </div>
+        ${!S.sid ? `<div class="notice warn" style="margin-top:8px">振り返りを書くには先にログインしてください。</div>` : ""}`;
+      if(quizOn) document.getElementById("go").onclick=()=>startTest(t);
+      if(S.sid && reflOn) document.getElementById("go-reflect").onclick=()=>renderReflectionForm(t);
     } else {
       box.innerHTML = `
         <h2>${esc(t.no)}　${esc(t.name)}</h2>
@@ -904,12 +923,9 @@ async function refreshTests(){
       clearInterval(waitTimer);
       waitTimer = setInterval(async ()=>{
         try{
-          const [a, r] = await Promise.all([
-            Quiz.rpc("quiz_list_active", {}),
-            Quiz.rpc("quiz_list_reflect_active", {}),
-          ]);
-          if(Array.isArray(a) && a.includes(t.id)){ clearInterval(waitTimer); startTest(t); }
-          else if(Array.isArray(r) && r.includes(t.id)){ clearInterval(waitTimer); refreshTests(); }
+          const dd = await fetchDistribution();
+          if(dd.active.includes(t.id)){ clearInterval(waitTimer); startTest(t); }
+          else if(dd.reflect.includes(t.id)){ clearInterval(waitTimer); refreshTests(); }
         }catch(e){}
       }, 4000);
     }
@@ -924,23 +940,7 @@ async function refreshTests(){
   box.innerHTML = `
     <h2>今日の授業</h2>
     <div class="tests">
-      ${list.map(t=>{
-        const quizOn = ACTIVE.includes(t.id);
-        const d = S.sid ? loadDoneFor(t.id, S.sid) : null;
-        const today = d && d.date===todayStr();
-        return `<div class="testrow">
-          ${quizOn
-            ? `<button class="teststart" data-id="${t.id}">
-                <span class="no">${t.no}</span><span class="nm">${esc(t.name)}</span>
-                ${today?`<span class="badge" style="border-color:var(--ok);color:var(--ok)">✓ 本日実施</span>`:`<span class="pg">${t.pages}</span>`}
-              </button>`
-            : `<div class="teststart" style="cursor:default">
-                <span class="no">${t.no}</span><span class="nm">${esc(t.name)}</span>
-                <span class="pg">振り返りのみ</span>
-              </div>`}
-          ${S.sid ? `<button class="btn mini ghost rfbtn" data-reflect="${t.id}">📝 振り返り</button>` : ""}
-        </div>`;
-      }).join("")}
+      ${list.map(t=>testRowHTML(t, ACTIVE.includes(t.id), REFLECT_ACTIVE.includes(t.id))).join("")}
     </div>`;
   box.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{
     const t = CH.find(x=>x.id===b.dataset.id);

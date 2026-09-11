@@ -12,16 +12,37 @@
 
 -- ---------- テーブル ----------
 
--- どの小テスト（quiz_id は quizdata.js の CH[].id と一致）が今配布中か
-create table if not exists quiz_state (
-  quiz_id           text primary key,
+-- どの小テスト（quiz_id は quizdata.js の CH[].id と一致）が「どの学校・どのクラス」に今配布中か。
+-- 2026-09-11: quiz_id 単位のグローバルな1状態から、(quiz_id, school, class) 単位の状態へ再設計。
+-- 以前は配布すると学校・クラスに関係なく全員に見えていたが、それを避けるため。
+-- 配布状態はその場限りの運用データ（成績・振り返りの記録とは別）なので、作り直しても実害は無い。
+drop table if exists quiz_state cascade;
+create table quiz_state (
+  quiz_id           text not null,             -- quizdata.js の CH[].id
+  school            text not null,             -- 学校コード（例: E-10）
+  class             text not null,             -- クラス（例: 1-1 ＝ 1年1組）
   is_active         boolean not null default false, -- 小テスト本体の配布
-  reflection_active boolean not null default false, -- 振り返りだけの配布（小テストをやらない授業用）
+  reflection_active boolean not null default false, -- 「授業を開始」＝振り返りの受付（小テストとは独立）
   time_limit_sec    int,                      -- 制限時間の上書き（秒）。nullならquizdata.jsの既定値を使う
-  updated_at        timestamptz not null default now()
+  updated_at        timestamptz not null default now(),
+  primary key (quiz_id, school, class)
 );
-alter table quiz_state add column if not exists time_limit_sec int;
-alter table quiz_state add column if not exists reflection_active boolean not null default false;
+
+-- account_id（例 E-101236）から学校コード・クラスを取り出す内部ヘルパー。
+-- index.html の parseAccountId/schoolOf/classOf と同じ規則（末尾4桁が出席番号、残りが学校コード数字部）。
+create or replace function _quiz_parse_account(p_account_id text, out school text, out class text)
+language plpgsql immutable as $$
+declare
+  m text[]; rest text; sid4 text; groupnum text;
+begin
+  m := regexp_match(coalesce(p_account_id,''), '^([A-Z])-([0-9]{5,7})$');
+  if m is null then school := null; class := null; return; end if;
+  rest := m[2];
+  sid4 := right(rest, 4);
+  groupnum := left(rest, length(rest)-4);
+  school := m[1] || '-' || groupnum;
+  class := substr(sid4,1,1) || '-' || substr(sid4,2,1);
+end $$;
 
 -- 提出1回＝1行（同じ生徒×テスト×日付は1回まで）
 create table if not exists quiz_attempts (
@@ -129,28 +150,42 @@ end $$;
 
 -- ---------- 生徒用 RPC（PIN不要） ----------
 
--- 配布中の quiz_id 一覧（生徒のホーム画面・QR待ち画面のポーリングで使う）
-create or replace function quiz_list_active()
-returns jsonb language sql security definer set search_path = public as $$
-  select coalesce(jsonb_agg(quiz_id), '[]'::jsonb) from quiz_state where is_active;
-$$;
+-- p_student（アカウントID）本人の学校・クラスに配布中の quiz_id 一覧（生徒のホーム画面・QR待ち画面のポーリングで使う）。
+-- 本人のIDが未指定/不正な形式なら空配列（＝ログイン前は何も見えない）。
+create or replace function quiz_list_active(p_student text default null)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_school text; v_class text;
+begin
+  select school, class into v_school, v_class from _quiz_parse_account(p_student);
+  if v_school is null then return '[]'::jsonb; end if;
+  return coalesce((select jsonb_agg(quiz_id) from quiz_state
+    where school=v_school and class=v_class and is_active), '[]'::jsonb);
+end $$;
 
--- 振り返りだけ配布中の quiz_id 一覧（小テストはやらないが振り返りは書かせたい授業用）
-create or replace function quiz_list_reflect_active()
-returns jsonb language sql security definer set search_path = public as $$
-  select coalesce(jsonb_agg(quiz_id), '[]'::jsonb) from quiz_state where reflection_active;
-$$;
+-- 振り返りだけ配布中の quiz_id 一覧（本人の学校・クラスのみ。小テストはやらないが振り返りは書かせたい授業用）
+create or replace function quiz_list_reflect_active(p_student text default null)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_school text; v_class text;
+begin
+  select school, class into v_school, v_class from _quiz_parse_account(p_student);
+  if v_school is null then return '[]'::jsonb; end if;
+  return coalesce((select jsonb_agg(quiz_id) from quiz_state
+    where school=v_school and class=v_class and reflection_active), '[]'::jsonb);
+end $$;
 
--- 特定のテストが受けられるか（配布中か／今日すでに提出済みか）を確認
+-- 特定のテストが受けられるか（本人の学校・クラスで配布中か／今日すでに提出済みか）を確認
 create or replace function quiz_check(p_quiz_id text, p_student text)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
+  v_school text; v_class text;
   v_active boolean;
   v_limit int;
   v_today date := (now() at time zone 'Asia/Tokyo')::date;
   v_score int; v_max int; v_found boolean;
 begin
-  select is_active, time_limit_sec into v_active, v_limit from quiz_state where quiz_id = p_quiz_id;
+  select school, class into v_school, v_class from _quiz_parse_account(p_student);
+  select is_active, time_limit_sec into v_active, v_limit from quiz_state
+    where quiz_id = p_quiz_id and school=v_school and class=v_class;
   v_active := coalesce(v_active, false);
   select score, max_score into v_score, v_max from quiz_attempts
     where quiz_id = p_quiz_id and student_code = p_student and jst_date = v_today;
@@ -163,6 +198,7 @@ end $$;
 create or replace function quiz_submit(p_quiz_id text, p_student text, p_score int, p_max int, p_rows jsonb)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
+  v_school text; v_class text;
   v_active boolean;
   v_today date := (now() at time zone 'Asia/Tokyo')::date;
   v_attempt_id uuid;
@@ -172,7 +208,9 @@ begin
     return jsonb_build_object('error', 'bad_student');
   end if;
 
-  select coalesce((select is_active from quiz_state where quiz_id = p_quiz_id), false) into v_active;
+  select school, class into v_school, v_class from _quiz_parse_account(p_student);
+  select coalesce((select is_active from quiz_state
+    where quiz_id = p_quiz_id and school=v_school and class=v_class), false) into v_active;
   if not v_active then
     return jsonb_build_object('error', 'inactive');
   end if;
@@ -285,6 +323,7 @@ create or replace function quiz_reflection_submit(
   p_toikaeshi text default null, p_warning text default null
 ) returns jsonb language plpgsql security definer set search_path = public as $$
 declare
+  v_school text; v_class text;
   v_today date := (now() at time zone 'Asia/Tokyo')::date;
   v_active boolean;
 begin
@@ -296,8 +335,10 @@ begin
     return jsonb_build_object('error', 'bad_score');
   end if;
 
-  -- 小テスト本体が配布中、または「振り返りだけ配布」のどちらかなら書ける
-  select coalesce((select (is_active or reflection_active) from quiz_state where quiz_id = p_quiz_id), false) into v_active;
+  -- 本人の学校・クラスで、小テスト本体が配布中、または「授業を開始（振り返り受付）」のどちらかなら書ける
+  select school, class into v_school, v_class from _quiz_parse_account(p_account_id);
+  select coalesce((select (is_active or reflection_active) from quiz_state
+    where quiz_id = p_quiz_id and school=v_school and class=v_class), false) into v_active;
   if not v_active then
     return jsonb_build_object('error', 'inactive');
   end if;
@@ -349,40 +390,47 @@ returns jsonb language sql security definer set search_path = public as $$
 $$;
 
 -- 小テストの配布状態一覧
-create or replace function quiz_list_state(p_pin text)
+-- 指定した学校・クラスの配布状態一覧（配布管理・振り返り開始カードの表示用）
+create or replace function quiz_list_state(p_pin text, p_school text default null, p_class text default null)
 returns jsonb language plpgsql security definer set search_path = public as $$
 begin
   if not quiz_check_pin(p_pin) then return jsonb_build_object('error', 'bad_pin'); end if;
+  if coalesce(p_school,'')='' or coalesce(p_class,'')='' then
+    return jsonb_build_object('states', '[]'::jsonb);
+  end if;
   return jsonb_build_object('states', coalesce((
     select jsonb_agg(jsonb_build_object('quiz_id', qs.quiz_id, 'is_active', qs.is_active,
       'reflection_active', qs.reflection_active, 'time_limit_sec', qs.time_limit_sec))
-    from quiz_state qs
+    from quiz_state qs where qs.school=p_school and qs.class=p_class
   ), '[]'::jsonb));
 end $$;
 
--- 配布の開始／停止（quiz_id は quizdata.js の CH[].id）。制限時間（秒）も同時に設定できる
--- （p_time_limit_secがnullのときは既存の設定を変えない＝配布ON/OFFだけの操作にも使える）
-create or replace function quiz_set_active(p_pin text, p_quiz_id text, p_active boolean, p_time_limit_sec int default null)
+-- 配布の開始／停止（quiz_id は quizdata.js の CH[].id）。指定した学校・クラスだけに効く。
+-- 制限時間（秒）も同時に設定できる（p_time_limit_secがnullのときは既存の設定を変えない）
+create or replace function quiz_set_active(p_pin text, p_quiz_id text, p_active boolean, p_time_limit_sec int default null, p_school text default null, p_class text default null)
 returns jsonb language plpgsql security definer set search_path = public as $$
 begin
   if not quiz_check_pin(p_pin) then return jsonb_build_object('error', 'bad_pin'); end if;
-  insert into quiz_state (quiz_id, is_active, time_limit_sec, updated_at)
-    values (p_quiz_id, p_active, p_time_limit_sec, now())
-    on conflict (quiz_id) do update set
+  if coalesce(p_school,'')='' or coalesce(p_class,'')='' then return jsonb_build_object('error','no_target'); end if;
+  insert into quiz_state (quiz_id, school, class, is_active, time_limit_sec, updated_at)
+    values (p_quiz_id, p_school, p_class, p_active, p_time_limit_sec, now())
+    on conflict (quiz_id, school, class) do update set
       is_active = excluded.is_active,
       time_limit_sec = coalesce(excluded.time_limit_sec, quiz_state.time_limit_sec),
       updated_at = now();
   return jsonb_build_object('ok', true);
 end $$;
 
--- 振り返りだけの配布の開始／停止（小テストは実施しないが振り返りは書かせたい授業用）
-create or replace function quiz_set_reflection_active(p_pin text, p_quiz_id text, p_active boolean)
+-- 「授業を開始」＝振り返りの受付の開始／停止（小テストの配布ON/OFFとは独立）。
+-- 指定した学校・クラスだけに効く
+create or replace function quiz_set_reflection_active(p_pin text, p_quiz_id text, p_active boolean, p_school text default null, p_class text default null)
 returns jsonb language plpgsql security definer set search_path = public as $$
 begin
   if not quiz_check_pin(p_pin) then return jsonb_build_object('error', 'bad_pin'); end if;
-  insert into quiz_state (quiz_id, reflection_active, updated_at)
-    values (p_quiz_id, p_active, now())
-    on conflict (quiz_id) do update set
+  if coalesce(p_school,'')='' or coalesce(p_class,'')='' then return jsonb_build_object('error','no_target'); end if;
+  insert into quiz_state (quiz_id, school, class, reflection_active, updated_at)
+    values (p_quiz_id, p_school, p_class, p_active, now())
+    on conflict (quiz_id, school, class) do update set
       reflection_active = excluded.reflection_active,
       updated_at = now();
   return jsonb_build_object('ok', true);
