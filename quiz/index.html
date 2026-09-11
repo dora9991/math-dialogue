@@ -7,6 +7,7 @@
 <script src="config.js"></script>
 <script src="common.js"></script>
 <script src="quizdata.js"></script>
+<script src="appliedProblems.js"></script>
 <style>
 :root{
   --ink:#16202e;
@@ -806,13 +807,11 @@ function idleCardHTML(quizId, label){
   const appliedUrl = `${APPLIED_BASE}/challenge.html?set=${encodeURIComponent(quizId)}`;
   return `
   <div class="card" id="idle-${quizId}">
-    <h2>授業のはじめに</h2>
+    <h2>🎉 授業が開始されました</h2>
     <div class="hint">今日の学習時間を記録しよう（${esc(label)}）</div>
     <div class="idle-chips" id="study-mins-${quizId}">
       ${[5,10,15,20,30].map(m=>`<button type="button" data-mins="${m}" aria-pressed="false">${m}分</button>`).join("")}
-    </div>
-    <div class="subq" style="margin-top:8px">
-      <input type="number" id="study-custom-${quizId}" placeholder="その他（分）" min="1" max="180" style="max-width:130px">
+      <input type="number" id="study-custom-${quizId}" placeholder="その他" min="1" max="180" style="width:80px">
     </div>
     <label class="f" style="margin-top:12px">家庭学習で頑張ったこと（任意）</label>
     <textarea id="study-note-${quizId}" placeholder="例：応用問題を3問解いた／教科書を読み直した など"></textarea>
@@ -853,31 +852,51 @@ function wireIdleCard(quizId){
   const recBtn = document.getElementById(`idle-record-${quizId}`);
   if(recBtn) recBtn.onclick = renderMyRecord;
   const gameBtn = document.getElementById(`idle-game-${quizId}`);
-  if(gameBtn) gameBtn.onclick = ()=>renderConfirmQuiz();
+  if(gameBtn) gameBtn.onclick = ()=>renderConfirmQuiz(quizId);
 }
 
 /* ============================================================
    確認問題5問（数学ラボ2「はいちモード」の確認問題と同じ発想：
-   5問すべて正解で合格。全レッスンの問題プールからランダムに5問出し、
-   1問ずつ即採点・自動で次へ進む。サーバーには送らない、その場の腕試し用。）
+   5問すべて正解で合格）。開始された授業に関係する類似問題を、
+   応用チャレンジ(applied/、appliedProblems.js の SETS)から優先的に出題し、
+   足りなければその回のquiz本体の問題も混ぜる。図が必要な問題（fig）は、
+   テキストだけでは意味が通らないため除外する。1問ずつ即採点・自動で次へ進み、
+   サーバーには送らない、その場の腕試し用。
    ============================================================ */
-function confirmQuizPool(){
-  const pool = [];
-  CH.forEach(t=>{
-    (t.qs||[]).forEach(q=>{
-      if(q.type==="choice"){
-        q.subs.forEach(s=>pool.push({no:t.no, lead:s.prompt||q.lead, type:"choice", choices:q.choices, ans:s.a}));
-      } else if(q.type==="input"){
-        q.subs.forEach(s=>pool.push({no:t.no, lead:s.prompt||q.lead, type:"input", mode:s.mode, ans:s.a, ph:s.ph||q.ph}));
-      }
+function poolFromQuestions(qs, noLabel, leadKey){
+  const out = [];
+  (qs||[]).forEach(q=>{
+    if(q.fig) return; // 図が必要な問題はテキストだけでは成立しないため除外
+    if(q.type!=="choice" && q.type!=="input") return;
+    if(!Array.isArray(q.subs) || !q.subs.length) return;
+    const base = q[leadKey] || "";
+    q.subs.forEach(s=>{
+      const lead = s.prompt ? `${base}${base?"　":""}${s.lb?s.lb+"　":""}${s.prompt}` : base;
+      if(!lead) return;
+      if(q.type==="choice") out.push({no:noLabel, lead, type:"choice", choices:q.choices, ans:s.a});
+      else out.push({no:noLabel, lead, type:"input", mode:s.mode, ans:s.a, ph:s.ph||q.ph});
     });
   });
+  return out;
+}
+function confirmQuizPool(quizId){
+  let pool = [];
+  if(typeof SETS !== "undefined"){
+    const set = SETS.find(s=>s.id===quizId);
+    if(set) pool = pool.concat(poolFromQuestions(set.qs, set.no || quizId, "prompt"));
+  }
+  const t = CH.find(x=>x.id===quizId);
+  if(t) pool = pool.concat(poolFromQuestions(t.qs, t.no, "lead"));
+  if(!pool.length){
+    // 最終手段：その回の類似問題が見つからないときだけ、中1第4章の全問題から出す
+    CH.forEach(x=>{ pool = pool.concat(poolFromQuestions(x.qs, x.no, "lead")); });
+  }
   return pool;
 }
-function renderConfirmQuiz(){
+function renderConfirmQuiz(quizId){
   KB.hide(); clearInterval(waitTimer);
   const ROUND = 5;
-  const pool = confirmQuizPool();
+  const pool = confirmQuizPool(quizId);
   for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
   const set = pool.slice(0, Math.min(ROUND, pool.length));
   let i = 0, correct = 0;
@@ -932,7 +951,7 @@ function renderConfirmQuiz(){
       </div>
       <div class="foot"><button class="btn" id="cq-again" style="width:100%">もう一度</button></div>
       <div class="foot"><button class="btn ghost" id="cq-back" style="width:100%">もどる</button></div>`;
-    document.getElementById("cq-again").onclick = renderConfirmQuiz;
+    document.getElementById("cq-again").onclick = ()=>renderConfirmQuiz(quizId);
     document.getElementById("cq-back").onclick = renderHome;
   };
   showQ();
@@ -1084,27 +1103,27 @@ async function refreshTests(){
       clearInterval(waitTimer);
       box.innerHTML = `
         <h2>${esc(t.no)}　${esc(t.name)}</h2>
+        ${reflOn ? `<div class="notice ok">🎉 授業が開始されました。</div>` : ""}
         <div style="display:flex;gap:8px">
           ${quizOn
             ? `<button class="btn" id="go" style="flex:1">この小テストをはじめる</button>`
             : `<div class="notice" style="flex:1">小テストは先生がまだ配布していません。</div>`}
           ${S.sid && reflOn ? `<button class="btn ghost" id="go-reflect" style="flex:none">📝 振り返り</button>` : ""}
         </div>
-        ${!S.sid ? `<div class="notice warn" style="margin-top:8px">振り返りを書くには先にログインしてください。</div>` : ""}`;
+        ${!S.sid ? `<div class="notice warn" style="margin-top:8px">振り返りを書くには先にログインしてください。</div>` : ""}
+        <div id="idleSlot"></div>`;
       if(quizOn) document.getElementById("go").onclick=()=>startTest(t);
       if(S.sid && reflOn) document.getElementById("go-reflect").onclick=()=>renderReflectionForm(t);
+      if(S.sid && reflOn){ document.getElementById("idleSlot").innerHTML = idleCardHTML(t.id, `${t.no}　${t.name}`); wireIdleCard(t.id); }
     } else {
       box.innerHTML = `
         <h2>${esc(t.no)}　${esc(t.name)}</h2>
-        <div class="notice">先生が開始するのを待っています…（自動で確認します）</div>
-        <div id="idleSlot"></div>`;
-      if(S.sid){ document.getElementById("idleSlot").innerHTML = idleCardHTML(t.id, `${t.no}　${t.name}`); wireIdleCard(t.id); }
+        <div class="notice">先生が開始するのを待っています…（自動で確認します）</div>`;
       clearInterval(waitTimer);
       waitTimer = setInterval(async ()=>{
         try{
           const dd = await fetchDistribution();
-          if(dd.active.includes(t.id)){ clearInterval(waitTimer); startTest(t); }
-          else if(dd.reflect.includes(t.id)){ clearInterval(waitTimer); refreshTests(); }
+          if(dd.active.includes(t.id) || dd.reflect.includes(t.id)){ clearInterval(waitTimer); refreshTests(); }
         }catch(e){}
       }, 4000);
     }
@@ -1113,16 +1132,16 @@ async function refreshTests(){
 
   const list = CH.filter(t=>ACTIVE.includes(t.id) || REFLECT_ACTIVE.includes(t.id));
   if(!list.length){
-    box.innerHTML = `<div class="notice">現在受付中の小テスト・振り返りはありません。先生の指示を待つか、QRコードを読み込んでください。</div>
-      <div id="idleSlot"></div>`;
-    if(S.sid){ document.getElementById("idleSlot").innerHTML = idleCardHTML("unknown", "今日の学習"); wireIdleCard("unknown"); }
+    box.innerHTML = `<div class="notice">現在受付中の小テスト・振り返りはありません。先生の指示を待つか、QRコードを読み込んでください。</div>`;
     return;
   }
+  const startedLessons = list.filter(t=>REFLECT_ACTIVE.includes(t.id));
   box.innerHTML = `
     <h2>今日の授業</h2>
     <div class="tests">
       ${list.map(t=>testRowHTML(t, ACTIVE.includes(t.id), REFLECT_ACTIVE.includes(t.id))).join("")}
-    </div>`;
+    </div>
+    <div id="idleSlot"></div>`;
   box.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{
     const t = CH.find(x=>x.id===b.dataset.id);
     startTest(t);
@@ -1132,6 +1151,10 @@ async function refreshTests(){
     const t = CH.find(x=>x.id===b.dataset.reflect);
     renderReflectionForm(t);
   });
+  if(S.sid && startedLessons.length){
+    document.getElementById("idleSlot").innerHTML = startedLessons.map(t=>idleCardHTML(t.id, `${t.no}　${t.name}`)).join("");
+    startedLessons.forEach(t=>wireIdleCard(t.id));
+  }
 }
 
 /** 今日すでに提出済みのときに出す画面。正解や解説は出さない。 */

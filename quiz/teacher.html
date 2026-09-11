@@ -149,25 +149,16 @@ td .bar.low{background:var(--shu)}
 
     <div class="card no-print" id="qrcard">
       <h2>小テストの配布管理</h2>
-      <p class="notice">「配布」を押すと、そのテストのQRコードから生徒が入れるようになります。使い終わったら「停止」してください。</p>
+      <p class="notice">「授業を開始」を押すと、生徒の画面にその回が表示され、学習時間の記録・振り返りが
+        できるようになります。「配布」は小テスト本体の受付で、これとは別の操作です
+        （両方押すと、生徒はその回の小テストと振り返りの両方ができます）。使い終わったらそれぞれ
+        「終了」「停止」してください。</p>
       <div class="notice warn" id="qrNoTarget">↑ 上の「操作するクラスを選ぶ」で、まず学校コードとクラスを選んでください。</div>
-      <div id="quizmgr"></div>
-    </div>
-
-    <div class="card no-print" id="reflectonlycard">
-      <h2>授業を開始（振り返りの受付）</h2>
-      <p class="notice">回を選んで「配布」すると、その回の振り返りが選んだクラスの生徒に書けるようになります。
-        小テストとは別の操作です——小テストは上の「小テストの配布管理」で別途「配布」してください。
-        使い終わったら「停止」してください。</p>
-      <div class="notice warn" id="reflNoTarget">↑ 上の「操作するクラスを選ぶ」で、まず学校コードとクラスを選んでください。</div>
-      <div class="row hidden" id="reflOnlyRow" style="margin-bottom:8px">
-        <div><label class="f">授業（回）</label>
-          <select id="reflOnlySel"></select></div>
-        <button class="btn" id="reflOnlyGo" style="flex:none">この回の振り返りを配布</button>
+      <div class="row hidden" id="studyTimeRow" style="margin:0 0 10px">
         <button class="btn ghost" id="studyTimeGo" style="flex:none">📊 今日の学習時間を見る</button>
       </div>
-      <div id="reflOnlyList"></div>
-      <div id="studyTimeBox" class="hidden" style="margin-top:14px"></div>
+      <div id="studyTimeBox" class="hidden" style="margin-bottom:14px"></div>
+      <div id="quizmgr"></div>
     </div>
 
     <div class="card no-print" id="pwresetcard">
@@ -286,7 +277,8 @@ function initTargetPicker(){
     if(saved && saved.school && saved.class) TARGET = saved;
   }catch(e){}
   renderTargetUI();
-  show("qrNoTarget", !TARGET); show("reflNoTarget", !TARGET); show("reflOnlyRow", !!TARGET);
+  show("qrNoTarget", !TARGET); show("studyTimeRow", !!TARGET);
+  document.getElementById("studyTimeGo").onclick = showStudyTime;
   if(TARGET) loadQuizState();
 }
 
@@ -342,7 +334,6 @@ async function loadQuizState(){
     (r.states||[]).forEach(s=>{ QSTATE[s.quiz_id] = {active: s.is_active, reflectActive: !!s.reflection_active, limitSec: s.time_limit_sec ?? null}; });
   }catch(e){ box.textContent = "通信エラー："+e.message; return; }
   renderQuizMgr();
-  renderReflectOnlyMgr();
 }
 function renderQuizMgr(){
   const box = document.getElementById("quizmgr");
@@ -351,12 +342,16 @@ function renderQuizMgr(){
   show("qrNoTarget", !TARGET);
   if(!TARGET){ box.innerHTML = ""; return; }
   box.innerHTML = CH.map(t=>{
-    const st = QSTATE[t.id] || {active:false, limitSec:null};
+    const st = QSTATE[t.id] || {active:false, reflectActive:false, limitSec:null};
     const on = !!st.active;
+    const rOn = !!st.reflectActive;
     const mins = Math.round((st.limitSec ?? t.limit) / 60);
-    return `<div class="qr-row">
-      <div class="nm"><span class="no">${t.no}</span>${esc(t.name)} <span class="badge ${on?"on":"off"}">${on?"配布中":"停止中"}</span></div>
+    return `<div class="qr-row" style="flex-wrap:wrap">
+      <div class="nm"><span class="no">${t.no}</span>${esc(t.name)}
+        <span class="badge ${on?"on":"off"}">小テスト ${on?"配布中":"停止中"}</span>
+        <span class="badge ${rOn?"on":"off"}">授業 ${rOn?"開始中":"未開始"}</span></div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <button class="btn mini ${rOn?"":"ghost"}" data-rtoggle="${t.id}">${rOn?"授業を終了":"授業を開始"}</button>
         <label style="font-size:12.5px;color:var(--ink-soft);display:flex;align-items:center;gap:4px">制限時間
           <input type="number" min="1" max="120" data-mins="${t.id}" value="${mins}" style="width:56px;padding:6px 6px">分
         </label>
@@ -374,6 +369,13 @@ function renderQuizMgr(){
     await Quiz.rpc("quiz_set_active", {p_pin:pin, p_quiz_id:id, p_active: !st.active, p_time_limit_sec: minsOf(id), p_school:TARGET.school, p_class:TARGET.class});
     await loadQuizState();
   });
+  box.querySelectorAll("[data-rtoggle]").forEach(b=>b.onclick=async ()=>{
+    const id = b.dataset.rtoggle;
+    const st = QSTATE[id] || {reflectActive:false};
+    b.disabled = true;
+    await Quiz.rpc("quiz_set_reflection_active", {p_pin:pin, p_quiz_id:id, p_active: !st.reflectActive, p_school:TARGET.school, p_class:TARGET.class});
+    await loadQuizState();
+  });
   box.querySelectorAll("[data-mins]").forEach(inp=>inp.onchange=async ()=>{
     const id = inp.dataset.mins;
     const st = QSTATE[id] || {active:false};
@@ -387,46 +389,6 @@ function renderQuizMgr(){
     render();
     document.getElementById("view").scrollIntoView({behavior:"smooth", block:"start"});
   });
-}
-/** 小テストをしない授業で「振り返りだけ」配布する欄。配布管理の一覧とは別。 */
-function renderReflectOnlyMgr(){
-  const sel = document.getElementById("reflOnlySel");
-  const listBox = document.getElementById("reflOnlyList");
-  if(!sel || !listBox) return;
-  const cardTitle = document.querySelector("#reflectonlycard h2");
-  if(cardTitle) cardTitle.textContent = TARGET ? `授業を開始（振り返りの受付）　－　${TARGET.label}` : "授業を開始（振り返りの受付）";
-  show("reflNoTarget", !TARGET); show("reflOnlyRow", !!TARGET);
-  if(!TARGET) return;
-  const cur = sel.value;
-  sel.innerHTML = CH.map(t=>`<option value="${t.id}">${esc(t.no)}　${esc(t.name)}</option>`).join("");
-  if(cur) sel.value = cur;
-  const activeIds = CH.filter(t=>QSTATE[t.id] && QSTATE[t.id].reflectActive);
-  listBox.innerHTML = activeIds.length
-    ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:4px">配布中の振り返り</div>`
-      + activeIds.map(t=>`<div class="qr-row">
-          <div class="nm"><span class="no">${t.no}</span>${esc(t.name)} <span class="badge on">振り返り配布中</span></div>
-          <div style="display:flex;gap:6px">
-            <button class="btn mini ghost" data-refl-qr="${t.id}">QR表示</button>
-            <button class="btn mini" data-refl-stop="${t.id}">停止</button>
-          </div>
-        </div>`).join("")
-    : `<p class="notice">いまは振り返りだけの配布はありません。</p>`;
-  document.getElementById("reflOnlyGo").onclick = async ()=>{
-    const id = sel.value;
-    if(!id) return;
-    const btn = document.getElementById("reflOnlyGo");
-    btn.disabled = true;
-    await Quiz.rpc("quiz_set_reflection_active", {p_pin:pin, p_quiz_id:id, p_active:true, p_school:TARGET.school, p_class:TARGET.class});
-    await loadQuizState();
-    btn.disabled = false;
-  };
-  listBox.querySelectorAll("[data-refl-stop]").forEach(b=>b.onclick=async ()=>{
-    b.disabled = true;
-    await Quiz.rpc("quiz_set_reflection_active", {p_pin:pin, p_quiz_id:b.dataset.reflStop, p_active:false, p_school:TARGET.school, p_class:TARGET.class});
-    await loadQuizState();
-  });
-  listBox.querySelectorAll("[data-refl-qr]").forEach(b=>b.onclick=()=>showQR(b.dataset.reflQr));
-  document.getElementById("studyTimeGo").onclick = showStudyTime;
 }
 
 /** 選んだクラスの、今日の学習時間まとめ（ベスト3・平均・全員）を表示する。 */
