@@ -179,7 +179,21 @@ body.kbopen{padding-bottom:230px}
 #frac button{height:34px;font-size:13px;padding:0 12px;font-family:var(--gothic);background:#e9edf3;border:1px solid var(--rule)}
 #frac button.go{background:var(--ai);color:#fff;border-color:var(--ai);font-weight:600}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* お祝い演出（振り返り送信後） */
+@keyframes popIn{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.2);opacity:1}100%{transform:scale(1)}}
+@keyframes floatUp{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:1}100%{transform:translateY(-56px) scale(1.15);opacity:0}}
+.doneBadge{display:block;font-size:48px;text-align:center;animation:popIn .55s cubic-bezier(.34,1.56,.64,1) both}
+.celebrate{position:relative;height:0;max-width:320px;margin:0 auto}
+.celebrate span{position:absolute;left:calc(6% + var(--i)*15%);top:0;font-size:24px;animation:floatUp 1.5s ease-out calc(var(--i)*.08s) both}
+
+/* 暇な時間カード */
+.idle-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.idle-chips button{font-family:var(--mono);font-size:15px;padding:9px 16px;background:#fff;border:1px solid var(--rule)}
+.idle-chips button:active{background:var(--ai-weak);border-color:var(--ai)}
+.idle-chips button.done{background:var(--ok-weak);border-color:var(--ok);color:var(--ok)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.doneBadge,.celebrate span{animation:none!important}}
 </style>
 </head>
 <body>
@@ -211,6 +225,7 @@ const CONFIG = {
 };
 const ACCOUNT_KEY    = "quiz:account_id"; // この端末に記憶するID（例：E-101236）
 const ACCOUNT_PW_KEY = "quiz:account_pw"; // 「パスワードを保存する」を選んだ場合のみ、この端末に平文で記憶する
+const APPLIED_BASE = "https://math-applied.pages.dev"; // 応用チャレンジ（別デプロイ・同じ回番号M1-04-xを共有）
 const qs = new URLSearchParams(location.search);
 const CLASS_ID = qs.get("c") || "";          // 例: ?c=1-3 （出席番号選択の学年・組を固定）
 const QUIZ_ID  = qs.get("quiz") || "";       // QRコードで指定された小テストID
@@ -745,20 +760,144 @@ async function renderReflectionForm(t){
   };
 }
 
+const CELEBRATE_MESSAGES = [
+  "書けたね、えらい！",
+  "今日も自分をふり返れたね。ナイス！",
+  "続けることがいちばんすごい。",
+  "その気づき、次の授業できっと効いてくる。",
+  "今日の一歩、ちゃんと積み上がってるよ。",
+  "お疲れさま！いい振り返りでした。",
+];
+function celebrateBurstHTML(){
+  const emojis = ["✨","🎉","⭐","💮","🌟"];
+  return `<div class="celebrate">${emojis.map((e,i)=>`<span style="--i:${i}">${e}</span>`).join("")}</div>`;
+}
 function renderReflectionDone(t, ev){
   const feedback = ev?.warning
     ? `<div class="notice warn" style="margin-top:14px">${esc(ev.warning)}</div>`
     : (ev?.toikaeshi ? `<div class="notice" style="margin-top:14px;font-size:15px">💬 ${esc(ev.toikaeshi)}</div>` : "");
+  const msg = CELEBRATE_MESSAGES[Math.floor(Math.random()*CELEBRATE_MESSAGES.length)];
   app.innerHTML = `
     <header class="sheet">
       <h1>数学　小テスト・振り返り</h1>
       <div class="sub">${esc(accountLabel(S.sid))}　・　${esc(t.no)}　${esc(t.name)}</div>
     </header>
-    <div class="notice ok" style="margin-top:14px;font-size:15px;text-align:center;padding:18px">振り返りを保存しました。</div>
+    ${celebrateBurstHTML()}
+    <div class="notice ok" style="margin-top:0;font-size:15px;text-align:center;padding:18px">
+      <span class="doneBadge">🎉</span>
+      <div style="font-size:17px;font-weight:600;margin-top:4px">入力できました！</div>
+      <div style="margin-top:4px">${esc(msg)}</div>
+    </div>
     ${feedback}
-    <div class="foot"><button class="btn" id="rf-done-home" style="width:100%">ホームへもどる</button></div>
+    <div id="idleSlot"></div>
+    <div class="foot"><button class="btn ghost" id="rf-done-home" style="width:100%">ホームへもどる</button></div>
   `;
   document.getElementById("rf-done-home").onclick = renderHome;
+  document.getElementById("idleSlot").innerHTML = idleCardHTML(t.id, `${t.no}　${t.name}`);
+  wireIdleCard(t.id);
+}
+
+/* ============================================================
+   暇な時間カード（学習時間の記録・応用問題・記録・プチゲーム）
+   小テストの開始待ちや、振り返りを書き終えた後の空き時間に出す。
+   ============================================================ */
+function idleCardHTML(quizId, label){
+  const hasLesson = CH.some(x=>x.id===quizId);
+  const appliedUrl = `${APPLIED_BASE}/challenge.html?set=${encodeURIComponent(quizId)}`;
+  return `
+  <div class="card" id="idle-${quizId}">
+    <h2>ちょっと時間があるときは</h2>
+    <div class="hint">今日の学習時間を記録しよう（${esc(label)}）</div>
+    <div class="idle-chips">
+      ${[5,10,15,20,30].map(m=>`<button type="button" data-study="${m}">${m}分</button>`).join("")}
+    </div>
+    <div class="hint" id="study-msg-${quizId}" style="margin-top:6px;margin-bottom:0"></div>
+    <div class="foot" style="margin-top:14px">
+      ${hasLesson ? `<a class="btn ghost" style="text-decoration:none;text-align:center;flex:1" href="${appliedUrl}" target="_blank" rel="noopener">🎯 応用問題に挑戦</a>` : ""}
+      <button class="btn ghost" id="idle-record-${quizId}" style="flex:1">📋 記録を見る</button>
+    </div>
+    <button class="btn ghost" id="idle-game-${quizId}" style="width:100%;margin-top:8px">🕹️ 60秒計算チャレンジ</button>
+  </div>`;
+}
+function wireIdleCard(quizId){
+  const box = document.getElementById(`idle-${quizId}`);
+  if(!box || !S.sid) return;
+  box.querySelectorAll("[data-study]").forEach(b=>b.onclick=async ()=>{
+    const mins = +b.dataset.study;
+    box.querySelectorAll("[data-study]").forEach(x=>{x.disabled=true;});
+    const msgEl = document.getElementById(`study-msg-${quizId}`);
+    try{
+      const r = await Quiz.rpc("quiz_study_time_submit", {p_account_id:S.sid, p_quiz_id:quizId, p_minutes:mins});
+      if(r && r.ok){ b.classList.add("done"); if(msgEl) msgEl.textContent = `${mins}分、記録したよ！`; }
+      else if(msgEl) msgEl.textContent = "記録できませんでした。もう一度お試しください。";
+    }catch(e){ if(msgEl) msgEl.textContent = "通信エラーです。"; }
+    box.querySelectorAll("[data-study]").forEach(x=>{x.disabled=false;});
+  });
+  const recBtn = document.getElementById(`idle-record-${quizId}`);
+  if(recBtn) recBtn.onclick = renderMyRecord;
+  const gameBtn = document.getElementById(`idle-game-${quizId}`);
+  if(gameBtn) gameBtn.onclick = ()=>renderMiniGame();
+}
+
+/** 60秒でできるだけ多く計算するプチゲーム。サーバーには送らない、その場の気分転換用。 */
+function renderMiniGame(){
+  KB.hide(); clearInterval(waitTimer);
+  let score = 0, timeLeft = 60, cur = null, timer = null;
+  const nextQ = ()=>{
+    const a = 1+Math.floor(Math.random()*12), b = 1+Math.floor(Math.random()*12);
+    const op = Math.random()<0.5 ? "+" : "-";
+    const [x,y] = (op==="-" && a<b) ? [b,a] : [a,b];
+    cur = { text:`${x} ${op} ${y}`, ans: op==="+" ? x+y : x-y };
+    const qEl = document.getElementById("mg-q"), aEl = document.getElementById("mg-ans");
+    if(qEl) qEl.textContent = cur.text;
+    if(aEl){ aEl.value = ""; aEl.focus(); }
+  };
+  const finish = ()=>{
+    clearInterval(timer);
+    app.innerHTML = `
+      <header class="sheet"><h1>数学　小テスト・振り返り</h1><div class="sub">🕹️ 60秒計算チャレンジ・結果</div></header>
+      <div class="score">
+        <div class="big">${score}<small> 問</small></div>
+        <div style="margin-top:8px">よくがんばった！ひと息ついたら、また戻ってきてね。</div>
+      </div>
+      <div class="foot"><button class="btn" id="mg-again" style="width:100%">もう一度</button></div>
+      <div class="foot"><button class="btn ghost" id="mg-back" style="width:100%">もどる</button></div>`;
+    document.getElementById("mg-again").onclick = renderMiniGame;
+    document.getElementById("mg-back").onclick = renderHome;
+  };
+  app.innerHTML = `
+    <header class="sheet">
+      <h1>数学　小テスト・振り返り</h1>
+      <div class="sub">🕹️ 60秒計算チャレンジ</div>
+    </header>
+    <div class="score">
+      <div style="font-size:13px;color:var(--ink-soft)">残り時間　<span id="mg-time">60</span>秒</div>
+      <div class="big" id="mg-score">0<small> 問</small></div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div id="mg-q" style="font-family:var(--mono);font-size:34px;margin:14px 0"></div>
+      <input type="number" id="mg-ans" inputmode="numeric" style="font-size:22px;text-align:center;max-width:160px;margin:0 auto;display:block" autocomplete="off">
+    </div>
+    <div class="foot"><button class="btn ghost" id="mg-quit" style="width:100%">やめる</button></div>
+  `;
+  const ansEl = document.getElementById("mg-ans");
+  ansEl.oninput = ()=>{
+    if(ansEl.value==="" || cur===null) return;
+    if(+ansEl.value === cur.ans){
+      score++;
+      const sEl = document.getElementById("mg-score");
+      if(sEl) sEl.innerHTML = `${score}<small> 問</small>`;
+      nextQ();
+    }
+  };
+  document.getElementById("mg-quit").onclick = ()=>{ clearInterval(timer); renderHome(); };
+  timer = setInterval(()=>{
+    timeLeft--;
+    const tEl = document.getElementById("mg-time");
+    if(tEl) tEl.textContent = timeLeft;
+    if(timeLeft<=0) finish();
+  }, 1000);
+  nextQ();
 }
 
 /* ============================================================
@@ -919,7 +1058,9 @@ async function refreshTests(){
     } else {
       box.innerHTML = `
         <h2>${esc(t.no)}　${esc(t.name)}</h2>
-        <div class="notice">先生が開始するのを待っています…（自動で確認します）</div>`;
+        <div class="notice">先生が開始するのを待っています…（自動で確認します）</div>
+        <div id="idleSlot"></div>`;
+      if(S.sid){ document.getElementById("idleSlot").innerHTML = idleCardHTML(t.id, `${t.no}　${t.name}`); wireIdleCard(t.id); }
       clearInterval(waitTimer);
       waitTimer = setInterval(async ()=>{
         try{
@@ -934,7 +1075,9 @@ async function refreshTests(){
 
   const list = CH.filter(t=>ACTIVE.includes(t.id) || REFLECT_ACTIVE.includes(t.id));
   if(!list.length){
-    box.innerHTML = `<div class="notice">現在受付中の小テスト・振り返りはありません。先生の指示を待つか、QRコードを読み込んでください。</div>`;
+    box.innerHTML = `<div class="notice">現在受付中の小テスト・振り返りはありません。先生の指示を待つか、QRコードを読み込んでください。</div>
+      <div id="idleSlot"></div>`;
+    if(S.sid){ document.getElementById("idleSlot").innerHTML = idleCardHTML("unknown", "今日の学習"); wireIdleCard("unknown"); }
     return;
   }
   box.innerHTML = `

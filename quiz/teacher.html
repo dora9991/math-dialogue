@@ -162,8 +162,10 @@ td .bar.low{background:var(--shu)}
         <div><label class="f">授業（回）</label>
           <select id="reflOnlySel"></select></div>
         <button class="btn" id="reflOnlyGo" style="flex:none">この回の振り返りを配布</button>
+        <button class="btn ghost" id="studyTimeGo" style="flex:none">📊 今日の学習時間を見る</button>
       </div>
       <div id="reflOnlyList"></div>
+      <div id="studyTimeBox" class="hidden" style="margin-top:14px"></div>
     </div>
 
     <div class="card no-print" id="pwresetcard">
@@ -420,6 +422,34 @@ function renderReflectOnlyMgr(){
     await loadQuizState();
   });
   listBox.querySelectorAll("[data-refl-qr]").forEach(b=>b.onclick=()=>showQR(b.dataset.reflQr));
+  document.getElementById("studyTimeGo").onclick = showStudyTime;
+}
+
+/** 選んだクラスの、今日の学習時間まとめ（ベスト3・平均・全員）を表示する。 */
+async function showStudyTime(){
+  if(!TARGET) return;
+  const box = document.getElementById("studyTimeBox");
+  box.classList.remove("hidden");
+  box.innerHTML = `<p class="hint">読み込み中…</p>`;
+  let r;
+  try{ r = await Quiz.rpc("quiz_study_time_summary", {p_pin:pin, p_school:TARGET.school, p_class:TARGET.class}); }
+  catch(e){ box.innerHTML = `<div class="notice warn">通信エラーです。</div>`; return; }
+  if(r && r.error){ box.innerHTML = `<div class="notice warn">取得エラー：${esc(r.error)}</div>`; return; }
+  const rows = (r && r.rows) || [];
+  if(!rows.length){ box.innerHTML = `<div class="notice">今日はまだ${esc(TARGET.label)}の学習時間の記録がありません。</div>`; return; }
+  const avg = Math.round(rows.reduce((t,x)=>t+x.minutes,0)/rows.length);
+  const top3 = rows.slice(0,3);
+  const medal = ["🥇","🥈","🥉"];
+  box.innerHTML = `
+    <h2 style="font-size:15.5px;margin:0 0 8px">${esc(TARGET.label)}　今日の学習時間（${rows.length}人が記録）</h2>
+    <div class="kpis" style="margin-top:0">
+      <div class="kpi"><div class="v">${avg}<span style="font-size:14px">分</span></div><div class="k">平均</div></div>
+      ${top3.map((x,i)=>`<div class="kpi"><div class="v">${medal[i]} ${x.minutes}<span style="font-size:14px">分</span></div><div class="k">${esc(accountLabel(x.account_id))}</div></div>`).join("")}
+    </div>
+    <div class="scroll" style="margin-top:10px"><table>
+      <thead><tr><th>生徒</th><th>授業</th><th class="num">分</th></tr></thead>
+      <tbody>${rows.map(x=>`<tr><td>${esc(accountLabel(x.account_id))}</td><td>${esc(quizName(x.quiz_id))}</td><td class="num">${x.minutes}</td></tr>`).join("")}</tbody>
+    </table></div>`;
 }
 function showQR(quizId){
   const url = studentUrl(quizId);
