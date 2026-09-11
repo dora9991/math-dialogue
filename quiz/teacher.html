@@ -147,18 +147,20 @@ td .bar.low{background:var(--shu)}
       <div class="hint" id="tgCurrent" style="margin-top:10px;font-size:13px;color:var(--ink-soft)"></div>
     </div>
 
-    <div class="card no-print hidden" id="qrcard">
+    <div class="card no-print" id="qrcard">
       <h2>小テストの配布管理</h2>
       <p class="notice">「配布」を押すと、そのテストのQRコードから生徒が入れるようになります。使い終わったら「停止」してください。</p>
+      <div class="notice warn" id="qrNoTarget">↑ 上の「操作するクラスを選ぶ」で、まず学校コードとクラスを選んでください。</div>
       <div id="quizmgr"></div>
     </div>
 
-    <div class="card no-print hidden" id="reflectonlycard">
+    <div class="card no-print" id="reflectonlycard">
       <h2>授業を開始（振り返りの受付）</h2>
       <p class="notice">回を選んで「配布」すると、その回の振り返りが選んだクラスの生徒に書けるようになります。
         小テストとは別の操作です——小テストは上の「小テストの配布管理」で別途「配布」してください。
         使い終わったら「停止」してください。</p>
-      <div class="row" style="margin-bottom:8px">
+      <div class="notice warn" id="reflNoTarget">↑ 上の「操作するクラスを選ぶ」で、まず学校コードとクラスを選んでください。</div>
+      <div class="row hidden" id="reflOnlyRow" style="margin-bottom:8px">
         <div><label class="f">授業（回）</label>
           <select id="reflOnlySel"></select></div>
         <button class="btn" id="reflOnlyGo" style="flex:none">この回の振り返りを配布</button>
@@ -248,7 +250,6 @@ function setTarget(t){
   localStorage.setItem(TARGET_KEY, JSON.stringify(t));
   saveTargetHistory(t);
   renderTargetUI();
-  show("qrcard", true); show("reflectonlycard", true);
   loadQuizState();
 }
 function renderTargetUI(){
@@ -285,7 +286,8 @@ function initTargetPicker(){
     if(saved && saved.school && saved.class) TARGET = saved;
   }catch(e){}
   renderTargetUI();
-  if(TARGET){ show("qrcard", true); show("reflectonlycard", true); loadQuizState(); }
+  show("qrNoTarget", !TARGET); show("reflNoTarget", !TARGET); show("reflOnlyRow", !!TARGET);
+  if(TARGET) loadQuizState();
 }
 
 function studentUrl(quizId){
@@ -346,6 +348,7 @@ function renderQuizMgr(){
   const box = document.getElementById("quizmgr");
   const cardTitle = document.querySelector("#qrcard h2");
   if(cardTitle) cardTitle.textContent = TARGET ? `小テストの配布管理　－　${TARGET.label}` : "小テストの配布管理";
+  show("qrNoTarget", !TARGET);
   if(!TARGET){ box.innerHTML = ""; return; }
   box.innerHTML = CH.map(t=>{
     const st = QSTATE[t.id] || {active:false, limitSec:null};
@@ -392,6 +395,7 @@ function renderReflectOnlyMgr(){
   if(!sel || !listBox) return;
   const cardTitle = document.querySelector("#reflectonlycard h2");
   if(cardTitle) cardTitle.textContent = TARGET ? `授業を開始（振り返りの受付）　－　${TARGET.label}` : "授業を開始（振り返りの受付）";
+  show("reflNoTarget", !TARGET); show("reflOnlyRow", !!TARGET);
   if(!TARGET) return;
   const cur = sel.value;
   sel.innerHTML = CH.map(t=>`<option value="${t.id}">${esc(t.no)}　${esc(t.name)}</option>`).join("");
@@ -447,8 +451,8 @@ async function showStudyTime(){
       ${top3.map((x,i)=>`<div class="kpi"><div class="v">${medal[i]} ${x.minutes}<span style="font-size:14px">分</span></div><div class="k">${esc(accountLabel(x.account_id))}</div></div>`).join("")}
     </div>
     <div class="scroll" style="margin-top:10px"><table>
-      <thead><tr><th>生徒</th><th>授業</th><th class="num">分</th></tr></thead>
-      <tbody>${rows.map(x=>`<tr><td>${esc(accountLabel(x.account_id))}</td><td>${esc(quizName(x.quiz_id))}</td><td class="num">${x.minutes}</td></tr>`).join("")}</tbody>
+      <thead><tr><th>生徒</th><th>授業</th><th class="num">分</th><th>家庭学習で頑張ったこと</th></tr></thead>
+      <tbody>${rows.map(x=>`<tr><td>${esc(accountLabel(x.account_id))}</td><td>${esc(quizName(x.quiz_id))}</td><td class="num">${x.minutes}</td><td style="white-space:pre-wrap">${esc(x.note||"—")}</td></tr>`).join("")}</tbody>
     </table></div>`;
 }
 function showQR(quizId){

@@ -509,15 +509,17 @@ create table if not exists quiz_study_time (
   quiz_id    text not null default 'unknown', -- どの授業の前後の記録か（未指定はunknown）
   jst_date   date not null,
   minutes    int  not null,
+  note       text,                            -- 家庭学習で頑張ったこと（任意）
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (account_id, quiz_id, jst_date)
 );
 alter table quiz_study_time enable row level security;
+alter table quiz_study_time add column if not exists note text;
 -- ポリシーを一切作らない = anonキーからの直接アクセスは全拒否（RPC経由のみ）
 
 -- 記録（同じ生徒×同じ授業×同じ日は上書き＝押し直しOK）
-create or replace function quiz_study_time_submit(p_account_id text, p_quiz_id text, p_minutes int)
+create or replace function quiz_study_time_submit(p_account_id text, p_quiz_id text, p_minutes int, p_note text default null)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare v_today date := (now() at time zone 'Asia/Tokyo')::date;
 begin
@@ -527,15 +529,15 @@ begin
   if p_minutes is null or p_minutes < 1 or p_minutes > 180 then
     return jsonb_build_object('error', 'bad_minutes');
   end if;
-  insert into quiz_study_time (account_id, quiz_id, jst_date, minutes, updated_at)
-    values (p_account_id, coalesce(p_quiz_id,'unknown'), v_today, p_minutes, now())
+  insert into quiz_study_time (account_id, quiz_id, jst_date, minutes, note, updated_at)
+    values (p_account_id, coalesce(p_quiz_id,'unknown'), v_today, p_minutes, p_note, now())
   on conflict (account_id, quiz_id, jst_date) do update set
-    minutes = excluded.minutes, updated_at = now();
+    minutes = excluded.minutes, note = excluded.note, updated_at = now();
   return jsonb_build_object('ok', true);
 end $$;
 
 -- 教師用：選んだ学校・クラス（＋任意でその授業）の、今日の学習時間まとめ。
--- ベスト3・平均・全員の記録をまとめて返す（投影して見せられるように）
+-- ベスト3・平均・全員の記録（頑張ったことのメモ含む）をまとめて返す（投影して見せられるように）
 create or replace function quiz_study_time_summary(p_pin text, p_school text, p_class text, p_quiz_id text default null)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare v_today date := (now() at time zone 'Asia/Tokyo')::date;
@@ -545,7 +547,7 @@ begin
     return jsonb_build_object('error', 'no_target');
   end if;
   return jsonb_build_object('rows', coalesce((
-    select jsonb_agg(jsonb_build_object('account_id', st.account_id, 'quiz_id', st.quiz_id, 'minutes', st.minutes) order by st.minutes desc)
+    select jsonb_agg(jsonb_build_object('account_id', st.account_id, 'quiz_id', st.quiz_id, 'minutes', st.minutes, 'note', st.note) order by st.minutes desc)
     from quiz_study_time st, _quiz_parse_account(st.account_id) pa
     where st.jst_date = v_today and pa.school = p_school and pa.class = p_class
       and (p_quiz_id is null or st.quiz_id = p_quiz_id)

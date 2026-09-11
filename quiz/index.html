@@ -806,98 +806,136 @@ function idleCardHTML(quizId, label){
   const appliedUrl = `${APPLIED_BASE}/challenge.html?set=${encodeURIComponent(quizId)}`;
   return `
   <div class="card" id="idle-${quizId}">
-    <h2>ちょっと時間があるときは</h2>
+    <h2>授業のはじめに</h2>
     <div class="hint">今日の学習時間を記録しよう（${esc(label)}）</div>
-    <div class="idle-chips">
-      ${[5,10,15,20,30].map(m=>`<button type="button" data-study="${m}">${m}分</button>`).join("")}
+    <div class="idle-chips" id="study-mins-${quizId}">
+      ${[5,10,15,20,30].map(m=>`<button type="button" data-mins="${m}" aria-pressed="false">${m}分</button>`).join("")}
     </div>
+    <div class="subq" style="margin-top:8px">
+      <input type="number" id="study-custom-${quizId}" placeholder="その他（分）" min="1" max="180" style="max-width:130px">
+    </div>
+    <label class="f" style="margin-top:12px">家庭学習で頑張ったこと（任意）</label>
+    <textarea id="study-note-${quizId}" placeholder="例：応用問題を3問解いた／教科書を読み直した など"></textarea>
+    <button class="btn" id="study-submit-${quizId}" style="width:100%;margin-top:8px">記録する</button>
     <div class="hint" id="study-msg-${quizId}" style="margin-top:6px;margin-bottom:0"></div>
     <div class="foot" style="margin-top:14px">
       ${hasLesson ? `<a class="btn ghost" style="text-decoration:none;text-align:center;flex:1" href="${appliedUrl}" target="_blank" rel="noopener">🎯 応用問題に挑戦</a>` : ""}
       <button class="btn ghost" id="idle-record-${quizId}" style="flex:1">📋 記録を見る</button>
     </div>
-    <button class="btn ghost" id="idle-game-${quizId}" style="width:100%;margin-top:8px">🕹️ 60秒計算チャレンジ</button>
+    <button class="btn ghost" id="idle-game-${quizId}" style="width:100%;margin-top:8px">🎯 確認問題5問</button>
   </div>`;
 }
 function wireIdleCard(quizId){
   const box = document.getElementById(`idle-${quizId}`);
   if(!box || !S.sid) return;
-  box.querySelectorAll("[data-study]").forEach(b=>b.onclick=async ()=>{
-    const mins = +b.dataset.study;
-    box.querySelectorAll("[data-study]").forEach(x=>{x.disabled=true;});
+  const chipsBox = document.getElementById(`study-mins-${quizId}`);
+  const customEl = document.getElementById(`study-custom-${quizId}`);
+  chipsBox.querySelectorAll("[data-mins]").forEach(b=>b.onclick=()=>{
+    chipsBox.querySelectorAll("[data-mins]").forEach(x=>x.setAttribute("aria-pressed", String(x===b)));
+    customEl.value = "";
+  });
+  customEl.oninput = ()=>{ if(customEl.value) chipsBox.querySelectorAll("[data-mins]").forEach(x=>x.setAttribute("aria-pressed","false")); };
+  document.getElementById(`study-submit-${quizId}`).onclick = async ()=>{
+    const pressed = chipsBox.querySelector('[aria-pressed="true"]');
+    const mins = customEl.value ? +customEl.value : (pressed ? +pressed.dataset.mins : null);
     const msgEl = document.getElementById(`study-msg-${quizId}`);
+    if(!mins || mins<1){ if(msgEl) msgEl.textContent = "学習時間を選ぶか入力してください。"; return; }
+    const note = document.getElementById(`study-note-${quizId}`).value;
+    const btn = document.getElementById(`study-submit-${quizId}`);
+    btn.disabled = true;
     try{
-      const r = await Quiz.rpc("quiz_study_time_submit", {p_account_id:S.sid, p_quiz_id:quizId, p_minutes:mins});
-      if(r && r.ok){ b.classList.add("done"); if(msgEl) msgEl.textContent = `${mins}分、記録したよ！`; }
+      const r = await Quiz.rpc("quiz_study_time_submit", {p_account_id:S.sid, p_quiz_id:quizId, p_minutes:mins, p_note:note});
+      if(r && r.ok){ if(msgEl) msgEl.textContent = `${mins}分、記録したよ！`; }
       else if(msgEl) msgEl.textContent = "記録できませんでした。もう一度お試しください。";
     }catch(e){ if(msgEl) msgEl.textContent = "通信エラーです。"; }
-    box.querySelectorAll("[data-study]").forEach(x=>{x.disabled=false;});
-  });
+    btn.disabled = false;
+  };
   const recBtn = document.getElementById(`idle-record-${quizId}`);
   if(recBtn) recBtn.onclick = renderMyRecord;
   const gameBtn = document.getElementById(`idle-game-${quizId}`);
-  if(gameBtn) gameBtn.onclick = ()=>renderMiniGame();
+  if(gameBtn) gameBtn.onclick = ()=>renderConfirmQuiz();
 }
 
-/** 60秒でできるだけ多く計算するプチゲーム。サーバーには送らない、その場の気分転換用。 */
-function renderMiniGame(){
+/* ============================================================
+   確認問題5問（数学ラボ2「はいちモード」の確認問題と同じ発想：
+   5問すべて正解で合格。全レッスンの問題プールからランダムに5問出し、
+   1問ずつ即採点・自動で次へ進む。サーバーには送らない、その場の腕試し用。）
+   ============================================================ */
+function confirmQuizPool(){
+  const pool = [];
+  CH.forEach(t=>{
+    (t.qs||[]).forEach(q=>{
+      if(q.type==="choice"){
+        q.subs.forEach(s=>pool.push({no:t.no, lead:s.prompt||q.lead, type:"choice", choices:q.choices, ans:s.a}));
+      } else if(q.type==="input"){
+        q.subs.forEach(s=>pool.push({no:t.no, lead:s.prompt||q.lead, type:"input", mode:s.mode, ans:s.a, ph:s.ph||q.ph}));
+      }
+    });
+  });
+  return pool;
+}
+function renderConfirmQuiz(){
   KB.hide(); clearInterval(waitTimer);
-  let score = 0, timeLeft = 60, cur = null, timer = null;
-  const nextQ = ()=>{
-    const a = 1+Math.floor(Math.random()*12), b = 1+Math.floor(Math.random()*12);
-    const op = Math.random()<0.5 ? "+" : "-";
-    const [x,y] = (op==="-" && a<b) ? [b,a] : [a,b];
-    cur = { text:`${x} ${op} ${y}`, ans: op==="+" ? x+y : x-y };
-    const qEl = document.getElementById("mg-q"), aEl = document.getElementById("mg-ans");
-    if(qEl) qEl.textContent = cur.text;
-    if(aEl){ aEl.value = ""; aEl.focus(); }
-  };
-  const finish = ()=>{
-    clearInterval(timer);
+  const ROUND = 5;
+  const pool = confirmQuizPool();
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
+  const set = pool.slice(0, Math.min(ROUND, pool.length));
+  let i = 0, correct = 0;
+  const showQ = ()=>{
+    if(i>=set.length){ finish(); return; }
+    const q = set[i];
     app.innerHTML = `
-      <header class="sheet"><h1>数学　小テスト・振り返り</h1><div class="sub">🕹️ 60秒計算チャレンジ・結果</div></header>
-      <div class="score">
-        <div class="big">${score}<small> 問</small></div>
-        <div style="margin-top:8px">よくがんばった！ひと息ついたら、また戻ってきてね。</div>
+      <header class="sheet">
+        <h1>数学　小テスト・振り返り</h1>
+        <div class="sub">🎯 確認問題　${i+1}/${set.length}問目　（${set.length}問すべて正解で合格）</div>
+      </header>
+      <div class="q">
+        <div class="head"><span class="n">${esc(q.no)}</span><span class="prompt">${esc(q.lead||"")}</span></div>
+        ${q.type==="choice"
+          ? `<div class="choices">${q.choices.map((c,ci)=>`<button type="button" data-ci="${ci}">${esc(c)}</button>`).join("")}</div>`
+          : `<div class="subq"><input type="text" id="cq-ans" placeholder="${esc(q.ph||"")}" autocomplete="off" spellcheck="false"></div>
+             <button class="btn" id="cq-check" style="margin-top:10px;width:100%">こたえる</button>`}
+        <div id="cq-fb" style="margin-top:10px"></div>
       </div>
-      <div class="foot"><button class="btn" id="mg-again" style="width:100%">もう一度</button></div>
-      <div class="foot"><button class="btn ghost" id="mg-back" style="width:100%">もどる</button></div>`;
-    document.getElementById("mg-again").onclick = renderMiniGame;
-    document.getElementById("mg-back").onclick = renderHome;
-  };
-  app.innerHTML = `
-    <header class="sheet">
-      <h1>数学　小テスト・振り返り</h1>
-      <div class="sub">🕹️ 60秒計算チャレンジ</div>
-    </header>
-    <div class="score">
-      <div style="font-size:13px;color:var(--ink-soft)">残り時間　<span id="mg-time">60</span>秒</div>
-      <div class="big" id="mg-score">0<small> 問</small></div>
-    </div>
-    <div class="card" style="text-align:center">
-      <div id="mg-q" style="font-family:var(--mono);font-size:34px;margin:14px 0"></div>
-      <input type="number" id="mg-ans" inputmode="numeric" style="font-size:22px;text-align:center;max-width:160px;margin:0 auto;display:block" autocomplete="off">
-    </div>
-    <div class="foot"><button class="btn ghost" id="mg-quit" style="width:100%">やめる</button></div>
-  `;
-  const ansEl = document.getElementById("mg-ans");
-  ansEl.oninput = ()=>{
-    if(ansEl.value==="" || cur===null) return;
-    if(+ansEl.value === cur.ans){
-      score++;
-      const sEl = document.getElementById("mg-score");
-      if(sEl) sEl.innerHTML = `${score}<small> 問</small>`;
-      nextQ();
+      <div class="foot"><button class="btn ghost" id="cq-quit" style="width:100%">やめる</button></div>`;
+    document.getElementById("cq-quit").onclick = renderHome;
+    const fb = document.getElementById("cq-fb");
+    const judge = ok=>{
+      fb.innerHTML = ok
+        ? `<div class="notice ok">○ 正解！</div>`
+        : `<div class="notice warn">× 正解は「${esc(q.type==="choice"?q.choices[q.ans]:q.ans)}」</div>`;
+      if(ok) correct++;
+      i++;
+      setTimeout(showQ, 900);
+    };
+    if(q.type==="choice"){
+      app.querySelectorAll("[data-ci]").forEach(b=>b.onclick=()=>{
+        app.querySelectorAll("[data-ci]").forEach(x=>x.disabled=true);
+        judge(+b.dataset.ci === q.ans);
+      });
+    } else {
+      const inp = document.getElementById("cq-ans");
+      KB.attach(inp, q.lead||"");
+      document.getElementById("cq-check").onclick = ()=>{
+        document.getElementById("cq-check").disabled = true;
+        judge(gradeSub(q.mode, inp.value, q.ans));
+      };
     }
   };
-  document.getElementById("mg-quit").onclick = ()=>{ clearInterval(timer); renderHome(); };
-  timer = setInterval(()=>{
-    timeLeft--;
-    const tEl = document.getElementById("mg-time");
-    if(tEl) tEl.textContent = timeLeft;
-    if(timeLeft<=0) finish();
-  }, 1000);
-  nextQ();
+  const finish = ()=>{
+    const pass = correct===set.length;
+    app.innerHTML = `
+      <header class="sheet"><h1>数学　小テスト・振り返り</h1><div class="sub">🎯 確認問題・結果</div></header>
+      <div class="score">
+        <div class="big">${correct}<small> / ${set.length}</small></div>
+        <div style="margin-top:8px">${pass ? "🎉 全問正解！合格です！" : "おしい！もう一度チャレンジしてみよう。"}</div>
+      </div>
+      <div class="foot"><button class="btn" id="cq-again" style="width:100%">もう一度</button></div>
+      <div class="foot"><button class="btn ghost" id="cq-back" style="width:100%">もどる</button></div>`;
+    document.getElementById("cq-again").onclick = renderConfirmQuiz;
+    document.getElementById("cq-back").onclick = renderHome;
+  };
+  showQ();
 }
 
 /* ============================================================
