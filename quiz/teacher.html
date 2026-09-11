@@ -529,6 +529,9 @@ function byQuestion(rows){
   return Object.values(m);
 }
 const pct = (s,m)=> m? Math.round(s/m*100) : 0;
+// ボーナス（応用）問題は max_score が常に0（配点を増やさない設計）なので pct(score,max) は必ず0になる。
+// byQuestion() の集計行に対してはこちらを使い、ボーナス行は「正解した人数の割合」で代用する。
+const qPct = x => x.max===0 ? Math.round(x.okN/Math.max(1,x.n)*100) : pct(x.score,x.max);
 const med = a => { if(!a.length) return 0; const s=[...a].sort((x,y)=>x-y); return s[Math.floor(s.length/2)]; };
 const fmtMs = ms => ms>=60000 ? `${Math.floor(ms/60000)}分${Math.round(ms%60000/1000)}秒` : `${Math.round(ms/1000)}秒`;
 const qSort = (a,b)=> String(a).localeCompare(String(b),"ja",{numeric:true});
@@ -632,7 +635,7 @@ function vQuestions(rows){
     <thead><tr><th>テスト</th><th>問題</th><th class="num">解答数</th><th>正答率</th><th>多い誤答（上位3）</th></tr></thead>
     <tbody>${list.map(x=>{
       const isBonus = x.max===0;
-      const p = isBonus ? Math.round(x.okN/Math.max(1,x.n)*100) : pct(x.score,x.max);
+      const p = qPct(x);
       const cell = isBonus ? `<span class="badge">★ボーナス 正解 ${x.okN}/${x.n}人</span>` : bar(p);
       const top=Object.entries(x.wrong).sort((a,b)=>b[1]-a[1]).slice(0,3)
         .map(([a,n])=>`<span class="badge">${esc(a.length>18?a.slice(0,18)+"…":a)} ×${n}</span>`).join(" ");
@@ -796,7 +799,7 @@ $("#xlsx").onclick = ()=>{
   const sheet2=[["テスト","問題","解答数","正答率%","多い誤答1","","多い誤答2","","多い誤答3",""]];
   for(const x of bq){
     const top=Object.entries(x.wrong).sort((a,b)=>b[1]-a[1]).slice(0,3);
-    const r=[quizName(x.quiz), x.q_no, x.n, pct(x.score,x.max)];
+    const r=[quizName(x.quiz), x.q_no, x.n, qPct(x)];
     for(let i=0;i<3;i++){ r.push(top[i]?.[0]??"", top[i]?.[1]??""); }
     sheet2.push(r);
   }
@@ -820,7 +823,7 @@ $("#proj-open").onclick = ()=>{
   const sq = byStudentQuiz(rows);
   const ps = sq.map(x=>pct(x.score,x.max));
   const avg = Math.round(ps.reduce((t,p)=>t+p,0)/ps.length);
-  const bq = byQuestion(rows).sort((a,b)=>pct(a.score,a.max)-pct(b.score,b.max));
+  const bq = byQuestion(rows).filter(x=>x.max>0).sort((a,b)=>qPct(a)-qPct(b));
   const title = [F.school, F.cls&&F.cls.replace("-","年")+"組", F.quiz?quizName(F.quiz):"4章 全テスト"].filter(Boolean).join("　");
 
   const refl = reflectionsFiltered();
@@ -853,7 +856,7 @@ $("#proj-open").onclick = ()=>{
     <h2 style="font-size:24px;margin-top:22px">正答率の低かった問題</h2>
     <table><thead><tr><th>テスト</th><th>問題</th><th>正答率</th><th>多かったまちがい</th></tr></thead>
     <tbody>${bq.slice(0,7).map(x=>{
-      const p=pct(x.score,x.max);
+      const p=qPct(x);
       const top=Object.entries(x.wrong).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([a])=>esc(a.length>22?a.slice(0,22)+"…":a)).join("　／　");
       return `<tr class="${p<60?"lo":""}"><td>${esc(QUIZ_META[x.quiz]?.no||x.quiz)}</td><td>${esc(x.q_no)}</td>
         <td>${bar(p)}</td><td style="font-family:var(--mono)">${top||"—"}</td></tr>`;
