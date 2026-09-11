@@ -194,7 +194,21 @@ body.kbopen{padding-bottom:230px}
 .idle-chips button:active{background:var(--ai-weak);border-color:var(--ai)}
 .idle-chips button.done{background:var(--ok-weak);border-color:var(--ok);color:var(--ok)}
 
-@media (prefers-reduced-motion:reduce){*{transition:none!important}.doneBadge,.celebrate span{animation:none!important}}
+/* 60秒計算チャレンジ：押し合いバトル */
+.duel-track{position:relative;height:64px;margin:4px 0 14px;border:1px solid var(--rule);border-radius:8px;
+  background:linear-gradient(90deg,var(--ai-weak),#fff 55%,var(--shu-weak));overflow:hidden}
+.duel-track.danger{background:linear-gradient(90deg,var(--ai-weak),#fff 30%,var(--shu-weak))}
+.duel-player{position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:30px;z-index:2}
+.duel-enemy{position:absolute;top:50%;font-size:30px;transform:translateY(-50%);
+  transition:left .35s cubic-bezier(.34,1.56,.64,1);will-change:left;z-index:1}
+.duel-enemy.knock{animation:duelKnock .35s ease}
+.duel-enemy.spawn{animation:duelSpawn .5s ease}
+@keyframes duelKnock{0%{transform:translateY(-50%) scale(1.22) rotate(-10deg)}100%{transform:translateY(-50%) scale(1) rotate(0)}}
+@keyframes duelSpawn{0%{transform:translate(0,-58px) scale(.5);opacity:0}100%{transform:translateY(-50%) scale(1);opacity:1}}
+.duel-impact{position:absolute;top:50%;font-size:22px;transform:translate(-50%,-50%);animation:duelImpactFade .5s ease forwards;pointer-events:none;z-index:3}
+@keyframes duelImpactFade{0%{opacity:1;transform:translate(-50%,-50%) scale(.6)}55%{opacity:1;transform:translate(-50%,-50%) scale(1.35)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.5)}}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.doneBadge,.celebrate span,.duel-enemy.knock,.duel-enemy.spawn,.duel-impact{animation:none!important}}
 </style>
 </head>
 <body>
@@ -821,7 +835,10 @@ function idleCardHTML(quizId, label){
       ${hasLesson ? `<a class="btn ghost" style="text-decoration:none;text-align:center;flex:1" href="${appliedUrl}" target="_blank" rel="noopener">🎯 応用問題に挑戦</a>` : ""}
       <button class="btn ghost" id="idle-record-${quizId}" style="flex:1">📋 記録を見る</button>
     </div>
-    <button class="btn ghost" id="idle-game-${quizId}" style="width:100%;margin-top:8px">🎯 確認問題5問</button>
+    <div class="foot" style="margin-top:8px">
+      <button class="btn ghost" id="idle-confirm-${quizId}" style="flex:1">🎯 確認問題5問</button>
+      <button class="btn ghost" id="idle-game-${quizId}" style="flex:1">🕹️ 60秒計算チャレンジ</button>
+    </div>
   </div>`;
 }
 function wireIdleCard(quizId){
@@ -851,8 +868,133 @@ function wireIdleCard(quizId){
   };
   const recBtn = document.getElementById(`idle-record-${quizId}`);
   if(recBtn) recBtn.onclick = renderMyRecord;
+  const confirmBtn = document.getElementById(`idle-confirm-${quizId}`);
+  if(confirmBtn) confirmBtn.onclick = ()=>renderConfirmQuiz(quizId);
   const gameBtn = document.getElementById(`idle-game-${quizId}`);
-  if(gameBtn) gameBtn.onclick = ()=>renderConfirmQuiz(quizId);
+  if(gameBtn) gameBtn.onclick = ()=>renderMiniGame();
+}
+
+/* ============================================================
+   60秒計算チャレンジ（押し合いバトル）
+   自分は左端に固定。敵は右側から現れ、時間が経つとじわじわ左（自分側）へ迫ってくる。
+   正解すると、答えた速さに応じて敵をドンと右へ押し返す。右端まで押し出すと撃退＝
+   新しい敵が上から降ってきてまた押してくる。サーバーには送らない、その場の気分転換用。
+   ============================================================ */
+function renderMiniGame(){
+  KB.hide(); clearInterval(waitTimer);
+  const MIN_X = 8, MAX_X = 90, START_X = 78, CREEP = 2.6, CREEP_MS = 650;
+  let score = 0, driven = 0, timeLeft = 60, cur = null, qStart = 0;
+  let enemyX = START_X;
+  let creepTimer = null, countTimer = null;
+
+  const enemyEl  = ()=>document.getElementById("duel-enemy");
+  const trackEl  = ()=>document.getElementById("duel-track");
+  const paintEnemy = ()=>{ const el=enemyEl(); if(el) el.style.left = enemyX+"%"; };
+  const paintDanger = ()=>{ const tr=trackEl(); if(tr) tr.classList.toggle("danger", enemyX < 30); };
+
+  const impactFx = ()=>{
+    const tr = trackEl(); if(!tr) return;
+    const el = document.createElement("div");
+    el.className = "duel-impact"; el.textContent = "💥";
+    el.style.left = enemyX+"%";
+    tr.appendChild(el);
+    setTimeout(()=>el.remove(), 520);
+  };
+  const bump = ()=>{ const el=enemyEl(); if(!el) return; el.classList.remove("knock"); void el.offsetWidth; el.classList.add("knock"); };
+
+  const nextQ = ()=>{
+    const a = 1+Math.floor(Math.random()*12), b = 1+Math.floor(Math.random()*12);
+    const op = Math.random()<0.5 ? "+" : "-";
+    const [x,y] = (op==="-" && a<b) ? [b,a] : [a,b];
+    cur = { text:`${x} ${op} ${y}`, ans: op==="+" ? x+y : x-y };
+    qStart = Date.now();
+    const qEl = document.getElementById("mg-q"), aEl = document.getElementById("mg-ans");
+    if(qEl) qEl.textContent = cur.text;
+    if(aEl){ aEl.value = ""; aEl.focus(); }
+  };
+
+  /** 時間経過で敵がじわじわ迫る。自分側の端に達したら少しだけ押し戻して続行（ペナルティ演出のみ）。 */
+  const creep = ()=>{
+    enemyX = Math.max(MIN_X, enemyX - CREEP);
+    paintEnemy(); paintDanger();
+    if(enemyX<=MIN_X){ bump(); enemyX = MIN_X + 8; paintEnemy(); }
+  };
+
+  /** 正解時：答えた速さに応じて右へ押し返す。右端まで届いたら撃退→新しい敵が降ってくる。 */
+  const pushBack = (elapsedMs)=>{
+    const sec = elapsedMs/1000;
+    const amount = Math.max(10, 32 - sec*7); // 速いほど大きく押し返す
+    enemyX = Math.min(MAX_X, enemyX + amount);
+    impactFx(); bump(); paintEnemy(); paintDanger();
+    if(enemyX >= MAX_X){
+      driven++;
+      const dEl = document.getElementById("mg-drive"); if(dEl) dEl.textContent = driven;
+      setTimeout(()=>{
+        enemyX = START_X;
+        const el = enemyEl();
+        if(el){ el.classList.remove("knock"); paintEnemy(); el.classList.add("spawn"); setTimeout(()=>el.classList.remove("spawn"), 520); }
+        paintDanger();
+      }, 260);
+    }
+  };
+
+  const finish = ()=>{
+    clearInterval(creepTimer); clearInterval(countTimer);
+    app.innerHTML = `
+      <header class="sheet"><h1>数学　小テスト・振り返り</h1><div class="sub">🕹️ 60秒計算チャレンジ・結果</div></header>
+      <div class="score">
+        <div class="big">${score}<small> 問</small></div>
+        <div style="margin-top:6px">🚀 おいだした数：${driven}体</div>
+        <div style="margin-top:8px">よくがんばった！ひと息ついたら、また戻ってきてね。</div>
+      </div>
+      <div class="foot"><button class="btn" id="mg-again" style="width:100%">もう一度</button></div>
+      <div class="foot"><button class="btn ghost" id="mg-back" style="width:100%">もどる</button></div>`;
+    document.getElementById("mg-again").onclick = renderMiniGame;
+    document.getElementById("mg-back").onclick = renderHome;
+  };
+
+  app.innerHTML = `
+    <header class="sheet">
+      <h1>数学　小テスト・振り返り</h1>
+      <div class="sub">🕹️ 60秒計算チャレンジ</div>
+    </header>
+    <div class="score">
+      <div style="font-size:13px;color:var(--ink-soft)">残り時間　<span id="mg-time">60</span>秒　・　🚀 おいだした数　<span id="mg-drive">0</span>体</div>
+      <div class="big" id="mg-score">0<small> 問</small></div>
+    </div>
+    <div class="card">
+      <div class="duel-track" id="duel-track">
+        <div class="duel-player">🧑</div>
+        <div class="duel-enemy" id="duel-enemy">😈💣</div>
+      </div>
+      <div style="text-align:center">
+        <div id="mg-q" style="font-family:var(--mono);font-size:34px;margin:10px 0"></div>
+        <input type="number" id="mg-ans" inputmode="numeric" style="font-size:22px;text-align:center;max-width:160px;margin:0 auto;display:block" autocomplete="off">
+      </div>
+    </div>
+    <div class="foot"><button class="btn ghost" id="mg-quit" style="width:100%">やめる</button></div>
+  `;
+  paintEnemy(); paintDanger();
+  const ansEl = document.getElementById("mg-ans");
+  ansEl.oninput = ()=>{
+    if(ansEl.value==="" || cur===null) return;
+    if(+ansEl.value === cur.ans){
+      score++;
+      const sEl = document.getElementById("mg-score");
+      if(sEl) sEl.innerHTML = `${score}<small> 問</small>`;
+      pushBack(Date.now()-qStart);
+      nextQ();
+    }
+  };
+  document.getElementById("mg-quit").onclick = ()=>{ clearInterval(creepTimer); clearInterval(countTimer); renderHome(); };
+  creepTimer = setInterval(creep, CREEP_MS);
+  countTimer = setInterval(()=>{
+    timeLeft--;
+    const tEl = document.getElementById("mg-time");
+    if(tEl) tEl.textContent = timeLeft;
+    if(timeLeft<=0) finish();
+  }, 1000);
+  nextQ();
 }
 
 /* ============================================================
