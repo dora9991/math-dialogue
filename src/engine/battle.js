@@ -189,16 +189,31 @@ export const BATTLE_SKILLS = [
     name: "クリスタルラック", icon: "💎", color: "#67e8f9", desc: "勝つとコイン+150＆クリスタル+1" },
   { id: "overload",  slot: 2, cost: 10, rarity: "ssr", kind: "burst", mult: 0, buffMult: 2, buffTurns: 5, regenPct: 0.1, regenTurns: 5,
     name: "オーバーロード", icon: "👑", color: "#fbbf24", desc: "5ターン 与ダメ2倍＋毎ターンHP10%回復" },
+
+  // ── レジェンドレア（2026-09-12新設）：Lv1000以降でだけガチャに出現する強化版 ──
+  //  既存の上位スキルの純粋強化版。個別に狙った出現率になるよう weight を直接指定
+  //  （2026-09-12・再調整：メテオ2≈2%・オーバーロード2≈2%・アルティマ2≈1%になるよう
+  //   weightをそのまま「全体に対する％」として使う。合計5＝SKILL_RARITY.lr.weightと一致させる）。
+  { id: "overload2", slot: 2, cost: 10, rarity: "lr", weight: 2, kind: "burst", mult: 0, buffMult: 3, buffTurns: 5, regenPct: 0.1, regenTurns: 5,
+    name: "オーバーロード2", icon: "👑", color: "#fb7185", desc: "5ターン 与ダメ3倍＋毎ターンHP10%回復（Lv1000以降で出現）" },
+  { id: "meteor2",   slot: 2, cost: 10, rarity: "lr", weight: 2, kind: "ultimate", mult: 14,
+    name: "メテオ2", icon: "☄️", color: "#ea580c", desc: "基本ダメージの14倍を直接あたえる（Lv1000以降で出現）" },
+  { id: "ultima2",   slot: 2, cost: 10, rarity: "lr", weight: 1, kind: "ultimate", mult: 18,
+    name: "アルティマ2", icon: "🌌", color: "#d946ef", desc: "基本ダメージの18倍を直接あたえる（Lv1000以降で出現）" },
 ];
 
 // ── スキルガチャ：レア度の定義（重み＝出やすさ%、色・ラベル） ──
+//  lr（レジェンドレア）はLv1000未満のプレイヤーには出さない（rollSkillGachaのplayerLevel引数で制御）。
+//  2026-09-12：lrの重みを、中身3スキルのweight合計(2+2+1=5)と一致させた
+//   （n/r/sr/ssrの合計100に対し全体で105になり、meteor2≈1.9%・overload2≈1.9%・ultima2≈1.0%）。
 export const SKILL_RARITY = {
-  n:   { key: "n",   label: "ノーマル",       color: "#94a3b8", weight: 60, refund: 50 },
-  r:   { key: "r",   label: "レア",           color: "#38bdf8", weight: 28, refund: 150 },
-  sr:  { key: "sr",  label: "スーパーレア",   color: "#a78bfa", weight: 10, refund: 400 },
-  ssr: { key: "ssr", label: "ウルトラレア",   color: "#fde047", weight: 2,  refund: 1000 },
+  n:   { key: "n",   label: "ノーマル",         color: "#94a3b8", weight: 60, refund: 50 },
+  r:   { key: "r",   label: "レア",             color: "#38bdf8", weight: 28, refund: 150 },
+  sr:  { key: "sr",  label: "スーパーレア",     color: "#a78bfa", weight: 10, refund: 400 },
+  ssr: { key: "ssr", label: "ウルトラレア",     color: "#fde047", weight: 2,  refund: 1000 },
+  lr:  { key: "lr",  label: "レジェンドレア",   color: "#f43f5e", weight: 5,  refund: 3000 },
 };
-export const SKILL_RARITY_ORDER = ["n", "r", "sr", "ssr"];
+export const SKILL_RARITY_ORDER = ["n", "r", "sr", "ssr", "lr"];
 
 // スキルガチャの値段（クリスタル）。
 //  単発=10。まとめ引きは「10回ぶんの値段(100)で11回」回せる（1回おまけ）。
@@ -216,27 +231,38 @@ export function skillsOfRarity(rarity) {
   return BATTLE_SKILLS.filter((s) => s.rarity === rarity);
 }
 
+// Lv1000未満のときにガチャの抽選対象から外すレア度（2026-09-12新設のlr）
+const LEVEL_GATED_RARITY = { lr: 1000 };
+
 /**
  * スキルガチャを1回引く → 当たったスキルの id。
- *  レア度を重みで抽選 → そのレア度のスキルから等確率で1つ。
+ *  レア度を重みで抽選 → そのレア度のスキルから抽選（各スキルにweightがあれば重み付き、
+ *  無ければ従来どおり等確率＝既存のn/r/sr/ssrスキルは全部weight未指定なので挙動は変わらない）。
+ *  playerLevel未満のレベルが必要なレア度（lr等）は、そもそも抽選対象から除外する
+ *  （重みを0にするのでなく候補から消す＝他のレア度の相対比率は変えない）。
  */
-export function rollSkillGacha(rand = Math.random) {
-  const defs = SKILL_RARITY_ORDER.map((k) => SKILL_RARITY[k]);
+export function rollSkillGacha(rand = Math.random, playerLevel = 0) {
+  const order = SKILL_RARITY_ORDER.filter((k) => playerLevel >= (LEVEL_GATED_RARITY[k] ?? 0));
+  const defs = order.map((k) => SKILL_RARITY[k]);
   const total = defs.reduce((s, d) => s + d.weight, 0);
   let t = rand() * total;
   let chosen = defs[0];
   for (const d of defs) { if ((t -= d.weight) < 0) { chosen = d; break; } }
   const pool = skillsOfRarity(chosen.key);
-  return (pool[Math.floor(rand() * pool.length)] || BATTLE_SKILLS[0]).id;
+  if (!pool.length) return BATTLE_SKILLS[0].id;
+  const poolTotal = pool.reduce((s, sk) => s + (sk.weight ?? 1), 0);
+  let u = rand() * poolTotal;
+  for (const sk of pool) { if ((u -= (sk.weight ?? 1)) < 0) return sk.id; }
+  return pool[pool.length - 1].id;
 }
 
 /**
  * まとめ引き（既定11連）を引く（id配列を返す）。最低1つ R 以上を保証する。
  * pulls を渡すと回数を変えられる（金曜の「ガチャデー」は12連など）。
  */
-export function rollSkillGachaMulti(rand = Math.random, pulls = SKILL_GACHA_MULTI_N) {
+export function rollSkillGachaMulti(rand = Math.random, pulls = SKILL_GACHA_MULTI_N, playerLevel = 0) {
   const n = Math.max(1, pulls);
-  const ids = Array.from({ length: n }, () => rollSkillGacha(rand));
+  const ids = Array.from({ length: n }, () => rollSkillGacha(rand, playerLevel));
   const hasRPlus = ids.some((id) => {
     const r = findSkill(id)?.rarity;
     return r === "r" || r === "sr" || r === "ssr";
@@ -366,7 +392,10 @@ export function enemyDecide(aiId, state = {}, opts = {}) {
     if (r < ai.chargeChance) { st.charged = true; return { st, act: { kind: "charge", label: "力をためている…！" } }; }
   }
   if (aiId === "super") {
-    if (st.superCount >= chargeNeed) { st.superCount = 0; return { st, act: { kind: "super", mult: opts.superMult ?? ai.superMult, label: "超必殺技さくれつ！" } }; }
+    // chargeNeed=0 のモンスターは「ためる」を挟まず毎ターン即座に大技を撃つ
+    //  （2026-09-12：Lv1600以降の"ため攻撃をしない、常に強い一撃"要望への対応）。
+    // opts.superLabel があれば専用の技名を表示できる（例：Lv9999の「アルティマ」）。
+    if (st.superCount >= chargeNeed) { st.superCount = 0; return { st, act: { kind: "super", mult: opts.superMult ?? ai.superMult, label: opts.superLabel ?? "超必殺技さくれつ！" } }; }
     st.superCount += 1;
     return { st, act: { kind: "charge", label: "エネルギーをためている…！" } };
   }

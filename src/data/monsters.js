@@ -16,6 +16,7 @@
 import { allChapters } from "./index.js";
 import { playerAtkForLevel, playerHpForLevel, enemyAtkForLevel } from "../engine/battle.js";
 import { hueFromId } from "./monsterImages.js";
+import { MAX_LEVEL } from "../engine/scoring.js";
 
 // ★RPG進行は全学年（中1→中2→中3）を1本の冒険としてつなぐ。
 const RPG_CHAPTERS = allChapters();
@@ -41,21 +42,57 @@ const SECRET_TIERS = [
   { lv: 200,  name: "破壊神オメガ",   color: "#fb923c" },
   { lv: 250,  name: "時空の支配者",   color: "#f43f5e" },
   { lv: 300,  name: "数学の真神",     color: "#fde047" },
-  // ── 超高難度の追加裏ボス（推奨Lv400〜1500）──
-  //  最大レベルは999のままなので、これらは「レベルで届く」のではなく
-  //  装備・スキル・計算王ボーナスを極めて挑む“真の極限”。tiが進むほど硬く・痛く・凶悪に。
+  // ── 超高難度の追加裏ボス（推奨Lv400〜900）──
   { lv: 400,  name: "終焉の竜帝",     color: "#ef4444" },
   { lv: 500,  name: "星喰らいの魔王", color: "#8b5cf6" },
   { lv: 600,  name: "次元の裂け目",   color: "#06b6d4" },
   { lv: 700,  name: "永劫の支配者",   color: "#f59e0b" },
   { lv: 800,  name: "無限の審判者",   color: "#ec4899" },
   { lv: 900,  name: "創世の破壊者",   color: "#10b981" },
+  // ── 超高難度の追加裏ボス（推奨Lv1000〜1500）── ここは2026-09-12の変更前の姿のまま。
+  //  「今までいた魔王はそのまま残してほしい」という要望どおり、名前・色・ため攻撃の
+  //  仕様（ai:"super"・chargeNeedは下の生成ループで従来どおり1）を一切変えていない。
   { lv: 1000, name: "概念崩壊オメガ", color: "#fbbf24" },
   { lv: 1100, name: "虚数界の覇王",   color: "#a855f7" },
   { lv: 1200, name: "絶対零度の神",   color: "#38bdf8" },
   { lv: 1300, name: "全方程式の頂点", color: "#f43f5e" },
   { lv: 1400, name: "数理の終局",     color: "#e879f9" },
   { lv: 1500, name: "究極存在アレフ", color: "#ffffff" },
+  // ── 転生ゾーン（推奨Lv1600〜5000）── 2026-09-12：生徒要望への対応（第2〜3弾）。
+  //  「Lv1600から先は、イラストもスライムや数値ビットなど雑魚敵のものを流用しつつ、
+  //   "転生したスライム"的な名前にしたい」を反映。見た目は"格下"に見えるのに
+  //   実際はLv1500までの魔王よりずっと強い、という見た目とのギャップが狙い。
+  //  art は ART（boss以外）から章テーマに使っているものを流用し、下の生成ループで
+  //   secretTier順に割り当てる（imgArt/imgHueの分岐も参照）。ただし最後のLv5000だけは
+  //   「正体を現す」演出として、雑魚アートでなく魔王の姿（ART.boss）に戻す。
+  //  ため攻撃（充填してからの大技）はこの帯（lv>=1600）だけ廃止し、
+  //   代わりに"充填なしで毎ターン普通に強い一撃"（3倍〜7倍・下の生成ループで
+  //   段階的に上昇）を撃ってくる（生徒要望どおり）。
+  { lv: 1600, name: "転生スライム",       color: "#a3e635" },
+  { lv: 1700, name: "覚醒ビット・β",     color: "#38bdf8" },
+  { lv: 1800, name: "賢者スライム",       color: "#818cf8" },
+  { lv: 1900, name: "暴走計算ビット",     color: "#f97316" },
+  { lv: 2000, name: "竜殺しのスライム",   color: "#f43f5e" },
+  { lv: 2200, name: "進化ビット・ガンマ", color: "#22d3ee" },
+  { lv: 2400, name: "名もなきスライム王", color: "#eab308" },
+  { lv: 2600, name: "特異点ビット",       color: "#a855f7" },
+  { lv: 2800, name: "究極体スライムΩ",   color: "#fef08a" },
+  { lv: 3000, name: "深化ビット・ジータ", color: "#06b6d4" },
+  { lv: 3200, name: "神域スライム",       color: "#f0abfc" },
+  { lv: 3400, name: "完全体ビット・零",   color: "#94a3b8" },
+  { lv: 3600, name: "無限増殖スライム",   color: "#84cc16" },
+  { lv: 3800, name: "転生数値生命体",     color: "#7e22ce" },
+  { lv: 4000, name: "真・転生スライム",   color: "#4ade80" },
+  { lv: 4200, name: "超進化ビット",       color: "#facc15" },
+  { lv: 4400, name: "究極スライム・改",   color: "#ec4899" },
+  { lv: 4600, name: "完全数ビット",       color: "#60a5fa" },
+  { lv: 4800, name: "最終形態スライム",   color: "#e879f9" },
+  { lv: 5000, name: "真・転生魔王",       color: "#ffffff" }, // 正体を現す＝魔王の姿(ART.boss)に戻る
+  // ── 真の最終決戦（推奨Lv9999）── 2026-09-12：生徒要望への対応（第3弾）。
+  //  「飛ばしてレベル9999の魔王を追加してほしい。アルティマを使ってくるように」を反映。
+  //  Lv5000から一気に飛ばし、間の帯は作らない。プレイヤー自身の「アルティマ2」スキル
+  //  （基本ダメージ18倍）と対をなす、ゲーム全体で最後の相手。
+  { lv: 9999, name: "終焉魔王アルティマ", color: "#fde047" },
 ];
 /** 通し番号 gi（0始まり）から推奨レベルを均等配分で求める */
 function unitMinLv(gi) {
@@ -411,20 +448,44 @@ for (const g of GRADE_WORLDS) {
 
   // ── 裏ボス（隠しボス）：魔王のあと段階的に解放。推奨Lv80〜300の高難度。──
   let prevSecretId = `boss_maou_${g}`; // tier0 は魔王を倒すと解放
+  // 転生ゾーン（lv1600〜4800）で流用する"雑魚敵"アート（boss以外から。見た目は格下に見せる）。
+  //  lv5000・9999は魔王の姿(ART.boss)に戻す＝「正体を現す」演出。
+  const ZAKO_ART_KEYS = ["calc", "dice", "balance", "wave", "prime"];
+  let zakoArtCount = 0;
   SECRET_TIERS.forEach((t, ti) => {
     const id = `secret_${g}_${ti}`;
-    // 推奨Lvが上限(999)を超える裏ボスは、ステータス計算だけ999で頭打ちにする。
-    //  （表示上の推奨Lvは t.lv のまま。届かないレベル基準で攻撃力が暴れて
-    //    一撃死＝攻略不能になるのを防ぎつつ、強さは ti でさらに上げる）
-    const statLv = Math.min(t.lv, 999);
+    // 2026-09-12：レベル上限9999化に伴い、ステータス計算を999で頭打ちにしていたのを
+    //  MAX_LEVEL（現9999）まで頭打ちを引き上げ。lv1000以降も実際に届く相手として計算する。
+    const statLv = Math.min(t.lv, MAX_LEVEL);
     const playerAtk = playerAtkForLevel(statLv);
+    // 生徒要望（2026-09-12・第2〜3弾）：
+    //  ・lv80〜1500：完全に従来どおり（ため攻撃つき・chargeNeed=1・superMultは旧式）。
+    //  ・lv1600〜5000（転生ゾーン）：ためを廃止し、chargeNeed=0で毎ターン即座に大技
+    //    （＝実質「通常攻撃」化）。倍率はlv1600で3倍→lv5000で7倍まで線形に上昇。
+    //  ・lv9999（真の最終決戦）：同じくchargeNeed=0・毎ターン即座に大技だが、
+    //    倍率は転生ゾーンの上限(7倍)を超える「アルティマ」級の大技として別枠で設定。
+    const isFinalBoss9999 = t.lv >= 9999;
+    const isReincarnationZone = t.lv >= 1600 && !isFinalBoss9999;
+    const chargeNeed = (isReincarnationZone || isFinalBoss9999) ? 0 : 1;
+    const superMult = isFinalBoss9999
+      ? 22 // アルティマ級：プレイヤー自身の「アルティマ2」(18倍)を上回る、ゲーム最大の一撃
+      : isReincarnationZone
+        ? 3 + 4 * Math.min(1, Math.max(0, (t.lv - 1600) / (5000 - 1600))) // lv1600=3倍→lv5000=7倍
+        : 7 + ti * 1.5; // lv80〜1500は従来どおり
+    const superLabel = isFinalBoss9999 ? "アルティマ発動！" : undefined;
+    // 転生ゾーンのうちlv1600〜4800だけ雑魚アートに差し替える（lv5000・9999は魔王の姿のまま）。
+    const useZakoLook = t.lv >= 1600 && t.lv < 5000;
+    const zakoArtKey = useZakoLook ? ZAKO_ART_KEYS[zakoArtCount++ % ZAKO_ART_KEYS.length] : null;
+    const artDef = zakoArtKey ? ART[zakoArtKey] : ART.boss;
+    // lv1600以降は「裏ボス・」の接頭辞を外す（見た目は格下の雑魚っぽい名前にするため）。
+    const displayName = t.lv >= 1600 ? `${t.name}（中${g}）` : `裏ボス・${t.name}（中${g}）`;
     MONSTERS.push({
       id,
       kind: "secretBoss",
       grade: g,
       secretTier: ti,
       prevId: prevSecretId,        // これを倒すと解放（unlock.js が参照）
-      name: `裏ボス・${t.name}（中${g}）`,
+      name: displayName,
       unit: `中${g}・全単元の発展（極）`,
       hp: Math.round(playerAtk * (28 + ti * 6)),     // 段階ごとにどんどん硬く
       atk: Math.round(playerHpForLevel(statLv) / 3.4 * (1 + ti * 0.06)), // 推奨レベルでも3〜4発。上位ほど痛い
@@ -433,8 +494,9 @@ for (const g of GRADE_WORLDS) {
       ai: "super",
       role: "boss",
       roleTag: `裏ボス・推奨Lv${t.lv}`,
-      superMult: 7 + ti * 1.5,     // 上位ほど超必殺が強烈
-      chargeNeed: 1,
+      superMult,
+      chargeNeed,
+      superLabel,
       exposeOnCharge: true,
       enrage: 1.8,                 // 半分以下で大暴走
       revive: ti >= 2,             // 上位は不死（一度だけ復活。フリーズは修正済み）
@@ -458,11 +520,11 @@ for (const g of GRADE_WORLDS) {
       color: t.color,
       pools: allUnitsG,
       bossAdvancedOnly: true,
-      art: "boss",
-      svgDefs: ART.boss.svgDefs,
-      svg: ART.boss.svg,
-      idleExtra: ART.boss.idleExtra,
-      deathColors: ART.boss.deathColors,
+      art: zakoArtKey || "boss",
+      svgDefs: artDef.svgDefs,
+      svg: artDef.svg,
+      idleExtra: artDef.idleExtra,
+      deathColors: artDef.deathColors,
     });
     prevSecretId = id;
   });
@@ -501,18 +563,23 @@ for (const g of GRADE_WORLDS) {
 //   ・imgArt: 表示する画像のアート種別（finalBoss→maou / sample→sample / chapterBoss→boss / それ以外は art）。
 //   ・imgHue: 画像のリカラー角度。画像は数が少ないので id ごとに色を変えて個体差を出す。
 //     ただし魔王・サンプルは本来の色のまま見せたいので 0（リカラーなし）。
+//   2026-09-12：secretBossのうち雑魚アートを割り当てたもの（m.art !== "boss"＝転生ゾーンの
+//     lv1600〜4800）だけ、魔王画像でなく自分のartをそのまま使う。lv80〜1500・lv5000・lv9999は
+//     m.artが最初から"boss"なので、従来どおり魔王画像＋tierごとの色違いになる
+//     （生成時のuseZakoLook判定と一致させているので、ここでlvを再判定する必要はない）。
 for (const m of MONSTERS) {
   if (NAME_BY_ID[m.id]) m.name = NAME_BY_ID[m.id];
+  const showsZakoLook = m.kind === "secretBoss" && m.art !== "boss";
   m.imgArt =
     m.kind === "finalBoss" ? "maou" :
     m.kind === "sample" ? "sample" :
     m.kind === "chapterBoss" ? "boss" :
-    m.kind === "secretBoss" ? "maou" :   // 裏ボスは魔王の画像を、tierごとに色違いで使う
-    m.art;
+    (m.kind === "secretBoss" && !showsZakoLook) ? "maou" :   // lv80〜1500・lv5000・lv9999は魔王画像
+    m.art; // 転生ゾーン(lv1600〜4800)＋通常モンスターは自分のart
   m.imgHue =
     (m.kind === "finalBoss" || m.kind === "sample") ? 0 :
-    m.kind === "secretBoss" ? (40 + m.secretTier * 50) : // tierごとに色を変えて差別化
-    hueFromId(m.id);
+    (m.kind === "secretBoss" && !showsZakoLook) ? (40 + m.secretTier * 50) : // 魔王画像組はtierごとに色を変えて差別化
+    hueFromId(m.id); // 雑魚アート組は個体ごとに色を変える（使い回し感を減らす）
 }
 
 /** id からモンスター定義を引く（なかま育成・図鑑などで使用） */

@@ -3,22 +3,38 @@
 // 「ゲームのルール」をここに集約。バランス調整はこのファイルだけ触ればよい。
 // ============================================================
 
-// ── レベル（Lv1〜99）──────────────────────────────
+// ── レベル（Lv1〜999は従来どおり／Lv1000〜9999は新設）──────────────
 // 「次のレベルに必要なXX（増分）」を、序盤は増えていき、後半は上限で頭打ちにする。
 //  → 累計XPのグラフが √ のような形（後半はゆるやかに直線的）になる。
 //  序盤は今まで通り上がりやすく、後半は1レベルぶんの必要XPが一定に。
 //
 //  次のレベルに必要なXP（増分）= min(INC_A + INC_B*(lv-1), INC_MAX)
-//    Lv1→2:150, Lv2→3:170, Lv3→4:190, … と20ずつ増え、1000で頭打ち
-export const MAX_LEVEL = 999;
+//    Lv1→2:150, Lv2→3:170, Lv3→4:190, … と20ずつ増え、Lv45以降は1000で頭打ち
+//
+// 2026-09-12：生徒要望「レベル上限を9999まで解放してほしい」への対応。
+//  Lv1〜999は既存のカーブを一切変えない（今までのバランス感を保つ）。
+//
+//  2026-09-12（同日・第2弾）：Lv1000〜9999の増分を「20,000でフラット」から
+//  「Lv1000で30,000 → Lv9999で150,000へ、直線的に少しずつ上がりにくくなる」
+//  に変更（生徒の指示どおり、複雑な曲線でなく素直な直線でよい）。
+export const MAX_LEVEL = 9999;
+const OLD_MAX_LEVEL = 999;   // ここまでは既存カーブのまま
 const INC_A = 130;    // Lv1→2の増分が INC_A+INC_B=150 になるよう設定
 const INC_B = 20;     // 1レベルごとに増える量
-const INC_MAX = 1000; // 増分の上限（1000で頭打ち＝フラットに）
+const INC_MAX = 1000; // 増分の上限（Lv45〜999は1000で頭打ち＝フラットに）
+const ABYSS_INC_START = 30000;  // Lv1000時点の増分
+const ABYSS_INC_END = 150000;   // Lv9999時点の増分（ここまで直線的に伸びる）
 
 // 起動時に「各レベルに到達する累計XP」のテーブルを作っておく
 const XP_TABLE = [0, 0]; // XP_TABLE[1]=0（Lv1は0XP）
-for (let lv = 2; lv <= MAX_LEVEL; lv++) {
+for (let lv = 2; lv <= OLD_MAX_LEVEL; lv++) {
   XP_TABLE[lv] = XP_TABLE[lv - 1] + Math.min(INC_A + INC_B * (lv - 1), INC_MAX);
+}
+for (let lv = OLD_MAX_LEVEL + 1; lv <= MAX_LEVEL; lv++) {
+  // lv=OLD_MAX_LEVEL+1(=1000)で t=0（増分30,000）、lv=MAX_LEVEL(=9999)で t=1（増分150,000）
+  const t = (lv - (OLD_MAX_LEVEL + 1)) / (MAX_LEVEL - (OLD_MAX_LEVEL + 1));
+  const inc = Math.round(ABYSS_INC_START + (ABYSS_INC_END - ABYSS_INC_START) * t);
+  XP_TABLE[lv] = XP_TABLE[lv - 1] + inc;
 }
 
 /** レベル lv に到達するのに必要な累計XP */
@@ -26,7 +42,7 @@ export function xpForLevel(lv) {
   return XP_TABLE[Math.max(1, Math.min(MAX_LEVEL, lv))];
 }
 
-/** 累計XPから現在レベルを求める（1〜99） */
+/** 累計XPから現在レベルを求める（1〜MAX_LEVEL） */
 export function levelFromXp(xp) {
   let lv = 1;
   while (lv < MAX_LEVEL && xp >= XP_TABLE[lv + 1]) lv++;
@@ -60,8 +76,13 @@ export function levelProgress(xp) {
   return ((xp - lo) / (hi - lo)) * 100;
 }
 
-// レベル帯ごとの称号と色（Lv999まで。高レベルほど豪華な称号）
+// レベル帯ごとの称号と色（Lv9999まで。高レベルほど豪華な称号）
+// 2026-09-12：レベル上限9999化に合わせ、Lv1000以上の称号を追加。
 const LEVEL_TIERS = [
+  { min: 9000, name: "無限", color: "#ffffff" },
+  { min: 5000, name: "全次元の王", color: "#f0abfc" },
+  { min: 3000, name: "深淵の支配者", color: "#a78bfa" },
+  { min: 1000, name: "神を超えし者", color: "#fbbf24" },
   { min: 500, name: "全知全能", color: "#ffffff" },
   { min: 350, name: "創造主", color: "#fef9c3" },
   { min: 250, name: "超越神", color: "#fde68a" },

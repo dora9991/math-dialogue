@@ -548,7 +548,10 @@ export default function App() {
     const cost = isMulti ? SKILL_GACHA_MULTI_COST : SKILL_GACHA_COST_1;
     if ((data.player.crystals ?? 0) < cost) return null;
     const pulls = SKILL_GACHA_MULTI_N + eventGachaBonus(); // 金曜=ガチャデーは+1回（11→12連）
-    const ids = isMulti ? rollSkillGachaMulti(undefined, pulls) : [rollSkillGacha()];
+    // 2026-09-12：Lv1000以降だけ「レジェンドレア」（オーバーロード2/メテオ2/アルティマ2）が
+    //  低確率で出現するようにする（rollSkillGachaのplayerLevelゲート）。
+    const lv = playerLevel(data.player);
+    const ids = isMulti ? rollSkillGachaMulti(undefined, pulls, lv) : [rollSkillGacha(undefined, lv)];
 
     // 既存の所持状態をもとに「新規 / 被り」を判定（連続で引いた分も加味）
     const already = new Set(data.player.ownedSkills || []);
