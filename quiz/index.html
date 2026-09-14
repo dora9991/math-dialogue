@@ -1172,15 +1172,16 @@ function poolFromQuestions(qs, noLabel, leadKey){
   return out;
 }
 function confirmQuizPool(quizId){
-  let pool = [];
-  if(typeof SETS !== "undefined"){
+  // その回の小テストと同じレベルにするため、まずその回自身の問題（CH.qs）だけを使う。
+  // 応用バンク(SETS)は難易度が上のため、CH.qsだけでは5問に満たないときの補充にのみ使う。
+  const t = CH.find(x=>x.id===quizId);
+  let pool = t ? poolFromQuestions(t.qs, t.no, "lead") : [];
+  if(pool.length<5 && typeof SETS !== "undefined"){
     const set = SETS.find(s=>s.id===quizId);
     if(set) pool = pool.concat(poolFromQuestions(set.qs, set.no || quizId, "prompt"));
   }
-  const t = CH.find(x=>x.id===quizId);
-  if(t) pool = pool.concat(poolFromQuestions(t.qs, t.no, "lead"));
   if(!pool.length){
-    // 最終手段：その回の類似問題が見つからないときだけ、中1第4章の全問題から出す
+    // 最終手段：その回の問題が見つからないときだけ、中1第4章の全問題から出す
     CH.forEach(x=>{ pool = pool.concat(poolFromQuestions(x.qs, x.no, "lead")); });
   }
   return pool;
@@ -1804,7 +1805,7 @@ function renderBonus(b){
   d.innerHTML=`<div class="head"><span class="n">★</span><span class="prompt">${esc(b.lead||"")}<span class="bonus-tag">ボーナス</span></span></div>
     <div class="bonus-note">基本問題を全問正解すると、この問題の正解で ＋1点（例：4点満点なら 5/4）。</div>`;
   if(b.hint) d.innerHTML+=`<div class="hint">${esc(b.hint)}</div>`;
-  const sub=b.subs[0];
+  const sub=b.subs ? b.subs[0] : null;
   const K=keyOf("bonus",0);
   if(b.type==="choice"){
     const c=document.createElement("div"); c.className="choices";
@@ -1816,6 +1817,24 @@ function renderBonus(b){
       c.appendChild(btn);
     });
     d.appendChild(c);
+  } else if(b.type==="multi"){
+    const c=document.createElement("div"); c.className="choices";
+    const sel = new Set(S.ans[K] ? JSON.parse(S.ans[K]) : []);
+    b.points.forEach((p,pi)=>{
+      const btn=document.createElement("button"); btn.type="button";
+      btn.textContent = `${p[0]}（${p[1]}, ${p[2]}）`;
+      btn.setAttribute("aria-pressed", String(sel.has(pi)));
+      btn.onclick=()=>{
+        if(sel.has(pi)) sel.delete(pi); else sel.add(pi);
+        S.ans[K]=JSON.stringify([...sel].sort((a,b)=>a-b)); save();
+        btn.setAttribute("aria-pressed", String(sel.has(pi)));
+      };
+      c.appendChild(btn);
+    });
+    d.appendChild(c);
+    const hint=document.createElement("div"); hint.className="hint"; hint.style.marginTop="8px";
+    hint.textContent="あてはまるものをすべて選びましょう（複数選択できます）。";
+    d.appendChild(hint);
   } else {
     const row=document.createElement("div"); row.className="subq";
     const inp=document.createElement("input");
@@ -2055,13 +2074,23 @@ function gradeAll(){
   const perfect = baseMax>0 && baseScore===baseMax;
   let bonus=null, awarded=false;
   if(S.test.bonus){
-    const b=S.test.bonus, sub=b.subs[0];
+    const b=S.test.bonus, sub=b.subs ? b.subs[0] : null;
     const u=S.ans[keyOf("bonus",0)];
-    const ok = b.type==="choice" ? (u===sub.a) : gradeSub(sub.mode, u, sub.a);
-    const shown = b.type==="choice" ? (u==null?"":b.choices[u]) : (u??"");
-    const right = b.type==="choice" ? b.choices[sub.a]
-      : (sub.mode==="coord" ? `(${sub.a[0]}, ${sub.a[1]})`
-      : (sub.mode==="text" ? sub.a[0] : String(sub.a)));
+    let ok, shown, right;
+    if(b.type==="choice"){
+      ok = (u===sub.a); shown = (u==null?"":b.choices[u]); right = b.choices[sub.a];
+    } else if(b.type==="multi"){
+      const arr = (()=>{ try{ const v=JSON.parse(u); return Array.isArray(v)?v:[]; }catch(e){ return []; } })();
+      const selSorted = [...arr].sort((x,y)=>x-y), rightSorted = [...b.correct].sort((x,y)=>x-y);
+      ok = selSorted.length===rightSorted.length && selSorted.every((v,i)=>v===rightSorted[i]);
+      const labelOf = i => (b.points[i] ? b.points[i][0] : "?");
+      shown = arr.length ? arr.map(labelOf).join("、") : "（未選択）";
+      right = b.correct.map(labelOf).join("、");
+    } else {
+      ok = gradeSub(sub.mode, u, sub.a); shown = (u??"");
+      right = (sub.mode==="coord" ? `(${sub.a[0]}, ${sub.a[1]})`
+        : (sub.mode==="text" ? sub.a[0] : String(sub.a)));
+    }
     awarded = ok && perfect;
     bonus = {ok, raw:String(shown), right, sol:b.sol||"", lead:b.lead||""};
     rows.push({q_no:"★応用", label:b.lead, raw:String(shown), ok, right,
