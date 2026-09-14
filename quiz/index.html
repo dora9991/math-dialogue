@@ -212,10 +212,16 @@ svg.fig{width:100%;max-width:360px;height:auto;background:#fff}
 .mkb3-pad button{font-family:var(--mono);font-size:15px;background:#fff;border:1px solid var(--rule);padding:0;line-height:1}
 .mkb3-pad button:active{background:var(--ai-weak);border-color:var(--ai)}
 
+/* 「分数」トグルボタン：OFF＝普通の整数表記、ON（青く光る）＝分子/分母の2段入力。
+   数字キーボード・文字式キーボードで共通に使う。 */
+.mkb3-fracBtn{width:100%;font-family:var(--gothic);font-size:13px;padding:8px 4px;background:#e9edf3;border:1px solid var(--rule)}
+.mkb3-fracBtn[aria-pressed=true]{background:var(--ai);color:#fff;border-color:var(--ai)}
+
 /* 数字キーボード右側（分数） */
 .mkb3-numRight{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;align-items:center}
-.mkb3-fracLabel{font-size:12px;color:var(--ink-soft);align-self:flex-start}
+.mkb3-numRight .mkb3-fracBtn{width:96px}
 .mkb3-fracRow{display:flex;flex-direction:column;align-items:center;gap:0}
+.mkb3-fracRow.off .mkb3-fracSlot.den,.mkb3-fracRow.off .mkb3-fracDiv{display:none}
 .mkb3-fracSlot{
   width:96px;padding:8px;font-family:var(--mono);font-size:18px;background:#fff;
   border:1px solid var(--rule);
@@ -224,26 +230,22 @@ svg.fig{width:100%;max-width:360px;height:auto;background:#fff}
 .mkb3-fracDiv{width:96px;height:2px;background:var(--ink);margin:2px 0}
 .mkb3-numRight .btn{width:100%}
 
-/* 文字式キーボード（数字パッド＋記号グリッド＋分数ボタン） */
+/* 文字式キーボード（数字パッド＋記号グリッド＋分数トグル） */
 .mkb3-sym{display:grid;grid-template-columns:repeat(5,38px);grid-auto-rows:36px;gap:4px;flex:none}
 .mkb3-sym button{font-family:var(--mono);font-size:14px;background:#fff;border:1px solid var(--rule);padding:0}
 .mkb3-sym button.var{color:var(--ai);font-style:italic}
 .mkb3-sym button.op{color:var(--ai)}
 .mkb3-sym button:active{background:var(--ai-weak);border-color:var(--ai)}
-.mkb3-fracBtn{align-self:stretch;width:64px;font-family:var(--gothic);font-size:13px;background:#e9edf3;border:1px solid var(--rule)}
+.mkb3-fracCol{flex:none;display:flex;flex-direction:column;gap:6px;align-items:center;width:72px}
+.mkb3-fracCol .mkb3-fracRow{display:none}
+.mkb3-fracCol .mkb3-fracRow.on{display:flex}
+.mkb3-fracCol .mkb3-fracSlot{width:64px;font-size:15px;padding:6px}
+.mkb3-fracCol .mkb3-fracDiv{width:64px}
 
 /* 関数キーボード（左＝式を選ぶ、右＝数字入力） */
 .mkb3-funcRight{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
 .mkb3-funcRight .btn{width:100%}
 
-/* 文字式キーボードの分数挿入ポップアップ（位置はJSでキーボードの直上に合わせる） */
-#mkb3-fracPopup{
-  position:fixed;z-index:61;
-  background:#fff;border:1px solid var(--rule);box-shadow:0 6px 20px rgba(22,32,46,.18);
-  border-radius:8px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:8px;
-}
-#mkb3-fracPopup .btnrow{display:flex;gap:6px;width:100%}
-#mkb3-fracPopup .btnrow button{flex:1}
 @media (max-width:460px){ .mkb3-panel{flex-direction:column;align-items:center} .mkb3-pad,.mkb3-sym{margin:0 auto} }
 /* 数式キーボード */
 #kb{
@@ -333,25 +335,32 @@ body.kbopen{padding-bottom:230px}
 <div id="mkb3" class="hidden" aria-label="回答用キーボード">
   <div class="mkb3-head"><span id="mkb3hint"></span><button type="button" id="mkb3-close">閉じる</button></div>
 
-  <!-- 数字キーボード -->
+  <!-- 数字キーボード：「分数」ボタンOFF＝普通の整数、ON（青く光る）＝分子/分母の2段入力 -->
   <div id="mkb3-num" class="mkb3-panel">
     <div class="mkb3-pad" id="numPad"></div>
     <div class="mkb3-numRight">
-      <div class="mkb3-fracLabel">分数</div>
-      <div class="mkb3-fracRow">
+      <button type="button" class="mkb3-fracBtn" id="numFracToggle">分数</button>
+      <div class="mkb3-fracRow off" id="numFracRow">
         <button type="button" class="mkb3-fracSlot" id="numSlotN">◻</button>
-        <div class="mkb3-fracDiv"></div>
-        <button type="button" class="mkb3-fracSlot" id="numSlotD">◻</button>
+        <div class="mkb3-fracDiv" id="numFracDiv"></div>
+        <button type="button" class="mkb3-fracSlot den" id="numSlotD">◻</button>
       </div>
       <button type="button" class="btn" id="numOk" disabled>確定</button>
     </div>
   </div>
 
-  <!-- 文字式キーボード -->
+  <!-- 文字式キーボード：「分数」ボタンON中は数字パッドが分子/分母へ入る。OFFにすると式へ挿入 -->
   <div id="mkb3-expr" class="mkb3-panel">
     <div class="mkb3-pad" id="exprPad"></div>
     <div class="mkb3-sym" id="exprSym"></div>
-    <button type="button" class="mkb3-fracBtn" id="exprFracBtn">分数</button>
+    <div class="mkb3-fracCol">
+      <button type="button" class="mkb3-fracBtn" id="exprFracBtn">分数</button>
+      <div class="mkb3-fracRow" id="exprFracRow">
+        <button type="button" class="mkb3-fracSlot" id="exprFracN">◻</button>
+        <div class="mkb3-fracDiv"></div>
+        <button type="button" class="mkb3-fracSlot" id="exprFracD">◻</button>
+      </div>
+    </div>
   </div>
 
   <!-- 関数キーボード -->
@@ -365,18 +374,6 @@ body.kbopen{padding-bottom:230px}
       <div class="mkb3-pad" id="funcPad"></div>
       <button type="button" class="btn" id="funcOk" disabled>確定</button>
     </div>
-  </div>
-</div>
-
-<div id="mkb3-fracPopup" class="hidden">
-  <div class="mkb3-fracRow">
-    <button type="button" class="mkb3-fracSlot" id="exprFracN">◻</button>
-    <div class="mkb3-fracDiv"></div>
-    <button type="button" class="mkb3-fracSlot" id="exprFracD">◻</button>
-  </div>
-  <div class="btnrow">
-    <button type="button" class="btn" id="exprFracOk">挿入</button>
-    <button type="button" class="btn ghost" id="exprFracCancel">やめる</button>
   </div>
 </div>
 
@@ -573,7 +570,7 @@ const Mkb3 = (()=>{
   }
   function hide(){
     el.classList.add("hidden");
-    closeFracPopup();
+    resetExprFrac();
   }
   document.getElementById("mkb3-close").addEventListener("click", hide);
 
@@ -596,18 +593,22 @@ const Mkb3 = (()=>{
   el.addEventListener("pointerup", stopPanelDrag);
   el.addEventListener("pointercancel", stopPanelDrag);
 
-  /* ---------- 数字キーボード ---------- */
+  /* ---------- 数字キーボード：「分数」トグルOFF＝整数、ON＝分子/分母 ---------- */
   const numPad = document.getElementById("numPad");
+  const numFracToggle = document.getElementById("numFracToggle");
+  const numFracRow = document.getElementById("numFracRow");
   const numSlotN = document.getElementById("numSlotN");
   const numSlotD = document.getElementById("numSlotD");
   const numOk = document.getElementById("numOk");
-  let numState = {n:"", d:"", nNeg:false, dNeg:false, active:"n", onConfirm:null};
+  let numState = {n:"", d:"", nNeg:false, dNeg:false, active:"n", frac:false, onConfirm:null};
   function syncNum(){
+    numFracToggle.setAttribute("aria-pressed", String(numState.frac));
+    numFracRow.classList.toggle("off", !numState.frac);
     numSlotN.textContent = (numState.nNeg?"−":"") + (numState.n||"◻");
     numSlotD.textContent = (numState.dNeg?"−":"") + (numState.d||"◻");
     numSlotN.setAttribute("aria-pressed", String(numState.active==="n"));
     numSlotD.setAttribute("aria-pressed", String(numState.active==="d"));
-    numOk.disabled = !numState.n;
+    numOk.disabled = numState.frac ? !(numState.n && numState.d) : !numState.n;
   }
   CALC_KEYS.forEach(k=>{
     const b=document.createElement("button"); b.type="button"; b.textContent=k;
@@ -620,36 +621,54 @@ const Mkb3 = (()=>{
     });
     numPad.appendChild(b);
   });
+  numFracToggle.addEventListener("click", ()=>{
+    numState.frac = !numState.frac;
+    numState.active = "n";
+    syncNum();
+  });
   numSlotN.addEventListener("click", ()=>{ numState.active="n"; syncNum(); });
-  numSlotD.addEventListener("click", ()=>{ numState.active="d"; syncNum(); });
+  numSlotD.addEventListener("click", ()=>{ if(numState.frac){ numState.active="d"; syncNum(); } });
   numOk.addEventListener("click", ()=>{
-    if(!numState.n) return;
     const n = (numState.nNeg?"-":"")+numState.n;
-    const out = numState.d ? `${n}/${(numState.dNeg?"-":"")+numState.d}` : n;
+    let out;
+    if(numState.frac){
+      if(!numState.n || !numState.d) return;
+      out = `${n}/${(numState.dNeg?"-":"")+numState.d}`;
+    } else {
+      if(!numState.n) return;
+      out = n;
+    }
     const cb = numState.onConfirm; hide(); cb && cb(out);
   });
   function openNum(initialVal, label, onConfirm){
     const parts = String(initialVal||"").split("/");
     const parseOne = s=>{ const neg = s.startsWith("-"); return {v: neg?s.slice(1):s, neg}; };
-    const np = parseOne(parts[0]||""), dp = parts[1]!=null ? parseOne(parts[1]) : {v:"",neg:false};
-    numState = {n:np.v, d:dp.v, nNeg:np.neg, dNeg:dp.neg, active:"n", onConfirm};
+    const np = parseOne(parts[0]||"");
+    const hasD = parts.length>1;
+    const dp = hasD ? parseOne(parts[1]) : {v:"",neg:false};
+    numState = {n:np.v, d:dp.v, nNeg:np.neg, dNeg:dp.neg, active:"n", frac:hasD, onConfirm};
     syncNum();
     showPanel("num", label);
   }
 
-  /* ---------- 文字式キーボード（普通のキーボードと同じくライブ入力） ---------- */
+  /* ---------- 文字式キーボード（普通のキーボードと同じくライブ入力）
+     「分数」トグルON中は数字パッドが分子/分母へ入る。もう一度押すとOFFになり、
+     両方埋まっていれば式にその場で挿入される。 ---------- */
   const exprPad = document.getElementById("exprPad");
   const exprSym = document.getElementById("exprSym");
-  const fracPopup = document.getElementById("mkb3-fracPopup");
+  const exprFracBtn = document.getElementById("exprFracBtn");
+  const exprFracRow = document.getElementById("exprFracRow");
   const exprFracN = document.getElementById("exprFracN"), exprFracD = document.getElementById("exprFracD");
   let exprTarget = null;
-  let fracState = {n:"", d:"", active:"n"};
-  function syncFracPopup(){
+  let fracState = {n:"", d:"", active:"n", on:false};
+  function syncExprFrac(){
+    exprFracBtn.setAttribute("aria-pressed", String(fracState.on));
+    exprFracRow.classList.toggle("on", fracState.on);
     exprFracN.textContent = fracState.n||"◻"; exprFracD.textContent = fracState.d||"◻";
     exprFracN.setAttribute("aria-pressed", String(fracState.active==="n"));
     exprFracD.setAttribute("aria-pressed", String(fracState.active==="d"));
   }
-  function closeFracPopup(){ fracPopup.classList.add("hidden"); }
+  function resetExprFrac(){ fracState = {n:"",d:"",active:"n",on:false}; syncExprFrac(); }
   function exprInsert(txt){
     if(!exprTarget) return;
     const t=exprTarget;
@@ -678,12 +697,12 @@ const Mkb3 = (()=>{
     const b=document.createElement("button"); b.type="button"; b.textContent=k;
     b.addEventListener("pointerdown", e=>e.preventDefault());
     b.addEventListener("click", ()=>{
-      if(!fracPopup.classList.contains("hidden")){
+      if(fracState.on){
         const key=fracState.active;
         if(k==="⌫") fracState[key]=fracState[key].slice(0,-1);
         else if(k==="±") fracState[key] = fracState[key].startsWith("-") ? fracState[key].slice(1) : "-"+fracState[key];
         else fracState[key]=fracState[key]+k;
-        syncFracPopup();
+        syncExprFrac();
         return;
       }
       if(k==="⌫") exprBack();
@@ -701,24 +720,18 @@ const Mkb3 = (()=>{
     b.addEventListener("click", ()=> exprInsert(sym));
     exprSym.appendChild(b);
   });
-  document.getElementById("exprFracBtn").addEventListener("click", ()=>{
-    fracState = {n:"",d:"",active:"n"}; syncFracPopup();
-    fracPopup.classList.remove("hidden");
-    const r = el.getBoundingClientRect();
-    const pw = fracPopup.offsetWidth;
-    const left = Math.min(Math.max(4, r.left + r.width/2 - pw/2), window.innerWidth - pw - 4);
-    const top = Math.max(4, r.top - fracPopup.offsetHeight - 8);
-    fracPopup.style.left = left+"px"; fracPopup.style.top = top+"px";
+  exprFracBtn.addEventListener("click", ()=>{
+    if(fracState.on){
+      const {n,d} = fracState;
+      resetExprFrac();
+      if(n && d) exprInsert(`(${n}/${d})`);
+    } else {
+      fracState = {n:"",d:"",active:"n",on:true};
+      syncExprFrac();
+    }
   });
-  exprFracN.addEventListener("click", ()=>{ fracState.active="n"; syncFracPopup(); });
-  exprFracD.addEventListener("click", ()=>{ fracState.active="d"; syncFracPopup(); });
-  document.getElementById("exprFracOk").addEventListener("click", ()=>{
-    const n=fracState.n, d=fracState.d;
-    const txt = n&&d ? `(${n}/${d})` : n;
-    closeFracPopup();
-    if(txt) exprInsert(txt);
-  });
-  document.getElementById("exprFracCancel").addEventListener("click", closeFracPopup);
+  exprFracN.addEventListener("click", ()=>{ fracState.active="n"; syncExprFrac(); });
+  exprFracD.addEventListener("click", ()=>{ fracState.active="d"; syncExprFrac(); });
   function attachExpr(input, label){
     input.setAttribute("inputmode","none");
     input.addEventListener("focus", ()=>{ exprTarget=input; showPanel("expr", label); });
