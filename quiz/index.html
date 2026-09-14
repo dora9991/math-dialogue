@@ -2341,7 +2341,9 @@ function hyperUI(q,qi){
   const draw=()=>{
     let s="";
     for(const side of ["pos","neg"]){
-      const [x,y] = pts[side];
+      const p = pts[side];
+      if(!p) continue;
+      const [x,y] = p;
       const k = x*y, sgn = side==="pos" ? 1 : -1;
       if(isFinite(k) && Math.abs(k)>1e-9) s += hyperPath(k, q.R, g.X, g.Y, sgn);
       s += dot(g.X,g.Y,x,y,"#24467d",4.8);
@@ -2349,20 +2351,28 @@ function hyperUI(q,qi){
     ink.innerHTML=s;
   };
   const commit=()=>{ S.ans[keyOf(qi)]=JSON.stringify(pts); save(); tick(); };
-  const upd=()=>{ c.textContent = "点をドラッグして、正しい位置に動かしましょう。1点で曲線が決まります。"; };
+  const upd=()=>{ c.textContent = "正の側・負の側それぞれ、通したい点をクリック（そのままドラッグでも動かせます）。"; };
 
   let drag=null;
   const findNear=(x,y)=>{
     for(const side of ["pos","neg"]){
-      const [px,py]=pts[side];
-      if(Math.hypot(x-px,y-py) < 0.6) return side;
+      const p=pts[side];
+      if(p && Math.hypot(x-p[0],y-p[1]) < 0.6) return side;
     }
     return null;
   };
+  const place=(x,y)=>{
+    if(!inRange(x,y,q.R) || x===0 || y===0) return false;
+    const side = x>0 ? "pos" : "neg";
+    pts[side]=[x,y]; drag=side; draw();
+    return true;
+  };
   svg.addEventListener("pointerdown",e=>{
     touch(qi); e.preventDefault(); svg.setPointerCapture(e.pointerId);
-    const [fx,fy]=g.at(svg,e);
-    drag = findNear(fx,fy);
+    const [fx,fy]=g.at(svg,e); const x=Math.round(fx), y=Math.round(fy);
+    const near = findNear(fx,fy);
+    if(near){ drag=near; return; }
+    place(x,y);
   });
   svg.addEventListener("pointermove",e=>{
     if(!drag) return;
@@ -2377,12 +2387,12 @@ function hyperUI(q,qi){
   draw(); upd(); box.appendChild(c);
   return box;
 }
+/** 未回答時は pos/neg とも null（＝最初は何も表示しない）。片側だけ回答済みも許容する。 */
 function readHyperPts(raw, q){
-  const R=q.R;
-  const def = { pos:[Math.max(1,Math.round(R*0.5)),1], neg:[-Math.max(1,Math.round(R*0.5)),-1] };
+  const def = { pos:null, neg:null };
   if(!raw) return def;
   try{ const v=JSON.parse(raw);
-    if(v && Array.isArray(v.pos) && Array.isArray(v.neg)) return v;
+    if(v && (Array.isArray(v.pos) || v.pos===null) && (Array.isArray(v.neg) || v.neg===null)) return v;
     return def;
   }catch(e){ return def; }
 }
@@ -2430,12 +2440,12 @@ function gradeAll(){
     } else if(q.type==="hyper"){
       const d = readHyperPts(S.ans[keyOf(qi)], q);
       const pts = [d.pos, d.neg];
-      const s = pts.filter(([x,y])=> x!==0 && x*y===q.a).length;
+      const s = pts.filter(p=> p && p[0]!==0 && p[0]*p[1]===q.a).length;
       const ok = s===2;
       const fig = gridSVG(q.R,{extra:({X,Y,R})=>
-        hyperPath(q.a,R,X,Y) + pts.map(([x,y])=>dot(X,Y,x,y, x*y===q.a?"#1d6b4f":"#c8322d",4.2)).join("")
+        hyperPath(q.a,R,X,Y) + pts.map(p=>p?dot(X,Y,p[0],p[1], p[0]*p[1]===q.a?"#1d6b4f":"#c8322d",4.2):"").join("")
       }).svg;
-      rows.push({q_no:q.no, label:"反比例のグラフ", raw:pts.map(p=>`(${p[0]},${p[1]})`).join(" "), ok, fig,
+      rows.push({q_no:q.no, label:"反比例のグラフ", raw:pts.map(p=>p?`(${p[0]},${p[1]})`:"（未回答）").join(" "), ok, fig,
         right:`xy=${q.a} をみたす格子点（正の側・負の側に1点ずつ）`, score:s, max:2, ms:el});
       score+=s; max+=2;
     }
