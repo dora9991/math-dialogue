@@ -404,6 +404,20 @@ const CH = [
   },
 ];
 
+/* ---------- 振り返り「同じ単元で複数回」ヘルパー ----------
+   小単元を複数回に分けて授業した場合、2回目以降の振り返りは quiz_id に
+   "-2" "-3" ... を付けて別レコードとして保存される（quiz_reflection_submit 側の仕様、schema.sql参照）。
+   表示側では CH の元のレッスンIDに戻して1枚のカードにまとめ、回数ラベルを出すのに使う。 */
+const baseQuizId = id => {
+  if(CH.some(t=>t.id===id)) return id;
+  const m = /^(.*)-([0-9]+)$/.exec(String(id||""));
+  return (m && CH.some(t=>t.id===m[1])) ? m[1] : id;
+};
+const reflectionOccurrence = id => {
+  const m = /^(.*)-([0-9]+)$/.exec(String(id||""));
+  return (m && CH.some(t=>t.id===m[1])) ? +m[2] : 1;
+};
+
 /* ---------- 出席番号ヘルパー（例：1年2組3番 → 1203） ---------- */
 const makeSid = (g,c,n) => `${g}${c}${String(n).padStart(2,"0")}`;
 const readSid = sid => ({ g:+sid[0], c:+sid[1], n:+sid.slice(2) });

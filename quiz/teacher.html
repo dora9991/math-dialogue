@@ -196,7 +196,15 @@ td .bar.low{background:var(--shu)}
 <div id="qrproj" class="hidden"></div>
 
 <script>
-const quizName = id => CH.find(t=>t.id===id) ? `${CH.find(t=>t.id===id).no} ${CH.find(t=>t.id===id).name}` : id;
+// 振り返りは同じ単元を複数回に分けた場合、2回目以降が「元id-2」等の派生idで保存される
+// （quiz_reflection_submit参照）ので、そのときは元のレッスン名に「◯回目」を添えて表示する。
+const quizName = id => {
+  const hit = CH.find(t=>t.id===id);
+  if(hit) return `${hit.no} ${hit.name}`;
+  const n = reflectionOccurrence(id);
+  const base = CH.find(t=>t.id===baseQuizId(id));
+  return base && n>1 ? `${base.no} ${base.name}（${n}回目）` : id;
+};
 const QUIZ_META = Object.fromEntries(CH.map(t=>[t.id,{no:t.no,name:t.name}]));
 
 /* ============================================================

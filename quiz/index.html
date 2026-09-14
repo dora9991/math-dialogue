@@ -857,7 +857,8 @@ async function renderReflectionForm(t){
     try{
       const hist = await Quiz.rpc("quiz_my_reflections", {p_account_id:S.sid});
       if(hist && Array.isArray(hist.reflections)){
-        prev = hist.reflections.filter(x=>!(x.quiz_id===t.id && x.date===todayStr())); // 今回の上書き元は除く
+        // 今回の上書き元（今日のこの単元の分。2回目以降は quiz_id が派生idの場合もある）は除く
+        prev = hist.reflections.filter(x=>!(x.date===todayStr() && (x.quiz_id===t.id || x.quiz_id.startsWith(t.id+"-"))));
       }
     }catch(e){ /* 履歴が取れなくても保存自体は続行する */ }
     const ev = reflAnalyze(comment, picked.understanding, picked.effort, prev);
@@ -1244,8 +1245,14 @@ async function renderMyRecord(){
   }catch(e){ ra=null; rr=null; }
   const attempts = (ra && Array.isArray(ra.attempts)) ? ra.attempts : [];
   const reflections = (rr && Array.isArray(rr.reflections)) ? rr.reflections : [];
+  // 同じ単元を複数回に分けて授業した場合、2回目以降の振り返りは quiz_id が「元id-2」等の派生idで
+  // 保存されている（quiz_reflection_submit参照）。表示は元のレッスンのカードにまとめ、古い順に並べる。
   const reflByQuiz = {};
-  reflections.forEach(x=>{ if(!reflByQuiz[x.quiz_id] || x.date > reflByQuiz[x.quiz_id].date) reflByQuiz[x.quiz_id]=x; });
+  reflections.forEach(x=>{
+    const base = baseQuizId(x.quiz_id);
+    (reflByQuiz[base] ||= []).push(x);
+  });
+  Object.values(reflByQuiz).forEach(list=>list.sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:0)));
   const attemptByQuiz = {};
   attempts.forEach(a=>{ attemptByQuiz[a.quiz_id]=a; });
   const known = [...new Set([...Object.keys(attemptByQuiz), ...Object.keys(reflByQuiz)])]
@@ -1265,26 +1272,27 @@ async function renderMyRecord(){
 
   const cardHTML = t=>{
     const a = attemptByQuiz[t.id];
-    const rf = reflByQuiz[t.id];
+    const rfList = reflByQuiz[t.id] || [];
     const perfect = a && a.best_max>0 && a.best_score>=a.best_max;
     const pct = (a && a.best_max) ? Math.round(a.best_score/a.best_max*100) : null;
-    let badges = "";
-    if(rf){
+    const reflBlockHTML = rf=>{
+      let badges = "";
       if(rf.is_duplicate) badges += `<span class="badge">📋 前回と似た内容</span>`;
       if(rf.flag) badges += `<span class="badge" style="border-color:var(--shu);color:var(--shu)">⚠ 要フォロー</span>`;
       if(rf.good) badges += `<span class="badge" style="border-color:var(--ok);color:var(--ok)">⭐ よくできた振り返り</span>`;
-    }
+      const label = rfList.length>1 ? `${reflectionOccurrence(rf.quiz_id)}回目・` : "";
+      return `
+        <div class="hint" style="margin-top:10px;margin-bottom:0">${label}${esc(rf.date)}の振り返り　理解度${esc(rf.understanding)}・意欲${esc(rf.effort)}</div>
+        ${rf.comment ? `<div class="ans" style="margin-top:4px;white-space:pre-wrap">${esc(rf.comment)}</div>` : ""}
+        ${badges ? `<div style="margin-top:8px">${badges}</div>` : ""}
+        ${rf.warning ? `<div class="notice warn" style="margin-top:8px">${esc(rf.warning)}</div>`
+          : (rf.toikaeshi ? `<div class="notice" style="margin-top:8px">💬 ${esc(rf.toikaeshi)}</div>` : "")}`;
+    };
     return `<div class="card">
       <h2>${esc(t.no)}　${esc(t.name)}</h2>
       ${a ? `<div style="font-size:14px">小テスト：最高 <b>${a.best_score}/${a.best_max}</b>（${pct}%）・${a.times}回挑戦</div>`
           : `<div class="hint">小テストはまだ受けていません。</div>`}
-      ${rf ? `
-        <div class="hint" style="margin-top:10px;margin-bottom:0">${esc(rf.date)}の振り返り　理解度${esc(rf.understanding)}・意欲${esc(rf.effort)}</div>
-        ${rf.comment ? `<div class="ans" style="margin-top:4px;white-space:pre-wrap">${esc(rf.comment)}</div>` : ""}
-        ${badges ? `<div style="margin-top:8px">${badges}</div>` : ""}
-        ${rf.warning ? `<div class="notice warn" style="margin-top:8px">${esc(rf.warning)}</div>`
-          : (rf.toikaeshi ? `<div class="notice" style="margin-top:8px">💬 ${esc(rf.toikaeshi)}</div>` : "")}
-        ` : `<div class="hint" style="margin-top:10px">振り返りはまだありません。</div>`}
+      ${rfList.length ? rfList.map(reflBlockHTML).join("") : `<div class="hint" style="margin-top:10px">振り返りはまだありません。</div>`}
       ${a && !perfect ? `<button class="btn ghost" data-retry="${t.id}" style="margin-top:12px">🔁 もう一度挑戦する</button>` : ""}
       ${a && perfect ? `<div class="notice ok" style="margin-top:12px">満点です！🎉</div>` : ""}
     </div>`;

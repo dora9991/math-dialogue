@@ -279,7 +279,9 @@ alter table quiz_reflections add column if not exists duplicate_date date;
 alter table quiz_reflections add column if not exists toikaeshi text;
 alter table quiz_reflections add column if not exists warning text;
 
--- 今日の分の振り返りを取得（その quiz_id ・今日の分。無ければ found:false）。フォームの再編集に使う
+-- 今日の分の振り返りを取得（その quiz_id ・今日の分。無ければ found:false）。フォームの再編集に使う。
+-- 同じ小単元を複数回に分けて授業した場合、2回目以降は quiz_id が "元のid-2" のように保存されている
+-- ことがあるので（quiz_reflection_submit 参照）、p_quiz_id そのもの or その派生idのどちらでも拾う。
 create or replace function quiz_reflection_get(p_account_id text, p_quiz_id text)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
@@ -287,7 +289,10 @@ declare
   v_row record;
 begin
   select understanding, effort, score, comment into v_row
-    from quiz_reflections where account_id = p_account_id and quiz_id = p_quiz_id and jst_date = v_today;
+    from quiz_reflections
+    where account_id = p_account_id and jst_date = v_today
+      and (quiz_id = p_quiz_id or quiz_id like p_quiz_id || '-%')
+    order by quiz_id desc limit 1;
   if not found then
     return jsonb_build_object('found', false);
   end if;
@@ -316,6 +321,11 @@ end $$;
 -- 振り返りの提出（同じアカウント×同じquiz_id×同じ日は上書き＝書き直しOK）。
 -- その小テストが「配布中」でなければ拒否する＝小テストが非公開になると振り返りも書けなくなる。
 -- 6観点チェック等はクライアント側(reflection-sheet/と同じロジック)で計算済みのものをそのまま受け取って記録する。
+--
+-- 小単元によっては同じ単元(quiz_id)で複数回（別日）授業をすることがあり、その度に振り返りを書かせたい
+-- 場合がある。今日まだこの単元の振り返りが無ければ新規の「◯回目」として扱い、2回目は quiz_id に "-2"、
+-- 3回目は "-3" を付けて別レコードとして保存する（1回目は元の quiz_id のまま＝互換維持）。
+-- 同じ日にもう一度保存した場合は、それは書き直しとみなして同じ行を上書きする（別回にはしない）。
 create or replace function quiz_reflection_submit(
   p_account_id text, p_quiz_id text, p_understanding int, p_effort int, p_score int, p_comment text,
   p_checks jsonb default null, p_flag boolean default false, p_good boolean default false,
@@ -326,6 +336,8 @@ declare
   v_school text; v_class text;
   v_today date := (now() at time zone 'Asia/Tokyo')::date;
   v_active boolean;
+  v_store_id text;
+  v_occurrences int;
 begin
   if coalesce(p_account_id, '') !~ '^[A-Z]-[0-9]{5,7}$' then
     return jsonb_build_object('error', 'bad_account');
@@ -336,6 +348,7 @@ begin
   end if;
 
   -- 本人の学校・クラスで、小テスト本体が配布中、または「授業を開始（振り返り受付）」のどちらかなら書ける
+  -- （配布状態は常に元の quiz_id で管理されているので、判定は必ず p_quiz_id そのもので行う）
   select school, class into v_school, v_class from _quiz_parse_account(p_account_id);
   select coalesce((select (is_active or reflection_active) from quiz_state
     where quiz_id = p_quiz_id and school=v_school and class=v_class), false) into v_active;
@@ -343,11 +356,28 @@ begin
     return jsonb_build_object('error', 'inactive');
   end if;
 
+  -- 今日すでにこの単元（元id or 派生id）の振り返りがあれば、その行への書き直しとして扱う
+  select quiz_id into v_store_id
+    from quiz_reflections
+    where account_id = p_account_id and jst_date = v_today
+      and (quiz_id = p_quiz_id or quiz_id like p_quiz_id || '-%')
+    limit 1;
+
+  if v_store_id is null then
+    -- 今日は初めての入力 → これまでの別日の入力回数を数えて、2回目以降なら quiz_id に番号を付ける
+    select count(distinct quiz_id) into v_occurrences
+      from quiz_reflections
+      where account_id = p_account_id
+        and (quiz_id = p_quiz_id or quiz_id like p_quiz_id || '-%');
+    v_store_id := case when coalesce(v_occurrences,0) = 0 then p_quiz_id
+                        else p_quiz_id || '-' || (v_occurrences + 1) end;
+  end if;
+
   insert into quiz_reflections (
     account_id, quiz_id, jst_date, understanding, effort, score, comment,
     checks, flag, good, is_duplicate, duplicate_date, toikaeshi, warning, updated_at
   ) values (
-    p_account_id, p_quiz_id, v_today, p_understanding, p_effort, p_score, p_comment,
+    p_account_id, v_store_id, v_today, p_understanding, p_effort, p_score, p_comment,
     p_checks, coalesce(p_flag,false), coalesce(p_good,false), coalesce(p_is_duplicate,false),
     p_duplicate_date, p_toikaeshi, p_warning, now()
   )
@@ -358,7 +388,7 @@ begin
     is_duplicate = excluded.is_duplicate, duplicate_date = excluded.duplicate_date,
     toikaeshi = excluded.toikaeshi, warning = excluded.warning, updated_at = now();
 
-  return jsonb_build_object('ok', true);
+  return jsonb_build_object('ok', true, 'quiz_id', v_store_id);
 end $$;
 
 -- 生徒本人の「今までに解いた小テスト」一覧（やり直し画面用）。パスワード再確認はしない軽量方式
