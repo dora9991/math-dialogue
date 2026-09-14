@@ -808,6 +808,12 @@ let waitTimer = null;  // QR待ちの自動再確認タイマー
 const KEY = t => `quiz:${t}:${S.sid}`;
 const app = document.getElementById("app");
 const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/** 問題文・選択肢・解答表示などに出てくる "8/x" "-12/x" "3/4" のような分数を、
+    きちんと上下2段の表記に変えてHTML化する（他の文字はエスケープするだけ）。 */
+const fractionizeHTML = s => esc(s).replace(/(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?|x)/g, (m,n,d)=>{
+  const dHtml = d==="x" ? `<i class="mathx">x</i>` : d;
+  return `<span class="fracStack"><span class="fracNum">${n}</span><span class="fracBar"></span><span class="fracDen">${dHtml}</span></span>`;
+});
 const save = () => { if(S.test&&S.sid&&!S.practice) store.set(KEY(S.test.id), JSON.stringify({ans:S.ans, startedAt:S.startedAt, qStart:S.qStart, date:todayStr()})); };
 
 /* ============================================================
@@ -1570,9 +1576,9 @@ function renderConfirmQuiz(quizId){
         <div class="sub">🎯 確認問題　${i+1}/${set.length}問目　（${set.length}問すべて正解で合格）</div>
       </header>
       <div class="q">
-        <div class="head"><span class="n">${esc(q.no)}</span><span class="prompt">${esc(q.lead||"")}</span></div>
+        <div class="head"><span class="n">${esc(q.no)}</span><span class="prompt">${fractionizeHTML(q.lead||"")}</span></div>
         ${q.type==="choice"
-          ? `<div class="choices">${q.choices.map((c,ci)=>`<button type="button" data-ci="${ci}">${esc(c)}</button>`).join("")}</div>`
+          ? `<div class="choices">${q.choices.map((c,ci)=>`<button type="button" data-ci="${ci}">${fractionizeHTML(c)}</button>`).join("")}</div>`
           : `<div class="subq"><input type="text" id="cq-ans" placeholder="${esc(q.ph||"")}" autocomplete="off" spellcheck="false"></div>
              <button class="btn" id="cq-check" style="margin-top:10px;width:100%">こたえる</button>`}
         <div id="cq-fb" style="margin-top:10px"></div>
@@ -1583,7 +1589,7 @@ function renderConfirmQuiz(quizId){
     const judge = ok=>{
       fb.innerHTML = ok
         ? `<div class="notice ok">○ 正解！</div>`
-        : `<div class="notice warn">× 正解は「${esc(q.type==="choice"?q.choices[q.ans]:q.ans)}」</div>`;
+        : `<div class="notice warn">× 正解は「${fractionizeHTML(String(q.type==="choice"?q.choices[q.ans]:q.ans))}」</div>`;
       if(ok) correct++;
       i++;
       setTimeout(showQ, 900);
@@ -2118,18 +2124,18 @@ function wireScratchToolbar(){
 
 function renderQ(q,qi){
   const d=document.createElement("div"); d.className="q";
-  let h=`<div class="head"><span class="n">${q.no}</span><span class="prompt">${esc(q.lead||"")}</span></div>`;
-  if(q.hint) h+=`<div class="lead">${esc(q.hint)}</div>`;
+  let h=`<div class="head"><span class="n">${q.no}</span><span class="prompt">${fractionizeHTML(q.lead||"")}</span></div>`;
+  if(q.hint) h+=`<div class="lead">${fractionizeHTML(q.hint)}</div>`;
   if(q.fig) h+=`<div class="gridwrap">${FIG[q.fig]()}</div>`;
   d.innerHTML=h;
 
   if(q.type==="choice"){
     q.subs.forEach((s,si)=>{
       const w=document.createElement("div");
-      if(s.prompt) w.innerHTML=`<div style="margin-top:12px;font-size:15px"><span style="font-family:var(--mono);color:var(--ink-soft)">${s.lb}</span> ${esc(s.prompt)}</div>`;
+      if(s.prompt) w.innerHTML=`<div style="margin-top:12px;font-size:15px"><span style="font-family:var(--mono);color:var(--ink-soft)">${s.lb}</span> ${fractionizeHTML(s.prompt)}</div>`;
       const c=document.createElement("div"); c.className="choices";
       q.choices.forEach((txt,ci)=>{
-        const b=document.createElement("button"); b.type="button"; b.textContent=txt;
+        const b=document.createElement("button"); b.type="button"; b.innerHTML=fractionizeHTML(txt);
         b.setAttribute("aria-pressed", String(S.ans[keyOf(qi,si)]===ci));
         b.onclick=()=>{ touch(qi); S.ans[keyOf(qi,si)]=ci; save();
           c.querySelectorAll("button").forEach((x,j)=>x.setAttribute("aria-pressed",String(j===ci))); tick(); };
@@ -2141,7 +2147,7 @@ function renderQ(q,qi){
   else if(q.type==="input"){
     q.subs.forEach((s,si)=>{
       const w=document.createElement("div");
-      if(s.prompt) w.innerHTML=`<div style="margin-top:12px;font-size:15px"><span style="font-family:var(--mono);color:var(--ink-soft)">${s.lb}</span> ${esc(s.prompt)}</div>`;
+      if(s.prompt) w.innerHTML=`<div style="margin-top:12px;font-size:15px"><span style="font-family:var(--mono);color:var(--ink-soft)">${s.lb}</span> ${fractionizeHTML(s.prompt)}</div>`;
       const row=document.createElement("div"); row.className="subq";
       if(!s.prompt) row.innerHTML=`<span class="lb">${s.lb}</span>`;
       const label = `${q.no}${s.lb?" "+s.lb:""}`;
@@ -2227,15 +2233,15 @@ function mountNumField(holder, initialVal, label, onConfirm){
 /* ボーナス（応用）問題。基本問題を全問正解したときだけ +1 点になる。 */
 function renderBonus(b){
   const d=document.createElement("div"); d.className="q bonus";
-  d.innerHTML=`<div class="head"><span class="n">★</span><span class="prompt">${esc(b.lead||"")}<span class="bonus-tag">ボーナス</span></span></div>
-    <div class="bonus-note">基本問題を全問正解すると、この問題の正解で ＋1点（例：4点満点なら 5/4）。</div>`;
-  if(b.hint) d.innerHTML+=`<div class="hint">${esc(b.hint)}</div>`;
+  d.innerHTML=`<div class="head"><span class="n">★</span><span class="prompt">${fractionizeHTML(b.lead||"")}<span class="bonus-tag">ボーナス</span></span></div>
+    <div class="bonus-note">基本問題を全問正解すると、この問題の正解で ＋1点（例：${fractionizeHTML("4点満点なら 5/4")}）。</div>`;
+  if(b.hint) d.innerHTML+=`<div class="hint">${fractionizeHTML(b.hint)}</div>`;
   const sub=b.subs ? b.subs[0] : null;
   const K=keyOf("bonus",0);
   if(b.type==="choice"){
     const c=document.createElement("div"); c.className="choices";
     b.choices.forEach((txt,ci)=>{
-      const btn=document.createElement("button"); btn.type="button"; btn.textContent=txt;
+      const btn=document.createElement("button"); btn.type="button"; btn.innerHTML=fractionizeHTML(txt);
       btn.setAttribute("aria-pressed", String(S.ans[K]===ci));
       btn.onclick=()=>{ S.ans[K]=ci; save();
         c.querySelectorAll("button").forEach((x,j)=>x.setAttribute("aria-pressed",String(j===ci))); };
@@ -2247,7 +2253,7 @@ function renderBonus(b){
     const sel = new Set(S.ans[K] ? JSON.parse(S.ans[K]) : []);
     b.points.forEach((p,pi)=>{
       const btn=document.createElement("button"); btn.type="button";
-      btn.textContent = `${p[0]}（${p[1]}, ${p[2]}）`;
+      btn.innerHTML = fractionizeHTML(`${p[0]}（${p[1]}, ${p[2]}）`);
       btn.setAttribute("aria-pressed", String(sel.has(pi)));
       btn.onclick=()=>{
         if(sel.has(pi)) sel.delete(pi); else sel.add(pi);
@@ -2608,11 +2614,11 @@ function renderResult(g, auto, state){
     d.innerHTML=`<div class="mk">${r.ok?"○":"×"}</div>
       <div class="body">
         <div class="qn">${r.bonus?"★応用（ボーナス）":esc(r.q_no)}${(!r.bonus&&r.max>1)?`　${r.score}/${r.max}`:""}</div>
-        <div class="txt">${esc((r.label||"").slice(0,80))}</div>
-        <div class="ans">あなた: <span class="${r.ok?"right":"yours"}">${esc(r.raw||"（無解答）")}</span></div>
-        ${showRight?`<div class="ans">正解: <span class="right">${esc(r.right)}</span></div>`:""}
+        <div class="txt">${fractionizeHTML((r.label||"").slice(0,80))}</div>
+        <div class="ans">あなた: <span class="${r.ok?"right":"yours"}">${fractionizeHTML(r.raw||"（無解答）")}</span></div>
+        ${showRight?`<div class="ans">正解: <span class="right">${fractionizeHTML(r.right)}</span></div>`:""}
         ${r.fig && showRight && !r.bonus ? r.fig : ""}
-        ${r.bonus && r.sol ? `<div class="hint" style="border-left:2px solid var(--rule);padding-left:10px;white-space:pre-wrap;margin-top:8px">${esc(r.sol)}</div>` : ""}
+        ${r.bonus && r.sol ? `<div class="hint" style="border-left:2px solid var(--rule);padding-left:10px;white-space:pre-wrap;margin-top:8px">${fractionizeHTML(r.sol)}</div>` : ""}
       </div>`;
     box.appendChild(d);
   });
