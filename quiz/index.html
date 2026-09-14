@@ -172,12 +172,12 @@ svg.fig{width:100%;max-width:360px;height:auto;background:#fff}
 
 /* 数字・文字式・関数の3キーボード共通パーツ */
 .mathx{font-family:"Times New Roman","Hiragino Mincho ProN",Georgia,serif;font-style:italic;font-weight:400}
-.funcKB-form{display:flex;flex-direction:column;gap:6px;flex:none;width:112px}
+.funcKB-form{display:flex;flex-direction:column;gap:6px;flex:none;min-width:112px}
 .funcKB-formBtn{width:100%;background:#fff;border:1px solid var(--rule);padding:10px 4px;font-size:15px;font-family:var(--mincho)}
 .funcKB-formBtn[aria-pressed=true]{border-color:var(--ai);background:var(--ai-weak);color:var(--ai);box-shadow:inset 0 0 0 1px var(--ai)}
 .funcKB-preview{
-  min-height:52px;display:flex;align-items:center;justify-content:center;gap:2px;
-  font-family:var(--mincho);font-size:24px;background:#fff;border:1px solid var(--rule);padding:8px;
+  min-height:48px;display:flex;align-items:center;justify-content:center;gap:2px;
+  font-family:var(--mincho);font-size:22px;background:#fff;border:1px solid var(--rule);padding:6px;margin-top:2px;
 }
 .funcKB-hint{font-size:13px;color:var(--ink-soft);font-family:var(--gothic)}
 .funcKB-minus{margin-right:2px}
@@ -193,18 +193,20 @@ svg.fig{width:100%;max-width:360px;height:auto;background:#fff}
 }
 .mkb3-field.placeholder{color:var(--ink-soft);font-size:13px;font-family:var(--gothic)}
 .mkb3-field:hover{border-color:var(--ai)}
-body.mkb3open{padding-bottom:250px}
 
-/* 下部ドック：数字／文字式／関数キーボード */
+/* コンパクトなフローティングキーボード：画面の端から端まで広がらず、余白を持って
+   ドラッグすると動かせる（ボタン等の上を除く、無地のところを掴む）。 */
 #mkb3{
-  position:fixed;left:0;right:0;bottom:0;z-index:60;
-  background:#f3f5f8;border-top:1px solid var(--rule);
-  padding:8px 10px calc(8px + env(safe-area-inset-bottom));
-  box-shadow:0 -6px 20px rgba(22,32,46,.10);
+  position:fixed;z-index:60;width:max-content;max-width:calc(100vw - 20px);
+  background:#f3f5f8;border:1px solid var(--rule);border-radius:10px;
+  padding:8px 12px calc(8px + env(safe-area-inset-bottom));
+  box-shadow:0 8px 26px rgba(22,32,46,.2);
+  cursor:grab;
 }
+#mkb3.dragging{cursor:grabbing}
 #mkb3 .mkb3-head{display:flex;align-items:center;gap:8px;padding:0 2px 6px;font-size:12px;color:var(--ink-soft)}
 #mkb3 .mkb3-head button{margin-left:auto;font-size:12px;padding:5px 12px;background:#fff;border:1px solid var(--rule)}
-.mkb3-panel{display:none;gap:14px;align-items:flex-start;max-width:520px;margin:0 auto}
+.mkb3-panel{display:none;gap:14px;align-items:flex-start}
 .mkb3-panel.on{display:flex}
 .mkb3-pad{display:grid;grid-template-columns:repeat(3,42px);grid-auto-rows:36px;gap:4px;flex:none}
 .mkb3-pad button{font-family:var(--mono);font-size:15px;background:#fff;border:1px solid var(--rule);padding:0;line-height:1}
@@ -234,11 +236,11 @@ body.mkb3open{padding-bottom:250px}
 .mkb3-funcRight{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
 .mkb3-funcRight .btn{width:100%}
 
-/* 文字式キーボードの分数挿入ポップアップ */
+/* 文字式キーボードの分数挿入ポップアップ（位置はJSでキーボードの直上に合わせる） */
 #mkb3-fracPopup{
-  position:fixed;left:50%;bottom:220px;transform:translateX(-50%);z-index:61;
+  position:fixed;z-index:61;
   background:#fff;border:1px solid var(--rule);box-shadow:0 6px 20px rgba(22,32,46,.18);
-  padding:14px;display:flex;flex-direction:column;align-items:center;gap:8px;
+  border-radius:8px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:8px;
 }
 #mkb3-fracPopup .btnrow{display:flex;gap:6px;width:100%}
 #mkb3-fracPopup .btnrow button{flex:1}
@@ -357,9 +359,9 @@ body.kbopen{padding-bottom:230px}
     <div class="funcKB-form">
       <button type="button" class="funcKB-formBtn" data-form="prop">y = a<i class="mathx">x</i></button>
       <button type="button" class="funcKB-formBtn" data-form="inv">y = a/<i class="mathx">x</i></button>
+      <div class="funcKB-preview" id="funcPreview"></div>
     </div>
     <div class="mkb3-funcRight">
-      <div class="funcKB-preview" id="funcPreview"></div>
       <div class="mkb3-pad" id="funcPad"></div>
       <button type="button" class="btn" id="funcOk" disabled>確定</button>
     </div>
@@ -547,19 +549,52 @@ const Mkb3 = (()=>{
     func: document.getElementById("mkb3-func"),
   };
 
+  /* コンパクトなフローティングパネルとして配置する。1度ドラッグしたら、その位置を
+     セッション中は覚えておく（パネルの種類が変わっても位置は動かさない）。 */
+  let mkb3Pos = null;
+  function positionPanel(){
+    const w = el.offsetWidth, h = el.offsetHeight;
+    if(mkb3Pos){
+      const left = Math.min(mkb3Pos.left, window.innerWidth - w - 4);
+      const top = Math.min(mkb3Pos.top, window.innerHeight - h - 4);
+      el.style.left = Math.max(4,left)+"px"; el.style.top = Math.max(4,top)+"px";
+      return;
+    }
+    const left = Math.max(4, (window.innerWidth - w)/2);
+    const top = Math.max(4, window.innerHeight - h - 16);
+    el.style.left = left+"px"; el.style.top = top+"px";
+  }
   function showPanel(mode, label){
     Object.values(panels).forEach(p=>p.classList.remove("on"));
     panels[mode].classList.add("on");
     hint.textContent = label || "";
     el.classList.remove("hidden");
-    document.body.classList.add("mkb3open");
+    positionPanel();
   }
   function hide(){
     el.classList.add("hidden");
-    document.body.classList.remove("mkb3open");
     closeFracPopup();
   }
   document.getElementById("mkb3-close").addEventListener("click", hide);
+
+  /* 何もないところ（ボタン・入力欄の外）を掴んでドラッグすると、パネル全体を動かせる。 */
+  let panelDrag=false, pdsx=0, pdsy=0, pdox=0, pdoy=0;
+  el.addEventListener("pointerdown", e=>{
+    if(e.target.closest("button,input,select")) return;
+    panelDrag=true; el.setPointerCapture(e.pointerId); el.classList.add("dragging");
+    pdsx=e.clientX; pdsy=e.clientY;
+    const r=el.getBoundingClientRect(); pdox=r.left; pdoy=r.top;
+  });
+  el.addEventListener("pointermove", e=>{
+    if(!panelDrag) return;
+    const nx = Math.min(Math.max(4, pdox+(e.clientX-pdsx)), window.innerWidth - el.offsetWidth - 4);
+    const ny = Math.min(Math.max(4, pdoy+(e.clientY-pdsy)), window.innerHeight - el.offsetHeight - 4);
+    el.style.left = nx+"px"; el.style.top = ny+"px";
+    mkb3Pos = {left:nx, top:ny};
+  });
+  const stopPanelDrag = ()=>{ panelDrag=false; el.classList.remove("dragging"); };
+  el.addEventListener("pointerup", stopPanelDrag);
+  el.addEventListener("pointercancel", stopPanelDrag);
 
   /* ---------- 数字キーボード ---------- */
   const numPad = document.getElementById("numPad");
@@ -669,6 +704,11 @@ const Mkb3 = (()=>{
   document.getElementById("exprFracBtn").addEventListener("click", ()=>{
     fracState = {n:"",d:"",active:"n"}; syncFracPopup();
     fracPopup.classList.remove("hidden");
+    const r = el.getBoundingClientRect();
+    const pw = fracPopup.offsetWidth;
+    const left = Math.min(Math.max(4, r.left + r.width/2 - pw/2), window.innerWidth - pw - 4);
+    const top = Math.max(4, r.top - fracPopup.offsetHeight - 8);
+    fracPopup.style.left = left+"px"; fracPopup.style.top = top+"px";
   });
   exprFracN.addEventListener("click", ()=>{ fracState.active="n"; syncFracPopup(); });
   exprFracD.addEventListener("click", ()=>{ fracState.active="d"; syncFracPopup(); });
