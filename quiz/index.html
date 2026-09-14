@@ -169,6 +169,31 @@ svg.fig{width:100%;max-width:360px;height:auto;background:#fff}
   .scratchCol{position:static;width:100%}
   #scratchCanvas{height:340px}
 }
+
+/* 関数キーボード（比例・反比例の式入力） */
+.mathx{font-family:"Times New Roman","Hiragino Mincho ProN",Georgia,serif;font-style:italic;font-weight:400}
+.funcKB{border:1px solid var(--rule);background:#fbfbf9;padding:12px;margin-top:4px}
+.funcKB-form{display:flex;gap:8px}
+.funcKB-formBtn{flex:1;background:#fff;border:1px solid var(--rule);padding:10px;font-size:17px;font-family:var(--mincho)}
+.funcKB-formBtn[aria-pressed=true]{border-color:var(--ai);background:var(--ai-weak);color:var(--ai);box-shadow:inset 0 0 0 1px var(--ai)}
+.funcKB-preview{
+  min-height:56px;display:flex;align-items:center;justify-content:center;gap:2px;
+  font-family:var(--mincho);font-size:26px;background:#fff;border:1px solid var(--rule);margin-top:10px;padding:8px;
+}
+.funcKB-hint{font-size:13px;color:var(--ink-soft);font-family:var(--gothic)}
+.funcKB-minus{margin-right:2px}
+.fracStack{display:inline-flex;flex-direction:column;align-items:center;line-height:1.2;margin:0 2px;vertical-align:middle}
+.fracStack .fracNum,.fracStack .fracDen{padding:0 4px}
+.fracStack .fracBar{display:block;width:100%;height:0;border-top:2px solid var(--ink);margin:1px 0}
+.funcKB-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.funcKB-pad button{
+  font-family:var(--mono);font-size:19px;padding:12px 0;background:#fff;border:1px solid var(--rule);
+}
+.funcKB-pad button:active{background:var(--ai-weak);border-color:var(--ai)}
+.funcKB-ok{width:100%;margin-top:10px}
+.funcKB-confirmed{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border:1px solid var(--rule);background:#fff;padding:10px 14px;margin-top:4px}
+.funcKB-confirmedEq{font-family:var(--mincho);font-size:22px;display:flex;align-items:center;gap:2px}
 /* 数式キーボード */
 #kb{
   position:fixed;left:0;right:0;bottom:0;z-index:60;
@@ -1776,13 +1801,12 @@ function renderQ(q,qi){
       if(s.prompt) w.innerHTML=`<div style="margin-top:12px;font-size:15px"><span style="font-family:var(--mono);color:var(--ink-soft)">${s.lb}</span> ${esc(s.prompt)}</div>`;
       const row=document.createElement("div"); row.className="subq";
       if(!s.prompt) row.innerHTML=`<span class="lb">${s.lb}</span>`;
-      if(s.select){
-        const sel=document.createElement("select");
-        const cur = S.ans[keyOf(qi,si)] ?? "";
-        sel.innerHTML = `<option value="" disabled ${cur?"":"selected"}>選んでください</option>`
-          + s.select.map(opt=>`<option value="${esc(opt)}" ${opt===cur?"selected":""}>${esc(opt)}</option>`).join("");
-        sel.onchange=()=>{ touch(qi); S.ans[keyOf(qi,si)]=sel.value; save(); tick(); };
-        row.appendChild(sel); w.appendChild(row); d.appendChild(w);
+      if(s.funcKB){
+        const holder=document.createElement("div");
+        mountFuncKBField(holder, S.ans[keyOf(qi,si)] ?? "", val=>{
+          touch(qi); S.ans[keyOf(qi,si)]=val; save(); tick();
+        });
+        row.appendChild(holder); w.appendChild(row); d.appendChild(w);
         return;
       }
       const inp=document.createElement("input");
@@ -1797,6 +1821,76 @@ function renderQ(q,qi){
   else if(q.type==="line")  d.appendChild(lineUI(q,qi));
   else if(q.type==="hyper") d.appendChild(hyperUI(q,qi));
   return d;
+}
+
+/* ============================================================
+   関数キーボード（比例・反比例専用）：y=◻x／y=◻/x のどちらかを選び、
+   電卓配置の数字パッドで係数を入力する。分数はきちんと上下表記、符号は
+   分数の前に出す。確定した式は普通の文字列（例："y=-12/x"）として
+   S.ans に入るので、採点(gradeSub)は既存のまま変更なしで動く。
+   ============================================================ */
+function funcPreviewHTML(form, neg, digits){
+  const n = digits || "0";
+  if(!form) return `<span class="funcKB-hint">式の形を選んでください</span>`;
+  if(form==="prop") return `y = ${neg?"−":""}${esc(n)}<i class="mathx">x</i>`;
+  return `y = ${neg?`<span class="funcKB-minus">−</span>`:""}`+
+    `<span class="fracStack"><span class="fracNum">${esc(n)}</span><span class="fracBar"></span><span class="fracDen"><i class="mathx">x</i></span></span>`;
+}
+function parseFuncAnswer(str){
+  const m = /^y=(-)?(\d+)(\/x|x)?$/.exec(String(str||"").trim());
+  if(!m) return null;
+  return {form: m[3]==="/x" ? "inv" : "prop", neg: !!m[1], digits: m[2]};
+}
+/** holder(空のdiv)に、確定済みなら結果表示＋編集ボタン、未確定ならキーボードを差し込む。 */
+function mountFuncKBField(holder, initialVal, onConfirm){
+  const showConfirmed = val=>{
+    const p = parseFuncAnswer(val);
+    holder.innerHTML = `<div class="funcKB-confirmed">
+        <span class="funcKB-confirmedEq">${p ? funcPreviewHTML(p.form,p.neg,p.digits) : esc(val)}</span>
+        <button type="button" class="btn ghost mini">編集する</button>
+      </div>`;
+    holder.querySelector("button").onclick = ()=>showEditor(val);
+  };
+  const showEditor = val=>{
+    const initial = parseFuncAnswer(val);
+    let form = initial?.form || null, neg = initial?.neg || false, digits = initial?.digits || "";
+    holder.innerHTML = `
+      <div class="funcKB">
+        <div class="funcKB-form">
+          <button type="button" class="funcKB-formBtn" data-form="prop">y = ◻<i class="mathx">x</i></button>
+          <button type="button" class="funcKB-formBtn" data-form="inv">y = ◻/<i class="mathx">x</i></button>
+        </div>
+        <div class="funcKB-preview"></div>
+        <div class="funcKB-pad">
+          ${["7","8","9","4","5","6","1","2","3","±","0","⌫"].map(k=>`<button type="button" data-k="${k}">${k}</button>`).join("")}
+        </div>
+        <button type="button" class="btn funcKB-ok" disabled>確定</button>
+      </div>`;
+    const formBtns = holder.querySelectorAll(".funcKB-formBtn");
+    const preview = holder.querySelector(".funcKB-preview");
+    const okBtn = holder.querySelector(".funcKB-ok");
+    const sync = ()=>{
+      formBtns.forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.form===form)));
+      preview.innerHTML = funcPreviewHTML(form, neg, digits);
+      okBtn.disabled = !(form && digits.length);
+    };
+    formBtns.forEach(b=>b.onclick=()=>{ form=b.dataset.form; sync(); });
+    holder.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{
+      const k=b.dataset.k;
+      if(k==="⌫") digits = digits.slice(0,-1);
+      else if(k==="±") neg = !neg;
+      else if(digits.length<6) digits = (digits+k).replace(/^0+(?=\d)/,"");
+      sync();
+    });
+    okBtn.onclick=()=>{
+      if(!form || !digits) return;
+      const out = form==="prop" ? `y=${neg?"-":""}${digits}x` : `y=${neg?"-":""}${digits}/x`;
+      onConfirm(out);
+      showConfirmed(out);
+    };
+    sync();
+  };
+  if(initialVal) showConfirmed(initialVal); else showEditor("");
 }
 
 /* ボーナス（応用）問題。基本問題を全問正解したときだけ +1 点になる。 */
