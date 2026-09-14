@@ -170,20 +170,13 @@ svg.fig{width:100%;max-width:360px;height:auto;background:#fff}
   #scratchCanvas{height:340px}
 }
 
-/* 関数キーボード（比例・反比例の式入力）：左＝小さめの数字パッド、右＝式の形とディスプレイ */
+/* 数字・文字式・関数の3キーボード共通パーツ */
 .mathx{font-family:"Times New Roman","Hiragino Mincho ProN",Georgia,serif;font-style:italic;font-weight:400}
-.funcKB{border:1px solid var(--rule);background:#fbfbf9;padding:12px;margin-top:4px;display:flex;gap:14px;align-items:flex-start}
-.funcKB-pad{display:grid;grid-template-columns:repeat(3,38px);grid-auto-rows:34px;gap:4px;flex:none}
-.funcKB-pad button{
-  font-family:var(--mono);font-size:14px;padding:0;background:#fff;border:1px solid var(--rule);line-height:1;
-}
-.funcKB-pad button:active{background:var(--ai-weak);border-color:var(--ai)}
-.funcKB-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
-.funcKB-form{display:flex;gap:6px}
-.funcKB-formBtn{flex:1;background:#fff;border:1px solid var(--rule);padding:8px 4px;font-size:15px;font-family:var(--mincho)}
+.funcKB-form{display:flex;flex-direction:column;gap:6px;flex:none;width:112px}
+.funcKB-formBtn{width:100%;background:#fff;border:1px solid var(--rule);padding:10px 4px;font-size:15px;font-family:var(--mincho)}
 .funcKB-formBtn[aria-pressed=true]{border-color:var(--ai);background:var(--ai-weak);color:var(--ai);box-shadow:inset 0 0 0 1px var(--ai)}
 .funcKB-preview{
-  flex:1;min-height:56px;display:flex;align-items:center;justify-content:center;gap:2px;
+  min-height:52px;display:flex;align-items:center;justify-content:center;gap:2px;
   font-family:var(--mincho);font-size:24px;background:#fff;border:1px solid var(--rule);padding:8px;
 }
 .funcKB-hint{font-size:13px;color:var(--ink-soft);font-family:var(--gothic)}
@@ -191,11 +184,65 @@ svg.fig{width:100%;max-width:360px;height:auto;background:#fff}
 .fracStack{display:inline-flex;flex-direction:column;align-items:center;line-height:1.2;margin:0 2px;vertical-align:middle}
 .fracStack .fracNum,.fracStack .fracDen{padding:0 4px}
 .fracStack .fracBar{display:block;width:100%;height:0;border-top:2px solid var(--ink);margin:1px 0}
-.funcKB-ok{width:100%;margin-top:auto}
-.funcKB-confirmed{display:flex;align-items:center;justify-content:space-between;gap:10px;
-  border:1px solid var(--rule);background:#fff;padding:10px 14px;margin-top:4px}
-.funcKB-confirmedEq{font-family:var(--mincho);font-size:22px;display:flex;align-items:center;gap:2px}
-@media (max-width:420px){ .funcKB{flex-direction:column} .funcKB-pad{margin:0 auto} }
+
+/* 出題画面内の、タップすると下からキーボードが出てくる入力欄 */
+.mkb3-field{
+  display:inline-flex;align-items:center;gap:2px;min-height:42px;min-width:64px;
+  border:1px solid var(--rule);background:#fff;padding:6px 12px;cursor:pointer;
+  font-family:var(--mincho);font-size:18px;
+}
+.mkb3-field.placeholder{color:var(--ink-soft);font-size:13px;font-family:var(--gothic)}
+.mkb3-field:hover{border-color:var(--ai)}
+body.mkb3open{padding-bottom:250px}
+
+/* 下部ドック：数字／文字式／関数キーボード */
+#mkb3{
+  position:fixed;left:0;right:0;bottom:0;z-index:60;
+  background:#f3f5f8;border-top:1px solid var(--rule);
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+  box-shadow:0 -6px 20px rgba(22,32,46,.10);
+}
+#mkb3 .mkb3-head{display:flex;align-items:center;gap:8px;padding:0 2px 6px;font-size:12px;color:var(--ink-soft)}
+#mkb3 .mkb3-head button{margin-left:auto;font-size:12px;padding:5px 12px;background:#fff;border:1px solid var(--rule)}
+.mkb3-panel{display:none;gap:14px;align-items:flex-start;max-width:520px;margin:0 auto}
+.mkb3-panel.on{display:flex}
+.mkb3-pad{display:grid;grid-template-columns:repeat(3,42px);grid-auto-rows:36px;gap:4px;flex:none}
+.mkb3-pad button{font-family:var(--mono);font-size:15px;background:#fff;border:1px solid var(--rule);padding:0;line-height:1}
+.mkb3-pad button:active{background:var(--ai-weak);border-color:var(--ai)}
+
+/* 数字キーボード右側（分数） */
+.mkb3-numRight{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;align-items:center}
+.mkb3-fracLabel{font-size:12px;color:var(--ink-soft);align-self:flex-start}
+.mkb3-fracRow{display:flex;flex-direction:column;align-items:center;gap:0}
+.mkb3-fracSlot{
+  width:96px;padding:8px;font-family:var(--mono);font-size:18px;background:#fff;
+  border:1px solid var(--rule);
+}
+.mkb3-fracSlot[aria-pressed=true]{border-color:var(--ai);box-shadow:inset 0 0 0 1px var(--ai)}
+.mkb3-fracDiv{width:96px;height:2px;background:var(--ink);margin:2px 0}
+.mkb3-numRight .btn{width:100%}
+
+/* 文字式キーボード（数字パッド＋記号グリッド＋分数ボタン） */
+.mkb3-sym{display:grid;grid-template-columns:repeat(5,38px);grid-auto-rows:36px;gap:4px;flex:none}
+.mkb3-sym button{font-family:var(--mono);font-size:14px;background:#fff;border:1px solid var(--rule);padding:0}
+.mkb3-sym button.var{color:var(--ai);font-style:italic}
+.mkb3-sym button.op{color:var(--ai)}
+.mkb3-sym button:active{background:var(--ai-weak);border-color:var(--ai)}
+.mkb3-fracBtn{align-self:stretch;width:64px;font-family:var(--gothic);font-size:13px;background:#e9edf3;border:1px solid var(--rule)}
+
+/* 関数キーボード（左＝式を選ぶ、右＝数字入力） */
+.mkb3-funcRight{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.mkb3-funcRight .btn{width:100%}
+
+/* 文字式キーボードの分数挿入ポップアップ */
+#mkb3-fracPopup{
+  position:fixed;left:50%;bottom:220px;transform:translateX(-50%);z-index:61;
+  background:#fff;border:1px solid var(--rule);box-shadow:0 6px 20px rgba(22,32,46,.18);
+  padding:14px;display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+#mkb3-fracPopup .btnrow{display:flex;gap:6px;width:100%}
+#mkb3-fracPopup .btnrow button{flex:1}
+@media (max-width:460px){ .mkb3-panel{flex-direction:column;align-items:center} .mkb3-pad,.mkb3-sym{margin:0 auto} }
 /* 数式キーボード */
 #kb{
   position:fixed;left:0;right:0;bottom:0;z-index:60;
@@ -279,6 +326,56 @@ body.kbopen{padding-bottom:230px}
     <button type="button" id="frac-cancel">やめる</button>
   </div>
   <div class="keys" id="kbkeys"></div>
+</div>
+
+<div id="mkb3" class="hidden" aria-label="回答用キーボード">
+  <div class="mkb3-head"><span id="mkb3hint"></span><button type="button" id="mkb3-close">閉じる</button></div>
+
+  <!-- 数字キーボード -->
+  <div id="mkb3-num" class="mkb3-panel">
+    <div class="mkb3-pad" id="numPad"></div>
+    <div class="mkb3-numRight">
+      <div class="mkb3-fracLabel">分数</div>
+      <div class="mkb3-fracRow">
+        <button type="button" class="mkb3-fracSlot" id="numSlotN">◻</button>
+        <div class="mkb3-fracDiv"></div>
+        <button type="button" class="mkb3-fracSlot" id="numSlotD">◻</button>
+      </div>
+      <button type="button" class="btn" id="numOk" disabled>確定</button>
+    </div>
+  </div>
+
+  <!-- 文字式キーボード -->
+  <div id="mkb3-expr" class="mkb3-panel">
+    <div class="mkb3-pad" id="exprPad"></div>
+    <div class="mkb3-sym" id="exprSym"></div>
+    <button type="button" class="mkb3-fracBtn" id="exprFracBtn">分数</button>
+  </div>
+
+  <!-- 関数キーボード -->
+  <div id="mkb3-func" class="mkb3-panel">
+    <div class="funcKB-form">
+      <button type="button" class="funcKB-formBtn" data-form="prop">y = a<i class="mathx">x</i></button>
+      <button type="button" class="funcKB-formBtn" data-form="inv">y = a/<i class="mathx">x</i></button>
+    </div>
+    <div class="mkb3-funcRight">
+      <div class="funcKB-preview" id="funcPreview"></div>
+      <div class="mkb3-pad" id="funcPad"></div>
+      <button type="button" class="btn" id="funcOk" disabled>確定</button>
+    </div>
+  </div>
+</div>
+
+<div id="mkb3-fracPopup" class="hidden">
+  <div class="mkb3-fracRow">
+    <button type="button" class="mkb3-fracSlot" id="exprFracN">◻</button>
+    <div class="mkb3-fracDiv"></div>
+    <button type="button" class="mkb3-fracSlot" id="exprFracD">◻</button>
+  </div>
+  <div class="btnrow">
+    <button type="button" class="btn" id="exprFracOk">挿入</button>
+    <button type="button" class="btn ghost" id="exprFracCancel">やめる</button>
+  </div>
 </div>
 
 <script>
@@ -431,6 +528,197 @@ const KB = (()=>{
       input.addEventListener("focus", ()=>show(input,label));
     }
   };
+})();
+
+/* ============================================================
+   数字／文字式／関数キーボード（Mkb3）
+   1つの下部ドックパネルの中身を、答えの種類ごとに出し分ける。
+   ・数字キーボード：電卓配置の数字パッド＋分数（分子/分母）＋確定
+   ・文字式キーボード：数字パッド＋記号グリッド＋分数挿入ボタン（普通のキーボードと同じくライブ入力）
+   ・関数キーボード：y=ax／y=a/x を選び、数字パッドで係数を入力＋確定
+   ============================================================ */
+const Mkb3 = (()=>{
+  const CALC_KEYS = ["7","8","9","4","5","6","1","2","3","±","0","⌫"];
+  const el = document.getElementById("mkb3");
+  const hint = document.getElementById("mkb3hint");
+  const panels = {
+    num: document.getElementById("mkb3-num"),
+    expr: document.getElementById("mkb3-expr"),
+    func: document.getElementById("mkb3-func"),
+  };
+
+  function showPanel(mode, label){
+    Object.values(panels).forEach(p=>p.classList.remove("on"));
+    panels[mode].classList.add("on");
+    hint.textContent = label || "";
+    el.classList.remove("hidden");
+    document.body.classList.add("mkb3open");
+  }
+  function hide(){
+    el.classList.add("hidden");
+    document.body.classList.remove("mkb3open");
+    closeFracPopup();
+  }
+  document.getElementById("mkb3-close").addEventListener("click", hide);
+
+  /* ---------- 数字キーボード ---------- */
+  const numPad = document.getElementById("numPad");
+  const numSlotN = document.getElementById("numSlotN");
+  const numSlotD = document.getElementById("numSlotD");
+  const numOk = document.getElementById("numOk");
+  let numState = {n:"", d:"", nNeg:false, dNeg:false, active:"n", onConfirm:null};
+  function syncNum(){
+    numSlotN.textContent = (numState.nNeg?"−":"") + (numState.n||"◻");
+    numSlotD.textContent = (numState.dNeg?"−":"") + (numState.d||"◻");
+    numSlotN.setAttribute("aria-pressed", String(numState.active==="n"));
+    numSlotD.setAttribute("aria-pressed", String(numState.active==="d"));
+    numOk.disabled = !numState.n;
+  }
+  CALC_KEYS.forEach(k=>{
+    const b=document.createElement("button"); b.type="button"; b.textContent=k;
+    b.addEventListener("click", ()=>{
+      const key = numState.active;
+      if(k==="⌫") numState[key] = numState[key].slice(0,-1);
+      else if(k==="±") numState[key+"Neg"] = !numState[key+"Neg"];
+      else if(numState[key].length<6) numState[key] = (numState[key]+k).replace(/^0+(?=\d)/,"");
+      syncNum();
+    });
+    numPad.appendChild(b);
+  });
+  numSlotN.addEventListener("click", ()=>{ numState.active="n"; syncNum(); });
+  numSlotD.addEventListener("click", ()=>{ numState.active="d"; syncNum(); });
+  numOk.addEventListener("click", ()=>{
+    if(!numState.n) return;
+    const n = (numState.nNeg?"-":"")+numState.n;
+    const out = numState.d ? `${n}/${(numState.dNeg?"-":"")+numState.d}` : n;
+    const cb = numState.onConfirm; hide(); cb && cb(out);
+  });
+  function openNum(initialVal, label, onConfirm){
+    const parts = String(initialVal||"").split("/");
+    const parseOne = s=>{ const neg = s.startsWith("-"); return {v: neg?s.slice(1):s, neg}; };
+    const np = parseOne(parts[0]||""), dp = parts[1]!=null ? parseOne(parts[1]) : {v:"",neg:false};
+    numState = {n:np.v, d:dp.v, nNeg:np.neg, dNeg:dp.neg, active:"n", onConfirm};
+    syncNum();
+    showPanel("num", label);
+  }
+
+  /* ---------- 文字式キーボード（普通のキーボードと同じくライブ入力） ---------- */
+  const exprPad = document.getElementById("exprPad");
+  const exprSym = document.getElementById("exprSym");
+  const fracPopup = document.getElementById("mkb3-fracPopup");
+  const exprFracN = document.getElementById("exprFracN"), exprFracD = document.getElementById("exprFracD");
+  let exprTarget = null;
+  let fracState = {n:"", d:"", active:"n"};
+  function syncFracPopup(){
+    exprFracN.textContent = fracState.n||"◻"; exprFracD.textContent = fracState.d||"◻";
+    exprFracN.setAttribute("aria-pressed", String(fracState.active==="n"));
+    exprFracD.setAttribute("aria-pressed", String(fracState.active==="d"));
+  }
+  function closeFracPopup(){ fracPopup.classList.add("hidden"); }
+  function exprInsert(txt){
+    if(!exprTarget) return;
+    const t=exprTarget;
+    const s=t.selectionStart ?? t.value.length, e=t.selectionEnd ?? s;
+    t.value = t.value.slice(0,s)+txt+t.value.slice(e);
+    const p=s+txt.length;
+    try{ t.setSelectionRange(p,p); }catch(_){}
+    t.dispatchEvent(new Event("input",{bubbles:true}));
+  }
+  function exprBack(){
+    if(!exprTarget) return;
+    const t=exprTarget;
+    let s=t.selectionStart ?? t.value.length, e=t.selectionEnd ?? s;
+    if(s===e){ if(s===0) return; s=s-1; }
+    t.value = t.value.slice(0,s)+t.value.slice(e);
+    try{ t.setSelectionRange(s,s); }catch(_){}
+    t.dispatchEvent(new Event("input",{bubbles:true}));
+  }
+  function exprToggleSign(){
+    if(!exprTarget) return;
+    const t=exprTarget;
+    t.value = t.value.startsWith("-") ? t.value.slice(1) : "-"+t.value;
+    t.dispatchEvent(new Event("input",{bubbles:true}));
+  }
+  CALC_KEYS.forEach(k=>{
+    const b=document.createElement("button"); b.type="button"; b.textContent=k;
+    b.addEventListener("pointerdown", e=>e.preventDefault());
+    b.addEventListener("click", ()=>{
+      if(!fracPopup.classList.contains("hidden")){
+        const key=fracState.active;
+        if(k==="⌫") fracState[key]=fracState[key].slice(0,-1);
+        else if(k==="±") fracState[key] = fracState[key].startsWith("-") ? fracState[key].slice(1) : "-"+fracState[key];
+        else fracState[key]=fracState[key]+k;
+        syncFracPopup();
+        return;
+      }
+      if(k==="⌫") exprBack();
+      else if(k==="±") exprToggleSign();
+      else exprInsert(k);
+    });
+    exprPad.appendChild(b);
+  });
+  const SYM_LAYOUT = ["+","-","×","÷","a","b","c","x","y","z","n","m","r","π","(",")","<",">","≦","≧"];
+  SYM_LAYOUT.forEach(sym=>{
+    const b=document.createElement("button"); b.type="button"; b.textContent=sym;
+    if("abcxyznmr".includes(sym)) b.className="var";
+    else if("+-×÷".includes(sym)) b.className="op";
+    b.addEventListener("pointerdown", e=>e.preventDefault());
+    b.addEventListener("click", ()=> exprInsert(sym));
+    exprSym.appendChild(b);
+  });
+  document.getElementById("exprFracBtn").addEventListener("click", ()=>{
+    fracState = {n:"",d:"",active:"n"}; syncFracPopup();
+    fracPopup.classList.remove("hidden");
+  });
+  exprFracN.addEventListener("click", ()=>{ fracState.active="n"; syncFracPopup(); });
+  exprFracD.addEventListener("click", ()=>{ fracState.active="d"; syncFracPopup(); });
+  document.getElementById("exprFracOk").addEventListener("click", ()=>{
+    const n=fracState.n, d=fracState.d;
+    const txt = n&&d ? `(${n}/${d})` : n;
+    closeFracPopup();
+    if(txt) exprInsert(txt);
+  });
+  document.getElementById("exprFracCancel").addEventListener("click", closeFracPopup);
+  function attachExpr(input, label){
+    input.setAttribute("inputmode","none");
+    input.addEventListener("focus", ()=>{ exprTarget=input; showPanel("expr", label); });
+  }
+
+  /* ---------- 関数キーボード：y=ax／y=a/x を選び、数字パッドで係数を入力 ---------- */
+  const funcFormBtns = document.querySelectorAll('#mkb3-func .funcKB-formBtn');
+  const funcPreview = document.getElementById("funcPreview");
+  const funcPad = document.getElementById("funcPad");
+  const funcOk = document.getElementById("funcOk");
+  let funcState = {form:null, neg:false, digits:"", onConfirm:null};
+  function syncFunc(){
+    funcFormBtns.forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.form===funcState.form)));
+    funcPreview.innerHTML = funcPreviewHTML(funcState.form, funcState.neg, funcState.digits);
+    funcOk.disabled = !(funcState.form && funcState.digits);
+  }
+  funcFormBtns.forEach(b=>b.addEventListener("click", ()=>{ funcState.form=b.dataset.form; syncFunc(); }));
+  CALC_KEYS.forEach(k=>{
+    const b=document.createElement("button"); b.type="button"; b.textContent=k;
+    b.addEventListener("click", ()=>{
+      if(k==="⌫") funcState.digits = funcState.digits.slice(0,-1);
+      else if(k==="±") funcState.neg = !funcState.neg;
+      else if(funcState.digits.length<6) funcState.digits = (funcState.digits+k).replace(/^0+(?=\d)/,"");
+      syncFunc();
+    });
+    funcPad.appendChild(b);
+  });
+  funcOk.addEventListener("click", ()=>{
+    if(!funcState.form || !funcState.digits) return;
+    const out = funcState.form==="prop" ? `y=${funcState.neg?"-":""}${funcState.digits}x` : `y=${funcState.neg?"-":""}${funcState.digits}/x`;
+    const cb = funcState.onConfirm; hide(); cb && cb(out);
+  });
+  function openFunc(initialVal, label, onConfirm){
+    const p = parseFuncAnswer(initialVal);
+    funcState = {form:p?.form||null, neg:p?.neg||false, digits:p?.digits||"", onConfirm};
+    syncFunc();
+    showPanel("func", label);
+  }
+
+  return {hide, openNum, openFunc, attachExpr};
 })();
 
 /* ============================================================
@@ -1803,11 +2091,17 @@ function renderQ(q,qi){
       if(s.prompt) w.innerHTML=`<div style="margin-top:12px;font-size:15px"><span style="font-family:var(--mono);color:var(--ink-soft)">${s.lb}</span> ${esc(s.prompt)}</div>`;
       const row=document.createElement("div"); row.className="subq";
       if(!s.prompt) row.innerHTML=`<span class="lb">${s.lb}</span>`;
+      const label = `${q.no}${s.lb?" "+s.lb:""}`;
+      const onAnswer = val=>{ touch(qi); S.ans[keyOf(qi,si)]=val; save(); tick(); };
       if(s.funcKB){
         const holder=document.createElement("div");
-        mountFuncKBField(holder, S.ans[keyOf(qi,si)] ?? "", val=>{
-          touch(qi); S.ans[keyOf(qi,si)]=val; save(); tick();
-        });
+        mountFuncField(holder, S.ans[keyOf(qi,si)] ?? "", label, onAnswer);
+        row.appendChild(holder); w.appendChild(row); d.appendChild(w);
+        return;
+      }
+      if(s.mode==="num"){
+        const holder=document.createElement("div");
+        mountNumField(holder, S.ans[keyOf(qi,si)] ?? "", label, onAnswer);
         row.appendChild(holder); w.appendChild(row); d.appendChild(w);
         return;
       }
@@ -1815,7 +2109,8 @@ function renderQ(q,qi){
       inp.type="text"; inp.placeholder=s.ph||q.ph||""; inp.autocomplete="off"; inp.spellcheck=false;
       inp.value = S.ans[keyOf(qi,si)] ?? "";
       inp.oninput=()=>{ touch(qi); S.ans[keyOf(qi,si)]=inp.value; save(); tick(); };
-      KB.attach(inp, `${q.no}${s.lb?" "+s.lb:""}`);
+      // 座標(coord)はカンマが要るため、カンマのある従来の数式キーボードのまま。それ以外は文字式キーボード。
+      if(s.mode==="coord") KB.attach(inp, label); else Mkb3.attachExpr(inp, label);
       row.appendChild(inp); w.appendChild(row); d.appendChild(w);
     });
   }
@@ -1826,10 +2121,9 @@ function renderQ(q,qi){
 }
 
 /* ============================================================
-   関数キーボード（比例・反比例専用）：y=◻x／y=◻/x のどちらかを選び、
-   電卓配置の数字パッドで係数を入力する。分数はきちんと上下表記、符号は
-   分数の前に出す。確定した式は普通の文字列（例："y=-12/x"）として
-   S.ans に入るので、採点(gradeSub)は既存のまま変更なしで動く。
+   関数・数字キーボードの見た目ヘルパーと、出題画面内の入力欄マウント。
+   確定した値はどちらも普通の文字列（例："y=-12/x"・"3/4"）として S.ans に
+   入るので、採点(gradeSub)は既存のまま変更なし。
    ============================================================ */
 function funcPreviewHTML(form, neg, digits){
   const n = digits || "0";
@@ -1843,58 +2137,38 @@ function parseFuncAnswer(str){
   if(!m) return null;
   return {form: m[3]==="/x" ? "inv" : "prop", neg: !!m[1], digits: m[2]};
 }
-/** holder(空のdiv)に、確定済みなら結果表示＋編集ボタン、未確定ならキーボードを差し込む。 */
-function mountFuncKBField(holder, initialVal, onConfirm){
-  const showConfirmed = val=>{
-    const p = parseFuncAnswer(val);
-    holder.innerHTML = `<div class="funcKB-confirmed">
-        <span class="funcKB-confirmedEq">${p ? funcPreviewHTML(p.form,p.neg,p.digits) : esc(val)}</span>
-        <button type="button" class="btn ghost mini">編集する</button>
-      </div>`;
-    holder.querySelector("button").onclick = ()=>showEditor(val);
+function numValHTML(val){
+  if(!val) return "";
+  if(val.includes("/")){
+    const [n,d] = val.split("/");
+    return `<span class="fracStack"><span class="fracNum">${esc(n)}</span><span class="fracBar"></span><span class="fracDen">${esc(d)}</span></span>`;
+  }
+  return esc(val);
+}
+/** holder(空のdiv)に「タップして下から関数キーボードを開く」フィールドを差し込む。 */
+function mountFuncField(holder, initialVal, label, onConfirm){
+  const render = val=>{
+    holder.innerHTML = "";
+    const box = document.createElement("div");
+    box.className = "mkb3-field" + (val ? "" : " placeholder");
+    if(val){ const p=parseFuncAnswer(val); box.innerHTML = p ? funcPreviewHTML(p.form,p.neg,p.digits) : esc(val); }
+    else box.textContent = "タップして式を入力";
+    box.onclick = ()=> Mkb3.openFunc(val, label, v=>{ onConfirm(v); render(v); });
+    holder.appendChild(box);
   };
-  const showEditor = val=>{
-    const initial = parseFuncAnswer(val);
-    let form = initial?.form || null, neg = initial?.neg || false, digits = initial?.digits || "";
-    holder.innerHTML = `
-      <div class="funcKB">
-        <div class="funcKB-pad">
-          ${["7","8","9","4","5","6","1","2","3","±","0","⌫"].map(k=>`<button type="button" data-k="${k}">${k}</button>`).join("")}
-        </div>
-        <div class="funcKB-right">
-          <div class="funcKB-form">
-            <button type="button" class="funcKB-formBtn" data-form="prop">y = ◻<i class="mathx">x</i></button>
-            <button type="button" class="funcKB-formBtn" data-form="inv">y = ◻/<i class="mathx">x</i></button>
-          </div>
-          <div class="funcKB-preview"></div>
-          <button type="button" class="btn funcKB-ok" disabled>確定</button>
-        </div>
-      </div>`;
-    const formBtns = holder.querySelectorAll(".funcKB-formBtn");
-    const preview = holder.querySelector(".funcKB-preview");
-    const okBtn = holder.querySelector(".funcKB-ok");
-    const sync = ()=>{
-      formBtns.forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.form===form)));
-      preview.innerHTML = funcPreviewHTML(form, neg, digits);
-      okBtn.disabled = !(form && digits.length);
-    };
-    formBtns.forEach(b=>b.onclick=()=>{ form=b.dataset.form; sync(); });
-    holder.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{
-      const k=b.dataset.k;
-      if(k==="⌫") digits = digits.slice(0,-1);
-      else if(k==="±") neg = !neg;
-      else if(digits.length<6) digits = (digits+k).replace(/^0+(?=\d)/,"");
-      sync();
-    });
-    okBtn.onclick=()=>{
-      if(!form || !digits) return;
-      const out = form==="prop" ? `y=${neg?"-":""}${digits}x` : `y=${neg?"-":""}${digits}/x`;
-      onConfirm(out);
-      showConfirmed(out);
-    };
-    sync();
+  render(initialVal);
+}
+/** holder(空のdiv)に「タップして下から数字キーボードを開く」フィールドを差し込む。 */
+function mountNumField(holder, initialVal, label, onConfirm){
+  const render = val=>{
+    holder.innerHTML = "";
+    const box = document.createElement("div");
+    box.className = "mkb3-field" + (val ? "" : " placeholder");
+    if(val) box.innerHTML = numValHTML(val); else box.textContent = "タップして入力";
+    box.onclick = ()=> Mkb3.openNum(val, label, v=>{ onConfirm(v); render(v); });
+    holder.appendChild(box);
   };
-  if(initialVal) showConfirmed(initialVal); else showEditor("");
+  render(initialVal);
 }
 
 /* ボーナス（応用）問題。基本問題を全問正解したときだけ +1 点になる。 */
@@ -2224,13 +2498,6 @@ async function send(g){
     return "ok";
   }catch(e){ return "fail"; }
 }
-function csv(rows){
-  const head=["timestamp","student_id","quiz_id","q_no","raw_answer","is_correct","score","max_score","elapsed_ms"];
-  const q=v=>`"${String(v).replace(/"/g,'""')}"`;
-  const ts=new Date().toISOString();
-  return "﻿"+[head.join(",")].concat(rows.map(r=>[ts,S.sid,S.test.id,r.q_no,r.raw,r.ok,r.score,r.max,r.ms].map(q).join(","))).join("\n");
-}
-
 /* ============================================================
    結果画面
    ============================================================ */
@@ -2266,7 +2533,6 @@ function renderResult(g, auto, state){
     ${banner}
     <div id="rows"></div>
     <div class="foot">
-      <button class="btn ghost" id="csv">CSVを保存</button>
       <button class="btn ghost ${state==="fail"?"":"hidden"}" id="re">もう一度送信</button>
       <button class="btn ghost ${state==="practice"?"":"hidden"}" id="retry">🔁 もう一度挑戦する</button>
       <button class="btn" id="home">ホームへ</button>
@@ -2288,11 +2554,6 @@ function renderResult(g, auto, state){
     box.appendChild(d);
   });
   document.getElementById("home").onclick=()=>{ S.startedAt=0; renderHome(); };
-  document.getElementById("csv").onclick=()=>{
-    const b=new Blob([csv(g.rows)],{type:"text/csv"});
-    const a=document.createElement("a"); a.href=URL.createObjectURL(b);
-    a.download=`${S.test.id}_${S.sid}.csv`; a.click(); URL.revokeObjectURL(a.href);
-  };
   const re=document.getElementById("re");
   if(re) re.onclick=async()=>{
     re.disabled=true; re.textContent="送信中…";
