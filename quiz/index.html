@@ -230,17 +230,30 @@ svg.fig{width:100%;max-width:360px;height:auto;background:#fff}
 .mkb3-fracDiv{width:96px;height:2px;background:var(--ink);margin:2px 0}
 .mkb3-numRight .btn{width:100%}
 
-/* 文字式キーボード（数字パッド＋記号グリッド＋分数トグル） */
+/* 文字式キーボード（数字パッド＋記号グリッド＋右側に実際の表示） */
 .mkb3-sym{display:grid;grid-template-columns:repeat(5,38px);grid-auto-rows:36px;gap:4px;flex:none}
 .mkb3-sym button{font-family:var(--mono);font-size:14px;background:#fff;border:1px solid var(--rule);padding:0}
 .mkb3-sym button.var{color:var(--ai);font-style:italic}
 .mkb3-sym button.op{color:var(--ai)}
 .mkb3-sym button:active{background:var(--ai-weak);border-color:var(--ai)}
-.mkb3-fracCol{flex:none;display:flex;flex-direction:column;gap:6px;align-items:center;width:72px}
-.mkb3-fracCol .mkb3-fracRow{display:none}
-.mkb3-fracCol .mkb3-fracRow.on{display:flex}
-.mkb3-fracCol .mkb3-fracSlot{width:64px;font-size:15px;padding:6px}
-.mkb3-fracCol .mkb3-fracDiv{width:64px}
+.mkb3-exprRight{flex:1;min-width:180px;display:flex;flex-direction:column;gap:6px}
+.mkb3-exprRight .mkb3-fracBtn[aria-pressed=true]{background:var(--ai);color:#fff;border-color:var(--ai)}
+.mkb3-exprDisplay{
+  flex:1;min-height:52px;background:#fff;border:1px solid var(--rule);padding:8px 10px;
+  font-family:var(--mono);font-size:17px;display:flex;flex-wrap:wrap;align-items:center;
+  line-height:1.3;cursor:text;
+}
+.mkb3-exprDisplay .ch{cursor:pointer;white-space:pre}
+.mkb3-exprDisplay .fracStack{cursor:pointer;margin:0 1px}
+.mkb3-cursor{display:inline-block;width:1px;height:1.15em;background:var(--ink);vertical-align:middle;animation:mkb3Blink 1s step-end infinite}
+@keyframes mkb3Blink{50%{opacity:0}}
+.mkb3-fracEdit{
+  display:inline-flex;align-items:center;border:2px solid var(--ai);border-radius:3px;
+  padding:1px 4px;margin:0 1px;vertical-align:middle;
+}
+.mkb3-fracEdit .fracStack{margin:0}
+.mkb3-fracEdit .fracNum,.mkb3-fracEdit .fracDen{cursor:pointer;padding:0 3px}
+.mkb3-fracEdit .fracNum[aria-pressed=true],.mkb3-fracEdit .fracDen[aria-pressed=true]{background:var(--ai-weak)}
 
 /* 関数キーボード（左＝式を選ぶ、右＝数字入力） */
 .mkb3-funcRight{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
@@ -349,17 +362,14 @@ body.kbopen{padding-bottom:230px}
     </div>
   </div>
 
-  <!-- 文字式キーボード：「分数」ボタンON中は数字パッドが分子/分母へ入る。OFFにすると式へ挿入 -->
+  <!-- 文字式キーボード：右側に実際の表示（点滅カーソル・タップで編集位置移動）。
+       「分数」を押すとカーソル位置に青枠の分子/分母入力がその場で出て、確定でまとまる。 -->
   <div id="mkb3-expr" class="mkb3-panel">
     <div class="mkb3-pad" id="exprPad"></div>
     <div class="mkb3-sym" id="exprSym"></div>
-    <div class="mkb3-fracCol">
+    <div class="mkb3-exprRight">
       <button type="button" class="mkb3-fracBtn" id="exprFracBtn">分数</button>
-      <div class="mkb3-fracRow" id="exprFracRow">
-        <button type="button" class="mkb3-fracSlot" id="exprFracN">◻</button>
-        <div class="mkb3-fracDiv"></div>
-        <button type="button" class="mkb3-fracSlot" id="exprFracD">◻</button>
-      </div>
+      <div class="mkb3-exprDisplay" id="exprDisplay"></div>
     </div>
   </div>
 
@@ -651,58 +661,110 @@ const Mkb3 = (()=>{
     showPanel("num", label);
   }
 
-  /* ---------- 文字式キーボード（普通のキーボードと同じくライブ入力）
-     「分数」トグルON中は数字パッドが分子/分母へ入る。もう一度押すとOFFになり、
-     両方埋まっていれば式にその場で挿入される。 ---------- */
+  /* ---------- 文字式キーボード：右側に実際の表示（点滅カーソル付き）を出す。
+     cursorPos で編集位置を自前管理し、表示中の好きな文字をタップするとそこへ移動できる。
+     「分数」を押すとカーソル位置に青枠の分子/分母入力がその場に出て（ボタンは「確定」に
+     変わる）、確定すると式にまとまってカーソルはその直後へ進む。 ---------- */
   const exprPad = document.getElementById("exprPad");
   const exprSym = document.getElementById("exprSym");
   const exprFracBtn = document.getElementById("exprFracBtn");
-  const exprFracRow = document.getElementById("exprFracRow");
-  const exprFracN = document.getElementById("exprFracN"), exprFracD = document.getElementById("exprFracD");
+  const exprDisplay = document.getElementById("exprDisplay");
   let exprTarget = null;
-  let fracState = {n:"", d:"", active:"n", on:false};
-  function syncExprFrac(){
-    exprFracBtn.setAttribute("aria-pressed", String(fracState.on));
-    exprFracRow.classList.toggle("on", fracState.on);
-    exprFracN.textContent = fracState.n||"◻"; exprFracD.textContent = fracState.d||"◻";
-    exprFracN.setAttribute("aria-pressed", String(fracState.active==="n"));
-    exprFracD.setAttribute("aria-pressed", String(fracState.active==="d"));
+  let cursorPos = 0;
+  let fracEdit = null; // null、または {n,d,nNeg,dNeg,active} で分数を編集中
+  function syncExprFracBtn(){
+    exprFracBtn.textContent = fracEdit ? "確定" : "分数";
+    exprFracBtn.setAttribute("aria-pressed", String(!!fracEdit));
   }
-  function resetExprFrac(){ fracState = {n:"",d:"",active:"n",on:false}; syncExprFrac(); }
+  function resetExprFrac(){ fracEdit = null; syncExprFracBtn(); }
+  /** value の一部分（分数パターンは上下表記にまとめつつ）をタップ可能な文字単位で描く。 */
+  function renderExprSegments(container, str, baseOffset){
+    const re = /(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?|x)/g;
+    let last=0, m;
+    const flushChars = (text, start)=>{
+      [...text].forEach((ch,i)=>{
+        const s=document.createElement("span"); s.className="ch"; s.textContent=ch;
+        const pos = baseOffset+start+i+1;
+        s.onclick=(e)=>{ e.stopPropagation(); if(!fracEdit){ cursorPos=pos; renderExprDisplay(); } };
+        container.appendChild(s);
+      });
+    };
+    while((m = re.exec(str))){
+      if(m.index>last) flushChars(str.slice(last,m.index), last);
+      const fs=document.createElement("span");
+      fs.innerHTML = fractionizeHTML(m[0]);
+      const endPos = baseOffset+m.index+m[0].length;
+      fs.onclick=(e)=>{ e.stopPropagation(); if(!fracEdit){ cursorPos=endPos; renderExprDisplay(); } };
+      container.appendChild(fs);
+      last = m.index+m[0].length;
+    }
+    if(last<str.length) flushChars(str.slice(last), last);
+  }
+  function fracEditEl(){
+    const box=document.createElement("span"); box.className="mkb3-fracEdit";
+    const stack=document.createElement("span"); stack.className="fracStack";
+    const n=document.createElement("span"); n.className="fracNum"; n.textContent=(fracEdit.nNeg?"−":"")+(fracEdit.n||"◻");
+    n.setAttribute("aria-pressed", String(fracEdit.active==="n"));
+    n.onclick=(e)=>{ e.stopPropagation(); fracEdit.active="n"; renderExprDisplay(); };
+    const bar=document.createElement("span"); bar.className="fracBar";
+    const d=document.createElement("span"); d.className="fracDen"; d.textContent=(fracEdit.dNeg?"−":"")+(fracEdit.d||"◻");
+    d.setAttribute("aria-pressed", String(fracEdit.active==="d"));
+    d.onclick=(e)=>{ e.stopPropagation(); fracEdit.active="d"; renderExprDisplay(); };
+    stack.appendChild(n); stack.appendChild(bar); stack.appendChild(d);
+    box.appendChild(stack);
+    return box;
+  }
+  function renderExprDisplay(){
+    if(!exprDisplay) return;
+    exprDisplay.innerHTML = "";
+    const val = exprTarget ? exprTarget.value : "";
+    const before = val.slice(0, cursorPos), after = val.slice(cursorPos);
+    renderExprSegments(exprDisplay, before, 0);
+    if(fracEdit) exprDisplay.appendChild(fracEditEl());
+    else { const c=document.createElement("span"); c.className="mkb3-cursor"; exprDisplay.appendChild(c); }
+    renderExprSegments(exprDisplay, after, cursorPos);
+  }
+  exprDisplay.addEventListener("click", e=>{
+    if(e.target===exprDisplay && !fracEdit && exprTarget){ cursorPos = exprTarget.value.length; renderExprDisplay(); }
+  });
   function exprInsert(txt){
     if(!exprTarget) return;
     const t=exprTarget;
-    const s=t.selectionStart ?? t.value.length, e=t.selectionEnd ?? s;
-    t.value = t.value.slice(0,s)+txt+t.value.slice(e);
-    const p=s+txt.length;
-    try{ t.setSelectionRange(p,p); }catch(_){}
+    t.value = t.value.slice(0,cursorPos)+txt+t.value.slice(cursorPos);
+    cursorPos += txt.length;
+    try{ t.setSelectionRange(cursorPos,cursorPos); }catch(_){}
     t.dispatchEvent(new Event("input",{bubbles:true}));
+    renderExprDisplay();
   }
   function exprBack(){
-    if(!exprTarget) return;
+    if(!exprTarget || cursorPos===0) return;
     const t=exprTarget;
-    let s=t.selectionStart ?? t.value.length, e=t.selectionEnd ?? s;
-    if(s===e){ if(s===0) return; s=s-1; }
-    t.value = t.value.slice(0,s)+t.value.slice(e);
-    try{ t.setSelectionRange(s,s); }catch(_){}
+    t.value = t.value.slice(0,cursorPos-1)+t.value.slice(cursorPos);
+    cursorPos -= 1;
+    try{ t.setSelectionRange(cursorPos,cursorPos); }catch(_){}
     t.dispatchEvent(new Event("input",{bubbles:true}));
+    renderExprDisplay();
   }
   function exprToggleSign(){
     if(!exprTarget) return;
     const t=exprTarget;
-    t.value = t.value.startsWith("-") ? t.value.slice(1) : "-"+t.value;
+    const had = t.value.startsWith("-");
+    t.value = had ? t.value.slice(1) : "-"+t.value;
+    cursorPos = Math.max(0, cursorPos + (had?-1:1));
+    try{ t.setSelectionRange(cursorPos,cursorPos); }catch(_){}
     t.dispatchEvent(new Event("input",{bubbles:true}));
+    renderExprDisplay();
   }
   CALC_KEYS.forEach(k=>{
     const b=document.createElement("button"); b.type="button"; b.textContent=k;
     b.addEventListener("pointerdown", e=>e.preventDefault());
     b.addEventListener("click", ()=>{
-      if(fracState.on){
-        const key=fracState.active;
-        if(k==="⌫") fracState[key]=fracState[key].slice(0,-1);
-        else if(k==="±") fracState[key] = fracState[key].startsWith("-") ? fracState[key].slice(1) : "-"+fracState[key];
-        else fracState[key]=fracState[key]+k;
-        syncExprFrac();
+      if(fracEdit){
+        const key=fracEdit.active;
+        if(k==="⌫") fracEdit[key]=fracEdit[key].slice(0,-1);
+        else if(k==="±") fracEdit[key+"Neg"]=!fracEdit[key+"Neg"];
+        else fracEdit[key]=fracEdit[key]+k;
+        renderExprDisplay();
         return;
       }
       if(k==="⌫") exprBack();
@@ -711,30 +773,35 @@ const Mkb3 = (()=>{
     });
     exprPad.appendChild(b);
   });
-  const SYM_LAYOUT = ["+","-","×","÷","a","b","c","x","y","z","n","m","r","π","(",")","<",">","≦","≧"];
+  const SYM_LAYOUT = ["+","-","×","÷","=","a","b","c","x","y","z","n","m","r","π","(",")","<",">","≦","≧","."];
   SYM_LAYOUT.forEach(sym=>{
     const b=document.createElement("button"); b.type="button"; b.textContent=sym;
     if("abcxyznmr".includes(sym)) b.className="var";
-    else if("+-×÷".includes(sym)) b.className="op";
+    else if("+-×÷=".includes(sym)) b.className="op";
     b.addEventListener("pointerdown", e=>e.preventDefault());
     b.addEventListener("click", ()=> exprInsert(sym));
     exprSym.appendChild(b);
   });
   exprFracBtn.addEventListener("click", ()=>{
-    if(fracState.on){
-      const {n,d} = fracState;
-      resetExprFrac();
-      if(n && d) exprInsert(`(${n}/${d})`);
+    if(fracEdit){
+      const {n,d,nNeg,dNeg} = fracEdit;
+      fracEdit = null; syncExprFracBtn();
+      if(n && d) exprInsert(`${nNeg?"-":""}${n}/${dNeg?"-":""}${d}`);
+      else renderExprDisplay();
     } else {
-      fracState = {n:"",d:"",active:"n",on:true};
-      syncExprFrac();
+      fracEdit = {n:"",d:"",nNeg:false,dNeg:false,active:"n"};
+      syncExprFracBtn();
+      renderExprDisplay();
     }
   });
-  exprFracN.addEventListener("click", ()=>{ fracState.active="n"; syncExprFrac(); });
-  exprFracD.addEventListener("click", ()=>{ fracState.active="d"; syncExprFrac(); });
   function attachExpr(input, label){
     input.setAttribute("inputmode","none");
-    input.addEventListener("focus", ()=>{ exprTarget=input; showPanel("expr", label); });
+    input.addEventListener("focus", ()=>{
+      exprTarget=input; cursorPos=input.value.length; fracEdit=null;
+      syncExprFracBtn();
+      showPanel("expr", label);
+      renderExprDisplay();
+    });
   }
 
   /* ---------- 関数キーボード：y=ax／y=a/x を選び、数字パッドで係数を入力 ---------- */
