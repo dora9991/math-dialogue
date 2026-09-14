@@ -143,6 +143,32 @@ svg.fig{width:100%;max-width:360px;height:auto;background:#fff}
 .foot{display:flex;gap:8px;margin-top:16px}
 .foot button{flex:1}
 .hidden{display:none!important}
+
+/* 出題画面：問題＋手書きメモの2カラム */
+.testWide{width:100vw;position:relative;left:50%;transform:translateX(-50%);max-width:1320px;padding:0 16px 96px}
+.testLayout{display:flex;gap:20px;align-items:flex-start}
+.testLayout.swapped{flex-direction:row-reverse}
+.qCol{flex:1 1 52%;min-width:0}
+.scratchCol{flex:1 1 48%;min-width:0;position:sticky;top:64px}
+.scratchHead{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);margin:14px 0 6px}
+.scratchCanvasWrap{background:#fff;border:1px solid var(--rule)}
+#scratchCanvas{display:block;width:100%;height:min(72vh,640px);touch-action:none;cursor:crosshair}
+.scratchToolbar{
+  position:fixed;z-index:30;display:flex;align-items:center;gap:5px;
+  background:#fff;border:1px solid var(--rule);border-radius:4px;padding:6px;
+  box-shadow:0 3px 14px rgba(22,32,46,.16);
+}
+.scratchToolbar .grip{cursor:grab;padding:4px 6px;color:var(--ink-soft);font-size:15px;user-select:none;touch-action:none}
+.scratchToolbar .grip:active{cursor:grabbing}
+.scratchToolbar button{font-size:13px;padding:7px 10px;background:#fff;border:1px solid var(--rule);white-space:nowrap}
+.scratchToolbar button[aria-pressed=true]{background:var(--ai);border-color:var(--ai);color:#fff}
+.scratchToolbar button:disabled{opacity:.4;cursor:not-allowed}
+.scratchToolbar .sep{width:1px;align-self:stretch;background:var(--rule);margin:0 2px}
+@media (max-width:860px){
+  .testLayout,.testLayout.swapped{flex-direction:column}
+  .scratchCol{position:static;width:100%}
+  #scratchCanvas{height:340px}
+}
 /* 数式キーボード */
 #kb{
   position:fixed;left:0;right:0;bottom:0;z-index:60;
@@ -192,6 +218,7 @@ body.kbopen{padding-bottom:230px}
 .idle-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .idle-chips button{font-family:var(--mono);font-size:15px;padding:9px 16px;background:#fff;border:1px solid var(--rule)}
 .idle-chips button:active{background:var(--ai-weak);border-color:var(--ai)}
+.idle-chips button[aria-pressed=true]{background:var(--ai);border-color:var(--ai);color:#fff}
 .idle-chips button.done{background:var(--ok-weak);border-color:var(--ok);color:var(--ok)}
 
 /* 60秒計算チャレンジ：押し合いバトル */
@@ -929,17 +956,19 @@ function idleCardHTML(quizId, label){
   const hasLesson = CH.some(x=>x.id===quizId);
   const appliedUrl = `${APPLIED_BASE}/challenge.html?set=${encodeURIComponent(quizId)}`;
   return `
-  <div class="card" id="idle-${quizId}">
+  <div class="card" id="idle-${quizId}" data-label="${esc(label)}">
     <h2>🎉 授業が開始されました</h2>
-    <div class="hint">今日の学習時間を記録しよう（${esc(label)}）</div>
-    <div class="idle-chips" id="study-mins-${quizId}">
-      ${[5,10,15,20,30].map(m=>`<button type="button" data-mins="${m}" aria-pressed="false">${m}分</button>`).join("")}
-      <input type="number" id="study-custom-${quizId}" placeholder="その他" min="1" max="180" style="width:80px">
+    <div id="study-form-${quizId}">
+      <div class="hint">今日の学習時間を記録しよう（${esc(label)}）</div>
+      <div class="idle-chips" id="study-mins-${quizId}">
+        ${[0,5,10,15,20,30].map(m=>`<button type="button" data-mins="${m}" aria-pressed="false">${m}分</button>`).join("")}
+        <input type="number" id="study-custom-${quizId}" placeholder="その他" min="0" max="180" style="width:80px">
+      </div>
+      <label class="f" style="margin-top:12px">家庭学習で頑張ったこと（任意）</label>
+      <textarea id="study-note-${quizId}" placeholder="例：応用問題を3問解いた／教科書を読み直した など"></textarea>
+      <button class="btn" id="study-submit-${quizId}" style="width:100%;margin-top:8px">記録する</button>
+      <div class="hint" id="study-msg-${quizId}" style="margin-top:6px;margin-bottom:0"></div>
     </div>
-    <label class="f" style="margin-top:12px">家庭学習で頑張ったこと（任意）</label>
-    <textarea id="study-note-${quizId}" placeholder="例：応用問題を3問解いた／教科書を読み直した など"></textarea>
-    <button class="btn" id="study-submit-${quizId}" style="width:100%;margin-top:8px">記録する</button>
-    <div class="hint" id="study-msg-${quizId}" style="margin-top:6px;margin-bottom:0"></div>
     <div class="foot" style="margin-top:14px">
       ${hasLesson ? `<a class="btn ghost" style="text-decoration:none;text-align:center;flex:1" href="${appliedUrl}" target="_blank" rel="noopener">🎯 応用問題に挑戦</a>` : ""}
       <button class="btn ghost" id="idle-record-${quizId}" style="flex:1">📋 記録を見る</button>
@@ -964,14 +993,26 @@ function wireIdleCard(quizId){
     const pressed = chipsBox.querySelector('[aria-pressed="true"]');
     const mins = customEl.value ? +customEl.value : (pressed ? +pressed.dataset.mins : null);
     const msgEl = document.getElementById(`study-msg-${quizId}`);
-    if(!mins || mins<1){ if(msgEl) msgEl.textContent = "学習時間を選ぶか入力してください。"; return; }
+    if(mins==null || mins<0){ if(msgEl) msgEl.textContent = "学習時間を選ぶか入力してください。"; return; }
     const note = document.getElementById(`study-note-${quizId}`).value;
     const btn = document.getElementById(`study-submit-${quizId}`);
     btn.disabled = true;
     try{
       const r = await Quiz.rpc("quiz_study_time_submit", {p_account_id:S.sid, p_quiz_id:quizId, p_minutes:mins, p_note:note});
-      if(r && r.ok){ if(msgEl) msgEl.textContent = `${mins}分、記録したよ！`; }
-      else if(msgEl) msgEl.textContent = "記録できませんでした。もう一度お試しください。";
+      if(r && r.ok){
+        const formEl = document.getElementById(`study-form-${quizId}`);
+        if(formEl) formEl.innerHTML = `
+          <div class="notice ok"><b>✅ 入力しました！</b><br>${mins}分、記録したよ。</div>
+          <button class="btn ghost" id="study-redo-${quizId}" style="width:100%;margin-top:8px">入力し直す</button>`;
+        const redoBtn = document.getElementById(`study-redo-${quizId}`);
+        if(redoBtn) redoBtn.onclick = ()=>{
+          const box2 = document.getElementById(`idle-${quizId}`);
+          if(box2) box2.outerHTML = idleCardHTML(quizId, box2.dataset.label||"");
+          wireIdleCard(quizId);
+        };
+        return;
+      }
+      if(msgEl) msgEl.textContent = "記録できませんでした。もう一度お試しください。";
     }catch(e){ if(msgEl) msgEl.textContent = "通信エラーです。"; }
     btn.disabled = false;
   };
@@ -1502,6 +1543,10 @@ function progress(){
 }
 function touch(qi){ if(!S.qStart[qi]) S.qStart[qi]=Date.now(); }
 
+let scratchSwapped = false;      // 問題／手書きメモの左右入れ替え（セッション中だけ記憶）
+let scratchToolbarPos = null;    // 手書きツールバーのドラッグ位置（同上）
+let scratchResizeHandler = null; // 直前のテスト画面のresizeリスナー（張り替え時に解除する）
+
 function renderTest(){
   KB.hide();
   const t=S.test;
@@ -1510,16 +1555,35 @@ function renderTest(){
       <span class="who">${esc(accountLabel(S.sid))}</span>
       ${S.practice ? `<span class="badge" style="border-color:#c98a2b;color:#8a5a12">練習</span>` : ""}
       <span style="font-size:13px;color:var(--ink-soft)">${t.no} ${esc(t.name)}</span>
+      <button type="button" class="btn ghost mini" id="swapSides" title="問題と手書きメモの左右を入れ替え" style="margin-left:8px">⇄ 入れ替え</button>
       <span class="tm" id="tm">--:--</span>
     </div>
     <div class="prog"><i id="pg"></i></div>
-    <div id="qs"></div>
-    ${S.practice
-      ? `<div class="notice">これは練習（やり直し）です。結果は保存・送信されません。何度でも挑戦できます。</div>`
-      : `<div class="notice">解答は入力するたびにこの端末に保存されます。送信は最後に1回だけです。</div>`}
-    <div class="foot">
-      <button class="btn ghost" id="back">中断してもどる</button>
-      <button class="btn" id="sb">解答を提出する</button>
+    <div class="testWide">
+      <div class="testLayout" id="testLayout">
+        <div class="qCol" id="qCol">
+          <div id="qs"></div>
+        </div>
+        <div class="scratchCol" id="scratchCol">
+          <div class="scratchHead">✏️ 手書きメモ<span class="pill">採点対象外・この端末だけ</span></div>
+          <div class="scratchCanvasWrap"><canvas id="scratchCanvas"></canvas></div>
+        </div>
+      </div>
+      ${S.practice
+        ? `<div class="notice">これは練習（やり直し）です。結果は保存・送信されません。何度でも挑戦できます。</div>`
+        : `<div class="notice">解答は入力するたびにこの端末に保存されます。送信は最後に1回だけです。</div>`}
+      <div class="foot">
+        <button class="btn ghost" id="back">中断してもどる</button>
+        <button class="btn" id="sb">解答を提出する</button>
+      </div>
+    </div>
+    <div class="scratchToolbar" id="scratchToolbar">
+      <span class="grip" id="scratchGrip" title="ドラッグで移動">⠿⠿</span>
+      <button type="button" data-tool="pen" aria-pressed="true">✏️ ペン</button>
+      <button type="button" data-tool="eraser" aria-pressed="false">🧹 消しゴム</button>
+      <span class="sep"></span>
+      <button type="button" id="scUndo" disabled>↶ 戻る</button>
+      <button type="button" id="scRedo" disabled>↷ 進む</button>
     </div>
   `;
   const box=document.getElementById("qs");
@@ -1531,6 +1595,156 @@ function renderTest(){
     const msg = S.practice ? "中断してホームにもどりますか？" : "中断してホームにもどりますか？（解答はこの端末に残ります）";
     if(confirm(msg)){ clearInterval(S.timer); renderHome(); }
   };
+
+  const layout = document.getElementById("testLayout");
+  const applySwap = ()=> layout.classList.toggle("swapped", scratchSwapped);
+  applySwap();
+  document.getElementById("swapSides").onclick = ()=>{ scratchSwapped = !scratchSwapped; applySwap(); };
+
+  mountScratchPad(document.getElementById("scratchCanvas"));
+  wireScratchToolbar();
+}
+
+/* --- 手書きメモ（採点対象外の下書き欄。ストロークはこの端末のメモリ上だけに置き、送信・保存はしない） --- */
+function mountScratchPad(canvas){
+  const ctx = canvas.getContext("2d");
+  let strokes = [];          // 確定したストローク（1本＝消しゴムで消せる1つの「オブジェクト」）
+  let undoStack = [], redoStack = [];
+  let tool = "pen";
+  let curPts = null;         // 描いている最中のストローク
+  let dpr = 1, cw = 0, ch = 0;
+
+  function resize(){
+    const r = canvas.getBoundingClientRect();
+    dpr = window.devicePixelRatio || 1;
+    cw = Math.max(1, r.width); ch = Math.max(1, r.height);
+    canvas.width = Math.round(cw*dpr); canvas.height = Math.round(ch*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    redraw();
+  }
+  function redraw(){
+    ctx.clearRect(0,0,cw,ch);
+    ctx.strokeStyle = "#16202e"; ctx.lineWidth = 1.6; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    for(const s of strokes) drawStroke(s);
+  }
+  function drawStroke(s){
+    if(s.length<2){ if(s.length===1){ ctx.beginPath(); ctx.arc(s[0].x,s[0].y,0.8,0,7); ctx.fill(); } return; }
+    ctx.beginPath(); ctx.moveTo(s[0].x,s[0].y);
+    for(let i=1;i<s.length;i++) ctx.lineTo(s[i].x,s[i].y);
+    ctx.stroke();
+  }
+  function snapshot(){
+    undoStack.push(strokes.map(s=>s.slice()));
+    if(undoStack.length>60) undoStack.shift();
+    redoStack = [];
+    syncButtons();
+  }
+  function syncButtons(){
+    const u=document.getElementById("scUndo"), r=document.getElementById("scRedo");
+    if(u) u.disabled = undoStack.length===0;
+    if(r) r.disabled = redoStack.length===0;
+  }
+  function ptOf(e){
+    const r = canvas.getBoundingClientRect();
+    return {x:e.clientX-r.left, y:e.clientY-r.top};
+  }
+  function distToSeg(p,a,b){
+    const dx=b.x-a.x, dy=b.y-a.y; const len2=dx*dx+dy*dy;
+    let t = len2>0 ? ((p.x-a.x)*dx+(p.y-a.y)*dy)/len2 : 0;
+    t = Math.max(0,Math.min(1,t));
+    const cx=a.x+t*dx, cy=a.y+t*dy;
+    return Math.hypot(p.x-cx,p.y-cy);
+  }
+  function hitStroke(p){
+    for(let i=strokes.length-1;i>=0;i--){
+      const s=strokes[i];
+      if(s.length===1){ if(Math.hypot(p.x-s[0].x,p.y-s[0].y)<10) return i; continue; }
+      for(let j=0;j<s.length-1;j++) if(distToSeg(p,s[j],s[j+1])<10) return i;
+    }
+    return -1;
+  }
+  function eraseAt(p){
+    const i = hitStroke(p);
+    if(i<0) return;
+    snapshot();
+    strokes.splice(i,1);
+    redraw();
+  }
+
+  let dragging=false;
+  canvas.addEventListener("pointerdown",e=>{
+    e.preventDefault(); canvas.setPointerCapture(e.pointerId); dragging=true;
+    const p=ptOf(e);
+    if(tool==="eraser"){ eraseAt(p); return; }
+    curPts=[p];
+  });
+  canvas.addEventListener("pointermove",e=>{
+    if(!dragging) return;
+    const p=ptOf(e);
+    if(tool==="eraser"){ eraseAt(p); return; }
+    if(!curPts) return;
+    curPts.push(p); redraw(); drawStroke(curPts);
+  });
+  const end=()=>{
+    if(!dragging) return; dragging=false;
+    if(tool==="pen" && curPts){ snapshot(); strokes.push(curPts); curPts=null; redraw(); }
+  };
+  canvas.addEventListener("pointerup",end);
+  canvas.addEventListener("pointercancel",end);
+
+  if(scratchResizeHandler) window.removeEventListener("resize", scratchResizeHandler);
+  scratchResizeHandler = resize;
+  window.addEventListener("resize", scratchResizeHandler);
+  resize();
+
+  document.getElementById("scUndo").onclick = ()=>{
+    if(!undoStack.length) return;
+    redoStack.push(strokes.map(s=>s.slice()));
+    strokes = undoStack.pop();
+    redraw(); syncButtons();
+  };
+  document.getElementById("scRedo").onclick = ()=>{
+    if(!redoStack.length) return;
+    undoStack.push(strokes.map(s=>s.slice()));
+    strokes = redoStack.pop();
+    redraw(); syncButtons();
+  };
+  document.querySelectorAll('#scratchToolbar [data-tool]').forEach(b=>{
+    b.onclick = ()=>{
+      tool = b.dataset.tool;
+      document.querySelectorAll('#scratchToolbar [data-tool]').forEach(x=>x.setAttribute("aria-pressed", String(x===b)));
+      canvas.style.cursor = tool==="eraser" ? "cell" : "crosshair";
+    };
+  });
+}
+
+/* --- 手書きツールバー：スクロールしても常に見える固定表示・ドラッグで移動可 --- */
+function wireScratchToolbar(){
+  const bar = document.getElementById("scratchToolbar");
+  const grip = document.getElementById("scratchGrip");
+  const place = ()=>{
+    if(scratchToolbarPos){ bar.style.left=scratchToolbarPos.x+"px"; bar.style.top=scratchToolbarPos.y+"px"; return; }
+    const col = document.getElementById("scratchCol");
+    const r = col ? col.getBoundingClientRect() : {right:window.innerWidth-16, top:70};
+    bar.style.left = Math.max(8, r.right - bar.offsetWidth - 8) + "px";
+    bar.style.top = "70px";
+  };
+  place();
+  let dragging=false, sx=0, sy=0, ox=0, oy=0;
+  grip.addEventListener("pointerdown",e=>{
+    e.preventDefault(); grip.setPointerCapture(e.pointerId); dragging=true;
+    sx=e.clientX; sy=e.clientY;
+    const r=bar.getBoundingClientRect(); ox=r.left; oy=r.top;
+  });
+  grip.addEventListener("pointermove",e=>{
+    if(!dragging) return;
+    const nx = Math.min(Math.max(4, ox+(e.clientX-sx)), window.innerWidth - bar.offsetWidth - 4);
+    const ny = Math.min(Math.max(4, oy+(e.clientY-sy)), window.innerHeight - bar.offsetHeight - 4);
+    bar.style.left = nx+"px"; bar.style.top = ny+"px";
+    scratchToolbarPos = {x:nx, y:ny};
+  });
+  const stop=()=>{ dragging=false; };
+  grip.addEventListener("pointerup",stop); grip.addEventListener("pointercancel",stop);
 }
 
 function renderQ(q,qi){
@@ -1561,6 +1775,15 @@ function renderQ(q,qi){
       if(s.prompt) w.innerHTML=`<div style="margin-top:12px;font-size:15px"><span style="font-family:var(--mono);color:var(--ink-soft)">${s.lb}</span> ${esc(s.prompt)}</div>`;
       const row=document.createElement("div"); row.className="subq";
       if(!s.prompt) row.innerHTML=`<span class="lb">${s.lb}</span>`;
+      if(s.select){
+        const sel=document.createElement("select");
+        const cur = S.ans[keyOf(qi,si)] ?? "";
+        sel.innerHTML = `<option value="" disabled ${cur?"":"selected"}>選んでください</option>`
+          + s.select.map(opt=>`<option value="${esc(opt)}" ${opt===cur?"selected":""}>${esc(opt)}</option>`).join("");
+        sel.onchange=()=>{ touch(qi); S.ans[keyOf(qi,si)]=sel.value; save(); tick(); };
+        row.appendChild(sel); w.appendChild(row); d.appendChild(w);
+        return;
+      }
       const inp=document.createElement("input");
       inp.type="text"; inp.placeholder=s.ph||q.ph||""; inp.autocomplete="off"; inp.spellcheck=false;
       inp.value = S.ans[keyOf(qi,si)] ?? "";
