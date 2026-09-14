@@ -604,7 +604,7 @@ const Mkb3 = (()=>{
   function syncNum(){
     numFracToggle.setAttribute("aria-pressed", String(numState.frac));
     numFracRow.classList.toggle("off", !numState.frac);
-    numSlotN.textContent = (numState.nNeg?"−":"") + (numState.n||"◻");
+    numSlotN.textContent = (numState.nNeg?"−":"") + (numState.n || (numState.frac ? "◻" : ""));
     numSlotD.textContent = (numState.dNeg?"−":"") + (numState.d||"◻");
     numSlotN.setAttribute("aria-pressed", String(numState.active==="n"));
     numSlotD.setAttribute("aria-pressed", String(numState.active==="d"));
