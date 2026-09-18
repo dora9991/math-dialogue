@@ -224,6 +224,21 @@ const SS_KEY = "quiz_teacher_pin";
 let pin = sessionStorage.getItem(SS_KEY) || "";
 
 /* ============================================================
+   数学ラボ2との連携（案内のみ・生徒データは連携しない）
+   「授業を開始」した回に対応する数学ラボ2の単元を、教師向けに表示するだけ。
+   ============================================================ */
+const MATHLABO_URL = "https://dora9991.github.io/math-labo-second/";
+const MATHLABO_UNIT = { // quiz回id → 数学ラボ2の単元（比例と反比例=chapter c4）
+  "M1-04-1": "h4 変域",
+  "M1-04-2": "h1 比例",
+  "M1-04-3": "h3 座標とグラフ",
+  "M1-04-4": "h3 座標とグラフ",
+  "M1-04-5": "h2 反比例",
+  "M1-04-6": "h3 座標とグラフ",
+  "M1-04-7": "h5 比例・反比例の利用",
+};
+
+/* ============================================================
    操作対象クラス（学校コード×クラス）。配布系の操作はすべてこれに従う。
    ============================================================ */
 const TG_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
@@ -357,7 +372,8 @@ function renderQuizMgr(){
     return `<div class="qr-row" style="flex-wrap:wrap">
       <div class="nm"><span class="no">${t.no}</span>${esc(t.name)}
         <span class="badge ${on?"on":"off"}">小テスト ${on?"配布中":"停止中"}</span>
-        <span class="badge ${rOn?"on":"off"}">授業 ${rOn?"開始中":"未開始"}</span></div>
+        <span class="badge ${rOn?"on":"off"}">授業 ${rOn?"開始中":"未開始"}</span>
+        ${MATHLABO_UNIT[t.id] ? `<a href="${MATHLABO_URL}" target="_blank" rel="noopener" class="badge" style="text-decoration:none">🧮 数学ラボ2：${esc(MATHLABO_UNIT[t.id])}</a>` : ""}</div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button class="btn mini ${rOn?"":"ghost"}" data-rtoggle="${t.id}">${rOn?"授業を終了":"授業を開始"}</button>
         <label style="font-size:12.5px;color:var(--ink-soft);display:flex;align-items:center;gap:4px">制限時間
