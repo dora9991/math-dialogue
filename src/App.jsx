@@ -17,6 +17,7 @@ import StartScreen from "./screens/StartScreen.jsx";
 import Opening from "./screens/Opening.jsx";
 import Transfer from "./screens/Transfer.jsx";
 import LoginBonusOverlay from "./components/LoginBonusOverlay.jsx";
+import TamperWarningOverlay from "./components/TamperWarningOverlay.jsx";
 import { computeLogin, canClaimLogin, goldenMultiplier, eventXpMult, eventCoinMult, eventCrystalMult, eventRelearnMult, eventCalcMult, eventTaCoinMult, eventGachaBonus } from "./engine/daily.js";
 import TitleScreen from "./screens/TitleScreen.jsx";
 import AudioToggle from "./components/AudioToggle.jsx";
@@ -71,6 +72,17 @@ const HAICHI_PASS_XP = 30, HAICHI_PASS_COIN = 30;
 
 export default function App() {
   const [data, setData] = useState(() => store.load());
+  // 改ざん検知：読み込み時のチェックサム不一致は data.tampered に載ってくる（store.load()参照）。
+  // 実際のリセットは副作用なので、初期化(useState)ではなくマウント時のuseEffectで1回だけ行う。
+  const [tamperWarning, setTamperWarning] = useState(false);
+  useEffect(() => {
+    if (data.tampered) {
+      const fresh = store.resetPlayerDueToTamper();
+      setData((d) => ({ ...d, player: fresh.player, records: fresh.records, mistakes: fresh.mistakes, tampered: false }));
+      setTamperWarning(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [screen, setScreen] = useState("start");
   // 初回起動か？（v4からの引き継ぎ画面を出すか）。既に進捗がある人には出さない。
   const [needsOnboard, setNeedsOnboard] = useState(() => {
@@ -1415,6 +1427,7 @@ export default function App() {
           }}
         />
       )}
+      {tamperWarning && <TamperWarningOverlay onDone={() => setTamperWarning(false)} />}
       {loginBonus && (
         <LoginBonusOverlay
           reward={loginBonus.reward}

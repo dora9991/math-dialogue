@@ -14,6 +14,7 @@
 // 将来サーバー保存にするときは、同じ関数名で supabase 版を作り、import 先を差し替える。
 // ============================================================
 import { getOrCreateLocalStudentId, initialPlayerState, normalizePlayerState } from "./recordSchema.js";
+import { computeChecksum, isTampered, isImplausible } from "./integrity.js";
 
 const KEY = "mathApp_data_v1";
 const BAK = "mathApp_data_v1_bak"; // 自動バックアップ（前回保存時の中身）
@@ -32,6 +33,7 @@ function freshData() {
 // 生JSONを安全にデータ化（normalizeが失敗しても生プレイヤーを残す）
 function parseData(raw) {
   const data = JSON.parse(raw); // 不正JSONならここで例外
+  const savedChk = data._chk; // normalize前の生値で判定（正規化で欠損値が補完される前に比較する）
   try {
     data.player = normalizePlayerState(data.player);
   } catch (e) {
@@ -41,6 +43,11 @@ function parseData(raw) {
   if (!Array.isArray(data.records)) data.records = [];
   if (!Array.isArray(data.mistakes)) data.mistakes = [];
   if (!data.player) data.player = initialPlayerState(getOrCreateLocalStudentId());
+  // chk付きなら厳密照合。chk無し（導入前からの古いセーブ）は、遊んだ量に対して
+  // 明らかにあり得ない値のときだけ後付けで検知する（ゆるい網＝誤検知を避ける優先）。
+  data.tampered = typeof savedChk === "string"
+    ? isTampered(data.player, savedChk)
+    : isImplausible(data.player, data.records);
   return data;
 }
 
@@ -67,6 +74,7 @@ function readAll() {
 
 // 書き込み：書く前に「今の中身」をバックアップへ退避してから上書きする
 function writeAll(data) {
+  data._chk = computeChecksum(data.player); // 保存のたびにチェックサムを更新（次回読み込み時の改ざん検知用）
   let json;
   try { json = JSON.stringify(data); } catch (e) { console.warn("保存データの変換に失敗:", e); return; }
   const cur = safeGet(KEY);
@@ -117,6 +125,15 @@ export function removeMistake(id) {
 /** すべてのデータを初期状態に戻す（管理モードの「進捗リセット」用）。studentId は引き継ぐ */
 export function resetAll() {
   const data = freshData();
+  writeAll(data);
+  return data;
+}
+
+/** 改ざん検知時に呼ぶ：player（レベル・コイン等）だけ初期化し、records/mistakes（学習履歴）は残す。studentId は引き継ぐ */
+export function resetPlayerDueToTamper() {
+  const data = readAll();
+  data.player = initialPlayerState(data.player?.studentId || getOrCreateLocalStudentId());
+  data.tampered = false;
   writeAll(data);
   return data;
 }

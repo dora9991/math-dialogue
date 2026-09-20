@@ -42,21 +42,37 @@ export function partnerMaxLevel(monster) {
   return PARTNER_MAX_LEVEL[partnerTierOf(monster)] || PARTNER_MAX_LEVEL.unit;
 }
 
+// プレイヤーの成長式（battle.js の playerHpForLevel/playerAtkForLevel と同じ式）。
+//  ここは battle.js を import しない方針なので複製している。battle.js側のカーブを
+//  変えたときはここも合わせて直すこと。
+function refPlayerHp(lv) {
+  return Math.round(40 + 13 * lv + 0.18 * lv * lv);
+}
+function refPlayerAtk(lv) {
+  return Math.round(8 + 6 * lv + 0.09 * lv * lv);
+}
+
 /**
  * 仲間モンスターのバトル用ステータス（HP・攻撃力）。
- *  敵としての強さ(monster.atk)とレベルから算出（深い敵・高Lvほど強い仲間）。
- *   攻撃力 = monster.atk × (0.5 + (atkLv-1)*0.07)   ← クリスタルで強化
- *   最大HP = monster.atk × 4 × (0.6 + (hpLv-1)*0.09) ← お金で強化
+ *  ★2026-09調整：以前は「敵としての強さ(monster.atk)」をそのまま基準にしていたが、
+ *   裏ボス（高レベル帯ほど、戦う相手のプレイヤーを追い詰めるために意図的にatkが
+ *   大きく作られている）を仲間にすると、プレイヤー本人の何倍もの化け物になってしまう
+ *   問題があった（例：Lv1000の裏ボスを仲間にすると、育成後ATKが本人の約5倍・HPが約17倍）。
+ *   → 「倒す相手として強い」と「連れ歩く仲間としてちょうどよい」は別物、という反省を踏まえ、
+ *   その敵の推奨レベル(monster.minLv)にいる"同格のプレイヤー"を基準にするよう変更。
+ *   仲間は同格プレイヤーよりやや強い程度（ティアが上がるほど伸びしろも大きい）に留める。
+ *    攻撃 = 推奨レベル同格プレイヤーのATK × (0.4 + (atkLv-1)*0.03)  ← クリスタルで強化
+ *    最大HP = 推奨レベル同格プレイヤーのHP × (0.5 + (hpLv-1)*0.045) ← お金で強化（仲間は"盾役"なので比率はATKよりやや高め）
  * @returns {{maxHp:number, atk:number}}
  */
 export function allyStats(monster, hpLv = 1, atkLv = 1) {
-  const base = Math.max(4, monster?.atk || 8);
+  const refLv = Math.max(1, Math.round(monster?.minLv || 1));
+  const refAtk = refPlayerAtk(refLv);
+  const refHp = refPlayerHp(refLv);
   const hL = Math.max(1, hpLv);
   const aL = Math.max(1, atkLv);
-  // ★要望により仲間をさらに強化。仲間にした直後（Lv1）の基礎値と育成の伸びを引き上げ。
-  //   攻撃 = base × (1.25 + (atkLv-1)*0.16)     HP = base × 6 × (1.15 + (hpLv-1)*0.18)
-  const atk = Math.max(1, Math.round(base * (1.25 + (aL - 1) * 0.16)));
-  const maxHp = Math.max(12, Math.round(base * 6 * (1.15 + (hL - 1) * 0.18)));
+  const atk = Math.max(1, Math.round(refAtk * (0.4 + (aL - 1) * 0.03)));
+  const maxHp = Math.max(12, Math.round(refHp * (0.5 + (hL - 1) * 0.045)));
   return { maxHp, atk };
 }
 
