@@ -26,12 +26,19 @@ export function playerAtkForLevel(lv) {
 
 /** プレイヤーのレベルに応じたバトル用ステータス（Lv1〜99）。
  *  bonuses（装備の上昇率 {atkPct,hpPct}）があれば攻撃力・最大HPに加算する。 */
+// Lv1000以降の主人公強化（2026-09：仲間を推奨レベル基準に弱体化した際、主人公単体では推奨Lvの
+//  裏ボスにほぼ勝てなくなったため）。敵のatk/HPは playerHpForLevel/AtkForLevel から導出されるので、
+//  それらは触らず、プレイヤー本人のステータスにだけ掛ける。
+export const HIGH_LEVEL_PLAYER_MULT = 1.5;
+export const HIGH_LEVEL_PLAYER_MIN_LV = 1000;
+
 export function getPlayerBattleStats(lv, bonuses = {}) {
   const atkPct = bonuses.atkPct || 0;
   const hpPct = bonuses.hpPct || 0;
+  const m = lv >= HIGH_LEVEL_PLAYER_MIN_LV ? HIGH_LEVEL_PLAYER_MULT : 1;
   return {
-    maxHp: Math.round(playerHpForLevel(lv) * (1 + hpPct)),
-    atk: Math.round(playerAtkForLevel(lv) * (1 + atkPct)),
+    maxHp: Math.round(playerHpForLevel(lv) * m * (1 + hpPct)),
+    atk: Math.round(playerAtkForLevel(lv) * m * (1 + atkPct)),
     timer: Math.min(9 + lv, 30), // Lv1=10秒 〜 上限30秒
   };
 }
