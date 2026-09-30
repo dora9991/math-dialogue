@@ -68,7 +68,7 @@ node adaptive/tools/build-single.mjs      # → adaptive/dist/tsumazuki-navi.htm
 ### 5. 問題の作り方（`js/data/tpl/`）
 テンプレートは `make(r, level)` という関数で、乱数から数値を選び、**答えを別の方法でも計算し直して確かめ**（数値微分・全数探索・展開して比較など）、
 誤答の選択肢／誤答の値には「まちがいパターン（MC-…）」を付けます。
-このため、間違えたときに「何が原因か」を返せ、モデルはそのパターンが指す前提単元にも証拠を送ります（`js/data/misconceptions.js`、583 件）。
+このため、間違えたときに「何が原因か」を返せ、モデルはそのパターンが指す前提単元にも証拠を送ります（`js/data/misconceptions.js`、581 件）。
 
 ---
 

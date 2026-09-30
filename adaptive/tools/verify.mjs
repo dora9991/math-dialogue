@@ -78,7 +78,7 @@ console.log(`  単元 ${ALL_IDS.length}、まちがいパターン ${Object.keys
 // ── テンプレ ────────────────────────────────────────
 console.log("\n■ 問題テンプレ");
 const missing = [];
-const usedMc = new Set();
+const usedMc = new Set(["MC-NOT-REDUCED"]); // 採点(items.js)が直接返すもの。テンプレには書かれない
 const stats = { items: 0, byKind: {}, templates: 0 };
 const variety = [];
 
@@ -199,7 +199,7 @@ if (missing.length && !ONLY) {
   console.log("  テンプレ未作成:");
   for (const [k, v] of Object.entries(byStrand)) console.log(`    ${STRANDS[k].name}: ${v.join(", ")}`);
 }
-if (unusedMc.length) console.log(`  （辞書にあるが未使用のまちがいパターン: ${unusedMc.length} 個）`);
+if (unusedMc.length) console.log(`  （辞書にあるが未使用のまちがいパターン: ${unusedMc.length} 個${unusedMc.length <= 10 ? `：${unusedMc.join(", ")}` : ""}）`);
 
 console.log("");
 if (errors) {

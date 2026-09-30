@@ -15,6 +15,7 @@
 //   ・書き出しの JSON は、そのまま別の端末に読み込める。
 // ============================================================
 import { Learner } from "./model.js";
+import { SKILLS } from "../data/graph.js";
 
 const KEY = "tsumazuki-navi:v1";
 export const FORMAT_VERSION = 1;
@@ -137,7 +138,8 @@ export class Store {
 
 /** 読み込んだデータを、想定した形に整える（足りない項目を補い、不正な行を捨てる） */
 export function normalize(d) {
-  const log = (Array.isArray(d.log) ? d.log : []).filter((e) => e && typeof e === "object" && (e.type === "start" || (e.type === "answer" && typeof e.skillId === "string" && [1, 2, 3].includes(e.level))));
+  // 知らない単元IDの解答（古い版のデータなど）は、モデルが壊れないよう読み捨てる
+  const log = (Array.isArray(d.log) ? d.log : []).filter((e) => e && typeof e === "object" && (e.type === "start" || (e.type === "answer" && typeof e.skillId === "string" && SKILLS[e.skillId] && [1, 2, 3].includes(e.level))));
   const concerns = (Array.isArray(d.concerns) ? d.concerns : []).filter((c) => c && typeof c === "object" && typeof c.id === "string");
   const p = d.profile && typeof d.profile === "object" ? d.profile : null;
   return { version: FORMAT_VERSION, profile: p ? { name: String(p.name || ""), grade: Number(p.grade) || 8, createdAt: Number(p.createdAt) || Date.now() } : null, log, concerns };

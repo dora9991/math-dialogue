@@ -45,7 +45,6 @@ export const MISCONCEPTIONS = {
   "MC-FRAC-IMPROPER-WRONG": { name: "帯分数→仮分数で、分子の作り方をまちがえる", blame: "frac_meaning", tip: "分子＝整数×分母＋分子。分母は変わらない。" },
   "MC-FRAC-COMPARE-DEN": { name: "分母が大きいほど大きい分数だと思う", blame: "frac_meaning", tip: "分子が同じなら、分母が小さいほど1つ分が大きい。ピザを何人で分けるかで考える。" },
   "MC-FRAC-COMPARE-NUM": { name: "分子だけを見て大小を決める", blame: "frac_common", tip: "分母がちがう分数は、通分してから分子を比べる。" },
-  "MC-FRAC-COMPARE-EQUAL": { name: "分母がちがう分数の大小を決められない", blame: "frac_common", tip: "通分すれば必ず比べられる。" },
   "MC-FRAC-ADD-BOTH": { name: "分母どうし・分子どうしをそれぞれたす", blame: "frac_meaning", tip: "分母は「何等分か」を表すので、たさない。通分してから分子だけをたす。" },
   "MC-FRAC-CARRY-FORGET": { name: "帯分数のたし算で、分数部分が1をこえたのに整数部分にくり上げない", blame: "frac_add_same", tip: "分数部分が1以上になったら、整数部分に1くり上げる。" },
   "MC-COUNT-OFF": { name: "数えるとき、1つ多い・少ない", blame: "mult_factor", tip: "1 と その数自身も約数に入れる。倍数は 1倍から数える。" },
@@ -62,7 +61,6 @@ export const MISCONCEPTIONS = {
   "MC-FRAC-MUL-ADD": { name: "分数のかけ算を、通分してたす計算と混同する", blame: "frac_mul", tip: "かけ算に通分はいらない。" },
   "MC-FRAC-DIV-NO-INVERT": { name: "分数のわり算で、逆数にせずそのままかける", blame: "frac_div", tip: "わる数を逆数（分母と分子を入れかえ）にしてからかける。" },
   "MC-FRAC-DIV-INVERT-WRONG": { name: "分数のわり算で、わられる数のほうを逆数にする", blame: "frac_div", tip: "逆数にするのは「わる数」。" },
-  "MC-FRAC-DIV-SWAP": { name: "分数のわり算で、わる数とわられる数の順番を取りちがえる", blame: "frac_div", tip: "「AをBでわる」は A÷B。" },
 
   // ── 割合・比・速さ・単位 ──
   "MC-UNIT-POWER": { name: "単位の換算で、10・100・1000倍のけた数をまちがえる", blame: "unit_conv", tip: "1km=1000m, 1m=100cm, 1kg=1000g を表にして確かめる。" },

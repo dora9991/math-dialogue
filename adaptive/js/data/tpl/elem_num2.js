@@ -674,7 +674,6 @@ export default {
         wrongs: [
           [mul(f1, f2), "MC-FRAC-DIV-NO-INVERT"],
           [mul(Q(b, a), f2), "MC-FRAC-DIV-INVERT-WRONG"],
-          [div(f2, f1), "MC-FRAC-DIV-SWAP"],
         ],
         explain: `${lv === 3 && f1.n > f1.d && f1.d > 1 ? "帯分数は先に仮分数になおします。" : ""}わる数の分母と分子を入れかえて（逆数にして）かけ算にします。$${tq(f1)}\\div ${tq(f2)}=${tq(f1)}\\times ${tq(div(1, f2))}=${tq(ans)}$。`,
       });
