@@ -33,6 +33,7 @@ const rad = (d) => (d * Math.PI) / 180;
  *  o.params=[{x:(t)=>…, y:(t)=>…, t0, t1, color, dash}]  … 媒介変数で表した曲線（楕円・双曲線など）。範囲の外は切りとられる
  *  o.arrows=[[x1,y1,x2,y2,{color,label}]]                … 矢印（ベクトル）。端点が表示範囲の中にあること
  *  o.axisNames=["x","y"]                                … 軸の名前（複素数平面なら ["実軸","虚軸"]）
+ *  o.cell（1目もりの画素数）・o.tick（目もりの数字の間隔）・o.grid（方眼の間隔）… 広い範囲を小さく描くときに
  */
 export function coordPlane(o) {
   const [xmin, xmax] = o.x || [-5, 5];
@@ -51,8 +52,9 @@ export function coordPlane(o) {
   const Y = (y) => PT + (ymax - y) * cell;
   const inside = (x, y) => x >= xmin - 1e-9 && x <= xmax + 1e-9 && y >= ymin - 1e-9 && y <= ymax + 1e-9;
   let b = "";
-  for (let x = Math.ceil(xmin); x <= xmax; x++) b += line(X(x), Y(ymin), X(x), Y(ymax), { color: "#8886", w: 0.6 });
-  for (let y = Math.ceil(ymin); y <= ymax; y++) b += line(X(xmin), Y(y), X(xmax), Y(y), { color: "#8886", w: 0.6 });
+  const gs = o.grid || 1; // 方眼の間隔（範囲が広い図では 5 などにして線を減らす）
+  for (let x = Math.ceil(xmin / gs) * gs; x <= xmax; x += gs) b += line(X(x), Y(ymin), X(x), Y(ymax), { color: "#8886", w: 0.6 });
+  for (let y = Math.ceil(ymin / gs) * gs; y <= ymax; y += gs) b += line(X(xmin), Y(y), X(xmax), Y(y), { color: "#8886", w: 0.6 });
   b += line(X(xmin), Y(0), X(xmax) + 6, Y(0), { w: 1.4 }) + line(X(0), Y(ymin), X(0), Y(ymax) - 6, { w: 1.4 });
   b += text(X(xmax) + (longName(xName) ? 10 : 10), Y(0) + 4, xName, { size: longName(xName) ? 11 : 13, anchor: longName(xName) ? "start" : "middle", italic: !longName(xName) });
   b += text(X(0) + (longName(yName) ? 6 : 9), Y(ymax) - 6, yName, { size: longName(yName) ? 11 : 13, anchor: longName(yName) ? "start" : "middle", italic: !longName(yName) });
@@ -83,14 +85,21 @@ export function coordPlane(o) {
     else g += line(X(xmin), Y(l.a * xmin + l.b), X(xmax), Y(l.a * xmax + l.b), { color: c, w: 2 });
   }
   const span = ymax - ymin;
+  // 表示範囲から 1 目もり以上はなれた点は描かない（切りとられて見えないうえ、図の外まで線が伸びるため）
+  const far = (x, y) => x < xmin - 1 || x > xmax + 1 || y < ymin - 1 || y > ymax + 1;
   for (const pc of o.params || []) {
     let d = "";
+    let pen = false;
     for (let i = 0; i <= 360; i++) {
       const tt = pc.t0 + ((pc.t1 - pc.t0) * i) / 360;
       const px_ = pc.x(tt);
       const py_ = pc.y(tt);
-      if (!Number.isFinite(px_) || !Number.isFinite(py_) || Math.abs(px_) > 1e6 || Math.abs(py_) > 1e6) continue;
-      d += `${d ? "L" : "M"}${f(X(px_))} ${f(Y(py_))} `;
+      if (!Number.isFinite(px_) || !Number.isFinite(py_) || far(px_, py_)) {
+        pen = false;
+        continue;
+      }
+      d += `${pen ? "L" : "M"}${f(X(px_))} ${f(Y(py_))} `;
+      pen = true;
     }
     g += `<path d="${d}" stroke="${pc.color || BLUE}" stroke-width="2"${pc.dash ? ` stroke-dasharray="${pc.dash}"` : ""}/>`;
   }
@@ -123,7 +132,9 @@ export function coordPlane(o) {
   }
   const cw = X(xmax) - X(xmin);
   const ch = Y(ymin) - Y(ymax);
-  b += `<svg x="${f(X(xmin))}" y="${f(Y(ymax))}" width="${f(cw)}" height="${f(ch)}" viewBox="${f(X(xmin))} ${f(Y(ymax))} ${f(cw)} ${f(ch)}" overflow="hidden">${g}</svg>`;
+  // 入れ子の svg の大きさは style でも固定する。ページの CSS（.fig svg { height:auto }）が内側の svg にも効くと、
+  // 高さが外側いっぱいに広がって中身が上下にずれる（線や曲線が目もりから約1マスずれて見える）ため
+  b += `<svg x="${f(X(xmin))}" y="${f(Y(ymax))}" width="${f(cw)}" height="${f(ch)}" style="width:${f(cw)}px;height:${f(ch)}px;max-width:none" viewBox="${f(X(xmin))} ${f(Y(ymax))} ${f(cw)} ${f(ch)}" overflow="hidden">${g}</svg>`;
 
   for (const l of o.lines || []) if (l.label) b += text(X(l.lx ?? xmax - 0.4) - 4, Y(l.ly ?? l.a * (xmax - 0.4) + l.b) - 6, l.label, { color: l.color || BLUE, size: 13 });
   for (const c of o.curves || []) if (c.label) b += text(X(c.lx ?? 0) + 10, Y(c.ly ?? 0) - 6, c.label, { color: c.color || BLUE, size: 13 });
