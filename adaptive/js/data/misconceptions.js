@@ -11,6 +11,8 @@
 //  ※ 増やすときは tools/verify.mjs が、blame が実在する単元かを確認する。
 // ============================================================
 
+import { MISCONCEPTIONS_HS2 } from "./misconceptions_hs2.js";
+
 export const MISCONCEPTIONS = {
   // ── 共通 ──
   "MC-SLIP": { name: "計算まちがい（うっかり）", blame: null, tip: "考え方は合っていそう。見直しの習慣（たしかめ算）をつける。" },
@@ -643,4 +645,6 @@ export const MISCONCEPTIONS = {
   "MC-VIETA-SIGN": { name: "解と係数の関係 α＋β＝−b/a の符号を誤る", blame: "neg_add", tip: "ax²＋bx＋c＝0 の解の和は −b/a、積は c/a。" },
   "MC-VIETA-SQ": { name: "α²＋β²＝(α＋β)²−2αβ の 2αβ を落とす", blame: "expand_formula", tip: "(α＋β)²＝α²＋2αβ＋β² より α²＋β²＝(α＋β)²−2αβ。" },
   "MC-VIETA-SWAP": { name: "解の和と積を取り違える", blame: null, tip: "解の和は −b/a、解の積は c/a。" },
+  // ── 高校の追加単元（数学Ⅰ〜Ⅲ・A〜C）は別ファイル ──
+  ...MISCONCEPTIONS_HS2,
 };

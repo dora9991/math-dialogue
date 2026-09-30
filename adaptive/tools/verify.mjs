@@ -119,6 +119,8 @@ for (const id of targets) {
         for (const k of ["pre", "post", "unit"]) if (it[k]) checkMarkup(`${where} ${k}`, it[k]);
         if (it.hint) checkMarkup(`${where} hint`, it.hint);
         if (it.fig && !(it.fig.startsWith("<svg") && it.fig.endsWith("</svg>") && !/NaN|undefined|Infinity/.test(it.fig))) err(where, "図(SVG)が不正");
+        // 図の文字は SVG のまま表示される（KaTeX を通らない）ので、TeX の書き方が残っていたら誤り
+        if (it.fig && /\^\{|\\(circ|frac|sqrt|cdot|times|pi|theta|alpha|vec)\b|\$/.test(it.fig.replace(/<path d="[^"]*"/g, ""))) err(where, "図の文字に TeX の書き方が残っている");
         if (it.kind === "choice") {
           it.choices.forEach((c, i) => checkMarkup(`${where} choice${i}`, c.label));
           if (it.choices.filter((c) => c.correct).length !== 1) err(where, "正解が1つでない");

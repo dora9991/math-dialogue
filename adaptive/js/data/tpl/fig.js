@@ -30,14 +30,19 @@ const rad = (d) => (d * Math.PI) / 180;
  *  o.fills=[{x0,x1,hi:(x)=>y,lo:(x)=>y,color}]           … x0〜x1 で hi と lo にはさまれた部分を薄く塗る（lo 省略で x 軸）
  *  o.points=[{x,y,label,color,dx,dy}]                   … 表示範囲の中にあること（外なら例外）
  *  o.segments=[[x1,y1,x2,y2,{dash,color}]]              … 端点が表示範囲の中にあること
+ *  o.params=[{x:(t)=>…, y:(t)=>…, t0, t1, color, dash}]  … 媒介変数で表した曲線（楕円・双曲線など）。範囲の外は切りとられる
+ *  o.arrows=[[x1,y1,x2,y2,{color,label}]]                … 矢印（ベクトル）。端点が表示範囲の中にあること
+ *  o.axisNames=["x","y"]                                … 軸の名前（複素数平面なら ["実軸","虚軸"]）
  */
 export function coordPlane(o) {
   const [xmin, xmax] = o.x || [-5, 5];
   const [ymin, ymax] = o.y || [-5, 5];
   if (!(xmin <= 0 && xmax >= 0 && ymin <= 0 && ymax >= 0)) throw new Error("coordPlane: 表示範囲は原点をふくむこと");
   const cell = o.cell || 26;
+  const [xName, yName] = o.axisNames || ["x", "y"];
+  const longName = (nm) => nm.length > 1;
   const PL = 20;
-  const PR = 26;
+  const PR = longName(xName) ? 50 : 26; // 「実軸」のような長い名前は、軸の右はしの外に置く
   const PT = 26;
   const PB = 22;
   const W = (xmax - xmin) * cell + PL + PR;
@@ -49,7 +54,8 @@ export function coordPlane(o) {
   for (let x = Math.ceil(xmin); x <= xmax; x++) b += line(X(x), Y(ymin), X(x), Y(ymax), { color: "#8886", w: 0.6 });
   for (let y = Math.ceil(ymin); y <= ymax; y++) b += line(X(xmin), Y(y), X(xmax), Y(y), { color: "#8886", w: 0.6 });
   b += line(X(xmin), Y(0), X(xmax) + 6, Y(0), { w: 1.4 }) + line(X(0), Y(ymin), X(0), Y(ymax) - 6, { w: 1.4 });
-  b += text(X(xmax) + 10, Y(0) + 4, "x", { size: 13 }) + text(X(0) + 9, Y(ymax) - 6, "y", { size: 13 });
+  b += text(X(xmax) + (longName(xName) ? 10 : 10), Y(0) + 4, xName, { size: longName(xName) ? 11 : 13, anchor: longName(xName) ? "start" : "middle", italic: !longName(xName) });
+  b += text(X(0) + (longName(yName) ? 6 : 9), Y(ymax) - 6, yName, { size: longName(yName) ? 11 : 13, anchor: longName(yName) ? "start" : "middle", italic: !longName(yName) });
   b += text(X(0) - 6, Y(0) + 13, "O", { size: 12, anchor: "end", italic: false });
   // 目もり
   for (let x = Math.ceil(xmin); x <= xmax; x++) if (x !== 0 && x % (o.tick || 1) === 0) b += text(X(x), Y(0) + 13, String(x), { size: 10, italic: false });
@@ -59,8 +65,10 @@ export function coordPlane(o) {
   let g = "";
   for (const fl of o.fills || []) {
     if (!(fl.x0 < fl.x1)) throw new Error("coordPlane: fills は x0 < x1 で指定する");
-    const hi = fl.hi || (() => 0);
-    const lo = fl.lo || (() => 0);
+    // 塗る範囲は表示範囲の中に切りつめる（外にはみ出した多角形が枠の外に見えないように）
+    const clampY = (v) => Math.max(ymin, Math.min(ymax, v));
+    const hi = (x) => clampY((fl.hi || (() => 0))(x));
+    const lo = (x) => clampY((fl.lo || (() => 0))(x));
     const xs = Array.from({ length: 161 }, (_, i) => fl.x0 + ((fl.x1 - fl.x0) * i) / 160);
     const pts = [...xs.map((x) => [X(x), Y(hi(x))]), ...[...xs].reverse().map((x) => [X(x), Y(lo(x))])];
     g += `<polygon points="${pts.map(([qx, qy]) => `${f(qx)},${f(qy)}`).join(" ")}" fill="${fl.color || BLUE}" fill-opacity="0.22" stroke="none"/>`;
@@ -75,6 +83,26 @@ export function coordPlane(o) {
     else g += line(X(xmin), Y(l.a * xmin + l.b), X(xmax), Y(l.a * xmax + l.b), { color: c, w: 2 });
   }
   const span = ymax - ymin;
+  for (const pc of o.params || []) {
+    let d = "";
+    for (let i = 0; i <= 360; i++) {
+      const tt = pc.t0 + ((pc.t1 - pc.t0) * i) / 360;
+      const px_ = pc.x(tt);
+      const py_ = pc.y(tt);
+      if (!Number.isFinite(px_) || !Number.isFinite(py_) || Math.abs(px_) > 1e6 || Math.abs(py_) > 1e6) continue;
+      d += `${d ? "L" : "M"}${f(X(px_))} ${f(Y(py_))} `;
+    }
+    g += `<path d="${d}" stroke="${pc.color || BLUE}" stroke-width="2"${pc.dash ? ` stroke-dasharray="${pc.dash}"` : ""}/>`;
+  }
+  for (const a of o.arrows || []) {
+    if (!inside(a[0], a[1]) || !inside(a[2], a[3])) throw new Error(`coordPlane: 矢印の端点が表示範囲の外 (${a.slice(0, 4)})`);
+    const col = (a[4] && a[4].color) || ACCENT;
+    const [x1, y1, x2, y2] = [X(a[0]), Y(a[1]), X(a[2]), Y(a[3])];
+    const ang = Math.atan2(y2 - y1, x2 - x1);
+    const hx = (t) => x2 - 9 * Math.cos(ang + t);
+    const hy = (t) => y2 - 9 * Math.sin(ang + t);
+    g += line(x1, y1, x2, y2, { color: col, w: 2 }) + `<polygon points="${f(x2)},${f(y2)} ${f(hx(0.42))},${f(hy(0.42))} ${f(hx(-0.42))},${f(hy(-0.42))}" fill="${col}" stroke="none"/>`;
+  }
   for (const c of o.curves || []) {
     let d = "";
     let pen = false;
@@ -99,6 +127,7 @@ export function coordPlane(o) {
 
   for (const l of o.lines || []) if (l.label) b += text(X(l.lx ?? xmax - 0.4) - 4, Y(l.ly ?? l.a * (xmax - 0.4) + l.b) - 6, l.label, { color: l.color || BLUE, size: 13 });
   for (const c of o.curves || []) if (c.label) b += text(X(c.lx ?? 0) + 10, Y(c.ly ?? 0) - 6, c.label, { color: c.color || BLUE, size: 13 });
+  for (const a of o.arrows || []) if (a[4] && a[4].label) b += text(X((a[0] + a[2]) / 2) + (a[4].dx ?? 8), Y((a[1] + a[3]) / 2) + (a[4].dy ?? -6), a[4].label, { color: a[4].color || ACCENT, size: 13, italic: false });
   for (const p of o.points || []) {
     if (!inside(p.x, p.y)) throw new Error(`coordPlane: 点 (${p.x}, ${p.y}) が表示範囲の外`);
     b += dot(X(p.x), Y(p.y), { color: p.color || ACCENT, r: 3.8 });
@@ -285,4 +314,148 @@ export function boxPlot({ min, q1, med, q3, max, lo, hi }) {
   b += line(X(min), 40, X(min), 60) + line(X(max), 40, X(max), 60) + line(X(min), 50, X(q1), 50) + line(X(q3), 50, X(max), 50);
   b += `<rect x="${f(X(q1))}" y="40" width="${f(X(q3) - X(q1))}" height="20" fill="#2b6cb022"/>` + line(X(med), 40, X(med), 60, { color: ACCENT, w: 2 });
   return svg(W, 100, b, "箱ひげ図");
+}
+
+/**
+ * 平面図形（三角形・円・接線など）。座標は数学の向き（y が上）。全体が枠に収まるように自動で縮める。
+ *  o.points   = { A: [x, y], … }                       … 点（既定ですべてに点と名前を描く。o.noDot / o.noLabel で除外）
+ *  o.segments = [["A","B",{dash,color,w}]]              … 線分
+ *  o.lines    = [["P","Q",{ext:[s0,s1],dash,color}]]    … P→Q の方向に、P + s(Q−P)（s0〜s1）まで伸ばした直線
+ *  o.circles  = [{c:"O" or [x,y], r, dash, color}]      … 円
+ *  o.segLabels  = [{seg:["A","B"], text, color, side:±1, off}] … 線分の横の文字（side を省くと図の外側）
+ *  o.angleMarks = [{at:"A", between:["B","C"], text, color, arc:true}] … 角の印と文字
+ *  o.rightAngles = [{at:"H", between:["A","B"]}]         … 直角の印
+ *  o.labelDir = { A: [dx, dy] }                          … 点の名前の置き場所（省くと図の中心から外向き）
+ *  o.width    … 図の幅の目安（既定 260）
+ */
+export function geoFigure(o) {
+  const pts = o.points || {};
+  const P = (n) => (Array.isArray(n) ? n : pts[n]);
+  for (const [n, v] of Object.entries(pts)) if (!v || !Number.isFinite(v[0]) || !Number.isFinite(v[1])) throw new Error(`geoFigure: 点 ${n} の座標が不正`);
+  // 図の範囲
+  const xs = [];
+  const ys = [];
+  const add = (x, y) => {
+    xs.push(x);
+    ys.push(y);
+  };
+  for (const v of Object.values(pts)) add(v[0], v[1]);
+  for (const c of o.circles || []) {
+    const cc = P(c.c);
+    add(cc[0] - c.r, cc[1] - c.r);
+    add(cc[0] + c.r, cc[1] + c.r);
+  }
+  const lineEnds = (l) => {
+    const [p1, p2] = [P(l[0]), P(l[1])];
+    const [s0, s1] = (l[2] && l[2].ext) || [0, 1];
+    return [[p1[0] + s0 * (p2[0] - p1[0]), p1[1] + s0 * (p2[1] - p1[1])], [p1[0] + s1 * (p2[0] - p1[0]), p1[1] + s1 * (p2[1] - p1[1])]];
+  };
+  for (const l of o.lines || []) for (const e of lineEnds(l)) add(e[0], e[1]);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const Wt = o.width || 260;
+  const pad = 26;
+  const sc = Math.min((Wt - 2 * pad) / Math.max(maxX - minX, 1e-9), (230 - 2 * pad) / Math.max(maxY - minY, 1e-9));
+  const W = (maxX - minX) * sc + 2 * pad;
+  const H = (maxY - minY) * sc + 2 * pad;
+  const X = (x) => pad + (x - minX) * sc;
+  const Y = (y) => pad + (maxY - y) * sc;
+  const S = (n) => [X(P(n)[0]), Y(P(n)[1])];
+  const cx0 = (minX + maxX) / 2;
+  const cy0 = (minY + maxY) / 2;
+  let b = "";
+  for (const c of o.circles || []) {
+    const cc = P(c.c);
+    b += `<circle cx="${f(X(cc[0]))}" cy="${f(Y(cc[1]))}" r="${f(c.r * sc)}"${c.dash ? ` stroke-dasharray="${c.dash}"` : ""}${c.color ? ` stroke="${c.color}"` : ""}/>`;
+  }
+  for (const l of o.lines || []) {
+    const [e0, e1] = lineEnds(l);
+    b += line(X(e0[0]), Y(e0[1]), X(e1[0]), Y(e1[1]), { dash: l[2] && l[2].dash, color: l[2] && l[2].color });
+  }
+  for (const sg of o.segments || []) {
+    const [a1, a2] = [S(sg[0]), S(sg[1])];
+    b += line(a1[0], a1[1], a2[0], a2[1], { dash: sg[2] && sg[2].dash, color: sg[2] && sg[2].color, w: sg[2] && sg[2].w });
+  }
+  for (const ra of o.rightAngles || []) {
+    const V = S(ra.at);
+    const u = (n) => {
+      const q = S(n);
+      const d = Math.hypot(q[0] - V[0], q[1] - V[1]) || 1;
+      return [(q[0] - V[0]) / d, (q[1] - V[1]) / d];
+    };
+    const [u1, u2] = [u(ra.between[0]), u(ra.between[1])];
+    const k = 10;
+    b += `<polyline points="${f(V[0] + k * u1[0])},${f(V[1] + k * u1[1])} ${f(V[0] + k * (u1[0] + u2[0]))},${f(V[1] + k * (u1[1] + u2[1]))} ${f(V[0] + k * u2[0])},${f(V[1] + k * u2[1])}" stroke-width="1.2"/>`;
+  }
+  for (const am of o.angleMarks || []) {
+    const V = S(am.at);
+    const [A1, A2] = [S(am.between[0]), S(am.between[1])];
+    const a1 = Math.atan2(A1[1] - V[1], A1[0] - V[0]);
+    const a2 = Math.atan2(A2[1] - V[1], A2[0] - V[0]);
+    let da = a2 - a1;
+    while (da <= -Math.PI) da += 2 * Math.PI;
+    while (da > Math.PI) da -= 2 * Math.PI;
+    const rr = am.r ?? 16;
+    if (am.arc !== false) {
+      const e1 = [V[0] + rr * Math.cos(a1), V[1] + rr * Math.sin(a1)];
+      const e2 = [V[0] + rr * Math.cos(a1 + da), V[1] + rr * Math.sin(a1 + da)];
+      b += `<path d="M${f(e1[0])} ${f(e1[1])} A${rr} ${rr} 0 0 ${da > 0 ? 1 : 0} ${f(e2[0])} ${f(e2[1])}" stroke="${am.color || ACCENT}" stroke-width="1.3"/>`;
+    }
+    if (am.text) b += angleText(V, A1, A2, am.text, { color: am.color || (am.text === "x" ? BLUE : ACCENT), r: am.textR });
+  }
+  for (const sl of o.segLabels || []) {
+    const [a1, a2] = [S(sl.seg[0]), S(sl.seg[1])];
+    const mx = (a1[0] + a2[0]) / 2;
+    const my = (a1[1] + a2[1]) / 2;
+    const d = Math.hypot(a2[0] - a1[0], a2[1] - a1[1]) || 1;
+    let nx = -(a2[1] - a1[1]) / d;
+    let ny = (a2[0] - a1[0]) / d;
+    // 側を省いたときは、図の中心から遠ざかる向き
+    const side = sl.side ?? (nx * (mx - X(cx0)) + ny * (my - Y(cy0)) >= 0 ? 1 : -1);
+    nx *= side;
+    ny *= side;
+    const off = sl.off ?? 12;
+    b += text(mx + nx * off, my + ny * off + 5, sl.text, { color: sl.color || ACCENT, size: 13, italic: false });
+  }
+  const noDot = new Set(o.noDot || []);
+  const noLabel = new Set(o.noLabel || []);
+  for (const [n, v] of Object.entries(pts)) {
+    const [x, y] = [X(v[0]), Y(v[1])];
+    if (!noDot.has(n)) b += dot(x, y, { r: 2.6 });
+    if (noLabel.has(n)) continue;
+    let dir = o.labelDir && o.labelDir[n];
+    if (!dir) {
+      const dx = x - X(cx0);
+      const dy = y - Y(cy0);
+      const dd = Math.hypot(dx, dy);
+      dir = dd < 1e-6 ? [12, -8] : [(dx / dd) * 14, (dy / dd) * 14];
+    }
+    b += text(x + dir[0], y + dir[1] + 5, n, { italic: false, size: 14 });
+  }
+  return svg(Math.ceil(W), Math.ceil(H), b, o.label || "図形");
+}
+
+/**
+ * 散布図。pts=[[x,y],…]。x・y の目もりは xr=[min,max,step]、yr=[min,max,step]（データより広く取ること）。
+ */
+export function scatter({ pts, xr, yr, xName = "x", yName = "y" }) {
+  const [x0, x1, xs] = xr;
+  const [y0, y1, ys] = yr;
+  const W = 250;
+  const H = 210;
+  const L = 36;
+  const B = 26;
+  const X = (x) => L + ((x - x0) / (x1 - x0)) * (W - L - 12);
+  const Y = (y) => H - B - ((y - y0) / (y1 - y0)) * (H - B - 12);
+  let b = line(L, H - B, W - 6, H - B, { w: 1.2 }) + line(L, H - B, L, 8, { w: 1.2 });
+  for (let v = x0; v <= x1 + 1e-9; v += xs) b += line(X(v), H - B, X(v), H - B + 4, { w: 1 }) + text(X(v), H - B + 16, String(Math.round(v * 100) / 100), { size: 10, italic: false });
+  for (let v = y0; v <= y1 + 1e-9; v += ys) b += line(L - 4, Y(v), L, Y(v), { w: 1 }) + text(L - 6, Y(v) + 4, String(Math.round(v * 100) / 100), { size: 10, anchor: "end", italic: false });
+  b += text(W - 4, H - B - 6, xName, { size: 12, anchor: "end" }) + text(L + 6, 14, yName, { size: 12, anchor: "start" });
+  for (const [x, y] of pts) {
+    if (x < x0 || x > x1 || y < y0 || y > y1) throw new Error(`scatter: 点 (${x}, ${y}) が表示範囲の外`);
+    b += `<circle cx="${f(X(x))}" cy="${f(Y(y))}" r="3.4" fill="${BLUE}" fill-opacity="0.75" stroke="none"/>`;
+  }
+  return svg(W, H, b, "散布図");
 }

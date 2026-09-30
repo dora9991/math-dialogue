@@ -6,6 +6,8 @@
 //  見立てから自作したもの。他社サービスや市販教材の単元体系は複製していない。
 //
 //  stage: 2〜6=小2〜小6、7〜9=中1〜中3、10〜12=高1〜高3（学年は目安。教科書で前後する）
+//  高校の単元には科目（数学Ⅰ・Ⅱ・Ⅲ・A・B・C。学習指導要領の区分）を COURSE_OF で付ける。
+//  「履修していない科目」の単元は、見立て・診断・練習の範囲から外す（文系で数学Ⅲを取らない など）。
 //  問題の生成コードは data/tpl/ にある（ここは「何を・どの順で」だけ）。
 //  前提の追加・削除は検証スクリプト（tools/verify.mjs）で、循環や学年の逆転を自動チェックする。
 // ============================================================
@@ -69,6 +71,11 @@ const D = [
   ["exp_law", "指数法則（整数・有理数の指数）", "num", 11, ["neg_power_mixed", "sqrt_simplify"], "$a^m a^n=a^{m+n}$、$(a^m)^n=a^{mn}$、$a^{-n}=\\frac1{a^n}$、$a^{\\frac mn}=\\sqrt[n]{a^m}$。"],
   ["complex_calc", "複素数の計算", "num", 11, ["real_calc_hs", "expand_basic"], "$i^2=-1$ として、$i$ を文字のように展開し、$i^2$ を $-1$ に直す。"],
   ["log_calc", "対数の計算", "num", 11, ["exp_law"], "$\\log_a M=x \\iff a^x=M$。$\\log_a MN=\\log_a M+\\log_a N$。"],
+  ["int_divisor", "約数・倍数と余り（互除法）", "num", 10, ["prime_factor", "gcd_lcm"], "$N=p^aq^b$（$p,\\ q$ は素数）の正の約数は $(a+1)(b+1)$ 個。$a$ を $b$ でわった余りを $r$ とすると、$a$ と $b$ の最大公約数は $b$ と $r$ の最大公約数に等しい（ユークリッドの互除法）。"],
+  ["int_eq", "1次不定方程式", "num", 10, ["int_divisor", "eq_linear_basic"], "$ax+by=c$（$a,\\ b$ は互いに素）の整数解は、1組の解 $(x_0,\\ y_0)$ を見つけて $x=x_0+bk,\\ y=y_0-ak$（$k$ は整数）と表せる。"],
+  ["int_base", "$n$ 進法", "num", 10, ["big_numbers", "neg_power_mixed", "div_rem"], "$n$ 進法で $abc_{(n)}$ と書いた数は $a\\times n^2+b\\times n+c$。10 進法から $n$ 進法へは、$n$ でわった余りを下から順に並べる。"],
+  ["log_common", "常用対数の利用（桁数）", "num", 11, ["log_calc"], "$\\log_{10}N=k+\\alpha$（$k$ は整数、$0\\le\\alpha<1$）で $N\\ge1$ のとき、$N$ は $k+1$ 桁の整数部分をもつ。"],
+  ["complex_plane", "複素数平面（極形式・ド・モアブルの定理）", "num", 12, ["complex_calc", "trig_addition"], "$z=r(\\cos\\theta+i\\sin\\theta)$ と表すと、積は「絶対値の積・偏角の和」。$(\\cos\\theta+i\\sin\\theta)^n=\\cos n\\theta+i\\sin n\\theta$（ド・モアブルの定理）。"],
 
   // ───────── 割合・比・速さ ─────────
   ["unit_conv", "単位の換算（長さ・重さ・かさ）", "ratio", 4, ["dec_place", "mul_by_1digit"], "$1\\,\\mathrm{m}=100\\,\\mathrm{cm}$、$1\\,\\mathrm{kg}=1000\\,\\mathrm{g}$、$1\\,\\mathrm{L}=1000\\,\\mathrm{mL}$ など。"],
@@ -107,13 +114,16 @@ const D = [
   ["quad_eq_word", "2次方程式の利用", "alg", 9, ["quad_eq_formula"], "立式して解いたら、解が問題の条件（正の数など）に合うか必ず確かめる。"],
   ["ineq_linear", "1次不等式", "alg", 10, ["eq_linear_adv"], "解き方は方程式と同じ。ただし負の数でかけたりわったりすると不等号の向きが逆になる。"],
   ["abs_eq_ineq", "絶対値を含む方程式・不等式", "alg", 10, ["ineq_linear", "neg_order"], "$|x|<a$ は $-a<x<a$、$|x|>a$ は $x<-a,\\ a<x$。"],
-  ["expand_hs", "3次の展開公式・複雑な展開", "alg", 10, ["expand_formula"], "$(a\\pm b)^3=a^3\\pm3a^2b+3ab^2\\pm b^3$、$(a+b)(a^2-ab+b^2)=a^3+b^3$。"],
-  ["factor_hs", "たすき掛け・置き換え・3次式の因数分解", "alg", 10, ["factor_formula", "expand_hs"], "$acx^2+(ad+bc)x+bd=(ax+b)(cx+d)$。式の一部を置き換えると見通しがよくなる。"],
+  ["factor_hs", "たすき掛け・置き換えによる因数分解", "alg", 10, ["factor_formula"], "$acx^2+(ad+bc)x+bd=(ax+b)(cx+d)$。式の一部を1つの文字に置き換えると見通しがよくなる。"],
   ["quad_discriminant", "判別式と解の個数", "alg", 10, ["quad_eq_formula"], "$D=b^2-4ac$。$D>0$ なら異なる2つの実数解、$D=0$ なら重解、$D<0$ なら実数解なし。"],
   ["quad_ineq", "2次不等式", "alg", 10, ["quad_eq_formula", "ineq_linear", "quad_vertex"], "グラフが $x$ 軸より上か下かで解を決める。まず $=0$ の解を求める。"],
+  ["expand_hs", "3次式の展開と因数分解", "alg", 11, ["expand_formula", "factor_hs"], "$(a\\pm b)^3=a^3\\pm3a^2b+3ab^2\\pm b^3$、$a^3+b^3=(a+b)(a^2-ab+b^2)$、$a^3-b^3=(a-b)(a^2+ab+b^2)$。"],
   ["poly_div", "整式の除法・剰余の定理・因数定理", "alg", 11, ["factor_hs"], "$P(x)$ を $x-a$ でわった余りは $P(a)$。$P(a)=0$ なら $x-a$ を因数にもつ。"],
   ["binomial", "二項定理", "alg", 11, ["expand_hs", "perm_comb"], "$(a+b)^n$ の展開で、$a^{n-k}b^k$ の係数は ${}_nC_k$。"],
   ["higher_eq", "高次方程式", "alg", 11, ["poly_div", "complex_calc", "quad_eq_formula"], "因数定理で1つ解を見つけ、因数分解して次数を下げていく。"],
+  ["frac_expr", "分数式の計算", "alg", 11, ["poly_calc_mixed", "factor_hs"], "分母・分子を因数分解して、共通な因数で約分する。たし算・ひき算は、分母をそろえて（通分して）から。"],
+  ["identity", "恒等式（係数比較）", "alg", 11, ["expand_formula", "simul_add"], "$x$ についての恒等式では、両辺の同じ次数の項の係数がそれぞれ等しい（係数比較法）。$x$ にいくつかの値を代入して求めてもよい（数値代入法）。"],
+  ["amgm", "相加平均と相乗平均の関係", "alg", 11, ["sqrt_addsub", "ineq_linear"], "$a>0,\\ b>0$ のとき $\\dfrac{a+b}{2}\\ge\\sqrt{ab}$（等号は $a=b$ のとき）。積が一定なら和の最小値が、和が一定なら積の最大値がわかる。"],
   ["quad_roots_coef", "解と係数の関係", "alg", 11, ["quad_discriminant", "complex_calc"], "$ax^2+bx+c=0$ の2解 $\\alpha,\\beta$ について $\\alpha+\\beta=-\\frac ba$、$\\alpha\\beta=\\frac ca$。"],
 
   // ───────── 関数 ─────────
@@ -133,6 +143,7 @@ const D = [
   ["trig_addition", "加法定理・倍角の公式", "func", 11, ["trig_radian"], "$\\sin(\\alpha+\\beta)=\\sin\\alpha\\cos\\beta+\\cos\\alpha\\sin\\beta$。"],
   ["exp_func", "指数関数・指数方程式", "func", 11, ["exp_law", "linear_basic"], "$y=a^x$ は $a>1$ で増加、$0<a<1$ で減少。底をそろえて指数を比べる。"],
   ["log_func", "対数関数・対数方程式", "func", 11, ["log_calc", "exp_func"], "真数は正。底をそろえて、真数どうしを比べる。"],
+  ["func_frac_irr", "分数関数・無理関数・逆関数", "func", 12, ["prop_graph", "quad_vertex", "sqrt_meaning"], "$y=\\dfrac{k}{x-p}+q$ の漸近線は $x=p$ と $y=q$。$y=f(x)$ の逆関数は、$x$ について解いてから $x$ と $y$ を入れかえる。合成関数 $(g\\circ f)(x)=g(f(x))$ は内側から計算する。"],
 
   // ───────── 図形 ─────────
   ["angle_basic", "角度（三角形・四角形・対頂角）", "geom", 4, ["add_sub_big"], "三角形の内角の和は $180^\\circ$、四角形は $360^\\circ$、一直線の角は $180^\\circ$。"],
@@ -152,12 +163,22 @@ const D = [
   ["circle_angle", "円周角の定理", "geom", 9, ["parallel_angle", "sector"], "同じ弧に対する円周角は等しく、中心角の半分。直径に対する円周角は $90^\\circ$。"],
   ["pythagorean", "三平方の定理", "geom", 9, ["sqrt_simplify", "area_polygons"], "直角三角形で、斜辺を $c$ とすると $a^2+b^2=c^2$。"],
   ["pythagorean_apps", "三平方の定理の利用（特別な直角三角形・空間）", "geom", 9, ["pythagorean", "similar_basic"], "辺の比 $1:1:\\sqrt2$、$1:2:\\sqrt3$。直方体の対角線は $\\sqrt{a^2+b^2+c^2}$。"],
+  ["geom_centers", "三角形の重心・外心・内心", "geom", 10, ["circle_angle", "similar_basic", "parallel_angle"], "重心は中線を $2:1$ に内分する。外心は3頂点から等距離で、$\\angle A$ が鋭角なら $\\angle BOC=2\\angle A$。内心は3辺から等距離で、$\\angle BIC=90^\\circ+\\frac12\\angle A$。"],
+  ["geom_ratio", "角の二等分線・チェバ・メネラウスの定理", "geom", 10, ["similar_basic", "ratio_eq"], "$\\angle A$ の二等分線と $BC$ の交点を $D$ とすると $BD:DC=AB:AC$。チェバの定理 $\\dfrac{BP}{PC}\\cdot\\dfrac{CQ}{QA}\\cdot\\dfrac{AR}{RB}=1$。メネラウスの定理も、同じ形の比の積が $1$。"],
+  ["geom_circle_hs", "円の性質（内接四角形・接弦定理・方べき）", "geom", 10, ["circle_angle", "similar_basic"], "円に内接する四角形の向かい合う角の和は $180^\\circ$。接線と弦のつくる角は、その内側の弧に対する円周角に等しい。方べきの定理 $PA\\cdot PB=PC\\cdot PD$（接線なら $PT^2=PA\\cdot PB$）。"],
+  ["polyhedron", "多面体（オイラーの多面体定理）", "geom", 10, ["solid_area_vol"], "へこみのない多面体では（頂点の数）$-$（辺の数）$+$（面の数）$=2$。辺の数は「各面の辺の数の合計 $\\div2$」で数えられる。"],
   ["trig_ratio", "三角比", "geom", 10, ["pythagorean_apps"], "直角三角形の角 $\\theta$ について、$\\sin\\theta=\\frac{\\text{対辺}}{\\text{斜辺}}$、$\\cos\\theta=\\frac{\\text{隣辺}}{\\text{斜辺}}$、$\\tan\\theta=\\frac{\\text{対辺}}{\\text{隣辺}}$。"],
   ["trig_laws", "正弦定理・余弦定理", "geom", 10, ["trig_ratio", "sqrt_addsub"], "正弦定理 $\\frac a{\\sin A}=2R$。余弦定理 $a^2=b^2+c^2-2bc\\cos A$。"],
   ["triangle_area_trig", "三角形の面積（$\\frac12 ab\\sin C$）", "geom", 10, ["trig_laws"], "2辺とその間の角がわかれば面積は $\\frac12ab\\sin C$。"],
   ["coord_line", "直線の方程式・点と直線の距離", "geom", 11, ["linear_eq", "pythagorean"], "点 $(x_1,y_1)$ を通り傾き $m$ の直線は $y-y_1=m(x-x_1)$。"],
   ["coord_circle", "円の方程式", "geom", 11, ["coord_line", "quad_vertex"], "中心 $(a,b)$、半径 $r$ の円は $(x-a)^2+(y-b)^2=r^2$。"],
-  ["vector_basic", "ベクトルの成分と内積", "geom", 12, ["pythagorean", "coord_basic", "trig_ratio"], "$\\vec a=(a_1,a_2)$ のとき $|\\vec a|=\\sqrt{a_1^2+a_2^2}$、内積 $\\vec a\\cdot\\vec b=a_1b_1+a_2b_2$。"],
+  ["locus", "軌跡", "geom", 11, ["coord_circle"], "条件を満たす点を $P(x,\\ y)$ とおき、条件を $x,\\ y$ の式で表して整理する。どんな図形になるか（直線・円など）を式の形から読む。"],
+  ["region", "不等式の表す領域", "geom", 11, ["coord_line", "coord_circle", "ineq_linear"], "$y>f(x)$ はグラフ $y=f(x)$ の上側、$x^2+y^2<r^2$ は円の内部。連立不等式は共通部分。領域での $ax+by$ の最大・最小は、境界の頂点などで調べる。"],
+  ["vector_basic", "ベクトルの成分と内積", "geom", 11, ["pythagorean", "coord_basic", "trig_ratio"], "$\\vec a=(a_1,a_2)$ のとき $|\\vec a|=\\sqrt{a_1^2+a_2^2}$、内積 $\\vec a\\cdot\\vec b=a_1b_1+a_2b_2$。"],
+  ["vector_pos", "位置ベクトルと図形", "geom", 11, ["vector_basic", "similar_basic"], "点 $A(\\vec a)$、$B(\\vec b)$ を結ぶ線分を $m:n$ に内分する点は $\\dfrac{n\\vec a+m\\vec b}{m+n}$。2直線の交点は、2通りに表して係数を比べる。"],
+  ["vector_space", "空間の座標とベクトル", "geom", 11, ["vector_basic", "pythagorean_apps"], "空間ベクトル $\\vec a=(a_1,a_2,a_3)$ の大きさは $\\sqrt{a_1^2+a_2^2+a_3^2}$、内積は $a_1b_1+a_2b_2+a_3b_3$。平面と同じ考え方を3つの成分で行う。"],
+  ["conic", "2次曲線（放物線・楕円・双曲線）", "geom", 12, ["coord_circle", "quad_vertex"], "放物線 $y^2=4px$ の焦点は $(p,\\ 0)$、準線は $x=-p$。楕円 $\\dfrac{x^2}{a^2}+\\dfrac{y^2}{b^2}=1$（$a>b>0$）の焦点は $(\\pm\\sqrt{a^2-b^2},\\ 0)$。双曲線 $\\dfrac{x^2}{a^2}-\\dfrac{y^2}{b^2}=1$ の焦点は $(\\pm\\sqrt{a^2+b^2},\\ 0)$、漸近線は $y=\\pm\\dfrac bax$。"],
+  ["param_polar", "媒介変数表示と極座標", "geom", 12, ["conic", "trig_radian"], "媒介変数を消去すると $x,\\ y$ の関係式になる（$\\cos^2\\theta+\\sin^2\\theta=1$ を使うなど）。極座標 $(r,\\ \\theta)$ と直交座標は $x=r\\cos\\theta,\\ y=r\\sin\\theta$ で結ばれる。"],
 
   // ───────── データ・確率 ─────────
   ["table_read", "表・グラフの読み取り", "data", 3, ["add_sub_big"], "表の合計、ちがい、いちばん大きい（小さい）ものを、目もりを正しく読んで答える。"],
@@ -171,12 +192,22 @@ const D = [
   ["perm_comb", "順列・組合せ", "data", 10, ["counting_elem", "mul_by_1digit"], "順列 ${}_nP_r=n(n-1)\\cdots(n-r+1)$、組合せ ${}_nC_r=\\frac{{}_nP_r}{r!}$。順番を区別するかどうかが分かれ目。"],
   ["prob_hs", "確率（余事象・独立・反復試行）", "data", 10, ["perm_comb", "prob_multi"], "「少なくとも1つ」は余事象（1−ない確率）。独立な試行の確率は積。"],
   ["variance_sd", "分散・標準偏差", "data", 10, ["data_avg_median", "sqrt_meaning"], "分散 ＝（平均との差）$^2$ の平均。標準偏差は分散の正の平方根。"],
-  ["expected_value", "期待値", "data", 11, ["prob_hs", "frac_add_unlike"], "期待値 ＝ Σ（値×その確率）。"],
+  ["data_corr", "散布図と相関係数", "data", 10, ["variance_sd"], "共分散 $s_{xy}$ は「$x$ の偏差 $\\times$ $y$ の偏差」の平均。相関係数 $r=\\dfrac{s_{xy}}{s_xs_y}$ は $-1\\le r\\le 1$ で、$1$ に近いほど強い正の相関、$-1$ に近いほど強い負の相関。"],
+  ["hypo_basic", "仮説検定の考え方", "data", 10, ["freq_table", "prob_basic"], "「偶然そうなっただけ」と仮定したとき、実際の結果以上にかたよる確率が基準（例えば $5\\%$）より小さければ、仮定は正しくなかったと判断する。"],
+  ["expected_value", "期待値", "data", 10, ["prob_hs", "frac_add_unlike"], "期待値 ＝ Σ（値×その確率）。"],
+  ["prob_cond", "条件付き確率", "data", 10, ["prob_hs"], "$A$ が起こったときに $B$ が起こる確率は $P_A(B)=\\dfrac{P(A\\cap B)}{P(A)}$。変形した $P(A\\cap B)=P(A)\\,P_A(B)$ が乗法定理。"],
+  ["rv_var", "確率変数の分散と $aX+b$", "data", 11, ["expected_value", "variance_sd"], "$V(X)=E(X^2)-\\{E(X)\\}^2$、$\\sigma(X)=\\sqrt{V(X)}$。$E(aX+b)=aE(X)+b$、$V(aX+b)=a^2V(X)$。"],
+  ["binom_dist", "二項分布", "data", 11, ["rv_var", "perm_comb"], "成功の確率が $p$ の試行を $n$ 回くり返したときの成功の回数 $X$ は二項分布 $B(n,\\ p)$ に従い、$E(X)=np$、$V(X)=np(1-p)$。"],
+  ["normal_dist", "正規分布", "data", 11, ["binom_dist"], "$X$ が正規分布 $N(m,\\ \\sigma^2)$ に従うとき、$Z=\\dfrac{X-m}{\\sigma}$ は標準正規分布 $N(0,\\ 1)$ に従う。確率は正規分布表から読む。"],
+  ["estimate", "母平均・母比率の推定", "data", 11, ["normal_dist"], "標本の大きさ $n$、標本平均 $\\overline{X}$、母標準偏差 $\\sigma$ のとき、母平均の信頼度 $95\\%$ の信頼区間は $\\overline{X}\\pm1.96\\cdot\\dfrac{\\sigma}{\\sqrt n}$。"],
+  ["hypo_test", "仮説検定（正規分布の利用）", "data", 11, ["normal_dist", "hypo_basic"], "帰無仮説が正しいと仮定して検定統計量 $Z$ を計算する。有意水準 $5\\%$ の両側検定なら、$|Z|\\ge1.96$ のとき帰無仮説を棄却する。"],
 
   // ───────── 数列・微分積分 ─────────
   ["seq_arith", "等差数列", "calc", 11, ["eq_linear_basic", "lit_evaluate"], "初項 $a$、公差 $d$ のとき $a_n=a+(n-1)d$。和は $\\frac{n(\\text{初項}+\\text{末項})}{2}$。"],
   ["seq_geom", "等比数列", "calc", 11, ["seq_arith", "exp_law"], "初項 $a$、公比 $r$ のとき $a_n=ar^{n-1}$。和は $\\frac{a(r^n-1)}{r-1}$。"],
   ["seq_sigma", "和の公式（Σ）", "calc", 11, ["seq_arith", "expand_formula"], "$\\sum k=\\frac{n(n+1)}2$、$\\sum k^2=\\frac{n(n+1)(2n+1)}6$、$\\sum k^3=\\left\\{\\frac{n(n+1)}2\\right\\}^2$。"],
+  ["seq_diff", "階差数列・和と一般項", "calc", 11, ["seq_sigma"], "階差数列 $b_n=a_{n+1}-a_n$ を使うと $a_n=a_1+\\sum_{k=1}^{n-1}b_k$（$n\\ge2$）。和 $S_n$ がわかっていれば $a_n=S_n-S_{n-1}$（$n\\ge2$）、$a_1=S_1$。"],
+  ["seq_induction", "数学的帰納法", "calc", 11, ["seq_sigma"], "[1] $n=1$ のとき成り立つ。[2] $n=k$ のとき成り立つと仮定すると $n=k+1$ のときも成り立つ。この2つを示せば、すべての自然数 $n$ で成り立つ。"],
   ["seq_recur", "漸化式", "calc", 11, ["seq_arith", "seq_geom"], "$a_{n+1}=a_n+d$ は等差、$a_{n+1}=ra_n$ は等比。$a_{n+1}=pa_n+q$ は特性方程式 $\\alpha=p\\alpha+q$ で変形。"],
   ["deriv_basic", "微分（多項式）", "calc", 11, ["exp_law", "expand_basic"], "$(x^n)'=nx^{n-1}$、定数は 0、和・定数倍は項ごとに。"],
   ["deriv_tangent", "接線の方程式", "calc", 11, ["deriv_basic", "linear_eq"], "$x=a$ での接線は $y-f(a)=f'(a)(x-a)$。"],
@@ -185,12 +216,63 @@ const D = [
   ["integ_area", "積分と面積", "calc", 11, ["integ_basic", "quad_eq_basic"], "上の関数 − 下の関数 を、交点から交点まで積分する。"],
   ["limit_seq", "数列の極限", "calc", 12, ["seq_geom"], "$|r|<1$ なら $r^n\\to0$。分数式は分母の最高次でわって考える。"],
   ["limit_func", "関数の極限", "calc", 12, ["limit_seq", "factor_hs", "sqrt_addsub"], "$\\frac00$ の形は因数分解や有理化で約分してから代入する。"],
-  ["deriv_rules", "積・商・合成関数の微分", "calc", 12, ["deriv_basic"], "$(fg)'=f'g+fg'$、$\\left(\\frac fg\\right)'=\\frac{f'g-fg'}{g^2}$、$\\{f(g(x))\\}'=f'(g)\\,g'$。"],
+  ["deriv_rules", "積・商・合成関数の微分", "calc", 12, ["deriv_basic", "func_frac_irr"], "$(fg)'=f'g+fg'$、$\\left(\\frac fg\\right)'=\\frac{f'g-fg'}{g^2}$、$\\{f(g(x))\\}'=f'(g)\\,g'$。"],
   ["deriv_transc", "三角・指数・対数関数の微分", "calc", 12, ["deriv_rules", "trig_radian", "log_func"], "$(\\sin x)'=\\cos x$、$(e^x)'=e^x$、$(\\log x)'=\\frac1x$。"],
   ["integ_adv", "置換積分・部分積分", "calc", 12, ["integ_basic", "deriv_transc"], "置換積分は $u=g(x)$ とおく。部分積分は $\\int fg'=fg-\\int f'g$。"],
+  ["deriv_implicit", "媒介変数・陰関数の微分と高次導関数", "calc", 12, ["deriv_rules", "deriv_transc"], "$x=f(t),\\ y=g(t)$ のとき $\\dfrac{dy}{dx}=\\dfrac{dy/dt}{dx/dt}$。$y$ を $x$ の関数とみて両辺を微分すると、$\\dfrac{d}{dx}y^2=2y\\dfrac{dy}{dx}$。"],
+  ["deriv_graph", "法線・グラフの凹凸と変曲点", "calc", 12, ["deriv_transc", "deriv_tangent", "deriv_extrema"], "$x=a$ での法線の傾きは $-\\dfrac{1}{f'(a)}$。$f''(x)>0$ の区間で下に凸、$f''(x)<0$ で上に凸。$f''(x)$ の符号が変わる点が変曲点。"],
+  ["deriv_app", "微分の応用（最大・最小・速度）", "calc", 12, ["deriv_graph"], "区間での最大・最小は、極値と区間の端の値を比べる。直線上を動く点の位置 $x(t)$ から、速度 $v=\\dfrac{dx}{dt}$、加速度 $\\alpha=\\dfrac{dv}{dt}$。"],
+  ["integ_riemann", "区分求積法", "calc", 12, ["integ_basic", "limit_seq", "seq_sigma"], "$\\displaystyle\\lim_{n\\to\\infty}\\frac1n\\sum_{k=1}^{n}f\\!\\left(\\frac kn\\right)=\\int_0^1 f(x)\\,dx$。和を「幅 $\\frac1n$ の長方形の面積の和」とみる。"],
+  ["integ_app", "面積・体積・曲線の長さ", "calc", 12, ["integ_adv", "integ_area"], "$x$ 軸のまわりに1回転してできる立体の体積は $\\pi\\displaystyle\\int_a^b\\{f(x)\\}^2dx$。曲線の長さは $\\displaystyle\\int_a^b\\sqrt{1+\\{f'(x)\\}^2}\\,dx$。"],
 ];
 
-/** 検証しやすい形（オブジェクトの配列）にして export */
+/**
+ * 高校の科目（平成30年告示の学習指導要領の区分）。stages はその科目の単元が置かれる学年。
+ *  履修のしかたは学校・コースで違うので、プロフィールで選べるようにする（既定は defaultCourses）。
+ */
+export const COURSES = {
+  I: { name: "数学Ⅰ", short: "Ⅰ", stages: [10] },
+  A: { name: "数学A", short: "A", stages: [10] },
+  II: { name: "数学Ⅱ", short: "Ⅱ", stages: [11] },
+  B: { name: "数学B", short: "B", stages: [11] },
+  C: { name: "数学C", short: "C", stages: [11, 12] },
+  III: { name: "数学Ⅲ", short: "Ⅲ", stages: [12] },
+};
+export const COURSE_KEYS = Object.keys(COURSES);
+
+/** 学年ごとの、ふつうの履修（高1＝Ⅰ・A、高2＝＋Ⅱ・B・C、高3＝＋Ⅲ）。中学生以下は科目なし */
+export function defaultCourses(grade) {
+  if (grade >= 12) return ["I", "A", "II", "B", "C", "III"];
+  if (grade === 11) return ["I", "A", "II", "B", "C"];
+  if (grade === 10) return ["I", "A"];
+  return [];
+}
+
+/** 高校の単元の科目 */
+const COURSE_OF = {
+  // 数学Ⅰ
+  real_calc_hs: "I", ineq_linear: "I", abs_eq_ineq: "I", factor_hs: "I", quad_discriminant: "I", quad_ineq: "I",
+  quad_vertex: "I", quad_maxmin: "I", quad_determine: "I", trig_ratio: "I", trig_laws: "I", triangle_area_trig: "I",
+  sets_logic: "I", variance_sd: "I", data_corr: "I", hypo_basic: "I",
+  // 数学A
+  perm_comb: "A", prob_hs: "A", expected_value: "A", prob_cond: "A", geom_centers: "A", geom_ratio: "A",
+  geom_circle_hs: "A", polyhedron: "A", int_divisor: "A", int_eq: "A", int_base: "A",
+  // 数学Ⅱ
+  exp_law: "II", complex_calc: "II", log_calc: "II", log_common: "II", expand_hs: "II", poly_div: "II", binomial: "II",
+  higher_eq: "II", quad_roots_coef: "II", frac_expr: "II", identity: "II", amgm: "II", trig_radian: "II", trig_eq: "II",
+  trig_addition: "II", exp_func: "II", log_func: "II", coord_line: "II", coord_circle: "II", locus: "II", region: "II",
+  deriv_basic: "II", deriv_tangent: "II", deriv_extrema: "II", integ_basic: "II", integ_area: "II",
+  // 数学B
+  seq_arith: "B", seq_geom: "B", seq_sigma: "B", seq_recur: "B", seq_diff: "B", seq_induction: "B",
+  rv_var: "B", binom_dist: "B", normal_dist: "B", estimate: "B", hypo_test: "B",
+  // 数学C
+  vector_basic: "C", vector_pos: "C", vector_space: "C", conic: "C", param_polar: "C", complex_plane: "C",
+  // 数学Ⅲ
+  func_frac_irr: "III", limit_seq: "III", limit_func: "III", deriv_rules: "III", deriv_transc: "III", deriv_implicit: "III",
+  deriv_graph: "III", deriv_app: "III", integ_adv: "III", integ_riemann: "III", integ_app: "III",
+};
+
+/** 検証しやすい形（オブジェクトの配列）にして export。course は高校の単元だけ（それ以外は null） */
 export const SKILL_DEFS = D.map(([id, name, strand, stage, prereqs, point]) => ({
   id,
   name,
@@ -198,4 +280,6 @@ export const SKILL_DEFS = D.map(([id, name, strand, stage, prereqs, point]) => (
   stage,
   prereqs,
   point,
+  course: COURSE_OF[id] || null,
 }));
+export { COURSE_OF };

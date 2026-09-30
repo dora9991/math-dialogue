@@ -1,6 +1,6 @@
 // ============================================================
 // tpl/hs_alg1.js — 高校 式と方程式（数I）
-//   ineq_linear / abs_eq_ineq / quad_ineq / expand_hs / factor_hs / quad_discriminant
+//   ineq_linear / abs_eq_ineq / quad_ineq / expand_hs（数Ⅱ）/ factor_hs / quad_discriminant
 //
 //  すべて自作の数値・言い回し。答えは別の方法（全数チェック・展開の照合）でも確かめている。
 // ============================================================
@@ -428,7 +428,7 @@ export default {
     ),
   ],
 
-  // ── 3次の展開公式・複雑な展開 ────────────────────
+  // ── 3次式の展開と因数分解（数Ⅱ） ─────────────────
   expand_hs: [
     t("choice", (r, lv) => {
       /** (p x + q [y])^3 の係数（x の次数の低い順）。2 変数のときは y^(3−k) をかける */
@@ -591,9 +591,79 @@ export default {
       },
       { id: "b", db: 0.1 },
     ),
+    t(
+      "choice",
+      (r, lv) => {
+        // 3次式の因数分解：a³±b³（1文字・2文字）、(x+q)³ の展開形、共通因数をくくってから
+        const order = ["x", "y"];
+        const f2 = (f) => (f.t.size > 1 ? `(${px(f, order)})` : px(f, order));
+        const prod = (fs) => fs.reduce((acc, f) => acc.mul(f), Poly.const(1));
+        const kind = lv === 1 ? "cube" : lv === 2 ? r.pick(["cube", "cubeY"]) : r.pick(["perfect", "common"]);
+        let given; // Poly
+        let correct; // TeX
+        let good; // Poly[]（定数倍もふくめた因数）
+        let bad; // [TeX, Poly[], mc][]
+        let expl;
+        if (kind === "perfect") {
+          const q = r.nz(-4, 4);
+          given = C([q ** 3, 3 * q * q, 3 * q, 1]);
+          good = [P.lin(1, q), P.lin(1, q), P.lin(1, q)];
+          assert(prod(good).equals(P.lin(1, q).pow(3)) && prod(good).equals(given), "(x+q)³ の検算");
+          const L = (u) => px(P.lin(1, u));
+          correct = `(${L(q)})^{3}`;
+          bad = [
+            [`(${L(-q)})^{3}`, [P.lin(1, -q), P.lin(1, -q), P.lin(1, -q)], "MC-CUBE-SIGN"],
+            [`(${L(q)})(${px(C([q * q, -q, 1]))})`, [P.lin(1, q), C([q * q, -q, 1])], "MC-CUBE-FORMULA-CONFUSE"],
+            [`(${L(q)})(${px(C([q * q, q, 1]))})`, [P.lin(1, q), C([q * q, q, 1])], "MC-CUBE-FORMULA-CONFUSE"],
+            [`(${L(q)})^{2}(${L(-q)})`, [P.lin(1, q), P.lin(1, q), P.lin(1, -q)], "MC-FACTOR-SIGN"],
+            [`(${L(3 * q)})^{3}`, [P.lin(1, 3 * q), P.lin(1, 3 * q), P.lin(1, 3 * q)], "MC-CUBE-COEF"],
+          ];
+          expl = `$(a+b)^3=a^3+3a^2b+3ab^2+b^3$ の形になっているか確かめます。$a=x$、$b=${q}$ とすると $3a^2b=${3 * q}x^2$、$3ab^2=${3 * q * q}x$、$b^3=${q ** 3}$ で、すべて一致します。よって $${correct}$。`;
+        } else {
+          // p³X³ ± q³Y³ = (pX ± qY)(p²X² ∓ pq XY + q²Y²)。common のときは全体に k をかける
+          const k = kind === "common" ? r.pick([2, 3, 5]) : 1;
+          const withY = kind === "cubeY";
+          const [p, q] = lv === 1 ? [1, r.int(1, 4)] : kind === "common" ? [1, r.int(1, 3)] : until(() => [r.int(1, 3), r.int(1, 3)], ([u, v]) => gcd(u, v) === 1 && u * v > 1);
+          const plus = r.chance(0.5);
+          const sq = plus ? q : -q;
+          const Y = withY ? Poly.v("y") : Poly.const(1);
+          const X = Poly.v("x");
+          const lin = (a, b) => X.scale(a).add(Y.scale(b)); // aX + bY
+          const quad = (m) => X.pow(2).scale(p * p).add(X.mul(Y).scale(m)).add(Y.pow(2).scale(q * q)); // p²X² + m XY + q²Y²
+          given = X.pow(3).scale(k * p ** 3).add(Y.pow(3).scale(k * sq ** 3));
+          const kP = Poly.const(k);
+          good = [...(k > 1 ? [kP] : []), lin(p, sq), quad(-p * sq)];
+          assert(prod(good).equals(given), "3乗の和・差の因数分解の検算");
+          // 独立な検算：いくつかの値を代入して一致を確かめる
+          for (const [xv, yv] of [[2, 3], [-1, 5], [4, -2]]) assert(eq(prod(good).eval({ x: xv, y: yv }), given.eval({ x: xv, y: yv })), "代入による検算");
+          const kT = k > 1 ? String(k) : "";
+          const show = (fs) => kT + fs.map(f2).join("");
+          correct = show([lin(p, sq), quad(-p * sq)]);
+          bad = [
+            [show([lin(p, sq), quad(p * sq)]), [...(k > 1 ? [kP] : []), lin(p, sq), quad(p * sq)], "MC-FACTOR-CUBE-MIDDLE"],
+            [show([lin(p, -sq), quad(p * sq)]), [...(k > 1 ? [kP] : []), lin(p, -sq), quad(p * sq)], "MC-FACTOR-CUBE-SIGN"],
+            [show([lin(p, sq), quad(-2 * p * sq)]), [...(k > 1 ? [kP] : []), lin(p, sq), quad(-2 * p * sq)], "MC-FACTOR-CUBE-MIDDLE"],
+            [kT + `(${px(lin(p, sq), order)})^{3}`, [...(k > 1 ? [kP] : []), lin(p, sq), lin(p, sq), lin(p, sq)], "MC-CUBE-FORMULA-CONFUSE"],
+            ...(k > 1 ? [[[lin(p, sq), quad(-p * sq)].map(f2).join(""), [lin(p, sq), quad(-p * sq)], "MC-FACTOR-PARTIAL"]] : []),
+          ];
+          const A = `${p === 1 ? "" : p}x`;
+          const B = `${q === 1 && withY ? "" : q}${withY ? "y" : ""}`;
+          expl = `${k > 1 ? `まず共通因数 $${k}$ をくくり出して $${k}(${px(given.scale(Q(1, k)), order)})$。` : ""}${plus ? "$a^3+b^3=(a+b)(a^2-ab+b^2)$" : "$a^3-b^3=(a-b)(a^2+ab+b^2)$"} で、$a=${A}$、$b=${B}$ とみます。$${correct}$。（2次の因数の真ん中の項の符号は、1次の因数の符号と逆になります）`;
+        }
+        const g = prod(good);
+        const list = bad.filter(([, fs]) => !prod(fs).equals(g)).map(([label, , mc]) => [label, mc]);
+        return choice({
+          q: `次の式を因数分解しなさい。\n$${px(given, order)}$`,
+          correct: $(correct),
+          wrongs: collect(list, correct),
+          explain: expl,
+        });
+      },
+      { id: "c", db: 0.2 },
+    ),
   ],
 
-  // ── たすき掛け・置き換え・3次式の因数分解 ────────────
+  // ── たすき掛け・置き換えによる因数分解 ────────────
   factor_hs: [
     t("choice", (r, lv) => {
       // たすき掛け：(a x + b y0)(c x + d y0)
@@ -648,8 +718,8 @@ export default {
     t(
       "choice",
       (r, lv) => {
-        // 置き換え・3乗の和差・4次式・3次式（因数定理）
-        const kind = lv === 1 ? "subst" : lv === 2 ? r.pick(["subst", "cube"]) : r.pick(["quartic", "cubic", "cube"]);
+        // 置き換え・複2次式・平方の差を作る4次式・2文字の2次式（3次式の因数分解は数Ⅱの expand_hs）
+        const kind = lv === 1 ? "subst" : lv === 2 ? r.pick(["subst", "quartic"]) : r.pick(["quartic2", "two"]);
         const linF = (k) => P.lin(1, k);
         const show = (fs) =>
           [...fs]
@@ -681,24 +751,6 @@ export default {
             [[linF(-pp + s), linF(-pp + t_)], "MC-FACTOR-SUBST"],
           ];
           expl = `$x${sgn(pp)}=A$ とおくと、$A^2${m === 1 ? "+" : m === -1 ? "-" : sgn(m)}A${sgn(n)}=(A${sgn(s)})(A${sgn(t_)})$。$A$ をもとにもどして $(x${sgn(pp)}${sgn(s)})(x${sgn(pp)}${sgn(t_)})=${show(good)}$。（かっこの中を計算して簡単にするのを忘れずに）`;
-        } else if (kind === "cube") {
-          const [p, q] = until(() => [lv === 2 ? r.pick([1, 2]) : r.pick([1, 2, 3]), r.pick([1, 2, 3, 4])], ([u, v]) => gcd(u, v) === 1);
-          const plus = r.chance(0.5);
-          const qq = plus ? q : -q;
-          // p³x³ + qq³ = (p x + qq)(p²x² − p qq x + qq²)
-          const f1 = P.lin(p, qq);
-          const f2 = C([qq * qq, -p * qq, p * p]);
-          given = `${p ** 3 === 1 ? "" : p ** 3}x^{3}${plus ? "+" : "-"}${q ** 3}`;
-          good = [f1, f2];
-          assert(prod(good).equals(C([qq ** 3, 0, 0, p ** 3])), "3乗の和差の因数分解の検算");
-          bad = [
-            [[f1, C([qq * qq, p * qq, p * p])], "MC-FACTOR-CUBE-SIGN"],
-            [[f1, f1, f1], "MC-CUBE-FORMULA-CONFUSE"],
-            [[f1, C([qq * qq, -2 * p * qq, p * p])], "MC-FACTOR-CUBE-MIDDLE"],
-            [[P.lin(p, -qq), C([qq * qq, p * qq, p * p])], "MC-FACTOR-CUBE-SIGN"],
-            [[f1, C([qq, -p, p * p])], "MC-FACTOR-CUBE-MIDDLE"],
-          ];
-          expl = `${plus ? "$a^3+b^3=(a+b)(a^2-ab+b^2)$" : "$a^3-b^3=(a-b)(a^2+ab+b^2)$"} を使います。$a=${p === 1 ? "" : p}x$、$b=${q}$ とみて、$${show(good)}$。（2次の因数の真ん中の符号は、最初の因数と逆）`;
         } else if (kind === "quartic") {
           const [m, n] = until(() => [r.int(1, 3), r.int(2, 5)], ([u, v]) => u < v);
           given = `x^{4}-${m * m + n * n}x^{2}+${m * m * n * n}`;
@@ -712,20 +764,48 @@ export default {
             [[linF(-n), linF(m), linF(m), linF(n)], "MC-FACTOR-SIGN"],
           ];
           expl = `$x^2=A$ とおくと $A^2-${m * m + n * n}A+${m * m * n * n}=(A-${m * m})(A-${n * n})$。もどして $(x^2-${m * m})(x^2-${n * n})$。さらに $x^2-a^2=(x+a)(x-a)$ で分解して $${show(good)}$。（途中で止めずに、これ以上分解できなくなるまで）`;
-        } else {
-          const roots = until(() => [r.nz(-4, 4), r.nz(-4, 4), r.nz(-4, 4)], (v) => new Set(v).size === 3);
-          const [r1, r2, r3] = roots;
-          good = roots.map((x) => linF(-x));
-          const g = prod(good);
-          given = px(g);
+        } else if (kind === "quartic2") {
+          // x⁴ + k x² + a² = (x² + a)² − (b x)² = (x² + b x + a)(x² − b x + a)。2次の因数は実数の範囲でこれ以上分解できない（b² < 4a）
+          const [a, b] = r.pick([[1, 1], [2, 1], [2, 2], [3, 1], [3, 2], [3, 3], [4, 1], [4, 2], [4, 3]]);
+          assert(b * b < 4 * a, "2次の因数が分解できない条件");
+          const k = 2 * a - b * b;
+          given = px(C([a * a, 0, k, 0, 1]));
+          good = [C([a, b, 1]), C([a, -b, 1])];
+          assert(prod(good).equals(C([a * a, 0, k, 0, 1])), "平方の差の検算");
           bad = [
-            [roots.map((x) => linF(x)), "MC-FACTOR-THEOREM-SIGN"],
-            [[linF(-r1), linF(-r2), linF(r3)], "MC-FACTOR-THEOREM-SIGN"],
-            [[linF(r1), linF(-r2), linF(-r3)], "MC-FACTOR-THEOREM-SIGN"],
-            [[linF(-r1), linF(r2), linF(r3)], "MC-FACTOR-THEOREM-SIGN"],
-            [[linF(-r1), C([r2 * r3, -(r2 + r3), 1])], "MC-FACTOR-INCOMPLETE", true],
+            [[C([-a, b, 1]), C([-a, -b, 1])], "MC-FACTOR-SQDIFF"],
+            [[C([a, b, 1]), C([a, b, 1])], "MC-FACTOR-SQDIFF"],
+            [[C([a, 2 * b, 1]), C([a, -2 * b, 1])], "MC-FACTOR-SQDIFF"],
+            [[C([a, 0, 1]), C([a, 0, 1])], "MC-FACTOR-SQDIFF"],
+            [[C([b, a, 1]), C([b, -a, 1])], "MC-FACTOR-SQDIFF"],
           ];
-          expl = `定数項 $${qnum(g.coeff(0))}$ の約数（$\\pm$）を $x$ に代入して、値が 0 になるものを探します（因数定理）。$x=${r1}$ を代入すると $0$ になるので $(x${sgn(-r1)})$ を因数にもち、わり算で残りを因数分解すると $${show(good)}$。（3つの解は $${r1},\\ ${r2},\\ ${r3}$）`;
+          const kx2 = k === 0 ? "" : k === 1 ? "+x^2" : k === -1 ? "-x^2" : `${sgn(k)}x^2`;
+          expl = `$x^2=A$ とおいても、そのままでは因数分解できません。$x^4${kx2}+${a * a}=(x^2+${a})^2-${b * b === 1 ? "" : b * b}x^2$ と「平方の差」に変形すると、$(x^2+${a})^2-(${b === 1 ? "" : b}x)^2=${show(good)}$。`;
+        } else {
+          // 2文字の2次式：(x + a y + b)(x + c y + d)。x について整理して、定数項（y の式）をたすき掛け
+          const [a, c, b, d] = until(
+            () => [r.nz(-3, 3), r.nz(-3, 3), r.nz(-4, 4), r.nz(-4, 4)],
+            ([a1, c1, b1, d1]) => a1 !== c1 && a1 + c1 !== 0 && b1 + d1 !== 0 && a1 * d1 + b1 * c1 !== 0 && a1 * d1 !== b1 * c1,
+          );
+          const lin2 = (u, v) => Poly.v("x").add(Poly.mono(u, { y: 1 })).add(Poly.const(v));
+          good = [lin2(a, b), lin2(c, d)];
+          const g2 = prod(good);
+          given = px(g2, ["x", "y"]);
+          // 独立な検算：x について整理した形 x² + {(a+c)y + (b+d)}x + (ay+b)(cy+d) を作って比べる
+          const byX = Poly.v("x", 2)
+            .add(Poly.v("x").mul(Poly.mono(a + c, { y: 1 }).add(Poly.const(b + d))))
+            .add(Poly.mono(a, { y: 1 }).add(Poly.const(b)).mul(Poly.mono(c, { y: 1 }).add(Poly.const(d))));
+          assert(byX.equals(g2), "2文字の2次式の検算");
+          bad = [
+            [[lin2(a, d), lin2(c, b)], "MC-TASUKI-CROSS"],
+            [[lin2(a, -b), lin2(c, -d)], "MC-FACTOR-SIGN"],
+            [[lin2(-a, b), lin2(-c, d)], "MC-FACTOR-SIGN"],
+            [[lin2(a, b), lin2(c, -d)], "MC-FACTOR-SIGN"],
+            [[lin2(c, b), lin2(a, d)], "MC-TASUKI-CROSS"],
+          ];
+          const ty = (u, v) => `${u === 1 ? "" : u === -1 ? "-" : u}y${sgn(v)}`;
+          const midX = a + c > 0 ? `+(${ty(a + c, b + d)})x` : `-(${ty(-(a + c), -(b + d))})x`;
+          expl = `$x$ について整理すると $x^2${midX}+(${ty(a, b)})(${ty(c, d)})$。定数項（$y$ の式）を $(${ty(a, b)})$ と $(${ty(c, d)})$ に分けると、和が $x$ の係数 $${ty(a + c, b + d)}$ になるので、$${show(good)}$。`;
         }
         const correct = show(good);
         // 展開すると正解と同じになる選択肢は、「途中で止めた形」(incomplete) のときだけ残す

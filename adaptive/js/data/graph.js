@@ -1,14 +1,15 @@
 // ============================================================
 // graph.js — 知識グラフを組み立てる（定義 + 問題テンプレ + 前後関係の索引）
 //
-//  SKILLS[id] = { id, name, strand, stage, prereqs, point, tpl,
+//  SKILLS[id] = { id, name, strand, stage, prereqs, point, course, tpl,
 //                 children, anc: Map(祖先ID→距離), desc: Map(子孫ID→距離) }
+//  course … 高校の単元の科目（"I" "A" "II" "B" "C" "III"）。小中学校の単元は null
 //  「祖先」＝前提をたどった先（さかのぼり先）、「子孫」＝そこから先に進む単元。
 // ============================================================
-import { SKILL_DEFS, STRANDS, STAGE_LABEL } from "./graph_def.js";
+import { SKILL_DEFS, STRANDS, STAGE_LABEL, COURSES, COURSE_KEYS, defaultCourses } from "./graph_def.js";
 import { TEMPLATES } from "./tpl/index.js";
 
-export { STRANDS, STAGE_LABEL };
+export { STRANDS, STAGE_LABEL, COURSES, COURSE_KEYS, defaultCourses };
 
 const MAX_DEPTH = 4; // 証拠を伝える範囲（これより遠い関係は薄すぎるので無視）
 
@@ -70,6 +71,13 @@ export const ALL_IDS = Object.keys(SKILLS);
 export const skill = (id) => SKILLS[id];
 export const skillName = (id) => SKILLS[id]?.name || id;
 export const stageLabel = (st) => STAGE_LABEL[st] || String(st);
+/** 単元の学年と科目の表示（例「高2・数学Ⅱ」「中3」） */
+export const stageCourseLabel = (id) => {
+  const s = SKILLS[id];
+  return s.course ? `${stageLabel(s.stage)}・${COURSES[s.course].name}` : stageLabel(s.stage);
+};
+/** 履修科目の配列を正しい形に（知らない科目・重複を除き、科目の順に並べる） */
+export const normalizeCourses = (arr) => COURSE_KEYS.filter((k) => Array.isArray(arr) && arr.includes(k));
 export const hasTemplates = (id) => (SKILLS[id]?.tpl?.length || 0) > 0;
 
 /** 出題できる（テンプレのある）スキルだけ */
@@ -88,6 +96,11 @@ export function validateGraph() {
     if (!STRANDS[d.strand]) errs.push(`${d.id}: 未知の領域 ${d.strand}`);
     if (!STAGE_LABEL[d.stage]) errs.push(`${d.id}: 未知の学年 ${d.stage}`);
     if (!d.point) errs.push(`${d.id}: ポイントが空`);
+    // 科目：高校の単元には必ず付け、その科目の学年に置く。小中学校の単元には付けない
+    if (d.stage >= 10 && !d.course) errs.push(`${d.id}: 高校の単元なのに科目がない`);
+    if (d.stage < 10 && d.course) errs.push(`${d.id}: 小中学校の単元に科目 ${d.course} がある`);
+    if (d.course && !COURSES[d.course]) errs.push(`${d.id}: 未知の科目 ${d.course}`);
+    else if (d.course && !COURSES[d.course].stages.includes(d.stage)) errs.push(`${d.id}: 科目 ${COURSES[d.course].name} の学年でない（${stageLabel(d.stage)}）`);
   }
   for (const s of Object.values(SKILLS)) {
     for (const p of s.prereqs) {
