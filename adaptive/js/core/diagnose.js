@@ -15,16 +15,32 @@
 //  ■ 補正
 //   ・同じ単元の連続・繰り返しは減点（いろんな単元を見たい）
 //   ・難しすぎて正答率が低い問題は減点（心が折れない範囲で）
-//   ・学年より上の単元は重みを小さく（未習を「つまずき」にしたくない）
+//   ・学年から離れた単元は重みを小さく：いまの学年とその前の年を中心に見て、
+//     古い単元は前提として必要なときにさかのぼる。2学年以上先・履修していない科目の単元は見ない
 // ============================================================
 import { SKILLS, PLAYABLE_IDS } from "../data/graph.js";
 import { h2, pCorrect, NS } from "./model.js";
 
-/** 診断で単元を重視する度合い（学年に対して） */
+/**
+ * 診断で単元を重視する度合い（単元の学年 stage が、いまの学年 grade からどれだけ離れているか）。
+ *  いまの学年・1つ前 … 1、2つ前 0.7、3つ前 0.5、4つ前 0.35、それより前 0.25
+ *  1つ先 … 0.4（予習の範囲）、2つ以上先（履修していない科目もここ）… 0（診断では出さない）
+ *  古い単元も 0 にはしない：上の単元の答えから前提が怪しいと分かれば、さかのぼって確かめる
+ */
 export function relevance(stage, grade) {
-  if (stage <= grade) return 1;
-  if (stage === grade + 1) return 0.5;
-  return 0.15;
+  const back = grade - stage;
+  if (back < -1) return 0;
+  if (back === -1) return 0.4;
+  if (back <= 1) return 1;
+  if (back === 2) return 0.7;
+  if (back === 3) return 0.5;
+  if (back === 4) return 0.35;
+  return 0.25;
+}
+
+/** 学習者 L にとっての単元 id の重み（履修していない科目は 0） */
+export function relevanceOf(L, id) {
+  return relevance(L.effStage ? L.effStage(id) : SKILLS[id].stage, L.grade);
 }
 
 /** その単元のテンプレの入力形式（当て推量の大きさを決める）。宣言がなければ選択式扱い */
@@ -54,10 +70,10 @@ function coTable(L) {
   return co;
 }
 
-/** 全単元の重み（学年に応じた relevance） */
+/** 全単元の重み（学年・履修科目に応じた relevance） */
 export function weightsFor(L) {
   const w = new Float64Array(L.N);
-  for (let i = 0; i < L.N; i++) w[i] = relevance(SKILLS[L.order[i]].stage, L.grade);
+  for (let i = 0; i < L.N; i++) w[i] = relevanceOf(L, L.order[i]);
   return w;
 }
 
@@ -132,6 +148,7 @@ export function chooseDiagnostic(L, ctx = {}) {
 
   const cands = [];
   for (const id of playable) {
+    if (!weights[L.idx[id]]) continue; // 2学年以上先・履修していない科目の単元は出さない
     const kind = kindFn(id);
     for (const level of levels) {
       const { gain, pc } = expectedGain(L, id, level, kind, weights);

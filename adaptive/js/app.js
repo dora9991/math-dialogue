@@ -7,7 +7,7 @@
 // ============================================================
 import { Store, rebuildLearner, DISCOUNT } from "./core/store.js";
 import { makeRng, newSeed } from "./core/rng.js";
-import { SKILLS } from "./data/graph.js";
+import { SKILLS, defaultCourses } from "./data/graph.js";
 import { makeItem } from "./core/items.js";
 import { h, mount } from "./ui/dom.js";
 import { homeScreen } from "./ui/home.js";
@@ -47,7 +47,8 @@ export const app = {
   /** 保存された解答ログからモデルを作り直す */
   rebuild() {
     const grade = this.store.profile?.grade ?? 8;
-    this.learner = rebuildLearner(this.store.log, grade);
+    const courses = this.store.profile?.courses ?? defaultCourses(grade);
+    this.learner = rebuildLearner(this.store.log, grade, { courses });
     this.learner.decayTo(Date.now());
   },
 

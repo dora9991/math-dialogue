@@ -80,11 +80,14 @@ export function defaultGraph() {
 export class Learner {
   /**
    * @param opts.grade  いまの学年（stage の数値。中2=8）
+   * @param opts.courses 履修している高校の科目（["I","A",…]）。高校生のときだけ使う。省略ですべて履修扱い
    * @param opts.params PARAMS の上書き
    * @param opts.graph  { order, skills:{id:{stage,strand,prereqs}}, strands:[…] }（省略で本物）
    */
   constructor(opts = {}) {
     this.grade = opts.grade ?? 8;
+    // 科目の区別は高校生だけ（中学生以下は、高校の単元はどれも「まだ先の単元」）
+    this.courses = this.grade >= 10 && Array.isArray(opts.courses) ? new Set(opts.courses) : null;
     this.P = { ...PARAMS, ...(opts.params || {}), guess: { ...PARAMS.guess, ...(opts.params?.guess || {}) } };
     const g = opts.graph || defaultGraph();
     this.order = g.order;
@@ -111,12 +114,24 @@ export class Learner {
     this._buildPriors();
   }
 
+  /** 履修している科目の単元か（科目のない単元・科目の指定がないときは true） */
+  takes(id) {
+    const c = this.skills[id]?.course;
+    return !c || !this.courses || this.courses.has(c);
+  }
+
+  /** この生徒にとっての単元の学年。履修していない科目の単元は「2学年以上先（まだ習わない）」として扱う */
+  effStage(id) {
+    const st = this.skills[id].stage;
+    return this.takes(id) ? st : Math.max(st, this.grade + 2);
+  }
+
   _buildPriors() {
     const P = this.P;
     // logPi[i][combo*4 + k]：単元 i の事前分布（対数）。combo = (G+2)*5 + (Gs+2)
     this.logPi = [];
     for (let i = 0; i < this.N; i++) {
-      const base = priorDist(this.skills[this.order[i]].stage, this.grade);
+      const base = priorDist(this.effStage(this.order[i]), this.grade);
       const arr = new Float64Array(NG * NG * NS);
       for (let gg = 0; gg < NG; gg++) {
         for (let gs = 0; gs < NG; gs++) {
@@ -392,10 +407,12 @@ export class Learner {
    * 単元の状態ラベル。
    *  mastered / gap / shaky … 直接測った単元
    *  infOk / infGap / unknown … 測っていない単元（他の結果からの推定）
+   *  future … 測っていない、まだ習わない単元（学年より先・履修していない科目）。つまずきとは呼ばない
    */
   state(id) {
     const st = this.stat[id];
     const pm = this.pMaster(id);
+    if (st.n === 0 && this.effStage(id) > this.grade) return "future";
     if (st.n > 0) {
       if (pm >= 0.75) return "mastered";
       if (pm <= 0.25) return "gap";

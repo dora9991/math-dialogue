@@ -2,7 +2,7 @@
 // data.js — データの管理（学年・名前の変更、書き出し・読み込み、全消去）
 // ============================================================
 import { h, button, fmtDate } from "./dom.js";
-import { gradeSelect } from "./home.js";
+import { gradeSelect, courseChooser } from "./home.js";
 import { confirmDialog, saveText } from "./dialogs.js";
 
 export function dataScreen(app) {
@@ -14,20 +14,23 @@ export function dataScreen(app) {
   if (p) {
     const nameIn = h("input", { id: "nick", class: "in-text", type: "text", maxlength: "20", value: p.name || "", autocomplete: "off" });
     const gradeIn = gradeSelect(p.grade);
+    const crs = courseChooser(p.grade, p.courses);
+    gradeIn.addEventListener("change", () => crs.setGrade(Number(gradeIn.value)));
     wrap.append(
       h(
         "section",
         { class: "card" },
         h("h2", null, "プロフィール"),
         h("div", { class: "form" }, h("label", { for: "nick" }, "ニックネーム"), nameIn, h("label", { for: "grade" }, "いま習っている学年"), gradeIn),
-        h("p", { class: "muted small" }, "学年を変えると、最初の見立て（この学年ならここまで習っているはず）が変わります。これまでの解答の記録は残り、新しい学年で見立てを作り直します。"),
+        crs.el,
+        h("p", { class: "muted small" }, "学年や科目を変えると、最初の見立て（ここまで習っているはず）と、診断・練習で出す範囲が変わります。これまでの解答の記録は残り、新しい設定で見立てを作り直します。"),
         h(
           "div",
           { class: "actions" },
           button(
             "保存する",
             () => {
-              store.setProfile({ name: nameIn.value.trim(), grade: Number(gradeIn.value) });
+              store.setProfile({ name: nameIn.value.trim(), grade: Number(gradeIn.value), courses: crs.value() });
               app.rebuild();
               app.session = null;
               app.toast("保存しました");

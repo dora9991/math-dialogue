@@ -2,7 +2,7 @@
 // map.js — つまずきマップ（列＝学年、行＝領域。1 マス＝1 つの単元。色で状態を表す）
 // ============================================================
 import { h, mk, button, mount } from "./dom.js";
-import { SKILLS, ALL_IDS, ORDER, STRANDS, STAGE_LABEL, stageLabel } from "../data/graph.js";
+import { SKILLS, ALL_IDS, ORDER, STRANDS, STAGE_LABEL, COURSES, stageCourseLabel } from "../data/graph.js";
 import { nameEl, namePlain } from "./names.js";
 
 export const STATE_INFO = {
@@ -12,8 +12,9 @@ export const STATE_INFO = {
   gap: { label: "つまずき", sym: "▲", note: "測って、標準の問題を解けていなかった" },
   infGap: { label: "つまずきかも（推定）", sym: "△", note: "まだ出していないが、前提のつまずきから苦手かもしれない" },
   unknown: { label: "まだ分からない", sym: "？", note: "見立てるだけの情報がまだない" },
+  future: { label: "これから習う", sym: "◇", note: "学年より先の単元、または履修していない科目の単元（まだ問題を出していない）" },
 };
-const ORDER_STATES = ["mastered", "infOk", "shaky", "gap", "infGap", "unknown"];
+const ORDER_STATES = ["mastered", "infOk", "shaky", "gap", "infGap", "unknown", "future"];
 
 export function mapScreen(app) {
   const L = app.learner;
@@ -40,21 +41,25 @@ export function mapScreen(app) {
   const chipFor = (id) => {
     const s = L.state(id);
     const sk = SKILLS[id];
+    const untaken = !L.takes(id); // 履修していない科目の単元
+    const where = `${stageCourseLabel(id)}${untaken ? "、履修していない科目" : ""}`;
     const b = h(
       "button",
       {
         type: "button",
-        class: `chip-skill st-${s}${sk.stage > grade ? " above" : ""}`,
+        class: `chip-skill st-${s}${sk.stage > grade ? " above" : ""}${untaken ? " untaken" : ""}`,
         dataset: { id },
-        title: `${namePlain(id)}（${stageLabel(sk.stage)}）— ${STATE_INFO[s].label}`,
-        "aria-label": `${namePlain(id)}、${stageLabel(sk.stage)}、${STATE_INFO[s].label}`,
+        title: `${namePlain(id)}（${where}）— ${STATE_INFO[s].label}`,
+        "aria-label": `${namePlain(id)}、${where}、${STATE_INFO[s].label}`,
         onclick: () => select(id),
       },
       h("span", { class: "sym", "aria-hidden": "true" }, STATE_INFO[s].sym),
       h("span", { class: "nm" }, nameEl(id, true)),
+      sk.course ? h("span", { class: "crs", "aria-hidden": "true" }, COURSES[sk.course].short) : null,
     );
     return b;
   };
+  const nUntaken = ALL_IDS.filter((id) => !L.takes(id)).length;
 
   for (const [key, strand] of Object.entries(STRANDS)) {
     grid.append(h("div", { class: "map-rowhead", style: { "--chip": strand.color } }, strand.name));
@@ -85,6 +90,7 @@ export function mapScreen(app) {
       h("h2", null, "つまずきマップ"),
       h("p", { class: "muted" }, "1 つの四角が 1 つの単元です。左（小さい学年）ほど土台になる単元で、右へ進むほどそれを使う単元です。色は「いまの見立て」を表します。単元をクリックすると、くわしく見られます。表は横にスクロールできます（左に小学校の単元があります）。"),
       legend,
+      nUntaken ? h("p", { class: "muted small" }, `高校の単元には科目（Ⅰ・A・Ⅱ・B・C・Ⅲ）を小さく書いています。点線で薄い単元（${nUntaken}）は、履修していない科目の単元です（「データ」で変えられます）。`) : null,
       scroller,
     ),
     detail,
@@ -116,7 +122,7 @@ function detailBody(app, id, select) {
   return h(
     "div",
     null,
-    h("div", { class: "detail-head" }, h("span", { class: "chip", style: { "--chip": strand.color } }, strand.name), h("h3", null, nameEl(id)), h("span", { class: "muted" }, stageLabel(sk.stage))),
+    h("div", { class: "detail-head" }, h("span", { class: "chip", style: { "--chip": strand.color } }, strand.name), h("h3", null, nameEl(id)), h("span", { class: "muted" }, stageCourseLabel(id)), L.takes(id) ? null : h("span", { class: "muted small" }, "（履修していない科目。診断・練習では出しません）")),
     h("p", null, h("span", { class: `state-badge st-${state}` }, h("span", { class: "sym", "aria-hidden": "true" }, STATE_INFO[state].sym), STATE_INFO[state].label), h("span", { class: "muted small" }, `　「標準以上」の確からしさ ${Math.round(pm * 100)}％`)),
     bar(dist),
     h("p", { class: "muted small" }, st.n ? `この単元の解答：${st.n} 問（正解 ${st.c} 問）` : "この単元の問題は、まだ解いていません（他の単元の結果からの推定です）。"),

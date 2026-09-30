@@ -8,7 +8,7 @@
 // ============================================================
 import { SKILLS, ALL_IDS, STRANDS } from "../data/graph.js";
 import { MISCONCEPTIONS } from "../data/misconceptions.js";
-import { relevance } from "./diagnose.js";
+import { relevanceOf } from "./diagnose.js";
 
 /** 単元 id の下流への影響の大きさ（苦手そうな下流をどれだけ巻き込んでいるか） */
 export function impactOf(L, id) {
@@ -18,7 +18,7 @@ export function impactOf(L, id) {
   for (const [d, k] of s.desc) {
     const pd = 1 - L.pMaster(d);
     if (pd > 0.5) blocked.push(d);
-    impact += (pd * relevance(SKILLS[d].stage, L.grade)) / k;
+    impact += (pd * relevanceOf(L, d)) / k;
   }
   return { impact, blocked };
 }
@@ -36,7 +36,7 @@ export function rootCauses(L, opts = {}) {
   const out = [];
   for (const id of ALL_IDS) {
     const s = SKILLS[id];
-    if (s.stage > L.grade + above) continue;
+    if (L.effStage(id) > L.grade + above) continue; // 履修していない科目の単元は、つまずきとして挙げない
     const pm = L.pMaster(id);
     if (pm > gapThr) continue;
     if (s.prereqs.some((p) => L.pMaster(p) <= weakThr)) continue;
@@ -52,7 +52,7 @@ export function strandSummary(L) {
   const res = {};
   for (const key of Object.keys(STRANDS)) {
     const ids = ALL_IDS.filter((id) => SKILLS[id].strand === key).sort((a, b) => SKILLS[a].stage - SKILLS[b].stage);
-    const counts = { mastered: 0, infOk: 0, shaky: 0, gap: 0, infGap: 0, unknown: 0 };
+    const counts = { mastered: 0, infOk: 0, shaky: 0, gap: 0, infGap: 0, unknown: 0, future: 0 };
     for (const id of ids) counts[L.state(id)]++;
     // 到達学年：その学年までの単元の8割以上が「できていそう(pMaster≥0.6)」な最大の学年
     const stages = [...new Set(ids.map((id) => SKILLS[id].stage))].sort((a, b) => a - b);
@@ -82,10 +82,10 @@ export function misconceptionSummary(L, log = []) {
 
 /** 全体の集計（画面の見出し用） */
 export function overview(L) {
-  const c = { mastered: 0, infOk: 0, shaky: 0, gap: 0, infGap: 0, unknown: 0 };
+  const c = { mastered: 0, infOk: 0, shaky: 0, gap: 0, infGap: 0, unknown: 0, future: 0 };
   let relevantTotal = 0;
   for (const id of ALL_IDS) {
-    if (SKILLS[id].stage > L.grade) continue;
+    if (L.effStage(id) > L.grade) continue;
     relevantTotal++;
     c[L.state(id)]++;
   }

@@ -2,7 +2,7 @@
 // home.js — ホーム画面（はじめての設定・次にやること・しくみの説明）
 // ============================================================
 import { h, button, fmtDate } from "./dom.js";
-import { STAGE_LABEL, PLAYABLE_IDS } from "../data/graph.js";
+import { STAGE_LABEL, PLAYABLE_IDS, COURSES, COURSE_KEYS, defaultCourses, coursesLabel } from "../data/graph.js";
 import { currentRound } from "../core/store.js";
 import { overview } from "../core/report.js";
 
@@ -14,6 +14,38 @@ export function gradeSelect(value, id = "grade") {
     { id, class: "in-select" },
     GRADES.map((g) => h("option", { value: g, selected: g === value }, STAGE_LABEL[g])),
   );
+}
+
+/**
+ * 高校で習っている（履修している）科目のチェックボックス。高校生の学年のときだけ見せる。
+ *  学年を変えたら setGrade で、その学年のふつうの履修に選び直す。
+ */
+export function courseChooser(grade, selected) {
+  const init = Array.isArray(selected) ? selected : defaultCourses(grade);
+  const boxes = {};
+  const opts = COURSE_KEYS.map((k) => {
+    const cb = h("input", { type: "checkbox", id: `crs-${k}`, value: k, checked: init.includes(k) });
+    boxes[k] = cb;
+    return h("label", { class: "course-opt", for: `crs-${k}` }, cb, COURSES[k].name);
+  });
+  const el = h(
+    "fieldset",
+    { class: "courses" },
+    h("legend", null, "習っている（履修している）科目"),
+    h("div", { class: "course-list" }, opts),
+    h("p", { class: "muted small" }, "チェックした科目の単元を、診断と練習で出します。ほかの科目の単元は「まだ習わない単元」として扱い、つまずきマップでは薄く表示します。"),
+  );
+  const show = (g) => (el.hidden = g < 10);
+  show(grade);
+  return {
+    el,
+    setGrade(g) {
+      const d = defaultCourses(g);
+      for (const k of COURSE_KEYS) boxes[k].checked = d.includes(k);
+      show(g);
+    },
+    value: () => COURSE_KEYS.filter((k) => boxes[k].checked),
+  };
 }
 
 export function homeScreen(app) {
@@ -35,12 +67,15 @@ export function homeScreen(app) {
   if (!p) {
     const nameIn = h("input", { id: "nick", class: "in-text", type: "text", maxlength: "20", placeholder: "例：ゆうき", autocomplete: "off" });
     const gradeIn = gradeSelect(8);
+    const crs = courseChooser(8);
+    gradeIn.addEventListener("change", () => crs.setGrade(Number(gradeIn.value)));
     wrap.append(
       h(
         "section",
         { class: "card" },
         h("h2", null, "はじめに"),
         h("div", { class: "form" }, h("label", { for: "nick" }, "ニックネーム（省略できます）"), nameIn, h("label", { for: "grade" }, "いま習っている学年"), gradeIn),
+        crs.el,
         h("p", { class: "muted small" }, "学年は、最初の見立て（この学年ならここまで習っているはず）に使います。あとから「データ」で変えられます。"),
         h(
           "div",
@@ -48,7 +83,7 @@ export function homeScreen(app) {
           button(
             "診断をはじめる",
             () => {
-              store.setProfile({ name: nameIn.value.trim(), grade: Number(gradeIn.value) });
+              store.setProfile({ name: nameIn.value.trim(), grade: Number(gradeIn.value), courses: crs.value() });
               app.rebuild();
               app.session = null;
               app.go("diag");
@@ -72,6 +107,7 @@ export function homeScreen(app) {
         { class: "card" },
         h("h2", null, `${p.name ? `${p.name}さん` : "あなた"}の学習`),
         h("div", { class: "stats" }, stat("学年", STAGE_LABEL[p.grade]), stat("解いた問題", `${answers.length} 問`), stat("できていそう", ov.relevantTotal ? `${ov.mastered + ov.infOk} / ${ov.relevantTotal}` : "―"), stat("最後に解いた日", last ? fmtDate(last).slice(0, 10) : "―")),
+        p.grade >= 10 ? h("p", { class: "muted small" }, `習っている科目：数学${coursesLabel(p.courses)}（「データ」で変えられます）`) : null,
         h(
           "div",
           { class: "actions" },

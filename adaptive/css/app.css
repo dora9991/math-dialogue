@@ -327,6 +327,39 @@ main#view {
   max-width: 420px;
   margin-bottom: 8px;
 }
+/* 履修している科目（高校生のとき） */
+.courses {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 12px 4px;
+  margin: 4px 0 10px;
+  max-width: 520px;
+}
+.courses[hidden] {
+  display: none;
+}
+.courses legend {
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 0 4px;
+}
+.course-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.course-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  cursor: pointer;
+}
+.course-opt input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
 .form label,
 .block {
   font-weight: 600;
@@ -849,6 +882,13 @@ details summary {
   border-color: var(--st-gap-bg);
   border-style: dashed;
 }
+/* これから習う単元（学年より先・履修していない科目）：色をつけず、点線のふちだけ */
+.st-future {
+  background: transparent;
+  color: var(--muted);
+  border-color: var(--line);
+  border-style: dotted;
+}
 .st-unknown {
   background: var(--st-unknown-bg);
   color: var(--st-unknown-fg);
@@ -933,6 +973,22 @@ details summary {
 .chip-skill.above:not(.st-mastered):not(.st-gap):not(.st-shaky) {
   opacity: 0.65;
 }
+.chip-skill .crs {
+  margin-left: auto;
+  flex: none;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.5;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+/* 履修していない科目の単元：点線で薄く */
+.chip-skill.untaken {
+  opacity: 0.45;
+  border: 1px dashed var(--line);
+}
 .chip-skill.selected {
   outline: 3px solid var(--accent);
   outline-offset: 1px;
@@ -1013,6 +1069,9 @@ details summary {
 .stackbar .seg {
   display: block;
   height: 100%;
+}
+.stackbar .seg.st-future {
+  background: repeating-linear-gradient(45deg, var(--line) 0 3px, transparent 3px 7px);
 }
 .causes {
   display: flex;

@@ -12,7 +12,7 @@
 // ============================================================
 import { SKILLS, PLAYABLE_IDS } from "../data/graph.js";
 import { impactOf } from "./report.js";
-import { kindOf, relevance } from "./diagnose.js";
+import { kindOf, relevance, relevanceOf } from "./diagnose.js";
 
 export const CLEAR = { pm: 0.85, minN: 1 };
 export const TARGET_ACC = 0.75;
@@ -39,8 +39,8 @@ export function frontier(L, ctx = {}) {
   const above = ctx.above ?? 1;
   const out = [];
   for (const id of playable) {
-    const s = SKILLS[id];
-    if (s.stage > L.grade + above) continue;
+    const est = L.effStage(id); // 履修していない科目の単元は「先の単元」になる
+    if (est > L.grade + above) continue;
     if (isCleared(L, id)) continue;
     if (ctx.stuck?.has(id)) continue; // 今回は行き詰まった単元（先生に相談の候補）
     const pm = L.pMaster(id);
@@ -48,7 +48,7 @@ export function frontier(L, ctx = {}) {
     if (L.stat[id].n === 0 && pm >= 0.85) continue;
     if (!prereqsReady(L, id, playable)) continue;
     const { impact } = impactOf(L, id);
-    const score = 2 * (1 - pm) + 0.15 * impact - 0.04 * s.stage + (s.stage <= L.grade ? 0.3 : 0);
+    const score = 2 * (1 - pm) + 0.15 * impact - 0.04 * est + (est <= L.grade ? 0.3 : 0);
     out.push({ id, pm, impact, score });
   }
   out.sort((a, b) => b.score - a.score);
@@ -172,8 +172,7 @@ export function studyPlan(L, ctx = {}) {
   const above = ctx.above ?? 1;
   // 未習熟の単元を集め、前提が先に来るように並べる（graph の ORDER 順）
   const cand = [...playable].filter((id) => {
-    const s = SKILLS[id];
-    if (s.stage > L.grade + above) return false;
+    if (L.effStage(id) > L.grade + above) return false;
     if (isCleared(L, id)) return false;
     if (L.stat[id].n === 0 && L.pMaster(id) >= 0.85) return false;
     return L.pMaster(id) < 0.75 || L.stat[id].n === 0;
@@ -196,4 +195,4 @@ export function studyPlan(L, ctx = {}) {
   return out;
 }
 
-export { relevance };
+export { relevance, relevanceOf };

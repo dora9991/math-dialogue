@@ -2,7 +2,8 @@
 // store.js — 端末への保存（localStorage）と、書き出し・読み込み
 //
 //  ■ 保存するもの
-//    profile  … { name, grade, createdAt }
+//    profile  … { name, grade, courses, createdAt }
+//               courses … 履修している高校の科目（["I","A","II",…]）。高校生の見立て・出題範囲に使う
 //    log      … 解答ログ（追加するだけ）。学習者モデルはここから毎回作り直す
 //               { type:"answer", t, mode:"diag"|"practice", uid, skillId, level, kind, ok, skipped, mc, given, ms }
 //               { type:"start",  t, mode }               … 診断・演習の開始位置の印
@@ -15,7 +16,7 @@
 //   ・書き出しの JSON は、そのまま別の端末に読み込める。
 // ============================================================
 import { Learner } from "./model.js";
-import { SKILLS } from "../data/graph.js";
+import { SKILLS, normalizeCourses, defaultCourses } from "../data/graph.js";
 
 const KEY = "tsumazuki-navi:v1";
 export const FORMAT_VERSION = 1;
@@ -84,7 +85,9 @@ export class Store {
   }
 
   setProfile(p) {
-    this.data.profile = { name: "", createdAt: Date.now(), ...(this.data.profile || {}), ...p };
+    const next = { name: "", createdAt: Date.now(), ...(this.data.profile || {}), ...p };
+    next.courses = Array.isArray(next.courses) ? normalizeCourses(next.courses) : defaultCourses(next.grade);
+    this.data.profile = next;
     this.save();
   }
 
@@ -142,7 +145,14 @@ export function normalize(d) {
   const log = (Array.isArray(d.log) ? d.log : []).filter((e) => e && typeof e === "object" && (e.type === "start" || (e.type === "answer" && typeof e.skillId === "string" && SKILLS[e.skillId] && [1, 2, 3].includes(e.level))));
   const concerns = (Array.isArray(d.concerns) ? d.concerns : []).filter((c) => c && typeof c === "object" && typeof c.id === "string");
   const p = d.profile && typeof d.profile === "object" ? d.profile : null;
-  return { version: FORMAT_VERSION, profile: p ? { name: String(p.name || ""), grade: Number(p.grade) || 8, createdAt: Number(p.createdAt) || Date.now() } : null, log, concerns };
+  let profile = null;
+  if (p) {
+    const grade = Number(p.grade) || 8;
+    // 科目の記録がない古いデータは、学年ごとのふつうの履修とみなす
+    const courses = Array.isArray(p.courses) ? normalizeCourses(p.courses) : defaultCourses(grade);
+    profile = { name: String(p.name || ""), grade, courses, createdAt: Number(p.createdAt) || Date.now() };
+  }
+  return { version: FORMAT_VERSION, profile, log, concerns };
 }
 
 /** 解答ログから学習者モデルを作り直す（診断と演習で証拠の割り引きを変える） */

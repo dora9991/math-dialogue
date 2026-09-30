@@ -6,11 +6,11 @@ import { saveText } from "./dialogs.js";
 import { rootCauses, strandSummary, misconceptionSummary, overview } from "../core/report.js";
 import { studyPlan } from "../core/practice.js";
 import { uncertainty } from "../core/diagnose.js";
-import { SKILLS, ALL_IDS, ORDER, STRANDS, stageLabel, STAGE_LABEL } from "../data/graph.js";
+import { SKILLS, ALL_IDS, ORDER, STRANDS, stageLabel, stageCourseLabel, STAGE_LABEL, coursesLabel } from "../data/graph.js";
 import { STATE_INFO } from "./map.js";
 import { nameEl, namePlain } from "./names.js";
 
-const STATES = ["mastered", "infOk", "shaky", "gap", "infGap", "unknown"];
+const STATES = ["mastered", "infOk", "shaky", "gap", "infGap", "unknown", "future"];
 
 /** 状態ごとの割合を積み上げた横棒 */
 function stackBar(counts, total) {
@@ -39,11 +39,11 @@ export function reportScreen(app) {
       "section",
       { class: "card" },
       h("h2", null, `${p.name ? `${p.name}さん` : "あなた"}のつまずきレポート`),
-      h("p", { class: "muted" }, `${STAGE_LABEL[p.grade]}　／　解いた問題 ${answers.length} 問　／　${fmtDate(answers[answers.length - 1].t)} 時点`),
+      h("p", { class: "muted" }, `${STAGE_LABEL[p.grade]}${p.grade >= 10 ? `（数学${coursesLabel(p.courses)}）` : ""}　／　解いた問題 ${answers.length} 問　／　${fmtDate(answers[answers.length - 1].t)} 時点`),
       h("div", { class: `note ${reliability.cls}` }, reliability.text),
-      h("h3", null, `${STAGE_LABEL[p.grade]}までの単元（${ov.relevantTotal}）のようす`),
+      h("h3", null, `${STAGE_LABEL[p.grade]}までに習う単元（${ov.relevantTotal}）のようす`),
       stackBar({ mastered: ov.mastered, infOk: ov.infOk, shaky: ov.shaky, gap: ov.gap, infGap: ov.infGap, unknown: ov.unknown }, Math.max(1, ov.relevantTotal)),
-      h("div", { class: "legend" }, STATES.map((s) => h("span", { class: `legend-item st-${s}` }, h("span", { class: "sym", "aria-hidden": "true" }, STATE_INFO[s].sym), `${STATE_INFO[s].label} ${ov[s]}`))),
+      h("div", { class: "legend" }, STATES.filter((s) => s !== "future").map((s) => h("span", { class: `legend-item st-${s}` }, h("span", { class: "sym", "aria-hidden": "true" }, STATE_INFO[s].sym), `${STATE_INFO[s].label} ${ov[s]}`))),
     ),
   );
 
@@ -123,7 +123,7 @@ export function reportScreen(app) {
         ? h(
             "ol",
             { class: "plan" },
-            plan.map((id) => h("li", null, h("span", { class: "plan-name" }, nameEl(id), h("span", { class: "muted small" }, `　${stageLabel(SKILLS[id].stage)}`)), button("練習", () => ((app.session = null), app.go(`practice?focus=${id}`)), "btn small"))),
+            plan.map((id) => h("li", null, h("span", { class: "plan-name" }, nameEl(id), h("span", { class: "muted small" }, `　${stageCourseLabel(id)}`)), button("練習", () => ((app.session = null), app.go(`practice?focus=${id}`)), "btn small"))),
           )
         : h("p", { class: "muted" }, "いまのところ、優先して取り組む単元はありません。"),
       h("div", { class: "actions" }, button("この順で練習をはじめる", () => ((app.session = null), app.go("practice")), "btn primary"), button("マップで全体を見る", () => app.go("map"), "btn")),
@@ -147,7 +147,7 @@ export function reportScreen(app) {
             const rows = [["単元ID", "単元名", "学年", "領域", "状態", "標準以上の確率", "解答数", "正解数"]];
             for (const id of ORDER) {
               const st = L.stat[id];
-              rows.push([id, namePlain(id), stageLabel(SKILLS[id].stage), STRANDS[SKILLS[id].strand].name, STATE_INFO[L.state(id)].label, L.pMaster(id).toFixed(3), st.n, st.c]);
+              rows.push([id, namePlain(id), stageCourseLabel(id), STRANDS[SKILLS[id].strand].name, STATE_INFO[L.state(id)].label, L.pMaster(id).toFixed(3), st.n, st.c]);
             }
             const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\r\n");
             saveText(`tsumazuki-report-${new Date().toISOString().slice(0, 10)}.csv`, `﻿${csv}`, "text/csv");
@@ -173,7 +173,7 @@ function causeCard(app, c, no) {
     h(
       "div",
       { class: "cause-body" },
-      h("div", { class: "cause-head" }, h("b", null, nameEl(c.id)), h("span", { class: "muted" }, `　${stageLabel(sk.stage)}`), h("span", { class: `state-badge st-${L.state(c.id)}` }, h("span", { class: "sym", "aria-hidden": "true" }, STATE_INFO[L.state(c.id)].sym), STATE_INFO[L.state(c.id)].label)),
+      h("div", { class: "cause-head" }, h("b", null, nameEl(c.id)), h("span", { class: "muted" }, `　${stageCourseLabel(c.id)}`), h("span", { class: `state-badge st-${L.state(c.id)}` }, h("span", { class: "sym", "aria-hidden": "true" }, STATE_INFO[L.state(c.id)].sym), STATE_INFO[L.state(c.id)].label)),
       h("div", { class: "prog-bar slim", "aria-hidden": "true" }, h("div", { class: "prog-fill mastery", style: { width: `${pm}%` } })),
       h(
         "p",

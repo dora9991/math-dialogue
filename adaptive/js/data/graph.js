@@ -78,6 +78,8 @@ export const stageCourseLabel = (id) => {
 };
 /** 履修科目の配列を正しい形に（知らない科目・重複を除き、科目の順に並べる） */
 export const normalizeCourses = (arr) => COURSE_KEYS.filter((k) => Array.isArray(arr) && arr.includes(k));
+/** 科目の一覧の短い表示（例：Ⅰ・A・Ⅱ・B）。なければ「なし」 */
+export const coursesLabel = (arr) => (arr && arr.length ? normalizeCourses(arr).map((k) => COURSES[k].short).join("・") : "なし");
 export const hasTemplates = (id) => (SKILLS[id]?.tpl?.length || 0) > 0;
 
 /** 出題できる（テンプレのある）スキルだけ */

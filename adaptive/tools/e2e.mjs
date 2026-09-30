@@ -12,6 +12,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { ROOT, startServer, launchBrowser } from "./_browser.mjs";
+import { ALL_IDS, SKILLS } from "../js/data/graph.js";
 
 const args = process.argv.slice(2);
 const opt = (k, d) => (args.includes(k) ? args[args.indexOf(k) + 1] : d);
@@ -138,7 +139,8 @@ try {
   // マップ
   await pg.locator(".nav a", { hasText: "マップ" }).click();
   await pg.waitForSelector(".map-grid");
-  check((await pg.locator(".chip-skill").count()) === 148, "マップ：148 の単元が並ぶ");
+  const nChips = await pg.locator(".chip-skill").count();
+  check(nChips === ALL_IDS.length, `マップ：${ALL_IDS.length} の単元が並ぶ（${nChips}）`);
   await pg.locator(".chip-skill").nth(40).click();
   await pg.waitForSelector(".detail .detail-head");
   check(true, "マップ：単元をクリックすると詳細が出る");
@@ -229,6 +231,63 @@ try {
   const label = await pg.locator(".prog-label").innerText();
   check(qno.startsWith("6"), `再読み込みのあと、6 問目から続く（${qno}）`);
   check(label.includes("5 問"), "進みぐあいが引きつがれる");
+  await ctx.close();
+
+  // ═════ 高校生：学年と履修科目 ═════
+  console.log("■ 高校生（高1・数学Ⅰ・A）");
+  ({ ctx, pg } = await newPage({ width: 1000, height: 900 }));
+  await pg.goto(`${BASE}/?seed=${SEED}`);
+  await pg.waitForSelector(".hero");
+  check(await pg.locator("fieldset.courses").isHidden(), "中学生の学年では科目の欄が出ない");
+  await pg.selectOption("#grade", "11");
+  const checkedOf = () => pg.evaluate(() => [...document.querySelectorAll(".courses input:checked")].map((e) => e.value).join(","));
+  check((await checkedOf()) === "I,A,II,B,C", `高2を選ぶと、ふつうの履修（Ⅰ・A・Ⅱ・B・C）にチェックが入る（${await checkedOf()}）`);
+  await pg.selectOption("#grade", "10");
+  check((await checkedOf()) === "I,A", `高1にもどすと、Ⅰ・A だけになる（${await checkedOf()}）`);
+  await shot(pg, "10-hs-setup.png");
+  await pg.getByRole("button", { name: "診断をはじめる" }).click();
+  await pg.waitForSelector(".qcard");
+  const asked = [];
+  for (let i = 0; i < 12; i++) {
+    asked.push(await pg.evaluate(() => window.tsumazukiApp.session.current.item.skillId));
+    await answerCurrent(pg, { correct: i % 3 !== 1 });
+    await pg.getByRole("button", { name: "次の問題へ" }).click();
+    await waitAny(pg, ".qcard", "text=診断おつかれさまでした");
+  }
+  const offCourse = asked.filter((id) => SKILLS[id].course && !["I", "A"].includes(SKILLS[id].course));
+  const hsCount = asked.filter((id) => SKILLS[id].stage >= 10).length;
+  check(offCourse.length === 0, `履修していない科目（Ⅱ・B・C・Ⅲ）の問題は出ない（${offCourse.join(",") || "なし"}）`);
+  check(hsCount >= 2, `高1の診断で、高校の問題も出る（12 問中 ${hsCount} 問）`);
+  await pg.goto(`${BASE}/?seed=${SEED}#/map`);
+  await pg.waitForSelector(".map-grid");
+  const nUntaken = ALL_IDS.filter((id) => SKILLS[id].course && !["I", "A"].includes(SKILLS[id].course)).length;
+  check((await pg.locator(".chip-skill.untaken").count()) === nUntaken, `マップ：履修していない科目の単元（${nUntaken}）が薄く表示される`);
+  await shot(pg, "11-hs-map.png");
+  // データ画面で科目を変えると、見立てに反映される
+  await pg.goto(`${BASE}/?seed=${SEED}#/data`);
+  await pg.waitForSelector("fieldset.courses");
+  await pg.locator("#crs-A").uncheck();
+  await pg.getByRole("button", { name: "保存する" }).click();
+  check((await pg.evaluate(() => window.tsumazukiApp.learner.takes("int_eq"))) === false, "データ：数学A のチェックを外すと、数学A の単元が範囲から外れる");
+  check((await pg.evaluate(() => window.tsumazukiApp.store.profile.courses.join(","))) === "I", "データ：科目の設定が保存される");
+  // 図：グラフの線を描く内側の枠が、ページの CSS で引きのばされない（線が目もりからずれない）
+  const figOk = await pg.evaluate(async () => {
+    const { SKILLS: S } = await import("/js/data/graph.js");
+    const { makeItem } = await import("/js/core/items.js");
+    const box = document.createElement("div");
+    box.className = "fig";
+    box.innerHTML = makeItem(S.region, 1, 1, "b").fig;
+    document.querySelector("#app").append(box);
+    const outer = box.querySelector("svg");
+    const inner = outer.querySelector("svg");
+    // 内側の svg の座標は外側と同じ（viewBox＝位置と大きさ）なので、画面への変換も同じになるはず
+    const a = outer.getScreenCTM();
+    const b = inner.getScreenCTM();
+    const diff = Math.max(Math.abs(a.a - b.a), Math.abs(a.d - b.d), Math.abs(a.e - b.e), Math.abs(a.f - b.f));
+    box.remove();
+    return { ok: diff < 0.5, diff };
+  });
+  check(figOk.ok, `図：グラフの線を描く枠が目もりとずれない（座標のずれ ${figOk.diff.toFixed(2)}px）`);
   await ctx.close();
 
   // ═════ ダークモード ═════
