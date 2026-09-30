@@ -27,6 +27,7 @@ const rad = (d) => (d * Math.PI) / 180;
  *  o.x=[xmin,xmax], o.y=[ymin,ymax]（どちらも 0 をふくむこと）
  *  o.lines=[{a,b,color,label}]（y=ax+b）／{vx}（x=定数）… 表示範囲の外は切りとられる
  *  o.curves=[{fn:(x)=>y, color, label}]                 … 同上
+ *  o.fills=[{x0,x1,hi:(x)=>y,lo:(x)=>y,color}]           … x0〜x1 で hi と lo にはさまれた部分を薄く塗る（lo 省略で x 軸）
  *  o.points=[{x,y,label,color,dx,dy}]                   … 表示範囲の中にあること（外なら例外）
  *  o.segments=[[x1,y1,x2,y2,{dash,color}]]              … 端点が表示範囲の中にあること
  */
@@ -56,6 +57,14 @@ export function coordPlane(o) {
 
   // 直線・曲線・線分は、グラフの枠の中だけに描く（入れ子の svg で切りとる）
   let g = "";
+  for (const fl of o.fills || []) {
+    if (!(fl.x0 < fl.x1)) throw new Error("coordPlane: fills は x0 < x1 で指定する");
+    const hi = fl.hi || (() => 0);
+    const lo = fl.lo || (() => 0);
+    const xs = Array.from({ length: 161 }, (_, i) => fl.x0 + ((fl.x1 - fl.x0) * i) / 160);
+    const pts = [...xs.map((x) => [X(x), Y(hi(x))]), ...[...xs].reverse().map((x) => [X(x), Y(lo(x))])];
+    g += `<polygon points="${pts.map(([qx, qy]) => `${f(qx)},${f(qy)}`).join(" ")}" fill="${fl.color || BLUE}" fill-opacity="0.22" stroke="none"/>`;
+  }
   for (const s of o.segments || []) {
     if (!inside(s[0], s[1]) || !inside(s[2], s[3])) throw new Error(`coordPlane: 線分の端点が表示範囲の外 (${s.slice(0, 4)})`);
     g += line(X(s[0]), Y(s[1]), X(s[2]), Y(s[3]), { color: (s[4] && s[4].color) || INK, dash: s[4] && s[4].dash, w: 1.4 });
@@ -103,8 +112,11 @@ export function coordPlane(o) {
   return svg(W, H, b, "座標平面");
 }
 
-/** 直角三角形。頂点 A(直角の頂点)・B・C。a=辺の長さ表示（"?" も可）。斜辺は c */
-export function rightTriangle({ base, height, baseLabel, heightLabel, hypLabel }) {
+/**
+ * 直角三角形。頂点 A（直角）・B・C。斜辺は BC。辺の長さは baseLabel(AB)・heightLabel(AC)・hypLabel(BC) に文字で渡す。
+ *  vertexLabels=true で A, B, C を描く。theta="B" または "C" で、その頂点の角に θ を書く。
+ */
+export function rightTriangle({ base, height, baseLabel, heightLabel, hypLabel, vertexLabels = false, theta = null }) {
   const s = 150 / Math.max(base, height);
   const w = base * s;
   const h = height * s;
@@ -115,6 +127,13 @@ export function rightTriangle({ base, height, baseLabel, heightLabel, hypLabel }
   b += text(x0 + w / 2, y0 + 18, baseLabel ?? "", { italic: false });
   b += text(x0 - 10, y0 - h / 2 + 5, heightLabel ?? "", { anchor: "end", italic: false });
   b += text(x0 + w / 2 + 14, y0 - h / 2 - 6, hypLabel ?? "", { anchor: "start", italic: false });
+  if (vertexLabels) {
+    b += text(x0 - 12, y0 + 16, "A", { italic: false });
+    b += text(x0 + w + 12, y0 + 5, "B", { italic: false });
+    b += text(x0 - 4, y0 - h - 8, "C", { italic: false });
+  }
+  if (theta === "B") b += text(x0 + w - 30, y0 - 6, "θ", { color: ACCENT, size: 15, italic: false });
+  if (theta === "C") b += text(x0 + 16, y0 - h + 30, "θ", { color: ACCENT, size: 15, italic: false });
   return svg(x0 + w + 60, y0 + 28, b, "直角三角形");
 }
 

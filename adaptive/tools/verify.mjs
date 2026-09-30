@@ -31,11 +31,14 @@ const SEEDS = Number(opt("seeds", 40));
 const ONLY = opt("skill", null);
 const SAMPLE = Number(opt("sample", 0));
 const BRIEF = args.includes("--brief");
+const GROUPED = args.includes("--grouped"); // 種の違いをまとめて、原因ごとの件数で表示する
 
 let errors = 0;
 const errList = [];
+const allErrs = [];
 const err = (where, msg) => {
   errors++;
+  allErrs.push([where, msg]);
   if (errList.length < 60) errList.push(`  ✗ ${where}: ${msg}`);
 };
 
@@ -174,13 +177,13 @@ for (const id of targets) {
           console.log("  解説:", it.explain.replace(/\n/g, "\n       "));
         }
       }
-      variety.push({ id, tpl: tpl.id, level, distinct: texts.size });
+      variety.push({ id, tpl: tpl.id, level, distinct: texts.size, finite: !!tpl.finite });
     }
   }
 }
 
 // 変化の乏しいテンプレ（同じ問題ばかり）
-const lowVariety = variety.filter((v) => v.distinct < Math.min(SEEDS, 12) * 0.5);
+const lowVariety = variety.filter((v) => !v.finite && v.distinct < Math.min(SEEDS, 12) * 0.5); // finite（型の数が少ないのが仕様）は除く
 for (const v of lowVariety) err(`${v.id}/${v.tpl}/L${v.level}`, `問題のバリエーションが少ない(${v.distinct}/${SEEDS}種類)`);
 
 // MC の実在
@@ -189,7 +192,7 @@ const unusedMc = Object.keys(MISCONCEPTIONS).filter((m) => !usedMc.has(m));
 
 console.log(`  テンプレ ${stats.templates} 個、検査した問題 ${stats.items} 問 (${JSON.stringify(stats.byKind)})`);
 const withTpl = targets.length - missing.length;
-console.log(`  問題のある単元 ${withTpl}/${targets.length}`);
+console.log(`  テンプレのある単元 ${withTpl}/${targets.length}`);
 if (missing.length && !ONLY) {
   const byStrand = {};
   for (const id of missing) (byStrand[SKILLS[id].strand] ||= []).push(`${id}(${stageLabel(SKILLS[id].stage)})`);
@@ -200,8 +203,20 @@ if (unusedMc.length) console.log(`  （辞書にあるが未使用のまちが�
 
 console.log("");
 if (errors) {
-  console.log(errList.join("\n"));
-  if (errors > errList.length) console.log(`  … ほか ${errors - errList.length} 件`);
+  if (GROUPED) {
+    // 「単元/テンプレ/難易度」と、数字をならしたメッセージごとに件数を数える
+    const groups = new Map();
+    for (const [where, msg] of allErrs) {
+      const key = `${where.replace(/\/s\d+/, "")}: ${msg.replace(/[-\d.]+/g, "#").slice(0, 90)}`;
+      const g = groups.get(key) || { n: 0, first: `${where}: ${msg}` };
+      g.n++;
+      groups.set(key, g);
+    }
+    for (const [k, g] of [...groups].sort((a, b) => b[1].n - a[1].n)) console.log(`  ${String(g.n).padStart(4)} 件  ${k}\n         例) ${g.first.slice(0, 200)}`);
+  } else {
+    console.log(errList.join("\n"));
+    if (errors > errList.length) console.log(`  … ほか ${errors - errList.length} 件（--grouped で原因ごとの件数を表示）`);
+  }
   console.log(`\n✗ 問題あり: ${errors} 件`);
   process.exit(1);
 } else {

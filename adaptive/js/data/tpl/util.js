@@ -4,6 +4,7 @@
 //  テンプレは  { id, kind, db, make(r, level) }  の形。
 //    kind … "num" | "choice" | "fields"（当て推量の大きさを決めるので必ず宣言）
 //    db   … このテンプレだけ難しさをずらす（ロジット。省略で0）
+//    finite … true なら「型の数が少ないのは仕様」（概念を選ぶ問題など）。検査の「バリエーション不足」から外す
 //    make … r は seed 付き乱数、level は 1(基本)/2(標準)/3(発展)。num()/choice()/fields() を返す
 //
 //  ※ 問題文・数値・図はすべてここから自作。教科書や問題集の問題は転載しない。
@@ -15,7 +16,7 @@ export const lcm = (a, b) => (a / gcd(a, b)) * b;
 
 /** テンプレ定義 */
 export function t(kind, make, o = {}) {
-  return { id: o.id || "a", kind, db: o.db || 0, make };
+  return { id: o.id || "a", kind, db: o.db || 0, make, finite: !!o.finite };
 }
 /** 同じ kind のテンプレを複数（id は a, b, c…） */
 export function ts(kind, ...makes) {

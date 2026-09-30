@@ -96,6 +96,12 @@ export function validateGraph() {
       else if (SKILLS[p].stage > s.stage) errs.push(`${s.id}(${stageLabel(s.stage)}): 前提 ${p} が上の学年(${stageLabel(SKILLS[p].stage)})`);
     }
   }
+  // テンプレの ID は単元の中で重複しないこと（uid から問題を再現するときに取り違えるため）
+  for (const s of Object.values(SKILLS)) {
+    const ids = (s.tpl || []).map((x) => x.id);
+    if (new Set(ids).size !== ids.length) errs.push(`${s.id}: テンプレIDが重複 (${ids.join(",")})`);
+    for (const tp of s.tpl || []) if (!["num", "choice", "fields"].includes(tp.kind)) errs.push(`${s.id}/${tp.id}: 未知の kind ${tp.kind}`);
+  }
   // 循環検出（DFS）
   const state = {};
   const stack = [];
