@@ -112,5 +112,102 @@ export const MISCONCEPTIONS_HS2 = {
   "MC-REGION-CIRCLE": { name: "円の領域での最大・最小を、x・y をそれぞれ半径にして計算する", blame: null, tip: "ax＋by＝k が円と接するときを考える（原点との距離が半径）。" },
   "MC-DIGITS-NO-PLUS1": { name: "常用対数から桁数を求めるとき、1 をたし忘れる（または位置を1つずらす）", blame: "log_calc", tip: "10^k は k＋1 桁。10^k ≦ N ＜ 10^(k＋1) なら N は k＋1 桁。" },
   "MC-DIGITS-ROUND": { name: "常用対数の値を四捨五入して桁数を決める", blame: "log_calc", tip: "整数部分（切り捨て）で決める。0.9 でも切り上げない。" },
+
+  // ── 数列（数B） ──
+  "MC-SEQDIFF-UPTO": { name: "階差数列の和を、n−1 項目までではなく n 項目までとってしまう", blame: "seq_sigma", tip: "a_n＝a₁＋(b₁＋…＋b_{n−1})。n 項目の値は、n−1 回の差をたしたもの。" },
+  "MC-SEQDIFF-A1": { name: "階差数列から一般項を求めるとき、初項 a₁ をたし忘れる", blame: null, tip: "差の合計は「a₁ からどれだけ増えたか」。最後に a₁ をたす。" },
+  "MC-SEQDIFF-SUM": { name: "階差の和を計算するとき、和の公式（Σk や等比数列の和）の使い方を誤る", blame: "seq_sigma", tip: "Σ_{k=1}^{n−1} k＝(n−1)n/2、等比数列の和は a(rⁿ−1)/(r−1)。上端が n−1 であることにも注意。" },
+  "MC-SEQDIFF-TYPE": { name: "階差数列の形を見ずに、もとの数列を等差・等比数列とみてしまう", blame: "seq_arith", tip: "となりどうしの差を並べて、その差の規則を先に見つける。" },
+  "MC-SN-AS-AN": { name: "和 S_n の値を、そのまま第 n 項 a_n と答える", blame: null, tip: "a_n＝S_n−S_{n−1}（n≧2）。S_n は初項から第 n 項までの合計。" },
+  "MC-SN-A1-TRAP": { name: "S_n から求めた a_n の式を、n＝1 のときにもそのまま使う", blame: null, tip: "a₁＝S₁ は別に求め、n≧2 の式と一致するか確かめる。" },
+  "MC-INDUCT-SUBST": { name: "n＝k＋1 のときの式で、n をすべて k＋1 に置きかえていない", blame: "lit_evaluate", tip: "式の中の n を1つ残らず (k＋1) に置きかえ、かっこをつけて整理する。" },
+  "MC-INDUCT-TERM": { name: "n＝k＋1 のときに加わる項（第 k＋1 項）を誤る", blame: "seq_sigma", tip: "Σ の上端が k から k＋1 に増えると、i＝k＋1 の項が1つ加わる。" },
+  "MC-INDUCT-CIRCULAR": { name: "これから示したい n＝k＋1 の式を、途中で使ってしまう", blame: null, tip: "使ってよいのは n＝k の仮定だけ。n＝k＋1 の式は、最後にたどり着く目標。" },
+  "MC-INDUCT-START": { name: "数学的帰納法の出発点を、最初に成り立つ値だけで決める", blame: null, tip: "その値から先で「ずっと」成り立つかを確かめる（途中で成り立たない値がないか）。" },
+
+  // ── 統計的な推測（数B） ──
+  "MC-VAR-FORMULA": { name: "分散の公式 V(X)＝E(X²)−{E(X)}² で、2乗や引き算を落とす", blame: "variance_sd", tip: "E(X²) から、期待値の2乗 {E(X)}² をひく。" },
+  "MC-VAR-MEAN": { name: "分散（ちらばり）を、期待値（平均）と取りちがえる", blame: "expected_value", tip: "期待値は中心、分散は中心からのはなれぐあい。" },
+  "MC-VAR-LINEAR-A": { name: "V(aX＋b) を aV(X) とする（a を2乗しない）", blame: null, tip: "偏差が a 倍になるので、偏差の2乗の平均（分散）は a² 倍。" },
+  "MC-VAR-ADD-B": { name: "期待値・分散の変換で、定数 b の扱いを誤る", blame: null, tip: "E(aX＋b)＝aE(X)＋b。分散・標準偏差には b は影響しない。" },
+  "MC-VAR-DIFF": { name: "独立な確率変数の差の分散を、ひき算で求める", blame: null, tip: "V(X−Y)＝V(X)＋V(Y)。ちらばりは打ち消し合わない。" },
+  "MC-BINOM-MEAN-VAR": { name: "二項分布の期待値 np と分散 np(1−p) を取りちがえる", blame: null, tip: "期待値 np、分散 np(1−p)、標準偏差 √{np(1−p)}。" },
+  "MC-BINOM-VAR-P2": { name: "二項分布の分散を np² や n(1−p)² とする", blame: null, tip: "分散は np(1−p)＝n×(成功の確率)×(失敗の確率)。" },
+  "MC-BINOM-SD": { name: "二項分布の標準偏差で、分散の平方根をとり忘れる", blame: "sqrt_meaning", tip: "σ(X)＝√V(X)＝√{np(1−p)}。" },
+  "MC-BINOM-PARAM": { name: "二項分布 B(n, p) の n と p（回数と確率）を取りちがえる", blame: null, tip: "n は試行の回数、p は1回の試行で成功する確率。" },
+  "MC-NORMAL-TAIL": { name: "正規分布表の値（0 から z までの確率）を、そのまま端の確率とする", blame: null, tip: "P(Z≧z)＝0.5−P(0≦Z≦z)。表の値は 0 から z までの面積。" },
+  "MC-NORMAL-SIDE": { name: "正規分布の確率で、0 をはさむ区間とはさまない区間の計算を取りちがえる", blame: null, tip: "0 をはさむならたす、同じ側ならひく。図にかいて面積で考える。" },
+  "MC-ESTIMATE-NO-SQRTN": { name: "信頼区間で、σ を √n でわり忘れる", blame: null, tip: "標本平均の標準偏差は σ/√n。" },
+  "MC-ESTIMATE-N-NOT-SQRT": { name: "信頼区間で、σ を √n ではなく n でわる", blame: "sqrt_meaning", tip: "わるのは √n。n＝400 なら 20 でわる。" },
+  "MC-ESTIMATE-WRONG-Z": { name: "信頼度と係数（95%→1.96、99%→2.58）の対応を誤る", blame: null, tip: "信頼度 95% は 1.96。信頼度を上げると区間は広くなる。" },
+  "MC-ESTIMATE-HALF": { name: "信頼区間の幅と、その半分（片側の長さ）を取りちがえる", blame: null, tip: "幅は（上の端）−（下の端）＝2×1.96×σ/√n。" },
+  "MC-ESTIMATE-SIZE": { name: "標本の大きさと区間の幅の関係（幅は √n に反比例）を誤る", blame: "sqrt_meaning", tip: "幅を半分にするには、n を 4 倍にする。" },
+  "MC-ESTIMATE-POP": { name: "信頼区間を、母集団の値の 95% が入る範囲と考える", blame: null, tip: "信頼区間は「母平均」を推定する区間。個々の値の範囲ではない。" },
+  "MC-ESTIMATE-SAMPLE": { name: "信頼区間を、標本の値（標本平均）が入る範囲と考える", blame: null, tip: "区間を作る方法をくり返すと、95% の区間が母平均をふくむ、という意味。" },
+  "MC-HTEST-SD": { name: "検定統計量 Z を求めるとき、標準偏差ではなく分散や n でわる", blame: null, tip: "Z＝(X−平均)÷標準偏差。標準偏差は √{np(1−p)} や σ/√n。" },
+  "MC-HTEST-ZCALC": { name: "検定統計量 Z の符号（平均との差の向き）を誤る", blame: null, tip: "Z＝(観測した値 − 帰無仮説のもとでの平均)÷標準偏差。" },
   "MC-DIGITS-LEAD": { name: "最高位の数字を、対数の小数部分と log 1〜log 9 を比べずに決める", blame: "log_calc", tip: "小数部分が log a 以上 log(a＋1) 未満なら、最高位の数字は a。" },
+
+  // ── ベクトル（数C） ──
+  "MC-DIVIDE-EXTERNAL": { name: "外分点を、内分点と同じ式で計算する（n を −n にしない）", blame: null, tip: "m:n に外分する点は (−n·A＋m·B)/(m−n)。内分の式の n を −n にかえる。" },
+  "MC-VECTOR-INTERSECT": { name: "交点の位置ベクトルを、2通りの表し方の係数を比べずに見当で決める", blame: "simul_add", tip: "交点を2本の線分それぞれの上の点として2通りに表し、a と b の係数を比べて連立方程式を解く。" },
+  "MC-VEC-NORM-COEF": { name: "|ka|² を k|a|² とする（係数を2乗しない）", blame: null, tip: "|ka|＝|k||a| なので、2乗すると k²|a|²。" },
+  "MC-SPACE-COMPONENT": { name: "空間の距離・大きさで、z 成分を落として平面の公式のまま計算する", blame: "pythagorean_apps", tip: "空間では √(x²＋y²＋z²)。3つの成分すべての2乗をたす。" },
+  "MC-SPACE-SYMMETRY": { name: "空間の対称点で、符号を変える成分を取りちがえる", blame: "coord_basic", tip: "xy 平面に関して対称なら z だけ、x 軸に関して対称なら y と z の符号が変わる。" },
+
+  // ── 2次曲線（数C） ──
+  "MC-CONIC-PARABOLA-P": { name: "放物線 y²＝4px の p を、係数そのもの（4p）やその半分と取りちがえる", blame: null, tip: "y²＝8x なら 4p＝8 で p＝2。焦点は (2, 0)。" },
+  "MC-CONIC-DIRECTRIX": { name: "放物線の準線の位置（焦点と原点をはさんで反対側）や、準線までの距離を誤る", blame: null, tip: "焦点 (p, 0) なら準線は x＝−p。曲線上の点から焦点までの距離＝準線までの距離。" },
+  "MC-CONIC-AXIS": { name: "焦点や長軸が、x 軸・y 軸のどちらの上にあるかを取りちがえる", blame: null, tip: "楕円は分母の大きい方の軸の上に焦点がある。双曲線は右辺が 1 なら x 軸上、−1 なら y 軸上。" },
+  "MC-CONIC-ELLIPSE-HYPER": { name: "楕円と双曲線の式や焦点の公式（c²＝a²−b² と c²＝a²＋b²）を取りちがえる", blame: null, tip: "楕円は「距離の和が一定」で c²＝a²−b²、双曲線は「距離の差が一定」で c²＝a²＋b²。" },
+  "MC-CONIC-VERTEX-FOCUS": { name: "頂点（軸の端）と焦点を取りちがえる", blame: null, tip: "焦点は頂点とは別の点。楕円では頂点より内側、双曲線では頂点より外側にある。" },
+  "MC-CONIC-ASYMPTOTE": { name: "双曲線の漸近線の傾き b/a を a/b とする", blame: null, tip: "x²/a²−y²/b²＝1 の右辺を 0 にすると y＝±(b/a)x。" },
+  "MC-CONIC-2A": { name: "焦点からの距離の和（差）を、2a でなく a や別の長さにする", blame: null, tip: "楕円上の点では PF＋PF′＝2a（長軸の長さ）、双曲線では |PF−PF′|＝2a。" },
+
+  // ── 媒介変数表示・極座標（数C） ──
+  "MC-PARAM-SUBST": { name: "媒介変数を消去するとき、t や cosθ を x・y で表す式の符号・移項を誤る", blame: "lit_eq_solve", tip: "x＝t＋2 なら t＝x−2。求めた式を y の式に、かっこごと代入する。" },
+  "MC-PARAM-PYTH": { name: "cos²θ＋sin²θ＝1 などに持ちこむときに、2乗し忘れたり、たし算をひき算にしたりする", blame: "trig_radian", tip: "cosθ＝x/a、sinθ＝y/b をそれぞれ2乗してたすと 1 になる。" },
+  "MC-POLAR-XY": { name: "極座標と直交座標の変換で、x＝r cosθ・y＝r sinθ の対応や r のかけ忘れを誤る", blame: "trig_radian", tip: "x は cos（横）、y は sin（縦）。どちらも r 倍する。" },
+  "MC-ARG-QUADRANT": { name: "偏角（θ）を、点がどの象限にあるかを考えずに基準の角のまま答える", blame: "trig_radian", tip: "まず点を図にかき、どの象限にあるかを確かめてから角を決める。" },
+  "MC-ARG-RANGE": { name: "偏角を、指定された範囲（0≦θ＜2π など）に直さずに答える", blame: "trig_radian", tip: "−π/3 は 5π/3 と同じ向き。範囲に合わせて 2π をたす・ひく。" },
+  "MC-POLAR-CIRCLE-HALF": { name: "極方程式 r＝2a cosθ＋2b sinθ の円の中心を (2a, 2b) とする（半分にしない）", blame: "coord_circle", tip: "両辺に r をかけて x²＋y²＝2ax＋2by、平方完成すると中心は (a, b)。" },
+
+  // ── 複素数平面（数C） ──
+  "MC-CPOLAR-RULE": { name: "複素数の積・商で、絶対値と偏角の計算のきまりを取りちがえる", blame: null, tip: "積は「絶対値はかける・偏角はたす」、商は「絶対値はわる・偏角はひく」。" },
+  "MC-CPOLAR-ARG-ORDER": { name: "商 z₁/z₂ の偏角や絶対値で、ひく順・わる順を逆にする", blame: null, tip: "z₁/z₂ の偏角は (z₁ の偏角)−(z₂ の偏角)、絶対値は |z₁|÷|z₂|。" },
+  "MC-DEMOIVRE-R": { name: "ド・モアブルの定理で、絶対値 r の n 乗を忘れる（または n 倍にする）", blame: "exp_law", tip: "{r(cosθ＋i sinθ)}ⁿ＝rⁿ(cos nθ＋i sin nθ)。絶対値は n 乗、偏角は n 倍。" },
+  "MC-ROT-DIR": { name: "回転の向き（正の向き＝反時計まわり）を逆にする", blame: "trig_radian", tip: "i をかけると反時計まわりに π/2 回転、−i をかけると時計まわり。" },
+  "MC-ROT-CENTER": { name: "原点以外の点を中心とする回転で、中心を引いてから回し、たしてもどす手順を落とす", blame: null, tip: "中心 c のまわりの回転は w−c＝(回転を表す数)×(z−c)。" },
+  "MC-CPLANE-MAXMIN": { name: "円周上の点と原点の距離の最大・最小で、中心までの距離と半径の足し引きを誤る", blame: "coord_circle", tip: "最大は（中心までの距離）＋（半径）、最小は |（中心までの距離）−（半径）|。" },
+
+  // ── 数学Ⅲ：関数 ──
+  "MC-ASYMPTOTE-SIGN": { name: "漸近線 x＝p の符号を逆にする（x−p を見て x＝−p とする）", blame: "quad_vertex", tip: "分母が 0 になる x が縦の漸近線。x−3 なら x＝3。" },
+  "MC-ASYMPTOTE-RATIO": { name: "分数関数の横の漸近線を、x の係数どうしの比以外（定数項の比など）で求める", blame: null, tip: "y＝(ax＋b)/(cx＋d) は、x が大きいとき a/c に近づく。分子を分母でわって確かめる。" },
+  "MC-ASYMPTOTE-OBLIQUE": { name: "斜めの漸近線（y＝ax＋b）を見落とす・定数だけにする", blame: null, tip: "分子の次数が分母より1高いときは、わり算の商 ax＋b が斜めの漸近線になる。" },
+  "MC-INVERSE-EVAL": { name: "逆関数の値 f⁻¹(k) を、f(k) と取りちがえる", blame: "lit_evaluate", tip: "f⁻¹(k) は「f(x)＝k となる x」。方程式を解いて求める。" },
+  "MC-INVERSE-RECIP": { name: "逆関数 f⁻¹(x) を逆数 1/f(x) と考える", blame: null, tip: "f⁻¹ の −1 は「逆向きの対応」の記号で、−1 乗（逆数）ではない。" },
+  "MC-COMPOSE-ORDER": { name: "合成関数 (g∘f)(x)＝g(f(x)) の順番を逆にする", blame: null, tip: "(g∘f)(x) は、先に f、あとで g。右側の関数から順に計算する。" },
+  "MC-IRR-EXTRANEOUS": { name: "無理方程式で、2乗して出てきた解を元の式で確かめない（または確かめを誤る）", blame: null, tip: "2乗すると解が増えることがある。√ の側は 0 以上なので、反対側も 0 以上かを確かめる。" },
+  "MC-IRR-SQUARE": { name: "√ をはずすときに、反対側を2乗し忘れる", blame: "sqrt_meaning", tip: "√A＝B なら A＝B²（B≧0）。両辺を2乗する。" },
+
+  // ── 数学Ⅲ：微分 ──
+  "MC-DYDX-INVERT": { name: "dy/dx を dx/dy（逆数）と取りちがえる", blame: null, tip: "dy/dx は「x が少し変わったときの y の変化の割合」。(dy/dt)÷(dx/dt) の順。" },
+  "MC-DYDX-PART": { name: "媒介変数表示の微分で、dy/dt（または dx/dt）のまま答える", blame: null, tip: "dy/dx＝(dy/dt)÷(dx/dt)。両方を求めてからわる。" },
+  "MC-HIGHER-ORDER": { name: "第 n 次導関数で、微分する回数を取りちがえる（1回だけ・1回足りない）", blame: null, tip: "f″ は2回、f‴ は3回微分する。1回ごとに式を書いて数える。" },
+  "MC-NORMAL-TANGENT": { name: "法線（接線に垂直な直線）を求める場面で、接線を答える", blame: null, tip: "法線の傾きは −1÷(接線の傾き)。接点を通ることは同じ。" },
+  "MC-INFLECT-STATIONARY": { name: "変曲点を f′(x)＝0 の点（極値の点）と取りちがえる", blame: null, tip: "変曲点は f″(x) の符号が変わる点（グラフの曲がり方が変わる点）。極値は f′ で調べる。" },
+  "MC-CONCAVE-DIR": { name: "上に凸・下に凸と f″ の符号の対応を逆にする", blame: null, tip: "f″＞0 で下に凸（お椀の形）、f″＜0 で上に凸。" },
+  "MC-MOTION-LEVEL": { name: "位置・速度・加速度を取りちがえる（微分する回数を誤る）", blame: null, tip: "位置を1回微分すると速度、2回微分すると加速度。" },
+  "MC-ROOTCOUNT-GRAPH": { name: "方程式の実数解の個数を、グラフと直線の共有点の数として正しく数えられない", blame: "deriv_extrema", tip: "f(x)＝k の解の個数は、y＝f(x) のグラフと直線 y＝k の共有点の数。極値や近づく値と k を比べる。" },
+
+  // ── 数学Ⅲ：積分 ──
+  "MC-RIEMANN-RANGE": { name: "区分求積法で、積分する区間（k の範囲から決まる端）を誤る", blame: "seq_sigma", tip: "x＝k/n とおき、k の最初と最後で x がいくつになるかを調べて区間の端にする。" },
+  "MC-RIEMANN-ENDPOINT": { name: "区分求積で、区間の端の値だけを使って答える（積分しない）", blame: "integ_basic", tip: "(1/n)Σf(k/n) は長方形の面積の和。n→∞ で ∫f(x)dx（面積）になる。" },
+  "MC-RIEMANN-FORM": { name: "区分求積で、和を (1/n)Σf(k/n) の形に直すときに式を誤る", blame: null, tip: "1/n を1つくくり出し、残りを k/n だけの式にする。n が残っていたら変形の途中。" },
+  "MC-VOLUME-NO-SQUARE": { name: "回転体の体積で、y を2乗し忘れる（π∫y dx とする）", blame: null, tip: "切り口は半径 y の円なので、面積は πy²。V＝π∫y²dx。" },
+  "MC-VOLUME-WASHER": { name: "2曲線ではさまれた部分の回転体を、差の2乗 π∫(f−g)²dx で計算する", blame: null, tip: "くりぬいた形なので、π∫(f²−g²)dx（2乗の差）。" },
+  "MC-VOLUME-AXIS": { name: "回転の軸（x 軸・y 軸）を取りちがえて体積を計算する", blame: null, tip: "x 軸のまわりなら π∫y²dx、y 軸のまわりなら π∫x²dy。" },
+  "MC-SYMMETRY-FACTOR": { name: "対称性を使って一部分だけ計算したあと、何倍かするのを忘れる", blame: null, tip: "半分だけ計算したら 2 倍、4 分の 1 なら 4 倍。どこを計算したかを図で確かめる。" },
+  "MC-ARCLEN-FORMULA": { name: "曲線の長さの公式 ∫√(1＋(y′)²)dx を正しく使えない（√ や 1 を落とす、高さの差にする）", blame: null, tip: "小さな直角三角形の斜辺 √(dx²＋dy²) を足し合わせる、と考える。" },
+  "MC-DISTANCE-DISPLACEMENT": { name: "道のり（動いた距離の合計）を、位置の変化（∫v dt）と取りちがえる", blame: null, tip: "道のりは ∫|v|dt。向きが変わるところで区間を分け、それぞれ正の値にしてたす。" },
 };

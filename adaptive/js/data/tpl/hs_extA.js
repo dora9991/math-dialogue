@@ -542,7 +542,7 @@ export default {
           });
         }
         // 大きな累乗の余り（周期）
-        const [base, mod] = until(() => [r.int(2, 9), r.pick([5, 7, 9, 11, 13])], ([b, md]) => b % md !== 0 && b % md !== 1);
+        const [base, mod] = until(() => [r.int(2, 9), r.pick([5, 7, 9, 11, 13])], ([b, md]) => gcd(b, md) === 1 && b % md !== 1); // 互いに素なら、余りはいつか 1 にもどる（周期がある）
         const N = r.int(20, 99);
         // 周期を求める
         const seq = [];
@@ -1121,6 +1121,7 @@ export default {
             const ang = (x, y, z) => deg(Math.acos((y * y + z * z - x * x) / (2 * y * z)));
             return [ang(a, b, c), ang(b, c, a), ang(c, a, b)].every((v) => v >= 28 && v <= 125);
           },
+          5000, // 条件（わり切れる・細長くない）が厳しいので、多めに試す
         );
       if (lv === 1) {
         const [a, b, c] = pickTri((a, b, c) => (a * c) % (b + c) === 0);
@@ -1538,10 +1539,11 @@ export default {
           want = (e) => rel(ref, e) === "skew";
           qText = `立方体 ABCD-EFGH で、面の対角線 ${ref} とねじれの位置にある辺はどれですか。`;
         } else {
-          ref = r.pick(EDGES);
-          refLabel = `辺 ${ref}`;
+          // 面の対角線とは、ねじれの位置でも垂直でない辺がある（なす角 45°）
+          ref = r.pick(["AC", "BD", "EG", "FH", "AF", "BE", "CH", "DG", "AH", "DE", "BG", "CF"]);
+          refLabel = `線分 ${ref}`;
           want = (e) => rel(ref, e) === "skew" && perp(ref, e);
-          qText = `立方体 ABCD-EFGH で、辺 ${ref} と垂直で、しかもねじれの位置にある辺はどれですか。`;
+          qText = `立方体 ABCD-EFGH で、面の対角線 ${ref} と垂直で、しかもねじれの位置にある辺はどれですか。`;
         }
         const others = EDGES.filter((e) => e !== ref);
         const good = others.filter(want);
@@ -1558,7 +1560,7 @@ export default {
         }
         for (const e of wrongPool) if (picks.length < 5 && !picks.includes(e)) picks.push(e);
         const segs = EDGES.map((e) => [e[0], e[1], hidden.has(e) ? { dash: "4 3" } : {}]);
-        if (lv === 2) segs.push([ref[0], ref[1], { color: "#c0392b" }]);
+        if (lv >= 2) segs.push([ref[0], ref[1], { color: "#c0392b" }]);
         return choice({
           q: qText,
           fig: geoFigure({ points: pts, segments: segs, labelDir: { A: [-12, -4], B: [6, 10], C: [10, -4], D: [-8, -8], E: [-12, 6], F: [10, 8], G: [12, 4], H: [-10, -8] }, width: 220 }),

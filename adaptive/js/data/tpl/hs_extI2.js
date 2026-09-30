@@ -291,7 +291,8 @@ export default {
         expl = `${divide ? `わり算は、わる式の分母と分子を入れかえてかけ算にします。` : ""}分子・分母を因数分解すると $${frac(`${f(L(a))}${f(L(b))}`, `${f(L(c))}${f(L(d))}`)}\\times${frac(px(L(c)), px(L(a)))}$。$${f(L(a))}$ と $${f(L(c))}$ を約分して $${goodTex}$。`;
       } else {
         const [a, b] = until(() => [r.nz(-5, 5), r.nz(-5, 5)], ([u, v]) => u !== v);
-        const [m, n] = [r.int(1, 5), r.int(1, 5)];
+        // m＝n だと、まちがい方のいくつかが正解と同じ式になる（選択肢が足りなくなる）ので避ける
+        const [m, n] = until(() => [r.int(1, 5), r.int(1, 5)], ([u, v]) => u !== v);
         const minus = r.chance(0.5);
         const sn = minus ? -n : n;
         // m/(x+a) ± n/(x+b) = {(m±n)x + (mb ± na)} / {(x+a)(x+b)}
@@ -579,8 +580,12 @@ export default {
           });
         }
         if (lv === 2) {
-          const [a, b] = until(() => [r.int(2, 9), r.int(2, 72)], ([u, v]) => Number.isInteger(Math.sqrt(v / u)) && v % u === 0 && u !== v);
+          // b＝a·k² として直接作る（x＝k が整数になる）。b は 72 以下
+          const a = r.int(2, 9);
+          const k = r.int(2, Math.floor(Math.sqrt(72 / a)));
+          const b = a * k * k;
           const x0 = Math.sqrt(b / a);
+          assert(x0 === k, "最小となる x の検算");
           return num({
             q: `$x>0$ のとき、$${a}x+\\dfrac{${b}}{x}$ が最小となる $x$ の値を求めなさい。`,
             ans: x0,
@@ -936,7 +941,8 @@ export default {
         return num({
           q: `$${givenTex}$ とします。$${base}^{${n}}$ は何けたの整数ですか。`,
           ans,
-          wrongs: [[ans - 1, "MC-DIGITS-NO-PLUS1"], [Math.round(lg), "MC-DIGITS-ROUND"], [ans + 1, "MC-DIGITS-NO-PLUS1"]],
+          // 小数部分が 0.5 以上なのに四捨五入すると、1 けた多くなる（その誤答は ROUND として先に登録）
+          wrongs: [[ans - 1, "MC-DIGITS-NO-PLUS1"], ...(lg - Math.floor(lg) >= 0.5 ? [[ans + 1, "MC-DIGITS-ROUND"]] : []), [ans + 1, "MC-DIGITS-NO-PLUS1"]],
           explain: `$${logTex}=${Math.round(lg * 10000) / 10000}$。よって $10^{${Math.floor(lg)}}<${base}^{${n}}<10^{${Math.floor(lg) + 1}}$ なので、$${base}^{${n}}$ は $${ans}$ けたの整数です。（$10^{k}$ は $k+1$ けた）`,
         });
       }
@@ -962,7 +968,8 @@ export default {
       return num({
         q: `$${givenTex}$ とします。$${kd.tex}^{${n}}$ を小数で表すと、小数第何位に初めて $0$ でない数字が現れますか。`,
         ans: k,
-        wrongs: [[k - 1, "MC-DIGITS-NO-PLUS1"], [k + 1, "MC-DIGITS-NO-PLUS1"], [Math.round(-lg), "MC-DIGITS-ROUND"]],
+        // −log の小数部分が 0.5 未満なのに四捨五入すると、1 つ手前の位になる（その誤答は ROUND として先に登録）
+        wrongs: [...(-lg - Math.floor(-lg) < 0.5 ? [[k - 1, "MC-DIGITS-ROUND"]] : []), [k - 1, "MC-DIGITS-NO-PLUS1"], [k + 1, "MC-DIGITS-NO-PLUS1"]],
         explain: `$\\log_{10}${kd.tex}^{${n}}=${Math.round(lg * 10000) / 10000}$ なので、$10^{${-k}}\\le ${kd.tex}^{${n}}<10^{${-k + 1}}$。$10^{-${k}}=0.${"0".repeat(k - 1)}1$ 以上なので、小数第 $${k}$ 位に初めて $0$ でない数字が現れます。`,
       });
     }),

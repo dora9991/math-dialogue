@@ -25,6 +25,9 @@ import hsCalcInteg from "./hs_calc_integ.js";
 import hsCalcLimit from "./hs_calc_limit.js";
 import hsExtA from "./hs_extA.js";
 import hsExtI2 from "./hs_extI2.js";
+import hsExtB from "./hs_extB.js";
+import hsExtC from "./hs_extC.js";
+import hsExtIII from "./hs_extIII.js";
 
 export const TEMPLATES = {
   ...elemNum1,
@@ -50,4 +53,7 @@ export const TEMPLATES = {
   ...hsCalcLimit,
   ...hsExtA,
   ...hsExtI2,
+  ...hsExtB,
+  ...hsExtC,
+  ...hsExtIII,
 };
