@@ -4,7 +4,8 @@
 //  問題の uid（単元/テンプレ/難易度/種）から、同じ問題をいつでも作り直せる。
 //  書き出した Markdown や JSON を、docs の「気になる点」に貼りつけて直す材料にする。
 // ============================================================
-import { h, mk, markup, button, mount, fmtDate, download, copyText } from "./dom.js";
+import { h, mk, markup, button, mount, fmtDate, copyText } from "./dom.js";
+import { confirmDialog, saveText } from "./dialogs.js";
 import { SKILLS, stageLabel } from "../data/graph.js";
 import { makeItem, answerText, LEVEL_LABEL, parseUid } from "../core/items.js";
 import { plainText } from "../core/markup.js";
@@ -24,7 +25,7 @@ export const REASONS = [
 ];
 const REASON_LABEL = Object.fromEntries(REASONS);
 
-/** 「気になる」ダイアログ。ctx = { item, mode, given, result } または { general: true } */
+/** 「気になる」ダイアログ。ctx = { item, mode, given, result } または { general: true }。保存したあとに onSaved() を呼ぶ（一覧の再描画用） */
 export function openConcernDialog(app, ctx = {}) {
   const item = ctx.item || null;
   const checks = REASONS.map(([key, label]) => {
@@ -60,6 +61,7 @@ export function openConcernDialog(app, ctx = {}) {
     app.store.addConcern(base);
     app.toast("「気になる」に記録しました");
     close();
+    ctx.onSaved?.();
   };
   dlg.append(
     h(
@@ -96,9 +98,9 @@ export function concernsScreen(app) {
       h(
         "div",
         { class: "actions" },
-        button("メモを追加", () => openConcernDialog(app, { general: true, mode: null }), "btn"),
+        button("メモを追加", () => openConcernDialog(app, { general: true, mode: null, onSaved: draw }), "btn"),
         button("Markdown でコピー", async () => app.toast((await copyText(toMarkdown(shown))) ? "コピーしました" : "コピーできませんでした"), "btn", { disabled: !shown.length }),
-        button("JSON で書き出し", () => download(`tsumazuki-concerns-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(shown, null, 2)), "btn", { disabled: !shown.length }),
+        button("JSON で書き出し", () => saveText(`tsumazuki-concerns-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(shown, null, 2)), "btn", { disabled: !shown.length }),
       ),
       h(
         "div",
@@ -150,8 +152,8 @@ function concernCard(app, c, redraw) {
           }, "btn small")
         : null,
       button(c.status === "done" ? "未対応にもどす" : "対応ずみにする", () => (app.store.updateConcern(c.id, { status: c.status === "done" ? "open" : "done" }), redraw()), "btn small"),
-      button("削除", () => {
-        if (confirm("この記録を削除しますか？")) {
+      button("削除", async () => {
+        if (await confirmDialog("この記録を削除します。元にもどせません。", { title: "記録の削除", okLabel: "削除する", danger: true })) {
           app.store.removeConcern(c.id);
           redraw();
         }

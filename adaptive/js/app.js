@@ -137,6 +137,7 @@ function render() {
 }
 
 function boot() {
+  if (!document.documentElement.lang) document.documentElement.lang = "ja"; // 置き場所側の枠に lang が無くても、日本語の字形で表示する
   const seedParam = new URLSearchParams(location.search).get("seed");
   app.rng = makeRng(seedParam ? Number(seedParam) || 1 : newSeed());
   app.rebuild();

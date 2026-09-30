@@ -1,8 +1,9 @@
 // ============================================================
 // data.js — データの管理（学年・名前の変更、書き出し・読み込み、全消去）
 // ============================================================
-import { h, button, download, fmtDate } from "./dom.js";
+import { h, button, fmtDate } from "./dom.js";
 import { gradeSelect } from "./home.js";
+import { confirmDialog, saveText } from "./dialogs.js";
 
 export function dataScreen(app) {
   const { store } = app;
@@ -38,24 +39,39 @@ export function dataScreen(app) {
     );
   }
 
-  const fileIn = h("input", { type: "file", accept: "application/json,.json", hidden: true });
-  fileIn.addEventListener("change", async () => {
-    const f = fileIn.files?.[0];
-    if (!f) return;
+  /** 書き出した JSON の文字列を読み込む（ファイルでも貼りつけでも同じ） */
+  const loadJson = async (text) => {
     try {
-      const obj = JSON.parse(await f.text());
-      if (store.log.length && !confirm("いまの記録は、読み込んだ内容に置きかえられます。よろしいですか？")) return;
+      let obj;
+      try {
+        obj = JSON.parse(text);
+      } catch {
+        throw new Error("JSON として読めません（途中で切れていないか、確かめてください）");
+      }
+      if (!obj || typeof obj !== "object" || !Array.isArray(obj.log)) throw new Error("このファイルは読み込めません（形式がちがいます）");
+      if (store.log.length && !(await confirmDialog("いまの記録は、読み込んだ内容に置きかえられます。", { title: "読み込みの確認", okLabel: "置きかえて読み込む", danger: true }))) return false;
       store.importData(obj);
       app.rebuild();
       app.session = null;
       app.toast("読み込みました");
       app.go("home");
+      return true;
     } catch (e) {
       app.toast(`読み込めませんでした：${e.message}`, 5000);
+      return false;
+    }
+  };
+  const fileIn = h("input", { type: "file", accept: "application/json,.json", hidden: true });
+  fileIn.addEventListener("change", async () => {
+    const f = fileIn.files?.[0];
+    if (!f) return;
+    try {
+      await loadJson(await f.text());
     } finally {
       fileIn.value = "";
     }
   });
+  const pasteIn = h("textarea", { id: "paste-json", class: "in-text mono", rows: "5", placeholder: "書き出したテキストをここに貼りつける", "aria-label": "書き出した JSON" });
 
   wrap.append(
     h(
@@ -67,11 +83,12 @@ export function dataScreen(app) {
       h(
         "div",
         { class: "actions" },
-        button("書き出す（JSON）", () => download(`tsumazuki-navi-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(store.exportData(), null, 2)), "btn primary", { disabled: !store.log.length && !store.concerns.length }),
+        button("書き出す（JSON）", () => saveText(`tsumazuki-navi-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(store.exportData(), null, 2)), "btn primary", { disabled: !store.log.length && !store.concerns.length }),
         button("読み込む", () => fileIn.click(), "btn"),
         fileIn,
       ),
       h("p", { class: "muted small" }, "書き出したファイルは、別の端末・別のブラウザに読み込めます。先生に渡して、つまずきの見立てを一緒に見ることもできます。"),
+      h("details", { class: "fine" }, h("summary", null, "貼りつけて読み込む"), pasteIn, h("div", { class: "actions" }, button("貼りつけた内容を読み込む", () => loadJson(pasteIn.value), "btn", { id: "paste-load" }))),
     ),
     h(
       "section",
@@ -83,8 +100,8 @@ export function dataScreen(app) {
         { class: "actions" },
         button(
           "すべて消す",
-          () => {
-            if (!confirm("本当にすべて消しますか？（元にもどせません）\n先に「書き出す」で保存しておくと安心です。")) return;
+          async () => {
+            if (!(await confirmDialog("解答の記録・気になる・プロフィールをすべて消します。元にもどせません。\n先に「書き出す」で保存しておくと安心です。", { title: "すべて消しますか？", okLabel: "消す", danger: true }))) return;
             store.reset();
             app.rebuild();
             app.session = null;

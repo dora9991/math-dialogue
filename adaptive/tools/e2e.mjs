@@ -195,8 +195,8 @@ try {
   const exportPath = await (await dl2).path();
   const exported = JSON.parse(fs.readFileSync(exportPath, "utf8"));
   check(exported.log.length > 20 && exported.concerns.length === 1, `データ：書き出し（記録 ${exported.log.length} 件）`);
-  pg.once("dialog", (d) => d.accept());
-  await pg.getByRole("button", { name: "すべて消す" }).click();
+  await pg.getByRole("button", { name: "すべて消す" }).click(); // 画面の中の確認ダイアログが出る
+  await pg.locator("dialog[open]").getByRole("button", { name: "消す", exact: true }).click();
   await pg.waitForSelector(".hero");
   check((await pg.evaluate(() => window.tsumazukiApp.store.log.length)) === 0, "データ：すべて消すと空になる");
   await pg.locator(".nav a", { hasText: "データ" }).click();
@@ -295,6 +295,14 @@ try {
   await pg.goto(`${BASE}/#/report`);
   await pg.waitForSelector("text=つまずきレポート");
   await shot(pg, "13-mobile-report.png");
+  // どの画面でも、ページ全体が横にはみ出さない（KaTeX の読み上げ用の要素などで起きやすい）
+  for (const route of ["home", "practice", "map", "report", "concerns", "data"]) {
+    await pg.goto(`${BASE}/#/${route}`);
+    await pg.waitForSelector("main#view > *");
+    await pg.waitForTimeout(150);
+    const over = await pg.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    check(over <= 2, `スマホ幅：#/${route} で横にはみ出さない（${over}px）`);
+  }
   await ctx.close();
 } catch (e) {
   problems.push(`テストが途中で止まりました: ${e.message}`);

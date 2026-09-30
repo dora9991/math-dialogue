@@ -21,7 +21,13 @@ python3 -m http.server 8786 --directory adaptive
 
 # ダブルクリックで開ける 1 枚の HTML にまとめる（オフラインで動く。配るときに便利）
 node adaptive/tools/build-single.mjs      # → adaptive/dist/tsumazuki-navi.html
+
+# claude.ai の Artifact など「枠の中」で動かす形（外枠なしの断片。ダウンロード・印刷・confirm が使えない前提）
+node adaptive/tools/build-single.mjs --artifact   # → adaptive/dist/tsumazuki-navi.artifact.html
 ```
+
+枠の中では、ファイルの保存のかわりに「コピーして貼りつけ」のダイアログが出ます（読み込みは「貼りつけて読み込む」）。
+確認（削除・読み込み・すべて消す）は、ブラウザ標準の `confirm()` ではなく画面の中のダイアログで行います。
 
 `?seed=数字` を URL につけると、同じ順番で出題されます（動作確認用）。
 
@@ -82,6 +88,7 @@ node adaptive/tools/build-single.mjs      # → adaptive/dist/tsumazuki-navi.htm
 | `node adaptive/tools/test-core.mjs` | 有理数・多項式・採点・乱数・学習者モデル（サンプリングと全列挙の一致）の単体テスト |
 | `node adaptive/tools/simulate.mjs` / `simulate-practice.mjs` | 合成生徒での診断・練習の性能評価 |
 | `node adaptive/tools/e2e.mjs` | 実ブラウザ（Playwright）で診断→レポート→マップ→練習→気になる→データを一通り操作（PC・スマホ・ダークモード） |
+| `node adaptive/tools/e2e-artifact.mjs` | 「枠の中」（Artifact 形式の断片）を想定した通し確認：ダウンロード・印刷・`confirm()` が使えなくても、コピーして書き出し／貼りつけて読み込み／画面内の確認が動くか。暗い配色・スマホ幅も |
 | `node adaptive/tools/render-audit.mjs` | 全テンプレを実ブラウザでスマホ幅に描いて、はみ出し・KaTeX エラーを探す |
 
 ### 合成生徒でのシミュレーション（`tools/simulate.mjs`、60 人、診断 30 問）

@@ -1,7 +1,12 @@
 // ============================================================
 // tools/build-single.mjs — 1 枚の HTML にまとめる（サーバーなしで、ダブルクリックで開ける）
 //
-//   node tools/build-single.mjs [--out dist/tsumazuki-navi.html]
+//   node tools/build-single.mjs [--out dist/tsumazuki-navi.html] [--artifact]
+//
+//  --artifact … claude.ai の Artifact のように「枠の中」で動かす形で出す。
+//     ・文書の外枠(<!doctype>/<html>/<head>/<body>)は置き場所側が付けるので、<title>・<style>・中身・<script> だけを出す
+//     ・枠の中ではファイルのダウンロード・印刷・confirm() が使えないので、
+//       globalThis.TSUMAZUKI_SANDBOX を立てて、画面の中の代わりの操作（コピーして保存・確認ダイアログ）に切りかえる
 //
 //  ES モジュールの import/export を小さな変換でつなぎ直して 1 つのスクリプトにし、
 //  CSS・KaTeX・フォントを埋め込む。外部の通信はしない（オフラインで動く）。
@@ -14,7 +19,8 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
-const OUT = path.resolve(ROOT, args.includes("--out") ? args[args.indexOf("--out") + 1] : "dist/tsumazuki-navi.html");
+const ARTIFACT = args.includes("--artifact");
+const OUT = path.resolve(ROOT, args.includes("--out") ? args[args.indexOf("--out") + 1] : ARTIFACT ? "dist/tsumazuki-navi.artifact.html" : "dist/tsumazuki-navi.html");
 
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), "utf8");
 
@@ -108,11 +114,25 @@ function katexCss() {
 
 // ── HTML に埋め込む ─────────────────────────
 const esc = (js) => js.replace(/<\/script/gi, "<\\/script");
-let html = read("index.html");
-html = html.replace(/<link rel="stylesheet" href="vendor\/katex\/katex\.min\.css"\s*\/>/, () => `<style>${katexCss()}</style>`);
-html = html.replace(/<link rel="stylesheet" href="css\/app\.css"\s*\/>/, () => `<style>\n${read("css/app.css")}\n</style>`);
-html = html.replace(/<script src="vendor\/katex\/katex\.min\.js"><\/script>/, () => `<script>${esc(read("vendor/katex/katex.min.js"))}</script>`);
-html = html.replace(/<script type="module" src="js\/app\.js"><\/script>/, () => `<script>\n${esc(bundle)}</script>`);
+let html;
+if (ARTIFACT) {
+  html = [
+    "<title>つまずきナビ</title>",
+    `<style>${katexCss()}</style>`,
+    `<style>\n${read("css/app.css")}\n</style>`,
+    '<div id="app"></div>',
+    "<noscript>このページはJavaScriptを使います。ブラウザの設定でJavaScriptを有効にしてください。</noscript>",
+    `<script>${esc(read("vendor/katex/katex.min.js"))}</script>`,
+    `<script>\nglobalThis.TSUMAZUKI_SANDBOX = true;\n${esc(bundle)}</script>`,
+    "",
+  ].join("\n");
+} else {
+  html = read("index.html");
+  html = html.replace(/<link rel="stylesheet" href="vendor\/katex\/katex\.min\.css"\s*\/>/, () => `<style>${katexCss()}</style>`);
+  html = html.replace(/<link rel="stylesheet" href="css\/app\.css"\s*\/>/, () => `<style>\n${read("css/app.css")}\n</style>`);
+  html = html.replace(/<script src="vendor\/katex\/katex\.min\.js"><\/script>/, () => `<script>${esc(read("vendor/katex/katex.min.js"))}</script>`);
+  html = html.replace(/<script type="module" src="js\/app\.js"><\/script>/, () => `<script>\n${esc(bundle)}</script>`);
+}
 if (/(href|src)="(?!data:|#)[^"]*\.(css|js)"/.test(html)) throw new Error("外部ファイルの参照が残っています");
 
 fs.mkdirSync(path.dirname(OUT), { recursive: true });

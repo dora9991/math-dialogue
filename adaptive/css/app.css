@@ -3,6 +3,7 @@
    色は変数で持ち、暗い設定の端末では自動で切りかえる。スマホ幅を基準にして、広い画面で少し広げる。
    ============================================================ */
 :root {
+  color-scheme: light;
   --bg: #f4f6f9;
   --card: #ffffff;
   --card-soft: #f0f4fa;
@@ -37,6 +38,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --bg: #12161d;
     --card: #1b212b;
     --card-soft: #212938;
@@ -70,6 +72,7 @@
 }
 /* 端末の設定ではなく、ページ側で暗い配色を指定されたときも同じ色にする */
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --bg: #12161d;
   --card: #1b212b;
   --card-soft: #212938;
@@ -482,6 +485,7 @@ details summary {
   font-size: 1.12em;
 }
 .m {
+  position: relative; /* KaTeX の読み上げ用 MathML（position:absolute）を、この式の枠にとどめる */
   display: inline-block;
   max-width: 100%;
   overflow-x: auto;
@@ -850,6 +854,7 @@ details summary {
   color: var(--st-unknown-fg);
 }
 .map-scroll {
+  position: relative; /* KaTeX の読み上げ用 MathML（position:absolute）を、この枠の中にとどめる。なければページ全体が横にはみ出す */
   overflow-x: auto;
   padding-bottom: 8px;
   border: 1px solid var(--line);
@@ -1148,6 +1153,14 @@ dialog.dlg {
 dialog.dlg::backdrop {
   background: rgba(10, 16, 28, 0.5);
 }
+dialog.dlg-narrow {
+  width: min(420px, calc(100vw - 32px));
+}
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Noto Sans Mono CJK JP", monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
 .checks {
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -1174,7 +1187,7 @@ dialog.dlg::backdrop {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   transform: translate(-50%, 20px);
   max-width: min(92vw, 520px);
   padding: 10px 18px;

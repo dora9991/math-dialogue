@@ -1,7 +1,8 @@
 // ============================================================
 // report.js — つまずきレポート（源流・領域ごとの到達・よくあるまちがい・学習プラン）
 // ============================================================
-import { h, mk, button, download, fmtDate } from "./dom.js";
+import { h, mk, button, fmtDate } from "./dom.js";
+import { saveText } from "./dialogs.js";
 import { rootCauses, strandSummary, misconceptionSummary, overview } from "../core/report.js";
 import { studyPlan } from "../core/practice.js";
 import { uncertainty } from "../core/diagnose.js";
@@ -149,11 +150,11 @@ export function reportScreen(app) {
               rows.push([id, namePlain(id), stageLabel(SKILLS[id].stage), STRANDS[SKILLS[id].strand].name, STATE_INFO[L.state(id)].label, L.pMaster(id).toFixed(3), st.n, st.c]);
             }
             const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\r\n");
-            download(`tsumazuki-report-${new Date().toISOString().slice(0, 10)}.csv`, `﻿${csv}`, "text/csv");
+            saveText(`tsumazuki-report-${new Date().toISOString().slice(0, 10)}.csv`, `﻿${csv}`, "text/csv");
           },
           "btn",
         ),
-        button("印刷する", () => window.print(), "btn ghost"),
+        globalThis.TSUMAZUKI_SANDBOX ? null : button("印刷する", () => window.print(), "btn ghost"), // 枠の中では印刷できない
       ),
     ),
   );
