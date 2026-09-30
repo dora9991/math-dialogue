@@ -1022,7 +1022,7 @@ export default {
         ans: meanQ,
         post: unit,
         wrongs: [[Q(Math.round(mids.reduce((a, b) => a + b, 0) * 2), nclass * 2), "MC-FREQ-MEAN"], [Q(freq.reduce((s, f_, i) => s + f_ * (start + i * width), 0), total), "MC-FREQ-MEAN"], [mids[freq.indexOf(Math.max(...freq))], "MC-FREQ-MEAN"]],
-        explain: `（階級値 × 度数）の合計を、度数の合計でわります。階級値は ${mids.join("、")}。$\\dfrac{${freq.map((f_, i) => `${mids[i]}\\times ${f_}`).join("+")}}{${total}}=${decStr(meanQ)}$。`,
+        explain: `（階級値 × 度数）の合計を、度数の合計でわります。階級値は ${mids.join("、")}。（階級値）×（度数）は ${freq.map((f_, i) => `$${mids[i]}\\times ${f_}=${decStr(Q(Math.round(mids[i] * f_ * 2), 2))}$`).join("、")}。その合計は $${decStr(Q(Math.round(freq.reduce((sum, f_, i) => sum + f_ * mids[i], 0) * 2), 2))}$ で、度数の合計 $${total}$ でわって $${decStr(meanQ)}$。`,
       });
     }),
   ],
@@ -1157,7 +1157,7 @@ export default {
         q: `次の ${n} 個のデータの四分位範囲（第3四分位数 − 第1四分位数）を求めなさい。\n${shuffled.join("、")}`,
         ans: Q(Math.round(iqr * 2), 2),
         wrongs: [[Q(Math.round(wrongIqr * 2), 2), "MC-QUARTILE-MEDIAN"], [data[n - 1] - data[0], "MC-QUARTILE-RANGE"], [Q(Math.round(median(data) * 2), 2), "MC-QUARTILE-MEDIAN"], [Q(Math.round((q3 + q1) * 2), 2), "MC-QUARTILE-RANGE"]],
-        explain: `小さい順に並べると $${data.join(",\\ ")}$。中央値で前半・後半に分けます${n % 2 ? "（データの数が奇数のときは、中央値そのものはどちらにもふくめません）" : ""}。前半 $${lower.join(",\\ ")}$ の中央値が第1四分位数 $${decStr(Q(Math.round(q1 * 2), 2))}$、後半 $${upper.join(",\\ ")}$ の中央値が第3四分位数 $${decStr(Q(Math.round(q3 * 2), 2))}$。四分位範囲は $${decStr(Q(Math.round(q3 * 2), 2))}-${decStr(Q(Math.round(q1 * 2), 2))}=${decStr(Q(Math.round(iqr * 2), 2))}$。`,
+        explain: `小さい順に並べると ${data.join("、")}。中央値で前半・後半に分けます${n % 2 ? "（データの数が奇数のときは、中央値そのものはどちらにもふくめません）" : ""}。前半 ${lower.join("、")} の中央値が第1四分位数 $${decStr(Q(Math.round(q1 * 2), 2))}$、後半 ${upper.join("、")} の中央値が第3四分位数 $${decStr(Q(Math.round(q3 * 2), 2))}$。四分位範囲は $${decStr(Q(Math.round(q3 * 2), 2))}-${decStr(Q(Math.round(q1 * 2), 2))}=${decStr(Q(Math.round(iqr * 2), 2))}$。`,
       });
     }),
     t(
