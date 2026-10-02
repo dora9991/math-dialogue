@@ -1,0 +1,43 @@
+/* セットで入れる・周辺の問題をさがす（編集画面の右に出る欄） */
+.nbtn.set{border-color:#b42318;color:#b42318;font-weight:700}
+.nbtn.set:hover{background:#fff3f1}
+.ws-wrap.all #wsSetBtn{display:none}
+.ws-wrap.set-on .wse-main{margin-right:min(680px,50vw)}
+.wse-add.set{margin-top:6px;border-color:#e3a59d;color:#b42318;font-weight:700;width:100%}
+.wse-add.set:hover{background:#fff3f1;border-color:#b42318;color:#b42318}
+.wset{position:fixed;right:0;bottom:0;top:54px;width:min(680px,50vw);z-index:75;background:var(--bg);border-left:1px solid var(--line2);box-shadow:-6px 0 22px rgba(0,0,0,.12);display:flex;flex-direction:column;font-size:13.5px}
+.wset[hidden]{display:none}
+.wset-h{display:flex;align-items:center;gap:8px;padding:10px 14px 6px;font-size:15px}
+.wset-h .sp,.wset-ch .sp{flex:1}
+.wset-tabs{display:flex;gap:4px;padding:0 14px;border-bottom:1px solid var(--line)}
+.wset-tabs button{border:0;background:transparent;padding:8px 12px;font-weight:700;color:var(--ink3);cursor:pointer;border-bottom:3px solid transparent}
+.wset-tabs button.on{color:var(--acc);border-bottom-color:var(--acc)}
+.wset-where{margin:8px 14px 0;padding:6px 10px;border-radius:8px;background:#fff8e6;border:1px solid #f0d9a0;color:#7a5200;font-size:12.5px}
+.wset-f{padding:8px 14px 0}
+.wset-f input[type=search]{width:100%;box-sizing:border-box;border:1px solid var(--line2);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;background:#fff;outline:0}
+.wset-f input[type=search]:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-soft)}
+.wset-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;align-items:center}
+.wset .chip{border:1px solid var(--line2);background:#fff;border-radius:999px;padding:3px 11px;font-size:12.5px;cursor:pointer;color:var(--ink2)}
+.wset .chip.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+.wset .fsep{width:1px;height:18px;background:var(--line2);margin:0 4px}
+.wset-f .ck{display:inline-flex;align-items:center;gap:5px;margin-top:7px;font-size:12.5px;color:var(--ink2)}
+.wset-n{margin:6px 16px 0;font-size:12px;color:var(--ink3)}
+.wset-list{flex:1;overflow:auto;padding:8px 14px 20px;display:flex;flex-direction:column;gap:10px}
+.wset-c{background:#fff;border:1px solid var(--line2);border-radius:10px;overflow:hidden;flex:none}
+.wset-c:hover{border-color:var(--acc)}
+.wset-ch{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px dashed var(--line);flex-wrap:wrap}
+.wset-ch .wsrc{font-size:12px;font-weight:700;color:var(--u)}
+.wset-ch .muted{font-size:12px}
+.wset-ch .nbtn{padding:4px 14px}
+.wset-ch .nbtn.done{background:#1e7a4a;border-color:#1e7a4a}
+.wset .ty.t-ex{background:#e8f0fc;color:#1d5fbf;border-color:#c9dcf7}
+.wset .ty.t-task{background:#fde8e8;color:#b42318;border-color:#f6c9c5}
+.wset .ty.t-prac{background:#eef2f6;color:#475569;border-color:#d7dee6}
+.wset .ty.t-think{background:#fdf1dc;color:#9a5b00;border-color:#f3d9a8}
+.wset .ty.t-word{background:#e6f4ea;color:#1e7a4a;border-color:#c3e3ce}
+.wset-pv{max-height:310px;overflow:auto;padding:6px 10px 8px;zoom:.78}
+.wset-pv .wset-sheet{position:relative;box-shadow:none;overflow:visible}
+.wset-pv .wb{cursor:default}
+.wset-foot{margin:0;padding:8px 14px;border-top:1px solid var(--line);font-size:12px;color:var(--ink3);background:#fff}
+@media (max-width:1100px){.wset{width:min(560px,92vw)}.ws-wrap.set-on .wse-main{margin-right:0}}
+@media print{.wset{display:none !important}.ws-wrap.set-on .wse-main{margin-right:0}}

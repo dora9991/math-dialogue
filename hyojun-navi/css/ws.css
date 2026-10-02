@@ -1,0 +1,192 @@
+/* ノート型ワークシート（ドット入り罫線）。用紙は実寸（mm）でつくり、画面では zoom で縮める */
+:root{--wsfont:"UD デジタル 教科書体 N-R","UD Digi Kyokasho N-R","UD デジタル 教科書体 NK-R","YuKyokasho Yoko","游教科書体 横用","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif}
+
+/* ---- 1枚 ---- */
+.wsp{position:relative;flex:none;background:#fff;color:#1f2328;font-family:var(--wsfont);line-height:1.4;overflow:hidden;
+  box-shadow:0 1px 3px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.1);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.wsp-head{position:absolute;height:10mm;display:flex;align-items:flex-end;justify-content:space-between;gap:4mm;font-size:3.5mm;white-space:nowrap}
+.wsp-head .u{display:inline-block;border-bottom:.25mm solid #333;height:4.6mm;vertical-align:-1.1mm;margin:0 .7mm}
+.wsp-head .w1{width:7mm}.wsp-head .w2{width:9mm}.wsp-head .w6{width:46mm}
+.wh-mid{flex:1;text-align:center;font-size:3mm;color:#6b7280;overflow:hidden;text-overflow:ellipsis}
+.wsp-body{position:absolute}
+.wsp-rule{position:absolute;left:0;top:0;display:block;pointer-events:none;overflow:visible}
+.wsp-flow{position:relative;font-size:calc(var(--pitch) * .56);line-height:var(--pitch)}
+
+/* ---- ブロック（高さはいつも罫の幅の倍数） ---- */
+.wb{position:relative}
+.wb-t,.wb-w{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start}
+.wb .tx{grid-column:2;position:relative;top:calc(var(--pitch) * .06);min-width:0;overflow-wrap:anywhere}
+.wb.box{padding:0 1.6mm}
+.wb.box::after{content:"";position:absolute;left:0;right:0;top:.35mm;bottom:.35mm;border:.3mm solid #2d3748;border-radius:1.4mm;pointer-events:none}
+.wsp .tag{grid-column:1;box-sizing:border-box;display:inline-block;height:calc(var(--pitch) * .7);margin:calc(var(--pitch) * .15) 1.8mm 0 0;padding:0 1.5mm;
+  line-height:calc(var(--pitch) * .7);font-size:calc(var(--pitch) * .42);font-weight:700;border-radius:1mm;white-space:nowrap;letter-spacing:.04em}
+.wsp .t-meate{background:#2d3748;color:#fff}
+.wsp .t-kadai{border:.3mm solid #2d3748;line-height:calc(var(--pitch) * .7 - .6mm);background:#fff}
+.wsp .t-text{padding:0 .8mm 0 0;font-size:calc(var(--pitch) * .5);letter-spacing:0}
+.wsp .t-write{background:#e8edf2;color:#2d3748}
+.wb-w .pr{font-size:.8em;color:#5a6470;margin-right:.6em}
+/* 小テストの得点らん（最初の行の右はし。2行ぶんの高さ） */
+.wb.has-score{padding-right:38mm}
+.wsp .wscore{position:absolute;right:0;top:.5mm;bottom:.5mm;width:35mm;box-sizing:border-box;border:.35mm solid #2d3748;border-radius:1.4mm;background:#fff;line-height:1}
+.wsp .wscore small{position:absolute;left:1.4mm;top:1.1mm;font-size:2.7mm;font-weight:700;color:#2d3748}
+.wsp .wscore b{position:absolute;right:1.6mm;bottom:1.3mm;font-size:4.2mm;font-weight:700;color:#2d3748}
+.wsp .ansx{display:none;color:#d62828}
+.ans-on .ansx{display:inline}
+.ans-on .wb-w.ovf{box-shadow:inset 0 -.7mm 0 rgba(214,40,40,.7)}
+
+/* 文字の中の空欄・分数・累乗・文字式の字 */
+.wsp .bl{display:inline-block;height:1.1em;line-height:1.1em;border-bottom:.25mm solid #333;vertical-align:-.25em;text-align:center;margin:0 .15em;white-space:nowrap}
+.wsp .fr{display:inline-block;vertical-align:middle;font-size:.7em;line-height:1;text-align:center;margin:0 .14em}
+.wsp .fr>span{display:block;padding:0 .12em}
+.wsp .fr>span:first-child{border-bottom:.2mm solid currentColor;padding-bottom:.06em}
+.wsp .fr>span:last-child{padding-top:.04em}
+.wsp i.v{font-family:"Times New Roman",Times,serif;font-style:italic;font-size:1.1em;line-height:0;padding:0 .03em}
+.wsp sup{font-size:.62em;vertical-align:.5em;line-height:0}
+/* 根号 √{12×8}：中の式の上に線をのばす */
+.wsp .sq{white-space:nowrap}
+.wsp .sq>span{display:inline-block;border-top:.2mm solid currentColor;line-height:1.02;padding:0 .08em 0 .03em;margin-left:-.07em}
+/* 連立方程式 {|式1|式2|}：式を縦にならべ、左に中かっこ。1つの式が罫1行分 */
+.wsp .sys{display:inline-grid;grid-auto-rows:var(--pitch);vertical-align:top;position:relative;padding-left:.75em;margin:0 .3em 0 .1em;line-height:var(--pitch);white-space:nowrap}
+.wsp .sys::before{content:"";position:absolute;left:0;top:.5mm;bottom:.5mm;width:.6em;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 40' preserveAspectRatio='none'%3E%3Cpath d='M9 1C5 1 5.5 4 5.5 8v6.5c0 3-1 5.5-4.5 5.5 3.5 0 4.5 2.5 4.5 5.5V32c0 4-.5 7 3.5 7' fill='none' stroke='%23000' stroke-width='1.2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") no-repeat center/100% 100%;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 40' preserveAspectRatio='none'%3E%3Cpath d='M9 1C5 1 5.5 4 5.5 8v6.5c0 3-1 5.5-4.5 5.5 3.5 0 4.5 2.5 4.5 5.5V32c0 4-.5 7 3.5 7' fill='none' stroke='%23000' stroke-width='1.2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") no-repeat center/100% 100%}
+
+/* 表 */
+.wb-tab{display:block}
+.wt{border-collapse:collapse;table-layout:fixed;height:100%;background:#fff;font-size:.9em}
+.wt th,.wt td{border:.25mm solid #333;padding:0 .4mm;text-align:center;vertical-align:middle;line-height:1.1;white-space:nowrap;overflow:hidden}
+.wt th{background:#f0f2f5;font-weight:700}
+
+/* 図・グラフ */
+.wb-fig{display:flex;gap:4mm;align-items:stretch;background:#fff}
+.wb-fig::before{content:"";position:absolute;top:0;bottom:0;left:-3mm;right:-3mm;background:#fff}  /* 2段組のすき間の罫線も隠す */
+.wb-fig .fg{flex:none;position:relative}
+.fsvg{display:block;overflow:visible;fill:#222}
+.fsvg text{font-family:var(--wsfont)}
+.fsvg .sv{font-family:"Times New Roman",Times,serif;font-style:italic}
+.fsvg .cap{font-weight:700}
+.fsvg .pl{font-family:"Times New Roman",Times,serif;font-style:italic}
+.wt tr.hd th{background:#f0f2f5}
+
+/* 2段組 */
+.wb-cols{display:grid;column-gap:6mm;align-items:start}
+.wcol{min-width:0}
+
+/* はみ出しの注意（画面だけ） */
+.wsp-over{position:absolute;left:0;right:0;bottom:0;background:#d62828;color:#fff;font:700 3.4mm/1.6 var(--font,sans-serif);padding:1.4mm 4mm;text-align:center}
+.wsp-over[hidden]{display:none}
+.wsp.overflow{box-shadow:0 0 0 1.2mm rgba(214,40,40,.45)}
+
+/* ---- 編集画面 ---- */
+.ws-wrap{position:fixed;inset:0;z-index:70;background:#e7e5df;display:flex;flex-direction:column}
+.ws-wrap[hidden]{display:none}
+.ws-wrap.all .wse-panel,.ws-wrap.all #wsUndo,.ws-wrap.all #wsRedo{display:none}
+.ws-wrap.all .wse-main{grid-template-columns:1fr}
+.ws-wrap.all .wsp .wb{cursor:default}
+.ws-wrap.all .wsp .wb:hover{outline:none}
+.wse-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.wse-title{display:flex;flex-direction:column;line-height:1.3;min-width:0}
+.wse-title small{font-size:11px;color:var(--ink3);font-weight:700}
+.wse-title b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:44vw}
+.wse-bar .sp{flex:1}
+.wse-status{font-size:12px;color:var(--ink3)}
+.wse-status.ok{color:var(--ok)}.wse-status.bad{color:#c62828}
+.nbtn.ck{cursor:pointer}
+.nbtn:disabled{opacity:.35;cursor:default}
+.wse-main{flex:1;display:grid;grid-template-columns:minmax(330px,410px) 1fr;min-height:0}
+.wse-panel{overflow:auto;background:var(--bg);border-right:1px solid var(--line);padding:12px 12px 90px}
+.wse-view{overflow:auto;padding:12px 24px 60px}
+.wse-info{font-size:12.5px;color:var(--ink2);margin:0 0 10px;text-align:center}
+.wse-info .bad{color:#c62828}
+.wse-pages{display:flex;flex-direction:column;align-items:center;gap:10mm}
+.ws-edit .wsp .wb{cursor:pointer}
+.ws-edit .wsp .wb:hover{outline:.35mm dashed rgba(29,95,191,.45);outline-offset:-.1mm}
+.wsp .wb.sel{outline:.55mm solid rgba(29,95,191,.85);outline-offset:-.1mm}
+
+.wse-sec{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.wse-sec h3{font-size:13.5px;margin:0 0 8px}
+.wse-sec h3 small{font-weight:400;color:var(--ink3);font-size:11.5px;margin-left:6px}
+.wse-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.wse-field{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--ink3);font-weight:700;margin:0 0 8px;flex:1 1 100%;min-width:0}
+.wse-field.sm{flex:1 1 84px}
+.wse-field input,.wse-field select,.wse-field textarea{font:inherit;font-weight:400;font-size:13.5px;color:var(--ink);border:1px solid var(--line2);border-radius:7px;padding:6px 8px;background:#fff;width:100%;box-sizing:border-box}
+.wse-field textarea{resize:vertical;line-height:1.5}
+.wse-panel .ck,.ws-tab .ck{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ink2);font-weight:400;margin:0 10px 6px 0}
+.wse-list{display:flex;flex-direction:column;gap:6px}
+.wsc{border:1px solid var(--line);border-radius:9px;background:#fff}
+.wsc.sel{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc-soft)}
+.wsc-h{display:flex;align-items:center;gap:6px;padding:6px 6px 6px 8px;cursor:pointer;min-width:0}
+.wsc-ty{flex:none;font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;background:#eef1f4;color:#334}
+.wt-meate .wsc-ty{background:#2d3748;color:#fff}
+.wt-kadai .wsc-ty{background:#fff;box-shadow:inset 0 0 0 1px #2d3748}
+.wt-write .wsc-ty{background:#e8edf2}
+.wt-table .wsc-ty,.wt-figure .wsc-ty{background:#e6f4ea;color:#1e6b3a}
+.wt-cols .wsc-ty{background:#efe9fb;color:#5b3fa6}
+.wt-break .wsc-ty{background:#fde8e8;color:#9b1c1c}
+.wsc-sum{flex:1;min-width:0;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wsc-rows{flex:none;font-size:11px;color:var(--ink3)}
+.wsc-ops{flex:none;display:flex;gap:1px}
+.wsc-ops button,.wse-trow button,.wse-fig button{border:1px solid transparent;background:transparent;border-radius:5px;width:24px;height:24px;cursor:pointer;color:var(--ink3);font-size:12px;padding:0}
+.wsc-ops button:hover,.wse-trow button:hover,.wse-fig button:hover{background:#f0efe9;color:var(--ink)}
+.wsc-ops button:disabled{opacity:.25;cursor:default;background:transparent}
+.wsc-b{border-top:1px dashed var(--line);padding:10px 10px 4px}
+.wsc-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;padding:0 8px 8px 12px}
+.wsc-col,.wse-list{min-width:0}
+.wsc-colh{font-size:11.5px;font-weight:700;color:#5b3fa6;margin:2px 0 4px}
+.wse-add{border:1px dashed var(--line2);background:transparent;border-radius:8px;padding:6px;font-size:12.5px;color:var(--ink2);cursor:pointer}
+.wse-add:hover{background:#fff;border-color:var(--acc);color:var(--acc)}
+.wse-addmenu{display:flex;flex-wrap:wrap;gap:5px;padding:8px;border:1px solid var(--acc);border-radius:9px;background:var(--acc-soft)}
+.wse-addmenu button{border:1px solid var(--line2);background:#fff;border-radius:999px;padding:4px 10px;font-size:12px;cursor:pointer}
+.wse-addmenu button:hover{border-color:var(--acc);color:var(--acc)}
+.wse-addmenu .x{background:transparent;border-color:transparent;color:var(--ink3)}
+.wse-trows{display:flex;flex-direction:column;gap:5px;margin-bottom:8px}
+.wse-trow{display:flex;gap:5px;align-items:center}
+.wse-trow input.h{width:84px;flex:none}
+.wse-trow input.c{flex:1;min-width:0}
+.wse-trow input:not([type=checkbox]){font:inherit;font-size:13px;border:1px solid var(--line2);border-radius:6px;padding:5px 7px}
+.wse-trow .ck{margin:0}
+.wse-fig{border:1px solid var(--line);border-radius:8px;padding:8px 8px 2px;margin-bottom:8px;background:#fbfbf9}
+.wse-mini{border:1px solid var(--line2);background:#fff;border-radius:7px;padding:5px 10px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;margin:0 4px 8px 0;color:var(--ink2)}
+.wse-mini:hover{border-color:var(--acc);color:var(--acc)}
+.wse-mini.warn:hover{border-color:#c62828;color:#c62828}
+.wse-file{display:flex;gap:6px;flex-wrap:wrap}
+.wse-note{font-size:12px;color:var(--ink3);margin:2px 0 8px;line-height:1.5}
+.wse-help summary,.wse-geohelp summary{cursor:pointer;font-weight:700;font-size:13px}
+.wse-geohelp{margin:0 0 8px;font-size:12px}
+.wse-geohelp ul{margin:6px 0 0;padding-left:18px;line-height:1.65;color:var(--ink2)}
+.wse-geohelp code{background:#f0efe9;padding:0 4px;border-radius:4px;font-size:11.5px}
+.wse-quick{margin-top:2px}
+.wse-field textarea[data-ff="src"]{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.45}
+.wse-help ul{margin:6px 0 0;padding-left:18px;font-size:12.5px;line-height:1.7}
+.wse-help code{background:#f0efe9;padding:0 4px;border-radius:4px;font-size:12px}
+
+/* ---- 授業の「ワークシート」タブ ---- */
+.ws-tbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.ws-tbar .sp{flex:1}
+.ws-tbar .ck{margin:0}
+.ws-src{font-size:12.5px;color:var(--ink3)}
+.ws-thumb{background:#e7e5df;border-radius:10px;padding:12px;overflow:auto;max-height:72vh}
+.ws-thumb-in{display:flex;flex-direction:column;align-items:center;gap:6mm}
+.ws-empty{padding:16px;border:1px dashed var(--line2);border-radius:10px;background:#fff}
+.ws-empty p{margin:0 0 8px}
+.badge.wsb{background:#efe9fb;color:#5b3fa6}
+
+@media (max-width:900px){
+  .wse-main{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .wse-panel{max-height:46vh;border-right:0;border-bottom:1px solid var(--line)}
+  .wse-view{padding:10px}
+  .wse-title b{max-width:70vw}
+}
+
+/* ---- 印刷：編集画面を開いているときは用紙だけを実寸で ---- */
+@media print{
+  html,body.ws-open{overflow:visible !important;height:auto !important}
+  body.ws-open{background:#fff !important}
+  body.ws-open>*:not(#wsWrap){display:none !important}
+  body.ws-open #wsWrap{position:static !important;display:block !important;background:none !important}
+  body.ws-open .wse-bar,body.ws-open .wse-panel,body.ws-open .wse-info,body.ws-open .wsp-over,.wsp .noprint{display:none !important}
+  body.ws-open .wse-main{display:block !important}
+  body.ws-open .wse-view{overflow:visible !important;padding:0 !important}
+  body.ws-open .wse-pages{zoom:1 !important;display:block !important}
+  body.ws-open .wsp{box-shadow:none !important;margin:0 !important;break-after:page;page-break-after:always}
+  body.ws-open .wsp:last-child{break-after:auto;page-break-after:auto}
+  .wsp .wb{outline:none !important}
+}

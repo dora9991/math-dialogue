@@ -1,0 +1,176 @@
+/* 電子黒板用スライド。1枚＝1600×900（16:9）でつくり、画面に合わせて拡大・縮小する。
+   文字の大きさは --fs（枚ごとに、入りきる中でいちばん大きい倍率を js/slides.js が決める） */
+.sl-slide{
+  --sl-bg:#fff; --sl-ink:#1f2328; --sl-ink3:#6b7280; --sl-hd:#f1f3f5; --sl-line:#2d3748; --sl-line2:#c9d1da;
+  --sl-kbg:#fbfcfd; --sl-q:#1d4f9f; --sl-ans:#d62828; --sl-veil:#fff8dc; --sl-veil-line:#ead9a0; --sl-chip:#2d3748; --sl-chipink:#fff; --sl-soft:#e8edf2;
+  position:relative;flex:none;width:1600px;height:900px;box-sizing:border-box;background:var(--sl-bg);color:var(--sl-ink);
+  font-family:var(--wsfont);overflow:hidden;display:flex;flex-direction:column;--fs:1;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;text-align:left;line-height:1.5;font-weight:400}
+.sl-slide *{box-sizing:border-box}
+/* 黒板の色（図と表は白いカードのまま） */
+.sl-dark .sl-slide{
+  --sl-bg:#1f4035; --sl-ink:#f4f7f2; --sl-ink3:#b9c9c0; --sl-hd:#183229; --sl-line:#f7e27a; --sl-line2:#4f7a68;
+  --sl-kbg:rgba(255,255,255,.05); --sl-q:#a7d3ff; --sl-ans:#ffb3c7; --sl-veil:rgba(255,255,255,.13); --sl-veil-line:rgba(255,255,255,.4); --sl-chip:#f4f7f2; --sl-chipink:#1f4035; --sl-soft:rgba(255,255,255,.16)}
+
+.sl-hd{flex:none;height:60px;display:flex;align-items:center;gap:18px;padding:0 28px;background:var(--sl-hd);font-size:25px;white-space:nowrap;line-height:1.3}
+.sl-hd .u{flex:none;color:#fff;border-radius:8px;padding:4px 14px;font-weight:700;font-size:21px;letter-spacing:.02em}
+.sl-hd .m{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+.sl-hd .m>b{font-size:18px;background:var(--sl-chip);color:var(--sl-chipink);border-radius:6px;padding:3px 10px;margin-right:12px;vertical-align:3px}
+.sl-hd .pg{flex:none;font-size:21px;color:var(--sl-ink3);font-variant-numeric:tabular-nums}
+.sl-body{flex:1;min-height:0;padding:24px 50px 20px;font-size:calc(40px * var(--fs));display:flex;flex-direction:column;gap:.4em;overflow:hidden}
+
+/* ---- 1つ1つの部品 ---- */
+.sl-slide .su{flex:none;position:relative;min-width:0}
+.su-k,.su-t,.su-w{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start}
+.sl-slide .tx{grid-column:2;min-width:0;overflow-wrap:anywhere;line-break:strict}
+.sl-slide .ck{display:inline-block;max-width:100%;margin-right:1em;vertical-align:top}
+.sl-slide .ck:last-child{margin-right:0}
+.sl-slide .chip{grid-column:1;display:inline-block;font-size:.64em;font-weight:700;line-height:1.5;padding:.04em .65em;border-radius:.32em;margin:.36em .8em 0 0;white-space:nowrap;background:var(--sl-chip);color:var(--sl-chipink);letter-spacing:.04em}
+.sl-slide .chip.c-k{background:none;color:var(--sl-ink);box-shadow:inset 0 0 0 .12em var(--sl-line)}
+.sl-slide .chip.c-n{background:none;color:inherit;font-size:1em;font-weight:400;padding:0;margin:0 .3em 0 0;letter-spacing:0}
+.sl-slide .chip.c-d{background:#0e7a6b;color:#fff}
+.sl-slide .chip.c-w{background:var(--sl-soft);color:var(--sl-ink)}
+.su-k{border:.08em solid var(--sl-line);border-radius:.4em;padding:.22em .6em .26em;font-weight:600;background:var(--sl-kbg)}
+.su-k.nobox{border:0;padding:0;background:none}
+.su-sec{font-weight:700;border-bottom:.1em solid var(--sl-line);padding-bottom:.1em}
+/* つづきのスライドの上に、問題を小さくもう一度出す */
+.su-rc{font-size:.6em;color:var(--sl-ink3);border-left:.3em solid var(--sl-line2);padding:.05em .8em;line-height:1.45;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.su-rc b{color:var(--sl-ink);margin-right:.7em}
+
+/* 発問と答え */
+.su-w .q{color:var(--sl-q);font-weight:600}
+.su-w .q::before{content:"？";display:inline-grid;place-items:center;width:1.3em;height:1.3em;border-radius:50%;background:var(--sl-q);color:var(--sl-bg);font-size:.68em;font-weight:700;margin-right:.5em;vertical-align:.14em;line-height:1}
+.sl-slide .a{color:var(--sl-ans);border-radius:.25em;padding:0 .35em;margin-left:-.35em}
+.sl-slide .ansx{visibility:hidden}
+.sl-slide .rv.on .ansx,.sl-all .sl-slide .ansx{visibility:visible}
+.sl-slide .rv{cursor:pointer}
+.sl-slide .a.rv:not(.on){background:var(--sl-veil);box-shadow:inset 0 0 0 1px var(--sl-veil-line)}
+.sl-all .sl-slide .a.rv{background:none;box-shadow:none}
+
+/* 文字の中の空欄・分数・累乗・根号・連立方程式（ワークシートと同じ書き方） */
+.sl-slide .bl{display:inline-block;min-height:1.22em;line-height:1.22;border-bottom:.07em solid currentColor;vertical-align:-.2em;text-align:center;margin:0 .15em;padding:0 .15em;white-space:nowrap;border-radius:.15em .15em 0 0}
+.sl-slide .bl .ansx{color:var(--sl-ans)}
+.sl-slide .a .bl .ansx{visibility:inherit}
+.sl-slide .bl.rv:not(.on){background:var(--sl-veil)}
+.sl-all .sl-slide .bl.rv{background:none}
+.sl-slide .fr{display:inline-block;vertical-align:middle;font-size:.7em;line-height:1;text-align:center;margin:0 .14em}
+.sl-slide .fr>span{display:block;padding:0 .12em}
+.sl-slide .fr>span:first-child{border-bottom:.08em solid currentColor;padding-bottom:.06em}
+.sl-slide .fr>span:last-child{padding-top:.04em}
+.sl-slide i.v{font-family:"Times New Roman",Times,serif;font-style:italic;font-size:1.1em;line-height:0;padding:0 .03em}
+.sl-slide sup{font-size:.62em;vertical-align:.5em;line-height:0}
+.sl-slide .sq{white-space:nowrap}
+.sl-slide .sq>span{display:inline-block;border-top:.06em solid currentColor;line-height:1.02;padding:0 .08em 0 .03em;margin-left:-.07em}
+.sl-slide .sys{display:inline-grid;grid-auto-rows:1.5em;vertical-align:top;position:relative;padding-left:.75em;margin:0 .3em 0 .1em;line-height:1.5em;white-space:nowrap}
+.sl-slide .sys::before{content:"";position:absolute;left:0;top:.08em;bottom:.08em;width:.6em;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 40' preserveAspectRatio='none'%3E%3Cpath d='M9 1C5 1 5.5 4 5.5 8v6.5c0 3-1 5.5-4.5 5.5 3.5 0 4.5 2.5 4.5 5.5V32c0 4-.5 7 3.5 7' fill='none' stroke='%23000' stroke-width='1.2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") no-repeat center/100% 100%;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 40' preserveAspectRatio='none'%3E%3Cpath d='M9 1C5 1 5.5 4 5.5 8v6.5c0 3-1 5.5-4.5 5.5 3.5 0 4.5 2.5 4.5 5.5V32c0 4-.5 7 3.5 7' fill='none' stroke='%23000' stroke-width='1.2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") no-repeat center/100% 100%}
+
+/* 表（白いカード） */
+.su-tab{max-width:100%}
+.sl-slide .st{border-collapse:collapse;background:#fff;color:#1f2328;font-size:var(--tf,1em)}
+.sl-slide .st th,.sl-slide .st td{border:.05em solid #333;padding:.1em .5em;text-align:center;vertical-align:middle;line-height:1.35;white-space:nowrap;min-width:2.3em}
+.sl-slide .st th{background:#eef1f4;font-weight:700}
+.sl-slide .st .ansx{color:#d62828}
+.sl-slide .st .rv:not(.on){background:#fff3c4}
+.sl-slide .st tr.rv:not(.on) td{background:#fff3c4}
+.sl-all .sl-slide .st .rv,.sl-all .sl-slide .st tr.rv td{background:#fff}
+
+/* 図（白いカード）。高さの上限 --fh、横：縦 --ar */
+.su-fig{display:flex;gap:1.6%;align-items:center;margin:0 auto;width:min(100%,calc(var(--fh,15em) * var(--ar,2)),var(--mw,100%));background:#fff;border-radius:.25em;color:#1f2328}
+.su-fig .fg{min-width:0;position:relative}
+.su-fig.cap{align-items:flex-start}
+.sl-slide .fsvg{display:block;width:100%;height:auto}
+.sl-slide .fsvg .ansx{visibility:hidden}
+.sl-slide .fg.rv.on .fsvg .ansx,.sl-all .sl-slide .fsvg .ansx{visibility:visible}
+.sl-slide .fg.rv:not(.on)::after{content:"答え";position:absolute;right:.3em;top:.3em;font-size:.42em;font-weight:700;line-height:1.5;padding:0 .6em;border-radius:1em;background:#fff3c4;color:#7a5c00;box-shadow:inset 0 0 0 1px #e0c56a}
+.sl-all .sl-slide .fg.rv::after{display:none}
+
+/* 2段組・小問のならび */
+.su-cols{display:grid;column-gap:1.1em;align-items:start}
+.su-row{display:grid;column-gap:1.3em;align-items:start}
+.sl-slide .sc,.sl-slide .si{min-width:0;display:flex;flex-direction:column;gap:.25em}
+.sl-slide .sc .su-fig{--fh:17em}
+
+/* 表紙・まとめ */
+.sl-title .sl-body{justify-content:center;align-items:center;text-align:center;gap:0;padding:40px 90px}
+.sl-title .tt-u{font-size:40px;font-weight:700;display:flex;align-items:center;gap:22px}
+.sl-title .tt-u span{color:#fff;border-radius:12px;padding:6px 24px}
+.sl-title .tt-s{font-size:30px;color:var(--sl-ink3);margin-top:14px}
+.sl-title .tt-l{margin-top:64px;font-size:30px;font-weight:700;background:var(--sl-chip);color:var(--sl-chipink);border-radius:10px;padding:4px 26px;letter-spacing:.1em}
+.sl-title .tt-m{margin-top:26px;font-size:calc(76px * var(--fs));font-weight:700;line-height:1.4;overflow-wrap:anywhere;line-break:strict}
+.su-m ul{margin:.2em 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.35em}
+.su-m li{position:relative;padding-left:1.1em}
+.su-m li::before{content:"";position:absolute;left:.15em;top:.58em;width:.42em;height:.42em;border-radius:50%;background:var(--sl-line)}
+.sl-slide .su-m li.a{color:var(--sl-ink);padding:0 .35em 0 1.1em;margin-left:0}
+.su-m .mh{font-weight:700;border-bottom:.1em solid var(--sl-line);display:inline-block;padding:0 .4em .05em 0}
+
+/* ---- 授業ナビの「スライド」タブ ---- */
+.sl-tbar{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.sl-tbar .sp{flex:1}
+.sl-seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;background:#fff}
+.sl-seg button{border:0;background:transparent;padding:6px 12px;font-size:13px;font-weight:700;color:var(--ink2);cursor:pointer}
+.sl-seg button.on{background:var(--acc);color:#fff}
+.sl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px;background:#e7e5df;border-radius:10px;padding:12px}
+.sl-th{position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:6px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18);cursor:pointer;border:0;padding:0;display:block;width:100%}
+.sl-th .sl-slide{position:absolute;left:0;top:0;transform-origin:0 0;transform:scale(var(--k,.15));pointer-events:none}
+.sl-th .n{position:absolute;left:6px;bottom:5px;z-index:2;font:700 11.5px/1.5 var(--font);background:rgba(31,35,40,.78);color:#fff;border-radius:5px;padding:0 6px}
+.sl-th:hover{box-shadow:0 0 0 3px var(--acc)}
+.sl-th.off{opacity:.38}
+.sl-th.cur{box-shadow:0 0 0 4px #f59e0b}
+.sl-note{font-size:12.5px;color:var(--ink3);margin:8px 0 0}
+
+/* ---- スライドの画面（電子黒板に映す） ---- */
+.sl-wrap{position:fixed;inset:0;z-index:80;background:#101214;display:flex;flex-direction:column;font-family:var(--font);color:#e8eaed;user-select:none;-webkit-user-select:none}
+.sl-wrap[hidden]{display:none}
+.sl-area{flex:1;min-height:0;position:relative;overflow:hidden}
+.sl-stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform:translate(-50%,-50%) scale(var(--s,1));box-shadow:0 0 40px rgba(0,0,0,.5)}
+.sl-ink{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;touch-action:none}
+.sl-wrap.pen .sl-ink{pointer-events:auto;cursor:crosshair}
+.sl-black{position:absolute;inset:0;background:#000;z-index:5}
+.sl-timer{position:absolute;right:26px;top:74px;z-index:4;font:700 64px/1.2 "Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums;background:rgba(17,24,39,.9);color:#fff;border-radius:16px;padding:6px 26px;cursor:pointer}
+.sl-timer.end{background:#d62828;animation:slblink 1s steps(2) infinite}
+@keyframes slblink{50%{opacity:.45}}
+.sl-bar{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:6px 7px;padding:6px 10px;background:#1b1f24;border-top:1px solid #2c3238}
+.sl-bar::-webkit-scrollbar{display:none}
+.sl-bar button,.sl-bar a.b{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:50px;height:46px;border-radius:10px;border:1px solid #3a4048;background:#272c33;color:#e8eaed;font:700 15px/1 var(--font);padding:0 13px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.sl-bar button:hover,.sl-bar a.b:hover{background:#333a43}
+.sl-bar button.on{background:#f59e0b;border-color:#f59e0b;color:#1b1f24}
+.sl-bar button.nav{min-width:74px;font-size:22px}
+.sl-bar button:disabled{opacity:.3;cursor:default}
+.sl-bar .sp{flex:1}
+.sl-bar .sep{flex:none;width:1px;height:30px;background:#3a4048;margin:0 3px}
+.sl-bar .pos{flex:none;min-width:86px;text-align:center;font:700 19px/1 "Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.sl-bar .pos small{display:block;font-size:11px;font-weight:400;color:#9aa4ae;margin-top:5px;font-family:var(--font)}
+.sl-pens{display:none;align-items:center;gap:6px}
+.sl-wrap.pen .sl-pens{display:flex}
+.sl-pens button.c{min-width:44px;width:44px;padding:0}
+.sl-pens button.c i{display:block;width:22px;height:22px;border-radius:50%;background:var(--c);box-shadow:0 0 0 2px rgba(255,255,255,.75)}
+.sl-pens button.c.on{background:#4b5563;border-color:#fff}
+.sl-pop{position:absolute;bottom:64px;z-index:9;background:#272c33;border:1px solid #3a4048;border-radius:12px;padding:8px;display:flex;gap:6px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.sl-pop button{min-width:64px;height:46px;border-radius:10px;border:1px solid #3a4048;background:#1b1f24;color:#e8eaed;font:700 15px/1 var(--font);cursor:pointer}
+.sl-msg{position:absolute;inset:0;display:grid;place-items:center;color:#cbd5e1;font-size:17px;text-align:center;padding:30px;line-height:1.9}
+
+/* 一覧（スライドをえらぶ・使わないスライドを外す） */
+.sl-over{position:absolute;inset:0;z-index:8;background:#14171a;overflow:auto;padding:16px 22px 80px;user-select:none}
+.sl-over[hidden]{display:none}
+.sl-over h2{margin:0 0 4px;font-size:19px;color:#fff}
+.sl-over .oh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.sl-over .oh .sp{flex:1}
+.sl-over p{margin:0 0 12px;color:#aab4be;font-size:13.5px}
+.sl-over .nbtn{background:#272c33;border-color:#3a4048;color:#e8eaed;font-size:14px;padding:8px 13px}
+.sl-over .nbtn:hover{background:#333a43}
+.sl-over .nbtn.pri{background:#f59e0b;border-color:#f59e0b;color:#1b1f24}
+.sl-ogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.sl-oc{display:flex;flex-direction:column;gap:6px}
+.sl-oc .use{align-self:flex-start;border:1px solid #3a4048;background:#1b1f24;color:#cbd5e1;border-radius:8px;font:700 12.5px/1 var(--font);padding:7px 10px;cursor:pointer}
+.sl-oc.off .use{background:#7c2d12;border-color:#9a3412;color:#fff}
+
+/* ---- 印刷・PDF（1枚＝1ページ、16:9） ---- */
+#slPrint{display:none}
+@media print{
+  .pane[data-p="sl"]{display:none !important}
+  html,body.sl-print{overflow:visible !important;height:auto !important;background:#fff !important}
+  body.sl-print>*:not(#slPrint){display:none !important}
+  body.sl-print #slPrint{display:block !important}
+  #slPrint .sl-slide{break-after:page;page-break-after:always}
+  #slPrint .sl-slide:last-child{break-after:auto;page-break-after:auto}
+}

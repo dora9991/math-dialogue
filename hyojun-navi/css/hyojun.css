@@ -1,0 +1,141 @@
+/* 授業の型のしるし・学期の見出し・一覧表・板書計画の見た目 */
+.bn small{display:block;font-size:10.5px;font-weight:600;color:var(--ink3);line-height:1.1;margin-top:1px}
+.brand{align-items:center}
+
+/* 授業の型 */
+.ty{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.6;white-space:nowrap;vertical-align:middle;border:1px solid transparent}
+.ty-t{background:#fde8e8;color:#b42318;border-color:#f6c9c5}   /* 課題解決 */
+.ty-r{background:#e8f0fc;color:#1d5fbf;border-color:#c9dcf7}   /* 例題と練習 */
+.ty-p{background:#eef2f6;color:#475569;border-color:#d7dee6}   /* 習熟・教え合い */
+.ty-g{background:#f1e9fb;color:#6b3fb8;border-color:#dccbf3}   /* ゲーム・活動 */
+.ty-k{background:#fdf1dc;color:#9a5b00;border-color:#f3d9a8}   /* 活用・表現 */
+.ty-m{background:#e6f4ea;color:#1e7a4a;border-color:#c3e3ce}   /* まとめ */
+.lc .lc-h .ty{margin-left:auto;font-size:10px;padding:0 6px}
+.lc .lc-h{display:flex;align-items:center;gap:6px}
+.d-meta .ty{font-size:12px}
+.tysum{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:10px;font-size:13px;color:var(--ink2)}
+.tysum .ty{margin-right:4px}
+.tylist{list-style:none;margin:0;padding:0}
+.tylist li{display:flex;gap:10px;align-items:baseline;padding:5px 0;border-top:1px dashed var(--line)}
+.tylist li:first-child{border-top:0}
+.tylist .ty{flex:none;min-width:6.4em;text-align:center}
+.tycard h3 .ty{margin-left:8px}
+
+
+/* 教材があるしるし */
+.mb{display:inline-grid;place-items:center;min-width:17px;height:17px;padding:0 3px;border-radius:4px;font-size:10px;font-weight:700;background:#edf6f0;color:#1e7a4a;border:1px solid #c3e3ce}
+.lc .lc-f{gap:3px}
+
+/* 行事の枠（定期テスト・学期のまとめ） */
+.lc.ev{background:#f4f1fa;border:1px dashed #cdbfe6;cursor:default}
+.lc.ev::before{background:#9a86c6}
+.lc.ev.exam{background:#f3f4f6;border-color:#cfd4da}
+.lc.ev.exam::before{background:#8a939c}
+.lc.ev .lc-h i{font-style:normal;color:var(--ink2)}
+.lc.ev .lc-t{font-size:12.5px;color:var(--ink2);font-weight:600}
+.lc.ev:hover{transform:none;box-shadow:none}
+.yb-seg.ev{background:repeating-linear-gradient(135deg,#b9bfc7 0 4px,#d9dde2 4px 8px);min-width:0;padding:0}
+.evrow td{background:#f4f1fa;color:#4b3f72;font-weight:700;font-size:13px}
+
+/* 学期の見出し */
+h2.term{margin:26px 0 4px;padding:6px 14px;border-radius:9px;background:var(--board);color:var(--board-ink);font-size:15px;letter-spacing:.1em}
+
+
+/* 考える問題 */
+.prob.think{border-left:6px solid #b42318;background:#fff8f7}
+.prob.think .pl{background:#b42318;color:#fff;padding:1px 8px;border-radius:5px;margin-right:8px}
+.flow .st small{margin-left:8px;font-weight:600;color:var(--ink3)}
+.flow>li.fx{opacity:.62}
+.flow>li.fx .tx{font-size:13px}
+
+/* 一覧表 */
+.ytbl{table-layout:fixed;width:100%}
+.ytbl th:nth-child(1){width:5%}.ytbl th:nth-child(2){width:5%}.ytbl th:nth-child(3){width:11%}.ytbl th:nth-child(4){width:4.5%}.ytbl th:nth-child(5){width:9%}.ytbl th:nth-child(6){width:41%}.ytbl th:nth-child(7){width:24.5%}
+.ytbl td,.ytbl th{width:auto;word-break:normal;overflow-wrap:anywhere}
+.ytbl td.n,.ytbl td.sb{width:auto}
+.ytbl td.n{white-space:nowrap}
+.ytbl .ty{font-size:10.5px}
+.ytbl tr.grp-h td{font-weight:700}
+
+/* 「進め方」のページ */
+.idea-sec p{margin:6px 0 10px}
+
+@media print{
+  body.pm main{display:block !important;max-width:none;padding:0}
+  body.pm .ytbl{font-size:10.5px}
+  body.pm .ytbl tr{break-inside:avoid}
+  body.pm h1.pg{font-size:16px;margin:0 0 6px}
+  body.pm .ypage{break-after:page}
+  body.pm .ypage:last-child{break-after:auto}
+  body.pm .sub{font-size:11px;margin:0 0 6px}
+  body.pm .tysum{font-size:10.5px}
+  body.pm .plan-tbl th,body.pm .plan-tbl td{padding:2px 6px}
+  .evrow td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .ty{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{margin:10mm}
+}
+
+.ypage{margin-bottom:40px}
+
+/* 授業構想をまとめて見る */
+.cardp{margin:0 0 22px;padding:14px 16px;border:1px solid var(--line2);border-left:6px solid var(--u);border-radius:10px;background:#fff}
+.cardp h2{margin:0 0 4px;font-size:17px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.cardp h2 .no{color:var(--u);font-size:13px}
+.cardp .card{box-shadow:none;border:0;padding:6px 0 0;margin:6px 0 0;border-top:1px dashed var(--line)}
+.cardp .prob{margin:8px 0}
+@media print{
+  body.pm .cardp{break-inside:auto;break-before:page;border-color:#bbb;margin-bottom:0;font-size:10.5px;padding:8px 10px}
+  body.pm .cardp:first-of-type{break-before:auto}
+  body.pm .cardp{zoom:.86}
+  body.pm .cardp .board{margin-top:6px}
+  body.pm .cp-body{column-count:2;column-gap:14px;column-rule:1px dashed var(--line)}
+  body.pm .cp-body .card:first-child{border-top:0;margin-top:0;padding-top:0}
+  body.pm .cardp .card h3{font-size:12px;margin:0 0 3px}
+  body.pm .cardp .flow .q,body.pm .cardp .prob{font-size:10.5px}
+  body.pm .cardp .board .col li{font-size:11.5px;line-height:1.55}
+  body.pm .cardp h2,body.pm .cardp .d-goal,body.pm .cardp .prob{break-after:avoid}
+  body.pm .cardp .flow>li.fx .tx,body.pm .cardp .fxnote,body.pm .cardp .board-note{display:none}
+  body.pm .cardp .card{break-inside:avoid}
+  body.pm .cardp .card.flowcard{break-inside:auto}
+  body.pm .cardp .flow>li{break-inside:avoid}
+  body.pm .cardp h2{font-size:14px}
+  body.pm .cardp .flow>li{padding-bottom:4px}
+  .prob.think,.flow .q,.d-goal{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+
+/* 板書計画（黒板を3つに分ける）。□＝枠　★＝黄　？＝青　→＝生徒の考え */
+.board .bt b{display:inline-block;font-size:11.5px;font-weight:700;background:var(--chalk-y);color:#23473a;border-radius:4px;padding:0 7px;margin-right:8px;line-height:1.7}
+.board .cols{display:grid;gap:12px}
+.board .col{border-left:1px dashed var(--board-line);padding-left:10px;min-width:0}
+.board .col:first-child{border-left:0;padding-left:0}
+.board .col h4{margin:0 0 6px;font-size:12px;font-weight:700;color:#cfe3d8;letter-spacing:.04em}
+.board .col ul{list-style:none;margin:0;padding:0}
+.board .col li{font-size:13.5px;line-height:1.65;margin:0 0 5px;overflow-wrap:anywhere}
+.board .col li.box{border:1.5px solid var(--board-ink);border-radius:5px;padding:3px 7px}
+.board .col li.y{color:var(--chalk-y)}
+.board .col li.b{color:var(--chalk-b)}
+.board .col li.p{color:#fff}
+.board .col li.p i{font-style:normal;color:var(--chalk-p);margin-right:4px}
+.board .bl{border-bottom-color:currentColor}
+.board-note b{display:inline-block;font-size:11px;border-radius:4px;padding:0 6px;margin:0 2px 0 6px;line-height:1.7}
+.bn-box{border:1.5px solid var(--ink2);color:var(--ink2)}
+.bn-y{background:#f7e27a;color:#5a4a00}
+.bn-b{background:#a7d3ff;color:#123a66}
+.card.prep{border-left:5px solid #9a86c6}
+.cardp .board{margin-top:10px}
+.cardp .board .col li{font-size:12.5px}
+@media print{ .board{-webkit-print-color-adjust:exact;print-color-adjust:exact} body.pm .cardp .board{break-inside:avoid} }
+
+/* 授業構想・板書計画の中の数式（分数・文字・根号・空らん） */
+.mx .fr{display:inline-block;vertical-align:middle;font-size:.78em;line-height:1.05;text-align:center;margin:0 .14em}
+.mx .fr>span{display:block;padding:0 .12em}
+.mx .fr>span:first-child{border-bottom:1px solid currentColor;padding-bottom:.05em}
+.mx i.v{font-family:"Times New Roman",Times,serif;font-style:italic;font-size:1.1em;padding:0 .03em}
+.mx sup{font-size:.68em;vertical-align:.45em;line-height:0}
+.mx .sq{white-space:nowrap}
+.mx .sq>span{display:inline-block;border-top:1px solid currentColor;line-height:1.05;padding:0 .08em 0 .03em;margin-left:-.07em}
+.mx .bl{display:inline-block;border-bottom:1px solid currentColor;min-width:2.4em;text-align:center;margin:0 .15em;line-height:1.2}
+.mx .bl .ansx{display:inline;color:inherit}
+.mx .sys{display:inline-grid;vertical-align:middle;border-left:2px solid currentColor;border-radius:6px 0 0 6px;padding-left:.5em;margin:0 .3em;line-height:1.35}
+
+.board .col li.box{margin-left:0}
