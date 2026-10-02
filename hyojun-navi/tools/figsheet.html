@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><title>図の一覧（開発用）</title>
+<link rel="stylesheet" href="../css/ws.css">
+<style>
+  /* 開発用：ワークシート・演習プリントの「図」だけをならべて見る。
+     例）tools/figsheet.html?re=^sanhei-   演習プリントは &kind=dr   解答例なしは &ans=0 */
+  body{margin:6mm;background:#fff;font-family:"Hiragino Sans","Yu Gothic",sans-serif}
+  .cell{display:inline-block;vertical-align:top;margin:1.5mm;border:.2mm solid #9aa;padding:1mm;break-inside:avoid}
+  .cell .fcap{font-size:8pt;color:#345;margin:0 0 .5mm}
+  .cell .wsp{position:static!important;width:auto!important;height:auto!important;box-shadow:none!important;margin:0!important;display:block}
+  .cell .wb-fig{position:relative!important;height:auto!important}
+  .cell .wb-fig::before{display:none}
+  @page{size:A4;margin:0}
+</style></head>
+<body><div id="out"></div>
+<script>
+(async () => {
+  const q = new URLSearchParams(location.search), re = new RegExp(q.get('re') || '.'), kind = q.get('kind') || 'ws', ans = q.get('ans') !== '0';
+  const html = await (await fetch('../index.html', { cache: 'no-store' })).text();
+  const srcs = [...html.matchAll(/<script src="((?:data|js)\/[^"]+)"/g)].map(m => m[1]).filter(s => /^data\//.test(s) || /js\/ws\.js/.test(s));
+  for (const s of srcs) await new Promise((res, rej) => { const el = document.createElement('script'); el.src = '../' + s + '?' + Date.now(); el.onload = res; el.onerror = rej; document.head.appendChild(el); });
+  const out = document.getElementById('out'); if (ans) out.classList.add('ans-on');
+  const src = kind === 'dr' ? (LDB.drills || {}) : kind === 'qz' ? (LDB.quizzes || {}) : LDB.worksheets;
+  const tmp = document.createElement('div'); tmp.style.cssText = 'position:absolute;left:-30000px;top:0'; document.body.appendChild(tmp);
+  let n = 0;
+  for (const id of Object.keys(src).filter(k => re.test(k))) {
+    const ld = await WSX.load(id, kind), l = LDB.lessons.find(x => x.id === id);
+    tmp.innerHTML = WSX.pagesHTML(ld.sheet, l);
+    tmp.querySelectorAll('.wb-fig').forEach((f, i) => {
+      const cell = document.createElement('div'); cell.className = 'cell';
+      cell.innerHTML = `<p class="fcap">${id}　図${i + 1}</p><div class="wsp" style="--pitch:7mm"></div>`;
+      const c = f.cloneNode(true); c.style.width = f.getBoundingClientRect().width + 'px';
+      cell.querySelector('.wsp').appendChild(c); out.appendChild(cell); n++;
+    });
+  }
+  tmp.remove(); document.title = `図 ${n}`; document.body.dataset.ready = '1';
+})();
+</script>
+</body></html>

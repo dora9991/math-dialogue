@@ -1,0 +1,11 @@
+# 見本のPDFは tools/mihon.py で作り直せるので、追跡しない（全部で約220MB）
+見本/*.pdf
+# 検査のときにできる一時ファイル
+tools/_run.html
+tools/_app.html
+__pycache__/
+# 見くらべの相手の場所（手元だけの設定）
+tools/overlap.local.json
+# serve.py で開いて編集・保存したワークシート（手元だけ）
+worksheets/
+all.json
