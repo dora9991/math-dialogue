@@ -42,6 +42,11 @@ function mixParts(w, m, d) {
 /** 仮分数 n/d を帯分数（約分しない）の TeX に */
 const mix = (n, d) => mixParts(Math.floor(n / d), n % d, d);
 const $ = (s) => `$${s}$`;
+/** 帯分数の4択の補充用：正解 n/d の近くの値 */
+const mixFill = (n, d) => (i) => {
+  const v = n + [1, -1, 2, -2, 3, 4, 5][i % 7];
+  return v > 0 ? $(mix(v, d)) : null;
+};
 
 /** わり算の筆算の手順（1行ずつ） */
 function hissan(a, b) {
@@ -399,7 +404,7 @@ export const UNITS = [
           return {
             q: `${n}cm のテープから、${b}cm のテープを切り取ります。${b}cm のテープは何本とれて、何cm あまりますか。`,
             ans,
-            choices: choices4(r, ans, [`${q - 1}本とれて、${m + b}cm あまる`, `${q + 1}本とれて、${m}cm あまる`, `${q}本とれて、${b - m}cm あまる`]),
+            choices: choices4(r, ans, [`${q - 1}本とれて、${m + b}cm あまる`, `${q + 1}本とれて、${m}cm あまる`, `${q}本とれて、${b - m}cm あまる`, `${q - 1}本とれて、${m}cm あまる`]),
             hint: `${n} ÷ ${b} を計算しよう。`,
             steps: [...hissan(n, b), `${q}本とれて、${m}cm あまる`],
           };
@@ -1133,7 +1138,7 @@ export const UNITS = [
           return {
             q: `$${a1}\\frac{${b1}}{${d}}-${a2}\\frac{${b2}}{${d}}$ を計算しましょう。`,
             ans,
-            choices: choices4(r, ans, [$(mixParts(a1 - a2, b2 - b1, d)), $(mixParts(a1 - a2, d + b1 - b2, d)), $(mixParts(a1 - a2 - 1, b2 - b1, d)), $(mixParts(a1 - a2 + 1, d + b1 - b2, d))]),
+            choices: choices4(r, ans, [$(mixParts(a1 - a2, b2 - b1, d)), $(mixParts(a1 - a2, d + b1 - b2, d)), $(mixParts(a1 - a2 - 1, b2 - b1, d)), $(mixParts(a1 - a2 + 1, d + b1 - b2, d))], mixFill(n, d)),
             hint: `分数の部分がひけないときは、整数から1くり下げよう。`,
             steps: [`$\\frac{${b1}}{${d}}$ から $\\frac{${b2}}{${d}}$ はひけないので、$${a1}\\frac{${b1}}{${d}}=${mixParts(a1 - 1, d + b1, d)}$ と考える`, `$${mixParts(a1 - 1, d + b1, d)}-${a2}\\frac{${b2}}{${d}}=${mix(n, d)}$`],
           };
@@ -1167,7 +1172,7 @@ export const UNITS = [
           return {
             q: `リボンが $${a1}\\frac{${b1}}{${d}}$m あります。$\\frac{${b2}}{${d}}$m 使うと、のこりは何m ですか。`,
             ans,
-            choices: choices4(r, ans, [$(mixParts(a1, b2 - b1, d)), $(mixParts(a1, d + b1 - b2, d)), $(mixParts(a1 - 1, b2 - b1, d)), $(mix(a1 * d + b1 + b2, d)), $(mixParts(a1 + 1, b2 - b1, d))]),
+            choices: choices4(r, ans, [$(mixParts(a1, b2 - b1, d)), $(mixParts(a1, d + b1 - b2, d)), $(mixParts(a1 - 1, b2 - b1, d)), $(mix(a1 * d + b1 + b2, d)), $(mixParts(a1 + 1, b2 - b1, d))], mixFill(n, d)),
             hint: "分数の部分がひけないときは、整数から1くり下げよう。",
             steps: [`$${a1}\\frac{${b1}}{${d}}-\\frac{${b2}}{${d}}$`, `$${a1}\\frac{${b1}}{${d}}=${mixParts(a1 - 1, d + b1, d)}$ と考えて計算する`, `のこりは ${ans}m`],
           };
@@ -1196,7 +1201,7 @@ export const UNITS = [
           return {
             q: `バケツに水が $${a}\\frac{${b}}{${d}}$L 入っています。そこへ $${c}\\frac{${e}}{${d}}$L 水を入れてから、$\\frac{${f}}{${d}}$L 使いました。バケツの水は何L になりましたか。`,
             ans,
-            choices: choices4(r, ans, [$(mix(N + 2 * f, d)), $(mix(N + d, d)), N > d ? $(mix(N - d, d)) : null, $(mixParts(a + c, b + e, d))]),
+            choices: choices4(r, ans, [$(mix(N + 2 * f, d)), $(mix(N + d, d)), N > d ? $(mix(N - d, d)) : null, $(mixParts(a + c, b + e, d))], mixFill(N, d)),
             hint: "入れた分はたし算、使った分はひき算。順に計算しよう。",
             steps: [`$${a}\\frac{${b}}{${d}}+${c}\\frac{${e}}{${d}}=${mix(a * d + b + c * d + e, d)}$`, `$${mix(a * d + b + c * d + e, d)}-\\frac{${f}}{${d}}=${mix(N, d)}$`, `答え ${ans}L`],
           };

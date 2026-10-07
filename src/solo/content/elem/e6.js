@@ -119,6 +119,7 @@ export const UNITS = [
         t("E6-bunsukake-2a", (r) => {
           const [a, b] = properFrac(r);
           const [c, d] = properFrac(r);
+          if (a === c && b === d) return { skip: true };
           return {
             q: `$${fr(a, b)} \\div ${fr(c, d)}$ を計算しましょう。`,
             ans: fracAns(a * d, b * c),
@@ -210,9 +211,10 @@ export const UNITS = [
       ],
       4: [
         t("E6-bunsukake-4a", (r) => {
-          const [a, b] = properFrac(r, 2, 7);
+          const [a, b] = properFrac(r, 2, 5);
           const [c, d] = properFrac(r, 2, 9);
           const [xn, xd] = reduce(c * a, d * b);
+          if (reduce(xn * a, xd * b)[1] > 100) return { skip: true };
           return {
             q: `ある数に $${fr(a, b)}$ をかけるところを、まちがえて $${fr(a, b)}$ でわってしまったので、答えが $${fr(c, d)}$ になりました。正しい答えを求めましょう。`,
             ans: fracAns(xn * a, xd * b),
@@ -221,12 +223,20 @@ export const UNITS = [
           };
         }),
         t("E6-bunsukake-4b", (r) => {
-          const n1 = r(2, 12);
-          const n2 = r(2, 12);
-          const d1 = r(2, 15);
-          const d2 = r(2, 15);
-          if (gcd(n1, d1) !== 1 || gcd(n2, d2) !== 1 || n1 === n2 || d1 === d2) return { skip: true };
-          if (gcd(n1, n2) === 1 && r(0, 2) > 0) return { skip: true };
+          const g = pick(r, [1, 2, 2, 3, 3, 4, 5]);
+          let n1 = 0;
+          let n2 = 0;
+          let d1 = 0;
+          let d2 = 0;
+          let ok = false;
+          for (let k = 0; k < 60 && !ok; k++) {
+            n1 = g * r(1, 4);
+            n2 = g * r(1, 4);
+            d1 = r(2, 15);
+            d2 = r(2, 15);
+            ok = n1 !== n2 && d1 !== d2 && gcd(n1, d1) === 1 && gcd(n2, d2) === 1 && n1 > 1 && n2 > 1;
+          }
+          if (!ok) return { skip: true };
           const P = lcm(d1, d2);
           const Q = gcd(n1, n2);
           return {
@@ -567,11 +577,18 @@ export const UNITS = [
       ],
       4: [
         t("E6-hi-4a", (r) => {
-          const a = r(1, 7);
-          const b = r(2, 7);
-          const c = r(2, 7);
-          const d = r(1, 7);
-          if (gcd(a, b) !== 1 || gcd(c, d) !== 1 || b === c) return { skip: true };
+          let a = 0;
+          let b = 0;
+          let c = 0;
+          let d = 0;
+          for (let k = 0; k < 60; k++) {
+            a = r(1, 7);
+            b = r(2, 7);
+            c = r(2, 7);
+            d = r(1, 7);
+            if (gcd(a, b) === 1 && gcd(c, d) === 1 && b !== c && a !== b && c !== d) break;
+          }
+          if (gcd(a, b) !== 1 || gcd(c, d) !== 1 || b === c || a === b || c === d) return { skip: true };
           const ans = ratio(a * c, b * d);
           return {
             q: `A : B ＝ ${a} : ${b}、B : C ＝ ${c} : ${d} のとき、A : C をかんたんな比で表すとどれですか。`,
@@ -586,11 +603,19 @@ export const UNITS = [
           };
         }),
         t("E6-hi-4b", (r) => {
-          const a = r(3, 7);
-          const b = r(2, 6);
-          const c = r(1, 5);
-          const d = r(2, 6);
-          if (gcd(a, b) !== 1 || gcd(c, d) !== 1 || a * d <= c * b) return { skip: true };
+          let a = 0;
+          let b = 0;
+          let c = 0;
+          let d = 0;
+          let ok = false;
+          for (let k = 0; k < 80 && !ok; k++) {
+            a = r(3, 7);
+            b = r(2, 6);
+            c = r(1, 5);
+            d = r(2, 6);
+            ok = gcd(a, b) === 1 && gcd(c, d) === 1 && a * d > c * b && a * d * 10 <= 3000 / 1;
+          }
+          if (!ok) return { skip: true };
           const t0 = r(1, 6) * 10;
           const A = a * d * t0;
           const B = b * d * t0;
@@ -740,7 +765,7 @@ export const UNITS = [
       ],
       4: [
         t("E6-enmenseki-4a", (r) => {
-          const a = r(2, 20);
+          const a = 2 * r(1, 10);
           const q = round((a * a * 3.14) / 4);
           const ans = round(q * 2 - a * a);
           return {
@@ -748,7 +773,7 @@ export const UNITS = [
             ans,
             unit: "cm²",
             hint: "円の4分の1の形を2つ合わせると、重なった部分を2回数えて、正方形より大きくなるね。",
-            steps: [`円の4分の1：${a} × ${a} × 3.14 ÷ 4 ＝ ${q}`, `2つ分 ${round(q * 2)} は、正方形 ${a * a} に重なった部分を1回多く数えている`, `${round(q * 2)} − ${a * a} ＝ ${ans}（cm²）`],
+            steps: [`円の4分の1：${a} × ${a} × 3.14 ÷ 4 ＝ ${q}`, `2つをあわせると正方形全体をおおい、重なった部分だけを2回数えているので、合計 ${round(q * 2)} は正方形 ${a * a} より重なった部分の分だけ大きい`, `${round(q * 2)} − ${a * a} ＝ ${ans}（cm²）`],
           };
         }),
         t("E6-enmenseki-4b", (r) => {
@@ -999,14 +1024,14 @@ export const UNITS = [
           const A = r(5, 20) * 100;
           const D = pick(r, [12, 24, 60]);
           const P = r(10, 30);
-          const hi = [`1本 ${p}円のえんぴつを $x$ 本買ったときの代金 $y$ 円`, `時速 ${p / 10}km で $x$ 時間歩いたときの道のり $y$ km`, "1辺が $x$ cm の正方形のまわりの長さ $y$ cm"];
+          const hi = [`1本 ${p}円のえんぴつを $x$ 本買ったときの代金 $y$ 円`, `時速 ${p / 10}km で $x$ 時間進んだときの道のり $y$ km`, "1辺が $x$ cm の正方形のまわりの長さ $y$ cm"];
           const han = [`面積が ${S}cm² の長方形のたて $x$ cm と横 $y$ cm`, `${D}km の道のりを時速 $x$ km で進むときにかかる時間 $y$ 時間`, `${S * 2}このあめを $x$ 人で同じ数ずつ分けるときの1人分の数 $y$ こ`];
           const non = [`${A}円持っていて $x$ 円使ったときの、のこりのお金 $y$ 円`, `まわりの長さが ${P}cm の長方形のたて $x$ cm と横 $y$ cm`, "1辺が $x$ cm の正方形の面積 $y$ cm²", "$x$ 才の人の身長 $y$ cm"];
           const want = r(0, 1) === 0;
           const ans = pick(r, want ? hi : han);
           const wrongs = [pick(r, want ? han : hi), ...sample(r, non, 2)];
           return {
-            q: `次のうち、$y$ が $x$ に${want ? "比例" : "反比例"}するものはどれですか。`,
+            q: `${pick(r, NAMES)}さんは、ともなって変わる2つの量 $x$ と $y$ を調べました。次のうち、$y$ が $x$ に${want ? "比例" : "反比例"}するものはどれですか。`,
             ans,
             choices: choices4(r, ans, wrongs),
             hint: want ? "「$y = $ 決まった数 $\\times x$」の式になるものをさがそう。" : "「$x \\times y = $ 決まった数」になるものをさがそう。",
@@ -1078,6 +1103,7 @@ export const UNITS = [
           const W = a * tt;
           const t2s = [];
           for (let k = 2; k <= 40; k++) if (W % k === 0 && k !== tt) t2s.push(k);
+          if (!t2s.length) return { skip: true };
           const t2 = pick(r, t2s);
           if (r(0, 1)) {
             return {
@@ -1113,6 +1139,7 @@ export const UNITS = [
           const a = r(12, 40);
           const b = r(10, 50);
           const n = r(2, 12);
+          if (a === b) return { skip: true };
           const cs = [];
           for (let c = 8; c <= 60; c++) if ((a * n) % c === 0 && c !== a && c !== b) cs.push(c);
           if (!cs.length) return { skip: true };
@@ -1173,7 +1200,7 @@ export const UNITS = [
           return {
             q: `三角形 ABC の ${k}倍の拡大図 DEF をかきました。角 A の大きさが ${A}° のとき、角 A に対応する角 D の大きさはどれですか。`,
             ans,
-            choices: choices4(r, ans, [`${A * k}°`, `${A + k * 10}°`, A % k === 0 ? `${A / k}°` : `${180 - A}°`, `${180 - A}°`]),
+            choices: choices4(r, ans, [`${A * k}°`, `${180 - A}°`, `${Math.round(A / k)}°`, `${A + 90}°`], (i) => `${A + 10 * (i + 1)}°`),
             hint: "拡大図や縮図で、対応する角の大きさはどうなるかな？",
             steps: ["拡大図・縮図では、対応する角の大きさは等しい", `角 D ＝ ${A}°`],
           };
@@ -1265,13 +1292,15 @@ export const UNITS = [
         t("E6-kakudai-4a", (r) => {
           const k = r(2, 5);
           const big = r(0, 1) === 1;
-          const ans = big ? `${k * k}倍` : `$\\frac{1}{${k * k}}$`;
+          const ans = big ? `${k * k}倍` : `$\\frac{1}{${k * k}}$倍`;
           return {
             q: big
               ? `三角形を ${k}倍に拡大した図をかきました。拡大図の面積は、もとの三角形の面積の何倍ですか。`
               : `正方形の $\\frac{1}{${k}}$ の縮図をかきました。縮図の面積は、もとの正方形の面積の何倍ですか。`,
             ans,
-            choices: big ? choices4(r, ans, [`${k}倍`, `${2 * k}倍`, `${k * k * k}倍`]) : choices4(r, ans, [`$\\frac{1}{${k}}$`, `$\\frac{1}{${2 * k}}$`, `$\\frac{1}{${k * k * k}}$`]),
+            choices: big
+              ? choices4(r, ans, [`${k}倍`, `${2 * k}倍`, `${k * k * k}倍`], (i) => `${k * k + i + 1}倍`)
+              : choices4(r, ans, [`$\\frac{1}{${k}}$倍`, `$\\frac{1}{${2 * k}}$倍`, `$\\frac{1}{${k * k * k}}$倍`], (i) => `$\\frac{1}{${k * k + 2 * i + 2}}$倍`),
             hint: "底辺と高さ（たてと横）が、それぞれ何倍になるかを考えよう。",
             steps: big
               ? [`底辺も高さも ${k}倍になる`, `面積は ${k} × ${k} ＝ ${k * k}（倍）`]
@@ -1361,12 +1390,13 @@ export const UNITS = [
               steps: [`AM ＝ BM なので ${d} ÷ 2 ＝ ${d / 2}（cm）`],
             };
           }
+          const x = r(3, 12);
           return {
-            q: `線対称な図形で、対応する2つの点 A と B を結ぶ直線が、対称の軸と点 M で交わっています。直線 AB と対称の軸が交わってできる角は何度ですか。（AM の長さは ${d / 2}cm、角 A は ${a}° です）`,
-            ans: 90,
+            q: `対角線 AC を対称の軸とする線対称な四角形 ABCD があります。角 B が ${a + 40}°、辺 AB が ${x}cm のとき、角 D は何度ですか。`,
+            ans: a + 40,
             unit: "度",
-            hint: "対応する点を結ぶ直線と対称の軸は、どのように交わるかな？",
-            steps: ["線対称な図形で、対応する点を結ぶ直線は、対称の軸と垂直に交わる", "答え 90°"],
+            hint: "対称の軸 AC で折ると、点 B はどの点に重なるかな？",
+            steps: ["AC で折ると、B は D に重なる（B と D が対応する点）", `対応する角は等しいので、角 D ＝ 角 B ＝ ${a + 40}°`, `（同じように、辺 AD ＝ 辺 AB ＝ ${x}cm）`],
           };
         }),
         t("E6-taisho-2c", (r) => {
@@ -1688,7 +1718,7 @@ export const UNITS = [
             ans,
             unit: "人",
             hint: `「以上」はその数をふくみ、「未満」はその数をふくまないよ。${B}m がどの階級に入るか考えよう。`,
-            steps: [`${B}m ${above ? "以上" : "未満"}の階級は ${above ? labels.slice(k).map((s) => s.split(" ")[0]).join("、") : labels.slice(0, k).map((s) => s.split(" ")[0]).join("、")}`, `${(above ? cs.slice(k) : cs.slice(0, k)).join(" ＋ ")} ＝ ${ans}（人）`],
+            steps: [`${B}m ${above ? "以上" : "未満"}の階級は ${above ? labels.slice(k).map((s) => s.split(" ")[0]).join("、") : labels.slice(0, k).map((s) => s.split(" ")[0]).join("、")}`, (above ? cs.slice(k) : cs.slice(0, k)).length > 1 ? `${(above ? cs.slice(k) : cs.slice(0, k)).join(" ＋ ")} ＝ ${ans}（人）` : `${ans}人`],
           };
         }),
         t("E6-data-2c", (r) => {
@@ -1782,7 +1812,7 @@ export const UNITS = [
             ans: pct,
             unit: "％",
             hint: "まず、" + (lo + w * k) + "m 以上の人数を求めて、全体の人数でわろう。",
-            steps: [`${lo + w * k}m 以上の人数：${cs.slice(k).join(" ＋ ")} ＝ ${part}（人）`, `${part} ÷ ${total} ＝ ${round(part / total)}`, `${pct}％`],
+            steps: [`${lo + w * k}m 以上の人数：${cs.slice(k).length > 1 ? `${cs.slice(k).join(" ＋ ")} ＝ ` : ""}${part}（人）`, `${part} ÷ ${total} ＝ ${round(part / total)}`, `${pct}％`],
           };
         }),
       ],
