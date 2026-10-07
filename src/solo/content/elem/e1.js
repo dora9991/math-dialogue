@@ -171,9 +171,8 @@ export const UNITS = [
           };
         }),
         t("E1-kazu-4b", (r) => {
-          const n = r(4, 10), d = r(1, n - 2);
-          if ((n - d) % 2 !== 0) return { skip: true };
-          const half = (n - d) / 2, ans = half + d;
+          const half = r(1, 4), d = r(1, 10 - 2 * half);
+          const n = 2 * half + d, ans = half + d;
           return {
             q: `おはじきが ${n}こ あります。ゆいさんと けんさんで ぜんぶ わけます。ゆいさんが けんさんより ${d}こ おおく なるように わけると、ゆいさんは なんこ？`,
             ans,
