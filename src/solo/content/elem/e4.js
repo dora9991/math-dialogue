@@ -164,7 +164,7 @@ export const UNITS = [
           const target = big ? Math.max(...vals) : Math.min(...vals);
           const sorted = [...vals].sort((a, b) => b - a).map(jp);
           return {
-            q: `次の数のうち、いちばん${big ? "大きい" : "小さい"}数はどれですか。`,
+            q: `${vals.map(jp).join("、")} のうち、いちばん${big ? "大きい" : "小さい"}数はどれですか。`,
             ans: jp(target),
             choices: shuffle(r, vals.map(jp)),
             hint: "まず、いちばん上の区切り（兆・億・万）がどこまであるかをくらべよう。",
@@ -307,11 +307,13 @@ export const UNITS = [
           const q = r(2, Math.floor(99 / b));
           const a = b * q;
           const g = Math.round(b / 10) * 10;
+          const tq = Math.max(1, Math.floor(a / g));
+          const fix = tq === q ? [] : [`${b} × ${tq} ＝ ${b * tq} で${tq > q ? "大きすぎる" : "小さすぎる"}ので、商を ${q} にする`];
           return {
             q: `${a} ÷ ${b} を計算しましょう。`,
             ans: q,
             hint: `${b} を ${g} とみて、商の見当をつけよう。`,
-            steps: [`${b} を ${g} とみると、商はだいたい ${Math.max(1, Math.floor(a / g))}`, `${b} × ${q} ＝ ${a} なので`, `答え ${q}`],
+            steps: [`${b} を ${g} とみて、${a} ÷ ${g} から仮の商 ${tq} をたてる`, ...fix, `${b} × ${q} ＝ ${a} なので、答え ${q}`],
           };
         }),
       ],
@@ -1042,7 +1044,7 @@ export const UNITS = [
           const m = r(1, d - 1);
           const n = q * d + m;
           const ans = $(mixParts(q, m, d));
-          const traps = [$(mixParts(q + 1, m, d)), $(mixParts(q, m, n)), $(mixParts(q, d - m, d))];
+          const traps = [$(mixParts(q + 1, m, d)), $(mixParts(q, m, n)), $(mixParts(q, d - m, d)), $(mixParts(q, m + 1, d)), $(mixParts(q + 1, m + 1, d))];
           if (q < d && q !== m) traps.unshift($(mixParts(m, q, d)));
           return {
             q: `$\\frac{${n}}{${d}}$ を帯分数になおすと、どれになりますか。`,
@@ -1107,10 +1109,9 @@ export const UNITS = [
           const d = r(3, 9);
           const a1 = r(1, 4);
           const a2 = r(1, 4);
-          const b1 = r(1, d - 1);
-          const b2 = r(1, d - 1);
+          const b1 = r(2, d - 1);
+          const b2 = r(d - b1 + 1, d - 1);
           const s = b1 + b2;
-          if (s <= d) return { skip: true };
           const W = a1 + a2;
           const ans = $(mixParts(W + 1, s - d, d));
           return {
@@ -1147,7 +1148,7 @@ export const UNITS = [
           const target = big ? Math.max(...ns) : Math.min(...ns);
           const ans = show[ns.indexOf(target)];
           return {
-            q: `次の分数のうち、いちばん${big ? "大きい" : "小さい"}ものはどれですか。`,
+            q: `${show.join("、")} のうち、いちばん${big ? "大きい" : "小さい"}分数はどれですか。`,
             ans,
             choices: shuffle(r, show),
             hint: "帯分数を仮分数になおして、分子をくらべよう。",
@@ -1166,7 +1167,7 @@ export const UNITS = [
           return {
             q: `リボンが $${a1}\\frac{${b1}}{${d}}$m あります。$\\frac{${b2}}{${d}}$m 使うと、のこりは何m ですか。`,
             ans,
-            choices: choices4(r, ans, [$(mixParts(a1, b2 - b1, d)), $(mixParts(a1, d + b1 - b2, d)), $(mixParts(a1 - 1, b2 - b1, d)), $(mixParts(a1 + 1, b2 - b1, d))]),
+            choices: choices4(r, ans, [$(mixParts(a1, b2 - b1, d)), $(mixParts(a1, d + b1 - b2, d)), $(mixParts(a1 - 1, b2 - b1, d)), $(mix(a1 * d + b1 + b2, d)), $(mixParts(a1 + 1, b2 - b1, d))]),
             hint: "分数の部分がひけないときは、整数から1くり下げよう。",
             steps: [`$${a1}\\frac{${b1}}{${d}}-\\frac{${b2}}{${d}}$`, `$${a1}\\frac{${b1}}{${d}}=${mixParts(a1 - 1, d + b1, d)}$ と考えて計算する`, `のこりは ${ans}m`],
           };
@@ -1177,7 +1178,7 @@ export const UNITS = [
           const m = r(1, d - 1);
           const n = q * d + m;
           return {
-            q: `$\\frac{□}{${d}}=${q}\\frac{${m}}{${d}}$ の □ にあてはまる数はいくつですか。`,
+            q: `$\\frac{\\square}{${d}}=${q}\\frac{${m}}{${d}}$ の □ にあてはまる数はいくつですか。`,
             ans: n,
             hint: `整数の ${q} は、$\\frac{1}{${d}}$ の何こ分かな？`,
             steps: [`${q} は $\\frac{1}{${d}}$ の ${q * d} こ分`, `${q * d} ＋ ${m} ＝ ${n}`, `□ ＝ ${n}`],
@@ -1349,7 +1350,7 @@ export const UNITS = [
             q: `${h}時ちょうどのとき、時計の長いはりと短いはりがつくる角のうち、小さいほうの角は何度ですか。`,
             ans,
             unit: "度",
-            hint: "時計の数字と数字の間（1目もり分の大きな目もり）は何度かな？",
+            hint: "時計の数字と数字の間は何度かな？",
             steps: ["数字と数字の間は 360 ÷ 12 ＝ 30°", `${h}時は、長いはりと短いはりの間が数字 ${Math.min(h, 12 - h)} つ分`, `30 × ${Math.min(h, 12 - h)} ＝ ${ans}（度）`],
           };
         }),
