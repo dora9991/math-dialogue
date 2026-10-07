@@ -59,7 +59,7 @@
   const f1 = FG('g1', -1.1, -0.9, 7.1, 4.7), f2 = FG('g2', -1.1, -0.9, 7.1, 4.7), f3 = FG('g3', -5.6, -1.3, 5.6, 1.7), f4 = FG('g4', -1.1, -0.9, 6.1, 5.2);
   const iso = [tri([pA, pB, pC], 'w'), dn(pA, 'A', [0, 1]), dn(pB, 'B', [-0.7, -0.7]), dn(pC, 'C', [0.7, -0.7]), tick(pB, pA, 1, 'y'), tick(pC, pA, 1, 'y')];
   const baseEq = [ang(pB, pC, pA, 0.9, 1, 'p'), ang(pC, pB, pA, 0.9, 1, 'p')];
-  const nline = [ln([-4.8, 0], [4.8, 0], 'w'), Array.from({ length: 11 }, (_, i) => ln([i - 5, -0.12], [i - 5, 0.12], 'w', { wd: 2.4 })), tx([-3, -0.5], '−3', 'w'), tx([0, -0.5], '0', 'w'), tx([3, -0.5], '3', 'w')];
+  const nline = [ln([-5.3, 0], [5.3, 0], 'w'), Array.from({ length: 11 }, (_, i) => ln([i - 5, -0.12], [i - 5, 0.12], 'w', { wd: 2.4 })), tx([-3, -0.5], '−3', 'w'), tx([0, -0.5], '0', 'w'), tx([3, -0.5], '3', 'w')];
   const nptsA = [{ k: 'pts', list: [[-3, 0], [3, 0]], c: 'p', r: 7 }, tx([-3, 0.55], 'x＝−3', 'p'), tx([3, 0.55], 'x＝3', 'p'), tx([0, 1.25], 'どちらも、2乗すると 9', 'y')];
   const equi = [tri([eA, eB, eC], 'w'), dn(eA, 'A', [0, 1]), dn(eB, 'B', [-0.7, -0.7]), dn(eC, 'C', [0.7, -0.7]), tick(eB, eA, 1, 'y'), tick(eC, eA, 1, 'y'), tick(eB, eC, 1, 'y')];
   const equiAng = [ang(eB, eC, eA, 0.8, 1, 'p'), ang(eC, eB, eA, 0.8, 1, 'p'), ang(eA, eB, eC, 0.8, 1, 'p'), tx([1.35, 0.4], '60°', 'p', 'middle', 24), tx([3.65, 0.4], '60°', 'p', 'middle', 24), tx([2.5, 3.1], '60°', 'p', 'middle', 24)];
