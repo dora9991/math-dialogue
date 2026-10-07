@@ -297,7 +297,7 @@ export const UNITS = [
             q: `1本 $x$ 円のえんぴつを ${n}本と、${m}円のノートを1さつ買ったときの代金を表す式はどれですか。`,
             ans,
             choices: choices4(r, ans, [`$(x + ${m}) \\times ${n}$`, `$x + ${n} \\times ${m}$`, `$x \\times ${m} + ${n}$`, `$x \\times ${n} - ${m}$`]),
-            hint: `えんぴつの代金は「1本のねだん × 本数」。それにノートの代金をたそう。p.s. たとえば $x$ が ${p} ならいくらかな？`.replace(/p\.s\. /, ""),
+            hint: `えんぴつの代金は「1本のねだん × 本数」。それにノートの代金 ${m}円をたそう。たとえば $x$ が ${p} ならいくらかな？`,
             steps: [`えんぴつ ${n}本の代金は $x \\times ${n}$`, `ノートの代金 ${m}円をたして ${ans}`],
           };
         }),
@@ -1311,17 +1311,17 @@ export const UNITS = [
         t("E6-taisho-1b", (r) => {
           const pointOnly = ["平行四辺形"];
           const both = ["長方形", "ひし形", "正方形", "円", "正六角形"];
-          const lineOnly = ["正三角形", "二等辺三角形", "正五角形", "台形（等脚台形）"];
-          const want = pick(r, ["点", "線"]);
-          const ans = want === "点" ? pick(r, [...pointOnly, ...both]) : pick(r, lineOnly);
-          const wrongPool = want === "点" ? lineOnly : pointOnly;
-          const wrongs = want === "点" ? sample(r, lineOnly, 3) : [...pointOnly, ...sample(r, ["直角三角形", "ふつうの四角形"], 2)];
+          const lineOnly = ["正三角形", "二等辺三角形", "正五角形", "等脚台形"];
+          const wantPoint = r(0, 1) === 0;
+          const ans = wantPoint ? pick(r, [...pointOnly, ...both]) : pick(r, lineOnly);
+          const wrongs = wantPoint ? sample(r, [...lineOnly, "直角三角形"], 3) : [...pointOnly, ...sample(r, both, 2)];
+          const choices = choices4(r, ans, wrongs);
           return {
-            q: want === "点" ? "次の図形のうち、点対称な図形はどれですか。" : "次の図形のうち、線対称であるが点対称ではない図形はどれですか。",
+            q: wantPoint ? `${choices.join("、")} のうち、点対称な図形はどれですか。` : `${choices.join("、")} のうち、線対称であるが、点対称ではない図形はどれですか。`,
             ans,
-            choices: choices4(r, ans, wrongs.length ? wrongs : wrongPool),
+            choices,
             hint: "180° 回すと重なるか、折ると重なるかを、頭の中で動かして考えよう。",
-            steps: [want === "点" ? `${ans}は、対称の中心のまわりに 180° 回すと重なる` : `${ans}は、折ると重なるが、180° 回しても重ならない`, `答え：${ans}`],
+            steps: [wantPoint ? `${ans}は、対称の中心のまわりに 180° 回すと重なる` : `${ans}は、折ると重なるが、180° 回しても重ならない`, `答え：${ans}`],
           };
         }),
         t("E6-taisho-1c", (r) => {
@@ -1338,12 +1338,13 @@ export const UNITS = [
       2: [
         t("E6-taisho-2a", (r) => {
           const both = ["長方形", "ひし形", "正方形", "円", "正六角形"];
-          const notBoth = ["平行四辺形", "正三角形", "二等辺三角形", "正五角形", "台形（等脚台形）"];
+          const notBoth = ["平行四辺形", "正三角形", "二等辺三角形", "正五角形", "等脚台形"];
           const ans = pick(r, both);
+          const choices = choices4(r, ans, sample(r, notBoth, 3));
           return {
-            q: `次の図形のうち、線対称でもあり、点対称でもある図形はどれですか。（${pick(r, NAMES)}さんの問題）`.replace(/（.*さんの問題）/, ""),
+            q: `${choices.join("、")} のうち、線対称でもあり、点対称でもある図形はどれですか。`,
             ans,
-            choices: choices4(r, ans, sample(r, notBoth, 3)),
+            choices,
             hint: "折って重なるか、180° 回して重なるか、両方を調べよう。",
             steps: [`${ans}は、折っても重なり、180° 回しても重なる`, "平行四辺形は点対称だけ、正三角形・二等辺三角形・正五角形・等脚台形は線対称だけ"],
           };
@@ -1375,10 +1376,11 @@ export const UNITS = [
           const odds = [3, 5, 7, 9];
           const ansN = pick(r, want ? evens : odds);
           const wr = sample(r, want ? odds : evens, 3);
+          const choices = choices4(r, names[ansN], wr.map((n) => names[n]));
           return {
-            q: `次の正多角形のうち、点対称${want ? "である" : "ではない"}ものはどれですか。`,
+            q: `${choices.join("、")} のうち、点対称${want ? "である" : "ではない"}ものはどれですか。`,
             ans: names[ansN],
-            choices: choices4(r, names[ansN], wr.map((n) => names[n])),
+            choices,
             hint: "頂点の数が偶数か奇数かに注目しよう。",
             steps: ["頂点の数が偶数の正多角形は点対称、奇数の正多角形は点対称ではない", `答え：${names[ansN]}`],
           };
@@ -1419,11 +1421,12 @@ export const UNITS = [
         t("E6-taisho-3c", (r) => {
           const pointSym = ["N", "S", "Z", "H", "X", "O", "I"];
           const notPoint = ["A", "B", "C", "D", "E", "K", "M", "T", "U", "V", "W", "Y", "F", "G", "J", "L", "P", "R"];
-          const ans = pick(r, ["N", "S", "Z"].concat(r(0, 1) ? ["H", "X"] : []));
+          const ans = pick(r, ["N", "S", "Z", "H", "X"]);
+          const choices = choices4(r, ans, sample(r, notPoint.filter((c) => !pointSym.includes(c)), 3));
           return {
-            q: `アルファベットの大文字（ゴシック体）${sample(r, notPoint, 3).concat(ans).sort().join("、")} のうち、点対称なものはどれですか。`.replace(/（ゴシック体）.*のうち/, "（ゴシック体）のうち"),
+            q: `アルファベットの大文字 ${choices.join("、")} のうち、点対称なものはどれですか。（ゴシック体の文字で考えます）`,
             ans,
-            choices: choices4(r, ans, sample(r, notPoint.filter((c) => !pointSym.includes(c)), 3)),
+            choices,
             hint: "文字を 180° 回して、もとの形と同じになるか考えよう。",
             steps: [`${ans} は 180° 回すと、もとの形と重なる`, "A・M・T・U などは線対称だけれど、点対称ではない"],
           };
@@ -1664,7 +1667,7 @@ export const UNITS = [
           const s = [...xs].sort((a, b) => a - b);
           const med = median(xs);
           return {
-            q: `${n}人の50m走のタイムを、0.1秒の位を切りすてて整数で表すと ${xs.join("、")}（秒）…ではなく、ここでは反復横とびの回数 ${xs.join("、")}（回）でした。中央値は何回ですか。`.replace(/、0\.1秒.*ここでは/, "の"),
+            q: `${n}人の反復横とびの回数は ${xs.join("、")}（回）でした。中央値は何回ですか。`,
             ans: med,
             unit: "回",
             hint: "個数が偶数のときは、真ん中の2つの平均が中央値だよ。",
