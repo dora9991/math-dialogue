@@ -134,7 +134,7 @@
         wrong: [TS('一直線は、180°です。∠b＝180°−50°＝130°です。', { ft: 'normal' })] }),
 
     TS('これで、∠b は、130°と、わかりました。つぎは、∠a の、向かい側にある角、∠c です。∠b と ∠c も、合わせると、一直線です。', { ft: 'normal', point: false,
-      add: [{ col: 0, type: 'text', size: 'xs', label: '一直線', text: '∠b＋∠c＝180°', t: 3.0 }],
+      add: [{ col: 0, type: 'text', size: 'xs', text: '∠b＋∠c＝180°', t: 3.0 }],
       draw: [G1(G1_B_VAL, G1_C_ARC, G1_C_LET)] }),
 
     /* ---------- 問2 ---------- */
@@ -150,7 +150,7 @@
       draw: [G1(G1_C_VAL)] }),
     BS('たまたま、じゃないの？ ほかの角でも、同じになるのかな？', { fb: 'think', up: true }),
     TS('いつでも等しい、わけを見ましょう。∠a＋∠b＝180°、∠c＋∠b＝180°です。どちらも、180°から ∠b を、ひいた角なので、∠a＝∠c です。', { ft: 'normal', point: false,
-      add: [{ col: 0, type: 'text', size: 'xs', label: 'わけ', text: 'だから　∠a＝∠c', t: 3.0 }] }),
+      add: [{ col: 0, type: 'text', size: 'xs', text: 'だから　∠a＝∠c', t: 3.0 }] }),
     TS('どんな2直線でも、同じ理由で、対頂角は、等しくなります。∠b と ∠d も、対頂角で、130°です。', { ft: 'normal', point: false,
       draw: [G1(G1_D_ARC, G1_D_LET, G1_D_VAL)] }),
 

@@ -248,7 +248,7 @@
 
     TS('今日は、補助線を、2種類、ひきました。平行線の間の折れ線は、平行な補助線。ブーメラン形は、辺をのばす補助線です。', { clear: true, cols: [0.34, 0.66], part: 'まとめ', ft: 'normal', point: false,
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'ポイント', text: '折れ線 → 平行な補助線\nブーメラン → 辺をのばす', t: 5.5 }] }),
-    BS('補助線は、なぞ解きの魔法の杖だったよ！ 賞品は、お話の続きで、いいや！', { fb: 'happy', up: true, fx: { b: 'e' } }),
+    BS('補助線は、なぞ解きの魔法の杖だったよ！ 賞品がなくても、全問正解は、うれしいね！', { fb: 'happy', up: true, fx: { b: 'e' } }),
     TS('お疲れさまでした。成績は、こちらです。', { ft: 'happy', point: false, result: true })
   ] });
 })();

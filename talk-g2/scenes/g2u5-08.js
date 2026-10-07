@@ -134,7 +134,7 @@
     /* ---------- 4ページ目：証明の後半 ---------- */
     t('①②③より、1組の辺と、その両端の角が、それぞれ等しいから、△ABC≡△CDA です。', { clear: true, cols: [0.34, 0.66], part: '合同から結論へ', ft: 'normal',
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'ここまで', text: '①∠BAC＝∠DCA\n②∠BCA＝∠DAC\n③AC＝CA', t: 4.0 }, { col: 0, type: 'text', size: 'xs', text: '①②③より、1組の辺と\nその両端の角が等しいから\n△ABC≡△CDA', t: 4.5 }, Object.assign(f4, { prims: [] })],
-      draw: [G('g4', para, marks, diagAC, altA, altC, triL, triR)] }),
+      draw: [G('g4', para, diagAC, altA, altC, triL, triR)] }),
     t('対応する辺は、等しいので、AB＝CD、BC＝DA です。対応する角も、等しいので、∠B＝∠D です。', { ft: 'normal', point: false, draw: [G('g4', eqSides)],
       add: [{ col: 0, type: 'text', size: 'xs', text: '対応する辺は等しいから\nAB＝CD　BC＝DA\n角も等しく　∠B＝∠D', t: 5.0 }] }),
     t('∠A＝∠C も、もう1本の対角線 BD を使えば、同じように、証明できます。対角線の性質は、次の時間に、確かめます。', { ft: 'normal', point: false }),

@@ -114,7 +114,7 @@
     /* ---------- 問2 ---------- */
     Q('q2', TS('問題です。∠DAB と、等しい角は、どれでしょう。', { ft: 'normal' }),
       [{ t: '∠ABC', ok: true }, { t: '∠ACB' }, { t: '∠BAC' }, { t: '∠CAE' }],
-      { 1: [BS('底辺の両はしの角だから、どっちも同じでしょ！', { fb: 'happy', up: true }), TS('∠ACB は、∠DAB の錯角では、ありません。平行線と、辺ABを使って、錯角を探します。', { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } })],
+      { 1: [BS('底辺の両はしの角だから、どっちも同じでしょ！', { fb: 'happy', up: true }), TS('底辺の両はしの角が、いつも同じとは、かぎりません。∠DAB の錯角は、辺ABを、交わる直線として、探します。', { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } })],
         3: [TS('∠CAE は、辺ACを、交わる直線とみたとき、∠ACB の錯角です。∠DAB の錯角は、∠ABC です。', { ft: 'normal' })],
         ok: [TS('正解！ 辺ABを、交わる直線とみると、∠DAB と ∠ABC は、錯角です。', { ft: 'happy', draw: [G2(tp(G2_HI_AB))] }), BS('平行線の、錯角が、使えるんだね！', { fb: 'star', up: true })],
         wrong: [TS('∠DAB の錯角は、∠ABC です。辺ABを、交わる直線とみます。', { ft: 'normal' })] }),

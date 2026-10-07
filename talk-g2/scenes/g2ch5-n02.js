@@ -1,10 +1,10 @@
 /* 中2 5章 三角形と四角形　入試レベル2「【入試】平行四辺形になることの証明」。自作問題。証明の授業。
    平行四辺形 ABCD の対角線 BD 上に BE＝DF となる点 E、F。四角形 AECF が平行四辺形であることの証明：
    対角線 AC、BD の交点 O。①OA＝OC ②OB＝OD（平行四辺形の対角線は中点で交わる）③BE＝DF（仮定）→ ④OE＝OB−BE＝OD−DF＝OF → AC と EF がそれぞれの中点 O で交わる → 平行四辺形。
-   図：A(0,0) B(7,0) C(9,4) D(2,4) E(5.5,1.2) F(3.5,2.8) O(4.5,2)（python で、ABCD が平行四辺形、BE＝DF、OA＝OC、OE＝OF、AE∥FC かつ AE＝FC を確認）。 */
+   図：A(0,0) B(7,0) C(9,4) D(2,4) E(5.25,1.4) F(3.75,2.6) O(4.5,2)（python で、ABCD が平行四辺形、BE＝DF、OA＝OC、OE＝OF、AE∥FC かつ AE＝FC を確認）。 */
 (function () {
   const { T, B, Q, FIG } = KL;
-  const P = {"A": [0, 0], "B": [7, 0], "C": [9, 4], "D": [2, 4], "E": [5.5, 1.2], "F": [3.5, 2.8], "O": [4.5, 2.0]};
+  const P = {"A": [0, 0], "B": [7, 0], "C": [9, 4], "D": [2, 4], "E": [5.25, 1.4], "F": [3.75, 2.6], "O": [4.5, 2.0]};
   const W = 1180, H = 600, VIEW = [-1.8, -1.203, 10.8, 5.203];
   const U = Math.min(W / (VIEW[2] - VIEW[0]), H / (VIEW[3] - VIEW[1]));   // 1単位が何pxか
   const mk = id => FIG(id, VIEW, W, H, [], { col: 1 });
@@ -30,7 +30,7 @@
   const f1 = mk('g1'), f2 = mk('g2'), f3 = mk('g3'), f4 = mk('g4');
   const { A, B: Bp, C, D, E, F, O } = P;
   const fig = [pol([A, Bp, C, D], 'w'), sg(A, C, 'w', { wd: 2.8 }), sg(Bp, D, 'w', { wd: 2.8 }), nm('A', A, [-0.7, -0.7]), nm('B', Bp, [0.7, -0.7]), nm('C', C, [0.7, 0.7]), nm('D', D, [-0.7, 0.7]),
-    nm('E', E, [0.8, -0.6]), nm('F', F, [-0.8, 0.6]), nm('O', O, [0.2, 1], 'w'), tick(Bp, E, 2, 'g'), tick(F, D, 2, 'g')];
+    nm('E', E, [-0.62, -0.78]), nm('F', F, [0.62, 0.78]), nm('O', O, [0.2, 1], 'w'), tick(Bp, E, 2, 'g'), tick(F, D, 2, 'g')];
   const aecf = [pol([A, E, C, F], 'y', 'y')];
   const oaoc = [tick(A, O, 1, 'y'), tick(O, C, 1, 'y')];
   const obod = [tick(Bp, O, 3, 'b'), tick(O, D, 3, 'b')];
