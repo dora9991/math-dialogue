@@ -59,10 +59,9 @@
 
     T('問題です。△ABC と △DEF は、ぴったり重なります。辺の長さは、図のとおりです。', { part: '問題を読もう', ft: 'normal',
       say: '問題です。さんかく エービーシー と さんかく ディーイーエフ は、ぴったり重なります。辺の長さは、図のとおりです。',
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'めあて', text: '重なる図形の\n辺や角の関係を\n調べよう', t: 4.0 }, Object.assign(f1, { prims: [] })],
+      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'めあて', text: '重なる図形の\n関係を調べよう', t: 4.0 }, Object.assign(f1, { prims: [] })],
       draw: [G(base)] }),
-    T('ぴったり重なる2つの図形を、合同な図形といいます。裏返して重なる場合も、合同です。', { ft: 'normal', point: false,
-      add: [{ col: 0, type: 'box', color: 'p', size: 'xs', label: '合同', text: 'ぴったり重なる\n図形どうし', t: 4.0 }] }),
+    T('ぴったり重なる2つの図形を、合同な図形といいます。裏返して重なる場合も、合同です。', { ft: 'normal', point: false }),
     T('まず、辺の長さに、注目します。8cm の辺は、BC と FD。7cm の辺は、CA と DE です。', { ft: 'normal', point: false,
       say: 'まず、辺の長さに、注目します。8センチの辺は、ビーシー と エフディー。7センチの辺は、シーエー と ディーイー です。',
       draw: [G(sides8, sides7)] }),
@@ -91,7 +90,7 @@
       draw: [G(pairs)] }),
     T('合同は、記号 ≡ で表します。対応する頂点を、同じ順に書きます。', { ft: 'normal', point: false,
       say: '合同は、合同の記号で表します。対応する頂点を、同じ順に書きます。',
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '合同の書き方', text: '△ABC≡△EFD\n対応する順に書く', t: 4.5 }] }),
+      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '合同', text: 'ぴったり重なる\n△ABC≡△EFD\n対応する順に書く', t: 4.5 }] }),
 
     /* ---------- 問2 ---------- */
     Q('q2', T('問題です。△ABC と合同な三角形を、記号で正しく書いているのは、どれでしょう。', { ft: 'normal',
