@@ -43,7 +43,7 @@
     /* ---------- 2ページ目：分数の形の式 ---------- */
     T('つぎは、分数の形の式です。（x＋3y）÷4−（2x−y）÷6 を、計算します。', { clear: true, cols: [0.34, 0.66], part: '分数の形の式', ft: 'normal',
       say: '4分の、エックスたす3ワイ、ひく、6分の、2エックスひくワイ、を、計算します。つぎは、分数の形の式です。',
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '問題', text: '（x＋3y）÷4\n−（2x−y）÷6', t: 4.0 }, tbl(tf1, { style: 'font-size:40px; align-self:center; margin-top:20px', t: 1.0 })] }),
+      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '問題', text: '（x＋3y）÷4\n−（2x−y）÷6', t: 4.0 }, tbl(tf1, { style: 'font-size:34px; align-self:center; margin-top:14px', t: 1.0 })] }),
     B('ケーキを、4つに切ったのと、6つに切ったのを、ひくなんて、ややこしいよ！', { fb: 'confused', up: true }),
     T('そのとおり。大きさが、そろっていないと、ややこしいのです。分母を、12に、そろえます。これを、通分といいます。', { ft: 'normal', point: false,
       add: [{ col: 0, type: 'box', color: 'p', size: 'xs', label: '通分', text: '分母を12にそろえる\n分子にも同じ数をかける', t: 4.5 }] }),
@@ -57,7 +57,7 @@
         ok: [T('正解！ 4を3倍して12、6を2倍して12。分子は、3（x＋3y）−2（2x−y）です。', { ft: 'happy', say: '正解！4を3倍して12、6を2倍して12。分子は、3、かっこ、エックスたす3ワイ、かっことじ、ひく2、かっこ、2エックスひくワイ、かっことじ、です。' }), B('分母と同じ数を、分子にもかけるんだね！', { fb: 'star', up: true })],
         wrong: [T('1つ目は3倍、2つ目は2倍です。分子は、3（x＋3y）−2（2x−y）です。', { ft: 'normal', say: '1つ目は3倍、2つ目は2倍です。分子は、3、かっこ、エックスたす3ワイ、かっことじ、ひく2、かっこ、2エックスひくワイ、かっことじ、です。' })] }),
     T('分母が、12に、そろいました。分子を、かっこをはずして、計算します。', { ft: 'normal', point: false,
-      add: [tbl(tf2, { style: 'font-size:40px; align-self:center; margin-top:20px', t: 1.0 })] }),
+      add: [tbl(tf2, { style: 'font-size:34px; align-self:center; margin-top:10px', t: 1.0 })] }),
 
     /* ---------- 問5 ---------- */
     Q('q5', T('最後の問題です。3（x＋3y）−2（2x−y） を、計算すると、どれでしょう。', { ft: 'happy', say: '最後の問題です。3、かっこ、エックスたす3ワイ、かっことじ、ひく2、かっこ、2エックスひくワイ、かっことじを、計算すると、どれでしょう。' }),

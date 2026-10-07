@@ -11,7 +11,7 @@
     T('友だちというより、仲間です。どれが仲間か、見わけられるように、なりましょう。', { title: true, point: false, ft: 'sigh', fx: { t: 'sweat' } }),
 
     T('問題です。5a²＋3ab−2a²−7ab＋4a を、かんたんにします。まず、項を、ならべてみましょう。', { part: '問題を読もう', ft: 'normal', say: '問題です。5エーの2乗たす3エービーひく2エーの2乗ひく7エービーたす4エーを、かんたんにします。まず、項を、ならべてみましょう。',
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'めあて', text: '同類項を見つけて\nまとめよう', t: 4.0 }, { col: 0, type: 'text', size: 'xs', label: '式', text: '5a²＋3ab−2a²\n−7ab＋4a', t: 3.0 }, tbl(t1, { style: 'font-size:40px; align-self:center; margin-top:20px', t: 1.0 })] }),
+      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'めあて', text: '同類項を見つけて\nまとめよう', t: 4.0 }, tbl(t1, { style: 'font-size:40px; align-self:center; margin-top:20px', t: 1.0 })] }),
     T('同類項は、文字の部分が、まったく同じ項です。ちがうのは、係数だけです。', { ft: 'normal', point: false,
       add: [{ col: 0, type: 'box', color: 'p', size: 'xs', label: '同類項', text: '文字の部分が\nまったく同じ項', t: 4.0 }] }),
     B('くだもので、いうとね。a²が、りんご、abが、みかん、aが、ぶどうだね！', { fb: 'happy', up: true, say: 'くだもので、いうとね。エーの2乗が、りんご、エービーが、みかん、エーが、ぶどうだね！' }),
