@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>つくるナビ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=BIZ+UDPGothic:wght@400;700&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* レイアウト：方眼ノートの作業台。左に「問1〜」の質問、右に指示書を貼っておく。ダークでは黒板になる。 */
+:root{
+  --bg:#f2f6f3;
+  --grid:rgba(47,107,85,.075);
+  --surface:#ffffff;
+  --surface-2:#eaf1ed;
+  --ink:#1e2a26;
+  --muted:#56675f;
+  --line:#cbd8d0;
+  --accent:#2f6b55;
+  --accent-ink:#ffffff;
+  --accent-soft:#dcebe3;
+  --marker:rgba(232,180,64,.40);
+  --stamp:#b0432d;
+  --danger:#b3361f;
+  --tile-ink:#ffffff;
+  --c-site:#3a68a8; --c-game:#7d55b3; --c-material:#2c7f57; --c-business:#b0661a; --c-vague:#5d6b66; --c-common:#4f5f59;
+  --shadow:0 1px 0 rgba(30,42,38,.05), 0 12px 30px rgba(30,60,48,.11);
+  --font-display:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
+  --font-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic UI","Yu Gothic","Meiryo",sans-serif;
+  --font-sheet:"BIZ UDGothic","Hiragino Sans","Yu Gothic","Meiryo",monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16221d; --grid:rgba(232,240,234,.045); --surface:#1d2b25; --surface-2:#25372f;
+    --ink:#e6eee9; --muted:#a2b4ab; --line:#344a40; --accent:#efc65c; --accent-ink:#1a2520;
+    --accent-soft:rgba(239,198,92,.15); --marker:rgba(239,198,92,.26); --stamp:#e88b70; --danger:#f08a72;
+    --tile-ink:#15201b;
+    --c-site:#86aee6; --c-game:#bb9de6; --c-material:#74cba0; --c-business:#e6a95c; --c-vague:#a3b1ab; --c-common:#b9c6c0;
+    --shadow:0 1px 0 rgba(0,0,0,.3), 0 14px 32px rgba(0,0,0,.38);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16221d; --grid:rgba(232,240,234,.045); --surface:#1d2b25; --surface-2:#25372f;
+  --ink:#e6eee9; --muted:#a2b4ab; --line:#344a40; --accent:#efc65c; --accent-ink:#1a2520;
+  --accent-soft:rgba(239,198,92,.15); --marker:rgba(239,198,92,.26); --stamp:#e88b70; --danger:#f08a72;
+  --tile-ink:#15201b;
+  --c-site:#86aee6; --c-game:#bb9de6; --c-material:#74cba0; --c-business:#e6a95c; --c-vague:#a3b1ab; --c-common:#b9c6c0;
+  --shadow:0 1px 0 rgba(0,0,0,.3), 0 14px 32px rgba(0,0,0,.38);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box;}
+[hidden]{display:none !important;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; padding-inline:16px;
+  background-color:var(--bg);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:20px 20px;
+  color:var(--ink);
+  font-family:var(--font-body); font-size:15px; line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1240px; margin:0 auto; padding-block:20px 96px;}
+h1,h2,h3{font-family:var(--font-display); text-wrap:balance; margin:0; line-height:1.35;}
+button,input,textarea{font:inherit; color:inherit;}
+a{color:var(--accent);}
+:focus-visible{outline:3px solid var(--accent); outline-offset:2px; border-radius:8px;}
+
+/* ---------- header ---------- */
+.top{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px 24px; margin-bottom:14px;}
+.brand{display:flex; align-items:center; gap:12px;}
+.mark{
+  width:46px; height:46px; flex:none; display:grid; place-items:center;
+  border:2.5px solid var(--stamp); color:var(--stamp); border-radius:10px;
+  font-family:var(--font-display); font-weight:700; font-size:26px; line-height:1;
+  transform:rotate(-5deg); background:var(--surface);
+}
+.brand h1{font-size:26px; letter-spacing:.04em;}
+.brand .tag{margin:0; font-size:13px; color:var(--muted);}
+.tabs{display:flex; flex-wrap:wrap; gap:4px; padding:4px; background:var(--surface); border:1px solid var(--line); border-radius:999px;}
+.tab{
+  border:0; background:transparent; padding:7px 16px; border-radius:999px; cursor:pointer;
+  font-family:var(--font-display); font-weight:700; font-size:14px; color:var(--muted);
+  display:inline-flex; align-items:center; gap:6px;
+}
+.tab:hover{color:var(--ink);}
+.tab[aria-selected="true"]{background:var(--accent); color:var(--accent-ink);}
+.tab .count{font-family:var(--font-body); font-size:11px; min-width:18px; padding:0 5px; border-radius:999px; background:var(--accent-soft); color:var(--ink); font-variant-numeric:tabular-nums;}
+.tab .count:empty{display:none;}
+
+.flow{list-style:none; margin:0 0 16px; padding:0; display:flex; flex-wrap:wrap; gap:6px 10px; font-size:13px; color:var(--muted); counter-reset:f;}
+.flow li{counter-increment:f; display:flex; align-items:center; gap:6px;}
+.flow li::before{content:counter(f); width:20px; height:20px; border-radius:50%; display:grid; place-items:center; background:var(--accent-soft); color:var(--ink); font-weight:700; font-size:12px;}
+.flow li:not(:last-child)::after{content:"→"; margin-left:4px; color:var(--line);}
+@media (max-width:600px){ .flow{flex-direction:column;} .flow li:not(:last-child)::after{content:none;} }
+.lead{margin:0 0 16px; max-width:62ch; color:var(--muted); font-size:14px;}
+
+/* ---------- workbench ---------- */
+.work{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,450px); gap:24px; align-items:start;}
+@media (max-width:920px){ .work{grid-template-columns:minmax(0,1fr);} }
+.qs{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:4px 22px; min-width:0;}
+@media (max-width:520px){ .qs{padding:2px 14px;} }
+.q{padding-block:18px; border-bottom:1.5px dashed var(--line); min-width:0;}
+.q:last-child{border-bottom:0;}
+.qh{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+.qn{
+  flex:none; font-family:var(--font-display); font-weight:700; font-size:13px; color:var(--accent);
+  border:1.5px solid var(--accent); border-radius:999px; padding:0 9px; line-height:1.6;
+  font-variant-numeric:tabular-nums;
+}
+.qt{font-size:17px;}
+.qt small{font-family:var(--font-body); font-weight:400; font-size:13px; color:var(--muted);}
+.qhint{margin:-4px 0 10px; font-size:13px; color:var(--muted); max-width:60ch;}
+.qfoot{margin-top:10px; display:flex; justify-content:flex-end;}
+
+input[type="text"], textarea{
+  width:100%; padding:10px 12px; border:1.5px solid var(--line); border-radius:10px;
+  background:var(--surface); font-size:15px; line-height:1.6; resize:vertical;
+}
+input[type="text"]:focus, textarea:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
+textarea + .chips, .chips + textarea, .chips + input{margin-top:10px;}
+::placeholder{color:var(--muted); opacity:.75;}
+
+/* category tiles */
+.cats{display:grid; grid-template-columns:repeat(auto-fill, minmax(148px,1fr)); gap:10px;}
+.cat{
+  display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto; column-gap:10px; align-items:center;
+  text-align:left; padding:10px 12px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface); cursor:pointer;
+}
+.cat:hover{border-color:var(--accent);}
+.cat[aria-pressed="true"]{border-color:var(--accent); background:var(--accent-soft); box-shadow:inset 0 0 0 1px var(--accent);}
+.kanji{
+  grid-row:1 / span 2; width:38px; height:38px; display:grid; place-items:center; border-radius:9px;
+  background:var(--c); color:var(--tile-ink); font-family:var(--font-display); font-weight:700; font-size:20px; line-height:1;
+}
+.cat-t{font-family:var(--font-display); font-weight:700; font-size:15px; line-height:1.3;}
+.cat-d{font-size:12px; color:var(--muted); line-height:1.4;}
+
+/* example cards */
+.exs{display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:10px;}
+.ex{
+  display:flex; flex-direction:column; gap:4px; text-align:left; padding:12px 14px;
+  border:1.5px solid var(--line); border-radius:12px; background:var(--surface); cursor:pointer; min-width:0;
+}
+.ex:hover{border-color:var(--accent);}
+.ex[aria-pressed="true"]{border-color:var(--accent); background:var(--accent-soft); box-shadow:inset 0 0 0 1px var(--accent);}
+.ex-top{display:flex; align-items:flex-start; justify-content:space-between; gap:8px;}
+.ex-t{font-family:var(--font-display); font-weight:700; font-size:15px; line-height:1.4;}
+.ex-d{font-size:13px; color:var(--muted); line-height:1.55;}
+.ex-cat{font-size:11px; color:var(--muted); letter-spacing:.04em;}
+.stamp{
+  flex:none; font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--stamp);
+  border:1.5px solid var(--stamp); border-radius:4px; padding:0 5px; line-height:1.6; transform:rotate(-4deg);
+}
+.exs-empty{font-size:13px; color:var(--muted); padding:6px 0;}
+
+/* chips */
+.chips{display:flex; flex-wrap:wrap; gap:8px;}
+.chip{
+  border:1.5px solid var(--line); background:var(--surface-2); padding:5px 13px; border-radius:999px;
+  font-size:14px; line-height:1.5; cursor:pointer; text-align:left;
+}
+.chip:hover{border-color:var(--accent);}
+.chip[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
+.chip[aria-pressed="true"]::before{content:"✓ ";}
+
+/* option cards (single choice) */
+.opts{display:grid; grid-template-columns:repeat(auto-fill, minmax(170px,1fr)); gap:8px;}
+.opt{
+  display:flex; flex-direction:column; text-align:left; gap:2px; padding:9px 12px;
+  border:1.5px solid var(--line); border-radius:10px; background:var(--surface); cursor:pointer;
+}
+.opt:hover{border-color:var(--accent);}
+.opt b{font-size:14px;}
+.opt span{font-size:12px; color:var(--muted); line-height:1.45;}
+.opt[aria-pressed="true"]{border-color:var(--accent); background:var(--accent-soft); box-shadow:inset 0 0 0 1px var(--accent);}
+
+.linkbtn{border:0; background:none; padding:2px 0; color:var(--accent); font-size:13px; cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
+
+/* ---------- 指示書 (sheet) ---------- */
+.sheet-col{position:sticky; top:calc(env(safe-area-inset-top, 0px) + 14px); min-width:0;}
+@media (max-width:920px){ .sheet-col{position:static;} }
+.sheet{
+  background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow);
+  padding:16px 18px 18px; display:flex; flex-direction:column; gap:10px; min-width:0;
+}
+.sheet-head{display:flex; align-items:baseline; justify-content:space-between; gap:8px; flex-wrap:wrap;}
+.sheet-head h2{font-size:19px; letter-spacing:.06em;}
+.src{font-size:12px; color:var(--muted);}
+.modes{display:grid; grid-template-columns:1fr 1fr; gap:6px;}
+.mode{
+  border:1.5px solid var(--line); background:var(--surface-2); border-radius:9px; padding:6px 8px; cursor:pointer;
+  font-family:var(--font-display); font-weight:700; font-size:13px; line-height:1.4;
+}
+.mode:hover{border-color:var(--accent);}
+.mode[aria-checked="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
+.mode-d{margin:0; font-size:12.5px; color:var(--muted); line-height:1.55;}
+.sheet-body{
+  font-family:var(--font-sheet); font-size:13.5px; line-height:1.8;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0, transparent calc(1.8em - 1px), var(--grid) calc(1.8em - 1px), var(--grid) 1.8em);
+  background-attachment:local;
+  border-top:2px solid var(--ink); border-bottom:1px solid var(--line);
+  padding:0 4px; max-height:min(54vh, 640px); overflow:auto; overflow-wrap:anywhere;
+}
+@media (max-width:920px){ .sheet-body{max-height:none;} }
+.sheet-body .sl{white-space:pre-wrap;}
+/* 罫線（1.8em）にそろえるため、見出しも空行も1行ぶんの高さにする */
+.sheet-body .sh{font-weight:700; color:var(--accent);}
+.sheet-body .sp{height:1.8em;}
+mark.blank{background:var(--marker); color:inherit; border-radius:3px; padding:0 2px;}
+.sheet-meta{display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums;}
+.sheet-meta .warn{color:var(--stamp);}
+.actions{display:flex; flex-wrap:wrap; gap:8px;}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  border:1.5px solid var(--line); background:var(--surface); color:var(--ink);
+  padding:9px 16px; border-radius:10px; cursor:pointer; text-decoration:none;
+  font-family:var(--font-display); font-weight:700; font-size:14px; line-height:1.3;
+}
+.btn:hover{border-color:var(--accent);}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
+.btn.primary:hover{filter:brightness(1.08);}
+.btn.sm{padding:6px 12px; font-size:13px;}
+.btn.danger{border-color:var(--danger); color:var(--danger);}
+.btn:disabled{opacity:.45; cursor:not-allowed;}
+.actions .primary{flex:1 1 160px;}
+.open-hint{margin:0; font-size:12px; color:var(--muted); line-height:1.55;}
+
+/* ---------- 育てる ---------- */
+.gex-list{display:grid; gap:8px;}
+.gex{
+  display:grid; grid-template-columns:auto 1fr; gap:2px 10px; text-align:left; padding:10px 12px;
+  border:1.5px solid var(--line); border-radius:12px; background:var(--surface); cursor:pointer; min-width:0;
+}
+.gex:hover{border-color:var(--accent);}
+.gex[aria-pressed="true"]{border-color:var(--accent); background:var(--accent-soft);}
+.gex .gtype{grid-row:1 / span 2; align-self:start; font-size:11px; font-weight:700; color:var(--accent); border:1.5px solid var(--accent); border-radius:6px; padding:1px 6px; white-space:nowrap;}
+.gex .gt{font-weight:700; font-size:14px;}
+.gex .gd{font-size:13px; color:var(--muted); line-height:1.55;}
+.tips{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:10px; margin:0; padding:0; list-style:none;}
+.tips li{background:var(--surface-2); border-radius:10px; padding:10px 12px; font-size:13px; line-height:1.6;}
+.tips b{display:block; font-family:var(--font-display); font-size:14px; margin-bottom:2px;}
+
+/* ---------- まなぶ ---------- */
+.learn{display:grid; gap:18px; max-width:1000px;}
+.block{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 22px; min-width:0;}
+@media (max-width:520px){ .block{padding:16px 14px;} }
+.block > h2{font-size:19px; margin-bottom:4px;}
+.block > p.sub{margin:0 0 14px; font-size:13px; color:var(--muted); max-width:64ch;}
+.steps{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr)); gap:12px; counter-reset:s;}
+.steps li{counter-increment:s; position:relative; padding:12px 14px 12px 14px; border:1.5px solid var(--line); border-radius:12px;}
+.steps li::before{content:"その" counter(s); display:block; font-family:var(--font-display); font-weight:700; font-size:12px; color:var(--accent); margin-bottom:2px;}
+.steps b{display:block; font-family:var(--font-display); font-size:16px; margin-bottom:4px;}
+.steps p{margin:0; font-size:13px; color:var(--muted); line-height:1.6;}
+.steps code, .where code{font-family:var(--font-sheet); font-size:12.5px; background:var(--surface-2); padding:0 4px; border-radius:4px; color:var(--ink);}
+.where{display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:12px;}
+.where div{padding:12px 14px; border-left:3px solid var(--accent); background:var(--surface-2); border-radius:0 10px 10px 0;}
+.where b{font-family:var(--font-display); font-size:15px;}
+.where p{margin:4px 0 0; font-size:13px; line-height:1.6;}
+.seg{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;}
+.terms{display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:10px; margin-bottom:14px;}
+.term{border:1.5px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:4px; min-width:0;}
+.term b{font-family:var(--font-display); font-size:15px;}
+.term p{margin:0; font-size:13px; color:var(--muted); line-height:1.6; flex:1;}
+.term a{font-size:13px; font-weight:700; text-decoration:none;}
+.term a:hover{text-decoration:underline;}
+
+/* ---------- 指示ノート ---------- */
+.note-head{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:10px; margin-bottom:14px;}
+.note-head p{margin:0; max-width:62ch; font-size:14px; color:var(--muted);}
+.notes{display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:12px;}
+.note{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px; display:flex; flex-direction:column; gap:8px; min-width:0;}
+.note-top{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 10px;}
+.note-top h3{font-size:16px; flex:1 1 auto; min-width:0;}
+.pill{font-size:11px; padding:1px 8px; border-radius:999px; background:var(--accent-soft); white-space:nowrap;}
+.note time{font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums;}
+.note-pre{margin:0; font-family:var(--font-sheet); font-size:12.5px; color:var(--muted); white-space:pre-wrap; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden;}
+.empty{background:var(--surface); border:1.5px dashed var(--line); border-radius:14px; padding:28px 22px; text-align:center; color:var(--muted); font-size:14px;}
+.empty b{display:block; font-family:var(--font-display); font-size:17px; color:var(--ink); margin-bottom:4px;}
+
+/* ---------- misc ---------- */
+.foot{margin-top:28px; font-size:12px; color:var(--muted); max-width:70ch;}
+.toast{
+  position:fixed; left:50%; bottom:calc(18px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%);
+  background:var(--ink); color:var(--bg); padding:10px 18px; border-radius:999px; font-size:14px; z-index:30;
+  box-shadow:var(--shadow); max-width:calc(100% - 32px); text-align:center;
+}
+.to-sheet{
+  position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom, 0px)); z-index:20;
+  display:none; box-shadow:var(--shadow);
+}
+@media (max-width:920px){ .to-sheet.on{display:inline-flex;} }
+.overlay{position:fixed; inset:0; background:rgba(10,20,16,.55); display:grid; place-items:center; padding:16px; z-index:40;}
+.overlay .box{background:var(--surface); border-radius:14px; padding:18px; width:min(640px, 100%); display:grid; gap:10px; box-shadow:var(--shadow);}
+.overlay .box p{margin:0; font-size:14px;}
+.overlay textarea{min-height:240px; font-family:var(--font-sheet); font-size:13px;}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important; scroll-behavior:auto !important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="brand">
+    <span class="mark" aria-hidden="true">作</span>
+    <div>
+      <h1>つくるナビ</h1>
+      <p class="tag">作りたいものを、Claudeへの指示書に。</p>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="画面のきりかえ">
+    <button class="tab" role="tab" id="t-tsukuru" data-tab="tsukuru" aria-controls="tab-tsukuru">つくる</button>
+    <button class="tab" role="tab" id="t-sodateru" data-tab="sodateru" aria-controls="tab-sodateru">育てる</button>
+    <button class="tab" role="tab" id="t-manabu" data-tab="manabu" aria-controls="tab-manabu">まなぶ</button>
+    <button class="tab" role="tab" id="t-note" data-tab="note" aria-controls="tab-note">指示ノート<span class="count" id="n-count"></span></button>
+  </nav>
+</header>
+
+<!-- ============ つくる ============ -->
+<section class="tabpanel" id="tab-tsukuru" role="tabpanel" aria-labelledby="t-tsukuru">
+  <ol class="flow" aria-label="使い方">
+    <li>例を選ぶか、質問に答える</li>
+    <li>右の指示書ができあがる</li>
+    <li>「Claudeで開く」かコピーして渡す</li>
+  </ol>
+  <div class="work">
+    <div class="qs">
+      <div class="q">
+        <div class="qh"><span class="qn">問1</span><h2 class="qt">どんなものを作りたい？</h2></div>
+        <div class="cats" id="cats"></div>
+      </div>
+      <div class="q">
+        <div class="qh"><span class="qn">問2</span><h2 class="qt" id="q2-title">例から選ぶ <small>そのまま使っても、書きかえてもOK</small></h2></div>
+        <p class="qhint" id="troubles-hint" hidden>近い困りごとを選ぶと、似た例が出ます。右の指示書は「まず質問してもらう」になっています。</p>
+        <div class="chips" id="troubles" hidden></div>
+        <div class="exs" id="examples" style="margin-top:10px"></div>
+        <div class="qfoot"><button type="button" class="linkbtn" id="btn-clear">白紙から書く</button></div>
+      </div>
+      <div class="q">
+        <div class="qh"><span class="qn">問3</span><h2 class="qt"><label for="f-what">ひとことで言うと、何を作る？</label></h2></div>
+        <input type="text" id="f-what" data-field="what" placeholder="例：クラスの席替えを、ルーレットの演出つきで決めるツール">
+      </div>
+      <div class="q">
+        <div class="qh"><span class="qn">問4</span><h2 class="qt"><label for="f-pain">きっかけ・困っていること</label></h2></div>
+        <p class="qhint">ここがいちばん大事です。なぜ作りたいかが伝わると、Claudeは自分から工夫を提案してくれます。</p>
+        <textarea id="f-pain" data-field="pain" rows="3" placeholder="例：席替えのたびに、配慮が必要な生徒の席を考えるのが大変"></textarea>
+      </div>
+      <div class="q">
+        <div class="qh"><span class="qn">問5</span><h2 class="qt">だれが使う？ <small>いくつでも</small></h2></div>
+        <div class="chips" id="c-users" data-field="users"></div>
+      </div>
+      <div class="q">
+        <div class="qh"><span class="qn">問6</span><h2 class="qt">どこで使う？ <small>いくつでも</small></h2></div>
+        <div class="chips" id="c-devices" data-field="devices"></div>
+      </div>
+      <div class="q">
+        <div class="qh"><span class="qn">問7</span><h2 class="qt">最初の版でほしい機能</h2></div>
+        <p class="qhint">欲ばらずに3〜5個がちょうどいいです。足りないものは、あとから「育てる」で足せます。</p>
+        <div class="chips" id="c-features" data-field="features"></div>
+        <textarea id="f-featuresFree" data-field="featuresFree" rows="2" placeholder="ほかにあれば、1行に1つずつ"></textarea>
+      </div>
+      <div class="q">
+        <div class="qh"><span class="qn">問8</span><h2 class="qt">見た目・雰囲気</h2></div>
+        <div class="chips" id="c-look" data-field="look"></div>
+        <input type="text" id="f-lookFree" data-field="lookFree" placeholder="例：学校の色の緑を使う／ボタンは大きく">
+      </div>
+      <div class="q">
+        <div class="qh"><span class="qn">問9</span><h2 class="qt">データはどうする？</h2></div>
+        <div class="opts" id="o-save" data-field="save"></div>
+      </div>
+      <div class="q">
+        <div class="qh"><span class="qn">問10</span><h2 class="qt">どうやって配る？</h2></div>
+        <p class="qhint">ほかの先生にも配ると、直してもらえたり、アイデアが返ってきたりします。</p>
+        <div class="opts" id="o-share" data-field="share"></div>
+      </div>
+      <div class="q">
+        <div class="qh"><span class="qn">問11</span><h2 class="qt">プログラミングの経験は？</h2></div>
+        <p class="qhint">経験に合わせて、Claudeの説明のくわしさが変わります。</p>
+        <div class="opts" id="o-level" data-field="level"></div>
+      </div>
+      <div class="q">
+        <div class="qh"><span class="qn">問12</span><h2 class="qt">気をつけたいこと <small>いくつでも</small></h2></div>
+        <div class="chips" id="c-cautions" data-field="cautions"></div>
+      </div>
+    </div>
+
+    <aside class="sheet-col" aria-label="指示書">
+      <div class="sheet" id="sheet-make">
+        <div class="sheet-head"><h2>指示書</h2><span class="src" id="m-src"></span></div>
+        <div class="modes" id="modes" role="radiogroup" aria-label="Claudeへの頼み方"></div>
+        <p class="mode-d" id="mode-d"></p>
+        <div class="sheet-body" id="m-body" tabindex="0" aria-label="できあがった指示文"></div>
+        <div class="sheet-meta"><span id="m-count"></span><span class="warn" id="m-warn"></span></div>
+        <div class="actions">
+          <a class="btn primary" id="m-open" href="https://claude.ai/new" target="_blank" rel="noopener">Claudeで開く</a>
+          <button type="button" class="btn" id="m-copy">コピー</button>
+          <button type="button" class="btn" id="m-save">ノートに保存</button>
+        </div>
+        <p class="open-hint" id="m-hint"></p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ 育てる ============ -->
+<section class="tabpanel" id="tab-sodateru" role="tabpanel" aria-labelledby="t-sodateru" hidden>
+  <p class="lead">できたものを使ってみて「ここをこうしたい」が出てきたら、それが次の指示です。「今は」「こうしてほしい」「理由」の3つがそろうと、ねらいどおりに直してもらいやすくなります。</p>
+  <div class="work">
+    <div class="qs">
+      <div class="q">
+        <div class="qh"><span class="qn">問1</span><h2 class="qt">何をしたい？</h2></div>
+        <div class="chips" id="g-types"></div>
+      </div>
+      <div class="q">
+        <div class="qh"><span class="qn">問2</span><h2 class="qt"><label for="g-target">どの画面・どの部分？</label></h2></div>
+        <input type="text" id="g-target" data-gfield="target" placeholder="例：座席ルーレットの設定画面">
+      </div>
+      <div class="q">
+        <div class="qh"><span class="qn">問3</span><h2 class="qt"><label for="g-now">今はどうなっている？</label></h2></div>
+        <textarea id="g-now" data-gfield="now" rows="2" placeholder="例：全員がランダムで決まる"></textarea>
+      </div>
+      <div class="q">
+        <div class="qh"><span class="qn">問4</span><h2 class="qt"><label for="g-want">どうしてほしい？</label></h2></div>
+        <textarea id="g-want" data-gfield="want" rows="2" placeholder="例：指定席と、優先席の候補を設定できるようにしてほしい"></textarea>
+      </div>
+      <div class="q">
+        <div class="qh"><span class="qn">問5</span><h2 class="qt"><label for="g-why">なぜ？（理由）</label></h2></div>
+        <p class="qhint">理由があると、Claudeは言われたとおりに直すだけでなく、もっとよい直し方を提案できます。</p>
+        <textarea id="g-why" data-gfield="why" rows="2" placeholder="例：視力や配慮が必要な生徒の席を、先に決めておきたいから"></textarea>
+      </div>
+      <div class="q">
+        <div class="qh"><h2 class="qt">実際に出した「育てる指示」 <small>押すと上に入ります</small></h2></div>
+        <div class="gex-list" id="g-examples"></div>
+      </div>
+      <div class="q">
+        <div class="qh"><h2 class="qt">うまく育てるコツ</h2></div>
+        <ul class="tips">
+          <li><b>1回に1つ</b>まとめて頼むと、どれかが中途半端になりやすいです。</li>
+          <li><b>理由を添える</b>「仲間を弱くしたので、主人公側で釣り合いをとりたい」のように書くと、直し方の提案が変わります。</li>
+          <li><b>画面の写真を貼る</b>スクリーンショットを一緒に貼ると、「どこ」がすぐ伝わります。</li>
+          <li><b>動いた版を残す</b>うまくいったら保存しておきます（Gitならコミット）。失敗しても戻れます。</li>
+        </ul>
+      </div>
+    </div>
+    <aside class="sheet-col" aria-label="育てる指示">
+      <div class="sheet" id="sheet-grow">
+        <div class="sheet-head"><h2>育てる指示</h2><span class="src" id="g-src"></span></div>
+        <div class="sheet-body" id="g-body" tabindex="0" aria-label="できあがった指示文"></div>
+        <div class="sheet-meta"><span id="g-count"></span><span class="warn" id="g-warn"></span></div>
+        <div class="actions">
+          <a class="btn primary" id="g-open" href="https://claude.ai/new" target="_blank" rel="noopener">Claudeで開く</a>
+          <button type="button" class="btn" id="g-copy">コピー</button>
+          <button type="button" class="btn" id="g-save">ノートに保存</button>
+        </div>
+        <p class="open-hint">作ったときと同じ会話（チャット）に貼ると、Claudeは前の内容をふまえて直せます。</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ まなぶ ============ -->
+<section class="tabpanel" id="tab-manabu" role="tabpanel" aria-labelledby="t-manabu" hidden>
+  <div class="learn">
+    <section class="block">
+      <h2>最初の4歩</h2>
+      <p class="sub">本を1冊読みきってから作るより、作りながら少しずつ覚えるほうが続きます。</p>
+      <ol class="steps">
+        <li><b>小さく作ってもらう</b><p>「1つのHTMLファイルで」と頼むと、ダブルクリックで開けるものができます。インストールはいりません。</p></li>
+        <li><b>1か所だけ自分で直す</b><p>「タイトルの文字はどこに書いてある？」と聞いて、自分で書きかえてみます。これがいちばんの勉強になります。</p></li>
+        <li><b>育てる指示を出す</b><p>「今は／こうしてほしい／理由」の3つで、1回に1つずつ。「育てる」の画面で作れます。</p></li>
+        <li><b>人に配る</b><p>うまくいったらURLで配ります。使った人の声が、次の改良の材料になります。</p></li>
+      </ol>
+    </section>
+    <section class="block">
+      <h2>どこで作る？</h2>
+      <p class="sub">はじめは claude.ai のチャットで十分です。ファイルが増えてきたら Claude Code に移ります。</p>
+      <div class="where">
+        <div><b>claude.ai（チャット）</b><p>指示書を貼るだけで始められます。1枚のHTMLなら、画面の横にできたものが表示され、その場で試せます。</p></div>
+        <div><b>Claude Code</b><p>パソコンのフォルダや GitHub のリポジトリを直接さわりながら、一緒にファイルを作って直していけます。作品が大きくなってきたら。</p></div>
+      </div>
+    </section>
+    <section class="block">
+      <h2>知っておくと、指示が伝わることば</h2>
+      <p class="sub">全部覚えなくて大丈夫です。気になったものを「Claudeに聞く」で開くと、例え話で説明してもらえます。</p>
+      <div class="seg chips" id="l-cats"></div>
+      <div class="terms" id="terms"></div>
+      <div class="actions"><a class="btn primary" id="l-ask" href="https://claude.ai/new" target="_blank" rel="noopener">このジャンルの学び方を Claude に聞く</a></div>
+    </section>
+  </div>
+</section>
+
+<!-- ============ 指示ノート ============ -->
+<section class="tabpanel" id="tab-note" role="tabpanel" aria-labelledby="t-note" hidden>
+  <div class="note-head">
+    <p>うまくいった指示は、ここに残しておけます。同じことで困っている先生に渡すと、その人の最初の一歩になります。ノートはこの端末のブラウザの中にだけ保存されます。</p>
+    <button type="button" class="btn" id="n-all">すべてコピー</button>
+  </div>
+  <div class="notes" id="notes"></div>
+</section>
+
+<p class="foot">入力した内容は、このブラウザの中にだけ保存されます。「Claudeで開く」を押したときだけ、指示文が claude.ai に渡ります。</p>
+</div>
+
+<button type="button" class="btn primary to-sheet" id="to-sheet">指示書を見る ↓</button>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="overlay" id="copy-fallback" hidden>
+  <div class="box" role="dialog" aria-modal="true" aria-labelledby="cf-msg">
+    <p id="cf-msg">自動でコピーできませんでした。下の文を選んだ状態にしたので、Ctrl+C（Macは ⌘+C）でコピーしてください。</p>
+    <textarea id="cf-text" readonly aria-label="コピーする指示文"></textarea>
+    <div class="actions"><button type="button" class="btn primary" id="cf-close">閉じる</button></div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ================= データ ================= */
+const CATS = {
+  site:     { label: 'サイト',     kanji: '頁', desc: 'お知らせ・作品紹介・授業のページ', kind: 'Webページ', sample: 'かんたんなWebページ',
+              features: ['スマホでも見やすい', '写真や画像を載せる', 'QRコードで配れる', 'お知らせ・更新の欄', 'ページ内の検索', '印刷用のレイアウト', '動きのある演出'] },
+  game:     { label: 'ゲーム',     kanji: '遊', desc: '復習ゲーム・対戦・RPG', kind: 'ブラウザで遊べるゲーム', sample: 'ブラウザで遊べるミニゲーム',
+              features: ['スコア・自己ベスト', 'レベルアップ', '効果音・BGM', 'ステージ選択', '2人で対戦', '問題を差しかえられる', 'セーブ機能'] },
+  material: { label: '教材',       kanji: '教', desc: '小テスト・プリント・学習ツール', kind: '学習教材（Webツール）', sample: 'タブレットで使える学習教材',
+              features: ['自動採点', '解説の表示', '間違えた問題を記録', 'ランダムに出題', '答えつきで印刷', '先生用の集計画面', '手書きメモ欄'] },
+  business: { label: '業務・校務', kanji: '務', desc: '席替え・面談・勤務表・成績', kind: '仕事を楽にするツール', sample: '仕事を楽にする小さなツール',
+              features: ['Excel・CSVの読み込み', 'Excel・CSVで書き出し', '条件を満たす自動割り振り', '結果を印刷', '入力ミスのチェック', '変更の履歴を残す', '先生だけが開けるパスワード'] },
+  vague:    { label: 'まだぼんやり', kanji: '？', desc: '困りごとから探す', kind: '', sample: '',
+              features: ['スマホ・タブレットで使える', '印刷できる', '結果を保存できる', 'URLやQRコードで配れる'] },
+};
+const CAT_ORDER = ['site', 'game', 'material', 'business', 'vague'];
+
+const USERS = ['自分', '生徒（中学生）', '小学生', '同僚の先生', '保護者', 'わが子', '一般の人'];
+const DEVICES = ['パソコン', 'タブレット・Chromebook', 'スマホ', '電子黒板・プロジェクター', '紙に印刷'];
+const LOOKS = ['やさしい・あたたかい', 'ポップ・にぎやか', 'シンプル・事務的', '黒板・ノート風', 'ドット絵・レトロゲーム', '和風'];
+const CAUTIONS = {
+  '名前などの個人情報を保存しない': '名前などの個人情報は保存しない形にしてください（必要なら出席番号などで代わりにします）。',
+  'データを外部に送らない': '入力したデータは外部のサーバーに送らず、この端末の中だけで処理してください。',
+  'ネットがなくても動く': 'インターネットにつながっていなくても動くようにしてください（外部からの読み込みに頼らない）。',
+  'お金をかけない（無料で）': '費用はかけたくないので、無料で使える方法だけで作ってください。',
+  'インストール不要': 'ソフトのインストールが必要ない形にしてください。',
+  '小学生にも読める言葉': '画面の言葉は、小学生にも読めるやさしい言葉にしてください（むずかしい漢字にはふりがなを）。',
+  'A4 1枚に印刷できる': '印刷したときに、A4 1枚にきれいに収まるようにしてください。',
+  '大きな文字・押しやすいボタン': '文字は大きめに、ボタンは押しやすい大きさにしてください。',
+  '色の見分けにくい人にも配慮': '色だけで区別せず、文字や形でも区別して、色の見分けにくい人にもわかるようにしてください。',
+};
+const SAVES = [
+  { v: 'none',    t: '保存しない',       d: 'その場で使えれば十分',             p: '保存しない（その場で使う）' },
+  { v: 'browser', t: 'この端末に残す',   d: '閉じても消えない（ブラウザの中）', p: 'この端末のブラウザに残す' },
+  { v: 'file',    t: 'ファイルで書き出す', d: 'Excel・CSVで渡したり残したり',   p: 'Excel・CSVなどのファイルで書き出す' },
+  { v: 'server',  t: 'みんなの分を集める', d: '複数人のデータを1か所に（サーバー）', p: '複数人のデータを1か所に集める' },
+];
+const SHARES = [
+  { v: 'me',         t: '自分だけで使う',     d: '自分のパソコンで',         p: '自分だけで使う' },
+  { v: 'class',      t: 'クラス・家族に配る', d: 'URLやQRコードで',          p: 'クラスや家族にURL・QRコードで配る' },
+  { v: 'colleagues', t: 'ほかの先生にも配る', d: '学校ごとに設定を変えて',   p: 'ほかの先生にも配る' },
+  { v: 'public',     t: '誰でも見られる',     d: 'インターネットに公開',     p: 'インターネットに公開する' },
+];
+const LEVELS = [
+  { v: 'first', t: 'プログラミングは初めて', d: 'ことばの説明からほしい',   p: '初めて' },
+  { v: 'some',  t: '少し触ったことがある',   d: 'コピーして貼れば直せる',   p: '少し触ったことがある' },
+  { v: 'can',   t: 'コードを読んで直せる',   d: '設計から相談したい',       p: 'コードを読んで直せる' },
+];
+const MODES = [
+  { v: 'build',     t: '作ってもらう',       d: 'この内容で、最初の版を作ってもらいます。' },
+  { v: 'interview', t: 'まず質問してもらう', d: 'Claudeが1つずつ質問して、一緒に整理してくれます。まだぼんやりしているときに。' },
+  { v: 'plan',      t: '設計図だけ',         d: 'すぐには作らず、画面・機能・作る順番を先に考えてもらいます。' },
+  { v: 'learn',     t: '学び方を聞く',       d: 'これを題材に、何から学べばいいかロードマップを作ってもらいます。' },
+];
+
+// real: このリポジトリで実際に Claude と作ったもの
+const EXAMPLES = [
+  { id: 'kansou', cat: 'site', real: true, title: '感想ひろば',
+    desc: '行事の感想を、会場の絵の中を歩き回る人のイラストから読めるページ。',
+    what: '行事の感想を、イラストの人たちが歩き回る会場の絵の中で読めるページ',
+    pain: '行事のアンケートで書いた感想を、生徒どうしで読み合う機会がない。紙で配っても、なかなか読まれない。',
+    users: ['生徒（中学生）', '保護者'], devices: ['スマホ', 'タブレット・Chromebook', '電子黒板・プロジェクター'],
+    features: ['行事の会場の絵の中を、人のイラストが歩き回る', '人をタップすると、感想がふきだしで出る', '誰の感想かはわからない（名前は出さない）', 'Googleフォームの集計Excelからデータを作れる'],
+    look: ['やさしい・あたたかい'], save: 'none', share: 'class', level: 'first', cautions: ['名前などの個人情報を保存しない', 'インストール不要'] },
+  { id: 'navi', cat: 'site', real: true, title: '授業ナビ',
+    desc: '年間計画から、1時間ごとの板書計画・ワークシート・小テストに飛べる授業サイト。',
+    what: '1年間の授業計画から、1時間ごとの資料（板書計画・ワークシート・小テスト）に飛べる授業サイト',
+    pain: '授業の資料がフォルダのあちこちに散らばっていて、毎回探すのに時間がかかる。同じ学年の先生とも共有しにくい。',
+    users: ['自分', '同僚の先生'], devices: ['パソコン', '電子黒板・プロジェクター', '紙に印刷'],
+    features: ['年間計画の一覧', '1時間ごとのページ（ねらい・流れ・板書計画）', 'ワークシートを印刷できる', '電子黒板に映すスライド表示'],
+    look: ['シンプル・事務的', '黒板・ノート風'], save: 'none', share: 'colleagues', level: 'some', cautions: ['インストール不要', 'A4 1枚に印刷できる'] },
+  { id: 'tsushin', cat: 'site', real: false, title: '学級通信ページ',
+    desc: '写真と文章を入れて、スマホで読める学級通信。印刷もできる。',
+    what: '写真と文章を入れて、保護者がスマホで読める学級通信のページ',
+    pain: '紙の学級通信は、家庭まで届かないことがある。写真も白黒になって伝わりにくい。',
+    users: ['保護者'], devices: ['スマホ', '紙に印刷'],
+    features: ['見出し・写真・本文をくり返して書ける', '過去の号の一覧', '印刷するとA4 1枚に収まる'],
+    look: ['やさしい・あたたかい'], save: 'none', share: 'class', level: 'first', cautions: ['名前などの個人情報を保存しない'] },
+  { id: 'portfolio', cat: 'site', real: false, title: '作品紹介サイト',
+    desc: '作曲・演奏・本など、自分の作品をまとめて見せられるサイト。',
+    what: '自分の作曲・演奏・本などの作品をまとめた紹介サイト',
+    pain: '作ったものがSNSやフォルダに散らばっていて、人に見せたいときにまとめて見せられない。',
+    users: ['一般の人'], devices: ['スマホ', 'パソコン'],
+    features: ['作品の一覧（カードで並べる）', '音源・動画へのリンク', 'プロフィール', '連絡先'],
+    look: ['シンプル・事務的'], save: 'none', share: 'public', level: 'first', cautions: ['お金をかけない（無料で）'] },
+
+  { id: 'labo', cat: 'game', real: true, title: '数学の復習RPG',
+    desc: '問題に正解すると敵にダメージ。レベル・間違いノートつき。（数学ラボ）',
+    what: '問題に正解すると敵にダメージを与えられる、数学の復習RPG',
+    pain: '復習プリントだと、数学が苦手な子ほど手が止まってしまう。楽しみながら、気づいたら何問も解いている形にしたい。',
+    users: ['生徒（中学生）'], devices: ['タブレット・Chromebook', 'スマホ'],
+    features: ['4択の問題に正解すると攻撃できる', 'レベルアップと経験値', '間違えた問題が自動でたまる「間違いノート」', '単元ごとのステージ選択', '効果音・BGM'],
+    look: ['ドット絵・レトロゲーム', 'ポップ・にぎやか'], save: 'browser', share: 'class', level: 'first', cautions: ['名前などの個人情報を保存しない', 'お金をかけない（無料で）'] },
+  { id: 'mecha', cat: 'game', real: true, title: 'きょうだい対戦ゲーム',
+    desc: '1台の画面で、2人でロボットを選んで戦う格闘ゲーム。（メカバトル）',
+    what: '1台の画面で、2人で対戦できるロボットの格闘ゲーム',
+    pain: '子どもたちが一緒に遊べて、短い時間で1回が終わるゲームがほしい。',
+    users: ['わが子'], devices: ['パソコン', 'タブレット・Chromebook'],
+    features: ['ロボットを選んで1対1で戦う', '2人で同じ画面／CPUとの対戦', '必殺技', 'ドット絵のステージ', '効果音とBGM'],
+    look: ['ドット絵・レトロゲーム'], save: 'none', share: 'me', level: 'first', cautions: ['インストール不要', 'ネットがなくても動く'] },
+  { id: 'quest', cat: 'game', real: true, title: '文化祭のRPG',
+    desc: '文化祭で発表するドラクエ風RPG。生徒がマップやセリフを作れる。（致遠館クエスト）',
+    what: '文化祭で発表する、ドラクエ風のRPG。生徒がマップやセリフを作れる編集画面つき',
+    pain: '文化祭の発表で、一部の生徒しか主役になれない。全員が何かを担当できる形にしたい。',
+    users: ['生徒（中学生）'], devices: ['パソコン', '電子黒板・プロジェクター'],
+    features: ['マップを歩いて、人に話しかける', '生徒用のマップ・セリフ編集画面', '担当（シナリオ・絵・音楽）ごとに作業を分けられる', 'BGMの差しかえ'],
+    look: ['ドット絵・レトロゲーム'], save: 'file', share: 'class', level: 'some', cautions: ['インストール不要'] },
+  { id: 'calc60', cat: 'game', real: true, title: '60秒計算チャレンジ',
+    desc: '60秒で何問解けるかに挑戦。授業のはじめの5分に。',
+    what: '60秒で何問解けるかに挑戦する計算ゲーム',
+    pain: '授業のはじめの5分で、計算練習にゲーム感覚で取り組ませたい。',
+    users: ['生徒（中学生）'], devices: ['タブレット・Chromebook'],
+    features: ['60秒のタイマー', '連続正解でコンボになり、点数アップ', '自己ベストの記録', '難しさを選べる'],
+    look: ['ポップ・にぎやか'], save: 'browser', share: 'class', level: 'first', cautions: ['名前などの個人情報を保存しない'] },
+
+  { id: 'quiz', cat: 'material', real: true, title: '小テスト＋振り返り',
+    desc: 'QRコードから開いて解く小テスト。自動採点と、授業の振り返りの記録。',
+    what: 'QRコードから開いて解く小テストと、授業の振り返りを記録するツール',
+    pain: '紙の小テストは採点と集計に時間がかかり、誰がどこでつまずいたかが見えにくい。',
+    users: ['生徒（中学生）', '自分'], devices: ['タブレット・Chromebook', 'スマホ', 'パソコン'],
+    features: ['自動採点（2/5 と 0.4 のような書き方のちがいも正解にする）', '先生が「配布」したテストだけ受けられる', '理解度・意欲・ひとことの振り返り', '先生用の集計画面（問題ごとの正答率）'],
+    look: ['シンプル・事務的'], save: 'server', share: 'class', level: 'some', cautions: ['名前などの個人情報を保存しない', 'お金をかけない（無料で）'] },
+  { id: 'keyboard', cat: 'material', real: true, title: '数式キーボード',
+    desc: 'タブレットで分数や文字式を打てる、画面上のキーボード。',
+    what: 'タブレットで分数や文字式を入力できる、画面上の数式キーボード',
+    pain: 'タブレットのキーボードでは分数や x² が打てず、生徒が答えを入力できない。',
+    users: ['生徒（中学生）'], devices: ['タブレット・Chromebook'],
+    features: ['分数を上下2段で入力・表示できる', '文字式（x、y、²）のキー', '問題を隠さない、小さく動かせるパネル', '入力した式を答えとして判定できる'],
+    look: ['シンプル・事務的'], save: 'none', share: 'colleagues', level: 'some', cautions: ['大きな文字・押しやすいボタン'] },
+  { id: 'worksheet', cat: 'material', real: true, title: 'ワークシートづくり',
+    desc: '単元のめあてから、ワークシートと演習プリント（答えつき）を作る。',
+    what: '単元のめあてから、ワークシートと演習プリント（答えつき）を作るツール',
+    pain: '毎時間のプリントづくりに時間がかかり、教材研究の時間が足りない。',
+    users: ['自分', '同僚の先生'], devices: ['パソコン', '紙に印刷'],
+    features: ['めあて・考える問い・練習問題の欄', '答えつき／答えなしを切りかえて印刷', '難しさの段階（基本・標準・応用）', 'A4両面のレイアウト'],
+    look: ['シンプル・事務的'], save: 'file', share: 'colleagues', level: 'first', cautions: ['A4 1枚に印刷できる'] },
+  { id: 'tutor', cat: 'material', real: true, title: '問いかけるAI先生',
+    desc: '答えを言わずに、問いかけで考えさせるAIチューター。',
+    what: '答えを教えずに、問いかけで生徒に考えさせるAIチューター',
+    pain: '生徒が答えだけを写してしまい、自分で考える前にあきらめてしまう。',
+    users: ['生徒（中学生）'], devices: ['タブレット・Chromebook'],
+    features: ['答えや核心を先に言わない', '詰まったら、小さな問い（ヒント）を1段ずつ出す', '生徒の答えに、まず短く反応する', '黒板に要点が少しずつ書き残される'],
+    look: ['黒板・ノート風'], save: 'none', share: 'class', level: 'some', cautions: ['名前などの個人情報を保存しない'] },
+
+  { id: 'sekigae', cat: 'business', real: true, title: '座席ルーレット',
+    desc: '席替えをルーレットの演出つきで。指定席・優先席も設定できる。',
+    what: 'クラスの席替えを、ルーレットの演出つきで決めるツール',
+    pain: '席替えのたびに、配慮が必要な生徒の席を考えるのが大変。くじ引きの準備にも時間がかかる。',
+    users: ['自分', '生徒（中学生）'], devices: ['パソコン', '電子黒板・プロジェクター'],
+    features: ['教室の座席の並び（列×行）を設定できる', 'ルーレットの演出で1人ずつ決まる', '指定席（固定）と優先席の候補を設定できる', '結果を印刷できる'],
+    look: ['ポップ・にぎやか'], save: 'browser', share: 'colleagues', level: 'first', cautions: ['名前などの個人情報を保存しない', 'インストール不要', 'ネットがなくても動く'] },
+  { id: 'mendan', cat: 'business', real: false, title: '保護者面談スケジューラ',
+    desc: '保護者の希望時間を集めて、面談の日程を自動で割り振る。',
+    what: '保護者の希望時間をもとに、面談の日程を自動で割り振るツール',
+    pain: '面談の希望調査を紙で集めて、手作業で割り振るのに何時間もかかる。きょうだいの調整も大変。',
+    users: ['自分', '同僚の先生'], devices: ['パソコン'],
+    features: ['希望の時間帯をExcel・CSVから読み込む', '希望をもとに自動で割り振る', 'きょうだいは同じ日に続けて入れる', '決まった日程を一覧で印刷'],
+    look: ['シンプル・事務的'], save: 'file', share: 'colleagues', level: 'first', cautions: ['データを外部に送らない', 'お金をかけない（無料で）'] },
+  { id: 'kinmu', cat: 'business', real: false, title: '保育園の勤務表',
+    desc: '休み希望や必要な人数の条件を満たすシフトを、自動で作る。',
+    what: '休み希望や、1日に必要な人数の条件を満たす、保育園の勤務表（シフト）を自動で作るツール',
+    pain: '毎月の勤務表づくりに、休み希望・早番遅番・人数の条件を考えながら何日もかかっている。',
+    users: ['自分'], devices: ['パソコン', '紙に印刷'],
+    features: ['職員と休み希望の入力', '早番・遅番などの勤務の種類', '1日に必要な人数の条件', '条件を満たすように自動で作り、守れないところは色と記号で知らせる', 'Excelで書き出し'],
+    look: ['シンプル・事務的'], save: 'file', share: 'me', level: 'first', cautions: ['データを外部に送らない', 'インストール不要'] },
+  { id: 'hyoka', cat: 'business', real: false, title: '観点別評価の成績管理',
+    desc: '小テストや提出物の点数から、3観点のA・B・Cを根拠つきで出す。',
+    what: '小テスト・提出物・振り返りの点数から、3観点の評価（A・B・C）を出す成績管理ツール',
+    pain: '観点別評価の計算をExcelで手作業していて、式が壊れたり、評価の根拠を説明しにくかったりする。',
+    users: ['自分'], devices: ['パソコン'],
+    features: ['Excel・CSVの点数を読み込む', '観点ごとの重みと基準を設定できる', 'A・B・Cを自動で計算し、根拠も表示', '評価の一覧を書き出す'],
+    look: ['シンプル・事務的'], save: 'file', share: 'me', level: 'some', cautions: ['データを外部に送らない', 'ネットがなくても動く'] },
+];
+const EX = Object.fromEntries(EXAMPLES.map(e => [e.id, e]));
+
+const TROUBLES = [
+  { t: '毎回おなじ作業に、時間がとられている', pain: '毎回おなじ作業に時間がとられて、本当にやりたいことに使える時間が減っている。', ex: ['sekigae', 'mendan', 'kinmu', 'hyoka'] },
+  { t: '生徒が、もっと楽しく復習できたら', pain: '復習をもっと楽しく、苦手な子も続けられる形にしたい。', ex: ['labo', 'calc60', 'quiz'] },
+  { t: '紙でやっていることを、タブレットでやりたい', pain: '紙でやっていることをタブレットに移して、配る・集める・まとめる手間を減らしたい。', ex: ['quiz', 'keyboard', 'tsushin'] },
+  { t: '行事や授業のようすを、みんなに届けたい', pain: '行事や授業のようすを、生徒や保護者に届けたい。', ex: ['kansou', 'tsushin', 'quest'] },
+  { t: 'わが子と一緒に遊べるものがほしい', pain: '子どもと一緒に遊べて、短い時間で楽しめるものがほしい。', ex: ['mecha', 'calc60'] },
+  { t: '何が作れるのか、まず知りたい', pain: '', ex: ['sekigae', 'kansou', 'labo', 'quiz', 'mecha', 'navi'] },
+];
+
+const GROW_TYPES = [
+  { v: 'bug',     t: '不具合を直す',     extra: '原因がわかりにくければ、直す前に、考えられる原因を教えてください。' },
+  { v: 'look',    t: '見た目・使い心地', extra: '変える前と後で、どこがどう変わったかを教えてください。' },
+  { v: 'feature', t: '機能を足す',       extra: '今ある機能がこわれないように気をつけてください。' },
+  { v: 'balance', t: '数値・バランス',   extra: '数値は、あとで私が自分で変えやすいように、1か所にまとめてください。' },
+  { v: 'words',   t: '言葉づかい',       extra: '書きかえる前に、言い回しの例を3パターン見せてください。選んだもので全体を直してください。' },
+  { v: 'data',    t: 'データを入れる',   extra: '先に、データの形（列の名前など）を教えてください。' },
+  { v: 'test',    t: 'テストしてもらう', extra: '使う人の立場（得意な人・苦手な人など）を3〜5人想定して、それぞれの目線で評価し、直すとよい点を優先順位つきで挙げてください。',
+    close: 'まだコードは直さずに、評価の結果だけを見せてください。' },
+  { v: 'publish', t: '公開・配布',       extra: '手順は1つずつ、画面のどこを押すかまで書いてください。',
+    close: 'わからない言葉が出てきたら、ひとこと説明をつけてください。' },
+  { v: 'safety',  t: '安全・個人情報',   extra: 'いま保存しているデータの項目を全部書き出して、個人情報になりうるものがないかも確かめてください。' },
+];
+const GT = Object.fromEntries(GROW_TYPES.map(g => [g.v, g]));
+const GROW_CLOSE = 'ほかの部分は変えずに、この点だけを直してください。直したら、どこを変えたかを短く教えてください。';
+
+// 実際にこのリポジトリで出した指示（コミット履歴）をもとにした例
+const GROW_EXAMPLES = [
+  { type: 'feature', target: '座席ルーレット', now: '全員がランダムで決まる。', want: '指定席（固定）と、優先席の候補を設定できる画面を足してほしい。', why: '視力や配慮が必要な生徒の席を、先に決めておきたいから。' },
+  { type: 'bug', target: '小テストの結果画面（★応用のボーナス問題）', now: '生徒が正解しているのに、正答率がいつも0%と表示される。', want: '正しい正答率が出るようにしてほしい。', why: '解けたのに0%だと、生徒ががっかりしてしまうから。' },
+  { type: 'look', target: '数式キーボード', now: '画面の下に横いっぱいのバーで出て、問題文が隠れてしまう。', want: '小さくまとまった、動かせるパネルにしてほしい。', why: 'タブレットだと、問題を見ながら答えを打てないから。' },
+  { type: 'balance', target: 'RPGのLv1000以降の主人公', now: '推奨レベルまで上げても、裏ボスに勝ちにくい。', want: '主人公のATKとHPを1.5倍にしてほしい。', why: '仲間を弱くしたので、主人公の側で釣り合いをとりたいから。' },
+  { type: 'words', target: '振り返りへの声かけ・お祝いのメッセージ', now: '言い回しが機械っぽく、どれも同じに見える。', want: '私の話し方（ていねいだけど親しみやすい）に寄せて全部書き直し、種類も増やしてほしい。', why: '生徒が「ちゃんと読んでもらえた」と感じられるようにしたいから。' },
+  { type: 'data', target: '感想ひろば', now: '感想を1件ずつ手で入れている。', want: 'Googleフォームの集計Excelから、そのままデータを作れるようにしてほしい。', why: '行事のたびに100人分を手で入れるのは大変だから。' },
+  { type: 'test', target: '数学ゲーム全体', now: '自分で遊んでみても、苦手な子がどう感じるかがわからない。', want: '得意な子から苦手な子まで5人のテストプレイヤーを想定して、楽しさ・難しさ・爽快感・安心感・続けたい気持ちで評価してほしい。', why: 'いちばん届けたい、数学が苦手な子が楽しめているかを確かめたいから。' },
+  { type: 'safety', target: '小テストのログイン画面', now: '学校名が画面に出ている。', want: '学校名を出さずに、合言葉とパスワードでログインできるようにしてほしい。', why: '校外の人に、どこの学校か特定されないようにしたいから。' },
+  { type: 'publish', target: '座席ルーレット（1枚のHTML）', now: '自分のパソコンでしか開けない。', want: 'GitHub Pagesで公開して、URLとQRコードで配れるようにしてほしい。', why: 'ほかの先生にも使ってもらいたいから。' },
+];
+
+const TERM_CATS = [
+  { v: 'site', t: 'サイト' }, { v: 'game', t: 'ゲーム' }, { v: 'material', t: '教材' },
+  { v: 'business', t: '業務・校務' }, { v: 'common', t: 'どのジャンルでも' },
+];
+const TERMS = {
+  site: [
+    ['HTML', 'ページの骨組み。見出し・文章・画像などの部品を並べることば。'],
+    ['CSS', 'ページの服。色・文字の大きさ・並べ方を決めることば。'],
+    ['レスポンシブ', 'スマホでもパソコンでも、画面の幅に合わせて見やすく並べかえること。'],
+    ['GitHub Pages', '作ったHTMLを、無料でインターネットに公開できるしくみ。URLで配れる。'],
+    ['QRコード', 'URLを、カメラで読める四角い模様にしたもの。教室で配るときに便利。'],
+  ],
+  game: [
+    ['JavaScript', 'ページを動かすことば。ボタンを押したら何が起きるかを書く。'],
+    ['Canvas', '絵を自由に描ける画用紙のような部品。ゲームの画面によく使う。'],
+    ['ゲームループ', '1秒に60回ほど「動かす→描く」をくり返す、ゲームの心臓。'],
+    ['当たり判定', 'キャラクターどうしがぶつかったかを調べるしくみ。'],
+    ['localStorage', 'ブラウザの中にある小さな保存箱。セーブデータを残せる。'],
+  ],
+  material: [
+    ['自動採点', '答えを、決まりにそって自動で○×にするしくみ。'],
+    ['表記ゆれ', '「2/5」と「0.4」のように、同じ答えのちがう書き方。正解にしたいなら指示に書く。'],
+    ['KaTeX', '分数や√などの数式を、きれいに表示する道具。'],
+    ['印刷用CSS', '画面と印刷で見え方を変える指定。ボタンを印刷に出さない、など。'],
+    ['CSV', 'Excelで開ける、カンマで区切った表のファイル。'],
+  ],
+  business: [
+    ['CSV・Excel連携', '今ある名簿や点数の表を読み込んだり、結果を書き出したりすること。'],
+    ['自動割り振り', '希望・人数・休みなどの条件を満たすように、順番に当てはめていくしくみ。'],
+    ['データベース', 'たくさんのデータを整理して、しまっておく場所。'],
+    ['Supabase', '無料から使えるデータベースのサービス。みんなの記録を1か所に集めるときに。'],
+    ['Google Apps Script', 'Googleスプレッドシートやフォームを自動で動かすしくみ。'],
+  ],
+  common: [
+    ['Claude Code', 'パソコンのフォルダを直接さわりながら、Claudeと一緒にファイルを作って直していく道具。'],
+    ['Git・GitHub', 'ファイルの変更の歴史を残すしくみと、それを置いておく場所。失敗しても前に戻れる。'],
+    ['API', 'ソフトどうしがやりとりする窓口。アプリの中からClaudeを呼ぶときにも使う。'],
+    ['APIキー', 'APIを使うための合言葉。人に見せたり、公開するファイルに書いたりしてはいけない。'],
+  ],
+};
+
+/* ================= 状態 ================= */
+const STORE_KEY = 'tsukuru-navi:v1';
+const NOTE_KEY = 'tsukuru-navi:notes:v1';
+const load = key => { try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : null; } catch (e) { return null; } };
+const store = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* 保存できない環境でもそのまま動かす */ } };
+
+function blankState(cat) {
+  return { cat: cat || 'business', ex: null, trouble: null, what: '', pain: '', users: [], devices: [], features: [], featuresFree: '',
+           look: [], lookFree: '', save: '', share: '', level: '', cautions: [], mode: 'build', dirty: false };
+}
+function fromExample(e, keep) {
+  return Object.assign(blankState(e.cat), {
+    cat: keep.cat === 'vague' ? 'vague' : e.cat, ex: e.id, trouble: keep.trouble ?? null, mode: keep.mode || 'build',
+    what: e.what, pain: e.pain, users: [...e.users], devices: [...e.devices], features: [...e.features],
+    look: [...e.look], save: e.save, share: e.share, level: e.level, cautions: [...e.cautions], dirty: false,
+  });
+}
+function growFrom(g) { return { type: g.type, target: g.target, now: g.now, want: g.want, why: g.why, ex: GROW_EXAMPLES.indexOf(g) }; }
+
+const saved = load(STORE_KEY) || {};
+let S = saved.make ? Object.assign(blankState(), saved.make) : fromExample(EX.sekigae, { cat: 'business', mode: 'build' });
+let G = saved.grow ? Object.assign({ type: 'feature', target: '', now: '', want: '', why: '', ex: -1 }, saved.grow) : growFrom(GROW_EXAMPLES[0]);
+let notes = Array.isArray(load(NOTE_KEY)) ? load(NOTE_KEY) : [];
+let termCat = 'site';
+const persist = () => store(STORE_KEY, { make: S, grow: G });
+
+/* ================= 指示文をつくる ================= */
+const kindCat = s => (s.cat === 'vague' ? (s.ex && EX[s.ex] ? EX[s.ex].cat : null) : s.cat);
+const lines = t => String(t || '').split('\n').map(x => x.trim()).filter(Boolean);
+const feats = s => [...s.features, ...lines(s.featuresFree)];
+const looks = s => [...s.look, ...(s.lookFree.trim() ? [s.lookFree.trim()] : [])];
+const optP = (list, v) => (list.find(o => o.v === v) || {}).p || '';
+const flat = t => String(t).trim().replace(/\s*\n\s*/g, ' ');
+
+function techLines(s) {
+  const t = [];
+  const has = d => s.devices.includes(d);
+  if (s.save === 'server') {
+    t.push('複数の人のデータを1か所に集めたいです。無料で始められる方法（例：Googleスプレッドシート、Supabase など）を2〜3案、よい点・気をつける点・準備の手間をつけて比べてから、おすすめの方法で作ってください。');
+  } else {
+    t.push('1つのHTMLファイル（HTML・CSS・JavaScriptを1枚にまとめたもの）で作ってください。ダブルクリックでブラウザで開けて、インストールがいらない形がいいです。');
+  }
+  if (s.save === 'browser') t.push('入力したデータは、このブラウザの中（localStorage）に保存して、閉じても消えないようにしてください。');
+  if (s.save === 'file') t.push('結果は、Excelで開けるCSVファイルで書き出せるようにしてください。読み込みもできると助かります。');
+  if (s.save === 'none') t.push('データは保存しなくてかまいません（その場で使えれば十分です）。');
+  if (has('タブレット・Chromebook') || has('スマホ')) t.push('タブレットやスマホでも使いやすいように、指で押しやすいボタンの大きさと、画面の幅に合わせた表示にしてください。');
+  if (has('電子黒板・プロジェクター')) t.push('電子黒板やプロジェクターに映すので、教室の後ろからでも読める大きさの文字にしてください。');
+  if (has('紙に印刷') && !s.cautions.includes('A4 1枚に印刷できる')) t.push('印刷したときに、A4にきれいに収まるようにしてください。');
+  if (s.share === 'class') t.push('URLやQRコードで配りたいので、公開のしかた（GitHub Pages など）も手順で教えてください。');
+  if (s.share === 'colleagues') t.push('ほかの先生も自分の学校で使えるように、学校名・クラス名・人数などは画面の設定で変えられるようにし、使い方の説明も画面の中に入れてください。');
+  if (s.share === 'public') t.push('インターネットで誰でも見られるように公開したいです。公開のしかたと、載せてはいけない情報の注意点も教えてください。');
+  return t;
+}
+function cautionLines(s) {
+  return s.cautions
+    .filter(c => !(c === 'インストール不要' && s.save !== 'server'))
+    .map(c => CAUTIONS[c]).filter(Boolean);
+}
+function levelLine(s) {
+  return {
+    first: '私はプログラミングが初めてです。専門用語にはひとこと説明をつけ、できたファイルの保存のしかたと開き方も、手順で教えてください。',
+    some: 'ファイルを開いたり、コピーして貼りつけて直したりはできます。あとで自分でも直せるように、どこを変えると何が変わるか、コードにコメントを入れてください。',
+    can: 'コードは読めます。作る前に、画面の構成とデータの形を短く提案してください。',
+  }[s.level] || '';
+}
+function summary(s, withLevel) {
+  const L = [];
+  const kc = kindCat(s);
+  if (kc) L.push('- ジャンル：' + CATS[kc].label);
+  if (s.pain.trim()) L.push('- きっかけ・困っていること：' + flat(s.pain));
+  if (s.users.length) L.push('- 使う人：' + s.users.join('、'));
+  if (s.devices.length) L.push('- 使う場所・端末：' + s.devices.join('、'));
+  const f = feats(s); if (f.length) L.push('- ほしい機能（候補）：' + f.join('／'));
+  const lk = looks(s); if (lk.length) L.push('- 見た目：' + lk.join('、'));
+  if (s.save) L.push('- データ：' + optP(SAVES, s.save));
+  if (s.share) L.push('- 配り方：' + optP(SHARES, s.share));
+  if (withLevel && s.level) L.push('- プログラミングの経験：' + optP(LEVELS, s.level));
+  if (s.cautions.length) L.push('- 気をつけたいこと：' + s.cautions.join('、'));
+  return L;
+}
+
+function buildMake(s) {
+  const kc = kindCat(s);
+  const what = s.what.trim();
+  const W = what || '【作りたいもの】';
+  const kind = kc ? `（${CATS[kc].kind}）` : '';
+  const out = [];
+
+  if (s.mode === 'interview') {
+    const sum = summary(s, true);
+    out.push('あなたは、ものづくりの相談にのる、やさしい伴走者です。');
+    out.push(`私は${what ? `「${what}」のようなもの` : '何か'}を作りたいと思っていますが、Claudeにどう頼めばいいか、まだうまく言葉にできません。`);
+    out.push('これから私に質問をして、作りたいものを一緒に整理してください。', '');
+    out.push('## 今わかっていること', ...(sum.length ? sum : ['- まだ、ほとんど決まっていません。']), '');
+    out.push('## 質問のしかた',
+      '- 質問は1回に1つだけにしてください。',
+      '- 答えやすいように A・B・C の選択肢をつけてください。選択肢にない答え方をしてもいいことにしてください。',
+      '- 専門用語は使わないか、使うときはひとこと説明をつけてください。',
+      '- 私の答えがぼんやりしていたら、具体的な例を出して確かめてください。',
+      '- 7〜10問くらいで整理できたら、質問を終えてください。', '');
+    out.push('## 最後にまとめてほしいもの',
+      '1. Claudeにそのまま渡せる「指示書」（最初に作る版と、あとで足す機能を分けて）',
+      '2. 作るときに気をつけること（個人情報、使う場所など）',
+      '3. これを作るために、私が少しずつ学ぶとよいこと3つ', '');
+    out.push('では、最初の質問からお願いします。');
+    return out.join('\n');
+  }
+
+  if (s.mode === 'plan') {
+    out.push(`${W}${kind}を作りたいと考えています。まだ作り始めずに、まず設計図を一緒に考えてください。`, '');
+    const sum = summary(s, true);
+    if (sum.length) out.push('## 今わかっていること', ...sum, '');
+    out.push('## 作ってほしい設計図',
+      '1. 画面の一覧（どんな画面があって、どうつながるか）',
+      '2. 機能の優先順位（最初の版／次の版／いつか）',
+      '3. 保存するデータの形（どんな項目を持つか）',
+      '4. 使う技術と、それを選ぶ理由（初心者にもわかる言葉で）',
+      '5. 作る順番（3〜5ステップ。どのステップでも「動くもの」ができるように）',
+      '6. つまずきそうなところと、その避け方', '');
+    out.push('最後に、ステップ1を作るときに Claude へ出す指示文の例を書いてください。');
+    return out.join('\n');
+  }
+
+  if (s.mode === 'learn') {
+    out.push(`${W}${kind}を、Claudeと一緒に作りながら、少しずつ自分でも作れるようになりたいです。`);
+    const lv = { first: '私はプログラミングが初めてです。', some: 'ファイルを開いたり、少し直したりしたことはあります。', can: 'コードはある程度読めます。' }[s.level];
+    if (lv) out.push(lv);
+    out.push('');
+    const sum = summary(s, false);
+    if (sum.length) out.push('## 作りたいもの', ...sum, '');
+    out.push('## 教えてほしいこと',
+      '1. これを作るのに使う技術を3〜5つに分けて、身近な例え話で説明してください。',
+      '2. 4週間の学習ロードマップ（1週間に30分×3回くらい）。各週に「やってみること」と、そのとき Claude に出す練習の指示文の例をつけてください。',
+      '3. 今日の30分でできる、いちばん小さな練習を1つ。',
+      '4. 調べものをするときに使うとよいキーワード。', '');
+    out.push('完璧をめざさず、楽しく続けられるペースでお願いします。');
+    return out.join('\n');
+  }
+
+  // build
+  out.push(`${W}${kind}を作りたいです。`, '');
+  out.push('## なぜ作りたいか（困っていること）', s.pain.trim() || '【きっかけ・困っていること】', '');
+  out.push('## 使う人と場面',
+    '- 使う人：' + (s.users.join('、') || '【だれが使うか】'),
+    '- 使う場所・端末：' + (s.devices.join('、') || '【どこで使うか】'), '');
+  const f = feats(s);
+  out.push('## 最初の版でほしい機能', ...(f.length ? f.map((x, i) => `${i + 1}. ${x}`) : ['【ほしい機能】']), '');
+  out.push('## 見た目・雰囲気', looks(s).join('、') || 'おまかせします。使う人に合う見た目を提案してください。', '');
+  out.push('## 作り方の希望', ...techLines(s).map(x => '- ' + x), '');
+  const c = cautionLines(s);
+  if (c.length) out.push('## 気をつけてほしいこと', ...c.map(x => '- ' + x), '');
+  out.push('## 進め方のお願い',
+    '- 作り始める前に、確認したいことがあれば3つまで先に質問してください。',
+    '- いきなり全部を作らず、まずは上の機能が動く「最初の版」を作ってください。');
+  const lv = levelLine(s); if (lv) out.push('- ' + lv);
+  out.push('- できあがったら、使い方と、次に足すとよい機能を3つ提案してください。');
+  return out.join('\n');
+}
+
+function buildGrow(g) {
+  const T = GT[g.type] || GT.feature;
+  const out = [];
+  out.push(`（前回のつづきです）「${g.target.trim() || '【どの画面・どの部分】'}」について、お願いがあります。`, '');
+  out.push('- 今は：' + (flat(g.now) || '【今どうなっているか】'));
+  out.push('- こうしてほしい：' + (flat(g.want) || '【どうしてほしいか】'));
+  out.push('- 理由：' + (flat(g.why) || '【なぜそうしたいか】'), '');
+  out.push(T.extra);
+  out.push(T.close || GROW_CLOSE);
+  return out.join('\n');
+}
+
+/* ================= Claude への受け渡し ================= */
+const URL_LIMIT = 8000; // これより長いURLは途中で切れることがあるので、コピー＋貼りつけに切りかえる
+function claudeLink(text) {
+  const u = 'https://claude.ai/new?q=' + encodeURIComponent(text);
+  return u.length <= URL_LIMIT ? { href: u, prefilled: true } : { href: 'https://claude.ai/new', prefilled: false };
+}
+let toastTimer = 0;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2800);
+}
+function showCopyFallback(text) {
+  const o = $('#copy-fallback'); const ta = $('#cf-text');
+  ta.value = text; o.hidden = false; ta.focus(); ta.select();
+}
+async function copyText(text, msg) {
+  try { await navigator.clipboard.writeText(text); toast(msg || 'コピーしました'); return true; }
+  catch (e) { showCopyFallback(text); return false; }
+}
+const hasBlank = t => /【[^】]*】/.test(t);
+
+function fmtSheet(text) {
+  const hl = s => esc(s).replace(/【[^】]*】/g, m => `<mark class="blank">${m}</mark>`);
+  return text.split('\n').map(l => {
+    if (l.startsWith('## ')) return `<div class="sh">${hl(l.slice(3))}</div>`;
+    if (l === '') return '<div class="sp"></div>';
+    return `<div class="sl">${hl(l)}</div>`;
+  }).join('');
+}
+function paintSheet(p, text) {
+  $(`#${p}-body`).innerHTML = fmtSheet(text);
+  $(`#${p}-count`).textContent = `約${text.length.toLocaleString('ja-JP')}文字`;
+  $(`#${p}-warn`).textContent = hasBlank(text) ? '黄色の【 】がまだ空いています' : '';
+  const link = claudeLink(text);
+  const a = $(`#${p}-open`);
+  a.href = link.href; a.dataset.prefilled = link.prefilled ? '1' : '';
+  return link;
+}
+function wireSheet(p, getText, noteMeta) {
+  $(`#${p}-copy`).addEventListener('click', () => {
+    const t = getText();
+    copyText(t, hasBlank(t) ? 'コピーしました（【 】が空いているところがあります）' : 'コピーしました');
+  });
+  $(`#${p}-open`).addEventListener('click', e => {
+    const a = e.currentTarget;
+    copyText(getText(), a.dataset.prefilled ? 'Claudeを開きます（指示文はコピーもしてあります）' : '長いのでコピーしました。開いたClaudeの入力欄に貼りつけてください');
+  });
+  $(`#${p}-save`).addEventListener('click', () => {
+    const m = noteMeta();
+    notes.unshift({ id: Date.now().toString(36), title: m.title, kind: m.kind, text: getText(), date: new Date().toISOString() });
+    store(NOTE_KEY, notes); renderNotes();
+    toast('指示ノートに保存しました');
+  });
+}
+
+/* ================= 描画：つくる ================= */
+function renderCats() {
+  $('#cats').innerHTML = CAT_ORDER.map(id => {
+    const c = CATS[id];
+    return `<button type="button" class="cat" data-cat="${id}" aria-pressed="${S.cat === id}">
+      <span class="kanji" style="--c:var(--c-${id})" aria-hidden="true">${c.kanji}</span>
+      <span class="cat-t">${c.label}</span><span class="cat-d">${c.desc}</span></button>`;
+  }).join('');
+}
+function exampleList() {
+  if (S.cat === 'vague') return S.trouble != null && TROUBLES[S.trouble] ? TROUBLES[S.trouble].ex.map(id => EX[id]) : [];
+  return EXAMPLES.filter(e => e.cat === S.cat);
+}
+function renderExamples() {
+  const vague = S.cat === 'vague';
+  $('#troubles').hidden = !vague;
+  $('#troubles-hint').hidden = !vague;
+  $('#q2-title').innerHTML = vague ? '近い困りごとは？ <small>選ぶと、似た例が出ます</small>' : '例から選ぶ <small>そのまま使っても、書きかえてもOK</small>';
+  if (vague) {
+    $('#troubles').innerHTML = TROUBLES.map((t, i) =>
+      `<button type="button" class="chip" data-trouble="${i}" aria-pressed="${S.trouble === i}">${esc(t.t)}</button>`).join('');
+  }
+  const list = exampleList();
+  $('#examples').innerHTML = list.length ? list.map(e => `<button type="button" class="ex" data-ex="${e.id}" aria-pressed="${S.ex === e.id}">
+      <span class="ex-top"><span class="ex-t">${esc(e.title)}</span>${e.real ? '<span class="stamp" title="実際にClaudeと作ったもの">実例</span>' : ''}</span>
+      ${vague ? `<span class="ex-cat">${CATS[e.cat].label}</span>` : ''}
+      <span class="ex-d">${esc(e.desc)}</span></button>`).join('')
+    : `<p class="exs-empty">${vague ? '困りごとを選ぶと、ここに似た例が出ます。どれにも当てはまらなければ、問3から自由に書いてください。' : 'このジャンルの例はまだありません。'}</p>`;
+}
+function renderChips(id, options, selected) {
+  $('#' + id).innerHTML = options.map(o =>
+    `<button type="button" class="chip" data-v="${esc(o)}" aria-pressed="${selected.includes(o)}">${esc(o)}</button>`).join('');
+}
+function renderOpts(id, options, value) {
+  $('#' + id).innerHTML = options.map(o =>
+    `<button type="button" class="opt" data-v="${o.v}" aria-pressed="${value === o.v}"><b>${esc(o.t)}</b><span>${esc(o.d)}</span></button>`).join('');
+}
+function featureOptions() {
+  const kc = kindCat(S) || S.cat;
+  const base = (CATS[kc] || CATS.vague).features;
+  return [...new Set([...S.features, ...base])];
+}
+function renderFields() {
+  ['what', 'pain', 'featuresFree', 'lookFree'].forEach(f => { const el = $('#f-' + f); if (el.value !== S[f]) el.value = S[f]; });
+  renderChips('c-users', USERS, S.users);
+  renderChips('c-devices', DEVICES, S.devices);
+  renderChips('c-features', featureOptions(), S.features);
+  renderChips('c-look', LOOKS, S.look);
+  renderChips('c-cautions', Object.keys(CAUTIONS), S.cautions);
+  renderOpts('o-save', SAVES, S.save);
+  renderOpts('o-share', SHARES, S.share);
+  renderOpts('o-level', LEVELS, S.level);
+}
+function renderModes() {
+  $('#modes').innerHTML = MODES.map(m =>
+    `<button type="button" class="mode" role="radio" data-mode="${m.v}" aria-checked="${S.mode === m.v}">${m.t}</button>`).join('');
+  $('#mode-d').textContent = (MODES.find(m => m.v === S.mode) || MODES[0]).d;
+}
+function renderMakeSheet() {
+  const text = buildMake(S);
+  const link = paintSheet('m', text);
+  $('#m-src').textContent = S.ex && EX[S.ex] ? `「${EX[S.ex].title}」の例をもとにした下書き` : '自分で書いた指示書';
+  $('#m-hint').textContent = link.prefilled
+    ? '押すと claude.ai が開き、指示文が入った状態で始まります（同時にコピーもします）。入っていなければ、入力欄に貼りつけてください。'
+    : '指示文が長いので、押すとコピーしてから claude.ai を開きます。入力欄に貼りつけて（Ctrl+V／⌘+V）送ってください。';
+}
+function renderMake() { renderCats(); renderExamples(); renderFields(); renderModes(); renderMakeSheet(); }
+const touch = () => { S.dirty = true; renderMakeSheet(); persist(); };
+
+/* ================= 描画：育てる ================= */
+function renderGrow() {
+  $('#g-types').innerHTML = GROW_TYPES.map(g =>
+    `<button type="button" class="chip" data-type="${g.v}" aria-pressed="${G.type === g.v}">${g.t}</button>`).join('');
+  ['target', 'now', 'want', 'why'].forEach(f => { const el = $('#g-' + f); if (el.value !== G[f]) el.value = G[f]; });
+  $('#g-examples').innerHTML = GROW_EXAMPLES.map((g, i) => `<button type="button" class="gex" data-gex="${i}" aria-pressed="${G.ex === i}">
+      <span class="gtype">${GT[g.type].t}</span><span class="gt">${esc(g.target)}</span><span class="gd">${esc(g.want)}</span></button>`).join('');
+  renderGrowSheet();
+}
+function renderGrowSheet() {
+  paintSheet('g', buildGrow(G));
+  $('#g-src').textContent = G.ex >= 0 ? '実際に出した指示をもとにした下書き' : '自分で書いた指示';
+}
+
+/* ================= 描画：まなぶ ================= */
+function termAsk(term) {
+  return `「${term}」について、プログラミングをしたことがない学校の先生にもわかるように、身近な例え話を使って説明してください。3分で読める長さでお願いします。最後に、${term}を体験できる小さな練習を1つ出してください。`;
+}
+function renderLearn() {
+  $('#l-cats').innerHTML = TERM_CATS.map(c =>
+    `<button type="button" class="chip" data-tcat="${c.v}" aria-pressed="${termCat === c.v}">${c.t}</button>`).join('');
+  $('#terms').innerHTML = TERMS[termCat].map(([name, d]) => `<div class="term"><b>${esc(name)}</b><p>${esc(d)}</p>
+      <a href="${esc(claudeLink(termAsk(name)).href)}" target="_blank" rel="noopener">Claudeに聞く →</a></div>`).join('');
+  const sample = termCat === 'common' ? 'かんたんなWebツール' : CATS[termCat].sample;
+  const s = Object.assign(blankState(termCat === 'common' ? 'vague' : termCat), { what: sample, mode: 'learn', level: S.level || 'first' });
+  $('#l-ask').href = claudeLink(buildMake(s)).href;
+}
+
+/* ================= 描画：指示ノート ================= */
+function fmtDate(iso) {
+  const d = new Date(iso); if (isNaN(d)) return '';
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function renderNotes() {
+  $('#n-count').textContent = notes.length ? String(notes.length) : '';
+  $('#n-all').disabled = !notes.length;
+  if (!notes.length) {
+    $('#notes').innerHTML = '<div class="empty"><b>まだ保存した指示はありません</b>「つくる」か「育てる」の指示書で「ノートに保存」を押すと、ここにたまっていきます。</div>';
+    return;
+  }
+  $('#notes').innerHTML = notes.map(n => `<article class="note" data-id="${esc(n.id)}">
+      <div class="note-top"><h3>${esc(n.title)}</h3><span class="pill">${esc(n.kind)}</span><time datetime="${esc(n.date)}">${fmtDate(n.date)}</time></div>
+      <p class="note-pre">${esc(n.text)}</p>
+      <div class="actions">
+        <a class="btn primary sm" href="${esc(claudeLink(n.text).href)}" target="_blank" rel="noopener" data-act="open">Claudeで開く</a>
+        <button type="button" class="btn sm" data-act="copy">コピー</button>
+        <button type="button" class="btn sm" data-act="del">削除</button>
+      </div></article>`).join('');
+}
+
+/* ================= タブ ================= */
+const TABS = ['tsukuru', 'sodateru', 'manabu', 'note'];
+function showTab(id) {
+  if (!TABS.includes(id)) id = 'tsukuru';
+  $$('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === id)));
+  $$('.tabpanel').forEach(p => { p.hidden = p.id !== 'tab-' + id; });
+  $('#to-sheet').classList.toggle('on', id === 'tsukuru' || id === 'sodateru');
+  if (location.hash.slice(1) !== id) { try { history.replaceState(null, '', '#' + id); } catch (e) { /* noop */ } }
+}
+
+/* ================= イベント ================= */
+$('.tabs').addEventListener('click', e => { const b = e.target.closest('.tab'); if (b) showTab(b.dataset.tab); });
+window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
+
+$('#cats').addEventListener('click', e => {
+  const b = e.target.closest('.cat'); if (!b) return;
+  const id = b.dataset.cat; if (id === S.cat) return;
+  if (id === 'vague') {
+    S = S.dirty ? Object.assign(S, { cat: 'vague', mode: 'interview', trouble: null }) : Object.assign(blankState('vague'), { mode: 'interview' });
+    toast('右の指示書を「まず質問してもらう」にしました');
+  } else if (!S.dirty) {
+    S = fromExample(EXAMPLES.find(x => x.cat === id), { cat: id, mode: S.mode === 'interview' ? 'build' : S.mode });
+  } else {
+    S.cat = id;
+  }
+  renderMake(); persist();
+});
+$('#troubles').addEventListener('click', e => {
+  const b = e.target.closest('[data-trouble]'); if (!b) return;
+  const i = Number(b.dataset.trouble);
+  S.trouble = i;
+  if (!S.dirty || !S.pain.trim()) S.pain = TROUBLES[i].pain;
+  renderMake(); persist();
+});
+$('#examples').addEventListener('click', e => {
+  const b = e.target.closest('.ex'); if (!b) return;
+  const ex = EX[b.dataset.ex];
+  S = fromExample(ex, { cat: S.cat, trouble: S.trouble, mode: S.mode });
+  renderMake(); persist();
+  toast(`「${ex.title}」の例を入れました。自分用に書きかえてください`);
+});
+$('#btn-clear').addEventListener('click', () => {
+  S = Object.assign(blankState(S.cat), { mode: S.mode, trouble: S.trouble, dirty: true });
+  renderMake(); persist();
+  $('#f-what').focus();
+  toast('白紙にしました');
+});
+$$('#tab-tsukuru [data-field]').forEach(el => {
+  if (el.matches('input, textarea')) {
+    el.addEventListener('input', () => { S[el.dataset.field] = el.value; touch(); });
+    return;
+  }
+  el.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const f = el.dataset.field; const v = b.dataset.v;
+    if (b.classList.contains('chip')) {
+      const arr = S[f]; const i = arr.indexOf(v);
+      if (i >= 0) arr.splice(i, 1); else arr.push(v);
+      b.setAttribute('aria-pressed', String(i < 0));
+    } else {
+      S[f] = S[f] === v ? '' : v;
+      $$('.opt', el).forEach(o => o.setAttribute('aria-pressed', String(o.dataset.v === S[f])));
+    }
+    touch();
+  });
+});
+$('#modes').addEventListener('click', e => {
+  const b = e.target.closest('.mode'); if (!b) return;
+  S.mode = b.dataset.mode; renderModes(); renderMakeSheet(); persist();
+});
+wireSheet('m', () => buildMake(S), () => ({
+  title: S.what.trim() || (kindCat(S) ? CATS[kindCat(S)].label + 'の指示書' : '指示書'),
+  kind: (MODES.find(m => m.v === S.mode) || MODES[0]).t,
+}));
+$('#to-sheet').addEventListener('click', () => {
+  const id = $('#tab-sodateru').hidden ? '#sheet-make' : '#sheet-grow';
+  $(id).scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+});
+
+$('#g-types').addEventListener('click', e => {
+  const b = e.target.closest('[data-type]'); if (!b) return;
+  G.type = b.dataset.type;
+  $$('#g-types .chip').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.type === G.type)));
+  renderGrowSheet(); persist();
+});
+$$('#tab-sodateru [data-gfield]').forEach(el => el.addEventListener('input', () => {
+  G[el.dataset.gfield] = el.value; G.ex = -1;
+  $$('#g-examples .gex').forEach(c => c.setAttribute('aria-pressed', 'false'));
+  renderGrowSheet(); persist();
+}));
+$('#g-examples').addEventListener('click', e => {
+  const b = e.target.closest('.gex'); if (!b) return;
+  G = growFrom(GROW_EXAMPLES[Number(b.dataset.gex)]);
+  renderGrow(); persist();
+  $('#g-target').scrollIntoView({ behavior: 'auto', block: 'center' });
+  toast('例を入れました。自分の作品に合わせて書きかえてください');
+});
+wireSheet('g', () => buildGrow(G), () => ({ title: G.target.trim() || '育てる指示', kind: '育てる：' + (GT[G.type] || GT.feature).t }));
+
+$('#l-cats').addEventListener('click', e => {
+  const b = e.target.closest('[data-tcat]'); if (!b) return;
+  termCat = b.dataset.tcat; renderLearn();
+});
+$('#l-ask').addEventListener('click', () => {
+  if (!$('#l-ask').href.includes('?q=')) toast('長いので、開いたClaudeに質問を書いてください');
+});
+
+$('#notes').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const card = b.closest('.note'); const n = notes.find(x => x.id === card.dataset.id); if (!n) return;
+  if (b.dataset.act === 'copy') copyText(n.text);
+  if (b.dataset.act === 'open') copyText(n.text, 'Claudeを開きます（指示文はコピーもしてあります）');
+  if (b.dataset.act === 'del') {
+    if (b.dataset.armed) {
+      notes = notes.filter(x => x.id !== n.id); store(NOTE_KEY, notes); renderNotes(); toast('削除しました');
+    } else {
+      b.dataset.armed = '1'; b.textContent = 'もう一度押すと削除'; b.classList.add('danger');
+      setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = '削除'; b.classList.remove('danger'); } }, 4000);
+    }
+  }
+});
+$('#n-all').addEventListener('click', () => {
+  const all = notes.map(n => `■ ${n.title}（${n.kind}）\n\n${n.text}`).join('\n\n――――――――――\n\n');
+  copyText(all, `${notes.length}件の指示をまとめてコピーしました`);
+});
+$('#cf-close').addEventListener('click', () => { $('#copy-fallback').hidden = true; });
+$('#copy-fallback').addEventListener('click', e => { if (e.target.id === 'copy-fallback') e.currentTarget.hidden = true; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#copy-fallback').hidden = true; });
+
+/* ================= 起動 ================= */
+renderMake(); renderGrow(); renderLearn(); renderNotes();
+showTab(location.hash.slice(1) || 'tsukuru');
+
+// テスト用：指示文をつくる関数だけ外から呼べるようにしておく
+window.TsukuruNavi = { buildMake, buildGrow, fromExample, blankState, EXAMPLES, claudeLink };
+})();
+</script>
+</body>
+</html>
