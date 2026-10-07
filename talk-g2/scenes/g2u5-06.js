@@ -1,3 +1,7 @@
+/* 中2 5章 三角形と四角形　第6時（例）「直角三角形の合同を使って証明しよう」。自作。
+   △ABC（AB＝AC）：B(0,0)，C(6,0)，A(3,4.4)，M(3,0)（BC の中点）。M から AB，AC への垂線の足 D，E → MD＝ME。
+   △MBD と △MCE：∠MDB＝∠MEC＝90°，BM＝CM（斜辺），∠B＝∠C（底角）→ 斜辺と1つの鋭角 → MD＝ME。
+   類題：∠XOY の二等分線 OP 上の点 P から OX，OY への垂線 PA，PB → PA＝PB（斜辺 OP 共通，∠POA＝∠POB）。 */
 (function () {
   const { T, B, Q, FIG, tbl } = KL;
   /* ---- 図の部品（座標は数学の座標・y が上）。1目もり＝88px ---- */
@@ -41,7 +45,8 @@
     .replace(/[①-⑤]+/g, m => m.length === 1 ? 'まる' + ['いち', 'に', 'さん', 'よん', 'ご']['①②③④⑤'.indexOf(m)] + '、' : [...m].map(c => ['いち', 'に', 'さん', 'よん', 'ご']['①②③④⑤'.indexOf(c)]).join('、') + '、')
     .replace(/△/g, 'さんかく ').replace(/∠/g, 'かく ').replace(/≡/g, ' 合同 ').replace(/∥/g, ' へいこう ').replace(/⊥/g, ' 垂直 ')
     .replace(/°/g, '度').replace(/＝/g, ' イコール ').replace(/≠/g, ' イコールではない ')
-    .replace(/(?<=[0-9°A-Za-z）)])−/g, 'ひく').replace(/−/g, 'マイナス').replace(/÷/g, 'わる').replace(/×/g, 'かける').replace(/＋/g, 'たす')
+    .replace(/(?<=[0-9°度A-Za-z）)])−/g, 'ひく').replace(/−/g, 'マイナス').replace(/÷/g, 'わる').replace(/×/g, 'かける').replace(/＋/g, 'たす')
+    .replace(/[(（]/g, 'かっこ、').replace(/[)）]/g, '、かっことじ、')
     .replace(/²/g, 'の2乗').replace(/(?<=[0-9])m(?![a-z])/g, 'メートル')
     .replace(/[A-Z]+/g, m => [...m].map(c => KA[c] || c).join(''))
     .replace(/(?<![A-Za-z])[a-z](?![A-Za-z])/g, m => KS[m] || m)
@@ -49,10 +54,6 @@
   const wrap = f => (s, o) => { const r = rd(s); return f(s, r === plainS(s) ? o : Object.assign({ say: r }, o)); };
   const t = wrap(T), b = wrap(B);
   const sad = { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } };      // ポンタのまちがいを、先生がやさしく直す
-  /* 中2 5章 三角形と四角形　第6時（例）「直角三角形の合同を使って証明しよう」。自作。
-     △ABC（AB＝AC）：B(0,0)，C(6,0)，A(3,4.4)，M(3,0)（BC の中点）。M から AB，AC への垂線の足 D，E → MD＝ME。
-     △MBD と △MCE：∠MDB＝∠MEC＝90°，BM＝CM（斜辺），∠B＝∠C（底角）→ 斜辺と1つの鋭角 → MD＝ME。
-     類題：∠XOY の二等分線 OP 上の点 P から OX，OY への垂線 PA，PB → PA＝PB（斜辺 OP 共通，∠POA＝∠POB）。 */
   const foot = (p, a, c) => { const dx = c[0] - a[0], dy = c[1] - a[1], k = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy); return [a[0] + k * dx, a[1] + k * dy]; };
   const pA = [3, 4.4], pB = [0, 0], pC = [6, 0], pM = [3, 0], pD = foot(pM, pB, pA), pE = foot(pM, pC, pA);
   const oO = [0, 0], oX = [4.6 * Math.cos(30 * R), 4.6 * Math.sin(30 * R)], oY = [4.6 * Math.cos(30 * R), -4.6 * Math.sin(30 * R)], oP = [3.4, 0], oA = foot(oP, oO, oX), oB = foot(oP, oO, oY);
@@ -108,7 +109,7 @@
       add: [{ col: 0, type: 'text', size: 'xs', text: '二等辺三角形の底角は\n等しいから　∠B＝∠C　…③', t: 4.0 }] }),
 
     /* ---------- 3ページ目：合同から結論へ ---------- */
-    t('△MBD の斜辺は、BM。△MCE の斜辺は、CM です。①の直角を、頼りに、条件を探します。', { clear: true, cols: [0.34, 0.66], part: '合同から結論へ', ft: 'normal',
+    t('△MBD の斜辺は、BM。△MCE の斜辺は、CM です。①の直角に、注目して、条件を探します。', { clear: true, cols: [0.34, 0.66], part: '合同から結論へ', ft: 'normal',
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'そろった条件', text: '①∠MDB＝∠MEC＝90°\n②BM＝CM（斜辺）\n③∠B＝∠C', t: 5.0 }, Object.assign(f3, { prims: [] })], draw: [G('g3', garden, hose, baseAng, triL, triR)] }),
 
     /* ---------- 問3（合同条件）---------- */
@@ -140,7 +141,7 @@
 
     /* ---------- 問5（Pを動かす）---------- */
     Q('q5', t('最後の問題です。点 P を、OP 上で、動かしても、PA＝PB は、成り立つでしょうか。', { ft: 'happy' }),
-      [{ t: 'OP の真ん中でだけ成り立つ' }, { t: 'どの位置でも成り立つ', ok: true }, { t: 'O に近いときだけ成り立つ' }, { t: '動かすと成り立たなくなる' }],
+      [{ t: 'OP の真ん中でだけ成り立つ' }, { t: 'O に近いときだけ成り立つ' }, { t: '動かすと成り立たなくなる' }, { t: 'どの位置でも成り立つ', ok: true }],
       { 0: [b('ぼくは、OP の真ん中で、歩いて数えたよ！ そこだけだと思う！', { fb: 'happy', up: true }), t('証明では、P の位置を、決めていません。OP 上の、どこでも、同じ証明が使えます。', sad)],
         ok: [t('正解！ P の位置を、決めずに、証明しました。OP 上の、どこに P があっても、PA＝PB です。', { ft: 'happy' }), b('1回だけじゃなくて、全部に通じるのが、証明なんだね！', { fb: 'star', up: true })],
         wrong: [t('証明は、P の位置を、決めずに行いました。OP 上の、どこでも、成り立ちます。', { ft: 'normal' })] }),

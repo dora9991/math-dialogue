@@ -1,3 +1,7 @@
+/* 中2 5章 三角形と四角形　第7時（練）「三角形の証明を、教え合って書けるようになろう」。自作。
+   △ABC（AB＝AC）：B(0,0)，C(6,0)，A(3,4.2)。AB 上に D，AC 上に E，BD＝CE＝2.2。CD＝BE を証明。
+   △DBC≡△ECB：BD＝CE（仮定）、∠DBC＝∠ECB（二等辺三角形の底角）、BC＝CB（共通）→ 2組の辺とその間の角。
+   ポンタ先生の証明のまちがい：①図を見ると同じ ②BC＝BC を「仮定より」 ③3組の辺 ④△DBC≡△EBC（頂点の順）⑤結論の根拠なし。 */
 (function () {
   const { T, B, Q, FIG, tbl } = KL;
   /* ---- 図の部品（座標は数学の座標・y が上）。1目もり＝88px ---- */
@@ -41,7 +45,8 @@
     .replace(/[①-⑤]+/g, m => m.length === 1 ? 'まる' + ['いち', 'に', 'さん', 'よん', 'ご']['①②③④⑤'.indexOf(m)] + '、' : [...m].map(c => ['いち', 'に', 'さん', 'よん', 'ご']['①②③④⑤'.indexOf(c)]).join('、') + '、')
     .replace(/△/g, 'さんかく ').replace(/∠/g, 'かく ').replace(/≡/g, ' 合同 ').replace(/∥/g, ' へいこう ').replace(/⊥/g, ' 垂直 ')
     .replace(/°/g, '度').replace(/＝/g, ' イコール ').replace(/≠/g, ' イコールではない ')
-    .replace(/(?<=[0-9°A-Za-z）)])−/g, 'ひく').replace(/−/g, 'マイナス').replace(/÷/g, 'わる').replace(/×/g, 'かける').replace(/＋/g, 'たす')
+    .replace(/(?<=[0-9°度A-Za-z）)])−/g, 'ひく').replace(/−/g, 'マイナス').replace(/÷/g, 'わる').replace(/×/g, 'かける').replace(/＋/g, 'たす')
+    .replace(/[(（]/g, 'かっこ、').replace(/[)）]/g, '、かっことじ、')
     .replace(/²/g, 'の2乗').replace(/(?<=[0-9])m(?![a-z])/g, 'メートル')
     .replace(/[A-Z]+/g, m => [...m].map(c => KA[c] || c).join(''))
     .replace(/(?<![A-Za-z])[a-z](?![A-Za-z])/g, m => KS[m] || m)
@@ -49,10 +54,6 @@
   const wrap = f => (s, o) => { const r = rd(s); return f(s, r === plainS(s) ? o : Object.assign({ say: r }, o)); };
   const t = wrap(T), b = wrap(B);
   const sad = { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } };      // ポンタのまちがいを、先生がやさしく直す
-  /* 中2 5章 三角形と四角形　第7時（練）「三角形の証明を、教え合って書けるようになろう」。自作。
-     △ABC（AB＝AC）：B(0,0)，C(6,0)，A(3,4.2)。AB 上に D，AC 上に E，BD＝CE＝2.2。CD＝BE を証明。
-     △DBC≡△ECB：BD＝CE（仮定）、∠DBC＝∠ECB（二等辺三角形の底角）、BC＝CB（共通）→ 2組の辺とその間の角。
-     ポンタ先生の証明のまちがい：①図を見ると同じ ②BC＝BC を「仮定より」 ③3組の辺 ④△DBC≡△EBC（頂点の順）⑤結論の根拠なし。 */
   const pA = [3, 4.2], pB = [0, 0], pC = [6, 0];
   const LAB = Math.hypot(3, 4.2), uB = [3 / LAB, 4.2 / LAB], uC = [-3 / LAB, 4.2 / LAB];
   const pD = [pB[0] + 2.2 * uB[0], pB[1] + 2.2 * uB[1]], pE = [pC[0] + 2.2 * uC[0], pC[1] + 2.2 * uC[1]];

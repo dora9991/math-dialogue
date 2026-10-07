@@ -17,8 +17,8 @@
   const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
   // 等しい長さの印：辺の真ん中に、辺と直角の短い線を n 本
   const tick = (a, b, n, c) => { const u = nrm(a, b), v = [-u[1], u[0]], m = mid(a, b), h = 12 / U, g = 8 / U, o = []; for (let i = 0; i < n; i++) { const s = (i - (n - 1) / 2) * g, p = [m[0] + u[0] * s, m[1] + u[1] * s]; o.push(sg([p[0] - v[0] * h, p[1] - v[1] * h], [p[0] + v[0] * h, p[1] + v[1] * h], c, { wd: 3, d: 0.2 })); } return o; };
-  // 平行の印：辺の真ん中に、a→b の向きの「＞」を n 個
-  const par = (a, b, n, c) => { const u = nrm(a, b), v = [-u[1], u[0]], m = mid(a, b), h = 9 / U, g = 10 / U, o = []; for (let i = 0; i < n; i++) { const s = (i - (n - 1) / 2) * g, p = [m[0] + u[0] * s, m[1] + u[1] * s], tip = [p[0] + u[0] * h * 0.7, p[1] + u[1] * h * 0.7]; o.push(sg([p[0] - u[0] * h * 0.7 + v[0] * h, p[1] - u[1] * h * 0.7 + v[1] * h], tip, c, { wd: 3, d: 0.2 }), sg([p[0] - u[0] * h * 0.7 - v[0] * h, p[1] - u[1] * h * 0.7 - v[1] * h], tip, c, { wd: 3, d: 0.2 })); } return o; };
+  // 平行の印：辺の a から t の位置に、a→b の向きの「＞」を n 個（t を省くと真ん中）
+  const par = (a, b, n, c, t) => { const u = nrm(a, b), v = [-u[1], u[0]], f = t == null ? 0.5 : t, m = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], h = 11 / U, g = 17 / U, o = []; for (let i = 0; i < n; i++) { const s = (i - (n - 1) / 2) * g, p = [m[0] + u[0] * s, m[1] + u[1] * s], tip = [p[0] + u[0] * h * 0.7, p[1] + u[1] * h * 0.7]; o.push(sg([p[0] - u[0] * h * 0.7 + v[0] * h, p[1] - u[1] * h * 0.7 + v[1] * h], tip, c, { wd: 2.6, d: 0.2 }), sg([p[0] - u[0] * h * 0.7 - v[0] * h, p[1] - u[1] * h * 0.7 - v[1] * h], tip, c, { wd: 2.6, d: 0.2 })); } return o; };
   const deg = (o, p) => (Math.atan2(p[1] - o[1], p[0] - o[0]) * 180 / Math.PI + 360) % 360;
   const at = (p, r, d) => [p[0] + r * Math.cos(d * Math.PI / 180), p[1] + r * Math.sin(d * Math.PI / 180)];
   // 角の印：点 o を頂点に、半直線 o→p と o→q ではさまれた角（小さいほう）に弧をかく

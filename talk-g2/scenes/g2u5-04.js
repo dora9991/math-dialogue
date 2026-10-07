@@ -1,3 +1,6 @@
+/* 中2 5章 三角形と四角形　第4時（例）「「逆」が正しいかどうかを調べよう」。自作。
+   定義（二等辺三角形＝2辺が等しい三角形）・定理（底角は等しい）。逆：仮定と結論を入れかえる。反例：「たぬきならばポンタ」→ たぬきのタヌ子さん，
+   「x²＝9 ならば x＝3」→ x＝−3。正三角形（3辺が等しい）：AB＝AC，BA＝BC → ∠A＝∠B＝∠C＝60°，逆（3つの角が等しい → 正三角形）も正しい。 */
 (function () {
   const { T, B, Q, FIG, tbl } = KL;
   /* ---- 図の部品（座標は数学の座標・y が上）。1目もり＝88px ---- */
@@ -41,7 +44,8 @@
     .replace(/[①-⑤]+/g, m => m.length === 1 ? 'まる' + ['いち', 'に', 'さん', 'よん', 'ご']['①②③④⑤'.indexOf(m)] + '、' : [...m].map(c => ['いち', 'に', 'さん', 'よん', 'ご']['①②③④⑤'.indexOf(c)]).join('、') + '、')
     .replace(/△/g, 'さんかく ').replace(/∠/g, 'かく ').replace(/≡/g, ' 合同 ').replace(/∥/g, ' へいこう ').replace(/⊥/g, ' 垂直 ')
     .replace(/°/g, '度').replace(/＝/g, ' イコール ').replace(/≠/g, ' イコールではない ')
-    .replace(/(?<=[0-9°A-Za-z）)])−/g, 'ひく').replace(/−/g, 'マイナス').replace(/÷/g, 'わる').replace(/×/g, 'かける').replace(/＋/g, 'たす')
+    .replace(/(?<=[0-9°度A-Za-z）)])−/g, 'ひく').replace(/−/g, 'マイナス').replace(/÷/g, 'わる').replace(/×/g, 'かける').replace(/＋/g, 'たす')
+    .replace(/[(（]/g, 'かっこ、').replace(/[)）]/g, '、かっことじ、')
     .replace(/²/g, 'の2乗').replace(/(?<=[0-9])m(?![a-z])/g, 'メートル')
     .replace(/[A-Z]+/g, m => [...m].map(c => KA[c] || c).join(''))
     .replace(/(?<![A-Za-z])[a-z](?![A-Za-z])/g, m => KS[m] || m)
@@ -49,9 +53,6 @@
   const wrap = f => (s, o) => { const r = rd(s); return f(s, r === plainS(s) ? o : Object.assign({ say: r }, o)); };
   const t = wrap(T), b = wrap(B);
   const sad = { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } };      // ポンタのまちがいを、先生がやさしく直す
-  /* 中2 5章 三角形と四角形　第4時（例）「「逆」が正しいかどうかを調べよう」。自作。
-     定義（二等辺三角形＝2辺が等しい三角形）・定理（底角は等しい）。逆：仮定と結論を入れかえる。反例：「たぬきならばポンタ」→ たぬきのタヌ子さん，
-     「x²＝9 ならば x＝3」→ x＝−3。正三角形（3辺が等しい）：AB＝AC，BA＝BC → ∠A＝∠B＝∠C＝60°，逆（3つの角が等しい → 正三角形）も正しい。 */
   const T50 = 3 * Math.tan(50 * R);
   const pA = [3, T50], pB = [0, 0], pC = [6, 0];
   const eA = [2.5, 2.5 * Math.sqrt(3)], eB = [0, 0], eC = [5, 0];

@@ -1,3 +1,7 @@
+/* 中2 5章 三角形と四角形　第8時（探）「平行四辺形には、どんな性質があるだろう」。自作。
+   平行四辺形 ABCD：B(0,0)，C(6,0)，A＝4(cos70°, sin70°)，D＝A＋(6,0)（AB＝4，BC＝6，∠B＝70°，∠A＝110°）。対角線 AC，BD の交点 O。
+   表（はかった値）：①AB4・BC6・∠B70° ②AB3・BC5・∠B55° ③AB2・BC7・∠B80°。AO＝CO，BO＝DO は余弦定理で計算（小数第1位）。
+   性質 ①対辺は等しい ②対角は等しい（△ABC≡△CDA）。③対角線は中点で交わる（次の時間に証明）。 */
 (function () {
   const { T, B, Q, FIG, tbl } = KL;
   /* ---- 図の部品（座標は数学の座標・y が上）。1目もり＝88px ---- */
@@ -41,7 +45,8 @@
     .replace(/[①-⑤]+/g, m => m.length === 1 ? 'まる' + ['いち', 'に', 'さん', 'よん', 'ご']['①②③④⑤'.indexOf(m)] + '、' : [...m].map(c => ['いち', 'に', 'さん', 'よん', 'ご']['①②③④⑤'.indexOf(c)]).join('、') + '、')
     .replace(/△/g, 'さんかく ').replace(/∠/g, 'かく ').replace(/≡/g, ' 合同 ').replace(/∥/g, ' へいこう ').replace(/⊥/g, ' 垂直 ')
     .replace(/°/g, '度').replace(/＝/g, ' イコール ').replace(/≠/g, ' イコールではない ')
-    .replace(/(?<=[0-9°A-Za-z）)])−/g, 'ひく').replace(/−/g, 'マイナス').replace(/÷/g, 'わる').replace(/×/g, 'かける').replace(/＋/g, 'たす')
+    .replace(/(?<=[0-9°度A-Za-z）)])−/g, 'ひく').replace(/−/g, 'マイナス').replace(/÷/g, 'わる').replace(/×/g, 'かける').replace(/＋/g, 'たす')
+    .replace(/[(（]/g, 'かっこ、').replace(/[)）]/g, '、かっことじ、')
     .replace(/²/g, 'の2乗').replace(/(?<=[0-9])m(?![a-z])/g, 'メートル')
     .replace(/[A-Z]+/g, m => [...m].map(c => KA[c] || c).join(''))
     .replace(/(?<![A-Za-z])[a-z](?![A-Za-z])/g, m => KS[m] || m)
@@ -49,10 +54,6 @@
   const wrap = f => (s, o) => { const r = rd(s); return f(s, r === plainS(s) ? o : Object.assign({ say: r }, o)); };
   const t = wrap(T), b = wrap(B);
   const sad = { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } };      // ポンタのまちがいを、先生がやさしく直す
-  /* 中2 5章 三角形と四角形　第8時（探）「平行四辺形には、どんな性質があるだろう」。自作。
-     平行四辺形 ABCD：B(0,0)，C(6,0)，A＝4(cos70°, sin70°)，D＝A＋(6,0)（AB＝4，BC＝6，∠B＝70°，∠A＝110°）。対角線 AC，BD の交点 O。
-     表（はかった値）：①AB4・BC6・∠B70° ②AB3・BC5・∠B55° ③AB2・BC7・∠B80°。AO＝CO，BO＝DO は余弦定理で計算（小数第1位）。
-     性質 ①対辺は等しい ②対角は等しい（△ABC≡△CDA）。③対角線は中点で交わる（次の時間に証明）。 */
   const pB = [0, 0], pC = [6, 0], pA = [4 * Math.cos(70 * R), 4 * Math.sin(70 * R)], pD = [pA[0] + 6, pA[1]], pO = [(pA[0] + pC[0]) / 2, (pA[1] + pC[1]) / 2];
   const f1 = FG('g1', -1.1, -0.9, 8.5, 4.8), f3 = FG('g3', -1.1, -0.9, 8.5, 4.8), f4 = FG('g4', -1.1, -0.9, 8.5, 4.8);
   const names = [dn(pA, 'A', [-0.7, 0.7]), dn(pB, 'B', [-0.7, -0.7]), dn(pC, 'C', [0.7, -0.7]), dn(pD, 'D', [0.7, 0.7])];

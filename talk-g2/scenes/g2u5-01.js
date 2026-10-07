@@ -1,3 +1,6 @@
+/* 中2 5章 三角形と四角形　第1時（探）「二等辺三角形の底角が等しいことを証明しよう」。自作。
+   △ABC：B(0,0)，C(6,0)，A(3,4.2)（AB＝AC）。頂角の二等分線 AD（D(3,0)）で △ABD と △ACD に分け、
+   AB＝AC，∠BAD＝∠CAD，AD 共通 → 2組の辺とその間の角で合同 → ∠B＝∠C。 */
 (function () {
   const { T, B, Q, FIG, tbl } = KL;
   /* ---- 図の部品（座標は数学の座標・y が上）。1目もり＝88px ---- */
@@ -25,30 +28,31 @@
     }
     return out;
   };
-  // 角の印：頂点 v で、v→p と v→q のあいだの円弧を n 本
-  const ang = (v, p, q, r, n, c) => {
-    const a1 = Math.atan2(p[1] - v[1], p[0] - v[0]) / R, a2 = Math.atan2(q[1] - v[1], q[0] - v[0]) / R;
-    const d = ((a2 - a1 + 540) % 360) - 180, s0 = (((d > 0 ? a1 : a1 + d) % 360) + 360) % 360;
-    return Array.from({ length: n }, (_, i) => ({ k: 'ell', o: v, rx: r + i * 7 / U, ry: r + i * 7 / U, a1: s0, a2: s0 + Math.abs(d), c, wd: 3 }));
+  // 角の印：頂点 v で、v→p と v→q のあいだの円弧を n 本（gap：両はしを、その度だけ短くする）
+  const ang = (v, p, q, r, n, c, gap) => {
+    const a1 = Math.atan2(p[1] - v[1], p[0] - v[0]) / R, a2 = Math.atan2(q[1] - v[1], q[0] - v[0]) / R, g = gap || 0;
+    const d = ((a2 - a1 + 540) % 360) - 180, s0 = (((d > 0 ? a1 : a1 + d) % 360) + 360) % 360 + g;
+    return Array.from({ length: n }, (_, i) => ({ k: 'ell', o: v, rx: r + i * 7 / U, ry: r + i * 7 / U, a1: s0, a2: s0 + Math.abs(d) - 2 * g, c, wd: 3 }));
   };
   // 直角の印：頂点 v、v→p と v→q が直角
   const rt = (v, p, q, c) => { const u = x => { const l = Math.hypot(x[0] - v[0], x[1] - v[1]); return [(x[0] - v[0]) / l, (x[1] - v[1]) / l]; }; return { k: 'right', at: v, u: u(p), v: u(q), s: 15, c: c || 'w' }; };
   /* ---- 読み上げ（say）：記号と英字を、ひらがな・カタカナの読みにする ---- */
-  const KA = { A: 'エー', B: 'ビー', C: 'シー', D: 'ディー', E: 'イー', F: 'エフ', G: 'ジー', H: 'エイチ', M: 'エム', N: 'エヌ', O: 'オー', P: 'ピー', Q: 'キュー' };
+  const KA = { A: 'エー', B: 'ビー', C: 'シー', D: 'ディー', E: 'イー', F: 'エフ', G: 'ジー', H: 'エイチ', I: 'アイ', J: 'ジェー', K: 'ケー', L: 'エル', M: 'エム', N: 'エヌ', O: 'オー', P: 'ピー', Q: 'キュー', R: 'アール', S: 'エス', T: 'ティー', U: 'ユー', V: 'ブイ', W: 'ダブリュー', X: 'エックス', Y: 'ワイ', Z: 'ゼット' };
   const plainS = s => s.replace(/\{\{|\}\}|\*\*/g, '');
+  const KS = { a: 'エー', b: 'ビー', c: 'シー', x: 'エックス', y: 'ワイ' };
   const rd = s => plainS(s)
-    .replace(/[①-⑤]+/g, m => m.length === 1 ? 'まる' + ['いち', 'に', 'さん', 'よん', 'ご']['①②③④⑤'.indexOf(m)] : [...m].map(c => ['いち', 'に', 'さん', 'よん', 'ご']['①②③④⑤'.indexOf(c)]).join('、') + '、')
+    .replace(/[①-⑤]+/g, m => m.length === 1 ? 'まる' + ['いち', 'に', 'さん', 'よん', 'ご']['①②③④⑤'.indexOf(m)] + '、' : [...m].map(c => ['いち', 'に', 'さん', 'よん', 'ご']['①②③④⑤'.indexOf(c)]).join('、') + '、')
     .replace(/△/g, 'さんかく ').replace(/∠/g, 'かく ').replace(/≡/g, ' 合同 ').replace(/∥/g, ' へいこう ').replace(/⊥/g, ' 垂直 ')
-    .replace(/°/g, '度').replace(/＝/g, ' イコール ').replace(/≠/g, ' イコールではない ').replace(/−/g, 'ひく').replace(/÷/g, 'わる').replace(/×/g, 'かける').replace(/＋/g, 'たす')
-    .replace(/(?<=[0-9])m(?![a-z])/g, 'メートル')
-    .replace(/[A-Z]+/g, m => [...m].map(c => KA[c]).join(''))
+    .replace(/°/g, '度').replace(/＝/g, ' イコール ').replace(/≠/g, ' イコールではない ')
+    .replace(/(?<=[0-9°度A-Za-z）)])−/g, 'ひく').replace(/−/g, 'マイナス').replace(/÷/g, 'わる').replace(/×/g, 'かける').replace(/＋/g, 'たす')
+    .replace(/[(（]/g, 'かっこ、').replace(/[)）]/g, '、かっことじ、')
+    .replace(/²/g, 'の2乗').replace(/(?<=[0-9])m(?![a-z])/g, 'メートル')
+    .replace(/[A-Z]+/g, m => [...m].map(c => KA[c] || c).join(''))
+    .replace(/(?<![A-Za-z])[a-z](?![A-Za-z])/g, m => KS[m] || m)
     .replace(/、、+/g, '、').replace(/ {2,}/g, ' ').trim();
   const wrap = f => (s, o) => { const r = rd(s); return f(s, r === plainS(s) ? o : Object.assign({ say: r }, o)); };
   const t = wrap(T), b = wrap(B);
   const sad = { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } };      // ポンタのまちがいを、先生がやさしく直す
-  /* 中2 5章 三角形と四角形　第1時（探）「二等辺三角形の底角が等しいことを証明しよう」。自作。
-     △ABC：B(0,0)，C(6,0)，A(3,4.2)（AB＝AC）。頂角の二等分線 AD（D(3,0)）で △ABD と △ACD に分け、
-     AB＝AC，∠BAD＝∠CAD，AD 共通 → 2組の辺とその間の角で合同 → ∠B＝∠C。 */
   const pA = [3, 4.2], pB = [0, 0], pC = [6, 0], pD = [3, 0];
   const f1 = FG('g1', -1.1, -1.0, 7.1, 5.3), f2 = FG('g2', -1.1, -1.0, 7.1, 5.3), f3 = FG('g3', -1.1, -1.0, 7.1, 5.3), f4 = FG('g4', -1.1, -1.0, 7.1, 5.3);
   const names = [dn(pA, 'A', [0, 1]), dn(pB, 'B', [-0.7, -0.7]), dn(pC, 'C', [0.7, -0.7])];
