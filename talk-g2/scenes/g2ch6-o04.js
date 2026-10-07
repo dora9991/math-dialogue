@@ -4,8 +4,8 @@
    樹形図は seg・lbl で描く（level 1→2→3 と3ステップで描き足す）。表・裏は硬貨の意味なので、読みを say: で「おもて」「うら」にする。 */
 (function () {
   const { Q, FIG, lbl, seg } = KL;
-  const ym = s => String(s).replace(/\[\[(\d+)\/(\d+)\]\]/g, '$2分の$1').replace(/\{\{|\}\}|\*\*/g, '').replace(/＝/g, 'イコール').replace(/＋/g, 'たす').replace(/−/g, 'ひく').replace(/×/g, 'かける').replace(/÷/g, 'わる').replace(/表/g, 'おもて').replace(/裏/g, 'うら').replace(/確からしい/g, 'たしからしい').replace(/樹形図/g, 'じゅけいず').replace(/約分/g, 'やくぶん');
-  const ex = (s, o) => (/表|裏|確からしい|樹形図|約分/.test(s) ? Object.assign({ say: ym(s) }, o || {}) : o);
+  const ym = s => String(s).replace(/\[\[(\d+)\/(\d+)\]\]/g, '$2分の$1').replace(/\{\{|\}\}|\*\*/g, '').replace(/＝/g, 'イコール').replace(/＋/g, 'たす').replace(/−/g, 'ひく').replace(/×/g, 'かける').replace(/÷/g, 'わる').replace(/([表裏])([表裏])([表裏])/g, '$1・$2・$3').replace(/表/g, 'おもて').replace(/裏/g, 'うら').replace(/確からし/g, 'たしからし').replace(/樹形図/g, 'じゅけいず').replace(/約分/g, 'やくぶん');
+  const ex = (s, o) => (/表|裏|確からし|樹形図|約分/.test(s) ? Object.assign({ say: ym(s) }, o || {}) : o);
   const T = (s, o) => KL.T(s, ex(s, o));
   const B = (s, o) => KL.B(s, ex(s, o));
 

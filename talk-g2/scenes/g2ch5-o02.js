@@ -35,7 +35,7 @@
   const bis = [nm('D', D, [0, -1]), sg(A, D, 'w'), an(A, Bp, D, 1.0, 'p'), an(A, D, C, 1.0, 'p')];
   const marks = [tick(Bp, D, 2, 'g'), tick(D, C, 2, 'g'), rt(D, [1, 0], [0, 1]), rt(D, [-1, 0], [0, 1])];
   const tri2 = [pol([A, Bp, D], 'y', 'y'), pol([A, D, C], 'b', 'b'), nm('A', A, [0, 1]), nm('B', Bp, [-0.7, -0.7]), nm('C', C, [0.7, -0.7]), nm('D', D, [0, -1]),
-    tick(A, Bp, 1, 'y'), tick(A, C, 1, 'y'), an(A, Bp, D, 1.0, 'p'), an(A, D, C, 1.0, 'p')];
+    tick(A, Bp, 1, 'y'), tick(A, C, 1, 'y'), an(A, Bp, D, 1.0, 'p'), an(A, D, C, 1.0, 'p'), an(Bp, A, C, 0.9, 'b'), anLab(Bp, A, C, 1.6, '64°', 'b')];
   const adCom = [tick(A, D, 3, 'g')];
   const c26 = [anLab(A, Bp, D, 1.7, '26°', 'p'), anLab(A, D, C, 1.7, '26°', 'p')];
   // ---- 3ページ目の図 ----

@@ -4,23 +4,26 @@
    図の座標・角度は python で計算（geom01.py）。 */
 (function () {
   const { T, B, Q, FIG } = KL;
-  /* ---- 記号の読み（say）：∠・°・文字名を、かなで書きなおす ---- */
+  /* ---- 記号の読み（say）：∠・°・ℓ・∥・錯角・文字名を、かなで書きなおす。say は字幕から自動でつくる ---- */
   const KA = { a: 'エー', b: 'ビー', c: 'シー', d: 'ディー', e: 'イー', f: 'エフ', g: 'ジー', h: 'エイチ', x: 'エックス', y: 'ワイ', ℓ: 'エル', m: 'エム', n: 'エヌ' };
-  const KU = { A: 'エー', B: 'ビー', C: 'シー', D: 'ディー', E: 'イー', F: 'エフ', O: 'オー', P: 'ピー', Q: 'キュー' };
+  const KU = { A: 'エー', B: 'ビー', C: 'シー', D: 'ディー', E: 'イー', F: 'エフ', G: 'ジー', H: 'エイチ', O: 'オー', P: 'ピー', Q: 'キュー' };
   const strip = s => String(s).replace(/\{\{|\}\}|\*\*/g, '');
   const sy = s => strip(s)
     .replace(/∠([a-hxy])(?![a-z])/g, (m, c) => 'かく ' + KA[c])
     .replace(/∠([A-Z]{3})/g, (m, c) => 'かく ' + [...c].map(u => KU[u]).join(''))
     .replace(/ℓ/g, 'エル').replace(/∥/g, ' へいこう ')
     .replace(/(直線|へいこう )([mn])(?![a-zA-Z])/g, (m, p, c) => p + KA[c])
+    .replace(/錯角/g, 'さっかく')
     .replace(/°−/g, '度 ひく ').replace(/°＋/g, '度 たす ').replace(/°＝/g, '度 イコール ').replace(/°/g, '度');
   const mk = f => (s, o) => { const y = sy(s); return f(s, y === strip(s) ? o : Object.assign({ say: y }, o)); };
   const TS = mk(T), BS = mk(B);
-  /* ---- 図の部品 ---- */
+  /* ---- 図の部品（座標は数学の座標。点・角の値は python で計算して、下に貼ってある） ---- */
   const S = (a, b, c, o) => Object.assign({ k: 'seg', a, b, c: c || 'w', wd: 3.4 }, o || {});
   const A = (o, r, a1, a2, c) => ({ k: 'ell', o, rx: r, ry: r, a1, a2, c, wd: 3.4 });
-  const LB = (at, text, c, size) => ({ k: 'label', at, text, c: c || 'w', size: size || 28, anchor: 'middle' });
+  const LB = (at, text, c, size, anchor) => ({ k: 'label', at, text, c: c || 'w', size: size || 28, anchor: anchor || 'middle' });
   const PT = (at, name, dir, c) => ({ k: 'pt', at, name, dir, off: 26, c: c || 'y', r: 5.5 });
+  const PG = (pts, c, fill) => Object.assign({ k: 'poly', pts, close: true, c: c || 'w', wd: 3.4 }, fill ? { fill, alpha: 0.14 } : {});
+  const CH = (pts, c) => ({ k: 'poly', pts, c: c || 'w', wd: 3 });
   const tp = (...i) => i.flat(3).map(x => Object.assign({}, x, { temp: true }));
   const f1 = FIG('g1', [0, 0, 11.8, 6.0], 1180, 600, [], { col: 1 });
   const f2 = FIG('g2', [0, 0, 11.8, 6.0], 1180, 600, [], { col: 1 });

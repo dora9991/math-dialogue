@@ -5,8 +5,8 @@
 (function () {
   const { Q, FIG, lbl, seg } = KL;
   // 硬貨の「表」「裏」と、読みがあやしい語を含む行は、読みを直接書く
-  const ym = s => String(s).replace(/（(表|裏)，(表|裏)）/g, '$1、$2の組').replace(/\[\[(\d+)\/(\d+)\]\]/g, '$2分の$1').replace(/\{\{|\}\}|\*\*/g, '').replace(/＝/g, 'イコール').replace(/＋/g, 'たす').replace(/−/g, 'ひく').replace(/×/g, 'かける').replace(/÷/g, 'わる').replace(/[（）]/g, '').replace(/，/g, '、').replace(/表/g, 'おもて').replace(/裏/g, 'うら').replace(/確からしい/g, 'たしからしい').replace(/樹形図/g, 'じゅけいず').replace(/約分/g, 'やくぶん');
-  const ex = (s, o) => (/表|裏|確からしい|樹形図|約分/.test(s) ? Object.assign({ say: ym(s) }, o || {}) : o);
+  const ym = s => String(s).replace(/（(表|裏)，(表|裏)）/g, '$1、$2の組').replace(/\[\[(\d+)\/(\d+)\]\]/g, '$2分の$1').replace(/\{\{|\}\}|\*\*/g, '').replace(/＝/g, 'イコール').replace(/＋/g, 'たす').replace(/−/g, 'ひく').replace(/×/g, 'かける').replace(/÷/g, 'わる').replace(/[（）]/g, '').replace(/，/g, '、').replace(/表/g, 'おもて').replace(/裏/g, 'うら').replace(/確からし/g, 'たしからし').replace(/樹形図/g, 'じゅけいず').replace(/約分/g, 'やくぶん');
+  const ex = (s, o) => (/表|裏|確からし|樹形図|約分/.test(s) ? Object.assign({ say: ym(s) }, o || {}) : o);
   const T = (s, o) => KL.T(s, ex(s, o));
   const B = (s, o) => KL.B(s, ex(s, o));
 

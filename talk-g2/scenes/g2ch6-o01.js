@@ -5,8 +5,8 @@
 (function () {
   const { Q, FIG, lbl, seg, tbl } = KL;
   // 「同様に確からしい」を含む行だけ、読みを直接書く
-  const ym = s => String(s).replace(/\[\[(\d+)\/(\d+)\]\]/g, '$2分の$1').replace(/\{\{|\}\}|\*\*/g, '').replace(/＝/g, 'イコール').replace(/＋/g, 'たす').replace(/−/g, 'ひく').replace(/×/g, 'かける').replace(/÷/g, 'わる').replace(/確からしい/g, 'たしからしい');
-  const ex = (s, o) => (/確からしい/.test(s) ? Object.assign({ say: ym(s) }, o || {}) : o);
+  const ym = s => String(s).replace(/\[\[(\d+)\/(\d+)\]\]/g, '$2分の$1').replace(/\{\{|\}\}|\*\*/g, '').replace(/＝/g, 'イコール').replace(/＋/g, 'たす').replace(/−/g, 'ひく').replace(/×/g, 'かける').replace(/÷/g, 'わる').replace(/確からし/g, 'たしからし');
+  const ex = (s, o) => (/確からし/.test(s) ? Object.assign({ say: ym(s) }, o || {}) : o);
   const T = (s, o) => KL.T(s, ex(s, o));
   const B = (s, o) => KL.B(s, ex(s, o));
   const t1 = [['味', 'いちご', 'メロン', 'レモン', '合計'], ['個数（個）', '5', '4', '3', '{{？}}']];
@@ -20,7 +20,7 @@
     lbl(X(0), 0.6, '0', { c: 'w', size: 30, d: 0.2 }), lbl(X(1), 0.6, '1', { c: 'w', size: 30, d: 0.2 }),
     lbl(X(0), 2.1, '起こらない', { c: 'd', size: 26, d: 0.2 }), lbl(X(1), 2.1, '必ず起こる', { c: 'd', size: 26, d: 0.2 })];
   const marks = [{ k: 'pts', list: [[X(5 / 12), 1.2], [X(7 / 12), 1.2]], c: 'y', r: 7, d: 0.4 }, lbl(X(5 / 12), 0.6, '5/12', { c: 'y', size: 26, d: 0.2 }), lbl(X(7 / 12), 0.6, '7/12', { c: 'y', size: 26, d: 0.2 }),
-    lbl(X(5 / 12), 1.75, 'いちご', { c: 'y', size: 24, d: 0.2 }), lbl(X(7 / 12), 2.4, 'メロンかレモン', { c: 'y', size: 24, d: 0.2 })];
+    lbl(X(5 / 12), 1.75, 'いちご', { c: 'y', size: 24, d: 0.2 }), lbl(X(7 / 12), 1.75, 'メロンかレモン', { c: 'y', size: 24, d: 0.2 })];
   const over = [seg([X(1), 1.2], [X(13 / 12), 1.2], { c: 'p', wd: 3.6, dash: true, d: 0.3 }), { k: 'pts', list: [[X(13 / 12), 1.2]], c: 'p', r: 7, d: 0.3 }, lbl(X(13 / 12), 0.6, '13/12', { c: 'p', size: 26, d: 0.2 }), lbl(X(13 / 12), 1.75, '1をこえる', { c: 'p', size: 24, d: 0.2 })];
 
   KL.lesson({ id: 'g2ch6-o01', unit: '中2　確率', kick: '2年6章　応用1', title: '確率の求め方と範囲', card: '確率の求め方と範囲', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [

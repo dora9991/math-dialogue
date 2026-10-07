@@ -4,8 +4,8 @@
 (function () {
   const { Q, tbl } = KL;
   // 読みがあやしい語（同様に確からしい・約分）を含む行だけ、読みを直接書く
-  const ym = s => String(s).replace(/\[\[(\d+)\/(\d+)\]\]/g, '$2分の$1').replace(/\{\{|\}\}|\*\*/g, '').replace(/＝/g, 'イコール').replace(/＋/g, 'たす').replace(/−/g, 'ひく').replace(/×/g, 'かける').replace(/÷/g, 'わる').replace(/確からしい/g, 'たしからしい').replace(/約分/g, 'やくぶん');
-  const ex = (s, o) => (/確からしい|約分/.test(s) ? Object.assign({ say: ym(s) }, o || {}) : o);
+  const ym = s => String(s).replace(/\[\[(\d+)\/(\d+)\]\]/g, '$2分の$1').replace(/\{\{|\}\}|\*\*/g, '').replace(/＝/g, 'イコール').replace(/＋/g, 'たす').replace(/−/g, 'ひく').replace(/×/g, 'かける').replace(/÷/g, 'わる').replace(/確からし/g, 'たしからし').replace(/約分/g, 'やくぶん');
+  const ex = (s, o) => (/確からし|約分/.test(s) ? Object.assign({ say: ym(s) }, o || {}) : o);
   const T = (s, o) => KL.T(s, ex(s, o));
   const B = (s, o) => KL.B(s, ex(s, o));
   const head = ['目', '1', '2', '3', '4', '5', '6'];
