@@ -13,6 +13,7 @@
     .replace(/∠([a-hxy])(?![a-z])/g, (m, c) => 'かく ' + KA[c])
     .replace(/∠([A-Z]{3})/g, (m, c) => 'かく ' + [...c].map(u => KU[u]).join(''))
     .replace(/∠([A-Z])(?![A-Za-z])/g, (m, c) => 'かく ' + KU[c])
+    .replace(/[A-Z]{2,}/g, m => [...m].map(u => KU[u]).join(''))
     .replace(/ℓ/g, 'エル').replace(/∥/g, ' へいこう ')
     .replace(/(直線|へいこう )([mn])(?![a-zA-Z])/g, (m, p, c) => p + KA[c])
     .replace(/錯角/g, 'さっかく')

@@ -7,7 +7,7 @@
   // 箱を描く部品（自作。poly の閉じた四角形）
   const rect = (x0, y0, x1, y1, o) => Object.assign({ k: 'poly', pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], close: true }, o);
   // 読み上げ用：「四分位」を かな にし、式の記号を ことばに直す（say に使う）
-  const rd = s => String(s).replace(/\{\{|\}\}|\*\*/g, '').replace(/四分位/g, 'しぶんい').replace(/＝/g, 'イコール').replace(/＋/g, 'たす').replace(/−/g, 'ひく').replace(/÷/g, 'わる').replace(/×/g, 'かける');
+  const rd = s => String(s).replace(/\{\{|\}\}|\*\*/g, '').replace(/四分位数/g, 'しぶんいすう').replace(/四分位範囲/g, 'しぶんいはんい').replace(/四分位/g, 'しぶんい').replace(/＝/g, 'イコール').replace(/＋/g, 'たす').replace(/−/g, 'ひく').replace(/÷/g, 'わる').replace(/×/g, 'かける');
   const TT = (s, o) => T(s, Object.assign({ say: rd(s) }, o || {}));
   const BB = (s, o) => B(s, Object.assign({ say: rd(s) }, o || {}));
 
@@ -82,9 +82,9 @@
     TT('つぎは、四分位範囲です。真ん中あたりの半分のデータが、どれだけ広がっているかを、表します。', { clear: true, cols: [0.34, 0.66], part: '四分位範囲', ft: 'normal',
       add: [{ col: 0, type: 'box', color: 'p', size: 'xs', label: '四分位範囲', text: '第3四分位数\n−第1四分位数', t: 4.5 }] }),
     Q('q5', TT('最後の問題です。このデータの、四分位範囲は、いくつでしょう。', { ft: 'happy' }),
-      [{ t: '19' }, { t: '18' }, { t: '9', ok: true }, { t: '7.5' }],
-      { 0: [B('14と5を、足して、19！', { fb: 'happy', up: true }), T('四分位範囲は、差です。足さずに、ひいて、14−5＝9です。', { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } })],
-        1: [T('18は、最大値と最小値の差で、範囲です。四分位範囲は、14−5＝9です。', { ft: 'normal' })],
+      [{ t: '7.5' }, { t: '9', ok: true }, { t: '18' }, { t: '19' }],
+      { 3: [B('14と5を、足して、19！', { fb: 'happy', up: true }), T('四分位範囲は、差です。足さずに、ひいて、14−5＝9です。', { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } })],
+        2: [T('18は、最大値と最小値の差で、範囲です。四分位範囲は、14−5＝9です。', { ft: 'normal' })],
         ok: [TT('正解！ 14−5＝9。四分位範囲は、9です。', { ft: 'happy' }), B('真ん中の半分が、9の広がりなんだね！', { fb: 'star', up: true })],
         wrong: [T('7.5は、中央値を、前半と後半に入れた値です。入れずに、14−5＝9です。', { ft: 'normal' })] }),
     TT('個数が奇数のときは、中央値を、前半にも後半にも、入れません。四分位範囲は、第3四分位数から、第1四分位数を、ひいた差です。', { ft: 'normal', point: false,

@@ -7,7 +7,7 @@
   // 箱を描く部品（自作。poly の閉じた四角形）
   const rect = (x0, y0, x1, y1, o) => Object.assign({ k: 'poly', pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], close: true }, o);
   // 読み上げ用：「四分位」を かな にし、式の記号を ことばに直す（say に使う）
-  const rd = s => String(s).replace(/\{\{|\}\}|\*\*/g, '').replace(/四分位/g, 'しぶんい').replace(/＝/g, 'イコール').replace(/＋/g, 'たす').replace(/−/g, 'ひく').replace(/÷/g, 'わる').replace(/×/g, 'かける');
+  const rd = s => String(s).replace(/\{\{|\}\}|\*\*/g, '').replace(/四分位数/g, 'しぶんいすう').replace(/四分位範囲/g, 'しぶんいはんい').replace(/四分位/g, 'しぶんい').replace(/＝/g, 'イコール').replace(/＋/g, 'たす').replace(/−/g, 'ひく').replace(/÷/g, 'わる').replace(/×/g, 'かける');
   const TT = (s, o) => T(s, Object.assign({ say: rd(s) }, o || {}));
   const BB = (s, o) => B(s, Object.assign({ say: rd(s) }, o || {}));
 

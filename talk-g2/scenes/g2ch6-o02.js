@@ -20,7 +20,7 @@
 
     T('問題です。ポンタが、すごろくで、さいころを1回ふります。出る目は、1から6の、どれかです。', { part: '問題を読もう', ft: 'normal',
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '問題', text: 'さいころを1回ふる\n素数の目\n6の約数の目\nが出る確率は？', t: 5.0 }, tbl(t1, { style: 'font-size:38px; align-self:center; margin-top:30px', t: 1.0 })] }),
-    T('どの目も、出る確かさが同じです。同様に確からしいので、目の出方は、全部で6通りです。', { ft: 'normal', point: false }),
+    T('目の出方は、全部で6通りです。どの目も、出る確かさが同じ、つまり、同様に確からしいと、考えます。', { ft: 'normal', point: false }),
     T('まず、素数の目です。素数は、約数が、1と自分自身の、2つだけの数です。', { ft: 'normal', point: false,
       add: [{ col: 0, type: 'box', color: 'p', size: 'xs', label: '素数', text: '約数が\n1と自分自身の\n2つだけの数', t: 4.5 }] }),
 
