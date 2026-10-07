@@ -40,7 +40,7 @@
   KL.lesson({ id: 'g2ch5-n03', unit: '中2　三角形と四角形', kick: '2年5章　入試レベル3', title: '【入試】面積を変えずに形を変える', card: '【入試】面積を変えずに形を変える', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [
     T('みなさん、こんにちは。今日は、入試レベルの問題です。面積を変えずに、三角形の形を変えて、面積を、2等分します。', { title: true, point: false, ft: 'happy' }),
     B('三角形の畑を、2人でわけるんだね！ ぼくは、日あたりのいい方を、もらうよ！', { title: true, fb: 'proud', up: true }),
-    T('ずるは、いけません。面積が、ちょうど半分に、なるように、線をひきます。', { title: true, point: false, ft: 'sigh', fx: { t: 'sweat' } }),
+    T('ひとりじめは、いけません。面積が、ちょうど半分に、なるように、線をひきます。', { title: true, point: false, ft: 'sigh', fx: { t: 'sweat' } }),
 
     T('問題です。三角形の畑 ABC が、あります。BC＝12m、高さは6mです。辺BC上に、BP＝2m の点Pが、あります。', { say: '問題です。三角形の畑 エービーシー が、あります。ビーシー イコール 12エム、高さは6エムです。辺ビーシー上に、ビーピー イコール 2エム の点ピーが、あります。', part: '問題を読もう', ft: 'normal',
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '問題', text: 'BC＝12m　高さ6m\nBP＝2m\nPを通る線で2等分', t: 4.5 }, Object.assign(f1, { prims: [] })], draw: [G('g1', tri)] }),
