@@ -202,8 +202,10 @@ export const UNITS = [
       3: [
         t("HI-tenkai-3a", (r) => {
           const s = r(-3, 5);
-          const a = r(-4, 4), d = s - a, b = r(-4, 4), c = s - b;
-          if (new Set([a, b, c, d]).size < 4 || [a, b, c, d].includes(0)) return { skip: true };
+          const prs = [];
+          for (let u = -5; u <= 5; u++) if (u !== 0 && s - u !== 0 && u < s - u) prs.push([u, s - u]);
+          if (prs.length < 2) return { skip: true };
+          const [[a, d], [b, c]] = sample(r, prs, 2);
           const P = [[1, a], [1, b], [1, c], [1, d]].reduce((acc, f) => pmul(acc, f), [1]);
           const k = r(1, 2);
           const v = P[4 - k];
@@ -641,8 +643,9 @@ export const UNITS = [
           };
         }),
         t("HI-jissu-4b", (r) => {
-          const b = r(1, 6), a = r(b + 1, 11);
-          if ((a + b) % 2 || sqrtSimp(a * b)[0] !== 1) return { skip: true };
+          const prs = [];
+          for (let b0 = 1; b0 <= 6; b0++) for (let a0 = b0 + 1; a0 <= 11; a0++) if ((a0 + b0) % 2 === 0 && sqrtSimp(a0 * b0)[0] === 1) prs.push([a0, b0]);
+          const [a, b] = pick(r, prs);
           const m = (a + b) / 2, n = a * b, sg = r(0, 1) ? 1 : -1;
           const op = sg > 0 ? "+" : "-";
           const [s1, t1] = sqrtSimp(2 * a), [s2, t2] = sqrtSimp(2 * b);
@@ -761,7 +764,8 @@ export const UNITS = [
         }),
         t("HI-futoshiki-2b", (r) => {
           const mk = (wantLower) => {
-            const A = pick(r, [-5, -4, -3, -2, 2, 3, 4, 5]), c1 = r(-3, 3), a1 = A + c1, b1 = r(-9, 9), K = r(-20, 20), d1 = b1 + K;
+            const A = pick(r, [-5, -4, -3, -2, 2, 3, 4, 5]), c1 = r(-3, 3), a1 = A + c1, b1 = r(-9, 9);
+            const K = A * (wantLower ? r(-6, 1) : r(2, 8)) + r(-Math.abs(A) + 1, Math.abs(A) - 1), d1 = b1 + K;
             const dir = wantLower === A > 0 ? pick(r, [">", ">="]) : pick(r, ["<", "<="]);
             const test = (x) => ({ "<": A * x < K, ">": A * x > K, "<=": A * x <= K, ">=": A * x >= K })[dir];
             return { tx: `${poly([a1, b1])}${OPS[dir]} ${poly([c1, d1])}`, test, A, K, dir };
@@ -858,6 +862,419 @@ export const UNITS = [
               `右側：$${k - 1 === 1 ? "" : k - 1}x<${p + q}$ より $x<${hi}$`,
               `左側：$${k + 1}x>${p - q}$ より $x>${lo}$`,
               `$${lo}<x<${hi}$`,
+            ],
+          };
+        }),
+      ],
+    },
+  },
+  // ─────────────────────────────────────────────────────
+  {
+    ...H,
+    id: "HI-shugo", area: "num", name: "集合と命題", desc: "共通部分・和集合・必要条件と十分条件・対偶",
+    prereqs: ["HI-futoshiki"],
+    points: [
+      "$A\\cap B$ は共通部分、$A\\cup B$ は和集合、$\\overline{A}$ は補集合。ド・モルガン $\\overline{A\\cup B}=\\overline{A}\\cap\\overline{B}$",
+      "$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)$（重なりを2回数えないように引く）",
+      "$p\\Rightarrow q$ が真のとき、$p$ は $q$ であるための十分条件、$q$ は $p$ であるための必要条件。",
+      "命題 $p\\Rightarrow q$ と対偶 $\\overline{q}\\Rightarrow\\overline{p}$ の真偽は一致する。条件を集合で表すと「小さい方が十分条件」。",
+    ],
+    levels: {
+      1: [
+        t("HI-shugo-1a", (r) => {
+          const U = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+          const A = sample(r, U, r(3, 6)).sort((x, y) => x - y), B = sample(r, U, r(3, 6)).sort((x, y) => x - y);
+          const kinds = [
+            ["A\\cap B", U.filter((x) => A.includes(x) && B.includes(x))],
+            ["A\\cup B", U.filter((x) => A.includes(x) || B.includes(x))],
+            ["\\overline{A}\\cap B", U.filter((x) => !A.includes(x) && B.includes(x))],
+            ["\\overline{A\\cup B}", U.filter((x) => !A.includes(x) && !B.includes(x))],
+          ];
+          const [name, S] = pick(r, kinds);
+          return {
+            q: `全体集合 ${tex("U=\\{1,2,3,\\ldots,10\\}")} の部分集合 ${tex(`A=\\{${A.join(",")}\\}`)}、${tex(`B=\\{${B.join(",")}\\}`)} について、${tex(`n(${name})`)} は？`,
+            ans: S.length,
+            unit: "個",
+            hint: "記号の意味（$\\cap$ は「かつ」、$\\cup$ は「または」、上の線は「でない」）を確かめて、要素を書き出す。",
+            steps: [
+              `$${name}=${S.length ? `\\{${S.join(",")}\\}` : "\\varnothing"}$`,
+              `要素の個数は ${S.length} 個`,
+            ],
+          };
+        }),
+        t("HI-shugo-1b", (r) => {
+          const a = r(1, 6), b = r(1, 6);
+          const kinds = [
+            [`x=${a}`, `x^{2}=${a * a}`, true, false, `$x=${a}$ なら $x^{2}=${a * a}$`, `反例 $x=${-a}$`],
+            [`x>${a + b}`, `x>${a}`, true, false, `$x>${a + b}$ なら $x>${a}$`, `反例 $x=${b > 1 ? a + 1 : `${a}.5`}$`],
+            ["xy=0", "x=0", false, true, "反例 $x=1,\\ y=0$", "$x=0$ なら $xy=0$"],
+            [`x>${a}`, `x^{2}>${a * a}`, true, false, `$x>${a}>0$ なら $x^{2}>${a * a}$`, `反例 $x=${-a - 1}$`],
+            [`x^{2}<${a * a}`, `x<${a}`, true, false, `$-${a}<x<${a}$ なので $x<${a}$`, `反例 $x=${-a - 1}$`],
+            [`${2}x-${a}=${b}`, `x=${fracTex(a + b, 2)}`, true, true, "移項して2で割ればよい", "代入すれば成り立つ"],
+            [`x>${a}`, `|x|<${a + b}`, false, false, `反例 $x=${a + b + 1}$`, `反例 $x=${-1}$`],
+          ];
+          const [P, Q, pq, qp, w1, w2] = pick(r, kinds);
+          const sw = r(0, 1) === 1;
+          const [p, q, PQ, QP, W1, W2] = sw ? [Q, P, qp, pq, w2, w1] : [P, Q, pq, qp, w1, w2];
+          const ok = nsOf(PQ, QP);
+          return {
+            q: `${tex("x,\\ y")} は実数とする。条件 ${tex(p)} は、条件 ${tex(q)} であるための何条件？`,
+            ans: ok,
+            choices: choices4(r, ok, NS.filter((s) => s !== ok)),
+            hint: "「前 ⇒ 後」と「後 ⇒ 前」の真偽をそれぞれ調べる。偽なら反例を1つ見つける。",
+            steps: [
+              `$${p}\\Rightarrow ${q}$ は${PQ ? "真" : "偽"}（${W1}）`,
+              `$${q}\\Rightarrow ${p}$ は${QP ? "真" : "偽"}（${W2}）`,
+              `よって ${ok}`,
+            ],
+          };
+        }),
+        t("HI-shugo-1c", (r) => {
+          const a = r(1, 6), b = r(1, 5);
+          const props = pick(r, [
+            [[`x=${a}`, `x\\neq ${a}`], [`x^{2}=${a * a}`, `x^{2}\\neq ${a * a}`]],
+            [[`x>${a + b}`, `x\\leqq ${a + b}`], [`x>${a}`, `x\\leqq ${a}`]],
+            [[`x<${a}`, `x\\geqq ${a}`], [`x<${a + b}`, `x\\geqq ${a + b}`]],
+          ]);
+          const [[P, nP], [Q, nQ]] = props;
+          const st = (A, B) => `$${A}$ ならば $${B}$`;
+          const all = { 逆: st(Q, P), 裏: st(nP, nQ), 対偶: st(nQ, nP), 元: st(P, Q) };
+          const ask = pick(r, ["逆", "裏", "対偶"]);
+          const ok = all[ask];
+          return {
+            q: `命題「${st(P, Q)}」の${ask}は？`,
+            ans: ok,
+            choices: choices4(r, ok, Object.entries(all).filter(([k]) => k !== ask).map(([, v]) => v)),
+            hint: "$p\\Rightarrow q$ の逆は $q\\Rightarrow p$、裏は $\\overline{p}\\Rightarrow\\overline{q}$、対偶は $\\overline{q}\\Rightarrow\\overline{p}$。",
+            steps: [
+              `$p$：$${P}$、$q$：$${Q}$ とする`,
+              `${ask}は ${{ 逆: "$q\\Rightarrow p$", 裏: "$\\overline{p}\\Rightarrow\\overline{q}$", 対偶: "$\\overline{q}\\Rightarrow\\overline{p}$" }[ask]}`,
+              `「${ok}」`,
+            ],
+          };
+        }),
+      ],
+      2: [
+        t("HI-shugo-2a", (r) => {
+          const c = r(-3, 4), d = r(2, 5), L1 = c - d, U1 = c + d;
+          const type = r(0, 3);
+          let L2, U2;
+          if (type === 0) { L2 = L1; U2 = U1; }
+          else if (type === 1) { L2 = L1 - r(0, 2); U2 = U1 + r(1, 2); }
+          else if (type === 2) { L2 = L1 + r(0, 1); U2 = U1 - r(1, 2); }
+          else { const s = pick(r, [-2, -1, 1, 2]); L2 = L1 + s; U2 = U1 + s; }
+          const pq = L2 <= L1 && U1 <= U2, qp = L1 <= L2 && U2 <= U1;
+          const ok = nsOf(pq, qp);
+          const pT = `|x${sh(-c)}|<${d}`, qT = `${L2}<x<${U2}`;
+          return {
+            q: `条件 ${tex("p")}：${tex(pT)} は、条件 ${tex("q")}：${tex(qT)} であるための何条件？`,
+            ans: ok,
+            choices: choices4(r, ok, NS.filter((s) => s !== ok)),
+            hint: "条件を満たす $x$ の範囲（集合）を数直線にかき、どちらがどちらに含まれるかを見る。",
+            steps: [
+              `$p$：$${L1}<x<${U1}$、$q$：$${L2}<x<${U2}$`,
+              `$p\\Rightarrow q$ は${pq ? "真" : "偽"}、$q\\Rightarrow p$ は${qp ? "真" : "偽"}`,
+              `よって ${ok}`,
+            ],
+          };
+        }),
+        t("HI-shugo-2b", (r) => {
+          const N = r(5, 20) * 10, [a, b] = sample(r, [2, 3, 4, 5, 6, 7, 8, 9], 2);
+          const L = (a * b) / gcd(a, b);
+          const na = Math.floor(N / a), nb = Math.floor(N / b), nab = Math.floor(N / L);
+          const kind = r(0, 2);
+          const v = [na + nb - nab, N - (na + nb - nab), na - nab][kind];
+          const what = [`${a} または ${b} で割り切れる数`, `${a} でも ${b} でも割り切れない数`, `${a} で割り切れるが ${b} では割り切れない数`][kind];
+          return {
+            q: `1 から ${N} までの整数のうち、${what}は何個？`,
+            ans: v,
+            unit: "個",
+            hint: "$a$ の倍数の集合を $A$、$b$ の倍数の集合を $B$ として、$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)$ を使う。",
+            steps: [
+              `$n(A)=${na}$、$n(B)=${nb}$、$A\\cap B$ は ${L} の倍数で $n(A\\cap B)=${nab}$`,
+              [`$n(A\\cup B)=${na}+${nb}-${nab}=${v}$`, `$${N}-n(A\\cup B)=${N}-${na + nb - nab}=${v}$`, `$n(A)-n(A\\cap B)=${na}-${nab}=${v}$`][kind],
+            ],
+          };
+        }),
+      ],
+      3: [
+        t("HI-shugo-3a", (r) => {
+          const N = r(10, 30) * 10, [a, b, c] = sample(r, [2, 3, 5, 7], 3).sort((x, y) => x - y);
+          const f = (k) => Math.floor(N / k);
+          const any = f(a) + f(b) + f(c) - f(a * b) - f(b * c) - f(c * a) + f(a * b * c);
+          const none = r(0, 1) === 1;
+          return {
+            q: `1 から ${N} までの整数のうち、${a}, ${b}, ${c} の${none ? "どれでも割り切れない" : "少なくとも1つで割り切れる"}数は何個？`,
+            ans: none ? N - any : any,
+            unit: "個",
+            hint: "$n(A\\cup B\\cup C)=n(A)+n(B)+n(C)-n(A\\cap B)-n(B\\cap C)-n(C\\cap A)+n(A\\cap B\\cap C)$",
+            steps: [
+              `${a}, ${b}, ${c} の倍数：${f(a)}, ${f(b)}, ${f(c)} 個。${a * b}, ${b * c}, ${c * a} の倍数：${f(a * b)}, ${f(b * c)}, ${f(c * a)} 個。${a * b * c} の倍数：${f(a * b * c)} 個`,
+              `$n(A\\cup B\\cup C)=${f(a) + f(b) + f(c)}-${f(a * b) + f(b * c) + f(c * a)}+${f(a * b * c)}=${any}$`,
+              none ? `どれでも割り切れない数は $${N}-${any}=${N - any}$` : `答えは ${any} 個`,
+            ],
+          };
+        }),
+        t("HI-shugo-3b", (r) => {
+          const L = -r(1, 6), U = r(1, 6);
+          if (-L === U) return { skip: true };
+          const suf = r(0, 1) === 1;
+          const v = suf ? Math.max(-L, U) : Math.min(-L, U);
+          return {
+            q: `条件 ${tex("p")}：${tex(`${L}\\leqq x\\leqq ${U}`)}、条件 ${tex("q")}：${tex("|x|\\leqq a")}（${tex("a")} は正の定数）について、${tex("p")} が ${tex("q")} であるための${suf ? "十分条件となる a の最小値" : "必要条件となる a の最大値"}は？`.replace(" a の", " $a$ の"),
+            ans: v,
+            hint: "条件を集合で表す。「$p$ が十分条件」は $P\\subset Q$、「$p$ が必要条件」は $Q\\subset P$。",
+            steps: [
+              `$Q$：$-a\\leqq x\\leqq a$`,
+              suf ? `$P\\subset Q$ となるには $-a\\leqq ${L}$ かつ $${U}\\leqq a$` : `$Q\\subset P$ となるには $${L}\\leqq -a$ かつ $a\\leqq ${U}$`,
+              suf ? `$a\\geqq ${Math.max(-L, U)}$ なので最小値は ${v}` : `$a\\leqq ${Math.min(-L, U)}$ なので最大値は ${v}`,
+            ],
+          };
+        }),
+      ],
+      4: [
+        t("HI-shugo-4a", (r) => {
+          const N = r(10, 30) * 10, [a, b, c] = sample(r, [2, 3, 5, 7], 3);
+          const f = (k) => Math.floor(N / k);
+          let v = 0;
+          for (let x = 1; x <= N; x++) if (x % a !== 0 && (x % b === 0 || x % c === 0)) v++;
+          const bc = f(b) + f(c) - f(b * c), abc = f(a * b) + f(a * c) - f(a * b * c);
+          return {
+            q: `1 から ${N} までの整数で、${a} の倍数の集合を ${tex("A")}、${b} の倍数の集合を ${tex("B")}、${c} の倍数の集合を ${tex("C")} とする。${tex("n(\\overline{A}\\cap(B\\cup C))")} は？`,
+            ans: v,
+            hint: "$n(\\overline{A}\\cap X)=n(X)-n(A\\cap X)$。$A\\cap(B\\cup C)=(A\\cap B)\\cup(A\\cap C)$ と分配する。",
+            steps: [
+              `$n(B\\cup C)=${f(b)}+${f(c)}-${f(b * c)}=${bc}$`,
+              `$n(A\\cap(B\\cup C))=n(A\\cap B)+n(A\\cap C)-n(A\\cap B\\cap C)=${f(a * b)}+${f(a * c)}-${f(a * b * c)}=${abc}$`,
+              `$${bc}-${abc}=${v}$`,
+            ],
+          };
+        }),
+        t("HI-shugo-4b", (r) => {
+          const c = r(-3, 3), d = r(3, 7), a = c + r(-(d - 1), d - 1);
+          const suf = r(0, 1) === 1;
+          const m1 = a - c + d, m2 = c + d - a;
+          const v = suf ? Math.min(m1, m2) : Math.max(m1, m2);
+          return {
+            q: `条件 ${tex("p")}：${tex(`|x${sh(-a)}|<b`)}（${tex("b")} は正の定数）、条件 ${tex("q")}：${tex(`|x${sh(-c)}|<${d}`)} について、${tex("p")} が ${tex("q")} であるための${suf ? "十分条件" : "必要条件"}となるような ${tex("b")} の${suf ? "最大値" : "最小値"}は？`,
+            ans: v,
+            hint: "それぞれ区間に直し、どちらの区間がどちらに含まれればよいかを考える。端の値の扱いに注意。",
+            steps: [
+              `$p$：$${a}-b<x<${a}+b$、$q$：$${c - d}<x<${c + d}$`,
+              suf ? `$p\\Rightarrow q$ より $${c - d}\\leqq ${a}-b$ かつ $${a}+b\\leqq ${c + d}$` : `$q\\Rightarrow p$ より $${a}-b\\leqq ${c - d}$ かつ $${c + d}\\leqq ${a}+b$`,
+              suf ? `$b\\leqq ${m1}$ かつ $b\\leqq ${m2}$ より最大値は ${v}` : `$b\\geqq ${m1}$ かつ $b\\geqq ${m2}$ より最小値は ${v}`,
+            ],
+          };
+        }),
+        t("HI-shugo-4c", (r) => {
+          const L = [
+            ["x>0 \\text{ and } y>0", "x+y>0,\\ xy>0", true, true, "和も積も正", "積が正なら同符号で、和が正なので両方正"],
+            ["x+y>0", "x>0,\\ y>0", false, true, "反例 $x=3,\\ y=-1$", "両方正なら和も正"],
+            ["xy>0", "x>0,\\ y>0", false, true, "反例 $x=y=-1$", "両方正なら積も正"],
+            ["x^{2}+y^{2}=0", "x=y=0", true, true, "$x^{2}\\geqq 0,\\ y^{2}\\geqq 0$ より両方0", "代入すれば成り立つ"],
+            ["x>1,\\ y>1", "x+y>2,\\ xy>1", true, false, "両方1より大きければ和は2より、積は1より大きい", "反例 $x=\\frac{1}{2},\\ y=4$"],
+            ["x^{2}=y^{2}", "x=y", false, true, "反例 $x=1,\\ y=-1$", "$x=y$ なら $x^{2}=y^{2}$"],
+            ["x>y", "x^{2}>y^{2}", false, false, "反例 $x=1,\\ y=-2$", "反例 $x=-2,\\ y=1$"],
+            ["xy+1=x+y", "(x-1)(y-1)=0", true, true, "移項すると $(x-1)(y-1)=0$", "展開すると $xy+1=x+y$"],
+            ["x^{2}+y^{2}<1", "|x|<1,\\ |y|<1", true, false, "$x^{2}<1$ かつ $y^{2}<1$ になる", "反例 $x=y=0.9$"],
+            ["|x+y|=|x|+|y|", "xy\\geqq 0", true, true, "両辺を2乗すると $xy=|xy|$", "同符号（または0）なら等号が成り立つ"],
+            ["xy>1", "x>1,\\ y>1", false, true, "反例 $x=y=-2$", "両方1より大きければ積は1より大きい"],
+            ["|x|+|y|<1", "x^{2}+y^{2}<1", true, false, "$x^{2}+y^{2}\\leqq(|x|+|y|)^{2}<1$", "反例 $x=y=0.6$"],
+            ["x>y", "x^{3}>y^{3}", true, true, "$x^{3}-y^{3}=(x-y)(x^{2}+xy+y^{2})$ で第2因数は正", "同じ式から逆も成り立つ"],
+          ];
+          const [P0, Q0, pq0, qp0, w10, w20] = pick(r, L);
+          const sw = r(0, 1) === 1;
+          const [P, Q, pq, qp, w1, w2] = sw ? [Q0, P0, qp0, pq0, w20, w10] : [P0, Q0, pq0, qp0, w10, w20];
+          const ok = nsOf(pq, qp);
+          const show = (s) => s.replace(" \\text{ and } ", ",\\ ");
+          return {
+            q: `${tex("x,\\ y")} は実数とする（「,」は「かつ」を表す）。条件 ${tex(show(P))} は、条件 ${tex(show(Q))} であるための何条件？`,
+            ans: ok,
+            choices: choices4(r, ok, NS.filter((s) => s !== ok)),
+            hint: "両方向の真偽を調べる。偽のものは反例を探し、真のものは対偶や式変形で示す。",
+            steps: [
+              `前 ⇒ 後：${pq ? "真" : "偽"}（${w1}）`,
+              `後 ⇒ 前：${qp ? "真" : "偽"}（${w2}）`,
+              `よって ${ok}`,
+            ],
+          };
+        }),
+      ],
+    },
+  },
+  // ─────────────────────────────────────────────────────
+  {
+    ...H,
+    id: "HI-niji", area: "func", name: "2次関数のグラフ", desc: "平方完成・頂点・軸・平行移動",
+    prereqs: ["J3-g3c4u1", "J3-g3c1u4"],
+    points: [
+      "平方完成：$y=a(x-p)^{2}+q$ の形にすると、頂点は $(p,\\ q)$、軸は $x=p$",
+      "$x^{2}+bx=\\left(x+\\frac{b}{2}\\right)^{2}-\\frac{b^{2}}{4}$（$x$ の係数の半分を2乗して引く）。$a\\neq 1$ なら先に $a$ でくくる。",
+      "$y=f(x)$ を $x$ 軸方向に $p$、$y$ 軸方向に $q$ 平行移動 → $y-q=f(x-p)$",
+      "対称移動：$x$ 軸 → $y$ を $-y$ に、$y$ 軸 → $x$ を $-x$ に、原点 → 両方",
+    ],
+    levels: {
+      1: [
+        t("HI-niji-1a", (r) => {
+          const p = rnz(r, -5, 5), c = r(-9, 9), q = c - p * p;
+          const PT = (x, y) => tex(`(${x},\\ ${y})`);
+          const ok = PT(p, q);
+          return {
+            q: `放物線 ${tex(`y=${poly([1, -2 * p, c])}`)} の頂点の座標は？`,
+            ans: ok,
+            choices: choices4(r, ok, [PT(-p, q), PT(2 * p, c - 4 * p * p), PT(p, c + p * p), PT(p, -q)]),
+            hint: "平方完成して $y=(x-p)^{2}+q$ の形にする。",
+            steps: [
+              `$y=(x${signed(-p)})^{2}-${p * p}${sh(c)}$`,
+              `$=(x${signed(-p)})^{2}${sh(q)}$`,
+              `頂点は $(${p},\\ ${q})$`,
+            ],
+          };
+        }),
+        t("HI-niji-1b", (r) => {
+          const a = rnz(r, -4, 4), b = rnz(r, -9, 9), c = r(-9, 9);
+          return {
+            q: `放物線 ${tex(`y=${poly([a, b, c])}`)} の軸を ${tex("x=k")} と表すとき、${tex("k")} の値は？`,
+            ans: fracAns(-b, 2 * a),
+            hint: "$y=ax^{2}+bx+c$ の軸は $x=-\\frac{b}{2a}$（平方完成で確かめられる）。",
+            steps: [
+              `$a=${a},\\ b=${b}$`,
+              `$k=-\\frac{${b}}{2\\cdot (${a})}=${fracTex(-b, 2 * a)}$`,
+            ],
+          };
+        }),
+        t("HI-niji-1c", (r) => {
+          const a = pick(r, [1, 2, 3, -1, -2, -3]), p = rnz(r, -5, 5), q = rnz(r, -6, 6);
+          const A = a === 1 ? "" : a === -1 ? "-" : String(a);
+          const S = (u, v) => `${tex("x")} 軸方向に ${tex(String(u))}、${tex("y")} 軸方向に ${tex(String(v))}`;
+          const ok = S(p, q);
+          return {
+            q: `放物線 ${tex(`y=${A}(x${signed(-p)})^{2}${signed(q)}`)} は、放物線 ${tex(`y=${A}x^{2}`)} をどのように平行移動したもの？`,
+            ans: ok,
+            choices: choices4(r, ok, [S(-p, q), S(p, -q), S(-p, -q)]),
+            hint: "$y=a(x-p)^{2}+q$ の頂点は $(p,\\ q)$。かっこの中の符号に注意。",
+            steps: [
+              `頂点は $(${p},\\ ${q})$。もとの頂点は原点 $(0,\\ 0)$`,
+              `原点を $(${p},\\ ${q})$ に移す平行移動`,
+            ],
+          };
+        }),
+      ],
+      2: [
+        t("HI-niji-2a", (r) => {
+          const a = pick(r, [2, 3, -2, -3]), p = rnz(r, -4, 4), q = r(-8, 8);
+          const b = -2 * a * p, c = a * p * p + q;
+          const f = (x) => a * x * x + b * x + c;
+          const PT = (x, y) => tex(`(${x},\\ ${y})`);
+          const ok = PT(p, q);
+          return {
+            q: `放物線 ${tex(`y=${poly([a, b, c])}`)} の頂点の座標は？`,
+            ans: ok,
+            choices: choices4(r, ok, [PT(-p, q), PT(a * p, f(a * p)), PT(p, -q), PT(p, c)]),
+            hint: "$x^{2}$ の係数で $x$ の項までをくくってから平方完成する。",
+            steps: [
+              `$y=${a}(${poly([1, -2 * p, 0])})${signed(c)}$`,
+              `$=${a}\\{(x${signed(-p)})^{2}-${p * p}\\}${signed(c)}=${a}(x${signed(-p)})^{2}${sh(q)}$`,
+              `頂点は $(${p},\\ ${q})$`,
+            ],
+          };
+        }),
+        t("HI-niji-2b", (r) => {
+          const a = rnz(r, -3, 3), b = r(-5, 5), c = r(-5, 5);
+          const xs = sample(r, [-2, -1, 0, 1, 2, 3], 3).sort((u, v) => u - v);
+          const pts = xs.map((x) => [x, a * x * x + b * x + c]);
+          const ask = pick(r, ["a", "b", "c"]);
+          const v = { a, b, c }[ask];
+          return {
+            q: `2次関数 ${tex("y=ax^{2}+bx+c")} のグラフが3点 ${pts.map(([x, y]) => tex(`(${x},\\ ${y})`)).join("、")} を通るとき、${tex(ask)} の値は？`,
+            ans: v,
+            hint: "3点の座標を代入して、$a,\\ b,\\ c$ の連立方程式を作る。2式ずつ引いて $c$ を消す。",
+            steps: [
+              `${pts.map(([x, y]) => `\$${y}=${mpoly([[x * x, "a"], [x, "b"], [1, "c"]])}\$`).join("、")}`,
+              `これを解いて $a=${a},\\ b=${b},\\ c=${c}$`,
+            ],
+          };
+        }),
+        t("HI-niji-2c", (r) => {
+          const B = r(-6, 6), C = r(-6, 6), h = rnz(r, -4, 4), k = rnz(r, -5, 5);
+          const mv = (hh, kk) => [1, B - 2 * hh, hh * hh - B * hh + C + kk];
+          const W = (c) => [tex(`y=${poly(c)}`), pkey(c)];
+          return {
+            q: `放物線 ${tex(`y=${poly([1, B, C])}`)} を ${tex("x")} 軸方向に ${tex(String(h))}、${tex("y")} 軸方向に ${tex(String(k))} だけ平行移動した放物線の方程式は？`,
+            ...ec(r, W(mv(h, k)), [W(mv(-h, -k)), W(mv(-h, k)), W(mv(h, -k))], (i) => W(mv(h, k + i + 1))),
+            hint: "$x$ を $x-p$ に、$y$ を $y-q$ に置き換える。",
+            steps: [
+              `$y${signed(-k)}=(x${signed(-h)})^{2}${signedVar(B, `(x${signed(-h)})`)}${sh(C)}$`,
+              `展開して整理すると $y=${poly(mv(h, k))}$`,
+            ],
+          };
+        }),
+      ],
+      3: [
+        t("HI-niji-3a", (r) => {
+          const a = rnz(r, -3, 3), p = r(-3, 3), q = r(-6, 6);
+          const [x1, x2] = sample(r, [-3, -2, -1, 0, 1, 2, 3, 4].map((d) => p + d).filter((x) => x !== p), 2);
+          if ((x1 - p) ** 2 === (x2 - p) ** 2) return { skip: true };
+          const f = (x) => a * (x - p) ** 2 + q;
+          const askA = r(0, 1) === 1;
+          const u1 = (x1 - p) ** 2, u2 = (x2 - p) ** 2;
+          return {
+            q: `軸が直線 ${tex(`x=${p}`)} で、2点 ${tex(`(${x1},\\ ${f(x1)})`)}、${tex(`(${x2},\\ ${f(x2)})`)} を通る放物線を ${tex(`y=a(x${sh(-p)})^{2}+q`)} と表すとき、${tex(askA ? "a" : "q")} の値は？`,
+            ans: askA ? a : q,
+            hint: "軸がわかっているので $y=a(x-p)^{2}+q$ とおき、2点を代入する。",
+            steps: [
+              `$${f(x1)}=${u1}a+q$、$${f(x2)}=${u2}a+q$`,
+              `辺々引いて $${f(x1) - f(x2)}=${u1 - u2}a$ より $a=${a}$`,
+              `$q=${f(x1)}-${u1}\\cdot (${a})=${q}$`,
+            ],
+          };
+        }),
+        t("HI-niji-3b", (r) => {
+          const a = rnz(r, -3, 3), b = rnz(r, -6, 6), c = rnz(r, -6, 6);
+          const kinds = { "x 軸": [-a, -b, -c], "y 軸": [a, -b, c], 原点: [-a, b, -c] };
+          const ask = pick(r, Object.keys(kinds));
+          const W = (cf) => [tex(`y=${poly(cf)}`), pkey(cf)];
+          const others = Object.keys(kinds).filter((k) => k !== ask).map((k) => W(kinds[k]));
+          const label = ask === "原点" ? "原点" : `${tex(ask[0])} 軸`;
+          const rule = { "x 軸": "$y$ を $-y$ に置き換える", "y 軸": "$x$ を $-x$ に置き換える", 原点: "$x$ を $-x$ に、$y$ を $-y$ に置き換える" }[ask];
+          return {
+            q: `放物線 ${tex(`y=${poly([a, b, c])}`)} を${label}に関して対称移動した放物線の方程式は？`,
+            ...ec(r, W(kinds[ask]), [...others, W([a, b, -c]), W([-a, -b, c])]),
+            hint: "対称移動では、$x$ や $y$ をどう置き換えるかを考える。",
+            steps: [rule, `$y=${poly(kinds[ask])}$`],
+          };
+        }),
+      ],
+      4: [
+        t("HI-niji-4a", (r) => {
+          const a = pick(r, [1, 2, -1, 3]), p1 = r(-4, 4), q1 = r(-6, 6), h = rnz(r, -4, 4), k = rnz(r, -5, 5);
+          const p2 = p1 + h, q2 = q1 + k;
+          const F = (p, q) => poly([a, -2 * a * p, a * p * p + q]);
+          const S = (u, v) => tex(`h=${u},\\ k=${v}`);
+          const ok = S(h, k);
+          return {
+            q: `放物線 ${tex(`y=${F(p1, q1)}`)} を ${tex("x")} 軸方向に ${tex("h")}、${tex("y")} 軸方向に ${tex("k")} だけ平行移動すると、放物線 ${tex(`y=${F(p2, q2)}`)} に重なった。${tex("h,\\ k")} の値は？`,
+            ans: ok,
+            choices: choices4(r, ok, [S(-h, -k), S(-h, k), S(h, -k)]),
+            hint: "式どうしを比べるより、2つの放物線の頂点の移動を考える方が早い。",
+            steps: [
+              `移動前の頂点 $(${p1},\\ ${q1})$、移動後の頂点 $(${p2},\\ ${q2})$`,
+              `$h=${p2}-(${p1})=${h}$、$k=${q2}-(${q1})=${k}$`,
+            ],
+          };
+        }),
+        t("HI-niji-4b", (r) => {
+          const k = r(2, 3), l = rnz(r, -6, 6), c = r(-5, 5);
+          const K = k - 1;
+          const mn = fracAns(4 * K * c - l * l, 4 * K);
+          return {
+            q: `${tex("a")} を実数の定数とする。放物線 ${tex(`y=x^{2}-2ax+${mpoly([[k, "a^{2}"], [l, "a"], [c, ""]])}`)} の頂点の ${tex("y")} 座標が最小となるときの、その最小値は？`,
+            ans: mn,
+            hint: "まず頂点の $y$ 座標を $a$ の式で表す。それは $a$ の2次関数になる。",
+            steps: [
+              `$y=(x-a)^{2}-a^{2}+${mpoly([[k, "a^{2}"], [l, "a"], [c, ""]])}$ より頂点の $y$ 座標は $${mpoly([[K, "a^{2}"], [l, "a"], [c, ""]])}$`,
+              `$=${K === 1 ? "" : K}\\left(a${l > 0 ? "+" : "-"}${fracTex(Math.abs(l), 2 * K)}\\right)^{2}${4 * K * c - l * l === 0 ? "" : (4 * K * c - l * l > 0 ? "+" : "") + fracTex(4 * K * c - l * l, 4 * K)}$`,
+              `$a=${fracTex(-l, 2 * K)}$ のとき最小値 $${fracTex(4 * K * c - l * l, 4 * K)}$`,
             ],
           };
         }),
