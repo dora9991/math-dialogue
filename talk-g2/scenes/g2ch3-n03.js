@@ -73,7 +73,7 @@
       draw: [G(pts([[20, 8]], 'g'), dash([20, 8], [20, 0], 'g'), dash([20, 8], [0, 8], 'g'), lab(19.6, 8.5, '追いつく（20分，800ｍ）', 'g', { anchor: 'end', dy: 4 }))] }),
 
     T('まとめです。グラフの傾きは、速さです。出発のおくれは、x から引きます。交点が、追いつく時刻と場所です。', { ft: 'normal', point: false,
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'ポイント', text: '傾き＝速さ\nおくれは x−12 のように引く\n交点＝追いつく時と場所', t: 5.5 }] }),
+      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'ポイント', text: '傾き＝速さ\nおくれは x−12 と引く\n交点＝追いつく時と場所', t: 5.5 }] }),
     B('兄ちゃんの自転車、グラフでも、速かったね！', { fb: 'happy', up: true, fx: { b: 'e' } }),
     T('お疲れさまでした。成績は、こちらです。', { ft: 'happy', point: false, result: true })
   ] });
