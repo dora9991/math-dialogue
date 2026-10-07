@@ -72,8 +72,8 @@
   const vert = [ang(pO, pA, pE, 0.55, 1, 'g'), ang(pO, pC, pF, 0.55, 1, 'g')];
   const altAE = [ang(pA, pO, pE, 0.9, 2, 'p'), ang(pC, pO, pF, 0.9, 2, 'p')];
   const eqOEF = [tick(pO, pE, 3, 'y'), tick(pO, pF, 3, 'y')];
-  const numFig = [tri([nA, nB, nC, nD], 'w'), dn(nA, 'A', [-0.7, 0.7]), dn(nB, 'B', [-0.7, -0.7]), dn(nC, 'C', [0.7, -0.7]), dn(nD, 'D', [0.7, 0.7]), ln(nA, nC, 'w'), ln(nB, nD, 'w'), dn(nO, 'O', [0.8, -0.5]),
-    tx([-0.45, 2.2], '5cm', 'y', 'end', 26), tx([3, -0.62], '6cm', 'y', 'middle', 26), tx([nO[0] - 0.35, nO[1] + 0.55], '8cm', 'g', 'end', 26)];
+  const numFig = [tri([nA, nB, nC, nD], 'w'), dn(nA, 'A', [-0.7, 0.7]), dn(nB, 'B', [-0.7, -0.7]), dn(nC, 'C', [0.7, -0.7]), dn(nD, 'D', [0.7, 0.7]), ln(nB, nD, 'w'), ln(nA, nC, 'g', { wd: 4.4 }), dn(nO, 'O', [0.8, -0.5]),
+    tx([-0.45, 2.2], '5cm', 'y', 'end', 26), tx([3, -0.62], '6cm', 'y', 'middle', 26), tx([1.9, 2.25], '8cm', 'g', 'middle', 26)];
 
   KL.lesson({ id: 'g2u5-09', unit: '中2　三角形と四角形', kick: '2年5章　第9時', title: '平行四辺形の性質を使って証明しよう', card: '平行四辺形の性質を使って証明しよう', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [
     t('みなさん、こんにちは。今日は、平行四辺形の性質を、使って、証明をします。対角線の性質も、証明しましょう。', { title: true, point: false, ft: 'happy' }),
