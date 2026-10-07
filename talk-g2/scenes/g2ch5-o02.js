@@ -31,7 +31,7 @@
   const { A, B: Bp, C, D } = P;
   // ---- 1・2ページ目の図 ----
   const tri = [pol([A, Bp, C], 'w'), nm('A', A, [0, 1]), nm('B', Bp, [-0.7, -0.7]), nm('C', C, [0.7, -0.7]), tick(A, Bp, 1, 'y'), tick(A, C, 1, 'y'),
-    an(Bp, A, C, 0.9, 'b'), anLab(Bp, A, C, 1.6, '64°', 'b'), tx(2.8, -0.62, '14cm', 'w', { size: 27 })];
+    an(Bp, A, C, 0.9, 'b'), anLab(Bp, A, C, 1.6, '64°', 'b'), tx(4.5, -0.62, 'BC＝14cm', 'w', { size: 26 })];
   const bis = [nm('D', D, [0, -1]), sg(A, D, 'w'), an(A, Bp, D, 1.0, 'p'), an(A, D, C, 1.0, 'p')];
   const marks = [tick(Bp, D, 2, 'g'), tick(D, C, 2, 'g'), rt(D, [1, 0], [0, 1]), rt(D, [-1, 0], [0, 1])];
   const tri2 = [pol([A, Bp, D], 'y', 'y'), pol([A, D, C], 'b', 'b'), nm('A', A, [0, 1]), nm('B', Bp, [-0.7, -0.7]), nm('C', C, [0.7, -0.7]), nm('D', D, [0, -1]),
@@ -40,7 +40,7 @@
   const c26 = [anLab(A, Bp, D, 1.7, '26°', 'p'), anLab(A, D, C, 1.7, '26°', 'p')];
   // ---- 3ページ目の図 ----
   const { P: Pp, Q: Qp, R: Rp, S: Sp } = P;
-  const tri3 = [pol([Pp, Qp, Rp], 'w'), nm('P', Pp, [0, 1]), nm('Q', Qp, [-0.7, -0.7]), nm('R', Rp, [0.7, -0.7]), nm('S', Sp, [0, -1]), tick(Pp, Qp, 1, 'y'), tick(Pp, Rp, 1, 'y'), tx(3.51, -0.7, '18cm', 'w', { size: 27 }),
+  const tri3 = [pol([Pp, Qp, Rp], 'w'), nm('P', Pp, [0, 1]), nm('Q', Qp, [-0.7, -0.7]), nm('R', Rp, [0.7, -0.7]), nm('S', Sp, [0, -1]), tick(Pp, Qp, 1, 'y'), tick(Pp, Rp, 1, 'y'), tx(5.3, -0.62, 'QR＝18cm', 'w', { size: 26 }),
     sg(Pp, Sp, 'w'), an(Pp, Qp, Sp, 1.1, 'p'), an(Pp, Sp, Rp, 1.1, 'p'), anLab(Pp, Qp, Sp, 1.9, '35°', 'p')];
   const marks3 = [tick(Qp, Sp, 2, 'g'), tick(Sp, Rp, 2, 'g'), rt(Sp, [1, 0], [0, 1]), rt(Sp, [-1, 0], [0, 1])];
 
