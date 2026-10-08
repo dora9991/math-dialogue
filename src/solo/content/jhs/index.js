@@ -143,7 +143,7 @@ function buildUnits() {
         }
         out.push({
           id,
-          srcUnitId: u.id, // 元の単元ID（葉一さんの動画・DB実問題の対応に使う）
+          srcUnitId: u.id, // 元の単元ID（教科書由来の実問題 problem_bank.json との対応に使う）
           chapterId: ch.id,
           chapterName: ch.name,
           grade: `J${g}`,

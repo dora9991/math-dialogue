@@ -1,23 +1,14 @@
 // ============================================================
 // Lecture.jsx — 講義（解説）
 //   ・ホー先生の解説がある単元 … スライドを1枚ずつ（話す→板書→ポイント→例題→理解チェック）
-//   ・まだ無い単元 … 要点＋例題（タップで1行ずつ解き方）＋（中学）葉一さんの解説動画
+//   ・まだ無い単元 … 要点＋例題（タップで1行ずつ解き方）。ホー先生の解説動画（lectures/videos.js）があれば一緒に出す
 // ============================================================
 import { useMemo, useState } from "react";
 import M from "./M.jsx";
 import { Coach } from "./ui.jsx";
 import { getLecture, TEACHER } from "../lectures/index.js";
 import { genProblem } from "../content/index.js";
-import { HAICHI_COURSE } from "../../data/haichiCourse.js";
-
-// 中学の単元ID → 葉一さん（19ch）のレッスン
-const HAICHI_BY_UNIT = (() => {
-  const m = {};
-  for (const sections of Object.values(HAICHI_COURSE)) {
-    for (const sec of sections) for (const l of sec.lessons) for (const u of l.u || []) (m[u] ||= []).push(l);
-  }
-  return m;
-})();
+import { getVideos } from "../lectures/videos.js";
 
 function Board({ lines, title }) {
   return (
@@ -110,7 +101,7 @@ export default function Lecture({ unit, onStartPractice }) {
   const lecture = getLecture(unit.id);
   const [mode, setMode] = useState(lecture ? "slides" : "summary");
   const example = useMemo(() => genProblem(unit.id, 1), [unit.id]);
-  const videos = (unit.srcUnitId && HAICHI_BY_UNIT[unit.srcUnitId]) || [];
+  const videos = getVideos(unit.id);
   const [video, setVideo] = useState(null);
 
   if (lecture && mode === "slides") {
@@ -123,7 +114,7 @@ export default function Lecture({ unit, onStartPractice }) {
         <button className="btn block grad" onClick={() => setMode("slides")} style={{ marginBottom: 14 }}>
           {TEACHER.icon} {TEACHER.name}の解説を見る（約{lecture.minutes}分）
         </button>
-      ) : (
+      ) : videos.length === 0 && (
         <div className="card" style={{ background: "#fffaf0" }}>
           <Coach>
             <span className="small">この単元の{TEACHER.name}の解説は、いま準備中だよ。まずは要点と例題で確かめよう。</span>
@@ -152,15 +143,15 @@ export default function Lecture({ unit, onStartPractice }) {
 
       {videos.length > 0 && (
         <div className="card">
-          <h2>📺 解説動画<span className="sub">葉一「とある男が授業をしてみた」</span></h2>
-          {video ? (
+          <h2>📺 {TEACHER.name}の解説動画</h2>
+          {video && (
             <div className="video"><iframe src={`https://www.youtube-nocookie.com/embed/${video}?autoplay=1`} title="解説動画" allow="autoplay; encrypted-media" allowFullScreen /></div>
-          ) : null}
+          )}
           <div className="mt8">
-            {videos.slice(0, 4).map((l) => (
-              <button key={l.yt} className="rec" onClick={() => setVideo(l.yt)} style={{ marginBottom: 6 }}>
-                <span className="badge" style={{ background: "#fee2e2" }}>▶</span>
-                <span className="grow"><span className="nm">{l.t}</span>{l.pdf && <span className="why"> ・<a href={l.pdf} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>プリント</a></span>}</span>
+            {videos.map((v) => (
+              <button key={v.yt} className="rec" onClick={() => setVideo(v.yt)} style={{ marginBottom: 6 }}>
+                <span className="badge" style={{ background: "#fff7e6" }}>▶</span>
+                <span className="grow"><span className="nm">{v.title || `${TEACHER.name}の解説`}</span></span>
               </button>
             ))}
           </div>

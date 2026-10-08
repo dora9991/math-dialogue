@@ -203,7 +203,7 @@ const LECT = path.join(ROOT, "src/solo/lectures");
 let nLect = 0;
 if (!args.length && fs.existsSync(LECT)) {
   for (const f of fs.readdirSync(LECT).sort()) {
-    if (!f.endsWith(".js") || f === "index.js") continue;
+    if (!f.endsWith(".js") || f === "index.js" || f === "videos.js") continue;
     const W = `lectures/${f}`;
     let L;
     try { L = (await import(pathToFileURL(path.join(LECT, f)).href)).default; } catch (e) { err(W, `読み込みエラー: ${e.message}`); continue; }
@@ -232,8 +232,22 @@ if (!args.length && fs.existsSync(LECT)) {
   }
 }
 
+// 解説動画の登録表の検査：単元IDが実在するか・YouTube の動画IDの形か
+let nVideo = 0;
+if (!args.length && fs.existsSync(path.join(LECT, "videos.js"))) {
+  const { VIDEOS } = await import(pathToFileURL(path.join(LECT, "videos.js")).href);
+  for (const [uid, list] of Object.entries(VIDEOS || {})) {
+    if (!ids.has(uid)) err(`videos.js ${uid}`, "この単元IDはない");
+    if (!Array.isArray(list) || !list.length) { err(`videos.js ${uid}`, "動画の配列が空"); continue; }
+    for (const v of list) {
+      nVideo++;
+      if (!/^[A-Za-z0-9_-]{11}$/.test(v?.yt || "")) err(`videos.js ${uid}`, `yt は11文字の YouTube 動画ID: ${v?.yt}`);
+    }
+  }
+}
+
 const nTpl = targets.reduce((s, u) => s + Object.values(u.levels || {}).reduce((a, l) => a + (l?.length || 0), 0), 0);
-console.log(`検査: ${targets.length} 単元 / ${nTpl} テンプレート × ${RUNS} 回生成${nLect ? ` / 講義 ${nLect} 本` : ""}`);
+console.log(`検査: ${targets.length} 単元 / ${nTpl} テンプレート × ${RUNS} 回生成${nLect ? ` / 講義 ${nLect} 本` : ""}${nVideo ? ` / 動画 ${nVideo} 本` : ""}`);
 if (warns.length) console.log(warns.slice(0, 60).join("\n") + (warns.length > 60 ? `\n…ほか ${warns.length - 60} 件の注意` : ""));
 if (errors.length) {
   console.log(errors.slice(0, 80).join("\n") + (errors.length > 80 ? `\n…ほか ${errors.length - 80} 件のエラー` : ""));
