@@ -5,7 +5,7 @@
 (function () {
   const { T, B, Q, FIG } = KL;
   const P = {"A": [-1, 3.87298], "B": [0, 0], "C": [6, 0], "D": [7.5, 5.80948], "E": [9, 0], "F": [18, 0]};
-  const W = 1180, H = 600, VIEW = [-3.217, -2.399, 19.717, 9.262];
+  const W = 1180, H = 600, VIEW = [-3.217, -3.0, 19.717, 8.662];
   const U = Math.min(W / (VIEW[2] - VIEW[0]), H / (VIEW[3] - VIEW[1]));   // 1単位が何pxか
   const mk = id => FIG(id, VIEW, W, H, [], { col: 1 });
   const G = (id, ...i) => ({ fig: id, items: i.flat(3) });
