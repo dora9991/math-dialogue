@@ -39,7 +39,7 @@
     const V = { A: P(0, 0, 0), B: P(w, 0, 0), C: P(w, d, 0), D: P(0, d, 0), E: P(0, 0, h), F: P(w, 0, h), G: P(w, d, h), H: P(0, d, h) };
     const vis = ['AB', 'BC', 'EF', 'FG', 'GH', 'HE', 'AE', 'BF', 'CG'], hid = ['DA', 'DC', 'DH'];
     const lines = [...vis.map(e => LN(V[e[0]], V[e[1]], 'w', { wd: 3.4 })), ...hid.map(e => LN(V[e[0]], V[e[1]], 'w', { wd: 3, dash: true }))];
-    const dirs = { A: [-0.7, -0.7], B: [0.7, -0.7], C: [0.8, -0.2], D: [-0.8, 0.3], E: [-0.8, 0.3], F: [0.9, -0.7], G: [0.7, 0.7], H: [0, 1] };
+    const dirs = { A: [-0.7, -0.7], B: [0.7, -0.7], C: [0.8, -0.2], D: [0.4, -1], E: [-0.8, 0.3], F: [-0.7, -0.7], G: [0.7, 0.7], H: [0, 1] };
     const names = Object.keys(V).map(n => DT(V[n], n, dirs[n], 'y'));
     return { V, lines, names }; };
   // ---- 1ページ目：底面 4×4、高さ 7 ----
