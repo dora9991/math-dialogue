@@ -40,7 +40,7 @@
   const f2 = fg('g2', 2, 0, 14.4);
   const c2 = [circ(O2, r2), nm('O', O2, [-0.8, 0.8]), nm('P', P2, [0.8, 0.8]), nm('A', A2, [0, 1]), sg(O2, P2, 'w', { wd: 3 }), sg(O2, A2, 'w', { wd: 3.4 }), sg(A2, P2, 'p', { wd: 4.4 }), rt(A2, unit(A2, O2), unit(A2, P2), 'p'),
     side(O2, A2, '6cm', 1.1, 'w', { size: 28 }), side(O2, P2, '10cm', -1.1, 'w', { size: 28 }), side(A2, P2, 'PA＝？', 1.6, 'p', { size: 28 })];
-  const ans2 = [side(A2, P2, 'PA＝8cm', -1.7, 'g', { size: 28 })];
+  const ans2 = [side(A2, P2, 'PA＝8cm', 2.9, 'g', { size: 28 })];
   const pb2 = [nm('B', B2, [0, -1]), sg(O2, B2, 'w', { wd: 3.4 }), sg(B2, P2, 'b', { wd: 4.4 }), tick(A2, P2, 1, 'y', 0.2), tick(B2, P2, 1, 'y', 0.2)];
 
   KL.lesson({ id: 'g3ch7-o07', unit: '中3　三平方の定理', kick: '3年7章　応用7', title: '円の弦・接線の長さ', card: '円の弦・接線の長さ', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [

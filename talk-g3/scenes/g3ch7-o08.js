@@ -30,11 +30,11 @@
   // ---- 立体の図：斜投影（x が右、y が奥、z が上）。K は図の拡大率 ----
   const CX = 0.5 * Math.cos(Math.PI / 6), CY = 0.5 * Math.sin(Math.PI / 6);   // 奥行きは 0.5 倍、右上 30° の向き
   const pj = (x, y, z, K) => [K * (x + y * CX), K * (z + y * CY)];
-  const box3 = (X, Y, Z, K) => {
+  const box3 = (X, Y, Z, K, dd) => {
     const V = { A: pj(0, 0, 0, K), B: pj(X, 0, 0, K), C: pj(X, Y, 0, K), D: pj(0, Y, 0, K), E: pj(0, 0, Z, K), F: pj(X, 0, Z, K), G: pj(X, Y, Z, K), H: pj(0, Y, Z, K) };
     const vis = [['A', 'B'], ['B', 'C'], ['E', 'F'], ['F', 'G'], ['G', 'H'], ['H', 'E'], ['A', 'E'], ['B', 'F'], ['C', 'G']];
     const hid = [['D', 'A'], ['D', 'C'], ['D', 'H']];
-    const dirs = { A: [-0.8, -0.7], B: [0.4, -0.9], C: [0.9, -0.5], D: [-0.9, 0.5], E: [-0.9, 0.5], F: [-0.3, 0.9], G: [0.8, 0.7], H: [-0.2, 0.9] };
+    const dirs = Object.assign({ A: [-0.8, -0.7], B: [0.4, -0.9], C: [0.9, -0.5], D: [-0.9, 0.5], E: [-0.9, 0.5], F: [-0.3, 0.9], G: [0.8, 0.7], H: [-0.2, 0.9] }, dd || {});
     const solid = vis.map(e => sg(V[e[0]], V[e[1]], 'w', { wd: 3.6 }));
     const hidden = hid.map(e => sg(V[e[0]], V[e[1]], 'w', { wd: 3.2, dash: true }));
     const names = Object.keys(V).map(k => nm(k, V[k], dirs[k], 'y'));
@@ -42,15 +42,15 @@
   };
   const dsh = (a, b, c, wd) => sg(a, b, c, { dash: true, wd: wd || 3.8 });
   // ---- 1ページ目：横 6、縦 3、高さ 2（K＝2） ----
-  const K1 = 2, b1 = box3(6, 3, 2, K1), V1 = b1.V;
+  const K1 = 2, b1 = box3(6, 3, 2, K1, { F: [0.7, -0.7] }), V1 = b1.V;
   const f1 = fg('g1', 7.3, 2.9, 8.8);
-  const dim1 = [side(V1.A, V1.B, '6cm', -1.0, 'w', { size: 28 }), side(V1.B, V1.C, '3cm', -1.0, 'w', { size: 28 }), side(V1.E, V1.A, '2cm', -1.0, 'w', { size: 28 })];
+  const dim1 = [side(V1.A, V1.B, '6cm', -1.0, 'w', { size: 28 }), side(V1.B, V1.C, '3cm', -1.0, 'w', { size: 28 }), side(V1.E, V1.A, '2cm', -0.65, 'w', { size: 28 })];
   const ag1 = [dsh(V1.A, V1.G, 'p', 4.4)];
   const ac1 = [dsh(V1.A, V1.C, 'b'), pol([V1.A, V1.C, V1.G], 'p', 'p', { d: 0.4, wd: 2.4, dash: true })];
-  const acAns = [tx(8.6, 1.0, 'AC²＝45', 'b', { size: 28, anchor: 'start' })];
+  const acAns = [tx(8.6, 0.45, 'AC²＝45', 'b', { size: 28, anchor: 'start' })];
   const agAns = [tx(5.0, 6.6, 'AG＝7cm', 'g', { size: 30, anchor: 'start' })];
   // ---- 2ページ目：1辺 4 の立方体（K＝2.2） ----
-  const K2 = 1.6, b2 = box3(4, 4, 4, K2), V2 = b2.V;
+  const K2 = 1.6, b2 = box3(4, 4, 4, K2, { D: [0.5, -0.85] }), V2 = b2.V;
   const f2 = fg('g2', 4.6, 3.9, 12.2);
   const dim2 = [side(V2.A, V2.B, '4cm', -1.0, 'w', { size: 28 }), side(V2.B, V2.C, '4cm', -1.0, 'w', { size: 28 }), side(V2.E, V2.A, '4cm', -1.0, 'w', { size: 28 })];
   const ag2 = [dsh(V2.A, V2.G, 'p', 4.4)];
