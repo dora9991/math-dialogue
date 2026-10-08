@@ -496,7 +496,7 @@ const ZENKA = {
         const A = r(-5, 5), p = rnz(r, -3, 4), q = r(-5, 5), k = r(6, 15);
         const ans = A + (p * (k - 1) * k) / 2 + q * (k - 1);
         return {
-          q: `$a_{1}=${A}$，$a_{n+1}=a_{n}+${poly([p, q], "n").startsWith("-") ? `(${poly([p, q], "n")})` : poly([p, q], "n")}$ で定められる数列 $\\{a_{n}\\}$ の $a_{${k}}$ を求めよ。`,
+          q: `$a_{1}=${A}$，$a_{n+1}=a_{n}${plusTerm(poly([p, q], "n"))}$ で定められる数列 $\\{a_{n}\\}$ の $a_{${k}}$ を求めよ。`,
           ans,
           hint: "階差数列 $b_{n}=a_{n+1}-a_{n}$ を使い，$a_{n}=a_{1}+\\sum_{k=1}^{n-1}b_{k}$。",
           steps: [
@@ -517,12 +517,12 @@ const ZENKA = {
         return {
           q: `$a_{1}=${A}$，$${rec}$ で定められる数列 $\\{a_{n}\\}$ の一般項を求めよ。`,
           ans,
-          choices: choices4(r, ans, [F([c * p, A - c * p], "n"), F([c, A - c], "n-1"), F([c * p, A], "n-1")],
+          choices: choices4(r, ans, [F([c * p, A - c * p], "n"), A !== c ? F([c, A - c], "n-1") : null, F([c * p, A], "n-1")],
             (i) => F([c * p, A - c * p + i + 1], "n-1")),
           hint: `両辺を $${p}^{n+1}$ で割り，$b_{n}=\\frac{a_{n}}{${p}^{n}}$ とおく。`,
           steps: [
             `両辺を $${p}^{n+1}$ で割ると $\\frac{a_{n+1}}{${p}^{n+1}}=\\frac{a_{n}}{${p}^{n}}${signed(c)}$`,
-            `$b_{n}=\\frac{a_{n}}{${p}^{n}}$ は初項 $${fracTex(A, p)}$，公差 $${c}$ の等差数列：$b_{n}=${fracTex(A, p)}${signed(c)}(n-1)$`,
+            `$b_{n}=\\frac{a_{n}}{${p}^{n}}$ は初項 $${fracTex(A, p)}$，公差 $${c}$ の等差数列：$b_{n}=${fracTex(A, p)}${signedVar(c, "(n-1)")}$`,
             `$a_{n}=${p}^{n}b_{n}=(${poly([c * p, A - c * p], "n")})\\cdot ${p}^{n-1}$`,
           ],
         };
@@ -540,7 +540,7 @@ const ZENKA = {
           steps: [
             `$n=1$ とすると $a_{1}=2a_{1}${signed(q + c)}$ より $a_{1}=${a1}$`,
             `$S_{n+1}-S_{n}$ を計算すると $a_{n+1}=2a_{n+1}-2a_{n}${q ? signed(q) : ""}$ より $a_{n+1}=2a_{n}${q ? signed(-q) : ""}$`,
-            `$a_{n+1}${signed(-q)}=2(a_{n}${signed(-q)})$ より $a_{n}=${geoTex(a1 - q, 2, "n-1")}${q ? signed(q) : ""}$`,
+            q ? `$a_{n+1}${signed(-q)}=2(a_{n}${signed(-q)})$ より $a_{n}=${geoTex(a1 - q, 2, "n-1")}${signed(q)}$` : `公比 $2$ の等比数列なので $a_{n}=${geoTex(a1, 2, "n-1")}$`,
             `答え：$a_{${k}}=${ans}$`,
           ],
         };
@@ -579,7 +579,7 @@ const ZENKA = {
           hint: "$x^{2}=(\\cdots)x+(\\cdots)$ の2解 $\\alpha,\\ \\beta$ を求め，$a_{n+2}-\\alpha a_{n+1}=\\beta(a_{n+1}-\\alpha a_{n})$ と変形する。",
           steps: [
             `$x^{2}=${s === 0 ? String(-pr) : `${coefVar(s)}${signed(-pr)}`}$ の解は $x=${al},\\ ${be}$`,
-            `$a_{n+2}-${par(al)}a_{n+1}=${par(be)}(a_{n+1}-${par(al)}a_{n})$ などから，$a_{n}=p\\cdot ${par(al)}^{n-1}+q\\cdot ${par(be)}^{n-1}$ の形になる`,
+            `$a_{n+2}${signedVar(-al, "a_{n+1}")}=${par(be)}(a_{n+1}${signedVar(-al, "a_{n}")})$ などから，$a_{n}=p\\cdot ${par(al)}^{n-1}+q\\cdot ${par(be)}^{n-1}$ の形になる`,
             `$a_{1}=p+q=${a1}$，$a_{2}=${coefVar(al, "p")}${signedVar(be, "q")}=${a2}$ より $p=${c1}$，$q=${c2}$`,
           ],
         };

@@ -249,7 +249,7 @@ const VECTOR = {
           hint: "$\\cos\\theta=\\frac{\\vec{a}\\cdot\\vec{b}}{|\\vec{a}||\\vec{b}|}$ を計算する。",
           steps: [
             `$\\vec{a}\\cdot\\vec{b}=${dot}$, $|\\vec{a}|=${sqrtTex(1, A)}$, $|\\vec{b}|=${sqrtTex(1, B)}$`,
-            `$\\cos\\theta=\\frac{${dot}}{${sqrtTex(1, A)}\\times${sqrtTex(1, B)}}=${cosT}$`,
+            dot === 0 ? "内積が $0$ なので $\\cos\\theta=0$" : `$\\cos\\theta=\\frac{${dot}}{${sqrtTex(1, A)}\\times${sqrtTex(1, B)}}=${cosT}$`,
             `よって $\\theta=${th}^{\\circ}$`,
           ],
         };
@@ -266,7 +266,7 @@ const VECTOR = {
           choices: choices4(r, ans, [vab(m, n, m + n), vab(-n, m, m - n), vab(1, 1, 2), vab(n, m, m * n)]),
           hint: "内分点の公式：A に近い点ほど $\\vec{a}$ の係数が大きい（係数は「たすきがけ」）。",
           steps: [
-            `$\\overrightarrow{OP}=\\frac{${n}\\vec{a}+${m}\\vec{b}}{${m}+${n}}$`,
+            `$\\overrightarrow{OP}=\\frac{${lin([[n, 1, "\\vec{a}"], [m, 1, "\\vec{b}"]])}}{${m}+${n}}$`,
             `${ans}`,
           ],
         };
@@ -287,8 +287,8 @@ const VECTOR = {
           hint: "$|\\vec{a}-\\vec{b}|^{2}$ を展開して内積を求め、$|\\vec{a}+t\\vec{b}|^{2}$ を t の2次式として平方完成する。",
           steps: [
             `$|\\vec{a}-\\vec{b}|^{2}=${p * p}-2\\vec{a}\\cdot\\vec{b}+${q * q}=${M}$ より $\\vec{a}\\cdot\\vec{b}=${d}$`,
-            `$|\\vec{a}+t\\vec{b}|^{2}=${q * q}t^{2}${signed(2 * d)}t+${p * p}$`,
-            `$=${q * q}\\left(t${d / (q * q) >= 0 ? "+" : "-"}${fracTex(Math.abs(d), q * q)}\\right)^{2}+${fracTex(minN, minD)}$`,
+            `$|\\vec{a}+t\\vec{b}|^{2}=${lin([[q * q, 1, "t^{2}"], [2 * d, 1, "t"], [p * p, 1, ""]])}$`,
+            `$=${q * q === 1 ? "" : q * q}\\left(t${d / (q * q) >= 0 ? "+" : "-"}${fracTex(Math.abs(d), q * q)}\\right)^{2}+${fracTex(minN, minD)}$`,
             askMin ? `最小値の2乗は $${fracTex(minN, minD)}$` : `最小になるのは $t=${fracTex(tN, tD)}$`,
           ],
         };
@@ -340,9 +340,10 @@ const VECTOR = {
         const l = r(1, 5), m = r(1, 5), n = r(1, 5);
         const S = l + m + n;
         const mode = r(0, 2);
+        const ABC = lin([[m, 1, "\\overrightarrow{AB}"], [n, 1, "\\overrightarrow{AC}"]]);
         const eq = `${lin([[l, 1, "\\overrightarrow{PA}"], [m, 1, "\\overrightarrow{PB}"], [n, 1, "\\overrightarrow{PC}"]])}=\\vec{0}`;
         const base = [
-          `A を始点にすると $\\overrightarrow{AP}=\\frac{${m}\\overrightarrow{AB}+${n}\\overrightarrow{AC}}{${S}}=\\frac{${m + n}}{${S}}\\cdot\\frac{${m}\\overrightarrow{AB}+${n}\\overrightarrow{AC}}{${m + n}}$`,
+          `A を始点にすると $\\overrightarrow{AP}=\\frac{${ABC}}{${S}}=${fracTex(m + n, S)}\\cdot\\frac{${ABC}}{${m + n}}$`,
           `直線 AP と BC の交点 D は BC を ${n / gcd(n, m)}:${m / gcd(n, m)} に内分し、AP:PD $=${(m + n) / gcd(m + n, l)}:${l / gcd(m + n, l)}$`,
         ];
         if (mode === 0) {
@@ -410,7 +411,7 @@ const VECTOR = {
           hint: "外心 P から辺 OA, OB に下ろした垂線の足は中点。$\\overrightarrow{OP}\\cdot\\vec{a}=\\frac{1}{2}|\\vec{a}|^{2}$ などを使う。",
           steps: [
             `$\\overrightarrow{OP}=s\\vec{a}+t\\vec{b}$ とおく。$\\overrightarrow{OP}\\cdot\\vec{a}=\\frac{1}{2}|\\vec{a}|^{2}$, $\\overrightarrow{OP}\\cdot\\vec{b}=\\frac{1}{2}|\\vec{b}|^{2}$`,
-            `$${P2}s${signed(d)}t=${fracTex(P2, 2)}$, $${d}s+${Q2}t=${fracTex(Q2, 2)}$`,
+            `$${lin([[P2, 1, "s"], [d, 1, "t"]])}=${fracTex(P2, 2)}$, $${lin([[d, 1, "s"], [Q2, 1, "t"]])}=${fracTex(Q2, 2)}$`,
             `解くと $s=${fracTex(sN, den)}$, $t=${fracTex(tN, den)}$`,
             `${ans}`,
           ],
@@ -517,7 +518,7 @@ const KUKAN = {
           hint: "$\\cos\\theta=\\frac{\\vec{a}\\cdot\\vec{b}}{|\\vec{a}||\\vec{b}|}$。空間でも同じ。",
           steps: [
             `$\\vec{a}\\cdot\\vec{b}=${dot3(a, b)}$, $|\\vec{a}|=${sqrtTex(1, dot3(a, a))}$, $|\\vec{b}|=${sqrtTex(1, dot3(b, b))}$`,
-            `$\\cos\\theta=\\frac{${dot3(a, b)}}{${sqrtTex(1, dot3(a, a))}\\times${sqrtTex(1, dot3(b, b))}}=${cosT}$`,
+            dot3(a, b) === 0 ? "内積が $0$ なので $\\cos\\theta=0$" : `$\\cos\\theta=\\frac{${dot3(a, b)}}{${sqrtTex(1, dot3(a, a))}\\times${sqrtTex(1, dot3(b, b))}}=${cosT}$`,
             `よって $\\theta=${th}^{\\circ}$`,
           ],
         };
@@ -532,7 +533,7 @@ const KUKAN = {
             ans: fracAns(num, a[0]),
             hint: "垂直 ⇔ 内積が0。",
             steps: [
-              `$\\vec{a}\\cdot\\vec{b}=${a[0]}x${signed(a[1] * b2)}${signed(a[2] * b3)}=0$`,
+              `$\\vec{a}\\cdot\\vec{b}=${lin([[a[0], 1, "x"], [a[1] * b2, 1, ""], [a[2] * b3, 1, ""]])}=0$`,
               `$x=${fracTex(num, a[0])}$`,
             ],
           };
@@ -883,7 +884,7 @@ const FUKUSO = {
           steps: [
             isProd
               ? `絶対値 $${r1}\\times${r2}=${r1 * r2}$、偏角 $${radT(d1)}+${radT(d2)}=${radT(d1 + d2)}$`
-              : `絶対値 $\\frac{${r1}}{${r2}}=${fracTex(r1, r2)}$、偏角 $${radT(d1)}-${radT(d2)}=${radT(d1 - d2)}$${d1 < d2 ? `（$2\\pi$ をたして $${radT(d1 - d2 + 360)}$）` : ""}`,
+              : `絶対値 $${r2 === 1 ? r1 : `\\frac{${r1}}{${r2}}=${fracTex(r1, r2)}`}$、偏角 $${radT(d1)}-${radT(d2)}=${radT(d1 - d2)}$${d1 < d2 ? `（$2\\pi$ をたして $${radT(d1 - d2 + 360)}$）` : ""}`,
             `${ans}`,
           ],
         };
@@ -1300,7 +1301,7 @@ const KYOKUSEN = {
             ans: 2 * a * b,
             hint: "第1象限の頂点を $(a\\cos\\theta,\\ b\\sin\\theta)$ とおく。",
             steps: [
-              `頂点 $(${a}\\cos\\theta,\\ ${b}\\sin\\theta)$ $\\left(0<\\theta<\\frac{\\pi}{2}\\right)$ とおくと面積は $4\\times${a}\\cos\\theta\\times${b}\\sin\\theta$`,
+              `頂点 $(${termTex(a, 1, "\\cos\\theta")},\\ ${termTex(b, 1, "\\sin\\theta")})$ $\\left(0<\\theta<\\frac{\\pi}{2}\\right)$ とおくと面積は $4\\times${termTex(a, 1, "\\cos\\theta")}\\times${termTex(b, 1, "\\sin\\theta")}$`,
               `$=${2 * a * b}\\sin2\\theta$、$\\theta=\\frac{\\pi}{4}$ で最大値 $${2 * a * b}$`,
             ],
           };
