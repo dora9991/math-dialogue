@@ -113,9 +113,9 @@
 
     /* ---------- 問2 ---------- */
     Q('q2', t('問題です。DE∥BC のとき、AD：AB と等しい比は、どれでしょう。', { ft: 'normal' }),
-      [{ t: 'AE：EC' }, { t: 'EC：AC' }, { t: 'AE：AC', ok: true }, { t: 'BC：DE' }],
-      { 0: [b('AD と AE、AB と EC が、ならんでいるから、これでしょ！', { fb: 'happy', up: true }), t('AB は、辺 AB の全体です。対応する全体は、辺 AC です。EC は、AC の一部です。AE：AC です。', sad)],
-        1: [t('EC：AC は、DB：AB と等しい比です。AD：AB とは、ちがいます。', { ft: 'normal' })],
+      [{ t: 'AE：AC', ok: true }, { t: 'AE：EC' }, { t: 'EC：AC' }, { t: 'BC：DE' }],
+      { 1: [b('AD と AE、AB と EC が、ならんでいるから、これでしょ！', { fb: 'happy', up: true }), t('AB は、辺 AB の全体です。対応する全体は、辺 AC です。EC は、AC の一部です。AE：AC です。', sad)],
+        2: [t('EC：AC は、DB：AB と等しい比です。AD：AB とは、ちがいます。', { ft: 'normal' })],
         ok: [t('正解！ AD は AB の一部、AE は AC の一部です。AD：AB＝AE：AC です。', { ft: 'happy' }), b('全体どうし、一部どうしを、ならべるんだね！', { fb: 'star', up: true })],
         wrong: [t('BC：DE は、AB：AD と等しい比です。上と下が、逆になっています。', { ft: 'normal' })] }),
 

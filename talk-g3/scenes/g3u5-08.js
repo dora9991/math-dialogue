@@ -108,7 +108,7 @@
 
     t('問題です。△ABC で、DE∥BC です。AD は6cm、DB は4cm、EC は8cm、BC は15cm です。DE と AE を、求めます。', { part: '問題を読もう', ft: 'normal',
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'めあて', text: '比を使って\n線分の長さを求めよう', t: 4.0 }, Object.assign(f1, { prims: [] })], draw: [G('g1', base1, len1)] }),
-    t('まず、DE です。DE は、BC と対応します。この比に等しい、AD、DB、AB の中の2つの比を、選びます。', { ft: 'normal', point: false }),
+    t('まず、DE です。DE は、BC と対応します。DE：BC と等しい比を、AD、DB、AB から、選びます。', { ft: 'normal', point: false }),
 
     /* ---------- 問1 ---------- */
     Q('q1', t('問題です。DE を求めるための、正しい比例式は、どれでしょう。', { ft: 'normal' }),
@@ -131,7 +131,7 @@
         ok: [t('正解！ 4×AE＝6×8＝48 で、AE＝12cm です。AC は、12＋8＝20cm になります。', { ft: 'happy' }), b('AE は 12cm、EC は 8cm だね！', { fb: 'star', up: true })],
         wrong: [t('4.8cm は、6：10＝AE：8 を、解いた答えです。AE と EC には、AD と DB が対応します。AB では、ありません。', { ft: 'normal' })] }),
 
-    t('三角形と比では、「部分：部分」と「全体：全体」を、混ぜません。AD：DB は AE：EC、AD：AB は AE：AC と DE：BC です。', { ft: 'normal', point: false,
+    t('三角形と比では、「部分：部分」と「全体：全体」を、混ぜません。AD：DB は AE：EC、AD：AB は AE：AC と DE：BC です。', { clear: true, cols: [0.34, 0.66], part: '気をつけること', ft: 'normal',
       add: [{ col: 0, type: 'box', color: 'p', size: 'xs', label: '注意', text: '部分：部分\n全体：全体\n混ぜない', t: 4.5 }] }),
 
     /* ---------- 2ページ目：A をはさむ形 ---------- */

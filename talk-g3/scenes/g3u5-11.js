@@ -19,7 +19,7 @@
     .replace(/(?<![A-Za-z])cm²/g, '平方センチメートル').replace(/(?<![A-Za-z])cm³/g, '立方センチメートル').replace(/(?<![A-Za-z])cm(?![a-z])/g, 'センチメートル')
     .replace(/(?<=[0-9])m²/g, '平方メートル').replace(/(?<=[0-9])m³/g, '立方メートル').replace(/(?<=[0-9])mL/g, 'ミリリットル').replace(/(?<=[0-9])m(?![a-zA-Z²³])/g, 'メートル')
     .replace(/²/g, 'の2乗').replace(/³/g, 'の3乗').replace(/π/g, 'パイ')
-    .replace(/逆/g, 'ぎゃく').replace(/二等辺/g, 'にとうへん').replace(/対頂角/g, 'たいちょうかく').replace(/同位角/g, 'どういかく').replace(/錯角/g, 'さっかく').replace(/罫線/g, 'けいせん')
+    .replace(/逆/g, 'ぎゃく').replace(/二等辺/g, 'にとうへん').replace(/対頂角/g, 'たいちょうかく').replace(/同位角/g, 'どういかく').replace(/錯角/g, 'さっかく').replace(/罫線/g, 'けいせん').replace(/割高/g, 'わりだか').replace(/得意/g, 'とくい').replace(/お得/g, 'おとく').replace(/得/g, 'とく')
     .replace(/(?:[A-Z]′?)+/g, m => { const t = [...m.matchAll(/([A-Z])(′?)/g)].map(x => ({ r: (KA[x[1]] || x[1]) + (x[2] ? 'ダッシュ' : ''), d: !!x[2] })); return t.map((x, i) => (i && (x.d || t[i - 1].d) ? ' ' : '') + x.r).join(''); })
     .replace(/(?<![A-Za-z])[a-z](?![A-Za-z])/g, m => KS[m] || m)
     .replace(/、、+/g, '、').replace(/ {2,}/g, ' ').trim();
@@ -56,6 +56,25 @@
   const arcm = (o, a, b, r, c, n, gap) => { n = n || 1; gap = gap || 0; const t1 = Math.atan2(a[1] - o[1], a[0] - o[0]); let d = Math.atan2(b[1] - o[1], b[0] - o[0]) - t1; d = Math.atan2(Math.sin(d), Math.cos(d)); const out = [];
     for (let j = 0; j < n; j++) { const rr = r + j * 0.14, pts = []; for (let i = 0; i <= 14; i++) { const t = t1 + d * (gap + (1 - 2 * gap) * i / 14); pts.push([o[0] + rr * Math.cos(t), o[1] + rr * Math.sin(t)]); } out.push({ k: 'poly', pts, c, wd: 3 }); }
     return out; };
+  // ---- 立体（斜投影）：prj(o, s)(x, y, z)＝[o.x＋s(x＋0.5y·cos45°), o.y＋s(z＋0.5y·sin45°)]。x：横、y：奥ゆき、z：高さ ----
+  const C45 = Math.SQRT1_2;
+  const prj = (o, s) => (x, y, z) => [o[0] + s * (x + 0.5 * y * C45), o[1] + s * (z + 0.5 * y * C45)];
+  // 直方体 a×b×c（横×奥ゆき×高さ）の12本の辺。見えない3辺（うしろ・左・下）は dash:true
+  const boxEdges = (pj, a, b, c, col, wd) => {
+    const E = (p, q, dash) => LN(pj(...p), pj(...q), col, Object.assign({ wd: wd || 3.4 }, dash ? { dash: true } : {}));
+    return [E([0, 0, 0], [a, 0, 0]), E([a, 0, 0], [a, 0, c]), E([a, 0, c], [0, 0, c]), E([0, 0, c], [0, 0, 0]),
+      E([0, b, 0], [a, b, 0], 1), E([a, b, 0], [a, b, c]), E([a, b, c], [0, b, c]), E([0, b, c], [0, b, 0], 1),
+      E([0, 0, 0], [0, b, 0], 1), E([a, 0, 0], [a, b, 0]), E([a, 0, c], [a, b, c]), E([0, 0, c], [0, b, c])];
+  };
+  // 見える3面（正面・上・右）のぬり
+  const boxFaces = (pj, a, b, c, col, alpha) => [[[0, 0, 0], [a, 0, 0], [a, 0, c], [0, 0, c]], [[0, 0, c], [a, 0, c], [a, b, c], [0, b, c]], [[a, 0, 0], [a, b, 0], [a, b, c], [a, 0, c]]]
+    .map((f, i) => PG(f.map(p => pj(...p)), col, { fill: col, alpha: (alpha || 0.14) * (i === 0 ? 1 : i === 1 ? 1.5 : 0.7), wd: 2 }));
+  // 見える3面を、横 na・奥ゆき nb・高さ nc 等分する線（細い線）
+  const boxGrid = (pj, a, b, c, na, nb, nc, col) => { const out = [], L = (p, q) => out.push(LN(pj(...p), pj(...q), col || 'd', { wd: 2 }));
+    for (let i = 1; i < na; i++) { const x = a * i / na; L([x, 0, 0], [x, 0, c]); L([x, 0, c], [x, b, c]); }
+    for (let k = 1; k < nc; k++) { const z = c * k / nc; L([0, 0, z], [a, 0, z]); L([a, 0, z], [a, b, z]); }
+    for (let j = 1; j < nb; j++) { const y = b * j / nb; L([0, y, c], [a, y, c]); L([a, y, 0], [a, y, c]); }
+    return out; };
   // ---- 図の座標（四角形ABCD。AC：BD＝5：3 になるように BD の長さを決める）----
   const qA = [1.0, 1.2], qC = [9.5, 3.0], qD = [3.6, 5.0];
   const ACl = Math.hypot(qC[0] - qA[0], qC[1] - qA[1]);
@@ -84,7 +103,7 @@
 
   KL.lesson({ id: 'g3u5-11', unit: '中3　相似な図形', kick: '3年5章　第11時', title: '中点連結定理を使って証明しよう', card: '中点連結定理を使って証明しよう', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [
     T('みなさん、こんにちは。今日は、中点連結定理を使って、図形の性質を、証明します。', { title: true, point: false, ft: 'happy' }),
-    B('ぼくの家の畑は、形がいびつなんだ。四方の辺の真ん中に杭を打って、ひもで結んだら、いびつな形になるよね？', { title: true, fb: 'happy', up: true }),
+    B('ぼくの家の畑は、形がいびつなんだ。四方の辺の真ん中に、くいを打って、ひもで結んだら、いびつな形になるよね？', { title: true, fb: 'happy', up: true }),
     T('ふふ。いびつな畑でも、ひもで結ぶと、ある形になります。それを、証明で確かめましょう。', { title: true, point: false, ft: 'sigh', fx: { t: 'sweat' } }),
 
     T('まず、中点連結定理の、ふり返りです。三角形ABCで、辺ABとACの中点を、MとNとします。', { part: 'ふり返ろう', ft: 'normal',
@@ -163,7 +182,7 @@
         wrong: [T('32cmは、ACとBDの和の2倍です。EFGHの周は、10＋6＝16cmです。', { ft: 'normal' })] }),
     T('ACとBDが、同じ長さのときは、EFとEHも、同じ長さになります。そのとき、EFGHは、ひし形です。', { ft: 'normal', point: false,
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'まとめ', text: '四角形の各辺の中点を\n結ぶと、平行四辺形', t: 5.0 }] }),
-    B('ぼくの畑も、ひもで結べば、平行四辺形になるんだね！ 杭を、打ちに行ってくる！', { fb: 'happy', up: true, fx: { b: 'e' } }),
+    B('ぼくの畑も、ひもで結べば、平行四辺形になるんだね！ くいを、打ちに行ってくる！', { fb: 'happy', up: true, fx: { b: 'e' } }),
     T('お疲れさまでした。成績は、こちらです。', { ft: 'happy', point: false, result: true })
   ] });
 })();

@@ -23,6 +23,12 @@
     return [[P[0] + ab * cb, P[1] + ab * sb], P, [P[0] + bc, P[1]]];
   };
   const unit = (a, b) => { const d = Math.hypot(b[0] - a[0], b[1] - a[1]); return [(b[0] - a[0]) / d, (b[1] - a[1]) / d]; };
+  // 2辺とその間の角から三角形：A＝P，B＝P＋(c,0)（AB＝c），AC＝b で ∠A＝deg。[A,B,C] を返す
+  const SAS = (P, c, b, deg) => [P, [P[0] + c, P[1]], [P[0] + b * Math.cos(deg * R), P[1] + b * Math.sin(deg * R)]];
+  // 1辺とその両端の角から三角形：P（左・角 aP），Q＝P＋(len,0)（右・角 aQ），R は上。[P,Q,R] を返す
+  const ASA = (P, len, aP, aQ) => { const pr = len * Math.sin(aQ * R) / Math.sin((aP + aQ) * R); return [P, [P[0] + len, P[1]], [P[0] + pr * Math.cos(aP * R), P[1] + pr * Math.sin(aP * R)]]; };
+  // 角の大きさの文字：頂点 v、v→p と v→q のあいだの内側（距離 r）
+  const angLab = (v, p, q, r, text, c) => { const u = unit(v, p), w = unit(v, q), s = unit([0, 0], [u[0] + w[0], u[1] + w[1]]); return tx([v[0] + s[0] * r, v[1] + s[1] * r - 0.08], text, c || 'w', 'middle', 24); };
   // 辺 ab の外側（図形の重心 ps と反対がわ）にそえる長さの文字
   const sl = (a, b, ps, text, c, d) => { const m = lerp(a, b, 0.5), u = unit(cen(ps), m); return tx([m[0] + u[0] * (d || 0.42), m[1] + u[1] * (d || 0.42) - 0.1], text, c || 'w', 'middle', 26); };
   // 頂点の名前：図形の重心から外へ向ける
@@ -101,9 +107,9 @@
 
     /* ---------- 問1 ---------- */
     Q('q1', t('問題です。△ABC と △DEF の相似比は、どれでしょう。AB は10cm、DE は15cm です。', { ft: 'normal' }),
-      [{ t: '2：1' }, { t: '2：3', ok: true }, { t: '2：5' }, { t: '3：2' }],
+      [{ t: '2：3', ok: true }, { t: '2：1' }, { t: '2：5' }, { t: '3：2' }],
       { 3: [b('大きいほうが、先でしょ！ 15：10 で、3：2 だよ！', { fb: 'happy', up: true }), t('△ABC と △DEF の順に、聞かれています。先に言うのは、△ABC の辺 AB です。10：15 で、2：3 です。', sad)],
-        0: [t('2：1 は、10：5 の比です。差の5を、使っていませんか。AB：DE＝10：15 を、かんたんにします。', { ft: 'normal' })],
+        1: [t('2：1 は、10：5 の比です。差の5を、使っていませんか。AB：DE＝10：15 を、かんたんにします。', { ft: 'normal' })],
         ok: [t('正解！ AB：DE＝10：15 で、5でわって、2：3 です。', { ft: 'happy' }), b('△ABC を、先に言えばいいんだね！', { fb: 'star', up: true })],
         wrong: [t('2：5 は、10：25 の比です。25は、10と15を足した数です。相似比は、10：15 です。', { ft: 'normal' })] }),
 

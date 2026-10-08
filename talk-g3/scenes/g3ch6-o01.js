@@ -33,11 +33,11 @@
   const Ap = [4.215, 1.836], Bp = [7.585, 1.836], Cp = [6.652, 5.317], Dp = [5.9, 1.05];
   const Ep = [3.775, 2.681], Fp = [5.938, 1.05], Gp = [5.518, 5.417];
   const base1 = [circ(O, 2.2, 'w'), [['A', Ap], ['B', Bp], ['C', Cp], ['D', Dp]].map(a => dot(a[1], a[0], away(a[1], O), 'y')), dot(O, 'O', [-0.75, 0.75], 'w', { r: 5 }),
-    ln(O, Ap, 'b'), ln(O, Bp, 'b'), mark(O, Ap, Bp, 0.5, 'y'), num(O, Ap, Bp, 0.98, '100°', 'y', { size: 28 })];
+    ln(O, Ap, 'b'), ln(O, Bp, 'b'), mark(O, Ap, Bp, 0.45, 'y'), num(O, Ap, Bp, 0.78, '100°', 'y', { size: 28 })];
   const insc1 = [ln(Cp, Ap, 'g'), ln(Cp, Bp, 'g'), mark(Cp, Ap, Bp, 0.55, 'p'), num(Cp, Ap, Bp, 1.0, 'x', 'p', { size: 30 })];
   const minorArc = arcAt(O, 2.2, 220, 320, 'p');
   const majorArc = arcAt(O, 2.2, -40, 220, 'g');
-  const fromD = [ln(Dp, Ap, 'b', { wd: 3.2 }), ln(Dp, Bp, 'b', { wd: 3.2 }), mark(Dp, Ap, Bp, 0.5, 'p'), num(Dp, Ap, Bp, 0.95, '130°', 'p', { size: 27 })];
+  const fromD = [ln(Dp, Ap, 'b', { wd: 3.2 }), ln(Dp, Bp, 'b', { wd: 3.2 }), mark(Dp, Ap, Bp, 0.42, 'p'), num(Dp, Ap, Bp, 0.72, '130°', 'p', { size: 27 })];
   const fig2 = [circ(O, 2.2, 'w'), [['E', Ep], ['F', Fp], ['G', Gp]].map(a => dot(a[1], a[0], away(a[1], O), 'y')), dot(O, 'O', [0.8, 0.5], 'w', { r: 5 }),
     ln(Gp, Ep, 'g'), ln(Gp, Fp, 'g'), mark(Gp, Ep, Fp, 0.55, 'y'), num(Gp, Ep, Fp, 1.0, '38°', 'y', { size: 27 }),
     ln(O, Ep, 'b'), ln(O, Fp, 'b'), mark(O, Ep, Fp, 0.5, 'p'), num(O, Ep, Fp, 0.95, 'x', 'p', { size: 30 })];

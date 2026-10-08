@@ -153,11 +153,10 @@
         ok: [t('正解！ 同位角が等しいので、DE∥BC です。逆が、証明できました。', { ft: 'happy' }), b('角が等しければ、平行なんだね！', { fb: 'star', up: true })],
         wrong: [t('共通な角は、∠A です。∠ADE と ∠ABC は、頂点がちがいます。同位角が等しいから、平行です。', { ft: 'normal' })] }),
 
-    t('AD：DB＝AE：EC でも、同じです。AD：DB＝2：3 なら、AD：AB＝2：5 です。AE：EC＝2：3 なら、AE：AC＝2：5 です。', { ft: 'normal', point: false, draw: [G('g3', par0)],
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '定理の逆', text: 'AD：AB＝AE：AC\nならば　DE∥BC', t: 5.0 }] }),
+    t('AD：DB＝AE：EC でも、同じです。AD：DB＝2：3 なら、AD：AB＝2：5 です。AE：EC＝2：3 なら、AE：AC＝2：5 です。', { ft: 'normal', point: false, draw: [G('g3', par0)] }),
 
     /* ---------- 5ページ目：表から選ぶ ---------- */
-    t('では、使ってみましょう。△ABC の辺 AB、AC 上に、D、E をとります。表のア〜エの中で、DE∥BC といえるものを、探します。', { clear: true, cols: [0.34, 0.66], part: '使ってみよう', ft: 'normal',
+    t('では、使ってみましょう。△ABC の辺 AB、AC 上に、D、E をとります。表の ア から エ の中で、DE∥BC といえるものを、探します。', { clear: true, cols: [0.34, 0.66], part: '使ってみよう', ft: 'normal',
       add: [{ col: 0, type: 'box', color: 'p', size: 'xs', label: '調べること', text: 'AD：DB と\nAE：EC が\n等しいか', t: 4.0 }, tbl(t9, { col: 1, style: 'font-size:40px; align-self:center; margin-top:14px', t: 1.0 })] }),
 
     /* ---------- 問5 ---------- */

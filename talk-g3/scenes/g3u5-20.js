@@ -19,7 +19,7 @@
     .replace(/(?<![A-Za-z])cm²/g, '平方センチメートル').replace(/(?<![A-Za-z])cm³/g, '立方センチメートル').replace(/(?<![A-Za-z])cm(?![a-z])/g, 'センチメートル')
     .replace(/(?<=[0-9])m²/g, '平方メートル').replace(/(?<=[0-9])m³/g, '立方メートル').replace(/(?<=[0-9])mL/g, 'ミリリットル').replace(/(?<=[0-9])m(?![a-zA-Z²³])/g, 'メートル')
     .replace(/²/g, 'の2乗').replace(/³/g, 'の3乗').replace(/π/g, 'パイ')
-    .replace(/逆/g, 'ぎゃく').replace(/二等辺/g, 'にとうへん').replace(/対頂角/g, 'たいちょうかく').replace(/同位角/g, 'どういかく').replace(/錯角/g, 'さっかく').replace(/罫線/g, 'けいせん')
+    .replace(/逆/g, 'ぎゃく').replace(/二等辺/g, 'にとうへん').replace(/対頂角/g, 'たいちょうかく').replace(/同位角/g, 'どういかく').replace(/錯角/g, 'さっかく').replace(/罫線/g, 'けいせん').replace(/割高/g, 'わりだか').replace(/得意/g, 'とくい').replace(/お得/g, 'おとく').replace(/得/g, 'とく')
     .replace(/(?:[A-Z]′?)+/g, m => { const t = [...m.matchAll(/([A-Z])(′?)/g)].map(x => ({ r: (KA[x[1]] || x[1]) + (x[2] ? 'ダッシュ' : ''), d: !!x[2] })); return t.map((x, i) => (i && (x.d || t[i - 1].d) ? ' ' : '') + x.r).join(''); })
     .replace(/(?<![A-Za-z])[a-z](?![A-Za-z])/g, m => KS[m] || m)
     .replace(/、、+/g, '、').replace(/ {2,}/g, ' ').trim();
@@ -80,7 +80,7 @@
   const k1 = 0.4, rB = [1.0, 1.2], rA = [1.0, 1.2 + 6 * k1], rC = [1.0 + 8 * k1, 1.2], rE = [6.0, 1.2], rD = [6.0, 1.2 + 9 * k1], rF = [6.0 + 12 * k1, 1.2];
   const triS = [PG([rA, rB, rC], 'y', { fill: 'y', alpha: 0.12 }), DT(rA, 'A', [-0.7, 0.7], 'y'), DT(rB, 'B', [-0.7, -0.7], 'y'), DT(rC, 'C', [0.7, -0.7], 'y'), RT(rB, [1, 0], [0, 1], 18), arcm(rA, rB, rC, 0.6, 'p', 1)];
   const triL = [PG([rD, rE, rF], 'p', { fill: 'p', alpha: 0.12 }), DT(rD, 'D', [-0.7, 0.7], 'p'), DT(rE, 'E', [-0.7, -0.7], 'p'), DT(rF, 'F', [0.7, -0.7], 'p'), RT(rE, [1, 0], [0, 1], 18), arcm(rD, rE, rF, 0.8, 'p', 1)];
-  const sideLab = [TX(add2(mid(rA, rB), [-0.15, 0]), 'AB＝6cm', 'y', 26, 'end'), TX([mid(rB, rC)[0], 0.7], 'BC＝8cm', 'y', 26), TX(add2(mid(rD, rE), [-0.15, 0]), 'DE＝9cm', 'p', 26, 'end'), TX([mid(rE, rF)[0], 0.7], 'EF＝？', 'p', 28)];
+  const sideLab = [TX(add2(mid(rA, rB), [-0.15, 0]), '6cm', 'y', 28, 'end'), TX([mid(rB, rC)[0], 0.7], '8cm', 'y', 28), TX(add2(mid(rD, rE), [-0.15, 0]), '9cm', 'p', 28, 'end'), TX([mid(rE, rF)[0], 0.7], '？', 'p', 34)];
   // 2ページ目：DE∥BC、AD：DB＝3：5（AD：AB＝3：8）、BC＝16 の 1cm＝0.5375
   const k2 = 8.6 / 16, uA = [5.2, 4.9], uB = [1.2, 0.9], uC = [9.8, 0.9], uD = lerp(uA, uB, 3 / 8), uE = lerp(uA, uC, 3 / 8);
   const tri2 = [PG([uA, uB, uC], 'w'), DT(uA, 'A', [0, 1], 'y'), DT(uB, 'B', [-0.7, -0.7], 'y'), DT(uC, 'C', [0.7, -0.7], 'y'), DT(uD, 'D', [-0.9, 0.2], 'p', { r: 5.5 }), DT(uE, 'E', [0.9, 0.2], 'p', { r: 5.5 }), LN(uD, uE, 'p', { wd: 4 }), para(uD, uE, 'b', 1), para(uB, uC, 'b', 1)];
@@ -90,7 +90,11 @@
   const pj1 = prj([1.6, 1.2], 1.0), pj2 = prj([4.8, 1.2], 1.0);
   const cube1 = [boxFaces(pj1, 1, 1, 1, 'y', 0.2), boxEdges(pj1, 1, 1, 1, 'y'), TX(add2(pj1(0.5, 0, 0), [0, -0.4]), '1cm', 'y', 28)];
   const cube2 = [boxFaces(pj2, 2, 2, 2, 'p', 0.14), boxEdges(pj2, 2, 2, 2, 'p'), boxGrid(pj2, 2, 2, 2, 2, 2, 2, 'd'), TX(add2(pj2(1, 0, 0), [0, -0.4]), '2cm', 'p', 28)];
-  const g1 = GF('g1'), g2 = GF('g2'), g3 = GF('g3');
+  // ふり返りのページ：中点連結定理（MN∥BC、MN＝BC÷2）
+  const mA = [5.4, 4.9], mB = [2.0, 0.9], mC = [9.6, 0.9], mM = mid(mA, mB), mN = mid(mA, mC);
+  const midFig = [PG([mA, mB, mC], 'w'), DT(mA, 'A', [0, 1], 'y'), DT(mB, 'B', [-0.7, -0.7], 'y'), DT(mC, 'C', [0.7, -0.7], 'y'), LN(mM, mN, 'p', { wd: 4.4 }), DT(mM, 'M', [-0.9, 0.3], 'p', { r: 5 }), DT(mN, 'N', [0.9, 0.3], 'p', { r: 5 }),
+    tick(mA, mM, 'g', 1), tick(mM, mB, 'g', 1), tick(mA, mN, 'g', 2), tick(mN, mC, 'g', 2), para(mM, mN, 'b', 1), para(mB, mC, 'b', 1)];
+  const g1 = GF('g1'), g2 = GF('g2'), g3 = GF('g3'), g4 = GF('g4');
 
   KL.lesson({ id: 'g3u5-20', unit: '中3　相似な図形', kick: '3年5章　第20時', title: '「相似な図形」で学んだことを、整理して確かめよう', card: '「相似な図形」で学んだことを、整理して確かめよう', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [
     T('みなさん、こんにちは。今日は、「相似な図形」の、まとめです。前半の、相似条件や、証明も、いっしょに、ふり返ります。', { title: true, point: false, ft: 'happy' }),
@@ -122,7 +126,7 @@
         wrong: [T('相似比は、AB：DE＝6：9＝2：3です。8：EF＝2：3を解いて、EF＝12cmです。', { ft: 'normal' })] }),
 
     T('次は、証明です。△ABCで、DE∥BCです。△ABC∽△ADEを、証明します。まず、∠Aは、共通です。', { clear: true, cols: [0.34, 0.66], part: '相似の証明', ft: 'normal',
-      add: [{ col: 0, type: 'box', color: 'b', size: 'xs', label: '仮定', text: 'DE∥BC', t: 3.0 }, { col: 0, type: 'box', color: 'p', size: 'xs', label: '結論', text: '△ABC∽△ADE', t: 3.0 }, { col: 0, type: 'text', size: 'xs', label: '証明', text: '△ABC と △ADE において\n共通な角だから　∠A＝∠A　…①', t: 5.0 }, FG('g2')],
+      add: [{ col: 0, type: 'box', color: 'b', size: 'xs', label: '仮定と結論', text: 'DE∥BC のとき\n△ABC∽△ADE', t: 4.0 }, { col: 0, type: 'text', size: 'xs', text: '△ABC と △ADE において\n共通な角だから　∠A＝∠A　…①', t: 5.0 }, FG('g2')],
       draw: [g2(tri2)] }),
 
     /* ---------- 問3 ---------- */
@@ -133,7 +137,7 @@
         ok: [T('正解！ DE∥BCだから、同位角が等しく、∠ABC＝∠ADEです。これを、②とします。', { ft: 'happy' }), B('平行線の、同じ側の角だね！', { fb: 'star', up: true })],
         wrong: [T('∠Aは、共通な角ですが、∠ABCと∠ADEは、別の角です。この2つは、平行線の、同位角です。', { ft: 'normal' })] }),
     T('①②より、2組の角が、それぞれ等しいから、△ABC∽△ADEです。相似だから、AD：AB＝DE：BCです。', { ft: 'normal', point: false,
-      add: [{ col: 0, type: 'text', size: 'xs', text: '平行線の同位角は等しいから\n∠ABC＝∠ADE　…②\n①②より、2組の角が\nそれぞれ等しいから\n△ABC∽△ADE', t: 6.0 }],
+      add: [{ col: 0, type: 'text', size: 'xs', text: '同位角は等しいから\n∠ABC＝∠ADE　…②\n①②より、2組の角が\nそれぞれ等しいから\n△ABC∽△ADE', t: 6.0 }],
       draw: [g2(angs2)] }),
     T('AD＝3cm、DB＝5cm、DE＝6cmとします。BCの長さを、求めましょう。ABは、3＋5で、出せますね。', { ft: 'normal', point: false,
       draw: [g2(lab2)] }),
@@ -145,8 +149,9 @@
         1: [T('12cmは、DEの2倍です。AD：AB＝3：8を使って、6：BC＝3：8を、解きます。', { ft: 'normal' })],
         ok: [T('正解！ AB＝3＋5＝8。6：BC＝3：8だから、BC＝6×8÷3＝16cmです。', { ft: 'happy' }), B('ABを、足して出すのが、ポイントだね！', { fb: 'star', up: true })],
         wrong: [T('48cmは、6×8の値です。3でわるのを、忘れています。BC＝6×8÷3＝16cmです。', { ft: 'normal' })] }),
-    T('ほかにも、平行線と線分の比や、中点連結定理を、学びました。中点を結ぶ線は、残りの辺と平行で、長さは、半分です。', { ft: 'normal', point: false,
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'ふり返り', text: '平行線と線分の比\nAB：BC＝A′B′：B′C′\n中点連結定理\nMN∥BC　MN＝1/2BC', t: 7.0 }] }),
+    T('ほかにも、平行線と線分の比や、中点連結定理を、学びました。中点を結ぶ線は、残りの辺と平行で、長さは、半分です。', { clear: true, cols: [0.34, 0.66], part: 'ふり返り', ft: 'normal',
+      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'ふり返り', text: '平行線と線分の比\nAB：BC＝A′B′：B′C′\n中点連結定理\nMN∥BC　MN＝1/2BC', t: 7.0 }, FG('g4')],
+      draw: [g4(midFig)] }),
 
     T('最後は、面積と体積です。相似比が、m：nのとき、面積比は、m²：n²。体積比は、m³：n³です。', { clear: true, cols: [0.34, 0.66], part: '面積と体積', ft: 'normal',
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'きまり', text: '相似比 m：n\n面積比 m²：n²\n体積比 m³：n³', t: 5.0 }, FG('g3')],

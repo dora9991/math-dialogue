@@ -133,8 +133,8 @@
 
     /* ---------- 問5 ---------- */
     Q('q5', T('最後の問題です。PBの長さは、何cmでしょう。PAとPD、PCとPBが、対応します。', { ft: 'happy' }),
-      [{ t: '2cm', ok: true }, { t: '4.5cm' }, { t: '6cm' }, { t: '18cm' }],
-      { 1: [B('PA：PD＝PB：PC で、9：6＝PB：3 だから、4.5cmだよ！', { fb: 'happy', up: true }), T('対応する辺を、入れかえています。PAとPD、PCとPBが対応するので、9：6＝3：PBです。PBは、2cmです。', { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } })],
+      [{ t: '2cm', ok: true }, { t: '[[9/2]]cm' }, { t: '6cm' }, { t: '18cm' }],
+      { 1: [B('PA：PD＝PB：PC で、9：6＝PB：3 だから、[[9/2]]cmだよ！', { fb: 'happy', up: true }), T('対応する辺を、入れかえています。PAとPD、PCとPBが対応するので、9：6＝3：PBです。PBは、2cmです。', { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } })],
         3: [T('18cmは、9：3＝PB：6 と、対応を、まちがえた答えです。9：6＝3：PB を解くと、2cmです。', { ft: 'normal' })],
         ok: [T('正解！ PA：PD＝PC：PB より、9：6＝3：PB。9×PB＝6×3、PB＝2cmです。', { ft: 'happy' }), B('相似比3：2を、使ったんだね！', { fb: 'star', up: true })],
         wrong: [T('6cmは、PDの長さです。9：6＝3：PB を解いて、PBは、2cmです。', { ft: 'normal' })] }),
