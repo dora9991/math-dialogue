@@ -29,11 +29,17 @@
   const G = (...i) => ({ fig: 'g', items: i.flat(3) });
   const lb = (x, y, text, c, size) => ({ k: 'label', at: [x, y], text, c: c || 'w', size: size || 28, anchor: 'middle', d: 0.2 });
   const H = 2.6, W = H * Math.SQRT2, X0 = 0.9, Y0 = 1.0;
-  const sheet = [rect(X0, Y0, X0 + W, Y0 + H, { c: 'w', wd: 3.6, d: 0.6 }), lb(X0 - 0.4, Y0 + H / 2, '1', 'b', 34), lb(X0 + W / 2, Y0 + H + 0.45, 'x', 'p', 34)];
+  const dim = (a, b, c) => ({ k: 'seg', a, b, c, wd: 3, d: 0.4 });                       // 長さを示す線
+  const sheet = [rect(X0, Y0, X0 + W, Y0 + H, { c: 'w', wd: 3.6, d: 0.6 }),
+    dim([X0 - 0.25, Y0], [X0 - 0.25, Y0 + H], 'b'), lb(X0 - 0.6, Y0 + H / 2, '1', 'b', 34),
+    dim([X0, Y0 + H + 0.25], [X0 + W, Y0 + H + 0.25], 'p'), lb(X0 + W / 2, Y0 + H + 0.65, 'x', 'p', 34)];
   const fold = [{ k: 'seg', a: [X0 + W / 2, Y0 - 0.1], b: [X0 + W / 2, Y0 + H + 0.1], c: 'y', wd: 3.4, dash: true, d: 0.5 },
     rect(X0, Y0, X0 + W / 2, Y0 + H, { c: 'y', wd: 3, fill: 'y', alpha: 0.16, d: 0.5 }), lb(X0 + W / 2, Y0 - 0.45, '折り目', 'y', 26)];
+  const RX = 6.6;
   const half = [{ k: 'seg', a: [5.0, Y0 + H / 2 + 0.2], b: [6.2, Y0 + H / 2 + 0.2], c: 'w', wd: 4, arrow: true, d: 0.5 }, lb(5.6, Y0 + H / 2 + 0.7, '折って回す', 'w', 24),
-    rect(6.6, Y0, 6.6 + H, Y0 + W / 2, { c: 'y', wd: 3.6, fill: 'y', alpha: 0.16, d: 0.6 }), lb(6.6 + H / 2, Y0 - 0.38, '1', 'b', 34), lb(6.6 + H + 0.6, Y0 + W / 4, 'x/2', 'p', 34)];
+    rect(RX, Y0, RX + H, Y0 + W / 2, { c: 'y', wd: 3.6, fill: 'y', alpha: 0.16, d: 0.6 }),
+    dim([RX, Y0 - 0.25], [RX + H, Y0 - 0.25], 'b'), lb(RX + H / 2, Y0 - 0.65, '1', 'b', 34),
+    dim([RX + H + 0.25, Y0], [RX + H + 0.25, Y0 + W / 2], 'p'), lb(RX + H + 0.85, Y0 + W / 4, 'x/2', 'p', 34)];
 
   KL.lesson({ id: 'g3u2-13', unit: '中3　平方根', kick: '3年2章　第13時', title: 'コピー用紙の縦と横の比のひみつを調べよう', card: 'コピー用紙の縦と横の比のひみつを調べよう', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [
     T('みなさん、こんにちは。今日は、コピー用紙の、縦と横の比のひみつを、調べます。', { title: true, point: false, ft: 'happy' }),

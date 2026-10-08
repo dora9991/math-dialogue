@@ -88,7 +88,7 @@
         0: [T('外の数も、かけます。2√5×2√2の、外の数は、2×2＝4です。2√10ではありません。', { ft: 'normal' })],
         ok: [T('正解！ x²−y²＝（x＋y）（x−y）＝2√5×2√2＝4√10です。', { ft: 'happy' }), B('因数分解の公式が、ここで役に立つんだね！', { fb: 'star', up: true })],
         wrong: [T('x²−y²は、2√5×2√2＝4√10です。', { ft: 'normal' })] }),
-    T('まとめです。文字の式の値は、代入する前に、x＋y、x−y、xyを求めます。それから、式を、変形して使います。', { ft: 'normal', point: false,
+    T('まとめです。文字の式の値は、代入する前に、x＋y、x−y、xyを求めます。それから、式を、変形して使います。', { clear: true, cols: [0.34, 0.66], part: 'まとめ', ft: 'normal',
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'ポイント', text: 'x＋y、x−y、xyを先に\nx²＋y²＝（x＋y）²−2xy\nx²−y²＝（x＋y）（x−y）', t: 7.0 }] }),
     B('代入する前に、和と積を求めると、ごちゃごちゃしないんだね！ 目が回らなくなったよ！', { fb: 'happy', up: true, fx: { b: 'e' } }),
     T('お疲れさまでした。成績は、こちらです。', { ft: 'happy', point: false, result: true })

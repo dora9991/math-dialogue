@@ -11,7 +11,7 @@
   const NUM = { '①': 'いち、', '②': 'に、', '③': 'さん、', '④': 'よん、' };
   const plain = s => String(s).replace(/\{\{|\}\}|\*\*/g, '');
   const yomi = s => {
-    const u = plain(s).replace(/式の値/g, 'しきのあたい').replace(/和から積/g, 'わ、から、せき').replace(/積から和/g, 'せき、から、わ').replace(/(?<![面体])積/g, 'せき').replace(/和/g, 'わ')
+    const u = plain(s).replace(/式の値/g, 'しきのあたい').replace(/和から積/g, 'わ、から、せき').replace(/積から和/g, 'せき、から、わ').replace(/(面|体)?積/g, (m, p) => (p ? m : 'せき')).replace(/和/g, 'わ')
       .replace(/\^([0-9]+)/g, 'の$1乗').replace(/²/g, 'の2乗').replace(/³/g, 'の3乗');
     let o = '', v = false;                       // v：直前が「数・文字・閉じかっこ」なら true（− を「ひく」と読む目印）
     for (let i = 0; i < u.length; i++) {
@@ -38,7 +38,7 @@
   const b = (s, o = {}) => B(s, withSay(s, Object.assign({ up: true }, o)));
   // ---- 黒板の部品 ----
   const REC = [['手順', 'すること'], ['①', '共通な因数でくくる'], ['②', '公式が使えるか見る'], ['③', 'もう分けられないか確かめる']];
-  const recipe = tbl(REC, { style: 'font-size:34px; align-self:center; margin-top:14px', t: 1.0 });
+  const recipe = () => tbl(REC, { style: 'font-size:34px; align-self:center; margin-top:14px', t: 1.0 });
   const qbox = (label, text) => ({ col: 0, type: 'box', color: 'y', size: 'xs', label, text, t: 3.5 });
   const memo = (label, text) => ({ col: 0, type: 'text', size: 'xs', label, text, t: 4.0 });
   const bad = { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } };
@@ -49,7 +49,7 @@
     t('泣かなくて、大丈夫です。順番を決めて、1まいずつ、むいていきましょう。', { title: true, point: false, ft: 'sigh', fx: { t: 'sweat' } }),
 
     t('因数分解は、3つの手順で、進めます。手順1は、共通な因数で、くくる。手順2は、公式が、使えるか、見る。手順3は、もう分けられないか、確かめる。', { part: '3つの手順', ft: 'normal',
-      add: [qbox('めあて', 'いろいろな式を\n最後まで\n因数分解しよう'), recipe] }),
+      add: [qbox('めあて', 'いろいろな式を\n最後まで\n因数分解しよう'), recipe()] }),
     b('手順3は、玉ねぎの、しんまで、むくことだね！ ぼくにも、できそう！', { fb: 'happy' }),
     t('では、3x²−27 で、やってみましょう。まず、手順1です。27 は 3×9 なので、3 でくくれます。3（x²−9）に、なります。', { clear: true, cols: [0.34, 0.66], part: '例を見よう', ft: 'normal',
       add: [memo('式', '3x²−27\n＝3（x²−9）')] }),

@@ -11,7 +11,7 @@
   const NUM = { '①': 'いち、', '②': 'に、', '③': 'さん、', '④': 'よん、' };
   const plain = s => String(s).replace(/\{\{|\}\}|\*\*/g, '');
   const yomi = s => {
-    const u = plain(s).replace(/式の値/g, 'しきのあたい').replace(/和から積/g, 'わ、から、せき').replace(/積から和/g, 'せき、から、わ').replace(/(?<![面体])積/g, 'せき').replace(/和/g, 'わ')
+    const u = plain(s).replace(/式の値/g, 'しきのあたい').replace(/和から積/g, 'わ、から、せき').replace(/積から和/g, 'せき、から、わ').replace(/(面|体)?積/g, (m, p) => (p ? m : 'せき')).replace(/和/g, 'わ')
       .replace(/\^([0-9]+)/g, 'の$1乗').replace(/²/g, 'の2乗').replace(/³/g, 'の3乗');
     let o = '', v = false;                       // v：直前が「数・文字・閉じかっこ」なら true（− を「ひく」と読む目印）
     for (let i = 0; i < u.length; i++) {
@@ -40,7 +40,7 @@
   const qbox = (label, text) => ({ col: 0, type: 'box', color: 'y', size: 'xs', label, text, t: 3.5 });
   const memo = (label, text) => ({ col: 0, type: 'text', size: 'xs', label, text, t: 4.0 });
   const bad = { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } };
-  const compare = tbl([['', '展開', '因数分解'], ['向き', '積 → 和', '和 → 積'], ['例', '（x＋3）²→x²＋6x＋9', 'x²＋6x＋9→（x＋3）²'], ['かっこ', 'はずす', 'つける']],
+  const compare = () => tbl([['', '展開', '因数分解'], ['向き', '積 → 和', '和 → 積'], ['例', '（x＋3）²→x²＋6x＋9', 'x²＋6x＋9→（x＋3）²'], ['かっこ', 'はずす', 'つける']],
     { style: 'font-size:30px; align-self:center; margin-top:14px', t: 1.0 });
 
   KL.lesson({ id: 'g3u1-12', unit: '中3　式の展開と因数分解', kick: '3年1章　第12時', title: '展開と因数分解を、見分けてたしかに計算しよう', card: '展開と因数分解を、見分けてたしかに計算しよう', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [
@@ -49,7 +49,7 @@
     t('はい、お願いします、ポンタ先生。まちがえたら、私が、やさしく、直しますよ。', { title: true, point: false, ft: 'sigh', fx: { t: 'sweat' } }),
 
     t('展開は、積の形を、和の形に直すこと。因数分解は、和の形を、積の形に直すことです。向きが、逆なのです。', { part: '見分けよう', ft: 'normal',
-      add: [qbox('めあて', '展開と因数分解を\n見分けて\nたしかに計算しよう'), compare] }),
+      add: [qbox('めあて', '展開と因数分解を\n見分けて\nたしかに計算しよう'), compare()] }),
     b('わかった！ かっこが あるのが、展開で、かっこが ないのが、因数分解でしょ！ 先生っぽい？', { fb: 'proud' }),
     t('おしいです、ポンタ先生。かっこの有無では、ありません。向きで、見分けます。積から和なら、展開。和から積なら、因数分解です。', { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' },
       add: [{ col: 0, type: 'box', color: 'p', size: 'xs', label: '見分け方', text: '積→和　展開\n和→積　因数分解', t: 4.5 }] }),
@@ -107,7 +107,7 @@
       add: [memo('展開して確かめる', '（x−2）（x−4）\n＝x²−4x−2x＋8\n＝x²−6x＋8')] }),
 
     t('まとめです。展開は、積から和。因数分解は、和から積。答えは、逆向きの計算で、確かめましょう。', { clear: true, cols: [0.34, 0.66], part: 'まとめ', ft: 'normal', point: false,
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'ポイント', text: '展開　積→和\n因数分解　和→積\n逆向きに計算して\n確かめる', t: 6.0 }, compare] }),
+      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'ポイント', text: '展開　積→和\n因数分解　和→積\n逆向きに計算して\n確かめる', t: 6.0 }, compare()] }),
     b('ぼく先生、授業、うまくできたかな？ 先生、花丸を、ちょうだい！', { fb: 'star', fx: { b: 'e' } }),
     t('お疲れさまでした。花丸を、つけておきます。成績は、こちらです。', { ft: 'happy', point: false, result: true })
   ] });

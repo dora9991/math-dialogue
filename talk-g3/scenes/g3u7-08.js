@@ -39,14 +39,14 @@
     const V = { A: P(0, 0, 0), B: P(w, 0, 0), C: P(w, d, 0), D: P(0, d, 0), E: P(0, 0, h), F: P(w, 0, h), G: P(w, d, h), H: P(0, d, h) };
     const vis = ['AB', 'BC', 'EF', 'FG', 'GH', 'HE', 'AE', 'BF', 'CG'], hid = ['DA', 'DC', 'DH'];
     const lines = [...vis.map(e => LN(V[e[0]], V[e[1]], 'w', { wd: 3.4 })), ...hid.map(e => LN(V[e[0]], V[e[1]], 'w', { wd: 3, dash: true }))];
-    const dirs = { A: [-0.7, -0.7], B: [0.7, -0.7], C: [0.8, -0.2], D: [-0.8, 0.3], E: [-0.8, 0.3], F: [0.8, -0.4], G: [0.7, 0.7], H: [0, 1] };
+    const dirs = { A: [-0.7, -0.7], B: [0.7, -0.7], C: [0.8, -0.2], D: [-0.8, 0.3], E: [-0.8, 0.3], F: [0.9, -0.7], G: [0.7, 0.7], H: [0, 1] };
     const names = Object.keys(V).map(n => DT(V[n], n, dirs[n], 'y'));
     return { V, lines, names }; };
   // ---- 1ページ目：底面 4×4、高さ 7 ----
   const s1 = 0.55, K1 = cub(3.6, 0.6, s1, 4, 4, 7), V1 = K1.V;
   const dim1 = [TX([mid(V1.A, V1.B)[0], V1.A[1] - 0.35], '4cm', 'y', 26), TX([mid(V1.B, V1.C)[0] + 0.45, mid(V1.B, V1.C)[1] - 0.25], '4cm', 'y', 26), TX([V1.C[0] + 0.4, mid(V1.C, V1.G)[1]], '7cm', 'y', 26, 'start')];
   const diagAG = [LN(V1.A, V1.G, 'p', { wd: 4.4 })];
-  const baseAC = [LN(V1.A, V1.C, 'b', { wd: 3.6, dash: true }), PG([V1.A, V1.C, V1.G], 'y', { fill: 'y', alpha: 0.16, wd: 2 }), RT(V1.C, [V1.A[0] - V1.C[0], V1.A[1] - V1.C[1]], [V1.G[0] - V1.C[0], V1.G[1] - V1.C[1]], 14)];
+  const baseAC = [PG([V1.A, V1.C, V1.G], 'y', { fill: 'y', alpha: 0.16, wd: 0.1 }), LN(V1.A, V1.C, 'b', { wd: 3.6, dash: true }), RT(V1.C, [V1.A[0] - V1.C[0], V1.A[1] - V1.C[1]], [V1.G[0] - V1.C[0], V1.G[1] - V1.C[1]], 14)];
   // ---- 2ページ目：文字 a, b, c ----
   const s2 = 0.62, K2 = cub(3.8, 0.7, s2, 3, 3.2, 4.4), V2 = K2.V;
   const dim2 = [TX([mid(V2.A, V2.B)[0], V2.A[1] - 0.35], 'a', 'y', 30), TX([mid(V2.B, V2.C)[0] + 0.4, mid(V2.B, V2.C)[1] - 0.2], 'b', 'y', 30), TX([V2.C[0] + 0.4, mid(V2.C, V2.G)[1]], 'c', 'y', 30, 'start'),

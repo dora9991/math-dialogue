@@ -10,7 +10,7 @@
   const NUM = { '①': 'いち、', '②': 'に、', '③': 'さん、', '④': 'よん、' };
   const plain = s => String(s).replace(/\{\{|\}\}|\*\*/g, '');
   const yomi = s => {
-    const u = plain(s).replace(/式の値/g, 'しきのあたい').replace(/和から積/g, 'わ、から、せき').replace(/積から和/g, 'せき、から、わ').replace(/(?<![面体])積/g, 'せき').replace(/和/g, 'わ')
+    const u = plain(s).replace(/式の値/g, 'しきのあたい').replace(/和から積/g, 'わ、から、せき').replace(/積から和/g, 'せき、から、わ').replace(/(面|体)?積/g, (m, p) => (p ? m : 'せき')).replace(/和/g, 'わ')
       .replace(/\^([0-9]+)/g, 'の$1乗').replace(/²/g, 'の2乗').replace(/³/g, 'の3乗');
     let o = '', v = false;                       // v：直前が「数・文字・閉じかっこ」なら true（− を「ひく」と読む目印）
     for (let i = 0; i < u.length; i++) {
@@ -40,7 +40,7 @@
   const memo = (label, text) => ({ col: 0, type: 'text', size: 'xs', label, text, t: 4.0 });
   const bad = { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } };
   const FORMS = [['公式', '展開にも因数分解にも使う'], ['（a＋b）²', 'a²＋2ab＋b²'], ['（a−b）²', 'a²−2ab＋b²'], ['（a＋b）（a−b）', 'a²−b²']];
-  const forms = tbl(FORMS, { style: 'font-size:34px; align-self:center; margin-top:14px', t: 1.0 });
+  const forms = () => tbl(FORMS, { style: 'font-size:34px; align-self:center; margin-top:14px', t: 1.0 });
 
   KL.lesson({ id: 'g3u1-13', unit: '中3　式の展開と因数分解', kick: '3年1章　第13時', title: '式の展開や因数分解を使って、計算をくふうしよう', card: '式の展開や因数分解を使って、計算をくふうしよう', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [
     t('みなさん、こんにちは。今日は、式の展開や因数分解を、計算のくふうに、使ってみます。', { title: true, point: false, ft: 'happy' }),
@@ -48,7 +48,7 @@
     t('ポンタの畑ですね。101×101 は、ひっ算だと、大変です。式の力で、暗算に、挑戦しましょう。', { title: true, point: false, ft: 'normal' }),
 
     t('問題です。一辺が101メートルの、正方形の畑の面積は、何平方メートルでしょう。101 を、100＋1 と見るのが、コツです。', { part: '問題を読もう', ft: 'normal',
-      add: [qbox('めあて', '展開・因数分解で\n計算をくふうしよう'), forms] }),
+      add: [qbox('めあて', '展開・因数分解で\n計算をくふうしよう'), forms()] }),
     b('ひっ算で、やるよ。101×101… えっと、えっと… 目が回る！', { fb: 'confused', fx: { b: 'sweat' } }),
 
     /* ---------- Q1：平方の公式で計算（正解は4番目） ---------- */
@@ -106,7 +106,7 @@
       add: [memo('式の変形', '（x＋y）²＝x²＋2xy＋y²\nx²＋y²＝（x＋y）²−2xy\n＝8²−2×12\n＝64−24＝40')] }),
 
     t('まとめです。公式を使うと、数の計算が、かんたんになります。式の値は、展開や因数分解を、うまく使いましょう。', { clear: true, cols: [0.34, 0.66], part: 'まとめ', ft: 'normal', point: false,
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'ポイント', text: 'キリのいい数を見つける\n因数分解してから代入\nx²＋y²＝（x＋y）²−2xy', t: 6.0 }, forms] }),
+      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'ポイント', text: 'キリのいい数を見つける\n因数分解してから代入\nx²＋y²＝（x＋y）²−2xy', t: 6.0 }, forms()] }),
     b('ぼくの畑は、10201平方メートル！ 広いなぁ！ 暗算できると、気持ちいいね！', { fb: 'star', fx: { b: 'e' } }),
     t('お疲れさまでした。成績は、こちらです。', { ft: 'happy', point: false, result: true })
   ] });

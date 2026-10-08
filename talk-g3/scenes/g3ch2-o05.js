@@ -7,9 +7,9 @@
     // ---- 読み上げ用の変換（√・累乗・文字・記号を、ことばにする。say に使う） ----
   const rd = src => {
     let s = String(src).replace(/\{\{|\}\}|\*\*/g, '');
-    s = s.replace(/−/g, (m, i, all) => (i > 0 && /[0-9０-９A-Za-z）²³\]]/.test(all[i - 1]) ? ' ひく ' : 'マイナス'));
+    s = s.replace(/−/g, (m, i, all) => (i > 0 && (/[0-9０-９A-Za-z）²³\]]/.test(all[i - 1]) || (/[\u4e00-\u9fff]/.test(all[i - 1]) && /[\u4e00-\u9fff]/.test(all[i + 1] || ''))) ? ' ひく ' : 'マイナス'));
     s = s.replace(/\[\[([^\/\]]*)\/([^\]]*)\]\]/g, (_, a, b) => b + '分の' + a);
-    s = s.replace(/cm²/g, '平方センチメートル').replace(/(\d)\s*m²/g, '$1平方メートル').replace(/cm/g, 'センチメートル').replace(/km/g, 'キロメートル').replace(/kg/g, 'キログラム').replace(/(\d)\s*m(?![A-Za-z])/g, '$1メートル').replace(/(\d)\s*g(?![A-Za-z])/g, '$1グラム');
+    s = s.replace(/cm²/g, '平方センチメートル').replace(/(\d)\s*m²/g, '$1平方メートル').replace(/cm/g, 'センチメートル').replace(/km/g, 'キロメートル').replace(/kg/g, 'キログラム').replace(/([\d³²])\s*m(?![A-Za-z])/g, '$1メートル').replace(/(\d)\s*g(?![A-Za-z])/g, '$1グラム');
     s = s.replace(/\^(\d+)/g, 'の$1乗').replace(/²/g, 'の2乗').replace(/³/g, 'の3乗');
     for (let guard = 0; guard < 8; guard++) {                       // √（…）は、かっこを読まずに「ルート、…、」
       const i = s.indexOf('√（'); if (i < 0) break;
@@ -74,7 +74,8 @@
         ok: [T('正解！ 外の数は3×2＝6、中の数は2×6＝12で、6√12。さらに簡単にして、12√3です。', { ft: 'happy' }), B('外の数と、ルートの中を、別々に計算するんだね！', { fb: 'star', up: true })],
         wrong: [T('3√2×2√6＝6√12＝12√3です。', { ft: 'normal' })] }),
 
-    T('最後は、同じ数のルートどうしの、かけ算です。2√3×√3を、考えましょう。', { ft: 'normal', point: false }),
+    T('最後は、同じ数のルートどうしの、かけ算です。2√3×√3を、考えましょう。', { clear: true, cols: [0.34, 0.66], part: '同じルートどうし', ft: 'normal',
+      add: [{ col: 0, type: 'text', size: 'xs', label: '問題', text: '2√3×√3', t: 3.0 }] }),
 
     /* ---------- 問4 ---------- */
     Q('q4', T('最後の問題です。2√3×√3を、もっとも簡単な形で表すと、どれでしょう。', { ft: 'happy' }),

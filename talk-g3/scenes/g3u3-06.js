@@ -18,8 +18,8 @@
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'めあて', text: 'ax²＋bx＋c＝0 の\n解を文字で求める', t: 4.5 }, { col: 0, type: 'text', size: 'xs', label: '①', text: 'ax²＋bx＋c＝0', t: 2.5 }] }),
     T('まず、両辺に 4a をかけます。次に、4ac を右辺へ移項します。', { say: 'まず、りょうへんに 4エー をかけます。次に、4エーシー をうへんへいこうします。', ft: 'normal', point: false,
       add: [{ col: 0, type: 'text', size: 'xs', label: '② 4a をかける', text: '4a²x²＋4abx＋4ac＝0', t: 3.5 }, { col: 0, type: 'text', size: 'xs', label: '③ 移項', text: '4a²x²＋4abx＝−4ac', t: 3.5 }] }),
-    T('そして、両辺に b² を足します。左辺が、（2ax＋b）² の形に なるか、展開して、確かめましょう。', { say: 'そして、りょうへんに ビーの2乗 を足します。さへんが、かっこ、2エーエックス プラス ビー、かっことじ、の2乗 の形に なるか、てんかいして、確かめましょう。', ft: 'normal', point: false,
-      add: [{ col: 0, type: 'text', size: 'xs', label: '④ b² を足す', text: '4a²x²＋4abx＋b²\n＝b²−4ac', t: 4.0 }] }),
+    T('そして、両辺に b² を足します。左辺が、（2ax＋b）² の形に なるか、展開して、確かめましょう。', { say: 'そして、りょうへんに ビーの2乗 を足します。さへんが、かっこ、2エーエックス プラス ビー、かっことじ、の2乗 の形に なるか、てんかいして、確かめましょう。', clear: true, cols: [0.34, 0.66], part: '平方の形にする', ft: 'normal',
+      add: [{ col: 0, type: 'text', size: 'xs', label: '③ 移項', text: '4a²x²＋4abx＝−4ac', t: 3.0 }, { col: 0, type: 'text', size: 'xs', label: '④ b² を足す', text: '4a²x²＋4abx＋b²\n＝b²−4ac', t: 4.0 }] }),
 
     /* ---------- 問1 ---------- */
     Q('q1', T('問題です。（2ax＋b）² を展開すると、どうなるでしょう。', { say: '問題です。かっこ、2エーエックス プラス ビー、かっことじ、の2乗 をてんかいすると、どうなるでしょう。', ft: 'normal' }),

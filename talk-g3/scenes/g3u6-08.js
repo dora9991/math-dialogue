@@ -73,9 +73,7 @@
   const rho = 38 * D2R, rot = p => [p[0] * Math.cos(rho) - p[1] * Math.sin(rho), p[0] * Math.sin(rho) + p[1] * Math.cos(rho)], ccr = rot(cc);
   const F = p => { const q = rot(p); return [5.9 + sc * (q[0] - ccr[0]), 3.0 + sc * (q[1] - ccr[1])]; };
   const A4 = F([-9, 0]), B4 = F([2, 0]), C4 = F([-1.5, 3 * Math.sin(Math.PI / 3)]), D4 = F([3, -6 * Math.sin(Math.PI / 3)]), P4 = F([0, 0]);
-  const lenL = (p, q, text, c, dx, dy) => lab((p[0] + q[0]) / 2 + dx, (p[1] + q[1]) / 2 + dy, text, c, { size: 24 });
-  const fig4 = [circ(O, r, 'w'), nm(A4, 'A'), nm(B4, 'B'), nm(C4, 'C'), nm(D4, 'D'), dot(P4, 'P', [0.2, 1], 'w', { off: 24, r: 5 }), ln(A4, B4, 'w'), ln(C4, D4, 'w'), ln(A4, C4, 'y', { wd: 3 }), ln(D4, B4, 'p', { wd: 3 }),
-    lenL(P4, A4, 'PA＝9cm', 'y', 0, -0.3), lenL(P4, C4, 'PC＝3cm', 'y', -0.55, 0.0), lenL(P4, D4, 'PD＝6cm', 'p', 0.55, -0.1), lab((P4[0] + B4[0]) / 2, P4[1] - 0.3, 'PB＝？', 'p', { size: 24 })];
+  const fig4 = [circ(O, r, 'w'), nm(A4, 'A'), nm(B4, 'B'), nm(C4, 'C'), nm(D4, 'D'), dot(P4, 'P', [0.2, 1], 'w', { off: 24, r: 5 }), ln(A4, B4, 'w'), ln(C4, D4, 'w'), ln(A4, C4, 'y', { wd: 3 }), ln(D4, B4, 'p', { wd: 3 })];
 
   KL.lesson({ id: 'g3u6-08', unit: '中3　円', kick: '3年6章　第8時', title: '「円」で学んだことを、整理して確かめよう', card: '「円」で学んだことを、整理して確かめよう', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [
     T('みなさん、こんにちは。今日は、円の章の、まとめです。円周角の定理から、相似まで、5つの問題で、確かめましょう。', { title: true, point: false, ft: 'happy' }),
@@ -130,7 +128,7 @@
         wrong: [T('△ABCが二等辺三角形とは、言えません。言えるのは、円周角の定理の逆から、4点が、同じ円周上にあることです。', { ft: 'normal', draw: [G3(circle3)] })] }),
 
     T('第5問は、円の中の、相似です。弦ABと弦CDが、点Pで交わり、△PAC∽△PDBです。PA＝9cm、PC＝3cm、PD＝6cmです。', { clear: true, cols: [0.34, 0.66], part: '第5問：円と相似', ft: 'normal',
-      add: [memo('円と相似', '対頂角は等しい\n同じ弧の円周角は等しい\n→△PAC∽△PDB', 'y'), Object.assign(f4, { prims: [] })],
+      add: [memo('円と相似', '対頂角は等しい\n同じ弧の円周角は等しい\n→△PAC∽△PDB', 'y'), note('PA＝9cm\nPC＝3cm\nPD＝6cm\nPB＝？', '長さ'), Object.assign(f4, { prims: [] })],
       draw: [G4(fig4)] }),
 
     /* ---------- 問5 ---------- */

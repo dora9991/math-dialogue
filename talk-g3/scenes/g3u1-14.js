@@ -10,7 +10,7 @@
   const NUM = { '①': 'いち、', '②': 'に、', '③': 'さん、', '④': 'よん、' };
   const plain = s => String(s).replace(/\{\{|\}\}|\*\*/g, '');
   const yomi = s => {
-    const u = plain(s).replace(/式の値/g, 'しきのあたい').replace(/和から積/g, 'わ、から、せき').replace(/積から和/g, 'せき、から、わ').replace(/(?<![面体])積/g, 'せき').replace(/和/g, 'わ')
+    const u = plain(s).replace(/式の値/g, 'しきのあたい').replace(/和から積/g, 'わ、から、せき').replace(/積から和/g, 'せき、から、わ').replace(/(面|体)?積/g, (m, p) => (p ? m : 'せき')).replace(/和/g, 'わ')
       .replace(/\^([0-9]+)/g, 'の$1乗').replace(/²/g, 'の2乗').replace(/³/g, 'の3乗');
     let o = '', v = false;                       // v：直前が「数・文字・閉じかっこ」なら true（− を「ひく」と読む目印）
     for (let i = 0; i < u.length; i++) {

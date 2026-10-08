@@ -11,7 +11,7 @@
   const NUM = { '①': 'いち、', '②': 'に、', '③': 'さん、', '④': 'よん、' };
   const plain = s => String(s).replace(/\{\{|\}\}|\*\*/g, '');
   const yomi = s => {
-    const u = plain(s).replace(/式の値/g, 'しきのあたい').replace(/和から積/g, 'わ、から、せき').replace(/積から和/g, 'せき、から、わ').replace(/(?<![面体])積/g, 'せき').replace(/和/g, 'わ')
+    const u = plain(s).replace(/式の値/g, 'しきのあたい').replace(/和から積/g, 'わ、から、せき').replace(/積から和/g, 'せき、から、わ').replace(/(面|体)?積/g, (m, p) => (p ? m : 'せき')).replace(/和/g, 'わ')
       .replace(/\^([0-9]+)/g, 'の$1乗').replace(/²/g, 'の2乗').replace(/³/g, 'の3乗');
     let o = '', v = false;                       // v：直前が「数・文字・閉じかっこ」なら true（− を「ひく」と読む目印）
     for (let i = 0; i < u.length; i++) {
@@ -48,7 +48,7 @@
     { style: 'font-size:32px; align-self:center; margin-top:14px', t: 1.0 });
   const bad = { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } };
   const HEAD = ['かけて', 'たして', '2数のようす'];
-  const signs = tbl([HEAD, ['＋', '＋', 'どちらも＋'], ['＋', '−', 'どちらも−'], ['−', '＋', '数字の大きい方が＋'], ['−', '−', '数字の大きい方が−']],
+  const signs = () => tbl([HEAD, ['＋', '＋', 'どちらも＋'], ['＋', '−', 'どちらも−'], ['−', '＋', '数字の大きい方が＋'], ['−', '−', '数字の大きい方が−']],
     { style: 'font-size:32px; align-self:center; margin-top:14px', t: 1.0 });
 
   KL.lesson({ id: 'g3u1-11', unit: '中3　式の展開と因数分解', kick: '3年1章　第11時', title: '「かけて□、たして△」の2数を見つけて、カードをとろう', card: '「かけて□、たして△」の2数を見つけて、カードをとろう', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [
@@ -62,7 +62,7 @@
       add: [memo('答え', 'x²＋5x＋6\n＝（x＋2）（x＋3）')] }),
     b('ピンポーン！ かけて6、たして5 は、2と3！ 早押しなら、ぼく、強いよ！', { fb: 'happy' }),
     t('ただし、符号に、ご注意ください。かけてプラスなら、2数は、同じ符号。かけてマイナスなら、ちがう符号です。たした答えの符号は、数字の大きい方と、同じです。たとえば、−5と2 は、たすと−3。5 の方が、大きいからです。', { clear: true, cols: [0.34, 0.66], part: '符号のルール', ft: 'normal',
-      add: [{ col: 0, type: 'box', color: 'p', size: 'xs', label: '符号', text: 'かけて＋→同じ符号\nかけて−→ちがう符号', t: 4.5 }, signs] }),
+      add: [{ col: 0, type: 'box', color: 'p', size: 'xs', label: '符号', text: 'かけて＋→同じ符号\nかけて−→ちがう符号', t: 4.5 }, signs()] }),
 
     /* ---------- 第1問（正解は3番目） ---------- */
     Q('q1', t('第1問です。x²＋7x＋12 を、因数分解すると、どれでしょう。', { clear: true, cols: [0.34, 0.66], part: '第1問', ft: 'normal',
