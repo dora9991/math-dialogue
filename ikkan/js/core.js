@@ -113,35 +113,36 @@
       labels.forEach((nm, k) => { if (k < V2.length) idx[nm] = k; });
       if (shape === 'pyramid') { const h0 = P2([0, 0, 0]); dimLines.filter(d => d.key === 'h').forEach(d => { extra.push({ seg: [V2[0], h0], dash: true }); extra.push({ text: d.text, at: [(V2[0][0] + h0[0]) / 2, (V2[0][1] + h0[1]) / 2], dx: 1.2, anchor: 'start' }); }); }
     } else {
-      const r = a, h = c, S = (t, z, rr) => P2([(rr || r) * Math.cos(t), (rr || r) * Math.sin(t), z]);
+      // 円柱・円錐：底面・上面は、軸が水平な、ふつうの横長のだ円（斜めの投影はつかわない）。q＝だ円のつぶれぐあい（縦÷横）
+      const r = a, h = c, q = Math.min(0.5, Math.max(0.15, num(f.q, 0.3)));
+      const S = (t, z) => [r * Math.cos(t), z + q * r * Math.sin(t)];
       const arc = (t0, t1, z, hidden) => { const pts = []; for (let k = 0; k <= 60; k++) pts.push(S(t0 + (t1 - t0) * k / 60, z)); curves.push({ pts, hidden }); };
       if (shape === 'cylinder') {
-        const t1 = Math.atan(kc);
-        arc(t1 - Math.PI, t1, 0, false); arc(t1, t1 + Math.PI, 0, true); arc(0, 2 * Math.PI, h, false);
-        segs.push({ a: S(t1, 0), b: S(t1, h), hidden: false }, { a: S(t1 - Math.PI, 0), b: S(t1 - Math.PI, h), hidden: false });
-        V2 = [P2([0, 0, h]), P2([0, 0, 0])];
+        arc(0, 2 * Math.PI, h, false);          // 上のだ円
+        arc(Math.PI, 2 * Math.PI, 0, false);    // 下のだ円の手前（実線）
+        arc(0, Math.PI, 0, true);               // 下のだ円の向こう（点線）
+        segs.push({ a: [-r, 0], b: [-r, h], hidden: false }, { a: [r, 0], b: [r, h], hidden: false });
+        V2 = [[0, h], [0, 0]];
         dimLines.forEach(d => {
-          if (d.key === 'r') { extra.push({ seg: [P2([0, 0, h]), S(0, h)], thin: true }); extra.push({ text: d.text, at: [(P2([0, 0, h])[0] + S(0, h)[0]) / 2, P2([0, 0, h])[1]], dy: -1.4, anchor: 'middle' }); }
-          if (d.key === 'h') { const p = S(t1, h / 2); extra.push({ text: d.text, at: p, dx: 1.4, anchor: 'start' }); }
+          // 半径 r：上の面の中心から右はしまで。字は、右はしの外がわ
+          if (d.key === 'r') { extra.push({ seg: [[0, h], S(0, h)], thin: true }); extra.push({ text: d.text, at: S(0, h), dx: 1.8, anchor: 'start' }); }
+          if (d.key === 'h') extra.push({ text: d.text, at: [r, h / 2], dx: 1.6, anchor: 'start' });
         });
       } else if (shape === 'cone') {
-        const A2 = P2([0, 0, h]), g = t => h * (Math.sin(t) - kc * Math.cos(t)) - ks * r;
-        const bnd = []; const N = 720;
-        for (let k = 0; k < N; k++) { const t0 = 2 * Math.PI * k / N, t1 = 2 * Math.PI * (k + 1) / N; if ((g(t0) < 0) !== (g(t1) < 0)) bnd.push((t0 + t1) / 2); }
-        let cur = [], curHid = null;
-        for (let k = 0; k <= N; k++) { const t = 2 * Math.PI * k / N, hid = g(t) >= 0; if (curHid === null) curHid = hid; if (hid !== curHid) { curves.push({ pts: cur, hidden: curHid }); cur = [cur[cur.length - 1]]; curHid = hid; } cur.push(S(t, 0)); }
-        if (cur.length > 1) curves.push({ pts: cur, hidden: curHid });
-        bnd.forEach(t => segs.push({ a: A2, b: S(t, 0), hidden: false }));
-        V2 = [A2, P2([0, 0, 0])];
+        const A2 = [0, h], t1 = Math.asin(Math.min(0.98, q * r / h));   // 頂点から底面のだ円にひいた接線の、接点の角
+        arc(Math.PI - t1, 2 * Math.PI + t1, 0, false);                  // 底面の手前（実線）
+        arc(t1, Math.PI - t1, 0, true);                                 // 底面の向こう（点線）
+        const PR = S(t1, 0), PL = S(Math.PI - t1, 0);
+        segs.push({ a: A2, b: PR, hidden: false }, { a: A2, b: PL, hidden: false });
+        V2 = [A2, [0, 0]];
         dimLines.forEach(d => {
           // 半径 r：底面の中心から右はしまでの点線。字は、点線をのばした先（底面の右はしの外がわ）に書く
-          if (d.key === 'r') { extra.push({ seg: [P2([0, 0, 0]), S(0, 0)], dash: true }); extra.push({ text: d.text, at: S(0, 0), dx: 1.8, anchor: 'start' }); }
-          if (d.key === 'h') { extra.push({ seg: [A2, P2([0, 0, 0])], dash: true }); extra.push({ text: d.text, at: [(A2[0] + P2([0, 0, 0])[0]) / 2, (A2[1] + P2([0, 0, 0])[1]) / 2], dx: 1.2, anchor: 'start' }); }
+          if (d.key === 'r') { extra.push({ seg: [[0, 0], S(0, 0)], dash: true }); extra.push({ text: d.text, at: S(0, 0), dx: 1.8, anchor: 'start' }); }
+          if (d.key === 'h') { extra.push({ seg: [A2, [0, 0]], dash: true }); extra.push({ text: d.text, at: [0, h / 2], dx: 1.2, anchor: 'start' }); }
           // 母線 l：右の母線の外がわ（f.lside が 'left' なら左の母線の外がわ）に書く
           if (d.key === 'l') {
-            const ts = bnd.map(t => ({ t, p: S(t, 0) })).sort((u, v) => u.p[0] - v.p[0]), q = (f.lside === 'left' ? ts[0] : ts[ts.length - 1]) || { p: S(0, 0) };
-            const left = f.lside === 'left';
-            extra.push({ text: d.text, at: [(A2[0] + q.p[0]) / 2, (A2[1] + q.p[1]) / 2], dx: left ? -1.6 : 1.6, anchor: left ? 'end' : 'start' });
+            const left = f.lside === 'left', P = left ? PL : PR;
+            extra.push({ text: d.text, at: [(A2[0] + P[0]) / 2, (A2[1] + P[1]) / 2], dx: left ? -1.6 : 1.6, anchor: left ? 'end' : 'start' });
           }
         });
       } else {   // 球・半球
