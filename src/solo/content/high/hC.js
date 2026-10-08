@@ -592,6 +592,7 @@ const KUKAN = {
         const N = cross(AB, AC);
         if (N[0] === 0) return { skip: true };
         const py = r(-3, 3), pz = r(-3, 3);
+        if (py === A[1] && pz === A[2]) return { skip: true };
         const APy = py - A[1], APz = pz - A[2];
         // s, t（AP の y, z 成分から）
         const sN = APy * AC[2] - APz * AC[1], tN = AB[1] * APz - AB[2] * APy, D = N[0];
@@ -1243,7 +1244,7 @@ const KYOKUSEN = {
         const ans = fracAns(4 * p * (m * m + 1), m * m);
         const mT = m === 1 ? "" : m === -1 ? "-" : m;
         return {
-          q: `放物線 $y^{2}=${4 * p}x$ の焦点 F を通り、傾き ${m} の直線が放物線と2点 A, B で交わる。線分 AB の長さを求めよ。`,
+          q: `放物線 $y^{2}=${4 * p}x$ の焦点 F を通り、傾き $${m}$ の直線が放物線と2点 A, B で交わる。線分 AB の長さを求めよ。`,
           ans,
           hint: "放物線の定義から AF = (A の x 座標) + p。解と係数の関係で x 座標の和を出す。",
           steps: [
