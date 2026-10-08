@@ -27,10 +27,24 @@
 | 全体を見る／幅に合わせる | 上のボタン（電子黒板に映すとき、1枚が画面に収まる） |
 | 印刷 | 上の「印刷」。**いま表示している状態**で印刷される（生徒用なら、解答をかくしてから。教師用なら、解答を表示してから） |
 
+## ワークシート（中1・7単元）
+
+| 単元 | ワークシート | ファイル |
+|---|---|---|
+| 正の数・負の数 | 正の数・負の数の加法（符号がちがう 2 つの数） | `data/ws_seifu.js` |
+| 文字と式 | 文字を使った式（数量の表し方・式の値） | `data/ws_moji.js` |
+| 方程式 | 等式の性質を使って方程式を解く | `data/ws_hotei.js` |
+| 比例と反比例 | 比例のグラフ | `data/ws_hirei.js` |
+| 平面図形 | おうぎ形の弧の長さと面積 | `data/ws_heimen.js` |
+| 空間図形 | 円錐の表面積 | `data/ws_kukan.js` |
+| データの活用 | ヒストグラムの読み取り（階級・度数・相対度数） | `data/ws_data.js` |
+
+どれも「学習課題＋例題2問」。1単元につき、代表の 1 授業ぶんを作ってある（授業ごとには、まだ作っていない）。
+
 ## ワークシートを書き足す
 
 `data/ws_<単元>.js` に、`IK.add(ID, { 授業の情報 }, [ブロック…])` で 1 授業ぶんを書く。見本は `data/ws_kukan.js`。
-単元を足すときは `data/lessons.js` に `IK.unit(…)` を足し、`index.html` に `<script src="data/ws_<単元>.js">` を足す。
+新しい単元を足すときは `data/lessons.js` に単元を足し、`index.html` に `<script src="data/ws_<単元>.js">` を足す（同じ単元に授業を足すときは、その単元のファイルに `IK.add(…)` を足すだけ）。
 
 ```js
 const { M, K, B, G, F, C2, SO, NET } = IK.b;
@@ -63,6 +77,12 @@ IK.add('kukan-xx', { unit: 'kukan', unitName: '空間図形', title: '…', head
 |---|---|
 | 立体の見取図 | `SO({ shape: 'cube' / 'cuboid' / 'prism' / 'pyramid' / 'cylinder' / 'cone' / 'sphere' / 'hemisphere', a, b, c, n, labels, dims })` |
 | 円錐の展開図 | `NET({ R: 母線, r: 半径, lR, lr, ansAngle, ansArc })`。`ansAngle`・`ansArc` は解答を表示したときだけ赤で出る |
+| 数直線 | `NL({ min, max, arrows:[{ from, to, text }], marks:[{ at }] })`。`arrows`（動きの矢印）と `marks`（答えの位置）は、解答を表示したときだけ赤で出る |
+| 座標平面 | `CO({ xmin, xmax, ymin, ymax, lines:[{ a, b, from, to, text, at, anchor }], points:[{ x, y }] })`。`lines`（y＝ax+b）と `points` は解答のとき赤で出る |
+| ヒストグラム | `HIST({ edges, counts, ymax, ystep, xname, yname, hl:[番号] })`。`hl`（強調する階級）は解答のとき赤い枠で出る |
+| おうぎ形 | `SEC({ R, th, lr, la, larc })`（半径・中心角・弧の字。`{{ }}` で空欄にできる） |
+| てんびん | `BAL({ left:[{ box:'x' }, { w:'5\\g' }], right:[…] })`（つり合っている状態） |
+| 長方形 | `RECT({ w, h, top, side })`（縦・横の字） |
 | 自由な図 | `SVG((W, H, h) => '<svg の中身（単位 mm）>')`。`h.ans(…)` でかこんだものは、解答を表示したときだけ出る |
 
 ## 検査
@@ -80,10 +100,11 @@ NODE_PATH=$(npm root -g) node tools/check.cjs [出力先]         # 見た目：
 ```
 index.html        画面（一覧・ワークシート）
 css/ikkan.css     紙面と画面の見た目、印刷
-js/core.js        紙面をつくる道具（文字・図・ブロック）。画面を持たない
+js/core.js        紙面をつくる道具（文字・立体の図・ブロック）。画面を持たない
+js/figs.js        図の部品（数直線・座標平面・ヒストグラム・おうぎ形・てんびん・長方形）
 js/app.js         画面（一覧・解答の切りかえ・印刷）
-data/lessons.js   単元の一覧
-data/ws_kukan.js  中1 空間図形のワークシート
+data/lessons.js   単元の一覧（表示の順）
+data/ws_<単元>.js 単元ごとのワークシート（seifu・moji・hotei・hirei・heimen・kukan・data）
 tools/            検査（verify.cjs・check.cjs）
 ```
 

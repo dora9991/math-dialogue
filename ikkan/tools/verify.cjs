@@ -3,7 +3,7 @@
    ① checks に書いた式が成り立つか（PI＝π、near(a, b)＝ほぼ等しい）
    ② 1ページの行数（37行）におさまっているか
    ③ 板書の行数（\n で区切った行）が、B(行数, …) の枠に入るか
-   ④ 1問目（最初の学習課題・例題）には、空欄 {{ }} がないか。2問目以降には、空欄が1つ以上あるか */
+   ④ 1問目（最初の学習課題・例題）には、空欄 {{ }} がないか。2問目以降の問題文には、空欄が1つ以上あるか */
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -12,7 +12,7 @@ const root = path.resolve(__dirname, '..');
 const ctx = { console };
 ctx.window = ctx;
 vm.createContext(ctx);
-const files = ['js/core.js', 'data/lessons.js', ...fs.readdirSync(path.join(root, 'data')).filter(f => /^ws_.*\.js$/.test(f)).sort().map(f => 'data/' + f)];
+const files = ['js/core.js', 'js/figs.js', 'data/lessons.js', ...fs.readdirSync(path.join(root, 'data')).filter(f => /^ws_.*\.js$/.test(f)).sort().map(f => 'data/' + f)];
 for (const f of files) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
 const IK = ctx.IK;
 
@@ -48,15 +48,24 @@ for (const id of IK.order) {
     const n = String(b.answer).split('\n').length;
     if (n > b.rows) bad(id, `板書が ${n} 行で、枠（${b.rows}行）に入らない：「${String(b.answer).slice(0, 14)}…」`);
   });
-  // ④ 空欄のきまり
-  let k = 0;
-  l.blocks.filter(hasKadai).forEach(b => {
-    k++;
-    const n = (JSON.stringify(b).match(/\{\{/g) || []).length;   // 問題文と図の字（板書 answer には {{ }} を使わない）
+  // ④ 空欄のきまり：1問目（最初の K と、つぎの K までの部分）には {{ }} がない。2問目以降は、問題文（K）に {{ }} がある
+  const problems = [];   // { text: その問題の K の文, region: その問題をふくむ部分の全体（1問目の検査用）}
+  const kids = (b, out) => { if (b.type === 'kadai') out.push(b); if (b.type === 'cols') b.cols.forEach(c => c.blocks.forEach(x => kids(x, out))); return out; };
+  let region = null;
+  l.blocks.forEach(b => {
+    const ks = kids(b, []);
+    if (ks.length) { ks.forEach((k, i) => problems.push({ text: k.text, region: i === 0 ? (region = [b]) : null })); }
+    else if (region && problems.length === 1) region.push(b);
+  });
+  problems.forEach((pr, i) => {
     total++;
-    if (k === 1 && n > 0) bad(id, `1問目に空欄 {{ }} が ${n} か所ある（1問目は、すべて印刷する）`);
-    if (k > 1 && n === 0) bad(id, `${k}問目に空欄 {{ }} がない（先に解けてしまう）`);
-    if (k > 1) console.log(`  ${k}問目：空欄 ${n} か所`);
+    const n = (pr.text.match(/\{\{/g) || []).length;
+    if (i === 0) {
+      const all = (JSON.stringify(pr.region || []).match(/\{\{/g) || []).length;
+      if (all > 0 && (pr.region || []).length) bad(id, `1問目に空欄 {{ }} が ${all} か所ある（1問目は、数字もすべて印刷する）`);
+      else console.log(`  1問目：空欄なし`);
+    } else if (n === 0) bad(id, `${i + 1}問目の問題文に空欄 {{ }} がない（先に解けてしまう）`);
+    else console.log(`  ${i + 1}問目：問題文の空欄 ${n} か所`);
   });
 }
 console.log(ng ? `\n✗ ${ng} 件の指摘（確かめた項目 ${total}）` : `\n○ 指摘 0（確かめた項目 ${total}）`);
