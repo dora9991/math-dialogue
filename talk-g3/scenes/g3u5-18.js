@@ -100,7 +100,7 @@
   const lineX = (a, c, col) => LN(sub2(a, mul2(dirv(a, c), 0.45)), add2(c, mul2(dirv(a, c), 0.45)), col, { wd: 3.6 });
   const lad = [ys.map(y => LN([0.4, y], [11.2, y], 'w', { wd: 3 })), ys.map(y => para([0.4, y], [11.2, y], 'b', 1, 0.96)), lineX(pA, pC, 'y'), lineX(qA, qC, 'p'),
     DT(pA, 'A', [-0.9, 0.5], 'y'), DT(pB, 'B', [-1, 0], 'y'), DT(pC, 'C', [-0.9, -0.5], 'y'), DT(qA, 'A′', [0.9, 0.6], 'p'), DT(qB, 'B′', [0.9, 0.6], 'p'), DT(qC, 'C′', [1, 0.6], 'p')];
-  const ladLab = [TX(add2(mid(pA, pB), [-0.55, 0.05]), '3cm', 'y', 28, 'end'), TX(add2(mid(pB, pC), [-0.55, 0.0]), '2cm', 'y', 28, 'end'), TX(add2(mid(qA, qC), [0.9, 0.2]), 'A′C′＝10cm', 'p', 28, 'start'), TX(add2(mid(qA, qB), [-0.15, -0.3]), '？', 'p', 32, 'end')];
+  const ladLab = [TX(add2(mid(pA, pB), [-0.55, 0.05]), '3cm', 'y', 28, 'end'), TX(add2(mid(pB, pC), [-0.55, 0.0]), '2cm', 'y', 28, 'end'), TX(add2(mid(qA, qC), [1.3, 0.85]), 'A′C′＝10cm', 'p', 28, 'start'), TX(add2(mid(qA, qB), [-0.15, -0.3]), '？', 'p', 32, 'end')];
   const g1 = GF('g1'), g2 = GF('g2'), g3 = GF('g3');
 
   KL.lesson({ id: 'g3u5-18', unit: '中3　相似な図形', kick: '3年5章　第18時', title: '相似の問題を、教え合って解こう', card: '相似の問題を、教え合って解こう', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [

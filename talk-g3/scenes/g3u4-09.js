@@ -2,14 +2,14 @@
    どんぐりが板の坂を転がる。転がり始めて x 秒間に進む距離 y cm は y＝2x²。位置は 0, 2, 8, 18, 32（x＝0〜4）。
    平均の速さ＝進んだ距離÷時間＝変化の割合＝a(p＋q)。1→3：(18−2)÷2＝8、3→4：(32−18)÷1＝14、2→q＝3：(18−8)÷1＝10（2(2＋q)＝10 より q＝3）、
    0→3：18÷3＝6（Q1 でポンタが言った 6 の正体）。1秒ごとの平均の速さ：2, 6, 10, 14。
-   図は「ものさし」：数直線 0〜32cm（座標平面ではない）、横 1cm＝32px。 */
+   図は「ものさし」：数直線 0〜32cm（座標平面ではない）、横 1cm＝約31.8px。 */
 (function () {
   const { T, B, Q, FIG } = KL;
   const G = (id, ...i) => ({ fig: id, items: i.flat(3) });
   const LB = (x, y, text, c, size, anchor, o) => Object.assign({ k: 'label', at: [x, y], text, c: c || 'w', size: size || 24, anchor: anchor || 'middle' }, o || {});
   const SG = (a, b, c, o) => Object.assign({ k: 'seg', a, b, c: c || 'w', wd: 3.4 }, o || {});
   // ものさしの図（0〜32cm）。時間は上、位置は下に書く
-  const track = id => FIG(id, [-2, -3.7, 35, 2.3], 1184, 192, [], { col: 1 });
+  const track = id => FIG(id, [-2, -3.7, 35, 2.3], 1178, 191, [], { col: 1 });
   const XS = [0, 2, 8, 18, 32];
   const ticks = [];
   for (let k = 0; k <= 32; k += 2) ticks.push(SG([k, -0.3], [k, 0.3], 'd', { wd: 2 }));
