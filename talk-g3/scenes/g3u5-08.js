@@ -131,8 +131,8 @@
         ok: [t('正解！ 4×AE＝6×8＝48 で、AE＝12cm です。AC は、12＋8＝20cm になります。', { ft: 'happy' }), b('AE は 12cm、EC は 8cm だね！', { fb: 'star', up: true })],
         wrong: [t('4.8cm は、6：10＝AE：8 を、解いた答えです。AE と EC には、AD と DB が対応します。AB では、ありません。', { ft: 'normal' })] }),
 
-    t('三角形と比では、「部分：部分」と「全体：全体」を、混ぜません。AD：DB は AE：EC、AD：AB は AE：AC と DE：BC です。', { clear: true, cols: [0.34, 0.66], part: '気をつけること', ft: 'normal',
-      add: [{ col: 0, type: 'box', color: 'p', size: 'xs', label: '注意', text: '部分：部分\n全体：全体\n混ぜない', t: 4.5 }] }),
+    t('三角形と比では、「部分：部分」と「部分：全体」を、混ぜません。AD：DB は AE：EC、AD：AB は AE：AC と DE：BC です。', { clear: true, cols: [0.34, 0.66], part: '気をつけること', ft: 'normal',
+      add: [{ col: 0, type: 'box', color: 'p', size: 'xs', label: '注意', text: '部分：部分\n部分：全体\n混ぜない', t: 4.5 }] }),
 
     /* ---------- 2ページ目：A をはさむ形 ---------- */
     t('今度は、点 D、E が、頂点 A の反対側にある、場合です。直線 BA、CA を、のばして、D、E をとります。DE∥BC です。', { clear: true, cols: [0.34, 0.66], part: 'もう1つの形', ft: 'normal',
@@ -161,7 +161,7 @@
         wrong: [t('30cm は、6×5 です。2でわるのを、わすれていませんか。2×BC＝30 から、BC＝15cm です。', { ft: 'normal' })] }),
 
     t('まとめです。三角形と比の性質で、長さを求めるときは、どの辺と、どの辺の比かを決めて、比例式を立てます。', { clear: true, cols: [0.34, 0.66], part: 'まとめ', ft: 'normal', point: false,
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'ポイント', text: '① 対応を決める\n② 部分：部分か\n　 全体：全体か\n③ 比例式を解く', t: 7.0 }] }),
+      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'ポイント', text: '① 対応を決める\n② 部分：部分か\n　 部分：全体か\n③ 比例式を解く', t: 7.0 }] }),
     b('かけ算の前に、対応を決める！ ぼく、かけ算の前に、おやつを決めるよ！', { fb: 'happy', up: true, fx: { b: 'e' } }),
     t('お疲れさまでした。成績は、こちらです。', { ft: 'happy', point: false, result: true })
   ] });

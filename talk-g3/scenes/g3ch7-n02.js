@@ -46,7 +46,7 @@
   const fan = [{ k: 'ell', o: O2, rx: 12, ry: 12, a1: 210, a2: 330, c: 'y', wd: 4, d: 0.8 }, sg(O2, A2, 'w'), sg(O2, A2p, 'w'), nm('O', O2, [0, 1]), nm('A', A2, [0.8, 0.5]), nm('A′', A2p, [-0.8, 0.5]),
     side(O2, A2, '12cm', 1.3, 'w', { size: 28 }), tx(0, -9.2, '弧の長さ ＝ 底面の円周', 'y', { size: 26 })];
   const chord = [sg(A2, A2p, 'p', { wd: 4.6 }), tx(-5.6, -6.9, 'AA′', 'p', { size: 30 })];
-  const ang = [an(O2, A2, A2p, 2.2, 'p'), tx(0, -3.0, '120°', 'p', { size: 28 })];
+  const ang = [an(O2, A2, A2p, 2.2, 'p'), tx(-1.1, -3.0, '120°', 'p', { size: 28 })];
   const mdl = [sg(O2, M2, 'b', { dash: true, wd: 3.4 }), nm('M', M2, [0.9, -0.5], 'b', { r: 5 }), rt(M2, [1, 0], [0, 1], 'b'), tx(0.5, -4.4, 'OM', 'b', { size: 26, anchor: 'start' })];
 
   KL.lesson({ id: 'g3ch7-n02', unit: '中3　三平方の定理', kick: '3年7章　入試レベル2', title: '【入試】円錐の側面上の最短', card: '【入試】円錐の側面上の最短', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [

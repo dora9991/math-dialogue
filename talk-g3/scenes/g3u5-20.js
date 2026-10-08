@@ -137,7 +137,7 @@
         ok: [T('正解！ DE∥BCだから、同位角が等しく、∠ABC＝∠ADEです。これを、②とします。', { ft: 'happy' }), B('平行線の、同じ側の角だね！', { fb: 'star', up: true })],
         wrong: [T('∠Aは、共通な角ですが、∠ABCと∠ADEは、別の角です。この2つは、平行線の、同位角です。', { ft: 'normal' })] }),
     T('①②より、2組の角が、それぞれ等しいから、△ABC∽△ADEです。相似だから、AD：AB＝DE：BCです。', { ft: 'normal', point: false,
-      add: [{ col: 0, type: 'text', size: 'xs', text: '同位角は等しいから\n∠ABC＝∠ADE　…②\n①②より、2組の角が\nそれぞれ等しいから\n△ABC∽△ADE', t: 6.0 }],
+      add: [{ col: 0, type: 'text', size: 'xs', text: '平行線の同位角は等しいから\n∠ABC＝∠ADE　…②\n①②より、2組の角が\nそれぞれ等しいから\n△ABC∽△ADE', t: 6.0 }],
       draw: [g2(angs2)] }),
     T('AD＝3cm、DB＝5cm、DE＝6cmとします。BCの長さを、求めましょう。ABは、3＋5で、出せますね。', { ft: 'normal', point: false,
       draw: [g2(lab2)] }),

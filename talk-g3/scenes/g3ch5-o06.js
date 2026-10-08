@@ -39,7 +39,7 @@
   const f1 = mk('g1'), f2 = mk('g2'), f3 = mk('g3');
   const { S0, S1, S2, T0, T1, T2, M0, M1, M2 } = P;
   // ---- 図：棒と木 ----
-  const ground = [sg([-1.4, 0], [14.0, 0], 'd', { wd: 2.6 })];
+  const ground = [sg([-1.4, 0], [16.0, 0], 'd', { wd: 2.6 })];
   const stick = [sg(S0, S1, 'y', { wd: 5 }), pol([S0, S2, S1], 'y', 'y', { wd: 2.8 }), rtm(S0, S2, S1), tx(-0.35, 0.8, '160cm', 'y', { anchor: 'end' }), tx(1, -0.65, '2m', 'w')];
   const tree = [sg(T0, [5, 6.8], 'w', { wd: 6 }), { k: 'ell', o: [5, 6.8], rx: 1.3, ry: 1.2, c: 'g', fill: 'g', alpha: 0.22, wd: 3.4, d: 0.6 }, pol([T0, T2, T1], 'b', 'b', { wd: 2.8 }), rtm(T0, T2, T1), tx(10, -0.65, '10m', 'w'), tx(4.55, 3.4, '木の高さ　x m', 'b', { anchor: 'end' })];
   const rays = [par(S1, S2, 1, 'p', 0.5), par(T1, T2, 1, 'p', 0.5), tx(10.6, 5.0, '太陽の光', 'p', { anchor: 'start', size: 25 })];
