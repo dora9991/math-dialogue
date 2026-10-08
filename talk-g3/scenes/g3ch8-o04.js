@@ -8,16 +8,16 @@
   // 読み上げ用：記号・比・英字をことばに直す（say に使う）
   const rd = s => String(s).replace(/\{\{|\}\}|\*\*/g, '').replace(/\[\[(\d+)\/(\d+)\]\]/g, '$2分の$1')
     .replace(/：/g, ' たい ').replace(/＝/g, ' イコール ').replace(/＋/g, ' たす ').replace(/−/g, ' ひく ').replace(/×/g, ' かける ').replace(/÷/g, ' わる ')
-    .replace(/％/g, 'パーセント').replace(/無作為/g, 'むさくい').replace(/抽出/g, 'ちゅうしゅつ');
+    .replace(/％/g, 'パーセント').replace(/無作為/g, 'むさくい').replace(/抽出/g, 'ちゅうしゅつ').replace(/最頻値/g, 'さいひんち');
   const mk = f => (s, o) => { const r = rd(s); return f(s, r !== String(s).replace(/\{\{|\}\}|\*\*/g, '') ? Object.assign({ say: r }, o || {}) : o); };
   const T = mk(T0), B = mk(B0);
 
   // 1回目の標本（20人の通学時間・分）と、2回目の標本の合計（python で検算ずみ）
   const dA = [12, 20, 28, 10, 20, 23, 19, 16, 14, 20, 17, 10, 18, 13, 24, 29, 20, 16, 15, 16];
   const num = (a, b) => ['番号', ...Array.from({ length: b - a + 1 }, (_, i) => String(a + i))];
-  const t1 = [num(1, 10), ['時間（分）', ...dA.slice(0, 10).map(String)], num(11, 20), ['時間（分）', ...dA.slice(10).map(String)]];
+  const t1 = [num(1, 10), ['時間', ...dA.slice(0, 10).map(String)], num(11, 20), ['時間', ...dA.slice(10).map(String)]];
   const t2 = [['', '1回目の標本', '2回目の標本'], ['20人の合計（分）', '360', '420'], ['平均値（分）', '18', '21']];
-  const st = 'font-size:32px; align-self:center; margin-top:20px';
+  const st = 'font-size:30px; align-self:center; margin-top:20px';
   const st2 = 'font-size:38px; align-self:center; margin-top:30px';
 
   KL.lesson({ id: 'g3ch8-o04', unit: '中3　標本調査', kick: '3年8章　応用4', title: '標本平均から母集団の平均を推定', card: '標本平均から母集団の平均を推定', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [
@@ -26,7 +26,7 @@
     T('走った日の記録だけでは、かたよります。無作為に選んだ、20人の記録を、使いましょう。', { title: true, point: false, ft: 'sigh', fx: { t: 'sweat' } }),
 
     T('問題です。ある町の、中学生2000人から、20人を無作為に選んで、家から学校までの、通学時間を調べました。', { part: '問題を読もう', ft: 'normal',
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '問題', text: '町の中学生2000人\n20人を無作為に選ぶ\n通学時間（分）', t: 4.5 }, tbl(t1, { style: st, t: 1.0 })] }),
+      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '問題', text: '町の中学生2000人\n20人を無作為に選ぶ\n表の時間の単位は分', t: 4.5 }, tbl(t1, { style: st, t: 1.0 })] }),
     T('この20人の、通学時間の合計は、360分でした。まず、標本の平均値を、求めましょう。', { ft: 'normal', point: false }),
 
     /* ---------- 問1：標本の平均値 ---------- */
@@ -65,7 +65,7 @@
         1: [B('標本の合計の、360分が、そのまま答えでしょ！', { fb: 'happy', up: true }), T('360分は、20人の合計です。町の中学生は2000人なので、18×2000＝36000分です。', { ft: 'sigh', fb: 'sad', fx: { b: 'sweat' } })],
         ok: [T('正解！ 1人あたり約18分で、2000人分です。18×2000＝36000分と、推定できます。', { ft: 'happy' }), B('平均値があれば、全体の合計も、わかるんだね！', { fb: 'star', up: true })],
         wrong: [T('3600分は、けたが1つ足りません。18×2000＝36000分です。', { ft: 'normal' })] }),
-    T('標本の平均値を、母集団の平均値とみなして、推定します。ただし、ぴったり同じとは、かぎりません。標本が変われば、平均値も変わります。', { ft: 'normal', point: false,
+    T('標本の平均値を、母集団の平均値とみなして、推定します。ただし、ぴったり同じとは、かぎりません。標本が変われば、平均値も変わります。', { clear: true, cols: [0.34, 0.66], part: 'まとめ', ft: 'normal',
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'ポイント', text: '標本の平均値\n→ 母集団の平均値と\nみなす（約〜）\nぴったりとは限らない', t: 5.5 }] }),
     B('ぼくが走った日だけを選んだら、かたよっちゃうね！ 無作為って、大事だね！', { fb: 'happy', up: true, fx: { b: 'e' } }),
     T('お疲れさまでした。成績は、こちらです。', { ft: 'happy', point: false, result: true })

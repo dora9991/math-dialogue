@@ -40,10 +40,10 @@
   const { A, B: Bp, C, D, E } = P;
   const cen = cen3(A, Bp, C);
   // ---- 図 ----
-  const fig = [pol([A, Bp, C], 'w'), sg(D, E, 'w'), nm('A', A, [-0.7, -0.7]), nm('B', Bp, [0.7, -0.7]), nm('C', C, [0.3, 1]), nm('D', D, [0.2, -1]), nm('E', E, [-1, 0.2])];
+  const fig = [pol([A, Bp, C], 'w'), sg(D, E, 'w'), nm('A', A, [-0.7, -0.7]), nm('B', Bp, [0.7, -0.7]), nm('C', C, [0.3, 1]), nm('D', D, [0.6, 0.8]), nm('E', E, [0.9, 0.5])];
   const small = [pol([A, D, E], 'y', 'y')];
-  const lens = [dim(A, D, cen, 20, 'w', '3cm'), dim(A, Bp, cen, 52, 'w', '8cm'), dim(A, E, cen, 20, 'w', '4cm'), dim(A, C, cen, 52, 'w', '6cm')];
-  const pairAll = [dim(A, D, cen, 20, 'p', null, { wd: 5 }), dim(A, C, cen, 52, 'p', null), dim(A, E, cen, 20, 'g', null), dim(A, Bp, cen, 52, 'g', null)];
+  const lens = [dim(A, D, cen, 20, 'w', '3cm'), dim(A, Bp, cen, 80, 'w', '8cm'), dim(A, E, cen, 20, 'w', '4cm'), dim(A, C, cen, 112, 'w', '6cm')];
+  const pairAll = [dim(A, D, cen, 20, 'p', null, { wd: 5 }), dim(A, C, cen, 112, 'p', null), dim(A, E, cen, 20, 'g', null), dim(A, Bp, cen, 80, 'g', null)];
   const ang = [an(A, Bp, C, 50, 'b', 1)];
   const bc = [dim(Bp, C, cen, 22, 'w', 'BC＝7cm')];
   const de = [dim(D, E, cen3(A, D, E), 16, 'y', 'DE＝3.5cm').map(i => Object.assign(i, { temp: true }))];

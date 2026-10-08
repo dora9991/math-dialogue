@@ -25,7 +25,7 @@
       else if (c === '÷') { o += 'わる'; v = false; }
       else if (c === '＝' || c === '=') { o += 'イコール'; v = false; }
       else if (c === '（' || c === '(') { o += '、かっこ、'; v = false; }
-      else if (c === '）' || c === ')') { o += '、かっことじ' + (/[²³^の]/.test(u[i + 1] || '') ? '' : '、'); v = true; }
+      else if (c === '）' || c === ')') { o += '、かっことじ' + (/^の[0-9]+乗/.test(u.slice(i + 1, i + 6)) ? '' : '、'); v = true; }
       else if (c === '，') { o += '、'; v = false; }
       else if (c === '→') { o += '、'; v = false; }
       else if (NUM[c]) { o += NUM[c]; v = false; }

@@ -7,7 +7,7 @@
   // 読み上げ用：記号・比・英字をことばに直す（say に使う）
   const rd = s => String(s).replace(/\{\{|\}\}|\*\*/g, '').replace(/\[\[(\d+)\/(\d+)\]\]/g, '$2分の$1')
     .replace(/：/g, ' たい ').replace(/＝/g, ' イコール ').replace(/＋/g, ' たす ').replace(/−/g, ' ひく ').replace(/×/g, ' かける ').replace(/÷/g, ' わる ')
-    .replace(/％/g, 'パーセント').replace(/無作為/g, 'むさくい').replace(/抽出/g, 'ちゅうしゅつ');
+    .replace(/％/g, 'パーセント').replace(/無作為/g, 'むさくい').replace(/抽出/g, 'ちゅうしゅつ').replace(/白玉/g, 'しろだま').replace(/赤玉/g, 'あかだま');
   const mk = f => (s, o) => { const r = rd(s); return f(s, r !== String(s).replace(/\{\{|\}\}|\*\*/g, '') ? Object.assign({ say: r }, o || {}) : o); };
   const T = mk(T0), B = mk(B0);
 
@@ -35,7 +35,7 @@
     T('1回の結果だけで、決めつけるのは、あぶないです。何回か抽出して、くらべてみましょう。', { title: true, point: false, ft: 'sigh', fx: { t: 'sweat' } }),
 
     T('問題です。ホー先生が、袋に、赤玉1500個と、白玉3500個を入れました。全部で5000個で、赤玉の割合は、30％です。', { part: '問題を読もう', ft: 'normal',
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '問題', text: '袋にビー玉5000個\n赤玉の割合は30％\n取り出して\n割合を調べる', t: 5.0 }] }),
+      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '問題', text: '袋にビー玉5000個\n赤玉の割合は30％\n取り出して調べる', t: 5.0 }] }),
     T('よくまぜて、10個、100個、400個を、取り出します。取り出したら袋にもどして、5回ずつ行い、赤玉の割合を、まとめました。', { ft: 'normal', point: false,
       add: [{ col: 0, type: 'text', size: 'xs', label: '表の見方', text: '赤玉の割合（％）\n400個は\n一の位までのがい数', t: 4.0 }, tbl(t1, { style: st, t: 1.0 })] }),
 
@@ -75,7 +75,7 @@
         2: [T('近づかないわけでは、ありません。標本が大きいほど、30％のまわりに、集まっていました。', { ft: 'normal' })],
         ok: [T('正解！ 大きい標本ほど、近づきやすくなります。でも、ぴったり一致するとは、かぎりません。', { ft: 'happy' }), B('だから、「だいたい」って言うんだね！', { fb: 'star', up: true })],
         wrong: [T('何個以上なら必ず一致、ということは、ありません。大きいほど近づきやすい、と言えるだけです。', { ft: 'normal' })] }),
-    T('標本の大きさが大きいほど、結果は、安定しやすくなります。小さい標本の結果を、信じすぎないことが、大切です。', { ft: 'normal', point: false,
+    T('標本の大きさが大きいほど、結果は、安定しやすくなります。小さい標本の結果を、信じすぎないことが、大切です。', { clear: true, cols: [0.34, 0.66], part: 'まとめ', ft: 'normal',
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'ポイント', text: '標本が大きい\n→ 結果が安定\n小さい標本は\n信じすぎない', t: 5.5 }] }),
     B('1回当たっただけで、運がいいと決めるのは、早かったね！ 何回も、ためすよ！', { fb: 'happy', up: true, fx: { b: 'e' } }),
     T('お疲れさまでした。成績は、こちらです。', { ft: 'happy', point: false, result: true })
