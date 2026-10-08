@@ -65,11 +65,10 @@
   const n4c = TX(ctr(P4.sqH), '169', 'y', 48);
 
   // ---- 5ページ目：文字で表す（a²・b²・c²）----
-  const P5 = pyth(3, 4, 0.45, [4.0, 2.4]);
-  const inw = nrm([P5.C[0] - mid(P5.A, P5.B)[0], P5.C[1] - mid(P5.A, P5.B)[1]]);
+  const P5 = pyth(3, 4, 0.5, [4.0, 2.15]), C5 = P5.C;
   const fig5 = [PG([P5.C, P5.A, P5.B], 'w'), RT(P5.C, [0, 1], [1, 0], 18), PG(P5.sqL, 'p', { fill: 'p', alpha: 0.16, wd: 3 }), PG(P5.sqB, 'b', { fill: 'b', alpha: 0.16, wd: 3 }), PG(P5.sqH, 'y', { fill: 'y', alpha: 0.16, wd: 3 }),
     TX(ctr(P5.sqL), 'a²', 'p', 44), TX(ctr(P5.sqB), 'b²', 'b', 44), TX(ctr(P5.sqH), 'c²', 'y', 44),
-    TX([P5.C[0] + 0.2, P5.C[1] + 0.68], 'a', 'p', 30, 'start'), TX([P5.C[0] + 0.8, P5.C[1] + 0.25], 'b', 'b', 30), TX([mid(P5.A, P5.B)[0] + inw[0] * 0.3, mid(P5.A, P5.B)[1] + inw[1] * 0.3], 'c', 'y', 30)];
+    TX([C5[0] + 0.2, C5[1] + 0.75], 'a', 'p', 26, 'start'), TX([C5[0] + 1.0, C5[1] + 0.2], 'b', 'b', 26), TX([C5[0] + 0.95, C5[1] + 0.58], 'c', 'y', 26)];
 
   KL.lesson({ id: 'g3u7-01', unit: '中3　三平方の定理', kick: '3年7章　第1時', title: '直角三角形の3辺の長さには、どんな関係があるだろう', card: '直角三角形の3辺の長さには、どんな関係があるだろう', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [
     T('みなさん、こんにちは。今日は、直角三角形の3つの辺の長さに、きまりがあるのかどうかを、探します。', { title: true, point: false, ft: 'happy' }),
