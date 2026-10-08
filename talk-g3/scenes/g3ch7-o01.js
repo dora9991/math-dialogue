@@ -49,7 +49,7 @@
     T('定規で測れない時も、あります。2辺がわかれば、残りの辺は、計算で出せるのです。', { title: true, point: false, ft: 'sigh', fx: { t: 'sweat' } }),
 
     T('問題です。公園に、直角三角形の花だんがあります。直角をはさむ2辺は、15mと8mです。ななめの辺は、何mでしょう。', { say: '問題です。公園に、直角三角形の花だんがあります。直角をはさむ2辺は、15メートルと8メートルです。ななめの辺は、何メートルでしょう。', part: '問題を読もう', ft: 'normal',
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '問題', text: '直角をはさむ2辺\n15m と 8m\nななめの辺は？', t: 4.5 }, Object.assign(f1, { prims: [] })], draw: [G('g1', tri1)] }),
+      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '問題', text: '直角をはさむ2辺 15m、8m\nななめの辺は？', t: 4.5 }, Object.assign(f1, { prims: [] })], draw: [G('g1', tri1)] }),
     T('直角の向かいの、いちばん長い辺を、斜辺といいます。斜辺を c、ほかの2辺を a、b とすると、a²＋b²＝c² が成り立ちます。', { say: '直角の向かいの、いちばん長い辺を、斜辺といいます。斜辺を シー、ほかの2辺を エー、ビー とすると、エーの2乗 たす ビーの2乗 イコール シーの2乗 が成り立ちます。', ft: 'normal', point: false, draw: [G('g1', cLab)],
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '三平方の定理', text: 'a²＋b²＝c²\n（c は斜辺）', t: 4.0 }] }),
 

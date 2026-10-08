@@ -35,6 +35,8 @@
   // 三角形などの外がわに置く、辺の長さの文字：重心 cen から遠ざかる向きに offpx だけはなす
   const sk = (a, b, cen, text, offpx, c, o) => { const u = nrm(a, b), m = mid(a, b); let n = [-u[1], u[0]]; if ((m[0] - cen[0]) * n[0] + (m[1] - cen[1]) * n[1] < 0) n = [-n[0], -n[1]]; const k = offpx / U; return tx(m[0] + n[0] * k, m[1] + n[1] * k, text, c, o); };
   const cen3 = (a, b, c) => [(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3];
+  // 寸法線：辺 a→b を、重心 cen と反対がわへ px だけ平行にずらした線（両はしに短い印）と、長さの文字（text が null なら文字なし）
+  const dim = (a, b, cen, px, c, text, o) => { const u = nrm(a, b), m = mid(a, b); let n = [-u[1], u[0]]; if ((m[0] - cen[0]) * n[0] + (m[1] - cen[1]) * n[1] < 0) n = [-n[0], -n[1]]; const k = px / U, h = 7 / U, p = [a[0] + n[0] * k, a[1] + n[1] * k], q = [b[0] + n[0] * k, b[1] + n[1] * k], out = [sg(p, q, c, { wd: 3.2 }), sg([p[0] - n[0] * h, p[1] - n[1] * h], [p[0] + n[0] * h, p[1] + n[1] * h], c, { wd: 3, d: 0.2 }), sg([q[0] - n[0] * h, q[1] - n[1] * h], [q[0] + n[0] * h, q[1] + n[1] * h], c, { wd: 3, d: 0.2 })]; if (text) { const ax = n[0] > 0.4 ? 'start' : n[0] < -0.4 ? 'end' : 'middle', kk = (px + (ax === 'middle' ? 24 : 12)) / U; out.push(tx(m[0] + n[0] * kk, m[1] + n[1] * kk, text, c, Object.assign({ anchor: ax }, o || {}))); } return out; };
   const f1 = mk('g1'), f2 = mk('g2'), f3 = mk('g3'), f4 = mk('g4');
   const { A, B: Bp, C, D, E, F, G: Gp, H: Hp, I, J, K, L, M, N, O, O2, P: Pp, Q: Qp, R, A4, D4, E4 } = P;
   const Z = [0, 0];

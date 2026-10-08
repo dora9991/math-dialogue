@@ -97,7 +97,7 @@
 
     /* ---------- 2ページ目：BQ ---------- */
     T('次は、折り目の端 Q です。M から BC に、垂線 MH をひきます。BH＝AM＝4cm、MH＝AB＝8cm です。BQ＝y cm とおきます。', { say: '次は、折り目の端 キュー です。エム から ビーシー に、垂線 エムエイチ をひきます。ビーエイチ イコール エーエム イコール 4センチ、エムエイチ イコール エービー イコール 8センチ です。ビーキュー イコール ワイ センチ とおきます。', clear: true, cols: [0.34, 0.66], part: 'BQ の長さ', ft: 'normal',
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '問題', text: 'BQ＝y\nQM＝BQ＝y\nQH＝y−4', t: 4.0 }, Object.assign(f2, { prims: [] })], draw: [G('g2', fig2, hq)] }),
+      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '問題', text: 'BQ＝QM＝y\nQH＝y−4', t: 4.0 }, Object.assign(f2, { prims: [] })], draw: [G('g2', fig2, hq)] }),
     T('QM は、BQ と等しいので、QM＝y です。QH＝y−4 で、直角三角形 QHM で、y²＝（y−4）²＋8² です。展開して、整理すると、8y＝80 です。', { say: 'キューエム は、ビーキュー と等しいので、キューエム イコール ワイ です。キューエイチ イコール ワイ ひく 4 で、直角三角形 キューエイチエム で、ワイの2乗 イコール かっこ ワイ ひく 4 かっことじ の2乗 たす 8の2乗 です。展開して、整理すると、8ワイ イコール 80 です。', ft: 'normal', point: false,
       add: [{ col: 0, type: 'text', size: 'xs', label: '式', text: 'y²＝（y−4）²＋8²\n8y＝80', t: 4.0 }] }),
 

@@ -63,7 +63,7 @@
 
     /* ---------- 2ページ目：台形 ---------- */
     T('次は、台形です。台形 ABCD で、AD∥BC、AD＝6cm、BC＝16cm、AB＝DC＝13cm です。高さを、求めましょう。', { say: '次は、台形です。台形 エービーシーディー で、エーディー へいこう ビーシー、エーディー イコール 6センチ、ビーシー イコール 16センチ、エービー イコール ディーシー イコール 13センチ です。高さを、求めましょう。', clear: true, cols: [0.34, 0.66], part: '台形の高さ', ft: 'normal',
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '問題', text: 'AD∥BC\nAD＝6cm　BC＝16cm\nAB＝DC＝13cm', t: 4.5 }, Object.assign(f2, { prims: [] })], draw: [G('g2', trap)] }),
+      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '問題', text: 'AD∥BC\nAD＝6　BC＝16　AB＝DC＝13', t: 4.5 }, Object.assign(f2, { prims: [] })], draw: [G('g2', trap)] }),
     T('A と D から、BC に、垂線 AH、DI をひきます。四角形 AHID は長方形で、HI＝AD＝6cm です。', { say: 'エー と ディー から、ビーシー に、垂線 エーエイチ、ディーアイ をひきます。四角形 エーエイチアイディー は長方形で、エイチアイ イコール エーディー イコール 6センチ です。', ft: 'normal', point: false, draw: [G('g2', aux)] }),
     T('△ABH と △DCI は、斜辺が等しく、AH＝DI の、直角三角形です。だから、合同で、BH＝IC です。', { say: 'さんかく エービーエイチ と さんかく ディーシーアイ は、斜辺が等しく、エーエイチ イコール ディーアイ の、直角三角形です。だから、合同で、ビーエイチ イコール アイシー です。', ft: 'normal', point: false, draw: [G('g2', bh)] }),
 
