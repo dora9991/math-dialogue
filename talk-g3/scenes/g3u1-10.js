@@ -87,7 +87,7 @@
       add: [memo('解答', 'ax²−6ax＋9a\n＝a（x²−6x＋9）\n＝a（x−3）²')] }),
 
     t('ここからは、おきかえです。同じかたまりが、何回も出る式は、1つの文字に、おきかえると、見やすくなります。', { clear: true, cols: [0.34, 0.66], part: 'おきかえ', ft: 'normal',
-      add: [{ col: 0, type: 'box', color: 'p', size: 'xs', label: 'おきかえ', text: '同じかたまりを\n1つの文字にする', t: 4.0 }] }),
+      add: [{ col: 0, type: 'box', color: 'p', size: 'xs', label: 'おきかえ', text: '同じかたまり→1つの文字', t: 4.0 }] }),
     t('（x＋3）²−4（x＋3）−5 では、x＋3 が、2回出てきます。x＋3 を M と おくと、M²−4M−5 に、なります。', { ft: 'normal', point: false,
       add: [memo('式', '（x＋3）²−4（x＋3）−5\nx＋3＝M とおく\n＝M²−4M−5')] }),
 
