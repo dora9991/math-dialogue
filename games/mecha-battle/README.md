@@ -33,6 +33,7 @@ cp dist/site/index.html dist/site/LICENSES.txt ../../public/mecha-battle/
 cd test/node && npm install        # peer / peerjs（ローカルの部屋サーバ用）
 cd ../.. && node test/mechanics.js && node test/rollback-test.js
 node test/phone-lock.js                    # スマホで拡大・スライドしないか（要Playwright）
+node test/jump-gauge.js                    # ジャンプの最高点がゲージにかからないか（要Playwright）
 python3 build.py && node test/online.js   # ブラウザ2つでオンライン通し（要Playwright）
 ```
 
@@ -46,5 +47,10 @@ python3 build.py && node test/online.js   # ブラウザ2つでオンライン�
 
 ## 調整できる数値
 
-- ジャンプの高さ … `src/core.js` の `JUMP_MUL`（1 = 最初の高さ、2 = 2倍）。初速と重力を同じ倍率にするので、滞空時間は変わらず、高さだけが変わります。大きくしすぎると、飛びこみ攻撃が当たらなくなります（4倍でバルーナの飛びこみが当たらなくなることを確認）
+- **ジャンプ**（`src/chars.js` の各キャラの `jump: { h, t, d }`）
+  - `h` … いちばん高いところ（px）。体力ゲージ（上の黒い帯）に頭がかからない高さにそろえてあります
+  - `t` … 地面を離れてから着地するまでのフレーム数（60で1秒）。**小さいほど「さっと」、大きいほど「ふんわり」**（いまは 26〜64）
+  - `d` … 前にジャンプしたとき、横に進む距離（px）
+  - ここから、整数の初速と重力を自動で作ります（高さの誤差は1px以内、滞空は `t` どおり）。`h` を変えたら `node test/jump-gauge.js`（要Playwright）で、ゲージにかからないか・低すぎないかを確かめられます
+  - 技の中のジャンプ（ライジングパンチなど）と、吹っ飛びの重力は、ジャンプとは別（`stats.grav`）です
 - 対戦の動き（物理・技の数値など）を変えたら、`src/net.js` の `NET_PROTOCOL` を +1 してください。ちがうバージョンのページどうしは、つないだ直後にはじかれます（ずれたまま遊ばないように）

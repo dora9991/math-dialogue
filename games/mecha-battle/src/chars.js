@@ -70,7 +70,8 @@ const CHARS = [
   {
     key: 'kotetsu', name: 'コテツ', en: 'KOTETSU', stage: 'factory', pref: [50, 105],
     desc: ['町工場うまれの主人公ロボ。', 'クセがなく、何でもできる。'],
-    stats: { hp: 100, walk: 1.5, back: 1.15, jumpV: 5.4, grav: 0.30, airX: 2.0, w: 22, h: 56, ch: 36, push: 16 },
+    stats: { hp: 100, walk: 1.5, back: 1.15, grav: 0.30, w: 22, h: 56, ch: 36, push: 16 },
+    jump: { h: 104, t: 40, d: 72 },   // ふつう
     moves: {
       jab: mkJab({}), kick: mkKick({}), jA: mkAirP({}), jB: mkAirK({}),
       s1: mkCast('ロケットパンチ', '→A', SPW({ type: 'fist', x: 20, y: 30, vx: 5.6, w: 16, h: 12, dmg: 7, hs: 15, bs: 9, kb: 2.2, life: 75, hide: 'hf', hstop: 6 }),
@@ -107,7 +108,8 @@ const CHARS = [
   {
     key: 'ganjou', name: 'ガンジョウ', en: 'GANJOU', stage: 'castle', pref: [30, 72],
     desc: ['お城のいしがきでできた', 'どっしり重量級。力が強い。'],
-    stats: { hp: 125, walk: 0.95, back: 0.75, jumpV: 4.9, grav: 0.30, airX: 1.4, w: 28, h: 60, ch: 40, push: 20 },
+    stats: { hp: 125, walk: 0.95, back: 0.75, grav: 0.30, w: 28, h: 60, ch: 40, push: 20 },
+    jump: { h: 100, t: 34, d: 46 },   // どっしり。すとんと落ちる
     moves: {
       jab: mkJab({ su: 5, rc: 10, reach: 44, y: 42, h: 16, dmg: 5 }),
       kick: mkKick({ su: 9, ac: 4, rc: 15, reach: 52, y: 6, h: 24, dmg: 8, hs: 17, kb: 2.6 }),
@@ -156,7 +158,8 @@ const CHARS = [
   {
     key: 'ason', name: 'アソン', en: 'ASON', stage: 'aso', pref: [78, 140],
     desc: ['阿蘇山のマグマで動く。', '炎の技がいっぱい。'],
-    stats: { hp: 100, walk: 1.4, back: 1.1, jumpV: 5.4, grav: 0.30, airX: 2.0, w: 22, h: 56, ch: 36, push: 16 },
+    stats: { hp: 100, walk: 1.4, back: 1.1, grav: 0.30, w: 22, h: 56, ch: 36, push: 16 },
+    jump: { h: 105, t: 32, d: 72 },   // さっと
     moves: {
       jab: mkJab({}), kick: mkKick({}), jA: mkAirP({}), jB: mkAirK({}),
       s1: mkCast('ファイアボール', '→A', SPW({ type: 'fire', x: 20, y: 30, vx: 3.8, w: 16, h: 16, dmg: 6, hs: 15, bs: 9, kb: 2, life: 84 }),
@@ -197,7 +200,8 @@ const CHARS = [
   {
     key: 'baruna', name: 'バルーナ', en: 'BARUNA', stage: 'balloon', pref: [60, 120], airy: 0.3,
     desc: ['バルーンフェスタの空から来た', 'ふわふわ軽量級。空中戦が得意。'],
-    stats: { hp: 105, walk: 1.55, back: 1.25, jumpV: 5.0, grav: 0.20, airX: 2.2, w: 20, h: 54, ch: 34, push: 14 },
+    stats: { hp: 105, walk: 1.55, back: 1.25, grav: 0.20, w: 20, h: 54, ch: 34, push: 14 },
+    jump: { h: 107, t: 64, d: 112 },   // ふんわり（いちばん）
     moves: {
       jab: mkJab({ su: 3, rc: 7, reach: 36, y: 36, dmg: 4 }),
       kick: mkKick({ su: 6, rc: 11, reach: 46, dmg: 6 }),
@@ -239,7 +243,8 @@ const CHARS = [
   {
     key: 'root', name: 'ルート', en: 'ROOT', stage: 'mathlab', pref: [100, 170],
     desc: ['数学ラボから来た先生ロボ。', '遠くからの攻めとワープが得意。'],
-    stats: { hp: 85, walk: 1.35, back: 1.1, jumpV: 5.4, grav: 0.30, airX: 2.0, w: 22, h: 56, ch: 36, push: 16 },
+    stats: { hp: 85, walk: 1.35, back: 1.1, grav: 0.30, w: 22, h: 56, ch: 36, push: 16 },
+    jump: { h: 105, t: 50, d: 72 },   // ふんわり
     moves: {
       jab: mkJab({ reach: 36 }), kick: mkKick({ reach: 48 }), jA: mkAirP({}), jB: mkAirK({}),
       s1: mkCast('ルートブラスト', '→A', SPW({ type: 'sqrt', x: 20, y: 30, vx: 4.2, w: 16, h: 14, dmg: 6, hs: 14, bs: 8, kb: 1.8, life: 76 }),
@@ -282,7 +287,8 @@ const CHARS = [
   {
     key: 'mutsugo', name: 'ムツゴ', en: 'MUTSUGO', stage: 'ariake', pref: [40, 92],
     desc: ['有明海のひがたから来た。', 'すばしこくて、トリッキー。'],
-    stats: { hp: 105, walk: 1.6, back: 1.3, jumpV: 5.0, grav: 0.30, airX: 2.2, w: 24, h: 48, ch: 32, push: 16 },
+    stats: { hp: 105, walk: 1.6, back: 1.3, grav: 0.30, w: 24, h: 48, ch: 32, push: 16 },
+    jump: { h: 111, t: 30, d: 75 },   // さっと
     moves: {
       jab: mkJab({ su: 3, rc: 7, reach: 34, y: 34, h: 12 }),
       kick: mkKick({ reach: 46, y: 4, h: 22 }),
@@ -320,7 +326,8 @@ const CHARS = [
   {
     key: 'raigou', name: 'ライゴウ', en: 'RAIGOU', stage: 'storm', pref: [26, 66],
     desc: ['雷雲の街のスピードスター。', 'とにかく速い。打たれ弱い。'],
-    stats: { hp: 82, walk: 1.9, back: 1.5, jumpV: 5.6, grav: 0.32, airX: 2.4, w: 20, h: 54, ch: 34, push: 14 },
+    stats: { hp: 82, walk: 1.9, back: 1.5, grav: 0.32, w: 20, h: 54, ch: 34, push: 14 },
+    jump: { h: 105, t: 26, d: 84 },   // さっと（いちばん）
     moves: {
       jab: mkJab({ su: 3, ac: 2, rc: 6, reach: 34, y: 36, dmg: 3 }),
       kick: mkKick({ su: 5, ac: 3, rc: 10, reach: 44, dmg: 5 }),
@@ -360,7 +367,8 @@ const CHARS = [
   {
     key: 'gitaro', name: 'ギタロー', en: 'GITARO', stage: 'live', pref: [68, 128],
     desc: ['ライブハウスの爆音ロッカー。', '音波と連打でぐいぐい押す。'],
-    stats: { hp: 100, walk: 1.35, back: 1.1, jumpV: 5.4, grav: 0.30, airX: 2.0, w: 22, h: 56, ch: 36, push: 16 },
+    stats: { hp: 100, walk: 1.35, back: 1.1, grav: 0.30, w: 22, h: 56, ch: 36, push: 16 },
+    jump: { h: 104, t: 42, d: 72 },   // ふつう
     moves: {
       jab: mkJab({}), kick: mkKick({}), jA: mkAirP({}), jB: mkAirK({}),
       s1: mkCast('ソニックウェーブ', '→A', SPW({ type: 'wave', x: 22, y: 30, vx: 3.8, w: 14, h: 32, dmg: 6, hs: 15, bs: 9, kb: 2, life: 80 }),
@@ -399,6 +407,20 @@ const CHARS = [
   },
 ];
 
+/* ---------- ジャンプ ----------
+   各キャラの jump: { h, t, d } は、人が決める3つの数字。
+     h … いちばん高いところ（px）。体力ゲージ（上の黒い帯）に頭がかからない高さにそろえてある
+     t … 地面を離れてから着地するまでのフレーム数（60で1秒）。小さいほど「さっと」、大きいほど「ふんわり」
+     d … 前にジャンプしたとき、横に進む距離（px）
+   ここから、整数の初速 v・ジャンプ中の重力 g を作る（放物線：高さ = g*t*t/8、初速 = g*t/2）。
+   整数で1フレームずつ進めると、連続の式より「初速の半分」ぶん低くなるので、そのぶん先に足しておく。
+   これで、高さの誤差は 1px 以内、滞空フレーム数は t どおりになる（test/mechanics.js で確かめている）。 */
+function jumpArc(h, t) {
+  const hc = h + (2 * h) / t;
+  const g = S((8 * hc) / (t * t));
+  return { v: Math.floor((g * t) / 2), g };
+}
+
 /* ---------- px → サブピクセル整数 へ変換（1回だけ） ---------- */
 function compileSpawn(s) {
   ['x', 'y', 'vx', 'vy', 'grav', 'w', 'h', 'kb', 'lift'].forEach((k) => { if (s[k] !== undefined) s[k] = S(s[k]); });
@@ -408,11 +430,11 @@ function compileChar(c) {
   if (c._c) return;
   c._c = true;
   const st = c.stats;
-  ['walk', 'back', 'jumpV', 'grav', 'airX', 'w', 'h', 'ch', 'push'].forEach((k) => { st[k] = S(st[k]); });
-  // ジャンプだけを JUMP_MUL 倍の高さにする（初速と重力をどちらも倍にすると、滞空時間は同じで高さが倍になる）。
+  ['walk', 'back', 'grav', 'w', 'h', 'ch', 'push'].forEach((k) => { st[k] = S(st[k]); });
+  // ジャンプ：高さ・滞空・距離から、初速・ジャンプ中の重力・横の速さを出す。
   // 技の中のジャンプ（アッパーなど）や、吹っ飛びの重力は、これまでの grav のまま。
-  st.jumpG = st.grav * JUMP_MUL;
-  st.jumpV *= JUMP_MUL;
+  const arc = jumpArc(c.jump.h, c.jump.t);
+  st.jumpV = arc.v; st.jumpG = arc.g; st.airX = S(c.jump.d / c.jump.t);
   for (const key of Object.keys(c.moves)) {
     const mv = c.moves[key];
     mv.key = key;

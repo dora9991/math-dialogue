@@ -2,7 +2,7 @@
 const fs = require('fs'), vm = require('vm'), path = require('path');
 const code = ['core.js', 'chars.js', 'sim.js', 'ai.js'].map((f) => fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8')).join('\n');
 const ctx = vm.createContext({ console });
-vm.runInContext(code + '\nthis.API = { CHARS, createMatch, stepMatch, nextRound, newAI, aiInput, makePulse, IN, S, SP, FPS, MOVE_KEYS, hurtBox, fPhase, INTRO_FRAMES, JUMP_MUL, FLOOR_Y };', ctx);
+vm.runInContext(code + '\nthis.API = { CHARS, createMatch, stepMatch, nextRound, newAI, aiInput, makePulse, IN, S, SP, FPS, MOVE_KEYS, hurtBox, fPhase, INTRO_FRAMES, FLOOR_Y };', ctx);
 const A = ctx.API, IN = A.IN, S = A.S;
 
 let pass = 0, fail = 0;
@@ -36,24 +36,26 @@ console.log('● 歩く・ジャンプ・しゃがみ');
   ok(m3.f[0].st === 'crouch', 'DOWNでしゃがむ');
 }
 
-console.log('● ジャンプ：高さは従来の2倍、滞空時間は同じ');
+console.log('● ジャンプ：キャラごとの高さ・滞空（ふんわり／さっと）・横の距離');
 {
-  // 従来の放物線（初速 = jumpV / JUMP_MUL、重力 = grav）を、整数のまま計算して比べる
   const oldArc = (v, g) => { let y = 0, vy = v, peak = 0, n = 0; do { vy -= g; y += vy; n++; if (y > peak) peak = y; } while (y > 0); return { peak, frames: n + 1 }; };
-  const jump = (ch, atkAt) => {       // 垂直ジャンプを1回。atkAt フレーム目に空中Aを押す。高さの記録と、着地までのフレーム数を返す
-    const m = mk(ch, ch === 7 ? 6 : 7, 200); const ys = [];
-    step(m, IN.UP, 0, 1); ys.push(m.f[0].y);
+  const jump = (ch, atkAt, dirKey) => {       // ジャンプを1回。atkAt フレーム目に空中Aを押す。高さの記録と、着地までのフレーム数・進んだ距離を返す
+    const m = mk(ch, ch === 7 ? 6 : 7, 200); const ys = [], x0 = m.f[0].x;
+    step(m, IN.UP | (dirKey || 0), 0, 1); ys.push(m.f[0].y);
     for (let t = 1; m.f[0].st !== 'idle' && t < 200; t++) { step(m, t === atkAt ? IN.A : 0, 0); ys.push(m.f[0].y); }
-    return { ys, peak: Math.max(...ys), frames: ys.length, st: m.f[0].st };
+    return { ys, peak: Math.max(...ys), frames: ys.length, st: m.f[0].st, dx: m.f[0].x - x0 };
   };
-  const bad = [];
+  const bad = [], farX = [];
   for (let c = 0; c < 8; c++) {
-    const st = A.CHARS[c].stats, o = oldArc(st.jumpV / A.JUMP_MUL, st.grav), r = jump(c);
-    if (r.peak !== 2 * o.peak || r.frames !== o.frames) bad.push([A.CHARS[c].en, r.peak / 256, o.peak / 256, r.frames, o.frames]);
+    const J = A.CHARS[c].jump, r = jump(c), f = jump(c, 0, IN.RIGHT);
+    if (Math.abs(r.peak / 256 - J.h) > 1 || r.frames !== J.t) bad.push([A.CHARS[c].en, J, r.peak / 256, r.frames]);
+    if (Math.abs(f.dx / 256 - J.d) > J.d * 0.04 + 1) farX.push([A.CHARS[c].en, J.d, f.dx / 256]);
   }
-  ok(A.JUMP_MUL === 2 && bad.length === 0, '全8キャラ：ジャンプの最高点がちょうど従来の2倍で、着地までのフレーム数は同じ', bad);
-  const over = A.CHARS.map((c, i) => [c.en, A.FLOOR_Y - jump(i).peak / 256 - c.stats.h / 256]).filter((x) => x[1] <= 0);
-  ok(over.length === 0, '最高点でも、頭が画面の上にはみ出さない', over);
+  ok(bad.length === 0, '全8キャラ：ジャンプの最高点は jump.h（誤差1px以内）、着地までのフレーム数は jump.t どおり', bad);
+  ok(farX.length === 0, '全8キャラ：前にジャンプしたとき、横に進む距離は jump.d どおり（誤差4%以内）', farX);
+  const ts = A.CHARS.map((c) => c.jump.t);
+  ok(Math.max(...ts) >= 2 * Math.min(...ts), 'ジャンプの「ふんわり」と「さっと」の差がはっきりある（滞空の最長が最短の2倍以上）', ts);
+  ok(A.CHARS.every((c) => c.jump.h >= 95 && c.jump.h <= 115), 'どのキャラも、体力ゲージの下ぎりぎりまで跳ぶ高さ（95〜115px）', A.CHARS.map((c) => c.jump.h));
   // 空中技を出した瞬間に重力が1フレーム止まる（これまでと同じ）ので、着地は最大1〜2フレーム遅れるだけ。重力が別の値になっていたら、高さ・滞空時間が大きくずれる
   const plain = jump(0), early = jump(0, 8), late = jump(0, 24);
   const same = (r) => r.st === 'idle' && r.peak === plain.peak && r.frames >= plain.frames && r.frames <= plain.frames + 2;
