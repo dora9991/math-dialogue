@@ -103,7 +103,7 @@
 
     /* ---------- 問1 ---------- */
     Q('q1', t('問題です。この定理の逆は、どれでしょう。', { ft: 'normal' }),
-      [{ t: 'DE∥BC ならば DE＝BC' }, { t: 'AD＝AE ならば DE∥BC' }, { t: 'AD：AB＝AE：AC ならば DE∥BC', ok: true }, { t: 'AD：AB＝AE：AC ならば DE＝BC' }],
+      [{ t: 'DE∥BC ならば DE＝BC' }, { t: 'AD＝AE ならば DE∥BC' }, { t: 'AD：AB＝AE：ACならばDE∥BC', ok: true }, { t: 'AD：AB＝AE：ACならばDE＝BC' }],
       { 3: [b('比が等しいなら、DE も BC と、等しいでしょ！ ならばの後ろだけ、変えたよ！', { fb: 'happy', up: true }), t('逆は、仮定と結論を、入れかえます。結論の DE∥BC が、仮定になります。DE＝BC では、ありません。', sad)],
         ok: [t('正解！ もとの文の、仮定と結論を、入れかえます。AD：AB＝AE：AC ならば DE∥BC が、逆です。', { ft: 'happy' }), b('「ならば」の前と後ろを、ひっくり返すんだね！', { fb: 'star', up: true })],
         wrong: [t('これは、仮定か結論の、片方だけを変えた文です。逆は、仮定と結論を、そっくり入れかえます。', { ft: 'normal' })] }),

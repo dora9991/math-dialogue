@@ -94,8 +94,8 @@
   const pizzaL = [CI(oL, 15 * kz, 'p', { fill: 'p', alpha: 0.14 }), spokes(oL, 15 * kz, 8, 'd'), TX([oL[0], 0.75], 'Lサイズ', 'p', 30), TX([oL[0], 0.35], '直径30cm　2400円', 'p', 26)];
   // 2ページ目：缶（高さ 10cm と 15cm、1cm＝0.22、直径は高さの 0.6倍）
   const kc = 0.22, canS = [2.9, 0.9], canL = [7.4, 0.9];
-  const cansS = [can(canS, 0.3 * 10 * kc, 10 * kc, 'y'), TX([canS[0], 0.45], '高さ10cm　200円', 'y', 26)];
-  const cansL = [can(canL, 0.3 * 15 * kc, 15 * kc, 'p'), TX([canL[0], 0.45], '高さ15cm　600円', 'p', 26)];
+  const cansS = [can(canS, 0.3 * 10 * kc, 10 * kc, 'y'), TX([canS[0], 0.55], '高さ10cm　200円', 'y', 26)];
+  const cansL = [can(canL, 0.3 * 15 * kc, 15 * kc, 'p'), TX([canL[0], 0.55], '高さ15cm　600円', 'p', 26)];
   // 3ページ目：立方体の箱（斜投影 1cm＝0.3）
   const pjA = prj([1.4, 1.1], 0.3), pjB = prj([5.2, 1.1], 0.3);
   const boxA = [boxFaces(pjA, 5, 5, 5, 'y', 0.18), boxEdges(pjA, 5, 5, 5, 'y'), TX(add2(pjA(2.5, 0, 0), [0, -0.4]), '1辺5cm', 'y', 28)];
