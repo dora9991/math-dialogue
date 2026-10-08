@@ -26,7 +26,7 @@
 
     T('問題です。関数 y＝[[1/2]]x² で、x が2から4まで増加するときの、変化の割合を求めましょう。', { part: '問題を読もう', ft: 'normal',
       say: '問題です。関数 ワイ イコール 2分の1 エックスの2乗 で、エックス が2から4まで増加するときの、変化の割合を求めましょう。',
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'めあて', text: '変化の割合を\n求めよう', t: 3.5 }, { col: 0, type: 'text', size: 'xs', label: '問題', text: 'y＝[[1/2]]x²\nx：2→4', t: 3.5 }, Object.assign(f1, { prims: [] })],
+      add: [{ col: 0, type: 'text', size: 'xs', label: '問題', text: 'y＝[[1/2]]x²\nx：2→4', t: 3.5 }, Object.assign(f1, { prims: [] })],
       draw: [G(plane, para, lab(0.5, 8.6, 'y＝1/2x²', 'y', { size: 24 }), pts([[2, 2], [4, 8]], 'p'), { k: 'pt', at: [2, 2], name: 'A', dir: [-0.8, 0.7], c: 'p', r: 7 }, { k: 'pt', at: [4, 8], name: 'B', dir: [-0.8, 0.7], c: 'p', r: 7 })] }),
     T('x が2から4まで増えるとき、y は、2から8まで増えます。それぞれの増加量を、調べましょう。', { ft: 'normal', point: false,
       say: 'エックス が2から4まで増えるとき、ワイ は、2から8まで増えます。それぞれの増加量を、調べましょう。',

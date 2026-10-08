@@ -25,7 +25,7 @@
 
     T('問題です。時速 x キロメートルの車が、ブレーキをかけてから、止まるまでに進む距離を、y メートルとします。', { part: '問題を読もう', ft: 'normal',
       say: '問題です。時速 エックス キロメートルの車が、ブレーキをかけてから、止まるまでに進む距離を、ワイ メートルとします。',
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'めあて', text: '関数 y＝ax² を\n使って予測しよう', t: 4.0 }, { col: 0, type: 'text', size: 'xs', label: '問題', text: '時速 x キロメートル\n止まる距離 y メートル', t: 4.0 }, Object.assign(f1, { prims: [] })],
+      add: [{ col: 0, type: 'text', size: 'xs', label: '問題', text: '時速 x キロメートル\n止まる距離 y メートル', t: 4.0 }, Object.assign(f1, { prims: [] })],
       draw: [G(plane)] }),
     T('y は、x の2乗に比例します。時速20キロメートルのとき、止まるまでの距離は、10メートルでした。', { ft: 'normal', point: false,
       say: 'ワイ は、エックス の2乗に比例します。時速20キロメートルのとき、止まるまでの距離は、10メートルでした。',

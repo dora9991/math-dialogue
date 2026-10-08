@@ -86,7 +86,7 @@
     /* ---------- 2ページ目：a が負のとき ---------- */
     T('次は、a が負の数の場合です。関数 y＝−x² で、x の変域が −1≦x≦2 のとき、y の変域を求めましょう。', { clear: true, cols: [0.34, 0.66], part: 'a が負のとき', ft: 'normal',
       say: '次は、エー が負の数の場合です。関数 ワイ イコール マイナス エックスの2乗 で、エックス の変域が、マイナス1 以上 2 以下 のとき、ワイ の変域を求めましょう。',
-      add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'めあて', text: 'a が負のとき\nの変域', t: 3.5 }, { col: 0, type: 'text', size: 'xs', label: '問題', text: 'y＝−x²\n−1≦x≦2', t: 3.5 }, Object.assign(f2, { prims: [] })],
+      add: [{ col: 0, type: 'text', size: 'xs', label: '問題', text: 'y＝−x²\n−1≦x≦2', t: 3.5 }, Object.assign(f2, { prims: [] })],
       draw: [H(plane, p2, lab(0.5, 0.55, 'y＝−x²', 'y', { size: 24 }), thick([-1, 0], [2, 0], 'b'), dash([-1, -1], [-1, 0], 'b'), dash([2, -4], [2, 0], 'b'), pts([[-1, -1], [2, -4]], 'p'), pts([[0, 0]], 'g'))] }),
     T('下に開くグラフです。いちばん高い点と、いちばん低い点を、グラフから探しましょう。', { ft: 'normal', point: false }),
 
