@@ -87,7 +87,13 @@ window.addEventListener('blur', () => { Input.held.clear(); Input.touch = 0; });
 function setupTouch() {
   const root = document.getElementById('touch');
   if (!root) return;
-  const show = () => { root.hidden = false; document.body.classList.add('has-touch'); if (window.fitScreen) window.fitScreen(); };
+  let locked = false;
+  const show = () => {
+    root.hidden = false;
+    document.documentElement.classList.add('has-touch'); document.body.classList.add('has-touch');
+    if (!locked) { locked = true; lockPageGestures(); }
+    if (window.fitScreen) window.fitScreen();
+  };
   if ('ontouchstart' in window || (navigator.maxTouchPoints | 0) > 0) show();
   window.addEventListener('touchstart', show, { once: true, passive: true });
 
@@ -118,6 +124,24 @@ function setupTouch() {
   const pb = document.getElementById('btnPause');
   if (pb) pb.addEventListener('pointerdown', (e) => { e.preventDefault(); Input.hit.add('Enter'); Input.any = true; if (typeof Sound !== 'undefined') Sound.unlock(); });
   root.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+
+/* スマホで画面が勝手に動かないようにする（拡大・スクロール・跳ね返り）。
+   CSS（page.html の .has-touch）と viewport の指定でも止めているが、iPhone の Safari はそれを無視することがあるので、ここでも止める。 */
+function lockPageGestures() {
+  const opt = { passive: false };
+  const inField = (t) => !!(t && t.closest && t.closest('input, textarea'));     // 文字入力欄は除く（指でカーソルを動かせるように）
+  // iPhone のピンチ拡大
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach((n) => document.addEventListener(n, (e) => e.preventDefault(), opt));
+  // 画面上のドラッグ：ページのスクロール／ゴムのような跳ね返り／2本指の拡大／引っぱって更新
+  document.addEventListener('touchmove', (e) => { if (e.cancelable && !inField(e.target)) e.preventDefault(); }, opt);
+  // ダブルタップ拡大：すばやい2回目のタップを止める（ボタンはクリックが要るので除く）
+  let lastEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const isButton = !!(e.target && e.target.closest && e.target.closest('#lobby, #btnSound'));
+    if (e.cancelable && !isButton && e.timeStamp - lastEnd < 350) e.preventDefault();
+    lastEnd = e.timeStamp;
+  }, opt);
 }
 
 /* キャンバスのタップ（メニュー選択用）：論理座標(256x224)へ変換して渡す */

@@ -32,6 +32,7 @@ cp dist/site/index.html dist/site/LICENSES.txt ../../public/mecha-battle/
 ```
 cd test/node && npm install        # peer / peerjs（ローカルの部屋サーバ用）
 cd ../.. && node test/mechanics.js && node test/rollback-test.js
+node test/phone-lock.js                    # スマホで拡大・スライドしないか（要Playwright）
 python3 build.py && node test/online.js   # ブラウザ2つでオンライン通し（要Playwright）
 ```
 
