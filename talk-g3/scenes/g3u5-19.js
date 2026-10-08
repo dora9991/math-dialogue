@@ -79,18 +79,19 @@
     return out; };
   // ---- 図の部品：円・缶 ----
   const CI = (o, r, c, op) => Object.assign({ k: 'ell', o, rx: r, ry: r, c, wd: 3.4 }, op || {});
+  const CI2 = (o, rx, ry, c, op) => Object.assign({ k: 'ell', o, rx, ry, c, wd: 3.4 }, op || {});
   const spokes = (o, r, n, c) => Array.from({ length: n }, (_, i) => LN(o, [o[0] + r * Math.cos(2 * Math.PI * (i + 0.5) / n), o[1] + r * Math.sin(2 * Math.PI * (i + 0.5) / n)], c, { wd: 1.6 }));
   // 缶（円柱）：底面の中心 c、半径 r、高さ h。底のうしろ半分は dash
   const can = (c, r, h, col) => { const e = 0.3 * r, t = [c[0], c[1] + h];
-    return [PG([[c[0] - r, c[1]], [c[0] + r, c[1]], [c[0] + r, t[1]], [c[0] - r, t[1]]], col, { fill: col, alpha: 0.12, wd: 0.5 }),
+    return [PG([...arcPts(c, r, e, 180, 360, 30), ...arcPts(t, r, e, 360, 180, 30)], col, { fill: col, alpha: 0.12, wd: 0.5 }),
       LN([c[0] - r, c[1]], [c[0] - r, t[1]], col), LN([c[0] + r, c[1]], [c[0] + r, t[1]], col),
       PL(arcPts(c, r, e, 180, 360, 30), col), PL(arcPts(c, r, e, 0, 180, 30), col, { dash: true }),
-      EL(t, r, e, undefined, undefined, col, { fill: col, alpha: 0.22 })]; };
+      CI2(t, r, e, col, { fill: col, alpha: 0.22 })]; };
   const arcPts = (c, rx, ry, a1, a2, n) => Array.from({ length: n + 1 }, (_, i) => { const t = (a1 + (a2 - a1) * i / n) * Math.PI / 180; return [c[0] + rx * Math.cos(t), c[1] + ry * Math.sin(t)]; });
   // 1ページ目：ピザ（1cm＝0.15）
-  const kz = 0.15, oM = [2.9, 2.9], oL = [7.8, 2.9];
-  const pizzaM = [CI(oM, 10 * kz, 'y', { fill: 'y', alpha: 0.16 }), spokes(oM, 10 * kz, 8, 'd'), TX([oM[0], 0.85], 'Mサイズ', 'y', 30), TX([oM[0], 0.45], '直径20cm　1000円', 'y', 26)];
-  const pizzaL = [CI(oL, 15 * kz, 'p', { fill: 'p', alpha: 0.14 }), spokes(oL, 15 * kz, 8, 'd'), TX([oL[0], 0.85], 'Lサイズ', 'p', 30), TX([oL[0], 0.45], '直径30cm　2400円', 'p', 26)];
+  const kz = 0.15, oM = [2.9, 3.3], oL = [7.8, 3.3];
+  const pizzaM = [CI(oM, 10 * kz, 'y', { fill: 'y', alpha: 0.16 }), spokes(oM, 10 * kz, 8, 'd'), TX([oM[0], 1.55], 'Mサイズ', 'y', 30), TX([oM[0], 1.15], '直径20cm　1000円', 'y', 26)];
+  const pizzaL = [CI(oL, 15 * kz, 'p', { fill: 'p', alpha: 0.14 }), spokes(oL, 15 * kz, 8, 'd'), TX([oL[0], 0.75], 'Lサイズ', 'p', 30), TX([oL[0], 0.35], '直径30cm　2400円', 'p', 26)];
   // 2ページ目：缶（高さ 10cm と 15cm、1cm＝0.22、直径は高さの 0.6倍）
   const kc = 0.22, canS = [2.9, 0.9], canL = [7.4, 0.9];
   const cansS = [can(canS, 0.3 * 10 * kc, 10 * kc, 'y'), TX([canS[0], 0.45], '高さ10cm　200円', 'y', 26)];
@@ -154,7 +155,7 @@
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: '問題', text: '1辺5cmと1辺10cmの\n立方体の箱\n包み紙は表面積ぶん', t: 5.0 }, FG('g3')],
       draw: [g3(boxA, boxB)] }),
     T('相似比は、5：10＝1：2です。表面積比は、1：4。体積比は、1：8です。中身は、体積です。', { ft: 'normal', point: false,
-      add: [{ col: 0, type: 'text', size: 'xs', label: '1：2', text: '包み紙　4倍\n中身　　8倍', t: 4.0 }] }),
+      add: [{ col: 0, type: 'text', size: 'xs', text: '包み紙　4倍\n中身　　8倍', t: 4.0 }] }),
 
     /* ---------- 問5 ---------- */
     Q('q5', T('最後の問題です。中身1立方センチメートルあたりの、包み紙の量は、大きい箱では、小さい箱の何倍でしょう。', { ft: 'happy' }),
