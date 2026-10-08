@@ -668,7 +668,7 @@ const TOUKEI = {
           hint: "期待値は「値 × 確率」の和：$E(X)=\\sum x_{k}p_{k}$。",
           steps: [
             `$E(X)=${d.xs.map((x, i) => `${par(x)}\\cdot ${fracTex(d.ps[i], d.D)}`).join("+")}$`,
-            `$=\\frac{${d.s1}}{${d.D}}=${fracTex(d.s1, d.D)}$`,
+            `$=\\frac{${d.s1}}{${d.D}}${gcd(d.s1, d.D) === 1 && d.s1 !== 0 ? "" : `=${fracTex(d.s1, d.D)}`}$`,
           ],
         };
       }),
@@ -796,11 +796,11 @@ const TOUKEI = {
         const ansE = fracAns((a + b) * EX[0] - b * n * EX[1], EX[1]);
         const ansV = fracAns((a + b) ** 2 * VX[0], VX[1]);
         return {
-          q: `${story} $${a}$ 点，出なかったら $${-b}$ 点とするゲームを $${n}$ 回行う。得点の合計 $Y$ の${askE ? "期待値 $E(Y)$" : "分散 $V(Y)$"}を求めよ。`,
+          q: `${story} $${a}$ 点，出なかったら $${-b}$ 点とするゲームを $${n}$ 回行う。得点の合計 $Y$ の${askE ? "期待値 $E(Y)$" : "分散 $V(Y)$"} を求めよ。`,
           ans: askE ? ansE : ansV,
           hint: "成功の回数を $X$ とすると $Y=aX-b(n-X)$ と表せる。$X$ は二項分布に従う。",
           steps: [
-            `成功の回数を $X$ とすると $Y=${a}X-${b}(${n}-X)=${a + b}X-${b * n}$`,
+            `成功の回数を $X$ とすると $Y=${a}X-${b === 1 ? "" : b}(${n}-X)=${a + b}X-${b * n}$`,
             `$X$ は $B\\left(${n},\\ ${fracTex(pn, pd)}\\right)$ に従い，$E(X)=${fracTex(...EX)}$，$V(X)=${fracTex(...VX)}$`,
             askE
               ? `$E(Y)=${a + b}E(X)-${b * n}=${fracTex((a + b) * EX[0] - b * n * EX[1], EX[1])}$`

@@ -103,7 +103,9 @@ export function Ring({ pct = 0, size = 88, stroke = 9, color = "#fff", track = "
 
 /** 分野ごとの理解度レーダー（scores: {num: 0..100, ...}） */
 export function Radar({ scores = {}, size = 230 }) {
-  const cx = size / 2, cy = size / 2, R = size / 2 - 38;
+  // 左右のラベル（「データ・確率」など）が切れないよう、横に余白をとる
+  const padX = 34;
+  const cx = size / 2 + padX, cy = size / 2, R = size / 2 - 40;
   const n = AREAS.length;
   const pt = (i, v) => {
     const ang = -Math.PI / 2 + (2 * Math.PI * i) / n;
@@ -111,7 +113,7 @@ export function Radar({ scores = {}, size = 230 }) {
   };
   const poly = AREAS.map((a, i) => pt(i, (scores[a] ?? 0) / 100).join(",")).join(" ");
   return (
-    <svg width="100%" viewBox={`0 0 ${size} ${size}`} style={{ maxWidth: 300, display: "block", margin: "0 auto" }} role="img" aria-label="分野ごとの理解度">
+    <svg width="100%" viewBox={`0 0 ${size + padX * 2} ${size}`} style={{ maxWidth: 340, display: "block", margin: "0 auto" }} role="img" aria-label="分野ごとの理解度">
       {[0.25, 0.5, 0.75, 1].map((k) => (
         <polygon key={k} points={AREAS.map((_, i) => pt(i, k).join(",")).join(" ")} fill="none" stroke="#e3e7f0" strokeWidth={k === 1 ? 1.5 : 1} />
       ))}
@@ -122,7 +124,7 @@ export function Radar({ scores = {}, size = 230 }) {
         return <circle key={a} cx={x} cy={y} r="3.5" fill="#4f46e5" />;
       })}
       {AREAS.map((a, i) => {
-        const [x, y] = pt(i, 1.24);
+        const [x, y] = pt(i, 1.22);
         return (
           <text key={a} x={x} y={y} textAnchor="middle" dominantBaseline="middle" fontSize="11.5" fontWeight="800" fill={AREA_INFO[a].color}>
             {AREA_INFO[a].label}

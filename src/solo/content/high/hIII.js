@@ -138,8 +138,8 @@ const KYOKUGEN = {
           hint: "$\\lim_{\\theta\\to0}\\frac{\\sin\\theta}{\\theta}=1$ が使える形に変形する。",
           steps: [
             mode === 2
-              ? `$\\frac{\\sin ${ax}}{${ax}}\\cdot\\frac{${bx}}{\\sin ${bx}}\\cdot\\frac{${a}}{${b}}$ と変形`
-              : `$\\frac{${mode === 0 ? "\\sin" : "\\tan"} ${ax}}{${ax}}\\cdot\\frac{${a}}{${b}}$ と変形`,
+              ? `$\\frac{\\sin ${ax}}{${ax}}\\cdot\\frac{${bx}}{\\sin ${bx}}\\cdot${fracTex(a, b)}$ と変形`
+              : `$\\frac{${mode === 0 ? "\\sin" : "\\tan"} ${ax}}{${ax}}${fracTex(a, b) === "1" ? "" : `\\cdot${fracTex(a, b)}`}$ と変形`,
             `$x\\to0$ で $1\\times${fracTex(a, b)}=${fracTex(a, b)}$`,
           ],
         };
@@ -247,12 +247,12 @@ const KYOKUGEN = {
         return {
           q: `$${ex}$ を求めよ。`,
           ans,
-          choices: choices4(r, ans, [`$${eT(a, b)}$`, `$${eT(a + b)}$`, "$1$", `$${eT(-a * b)}$`, `$${eT(b, a)}$`]),
+          choices: choices4(r, ans, [`$${eT(a, b)}$`, `$${eT(a + b)}$`, "$1$", `$${eT(-a * b)}$`, `$${eT(b, a)}$`], (i) => `$${eT(a * b + i + 1)}$`),
           hint: "$(1+h)^{\\frac{1}{h}}\\to e$（$h\\to0$）の形を作り、指数を調整する。",
           steps: [
             mode === 0
-              ? `$h=${a === 1 ? "" : a === -1 ? "-" : a}x$ とおくと $(1+h)^{\\frac{${b}}{x}}=\\left\\{(1+h)^{\\frac{1}{h}}\\right\\}^{${a * b}}$`
-              : `$h=${a < 0 ? "-" : ""}\\frac{${Math.abs(a)}}{n}$ とおくと $\\left(1+h\\right)^{${b === 1 ? "" : b}n}=\\left\\{(1+h)^{\\frac{1}{h}}\\right\\}^{${a * b}}$`,
+              ? `$h=${a === 1 ? "" : a === -1 ? "-" : a}x$ とおくと $(1+h)^{\\frac{${b}}{x}}=\\left\\{(1+h)^{\\frac{1}{h}}\\right\\}${a * b === 1 ? "" : `^{${a * b}}`}$`
+              : `$h=${a < 0 ? "-" : ""}\\frac{${Math.abs(a)}}{n}$ とおくと $\\left(1+h\\right)^{${b === 1 ? "" : b}n}=\\left\\{(1+h)^{\\frac{1}{h}}\\right\\}${a * b === 1 ? "" : `^{${a * b}}`}$`,
             `$h\\to0$ で $(1+h)^{\\frac{1}{h}}\\to e$ より極限は $${eT(a * b)}$`,
           ],
         };
@@ -269,7 +269,7 @@ const KYOKUGEN = {
           steps: [
             `$x=\\frac{1}{${q}}$ とおくと $\\sum nx^{n}=\\frac{x}{(1-x)^{2}}=${fracTex(q, (q - 1) * (q - 1))}$（$S-xS$ の計算と $nx^{n}\\to0$ から）`,
             `$\\sum x^{n}=\\frac{x}{1-x}=${fracTex(1, q - 1)}$`,
-            `和は $${a}\\times${fracTex(q, (q - 1) * (q - 1))}+${b}\\times${fracTex(1, q - 1)}=${fracTex(num, den)}$`,
+            `和は $${a}\\times${fracTex(q, (q - 1) * (q - 1))}${b === 0 ? "" : `+${b}\\times${fracTex(1, q - 1)}`}=${fracTex(num, den)}$`,
           ],
         };
       }),
@@ -409,7 +409,7 @@ const BIBUN = {
             q: `$f(x)=\\log(${inner})$ のとき、$f'(${c})$ の値を求めよ。`,
             ans: fracAns(a, v),
             hint: "$\\{\\log u\\}'=\\frac{u'}{u}$。",
-            steps: [`$f'(x)=\\frac{${a}}{${inner}}$`, `$f'(${c})=\\frac{${a}}{${v}}=${fracTex(a, v)}$`],
+            steps: [`$f'(x)=\\frac{${a}}{${inner}}$`, `$f'(${c})=${v === 1 ? "" : `\\frac{${a}}{${v}}=`}${fracTex(a, v)}$`],
           };
         }
         const s = r(1, 5), a = r(1, 4), c = r(-2, 3);
@@ -465,7 +465,7 @@ const BIBUN = {
           return {
             q: `関数 $y=\\frac{${poly([a, b])}}{${g}}$ を微分せよ。`,
             ans,
-            choices: choices4(r, ans, [`$${frT(-D, `(${g})^{2}`)}$`, `$${frT(D, g)}$`, `$${frT(a * d + b * c, `(${g})^{2}`)}$`]),
+            choices: choices4(r, ans, [`$${frT(-D, `(${g})^{2}`)}$`, `$${frT(D, g)}$`, a * d + b * c === 0 ? null : `$${frT(a * d + b * c, `(${g})^{2}`)}$`], (i) => `$${frT(D * (i + 2), `(${g})^{2}`)}$`),
             hint: "商の微分 $\\frac{f'g-fg'}{g^{2}}$。分子の引き算の順番に注意。",
             steps: [
               `$y'=\\frac{${par(a)}(${g})-(${poly([a, b])})\\cdot${par(c)}}{(${g})^{2}}$`,
@@ -573,7 +573,7 @@ const BIBUN = {
           hint: "$\\frac{dy}{dx}=\\frac{dy}{dt}\\div\\frac{dx}{dt}$。",
           steps: [
             `$\\frac{dx}{dt}=${co(-a, "\\sin t")}$, $\\frac{dy}{dt}=${co(b, "\\cos t")}$`,
-            `$\\frac{dy}{dx}=-\\frac{${b}\\cos t}{${a}\\sin t}$、$t=${tT}$ では $\\frac{\\cos t}{\\sin t}=${cot}$`,
+            `$\\frac{dy}{dx}=-\\frac{${co(b, "\\cos t")}}{${co(a, "\\sin t")}}$、$t=${tT}$ では $\\frac{\\cos t}{\\sin t}=${cot}$`,
             `$\\frac{dy}{dx}=${fracTex(-b * cot, a)}$`,
           ],
         };
@@ -592,7 +592,7 @@ const BIBUN = {
           steps: sq
             ? [
                 `$(x^{2}g)^{(n)}=x^{2}g^{(n)}+2nx\\,g^{(n-1)}+n(n-1)g^{(n-2)}$`,
-                `$x=0$ では最後の項だけ残る：$f^{(${n})}(0)=${n}\\times${n - 1}\\times${par(a)}^{${n - 2}}$`,
+                `$x=0$ では最後の項だけ残る：$f^{(${n})}(0)=${n}\\times${n - 1}\\times${par(a)}${n - 2 === 1 ? "" : `^{${n - 2}}`}$`,
                 `$=${ans}$`,
               ]
             : [
@@ -607,7 +607,7 @@ const BIBUN = {
         const mode = r(0, 3);
         let fT, a0, dN, dD, dT;
         if (mode === 0) { a0 = r(1, 5); fT = "\\log x"; dN = 1; dD = a0; dT = `\\frac{1}{x}`; }
-        else if (mode === 1) { const n = r(2, 4); a0 = rnz(r, -2, 2); fT = `x^{${n}}`; dN = n * a0 ** (n - 1); dD = 1; dT = `${n}x^{${n - 1}}`; }
+        else if (mode === 1) { const n = r(2, 4); a0 = rnz(r, -2, 2); fT = `x^{${n}}`; dN = n * a0 ** (n - 1); dD = 1; dT = n === 2 ? "2x" : `${n}x^{${n - 1}}`; }
         else if (mode === 2) { const s = r(1, 4); a0 = s * s; fT = "\\sqrt{x}"; dN = 1; dD = 2 * s; dT = "\\frac{1}{2\\sqrt{x}}"; }
         else { const k = pick(r, [1, 2, 3, -1]); a0 = 0; fT = eax(k); dN = k; dD = 1; dT = co(k, eax(k)); }
         const P = lin([[a0, 1, ""], [p, 1, "h"]]), M = lin([[a0, 1, ""], [-q, 1, "h"]]);
@@ -627,11 +627,11 @@ const BIBUN = {
         const sq = r(0, 1) === 1;
         const xa = `x-${a}`;
         const ans = sq ? 2 * a * A - a * a * B : A - a * B;
-        const num = sq ? `x^{2}f(${a})-${a * a}f(x)` : `xf(${a})-${a === 1 ? "" : a}f(x)`;
+        const num = sq ? `x^{2}f(${a})-${a === 1 ? "" : a * a}f(x)` : `xf(${a})-${a === 1 ? "" : a}f(x)`;
         return {
           q: `微分可能な関数 $f(x)$ が $f(${a})=${A}$, $f'(${a})=${B}$ を満たすとき、$\\lim_{x\\to ${a}}\\frac{${num}}{${xa}}$ を求めよ。`,
           ans,
-          hint: `分子に $-${sq ? a * a : a === 1 ? "" : a}f(${a})+${sq ? a * a : a === 1 ? "" : a}f(${a})$ をはさんで、微分係数の定義が見える形に分ける。`,
+          hint: `分子に $-${(sq ? a * a : a) === 1 ? "" : sq ? a * a : a}f(${a})+${(sq ? a * a : a) === 1 ? "" : sq ? a * a : a}f(${a})$ をはさんで、微分係数の定義が見える形に分ける。`,
           steps: sq
             ? [
                 `分子 $=(x^{2}-${a * a})f(${a})-${a * a}\\{f(x)-f(${a})\\}$`,
@@ -709,12 +709,12 @@ const BIBUNOUYO = {
         return {
           q: `関数 $f(x)=x${eax(-a)}$ の極大値を求めよ。`,
           ans,
-          choices: choices4(r, ans, [`$\\frac{1}{${eT(a)}}$`, `$\\frac{${a}}{e}$`, `$\\frac{e}{${a}}$`, `$\\frac{1}{${a}}$`, `$\\frac{1}{${a}e^{2}}$`]),
+          choices: choices4(r, ans, a === 1 ? ["$e$", "$1$", "$\\frac{1}{e^{2}}$"] : [`$\\frac{1}{${eT(a)}}$`, `$\\frac{${a}}{e}$`, `$\\frac{e}{${a}}$`, `$\\frac{1}{${a}}$`, `$\\frac{1}{${a}e^{2}}$`]),
           hint: "積の微分で $f'(x)$ を求め、$f'(x)=0$ の x を代入する。",
           steps: [
             `$f'(x)=(1${a === 1 ? "-x" : `-${a}x`})${eax(-a)}$`,
             `$x=${fracTex(1, a)}$ の前後で $f'$ は正から負に変わるので極大`,
-            `極大値は $f\\left(${fracTex(1, a)}\\right)=${fracTex(1, a)}e^{-1}=${invAE(a)}$`,
+            `極大値は $f\\left(${fracTex(1, a)}\\right)=${a === 1 ? "" : fracTex(1, a)}e^{-1}=${invAE(a)}$`,
           ],
         };
       }),
@@ -799,7 +799,7 @@ const BIBUNOUYO = {
             steps: [
               `接点 $(t,\\ ${eax(a, "t")})$ での接線：$y=${co(a, eax(a, "t"))}(x-t)+${eax(a, "t")}$`,
               `原点を通る：$0=${co(-a, "t")}${eax(a, "t")}+${eax(a, "t")}$ より $t=${fracTex(1, a)}$`,
-              `傾きは $${a === 1 ? "" : a === -1 ? "-" : a}e^{1}=${co(a, "e")}$`,
+              `傾き $${co(a, eax(a, "t"))}$ に $t=${fracTex(1, a)}$ を代入して $${co(a, "e")}$`,
             ],
           };
         }
@@ -808,7 +808,7 @@ const BIBUNOUYO = {
         return {
           q: `原点から曲線 $y=${c === 1 ? "" : c}\\log x$ に引いた接線の傾きを求めよ。`,
           ans,
-          choices: choices4(r, ans, [`$${c}$`, `$${co(c, "e")}$`, `$\\frac{${c}}{e^{2}}$`, `$\\frac{1}{${c}e}$`]),
+          choices: choices4(r, ans, [`$${c}$`, `$${co(c, "e")}$`, `$\\frac{${c}}{e^{2}}$`, `$${invAE(c)}$`, `$\\frac{${c + 1}}{e}$`]),
           hint: "接点を $(t,\\ c\\log t)$ とおき、接線が原点を通る条件から t を決める。",
           steps: [
             `接点 $(t,\\ ${c === 1 ? "" : c}\\log t)$ での接線：$y=\\frac{${c}}{t}(x-t)+${c === 1 ? "" : c}\\log t$`,
@@ -877,7 +877,7 @@ const BIBUNOUYO = {
         return {
           q: `関数 $f(x)=${xp(n)}e^{-x}$（$x\\geqq0$）の最大値を求めよ。`,
           ans,
-          choices: choices4(r, ans, [`$${n}$`, `$\\frac{${n}}{e}$`, `$\\frac{${N}}{e}$`, `$\\frac{${N}}{${eT(n + 1)}}$`, `$${N}$`]),
+          choices: choices4(r, ans, [`$${n}$`, `$\\frac{${n}}{e}$`, `$\\frac{${N}}{e}$`, `$\\frac{${N}}{${eT(n + 1)}}$`, `$${N}$`, "$e$", `$\\frac{${n + 1}}{e}$`]),
           hint: "積の微分で $f'(x)$ を求め、増減表をかく。",
           steps: [
             `$f'(x)=${n === 1 ? "" : xp(n - 1)}(${n}-x)e^{-x}$`,
@@ -896,7 +896,7 @@ const BIBUNOUYO = {
             ans: m * s * tt,
             hint: "左辺を計算し、$f'(c)=-\\frac{1}{c^{2}}$ と等しいとおく。",
             steps: [
-              `左辺 $=\\frac{\\frac{1}{${b}}-\\frac{1}{${a}}}{${b - a}}=-\\frac{1}{${a * b}}$`,
+              `左辺 $=\\frac{\\frac{1}{${b}}-${a === 1 ? "1" : `\\frac{1}{${a}}`}}{${b - a}}=-\\frac{1}{${a * b}}$`,
               `$-\\frac{1}{c^{2}}=-\\frac{1}{${a * b}}$ より $c^{2}=${a * b}$`,
               `$${a}<c<${b}$ より $c=${m * s * tt}$`,
             ],
@@ -959,7 +959,7 @@ const BIBUNOUYO = {
           hint: "球の中心から底面までの距離 x を変数にする（高さは 2x）。",
           steps: [
             `球の中心から底面までの距離を $x$（$0<x<${R}$）とすると、底面の半径の2乗は $${R * R}-x^{2}$、高さは $2x$`,
-            `$V=2\\pi(${R * R}x-x^{3})$、$V'=2\\pi(${R * R}-3x^{2})$`,
+            `$V=2\\pi(${R === 1 ? "" : R * R}x-x^{3})$、$V'=2\\pi(${R * R}-3x^{2})$`,
             `$x=\\frac{${R}}{\\sqrt{3}}$ で最大：$V=${surd(4 * R3, 9, 3)}\\pi$`,
           ],
         };
@@ -969,6 +969,7 @@ const BIBUNOUYO = {
           const n = pick(r, [0.5, 1, 2, 3]);
           let cur, ans, wr;
           if (n === 0.5) { cur = "y=a\\sqrt{x}"; ans = "\\frac{2}{e}"; wr = ["\\frac{1}{2e}", "\\frac{e}{2}", "\\frac{1}{e}", "\\frac{2}{e^{2}}"]; }
+          else if (n === 1) { cur = "y=ax"; ans = invAE(1); wr = ["e", "1", "\\frac{1}{e^{2}}", "\\frac{2}{e}"]; }
           else { cur = `y=a${xp(n)}`; ans = invAE(n); wr = ["\\frac{1}{e}", `\\frac{e}{${n}}`, `\\frac{1}{${n}}`, `\\frac{1}{${n}e^{2}}`, `\\frac{${n}}{e}`]; }
           const TAN = {
             0.5: ["$a\\sqrt{t}=\\log t$, $\\frac{a}{2\\sqrt{t}}=\\frac{1}{t}$", "$a\\sqrt{t}=2$"],
@@ -1038,7 +1039,7 @@ const SEKIBUN = {
           return {
             q: `不定積分 $\\int ${L}^{${n}}dx$ を求めよ。`,
             ans,
-            choices: choices4(r, ans, [`$${termTex(1, n + 1, body)}+C$`, `$${termTex(a, n + 1, body)}+C$`, `$${termTex(1, a * n, `${L}^{${n - 1}}`)}+C$`]),
+            choices: choices4(r, ans, [`$${termTex(1, n + 1, body)}+C$`, `$${termTex(a, n + 1, body)}+C$`, `$${termTex(1, a * n, n === 2 ? L : `${L}^{${n - 1}}`)}+C$`]),
             hint: "$ax+b=u$ と見て積分し、最後に中の係数 a でわる。",
             steps: [`$\\int ${L}^{${n}}dx=\\frac{1}{${a}}\\cdot\\frac{${L}^{${n + 1}}}{${n + 1}}+C$`, `$=${termTex(1, a * (n + 1), body)}+C$`],
           };
@@ -1152,12 +1153,12 @@ const SEKIBUN = {
           const top = a * a + b;
           const num = top ** (n + 1) - b ** (n + 1), den = 2 * (n + 1);
           return {
-            q: `定積分 $\\int_{0}^{${a}}x(x^{2}+${b})^{${n}}dx$ を求めよ。`,
+            q: `定積分 $\\int_{0}^{${a}}x(x^{2}+${b})${n === 1 ? "" : `^{${n}}`}\\,dx$ を求めよ。`,
             ans: fracAns(num, den),
             hint: "$t=x^{2}+" + b + "$ とおく。積分区間も t の範囲に直す。",
             steps: [
               `$t=x^{2}+${b}$ とおくと $dt=2x\\,dx$、x: $0\\to ${a}$ のとき t: $${b}\\to ${top}$`,
-              `$\\int_{${b}}^{${top}}\\frac{1}{2}t^{${n}}dt=\\frac{1}{2}\\left[\\frac{t^{${n + 1}}}{${n + 1}}\\right]_{${b}}^{${top}}$`,
+              `$\\int_{${b}}^{${top}}\\frac{1}{2}${n === 1 ? "t" : `t^{${n}}`}\\,dt=\\frac{1}{2}\\left[\\frac{t^{${n + 1}}}{${n + 1}}\\right]_{${b}}^{${top}}$`,
               `$=\\frac{${top ** (n + 1)}-${b ** (n + 1)}}{${den}}=${fracTex(num, den)}$`,
             ],
           };
@@ -1170,16 +1171,16 @@ const SEKIBUN = {
             hint: "$t=\\log x$ とおくと $dt=\\frac{1}{x}dx$。",
             steps: [
               `$t=\\log x$、x: $1\\to ${eT(m)}$ のとき t: $0\\to ${m}$`,
-              `$\\int_{0}^{${m}}t^{${n}}dt=\\frac{${m}^{${n + 1}}}{${n + 1}}=${fracTex(m ** (n + 1), n + 1)}$`,
+              `$\\int_{0}^{${m}}${n === 1 ? "t" : `t^{${n}}`}dt=${m === 1 ? "" : `\\frac{${m}^{${n + 1}}}{${n + 1}}=`}${fracTex(m ** (n + 1), n + 1)}$`,
             ],
           };
         }
         const n = r(1, 6);
         return {
-          q: `定積分 $\\int_{0}^{\\frac{\\pi}{2}}\\sin^{${n}}x\\cos x\\,dx$ を求めよ。`,
+          q: `定積分 $\\int_{0}^{\\frac{\\pi}{2}}${n === 1 ? "\\sin x" : `\\sin^{${n}}x`}\\cos x\\,dx$ を求めよ。`,
           ans: fracAns(1, n + 1),
           hint: "$t=\\sin x$ とおくと $dt=\\cos x\\,dx$。",
-          steps: [`$t=\\sin x$、x: $0\\to\\frac{\\pi}{2}$ のとき t: $0\\to1$`, `$\\int_{0}^{1}t^{${n}}dt=${fracTex(1, n + 1)}$`],
+          steps: [`$t=\\sin x$、x: $0\\to\\frac{\\pi}{2}$ のとき t: $0\\to1$`, `$\\int_{0}^{1}${n === 1 ? "t" : `t^{${n}}`}\\,dt=${fracTex(1, n + 1)}$`],
         };
       }),
       t("HIII-sekibun-2b", (r) => {
@@ -1262,8 +1263,8 @@ const SEKIBUN = {
             hint: `$x=${a === 1 ? "" : a}\\tan\\theta$ とおく。`,
             steps: [
               `$x=${a === 1 ? "" : a}\\tan\\theta$ とおくと $dx=\\frac{${a}}{\\cos^{2}\\theta}d\\theta$、$x^{2}+${a * a}=\\frac{${a * a}}{\\cos^{2}\\theta}$`,
-              `θ: $0\\to ${piT(1, m)}$、被積分関数は $\\frac{1}{${a}}$ になる`,
-              `$\\frac{1}{${a}}\\times${piT(1, m)}=${piT(1, m * a)}$`,
+              `θ: $0\\to ${piT(1, m)}$、被積分関数は $${fracTex(1, a)}$ になる`,
+              `$${a === 1 ? "" : `\\frac{1}{${a}}\\times`}${piT(1, m)}${a === 1 ? "" : `=${piT(1, m * a)}`}$`,
             ],
           };
         }
@@ -1485,7 +1486,7 @@ const SEKIBUNOUYO = {
         if (mode === 2) {
           const mm = r(1, 3);
           return {
-            q: `$\\lim_{n\\to\\infty}\\frac{1}{n}\\sum_{k=1}^{n}\\left(1+\\frac{k}{n}\\right)^{${mm}}$ を求めよ。`,
+            q: `$\\lim_{n\\to\\infty}\\frac{1}{n}\\sum_{k=1}^{n}\\left(1+\\frac{k}{n}\\right)${mm === 1 ? "" : `^{${mm}}`}$ を求めよ。`,
             ans: fracAns(2 ** (mm + 1) - 1, mm + 1),
             hint: "$\\frac{1}{n}\\sum f\\left(\\frac{k}{n}\\right)\\to\\int_{0}^{1}f(x)\\,dx$。",
             steps: [`$=\\int_{0}^{1}(1+x)^{${mm}}dx=\\left[\\frac{(1+x)^{${mm + 1}}}{${mm + 1}}\\right]_{0}^{1}=${fracTex(2 ** (mm + 1) - 1, mm + 1)}$`],
@@ -1554,7 +1555,7 @@ const SEKIBUNOUYO = {
           return {
             q: `$\\lim_{n\\to\\infty}\\sum_{k=1}^{n}\\frac{1}{n${b === 1 ? "+" : `+${b}`}k}$ を求めよ。`,
             ans,
-            choices: choices4(r, ans, [`$\\log ${b + 1}$`, `$${lg(b, 1, b + 1)}$`, `$${lg(1, b, b + 2)}$`, `$${lg(1, b + 1, b + 1)}$`]),
+            choices: choices4(r, ans, [`$\\log ${b + 1}$`, `$${lg(b, 1, b + 1)}$`, `$${lg(1, b, b + 2)}$`, `$${lg(1, b + 1, b + 1)}$`], (i) => `$${lg(i + 2, b, b + 1)}$`),
             hint: "$\\frac{1}{n}$ をくくり出して $\\frac{1}{n}\\sum f\\left(\\frac{k}{n}\\right)$ の形にする。",
             steps: [
               `$\\frac{1}{n${b === 1 ? "+" : `+${b}`}k}=\\frac{1}{n}\\cdot\\frac{1}{1+${b === 1 ? "" : b}\\cdot\\frac{k}{n}}$`,
@@ -1566,7 +1567,7 @@ const SEKIBUNOUYO = {
         return {
           q: `$\\lim_{n\\to\\infty}\\sum_{k=1}^{n}\\frac{k}{n^{2}${b === 1 ? "+" : `+${b}`}k^{2}}$ を求めよ。`,
           ans,
-          choices: choices4(r, ans, [`$${lg(1, b, b + 1)}$`, `$${lg(1, 2, b + 1)}$`, `$\\log ${b + 1}$`, `$${lg(1, 2 * b, b)}$`]),
+          choices: choices4(r, ans, [`$${lg(1, b, b + 1)}$`, `$${lg(1, 2, b + 1)}$`, `$\\log ${b + 1}$`], (i) => `$${lg(1, 2 * b + i + 1, b + 1)}$`),
           hint: "分母・分子を $n^{2}$ でわって $\\frac{1}{n}\\sum f\\left(\\frac{k}{n}\\right)$ の形にする。",
           steps: [
             `$\\frac{k}{n^{2}${b === 1 ? "+" : `+${b}`}k^{2}}=\\frac{1}{n}\\cdot\\frac{\\frac{k}{n}}{1+${b === 1 ? "" : b}\\left(\\frac{k}{n}\\right)^{2}}$`,
@@ -1597,7 +1598,7 @@ const SEKIBUNOUYO = {
         return {
           q: `曲線 $y=${a === 1 ? "" : a}\\sqrt{x}$ と直線 $y=${b === 1 ? "" : b}x$ で囲まれた部分を x 軸のまわりに1回転させてできる立体の体積を求めよ。`,
           ans,
-          choices: choices4(r, ans, [`$${piT(a ** 6, 30 * b ** 4)}$`, `$${fracTex(a ** 6, 6 * b ** 4)}$`, `$${piT(a ** 4, 6 * b ** 3)}$`]),
+          choices: choices4(r, ans, [`$${piT(a ** 6, 30 * b ** 4)}$`, `$${fracTex(a ** 6, 6 * b ** 4)}$`, `$${piT(a ** 4, 6 * b ** 3)}$`, `$${piT(a ** 6, 2 * b ** 4)}$`]),
           hint: "外側の回転体から内側の回転体を引く：$\\pi\\int(f^{2}-g^{2})dx$。$\\pi\\int(f-g)^{2}dx$ ではない。",
           steps: [
             `交点の x 座標は $0,\\ ${X}$`,
@@ -1685,7 +1686,7 @@ const SEKIBUNOUYO = {
         return {
           q: `曲線 $y=x(${p}-x)$ と x 軸で囲まれた部分を y 軸のまわりに1回転させてできる立体の体積を求めよ。`,
           ans,
-          choices: choices4(r, ans, [`$${piT(p ** 4, 12)}$`, `$${piT(p ** 5, 30)}$`, `$${piT(p ** 3, 6)}$`]),
+          choices: choices4(r, ans, [`$${piT(p ** 4, 12)}$`, `$${piT(p ** 5, 30)}$`, `$${piT(p ** 3, 6)}$`, `$${piT(p ** 4, 3)}$`]),
           hint: "y 軸のまわりの回転体は $V=2\\pi\\int_{a}^{b}x f(x)\\,dx$（薄い円筒を重ねる考え方）で計算できる。",
           steps: [
             `$V=2\\pi\\int_{0}^{${p}}x\\cdot x(${p}-x)\\,dx=2\\pi\\int_{0}^{${p}}(${p === 1 ? "" : p}x^{2}-x^{3})\\,dx$`,
