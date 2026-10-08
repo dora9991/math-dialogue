@@ -409,6 +409,10 @@ function compileChar(c) {
   c._c = true;
   const st = c.stats;
   ['walk', 'back', 'jumpV', 'grav', 'airX', 'w', 'h', 'ch', 'push'].forEach((k) => { st[k] = S(st[k]); });
+  // ジャンプだけを JUMP_MUL 倍の高さにする（初速と重力をどちらも倍にすると、滞空時間は同じで高さが倍になる）。
+  // 技の中のジャンプ（アッパーなど）や、吹っ飛びの重力は、これまでの grav のまま。
+  st.jumpG = st.grav * JUMP_MUL;
+  st.jumpV *= JUMP_MUL;
   for (const key of Object.keys(c.moves)) {
     const mv = c.moves[key];
     mv.key = key;

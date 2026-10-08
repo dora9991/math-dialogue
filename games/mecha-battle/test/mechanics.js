@@ -2,7 +2,7 @@
 const fs = require('fs'), vm = require('vm'), path = require('path');
 const code = ['core.js', 'chars.js', 'sim.js', 'ai.js'].map((f) => fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8')).join('\n');
 const ctx = vm.createContext({ console });
-vm.runInContext(code + '\nthis.API = { CHARS, createMatch, stepMatch, nextRound, newAI, aiInput, makePulse, IN, S, SP, FPS, MOVE_KEYS, hurtBox, fPhase, INTRO_FRAMES };', ctx);
+vm.runInContext(code + '\nthis.API = { CHARS, createMatch, stepMatch, nextRound, newAI, aiInput, makePulse, IN, S, SP, FPS, MOVE_KEYS, hurtBox, fPhase, INTRO_FRAMES, JUMP_MUL, FLOOR_Y };', ctx);
 const A = ctx.API, IN = A.IN, S = A.S;
 
 let pass = 0, fail = 0;
@@ -34,6 +34,74 @@ console.log('● 歩く・ジャンプ・しゃがみ');
   ok(m2.f[0].st === 'idle' && t > 20 && t < 50, 'ジャンプは約30〜40フレームで着地', t);
   const m3 = mk(0, 1, 80); step(m3, IN.DOWN, 0, 3);
   ok(m3.f[0].st === 'crouch', 'DOWNでしゃがむ');
+}
+
+console.log('● ジャンプ：高さは従来の2倍、滞空時間は同じ');
+{
+  // 従来の放物線（初速 = jumpV / JUMP_MUL、重力 = grav）を、整数のまま計算して比べる
+  const oldArc = (v, g) => { let y = 0, vy = v, peak = 0, n = 0; do { vy -= g; y += vy; n++; if (y > peak) peak = y; } while (y > 0); return { peak, frames: n + 1 }; };
+  const jump = (ch, atkAt) => {       // 垂直ジャンプを1回。atkAt フレーム目に空中Aを押す。高さの記録と、着地までのフレーム数を返す
+    const m = mk(ch, ch === 7 ? 6 : 7, 200); const ys = [];
+    step(m, IN.UP, 0, 1); ys.push(m.f[0].y);
+    for (let t = 1; m.f[0].st !== 'idle' && t < 200; t++) { step(m, t === atkAt ? IN.A : 0, 0); ys.push(m.f[0].y); }
+    return { ys, peak: Math.max(...ys), frames: ys.length, st: m.f[0].st };
+  };
+  const bad = [];
+  for (let c = 0; c < 8; c++) {
+    const st = A.CHARS[c].stats, o = oldArc(st.jumpV / A.JUMP_MUL, st.grav), r = jump(c);
+    if (r.peak !== 2 * o.peak || r.frames !== o.frames) bad.push([A.CHARS[c].en, r.peak / 256, o.peak / 256, r.frames, o.frames]);
+  }
+  ok(A.JUMP_MUL === 2 && bad.length === 0, '全8キャラ：ジャンプの最高点がちょうど従来の2倍で、着地までのフレーム数は同じ', bad);
+  const over = A.CHARS.map((c, i) => [c.en, A.FLOOR_Y - jump(i).peak / 256 - c.stats.h / 256]).filter((x) => x[1] <= 0);
+  ok(over.length === 0, '最高点でも、頭が画面の上にはみ出さない', over);
+  // 空中技を出した瞬間に重力が1フレーム止まる（これまでと同じ）ので、着地は最大1〜2フレーム遅れるだけ。重力が別の値になっていたら、高さ・滞空時間が大きくずれる
+  const plain = jump(0), early = jump(0, 8), late = jump(0, 24);
+  const same = (r) => r.st === 'idle' && r.peak === plain.peak && r.frames >= plain.frames && r.frames <= plain.frames + 2;
+  ok(same(early) && same(late), 'ジャンプ中に空中技を出しても、放物線はジャンプの続き（高さ・着地のタイミングはほぼ同じ）', [plain.peak, plain.frames, early.peak, early.frames, late.peak, late.frames]);
+
+  // 空中で技を受けて吹っ飛んだあと：重力は元に戻り、技の中のジャンプ（ライジングパンチ）は従来の高さのまま
+  const upperPeak = (m, who) => {
+    const f = m.f[who]; let peak = 0; seq(m, who, A.makePulse('s3', who === 0 ? IN.RIGHT : IN.LEFT));
+    for (let t = 0; t < 120 && (f.st === 'atk' || f.y > 0); t++) { step(m, 0, 0); peak = Math.max(peak, f.y); }
+    return peak;
+  };
+  const m0 = mk(0, 1, 200), s3 = A.CHARS[0].moves.s3.phases.find((p) => p.vy);
+  const expect = oldArc(s3.vy, A.CHARS[0].stats.grav).peak;
+  const base = upperPeak(m0, 0);
+  ok(base === expect, 'ジャンプしていない時のライジングパンチは、従来の高さ（重力も従来）', [base, expect]);
+  let flagged = null;
+  for (let t0 = 0; t0 < 30 && !flagged; t0++) {            // 相手のライジングパンチを、ジャンプ中の自分に当てる
+    const m = mk(0, 0, 38); let knockedInAir = false;
+    step(m, IN.UP, 0, 1);
+    for (let t = 1; t < 160; t++) {
+      if (t === t0) { const p = A.makePulse('s3', IN.LEFT); for (const f of p.f) { step(m, 0, f); } t += p.f.length; }
+      else step(m, 0, 0);
+      if (m.f[0].st === 'knock' && m.f[0].y > 0) knockedInAir = true;
+      if (knockedInAir && m.f[0].st === 'idle' && m.f[1].st === 'idle') break;
+    }
+    if (knockedInAir && m.f[0].st === 'idle' && m.f[1].st === 'idle') flagged = m;
+  }
+  ok(!!flagged, '（準備）ジャンプ中に相手のライジングパンチを受けて、吹っ飛び→ダウン→起き上がり→立つ');
+  if (flagged) {
+    ok(flagged.f[0].jmp === false, '立ち上がったあと、ジャンプ中の重力は残っていない');
+    ok(upperPeak(flagged, 0) === expect, '吹っ飛ばされたあとのライジングパンチも、従来の高さ', [upperPeak(flagged, 0), expect]);
+  }
+}
+
+console.log('● ジャンプ攻撃（飛びこみ）が、立っている相手に当たる');
+{
+  const miss = [];
+  for (let c = 0; c < 8; c++) {
+    const def = c === 1 ? 0 : 1; let hit = false;
+    for (const d of [40, 52, 64, 76]) for (const key of [IN.A, IN.B]) for (let k = 1; k < 34 && !hit; k++) {
+      const m = mk(c, def, d); const hp0 = m.f[1].hp;
+      step(m, IN.UP | IN.RIGHT, 0, 1);
+      for (let t = 1; t < 60; t++) step(m, t === k ? key : 0, 0);
+      if (m.f[1].hp < hp0) hit = true;
+    }
+    if (!hit) miss.push(A.CHARS[c].en);
+  }
+  ok(miss.length === 0, '全8キャラ：飛びこんで空中A/Bを出すと、立っている相手に当てられる', miss);
 }
 
 console.log('● こうげき・ダメージ');

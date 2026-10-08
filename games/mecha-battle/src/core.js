@@ -9,6 +9,8 @@ const SCREEN_W = 256, SCREEN_H = 224; // ファミコンっぽい解像度
 const FLOOR_Y = 190;                  // 床（足が付く画面Y）
 const WALL_L = 28, WALL_R = SCREEN_W - 28; // 戦える範囲（中心X）。パーツが画面外に出ない余白
 const FPS = 60;
+// ジャンプの高さの倍率（1 = 最初の高さ）。初速と重力をどちらも同じ倍率にするので、滞空時間は変わらず、高さだけが変わる。
+const JUMP_MUL = 2;
 
 // 入力ビット
 const IN = { UP: 1, DOWN: 2, LEFT: 4, RIGHT: 8, A: 16, B: 32 };

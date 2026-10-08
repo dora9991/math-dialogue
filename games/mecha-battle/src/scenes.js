@@ -240,7 +240,7 @@ const SceneOnline = {
     if (m.t === 'hello') {
       if (m.v !== NET_PROTOCOL) { this.fail(Net.errText('version')); return; }
       this.showLobby(false, false); Sound.sfx('confirm'); Game.go('select', { mode: 'online' });
-    } else if (m.t === '_lost') this.fail('せつだん されました');
+    } else if (m.t === '_lost' && this.state !== 'error') this.fail('せつだん されました');   // すでにエラー（バージョンちがい等）なら、その文のまま
   },
   update() {
     this.t++;
@@ -297,7 +297,7 @@ const SceneOnline = {
       jpO(c, 'B:やめる', 128, 196, '#ffffff', { align: 'c' });
     } else if (this.state === 'error') {
       jp(c, 'つながりません', 128, 76, '#fc7460', { align: 'c' });
-      jp(c, this.msg, 128, 104, '#fcfcfc', { align: 'c' });
+      String(this.msg).split('\n').forEach((s, i) => jp(c, s, 128, 104 + i * 14, '#fcfcfc', { align: 'c' }));
       jpO(c, 'なにかキーを おす', 128, 196, '#ffffff', { align: 'c' });
     }
   },
