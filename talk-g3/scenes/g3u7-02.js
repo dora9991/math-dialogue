@@ -53,6 +53,7 @@
   const rts = [RT(O, [1, 0], [0, 1], 14), RT(Bq, [-1, 0], [0, 1], 14), RT(Cq, [-1, 0], [0, -1], 14), RT(Dq, [1, 0], [0, -1], 14)];
   const inner = PG([E, F, G, Hh], 'y', { wd: 3.6 });
   const innerFill = PG([E, F, G, Hh], 'y', { fill: 'y', alpha: 0.2, wd: 3.6 });
+  const nameEFGH = [DT(E, 'E', [0, -1], 'y'), DT(F, 'F', [1, 0], 'y'), DT(G, 'G', [0, 1], 'y'), DT(Hh, 'H', [-1, 0], 'y')];   // 中の四角形の頂点の名前（本文で「点E」「∠HEF」と言うため）
   const cc = ctr([E, F, G, Hh]);
   const cLab = [[E, F], [F, G], [G, Hh], [Hh, E]].map(([p, q]) => { const m = mid(p, q), d = nrm([m[0] - cc[0], m[1] - cc[1]]); return TX([m[0] + d[0] * 0.3, m[1] + d[1] * 0.3 - 0.02], 'c', 'y', 28); });
   const angE = [arcm(E, O, Hh, 0.34, 'g', 2), arcm(E, F, Bq, 0.34, 'p', 1)];
@@ -91,7 +92,7 @@
         wrong: [T('正方形の面積は、1辺の2乗です。1辺がa＋bなので、（a＋b）²です。', { say: '正方形の面積は、1辺の2乗です。1辺がエーたすビーなので、エーたすビーの2乗です。', ft: 'normal' })] }),
 
     T('次に、中の四角形EFGHを調べます。4つの辺は、どれも、同じ形の直角三角形の斜辺です。だから、すべて長さcです。', { say: '次に、中の四角形イーエフジーエイチを調べます。4つの辺は、どれも、同じ形の直角三角形の斜辺です。だから、すべて長さシーです。', ft: 'normal', point: false,
-      add: [{ col: 0, type: 'text', size: 'xs', label: '外側の正方形', text: '1辺 a＋b\n面積（a＋b）²　…①', t: 4.0 }], draw: [g2(inner, cLab)] }),
+      add: [{ col: 0, type: 'text', size: 'xs', label: '外側の正方形', text: '1辺 a＋b\n面積（a＋b）²　…①', t: 4.0 }], draw: [g2(inner, cLab, nameEFGH)] }),
     T('では、角はどうでしょう。点Eのまわりを見ます。三角形の鋭角には、緑とピンクの印をつけます。', { say: 'では、角はどうでしょう。点イーのまわりを見ます。三角形の鋭角には、緑とピンクの印をつけます。', ft: 'normal', point: false, draw: [g2(angE)] }),
     T('直角三角形の、2つの鋭角の和は、90°です。点Eでは、一直線の180°に、緑の角、ピンクの角、∠HEFが、並んでいます。', { say: '直角三角形の、2つの鋭角の和は、90度です。点イーでは、一直線の180度に、緑の角、ピンクの角、かくエイチイーエフが、並んでいます。', ft: 'normal', point: false }),
 
