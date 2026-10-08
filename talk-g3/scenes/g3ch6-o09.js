@@ -37,7 +37,7 @@
   const baseA = [mark(Bp, O, Ap, 0.7, 'g'), num(Bp, O, Ap, 1.35, '28°', 'g', { size: 24 })];
   const baseC = [mark(Bp, O, Cp, 0.55, 'g'), num(Bp, O, Cp, 1.2, '40°', 'g', { size: 24 })];
   const triOAC = tri(O, Ap, Cp, 'p', { alpha: 0.14 });
-  const baseOAC = [mark(Ap, O, Cp, 0.95, 'p'), num(Ap, O, Cp, 1.7, '22°', 'p', { size: 24 })];
+  const baseOAC = [mark(Ap, O, Cp, 0.95, 'p'), num(Ap, O, Cp, 1.4, '22°', 'p', { size: 24 })];
 
   KL.lesson({ id: 'g3ch6-o09', unit: '中3　円', kick: '3年6章　応用9', title: '角度を求める総合', card: '角度を求める総合', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [
     T('みなさん、こんにちは。今日は、円周角、中心角、二等辺三角形を組み合わせて、角度を求めます。', { title: true, point: false, ft: 'happy' }),

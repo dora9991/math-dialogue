@@ -35,7 +35,7 @@
     tick(Ap, Bp, 1, 'g'), tick(Ap, Cp, 1, 'g'),
     mark(Dp, Bp, Cp, 0.7, 'y'), num(Dp, Bp, Cp, 1.4, '50°', 'y', { size: 26 }), mark(Bp, Ap, O, 0.8, 'p'), num(Bp, Ap, O, 1.6, 'x', 'p', { size: 30 })];
   const a50 = [mark(Ap, Bp, Cp, 0.7, 'y'), num(Ap, Bp, Cp, 1.35, '50°', 'y', { size: 26 })];
-  const a65 = [mark(Bp, Ap, Cp, 0.65, 'g'), num(Bp, Ap, Cp, 1.2, '65°', 'g', { size: 25 })];
+  const a65 = [mark(Cp, Ap, Bp, 0.65, 'g'), num(Cp, Ap, Bp, 1.05, '65°', 'g', { size: 25 })];
   const o100 = [ln(O, Cp, 'w', { wd: 2.8, dash: true }), mark(O, Bp, Cp, 0.45, 'p'), num(O, Bp, Cp, 0.85, '100°', 'p', { size: 24 }), tick(O, Bp, 2, 'b'), tick(O, Cp, 2, 'b')];
   const a40 = [mark(Bp, Cp, O, 0.6, 'g'), num(Bp, Cp, O, 1.15, '40°', 'g', { size: 24 })];
 

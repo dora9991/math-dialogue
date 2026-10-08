@@ -35,10 +35,10 @@
   const Pp = [8.623, 3.25], Ap = [5.318, 4.791], Bp = [5.318, 1.709];
   const base = [circ(O, r, 'w'), ln(Pp, Ap, 'w'), ln(Pp, Bp, 'w'), ln(O, Ap, 'b'), ln(O, Bp, 'b'), ln(O, Pp, 'b', { wd: 2.6, dash: true }),
     dot(O, 'O', [-0.8, -0.6], 'w', { r: 5 }), dot(Pp, 'P', [1, 0.3], 'y'), dot(Ap, 'A', [0.3, 1], 'y'), dot(Bp, 'B', [0.3, -1], 'y'),
-    mark(Pp, Ap, Bp, 0.9, 'y'), num(Pp, Ap, Bp, 1.65, '50°', 'y', { size: 26 }), lab(7.35, 4.55, 'PA＝7cm', 'y', { size: 24 })];
+    mark(Pp, Ap, Bp, 0.9, 'y'), lab(7.1, 3.47, '50°', 'y', { size: 26 }), lab(7.35, 4.55, 'PA＝7cm', 'y', { size: 24 })];
   const qx = [mark(Ap, O, Pp, 0.4, 'p'), num(Ap, O, Pp, 0.85, 'x', 'p', { size: 30 })];
   const rts = [rt(Ap, unit(Ap, O), unit(Ap, Pp), 'g'), rt(Bp, unit(Bp, O), unit(Bp, Pp), 'g')];
-  const qy = [mark(O, Ap, Bp, 0.6, 'p'), num(O, Ap, Bp, 1.1, 'y', 'p', { size: 30 })];
+  const qy = [mark(O, Ap, Bp, 0.6, 'p'), lab(5.6, 3.5, 'y', 'p', { size: 30 })];
   const tris = [tri(O, Ap, Pp, 'y', { temp: false, alpha: 0.14 }), tri(O, Bp, Pp, 'g', { temp: false, alpha: 0.14 })];
   const ab = ln(Ap, Bp, 'g', { wd: 3, dash: true });
   const qz = [mark(Ap, O, Bp, 0.55, 'p'), num(Ap, O, Bp, 1.25, 'z', 'p', { size: 30 }), mark(Ap, Pp, Bp, 0.75, 'g'), num(Ap, Pp, Bp, 1.35, '65°', 'g', { size: 24 })];

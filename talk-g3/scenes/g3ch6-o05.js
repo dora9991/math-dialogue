@@ -49,8 +49,8 @@
   const A3 = [3.833, 2.498], B3 = [7.314, 1.565], C3 = [7.805, 4.35], D3 = [4.486, 4.935];
   const fig3 = [dot(A3, 'A', away(A3, O), 'y'), dot(B3, 'B', away(B3, O), 'y'), dot(C3, 'C', away(C3, O), 'y'), dot(D3, 'D', away(D3, O), 'y'),
     { k: 'poly', pts: [A3, B3, C3, D3], close: true, c: 'w', wd: 3.2, d: 0.6 }, ln(A3, C3, 'b', { wd: 3.2 }), ln(B3, D3, 'b', { wd: 3.2 }),
-    mark(B3, A3, D3, 0.7, 'y'), num(B3, A3, D3, 1.5, '35°', 'y', { size: 26 }), mark(C3, A3, D3, 0.7, 'y'), num(C3, A3, D3, 1.5, '35°', 'y', { size: 26 }),
-    mark(A3, B3, C3, 0.75, 'g'), num(A3, B3, C3, 1.7, '40°', 'g', { size: 26 }), mark(D3, B3, C3, 0.7, 'p'), num(D3, B3, C3, 1.45, 'x', 'p', { size: 30 })];
+    mark(B3, A3, D3, 0.7, 'y'), num(B3, A3, D3, 1.15, '35°', 'y', { size: 26 }), mark(C3, A3, D3, 0.7, 'y'), num(C3, A3, D3, 1.05, '35°', 'y', { size: 26 }),
+    mark(A3, B3, C3, 0.75, 'g'), num(A3, B3, C3, 1.3, '40°', 'g', { size: 26 }), mark(D3, B3, C3, 0.7, 'p'), num(D3, B3, C3, 1.1, 'x', 'p', { size: 30 })];
   const circ3 = circ(O, 2.2, 'g', { dash: true, wd: 3.2 });
 
   KL.lesson({ id: 'g3ch6-o05', unit: '中3　円', kick: '3年6章　応用5', title: '円周角の定理の逆', card: '円周角の定理の逆', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [

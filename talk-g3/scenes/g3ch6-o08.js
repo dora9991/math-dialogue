@@ -31,8 +31,8 @@
   const O = [5.9, 3.25];
   const Pp = [4.9, 2.333], Ap = [7.9, 2.333], Bp = [3.9, 2.333], Cp = [5.692, 1.06], Dp = [3.844, 4.032];
   const base = [circ(O, 2.2, 'w'), ln(Ap, Bp, 'w'), ln(Cp, Dp, 'w'),
-    dot(Ap, 'A', [1, 0.2], 'y'), dot(Bp, 'B', [-1, -0.3], 'y'), dot(Cp, 'C', [0.5, -0.9], 'y'), dot(Dp, 'D', [-0.6, 0.8], 'y'), dot(Pp, 'P', [-0.5, -0.87], 'w', { r: 5 }),
-    lab(6.4, 2.62, '6cm', 'y', { size: 24 }), lab(4.4, 2.62, '2cm', 'y', { size: 24 }), lab(5.85, 1.7, '3cm', 'g', { size: 24 }), lab(4.0, 3.2, 'x', 'p', { size: 28 })];
+    dot(Ap, 'A', [1, 0.2], 'y'), dot(Bp, 'B', [-1, -0.3], 'y'), dot(Cp, 'C', [0.5, -0.9], 'y'), dot(Dp, 'D', [-0.6, 0.8], 'y'), dot(Pp, 'P', [0.3, 1], 'w', { r: 5 }),
+    lab(6.4, 2.62, '6cm', 'y', { size: 24 }), lab(4.4, 2.07, '2cm', 'y', { size: 24 }), lab(5.85, 1.7, '3cm', 'g', { size: 24 }), lab(4.0, 3.2, 'x', 'p', { size: 28 })];
   const triPAC = tri(Pp, Ap, Cp, 'y', { alpha: 0.2 }), triPDB = tri(Pp, Dp, Bp, 'g', { alpha: 0.2 });
   const vert = [mark(Pp, Ap, Cp, 0.42, 'p'), mark(Pp, Ap, Cp, 0.56, 'p'), mark(Pp, Dp, Bp, 0.42, 'p'), mark(Pp, Dp, Bp, 0.56, 'p')];
   const circ2 = [mark(Ap, Pp, Cp, 0.8, 'y'), mark(Dp, Pp, Bp, 0.8, 'y')];
