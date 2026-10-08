@@ -169,7 +169,7 @@
 
     t('まとめです。AD：AB＝AE：AC ならば、DE∥BC です。比が等しいことから、平行が言えます。', { clear: true, cols: [0.34, 0.66], part: 'まとめ', ft: 'normal', point: false,
       add: [{ col: 1, type: 'box', color: 'y', size: 'sm', label: '三角形と比の定理の逆', text: 'AD：AB＝AE：AC ならば DE∥BC\nAD：DB＝AE：EC ならば DE∥BC', t: 7.0 }] }),
-    b('おなかが鳴ったら、おなかがすいている。でも、おなかがすいても、鳴るとは、かぎらないんだね！', { fb: 'happy', up: true, fx: { b: 'e' } }),
+    b('ぼくは、ほめられると、うれしい！ でも、うれしいときが、ほめられたときとは、かぎらないんだね！', { fb: 'happy', up: true, fx: { b: 'e' } }),
     t('お疲れさまでした。成績は、こちらです。', { ft: 'happy', point: false, result: true })
   ] });
 })();
