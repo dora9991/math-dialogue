@@ -23,8 +23,8 @@
     s = s.replace(/[＝＋×÷＜＞≦≧≒±π°〜…]/g, c => Y[c]);
     return s.replace(/\s+/g, ' ').replace(/ ?([、。！？]) ?/g, '$1').replace(/、{2,}/g, '、').replace(/、([。！？])/g, '$1').replace(/かっことじ、の/g, 'かっことじの').replace(/^ | $/g, '');
   };
-  const NEED = /[√²³^A-Za-zπ°≒±〜…＜＞≦≧]/;                           // これらを含む行にだけ say をつける（単位だけの行は、ふつうの読みでよい）
-  const needSay = s => NEED.test(String(s).replace(/\{\{|\}\}|\*\*/g, '').replace(/cm[²³]?|km|kg|(?<=\d)[mg][²³]?(?![A-Za-z])/g, ''));
+  const NEED = /[√²³^A-Za-zπ°≒±〜…＜＞≦≧]/;                           // これらを含む行にだけ say をつける
+  const needSay = s => NEED.test(String(s).replace(/\{\{|\}\}|\*\*/g, ''));
   const T = (s, o) => T0(s, Object.assign(needSay(s) ? { say: rd(s) } : {}, o || {}));
   const B = (s, o) => B0(s, Object.assign(needSay(s) ? { say: rd(s) } : {}, o || {}));
   // 図：面積25cm²の正方形（view 10×4、1180×472）
@@ -38,7 +38,7 @@
     B('へいほうこん？ 平らな根っこ？ ごぼうのことだね！ ぼく、きんぴらが大好きだよ！', { title: true, fb: 'happy', up: true }),
     T('ごぼうでは、ありません。2乗すると、その数になる数のことです。', { title: true, point: false, ft: 'sigh', fx: { t: 'sweat' } }),
 
-    T('問題です。面積が25cm²の、正方形の折り紙があります。この折り紙の、1辺の長さを、考えましょう。', { part: '問題を読もう', ft: 'normal',
+    T('問題です。面積が25平方センチメートルの、正方形の折り紙があります。この折り紙の、1辺の長さを、考えましょう。', { part: '問題を読もう', ft: 'normal',
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'めあて', text: '平方根の意味を\n確かめよう', t: 4.0 }, Object.assign(f1, { prims: [] })], draw: [G(sq)] }),
     T('正方形の面積は、1辺×1辺です。1辺を、2回かけると、25になる数を、探します。', { ft: 'normal', point: false,
       add: [{ col: 0, type: 'text', size: 'xs', label: '考え方', text: '1辺×1辺＝25', t: 3.0 }] }),

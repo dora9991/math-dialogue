@@ -25,8 +25,8 @@
     s = s.replace(/[＝＋×÷＜＞≦≧≒±π°〜…]/g, c => Y[c]);
     return s.replace(/\s+/g, ' ').replace(/ ?([、。！？]) ?/g, '$1').replace(/、{2,}/g, '、').replace(/、([。！？])/g, '$1').replace(/かっことじ、の/g, 'かっことじの').replace(/^ | $/g, '');
   };
-  const NEED = /[√²³^A-Za-zπ°≒±〜…＜＞≦≧]/;                           // これらを含む行にだけ say をつける（単位だけの行は、ふつうの読みでよい）
-  const needSay = s => NEED.test(String(s).replace(/\{\{|\}\}|\*\*/g, '').replace(/cm[²³]?|km|kg|(?<=\d)[mg][²³]?(?![A-Za-z])/g, ''));
+  const NEED = /[√²³^A-Za-zπ°≒±〜…＜＞≦≧]/;                           // これらを含む行にだけ say をつける
+  const needSay = s => NEED.test(String(s).replace(/\{\{|\}\}|\*\*/g, ''));
   const T = (s, o) => T0(s, Object.assign(needSay(s) ? { say: rd(s) } : {}, o || {}));
   const B = (s, o) => B0(s, Object.assign(needSay(s) ? { say: rd(s) } : {}, o || {}));
   const t0 = [['問題', '自然数nについて'], ['(1)', '3＜√n＜5を満たすnは、何個か'], ['(2)', '√nの整数部分が4になるnは、何個か'], ['(3)', '√（3n）の整数部分が4になるnは、何個か']];

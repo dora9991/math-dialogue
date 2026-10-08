@@ -24,8 +24,8 @@
     s = s.replace(/[＝＋×÷＜＞≦≧≒±π°〜…]/g, c => Y[c]);
     return s.replace(/\s+/g, ' ').replace(/ ?([、。！？]) ?/g, '$1').replace(/、{2,}/g, '、').replace(/、([。！？])/g, '$1').replace(/かっことじ、の/g, 'かっことじの').replace(/^ | $/g, '');
   };
-  const NEED = /[√²³^A-Za-zπ°≒±〜…＜＞≦≧]/;                           // これらを含む行にだけ say をつける（単位だけの行は、ふつうの読みでよい）
-  const needSay = s => NEED.test(String(s).replace(/\{\{|\}\}|\*\*/g, '').replace(/cm[²³]?|km|kg|(?<=\d)[mg][²³]?(?![A-Za-z])/g, ''));
+  const NEED = /[√²³^A-Za-zπ°≒±〜…＜＞≦≧]/;                           // これらを含む行にだけ say をつける
+  const needSay = s => NEED.test(String(s).replace(/\{\{|\}\}|\*\*/g, ''));
   const T = (s, o) => T0(s, Object.assign(needSay(s) ? { say: rd(s) } : {}, o || {}));
   const B = (s, o) => B0(s, Object.assign(needSay(s) ? { say: rd(s) } : {}, o || {}));
   KL.lesson({ id: 'g3ch2-o08', unit: '中3　平方根', kick: '3年2章　応用8', title: '展開公式を使う計算', card: '展開公式を使う計算', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [

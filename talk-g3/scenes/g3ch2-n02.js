@@ -25,15 +25,15 @@
     s = s.replace(/[＝＋×÷＜＞≦≧≒±π°〜…]/g, c => Y[c]);
     return s.replace(/\s+/g, ' ').replace(/ ?([、。！？]) ?/g, '$1').replace(/、{2,}/g, '、').replace(/、([。！？])/g, '$1').replace(/かっことじ、の/g, 'かっことじの').replace(/^ | $/g, '');
   };
-  const NEED = /[√²³^A-Za-zπ°≒±〜…＜＞≦≧]/;                           // これらを含む行にだけ say をつける（単位だけの行は、ふつうの読みでよい）
-  const needSay = s => NEED.test(String(s).replace(/\{\{|\}\}|\*\*/g, '').replace(/cm[²³]?|km|kg|(?<=\d)[mg][²³]?(?![A-Za-z])/g, ''));
+  const NEED = /[√²³^A-Za-zπ°≒±〜…＜＞≦≧]/;                           // これらを含む行にだけ say をつける
+  const needSay = s => NEED.test(String(s).replace(/\{\{|\}\}|\*\*/g, ''));
   const T = (s, o) => T0(s, Object.assign(needSay(s) ? { say: rd(s) } : {}, o || {}));
   const B = (s, o) => B0(s, Object.assign(needSay(s) ? { say: rd(s) } : {}, o || {}));
   const t0 = [['問題', 'x＝√5＋√2、y＝√5−√2のとき、次の値を求めよう'], ['(1)', 'x＋y　と　xy'], ['(2)', 'x²＋y²'], ['(3)', 'x²−y²']];
 
   KL.lesson({ id: 'g3ch2-n02', unit: '中3　平方根', kick: '3年2章　入試レベル2', title: '【入試】式の値（x＝√3＋√2 など）', card: '【入試】式の値（x＝√3＋√2 など）', sub: 'ホー先生とポンタと いっしょに ゆっくり解説', cols: [0.34, 0.66], steps: [
     T('みなさん、こんにちは。今日は、入試レベルの問題です。ルートをふくむ文字の、式の値を求めます。', { title: true, point: false, ft: 'happy' }),
-    B('xとyに、ルートが入ってる！ そのまま代入したら、目が回りそうだよ！', { title: true, fb: 'spiral', up: true }),
+    B('xとyに、ルートが入ってる！ そのまま代入したら、目が回りそうだよ！', { title: true, fb: 'confused', up: true }),
     T('そのまま代入すると、たいへんです。先に、和や積を求めると、楽になります。', { title: true, point: false, ft: 'think' }),
 
     T('問題です。x＝√5＋√2、y＝√5−√2のとき、x＋yとxy、x²＋y²、x²−y²の値を、求めましょう。', { part: '問題を読もう', ft: 'normal',
