@@ -14,7 +14,7 @@
     .replace(/[①-⑥]+/g, m => m.length === 1 ? 'まる' + CN['①②③④⑤⑥'.indexOf(m)] + '、' : [...m].map(c => CN['①②③④⑤⑥'.indexOf(c)]).join('、') + '、')
     .replace(/△/g, 'さんかく ').replace(/∠/g, 'かく ').replace(/∽/g, ' そうじ ').replace(/≡/g, ' 合同 ').replace(/∥/g, ' へいこう ').replace(/⊥/g, ' 垂直 ')
     .replace(/°/g, '度').replace(/＝/g, ' イコール ').replace(/≠/g, ' イコールではない ').replace(/：/g, ' たい ')
-    .replace(/(?<=[0-9度A-Za-z）)])−/g, 'ひく').replace(/−/g, 'マイナス').replace(/÷/g, 'わる').replace(/×/g, 'かける').replace(/＋/g, 'たす')
+    .replace(/(?<=[0-9度A-Za-z）)π])−/g, 'ひく').replace(/−/g, 'マイナス').replace(/÷/g, 'わる').replace(/×/g, 'かける').replace(/＋/g, 'たす')
     .replace(/[(（]/g, 'かっこ、').replace(/[)）]/g, '、かっことじ、')
     .replace(/(?<![A-Za-z])cm²/g, '平方センチメートル').replace(/(?<![A-Za-z])cm³/g, '立方センチメートル').replace(/(?<![A-Za-z])cm(?![a-z])/g, 'センチメートル')
     .replace(/(?<=[0-9])m²/g, '平方メートル').replace(/(?<=[0-9])m³/g, '立方メートル').replace(/(?<=[0-9])mL/g, 'ミリリットル').replace(/(?<=[0-9])m(?![a-zA-Z²³])/g, 'メートル')
@@ -81,8 +81,8 @@
   const triS = [PG([rA, rB, rC], 'y', { fill: 'y', alpha: 0.12 }), DT(rA, 'A', [-0.7, 0.7], 'y'), DT(rB, 'B', [-0.7, -0.7], 'y'), DT(rC, 'C', [0.7, -0.7], 'y'), RT(rB, [1, 0], [0, 1], 18), arcm(rA, rB, rC, 0.6, 'p', 1)];
   const triL = [PG([rD, rE, rF], 'p', { fill: 'p', alpha: 0.12 }), DT(rD, 'D', [-0.7, 0.7], 'p'), DT(rE, 'E', [-0.7, -0.7], 'p'), DT(rF, 'F', [0.7, -0.7], 'p'), RT(rE, [1, 0], [0, 1], 18), arcm(rD, rE, rF, 0.8, 'p', 1)];
   const sideLab = [TX(add2(mid(rA, rB), [-0.15, 0]), '6cm', 'y', 28, 'end'), TX([mid(rB, rC)[0], 0.7], '8cm', 'y', 28), TX(add2(mid(rD, rE), [-0.15, 0]), '9cm', 'p', 28, 'end'), TX([mid(rE, rF)[0], 0.7], '？', 'p', 34)];
-  // 2ページ目：DE∥BC、AD：DB＝3：5（AD：AB＝3：8）、BC＝16 の 1cm＝0.5375
-  const k2 = 8.6 / 16, uA = [5.2, 4.9], uB = [1.2, 0.9], uC = [9.8, 0.9], uD = lerp(uA, uB, 3 / 8), uE = lerp(uA, uC, 3 / 8);
+  // 2ページ目：DE∥BC、AD：DB＝3：5（AD：AB＝3：8）、BC＝16 の 1cm＝0.5375。AB＝8cm（4.3）になるよう A の位置を計算
+  const k2 = 8.6 / 16, uB = [1.2, 0.9], uC = [9.8, 0.9], uA = [uB[0] + Math.sqrt((8 * k2) ** 2 - 4.0 ** 2), 4.9], uD = lerp(uA, uB, 3 / 8), uE = lerp(uA, uC, 3 / 8);
   const tri2 = [PG([uA, uB, uC], 'w'), DT(uA, 'A', [0, 1], 'y'), DT(uB, 'B', [-0.7, -0.7], 'y'), DT(uC, 'C', [0.7, -0.7], 'y'), DT(uD, 'D', [-0.9, 0.2], 'p', { r: 5.5 }), DT(uE, 'E', [0.9, 0.2], 'p', { r: 5.5 }), LN(uD, uE, 'p', { wd: 4 }), para(uD, uE, 'b', 1), para(uB, uC, 'b', 1)];
   const angs2 = [arcm(uB, uC, uA, 0.7, 'g', 1), arcm(uD, uE, uA, 0.6, 'g', 1)];
   const lab2 = [TX(add2(mid(uA, uD), [-0.2, 0.1]), '3cm', 'g', 26, 'end'), TX(add2(mid(uD, uB), [-0.2, 0.0]), '5cm', 'g', 26, 'end'), TX(add2(mid(uD, uE), [0, 0.35]), '6cm', 'p', 26), TX([mid(uB, uC)[0], 0.45], 'BC＝？', 'y', 28)];

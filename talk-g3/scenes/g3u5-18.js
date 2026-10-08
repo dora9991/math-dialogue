@@ -18,7 +18,7 @@
     .replace(/[①-⑥]+/g, m => m.length === 1 ? 'まる' + CN['①②③④⑤⑥'.indexOf(m)] + '、' : [...m].map(c => CN['①②③④⑤⑥'.indexOf(c)]).join('、') + '、')
     .replace(/△/g, 'さんかく ').replace(/∠/g, 'かく ').replace(/∽/g, ' そうじ ').replace(/≡/g, ' 合同 ').replace(/∥/g, ' へいこう ').replace(/⊥/g, ' 垂直 ')
     .replace(/°/g, '度').replace(/＝/g, ' イコール ').replace(/≠/g, ' イコールではない ').replace(/：/g, ' たい ')
-    .replace(/(?<=[0-9度A-Za-z）)])−/g, 'ひく').replace(/−/g, 'マイナス').replace(/÷/g, 'わる').replace(/×/g, 'かける').replace(/＋/g, 'たす')
+    .replace(/(?<=[0-9度A-Za-z）)π])−/g, 'ひく').replace(/−/g, 'マイナス').replace(/÷/g, 'わる').replace(/×/g, 'かける').replace(/＋/g, 'たす')
     .replace(/[(（]/g, 'かっこ、').replace(/[)）]/g, '、かっことじ、')
     .replace(/(?<![A-Za-z])cm²/g, '平方センチメートル').replace(/(?<![A-Za-z])cm³/g, '立方センチメートル').replace(/(?<![A-Za-z])cm(?![a-z])/g, 'センチメートル')
     .replace(/(?<=[0-9])m²/g, '平方メートル').replace(/(?<=[0-9])m³/g, '立方メートル').replace(/(?<=[0-9])mL/g, 'ミリリットル').replace(/(?<=[0-9])m(?![a-zA-Z²³])/g, 'メートル')
@@ -172,7 +172,7 @@
 
     T('相似の問題では、まず、何の比なのかを、確かめます。長さの比は、そのまま。面積の比は、2乗。体積の比は、3乗です。', { ft: 'normal', point: false,
       add: [{ col: 0, type: 'box', color: 'y', size: 'xs', label: 'まとめ', text: '長さ　m：n\n面積　m²：n²\n体積　m³：n³', t: 6.0 }] }),
-    B('ぼく先生は、2乗と3乗を、うっかり忘れました。でも、みんなと教え合って、思い出せたよ！', { fb: 'happy', up: true, fx: { b: 'e' } }),
+    B('ぼく先生は、何の比かを確かめるのを、うっかり忘れました。でも、みんなと教え合って、思い出せたよ！', { fb: 'happy', up: true, fx: { b: 'e' } }),
     T('お疲れさまでした。成績は、こちらです。', { ft: 'happy', point: false, result: true })
   ] });
 })();
