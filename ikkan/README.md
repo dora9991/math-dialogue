@@ -17,7 +17,10 @@
 
 ## 使い方
 
-`index.html` をブラウザで開く（ビルド不要。サーバーも不要）。
+**いちばん簡単な開き方**：`ikkan-all-in-one.html`（全部を1つにまとめたファイル）をダウンロードして、ダブルクリックでブラウザで開く。印刷もできる。
+GitHub では、このファイルを開いて、右上の「Download raw file」（↓のボタン）で保存できる。
+
+フォルダごと持っているときは、`index.html` をブラウザで開いてもよい（ビルド不要。サーバーも不要）。
 
 | 操作 | |
 |---|---|
@@ -85,6 +88,12 @@ IK.add('kukan-xx', { unit: 'kukan', unitName: '空間図形', title: '…', head
 | 長方形 | `RECT({ w, h, top, side })`（縦・横の字） |
 | 自由な図 | `SVG((W, H, h) => '<svg の中身（単位 mm）>')`。`h.ans(…)` でかこんだものは、解答を表示したときだけ出る |
 
+## 1つにまとめたファイルの作り方
+
+```bash
+node tools/bundle.cjs          # → ikkan-all-in-one.html（ワークシートを足したら、作り直す。できたファイルは手で直さない）
+```
+
 ## 検査
 
 ```bash
@@ -103,9 +112,10 @@ css/ikkan.css     紙面と画面の見た目、印刷
 js/core.js        紙面をつくる道具（文字・立体の図・ブロック）。画面を持たない
 js/figs.js        図の部品（数直線・座標平面・ヒストグラム・おうぎ形・てんびん・長方形）
 js/app.js         画面（一覧・解答の切りかえ・印刷）
+ikkan-all-in-one.html  全部を1つにまとめたファイル（tools/bundle.cjs でつくる。印刷もできる）
 data/lessons.js   単元の一覧（表示の順）
 data/ws_<単元>.js 単元ごとのワークシート（seifu・moji・hotei・hirei・heimen・kukan・data）
-tools/            検査（verify.cjs・check.cjs）
+tools/            verify.cjs（検算）・check.cjs（見た目）・bundle.cjs（1ファイルにまとめる）
 ```
 
 ## 注意

@@ -22,7 +22,7 @@
     if (!pages) return;
     const wrap = pages.parentElement, top = document.querySelector('.top');
     const g = R.geo(cur), pw = g.P.w * MM, ph = g.P.h * MM;
-    let z = Math.min(1.6, (wrap.clientWidth - 24) / pw);
+    let z = Math.min(1.6, (wrap.clientWidth - 32) / pw);
     if (fit === 'all') z = Math.min(z, (window.innerHeight - (top ? top.offsetHeight : 0) - 70) / ph);
     pages.style.zoom = Math.max(0.3, z);
   }
@@ -58,23 +58,33 @@
         <span class="sp"></span>
         <button type="button" class="btn main" id="ansBtn" aria-pressed="false">解答を表示</button>
         <button type="button" class="btn" id="fitBtn" title="紙面の見せ方">全体を見る</button>
-        <button type="button" class="btn" id="prtBtn">印刷</button>
+        ${IK.noPrint ? '' : '<button type="button" class="btn" id="prtBtn">印刷</button>'}
       </header>
       <div class="pages-wrap"><p class="hint" id="hint"></p><div class="pages">${R.pagesHTML(l)}</div></div>`;
     setAns(withAns);
     document.getElementById('ansBtn').onclick = () => setAns(!ans);
     document.getElementById('fitBtn').onclick = e => { fit = fit === 'w' ? 'all' : 'w'; e.target.textContent = fit === 'w' ? '全体を見る' : '幅に合わせる'; zoom(); };
-    document.getElementById('prtBtn').onclick = () => window.print();
+    const prt = document.getElementById('prtBtn'); if (prt) prt.onclick = () => window.print();
     zoom();
   }
 
-  function route() {
-    const h = location.hash.replace(/^#\/?/, '').split('/');
+  function route(hash) {
+    const h = String(hash != null ? hash : location.hash).replace(/^#\/?/, '').split('/');
     if (!h[0]) home(); else show(h[0], h[1] === 'ans');
     window.scrollTo(0, 0);
   }
 
-  window.addEventListener('hashchange', route);
+  // 一覧↔ワークシートの移動は、ページの中で処理する（埋めこみ表示では、アドレスの # が変えられないことがある）
+  document.addEventListener('click', e => {
+    const a = e.target.closest && e.target.closest('a[href^="#/"]');
+    if (!a) return;
+    e.preventDefault();
+    const h = a.getAttribute('href');
+    try { history.pushState(null, '', h); } catch (_) { /* 変えられなくてもよい */ }
+    route(h);
+  });
+  window.addEventListener('hashchange', () => route());
+  window.addEventListener('popstate', () => route());
   window.addEventListener('resize', zoom);
   document.addEventListener('keydown', e => {
     if (!cur || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test((e.target || {}).tagName || '')) return;
