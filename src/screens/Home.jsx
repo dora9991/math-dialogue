@@ -287,6 +287,19 @@ export default function Home({
               </button>
             </div>
 
+            {/* 別アプリ：数学ラボ ソロ（小1〜高3・目標設定→診断→おすすめで一人で習熟） */}
+            <a href={`${import.meta.env.BASE_URL}solo/`} style={{
+              display: "flex", alignItems: "center", gap: 12, margin: "12px 0", padding: "14px 16px", borderRadius: 16,
+              background: "linear-gradient(135deg,#4f46e5,#7c3aed)", color: "#fff", textDecoration: "none",
+              border: "2px solid rgba(255,255,255,.25)", boxShadow: "0 6px 18px rgba(79,70,229,.35)",
+            }}>
+              <span style={{ fontSize: 34, lineHeight: 1 }}>∑</span>
+              <span>
+                <span style={{ fontSize: 16, fontWeight: 900, display: "block" }}>数学ラボ ソロ（小1〜高3）</span>
+                <span style={{ fontSize: 11.5, fontWeight: 700, opacity: .9 }}>志望校から目標設定 → 診断 → おすすめで一人で習熟</span>
+              </span>
+            </a>
+
             {/* 学習の記録（ダッシュボード） */}
             <Dashboard player={player} records={records || []} onDetail={onDetail} grade={grade} />
           </>
