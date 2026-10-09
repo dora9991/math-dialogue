@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claudeラボ — 使いながら学ぶ</title>
+<meta name="description" content="Claudeの使い方を、使いながら学ぶ練習場。指示を少しずつ足して、どんな結果が返ってくるかを見くらべる。（個人が作った非公式の学習ツール）">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%23b95427%22/%3E%3Ctext x=%2216%22 y=%2223%22 font-size=%2218%22 text-anchor=%22middle%22 fill=%22%23fff%22%3E%E6%8C%87%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="top">
+  <a class="brand" href="#/" title="一覧へ">
+    <span class="logo" aria-hidden="true">指</span>
+    <span class="bn">Claudeラボ<small>使いながら学ぶ</small></span>
+  </a>
+  <span class="progress" id="progress" aria-live="polite"></span>
+</header>
+
+<main id="view" class="wrap"></main>
+
+<footer class="foot wrap">
+  <p>個人が作った<strong>非公式</strong>の学習ツールです。Anthropic社の公式教材ではありません。「Claude」はAnthropic社の製品名です。</p>
+  <p>画面に出る「結果」は、あらかじめ用意した<strong>見本</strong>です。本物のClaudeは、同じ指示でも毎回少しちがう答えを返します。</p>
+  <p><button type="button" class="linkbtn" id="btnReset">進み具合をリセットする</button></p>
+</footer>
+
+<!-- レッスンのデータ（足したい場合は data/ にファイルを置いて、ここに1行足す） -->
+<script src="data/lv1_hanasu.js"></script>
+<script src="data/lv2_shiji.js"></script>
+<script src="data/lv3_zairyo.js"></script>
+<script src="data/lv4_migaku.js"></script>
+<script src="data/lv5_next.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

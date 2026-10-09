@@ -96,6 +96,12 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8785", "--directory", "home"],
       "port": 8785
+    },
+    {
+      "name": "claude-lab",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8793", "--directory", "claude-lab"],
+      "port": 8793
     }
   ]
 }
