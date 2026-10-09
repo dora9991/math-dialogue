@@ -94,6 +94,16 @@ IK.add('kukan-xx', { unit: 'kukan', unitName: '空間図形', title: '…', head
 node tools/bundle.cjs          # → ikkan-all-in-one.html（ワークシートを足したら、作り直す。できたファイルは手で直さない）
 ```
 
+## 公開（Cloudflare Pages：math-ikkan）
+
+```bash
+node tools/deploy.cjs --dry    # 組み立てるだけ（できた場所を表示する）
+node tools/deploy.cjs          # 公開する（先に、一度だけ：npx wrangler login）
+```
+
+出すのは、全部入りの `index.html` と、検索に出ないための `robots.txt`・`_headers` だけ（README や tools は出さない）。
+コマンドを使わないときは、Cloudflare の画面（Workers & Pages → math-ikkan → デプロイを作成）で、`ikkan-all-in-one.html` を **`index.html` という名前にして**アップロードしてもよい。
+
 ## 検査
 
 ```bash
@@ -115,10 +125,10 @@ js/app.js         画面（一覧・解答の切りかえ・印刷）
 ikkan-all-in-one.html  全部を1つにまとめたファイル（tools/bundle.cjs でつくる。印刷もできる）
 data/lessons.js   単元の一覧（表示の順）
 data/ws_<単元>.js 単元ごとのワークシート（seifu・moji・hotei・hirei・heimen・kukan・data）
-tools/            verify.cjs（検算）・check.cjs（見た目）・bundle.cjs（1ファイルにまとめる）
+tools/            verify.cjs（検算）・check.cjs（見た目）・bundle.cjs（1ファイルにまとめる）・deploy.cjs（公開）
 ```
 
 ## 注意
 
 - 問題・数値・板書は、このワークシートのために新しく作った。授業で使う前に、内容を確かめてほしい（検算は機械でしているが、読み直しはまだ）。
-- ビルドは要らない。このフォルダをそのまま静的サイトとして公開できる（Cloudflare Pages など）。
+- ビルドは要らない。このフォルダをそのまま静的サイトとして公開できる（上の「公開」では、1ファイルにまとめたものを出す）。
