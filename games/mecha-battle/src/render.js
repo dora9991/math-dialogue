@@ -185,6 +185,8 @@ const POSES = {
 };
 
 const RIG = {};
+/* 後から足した技の見た目の登録表（render2.js）。FX_DRAW=技の演出 / FX_UNDER=ロボの下に描くもの / PROJ_DRAW=飛び道具 / FXL_DRAW=ヒットなどの演出 */
+const FX_DRAW = {}, FX_UNDER = {}, PROJ_DRAW = {}, FXL_DRAW = {};
 const rigOf = (key) => RIG[key] || (RIG[key] = rigGeom(key));
 
 function poseName(f, m) {
@@ -234,14 +236,15 @@ const PART_SPR = { hb: 'hand', hf: 'hand', fb: 'foot', ff: 'foot', t: 'torso', h
 function drawFighter(c, f, m, fr) {
   const C = CHARS[f.ch], key = C.key, set = SPR.parts[key];
   const ph = f.st === 'atk' ? fPhase(f) : null;
-  if (ph && ph.hide) return;
   const L = rigLayout(f, m, fr);
+  if (ph && ph.hide) { if (ph.fx) drawMoveFx(c, f, ph, L, fr); return; }
   // 影
   const air = f.y / SP;
   c.fillStyle = 'rgba(0,0,0,0.38)';
   E(c, L.fx, FLOOR_Y + 1, Math.max(5, 15 - air / 5), 3, 'rgba(0,0,0,0.38)');
   const flash = f.flash >= 2;
   const hideHand = m.projs.some((p) => p.own === f.i && p.hide === 'hf');
+  if (ph && ph.fx && FX_UNDER[ph.fx]) drawMoveFx(c, f, ph, L, fr);
   for (const k of ['hb', 'fb', 't', 'h', 'ff', 'hf']) {
     if (k === 'hf' && hideHand) continue;
     const s = set[PART_SPR[k]];
@@ -254,7 +257,7 @@ function drawFighter(c, f, m, fr) {
     const p = SPR.props[ph.prop], hp = L.pts.hf;
     c.drawImage(f.face > 0 ? p.n : p.f, Math.round(hp.x - p.cw / 2 + f.face * 5), Math.round(hp.y - p.ch / 2 - 1));
   }
-  if (ph && ph.fx) drawMoveFx(c, f, ph, L, fr);
+  if (ph && ph.fx && !FX_UNDER[ph.fx]) drawMoveFx(c, f, ph, L, fr);
 }
 
 /* 技ごとの演出（ビーム・べろ・バリアなど） */
@@ -326,7 +329,7 @@ function drawMoveFx(c, f, ph, L, fr) {
       }
       break;
     }
-    default: break;
+    default: if (FX_DRAW[ph.fx]) FX_DRAW[ph.fx](c, f, ph, L, fr); break;
   }
 }
 
@@ -457,7 +460,7 @@ function drawProj(c, pr, m, fr) {
       for (let i = 0; i < 6; i++) R(c, x + (hash01(i * 5 + 1) - 0.5) * W * 1.6, FLOOR_Y - hash01(i * 7 + 2) * H * 1.2 - 2, 2, 2, '#fcd838');
       break;
     }
-    default: E(c, x, y, hw, hh, '#fcfcfc');
+    default: if (PROJ_DRAW[pr.type]) PROJ_DRAW[pr.type](c, pr, x, y, d, hw, hh, t, fr, m); else E(c, x, y, hw, hh, '#fcfcfc');
   }
 }
 
@@ -511,7 +514,7 @@ function drawFxList(c) {
         E(c, x, FLOOR_Y - 8, 10 + t, 8 + t * 0.7, t < 4 ? '#fcfcfc' : '#fc9838');
         break;
       }
-      default: break;
+      default: if (FXL_DRAW[e.k]) FXL_DRAW[e.k](c, x, y, t, e); break;
     }
   }
 }

@@ -26,7 +26,7 @@ function resetFighter(f, i) {
   Object.assign(f, {
     x: S(i === 0 ? 90 : 166), y: 0, vx: 0, vy: 0, face: i === 0 ? 1 : -1, hp: c.stats.hp,
     st: 'idle', t: 0, mv: null, ph: 0, pt: 0, hd: {}, stun: 0, flash: 0, comboN: 0,
-    bufA: 0, bufB: 0, in: 0, dm: [0, 0, 0], airAtk: false, crouchG: false, hits: 0, jmp: false,
+    bufA: 0, bufB: 0, in: 0, dm: [0, 0, 0], airAtk: false, crouchG: false, hits: 0, jmp: false, wish: 0,
   });
   return f;
 }
@@ -114,6 +114,11 @@ function enterPhase(m, f, idx) {
   else if (p.vx !== undefined) f.vx = p.vx * f.face;
   if (p.vy !== undefined) f.vy = p.vy;
   if (p.tele) teleport(m, f);
+  if (p.turn) { const o = m.f[1 - f.i]; if (o.x !== f.x) f.face = o.x > f.x ? 1 : -1; }   // すりぬけたあと、相手のほうへ向きなおる
+  if (p.heal && f.wish < 2) {   // HP回復（1ラウンドに2回まで）
+    f.wish++; f.hp = Math.min(CHARS[f.ch].stats.hp, f.hp + p.heal);
+    ev(m, 'heal', { x: f.x, y: f.y + S(28) });
+  }
   if (p.spawn) spawnProjs(m, f, p.spawn);
   if (p.snd) ev(m, 'snd', { n: p.snd, i: f.i });
   if (p.land && f.y === 0 && f.vy <= 0) advance(m, f);   // もう着地済みなら飛ばす
@@ -143,7 +148,7 @@ function spawnProjs(m, f, spec) {
   for (const s of list) {
     m.projs.push({
       own: f.i, type: s.type, x: s.at === 'opp' ? o.x : f.x + f.face * s.x, y: f.y + s.y,
-      vx: f.face * s.vx, vy: s.vy, grav: s.grav, w: s.w, h: s.h,
+      vx: f.face * s.vx, vy: s.vy, ax: f.face * (s.ax || 0), grav: s.grav, w: s.w, h: s.h,
       hh: { dmg: s.dmg, hs: s.hs, bs: s.bs, kb: s.kb, kd: !!s.kd, lift: s.lift, hstop: s.hstop },
       life: s.life, delay: s.delay, mh: s.mh || 0, pierce: !!s.pierce, bounce: s.bounce || 0,
       ground: s.ground || null, hide: s.hide || null, dir: f.face, age: 0, hits: {}, dead: false,
@@ -336,7 +341,7 @@ function stepProjs(m) {
       continue;
     }
     if (--pr.life < 0) { pr.dead = true; continue; }
-    pr.vy -= pr.grav; pr.x += pr.vx; pr.y += pr.vy;
+    pr.vx += pr.ax; pr.vy -= pr.grav; pr.x += pr.vx; pr.y += pr.vy;
     const hh = pr.h >> 1, hw = pr.w >> 1;
     if (pr.vy < 0 && pr.y - hh <= 0) {
       if (pr.bounce > 0) { pr.bounce--; pr.y = hh; pr.vy = Math.trunc((-pr.vy * 5) / 8); ev(m, 'bounce', { x: pr.x }); }
@@ -351,7 +356,7 @@ function stepProjs(m) {
     if (d.st === 'atk') {
       const ep = fPhase(d);
       if (ep.reflect && ov(pb, fbox(d, ep.reflect.box))) {
-        pr.own = d.i; pr.vx = -pr.vx; pr.dir = -pr.dir; pr.hits = {}; pr.life = Math.max(pr.life, 40);
+        pr.own = d.i; pr.vx = -pr.vx; pr.ax = -pr.ax; pr.dir = -pr.dir; pr.hits = {}; pr.life = Math.max(pr.life, 40);
         ev(m, 'reflect', { x: pr.x, y: pr.y });
         continue;
       }

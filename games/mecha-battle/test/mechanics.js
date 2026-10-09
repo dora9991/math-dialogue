@@ -1,6 +1,6 @@
 // ゲームの仕組みの単体テスト（Node・ヘッドレス）
 const fs = require('fs'), vm = require('vm'), path = require('path');
-const code = ['core.js', 'chars.js', 'sim.js', 'ai.js'].map((f) => fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8')).join('\n');
+const code = ['core.js', 'chars.js', 'chars2.js', 'sim.js', 'ai.js'].map((f) => fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8')).join('\n');
 const ctx = vm.createContext({ console });
 vm.runInContext(code + '\nthis.API = { CHARS, createMatch, stepMatch, nextRound, newAI, aiInput, makePulse, IN, S, SP, FPS, MOVE_KEYS, hurtBox, fPhase, INTRO_FRAMES, FLOOR_Y };', ctx);
 const A = ctx.API, IN = A.IN, S = A.S;
@@ -46,13 +46,13 @@ console.log('● ジャンプ：キャラごとの高さ・滞空（ふんわり
     return { ys, peak: Math.max(...ys), frames: ys.length, st: m.f[0].st, dx: m.f[0].x - x0 };
   };
   const bad = [], farX = [];
-  for (let c = 0; c < 8; c++) {
+  for (let c = 0; c < A.CHARS.length; c++) {
     const J = A.CHARS[c].jump, r = jump(c), f = jump(c, 0, IN.RIGHT);
     if (Math.abs(r.peak / 256 - J.h) > 1 || r.frames !== J.t) bad.push([A.CHARS[c].en, J, r.peak / 256, r.frames]);
     if (Math.abs(f.dx / 256 - J.d) > J.d * 0.04 + 1) farX.push([A.CHARS[c].en, J.d, f.dx / 256]);
   }
-  ok(bad.length === 0, '全8キャラ：ジャンプの最高点は jump.h（誤差1px以内）、着地までのフレーム数は jump.t どおり', bad);
-  ok(farX.length === 0, '全8キャラ：前にジャンプしたとき、横に進む距離は jump.d どおり（誤差4%以内）', farX);
+  ok(bad.length === 0, '全キャラ：ジャンプの最高点は jump.h（誤差1px以内）、着地までのフレーム数は jump.t どおり', bad);
+  ok(farX.length === 0, '全キャラ：前にジャンプしたとき、横に進む距離は jump.d どおり（誤差4%以内）', farX);
   const ts = A.CHARS.map((c) => c.jump.t);
   ok(Math.max(...ts) >= 2 * Math.min(...ts), 'ジャンプの「ふんわり」と「さっと」の差がはっきりある（滞空の最長が最短の2倍以上）', ts);
   ok(A.CHARS.every((c) => c.jump.h >= 95 && c.jump.h <= 115), 'どのキャラも、体力ゲージの下ぎりぎりまで跳ぶ高さ（95〜115px）', A.CHARS.map((c) => c.jump.h));
@@ -93,7 +93,7 @@ console.log('● ジャンプ：キャラごとの高さ・滞空（ふんわり
 console.log('● ジャンプ攻撃（飛びこみ）が、立っている相手に当たる');
 {
   const miss = [];
-  for (let c = 0; c < 8; c++) {
+  for (let c = 0; c < A.CHARS.length; c++) {
     const def = c === 1 ? 0 : 1; let hit = false;
     for (const d of [40, 52, 64, 76]) for (const key of [IN.A, IN.B]) for (let k = 1; k < 34 && !hit; k++) {
       const m = mk(c, def, d); const hp0 = m.f[1].hp;
@@ -103,7 +103,7 @@ console.log('● ジャンプ攻撃（飛びこみ）が、立っている相手
     }
     if (!hit) miss.push(A.CHARS[c].en);
   }
-  ok(miss.length === 0, '全8キャラ：飛びこんで空中A/Bを出すと、立っている相手に当てられる', miss);
+  ok(miss.length === 0, '全キャラ：飛びこんで空中A/Bを出すと、立っている相手に当てられる', miss);
 }
 
 console.log('● こうげき・ダメージ');
@@ -242,6 +242,75 @@ console.log('● 決定論（同じ入力 → 同じ結果）と、状態のコ�
   const a = run(11), b = run(11), c = run(11, 700);
   ok(a === b, '同じseedなら完全に同じ結果');
   ok(a === c, '途中でJSONコピーしても結果が変わらない（ロールバック可能な作り）');
+}
+
+console.log('● 全キャラ：どの攻撃技も、どこかの距離で相手に当たる（回復・カウンター・回避・反射 は除く）');
+{
+  const bad = [];
+  A.CHARS.forEach((C, ci) => {
+    for (const key of ['jab', 'kick', 's1', 's2', 's3', 's4']) {
+      const mv = C.moves[key];
+      if (mv.ai && ['heal', 'counter', 'escape', 'reflect'].includes(mv.ai.k)) continue;   // 回復・カウンター・回避・反射は、自分から当てる技ではない
+      let hit = false;
+      for (let d = 14; d <= 240 && !hit; d += 6) {
+        const m = mk(ci, ci === 0 ? 1 : 0, d); const hp0 = m.f[1].hp;
+        seq(m, 0, A.makePulse(key, IN.RIGHT));
+        for (let t = 0; t < 150 && !hit; t++) { step(m, 0, 0); if (m.f[1].hp < hp0) hit = true; }
+      }
+      if (!hit) bad.push(C.en + ':' + key);
+    }
+  });
+  ok(bad.length === 0, '全キャラ・全技が当たる距離を持つ', bad);
+}
+
+console.log('● あとから足した仕組み：加速する飛び道具(ax)・もどってくる飛び道具・すりぬけて向きなおる(turn)・回復(heal)');
+{
+  const hayabusa = A.CHARS.findIndex((c) => c.key === 'hayabusa'), kawataro = A.CHARS.findIndex((c) => c.key === 'kawataro');
+  const kagemaru = A.CHARS.findIndex((c) => c.key === 'kagemaru'), daruma = A.CHARS.findIndex((c) => c.key === 'daruma');
+  // ミニロケット：だんだん速くなる
+  let m = mk(hayabusa, 0, 240); seq(m, 0, A.makePulse('s1', IN.RIGHT));
+  const v = []; for (let t = 0; t < 40; t++) { step(m, 0, 0); const p = m.projs.find((q) => q.type === 'rocket'); if (p) v.push(p.vx); }
+  ok(v.length > 20 && v[v.length - 1] > v[0] * 2 && v.every((x, i) => i === 0 || x >= v[i - 1]), 'ミニロケットは、だんだん速くなる', [v[0], v[v.length - 1]]);
+  // うでぬき：行って、もどってくる
+  m = mk(kawataro, 0, 300); seq(m, 0, A.makePulse('s2', IN.RIGHT));
+  let maxX = 0, back = false, prev = null;
+  for (let t = 0; t < 90; t++) { step(m, 0, 0); const p = m.projs.find((q) => q.type === 'boomhand'); if (p) { if (prev !== null && p.x < prev - 1) back = true; if (p.x > maxX) maxX = p.x; prev = p.x; } }
+  ok(back && maxX > m.f[0].x + S(50), 'うでぬきは、前に飛んでからもどってくる', [maxX / 256, m.f[0].x / 256]);
+  // かげぬい：相手のうしろへ抜けて、向きなおって当てる
+  m = mk(kagemaru, 0, 44); const hp0 = m.f[1].hp, x1 = m.f[1].x;
+  seq(m, 0, A.makePulse('s2', IN.RIGHT)); let facedBack = false;
+  for (let t = 0; t < 70; t++) { step(m, 0, 0); if (m.f[0].x > x1 && m.f[0].face === -1) facedBack = true; }
+  ok(facedBack && m.f[1].hp < hp0, 'かげぬいで相手の向こうがわへぬけ、こちらを向いて斬る', [m.f[0].x / 256, x1 / 256, m.f[0].face, hp0 - m.f[1].hp]);
+  // ねがいごと：回復する（1ラウンドに2回まで・最大HPをこえない）
+  m = mk(daruma, 0, 200); m.f[0].hp = 50;
+  const heal = () => { seq(m, 0, A.makePulse('s3', IN.RIGHT)); step(m, 0, 0, 60); };
+  heal(); const h1 = m.f[0].hp; heal(); const h2 = m.f[0].hp; heal(); const h3 = m.f[0].hp;
+  ok(h1 === 57 && h2 === 64 && h3 === 64, 'ねがいごとで7ずつ回復し、3回目は回復しない', [h1, h2, h3]);
+  m.f[0].hp = A.CHARS[daruma].stats.hp - 2; m.f[0].wish = 0; heal();
+  ok(m.f[0].hp === A.CHARS[daruma].stats.hp, '回復は最大HPをこえない', m.f[0].hp);
+  A.nextRound(m);
+  ok(m.f[0].wish === 0, '次のラウンドでは、また2回つかえる');
+}
+
+console.log('● 全キャラ総当たりのCPU同士の対戦で、おかしな状態にならない（短縮版）');
+{
+  let bad = null, played = 0;
+  for (let a = 0; a < A.CHARS.length && !bad; a++) for (let b = 0; b < A.CHARS.length && !bad; b++) {
+    const m = A.createMatch({ ch: [a, b], seed: 100 + a * 17 + b, rounds: 2, time: 60 });
+    const ais = [A.newAI(2, a + 1), A.newAI(2, b + 50)];
+    for (let t = 0; t < 60 * 90 && m.matchWinner < 0; t++) {
+      m.events.length = 0; A.stepMatch(m, A.aiInput(ais[0], m, 0), A.aiInput(ais[1], m, 1));
+      for (const f of m.f) {
+        if (!Number.isInteger(f.x) || !Number.isInteger(f.y) || !Number.isInteger(f.hp) || f.hp < 0 || f.hp > A.CHARS[f.ch].stats.hp || f.y < 0 || f.x < 0 || f.x > S(256)) bad = bad || [a, b, t, f.x, f.y, f.hp];
+      }
+      for (const p of m.projs) if (!Number.isInteger(p.x) || !Number.isInteger(p.vx) || !Number.isInteger(p.ax)) bad = bad || ['proj', a, b, t, p.type, p.x, p.vx, p.ax];
+      if (m.projs.length > 14) bad = bad || ['too many projs', a, b, t, m.projs.length];
+      if (bad) break;
+      if (m.phase === 'over' && m.matchWinner < 0) A.nextRound(m);
+    }
+    played++;
+  }
+  ok(!bad && played === A.CHARS.length * A.CHARS.length, played + '通りの組み合わせで、座標・HP・飛び道具がすべて整数・範囲内', bad);
 }
 
 console.log('\n' + (fail ? 'FAILED ' + fail : 'ALL PASSED') + ' (' + pass + ' ok)');

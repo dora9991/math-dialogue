@@ -1,6 +1,6 @@
 // ジャンプの最高点でも、頭が体力ゲージ（上の黒い帯）にかからないことを、実際に描いて確かめる
 //   node test/jump-gauge.js          … dist/standalone.html（python3 build.py で作る）を使う
-// 8キャラそれぞれ、ふつうのジャンプ／最高点で空中パンチ／最高点で空中キック の3通りを、1フレームごとに描いて、
+// 全キャラそれぞれ、ふつうのジャンプ／最高点で空中パンチ／最高点で空中キック の3通りを、1フレームごとに描いて、
 // いちばん上の不透明ピクセルの行を調べる。ゲージ・タイマー枠は、行 0〜25 にある（scenes.js の drawHUD）。
 //   ・かからない … いちばん上の行が 26 以上
 //   ・ぎりぎりまで跳んでいる … いちばん上の行が 29 以下（高さを控えめにしすぎていない）
@@ -20,8 +20,8 @@ const TOP_LIMIT = 29;
   await sleep(400);
   let bad = 0;
   const check = (name, cond, extra) => { if (!cond) bad++; console.log((cond ? '  ok   ' : '  FAIL ') + name + (extra ? '   ' + extra : '')); };
-  for (let i = 0; i < 8; i++) {
-    await page.evaluate((i) => { window.__mecha.Game.go('fight', { chars: [i, (i + 4) % 8], lvl: 0, mode: 'vs', versus: false }); window.__mecha.Game.hold = true; }, i);
+  for (let i = 0; i < 16; i++) {
+    await page.evaluate((i) => { window.__mecha.Game.go('fight', { chars: [i, (i + 8) % 16], lvl: 0, mode: 'vs', versus: false }); window.__mecha.Game.hold = true; }, i);
     await sleep(120);
     const rows = [];
     for (const variant of ['jump', 'punch', 'kick']) {

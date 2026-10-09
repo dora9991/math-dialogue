@@ -1,7 +1,7 @@
 // ヘッドレス検証：Nodeでシミュレーションだけを動かす
 const fs = require('fs'), vm = require('vm'), path = require('path');
 const dir = path.join(__dirname, '..', 'src');
-const code = ['core.js', 'chars.js', 'sim.js', 'ai.js'].map((f) => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+const code = ['core.js', 'chars.js', 'chars2.js', 'sim.js', 'ai.js'].map((f) => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
 const ctx = vm.createContext({ console });
 vm.runInContext(code + '\nthis.API = { CHARS, createMatch, stepMatch, nextRound, newAI, aiInput, IN, S, SP, FPS, MOVE_KEYS, resetFighter, hurtBox, fPhase };', ctx);
 const A = ctx.API;
@@ -51,13 +51,14 @@ function playMatch(a, b, seed, la, lb, stats) {
 const N = +process.argv[2] || 6;
 const lv = +process.argv[3] || 2;
 const names = A.CHARS.map((c) => c.en);
-const win = Array.from({ length: 8 }, () => Array(8).fill(0));
-const games = Array.from({ length: 8 }, () => Array(8).fill(0));
+const NC = A.CHARS.length;
+const win = Array.from({ length: NC }, () => Array(NC).fill(0));
+const games = Array.from({ length: NC }, () => Array(NC).fill(0));
 const totals = { hits: 0, dmg: 0, blocks: 0, counters: 0, reflects: 0, ko: 0, time: 0, rounds: 0, roundFrames: 0 };
-const moveUse = Array.from({ length: 8 }, () => ({}));
+const moveUse = Array.from({ length: NC }, () => ({}));
 let unfinished = 0, matches = 0;
 const t0 = Date.now();
-for (let a = 0; a < 8; a++) for (let b = 0; b < 8; b++) for (let s = 1; s <= N; s++) {
+for (let a = 0; a < NC; a++) for (let b = 0; b < NC; b++) for (let s = 1; s <= N; s++) {
   const r = playMatch(a, b, s * 7919 + a * 31 + b, lv, lv, totals);
   matches++;
   if (r.winner < 0) { unfinished++; continue; }
@@ -69,16 +70,16 @@ for (let a = 0; a < 8; a++) for (let b = 0; b < 8; b++) for (let s = 1; s <= N; 
 console.log(`matches=${matches} unfinished=${unfinished} time=${Date.now() - t0}ms  level=${lv}`);
 console.log(`avg round = ${(totals.roundFrames / totals.rounds / 60).toFixed(1)}s  KO=${totals.ko} TIME=${totals.time}  hits=${totals.hits} blocks=${totals.blocks} counters=${totals.counters} reflects=${totals.reflects} avgdmg=${(totals.dmg / totals.hits).toFixed(1)}`);
 console.log('勝率（行が列に勝つ割合）');
-console.log('        ' + names.map((n) => n.slice(0, 5).padEnd(6)).join(''));
-for (let a = 0; a < 8; a++) {
-  let row = names[a].padEnd(8);
+console.log('         ' + names.map((n) => n.slice(0, 4).padEnd(5)).join(''));
+for (let a = 0; a < NC; a++) {
+  let row = names[a].padEnd(9);
   let w = 0, g = 0;
-  for (let b = 0; b < 8; b++) {
-    if (a === b) { row += '  -   '; continue; }
-    row += (games[a][b] ? Math.round((100 * win[a][b]) / games[a][b]) : 0).toString().padStart(3) + '   ';
+  for (let b = 0; b < NC; b++) {
+    if (a === b) { row += '  -  '; continue; }
+    row += (games[a][b] ? Math.round((100 * win[a][b]) / games[a][b]) : 0).toString().padStart(3) + '  ';
     w += win[a][b]; g += games[a][b];
   }
   console.log(row + '  total ' + Math.round((100 * w) / g) + '%');
 }
 console.log('技の使用回数（開始数）');
-for (let a = 0; a < 8; a++) console.log(names[a].padEnd(8) + A.MOVE_KEYS.map((k) => `${k}:${moveUse[a][k] || 0}`).join(' '));
+for (let a = 0; a < NC; a++) console.log(names[a].padEnd(8) + A.MOVE_KEYS.map((k) => `${k}:${moveUse[a][k] || 0}`).join(' '));

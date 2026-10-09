@@ -7,7 +7,7 @@
    ============================================================ */
 const NET_PREFIX = 'kmbt1-';
 const NET_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // 見まちがえやすい I O 0 1 は使わない
-const NET_PROTOCOL = 2;   // 対戦の動き（物理など）を変えたら +1 する。ちがうバージョンどうしは、つなぐ前にはじく（ズレたまま遊ばないように）
+const NET_PROTOCOL = 3;   // 対戦の動き（物理など）を変えたら +1 する。ちがうバージョンどうしは、つなぐ前にはじく（ズレたまま遊ばないように）
 
 const Net = {
   peer: null, conn: null, role: null, code: '', status: 'idle', rtt: 0, session: null,

@@ -86,7 +86,7 @@ const SceneTitle = {
     if (this.msgT > 0) this.msgT--;
     // 背景の2体が時々わざを出す
     this.pairT++;
-    if (this.pairT > 420) { this.pairT = 0; const a = rngInt({ s: (this.t * 2654435761) | 0 }, 8); this.pair = [a, (a + 1 + ((this.t >> 3) % 7)) % 8]; }
+    if (this.pairT > 420) { this.pairT = 0; const N = CHARS.length, a = rngInt({ s: (this.t * 2654435761) | 0 }, N); this.pair = [a, (a + 1 + ((this.t >> 3) % (N - 1))) % N]; }
     if (this.t % 70 === 30) this.act[0] = { k: ['jab', 'kick', 's1', 's2'][(this.t / 70 | 0) % 4], t: 0 };
     if (this.t % 70 === 60) this.act[1] = { k: ['kick', 'jab', 's2', 's1'][(this.t / 70 | 0) % 4], t: 0 };
     this.act.forEach((a) => { if (a) a.t++; });
@@ -307,9 +307,13 @@ const SceneOnline = {
    キャラ選択
    ============================================================ */
 const CELL = { x0: 8, y0: 16, w: 59, h: 60, gap: 2 };
+const SEL_COLS = 4, SEL_VIEW = 2;                       // 横4列。いちどに見えるのは2段（のこりは上下キーでスクロール）
+const SEL_VIEW_H = SEL_VIEW * CELL.h + (SEL_VIEW - 1) * CELL.gap;
+const selRows = () => Math.ceil(CHARS.length / SEL_COLS);
 const SceneSelect = {
   enter(p) {
     this.p = p; this.t = 0; this.cur = [Game.last[0], Game.last[1]]; this.step = 0; this.pick = [-1, -1]; this.go = 0;
+    this.vr = 0; this.follow = 0;
     Input.mode = p.mode === 'versus' ? 'versus' : 'solo';
     Sound.bgm('title');
     if (p.mode === 'online') {
@@ -317,12 +321,14 @@ const SceneSelect = {
       this.cur[this.me] = Game.last[0]; this.cur[1 - this.me] = this.me === 0 ? 3 : 0;
       Net.setListener((m) => this.onNet(m)); this.sendPick();
     }
+    this.follow = p.mode === 'online' ? this.me : 0; this.keepInView(this.follow);   // 自分のカーソルが見える段から
+    this.scroll = this.vr * (CELL.h + CELL.gap);
   },
   /* ---- オンライン ---- */
   sendPick() { Net.send({ t: 'pick', ch: this.cur[this.me], ok: this.pick[this.me] >= 0 }); },
   onNet(m) {
     const o = 1 - this.me;
-    if (m.t === 'pick') { this.cur[o] = clamp(m.ch | 0, 0, 7); this.pick[o] = m.ok ? this.cur[o] : -1; }
+    if (m.t === 'pick') { this.cur[o] = clamp(m.ch | 0, 0, CHARS.length - 1); this.pick[o] = m.ok ? this.cur[o] : -1; }
     else if (m.t === 'start' && this.me === 1 && !this.started) {
       this.started = true;
       const cfg = sanitizeCfg(m.cfg);
@@ -349,18 +355,33 @@ const SceneSelect = {
       let ok = Input.confirm();
       if (Input.tap) {
         const t = Input.tap;
-        for (let i = 0; i < 8; i++) { const q = this.cellPos(i); if (t.x >= q.x && t.x < q.x + CELL.w && t.y >= q.y && t.y < q.y + CELL.h) { if (this.cur[me] === i) ok = true; else { this.cur[me] = i; Sound.sfx('select'); this.sendPick(); } } }
+        if (this.tapScroll(t)) Sound.sfx('select');
+        else for (let i = 0; i < CHARS.length; i++) { const q = this.cellPos(i); if (this.cellTapped(t, q)) { if (this.cur[me] === i) ok = true; else { this.cur[me] = i; Sound.sfx('select'); this.sendPick(); } } }
       }
       if (ok) { this.pick[me] = this.cur[me]; Sound.sfx('confirm'); this.sendPick(); }
     }
     if (!this.started && this.me === 0 && this.pick[0] >= 0 && this.pick[1] >= 0) this.startMatch();
   },
-  cellPos(i) { return { x: CELL.x0 + (i % 4) * (CELL.w + CELL.gap), y: CELL.y0 + ((i / 4) | 0) * (CELL.h + CELL.gap) }; },
+  cellPos(i) { return { x: CELL.x0 + (i % SEL_COLS) * (CELL.w + CELL.gap), y: CELL.y0 + ((i / SEL_COLS) | 0) * (CELL.h + CELL.gap) - Math.round(this.scroll) }; },
+  cellTapped(t, q) { return t.x >= q.x && t.x < q.x + CELL.w && t.y >= q.y && t.y < q.y + CELL.h && t.y >= CELL.y0 && t.y < CELL.y0 + SEL_VIEW_H; },
+  /* 右はしのスクロールバーをタップ：上半分で上へ、下半分で下へ（スマホ用） */
+  tapScroll(t) {
+    if (t.x < 250 || t.y < CELL.y0 || t.y >= CELL.y0 + SEL_VIEW_H) return false;
+    this.vr = clamp(this.vr + (t.y < CELL.y0 + SEL_VIEW_H / 2 ? -1 : 1), 0, selRows() - SEL_VIEW);
+    return true;
+  },
+  /* カーソルのある段が見えるように、スクロール位置(vr)を決める */
+  keepInView(k) {
+    const row = (this.cur[k] / SEL_COLS) | 0;
+    if (row < this.vr) this.vr = row; else if (row > this.vr + SEL_VIEW - 1) this.vr = row - SEL_VIEW + 1;
+    this.vr = clamp(this.vr, 0, selRows() - SEL_VIEW);
+  },
   move(k, n) {
-    let i = this.cur[k], col = i % 4, row = (i / 4) | 0;
-    if (n.x) col = (col + n.x + 4) % 4;
-    if (n.y) row = 1 - row;
-    this.cur[k] = row * 4 + col;
+    let i = this.cur[k], col = i % SEL_COLS, row = (i / SEL_COLS) | 0;
+    if (n.x) col = (col + n.x + SEL_COLS) % SEL_COLS;
+    if (n.y) row = (row + n.y + selRows()) % selRows();
+    this.cur[k] = Math.min(CHARS.length - 1, row * SEL_COLS + col);
+    this.follow = k; this.keepInView(k);
   },
   start(a, b, lvl, extra) {
     Game.last = [a, b];
@@ -368,6 +389,8 @@ const SceneSelect = {
   },
   update() {
     this.t++;
+    const goal = this.vr * (CELL.h + CELL.gap), dif = goal - this.scroll;   // なめらかにスクロール
+    this.scroll = Math.abs(dif) < 1 ? goal : this.scroll + dif * 0.34;
     const mode = this.p.mode;
     if (mode === 'online') { this.updateOnline(); return; }
     if (Input.cancel() && mode !== 'versus' || (mode === 'versus' && Input.key('Escape'))) {
@@ -391,7 +414,8 @@ const SceneSelect = {
     if (n.x || n.y) { this.move(k, n); Sound.sfx('select'); }
     if (Input.tap) {
       const t = Input.tap;
-      for (let i = 0; i < 8; i++) { const p = this.cellPos(i); if (t.x >= p.x && t.x < p.x + CELL.w && t.y >= p.y && t.y < p.y + CELL.h) { if (this.cur[k] === i) this.decide(); else { this.cur[k] = i; Sound.sfx('select'); } } }
+      if (this.tapScroll(t)) Sound.sfx('select');
+      else for (let i = 0; i < CHARS.length; i++) { const p = this.cellPos(i); if (this.cellTapped(t, p)) { if (this.cur[k] === i) this.decide(); else { this.cur[k] = i; Sound.sfx('select'); this.follow = k; this.keepInView(k); } } }
     }
     if (Input.confirm()) this.decide();
   },
@@ -403,9 +427,9 @@ const SceneSelect = {
   launch() {
     const mode = this.p.mode;
     if (mode === 'arcade') {
-      const me = this.cur[0], others = [0, 1, 2, 3, 4, 5, 6, 7].filter((i) => i !== me);
+      const me = this.cur[0], others = CHARS.map((c, i) => i).filter((i) => i !== me);
       for (let i = others.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = others[i]; others[i] = others[j]; others[j] = t; }
-      const ladder = others.map((ch, i) => ({ ch, lvl: [0, 0, 1, 1, 2, 2, 3][i] }));
+      const ladder = others.slice(0, 7).map((ch, i) => ({ ch, lvl: [0, 0, 1, 1, 2, 2, 3][i] }));   // 7にんぬき（相手は全員のなかからランダム）
       Game.arcade = { me, ladder, idx: 0 };
       Game.last = [me, ladder[0].ch];
       Game.go('fight', { chars: [me, ladder[0].ch], lvl: ladder[0].lvl, mode: 'arcade', versus: false, stageNo: 1 });
@@ -414,7 +438,8 @@ const SceneSelect = {
   },
   drawCell(c, i) {
     const p = this.cellPos(i), C = CHARS[i], fr = this.t;
-    const stCol = { factory: '#ffc888', castle: '#9cd0fc', aso: '#a8e090', balloon: '#8cc4fc', mathlab: '#b8e8d0', ariake: '#fce0a0', storm: '#c8e0fc', live: '#fcd0e0' }[C.stage];
+    const stCol = { factory: '#ffc888', castle: '#9cd0fc', aso: '#a8e090', balloon: '#8cc4fc', mathlab: '#b8e8d0', ariake: '#fce0a0', storm: '#c8e0fc', live: '#fcd0e0',
+      bamboo: '#b8e8a0', jurassic: '#d8e8a0', snow: '#d8ecff', space: '#c8d8f8', shrine: '#fcc8b8', yatai: '#fcdcb0', river: '#a8e4e0', circus: '#fcc8e8' }[C.stage];
     R(c, p.x, p.y, CELL.w, CELL.h, '#000'); R(c, p.x + 1, p.y + 1, CELL.w - 2, CELL.h - 2, stCol);
     Dither(c, p.x + 1, p.y + 1, CELL.w - 2, CELL.h - 2, 'rgba(255,255,255,0.28)', 0);
     const sel = this.cur.includes(i);
@@ -448,7 +473,8 @@ const SceneSelect = {
     const dual = mode === 'versus' || mode === 'online';
     const title = mode === 'online' ? 'キャラクターを えらべ（オンライン）' : mode === 'versus' ? 'キャラクターを えらべ（1P / 2P）' : this.step === 1 ? 'あいてを えらべ' : 'キャラクターを えらべ';
     R(c, 0, 0, SCREEN_W, 14, NAVY); jp(c, title, 128, 3, '#ffffff', { align: 'c', shadow: false });
-    for (let i = 0; i < 8; i++) this.drawCell(c, i);
+    c.save(); c.beginPath(); c.rect(0, CELL.y0 - 1, SCREEN_W, SEL_VIEW_H + 2); c.clip();
+    for (let i = 0; i < CHARS.length; i++) { const q = this.cellPos(i); if (q.y + CELL.h > CELL.y0 - 2 && q.y < CELL.y0 + SEL_VIEW_H + 2) this.drawCell(c, i); }
     // カーソル
     const marks = mode === 'online' ? [[0, '#fc3c3c', this.me === 0 ? 'YOU' : '1P'], [1, '#3c9cfc', this.me === 1 ? 'YOU' : '2P']] : mode === 'versus' ? [[0, '#fc3c3c', '1P'], [1, '#3c9cfc', '2P']] : this.step === 1 ? [[0, '#fc3c3c', '1P'], [1, '#3c9cfc', 'CPU']] : [[0, '#fc3c3c', '1P']];
     marks.forEach(([k, col, label]) => {
@@ -459,6 +485,21 @@ const SceneSelect = {
       R(c, k === 0 ? p.x : p.x + CELL.w - 17, p.y, 17, 9, col);
       text5(c, label, k === 0 ? p.x + 2 : p.x + CELL.w - 15, p.y + 1, '#fcfcfc', 1, { outline: false });
     });
+    c.restore();
+    // 見えている範囲の外にいるカーソルは、タイトルのバーの左右に「1P ▲」「CPU ▼」の目印を出す
+    marks.forEach(([k, col, label]) => {
+      const p = this.cellPos(this.cur[k]), up = p.y + CELL.h <= CELL.y0, dn = p.y >= CELL.y0 + SEL_VIEW_H;
+      if (!up && !dn) return;
+      const bx = k === 0 ? 3 : SCREEN_W - 30, by = 2;   // タイトルのバーの左右にだす
+      R(c, bx, by, 27, 10, '#000'); R(c, bx + 1, by + 1, 25, 8, col); text5(c, label, bx + 2, by + 2, '#fcfcfc', 1, { outline: false });
+      if (up) Tri(c, bx + 19, by + 7, bx + 24, by + 7, bx + 21.5, by + 2, '#fcfcfc'); else Tri(c, bx + 19, by + 3, bx + 24, by + 3, bx + 21.5, by + 8, '#fcfcfc');
+    });
+    // スクロールバー（右はし）と、上下に まだあるしるし
+    const rows = selRows(), thumbH = Math.round(SEL_VIEW_H * SEL_VIEW / rows), thumbY = CELL.y0 + Math.round(SEL_VIEW_H * (this.scroll / (CELL.h + CELL.gap)) / rows);
+    R(c, 251, CELL.y0, 5, SEL_VIEW_H, '#0c1c4c'); R(c, 252, thumbY, 3, thumbH, '#fcfcfc'); R(c, 252, thumbY, 3, 1, '#fc7460');
+    const blink = (this.t >> 4) & 1;
+    if (this.vr > 0 && blink) Tri(c, 236, 9, 244, 9, 240, 4, '#fcd838');
+    if (this.vr < rows - SEL_VIEW && blink) Tri(c, 246, 4, 254, 4, 250, 9, '#fcd838');
     if (dual) {
       this.drawPanel(c, this.cur[0], 4, 144, 124, false, '#fc7460');
       this.drawPanel(c, this.cur[1], 128, 144, 124, false, '#3c9cfc');
@@ -513,6 +554,7 @@ const SceneFight = {
         case 'land': fxAdd('dust', x, FLOOR_Y, { life: 10 }); Sound.sfx('land'); break;
         case 'down': fxAdd('dust', x, FLOOR_Y, { life: 12 }); Sound.sfx('down'); break;
         case 'puff': fxAdd('puff', x, FLOOR_Y, { life: 14 }); break;
+        case 'heal': fxAdd('heal', x, y, { life: 36 }); Sound.sfx('wish'); break;
         case 'burst': fxAdd('burst', x, y, { life: 10 }); Sound.sfx('burst'); this.shake = Math.max(this.shake, 2); break;
         case 'pop': fxAdd('pop', x, y, { life: 8 }); Sound.sfx('pop'); break;
         case 'clash': fxAdd('clash', x, y, { life: 9 }); Sound.sfx('clash'); break;

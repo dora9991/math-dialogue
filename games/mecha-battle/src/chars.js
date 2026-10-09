@@ -1,6 +1,6 @@
 'use strict';
 /* ============================================================
-   chars.js — 8体のロボと、その技データ
+   chars.js — 最初の8体のロボと、その技データ（あとから足した8体は chars2.js）
    技は「フェーズ（区間）の並び」で書く。
      PH(フレーム数, ポーズ名, {hit, spawn, vx, vy, inv, ...})
    座標の単位は px / フレーム。x は「向いている方向」が +、y は「足元から上」が +。
@@ -423,7 +423,7 @@ function jumpArc(h, t) {
 
 /* ---------- px → サブピクセル整数 へ変換（1回だけ） ---------- */
 function compileSpawn(s) {
-  ['x', 'y', 'vx', 'vy', 'grav', 'w', 'h', 'kb', 'lift'].forEach((k) => { if (s[k] !== undefined) s[k] = S(s[k]); });
+  ['x', 'y', 'vx', 'vy', 'ax', 'grav', 'w', 'h', 'kb', 'lift'].forEach((k) => { if (s[k] !== undefined) s[k] = S(s[k]); });
   if (s.ground) compileSpawn(s.ground);
 }
 function compileChar(c) {

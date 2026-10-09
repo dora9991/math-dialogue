@@ -6,7 +6,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const ev = (f, ...a) => page.evaluate(f, ...a);
   let played = 0, i = 0;
   const pairs = [];
-  for (let a = 0; a < 8; a++) pairs.push([a, (a * 3 + 1) % 8], [a, (a + 4) % 8]);
+  const NC = 16;
+  for (let a = 0; a < NC; a++) pairs.push([a, (a * 3 + 1) % NC], [a, (a + 8) % NC]);
   const t0 = Date.now();
   for (const [a, b] of pairs) {
     if (Date.now() - t0 > 150000) break;

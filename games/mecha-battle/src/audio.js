@@ -252,5 +252,13 @@ const SFX = {
   fight: (S) => { S.jingle(['G5', 'C6'], { gap: 0.07, len: 0.2 }); S.noise(0.15, { type: 'highpass', f: 2500, vol: 0.14 }); },
   win: (S) => S.jingle(['C5', 'E5', 'G5', 'C6', 'G5', 'C6'], { gap: 0.11, len: 0.18 }),
   lose: (S) => S.jingle(['E5', 'D5', 'C5', 'A4'], { gap: 0.16, len: 0.26 }),
+  throw: (S) => { S.noise(0.06, { type: 'bandpass', f: 3200, slide: 1400, vol: 0.14, q: 1.4 }); S.tone(900, 0.05, { duty: 0.125, slide: 500, vol: 0.07 }); },
+  chomp: (S) => { S.noise(0.05, { type: 'highpass', f: 3500, vol: 0.14 }); S.tone(170, 0.09, { wave: 'tri', slide: 70, vol: 0.32 }); S.tone(150, 0.09, { wave: 'tri', slide: 60, vol: 0.32, delay: 0.08 }); },
+  roar: (S) => { S.tone(170, 0.5, { wave: 'saw', slide: 80, vol: 0.2 }); S.noise(0.42, { type: 'bandpass', f: 700, slide: 220, vol: 0.2, q: 0.8 }); },
+  splash: (S) => { S.noise(0.2, { type: 'bandpass', f: 1800, slide: 500, vol: 0.22, q: 0.8 }); S.tone(500, 0.16, { wave: 'sine', slide: 1200, vol: 0.1 }); },
+  ice: (S) => { S.tone(1900, 0.12, { duty: 0.125, slide: 900, vol: 0.12 }); S.tone(2500, 0.1, { duty: 0.125, slide: 1300, vol: 0.1, delay: 0.05 }); S.noise(0.1, { type: 'highpass', f: 6000, vol: 0.08 }); },
+  spring: (S) => { S.tone(200, 0.2, { wave: 'sine', slide: 900, vol: 0.2 }); S.tone(1200, 0.07, { duty: 0.25, vol: 0.14, delay: 0.14 }); },
+  steam: (S) => S.noise(0.38, { type: 'highpass', f: 3200, slide: 1400, vol: 0.16 }),
+  wish: (S) => { [880, 1175, 1480, 1760].forEach((f, i) => S.tone(f, 0.14, { duty: 0.25, vol: 0.13, delay: i * 0.08 })); },
   pause: (S) => { S.tone(900, 0.05, { duty: 0.5, vol: 0.16 }); S.tone(600, 0.06, { duty: 0.5, vol: 0.16, delay: 0.05 }); },
 };

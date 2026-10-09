@@ -1,6 +1,6 @@
 // ロールバック同期のテスト：遅延・ゆらぎ・パケット落ち・クロックのずれがあっても、2人の結果が一致するか
 const fs = require('fs'), vm = require('vm'), path = require('path');
-const code = ['core.js', 'chars.js', 'sim.js', 'ai.js', 'rollback.js'].map((f) => fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8')).join('\n');
+const code = ['core.js', 'chars.js', 'chars2.js', 'sim.js', 'ai.js', 'rollback.js'].map((f) => fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8')).join('\n');
 const ctx = vm.createContext({ console });
 vm.runInContext(code + '\nthis.API = { CHARS, createMatch, stepMatch, newAI, aiInput, RollbackSession, hashStr, IN };', ctx);
 const A = ctx.API;

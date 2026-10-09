@@ -57,6 +57,7 @@ function aiProjThreat(m, me) {
   return null;
 }
 
+const downOp0 = (op) => op.st === 'atk' || op.st === 'air';   // 相手が攻撃中・空中なら回復しない
 function aiChoose(ai, m, me, op, dist, fwd, back, L) {
   const C = CHARS[me.ch];
   const projT = aiProjThreat(m, me);
@@ -73,6 +74,7 @@ function aiChoose(ai, m, me, op, dist, fwd, back, L) {
     else if (a.k === 'counter') w = 1;
     else if (a.k === 'proj' && dist < 55) w *= 0.3;
     else if (a.k === 'escape') w = dist < 40 ? w * 1.5 : 0;
+    else if (a.k === 'heal') w = me.wish < 2 && me.hp < C.stats.hp * 0.75 && !downOp0(op) ? w * 3 : 0;   // 遠くにいて、HPが減っているときだけ「ねがいごと」
     if (special) w *= L.spec;
     if (w > 0) cands.push([key, w]);
   }
