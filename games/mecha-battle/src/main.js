@@ -12,16 +12,24 @@
   setupTouch();
   setupCanvasTap(cv);
 
-  /* 画面サイズ：スマホのボタン分を引いて、収まる最大の大きさに（大きい時は整数倍でドットをそろえる） */
+  /* 画面サイズ：画面以外（ヒント・ロビー・スマホのボタン）と余白を引いて、収まる最大の大きさに（大きい時は整数倍でドットをそろえる）。
+     スマホではページを固定している（スクロールできない）ので、1pxもはみ出さないよう、実際の余白・すき間から数える。 */
   function fit() {
     const stage = document.getElementById('stage');
-    const tp = document.getElementById('touch');
-    let touchH = 0;
-    if (tp && !tp.hidden && getComputedStyle(tp).position !== 'fixed') touchH = tp.offsetHeight;
-    const hint = document.getElementById('hint'), lobby = document.getElementById('lobby');
-    const hintH = (hint ? hint.offsetHeight + 8 : 0) + (lobby && !lobby.hidden ? lobby.offsetHeight + 8 : 0);
+    const cs = getComputedStyle(document.getElementById('app'));
+    const gap = parseFloat(cs.rowGap) || 0;
+    let others = 0;                                   // 画面の下に並ぶものの高さ（すき間込み）
+    for (const id of ['lobby', 'hint', 'touch']) {
+      const el = document.getElementById(id);
+      if (!el || el.hidden) continue;
+      const st = getComputedStyle(el);
+      if (st.display === 'none' || st.position === 'fixed') continue;   // 横向きのスマホでは、ボタンは画面に重ねるので場所をとらない
+      others += el.offsetHeight + gap;
+    }
+    const frame = 4;                                  // 画面のふち（上下2pxずつ）
     const availW = stage.clientWidth;
-    const availH = window.innerHeight - touchH - hintH - 24;
+    const baseH = document.body.classList.contains('has-touch') ? document.body.clientHeight : window.innerHeight;   // スマホは、ノッチ等を除いた高さ
+    const availH = baseH - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0) - others - frame;
     let s = Math.min(availW / SCREEN_W, availH / SCREEN_H);
     if (s >= 2) s = Math.floor(s);
     s = Math.max(0.5, s);
@@ -42,6 +50,8 @@
   const rc = document.getElementById('roomCode'), rg = document.getElementById('roomGo'), rcp = document.getElementById('roomCopy');
   if (rc) {
     rc.addEventListener('input', () => { rc.value = rc.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+    // スマホ：キーボードを閉じたあと、ページがずれたままにならないよう戻す
+    rc.addEventListener('blur', () => { if (document.body.classList.contains('has-touch')) setTimeout(() => window.scrollTo(0, 0), 60); });
     rc.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); SceneOnline.submit(); }
       else if (e.key === 'Escape') { SceneOnline.back(); rc.blur(); }

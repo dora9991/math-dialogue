@@ -26,7 +26,7 @@ function resetFighter(f, i) {
   Object.assign(f, {
     x: S(i === 0 ? 90 : 166), y: 0, vx: 0, vy: 0, face: i === 0 ? 1 : -1, hp: c.stats.hp,
     st: 'idle', t: 0, mv: null, ph: 0, pt: 0, hd: {}, stun: 0, flash: 0, comboN: 0,
-    bufA: 0, bufB: 0, in: 0, dm: [0, 0, 0], airAtk: false, crouchG: false, hits: 0,
+    bufA: 0, bufB: 0, in: 0, dm: [0, 0, 0], airAtk: false, crouchG: false, hits: 0, jmp: false,
   });
   return f;
 }
@@ -161,6 +161,7 @@ function tickFighter(m, f) {
   if (f.flash > 0) f.flash--;
   if (f.bufA > 0) f.bufA--;
   if (f.bufB > 0) f.bufB--;
+  if (f.jmp && f.y === 0 && f.vy <= 0) f.jmp = false;   // 地面に着いたら、ジャンプ中の重力はおしまい（吹っ飛びで着地した場合も）
   const live = m.phase === 'fight';
   const inp = live ? f.in : 0;
   switch (f.st) {
@@ -200,7 +201,7 @@ function tickGround(m, f, o, inp, C, live) {
     if (key) { f.bufA = 0; f.bufB = 0; }
   }
   if (inp & IN.UP) {
-    f.st = 'air'; f.t = 0; f.airAtk = false; f.vy = C.stats.jumpV;
+    f.st = 'air'; f.t = 0; f.airAtk = false; f.jmp = true; f.vy = C.stats.jumpV;
     f.vx = (((inp & IN.RIGHT) ? 1 : 0) - ((inp & IN.LEFT) ? 1 : 0)) * C.stats.airX;
     ev(m, 'snd', { n: 'jump', i: f.i });
     return;
@@ -217,7 +218,7 @@ function tickAir(m, f, o, C, live) {
     const key = pickMove(f, false);
     if (key) { startMove(m, f, key); return; }
   }
-  f.vy -= C.stats.grav; f.y += f.vy; f.x += f.vx; clampX(f);
+  f.vy -= f.jmp ? C.stats.jumpG : C.stats.grav; f.y += f.vy; f.x += f.vx; clampX(f);   // 技のあと空中に残った場合(jmpなし)は、これまでの重力
   if (f.y <= 0) {
     f.y = 0; f.vy = 0; f.vx = 0; f.st = 'idle'; f.t = 0; f.airAtk = false;
     if (f.x !== o.x) f.face = o.x > f.x ? 1 : -1;
@@ -229,7 +230,7 @@ function tickAtk(m, f, C) {
   const mv = C.moves[f.mv], p = mv.phases[f.ph];
   let landed = false;
   if (f.y > 0 || f.vy > 0) {
-    f.vy -= C.stats.grav; f.y += f.vy;
+    f.vy -= f.jmp ? C.stats.jumpG : C.stats.grav; f.y += f.vy;   // ジャンプ中の空中技は、ジャンプの続き（同じ放物線）
     if (f.y <= 0) { f.y = 0; f.vy = 0; landed = true; }
   }
   f.x += f.vx; clampX(f);
