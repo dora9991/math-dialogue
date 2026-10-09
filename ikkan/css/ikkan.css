@@ -1,0 +1,133 @@
+/* ikkan：板書型ワークシート。紙面は実寸（mm）でつくり、画面では zoom で縮める。 */
+:root{
+  --wsfont:"UD デジタル 教科書体 N-R","UD Digi Kyokasho N-R","UD デジタル 教科書体 NK-R","YuKyokasho Yoko","游教科書体 横用","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+  --ui:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic UI","Meiryo",sans-serif;
+  --bg:#e7e5df;--panel:#fff;--ink:#1f2933;--ink2:#52606d;--ink3:#667382;--line:#d9d6cc;--btn-line:#c5cbd3;--acc:#1d5fbf;--acc-soft:#e8f0fc;
+  --ans:#c62020;--ans-soft:#fdecec;--ans-line:#eba8a8;--ans-ink:#a31616;--on-ans:#fff;
+  --paper-ans:#d62828;   /* 紙面の赤（白い紙の上なので、暗い画面でも変えない） */
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14181d;--panel:#1d2329;--ink:#e6e9ec;--ink2:#a9b3bd;--ink3:#8a96a2;--line:#2f3841;--btn-line:#3d4853;--acc:#7db2ff;--acc-soft:#1e2e45;
+    --ans:#ff8a8a;--ans-soft:#3a2224;--ans-line:#6b3a3d;--ans-ink:#ffb0b0;--on-ans:#2a1214;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14181d;--panel:#1d2329;--ink:#e6e9ec;--ink2:#a9b3bd;--ink3:#8a96a2;--line:#2f3841;--btn-line:#3d4853;--acc:#7db2ff;--acc-soft:#1e2e45;
+  --ans:#ff8a8a;--ans-soft:#3a2224;--ans-line:#6b3a3d;--ans-ink:#ffb0b0;--on-ans:#2a1214;color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit}
+
+/* ================= 紙面 ================= */
+.wsp{position:relative;flex:none;background:#fff;color:#1f2328;font-family:var(--wsfont);line-height:1.4;overflow:hidden;
+  box-shadow:0 1px 3px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.1);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.wsp-head{position:absolute;height:10mm;display:flex;align-items:flex-end;justify-content:space-between;gap:4mm;font-size:3.5mm;white-space:nowrap}
+.wsp-head .u{display:inline-block;border-bottom:.25mm solid #333;height:4.6mm;vertical-align:-1.1mm;margin:0 .7mm}
+.wsp-head .w1{width:7mm}.wsp-head .w2{width:9mm}.wsp-head .w6{width:46mm}
+.wh-mid{flex:1;text-align:center;font-size:3mm;color:#6b7280;overflow:hidden;text-overflow:ellipsis}
+.wsp-body{position:absolute}
+.wsp-rule{position:absolute;left:0;top:0;display:block;pointer-events:none;overflow:visible}
+.wsp-flow{position:relative;font-size:calc(var(--pitch) * .56);line-height:var(--pitch)}
+
+/* ---- ブロック（高さはいつも罫の幅の倍数） ---- */
+.wb{position:relative}
+.wb-t{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;overflow:hidden}
+.wb .tx{grid-column:2;position:relative;top:calc(var(--pitch) * .06);min-width:0;overflow-wrap:anywhere}
+.wb.box{padding:0 1.6mm;overflow:visible}
+.wb.box::after{content:"";position:absolute;left:0;right:0;top:.35mm;bottom:.35mm;border:.3mm solid #2d3748;border-radius:1.4mm;pointer-events:none}
+.wsp .tag{grid-column:1;box-sizing:border-box;display:inline-block;height:calc(var(--pitch) * .7);margin:calc(var(--pitch) * .15) 1.8mm 0 0;padding:0 1.5mm;
+  line-height:calc(var(--pitch) * .7);font-size:calc(var(--pitch) * .42);font-weight:700;border-radius:1mm;white-space:nowrap;letter-spacing:.04em}
+.wsp .t-meate{background:#2d3748;color:#fff}
+.wsp .t-kadai{border:.3mm solid #2d3748;line-height:calc(var(--pitch) * .7 - .6mm);background:#fff}
+/* 板書の写し：ふだんは罫線だけ。解答を表示すると、教師の板書が赤で出る */
+.wb-b{overflow:hidden}
+.wb-b .tx{display:none;grid-column:auto;top:calc(var(--pitch) * .06);padding-left:.8mm;color:var(--paper-ans)}
+.ans-on .wb-b .tx{display:block}
+
+/* 答え（赤）：問題の中の空欄の数字、図の中の空欄の数字、板書 */
+.wsp .ansx{display:none;color:var(--paper-ans)}
+.ans-on .wsp .ansx{display:inline}
+
+/* 文字の中の空欄・分数・累乗・文字式の字 */
+.wsp .bl{display:inline-block;height:1.1em;line-height:1.1em;border-bottom:.25mm solid #333;vertical-align:-.25em;text-align:center;margin:0 .15em;white-space:nowrap}
+.wsp .fr{display:inline-block;vertical-align:middle;font-size:.7em;line-height:1;text-align:center;margin:0 .14em}
+.wsp .fr>span{display:block;padding:0 .12em}
+.wsp .fr>span:first-child{border-bottom:.2mm solid currentColor;padding-bottom:.06em}
+.wsp .fr>span:last-child{padding-top:.04em}
+.wsp i.v{font-family:"Times New Roman",Times,serif;font-style:italic;font-size:1.1em;line-height:0;padding:0 .03em}
+.wsp sup{font-size:.62em;vertical-align:.5em;line-height:0}
+.wsp .sq{white-space:nowrap}
+.wsp .sq>span{display:inline-block;border-top:.2mm solid currentColor;line-height:1.02;padding:0 .08em 0 .03em;margin-left:-.07em}
+
+/* 図 */
+.wb-fig{display:flex;gap:4mm;align-items:stretch;background:#fff}
+.wb-fig::before{content:"";position:absolute;top:-.4mm;bottom:-.4mm;left:-3mm;right:-3mm;background:#fff}
+.wb-fig .fg{flex:none;position:relative}
+.fsvg{display:block;overflow:visible;fill:#222}
+.fsvg text{font-family:var(--wsfont)}
+.fsvg .sv,.fsvg .pl{font-family:"Times New Roman",Times,serif;font-style:italic}
+.fsvg .cap{font-weight:700}
+.fsvg .ansx{display:none;fill:var(--paper-ans)}
+.ans-on .fsvg .ansx{display:inline}
+.fsvg g.ansx{fill:var(--paper-ans)}
+
+/* 2段組 */
+.wb-cols{display:grid;column-gap:6mm;align-items:start}
+.wcol{min-width:0}
+
+/* ================= 画面（ワークシート以外） ================= */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+.top .brand{font-weight:700;font-size:15px;color:var(--ink);text-decoration:none;white-space:nowrap}
+.top .brand small{font-weight:600;font-size:11px;color:var(--ink3);margin-left:6px}
+.top .sp{flex:1}
+.top .ttl{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.top .ttl small{font-size:11px;color:var(--ink3);font-weight:700}
+.top .ttl b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--btn-line);background:var(--panel);border-radius:8px;padding:7px 13px;font-size:14px;cursor:pointer;white-space:nowrap;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:var(--acc);color:var(--acc)}
+.btn.main{background:var(--ans-soft);border-color:var(--ans-line);color:var(--ans-ink);font-weight:700}
+.btn.main[aria-pressed=true]{background:var(--ans);border-color:var(--ans);color:var(--on-ans)}
+.btn.main:hover{border-color:var(--ans);color:var(--ans-ink)}
+.btn.main[aria-pressed=true]:hover{color:var(--on-ans)}
+.btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.pages-wrap{padding:16px 16px 60px;overflow-x:auto}
+.pages{display:flex;flex-direction:column;align-items:center;gap:10mm;transform-origin:top center}
+.hint{max-width:210mm;margin:0 auto 12px;font-size:13px;color:var(--ink2);text-align:center}
+.hint b{color:var(--ans)}
+
+/* 一覧 */
+.home{max-width:860px;margin:0 auto;padding:26px 16px 60px}
+.home h1{font-size:22px;margin:0 0 6px}
+.home .lead{margin:0 0 20px;color:var(--ink2);font-size:14px;line-height:1.75}
+.home .lead b{color:var(--ans)}
+.unit{margin:22px 0 8px;display:flex;align-items:baseline;gap:10px}
+.unit h2{font-size:16px;margin:0}
+.unit span{font-size:12px;color:var(--ink3)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.card{display:block;text-decoration:none;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;transition:border-color .15s,box-shadow .15s}
+.card:hover{border-color:var(--acc);box-shadow:0 2px 10px rgba(29,95,191,.12)}
+.card small{display:block;font-size:11.5px;color:var(--ink3);font-weight:700;margin-bottom:2px}
+.card b{display:block;font-size:15.5px;line-height:1.45}
+.card p{margin:6px 0 0;font-size:12.5px;color:var(--ink2);line-height:1.6}
+.card .go{display:inline-block;margin-top:8px;font-size:12.5px;color:var(--acc);font-weight:700}
+.note{margin-top:28px;padding:14px 16px;background:var(--panel);border:1px dashed var(--btn-line);border-radius:10px;font-size:13px;color:var(--ink2);line-height:1.75}
+.note h3{margin:0 0 4px;font-size:13.5px;color:var(--ink)}
+
+@media (max-width:640px){
+  .top{padding:8px 16px}
+  .top .ttl b{max-width:60vw}
+  .btn{padding:7px 10px;font-size:13px}
+}
+
+/* ================= 印刷 ================= */
+@page{size:A4;margin:0}
+@media print{
+  html,body{background:#fff !important;height:auto !important}
+  .top,.hint,.home{display:none !important}
+  .pages-wrap{padding:0 !important;overflow:visible !important}
+  .pages{zoom:1 !important;display:block !important;gap:0 !important}
+  .wsp{box-shadow:none !important;margin:0 !important;break-after:page;page-break-after:always}
+  .wsp:last-child{break-after:auto;page-break-after:auto}
+}
