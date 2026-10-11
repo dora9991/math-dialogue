@@ -67,7 +67,7 @@ const SHIKI = {
   prereqs: ["HI-tenkai", "HA-baai"],
   ...COURSE,
   points: [
-    "二項定理：$(a+b)^{n}$ の一般項は ${}_{n}\\mathrm{C}_{r}\\,a^{n-r}b^{r}$。特定の項の係数は、指数を比べて $r$ を決める。",
+    "二項定理：$(a+b)^{n}$ の一般項は ${}_{n}\\mathrm{C}_{r}\\,a^{n-r}b^{r}$。特定の項の係数は，指数を比べて $r$ を決める。",
     "恒等式は「両辺の係数を比べる」か「都合のよい値を代入する」で係数を決める。分数式は因数分解してから約分・通分する。",
     "相加平均と相乗平均：$a>0,\\ b>0$ のとき $a+b\\geqq 2\\sqrt{ab}$（等号は $a=b$）。積が一定のとき和の最小値がわかる。",
   ],
@@ -173,7 +173,7 @@ const SHIKI = {
           hint: "両辺に分母をかけて分母を払い，$x$ に都合のよい値を代入する。",
           steps: [
             `両辺に $${den}$ をかけて $${c}=A${fx(b)}+B${fx(a)}$`,
-            `$x=${a}$ を代入すると $${c}=${a - b}A$，$x=${b}$ を代入すると $${c}=${b - a}B$`,
+            `$x=${a}$ を代入すると $${c}=${coefVar(a - b, "A")}$，$x=${b}$ を代入すると $${c}=${coefVar(b - a, "B")}$`,
             `よって $A=${fracTex(c, a - b)}$，$B=${fracTex(c, b - a)}$`,
           ],
         };
@@ -336,8 +336,8 @@ const FUKUSO = {
           ans,
           hint: "解と係数の関係 $\\alpha+\\beta=-\\frac{b}{a}$，$\\alpha\\beta=\\frac{c}{a}$ を使う。",
           steps: askSum
-            ? [`$\\alpha+\\beta=-\\frac{${b}}{${a}}${a === 1 ? "" : `=${fracTex(-b, a)}`}$`]
-            : [`$\\alpha\\beta=\\frac{${c}}{${a}}${a === 1 || gcd(c, a) === 1 ? "" : `=${fracTex(c, a)}`}$`],
+            ? [`$\\alpha+\\beta=-\\frac{${b}}{${a}}${fracTex(-b, a) === `-\\frac{${b}}{${a}}` ? "" : `=${fracTex(-b, a)}`}$`]
+            : [`$\\alpha\\beta=\\frac{${c}}{${a}}${fracTex(c, a) === `\\frac{${c}}{${a}}` ? "" : `=${fracTex(c, a)}`}$`],
         };
       }),
     ],
@@ -432,7 +432,7 @@ const FUKUSO = {
           S = -m * p; P = m * m * q;
           wrongs = [poly([1, S, P]), poly([1, -S, m * q]), poly([1, -S, -P])];
           label = `${coefVar(m, "\\alpha")},\\ ${coefVar(m, "\\beta")}`;
-          how = [`和 $=${m}(\\alpha+\\beta)=${S}$`, `積 $=${m * m}\\alpha\\beta=${P}$`];
+          how = [`和 $=${m === -1 ? "-" : m}(\\alpha+\\beta)=${S}$`, `積 $=${m * m === 1 ? "" : m * m}\\alpha\\beta=${P}$`];
         }
         const ans = tex(`${poly([1, -S, P])}=0`);
         return {
@@ -549,7 +549,7 @@ const KOUJI = {
           hint: `因数定理：$${poly([1, -a])}$ で割り切れる $\\iff P(${a})=0$。`,
           steps: [
             `$P(${a})=${a ** 3}+${coefVar(a * a, "k")}${c ? signed(c * a) : ""}${d ? signed(d) : ""}=0$`,
-            `$${coefVar(a * a, "k")}=${-(a ** 3 + c * a + d)}$ より $k=${k}$`,
+            a * a === 1 ? `よって $k=${k}$` : `$${coefVar(a * a, "k")}=${-(a ** 3 + c * a + d)}$ より $k=${k}$`,
           ],
         };
       }),
@@ -782,6 +782,7 @@ const ZUHOU = {
       }),
       t("HII-zuhou-1b", (r) => {
         const x1 = r(-6, 6), y1 = r(-6, 6), x2 = r(-6, 6), y2 = r(-6, 6);
+        if (x1 === x2 && y1 === y2) return { skip: true };
         const m = r(1, 4);
         let n = r(1, 4);
         if (n === m) n = m === 4 ? 1 : m + 1;
@@ -815,7 +816,10 @@ const ZUHOU = {
     ],
     2: [
       t("HII-zuhou-2a", (r) => {
-        const a = rnz(r, -4, 4), b = rnz(r, -4, 4), c = r(-6, 6), x0 = r(-4, 4), y0 = r(-4, 4);
+        let a = rnz(r, -4, 4), b = rnz(r, -4, 4), c = r(-6, 6);
+        const x0 = r(-4, 4), y0 = r(-4, 4);
+        // 問題文の直線（lineTex で約分・符号をそろえた形）と解説の係数を合わせる
+        { const g = gcd(gcd(a, b), c), sg = a < 0 ? -1 : 1; a = (sg * a) / g; b = (sg * b) / g; c = (sg * c) / g; }
         const ans = tex(lineTex(b, -a, -b * x0 + a * y0));
         return {
           q: `点 $(${x0},\\ ${y0})$ を通り，直線 $${lineTex(a, b, c)}$ に垂直な直線の方程式を求めよ。`,
@@ -1495,7 +1499,7 @@ const SHISU = {
           hint: "$t=2^{x}$ とおいて $t$ の2次関数にする。$t$ の範囲に注意。",
           steps: [
             `$t=2^{x}$ とおくと $${tl}\\leqq t\\leqq ${th}$，$2^{x+1}=2t$`,
-            `$y=t^{2}-${2 * a}t${c ? signed(c) : ""}=(t-${a})^{2}${signed(c - a * a)}$`,
+            `$y=t^{2}-${2 * a}t${c ? signed(c) : ""}=(t-${a})^{2}${c - a * a ? signed(c - a * a) : ""}$`,
             `${a === ts ? `軸 $t=${a}$ は範囲内なので` : `軸 $t=${a}$ は範囲外なので端の`} $t=${ts}$ で最小。答え：$${ans}$`,
           ],
         };
@@ -1652,14 +1656,14 @@ const TAISU = {
           hint: "底の変換公式で，底を共通（たとえば 10）にそろえる。",
           steps: [
             `$\\log_{${a ** p}}${b ** q}=\\frac{${q === 1 ? "" : q}\\log ${b}}{${p === 1 ? "" : p}\\log ${a}}$，$\\log_{${b ** rr}}${a ** s}=\\frac{${s === 1 ? "" : s}\\log ${a}}{${rr === 1 ? "" : rr}\\log ${b}}$`,
-            `かけると $\\log ${a}$ と $\\log ${b}$ が約分されて $\\frac{${q * s}}{${p * rr}}$`,
+            `かけると $\\log ${a}$ と $\\log ${b}$ が約分されて $${p * rr === 1 ? q * s : `\\frac{${q * s}}{${p * rr}}`}$`,
             `答え：$${fracTex(q * s, p * rr)}$`,
           ],
         };
       }),
       t("HII-taisu-2b", (r) => {
         const i = r(0, 3), j = r(0, 3), k = i + j;
-        if (k === 0) return { skip: true };
+        if (k === 0 || i === j) return { skip: true }; // i=j だと同じ log を2つ並べた式になる
         const x1 = r(-3, 8), a = x1 - 2 ** i, b = x1 - 2 ** j, x2 = a + b - x1;
         return {
           q: `方程式 $\\log_{2}${logArg(a)}+\\log_{2}${logArg(b)}=${k}$ を解け。`,
@@ -1749,7 +1753,8 @@ const TAISU = {
         }
         const [m, n] = sample(r, P, 2);
         const same = (x, y) => ([2, 4, 8].includes(x) && [2, 4, 8].includes(y)) || ([3, 9].includes(x) && [3, 9].includes(y));
-        if (same(m, n)) return { skip: true };
+        // 4 と 9 の組は答えが 2b/2a（約分できる形）になるので除く
+        if (same(m, n) || (m === 4 && n === 9) || (m === 9 && n === 4)) return { skip: true };
         const vm = logVec(m), vn = logVec(n);
         const fr = (top, bot) => tex(`\\frac{${linAB(top)}}{${linAB(bot)}}`);
         const bad5 = (v) => [v[0] + 2 * v[2], v[1] + v[2], 0];
@@ -1803,7 +1808,7 @@ const TAISU = {
           steps: [
             `$\\log_{10}\\frac{${p}}{${q}}=\\log_{10}${p}-\\log_{10}${q}=${dec4(L)}$`,
             big ? `両辺の常用対数をとると $${dec4(-L)}n>${k}$` : `両辺の常用対数をとると $${dec4(L)}n<-${k}$`,
-            `$n>\\frac{${k}}{${dec4(-L)}}=${(k * 10000 / -L).toFixed(2)}\\cdots$ より，答え：$n=${n}$`,
+            `$n>\\frac{${k}}{${dec4(-L)}}=${(Math.floor((k * 1000000) / -L) / 100).toFixed(2)}\\cdots$ より，答え：$n=${n}$`,
           ],
         };
       }),
@@ -1965,7 +1970,7 @@ const BIBUN = {
           hint: "3次関数が極値をもつ $\\iff$ $f'(x)=0$ が異なる2つの実数解をもつ（判別式 $>0$）。",
           steps: [
             `$f'(x)=3x^{2}+2kx${signedVar(m, "k")}$`,
-            `$\\frac{D}{4}=k^{2}-3\\cdot ${par(m)}k=k(k${signed(-3 * m)})>0$`,
+            `$\\frac{D}{4}=k^{2}-${m === 1 ? "3" : `3\\cdot ${par(m)}`}k=k(k${signed(-3 * m)})>0$`,
             `答え：$k<${lo},\\ ${hi}<k$`,
           ],
         };

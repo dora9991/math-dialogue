@@ -68,6 +68,33 @@ function hissan(a, b) {
 
 const NAMES = ["ゆうと", "さくら", "はると", "あおい", "そうた", "ひなた", "れん", "ゆい"];
 
+const KD = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+/** 1〜9999 を漢字で（1000 は「千」、10 は「十」） */
+function kan4(x) {
+  let s = "";
+  for (const [u, name] of [[1000, "千"], [100, "百"], [10, "十"], [1, ""]]) {
+    const d = Math.floor(x / u) % 10;
+    if (d > 0) s += (d === 1 && u > 1 ? "" : KD[d]) + name;
+  }
+  return s;
+}
+/** 大きな数を漢字だけで（30520000000 → 三百五億二千万） */
+function kanji(n) {
+  let s = "";
+  let rest = n;
+  for (const [u, name] of [[1e12, "兆"], [1e8, "億"], [1e4, "万"], [1, ""]]) {
+    const q = Math.floor(rest / u);
+    if (q > 0) {
+      s += kan4(q) + name;
+      rest -= q * u;
+    }
+  }
+  return s;
+}
+
+/** 買い物の品物と数え方 */
+const SHOP = [["パン", "こ"], ["おにぎり", "こ"], ["ノート", "さつ"], ["ジュース", "本"], ["えんぴつ", "本"], ["ケーキ", "こ"]];
+
 export const UNITS = [
   // ────────────────────────────────────────────────────────
   {
@@ -138,6 +165,66 @@ export const UNITS = [
             steps: ["1兆 ÷ 10 ＝ 1000億", `${a}兆 ÷ 10 ＝ ${a}000億`],
           };
         }),
+        t("E4-ookina-1d", (r) => {
+          // 0 のある大きな数の読み方・書き方（数字 ↔ 漢字）
+          const top = r(9, 13);
+          const ps = [top];
+          while (ps.length < 3) {
+            const p = r(0, 2) ? r(4, top - 1) : r(0, top - 1);
+            if (!ps.includes(p)) ps.push(p);
+          }
+          const digs = ps.map(() => r(1, 9));
+          const N = ps.reduce((s, p, i) => s + digs[i] * 10 ** p, 0);
+          // まちがえやすい数：0 が1つ多い・少ない、数字が1つとなりの位にずれる
+          const wrongNs = [N * 10];
+          if (N % 10 === 0) wrongNs.push(N / 10);
+          ps.forEach((p, i) => {
+            if (i === 0) return;
+            for (const np of [p + 1, p - 1]) {
+              if (np >= 0 && np < top && !ps.includes(np)) wrongNs.push(N - digs[i] * 10 ** p + digs[i] * 10 ** np);
+            }
+          });
+          const s = String(N);
+          if (r(0, 1)) {
+            const ans = kanji(N);
+            return {
+              q: `${s} の読み方を、漢字で書いたものはどれですか。`,
+              ans,
+              choices: choices4(r, ans, shuffle(r, wrongNs).map(kanji)),
+              hint: "右から4けたずつ区切って、万・億・兆の区切りを見つけよう。",
+              steps: [`右から4けたずつ区切ると ${group4(s)}`, `${jp(N)} なので「${ans}」と読む`],
+            };
+          }
+          return {
+            q: `「${kanji(N)}」を数字で書いたものはどれですか。`,
+            ans: s,
+            choices: choices4(r, s, shuffle(r, wrongNs).map(String)),
+            hint: "兆・億・万の区切りごとに4けたずつ書こう。数字のない位には 0 を書くよ。",
+            steps: [`${kanji(N)} は ${jp(N)}`, `区切りごとに4けたで書くと ${group4(s)}`, `答え ${s}`],
+          };
+        }),
+        t("E4-ookina-1e", (r) => {
+          // 1億を□こ、1000万を□こ… あわせた数
+          const U = [[1e12, "1兆"], [1e11, "1000億"], [1e10, "100億"], [1e9, "10億"], [1e8, "1億"], [1e7, "1000万"], [1e6, "100万"], [1e5, "10万"], [1e4, "1万"]];
+          const group = (i) => (i === 0 ? 0 : i <= 4 ? 1 : 2);
+          const idx = sample(r, [0, 1, 2, 3, 4, 5, 6, 7, 8], 3).sort((a, b) => a - b);
+          if (new Set(idx.map(group)).size < 2) return { skip: true };
+          const terms = idx.map((i) => [U[i][0], U[i][1], r(1, 9)]);
+          const N = terms.reduce((s, [v, , c]) => s + v * c, 0);
+          const ans = jp(N);
+          const wrongNs = [];
+          terms.forEach(([v, , c]) => {
+            wrongNs.push(N + v * c * 9); // 位を1つ上にまちがえる
+            wrongNs.push(N - (v * c * 9) / 10); // 位を1つ下にまちがえる
+          });
+          return {
+            q: `${terms.map(([, name, c]) => `${name}を ${c}こ`).join("、")} あわせた数はどれですか。`,
+            ans,
+            choices: choices4(r, ans, shuffle(r, wrongNs).map(jp)),
+            hint: `それぞれがいくつになるかを先に考えよう。${terms[1][1]}を ${terms[1][2]}こ集めると、いくつかな？`,
+            steps: [terms.map(([v, name, c]) => `${name}を${c}こで ${jp(v * c)}`).join("、"), `あわせて ${ans}`],
+          };
+        }),
       ],
       2: [
         t("E4-ookina-2a", (r) => {
@@ -188,6 +275,58 @@ export const UNITS = [
             steps: [`1兆は1億を10000こ集めた数なので、${a}兆は1億の ${a * 10000} こ分`, `${b}億は1億の ${b} こ分`, `あわせて ${a * 10000 + b} こ`],
           };
         }),
+        t("E4-ookina-2d", (r) => {
+          // 億・兆のたし算・ひき算（くり上がり・くり下がりあり）
+          const plus = r(0, 1) === 1;
+          const [S, bg, sm] = pick(r, [[1e8, "億", "万"], [1e8, "億", "万"], [1e12, "兆", "億"]]);
+          const big = S === 1e8 ? () => r(12, 98) : () => r(1, 9);
+          let X = big();
+          let Y = big();
+          let a = r(1, 9);
+          let b = r(1, 9);
+          if (plus && a + b < 10) [a, b] = [10 - b + r(0, b - 1), b];
+          if (!plus) {
+            if (X === Y) return { skip: true };
+            if (X < Y) [X, Y] = [Y, X];
+            if (a >= b) {
+              a = r(1, 8);
+              b = r(a + 1, 9);
+            }
+          }
+          const x = X * S + a * (S / 10);
+          const y = Y * S + b * (S / 10);
+          const res = plus ? x + y : x - y;
+          const ans = `${jp(res)}円`;
+          const [A, B] = pick(r, [["A市の1年間の予算", "B市の1年間の予算"], ["A社の1年間の売り上げ", "B社の1年間の売り上げ"], ["A県の1年間の予算", "B県の1年間の予算"]]);
+          // くり上がりをわすれる／小さい区切りを逆にひく（くり下げない）など
+          const wrongNs = plus ? [res - S, res + S, res + 10 * S] : [(X - Y) * S + (b - a) * (S / 10), res + S, res - S, res + 10 * S];
+          const steps = plus
+            ? [`${bg}どうし：${X} ＋ ${Y} ＝ ${X + Y}（${bg}）、${sm}どうし：${a}000${sm} ＋ ${b}000${sm} ＝ ${a + b}000${sm}`, `${a + b}000${sm} ＝ 1${bg}${a + b > 10 ? `${a + b - 10}000${sm}` : ""} なので、1${bg}くり上げる`, `答え ${ans}`]
+            : [`${a}000${sm} から ${b}000${sm} はひけないので、${bg}から1くり下げて 1${a}000${sm} と考える`, `${bg}どうし：${X} − 1 − ${Y} ＝ ${X - 1 - Y}（${bg}）、${sm}どうし：1${a}000 − ${b}000 ＝ ${10 + a - b}000（${sm}）`, `答え ${ans}`];
+          return {
+            q: `${A}は ${jp(x)}円、${B}は ${jp(y)}円です。${plus ? "あわせて" : "ちがいは"}何円ですか。`,
+            ans,
+            choices: choices4(r, ans, wrongNs.filter((v) => v > 0).map((v) => `${jp(v)}円`)),
+            hint: `${bg}の部分と${sm}の部分に分けて計算しよう。1${bg} ＝ 10000${sm} だよ。`,
+            steps,
+          };
+        }),
+        t("E4-ookina-2e", (r) => {
+          // 数直線の目もり（1目もりの大きさを考えてから読む）
+          const [S, D] = pick(r, [[1e7, 10], [1e7, 10], [1e11, 10], [1e6, 10], [2e7, 5]]);
+          const B = r(1, 9) * S * D;
+          const n = r(1, D - 1);
+          const val = B + n * S;
+          const ans = jp(val);
+          const wrongNs = [B + n * S * 10, B + (n * S) / 10, B + (n + 1) * S, B + (D - n) * S, B + (n - 1) * S];
+          return {
+            q: `${jp(B)} から ${jp(B + S * D)} までを ${D}等分した数直線があります。${jp(B)} から右へ ${n}目もりのところの数はどれですか。`,
+            ans,
+            choices: choices4(r, ans, wrongNs.filter((v) => v > B).map(jp)),
+            hint: `まず、1目もりの大きさを考えよう。${jp(S * D)} を ${D}等分すると、いくつかな？`,
+            steps: [`${jp(S * D)} を ${D}等分すると、1目もりは ${jp(S)}`, `${jp(B)} から ${n}目もり進むと、${jp(S)} × ${n} ＝ ${jp(n * S)} ふえる`, `答え ${ans}`],
+          };
+        }),
       ],
       3: [
         t("E4-ookina-3a", (r) => {
@@ -235,6 +374,60 @@ export const UNITS = [
             steps: [`${a}億は1000万の ${a * 10} こ分`, `${b}000万は1000万の ${b} こ分`, `あわせて ${a * 10 + b} たば`],
           };
         }),
+        t("E4-ookina-3d", (r) => {
+          // 1万円札を重ねた高さ（大きな数のわり算）
+          const intro = "1万円札を 100まい重ねると、高さはおよそ 1cm になります。";
+          if (r(0, 1)) {
+            const N = r(1, 9) * 1e8 + r(0, 9) * 1e7;
+            const mai = N / 1e4;
+            const cm = mai / 100;
+            return {
+              q: `${intro}${jp(N)}円を全部 1万円札にして重ねると、高さはおよそ何cmになりますか。`,
+              ans: cm,
+              unit: "cm",
+              hint: "まず、1万円札が何まいになるかを考えよう。",
+              steps: [`${jp(N)}円は 1万円の ${mai}こ分なので、1万円札 ${mai}まい`, `100まいで 1cm なので ${mai} ÷ 100 ＝ ${cm}`, `およそ ${cm}cm`],
+            };
+          }
+          const a = r(1, 9);
+          const mai = a * 1e8;
+          const cm = mai / 100;
+          const km = cm / 100000;
+          return {
+            q: `${intro}${a}兆円を全部 1万円札にして重ねると、高さはおよそ何kmになりますか。`,
+            ans: km,
+            unit: "km",
+            hint: "1万円札のまい数 → cm → m → km の順に考えよう。",
+            steps: [`1兆は1万の1億倍なので、${a}兆円は 1万円札 ${jp(mai)}まい`, `100まいで 1cm なので ${jp(mai)} ÷ 100 ＝ ${jp(cm)}（cm）`, `${jp(cm)}cm ＝ ${jp(cm / 100)}m ＝ ${km}km`],
+          };
+        }),
+        t("E4-ookina-3e", (r) => {
+          // 0 のある大きな数のかけ算（0 をのぞいて計算し、あとで0をつける）
+          if (r(0, 1)) {
+            const a = r(2, 30);
+            const b = r(2, 9);
+            const v = a * b;
+            const ans = jp(v * 1e8);
+            return {
+              q: `${a}万 × ${b}万 はいくつですか。`,
+              ans,
+              choices: choices4(r, ans, [jp(v * 1e4), jp(v * 1e12), jp(v * 1e7), jp(v * 1e9)]),
+              hint: "1万 × 1万 は、1万の1万倍だよ。",
+              steps: [`${a} × ${b} ＝ ${v}`, `1万 × 1万 ＝ 1億 なので、${a}万 × ${b}万 ＝ ${v}億`],
+            };
+          }
+          const a = r(1, 9) * 10 + r(1, 9);
+          const b = r(1, 9) * 10 + r(1, 9);
+          const v = a * b;
+          const ans = jp(v * 1e4);
+          return {
+            q: `${a * 100} × ${b * 100} はいくつですか。`,
+            ans,
+            choices: choices4(r, ans, [jp(v * 1e3), jp(v * 1e5), jp(v * 1e2), jp(v * 1e6)]),
+            hint: "0 をのぞいた数どうしをかけてから、0 をいくつつけるか考えよう。",
+            steps: [`${a} × ${b} ＝ ${v}`, `${a * 100} と ${b * 100} の 0 は、あわせて 4こ`, `${v} に 0 を4こつけて ${v * 10000}（${ans}）`],
+          };
+        }),
       ],
       4: [
         t("E4-ookina-4a", (r) => {
@@ -260,6 +453,43 @@ export const UNITS = [
               `${jp(T)} とのちがいは、${da} と ${db}`,
               `ちがいが小さいほうの ${ans}`,
             ],
+          };
+        }),
+        t("E4-ookina-4b", (r) => {
+          // □ に入る数字（大小くらべ）
+          const L = r(3, 4);
+          const ds = [r(1, 9)];
+          for (let i = 1; i < L; i++) ds.push(r(0, 9));
+          const j = r(1, L - 1);
+          const bs = [...ds];
+          bs[j] = r(1, 8);
+          for (let i = j + 1; i < L; i++) bs[i] = r(0, 9);
+          const unit = pick(r, ["億", "兆", "万"]);
+          const big = r(0, 1) === 1;
+          const B = Number(bs.join(""));
+          const ok = [];
+          for (let d = 0; d <= 9; d++) {
+            const a = [...ds];
+            a[j] = d;
+            const v = Number(a.join(""));
+            if (big ? v > B : v < B) ok.push(d);
+          }
+          if (ok.length === 0 || ok.length === 10) return { skip: true };
+          const x = bs[j];
+          const show = ds.map((d, i) => (i === j ? "□" : d)).join("");
+          const restA = ds.slice(j + 1).join("");
+          const restB = bs.slice(j + 1).join("");
+          const eqOk = ok.includes(x);
+          const eqLine =
+            j === L - 1
+              ? `□ が ${x} のときは ${B}${unit} と同じ数になるので、あてはまらない`
+              : `□ が ${x} のときは、その下の位をくらべて ${restA} と ${restB} なので、${eqOk ? "あてはまる" : "あてはまらない"}`;
+          return {
+            q: `${show}${unit} は、${B}${unit} より${big ? "大きい" : "小さい"}数です。□ には 0 から 9 までの数字が1つ入ります。□ にあてはまる数字は何こありますか。`,
+            ans: ok.length,
+            unit: "こ",
+            hint: "上の位から順にくらべよう。□ の位の数字が同じになるときに気をつけよう。",
+            steps: [`□ より上の位は同じなので、□ の位の数字で大きさが決まる（${B}${unit} のその位は ${x}）`, eqLine, `あてはまる数字は ${ok.join("、")} の ${ok.length}こ`],
           };
         }),
       ],
@@ -321,6 +551,57 @@ export const UNITS = [
             steps: [`${b} を ${g} とみて、${a} ÷ ${g} から仮の商 ${tq} をたてる`, ...fix, `${b} × ${q} ＝ ${a} なので、答え ${q}`],
           };
         }),
+        t("E4-warihissan-1d", (r) => {
+          // 10・100 のまとまりで考えるわり算
+          const b = r(2, 9);
+          const q = r(2, 9);
+          const k = r(0, 2);
+          if (k === 0) {
+            const a = 10 * b * q;
+            return {
+              q: `${a} ÷ ${b} を計算しましょう。`,
+              ans: 10 * q,
+              hint: "10 のまとまりが何こあるかで考えよう。",
+              steps: [`${a} は 10 が ${b * q}こ`, `${b * q} ÷ ${b} ＝ ${q} なので、10 が ${q}こ`, `答え ${10 * q}`],
+            };
+          }
+          if (k === 1) {
+            const a = 100 * b * q;
+            return {
+              q: `${a} ÷ ${b} を計算しましょう。`,
+              ans: 100 * q,
+              hint: "100 のまとまりが何こあるかで考えよう。",
+              steps: [`${a} は 100 が ${b * q}こ`, `${b * q} ÷ ${b} ＝ ${q} なので、100 が ${q}こ`, `答え ${100 * q}`],
+            };
+          }
+          const a = 10 * b * q;
+          return {
+            q: `${a} ÷ ${10 * b} を計算しましょう。`,
+            ans: q,
+            hint: "10 のまとまりで考えると、何 ÷ 何になるかな？",
+            steps: [`10 のまとまりで考えると ${b * q} ÷ ${b}`, `${b * q} ÷ ${b} ＝ ${q}`, `答え ${q}`],
+          };
+        }),
+        t("E4-warihissan-1e", (r) => {
+          // わり算の文章題（等分除・包含除、わり切れる）
+          const b = r(2, 9);
+          const q = r(12, Math.min(99, Math.floor(999 / b)));
+          const n = b * q;
+          const [text, u] = pick(r, [
+            [`色紙が ${n}まいあります。${b}人で同じ数ずつ分けると、1人分は何まいになりますか。`, "まい"],
+            [`${n}cm のリボンを、${b}cm ずつに切ります。${b}cm のリボンは何本できますか。`, "本"],
+            [`あめが ${n}こあります。${b}つのふくろに同じ数ずつ入れると、1つのふくろのあめは何こになりますか。`, "こ"],
+            [`${n}ページの本を、毎日同じページ数ずつ読んで、${b}日で読み終えます。1日に何ページ読めばよいですか。`, "ページ"],
+            [`${n}人が、${b}人ずつのグループに分かれます。グループはいくつできますか。`, "グループ"],
+          ]);
+          return {
+            q: text,
+            ans: q,
+            unit: u,
+            hint: "同じ数ずつ分けるときや、いくつ分かを求めるときは、わり算を使うよ。",
+            steps: [`式：${n} ÷ ${b}`, `${n} ÷ ${b} ＝ ${q}`, `答え ${q}${u}`],
+          };
+        }),
       ],
       2: [
         t("E4-warihissan-2a", (r) => {
@@ -357,6 +638,97 @@ export const UNITS = [
             ans: b * q + m,
             hint: "たしかめの式「わる数 × 商 ＋ あまり」を使おう。",
             steps: [`わる数 × 商 ＋ あまり ＝ わられる数`, `${b} × ${q} ＋ ${m} ＝ ${b * q + m}`],
+          };
+        }),
+        t("E4-warihissan-2d", (r) => {
+          // 商の見当：商は何の位からたつか
+          const PL = ["百の位", "十の位", "一の位"];
+          if (r(0, 1)) {
+            const b = r(2, 9);
+            const start = r(0, 1) === 1;
+            const h = start ? r(b, 9) : r(1, b - 1);
+            const a = h * 100 + r(0, 99);
+            const ans = start ? "百の位" : "十の位";
+            return {
+              q: `${a} ÷ ${b} を筆算でするとき、商は何の位からたちますか。`,
+              ans,
+              choices: choices4(r, ans, PL.filter((x) => x !== ans)),
+              hint: "わられる数の上の位から順に、わる数でわれるかどうかを見ていこう。",
+              steps: start
+                ? [`百の位の ${h} は ${b} 以上なので、${h} ÷ ${b} で百の位に商がたつ`, `商は3けたの数になる`]
+                : [`百の位の ${h} は ${b} より小さいので、百の位に商はたたない`, `上から2けたの ${Math.floor(a / 10)} ÷ ${b} で、十の位から商がたつ（商は2けた）`],
+            };
+          }
+          const b = r(12, 79);
+          const start = r(0, 1) === 1;
+          const top2 = start ? r(b, 99) : r(10, b - 1);
+          const a = top2 * 10 + r(0, 9);
+          const ans = start ? "十の位" : "一の位";
+          return {
+            q: `${a} ÷ ${b} を筆算でするとき、商は何の位からたちますか。`,
+            ans,
+            choices: choices4(r, ans, PL.filter((x) => x !== ans)),
+            hint: "わられる数の上から2けたが、わる数より大きいか小さいかを見よう。",
+            steps: start
+              ? [`上から2けたの ${top2} は ${b} 以上なので、${top2} ÷ ${b} で十の位に商がたつ`, `商は2けたの数になる`]
+              : [`上から2けたの ${top2} は ${b} より小さいので、十の位に商はたたない`, `${a} ÷ ${b} で、一の位に商がたつ（商は1けた）`],
+          };
+        }),
+        t("E4-warihissan-2e", (r) => {
+          // わり算のきまり：わられる数とわる数に同じ数をかけても、同じ数でわっても、商は変わらない
+          if (r(0, 2) === 0) {
+            const [d, k, B] = pick(r, [[25, 4, 100], [50, 2, 100], [5, 2, 10]]);
+            const q = r(3, 40);
+            const A = d * q;
+            return {
+              q: `${A} ÷ ${d} を、わられる数とわる数に同じ数をかけて、くふうして計算しましょう。`,
+              ans: q,
+              hint: `${d} に何をかけると、計算しやすい数になるかな？`,
+              steps: [`わられる数とわる数に ${k} をかけても、商は変わらない`, `${A} ÷ ${d} ＝ ${A * k} ÷ ${B}`, `＝ ${q}`],
+            };
+          }
+          const q = r(2, 9);
+          const b0 = r(2, 9);
+          const m = r(2, 3);
+          const A = q * b0 * 10 ** m;
+          const B = b0 * 10 ** m;
+          const cut = r(1, m);
+          const ex = (i, j) => `${A / 10 ** i} ÷ ${B / 10 ** j}`;
+          const ans = ex(cut, cut);
+          const wrongs = [ex(cut, 0), ex(0, cut), ex(cut, cut - 1), ex(cut - 1, cut), ex(m, 0), ex(0, m)].filter((s, i, arr) => arr.indexOf(s) === i);
+          return {
+            q: `${A} ÷ ${B} と商が同じになる式はどれですか。`,
+            ans,
+            choices: choices4(r, ans, wrongs.filter((s) => s !== ans)),
+            hint: "わられる数とわる数を、同じ数でわっても、商は変わらないよ。",
+            steps: [`わられる数とわる数を、どちらも ${10 ** cut} でわると ${ans}`, `${ans} ＝ ${q} なので、${A} ÷ ${B} ＝ ${q}`],
+          };
+        }),
+        t("E4-warihissan-2f", (r) => {
+          // 倍の計算（何倍か・もとにする大きさ）
+          const [X, Y, u, bMax, scale] = pick(r, [
+            ["赤いテープの長さ", "白いテープの長さ", "cm", 25, 1],
+            ["ビルの高さ", "木の高さ", "m", 9, 1],
+            [`${pick(r, NAMES)}さんの家から駅までの道のり`, "家から公園までの道のり", "m", 25, 10],
+          ]);
+          const k = r(3, 12);
+          const Bv = r(4, bMax) * scale;
+          const A = Bv * k;
+          if (r(0, 1)) {
+            return {
+              q: `${X}は ${A}${u}、${Y}は ${Bv}${u} です。${X}は、${Y}の何倍ですか。`,
+              ans: k,
+              unit: "倍",
+              hint: "何倍かを求めるときは、わり算を使うよ。",
+              steps: [`${A} ÷ ${Bv} ＝ ${k}`, `${k}倍`],
+            };
+          }
+          return {
+            q: `${X}は ${A}${u} で、${Y}の ${k}倍です。${Y}は何${u}ですか。`,
+            ans: Bv,
+            unit: u,
+            hint: `${Y}を □${u} として、□ × ${k} ＝ ${A} の式を考えよう。`,
+            steps: [`□ × ${k} ＝ ${A}`, `□ ＝ ${A} ÷ ${k} ＝ ${Bv}`, `${Bv}${u}`],
           };
         }),
       ],

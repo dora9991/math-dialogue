@@ -38,7 +38,7 @@ const SURETSU = {
   points: [
     "等差数列 $a_{n}=a+(n-1)d$，和 $S_{n}=\\frac{n(a_{1}+a_{n})}{2}=\\frac{n\\{2a+(n-1)d\\}}{2}$。",
     "等比数列 $a_{n}=ar^{n-1}$，和 $S_{n}=\\frac{a(r^{n}-1)}{r-1}\\ (r\\neq 1)$。指数が $n$ か $n-1$ かに注意。",
-    "3つの数 $a,\\ b,\\ c$ がこの順に等差数列 $\\iff 2b=a+c$，等比数列 $\\iff b^{2}=ac$。",
+    "3つの数 $a,\\ b,\\ c$ がこの順に等差数列 $\\iff 2b=a+c$。0でない3つの数 $a,\\ b,\\ c$ がこの順に等比数列 $\\iff b^{2}=ac$。",
   ],
   levels: {
     1: [
@@ -381,7 +381,7 @@ const SIGMA = {
             `第 $m$ 群までの項数は $\\frac{1}{2}m(m+1)$。$\\frac{1}{2}\\cdot ${g - 1}\\cdot ${g}=${before}<${N}\\leqq ${(g * (g + 1)) / 2}$`,
             `第 $${N}$ 項は第 $${g}$ 群の $${pos}$ 番目で，値は $${pos}$`,
             askSum
-              ? `第 $m$ 群の和は $\\frac{1}{2}m(m+1)$。$\\sum_{m=1}^{${g - 1}}\\frac{1}{2}m(m+1)+(1+\\cdots+${pos})=${sum - (pos * (pos + 1)) / 2}+${(pos * (pos + 1)) / 2}=${sum}$`
+              ? `第 $m$ 群の和は $\\frac{1}{2}m(m+1)$。$\\sum_{m=1}^{${g - 1}}\\frac{1}{2}m(m+1)+${pos === 1 ? "1" : pos === 2 ? "(1+2)" : `(1+\\cdots+${pos})`}=${sum - (pos * (pos + 1)) / 2}+${(pos * (pos + 1)) / 2}=${sum}$`
               : `答え：$${pos}$`,
           ],
         };
@@ -581,6 +581,7 @@ const ZENKA = {
             `$x^{2}=${s === 0 ? String(-pr) : `${coefVar(s)}${signed(-pr)}`}$ の解は $x=${al},\\ ${be}$`,
             `$a_{n+2}${signedVar(-al, "a_{n+1}")}=${par(be)}(a_{n+1}${signedVar(-al, "a_{n}")})$ などから，$a_{n}=p\\cdot ${par(al)}^{n-1}+q\\cdot ${par(be)}^{n-1}$ の形になる`,
             `$a_{1}=p+q=${a1}$，$a_{2}=${coefVar(al, "p")}${signedVar(be, "q")}=${a2}$ より $p=${c1}$，$q=${c2}$`,
+            `答え：${ans}`,
           ],
         };
       }),
@@ -668,7 +669,7 @@ const TOUKEI = {
           hint: "期待値は「値 × 確率」の和：$E(X)=\\sum x_{k}p_{k}$。",
           steps: [
             `$E(X)=${d.xs.map((x, i) => `${par(x)}\\cdot ${fracTex(d.ps[i], d.D)}`).join("+")}$`,
-            `$=\\frac{${d.s1}}{${d.D}}${gcd(d.s1, d.D) === 1 && d.s1 !== 0 ? "" : `=${fracTex(d.s1, d.D)}`}$`,
+            `$=\\frac{${d.s1}}{${d.D}}${gcd(d.s1, d.D) === 1 && d.s1 > 0 ? "" : `=${fracTex(d.s1, d.D)}`}$`,
           ],
         };
       }),
@@ -836,7 +837,7 @@ const TOUKEI = {
         const z2 = round(d / (s * s), 4);
         const ans = C(z, rej);
         return {
-          q: `${story.replace("{n}", `$${n}$`)}を調べたところ $${X}$ 回であった。確率が $${fracTex(pn, pd)}$ であるという帰無仮説を，有意水準5%で両側検定する。検定統計量 $z=\\frac{X-m}{\\sigma}$ の値と結論の組として正しいものを選べ。ただし，正規分布で近似し，$P(|Z|\\geqq 1.96)=0.05$ とする。`,
+          q: `${story.replace("{n}", `$${n}$`).replace("のくじ", "とされるくじ")}を調べたところ $${X}$ 回であった。確率が $${fracTex(pn, pd)}$ であるという帰無仮説を，有意水準5%で両側検定する。検定統計量 $z=\\frac{X-m}{\\sigma}$ の値と結論の組として正しいものを選べ。ただし，正規分布で近似し，$P(|Z|\\geqq 1.96)=0.05$ とする。`,
           ans,
           choices: choices4(r, ans, [C(z, !rej), C(z2, Math.abs(z2) >= 1.96), C(z2, !(Math.abs(z2) >= 1.96))],
             (i) => C(round(z + 0.5 * (i + 1), 4), r(0, 1) === 1)),
@@ -852,6 +853,7 @@ const TOUKEI = {
         const [ph, sq] = pick(r, [[0.1, 0.3], [0.2, 0.4], [0.5, 0.5], [0.8, 0.4], [0.9, 0.3]]);
         const rn = pick(r, [10, 20, 30, 40, 50]), n = rn * rn, k = round(ph * n, 0);
         const se = round(sq / rn, 6), w = round(1.96 * se, 4);
+        const eqs = (x, shown) => (Math.abs(x - shown) < 1e-12 ? "=" : "\\fallingdotseq "); // 丸めたときは ≒
         const I = (ww) => tex(`${dec(ph - ww)}\\leqq p\\leqq ${dec(ph + ww)}`);
         const ans = I(w);
         return {
@@ -862,7 +864,7 @@ const TOUKEI = {
           hint: "標本比率を $\\hat{p}$ とすると，信頼区間は $\\hat{p}\\pm 1.96\\sqrt{\\frac{\\hat{p}(1-\\hat{p})}{n}}$。",
           steps: [
             `$\\hat{p}=\\frac{${k}}{${n}}=${ph}$`,
-            `$\\sqrt{\\frac{${ph}\\times ${round(1 - ph, 2)}}{${n}}}=\\frac{${sq}}{${rn}}=${dec(se, 6)}$，$1.96\\times ${dec(se, 6)}=${dec(w)}$`,
+            `$\\sqrt{\\frac{${ph}\\times ${round(1 - ph, 2)}}{${n}}}=\\frac{${sq}}{${rn}}${eqs(sq / rn, se)}${dec(se, 6)}$，$1.96\\times ${dec(se, 6)}${eqs(1.96 * se, w)}${dec(w)}$`,
             `答え：${ans}`,
           ],
         };
