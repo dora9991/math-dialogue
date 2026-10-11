@@ -1583,6 +1583,7 @@ export const UNITS = [
           const b = r(2, 5);
           const c = r(8, 20) * 10;
           const total = a * b + c;
+          if (total % 1000 === 0) return { skip: true }; // ちょうど1000円なら2000円は出さないので
           const pay = Math.ceil((total + 1) / 1000) * 1000;
           return {
             q: `1こ ${a}円のパンを ${b}こと、${c}円のジュースを1本買って、${pay}円出しました。おつりは何円ですか。`,
@@ -3781,6 +3782,7 @@ export const UNITS = [
         t("E4-oresen-3b", (r) => {
           const { hs, ts } = temps(r);
           const us = ts.map((v) => v - r(0, 6));
+          if (Math.min(...us) < 0) return { skip: true }; // 0度より低い気温（負の数）は小4では出さない
           const ds = ts.map((v, i) => v - us[i]);
           const mx = Math.max(...ds);
           if (ds.filter((d) => d === mx).length > 1) return { skip: true };
@@ -3890,9 +3892,14 @@ export const UNITS = [
 /** 1時間ごとの気温（上がってから下がる）。down=true なら下がる時間を長く */
 function temps(r, down = false) {
   const hs = [9, 10, 11, 12, 13, 14, 15];
-  const peak = down ? r(2, 3) : r(3, 5);
-  const ts = [r(8, 18)];
-  for (let i = 1; i < hs.length; i++) ts.push(ts[i - 1] + (i <= peak ? r(1, 4) : -r(1, 4)));
+  let peak, ts;
+  // 小4 なので 0度より低い気温（負の数）は出さない。まれに出たら作り直す
+  for (let k = 0; k < 50; k++) {
+    peak = down ? r(2, 3) : r(3, 5);
+    ts = [r(8, 18)];
+    for (let i = 1; i < hs.length; i++) ts.push(ts[i - 1] + (i <= peak ? r(1, 4) : -r(1, 4)));
+    if (Math.min(...ts) >= 0) break;
+  }
   return { hs, ts, peak };
 }
 
