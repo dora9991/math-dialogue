@@ -195,7 +195,8 @@ const VECTOR = {
           // (a + t b) ⊥ c
           const a = [rnz(r, -4, 4), rnz(r, -4, 4)], b = [rnz(r, -3, 3), rnz(r, -3, 3)], c = [rnz(r, -3, 3), rnz(r, -3, 3)];
           const ac = a[0] * c[0] + a[1] * c[1], bc = b[0] * c[0] + b[1] * c[1];
-          if (bc === 0 || ac === 0) return { skip: true };
+          // a ∥ b だと答えの t で a+tb が零ベクトルになり「垂直」にならない
+          if (bc === 0 || ac === 0 || a[0] * b[1] === a[1] * b[0]) return { skip: true };
           return {
             q: `$\\vec{a}=${vt(a)}$, $\\vec{b}=${vt(b)}$, $\\vec{c}=${vt(c)}$ とする。$\\vec{a}+t\\vec{b}$ と $\\vec{c}$ が垂直になるような実数 $t$ の値を求めよ。`,
             ans: fracAns(-ac, bc),
