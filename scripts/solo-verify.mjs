@@ -203,7 +203,7 @@ const LECT = path.join(ROOT, "src/solo/lectures");
 let nLect = 0;
 if (!args.length && fs.existsSync(LECT)) {
   for (const f of fs.readdirSync(LECT).sort()) {
-    if (!f.endsWith(".js") || f === "index.js" || f === "videos.js") continue;
+    if (!f.endsWith(".js") || f === "index.js" || f === "videos.js" || f === "talk.js" || f === "talk-data.js") continue;
     const W = `lectures/${f}`;
     let L;
     try { L = (await import(pathToFileURL(path.join(LECT, f)).href)).default; } catch (e) { err(W, `読み込みエラー: ${e.message}`); continue; }
@@ -246,8 +246,34 @@ if (!args.length && fs.existsSync(path.join(LECT, "videos.js"))) {
   }
 }
 
+// 会話授業（lectures/talk.js）の登録表の検査：単元IDが実在するか・授業IDが一覧（talk-data.js）にあるか・中学の全単元に授業があるか
+let nTalk = 0;
+if (!args.length && fs.existsSync(path.join(LECT, "talk.js"))) {
+  const { UNIT_LESSONS, getTalk, chapterOf } = await import(pathToFileURL(path.join(LECT, "talk.js")).href);
+  const { TALK_LESSONS, TALK_CHAPTERS } = await import(pathToFileURL(path.join(LECT, "talk-data.js")).href);
+  for (const [uid, list] of Object.entries(UNIT_LESSONS || {})) {
+    if (!ids.has(uid)) err(`talk.js ${uid}`, "この単元IDはない");
+    if (!chapterOf(uid)) err(`talk.js ${uid}`, "中学校の単元IDの形ではない");
+    if (!Array.isArray(list) || !list.length) { err(`talk.js ${uid}`, "授業の配列が空"); continue; }
+    if (new Set(list).size !== list.length) err(`talk.js ${uid}`, "同じ授業IDが2回ある");
+    for (const lid of list) {
+      nTalk++;
+      if (!TALK_LESSONS[lid]) err(`talk.js ${uid}`, `授業ID ${lid} は talk-data.js にない`);
+    }
+  }
+  // 中学の全単元（J1・J2・J3）に、会話授業を割り当てているか
+  for (const u of all) {
+    if (!chapterOf(u.id)) continue;
+    if (!UNIT_LESSONS[u.id]) warn(`talk.js ${u.id}`, "この単元には会話授業を割り当てていない");
+  }
+  // 授業一覧の全体（章ごとの数）と、章の並びの整合
+  for (const [g, cs] of Object.entries(TALK_CHAPTERS)) for (const [c, lids] of Object.entries(cs)) for (const lid of lids) if (!TALK_LESSONS[lid]) err(`talk-data.js ${g}-${c}`, `${lid} が TALK_LESSONS にない`);
+  // 公開ずみの学年で、リンクが出るか（例：中1の加法）
+  if (getTalk("J1-u2") === null && getTalk("J3-g3c1u1") === null) warn("talk.js", "どの学年も公開ずみ扱いになっていない（PUBLISHED）");
+}
+
 const nTpl = targets.reduce((s, u) => s + Object.values(u.levels || {}).reduce((a, l) => a + (l?.length || 0), 0), 0);
-console.log(`検査: ${targets.length} 単元 / ${nTpl} テンプレート × ${RUNS} 回生成${nLect ? ` / 講義 ${nLect} 本` : ""}${nVideo ? ` / 動画 ${nVideo} 本` : ""}`);
+console.log(`検査: ${targets.length} 単元 / ${nTpl} テンプレート × ${RUNS} 回生成${nLect ? ` / 講義 ${nLect} 本` : ""}${nVideo ? ` / 動画 ${nVideo} 本` : ""}${nTalk ? ` / 会話授業 ${nTalk} 件` : ""}`);
 if (warns.length) console.log(warns.slice(0, 60).join("\n") + (warns.length > 60 ? `\n…ほか ${warns.length - 60} 件の注意` : ""));
 if (errors.length) {
   console.log(errors.slice(0, 80).join("\n") + (errors.length > 80 ? `\n…ほか ${errors.length - 80} 件のエラー` : ""));
