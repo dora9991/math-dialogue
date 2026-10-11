@@ -196,8 +196,8 @@ const KYOKUGEN = {
           steps: [
             `$1-\\cos ${ax}=\\frac{\\sin^{2}${ax}}{1+\\cos ${ax}}$`,
             mode === 0
-              ? `$\\left(\\frac{\\sin ${ax}}{${ax}}\\right)^{2}\\cdot\\frac{${a * a}}{${b === 1 ? "" : b}(1+\\cos ${ax})}\\to\\frac{${a * a}}{${2 * b}}$`
-              : `$\\left(\\frac{\\sin ${ax}}{${ax}}\\right)^{2}\\cdot\\frac{${b === 1 ? "" : b}x}{\\sin ${b === 1 ? "" : b}x}\\cdot\\frac{${a * a}}{${b === 1 ? "" : b}(1+\\cos ${ax})}\\to\\frac{${a * a}}{${2 * b}}$`,
+              ? `$\\left(\\frac{\\sin ${ax}}{${ax}}\\right)^{2}\\cdot\\frac{${a * a}}{${b === 1 ? `1+\\cos ${ax}` : `${b}(1+\\cos ${ax})`}}\\to\\frac{${a * a}}{${2 * b}}$`
+              : `$\\left(\\frac{\\sin ${ax}}{${ax}}\\right)^{2}\\cdot\\frac{${b === 1 ? "" : b}x}{\\sin ${b === 1 ? "" : b}x}\\cdot\\frac{${a * a}}{${b === 1 ? `1+\\cos ${ax}` : `${b}(1+\\cos ${ax})`}}\\to\\frac{${a * a}}{${2 * b}}$`,
             `極限は $${fracTex(a * a, 2 * b)}$`,
           ],
         };

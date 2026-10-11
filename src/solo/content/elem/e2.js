@@ -1534,7 +1534,7 @@ export const UNITS = [
           for (let i = 0; vals.size < 4 && i < 50; i++) vals.add(base + pick(r, [-20, -10, -9, -5, 0, 5, 9, 10, 20, 90, -90]));
           const vs = [...vals].filter((v) => v > 0);
           if (vs.length < 4) return { skip: true };
-          const show = (v, k) => (k === 0 ? `${v}cm` : k === 1 ? `${10 * v}mm` : v % 100 === 0 ? `${v / 100}m` : `${Math.floor(v / 100)}m${v % 100}cm`);
+          const show = (v, k) => (k === 0 || (k === 2 && v < 100) ? `${v}cm` : k === 1 ? `${10 * v}mm` : v % 100 === 0 ? `${v / 100}m` : `${Math.floor(v / 100)}m${v % 100}cm`);
           const labels = vs.map((v) => show(v, r(0, 2)));
           const long = r(0, 1) === 1;
           const target = long ? Math.max(...vs) : Math.min(...vs);
@@ -1986,9 +1986,19 @@ export const UNITS = [
           const C3 = "2本の 直線と 1本の まがった 線で かこまれた 形";
           const C4 = "3本の 直線と 1本の まがった 線で かこまれた 形";
           const R = "まがった 線だけで かこまれた 形";
-          const ty = r(1, 3);
+          const ty = r(1, 5);
           let q, ok, wrongs, why;
-          if (ty === 1) {
+          if (ty === 4) {
+            q = "三角形と いえない ものは どれですか。";
+            ok = pick(r, [G3, C3, S4, R]);
+            wrongs = [S3, "長さが みんな ちがう 3本の 直線で かこまれた 形", "長さが みんな 同じ 3本の 直線で かこまれた 形"];
+            why = "三角形は、3本の 直線で かこまれた 形";
+          } else if (ty === 5) {
+            q = "四角形と いえない ものは どれですか。";
+            ok = pick(r, [G4, C4, S3, R]);
+            wrongs = [S4, "長さが みんな 同じ 4本の 直線で かこまれた 形", "4つの かどが みんな 直角で、4本の 直線で かこまれた 形"];
+            why = "四角形は、4本の 直線で かこまれた 形";
+          } else if (ty === 1) {
             q = "三角形と いえる ものは どれですか。";
             ok = S3; wrongs = sample(r, [G3, C3, S4, R], 3);
             why = "三角形は、3本の 直線で かこまれた 形";
@@ -2006,8 +2016,8 @@ export const UNITS = [
             q,
             choices: choices4(r, ok, wrongs),
             ans: ok,
-            hint: "「直線だけで」「すき間なく かこまれて いる」かを たしかめよう。",
-            steps: [why, `すき間が あったり、まがった 線が あったり する ものは ちがう`, `答え　${ok}`],
+            hint: "「直線だけで」「すき間なく かこまれて いる」か、直線は 何本かを たしかめよう。",
+            steps: [why, "すき間が あったり、まがった 線が あったり、直線の 数が ちがったり する ものは ちがう", `答え　${ok}`],
           };
         }),
         t("E2-zukei-1d", (r) => {
@@ -2391,7 +2401,7 @@ export const UNITS = [
         }),
         t("E2-bunsu-2d", (r) => {
           const [n1, n2] = sample(r, [2, 3, 4], 2);
-          const v1 = r(2, 9), v2 = r(0, 2) === 0 ? v1 : r(2, 9);
+          const v1 = r(2, 9), v2 = r(0, 3) === 0 ? v1 : pick(r, range(2, 9).filter((v) => v !== v1));
           const L1 = n1 * v1, L2 = n2 * v2;
           if (L1 === L2) return { skip: true };
           const c1 = `${L1}cm の テープの ${frac(1, n1)}`, c2 = `${L2}cm の テープの ${frac(1, n2)}`, same = "どちらも 同じ 長さ";
@@ -2468,8 +2478,9 @@ export const UNITS = [
         t("E2-bunsu-3d", (r) => {
           const nm = pick(r, NAMES), food = pick(r, ["ピザ", "ケーキ", "ホットケーキ"]);
           const ate = r(0, 1) === 1;
-          const [n, k] = ate ? pick(r, [[4, 2], [8, 2], [8, 4], [6, 2], [6, 3]]) : pick(r, [[8, 6], [8, 4], [4, 2], [6, 4], [6, 3]]);
-          const part = ate ? k : n - k, m = n / part, ok = frac(1, m);
+          const m = pick(r, [2, 3, 4]); // 答えは もとの 何分の一か
+          const [n, part] = pick(r, { 2: [[4, 2], [6, 3], [8, 4], [12, 6]], 3: [[6, 2], [12, 4]], 4: [[8, 2], [12, 3]] }[m]);
+          const k = ate ? part : n - part, ok = frac(1, m);
           const cands = [n, n - part, part, 2 * m, m + 1].filter((d) => [2, 3, 4, 8].includes(d) && d !== m);
           return {
             q: ate

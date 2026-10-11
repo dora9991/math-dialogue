@@ -2446,10 +2446,10 @@ export const UNITS = [
         }),
         t("E4-bunsu-3d", (r) => {
           // 逆思考：使った量とのこりから、はじめの量を求める
-          const d = r(3, 9);
-          const usedN = r(1, 2 * d);
-          const leftN = r(d + 1, 3 * d);
-          if (usedN % d === 0 || leftN % d === 0 || usedN === leftN) return { skip: true };
+          const d = r(4, 9);
+          const usedN = r(0, 1) * d + r(1, d - 1); // 真分数か、1と真分数
+          const leftN = r(1, 2) * d + r(1, d - 1); // 帯分数
+          if (usedN === leftN) return { skip: true };
           const S = usedN + leftN;
           const [thing, u, verb] = pick(r, [["ジュース", "L", "飲んだ"], ["リボン", "m", "使った"], ["さとう", "kg", "使った"]]);
           const ans = $(mix(S, d));
@@ -2464,11 +2464,10 @@ export const UNITS = [
         }),
         t("E4-bunsu-3e", (r) => {
           // 2本のテープを重ねてつなぐ
-          const d = r(3, 9);
-          const A = r(d + 1, 3 * d);
-          const B = r(d + 1, 3 * d);
+          const d = r(4, 9);
+          const A = r(1, 2) * d + r(1, d - 1);
+          const B = r(1, 2) * d + r(1, d - 1);
           const C = r(1, d - 1);
-          if (A % d === 0 || B % d === 0) return { skip: true };
           const N = A + B - C;
           const ans = $(mix(N, d));
           return {
@@ -3582,6 +3581,86 @@ export const UNITS = [
             steps: ["折れ線グラフは、時間がたつにつれて変わっていく量を表すのに向いている", `だから「${ans}」`],
           };
         }),
+        t("E4-oresen-1d", (r) => {
+          // たてじくの目もりを読む（場面ごとに、ありそうな目もりと大きさで）
+          const [what, u, scales, max, lo] = pick(r, [
+            ["気温", "度", [1, 2, 5], 35, 2],
+            ["プールの水の温度", "度", [1, 2], 30, 16],
+            ["ヘチマのくきの長さ", "cm", [5, 10, 20], 200, 10],
+          ]);
+          const k = r(0, 2);
+          if (k === 0) {
+            const opts = [];
+            for (const s0 of scales) for (const n0 of [5, 10]) if (s0 * n0 <= max) opts.push([s0, n0]);
+            const [s, n] = pick(r, opts);
+            return {
+              q: `${what}の変わり方を折れ線グラフに表します。たてじくの 0${u} から ${s * n}${u} までを、${n}目もりに等しく分けました。1目もりは何${u}ですか。`,
+              ans: s,
+              unit: u,
+              hint: "0 からいくつまでを、いくつに分けているかな？",
+              steps: [`${s * n} ÷ ${n} ＝ ${s}（${u}）`],
+            };
+          }
+          const s = pick(r, scales.filter((x) => x > 1));
+          const c = r(Math.max(2, Math.ceil(lo / s)), Math.min(12, Math.floor(max / s)));
+          if (k === 1) {
+            return {
+              q: `${what}の折れ線グラフで、たてじくの1目もりは ${s}${u} です。${s * c}${u} を表す点は、0 から何目もりのところにかきますか。`,
+              ans: c,
+              unit: "目もり",
+              hint: `${s * c}${u} は、${s}${u} の何こ分かな？`,
+              steps: [`${s * c} ÷ ${s} ＝ ${c}（目もり）`],
+            };
+          }
+          return {
+            q: `${what}の折れ線グラフで、たてじくの1目もりは ${s}${u} です。ある点は、0 から ${c}目もりのところにあります。この点は何${u}を表していますか。`,
+            ans: s * c,
+            unit: u,
+            hint: `1目もりが ${s}${u} だから、${c}目もりでは？`,
+            steps: [`${s} × ${c} ＝ ${s * c}（${u}）`],
+          };
+        }),
+        t("E4-oresen-1e", (r) => {
+          // 2つの時こくの間の変わり方を、ことばで表す
+          const scene = pick(r, ["temp", "water", "dog"]);
+          const type = scene === "dog" ? pick(r, ["up", "up", "flat"]) : pick(r, ["up", "down", "flat"]);
+          const S = {
+            temp: { labs: ["9時", "10時", "11時", "12時", "13時", "14時"], v0: r(10, 18), lo: -3, hi: 4, u: "度", what: "気温", upV: "上がった", downV: "下がった", intro: "ある日の気温を1時間ごとに調べて、折れ線グラフに表しました。" },
+            water: { labs: ["9時", "10時", "11時", "12時", "13時", "14時"], v0: r(20, 24), lo: -2, hi: 3, u: "度", what: "水の温度", upV: "上がった", downV: "下がった", intro: "プールの水の温度を1時間ごとに調べて、折れ線グラフに表しました。" },
+            dog: { labs: ["1か月", "2か月", "3か月", "4か月", "5か月", "6か月"], v0: r(1, 3), lo: 0, hi: 2, u: "kg", what: "体重", upV: "ふえた", downV: "へった", intro: "子犬の体重を、生まれてから1か月ごとに調べて、折れ線グラフに表しました。" },
+          }[scene];
+          const i = r(0, 4);
+          const vals = [S.v0];
+          for (let j = 0; j < 5; j++) {
+            const c = j !== i ? r(S.lo, S.hi) : type === "up" ? r(1, scene === "dog" ? 2 : 4) : type === "down" ? -r(1, 3) : 0;
+            vals.push(vals[j] + c);
+          }
+          if (vals.some((v) => v < 1)) return { skip: true };
+          const d = vals[i + 1] - vals[i];
+          const u = S.u;
+          let ans;
+          let wrongs;
+          if (d > 0) {
+            ans = `${d}${u}${S.upV}`;
+            wrongs = [`${d}${u}${S.downV}`, "変わらなかった", `${d + 1}${u}${S.upV}`, `${vals[i + 1]}${u}${S.upV}`];
+          } else if (d < 0) {
+            ans = `${-d}${u}${S.downV}`;
+            wrongs = [`${-d}${u}${S.upV}`, "変わらなかった", `${-d + 1}${u}${S.downV}`, `${vals[i + 1]}${u}${S.downV}`];
+          } else {
+            ans = "変わらなかった";
+            wrongs = [`1${u}${S.upV}`, `1${u}${S.downV}`, `${vals[i]}${u}${S.upV}`, `2${u}${S.upV}`];
+          }
+          return {
+            q: `${S.intro}${S.labs.map((l, j) => `${l} ${vals[j]}${u}`).join("、")}。${S.labs[i]}から${S.labs[i + 1]}までの${S.what}の変わり方を正しく表しているのはどれですか。`,
+            ans,
+            choices: choices4(r, ans, wrongs),
+            hint: "前とあとの2つの数をくらべよう。折れ線グラフの線が、右上がり・右下がり・横にまっすぐのどれになるかな？",
+            steps: [
+              `${S.labs[i]}は ${vals[i]}${u}、${S.labs[i + 1]}は ${vals[i + 1]}${u}`,
+              d > 0 ? `${vals[i + 1]} − ${vals[i]} ＝ ${d} なので、${ans}（線は右上がり）` : d < 0 ? `${vals[i]} − ${vals[i + 1]} ＝ ${-d} なので、${ans}（線は右下がり）` : "同じなので、変わらなかった（線は横にまっすぐ）",
+            ],
+          };
+        }),
       ],
       2: [
         t("E4-oresen-2a", (r) => {
@@ -3635,6 +3714,48 @@ export const UNITS = [
             steps: [`${x}${yes} ${A}人の中に、両方の人 ${C}人がふくまれている`, `${A} − ${C} ＝ ${A - C}（人）`],
           };
         }),
+        t("E4-oresen-2d", (r) => {
+          // 1年間の気温の折れ線グラフから、条件にあう月を数える
+          const ts = monthTemps(r);
+          const city = pick(r, ["A市", "B市", "ある町"]);
+          const above = r(0, 1) === 1;
+          const T = above ? pick(r, [15, 20, 25]) : pick(r, [10, 15]);
+          const ms = ts.map((v, i) => [i + 1, v]).filter(([, v]) => (above ? v >= T : v < T));
+          if (ms.length === 0) return { skip: true };
+          return {
+            q: `${city}の1年間の気温を、月ごとに調べて折れ線グラフに表しました。${mlist(ts)}。気温が ${T}度${above ? "以上" : "未満"}の月は、何か月ありますか。`,
+            ans: ms.length,
+            unit: "か月",
+            hint: `${T}度${above ? "以上" : "未満"}の月にしるしをつけて数えよう。「${above ? "以上" : "未満"}」は ${T}度ちょうどを${above ? "ふくむ" : "ふくまない"}よ。`,
+            steps: [`${T}度${above ? "以上" : "未満"}の月は ${ms.map(([m, v]) => `${m}月（${v}度）`).join("、")}`, `${ms.length}か月`],
+          };
+        }),
+        t("E4-oresen-2e", (r) => {
+          // いちばん高いときと、いちばん低いときのちがい
+          let labs;
+          let ts;
+          let intro;
+          if (r(0, 1)) {
+            ts = monthTemps(r);
+            labs = ts.map((_, i) => `${i + 1}月`);
+            intro = `ある市の1年間の気温を、月ごとに調べて折れ線グラフに表しました。${mlist(ts)}。`;
+          } else {
+            const T = temps(r, r(0, 1) === 1);
+            ts = T.ts;
+            labs = T.hs.map((h) => `${h}時`);
+            intro = `ある日の気温を1時間ごとに調べて、折れ線グラフに表しました。${list(T.hs, ts)}。`;
+          }
+          const mx = Math.max(...ts);
+          const mn = Math.min(...ts);
+          const at = (v) => labs.filter((_, i) => ts[i] === v).join("・");
+          return {
+            q: `${intro}いちばん高い気温と、いちばん低い気温のちがいは何度ですか。`,
+            ans: mx - mn,
+            unit: "度",
+            hint: "折れ線グラフで、いちばん上の点といちばん下の点を見つけよう。",
+            steps: [`いちばん高いのは ${at(mx)}の ${mx}度、いちばん低いのは ${at(mn)}の ${mn}度`, `${mx} − ${mn} ＝ ${mx - mn}（度）`],
+          };
+        }),
       ],
       3: [
         t("E4-oresen-3a", (r) => {
@@ -3680,6 +3801,76 @@ export const UNITS = [
             unit: "人",
             hint: "まず「犬もねこもかっていない人」と「犬をかっている人」をのぞいてみよう。",
             steps: [`犬をかっていない人は ${N} − ${A} ＝ ${N - A}（人）`, `そのうち ねこだけの人は ${N - A} − ${none} ＝ ${N - A - none}（人）`, `ねこをかっている人は ${N - A - none} ＋ ${C} ＝ ${B}（人）`],
+          };
+        }),
+        t("E4-oresen-3d", (r) => {
+          // 2本の折れ線グラフ：低かったほうが、はじめて高くなる時こく
+          const { hs, ts } = temps(r);
+          const us = [ts[0] - r(2, 5)];
+          for (let i = 1; i < hs.length; i++) us.push(us[i - 1] + (ts[i] - ts[i - 1]) + r(0, 2));
+          const k = us.findIndex((v, i) => v > ts[i]);
+          if (k < 1) return { skip: true };
+          const aFirst = r(0, 1) === 1; // A市がはじめ高い（ts）か、B市がはじめ高いか
+          const [A, B] = aFirst ? [ts, us] : [us, ts];
+          const [hi, lo] = aFirst ? ["A市", "B市"] : ["B市", "A市"];
+          return {
+            q: `A市とB市の気温を1時間ごとに調べて、2本の折れ線グラフに表しました。A市は ${list(hs, A)}。B市は ${list(hs, B)}。${lo}の気温が、はじめて${hi}の気温より高くなったのは何時ですか。`,
+            ans: hs[k],
+            unit: "時",
+            hint: "同じ時こくどうしで、2つの市の気温をくらべよう。2本の折れ線が交わるあたりに注目しよう。",
+            steps: [`同じ時こくでくらべると、${hs.slice(0, k + 1).map((h, i) => `${h}時は ${hi} ${ts[i]}度・${lo} ${us[i]}度`).join("、")}`, `${lo}のほうが高くなったのは ${hs[k]}時がはじめて`],
+          };
+        }),
+        t("E4-oresen-3e", (r) => {
+          // 2つのことがらで分けた表（あいているところを求めてから合計）
+          if (r(0, 1)) {
+            const foods = ["カレー", "あげパン", "やきそば"];
+            const c1 = [r(5, 14), r(4, 12), r(3, 10)];
+            const c2 = [r(5, 14), r(4, 12), r(3, 10)];
+            const j = r(0, 2);
+            const tot = c1[j] + c2[j];
+            const sum2 = c2.reduce((s, v) => s + v, 0);
+            const parts = foods.map((f, i) => (i === j ? `${f}がすきな人は、2つの組をあわせて ${tot}人で、そのうち1組は ${c1[i]}人` : `${f}がすきな人は、1組 ${c1[i]}人、2組 ${c2[i]}人`));
+            return {
+              q: `4年1組と2組で、すきな給食を1人1つずつえらんで、表にまとめました。${parts.join("。")}です。2組の人数は、全部で何人ですか。`,
+              ans: sum2,
+              unit: "人",
+              hint: "表にかいて、わかっていないところを先に求めよう。",
+              steps: [`2組で${foods[j]}がすきな人は ${tot} − ${c1[j]} ＝ ${c2[j]}（人）`, `2組の合計は ${c2.join(" ＋ ")} ＝ ${sum2}（人）`],
+            };
+          }
+          const a = [r(3, 9), r(2, 8), r(1, 6)]; // すりきず：校庭・体育館・教室
+          const b = [r(2, 8), r(2, 7), r(1, 5)]; // 打ぼく：校庭・体育館・教室
+          const Bt = b[0] + b[1] + b[2];
+          return {
+            q: `けがをした人について、けがの種類と場所で分けて表にまとめました。すりきずは、校庭 ${a[0]}人、体育館 ${a[1]}人、教室 ${a[2]}人です。打ぼくは全部で ${Bt}人で、そのうち校庭 ${b[0]}人、体育館 ${b[1]}人です。教室でけがをした人は、全部で何人ですか。`,
+            ans: a[2] + b[2],
+            unit: "人",
+            hint: "表にかいて、わかっていないところを先に求めよう。",
+            steps: [`教室での打ぼくは ${Bt} − ${b[0]} − ${b[1]} ＝ ${b[2]}（人）`, `教室でけがをした人は ${a[2]} ＋ ${b[2]} ＝ ${a[2] + b[2]}（人）`],
+          };
+        }),
+      ],
+      4: [
+        t("E4-oresen-4a", (r) => {
+          // 変わり方だけが分かっているとき、はじめの気温を求める
+          const { hs, ts } = temps(r);
+          const ch = hs.slice(0, -1).map((_, i) => ts[i + 1] - ts[i]);
+          const desc = ch.map((d, i) => `${hs[i]}時から${hs[i + 1]}時までに ${Math.abs(d)}度${d > 0 ? "上がり" : "下がり"}`).join("、");
+          const last = ts[ts.length - 1];
+          const up = ch.filter((d) => d > 0).reduce((s, d) => s + d, 0);
+          const down = -ch.filter((d) => d < 0).reduce((s, d) => s + d, 0);
+          const tot = up - down;
+          return {
+            q: `ある日の気温を、9時から1時間ごとに調べました。${desc}ました。15時の気温は ${last}度でした。9時の気温は何度でしたか。`,
+            ans: ts[0],
+            unit: "度",
+            hint: "上がった分の合計と、下がった分の合計をくらべてみよう。",
+            steps: [
+              `上がった分の合計は ${up}度、下がった分の合計は ${down}度`,
+              tot === 0 ? "15時と9時の気温は同じ" : `15時は9時より ${Math.abs(tot)}度${tot > 0 ? "高い" : "低い"}`,
+              `9時の気温は ${tot === 0 ? `${last}` : `${last} ${tot > 0 ? "−" : "＋"} ${Math.abs(tot)} ＝ ${ts[0]}`}（度）`,
+            ],
           };
         }),
       ],

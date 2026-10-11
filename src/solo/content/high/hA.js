@@ -104,6 +104,24 @@ export const UNITS = [
             ],
           };
         }),
+        t("HA-baai-1d", (r) => {
+          const [a, b] = pick(r, [[2, 3], [2, 5], [3, 4], [3, 5], [2, 7], [3, 7], [4, 5], [5, 7], [4, 6], [6, 8], [4, 10], [6, 9]]);
+          const N = r(5, 30) * 10, kind = r(0, 2);
+          const L = lcm(a, b), A = Math.floor(N / a), B = Math.floor(N / b), AB = Math.floor(N / L), U = A + B - AB;
+          const v = [U, N - U, A - AB][kind];
+          const what = [`${a} の倍数または ${b} の倍数`, `${a} の倍数でも ${b} の倍数でもない数`, `${a} の倍数であるが ${b} の倍数でない数`][kind];
+          return {
+            q: `1 から ${N} までの整数のうち、${what}は何個？`,
+            ans: v,
+            unit: "個",
+            hint: `${a} の倍数の集合を $A$、${b} の倍数の集合を $B$ として、$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)$ を使う。`,
+            steps: [
+              `${a} の倍数の集合を $A$、${b} の倍数の集合を $B$ とすると $n(A)=${A},\\ n(B)=${B}$（${N} をそれぞれで割った商）`,
+              `$A\\cap B$ は ${a} と ${b} の最小公倍数 ${L} の倍数の集合なので $n(A\\cap B)=${AB}$`,
+              [`$n(A\\cup B)=${A}+${B}-${AB}=${v}$`, `$n(\\overline{A\\cup B})=${N}-(${A}+${B}-${AB})=${v}$`, `$n(A)-n(A\\cap B)=${A}-${AB}=${v}$`][kind],
+            ],
+          };
+        }),
       ],
       2: [
         t("HA-baai-2a", (r) => {
@@ -144,6 +162,27 @@ export const UNITS = [
             unit: "個",
             hint: "最高位に 0 は使えない。最高位から順に、使える数字の個数を数える。",
             steps: [`最高位は 0 以外の ${k} 通り`, `残りの位は、残り ${k} 個から ${dg - 1} 個を並べる：$${P_(k, dg - 1)}=${nPr(k, dg - 1)}$`, `$${k}\\times ${nPr(k, dg - 1)}=${v}$`],
+          };
+        }),
+        t("HA-baai-2d", (r) => {
+          const m = r(4, 7), w = r(3, 6), k = r(3, 4), kind = r(0, 3), n = m + w;
+          const i = r(1, k - 1), T = nCr(n, k);
+          const v = [nCr(m, i) * nCr(w, k - i), T - nCr(m, k) - nCr(w, k), nCr(n - 2, k - 2), T - nCr(n - 2, k)][kind];
+          const cond = [`男子がちょうど ${i} 人になる`, "男子も女子も少なくとも1人ずつ含まれる", "特定の2人 A, B がともに選ばれる", "特定の2人 A, B のうち少なくとも一方が選ばれる"][kind];
+          return {
+            q: `男子 ${m} 人、女子 ${w} 人の中から ${k} 人の委員を選ぶ。${cond}選び方は何通り？`,
+            ans: v,
+            unit: "通り",
+            hint: "どこから何人選ぶかに分けて組合せを掛ける。「少なくとも」は全体から引く（余事象）。",
+            steps: [
+              [
+                `男子 ${m} 人から ${i} 人：$${C_(m, i)}=${nCr(m, i)}$、女子 ${w} 人から ${k - i} 人：$${C_(w, k - i)}=${nCr(w, k - i)}$`,
+                `全体 $${C_(n, k)}=${T}$ から、男子だけの $${C_(m, k)}=${nCr(m, k)}$ 通り${w >= k ? `と女子だけの $${C_(w, k)}=${nCr(w, k)}$ 通り` : `（女子だけでは ${k} 人を選べない）`}を引く`,
+                `A, B を先に選び、残りの ${n - 2} 人から ${k - 2} 人を選ぶ`,
+                `全体 $${C_(n, k)}=${T}$ から、A も B も選ばれない $${C_(n - 2, k)}=${nCr(n - 2, k)}$ 通りを引く`,
+              ][kind],
+              [`$${nCr(m, i)}\\times ${nCr(w, k - i)}=${v}$`, `$${T}-${nCr(m, k)}${w >= k ? `-${nCr(w, k)}` : ""}=${v}$`, `$${C_(n - 2, k - 2)}=${v}$`, `$${T}-${nCr(n - 2, k)}=${v}$`][kind],
+            ],
           };
         }),
       ],
@@ -221,6 +260,32 @@ export const UNITS = [
             ],
           };
         }),
+        t("HA-baai-3d", (r) => {
+          const n = r(4, 6);
+          const L = "abcdef".slice(0, n).split("");
+          const w = shuffle(r, L), word = w.join("");
+          let before = 0;
+          const parts = [];
+          w.forEach((ch, i) => {
+            const smaller = w.slice(i + 1).filter((x) => x < ch).sort();
+            if (!smaller.length) return;
+            const k = n - 1 - i, cnt = smaller.length * fact(k);
+            before += cnt;
+            parts.push(`${smaller.map((x) => w.slice(0, i).join("") + x + "□".repeat(k)).join(", ")} の形：$${smaller.length}\\times ${k}!=${cnt}$ 個`);
+          });
+          if (before === 0) return { skip: true };
+          return {
+            q: `${L.join(", ")} の ${n} 文字をすべて1回ずつ使ってできる文字列を、辞書式（アルファベット順）に並べる。${word} は何番目？`,
+            ans: before + 1,
+            unit: "番目",
+            hint: `${word} より前にくる文字列を、先頭から1文字ずつ見て「○□□…の形」ごとに数える。`,
+            steps: [
+              parts.slice(0, 2).join("、"),
+              ...(parts.length > 2 ? [parts.slice(2).join("、")] : []),
+              `${word} より前に ${before} 個あるので $${before}+1=${before + 1}$ 番目`,
+            ],
+          };
+        }),
       ],
       4: [
         t("HA-baai-4a", (r) => {
@@ -270,6 +335,41 @@ export const UNITS = [
             steps: rooms === 2
               ? [`空き部屋を許すと $2^{${n}}=${2 ** n}$`, `全員が A か全員が B の 2 通りを引く`, `$${2 ** n}-2=${v}$`]
               : [`空き部屋を許すと $3^{${n}}=${3 ** n}$`, `ちょうど1部屋が空く：空く部屋の選び方 3 通り × $(2^{${n}}-2)$ = ${3 * (2 ** n - 2)}`, `ちょうど2部屋が空く：3 通り`, `$${3 ** n}-${3 * (2 ** n - 2)}-3=${v}$`],
+          };
+        }),
+        t("HA-baai-4d", (r) => {
+          const n = r(4, 6), k = pick(r, [0, 0, 1, 2]), m = n - k;
+          const D = [1, 0, 1, 2, 9, 44, 265];
+          const v = nCr(n, k) * D[m];
+          const seq = [];
+          for (let j = 4; j <= m; j++) seq.push(`$D_{${j}}=${j - 1}(${D[j - 1]}+${D[j - 2]})=${D[j]}$`);
+          return {
+            q: `${n} 人がそれぞれプレゼントを1つずつ持ち寄って交換し、全員が1つずつ受け取る。${k === 0 ? "どの人も自分の持ってきたプレゼントを受け取らない" : `ちょうど ${k} 人だけが自分の持ってきたプレゼントを受け取る`}受け取り方は何通り？`,
+            ans: v,
+            unit: "通り",
+            hint: "$m$ 人で誰も自分のものを受け取らない受け取り方を $D_{m}$ 通りとおき、ある人のプレゼントを受け取る人に注目して漸化式を作る。",
+            steps: [
+              `$m$ 人で誰も自分のものを受け取らない受け取り方を $D_{m}$ 通りとすると $D_{2}=1,\\ D_{3}=2$`,
+              `人 1 のプレゼントを受け取る人 X は $m-1$ 通り。X のプレゼントを人 1 が受け取るなら残りは $D_{m-2}$ 通り、受け取らないなら（人 1 を X の代わりと考えて）$D_{m-1}$ 通り。よって $D_{m}=(m-1)(D_{m-1}+D_{m-2})$`,
+              ...(seq.length ? [seq.join("、")] : []),
+              k === 0 ? `$D_{${n}}=${v}$ 通り` : `自分のものを受け取る ${k} 人の選び方は $${C_(n, k)}=${nCr(n, k)}$ 通り、残りの ${m} 人は誰も自分のものを受け取らないので $${nCr(n, k)}\\times D_{${m}}=${nCr(n, k)}\\times ${D[m]}=${v}$ 通り`,
+            ],
+          };
+        }),
+        t("HA-baai-4e", (r) => {
+          const k = r(2, 4), n = r(2 * k + 2, 12);
+          const x = nCr(n - k - 1, k - 1), y = nCr(n - k, k), v = x + y;
+          return {
+            q: `円周上に等間隔に並んだ ${n} 個の点から ${k} 個を選ぶとき、選んだ点のどの2つも隣り合わない選び方は何通り？`,
+            ans: v,
+            unit: "通り",
+            hint: "特定の1点 P を選ぶか選ばないかで分けると、どちらも「1列に並んだ点から隣り合わないように選ぶ」問題になる。",
+            steps: [
+              `1列に並んだ $a$ 個から隣り合わない $b$ 個を選ぶ方法は、選ばない $a-b$ 個の間と両端の $a-b+1$ か所から $b$ か所を選ぶと考えて ${tex("{}_{a-b+1}\\mathrm{C}_{b}")} 通り`,
+              `点 P を選ぶとき：P の両隣は選べないので、残りの1列 ${n - 3} 個から ${k - 1} 個を選ぶ：$${C_(n - k - 1, k - 1)}=${x}$`,
+              `P を選ばないとき：残りの1列 ${n - 1} 個から ${k} 個を選ぶ：$${C_(n - k, k)}=${y}$`,
+              `$${x}+${y}=${v}$ 通り`,
+            ],
           };
         }),
       ],
@@ -332,6 +432,26 @@ export const UNITS = [
             steps: [`1回も 6 が出ない確率は $\\left(\\frac{5}{6}\\right)^{${n}}=\\frac{${5 ** n}}{${6 ** n}}$`, `$1-\\frac{${5 ** n}}{${6 ** n}}=${fracTex(6 ** n - 5 ** n, 6 ** n)}$`],
           };
         }),
+        t("HA-kakuritsu-1d", (r) => {
+          const n = r(4, 7), kind = r(0, 3);
+          const cnt = [fact(n - 1) * 2, fact(n - 2), 2 * fact(n - 2), (n - 2) * 2 * fact(n - 2)][kind];
+          const what = ["A と B が隣り合う", "A が左端、B が右端にくる", "A と B が両端にくる", "A と B の間にちょうど1人が入る"][kind];
+          return {
+            q: `A, B を含む ${n} 人が、くじで順番を決めて1列に並ぶ。${what}確率は？`,
+            ans: fracAns(cnt, fact(n)),
+            hint: "並び方の全体は $n!$ 通りで、どれも同様に確からしい。条件を満たす並び方を順列で数える。",
+            steps: [
+              `全体は $${n}!=${fact(n)}$ 通り`,
+              [
+                `A と B をひとまとめにして ${n - 1} 人の並び $${n - 1}!$ 通り、まとまりの中の並び 2 通り：$${fact(n - 1)}\\times 2=${cnt}$ 通り`,
+                `A, B の位置が決まり、残りの ${n - 2} 人の並びは $${n - 2}!=${cnt}$ 通り`,
+                `両端の A, B の並び 2 通り、残りの ${n - 2} 人の並び $${n - 2}!$ 通り：$2\\times ${fact(n - 2)}=${cnt}$ 通り`,
+                `間に入る人の選び方 ${n - 2} 通り、A□B か B□A かで 2 通り、その3人をひとまとめにして残りと並べる $${n - 2}!$ 通り：$${n - 2}\\times 2\\times ${fact(n - 2)}=${cnt}$ 通り`,
+              ][kind],
+              `$${fr(cnt, fact(n))}$`,
+            ],
+          };
+        }),
       ],
       2: [
         t("HA-kakuritsu-2a", (r) => {
@@ -373,6 +493,25 @@ export const UNITS = [
               : [`2人とも外れる確率 $${ft(q1)}\\times ${ft(q2)}=${ft(fmul(q1, q2))}$`, `$1-${ft(fmul(q1, q2))}=${ft(v)}$`],
           };
         }),
+        t("HA-kakuritsu-2d", (r) => {
+          const n = r(3, 4), kind = r(0, 2), T = 3 ** n;
+          const cnt = [3 * n, T - 3 * (2 ** n - 2), 3 * nCr(n, 2)][kind];
+          const what = ["1人だけが勝つ", "あいこになる", "ちょうど2人が勝つ"][kind];
+          return {
+            q: `${n} 人で1回じゃんけんをする。各人はグー・チョキ・パーを同様に確からしく出すとき、${what}確率は？`,
+            ans: fracAns(cnt, T),
+            hint: kind === 1 ? "勝負がつくのは、出た手がちょうど2種類のとき。あいこはその余事象。" : "「誰が」勝つか、「どの手で」勝つかを選ぶ。",
+            steps: [
+              `手の出し方は全部で $3^{${n}}=${T}$ 通り`,
+              [
+                `勝つ1人の選び方 ${n} 通り、勝つ手の選び方 3 通り：$${n}\\times 3=${cnt}$ 通り`,
+                `勝負がつくのは出た手が2種類のとき：2種類の手の選び方 3 通り、全員がそのどちらかを出して全員が同じではない出し方 $2^{${n}}-2=${2 ** n - 2}$ 通り。あいこは $${T}-3\\times ${2 ** n - 2}=${cnt}$ 通り`,
+                `勝つ2人の選び方 $${C_(n, 2)}=${nCr(n, 2)}$ 通り、勝つ手の選び方 3 通り：$${nCr(n, 2)}\\times 3=${cnt}$ 通り`,
+              ][kind],
+              `$${fr(cnt, T)}$`,
+            ],
+          };
+        }),
       ],
       3: [
         t("HA-kakuritsu-3a", (r) => {
@@ -400,6 +539,39 @@ export const UNITS = [
             steps: [
               `${ev}が $k$ 回出ると位置は $${a === 1 ? "" : a}k-${b === 1 ? "" : b}(${n}-k)$。これが ${X} になるのは $k=${s}$`,
               `$${C_(n, s)}\\left(${ft(p)}\\right)^{${s}}\\left(${ft(q)}\\right)^{${n - s}}=${ft(v)}$`,
+            ],
+          };
+        }),
+        t("HA-kakuritsu-3c", (r) => {
+          const n = r(3, 4), kind = n === 3 ? r(0, 2) : r(0, 1), T = 6 ** n;
+          const vs = n === 3 ? "a,\\ b,\\ c" : "a,\\ b,\\ c,\\ d";
+          const inc = n === 3 ? "a<b<c" : "a<b<c<d", dec = n === 3 ? "a>b>c" : "a>b>c>d";
+          const cnt = [nCr(6, n), 2 * nCr(6, n), 55][kind];
+          const what = [`$${inc}$ となる`, `$${inc}$ または $${dec}$ となる`, "$a<b$ かつ $b>c$ となる"][kind];
+          return {
+            q: `1個のさいころを ${n} 回投げ、出た目を順に $${vs}$ とする。${what}確率は？`,
+            ans: fracAns(cnt, T),
+            hint: kind === 2 ? "真ん中の $b$ の値で場合分けする。" : "異なる目の組を先に選べば、小さい順（大きい順）に並べる方法は1通りに決まる。",
+            steps: kind === 2
+              ? ["$b=k$ のとき、$a,\\ c$ はどちらも $k$ より小さい $k-1$ 通りずつで $(k-1)^{2}$ 通り", "$b=1,\\ 2,\\ \\ldots,\\ 6$ について足して $0+1+4+9+16+25=55$ 通り", `$${fr(55, 216)}$`]
+              : [`異なる ${n} 個の目の選び方 $${C_(6, n)}=${nCr(6, n)}$ 通りに対して、${kind === 0 ? "小さい順に並べる並べ方は1通り" : "増加する並べ方・減少する並べ方はそれぞれ1通り"}`, `$\\frac{${kind === 0 ? "" : "2\\times "}${nCr(6, n)}}{${T}}=${fracTex(cnt, T)}$`],
+          };
+        }),
+        t("HA-kakuritsu-3d", (r) => {
+          const s = r(5, 16);
+          const combos = [];
+          for (let a = 1; a <= 6; a++) for (let b = a; b <= 6; b++) { const c = s - a - b; if (c >= b && c <= 6) combos.push([a, b, c]); }
+          const ks = combos.map(([a, b, c]) => (a === c ? 1 : a === b || b === c ? 3 : 6));
+          const cnt = ks.reduce((x, y) => x + y, 0);
+          const terms = [6, 3, 1].map((k) => [k, ks.filter((x) => x === k).length]).filter(([, c]) => c).map(([k, c]) => `${k}\\times ${c}`).join("+");
+          return {
+            q: `3個のさいころを同時に投げるとき、出た目の和が ${s} になる確率は？`,
+            ans: fracAns(cnt, 216),
+            hint: "目の組を大小の区別なしで書き出し、それぞれが何通りの出方にあたるか（並べ方）を数える。",
+            steps: [
+              `和が ${s} になる目の組（大小の区別なし）は ${combos.map((c) => `(${c.join(", ")})`).join(", ")}`,
+              `3つとも異なる組は $3!=6$ 通り、2つだけ同じ組は 3 通り、3つとも同じ組は 1 通りの出方にあたるので $${terms}=${cnt}$ 通り`,
+              `$${fr(cnt, 216)}$`,
             ],
           };
         }),
@@ -448,6 +620,39 @@ export const UNITS = [
               `すべての目が ${b}〜${a}：$${d + 1}^{${n}}$ 通り。そのうち ${a} がない：$${d}^{${n}}$、${b} がない：$${d}^{${n}}$、両方ない：$${d - 1}^{${n}}$`,
               `$${(d + 1) ** n}-2\\times ${d ** n}+${(d - 1) ** n}=${num}$ 通り`,
               `$${fr(num, 6 ** n)}$`,
+            ],
+          };
+        }),
+        t("HA-kakuritsu-4d", (r) => {
+          const n = r(5, 10);
+          const a = [1, 2];
+          for (let k = 2; k <= n; k++) a.push(a[k - 1] + a[k - 2]);
+          return {
+            q: `1枚の硬貨を ${n} 回投げるとき、表が2回以上続けて出ることが一度もない確率は？`,
+            ans: fracAns(a[n], 2 ** n),
+            hint: "最後の回が裏か表かで場合分けして、表が続かない出方の数の漸化式を作る。",
+            steps: [
+              `$k$ 回投げて表が続かない出方を $a_{k}$ 通りとすると $a_{1}=2,\\ a_{2}=3$`,
+              `最後が裏ならその前の $k-1$ 回は表が続かない出方で $a_{k-1}$ 通り、最後が表ならその前は裏で、さらに前の $k-2$ 回が $a_{k-2}$ 通り。よって $a_{k}=a_{k-1}+a_{k-2}$`,
+              Array.from({ length: n - 2 }, (_, i) => `$a_{${i + 3}}=${a[i + 3]}$`).join("、"),
+              `$\\frac{${a[n]}}{2^{${n}}}=${fracTex(a[n], 2 ** n)}$`,
+            ],
+          };
+        }),
+        t("HA-kakuritsu-4e", (r) => {
+          const n = r(3, 5), k = r(2, 3);
+          const sur = k === 2 ? 2 ** n - 2 : 3 ** n - 3 * 2 ** n + 3;
+          const cnt = nCr(6, k) * sur, T = 6 ** n;
+          return {
+            q: `${n} 個のさいころを同時に投げるとき、出た目がちょうど ${k} 種類である確率は？`,
+            ans: fracAns(cnt, T),
+            hint: "先に「出る目の種類」を選び、その目だけを使ってどの目も少なくとも1回出る出方を数える（使われない目がある場合を除く）。",
+            steps: [
+              `出る ${k} 種類の目の選び方は $${C_(6, k)}=${nCr(6, k)}$ 通り`,
+              k === 2
+                ? `その2種類の目だけが出て、両方とも出る出方：$2^{${n}}-2=${sur}$ 通り（全部同じ目になる2通りを除く）`
+                : `その3種類の目だけが出て、3種類とも出る出方：$3^{${n}}-3\\times(2^{${n}}-2)-3=${sur}$ 通り（ちょうど2種類・1種類になる場合を除く）`,
+              `$\\frac{${nCr(6, k)}\\times ${sur}}{6^{${n}}}=${fr(cnt, T)}$`,
             ],
           };
         }),
@@ -843,6 +1048,7 @@ export const UNITS = [
           const e = [r(1, 4), r(0, 2), r(0, 1)];
           const ps = [2, 3, 5];
           const N = ps.reduce((acc, p, i) => acc * p ** e[i], 1);
+          if (N === 2) return { skip: true }; // 自明な問題
           const used = ps.map((p, i) => [p, e[i]]).filter(([, k]) => k > 0);
           const sums = used.map(([p, k]) => (p ** (k + 1) - 1) / (p - 1));
           const v = sums.reduce((a, b) => a * b, 1);
@@ -894,6 +1100,7 @@ export const UNITS = [
           if (gcd(a, b) !== 1) return { skip: true };
           const r1 = r(1, a - 1), r2 = r(1, b - 1), big = r(0, 1) === 1;
           const n0 = Array.from({ length: b }, (_, i) => r1 + a * i).find((x) => x % b === r2);
+          if (!big && (n0 === r1 || n0 === r2)) return { skip: true }; // 答えが与えた余りそのものになる自明な組
           const list = Array.from({ length: (n0 - r1) / a + 1 }, (_, i) => r1 + a * i);
           let n = 0;
           if (big) { for (let x = 999; x >= 100; x--) if (x % a === r1 && x % b === r2) { n = x; break; } }
