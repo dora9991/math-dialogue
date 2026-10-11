@@ -1041,7 +1041,7 @@ const KOUJI = {
         return {
           q: `方程式 $${poly([1, 0, A, 0, B])}=0$ を解け。`,
           ans,
-          choices: choices4(r, ans, [tex(sol([-u, -v])), tex(sol([Math.abs(u), Math.abs(v)])), tex(listTex("x", [u, v]))],
+          choices: choices4(r, ans, [tex(sol([-u, -v])), Math.abs(u) !== Math.abs(v) ? tex(sol([Math.abs(u), Math.abs(v)])) : null, tex(listTex("x", [u, v]))],
             (i) => tex(sol([u + (u > 0 ? i + 1 : -(i + 1)), v]))),
           hint: "$x^{2}=t$ とおくと，$t$ の2次方程式になる。",
           steps: [
@@ -1233,20 +1233,21 @@ const KOUJI = {
         const k1 = [b * b, 4], k2 = [-a * (a + b), 1];
         const cubic = `x^{3}${signedVar(b - a, "x^{2}")}${a * b === 0 ? "+kx" : `+(k${signed(-a * b)})x`}${signedVar(-a, "k")}`;
         const quad = `x^{2}${signedVar(b)}+k`;
-        const ans = tex(listFrac("k", [k1, k2]));
+        const kl = (vals) => listFrac("k", vals.filter((v, i) => vals.findIndex((w) => w[0] * v[1] === v[0] * w[1]) === i)); // 同じ値は1つに
+        const ans = tex(kl([k1, k2]));
         return {
           q: `3次方程式 $${cubic}=0$ が2重解をもつような定数 $k$ の値をすべて求めよ。`,
           ans,
           choices: choices4(r, ans, [
             tex(`k=${fracTex(...k1)}`),
             tex(`k=${fracTex(...k2)}`),
-            tex(listFrac("k", [k1, [a * (a + b), 1]])),
-          ], (i) => tex(listFrac("k", [k1, [k2[0] + i + 1, 1]]))),
+            tex(kl([k1, [a * (a + b), 1]])),
+          ], (i) => tex(kl([k1, [k2[0] + i + 1, 1]]))),
           hint: "$k$ の値によらず成り立つ解を1つ見つけて，左辺を因数分解する。",
           steps: [
             `$P(x)=${cubic}$ とおくと $P(${a})=0$（$k$ によらない）より $P(x)=${fx(a)}(${quad})$`,
             `(i) $${quad}=0$ が重解をもつとき：$D=${b === 0 ? "" : b * b}-4k=0$ より $k=${fracTex(...k1)}$（重解 $x=${fracTex(-b, 2)}$ は $${a}$ と異なる）`,
-            `(ii) $${quad}=0$ が $x=${a}$ を解にもつとき：$${a * a}${signed(a * b)}+k=0$ より $k=${k2[0]}$（もう1つの解 $x=${-a - b}$ は $${a}$ と異なる）`,
+            `(ii) $${quad}=0$ が $x=${a}$ を解にもつとき：$${a * a}${a * b ? signed(a * b) : ""}+k=0$ より $k=${k2[0]}$（もう1つの解 $x=${-a - b}$ は $${a}$ と異なる）`,
             `答え：${ans}`,
           ],
         };
@@ -1377,7 +1378,7 @@ const ZUHOU = {
           hint: "傾き $\\frac{y_{2}-y_{1}}{x_{2}-x_{1}}$ を求め，$y-y_{1}=m(x-x_{1})$ に代入する。",
           steps: [
             `傾きは $\\frac{${y2}-${par(y1)}}{${x2}-${par(x1)}}=${mT}$`,
-            `$y-${par(y1)}=${mT === "1" ? "" : mT === "-1" ? "-" : mT}(x-${par(x1)})$`,
+            `$${y1 ? `y${signed(-y1)}` : "y"}=${(() => { const mC = mT === "1" ? "" : mT === "-1" ? "-" : mT, xs = x1 ? `x${signed(-x1)}` : "x"; return mC === "" || !x1 ? `${mC}${xs}` : `${mC}(${xs})`; })()}$`,
             `整理して，答え：${ans}`,
           ],
         };
@@ -1450,14 +1451,15 @@ const ZUHOU = {
         const t0 = N % 2 === 0 ? rnz(r, -3, 3) : 2 * rnz(r, -2, 2);
         const c = (t0 * N) / 2 - a * x0 - b * y0;
         const x1 = x0 - t0 * a, y1 = y0 - t0 * b;
+        const sx = x0 ? `${x0}+p` : "p", sy = y0 ? `${y0}+q` : "q";
         const askX = r(0, 1) === 1;
         return {
           q: `直線 $${coefVar(a)}${signedVar(b, "y")}${c ? signed(c) : ""}=0$ に関して，点 $A(${x0},\\ ${y0})$ と対称な点 $B$ の ${askX ? "$x$" : "$y$"} 座標を求めよ。`,
           ans: askX ? x1 : y1,
           hint: "$B(p,\\ q)$ とおき，「直線 $AB$ が与えられた直線に垂直」「線分 $AB$ の中点が直線上にある」の2つを式にする。",
           steps: [
-            `$B(p,\\ q)$ とおく。直線の傾きは $${fracTex(-a, b)}$ なので，$AB$ の傾きは $\\frac{q-${par(y0)}}{p-${par(x0)}}=${fracTex(b, a)}$`,
-            `中点 $\\left(\\frac{${x0}+p}{2},\\ \\frac{${y0}+q}{2}\\right)$ が直線上にあるので $${coefVar(a, `(${x0}+p)`)}${signedVar(b, `(${y0}+q)`)}${c ? signed(2 * c) : ""}=0$`,
+            `$B(p,\\ q)$ とおく。直線の傾きは $${fracTex(-a, b)}$ なので，$AB$ の傾きは $\\frac{${y0 ? `q${signed(-y0)}` : "q"}}{${x0 ? `p${signed(-x0)}` : "p"}}=${fracTex(b, a)}$`,
+            `中点 $\\left(\\frac{${sx}}{2},\\ \\frac{${sy}}{2}\\right)$ が直線上にあるので $${coefVar(a, x0 ? `(${sx})` : "p")}${signedVar(b, y0 ? `(${sy})` : "q")}${c ? signed(2 * c) : ""}=0$`,
             `これを解いて $p=${x1}$，$q=${y1}$。答え：$${askX ? x1 : y1}$`,
           ],
         };
@@ -1612,7 +1614,7 @@ const ZUHOU = {
           hint: "点 $P(X,\\ Y)$ を通る傾き $m$ の直線が放物線に接する条件（判別式 $=0$）を $m$ の2次方程式にし，2つの解（2本の接線の傾き）の積を考える。",
           steps: [
             `$P(X,\\ Y)$ を通る傾き $m$ の直線 $y=m(x-X)+Y$ と放物線の式から $y$ を消去すると $${coefVar(a, "x^{2}")}-mx+mX-Y${c ? signed(c) : ""}=0$`,
-            `接する条件 $D=0$ より $m^{2}-4\\cdot ${par(a)}(mX-Y${c ? signed(c) : ""})=0$，すなわち $m^{2}${signedVar(-4 * a, "Xm")}${signedVar(4 * a, yc)}=0$`,
+            `接する条件 $D=0$ より $m^{2}-${a === 1 ? "4" : `4\\cdot ${par(a)}`}(mX-Y${c ? signed(c) : ""})=0$，すなわち $m^{2}${signedVar(-4 * a, "Xm")}${signedVar(4 * a, yc)}=0$`,
             `2本の接線の傾きの積が $-1$ なので $${4 * a}${yc}=-1$，$Y=${Y}$（このとき判別式は正で，接線は2本引ける）`,
             `答え：${ans}`,
           ],
@@ -3099,21 +3101,23 @@ const BIBUN = {
         const f = (x) => x ** 3 + c * x + d;
         const n1 = d - 2 * tt ** 3, n2 = d + 2 * tt ** 3;
         const L = (n) => `y=${poly([m, n])}`;
-        const ans = tex(`${L(n1)},\\ ${L(n2)}`);
-        const mm = m === 1 ? "" : m;
+        const L2 = (u, v) => `${L(Math.min(u, v))},\\ ${L(Math.max(u, v))}`; // 小さい順（同じ組の誤答が重複しないように）
+        const ans = tex(L2(n1, n2));
+        const tl = (y0, xs) => `${y0 ? `y${signed(-y0)}` : "y"}=${m === 1 ? xs : `${m}(${xs})`}`; // 点(t, y0) を通る傾き m の直線
+        const tline = (y0, xs, n) => (tl(y0, xs) === L(n) ? `$${L(n)}$` : `$${tl(y0, xs)}$，すなわち $${L(n)}$`);
         return {
           q: `曲線 $y=${poly([1, 0, c, d])}$ の接線のうち，傾きが $${m}$ であるものの方程式をすべて求めよ。`,
           ans,
           choices: choices4(r, ans, [
             tex(L(n1)),
-            tex(`${L(d - tt ** 3)},\\ ${L(d + tt ** 3)}`),
-            tex(`${L(f(tt))},\\ ${L(f(-tt))}`),
-          ], (i) => tex(`${L(n1 - i - 1)},\\ ${L(n2 + i + 1)}`)),
+            tex(L2(d - tt ** 3, d + tt ** 3)),
+            tex(L2(f(tt), f(-tt))),
+          ], (i) => tex(L2(n1 - i - 1, n2 + i + 1))),
           hint: "接点の $x$ 座標を $a$ とおき，$f'(a)$ が傾きに等しいとして $a$ を求める。",
           steps: [
             `$y'=${poly([3, 0, c])}$。接点の $x$ 座標を $a$ とすると $${poly([3, 0, c], "a")}=${m}$ より $a=\\pm ${tt}$`,
-            `$a=${tt}$ のとき接点は $(${tt},\\ ${f(tt)})$ で，接線は $y-${par(f(tt))}=${mm}(x-${tt})$，すなわち $${L(n1)}$`,
-            `$a=${-tt}$ のとき接点は $(${-tt},\\ ${f(-tt)})$ で，接線は $y-${par(f(-tt))}=${mm}(x+${tt})$，すなわち $${L(n2)}$`,
+            `$a=${tt}$ のとき接点は $(${tt},\\ ${f(tt)})$ で，接線は ${tline(f(tt), `x-${tt}`, n1)}`,
+            `$a=${-tt}$ のとき接点は $(${-tt},\\ ${f(-tt)})$ で，接線は ${tline(f(-tt), `x+${tt}`, n2)}`,
             `答え：${ans}`,
           ],
         };
@@ -3375,7 +3379,7 @@ const SEKIBUN = {
           steps: [
             `$f(x)=\\int(${poly([A, B, Cc])})\\,dx=${poly([A / 3, B / 2, Cc, 0])}+C$`,
             `$f(${p})=${F(p)}+C=${v}$ より $C=${C0}$`,
-            `$f(${q})=${F(q)}${signed(C0)}=${ans}$`,
+            `$f(${q})=${F(q)}${C0 ? `${signed(C0)}=${ans}` : ""}$`,
           ],
         };
       }),
@@ -3463,7 +3467,7 @@ const SEKIBUN = {
           steps: [
             `$${poly(co)}=${fac}$ より，$x$ 軸との共有点の $x$ 座標は $${lo},\\ ${hi}$`,
             `$${lo}\\leqq x\\leqq ${hi}$ で $y${pos ? "\\geqq" : "\\leqq"} 0$`,
-            `$S=${pos ? "" : "-"}\\int_{${lo}}^{${hi}}${fac}\\,dx=${fracTex(...S)}$`,
+            `$S=${pos ? "" : "-"}\\int_{${lo}}^{${hi}}${fac.startsWith("-") ? `\\left\\{${fac}\\right\\}` : fac}\\,dx=${fracTex(...S)}$`,
           ],
         };
       }),
