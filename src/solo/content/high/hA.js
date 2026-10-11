@@ -704,6 +704,42 @@ export const UNITS = [
             steps: [`$${x}\\times\\frac{${a}}{${N}}+${y}\\times\\frac{${b}}{${N}}+0$`, `$=\\frac{${x * a + y * b}}{${N}}=${fracTex(...E)}$ 円`],
           };
         }),
+        t("HA-joken-1c", (r) => {
+          const s = r(7, 10);
+          const conds = [["大きいさいころの目が偶数である", ([a]) => a % 2 === 0], ["少なくとも一方の目が 6 である", ([a, b]) => a === 6 || b === 6], ["目の和が偶数である", ([a, b]) => (a + b) % 2 === 0]];
+          const evs = [[`目の和が ${s} 以上である`, ([a, b]) => a + b >= s], ["2つの目が等しい", ([a, b]) => a === b], ["小さいさいころの目が 3 の倍数である", ([, b]) => b % 3 === 0]];
+          const [cn, cf] = pick(r, conds), [en, ef] = pick(r, evs);
+          const A = dice(2).filter(cf), AB = A.filter(ef);
+          if (AB.length === 0 || AB.length === A.length) return { skip: true };
+          return {
+            q: `大小2個のさいころを投げる。${cn}とき、${en}確率は？`,
+            ans: fracAns(AB.length, A.length),
+            hint: "条件となる出方だけを全体と考えて、その中で数える。$P_{A}(B)=\\frac{n(A\\cap B)}{n(A)}$",
+            steps: [`${cn}出方は ${A.length} 通り`, `そのうち${en}ものは ${AB.length} 通り`, `$${fr(AB.length, A.length)}$`],
+          };
+        }),
+        t("HA-joken-1d", (r) => {
+          if (r(0, 1)) {
+            const x = r(5, 12), y = r(2, 6), z = r(0, 3);
+            if (!(x > y && y > z)) return { skip: true };
+            return {
+              q: `1個のさいころを投げて、1 の目が出たら ${x} 点、2 か 3 の目が出たら ${y} 点、4 以上の目が出たら ${z} 点をもらえる。もらえる得点の期待値は？`,
+              ans: fracAns(x + 2 * y + 3 * z, 6),
+              unit: "点",
+              hint: "（得点）×（その得点をもらえる確率）をすべて足す。",
+              steps: ["それぞれの確率は $\\frac{1}{6},\\ \\frac{2}{6},\\ \\frac{3}{6}$", `$${x}\\times\\frac{1}{6}+${y}\\times\\frac{2}{6}+${z}\\times\\frac{3}{6}=${fr(x + 2 * y + 3 * z, 6)}$ 点`],
+            };
+          }
+          const x = pick(r, [800, 1000, 1200, 1600, 2000]), y = pick(r, [200, 400, 600, 800]);
+          if (y >= x) return { skip: true };
+          return {
+            q: `硬貨を3枚同時に投げて、3枚とも表なら ${x} 円、ちょうど2枚が表なら ${y} 円をもらい、それ以外は何ももらえない。もらえる金額の期待値は？`,
+            ans: fracAns(x + 3 * y, 8),
+            unit: "円",
+            hint: "（金額）×（その金額をもらえる確率）をすべて足す。表の枚数の確率は 8 通りの出方で数える。",
+            steps: [`3枚とも表：$\\frac{1}{8}$、ちょうど2枚が表：$\\frac{${C_(3, 2)}}{8}=\\frac{3}{8}$`, `$${x}\\times\\frac{1}{8}+${y}\\times\\frac{3}{8}+0=${fr(x + 3 * y, 8)}$ 円`],
+          };
+        }),
       ],
       2: [
         t("HA-joken-2a", (r) => {
@@ -729,6 +765,38 @@ export const UNITS = [
             steps: [
               `全体 $${C_(N, 2)}=${T}$。赤 0 個：${p0} 通り、1 個：${p1} 通り、2 個：${p2} 通り`,
               `$0\\times\\frac{${p0}}{${T}}+1\\times\\frac{${p1}}{${T}}+2\\times\\frac{${p2}}{${T}}=${fr(p1 + 2 * p2, T)}$`,
+            ],
+          };
+        }),
+        t("HA-joken-2c", (r) => {
+          const a1 = r(1, 5), b1 = r(1, 5), a2 = r(1, 5), b2 = r(1, 5);
+          const n1 = a1 + b1, n2 = a2 + b2;
+          const v = fadd(fmul([a1, n1], [a2 + 1, n2 + 1]), fmul([b1, n1], [a2, n2 + 1]));
+          return {
+            q: `袋 A には赤玉 ${a1} 個と白玉 ${b1} 個、袋 B には赤玉 ${a2} 個と白玉 ${b2} 個が入っている。袋 A から玉を1個取り出して袋 B に入れ、よくかき混ぜてから袋 B から玉を1個取り出す。袋 B から取り出した玉が赤玉である確率は？`,
+            ans: fa(v),
+            hint: "袋 A から移した玉が赤か白かで場合分けし、乗法定理で掛けてから足す。",
+            steps: [
+              `赤を移す（確率 $${fr(a1, n1)}$）と B は赤 ${a2 + 1} 個・白 ${b2} 個になり、赤を取り出す確率は $${fr(a2 + 1, n2 + 1)}$`,
+              `白を移す（確率 $${fr(b1, n1)}$）と B は赤 ${a2} 個・白 ${b2 + 1} 個になり、赤を取り出す確率は $${fr(a2, n2 + 1)}$`,
+              `$${ft([a1, n1])}\\times ${ft([a2 + 1, n2 + 1])}+${ft([b1, n1])}\\times ${ft([a2, n2 + 1])}=${ft(v)}$`,
+            ],
+          };
+        }),
+        t("HA-joken-2d", (r) => {
+          const a = r(1, 2), b = r(1, 3), c = r(3, 6), x = pick(r, [1000, 500]), y = pick(r, [100, 200]);
+          const N = a + b + c, T = nCr(N, 2);
+          const rows = [[2 * x, nCr(a, 2)], [x + y, a * b], [x, a * c], [2 * y, nCr(b, 2)], [y, b * c], [0, nCr(c, 2)]].filter(([, k]) => k > 0);
+          const S = rows.reduce((s, [v, k]) => s + v * k, 0);
+          return {
+            q: `${x} 円の当たりが ${a} 本、${y} 円の当たりが ${b} 本、外れが ${c} 本の、合わせて ${N} 本のくじがある。このくじを同時に2本引くとき、もらえる賞金の合計の期待値は？`,
+            ans: fracAns(S, T),
+            unit: "円",
+            hint: "引いた2本の組合せごとに賞金の合計がいくらになるかで場合を分け、それぞれの確率を求める。",
+            steps: [
+              `2本の引き方は全部で $${C_(N, 2)}=${T}$ 通り`,
+              `賞金の合計は ${rows.map(([v, k]) => `${v} 円が ${k} 通り`).join("、")}`,
+              `$\\frac{${rows.filter(([v]) => v > 0).map(([v, k]) => `${v}\\times ${k}`).join("+")}}{${T}}=${fr(S, T)}$ 円`,
             ],
           };
         }),
@@ -770,6 +838,44 @@ export const UNITS = [
             ],
           };
         }),
+        t("HA-joken-3c", (r) => {
+          const a = r(2, 6), w = r(2, 6), N = a + w, kind = r(0, 2), D = N * (N - 1);
+          const second = kind === 2 ? "白" : "赤", first = kind === 1 ? "白" : "赤";
+          const s2 = kind === 2 ? w : a;
+          const [f1, f2] = [[a, a - 1], [w, a], [a, w]][kind];
+          const num = f1 * f2, den = s2 * (N - 1);
+          return {
+            q: `袋の中に赤玉 ${a} 個と白玉 ${w} 個が入っている。この袋から玉を1個ずつ2回取り出す（取り出した玉は戻さない）。2回目に取り出した玉が${second}玉であったとき、1回目に取り出した玉が${first}玉である確率は？`,
+            ans: fracAns(num, den),
+            hint: "2回目の結果がわかったときの、1回目についての条件付き確率。$P_{B}(A)=\\frac{P(A\\cap B)}{P(B)}$",
+            steps: [
+              `2回目が${second}玉である確率：$\\frac{${a}}{${N}}\\cdot\\frac{${kind === 2 ? w : a - 1}}{${N - 1}}+\\frac{${w}}{${N}}\\cdot\\frac{${kind === 2 ? w - 1 : a}}{${N - 1}}=\\frac{${den}}{${D}}$`,
+              `1回目が${first}玉で2回目が${second}玉である確率：$\\frac{${f1}}{${N}}\\cdot\\frac{${f2}}{${N - 1}}=\\frac{${num}}{${D}}$`,
+              `求める確率は $\\frac{${num}}{${D}}\\div\\frac{${den}}{${D}}=${fracTex(num, den)}$`,
+            ],
+          };
+        }),
+        t("HA-joken-3d", (r) => {
+          const n = r(3, 5);
+          const [ev, p] = pick(r, [["1 の目", [1, 6]], ["3 の倍数の目", [1, 3]], ["偶数の目", [1, 2]]]);
+          const qq = [p[1] - p[0], p[1]];
+          const ps = [];
+          for (let k = 1; k < n; k++) ps.push(fmul(fpow(qq, k - 1), p));
+          ps.push(fpow(qq, n - 1));
+          let E = [0, 1];
+          ps.forEach((x, i) => { E = fadd(E, fmul([i + 1, 1], x)); });
+          return {
+            q: `1個のさいころを、${ev}が出るか、${n} 回投げ終わるまで投げ続ける。投げる回数の期待値は？`,
+            ans: fa(E),
+            unit: "回",
+            hint: `$k$ 回目で終わる確率を求める。${n} 回目まで進んだら、${n} 回目の目に関係なく終わることに注意。`,
+            steps: [
+              `$k$ 回目（$k<${n}$）で終わる確率は $\\left(${ft(qq)}\\right)^{k-1}\\cdot ${ft(p)}$、${n} 回目まで投げる確率は $\\left(${ft(qq)}\\right)^{${n - 1}}$`,
+              `$1,\\ 2,\\ \\ldots,\\ ${n}$ 回で終わる確率は順に ${ps.map((x) => tex(ft(x))).join(", ")}`,
+              `$E=${ps.map((x, i) => `${i + 1}\\times ${ft(x)}`).join("+")}=${ft(E)}$`,
+            ],
+          };
+        }),
       ],
       4: [
         t("HA-joken-4a", (r) => {
@@ -806,6 +912,47 @@ export const UNITS = [
               `$k$ 回目に初めて赤：白が $k-1$ 回続いたあと赤。$k=1,\\ \\ldots,\\ ${w + 1}$`,
               `確率は順に ${ps.map((x) => tex(ft(x))).join(", ")}`,
               `$E=\\sum k\\,P(k)=${ft(E)}$`,
+            ],
+          };
+        }),
+        t("HA-joken-4c", (r) => {
+          const [m, shape] = pick(r, [[4, "正四面体"], [6, ""], [8, "正八面体"], [12, "正十二面体"], [20, "正二十面体"]]);
+          const T = r(2, 3);
+          const Es = [[m + 1, 2]];
+          const lines = [];
+          for (let t2 = 2; t2 <= T; t2++) {
+            const prev = Es[t2 - 2];
+            const th = Math.floor(prev[0] / prev[1]) + 1, cont = th - 1;
+            let sumStop = 0;
+            for (let x = th; x <= m; x++) sumStop += x;
+            const E = fmul(fadd([sumStop, 1], fmul([cont, 1], prev)), [1, m]);
+            Es.push(E);
+            lines.push(`${t2} 回まで投げられるとき：1回目の目が $${ft(prev)}$ より大きい ${th === m ? m : `${th}〜${m}`} ならやめ、${cont === 1 ? "1" : `1〜${cont}`} なら投げ直す（その後の期待値は $${ft(prev)}$）。期待値は $\\frac{${sumStop}+${cont}\\times ${ft(prev)}}{${m}}=${ft(E)}$`);
+          }
+          const ET = Es[T - 1];
+          return {
+            q: `${shape ? `1 から ${m} までの目が同様に確からしく出る${shape}のさいころ` : "1個のさいころ"}を投げて、出た目を得点としてやめるか、その目を捨てて投げ直すかを選べる。ただし投げられるのは最大 ${T} 回で、${T} 回目に出た目はそのまま得点になる。得点の期待値が最大になるように行動するとき、その期待値は？`,
+            ans: fa(ET),
+            unit: "点",
+            hint: "最後の回から逆に考える。「投げ直したときの期待値」と今の目を比べ、大きい方を選ぶ。",
+            steps: [`1回だけなら期待値は $\\frac{1+2+\\cdots+${m}}{${m}}=${ft(Es[0])}$`, ...lines, `よって期待値は $${ft(ET)}$`],
+          };
+        }),
+        t("HA-joken-4d", (r) => {
+          const n = r(3, 4), b = r(3, 5);
+          const sur = (k) => { let s = 0; for (let j = 0; j <= k; j++) s += (-1) ** j * nCr(k, j) * (k - j) ** b; return s; };
+          const rows = [];
+          for (let e = 0; e < n; e++) { const c = nCr(n, e) * sur(n - e); if (c > 0) rows.push([e, c, sur(n - e)]); }
+          const T = n ** b, S = rows.reduce((s, [e, c]) => s + e * c, 0);
+          return {
+            q: `区別のつく ${b} 個の玉を、区別のつく ${n} 個の箱に入れる。どの玉もどの箱にも同様に確からしく入るとき、空の箱の個数の期待値は？`,
+            ans: fracAns(S, T),
+            unit: "個",
+            hint: "空の箱の個数ごとに場合を分ける。「残りの箱すべてに少なくとも1個入る」入れ方は、空き箱ができる場合を除いて数える。",
+            steps: [
+              `入れ方は全部で $${n}^{${b}}=${T}$ 通り。$k$ 個の箱すべてに少なくとも1個入る入れ方は、$k=1$ で 1、$k=2$ で $2^{${b}}-2$、$k=3$ で $3^{${b}}-3(2^{${b}}-2)-3$${n === 4 ? `、$k=4$ で $4^{${b}}-4\\times ${sur(3)}-6\\times ${sur(2)}-4$` : ""} 通り`,
+              `空の箱が ${rows.map(([e, c, s]) => `${e} 個：$${C_(n, e)}\\times ${s}=${c}$ 通り`).join("、")}`,
+              `$E=\\frac{${rows.filter(([e]) => e > 0).map(([e, c]) => `${e}\\times ${c}`).join("+")}}{${T}}=${fr(S, T)}$ 個`,
             ],
           };
         }),

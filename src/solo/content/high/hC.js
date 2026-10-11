@@ -187,6 +187,25 @@ const VECTOR = {
           ],
         };
       }),
+      t("HC-vector-1d", (r) => {
+        // ベクトルの分解 c = s a + t b
+        const a = [r(-3, 3), r(-3, 3)], b = [r(-3, 3), r(-3, 3)];
+        if (a[0] * b[1] - a[1] * b[0] === 0) return { skip: true };
+        const s = rnz(r, -3, 3), u = rnz(r, -3, 3);
+        const c = [s * a[0] + u * b[0], s * a[1] + u * b[1]];
+        const askS = r(0, 1) === 1;
+        const ex = (i) => lin([[a[i], 1, "s"], [b[i], 1, "t"]]);
+        return {
+          q: `$\\vec{a}=${vt(a)}$, $\\vec{b}=${vt(b)}$ とする。$\\vec{c}=${vt(c)}$ を $\\vec{c}=s\\vec{a}+t\\vec{b}$ の形に表すとき、実数 $${askS ? "s" : "t"}$ の値を求めよ。`,
+          ans: askS ? s : u,
+          hint: "$s\\vec{a}+t\\vec{b}$ を成分で表し、$\\vec{c}$ と x 成分・y 成分をそれぞれ比べる。",
+          steps: [
+            `$s\\vec{a}+t\\vec{b}=(${ex(0)},\\ ${ex(1)})$`,
+            `成分を比べて $${ex(0)}=${c[0]}$, $${ex(1)}=${c[1]}$`,
+            `この連立方程式を解いて $s=${s}$, $t=${u}$`,
+          ],
+        };
+      }),
     ],
     2: [
       t("HC-vector-2a", (r) => {
@@ -273,6 +292,32 @@ const VECTOR = {
           ],
         };
       }),
+      t("HC-vector-2d", (r) => {
+        // |pa + qb| を |a|, |b|, a・b から
+        const A = r(1, 4), B = r(1, 4);
+        if (A * B < 2) return { skip: true };
+        const d = rnz(r, -(A * B - 1), A * B - 1);
+        const p = rnz(r, -3, 3), q = rnz(r, -3, 3);
+        const N = p * p * A * A + 2 * p * q * d + q * q * B * B;
+        const ex = lin([[p, 1, "\\vec{a}"], [q, 1, "\\vec{b}"]]);
+        const ans = `$${sqrtTex(1, N)}$`;
+        return {
+          q: `$|\\vec{a}|=${A}$, $|\\vec{b}|=${B}$, $\\vec{a}\\cdot\\vec{b}=${d}$ のとき、$|${ex}|$ を求めよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            `$${sqrtTex(1, p * p * A * A + q * q * B * B)}$`,
+            `$${sqrtTex(1, p * p * A * A - 2 * p * q * d + q * q * B * B)}$`,
+            `$${sqrtTex(1, p * p * A * A + p * q * d + q * q * B * B)}$`,
+            `$${N}$`,
+          ], (i) => `$${sqrtTex(1, N + i + 1)}$`),
+          hint: `$|${ex}|^{2}$ を展開して、$|\\vec{a}|$, $|\\vec{b}|$, $\\vec{a}\\cdot\\vec{b}$ の値を代入する。`,
+          steps: [
+            `$|${ex}|^{2}=${lin([[p * p, 1, "|\\vec{a}|^{2}"], [2 * p * q, 1, "\\vec{a}\\cdot\\vec{b}"], [q * q, 1, "|\\vec{b}|^{2}"]])}$`,
+            `$=${p * p}\\times${A * A}${signed(2 * p * q)}\\times${par(d)}+${q * q}\\times${B * B}=${N}$`,
+            `よって $|${ex}|=${sqrtTex(1, N)}$`,
+          ],
+        };
+      }),
     ],
     3: [
       t("HC-vector-3a", (r) => {
@@ -333,6 +378,26 @@ const VECTOR = {
             `BP:PC $=v:(1-v)$ とおくと $\\overrightarrow{OP}=${k1}v\\vec{a}+(1-v)\\vec{b}$`,
             `係数を比べて $1-u=${k1}v$, $${k2}u=1-v$ を解く`,
             `${ans}`,
+          ],
+        };
+      }),
+      t("HC-vector-3d", (r) => {
+        // 点 P の存在範囲（s≧0, t≧0, m≦αs+βt≦k）の面積
+        const al = r(1, 4), be = r(1, 4), k = r(1, 4);
+        const m = r(0, k - 1);
+        const L = lin([[al, 1, "s"], [be, 1, "t"]]);
+        const cond = m === 0 ? `$s\\geqq0$, $t\\geqq0$, $${L}\\leqq${k}$` : `$s\\geqq0$, $t\\geqq0$, $${m}\\leqq ${L}\\leqq${k}$`;
+        const uo = (c) => (c === 1 ? "u" : `\\frac{u}{${c}}`);
+        return {
+          q: `△OAB の面積を $S$ とする。実数 $s$, $t$ が ${cond} を満たしながら動くとき、$\\overrightarrow{OP}=s\\overrightarrow{OA}+t\\overrightarrow{OB}$ で定まる点 P の存在範囲の面積は $S$ の何倍か。`,
+          ans: fracAns(k * k - m * m, al * be),
+          hint: `$${L}=u$（一定）のとき点 P がどんな線分上にあるかを考え、次に u を動かす。`,
+          steps: [
+            `$${L}=u$ $(u>0)$ とおくと $\\overrightarrow{OP}=\\frac{${al === 1 ? "" : al}s}{u}\\left(${uo(al)}\\overrightarrow{OA}\\right)+\\frac{${be === 1 ? "" : be}t}{u}\\left(${uo(be)}\\overrightarrow{OB}\\right)$ で、係数は0以上・和が1。P は $${uo(al)}\\overrightarrow{OA}$, $${uo(be)}\\overrightarrow{OB}$ の終点を結ぶ線分上にある`,
+            `$u=${k}$ のとき、この線分と O でできる三角形の面積は $${fracTex(k, al)}\\times${fracTex(k, be)}\\times S=${termTex(k * k, al * be, "S")}$`,
+            m === 0
+              ? `P の存在範囲はこの三角形の周と内部で、面積は $S$ の $${fracTex(k * k, al * be)}$ 倍`
+              : `$u=${m}$ のときの三角形（面積 $${termTex(m * m, al * be, "S")}$）を除いた台形の周と内部で、面積は $S$ の $${fracTex(k * k - m * m, al * be)}$ 倍`,
           ],
         };
       }),
@@ -420,6 +485,49 @@ const VECTOR = {
           ],
         };
       }),
+      t("HC-vector-4d", (r) => {
+        // 大きさが決まった3つのベクトルで a・b+b・c+c・a の最小値（|a+b+c| の最小に帰着、三角不等式で場合分け）
+        const L = [r(1, 7), r(1, 7), r(1, 7)];
+        const S2 = L[0] * L[0] + L[1] * L[1] + L[2] * L[2];
+        const iM = L.indexOf(Math.max(...L));
+        const rest = L[0] + L[1] + L[2] - L[iM];
+        const mn = Math.max(0, L[iM] - rest);
+        const NM = ["\\vec{a}", "\\vec{b}", "\\vec{c}"];
+        const oth = [0, 1, 2].filter((i) => i !== iM);
+        return {
+          q: `平面上のベクトル $\\vec{a}$, $\\vec{b}$, $\\vec{c}$ が $|\\vec{a}|=${L[0]}$, $|\\vec{b}|=${L[1]}$, $|\\vec{c}|=${L[2]}$ を満たしながら動くとき、$\\vec{a}\\cdot\\vec{b}+\\vec{b}\\cdot\\vec{c}+\\vec{c}\\cdot\\vec{a}$ の最小値を求めよ。`,
+          ans: fracAns(mn * mn - S2, 2),
+          hint: "$|\\vec{a}+\\vec{b}+\\vec{c}|^{2}$ を展開すると、求める式は $|\\vec{a}+\\vec{b}+\\vec{c}|$ だけで表せる。",
+          steps: [
+            `$|\\vec{a}+\\vec{b}+\\vec{c}|^{2}=${S2}+2(\\vec{a}\\cdot\\vec{b}+\\vec{b}\\cdot\\vec{c}+\\vec{c}\\cdot\\vec{a})$ より、求める式は $\\frac{|\\vec{a}+\\vec{b}+\\vec{c}|^{2}-${S2}}{2}$`,
+            mn === 0
+              ? `どの長さも他の2つの和以下なので、3つのベクトルを順につないで三角形（または一直線）を作れば $\\vec{a}+\\vec{b}+\\vec{c}=\\vec{0}$ にできる。よって $|\\vec{a}+\\vec{b}+\\vec{c}|$ の最小値は $0$`
+              : `$|${NM[iM]}|=${L[iM]}$ は他の2つの和 $${L[oth[0]]}+${L[oth[1]]}=${rest}$ より大きいので、$|\\vec{a}+\\vec{b}+\\vec{c}|\\geqq${L[iM]}-${rest}=${mn}$（他の2つを $${NM[iM]}$ と逆向きにそろえたとき等号）`,
+            `最小値は $\\frac{${mn * mn}-${S2}}{2}=${fracTex(mn * mn - S2, 2)}$`,
+          ],
+        };
+      }),
+      t("HC-vector-4e", (r) => {
+        // 外心 O と pOA+qOB+rOC=0 から △ABC の面積（移項して2乗 → 3つの三角形に分割）
+        const HER = [[3, 4, 5, 6], [5, 5, 6, 12], [5, 5, 8, 12], [5, 12, 13, 30], [4, 13, 15, 24], [13, 14, 15, 84], [9, 10, 17, 36], [8, 15, 17, 60]];
+        const [x0, y0, z0, D] = pick(r, HER); // 3辺の長さが x0, y0, z0 の三角形の面積が D
+        const [p, q, s] = shuffle(r, [x0, y0, z0]);
+        const R = r(1, 2);
+        const eq = `${lin([[p, 1, "\\overrightarrow{OA}"], [q, 1, "\\overrightarrow{OB}"], [s, 1, "\\overrightarrow{OC}"]])}=\\vec{0}`;
+        const cs = (u, v, w) => fracTex(w * w - u * u - v * v, 2 * u * v);
+        const sn = (u, v) => fracTex(2 * D, u * v);
+        return {
+          q: `点 O を中心とする半径 ${R} の円周上に3点 A, B, C があり、$${eq}$ を満たしている。△ABC の面積を求めよ。`,
+          ans: fracAns(R * R * D * (p + q + s), p * q * s),
+          hint: "1つのベクトルを移項して両辺の大きさを2乗すると、$\\angle AOB$ などの余弦が求まる。",
+          steps: [
+            `$${lin([[p, 1, "\\overrightarrow{OA}"], [q, 1, "\\overrightarrow{OB}"]])}=${termTex(-s, 1, "\\overrightarrow{OC}")}$ の両辺の大きさを2乗し、$|\\overrightarrow{OA}|=|\\overrightarrow{OB}|=|\\overrightarrow{OC}|=${R}$ を使うと $\\cos\\angle AOB=${cs(p, q, s)}$`,
+            `同様に $\\cos\\angle BOC=${cs(q, s, p)}$, $\\cos\\angle COA=${cs(s, p, q)}$ で、$\\sin\\angle AOB=${sn(p, q)}$, $\\sin\\angle BOC=${sn(q, s)}$, $\\sin\\angle COA=${sn(s, p)}$`,
+            `係数がすべて正なので O は △ABC の内部にあり、△ABC $=\\triangle OAB+\\triangle OBC+\\triangle OCA=${fracTex(R * R, 2)}(\\sin\\angle AOB+\\sin\\angle BOC+\\sin\\angle COA)$`,
+            `$=${fracTex(R * R * D * (p + q + s), p * q * s)}$`,
+          ],
+        };
+      }),
     ],
   },
 };
@@ -488,6 +596,29 @@ const KUKAN = {
           steps: [
             `${name} 座標は $\\frac{${n}\\times${par(A[c])}+${m}\\times${par(B[c])}}{${m}+${n}}=\\frac{${num}}{${m + n}}$`,
             `$=${fracTex(num, m + n)}$`,
+          ],
+        };
+      }),
+      t("HC-kukan-1d", (r) => {
+        // 座標平面・座標軸・原点に関する対称点
+        const P = [rnz(r, -5, 5), rnz(r, -5, 5), rnz(r, -5, 5)];
+        const REF = [["xy 平面", [1, 1, -1]], ["yz 平面", [-1, 1, 1]], ["zx 平面", [1, -1, 1]], ["x 軸", [1, -1, -1]], ["y 軸", [-1, 1, -1]], ["z 軸", [-1, -1, 1]], ["原点", [-1, -1, -1]]];
+        const KEEP = ["x 座標と y 座標", "y 座標と z 座標", "z 座標と x 座標", "x 座標", "y 座標", "z 座標"];
+        const FLIP = ["z 座標", "x 座標", "y 座標", "y 座標と z 座標", "z 座標と x 座標", "x 座標と y 座標"];
+        const k = r(0, 6);
+        const img = (j) => `$${vt(P.map((x, i) => x * REF[j][1][i]))}$`;
+        const ans = img(k);
+        // よくある取り違え：平面 ↔ その平面に垂直な軸、原点
+        const dual = [5, 3, 4, 1, 2, 0, 3][k];
+        const order = [dual, 6, 0, 1, 2, 3, 4, 5].filter((j, i, arr) => j !== k && arr.indexOf(j) === i);
+        return {
+          q: `点 P$${vt(P)}$ と${k === 6 ? "" : " "}${REF[k][0]}に関して対称な点の座標を求めよ。`,
+          ans,
+          choices: choices4(r, ans, order.map(img)),
+          hint: "平面や軸に含まれる向きの座標は変わらず、それ以外の座標の符号が変わる。",
+          steps: [
+            k === 6 ? "原点に関して対称な点は、すべての座標の符号が変わる" : `${REF[k][0]}に関して対称な点は、${KEEP[k]}はそのままで、${FLIP[k]}の符号が変わる`,
+            `よって ${ans}`,
           ],
         };
       }),
@@ -567,6 +698,27 @@ const KUKAN = {
           ],
         };
       }),
+      t("HC-kukan-2d", (r) => {
+        // 空間の3点を頂点とする三角形の面積
+        const A = [r(-2, 2), r(-2, 2), r(-2, 2)];
+        const u = [r(-2, 2), r(-2, 2), r(-2, 2)], v = [r(-2, 2), r(-2, 2), r(-2, 2)];
+        const uu = dot3(u, u), vv = dot3(v, v), uv = dot3(u, v);
+        const N = uu * vv - uv * uv;
+        if (N === 0) return { skip: true };
+        const B = A.map((x, i) => x + u[i]), C = A.map((x, i) => x + v[i]);
+        const ans = `$${surd(1, 2, N)}$`;
+        return {
+          q: `3点 A$${vt(A)}$, B$${vt(B)}$, C$${vt(C)}$ を頂点とする △ABC の面積を求めよ。`,
+          ans,
+          choices: choices4(r, ans, [`$${surd(1, 1, N)}$`, `$${surd(1, 2, uu * vv + uv * uv)}$`, `$${surd(1, 2, uu * vv)}$`], (i) => `$${surd(1, 2, N + 2 * (i + 1))}$`),
+          hint: "$\\overrightarrow{AB}$, $\\overrightarrow{AC}$ を成分で求め、大きさと内積から面積を計算する。",
+          steps: [
+            `$\\overrightarrow{AB}=${vt(u)}$, $\\overrightarrow{AC}=${vt(v)}$`,
+            `$|\\overrightarrow{AB}|^{2}=${uu}$, $|\\overrightarrow{AC}|^{2}=${vv}$, $\\overrightarrow{AB}\\cdot\\overrightarrow{AC}=${uv}$`,
+            `$S=\\frac{1}{2}\\sqrt{${uu}\\times${vv}-${par(uv)}^{2}}=\\frac{1}{2}\\sqrt{${N}}=${surd(1, 2, N)}$`,
+          ],
+        };
+      }),
     ],
     3: [
       t("HC-kukan-3a", (r) => {
@@ -629,6 +781,31 @@ const KUKAN = {
             `法線ベクトル $${vt(n)}$ の大きさは $\\sqrt{${n[0] * n[0] + n[1] * n[1] + n[2] * n[2]}}=${q4[3]}$`,
             `距離 $=\\frac{|${n[0]}\\times${par(P[0])}+${par(n[1])}\\times${par(P[1])}+${par(n[2])}\\times${par(P[2])}${d === 0 ? "" : signed(d)}|}{${q4[3]}}=\\frac{${Math.abs(val)}}{${q4[3]}}$`,
             `$=${fracTex(Math.abs(val), q4[3])}$`,
+          ],
+        };
+      }),
+      t("HC-kukan-3d", (r) => {
+        // 原点から3点を通る平面に下ろした垂線の足（法線ベクトルを内積で求める方法）
+        const n = signedPerm(r, pick(r, [[1, 1, 1], [1, 2, 2], [1, 1, 2], [0, 1, 1], [1, 2, 3]])).map((x) => x + 0);
+        const cand = [[n[1], -n[0], 0], [n[2], 0, -n[0]], [0, n[2], -n[1]]].filter((w) => dot3(w, w) > 0);
+        const [e1, e2] = shuffle(r, cand);
+        if (!e2 || dot3(cross(e1, e2), cross(e1, e2)) === 0) return { skip: true };
+        const A = [r(-2, 2), r(-2, 2), r(-2, 2)];
+        const d = dot3(n, A), nn = dot3(n, n);
+        if (d === 0) return { skip: true };
+        const s1 = sgn(r), s2 = sgn(r);
+        const u = e1.map((x) => s1 * x + 0), v = e2.map((x) => s2 * x + 0);
+        const B = A.map((x, i) => x + u[i]), C = A.map((x, i) => x + v[i]);
+        const ix = pick(r, [0, 1, 2].filter((i) => n[i] !== 0)), nm = "xyz"[ix];
+        const H = n.map((x) => fracTex(d * x, nn));
+        return {
+          q: `3点 A$${vt(A)}$, B$${vt(B)}$, C$${vt(C)}$ を通る平面を $\\alpha$ とする。原点 O から $\\alpha$ に垂線 OH を下ろすとき、点 H の ${nm} 座標を求めよ。`,
+          ans: fracAns(d * n[ix], nn),
+          hint: "$\\overrightarrow{AB}$, $\\overrightarrow{AC}$ の両方に垂直なベクトル $\\vec{n}$ を求めると、$\\overrightarrow{OH}$ は $\\vec{n}$ に平行。",
+          steps: [
+            `$\\overrightarrow{AB}=${vt(u)}$, $\\overrightarrow{AC}=${vt(v)}$ の両方に垂直なベクトルの1つは $\\vec{n}=${vt(n)}$ で、$\\overrightarrow{OH}=k\\vec{n}$ とおける`,
+            `H は $\\alpha$ 上にあるので $\\overrightarrow{AH}=k\\vec{n}-\\overrightarrow{OA}$ も $\\vec{n}$ に垂直。$k|\\vec{n}|^{2}=\\overrightarrow{OA}\\cdot\\vec{n}$ より $${nn}k=${d}$、$k=${fracTex(d, nn)}$`,
+            `H$(${H.join(",\\ ")})$ より、${nm} 座標は $${fracTex(d * n[ix], nn)}$`,
           ],
         };
       }),
@@ -702,6 +879,55 @@ const KUKAN = {
             `$\\overrightarrow{PQ}$ が $${vt(u)}$, $${vt(v)}$ の両方に垂直になる条件から $s=${al}$, $t=${-be}$`,
             `このとき $\\overrightarrow{PQ}=${vt(pq)}$`,
             `最小値は $|\\overrightarrow{PQ}|=${sqrtTex(1, W)}$`,
+          ],
+        };
+      }),
+      t("HC-kukan-4d", (r) => {
+        // 座標軸上を動く点 P と AP+PB の最小値（軸のまわりに回して平面に展開する）
+        const V2 = [[0, 1], [0, 2], [0, 3], [1, 0], [2, 0], [3, 0], [3, 4], [4, 3]];
+        const ra = pick(r, V2).map((x) => x * sgn(r) + 0), rb = pick(r, V2).map((x) => x * sgn(r) + 0);
+        if (ra[0] * rb[1] - ra[1] * rb[0] === 0) return { skip: true }; // A, B と軸が同じ平面上なら展開の必要がない
+        const la = Math.round(Math.hypot(ra[0], ra[1])), lb = Math.round(Math.hypot(rb[0], rb[1]));
+        const a1 = r(-3, 3), b1 = r(-3, 3);
+        const ax = r(0, 2), nm = "xyz"[ax];
+        const oth = [0, 1, 2].filter((i) => i !== ax);
+        const emb = (t0, w) => { const o = [0, 0, 0]; o[ax] = t0; o[oth[0]] = w[0]; o[oth[1]] = w[1]; return o; };
+        const A = emb(a1, ra), B = emb(b1, rb);
+        const dx = a1 - b1, D = dx * dx + (la + lb) * (la + lb);
+        const ans = `$${sqrtTex(1, D)}$`;
+        const dAB = dx * dx + (ra[0] - rb[0]) ** 2 + (ra[1] - rb[1]) ** 2;
+        const dRef = dx * dx + (ra[0] + rb[0]) ** 2 + (ra[1] + rb[1]) ** 2;
+        const Pt = ["t,\\ 0,\\ 0", "0,\\ t,\\ 0", "0,\\ 0,\\ t"][ax];
+        return {
+          q: `2点 A$${vt(A)}$, B$${vt(B)}$ がある。点 P が ${nm} 軸上を動くとき、AP + PB の最小値を求めよ。`,
+          ans,
+          choices: choices4(r, ans, [`$${sqrtTex(1, dRef)}$`, `$${sqrtTex(1, dAB)}$`, `$${la + lb + Math.abs(dx)}$`, `$${sqrtTex(1, dx * dx + (la - lb) ** 2)}$`], (i) => `$${sqrtTex(1, D + i + 1)}$`),
+          hint: `A, B から ${nm} 軸までの距離に注目し、${nm} 軸のまわりに回転させて1つの平面上で考える。`,
+          steps: [
+            `P$(${Pt})$ とおくと AP $=\\sqrt{${sqv("t", a1)}+${la * la}}$, BP $=\\sqrt{${sqv("t", b1)}+${lb * lb}}$（A, B から ${nm} 軸までの距離はそれぞれ $${la}$, $${lb}$）`,
+            `これは座標平面上で、点 $(t,\\ 0)$ と2点 $(${a1},\\ ${la})$, $(${b1},\\ ${-lb})$ との距離の和と同じ（${nm} 軸のまわりに回して、A, B を軸の反対側に置いた形）`,
+            `2点 $(${a1},\\ ${la})$, $(${b1},\\ ${-lb})$ を結ぶ線分は軸と交わるので、最小値はこの2点の距離で $\\sqrt{${dx * dx}+${(la + lb) * (la + lb)}}=${sqrtTex(1, D)}$`,
+          ],
+        };
+      }),
+      t("HC-kukan-4e", (r) => {
+        // 2つの線分上を動く点の中点の動く範囲（平行四辺形）の面積
+        const A = [r(-2, 2), r(-2, 2), r(-2, 2)], C = [r(-2, 2), r(-2, 2), r(-2, 2)];
+        const u = [r(-2, 2), r(-2, 2), r(-2, 2)], v = [r(-2, 2), r(-2, 2), r(-2, 2)];
+        const uu = dot3(u, u), vv = dot3(v, v), uv = dot3(u, v);
+        const N = uu * vv - uv * uv;
+        if (N === 0) return { skip: true };
+        const B = A.map((x, i) => x + u[i]), D = C.map((x, i) => x + v[i]);
+        const ans = `$${surd(1, 4, N)}$`;
+        return {
+          q: `4点 A$${vt(A)}$, B$${vt(B)}$, C$${vt(C)}$, D$${vt(D)}$ がある。点 P が線分 AB 上を、点 Q が線分 CD 上をそれぞれ動くとき、線分 PQ の中点 M が動く範囲の面積を求めよ。`,
+          ans,
+          choices: choices4(r, ans, [`$${surd(1, 1, N)}$`, `$${surd(1, 2, N)}$`, `$${surd(1, 4, uu * vv)}$`], (i) => `$${surd(1, 4, N + 2 * (i + 1))}$`),
+          hint: "P, Q をそれぞれ $0\\leqq s\\leqq1$, $0\\leqq t\\leqq1$ の媒介変数で表し、$\\overrightarrow{OM}$ を s, t の式で書く。",
+          steps: [
+            `$\\overrightarrow{OP}=\\overrightarrow{OA}+s\\overrightarrow{AB}$, $\\overrightarrow{OQ}=\\overrightarrow{OC}+t\\overrightarrow{CD}$ $(0\\leqq s\\leqq1,\\ 0\\leqq t\\leqq1)$ とおくと $\\overrightarrow{OM}=\\frac{\\overrightarrow{OA}+\\overrightarrow{OC}}{2}+s\\left(\\frac{1}{2}\\overrightarrow{AB}\\right)+t\\left(\\frac{1}{2}\\overrightarrow{CD}\\right)$`,
+            `M の動く範囲は、$\\frac{1}{2}\\overrightarrow{AB}$, $\\frac{1}{2}\\overrightarrow{CD}$ を2辺とする平行四辺形の周と内部。$\\overrightarrow{AB}=${vt(u)}$, $\\overrightarrow{CD}=${vt(v)}$`,
+            `$|\\overrightarrow{AB}|^{2}=${uu}$, $|\\overrightarrow{CD}|^{2}=${vv}$, $\\overrightarrow{AB}\\cdot\\overrightarrow{CD}=${uv}$ より、面積は $\\frac{1}{4}\\sqrt{${uu}\\times${vv}-${par(uv)}^{2}}=${surd(1, 4, N)}$`,
           ],
         };
       }),

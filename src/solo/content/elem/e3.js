@@ -37,6 +37,14 @@ const kanji = (n) => {
 const PLACE = ["一", "十", "百", "千", "一万", "十万", "百万", "千万"];
 const DAYS = ["日", "月", "火", "水", "木", "金", "土"];
 const SPORTS = ["サッカー", "野球", "水泳", "なわとび", "ドッジボール", "バスケットボール", "テニス"];
+/** 表・グラフの 話題：[調べた こと, こうもく] */
+const TOPICS = [
+  ["すきな くだもの", ["りんご", "みかん", "いちご", "バナナ", "ぶどう", "もも"]],
+  ["すきな 動物", ["犬", "ねこ", "うさぎ", "パンダ", "ライオン", "コアラ"]],
+  ["すきな 色", ["赤", "青", "黄", "緑", "白", "ピンク"]],
+  ["すきな 遊び", ["おにごっこ", "なわとび", "ドッジボール", "かくれんぼ", "てつぼう", "一りん車"]],
+  ["すきな きゅう食", ["カレー", "あげパン", "やきそば", "ハンバーグ", "シチュー", "からあげ"]],
+];
 /** 人の 名前（「〜さん」を つけて 使う） */
 const NAMES = ["ゆうと", "さくら", "はると", "あおい", "そうた", "ひなた", "れん", "ゆい", "みなと", "りこ"];
 /** 分ける 物と 数え方 */
@@ -2280,6 +2288,45 @@ export const UNITS = [
             steps: [`${a}kg ＝ ${1000 * a}g`, `${1000 * a} + ${b} = ${ans}　答え ${ans}g`],
           };
         }),
+        t("E3-omosa-1c", (r) => {
+          const [what, num, ok, kind] = pick(r, MITOU);
+          const pool = kind === "w" ? ["g", "kg", "t"] : ["mm", "cm", "m", "km"];
+          return {
+            q: `□に あてはまる たんいは どれですか。　${what} ${num}□`,
+            choices: choices4(r, ok, pool.filter((x) => x !== ok)),
+            ans: ok,
+            hint: `身の まわりの ものの ${kind === "w" ? "重さ" : "長さ"}を 思い出して、見当を つけよう。`,
+            steps: [`${what} ${num}${ok}`, `答え　${ok}`],
+          };
+        }),
+        t("E3-omosa-1d", (r) => {
+          const [max, u] = pick(r, [[1000, 5], [2000, 10], [4000, 20]]);
+          const base = 100 * r(1, max / 100 - 2), k = r(1, 9), v = base + u * k;
+          return {
+            q: `${max / 1000}kg まで はかれる はかりが あります。いちばん 小さい 1目もりは ${u}g です。はりは、${base}g の 目もりから ${k}目もり 進んだ ところを さして います。何g ですか。`,
+            ans: v,
+            unit: "g",
+            hint: `1目もりが ${u}g で あることに 気を つけて、${base}g から 数えよう。`,
+            steps: [`${u}g の ${k}目もり分で　${u} × ${k} = ${u * k}g`, `${base} + ${u * k} = ${v}`, `答え　${v}g`],
+          };
+        }),
+        t("E3-omosa-1e", (r) => {
+          const [from, to, pool] = pick(r, [
+            ["g", "kg", ["g", "kg", "t"]],
+            ["kg", "t", ["g", "kg", "t"]],
+            ["m", "km", ["mm", "cm", "m", "km"]],
+            ["mm", "m", ["mm", "cm", "m", "km"]],
+            ["mL", "L", ["mL", "dL", "L"]],
+          ]);
+          const k = r(2, 9);
+          return {
+            q: `□に あてはまる たんいは どれですか。　${1000 * k}${from} ＝ ${k}□`,
+            choices: choices4(r, to, pool.filter((x) => x !== to)),
+            ans: to,
+            hint: `${from} が 1000こ 集まると、どの たんいの 1 に なるかな。`,
+            steps: [`1000${from} ＝ 1${to}`, `${1000 * k}${from} ＝ ${k}${to}`],
+          };
+        }),
       ],
       2: [
         t("E3-omosa-2a", (r) => {
@@ -2313,6 +2360,36 @@ export const UNITS = [
           }
           const b = r(1, 9) * 100;
           return { q: `${a}t${b}kg は 何kg ですか。`, ans: 1000 * a + b, unit: "kg", hint: "1t は 1000kg だよ。", steps: [`${a}t ＝ ${1000 * a}kg`, `${1000 * a} + ${b} = ${1000 * a + b}　答え ${1000 * a + b}kg`] };
+        }),
+        t("E3-omosa-2d", (r) => {
+          const plus = r(0, 1) === 1, a = r(1, 4), b = 100 * r(1, 9), c = 100 * r(1, 9), A = 1000 * a + b;
+          const res = plus ? A + c : A - c;
+          if (res < 1000 || res % 1000 === 0) return { skip: true };
+          const ok = kgg(res);
+          // くり下がりを わすれて、g どうしを 大きい ほうから ひいた 答え
+          const naive = !plus && c > b ? 1000 * a + (c - b) : null;
+          const traps = [naive, res - 1000, res + 1000, res + 100, res - 100].filter((v) => v && v > 0 && v !== res).map(kgg);
+          return {
+            q: `${kgg(A)} ${plus ? "+" : "−"} ${c}g は 何kg何g ですか。`,
+            choices: choices4(r, ok, traps),
+            ans: ok,
+            hint: "g に そろえてから 計算すると まちがえにくいよ。",
+            steps: [`${kgg(A)} ＝ ${A}g`, `${A} ${plus ? "+" : "−"} ${c} = ${res}g`, `${res}g ＝ ${ok}`],
+          };
+        }),
+        t("E3-omosa-2e", (r) => {
+          const a = 10 * r(30, 95), b = 1000 * r(1, 2) + 10 * r(10, 90), sum = a + b;
+          if (sum % 1000 === 0) return { skip: true };
+          const [P, Q] = pick(r, [["公園", "駅"], ["図書館", "学校"], ["神社", "公園"], ["学校", "駅"]]);
+          const ok = kmm(sum);
+          const traps = [sum - 1000, sum + 1000, sum + 100, sum - 100, a + (b % 1000)].filter((v) => v > 0 && v !== sum).map(kmm);
+          return {
+            q: `家から ${P}までの 道のりは ${a}m、${P}から ${Q}までの 道のりは ${kmm(b)} です。家から ${P}を 通って ${Q}まで 行く 道のりは 何km何m ですか。`,
+            choices: choices4(r, ok, traps),
+            ans: ok,
+            hint: "m に そろえてから たそう。1000m で 1km だよ。",
+            steps: [`${kmm(b)} ＝ ${b}m`, `${a} + ${b} = ${sum}m`, `${sum}m ＝ ${ok}`],
+          };
         }),
       ],
       3: [
@@ -2359,6 +2436,38 @@ export const UNITS = [
             ans: ok,
             hint: "ぜんぶ g に なおして くらべよう。",
             steps: [`g に なおすと ${vals.map((v, i) => `${labels[i]} → ${v}g`).join("、")}`, `いちばん ${heavy ? "重い" : "軽い"}のは ${ok}`],
+          };
+        }),
+        t("E3-omosa-3d", (r) => {
+          const who = pick(r, NAMES);
+          const [what, how, lo, hi] = pick(r, [["ねこ", "だいて", 25, 60], ["子犬", "だいて", 15, 50], ["ランドセル", "せおって", 30, 60], ["荷物", "もって", 20, 80]]);
+          const me = 1000 * r(22, 35) + 100 * r(0, 9), w = 100 * r(lo, hi);
+          if (w % 1000 === 0) return { skip: true };
+          const both = me + w, ok = kgg(w);
+          // くり下がりを わすれて、kg と g を べつべつに ひいた 答え
+          const naive = 1000 * (Math.floor(both / 1000) - Math.floor(me / 1000)) + Math.abs((both % 1000) - (me % 1000));
+          const traps = [naive, w + 1000, w - 1000, w + 100, w - 100].filter((v) => v > 0 && v !== w).map(kgg);
+          return {
+            q: `${who}さんが ${what}を ${how} 体重計に のると ${kgg(both)} でした。${who}さんだけで のると ${kgg(me)} でした。${what}の 重さは 何kg何g ですか。`,
+            choices: choices4(r, ok, traps),
+            ans: ok,
+            hint: `${what}の 重さは、2つの 重さの ちがいだよ。g に そろえて 考えよう。`,
+            steps: [`${kgg(both)} ＝ ${both}g、${kgg(me)} ＝ ${me}g`, `${both} − ${me} = ${w}g`, `${w}g ＝ ${ok}`],
+          };
+        }),
+        t("E3-omosa-3e", (r) => {
+          const a1 = 10 * r(25, 90), a2 = 10 * r(25, 90), b1 = 10 * r(25, 90), b2 = 10 * r(25, 90);
+          const A = a1 + a2, B = b1 + b2, d = Math.abs(A - B);
+          if (d < 30) return { skip: true };
+          const win = A < B ? "公園" : "図書館", lose = A < B ? "図書館" : "公園";
+          const say = (x, m) => `${x}を 通る 道が ${m}m みじかい`;
+          const ok = say(win, d);
+          return {
+            q: `家から 学校までの 道が 2つ あります。公園を 通る 道は、家から 公園まで ${a1}m、公園から 学校まで ${a2}m です。図書館を 通る 道は、家から 図書館まで ${b1}m、図書館から 学校まで ${b2}m です。どちらの 道が 何m みじかいですか。`,
+            choices: choices4(r, ok, [say(lose, d), say(win, d + 100), Math.abs(a1 - b1) !== d ? say(win, Math.abs(a1 - b1)) : null], (i) => say(win, d + 10 * (i + 1))),
+            ans: ok,
+            hint: "まず、それぞれの 道の 道のりを もとめよう。",
+            steps: [`公園を 通る 道　${a1} + ${a2} = ${A}m`, `図書館を 通る 道　${b1} + ${b2} = ${B}m`, `${Math.max(A, B)} − ${Math.min(A, B)} = ${d}　答え ${ok}`],
           };
         }),
       ],
@@ -2426,6 +2535,39 @@ export const UNITS = [
             steps: [`${cs.join(" + ")} = ${s}`, `答え　${s}人`],
           };
         }),
+        t("E3-graph-1c", (r) => {
+          const [topic, list] = pick(r, TOPICS), items = sample(r, list, 4), cs = sample(r, range(3, 18), 4);
+          const many = r(0, 1) === 1, tg = many ? Math.max(...cs) : Math.min(...cs), ok = items[cs.indexOf(tg)];
+          const sorted = [...cs].sort((p, q) => (many ? q - p : p - q));
+          return {
+            q: `${topic}を 調べました。${items.map((it, i) => `${it} ${cs[i]}人`).join("、")} でした。人数が いちばん ${many ? "多い" : "少ない"} のは どれですか。`,
+            choices: choices4(r, ok, items.filter((x) => x !== ok)),
+            ans: ok,
+            hint: "人数を 1つずつ くらべよう。",
+            steps: [`${many ? "多い" : "少ない"} じゅんに ${sorted.map((c) => `${items[cs.indexOf(c)]} ${c}人`).join("、")}`, `答え　${ok}`],
+          };
+        }),
+        t("E3-graph-1d", (r) => {
+          const k = r(1, 5), m = r(0, 4), total = 5 * k + m, play = pick(r, TOPICS[3][1]);
+          return {
+            q: `すきな 遊びを、「正」の 字を 書いて 数えました。${play}は、「正」の 字が ${k}こ${m ? `と、とちゅうまで 書いた 線が ${m}本` : ""} でした。${play}が すきな 人は 何人ですか。`,
+            ans: total,
+            unit: "人",
+            hint: "「正」の 字 1こで 5人、線 1本で 1人だよ。",
+            steps: [`「正」の 字 1こで 5人なので、${k}こで 5 × ${k} = ${5 * k}人`, m ? `とちゅうの 線 ${m}本で ${m}人。${5 * k} + ${m} = ${total}` : "とちゅうの 線は ない", `答え　${total}人`],
+          };
+        }),
+        t("E3-graph-1e", (r) => {
+          const [u, m] = pick(r, [[1, 5], [2, 5], [2, 10], [5, 10], [10, 5], [10, 10], [20, 5], [50, 10], [100, 5], [100, 10]]);
+          const unit = u <= 10 ? "人" : u <= 50 ? "さつ" : "円";
+          return {
+            q: `ぼうグラフの たての 目もりを 見ると、0 から ${u * m}${unit} までが ${m}目もりに 分かれて います。1目もりは 何${unit}を 表して いますか。`,
+            ans: u,
+            unit,
+            hint: `${u * m}${unit}を ${m}つに 分けた 1つ分を 考えよう。`,
+            steps: [`${u * m} ÷ ${m} = ${u}`, `答え　${u}${unit}`],
+          };
+        }),
       ],
       2: [
         t("E3-graph-2a", (r) => {
@@ -2450,6 +2592,39 @@ export const UNITS = [
             unit: "人",
             hint: "2つの 組の 同じ スポーツの 人数を たそう。",
             steps: [`1組 ${c1[j]}人、2組 ${c2[j]}人`, `${c1[j]} + ${c2[j]} = ${ans}`, `答え　${ans}人`],
+          };
+        }),
+        t("E3-graph-2c", (r) => {
+          const u = pick(r, [2, 5, 10]), kb = r(2, 4), k = r(2, 4), ka = kb * k, [A, B] = sample(r, SPORTS, 2);
+          return {
+            q: `すきな スポーツを 調べた ぼうグラフで、1目もりは ${u}人です。${A}の ぼうは ${ka}目もり、${B}の ぼうは ${kb}目もり です。${A}が すきな 人数は、${B}が すきな 人数の 何倍ですか。`,
+            ans: k,
+            unit: "倍",
+            hint: "目もりの 数で くらべても、人数に なおして くらべても よいよ。",
+            steps: [`目もりで くらべると　${ka} ÷ ${kb} = ${k}`, `人数で くらべても ${u * ka}人は ${u * kb}人の ${k}倍`, `答え　${k}倍`],
+          };
+        }),
+        t("E3-graph-2d", (r) => {
+          const [topic, list] = pick(r, TOPICS), items = sample(r, list, 4), cs = items.map(() => r(2, 8)), other = r(1, 5);
+          const s = cs.reduce((p, q) => p + q, 0), total = s + other;
+          return {
+            q: `クラスの ${total}人に ${topic}を 聞いて、表に まとめました。${items.map((it, i) => `${it} ${cs[i]}人`).join("、")}、その他 □人 です。その他は 何人ですか。`,
+            ans: other,
+            unit: "人",
+            hint: "表の 人数を ぜんぶ たすと、クラスの 人数に なるよ。",
+            steps: [`わかって いる 人数の 合計　${cs.join(" + ")} = ${s}`, `${total} − ${s} = ${other}`, `答え　${other}人`],
+          };
+        }),
+        t("E3-graph-2e", (r) => {
+          const [topic, list] = pick(r, TOPICS), items = sample(r, list, 5), cs = sample(r, range(2, 15), 5);
+          const order = [...cs].sort((p, q) => q - p), k = r(2, 3), ok = items[cs.indexOf(order[k - 1])];
+          const name = (c) => items[cs.indexOf(c)];
+          return {
+            q: `${topic}を 調べました。${items.map((it, i) => `${it} ${cs[i]}人`).join("、")} でした。人数の 多い じゅんに ならべた とき、${k}番目に なるのは どれですか。`,
+            choices: choices4(r, ok, [name(order[0]), name(order[k]), name(order[k - 2]), ...items.filter((x) => x !== ok)]),
+            ans: ok,
+            hint: "いちばん 多い ものから じゅんに ならべて みよう。",
+            steps: [`多い じゅんに　${order.map((c) => `${name(c)}（${c}人）`).join("、")}`, `${k}番目は ${ok}`],
           };
         }),
       ],
@@ -2486,6 +2661,36 @@ export const UNITS = [
             steps: [`${k}目もりで ${u} × ${k} = ${k * u}${what[1]}`, `1目もりの 半分は ${u / 2}${what[1]}`, `${k * u} + ${u / 2} = ${ans}　答え ${ans}${what[1]}`],
           };
         }),
+        t("E3-graph-3d", (r) => {
+          const [topic, list] = pick(r, TOPICS);
+          for (let tries = 0; tries < 30; tries++) {
+            const items = sample(r, list, 3), c1 = items.map(() => r(3, 15)), c2 = items.map(() => r(3, 15));
+            const sums = c1.map((x, i) => x + c2[i]), mx = Math.max(...sums);
+            if (sums.filter((v) => v === mx).length !== 1) continue;
+            const w = sums.indexOf(mx);
+            if (c1.indexOf(Math.max(...c1)) === w && c2.indexOf(Math.max(...c2)) === w) continue;
+            const ok = items[w];
+            return {
+              q: `1組と 2組で、${topic}を 調べました。1組は ${items.map((it, i) => `${it} ${c1[i]}人`).join("、")}、2組は ${items.map((it, i) => `${it} ${c2[i]}人`).join("、")} でした。2つの 組を あわせると、人数が いちばん 多いのは どれですか。`,
+              choices: choices4(r, ok, items.filter((x) => x !== ok)),
+              ans: ok,
+              hint: "2つの 組の 人数を、こうもくごとに たしてから くらべよう。",
+              steps: [`あわせた 人数は ${items.map((it, i) => `${it} ${c1[i]} + ${c2[i]} = ${sums[i]}人`).join("、")}`, `いちばん 多いのは ${ok}`],
+            };
+          }
+          return { skip: true };
+        }),
+        t("E3-graph-3e", (r) => {
+          const lim = pick(r, [10, 20]), units = [1, 2, 5, 10, 20, 50];
+          const i = r(1, 4), ok = units[i], prev = units[i - 1], max = r(prev * lim + 1, ok * lim);
+          return {
+            q: `図書室で かりられた 本の 数を、しゅるいごとに ぼうグラフに します。いちばん 多い しゅるいは ${max}さつ です。グラフの 紙には ${lim}目もり分 しか かけません。ぼうが はみ出さないように かける、いちばん 小さい 1目もりの 大きさは どれですか。`,
+            choices: choices4(r, `${ok}さつ`, [prev, units[i + 1], units[i === 1 ? 3 : i - 2]].map((u) => `${u}さつ`)),
+            ans: `${ok}さつ`,
+            hint: `1目もりを いろいろ かえて、${lim}目もりで 何さつまで かけるかを 調べよう。`,
+            steps: [`1目もりが ${prev}さつ だと、${lim}目もりで ${prev * lim}さつ までしか かけない（${max}さつは はみ出す）`, `1目もりが ${ok}さつ だと、${lim}目もりで ${ok * lim}さつ まで かける`, `答え　${ok}さつ`],
+          };
+        }),
       ],
       4: [
         t("E3-graph-4a", (r) => {
@@ -2500,6 +2705,18 @@ export const UNITS = [
             unit: "目もり",
             hint: "まず、ぼうが あらわして いる 人数を もとめよう。",
             steps: [`人数は ${u1} × ${k1} = ${x}人`, `${x} ÷ ${u2} = ${k2}`, `答え　${k2}目もり`],
+          };
+        }),
+        t("E3-graph-4b", (r) => {
+          const u = pick(r, [2, 5, 10]), [X, Y] = sample(r, SPORTS, 2);
+          const kb = r(2, u === 10 ? 7 : 3), dk = r(1, u === 10 ? 4 : 3), ka = kb + dk, S = ka + kb;
+          const total = u * S, A = u * ka;
+          return {
+            q: `1目もりが ${u}人の ぼうグラフで、${X}の ぼうは ${Y}の ぼうより ${dk}目もり 長く なって います。${X}と ${Y}の 人数を あわせると ${total}人です。${X}が すきな 人は 何人ですか。`,
+            ans: A,
+            unit: "人",
+            hint: "あわせた 人数が 何目もり分に なるかを 考えてから、2つの ぼうの ちがいを 使おう。",
+            steps: [`あわせた ${total}人は　${total} ÷ ${u} = ${S}目もり分`, `${S} − ${dk} = ${S - dk}、${S - dk} ÷ 2 = ${kb} なので、${Y}は ${kb}目もり`, `${X}は ${kb} + ${dk} = ${ka}目もりで　${u} × ${ka} = ${A}人`],
           };
         }),
       ],
