@@ -258,6 +258,7 @@ const VECTOR = {
         const m = r(1, 5);
         let n = r(1, 5);
         if (n === m) n = m === 5 ? 4 : m + 1;
+        if (gcd(m, n) !== 1) return { skip: true }; // 2:4 のような約分できる比は出さない
         const vab = (x, y, z) => `$\\overrightarrow{OP}=${lin([[x, z, "\\vec{a}"], [y, z, "\\vec{b}"]])}$`;
         const ans = vab(n, m, m + n);
         return {
@@ -338,6 +339,7 @@ const VECTOR = {
     4: [
       t("HC-vector-4a", (r) => {
         const l = r(1, 5), m = r(1, 5), n = r(1, 5);
+        if (gcd(gcd(l, m), n) !== 1) return { skip: true }; // 2PA+2PB+2PC のような約分できる係数は出さない
         const S = l + m + n;
         const mode = r(0, 2);
         const ABC = lin([[m, 1, "\\overrightarrow{AB}"], [n, 1, "\\overrightarrow{AC}"]]);
@@ -474,7 +476,7 @@ const KUKAN = {
       }),
       t("HC-kukan-1c", (r) => {
         const A = [r(-4, 4), r(-4, 4), r(-4, 4)], B = [r(-4, 4), r(-4, 4), r(-4, 4)];
-        const m = r(1, 4), n = r(1, 4);
+        const [m, n] = pick(r, [[1, 1], [1, 2], [2, 1], [1, 3], [3, 1], [2, 3], [3, 2], [1, 4], [4, 1], [3, 4], [4, 3]]);
         const c = r(0, 2), name = ["x", "y", "z"][c];
         if (A[c] === B[c]) return { skip: true };
         const num = n * A[c] + m * B[c];
@@ -545,7 +547,7 @@ const KUKAN = {
           hint: "平行 ⇔ $\\vec{b}=k\\vec{a}$。z 成分から k を決める。",
           steps: [
             `$\\vec{b}=k\\vec{a}$ とおくと $${b3}=${termTex(a[2], 1, "k")}$ より $k=${fracTex(b3, a[2])}$`,
-            `$x=${termTex(a[0], 1, "k")}=${fracTex(a[0] * b3, a[2])}$, $y=${a[1] === 0 ? "0" : termTex(a[1], 1, "k")}=${fracTex(a[1] * b3, a[2])}$`,
+            `$x=${termTex(a[0], 1, "k")}=${fracTex(a[0] * b3, a[2])}$, $y=${a[1] === 0 ? "0" : `${termTex(a[1], 1, "k")}=${fracTex(a[1] * b3, a[2])}`}$`,
             `$x+y=${fracTex((a[0] + a[1]) * b3, a[2])}$`,
           ],
         };
@@ -1006,7 +1008,7 @@ const FUKUSO = {
         return {
           q: `$z=\\cos\\frac{2\\pi}{${n}}+i\\sin\\frac{2\\pi}{${n}}$ のとき、$${prodT}$ の値を求めよ。`,
           ans,
-          hint: `$z, z^{2}, \\cdots, z^{${n - 1}}$ は $x^{${n}}=1$ の 1 以外の解。因数分解の形を考える。`,
+          hint: `$${n === 3 ? "z, z^{2}" : n === 4 ? "z, z^{2}, z^{3}" : `z, z^{2}, \\cdots, z^{${n - 1}}`}$ は $x^{${n}}=1$ の 1 以外の解。因数分解の形を考える。`,
           steps: [
             `$x^{${n}}-1=(x-1)${xprod}$`,
             `両辺を $x-1$ でわると $${sumT}=${xprod}$`,
@@ -1214,7 +1216,7 @@ const KYOKUSEN = {
           ans: askK ? k : fracAns(-a * a * m, k),
           hint: "直線の式を楕円に代入した x の2次方程式が重解をもつ（判別式 $=0$）。",
           steps: [
-            `代入して整理：$${b * b + a * a * m * m}x^{2}${signed(2 * a * a * m)}kx+${a * a}(k^{2}-${b * b})=0$`,
+            `代入して整理：$${b * b + a * a * m * m}x^{2}${signed(2 * a * a * m)}kx+${a * a === 1 ? "" : a * a}(k^{2}-${b * b})=0$`,
             `判別式 $=0$ より $k^{2}=${a * a}\\times${m * m}+${b * b}=${k * k}$、$k=${k}$`,
             askK ? `$k=${k}$` : `接点の x 座標は重解 $x=-\\frac{${2 * a * a * m}k}{2\\times${b * b + a * a * m * m}}=${fracTex(-a * a * m, k)}$`,
           ],
@@ -1269,7 +1271,7 @@ const KYOKUSEN = {
           ans,
           hint: "PF + PF' $=2a$ と、△PFF' での余弦定理（FF' $=2c$）を組み合わせる。",
           steps: [
-            `PF + PF' $=2\\sqrt{${A}}$、FF' $=2c$、$c^{2}=${A}-${B}=${A - B}$`,
+            `PF + PF' $=${sqrtTex(2, A)}$、FF' $=2c$、$c^{2}=${A}-${B}=${A - B}$`,
             `余弦定理：$4c^{2}=(\\mathrm{PF}+\\mathrm{PF'})^{2}-2\\,\\mathrm{PF}\\cdot\\mathrm{PF'}(1+\\cos${th}^{\\circ})$`,
             `$\\mathrm{PF}\\cdot\\mathrm{PF'}=\\frac{4\\times${A}-4\\times${A - B}}{2(1+\\cos${th}^{\\circ})}=${fracTex(prod[0], prod[1])}$`,
             ...(askArea ? [`面積は $\\frac{1}{2}\\mathrm{PF}\\cdot\\mathrm{PF'}=${B}$`] : []),
