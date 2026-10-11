@@ -68,6 +68,44 @@ function hissan(a, b) {
 
 const NAMES = ["ゆうと", "さくら", "はると", "あおい", "そうた", "ひなた", "れん", "ゆい"];
 
+const KD = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+/** 1〜9999 を漢字で（1000 は「千」、10 は「十」） */
+function kan4(x) {
+  let s = "";
+  for (const [u, name] of [[1000, "千"], [100, "百"], [10, "十"], [1, ""]]) {
+    const d = Math.floor(x / u) % 10;
+    if (d > 0) s += (d === 1 && u > 1 ? "" : KD[d]) + name;
+  }
+  return s;
+}
+/** 大きな数を漢字だけで（30520000000 → 三百五億二千万） */
+function kanji(n) {
+  let s = "";
+  let rest = n;
+  for (const [u, name] of [[1e12, "兆"], [1e8, "億"], [1e4, "万"], [1, ""]]) {
+    const q = Math.floor(rest / u);
+    if (q > 0) {
+      s += kan4(q) + name;
+      rest -= q * u;
+    }
+  }
+  return s;
+}
+
+/** 買い物の品物（名前・数え方・ねだんのはんい（10円単位））。同じなかまから2つ選ぶ */
+const SHOP = [
+  [["パン", "こ", 8, 20], ["おにぎり", "こ", 10, 18], ["ジュース", "本", 10, 16], ["ケーキ", "こ", 20, 40]],
+  [["ノート", "さつ", 10, 20], ["えんぴつ", "本", 5, 10], ["消しゴム", "こ", 5, 10], ["じょうぎ", "本", 10, 20]],
+];
+/** 2つの品物と、そのねだん（1つめのほうが高い） */
+function twoGoods(r) {
+  const [x, y] = sample(r, pick(r, SHOP), 2);
+  const a = r(x[2], x[3]) * 10;
+  const b = r(y[2], y[3]) * 10;
+  if (a === b) return null;
+  return a > b ? [x[0], x[1], a, y[0], y[1], b] : [y[0], y[1], b, x[0], x[1], a];
+}
+
 export const UNITS = [
   // ────────────────────────────────────────────────────────
   {
@@ -138,6 +176,66 @@ export const UNITS = [
             steps: ["1兆 ÷ 10 ＝ 1000億", `${a}兆 ÷ 10 ＝ ${a}000億`],
           };
         }),
+        t("E4-ookina-1d", (r) => {
+          // 0 のある大きな数の読み方・書き方（数字 ↔ 漢字）
+          const top = r(9, 13);
+          const ps = [top];
+          while (ps.length < 3) {
+            const p = r(0, 2) ? r(4, top - 1) : r(0, top - 1);
+            if (!ps.includes(p)) ps.push(p);
+          }
+          const digs = ps.map(() => r(1, 9));
+          const N = ps.reduce((s, p, i) => s + digs[i] * 10 ** p, 0);
+          // まちがえやすい数：0 が1つ多い・少ない、数字が1つとなりの位にずれる
+          const wrongNs = [N * 10];
+          if (N % 10 === 0) wrongNs.push(N / 10);
+          ps.forEach((p, i) => {
+            if (i === 0) return;
+            for (const np of [p + 1, p - 1]) {
+              if (np >= 0 && np < top && !ps.includes(np)) wrongNs.push(N - digs[i] * 10 ** p + digs[i] * 10 ** np);
+            }
+          });
+          const s = String(N);
+          if (r(0, 1)) {
+            const ans = kanji(N);
+            return {
+              q: `${s} の読み方を、漢字で書いたものはどれですか。`,
+              ans,
+              choices: choices4(r, ans, shuffle(r, wrongNs).map(kanji)),
+              hint: "右から4けたずつ区切って、万・億・兆の区切りを見つけよう。",
+              steps: [`右から4けたずつ区切ると ${group4(s)}`, `${jp(N)} なので「${ans}」と読む`],
+            };
+          }
+          return {
+            q: `「${kanji(N)}」を数字で書いたものはどれですか。`,
+            ans: s,
+            choices: choices4(r, s, shuffle(r, wrongNs).map(String)),
+            hint: "兆・億・万の区切りごとに4けたずつ書こう。数字のない位には 0 を書くよ。",
+            steps: [`${kanji(N)} は ${jp(N)}`, `区切りごとに4けたで書くと ${group4(s)}`, `答え ${s}`],
+          };
+        }),
+        t("E4-ookina-1e", (r) => {
+          // 1億を□こ、1000万を□こ… あわせた数
+          const U = [[1e12, "1兆"], [1e11, "1000億"], [1e10, "100億"], [1e9, "10億"], [1e8, "1億"], [1e7, "1000万"], [1e6, "100万"], [1e5, "10万"], [1e4, "1万"]];
+          const group = (i) => (i === 0 ? 0 : i <= 4 ? 1 : 2);
+          const idx = sample(r, [0, 1, 2, 3, 4, 5, 6, 7, 8], 3).sort((a, b) => a - b);
+          if (new Set(idx.map(group)).size < 2) return { skip: true };
+          const terms = idx.map((i) => [U[i][0], U[i][1], r(1, 9)]);
+          const N = terms.reduce((s, [v, , c]) => s + v * c, 0);
+          const ans = jp(N);
+          const wrongNs = [];
+          terms.forEach(([v, , c]) => {
+            wrongNs.push(N + v * c * 9); // 位を1つ上にまちがえる
+            wrongNs.push(N - (v * c * 9) / 10); // 位を1つ下にまちがえる
+          });
+          return {
+            q: `${terms.map(([, name, c]) => `${name}を ${c}こ`).join("、")} あわせた数はどれですか。`,
+            ans,
+            choices: choices4(r, ans, shuffle(r, wrongNs).map(jp)),
+            hint: `それぞれがいくつになるかを先に考えよう。${terms[1][1]}を ${terms[1][2]}こ集めると、いくつかな？`,
+            steps: [terms.map(([v, name, c]) => `${name}を${c}こで ${jp(v * c)}`).join("、"), `あわせて ${ans}`],
+          };
+        }),
       ],
       2: [
         t("E4-ookina-2a", (r) => {
@@ -188,6 +286,58 @@ export const UNITS = [
             steps: [`1兆は1億を10000こ集めた数なので、${a}兆は1億の ${a * 10000} こ分`, `${b}億は1億の ${b} こ分`, `あわせて ${a * 10000 + b} こ`],
           };
         }),
+        t("E4-ookina-2d", (r) => {
+          // 億・兆のたし算・ひき算（くり上がり・くり下がりあり）
+          const plus = r(0, 1) === 1;
+          const [S, bg, sm] = pick(r, [[1e8, "億", "万"], [1e8, "億", "万"], [1e12, "兆", "億"]]);
+          const big = S === 1e8 ? () => r(12, 98) : () => r(1, 9);
+          let X = big();
+          let Y = big();
+          let a = r(1, 9);
+          let b = r(1, 9);
+          if (plus && a + b < 10) [a, b] = [10 - b + r(0, b - 1), b];
+          if (!plus) {
+            if (X === Y) return { skip: true };
+            if (X < Y) [X, Y] = [Y, X];
+            if (a >= b) {
+              a = r(1, 8);
+              b = r(a + 1, 9);
+            }
+          }
+          const x = X * S + a * (S / 10);
+          const y = Y * S + b * (S / 10);
+          const res = plus ? x + y : x - y;
+          const ans = `${jp(res)}円`;
+          const [A, B] = pick(r, [["A市の1年間の予算", "B市の1年間の予算"], ["A社の1年間の売り上げ", "B社の1年間の売り上げ"], ["A県の1年間の予算", "B県の1年間の予算"]]);
+          // くり上がりをわすれる／小さい区切りを逆にひく（くり下げない）など
+          const wrongNs = plus ? [res - S, res + S, res + 10 * S] : [(X - Y) * S + (b - a) * (S / 10), res + S, res - S, res + 10 * S];
+          const steps = plus
+            ? [`${bg}どうし：${X} ＋ ${Y} ＝ ${X + Y}（${bg}）、${sm}どうし：${a}000${sm} ＋ ${b}000${sm} ＝ ${a + b}000${sm}`, `${a + b}000${sm} ＝ 1${bg}${a + b > 10 ? `${a + b - 10}000${sm}` : ""} なので、1${bg}くり上げる`, `答え ${ans}`]
+            : [`${a}000${sm} から ${b}000${sm} はひけないので、${bg}から1くり下げて 1${a}000${sm} と考える`, `${bg}どうし：${X} − 1 − ${Y} ＝ ${X - 1 - Y}（${bg}）、${sm}どうし：1${a}000 − ${b}000 ＝ ${10 + a - b}000（${sm}）`, `答え ${ans}`];
+          return {
+            q: `${A}は ${jp(x)}円、${B}は ${jp(y)}円です。${plus ? "あわせて" : "ちがいは"}何円ですか。`,
+            ans,
+            choices: choices4(r, ans, wrongNs.filter((v) => v > 0).map((v) => `${jp(v)}円`)),
+            hint: `${bg}の部分と${sm}の部分に分けて計算しよう。1${bg} ＝ 10000${sm} だよ。`,
+            steps,
+          };
+        }),
+        t("E4-ookina-2e", (r) => {
+          // 数直線の目もり（1目もりの大きさを考えてから読む）
+          const [S, D] = pick(r, [[1e7, 10], [1e7, 10], [1e11, 10], [1e6, 10], [2e7, 5]]);
+          const B = r(1, 9) * S * D;
+          const n = r(1, D - 1);
+          const val = B + n * S;
+          const ans = jp(val);
+          const wrongNs = [B + n * S * 10, B + (n * S) / 10, B + (n + 1) * S, B + (D - n) * S, B + (n - 1) * S];
+          return {
+            q: `${jp(B)} から ${jp(B + S * D)} までを ${D}等分した数直線があります。${jp(B)} から右へ ${n}目もりのところの数はどれですか。`,
+            ans,
+            choices: choices4(r, ans, wrongNs.filter((v) => v > B).map(jp)),
+            hint: `まず、1目もりの大きさを考えよう。${jp(S * D)} を ${D}等分すると、いくつかな？`,
+            steps: [`${jp(S * D)} を ${D}等分すると、1目もりは ${jp(S)}`, `${jp(B)} から ${n}目もり進むと、${jp(S)} × ${n} ＝ ${jp(n * S)} ふえる`, `答え ${ans}`],
+          };
+        }),
       ],
       3: [
         t("E4-ookina-3a", (r) => {
@@ -235,6 +385,60 @@ export const UNITS = [
             steps: [`${a}億は1000万の ${a * 10} こ分`, `${b}000万は1000万の ${b} こ分`, `あわせて ${a * 10 + b} たば`],
           };
         }),
+        t("E4-ookina-3d", (r) => {
+          // 1万円札を重ねた高さ（大きな数のわり算）
+          const intro = "1万円札を 100まい重ねると、高さはおよそ 1cm になります。";
+          if (r(0, 1)) {
+            const N = r(1, 9) * 1e8 + r(0, 9) * 1e7;
+            const mai = N / 1e4;
+            const cm = mai / 100;
+            return {
+              q: `${intro}${jp(N)}円を全部 1万円札にして重ねると、高さはおよそ何cmになりますか。`,
+              ans: cm,
+              unit: "cm",
+              hint: "まず、1万円札が何まいになるかを考えよう。",
+              steps: [`${jp(N)}円は 1万円の ${mai}こ分なので、1万円札 ${mai}まい`, `100まいで 1cm なので ${mai} ÷ 100 ＝ ${cm}`, `およそ ${cm}cm`],
+            };
+          }
+          const a = r(1, 9);
+          const mai = a * 1e8;
+          const cm = mai / 100;
+          const km = cm / 100000;
+          return {
+            q: `${intro}${a}兆円を全部 1万円札にして重ねると、高さはおよそ何kmになりますか。`,
+            ans: km,
+            unit: "km",
+            hint: "1万円札のまい数 → cm → m → km の順に考えよう。",
+            steps: [`1兆は1万の1億倍なので、${a}兆円は 1万円札 ${jp(mai)}まい`, `100まいで 1cm なので ${jp(mai)} ÷ 100 ＝ ${jp(cm)}（cm）`, `${jp(cm)}cm ＝ ${jp(cm / 100)}m ＝ ${km}km`],
+          };
+        }),
+        t("E4-ookina-3e", (r) => {
+          // 0 のある大きな数のかけ算（0 をのぞいて計算し、あとで0をつける）
+          if (r(0, 1)) {
+            const a = r(2, 30);
+            const b = r(2, 9);
+            const v = a * b;
+            const ans = jp(v * 1e8);
+            return {
+              q: `${a}万 × ${b}万 はいくつですか。`,
+              ans,
+              choices: choices4(r, ans, [jp(v * 1e4), jp(v * 1e12), jp(v * 1e7), jp(v * 1e9)]),
+              hint: "1万 × 1万 は、1万の1万倍だよ。",
+              steps: [`${a} × ${b} ＝ ${v}`, `1万 × 1万 ＝ 1億 なので、${a}万 × ${b}万 ＝ ${v}億`],
+            };
+          }
+          const a = r(1, 9) * 10 + r(1, 9);
+          const b = r(1, 9) * 10 + r(1, 9);
+          const v = a * b;
+          const ans = jp(v * 1e4);
+          return {
+            q: `${a * 100} × ${b * 100} はいくつですか。`,
+            ans,
+            choices: choices4(r, ans, [jp(v * 1e3), jp(v * 1e5), jp(v * 1e2), jp(v * 1e6)]),
+            hint: "0 をのぞいた数どうしをかけてから、0 をいくつつけるか考えよう。",
+            steps: [`${a} × ${b} ＝ ${v}`, `${a * 100} と ${b * 100} の 0 は、あわせて 4こ`, `${v} に 0 を4こつけて ${v * 10000}（${ans}）`],
+          };
+        }),
       ],
       4: [
         t("E4-ookina-4a", (r) => {
@@ -260,6 +464,43 @@ export const UNITS = [
               `${jp(T)} とのちがいは、${da} と ${db}`,
               `ちがいが小さいほうの ${ans}`,
             ],
+          };
+        }),
+        t("E4-ookina-4b", (r) => {
+          // □ に入る数字（大小くらべ）
+          const L = r(3, 4);
+          const ds = [r(1, 9)];
+          for (let i = 1; i < L; i++) ds.push(r(0, 9));
+          const j = r(1, L - 1);
+          const bs = [...ds];
+          bs[j] = r(1, 8);
+          for (let i = j + 1; i < L; i++) bs[i] = r(0, 9);
+          const unit = pick(r, ["億", "兆", "万"]);
+          const big = r(0, 1) === 1;
+          const B = Number(bs.join(""));
+          const ok = [];
+          for (let d = 0; d <= 9; d++) {
+            const a = [...ds];
+            a[j] = d;
+            const v = Number(a.join(""));
+            if (big ? v > B : v < B) ok.push(d);
+          }
+          if (ok.length === 0 || ok.length === 10) return { skip: true };
+          const x = bs[j];
+          const show = ds.map((d, i) => (i === j ? "□" : d)).join("");
+          const restA = ds.slice(j + 1).join("");
+          const restB = bs.slice(j + 1).join("");
+          const eqOk = ok.includes(x);
+          const eqLine =
+            j === L - 1
+              ? `□ が ${x} のときは ${B}${unit} と同じ数になるので、あてはまらない`
+              : `□ が ${x} のときは、その下の位をくらべて ${restA} と ${restB} なので、${eqOk ? "あてはまる" : "あてはまらない"}`;
+          return {
+            q: `${show}${unit} は、${B}${unit} より${big ? "大きい" : "小さい"}数です。□ には 0 から 9 までの数字が1つ入ります。□ にあてはまる数字は何こありますか。`,
+            ans: ok.length,
+            unit: "こ",
+            hint: "上の位から順にくらべよう。□ の位の数字が同じになるときに気をつけよう。",
+            steps: [`□ より上の位は同じなので、□ の位の数字で大きさが決まる（${B}${unit} のその位は ${x}）`, eqLine, `あてはまる数字は ${ok.join("、")} の ${ok.length}こ`],
           };
         }),
       ],
@@ -321,6 +562,57 @@ export const UNITS = [
             steps: [`${b} を ${g} とみて、${a} ÷ ${g} から仮の商 ${tq} をたてる`, ...fix, `${b} × ${q} ＝ ${a} なので、答え ${q}`],
           };
         }),
+        t("E4-warihissan-1d", (r) => {
+          // 10・100 のまとまりで考えるわり算
+          const b = r(2, 9);
+          const q = r(2, 9);
+          const k = r(0, 2);
+          if (k === 0) {
+            const a = 10 * b * q;
+            return {
+              q: `${a} ÷ ${b} を計算しましょう。`,
+              ans: 10 * q,
+              hint: "10 のまとまりが何こあるかで考えよう。",
+              steps: [`${a} は 10 が ${b * q}こ`, `${b * q} ÷ ${b} ＝ ${q} なので、10 が ${q}こ`, `答え ${10 * q}`],
+            };
+          }
+          if (k === 1) {
+            const a = 100 * b * q;
+            return {
+              q: `${a} ÷ ${b} を計算しましょう。`,
+              ans: 100 * q,
+              hint: "100 のまとまりが何こあるかで考えよう。",
+              steps: [`${a} は 100 が ${b * q}こ`, `${b * q} ÷ ${b} ＝ ${q} なので、100 が ${q}こ`, `答え ${100 * q}`],
+            };
+          }
+          const a = 10 * b * q;
+          return {
+            q: `${a} ÷ ${10 * b} を計算しましょう。`,
+            ans: q,
+            hint: "10 のまとまりで考えると、何 ÷ 何になるかな？",
+            steps: [`10 のまとまりで考えると ${b * q} ÷ ${b}`, `${b * q} ÷ ${b} ＝ ${q}`, `答え ${q}`],
+          };
+        }),
+        t("E4-warihissan-1e", (r) => {
+          // わり算の文章題（等分除・包含除、わり切れる）
+          const b = r(2, 9);
+          const q = r(12, Math.min(99, Math.floor(999 / b)));
+          const n = b * q;
+          const [text, u] = pick(r, [
+            [`色紙が ${n}まいあります。${b}人で同じ数ずつ分けると、1人分は何まいになりますか。`, "まい"],
+            [`${n}cm のリボンを、${b}cm ずつに切ります。${b}cm のリボンは何本できますか。`, "本"],
+            [`あめが ${n}こあります。${b}つのふくろに同じ数ずつ入れると、1つのふくろのあめは何こになりますか。`, "こ"],
+            [`${n}ページの本を、毎日同じページ数ずつ読んで、${b}日で読み終えます。1日に何ページ読めばよいですか。`, "ページ"],
+            [`${n}人が、${b}人ずつのグループに分かれます。グループはいくつできますか。`, "グループ"],
+          ]);
+          return {
+            q: text,
+            ans: q,
+            unit: u,
+            hint: "同じ数ずつ分けるときや、いくつ分かを求めるときは、わり算を使うよ。",
+            steps: [`式：${n} ÷ ${b}`, `${n} ÷ ${b} ＝ ${q}`, `答え ${q}${u}`],
+          };
+        }),
       ],
       2: [
         t("E4-warihissan-2a", (r) => {
@@ -357,6 +649,97 @@ export const UNITS = [
             ans: b * q + m,
             hint: "たしかめの式「わる数 × 商 ＋ あまり」を使おう。",
             steps: [`わる数 × 商 ＋ あまり ＝ わられる数`, `${b} × ${q} ＋ ${m} ＝ ${b * q + m}`],
+          };
+        }),
+        t("E4-warihissan-2d", (r) => {
+          // 商の見当：商は何の位からたつか
+          const PL = ["百の位", "十の位", "一の位"];
+          if (r(0, 1)) {
+            const b = r(2, 9);
+            const start = r(0, 1) === 1;
+            const h = start ? r(b, 9) : r(1, b - 1);
+            const a = h * 100 + r(0, 99);
+            const ans = start ? "百の位" : "十の位";
+            return {
+              q: `${a} ÷ ${b} を筆算でするとき、商は何の位からたちますか。`,
+              ans,
+              choices: choices4(r, ans, PL.filter((x) => x !== ans)),
+              hint: "わられる数の上の位から順に、わる数でわれるかどうかを見ていこう。",
+              steps: start
+                ? [`百の位の ${h} は ${b} 以上なので、${h} ÷ ${b} で百の位に商がたつ`, `商は3けたの数になる`]
+                : [`百の位の ${h} は ${b} より小さいので、百の位に商はたたない`, `上から2けたの ${Math.floor(a / 10)} ÷ ${b} で、十の位から商がたつ（商は2けた）`],
+            };
+          }
+          const b = r(12, 79);
+          const start = r(0, 1) === 1;
+          const top2 = start ? r(b, 99) : r(10, b - 1);
+          const a = top2 * 10 + r(0, 9);
+          const ans = start ? "十の位" : "一の位";
+          return {
+            q: `${a} ÷ ${b} を筆算でするとき、商は何の位からたちますか。`,
+            ans,
+            choices: choices4(r, ans, PL.filter((x) => x !== ans)),
+            hint: "わられる数の上から2けたが、わる数より大きいか小さいかを見よう。",
+            steps: start
+              ? [`上から2けたの ${top2} は ${b} 以上なので、${top2} ÷ ${b} で十の位に商がたつ`, `商は2けたの数になる`]
+              : [`上から2けたの ${top2} は ${b} より小さいので、十の位に商はたたない`, `${a} ÷ ${b} で、一の位に商がたつ（商は1けた）`],
+          };
+        }),
+        t("E4-warihissan-2e", (r) => {
+          // わり算のきまり：わられる数とわる数に同じ数をかけても、同じ数でわっても、商は変わらない
+          if (r(0, 2) === 0) {
+            const [d, k, B] = pick(r, [[25, 4, 100], [50, 2, 100], [5, 2, 10]]);
+            const q = r(3, 40);
+            const A = d * q;
+            return {
+              q: `${A} ÷ ${d} を、わられる数とわる数に同じ数をかけて、くふうして計算しましょう。`,
+              ans: q,
+              hint: `${d} に何をかけると、計算しやすい数になるかな？`,
+              steps: [`わられる数とわる数に ${k} をかけても、商は変わらない`, `${A} ÷ ${d} ＝ ${A * k} ÷ ${B}`, `＝ ${q}`],
+            };
+          }
+          const q = r(2, 9);
+          const b0 = r(2, 9);
+          const m = r(2, 3);
+          const A = q * b0 * 10 ** m;
+          const B = b0 * 10 ** m;
+          const cut = r(1, m);
+          const ex = (i, j) => `${A / 10 ** i} ÷ ${B / 10 ** j}`;
+          const ans = ex(cut, cut);
+          const wrongs = [ex(cut, 0), ex(0, cut), ex(cut, cut - 1), ex(cut - 1, cut), ex(m, 0), ex(0, m)].filter((s, i, arr) => arr.indexOf(s) === i);
+          return {
+            q: `${A} ÷ ${B} と商が同じになる式はどれですか。`,
+            ans,
+            choices: choices4(r, ans, wrongs.filter((s) => s !== ans)),
+            hint: "わられる数とわる数を、同じ数でわっても、商は変わらないよ。",
+            steps: [`わられる数とわる数を、どちらも ${10 ** cut} でわると ${ans}`, `${ans} ＝ ${q} なので、${A} ÷ ${B} ＝ ${q}`],
+          };
+        }),
+        t("E4-warihissan-2f", (r) => {
+          // 倍の計算（何倍か・もとにする大きさ）
+          const [X, Y, u, bMax, scale] = pick(r, [
+            ["赤いテープの長さ", "白いテープの長さ", "cm", 25, 1],
+            ["ビルの高さ", "木の高さ", "m", 9, 1],
+            [`${pick(r, NAMES)}さんの家から駅までの道のり`, "家から公園までの道のり", "m", 25, 10],
+          ]);
+          const k = r(3, 12);
+          const Bv = r(4, bMax) * scale;
+          const A = Bv * k;
+          if (r(0, 1)) {
+            return {
+              q: `${X}は ${A}${u}、${Y}は ${Bv}${u} です。${X}は、${Y}の何倍ですか。`,
+              ans: k,
+              unit: "倍",
+              hint: "何倍かを求めるときは、わり算を使うよ。",
+              steps: [`${A} ÷ ${Bv} ＝ ${k}`, `${k}倍`],
+            };
+          }
+          return {
+            q: `${X}は ${A}${u} で、${Y}の ${k}倍です。${Y}は何${u}ですか。`,
+            ans: Bv,
+            unit: u,
+            hint: `${Y}を □${u} として、□ × ${k} ＝ ${A} の式を考えよう。`,
+            steps: [`□ × ${k} ＝ ${A}`, `□ ＝ ${A} ÷ ${k} ＝ ${Bv}`, `${Bv}${u}`],
           };
         }),
       ],
@@ -407,6 +790,104 @@ export const UNITS = [
             choices: choices4(r, ans, [`${q - 1}本とれて、${m + b}cm あまる`, `${q + 1}本とれて、${m}cm あまる`, `${q}本とれて、${b - m}cm あまる`, `${q - 1}本とれて、${m}cm あまる`]),
             hint: `${n} ÷ ${b} を計算しよう。`,
             steps: [...hissan(n, b), `${q}本とれて、${m}cm あまる`],
+          };
+        }),
+        t("E4-warihissan-3d", (r) => {
+          // まちがいさがし：筆算のどこがまちがっているか
+          const R = ["商の十の位に 0 を書いていない", "あまりが、わる数より大きい", "あまりに 0 をつけわすれている", "一の位の数字をおろしていない"];
+          const k = r(0, 3);
+          let a, d, wrong, right, why;
+          if (k === 0) {
+            // 商に 0 がたつのに書いていない
+            d = r(2, 9);
+            const maxQ = Math.floor(999 / d);
+            const h = r(1, Math.floor(maxQ / 100));
+            const o = r(1, Math.min(9, maxQ - 100 * h));
+            const q = 100 * h + o;
+            const m = r(0, 2) === 0 ? r(1, d - 1) : 0;
+            a = d * q + m;
+            if (a > 999) return { skip: true };
+            const T = (Math.floor(a / 100) % d) * 10 + (Math.floor(a / 10) % 10);
+            right = `${q}${m ? ` あまり ${m}` : ""}`;
+            wrong = `${h}${o}${m ? ` あまり ${m}` : ""}`;
+            why = T === 0 ? `十の位は 0 なので、商の十の位に 0 を書く` : `十の位は ${T} ÷ ${d} で商がたたないので、商の十の位に 0 を書く`;
+          } else if (k === 1) {
+            // あまりがわる数より大きいまま
+            d = r(3, 9);
+            const m = r(1, d - 1);
+            const q = r(10, Math.floor((99 - m) / d));
+            a = d * q + m;
+            right = `${q} あまり ${m}`;
+            wrong = `${q - 1} あまり ${m + d}`;
+            why = `あまりの ${m + d} は、わる数の ${d} より大きいので、商をもう1大きくできる`;
+          } else if (k === 2) {
+            // 何十でわるときのあまり
+            const b = r(2, 9);
+            d = 10 * b;
+            const m = r(1, b - 1);
+            const q = r(2, Math.floor((99 - m) / b));
+            a = 10 * (b * q + m);
+            right = `${q} あまり ${10 * m}`;
+            wrong = `${q} あまり ${m}`;
+            why = `10 のまとまりで ${a / 10} ÷ ${b} ＝ ${q} あまり ${m}。あまりは 10 が ${m}こで ${10 * m}`;
+          } else {
+            // 一の位をおろしわすれ
+            d = r(2, 9);
+            const t2 = r(Math.max(d, 10), 99);
+            a = t2 * 10 + r(0, 9);
+            const q = Math.floor(a / d);
+            if (q % 10 === 0) return { skip: true };
+            const m = a % d;
+            right = `${q}${m ? ` あまり ${m}` : ""}`;
+            wrong = `${Math.floor(t2 / d)}${t2 % d ? ` あまり ${t2 % d}` : ""}`;
+            why = `${t2} ÷ ${d} のあと、一の位の ${a % 10} をおろして計算をつづける`;
+          }
+          return {
+            q: `${pick(r, NAMES)}さんは、${a} ÷ ${d} を筆算で計算して、答えを「${wrong}」としました。どこがまちがっていますか。`,
+            ans: R[k],
+            choices: choices4(r, R[k], R.filter((_, i) => i !== k)),
+            hint: "たしかめの計算（わる数 × 商 ＋ あまり）をしたり、あまりとわる数をくらべたりしてみよう。",
+            steps: [`正しくは ${a} ÷ ${d} ＝ ${right}`, why, `答え：「${R[k]}」`],
+          };
+        }),
+        t("E4-warihissan-3e", (r) => {
+          // 0 を消して計算したときのあまり
+          const z = r(1, 2);
+          const Z = 10 ** z;
+          const b = r(2, 9);
+          const q = r(2, 19);
+          const m = r(1, b - 1);
+          const A = (b * q + m) * Z;
+          const B = b * Z;
+          const ans = `${q} あまり ${m * Z}`;
+          return {
+            q: `${A} ÷ ${B} の商とあまりはどれですか。`,
+            ans,
+            choices: choices4(r, ans, [`${q} あまり ${m}`, `${q} あまり ${m * Z * 10}`, `${q * Z} あまり ${m}`, `${q - 1} あまり ${(m + b) * Z}`]),
+            hint: `0 を同じ数だけ消して ${b * q + m} ÷ ${b} と考えると、商が分かるよ。あまりの大きさに気をつけよう。`,
+            steps: [`0 を ${z}こずつ消して ${b * q + m} ÷ ${b} ＝ ${q} あまり ${m}`, `あまりの ${m} は、${Z} が ${m}こ分なので ${m * Z}`, `たしかめ：${B} × ${q} ＋ ${m * Z} ＝ ${A}`, `答え ${ans}`],
+          };
+        }),
+        t("E4-warihissan-3f", (r) => {
+          // あまりの処理：切り捨てと「あと何こあれば」
+          const b = r(3, 9);
+          const q = r(8, 40);
+          const m = r(1, b - 1);
+          const n = b * q + m;
+          const [text, per, u] = pick(r, [
+            [`色紙が ${n}まいあります。1人に ${b}まいずつ配ると、何人に配れますか。また、あと何まいあれば、もう1人に配れますか。`, "人", "まい"],
+            [`クッキーが ${n}こあります。1ふくろに ${b}こずつ入れると、何ふくろできますか。また、あと何こあれば、もう1ふくろできますか。`, "ふくろ", "こ"],
+            [`${n}cm のリボンから、${b}cm のリボンを切り取ります。何本とれますか。また、あと何cm長ければ、もう1本とれますか。`, "本", "cm"],
+          ]);
+          const verb = per === "人" ? "に配れて" : per === "ふくろ" ? "できて" : "とれて";
+          const fmt = (x, y) => `${x}${per}${verb}、あと ${y}${u}`;
+          const ans = fmt(q, b - m);
+          return {
+            q: text,
+            ans,
+            choices: choices4(r, ans, [fmt(q, m), fmt(q + 1, b - m), fmt(q + 1, m), fmt(q, b)]),
+            hint: "わり算のあまりの分では、もう1つ分にたりないね。あまりとわる数をくらべよう。",
+            steps: [`${n} ÷ ${b} ＝ ${q} あまり ${m}`, `${q}${per}${verb}、${m}${u} あまる`, `もう1${per}分には ${b} − ${m} ＝ ${b - m}（${u}）たりない`],
           };
         }),
       ],
@@ -498,6 +979,55 @@ export const UNITS = [
             steps: [`${X * 1000} になるのは ${lo} 以上 ${hi} 未満の数`, `あてはまるのは ${ok}`],
           };
         }),
+        t("E4-gaisu-1d", (r) => {
+          // 切り上げ・切り捨て（四捨五入とはちがう答えになる数で）
+          const up = r(0, 1) === 1;
+          const [u, lab] = pick(r, [[100, "百"], [1000, "千"], [10000, "一万"]]);
+          const P = r(10, 99);
+          const rest = up ? r(1, u / 2 - 1) : r(u / 2, u - 1);
+          const n = P * u + rest;
+          const ans = up ? (P + 1) * u : P * u;
+          return {
+            q: `${n} を、${up ? "切り上げ" : "切り捨て"}て、${lab}の位までのがい数にしましょう。`,
+            ans,
+            hint: `${lab}の位より下の位を見よう。${up ? "切り上げ" : "切り捨て"}は、四捨五入とどこがちがうかな？`,
+            steps: up
+              ? [`${lab}の位より下の位が 0 でないので、${lab}の位を1大きくして、下の位をすべて 0 にする`, `${n} → ${ans}`]
+              : [`${lab}の位より下の位を、すべて 0 にする`, `${n} → ${ans}`],
+          };
+        }),
+        t("E4-gaisu-1e", (r) => {
+          // 以上・以下・未満
+          const a = r(5, 60);
+          const b = a + r(4, 9);
+          const k = r(0, 2);
+          if (k === 0) {
+            return {
+              q: `${a} 以上 ${b} 未満の整数は、何こありますか。`,
+              ans: b - a,
+              unit: "こ",
+              hint: "「以上」はその数をふくむ、「未満」はその数をふくまないよ。",
+              steps: [`${a} 以上 ${b} 未満の整数は、${a} から ${b - 1} まで`, `${b - 1} − ${a} ＋ 1 ＝ ${b - a}（こ）`],
+            };
+          }
+          if (k === 1) {
+            return {
+              q: `${a} 以上 ${b} 以下の整数は、何こありますか。`,
+              ans: b - a + 1,
+              unit: "こ",
+              hint: "「以上」「以下」は、どちらもその数をふくむよ。",
+              steps: [`${a} 以上 ${b} 以下の整数は、${a} から ${b} まで`, `${b} − ${a} ＋ 1 ＝ ${b - a + 1}（こ）`],
+            };
+          }
+          const x = r(0, 1) ? a : r(a + 1, b - 1);
+          return {
+            q: `次の数のうち、「${a} 以上 ${b} 未満」に入る数はどれですか。`,
+            ans: x,
+            choices: choices4(r, x, [b, a - 1, b + r(1, 3)]),
+            hint: "「以上」はその数をふくむ、「未満」はその数をふくまないよ。",
+            steps: [`「${a} 以上 ${b} 未満」は、${a} をふくみ、${b} をふくまない`, `あてはまるのは ${x}`],
+          };
+        }),
       ],
       2: [
         t("E4-gaisu-2a", (r) => {
@@ -541,6 +1071,55 @@ export const UNITS = [
             choices: choices4(r, ans, [`${lo}以上${hi}以下`, `${B}以上${B + u}未満`, `${lo + 1}以上${hi + 1}未満`, `${B - u}以上${B}未満`]),
             hint: `${hi} を四捨五入すると、いくつになるかな？`,
             steps: [`いちばん小さいのは ${lo}、${hi} は切り上げて ${B + u} になってしまう`, `だから ${ans}`],
+          };
+        }),
+        t("E4-gaisu-2d", (r) => {
+          // 商の見積もり（上から1けたのがい数にしてから計算）
+          const k = r(3, 4);
+          const K = 10 ** k;
+          let dA = 0;
+          let dn = 0;
+          for (let i = 0; i < 50; i++) {
+            dA = r(1, 9);
+            dn = r(2, 9);
+            if ((dA * K) % (dn * 10) === 0 && (dA * K) / (dn * 10) >= 10) break;
+            dA = 0;
+          }
+          if (!dA) return { skip: true };
+          const RA = dA * K;
+          const Rn = dn * 10;
+          let A = r(Math.max(K, RA - K / 2), RA + K / 2 - 1);
+          if (A === RA) A += r(1, 9) * (K / 100);
+          let n = r(Rn - 5, Rn + 4);
+          if (n === Rn) n += 1;
+          const ans = RA / Rn;
+          const scenes = [
+            [`工場で作ったボール ${A}こを、${n}箱に同じ数ずつ入れます。1箱分はおよそ何こですか。`, "こ"],
+            [`色紙 ${A}まいを、${n}人で同じ数ずつ分けます。1人分はおよそ何まいですか。`, "まい"],
+          ];
+          if (k === 4) scenes.push([`遠足のバス代 ${A}円を、${n}人で同じように分けます。1人分はおよそ何円ですか。`, "円"]);
+          const [text, u] = pick(r, scenes);
+          return {
+            q: `${text}わられる数とわる数を、それぞれ上から1けたのがい数にして見積もりましょう。`,
+            ans,
+            unit: u,
+            hint: "上から2けた目を四捨五入して、上から1けたのがい数にしよう。",
+            steps: [`${A} → ${RA}、${n} → ${Rn}`, `${RA} ÷ ${Rn} ＝ ${ans}`, `およそ ${ans}${u}`],
+          };
+        }),
+        t("E4-gaisu-2e", (r) => {
+          // どの位までのがい数にしたか
+          const n = r(10000, 99999);
+          const opts = [[10, "十の位"], [100, "百の位"], [1000, "千の位"], [10000, "一万の位"]];
+          const [u, lab] = pick(r, opts);
+          const R = gaisu(n, u);
+          if (R === n || opts.filter(([v]) => gaisu(n, v) === R).length > 1) return { skip: true };
+          return {
+            q: `${n} を四捨五入して、${R} にしました。何の位までのがい数にしましたか。`,
+            ans: lab,
+            choices: choices4(r, lab, opts.filter(([v]) => v !== u).map(([, l]) => l)),
+            hint: "それぞれの位までのがい数にして、くらべてみよう。",
+            steps: [opts.map(([v, l]) => `${l}まで → ${gaisu(n, v)}`).join("、"), `${R} になるのは ${lab}までのがい数`],
           };
         }),
       ],
@@ -600,6 +1179,72 @@ export const UNITS = [
             steps: [`十の位までで ${A} になるのは ${A - 5} 以上 ${A + 5} 未満`, `百の位までで ${B} になるのは ${B - 50} 以上 ${B + 50} 未満`, `両方にあてはまるいちばん小さい整数は ${ans}`],
           };
         }),
+        t("E4-gaisu-3d", (r) => {
+          // 目的にあわせた見積もり方（足りるか → 切り上げ、こえるか → 切り捨て）
+          const name = pick(r, NAMES);
+          const enough = r(0, 1) === 1;
+          const hs = [];
+          let B;
+          if (enough) {
+            B = pick(r, [1000, 1500, 2000, 2500, 3000]);
+            const T = B / 100 - 3; // 切り上げた合計が B 以下になるように
+            hs.push(r(1, Math.min(9, T - 2)));
+            hs.push(r(1, Math.min(9, T - 1 - hs[0])));
+            hs.push(r(1, Math.min(9, T - hs[0] - hs[1])));
+          } else {
+            B = pick(r, [1000, 1500, 2000]);
+            const T = B / 100; // 切り捨てた合計が B 以上になるように
+            hs.push(r(Math.max(1, T - 18), 9));
+            hs.push(r(Math.max(1, T - hs[0] - 9), 9));
+            hs.push(r(Math.max(1, T - hs[0] - hs[1]), 9));
+          }
+          const ps = hs.map((h) => h * 100 + r(1, 99));
+          const up = hs.reduce((s, h) => s + (h + 1) * 100, 0);
+          const down = hs.reduce((s, h) => s + h * 100, 0);
+          const rd = ps.reduce((s, p) => s + gaisu(p, 100), 0);
+          const items = `${ps.join("円、")}円`;
+          if (enough) {
+            const say = (how, v, end) => `${how}て ${v}円と見積もる。${B}円以下なので、${end}`;
+            const ans = say("切り上げ", up, "足りると言える");
+            return {
+              q: `${name}さんは ${B}円を持って買い物に行きます。${items}の品物を買うとき、お金が足りるかどうかを、ねだんを百の位までのがい数にして見積もります。正しい考え方はどれですか。`,
+              ans,
+              choices: choices4(r, ans, [say("切り捨て", down, "足りると言える"), say("四捨五入し", rd, "足りると言える"), say("切り上げ", up, "足りるかどうかは分からない")]),
+              hint: "見積もった代金が、本当の代金より多くなるか少なくなるかを考えよう。",
+              steps: [`切り上げると、本当の代金より多めに見積もることになる`, `多めに見積もった ${up}円でも ${B}円以下なので、本当の代金なら足りると言える`, `切り捨てや四捨五入では、本当の代金より少なく見積もることがあるので、足りるとは言い切れない`],
+            };
+          }
+          const say = (how, v, end) => `${how}て ${v}円と見積もる。${B}円以上なので、${end}`;
+          const ans = say("切り捨て", down, "くじが引けると言える");
+          return {
+            q: `${B}円以上の買い物をすると、くじが1回引けます。${name}さんは ${items}の品物を買います。くじが引けるかどうかを、ねだんを百の位までのがい数にして見積もります。正しい考え方はどれですか。`,
+            ans,
+            choices: choices4(r, ans, [say("切り上げ", up, "くじが引けると言える"), say("四捨五入し", rd, "くじが引けると言える"), say("切り捨て", down, "くじが引けるかどうかは分からない")]),
+            hint: "見積もった代金が、本当の代金より多くなるか少なくなるかを考えよう。",
+            steps: [`切り捨てると、本当の代金より少なめに見積もることになる`, `少なめに見積もった ${down}円でも ${B}円以上なので、本当の代金ならくじが引けると言える`, `切り上げや四捨五入では、本当の代金より多く見積もることがあるので、引けるとは言い切れない`],
+          };
+        }),
+        t("E4-gaisu-3e", (r) => {
+          // がい数にして、ぼうグラフの目もりに表す
+          const [u, lab, scale, sLab] = pick(r, [
+            [10000, "一万の位", 10000, "1万人"],
+            [10000, "一万の位", 20000, "2万人"],
+            [1000, "千の位", 1000, "1000人"],
+            [1000, "千の位", 2000, "2000人"],
+          ]);
+          const town = u === 10000 ? pick(r, ["A市", "B市", "ある市"]) : pick(r, ["A町", "B町", "ある町"]);
+          const ticks = r(6, 30);
+          const R = ticks * scale;
+          let n = R - u / 2 + r(0, u - 1);
+          if (n === R) n += r(1, u / 2 - 1);
+          return {
+            q: `${town}の人口は ${n}人です。人口を四捨五入して${lab}までのがい数にし、1目もりが ${sLab} のぼうグラフに表します。ぼうの長さは何目もりになりますか。`,
+            ans: ticks,
+            unit: "目もり",
+            hint: "まず、人口をがい数にしよう。そのあと、1目もりの何こ分かを考えよう。",
+            steps: [`${n} → ${R}（${lab}までのがい数）`, `${R} ÷ ${scale} ＝ ${ticks}`, `${ticks}目もり`],
+          };
+        }),
       ],
       4: [
         t("E4-gaisu-4a", (r) => {
@@ -614,6 +1259,30 @@ export const UNITS = [
             unit: "こ",
             hint: `代金は「何円以上何円未満」か考えよう。`,
             steps: [`代金は ${B - 50}円以上 ${B + 50}円未満`, `${p} × ${ans} ＝ ${p * ans}、${p} × ${ans + 1} ＝ ${p * (ans + 1)}`, `${B + 50}円未満になるいちばん多い数は ${ans}こ`],
+          };
+        }),
+        t("E4-gaisu-4b", (r) => {
+          // がい数のもとの数のはんいから、和・差のいちばん大きい・小さい数を考える
+          const [u, lab] = pick(r, [[10, "十"], [100, "百"]]);
+          let RA = r(3, 49) * u;
+          let RB = r(3, 49) * u;
+          if (RA === RB) return { skip: true };
+          const k = r(0, 2);
+          if (k === 2 && RA < RB) [RA, RB] = [RB, RA];
+          const loA = RA - u / 2;
+          const hiA = RA + u / 2 - 1;
+          const loB = RB - u / 2;
+          const hiB = RB + u / 2 - 1;
+          const [what, ans, line] = [
+            ["A ＋ B として考えられる、いちばん大きい数", hiA + hiB, `A も B もいちばん大きいとき：${hiA} ＋ ${hiB} ＝ ${hiA + hiB}`],
+            ["A ＋ B として考えられる、いちばん小さい数", loA + loB, `A も B もいちばん小さいとき：${loA} ＋ ${loB} ＝ ${loA + loB}`],
+            ["A − B として考えられる、いちばん大きい数", hiA - loB, `A がいちばん大きく、B がいちばん小さいとき：${hiA} − ${loB} ＝ ${hiA - loB}`],
+          ][k];
+          return {
+            q: `2つの整数 A と B があります。A を四捨五入して${lab}の位までのがい数にすると ${RA}、B を四捨五入して${lab}の位までのがい数にすると ${RB} になります。${what}はいくつですか。`,
+            ans,
+            hint: "A と B が、それぞれ「何以上何以下」の整数かを考えよう。",
+            steps: [`A は ${loA} 以上 ${hiA} 以下、B は ${loB} 以上 ${hiB} 以下の整数`, line, `答え ${ans}`],
           };
         }),
       ],
@@ -708,6 +1377,71 @@ export const UNITS = [
             steps: [`先に ${b} ÷ ${c} ＝ ${k}`, `${a} − ${k} ＝ ${a - k}`],
           };
         }),
+        t("E4-keisan-1d", (r) => {
+          // 場面に合う1つの式をえらぶ
+          const g = twoGoods(r);
+          if (!g) return { skip: true };
+          const [X, cx, a, Y, cy, b] = r(0, 1) ? g : [...g.slice(3), ...g.slice(0, 3)];
+          const n = r(2, 5);
+          const k = r(0, 3);
+          let q, ans, wrongs, word, val, u;
+          if (k === 0) {
+            q = `1${cx} ${a}円の${X}を ${n}${cx}と、1${cy} ${b}円の${Y}を 1${cy}買いました。代金を1つの式に表したものはどれですか。`;
+            ans = `${a} × ${n} ＋ ${b}`;
+            wrongs = [`(${a} ＋ ${b}) × ${n}`, `${a} ＋ ${b} × ${n}`, `${a} × (${n} ＋ ${b})`];
+            word = `${X}の代金 ＋ ${Y}の代金`;
+            val = a * n + b;
+            u = "円";
+          } else if (k === 1) {
+            q = `1${cx} ${a}円の${X}と、1${cy} ${b}円の${Y}を1組にして、${n}組買いました。代金を1つの式に表したものはどれですか。`;
+            ans = `(${a} ＋ ${b}) × ${n}`;
+            wrongs = [`${a} ＋ ${b} × ${n}`, `${a} × ${n} ＋ ${b}`, `${a} ＋ ${b} ＋ ${n}`];
+            word = "1組の代金 × 組の数";
+            val = (a + b) * n;
+            u = "円";
+          } else if (k === 2) {
+            const m = [500, 1000, 2000, 3000].find((v) => v > a * n);
+            q = `${m}円を持っています。1${cx} ${a}円の${X}を ${n}${cx}買うと、のこりは何円ですか。のこりを1つの式に表したものはどれですか。`;
+            ans = `${m} − ${a} × ${n}`;
+            wrongs = [`(${m} − ${a}) × ${n}`, `${a} × ${n} − ${m}`, `${m} − ${a} ＋ ${n}`];
+            word = `持っているお金 − ${X}の代金`;
+            val = m - a * n;
+            u = "円";
+          } else {
+            const n = r(3, 6);
+            const s = n * r(6, 15);
+            const b = r(5, Math.min(20, s - 10));
+            const a = s - b;
+            q = `色紙が ${a}まいあります。${b}まいもらってから、${n}人で同じ数ずつ分けます。1人分の色紙のまい数を1つの式に表したものはどれですか。`;
+            ans = `(${a} ＋ ${b}) ÷ ${n}`;
+            wrongs = [`${a} ＋ ${b} ÷ ${n}`, `${a} ÷ ${n} ＋ ${b}`, `(${a} − ${b}) ÷ ${n}`];
+            word = "（はじめのまい数 ＋ もらったまい数）÷ 人数";
+            val = s / n;
+            u = "まい";
+          }
+          return {
+            q,
+            ans,
+            choices: choices4(r, ans, wrongs),
+            hint: "まず、ことばの式に表してみよう。先に計算したいところに ( ) がいるかな？",
+            steps: [`ことばの式：${word}`, `1つの式：${ans}`, `計算すると ${val}${u}`],
+          };
+        }),
+        t("E4-keisan-1e", (r) => {
+          // たし算のくふう（たすと 100・200 になる組を先に）
+          const T = pick(r, [100, 100, 200]);
+          const b = T === 100 ? r(1, 8) * 10 + r(1, 9) : 100 + r(0, 8) * 10 + r(1, 9);
+          const c = T - b;
+          const a = r(12, 98);
+          const front = r(0, 1) === 1; // b ＋ a ＋ c の順（入れかえが必要）
+          const expr = front ? `${b} ＋ ${a} ＋ ${c}` : `${a} ＋ ${b} ＋ ${c}`;
+          return {
+            q: `${expr} を、くふうして計算しましょう。`,
+            ans: a + T,
+            hint: `たすと ${T} になる2つの数を見つけて、先にたそう。`,
+            steps: [`${b} ＋ ${c} ＝ ${T} なので、先に計算する`, front ? `${expr} ＝ (${b} ＋ ${c}) ＋ ${a}` : `${expr} ＝ ${a} ＋ (${b} ＋ ${c})`, front ? `＝ ${T} ＋ ${a} ＝ ${a + T}` : `＝ ${a} ＋ ${T} ＝ ${a + T}`],
+          };
+        }),
       ],
       2: [
         t("E4-keisan-2a", (r) => {
@@ -775,6 +1509,68 @@ export const UNITS = [
             ans: n * 101,
             hint: "101 ＝ 100 ＋ 1 と考えよう。",
             steps: [`${n} × 101 ＝ ${n} × (100 ＋ 1)`, `＝ ${n * 100} ＋ ${n}`, `＝ ${n * 101}`],
+          };
+        }),
+        t("E4-keisan-2d", (r) => {
+          // この式になる場面はどれ（式 → 場面）
+          const g = twoGoods(r);
+          if (!g) return { skip: true };
+          const [X, cx, a, Y, cy, b] = g;
+          const n = r(3, 6);
+          const S = [
+            [`(${a} ＋ ${b}) × ${n}`, `1${cx} ${a}円の${X}と 1${cy} ${b}円の${Y}を1組にして、${n}組買ったときの代金`, `(${a} ＋ ${b}) は1組の代金で、それが ${n}組分`],
+            [`${a} ＋ ${b} × ${n}`, `1${cx} ${a}円の${X}を 1${cx}と、1${cy} ${b}円の${Y}を ${n}${cy}買ったときの代金`, `${b} × ${n} は${Y} ${n}${cy}の代金で、それに${X} 1${cx}の ${a}円をたす`],
+            [`${a} × ${n} ＋ ${b}`, `1${cx} ${a}円の${X}を ${n}${cx}と、1${cy} ${b}円の${Y}を 1${cy}買ったときの代金`, `${a} × ${n} は${X} ${n}${cx}の代金で、それに${Y} 1${cy}の ${b}円をたす`],
+            [`(${a} − ${b}) × ${n}`, `1${cx} ${a}円の${X}が ${b}円安くなっていて、それを ${n}${cx}買ったときの代金`, `(${a} − ${b}) は安くなった${X}1${cx}のねだんで、それが ${n}${cx}分`],
+          ];
+          const [expr, ans, why] = pick(r, S);
+          return {
+            q: `「${expr}」の式で代金を求めるのは、どの買い物ですか。`,
+            ans,
+            choices: choices4(r, ans, S.map(([, s]) => s).filter((s) => s !== ans)),
+            hint: "( ) の中は先に計算するよ。( ) の中や、かけ算の部分が何を表しているか考えよう。",
+            steps: [why, `答え：${ans}`],
+          };
+        }),
+        t("E4-keisan-2e", (r) => {
+          // 1つの式に表して求める文章題
+          const k = r(0, 2);
+          if (k === 0) {
+            const a = r(6, 12);
+            const b = r(2, 6);
+            const cs = [3, 4, 5, 6, 7, 8, 9].filter((c) => (a * b) % c === 0 && c !== b && c !== a);
+            if (!cs.length) return { skip: true };
+            const c = pick(r, cs);
+            const ans = (a * b) / c;
+            return {
+              q: `1箱に ${a}こ入ったクッキーを ${b}箱買って、${c}人で同じ数ずつ分けます。1人分は何こになりますか。1つの式に表して求めましょう。`,
+              ans,
+              unit: "こ",
+              hint: "まず、クッキーが全部で何こになるかを表す式を考えて、それを人数でわろう。",
+              steps: [`1つの式：${a} × ${b} ÷ ${c}`, `${a} × ${b} ＝ ${a * b}、${a * b} ÷ ${c} ＝ ${ans}`, `${ans}こ`],
+            };
+          }
+          if (k === 1) {
+            const m = pick(r, [100, 150, 200, 250, 300, 500]);
+            const c = r(3, 8);
+            const p = m * c - r(1, Math.min(30, (m * c) / 10 - 1)) * 10;
+            return {
+              q: `${c}人で ${m}円ずつ出しあって、${p}円の花たばを買いました。のこりは何円ですか。1つの式に表して求めましょう。`,
+              ans: m * c - p,
+              unit: "円",
+              hint: "まず、集めたお金が全部でいくらかを表す式を考えよう。",
+              steps: [`1つの式：${m} × ${c} − ${p}`, `${m} × ${c} ＝ ${m * c}、${m * c} − ${p} ＝ ${m * c - p}`, `${m * c - p}円`],
+            };
+          }
+          const a = r(2, 6);
+          const kk = r(3, 9);
+          const n = a * kk + r(1, 20);
+          return {
+            q: `みかんが ${n}こあります。1人に ${a}こずつ、${kk}人に配ると、のこりは何こですか。1つの式に表して求めましょう。`,
+            ans: n - a * kk,
+            unit: "こ",
+            hint: "配ったみかんの数を表す式を考えて、それを全部の数からひこう。",
+            steps: [`1つの式：${n} − ${a} × ${kk}`, `${a} × ${kk} ＝ ${a * kk}、${n} − ${a * kk} ＝ ${n - a * kk}`, `${n - a * kk}こ`],
           };
         }),
       ],
@@ -847,6 +1643,65 @@ export const UNITS = [
             steps: [`${a} × ${d1} ＋ ${a} × ${100 - d1} ＝ ${a} × (${d1} ＋ ${100 - d1})`, `＝ ${a} × 100`, `＝ ${100 * a}`],
           };
         }),
+        t("E4-keisan-3d", (r) => {
+          // ( ) をつける場所で答えが変わる
+          const a = r(2, 9);
+          const b = r(2, 9);
+          const c = r(2, 9);
+          const d = r(2, 9);
+          const E = [
+            [`(${a} × ${b} ＋ ${c}) × ${d}`, (a * b + c) * d],
+            [`${a} × (${b} ＋ ${c}) × ${d}`, a * (b + c) * d],
+            [`${a} × (${b} ＋ ${c} × ${d})`, a * (b + c * d)],
+          ];
+          const plain = a * b + c * d;
+          if (new Set([...E.map(([, v]) => v), plain]).size !== 4) return { skip: true };
+          const [ans, target] = pick(r, E);
+          return {
+            q: `${a} × ${b} ＋ ${c} × ${d} の式に ( ) を1組つけて、答えが ${target} になるようにします。正しいものはどれですか。`,
+            ans,
+            choices: choices4(r, ans, [...E.map(([s]) => s).filter((s) => s !== ans), `(${a} × ${b}) ＋ ${c} × ${d}`]),
+            hint: "( ) の中を先に計算するよ。1つずつ計算してたしかめよう。",
+            steps: [...E.map(([s, v]) => `${s} ＝ ${v}`), `答えが ${target} になるのは ${ans}`],
+          };
+        }),
+        t("E4-keisan-3e", (r) => {
+          // くふうした計算の考え方をえらぶ
+          if (r(0, 1)) {
+            const k = r(3, 24);
+            const n = 4 * k;
+            const ans = `${n} × 25 ＝ ${k} × 4 × 25 ＝ ${k} × 100 ＝ ${k * 100}`;
+            return {
+              q: `${n} × 25 をくふうして計算します。正しい考え方はどれですか。`,
+              ans,
+              choices: choices4(r, ans, [
+                `${n} × 25 ＝ ${n} × 20 ＋ 5 ＝ ${n * 20 + 5}`,
+                `${n} × 25 ＝ ${k} × 4 × 25 ＝ ${k} ＋ 100 ＝ ${k + 100}`,
+                `${n} × 25 ＝ ${n} × 100 × 4 ＝ ${n * 400}`,
+              ]),
+              hint: "どの考え方が、計算のきまりを正しく使っているかな？1つずつたしかめよう。",
+              steps: [`${n} ＝ ${k} × 4 と考えると、4 × 25 ＝ 100 が使える`, `${n} × 25 ＝ ${k} × (4 × 25) ＝ ${k} × 100 ＝ ${k * 100}`],
+            };
+          }
+          const d = r(2, 3);
+          const minus = r(0, 1) === 1;
+          const n = r(3, minus ? Math.floor(99 / d) : 40);
+          const X = minus ? 100 - d : 100 + d;
+          const op = minus ? "−" : "＋";
+          const head = `${X} × ${n} ＝ (100 ${op} ${d}) × ${n} ＝ `;
+          const ans = `${head}100 × ${n} ${op} ${d} × ${n} ＝ ${X * n}`;
+          return {
+            q: `${X} × ${n} をくふうして計算します。正しい考え方はどれですか。`,
+            ans,
+            choices: choices4(r, ans, [
+              `${head}100 × ${n} ${op} ${d} ＝ ${minus ? 100 * n - d : 100 * n + d}`,
+              `${head}100 ${op} ${d} × ${n} ＝ ${minus ? 100 - d * n : 100 + d * n}`,
+              `${head}100 × ${n} ${minus ? "＋" : "−"} ${d} × ${n} ＝ ${minus ? 100 * n + d * n : 100 * n - d * n}`,
+            ]),
+            hint: "( ) の中の2つの数の、どちらにも かけているかな？1つずつたしかめよう。",
+            steps: [`(100 ${op} ${d}) × ${n} は、100 × ${n} と ${d} × ${n} の両方を計算する（分配のきまり）`, `100 × ${n} ${op} ${d} × ${n} ＝ ${100 * n} ${op} ${d * n} ＝ ${X * n}`],
+          };
+        }),
       ],
       4: [
         t("E4-keisan-4a", (r) => {
@@ -879,6 +1734,45 @@ export const UNITS = [
             choices: choices4(r, op, OPS.filter((o) => o !== op)),
             hint: "4つとも入れてためしてみよう。計算の順番（× と ÷ が先）に気をつけて。",
             steps: ["× と ÷ は、＋ と − より先に計算する（( ) があればその中が先）", `${show(op)} を計算すると ${D}`, `答えは ${op}`],
+          };
+        }),
+        t("E4-keisan-4b", (r) => {
+          // ( ) をつけわすれた計算から、正しい答えを求める
+          const k = r(0, 2);
+          const c = r(2, 9);
+          if (k === 0) {
+            const b = r(2, 9);
+            const x = r(5, 40);
+            const W = x + b * c;
+            const ans = (x + b) * c;
+            return {
+              q: `(□ ＋ ${b}) × ${c} を計算するところを、( ) をつけわすれて □ ＋ ${b} × ${c} と計算したので、答えが ${W} になりました。正しい答えはいくつですか。`,
+              ans,
+              hint: "まず、まちがえた式から □ にあてはまる数を求めよう。",
+              steps: [`まちがえた式：□ ＋ ${b * c} ＝ ${W} なので、□ ＝ ${W} − ${b * c} ＝ ${x}`, `正しい式：(${x} ＋ ${b}) × ${c} ＝ ${x + b} × ${c} ＝ ${ans}`],
+            };
+          }
+          if (k === 1) {
+            const b = r(2, 9);
+            const x = b * c + r(1, 40);
+            const W = x - b * c;
+            const ans = (x - b) * c;
+            return {
+              q: `(□ − ${b}) × ${c} を計算するところを、( ) をつけわすれて □ − ${b} × ${c} と計算したので、答えが ${W} になりました。正しい答えはいくつですか。`,
+              ans,
+              hint: "まず、まちがえた式から □ にあてはまる数を求めよう。",
+              steps: [`まちがえた式：□ − ${b * c} ＝ ${W} なので、□ ＝ ${W} ＋ ${b * c} ＝ ${x}`, `正しい式：(${x} − ${b}) × ${c} ＝ ${x - b} × ${c} ＝ ${ans}`],
+            };
+          }
+          const s = c * r(5, 15);
+          const b = c * r(1, 4);
+          const x = s - b;
+          const W = x + b / c;
+          return {
+            q: `(□ ＋ ${b}) ÷ ${c} を計算するところを、( ) をつけわすれて □ ＋ ${b} ÷ ${c} と計算したので、答えが ${W} になりました。正しい答えはいくつですか。`,
+            ans: s / c,
+            hint: "まず、まちがえた式から □ にあてはまる数を求めよう。",
+            steps: [`まちがえた式：□ ＋ ${b / c} ＝ ${W} なので、□ ＝ ${W} − ${b / c} ＝ ${x}`, `正しい式：(${x} ＋ ${b}) ÷ ${c} ＝ ${s} ÷ ${c} ＝ ${s / c}`],
           };
         }),
       ],
@@ -935,6 +1829,129 @@ export const UNITS = [
             steps: [`${X} × ${n} ＝ ${X * n} と計算する`, `かけられる数が小数第1位までなので、小数点をうって ${ans}`],
           };
         }),
+        t("E4-shosu-1d", (r) => {
+          // 小数のしくみ（0.01・0.001 のいくつ分、位の数字）
+          const k = r(0, 2);
+          if (k === 0) {
+            const three = r(0, 2) === 0;
+            const f = three ? 1000 : 100;
+            const u = three ? "0.001" : "0.01";
+            const N = three ? r(1001, 9999) : r(101, 999);
+            const x = round(N / f);
+            return {
+              q: `${x} は、${u} を何こ集めた数ですか。`,
+              ans: N,
+              unit: "こ",
+              hint: `1 は、${u} を何こ集めた数かな？`,
+              steps: [`1 は ${u} を ${f}こ集めた数`, `${x} を ${f}倍すると ${N}（小数点が右へ${three ? 3 : 2}けたうつる）`, `${N}こ`],
+            };
+          }
+          if (k === 1) {
+            const a = r(1, 9);
+            if (r(0, 1)) {
+              const b = r(1, 9);
+              const c = r(1, 9);
+              const ans = round(a + b / 10 + c / 100);
+              return {
+                q: `1 を ${a}こ、0.1 を ${b}こ、0.01 を ${c}こ あわせた数はいくつですか。`,
+                ans,
+                hint: "1 の位、$\\frac{1}{10}$ の位、$\\frac{1}{100}$ の位に、それぞれ数字を書いてみよう。",
+                steps: [`1 が ${a}こで ${a}、0.1 が ${b}こで ${round(b / 10)}、0.01 が ${c}こで ${round(c / 100)}`, `あわせて ${ans}`],
+              };
+            }
+            const b = r(1, 9);
+            const c = r(1, 9);
+            const ans = round(a + b / 100 + c / 1000);
+            return {
+              q: `1 を ${a}こ、0.01 を ${b}こ、0.001 を ${c}こ あわせた数はいくつですか。`,
+              ans,
+              hint: "$\\frac{1}{10}$ の位に数字がないときは、0 を書くよ。",
+              steps: [`1 が ${a}こで ${a}、0.01 が ${b}こで ${round(b / 100)}、0.001 が ${c}こで ${round(c / 1000)}`, `$\\frac{1}{10}$ の位は 0 なので ${ans}`],
+            };
+          }
+          const w = r(1, 19);
+          const ds = [r(0, 9), r(0, 9), r(1, 9)];
+          const s = `${w}.${ds.join("")}`;
+          const PLN = ["$\\frac{1}{10}$ の位", "$\\frac{1}{100}$ の位", "$\\frac{1}{1000}$ の位"];
+          const i = r(0, 2);
+          return {
+            q: `${s} の ${PLN[i]}の数字は何ですか。`,
+            ans: ds[i],
+            hint: "小数点のすぐ右が $\\frac{1}{10}$ の位、その右が $\\frac{1}{100}$ の位だよ。",
+            steps: [`小数点の右へ順に、${PLN.map((p, j) => `${p}は ${ds[j]}`).join("、")}`, `答え ${ds[i]}`],
+          };
+        }),
+        t("E4-shosu-1e", (r) => {
+          // 単位の換算（小数で表す）
+          const k = r(0, 5);
+          if (k === 0 || k === 1) {
+            const [big, small] = k === 0 ? ["km", "m"] : ["kg", "g"];
+            if (r(0, 1)) {
+              const N = pick(r, [r(1001, 9999), r(101, 999) * 10, r(11, 99) * 100]);
+              const x = round(N / 1000);
+              return {
+                q: `${x}${big} は何${small}ですか。`,
+                ans: N,
+                unit: small,
+                hint: `1${big} は何${small}かな？`,
+                steps: [`1${big} ＝ 1000${small}`, `${x}${big} は ${x} を 1000倍して ${N}${small}`],
+              };
+            }
+            const N = pick(r, [r(101, 999), r(1001, 4999), r(11, 99) * 10]);
+            const x = round(N / 1000);
+            return {
+              q: `${N}${small} は何${big}ですか。`,
+              ans: x,
+              unit: big,
+              hint: `1${small} は何${big}かな？`,
+              steps: [`1${small} ＝ 0.001${big}`, `${N}${small} は 0.001${big} の ${N}こ分で ${x}${big}`],
+            };
+          }
+          if (k === 2) {
+            const c = pick(r, [r(1, 99), r(101, 999)]);
+            const x = round(c / 100);
+            return {
+              q: `${c}cm は何m ですか。`,
+              ans: x,
+              unit: "m",
+              hint: "1cm は何m かな？",
+              steps: ["1cm ＝ 0.01m", `${c}cm は 0.01m の ${c}こ分で ${x}m`],
+            };
+          }
+          if (k === 3) {
+            const a = r(1, 9);
+            const b = r(1, 99);
+            const ans = round(a + b / 100);
+            return {
+              q: `${a}m${b}cm は何m ですか。`,
+              ans,
+              unit: "m",
+              hint: "1cm は 0.01m だよ。",
+              steps: [`${b}cm ＝ ${round(b / 100)}m`, `${a} ＋ ${round(b / 100)} ＝ ${ans}（m）`],
+            };
+          }
+          if (k === 4) {
+            const a = r(1, 9);
+            const b = pick(r, [r(1, 99), r(100, 999)]);
+            const ans = round(a + b / 1000);
+            return {
+              q: `${a}kg${b}g は何kg ですか。`,
+              ans,
+              unit: "kg",
+              hint: "1g は 0.001kg だよ。",
+              steps: [`${b}g ＝ ${round(b / 1000)}kg`, `${a} ＋ ${round(b / 1000)} ＝ ${ans}（kg）`],
+            };
+          }
+          const N = r(11, 99) * 100 + pick(r, [0, r(1, 99)]);
+          const x = round(N / 1000);
+          return {
+            q: `${x}L は何mL ですか。`,
+            ans: N,
+            unit: "mL",
+            hint: "1L は何mL かな？",
+            steps: ["1L ＝ 1000mL", `${x}L は ${x} を 1000倍して ${N}mL`],
+          };
+        }),
       ],
       2: [
         t("E4-shosu-2a", (r) => {
@@ -976,6 +1993,77 @@ export const UNITS = [
             ans: q,
             hint: "わり切れないときは、わられる数の右に 0 があると考えて、わり進めよう。",
             steps: [`${a} を ${Number.isInteger(a) ? `${a}.00` : `${a}0`} と考えて、0 をつけたしながらわり進める`, `${a} ÷ ${n} ＝ ${q}`],
+          };
+        }),
+        t("E4-shosu-2d", (r) => {
+          // 10倍・100倍・1/10・1/100 と小数点のうつり方
+          const [lab, f, how] = pick(r, [
+            ["10倍", 10, "10倍すると、小数点は右へ1けたうつる"],
+            ["100倍", 100, "100倍すると、小数点は右へ2けたうつる"],
+            ["$\\frac{1}{10}$", 0.1, "$\\frac{1}{10}$ にすると、小数点は左へ1けたうつる"],
+            ["$\\frac{1}{100}$", 0.01, "$\\frac{1}{100}$ にすると、小数点は左へ2けたうつる"],
+          ]);
+          const x = f > 1 ? pick(r, [round(r(101, 999) / 100), round(r(11, 99) / 100), round(r(11, 99) / 10)]) : pick(r, [round(r(11, 99) / 10), r(12, 99), round(r(101, 999) / 100)]);
+          const ans = round(x * f);
+          return {
+            q: f > 1 ? `${x} を${lab}した数はいくつですか。` : `${x} を ${lab} にした数はいくつですか。`,
+            ans,
+            hint: f > 1 ? `${lab}すると、小数点はどちらへ何けたうつるかな？` : `${lab} にすると、小数点はどちらへ何けたうつるかな？`,
+            steps: [how, `${x} → ${ans}`],
+          };
+        }),
+        t("E4-shosu-2e", (r) => {
+          // まちがいさがし：小数点をそろえずに筆算した
+          const name = pick(r, NAMES);
+          const plus = r(0, 1) === 1;
+          let a, b, ans, wrong, pad;
+          if (plus) {
+            const intA = r(0, 2) === 0;
+            const p = intA ? r(2, 9) : r(1, 9) * 10 + r(1, 9); // a の数字（小数点なし）
+            a = intA ? p : round(p / 10);
+            const s = r(1, 9) * 100 + r(0, 9) * 10 + r(1, 9); // b は小数第2位まで
+            b = round(s / 100);
+            ans = round(a + b);
+            wrong = round((p + s) / 100);
+            pad = intA ? `${a}.00` : `${a}0`;
+          } else {
+            const s = r(2, 9) * 100 + r(0, 9) * 10 + r(1, 9); // a は小数第2位まで
+            a = round(s / 100);
+            const p = r(1, Math.floor(s / 10) - 1);
+            if (p % 10 === 0) return { skip: true };
+            b = round(p / 10);
+            ans = round(a - b);
+            wrong = round((s - p) / 100);
+            pad = `${b}0`;
+          }
+          if (wrong === ans) return { skip: true };
+          const op = plus ? "＋" : "−";
+          return {
+            q: `${name}さんは、${a} ${op} ${b} を筆算で計算して、答えを ${wrong} としました。正しい答えはいくつですか。`,
+            ans,
+            hint: "筆算で、小数点の位置がそろっているかを見よう。",
+            steps: [`${name}さんは、数の右のはしをそろえて書いてしまった`, `小数点の位置をそろえる（${plus ? a : b} を ${pad} と考える）`, `${a} ${op} ${b} ＝ ${ans}`],
+          };
+        }),
+        t("E4-shosu-2f", (r) => {
+          // 小数の大小くらべ
+          const w = r(0, 9);
+          const x = r(1, 9);
+          let y = r(1, 9);
+          if (y === x) y = (x % 9) + 1;
+          const pool = [`${w}.${x}`, `${w}.${x}${y}`, `${w}.0${x}`, `${w}.${y}${x}`, `${w}.0${x}${y}`, `${w}.${x}0${y}`];
+          const vals = sample(r, pool, 4);
+          const nums = vals.map(Number);
+          const big = r(0, 1) === 1;
+          const target = big ? Math.max(...nums) : Math.min(...nums);
+          const ans = vals[nums.indexOf(target)];
+          const sorted = [...vals].sort((p, q) => Number(q) - Number(p));
+          return {
+            q: `${vals.join("、")} のうち、いちばん${big ? "大きい" : "小さい"}数はどれですか。`,
+            ans,
+            choices: choices4(r, ans, vals.filter((v) => v !== ans)),
+            hint: "上の位から順に、同じ位どうしの数字をくらべよう。けた数が多いほど大きいとはかぎらないよ。",
+            steps: [`大きい順にならべると ${sorted.join("、")}`, `いちばん${big ? "大きい" : "小さい"}のは ${ans}`],
           };
         }),
       ],
@@ -1022,6 +2110,79 @@ export const UNITS = [
             choices: choices4(r, ans, [`${q}本できて、${m10}m あまる`, `${q}本できて、${round(m / 10)}m あまる`, `${q - 1}本できて、${round(m + b)}m あまる`]),
             hint: "商は一の位まで求めて、あまりの小数点は、わられる数の小数点にそろえよう。",
             steps: [`${a} ÷ ${b} の商を一の位まで求めると ${q}`, `あまりは ${a} − ${b} × ${q} ＝ ${m}`, `たしかめ：${b} × ${q} ＋ ${m} ＝ ${a}`],
+          };
+        }),
+        t("E4-shosu-3d", (r) => {
+          // 小数倍（何倍かを小数で表す）
+          const b = pick(r, [2, 4, 5, 10, 20, 25]);
+          let a = r(2, Math.min(99, 4 * b));
+          if (a % b === 0) a += 1;
+          const ans = round(a / b);
+          const name = pick(r, NAMES);
+          const [X, Y, u, s] = pick(r, [
+            ["赤いテープの長さ", "白いテープの長さ", "m", 1],
+            [`${name}さんの家から駅までの道のり`, "家から公園までの道のり", "m", 100],
+            ["水そう A に入る水の量", "水そう B に入る水の量", "L", 1],
+          ]);
+          const A = a * s;
+          const B = b * s;
+          return {
+            q: `${X}は ${A}${u}、${Y}は ${B}${u} です。${X}は、${Y}の何倍ですか。`,
+            ans,
+            unit: "倍",
+            hint: "「何倍か」は、くらべる量 ÷ もとにする量 で求められるよ。",
+            steps: [`${A} ÷ ${B} を計算する`, `わり切れるまでわり進めると ${A} ÷ ${B} ＝ ${ans}`, `${ans}倍`],
+          };
+        }),
+        t("E4-shosu-3e", (r) => {
+          // 商を四捨五入して 1/10 の位までのがい数で求める
+          const b = pick(r, [3, 6, 7, 9, 12]);
+          const a = r(2, 9 * b);
+          if ((a * 10) % b === 0) return { skip: true };
+          const h = Math.floor((a * 100) / b);
+          const t1 = Math.floor(h / 10) + (h % 10 >= 5 ? 1 : 0);
+          const ans = t1 / 10;
+          const show = ans.toFixed(1);
+          const scene = r(0, 1)
+            ? { q: `${a} ÷ ${b} の商を、四捨五入して $\\frac{1}{10}$ の位までのがい数で求めましょう。`, u: undefined }
+            : { q: `ジュースが ${a}L あります。${b}人で同じ量ずつ分けると、1人分はおよそ何Lですか。商を四捨五入して、$\\frac{1}{10}$ の位までのがい数で答えましょう。`, u: "L" };
+          return {
+            q: scene.q,
+            ans,
+            unit: scene.u,
+            hint: "$\\frac{1}{100}$ の位まで計算して、その数字を四捨五入しよう。",
+            steps: [`${a} ÷ ${b} を $\\frac{1}{100}$ の位まで計算すると ${round(h / 100).toFixed(2)}`, `$\\frac{1}{100}$ の位の ${h % 10} を${h % 10 >= 5 ? "切り上げて" : "切り捨てて"} ${show}`, `答え ${show}${scene.u || ""}`],
+          };
+        }),
+      ],
+      4: [
+        t("E4-shosu-4a", (r) => {
+          // 数字カードで □.□□□ をつくり、ある整数にいちばん近い数を考える
+          const cards = sample(r, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 4);
+          const T = r(Math.min(...cards) + 1, Math.max(...cards));
+          const perms = [];
+          const rec = (rest, cur) => {
+            if (!rest.length) {
+              perms.push(cur);
+              return;
+            }
+            rest.forEach((d, i) => rec(rest.filter((_, j) => j !== i), [...cur, d]));
+          };
+          rec(cards, []);
+          const nums = perms.map((p) => ({ s: `${p[0]}.${p[1]}${p[2]}${p[3]}`, v: p[0] * 1000 + p[1] * 100 + p[2] * 10 + p[3] }));
+          const T1 = T * 1000;
+          const below = nums.filter((x) => x.v < T1).sort((p, q) => q.v - p.v)[0];
+          const above = nums.filter((x) => x.v > T1).sort((p, q) => p.v - q.v)[0];
+          if (!below || !above) return { skip: true };
+          const db = T1 - below.v;
+          const da = above.v - T1;
+          if (db === da) return { skip: true };
+          const best = db < da ? below : above;
+          return {
+            q: `${cards.join("、")} の4まいの数字カードを全部使って、□.□□□ の形の小数をつくります。${T} にいちばん近い数はいくつですか。`,
+            ans: best.v / 1000,
+            hint: `${T} より少し小さい数と、少し大きい数の両方を考えよう。`,
+            steps: [`${T} より小さくていちばん近いのは ${below.s}、${T} より大きくていちばん近いのは ${above.s}`, `${T} とのちがいは ${round(db / 1000)} と ${round(da / 1000)}`, `ちがいが小さいほうの ${best.s}`],
           };
         }),
       ],
@@ -1108,6 +2269,50 @@ export const UNITS = [
             steps: [`$1=\\frac{${d}}{${d}}$`, `$\\frac{${d}}{${d}}-\\frac{${a}}{${d}}=\\frac{${d - a}}{${d}}$`],
           };
         }),
+        t("E4-bunsu-1d", (r) => {
+          // 真分数・仮分数・帯分数の区別
+          const kinds = ["真分数", "仮分数", "帯分数"];
+          const kind = pick(r, kinds);
+          const make = (k) => {
+            const d = r(3, 9);
+            if (k === "真分数") return $(`\\frac{${r(1, d - 1)}}{${d}}`);
+            if (k === "仮分数") return $(`\\frac{${r(0, 3) === 0 ? d : r(d + 1, 3 * d)}}{${d}}`);
+            return $(`${r(1, 3)}\\frac{${r(1, d - 1)}}{${d}}`);
+          };
+          const ans = make(kind);
+          const others = kinds.filter((k) => k !== kind);
+          return {
+            q: `次の分数のうち、${kind}はどれですか。`,
+            ans,
+            choices: choices4(r, ans, [0, 1, 2, 3, 4, 5].map((i) => make(others[i % 2])), (i) => make(others[i % 2])),
+            hint: "分子と分母の大きさをくらべよう。整数と分数があわさった形はどれかな？",
+            steps: ["真分数：分子が分母より小さい。仮分数：分子が分母と同じか大きい。帯分数：整数と真分数をあわせた形", `${kind}は ${ans}`],
+          };
+        }),
+        t("E4-bunsu-1e", (r) => {
+          // 仮分数のたし算・ひき算（答えは仮分数のまま）
+          const d = pick(r, [3, 4, 5, 7, 8, 9]);
+          const plus = r(0, 1) === 1;
+          let a, b, s;
+          if (plus) {
+            a = r(d + 1, 3 * d);
+            b = r(1, 2 * d);
+            s = a + b;
+          } else {
+            a = r(d + 2, 4 * d);
+            b = r(d, a - 1);
+            s = a - b;
+          }
+          if (s % d === 0 || gcd(s, d) !== 1) return { skip: true };
+          const op = plus ? "+" : "-";
+          const opJ = plus ? "＋" : "−";
+          return {
+            q: `$\\frac{${a}}{${d}}${op}\\frac{${b}}{${d}}$ を計算しましょう。答えが仮分数になるときは、仮分数のままで答えましょう。`,
+            ans: fracAns(s, d),
+            hint: "分母はそのままで、分子どうしを計算しよう。",
+            steps: [`分子どうし：${a} ${opJ} ${b} ＝ ${s}`, `$\\frac{${a}}{${d}}${op}\\frac{${b}}{${d}}=\\frac{${s}}{${d}}$${s > d ? `（帯分数で表すと $${mix(s, d)}$）` : ""}`],
+          };
+        }),
       ],
       2: [
         t("E4-bunsu-2a", (r) => {
@@ -1160,6 +2365,39 @@ export const UNITS = [
             steps: [`全部を仮分数になおすと ${[...ns].sort((a, b) => a - b).map((n) => `$\\frac{${n}}{${d}}$`).join("、")}`, `分母が同じなので、分子がいちばん${big ? "大きい" : "小さい"}ものをえらんで ${ans}`],
           };
         }),
+        t("E4-bunsu-2d", (r) => {
+          // 大きさの等しい分数（数直線で見つける）
+          const [n, d] = pick(r, [[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [1, 5], [2, 5], [3, 5], [4, 5]]);
+          const k = r(2, Math.max(2, Math.floor(12 / d)));
+          const ans = $(`\\frac{${n * k}}{${d * k}}`);
+          const cand = [[n, d * k], [n + k, d + k], [n * k, d * k + 1], [n + 1, d + 1], [n * k - 1, d * k], [n * k + 1, d * k]];
+          const wrongs = cand.filter(([p, q]) => p > 0 && p < q && p * d !== q * n).map(([p, q]) => $(`\\frac{${p}}{${q}}`));
+          return {
+            q: `$\\frac{${n}}{${d}}$ と大きさの等しい分数はどれですか。`,
+            ans,
+            choices: choices4(r, ans, wrongs),
+            hint: "数直線で、同じ位置にある分数を考えよう。分母と分子は、それぞれ何倍になっているかな？",
+            steps: [`$\\frac{${n}}{${d}}$ の分母と分子を、どちらも ${k}倍すると $\\frac{${n * k}}{${d * k}}$`, `数直線で見ると、$\\frac{${n}}{${d}}$ と $\\frac{${n * k}}{${d * k}}$ は同じ位置にある`],
+          };
+        }),
+        t("E4-bunsu-2e", (r) => {
+          // 整数 − 帯分数（真分数）のくり下がり
+          const d = r(3, 9);
+          const w = r(2, 6);
+          const proper = r(0, 2) === 0;
+          const a = proper ? 0 : r(1, w - 1);
+          const b = r(1, d - 1);
+          const N = w * d - (a * d + b);
+          const ans = $(mix(N, d));
+          const sub = proper ? `\\frac{${b}}{${d}}` : `${a}\\frac{${b}}{${d}}`;
+          return {
+            q: `$${w}-${sub}$ を計算しましょう。`,
+            ans,
+            choices: choices4(r, ans, [$(mixParts(w - a, b, d)), $(mixParts(w - a - 1, b, d)), $(mixParts(w - a, d - b, d))], mixFill(N, d)),
+            hint: "整数から1をくり下げて、分数になおして考えよう。",
+            steps: [`$${w}=${mixParts(w - 1, d, d)}$ と考える`, `$${mixParts(w - 1, d, d)}-${sub}=${mix(N, d)}$`],
+          };
+        }),
       ],
       3: [
         t("E4-bunsu-3a", (r) => {
@@ -1206,6 +2444,40 @@ export const UNITS = [
             steps: [`$${a}\\frac{${b}}{${d}}+${c}\\frac{${e}}{${d}}=${mix(a * d + b + c * d + e, d)}$`, `$${mix(a * d + b + c * d + e, d)}-\\frac{${f}}{${d}}=${mix(N, d)}$`, `答え ${ans}L`],
           };
         }),
+        t("E4-bunsu-3d", (r) => {
+          // 逆思考：使った量とのこりから、はじめの量を求める
+          const d = r(4, 9);
+          const usedN = r(0, 1) * d + r(1, d - 1); // 真分数か、1と真分数
+          const leftN = r(1, 2) * d + r(1, d - 1); // 帯分数
+          if (usedN === leftN) return { skip: true };
+          const S = usedN + leftN;
+          const [thing, u, verb] = pick(r, [["ジュース", "L", "飲んだ"], ["リボン", "m", "使った"], ["さとう", "kg", "使った"]]);
+          const ans = $(mix(S, d));
+          return {
+            q: `${thing}が何${u}かありました。$${mix(usedN, d)}$${u} ${verb}ので、のこりが $${mix(leftN, d)}$${u} になりました。はじめに何${u}ありましたか。`,
+            ans,
+            // 逆の演算（ひき算）・くり上がりのまちがい
+            choices: choices4(r, ans, [$(mix(Math.abs(leftN - usedN), d)), $(mix(S - d, d)), $(mix(S + d, d))], mixFill(S, d)),
+            hint: `はじめの量・${verb}量・のこりの量の関係を、図や式に表してみよう。`,
+            steps: [`はじめの量 ＝ ${verb}量 ＋ のこりの量`, `$${mix(usedN, d)}+${mix(leftN, d)}=${mix(S, d)}$`, `答え ${ans}${u}`],
+          };
+        }),
+        t("E4-bunsu-3e", (r) => {
+          // 2本のテープを重ねてつなぐ
+          const d = r(4, 9);
+          const A = r(1, 2) * d + r(1, d - 1);
+          const B = r(1, 2) * d + r(1, d - 1);
+          const C = r(1, d - 1);
+          const N = A + B - C;
+          const ans = $(mix(N, d));
+          return {
+            q: `$${mix(A, d)}$m のテープと $${mix(B, d)}$m のテープを、$\\frac{${C}}{${d}}$m 重ねて1本につなぎました。つないだテープ全体の長さは何mですか。`,
+            ans,
+            choices: choices4(r, ans, [$(mix(A + B, d)), $(mix(A + B - 2 * C, d)), $(mix(A + B + C, d))], mixFill(N, d)),
+            hint: "重ねた部分は、2本のどちらのテープにも入っているよ。",
+            steps: [`2本の長さの和：$${mix(A, d)}+${mix(B, d)}=${mix(A + B, d)}$`, `重ねた分をひく：$${mix(A + B, d)}-\\frac{${C}}{${d}}=${mix(N, d)}$`, `答え ${ans}m`],
+          };
+        }),
       ],
       4: [
         t("E4-bunsu-4a", (r) => {
@@ -1221,6 +2493,41 @@ export const UNITS = [
             unit: "こ",
             hint: "帯分数を仮分数になおして、分子の数で考えよう。",
             steps: [`$${q}\\frac{${m}}{${d}}=\\frac{${n2}}{${d}}$`, `分子が ${n1 + 1} から ${n2 - 1} までの分数`, `${n2 - 1} − ${n1 + 1} ＋ 1 ＝ ${ans}（こ）`],
+          };
+        }),
+        t("E4-bunsu-4b", (r) => {
+          // 虫食い算：くり上がりがあったかを考えて □ を求める
+          const d = r(4, 9);
+          const carry = r(0, 3) > 0; // 分数の部分でくり上がる問題を多めに
+          const a = r(1, 4);
+          const b = carry ? r(2, d - 1) : r(1, d - 2);
+          const c = r(1, 4);
+          const e = carry ? r(d - b + 1, d - 1) : r(1, d - b - 1);
+          const S = a * d + b + c * d + e;
+          const W = Math.floor(S / d);
+          const F = S % d;
+          const right = `${c}\\frac{${e}}{${d}}=${W}\\frac{${F}}{${d}}`;
+          if (r(0, 1)) {
+            return {
+              q: `$${a}\\frac{\\square}{${d}}+${right}$ の □ にあてはまる数はいくつですか。`,
+              ans: b,
+              hint: "整数の部分を見て、分数の部分でくり上がりがあったかどうかを考えよう。",
+              steps: [
+                `整数の部分は ${a} ＋ ${c} ＝ ${a + c}。答えの整数の部分が ${W} なので、${carry ? "分数の部分で1くり上がっている" : "くり上がりはない"}`,
+                carry ? `分子は □ ＋ ${e} ＝ ${d} ＋ ${F} ＝ ${d + F}` : `分子は □ ＋ ${e} ＝ ${F}`,
+                `□ ＝ ${b}`,
+              ],
+            };
+          }
+          return {
+            q: `$\\square\\frac{${b}}{${d}}+${right}$ の □ にあてはまる数はいくつですか。`,
+            ans: a,
+            hint: "分数の部分をたすと、くり上がりがあるかな？",
+            steps: [
+              `分数の部分：$\\frac{${b}}{${d}}+\\frac{${e}}{${d}}=\\frac{${b + e}}{${d}}${carry ? `=1\\frac{${F}}{${d}}` : ""}$${carry ? " なので、1くり上がる" : " なので、くり上がりはない"}`,
+              `整数の部分：□ ＋ ${c}${carry ? " ＋ 1" : ""} ＝ ${W}`,
+              `□ ＝ ${a}`,
+            ],
           };
         }),
       ],
@@ -1294,6 +2601,43 @@ export const UNITS = [
             steps: ["となりあう2つの角をあわせると 180°", `180 − ${a} ＝ ${180 - a}（度）`],
           };
         }),
+        t("E4-kakudo-1d", (r) => {
+          // 分度器の使い方（180° より大きい角・内側と外側の目もり）
+          if (r(0, 1)) {
+            const x = r(1, 35) * 5;
+            return {
+              q: `180° より大きい角を、半回転の 180° と、のこりの角に分けてはかります。のこりの角を分度器ではかると ${x}° でした。この角は何度ですか。`,
+              ans: 180 + x,
+              unit: "度",
+              hint: "半回転の角は何度だったかな？",
+              steps: ["半回転の角は 180°", `180 ＋ ${x} ＝ ${180 + x}（度）`],
+            };
+          }
+          let x = r(2, 34) * 5;
+          if (x === 90) x = 85;
+          return {
+            q: `分度器には、0° から 180° までの目もりが、内側と外側に2通りついています。角の辺が、内側の目もりで ${x}° のところを通っているとき、外側の目もりでは何度のところを通っていますか。`,
+            ans: 180 - x,
+            unit: "度",
+            hint: "内側と外側の目もりは、0° のはじまる向きが反対になっているよ。",
+            steps: ["同じ線の上では、内側の目もりと外側の目もりをたすと 180°", `180 − ${x} ＝ ${180 - x}（度）`],
+          };
+        }),
+        t("E4-kakudo-1e", (r) => {
+          // 三角じょうぎの角を組み合わせて、ある角をつくる（どれとどれ？）
+          const pairs = [];
+          for (const a of [45, 90]) for (const b of [30, 60, 90]) if (a + b < 180) pairs.push([a, b]);
+          const [a, b] = pick(r, pairs);
+          const T = a + b;
+          const lab = ([x, y]) => `${x}° と ${y}°`;
+          return {
+            q: `1組の三角じょうぎの角を1つずつ使って、ぴったりあわせて ${T}° の角をつくります。どの角とどの角をあわせればよいですか。`,
+            ans: lab([a, b]),
+            choices: choices4(r, lab([a, b]), shuffle(r, pairs.filter(([x, y]) => x + y !== T)).map(lab)),
+            hint: "三角じょうぎの角は、45°・45°・90° と、30°・60°・90° だよ。",
+            steps: [`${a} ＋ ${b} ＝ ${T}`, `${lab([a, b])} をあわせる`],
+          };
+        }),
       ],
       2: [
         t("E4-kakudo-2a", (r) => {
@@ -1345,6 +2689,42 @@ export const UNITS = [
             ],
           };
         }),
+        t("E4-kakudo-2d", (r) => {
+          // 2本の直線が交わってできる角（向かい合う角・となりの角）
+          let a = r(4, 32) * 5;
+          if (a === 90) a = 85;
+          const fmt = (x, y) => `向かい合う角は ${x}°、となりの角は ${y}°`;
+          const ans = fmt(a, 180 - a);
+          return {
+            q: `2本の直線が交わって、4つの角ができています。そのうちの1つの角が ${a}° のとき、その角と向かい合う角、となりの角は、それぞれ何度ですか。`,
+            ans,
+            choices: choices4(r, ans, [fmt(180 - a, a), fmt(a, 360 - a), fmt(180 - a, 180 - a), fmt(360 - a, 180 - a)]),
+            hint: "一直線の角は 180° だよ。となりあう2つの角をあわせると何度かな？",
+            steps: [`となりの角は 180 − ${a} ＝ ${180 - a}（度）`, `向かい合う角は、となりの角とあわせて 180° なので 180 − ${180 - a} ＝ ${a}（度）`, "向かい合う角は、同じ大きさになる"],
+          };
+        }),
+        t("E4-kakudo-2e", (r) => {
+          // 1回転（360°）を同じ大きさに分ける
+          const n = pick(r, [3, 4, 5, 6, 8, 9, 10, 12]);
+          const x = 360 / n;
+          const thing = pick(r, ["丸いケーキ", "丸いピザ", "丸いホットケーキ"]);
+          if (r(0, 1)) {
+            return {
+              q: `${thing}を、中心のまわりの角がどれも同じ大きさになるように、${n}こに切り分けます。1こ分の、中心のまわりの角は何度ですか。`,
+              ans: x,
+              unit: "度",
+              hint: "中心のまわりの角を全部あわせると、1回転の角になるよ。",
+              steps: ["中心のまわりの角は、全部で 360°（1回転）", `360 ÷ ${n} ＝ ${x}（度）`],
+            };
+          }
+          return {
+            q: `${thing}を、中心のまわりの角がどれも ${x}° になるように切り分けます。何こに分けられますか。`,
+            ans: n,
+            unit: "こ",
+            hint: "中心のまわりの角を全部あわせると、何度になるかな？",
+            steps: ["中心のまわりの角は、全部で 360°（1回転）", `360 ÷ ${x} ＝ ${n}（こ）`],
+          };
+        }),
       ],
       3: [
         t("E4-kakudo-3a", (r) => {
@@ -1393,6 +2773,66 @@ export const UNITS = [
             steps: ["数字と数字の間は 30°", `${30 * h} ÷ 30 ＝ ${h} なので、短いはりは 12 から数字 ${h} つ分`, `${h}時`],
           };
         }),
+        t("E4-kakudo-3d", (r) => {
+          // 一直線（180°）を分けた角：等しい角・ちがい・何倍
+          const k = r(0, 2);
+          if (k === 0) {
+            const b = r(2, 16) * 10;
+            const ans = (180 - b) / 2;
+            return {
+              q: `一直線の角（180°）を、3つの角に分けました。まん中の角は ${b}° で、両はしの2つの角は同じ大きさです。両はしの角の1つ分は何度ですか。`,
+              ans,
+              unit: "度",
+              hint: "3つの角をあわせると 180° だよ。両はしの2つの角の和を先に考えよう。",
+              steps: [`両はしの2つの角の和は 180 − ${b} ＝ ${180 - b}（度）`, `${180 - b} ÷ 2 ＝ ${ans}（度）`],
+            };
+          }
+          if (k === 1) {
+            const d = r(1, 16) * 10;
+            const ans = (180 - d) / 2;
+            return {
+              q: `2本の直線が交わってできる角のうち、となりあう2つの角の大きさのちがいは ${d}° です。小さいほうの角は何度ですか。`,
+              ans,
+              unit: "度",
+              hint: "となりあう2つの角をあわせると 180° だよ。",
+              steps: ["となりあう2つの角の和は 180°", `小さいほうの角の2つ分は 180 − ${d} ＝ ${180 - d}（度）`, `${180 - d} ÷ 2 ＝ ${ans}（度）`],
+            };
+          }
+          const m = pick(r, [2, 3, 4, 5, 8, 9, 11]);
+          const ans = 180 / (m + 1);
+          return {
+            q: `2本の直線が交わってできる角のうち、となりあう2つの角の一方は、もう一方の ${m}倍の大きさです。小さいほうの角は何度ですか。`,
+            ans,
+            unit: "度",
+            hint: "となりあう2つの角をあわせると 180° だよ。小さいほうの角の何こ分になるかな？",
+            steps: [`小さいほうの角を □ とすると、□ ＋ □ × ${m} ＝ 180`, `□ × ${m + 1} ＝ 180`, `□ ＝ 180 ÷ ${m + 1} ＝ ${ans}（度）`],
+          };
+        }),
+        t("E4-kakudo-3e", (r) => {
+          // 回転の角：右回り・左回り、1回転まであと何度
+          const name = pick(r, NAMES);
+          if (r(0, 1)) {
+            const a = r(6, 30) * 5;
+            const b = r(6, 30) * 5;
+            const c = 360 - a - b;
+            return {
+              q: `${name}さんは、その場で右に ${a}° 回り、つづけて右に ${b}° 回りました。はじめの向きにもどるには、あと右に何度回ればよいですか。`,
+              ans: c,
+              unit: "度",
+              hint: "はじめの向きにもどるのは、1回転したときだよ。",
+              steps: [`右に回った角の合計は ${a} ＋ ${b} ＝ ${a + b}（度）`, `1回転は 360° なので 360 − ${a + b} ＝ ${c}（度）`],
+            };
+          }
+          const a = r(18, 54) * 5;
+          const b = r(4, a / 5 - 4) * 5;
+          return {
+            q: `${name}さんは、その場で右に ${a}° 回ってから、左に ${b}° 回りました。はじめの向きから、右に何度回った向きになっていますか。`,
+            ans: a - b,
+            unit: "度",
+            hint: "左に回ると、右に回った分がもどるね。",
+            steps: [`左に ${b}° 回ると、右に回った ${a}° のうち ${b}° がもどる`, `${a} − ${b} ＝ ${a - b}（度）`],
+          };
+        }),
       ],
       4: [
         t("E4-kakudo-4a", (r) => {
@@ -1408,6 +2848,29 @@ export const UNITS = [
             unit: "度",
             hint: "短いはりも少しずつ動いているよ。短いはりは1分で何度進むかな？",
             steps: [`長いはりは 12 から 6 × ${m} ＝ ${L}° 進んでいる`, `短いはりは 12 から 30 × ${h} ＋ 0.5 × ${m} ＝ ${S}° 進んでいる（1分で 0.5°）`, `ちがいは ${diff}°、小さいほうの角は ${ans}°`],
+          };
+        }),
+        t("E4-kakudo-4b", (r) => {
+          // 時計の長いはりと短いはりが回る角の関係
+          if (r(0, 1)) {
+            const s = pick(r, [5, 10, 15, 20, 25, 30, 45, 60, 75, 90]);
+            const min = 2 * s;
+            return {
+              q: `時計の短いはりが ${s}° 回る間に、長いはりは何度回りますか。`,
+              ans: 6 * min,
+              unit: "度",
+              hint: `短いはりが ${s}° 回るのに、何分かかるかな？`,
+              steps: [`短いはりは 60分で 30° 回るので、${s}° 回るのにかかる時間は ${min}分`, `長いはりは 1分で 6° 回るので、6 × ${min} ＝ ${6 * min}（度）`],
+            };
+          }
+          const L = pick(r, [60, 120, 180, 240, 300, 360, 540, 720, 900, 1080]);
+          const min = L / 6;
+          return {
+            q: `時計の長いはりが ${L}° 回る間に、短いはりは何度回りますか。`,
+            ans: min / 2,
+            unit: "度",
+            hint: `長いはりが ${L}° 回るのに、何分かかるかな？`,
+            steps: [`長いはりは 1分で 6° 回るので、${L}° 回るのにかかる時間は ${L} ÷ 6 ＝ ${min}分`, `短いはりは 60分で 30°、つまり 2分で 1° 回るので、${min} ÷ 2 ＝ ${min / 2}（度）`],
           };
         }),
       ],
@@ -1463,6 +2926,62 @@ export const UNITS = [
             steps: [`${a} × □ ＝ ${a * b}`, `□ ＝ ${a * b} ÷ ${a} ＝ ${b}`, `${b}cm`],
           };
         }),
+        t("E4-menseki-1d", (r) => {
+          // 面積の単位の見当（およその広さ）
+          const [what, num, unit, why] = pick(r, [
+            ["はがき1まいの面積", "150", "cm²", "はがきは、たて 15cm、横 10cm くらい"],
+            ["ノート1ページの面積", "470", "cm²", "ノートは、たて 26cm、横 18cm くらい"],
+            ["つくえの上の面の面積", "3000", "cm²", "つくえの上の面は、たて 45cm、横 65cm くらい"],
+            ["教室のゆかの面積", "60", "m²", "教室は、たて 8m、横 8m くらい"],
+            ["学校のプールの水面の面積", "300", "m²", "プールは、たて 25m、横 12m くらい"],
+            ["学校の体育館のゆかの面積", "700", "m²", "体育館は、たて 25m、横 28m くらい"],
+            ["サッカー場の面積", "70", "a", "サッカー場は、たて 70m、横 100m くらいで 7000m²（1a ＝ 100m²）"],
+            ["田んぼ1まいの面積", "30", "a", "田んぼは、たて 30m、横 100m くらいで 3000m²（1a ＝ 100m²）"],
+            ["大きな遊園地の面積", "50", "ha", "たて 500m、横 1000m くらいで 500000m²（1ha ＝ 10000m²）"],
+            ["びわ湖の面積", "670", "km²", "1辺 1km の正方形が 670こ分くらいの広さ"],
+            ["東京都の面積", "2200", "km²", "1辺 1km の正方形が 2200こ分くらいの広さ"],
+            ["日本の国土の面積", "38万", "km²", "1辺 1km の正方形が 38万こ分くらいの広さ"],
+          ]);
+          const UN = ["cm²", "m²", "a", "ha", "km²"];
+          return {
+            q: `${what}は、およそ ${num}□ です。□ にあてはまる面積の単位はどれですか。`,
+            ans: unit,
+            choices: choices4(r, unit, shuffle(r, UN.filter((u) => u !== unit))),
+            hint: "1cm²・1m²・1a・1ha・1km² が、それぞれどのくらいの広さか思い出そう。",
+            steps: [why, `だから □ は ${unit}`],
+          };
+        }),
+        t("E4-menseki-1e", (r) => {
+          // 面積の単位のしくみ（1辺の長さ・何倍）
+          if (r(0, 1)) {
+            const [u, side, su, area] = pick(r, [
+              ["1a", 10, "m", "100m²"],
+              ["1ha", 100, "m", "10000m²"],
+              ["1km²", 1000, "m", "1000000m²"],
+              ["1m²", 100, "cm", "10000cm²"],
+            ]);
+            return {
+              q: `${u} は、1辺が何${su}の正方形の面積ですか。`,
+              ans: side,
+              unit: su,
+              hint: `${u} は何${su}² かを思い出そう。`,
+              steps: [`${u} ＝ ${area}`, `${side} × ${side} ＝ ${side * side} なので、1辺 ${side}${su} の正方形の面積`],
+            };
+          }
+          const [big, small, k, why] = pick(r, [
+            ["1ha", "1a", 100, "1ha ＝ 10000m²、1a ＝ 100m²"],
+            ["1km²", "1ha", 100, "1km² ＝ 1000000m²、1ha ＝ 10000m²"],
+            ["1m²", "1cm²", 10000, "1m² は、1辺 100cm の正方形で 100 × 100 ＝ 10000cm²"],
+            ["1a", "1m²", 100, "1a は、1辺 10m の正方形で 10 × 10 ＝ 100m²"],
+          ]);
+          return {
+            q: `${big} は、${small} の何倍ですか。`,
+            ans: k,
+            unit: "倍",
+            hint: "どちらも m² などの同じ単位になおしてくらべよう。",
+            steps: [why, `${big} は ${small} の ${k}倍`],
+          };
+        }),
       ],
       2: [
         t("E4-menseki-2a", (r) => {
@@ -1504,6 +3023,60 @@ export const UNITS = [
             unit: "a",
             hint: "1a ＝ 100m² だよ。",
             steps: [`${a} × ${b} ＝ ${S}（m²）`, `1a ＝ 100m² なので ${S} ÷ 100 ＝ ${S / 100}`, `${S / 100}a`],
+          };
+        }),
+        t("E4-menseki-2d", (r) => {
+          // 面積が等しい長方形と正方形（1辺が素数だと長方形が作れないので、それ以外から）
+          const s = pick(r, [4, 6, 8, 9, 10, 12]);
+          const S = s * s;
+          const ds = [];
+          for (let a = 2; a <= S / 2; a++) if (S % a === 0 && a !== s && S / a <= 48) ds.push(a);
+          const a = pick(r, ds);
+          const b = S / a;
+          if (r(0, 1)) {
+            return {
+              q: `1辺が ${s}cm の正方形と面積が等しい長方形をつくります。たての長さを ${a}cm にすると、横の長さは何cmになりますか。`,
+              ans: b,
+              unit: "cm",
+              hint: "まず、正方形の面積を求めよう。",
+              steps: [`正方形の面積：${s} × ${s} ＝ ${S}（cm²）`, `横の長さ ＝ ${S} ÷ ${a} ＝ ${b}（cm）`],
+            };
+          }
+          return {
+            q: `たて ${a}cm、横 ${b}cm の長方形と面積が等しい正方形の、1辺の長さは何cmですか。`,
+            ans: s,
+            unit: "cm",
+            hint: "長方形の面積を求めてから、同じ数を2回かけてその面積になる数をさがそう。",
+            steps: [`長方形の面積：${a} × ${b} ＝ ${S}（cm²）`, `${s} × ${s} ＝ ${S} なので、1辺は ${s}cm`],
+          };
+        }),
+        t("E4-menseki-2e", (r) => {
+          // どちらがどれだけ広いか（まわりの長さが同じでも面積はちがう）
+          let a, b, s;
+          if (r(0, 1)) {
+            s = r(5, 12);
+            const k = r(1, Math.min(4, s - 2));
+            a = s - k;
+            b = s + k;
+          } else {
+            a = r(3, 12);
+            b = r(a + 1, 16);
+            s = r(4, 12);
+          }
+          const A = a * b;
+          const B = s * s;
+          if (A === B) return { skip: true };
+          const [W, L] = A > B ? ["花だん A", "花だん B"] : ["花だん B", "花だん A"];
+          const diff = Math.abs(A - B);
+          const pd = Math.abs(2 * (a + b) - 4 * s);
+          const fmt = (x, d) => `${x} のほうが ${d}m² 広い`;
+          const ans = fmt(W, diff);
+          return {
+            q: `花だん A は、たて ${a}m、横 ${b}m の長方形です。花だん B は、1辺 ${s}m の正方形です。どちらの花だんが何m² 広いですか。`,
+            ans,
+            choices: choices4(r, ans, [fmt(L, diff), "どちらも同じ広さ", fmt(W, pd > 0 && pd !== diff ? pd : diff + 2), fmt(W, diff * 2)]),
+            hint: "それぞれの面積を求めてくらべよう。",
+            steps: [`A：${a} × ${b} ＝ ${A}（m²）`, `B：${s} × ${s} ＝ ${B}（m²）`, `${W} のほうが ${Math.max(A, B)} − ${Math.min(A, B)} ＝ ${diff}（m²）広い`],
           };
         }),
       ],
@@ -1555,6 +3128,50 @@ export const UNITS = [
             unit: "m²",
             hint: "道を土地のはしによせて考えると、のこりは1つの長方形になるよ。",
             steps: [`道をはしによせると、のこりは たて ${a - 1}m、横 ${b - 1}m の長方形`, `${a - 1} × ${b - 1} ＝ ${ans}（m²）`],
+          };
+        }),
+        t("E4-menseki-3d", (r) => {
+          // 絵のまわりのわく（大きい長方形 − 小さい長方形）
+          const a = r(10, 40);
+          const b = r(10, 40);
+          const w = r(1, 5);
+          const A2 = a + 2 * w;
+          const B2 = b + 2 * w;
+          const ans = A2 * B2 - a * b;
+          return {
+            q: `たて ${a}cm、横 ${b}cm の絵のまわりに、はば ${w}cm のわくをつけました。わくの部分の面積は何cm²ですか。`,
+            ans,
+            unit: "cm²",
+            hint: "わくをふくめた外がわの長方形の面積から、絵の面積をひこう。外がわのたての長さは？",
+            steps: [`わくをふくめると、たて ${a} ＋ ${w} × 2 ＝ ${A2}（cm）、横 ${b} ＋ ${w} × 2 ＝ ${B2}（cm）`, `全体：${A2} × ${B2} ＝ ${A2 * B2}、絵：${a} × ${b} ＝ ${a * b}`, `わく：${A2 * B2} − ${a * b} ＝ ${ans}（cm²）`],
+          };
+        }),
+        t("E4-menseki-3e", (r) => {
+          // 辺の長さを何倍かにしたときの面積
+          if (r(0, 1)) {
+            const a = r(2, 5);
+            let b = r(2, 5);
+            if (b === a) b = a === 5 ? 2 : a + 1;
+            const p1 = r(2, 4);
+            const p2 = r(2, 4);
+            const A = a * b;
+            const B = p1 * a * p2 * b;
+            return {
+              q: `たて ${a}cm、横 ${b}cm の長方形があります。たての長さを ${p1}倍、横の長さを ${p2}倍にした長方形の面積は、もとの長方形の面積の何倍ですか。`,
+              ans: p1 * p2,
+              unit: "倍",
+              hint: "もとの面積と、新しい長方形の面積を、それぞれ求めてくらべよう。",
+              steps: [`もとの面積：${a} × ${b} ＝ ${A}（cm²）`, `新しい長方形は たて ${p1 * a}cm、横 ${p2 * b}cm で ${p1 * a} × ${p2 * b} ＝ ${B}（cm²）`, `${B} ÷ ${A} ＝ ${p1 * p2}（倍）`],
+            };
+          }
+          const s = r(2, 6);
+          const p = r(2, 4);
+          return {
+            q: `1辺が ${s}cm の正方形があります。1辺の長さを ${p}倍にした正方形の面積は、もとの正方形の面積の何倍ですか。`,
+            ans: p * p,
+            unit: "倍",
+            hint: "もとの面積と、新しい正方形の面積を、それぞれ求めてくらべよう。",
+            steps: [`もとの面積：${s} × ${s} ＝ ${s * s}（cm²）`, `1辺 ${p * s}cm の正方形の面積：${p * s} × ${p * s} ＝ ${p * p * s * s}（cm²）`, `${p * p * s * s} ÷ ${s * s} ＝ ${p * p}（倍）`],
           };
         }),
       ],
@@ -1640,6 +3257,52 @@ export const UNITS = [
             steps: [`姉 − 妹 ＝ ${d}（いつも同じ）`, `${b} − ${d} ＝ ${b - d}（才）`],
           };
         }),
+        t("E4-henka-1d", (r) => {
+          // へっていく変わり方（ろうそく・水をぬく）
+          if (r(0, 1)) {
+            const b = r(1, 3);
+            const L = b * r(6, 15);
+            const m = r(2, L / b - 1);
+            return {
+              q: `長さ ${L}cm のろうそくに火をつけると、1分間に ${b}cm ずつ短くなります。火をつけてから ${m}分後のろうそくの長さは何cmですか。`,
+              ans: L - b * m,
+              unit: "cm",
+              hint: "1分ごとに、ろうそくの長さはどれだけへるかな？",
+              steps: [`${m}分で短くなる長さは ${b} × ${m} ＝ ${b * m}（cm）`, `${L} − ${b * m} ＝ ${L - b * m}（cm）`],
+            };
+          }
+          const b = r(2, 5);
+          const W = b * r(6, 20);
+          return {
+            q: `水そうに ${W}L の水が入っています。1分間に ${b}L ずつ水をぬいていくと、水そうが空になるのは何分後ですか。`,
+            ans: W / b,
+            unit: "分後",
+            hint: "1分間にへる水の量で、全部の水の量をわってみよう。",
+            steps: [`1分ごとに ${b}L ずつへる`, `${W} ÷ ${b} ＝ ${W / b}（分後）`],
+          };
+        }),
+        t("E4-henka-1e", (r) => {
+          // 正三角形をならべたときのまわりの長さ（△ ＝ ○ ＋ 2）
+          const intro = "1辺が 1cm の正三角形を、向きをかえながら横に1列にならべていきます。正三角形が1このとき まわりの長さは 3cm、2このとき 4cm、3このとき 5cm です。";
+          if (r(0, 1)) {
+            const n = r(6, 30);
+            return {
+              q: `${intro}正三角形が ${n}このとき、まわりの長さは何cmですか。`,
+              ans: n + 2,
+              unit: "cm",
+              hint: "正三角形の数とまわりの長さを表にして、2つの数の関係を見つけよう。",
+              steps: ["正三角形が1こふえると、まわりの長さは 1cm ふえる", "まわりの長さ ＝ 正三角形の数 ＋ 2", `${n} ＋ 2 ＝ ${n + 2}（cm）`],
+            };
+          }
+          const P = r(8, 32);
+          return {
+            q: `${intro}まわりの長さが ${P}cm になるのは、正三角形が何このときですか。`,
+            ans: P - 2,
+            unit: "こ",
+            hint: "正三角形の数とまわりの長さを表にして、2つの数の関係を見つけよう。",
+            steps: ["まわりの長さ ＝ 正三角形の数 ＋ 2", `正三角形の数 ＝ ${P} − 2 ＝ ${P - 2}（こ）`],
+          };
+        }),
       ],
       2: [
         t("E4-henka-2a", (r) => {
@@ -1706,6 +3369,60 @@ export const UNITS = [
             steps: [`${n}分でふえる水は ${b} × ${n} ＝ ${b * n}（L）`, `${a} ＋ ${b * n} ＝ ${a + b * n}（L）`],
           };
         }),
+        t("E4-henka-2d", (r) => {
+          // 場面を ○ と △ を使った式に表す
+          const k = r(0, 2);
+          let q, ans, wrongs, word;
+          if (k === 0) {
+            const n = r(3, 8);
+            const b = r(5, 15) * 10;
+            q = `1本 ○円のえんぴつを ${n}本と、${b}円の消しゴムを1こ買ったときの代金を △円 とします。○ と △ の関係を表す式はどれですか。`;
+            ans = `△ ＝ ○ × ${n} ＋ ${b}`;
+            wrongs = [`△ ＝ ○ ＋ ${n} × ${b}`, `△ ＝ (○ ＋ ${b}) × ${n}`, `△ ＝ ○ × ${b} ＋ ${n}`];
+            word = "えんぴつの代金 ＋ 消しゴムの代金 ＝ 代金";
+          } else if (k === 1) {
+            const n = r(2, 6);
+            const T = pick(r, [500, 1000]);
+            q = `${T}円を持って、1こ ○円のパンを ${n}こ買います。のこりのお金を △円 とします。○ と △ の関係を表す式はどれですか。`;
+            ans = `△ ＝ ${T} − ○ × ${n}`;
+            wrongs = [`△ ＝ (${T} − ○) × ${n}`, `△ ＝ ○ × ${n} − ${T}`, `△ ＝ ${T} − ○ ＋ ${n}`];
+            word = "持っているお金 − パンの代金 ＝ のこりのお金";
+          } else {
+            const [shape, m] = pick(r, [["正方形", 4], ["正三角形", 3]]);
+            q = `1辺の長さが ○cm の${shape}の、まわりの長さを △cm とします。○ と △ の関係を表す式はどれですか。`;
+            ans = `△ ＝ ○ × ${m}`;
+            wrongs = [`△ ＝ ○ ＋ ${m}`, `○ ＝ △ × ${m}`, "△ ＝ ○ × ○"];
+            word = `1辺の長さ × ${m} ＝ まわりの長さ`;
+          }
+          return {
+            q,
+            ans,
+            choices: choices4(r, ans, wrongs),
+            hint: "まず、ことばの式に表してみよう。そのあと、○ と △ をあてはめよう。",
+            steps: [`ことばの式：${word}`, `○ と △ を使うと ${ans}`],
+          };
+        }),
+        t("E4-henka-2e", (r) => {
+          // かいだんの形のまわりの長さ（△ ＝ ○ × 4）
+          const intro = "1辺が 1cm の正方形を、1だん目に1こ、2だん目に2こ、3だん目に3こ、…と、かいだんの形にならべます。だんの数が 1 のとき まわりの長さは 4cm、2 のとき 8cm、3 のとき 12cm です。";
+          const n = r(5, 25);
+          if (r(0, 1)) {
+            return {
+              q: `${intro}だんの数が ${n} のとき、まわりの長さは何cmですか。`,
+              ans: 4 * n,
+              unit: "cm",
+              hint: "だんの数とまわりの長さを表にして、きまりを見つけよう。",
+              steps: ["だんの数が1ふえると、まわりの長さは 4cm ふえる", "まわりの長さ ＝ だんの数 × 4", `${n} × 4 ＝ ${4 * n}（cm）`],
+            };
+          }
+          return {
+            q: `${intro}まわりの長さが ${4 * n}cm になるのは、だんの数がいくつのときですか。`,
+            ans: n,
+            unit: "だん",
+            hint: "だんの数とまわりの長さを表にして、きまりを見つけよう。",
+            steps: ["まわりの長さ ＝ だんの数 × 4", `だんの数 ＝ ${4 * n} ÷ 4 ＝ ${n}（だん）`],
+          };
+        }),
       ],
       3: [
         t("E4-henka-3a", (r) => {
@@ -1741,6 +3458,50 @@ export const UNITS = [
             choices: numChoices(r, ans, [4 * n, 4 * n - 2, 4 * (n - 2), 4 * n + 4]),
             hint: "かどのおはじきは、2つの辺に入っているよ。",
             steps: [`${n} × 4 ＝ ${4 * n} だと、かどの4こを2回ずつ数えている`, `${4 * n} − 4 ＝ ${ans}（こ）`],
+          };
+        }),
+        t("E4-henka-3d", (r) => {
+          // 2人の差の変わり方（同じ日に始めて、差が □ になるのは？）
+          const [n1, n2] = sample(r, NAMES, 2);
+          const a = r(4, 12);
+          const b = r(2, a - 2);
+          const k = r(3, 12);
+          const N = (a - b) * k;
+          return {
+            q: `${n1}さんは毎日 ${a}ページずつ、${n2}さんは毎日 ${b}ページずつ、同じ日から本を読みはじめました。${n1}さんの読んだページ数が、${n2}さんより ${N}ページ多くなるのは、読みはじめてから何日目ですか。`,
+            ans: k,
+            unit: "日目",
+            hint: "1日ごとに、2人の読んだページ数のちがいがいくつずつふえるか、表にして考えよう。",
+            steps: [`1日ごとに、ちがいは ${a} − ${b} ＝ ${a - b}（ページ）ずつふえる`, `${N} ÷ ${a - b} ＝ ${k}`, `${k}日目`],
+          };
+        }),
+        t("E4-henka-3e", (r) => {
+          // 2つの量が同じになるとき（ちがいがちぢまっていく）
+          const k = r(3, 10);
+          if (r(0, 1)) {
+            const [n1, n2] = sample(r, NAMES, 2);
+            const p = r(1, 4) * 100;
+            const q2 = p + r(1, 3) * 100;
+            const Q0 = r(2, 12) * 100;
+            const P0 = Q0 + (q2 - p) * k;
+            return {
+              q: `${n1}さんは ${P0}円、${n2}さんは ${Q0}円のちょ金があります。これから毎月、${n1}さんは ${p}円ずつ、${n2}さんは ${q2}円ずつちょ金します。2人のちょ金が同じになるのは、何か月後ですか。`,
+              ans: k,
+              unit: "か月後",
+              hint: "1か月ごとに、2人のちょ金のちがいがどう変わるかを表にして考えよう。",
+              steps: [`今のちがいは ${P0} − ${Q0} ＝ ${P0 - Q0}（円）`, `1か月ごとに、ちがいは ${q2} − ${p} ＝ ${q2 - p}（円）ずつちぢまる`, `${P0 - Q0} ÷ ${q2 - p} ＝ ${k}（か月後）`],
+            };
+          }
+          const a = r(2, 5);
+          const b = r(2, 5);
+          const B0 = r(2, 10);
+          const A0 = B0 + (a + b) * k;
+          return {
+            q: `水そう A には ${A0}L、水そう B には ${B0}L の水が入っています。A からは1分間に ${a}L ずつ水をぬき、B には1分間に ${b}L ずつ水を入れます。A と B の水の量が同じになるのは、何分後ですか。`,
+            ans: k,
+            unit: "分後",
+            hint: "1分ごとに、A と B の水の量のちがいがどう変わるかを表にして考えよう。",
+            steps: [`今のちがいは ${A0} − ${B0} ＝ ${A0 - B0}（L）`, `1分ごとに、ちがいは ${a} ＋ ${b} ＝ ${a + b}（L）ずつちぢまる`, `${A0 - B0} ÷ ${a + b} ＝ ${k}（分後）`],
           };
         }),
       ],
@@ -1820,6 +3581,86 @@ export const UNITS = [
             steps: ["折れ線グラフは、時間がたつにつれて変わっていく量を表すのに向いている", `だから「${ans}」`],
           };
         }),
+        t("E4-oresen-1d", (r) => {
+          // たてじくの目もりを読む（場面ごとに、ありそうな目もりと大きさで）
+          const [what, u, scales, max, lo] = pick(r, [
+            ["気温", "度", [1, 2, 5], 35, 2],
+            ["プールの水の温度", "度", [1, 2], 30, 16],
+            ["ヘチマのくきの長さ", "cm", [5, 10, 20], 200, 10],
+          ]);
+          const k = r(0, 2);
+          if (k === 0) {
+            const opts = [];
+            for (const s0 of scales) for (const n0 of [5, 10]) if (s0 * n0 <= max) opts.push([s0, n0]);
+            const [s, n] = pick(r, opts);
+            return {
+              q: `${what}の変わり方を折れ線グラフに表します。たてじくの 0${u} から ${s * n}${u} までを、${n}目もりに等しく分けました。1目もりは何${u}ですか。`,
+              ans: s,
+              unit: u,
+              hint: "0 からいくつまでを、いくつに分けているかな？",
+              steps: [`${s * n} ÷ ${n} ＝ ${s}（${u}）`],
+            };
+          }
+          const s = pick(r, scales.filter((x) => x > 1));
+          const c = r(Math.max(2, Math.ceil(lo / s)), Math.min(12, Math.floor(max / s)));
+          if (k === 1) {
+            return {
+              q: `${what}の折れ線グラフで、たてじくの1目もりは ${s}${u} です。${s * c}${u} を表す点は、0 から何目もりのところにかきますか。`,
+              ans: c,
+              unit: "目もり",
+              hint: `${s * c}${u} は、${s}${u} の何こ分かな？`,
+              steps: [`${s * c} ÷ ${s} ＝ ${c}（目もり）`],
+            };
+          }
+          return {
+            q: `${what}の折れ線グラフで、たてじくの1目もりは ${s}${u} です。ある点は、0 から ${c}目もりのところにあります。この点は何${u}を表していますか。`,
+            ans: s * c,
+            unit: u,
+            hint: `1目もりが ${s}${u} だから、${c}目もりでは？`,
+            steps: [`${s} × ${c} ＝ ${s * c}（${u}）`],
+          };
+        }),
+        t("E4-oresen-1e", (r) => {
+          // 2つの時こくの間の変わり方を、ことばで表す
+          const scene = pick(r, ["temp", "water", "dog"]);
+          const type = scene === "dog" ? pick(r, ["up", "up", "flat"]) : pick(r, ["up", "down", "flat"]);
+          const S = {
+            temp: { labs: ["9時", "10時", "11時", "12時", "13時", "14時"], v0: r(10, 18), lo: -3, hi: 4, u: "度", what: "気温", upV: "上がった", downV: "下がった", intro: "ある日の気温を1時間ごとに調べて、折れ線グラフに表しました。" },
+            water: { labs: ["9時", "10時", "11時", "12時", "13時", "14時"], v0: r(20, 24), lo: -2, hi: 3, u: "度", what: "水の温度", upV: "上がった", downV: "下がった", intro: "プールの水の温度を1時間ごとに調べて、折れ線グラフに表しました。" },
+            dog: { labs: ["1か月", "2か月", "3か月", "4か月", "5か月", "6か月"], v0: r(1, 3), lo: 0, hi: 2, u: "kg", what: "体重", upV: "ふえた", downV: "へった", intro: "子犬の体重を、生まれてから1か月ごとに調べて、折れ線グラフに表しました。" },
+          }[scene];
+          const i = r(0, 4);
+          const vals = [S.v0];
+          for (let j = 0; j < 5; j++) {
+            const c = j !== i ? r(S.lo, S.hi) : type === "up" ? r(1, scene === "dog" ? 2 : 4) : type === "down" ? -r(1, 3) : 0;
+            vals.push(vals[j] + c);
+          }
+          if (vals.some((v) => v < 1)) return { skip: true };
+          const d = vals[i + 1] - vals[i];
+          const u = S.u;
+          let ans;
+          let wrongs;
+          if (d > 0) {
+            ans = `${d}${u}${S.upV}`;
+            wrongs = [`${d}${u}${S.downV}`, "変わらなかった", `${d + 1}${u}${S.upV}`, `${vals[i + 1]}${u}${S.upV}`];
+          } else if (d < 0) {
+            ans = `${-d}${u}${S.downV}`;
+            wrongs = [`${-d}${u}${S.upV}`, "変わらなかった", `${-d + 1}${u}${S.downV}`, `${vals[i + 1]}${u}${S.downV}`];
+          } else {
+            ans = "変わらなかった";
+            wrongs = [`1${u}${S.upV}`, `1${u}${S.downV}`, `${vals[i]}${u}${S.upV}`, `2${u}${S.upV}`];
+          }
+          return {
+            q: `${S.intro}${S.labs.map((l, j) => `${l} ${vals[j]}${u}`).join("、")}。${S.labs[i]}から${S.labs[i + 1]}までの${S.what}の変わり方を正しく表しているのはどれですか。`,
+            ans,
+            choices: choices4(r, ans, wrongs),
+            hint: "前とあとの2つの数をくらべよう。折れ線グラフの線が、右上がり・右下がり・横にまっすぐのどれになるかな？",
+            steps: [
+              `${S.labs[i]}は ${vals[i]}${u}、${S.labs[i + 1]}は ${vals[i + 1]}${u}`,
+              d > 0 ? `${vals[i + 1]} − ${vals[i]} ＝ ${d} なので、${ans}（線は右上がり）` : d < 0 ? `${vals[i]} − ${vals[i + 1]} ＝ ${-d} なので、${ans}（線は右下がり）` : "同じなので、変わらなかった（線は横にまっすぐ）",
+            ],
+          };
+        }),
       ],
       2: [
         t("E4-oresen-2a", (r) => {
@@ -1873,6 +3714,48 @@ export const UNITS = [
             steps: [`${x}${yes} ${A}人の中に、両方の人 ${C}人がふくまれている`, `${A} − ${C} ＝ ${A - C}（人）`],
           };
         }),
+        t("E4-oresen-2d", (r) => {
+          // 1年間の気温の折れ線グラフから、条件にあう月を数える
+          const ts = monthTemps(r);
+          const city = pick(r, ["A市", "B市", "ある町"]);
+          const above = r(0, 1) === 1;
+          const T = above ? pick(r, [15, 20, 25]) : pick(r, [10, 15]);
+          const ms = ts.map((v, i) => [i + 1, v]).filter(([, v]) => (above ? v >= T : v < T));
+          if (ms.length === 0) return { skip: true };
+          return {
+            q: `${city}の1年間の気温を、月ごとに調べて折れ線グラフに表しました。${mlist(ts)}。気温が ${T}度${above ? "以上" : "未満"}の月は、何か月ありますか。`,
+            ans: ms.length,
+            unit: "か月",
+            hint: `${T}度${above ? "以上" : "未満"}の月にしるしをつけて数えよう。「${above ? "以上" : "未満"}」は ${T}度ちょうどを${above ? "ふくむ" : "ふくまない"}よ。`,
+            steps: [`${T}度${above ? "以上" : "未満"}の月は ${ms.map(([m, v]) => `${m}月（${v}度）`).join("、")}`, `${ms.length}か月`],
+          };
+        }),
+        t("E4-oresen-2e", (r) => {
+          // いちばん高いときと、いちばん低いときのちがい
+          let labs;
+          let ts;
+          let intro;
+          if (r(0, 1)) {
+            ts = monthTemps(r);
+            labs = ts.map((_, i) => `${i + 1}月`);
+            intro = `ある市の1年間の気温を、月ごとに調べて折れ線グラフに表しました。${mlist(ts)}。`;
+          } else {
+            const T = temps(r, r(0, 1) === 1);
+            ts = T.ts;
+            labs = T.hs.map((h) => `${h}時`);
+            intro = `ある日の気温を1時間ごとに調べて、折れ線グラフに表しました。${list(T.hs, ts)}。`;
+          }
+          const mx = Math.max(...ts);
+          const mn = Math.min(...ts);
+          const at = (v) => labs.filter((_, i) => ts[i] === v).join("・");
+          return {
+            q: `${intro}いちばん高い気温と、いちばん低い気温のちがいは何度ですか。`,
+            ans: mx - mn,
+            unit: "度",
+            hint: "折れ線グラフで、いちばん上の点といちばん下の点を見つけよう。",
+            steps: [`いちばん高いのは ${at(mx)}の ${mx}度、いちばん低いのは ${at(mn)}の ${mn}度`, `${mx} − ${mn} ＝ ${mx - mn}（度）`],
+          };
+        }),
       ],
       3: [
         t("E4-oresen-3a", (r) => {
@@ -1920,6 +3803,76 @@ export const UNITS = [
             steps: [`犬をかっていない人は ${N} − ${A} ＝ ${N - A}（人）`, `そのうち ねこだけの人は ${N - A} − ${none} ＝ ${N - A - none}（人）`, `ねこをかっている人は ${N - A - none} ＋ ${C} ＝ ${B}（人）`],
           };
         }),
+        t("E4-oresen-3d", (r) => {
+          // 2本の折れ線グラフ：低かったほうが、はじめて高くなる時こく
+          const { hs, ts } = temps(r);
+          const us = [ts[0] - r(2, 5)];
+          for (let i = 1; i < hs.length; i++) us.push(us[i - 1] + (ts[i] - ts[i - 1]) + r(0, 2));
+          const k = us.findIndex((v, i) => v > ts[i]);
+          if (k < 1) return { skip: true };
+          const aFirst = r(0, 1) === 1; // A市がはじめ高い（ts）か、B市がはじめ高いか
+          const [A, B] = aFirst ? [ts, us] : [us, ts];
+          const [hi, lo] = aFirst ? ["A市", "B市"] : ["B市", "A市"];
+          return {
+            q: `A市とB市の気温を1時間ごとに調べて、2本の折れ線グラフに表しました。A市は ${list(hs, A)}。B市は ${list(hs, B)}。${lo}の気温が、はじめて${hi}の気温より高くなったのは何時ですか。`,
+            ans: hs[k],
+            unit: "時",
+            hint: "同じ時こくどうしで、2つの市の気温をくらべよう。2本の折れ線が交わるあたりに注目しよう。",
+            steps: [`同じ時こくでくらべると、${hs.slice(0, k + 1).map((h, i) => `${h}時は ${hi} ${ts[i]}度・${lo} ${us[i]}度`).join("、")}`, `${lo}のほうが高くなったのは ${hs[k]}時がはじめて`],
+          };
+        }),
+        t("E4-oresen-3e", (r) => {
+          // 2つのことがらで分けた表（あいているところを求めてから合計）
+          if (r(0, 1)) {
+            const foods = ["カレー", "あげパン", "やきそば"];
+            const c1 = [r(5, 14), r(4, 12), r(3, 10)];
+            const c2 = [r(5, 14), r(4, 12), r(3, 10)];
+            const j = r(0, 2);
+            const tot = c1[j] + c2[j];
+            const sum2 = c2.reduce((s, v) => s + v, 0);
+            const parts = foods.map((f, i) => (i === j ? `${f}がすきな人は、2つの組をあわせて ${tot}人で、そのうち1組は ${c1[i]}人` : `${f}がすきな人は、1組 ${c1[i]}人、2組 ${c2[i]}人`));
+            return {
+              q: `4年1組と2組で、すきな給食を1人1つずつえらんで、表にまとめました。${parts.join("。")}です。2組の人数は、全部で何人ですか。`,
+              ans: sum2,
+              unit: "人",
+              hint: "表にかいて、わかっていないところを先に求めよう。",
+              steps: [`2組で${foods[j]}がすきな人は ${tot} − ${c1[j]} ＝ ${c2[j]}（人）`, `2組の合計は ${c2.join(" ＋ ")} ＝ ${sum2}（人）`],
+            };
+          }
+          const a = [r(3, 9), r(2, 8), r(1, 6)]; // すりきず：校庭・体育館・教室
+          const b = [r(2, 8), r(2, 7), r(1, 5)]; // 打ぼく：校庭・体育館・教室
+          const Bt = b[0] + b[1] + b[2];
+          return {
+            q: `けがをした人について、けがの種類と場所で分けて表にまとめました。すりきずは、校庭 ${a[0]}人、体育館 ${a[1]}人、教室 ${a[2]}人です。打ぼくは全部で ${Bt}人で、そのうち校庭 ${b[0]}人、体育館 ${b[1]}人です。教室でけがをした人は、全部で何人ですか。`,
+            ans: a[2] + b[2],
+            unit: "人",
+            hint: "表にかいて、わかっていないところを先に求めよう。",
+            steps: [`教室での打ぼくは ${Bt} − ${b[0]} − ${b[1]} ＝ ${b[2]}（人）`, `教室でけがをした人は ${a[2]} ＋ ${b[2]} ＝ ${a[2] + b[2]}（人）`],
+          };
+        }),
+      ],
+      4: [
+        t("E4-oresen-4a", (r) => {
+          // 変わり方だけが分かっているとき、はじめの気温を求める
+          const { hs, ts } = temps(r);
+          const ch = hs.slice(0, -1).map((_, i) => ts[i + 1] - ts[i]);
+          const desc = ch.map((d, i) => `${hs[i]}時から${hs[i + 1]}時までに ${Math.abs(d)}度${d > 0 ? "上がり" : "下がり"}`).join("、");
+          const last = ts[ts.length - 1];
+          const up = ch.filter((d) => d > 0).reduce((s, d) => s + d, 0);
+          const down = -ch.filter((d) => d < 0).reduce((s, d) => s + d, 0);
+          const tot = up - down;
+          return {
+            q: `ある日の気温を、9時から1時間ごとに調べました。${desc}ました。15時の気温は ${last}度でした。9時の気温は何度でしたか。`,
+            ans: ts[0],
+            unit: "度",
+            hint: "上がった分の合計と、下がった分の合計をくらべてみよう。",
+            steps: [
+              `上がった分の合計は ${up}度、下がった分の合計は ${down}度`,
+              tot === 0 ? "15時と9時の気温は同じ" : `15時は9時より ${Math.abs(tot)}度${tot > 0 ? "高い" : "低い"}`,
+              `9時の気温は ${tot === 0 ? `${last}` : `${last} ${tot > 0 ? "−" : "＋"} ${Math.abs(tot)} ＝ ${ts[0]}`}（度）`,
+            ],
+          };
+        }),
       ],
     },
   },
@@ -1938,4 +3891,16 @@ function temps(r, down = false) {
 
 function list(hs, ts) {
   return hs.map((h, i) => `${h}時 ${ts[i]}度`).join("、");
+}
+
+/** 1年間の月ごとの気温（1月・2月が低く、8月ごろがいちばん高い） */
+function monthTemps(r) {
+  const low = r(2, 7);
+  const high = r(26, 30);
+  const shape = [0, 0.05, 0.25, 0.45, 0.65, 0.8, 0.95, 1, 0.85, 0.6, 0.35, 0.12];
+  return shape.map((s) => Math.round(low + (high - low) * s) + r(-1, 1));
+}
+
+function mlist(ts) {
+  return ts.map((v, i) => `${i + 1}月 ${v}度`).join("、");
 }

@@ -34,6 +34,19 @@ const divisors = (n) => {
   return out;
 };
 
+/** 問題に出てくる人の名前（「〜さん」をつけて使う） */
+const NAMES = ["ゆうと", "さくら", "はると", "あおい", "そうた", "ひなた", "れん", "ゆい"];
+
+/** 分母 d の真分数で、それ以上約分できない分子を1つ選ぶ */
+const numer = (r, d) => pick(r, Array.from({ length: d - 1 }, (_, i) => i + 1).filter((k) => gcd(k, d) === 1));
+
+/** p ÷ q の小数（わり切れないときは小数第3位まで書いて「…」をつける） */
+function decStr(p, q) {
+  const v = p / q;
+  if (Number.isInteger(round(v * 1000, 6))) return String(round(v));
+  return `${Math.floor(v * 1000) / 1000}…`;
+}
+
 /** 分数の4択（値が同じものは同じ文字列になる fracTex を使う） */
 function fracChoices(r, [n, d], traps) {
   const f = ([a, b]) => (b > 0 && a > 0 ? $(fracTex(a, b)) : null);
@@ -104,6 +117,54 @@ export const UNITS = [
             steps: [`両方を10倍して ${X} ÷ ${Y} と考える`, `${X} ÷ ${Y} ＝ ${q}`],
           };
         }),
+        t("E5-shosukake-1d", (r) => {
+          // 整数のかけ算の答えを使って、小数のかけ算の積を求める
+          const A = r(12, 98);
+          const B = r(12, 98);
+          if (A % 10 === 0 || B % 10 === 0) return { skip: true };
+          const P = A * B;
+          const [da, db] = pick(r, [[1, 1], [1, 1], [2, 1], [1, 2], [2, 0], [0, 2], [1, 0], [0, 1]]);
+          const k = da + db;
+          const a = round(A / 10 ** da);
+          const b = round(B / 10 ** db);
+          const raw = (P / 10 ** k).toFixed(k);
+          const ans = round(P / 10 ** k);
+          return {
+            q: `${A} × ${B} ＝ ${P} です。このことを使って、${a} × ${b} の積を求めましょう。`,
+            ans,
+            hint: "かけられる数とかける数の、小数点より下のけた数に注目しよう。",
+            steps: [
+              `小数点より下のけた数は ${da} ＋ ${db} ＝ ${k}（けた）`,
+              `${P} の右から ${k}けたのところに小数点をうって ${raw}${raw !== String(ans) ? `（終わりの 0 を消して ${ans}）` : ""}`,
+              `答え ${ans}`,
+            ],
+          };
+        }),
+        t("E5-shosukake-1e", (r) => {
+          // 整数 × 小数、整数 ÷ 小数 の文章題（代金・1m のねだん）
+          const item = pick(r, ["リボン", "ホース", "はり金", "ロープ", "布"]);
+          const p = r(6, 20) * 10;
+          const X = r(12, 49);
+          if (X % 10 === 0) return { skip: true };
+          const L = X / 10;
+          const T = (p * X) / 10;
+          if (r(0, 1)) {
+            return {
+              q: `1m のねだんが ${p}円の${item}を ${L}m 買います。代金は何円ですか。`,
+              ans: T,
+              unit: "円",
+              hint: "代金 ＝ 1m のねだん × 長さ。長さが小数のときも、かけ算で求められるよ。",
+              steps: [`${p} × ${L}`, `${p} × ${X} ＝ ${p * X}、小数点より下は 1 けたで ${T}`, `${T}円`],
+            };
+          }
+          return {
+            q: `${item} ${L}m の代金は ${T}円でした。この${item} 1m のねだんは何円ですか。`,
+            ans: p,
+            unit: "円",
+            hint: "1m のねだん ＝ 代金 ÷ 長さ。長さが小数でも、わり算で求められるよ。",
+            steps: [`${T} ÷ ${L}`, `わる数が整数になるように両方を10倍して ${T * 10} ÷ ${X} ＝ ${p}`, `${p}円`],
+          };
+        }),
       ],
       2: [
         t("E5-shosukake-2a", (r) => {
@@ -145,6 +206,101 @@ export const UNITS = [
             choices: choices4(r, ans, bigs.map(show)),
             hint: mul ? "1より小さい数をかけると、積はどうなるかな？" : "1より小さい数でわると、商はどうなるかな？",
             steps: [mul ? "1より小さい数をかけると、積はかけられる数より小さくなる" : "1より小さい数でわると、商はわられる数より大きくなる", `${small} は1より小さいので ${ans}`],
+          };
+        }),
+        t("E5-shosukake-2d", (r) => {
+          // 商を四捨五入して、がい数で求める
+          const X = r(20, 600);
+          const Y = r(12, 99);
+          if (Y % 10 === 0) return { skip: true };
+          const v = X / Y;
+          if (v < 0.1 || v >= 100) return { skip: true };
+          const sig = r(0, 1) === 1; // 上から2けた
+          const k = sig ? (v >= 10 ? 0 : v >= 1 ? 1 : 2) : 1; // 小数第 k 位までのがい数にする
+          if ((X * 10 ** (k + 1)) % Y === 0) return { skip: true };
+          const q1 = Math.floor((X * 10 ** (k + 1)) / Y);
+          const ans = round((Math.floor(q1 / 10) + (q1 % 10 >= 5 ? 1 : 0)) / 10 ** k);
+          const PN = (j) => (j === 0 ? "一の位" : `$\\frac{1}{${10 ** j}}$ の位`);
+          const x = X / 10;
+          const y = Y / 10;
+          return {
+            q: sig
+              ? `${x} ÷ ${y} の商を、四捨五入して、上から2けたのがい数で求めましょう。`
+              : `${x} ÷ ${y} の商を、四捨五入して、$\\frac{1}{10}$ の位までのがい数で求めましょう。`,
+            ans,
+            hint: "求める位の1つ下の位まで計算して、四捨五入しよう。",
+            steps: [
+              `${x} ÷ ${y} → 両方を10倍して ${X} ÷ ${Y}`,
+              `${PN(k + 1)}まで計算すると ${(q1 / 10 ** (k + 1)).toFixed(k + 1)}…`,
+              `${PN(k + 1)}を四捨五入して ${ans.toFixed(k)}`, // 6.0 のように、求めた位までの 0 も書く
+            ],
+          };
+        }),
+        t("E5-shosukake-2e", (r) => {
+          // 小数倍（何倍かを小数で表す）
+          const [A, B, u] = pick(r, [
+            ["赤いテープの長さ", "白いテープの長さ", "m"],
+            ["バケツAに入る水の量", "バケツBに入る水の量", "L"],
+            ["にもつAの重さ", "にもつBの重さ", "kg"],
+            ["Aのロープの長さ", "Bのロープの長さ", "m"],
+          ]);
+          const k = pick(r, [0.4, 0.6, 0.8, 1.2, 1.4, 1.5, 1.6, 1.8, 2.4, 2.5, 3.5, 0.75, 1.25]);
+          const Y = r(12, 49);
+          if (Y % 10 === 0) return { skip: true };
+          const b = Y / 10;
+          const a = round(b * k);
+          if (!Number.isInteger(round(a * 100, 6))) return { skip: true };
+          return {
+            q: `${A}は ${a}${u}、${B}は ${b}${u} です。${A}は、${B}の何倍ですか。`,
+            ans: k,
+            unit: "倍",
+            hint: `「${B}の何倍」なので、${B}でわるよ。`,
+            steps: [`何倍かは、わり算で求める：${a} ÷ ${b}`, `わる数が整数になるように両方を10倍して ${round(a * 10)} ÷ ${Y} ＝ ${k}`, `${k}倍`],
+          };
+        }),
+        t("E5-shosukake-2f", (r) => {
+          // 場面に合う式を選ぶ（かけ算か、わり算か、どちらでわるか）
+          const T = "\\times";
+          const D = "\\div";
+          const ex = (a, op, b) => $(`${a} ${op} ${b}`);
+          const k = r(0, 4);
+          const v = pick(r, [0.4, 0.6, 0.8, 1.5, 2.4, 3.5]);
+          let q;
+          let ans;
+          let wr;
+          let rule;
+          if (k <= 2) {
+            const w = pick(r, [0.6, 0.8, 0.9, 1.2, 1.5]);
+            if (w === v) return { skip: true };
+            if (k === 0) {
+              q = `1L の重さが ${w}kg の油があります。この油 ${v}L の重さを求める式はどれですか。`;
+              [ans, wr, rule] = [ex(w, T, v), [ex(w, D, v), ex(v, D, w), ex(w, "+", v)], "1L の重さ × L の数 ＝ 全体の重さ"];
+            } else if (k === 1) {
+              const W = round(w * v);
+              q = `${v}L の重さが ${W}kg の油があります。この油 1L の重さを求める式はどれですか。`;
+              [ans, wr, rule] = [ex(W, D, v), [ex(W, T, v), ex(v, D, W), ex(W, "-", v)], "全体の重さ ÷ L の数 ＝ 1L の重さ"];
+            } else {
+              const W = round(w * r(3, 12));
+              q = `${W}kg の米を、1ふくろに ${w}kg ずつ入れます。何ふくろできるかを求める式はどれですか。`;
+              [ans, wr, rule] = [ex(W, D, w), [ex(W, T, w), ex(w, D, W), ex(W, "-", w)], "全体の重さ ÷ 1ふくろの重さ ＝ ふくろの数"];
+            }
+          } else {
+            const p = r(6, 15) * 10;
+            if (k === 3) {
+              q = `1m のねだんが ${p}円のはり金を ${v}m 買います。代金を求める式はどれですか。`;
+              [ans, wr, rule] = [ex(p, T, v), [ex(p, D, v), ex(v, D, p), ex(p, "+", v)], "1m のねだん × 長さ ＝ 代金"];
+            } else {
+              const P = round(p * v);
+              q = `はり金 ${v}m の代金は ${P}円です。このはり金 1m のねだんを求める式はどれですか。`;
+              [ans, wr, rule] = [ex(P, D, v), [ex(P, T, v), ex(v, D, P), ex(P, "-", v)], "代金 ÷ 長さ ＝ 1m のねだん"];
+            }
+          }
+          return {
+            q,
+            ans,
+            choices: choices4(r, ans, wr),
+            hint: "小数を、2 や 3 のようなかんたんな整数におきかえて、どんな式になるか考えてみよう。",
+            steps: [`ことばの式：${rule}`, "数が小数でも、整数のときと同じ考え方で式をつくる", `式は ${ans}`],
           };
         }),
       ],
@@ -193,6 +349,89 @@ export const UNITS = [
             steps: [`${A / 10} ÷ ${B / 10} → ${A} ÷ ${B} と考えて、商は ${q}、あまりは ${m10}`, `あまりの小数点はもとの位置にうつので ${m}`, `たしかめ：${B / 10} × ${q} ＋ ${m} ＝ ${A / 10}`],
           };
         }),
+        t("E5-shosukake-3d", (r) => {
+          // もとにする量を求める（□ × 小数 ＝ 比べる量）
+          const [An, Bn, u] = pick(r, [
+            ["赤いテープの長さ", "青いテープの長さ", "m"],
+            ["水とうAに入る水の量", "水とうBに入る水の量", "L"],
+            ["にもつAの重さ", "にもつBの重さ", "kg"],
+            ["きのう走った道のり", "今日走った道のり", "km"],
+          ]);
+          const k = pick(r, [0.4, 0.6, 0.8, 1.2, 1.4, 1.5, 1.6, 2.5, 3.5]);
+          const X = r(11, 49);
+          if (X % 10 === 0) return { skip: true };
+          const A = X / 10;
+          const B = round(A * k);
+          return {
+            q: `${Bn}は ${B}${u} で、これは${An}の ${k}倍です。${An}は何${u}ですか。`,
+            ans: A,
+            unit: u,
+            hint: `${An}を □${u} として、かけ算の式に表してみよう。`,
+            steps: [`${An}を □${u} とすると、□ × ${k} ＝ ${B}`, `□ ＝ ${B} ÷ ${k}`, `＝ ${A}（${u}）`],
+          };
+        }),
+        t("E5-shosukake-3e", (r) => {
+          // 小数のわり算のあまりの処理（切り捨て・切り上げ）
+          const Y = r(3, 25);
+          if (Y % 10 === 0) return { skip: true };
+          const X = r(Y * 3 + 1, Math.min(Y * 25, 300));
+          const n = Math.floor(X / Y);
+          const m10 = X - Y * n;
+          if (m10 === 0) return { skip: true };
+          const A = X / 10;
+          const b = Y / 10;
+          const m = m10 / 10;
+          if (r(0, 1)) {
+            return {
+              q: `${A}m のロープから、${b}m のロープを切り取っていきます。${b}m のロープは何本とれますか。`,
+              ans: n,
+              unit: "本",
+              hint: "わり算のあまりの長さで、もう1本とれるかどうか考えよう。",
+              steps: [`${A} ÷ ${b} ＝ ${n} あまり ${m}`, `のこりの ${m}m では ${b}m のロープはとれない`, `${n}本`],
+            };
+          }
+          return {
+            q: `${A}L のジュースを、${b}L 入るびんに分けて、全部入れます。びんは何本いりますか。`,
+            ans: n + 1,
+            unit: "本",
+            hint: "わり算のあまりの分のジュースも、びんに入れないといけないね。",
+            steps: [`${A} ÷ ${b} ＝ ${n} あまり ${m}`, `あまりの ${m}L を入れるびんも、もう1本いる`, `${n} ＋ 1 ＝ ${n + 1}（本）`],
+          };
+        }),
+        t("E5-shosukake-3f", (r) => {
+          // 計算のきまりを使って、くふうして計算する
+          if (r(0, 1)) {
+            const [a, c, pr] = pick(r, [[2.5, 4, 10], [1.25, 8, 10], [12.5, 8, 100], [0.25, 40, 10], [2.5, 40, 100], [0.4, 25, 10], [0.5, 20, 10]]);
+            const B = r(11, 99);
+            if (B % 10 === 0) return { skip: true };
+            const b = B / 10;
+            const ans = round(b * pr);
+            const [x, y] = r(0, 1) ? [a, c] : [c, a];
+            return {
+              q: `${x} × ${b} × ${y} を、くふうして計算しましょう。`,
+              ans,
+              hint: "かけ算は、かける順番をかえても答えは同じ。先にかけるとかんたんになる2つの数はどれかな？",
+              steps: ["かけ算は、かける順番をかえても答えは同じ", `${x} × ${y} ＝ ${pr} を先に計算する`, `${b} × ${pr} ＝ ${ans}`],
+            };
+          }
+          const A = r(11, 99);
+          if (A % 10 === 0) return { skip: true };
+          const a = A / 10;
+          const C = r(11, 89);
+          if (C % 10 === 0) return { skip: true };
+          const c = C / 10;
+          const plus = r(0, 1) === 1;
+          const d = plus ? 10 : pick(r, [1, 10]);
+          const b = plus ? round(10 - c) : round(c + d);
+          const ans = round(a * d);
+          const op = plus ? "＋" : "−";
+          return {
+            q: `${a} × ${b} ${op} ${a} × ${c} を、くふうして計算しましょう。`,
+            ans,
+            hint: "同じ数が2回かけられているね。まとめて計算できないかな？",
+            steps: [`${a} × ${b} ${op} ${a} × ${c} ＝ ${a} × (${b} ${op} ${c})`, `＝ ${a} × ${d}`, `＝ ${ans}`],
+          };
+        }),
       ],
       4: [
         t("E5-shosukake-4a", (r) => {
@@ -205,6 +444,33 @@ export const UNITS = [
             ans,
             hint: "まず、まちがえた計算を逆にたどって「ある数」を求めよう。",
             steps: [`ある数 ÷ ${p} ＝ ${w} だから、ある数 ＝ ${w} × ${p} ＝ ${x}`, `正しい答えは ${x} × ${p} ＝ ${ans}`],
+          };
+        }),
+        t("E5-shosukake-4b", (r) => {
+          // 4まいのカードで「□.□ × □.□」をつくり、積をいちばん大きく（小さく）する
+          const ds = sample(r, [1, 2, 3, 4, 5, 6, 7, 8, 9], 4).sort((x, y) => y - x);
+          const big = r(0, 1) === 1;
+          const perms = (arr) => (arr.length <= 1 ? [arr] : arr.flatMap((x, i) => perms([...arr.slice(0, i), ...arr.slice(i + 1)]).map((p) => [x, ...p])));
+          let best = null;
+          for (const [p1, p2, p3, p4] of perms(ds)) {
+            const v = (p1 * 10 + p2) * (p3 * 10 + p4);
+            if (best === null || (big ? v > best : v < best)) best = v;
+          }
+          // a, b を一の位に、c, d を 1/10 の位に入れる
+          const [a, b, c, d] = big ? ds : [...ds].reverse();
+          const v1 = (a * 10 + c) * (b * 10 + d);
+          const v2 = (a * 10 + d) * (b * 10 + c);
+          if ((big ? Math.max(v1, v2) : Math.min(v1, v2)) !== best) return { skip: true };
+          const ans = round(best / 100);
+          return {
+            q: `4まいのカード ${shuffle(r, ds).join("、")} があります。「□.□ × □.□」の □ に、カードを1まいずつ入れて、小数のかけ算の式をつくります。積がいちばん${big ? "大きく" : "小さく"}なるときの積を求めましょう。`,
+            ans,
+            hint: big ? "一の位と $\\frac{1}{10}$ の位、どちらに大きい数字を入れると積が大きくなるかな？" : "一の位と $\\frac{1}{10}$ の位、どちらに小さい数字を入れると積が小さくなるかな？",
+            steps: [
+              `積を${big ? "大きく" : "小さく"}するには、${big ? "大きい" : "小さい"}数字 ${a} と ${b} を一の位に入れる`,
+              `のこりの ${c} と ${d} の入れ方は2通り：${a}.${c} × ${b}.${d} ＝ ${round(v1 / 100)}、${a}.${d} × ${b}.${c} ＝ ${round(v2 / 100)}`,
+              `${big ? "大きい" : "小さい"}ほうで ${ans}`,
+            ],
           };
         }),
       ],
@@ -265,6 +531,45 @@ export const UNITS = [
             steps: [`${n} の約数：${ds.join("、")}`, `全部で ${ds.length} こ`],
           };
         }),
+        t("E5-baisu-1d", (r) => {
+          // 倍数を選ぶ（約数ととりちがえる・一の位だけ見る などの誤答）
+          const a = pick(r, [3, 4, 6, 7, 8, 9, 12, 15]);
+          const k = r(3, 12);
+          const ans = a * k;
+          if (ans > 150) return { skip: true };
+          const ok = (x) => x > 0 && x % a !== 0;
+          const ds = divisors(a).filter((x) => x !== a && x !== 1);
+          const wr = [ds.length ? pick(r, ds) : 1, ans + 1, ans - 1, ans + (a % 2 === 0 ? a / 2 : 2), 10 * r(1, 9) + (a % 10)].filter(ok);
+          return {
+            q: `次の数のうち、${a} の倍数はどれですか。`,
+            ans,
+            choices: choices4(r, ans, wr, (i) => (ok(ans + i + 2) ? ans + i + 2 : null)),
+            hint: `${a} でわり切れるかどうかを調べよう。`,
+            steps: [`${a} の倍数は、${a} × 1、${a} × 2、${a} × 3、… のように ${a} でわり切れる数`, `${ans} ＝ ${a} × ${k} なので、${ans} は ${a} の倍数`],
+          };
+        }),
+        t("E5-baisu-1e", (r) => {
+          // 公約数を全部あげたものを選ぶ
+          const g = pick(r, [4, 6, 8, 9, 10, 12, 15, 16, 18]);
+          const [m, n] = sample(r, [1, 2, 3, 4, 5, 7], 2);
+          if (gcd(m, n) !== 1) return { skip: true };
+          const a = g * m;
+          const b = g * n;
+          if (Math.max(a, b) > 100) return { skip: true };
+          const small = Math.min(a, b);
+          const big = Math.max(a, b);
+          const J = (xs) => xs.join("、");
+          const dg = divisors(g);
+          const ans = J(dg);
+          const L = lcm(a, b);
+          return {
+            q: `${a} と ${b} の公約数を、全部あげたものはどれですか。`,
+            ans,
+            choices: choices4(r, ans, [J(divisors(small)), J(dg.slice(1)), J(dg.slice(0, -1)), J([L, L * 2, L * 3])]),
+            hint: `小さいほうの ${small} の約数のうち、${big} もわり切れるものをさがそう。`,
+            steps: [`${small} の約数：${J(divisors(small))}`, `このうち ${big} もわり切れるのは ${ans}`, `（公約数は、最大公約数 ${g} の約数になっている）`],
+          };
+        }),
       ],
       2: [
         t("E5-baisu-2a", (r) => {
@@ -302,6 +607,36 @@ export const UNITS = [
             choices,
             hint: "一の位の数字を見ればわかるよ。",
             steps: ["一の位が 0、2、4、6、8 なら偶数、1、3、5、7、9 なら奇数", `${ans} は一の位が ${ans % 10} なので${odd ? "奇数" : "偶数"}`],
+          };
+        }),
+        t("E5-baisu-2d", (r) => {
+          // ○番目の公倍数（公倍数は最小公倍数の倍数）
+          const [a, b] = sample(r, [2, 3, 4, 5, 6, 8, 9, 10, 12], 2).sort((x, y) => x - y);
+          if (b % a === 0) return { skip: true };
+          const L = lcm(a, b);
+          if (L > 60) return { skip: true };
+          const k = r(2, 5);
+          return {
+            q: `${a} と ${b} の公倍数を、小さいほうから順にならべたとき、${k}番目の数はいくつですか。`,
+            ans: L * k,
+            hint: "公倍数を小さいほうからいくつか書き出して、どんなきまりがあるか見てみよう。",
+            steps: [`${a} と ${b} の最小公倍数は ${L}`, `公倍数は ${L} の倍数になっている：${L}、${L * 2}、${L * 3}、…`, `${k}番目は ${L} × ${k} ＝ ${L * k}`],
+          };
+        }),
+        t("E5-baisu-2e", (r) => {
+          // 長方形の紙を、同じ大きさのできるだけ大きい正方形に切り分ける（最大公約数）
+          const g = r(2, 12);
+          const [m, n] = sample(r, [2, 3, 4, 5, 7], 2).sort((x, y) => x - y);
+          if (gcd(m, n) !== 1) return { skip: true };
+          const a = g * m;
+          const b = g * n;
+          if (b > 84) return { skip: true };
+          return {
+            q: `たて ${a}cm、横 ${b}cm の長方形の紙があります。この紙を、あまりが出ないように、同じ大きさの正方形に切り分けます。できるだけ大きな正方形にするとき、正方形の1辺は何cmにすればよいですか。`,
+            ans: g,
+            unit: "cm",
+            hint: "正方形の1辺の長さで、たての長さも横の長さもわり切れないといけないね。",
+            steps: [`正方形の1辺は、${a} と ${b} の公約数`, `できるだけ大きいので、最大公約数の ${g}cm`],
           };
         }),
       ],
@@ -349,6 +684,69 @@ export const UNITS = [
             unit: "分後",
             hint: `同時に出発するのは、${a} と ${b} の公倍数の時間がたったときだね。`,
             steps: [`${a} と ${b} の公倍数の時間ごとに同時に出発する`, `次は最小公倍数の ${L}分後`],
+          };
+        }),
+        t("E5-baisu-3d", (r) => {
+          // しきつめるまい数（最大公約数・最小公倍数を使って2段階で）
+          if (r(0, 1)) {
+            const g = pick(r, [6, 8, 10, 12, 15, 20]);
+            const [m, n] = sample(r, [2, 3, 4, 5, 7], 2).sort((x, y) => x - y);
+            if (gcd(m, n) !== 1) return { skip: true };
+            const a = g * m;
+            const b = g * n;
+            return {
+              q: `たて ${a}cm、横 ${b}cm の長方形の板に、同じ大きさの正方形のタイルを、すきまなくしきつめます。できるだけ大きなタイルを使うとき、タイルは何まいいりますか。`,
+              ans: m * n,
+              unit: "まい",
+              hint: "まず、タイルの1辺の長さを考えよう。",
+              steps: [`タイルの1辺は ${a} と ${b} の最大公約数で ${g}cm`, `たてに ${a} ÷ ${g} ＝ ${m}（まい）、横に ${b} ÷ ${g} ＝ ${n}（まい）ならぶ`, `${m} × ${n} ＝ ${m * n}（まい）`],
+            };
+          }
+          const [a, b] = sample(r, [3, 4, 5, 6, 8, 9, 10, 12], 2).sort((x, y) => x - y);
+          if (b % a === 0) return { skip: true };
+          const L = lcm(a, b);
+          if (L > 72) return { skip: true };
+          return {
+            q: `たて ${a}cm、横 ${b}cm の長方形のカードを、同じ向きにすきまなくならべて、できるだけ小さい正方形をつくります。カードは何まいいりますか。`,
+            ans: (L / a) * (L / b),
+            unit: "まい",
+            hint: "まず、できる正方形の1辺の長さを考えよう。",
+            steps: [`正方形の1辺は ${a} と ${b} の最小公倍数で ${L}cm`, `たてに ${L} ÷ ${a} ＝ ${L / a}（まい）、横に ${L} ÷ ${b} ＝ ${L / b}（まい）ならぶ`, `${L / a} × ${L / b} ＝ ${(L / a) * (L / b)}（まい）`],
+          };
+        }),
+        t("E5-baisu-3e", (r) => {
+          // あまりが出る分け方（あまりをのぞいてから公約数を考える）
+          const g = r(5, 15);
+          const [m, n] = sample(r, [2, 3, 4, 5, 7], 2);
+          if (gcd(m, n) !== 1) return { skip: true };
+          const ra = r(1, Math.min(4, g - 1));
+          const rb = r(1, Math.min(4, g - 1));
+          const [x, ux, y, uy] = pick(r, [["あめ", "こ", "ガム", "こ"], ["えんぴつ", "本", "けしゴム", "こ"], ["画用紙", "まい", "色紙", "まい"]]);
+          const A = g * m + ra;
+          const B = g * n + rb;
+          return {
+            q: `${x}が ${A}${ux}、${y}が ${B}${uy} あります。何人かの子どもに、${x}も${y}も、それぞれ同じ数ずつ配ったら、${x}は ${ra}${ux}、${y}は ${rb}${uy} あまりました。子どもの人数は、いちばん多くて何人と考えられますか。`,
+            ans: g,
+            unit: "人",
+            hint: "あまった分を先にのぞくと、ちょうど分けられたことになるね。",
+            steps: [`配った数：${x}は ${A} − ${ra} ＝ ${A - ra}（${ux}）、${y}は ${B} − ${rb} ＝ ${B - rb}（${uy}）`, `子どもの人数は、${A - ra} と ${B - rb} の公約数`, `いちばん多いのは最大公約数の ${g}人（あまりの数より大きいので、あっている）`],
+          };
+        }),
+        t("E5-baisu-3f", (r) => {
+          // 決まったはんいにある公倍数の個数
+          const [a, b] = sample(r, [2, 3, 4, 5, 6, 8, 9, 10, 12], 2).sort((x, y) => x - y);
+          if (b % a === 0) return { skip: true };
+          const L = lcm(a, b);
+          if (L > 60) return { skip: true };
+          const N = r(5, 30) * 10;
+          const n = Math.floor(N / L);
+          if (n < 2) return { skip: true };
+          return {
+            q: `1から ${N} までの整数のうち、${a} でも ${b} でもわり切れる数は何こありますか。`,
+            ans: n,
+            unit: "こ",
+            hint: `${a} でも ${b} でもわり切れる数は、${a} と ${b} の何といえるかな？`,
+            steps: [`${a} でも ${b} でもわり切れる数は、${a} と ${b} の公倍数で、最小公倍数 ${L} の倍数`, `${N} ÷ ${L} ＝ ${n}${N % L ? ` あまり ${N % L}` : ""}`, `${L} × 1 から ${L} × ${n} までの ${n}こ`],
           };
         }),
       ],
@@ -443,6 +841,47 @@ export const UNITS = [
             steps: [`分母を ${L} にそろえる：$\\frac{${a1 * (L / b1)}}{${L}}-\\frac{${c1 * (L / d1)}}{${L}}$`, `$=\\frac{${n}}{${L}}${gcd(n, L) > 1 ? `=${fracTex(n, L)}` : ""}$`],
           };
         }),
+        t("E5-bunsu-1d", (r) => {
+          // 等しい分数の □ にあてはまる数
+          const d = r(2, 9);
+          const n = numer(r, d);
+          const k = r(2, 8);
+          const S = "\\square";
+          const f = r(0, 2);
+          const [L, R, ans, st] =
+            f === 0
+              ? [`\\frac{${n}}{${d}}`, `\\frac{${S}}{${d * k}}`, n * k, [`分母が ${d} から ${d * k} へ、${k}倍になっている`, `分子も ${k}倍して ${n} × ${k} ＝ ${n * k}`]]
+              : f === 1
+                ? [`\\frac{${n}}{${d}}`, `\\frac{${n * k}}{${S}}`, d * k, [`分子が ${n} から ${n * k} へ、${k}倍になっている`, `分母も ${k}倍して ${d} × ${k} ＝ ${d * k}`]]
+                : [`\\frac{${n * k}}{${d * k}}`, `\\frac{${S}}{${d}}`, n, [`分母が ${d * k} から ${d} へ、${k} でわった数になっている`, `分子も ${k} でわって ${n * k} ÷ ${k} ＝ ${n}`]];
+          return {
+            q: `$${L}=${R}$ の □ にあてはまる数を求めましょう。`,
+            ans,
+            hint: "分母と分子に同じ数をかけても、分母と分子を同じ数でわっても、分数の大きさは変わらないよ。",
+            steps: st,
+          };
+        }),
+        t("E5-bunsu-1e", (r) => {
+          // 通分したものを選ぶ（分子をそのまま・分母の積・片方だけ などの誤答）
+          const [b, d] = sample(r, [2, 3, 4, 5, 6, 8, 9, 10, 12], 2).sort((x, y) => x - y);
+          const L = lcm(b, d);
+          if (L > 36) return { skip: true };
+          const a = numer(r, b);
+          const c = numer(r, d);
+          const A = a * (L / b);
+          const C = c * (L / d);
+          const pair = (x, y, z, w) => `$\\frac{${x}}{${y}}$ と $\\frac{${z}}{${w}}$`;
+          const ans = pair(A, L, C, L);
+          const wr = [pair(a, L, c, L), L !== b * d ? pair(a * d, b * d, c * b, b * d) : null, pair(A, L, c, L), pair(a, L, C, L), pair(a + L - b, L, c + L - d, L)];
+          const conv = (x, y, X) => (L === y ? `$\\frac{${x}}{${y}}$ はそのまま` : `$\\frac{${x}}{${y}}=\\frac{${x}\\times${L / y}}{${y}\\times${L / y}}=\\frac{${X}}{${L}}$`);
+          return {
+            q: `$\\frac{${a}}{${b}}$ と $\\frac{${c}}{${d}}$ を、分母ができるだけ小さくなるように通分したものはどれですか。`,
+            ans,
+            choices: choices4(r, ans, wr),
+            hint: `分母を、${b} と ${d} の最小公倍数にそろえよう。`,
+            steps: [`分母は ${b} と ${d} の最小公倍数の ${L}`, conv(a, b, A), conv(c, d, C)],
+          };
+        }),
       ],
       2: [
         t("E5-bunsu-2a", (r) => {
@@ -518,6 +957,73 @@ export const UNITS = [
             ans: fracAns(a, b),
             hint: "わり算の商は「わられる数を分子、わる数を分母」にした分数で表せるよ。",
             steps: [`${a} ÷ ${b} ＝ $\\frac{${a}}{${b}}$`, gcd(a, b) > 1 ? `約分して $${fracTex(a, b)}$` : "これ以上約分できない"],
+          };
+        }),
+        t("E5-bunsu-2d", (r) => {
+          // 分数倍（何倍かを分数で表す）
+          const a = r(2, 12);
+          const b = r(2, 12);
+          if (a === b || a % b === 0) return { skip: true };
+          const [X, Y, u] = pick(r, [
+            ["赤いテープの長さ", "白いテープの長さ", "m"],
+            ["水とうAに入る水の量", "水とうBに入る水の量", "L"],
+            ["にもつAの重さ", "にもつBの重さ", "kg"],
+          ]);
+          const red = gcd(a, b) > 1;
+          return {
+            q: `${X}は ${a}${u}、${Y}は ${b}${u} です。${X}は、${Y}の何倍ですか。分数で答えましょう。`,
+            ans: fracAns(a, b),
+            unit: "倍",
+            hint: `「${Y}の何倍」なので、${Y}でわるよ。わり算の商は分数で表せるね。`,
+            steps: [`${Y}をもとにするので ${a} ÷ ${b}`, `${a} ÷ ${b} ＝ $\\frac{${a}}{${b}}$${red ? ` ＝ $${fracTex(a, b)}$（約分）` : ""}`, `$${fracTex(a, b)}$倍`],
+          };
+        }),
+        t("E5-bunsu-2e", (r) => {
+          // 分数と小数の大小をくらべる
+          const F = [[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [2, 5], [3, 5], [4, 5], [1, 6], [5, 6], [3, 8], [5, 8], [7, 8], [4, 9], [3, 10], [7, 10]];
+          const fr = sample(r, F, 2);
+          const fv = fr.map(([p, q]) => p / q);
+          const near = round(fv[0] + (r(0, 1) ? 1 : -1) * (r(2, 9) / 100), 2);
+          const decs = [near, round(r(10, 95) / 100, 2)];
+          const vals = [...fv, ...decs];
+          for (let i = 0; i < 4; i++) {
+            if (vals[i] <= 0 || vals[i] >= 1) return { skip: true };
+            for (let j = 0; j < i; j++) if (Math.abs(vals[i] - vals[j]) < 0.01) return { skip: true };
+          }
+          const show = [...fr.map(([p, q]) => `$\\frac{${p}}{${q}}$`), ...decs.map(String)];
+          const big = r(0, 1) === 1;
+          const target = big ? Math.max(...vals) : Math.min(...vals);
+          const ans = show[vals.indexOf(target)];
+          return {
+            q: `${shuffle(r, show).join("、")} のうち、いちばん${big ? "大きい" : "小さい"}数はどれですか。`,
+            ans,
+            choices: shuffle(r, show),
+            hint: "分数を小数になおしてくらべよう。分数は「分子 ÷ 分母」で小数になるよ。",
+            steps: [`分数を小数になおす：${fr.map(([p, q]) => `$\\frac{${p}}{${q}}$ ＝ ${decStr(p, q)}`).join("、")}`, `小数どうしでくらべると、いちばん${big ? "大きい" : "小さい"}のは ${ans}`],
+          };
+        }),
+        t("E5-bunsu-2f", (r) => {
+          // 時間と分数（○分は何時間・○秒は何分・○時間は何分）
+          const k = r(0, 2);
+          if (k < 2) {
+            const [big, small] = k === 0 ? ["時間", "分"] : ["分", "秒"];
+            const m = pick(r, [5, 10, 12, 15, 20, 24, 25, 30, 35, 36, 40, 45, 48, 50, 55]);
+            return {
+              q: `${m}${small}は何${big}ですか。分数で答えましょう。`,
+              ans: fracAns(m, 60),
+              unit: big,
+              hint: `1${big} ＝ 60${small} だね。1${small}は何${big}かな？`,
+              steps: [`1${small} ＝ $\\frac{1}{60}$ ${big}`, `${m}${small} ＝ $\\frac{${m}}{60}$ ${big}${gcd(m, 60) > 1 ? ` ＝ $${fracTex(m, 60)}$ ${big}（約分）` : ""}`],
+            };
+          }
+          const d = pick(r, [2, 3, 4, 5, 6, 10, 12, 15, 20]);
+          const n = numer(r, d);
+          return {
+            q: `$\\frac{${n}}{${d}}$ 時間は何分ですか。`,
+            ans: (60 * n) / d,
+            unit: "分",
+            hint: "1時間 ＝ 60分 をもとに考えよう。",
+            steps: [`$\\frac{1}{${d}}$ 時間は 60 ÷ ${d} ＝ ${60 / d}（分）`, `$\\frac{${n}}{${d}}$ 時間は ${60 / d} × ${n} ＝ ${(60 * n) / d}（分）`],
           };
         }),
       ],
@@ -596,6 +1102,85 @@ export const UNITS = [
             choices: shuffle(r, show),
             hint: "通分して分母をそろえるか、小数になおしてくらべよう。",
             steps: [`小数になおすと（およそ）${fs.map(([a, b]) => `$\\frac{${a}}{${b}}$ → ${round(a / b, 2)}`).join("、")}`, `いちばん${big ? "大きい" : "小さい"}のは ${ans}`],
+          };
+        }),
+        t("E5-bunsu-3d", (r) => {
+          // 求差（どちらが何L多いか）
+          const [X, Y, u] = pick(r, [["赤いペンキ", "青いペンキ", "L"], ["牛にゅう", "ジュース", "L"], ["さとう", "塩", "kg"]]);
+          const [b, d] = sample(r, [2, 3, 4, 5, 6, 8, 9, 10, 12], 2);
+          const L = lcm(b, d);
+          if (L > 40) return { skip: true };
+          const a = numer(r, b);
+          const c = numer(r, d);
+          const A = a * (L / b);
+          const C = c * (L / d);
+          if (A === C) return { skip: true };
+          const W = A > C ? X : Y;
+          const O = A > C ? Y : X;
+          const diff = Math.abs(A - C);
+          const say = (who, n, m) => (n > 0 && m > 0 ? `${who}が $${fracTex(n, m)}$${u} 多い` : null);
+          const ans = say(W, diff, L);
+          const nv = [Math.abs(a - c), Math.abs(b - d)];
+          return {
+            q: `${X}が $\\frac{${a}}{${b}}$${u}、${Y}が $\\frac{${c}}{${d}}$${u} あります。どちらが何${u} 多いですか。`,
+            ans,
+            choices: choices4(r, ans, [say(O, diff, L), say(W, ...nv), say(W, A + C, L), say(O, ...nv)], (i) => say(W, diff + i + 1, L)),
+            hint: "通分して大きさをくらべてから、ひき算でちがいを求めよう。",
+            steps: [`通分すると ${X} $\\frac{${A}}{${L}}$${u}、${Y} $\\frac{${C}}{${L}}$${u} なので、${W}のほうが多い`, `ちがいは $\\frac{${Math.max(A, C)}}{${L}}-\\frac{${Math.min(A, C)}}{${L}}=${fracTex(diff, L)}$（${u}）`, `答え ${ans}`],
+          };
+        }),
+        t("E5-bunsu-3e", (r) => {
+          // 小数と分数がまじった計算（小数を分数になおす）
+          const dec = pick(r, [0.1, 0.3, 0.7, 0.9, 0.5, 0.25, 0.75, 0.2, 0.4, 0.6, 0.8, 0.05, 0.15]);
+          const den = Number.isInteger(round(dec * 10)) ? 10 : 100;
+          const [n, m] = reduce(round(dec * den), den);
+          const q = pick(r, [3, 4, 6, 7, 8, 9, 12]);
+          const p = numer(r, q);
+          if (m === q) return { skip: true };
+          const L = lcm(m, q);
+          if (L > 60) return { skip: true };
+          const N1 = n * (L / m);
+          const N2 = p * (L / q);
+          const plus = r(0, 1) === 1;
+          if (!plus && N1 === N2) return { skip: true };
+          const decFirst = plus ? r(0, 1) === 1 : N1 > N2;
+          const N = plus ? N1 + N2 : Math.abs(N1 - N2);
+          const op = plus ? "+" : "-";
+          const fq = `\\frac{${p}}{${q}}`;
+          const expr = decFirst ? `${dec}${op}${fq}` : `${fq}${op}${dec}`;
+          const fexpr = decFirst ? `\\frac{${N1}}{${L}}${op}\\frac{${N2}}{${L}}` : `\\frac{${N2}}{${L}}${op}\\frac{${N1}}{${L}}`;
+          return {
+            q: `$${expr}$ を計算しましょう。答えは分数で表しましょう。`,
+            ans: fracAns(N, L),
+            hint: "小数を分数になおしてから、通分して計算しよう。",
+            steps: [`${dec} ＝ $\\frac{${round(dec * den)}}{${den}}$${round(dec * den) !== n ? ` ＝ $\\frac{${n}}{${m}}$` : ""}`, `通分して $${fexpr}$`, `$=${fracTex(N, L)}$`],
+          };
+        }),
+        t("E5-bunsu-3f", (r) => {
+          // 逆思考（はじめはいくつ）
+          const [b0, d0] = sample(r, [2, 3, 4, 5, 6, 8, 9, 10, 12], 2);
+          const L = lcm(b0, d0);
+          if (L > 40) return { skip: true };
+          let [a, b, c, d] = [numer(r, b0), b0, numer(r, d0), d0];
+          if (r(0, 1)) {
+            const N = a * (L / b) + c * (L / d);
+            return {
+              q: `リボンを $\\frac{${a}}{${b}}$m 使ったので、のこりが $\\frac{${c}}{${d}}$m になりました。リボンは、はじめに何m ありましたか。`,
+              ans: fracAns(N, L),
+              unit: "m",
+              hint: "はじめの長さを □m として、式に表してみよう。",
+              steps: [`はじめの長さを □m とすると、□ − $\\frac{${a}}{${b}}$ ＝ $\\frac{${c}}{${d}}$`, `□ ＝ $\\frac{${c}}{${d}}+\\frac{${a}}{${b}}=\\frac{${c * (L / d)}}{${L}}+\\frac{${a * (L / b)}}{${L}}$`, `＝ $${fracTex(N, L)}$（m）`],
+            };
+          }
+          if (a * d === c * b) return { skip: true };
+          if (a * d > c * b) [a, b, c, d] = [c, d, a, b]; // 入れた量 a/b ＜ 全部の量 c/d
+          const N = c * (L / d) - a * (L / b);
+          return {
+            q: `水とうにお茶が入っています。そこへお茶を $\\frac{${a}}{${b}}$L たしたら、全部で $\\frac{${c}}{${d}}$L になりました。はじめに何L 入っていましたか。`,
+            ans: fracAns(N, L),
+            unit: "L",
+            hint: "はじめの量を □L として、式に表してみよう。",
+            steps: [`はじめの量を □L とすると、□ ＋ $\\frac{${a}}{${b}}$ ＝ $\\frac{${c}}{${d}}$`, `□ ＝ $\\frac{${c}}{${d}}-\\frac{${a}}{${b}}=\\frac{${c * (L / d)}}{${L}}-\\frac{${a * (L / b)}}{${L}}$`, `＝ $${fracTex(N, L)}$（L）`],
           };
         }),
       ],
@@ -688,6 +1273,47 @@ export const UNITS = [
             steps: [`合計：${xs.join(" ＋ ")} ＝ ${sum}（人）`, `0人の日もふくめて5日でわる：${sum} ÷ 5 ＝ ${sum / 5}（人）`],
           };
         }),
+        t("E5-heikin-1d", (r) => {
+          // 個数 ＝ 合計 ÷ 平均
+          const [item, ms] = pick(r, [["みかん", [80, 90, 95, 100, 105, 110, 120]], ["くり", [15, 18, 20, 22, 25]], ["たまご", [55, 58, 60, 62, 65]], ["いちご", [12, 14, 15, 16, 18, 20]], ["じゃがいも", [120, 125, 150, 160, 175]]]);
+          const m = pick(r, ms);
+          const n = r(8, 30);
+          const M = m * n;
+          return {
+            q: `${item}1こあたりの重さは、平均 ${m}g です。この${item}を何こか集めて重さをはかったら、${M}g でした。${item}はおよそ何こありますか。`,
+            ans: n,
+            unit: "こ",
+            hint: "「平均 × 個数 ＝ 合計」の式で、わからないのはどれかな？",
+            steps: ["個数 ＝ 合計 ÷ 平均", `${M} ÷ ${m} ＝ ${n}（こ）`],
+          };
+        }),
+        t("E5-heikin-1e", (r) => {
+          // 平均の意味（かならず言えることを選ぶ）
+          const n = r(4, 8);
+          let q;
+          let ans;
+          let wr;
+          let m;
+          if (r(0, 1)) {
+            m = r(3, 12);
+            q = `${n}人が1か月に読んだ本のさつ数の平均は ${m}さつでした。`;
+            ans = `${n}人が読んだ本は、あわせて ${n * m}さつ`;
+            wr = [`${n}人全員が、${m}さつずつ読んだ`, `${m}さつ読んだ人が、かならず1人はいる`, `${m}さつより多く読んだ人と、少なく読んだ人は、同じ人数`];
+          } else {
+            m = r(10, 30);
+            const name = pick(r, NAMES);
+            q = `${name}さんが ${n}日間に読んだ本のページ数の平均は、1日 ${m}ページでした。`;
+            ans = `${n}日間で、あわせて ${n * m}ページ読んだ`;
+            wr = [`毎日 ${m}ページずつ読んだ`, `${m}ページ読んだ日が、かならず1日はある`, `${m}ページより多く読んだ日と、少なく読んだ日は、同じ日数`];
+          }
+          return {
+            q: `${q}このことから、かならず言えることはどれですか。`,
+            ans,
+            choices: choices4(r, ans, wr),
+            hint: "平均は、全体を同じ大きさにならした数だよ。平均と個数から、何が計算できるかな？",
+            steps: [`合計 ＝ 平均 × 個数 なので、${m} × ${n} ＝ ${n * m}`, `だから「${ans}」は、かならず言える`, "平均は、ならした大きさなので、ほかのことは、かならずとは言えない"],
+          };
+        }),
       ],
       2: [
         t("E5-heikin-2a", (r) => {
@@ -733,6 +1359,69 @@ export const UNITS = [
             unit: "g",
             hint: "合計 ＝ 平均 × 個数",
             steps: [`${w} × ${n} ＝ ${ans}（g）`],
+          };
+        }),
+        t("E5-heikin-2d", (r) => {
+          // 歩はば（平均）を使って、道のりや歩数を見積もる
+          const S = r(52, 72);
+          const s = S / 100;
+          const u = 100 / gcd(S, 100);
+          const n = u * r(Math.ceil(200 / u), Math.floor(900 / u));
+          const D = round(s * n);
+          const name = pick(r, NAMES);
+          const place = pick(r, ["公園", "駅", "図書館", "学校"]);
+          if (r(0, 1)) {
+            return {
+              q: `${name}さんの歩はばは、平均 ${s}m です。家から${place}まで歩いたら ${n}歩でした。家から${place}までは、およそ何m ありますか。`,
+              ans: D,
+              unit: "m",
+              hint: "1歩で平均何m 進むか、わかっているね。",
+              steps: ["道のり ＝ 歩はば × 歩数", `${s} × ${n} ＝ ${D}（m）`],
+            };
+          }
+          return {
+            q: `${name}さんの歩はばは、平均 ${s}m です。家から${place}までの道のりは ${D}m です。${name}さんが家から${place}まで歩くと、およそ何歩になりますか。`,
+            ans: n,
+            unit: "歩",
+            hint: "道のりの中に、歩はばがいくつ分あるかを考えよう。",
+            steps: ["歩数 ＝ 道のり ÷ 歩はば", `${D} ÷ ${s} ＝ ${n}（歩）`],
+          };
+        }),
+        t("E5-heikin-2e", (r) => {
+          // 平均から、のこり1人の記録を求める
+          const n = r(4, 6);
+          const [what, u, lo, hi] = pick(r, [["ソフトボール投げの記録", "m", 22, 35], ["算数のテストの点数", "点", 60, 88], ["1分間にとんだなわとびの回数", "回", 70, 110]]);
+          const m = r(lo, hi);
+          const xs = Array.from({ length: n - 1 }, () => m + r(-9, 9));
+          const sum = xs.reduce((a, b) => a + b, 0);
+          const x = n * m - sum;
+          if (Math.abs(x - m) > 12 || x <= 0 || (u === "点" && x > 100)) return { skip: true };
+          return {
+            q: `${n}人の${what}の平均は ${m}${u}でした。そのうち ${n - 1}人の${what}は、${xs.map((v) => `${v}${u}`).join("、")} です。のこりの1人の${what}は何${u}ですか。`,
+            ans: x,
+            unit: u,
+            hint: `まず、${n}人の合計を平均から求めよう。`,
+            steps: [`${n}人の合計：${m} × ${n} ＝ ${n * m}（${u}）`, `${n - 1}人の合計：${xs.join(" ＋ ")} ＝ ${sum}（${u}）`, `${n * m} − ${sum} ＝ ${x}（${u}）`],
+          };
+        }),
+        t("E5-heikin-2f", (r) => {
+          // くふうして平均を求める（ある重さをこえた分の平均を考える）
+          const [item, B] = pick(r, [["たまご", 50], ["トマト", 100], ["じゃがいも", 150], ["りんご", 300]]);
+          const n = r(4, 6);
+          let es = null;
+          for (let g = 0; g < 40 && !es; g++) {
+            const xs = Array.from({ length: n }, () => r(1, 19));
+            if (xs.reduce((a, b) => a + b, 0) % n === 0) es = xs;
+          }
+          if (!es) return { skip: true };
+          const sum = es.reduce((a, b) => a + b, 0);
+          const ans = B + sum / n;
+          return {
+            q: `${n}この${item}の重さをはかると、${es.map((e) => `${B + e}g`).join("、")} でした。どれも ${B}g より重いので、${B}g をこえた分の平均を考えると、くふうして平均が求められます。${item}1この重さの平均は何gですか。`,
+            ans,
+            unit: "g",
+            hint: `それぞれ ${B}g より何g 重いかを考えて、その平均を求めよう。`,
+            steps: [`${B}g をこえた分：${es.join("、")}（g）`, `その平均：(${es.join(" ＋ ")}) ÷ ${n} ＝ ${sum} ÷ ${n} ＝ ${sum / n}（g）`, `${B} ＋ ${sum / n} ＝ ${ans}（g）`],
           };
         }),
       ],
@@ -789,6 +1478,75 @@ export const UNITS = [
             steps: [`男子の合計 ${a} × ${x} ＝ ${a * x}、女子の合計 ${b} × ${y} ＝ ${b * y}`, `全体の合計 ${a * x + b * y} を、全体の人数 ${a + b} でわる`, `${a * x + b * y} ÷ ${a + b} ＝ ${ans}（点）`],
           };
         }),
+        t("E5-heikin-3d", (r) => {
+          // 全体の平均と片方の組の平均から、もう片方の組の平均を求める
+          let a;
+          let b;
+          let x;
+          let y;
+          let ok = false;
+          for (let g = 0; g < 80 && !ok; g++) {
+            a = r(15, 30);
+            b = r(15, 30);
+            x = r(60, 90);
+            y = r(60, 90);
+            ok = x !== y && (a * x + b * y) % (a + b) === 0;
+          }
+          if (!ok) return { skip: true };
+          const N = a + b;
+          const M = (a * x + b * y) / N;
+          return {
+            q: `5年1組と2組の ${N}人が、算数のテストを受けました。2つの組全体の平均点は ${M}点で、1組 ${a}人の平均点は ${x}点でした。2組 ${b}人の平均点は何点ですか。`,
+            ans: y,
+            unit: "点",
+            hint: "平均のままでは、ひき算できないね。まず、合計点で考えよう。",
+            steps: [`全体の合計：${M} × ${N} ＝ ${M * N}（点）`, `1組の合計：${x} × ${a} ＝ ${a * x}（点）`, `2組の合計：${M * N} − ${a * x} ＝ ${b * y}（点）`, `2組の平均：${b * y} ÷ ${b} ＝ ${y}（点）`],
+          };
+        }),
+        t("E5-heikin-3e", (r) => {
+          // まちがいに気づいたときの、正しい平均
+          const n = pick(r, [4, 5, 10]);
+          const [what, u, lo, hi] = pick(r, [["体重", "kg", 28, 40], ["テストの点数", "点", 60, 85]]);
+          const m = r(lo, hi);
+          const x = m + r(-8, 8);
+          const y = x + (r(0, 1) ? 1 : -1) * r(2, 9);
+          if (y <= 0 || y > 100 || x > 100) return { skip: true };
+          const T = n * m - y + x;
+          const ans = round(T / n);
+          return {
+            q: `${n}人の${what}の平均を計算したら ${m}${u}でした。ところが、1人の${what} ${x}${u} を、まちがえて ${y}${u} として計算していたことがわかりました。正しい平均は何${u}ですか。`,
+            ans,
+            unit: u,
+            hint: "まず、まちがえたときの合計を求めて、それを正しい合計になおそう。",
+            steps: [`まちがえたときの合計：${m} × ${n} ＝ ${n * m}（${u}）`, `正しい合計：${n * m} − ${y} ＋ ${x} ＝ ${T}（${u}）`, `正しい平均：${T} ÷ ${n} ＝ ${ans}（${u}）`],
+          };
+        }),
+        t("E5-heikin-3f", (r) => {
+          // 1日平均のペースで読みつづけると、あと何日かかるか（あまりの処理）
+          const n = r(4, 5);
+          let xs = null;
+          for (let g = 0; g < 40 && !xs; g++) {
+            const ys = Array.from({ length: n }, () => r(8, 30));
+            if (r(0, 2) === 0) ys[r(0, n - 1)] = 0;
+            if (ys.reduce((a, b) => a + b, 0) % n === 0) xs = ys;
+          }
+          if (!xs) return { skip: true };
+          const sum = xs.reduce((a, b) => a + b, 0);
+          const avg = sum / n;
+          if (avg < 6) return { skip: true };
+          const k = r(3, 12);
+          const extra = r(1, avg - 1);
+          const R = avg * k + extra;
+          const P = sum + R;
+          const name = pick(r, NAMES);
+          return {
+            q: `${name}さんは、${P}ページの本を読んでいます。はじめの${n}日間に読んだページ数は、${xs.join("、")} ページでした。この${n}日間の1日平均と同じペースで読みつづけると、のこりを読み終えるのに、あと何日かかりますか。`,
+            ans: k + 1,
+            unit: "日",
+            hint: `まず、はじめの${n}日間の1日平均を求めよう。0ページの日も日数に入れるよ。`,
+            steps: [`1日平均：(${xs.join(" ＋ ")}) ÷ ${n} ＝ ${avg}（ページ）`, `のこり：${P} − ${sum} ＝ ${R}（ページ）`, `${R} ÷ ${avg} ＝ ${k} あまり ${extra}`, `あまりの ${extra}ページを読む日もいるので、${k} ＋ 1 ＝ ${k + 1}（日）`],
+          };
+        }),
       ],
       4: [
         t("E5-heikin-4a", (r) => {
@@ -816,6 +1574,20 @@ export const UNITS = [
             unit: "kg",
             hint: "2人ずつの平均から、2人ずつの合計を出してみよう。3つの合計をたすとどうなるかな？",
             steps: [`2人ずつの合計：A＋B ＝ ${2 * p}、B＋C ＝ ${2 * q}、C＋A ＝ ${2 * s}`, `3つをたすと3人の合計の2倍：${2 * p + 2 * q + 2 * s} ÷ 2 ＝ ${A + B + C}（kg）`, st],
+          };
+        }),
+        t("E5-heikin-4b", (r) => {
+          // 平均より D 点高い点を1回とると、平均は何点上がるか（平均との差をならす）
+          const n = r(3, 9);
+          const k = r(1, 4);
+          const D = (n + 1) * k;
+          const A = r(60, Math.min(80, 100 - D));
+          return {
+            q: `これまでに受けた ${n}回のテストの平均点より、ちょうど ${D}点高い点数を、${n + 1}回目のテストでとりました。${n + 1}回の平均点は、${n}回の平均点より何点高くなりましたか。`,
+            ans: k,
+            unit: "点",
+            hint: `${n}回の平均点を ○点 として、${n + 1}回目の点数を「○ ＋ ${D}」と考えてみよう。`,
+            steps: [`${n + 1}回目の点数のうち、平均より高い ${D}点の分を、${n + 1}回全部にならす`, `${D} ÷ ${n + 1} ＝ ${k}（点）`, `たしかめ：${n}回の平均が ${A}点なら、(${A} × ${n} ＋ ${A + D}) ÷ ${n + 1} ＝ ${A + k}（点）で、${k}点高い`],
           };
         }),
       ],
@@ -880,6 +1652,74 @@ export const UNITS = [
             unit: "時間",
             hint: "時間 ＝ 道のり ÷ 速さ",
             steps: [`${v * h} ÷ ${v} ＝ ${h}（時間）`],
+          };
+        }),
+        t("E5-tani-1d", (r) => {
+          // 単位量あたりの大きさ（1m² あたり・1L あたり・1さつあたり）
+          const k = r(0, 2);
+          if (k === 0) {
+            const S = r(1, 5) * 10;
+            const K = r(12, 60);
+            if (K % 10 === 0) return { skip: true };
+            const W = (S * K) / 10;
+            return {
+              q: `${S}m² の畑から、${W}kg のじゃがいもがとれました。1m² あたり何kg とれましたか。`,
+              ans: K / 10,
+              unit: "kg",
+              hint: "とれた重さを、畑の面積でわろう。",
+              steps: ["1m² あたりの重さ ＝ とれた重さ ÷ 面積", `${W} ÷ ${S} ＝ ${K / 10}（kg）`],
+            };
+          }
+          if (k === 1) {
+            const L = r(15, 45);
+            const e = r(8, 20);
+            return {
+              q: `ガソリン ${L}L で ${L * e}km 走る自動車があります。この自動車は、ガソリン 1L あたり何km 走りますか。`,
+              ans: e,
+              unit: "km",
+              hint: "走った道のりを、使ったガソリンの量でわろう。",
+              steps: ["1L あたりに走る道のり ＝ 道のり ÷ ガソリンの量", `${L * e} ÷ ${L} ＝ ${e}（km）`],
+            };
+          }
+          const n = r(3, 10);
+          const p = r(8, 20) * 10;
+          return {
+            q: `ノート ${n}さつで ${n * p}円でした。ノート1さつあたりのねだんは何円ですか。`,
+            ans: p,
+            unit: "円",
+            hint: "代金を、さつ数でわろう。",
+            steps: ["1さつあたりのねだん ＝ 代金 ÷ さつ数", `${n * p} ÷ ${n} ＝ ${p}（円）`],
+          };
+        }),
+        t("E5-tani-1e", (r) => {
+          // 速さくらべ（道のりか時間のどちらかが同じ）
+          const [A, B] = sample(r, NAMES, 2);
+          const choices = shuffle(r, [`${A}さん`, `${B}さん`, "どちらも同じ"]);
+          if (r(0, 1)) {
+            const D = pick(r, [50, 60, 80, 100]);
+            const t1 = r(8, 20);
+            const t2 = r(8, 20);
+            if (t1 === t2) return { skip: true };
+            const ans = t1 < t2 ? `${A}さん` : `${B}さん`;
+            return {
+              q: `${D}m を走るのに、${A}さんは ${t1}秒、${B}さんは ${t2}秒かかりました。速いのはどちらですか。`,
+              ans,
+              choices,
+              hint: "同じ道のりを走ったときは、何をくらべればよいかな？",
+              steps: ["同じ道のりなら、かかった時間が短いほうが速い", `${Math.min(t1, t2)}秒で走った ${ans}のほうが速い`],
+            };
+          }
+          const T = r(5, 15);
+          const v1 = r(55, 85);
+          const v2 = r(55, 85);
+          if (v1 === v2) return { skip: true };
+          const ans = v1 > v2 ? `${A}さん` : `${B}さん`;
+          return {
+            q: `${T}分間に、${A}さんは ${v1 * T}m、${B}さんは ${v2 * T}m 歩きました。速いのはどちらですか。`,
+            ans,
+            choices,
+            hint: "同じ時間だけ歩いたときは、何をくらべればよいかな？",
+            steps: ["同じ時間なら、進んだ道のりが長いほうが速い", `${Math.max(v1, v2) * T}m 歩いた ${ans}のほうが速い`],
           };
         }),
       ],
@@ -947,6 +1787,61 @@ export const UNITS = [
             steps: [`1分間に進む道のりは ${v} × 60 ＝ ${ans}（m）`, `分速 ${ans}m`],
           };
         }),
+        t("E5-tani-2d", (r) => {
+          // 速さくらべ（道のりも時間もちがう → 秒速でくらべる）
+          const [A, B] = sample(r, NAMES, 2);
+          const v1 = r(4, 9);
+          const v2 = r(4, 9);
+          const t1 = r(8, 25);
+          const t2 = r(8, 25);
+          if (t1 === t2 || v1 * t1 === v2 * t2) return { skip: true };
+          const ans = v1 === v2 ? "どちらも同じ" : v1 > v2 ? `${A}さん` : `${B}さん`;
+          return {
+            q: `${A}さんは ${v1 * t1}m を ${t1}秒で、${B}さんは ${v2 * t2}m を ${t2}秒で走りました。速いのはどちらですか。`,
+            ans,
+            choices: shuffle(r, [`${A}さん`, `${B}さん`, "どちらも同じ"]),
+            hint: "道のりも時間もちがうね。1秒あたりに走った道のり（秒速）でくらべよう。",
+            steps: [`${A}さん：${v1 * t1} ÷ ${t1} ＝ ${v1} → 秒速 ${v1}m`, `${B}さん：${v2 * t2} ÷ ${t2} ＝ ${v2} → 秒速 ${v2}m`, v1 === v2 ? "秒速が同じなので、速さは同じ" : `秒速が大きい ${ans}のほうが速い`],
+          };
+        }),
+        t("E5-tani-2e", (r) => {
+          // 人口密度から人口・面積を求める
+          const A = r(12, 85);
+          const D = r(12, 98) * 10;
+          const P = A * D;
+          if (r(0, 1)) {
+            return {
+              q: `人口密度が ${D}人の町があります。この町の面積は ${A}km² です。この町の人口は、およそ何人ですか。`,
+              ans: P,
+              unit: "人",
+              hint: "人口密度は、1km² あたりの人口のことだったね。",
+              steps: ["人口 ＝ 人口密度 × 面積", `${D} × ${A} ＝ ${P}（人）`],
+            };
+          }
+          return {
+            q: `人口が ${P}人で、人口密度が ${D}人の町があります。この町の面積は何km² ですか。`,
+            ans: A,
+            unit: "km²",
+            hint: "人口密度は、1km² あたりの人口のことだったね。",
+            steps: ["面積 ＝ 人口 ÷ 人口密度", `${P} ÷ ${D} ＝ ${A}（km²）`],
+          };
+        }),
+        t("E5-tani-2f", (r) => {
+          // 時間と道のりの表から速さを読み取る
+          const v = pick(r, [36, 42, 48, 54, 60, 72, 75, 84, 90, 96, 120]);
+          const s = pick(r, [2, 3, 4, 5, 10]);
+          const d = round((v * s) / 60);
+          if (!Number.isInteger(round(d * 10))) return { skip: true };
+          const pm = round(v / 60);
+          const veh = pick(r, ["電車", "自動車", "バス"]);
+          return {
+            q: `ある${veh}が同じ速さで走ったときの、時間と道のりを調べました。${s}分で ${d}km、${2 * s}分で ${round(2 * d)}km、${3 * s}分で ${round(3 * d)}km 進みました。この${veh}の速さは、時速何km ですか。`,
+            ans: v,
+            unit: "km",
+            hint: "まず、1分間に何km 進むかを考えよう。",
+            steps: [`1分間に ${d} ÷ ${s} ＝ ${pm}（km）進む`, `1時間（60分）では ${pm} × 60 ＝ ${v}（km）`, `時速 ${v}km`],
+          };
+        }),
       ],
       3: [
         t("E5-tani-3a", (r) => {
@@ -998,6 +1893,76 @@ export const UNITS = [
             unit: "円",
             hint: "まず、1m あたりのねだんを求めよう。",
             steps: [`1m あたり ${p * n} ÷ ${n} ＝ ${p}（円）`, `${p} × ${m} ＝ ${p * m}（円）`],
+          };
+        }),
+        t("E5-tani-3d", (r) => {
+          // 時速・分速・秒速をそろえてくらべる
+          const secV = pick(r, [36, 45, 54, 63, 72]); // 時速（km）。秒速がきれいな数になるもの
+          const pool = [36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69, 72].filter((x) => Math.abs(x - secV) >= 3);
+          const [hV, mV] = sample(r, pool, 2);
+          if (Math.abs(hV - mV) < 3) return { skip: true };
+          const mps = round(secV / 3.6);
+          const mpm = (mV * 50) / 3;
+          const names = shuffle(r, ["自動車", "電車", "バス"]);
+          const [n1, n2, n3] = names;
+          const big = r(0, 1) === 1;
+          const vs = [hV, mV, secV];
+          const target = big ? Math.max(...vs) : Math.min(...vs);
+          const ans = names[vs.indexOf(target)];
+          return {
+            q: `時速 ${hV}km で走る${n1}、分速 ${mpm}m で走る${n2}、秒速 ${mps}m で走る${n3}があります。いちばん${big ? "速い" : "おそい"}のはどれですか。`,
+            ans,
+            choices: shuffle(r, names),
+            hint: "単位がちがうと、くらべられないね。全部、時速になおしてみよう。",
+            steps: [
+              `${n2}：1時間に ${mpm} × 60 ＝ ${mpm * 60}（m）進むので、時速 ${mV}km`,
+              `${n3}：1時間に ${mps} × 60 × 60 ＝ ${round(mps * 3600)}（m）進むので、時速 ${secV}km`,
+              `${n1}は時速 ${hV}km なので、いちばん${big ? "速い" : "おそい"}のは ${ans}`,
+            ],
+          };
+        }),
+        t("E5-tani-3e", (r) => {
+          // こみぐあいを同じにするには、あと何人入ればよいか
+          const k = pick(r, [0.5, 0.6, 0.75, 0.8, 1.2, 1.25, 1.5, 2]);
+          const st = { 0.5: 2, 0.6: 5, 0.75: 4, 0.8: 5, 1.2: 5, 1.25: 4, 1.5: 2, 2: 1 }[k];
+          const a = st * r(Math.ceil(10 / st), Math.floor(40 / st));
+          const b = st * r(Math.ceil(10 / st), Math.floor(40 / st));
+          if (a === b) return { skip: true };
+          const x = round(k * a);
+          const kb = round(k * b);
+          const y = r(Math.max(1, Math.ceil(kb / 3)), kb - 1);
+          return {
+            q: `Aの部屋は ${a}m² に ${x}人、Bの部屋は ${b}m² に ${y}人います。Bの部屋に、あと何人入ると、Aの部屋と同じこみぐあい（1m² あたりの人数）になりますか。`,
+            ans: kb - y,
+            unit: "人",
+            hint: "まず、Aの部屋の 1m² あたりの人数を求めよう。",
+            steps: [`Aの部屋：${x} ÷ ${a} ＝ ${k}（人）…1m² あたりの人数`, `Bの部屋が同じこみぐあいになるのは、${k} × ${b} ＝ ${kb}（人）のとき`, `${kb} − ${y} ＝ ${kb - y}（人）`],
+          };
+        }),
+        t("E5-tani-3f", (r) => {
+          // 出発の時こくと速さから、着く時こくを求める（1.25時間は1時間25分ではない）
+          const M = pick(r, [36, 45, 54, 66, 72, 75, 78, 84, 90, 96, 105, 108, 114, 126, 135, 150]);
+          const v = pick(r, [30, 36, 40, 45, 48, 50, 60, 72, 80]);
+          const D = (v * M) / 60;
+          if (!Number.isInteger(D)) return { skip: true };
+          const h0 = r(7, 9);
+          const m0 = pick(r, [0, 0, 10, 15, 20, 30]);
+          const st = h0 * 60 + m0;
+          const end = st + M;
+          if (end >= 12 * 60) return { skip: true };
+          const fmt = (tm) => (tm < 12 * 60 ? `午前${Math.floor(tm / 60)}時${tm % 60 === 0 ? "" : `${tm % 60}分`}` : null);
+          const T = round(M / 60);
+          const H = Math.floor(M / 60);
+          const mm = M % 60;
+          const mis = Math.round((T - H) * 100); // 1.25時間 → 「25分」とまちがえる
+          const dur = `${H > 0 ? `${H}時間` : ""}${mm > 0 ? `${mm}分` : ""}`;
+          const ans = fmt(end);
+          return {
+            q: `自動車が、${fmt(st)}に出発して、時速 ${v}km で ${D}km はなれた町まで走りました。町に着いた時こくはどれですか。`,
+            ans,
+            choices: choices4(r, ans, [mis > 0 && mis < 60 && mis !== mm ? fmt(st + H * 60 + mis) : null, fmt(end + 10), fmt(end - 10), fmt(end + 15), fmt(end - 5)]),
+            hint: "かかる時間を求めたら、小数の時間を「何時間何分」になおそう。0.5時間は 50分ではないよ。",
+            steps: [`かかる時間：${D} ÷ ${v} ＝ ${T}（時間）`, `${T}時間 ＝ 60 × ${T} ＝ ${M}（分）＝ ${dur}`, `${fmt(st)}の ${dur}後で ${ans}`],
           };
         }),
       ],
@@ -1113,6 +2078,45 @@ export const UNITS = [
             steps: [`${x} ＝ 0.1 が ${w}こ と 0.01 が ${b}こ`, `${ans}`],
           };
         }),
+        t("E5-wariai-1d", (r) => {
+          // 比べる量を求める（割合が小数）
+          const k = pick(r, [0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.9]);
+          const s = r(0, 2);
+          const A = 20 * (s === 0 ? r(2, 4) : s === 1 ? r(1, 6) : r(5, 15));
+          const B = round(A * k);
+          const [q, u] = [
+            [`定員が ${A}人のバスに、定員の ${k} にあたる人数が乗っています。乗っている人は何人ですか。`, "人"],
+            [`面積が ${A}m² の花だんがあります。そのうち、花だん全体の ${k} にあたる部分にチューリップを植えました。チューリップを植えた部分は何m² ですか。`, "m²"],
+            [`${A}ページの本のうち、全体の ${k} にあたるページを読みました。読んだのは何ページですか。`, "ページ"],
+          ][s];
+          return {
+            q,
+            ans: B,
+            unit: u,
+            hint: `「〜の ${k} にあたる」の「〜」が、もとにする量だよ。`,
+            steps: ["比べる量 ＝ もとにする量 × 割合", `${A} × ${k} ＝ ${B}（${u}）`],
+          };
+        }),
+        t("E5-wariai-1e", (r) => {
+          // もとにする量を求める（割合が小数）
+          const k = pick(r, [0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.75, 0.8]);
+          const s = r(0, 2);
+          const name = pick(r, NAMES);
+          const A = s === 0 ? 100 * r(5, 30) : 20 * (s === 1 ? r(3, 6) : r(5, 15));
+          const B = round(A * k);
+          const [q, u] = [
+            [`${name}さんは、持っていたお金の ${k} にあたる ${B}円で本を買いました。${name}さんが持っていたお金は何円ですか。`, "円"],
+            [`5年生のうち ${B}人が、犬をかっています。これは5年生全体の ${k} にあたります。5年生は全部で何人ですか。`, "人"],
+            [`${name}さんは、本を ${B}ページ読みました。これは本全体のページ数の ${k} にあたります。この本は全部で何ページですか。`, "ページ"],
+          ][s];
+          return {
+            q,
+            ans: A,
+            unit: u,
+            hint: "もとにする量を □ として、かけ算の式に表してみよう。",
+            steps: [`もとにする量を □ とすると、□ × ${k} ＝ ${B}`, `□ ＝ ${B} ÷ ${k} ＝ ${A}（${u}）`],
+          };
+        }),
       ],
       2: [
         t("E5-wariai-2a", (r) => {
@@ -1153,6 +2157,94 @@ export const UNITS = [
             steps: [`${B} ÷ ${A} ＝ ${round(p / 100)}`, `${round(p / 100)} を百分率で表すと ${p}％`],
           };
         }),
+        t("E5-wariai-2d", (r) => {
+          // シュートの入った割合でくらべる
+          const [A, B] = sample(r, NAMES, 2);
+          const [n1, n2] = sample(r, [10, 12, 15, 16, 20, 24, 25], 2);
+          const x1 = r(Math.ceil(n1 * 0.3), n1 - 1);
+          const x2 = r(Math.ceil(n2 * 0.3), n2 - 1);
+          const e = x1 * n2 - x2 * n1;
+          const ans = e === 0 ? "どちらも同じ" : e > 0 ? `${A}さん` : `${B}さん`;
+          return {
+            q: `バスケットボールのシュートを、${A}さんは ${n1}回投げて ${x1}回、${B}さんは ${n2}回投げて ${x2}回入れました。入った割合が高いのはどちらですか。`,
+            ans,
+            choices: shuffle(r, [`${A}さん`, `${B}さん`, "どちらも同じ"]),
+            hint: "入った回数だけでは決められないね。投げた回数をもとにした割合でくらべよう。",
+            steps: [`${A}さん：${x1} ÷ ${n1} ＝ ${decStr(x1, n1)}`, `${B}さん：${x2} ÷ ${n2} ＝ ${decStr(x2, n2)}`, e === 0 ? "割合が同じなので、どちらも同じ" : `割合が大きい ${ans}のほうが高い`],
+          };
+        }),
+        t("E5-wariai-2e", (r) => {
+          // 割合の3つの使い方：場面に合う式を選ぶ
+          const T = "\\times";
+          const D = "\\div";
+          const ex = (a, op, b) => $(`${a} ${op} ${b}`);
+          const k = r(0, 2);
+          const p = k === 1 ? pick(r, [0.3, 0.4, 0.6, 0.75, 0.8, 1.2, 1.5]) : pick(r, [0.3, 0.4, 0.6, 0.75, 0.8]);
+          const A = r(2, 10) * 20;
+          const B = round(A * p);
+          let q;
+          let ans;
+          let wr;
+          let base;
+          let rule;
+          if (k === 0) {
+            q = `5年生 ${A}人のうち、${B}人が「算数がすき」と答えました。算数がすきと答えた人の割合を求める式はどれですか。`;
+            [ans, wr] = [ex(B, D, A), [ex(A, D, B), ex(A, T, B), ex(A, "-", B)]];
+            [base, rule] = [`もとにする量は5年生全体の ${A}人、比べる量は ${B}人`, "割合 ＝ 比べる量 ÷ もとにする量"];
+          } else if (k === 1) {
+            q = `ある店の、きのうのお客さんは ${A}人でした。今日のお客さんは、きのうの ${p}倍でした。今日のお客さんの人数を求める式はどれですか。`;
+            [ans, wr] = [ex(A, T, p), [ex(A, D, p), ex(p, D, A), ex(A, "+", p)]];
+            [base, rule] = [`もとにする量はきのうの ${A}人、割合は ${p}`, "比べる量 ＝ もとにする量 × 割合"];
+          } else {
+            q = `今日、プールに ${B}人が来ました。これは、プールの定員の ${p} にあたります。プールの定員を求める式はどれですか。`;
+            [ans, wr] = [ex(B, D, p), [ex(B, T, p), ex(p, D, B), ex(B, "-", p)]];
+            [base, rule] = [`比べる量は ${B}人、割合は ${p}、もとにする量（定員）がわからない`, "もとにする量 ＝ 比べる量 ÷ 割合"];
+          }
+          return {
+            q,
+            ans,
+            choices: choices4(r, ans, wr),
+            hint: "もとにする量・比べる量・割合のうち、わかっているのはどれかな？",
+            steps: [base, rule, `式は ${ans}`],
+          };
+        }),
+        t("E5-wariai-2f", (r) => {
+          // 帯グラフ・円グラフと割合
+          const k = r(0, 2);
+          if (k < 2) {
+            const L = pick(r, [10, 20, 25]);
+            const p = r(1, 19) * 5;
+            const x = round((L * p) / 100);
+            if (k === 0) {
+              return {
+                q: `全体の長さが ${L}cm の帯グラフをかきます。全体の ${p}％ を表す部分の長さは、何cmにすればよいですか。`,
+                ans: x,
+                unit: "cm",
+                hint: "帯グラフ全体の長さが 100％ にあたるよ。",
+                steps: [`${p}％ ＝ ${round(p / 100)}`, `${L} × ${round(p / 100)} ＝ ${x}（cm）`],
+              };
+            }
+            return {
+              q: `全体の長さが ${L}cm の帯グラフで、ある部分の長さは ${x}cm です。この部分は、全体の何％ を表していますか。`,
+              ans: p,
+              unit: "％",
+              hint: "帯グラフ全体の長さが 100％ にあたるよ。",
+              steps: [`${x} ÷ ${L} ＝ ${round(p / 100)}`, `${round(p / 100)} を百分率で表すと ${p}％`],
+            };
+          }
+          const a = r(10, 35);
+          const b = r(5, 25);
+          const c = r(10, 30);
+          const rest = 100 - a - b - c;
+          if (rest < 5 || rest > 50) return { skip: true };
+          return {
+            q: `ある町の土地の使われ方を調べて、円グラフに表しました。田が ${a}％、畑が ${b}％、住たく地が ${c}％ で、のこりは森林です。森林は全体の何％ ですか。`,
+            ans: rest,
+            unit: "％",
+            hint: "円グラフや帯グラフの全体は、何％ にあたるかな？",
+            steps: ["全体は 100％", `100 − ${a} − ${b} − ${c} ＝ ${rest}（％）`],
+          };
+        }),
       ],
       3: [
         t("E5-wariai-3a", (r) => {
@@ -1190,6 +2282,70 @@ export const UNITS = [
             unit: "g",
             hint: `増量したあとの量は、もとの量の (100 ＋ ${p})％ だね。`,
             steps: [`${M}g は、もとの量の ${100 + p}％ ＝ ${round((100 + p) / 100)}`, `${M} ÷ ${round((100 + p) / 100)} ＝ ${g}（g）`],
+          };
+        }),
+        t("E5-wariai-3d", (r) => {
+          // 定価と代金から、何％引きかを求める
+          const p = pick(r, [10, 15, 20, 25, 30, 35, 40, 45, 50]);
+          const P = r(10, 60) * 100;
+          const S = (P * (100 - p)) / 100;
+          const item = pick(r, ["シャツ", "くつ", "かばん", "ぼうし"]);
+          return {
+            q: `定価 ${P}円の${item}を、${S}円で買いました。定価の何％引きで買いましたか。`,
+            ans: p,
+            unit: "％引き",
+            hint: "まず、何円安くなったかを求めよう。もとにする量は定価だよ。",
+            steps: [`安くなった金額：${P} − ${S} ＝ ${P - S}（円）`, `${P - S} ÷ ${P} ＝ ${round(p / 100)}`, `${round(p / 100)} は ${p}％ なので、${p}％引き`],
+          };
+        }),
+        t("E5-wariai-3e", (r) => {
+          // のこりの割合から、もとにする量を求める
+          const [p, p2] = sample(r, [10, 15, 20, 25, 30, 35, 40], 2);
+          if (p + p2 > 75) return { skip: true };
+          const T = r(5, 40) * 100;
+          const rest = 100 - p - p2;
+          const R = (T * rest) / 100;
+          const [x, y] = pick(r, [["本", "ノート"], ["おかし", "ジュース"], ["えんぴつ", "けしゴム"], ["花のなえ", "植木ばち"]]);
+          const name = pick(r, NAMES);
+          return {
+            q: `${name}さんは、持っていたお金の ${p}％ で${x}を買い、${p2}％ で${y}を買ったので、のこりは ${R}円になりました。${name}さんが、はじめに持っていたお金は何円ですか。`,
+            ans: T,
+            unit: "円",
+            hint: `のこりの ${R}円は、はじめのお金の何％ にあたるかな？`,
+            steps: [`のこりは、はじめのお金の 100 − ${p} − ${p2} ＝ ${rest}（％）`, `はじめのお金を □円とすると、□ × ${round(rest / 100)} ＝ ${R}`, `□ ＝ ${R} ÷ ${round(rest / 100)} ＝ ${T}（円）`],
+          };
+        }),
+        t("E5-wariai-3f", (r) => {
+          // 歩合を使った問題（比べる量・もとにする量）
+          const w = r(1, 8);
+          const b = pick(r, [0, 5, 5, 2, 4, 6, 8]);
+          const R = 10 * w + b; // 百分率の数
+          const name = b === 0 ? `${w}割` : `${w}割${b}分`;
+          const u = 100 / gcd(R, 100);
+          const A = u * r(Math.ceil(40 / u), Math.floor(400 / u));
+          const B = (A * R) / 100;
+          const rate = round(R / 100);
+          const park = r(0, 1) === 1;
+          const unit = park ? "人" : "本";
+          if (r(0, 1)) {
+            return {
+              q: park
+                ? `ある日、遊園地に来た人は ${A}人で、そのうちの ${name}が小学生でした。小学生は何人でしたか。`
+                : `くじを ${A}本用意しました。そのうちの ${name}が当たりくじです。当たりくじは何本ですか。`,
+              ans: B,
+              unit,
+              hint: "歩合を小数になおしてから考えよう。1割は 0.1、1分は 0.01 だよ。",
+              steps: [`${name} ＝ ${rate}`, `${A} × ${rate} ＝ ${B}（${unit}）`],
+            };
+          }
+          return {
+            q: park
+              ? `ある日、遊園地に来た小学生は ${B}人で、これは来た人全体の ${name}にあたります。この日、遊園地に来た人は全部で何人でしたか。`
+              : `当たりくじは ${B}本で、これは用意したくじ全体の ${name}にあたります。用意したくじは全部で何本ですか。`,
+            ans: A,
+            unit,
+            hint: "歩合を小数になおしてから考えよう。1割は 0.1、1分は 0.01 だよ。",
+            steps: [`${name} ＝ ${rate}`, `全体を □${unit} とすると、□ × ${rate} ＝ ${B}`, `□ ＝ ${B} ÷ ${rate} ＝ ${A}（${unit}）`],
           };
         }),
       ],
@@ -1278,6 +2434,72 @@ export const UNITS = [
             steps: [`(${a} ＋ ${b}) × ${h} ÷ 2`, `＝ ${a + b} × ${h} ÷ 2 ＝ ${((a + b) * h) / 2}（cm²）`],
           };
         }),
+        t("E5-menseki-1d", (r) => {
+          // 平行四辺形の面積から、高さ・底辺を求める
+          const a = r(3, 15);
+          const h = r(3, 15);
+          const S = a * h;
+          const hint = "平行四辺形の面積 ＝ 底辺 × 高さ。わからない長さを □ にして式に表そう。";
+          if (r(0, 1)) {
+            return {
+              q: `面積が ${S}cm² で、底辺が ${a}cm の平行四辺形があります。高さは何cmですか。`,
+              ans: h,
+              unit: "cm",
+              hint,
+              steps: [`${a} × □ ＝ ${S}`, `□ ＝ ${S} ÷ ${a} ＝ ${h}（cm）`],
+            };
+          }
+          return {
+            q: `面積が ${S}cm² で、高さが ${h}cm の平行四辺形があります。底辺は何cmですか。`,
+            ans: a,
+            unit: "cm",
+            hint,
+            steps: [`□ × ${h} ＝ ${S}`, `□ ＝ ${S} ÷ ${h} ＝ ${a}（cm）`],
+          };
+        }),
+        t("E5-menseki-1e", (r) => {
+          // 面積を求める式を選ぶ
+          const T = "\\times";
+          const D = "\\div";
+          const k = r(0, 3);
+          let q;
+          let ans;
+          let wr;
+          let rule;
+          if (k === 0) {
+            const a = r(3, 15);
+            const h = r(3, 15);
+            if (a === h) return { skip: true };
+            q = `底辺が ${a}cm、高さが ${h}cm の三角形の面積を求める式はどれですか。`;
+            [ans, wr, rule] = [$(`${a} ${T} ${h} ${D} 2`), [$(`${a} ${T} ${h}`), $(`(${a} + ${h}) ${T} 2`), $(`${a} ${T} ${h} ${T} 2`)], "三角形の面積 ＝ 底辺 × 高さ ÷ 2"];
+          } else if (k === 1) {
+            const a = r(4, 15);
+            const h = r(3, 12);
+            const s = h + r(1, 4);
+            if (a === s) return { skip: true };
+            q = `底辺が ${a}cm、高さが ${h}cm、ななめの辺の長さが ${s}cm の平行四辺形の面積を求める式はどれですか。`;
+            [ans, wr, rule] = [$(`${a} ${T} ${h}`), [$(`${a} ${T} ${s}`), $(`${a} ${T} ${h} ${D} 2`), $(`(${a} + ${s}) ${T} 2`)], "平行四辺形の面積 ＝ 底辺 × 高さ（ななめの辺は使わない）"];
+          } else if (k === 2) {
+            const a = r(2, 9);
+            const b = r(a + 1, 15);
+            const h = r(2, 12);
+            q = `上底が ${a}cm、下底が ${b}cm、高さが ${h}cm の台形の面積を求める式はどれですか。`;
+            [ans, wr, rule] = [$(`(${a} + ${b}) ${T} ${h} ${D} 2`), [$(`${a} + ${b} ${T} ${h} ${D} 2`), $(`(${a} + ${b}) ${T} ${h}`), $(`${a} ${T} ${b} ${T} ${h} ${D} 2`)], "台形の面積 ＝ (上底 ＋ 下底) × 高さ ÷ 2（( ) をわすれない）"];
+          } else {
+            const d1 = r(4, 16);
+            const d2 = r(4, 16);
+            if (d1 === d2) return { skip: true };
+            q = `2本の対角線の長さが ${d1}cm と ${d2}cm のひし形の面積を求める式はどれですか。`;
+            [ans, wr, rule] = [$(`${d1} ${T} ${d2} ${D} 2`), [$(`${d1} ${T} ${d2}`), $(`(${d1} + ${d2}) ${T} 2`), $(`${d1} ${T} ${d2} ${T} 2`)], "ひし形の面積 ＝ 対角線 × 対角線 ÷ 2"];
+          }
+          return {
+            q,
+            ans,
+            choices: choices4(r, ans, wr),
+            hint: "その図形の面積の公式を思い出そう。",
+            steps: [rule, `式は ${ans}`],
+          };
+        }),
       ],
       2: [
         t("E5-menseki-2a", (r) => {
@@ -1317,6 +2539,71 @@ export const UNITS = [
             unit: "cm",
             hint: `${a} × 高さ ÷ 2 ＝ ${S} となる高さを考えよう。`,
             steps: [`${a} × □ ÷ 2 ＝ ${S}`, `${a} × □ ＝ ${S * 2}`, `□ ＝ ${S * 2} ÷ ${a} ＝ ${h}（cm）`],
+          };
+        }),
+        t("E5-menseki-2d", (r) => {
+          // 4つの図形の面積をくらべる（公式をいろいろ使う）
+          const mk = [
+            () => {
+              const a = r(4, 14);
+              const h = r(4, 14);
+              return (a * h) % 2 ? null : [`底辺 ${a}cm・高さ ${h}cm の三角形`, (a * h) / 2, `${a} × ${h} ÷ 2 ＝ ${(a * h) / 2}`];
+            },
+            () => {
+              const a = r(3, 9);
+              const h = r(3, 8);
+              return [`底辺 ${a}cm・高さ ${h}cm の平行四辺形`, a * h, `${a} × ${h} ＝ ${a * h}`];
+            },
+            () => {
+              const a = r(2, 7);
+              const b = r(a + 1, 12);
+              const h = r(2, 8);
+              return ((a + b) * h) % 2 ? null : [`上底 ${a}cm・下底 ${b}cm・高さ ${h}cm の台形`, ((a + b) * h) / 2, `(${a} ＋ ${b}) × ${h} ÷ 2 ＝ ${((a + b) * h) / 2}`];
+            },
+            () => {
+              const d1 = r(4, 12);
+              const d2 = r(4, 12);
+              return (d1 * d2) % 2 || d1 === d2 ? null : [`対角線が ${d1}cm と ${d2}cm のひし形`, (d1 * d2) / 2, `${d1} × ${d2} ÷ 2 ＝ ${(d1 * d2) / 2}`];
+            },
+          ];
+          const shapes = [];
+          for (const f of shuffle(r, mk)) {
+            let s = null;
+            for (let g = 0; g < 30 && !s; g++) {
+              s = f();
+              if (s && (s[1] < 15 || s[1] > 60)) s = null;
+            }
+            if (!s) return { skip: true };
+            shapes.push(s);
+          }
+          if (new Set(shapes.map((s) => s[1])).size < 4) return { skip: true };
+          const L = ["ア", "イ", "ウ", "エ"];
+          const big = r(0, 1) === 1;
+          const vals = shapes.map((s) => s[1]);
+          const ans = L[vals.indexOf(big ? Math.max(...vals) : Math.min(...vals))];
+          return {
+            q: `次のア〜エの図形のうち、面積がいちばん${big ? "大きい" : "小さい"}のはどれですか。　${shapes.map((s, i) => `${L[i]}：${s[0]}`).join("　")}`,
+            ans,
+            choices: L,
+            hint: "それぞれの面積を、公式を使って求めてくらべよう。",
+            steps: [`${L[0]}：${shapes[0][2]}、${L[1]}：${shapes[1][2]}`, `${L[2]}：${shapes[2][2]}、${L[3]}：${shapes[3][2]}（単位は cm²）`, `いちばん${big ? "大きい" : "小さい"}のは ${ans}`],
+          };
+        }),
+        t("E5-menseki-2e", (r) => {
+          // 四角形を対角線で2つの三角形に分けて面積を求める
+          const d = r(6, 16);
+          const h1 = r(2, 9);
+          const h2 = r(2, 9);
+          if ((d * (h1 + h2)) % 2) return { skip: true };
+          const S1 = round((d * h1) / 2);
+          const S2 = round((d * h2) / 2);
+          const ans = (d * (h1 + h2)) / 2;
+          return {
+            q: `四角形 ABCD があります。対角線 AC の長さは ${d}cm です。AC を底辺とみたとき、三角形 ABC の高さは ${h1}cm、三角形 ACD の高さは ${h2}cm です。四角形 ABCD の面積は何cm²ですか。`,
+            ans,
+            unit: "cm²",
+            hint: "対角線 AC で、四角形を2つの三角形に分けて考えよう。",
+            steps: [`三角形 ABC：${d} × ${h1} ÷ 2 ＝ ${S1}（cm²）`, `三角形 ACD：${d} × ${h2} ÷ 2 ＝ ${S2}（cm²）`, `${S1} ＋ ${S2} ＝ ${ans}（cm²）`],
           };
         }),
       ],
@@ -1360,6 +2647,76 @@ export const UNITS = [
             steps: [`${d1} × □ ÷ 2 ＝ ${S}`, `${d1} × □ ＝ ${S * 2}`, `□ ＝ ${S * 2} ÷ ${d1} ＝ ${d2}（cm）`],
           };
         }),
+        t("E5-menseki-3d", (r) => {
+          // 台形の面積から、上底・下底を求める
+          const a = r(2, 10);
+          const b = r(a + 2, 20);
+          const h = r(2, 12);
+          if (((a + b) * h) % 2) return { skip: true };
+          const S = ((a + b) * h) / 2;
+          const hint = "台形の面積の公式にあてはめて、まず「上底 ＋ 下底」を求めよう。";
+          if (r(0, 1)) {
+            return {
+              q: `下底が ${b}cm、高さが ${h}cm で、面積が ${S}cm² の台形があります。この台形の上底は何cmですか。`,
+              ans: a,
+              unit: "cm",
+              hint,
+              steps: [`(上底 ＋ ${b}) × ${h} ÷ 2 ＝ ${S}`, `上底 ＋ ${b} ＝ ${S} × 2 ÷ ${h} ＝ ${a + b}`, `上底 ＝ ${a + b} − ${b} ＝ ${a}（cm）`],
+            };
+          }
+          return {
+            q: `上底が ${a}cm、高さが ${h}cm で、面積が ${S}cm² の台形があります。この台形の下底は何cmですか。`,
+            ans: b,
+            unit: "cm",
+            hint,
+            steps: [`(${a} ＋ 下底) × ${h} ÷ 2 ＝ ${S}`, `${a} ＋ 下底 ＝ ${S} × 2 ÷ ${h} ＝ ${a + b}`, `下底 ＝ ${a + b} − ${a} ＝ ${b}（cm）`],
+          };
+        }),
+        t("E5-menseki-3e", (r) => {
+          // 底辺・高さを変えると、面積は何倍になるか（面積は底辺にも高さにも比例する）
+          const shape = pick(r, ["三角形", "平行四辺形"]);
+          const [k1, k2] = pick(r, [[2, 1], [1, 2], [3, 1], [1, 3], [2, 2], [2, 3], [3, 2], [3, 3], [4, 0.5], [0.5, 4], [2, 0.5], [0.5, 2]]);
+          const p = round(k1 * k2);
+          const word = (k) => (k === 1 ? "そのまま" : k === 0.5 ? "半分" : `${k}倍`);
+          const say = (x) => (x === 1 ? "変わらない" : x === 0.5 ? "半分になる" : `${x}倍`);
+          const ans = say(p);
+          const area = (b, h) => (shape === "三角形" ? (b * h) / 2 : b * h);
+          const [b0, h0] = [4, 6];
+          return {
+            q: `${shape}の底辺の長さを${word(k1)}にして、高さを${word(k2)}にすると、面積はもとの面積の何倍になりますか。`,
+            ans,
+            choices: choices4(r, ans, [say(round(k1 + k2)), say(Math.max(k1, k2)), p === 1 ? "2倍" : "変わらない", say(p * 2)], (i) => say(p + i + 2)),
+            hint: "面積の公式に、じっさいに数を入れてためしてみよう。",
+            steps: [
+              `${shape}の面積 ＝ 底辺 × 高さ${shape === "三角形" ? " ÷ 2" : ""} なので、面積は底辺にも高さにも比例する`,
+              `面積は ${k1} × ${k2} ＝ ${p}（倍）${p === 1 ? "で、変わらない" : ""}`,
+              `たしかめ：底辺 ${b0}cm・高さ ${h0}cm → ${area(b0, h0)}cm²、底辺 ${b0 * k1}cm・高さ ${h0 * k2}cm → ${area(b0 * k1, h0 * k2)}cm²`,
+            ],
+          };
+        }),
+        t("E5-menseki-3f", (r) => {
+          // 平行四辺形の形をした道をのぞいた土地の面積
+          const a = r(8, 30);
+          const b = r(12, 40);
+          const w = r(1, 4);
+          if (r(0, 1)) {
+            return {
+              q: `たて ${a}m、横 ${b}m の長方形の土地に、上の辺から下の辺まで、平行四辺形の形をした道を通しました。道のはばは、上の辺と下の辺にそってはかると、どちらも ${w}m です。道をのぞいた土地の面積は何m²ですか。`,
+              ans: a * (b - w),
+              unit: "m²",
+              hint: "道は、底辺と高さがどこになる平行四辺形かな？",
+              steps: [`道は、底辺 ${w}m、高さ ${a}m の平行四辺形`, `道の面積：${w} × ${a} ＝ ${w * a}（m²）`, `${a} × ${b} − ${w * a} ＝ ${a * (b - w)}（m²）`],
+            };
+          }
+          const v = r(1, 4);
+          return {
+            q: `たて ${a}m、横 ${b}m の長方形の土地に、横の辺に平行な はば ${v}m の道と、上の辺から下の辺まで通る平行四辺形の形をした道（上の辺と下の辺にそってはかったはばが ${w}m）が交わっています。道をのぞいた土地の面積は何m²ですか。`,
+            ans: (a - v) * (b - w),
+            unit: "m²",
+            hint: "道を土地のはしによせて考えると、のこりの土地はどんな形になるかな？",
+            steps: ["道を土地のはしによせても、のこりの土地の面積は変わらない", `のこりは、たて ${a} − ${v} ＝ ${a - v}（m）、横 ${b} − ${w} ＝ ${b - w}（m）の長方形`, `${a - v} × ${b - w} ＝ ${(a - v) * (b - w)}（m²）`],
+          };
+        }),
       ],
       4: [
         t("E5-menseki-4a", (r) => {
@@ -1375,6 +2732,35 @@ export const UNITS = [
               `三角形 ABE と ADF：${a} × ${a / 2} ÷ 2 ＝ ${(a * a) / 4} が2つ、三角形 ECF：${a / 2} × ${a / 2} ÷ 2 ＝ ${(a * a) / 8}`,
               `${a * a} − ${(a * a) / 4} × 2 − ${(a * a) / 8} ＝ ${S}（cm²）`,
             ],
+          };
+        }),
+        t("E5-menseki-4b", (r) => {
+          // 面積を2通りに表して、もう1つの高さを求める
+          const hint = "どの辺を底辺にしても、面積は同じだね。まず面積を求めよう。";
+          if (r(0, 1)) {
+            const a = r(6, 16);
+            const b = r(5, 15);
+            const ha = r(3, b - 1);
+            const S = a * ha;
+            if (a === b || (S * 10) % b !== 0) return { skip: true };
+            const hb = round(S / b);
+            return {
+              q: `平行四辺形 ABCD で、辺 BC の長さは ${a}cm、辺 AB の長さは ${b}cm です。BC を底辺としたときの高さは ${ha}cm です。AB を底辺としたときの高さは何cmですか。`,
+              ans: hb,
+              unit: "cm",
+              hint,
+              steps: [`面積：${a} × ${ha} ＝ ${S}（cm²）`, `AB を底辺とすると、${b} × □ ＝ ${S}`, `□ ＝ ${S} ÷ ${b} ＝ ${hb}（cm）`],
+            };
+          }
+          const [p, q, c] = pick(r, [[3, 4, 5], [6, 8, 10], [9, 12, 15], [12, 16, 20], [15, 20, 25], [7, 24, 25]]);
+          const S = (p * q) / 2;
+          const h = round((p * q) / c);
+          return {
+            q: `直角三角形 ABC で、直角をはさむ2つの辺の長さは ${p}cm と ${q}cm、のこりの辺（いちばん長い辺）の長さは ${c}cm です。いちばん長い辺を底辺としたときの高さは何cmですか。`,
+            ans: h,
+            unit: "cm",
+            hint,
+            steps: [`直角をはさむ2つの辺を底辺と高さとみると、面積は ${p} × ${q} ÷ 2 ＝ ${S}（cm²）`, `いちばん長い辺を底辺とすると、${c} × □ ÷ 2 ＝ ${S}`, `□ ＝ ${S} × 2 ÷ ${c} ＝ ${h}（cm）`],
           };
         }),
       ],
@@ -1437,6 +2823,58 @@ export const UNITS = [
             steps: ["1m³ ＝ 1000L", `${a}m³ ＝ ${a * 1000}L`],
           };
         }),
+        t("E5-taiseki-1d", (r) => {
+          // かさと体積の単位（dL・mL・cm³・L）
+          const k = r(0, 2);
+          if (k === 0) {
+            const n = r(2, 9);
+            return {
+              q: `${n}dL は何cm³ですか。`,
+              ans: n * 100,
+              unit: "cm³",
+              hint: "1dL ＝ 100mL、1mL ＝ 1cm³ だよ。",
+              steps: ["1dL ＝ 100mL ＝ 100cm³", `${n}dL ＝ ${n * 100}cm³`],
+            };
+          }
+          if (k === 1) {
+            const n = pick(r, [200, 250, 300, 500, 750, 1200, 1500, 2500, 3200, 4500]);
+            return {
+              q: `${n}cm³ は何L ですか。`,
+              ans: round(n / 1000),
+              unit: "L",
+              hint: "1L ＝ 1000cm³ だよ。",
+              steps: ["1000cm³ ＝ 1L", `${n} ÷ 1000 ＝ ${round(n / 1000)}（L）`],
+            };
+          }
+          const n = pick(r, [150, 200, 350, 500, 750]);
+          return {
+            q: `${n}mL は何cm³ですか。`,
+            ans: n,
+            unit: "cm³",
+            hint: "1mL は、1辺 1cm の立方体に入るかさと同じだよ。",
+            steps: ["1mL ＝ 1cm³", `${n}mL ＝ ${n}cm³`],
+          };
+        }),
+        t("E5-taiseki-1e", (r) => {
+          // 体積の量の見当（単位を選ぶ）
+          const [item, ns, u, why] = pick(r, [
+            ["教室の体積", [190, 200], "m³", "教室は たて 8m、横 8m、高さ 3m くらいなので、8 × 8 × 3 ＝ 192（m³）くらい"],
+            ["学校のプールに入る水の体積", [350, 360], "m³", "プールは たて 25m、横 12m、深さ 1.2m くらいなので、25 × 12 × 1.2 ＝ 360（m³）くらい"],
+            ["体育館の体積", [12000], "m³", "体育館は たて 40m、横 30m、高さ 10m くらいなので、40 × 30 × 10 ＝ 12000（m³）くらい"],
+            ["けしゴム1この体積", [10], "cm³", "けしゴムは たて 5cm、横 2cm、高さ 1cm くらいなので、5 × 2 × 1 ＝ 10（cm³）くらい"],
+            ["ジュースのかん1本に入るジュースの体積", [350], "cm³", "かんに入るジュースは 350mL くらい。1mL ＝ 1cm³"],
+            ["1L 入りの牛にゅうパックに入る牛にゅうの体積", [1000], "cm³", "1L ＝ 1000cm³"],
+            ["ふでばこの体積", [400, 420], "cm³", "ふでばこは たて 20cm、横 7cm、高さ 3cm くらいなので、20 × 7 × 3 ＝ 420（cm³）くらい"],
+          ]);
+          const n = pick(r, ns);
+          return {
+            q: `${item}は、およそ ${n}□ です。□ にあてはまる単位はどれですか。`,
+            ans: u,
+            choices: shuffle(r, ["cm³", "m³", "cm²", "m²"]),
+            hint: "cm² や m² は面積の単位だよ。1辺 1cm の立方体と 1辺 1m の立方体、どちらでかぞえるのが合うかな？",
+            steps: [why, `だから、およそ ${n}${u}`],
+          };
+        }),
       ],
       2: [
         t("E5-taiseki-2a", (r) => {
@@ -1474,6 +2912,66 @@ export const UNITS = [
             unit: "L",
             hint: "体積を cm³ で求めてから、1L ＝ 1000cm³ で L になおそう。",
             steps: [`${a} × ${b} × ${c} ＝ ${V}（cm³）`, `${V} ÷ 1000 ＝ ${V / 1000}（L）`],
+          };
+        }),
+        t("E5-taiseki-2d", (r) => {
+          // 体積から立方体の1辺を求める
+          const big = r(0, 3) === 0;
+          const a = big ? r(2, 5) : r(2, 10);
+          const u = big ? "m" : "cm";
+          const V = a * a * a;
+          return {
+            q: `体積が ${V}${u}³ の立方体があります。この立方体の1辺の長さは何${u}ですか。`,
+            ans: a,
+            unit: u,
+            hint: "同じ数を3回かけて、体積の数になる数をさがそう。",
+            steps: [`1辺を □${u} とすると、□ × □ × □ ＝ ${V}`, `${a} × ${a} × ${a} ＝ ${V} なので、□ ＝ ${a}（${u}）`],
+          };
+        }),
+        t("E5-taiseki-2e", (r) => {
+          // たて・横・高さを何倍かにすると、体積は何倍になるか
+          const [f, desc] = pick(r, [
+            [[2, 2, 2], "たて、横、高さを、それぞれ2倍"],
+            [[3, 3, 3], "たて、横、高さを、それぞれ3倍"],
+            [[2, 2, 1], "たてと横をそれぞれ2倍にして、高さはそのまま"],
+            [[3, 3, 1], "たてと横をそれぞれ3倍にして、高さはそのまま"],
+            [[2, 3, 1], "たてを2倍、横を3倍にして、高さはそのまま"],
+            [[2, 2, 3], "たてと横をそれぞれ2倍、高さを3倍"],
+            [[2, 3, 2], "たてを2倍、横を3倍、高さを2倍"],
+          ]);
+          const p = f[0] * f[1] * f[2];
+          const say = (x) => `${x}倍`;
+          const ans = say(p);
+          return {
+            q: `直方体の${desc}にすると、体積はもとの体積の何倍になりますか。`,
+            ans,
+            choices: choices4(r, ans, [say(f[0] + f[1] + f[2]), say(f[0] * f[1]), say(Math.max(...f)), say(p * 2)], (i) => say(p + i + 1)),
+            hint: "たしかめに、1辺 1cm の立方体で考えてみよう。",
+            steps: ["体積 ＝ たて × 横 × 高さ", `体積は ${f.join(" × ")} ＝ ${p}（倍）`, `たしかめ：1辺 1cm の立方体（1cm³）→ たて ${f[0]}cm・横 ${f[1]}cm・高さ ${f[2]}cm の直方体（${p}cm³）`],
+          };
+        }),
+        t("E5-taiseki-2f", (r) => {
+          // 長さの単位がまじった直方体の体積（単位をそろえる）
+          const a = r(1, 4);
+          const b = pick(r, [20, 40, 50, 60, 80]);
+          const c = pick(r, [20, 30, 40, 50, 60, 80]);
+          if (r(0, 1)) {
+            const ans = round((a * b * c) / 10000);
+            return {
+              q: `たて ${a}m、横 ${b}cm、高さ ${c}cm の直方体の体積は何m³ですか。`,
+              ans,
+              choices: numChoices(r, ans, [a * b * c, round((a * b * c) / 100), round((a * b * c) / 1000)]),
+              hint: "長さの単位がそろっていないね。m³ で答えるので、m にそろえよう。",
+              steps: [`${b}cm ＝ ${b / 100}m、${c}cm ＝ ${c / 100}m`, `${a} × ${b / 100} × ${c / 100} ＝ ${ans}（m³）`],
+            };
+          }
+          const ans = a * 100 * b * c;
+          return {
+            q: `たて ${a}m、横 ${b}cm、高さ ${c}cm の直方体の体積は何cm³ですか。`,
+            ans,
+            choices: numChoices(r, ans, [a * b * c, a * 10 * b * c, a * 1000 * b * c]),
+            hint: "長さの単位がそろっていないね。cm³ で答えるので、cm にそろえよう。",
+            steps: [`${a}m ＝ ${a * 100}cm`, `${a * 100} × ${b} × ${c} ＝ ${ans}（cm³）`],
           };
         }),
       ],
@@ -1517,6 +3015,69 @@ export const UNITS = [
             hint: "ふえた水の部分の体積が、石の体積と同じだよ。",
             steps: [`ふえた部分は、たて ${a}cm、横 ${b}cm、高さ ${h}cm の直方体`, `${a} × ${b} × ${h} ＝ ${a * b * h}（cm³）`],
           };
+        }),
+        t("E5-taiseki-3d", (r) => {
+          // 板の厚さを考えて、箱の容積を求める（外のり → 内のり）
+          const th = r(1, 2);
+          const A = r(6, 20) * 2;
+          const B = r(6, 20) * 2;
+          const C = r(5, 15) * 2;
+          const lid = r(0, 1) === 1;
+          const a = A - 2 * th;
+          const b = B - 2 * th;
+          const c = C - (lid ? 2 : 1) * th;
+          const ans = a * b * c;
+          return {
+            q: `厚さ ${th}cm の板で、${lid ? "ふたのある" : "ふたのない"}直方体の形をした箱をつくりました。外側の長さ（外のり）は、たて ${A}cm、横 ${B}cm、高さ ${C}cm です。この箱の容積は何cm³ですか。`,
+            ans,
+            unit: "cm³",
+            hint: "容積は、内側の長さ（内のり）で求めるよ。板の厚さが、どこに何まい分あるかな？",
+            steps: [
+              `内のりのたて：${A} − ${th} × 2 ＝ ${a}（cm）、横：${B} − ${th} × 2 ＝ ${b}（cm）`,
+              lid ? `高さ：上と下に板があるので ${C} − ${th} × 2 ＝ ${c}（cm）` : `高さ：ふたがないので、底の板の分だけひいて ${C} − ${th} ＝ ${c}（cm）`,
+              `${a} × ${b} × ${c} ＝ ${ans}（cm³）`,
+            ],
+          };
+        }),
+        t("E5-taiseki-3e", (r) => {
+          // 水そうがいっぱいになるまでの時間
+          const a = r(2, 8) * 10;
+          const b = r(2, 6) * 10;
+          const c = r(2, 6) * 10;
+          const V = (a * b * c) / 1000;
+          const rates = [2, 3, 4, 5, 6, 8, 10, 12].filter((x) => V % x === 0 && V / x >= 3 && V / x <= 60);
+          if (!rates.length) return { skip: true };
+          const q = pick(r, rates);
+          return {
+            q: `内のりが、たて ${a}cm、横 ${b}cm、深さ ${c}cm の直方体の形をした水そうがあります。からの水そうに、1分間に ${q}L ずつ水を入れると、何分でいっぱいになりますか。`,
+            ans: V / q,
+            unit: "分",
+            hint: "まず、水そうに入る水の量を L で求めよう。",
+            steps: [`容積：${a} × ${b} × ${c} ＝ ${a * b * c}（cm³）＝ ${V}L`, `${V} ÷ ${q} ＝ ${V / q}（分）`],
+          };
+        }),
+        t("E5-taiseki-3f", (r) => {
+          // 水をべつの水そうにうつしかえたときの深さ
+          for (let g = 0; g < 40; g++) {
+            const a1 = r(2, 8) * 5;
+            const b1 = r(2, 8) * 5;
+            const h1 = r(4, 24);
+            const a2 = r(2, 8) * 5;
+            const b2 = r(2, 8) * 5;
+            const V = a1 * b1 * h1;
+            const S2 = a2 * b2;
+            if (S2 === a1 * b1 || V % S2 !== 0) continue;
+            const h2 = V / S2;
+            if (h2 < 3 || h2 > 40) continue;
+            return {
+              q: `水そうAは、内のりが たて ${a1}cm、横 ${b1}cm で、水が深さ ${h1}cm まで入っています。この水を全部、内のりが たて ${a2}cm、横 ${b2}cm の水そうBにうつします。水そうBの水の深さは何cmになりますか。（水はあふれません）`,
+              ans: h2,
+              unit: "cm",
+              hint: "水の体積は、うつしかえても変わらないね。",
+              steps: [`水の体積：${a1} × ${b1} × ${h1} ＝ ${V}（cm³）`, `水そうBの たて × 横：${a2} × ${b2} ＝ ${S2}`, `深さ：${V} ÷ ${S2} ＝ ${h2}（cm）`],
+            };
+          }
+          return { skip: true };
         }),
       ],
       4: [
@@ -1611,6 +3172,40 @@ export const UNITS = [
             steps: [`1つの頂点から対角線をひくと、三角形が ${n} − 2 ＝ ${n - 2}こできる`, `180 × ${n - 2} ＝ ${180 * (n - 2)}（度）`],
           };
         }),
+        t("E5-kakudo-1d", (r) => {
+          // 直角三角形のもう1つの角
+          const a = r(15, 75);
+          return {
+            q: `直角三角形で、直角でない角の1つが ${a}° のとき、もう1つの直角でない角は何度ですか。`,
+            ans: 90 - a,
+            unit: "度",
+            hint: "直角は何度かな？三角形の3つの角の和を使おう。",
+            steps: ["直角は 90°、三角形の3つの角の和は 180°", `180 − 90 − ${a} ＝ ${90 - a}（度）`],
+          };
+        }),
+        t("E5-kakudo-1e", (r) => {
+          // 平行四辺形の角（向かい合う角・となり合う角）
+          const a = r(40, 140);
+          if (a === 90) return { skip: true };
+          const X = pick(r, ["B", "C", "D"]);
+          if (X === "C") {
+            return {
+              q: `平行四辺形 ABCD で、角 A が ${a}° です。角 C は何度ですか。`,
+              ans: a,
+              unit: "度",
+              hint: "平行四辺形の、向かい合う角の大きさはどうなっているかな？",
+              steps: ["平行四辺形の向かい合う角の大きさは等しい", `角 C は角 A と向かい合っているので ${a}°`],
+            };
+          }
+          const other = X === "B" ? "D" : "B";
+          return {
+            q: `平行四辺形 ABCD で、角 A が ${a}° です。角 ${X} は何度ですか。`,
+            ans: 180 - a,
+            unit: "度",
+            hint: "向かい合う角は等しく、4つの角の和は 360° だよ。",
+            steps: [`向かい合う角は等しいので、角 C ＝ ${a}°、角 ${X} ＝ 角 ${other}`, `角 ${X} ＋ 角 ${other} ＝ 360 − ${a} × 2 ＝ ${360 - 2 * a}`, `角 ${X} ＝ ${360 - 2 * a} ÷ 2 ＝ ${180 - a}（度）`],
+          };
+        }),
       ],
       2: [
         t("E5-kakudo-2a", (r) => {
@@ -1656,6 +3251,54 @@ export const UNITS = [
             steps: [`角 C ＝ 180 − ${a} − ${b} ＝ ${180 - a - b}`, `外側の角 ＝ 180 − ${180 - a - b} ＝ ${a + b}（度）`, `（角 A と角 B の和と同じになる）`],
           };
         }),
+        t("E5-kakudo-2d", (r) => {
+          // 角についてのまとめの中から、正しくないものを選ぶ
+          const n = r(5, 8);
+          const m = pick(r, [5, 6, 8, 10, 12]);
+          const nT = pick(r, [5, 6, 7, 8].filter((x) => x !== n));
+          const mT = pick(r, [5, 6, 8, 10, 12].filter((x) => x !== m));
+          const sumWhy = `${kan(n)}角形は三角形 ${n - 2}こに分けられるので、角の和は 180 × ${n - 2} ＝ ${180 * (n - 2)}°`;
+          const [F, why] = pick(r, [
+            [`${kan(n)}角形の角の大きさの和は ${180 * n}°`, sumWhy],
+            [`${kan(n)}角形の角の大きさの和は ${180 * (n - 1)}°`, sumWhy],
+            [`正${kan(m)}角形の1つの角の大きさは ${360 / m}°`, `正${kan(m)}角形の1つの角は 180 × ${m - 2} ÷ ${m} ＝ ${(180 * (m - 2)) / m}°（${360 / m}° は、中心のまわりを${m}等分した角）`],
+            ["二等辺三角形の3つの角の大きさは、すべて等しい", "二等辺三角形で等しいのは2つの角。3つの角がすべて等しいのは正三角形"],
+          ]);
+          const trues = sample(r, [
+            "三角形の3つの角の大きさの和は 180°",
+            "四角形の4つの角の大きさの和は 360°",
+            `${kan(nT)}角形の角の大きさの和は ${180 * (nT - 2)}°`,
+            "正三角形の1つの角の大きさは 60°",
+            "直角三角形で、直角でない2つの角の大きさの和は 90°",
+            "二等辺三角形の2つの底角の大きさは等しい",
+            `正${kan(mT)}角形の1つの角の大きさは ${(180 * (mT - 2)) / mT}°`,
+            "平行四辺形の、となり合う2つの角の大きさの和は 180°",
+          ], 3);
+          const name = pick(r, NAMES);
+          return {
+            q: `${name}さんが、図形の角について、次の4つのことをノートにまとめました。このうち、正しくないものはどれですか。`,
+            ans: F,
+            choices: shuffle(r, [F, ...trues]),
+            hint: "1つずつ、正しいかどうかたしかめよう。多角形の角の和は、三角形に分けて考えられるよ。",
+            steps: [`正しくないのは「${F}」`, why],
+          };
+        }),
+        t("E5-kakudo-2e", (r) => {
+          // 五角形・六角形の、のこりの1つの角
+          const n = pick(r, [5, 6]);
+          const S = 180 * (n - 2);
+          const xs = Array.from({ length: n - 1 }, () => (n === 5 ? r(80, 130) : r(95, 145)));
+          const sum = xs.reduce((a, b) => a + b, 0);
+          const last = S - sum;
+          if (last < 70 || last > 170) return { skip: true };
+          return {
+            q: `${kan(n)}角形の ${n - 1}つの角の大きさが ${xs.map((x) => `${x}°`).join("、")} のとき、のこりの1つの角は何度ですか。`,
+            ans: last,
+            unit: "度",
+            hint: `まず、${kan(n)}角形の角の大きさの和を求めよう。`,
+            steps: [`${kan(n)}角形の角の和：180 × ${n - 2} ＝ ${S}（度）`, `${n - 1}つの角の和：${xs.join(" ＋ ")} ＝ ${sum}（度）`, `${S} − ${sum} ＝ ${last}（度）`],
+          };
+        }),
       ],
       3: [
         t("E5-kakudo-3a", (r) => {
@@ -1692,6 +3335,76 @@ export const UNITS = [
             unit: "度",
             hint: "四角形の角の和は 360° だよ。",
             steps: [`のこりの2つの角の和：360 − ${a} − ${b} ＝ ${rest}`, `${rest} ÷ 2 ＝ ${rest / 2}（度）`],
+          };
+        }),
+        t("E5-kakudo-3d", (r) => {
+          // 角どうしの関係（□倍）から角を求める
+          const k = r(2, 4);
+          const B = r(10, 45);
+          const A = k * B;
+          const C = 180 - A - B;
+          if (C < 20 || C > 120) return { skip: true };
+          const askA = r(0, 1) === 1;
+          return {
+            q: `三角形 ABC で、角 A の大きさは角 B の大きさの ${k}倍で、角 C は ${C}° です。角 ${askA ? "A" : "B"} は何度ですか。`,
+            ans: askA ? A : B,
+            unit: "度",
+            hint: "角 B を □ として、角 A を □ を使って表してみよう。",
+            steps: [`角 A ＋ 角 B ＝ 180 − ${C} ＝ ${A + B}`, `角 B を □ とすると、□ × ${k} ＋ □ ＝ □ × ${k + 1} ＝ ${A + B}`, `□ ＝ ${A + B} ÷ ${k + 1} ＝ ${B}${askA ? `、角 A ＝ ${B} × ${k} ＝ ${A}（度）` : "（度）"}`],
+          };
+        }),
+        t("E5-kakudo-3e", (r) => {
+          // 正多角形に対角線をひいてできる角
+          const n = pick(r, [5, 6, 8, 9, 10, 12]);
+          const lab = "ABCDEFGHIJKL".slice(0, n);
+          const I = (180 * (n - 2)) / n;
+          const x = round((180 - I) / 2);
+          const cd = r(0, 1) === 1;
+          const ans = cd ? round(I - x) : x;
+          return {
+            q: `正${kan(n)}角形 ${lab} に、対角線 AC をひきました。対角線 AC と辺 ${cd ? "CD" : "AB"} がつくる角は何度ですか。`,
+            ans,
+            unit: "度",
+            hint: "三角形 ABC は、どんな三角形かな？辺 AB と辺 BC の長さに注目しよう。",
+            steps: [
+              `正${kan(n)}角形の1つの角：180 × ${n - 2} ÷ ${n} ＝ ${I}（度）`,
+              `AB ＝ BC なので、三角形 ABC は二等辺三角形。頂点 A と頂点 C のところの角は (180 − ${I}) ÷ 2 ＝ ${x}（度）`,
+              ...(cd ? [`AC と CD がつくる角 ＝ ${I} − ${x} ＝ ${ans}（度）`] : []),
+            ],
+          };
+        }),
+        t("E5-kakudo-3f", (r) => {
+          // 1つの点のまわりに正多角形をしきつめる
+          const P = { 3: ["正三角形", 60], 4: ["正方形", 90], 6: ["正六角形", 120], 8: ["正八角形", 135], 12: ["正十二角形", 150] };
+          const [known, tgt] = pick(r, [
+            [[[6, 1]], 3],
+            [[[6, 2]], 3],
+            [[[4, 2]], 3],
+            [[[4, 2], [6, 1]], 3],
+            [[[3, 2]], 6],
+            [[[8, 2]], 4],
+            [[[12, 2]], 3],
+            [[[4, 1], [6, 1]], 12],
+            [[[3, 3]], 4],
+            [[[3, 1], [4, 2]], 6],
+          ]);
+          const sum = known.reduce((s, [k, c]) => s + P[k][1] * c, 0);
+          const rest = 360 - sum;
+          const ans = rest / P[tgt][1];
+          if (!Number.isInteger(ans) || ans < 1) return { skip: true };
+          const angle = (k) => (k >= 8 ? `${P[k][0]}の1つの角は 180 × ${k - 2} ÷ ${k} ＝ ${P[k][1]}°` : `${P[k][0]}の1つの角は ${P[k][1]}°`);
+          const used = [...known.map(([k]) => k), tgt];
+          return {
+            q: `1つの点のまわりに、${known.map(([k, c]) => `${P[k][0]}を ${c}まい`).join("、")}と、何まいかの${P[tgt][0]}を、すきまなく、重ならないようにならべます。${P[tgt][0]}は何まいいりますか。`,
+            ans,
+            unit: "まい",
+            hint: "1つの点のまわりの角は、全部で何度かな？それぞれの正多角形の1つの角を考えよう。",
+            steps: [
+              `1つの点のまわりの角は 360°。${used.map(angle).join("、")}`,
+              `ならべた角の和：${known.map(([k, c]) => `${P[k][1]} × ${c}`).join(" ＋ ")} ＝ ${sum}（度）`,
+              `のこり 360 − ${sum} ＝ ${rest}（度）`,
+              `${rest} ÷ ${P[tgt][1]} ＝ ${ans}（まい）`,
+            ],
           };
         }),
       ],
@@ -1770,6 +3483,37 @@ export const UNITS = [
             steps: [`${C} ÷ 3.14 ＝ ${d}（cm）`],
           };
         }),
+        t("E5-enshu-1d", (r) => {
+          // 円周率を求める式を選ぶ
+          const d = r(3, 30);
+          const C = round(d * 3.14);
+          const T = "\\times";
+          const D = "\\div";
+          const ans = $(`${C} ${D} ${d}`);
+          return {
+            q: `直径 ${d}cm の円の円周の長さをはかったら、${C}cm でした。円周率を求める式はどれですか。`,
+            ans,
+            choices: choices4(r, ans, [$(`${d} ${D} ${C}`), d % 2 === 0 ? $(`${C} ${D} ${d / 2}`) : $(`${C} ${D} 2`), $(`${C} ${T} ${d}`), $(`${C} - ${d}`)]),
+            hint: "円周率は、円周の長さが直径の長さの何倍になっているかを表す数だよ。",
+            steps: ["円周率 ＝ 円周 ÷ 直径", `${C} ÷ ${d} ＝ 3.14`, `式は ${ans}`],
+          };
+        }),
+        t("E5-enshu-1e", (r) => {
+          // 円周のおよその長さ（直径の3倍より長く、4倍より短い）
+          const d = r(2, 30);
+          const ans = `${3 * d}cm より長く、${4 * d}cm より短い`;
+          return {
+            q: `直径 ${d}cm の円の円周の長さについて、正しいものはどれですか。`,
+            ans,
+            choices: choices4(r, ans, [`${2 * d}cm より長く、${3 * d}cm より短い`, `${4 * d}cm より長く、${5 * d}cm より短い`, `ちょうど ${3 * d}cm`, `${d}cm より長く、${2 * d}cm より短い`]),
+            hint: "円周は、直径のおよそ何倍だったかな？",
+            steps: [
+              `円の内側にぴったり入る正六角形のまわりの長さは、直径の3倍の ${3 * d}cm。円周はこれより長い`,
+              `円がぴったり入る正方形のまわりの長さは、直径の4倍の ${4 * d}cm。円周はこれより短い`,
+              `じっさいに計算すると、${d} × 3.14 ＝ ${round(d * 3.14)}（cm）`,
+            ],
+          };
+        }),
       ],
       2: [
         t("E5-enshu-2a", (r) => {
@@ -1814,6 +3558,51 @@ export const UNITS = [
             steps: [`曲線の部分：${d} × 3.14 ÷ 2 ＝ ${arc}`, `直径の部分：${d}`, `${arc} ＋ ${d} ＝ ${ans}（cm）`],
           };
         }),
+        t("E5-enshu-2d", (r) => {
+          // 直径と円周の比例（直径が○倍になると円周も○倍）
+          const d = r(2, 12) * 2;
+          const C = round(d * 3.14);
+          const k = pick(r, [2, 3, 4, 5, 0.5]);
+          const ans = round(C * k);
+          const word = k === 0.5 ? "半分" : `${k}倍`;
+          return {
+            q: `直径 ${d}cm の円の円周は ${C}cm です。直径を${word}にした円の円周は何cmですか。`,
+            ans,
+            unit: "cm",
+            hint: "円周 ＝ 直径 × 3.14。直径が変わると、円周はどう変わるかな？",
+            steps: ["円周 ＝ 直径 × 3.14 なので、円周は直径に比例する", `直径が${word}になると、円周も${word}になる`, `${C} × ${k} ＝ ${ans}（cm）`],
+          };
+        }),
+        t("E5-enshu-2e", (r) => {
+          // 正多角形をかいたとき、中心と2つの頂点でできる三角形の角
+          const n = pick(r, [5, 6, 8, 9, 10, 12]);
+          const c = 360 / n;
+          const ans = round((180 - c) / 2);
+          return {
+            q: `円の中心のまわりの角を ${n}等分して、正${kan(n)}角形をかきました。円の中心と、正${kan(n)}角形のとなり合う2つの頂点を結んでできる三角形で、中心のところの角以外の2つの角は、それぞれ何度ですか。`,
+            ans,
+            unit: "度",
+            hint: "中心と頂点を結ぶ2本の線は、どちらも円の半径だね。",
+            steps: [`中心のところの角：360 ÷ ${n} ＝ ${c}（度）`, "2本の辺はどちらも円の半径で等しいので、二等辺三角形", `(180 − ${c}) ÷ 2 ＝ ${ans}（度）`],
+          };
+        }),
+        t("E5-enshu-2f", (r) => {
+          // 正多角形について、正しいものを選ぶ（1つの角と中心の角のとりちがえ）
+          const n = pick(r, [5, 6, 8, 9, 10, 12]);
+          const I = (180 * (n - 2)) / n;
+          const c = 360 / n;
+          const inner = r(0, 1) === 1;
+          const sayI = (x) => `1つの角の大きさは ${x}°`;
+          const sayC = (x) => `円の中心のまわりの角を ${x}° ずつに分けるとかける`;
+          const ans = inner ? sayI(I) : sayC(c);
+          return {
+            q: `正${kan(n)}角形について、正しいものはどれですか。`,
+            ans,
+            choices: choices4(r, ans, [inner ? sayC(I) : sayI(c), `角の大きさの和は ${180 * n}°`, "辺の長さはすべて等しいが、角の大きさは等しいとはかぎらない", inner ? sayI(c) : sayC(I)]),
+            hint: "1つの角の大きさと、中心のまわりを何度ずつに分けるかを、それぞれ計算してみよう。",
+            steps: [`1つの角：180 × ${n - 2} ÷ ${n} ＝ ${I}°`, `中心のまわりの角：360 ÷ ${n} ＝ ${c}°`, `正しいのは「${ans}」`],
+          };
+        }),
       ],
       3: [
         t("E5-enshu-3a", (r) => {
@@ -1849,6 +3638,50 @@ export const UNITS = [
             choices: numChoices(r, ans, [arc, round(arc + rr), round((2 * rr * 3.14) / 2 + 2 * rr)]),
             hint: "まわりは、曲線の部分と、2本の半径でできているよ。",
             steps: [`曲線の部分：${rr * 2} × 3.14 ÷ 4 ＝ ${arc}`, `半径2本：${rr} × 2 ＝ ${2 * rr}`, `${arc} ＋ ${2 * rr} ＝ ${ans}（cm）`],
+          };
+        }),
+        t("E5-enshu-3d", (r) => {
+          // 直線と半円でできたトラック1周の長さ
+          const L = r(4, 10) * 10;
+          const d = r(20, 50);
+          const c = round(d * 3.14);
+          const ans = round(c + 2 * L);
+          return {
+            q: `向かい合う2本の直線の部分がそれぞれ ${L}m で、両はしが直径 ${d}m の半円になっているトラックがあります。このトラック1周の長さは何m ですか。`,
+            ans,
+            unit: "m",
+            hint: "両はしの半円を2つあわせると、どんな形になるかな？",
+            steps: [`両はしの半円2つで、直径 ${d}m の円1つ分：${d} × 3.14 ＝ ${c}（m）`, `直線の部分：${L} × 2 ＝ ${2 * L}（m）`, `${c} ＋ ${2 * L} ＝ ${ans}（m）`],
+          };
+        }),
+        t("E5-enshu-3e", (r) => {
+          // 進んだ道のりから、車輪が何回転したかを求める
+          const d = pick(r, [20, 40, 50, 60, 100]);
+          const c = round(d * 3.14);
+          // 進んだ道のりが「m で小数第2位まで」になるように回転数を決める
+          const n = d === 50 || d === 100 ? r(5, 40) : 5 * r(1, 8);
+          const Dcm = round(c * n);
+          const Dm = round(Dcm / 100);
+          return {
+            q: `直径 ${d}cm の車輪があります。この車輪が ${Dm}m 進んだとき、車輪は何回転しましたか。`,
+            ans: n,
+            unit: "回転",
+            hint: "車輪が1回転すると、何cm 進むかな？",
+            steps: [`1回転で進むのは円周の長さ：${d} × 3.14 ＝ ${c}（cm）`, `${Dm}m ＝ ${Dcm}cm`, `${Dcm} ÷ ${c} ＝ ${n}（回転）`],
+          };
+        }),
+        t("E5-enshu-3f", (r) => {
+          // 円周と、円にぴったり入る正六角形のまわりの長さのちがい
+          const rr = r(2, 20);
+          const C = round(2 * rr * 3.14);
+          const P = 6 * rr;
+          const ans = round(C - P);
+          return {
+            q: `半径 ${rr}cm の円に、6つの頂点がぴったり円周上にある正六角形をかきました。円周の長さは、正六角形のまわりの長さより何cm 長いですか。`,
+            ans,
+            unit: "cm",
+            hint: "正六角形の1辺の長さは、円の半径と同じだったね。",
+            steps: [`円周：${rr * 2} × 3.14 ＝ ${C}（cm）`, `正六角形の1辺は半径と同じなので、まわりは ${rr} × 6 ＝ ${P}（cm）`, `${C} − ${P} ＝ ${ans}（cm）`],
           };
         }),
       ],
