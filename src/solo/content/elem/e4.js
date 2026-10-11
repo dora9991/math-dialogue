@@ -1093,10 +1093,9 @@ export const UNITS = [
           let n = r(Rn - 5, Rn + 4);
           if (n === Rn) n += 1;
           const ans = RA / Rn;
-          const scenes = [
-            [`工場で作ったボール ${A}こを、${n}箱に同じ数ずつ入れます。1箱分はおよそ何こですか。`, "こ"],
-            [`色紙 ${A}まいを、${n}人で同じ数ずつ分けます。1人分はおよそ何まいですか。`, "まい"],
-          ];
+          const scenes = [[`工場で作ったボール ${A}こを、${n}箱に同じ数ずつ入れます。1箱分はおよそ何こですか。`, "こ"]];
+          // 色紙を何万まいも分けるのは不自然なので、4けたのときだけ
+          if (k === 3) scenes.push([`色紙 ${A}まいを、${n}人で同じ数ずつ分けます。1人分はおよそ何まいですか。`, "まい"]);
           if (k === 4) scenes.push([`遠足のバス代 ${A}円を、${n}人で同じように分けます。1人分はおよそ何円ですか。`, "円"]);
           const [text, u] = pick(r, scenes);
           return {
@@ -1202,6 +1201,8 @@ export const UNITS = [
           const up = hs.reduce((s, h) => s + (h + 1) * 100, 0);
           const down = hs.reduce((s, h) => s + h * 100, 0);
           const rd = ps.reduce((s, p) => s + gaisu(p, 100), 0);
+          // 四捨五入の見積もりが正しい見積もりと同じ金額になると、正しい選択肢が2つに見えるのでさける
+          if (rd === (enough ? up : down)) return { skip: true };
           const items = `${ps.join("円、")}円`;
           if (enough) {
             const say = (how, v, end) => `${how}て ${v}円と見積もる。${B}円以下なので、${end}`;
@@ -1517,6 +1518,8 @@ export const UNITS = [
           if (!g) return { skip: true };
           const [X, cx, a, Y, cy, b] = g;
           const n = r(3, 6);
+          // ほかの買い物の代金がたまたま同じ金額になる組み合わせはさける
+          if (new Set([(a + b) * n, a + b * n, a * n + b, (a - b) * n]).size < 4) return { skip: true };
           const S = [
             [`(${a} ＋ ${b}) × ${n}`, `1${cx} ${a}円の${X}と 1${cy} ${b}円の${Y}を1組にして、${n}組買ったときの代金`, `(${a} ＋ ${b}) は1組の代金で、それが ${n}組分`],
             [`${a} ＋ ${b} × ${n}`, `1${cx} ${a}円の${X}を 1${cx}と、1${cy} ${b}円の${Y}を ${n}${cy}買ったときの代金`, `${b} × ${n} は${Y} ${n}${cy}の代金で、それに${X} 1${cx}の ${a}円をたす`],
@@ -2005,6 +2008,7 @@ export const UNITS = [
           ]);
           const x = f > 1 ? pick(r, [round(r(101, 999) / 100), round(r(11, 99) / 100), round(r(11, 99) / 10)]) : pick(r, [round(r(11, 99) / 10), r(12, 99), round(r(101, 999) / 100)]);
           const ans = round(x * f);
+          if (!Number.isInteger(round(ans * 1000))) return { skip: true }; // 4年は 1/1000 の位まで
           return {
             q: f > 1 ? `${x} を${lab}した数はいくつですか。` : `${x} を ${lab} にした数はいくつですか。`,
             ans,
@@ -3745,6 +3749,7 @@ export const UNITS = [
             labs = T.hs.map((h) => `${h}時`);
             intro = `ある日の気温を1時間ごとに調べて、折れ線グラフに表しました。${list(T.hs, ts)}。`;
           }
+          if (Math.min(...ts) < 0) return { skip: true }; // 0度より低い気温（負の数）は中学校から
           const mx = Math.max(...ts);
           const mn = Math.min(...ts);
           const at = (v) => labs.filter((_, i) => ts[i] === v).join("・");
@@ -3808,6 +3813,7 @@ export const UNITS = [
           const { hs, ts } = temps(r);
           const us = [ts[0] - r(2, 5)];
           for (let i = 1; i < hs.length; i++) us.push(us[i - 1] + (ts[i] - ts[i - 1]) + r(0, 2));
+          if (Math.min(...ts, ...us) < 0) return { skip: true }; // 0度より低い気温（負の数）は中学校から
           const k = us.findIndex((v, i) => v > ts[i]);
           if (k < 1) return { skip: true };
           const aFirst = r(0, 1) === 1; // A市がはじめ高い（ts）か、B市がはじめ高いか
@@ -3855,6 +3861,7 @@ export const UNITS = [
         t("E4-oresen-4a", (r) => {
           // 変わり方だけが分かっているとき、はじめの気温を求める
           const { hs, ts } = temps(r);
+          if (Math.min(...ts) < 0) return { skip: true }; // 0度より低い気温（負の数）は中学校から
           const ch = hs.slice(0, -1).map((_, i) => ts[i + 1] - ts[i]);
           const desc = ch.map((d, i) => `${hs[i]}時から${hs[i + 1]}時までに ${Math.abs(d)}度${d > 0 ? "上がり" : "下がり"}`).join("、");
           const last = ts[ts.length - 1];

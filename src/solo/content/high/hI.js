@@ -129,6 +129,25 @@ for (let b = 1; b <= 16; b++) for (let c = 1; c <= 16; c++) for (const A of [60,
 const HERON = [[3, 4, 5, 6], [5, 5, 6, 12], [5, 5, 8, 12], [13, 14, 15, 84], [5, 12, 13, 30], [10, 13, 13, 60], [9, 10, 17, 36], [7, 15, 20, 42], [13, 20, 21, 126], [8, 15, 17, 60], [11, 13, 20, 66], [13, 13, 24, 60], [12, 17, 25, 90], [7, 24, 25, 84]]
   .filter(([a, b, c, S]) => (a + b + c) * (-a + b + c) * (a - b + c) * (a + b - c) === 16 * S * S);
 
+/**
+ * 0°≦θ≦180° の部分集合を TeX に。pts は境界の角（昇順）、inP[i] は角 pts[i] を含むか、
+ * inI[i] は pts[i] と pts[i+1] の間（端を除く）を含むか。含まれる部分が続くところはまとめる。
+ */
+function angTex(pts, inP, inI) {
+  const seq = [];
+  pts.forEach((A, k) => { seq.push({ on: inP[k], L: A, R: A, pt: true }); if (k + 1 < pts.length) seq.push({ on: inI[k], L: A, R: pts[k + 1], pt: false }); });
+  const out = [];
+  for (let s = 0; s < seq.length; s++) {
+    if (!seq[s].on) continue;
+    let e = s;
+    while (e + 1 < seq.length && seq[e + 1].on) e++;
+    const a = seq[s], b = seq[e];
+    if (s === e && a.pt) out.push(`\\theta=${deg(a.L)}`);
+    else out.push(`${deg(a.L)}${a.pt ? "\\leqq" : "<"}\\theta${b.pt ? "\\leqq " : "<"}${deg(b.R)}`);
+    s = e;
+  }
+  return out.join(",\\ ");
+}
 /** 点 (x, y)（どちらも0でない）がある象限 */
 const QUAD = (x, y) => (x > 0 ? (y > 0 ? "第1象限" : "第4象限") : y > 0 ? "第2象限" : "第3象限");
 // 0≦x≦L で常に x^2-2ax+sa+t>0（s=r1+r2, t=-r1r2）となる a の範囲が、整数を端とする区間になる組 [r1, r2, L, lo, hi]
@@ -145,6 +164,12 @@ for (let r1 = -4; r1 <= 4; r1++) for (let r2 = r1 + 1; r2 <= 6; r2++) for (const
   if (!Number.isInteger(lo) || !Number.isInteger(hi) || m(lo) !== 0 || m(hi) !== 0 || lo <= -20 || hi >= 20) continue;
   if (lo === Math.max(r1, 0) && hi === Math.min(r2, L)) continue; // 真ん中の場合だけで決まるものは除く
   ALWAYS_POS.push([r1, r2, L, lo, hi]);
+}
+// 解が無理数になる 2次方程式 ax^2+bx+c=0 の係数 [a, b, c]（D>0 で平方数でない）
+const IRR_QUAD = [];
+for (let a = 1; a <= 3; a++) for (let b = -6; b <= 6; b++) for (let c = -5; c <= 5; c++) {
+  const D = b * b - 4 * a * c;
+  if (D > 0 && !Number.isInteger(Math.sqrt(D))) IRR_QUAD.push([a, b, c]);
 }
 const H = { grade: "H1", course: "数学I", rikei: false };
 
@@ -2605,8 +2630,7 @@ export const UNITS = [
           };
         }),
         t("HI-nijifuto-1c", (r) => {
-          const a = r(1, 3), b = r(-6, 6), c = r(-5, 5), D = b * b - 4 * a * c;
-          if (D <= 0 || Number.isInteger(Math.sqrt(D))) return { skip: true };
+          const [a, b, c] = pick(r, IRR_QUAD), D = b * b - 4 * a * c;
           const RT = (B, DD, A) => {
             const [k, m] = sqrtSimp(DD);
             const g = gcd(gcd(Math.abs(B), k), 2 * A);
@@ -2710,8 +2734,7 @@ export const UNITS = [
           };
         }),
         t("HI-nijifuto-2d", (r) => {
-          const b = r(-5, 5), c = r(-5, 5), m = r(-4, 4);
-          if ((b - m) % 2 !== 0) return { skip: true };
+          const b = r(-5, 5), c = r(-5, 5), m = pick(r, [-4, -3, -2, -1, 0, 1, 2, 3, 4].filter((v) => (b - v) % 2 === 0)); // b-m は偶数
           const h = (b - m) / 2, k = c - h * h;
           return {
             q: `放物線 ${tex(`y=${poly([1, b, c])}`)} と直線 ${tex(`y=${m === 0 ? "" : coefVar(m)}+k`.replace("=+", "="))} が接するような定数 ${tex("k")} の値は？`,
@@ -2774,7 +2797,7 @@ export const UNITS = [
           return {
             q: `2次不等式 ${tex(`ax^{2}+bx${signed(c)}${gt ? ">" : "<"}0`)} の解が ${tex(sol)} であるとき、定数 ${tex(askA ? "a" : "b")} の値は？`,
             ans: askA ? a : b,
-            hint: `解が ${tex(sol)} になるのは、グラフが $x=${al},\\ ${be}$ で $x$ 軸と交わり、その${inside ? "間" : "外側"}で$x$ 軸より${gt ? "上" : "下"}にあるとき。`,
+            hint: `解が ${tex(sol)} になるのは、グラフが $x=${al},\\ ${be}$ で $x$ 軸と交わり、その${inside ? "間" : "外側"}で $x$ 軸より${gt ? "上" : "下"}にあるとき。`,
             steps: [
               `解の形から $a${aSign > 0 ? ">" : "<"}0$ で、$ax^{2}+bx${signed(c)}=a(x${sh(-al)})(x${sh(-be)})$`,
               `定数項を比べて $a\\cdot (${al})\\cdot (${be})=${c}$、$a=${a}$`,
@@ -2845,12 +2868,12 @@ export const UNITS = [
           const sv = r1 + r2, tv = -r1 * r2;
           const ok = tex(`${lo}<a<${hi}`);
           return {
-            q: `${tex(`0\\leqq x\\leqq ${L}`)} を満たすすべての ${tex("x")} に対して、${tex(`x^{2}-2ax${signedVar(sv, "a")}${signed(tv)}>0`)} が成り立つような定数 ${tex("a")} の値の範囲は？`,
+            q: `${tex(`0\\leqq x\\leqq ${L}`)} を満たすすべての ${tex("x")} に対して、${tex(`x^{2}-2ax${signedVar(sv, "a")}${sh(tv)}>0`)} が成り立つような定数 ${tex("a")} の値の範囲は？`,
             ans: ok,
             choices: choices4(r, ok, [tex(`${lo}\\leqq a\\leqq ${hi}`), tex(`${r1}<a<${r2}`), tex(`${Math.max(r1, 0)}<a<${Math.min(r2, L)}`), tex(`a<${hi}`)]),
-            hint: `$f(x)$ の $0\\leqq x\\leqq ${L}$ での最小値が正になればよい。軸 $x=a$ の位置で $a<0$、$0\\leqq a\\leqq ${L}$、$a>${L}$ に分ける。`,
+            hint: `左辺を $f(x)$ とおき、$0\\leqq x\\leqq ${L}$ での最小値が正になる条件を考える。軸 $x=a$ の位置で $a<0$、$0\\leqq a\\leqq ${L}$、$a>${L}$ に分ける。`,
             steps: [
-              `$a<0$ のとき最小値 $f(0)=${coefVar(sv, "a")}${signed(tv)}>0$、$0\\leqq a\\leqq ${L}$ のとき最小値 $f(a)=-a^{2}${signedVar(sv, "a")}${signed(tv)}>0$`,
+              `$a<0$ のとき最小値 $f(0)=${coefVar(sv, "a")}${sh(tv)}>0$、$0\\leqq a\\leqq ${L}$ のとき最小値 $f(a)=-a^{2}${signedVar(sv, "a")}${sh(tv)}>0$`,
               `$a>${L}$ のとき最小値 $f(${L})=${poly([sv - 2 * L, L * L + tv], "a")}>0$`,
               `それぞれを解いて合わせると $${lo}<a<${hi}$`,
             ],
@@ -2864,13 +2887,13 @@ export const UNITS = [
           const c = -(r1 + r2); // a^2 + c a - b^2 = (a-r1)(a-r2)
           const ok = tex(`a>${r2}`);
           return {
-            q: `すべての実数 ${tex("x")} に対して ${tex(`ax^{2}+${2 * b}x+a${signed(c)}>0`)} が成り立つような定数 ${tex("a")} の値の範囲は？`.replace("+a+0>", "+a>"),
+            q: `すべての実数 ${tex("x")} に対して ${tex(`ax^{2}+${2 * b}x+a${sh(c)}>0`)} が成り立つような定数 ${tex("a")} の値の範囲は？`,
             ans: ok,
             choices: choices4(r, ok, [tex(`a<${r1},\\ ${r2}<a`), tex(`${r1}<a<${r2}`), tex(`a\\geqq ${r2}`), tex("a>0")]),
             hint: "$x^{2}$ の係数に文字があるので、$a=0$ の場合と $a\\neq 0$ の場合に分ける。$a\\neq 0$ なら下に凸で $x$ 軸と共有点をもたない条件を考える。",
             steps: [
-              `$a=0$ のとき $${2 * b}x${signed(c)}>0$ はすべての $x$ では成り立たない`,
-              `$a\\neq 0$ のとき、$a>0$ かつ $\\frac{D}{4}=${b * b}-a(a${signed(c)})<0$、すなわち $a>0$ かつ $(a${signed(-r1)})(a${signed(-r2)})>0$`,
+              `$a=0$ のとき $${2 * b}x${sh(c)}>0$ はすべての $x$ では成り立たない`,
+              `$a\\neq 0$ のとき、$a>0$ かつ $\\frac{D}{4}=${b * b}-${c === 0 ? "a^{2}" : `a(a${signed(c)})`}<0$、すなわち $a>0$ かつ $(a${signed(-r1)})(a${signed(-r2)})>0$`,
               `$a>0$ と $a<${r1},\\ ${r2}<a$ の共通部分で $a>${r2}$`,
             ],
           };
@@ -2923,6 +2946,51 @@ export const UNITS = [
               `斜辺は AB $=${h}$、角 ${ang} の対辺は ${atA ? "BC" : "CA"} $=${opp}$、隣辺は ${atA ? "CA" : "BC"} $=${adj}$`,
               `$\\${f} ${ang}=${fr(v[0], v[1])}$`,
             ],
+          };
+        }),
+        t("HI-sankakuhi-1c", (r) => {
+          const f = pick(r, ["sin", "cos", "tan"]);
+          const A = pick(r, [95, 100, 105, 110, 115, 120, 125, 130, 140, 145, 150, 155, 160, 165, 170, 175]), B = 180 - A;
+          const T = (s, g, x) => tex(`${s}\\${g} ${deg(x)}`);
+          const ok = f === "sin" ? T("", "sin", B) : T("-", f, B);
+          const g = f === "sin" ? "cos" : "sin";
+          const wr = f === "tan" ? [T("", "tan", B), T("-", "tan", A - 90), T("", "tan", A - 90)] : [T(f === "sin" ? "-" : "", f, B), T("", g, B), T("-", g, B)];
+          return {
+            q: `${tex(`\\${f} ${deg(A)}`)} と等しいものは？`,
+            ans: ok,
+            choices: choices4(r, ok, wr),
+            hint: `$${deg(A)}=180^{\\circ}-${deg(B)}$ と考えて、$180^{\\circ}-\\theta$ の三角比の公式を使う。`,
+            steps: [
+              `$\\${f}(180^{\\circ}-\\theta)=${f === "sin" ? "" : "-"}\\${f}\\theta$`,
+              `$\\${f} ${deg(A)}=\\${f}(180^{\\circ}-${deg(B)})=${ok.slice(1, -1)}$`,
+            ],
+          };
+        }),
+        t("HI-sankakuhi-1d", (r) => {
+          // 三角比の表の値（小数第4位まで）[sin, cos, tan]
+          const TB = { 10: ["0.1736", "0.9848", "0.1763"], 15: ["0.2588", "0.9659", "0.2679"], 20: ["0.3420", "0.9397", "0.3640"], 25: ["0.4226", "0.9063", "0.4663"], 35: ["0.5736", "0.8192", "0.7002"], 40: ["0.6428", "0.7660", "0.8391"], 50: ["0.7660", "0.6428", "1.1918"], 55: ["0.8192", "0.5736", "1.4281"] };
+          const kind = r(0, 2);
+          const th = pick(r, kind === 0 ? [20, 25, 35, 40, 50, 55] : [10, 15, 20, 25]);
+          const d = kind === 0 ? r(5, 30) : 10 * r(3, 30);
+          const fi = [2, 0, 1][kind], fn = ["tan", "sin", "cos"][kind], val = TB[th][fi];
+          const h = kind === 0 ? pick(r, ["1.5", "1.6"]) : "0";
+          const X = d * Math.round(Number(val) * 10000) + Math.round(Number(h) * 10000); // 1万分の1 m 単位
+          const ans = round(Math.round(X / 1000) / 10);
+          const prod = round((d * Math.round(Number(val) * 10000)) / 10000, 4), tot = round(X / 10000, 4);
+          const given = `ただし ${tex(`\\${fn} ${deg(th)}=${val}`)} とし、小数第2位を四捨五入する。`;
+          const q = [
+            `水平な地面に立つ木の根元から ${d} m 離れた地点で、木の先端を見上げる角（仰角）が ${tex(deg(th))} であった。目の高さを ${h} m とするとき、木の高さは約何 m？ ${given}`,
+            `傾斜角が ${tex(deg(th))} のまっすぐな坂道を ${d} m 登ると、高さは約何 m 上がる？ ${given}`,
+            `傾斜角が ${tex(deg(th))} のまっすぐな坂道を ${d} m 登ると、水平方向には約何 m 進む？ ${given}`,
+          ][kind];
+          return {
+            q,
+            ans,
+            unit: "m",
+            hint: ["目の高さより上の部分は（水平距離）$\\times\\tan$（仰角）。最後に目の高さを足す。", "坂道の長さが斜辺。上がる高さは（斜辺）$\\times\\sin$（傾斜角）。", "坂道の長さが斜辺。水平方向の距離は（斜辺）$\\times\\cos$（傾斜角）。"][kind],
+            steps: kind === 0
+              ? [`目の高さより上の部分は $${d}\\tan ${deg(th)}=${d}\\times ${val}=${prod}$`, `目の高さを足して $${prod}+${h}=${tot}$`, `小数第2位を四捨五入して ${ans} m`]
+              : [`$${d}\\${fn} ${deg(th)}=${d}\\times ${val}=${prod}$`, `小数第2位を四捨五入して ${ans} m`],
           };
         }),
       ],
@@ -2984,6 +3052,37 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-sankakuhi-2d", (r) => {
+          const f = pick(r, ["sin", "cos", "tan"]);
+          const al = pick(r, f === "sin" ? [30, 45, 60] : [30, 45, 60, 120, 135, 150]);
+          const op = pick(r, ["<", ">", "<=", ">="]);
+          const rad0 = Math.PI / 180;
+          const val = (A) => (f === "sin" ? Math.sin(A * rad0) : f === "cos" ? Math.cos(A * rad0) : Math.tan(A * rad0));
+          // f(θ) o f(A0) を満たす θ（0°≦θ≦mx）の範囲。有名角での大小は表の値で、それ以外は数値で比べる
+          const solve = (A0, o, mx = 180) => {
+            const V = TRIG[f][A0], Vn = (V[0] * Math.sqrt(V[1])) / V[2];
+            const cmp = (A) => { const e = TRIG[f][A]; if (e && e.join() === V.join()) return 0; const x = e ? (e[0] * Math.sqrt(e[1])) / e[2] : val(A); return x < Vn ? -1 : 1; };
+            const ok = (A) => { if (f === "tan" && A === 90) return false; const s = cmp(A); return o === "<" ? s < 0 : o === ">" ? s > 0 : o === "<=" ? s <= 0 : s >= 0; };
+            const pts = [...new Set([0, A0, 180 - A0, 90, mx])].filter((x) => x <= mx).sort((x, y) => x - y);
+            return angTex(pts, pts.map(ok), pts.slice(1).map((B, i) => ok((pts[i] + B) / 2)));
+          };
+          const T = (s) => (s ? tex(s) : null);
+          const ok = T(solve(al, op));
+          const strict = { "<": "<=", "<=": "<", ">": ">=", ">=": ">" }[op], rev = { "<": ">", ">": "<", "<=": ">=", ">=": "<=" }[op];
+          const al2 = f === "sin" ? 90 - al : 180 - al;
+          const vt = tv(f, al);
+          const eqA = f === "sin" && al !== 90 ? [al, 180 - al] : [al];
+          return {
+            q: `${tex("0^{\\circ}\\leqq\\theta\\leqq 180^{\\circ}")} のとき、不等式 ${tex(`\\${f}\\theta${OPS[op]} ${vt}`)} を満たす ${tex("\\theta")} の値の範囲は？`,
+            ans: ok,
+            choices: choices4(r, ok, [T(solve(al, strict)), T(solve(al, rev)), al2 !== al ? T(solve(al2, op)) : null, T(solve(al, op, 90))], (i) => T(solve(pick(r, f === "sin" ? [30, 45, 60] : [30, 45, 60, 120, 135, 150]), pick(r, ["<", ">", "<=", ">="])))),
+            hint: `まず ${tex(`\\${f}\\theta=${vt}`)} となる ${tex("\\theta")} を求め、${f === "sin" ? "単位円の $y$ 座標" : f === "cos" ? "単位円の $x$ 座標" : "原点を通る直線の傾き"}の大小で範囲を読みとる。`,
+            steps: [
+              `$\\${f}\\theta=${vt}$ となる $\\theta$ は $${eqA.map(deg).join(",\\ ")}$`,
+              `${f === "tan" ? "$\\theta=90^{\\circ}$ では $\\tan\\theta$ が定義されないことに注意して、" : ""}単位円で考えると ${ok}`,
+            ],
+          };
+        }),
       ],
       3: [
         t("HI-sankakuhi-3a", (r) => {
@@ -3014,6 +3113,76 @@ export const UNITS = [
             steps: [
               `2乗して $1+2\\sin\\theta\\cos\\theta=${fracTex(p * p, q * q)}$`,
               `$\\sin\\theta\\cos\\theta=${fracTex(...sc)}$`,
+            ],
+          };
+        }),
+        t("HI-sankakuhi-3c", (r) => {
+          const useSin = r(0, 1) === 1; // 2次方程式を sinθ の式にするか cosθ の式にするか
+          const U = useSin ? "\\sin\\theta" : "\\cos\\theta", U2 = useSin ? "\\sin^{2}\\theta" : "\\cos^{2}\\theta", W2 = useSin ? "\\cos^{2}\\theta" : "\\sin^{2}\\theta";
+          const AT = useSin ? { 0: [0, 180], 0.5: [30, 150], 1: [90] } : { 1: [0], 0.5: [60], 0: [90], "-0.5": [120], "-1": [180] };
+          const valid = useSin ? [0, 0.5, 1] : [-1, -0.5, 0, 0.5, 1];
+          const t1 = pick(r, valid);
+          const t2 = pick(r, [...valid, ...(useSin ? [-1, -0.5, 1.5, 2] : [-2, -1.5, 1.5, 2])].filter((x) => x !== t1 && x !== -t1));
+          const K = (Number.isInteger(t1) ? 1 : 2) * (Number.isInteger(t2) ? 1 : 2);
+          const A = K, B = -K * (t1 + t2), C = K * t1 * t2; // A u^2 + B u + C = 0（u は U）
+          const angs = (t) => AT[String(t)] || [];
+          const setOf = (ts) => [...new Set(ts.flatMap(angs))].sort((x, y) => x - y);
+          const S = (arr) => (arr.length ? tex(`\\theta=${arr.map(deg).join(",\\ ")}`) : null);
+          const sol = setOf([t1, t2]);
+          const ok = S(sol);
+          const both = valid.includes(t2);
+          const wr = [both ? S(setOf([t1])) : null, both ? S(setOf([t2])) : null, S(sol.filter((x) => x <= 90)), S([...new Set(sol.map((x) => 180 - x))].sort((x, y) => x - y)), S(setOf([-t1, -t2]))];
+          const fac = (t) => (t === 0 ? U : Number.isInteger(t) ? `(${U}${sh(-t)})` : `(2${U}${sh(-2 * t)})`);
+          const F = [t1, t2].sort((x, y) => (x === 0 ? -1 : y === 0 ? 1 : 0)).map(fac).join("");
+          const ft = (t) => fracTex(2 * t, 2);
+          const bad = [t1, t2].filter((t) => !valid.includes(t));
+          return {
+            q: `${tex("0^{\\circ}\\leqq\\theta\\leqq 180^{\\circ}")} のとき、方程式 ${tex(`${A === 1 ? "" : A}${W2}${signedVar(-B, U)}${sh(-(A + C))}=0`)} を満たす ${tex("\\theta")} は？`,
+            ans: ok,
+            choices: choices4(r, ok, wr, () => S(setOf([pick(r, valid)]))),
+            hint: "$\\sin^{2}\\theta+\\cos^{2}\\theta=1$ を使って1種類の三角比で表し、2次方程式として解く。三角比のとりうる値の範囲に注意。",
+            steps: [
+              `$${W2}=1-${U2}$ を代入して整理すると $${A === 1 ? "" : A}${U2}${signedVar(B, U)}${sh(C)}=0$`,
+              `$${F}=0$ より $${U}=${[t1, t2].map(ft).join(",\\ ")}$`,
+              `$${useSin ? "0\\leqq\\sin\\theta\\leqq 1" : "-1\\leqq\\cos\\theta\\leqq 1"}$ なので $${U}=${[t1, t2].filter((t) => valid.includes(t)).map(ft).join(",\\ ")}$${bad.length ? `（$${U}=${bad.map(ft).join(",\\ ")}$ は不適）` : ""}`,
+              `$\\theta=${sol.map(deg).join(",\\ ")}$`,
+            ],
+          };
+        }),
+        t("HI-sankakuhi-3d", (r) => {
+          const [tn, td] = pick(r, [[2, 1], [3, 1], [4, 1], [-2, 1], [-3, 1], [1, 2], [-1, 2], [1, 3], [-1, 3], [3, 2], [-3, 2], [2, 3], [-2, 3]]);
+          const T = fracTex(tn, td);
+          if (r(0, 1) === 1) {
+            // 1次の同次式の分数式
+            const a = r(1, 3), b = rnz(r, -3, 3), c = r(1, 3), d = rnz(r, -3, 3);
+            const N = a * tn + b * td, D = c * tn + d * td;
+            if (D === 0 || a * d === b * c) return { skip: true };
+            const L = (u, w) => `${coefVar(u, "\\sin\\theta")}${signedVar(w, "\\cos\\theta")}`;
+            const Lt = (u, w) => `${coefVar(u, "\\tan\\theta")}${signed(w)}`;
+            return {
+              q: `${tex(`\\tan\\theta=${T}`)} のとき、${tex(`\\frac{${L(a, b)}}{${L(c, d)}}`)} の値は？`,
+              ans: fracAns(N, D),
+              hint: "分母と分子を $\\cos\\theta$ で割ると、$\\tan\\theta$ だけの式になる。",
+              steps: [
+                `$\\tan\\theta$ の値があるので $\\cos\\theta\\neq 0$。分母・分子を $\\cos\\theta$ で割ると $\\frac{${Lt(a, b)}}{${Lt(c, d)}}$`,
+                `$\\tan\\theta=${T}$ を代入して $${fracTex(N, D)}$`,
+              ],
+            };
+          }
+          // 2次の同次式：sin^2θ+cos^2θ（=1）で割る
+          let a = r(-3, 3), b = r(-4, 4), c = r(-3, 3);
+          if ([a, b, c].filter((x) => x !== 0).length < 2 || (a === c && b === 0)) return { skip: true };
+          if ((a || b) < 0) [a, b, c] = [-a, -b, -c]; // 先頭の係数を正に
+          const E = mpoly([[a, "\\sin^{2}\\theta"], [b, "\\sin\\theta\\cos\\theta"], [c, "\\cos^{2}\\theta"]]);
+          const N = a * tn * tn + b * tn * td + c * td * td, D = tn * tn + td * td;
+          return {
+            q: `${tex(`\\tan\\theta=${T}`)} のとき、${tex(E)} の値は？`,
+            ans: fracAns(N, D),
+            hint: "$\\sin^{2}\\theta+\\cos^{2}\\theta=1$ を分母とみて、分母・分子を $\\cos^{2}\\theta$ で割る。",
+            steps: [
+              `与式 $=\\frac{${E}}{\\sin^{2}\\theta+\\cos^{2}\\theta}$（分母は $1$）`,
+              `分母・分子を $\\cos^{2}\\theta$ で割ると $\\frac{${mpoly([[a, "\\tan^{2}\\theta"], [b, "\\tan\\theta"], [c, ""]])}}{\\tan^{2}\\theta+1}$`,
+              `$\\tan\\theta=${T}$ を代入して $${fracTex(N, D)}$`,
             ],
           };
         }),
@@ -3063,6 +3232,75 @@ export const UNITS = [
               `$t=\\cos\\theta$ とおくと $-1\\leqq t\\leqq 1$、$y=${poly([-k, a, k + b], "t")}$`,
               `軸は $t=${fracTex(a, 2 * k)}$${inside ? "（範囲内）" : "（範囲外）"}`,
               inside ? `$t=${fracTex(a, 2 * k)}$ のとき最大値 $${fracTex(...mx)}$` : `$t=${a > 0 ? 1 : -1}$ のとき最大値 $${fracTex(...mx)}$`,
+            ],
+          };
+        }),
+        t("HI-sankakuhi-4c", (r) => {
+          const A = r(1, 3), B = r(1, 2 * A - 1), want = A === B ? 4 : pick(r, [4, 2]); // A=B で2個は k=M の1点だけなので出さない
+          // t=sinθ（0≦t≦1）で f(t)=A(1-t^2)+Bt。頂点 t=B/(2A) は 0 と 1 の間、f(0)=A、f(1)=B、最大値 M
+          const M = fracTex(4 * A * A + B * B, 4 * A);
+          const lt = (x, y, e1, e2) => `${x}${e1 ? "\\leqq " : "<"}k${e2 ? "\\leqq " : "<"}${y}`;
+          let ok, wr;
+          if (want === 4) {
+            if (B < A) { ok = lt(A, M, 1, 0); wr = [lt(A, M, 0, 0), lt(B, M, 0, 0), lt(A, M, 1, 1)]; }
+            else if (B > A) { ok = lt(B, M, 0, 0); wr = [lt(B, M, 1, 0), lt(A, M, 0, 0), lt(B, M, 0, 1)]; }
+            else { ok = lt(A, M, 0, 0); wr = [lt(A, M, 1, 0), lt(A, M, 0, 1), lt(A, M, 1, 1)]; }
+          } else {
+            const km = `,\\ k=${M}`;
+            if (B < A) { ok = lt(B, A, 0, 0) + km; wr = [lt(B, A, 0, 0), lt(B, A, 1, 0) + km, lt(B, A, 0, 1) + km]; }
+            else { ok = lt(A, B, 1, 0) + km; wr = [lt(A, B, 0, 0) + km, lt(A, B, 1, 0), lt(A, B, 1, 1) + km]; }
+          }
+          const cnt = want === 4
+            ? `$\\theta$ が4個 ⇔ $0\\leqq t<1$ の範囲に $t$ が2個。よって $${ok}$`
+            : `$\\theta$ が2個 ⇔ $0\\leqq t<1$ の範囲に $t$ が1個で、$t=1$ は解でない。よって $${ok}$`;
+          return {
+            q: `${tex("0^{\\circ}\\leqq\\theta\\leqq 180^{\\circ}")} のとき、${tex("\\theta")} の方程式 ${tex(`${A === 1 ? "" : A}\\cos^{2}\\theta${signedVar(B, "\\sin\\theta")}=k`)} の異なる解がちょうど ${want} 個となるような定数 ${tex("k")} の値の範囲は？`,
+            ans: tex(ok),
+            choices: choices4(r, tex(ok), wr.map(tex)),
+            hint: "$\\sin\\theta=t$ とおき、$t$ の2次関数のグラフと直線 $y=k$ の共有点を考える。1つの $t$ に対応する $\\theta$ の個数に注意。",
+            steps: [
+              `$\\sin\\theta=t$ とおくと $0\\leqq t\\leqq 1$ で、$f(t)=${A === 1 ? "" : A}(1-t^{2})${signedVar(B, "t")}=-${A === 1 ? "" : A}\\left(t-${fracTex(B, 2 * A)}\\right)^{2}+${M}$ について $f(t)=k$`,
+              `$f(0)=${A}$、$f(1)=${B}$、最大値 $f\\left(${fracTex(B, 2 * A)}\\right)=${M}$`,
+              "$0\\leqq t<1$ の $t$ 1つに $\\theta$ は2つ（$\\theta$ と $180^{\\circ}-\\theta$）、$t=1$ には $\\theta=90^{\\circ}$ の1つが対応する",
+              cnt,
+            ],
+          };
+        }),
+        t("HI-sankakuhi-4d", (r) => {
+          const useCos = r(0, 1) === 1; // t=cosθ（-1≦t≦1）か t=sinθ（0≦t≦1）か
+          const p = useCos ? r(1, 3) : r(2, 4);
+          const q = useCos ? r(1 - p, p - 1) : -r(1, p - 1);
+          const c = useCos ? r(1, 3) : r(0, 2);
+          const U = useCos ? "\\cos\\theta" : "\\sin\\theta", t0 = useCos ? -1 : 0;
+          const E = `${useCos ? "\\sin" : "\\cos"}^{2}\\theta${signedVar(p, "a" + U)}${signedVar(q, "a")}${sh(c)}`;
+          // f(t)=-t^2+pat+qa+1+c。端での値 f(t)=αa+β を [α, β] で
+          const at = (t) => [q + p * t, 1 + c - t * t];
+          const e0 = at(t0), e1 = at(1);
+          // α a + β > 0 をすべて満たす a の範囲の TeX（eq なら等号つき）
+          const solve2 = (cs, eq = false) => {
+            let L = null, R = null;
+            for (const [al, be] of cs) {
+              if (al > 0) { const v = [-be, al]; if (!L || v[0] * L[1] > L[0] * v[1]) L = v; }
+              else if (al < 0) { const v = [be, -al]; if (!R || v[0] * R[1] < R[0] * v[1]) R = v; }
+              else if (be <= 0) return null;
+            }
+            if (L && R && L[0] * R[1] >= R[0] * L[1]) return null;
+            const o = eq ? "\\leqq " : "<", g = eq ? "\\geqq " : ">";
+            return L && R ? `${fracTex(...L)}${o}a${o}${fracTex(...R)}` : L ? `a${g}${fracTex(...L)}` : R ? `a${o}${fracTex(...R)}` : null;
+          };
+          const okS = solve2([e0, e1]);
+          const T = (s) => (s ? tex(s) : null);
+          const lin = (e) => `${coefVar(e[0], "a")}${sh(e[1])}`;
+          return {
+            q: `${tex("0^{\\circ}\\leqq\\theta\\leqq 180^{\\circ}")} を満たすすべての ${tex("\\theta")} に対して、不等式 ${tex(`${E}>0`)} が成り立つような定数 ${tex("a")} の値の範囲は？`,
+            ans: tex(okS),
+            choices: choices4(r, tex(okS), [T(solve2([e0, e1], true)), T(solve2([useCos ? at(0) : at(-1), e1])), T(solve2([e1])), T(solve2([e0]))]),
+            hint: `$${U}=t$ とおくと $t$ の2次関数になる。$t$ のとりうる値の範囲と、グラフの形に注目する。`,
+            steps: [
+              `$t=${U}$ とおくと $${t0}\\leqq t\\leqq 1$、${useCos ? "$\\sin^{2}\\theta" : "$\\cos^{2}\\theta"}=1-t^{2}$ より 左辺 $=f(t)=-t^{2}${signedVar(p, "at")}${signedVar(q, "a")}${sh(1 + c)}$`,
+              `$f(t)$ のグラフは上に凸なので、$${t0}\\leqq t\\leqq 1$ での最小値は $f(${t0})$ か $f(1)$`,
+              `$f(${t0})=${lin(e0)}>0$ かつ $f(1)=${lin(e1)}>0$`,
+              `よって $${okS}$`,
             ],
           };
         }),
@@ -3130,6 +3368,31 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-seigen-1d", (r) => {
+          let S;
+          if (r(0, 3) === 0) S = pick(r, [[3, 4, 5], [6, 8, 10], [5, 12, 13], [9, 12, 15], [8, 15, 17]]);
+          else { const L = r(4, 12), x = r(2, L - 1); S = [L, x, r(L - x + 1, L - 1)]; } // 最大の辺 L は1つだけ、三角形ができる
+          const [a, b, c] = shuffle(r, S); // BC=a, CA=b, AB=c
+          const L = Math.max(a, b, c), X = a === L ? "A" : b === L ? "B" : "C";
+          const [u, v] = X === "A" ? [b, c] : X === "B" ? [c, a] : [a, b]; // 角 X をはさむ2辺
+          const nm = u * u + v * v - L * L, kinds = ["鋭角", "直角", "鈍角"];
+          const kind = nm > 0 ? "鋭角" : nm === 0 ? "直角" : "鈍角";
+          const C = (Y, k) => `${tex(`\\angle ${Y}`)} が最大で、${k}`;
+          const ok = C(X, kind);
+          const other = ["A", "B", "C"].filter((Y) => Y !== X);
+          const side = { A: "BC", B: "CA", C: "AB" }[X];
+          return {
+            q: `${tex("\\triangle ABC")} で ${tex(`BC=${a},\\ CA=${b},\\ AB=${c}`)} のとき、最も大きい角と、その角が鋭角・直角・鈍角のどれかの組み合わせとして正しいものは？`,
+            ans: ok,
+            choices: choices4(r, ok, [...kinds.filter((k) => k !== kind).map((k) => C(X, k)), C(pick(r, other), kind)]),
+            hint: "最も大きい角は、最も長い辺の向かい側にある。その角の $\\cos$ の符号を余弦定理で調べる。",
+            steps: [
+              `最も長い辺は ${side} $=${L}$ なので、最も大きい角は $\\angle ${X}$`,
+              `$\\cos ${X}=\\frac{${u}^{2}+${v}^{2}-${L}^{2}}{2\\cdot ${u}\\cdot ${v}}=${fr(nm, 2 * u * v)}$`,
+              `$\\cos ${X}${nm > 0 ? ">" : nm === 0 ? "=" : "<"}0$ なので $\\angle ${X}$ は${kind}`,
+            ],
+          };
+        }),
       ],
       2: [
         t("HI-seigen-2a", (r) => {
@@ -3176,6 +3439,28 @@ export const UNITS = [
             steps: [
               `$\\frac{CA}{\\sin B}=\\frac{BC}{\\sin A}$ より $CA=\\frac{${a}\\sin ${deg(B)}}{\\sin ${deg(A)}}$`,
               `$=${a}\\cdot ${tv("sin", B)}\\div ${tv("sin", A)}=${okS}$`,
+            ],
+          };
+        }),
+        t("HI-seigen-2d", (r) => {
+          // BC=x の2次方程式 x^2-sx+P=0 の解 r1, r2 から作る（s=r1+r2、P=r1r2=AB^2-CA^2）
+          const r1 = r(1, 6), r2 = pick(r, [-8, -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7, 8].filter((x) => x !== r1 && x !== -r1));
+          const s = r1 + r2, B = s > 0 ? 60 : 120, c = Math.abs(s), b2 = c * c - r1 * r2;
+          const vals = [r1, r2].filter((x) => x > 0).sort((x, y) => x - y);
+          const V = (arr) => tex(`BC=${arr.join(",\\ ")}`);
+          const ok = V(vals);
+          // ∠B を CA と AB の間の角と取り違えたときの値（CA が整数のときだけ）
+          const bb = Math.round(Math.sqrt(b2)), wp = bb * bb === b2 ? tex(`BC=${sqrtTex(1, b2 + c * c - (B === 60 ? 1 : -1) * c * bb)}`) : null;
+          const wr = vals.length === 2 ? [V([vals[0]]), V([vals[1]]), wp] : [V([r1, Math.abs(r2)].sort((x, y) => x - y)), V([Math.abs(r2)]), wp];
+          return {
+            q: `${tex("\\triangle ABC")} で ${tex(`CA=${sqrtTex(1, b2)},\\ AB=${c},\\ \\angle B=${deg(B)}`)} のとき、辺 ${tex("BC")} の長さとして考えられる値をすべて挙げたものは？`,
+            ans: ok,
+            choices: choices4(r, ok, wr, (i) => V([vals[vals.length - 1] + i + 1])),
+            hint: "$\\angle B$ をはさむ2辺は $AB$ と $BC$。$BC=x$ とおき、辺 $CA$ について余弦定理の式を立てる。",
+            steps: [
+              `$BC=x$ とおくと、余弦定理より $${b2}=${c}^{2}+x^{2}-2\\cdot ${c}\\cdot x\\cos ${deg(B)}$`,
+              `整理して $${poly([1, -s, r1 * r2])}=0$、$${fac2(r1, r2)}=0$`,
+              `$x>0$ より $BC=${vals.join(",\\ ")}$${vals.length === 2 ? "（条件に合う三角形は2通りある）" : ""}`,
             ],
           };
         }),
@@ -3227,6 +3512,31 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-seigen-3d", (r) => {
+          const p = r(1, 6), q = r(1, 6), h = r(1, 6); // AB=p, AD=q, AE=h
+          const AC = p * p + q * q, AF = p * p + h * h, CF = q * q + h * h, X = AC * AF;
+          const N = p * p * q * q + q * q * h * h + h * h * p * p;
+          const okS = fsq(1, N, 2);
+          const seen = new Set([Math.sqrt(N) / 2]);
+          const ws = [];
+          for (const [tx, v] of [[fsq(1, X, 2), Math.sqrt(X) / 2], [fsq(1, N, 1), Math.sqrt(N)], [fsq(1, AF * CF, 2), Math.sqrt(AF * CF) / 2], [fsq(1, N, 4), Math.sqrt(N) / 4], [fsq(1, AC * CF, 2), Math.sqrt(AC * CF) / 2]]) {
+            if ([...seen].some((w) => Math.abs(w - v) < 1e-9)) continue;
+            seen.add(v); ws.push(tex(tx));
+          }
+          const Rt = (n) => sqrtTex(1, n);
+          return {
+            q: `直方体 ABCD-EFGH（AE, BF, CG, DH は平行な辺）で ${tex(`AB=${p},\\ AD=${q},\\ AE=${h}`)} のとき、${tex("\\triangle AFC")} の面積は？`,
+            ans: tex(okS),
+            choices: choices4(r, tex(okS), ws),
+            hint: "3辺を三平方の定理で求め、余弦定理で1つの角の $\\cos$、そこから $\\sin$ を出して面積を求める。",
+            steps: [
+              `三平方の定理より $AC=${Rt(AC)}$、$AF=${Rt(AF)}$、$CF=${Rt(CF)}$`,
+              `$\\cos\\angle CAF=\\frac{AC^{2}+AF^{2}-CF^{2}}{2\\cdot AC\\cdot AF}=\\frac{${2 * p * p}}{2\\sqrt{${AC}}\\sqrt{${AF}}}=\\frac{${p * p}}{\\sqrt{${X}}}$`,
+              `$\\sin\\angle CAF=\\sqrt{1-\\frac{${p ** 4}}{${X}}}=\\frac{\\sqrt{${N}}}{\\sqrt{${X}}}$`,
+              `$S=\\frac{1}{2}\\cdot AC\\cdot AF\\sin\\angle CAF=\\frac{1}{2}\\sqrt{${N}}=${okS}$`,
+            ],
+          };
+        }),
       ],
       4: [
         t("HI-seigen-4a", (r) => {
@@ -3273,6 +3583,64 @@ export const UNITS = [
             choices: choices4(r, ok, [tex(fracTex(b * c, b + c)), tex(fsq(b * c, s, 2 * (b + c))), tex(fsq(2 * b * c, s, b + c))], (i) => tex(fsq(b * c + i + 1, s, b + c))),
             hint: "面積を2通りに表す：$\\triangle ABC=\\triangle ABD+\\triangle ACD$",
             steps: [...base, `$\\frac{1}{2}x(${b + c})\\cdot ${tv("sin", half)}=\\frac{1}{2}\\cdot ${b * c}\\cdot ${tv("sin", A)}$`, `$x=${okS}$`],
+          };
+        }),
+        t("HI-seigen-4c", (r) => {
+          const a = r(1, 6), b = r(a + 1, 8), obtuse = r(0, 1) === 1;
+          const Sq = (n) => sqrtTex(1, n), lo = Sq(b * b - a * a), hi = Sq(a * a + b * b);
+          const ok = obtuse ? `${b - a}<x<${lo},\\ ${hi}<x<${a + b}` : `${lo}<x<${hi}`;
+          const wr = obtuse
+            ? [`${hi}<x<${a + b}`, `0<x<${lo},\\ ${hi}<x<${a + b}`, `${b - a}<x<${lo},\\ ${hi}<x`, `${hi}<x`]
+            : [`${b - a}<x<${hi}`, `${b}<x<${hi}`, `${lo}<x<${a + b}`, `${b - a}<x<${a + b}`];
+          return {
+            q: `3辺の長さが ${a}, ${b}, ${tex("x")} である三角形が${obtuse ? "鈍角" : "鋭角"}三角形となるような ${tex("x")} の値の範囲は？`,
+            ans: tex(ok),
+            choices: choices4(r, tex(ok), wr.map(tex)),
+            hint: `三角形ができる条件と、どの辺が最も長いかの場合分けで考える。${obtuse ? "鈍角" : "鋭角"}かどうかは、最も長い辺の向かい側の角で決まる。`,
+            steps: [
+              `三角形ができる条件は $${b - a}<x<${a + b}$`,
+              obtuse ? `$x\\geqq ${b}$ のとき最も長い辺は $x$：$x^{2}>${a * a}+${b * b}$ より $x>${hi}$` : `$x\\geqq ${b}$ のとき最も長い辺は $x$：$x^{2}<${a * a}+${b * b}$ より $${b}\\leqq x<${hi}$`,
+              obtuse ? `$x<${b}$ のとき最も長い辺は ${b}：$${b * b}>${a * a}+x^{2}$ より $x<${lo}$` : `$x<${b}$ のとき最も長い辺は ${b}：$${b * b}<${a * a}+x^{2}$ より $${lo}<x<${b}$`,
+              `三角形ができる条件と合わせて $${ok}$`,
+            ],
+          };
+        }),
+        t("HI-seigen-4d", (r) => {
+          const k = 2 * r(2, 6), h = k / 2, A = pick(r, [60, 90, 120]), askBC = r(0, 1) === 1;
+          const m = { 60: 3, 90: 2, 120: 1 }[A]; // BC^2 = m x^2 - m k x + k^2（m = 2+2cos A）
+          const s = { 60: 1, 90: 2, 120: 3 }[A]; // BC の最小値 = h√s
+          const pick3 = (ok, cands) => { const seen = [ok[1]], ws = []; for (const [tx, v] of cands) { if (seen.some((w) => Math.abs(w - v) < 1e-9)) continue; seen.push(v); ws.push(tex(tx)); } return choices4(r, tex(ok[0]), ws.slice(0, 3)); };
+          const head = `${tex("\\triangle ABC")} で ${tex(`AB+AC=${k},\\ \\angle A=${deg(A)}`)} のとき、`;
+          const st0 = `$AB=x$ とおくと $AC=${k}-x$（$0<x<${k}$）`;
+          if (askBC) {
+            const ok = [fsq(h, s), h * Math.sqrt(s)];
+            const err = { 60: 3, 90: 2, 120: 1 }[A]; // cos の符号を間違えたとき
+            return {
+              q: head + `辺 ${tex("BC")} の長さの最小値は？`,
+              ans: tex(ok[0]),
+              choices: pick3(ok, [[fsq(h, err), h * Math.sqrt(err)], [String(s * h * h), s * h * h], [String(k), k], [fsq(h, 1), h], [fsq(h, 2), h * Math.SQRT2], [fsq(h, 3), h * Math.sqrt(3)]]),
+              hint: `$AB=x$ とおくと $AC=${k}-x$。$BC^{2}$ を $x$ の2次関数で表す。`,
+              steps: [
+                st0,
+                `$BC^{2}=x^{2}+(${k}-x)^{2}-2x(${k}-x)\\cos ${deg(A)}=${poly([m, -m * k, k * k])}$`,
+                `$=${m === 1 ? "" : m}(x-${h})^{2}+${s * h * h}$`,
+                `$x=${h}$ のとき最小で、$BC=\\sqrt{${s * h * h}}=${ok[0]}$`,
+              ],
+            };
+          }
+          const sv = A === 90 ? [1, 1] : [1, 3]; // sin A = √sv[1]/(2 or 1)
+          const sd = A === 90 ? 1 : 2;
+          const okT = fsq(h * h, sv[1], 2 * sd), okV = (h * h * Math.sqrt(sv[1])) / (2 * sd);
+          return {
+            q: head + `${tex("\\triangle ABC")} の面積の最大値は？`,
+            ans: tex(okT),
+            choices: pick3([okT, okV], [[fsq(h * h, sv[1], sd), okV * 2], [fsq(h * h, 1, 2), (h * h) / 2], [fsq(k * k, sv[1], 2 * sd), okV * 4], [fsq(h * h, sv[1], 4 * sd), okV / 2]]),
+            hint: `$AB=x$ とおくと $AC=${k}-x$。面積を $x$ の2次関数で表す。`,
+            steps: [
+              st0,
+              `$S=\\frac{1}{2}x(${k}-x)\\sin ${deg(A)}=${fsq(1, sv[1], 2 * sd)}(-x^{2}+${k}x)=${fsq(1, sv[1], 2 * sd)}\\left\\{-(x-${h})^{2}+${h * h}\\right\\}$`,
+              `$x=${h}$ のとき最大で、$S=${fsq(1, sv[1], 2 * sd)}\\cdot ${h * h}=${okT}$`,
+            ],
           };
         }),
       ],

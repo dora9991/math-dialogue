@@ -281,6 +281,7 @@ export const UNITS = [
               [ans, wr, rule] = [ex(W, D, v), [ex(W, T, v), ex(v, D, W), ex(W, "-", v)], "全体の重さ ÷ L の数 ＝ 1L の重さ"];
             } else {
               const W = round(w * r(3, 12));
+              if (round(W - w) === round(W / w)) return { skip: true }; // 4.5 − 1.5 ＝ 4.5 ÷ 1.5 のように、ひき算の誤答が同じ値になる組をさける
               q = `${W}kg の米を、1ふくろに ${w}kg ずつ入れます。何ふくろできるかを求める式はどれですか。`;
               [ans, wr, rule] = [ex(W, D, w), [ex(W, T, w), ex(w, D, W), ex(W, "-", w)], "全体の重さ ÷ 1ふくろの重さ ＝ ふくろの数"];
             }
@@ -2215,6 +2216,7 @@ export const UNITS = [
             const L = pick(r, [10, 20, 25]);
             const p = r(1, 19) * 5;
             const x = round((L * p) / 100);
+            if (!Number.isInteger(round(x * 10))) return { skip: true }; // 1.25cm のような長さは、ものさし（mm）でかけない・読めない
             if (k === 0) {
               return {
                 q: `全体の長さが ${L}cm の帯グラフをかきます。全体の ${p}％ を表す部分の長さは、何cmにすればよいですか。`,
@@ -2469,26 +2471,27 @@ export const UNITS = [
           if (k === 0) {
             const a = r(3, 15);
             const h = r(3, 15);
-            if (a === h) return { skip: true };
+            if (a === h || (a + h) * 2 === (a * h) / 2) return { skip: true }; // 誤答の式が同じ値になる組（6 と 12）はさける
             q = `底辺が ${a}cm、高さが ${h}cm の三角形の面積を求める式はどれですか。`;
             [ans, wr, rule] = [$(`${a} ${T} ${h} ${D} 2`), [$(`${a} ${T} ${h}`), $(`(${a} + ${h}) ${T} 2`), $(`${a} ${T} ${h} ${T} 2`)], "三角形の面積 ＝ 底辺 × 高さ ÷ 2"];
           } else if (k === 1) {
             const a = r(4, 15);
             const h = r(3, 12);
             const s = h + r(1, 4);
-            if (a === s) return { skip: true };
+            if (a === s || (a + s) * 2 === a * h) return { skip: true }; // 誤答の式が同じ値になる組はさける
             q = `底辺が ${a}cm、高さが ${h}cm、ななめの辺の長さが ${s}cm の平行四辺形の面積を求める式はどれですか。`;
             [ans, wr, rule] = [$(`${a} ${T} ${h}`), [$(`${a} ${T} ${s}`), $(`${a} ${T} ${h} ${D} 2`), $(`(${a} + ${s}) ${T} 2`)], "平行四辺形の面積 ＝ 底辺 × 高さ（ななめの辺は使わない）"];
           } else if (k === 2) {
             const a = r(2, 9);
             const b = r(a + 1, 15);
             const h = r(2, 12);
+            if (h === 2) return { skip: true }; // 高さ 2cm だと ( ) をわすれた誤答 a ＋ b × 2 ÷ 2 が同じ値になる
             q = `上底が ${a}cm、下底が ${b}cm、高さが ${h}cm の台形の面積を求める式はどれですか。`;
             [ans, wr, rule] = [$(`(${a} + ${b}) ${T} ${h} ${D} 2`), [$(`${a} + ${b} ${T} ${h} ${D} 2`), $(`(${a} + ${b}) ${T} ${h}`), $(`${a} ${T} ${b} ${T} ${h} ${D} 2`)], "台形の面積 ＝ (上底 ＋ 下底) × 高さ ÷ 2（( ) をわすれない）"];
           } else {
             const d1 = r(4, 16);
             const d2 = r(4, 16);
-            if (d1 === d2) return { skip: true };
+            if (d1 === d2 || (d1 + d2) * 2 === (d1 * d2) / 2) return { skip: true }; // 誤答の式が同じ値になる組（6 と 12）はさける
             q = `2本の対角線の長さが ${d1}cm と ${d2}cm のひし形の面積を求める式はどれですか。`;
             [ans, wr, rule] = [$(`${d1} ${T} ${d2} ${D} 2`), [$(`${d1} ${T} ${d2}`), $(`(${d1} + ${d2}) ${T} 2`), $(`${d1} ${T} ${d2} ${T} 2`)], "ひし形の面積 ＝ 対角線 × 対角線 ÷ 2"];
           }
