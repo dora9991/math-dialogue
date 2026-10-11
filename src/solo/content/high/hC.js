@@ -1518,6 +1518,47 @@ const KYOKUSEN = {
           ],
         };
       }),
+      t("HC-kyokusen-1d", (r) => {
+        // 極座標と直交座標の変換
+        const deg = pick(r, [30, 45, 60, 120, 135, 150, 210, 225, 240, 300, 315, 330]);
+        const k = r(1, 3);
+        const f45 = deg % 90 === 45;
+        const [c, s] = trig(deg);
+        const mul = f45 ? [k, 2] : [2 * k, 1];
+        const cx = (sg) => surd(sg * c[0] * mul[0], c[1], c[2] * mul[1]);
+        const sy = (sg) => surd(sg * s[0] * mul[0], s[1], s[2] * mul[1]);
+        const xy = (X, Y) => `$(${X},\\ ${Y})$`;
+        const rT = f45 ? sqrtTex(k, 2) : String(2 * k);
+        const r2 = f45 ? 2 * k * k : 4 * k * k;
+        const pol = (rr, dd) => `$\\left(${rr},\\ ${radT(dd)}\\right)$`;
+        const ref = Math.min(deg % 180, 180 - (deg % 180));
+        const X2 = Math.round(r2 * Math.cos((deg * Math.PI) / 180) ** 2), Y2 = r2 - X2;
+        if (r(0, 1) === 1) {
+          const ans = xy(cx(1), sy(1));
+          return {
+            q: `極座標が $\\left(${rT},\\ ${radT(deg)}\\right)$ である点の直交座標を求めよ。`,
+            ans,
+            choices: choices4(r, ans, [xy(sy(1), cx(1)), xy(cx(-1), sy(1)), xy(cx(1), sy(-1)), xy(cx(-1), sy(-1))]),
+            hint: "極座標が $(r,\\ \\theta)$ の点の直交座標は $(r\\cos\\theta,\\ r\\sin\\theta)$。",
+            steps: [
+              `$x=${rT}\\cos${radT(deg)}=${cx(1)}$, $y=${rT}\\sin${radT(deg)}=${sy(1)}$`,
+              `よって ${ans}`,
+            ],
+          };
+        }
+        const ans = pol(rT, deg);
+        return {
+          q: `直交座標が ${xy(cx(1), sy(1))} である点の極座標 $(r,\\ \\theta)$ を求めよ。ただし $r>0$, $0\\leqq\\theta<2\\pi$ とする。`,
+          ans,
+          choices: choices4(r, ans, [pol(rT, ref), pol(rT, (deg + 180) % 360), pol(rT, 360 - deg), pol(String(r2), deg)]),
+          hint: "$r=\\sqrt{x^{2}+y^{2}}$ を求め、$\\cos\\theta=\\frac{x}{r}$, $\\sin\\theta=\\frac{y}{r}$ から θ を決める。点がどの象限にあるかに注意。",
+          steps: [
+            `$r=\\sqrt{${X2}+${Y2}}=${rT}$`,
+            `$\\cos\\theta=${surd(...c)}$, $\\sin\\theta=${surd(...s)}$ より $\\theta=${radT(deg)}$`,
+            `よって ${ans}`,
+          ],
+        };
+      }),
     ],
     2: [
       t("HC-kyokusen-2a", (r) => {
@@ -1584,6 +1625,47 @@ const KYOKUSEN = {
           ],
         };
       }),
+      t("HC-kyokusen-2d", (r) => {
+        // 一般形の楕円・双曲線を平方完成して焦点を求める（平行移動）
+        const hyp = r(0, 2) === 0;
+        const a = r(1, 3), b = r(1, 3);
+        if (!hyp && a === b) return { skip: true };
+        const h = r(-3, 3), k = r(-3, 3);
+        const sg = hyp ? -1 : 1;
+        // b²(x−h)² ± a²(y−k)² = a²b² を展開して係数の最大公約数でわる
+        let co = [b * b, sg * a * a, -2 * b * b * h, -2 * sg * a * a * k, b * b * h * h + sg * a * a * k * k - a * a * b * b];
+        const g = co.reduce((x, y) => gcd(x, y));
+        co = co.map((x) => x / g);
+        const R0 = (a * a * b * b) / g;
+        const c2 = hyp ? a * a + b * b : Math.abs(a * a - b * b);
+        const vert = !hyp && b > a;
+        const cf = (x) => (x === 1 ? "" : String(x));
+        const eq = `${cf(co[0])}x^{2}${co[1] > 0 ? "+" : "-"}${cf(Math.abs(co[1]))}y^{2}${signedVar(co[2], "x")}${signedVar(co[3], "y")}${co[4] === 0 ? "" : signed(co[4])}=0`;
+        const pmT = (H, s, cc2) => {
+          const [m0, rad] = sqrtSimp(cc2);
+          if (rad === 1) return String(H + s * m0);
+          const rt = sqrtTex(1, cc2);
+          return H === 0 ? (s > 0 ? rt : `-${rt}`) : `${H}${s > 0 ? "+" : "-"}${rt}`;
+        };
+        const foci = (cc2, v, H, K) => (v ? `$(${H},\\ ${pmT(K, 1, cc2)})$, $(${H},\\ ${pmT(K, -1, cc2)})$` : `$(${pmT(H, 1, cc2)},\\ ${K})$, $(${pmT(H, -1, cc2)},\\ ${K})$`);
+        const ans = foci(c2, vert, h, k);
+        const c2w = hyp ? Math.abs(a * a - b * b) : a * a + b * b; // 楕円と双曲線の取り違え
+        const wr = [...(c2w > 0 ? [foci(c2w, vert, h, k)] : []), foci(c2, !vert, h, k), foci(c2, vert, -h, -k), foci(c2, vert, 0, 0)];
+        const fr = (num, d) => (d === 1 ? num : `\\frac{${num}}{${d}}`);
+        const std = `${fr(sqv("x", h), a * a)}${sg > 0 ? "+" : "-"}${fr(sqv("y", k), b * b)}`;
+        return {
+          q: `${hyp ? "双曲線" : "楕円"} $${eq}$ の焦点の座標を求めよ。`,
+          ans,
+          choices: choices4(r, ans, wr, (i) => foci(c2 + i + 1, vert, h, k)),
+          hint: "x, y それぞれについて平方完成し、標準形を平行移動した形にする。",
+          steps: [
+            `平方完成すると $${cf(co[0])}${sqv("x", h)}${co[1] > 0 ? "+" : "-"}${cf(Math.abs(co[1]))}${sqv("y", k)}=${R0}$`,
+            R0 === 1 ? `中心は $(${h},\\ ${k})$` : `両辺を ${R0} でわって $${std}=1$ で、中心は $(${h},\\ ${k})$`,
+            `$c^{2}=${hyp ? `${a * a}+${b * b}` : `${Math.max(a, b) ** 2}-${Math.min(a, b) ** 2}`}=${c2}$ より $c=${sqrtTex(1, c2)}$。焦点は中心から ${vert ? "y" : "x"} 軸方向に $\\pm${sqrtTex(1, c2)}$ ずれた点`,
+            `よって ${ans}`,
+          ],
+        };
+      }),
     ],
     3: [
       t("HC-kyokusen-3a", (r) => {
@@ -1636,6 +1718,27 @@ const KYOKUSEN = {
             `焦点 F$(${p},\\ 0)$、直線 $y=${mT}(x-${p})$ を代入：$${lin([[m * m, 1, "x^{2}"], [-(2 * p * m * m + 4 * p), 1, "x"], [m * m * p * p, 1, ""]])}=0$`,
             `$x_{1}+x_{2}=${fracTex(2 * p * m * m + 4 * p, m * m)}$`,
             `AB = AF + BF $=(x_{1}+${p})+(x_{2}+${p})=${fracTex(4 * p * (m * m + 1), m * m)}$`,
+          ],
+        };
+      }),
+      t("HC-kyokusen-3d", (r) => {
+        // 楕円と直線の2交点の中点（解と係数の関係）
+        const a = r(1, 5), b = r(1, 5);
+        if (a === b) return { skip: true };
+        const m = rnz(r, -3, 3), k = rnz(r, -6, 6);
+        const A = b * b + a * a * m * m;
+        if (k * k >= A) return { skip: true }; // 異なる2点で交わる条件
+        const askY = r(0, 1) === 1;
+        const B1 = 2 * a * a * m * k, C1 = a * a * (k * k - b * b);
+        const lineT = `y=${m === 1 ? "" : m === -1 ? "-" : m}x${signed(k)}`;
+        return {
+          q: `楕円 $${conicT(a * a, b * b)}=1$ と直線 $${lineT}$ は異なる2点 P, Q で交わる。線分 PQ の中点の ${askY ? "y" : "x"} 座標を求めよ。`,
+          ans: askY ? fracAns(b * b * k, A) : fracAns(-a * a * m * k, A),
+          hint: "交点の x 座標を $x_{1}$, $x_{2}$ とすると、中点の x 座標は $\\frac{x_{1}+x_{2}}{2}$。解と係数の関係を使う。",
+          steps: [
+            `$${lineT}$ を代入して整理すると $${A}x^{2}${signed(B1)}x${C1 === 0 ? "" : signed(C1)}=0$`,
+            `2つの解を $x_{1}$, $x_{2}$ とすると $x_{1}+x_{2}=${fracTex(-B1, A)}$`,
+            `中点の x 座標は $\\frac{x_{1}+x_{2}}{2}=${fracTex(-a * a * m * k, A)}$${askY ? `、y 座標は直線の式に代入して $${fracTex(b * b * k, A)}$` : ""}`,
           ],
         };
       }),
@@ -1716,6 +1819,55 @@ const KYOKUSEN = {
             `$\\theta=0$ で $r=${sg > 0 ? rp : rm}$、$\\theta=\\pi$ で $r=${sg > 0 ? rm : rp}$`,
             `長軸の両端は $(${sg > 0 ? rp : rm},\\ 0)$ と $(-${sg > 0 ? rm : rp},\\ 0)$`,
             askAxis ? `長軸の長さは $${rp}+${rm}=${fracTex(2 * l * m, D)}$` : `中心の x 座標は両端の中点で $${fracTex(sg * l * n, D)}$`,
+          ],
+        };
+      }),
+      t("HC-kyokusen-4d", (r) => {
+        // 楕円上の点と x 軸上の定点の距離の最小値（2次関数の軸が x の範囲の中か外かで場合分け）
+        const [a, b, c] = pick(r, [[5, 4, 3], [5, 3, 4], [10, 8, 6], [10, 6, 8], [13, 12, 5], [13, 5, 12], [17, 15, 8], [17, 8, 15]]);
+        const t0 = r(1, a - 1) * sgn(r), at = Math.abs(t0);
+        const inner = at * a < c * c; // 軸 x=a²t/c² が -a≦x≦a の中（等号は起こらない）
+        const ansT = inner ? surd(b, c, c * c - at * at) : String(a - at);
+        const ans = `$${ansT}$`;
+        const wr = [];
+        if (inner) wr.push(`$${a - at}$`); // 長軸の端が最も近いと思う
+        else if (at < c) wr.push(`$${surd(b, c, c * c - at * at)}$`); // x の範囲を忘れて頂点の値を使う
+        wr.push(`$${sqrtTex(1, at * at + b * b)}$`, `$${b}$`, `$${a + at}$`);
+        const x0T = fracTex(a * a * at, c * c);
+        const valN = b * b * (c * c - at * at);
+        const end = t0 > 0 ? a : -a;
+        const ax0 = `${t0 > 0 ? "" : "-"}${x0T}`;
+        return {
+          q: `楕円 $${conicT(a * a, b * b)}=1$ 上の点 P と点 A$(${t0},\\ 0)$ の距離 AP の最小値を求めよ。`,
+          ans,
+          choices: choices4(r, ans, wr, (i) => `$${a - at + i + 1}$`),
+          hint: "P$(x,\\ y)$ とおき、$y^{2}$ を消去して $\\mathrm{AP}^{2}$ を x の2次関数で表す。x の範囲に注意。",
+          steps: [
+            `P$(x,\\ y)$ とすると $y^{2}=${b * b}-${fracTex(b * b, a * a)}x^{2}$ なので $\\mathrm{AP}^{2}=${sqv("x", t0)}+y^{2}=${fracTex(c * c, a * a)}x^{2}${signed(-2 * t0)}x+${t0 * t0 + b * b}$（$-${a}\\leqq x\\leqq${a}$）`,
+            `$=${fracTex(c * c, a * a)}\\left(x${t0 > 0 ? "-" : "+"}${x0T}\\right)^{2}${valN === 0 ? "" : valN > 0 ? `+${fracTex(valN, c * c)}` : fracTex(valN, c * c)}$ で、軸は $x=${ax0}$`,
+            inner
+              ? `軸は範囲 $-${a}\\leqq x\\leqq${a}$ の中にあるので、$x=${ax0}$ のとき最小。最小値は $\\sqrt{${fracTex(valN, c * c)}}=${ansT}$`
+              : `軸は範囲 $-${a}\\leqq x\\leqq${a}$ の外にあるので、$x=${end}$ のとき最小。最小値は $${a}-${at}=${a - at}$`,
+          ],
+        };
+      }),
+      t("HC-kyokusen-4e", (r) => {
+        // 楕円に内接する三角形の面積の最大値（円に拡大して正三角形に帰着）
+        const a = r(1, 6), b = r(1, 6);
+        if (a === b) return { skip: true };
+        const mode = r(0, 2);
+        const ans = `$${surd(3 * a * b, 4, 3)}$`;
+        const cond = mode === 1 ? `で、1つの頂点が点 $(${a},\\ 0)$ であるもの` : mode === 2 ? `で、1つの頂点が点 $(0,\\ ${b})$ であるもの` : "";
+        const ac = termTex(a, 1, "\\cos\\theta"), as = termTex(a, 1, "\\sin\\theta"), bs = termTex(b, 1, "\\sin\\theta");
+        return {
+          q: `楕円 $${conicT(a * a, b * b)}=1$ に内接する三角形${cond}の面積の最大値を求めよ。`,
+          ans,
+          choices: choices4(r, ans, [`$${surd(3 * Math.max(a, b) ** 2, 4, 3)}$`, `$${a * b}$`, `$${surd(3 * Math.min(a, b) ** 2, 4, 3)}$`, `$${surd(a * b, 4, 3)}$`]),
+          hint: "楕円を一方向に拡大（縮小）して円に移すと、図形の面積はすべて同じ比で変わる。",
+          steps: [
+            `楕円上の点 $(${ac},\\ ${bs})$ を $(${ac},\\ ${as})$ に移す（y 軸方向に $${fracTex(a, b)}$ 倍する）と、楕円は円 $x^{2}+y^{2}=${a * a}$ に移り、面積はすべて $${fracTex(a, b)}$ 倍になる`,
+            `円に内接する三角形の面積が最大になるのは正三角形のときで、その面積は $\\frac{3\\sqrt{3}}{4}\\times${a * a}=${surd(3 * a * a, 4, 3)}$${mode ? "（円周上のどの点も正三角形の頂点にできる）" : ""}`,
+            `もとに戻すと面積は $${fracTex(b, a)}$ 倍なので、最大値は ${ans}`,
           ],
         };
       }),

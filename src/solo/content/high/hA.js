@@ -105,20 +105,31 @@ export const UNITS = [
           };
         }),
         t("HA-baai-1d", (r) => {
-          const [a, b] = pick(r, [[2, 3], [2, 5], [3, 4], [3, 5], [2, 7], [3, 7], [4, 5], [5, 7], [4, 6], [6, 8], [4, 10], [6, 9]]);
-          const N = r(5, 30) * 10, kind = r(0, 2);
-          const L = lcm(a, b), A = Math.floor(N / a), B = Math.floor(N / b), AB = Math.floor(N / L), U = A + B - AB;
-          const v = [U, N - U, A - AB][kind];
-          const what = [`${a} の倍数または ${b} の倍数`, `${a} の倍数でも ${b} の倍数でもない数`, `${a} の倍数であるが ${b} の倍数でない数`][kind];
+          const U = r(30, 60), A = r(10, U - 15), B = r(10, U - 15);
+          const AB = r(Math.max(1, A + B - U + 1), Math.min(A, B) - 1);
+          const S = A + B - AB, kind = r(0, 3);
+          if (kind === 3) {
+            const [p1, p2] = pick(r, [["犬を飼っている", "猫を飼っている"], ["数学が好きな", "英語が好きな"], ["電車で通学している", "バスで通学している"]]);
+            return {
+              q: `ある学年の生徒 ${U} 人のうち、${p1}人は ${A} 人、${p2}人は ${B} 人、その両方である人は ${AB} 人である。どちらでもない人は何人？`,
+              ans: U - S,
+              unit: "人",
+              hint: "$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)$ で「少なくとも一方」の人数を出し、全体から引く。",
+              steps: [`${p1}人の集合を $A$、${p2}人の集合を $B$ とすると $n(A\\cup B)=${A}+${B}-${AB}=${S}$`, `どちらでもない人は $${U}-${S}=${U - S}$ 人`],
+            };
+          }
+          const name = ["A\\cup B", "\\overline{A}\\cap\\overline{B}", "A\\cap\\overline{B}"][kind];
           return {
-            q: `1 から ${N} までの整数のうち、${what}は何個？`,
-            ans: v,
+            q: `全体集合 $U$ とその部分集合 $A,\\ B$ について、$n(U)=${U},\\ n(A)=${A},\\ n(B)=${B},\\ n(A\\cap B)=${AB}$ のとき、$n(${name})$ は？`,
+            ans: [S, U - S, A - AB][kind],
             unit: "個",
-            hint: `${a} の倍数の集合を $A$、${b} の倍数の集合を $B$ として、$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)$ を使う。`,
+            hint: "$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)$、補集合は $n(\\overline{X})=n(U)-n(X)$ を使う。",
             steps: [
-              `${a} の倍数の集合を $A$、${b} の倍数の集合を $B$ とすると $n(A)=${A},\\ n(B)=${B}$（${N} をそれぞれで割った商）`,
-              `$A\\cap B$ は ${a} と ${b} の最小公倍数 ${L} の倍数の集合なので $n(A\\cap B)=${AB}$`,
-              [`$n(A\\cup B)=${A}+${B}-${AB}=${v}$`, `$n(\\overline{A\\cup B})=${N}-(${A}+${B}-${AB})=${v}$`, `$n(A)-n(A\\cap B)=${A}-${AB}=${v}$`][kind],
+              [
+                `$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)=${A}+${B}-${AB}=${S}$`,
+                `ド・モルガンの法則より $\\overline{A}\\cap\\overline{B}=\\overline{A\\cup B}$。$n(A\\cup B)=${A}+${B}-${AB}=${S}$ なので $n(\\overline{A\\cup B})=${U}-${S}=${U - S}$`,
+                `$A\\cap\\overline{B}$ は $A$ の要素のうち $B$ に属さないものの集合なので $n(A\\cap\\overline{B})=n(A)-n(A\\cap B)=${A}-${AB}=${A - AB}$`,
+              ][kind],
             ],
           };
         }),
@@ -182,6 +193,24 @@ export const UNITS = [
                 `全体 $${C_(n, k)}=${T}$ から、A も B も選ばれない $${C_(n - 2, k)}=${nCr(n - 2, k)}$ 通りを引く`,
               ][kind],
               [`$${nCr(m, i)}\\times ${nCr(w, k - i)}=${v}$`, `$${T}-${nCr(m, k)}${w >= k ? `-${nCr(w, k)}` : ""}=${v}$`, `$${C_(n - 2, k - 2)}=${v}$`, `$${T}-${nCr(n - 2, k)}=${v}$`][kind],
+            ],
+          };
+        }),
+        t("HA-baai-2e", (r) => {
+          const [a, b] = pick(r, [[2, 3], [2, 5], [3, 4], [3, 5], [2, 7], [3, 7], [4, 5], [5, 7], [4, 6], [6, 8], [4, 10], [6, 9]]);
+          const N = r(5, 30) * 10, kind = r(0, 2);
+          const L = lcm(a, b), A = Math.floor(N / a), B = Math.floor(N / b), AB = Math.floor(N / L), U = A + B - AB;
+          const v = [U, N - U, A - AB][kind];
+          const what = [`${a} の倍数または ${b} の倍数`, `${a} の倍数でも ${b} の倍数でもない数`, `${a} の倍数であるが ${b} の倍数でない数`][kind];
+          return {
+            q: `1 から ${N} までの整数のうち、${what}は何個？`,
+            ans: v,
+            unit: "個",
+            hint: `${a} の倍数の集合を $A$、${b} の倍数の集合を $B$ として、$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)$ を使う。`,
+            steps: [
+              `${a} の倍数の集合を $A$、${b} の倍数の集合を $B$ とすると $n(A)=${A},\\ n(B)=${B}$（${N} をそれぞれで割った商）`,
+              `$A\\cap B$ は ${a} と ${b} の最小公倍数 ${L} の倍数の集合なので $n(A\\cap B)=${AB}$`,
+              [`$n(A\\cup B)=${A}+${B}-${AB}=${v}$`, `$n(\\overline{A\\cup B})=${N}-(${A}+${B}-${AB})=${v}$`, `$n(A)-n(A\\cap B)=${A}-${AB}=${v}$`][kind],
             ],
           };
         }),
@@ -286,6 +315,40 @@ export const UNITS = [
             ],
           };
         }),
+        t("HA-baai-3e", (r) => {
+          const none = r(0, 1) === 1;
+          if (r(0, 1)) {
+            const t3 = r(1, 4), ab = t3 + r(1, 5), bc = t3 + r(1, 5), ca = t3 + r(1, 5);
+            const A = ab + ca - t3 + r(2, 12), B = ab + bc - t3 + r(2, 12), C = bc + ca - t3 + r(2, 12);
+            const any = A + B + C - ab - bc - ca + t3, U = any + r(3, 15);
+            return {
+              q: `生徒 ${U} 人に3つの問題 A, B, C を解かせたところ、A を正解した人は ${A} 人、B は ${B} 人、C は ${C} 人、A と B の両方を正解した人は ${ab} 人、B と C の両方は ${bc} 人、C と A の両方は ${ca} 人、3問とも正解した人は ${t3} 人であった。${none ? "3問とも不正解だった" : "少なくとも1問を正解した"}人は何人？`,
+              ans: none ? U - any : any,
+              unit: "人",
+              hint: "$n(A\\cup B\\cup C)=n(A)+n(B)+n(C)-n(A\\cap B)-n(B\\cap C)-n(C\\cap A)+n(A\\cap B\\cap C)$",
+              steps: [
+                "問題 A, B, C を正解した人の集合を $A,\\ B,\\ C$ とする",
+                `$n(A\\cup B\\cup C)=${A}+${B}+${C}-${ab}-${bc}-${ca}+${t3}=${any}$`,
+                none ? `3問とも不正解の人は $${U}-${any}=${U - any}$ 人` : `少なくとも1問を正解した人は ${any} 人`,
+              ],
+            };
+          }
+          const N = r(10, 30) * 10, [a, b, c] = sample(r, [2, 3, 5, 7], 3).sort((x, y) => x - y);
+          const f = (k) => Math.floor(N / k);
+          const s1 = f(a) + f(b) + f(c), s2 = f(a * b) + f(b * c) + f(c * a), any = s1 - s2 + f(a * b * c);
+          return {
+            q: `1 から ${N} までの整数のうち、${a}, ${b}, ${c} の${none ? "どれでも割り切れない" : "少なくとも1つで割り切れる"}数は何個？`,
+            ans: none ? N - any : any,
+            unit: "個",
+            hint: "$n(A\\cup B\\cup C)=n(A)+n(B)+n(C)-n(A\\cap B)-n(B\\cap C)-n(C\\cap A)+n(A\\cap B\\cap C)$",
+            steps: [
+              `${a}, ${b}, ${c} の倍数の集合を $A,\\ B,\\ C$ とすると $n(A)=${f(a)},\\ n(B)=${f(b)},\\ n(C)=${f(c)}$`,
+              `$A\\cap B,\\ B\\cap C,\\ C\\cap A$ はそれぞれ ${a * b}, ${b * c}, ${c * a} の倍数で ${f(a * b)}, ${f(b * c)}, ${f(c * a)} 個、$A\\cap B\\cap C$ は ${a * b * c} の倍数で ${f(a * b * c)} 個`,
+              `$n(A\\cup B\\cup C)=${s1}-${s2}+${f(a * b * c)}=${any}$`,
+              ...(none ? [`どれでも割り切れない数は $${N}-${any}=${N - any}$ 個`] : []),
+            ],
+          };
+        }),
       ],
       4: [
         t("HA-baai-4a", (r) => {
@@ -369,6 +432,31 @@ export const UNITS = [
               `点 P を選ぶとき：P の両隣は選べないので、残りの1列 ${n - 3} 個から ${k - 1} 個を選ぶ：$${C_(n - k - 1, k - 1)}=${x}$`,
               `P を選ばないとき：残りの1列 ${n - 1} 個から ${k} 個を選ぶ：$${C_(n - k, k)}=${y}$`,
               `$${x}+${y}=${v}$ 通り`,
+            ],
+          };
+        }),
+        t("HA-baai-4f", (r) => {
+          const N = r(10, 30) * 10, kind = r(0, 2);
+          const [a, b, c] = pick(r, [[2, 3, 5], [2, 3, 7], [2, 5, 7], [3, 5, 7], [4, 6, 9], [4, 6, 10], [6, 10, 15], [4, 10, 25], [6, 9, 15]]);
+          const f = (k) => Math.floor(N / k), lab = lcm(a, b), lbc = lcm(b, c), lca = lcm(c, a), l3 = lcm(lab, c);
+          const nA = f(a), nB = f(b), nC = f(c), nAB = f(lab), nBC = f(lbc), nCA = f(lca), n3 = f(l3);
+          const x = nB + nC - nBC, y = nAB + nCA - n3;
+          const v = [x - y, nA + nB + nC - 2 * (nAB + nBC + nCA) + 3 * n3, nAB + nBC + nCA - 3 * n3][kind];
+          return {
+            q: kind === 0
+              ? `1 から ${N} までの整数で、${a} の倍数の集合を $A$、${b} の倍数の集合を $B$、${c} の倍数の集合を $C$ とする。$n(\\overline{A}\\cap(B\\cup C))$ は？`
+              : `1 から ${N} までの整数のうち、${a}, ${b}, ${c} のうち${kind === 1 ? "ちょうど1つ" : "ちょうど2つ"}だけで割り切れる数は何個？`,
+            ans: v,
+            unit: "個",
+            hint: "ベン図をかいて、求める部分を共通部分の個数で表す。共通部分は最小公倍数の倍数になることに注意。",
+            steps: [
+              `${kind === 0 ? "" : `${a}, ${b}, ${c} の倍数の集合を $A,\\ B,\\ C$ とする。`}$n(A)=${nA},\\ n(B)=${nB},\\ n(C)=${nC}$`,
+              `$A\\cap B$ は ${lab} の倍数で ${nAB} 個、$B\\cap C$ は ${lbc} の倍数で ${nBC} 個、$C\\cap A$ は ${lca} の倍数で ${nCA} 個、$A\\cap B\\cap C$ は ${l3} の倍数で ${n3} 個（いずれも最小公倍数の倍数）`,
+              [
+                `$n(B\\cup C)=${nB}+${nC}-${nBC}=${x}$、$n(A\\cap(B\\cup C))=n(A\\cap B)+n(C\\cap A)-n(A\\cap B\\cap C)=${nAB}+${nCA}-${n3}=${y}$ なので $${x}-${y}=${v}$`,
+                `$n(A\\cap B)$ などの和では、ちょうど2つに入る数は1回ずつ、3つすべてに入る数は3回数えている。ちょうど1つは $(${nA}+${nB}+${nC})-2(${nAB}+${nBC}+${nCA})+3\\times ${n3}=${v}$`,
+                `$n(A\\cap B)+n(B\\cap C)+n(C\\cap A)$ では、3つすべてに入る数を3回数えているので、ちょうど2つは $(${nAB}+${nBC}+${nCA})-3\\times ${n3}=${v}$`,
+              ][kind],
             ],
           };
         }),
@@ -1206,6 +1294,45 @@ export const UNITS = [
             ],
           };
         }),
+        t("HA-zukei-4c", (r) => {
+          const m = r(1, 5), n = r(1, 5);
+          if (m === n || gcd(m, n) !== 1) return { skip: true };
+          const S = m * m + m * n + n * n;
+          return {
+            q: `$\\triangle ABC$ の辺 BC, CA, AB を、それぞれ $${m}:${n}$ に内分する点を D, E, F とする（$BD:DC=CE:EA=AF:FB=${m}:${n}$）。線分 AD, BE, CF で囲まれる三角形の面積は、$\\triangle ABC$ の面積の何倍？`,
+            ans: fracAns((m - n) ** 2, S),
+            hint: "AD と BE の交点を R として、メネラウスの定理で $AR:RD$ を求め、$\\triangle ABR$ の面積を出す。残りの2つの三角形も同じ形（対称性）。",
+            steps: [
+              `AD と BE の交点を R とする。$\\triangle ADC$ と直線 BE でメネラウスの定理：$\\frac{AR}{RD}\\cdot\\frac{DB}{BC}\\cdot\\frac{CE}{EA}=1$ より $\\frac{AR}{RD}=\\frac{${m + n}}{${m}}\\cdot\\frac{${n}}{${m}}=${fracTex(n * (m + n), m * m)}$`,
+              `$\\triangle ABR=\\frac{BD}{BC}\\cdot\\frac{AR}{AD}\\triangle ABC$ で、$\\frac{${m}}{${m + n}}\\cdot\\frac{${n * (m + n)}}{${S}}=${fracTex(m * n, S)}$`,
+              `BE と CF の交点を P、CF と AD の交点を Q とすると、同じように $\\triangle BCP,\\ \\triangle CAQ$ も $\\triangle ABC$ の $${fracTex(m * n, S)}$ 倍`,
+              `$1-3\\times ${fracTex(m * n, S)}=${fracTex((m - n) ** 2, S)}$ 倍`,
+            ],
+          };
+        }),
+        t("HA-zukei-4d", (r) => {
+          const p = r(2, 9), q = r(2, 9), s = r(2, 9), u = r(2, 9);
+          if (2 * Math.max(p, q, s, u) >= p + q + s + u) return { skip: true };
+          const askA = r(0, 1) === 1;
+          const [nu, de] = askA ? [p * u, s * q] : [p * q, s * u];
+          if (nu === de) return { skip: true };
+          return {
+            q: `円に内接する四角形 ABCD で $AB=${p},\\ BC=${q},\\ CD=${s},\\ DA=${u}$ とする。対角線 AC と BD の交点を E とするとき、$${askA ? "\\frac{AE}{EC}" : "\\frac{BE}{ED}"}$ の値は？`,
+            ans: fracAns(nu, de),
+            hint: "対角線で分けられた4つの三角形のうち、円周角の定理で相似になる組を2つ見つけ、比をつなぐ。",
+            steps: askA
+              ? [
+                `円周角の定理より $\\triangle ABE\\sim\\triangle DCE$ なので $\\frac{AE}{DE}=\\frac{AB}{DC}=\\frac{${p}}{${s}}$`,
+                `同じように $\\triangle ADE\\sim\\triangle BCE$ なので $\\frac{DE}{CE}=\\frac{AD}{BC}=\\frac{${u}}{${q}}$`,
+                `$\\frac{AE}{EC}=\\frac{AE}{DE}\\cdot\\frac{DE}{CE}=\\frac{${p}\\cdot ${u}}{${s}\\cdot ${q}}=${fracTex(nu, de)}$`,
+              ]
+              : [
+                `円周角の定理より $\\triangle ABE\\sim\\triangle DCE$ なので $\\frac{BE}{CE}=\\frac{AB}{DC}=\\frac{${p}}{${s}}$`,
+                `同じように $\\triangle BCE\\sim\\triangle ADE$ なので $\\frac{CE}{DE}=\\frac{BC}{AD}=\\frac{${q}}{${u}}$`,
+                `$\\frac{BE}{ED}=\\frac{BE}{CE}\\cdot\\frac{CE}{DE}=\\frac{${p}\\cdot ${q}}{${s}\\cdot ${u}}=${fracTex(nu, de)}$`,
+              ],
+          };
+        }),
       ],
     },
   },
@@ -1263,6 +1390,27 @@ export const UNITS = [
             steps: [`$${terms}$`, `$=${v}$`],
           };
         }),
+        t("HA-seisu-1d", (r) => {
+          const k = pick(r, [3, 9, 4, 6]), len = r(4, 5);
+          const ds = [r(1, 9), ...Array.from({ length: len - 1 }, () => r(0, 9))];
+          const pos = k === 4 ? len - 1 : r(1, len - 2);
+          if (k === 6 && ds[len - 1] % 2 === 1) return { skip: true };
+          const str = ds.map((d, i) => (i === pos ? "□" : d)).join("");
+          const okd = [];
+          for (let x = 0; x <= 9; x++) if (Number(ds.map((d, i) => (i === pos ? x : d)).join("")) % k === 0) okd.push(x);
+          if (!okd.length) return { skip: true };
+          const known = ds.reduce((s, d, i) => (i === pos ? s : s + d), 0);
+          return {
+            q: `${len} 桁の整数 ${str} の □ に 0 から 9 までの数字を1つ入れる。この整数が ${k} の倍数になるような □ の数字は何個ある？`,
+            ans: okd.length,
+            unit: "個",
+            hint: `${k} の倍数の判定法を使う：${k === 4 ? "下2桁が 4 の倍数" : k === 6 ? "2 の倍数かつ 3 の倍数" : `各位の数字の和が ${k} の倍数`}。`,
+            steps: [
+              k === 4 ? `下2桁 ${ds[len - 2]}□ が 4 の倍数になればよい` : `${k === 6 ? "一の位が偶数なので 2 の倍数。あとは" : ""}各位の数字の和 $${known}+\\square$ が ${k === 6 ? 3 : k} の倍数になればよい`,
+              `□ に入るのは ${okd.join(", ")} の ${okd.length} 個`,
+            ],
+          };
+        }),
       ],
       2: [
         t("HA-seisu-2a", (r) => {
@@ -1308,6 +1456,28 @@ export const UNITS = [
             ans: x,
             hint: "互除法を逆にたどって1組の解を見つけるか、$x=1,\\ 2,\\ \\ldots$ と代入して $1-ax$ が $b$ で割り切れるものを探す。",
             steps: [`$x=${x}$ のとき $${a}\\times ${x}+${b}\\times(${y})=1$`, `一般解は $x=${x}+${b}k$、$y=${y}-${a}k$ なので、正で最小の $x$ は ${x}`],
+          };
+        }),
+        t("HA-seisu-2d", (r) => {
+          const m = pick(r, [5, 6, 7, 9, 11]), ra = r(1, m - 1), rb = r(1, m - 1);
+          const [ex, f, st] = pick(r, [
+            ["a+b", (x, y) => x + y, (x, y) => `${x}+${y}`],
+            ["a-b", (x, y) => x - y, (x, y) => `${x}-${y}`],
+            ["ab", (x, y) => x * y, (x, y) => `${x}\\times ${y}`],
+            ["a^{2}+b", (x, y) => x * x + y, (x, y) => `${x}^{2}+${y}`],
+            ["2a+3b", (x, y) => 2 * x + 3 * y, (x, y) => `2\\times ${x}+3\\times ${y}`],
+            ["a^{2}+b^{2}", (x, y) => x * x + y * y, (x, y) => `${x}^{2}+${y}^{2}`],
+          ]);
+          const raw = f(ra, rb), v = ((raw % m) + m) % m;
+          return {
+            q: `整数 $a$ を ${m} で割ると ${ra} 余り、整数 $b$ を ${m} で割ると ${rb} 余る。$${ex}$ を ${m} で割った余りは？`,
+            ans: v,
+            hint: `$a=${m}k+${ra},\\ b=${m}l+${rb}$ のようにおいて代入し、${m} の倍数になる部分を除いて考える。`,
+            steps: [
+              `$a=${m}k+${ra},\\ b=${m}l+${rb}$（$k,\\ l$ は整数）とおく`,
+              `$${ex}$ を計算すると、${m} の倍数になる項を除いて $${st(ra, rb)}=${raw}$ が残る`,
+              raw >= 0 ? `${raw} を ${m} で割った余りは ${v}` : `$${raw}=${m}\\times(${Math.floor(raw / m)})+${v}$ なので、余りは ${v}`,
+            ],
           };
         }),
       ],
@@ -1367,6 +1537,27 @@ export const UNITS = [
             ],
           };
         }),
+        t("HA-seisu-3d", (r) => {
+          const n = r(20, 2026), last = r(0, 1) === 1;
+          const b = last ? pick(r, [2, 3, 7, 8, 12, 13, 17, 18, 23, 27]) : pick(r, [2, 3, 5]);
+          const m = last ? 10 : pick(r, [7, 9, 11, 13]);
+          if (gcd(b, m) !== 1 && !last) return { skip: true };
+          const seq = [];
+          for (let v = b % m; !seq.includes(v); v = (v * b) % m) seq.push(v);
+          const L = seq.length, k = n % L, ans = seq[(n - 1) % L];
+          return {
+            q: last ? `$${b}^{${n}}$ の一の位の数字は？` : `$${b}^{${n}}$ を ${m} で割った余りは？`,
+            ans,
+            hint: last ? "一の位だけに注目して、累乗の一の位がどのようにくり返すかを調べる。" : `余りの積の余りは、余りどうしの積から求められる。$${b}^{1},\\ ${b}^{2},\\ \\ldots$ を ${m} で割った余りのくり返しを調べる。`,
+            steps: [
+              last
+                ? `一の位だけを考えればよい。$${b}^{1},\\ ${b}^{2},\\ ${b}^{3},\\ \\ldots$ の一の位は ${seq.join(", ")} をくり返す（${L} 個で1周）`
+                : `$${b}^{1},\\ ${b}^{2},\\ ${b}^{3},\\ \\ldots$ を ${m} で割った余りは ${seq.join(", ")} をくり返す（${L} 個で1周）`,
+              `${n} を ${L} で割った余りは ${k}${k === 0 ? "（割り切れるので、1周の最後と同じ）" : `（1周の ${k} 番目と同じ）`}`,
+              `${last ? "一の位の数字" : "余り"}は ${ans}`,
+            ],
+          };
+        }),
       ],
       4: [
         t("HA-seisu-4a", (r) => {
@@ -1416,6 +1607,73 @@ export const UNITS = [
               `$${m * m}a+${m}b+c=${n * n}c+${n}b+a$`,
               `整理して、数字の範囲から調べると $a=${a},\\ b=${b},\\ c=${c}$`,
               `$N=${a}\\times ${m * m}+${b}\\times ${m}+${c}=${N}$`,
+            ],
+          };
+        }),
+        t("HA-seisu-4d", (r) => {
+          const kind = r(0, 3), askMax = r(0, 1) === 1;
+          const sols = [];
+          let eq, st;
+          if (kind < 3) {
+            const k = kind + 1, K = k === 1 ? "" : k;
+            for (let x = 1; x * x <= 3 * k; x++) for (let y = x; x * y <= 3 * k; y++) {
+              const den = x * y - k, num = k * (x + y);
+              if (den > 0 && num % den === 0 && num / den >= y) sols.push([x, y, num / den]);
+            }
+            eq = `$xyz=${K}${k === 1 ? "x+y+z" : "(x+y+z)"}$`;
+            st = [
+              `$x\\leqq y\\leqq z$ より $xyz=${K}${k === 1 ? "x+y+z" : "(x+y+z)"}\\leqq ${3 * k}z$、よって $xy\\leqq ${3 * k}$。とくに $x^{2}\\leqq ${3 * k}$ から $x\\leqq ${Math.floor(Math.sqrt(3 * k))}$`,
+              `各 $x,\\ y$ について $z=\\frac{${k === 1 ? "x+y" : `${k}(x+y)`}}{xy-${k}}$ が $y$ 以上の自然数になるものを調べる`,
+            ];
+          } else {
+            for (let x = 2; x <= 3; x++) for (let y = x; y <= 2 * x; y++) {
+              const den = (x - 1) * y - x, num = x * y;
+              if (den > 0 && num % den === 0 && num / den >= y) sols.push([x, y, num / den]);
+            }
+            eq = "$\\frac{1}{x}+\\frac{1}{y}+\\frac{1}{z}=1$";
+            st = [
+              "$x\\leqq y\\leqq z$ より $1=\\frac{1}{x}+\\frac{1}{y}+\\frac{1}{z}\\leqq\\frac{3}{x}$、よって $x\\leqq 3$。$x=1$ は成り立たないので $x=2,\\ 3$",
+              "$x=2$ のとき $\\frac{1}{y}+\\frac{1}{z}=\\frac{1}{2}\\leqq\\frac{2}{y}$ より $y\\leqq 4$、$x=3$ のとき $\\frac{1}{y}+\\frac{1}{z}=\\frac{2}{3}\\leqq\\frac{2}{y}$ より $y\\leqq 3$ で調べる",
+            ];
+          }
+          const zmax = Math.max(...sols.map((s) => s[2]));
+          return {
+            q: askMax
+              ? `$x\\leqq y\\leqq z$ を満たす自然数 $x,\\ y,\\ z$ が ${eq} を満たすとき、$z$ の最大値は？`
+              : `$x\\leqq y\\leqq z$ を満たす自然数の組 $(x,\\ y,\\ z)$ のうち、${eq} を満たすものは何組？`,
+            ans: askMax ? zmax : sols.length,
+            ...(askMax ? {} : { unit: "組" }),
+            hint: "$x\\leqq y\\leqq z$ を使って式の大きさを不等式で評価し、いちばん小さい $x$ のとりうる値をしぼる。",
+            steps: [
+              ...st,
+              `$(x,\\ y,\\ z)=${sols.map((s) => `(${s.join(",\\ ")})`).join(",\\ ")}$`,
+              askMax ? `$z$ の最大値は ${zmax}` : `${sols.length} 組`,
+            ],
+          };
+        }),
+        t("HA-seisu-4e", (r) => {
+          const a = r(1, 6), b = r(1, 20), M = a * a + b, kind = r(0, 2);
+          const fac = [];
+          for (let p = 2, x = M; x > 1; p++) if (x % p === 0) { let e = 0; while (x % p === 0) { x /= p; e++; } fac.push([p, e]); }
+          let n2 = 1;
+          while (gcd(n2 + a, M) === 1) n2++;
+          const p2 = fac.map(([p]) => p).find((p) => (n2 + a) % p === 0);
+          const v = [M, M - a, n2][kind];
+          return {
+            q: [
+              `$n$ を自然数とするとき、$n+${a}$ と $n^{2}+${b}$ の最大公約数として考えられる最大の値は？`,
+              `$n$ を自然数とする。$n+${a}$ と $n^{2}+${b}$ の最大公約数が最も大きくなるような $n$ のうち、最小のものは？`,
+              `$n$ を自然数とする。$n+${a}$ と $n^{2}+${b}$ が 1 以外の公約数をもつような $n$ のうち、最小のものは？`,
+            ][kind],
+            ans: v,
+            hint: `$n^{2}+${b}$ を $n+${a}$ で割った余りを考え、互除法の原理（$a=bq+r$ なら $a$ と $b$ の最大公約数は $b$ と $r$ の最大公約数に等しい）を使う。`,
+            steps: [
+              `$n^{2}+${b}=(n+${a})(n-${a})+${M}$ なので、互除法の原理より、$n+${a}$ と $n^{2}+${b}$ の最大公約数は $n+${a}$ と ${M} の最大公約数に等しい`,
+              [
+                `それは ${M} の約数なので ${M} 以下。$n=${M - a}$ のとき $n+${a}=${M}$ となり、最大公約数は ${M} になる。最大値は ${M}`,
+                `最大公約数が最大の ${M} になるのは、$n+${a}$ が ${M} の倍数のとき。$n+${a}\\geqq ${a + 1}$ なので最小は $n+${a}=${M}$ のときで、$n=${M - a}$`,
+                `${fac.length === 1 && fac[0][1] === 1 ? `${M} は素数なので、$n+${a}$ が ${M} の倍数になればよい` : `$${M}=${fac.map(([p, e]) => (e === 1 ? `${p}` : `${p}^{${e}}`)).join("\\times ")}$ なので、$n+${a}$ が ${fac.length === 1 ? `${fac[0][0]} の倍数` : `${fac.map(([p]) => p).join(", ")} のどれかの倍数`}になればよい`}。${a + 1} 以上で最小のものは ${n2 + a}（${p2} の倍数）なので $n=${n2}$`,
+              ][kind],
             ],
           };
         }),
