@@ -2293,6 +2293,42 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-saidai-1c", (r) => {
+          const a = pick(r, [1, 2, -1, -2]), p = rnz(r, -4, 4), m = r(-6, 6), c = m + a * p * p;
+          const word = a > 0 ? "最小値" : "最大値";
+          return {
+            q: `2次関数 ${tex(`y=${a === 1 ? "" : a === -1 ? "-" : a}x^{2}${signedVar(-2 * a * p)}+c`)} の${word}が ${tex(String(m))} となるような定数 ${tex("c")} の値は？`,
+            ans: c,
+            hint: `平方完成して頂点の $y$ 座標を $c$ で表す。$x^{2}$ の係数が${a > 0 ? "正なので頂点で最小" : "負なので頂点で最大"}。`,
+            steps: [
+              `$y=${a === 1 ? "" : a === -1 ? "-" : a}${vx(p)}${signed(-a * p * p)}+c$`,
+              `${word}は $${-a * p * p}+c$ なので $${-a * p * p}+c=${m}$`,
+              `$c=${c}$`,
+            ],
+          };
+        }),
+        t("HI-saidai-1d", (r) => {
+          const a = pick(r, [1, 2, -1, -2]), p = r(-3, 3), q = r(-5, 5), s0 = p + r(-3, 1), t0 = s0 + r(2, 5);
+          const f = (x) => a * (x - p) ** 2 + q;
+          const vals = [f(s0), f(t0)];
+          if (p >= s0 && p <= t0) vals.push(q);
+          const lo = Math.min(...vals), hi = Math.max(...vals);
+          if (lo === hi) return { skip: true };
+          const R = (u, v) => tex(`${u}\\leqq y\\leqq ${v}`);
+          const ok = R(lo, hi);
+          const e1 = Math.min(f(s0), f(t0)), e2 = Math.max(f(s0), f(t0));
+          return {
+            q: `2次関数 ${tex(`y=${poly([a, -2 * a * p, a * p * p + q])}\\ (${s0}\\leqq x\\leqq ${t0})`)} の値域は？`,
+            ans: ok,
+            choices: choices4(r, ok, [R(e1, e2), R(Math.min(q, e1), Math.max(q, e2)), R(lo, hi + 1), tex(`${lo}<y<${hi}`)], (i) => R(lo - i - 1, hi)),
+            hint: "平方完成して頂点を求め、定義域の両端と頂点（軸が定義域内なら）での値を比べる。",
+            steps: [
+              `$y=${a === 1 ? "" : a === -1 ? "-" : a}${vx(p)}${sh(q)}$、軸 $x=${p}$ は定義域の${p >= s0 && p <= t0 ? "中" : "外"}`,
+              `$x=${s0}$ で $y=${f(s0)}$、$x=${t0}$ で $y=${f(t0)}$${p >= s0 && p <= t0 ? `、頂点で $y=${q}$` : ""}`,
+              `値域は $${lo}\\leqq y\\leqq ${hi}$`,
+            ],
+          };
+        }),
       ],
       2: [
         t("HI-saidai-2a", (r) => {
@@ -2329,6 +2365,48 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-saidai-2c", (r) => {
+          if (r(0, 1)) {
+            const k = r(2, 8), L = 4 * k;
+            return {
+              q: `長さ ${L} m の金網で、まっすぐな壁を1辺に利用して長方形の囲いを作る（壁の側には金網を使わない）。囲いの面積の最大値は何 ${tex("\\mathrm{m}^{2}")}？`,
+              ans: 2 * k * k,
+              hint: "壁に垂直な辺の長さを $x$ とおき、面積を $x$ の2次関数で表す。$x$ のとりうる範囲にも注意。",
+              steps: [
+                `壁に垂直な辺を $x$ m とすると、壁に平行な辺は $(${L}-2x)$ m で、$0<x<${L / 2}$`,
+                `面積は $x(${L}-2x)=-2x^{2}+${L}x=-2(x-${k})^{2}+${2 * k * k}$`,
+                `$x=${k}$ のとき最大値 ${2 * k * k}`,
+              ],
+            };
+          }
+          const k = r(2, 9), L = 2 * k;
+          return {
+            q: `直角をはさむ2辺の長さの和が ${L} の直角三角形のうち、面積が最大のものの面積は？`,
+            ans: fracAns(k * k, 2),
+            hint: "直角をはさむ1辺を $x$ とおき、面積を $x$ の2次関数で表す。",
+            steps: [
+              `1辺を $x$ とすると他方は $${L}-x$（$0<x<${L}$）で、面積は $\\frac{1}{2}x(${L}-x)$`,
+              `$=-\\frac{1}{2}(x-${k})^{2}+${fracTex(k * k, 2)}$`,
+              `$x=${k}$ のとき最大値 $${fracTex(k * k, 2)}$`,
+            ],
+          };
+        }),
+        t("HI-saidai-2d", (r) => {
+          const p = r(2, 5), c = r(-4, 6), inner = r(0, 1) === 1; // 0<a<p か a≧p か
+          const okS = inner ? poly([1, -2 * p, c], "a") : String(c - p * p);
+          const ok = tex(okS);
+          return {
+            q: `${tex("a")} は正の定数で、${tex(inner ? `0<a<${p}` : `a\\geqq ${p}`)} とする。2次関数 ${tex(`y=${poly([1, -2 * p, c])}\\ (0\\leqq x\\leqq a)`)} の最小値は？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(inner ? String(c - p * p) : poly([1, -2 * p, c], "a")), tex(String(c)), tex(poly([1, 2 * p, c], "a")), tex(String(c + p * p))]),
+            hint: `軸 $x=${p}$ が定義域 $0\\leqq x\\leqq a$ の中にあるか、右の外にあるかで考える。`,
+            steps: [
+              `$y=${vx(p)}${sh(c - p * p)}$、軸は $x=${p}$`,
+              inner ? `$0<a<${p}$ のとき軸は定義域の右の外なので、定義域で減少し、$x=a$ で最小` : `$a\\geqq ${p}$ のとき軸は定義域の中なので、頂点で最小`,
+              `最小値は $${okS}$`,
+            ],
+          };
+        }),
       ],
       3: [
         t("HI-saidai-3a", (r) => {
@@ -2362,6 +2440,38 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-saidai-3c", (r) => {
+          const [u, v] = sample(r, [1, 2, 3, 4], 2), k = r(1, 4), askMax = r(0, 1) === 1;
+          // x+y=k, x≧0, y≧0 のとき u x^2 + v y^2：f(x)=(u+v)x^2-2vkx+vk^2 (0≦x≦k)
+          const mx = Math.max(u, v) * k * k, mn = [u * v * k * k, u + v];
+          return {
+            q: `${tex(`x\\geqq 0,\\ y\\geqq 0,\\ x+y=${k}`)} のとき、${tex(`${u === 1 ? "" : u}x^{2}+${v === 1 ? "" : v}y^{2}`)} の${askMax ? "最大値" : "最小値"}は？`,
+            ans: askMax ? mx : fracAns(...mn),
+            hint: "$y=" + k + "-x$ を代入して $x$ の2次関数にする。$y\\geqq 0$ から $x$ の範囲も決まる。",
+            steps: [
+              `$y=${k}-x$ と $y\\geqq 0$ より $0\\leqq x\\leqq ${k}$`,
+              `$${u === 1 ? "" : u}x^{2}+${v === 1 ? "" : v}(${k}-x)^{2}=${poly([u + v, -2 * v * k, v * k * k])}$、軸は $x=${fracTex(v * k, u + v)}$（範囲内）`,
+              askMax ? `最大値は端の値 $x=0$ で ${v * k * k}、$x=${k}$ で ${u * k * k} の大きい方の ${mx}` : `最小値は軸で $${fracTex(...mn)}$`,
+            ],
+          };
+        }),
+        t("HI-saidai-3d", (r) => {
+          const h = r(1, 2), c = r(-3, 6), d = r(-5, 5);
+          // t = x^2+2hx ≧ -h^2、y = t^2 + 2ct + d
+          const tmin = -h * h, inside = -c >= tmin;
+          const v = inside ? d - c * c : tmin * tmin + 2 * c * tmin + d;
+          const X = `(x^{2}+${2 * h}x)`;
+          return {
+            q: `関数 ${tex(`y=${X}^{2}${signedVar(2 * c, X)}${sh(d)}`)} の最小値は？`,
+            ans: v,
+            hint: `$t=x^{2}+${2 * h}x$ とおくと $y$ は $t$ の2次関数。$t$ がとりうる値の範囲に注意する。`,
+            steps: [
+              `$t=x^{2}+${2 * h}x=(x+${h})^{2}-${h * h}$ より $t\\geqq ${tmin}$`,
+              `$y=${poly([1, 2 * c, d], "t")}=(t${signed(c)})^{2}${sh(d - c * c)}$、軸は $t=${-c}$`,
+              inside ? `軸は $t\\geqq ${tmin}$ の中なので、$t=${-c}$ で最小値 ${v}` : `軸は $t\\geqq ${tmin}$ の左の外なので、$t=${tmin}$ で最小値 ${v}`,
+            ],
+          };
+        }),
       ],
       4: [
         t("HI-saidai-4a", (r) => {
@@ -2392,6 +2502,38 @@ export const UNITS = [
               `区間の中央 $t+${L / 2}$ が軸より左なら $M(t)=f(t)$、右なら $M(t)=f(t+${L})$`,
               `$M(t)$ が最小になるのは中央が軸と一致する $t=${p - L / 2}$ のとき`,
               `最小値は $f(${p - L / 2})=${a === 1 ? "" : `${a}\\cdot `}${(L / 2) ** 2}${sh(q)}=${v}$`,
+            ],
+          };
+        }),
+        t("HI-saidai-4c", (r) => {
+          const p = r(-2, 2), q = r(-3, 3), k = r(1, 2), rr = r(-3, 3), m = r(-5, 5);
+          // (x - p y - q)^2 + k (y - r)^2 + m を展開
+          const E = mpoly([[1, "x^{2}"], [-2 * p, "xy"], [p * p + k, "y^{2}"], [-2 * q, "x"], [2 * p * q - 2 * k * rr, "y"], [q * q + k * rr * rr + m, ""]]);
+          const inner = `x${p === 0 ? "" : signedVar(-p, "y")}${sh(-q)}`;
+          return {
+            q: `${tex("x,\\ y")} が実数全体を動くとき、${tex(E)} の最小値は？`,
+            ans: m,
+            hint: "まず $x$ について平方完成し、残った $y$ の2次式をさらに平方完成する。",
+            steps: [
+              `$x$ について平方完成：$(${inner})^{2}+${k === 1 ? "" : k}y^{2}${signedVar(-2 * k * rr, "y")}${sh(k * rr * rr + m)}$`,
+              `$=(${inner})^{2}+${k === 1 ? "" : k}${vx(rr).replace("x", "y")}${sh(m)}$`,
+              `$y=${rr},\\ x=${p * rr + q}$ のとき最小値 ${m}`,
+            ],
+          };
+        }),
+        t("HI-saidai-4d", (r) => {
+          const w = r(1, 2), j = w + r(1, 2), c = r(-5, 5), k = 4 * w * j;
+          // f(x)=x^2-2ax+c (0≦x≦2w) の 最大値−最小値 = k となる a は w±j
+          const ok = tex(`a=${w - j},\\ ${w + j}`);
+          return {
+            q: `${tex("a")} を定数とする。関数 ${tex(`f(x)=x^{2}-2ax${sh(c)}\\ (0\\leqq x\\leqq ${2 * w})`)} の最大値と最小値の差が ${k} となるような ${tex("a")} の値は？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(`a=${w + j}`), tex(`a=${w - j}`), tex(`a=${-j},\\ ${j}`), tex(`a=${fracTex(2 * w - j, 2)},\\ ${fracTex(2 * w + j, 2)}`)]),
+            hint: `軸 $x=a$ の位置で、$a<0$、$0\\leqq a\\leqq ${w}$、$${w}\\leqq a\\leqq ${2 * w}$、$a>${2 * w}$ の4つに分けて「最大値−最小値」を求める。`,
+            steps: [
+              `$a<0$ のとき 差 $=f(${2 * w})-f(0)=${4 * w * w}-${4 * w}a$、$a>${2 * w}$ のとき 差 $=f(0)-f(${2 * w})=${4 * w}a-${4 * w * w}$`,
+              `$0\\leqq a\\leqq ${2 * w}$ のときは差は $${w * w}$ 以上 $${4 * w * w}$ 以下なので、${k} にはならない`,
+              `$${4 * w * w}-${4 * w}a=${k}$ より $a=${w - j}$、$${4 * w}a-${4 * w * w}=${k}$ より $a=${w + j}$（どちらも範囲に合う）`,
             ],
           };
         }),
@@ -2444,6 +2586,49 @@ export const UNITS = [
               `$${fac2(al, be)}${OPS[op]} 0$`,
               `グラフは下に凸で $x=${al},\\ ${be}$ で $x$ 軸と交わる`,
               `${ok}`,
+            ],
+          };
+        }),
+        t("HI-nijifuto-1c", (r) => {
+          const a = r(1, 3), b = r(-6, 6), c = r(-5, 5), D = b * b - 4 * a * c;
+          if (D <= 0 || Number.isInteger(Math.sqrt(D))) return { skip: true };
+          const RT = (B, DD, A) => {
+            const [k, m] = sqrtSimp(DD);
+            const g = gcd(gcd(Math.abs(B), k), 2 * A);
+            const nb = -B / g, nk = k / g, den = (2 * A) / g;
+            const top = `${nb === 0 ? "" : nb}\\pm ${sqrtTex(nk, m)}`;
+            return tex(`x=${den === 1 ? top : `\\frac{${top}}{${den}}`}`);
+          };
+          const ok = RT(b, D, a);
+          const D2 = b * b + 4 * a * c;
+          return {
+            q: `2次方程式 ${tex(`${poly([a, b, c])}=0`)} を解くと？`,
+            ans: ok,
+            choices: choices4(r, ok, [RT(-b, D, a), D2 > 0 && !Number.isInteger(Math.sqrt(D2)) ? RT(b, D2, a) : null, (() => { const [k, m] = sqrtSimp(D); const g = gcd(gcd(Math.abs(b), k), a); return tex(`x=${a / g === 1 ? `${-b / g === 0 ? "" : -b / g}\\pm ${sqrtTex(k / g, m)}` : `\\frac{${-b / g === 0 ? "" : -b / g}\\pm ${sqrtTex(k / g, m)}}{${a / g}}`}`); })()].filter(Boolean), (i) => RT(b + 2 * (i + 1), D, a)),
+            hint: "解の公式 $x=\\frac{-b\\pm\\sqrt{b^{2}-4ac}}{2a}$。最後に約分できるか確かめる。",
+            steps: [
+              `$a=${a},\\ b=${b},\\ c=${c}$ を解の公式に代入：$x=\\frac{${-b}\\pm\\sqrt{${b * b}${signed(-4 * a * c)}}}{${2 * a}}=\\frac{${-b}\\pm\\sqrt{${D}}}{${2 * a}}$`,
+              `${sqrtSimp(D)[0] === 1 ? "" : `$\\sqrt{${D}}=${sqrtTex(1, D)}$ として`}${gcd(gcd(Math.abs(b), sqrtSimp(D)[0]), 2 * a) > 1 ? "約分すると" : "これ以上約分できないので"} $${ok.slice(1, -1)}$`,
+            ],
+          };
+        }),
+        t("HI-nijifuto-1d", (r) => {
+          const op = pick(r, [">", "<", ">=", "<="]), sq = r(0, 1) === 1;
+          const p = r(-4, 4);
+          const P = sq ? [1, -2 * p, p * p] : [1, -2 * p, p * p + r(1, 4)];
+          const cats = { all: "すべての実数", ex: `${tex(String(p))} 以外のすべての実数`, none: "解なし", one: tex(`x=${p}`) };
+          let key;
+          if (sq) key = { ">": "ex", ">=": "all", "<": "none", "<=": "one" }[op];
+          else key = op[0] === ">" ? "all" : "none";
+          const ok = cats[key];
+          return {
+            q: `2次不等式 ${tex(`${poly(P)}${OPS[op]} 0`)} を解くと？`,
+            ans: ok,
+            choices: choices4(r, ok, Object.values(cats).filter((x) => x !== ok)),
+            hint: "左辺を平方完成して、グラフと $x$ 軸の位置関係（接する・離れている）を考える。",
+            steps: [
+              sq ? `左辺 $=${vx(p)}$（$x=${p}$ で $x$ 軸に接する）` : `左辺 $=${vx(p)}+${P[2] - p * p}$（つねに正）`,
+              `よって解は「${ok}」`,
             ],
           };
         }),
@@ -2506,6 +2691,21 @@ export const UNITS = [
             steps: [
               `$${poly(P)}=0$ より $${a === 1 ? "" : a === -1 ? "-" : a}${fac2(al, be)}=0$`,
               `$x=${al},\\ ${be}$ なので長さは $${be}-(${al})=${be - al}$`,
+            ],
+          };
+        }),
+        t("HI-nijifuto-2d", (r) => {
+          const b = r(-5, 5), c = r(-5, 5), m = r(-4, 4);
+          if ((b - m) % 2 !== 0) return { skip: true };
+          const h = (b - m) / 2, k = c - h * h;
+          return {
+            q: `放物線 ${tex(`y=${poly([1, b, c])}`)} と直線 ${tex(`y=${m === 0 ? "" : coefVar(m)}+k`.replace("=+", "="))} が接するような定数 ${tex("k")} の値は？`,
+            ans: k,
+            hint: "2つの式から $y$ を消去した $x$ の2次方程式が重解をもつ（判別式が0）。",
+            steps: [
+              `$${poly([1, b, c])}=${m === 0 ? "" : coefVar(m)}+k$`.replace("=+", "=") + ` より $${poly([1, b - m, 0])}${sh(c)}-k=0$`,
+              `$\\frac{D}{4}=(${h})^{2}-(${c}-k)=0$`,
+              `$k=${c}-${h * h}=${k}$`,
             ],
           };
         }),
