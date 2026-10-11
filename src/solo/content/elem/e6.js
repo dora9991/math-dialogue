@@ -258,11 +258,13 @@ export const UNITS = [
           const kake = k % 2 === 0;
           const C = fr(c, d);
           let X;
+          let xv;
           let val;
           let q;
           let unit;
           if (k < 4) {
             X = fr(a, b);
+            xv = a / b;
             val = kake ? fracTex(a * c, b * d) : fracTex(a * d, b * c);
             [q, unit] = [
               [`1dL で $${X}$m² のかべをぬれるペンキがあります。このペンキ $${C}$dL では、何m² のかべをぬれますか。`, "m²"],
@@ -273,14 +275,22 @@ export const UNITS = [
           } else {
             const p = 10 * (kake ? d : c) * r(2, 6);
             X = String(p);
+            xv = p;
             val = String(kake ? (p * c) / d : (p * d) / c);
             unit = "円";
             q = kake
               ? `1m のねだんが ${p}円のリボンを $${C}$m 買います。代金は何円ですか。`
               : `$${C}$m のねだんが ${p}円のリボンがあります。このリボン 1m のねだんは何円ですか。`;
           }
+          const cv = c / d;
           const ans = $(kake ? `${X} \\times ${C}` : `${X} \\div ${C}`);
-          const wrongs = kake ? [$(`${X} \\div ${C}`), $(`${C} \\div ${X}`), $(`${X} + ${C}`)] : [$(`${C} \\div ${X}`), $(`${X} \\times ${C}`), $(`${X} + ${C}`)];
+          const good = kake ? xv * cv : xv / cv;
+          const diff = xv > cv ? [`${X} - ${C}`, xv - cv] : [`${C} - ${X}`, cv - xv];
+          const cands = kake
+            ? [[`${X} \\div ${C}`, xv / cv], [`${C} \\div ${X}`, cv / xv], [`${X} + ${C}`, xv + cv], diff]
+            : [[`${C} \\div ${X}`, cv / xv], [`${X} \\times ${C}`, xv * cv], [`${X} + ${C}`, xv + cv], diff];
+          // 誤答の式が、たまたま正解と同じ値にならないようにする
+          const wrongs = cands.filter(([, v]) => Math.abs(v - good) > 1e-9).map(([e]) => $(e));
           return {
             q: `${q}この答えを求める式はどれですか。`,
             ans,
@@ -1886,7 +1896,7 @@ export const UNITS = [
             q: `$y$ は $x$ に${hi ? "比例" : "反比例"}しています。$x$ の値が ${xk}になると、$y$ の値は何倍になりますか。`,
             ans,
             choices: choices4(r, ans, [hi === up ? invK : K, `${k * k}倍`, "変わらない"]),
-            hint: `${hi ? "比例" : "反比例"}では、$x$ の値が2倍、3倍…になると、$y$ の値はどうなるかな？`,
+            hint: `${hi ? "比例" : "反比例"}では、$x$ の値と $y$ の値の変わり方に、どんなきまりがあったかな？`,
             steps: [`${hi ? "比例" : "反比例"}では、$x$ の値が ${xk}になると、$y$ の値は ${ans}になる`, `答え ${ans}`],
           };
         }),
