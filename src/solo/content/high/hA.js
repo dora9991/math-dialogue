@@ -1020,6 +1020,44 @@ export const UNITS = [
             steps: [`重心は中線 AM を $2:1$ に分けるので、G の高さは A の高さの $\\frac{1}{3}$`, `$${S}\\times\\frac{1}{3}=${S / 3}$`],
           };
         }),
+        t("HA-zukei-1d", (r) => {
+          const kind = r(0, 2), x = r(4, 17) * 5;
+          if (kind === 0) {
+            return {
+              q: `円 O に内接する $\\triangle ABC$ で $\\angle BAC=${x}^{\\circ}$ のとき、$\\angle BOC$ の大きさは？`,
+              ans: 2 * x,
+              unit: "度",
+              hint: "同じ弧に対する中心角は、円周角の2倍。",
+              steps: ["$\\angle BOC$ は弧 BC に対する中心角、$\\angle BAC$ は同じ弧に対する円周角", `$\\angle BOC=2\\times ${x}^{\\circ}=${2 * x}^{\\circ}$`],
+            };
+          }
+          if (kind === 1) {
+            const y = r(8, 28) * 5;
+            if (r(0, 1)) {
+              return {
+                q: `円に内接する四角形 ABCD で $\\angle ABC=${y}^{\\circ}$ のとき、$\\angle ADC$ の大きさは？`,
+                ans: 180 - y,
+                unit: "度",
+                hint: "円に内接する四角形の向かい合う角の和は $180^{\\circ}$。",
+                steps: ["$\\angle ABC$ と $\\angle ADC$ は向かい合う角なので、和は $180^{\\circ}$", `$\\angle ADC=180^{\\circ}-${y}^{\\circ}=${180 - y}^{\\circ}$`],
+              };
+            }
+            return {
+              q: `円に内接する四角形 ABCD で $\\angle BAD=${y}^{\\circ}$ とする。辺 BC の C を越える延長上に点 E をとるとき、$\\angle DCE$ の大きさは？`,
+              ans: y,
+              unit: "度",
+              hint: "円に内接する四角形の外角は、それととなり合う内角の対角に等しい。",
+              steps: [`$\\angle BCD=180^{\\circ}-\\angle BAD=${180 - y}^{\\circ}$（向かい合う角の和は $180^{\\circ}$）`, `$\\angle DCE=180^{\\circ}-\\angle BCD=${y}^{\\circ}$`],
+            };
+          }
+          return {
+            q: `円周上に3点 A, B, C がある。点 A における円の接線上に、直線 AB に関して C と反対側に点 T をとる。$\\angle BAT=${x}^{\\circ}$ のとき、$\\angle ACB$ の大きさは？`,
+            ans: x,
+            unit: "度",
+            hint: "接線と弦のつくる角は、その角の内部にある弧に対する円周角に等しい（接弦定理）。",
+            steps: ["接弦定理より、接線 AT と弦 AB のつくる角 $\\angle BAT$ は、弧 AB に対する円周角 $\\angle ACB$ に等しい", `$\\angle ACB=${x}^{\\circ}$`],
+          };
+        }),
       ],
       2: [
         t("HA-zukei-2a", (r) => {
@@ -1054,6 +1092,22 @@ export const UNITS = [
             steps: [`$AR:RB=${m}:${n}$、$CQ:QA=${tt}:${s}$`, `$\\frac{${m}}{${n}}\\cdot\\frac{BP}{PC}\\cdot\\frac{${tt}}{${s}}=1$`, `$\\frac{BP}{PC}=\\frac{${n}\\cdot ${s}}{${m}\\cdot ${tt}}=${fracTex(n * s, m * tt)}$`],
           };
         }),
+        t("HA-zukei-2d", (r) => {
+          const a = r(4, 12), b = r(4, 12), c = r(4, 12);
+          if (a >= b + c || b >= a + c || c >= a + b) return { skip: true };
+          const which = r(0, 2);
+          const [nm, vr, sub2, num] = [["BP", "y", b, a + c - b], ["CQ", "z", c, a + b - c], ["AR", "x", a, b + c - a]][which];
+          return {
+            q: `$\\triangle ABC$ の内接円が辺 BC, CA, AB とそれぞれ点 P, Q, R で接している。$AB=${c},\\ BC=${a},\\ CA=${b}$ のとき、$${nm}$ の長さは？`,
+            ans: fracAns(num, 2),
+            hint: "円の外部の1点から引いた2本の接線の長さは等しい。3つの長さを文字でおいて連立する。",
+            steps: [
+              "$AR=AQ=x,\\ BP=BR=y,\\ CP=CQ=z$ とおく（接線の長さは等しい）",
+              `$x+y=${c},\\ y+z=${a},\\ z+x=${b}$ を足して $2(x+y+z)=${a + b + c}$ より $x+y+z=${fracTex(a + b + c, 2)}$`,
+              `$${nm}=${vr}=${fracTex(a + b + c, 2)}-${sub2}=${fracTex(num, 2)}$`,
+            ],
+          };
+        }),
       ],
       3: [
         t("HA-zukei-3a", (r) => {
@@ -1081,6 +1135,40 @@ export const UNITS = [
               `$BD=${a}\\times\\frac{${c}}{${c}+${b}}=${fracTex(a * c, b + c)}$`,
               `$\\triangle ABD$ で $AI:ID=BA:BD=${c}:${fracTex(a * c, b + c)}$`,
               `$\\frac{AI}{ID}=\\frac{${b}+${c}}{${a}}=${fracTex(b + c, a)}$`,
+            ],
+          };
+        }),
+        t("HA-zukei-3c", (r) => {
+          const a = r(3, 10), b = r(3, 10), c = r(3, 10);
+          if (b === c || a >= b + c || b >= a + c || c >= a + b) return { skip: true };
+          const askB = r(0, 1) === 1, d = Math.abs(c - b);
+          const num = askB ? a * c : a * b;
+          return {
+            q: `$\\triangle ABC$ で $AB=${c},\\ BC=${a},\\ CA=${b}$ とする。$\\angle A$ の外角の二等分線と直線 BC の交点を E とするとき、$${askB ? "BE" : "CE"}$ の長さは？`,
+            ans: fracAns(num, d),
+            hint: "外角の二等分線は、対辺 BC を $AB:AC$ に外分する。E が B, C のどちらの側にあるかに注意。",
+            steps: [
+              `外角の二等分線の性質より $BE:EC=AB:AC=${c}:${b}$（E は辺 BC を外分する）`,
+              `$AB${c > b ? ">" : "<"}AC$ なので E は辺 BC の ${c > b ? "C" : "B"} の側の延長上にあり、${c > b ? "$BE-CE=BC$" : "$CE-BE=BC$"}。$BE=${c}k,\\ CE=${b}k$ とおくと $${d === 1 ? "" : d}k=${a}$`,
+              `$${askB ? "BE" : "CE"}=${askB ? c : b}\\times ${fracTex(a, d)}=${fracTex(num, d)}$`,
+            ],
+          };
+        }),
+        t("HA-zukei-3d", (r) => {
+          const r1 = r(2, 8), r2 = r(1, r1 - 1), ext = r(0, 1) === 1;
+          const d = r(r1 + r2 + 1, r1 + r2 + 8);
+          const h = ext ? r1 - r2 : r1 + r2, h2 = ext ? r1 + r2 : r1 - r2;
+          const L2 = d * d - h * h;
+          const ok = tex(sqrtTex(1, L2));
+          return {
+            q: `半径 ${r1} の円 O と半径 ${r2} の円 O' があり、中心間の距離は $OO'=${d}$ である。この2円の共通${ext ? "外" : "内"}接線の1つが円 O, O' と接する点をそれぞれ A, B とするとき、線分 AB の長さは？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(sqrtTex(1, d * d - h2 * h2)), tex(sqrtTex(1, d * d + h * h)), tex(String(L2))], (i) => tex(sqrtTex(1, L2 + i + 1))),
+            hint: `O' から直線 OA に垂線を引いて直角三角形をつくる（${ext ? "半径の差" : "半径の和"}が1辺になる）。`,
+            steps: [
+              `O' から直線 OA に垂線 O'H を引くと、四角形 ABO'H は長方形で $O'H=AB$、$OH=${ext ? `${r1}-${r2}` : `${r1}+${r2}`}=${h}$`,
+              `$\\triangle OO'H$ で三平方の定理より $AB^{2}=${d}^{2}-${h}^{2}=${L2}$`,
+              `$AB=${sqrtTex(1, L2)}$`,
             ],
           };
         }),

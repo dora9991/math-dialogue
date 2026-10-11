@@ -27,7 +27,7 @@ const arSum = (a, d, n) => (n * (2 * a + (n - 1) * d)) / 2;
 /** 小数を TeX で（4桁まで） */
 const dec = (x, d = 4) => String(round(x, d));
 /** c・x の TeX（c=1 なら x，c=-1 なら -x。x は必要ならかっこをつけて渡す） */
-const mulTex = (c, x) => (c === 1 ? x : c === -1 ? (x === "0" ? "0" : `-${x}`) : `${c}\\cdot ${x}`);
+const mulTex = (c, x) => (c === 1 ? x : c === -1 ? `-${x}` : `${c}\\cdot ${x}`);
 /** 2項目以降の c・x（符号つき） */
 const smulTex = (c, x) => (c < 0 ? `-${mulTex(-c, x)}` : `+${mulTex(c, x)}`);
 /** 係数としての分数（1 なら省略，-1 なら "-"） */
@@ -273,7 +273,7 @@ const SIGMA = {
           ans,
           hint: "$\\sum(ak+b)=a\\sum k+\\sum b$。定数 $b$ の和は $bn$。",
           steps: [
-            `$${a === 1 ? "" : a === -1 ? "-" : a}\\sum_{k=1}^{${n}}k${b ? `${signed(b)}\\times ${n}` : ""}=${a}\\cdot\\frac{${n}\\cdot ${n + 1}}{2}${b ? signed(b * n) : ""}$`,
+            `$${a === 1 ? "" : a === -1 ? "-" : a}\\sum_{k=1}^{${n}}k${b ? `${signed(b)}\\times ${n}` : ""}=${mulTex(a, `\\frac{${n}\\cdot ${n + 1}}{2}`)}${b ? signed(b * n) : ""}$`,
             `答え：$${ans}$`,
           ],
         };
@@ -293,7 +293,7 @@ const SIGMA = {
           choices: choices4(r, ans, ws, (i) => tex(closed(K + 2 * (i + 1) + 1))),
           hint: "$k(k+c)=k^{2}+ck$ と分けて，$\\sum k^{2}$ と $\\sum k$ の公式を使い，$\\frac{1}{6}n(n+1)$ でくくる。",
           steps: [
-            `$\\sum k^{2}${c > 0 ? "+" : "-"}${Math.abs(c) === 1 ? "" : Math.abs(c)}\\sum k=\\frac{1}{6}n(n+1)(2n+1)${c > 0 ? "+" : "-"}\\frac{${Math.abs(c)}}{2}n(n+1)$`,
+            `$\\sum k^{2}${c > 0 ? "+" : "-"}${Math.abs(c) === 1 ? "" : Math.abs(c)}\\sum k=\\frac{1}{6}n(n+1)(2n+1)${c > 0 ? "+" : "-"}${cfTex(Math.abs(c), 2)}n(n+1)$`,
             `$=\\frac{1}{6}n(n+1)\\{(2n+1)${signed(3 * c)}\\}=\\frac{1}{6}n(n+1)(${poly([2, K], "n")})$`,
             `答え：$${closed(K)}$`,
           ],
@@ -310,7 +310,7 @@ const SIGMA = {
             (i) => P([p / 2, q - p / 2, A - q + i + 1])),
           hint: "$n\\geqq 2$ のとき $a_{n}=a_{1}+\\sum_{k=1}^{n-1}b_{k}$。和は $n-1$ までであることに注意。",
           steps: [
-            `$n\\geqq 2$ のとき $a_{n}=${A}+\\sum_{k=1}^{n-1}(${poly([p, q], "k")})=${A}${signed(p / 2)}(n-1)n${signed(q)}(n-1)$`,
+            `$n\\geqq 2$ のとき $a_{n}=${A}+\\sum_{k=1}^{n-1}(${poly([p, q], "k")})=${A}${signedVar(p / 2, "(n-1)n")}${signedVar(q, "(n-1)")}$`,
             `整理して $a_{n}=${poly([p / 2, q - p / 2, A - q], "n")}$（$n=1$ のときも $a_{1}=${A}$ で成り立つ）`,
           ],
         };
@@ -327,8 +327,8 @@ const SIGMA = {
           ans: fracAns(n, L * R),
           hint: "部分分数に分けると，となりあう項が打ち消し合う。",
           steps: [
-            `$\\frac{1}{${den}}=\\frac{1}{${a}}\\left(\\frac{1}{${f1}}-\\frac{1}{${f2}}\\right)$`,
-            `和をとると途中が消えて $\\frac{1}{${a}}\\left(\\frac{1}{${L}}-\\frac{1}{${R}}\\right)$`,
+            `$\\frac{1}{${den}}=${a === 1 ? "" : `\\frac{1}{${a}}`}\\left(\\frac{1}{${f1}}-\\frac{1}{${f2}}\\right)$`,
+            `和をとると途中が消えて $${a === 1 ? "" : `\\frac{1}{${a}}`}\\left(\\frac{1}{${L}}-\\frac{1}{${R}}\\right)$`,
             `答え：$${fracTex(n, L * R)}$`,
           ],
         };
@@ -338,15 +338,16 @@ const SIGMA = {
       t("HB-sigma-3a", (r) => {
         const p = pick(r, [1, 2, 3, -1]), q = r(-5, 5), c = rnz(r, -5, 5);
         const a1 = p + q + c, gen = poly([2 * p, q - p], "n");
-        const ans = `$a_{1}=${a1}$，$n\\geqq 2$ のとき $a_{n}=${gen}$`;
+        // 選択肢は { tex, f(n) }（値で重複除去する）
+        const pwc = (u, v) => ({ tex: `$a_{1}=${a1}$，$n\\geqq 2$ のとき $a_{n}=${poly([u, v], "n")}$`, f: (n) => (n === 1 ? a1 : u * n + v) });
+        const all = (u, v) => ({ tex: `$a_{n}=${poly([u, v], "n")}$`, f: (n) => u * n + v });
+        const corr = pwc(2 * p, q - p);
+        const ans = corr.tex;
         return {
           q: `数列 $\\{a_{n}\\}$ の初項から第 $n$ 項までの和 $S_{n}$ が $S_{n}=${poly([p, q, c], "n")}$ で表されるとき，一般項 $a_{n}$ を求めよ。`,
           ans,
-          choices: choices4(r, ans, [
-            `$a_{n}=${gen}$`,
-            `$a_{1}=${a1}$，$n\\geqq 2$ のとき $a_{n}=${poly([2 * p, q - p + c], "n")}$`,
-            `$a_{n}=${poly([2 * p, q + p], "n")}$`,
-          ]),
+          choices: choicesByValue(r, corr, [all(2 * p, q - p), pwc(2 * p, q - p + c), all(2 * p, q + p)],
+            (i) => [all(2 * p, q - p + c), pwc(2 * p, q + p)][i] || all(2 * p, q - p + i)),
           hint: "$a_{1}=S_{1}$ と，$n\\geqq 2$ での $a_{n}=S_{n}-S_{n-1}$ を別々に求める。",
           steps: [
             `$a_{1}=S_{1}=${a1}$`,
@@ -365,8 +366,8 @@ const SIGMA = {
           ans: S,
           hint: `$S-${rr}S$ を計算すると，等比数列の和が現れる。`,
           steps: [
-            `$S=${term(1)}+${term(2)}+\\cdots+${term(n)}$`,
-            `$S-${rr}S=${a + b}+${a === 1 ? "" : `${a}\\cdot `}(${rr}+${rr}^{2}+\\cdots+${rr}^{${n - 1}})-${a * n + b}\\cdot ${rr}^{${n}}$`,
+            `$S=${a + b === 0 ? "" : `${term(1)}+`}${term(2)}+\\cdots+${term(n)}$`,
+            `$S-${rr}S=${a + b === 0 ? "" : `${a + b}+`}${a === 1 ? "" : `${a}\\cdot `}(${rr}+${rr}^{2}+\\cdots+${rr}^{${n - 1}})-${a * n + b}\\cdot ${rr}^{${n}}$`,
             `$(1-${rr})S=${(1 - rr) * S}$ より，答え：$S=${S}$`,
           ],
         };
@@ -473,7 +474,7 @@ const ZENKA = {
           ans: seq[K - 1],
           hint: "$n=1,\\ 2,\\ 3,\\ \\cdots$ を順に代入して計算する。",
           steps: [
-            seq.slice(1).map((v, i) => `$a_{${i + 2}}=${p}\\cdot ${par(seq[i])}${q ? signed(q) : ""}=${v}$`).join("，"),
+            seq.slice(1).map((v, i) => `$a_{${i + 2}}=${mulTex(p, par(seq[i]))}${q ? signed(q) : ""}=${v}$`).join("，"),
             `答え：$${seq[K - 1]}$`,
           ],
         };
@@ -510,12 +511,14 @@ const ZENKA = {
         let A = r(-5, 6);
         if (A === al) A = al + 1;
         const c = A - al;
-        const G = (cc, e, k) => (cc === 0 ? null : tex(`a_{n}=${geoTex(cc, p, e)}${k ? signed(k) : ""}`));
-        const ans = G(c, "n-1", al);
+        // 選択肢は { tex, f(n) }（値で重複除去する）
+        const G = (cc, e, k) => (cc === 0 ? null : { tex: tex(`a_{n}=${geoTex(cc, p, e)}${k ? signed(k) : ""}`), f: (n) => cc * p ** (e === "n" ? n : n - 1) + k });
+        const corr = G(c, "n-1", al);
+        const ans = corr.tex;
         return {
           q: `$a_{1}=${A}$，$a_{n+1}=${coefVar(p, "a_{n}")}${signed(q)}$ で定められる数列 $\\{a_{n}\\}$ の一般項を求めよ。`,
           ans,
-          choices: choices4(r, ans, [G(c, "n", al), G(A + al, "n-1", -al), G(A, "n-1", al)], (i) => G(c + i + 1, "n-1", al)),
+          choices: choicesByValue(r, corr, [G(c, "n", al), G(A + al, "n-1", -al), G(A, "n-1", al)], (i) => G(c + i + 1, "n-1", al)),
           hint: "$\\alpha=p\\alpha+q$ となる $\\alpha$ を求め，$a_{n+1}-\\alpha=p(a_{n}-\\alpha)$ と変形する。",
           steps: [
             `$\\alpha=${p}\\alpha${signed(q)}$ より $\\alpha=${al}$。$a_{n+1}${signed(-al)}=${p}(a_{n}${signed(-al)})$`,
@@ -533,7 +536,7 @@ const ZENKA = {
           hint: "階差数列 $b_{n}=a_{n+1}-a_{n}$ を使い，$a_{n}=a_{1}+\\sum_{k=1}^{n-1}b_{k}$。",
           steps: [
             `$a_{${k}}=${A}+\\sum_{j=1}^{${k - 1}}(${poly([p, q], "j")})$`,
-            `$=${A}${signed(p)}\\cdot\\frac{${k - 1}\\cdot ${k}}{2}${q ? `${signed(q)}\\cdot ${k - 1}` : ""}=${ans}$`,
+            `$=${A}${smulTex(p, `\\frac{${k - 1}\\cdot ${k}}{2}`)}${q ? smulTex(q, `${k - 1}`) : ""}=${ans}$`,
           ],
         };
       }),
@@ -570,7 +573,7 @@ const ZENKA = {
           ans,
           hint: "$n=1$ を代入して $a_{1}$ を求め，$S_{n+1}-S_{n}=a_{n+1}$ から漸化式をつくる。",
           steps: [
-            `$n=1$ とすると $a_{1}=2a_{1}${signed(q + c)}$ より $a_{1}=${a1}$`,
+            `$n=1$ とすると $a_{1}=2a_{1}${q + c ? signed(q + c) : ""}$ より $a_{1}=${a1}$`,
             `$S_{n+1}-S_{n}$ を計算すると $a_{n+1}=2a_{n+1}-2a_{n}${q ? signed(q) : ""}$ より $a_{n+1}=2a_{n}${q ? signed(-q) : ""}$`,
             q ? `$a_{n+1}${signed(-q)}=2(a_{n}${signed(-q)})$ より $a_{n}=${geoTex(a1 - q, 2, "n-1")}${signed(q)}$` : `公比 $2$ の等比数列なので $a_{n}=${geoTex(a1, 2, "n-1")}$`,
             `答え：$a_{${k}}=${ans}$`,
@@ -586,7 +589,7 @@ const ZENKA = {
           hint: "両辺の逆数をとると，$\\frac{1}{a_{n}}$ の漸化式が等差型になる。",
           steps: [
             `逆数をとると $\\frac{1}{a_{n+1}}=\\frac{1}{a_{n}}+${p}$`,
-            `$\\frac{1}{a_{n}}$ は初項 $${A}$，公差 $${p}$ の等差数列：$\\frac{1}{a_{${k}}}=${A}+${p}\\cdot ${k - 1}=${bk}$`,
+            `$\\frac{1}{a_{n}}$ は初項 $${A}$，公差 $${p}$ の等差数列：$\\frac{1}{a_{${k}}}=${A}+${mulTex(p, `${k - 1}`)}=${bk}$`,
             `答え：$${fracTex(1, bk)}$`,
           ],
         };
@@ -600,18 +603,24 @@ const ZENKA = {
         const c1 = rnz(r, -3, 3), c2 = rnz(r, -3, 3);
         const a1 = c1 + c2, a2 = c1 * al + c2 * be, s = al + be, pr = al * be;
         const term = (c, base, first, e) => (base === 1 ? (first ? String(c) : signed(c)) : first ? geoTex(c, base, e) : plusTerm(geoTex(c, base, e)));
-        const form = (x1, b1, x2, b2, e = "n-1") => tex(`a_{n}=${term(x1, b1, true, e)}${term(x2, b2, false, e)}`);
+        // 選択肢は { tex, f(n) }（値で重複除去する）
+        const form = (x1, b1, x2, b2, e = "n-1") => (x1 === 0 || x2 === 0 ? null : {
+          tex: tex(`a_{n}=${term(x1, b1, true, e)}${term(x2, b2, false, e)}`),
+          f: (n) => { const m = e === "n" ? n : n - 1; return x1 * b1 ** m + x2 * b2 ** m; },
+        });
         const rec = `a_{n+2}=${s === 0 ? coefVar(-pr, "a_{n}") : `${coefVar(s, "a_{n+1}")}${signedVar(-pr, "a_{n}")}`}`;
-        const ans = form(c1, al, c2, be);
+        const corr = form(c1, al, c2, be);
+        const ans = corr.tex;
+        const bt = (sym, b) => (b === 1 ? sym : `${sym}\\cdot ${par(b)}^{n-1}`);
         return {
           q: `$a_{1}=${a1}$，$a_{2}=${a2}$，$${rec}$ で定められる数列 $\\{a_{n}\\}$ の一般項を求めよ。`,
           ans,
-          choices: choices4(r, ans, [form(c2, al, c1, be), form(c1, al, c2, be, "n"), form(c1, al, -c2, be)],
+          choices: choicesByValue(r, corr, [form(c2, al, c1, be), form(c1, al, c2, be, "n"), form(c1, al, -c2, be)],
             (i) => form(c1 + i + 1, al, c2, be)),
           hint: "$x^{2}=(\\cdots)x+(\\cdots)$ の2解 $\\alpha,\\ \\beta$ を求め，$a_{n+2}-\\alpha a_{n+1}=\\beta(a_{n+1}-\\alpha a_{n})$ と変形する。",
           steps: [
             `$x^{2}=${s === 0 ? String(-pr) : `${coefVar(s)}${signed(-pr)}`}$ の解は $x=${al},\\ ${be}$`,
-            `$a_{n+2}${signedVar(-al, "a_{n+1}")}=${par(be)}(a_{n+1}${signedVar(-al, "a_{n}")})$ などから，$a_{n}=p\\cdot ${par(al)}^{n-1}+q\\cdot ${par(be)}^{n-1}$ の形になる`,
+            `$a_{n+2}${signedVar(-al, "a_{n+1}")}=${par(be)}(a_{n+1}${signedVar(-al, "a_{n}")})$ などから，$a_{n}=${bt("p", al)}+${bt("q", be)}$ の形になる`,
             `$a_{1}=p+q=${a1}$，$a_{2}=${coefVar(al, "p")}${signedVar(be, "q")}=${a2}$ より $p=${c1}$，$q=${c2}$`,
             `答え：${ans}`,
           ],
@@ -628,7 +637,7 @@ const ZENKA = {
           hint: "逆数 $b_{n}=\\frac{1}{a_{n}}$ をとると $b_{n+1}=pb_{n}+q$ 型の漸化式になる。",
           steps: [
             `$b_{n}=\\frac{1}{a_{n}}$ とおくと $b_{n+1}=${rr}b_{n}+${p}$，$b_{1}=${A}$`,
-            `$\\alpha=${al}$ として $b_{n}-\\left(${al}\\right)=\\left(${c}\\right)\\cdot ${rr}^{n-1}$`,
+            `$\\alpha=${al}$ として $b_{n}+${fracTex(p, rr - 1)}=${c}\\cdot ${rr}^{n-1}$`,
             `$b_{${k}}=${b}$ より，答え：$a_{${k}}=${fracTex(1, b)}$`,
           ],
         };
@@ -682,7 +691,7 @@ const BINOM = [
 
 const TOUKEI = {
   id: "HB-toukei", grade: "H2", area: "data", name: "統計的な推測",
-  desc: "確率変数・期待値と分散・二項分布・正規分布・推定",
+  desc: "確率変数・期待値と分散・二項分布・正規分布・推定・検定",
   prereqs: ["HA-joken", "HI-data"],
   ...COURSE,
   points: [
@@ -709,9 +718,9 @@ const TOUKEI = {
         const m = r(-5, 10), s = r(1, 5), v = s * s, a = rnz(r, -4, 4), b = rnz(r, -10, 10), type = r(0, 2);
         const Y = `${coefVar(a, "X")}${signed(b)}`;
         const [what, ans, how] = [
-          [`E(${Y})`, a * m + b, `${a}\\cdot ${par(m)}${signed(b)}`],
-          [`V(${Y})`, a * a * v, `${par(a)}^{2}\\cdot ${v}`],
-          [`\\sigma(${Y})`, Math.abs(a) * s, `|${a}|\\cdot\\sqrt{${v}}`],
+          [`E(${Y})`, a * m + b, `${coefVar(a, "E(X)")}${signed(b)}=${mulTex(a, par(m))}${signed(b)}`],
+          [`V(${Y})`, a * a * v, Math.abs(a) === 1 ? "V(X)" : `${par(a)}^{2}V(X)=${par(a)}^{2}\\cdot ${v}`],
+          [`\\sigma(${Y})`, Math.abs(a) * s, `${Math.abs(a) === 1 ? "\\sigma(X)" : `|${a}|\\sigma(X)`}=${mulTex(Math.abs(a), `\\sqrt{${v}}`)}`],
         ][type];
         return {
           q: `確率変数 $X$ の期待値が $${m}$，分散が $${v}$ であるとき，$${what}$ を求めよ。`,
@@ -770,9 +779,10 @@ const TOUKEI = {
       t("HB-toukei-2c", (r) => {
         const EX = r(-3, 6), VX = r(1, 9), EY = r(-3, 6), VY = r(1, 9), a = rnz(r, -3, 3), b = rnz(r, -3, 3), type = r(0, 2);
         const Z = `${coefVar(a, "X")}${signedVar(b, "Y")}`;
+        const sqV = (c, V) => (Math.abs(c) === 1 ? V : `${par(c)}^{2}${V}`), sqN = (c, v) => (Math.abs(c) === 1 ? `${v}` : `${par(c)}^{2}\\cdot ${v}`);
         const [what, ans, how] = [
-          [`V(${Z})`, a * a * VX + b * b * VY, `${par(a)}^{2}\\cdot ${VX}+${par(b)}^{2}\\cdot ${VY}`],
-          [`E(${Z})`, a * EX + b * EY, `${a}\\cdot ${par(EX)}${signed(b)}\\cdot ${par(EY)}`],
+          [`V(${Z})`, a * a * VX + b * b * VY, `${sqV(a, "V(X)")}+${sqV(b, "V(Y)")}=${sqN(a, VX)}+${sqN(b, VY)}`],
+          [`E(${Z})`, a * EX + b * EY, `${coefVar(a, "E(X)")}${signedVar(b, "E(Y)")}=${mulTex(a, par(EX))}${smulTex(b, par(EY))}`],
           ["E(XY)", EX * EY, `${par(EX)}\\cdot ${par(EY)}`],
         ][type];
         return {
@@ -848,13 +858,15 @@ const TOUKEI = {
         if (3.92 * sig <= W) return { skip: true };
         const num = (392 * sig) ** 2, den = (100 * W) ** 2;
         const nmin = Math.floor((num + den - 1) / den);
+        // 割り切れないときは小数第2位までで切って「…」をつける
+        const cut = (x) => { const tr = Math.floor(x * 100 + 1e-9) / 100; return Math.abs(tr - x) < 1e-9 ? String(round(x, 2)) : `${tr.toFixed(2)}\\ldots`; };
         return {
           q: `母標準偏差が $${sig}$ の母集団から標本を抽出して，母平均を信頼度95%で推定する。信頼区間の幅を $${W}$ 以下にするには，標本の大きさ $n$ を少なくともいくつにすればよいか。`,
           ans: nmin,
           hint: "信頼区間の幅は $2\\times 1.96\\cdot\\frac{\\sigma}{\\sqrt{n}}$。これが指定の値以下となる $n$ を求める。",
           steps: [
             `幅は $2\\times 1.96\\times\\frac{${sig}}{\\sqrt{n}}=\\frac{${round(3.92 * sig, 2)}}{\\sqrt{n}}$`,
-            `$\\frac{${round(3.92 * sig, 2)}}{\\sqrt{n}}\\leqq ${W}$ より $\\sqrt{n}\\geqq ${round((3.92 * sig) / W, 4)}$，$n\\geqq ${round(num / den, 4)}$`,
+            `$\\frac{${round(3.92 * sig, 2)}}{\\sqrt{n}}\\leqq ${W}$ より $\\sqrt{n}\\geqq ${cut((3.92 * sig) / W)}$，$n\\geqq ${cut(num / den)}$`,
             `答え：$n=${nmin}$`,
           ],
         };

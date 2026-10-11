@@ -946,6 +946,13 @@ function polarPoint(deg, k) {
   const im = [s[0] * mul[0], s[1], s[2] * mul[2]];
   return [cplx(re, im), ref === 45 ? sqrtTex(k, 2) : String(2 * k)];
 }
+/** z − (a+bi) の TeX：z, z-3, z+2i, z-(1+2i) */
+function zMinus(a, b) {
+  if (a === 0 && b === 0) return "z";
+  if (b === 0) return `z${signed(-a)}`;
+  if (a === 0) { const w = ci(0, -b); return `z${w.startsWith("-") ? w : "+" + w}`; }
+  return `z-(${ci(a, b)})`;
+}
 
 const FUKUSO = {
   id: "HC-fukuso",
@@ -1016,6 +1023,33 @@ const FUKUSO = {
           ans: h,
           hint: "2点間の距離は $|\\beta-\\alpha|$。",
           steps: [`$\\beta-\\alpha=${ci(dx, dy)}$`, `AB $=|${ci(dx, dy)}|=\\sqrt{${dx * dx}+${dy * dy}}=${h}$`],
+        };
+      }),
+      t("HC-fukuso-1d", (r) => {
+        // 内分点・外分点を表す複素数
+        const al = [rnz(r, -4, 4), r(-4, 4)], be = [r(-4, 4), rnz(r, -4, 4)];
+        if (al[0] === be[0] && al[1] === be[1]) return { skip: true };
+        const [m, n] = pick(r, [[1, 2], [2, 1], [1, 3], [3, 1], [2, 3], [3, 2], [3, 4], [4, 3], [1, 4], [4, 1]]);
+        const ext = r(0, 1) === 1;
+        const pt = (wa, wb, den) => cplx([wa * al[0] + wb * be[0], den, 1], [wa * al[1] + wb * be[1], den, 1]);
+        const [wa, wb, den] = ext ? [-n, m, m - n] : [n, m, m + n];
+        const ans = `$${pt(wa, wb, den)}$`;
+        const wr = ext ? [pt(-m, n, n - m), pt(n, m, m + n), pt(n, m, m - n)] : [pt(m, n, m + n), pt(-n, m, m - n), pt(1, 1, 2)];
+        const cf = (c) => (c === 1 ? "" : c);
+        const aT = ci(al[0], al[1]), bT = ci(be[0], be[1]);
+        const sd = den < 0 ? -1 : 1; // 分母を正にして表示
+        const numT = ci(sd * (wa * al[0] + wb * be[0]), sd * (wa * al[1] + wb * be[1]));
+        return {
+          q: `複素数平面上の2点 A$(${aT})$, B$(${bT})$ を結ぶ線分 AB を ${m}:${n} に${ext ? "外分" : "内分"}する点を表す複素数を求めよ。`,
+          ans,
+          choices: choices4(r, ans, wr.map((w) => `$${w}$`), (i) => `$${cplx([wa * al[0] + wb * be[0] + (i + 1) * den, den, 1], [wa * al[1] + wb * be[1], den, 1])}$`),
+          hint: ext ? "$m:n$ に外分する点は $\\frac{-n\\alpha+m\\beta}{m-n}$（$\\alpha$, $\\beta$ は A, B を表す複素数）。" : "$m:n$ に内分する点は $\\frac{n\\alpha+m\\beta}{m+n}$（$\\alpha$, $\\beta$ は A, B を表す複素数）。",
+          steps: [
+            ext
+              ? `$\\alpha=${aT}$, $\\beta=${bT}$ とすると、求める点は $\\frac{-${cf(n)}\\alpha+${cf(m)}\\beta}{${m}-${n}}=\\frac{-${cf(n)}(${aT})+${cf(m)}(${bT})}{${m - n}}$`
+              : `$\\alpha=${aT}$, $\\beta=${bT}$ とすると、求める点は $\\frac{${cf(n)}\\alpha+${cf(m)}\\beta}{${m}+${n}}=\\frac{${cf(n)}(${aT})+${cf(m)}(${bT})}{${m + n}}$`,
+            sd * den === 1 ? `$=${pt(wa, wb, den)}$` : `$=\\frac{${numT}}{${sd * den}}=${pt(wa, wb, den)}$`,
+          ],
         };
       }),
     ],
@@ -1118,6 +1152,43 @@ const FUKUSO = {
           ],
         };
       }),
+      t("HC-fukuso-2d", (r) => {
+        // 3点が一直線上・2直線が垂直となる条件（(γ−α)/(β−α) が実数・純虚数）
+        const al = [r(-3, 3), r(-3, 3)], be = [r(-3, 3), r(-3, 3)];
+        const p = be[0] - al[0], q = be[1] - al[1];
+        if (p === 0 && q === 0) return { skip: true };
+        const perp = r(0, 1) === 1, unkRe = r(0, 1) === 1, c = r(-4, 4);
+        // γ−α = (kx a + x0) + (ky a + y0) i
+        const [kx, x0, ky, y0] = unkRe ? [1, -al[0], 0, c - al[1]] : [0, c - al[0], 1, -al[1]];
+        // (γ−α)×(β−α の共役) = (reA a + re0) + (imA a + im0) i
+        const reA = kx * p + ky * q, re0 = x0 * p + y0 * q;
+        const imA = ky * p - kx * q, im0 = y0 * p - x0 * q;
+        const [cA, c0] = perp ? [reA, re0] : [imA, im0];
+        if (cA === 0) return { skip: true };
+        // 解 a = −c0/cA のときの (γ−α)×cA。C が A や B に一致するものは除く
+        const X = -kx * c0 + x0 * cA, Y = -ky * c0 + y0 * cA;
+        if ((X === 0 && Y === 0) || (X === p * cA && Y === q * cA)) return { skip: true };
+        const imT = (y) => (y === 0 ? "" : `${y > 0 ? "+" : "-"}${Math.abs(y) === 1 ? "" : Math.abs(y)}i`);
+        const gT = unkRe ? `a${imT(c)}` : `${c === 0 ? "" : `${c}+`}ai`;
+        const xT = lin([[kx, 1, "a"], [x0, 1, ""]]), yT = lin([[ky, 1, "a"], [y0, 1, ""]]);
+        const dT = unkRe
+          ? (y0 === 0 ? xT : `${x0 === 0 ? "a" : `(${xT})`}${imT(y0)}`)
+          : (x0 === 0 ? `${y0 === 0 ? "a" : `(${yT})`}i` : `${x0}+${y0 === 0 ? "a" : `(${yT})`}i`);
+        const RE = lin([[reA, 1, "a"], [re0, 1, ""]]), IM = lin([[imA, 1, "a"], [im0, 1, ""]]);
+        const numT = [RE !== "0" ? RE : "", IM !== "0" ? `${RE !== "0" ? "+" : ""}(${IM})i` : ""].join("") || "0";
+        const a0 = fracTex(-c0, cA);
+        return {
+          q: `複素数平面上の3点 A$(${ci(al[0], al[1])})$, B$(${ci(be[0], be[1])})$, C$(${gT})$ について、${perp ? "2直線 AB, AC が垂直に交わる" : "3点 A, B, C が一直線上にある"}ような実数 $a$ の値を求めよ。`,
+          ans: fracAns(-c0, cA),
+          hint: `A, B, C を表す複素数を $\\alpha$, $\\beta$, $\\gamma$ として、$\\frac{\\gamma-\\alpha}{\\beta-\\alpha}$ が${perp ? "純虚数" : "実数"}になる条件を考える。`,
+          steps: [
+            `$\\frac{\\gamma-\\alpha}{\\beta-\\alpha}=\\frac{${dT}}{${ci(p, q)}}=\\frac{(${dT})(${ci(p, -q)})}{${p * p + q * q}}=\\frac{${numT}}{${p * p + q * q}}$`,
+            perp
+              ? `2直線が垂直に交わるのは、これが純虚数のとき。実部 $${RE}=0$ より $a=${a0}$（このとき虚部は0でない）`
+              : `3点が一直線上にあるのは、これが実数のとき。虚部 $${IM}=0$ より $a=${a0}$`,
+          ],
+        };
+      }),
     ],
     3: [
       t("HC-fukuso-3a", (r) => {
@@ -1200,6 +1271,39 @@ const FUKUSO = {
           ],
         };
       }),
+      t("HC-fukuso-3d", (r) => {
+        // アポロニウスの円 |z−α| = k|z−β|
+        const k = r(2, 3), K = k * k;
+        const dv = pick(r, [[3, 4], [4, 3], [5, 0], [0, 5], [1, 0], [0, 1], [2, 0], [0, 2], [3, 0], [0, 3]]).map((x) => x * sgn(r) + 0);
+        const be = [r(-3, 3), r(-3, 3)];
+        const al = [be[0] + dv[0], be[1] + dv[1]];
+        const len = Math.round(Math.hypot(dv[0], dv[1]));
+        const cN = [K * be[0] - al[0], K * be[1] - al[1]]; // 中心 ×(K−1)
+        const cen = cplx([cN[0], K - 1, 1], [cN[1], K - 1, 1]);
+        const cst = K * (be[0] * be[0] + be[1] * be[1]) - (al[0] * al[0] + al[1] * al[1]);
+        const askR = r(0, 1) === 1;
+        const eq = `|${zMinus(al[0], al[1])}|=${k}|${zMinus(be[0], be[1])}|`;
+        const zc = cen === "0" ? "z" : `z-(${cen})`;
+        const exT = `${K - 1}z\\bar{z}${cN[0] === 0 && cN[1] === 0 ? "" : `-(${ci(cN[0], -cN[1])})z-(${ci(cN[0], cN[1])})\\bar{z}`}${cst === 0 ? "" : signed(cst)}`;
+        const base = {
+          q: `複素数 $z$ が $${eq}$ を満たすとき、点 $z$ 全体は円を描く。この円の${askR ? "半径" : "中心を表す複素数"}を求めよ。`,
+          hint: "両辺を2乗し、$|w|^{2}=w\\bar{w}$ を使って展開・整理する。",
+          steps: [
+            `$\\alpha=${ci(al[0], al[1])}$, $\\beta=${ci(be[0], be[1])}$ とする。両辺を2乗して $(z-\\alpha)(\\bar{z}-\\bar{\\alpha})=${K}(z-\\beta)(\\bar{z}-\\bar{\\beta})$`,
+            `展開して整理すると $${exT}=0$`,
+            `両辺を ${K - 1} でわって変形すると $|${zc}|^{2}=${fracTex(K * len * len, (K - 1) * (K - 1))}$`,
+            `よって 中心 $${cen}$、半径 $${fracTex(k * len, K - 1)}$ の円`,
+          ],
+        };
+        if (askR) return { ...base, ans: fracAns(k * len, K - 1) };
+        const ans = `$${cen}$`;
+        const wr = [
+          cplx([k * be[0] - al[0], k - 1, 1], [k * be[1] - al[1], k - 1, 1]), // 2乗し忘れ
+          cplx([K * al[0] - be[0], K - 1, 1], [K * al[1] - be[1], K - 1, 1]), // α と β の取り違え
+          cplx([al[0] + k * be[0], k + 1, 1], [al[1] + k * be[1], k + 1, 1]), // 内分点を中心と思う
+        ];
+        return { ...base, ans, choices: choices4(r, ans, wr.map((w) => `$${w}$`), (i) => `$${cplx([cN[0] + (i + 1) * (K - 1), K - 1, 1], [cN[1], K - 1, 1])}$`) };
+      }),
     ],
     4: [
       t("HC-fukuso-4a", (r) => {
@@ -1262,6 +1366,57 @@ const FUKUSO = {
             `$\\gamma-\\alpha=\\left(\\cos\\frac{\\pi}{3}+i\\sin\\frac{\\pi}{3}\\right)(\\beta-\\alpha)$`,
             `$\\beta-\\alpha=${ci(2 * p, 2 * q)}$ より $\\gamma-\\alpha=\\frac{1+\\sqrt{3}i}{2}(${ci(2 * p, 2 * q)})=${cplx3(p, -q, q, p)}$`,
             `$\\gamma=${cplx3(a1 + p, -q, a2 + q, p)}$`,
+          ],
+        };
+      }),
+      t("HC-fukuso-4d", (r) => {
+        // z + 1/z が実数 ⇔ z が 0 でない実数 または |z|=1（場合分け）。円との共有点を数える
+        const c = [r(-3, 3), r(-3, 3)], rho = r(1, 4);
+        const d2 = c[0] * c[0] + c[1] * c[1], R2 = rho * rho;
+        if (d2 === 0 && rho === 1) return { skip: true };
+        const disc = R2 - c[1] * c[1];
+        const realN = disc > 0 ? 2 : disc === 0 ? 1 : 0;
+        const origin = d2 === R2 ? 1 : 0; // 円が原点を通る（z=0 は除く）
+        const unitN = d2 === 0 ? 0 : (rho - 1) ** 2 < d2 && d2 < (rho + 1) ** 2 ? 2 : d2 === (rho + 1) ** 2 || d2 === (rho - 1) ** 2 ? 1 : 0;
+        const both = [(1 - c[0]) ** 2 + c[1] ** 2 === R2 ? "1" : "", (1 + c[0]) ** 2 + c[1] ** 2 === R2 ? "-1" : ""].filter(Boolean);
+        const total = realN - origin + unitN - both.length;
+        const zm = zMinus(c[0], c[1]);
+        return {
+          q: `$z+\\frac{1}{z}$ が実数であり、かつ $|${zm}|=${rho}$ を満たす複素数 $z$ は全部で何個あるか。`,
+          ans: total,
+          unit: "個",
+          hint: "$z+\\frac{1}{z}=\\overline{z+\\frac{1}{z}}$ を変形して、z が満たす条件を2つの場合に分ける。",
+          steps: [
+            `$z+\\frac{1}{z}=\\bar{z}+\\frac{1}{\\bar{z}}$ を変形すると $(z-\\bar{z})\\left(1-\\frac{1}{|z|^{2}}\\right)=0$ なので、z は「0 でない実数」または「$|z|=1$ を満たす数」`,
+            `円 $|${zm}|=${rho}$（中心 $${ci(c[0], c[1])}$、半径 $${rho}$）と実軸の共有点は ${realN} 個${origin ? "で、そのうち原点 $z=0$ は除く" : ""}`,
+            `単位円 $|z|=1$ との共有点は ${unitN} 個（中心間の距離 $${sqrtTex(1, d2)}$ を、半径の和 $${rho + 1}$・差 $${Math.abs(rho - 1)}$ と比べる）`,
+            `${both.length ? `$z=${both.join(",\\ ")}$ は両方に数えているので重複を除き、` : ""}全部で ${total} 個`,
+          ],
+        };
+      }),
+      t("HC-fukuso-4e", (r) => {
+        // w = z + k/z（|z| = R）は楕円を描く（極形式で実部・虚部に分ける）
+        const R = r(1, 4), k = rnz(r, -6, 6);
+        if (R * R === Math.abs(k)) return { skip: true };
+        const X = R * R + k, Y = R * R - k; // 半軸の長さは |X|/R, |Y|/R
+        const big = Math.max(Math.abs(X), Math.abs(Y)), small = Math.min(Math.abs(X), Math.abs(Y));
+        let mode = r(0, 2);
+        if (mode === 2 && Math.abs(k) !== 1 && Math.abs(k) !== 4) mode = r(0, 1);
+        const what = ["長軸の長さ", "短軸の長さ", "2つの焦点の間の距離"][mode];
+        const ans = mode === 0 ? fracAns(2 * big, R) : mode === 1 ? fracAns(2 * small, R) : 4 * Math.round(Math.sqrt(Math.abs(k)));
+        const sqT = (n) => { const [p, q] = reduce(n, R); return q === 1 ? String(p * p) : `\\left(${fracTex(p, q)}\\right)^{2}`; };
+        const den = (v, n) => (sqT(n) === "1" ? `${v}^{2}` : `\\frac{${v}^{2}}{${sqT(n)}}`);
+        return {
+          q: `複素数 $z$ が $|z|=${R}$ を満たしながら動くとき、$w=z${k > 0 ? "+" : "-"}\\frac{${Math.abs(k)}}{z}$ で表される点 $w$ は楕円を描く。この楕円の${what}を求めよ。`,
+          ans,
+          hint: "$z=r(\\cos\\theta+i\\sin\\theta)$ とおき、w の実部と虚部を θ で表す。",
+          steps: [
+            `$z=${R === 1 ? "\\cos\\theta+i\\sin\\theta" : `${R}(\\cos\\theta+i\\sin\\theta)`}$ とおくと $\\frac{1}{z}=${R === 1 ? "\\cos\\theta-i\\sin\\theta" : `\\frac{1}{${R}}(\\cos\\theta-i\\sin\\theta)`}$`,
+            `$w=x+yi$ とすると $x=${termTex(X, R, "\\cos\\theta")}$, $y=${termTex(Y, R, "\\sin\\theta")}$`,
+            `θ を消去して $${den("x", Math.abs(X))}+${den("y", Math.abs(Y))}=1$`,
+            mode === 2
+              ? `長軸の半分は $${fracTex(big, R)}$、短軸の半分は $${fracTex(small, R)}$。中心から焦点までの距離 $c$ は $c^{2}=${sqT(big)}-${sqT(small)}=${4 * Math.abs(k)}$ より $c=${2 * Math.round(Math.sqrt(Math.abs(k)))}$、焦点間の距離は $${ans}$`
+              : `${what}は $2\\times${fracTex(mode === 0 ? big : small, R)}=${fracTex(2 * (mode === 0 ? big : small), R)}$`,
           ],
         };
       }),
