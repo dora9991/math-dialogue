@@ -131,6 +131,21 @@ const HERON = [[3, 4, 5, 6], [5, 5, 6, 12], [5, 5, 8, 12], [13, 14, 15, 84], [5,
 
 /** 点 (x, y)（どちらも0でない）がある象限 */
 const QUAD = (x, y) => (x > 0 ? (y > 0 ? "第1象限" : "第4象限") : y > 0 ? "第2象限" : "第3象限");
+// 0≦x≦L で常に x^2-2ax+sa+t>0（s=r1+r2, t=-r1r2）となる a の範囲が、整数を端とする区間になる組 [r1, r2, L, lo, hi]
+const ALWAYS_POS = [];
+for (let r1 = -4; r1 <= 4; r1++) for (let r2 = r1 + 1; r2 <= 6; r2++) for (const L of [1, 2, 3]) {
+  const sv = r1 + r2, tv = -r1 * r2;
+  if (sv <= 0 || 2 * L <= sv) continue;
+  // m(a)=min f は a<0 で sa+t、0≦a≦L で -a^2+sa+t、a>L で L^2-2aL+sa+t
+  const m = (a) => (a < 0 ? sv * a + tv : a <= L ? -a * a + sv * a + tv : L * L + (sv - 2 * L) * a + tv);
+  const pts = []; for (let k = -40; k <= 40; k++) pts.push(k / 2);
+  const ok = pts.filter((a) => m(a) > 0);
+  if (!ok.length) continue;
+  const lo = ok[0] - 0.5, hi = ok[ok.length - 1] + 0.5; // m は a について上に凸なので区間
+  if (!Number.isInteger(lo) || !Number.isInteger(hi) || m(lo) !== 0 || m(hi) !== 0 || lo <= -20 || hi >= 20) continue;
+  if (lo === Math.max(r1, 0) && hi === Math.min(r2, L)) continue; // 真ん中の場合だけで決まるものは除く
+  ALWAYS_POS.push([r1, r2, L, lo, hi]);
+}
 const H = { grade: "H1", course: "数学I", rikei: false };
 
 export const UNITS = [
@@ -2748,6 +2763,43 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-nijifuto-3c", (r) => {
+          const [al, be] = sample(r, [-4, -3, -2, -1, 1, 2, 3, 4, 5], 2).sort((u, v) => u - v);
+          const inside = r(0, 1) === 1, gt = r(0, 1) === 1, k = r(1, 2);
+          // ax^2+bx+c (gt ? > : <) 0 の解が inside なら α<x<β、そうでなければ x<α, β<x
+          const aSign = gt === inside ? -1 : 1;
+          const a = aSign * k, b = -a * (al + be), c = a * al * be;
+          const askA = r(0, 1) === 1;
+          const sol = inside ? `${al}<x<${be}` : `x<${al},\\ ${be}<x`;
+          return {
+            q: `2次不等式 ${tex(`ax^{2}+bx${signed(c)}${gt ? ">" : "<"}0`)} の解が ${tex(sol)} であるとき、定数 ${tex(askA ? "a" : "b")} の値は？`,
+            ans: askA ? a : b,
+            hint: `解が ${tex(sol)} になるのは、グラフが $x=${al},\\ ${be}$ で $x$ 軸と交わり、その${inside ? "間" : "外側"}で$x$ 軸より${gt ? "上" : "下"}にあるとき。`,
+            steps: [
+              `解の形から $a${aSign > 0 ? ">" : "<"}0$ で、$ax^{2}+bx${signed(c)}=a(x${sh(-al)})(x${sh(-be)})$`,
+              `定数項を比べて $a\\cdot (${al})\\cdot (${be})=${c}$、$a=${a}$`,
+              `$x$ の係数を比べて $b=-a(${al}${signed(be)})=${b}$`,
+            ],
+          };
+        }),
+        t("HI-nijifuto-3d", (r) => {
+          const k = r(2, 4), m = 1, kind = r(0, 2);
+          // f1: x^2+2ax+k^2=0（|a|≧k で実数解）、f2: x^2-2x+a=0（a≦1 で実数解）
+          const T = (str) => tex(str);
+          const ok = [T(`a\\leqq ${m},\\ ${k}\\leqq a`), T(`a\\leqq -${k}`), T(`${m}<a<${k}`)][kind];
+          const what = ["少なくとも一方が実数解をもつ", "どちらも実数解をもつ", "どちらも実数解をもたない"][kind];
+          return {
+            q: `2つの2次方程式 ${tex(`x^{2}+2ax+${k * k}=0`)}、${tex(`x^{2}-2x+a=0`)} の${what}ような、定数 ${tex("a")} の値の範囲は？`,
+            ans: ok,
+            choices: choices4(r, ok, [T(`a\\leqq ${m},\\ ${k}\\leqq a`), T(`a\\leqq -${k}`), T(`${m}<a<${k}`), T(`-${k}<a\\leqq ${m}`), T(`a\\leqq -${k},\\ ${k}\\leqq a`)].filter((x) => x !== ok).slice(0, 3)),
+            hint: "それぞれの判別式の条件を数直線にかき、「または」「かつ」「どちらでもない」に合う部分をとる。",
+            steps: [
+              `1つ目：$\\frac{D_{1}}{4}=a^{2}-${k * k}\\geqq 0$ より $a\\leqq -${k},\\ ${k}\\leqq a$`,
+              `2つ目：$\\frac{D_{2}}{4}=1-a\\geqq 0$ より $a\\leqq 1$`,
+              [`少なくとも一方は和集合：$a\\leqq ${m},\\ ${k}\\leqq a$`, `どちらもは共通部分：$a\\leqq -${k}$`, `どちらももたないのは、少なくとも一方がもつ範囲の外：$${m}<a<${k}$`][kind],
+            ],
+          };
+        }),
       ],
       4: [
         t("HI-nijifuto-4a", (r) => {
@@ -2785,6 +2837,41 @@ export const UNITS = [
               `$a>${p}$ のとき $${p}<x<a$。整数 ${Array.from({ length: n }, (_, i) => p + 1 + i).join(", ")} だけ入るのは $${p + n}<a\\leqq ${p + n + 1}$`,
               `$a<${p}$ のとき $a<x<${p}$。整数 ${Array.from({ length: n }, (_, i) => p - n + i).join(", ")} だけ入るのは $${p - n - 1}\\leqq a<${p - n}$`,
               `合わせて ${ok}`,
+            ],
+          };
+        }),
+        t("HI-nijifuto-4c", (r) => {
+          const [r1, r2, L, lo, hi] = pick(r, ALWAYS_POS);
+          const sv = r1 + r2, tv = -r1 * r2;
+          const ok = tex(`${lo}<a<${hi}`);
+          return {
+            q: `${tex(`0\\leqq x\\leqq ${L}`)} を満たすすべての ${tex("x")} に対して、${tex(`x^{2}-2ax${signedVar(sv, "a")}${signed(tv)}>0`)} が成り立つような定数 ${tex("a")} の値の範囲は？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(`${lo}\\leqq a\\leqq ${hi}`), tex(`${r1}<a<${r2}`), tex(`${Math.max(r1, 0)}<a<${Math.min(r2, L)}`), tex(`a<${hi}`)]),
+            hint: `$f(x)$ の $0\\leqq x\\leqq ${L}$ での最小値が正になればよい。軸 $x=a$ の位置で $a<0$、$0\\leqq a\\leqq ${L}$、$a>${L}$ に分ける。`,
+            steps: [
+              `$a<0$ のとき最小値 $f(0)=${coefVar(sv, "a")}${signed(tv)}>0$、$0\\leqq a\\leqq ${L}$ のとき最小値 $f(a)=-a^{2}${signedVar(sv, "a")}${signed(tv)}>0$`,
+              `$a>${L}$ のとき最小値 $f(${L})=${poly([sv - 2 * L, L * L + tv], "a")}>0$`,
+              `それぞれを解いて合わせると $${lo}<a<${hi}$`,
+            ],
+          };
+        }),
+        t("HI-nijifuto-4d", (r) => {
+          const b = r(1, 3);
+          const prs = [];
+          for (let r1 = -9; r1 <= -1; r1++) if ((b * b) % -r1 === 0) prs.push([r1, (b * b) / -r1]); // r1 r2 = -b^2
+          const [r1, r2] = pick(r, prs);
+          const c = -(r1 + r2); // a^2 + c a - b^2 = (a-r1)(a-r2)
+          const ok = tex(`a>${r2}`);
+          return {
+            q: `すべての実数 ${tex("x")} に対して ${tex(`ax^{2}+${2 * b}x+a${signed(c)}>0`)} が成り立つような定数 ${tex("a")} の値の範囲は？`.replace("+a+0>", "+a>"),
+            ans: ok,
+            choices: choices4(r, ok, [tex(`a<${r1},\\ ${r2}<a`), tex(`${r1}<a<${r2}`), tex(`a\\geqq ${r2}`), tex("a>0")]),
+            hint: "$x^{2}$ の係数に文字があるので、$a=0$ の場合と $a\\neq 0$ の場合に分ける。$a\\neq 0$ なら下に凸で $x$ 軸と共有点をもたない条件を考える。",
+            steps: [
+              `$a=0$ のとき $${2 * b}x${signed(c)}>0$ はすべての $x$ では成り立たない`,
+              `$a\\neq 0$ のとき、$a>0$ かつ $\\frac{D}{4}=${b * b}-a(a${signed(c)})<0$、すなわち $a>0$ かつ $(a${signed(-r1)})(a${signed(-r2)})>0$`,
+              `$a>0$ と $a<${r1},\\ ${r2}<a$ の共通部分で $a>${r2}$`,
             ],
           };
         }),
