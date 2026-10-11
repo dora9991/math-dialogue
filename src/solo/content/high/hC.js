@@ -1039,16 +1039,16 @@ const FUKUSO = {
         const aT = ci(al[0], al[1]), bT = ci(be[0], be[1]);
         const sd = den < 0 ? -1 : 1; // 分母を正にして表示
         const numT = ci(sd * (wa * al[0] + wb * be[0]), sd * (wa * al[1] + wb * be[1]));
+        const sub2 = `${ext ? "-" : ""}${cf(n)}(${aT})+${cf(m)}(${bT})`;
+        const fin = pt(wa, wb, den), mid = `\\frac{${numT}}{${sd * den}}`;
         return {
           q: `複素数平面上の2点 A$(${aT})$, B$(${bT})$ を結ぶ線分 AB を ${m}:${n} に${ext ? "外分" : "内分"}する点を表す複素数を求めよ。`,
           ans,
           choices: choices4(r, ans, wr.map((w) => `$${w}$`), (i) => `$${cplx([wa * al[0] + wb * be[0] + (i + 1) * den, den, 1], [wa * al[1] + wb * be[1], den, 1])}$`),
           hint: ext ? "$m:n$ に外分する点は $\\frac{-n\\alpha+m\\beta}{m-n}$（$\\alpha$, $\\beta$ は A, B を表す複素数）。" : "$m:n$ に内分する点は $\\frac{n\\alpha+m\\beta}{m+n}$（$\\alpha$, $\\beta$ は A, B を表す複素数）。",
           steps: [
-            ext
-              ? `$\\alpha=${aT}$, $\\beta=${bT}$ とすると、求める点は $\\frac{-${cf(n)}\\alpha+${cf(m)}\\beta}{${m}-${n}}=\\frac{-${cf(n)}(${aT})+${cf(m)}(${bT})}{${m - n}}$`
-              : `$\\alpha=${aT}$, $\\beta=${bT}$ とすると、求める点は $\\frac{${cf(n)}\\alpha+${cf(m)}\\beta}{${m}+${n}}=\\frac{${cf(n)}(${aT})+${cf(m)}(${bT})}{${m + n}}$`,
-            sd * den === 1 ? `$=${pt(wa, wb, den)}$` : `$=\\frac{${numT}}{${sd * den}}=${pt(wa, wb, den)}$`,
+            `$\\alpha=${aT}$, $\\beta=${bT}$ とすると、求める点は $${ext ? `\\frac{-${cf(n)}\\alpha+${cf(m)}\\beta}{${m}-${n}}` : `\\frac{${cf(n)}\\alpha+${cf(m)}\\beta}{${m}+${n}}`}=${den === 1 ? sub2 : den === -1 ? `-\\left\\{${sub2}\\right\\}` : `\\frac{${sub2}}{${den}}`}$`,
+            sd * den === 1 || mid === fin ? `$=${fin}$` : `$=${mid}=${fin}$`,
           ],
         };
       }),
@@ -1175,14 +1175,20 @@ const FUKUSO = {
           ? (y0 === 0 ? xT : `${x0 === 0 ? "a" : `(${xT})`}${imT(y0)}`)
           : (x0 === 0 ? `${y0 === 0 ? "a" : `(${yT})`}i` : `${x0}+${y0 === 0 ? "a" : `(${yT})`}i`);
         const RE = lin([[reA, 1, "a"], [re0, 1, ""]]), IM = lin([[imA, 1, "a"], [im0, 1, ""]]);
-        const numT = [RE !== "0" ? RE : "", IM !== "0" ? `${RE !== "0" ? "+" : ""}(${IM})i` : ""].join("") || "0";
+        const imP = (T) => (/a/.test(T) ? `(${T})i` : T === "1" ? "i" : T === "-1" ? "-i" : `${T}i`);
+        const numT = IM === "0" ? RE : RE === "0" ? imP(IM) : `${RE}${imP(IM).startsWith("-") ? "" : "+"}${imP(IM)}`;
+        const nn = p * p + q * q;
         const a0 = fracTex(-c0, cA);
         return {
           q: `複素数平面上の3点 A$(${ci(al[0], al[1])})$, B$(${ci(be[0], be[1])})$, C$(${gT})$ について、${perp ? "2直線 AB, AC が垂直に交わる" : "3点 A, B, C が一直線上にある"}ような実数 $a$ の値を求めよ。`,
           ans: fracAns(-c0, cA),
           hint: `A, B, C を表す複素数を $\\alpha$, $\\beta$, $\\gamma$ として、$\\frac{\\gamma-\\alpha}{\\beta-\\alpha}$ が${perp ? "純虚数" : "実数"}になる条件を考える。`,
           steps: [
-            `$\\frac{\\gamma-\\alpha}{\\beta-\\alpha}=\\frac{${dT}}{${ci(p, q)}}=\\frac{(${dT})(${ci(p, -q)})}{${p * p + q * q}}=\\frac{${numT}}{${p * p + q * q}}$`,
+            p === 1 && q === 0
+              ? `$\\beta-\\alpha=1$ より $\\frac{\\gamma-\\alpha}{\\beta-\\alpha}=\\gamma-\\alpha=${numT}$`
+              : nn === 1
+              ? `$\\frac{\\gamma-\\alpha}{\\beta-\\alpha}=\\frac{${dT}}{${ci(p, q)}}=(${dT})(${ci(p, -q)})=${numT}$`
+              : `$\\frac{\\gamma-\\alpha}{\\beta-\\alpha}=\\frac{${dT}}{${ci(p, q)}}=\\frac{(${dT})(${ci(p, -q)})}{${nn}}=\\frac{${numT}}{${nn}}$`,
             perp
               ? `2直線が垂直に交わるのは、これが純虚数のとき。実部 $${RE}=0$ より $a=${a0}$（このとき虚部は0でない）`
               : `3点が一直線上にあるのは、これが実数のとき。虚部 $${IM}=0$ より $a=${a0}$`,
@@ -1725,9 +1731,10 @@ const KYOKUSEN = {
         // 楕円と直線の2交点の中点（解と係数の関係）
         const a = r(1, 5), b = r(1, 5);
         if (a === b) return { skip: true };
-        const m = rnz(r, -3, 3), k = rnz(r, -6, 6);
+        const m = rnz(r, -3, 3);
         const A = b * b + a * a * m * m;
-        if (k * k >= A) return { skip: true }; // 異なる2点で交わる条件
+        const kmax = Math.min(6, Math.floor(Math.sqrt(A - 1))); // k² < A なら異なる2点で交わる
+        const k = rnz(r, -kmax, kmax);
         const askY = r(0, 1) === 1;
         const B1 = 2 * a * a * m * k, C1 = a * a * (k * k - b * b);
         const lineT = `y=${m === 1 ? "" : m === -1 ? "-" : m}x${signed(k)}`;

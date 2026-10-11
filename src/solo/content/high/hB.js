@@ -415,7 +415,7 @@ const SIGMA = {
         const rr = pick(r, [2, 3]), a = pick(r, [1, 2, 3, 5, -2]), e = pick(r, ["k-1", "k"]), n = rr === 3 ? r(4, 6) : r(4, 8);
         const F = a * (e === "k" ? rr : 1), ans = (F * (rr ** n - 1)) / (rr - 1);
         return {
-          q: `$\\sum_{k=1}^{${n}}${a === 1 ? "" : `${a}\\cdot `}${rr}^{${e}}$ の値を求めよ。`,
+          q: `$\\sum_{k=1}^{${n}}${a === 1 ? "" : `${par(a)}\\cdot `}${rr}^{${e}}$ の値を求めよ。`,
           ans,
           hint: "等比数列の和になる。初項（$k=1$ のときの値）・公比・項数を読みとる。",
           steps: [
@@ -703,7 +703,7 @@ const SIGMA = {
           hint: "$[\\sqrt{k}]$ の値が同じになる $k$ をまとめて数える。",
           steps: [
             `$m^{2}\\leqq k\\leqq (m+1)^{2}-1$ のとき $[\\sqrt{k}]=m$ で，そのような $k$ は $2m+1$ 個`,
-            `$${M}^{2}\\leqq ${N}<${M + 1}^{2}$ なので，$m=1$〜$${M - 1}$ の分はすべて入り，$m=${M}$ の分は $k=${M * M}$〜$${N}$ の $${N - M * M + 1}$ 個`,
+            `$${M}^{2}\\leqq ${N}<${M + 1}^{2}$ なので，$m=1$〜$${M - 1}$ の分はすべて入り，$m=${M}$ の分は ${N === M * M ? `$k=${N}$ の $1$ 個` : `$k=${M * M}$〜$${N}$ の $${N - M * M + 1}$ 個`}`,
             `和は $\\sum_{m=1}^{${M - 1}}m(2m+1)+${M}\\cdot ${N - M * M + 1}=${full}+${part}=${ans}$`,
           ],
         };
@@ -715,6 +715,30 @@ const SIGMA = {
 // ============================================================
 // 漸化式と数学的帰納法
 // ============================================================
+/** 数学的帰納法で示す等式 [左辺, 右辺, n=k+1 で両辺に加える項, 誤答, 加えたあとの右辺の確かめ] */
+const IND = [
+  ["1+2+3+\\cdots+n", "\\frac{1}{2}n(n+1)", "k+1", ["k", "k+2", "\\frac{1}{2}(k+1)(k+2)"], "\\frac{1}{2}k(k+1)+(k+1)=\\frac{1}{2}(k+1)(k+2)"],
+  ["1+3+5+\\cdots+(2n-1)", "n^{2}", "2k+1", ["2k-1", "2k+3", "(k+1)^{2}"], "k^{2}+(2k+1)=(k+1)^{2}"],
+  ["1^{2}+2^{2}+3^{2}+\\cdots+n^{2}", "\\frac{1}{6}n(n+1)(2n+1)", "(k+1)^{2}", ["k^{2}", "(k+2)^{2}", "k+1"], "\\frac{1}{6}k(k+1)(2k+1)+(k+1)^{2}=\\frac{1}{6}(k+1)(k+2)(2k+3)"],
+  ["1^{3}+2^{3}+3^{3}+\\cdots+n^{3}", "\\frac{1}{4}n^{2}(n+1)^{2}", "(k+1)^{3}", ["k^{3}", "(k+2)^{3}", "(k+1)^{2}"], "\\frac{1}{4}k^{2}(k+1)^{2}+(k+1)^{3}=\\frac{1}{4}(k+1)^{2}(k+2)^{2}"],
+  ["1\\cdot 2+2\\cdot 3+3\\cdot 4+\\cdots+n(n+1)", "\\frac{1}{3}n(n+1)(n+2)", "(k+1)(k+2)", ["k(k+1)", "(k+2)(k+3)", "(k+1)^{2}"], "\\frac{1}{3}k(k+1)(k+2)+(k+1)(k+2)=\\frac{1}{3}(k+1)(k+2)(k+3)"],
+  ["1+2+2^{2}+\\cdots+2^{n-1}", "2^{n}-1", "2^{k}", ["2^{k-1}", "2^{k+1}", "2^{k}-1"], "(2^{k}-1)+2^{k}=2^{k+1}-1"],
+  ["1+3+3^{2}+\\cdots+3^{n-1}", "\\frac{1}{2}(3^{n}-1)", "3^{k}", ["3^{k-1}", "3^{k+1}", "3^{k}-1"], "\\frac{1}{2}(3^{k}-1)+3^{k}=\\frac{1}{2}(3^{k+1}-1)"],
+  ["\\frac{1}{1\\cdot 2}+\\frac{1}{2\\cdot 3}+\\cdots+\\frac{1}{n(n+1)}", "\\frac{n}{n+1}", "\\frac{1}{(k+1)(k+2)}", ["\\frac{1}{k(k+1)}", "\\frac{1}{(k+2)(k+3)}", "\\frac{k+1}{k+2}"], "\\frac{k}{k+1}+\\frac{1}{(k+1)(k+2)}=\\frac{k+1}{k+2}"],
+];
+const fact = (n) => (n <= 1 ? 1 : n * fact(n - 1));
+/** n≧N で成り立つ不等式 [左辺, 右辺, 左辺の値, 右辺の値, n=k+1 で成り立つ理由] */
+const INEQ = [
+  ["2^{n}", "n^{2}", (n) => 2 ** n, (n) => n * n, "$2^{k+1}=2\\cdot 2^{k}>2k^{2}$ で，$2k^{2}-(k+1)^{2}=(k-1)^{2}-2>0$"],
+  ["2^{n}", "n^{3}", (n) => 2 ** n, (n) => n ** 3, "$2^{k+1}=2\\cdot 2^{k}>2k^{3}$ で，$k\\geqq 4$ なら $\\left(1+\\frac{1}{k}\\right)^{3}<2$ より $2k^{3}>(k+1)^{3}$"],
+  ["3^{n}", "n^{3}", (n) => 3 ** n, (n) => n ** 3, "$3^{k+1}=3\\cdot 3^{k}>3k^{3}$ で，$k\\geqq 3$ なら $\\left(1+\\frac{1}{k}\\right)^{3}<3$ より $3k^{3}>(k+1)^{3}$"],
+  ["2^{n}", "2n+1", (n) => 2 ** n, (n) => 2 * n + 1, "$2^{k+1}=2\\cdot 2^{k}>2(2k+1)=4k+2>2(k+1)+1$"],
+  ["2^{n}", "10n", (n) => 2 ** n, (n) => 10 * n, "$2^{k+1}=2\\cdot 2^{k}>20k\\geqq 10(k+1)$"],
+  ["3^{n}", "5n^{2}", (n) => 3 ** n, (n) => 5 * n * n, "$3^{k+1}=3\\cdot 3^{k}>15k^{2}$ で，$15k^{2}-5(k+1)^{2}=5(2k^{2}-2k-1)>0$"],
+  ["n!", "2^{n}", (n) => fact(n), (n) => 2 ** n, "$(k+1)!=(k+1)\\cdot k!>(k+1)\\cdot 2^{k}>2\\cdot 2^{k}=2^{k+1}$"],
+  ["n!", "3^{n}", (n) => fact(n), (n) => 3 ** n, "$(k+1)!=(k+1)\\cdot k!>(k+1)\\cdot 3^{k}>3\\cdot 3^{k}=3^{k+1}$"],
+];
+
 const ZENKA = {
   id: "HB-zenka", grade: "H2", area: "num", name: "漸化式と数学的帰納法",
   desc: "等差・等比・階差型・an+1=pan+q 型",
@@ -767,6 +791,33 @@ const ZENKA = {
           steps: [`初項 $${A}$，公比 $${rr}$ の等比数列`, `$a_{n}=${geoTex(A, rr, "n-1")}$`],
         };
       }),
+      t("HB-zenka-1c", (r) => {
+        const [pn, pd] = pick(r, [[2, 1], [3, 1], [4, 1], [-1, 1], [-2, 1], [-3, 1], [1, 2], [1, 3], [2, 3], [-1, 2]]);
+        const q = rnz(r, -9, 9), pc = cfTex(pn, pd);
+        return {
+          q: `漸化式 $a_{n+1}=${pc}a_{n}${signed(q)}$ を $a_{n+1}-\\alpha=${pc}(a_{n}-\\alpha)$ の形に変形するとき，定数 $\\alpha$ の値を求めよ。`,
+          ans: fracAns(q * pd, pd - pn),
+          hint: "$a_{n+1}$ と $a_{n}$ をどちらも $\\alpha$ におきかえた式 $\\alpha=p\\alpha+q$ を解く。",
+          steps: [
+            `$a_{n+1}-\\alpha=${pc}(a_{n}-\\alpha)$ を展開してもとの式と比べると，$\\alpha=${pc}\\alpha${signed(q)}$ をみたせばよい`,
+            `$${cfTex(pd - pn, pd)}\\alpha=${q}$ より，答え：$\\alpha=${fracTex(q * pd, pd - pn)}$`,
+          ],
+        };
+      }),
+      t("HB-zenka-1d", (r) => {
+        const [L, R, add, ws, chk] = pick(r, IND);
+        const ans = tex(add);
+        return {
+          q: `等式 $${L}=${R}$ がすべての自然数 $n$ について成り立つことを，数学的帰納法で証明する。$n=k$ のとき成り立つと仮定して $n=k+1$ のときを示すには，仮定の等式の両辺に何を加えればよいか。`,
+          ans,
+          choices: choices4(r, ans, ws.map(tex)),
+          hint: "$n=k+1$ のときの左辺は，$n=k$ のときの左辺より項が1つ多い。",
+          steps: [
+            `$n=k+1$ のときの左辺は，$n=k$ のときの左辺に第 $k+1$ 項 $${add}$ を加えたもの`,
+            `仮定の等式の両辺に $${add}$ を加えると，右辺は $${chk}$ となり，$n=k+1$ のときも成り立つ`,
+          ],
+        };
+      }),
     ],
     2: [
       t("HB-zenka-2a", (r) => {
@@ -800,6 +851,55 @@ const ZENKA = {
           steps: [
             `$a_{${k}}=${A}+\\sum_{j=1}^{${k - 1}}(${poly([p, q], "j")})$`,
             `$=${A}${smulTex(p, `\\frac{${k - 1}\\cdot ${k}}{2}`)}${q ? smulTex(q, `${k - 1}`) : ""}=${ans}$`,
+          ],
+        };
+      }),
+      t("HB-zenka-2c", (r) => {
+        const type = r(0, 2);
+        let N, Nk, Nk1, d, box, ws, how;
+        if (type === 0) {
+          const [b, c, dd] = pick(r, [[4, 5, 3], [5, 3, 4], [7, 5, 6], [6, 4, 5], [3, -1, 2], [5, -1, 4], [9, -1, 8], [4, 2, 3]]);
+          const e = (c * (b - 1)) / dd, f = (v) => `${b}^{${v}}${signed(c)}`;
+          d = dd; N = f("n"); Nk = f("k"); Nk1 = f("k+1");
+          box = `${b}m${signed(-e)}`;
+          ws = [`${b}m${signed(e)}`, `m${signed(-e)}`, `${b}m${signed(-c * (b - 1))}`];
+          how = `$${b}^{k}=${d}m${signed(-c)}$ を使うと $${Nk1}=${b}(${d}m${signed(-c)})${signed(c)}=${b * d}m${signed(-c * (b - 1))}=${d}(${box})$`;
+        } else if (type === 1) {
+          const [b, a] = pick(r, [[7, 4], [8, 3], [5, 2], [7, 3], [9, 4], [6, 2]]);
+          d = b - a; N = `${b}^{n}-${a}^{n}`; Nk = `${b}^{k}-${a}^{k}`; Nk1 = `${b}^{k+1}-${a}^{k+1}`;
+          box = `${b}m+${a}^{k}`;
+          ws = [`${b}m+${a}^{k+1}`, `${b}m-${a}^{k}`, `m+${a}^{k}`];
+          how = `$${b}^{k}=${d}m+${a}^{k}$ を使うと $${Nk1}=${b}(${d}m+${a}^{k})-${a}\\cdot ${a}^{k}=${b * d}m+${d}\\cdot ${a}^{k}=${d}(${box})$`;
+        } else {
+          const [nt, dd, bx, wx, hw] = pick(r, [
+            ["n^{3}+2n", 3, "m+k^{2}+k+1", ["m+k^{2}+k", "m+3k^{2}+3k+3", "m+k^{2}+1"], "(k^{3}+2k)+3k^{2}+3k+3=3m+3(k^{2}+k+1)"],
+            ["2n^{3}+3n^{2}+n", 6, "m+k^{2}+2k+1", ["m+k^{2}+2k", "m+6k^{2}+12k+6", "m+k^{2}+k+1"], "(2k^{3}+3k^{2}+k)+6k^{2}+12k+6=6m+6(k^{2}+2k+1)"],
+          ]);
+          d = dd; N = nt; Nk = nt.replace(/n/g, "k"); Nk1 = nt.replace(/n/g, "(k+1)");
+          box = bx; ws = wx;
+          how = `$${Nk1}=${hw}=${d}(${box})$`;
+        }
+        const ans = tex(box);
+        return {
+          q: `すべての自然数 $n$ について $${N}$ が $${d}$ の倍数であることを，数学的帰納法で証明する。$n=k$ のとき $${Nk}=${d}m$（$m$ は整数）と仮定すると，$${Nk1}=${d}\\left(\\square\\right)$ と表せる。$\\square$ にあてはまる式を選べ。`,
+          ans,
+          choices: choices4(r, ans, ws.map(tex)),
+          hint: `仮定の式を使って $n=k+1$ のときの式を $m$ で表し，$${d}$ でくくる形をめざす。`,
+          steps: [how, `$\\square$ は整数なので，$n=k+1$ のときも $${d}$ の倍数である`],
+        };
+      }),
+      t("HB-zenka-2d", (r) => {
+        const [f, g, F, G, why] = pick(r, INEQ);
+        let N = 1;
+        for (let n = 1; n <= 40; n++) if (!(F(n) > G(n))) N = n + 1;
+        return {
+          q: `不等式 $${f}>${g}$ が，$n\\geqq N$ をみたすすべての自然数 $n$ について成り立つような，最小の自然数 $N$ を求めよ。`,
+          ans: N,
+          hint: "小さい $n$ から順に両辺の値を比べ，成り立たない最後の $n$ を見つける。その先は数学的帰納法で示せる。",
+          steps: [
+            `$n=${N - 1}$ のとき（左辺）$=${F(N - 1)}$，（右辺）$=${G(N - 1)}$ で成り立たない。$n=${N}$ のとき（左辺）$=${F(N)}$，（右辺）$=${G(N)}$ で成り立つ`,
+            `$n=k\\ (k\\geqq ${N})$ で成り立つと仮定すると，${why}。よって $n=k+1$ でも成り立つ`,
+            `答え：$N=${N}$`,
           ],
         };
       }),
@@ -854,6 +954,57 @@ const ZENKA = {
             `逆数をとると $\\frac{1}{a_{n+1}}=\\frac{1}{a_{n}}+${p}$`,
             `$\\frac{1}{a_{n}}$ は初項 $${A}$，公差 $${p}$ の等差数列：$\\frac{1}{a_{${k}}}=${A}+${mulTex(p, `${k - 1}`)}=${bk}$`,
             `答え：$${fracTex(1, bk)}$`,
+          ],
+        };
+      }),
+      t("HB-zenka-3d", (r) => {
+        const m = r(1, 8), K = r(10, 40);
+        const wrap = (v, c) => (c === 0 ? v : `(${plusC(v, c)})`);
+        if (r(0, 1) === 0) {
+          // a1=(m-1)/m，a_{n+1}=1/(2-a_n) → a_n=(n+m-2)/(n+m-1)
+          const A = (n) => fracTex(n + m - 2, n + m - 1);
+          return {
+            q: `$a_{1}=${A(1)}$，$a_{n+1}=\\frac{1}{2-a_{n}}$ で定められる数列 $\\{a_{n}\\}$ の $a_{${K}}$ を求めよ。`,
+            ans: fracAns(K + m - 2, K + m - 1),
+            hint: "$a_{2},\\ a_{3},\\ a_{4}$ を計算して一般項を推測し，数学的帰納法で確かめる。",
+            steps: [
+              `$a_{2}=${A(2)}$，$a_{3}=${A(3)}$，$a_{4}=${A(4)}$ から $a_{n}=\\frac{${plusC("n", m - 2)}}{${plusC("n", m - 1)}}$ と推測できる`,
+              `$a_{k}=\\frac{${plusC("k", m - 2)}}{${plusC("k", m - 1)}}$ と仮定すると $a_{k+1}=\\frac{1}{2-a_{k}}=\\frac{${plusC("k", m - 1)}}{2${wrap("k", m - 1)}-${wrap("k", m - 2)}}=\\frac{${plusC("k", m - 1)}}{${plusC("k", m)}}$ となり，$n=k+1$ でも成り立つ`,
+              `答え：$a_{${K}}=${A(K)}$`,
+            ],
+          };
+        }
+        // a1=(m+1)/m，a_{n+1}=2-1/a_n → a_n=(n+m)/(n+m-1)
+        const A = (n) => fracTex(n + m, n + m - 1);
+        return {
+          q: `$a_{1}=${A(1)}$，$a_{n+1}=2-\\frac{1}{a_{n}}$ で定められる数列 $\\{a_{n}\\}$ の $a_{${K}}$ を求めよ。`,
+          ans: fracAns(K + m, K + m - 1),
+          hint: "$a_{2},\\ a_{3},\\ a_{4}$ を計算して一般項を推測し，数学的帰納法で確かめる。",
+          steps: [
+            `$a_{2}=${A(2)}$，$a_{3}=${A(3)}$，$a_{4}=${A(4)}$ から $a_{n}=\\frac{${plusC("n", m)}}{${plusC("n", m - 1)}}$ と推測できる`,
+            `$a_{k}=\\frac{${plusC("k", m)}}{${plusC("k", m - 1)}}$ と仮定すると $a_{k+1}=2-\\frac{${plusC("k", m - 1)}}{${plusC("k", m)}}=\\frac{${plusC("k", m + 1)}}{${plusC("k", m)}}$ となり，$n=k+1$ でも成り立つ`,
+            `答え：$a_{${K}}=${A(K)}$`,
+          ],
+        };
+      }),
+      t("HB-zenka-3e", (r) => {
+        const p = pick(r, [2, 3]), al = rnz(r, -3, 3), be = r(-4, 4), A = r(-3, 5);
+        const C = A + al + be;
+        if (C === 0 || Math.abs(C) === p) return { skip: true }; // 2・2^{n-1} のような形を避ける
+        const q = al * (p - 1), rc = be * (p - 1) - al;
+        const lin = (x, y) => `${signedVar(x, "n")}${y ? signed(y) : ""}`; // +xn+y の形
+        // 選択肢は { tex, f(n) }（値で重複除去する）
+        const F = (c, e, x, y) => (c === 0 ? null : { tex: tex(`a_{n}=${geoTex(c, p, e)}${lin(-x, -y)}`), f: (n) => c * p ** (e === "n" ? n : n - 1) - x * n - y });
+        const corr = F(C, "n-1", al, be), sq = `a_{n}${lin(al, be)}`, k1 = p - 1 === 1 ? "" : p - 1;
+        return {
+          q: `$a_{1}=${A}$，$a_{n+1}=${p}a_{n}${signedVar(q, "n")}${rc ? signed(rc) : ""}$ で定められる数列 $\\{a_{n}\\}$ の一般項を求めよ。`,
+          ans: corr.tex,
+          choices: choicesByValue(r, corr, [F(C, "n", al, be), F(A - al - be, "n-1", -al, -be), F(A, "n-1", al, be)], (i) => F(C + i + 1, "n-1", al, be)),
+          hint: "$a_{n}+\\alpha n+\\beta$ が等比数列になるように，定数 $\\alpha,\\ \\beta$ を決める。",
+          steps: [
+            `$a_{n+1}+\\alpha(n+1)+\\beta=${p}(a_{n}+\\alpha n+\\beta)$ を展開してもとの式と比べると，$${k1}\\alpha=${q}$，$${k1}\\beta-\\alpha=${rc}$ より $\\alpha=${al}$，$\\beta=${be}$`,
+            `数列 $\\{${sq}\\}$ は初項 $${A}${signed(al)}${be ? signed(be) : ""}=${C}$，公比 $${p}$ の等比数列`,
+            `$${sq}=${geoTex(C, p, "n-1")}$ より $a_{n}=${geoTex(C, p, "n-1")}${lin(-al, -be)}$`,
           ],
         };
       }),
@@ -918,6 +1069,68 @@ const ZENKA = {
           ],
         };
       }),
+      t("HB-zenka-4d", (r) => {
+        const K = r(3, 6);
+        if (r(0, 1) === 0) {
+          const [sn, sd] = pick(r, [[0, 1], [1, 2], [1, 4]]); // とどまる確率 s
+          const mv = fracTex(sd - sn, 2 * sd); // ほかの頂点へ移る確率（それぞれ）
+          const ln = 3 * sn - sd, ld = 2 * sd, lt = fracTex(ln, ld); // p_{n+1}-1/3=(s-mv)(p_n-1/3)
+          const move = sn === 0
+            ? "いまいる頂点以外の2つの頂点のどちらかへ，それぞれ確率 $\\frac{1}{2}$ で移る"
+            : `確率 $${fracTex(sn, sd)}$ でいまいる頂点にとどまり，残りの2つの頂点へそれぞれ確率 $${mv}$ で移る`;
+          const N = ld ** K + 2 * ln ** K, D = 3 * ld ** K;
+          return {
+            q: `正三角形 ABC の頂点を動く点 P がある。P は1秒ごとに，${move}。最初 P は頂点 A にある。$n$ 秒後に P が A にある確率を $p_{n}$ とするとき，$p_{${K}}$ を求めよ。`,
+            ans: fracAns(N, D),
+            hint: "最後の1秒で場合分けして，$p_{n+1}$ を $p_{n}$ で表す。",
+            steps: [
+              sn === 0
+                ? `$n+1$ 秒後に A にあるのは，$n$ 秒後に A 以外にあって A へ移るとき：$p_{n+1}=\\frac{1}{2}(1-p_{n})$`
+                : `$n+1$ 秒後に A にあるのは，$n$ 秒後に A にあってとどまるか，A 以外にあって A へ移るとき：$p_{n+1}=${fracTex(sn, sd)}p_{n}+${mv}(1-p_{n})$`,
+              `$p_{n+1}-\\frac{1}{3}=${lt}\\left(p_{n}-\\frac{1}{3}\\right)$，最初（$0$ 秒後）は A にあるので $p_{0}=1$。よって $p_{n}=\\frac{1}{3}+\\frac{2}{3}\\left(${lt}\\right)^{n}$`,
+              `答え：$p_{${K}}=\\frac{1}{3}+\\frac{2}{3}\\left(${lt}\\right)^{${K}}=${fracTex(N, D)}$`,
+            ],
+          };
+        }
+        const [qn, qd, ev] = pick(r, [[1, 6, "1の目"], [1, 3, "3の倍数の目"], [1, 6, "6の目"]]);
+        const lt = fracTex(qd - 2 * qn, qd), ln = qd - 2 * qn, ld = qd; // p_{n+1}-1/2=(1-2q)(p_n-1/2)
+        const N = ld ** K + ln ** K, D = 2 * ld ** K;
+        return {
+          q: `1個のさいころを $n$ 回投げるとき，${ev}が出る回数が偶数である確率を $p_{n}$ とする（$0$ 回も偶数とする）。$p_{${K}}$ を求めよ。`,
+          ans: fracAns(N, D),
+          hint: "最後の1回で場合分けして，$p_{n+1}$ を $p_{n}$ で表す。",
+          steps: [
+            `$n+1$ 回目までで偶数回となるのは，$n$ 回目までで偶数回で $n+1$ 回目に出ないか，奇数回で $n+1$ 回目に出るとき：$p_{n+1}=${fracTex(qd - qn, qd)}p_{n}+${fracTex(qn, qd)}(1-p_{n})$`,
+            `$p_{n+1}-\\frac{1}{2}=${lt}\\left(p_{n}-\\frac{1}{2}\\right)$，$p_{0}=1$ より $p_{n}=\\frac{1}{2}+\\frac{1}{2}\\left(${lt}\\right)^{n}$`,
+            `答え：$p_{${K}}=\\frac{1}{2}+\\frac{1}{2}\\left(${lt}\\right)^{${K}}=${fracTex(N, D)}$`,
+          ],
+        };
+      }),
+      t("HB-zenka-4e", (r) => {
+        const A = r(1, 6), K = r(5, 30);
+        if (r(0, 1) === 0) {
+          return {
+            q: `数列 $\\{a_{n}\\}$ が $a_{1}=${A}$，$a_{1}+a_{2}+\\cdots+a_{n}=n^{2}a_{n}$（$n=1,\\ 2,\\ 3,\\ \\cdots$）をみたすとき，$a_{${K}}$ を求めよ。`,
+            ans: fracAns(2 * A, K * (K + 1)),
+            hint: "$S_{n}=a_{1}+\\cdots+a_{n}$ とおき，$S_{n}-S_{n-1}=a_{n}$ を使って $a_{n}$ と $a_{n-1}$ の関係式をつくる。",
+            steps: [
+              `$S_{n}=a_{1}+\\cdots+a_{n}$ とする。$n\\geqq 2$ のとき $a_{n}=S_{n}-S_{n-1}=n^{2}a_{n}-(n-1)^{2}a_{n-1}$ より $(n+1)(n-1)a_{n}=(n-1)^{2}a_{n-1}$，$a_{n}=\\frac{n-1}{n+1}a_{n-1}$`,
+              `これをくり返して $a_{n}=\\frac{n-1}{n+1}\\cdot\\frac{n-2}{n}\\cdot\\frac{n-3}{n-1}\\cdots\\frac{2}{4}\\cdot\\frac{1}{3}a_{1}=\\frac{2}{n(n+1)}a_{1}=\\frac{${2 * A}}{n(n+1)}$`,
+              `答え：$a_{${K}}=\\frac{${2 * A}}{${K}\\cdot ${K + 1}}=${fracTex(2 * A, K * (K + 1))}$`,
+            ],
+          };
+        }
+        return {
+          q: `$a_{1}=${A}$，$na_{n+1}=(n+2)a_{n}$ で定められる数列 $\\{a_{n}\\}$ の $a_{${K}}$ を求めよ。`,
+          ans: (A * K * (K + 1)) / 2,
+          hint: "両辺を $n(n+1)(n+2)$ で割ると，一定になる式が見つかる。",
+          steps: [
+            `両辺を $n(n+1)(n+2)$ で割ると $\\frac{a_{n+1}}{(n+1)(n+2)}=\\frac{a_{n}}{n(n+1)}$`,
+            `よって $\\frac{a_{n}}{n(n+1)}$ は一定で $\\frac{a_{1}}{1\\cdot 2}=${fracTex(A, 2)}$。$a_{n}=${cfTex(A, 2)}n(n+1)$`,
+            `答え：$a_{${K}}=${A === 2 ? "" : `${fracTex(A, 2)}\\cdot `}${K}\\cdot ${K + 1}=${(A * K * (K + 1)) / 2}$`,
+          ],
+        };
+      }),
     ],
   },
 };
@@ -950,6 +1163,18 @@ const BINOM = [
   ["1個のさいころを {n} 回投げるとき，3の倍数の目が出る回数", 288, 1, 3, 96, 8],
   ["当たりの確率が $\\frac{1}{5}$ のくじを {n} 回引く（毎回もどす）とき，当たりの回数", 400, 1, 5, 80, 8],
   ["当たりの確率が $\\frac{1}{5}$ のくじを {n} 回引く（毎回もどす）とき，当たりの回数", 625, 1, 5, 125, 10],
+];
+
+/** 片側検定の題材 [文（{n} {x} に数を入れる）, n, p分子, p分母, m, σ, 向き(1:大きい -1:小さい), X の説明, 帰無仮説, 主張] */
+const ONE = [
+  ["ある種子の発芽率はこれまで $\\frac{4}{5}$ であった。品種を改良した種子を {n} 個まいたところ，{x} 個が発芽した。", 400, 4, 5, 320, 8, 1, "発芽した個数", "発芽率は $\\frac{4}{5}$ である", "発芽率は上がった"],
+  ["ある種子の発芽率はこれまで $\\frac{4}{5}$ であった。品種を改良した種子を {n} 個まいたところ，{x} 個が発芽した。", 625, 4, 5, 500, 10, 1, "発芽した個数", "発芽率は $\\frac{4}{5}$ である", "発芽率は上がった"],
+  ["ある政策の支持率はこれまで $\\frac{1}{2}$ であった。無作為に選んだ {n} 人に調査したところ，{x} 人が支持した。", 400, 1, 2, 200, 10, 1, "支持した人数", "支持率は $\\frac{1}{2}$ である", "支持率は上がった"],
+  ["ある政策の支持率はこれまで $\\frac{1}{2}$ であった。無作為に選んだ {n} 人に調査したところ，{x} 人が支持した。", 400, 1, 2, 200, 10, -1, "支持した人数", "支持率は $\\frac{1}{2}$ である", "支持率は下がった"],
+  ["ある政策の支持率はこれまで $\\frac{1}{2}$ であった。無作為に選んだ {n} 人に調査したところ，{x} 人が支持した。", 100, 1, 2, 50, 5, -1, "支持した人数", "支持率は $\\frac{1}{2}$ である", "支持率は下がった"],
+  ["ある製品の不良品の割合はこれまで $\\frac{1}{5}$ であった。製造方法を改良したあと，無作為に {n} 個を調べたところ，不良品は {x} 個であった。", 400, 1, 5, 80, 8, -1, "不良品の個数", "不良品の割合は $\\frac{1}{5}$ である", "不良品の割合は下がった"],
+  ["1個のさいころを {n} 回投げたところ，1の目が {x} 回出た。", 180, 1, 6, 30, 5, 1, "1の目が出た回数", "1の目が出る確率は $\\frac{1}{6}$ である", "1の目が出やすい"],
+  ["1個のさいころを {n} 回投げたところ，1の目が {x} 回出た。", 720, 1, 6, 120, 10, 1, "1の目が出た回数", "1の目が出る確率は $\\frac{1}{6}$ である", "1の目が出やすい"],
 ];
 
 const TOUKEI = {
@@ -1004,6 +1229,32 @@ const TOUKEI = {
             : [`$V(X)=${n}\\times ${fracTex(pn, pd)}\\times ${fracTex(pd - pn, pd)}=${fracTex(n * pn * (pd - pn), pd * pd)}$`],
         };
       }),
+      t("HB-toukei-1d", (r) => {
+        const [pn, pd] = pick(r, [[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [1, 5], [2, 5], [1, 6]]);
+        const n = r(3, 6), k = r(1, n - 1), c = nCr(n, k);
+        const P = fracTex(pn, pd), Qt = fracTex(pd - pn, pd);
+        const num = c * pn ** k * (pd - pn) ** (n - k), den = pd ** n;
+        return {
+          q: `確率変数 $X$ が二項分布 $B\\left(${n},\\ ${P}\\right)$ に従うとき，$P(X=${k})$ を求めよ。`,
+          ans: fracAns(num, den),
+          hint: "二項分布 $B(n,\\ p)$ では $P(X=k)={}_{n}\\mathrm{C}_{k}\\,p^{k}(1-p)^{n-k}$。",
+          steps: [
+            `$P(X=${k})=${Cn(n, k)}${pw(`\\left(${P}\\right)`, k)}${pw(`\\left(${Qt}\\right)`, n - k)}$`,
+            `$=${c}\\cdot\\frac{${pn ** k}}{${pd ** k}}\\cdot\\frac{${(pd - pn) ** (n - k)}}{${pd ** (n - k)}}=${fracTex(num, den)}$`,
+          ],
+        };
+      }),
+      t("HB-toukei-1e", (r) => {
+        const rn = pick(r, [2, 4, 5, 10, 20]), n = rn * rn, sig = r(2, 30), m = r(20, 80), askV = r(0, 1) === 1;
+        return {
+          q: `母平均 $${m}$，母標準偏差 $${sig}$ の母集団から，大きさ $${n}$ の標本を無作為に抽出する。標本平均 $\\overline{X}$ の${askV ? "分散 $V(\\overline{X})$" : "標準偏差 $\\sigma(\\overline{X})$"} を求めよ。`,
+          ans: askV ? fracAns(sig * sig, n) : round(sig / rn, 4),
+          hint: "標本平均 $\\overline{X}$ の期待値は母平均 $m$，分散は $\\frac{\\sigma^{2}}{n}$，標準偏差は $\\frac{\\sigma}{\\sqrt{n}}$。",
+          steps: askV
+            ? [`$V(\\overline{X})=\\frac{\\sigma^{2}}{n}=\\frac{${sig}^{2}}{${n}}=${fracTex(sig * sig, n)}$`]
+            : [`$\\sigma(\\overline{X})=\\frac{\\sigma}{\\sqrt{n}}=\\frac{${sig}}{\\sqrt{${n}}}=\\frac{${sig}}{${rn}}=${dec(sig / rn)}$`],
+        };
+      }),
     ],
     2: [
       t("HB-toukei-2a", (r) => {
@@ -1053,6 +1304,42 @@ const TOUKEI = {
           ans,
           hint: "独立なとき $V(aX+bY)=a^{2}V(X)+b^{2}V(Y)$（係数は2乗するので必ずたし算），$E(XY)=E(X)E(Y)$。",
           steps: [`$${what}=${how}=${ans}$`],
+        };
+      }),
+      t("HB-toukei-2d", (r) => {
+        const a = r(2, 5), b = r(2, 5), c = pick(r, [2, 3]), askE = r(0, 1) === 1;
+        const T = nCr(a + b, c), xs = [];
+        for (let x = Math.max(0, c - b); x <= Math.min(c, a); x++) xs.push([x, nCr(a, x) * nCr(b, c - x)]);
+        const s1 = xs.reduce((s, [x, w]) => s + x * w, 0), s2 = xs.reduce((s, [x, w]) => s + x * x * w, 0);
+        const vN = T * s2 - s1 * s1, vD = T * T;
+        return {
+          q: `袋の中に赤玉 $${a}$ 個と白玉 $${b}$ 個が入っている。この袋から同時に $${c}$ 個の玉を取り出すとき，取り出した赤玉の個数を $X$ とする。$X$ の${askE ? "期待値 $E(X)$" : "分散 $V(X)$"} を求めよ。`,
+          ans: askE ? fracAns(s1, T) : fracAns(vN, vD),
+          hint: "まず $X$ の確率分布（それぞれの値をとる確率）を組合せで求める。",
+          steps: [
+            `$P(X=x)=\\frac{${Cn(a, "x")}\\times ${Cn(b, `${c}-x`)}}{${Cn(a + b, c)}}$ より ${xs.map(([x, w]) => `$P(X=${x})=${fracTex(w, T)}$`).join("，")}`,
+            askE
+              ? `$E(X)=${xs.map(([x, w]) => `${x}\\cdot ${fracTex(w, T)}`).join("+")}=${fracTex(s1, T)}$`
+              : `$E(X)=${fracTex(s1, T)}$，$E(X^{2})=${xs.map(([x, w]) => `${x}^{2}\\cdot ${fracTex(w, T)}`).join("+")}=${fracTex(s2, T)}$ より $V(X)=${fracTex(s2, T)}-\\left(${fracTex(s1, T)}\\right)^{2}=${fracTex(vN, vD)}$`,
+          ],
+        };
+      }),
+      t("HB-toukei-2e", (r) => {
+        const c = r(2, 6), inc = r(0, 1) === 1;
+        const s = r(0, c - 1);
+        let u = r(s + 1, c);
+        if (s === 0 && u === c) u = c - 1;
+        const num = inc ? u * u - s * s : (c - s) ** 2 - (c - u) ** 2;
+        const k = fracTex(2, c * c), fx = inc ? `${k}x` : `${k}(${c}-x)`;
+        const sq = (x) => `${x}^{2}`, diff = (x, y) => (y === 0 ? sq(x) : `${sq(x)}-${sq(y)}`);
+        return {
+          q: `確率変数 $X$ のとる値の範囲が $0\\leqq X\\leqq ${c}$ で，その確率密度関数が $f(x)=${inc ? "kx" : `k(${c}-x)`}$（$k$ は定数）であるとき，$P(${s}\\leqq X\\leqq ${u})$ を求めよ。`,
+          ans: fracAns(num, c * c),
+          hint: "確率は $y=f(x)$ のグラフと $x$ 軸の間の部分の面積。まず全体の面積が $1$ になるように $k$ を決める。",
+          steps: [
+            `全体の確率は $1$ なので $\\int_{0}^{${c}}f(x)\\,dx=\\frac{1}{2}\\cdot ${c}\\cdot ${c}k=1$ より $k=${k}$`,
+            `$P(${s}\\leqq X\\leqq ${u})=\\int_{${s}}^{${u}}${fx}\\,dx=\\frac{${inc ? diff(u, s) : diff(c - s, c - u)}}{${c * c}}=${fracTex(num, c * c)}$`,
+          ],
         };
       }),
     ],
@@ -1111,6 +1398,48 @@ const TOUKEI = {
             askE
               ? `$E(Y)=${a + b}E(X)-${b * n}=${fracTex((a + b) * EX[0] - b * n * EX[1], EX[1])}$`
               : `$V(Y)=${a + b}^{2}V(X)=${fracTex((a + b) ** 2 * VX[0], VX[1])}$`,
+          ],
+        };
+      }),
+      t("HB-toukei-3d", (r) => {
+        const rn = pick(r, [4, 5, 6, 8, 10, 12, 20]);
+        const sx = pick(r, rn % 2 === 0 ? [0.5, 1, 1.5, 2, 2.5, 3] : [1, 2, 3]);
+        const n = rn * rn, sig = round(sx * rn, 4), m = r(40, 80), type = r(0, 3), k = r(1, 2);
+        const T = [0, T1, T2], at = (j) => dec(m + j * sx);
+        let ev, ans, how;
+        if (type === 0) { ev = `\\overline{X}\\geqq ${at(k)}`; ans = 0.5 - T[k]; how = `P(Z\\geqq ${k})=0.5-${T[k]}`; }
+        else if (type === 1) { ev = `\\overline{X}\\leqq ${at(-k)}`; ans = 0.5 - T[k]; how = `P(Z\\leqq -${k})=0.5-${T[k]}`; }
+        else if (type === 2) { ev = `${at(-k)}\\leqq\\overline{X}\\leqq ${at(k)}`; ans = 2 * T[k]; how = `P(-${k}\\leqq Z\\leqq ${k})=2\\times ${T[k]}`; }
+        else { ev = `${at(-1)}\\leqq\\overline{X}\\leqq ${at(2)}`; ans = T1 + T2; how = `P(-1\\leqq Z\\leqq 2)=${T1}+${T2}`; }
+        ans = round(ans, 4);
+        return {
+          q: `母平均 $${m}$，母標準偏差 $${sig}$ の母集団から，大きさ $${n}$ の標本を無作為に抽出する。標本平均 $\\overline{X}$ について，$P(${ev})$ を求めよ。$\\overline{X}$ は正規分布に従うとみなしてよい。${TAB}`,
+          ans,
+          hint: "$\\overline{X}$ は正規分布 $N\\left(m,\\ \\frac{\\sigma^{2}}{n}\\right)$ に従う。標準偏差 $\\frac{\\sigma}{\\sqrt{n}}$ で標準化する。",
+          steps: [
+            `$\\overline{X}$ の期待値は $${m}$，標準偏差は $\\frac{${sig}}{\\sqrt{${n}}}=${dec(sx)}$`,
+            `$Z=\\frac{\\overline{X}-${m}}{${dec(sx)}}$ とおくと，$Z$ は $N(0,\\ 1)$ に従う`,
+            `$P(${ev})=${how}=${dec(ans)}$`,
+          ],
+        };
+      }),
+      t("HB-toukei-3e", (r) => {
+        const [story, n, pn, pd, m, s, dir, xName, h0, claim] = pick(r, ONE);
+        const d = dir * r(Math.ceil(0.5 * s), 3 * s), z = round(d / s, 4);
+        if (Math.abs(Math.abs(z) - 1.64) < 0.05) return { skip: true };
+        const x = m + d, rej = dir * z >= 1.64, z2 = round(d / (s * s), 4);
+        const C = (zz, rj) => `$z=${dec(zz)}$ で，帰無仮説を${rj ? `棄却する（${claim}といえる）` : `棄却しない（${claim}とはいえない）`}`;
+        const ans = C(z, rej);
+        return {
+          q: `${story.replace("{n}", `$${n}$`).replace("{x}", `$${x}$`)}${claim}と判断してよいか。帰無仮説を「${h0}」として，有意水準5%で片側検定する。${xName}を $X$ とし，検定統計量 $z=\\frac{X-m}{\\sigma}$（$m,\\ \\sigma$ は帰無仮説のもとでの $X$ の期待値と標準偏差）の値と結論の組として正しいものを選べ。ただし，正規分布で近似し，$P(Z\\geqq 1.64)=0.05$ とする。`,
+          ans,
+          choices: choices4(r, ans, [C(z, !rej), C(z2, dir * z2 >= 1.64), C(z2, !(dir * z2 >= 1.64))],
+            (i) => C(round(z + 0.5 * (i + 1), 4), i % 2 === 0)),
+          hint: "「上がった（大きい）」かを調べるなら棄却域は右側の $Z\\geqq 1.64$ だけ，「下がった（小さい）」なら左側の $Z\\leqq -1.64$ だけにとる（片側検定）。",
+          steps: [
+            `帰無仮説のもとで $X$ は二項分布 $B\\left(${n},\\ ${fracTex(pn, pd)}\\right)$ に従い，$m=${m}$，$\\sigma=\\sqrt{${s * s}}=${s}$`,
+            `$z=\\frac{${x}-${m}}{${s}}=${dec(z)}$`,
+            `棄却域は $Z${dir > 0 ? "\\geqq 1.64" : "\\leqq -1.64"}$ で，$z$ は棄却域に${rej ? "入る" : "入らない"}。よって${rej ? "帰無仮説を棄却する" : "帰無仮説は棄却されない"}`,
           ],
         };
       }),
@@ -1173,6 +1502,54 @@ const TOUKEI = {
             `$\\hat{p}=\\frac{${k}}{${n}}=${ph}$`,
             `$\\sqrt{\\frac{${ph}\\times ${round(1 - ph, 2)}}{${n}}}=\\frac{${sq}}{${rn}}${eqs(sq / rn, se)}${dec(se, 6)}$，$1.96\\times ${dec(se, 6)}${eqs(1.96 * se, w)}${dec(w)}$`,
             `答え：${ans}`,
+          ],
+        };
+      }),
+      t("HB-toukei-4d", (r) => {
+        const [pn, pd, story] = pick(r, [
+          [1, 6, "1個のさいころを {n} 回投げるとき，1の目がちょうど $k$ 回出る確率"],
+          [1, 3, "1個のさいころを {n} 回投げるとき，3の倍数の目がちょうど $k$ 回出る確率"],
+          [2, 3, "1個のさいころを {n} 回投げるとき，3の倍数でない目がちょうど $k$ 回出る確率"],
+          [1, 5, "当たりの確率が $\\frac{1}{5}$ のくじを {n} 回引く（毎回もどす）とき，ちょうど $k$ 回当たる確率"],
+        ]);
+        const n = r(10, 80), x = ((n + 1) * pn) / pd;
+        if (Number.isInteger(x)) return { skip: true };
+        const K = Math.floor(x), P = fracTex(pn, pd), Qt = fracTex(pd - pn, pd);
+        const lhs = pn === 1 ? `${n}-k` : `${pn}(${n}-k)`, rhs = `${pd - pn === 1 ? "" : pd - pn}(k+1)`;
+        return {
+          q: `${story.replace("{n}", `$${n}$`)}を $p_{k}$ とする（$k=0,\\ 1,\\ \\cdots,\\ ${n}$）。$p_{k}$ が最大となる $k$ を求めよ。`,
+          ans: K,
+          hint: "となり合う確率の比 $\\frac{p_{k+1}}{p_{k}}$ が $1$ より大きいかどうかを調べる。",
+          steps: [
+            `$p_{k}=${Cn(n, "k")}\\left(${P}\\right)^{k}\\left(${Qt}\\right)^{${n}-k}$ より $\\frac{p_{k+1}}{p_{k}}=\\frac{${n}-k}{k+1}\\cdot ${fracTex(pn, pd - pn)}$`,
+            `$\\frac{p_{k+1}}{p_{k}}>1\\iff ${lhs}>${rhs}\\iff k<${fracTex((n + 1) * pn - pd, pd)}$`,
+            `よって $p_{0}<p_{1}<\\cdots<p_{${K}}$，$p_{${K}}>p_{${K + 1}}>\\cdots>p_{${n}}$ となり，最大となるのは $k=${K}$`,
+          ],
+        };
+      }),
+      t("HB-toukei-4e", (r) => {
+        if (r(0, 1) === 0) {
+          const n = r(2, 6), num = 6 ** n - 5 ** n;
+          return {
+            q: `1個のさいころを $${n}$ 回投げるとき，出た目の種類の数を $X$ とする（同じ目が何回出ても1種類と数える）。$X$ の期待値を求めよ。`,
+            ans: fracAns(num, 6 ** (n - 1)),
+            hint: "$X$ を「目 $i$ が出たら $1$，出なければ $0$」となる確率変数の和に分けて，期待値の和の性質を使う。",
+            steps: [
+              `$i=1,\\ 2,\\ \\cdots,\\ 6$ について，目 $i$ が少なくとも1回出れば $1$，出なければ $0$ となる確率変数を $X_{i}$ とすると $X=X_{1}+X_{2}+\\cdots+X_{6}$`,
+              `目 $i$ が1回も出ない確率は $\\left(\\frac{5}{6}\\right)^{${n}}$ なので $E(X_{i})=1-\\left(\\frac{5}{6}\\right)^{${n}}=${fracTex(num, 6 ** n)}$`,
+              `$E(X)=E(X_{1})+E(X_{2})+\\cdots+E(X_{6})=6\\times ${fracTex(num, 6 ** n)}=${fracTex(num, 6 ** (n - 1))}$`,
+            ],
+          };
+        }
+        const m = pick(r, [3, 4]), n = r(3, 6), num = (m - 1) ** n, den = m ** (n - 1);
+        return {
+          q: `$${n}$ 個の玉を $${m}$ 個の箱に1個ずつ入れていく。どの玉もどの箱にも同じ確率 $\\frac{1}{${m}}$ で入るとき，空の箱の個数を $X$ とする。$X$ の期待値を求めよ。`,
+          ans: fracAns(num, den),
+          hint: "$X$ を「箱 $j$ が空なら $1$，空でなければ $0$」となる確率変数の和に分けて，期待値の和の性質を使う。",
+          steps: [
+            `箱 $j$（$j=1,\\ \\cdots,\\ ${m}$）が空なら $1$，空でなければ $0$ となる確率変数を $Y_{j}$ とすると $X=Y_{1}+\\cdots+Y_{${m}}$`,
+            `箱 $j$ が空になるのは，どの玉もほかの箱に入るときなので $E(Y_{j})=\\left(\\frac{${m - 1}}{${m}}\\right)^{${n}}$`,
+            `$E(X)=${m}\\times\\left(\\frac{${m - 1}}{${m}}\\right)^{${n}}=${fracTex(num, den)}$`,
           ],
         };
       }),

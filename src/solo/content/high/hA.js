@@ -47,8 +47,9 @@ export const UNITS = [
   {
     ...H,
     id: "HA-baai", area: "data", name: "場合の数", desc: "順列・組合せ・円順列・重複順列",
-    prereqs: ["J2-g2c6u1"],
+    prereqs: ["J2-g2c6u1", "HI-shugo"],
     points: [
+      "要素の個数：$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)$、$n(\\overline{A})=n(U)-n(A)$。3つなら $n(A\\cup B\\cup C)=n(A)+n(B)+n(C)-n(A\\cap B)-n(B\\cap C)-n(C\\cap A)+n(A\\cap B\\cap C)$",
       "順列 $_{n}\\mathrm{P}_{r}=\\frac{n!}{(n-r)!}$（並べる・役割がある）、組合せ $_{n}\\mathrm{C}_{r}=\\frac{n!}{r!(n-r)!}$（選ぶだけ）",
       "円順列は $(n-1)!$（1人を固定）、重複順列は $n^{r}$、同じものを含む順列は $\\frac{n!}{p!\\,q!\\,r!}$",
       "「隣り合う」はひとまとめにして並べ、中で並べかえる。「隣り合わない」は他を並べてからすき間に入れる。",
@@ -454,7 +455,7 @@ export const UNITS = [
               `$A\\cap B$ は ${lab} の倍数で ${nAB} 個、$B\\cap C$ は ${lbc} の倍数で ${nBC} 個、$C\\cap A$ は ${lca} の倍数で ${nCA} 個、$A\\cap B\\cap C$ は ${l3} の倍数で ${n3} 個（いずれも最小公倍数の倍数）`,
               [
                 `$n(B\\cup C)=${nB}+${nC}-${nBC}=${x}$、$n(A\\cap(B\\cup C))=n(A\\cap B)+n(C\\cap A)-n(A\\cap B\\cap C)=${nAB}+${nCA}-${n3}=${y}$ なので $${x}-${y}=${v}$`,
-                `$n(A\\cap B)$ などの和では、ちょうど2つに入る数は1回ずつ、3つすべてに入る数は3回数えている。ちょうど1つは $(${nA}+${nB}+${nC})-2(${nAB}+${nBC}+${nCA})+3\\times ${n3}=${v}$`,
+                `$n(A)+n(B)+n(C)$ は、ちょうど2つに入る数を2回、3つすべてに入る数を3回数えている。$n(A\\cap B)+n(B\\cap C)+n(C\\cap A)$ は、ちょうど2つに入る数を1回、3つすべてに入る数を3回数えている。よってちょうど1つは $(${nA}+${nB}+${nC})-2(${nAB}+${nBC}+${nCA})+3\\times ${n3}=${v}$`,
                 `$n(A\\cap B)+n(B\\cap C)+n(C\\cap A)$ では、3つすべてに入る数を3回数えているので、ちょうど2つは $(${nAB}+${nBC}+${nCA})-3\\times ${n3}=${v}$`,
               ][kind],
             ],
