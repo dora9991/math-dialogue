@@ -22,6 +22,8 @@ const vx = (p) => (p ? `(x${signed(-p)})^{2}` : "x^{2}");
 const fr = (a, b) => (gcd(a, b) === 1 && b > 0 ? fracTex(a, b) : `\\frac{${a}}{${b}}=${fracTex(a, b)}`);
 /** (ax+b) / (ax+by) の TeX */
 const lin = (a, b, v = "x", w = "") => `(${coefVar(a, v)}${w ? signedVar(b, w) : b ? signed(b) : ""})`;
+/** (v-a)(v-b) の TeX（a か b が 0 なら v(v-…) の形に） */
+const fac2 = (a, b, v = "x") => (a === 0 ? `${v}(${v}${sh(-b)})` : b === 0 ? `${v}(${v}${sh(-a)})` : `(${v}${sh(-a)})(${v}${sh(-b)})`);
 /** 多項式の TeX をかっこで包む */
 const par = (c, v = "x") => `(${poly(c, v)})`;
 /** 多変数の式 [[係数, "文字"], ...] → TeX */
@@ -250,6 +252,7 @@ export const UNITS = [
         }),
         t("HI-tenkai-3b", (r) => {
           const s = r(2, 6), p = rnz(r, -5, 5);
+          if (s * s < 4 * p) return { skip: true }; // x, y が実数になる組だけ
           if (r(0, 1)) {
             const v = s ** 3 - 3 * p * s;
             return {
@@ -270,14 +273,17 @@ export const UNITS = [
             steps: [
               "$\\frac{y}{x}+\\frac{x}{y}=\\frac{x^{2}+y^{2}}{xy}$",
               `$x^{2}+y^{2}=(x+y)^{2}-2xy=${s * s}${signed(-2 * p)}=${s * s - 2 * p}$`,
-              `$\\frac{${s * s - 2 * p}}{${p}}=${fracTex(s * s - 2 * p, p)}$`,
+              `$\\frac{x^{2}+y^{2}}{xy}=${fr(s * s - 2 * p, p)}$`,
             ],
           };
         }),
       ],
       4: [
         t("HI-tenkai-4a", (r) => {
-          const s = r(1, 5), tt = rnz(r, -5, 5), u = rnz(r, -5, 5);
+          let s, tt, u;
+          // a, b, c がすべて実数になる組だけ（a, b, c を解とする3次方程式の判別式≧0）
+          do { s = r(1, 5); tt = rnz(r, -5, 5); u = rnz(r, -5, 5); }
+          while (18 * s * tt * u - 4 * s ** 3 * u + s * s * tt * tt - 4 * tt ** 3 - 27 * u * u < 0);
           const sq = s * s - 2 * tt;
           const v = s ** 3 - 3 * s * tt + 3 * u;
           return {
@@ -327,7 +333,7 @@ export const UNITS = [
       1: [
         t("HI-inbun-1a", (r) => {
           let p, q, rr, s;
-          do { p = r(1, 3); q = rnz(r, -5, 5); rr = r(1, 3); s = rnz(r, -5, 5); } while (p * rr < 2 || gcd(p, q) !== 1 || gcd(rr, s) !== 1);
+          do { p = r(1, 3); q = rnz(r, -5, 5); rr = r(1, 3); s = rnz(r, -5, 5); } while (p * rr < 2 || gcd(p, q) !== 1 || gcd(rr, s) !== 1 || (p === rr && q === s));
           const F = (a, b, c, d) => [tex(lin(a, b) + lin(c, d)), pkey(pmul([a, b], [c, d]))];
           const P = pmul([p, q], [rr, s]);
           return {
@@ -380,7 +386,7 @@ export const UNITS = [
       2: [
         t("HI-inbun-2a", (r) => {
           let p, q, rr, s;
-          do { p = r(1, 3); q = rnz(r, -5, 5); rr = r(1, 3); s = rnz(r, -5, 5); } while (p * rr < 2 || gcd(p, q) !== 1 || gcd(rr, s) !== 1);
+          do { p = r(1, 3); q = rnz(r, -5, 5); rr = r(1, 3); s = rnz(r, -5, 5); } while (p * rr < 2 || gcd(p, q) !== 1 || gcd(rr, s) !== 1 || (p === rr && q === s));
           const F = (a, b, c, d) => [tex(lin(a, b, "x", "y") + lin(c, d, "x", "y")), pkey(pmul([a, b], [c, d]))];
           const P = pmul([p, q], [rr, s]);
           const e = mpoly([[P[0], "x^{2}"], [P[1], "xy"], [P[2], "y^{2}"]]);
@@ -431,7 +437,7 @@ export const UNITS = [
             ...ec(r, F([1, m, c], [1, -m, c]), [sq, F([1, m, -c], [1, -m, -c]), F([1, m, c], [1, m, -c])], (i) => F([1, m + i + 1, c], [1, -m - i - 1, c])),
             hint: `$(x^{2}+${c})^{2}$ を作って、ずれた分を引く（平方の差の形）。`,
             steps: [
-              `$${poly(P)}=(x^{2}+${c})^{2}-${m * m}x^{2}$`,
+              `$${poly(P)}=(x^{2}+${c})^{2}-${m === 1 ? "" : m * m}x^{2}$`,
               `$=(x^{2}+${c})^{2}-(${coefVar(m)})^{2}$`,
               `$=${par([1, m, c])}${par([1, -m, c])}$`,
             ],
@@ -449,7 +455,7 @@ export const UNITS = [
             ...ec(r, F(p, q, rr, s), [F(p, s, rr, q), F(p, -q, rr, -s), F(-p, q, -rr, s), F(rr, q, p, s)], (i) => F(p, q + i + 1, rr, s)),
             hint: "$x$ について整理し、定数項（$y$ の式）を先に因数分解してからたすき掛けをする。",
             steps: [
-              `$x$ について整理：$x^{2}+(${mpoly([[p + rr, "y"], [q + s, ""]])})x+(${mpoly([[p * rr, "y^{2}"], [p * s + q * rr, "y"], [q * s, ""]])})$`,
+              `$x$ について整理：$x^{2}${p + rr || q + s ? `+(${mpoly([[p + rr, "y"], [q + s, ""]])})x` : ""}+(${mpoly([[p * rr, "y^{2}"], [p * s + q * rr, "y"], [q * s, ""]])})$`,
               `定数項 $=(${mpoly([[p, "y"], [q, ""]])})(${mpoly([[rr, "y"], [s, ""]])})$`,
               `$=${fx(p, q)}${fx(rr, s)}$`,
             ],
@@ -610,7 +616,7 @@ export const UNITS = [
             ans: fracAns(num, den),
             hint: "$x$ と $y$ を別々に計算せず、$x+y$ と $xy$ を先に求める（対称式）。",
             steps: [
-              `$xy=1$、$x+y=\\frac{(\\sqrt{${a}}+\\sqrt{${b}})^{2}+(\\sqrt{${a}}-\\sqrt{${b}})^{2}}{${a}-${b}}=\\frac{${2 * (a + b)}}{${a - b}}=${fracTex(n, d)}$`,
+              `$xy=1$、$x+y=\\frac{(\\sqrt{${a}}+\\sqrt{${b}})^{2}+(\\sqrt{${a}}-\\sqrt{${b}})^{2}}{${a}-${b}}=${fr(2 * (a + b), a - b)}$`,
               cube ? "$x^{3}+y^{3}=(x+y)^{3}-3xy(x+y)$" : "$x^{2}+y^{2}=(x+y)^{2}-2xy$",
               cube ? `$=\\left(${fracTex(n, d)}\\right)^{3}-3\\cdot ${fracTex(n, d)}=${fracTex(num, den)}$` : `$=\\left(${fracTex(n, d)}\\right)^{2}-2=${fracTex(num, den)}$`,
             ],
@@ -867,7 +873,7 @@ export const UNITS = [
             choices: choices4(r, ok, [tex(`${lo}\\leqq a<${hi}`), tex(`${lo}<a<${hi}`), tex(`${lo}\\leqq a\\leqq ${hi}`), tex(`${lo - m}<a\\leqq ${lo}`)]),
             hint: "1つ目は数だけで解ける。2つ目は $x<\\frac{a+c}{m}$ の形。整数がちょうど何個入るかを数直線で考える。",
             steps: [
-              `1つ目より $${coefVar(A)}${dir} ${A * L}$、$x>${L}$。2つ目より $x<\\frac{a${sh(c)}}{${m}}$`,
+              `1つ目より ${A === 1 ? "" : `$${coefVar(A)}${dir} ${A * L}$、`}$x>${L}$。2つ目より $x<\\frac{a${sh(c)}}{${m}}$`,
               `整数 ${Array.from({ length: k }, (_, i) => L + 1 + i).join(", ")} だけが入るには $${L + k}<\\frac{a${sh(c)}}{${m}}\\leqq ${L + k + 1}$`,
               `$${m * (L + k)}<a${sh(c)}\\leqq ${m * (L + k + 1)}$ より $${lo}<a\\leqq ${hi}$`,
             ],
@@ -1248,8 +1254,8 @@ export const UNITS = [
             ans: askA ? a : q,
             hint: "軸がわかっているので $y=a(x-p)^{2}+q$ とおき、2点を代入する。",
             steps: [
-              `$${f(x1)}=${u1}a+q$、$${f(x2)}=${u2}a+q$`,
-              `辺々引いて $${f(x1) - f(x2)}=${u1 - u2}a$ より $a=${a}$`,
+              `$${f(x1)}=${coefVar(u1, "a")}+q$、$${f(x2)}=${coefVar(u2, "a")}+q$`,
+              `辺々引いて $${f(x1) - f(x2)}=${coefVar(u1 - u2, "a")}$ より $a=${a}$`,
               `$q=${f(x1)}-${u1}\\cdot (${a})=${q}$`,
             ],
           };
@@ -1352,7 +1358,7 @@ export const UNITS = [
       2: [
         t("HI-saidai-2a", (r) => {
           const p = r(-3, 3), c = r(-5, 5), left = r(0, 1) === 1;
-          const s = left ? p + r(1, 3) : p - r(3, 6), tt = s + r(1, 3);
+          const s = left ? p + r(1, 3) : p - r(4, 6), tt = s + r(1, 3);
           const q = c - p * p, f = (x) => (x - p) ** 2 + q;
           const askMax = r(0, 1) === 1;
           const v = askMax ? Math.max(f(s), f(tt)) : Math.min(f(s), f(tt));
@@ -1411,7 +1417,7 @@ export const UNITS = [
             hint: "軸 $x=a$ が定義域の中にあるときと、右の外にあるときで場合分けする。",
             steps: [
               `$y=(x-a)^{2}-a^{2}${sh(c)}$、軸は $x=a$`,
-              `$0<a\\leqq ${d}$ のとき最小値 $-a^{2}${sh(c)}=${m}$ → $a^{2}=${c - m}$${mid ? `、$a=${a0}$（適する）` : `（$a=\\sqrt{${c - m}}>${d}$ なので不適）`}`,
+              `$0<a\\leqq ${d}$ のとき最小値 $-a^{2}${sh(c)}=${m}$ → $a^{2}=${c - m}$${mid ? `、$a=${a0}$（適する）` : `（$a=${sqrtTex(1, c - m)}>${d}$ なので不適）`}`,
               `$a>${d}$ のとき最小値 $f(${d})=${d * d}-${2 * d}a${sh(c)}=${m}$ → $a=${fracTex(d * d + c - m, 2 * d)}$${mid ? `（$${d}$ 以下なので不適）` : "（適する）"}`,
               `よって $a=${a0}$`,
             ],
@@ -1496,7 +1502,7 @@ export const UNITS = [
             choices: choices4(r, ok, [isIn ? outside(al, be, eq) : inside(al, be, eq), isIn ? inside(-be, -al, eq) : outside(-be, -al, eq), isIn ? inside(al, be, !eq) : outside(al, be, !eq), isIn ? outside(al, be, !eq) : inside(al, be, !eq)]),
             hint: "左辺を因数分解して、グラフが $x$ 軸より下（または上）になる範囲を考える。",
             steps: [
-              `$(x${sh(-al)})(x${sh(-be)})${OPS[op]} 0$`,
+              `$${fac2(al, be)}${OPS[op]} 0$`,
               `グラフは下に凸で $x=${al},\\ ${be}$ で $x$ 軸と交わる`,
               `${ok}`,
             ],
@@ -1559,7 +1565,7 @@ export const UNITS = [
             ans: be - al,
             hint: "$y=0$ とおいた2次方程式の2つの解が、$x$ 軸との交点の $x$ 座標。",
             steps: [
-              `$${poly(P)}=0$ より $${a === 1 ? "" : a === -1 ? "-" : a}(x${sh(-al)})(x${sh(-be)})=0$`,
+              `$${poly(P)}=0$ より $${a === 1 ? "" : a === -1 ? "-" : a}${fac2(al, be)}=0$`,
               `$x=${al},\\ ${be}$ なので長さは $${be}-(${al})=${be - al}$`,
             ],
           };
@@ -1572,13 +1578,13 @@ export const UNITS = [
           const m = k1 + k2, n = -k1 * k2;
           const ok = tex(`${k1}<k<${k2}`);
           return {
-            q: `すべての実数 ${tex("x")} について ${tex(`x^{2}+2kx${signedVar(m, "k")}${signed(n)}>0`)} が成り立つような定数 ${tex("k")} の値の範囲は？`,
+            q: `すべての実数 ${tex("x")} について ${tex(`x^{2}+2kx${signedVar(m, "k")}${sh(n)}>0`)} が成り立つような定数 ${tex("k")} の値の範囲は？`,
             ans: ok,
             choices: choices4(r, ok, [tex(`k<${k1},\\ ${k2}<k`), tex(`${k1}\\leqq k\\leqq ${k2}`), tex(`${-k2}<k<${-k1}`)]),
             hint: "下に凸の放物線が $x$ 軸より常に上 ⇔ $x$ 軸と共有点をもたない ⇔ $D<0$",
             steps: [
               `$\\frac{D}{4}=k^{2}-(${mpoly([[m, "k"], [n, ""]])})<0$`,
-              `$${poly([1, -m, -n], "k")}<0$、$(k${sh(-k1)})(k${sh(-k2)})<0$`,
+              `$${poly([1, -m, -n], "k")}<0$、$${fac2(k1, k2, "k")}<0$`,
               `$${k1}<k<${k2}$`,
             ],
           };
@@ -1669,7 +1675,7 @@ export const UNITS = [
             q: `${tex(`\\${f} ${deg(A)}`)} の値は？`,
             ans: ok,
             choices: choices4(r, ok, [...others, neg(f)], () => tex(tv(f, pick(r, Object.keys(TRIG[f]).map(Number))))),
-            hint: A <= 90 ? "30°・45°・60° の直角三角形（辺の比 $1:\\sqrt{3}:2$、$1:1:\\sqrt{2}$）を思い出す。" : "単位円の上の点 $(\\cos\\theta,\\ \\sin\\theta)$ で考える。$180^{\\circ}-\\theta$ の関係も使える。",
+            hint: A > 0 && A < 90 ? "30°・45°・60° の直角三角形（辺の比 $1:\\sqrt{3}:2$、$1:1:\\sqrt{2}$）を思い出す。" : "単位円の上の点 $(\\cos\\theta,\\ \\sin\\theta)$ で考える。$180^{\\circ}-\\theta$ の関係も使える。",
             steps: [
               A > 90 && A < 180 ? `$${deg(A)}=180^{\\circ}-${deg(180 - A)}$ より ${f === "sin" ? "符号はそのまま" : "符号が変わる"}` : `単位円で $${deg(A)}$ の点を考える`,
               `$\\${f} ${deg(A)}=${tv(f, A)}$`,
@@ -1912,7 +1918,7 @@ export const UNITS = [
             hint: "最大の角は最大の辺と向かい合う。余弦定理を $\\cos$ について解いた形を使う。",
             steps: [
               `最大の角は長さ ${c} の辺の向かい側`,
-              `$\\cos\\theta=\\frac{${a}^{2}+${b}^{2}-${c}^{2}}{2\\cdot ${a}\\cdot ${b}}=\\frac{${a * a + b * b - c * c}}{${2 * a * b}}=${fracTex(a * a + b * b - c * c, 2 * a * b)}$`,
+              `$\\cos\\theta=\\frac{${a}^{2}+${b}^{2}-${c}^{2}}{2\\cdot ${a}\\cdot ${b}}=${fr(a * a + b * b - c * c, 2 * a * b)}$`,
             ],
           };
         }),
@@ -2213,7 +2219,7 @@ export const UNITS = [
             hint: "共分散は $s_{uv}=ac\\,s_{xy}$。相関係数は $a,\\ c$ の符号だけで変わる。",
             steps: [
               `$s_{xy}=r\\,s_{x}s_{y}=${round(rr)}\\times ${sx}\\times ${sy}=${cov}$`,
-              askCov ? `$s_{uv}=(${a})\\times(${c})\\times(${cov})=${v}$` : `$s_{u}=${Math.abs(a)}s_{x}$、$s_{v}=${Math.abs(c)}s_{y}$、$s_{uv}=${a * c}s_{xy}$ より $r_{uv}=${a * c > 0 ? "" : "-"}r_{xy}=${v}$`,
+              askCov ? `$s_{uv}=(${a})\\times(${c})\\times(${cov})=${v}$` : `$s_{u}=${coefVar(Math.abs(a), "s_{x}")}$、$s_{v}=${coefVar(Math.abs(c), "s_{y}")}$、$s_{uv}=${coefVar(a * c, "s_{xy}")}$ より $r_{uv}=${a * c > 0 ? "" : "-"}r_{xy}=${v}$`,
             ],
           };
         }),

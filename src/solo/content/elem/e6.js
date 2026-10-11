@@ -2491,6 +2491,50 @@ export const UNITS = [
             steps: [`AO ＝ CO なので、${d} ÷ 2 ＝ ${d / 2}（cm）`],
           };
         }),
+        t("E6-taisho-1d", (r) => {
+          const cf = pick(r, [
+            { desc: "対角線 AC を対称の軸とする線対称な四角形 ABCD", v: "ABCD", map: { A: "A", B: "D", C: "C", D: "B" }, why: "AC で折ると、B と D が重なる" },
+            { desc: "対角線 BD を対称の軸とする線対称な四角形 ABCD", v: "ABCD", map: { A: "C", B: "B", C: "A", D: "D" }, why: "BD で折ると、A と C が重なる" },
+            { desc: "点対称な四角形 ABCD", v: "ABCD", map: { A: "C", B: "D", C: "A", D: "B" }, why: "対称の中心のまわりに 180° 回すと、A と C、B と D が重なる" },
+            { desc: "点対称な六角形 ABCDEF", v: "ABCDEF", map: { A: "D", B: "E", C: "F", D: "A", E: "B", F: "C" }, why: "対称の中心のまわりに 180° 回すと、A と D、B と E、C と F が重なる" },
+            { desc: "頂点 A と頂点 D を通る直線を対称の軸とする線対称な六角形 ABCDEF", v: "ABCDEF", map: { A: "A", B: "F", C: "E", D: "D", E: "C", F: "B" }, why: "AD で折ると、B と F、C と E が重なる" },
+          ]);
+          const V = cf.v.split("");
+          const side = (p, q) => [p, q].sort().join("");
+          const sides = V.map((p, i) => side(p, V[(i + 1) % V.length]));
+          if (r(0, 1)) {
+            const v = pick(r, V.filter((u) => cf.map[u] !== u));
+            const ans = `頂点 ${cf.map[v]}`;
+            return {
+              q: `${cf.desc} があります。頂点 ${v} に対応する頂点はどれですか。`,
+              ans,
+              choices: choices4(r, ans, shuffle(r, V.filter((u) => u !== v && u !== cf.map[v])).map((u) => `頂点 ${u}`)),
+              hint: "折ったり、180° 回したりしたときに、ぴったり重なる点をさがそう。",
+              steps: [cf.why, `頂点 ${v} に対応するのは ${ans}`],
+            };
+          }
+          const sd = pick(r, sides.filter((x) => side(cf.map[x[0]], cf.map[x[1]]) !== x));
+          const to = side(cf.map[sd[0]], cf.map[sd[1]]);
+          const ans = `辺 ${to}`;
+          return {
+            q: `${cf.desc} があります。辺 ${sd} に対応する辺はどれですか。`,
+            ans,
+            choices: choices4(r, ans, shuffle(r, sides.filter((x) => x !== sd && x !== to)).map((x) => `辺 ${x}`)),
+            hint: "辺の両はしの頂点が、それぞれどの頂点に対応するかを考えよう。",
+            steps: [cf.why, `頂点 ${sd[0]}、${sd[1]} に対応するのは 頂点 ${cf.map[sd[0]]}、${cf.map[sd[1]]} なので、辺 ${sd} に対応するのは ${ans}`],
+          };
+        }),
+        t("E6-taisho-1e", (r) => {
+          const ans = pick(r, [...ABC_LINE, ...ABC_BOTH]);
+          const choices = choices4(r, ans, sample(r, [...ABC_POINT, ...ABC_NONE], 3));
+          return {
+            q: `アルファベットの大文字 ${choices.join("、")} のうち、線対称なものはどれですか。（ゴシック体の文字で考えます）`,
+            ans,
+            choices,
+            hint: "文字を、ある直線を折り目にして折ったとき、ぴったり重なるかを考えよう。",
+            steps: [`${ans} は、${ABC_BOTH.includes(ans) ? "たてや横" : "たて"}の直線を折り目にして折ると、ぴったり重なる`, `${choices.filter((c) => c !== ans).join("・")} は、どこで折ってもぴったりは重ならない`],
+          };
+        }),
       ],
       2: [
         t("E6-taisho-2a", (r) => {
@@ -2543,6 +2587,68 @@ export const UNITS = [
             steps: ["頂点の数が偶数の正多角形は点対称、奇数の正多角形は点対称ではない", `答え：${names[ansN]}`],
           };
         }),
+        t("E6-taisho-2d", (r) => {
+          const nm = pick(r, NAMES);
+          const n = r(3, 8);
+          const ev = pick(r, [4, 6, 8]);
+          const od = pick(r, [3, 5, 7]);
+          const T = [
+            [`${polyName(n)}には、対称の軸が${n}本ある。`, "正多角形の対称の軸の数は、辺の数と同じ"],
+            ["平行四辺形は、点対称な図形である。", "平行四辺形は、対角線の交わる点を中心に 180° 回すと、ぴったり重なる"],
+            [`${polyName(ev)}は、線対称でもあり、点対称でもある。`, "頂点の数が偶数の正多角形は、線対称でもあり、点対称でもある"],
+            ["ひし形には、対称の軸が2本ある。", "ひし形の対称の軸は、2本の対角線"],
+            ["二等辺三角形には、対称の軸が1本ある。", "二等辺三角形の対称の軸は、長さの等しい2つの辺の間の頂点を通る1本だけ"],
+            ["点対称な図形では、対応する2つの点を結ぶ直線は、対称の中心を通る。", "点対称な図形の性質"],
+            ["線対称な図形では、対応する2つの点を結ぶ直線は、対称の軸と垂直に交わる。", "線対称な図形の性質"],
+          ];
+          const F = [
+            [`${polyName(n)}には、対称の軸が${n + 1}本ある。`, `${polyName(n)}の対称の軸は${n}本`],
+            ["平行四辺形は、線対称な図形である。", "平行四辺形は、どこで折ってもぴったり重ならない（点対称ではある）"],
+            [`${polyName(od)}は、点対称な図形である。`, "頂点の数が奇数の正多角形は、点対称ではない"],
+            ["長方形には、対称の軸が4本ある。", "長方形の対称の軸は2本"],
+            ["二等辺三角形は、点対称な図形である。", "二等辺三角形は、180° 回すとぴったり重ならない"],
+            ["線対称な図形では、対応する2つの点を結ぶ直線は、対称の軸と平行になる。", "対応する2つの点を結ぶ直線は、対称の軸と垂直に交わる"],
+          ];
+          const wantTrue = r(0, 1) === 0;
+          const [ans, why] = pick(r, wantTrue ? T : F);
+          return {
+            q: `${nm}さんが、対称な図形について、わかったことを書きました。次のうち、${wantTrue ? "正しい" : "まちがっている"}ものはどれですか。`,
+            ans,
+            choices: choices4(r, ans, sample(r, wantTrue ? F : T, 3).map(([x]) => x)),
+            hint: "図形を頭の中で折ったり、180° 回したりして、1つずつたしかめよう。",
+            steps: [`「${ans}」は${wantTrue ? "正しい" : "まちがい"}：${why}`, `答え：${ans}`],
+          };
+        }),
+        t("E6-taisho-2e", (r) => {
+          if (r(0, 1)) {
+            const A = r(40, 140);
+            const B = 180 - A;
+            return {
+              q: `点対称な四角形 ABCD があります。角 A の大きさが ${A}° のとき、角 B の大きさは何度ですか。`,
+              ans: B,
+              unit: "度",
+              hint: "点対称な四角形で、対応する角はどれとどれかな？ 四角形の4つの角の大きさの和も使おう。",
+              steps: [`点対称なので、角 C ＝ 角 A ＝ ${A}°、角 D ＝ 角 B`, `4つの角の和は 360° なので、角 B ＋ 角 D ＝ 360° − ${A}° × 2 ＝ ${360 - 2 * A}°`, `角 B ＝ ${360 - 2 * A}° ÷ 2 ＝ ${B}°`],
+            };
+          }
+          let A = 120;
+          let B = 120;
+          let C = 120;
+          for (let g = 0; g < 50; g++) {
+            A = r(100, 150);
+            B = r(100, 150);
+            C = 360 - A - B;
+            if (C >= 90 && C <= 160) break;
+          }
+          if (C < 90 || C > 160) return { skip: true };
+          return {
+            q: `点対称な六角形 ABCDEF があります。角 A が ${A}°、角 B が ${B}° のとき、角 C の大きさは何度ですか。`,
+            ans: C,
+            unit: "度",
+            hint: "点対称な六角形で、対応する角はどれとどれかな？ 六角形の6つの角の大きさの和も使おう。",
+            steps: ["点対称なので、角 D ＝ 角 A、角 E ＝ 角 B、角 F ＝ 角 C", "六角形の6つの角の和は 720° なので、角 A ＋ 角 B ＋ 角 C ＝ 720° ÷ 2 ＝ 360°", `角 C ＝ 360° − ${A}° − ${B}° ＝ ${C}°`],
+          };
+        }),
       ],
       3: [
         t("E6-taisho-3a", (r) => {
@@ -2587,6 +2693,86 @@ export const UNITS = [
             choices,
             hint: "文字を 180° 回して、もとの形と同じになるか考えよう。",
             steps: [`${ans} は 180° 回すと、もとの形と重なる`, "A・M・T・U などは線対称だけれど、点対称ではない"],
+          };
+        }),
+        t("E6-taisho-3d", (r) => {
+          const x = r(20, 65);
+          const y = r(20, 65);
+          const B = 180 - x - y;
+          const k = pick(r, [0, 0, 1, 2]);
+          const head = "対角線 AC を対称の軸とする線対称な四角形 ABCD があります。";
+          if (k === 0) {
+            return {
+              q: `${head}角 BAC が ${x}°、角 BCA が ${y}° のとき、角 ADC は何度ですか。`,
+              ans: B,
+              unit: "度",
+              hint: "AC で折ると、角 ADC はどの角と重なるかな？",
+              steps: ["AC で折ると、角 ADC は角 ABC と重なるので、角 ADC ＝ 角 ABC", `三角形 ABC の角の和から、角 ABC ＝ 180° − ${x}° − ${y}° ＝ ${B}°`, `答え ${B}°`],
+            };
+          }
+          if (k === 1) {
+            return {
+              q: `${head}角 BAD が ${2 * x}°、角 BCA が ${y}° のとき、角 ADC は何度ですか。`,
+              ans: B,
+              unit: "度",
+              hint: "AC で折ると重なる角を考えよう。角 BAC は何度かな？",
+              steps: [`AC で折ると、角 BAC と角 DAC が重なるので、角 BAC ＝ ${2 * x}° ÷ 2 ＝ ${x}°`, `三角形 ABC の角の和から、角 ABC ＝ 180° − ${x}° − ${y}° ＝ ${B}°`, `角 ADC は角 ABC と重なるので ${B}°`],
+            };
+          }
+          return {
+            q: `${head}角 BAC が ${x}°、角 BCD が ${2 * y}° のとき、角 ABC は何度ですか。`,
+            ans: B,
+            unit: "度",
+            hint: "AC で折ると重なる角を考えよう。角 BCA は何度かな？",
+            steps: [`AC で折ると、角 BCA と角 DCA が重なるので、角 BCA ＝ ${2 * y}° ÷ 2 ＝ ${y}°`, `三角形 ABC の角の和から、角 ABC ＝ 180° − ${x}° − ${y}° ＝ ${B}°`, `答え ${B}°`],
+          };
+        }),
+        t("E6-taisho-3e", (r) => {
+          const letters = shuffle(r, [...sample(r, ABC_LINE, r(1, 3)), ...sample(r, ABC_POINT, r(1, 2)), ...sample(r, ABC_BOTH, r(1, 2)), ...sample(r, ABC_NONE, r(1, 2))]);
+          const [label, set] = pick(r, [
+            ["線対称でも点対称でもある", ABC_BOTH],
+            ["点対称だが、線対称ではない", ABC_POINT],
+            ["線対称だが、点対称ではない", ABC_LINE],
+            ["線対称である", [...ABC_LINE, ...ABC_BOTH]],
+          ]);
+          const hits = letters.filter((c) => set.includes(c));
+          const grp = (arr, name) => {
+            const xs = letters.filter((c) => arr.includes(c));
+            return xs.length ? `${name}：${xs.join("・")}` : null;
+          };
+          const lines = [grp(ABC_LINE, "線対称だけ"), grp(ABC_POINT, "点対称だけ"), grp(ABC_BOTH, "線対称でも点対称でもある"), grp(ABC_NONE, "どちらでもない")].filter(Boolean);
+          return {
+            q: `アルファベットの大文字 ${letters.join("、")} のうち、${label}ものは何こありますか。（ゴシック体の文字で考えます）`,
+            ans: hits.length,
+            unit: "こ",
+            hint: "1文字ずつ、折って重なるか（線対称）、180° 回して重なるか（点対称）を調べよう。",
+            steps: [lines.join("、"), `${label}ものは ${hits.join("・")} の ${hits.length}こ`],
+          };
+        }),
+      ],
+      4: [
+        t("E6-taisho-4a", (r) => {
+          const p = r(4, 16);
+          const q = 2 * r(2, 8);
+          const S = (p * q) / 2;
+          const head = "対角線 AC を対称の軸とする線対称な四角形 ABCD があります。";
+          const why = "B と D は対応する点なので、BD は対称の軸 AC と垂直に交わり、交わる点で2等分される";
+          const hint = "線対称な図形で、対応する2つの点 B と D を結ぶ直線は、対称の軸 AC とどのように交わるかな？";
+          if (r(0, 2) > 0) {
+            return {
+              q: `${head}対角線 AC の長さが ${p}cm、対角線 BD の長さが ${q}cm のとき、この四角形の面積は何cm²ですか。`,
+              ans: S,
+              unit: "cm²",
+              hint,
+              steps: [why, `四角形を AC で三角形 ABC と三角形 ADC に分けると、どちらも底辺 ${p}cm、高さ ${q / 2}cm`, `${p} × ${q / 2} ÷ 2 × 2 ＝ ${S}（cm²）`],
+            };
+          }
+          return {
+            q: `${head}この四角形の面積は ${S}cm² で、対角線 BD の長さは ${q}cm です。対角線 AC の長さは何cmですか。`,
+            ans: p,
+            unit: "cm",
+            hint,
+            steps: [why, `四角形を AC で2つの三角形に分けると、どちらも底辺が AC、高さが ${q / 2}cm なので、面積 ＝ AC × ${q / 2} ÷ 2 × 2 ＝ AC × ${q / 2}`, `AC ＝ ${S} ÷ ${q / 2} ＝ ${p}（cm）`],
           };
         }),
       ],
@@ -2642,6 +2828,49 @@ export const UNITS = [
             steps: [`${Array(n).fill(2).join(" × ")} ＝ ${ans}（通り）`],
           };
         }),
+        t("E6-baai-1d", (r) => {
+          const nm = pick(r, NAMES);
+          const k = r(0, 2);
+          if (k === 2) {
+            const p = r(2, 4);
+            const q = r(2, 4);
+            const w = r(2, 3);
+            return {
+              q: `お店のランチで、主食を ${p}種類、おかずを ${q}種類、飲み物を ${w}種類の中から、それぞれ1つずつ選びます。選び方は、全部で何通りありますか。`,
+              ans: p * q * w,
+              unit: "通り",
+              hint: "主食の選び方のそれぞれに、おかずが何通りあるかな？ 樹形図をかいて考えよう。",
+              steps: [`主食 ${p}通りのそれぞれに、おかずが ${q}通り、さらにそのそれぞれに飲み物が ${w}通りある`, `${p} × ${q} × ${w} ＝ ${p * q * w}（通り）`],
+            };
+          }
+          const p = r(2, 5);
+          const q = r(2, 5);
+          const [text, A, B] =
+            k === 0
+              ? [`${nm}さんの家から公園までの道は ${p}通り、公園から駅までの道は ${q}通りあります。家から公園を通って駅まで行く行き方は、全部で何通りありますか。`, "家から公園までの道", "公園から駅までの道"]
+              : [`${nm}さんは、Tシャツを ${p}まい、ズボンを ${q}本持っています。Tシャツとズボンを1つずつ選んで組み合わせる方法は、全部で何通りありますか。`, "Tシャツ", "ズボン"];
+          return {
+            q: text,
+            ans: p * q,
+            unit: "通り",
+            hint: `${A}の選び方のそれぞれに、${B}の選び方が何通りあるかな？`,
+            steps: [`${A} ${p}通りのそれぞれに、${B}が ${q}通りずつある`, `${p} × ${q} ＝ ${p * q}（通り）`],
+          };
+        }),
+        t("E6-baai-1e", (r) => {
+          const n = r(3, 5);
+          const who = sample(r, NAMES, n);
+          const lead = pick(r, who);
+          const first = r(0, 1) === 0;
+          const f = [1, 1, 2, 6, 24][n - 1];
+          return {
+            q: `${who.map((w) => `${w}さん`).join("、")}の${n}人で、リレーの走る順番を決めます。${lead}さんが${first ? "第1走者（はじめに走る人）" : "アンカー（最後に走る人）"}になるとき、走る順番は全部で何通りありますか。`,
+            ans: f,
+            unit: "通り",
+            hint: `${lead}さんの順番は決まっているね。のこりの人のならび方を考えよう。`,
+            steps: [`${lead}さんの順番は決まっているので、のこりの ${n - 1}人のならび方を考える`, `${Array.from({ length: n - 1 }, (_, i) => n - 1 - i).join(" × ")} ＝ ${f}（通り）`],
+          };
+        }),
       ],
       2: [
         t("E6-baai-2a", (r) => {
@@ -2676,6 +2905,43 @@ export const UNITS = [
             unit: "こ",
             hint: zero ? "百の位に 0 はおけないことに注意しよう。" : "百の位、十の位、一の位の順に、何通りずつあるか考えよう。",
             steps: zero ? ["百の位は 0 以外の 3通り", "十の位は のこり3まいから 3通り、一の位は 2通り", `3 × 3 × 2 ＝ ${cnt}（こ）`] : ["百の位は 4通り、十の位は 3通り、一の位は 2通り", `4 × 3 × 2 ＝ ${cnt}（こ）`],
+          };
+        }),
+        t("E6-baai-2d", (r) => {
+          const n = r(4, 7);
+          const two = n >= 5 && r(0, 1) === 1;
+          const m = two ? n - 2 : n - 1;
+          const ans = two ? (n * (n - 1)) / 2 : n;
+          const [text, u] = pick(r, [
+            [`${n}人の中から、そうじ当番を ${m}人選びます。`, "人"],
+            [`${n}種類のくだものの中から、ちがう ${m}種類を選んで、フルーツポンチをつくります。`, "種類"],
+            [`${n}色の色えんぴつの中から、ちがう ${m}色を選んで使います。`, "色"],
+          ]);
+          return {
+            q: `${text}選び方は、全部で何通りありますか。`,
+            ans,
+            unit: "通り",
+            hint: "選ばれないほうを考えると、かんたんになるよ。",
+            steps: two
+              ? [`${m}${u}を選ぶことは、選ばない 2${u}を決めることと同じ`, `${n}${u}から 2${u}を選ぶ選び方は ${n} × ${n - 1} ÷ 2 ＝ ${ans}（通り）`]
+              : [`${m}${u}を選ぶことは、選ばない 1${u}を決めることと同じ`, `選ばない 1${u}の決め方は ${n}通り`],
+          };
+        }),
+        t("E6-baai-2e", (r) => {
+          const zero = r(0, 2) === 0;
+          const m = zero ? r(3, 4) : r(2, 4);
+          const ds = (zero ? [0, ...sample(r, [1, 2, 3, 4, 5, 6, 7, 8, 9], m - 1)] : sample(r, [1, 2, 3, 4, 5, 6, 7, 8, 9], m)).sort((a, b) => a - b);
+          const k = r(2, 3);
+          const top = zero ? m - 1 : m;
+          const ans = top * m ** (k - 1);
+          const pos = k === 2 ? ["十の位", "一の位"] : ["百の位", "十の位", "一の位"];
+          const counts = [top, ...Array(k - 1).fill(m)];
+          return {
+            q: `${ds.join("、")} の${m}つの数字を使って、${k}けたの整数をつくります。同じ数字を何回使ってもよいとき、整数は全部で何こできますか。`,
+            ans,
+            unit: "こ",
+            hint: zero ? "いちばん上の位に 0 はおけないね。それぞれの位に、何通りの数字がおけるかな？" : "それぞれの位に、何通りの数字がおけるかな？ 同じ数字をくり返し使ってもいいよ。",
+            steps: [pos.map((p, i) => `${p}は ${counts[i]}通り${i === 0 && zero ? "（0 はおけない）" : ""}`).join("、"), `${counts.join(" × ")} ＝ ${ans}（こ）`],
           };
         }),
       ],
@@ -2715,6 +2981,53 @@ export const UNITS = [
             unit: "通り",
             hint: "A → B → C の順に、何色ずつ使えるか考えよう。A と C は同じ色でもいいよ。",
             steps: [`A は ${n}通り、B は A とちがう色で ${n - 1}通り`, `C は B とちがう色で ${n - 1}通り（A と同じ色でもよい）`, `${n} × ${n - 1} × ${n - 1} ＝ ${ans}（通り）`],
+          };
+        }),
+        t("E6-baai-3d", (r) => {
+          const pairs = [];
+          for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) pairs.push([a, b]);
+          const k = r(0, 2);
+          let label;
+          let hits;
+          if (k === 0) {
+            const w = r(3, 11);
+            label = `出た目の数の和が ${w} になる`;
+            hits = pairs.filter(([a, b]) => a + b === w);
+          } else if (k === 1) {
+            const w = r(9, 11);
+            label = `出た目の数の和が ${w} 以上になる`;
+            hits = pairs.filter(([a, b]) => a + b >= w);
+          } else {
+            const p = pick(r, [4, 6, 8, 12]);
+            label = `出た目の数の積が ${p} になる`;
+            hits = pairs.filter(([a, b]) => a * b === p);
+          }
+          return {
+            q: `大小2つのさいころを同時に投げます。${label}出方は、全部で何通りありますか。`,
+            ans: hits.length,
+            unit: "通り",
+            hint: "大きいさいころの目を 1 から順に決めて、そのときの小さいさいころの目を調べよう。表をかいてもいいよ。",
+            steps: [`（大きいさいころの目, 小さいさいころの目）で書き出すと、${hits.map(([a, b]) => `（${a}, ${b}）`).join("、")}`, `全部で ${hits.length}通り`],
+          };
+        }),
+        t("E6-baai-3e", (r) => {
+          const n = r(4, 5);
+          const names = sample(r, ["ガム", "ラムネ", "チョコ", "クッキー", "グミ", "せんべい", "キャラメル"], n);
+          const prices = sample(r, [50, 60, 70, 80, 90, 100, 110, 120, 130, 150], n);
+          const pairs = [];
+          for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) pairs.push([names[i], names[j], prices[i] + prices[j]]);
+          const sums = [...new Set(pairs.map((p) => p[2]))].sort((a, b) => a - b);
+          if (sums.length < 3) return { skip: true };
+          const le = r(0, 1) === 0;
+          const L = pick(r, sums.slice(1, -1));
+          const hits = pairs.filter((p) => (le ? p[2] <= L : p[2] >= L));
+          if (hits.length < 2 || hits.length >= pairs.length) return { skip: true };
+          return {
+            q: `${names.map((x, i) => `${x} ${prices[i]}円`).join("、")} の中から、ちがう2つを1こずつ選んで買います。代金が ${L}円${le ? "以下" : "以上"}になる選び方は、全部で何通りありますか。`,
+            ans: hits.length,
+            unit: "通り",
+            hint: "2つの組み合わせをすべて書き出して、代金を調べよう。「以下」「以上」は、その金額もふくむよ。",
+            steps: [`2つの選び方は、全部で ${pairs.length}通り`, `代金が ${L}円${le ? "以下" : "以上"}になるのは、${hits.map(([a, b, w]) => `${a}と${b}（${w}円）`).join("、")}`, `全部で ${hits.length}通り`],
           };
         }),
       ],
@@ -2817,6 +3130,65 @@ export const UNITS = [
             steps: [`${mode}点が3人でいちばん多い`, `最頻値は ${mode}点`],
           };
         }),
+        t("E6-data-1d", (r) => {
+          const K = pick(r, FREQ_KINDS);
+          const labs = classLabels(K, 5);
+          const cs = Array.from({ length: 5 }, () => r(1, 9));
+          if (r(0, 1)) {
+            const i = r(0, 4);
+            const total = sum(cs);
+            const others = cs.filter((_, j) => j !== i);
+            return {
+              q: `${total}人の${K.what}を、度数分布表にまとめました。${labs.map((l, j) => `${l} ${j === i ? "□" : cs[j]}人`).join("、")}。□ にあてはまる数はいくつですか。`,
+              ans: cs[i],
+              unit: "人",
+              hint: "全体の人数から、ほかの階級の人数の合計をひこう。",
+              steps: [`ほかの階級の人数の合計：${others.join(" ＋ ")} ＝ ${sum(others)}（人）`, `${total} − ${sum(others)} ＝ ${cs[i]}（人）`],
+            };
+          }
+          const mx = Math.max(...cs);
+          const top = pick(r, cs.map((c, j) => (c === mx ? j : -1)).filter((j) => j >= 0));
+          cs[top] = mx + 1;
+          const ans = labs[top];
+          return {
+            q: `${K.what}を、度数分布表にまとめました。${labs.map((l, j) => `${l} ${cs[j]}人`).join("、")}。人数（度数）がいちばん多い階級はどれですか。`,
+            ans,
+            choices: choices4(r, ans, sample(r, labs.filter((l) => l !== ans), 3)),
+            hint: "それぞれの階級の人数をくらべよう。",
+            steps: [`人数がいちばん多いのは ${cs[top]}人`, `その階級は ${ans}`],
+          };
+        }),
+        t("E6-data-1e", (r) => {
+          const [what, u] = pick(r, [["1か月に読んだ本のさっ数", "さつ"], ["1週間に家の手伝いをした回数", "回"], ["10点満点の小テストの点数", "点"]]);
+          const s0 = r(1, 5);
+          const vals = Array.from({ length: 6 }, (_, i) => s0 + i);
+          const cs = vals.map(() => r(0, 4));
+          const mx = Math.max(...cs);
+          const top = pick(r, cs.map((c, i) => (c === mx ? i : -1)).filter((i) => i >= 0));
+          cs[top] = mx + 1;
+          const n = sum(cs);
+          const head = `${n}人の${what}を調べて、1人を ● 1こで表したドットプロットにすると、次のようになりました。${vals.map((v, i) => `${v}${u}：${cs[i] ? "●".repeat(cs[i]) : "なし"}`).join("、")}。`;
+          if (r(0, 1)) {
+            return {
+              q: `${head}最頻値は何${u}ですか。`,
+              ans: vals[top],
+              unit: u,
+              hint: "● がいちばん多くならんでいる値をさがそう。",
+              steps: [`● がいちばん多いのは ${vals[top]}${u}（${cs[top]}人）`, `最頻値は ${vals[top]}${u}`],
+            };
+          }
+          const js = [2, 3, 4].filter((j) => sum(cs.slice(j)) > 0 && sum(cs.slice(j)) < n);
+          if (!js.length) return { skip: true };
+          const j = pick(r, js);
+          const ans = sum(cs.slice(j));
+          return {
+            q: `${head}${vals[j]}${u}以上の人は何人ですか。`,
+            ans,
+            unit: "人",
+            hint: `「${vals[j]}${u}以上」なので、${vals[j]}${u}の人もふくめて数えよう。`,
+            steps: [vals.slice(j).map((v, i) => `${v}${u} ${cs[j + i]}人`).join("、"), `${cs.slice(j).join(" ＋ ")} ＝ ${ans}（人）`],
+          };
+        }),
       ],
       2: [
         t("E6-data-2a", (r) => {
@@ -2874,6 +3246,51 @@ export const UNITS = [
             };
           }
           return { skip: true };
+        }),
+        t("E6-data-2d", (r) => {
+          const [what, u] = pick(r, [["1か月に読んだ本のさっ数", "さつ"], ["10点満点の小テストの点数", "点"], ["1週間に図書室に行った回数", "回"]]);
+          const s0 = r(1, 5);
+          const vals = Array.from({ length: 5 }, (_, i) => s0 + i);
+          const cs = vals.map(() => r(1, 6));
+          const n = sum(cs);
+          const xs = vals.flatMap((v, i) => Array(cs[i]).fill(v));
+          const med = median(xs);
+          const cum = [];
+          cs.reduce((a, c) => (cum.push(a + c), a + c), 0);
+          const steps =
+            n % 2
+              ? [`全部で ${n}人なので、中央値は小さいほうから ${(n + 1) / 2}番目の値`, `小さいほうから人数をたしていくと ${cum.join(" → ")}`, `${(n + 1) / 2}番目は ${med}${u} なので、中央値は ${med}${u}`]
+              : [`全部で ${n}人なので、中央値は小さいほうから ${n / 2}番目と ${n / 2 + 1}番目の平均`, `小さいほうから人数をたしていくと ${cum.join(" → ")}`, `${n / 2}番目は ${xs[n / 2 - 1]}${u}、${n / 2 + 1}番目は ${xs[n / 2]}${u} なので、(${xs[n / 2 - 1]} ＋ ${xs[n / 2]}) ÷ 2 ＝ ${med}（${u}）`];
+          return {
+            q: `${n}人の${what}を調べると、${vals.map((v, i) => `${v}${u}が ${cs[i]}人`).join("、")}でした。中央値は何${u}ですか。`,
+            ans: med,
+            unit: u,
+            hint: "全部で何人かを調べて、小さいほうから数えて真ん中にくる人の値をさがそう。",
+            steps,
+          };
+        }),
+        t("E6-data-2e", (r) => {
+          const nm = pick(r, NAMES);
+          const G = ["折れ線グラフ", "ぼうグラフ", "円グラフ", "柱状グラフ"];
+          const [txt, gi] = pick(r, [
+            ["1年間の、月ごとの気温の変わり方", 0],
+            [`${nm}さんの身長の、1年生から6年生までの変わり方`, 0],
+            ["ある町の人口の、10年ごとの変わり方", 0],
+            ["クラスで調べた、すきなくだものごとの人数の多い少ない", 1],
+            ["学年ごとの、図書室で借りた本のさっ数のくらべ", 1],
+            ["クラスですきなスポーツを調べたときの、それぞれのスポーツの人数が全体のどれだけにあたるか", 2],
+            ["学校の土地の使われ方（校舎・運動場・花だんなど）の割合", 2],
+            ["クラス全員のソフトボール投げの記録の、ちらばりのようす", 3],
+            ["6年生全員の50m走の記録を階級に分けたときの、ちらばりのようす", 3],
+          ]);
+          const why = ["変わり方を表すには、折れ線グラフが適している", "数や量の多い少ないをくらべるには、ぼうグラフが適している", "全体に対する割合を表すには、円グラフ（や帯グラフ）が適している", "記録を階級に分けて、ちらばりのようすを表すには、柱状グラフが適している"][gi];
+          return {
+            q: `「${txt}」を表すのに、いちばん適しているグラフはどれですか。`,
+            ans: G[gi],
+            choices: G,
+            hint: "変わり方、多い少ない、割合、ちらばりのようす のうち、何を表したいのかを考えよう。",
+            steps: [why, `答え：${G[gi]}`],
+          };
         }),
       ],
       3: [
@@ -2942,6 +3359,100 @@ export const UNITS = [
             hint: "まず、" + (lo + w * k) + "m 以上の人数を求めて、全体の人数でわろう。",
             steps: [`${lo + w * k}m 以上の人数：${cs.slice(k).length > 1 ? `${cs.slice(k).join(" ＋ ")} ＝ ` : ""}${part}（人）`, `${part} ÷ ${total} ＝ ${round(part / total)}`, `${pct}％`],
           };
+        }),
+        t("E6-data-3d", (r) => {
+          const K = pick(r, FREQ_KINDS);
+          const labs = classLabels(K, 5);
+          const cs = Array.from({ length: 5 }, () => r(1, 9));
+          if (sum(cs) % 2 === 0) cs[r(0, 4)] += 1;
+          const n = sum(cs);
+          const pos = (n + 1) / 2;
+          const cum = [];
+          cs.reduce((a, c) => (cum.push(a + c), a + c), 0);
+          const ans = labs[cum.findIndex((c) => c >= pos)];
+          return {
+            q: `${n}人の${K.what}を、度数分布表にまとめました。${labs.map((l, i) => `${l} ${cs[i]}人`).join("、")}。中央値は、どの階級に入っていますか。`,
+            ans,
+            choices: choices4(r, ans, sample(r, labs.filter((l) => l !== ans), 3)),
+            hint: "中央値は、記録を小さい順にならべたとき、何番目の記録かな？",
+            steps: [`${n}人なので、中央値は小さいほうから ${pos}番目の記録`, `小さい階級から人数をたしていくと ${cum.join(" → ")}`, `${pos}番目の記録は ${ans} の階級に入る`],
+          };
+        }),
+        t("E6-data-3e", (r) => {
+          const n = 7;
+          const make = () => {
+            const xs = Array.from({ length: n - 1 }, () => r(2, 15));
+            const lasts = [];
+            for (let v = 2; v <= 15; v++) if ((sum(xs) + v) % n === 0) lasts.push(v);
+            xs.push(pick(r, lasts));
+            return shuffle(r, xs);
+          };
+          for (let g = 0; g < 300; g++) {
+            const A = make();
+            const B = make();
+            const th = r(8, 12);
+            const st = (xs) => ({ mean: sum(xs) / n, med: median(xs), max: Math.max(...xs), cnt: xs.filter((x) => x >= th).length });
+            const a = st(A);
+            const b = st(B);
+            const props = [
+              [a.mean, b.mean, (c) => `平均値は、${c}のほうが大きい`],
+              [a.med, b.med, (c) => `中央値は、${c}のほうが大きい`],
+              [a.max, b.max, (c) => `いちばん多く読んだ人は、${c}にいる`],
+              [a.cnt, b.cnt, (c) => `${th}さつ以上読んだ人数は、${c}のほうが多い`],
+            ].filter(([x, y]) => x !== y);
+            if (props.length < 4 || props.every(([x, y]) => x > y) || props.every(([x, y]) => x < y)) continue;
+            const order = shuffle(r, props);
+            const win = ([x, y]) => (x > y ? "1組" : "2組");
+            const lose = ([x, y]) => (x > y ? "2組" : "1組");
+            const ans = order[0][2](win(order[0]));
+            return {
+              q: `1組と2組の7人ずつが、1か月に読んだ本のさっ数を調べました。1組：${A.join("、")}（さつ）。2組：${B.join("、")}（さつ）。次のうち、正しいと言えるものはどれですか。`,
+              ans,
+              choices: choices4(r, ans, order.slice(1).map((p) => p[2](lose(p)))),
+              hint: "それぞれの組の平均値・中央値・いちばん多い記録などを求めて、くらべよう。",
+              steps: [
+                `1組：平均値 ${a.mean}さつ、中央値 ${a.med}さつ、いちばん多い記録 ${a.max}さつ、${th}さつ以上 ${a.cnt}人`,
+                `2組：平均値 ${b.mean}さつ、中央値 ${b.med}さつ、いちばん多い記録 ${b.max}さつ、${th}さつ以上 ${b.cnt}人`,
+                `正しいと言えるのは「${ans}」`,
+              ],
+            };
+          }
+          return { skip: true };
+        }),
+      ],
+      4: [
+        t("E6-data-4a", (r) => {
+          const hint = "5人の点数を低い順にならべたとき、中央値や最頻値から、何番目の点数がわかるかな？";
+          for (let g = 0; g < 100; g++) {
+            const m = r(4, 7);
+            if (r(0, 1)) {
+              const b = r(m + 1, 10);
+              const x1 = r(1, m - 2);
+              const x2 = r(x1 + 1, m - 1);
+              const S = x1 + x2 + m + 2 * b;
+              if (S % 5) continue;
+              return {
+                q: `5人の小テストの点数（10点満点）を調べると、中央値は ${m}点、最頻値は ${b}点、平均値は ${S / 5}点でした。いちばん低い点数が ${x1}点のとき、2番目に低い点数は何点ですか。`,
+                ans: x2,
+                unit: "点",
+                hint,
+                steps: [`5人の合計は ${S / 5} × 5 ＝ ${S}（点）`, `低い順にならべると、3番目が中央値の ${m}点。最頻値の ${b}点は中央値より高いので、4番目と5番目が ${b}点`, `2番目 ＝ ${S} − ${x1} − ${m} − ${b} × 2 ＝ ${x2}（点）`],
+              };
+            }
+            const b = r(1, m - 1);
+            const x4 = r(m + 1, 9);
+            const x5 = r(x4 + 1, 10);
+            const S = 2 * b + m + x4 + x5;
+            if (S % 5) continue;
+            return {
+              q: `5人の小テストの点数（10点満点）を調べると、中央値は ${m}点、最頻値は ${b}点、平均値は ${S / 5}点でした。2番目に高い点数が ${x4}点のとき、いちばん高い点数は何点ですか。`,
+              ans: x5,
+              unit: "点",
+              hint,
+              steps: [`5人の合計は ${S / 5} × 5 ＝ ${S}（点）`, `低い順にならべると、3番目が中央値の ${m}点。最頻値の ${b}点は中央値より低いので、1番目と2番目が ${b}点`, `いちばん高い点数 ＝ ${S} − ${b} × 2 − ${m} − ${x4} ＝ ${x5}（点）`],
+            };
+          }
+          return { skip: true };
         }),
       ],
     },

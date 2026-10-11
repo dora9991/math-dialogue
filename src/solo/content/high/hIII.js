@@ -115,7 +115,8 @@ const KYOKUGEN = {
         const [p, q] = pick(r, [[1, 2], [1, 3], [2, 3], [-1, 2], [1, 4], [3, 4], [-1, 3], [2, 5], [-2, 3]]);
         const a = rnz(r, -6, 6);
         const t1 = fracTex(a * p, q), t2 = fracTex(a * p * p, q * q);
-        const ser = `${a}${t1.startsWith("-") ? t1 : "+" + t1}${t2.startsWith("-") ? t2 : "+" + t2}+\\cdots`;
+        // ⋯ の前の符号は4項目 a·r^3 の符号（a·p の符号）に合わせる
+        const ser = `${a}${t1.startsWith("-") ? t1 : "+" + t1}${t2.startsWith("-") ? t2 : "+" + t2}${a * p < 0 ? "-" : "+"}\\cdots`;
         return {
           q: `無限等比級数 $${ser}$ の和を求めよ。`,
           ans: fracAns(a * q, q - p),
@@ -195,8 +196,8 @@ const KYOKUGEN = {
           steps: [
             `$1-\\cos ${ax}=\\frac{\\sin^{2}${ax}}{1+\\cos ${ax}}$`,
             mode === 0
-              ? `$\\left(\\frac{\\sin ${ax}}{${ax}}\\right)^{2}\\cdot\\frac{${a * a}}{${b}(1+\\cos ${ax})}\\to\\frac{${a * a}}{${2 * b}}$`
-              : `$\\left(\\frac{\\sin ${ax}}{${ax}}\\right)^{2}\\cdot\\frac{${b === 1 ? "" : b}x}{\\sin ${b === 1 ? "" : b}x}\\cdot\\frac{${a * a}}{${b}(1+\\cos ${ax})}\\to\\frac{${a * a}}{${2 * b}}$`,
+              ? `$\\left(\\frac{\\sin ${ax}}{${ax}}\\right)^{2}\\cdot\\frac{${a * a}}{${b === 1 ? "" : b}(1+\\cos ${ax})}\\to\\frac{${a * a}}{${2 * b}}$`
+              : `$\\left(\\frac{\\sin ${ax}}{${ax}}\\right)^{2}\\cdot\\frac{${b === 1 ? "" : b}x}{\\sin ${b === 1 ? "" : b}x}\\cdot\\frac{${a * a}}{${b === 1 ? "" : b}(1+\\cos ${ax})}\\to\\frac{${a * a}}{${2 * b}}$`,
             `極限は $${fracTex(a * a, 2 * b)}$`,
           ],
         };
@@ -225,14 +226,15 @@ const KYOKUGEN = {
         for (let k = 1; k <= d; k++) H = addQ(H, [1, k]);
         const ans = [c * H[0], d * H[1]];
         const Hs = [...Array(d).keys()].map((k) => (k === 0 ? "1" : `\\frac{1}{${k + 1}}`)).join("+");
+        const cd = fracTex(c, d) === "1" ? "" : fracTex(c, d);
         return {
           q: `$\\sum_{n=1}^{\\infty}\\frac{${c}}{n(n+${d})}$ を求めよ。`,
           ans: fracAns(ans[0], ans[1]),
           hint: "部分分数に分解すると、部分和で項が打ち消し合う。",
           steps: [
-            `$\\frac{${c}}{n(n+${d})}=${fracTex(c, d)}\\left(\\frac{1}{n}-\\frac{1}{n+${d}}\\right)$`,
-            `部分和は $${fracTex(c, d)}\\left(${Hs}-\\cdots\\right)$ の形で、引く側の項は $n\\to\\infty$ で $0$`,
-            `和は $${fracTex(c, d)}\\left(${Hs}\\right)=${fracTex(ans[0], ans[1])}$`,
+            `$\\frac{${c}}{n(n+${d})}=${cd}\\left(\\frac{1}{n}-\\frac{1}{n+${d}}\\right)$`,
+            `部分和は $${cd}\\left(${Hs}-\\cdots\\right)$ の形で、引く側の項は $n\\to\\infty$ で $0$`,
+            `和は $${cd}\\left(${Hs}\\right)=${fracTex(ans[0], ans[1])}$`,
           ],
         };
       }),
@@ -409,7 +411,7 @@ const BIBUN = {
             q: `$f(x)=\\log(${inner})$ のとき、$f'(${c})$ の値を求めよ。`,
             ans: fracAns(a, v),
             hint: "$\\{\\log u\\}'=\\frac{u'}{u}$。",
-            steps: [`$f'(x)=\\frac{${a}}{${inner}}$`, `$f'(${c})=${v === 1 ? "" : `\\frac{${a}}{${v}}=`}${fracTex(a, v)}$`],
+            steps: [`$f'(x)=\\frac{${a}}{${inner}}$`, `$f'(${c})=${v === 1 || gcd(a, v) === 1 ? "" : `\\frac{${a}}{${v}}=`}${fracTex(a, v)}$`],
           };
         }
         const s = r(1, 5), a = r(1, 4), c = r(-2, 3);
@@ -634,8 +636,8 @@ const BIBUN = {
           hint: `分子に $-${(sq ? a * a : a) === 1 ? "" : sq ? a * a : a}f(${a})+${(sq ? a * a : a) === 1 ? "" : sq ? a * a : a}f(${a})$ をはさんで、微分係数の定義が見える形に分ける。`,
           steps: sq
             ? [
-                `分子 $=(x^{2}-${a * a})f(${a})-${a * a}\\{f(x)-f(${a})\\}$`,
-                `$\\frac{${num}}{${xa}}=(x+${a})f(${a})-${a * a}\\cdot\\frac{f(x)-f(${a})}{${xa}}$`,
+                `分子 $=(x^{2}-${a * a})f(${a})-${a === 1 ? "" : a * a}\\{f(x)-f(${a})\\}$`,
+                `$\\frac{${num}}{${xa}}=(x+${a})f(${a})-${a === 1 ? "" : `${a * a}\\cdot`}\\frac{f(x)-f(${a})}{${xa}}$`,
                 `$\\to ${2 * a}\\times${par(A)}-${a * a}\\times${par(B)}=${ans}$`,
               ]
             : [
@@ -727,7 +729,7 @@ const BIBUNOUYO = {
             hint: "$y''$ を求め、符号が変わる x を探す。",
             steps: [
               `$y'=(${poly([a, 1])})${eax(a)}$`,
-              `$y''=${a}(${poly([a, 2])})${eax(a)}$`,
+              `$y''=${co(a, `(${poly([a, 2])})`)}${eax(a)}$`,
               `$x=${fracTex(-2, a)}$ の前後で $y''$ の符号が変わるので変曲点の x 座標は $${fracTex(-2, a)}$`,
             ],
           };
@@ -751,7 +753,7 @@ const BIBUNOUYO = {
         const b = -(al + be) - 2, c = al * be - b;
         const askMax = r(0, 1) === 1;
         return {
-          q: `関数 $f(x)=(${poly([1, b, c])})e^{x}$ が${askMax ? "極大値" : "極小値"}をとる x の値を求めよ。`,
+          q: `関数 $f(x)=${b === 0 && c === 0 ? "x^{2}" : `(${poly([1, b, c])})`}e^{x}$ が${askMax ? "極大値" : "極小値"}をとる x の値を求めよ。`,
           ans: askMax ? al : be,
           hint: "積の微分で $f'(x)$ を「2次式 × $e^{x}$」の形にする。$e^{x}>0$ なので2次式の符号だけ見ればよい。",
           steps: [
@@ -768,7 +770,7 @@ const BIBUNOUYO = {
           { f: "x+\\sqrt{2}\\cos x", d: "1-\\sqrt{2}\\sin x", z: "\\frac{\\pi}{4},\\ \\frac{3}{4}\\pi", v: [["0", "\\sqrt{2}", R2], ["\\frac{\\pi}{4}", "\\frac{\\pi}{4}+1", PI / 4 + 1], ["\\frac{3}{4}\\pi", "\\frac{3}{4}\\pi-1", (3 * PI) / 4 - 1], ["\\pi", "\\pi-\\sqrt{2}", PI - R2]] },
           { f: "x-2\\sin x", d: "1-2\\cos x", z: "\\frac{\\pi}{3}", v: [["0", "0", 0], ["\\frac{\\pi}{3}", "\\frac{\\pi}{3}-\\sqrt{3}", PI / 3 - R3], ["\\pi", "\\pi", PI]] },
           { f: "x-\\sqrt{2}\\sin x", d: "1-\\sqrt{2}\\cos x", z: "\\frac{\\pi}{4}", v: [["0", "0", 0], ["\\frac{\\pi}{4}", "\\frac{\\pi}{4}-1", PI / 4 - 1], ["\\pi", "\\pi", PI]] },
-          { f: "2\\sin x+\\sin 2x", d: "2\\cos x+2\\cos 2x=2(2\\cos x-1)(\\cos x+1)", z: "\\frac{\\pi}{3}", v: [["0", "0", 0], ["\\frac{\\pi}{3}", "\\frac{3\\sqrt{3}}{2}", (3 * R3) / 2], ["\\pi", "0", 0]] },
+          { f: "2\\sin x+\\sin 2x", d: "2\\cos x+2\\cos 2x=2(2\\cos x-1)(\\cos x+1)", z: "\\frac{\\pi}{3},\\ \\pi", v: [["0", "0", 0], ["\\frac{\\pi}{3}", "\\frac{3\\sqrt{3}}{2}", (3 * R3) / 2], ["\\pi", "0", 0]] },
           { f: "e^{x}\\sin x", d: "e^{x}(\\sin x+\\cos x)", z: "\\frac{3}{4}\\pi", v: [["0", "0", 0], ["\\frac{3}{4}\\pi", "\\frac{\\sqrt{2}}{2}e^{\\frac{3}{4}\\pi}", (R2 / 2) * Math.exp((3 * PI) / 4)], ["\\pi", "0", 0]] },
         ]);
         const askMax = r(0, 1) === 1;
@@ -978,7 +980,7 @@ const BIBUNOUYO = {
             3: ["$at^{3}=\\log t$, $3at^{2}=\\frac{1}{t}$", "$at^{3}=\\frac{1}{3}$"],
           };
           return {
-            q: `曲線 $${cur}$ と曲線 $y=\\log x$ が接するとき、正の定数 $a$ の値を求めよ。`,
+            q: `${n === 1 ? "直線" : "曲線"} $${cur}$ と曲線 $y=\\log x$ が接するとき、正の定数 $a$ の値を求めよ。`,
             ans: `$${ans}$`,
             choices: choices4(r, `$${ans}$`, wr.map((w) => `$${w}$`)),
             hint: "接点の x 座標を t とし、「y 座標が等しい」「傾きが等しい」の2式を立てる。",
@@ -993,7 +995,7 @@ const BIBUNOUYO = {
         const ans = ["", "e", "\\frac{e^{2}}{4}", "\\frac{e^{3}}{27}"][n];
         const wr = n === 1 ? ["1", "e^{2}", "\\frac{1}{e}"] : [`\\frac{${eT(n)}}{${n}}`, eT(n), `\\frac{${eT(n)}}{${n ** (n - 1)}}`, `\\frac{${eT(n - 1)}}{${n ** n}}`];
         return {
-          q: `曲線 $y=e^{x}$ と曲線 $y=a${xp(n)}$（$x>0$）が接するとき、定数 $a$ の値を求めよ。`,
+          q: `曲線 $y=e^{x}$ と${n === 1 ? "直線" : "曲線"} $y=a${xp(n)}$（$x>0$）が接するとき、定数 $a$ の値を求めよ。`,
           ans: `$${ans}$`,
           choices: choices4(r, `$${ans}$`, wr.map((w) => `$${w}$`)),
           hint: "接点の x 座標を t とし、「y 座標が等しい」「傾きが等しい」の2式を立てる。",
@@ -1090,7 +1092,7 @@ const SEKIBUN = {
             ans: fracAns(v, a),
             hint: "$\\int\\sin ax\\,dx=-\\frac{1}{a}\\cos ax$。$\\cos k\\pi=(-1)^{k}$。",
             steps: [
-              `$\\left[${termTex(-1, a, `\\cos ${a === 1 ? "" : a}x`)}\\right]_{0}^{\\pi}=${termTex(-1, a, "")}(\\cos ${a === 1 ? "" : a}\\pi-1)$`,
+              `$\\left[${termTex(-1, a, `\\cos ${a === 1 ? "" : a}x`)}\\right]_{0}^{\\pi}=${a === 1 ? "-" : termTex(-1, a, "")}(\\cos ${a === 1 ? "" : a}\\pi-1)$`,
               `$\\cos ${a === 1 ? "" : a}\\pi=${a % 2 === 0 ? 1 : -1}$ より $${fracTex(v, a)}$`,
             ],
           };
@@ -1166,7 +1168,7 @@ const SEKIBUN = {
         if (mode === 1) {
           const n = r(1, 5), m = r(1, 2);
           return {
-            q: `定積分 $\\int_{1}^{${eT(m)}}\\frac{(\\log x)^{${n}}}{x}dx$ を求めよ。`,
+            q: `定積分 $\\int_{1}^{${eT(m)}}\\frac{${n === 1 ? "\\log x" : `(\\log x)^{${n}}`}}{x}dx$ を求めよ。`,
             ans: fracAns(m ** (n + 1), n + 1),
             hint: "$t=\\log x$ とおくと $dt=\\frac{1}{x}dx$。",
             steps: [
@@ -1192,7 +1194,7 @@ const SEKIBUN = {
           return {
             q: `不定積分 $\\int x${E}dx$ を求めよ。`,
             ans,
-            choices: choices4(r, ans, [F(1), `$${termTex(1, a, `(x-1)${E}`)}+C$`, `$${termTex(1, a, `x${E}`)}+C$`, `$${termTex(1, a * a, `(${poly([a, -a])})${E}`)}+C$`], (i) => F(-(i + 2))),
+            choices: choices4(r, ans, [F(1), a === -1 ? null : `$${termTex(1, a, `(x-1)${E}`)}+C$`, `$${termTex(1, a, `x${E}`)}+C$`, `$${termTex(1, a * a, `(${poly([a, -a])})${E}`)}+C$`], (i) => F(-(i + 2))),
             hint: "部分積分：$x$ を微分する側、$e^{ax}$ を積分する側にする。",
             steps: [
               `$\\int x${E}dx=${termTex(1, a, `x${E}`)}-\\int ${termTex(1, a, E)}dx$`,
@@ -1229,7 +1231,7 @@ const SEKIBUN = {
             choices: choices4(r, ans, [`$${piT(-sg, a)}$`, `$${piT(sg, a * a)}$`, `$${piT(2 * sg, a)}$`, "$0$"]),
             hint: "部分積分。$\\cos a\\pi=(-1)^{a}$ に注意。",
             steps: [
-              `$\\int_{0}^{\\pi}x\\sin ${ax}\\,dx=\\left[${termTex(-1, a, `x\\cos ${ax}`)}\\right]_{0}^{\\pi}+${termTex(1, a, "")}\\int_{0}^{\\pi}\\cos ${ax}\\,dx$`,
+              `$\\int_{0}^{\\pi}x\\sin ${ax}\\,dx=\\left[${termTex(-1, a, `x\\cos ${ax}`)}\\right]_{0}^{\\pi}+${a === 1 ? "" : termTex(1, a, "")}\\int_{0}^{\\pi}\\cos ${ax}\\,dx$`,
               `第1項 $=${termTex(-1, a, "\\pi")}\\times(${sg === 1 ? -1 : 1})$、第2項 $=0$`,
               `$=${piT(sg, a)}$`,
             ],
@@ -1241,8 +1243,8 @@ const SEKIBUN = {
           ans: fracAns(v, a * a),
           hint: "部分積分。$\\sin a\\pi=0$, $\\cos a\\pi=(-1)^{a}$。",
           steps: [
-            `$=\\left[${termTex(1, a, `x\\sin ${ax}`)}\\right]_{0}^{\\pi}-${termTex(1, a, "")}\\int_{0}^{\\pi}\\sin ${ax}\\,dx$`,
-            `$=0+\\left[${termTex(1, a * a, `\\cos ${ax}`)}\\right]_{0}^{\\pi}=${termTex(1, a * a, "")}(${a % 2 === 0 ? 1 : -1}-1)$`,
+            `$=\\left[${termTex(1, a, `x\\sin ${ax}`)}\\right]_{0}^{\\pi}-${a === 1 ? "" : termTex(1, a, "")}\\int_{0}^{\\pi}\\sin ${ax}\\,dx$`,
+            `$=0+\\left[${termTex(1, a * a, `\\cos ${ax}`)}\\right]_{0}^{\\pi}=${a === 1 ? "" : termTex(1, a * a, "")}(${a % 2 === 0 ? 1 : -1}-1)$`,
             `$=${fracTex(v, a * a)}$`,
           ],
         };
@@ -1489,7 +1491,7 @@ const SEKIBUNOUYO = {
             q: `$\\lim_{n\\to\\infty}\\frac{1}{n}\\sum_{k=1}^{n}\\left(1+\\frac{k}{n}\\right)${mm === 1 ? "" : `^{${mm}}`}$ を求めよ。`,
             ans: fracAns(2 ** (mm + 1) - 1, mm + 1),
             hint: "$\\frac{1}{n}\\sum f\\left(\\frac{k}{n}\\right)\\to\\int_{0}^{1}f(x)\\,dx$。",
-            steps: [`$=\\int_{0}^{1}(1+x)^{${mm}}dx=\\left[\\frac{(1+x)^{${mm + 1}}}{${mm + 1}}\\right]_{0}^{1}=${fracTex(2 ** (mm + 1) - 1, mm + 1)}$`],
+            steps: [`$=\\int_{0}^{1}(1+x)${mm === 1 ? "" : `^{${mm}}`}dx=\\left[\\frac{(1+x)^{${mm + 1}}}{${mm + 1}}\\right]_{0}^{1}=${fracTex(2 ** (mm + 1) - 1, mm + 1)}$`],
           };
         }
         const ex =
@@ -1558,7 +1560,7 @@ const SEKIBUNOUYO = {
             choices: choices4(r, ans, [`$\\log ${b + 1}$`, `$${lg(b, 1, b + 1)}$`, `$${lg(1, b, b + 2)}$`, `$${lg(1, b + 1, b + 1)}$`], (i) => `$${lg(i + 2, b, b + 1)}$`),
             hint: "$\\frac{1}{n}$ をくくり出して $\\frac{1}{n}\\sum f\\left(\\frac{k}{n}\\right)$ の形にする。",
             steps: [
-              `$\\frac{1}{n${b === 1 ? "+" : `+${b}`}k}=\\frac{1}{n}\\cdot\\frac{1}{1+${b === 1 ? "" : b}\\cdot\\frac{k}{n}}$`,
+              `$\\frac{1}{n${b === 1 ? "+" : `+${b}`}k}=\\frac{1}{n}\\cdot\\frac{1}{1+${b === 1 ? "" : `${b}\\cdot`}\\frac{k}{n}}$`,
               `$\\to\\int_{0}^{1}\\frac{dx}{1+${b === 1 ? "" : b}x}=\\left[${lg(1, b, `(1+${b === 1 ? "" : b}x)`)}\\right]_{0}^{1}=${lg(1, b, b + 1)}$`,
             ],
           };
@@ -1697,7 +1699,7 @@ const SEKIBUNOUYO = {
       t("HIII-sekibunouyo-4c", (r) => {
         const a = r(1, 4);
         const mode = r(0, 2);
-        const cyc = `x=${a === 1 ? "" : a}(t-\\sin t)$, $y=${a === 1 ? "" : a}(1-\\cos t)$（$0\\leqq t\\leqq2\\pi$）`;
+        const cyc = `x=${a === 1 ? "t-\\sin t" : `${a}(t-\\sin t)`}$, $y=${a === 1 ? "1-\\cos t" : `${a}(1-\\cos t)`}$（$0\\leqq t\\leqq2\\pi$）`;
         if (mode === 0) {
           const ans = `$${piT(3 * a * a, 1)}$`;
           return {
