@@ -129,6 +129,8 @@ for (let b = 1; b <= 16; b++) for (let c = 1; c <= 16; c++) for (const A of [60,
 const HERON = [[3, 4, 5, 6], [5, 5, 6, 12], [5, 5, 8, 12], [13, 14, 15, 84], [5, 12, 13, 30], [10, 13, 13, 60], [9, 10, 17, 36], [7, 15, 20, 42], [13, 20, 21, 126], [8, 15, 17, 60], [11, 13, 20, 66], [13, 13, 24, 60], [12, 17, 25, 90], [7, 24, 25, 84]]
   .filter(([a, b, c, S]) => (a + b + c) * (-a + b + c) * (a - b + c) * (a + b - c) === 16 * S * S);
 
+/** 点 (x, y)（どちらも0でない）がある象限 */
+const QUAD = (x, y) => (x > 0 ? (y > 0 ? "第1象限" : "第4象限") : y > 0 ? "第2象限" : "第3象限");
 const H = { grade: "H1", course: "数学I", rikei: false };
 
 export const UNITS = [
@@ -1001,7 +1003,7 @@ export const UNITS = [
           const best = four.reduce((u, v) => (askMax ? (v[1] > u[1] ? v : u) : (v[1] < u[1] ? v : u)));
           const ok = tex(best[0]);
           return {
-            q: `次の4つの数のうち、${askMax ? "最も大きい" : "最も小さい"}ものは？`,
+            q: `4つの数 ${four.map((x) => tex(x[0])).join("、")} のうち、${askMax ? "最も大きい" : "最も小さい"}ものは？`,
             ans: ok,
             choices: choices4(r, ok, four.filter((x) => x !== best).map((x) => tex(x[0]))),
             hint: "正の数どうしは、2乗した値の大小で比べられる。$a\\sqrt{b}=\\sqrt{a^{2}b}$",
@@ -1238,17 +1240,19 @@ export const UNITS = [
         }),
         t("HI-futoshiki-1c", (r) => {
           const k = r(2, 5), m = r(1, 9), lt = r(0, 1) === 1; // 前提 a<b か a>b か
+          const [A, B] = pick(r, [["a", "b"], ["x", "y"], ["p", "q"]]);
+          const V = (t) => t.replace(/\\frac/g, "§").replace(/a/g, "#").replace(/b/g, B).replace(/#/g, A).replace(/§/g, "\\frac");
           const P = lt ? "<" : ">", N = lt ? ">" : "<";
           const T = [`a${signed(m)}${P}b${signed(m)}`, `a-${m}${P}b-${m}`, `${k}a${P}${k}b`, `-${k}a${N}-${k}b`, `\\frac{a}{${k}}${P}\\frac{b}{${k}}`, `-a${N}-b`];
           const F = [`${k}a${N}${k}b`, `-${k}a${P}-${k}b`, `a-${m}${N}b-${m}`, `-a${P}-b`, `\\frac{a}{${k}}${N}\\frac{b}{${k}}`, `${m}-a${P}${m}-b`];
-          const ok = tex(pick(r, T));
+          const ok = tex(V(pick(r, T)));
           return {
-            q: `${tex(`a${P}b`)} のとき、次のうち正しいものは？`,
+            q: `${tex(`${A}${P}${B}`)} のとき、次のうち正しいものは？`,
             ans: ok,
-            choices: choices4(r, ok, sample(r, F, 3).map(tex)),
+            choices: choices4(r, ok, sample(r, F, 3).map((x) => tex(V(x)))),
             hint: "両辺に同じ数を足す・引く、正の数を掛ける・割るときは向きはそのまま。負の数を掛ける・割ると向きが逆になる。",
             steps: [
-              "負の数を掛けたり割ったりしたもの、$-a$ や $m-a$ の形は不等号の向きが逆になる",
+              `負の数を掛けたり割ったりしたもの、$-${A}$ や $${m}-${A}$ の形は不等号の向きが逆になる`,
               `正しいのは $${ok.slice(1, -1)}$`,
             ],
           };
@@ -1768,15 +1772,27 @@ export const UNITS = [
             [`x^{2}=${k * k}`, `x=${k}`, `x=-${k}`], [`x<${k}`, `x^{2}<${k * k}`, `x=-${k + 1}`], [`x^{2}>${k * k}`, `x>${k}`, `x=-${k + 1}`],
             [`|x|>${k}`, `x>${k}`, `x=-${k + 1}`], [`x>${k}`, `x>${k + 1}`, `x=${k + 1}`], [`x>-${k}`, `|x|<${k}`, `x=${k}`],
           ];
-          const S = ([p, q]) => `$${p}$ ならば $${q}$`;
-          const t0 = pick(r, T), fs = sample(r, F, 3);
-          const ok = S(t0);
+          const v = pick(r, ["x", "t", "a"]), askTrue = r(0, 1) === 1;
+          const S = ([p, q]) => `$${p.replace(/x/g, v)}$ ならば $${q.replace(/x/g, v)}$`;
+          if (askTrue) {
+            const t0 = pick(r, T), fs = sample(r, F, 3);
+            const ok = S(t0);
+            return {
+              q: `${tex(v)} は実数とする。次の命題のうち、真であるものは？`,
+              ans: ok,
+              choices: choices4(r, ok, fs.map(S)),
+              hint: "偽の命題は、仮定を満たすのに結論を満たさない例（反例）が1つあればよい。",
+              steps: [...fs.map((f) => `「${S(f)}」は偽（反例 $${f[2].replace(/x/g, v)}$）`), `よって真であるのは「${ok}」`],
+            };
+          }
+          const f0 = pick(r, F), ts = sample(r, T, 3);
+          const ok = S(f0);
           return {
-            q: `${tex("x")} は実数とする。次の命題のうち、真であるものは？`,
+            q: `${tex(v)} は実数とする。次の命題のうち、偽であるものは？`,
             ans: ok,
-            choices: choices4(r, ok, fs.map(S)),
+            choices: choices4(r, ok, ts.map(S)),
             hint: "偽の命題は、仮定を満たすのに結論を満たさない例（反例）が1つあればよい。",
-            steps: [...fs.map((f) => `「${S(f)}」は偽（反例 $${f[2]}$）`), `よって真であるのは「${ok}」`],
+            steps: [`「${ok}」は反例 $${f0[2].replace(/x/g, v)}$ があるので偽`, "ほかの3つは、仮定を満たすものがすべて結論を満たすので真"],
           };
         }),
       ],
@@ -2010,6 +2026,20 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-niji-1d", (r) => {
+          const a = pick(r, [1, -1, 2, -2]), p = rnz(r, -4, 4), q = rnz(r, -6, 6);
+          const ok = QUAD(p, q);
+          return {
+            q: `放物線 ${tex(`y=${poly([a, -2 * a * p, a * p * p + q])}`)} の頂点は、座標平面のどの象限にある？`,
+            ans: ok,
+            choices: ["第1象限", "第2象限", "第3象限", "第4象限"],
+            hint: "平方完成して頂点の座標を求め、$x$ 座標・$y$ 座標の符号を見る。",
+            steps: [
+              `$y=${a === 1 ? "" : a === -1 ? "-" : a}${vx(p)}${sh(q)}$ より頂点は $(${p},\\ ${q})$`,
+              `$x$ 座標が${p > 0 ? "正" : "負"}、$y$ 座標が${q > 0 ? "正" : "負"}なので ${ok}`,
+            ],
+          };
+        }),
       ],
       2: [
         t("HI-niji-2a", (r) => {
@@ -2060,6 +2090,22 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-niji-2d", (r) => {
+          const a = pick(r, [1, 2, 3, -1, -2, -3]), p = rnz(r, -3, 3), q = r(-6, 6), x1 = p + rnz(r, -3, 3), y1 = a * (x1 - p) ** 2 + q;
+          const V = (A, P, Qv) => [A, -2 * A * P, A * P * P + Qv];
+          const W = (c) => [tex(`y=${poly(c)}`), pkey(c)];
+          const a2 = (y1 - q) / (x1 - p);
+          return {
+            q: `頂点が点 ${tex(`(${p},\\ ${q})`)} で、点 ${tex(`(${x1},\\ ${y1})`)} を通る放物線の方程式は？`,
+            ...ec(r, W(V(a, p, q)), [W(V(a, -p, q)), Number.isInteger(a2) ? W(V(a2, p, q)) : null, W(V(-a, p, q)), W(V(a, p, -q))], (i) => W(V(a, p, q + i + 1))),
+            hint: "頂点が $(p,\\ q)$ なので $y=a(x-p)^{2}+q$ とおき、通る点を代入して $a$ を求める。",
+            steps: [
+              `$y=a${vx(p)}${sh(q)}$ とおく`,
+              `点 $(${x1},\\ ${y1})$ を通るので $${y1}=a\\cdot (${x1 - p})^{2}${sh(q)}$、$a=${a}$`,
+              `$y=${a === 1 ? "" : a === -1 ? "-" : a}${vx(p)}${sh(q)}=${poly(V(a, p, q))}$`,
+            ],
+          };
+        }),
       ],
       3: [
         t("HI-niji-3a", (r) => {
@@ -2095,6 +2141,41 @@ export const UNITS = [
             steps: [rule, `$y=${poly(kinds[ask])}$`],
           };
         }),
+        t("HI-niji-3c", (r) => {
+          const a = pick(r, [1, 2, 3, -1, -2, -3]), [al, be] = sample(r, [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5], 2).sort((u, v) => u - v);
+          const cand = [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6].filter((x) => x !== al && x !== be);
+          const x1 = pick(r, cand), y1 = a * (x1 - al) * (x1 - be);
+          const vy = [-a * (be - al) ** 2, 4]; // a((β-α)/2)^2 の符号反転：頂点 y = -a(β-α)^2/4
+          return {
+            q: `放物線が ${tex("x")} 軸と2点 ${tex(`(${al},\\ 0)`)}、${tex(`(${be},\\ 0)`)} で交わり、点 ${tex(`(${x1},\\ ${y1})`)} を通るとき、この放物線の頂点の ${tex("y")} 座標は？`,
+            ans: fracAns(...vy),
+            hint: "$x$ 軸との交点が $\\alpha,\\ \\beta$ なら $y=a(x-\\alpha)(x-\\beta)$ とおける。",
+            steps: [
+              `$y=a(x${sh(-al)})(x${sh(-be)})$ とおき、点 $(${x1},\\ ${y1})$ を代入して $${y1}=a\\cdot (${x1 - al})\\cdot (${x1 - be})$、$a=${a}$`,
+              `軸は $x=${fracTex(al + be, 2)}$（2つの交点の真ん中）`,
+              `頂点の $y$ 座標は $${a}\\cdot \\left(${fracTex(al + be, 2)}${al === 0 ? "" : `-(${al})`}\\right)\\left(${fracTex(al + be, 2)}-(${be})\\right)=${fracTex(...vy)}$`,
+            ],
+          };
+        }),
+        t("HI-niji-3d", (r) => {
+          const a = pick(r, [1, -1]), p = rnz(r, -4, 4), q = rnz(r, -6, 6), c = a * p * p + q;
+          if (c === 0) return { skip: true };
+          const b = -2 * a * p;
+          const sg = (v) => (v > 0 ? ">0" : "<0");
+          const T = (sa, sb, sc) => tex(`a${sa},\\ b${sb},\\ c${sc}`);
+          const ok = T(sg(a), sg(b), sg(c));
+          return {
+            q: `放物線 ${tex("y=ax^{2}+bx+c")} は${a > 0 ? "下に凸" : "上に凸"}で、頂点は${QUAD(p, q)}にあり、${tex("y")} 軸とは ${tex(c > 0 ? "y>0" : "y<0")} の部分で交わる。${tex("a,\\ b,\\ c")} の符号の組み合わせは？`,
+            ans: ok,
+            choices: choices4(r, ok, [T(sg(a), sg(-b), sg(c)), T(sg(a), sg(b), sg(-c)), T(sg(-a), sg(b), sg(c)), T(sg(-a), sg(-b), sg(c))]),
+            hint: "凸の向きで $a$、$y$ 軸との交点で $c$ がわかる。軸 $x=-\\frac{b}{2a}$ の位置（頂点の $x$ 座標の符号）から $b$ の符号を決める。",
+            steps: [
+              `${a > 0 ? "下に凸" : "上に凸"}なので $a${sg(a)}$、$y$ 軸との交点は $(0,\\ c)$ なので $c${sg(c)}$`,
+              `頂点は${QUAD(p, q)}なので軸 $x=-\\frac{b}{2a}$ は ${p > 0 ? "正" : "負"}`,
+              `$a${sg(a)}$ だから $b${sg(b)}$`,
+            ],
+          };
+        }),
       ],
       4: [
         t("HI-niji-4a", (r) => {
@@ -2126,6 +2207,44 @@ export const UNITS = [
               `$y=(x-a)^{2}-a^{2}+${mpoly([[k, "a^{2}"], [l, "a"], [c, ""]])}$ より頂点の $y$ 座標は $${mpoly([[K, "a^{2}"], [l, "a"], [c, ""]])}$`,
               `$=${K === 1 ? "" : K}\\left(a${l > 0 ? "+" : "-"}${fracTex(Math.abs(l), 2 * K)}\\right)^{2}${4 * K * c - l * l === 0 ? "" : (4 * K * c - l * l > 0 ? "+" : "") + fracTex(4 * K * c - l * l, 4 * K)}$`,
               `$a=${fracTex(-l, 2 * K)}$ のとき最小値 $${fracTex(4 * K * c - l * l, 4 * K)}$`,
+            ],
+          };
+        }),
+        t("HI-niji-4c", (r) => {
+          const al = r(-5, 1), w = 2 * r(1, 3), be = al + w, m = (al + be) / 2, M = (w / 2) ** 2;
+          const f = poly([1, -(al + be), al * be]);
+          const ask3 = r(0, 1) === 1;
+          const base = {
+            hint: "$y=|f(x)|$ のグラフは、$y=f(x)$ の $x$ 軸より下の部分を $x$ 軸に関して折り返したもの。直線 $y=k$ を上下に動かして交点を数える。",
+            steps: [
+              `$${f}=${vx(m)}-${M}$ なので、頂点 $(${m},\\ -${M})$ が折り返されて $(${m},\\ ${M})$ になる`,
+              `$0<k<${M}$ で4個、$k=${M}$ で3個、$k=0$ または $k>${M}$ で2個`,
+            ],
+          };
+          if (ask3) return { q: `関数 ${tex(`y=|${f}|`)} のグラフと直線 ${tex("y=k")} の共有点がちょうど3個となるような定数 ${tex("k")} の値は？`, ans: M, ...base };
+          const ok = tex(`0<k<${M}`);
+          return {
+            q: `関数 ${tex(`y=|${f}|`)} のグラフと直線 ${tex("y=k")} の共有点がちょうど4個となるような定数 ${tex("k")} の値の範囲は？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(`0\\leqq k\\leqq ${M}`), tex(`k>${M}`), tex(`0<k<${al * be < 0 ? -al * be : M + 1}`), tex(`-${M}<k<${M}`)]),
+            ...base,
+          };
+        }),
+        t("HI-niji-4d", (r) => {
+          const m = pick(r, [-2, 2, -3, 3, -4, 4]), h = rnz(r, -3, 3), p = r(-4, 4), rr = r(-5, 5);
+          const E = mpoly([[1, "x^{2}"], [m, "ax"], [p, "x"], [-m * h, "a"], [rr, ""]]);
+          const Y = h * h + p * h + rr;
+          const P = (x, y) => tex(`(${x},\\ ${y})`);
+          const ok = P(h, Y);
+          return {
+            q: `${tex("a")} がどんな値をとっても、放物線 ${tex(`y=${E}`)} が通る点の座標は？`,
+            ans: ok,
+            choices: choices4(r, ok, [P(-h, h * h - p * h + rr), P(h, rr), P(0, rr), P(h, Y + m * h)], (i) => P(h, Y + i + 1)),
+            hint: "$a$ について整理し、「$a$ がどんな値でも成り立つ」ためには $a$ の係数が0、残りも等しくなればよい。",
+            steps: [
+              `$a$ について整理すると $${mpoly([[m, "x"], [-m * h, ""]])}$ が $a$ の係数：$y=${mpoly([[1, "x^{2}"], [p, "x"], [rr, ""]])}+(${mpoly([[m, "x"], [-m * h, ""]])})a$`,
+              `どんな $a$ でも成り立つのは $${mpoly([[m, "x"], [-m * h, ""]])}=0$、すなわち $x=${h}$ のとき`,
+              `そのとき $y=${h * h}${sh(p * h)}${sh(rr)}=${Y}$ なので、点 $(${h},\\ ${Y})$`,
             ],
           };
         }),
