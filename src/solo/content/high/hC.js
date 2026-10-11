@@ -385,6 +385,7 @@ const VECTOR = {
         // 点 P の存在範囲（s≧0, t≧0, m≦αs+βt≦k）の面積
         const al = r(1, 4), be = r(1, 4), k = r(1, 4);
         const m = r(0, k - 1);
+        if (gcd(gcd(al, be), gcd(k, m)) !== 1) return { skip: true }; // 2s+4t≦2 のような約分できる条件は出さない
         const L = lin([[al, 1, "s"], [be, 1, "t"]]);
         const cond = m === 0 ? `$s\\geqq0$, $t\\geqq0$, $${L}\\leqq${k}$` : `$s\\geqq0$, $t\\geqq0$, $${m}\\leqq ${L}\\leqq${k}$`;
         const uo = (c) => (c === 1 ? "u" : `\\frac{u}{${c}}`);
@@ -1729,11 +1730,11 @@ const KYOKUSEN = {
       }),
       t("HC-kyokusen-3d", (r) => {
         // 楕円と直線の2交点の中点（解と係数の関係）
-        const a = r(1, 5), b = r(1, 5);
+        const a = r(1, 4), b = r(1, 4);
         if (a === b) return { skip: true };
-        const m = rnz(r, -3, 3);
+        const m = rnz(r, -2, 2);
         const A = b * b + a * a * m * m;
-        const kmax = Math.min(6, Math.floor(Math.sqrt(A - 1))); // k² < A なら異なる2点で交わる
+        const kmax = Math.min(4, Math.floor(Math.sqrt(A - 1))); // k² < A なら異なる2点で交わる
         const k = rnz(r, -kmax, kmax);
         const askY = r(0, 1) === 1;
         const B1 = 2 * a * a * m * k, C1 = a * a * (k * k - b * b);
