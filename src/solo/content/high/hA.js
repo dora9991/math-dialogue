@@ -161,11 +161,19 @@ export const UNITS = [
           }
           const c0 = nPr(k, dg - 1), mid = (k - 1) * nPr(k - 1, dg - 2);
           const E = Math.floor(k / 2), has5 = k >= 5;
+          // 3の倍数：和が3の倍数になる数字の組（0 を含む組は z 個）
+          const sets = [];
+          (function rec(s, d) { if (s.length === dg) { if (s.reduce((x, y) => x + y, 0) % 3 === 0) sets.push(s); return; } for (let x = d; x <= k; x++) rec([...s, x], x + 1); })([], 0);
+          const z = sets.filter((s) => s[0] === 0).length, nz = sets.length - z, fz = fact(dg) - fact(dg - 1);
           const st = kind === "偶数"
             ? [`一の位が 0 のとき：残り ${k} 個から並べて $${P_(k, dg - 1)}=${c0}$`, `一の位が 0 以外の偶数（${E} 通り）のとき：最高位は 0 と一の位以外の ${k - 1} 通り、残りは $${P_(k - 1, dg - 2)}$ 通り → $${E}\\times ${k - 1}\\times ${nPr(k - 1, dg - 2)}=${E * mid}$`, `合計 $${c0}+${E * mid}=${v}$ 個`]
             : kind === "5の倍数"
               ? [`一の位が 0 のとき：$${P_(k, dg - 1)}=${c0}$`, has5 ? `一の位が 5 のとき：最高位は 0 と 5 以外の ${k - 1} 通り、残りは $${P_(k - 1, dg - 2)}$ 通り → $${mid}$` : `一の位が 5 の数は作れない（5 がない）`, `合計 ${v} 個`]
-              : ["各位の数字の和が 3 の倍数になる数字の組を選ぶ", "0 を含む組は最高位に 0 を置かないように並べる（全体 − 最高位が 0）", `合計 ${v} 個`];
+              : [
+                `各位の数字の和が 3 の倍数になる数字の組は${sets.length <= 8 ? ` ${sets.map((s) => `$\\{${s.join(",\\ ")}\\}$`).join(", ")} の` : ""} ${sets.length} 組（うち 0 を含む組は ${z} 組）`,
+                `0 を含む組は最高位に 0 を置かないように並べる（全体 − 最高位が 0）：$${dg}!-${dg - 1}!=${fz}$ 通りずつ${nz ? `。含まない組は $${dg}!=${fact(dg)}$ 通りずつ` : ""}`,
+                `合計 $${fz}\\times ${z}${nz ? `+${fact(dg)}\\times ${nz}` : ""}=${v}$ 個`,
+              ];
           return {
             q: `0 から ${k} までの数字から異なる ${dg} 個を使ってできる ${dg} 桁の整数のうち、${kind}は何個？`,
             ans: v,
@@ -242,7 +250,7 @@ export const UNITS = [
           const vars = ["x", "y", "z", "w"].slice(0, k);
           const v = pos ? nCr(n - 1, k - 1) : nCr(n + k - 1, k - 1);
           return {
-            q: `方程式 ${tex(`${vars.join("+")}=${n}`)} を満たす${pos ? "正の整数" : "0 以上の整数"}の組 ${tex(`(${vars.join(",\\ ")})`)} は何組？`,
+            q: `方程式 ${tex(`${vars.join("+")}=${n}`)} を満たす${pos ? "正の整数" : " 0 以上の整数"}の組 ${tex(`(${vars.join(",\\ ")})`)} は何組？`,
             ans: v,
             unit: "組",
             hint: pos ? "○を並べ、その間に仕切りを入れると考える（間は n−1 か所）。" : "○ と仕切り｜を並べる方法として数える（重複組合せ）。",
@@ -390,7 +398,7 @@ export const UNITS = [
             ans: fa(v),
             hint: `${ev}の目が出る回数を $k$ として、${n} 回後の位置を $k$ で表す。`,
             steps: [
-              `${ev}が $k$ 回出ると位置は $${a === 1 ? "" : a}k-${b}(${n}-k)$。これが ${X} になるのは $k=${s}$`,
+              `${ev}が $k$ 回出ると位置は $${a === 1 ? "" : a}k-${b === 1 ? "" : b}(${n}-k)$。これが ${X} になるのは $k=${s}$`,
               `$${C_(n, s)}\\left(${ft(p)}\\right)^{${s}}\\left(${ft(q)}\\right)^{${n - s}}=${ft(v)}$`,
             ],
           };
@@ -481,6 +489,7 @@ export const UNITS = [
           const a = r(1, 3), b = r(2, 8);
           if (a + b >= N) return { skip: true };
           const x = pick(r, [500, 1000, 2000, 3000, 5000]), y = pick(r, [100, 200, 300, 500]);
+          if (x === y) return { skip: true }; // 2種類の当たりが同じ金額にならないように
           const E = [x * a + y * b, N];
           return {
             q: `${N} 本のくじに、${x} 円の当たりが ${a} 本、${y} 円の当たりが ${b} 本入っていて、残りは外れ（0 円）である。このくじを1本引くときの賞金の期待値は？`,
@@ -542,7 +551,7 @@ export const UNITS = [
         t("HA-joken-3b", (r) => {
           const kind = r(0, 2);
           const f = [(a, b) => Math.max(a, b), (a, b) => Math.min(a, b), (a, b) => Math.abs(a - b)][kind];
-          const name = ["大きい方の目（同じなら その目）", "小さい方の目（同じなら その目）", "目の差の絶対値"][kind];
+          const name = ["大きい方の目（同じならその目）", "小さい方の目（同じならその目）", "目の差の絶対値"][kind];
           const cnt = {};
           let sum = 0;
           for (const [a, b] of dice(2)) { const v = f(a, b); cnt[v] = (cnt[v] || 0) + 1; sum += v; }
@@ -767,7 +776,7 @@ export const UNITS = [
     prereqs: ["J1-u6"],
     points: [
       "$N=p^{a}q^{b}r^{c}$（素因数分解）のとき、約数の個数は $(a+1)(b+1)(c+1)$、約数の和は $(1+p+\\cdots+p^{a})(1+q+\\cdots+q^{b})(1+r+\\cdots+r^{c})$",
-      "ユークリッドの互除法：$a=bq+r$ のとき $\\gcd(a,\\ b)=\\gcd(b,\\ r)$。余りが0になる直前の割る数が最大公約数。",
+      "ユークリッドの互除法：$a=bq+r$ のとき $\\gcd(a,\\ b)=\\gcd(b,\\ r)$。余りが0になったときの割る数が最大公約数。",
       "$ax+by=c$（$a,\\ b$ は互いに素）は1組の解 $(x_{0},\\ y_{0})$ を見つけ、$x=x_{0}+bk,\\ y=y_{0}-ak$（$k$ は整数）",
       "$n$ 進法：$abc_{(n)}=a\\times n^{2}+b\\times n+c$。10進法から直すときは $n$ で割った余りを下から並べる。",
     ],
@@ -798,7 +807,7 @@ export const UNITS = [
             q: `${g * Math.max(u, w)} と ${g * Math.min(u, w)} の最大公約数は？`,
             ans: g,
             hint: "ユークリッドの互除法：大きい方を小さい方で割り、余りで割ることをくり返す。",
-            steps: [...st.slice(0, 3), `最大公約数は ${g}`],
+            steps: [...(st.length <= 3 ? st : [st[0], st[1], st.slice(2).join("、")]), `最大公約数は ${g}`],
           };
         }),
         t("HA-seisu-1c", (r) => {
@@ -843,7 +852,7 @@ export const UNITS = [
             hint: "素因数分解 $p^{a}q^{b}$ のとき、約数の和は $(1+p+\\cdots+p^{a})(1+q+\\cdots+q^{b})$",
             steps: [
               `$${N}=${used.map(([p, k]) => (k === 1 ? `${p}` : `${p}^{${k}}`)).join("\\times ")}$`,
-              `$${used.map(([p, k]) => `(${Array.from({ length: k + 1 }, (_, i) => (i === 0 ? "1" : i === 1 ? `${p}` : `${p}^{${i}}`)).join("+")})`).join("")}=${sums.join("\\times ")}=${v}$`,
+              `$${used.map(([p, k]) => `(${Array.from({ length: k + 1 }, (_, i) => (i === 0 ? "1" : i === 1 ? `${p}` : `${p}^{${i}}`)).join("+")})`).join("")}=${sums.length > 1 ? `${sums.join("\\times ")}=` : ""}${v}$`,
             ],
           };
         }),
@@ -875,7 +884,7 @@ export const UNITS = [
             hint: "1組の解を見つけて一般解を作り、$x>0,\\ y>0$ となる $k$ の範囲を調べる。",
             steps: [
               `1組の解 $(x,\\ y)=(${sols[0][0]},\\ ${sols[0][1]})$ から、一般解は $x=${sols[0][0]}+${b}k,\\ y=${sols[0][1]}-${a}k$`,
-              `$y>0$ となる $k$ は $k=0,\\ 1,\\ \\ldots,\\ ${sols.length - 1}$`,
+              `$x>0,\\ y>0$ となる $k$ は ${sols.length === 1 ? "$k=0$ のみ" : sols.length <= 3 ? `$k=${sols.map((_, i) => i).join(",\\ ")}$` : `$k=0,\\ 1,\\ \\ldots,\\ ${sols.length - 1}$`}`,
               `${sols.length} 組`,
             ],
           };
