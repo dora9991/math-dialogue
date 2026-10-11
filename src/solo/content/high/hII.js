@@ -2228,7 +2228,7 @@ const SHISU = {
         let expr, mid;
         if (r(0, 1) === 1) {
           const divs = [];
-          for (let d = 2; d < P; d++) if (P % d === 0 && !isPow(d) && !isPow(P / d)) divs.push(d);
+          for (let d = 2; d < P; d++) if (P % d === 0 && d * d !== P && !isPow(d) && !isPow(P / d)) divs.push(d);
           if (!divs.length) return { skip: true };
           const d = pick(r, divs);
           expr = `${rootT(n, d)}\\times ${rootT(n, P / d)}`;
@@ -2944,7 +2944,7 @@ const TAISU = {
           steps: [
             `$t=\\log_{2}x$ とおくと，$${xr(p)}<x<${xr(q)} \\iff ${p}<t<${q}$ で，$x$ と $t$ は1対1に対応する`,
             `$f(t)=t^{2}-${2 * c}t+k$ が $${p}<t<${q}$ に異なる2つの解をもつ条件は，$\\frac{D}{4}=${c * c}-k>0$，軸 $t=${c}$ が $${p}<t<${q}$ にあること，$f(${p})>0$，$f(${q})>0$`,
-            `$f(${p})=${fT(fp)}>0$，$f(${q})=${fT(fq)}>0$ より $k>${-fp}$，$k>${-fq}$`,
+            fp === fq ? `$f(${p})=f(${q})=${fT(fp)}>0$ より $k>${-fp}$` : `$f(${p})=${fT(fp)}>0$，$f(${q})=${fT(fq)}>0$ より $k>${-fp}$，$k>${-fq}$`,
             `答え：${ans}`,
           ],
         };
@@ -3595,10 +3595,10 @@ const SEKIBUN = {
           ans: fracAns(4 * a * s ** 3, 3),
           hint: "直線の傾きを $m$ として，交点の $x$ 座標の差 $\\beta-\\alpha$ を $m$ で表す。面積は $\\beta-\\alpha$ で決まる。",
           steps: [
-            `直線を $y=m(x${p ? signed(-p) : ""})+${q}$ とおくと，放物線と連立して $${xa}-mx${p ? signedVar(p, "m") : ""}${signed(-q)}=0$（判別式はつねに正）`,
-            `2つの解を $\\alpha<\\beta$ とすると $(\\beta-\\alpha)^{2}=${fr(num)}=${fr(`${sqm}+${4 * a * a * s * s}`)}$`,
-            `面積 $S=\\frac{${a}}{6}(\\beta-\\alpha)^{3}$ は $\\beta-\\alpha$ が最小のとき最小で，$m=${2 * a * p}$ のとき $\\beta-\\alpha=${2 * s}$`,
-            `答え：最小値 $\\frac{${a}}{6}\\cdot ${2 * s}^{3}=${fracTex(4 * a * s ** 3, 3)}$`,
+            `直線を $y=${p ? `m(x${signed(-p)})` : "mx"}+${q}$ とおくと，放物線と連立して $${xa}-mx${p ? signedVar(p, "m") : ""}${signed(-q)}=0$（判別式はつねに正）`,
+            `2つの解を $\\alpha<\\beta$ とすると $(\\beta-\\alpha)^{2}=${fr(num)}${p ? `=${fr(`${sqm}+${4 * a * a * s * s}`)}` : ""}$`,
+            `面積 $S=${fracTex(a, 6)}(\\beta-\\alpha)^{3}$ は $\\beta-\\alpha$ が最小のとき最小で，$m=${2 * a * p}$ のとき $\\beta-\\alpha=${2 * s}$`,
+            `答え：最小値 $${fracTex(a, 6)}\\cdot ${2 * s}^{3}=${fracTex(4 * a * s ** 3, 3)}$`,
           ],
         };
       }),

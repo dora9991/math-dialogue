@@ -125,7 +125,7 @@ const SURETSU = {
             q: `3つの数 $${P},\\ x,\\ ${Q}$ がこの順に等比数列をなすとき，正の数 $x$ の値を求めよ。`,
             ans: x,
             hint: "0でない3つの数 $a,\\ b,\\ c$ がこの順に等比数列 $\\iff b^{2}=ac$。",
-            steps: [`$x^{2}=${P}\\cdot ${par(Q)}=${P * Q}$`, `$x>0$ より $x=${x}$`],
+            steps: [`$x^{2}=${par(P)}\\cdot ${par(Q)}=${P * Q}$`, `$x>0$ より $x=${x}$`],
           };
         }
         const P = r(-10, 20), x = P + rnz(r, -8, 8), Q = 2 * x - P;
@@ -489,7 +489,7 @@ const SIGMA = {
           hint: "部分分数に分けると，となりあう項が打ち消し合う。",
           steps: [
             `$\\frac{1}{${den}}=${a === 1 ? "" : `\\frac{1}{${a}}`}\\left(\\frac{1}{${f1}}-\\frac{1}{${f2}}\\right)$`,
-            `和をとると途中が消えて $${a === 1 ? "" : `\\frac{1}{${a}}`}\\left(\\frac{1}{${L}}-\\frac{1}{${R}}\\right)$`,
+            `和をとると途中が消えて $${a === 1 ? "" : `\\frac{1}{${a}}`}\\left(${L === 1 ? "1" : `\\frac{1}{${L}}`}-\\frac{1}{${R}}\\right)$`,
             `答え：$${fracTex(n, L * R)}$`,
           ],
         };
@@ -988,9 +988,10 @@ const ZENKA = {
         };
       }),
       t("HB-zenka-3e", (r) => {
-        const p = pick(r, [2, 3]), al = rnz(r, -3, 3), be = r(-4, 4), A = r(-3, 5);
+        const p = pick(r, [2, 3]), al = rnz(r, -3, 3), be = r(-4, 4);
+        let A = r(-3, 5);
+        while ([0, p, -p].includes(A + al + be)) A++; // 初項 0 や 2・2^{n-1} のような形を避ける
         const C = A + al + be;
-        if (C === 0 || Math.abs(C) === p) return { skip: true }; // 2・2^{n-1} のような形を避ける
         const q = al * (p - 1), rc = be * (p - 1) - al;
         const lin = (x, y) => `${signedVar(x, "n")}${y ? signed(y) : ""}`; // +xn+y の形
         // 選択肢は { tex, f(n) }（値で重複除去する）
@@ -1034,7 +1035,7 @@ const ZENKA = {
           hint: "$x^{2}=(\\cdots)x+(\\cdots)$ の2解 $\\alpha,\\ \\beta$ を求め，$a_{n+2}-\\alpha a_{n+1}=\\beta(a_{n+1}-\\alpha a_{n})$ と変形する。",
           steps: [
             `$x^{2}=${s === 0 ? String(-pr) : `${coefVar(s)}${signed(-pr)}`}$ の解は $x=${al},\\ ${be}$`,
-            `$a_{n+2}${signedVar(-al, "a_{n+1}")}=${par(be)}(a_{n+1}${signedVar(-al, "a_{n}")})$ などから，$a_{n}=${bt("p", al)}+${bt("q", be)}$ の形になる`,
+            `$a_{n+2}${signedVar(-al, "a_{n+1}")}=${be === 1 ? "" : be === -1 ? "-" : par(be)}(a_{n+1}${signedVar(-al, "a_{n}")})$ などから，$a_{n}=${bt("p", al)}+${bt("q", be)}$ の形になる`,
             `$a_{1}=p+q=${a1}$，$a_{2}=${coefVar(al, "p")}${signedVar(be, "q")}=${a2}$ より $p=${c1}$，$q=${c2}$`,
             `答え：${ans}`,
           ],
@@ -1297,7 +1298,7 @@ const TOUKEI = {
         const [what, ans, how] = [
           [`V(${Z})`, a * a * VX + b * b * VY, `${sqV(a, "V(X)")}+${sqV(b, "V(Y)")}=${sqN(a, VX)}+${sqN(b, VY)}`],
           [`E(${Z})`, a * EX + b * EY, `${coefVar(a, "E(X)")}${signedVar(b, "E(Y)")}=${mulTex(a, par(EX))}${smulTex(b, par(EY))}`],
-          ["E(XY)", EX * EY, `${par(EX)}\\cdot ${par(EY)}`],
+          ["E(XY)", EX * EY, `E(X)E(Y)=${par(EX)}\\cdot ${par(EY)}`],
         ][type];
         return {
           q: `互いに独立な確率変数 $X,\\ Y$ について，$E(X)=${EX}$，$V(X)=${VX}$，$E(Y)=${EY}$，$V(Y)=${VY}$ である。$${what}$ を求めよ。`,
@@ -1512,8 +1513,9 @@ const TOUKEI = {
           [2, 3, "1個のさいころを {n} 回投げるとき，3の倍数でない目がちょうど $k$ 回出る確率"],
           [1, 5, "当たりの確率が $\\frac{1}{5}$ のくじを {n} 回引く（毎回もどす）とき，ちょうど $k$ 回当たる確率"],
         ]);
-        const n = r(10, 80), x = ((n + 1) * pn) / pd;
-        if (Number.isInteger(x)) return { skip: true };
+        let n = r(10, 80);
+        if (Number.isInteger(((n + 1) * pn) / pd)) n++; // (n+1)p が整数だと最大が2つになるので避ける
+        const x = ((n + 1) * pn) / pd;
         const K = Math.floor(x), P = fracTex(pn, pd), Qt = fracTex(pd - pn, pd);
         const lhs = pn === 1 ? `${n}-k` : `${pn}(${n}-k)`, rhs = `${pd - pn === 1 ? "" : pd - pn}(k+1)`;
         return {
