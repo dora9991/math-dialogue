@@ -253,3 +253,10 @@ a { color: var(--pri); }
   .choices.two { grid-template-columns: 1fr 1fr; }
   .tile { width: 18px; height: 18px; }
 }
+
+/* 会話授業（ホー先生とポンタ）へのリンク */
+a.rec { text-decoration: none; color: inherit; }
+.talk-more { margin-top: 10px; }
+.talk-more > summary { cursor: pointer; font-weight: 800; font-size: 14px; color: var(--ink2); padding: 6px 0; }
+.talk-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.talk-pills a.chip { text-decoration: none; background: #eef2ff; color: #4338ca; padding: 6px 12px; font-size: 13px; }

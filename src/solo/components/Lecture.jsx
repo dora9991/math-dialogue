@@ -2,6 +2,7 @@
 // Lecture.jsx — 講義（解説）
 //   ・ホー先生の解説がある単元 … スライドを1枚ずつ（話す→板書→ポイント→例題→理解チェック）
 //   ・まだ無い単元 … 要点＋例題（タップで1行ずつ解き方）。ホー先生の解説動画（lectures/videos.js）があれば一緒に出す
+//   ・中学校の単元 … ホー先生とポンタの「会話授業」（lectures/talk.js）へのリンクを出す（新しいタブで開く）
 // ============================================================
 import { useMemo, useState } from "react";
 import M from "./M.jsx";
@@ -9,6 +10,7 @@ import { Coach } from "./ui.jsx";
 import { getLecture, TEACHER } from "../lectures/index.js";
 import { genProblem } from "../content/index.js";
 import { getVideos } from "../lectures/videos.js";
+import { getTalk } from "../lectures/talk.js";
 
 function Board({ lines, title }) {
   return (
@@ -97,15 +99,63 @@ function SlidePlayer({ lecture, onFinish }) {
   );
 }
 
+/** ホー先生とポンタの会話授業（公開サイトの授業ページを、新しいタブで開く） */
+function TalkLink({ l }) {
+  return (
+    <a className="rec" href={l.url} target="_blank" rel="noopener noreferrer">
+      <span className="badge" style={{ background: "#eef2ff" }}>{l.icon}</span>
+      <span className="grow"><span className="nm">{l.title}</span></span>
+      <span className="go">▸</span>
+    </a>
+  );
+}
+
+function TalkCard({ unitId }) {
+  const talk = useMemo(() => getTalk(unitId), [unitId]);
+  if (!talk) return null;
+  const apply = talk.problems.filter((p) => p.kind === "応用");
+  const exam = talk.problems.filter((p) => p.kind === "入試");
+  return (
+    <div className="card">
+      <h2>💬 {TEACHER.name}とポンタの会話授業</h2>
+      <div className="small muted" style={{ marginBottom: 10 }}>
+        黒板の前で、{TEACHER.name}とポンタが掛け合いながら進む授業です。4択に答えながら、ゆっくり解説します。（新しいタブで開きます）
+      </div>
+      {talk.main.map((l) => <TalkLink key={l.id} l={l} />)}
+      {talk.more.length > 0 && (
+        <details className="talk-more">
+          <summary>同じ章のほかの授業（{talk.more.length}本）</summary>
+          <div className="mt8">{talk.more.map((l) => <TalkLink key={l.id} l={l} />)}</div>
+        </details>
+      )}
+      {talk.problems.length > 0 && (
+        <details className="talk-more">
+          <summary>この章の応用問題・入試レベル（{talk.problems.length}本）</summary>
+          <div className="small muted mt8">応用問題 {apply.length}問</div>
+          <div className="talk-pills">{apply.map((p) => <a key={p.id} className="chip" href={p.url} target="_blank" rel="noopener noreferrer">{p.label}</a>)}</div>
+          <div className="small muted mt8">入試レベル {exam.length}問</div>
+          <div className="talk-pills">{exam.map((p) => <a key={p.id} className="chip" href={p.url} target="_blank" rel="noopener noreferrer">{p.label}</a>)}</div>
+        </details>
+      )}
+    </div>
+  );
+}
+
 export default function Lecture({ unit, onStartPractice }) {
   const lecture = getLecture(unit.id);
   const [mode, setMode] = useState(lecture ? "slides" : "summary");
   const example = useMemo(() => genProblem(unit.id, 1), [unit.id]);
   const videos = getVideos(unit.id);
   const [video, setVideo] = useState(null);
+  const hasTalk = useMemo(() => !!getTalk(unit.id), [unit.id]);
 
   if (lecture && mode === "slides") {
-    return <SlidePlayer lecture={lecture} onFinish={onStartPractice} />;
+    return (
+      <div>
+        <SlidePlayer lecture={lecture} onFinish={onStartPractice} />
+        <TalkCard unitId={unit.id} />
+      </div>
+    );
   }
 
   return (
@@ -114,7 +164,7 @@ export default function Lecture({ unit, onStartPractice }) {
         <button className="btn block grad" onClick={() => setMode("slides")} style={{ marginBottom: 14 }}>
           {TEACHER.icon} {TEACHER.name}の解説を見る（約{lecture.minutes}分）
         </button>
-      ) : videos.length === 0 && (
+      ) : videos.length === 0 && !hasTalk && (
         <div className="card" style={{ background: "#fffaf0" }}>
           <Coach>
             <span className="small">この単元の{TEACHER.name}の解説は、いま準備中だよ。まずは要点と例題で確かめよう。</span>
@@ -157,6 +207,8 @@ export default function Lecture({ unit, onStartPractice }) {
           </div>
         </div>
       )}
+
+      <TalkCard unitId={unit.id} />
 
       <button className="btn block" onClick={onStartPractice}>演習へすすむ ▸</button>
     </div>
