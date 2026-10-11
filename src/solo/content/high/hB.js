@@ -15,10 +15,10 @@ const par = (n) => (n < 0 ? `(${n})` : `${n}`);
 /** c・base^{e} の TeX（c=±1 は省略） */
 function geoTex(c, base, e) {
   const B = base < 0 ? `(${base})` : `${base}`;
-  const pw = `${B}^{${e}}`;
-  if (c === 1) return pw;
-  if (c === -1) return `-${pw}`;
-  return `${c}\\cdot ${pw}`;
+  const pp = `${B}^{${e}}`;
+  if (c === 1) return pp;
+  if (c === -1) return `-${pp}`;
+  return `${c}\\cdot ${pp}`;
 }
 /** 2項目以降に足す形 */
 const plusTerm = (s) => (s.startsWith("-") ? s : `+${s}`);
@@ -26,6 +26,35 @@ const plusTerm = (s) => (s.startsWith("-") ? s : `+${s}`);
 const arSum = (a, d, n) => (n * (2 * a + (n - 1) * d)) / 2;
 /** 小数を TeX で（4桁まで） */
 const dec = (x, d = 4) => String(round(x, d));
+/** c・x の TeX（c=1 なら x，c=-1 なら -x。x は必要ならかっこをつけて渡す） */
+const mulTex = (c, x) => (c === 1 ? x : c === -1 ? (x === "0" ? "0" : `-${x}`) : `${c}\\cdot ${x}`);
+/** 2項目以降の c・x（符号つき） */
+const smulTex = (c, x) => (c < 0 ? `-${mulTex(-c, x)}` : `+${mulTex(c, x)}`);
+/** 係数としての分数（1 なら省略，-1 なら "-"） */
+const cfTex = (n, d) => { const s = fracTex(n, d); return s === "1" ? "" : s === "-1" ? "-" : s; };
+/** 累乗（指数1なら底だけ） */
+const pw = (b, e) => (e === 1 ? `${b}` : `${b}^{${e}}`);
+/** n + c の形（c=0 なら n） */
+const plusC = (v, c) => (c === 0 ? v : `${v}${signed(c)}`);
+/** 組合せ */
+function nCr(n, k) { let c = 1; for (let i = 1; i <= k; i++) c = (c * (n - k + i)) / i; return c; }
+const Cn = (n, k) => `{}_{${n}}\\mathrm{C}_{${k}}`;
+/** 4択（式）：誤答を n=1〜6 の「値」で重複除去して，いつも4つにする。選択肢は { tex, f(n) } */
+function choicesByValue(r, correct, wrongs, fill = null) {
+  const sig = (c) => [1, 2, 3, 4, 5, 6].map((n) => round(c.f(n), 6)).join(",");
+  const seen = new Set([sig(correct)]);
+  const ws = [];
+  const add = (w) => {
+    if (!w || ws.length >= 3 || w.tex === correct.tex || ws.includes(w.tex)) return;
+    const s = sig(w);
+    if (seen.has(s)) return;
+    seen.add(s);
+    ws.push(w.tex);
+  };
+  wrongs.forEach(add);
+  for (let i = 0; fill && ws.length < 3 && i < 60; i++) add(fill(i));
+  return choices4(r, correct.tex, ws);
+}
 
 // ============================================================
 // 等差数列・等比数列
@@ -59,7 +88,7 @@ const SURETSU = {
           q: `初項 $${a}$，公比 $${rr}$ の等比数列の第 $${n}$ 項を求めよ。`,
           ans,
           hint: "等比数列の一般項は $a_{n}=ar^{n-1}$（指数は $n-1$）。",
-          steps: [`$a_{${n}}=${a}\\cdot ${par(rr)}^{${n - 1}}=${a}\\cdot ${par(rr ** (n - 1))}$`, `答え：$${ans}$`],
+          steps: [`$a_{${n}}=${mulTex(a, `${par(rr)}^{${n - 1}}`)}=${mulTex(a, par(rr ** (n - 1)))}$`, `答え：$${ans}$`],
         };
       }),
       t("HB-suretsu-1c", (r) => {
@@ -83,7 +112,7 @@ const SURETSU = {
           ans: A(k),
           hint: "$a_{n}=a+(n-1)d$ とおいて，2つの条件から $a,\\ d$ の連立方程式をつくる。",
           steps: [
-            `$a+${p - 1}d=${A(p)}$，$a+${q - 1}d=${A(q)}$`,
+            `$a+${coefVar(p - 1, "d")}=${A(p)}$，$a+${q - 1}d=${A(q)}$`,
             `引くと $${q - p}d=${A(q) - A(p)}$ より $d=${d}$，$a=${a}$`,
             `$a_{${k}}=${a}+${k - 1}\\cdot ${par(d)}=${A(k)}$`,
           ],
@@ -98,7 +127,10 @@ const SURETSU = {
           ans,
           choices: numChoices(r, ans, [S(n - 1), S(n + 1), a * (rr ** n - 1)]),
           hint: "$S_{n}=\\frac{a(r^{n}-1)}{r-1}$。指数は項数 $n$。",
-          steps: [`$S_{${n}}=\\frac{${a}\\{${par(rr)}^{${n}}-1\\}}{${rr}-1}=\\frac{${a}\\cdot(${rr ** n - 1})}{${rr - 1}}$`, `答え：$${ans}$`],
+          steps: [
+            `$S_{${n}}=\\frac{${a === 1 ? `${par(rr)}^{${n}}-1` : `${a}\\{${par(rr)}^{${n}}-1\\}`}}{${rr}-1}=${rr === 2 ? "" : `${rr < 0 ? "-" : ""}\\frac{`}${mulTex(a, par(rr ** n - 1))}${rr === 2 ? "" : `}{${Math.abs(rr - 1)}}`}$`,
+            `答え：$${ans}$`,
+          ],
         };
       }),
       t("HB-suretsu-2c", (r) => {
