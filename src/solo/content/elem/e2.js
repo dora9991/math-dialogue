@@ -1381,7 +1381,8 @@ export const UNITS = [
             const a = r(3, 9), c = r(1, a - 1), b = r(2, 9), d = r(1, b - 1);
             ok = `${a - c}${U}${b - d}${u}`;
             q = `${a}${U}${b}${u} − ${c}${U}${d}${u} の 答えは どれですか。`;
-            wrongs = [`${a - c}${U}${b}${u}`, `${a}${U}${b - d}${u}`, `${a - c}${U}${b + d}${u}`, `${b - d}${U}${a - c}${u}`];
+            // b+d が 10 以上だと「7L11dL」が「8L1dL」と同じかさになるので、その誤答は使わない
+            wrongs = [`${a - c}${U}${b}${u}`, `${a}${U}${b - d}${u}`, b + d < 10 ? `${a - c}${U}${b + d}${u}` : null, `${b - d}${U}${a - c}${u}`];
             steps = [`${U} どうし　${a} − ${c} = ${a - c}`, `${u} どうし　${b} − ${d} = ${b - d}`, `答え　${ok}`];
           }
           return {
@@ -1441,7 +1442,7 @@ export const UNITS = [
             const a = r(1, 2), b = r(30, 95), c = r(101 - b, 95), e = b + c - 100;
             ok = mc(a + 1, e);
             q = `${mc(a, b)} + ${c}cm の 答えは どれですか。`;
-            wrongs = [`${a}m${b + c}cm`, mc(a, e), `${a + 1}m${b + c}cm`, mc(a + 2, e)];
+            wrongs = [mc(a, e), `${a + 1}m${b + c}cm`, mc(a + 1, e + 10 < 100 ? e + 10 : e - 10)]; // 「1m130cm」の ような 書き方は 正解と 同じ 長さなので 入れない
             steps = [`cm どうし　${b} + ${c} = ${b + c}`, `${b + c}cm ＝ 1m${e}cm`, `${a}m と 1m${e}cm で　答え ${ok}`];
             hint = "100cm ＝ 1m を つかって、くり上げよう。";
           } else if (ty === 2) {
@@ -1455,7 +1456,7 @@ export const UNITS = [
             const a = r(1, 4), c = r(1, 4), b = r(2, 9), d = r(11 - b, 9), e = b + d - 10;
             ok = ld(a + c + 1, e);
             q = `${ld(a, b)} + ${ld(c, d)} の 答えは どれですか。`;
-            wrongs = [`${a + c}L${b + d}dL`, ld(a + c, e), `${a + c + 1}L${b + d}dL`, ld(a + c + 2, e)];
+            wrongs = [ld(a + c, e), `${a + c + 1}L${b + d}dL`, ld(a + c + 1, e === 9 ? 8 : e + 1)]; // 「6L14dL」の ような 書き方は 正解と 同じ かさなので 入れない
             steps = [`L どうし　${a} + ${c} = ${a + c}、dL どうし　${b} + ${d} = ${b + d}`, `${b + d}dL ＝ 1L${e}dL`, `答え　${ok}`];
             hint = "10dL ＝ 1L を つかって、くり上げよう。";
           } else {
@@ -1495,7 +1496,7 @@ export const UNITS = [
             };
           }
           const a = r(1, 2), b = r(1, 9), all = 10 * a + b, c = r(3, Math.min(9, all - 2)), ans = all - c;
-          const [big, small] = pick(r, [["やかん", "水とう"], ["ペットボトル", "コップ"], ["なべ", "水とう"]]);
+          const [big, small] = pick(r, [["やかん", "水とう"], ["バケツ", "花びん"], ["なべ", "水とう"]]);
           return {
             q: `${big}に 水が ${a}L${b}dL、${small}に 水が ${c}dL 入って います。${big}の 水は、${small}の 水より 何dL 多いですか。`,
             ans,
@@ -1727,8 +1728,8 @@ export const UNITS = [
             `${r(8, 10)}時間 ねむった`,
           ]);
           const PT = shuffle(r, [
-            `朝 ${jif(r(6, 7), r(0, 11) * 5)}に おきた`,
-            `${jif(r(7, 8), r(0, 11) * 5)}に 家を 出た`,
+            `朝 ${jif(6, r(0, 11) * 5)}に おきた`, // おきる → 家を 出る → 学校に つく の じゅんに なるように
+            `${jif(7, r(0, 11) * 5)}に 家を 出た`,
             `${jif(8, r(0, 11) * 5)}に 学校に ついた`,
             `午後${r(2, 5)}時に 公園に 行った`,
             `夜 ${r(8, 10)}時に ねた`,
@@ -2498,7 +2499,7 @@ export const UNITS = [
         }),
         t("E2-bunsu-3e", (r) => {
           const [a, b] = pick(r, [[2, 4], [4, 2], [2, 8], [8, 2], [4, 8], [8, 4]]);
-          const big = Math.max(a, b), mmax = Math.floor((9 * a) / big);
+          const big = Math.max(a, b), mmax = Math.floor((9 * Math.min(a, b)) / big); // x も 答えも 9 いか（九九で とける）
           const mmin = Math.ceil((2 * a) / big);
           const total = big * r(mmin, mmax), x = total / a, ans = total / b;
           const what = pick(r, ["テープ", "ひも", "リボン"]);

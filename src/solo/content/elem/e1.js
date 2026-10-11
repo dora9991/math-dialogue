@@ -1940,7 +1940,7 @@ export const UNITS = [
           const [prop, ok] = pick(r, [
             ["たいらな ところが ある もの", (k) => k !== "ボール"],
             ["どんな むきに おいても ころがらない もの", (k) => k === "はこ" || k === "さいころ"],
-            ["おく むきを くふうすると ころがる もの", (k) => k === "ボール" || k === "つつ"],
+            ["どの むきにも よく ころがる もの", (k) => k === "ボール"],
           ]);
           const hit = list.filter(([, k]) => ok(k)).map(([x]) => x);
           if (hit.length === 0 || hit.length === list.length) return { skip: true };
