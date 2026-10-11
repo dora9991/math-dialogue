@@ -1333,7 +1333,7 @@ export const UNITS = [
             const t1 = r(1, 9), o = r(1, 9), n = 10 * t1 + o, ok = `${t1}cm${o}mm`;
             return {
               q: `${n}mm は 何cm何mm ですか。`,
-              choices: choices4(r, ok, [`${n}cm`, `${10 * t1}cm${o}mm`, o !== t1 ? `${o}cm${t1}mm` : null, `${t1}cm${o + 1}mm`]),
+              choices: choices4(r, ok, [`${n}cm`, `${10 * t1}cm${o}mm`, o !== t1 ? `${o}cm${t1}mm` : null, `${t1}cm${o === 9 ? 8 : o + 1}mm`]),
               ans: ok,
               hint: "10mm で 1cm。10mm の まとまりが いくつ あるかな。",
               steps: [`${n}mm は 10mm が ${t1}こ と ${o}mm`, `10mm ＝ 1cm なので ${ok}`],
@@ -1341,11 +1341,12 @@ export const UNITS = [
           }
           if (ty === 2) {
             const h = r(1, 3), rem = r(1, 99), n = 100 * h + rem;
-            if (rem % 10 === 0 && r(0, 1)) return { skip: true };
             const ok = `${h}m${rem}cm`;
+            const by10 = n % 10 ? `${Math.floor(n / 10)}m${n % 10}cm` : `${n / 10}m`;
+            const slip = rem < 10 ? `${h}m${rem * 10}cm` : rem % 10 ? `${h}m${rem % 10}cm` : `${h}m${rem / 10}cm`;
             return {
               q: `${n}cm は 何m何cm ですか。`,
-              choices: choices4(r, ok, [`${Math.floor(n / 10)}m${n % 10}cm`, `${n}m`, rem < 10 ? `${h}m${rem * 10}cm` : `${h}m${rem % 10}cm`, `${h + 1}m${rem}cm`]),
+              choices: choices4(r, ok, [by10, `${n}m`, slip, `${h + 1}m${rem}cm`]),
               ans: ok,
               hint: "100cm で 1m。100cm の まとまりが いくつ あるかな。",
               steps: [`${n}cm は 100cm が ${h}こ と ${rem}cm`, `100cm ＝ 1m なので ${ok}`],
@@ -1354,7 +1355,7 @@ export const UNITS = [
           const t1 = r(1, 9), o = r(1, 9), n = 10 * t1 + o, ok = `${t1}L${o}dL`;
           return {
             q: `${n}dL は 何L何dL ですか。`,
-            choices: choices4(r, ok, [`${n}L`, `${10 * t1}L${o}dL`, o !== t1 ? `${o}L${t1}dL` : null, `${t1}L${o + 1}dL`]),
+            choices: choices4(r, ok, [`${n}L`, `${10 * t1}L${o}dL`, o !== t1 ? `${o}L${t1}dL` : null, `${t1}L${o === 9 ? 8 : o + 1}dL`]),
             ans: ok,
             hint: "10dL で 1L。10dL の まとまりが いくつ あるかな。",
             steps: [`${n}dL は 10dL が ${t1}こ と ${o}dL`, `10dL ＝ 1L なので ${ok}`],
@@ -1374,7 +1375,7 @@ export const UNITS = [
             const a = r(1, 9), b = r(1, 7), d = r(1, 9 - b);
             ok = `${a}${U}${b + d}${u}`;
             q = `${a}${U}${b}${u} + ${d}${u} の 答えは どれですか。`;
-            wrongs = [`${a + d}${U}${b}${u}`, `${a + d}${U}${b + d}${u}`, `${a}${U}${b + d + 1}${u}`, `${a + 1}${U}${b + d}${u}`];
+            wrongs = [`${a + d}${U}${b}${u}`, `${a + d}${U}${b + d}${u}`, b + d < 9 ? `${a}${U}${b + d + 1}${u}` : null, `${a + 1}${U}${b + d}${u}`];
             steps = [`${u} どうし　${b} + ${d} = ${b + d}`, `${U} は そのまま ${a}`, `答え　${ok}`];
           } else {
             const a = r(3, 9), c = r(1, a - 1), b = r(2, 9), d = r(1, b - 1);
@@ -1431,6 +1432,77 @@ export const UNITS = [
             steps: [why, `答え　${ok}`],
           };
         }),
+        t("E2-nagasa-2d", (r) => {
+          const ty = r(1, 4);
+          const mc = (m, c) => (m ? `${m}m${c ? `${c}cm` : ""}` : `${c}cm`);
+          const ld = (l, d) => (l ? `${l}L${d ? `${d}dL` : ""}` : `${d}dL`);
+          let q, ok, wrongs, steps, hint;
+          if (ty === 1) {
+            const a = r(1, 2), b = r(30, 95), c = r(101 - b, 95), e = b + c - 100;
+            ok = mc(a + 1, e);
+            q = `${mc(a, b)} + ${c}cm の 答えは どれですか。`;
+            wrongs = [`${a}m${b + c}cm`, mc(a, e), `${a + 1}m${b + c}cm`, mc(a + 2, e)];
+            steps = [`cm どうし　${b} + ${c} = ${b + c}`, `${b + c}cm ＝ 1m${e}cm`, `${a}m と 1m${e}cm で　答え ${ok}`];
+            hint = "100cm ＝ 1m を つかって、くり上げよう。";
+          } else if (ty === 2) {
+            const a = r(1, 3), c = 10 * r(1, 8) + r(1, 9);
+            ok = mc(a - 1, 100 - c);
+            q = `${a}m − ${c}cm の 答えは どれですか。`;
+            wrongs = [mc(a, 100 - c), mc(a - 1, 110 - c), a > 1 ? mc(a - 1, c) : `${c}cm`, mc(a - 1, 90 - c)];
+            steps = [`${a}m を ${a > 1 ? `${a - 1}m と ` : ""}100cm に 分ける`, `100 − ${c} = ${100 - c}`, `答え　${ok}`];
+            hint = "1m を 100cm に して、くり下げよう。";
+          } else if (ty === 3) {
+            const a = r(1, 4), c = r(1, 4), b = r(2, 9), d = r(11 - b, 9), e = b + d - 10;
+            ok = ld(a + c + 1, e);
+            q = `${ld(a, b)} + ${ld(c, d)} の 答えは どれですか。`;
+            wrongs = [`${a + c}L${b + d}dL`, ld(a + c, e), `${a + c + 1}L${b + d}dL`, ld(a + c + 2, e)];
+            steps = [`L どうし　${a} + ${c} = ${a + c}、dL どうし　${b} + ${d} = ${b + d}`, `${b + d}dL ＝ 1L${e}dL`, `答え　${ok}`];
+            hint = "10dL ＝ 1L を つかって、くり上げよう。";
+          } else {
+            const a = r(2, 5), b = r(0, 7), c = r(b + 1, 9), e = b + 10 - c;
+            ok = ld(a - 1, e);
+            q = `${ld(a, b)} − ${c}dL の 答えは どれですか。`;
+            wrongs = [ld(a, c - b), ld(a, e), ld(a - 1, c - b), ld(a - 1, e === 9 ? 8 : e + 1)];
+            steps = [`${ld(a, b)} を ${a - 1}L と ${b + 10}dL に 分ける`, `${b + 10} − ${c} = ${e}`, `答え　${ok}`];
+            hint = "1L を 10dL に して、くり下げよう。";
+          }
+          return { q, choices: choices4(r, ok, wrongs), ans: ok, hint, steps };
+        }),
+        t("E2-nagasa-2e", (r) => {
+          const [A, B] = names(r);
+          const ty = r(1, 3);
+          if (ty === 1) {
+            const x = r(5, 40), y = r(80, 99), ans = 100 + x - y;
+            return {
+              q: `立ちはばとびで、${A}さんは 1m${x}cm、${B}さんは ${y}cm とびました。2人の きょりの ちがいは 何cm ですか。`,
+              ans,
+              unit: "cm",
+              hint: "同じ たんいに そろえてから ひき算しよう。",
+              steps: [`1m${x}cm ＝ ${100 + x}cm`, `${100 + x} − ${y} = ${ans}`, `答え　${ans}cm`],
+            };
+          }
+          if (ty === 2) {
+            const x = r(10, 35), y = r(10, 35);
+            if (x === y) return { skip: true };
+            const ans = Math.abs(x - y);
+            return {
+              q: `${A}さんの しん長は 1m${x}cm、${B}さんの しん長は ${100 + y}cm です。2人の しん長の ちがいは 何cm ですか。`,
+              ans,
+              unit: "cm",
+              hint: "同じ たんいに そろえてから くらべよう。",
+              steps: [`1m${x}cm ＝ ${100 + x}cm`, `${Math.max(100 + x, 100 + y)} − ${Math.min(100 + x, 100 + y)} = ${ans}`, `答え　${ans}cm`],
+            };
+          }
+          const a = r(1, 2), b = r(1, 9), all = 10 * a + b, c = r(3, Math.min(9, all - 2)), ans = all - c;
+          const [big, small] = pick(r, [["やかん", "水とう"], ["ペットボトル", "コップ"], ["なべ", "水とう"]]);
+          return {
+            q: `${big}に 水が ${a}L${b}dL、${small}に 水が ${c}dL 入って います。${big}の 水は、${small}の 水より 何dL 多いですか。`,
+            ans,
+            unit: "dL",
+            hint: "同じ たんいに そろえてから ひき算しよう。",
+            steps: [`${a}L${b}dL ＝ ${all}dL`, `${all} − ${c} = ${ans}`, `${big}の ほうが ${ans}dL 多い`],
+          };
+        }),
       ],
       3: [
         t("E2-nagasa-3a", (r) => {
@@ -1474,6 +1546,49 @@ export const UNITS = [
             steps: [`cm に そろえると ${vs.map((v, i) => `${labels[i]} → ${v}cm`).join("、")}`, `いちばん ${long ? "長い" : "みじかい"}のは ${ans}`],
           };
         }),
+        t("E2-nagasa-3d", (r) => {
+          if (r(0, 1)) {
+            const a = r(4, 9), b = r(3, 9), used = a * b, L = pick(r, [1, 2]), total = 100 * L, ans = total - used;
+            const what = pick(r, ["リボン", "テープ", "ひも"]);
+            return {
+              q: `${L}m の ${what}から、${a}cm の ${what}を ${b}本 切りとりました。のこりは 何cm ですか。`,
+              ans,
+              unit: "cm",
+              hint: "まず、切りとった 長さを かけ算で もとめよう。",
+              steps: [`切りとった 長さ　${a} × ${b} = ${used}cm`, `${L}m ＝ ${total}cm`, `${total} − ${used} = ${ans}　答え ${ans}cm`],
+            };
+          }
+          const a = r(1, 3), b = r(2, 6), used = a * b, L = used < 10 ? pick(r, [1, 2]) : 2, total = 10 * L, ans = total - used;
+          const drink = pick(r, ["ジュース", "お茶", "牛にゅう"]);
+          return {
+            q: `${drink}が ${L}L あります。${b}人が ${a}dL ずつ のみました。のこりは 何dL ですか。`,
+            ans,
+            unit: "dL",
+            hint: "まず、みんなで のんだ かさを かけ算で もとめよう。",
+            steps: [`のんだ かさ　${a} × ${b} = ${used}dL`, `${L}L ＝ ${total}dL`, `${total} − ${used} = ${ans}　答え ${ans}dL`],
+          };
+        }),
+        t("E2-nagasa-3e", (r) => {
+          const nm = pick(r, NAMES);
+          const pool = r(0, 2) === 0 ? MIERU : r(0, 1) ? MIERU.filter(isLen) : MIERU.filter((m) => !isLen(m));
+          const four = sample(r, pool, 4);
+          const k = r(0, 3);
+          const say = (m, u) => `${m[0]}は およそ ${m[1]}${u}`;
+          const findBad = r(0, 2) > 0;
+          const items = four.map((m, i) => ((i === k) === findBad ? say(m, pick(r, m[3])) : say(m, m[2])));
+          const ok = items[k];
+          return {
+            q: findBad
+              ? `${nm}さんが 書いた 文の うち、たんいの つかい方が まちがって いる ものは どれですか。`
+              : `${nm}さんが 書いた 文の うち、たんいの つかい方が 正しい ものは どれですか。`,
+            choices: choices4(r, ok, items.filter((_, i) => i !== k)),
+            ans: ok,
+            hint: "1mm・1cm・1m、1mL・1dL・1L が どれくらいかを 思いうかべて、1つずつ たしかめよう。",
+            steps: findBad
+              ? [`「${ok}」は おかしい。正しくは ${four[k][1]}${four[k][2]}`, `答え　${ok}`]
+              : [`「${ok}」が 正しい`, `ほかは たんいが おかしい（${four.filter((_, i) => i !== k).map((m) => `${m[1]}${m[2]}`).join("、")} が 正しい）`],
+          };
+        }),
       ],
       4: [
         t("E2-nagasa-4a", (r) => {
@@ -1485,6 +1600,19 @@ export const UNITS = [
             unit: "cm",
             hint: `つなぎめは いくつ できるかな？ ${n}本を つなぐ ときの つなぎめの 数を 考えよう。`,
             steps: [`かさねない ときの 長さ　${a} × ${n} = ${n * a}`, `つなぎめは ${n - 1}こ、かさなる 長さは ${b} × ${n - 1} = ${b * (n - 1)}`, `${n * a} − ${b * (n - 1)} = ${ans}　答え ${ans}cm`],
+          };
+        }),
+        t("E2-nagasa-4b", (r) => {
+          const c = r(2, 5), k = r(2, 9), need = c * k;
+          const T = Math.ceil((need + r(4, 14)) / 10), start = 10 * T - need;
+          const a = Math.floor(start / 10), b = start % 10;
+          const st = a ? `${a}L${b ? `${b}dL` : ""}` : `${b}dL`;
+          return {
+            q: `水そうに 水が ${st} 入って います。${c}dL 入る コップで 水を くんで 入れて、水そうの 水を ちょうど ${T}L に します。コップで 何回 入れれば よいですか。`,
+            ans: k,
+            unit: "回",
+            hint: "あと 何dL 入れれば よいかを まず 考えよう。",
+            steps: [`${T}L ＝ ${10 * T}dL、${st} ＝ ${start}dL`, `あと ${10 * T} − ${start} = ${need}dL`, `${c} × □ = ${need} の □ は ${k}`, `答え　${k}回`],
           };
         }),
       ],

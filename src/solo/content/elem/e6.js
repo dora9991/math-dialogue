@@ -2188,6 +2188,67 @@ export const UNITS = [
             steps: ["拡大図・縮図では、対応する角の大きさは等しい", `角 D ＝ ${A}°`],
           };
         }),
+        t("E6-kakudai-1d", (r) => {
+          let a = 3;
+          let b = 4;
+          let c = 5;
+          for (let g = 0; g < 50; g++) {
+            a = r(2, 6);
+            b = r(a, 8);
+            c = r(b, 9);
+            if (a + b > c && !(a === b && b === c)) break;
+          }
+          if (a + b <= c || (a === b && b === c)) return { skip: true };
+          const k = r(2, 3);
+          const big = r(0, 1) === 1;
+          const base = big ? [a, b, c] : [a * k, b * k, c * k];
+          const good = big ? [a * k, b * k, c * k] : [a, b, c];
+          const d = r(1, 3);
+          const cands = big
+            ? [[a + d, b + d, c + d], [a * k, b * k, c * k + 1], [a * k, b * k, c * k - 1], [a * k, b * (k + 1), c * k], [a + k, b * k, c * k]]
+            : [[a * k - d, b * k - d, c * k - d], [a, b, c + 1], [a, b + 1, c], [a + 1, b, c], [a, b, c - 1]];
+          const srt = (t) => [...t].sort((x, y) => x - y);
+          const similar = (t) => {
+            const [x, y, z] = srt(t);
+            return x * b === y * a && y * c === z * b;
+          };
+          const valid = (t) => {
+            const [x, y, z] = srt(t);
+            return x > 0 && x + y > z;
+          };
+          const fmt = (t) => srt(t).map((v) => `${v}cm`).join("、");
+          const ans = fmt(good);
+          return {
+            q: `3つの辺の長さが ${fmt(base)} の三角形があります。次のうち、この三角形の${big ? "拡大図" : "縮図"}になっている三角形の、3つの辺の長さはどれですか。`,
+            ans,
+            choices: choices4(r, ans, cands.filter((t) => valid(t) && !similar(t)).map(fmt), (i) => fmt([good[0] + i + 1, good[1], good[2]])),
+            hint: "拡大図や縮図では、すべての辺の長さが同じ割合で変わるよ。",
+            steps: [big ? `どの辺も ${k}倍になっているのは ${ans}` : `どの辺も $\\frac{1}{${k}}$ になっているのは ${ans}`, "同じ数をたしたりひいたり、1つの辺だけ変えたりしても、拡大図・縮図にはならない"],
+          };
+        }),
+        t("E6-kakudai-1e", (r) => {
+          if (r(0, 1)) {
+            const k = pick(r, [2, 3, 4, 5, 1.5, 2.5]);
+            let a = r(2, 12);
+            if (!Number.isInteger(a * k)) a += 1;
+            const DE = round(a * k);
+            return {
+              q: `三角形 DEF は、三角形 ABC の拡大図です。辺 AB の長さは ${a}cm で、AB に対応する辺 DE の長さは ${DE}cm です。三角形 DEF は、三角形 ABC の何倍の拡大図ですか。`,
+              ans: k,
+              unit: "倍",
+              hint: "対応する辺の長さが、何倍になっているかを調べよう。",
+              steps: [`${DE} ÷ ${a} ＝ ${k}`, `${k}倍の拡大図`],
+            };
+          }
+          const k = r(2, 5);
+          const a = r(2, 9);
+          return {
+            q: `三角形 DEF は、三角形 ABC の縮図です。辺 AB の長さは ${a * k}cm で、AB に対応する辺 DE の長さは ${a}cm です。三角形 DEF は、三角形 ABC の何分の1の縮図ですか。分数で答えましょう。`,
+            ans: fracAns(1, k),
+            hint: "対応する辺の長さが、もとの長さの何分の1になっているかを調べよう。",
+            steps: [`${a} ÷ ${a * k} ＝ $\\frac{1}{${k}}$`, `$\\frac{1}{${k}}$ の縮図`],
+          };
+        }),
       ],
       2: [
         t("E6-kakudai-2a", (r) => {
@@ -2227,6 +2288,42 @@ export const UNITS = [
             unit: "cm",
             hint: "AB と DE から、何倍の拡大図かを求めよう。",
             steps: [`${DE} ÷ ${a} ＝ ${k} なので ${k}倍の拡大図`, `EF ＝ ${b} × ${k} ＝ ${ans}（cm）`],
+          };
+        }),
+        t("E6-kakudai-2d", (r) => {
+          const N = pick(r, [1000, 2000, 2500, 5000, 10000, 20000, 25000, 50000]);
+          const L = pick(r, [1, 2, 4, 5]);
+          const D = (L * N) / 100;
+          const showD = D >= 1000 ? `${D / 1000}km` : `${D}m`;
+          let d = r(2, 15);
+          if (d === L) d += 1;
+          const M = (d * N) / 100;
+          const km = M >= 1000;
+          const ans = km ? M / 1000 : M;
+          return {
+            q: `ある地図には、0 から ${showD} までの長さを ${L}cm で表した線（縮尺を表す線）がかいてあります。この地図の上で ${d}cm の長さは、実際には何${km ? "km" : "m"} ですか。`,
+            ans,
+            unit: km ? "km" : "m",
+            hint: "まず、地図の上の 1cm が、実際の何m にあたるかを考えよう。",
+            steps: [L === 1 ? `1cm が ${showD}${D >= 1000 ? `（${D}m）` : ""} にあたる` : `${L}cm が ${showD}${D >= 1000 ? `（${D}m）` : ""} なので、1cm は ${D} ÷ ${L} ＝ ${N / 100}（m）`, `${d}cm は ${N / 100} × ${d} ＝ ${M}（m）`, ...(km ? [`${M}m ＝ ${ans}km`] : [])],
+          };
+        }),
+        t("E6-kakudai-2e", (r) => {
+          const ang = [r(30, 75), r(30, 75)];
+          ang.push(180 - ang[0] - ang[1]);
+          const miss = r(0, 2);
+          const P = ["A", "B", "C"];
+          const Q = ["D", "E", "F"];
+          const [i, j] = [0, 1, 2].filter((v) => v !== miss);
+          const k = r(2, 4);
+          const big = r(0, 1) === 1;
+          const side = r(3, 9);
+          return {
+            q: `三角形 DEF は、三角形 ABC の ${big ? `${k}倍の拡大図` : `$\\frac{1}{${k}}$ の縮図`}で、頂点 A と D、B と E、C と F がそれぞれ対応しています。辺 AB の長さが ${big ? side : side * k}cm、角 ${P[i]} が ${ang[i]}°、角 ${P[j]} が ${ang[j]}° のとき、角 ${Q[miss]} は何度ですか。`,
+            ans: ang[miss],
+            unit: "度",
+            hint: "拡大図や縮図で、対応する角の大きさはどうなるかな？ 三角形の3つの角の大きさの和も使おう。",
+            steps: [`角 ${Q[miss]} は角 ${P[miss]} に対応するので、角 ${Q[miss]} ＝ 角 ${P[miss]}（角の大きさは変わらない）`, `角 ${P[miss]} ＝ 180° − ${ang[i]}° − ${ang[j]}° ＝ ${ang[miss]}°`, `答え ${ang[miss]}°`],
           };
         }),
       ],
@@ -2270,6 +2367,41 @@ export const UNITS = [
             steps: [`${D}km ＝ ${round(D * 100000)}cm`, `${round(D * 100000)} ÷ ${d} ＝ ${N}`, `縮尺は 1 : ${N}`],
           };
         }),
+        t("E6-kakudai-3d", (r) => {
+          const N = pick(r, [100, 200, 250, 500]);
+          const H1 = r(4, 20);
+          const h = round((H1 * 100) / N);
+          const e = pick(r, [1.2, 1.3, 1.4, 1.5]);
+          const dist = r(8, 30);
+          const base = round((dist * 100) / N);
+          const ans = round(H1 + e);
+          return {
+            q: `木から ${dist}m はなれた地点に立って、木のてっぺんを見上げたようすを、$\\frac{1}{${N}}$ の縮図にかきました。縮図では、木までのきょりは ${base}cm、目の高さから木のてっぺんまでの高さは ${h}cm になりました。目の高さが ${e}m のとき、木の実際の高さは何m ですか。`,
+            ans,
+            unit: "m",
+            hint: "縮図の上の長さを、実際の長さになおそう。目の高さをたすのをわすれないでね。",
+            steps: [`目の高さから上の部分：${h} × ${N} ＝ ${round(h * N)}（cm）＝ ${H1}m`, `木の高さ ＝ ${H1} ＋ ${e} ＝ ${ans}（m）`],
+          };
+        }),
+        t("E6-kakudai-3e", (r) => {
+          for (let g = 0; g < 40; g++) {
+            const N = pick(r, [5000, 10000, 20000, 25000]);
+            const d = r(2, 12);
+            const D = (d * N) / 100;
+            const vs = [50, 60, 70, 75, 80].filter((v) => D % v === 0 && D / v >= 5 && D / v <= 90);
+            if (!vs.length) continue;
+            const v = pick(r, vs);
+            const nm = pick(r, NAMES);
+            return {
+              q: `縮尺 1 : ${N} の地図で、${nm}さんの家から図書館までの道のりをはかると ${d}cm でした。${nm}さんが分速 ${v}m で歩くと、家から図書館まで何分かかりますか。`,
+              ans: D / v,
+              unit: "分",
+              hint: "まず、実際の道のりを m で求めよう。",
+              steps: [`実際の道のり：${d} × ${N} ＝ ${d * N}（cm）＝ ${D}m`, `かかる時間：${D} ÷ ${v} ＝ ${D / v}（分）`],
+            };
+          }
+          return { skip: true };
+        }),
       ],
       4: [
         t("E6-kakudai-4a", (r) => {
@@ -2288,6 +2420,19 @@ export const UNITS = [
             steps: big
               ? [`底辺も高さも ${k}倍になる`, `面積は ${k} × ${k} ＝ ${k * k}（倍）`]
               : [`1辺が $\\frac{1}{${k}}$ になる`, `面積は $\\frac{1}{${k}} \\times \\frac{1}{${k}} = \\frac{1}{${k * k}}$（倍）`],
+          };
+        }),
+        t("E6-kakudai-4b", (r) => {
+          const N = pick(r, [100, 200, 500, 1000, 2000]);
+          const a = r(2, 20);
+          const N2 = N * N;
+          const ans = (a * N2) / 10000;
+          return {
+            q: `縮尺 1 : ${N} の地図で、面積が ${a}cm² の土地があります。この土地の実際の面積は何m² ですか。`,
+            ans,
+            unit: "m²",
+            hint: `縮尺 1 : ${N} では、長さが ${N}倍になるね。では、面積は何倍になるかな？`,
+            steps: [`長さが ${N}倍なので、面積は ${N} × ${N} ＝ ${N2}（倍）`, `${a} × ${N2} ＝ ${a * N2}（cm²）`, `1m² ＝ 10000cm² なので、${a * N2} ÷ 10000 ＝ ${ans}（m²）`],
           };
         }),
       ],

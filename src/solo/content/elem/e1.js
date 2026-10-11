@@ -260,10 +260,9 @@ export const UNITS = [
         }),
         t("E1-kazu-3c", (r) => {
           const [A, B] = sample(r, NAMES, 2);
-          const back = r(0, 1) === 1;
-          const m = back ? r(1, 7) : r(3, 9);
-          const k = back ? r(1, 9 - m) : r(1, m - 2);
-          const ans = back ? m + k + 1 : m - k - 1;
+          const [m, ans] = sample(r, range(1, 10), 2);   // A さん・B さんの ばしょ（まえから）
+          if (Math.abs(m - ans) < 2) return { skip: true };
+          const back = ans > m, k = Math.abs(m - ans) - 1;
           const side = back ? "うしろ" : "まえ";
           return {
             q: `こどもが 1れつに ならんで います。${A}さんは まえから ${m}ばんめ です。${B}さんは ${A}さんより ${side}に いて、ふたりの あいだには ${nin(k)} います。${B}さんは まえから なんばんめ ですか。`,
@@ -406,7 +405,7 @@ export const UNITS = [
           };
         }),
         t("E1-tashi-1d", (r) => {
-          const s = r(4, 10), a = r(1, s - 1), b = s - a;
+          const s = r(5, 10), a = r(1, s - 1), b = s - a;
           if (a === b) return { skip: true };
           const cs = range(1, s - 1).filter((x) => x !== a && x !== b);
           const c = pick(r, cs), c1 = pick(r, cs);
@@ -484,8 +483,9 @@ export const UNITS = [
           };
         }),
         t("E1-tashi-2d", (r) => {
-          const s = r(3, 10), a = r(1, s - 1), b = s - a;
           const front = r(0, 1) === 1;
+          const x = r(1, 9), y = r(1, 10 - x);            // x が □ の こたえ
+          const a = front ? x : y, b = front ? y : x, s = a + b;
           return {
             q: front ? `□ + ${b} = ${s} の □ に はいる かずは いくつ？` : `${a} + □ = ${s} の □ に はいる かずは いくつ？`,
             ans: front ? a : b,
@@ -498,7 +498,7 @@ export const UNITS = [
         t("E1-tashi-2e", (r) => {
           const [A, B] = sample(r, NAMES, 2);
           const [thing, c] = pick(r, THINGS);
-          const a = r(1, 8), d = r(1, 10 - a), ans = a + d;
+          const ans = r(3, 10), a = r(1, ans - 1), d = ans - a;
           return {
             q: `${A}さんは ${thing}を ${cnt(a, c)} もって います。${B}さんは ${A}さんより ${cnt(d, c)} おおく もって います。${B}さんは ${thing}を ${nan(c)} もって いますか。`,
             ans,
@@ -548,7 +548,7 @@ export const UNITS = [
         }),
         t("E1-tashi-3d", (r) => {
           const N = pick(r, NAMES);
-          const p = r(1, 8), q = r(1, 9 - p), n = p + q + 1;
+          const n = r(3, 10), p = r(1, n - 2), q = n - 1 - p;
           return {
             q: `こどもが 1れつに ならんで います。${N}さんの まえには ${nin(p)}、うしろには ${nin(q)} います。こどもは ぜんぶで なんにん ですか。`,
             ans: n,
@@ -558,7 +558,7 @@ export const UNITS = [
           };
         }),
         t("E1-tashi-3e", (r) => {
-          const a = r(2, 8), b = r(1, 10 - a), s = a + b;
+          const s = r(3, 10), a = r(2, s - 1), b = s - a;
           const [q, what] = pick(r, [
             [`こどもが ${nin(a)} います。ひとりに 1こずつ ボールを くばると、ボールが ${b}こ あまりました。ボールは ぜんぶで なんこ ありましたか。`, "くばった ボール"],
             [`こどもが ${nin(a)} います。ひとりに 1こずつ ぼうしを かぶせると、ぼうしが ${b}こ のこりました。ぼうしは ぜんぶで なんこ ありましたか。`, "かぶった ぼうし"],
@@ -643,7 +643,7 @@ export const UNITS = [
           };
         }),
         t("E1-hiki-1c", (r) => {
-          const n = r(3, 10), a = r(1, n - 1), d = n - a;
+          const d = r(1, 8), a = r(1, 10 - d), n = a + d;
           const [q, c, rest] = pick(r, [
             [`はなが ${hon(n)} さいて います。そのうち ${hon(a)}は あかい はなで、のこりは しろい はな です。しろい はなは なんぼん ですか。`, "ほん", "しろい はな"],
             [`あめが ${n}こ あります。いちごあじが ${a}こで、のこりは メロンあじ です。メロンあじは なんこ ですか。`, "こ", "メロンあじ"],
@@ -659,8 +659,8 @@ export const UNITS = [
           };
         }),
         t("E1-hiki-1d", (r) => {
-          const [x, y] = sample(r, range(1, 10), 2);
-          const hi = Math.max(x, y), lo = Math.min(x, y);
+          const d = r(1, 8), lo = r(1, 10 - d), hi = lo + d;
+          const [x, y] = r(0, 1) ? [hi, lo] : [lo, hi];
           return {
             q: `${x} と ${y} の ちがいは いくつ？`,
             ans: hi - lo,
@@ -733,7 +733,7 @@ export const UNITS = [
           };
         }),
         t("E1-hiki-2d", (r) => {
-          const a = r(3, 10), b = r(1, a - 1), d = a - b;
+          const d = r(1, 8), b = r(1, 10 - d), a = b + d;
           const [q, c] = pick(r, [
             [`こどもが ${nin(a)} います。いすは ${b}こ あります。ひとりずつ いすに すわると、すわれない こどもは なんにん ですか。`, "にん"],
             [`いすが ${a}こ あります。こどもが ${nin(b)} きて、ひとりずつ すわりました。あいて いる いすは なんこ ですか。`, "こ"],
@@ -1242,7 +1242,7 @@ export const UNITS = [
           };
         }),
         t("E1-kuri-1c", (r) => {
-          const a = r(2, 9), b = r(Math.max(2, 11 - a), 9), s = a + b, rest = s - 10;
+          const s = r(11, 18), a = r(s - 9, 9), b = s - a, rest = s - 10;
           if (a >= b) {
             return {
               q: `${a} + ${b} を けいさんします。${b} を ${10 - a} と □ に わけて、${a} と ${10 - a} で 10 を つくります。□ に はいる かずは いくつ？`,
@@ -1259,7 +1259,7 @@ export const UNITS = [
           };
         }),
         t("E1-kuri-1d", (r) => {
-          const a = r(11, 18), b = r(a - 9, 9), d = a - b, o = a - 10;
+          const b = r(2, 9), o = r(1, b - 1), a = 10 + o, d = a - b;
           if (r(0, 1)) {
             return {
               q: `${a} − ${b} を けいさんします。${a} を 10 と ${o} に わけて、10 − ${b} = □、□ と ${o} で こたえを だします。□ に はいる かずは いくつ？`,
@@ -1609,7 +1609,7 @@ export const UNITS = [
           };
         }),
         t("E1-tokei-1c", (r) => {
-          const h = r(1, 12), ty = r(1, 3);
+          const h = r(1, 12), ty = Math.max(1, r(0, 3));   // みじかい はりを きく ことを おおく
           const [time, hand, ans, why] =
             ty === 1
               ? [`${h}じ`, "みじかい", h, `ちょうど ${h}じ なので、みじかい はりは ${h} を さす`]
