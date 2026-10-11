@@ -781,6 +781,104 @@ export const UNITS = [
             steps: [...hissan(n, b), `${q}本とれて、${m}cm あまる`],
           };
         }),
+        t("E4-warihissan-3d", (r) => {
+          // まちがいさがし：筆算のどこがまちがっているか
+          const R = ["商の十の位に 0 を書いていない", "あまりが、わる数より大きい", "あまりに 0 をつけわすれている", "一の位の数字をおろしていない"];
+          const k = r(0, 3);
+          let a, d, wrong, right, why;
+          if (k === 0) {
+            // 商に 0 がたつのに書いていない
+            d = r(2, 9);
+            const maxQ = Math.floor(999 / d);
+            const h = r(1, Math.floor(maxQ / 100));
+            const o = r(1, Math.min(9, maxQ - 100 * h));
+            const q = 100 * h + o;
+            const m = r(0, 2) === 0 ? r(1, d - 1) : 0;
+            a = d * q + m;
+            if (a > 999) return { skip: true };
+            const T = (Math.floor(a / 100) % d) * 10 + (Math.floor(a / 10) % 10);
+            right = `${q}${m ? ` あまり ${m}` : ""}`;
+            wrong = `${h}${o}${m ? ` あまり ${m}` : ""}`;
+            why = T === 0 ? `十の位は 0 なので、商の十の位に 0 を書く` : `十の位は ${T} ÷ ${d} で商がたたないので、商の十の位に 0 を書く`;
+          } else if (k === 1) {
+            // あまりがわる数より大きいまま
+            d = r(3, 9);
+            const m = r(1, d - 1);
+            const q = r(10, Math.floor((99 - m) / d));
+            a = d * q + m;
+            right = `${q} あまり ${m}`;
+            wrong = `${q - 1} あまり ${m + d}`;
+            why = `あまりの ${m + d} は、わる数の ${d} より大きいので、商をもう1大きくできる`;
+          } else if (k === 2) {
+            // 何十でわるときのあまり
+            const b = r(2, 9);
+            d = 10 * b;
+            const m = r(1, b - 1);
+            const q = r(2, Math.floor((99 - m) / b));
+            a = 10 * (b * q + m);
+            right = `${q} あまり ${10 * m}`;
+            wrong = `${q} あまり ${m}`;
+            why = `10 のまとまりで ${a / 10} ÷ ${b} ＝ ${q} あまり ${m}。あまりは 10 が ${m}こで ${10 * m}`;
+          } else {
+            // 一の位をおろしわすれ
+            d = r(2, 9);
+            const t2 = r(Math.max(d, 10), 99);
+            a = t2 * 10 + r(0, 9);
+            const q = Math.floor(a / d);
+            if (q % 10 === 0) return { skip: true };
+            const m = a % d;
+            right = `${q}${m ? ` あまり ${m}` : ""}`;
+            wrong = `${Math.floor(t2 / d)}${t2 % d ? ` あまり ${t2 % d}` : ""}`;
+            why = `${t2} ÷ ${d} のあと、一の位の ${a % 10} をおろして計算をつづける`;
+          }
+          return {
+            q: `${pick(r, NAMES)}さんは、${a} ÷ ${d} を筆算で計算して、答えを「${wrong}」としました。どこがまちがっていますか。`,
+            ans: R[k],
+            choices: choices4(r, R[k], R.filter((_, i) => i !== k)),
+            hint: "たしかめの計算（わる数 × 商 ＋ あまり）をしたり、あまりとわる数をくらべたりしてみよう。",
+            steps: [`正しくは ${a} ÷ ${d} ＝ ${right}`, why, `答え：「${R[k]}」`],
+          };
+        }),
+        t("E4-warihissan-3e", (r) => {
+          // 0 を消して計算したときのあまり
+          const z = r(1, 2);
+          const Z = 10 ** z;
+          const b = r(2, 9);
+          const q = r(2, 19);
+          const m = r(1, b - 1);
+          const A = (b * q + m) * Z;
+          const B = b * Z;
+          const ans = `${q} あまり ${m * Z}`;
+          return {
+            q: `${A} ÷ ${B} の商とあまりはどれですか。`,
+            ans,
+            choices: choices4(r, ans, [`${q} あまり ${m}`, `${q} あまり ${m * Z * 10}`, `${q * Z} あまり ${m}`, `${q - 1} あまり ${(m + b) * Z}`]),
+            hint: `0 を同じ数だけ消して ${b * q + m} ÷ ${b} と考えると、商が分かるよ。あまりの大きさに気をつけよう。`,
+            steps: [`0 を ${z}こずつ消して ${b * q + m} ÷ ${b} ＝ ${q} あまり ${m}`, `あまりの ${m} は、${Z} が ${m}こ分なので ${m * Z}`, `たしかめ：${B} × ${q} ＋ ${m * Z} ＝ ${A}`, `答え ${ans}`],
+          };
+        }),
+        t("E4-warihissan-3f", (r) => {
+          // あまりの処理：切り捨てと「あと何こあれば」
+          const b = r(3, 9);
+          const q = r(8, 40);
+          const m = r(1, b - 1);
+          const n = b * q + m;
+          const [text, per, u] = pick(r, [
+            [`色紙が ${n}まいあります。1人に ${b}まいずつ配ると、何人に配れますか。また、あと何まいあれば、もう1人に配れますか。`, "人", "まい"],
+            [`クッキーが ${n}こあります。1ふくろに ${b}こずつ入れると、何ふくろできますか。また、あと何こあれば、もう1ふくろできますか。`, "ふくろ", "こ"],
+            [`${n}cm のリボンから、${b}cm のリボンを切り取ります。何本とれますか。また、あと何cm長ければ、もう1本とれますか。`, "本", "cm"],
+          ]);
+          const verb = per === "人" ? "に配れて" : per === "ふくろ" ? "できて" : "とれて";
+          const fmt = (x, y) => `${x}${per}${verb}、あと ${y}${u}`;
+          const ans = fmt(q, b - m);
+          return {
+            q: text,
+            ans,
+            choices: choices4(r, ans, [fmt(q, m), fmt(q + 1, b - m), fmt(q + 1, m), fmt(q, b)]),
+            hint: "わり算のあまりの分では、もう1つ分にたりないね。あまりとわる数をくらべよう。",
+            steps: [`${n} ÷ ${b} ＝ ${q} あまり ${m}`, `${q}${per}${verb}、${m}${u} あまる`, `もう1${per}分には ${b} − ${m} ＝ ${b - m}（${u}）たりない`],
+          };
+        }),
       ],
       4: [
         t("E4-warihissan-4a", (r) => {
@@ -870,6 +968,55 @@ export const UNITS = [
             steps: [`${X * 1000} になるのは ${lo} 以上 ${hi} 未満の数`, `あてはまるのは ${ok}`],
           };
         }),
+        t("E4-gaisu-1d", (r) => {
+          // 切り上げ・切り捨て（四捨五入とはちがう答えになる数で）
+          const up = r(0, 1) === 1;
+          const [u, lab] = pick(r, [[100, "百"], [1000, "千"], [10000, "一万"]]);
+          const P = r(10, 99);
+          const rest = up ? r(1, u / 2 - 1) : r(u / 2, u - 1);
+          const n = P * u + rest;
+          const ans = up ? (P + 1) * u : P * u;
+          return {
+            q: `${n} を、${up ? "切り上げ" : "切り捨て"}て、${lab}の位までのがい数にしましょう。`,
+            ans,
+            hint: `${lab}の位より下の位を見よう。${up ? "切り上げ" : "切り捨て"}は、四捨五入とどこがちがうかな？`,
+            steps: up
+              ? [`${lab}の位より下の位が 0 でないので、${lab}の位を1大きくして、下の位をすべて 0 にする`, `${n} → ${ans}`]
+              : [`${lab}の位より下の位を、すべて 0 にする`, `${n} → ${ans}`],
+          };
+        }),
+        t("E4-gaisu-1e", (r) => {
+          // 以上・以下・未満
+          const a = r(5, 60);
+          const b = a + r(4, 9);
+          const k = r(0, 2);
+          if (k === 0) {
+            return {
+              q: `${a} 以上 ${b} 未満の整数は、何こありますか。`,
+              ans: b - a,
+              unit: "こ",
+              hint: "「以上」はその数をふくむ、「未満」はその数をふくまないよ。",
+              steps: [`${a} 以上 ${b} 未満の整数は、${a} から ${b - 1} まで`, `${b - 1} − ${a} ＋ 1 ＝ ${b - a}（こ）`],
+            };
+          }
+          if (k === 1) {
+            return {
+              q: `${a} 以上 ${b} 以下の整数は、何こありますか。`,
+              ans: b - a + 1,
+              unit: "こ",
+              hint: "「以上」「以下」は、どちらもその数をふくむよ。",
+              steps: [`${a} 以上 ${b} 以下の整数は、${a} から ${b} まで`, `${b} − ${a} ＋ 1 ＝ ${b - a + 1}（こ）`],
+            };
+          }
+          const x = r(0, 1) ? a : r(a + 1, b - 1);
+          return {
+            q: `次の数のうち、「${a} 以上 ${b} 未満」に入る数はどれですか。`,
+            ans: x,
+            choices: choices4(r, x, [b, a - 1, b + r(1, 3)]),
+            hint: "「以上」はその数をふくむ、「未満」はその数をふくまないよ。",
+            steps: [`「${a} 以上 ${b} 未満」は、${a} をふくみ、${b} をふくまない`, `あてはまるのは ${x}`],
+          };
+        }),
       ],
       2: [
         t("E4-gaisu-2a", (r) => {
@@ -913,6 +1060,54 @@ export const UNITS = [
             choices: choices4(r, ans, [`${lo}以上${hi}以下`, `${B}以上${B + u}未満`, `${lo + 1}以上${hi + 1}未満`, `${B - u}以上${B}未満`]),
             hint: `${hi} を四捨五入すると、いくつになるかな？`,
             steps: [`いちばん小さいのは ${lo}、${hi} は切り上げて ${B + u} になってしまう`, `だから ${ans}`],
+          };
+        }),
+        t("E4-gaisu-2d", (r) => {
+          // 商の見積もり（上から1けたのがい数にしてから計算）
+          const k = r(3, 4);
+          const K = 10 ** k;
+          let dA = 0;
+          let dn = 0;
+          for (let i = 0; i < 50; i++) {
+            dA = r(1, 9);
+            dn = r(2, 9);
+            if ((dA * K) % (dn * 10) === 0 && (dA * K) / (dn * 10) >= 10) break;
+            dA = 0;
+          }
+          if (!dA) return { skip: true };
+          const RA = dA * K;
+          const Rn = dn * 10;
+          let A = r(Math.max(K, RA - K / 2), RA + K / 2 - 1);
+          if (A === RA) A += r(1, 9) * (K / 100);
+          let n = r(Rn - 5, Rn + 4);
+          if (n === Rn) n += 1;
+          const ans = RA / Rn;
+          const [text, u] = pick(r, [
+            [`遠足のバス代 ${A}円を、${n}人で同じように分けます。1人分はおよそ何円ですか。`, "円"],
+            [`工場で作ったボール ${A}こを、${n}箱に同じ数ずつ入れます。1箱分はおよそ何こですか。`, "こ"],
+            [`色紙 ${A}まいを、${n}人で同じ数ずつ分けます。1人分はおよそ何まいですか。`, "まい"],
+          ]);
+          return {
+            q: `${text}わられる数とわる数を、それぞれ上から1けたのがい数にして見積もりましょう。`,
+            ans,
+            unit: u,
+            hint: "上から2けた目を四捨五入して、上から1けたのがい数にしよう。",
+            steps: [`${A} → ${RA}、${n} → ${Rn}`, `${RA} ÷ ${Rn} ＝ ${ans}`, `およそ ${ans}${u}`],
+          };
+        }),
+        t("E4-gaisu-2e", (r) => {
+          // どの位までのがい数にしたか
+          const n = r(10000, 99999);
+          const opts = [[10, "十の位"], [100, "百の位"], [1000, "千の位"], [10000, "一万の位"]];
+          const [u, lab] = pick(r, opts);
+          const R = gaisu(n, u);
+          if (R === n || opts.filter(([v]) => gaisu(n, v) === R).length > 1) return { skip: true };
+          return {
+            q: `${n} を四捨五入して、${R} にしました。何の位までのがい数にしましたか。`,
+            ans: lab,
+            choices: choices4(r, lab, opts.filter(([v]) => v !== u).map(([, l]) => l)),
+            hint: "それぞれの位までのがい数にして、くらべてみよう。",
+            steps: [opts.map(([v, l]) => `${l}まで → ${gaisu(n, v)}`).join("、"), `${R} になるのは ${lab}までのがい数`],
           };
         }),
       ],
@@ -972,6 +1167,72 @@ export const UNITS = [
             steps: [`十の位までで ${A} になるのは ${A - 5} 以上 ${A + 5} 未満`, `百の位までで ${B} になるのは ${B - 50} 以上 ${B + 50} 未満`, `両方にあてはまるいちばん小さい整数は ${ans}`],
           };
         }),
+        t("E4-gaisu-3d", (r) => {
+          // 目的にあわせた見積もり方（足りるか → 切り上げ、こえるか → 切り捨て）
+          const name = pick(r, NAMES);
+          const enough = r(0, 1) === 1;
+          const hs = [];
+          let B;
+          if (enough) {
+            B = pick(r, [1000, 1500, 2000, 2500, 3000]);
+            const T = B / 100 - 3; // 切り上げた合計が B 以下になるように
+            hs.push(r(1, Math.min(9, T - 2)));
+            hs.push(r(1, Math.min(9, T - 1 - hs[0])));
+            hs.push(r(1, Math.min(9, T - hs[0] - hs[1])));
+          } else {
+            B = pick(r, [1000, 1500, 2000]);
+            const T = B / 100; // 切り捨てた合計が B 以上になるように
+            hs.push(r(Math.max(1, T - 18), 9));
+            hs.push(r(Math.max(1, T - hs[0] - 9), 9));
+            hs.push(r(Math.max(1, T - hs[0] - hs[1]), 9));
+          }
+          const ps = hs.map((h) => h * 100 + r(1, 99));
+          const up = hs.reduce((s, h) => s + (h + 1) * 100, 0);
+          const down = hs.reduce((s, h) => s + h * 100, 0);
+          const rd = ps.reduce((s, p) => s + gaisu(p, 100), 0);
+          const items = `${ps.join("円、")}円`;
+          if (enough) {
+            const say = (how, v, end) => `${how}て ${v}円と見積もる。${B}円以下なので、${end}`;
+            const ans = say("切り上げ", up, "足りると言える");
+            return {
+              q: `${name}さんは ${B}円を持って買い物に行きます。${items}の品物を買うとき、お金が足りるかどうかを、ねだんを百の位までのがい数にして見積もります。正しい考え方はどれですか。`,
+              ans,
+              choices: choices4(r, ans, [say("切り捨て", down, "足りると言える"), say("四捨五入し", rd, "足りると言える"), say("切り上げ", up, "足りるかどうかは分からない")]),
+              hint: "見積もった代金が、本当の代金より多くなるか少なくなるかを考えよう。",
+              steps: [`切り上げると、本当の代金より多めに見積もることになる`, `多めに見積もった ${up}円でも ${B}円以下なので、本当の代金なら足りると言える`, `切り捨てや四捨五入では、本当の代金より少なく見積もることがあるので、足りるとは言い切れない`],
+            };
+          }
+          const say = (how, v, end) => `${how}て ${v}円と見積もる。${B}円以上なので、${end}`;
+          const ans = say("切り捨て", down, "くじが引けると言える");
+          return {
+            q: `${B}円以上の買い物をすると、くじが1回引けます。${name}さんは ${items}の品物を買います。くじが引けるかどうかを、ねだんを百の位までのがい数にして見積もります。正しい考え方はどれですか。`,
+            ans,
+            choices: choices4(r, ans, [say("切り上げ", up, "くじが引けると言える"), say("四捨五入し", rd, "くじが引けると言える"), say("切り捨て", down, "くじが引けるかどうかは分からない")]),
+            hint: "見積もった代金が、本当の代金より多くなるか少なくなるかを考えよう。",
+            steps: [`切り捨てると、本当の代金より少なめに見積もることになる`, `少なめに見積もった ${down}円でも ${B}円以上なので、本当の代金ならくじが引けると言える`, `切り上げや四捨五入では、本当の代金より多く見積もることがあるので、引けるとは言い切れない`],
+          };
+        }),
+        t("E4-gaisu-3e", (r) => {
+          // がい数にして、ぼうグラフの目もりに表す
+          const [u, lab, scale, sLab] = pick(r, [
+            [10000, "一万の位", 10000, "1万人"],
+            [10000, "一万の位", 20000, "2万人"],
+            [1000, "千の位", 1000, "1000人"],
+            [1000, "千の位", 2000, "2000人"],
+          ]);
+          const town = pick(r, ["A市", "B市", "C町", "ある市"]);
+          const ticks = r(6, 30);
+          const R = ticks * scale;
+          let n = R - u / 2 + r(0, u - 1);
+          if (n === R) n += r(1, u / 2 - 1);
+          return {
+            q: `${town}の人口は ${n}人です。人口を四捨五入して${lab}までのがい数にし、1目もりが ${sLab} のぼうグラフに表します。ぼうの長さは何目もりになりますか。`,
+            ans: ticks,
+            unit: "目もり",
+            hint: "まず、人口をがい数にしよう。そのあと、1目もりの何こ分かを考えよう。",
+            steps: [`${n} → ${R}（${lab}までのがい数）`, `${R} ÷ ${scale} ＝ ${ticks}`, `${ticks}目もり`],
+          };
+        }),
       ],
       4: [
         t("E4-gaisu-4a", (r) => {
@@ -986,6 +1247,30 @@ export const UNITS = [
             unit: "こ",
             hint: `代金は「何円以上何円未満」か考えよう。`,
             steps: [`代金は ${B - 50}円以上 ${B + 50}円未満`, `${p} × ${ans} ＝ ${p * ans}、${p} × ${ans + 1} ＝ ${p * (ans + 1)}`, `${B + 50}円未満になるいちばん多い数は ${ans}こ`],
+          };
+        }),
+        t("E4-gaisu-4b", (r) => {
+          // がい数のもとの数のはんいから、和・差のいちばん大きい・小さい数を考える
+          const [u, lab] = pick(r, [[10, "十"], [100, "百"]]);
+          let RA = r(3, 49) * u;
+          let RB = r(3, 49) * u;
+          if (RA === RB) return { skip: true };
+          const k = r(0, 2);
+          if (k === 2 && RA < RB) [RA, RB] = [RB, RA];
+          const loA = RA - u / 2;
+          const hiA = RA + u / 2 - 1;
+          const loB = RB - u / 2;
+          const hiB = RB + u / 2 - 1;
+          const [what, ans, line] = [
+            ["A ＋ B として考えられる、いちばん大きい数", hiA + hiB, `A も B もいちばん大きいとき：${hiA} ＋ ${hiB} ＝ ${hiA + hiB}`],
+            ["A ＋ B として考えられる、いちばん小さい数", loA + loB, `A も B もいちばん小さいとき：${loA} ＋ ${loB} ＝ ${loA + loB}`],
+            ["A − B として考えられる、いちばん大きい数", hiA - loB, `A がいちばん大きく、B がいちばん小さいとき：${hiA} − ${loB} ＝ ${hiA - loB}`],
+          ][k];
+          return {
+            q: `2つの整数 A と B があります。A を四捨五入して${lab}の位までのがい数にすると ${RA}、B を四捨五入して${lab}の位までのがい数にすると ${RB} になります。${what}はいくつですか。`,
+            ans,
+            hint: "A と B が、それぞれ「何以上何以下」の整数かを考えよう。",
+            steps: [`A は ${loA} 以上 ${hiA} 以下、B は ${loB} 以上 ${hiB} 以下の整数`, line, `答え ${ans}`],
           };
         }),
       ],

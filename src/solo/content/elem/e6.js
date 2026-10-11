@@ -1631,8 +1631,9 @@ export const UNITS = [
           const d = r(2, B - 2);
           const h = r(2, 10);
           const S = A * B - c * d;
+          const rect = (x, y) => (x === y ? `1辺が ${x}cm の正方形` : `たて ${x}cm、横 ${y}cm の長方形`);
           return {
-            q: `たて ${A}cm、横 ${B}cm の長方形から、1つのかどの、たて ${c}cm、横 ${d}cm の長方形を切り取った形（L字の形）があります。この形を底面とする、高さ ${h}cm の角柱の体積は何cm³ですか。`,
+            q: `${rect(A, B)}から、1つのかどの、${rect(c, d)}を切り取った形（L字の形）があります。この形を底面とする、高さ ${h}cm の角柱の体積は何cm³ですか。`,
             ans: S * h,
             unit: "cm³",
             hint: "まず底面積を求めよう。大きい長方形から、切り取った長方形をひけばいいね。",
@@ -1770,7 +1771,7 @@ export const UNITS = [
             if (x === h) continue;
             const H = x + r(2, 10);
             return {
-              q: `内側のたてが ${A}cm、横が ${B}cm の直方体の形をした水そうに、深さ ${h}cm まで水が入っています。この水そうの底に、底面がたて ${c}cm、横 ${d}cm の長方形で、高さが ${H}cm の四角柱のおもりを、まっすぐ立てて置きました。水の深さは何cmになりますか。（水はあふれないものとします）`,
+              q: `内側のたてが ${A}cm、横が ${B}cm の直方体の形をした水そうに、深さ ${h}cm まで水が入っています。この水そうの底に、底面が${c === d ? `1辺 ${c}cm の正方形` : `たて ${c}cm、横 ${d}cm の長方形`}で、高さが ${H}cm の四角柱のおもりを、まっすぐ立てて置きました。水の深さは何cmになりますか。（水はあふれないものとします）`,
               ans: x,
               unit: "cm",
               hint: "水の体積は変わらないね。おもりを置くと、水が入る部分の底面積はどうなるかな？",
@@ -1838,6 +1839,57 @@ export const UNITS = [
             steps: [`$x \\times y = ${a} \\times ${b} = ${P}$`, `$${c} \\times y = ${P}$ なので $y = ${P} \\div ${c} = ${P / c}$`],
           };
         }),
+        t("E6-hirei-1d", (r) => {
+          const type = r(0, 2);
+          let xs;
+          let ys;
+          let why;
+          if (type === 0) {
+            const k = r(2, 9);
+            const s0 = r(1, 3);
+            xs = [s0, s0 + 1, s0 + 2, s0 + 3];
+            ys = xs.map((x) => k * x);
+            why = `$y \\div x$ を計算すると、どれも ${k} になる。$y = ${k} \\times x$ と表せる`;
+          } else if (type === 1) {
+            const P = pick(r, [12, 24, 36, 48, 60]);
+            const ds = [];
+            for (let d = 1; d < P; d++) if (P % d === 0) ds.push(d);
+            xs = sample(r, ds, 4).sort((a, b) => a - b);
+            ys = xs.map((x) => P / x);
+            why = `$x \\times y$ を計算すると、どれも ${P} になる。$x \\times y = ${P}$ と表せる`;
+          } else {
+            const s0 = r(1, 3);
+            xs = [s0, s0 + 1, s0 + 2, s0 + 3];
+            const c = r(1, 9);
+            const C = r(12, 20);
+            ys = r(0, 1) ? xs.map((x) => x + c) : xs.map((x) => C - x);
+            why = `$y \\div x$ は $${fracTex(ys[0], xs[0])}$、$${fracTex(ys[1], xs[1])}$、…、$x \\times y$ は ${xs[0] * ys[0]}、${xs[1] * ys[1]}、… と、どちらも決まった数にならない`;
+          }
+          const labels = ["比例している", "反比例している", "比例も反比例もしていない"];
+          return {
+            q: `ともなって変わる2つの量 $x$ と $y$ を調べたら、$x$ が ${xs.join("、")} のとき、$y$ はそれぞれ ${ys.join("、")} でした。$y$ は $x$ にどうなっていますか。`,
+            ans: labels[type],
+            choices: labels,
+            hint: "$y \\div x$ や $x \\times y$ を計算して、いつも同じ数になるかを調べよう。",
+            steps: [why, `答え：${labels[type]}`],
+          };
+        }),
+        t("E6-hirei-1e", (r) => {
+          const hi = r(0, 1) === 0;
+          const k = r(2, 6);
+          const up = r(0, 2) > 0;
+          const K = `${k}倍`;
+          const invK = `$\\frac{1}{${k}}$倍`;
+          const ans = hi === up ? K : invK;
+          const xk = up ? K : invK;
+          return {
+            q: `$y$ は $x$ に${hi ? "比例" : "反比例"}しています。$x$ の値が ${xk}になると、$y$ の値は何倍になりますか。`,
+            ans,
+            choices: choices4(r, ans, [hi === up ? invK : K, `${k * k}倍`, "変わらない"]),
+            hint: `${hi ? "比例" : "反比例"}では、$x$ の値が2倍、3倍…になると、$y$ の値はどうなるかな？`,
+            steps: [`${hi ? "比例" : "反比例"}では、$x$ の値が ${xk}になると、$y$ の値は ${ans}になる`, `答え ${ans}`],
+          };
+        }),
       ],
       2: [
         t("E6-hirei-2a", (r) => {
@@ -1886,6 +1938,59 @@ export const UNITS = [
             unit: "時間",
             hint: "道のりが同じとき、速さとかかる時間は反比例するよ。",
             steps: [`道のりは ${a} × ${tt} ＝ ${D}（km）`, `${D} ÷ ${b} ＝ ${D / b}（時間）`],
+          };
+        }),
+        t("E6-hirei-2d", (r) => {
+          const nm = pick(r, NAMES);
+          const wantHi = r(0, 1) === 0;
+          const a = r(2, 9);
+          const b = pick(r, [12, 18, 24, 30, 36, 48]);
+          const c = r(1, 9);
+          const hi = [`$y = ${a} \\times x$`, `$y = x \\div ${a}$`];
+          const han = [`$y = ${b} \\div x$`, `$x \\times y = ${b}$`];
+          const non = [`$y = x + ${a}$`, `$x + y = ${b}$`, `$y = ${a} \\times x + ${c}$`];
+          const ans = pick(r, wantHi ? hi : han);
+          const steps = wantHi
+            ? ["$y = $ 決まった数 $\\times x$ の形の式なら、比例", ans === hi[1] ? `$y = x \\div ${a}$ は $y = \\frac{1}{${a}} \\times x$ と同じなので、比例の式` : `${ans} は、決まった数が ${a} の比例の式`, `答え ${ans}`]
+            : ["$x \\times y = $ 決まった数（$y = $ 決まった数 $\\div x$）の形の式なら、反比例", `${ans} は、決まった数が ${b} の反比例の式`, `答え ${ans}`];
+          return {
+            q: `${nm}さんが、$x$ と $y$ の関係を表す式を4つつくりました。このうち、$y$ が $x$ に${wantHi ? "比例" : "反比例"}しているものはどれですか。`,
+            ans,
+            choices: choices4(r, ans, [pick(r, wantHi ? han : hi), ...sample(r, non, 2)]),
+            hint: wantHi ? "「$y = $ 決まった数 $\\times x$」の形になおせる式をさがそう。" : "「$x \\times y = $ 決まった数」の形になおせる式をさがそう。",
+            steps,
+          };
+        }),
+        t("E6-hirei-2e", (r) => {
+          if (r(0, 2) > 0) {
+            const a = r(3, 9);
+            let c = r(2, 6);
+            if (a * c === a + c) c += 1;
+            const b = r(2, a - 1);
+            const T = ["0 の点を通る直線になる", `$x$ の値が ${c} のとき、$y$ の値が ${a * c} になる点を通る`, `$y = ${b} \\times x$ のグラフより、直線のかたむきが急になる`];
+            const F = ["0 の点を通らない直線になる", "0 の点を通る曲線になる", `$x$ の値が ${c} のとき、$y$ の値が ${a + c} になる点を通る`, `$y = ${b} \\times x$ のグラフより、直線のかたむきがゆるやかになる`, "$x$ の値が大きくなると、$y$ の値は小さくなる"];
+            const ans = pick(r, T);
+            return {
+              q: `$y = ${a} \\times x$ のグラフについて、正しいものはどれですか。`,
+              ans,
+              choices: choices4(r, ans, sample(r, F, 3)),
+              hint: "比例のグラフの形や、通る点を思い出そう。$x$ にいくつか数をあてはめて調べてもいいよ。",
+              steps: ["比例のグラフは、0 の点を通る直線。決まった数が大きいほど、直線のかたむきが急になる", `答え：${ans}`],
+            };
+          }
+          const P = pick(r, [12, 18, 24, 36]);
+          const ds = [];
+          for (let d = 2; d < P; d++) if (P % d === 0) ds.push(d);
+          const d = pick(r, ds);
+          const T = ["0 の点を通らない曲線になる", `$x$ の値が ${d} のとき、$y$ の値が ${P / d} になる点を通る`, "$x$ の値が大きくなると、$y$ の値は小さくなる"];
+          const F = ["0 の点を通る直線になる", "0 の点を通らない直線になる", `$x$ の値が ${d} のとき、$y$ の値が ${P * d} になる点を通る`, "$x$ の値が大きくなると、$y$ の値も大きくなる"];
+          const ans = pick(r, T);
+          return {
+            q: `$y = ${P} \\div x$ のグラフについて、正しいものはどれですか。`,
+            ans,
+            choices: choices4(r, ans, sample(r, F, 3)),
+            hint: "反比例のグラフの形や、通る点を思い出そう。$x$ にいくつか数をあてはめて調べてもいいよ。",
+            steps: ["反比例のグラフは、0 の点を通らない曲線。$x$ の値が大きくなると、$y$ の値は小さくなる", `答え：${ans}`],
           };
         }),
       ],
@@ -1942,6 +2047,62 @@ export const UNITS = [
             unit: "日",
             hint: "人数とかかる日数は反比例するよ。全部の仕事の量を「人 × 日」で考えよう。",
             steps: [`仕事の量は ${a} × ${tt} ＝ ${W}（人・日）`, `${W} ÷ ${W / t2} ＝ ${t2}（日）`],
+          };
+        }),
+        t("E6-hirei-3d", (r) => {
+          const [n1, n2] = sample(r, NAMES, 2);
+          const v1 = pick(r, [60, 65, 70, 75, 80, 90]);
+          const v2 = pick(r, [40, 45, 50, 55, 60, 65, 70].filter((v) => v < v1));
+          const gap = v1 - v2;
+          const intro = `${n1}さんと${n2}さんが、同じ場所から同時に出発して、同じ道を同じ向きに歩きます。歩いた時間を $x$ 分、進んだ道のりを $y$ m とすると、${n1}さんは $y = ${v1} \\times x$、${n2}さんは $y = ${v2} \\times x$ と表されます。`;
+          const hint = "2人の式の $x$ に、同じ時間をあてはめてくらべよう。";
+          const k = r(0, 2);
+          if (k === 0) {
+            const t1 = r(5, 20);
+            return {
+              q: `${intro}出発してから ${t1}分後に、2人は何m はなれていますか。`,
+              ans: gap * t1,
+              unit: "m",
+              hint,
+              steps: [`${t1}分後、${n1}さんは ${v1} × ${t1} ＝ ${v1 * t1}（m）、${n2}さんは ${v2} × ${t1} ＝ ${v2 * t1}（m）進んでいる`, `${v1 * t1} − ${v2 * t1} ＝ ${gap * t1}（m）`],
+            };
+          }
+          if (k === 1) {
+            const t1 = r(3, 15);
+            const G = gap * t1;
+            return {
+              q: `${intro}2人の間が ${G}m はなれるのは、出発してから何分後ですか。`,
+              ans: t1,
+              unit: "分後",
+              hint,
+              steps: [`1分間に ${v1} − ${v2} ＝ ${gap}（m）ずつはなれていく`, `${G} ÷ ${gap} ＝ ${t1}（分後）`],
+            };
+          }
+          const t1 = r(5, 20);
+          const D = v1 * t1;
+          return {
+            q: `${intro}${n1}さんが、出発した場所から ${D}m の地点に着いたとき、${n2}さんはその地点まであと何m のところにいますか。`,
+            ans: D - v2 * t1,
+            unit: "m",
+            hint,
+            steps: [`${n1}さんが ${D}m 進むのにかかる時間は ${D} ÷ ${v1} ＝ ${t1}（分）`, `そのとき、${n2}さんは ${v2} × ${t1} ＝ ${v2 * t1}（m）進んでいる`, `${D} − ${v2 * t1} ＝ ${D - v2 * t1}（m）`],
+          };
+        }),
+        t("E6-hirei-3e", (r) => {
+          const n = pick(r, [10, 20, 50]);
+          const w = pick(r, [2, 2.5, 3, 4, 4.5, 5, 6]);
+          const N = r(10, 50) * 10;
+          const box = r(10, 60) * 10;
+          const W = round(w * N + box);
+          const Wn = round(w * n);
+          const kg = W >= 1000 && W % 10 === 0;
+          const disp = kg ? `${W / 1000}kg` : `${W}g`;
+          return {
+            q: `同じ画用紙 ${n}まいの重さをはかったら ${Wn}g でした。箱に入った画用紙全体の重さをはかったら ${disp} で、箱だけの重さは ${box}g でした。箱の中の画用紙は何まいですか。`,
+            ans: N,
+            unit: "まい",
+            hint: "まず、画用紙だけの重さを求めよう。画用紙のまい数と重さは比例するよ。",
+            steps: [`画用紙だけの重さ：${kg ? `${disp} ＝ ${W}g、` : ""}${W} − ${box} ＝ ${W - box}（g）`, `1まいの重さ：${Wn} ÷ ${n} ＝ ${w}（g）`, `${W - box} ÷ ${w} ＝ ${N}（まい）`],
           };
         }),
       ],
