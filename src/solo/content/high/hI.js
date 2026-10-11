@@ -2911,6 +2911,7 @@ export const UNITS = [
       "$\\sin^{2}\\theta+\\cos^{2}\\theta=1$、$\\tan\\theta=\\frac{\\sin\\theta}{\\cos\\theta}$、$1+\\tan^{2}\\theta=\\frac{1}{\\cos^{2}\\theta}$",
       "$\\sin(180^{\\circ}-\\theta)=\\sin\\theta$、$\\cos(180^{\\circ}-\\theta)=-\\cos\\theta$。鈍角では $\\cos$ と $\\tan$ が負。",
       "$0^{\\circ}\\leqq\\theta\\leqq 180^{\\circ}$ では $\\sin\\theta\\geqq 0$。$\\cos$ の符号で鋭角か鈍角かが決まる。",
+      "三角比の方程式・不等式は単位円で考える。$\\sin\\theta=t$ とおくと、$0\\leqq t<1$ の $t$ 1つに $\\theta$ は2つ、$t=1$ には $\\theta=90^{\\circ}$ の1つが対応する。",
     ],
     levels: {
       1: [
@@ -3317,6 +3318,7 @@ export const UNITS = [
       "余弦定理：$a^{2}=b^{2}+c^{2}-2bc\\cos A$、$\\cos A=\\frac{b^{2}+c^{2}-a^{2}}{2bc}$。2辺と間の角、または3辺がわかるときに使う。",
       "面積 $S=\\frac{1}{2}bc\\sin A$。内接円の半径 $r$ は $S=\\frac{1}{2}r(a+b+c)$ から求める。",
       "円に内接する四角形では向かい合う角の和が $180^{\\circ}$ なので $\\cos D=-\\cos B$。",
+      "$A$ が鋭角 $\\iff a^{2}<b^{2}+c^{2}$、直角 $\\iff a^{2}=b^{2}+c^{2}$、鈍角 $\\iff a^{2}>b^{2}+c^{2}$。最も大きい角は最も長い辺の向かい側にある。",
     ],
     levels: {
       1: [
@@ -3649,13 +3651,14 @@ export const UNITS = [
   // ─────────────────────────────────────────────────────
   {
     ...H,
-    id: "HI-data", area: "data", name: "データの分析", desc: "四分位数・分散・標準偏差・相関係数",
+    id: "HI-data", area: "data", name: "データの分析", desc: "四分位数・外れ値・分散・相関係数・仮説検定",
     prereqs: ["J1-d1"],
     points: [
       "四分位数：小さい順に並べ、中央値 $Q_{2}$ で前半・後半に分ける（個数が奇数なら中央値は除く）。前半の中央値が $Q_{1}$、後半が $Q_{3}$。四分位範囲は $Q_{3}-Q_{1}$",
       "分散 $s^{2}=\\frac{1}{n}\\sum(x_{i}-\\overline{x})^{2}=\\overline{x^{2}}-(\\overline{x})^{2}$、標準偏差 $s=\\sqrt{s^{2}}$",
       "$y=ax+b$ と変換すると $\\overline{y}=a\\overline{x}+b$、$s_{y}^{2}=a^{2}s_{x}^{2}$、$s_{y}=|a|s_{x}$",
       "相関係数 $r=\\frac{s_{xy}}{s_{x}s_{y}}$（$-1\\leqq r\\leqq 1$）。共分散 $s_{xy}=\\frac{1}{n}\\sum(x_{i}-\\overline{x})(y_{i}-\\overline{y})$",
+      "外れ値：$Q_{1}-1.5(Q_{3}-Q_{1})$ 以下、または $Q_{3}+1.5(Q_{3}-Q_{1})$ 以上の値。仮説検定：仮説が正しいとして、実際の結果（またはそれ以上にかたよった結果）が起こる確率が基準（0.05 など）以下なら、仮説は正しくなかったと判断する。",
     ],
     levels: {
       1: [
@@ -3695,6 +3698,45 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-data-1c", (r) => {
+          const score = r(0, 1) === 1; // 得点（10点きざみ）か通学時間（20分きざみ）
+          const w = score ? 10 : 20, s0 = score ? pick(r, [30, 40, 50]) : 0, k = score ? r(4, 5) : 4, u = score ? "点" : "分";
+          const N = pick(r, [10, 20, 25, 40, 50]);
+          const cuts = sample(r, Array.from({ length: N - 1 }, (_, i) => i + 1), k - 1).sort((a, b) => a - b);
+          const f = [...cuts, N].map((c, i) => c - (i ? cuts[i - 1] : 0)); // 度数（合計 N、どれも1以上）
+          const marks = f.map((_, i) => s0 + w * i + w / 2);
+          const S = f.reduce((a, x, i) => a + x * marks[i], 0);
+          const mx = Math.max(...f), modeOk = f.filter((x) => x === mx).length === 1;
+          const askMode = modeOk && r(0, 3) === 0;
+          const rows = f.map((x, i) => `${s0 + w * i}${u}以上${s0 + w * (i + 1)}${u}未満が ${x} 人`).join("、");
+          const im = f.indexOf(mx);
+          return {
+            q: `ある ${N} 人の${score ? "テストの得点" : "通学時間"}の度数分布表は「${rows}」である。${askMode ? "最頻値" : "階級値を用いて計算した平均値"}は何${u}？`,
+            ans: askMode ? marks[im] : round(S / N),
+            unit: u,
+            hint: askMode ? "度数がいちばん大きい階級の階級値（階級のまん中の値）が最頻値。" : "各階級の階級値（まん中の値）×度数 の合計を、人数で割る。",
+            steps: askMode
+              ? [`度数がいちばん大きいのは ${s0 + w * im}${u}以上${s0 + w * (im + 1)}${u}未満の階級（${mx} 人）`, `最頻値はその階級値で ${marks[im]}${u}`]
+              : [`階級値は ${marks.join(", ")}`, `（階級値）×（度数）の和は $${marks.map((m, i) => `${m}\\times ${f[i]}`).join("+")}=${S}$`, `平均値は $\\frac{${S}}{${N}}=${round(S / N)}$`],
+          };
+        }),
+        t("HI-data-1d", (r) => {
+          const D = [[-2, -1, 0, 1, 2], [-3, -1, 0, 1, 3], [-4, -1, 0, 2, 3], [-2, -2, 0, 1, 3], [-3, -2, 1, 2, 2], [-4, -2, 1, 2, 3]];
+          const dx = shuffle(r, pick(r, D)), dy = shuffle(r, pick(r, D));
+          const mx = r(5, 12), my = r(5, 20); // データはすべて正の値
+          const pr = dx.map((d, i) => d * dy[i]), sum = pr.reduce((a, b) => a + b, 0);
+          const cov = round(sum / 5);
+          return {
+            q: `5組のデータ ${dx.map((d, i) => tex(`(${mx + d},\\ ${my + dy[i]})`)).join("、")}（${tex("(x,\\ y)")} の組）について、${tex("x")} と ${tex("y")} の共分散は？`,
+            ans: cov,
+            hint: "それぞれの平均値を求め、偏差の積 $(x-\\overline{x})(y-\\overline{y})$ の平均をとる。",
+            steps: [
+              `$\\overline{x}=${mx}$、$\\overline{y}=${my}$`,
+              `偏差の積は ${pr.join(", ")}、その和は ${sum}`,
+              `共分散は $${sum < 0 ? "-" : ""}\\frac{${Math.abs(sum)}}{5}=${cov}$`,
+            ],
+          };
+        }),
       ],
       2: [
         t("HI-data-2a", (r) => {
@@ -3723,6 +3765,54 @@ export const UNITS = [
             steps: [
               `$\\overline{x}=\\frac{${S}}{${n}}=${round(S / n)}$、$\\overline{x^{2}}=\\frac{${T}}{${n}}=${round(T / n)}$`,
               `分散 $=${round(T / n)}-${round(S / n)}^{2}=${V}$`,
+            ],
+          };
+        }),
+        t("HI-data-2c", (r) => {
+          // [回数 n, 回数 k, 1000セット中で表が k 回以上のセット数（二項分布から）]
+          const [n, k] = pick(r, [[10, 7], [10, 8], [10, 9], [15, 10], [15, 11], [15, 12], [20, 13], [20, 14], [20, 15], [20, 16], [30, 19], [30, 21], [30, 22]]);
+          let tail = 0, cnk = 1;
+          for (let j = 0; j <= n; j++) { if (j > 0) cnk = (cnk * (n - j + 1)) / j; if (j >= k) tail += cnk; }
+          const m = Math.round((1000 * tail) / 2 ** n);
+          const game = r(0, 1) === 1;
+          const ctx = game ? `A さんと B さんがあるゲームを ${n} 回行ったところ、A さんが ${k} 回勝った` : `新しいお茶とこれまでのお茶を ${n} 人に飲み比べてもらったところ、${k} 人が新しいお茶の方がおいしいと答えた`;
+          const claim = game ? "A さんの方が強い" : "新しいお茶の方がおいしいと評価されている";
+          const nul = game ? "2人の強さは同じ（A さんが勝つ確率は $\\frac{1}{2}$）" : "どちらのお茶も同じように選ばれる（新しいお茶を選ぶ確率は $\\frac{1}{2}$）";
+          const opp = game ? "B さんの方が強い" : "これまでのお茶の方がおいしいと評価されている";
+          const yes = `「${claim}」と判断できる`, no = `「${claim}」とは判断できない`;
+          const rej = m <= 50, ok = rej ? yes : no;
+          return {
+            q: `${ctx}。「${claim}」といえるかを、基準となる確率を 0.05 として仮説検定の考え方で調べる。「${nul}」という仮説のもとで、公正なコインを ${n} 回投げて表の出た回数を記録する実験を 1000 セット行ったところ、表が ${k} 回以上出たのは ${m} セットであった。正しいものは？`,
+            ans: ok,
+            choices: choices4(r, ok, [rej ? no : yes, `「${nul.replace(/（.*）$/, "")}」と判断できる`, `「${opp}」と判断できる`]),
+            hint: "仮説が正しいとしたとき、実際の結果（またはそれ以上にかたよった結果）が起こる割合を、基準の 0.05 と比べる。",
+            steps: [
+              `仮説のもとで、表が ${k} 回以上になる割合は ${tex(`\\frac{${m}}{1000}=${round(m / 1000)}`)}`,
+              rej ? `${round(m / 1000)} は 0.05 以下なので、めったに起こらないことが起きたと考え、仮説は正しくなかったと判断する` : `${round(m / 1000)} は 0.05 より大きいので、仮説が正しくないとはいえない（仮説が正しいと判断できるわけでもない）`,
+              `よって${ok}`,
+            ],
+          };
+        }),
+        t("HI-data-2d", (r) => {
+          const n = r(9, 12), o = r(0, 2);
+          const xs = Array.from({ length: n - o }, () => r(20, 40));
+          for (let i = 0; i < o; i++) xs.push(r(0, 1) ? r(55, 80) : r(0, 6));
+          const d = shuffle(r, xs);
+          const s = [...d].sort((a, b) => a - b);
+          const med = (arr) => (arr.length % 2 ? arr[(arr.length - 1) / 2] : (arr[arr.length / 2 - 1] + arr[arr.length / 2]) / 2);
+          const h = Math.floor(n / 2), q1 = med(s.slice(0, h)), q3 = med(s.slice(n - h)), iqr = q3 - q1;
+          const L = round(q1 - 1.5 * iqr), U = round(q3 + 1.5 * iqr);
+          const outs = s.filter((x) => x <= L || x >= U);
+          return {
+            q: `次の ${n} 個のデータの外れ値は何個？ ただし、${tex("Q_{1}-1.5(Q_{3}-Q_{1})")} 以下、または ${tex("Q_{3}+1.5(Q_{3}-Q_{1})")} 以上の値を外れ値とする（${tex("Q_{1}")}、${tex("Q_{3}")} は第1・第3四分位数）。　${d.join(", ")}`,
+            ans: outs.length,
+            unit: "個",
+            hint: "小さい順に並べて $Q_{1}$、$Q_{3}$ を求め、外れ値の境目の値を計算する。",
+            steps: [
+              `並べると ${s.join(", ")}`,
+              `$Q_{1}=${q1}$、$Q_{3}=${q3}$、四分位範囲は $${iqr}$`,
+              `$Q_{1}-1.5\\times ${iqr}=${L}$、$Q_{3}+1.5\\times ${iqr}=${U}$`,
+              outs.length ? `${L} 以下または ${U} 以上の値は ${outs.join(", ")} の ${outs.length} 個` : `${L} 以下または ${U} 以上の値はないので 0 個`,
             ],
           };
         }),
@@ -3763,6 +3853,45 @@ export const UNITS = [
               `和 $=${n}\\times ${m}=${S}$、2乗の和 $=${n}\\times(${V}+${m}^{2})=${T}$`,
               `正しい和 $=${S}-${w}+${u}=${S2}$、正しい2乗の和 $=${T}-${w * w}+${u * u}=${T2}$`,
               `分散 $=\\frac{${T2}}{${n}}-\\left(\\frac{${S2}}{${n}}\\right)^{2}=${V2}$`,
+            ],
+          };
+        }),
+        t("HI-data-3c", (r) => {
+          let x = r(1, 15), y = r(1, 15);
+          if (x === y) return { skip: true };
+          if (x > y) [x, y] = [y, x];
+          const k1 = r(1, 15), k2 = r(1, 15);
+          const k3 = pick(r, Array.from({ length: 15 }, (_, i) => i + 1).filter((v) => (k1 + k2 + v + x + y) % 5 === 0)); // 平均が整数になるように
+          const kn = [k1, k2, k3], all = [...kn, x, y];
+          const m = all.reduce((a, b) => a + b, 0) / 5;
+          const V = round(all.reduce((a, b) => a + (b - m) ** 2, 0) / 5);
+          const A = x + y, B = x * x + y * y, askX = r(0, 1) === 1;
+          return {
+            q: `5個のデータ ${kn.join(", ")}, ${tex("x")}, ${tex("y")} の平均値が ${m}、分散が ${V} である。${tex("x<y")} のとき、${tex(askX ? "x" : "y")} の値は？`,
+            ans: askX ? x : y,
+            hint: "平均値から $x+y$、分散（$=$ 2乗の平均 $-$ 平均の2乗）から $x^{2}+y^{2}$ を求めて、連立方程式を解く。",
+            steps: [
+              `平均値から $${kn.join("+")}+x+y=5\\times ${m}$ より $x+y=${A}$`,
+              `2乗の平均 $=${V}+${m}^{2}$ より $${kn.map((v) => `${v}^{2}`).join("+")}+x^{2}+y^{2}=5\\times ${round(V + m * m)}$、$x^{2}+y^{2}=${B}$`,
+              `$y=${A}-x$ を代入して整理すると $${poly([1, -A, x * y])}=0$、$${fac2(x, y)}=0$`,
+              `$x<y$ より $x=${x}$、$y=${y}$`,
+            ],
+          };
+        }),
+        t("HI-data-3d", (r) => {
+          const xs = Array.from({ length: 5 }, () => r(1, 12));
+          const S = xs.reduce((a, b) => a + b, 0), T = xs.reduce((a, b) => a + b * b, 0);
+          const mean = round(S / 5), mn = round(T - (S * S) / 5);
+          if (new Set(xs).size === 1) return { skip: true };
+          const askMin = r(0, 1) === 1;
+          return {
+            q: `5個のデータ ${xs.join(", ")} について、各値と実数 ${tex("a")} との差の2乗の和を ${tex("f(a)")} とする。${askMin ? `${tex("f(a)")} の最小値` : `${tex("f(a)")} を最小にする ${tex("a")} の値`}は？`,
+            ans: askMin ? mn : mean,
+            hint: "$f(a)$ を展開して $a$ の2次関数とみて、平方完成する。",
+            steps: [
+              `$f(a)=${xs.map((v) => `(${v}-a)^{2}`).join("+")}=5a^{2}-${2 * S}a+${T}$`,
+              `$=5(a-${mean})^{2}+${mn}$`,
+              `$a=${mean}$（平均値）のとき最小で、最小値は $${mn}$（データの個数 $\\times$ 分散）`,
             ],
           };
         }),
@@ -3811,6 +3940,40 @@ export const UNITS = [
             steps: [
               `$s_{xy}=r\\,s_{x}s_{y}=${round(rr)}\\times ${sx}\\times ${sy}=${cov}$`,
               askCov ? `$s_{uv}=(${a})\\times(${c})\\times(${cov})=${v}$` : `$s_{u}=${coefVar(Math.abs(a), "s_{x}")}$、$s_{v}=${coefVar(Math.abs(c), "s_{y}")}$、$s_{uv}=${coefVar(a * c, "s_{xy}")}$ より $r_{uv}=${a * c > 0 ? "" : "-"}r_{xy}=${v}$`,
+            ],
+          };
+        }),
+        t("HI-data-4d", (r) => {
+          const vx = pick(r, [4, 9, 16, 25, 36]), vy = pick(r, [1, 4, 9, 16]);
+          const lim = Math.sqrt(vx * vy); // |共分散| < s_x s_y
+          const c = pick(r, Array.from({ length: 2 * lim - 1 }, (_, i) => i - lim + 1).filter((v) => v !== 0));
+          const askT = r(0, 1) === 1;
+          const tS = fracTex(-c, vy), mnS = fracTex(vx * vy - c * c, vy);
+          return {
+            q: `2つの変量 ${tex("x,\\ y")} のデータについて、${tex("x")} の分散が ${vx}、${tex("y")} の分散が ${vy}、${tex("x")} と ${tex("y")} の共分散が ${c} である。定数 ${tex("t")} に対して、変量 ${tex("z=x+ty")} の分散${askT ? `を最小にする ${tex("t")} の値` : "の最小値"}は？`,
+            ans: askT ? fracAns(-c, vy) : fracAns(vx * vy - c * c, vy),
+            hint: "$z$ の偏差は $(x-\\overline{x})+t(y-\\overline{y})$。これを2乗して平均をとると、$z$ の分散は $t$ の2次式になる。",
+            steps: [
+              `$s_{z}^{2}=s_{x}^{2}+2ts_{xy}+t^{2}s_{y}^{2}=${poly([vy, 2 * c, vx], "t")}$`,
+              `$=${vy === 1 ? "" : vy}\\left(t${c > 0 ? "+" : "-"}${fracTex(Math.abs(c), vy)}\\right)^{2}+${mnS}$`,
+              `$t=${tS}$ のとき最小で、最小値は $${mnS}$`,
+            ],
+          };
+        }),
+        t("HI-data-4e", (r) => {
+          const sx = r(1, 6), sy = r(1, 6), p = pick(r, [1, 2, 3]), q = pick(r, [-3, -2, -1, 1, 2, 3]);
+          const P = p * sx, Qy = Math.abs(q) * sy, base = p * p * sx * sx + q * q * sy * sy, cr = 2 * Math.abs(p * q) * sx * sy;
+          const I = (lo, hi) => tex(`${lo}\\leqq s_{z}^{2}\\leqq ${hi}`);
+          const ok = I((P - Qy) ** 2, (P + Qy) ** 2);
+          return {
+            q: `2つの変量 ${tex("x,\\ y")} の標準偏差がそれぞれ ${sx}, ${sy} である。${tex("x")} と ${tex("y")} の相関係数がわからないとき、変量 ${tex(`z=${coefVar(p, "x")}${signedVar(q, "y")}`)} の分散 ${tex("s_{z}^{2}")} のとりうる値の範囲は？`,
+            ans: ok,
+            choices: choices4(r, ok, [I(0, (P + Qy) ** 2), I(base - cr / 2, base + cr / 2), I(Math.abs(P - Qy), P + Qy), I(base - cr, base)]),
+            hint: "$z$ の分散を $x,\\ y$ の分散と共分散 $s_{xy}$ で表す。$s_{xy}=rs_{x}s_{y}$（$r$ は相関係数）で、$-1\\leqq r\\leqq 1$。",
+            steps: [
+              `$s_{z}^{2}=${p * p === 1 ? "" : p * p}s_{x}^{2}${signed(2 * p * q)}s_{xy}+${q * q === 1 ? "" : q * q}s_{y}^{2}=${base}${signed(2 * p * q * sx * sy)}r$（$s_{xy}=${sx * sy}r$）`,
+              `$-1\\leqq r\\leqq 1$ より、$s_{z}^{2}$ は $${base}-${cr}$ 以上 $${base}+${cr}$ 以下`,
+              `$${(P - Qy) ** 2}\\leqq s_{z}^{2}\\leqq ${(P + Qy) ** 2}$`,
             ],
           };
         }),
