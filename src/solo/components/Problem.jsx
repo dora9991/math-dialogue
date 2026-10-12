@@ -11,6 +11,7 @@ import M from "./M.jsx";
 import { checkAnswer } from "../engine/answer.js";
 import { LevelChip } from "./ui.jsx";
 import { GRADE_LABEL, getUnit } from "../content/index.js";
+import { useShrinkToFit } from "./useShrinkToFit.js";
 
 /** 入力中の値を表示（分数は上下2段で） */
 function AnswerDisplay({ value, unit }) {
@@ -89,6 +90,7 @@ export default function Problem({ p, mode = "practice", index, total, onAnswer, 
   const [result, setResult] = useState(null); // { correct, note, gaveUp }
   const t0 = useRef(Date.now());
   const unit = getUnit(p.unitId);
+  const qRef = useShrinkToFit(p.key); // 長い数式の問題文は、はみ出さないよう少し小さくする
 
   useEffect(() => {
     setInput(""); setSel(null); setHinted(false); setResult(null);
@@ -153,7 +155,7 @@ export default function Problem({ p, mode = "practice", index, total, onAnswer, 
           {(showUnit || mode === "diag") && unit && <span className="chip">{GRADE_LABEL[unit.grade]}・{unit.name}</span>}
           {mode === "test" && <span className="chip" style={{ background: "#fff4e0", color: "#b45309" }}>確認テスト</span>}
         </div>
-        <div className="qtext"><M>{p.q}</M></div>
+        <div className="qtext" ref={qRef}><M>{p.q}</M></div>
         {hinted && !result && <div className="point mt12 small"><span>💡 </span><M>{p.hint}</M></div>}
       </div>
 
@@ -165,7 +167,7 @@ export default function Problem({ p, mode = "practice", index, total, onAnswer, 
             else if (sel === i) cls = "sel";
             return (
               <button key={i} className={`choice ${cls}`} disabled={!!result} onClick={() => choose(c, i)}>
-                <span className="no">{i + 1}</span><M>{String(c)}</M>
+                <span className="no">{i + 1}</span><M breakable>{String(c)}</M>
               </button>
             );
           })}

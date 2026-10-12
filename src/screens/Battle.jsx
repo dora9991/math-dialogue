@@ -12,6 +12,7 @@ import { heroImageFor } from "../data/heroes.js";
 import { pickHitCheer, pickHurtCheer } from "../data/cheers.js";
 import { BigWord, StarField } from "../components/Decorations.jsx";
 import MathText from "../components/MathText.jsx";
+import { useFitChoices } from "../components/useFitChoices.js";
 import * as bgm from "../audio/bgm.js";
 import * as sfx from "../audio/sfx.js";
 import { getPlayerBattleStats, calcDamage, genBattleProblem, getEquippedSkills, SP_MAX, ultimateDamage, enemyDecide, battleBonuses } from "../engine/battle.js";
@@ -64,6 +65,7 @@ export default function Battle({ player, monster, ally = null, onResult, onSpCha
   const [input, setInput] = useState("");      // 文字入力の答え（数値問題＝中1用）
   // 式の4択（中2・中3）はシャッフルした選択肢を問題ごとに1回だけ作る
   const choices = useMemo(() => (q && hasChoices(q) ? shuffle([...q.choices]) : null), [q]);
+  const choicesRef = useFitChoices(choices); // 式が長いときに、列数・文字サイズ・折り返しを自動で決める
   const [locked, setLocked] = useState(false);
   const [monState, setMonState] = useState("idle");
   const [animKey, setAnimKey] = useState(0);
@@ -998,17 +1000,17 @@ export default function Battle({ player, monster, ally = null, onResult, onSpCha
               )}
               {choices ? (
                 /* 中2・中3：式の4択ボタン（文字列一致で採点） */
-                <div className={"bt-choices" + (shakeAns ? " answer-shake" : "")} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
+                <div ref={choicesRef} className={"bt-choices" + (shakeAns ? " answer-shake" : "")} style={{ display: "grid", gridTemplateColumns: "var(--cg-cols, 1fr 1fr)", gap: 8, marginTop: 8 }}>
                   {choices.map((c, i) => (
                     <button
                       key={i} className="bt-choice" data-sfx="none" disabled={locked}
                       onClick={() => answer(c)}
                       style={{
                         padding: "12px 10px", borderRadius: 12, border: "2px solid rgba(255,255,255,.18)",
-                        background: "rgba(255,255,255,.08)", color: "#f1f5f9", fontWeight: 800, fontSize: 16,
+                        background: "rgba(255,255,255,.08)", color: "#f1f5f9", fontWeight: 800, fontSize: "calc(16px * var(--cg-scale, 1))", minWidth: 0,
                         cursor: locked ? "default" : "pointer", fontFamily: "inherit",
                       }}
-                    ><MathText>{c}</MathText></button>
+                    ><MathText breakable>{c}</MathText></button>
                   ))}
                 </div>
               ) : (

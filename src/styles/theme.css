@@ -89,10 +89,16 @@ body { font-family: 'Zen Kaku Gothic New', sans-serif; background: #0f0f1a; }
   font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 18px; margin-bottom: 7px; }
 .q-text { font-size: 20px; font-weight: 900; color: #1e1b4b; margin-bottom: 11px; line-height: 1.3;
   font-family: 'M PLUS Rounded 1c', sans-serif; word-break: break-all; }
-.choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* 選択肢の並べ方は useFitChoices.js が、画面の幅と式の長さを測って決める（列数 --cg-cols、文字サイズの倍率 --cg-scale） */
+.choices-grid { display: grid; grid-template-columns: var(--cg-cols, 1fr 1fr); gap: 10px; }
+.choices-grid > button, .bt-choices > button { min-width: 0; }
+/* 測っているあいだは、折り返さずに1行で並べて、はみ出すかどうかを見る */
+[data-measure] > button { white-space: nowrap; }
+/* どうしても1行に入らないときだけ、2行に折り返す（折り返す位置は MathText の breakable が入れた演算子の手前） */
+[data-wrap] > button { white-space: normal; overflow-wrap: anywhere; line-height: 1.25; }
 /* 選択肢は「淡い藍色カード＋濃い枠＋下影」で、白カード／暗い背景どちらでもはっきり区別できる */
 .choice-btn { border: 3px solid #6366f1; background: linear-gradient(135deg, #eef2ff, #dbe4ff); border-radius: 14px; padding: 14px 8px;
-  font-family: 'M PLUS Rounded 1c', sans-serif; font-size: 20px; font-weight: 900; color: #1e1b4b; cursor: pointer; transition: all .15s;
+  font-family: 'M PLUS Rounded 1c', sans-serif; font-size: calc(20px * var(--cg-scale, 1)); font-weight: 900; color: #1e1b4b; cursor: pointer; transition: all .15s;
   box-shadow: 0 3px 0 #c7d2fe, 0 4px 10px rgba(30,27,75,.18); }
 .choice-btn:hover:not(:disabled) { border-color: #4f46e5; background: linear-gradient(135deg, #e0e7ff, #c7d2fe); transform: translateY(-2px); }
 .choice-btn:disabled { cursor: not-allowed; }

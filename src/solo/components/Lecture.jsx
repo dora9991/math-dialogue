@@ -52,7 +52,7 @@ function Check({ ck, onDone }) {
           if (sel != null) cls = String(c) === String(ck.ans) ? "right" : i === sel ? "wrong" : "";
           return (
             <button key={i} className={`choice ${cls}`} disabled={sel != null} onClick={() => { setSel(i); onDone?.(); }}>
-              <span className="no">{i + 1}</span><M>{String(c)}</M>
+              <span className="no">{i + 1}</span><M breakable>{String(c)}</M>
             </button>
           );
         })}

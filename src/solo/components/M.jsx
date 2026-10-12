@@ -21,7 +21,8 @@ function texHtml(src) {
   return html;
 }
 
-export default function M({ children, className, style }) {
+// breakable … 選択肢の式用。長いときに、演算子の手前で折り返してよい（MathText の breakable）
+export default function M({ children, className, style, breakable = false }) {
   const s = children == null ? "" : String(children);
   const parts = s.split("$");
   return (
@@ -29,7 +30,7 @@ export default function M({ children, className, style }) {
       {parts.map((p, i) =>
         i % 2 === 1
           ? <span key={i} dangerouslySetInnerHTML={{ __html: texHtml(p) }} />
-          : p ? <MathText key={i}>{p}</MathText> : null
+          : p ? <MathText key={i} breakable={breakable}>{p}</MathText> : null
       )}
     </span>
   );

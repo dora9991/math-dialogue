@@ -154,13 +154,14 @@ a { color: var(--pri); }
 /* ── 問題 ── */
 .qcard { background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 18px 16px; margin-bottom: 12px; }
 .qmeta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
-.qtext { font-size: 19px; line-height: 1.75; font-weight: 600; word-break: break-word; }
+.qtext { font-size: 19px; line-height: 1.75; font-weight: 600; word-break: break-word; overflow-x: auto; overflow-y: hidden; padding: 1px 0; }
 .qtext .katex { font-size: 1.08em; }
 .choices { display: grid; gap: 10px; }
 .choice {
   border: 2px solid var(--line); background: #fff; border-radius: 14px; padding: 13px 14px; font-size: 17.5px; cursor: pointer; text-align: left;
   display: flex; align-items: center; gap: 10px; min-height: 54px; font-weight: 600;
 }
+.choice > span:not(.no) { flex: 1; min-width: 0; } /* 式が長いときは、ボタンの幅の中で折り返す（はみ出さない） */
 .choice .no { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: #eef1f7; font-size: 13px; font-weight: 800; color: var(--ink2); }
 .choice:hover:not(:disabled) { border-color: #c7cdf9; }
 .choice.sel { border-color: var(--pri); background: var(--pri-soft); }
