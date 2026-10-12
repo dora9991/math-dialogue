@@ -47,8 +47,9 @@ export const UNITS = [
   {
     ...H,
     id: "HA-baai", area: "data", name: "場合の数", desc: "順列・組合せ・円順列・重複順列",
-    prereqs: ["J2-g2c6u1"],
+    prereqs: ["J2-g2c6u1", "HI-shugo"],
     points: [
+      "要素の個数：$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)$、$n(\\overline{A})=n(U)-n(A)$。3つなら $n(A\\cup B\\cup C)=n(A)+n(B)+n(C)-n(A\\cap B)-n(B\\cap C)-n(C\\cap A)+n(A\\cap B\\cap C)$",
       "順列 $_{n}\\mathrm{P}_{r}=\\frac{n!}{(n-r)!}$（並べる・役割がある）、組合せ $_{n}\\mathrm{C}_{r}=\\frac{n!}{r!(n-r)!}$（選ぶだけ）",
       "円順列は $(n-1)!$（1人を固定）、重複順列は $n^{r}$、同じものを含む順列は $\\frac{n!}{p!\\,q!\\,r!}$",
       "「隣り合う」はひとまとめにして並べ、中で並べかえる。「隣り合わない」は他を並べてからすき間に入れる。",
@@ -104,6 +105,35 @@ export const UNITS = [
             ],
           };
         }),
+        t("HA-baai-1d", (r) => {
+          const U = r(30, 60), A = r(10, U - 15), B = r(10, U - 15);
+          const AB = r(Math.max(1, A + B - U + 1), Math.min(A, B) - 1);
+          const S = A + B - AB, kind = r(0, 3);
+          if (kind === 3) {
+            const [p1, p2] = pick(r, [["犬を飼っている", "猫を飼っている"], ["数学が好きな", "英語が好きな"], ["電車で通学している", "バスで通学している"]]);
+            return {
+              q: `ある学年の生徒 ${U} 人のうち、${p1}人は ${A} 人、${p2}人は ${B} 人、その両方である人は ${AB} 人である。どちらでもない人は何人？`,
+              ans: U - S,
+              unit: "人",
+              hint: "$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)$ で「少なくとも一方」の人数を出し、全体から引く。",
+              steps: [`${p1}人の集合を $A$、${p2}人の集合を $B$ とすると $n(A\\cup B)=${A}+${B}-${AB}=${S}$`, `どちらでもない人は $${U}-${S}=${U - S}$ 人`],
+            };
+          }
+          const name = ["A\\cup B", "\\overline{A}\\cap\\overline{B}", "A\\cap\\overline{B}"][kind];
+          return {
+            q: `全体集合 $U$ とその部分集合 $A,\\ B$ について、$n(U)=${U},\\ n(A)=${A},\\ n(B)=${B},\\ n(A\\cap B)=${AB}$ のとき、$n(${name})$ は？`,
+            ans: [S, U - S, A - AB][kind],
+            unit: "個",
+            hint: "$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)$、補集合は $n(\\overline{X})=n(U)-n(X)$ を使う。",
+            steps: [
+              [
+                `$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)=${A}+${B}-${AB}=${S}$`,
+                `ド・モルガンの法則より $\\overline{A}\\cap\\overline{B}=\\overline{A\\cup B}$。$n(A\\cup B)=${A}+${B}-${AB}=${S}$ なので $n(\\overline{A\\cup B})=${U}-${S}=${U - S}$`,
+                `$A\\cap\\overline{B}$ は $A$ の要素のうち $B$ に属さないものの集合なので $n(A\\cap\\overline{B})=n(A)-n(A\\cap B)=${A}-${AB}=${A - AB}$`,
+              ][kind],
+            ],
+          };
+        }),
       ],
       2: [
         t("HA-baai-2a", (r) => {
@@ -146,6 +176,45 @@ export const UNITS = [
             steps: [`最高位は 0 以外の ${k} 通り`, `残りの位は、残り ${k} 個から ${dg - 1} 個を並べる：$${P_(k, dg - 1)}=${nPr(k, dg - 1)}$`, `$${k}\\times ${nPr(k, dg - 1)}=${v}$`],
           };
         }),
+        t("HA-baai-2d", (r) => {
+          const m = r(4, 7), w = r(3, 6), k = r(3, 4), kind = r(0, 3), n = m + w;
+          const i = r(1, k - 1), T = nCr(n, k);
+          const v = [nCr(m, i) * nCr(w, k - i), T - nCr(m, k) - nCr(w, k), nCr(n - 2, k - 2), T - nCr(n - 2, k)][kind];
+          const cond = [`男子がちょうど ${i} 人になる`, "男子も女子も少なくとも1人ずつ含まれる", "特定の2人 A, B がともに選ばれる", "特定の2人 A, B のうち少なくとも一方が選ばれる"][kind];
+          return {
+            q: `男子 ${m} 人、女子 ${w} 人の中から ${k} 人の委員を選ぶ。${cond}選び方は何通り？`,
+            ans: v,
+            unit: "通り",
+            hint: "どこから何人選ぶかに分けて組合せを掛ける。「少なくとも」は全体から引く（余事象）。",
+            steps: [
+              [
+                `男子 ${m} 人から ${i} 人：$${C_(m, i)}=${nCr(m, i)}$、女子 ${w} 人から ${k - i} 人：$${C_(w, k - i)}=${nCr(w, k - i)}$`,
+                `全体 $${C_(n, k)}=${T}$ から、男子だけの $${C_(m, k)}=${nCr(m, k)}$ 通り${w >= k ? `と女子だけの $${C_(w, k)}=${nCr(w, k)}$ 通り` : `（女子だけでは ${k} 人を選べない）`}を引く`,
+                `A, B を先に選び、残りの ${n - 2} 人から ${k - 2} 人を選ぶ`,
+                `全体 $${C_(n, k)}=${T}$ から、A も B も選ばれない $${C_(n - 2, k)}=${nCr(n - 2, k)}$ 通りを引く`,
+              ][kind],
+              [`$${nCr(m, i)}\\times ${nCr(w, k - i)}=${v}$`, `$${T}-${nCr(m, k)}${w >= k ? `-${nCr(w, k)}` : ""}=${v}$`, `$${C_(n - 2, k - 2)}=${v}$`, `$${T}-${nCr(n - 2, k)}=${v}$`][kind],
+            ],
+          };
+        }),
+        t("HA-baai-2e", (r) => {
+          const [a, b] = pick(r, [[2, 3], [2, 5], [3, 4], [3, 5], [2, 7], [3, 7], [4, 5], [5, 7], [4, 6], [6, 8], [4, 10], [6, 9]]);
+          const N = r(5, 30) * 10, kind = r(0, 2);
+          const L = lcm(a, b), A = Math.floor(N / a), B = Math.floor(N / b), AB = Math.floor(N / L), U = A + B - AB;
+          const v = [U, N - U, A - AB][kind];
+          const what = [`${a} の倍数または ${b} の倍数`, `${a} の倍数でも ${b} の倍数でもない数`, `${a} の倍数であるが ${b} の倍数でない数`][kind];
+          return {
+            q: `1 から ${N} までの整数のうち、${what}は何個？`,
+            ans: v,
+            unit: "個",
+            hint: `${a} の倍数の集合を $A$、${b} の倍数の集合を $B$ として、$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)$ を使う。`,
+            steps: [
+              `${a} の倍数の集合を $A$、${b} の倍数の集合を $B$ とすると $n(A)=${A},\\ n(B)=${B}$（${N} をそれぞれで割った商）`,
+              `$A\\cap B$ は ${a} と ${b} の最小公倍数 ${L} の倍数の集合なので $n(A\\cap B)=${AB}$`,
+              [`$n(A\\cup B)=${A}+${B}-${AB}=${v}$`, `$n(\\overline{A\\cup B})=${N}-(${A}+${B}-${AB})=${v}$`, `$n(A)-n(A\\cap B)=${A}-${AB}=${v}$`][kind],
+            ],
+          };
+        }),
       ],
       3: [
         t("HA-baai-3a", (r) => {
@@ -161,11 +230,19 @@ export const UNITS = [
           }
           const c0 = nPr(k, dg - 1), mid = (k - 1) * nPr(k - 1, dg - 2);
           const E = Math.floor(k / 2), has5 = k >= 5;
+          // 3の倍数：和が3の倍数になる数字の組（0 を含む組は z 個）
+          const sets = [];
+          (function rec(s, d) { if (s.length === dg) { if (s.reduce((x, y) => x + y, 0) % 3 === 0) sets.push(s); return; } for (let x = d; x <= k; x++) rec([...s, x], x + 1); })([], 0);
+          const z = sets.filter((s) => s[0] === 0).length, nz = sets.length - z, fz = fact(dg) - fact(dg - 1);
           const st = kind === "偶数"
             ? [`一の位が 0 のとき：残り ${k} 個から並べて $${P_(k, dg - 1)}=${c0}$`, `一の位が 0 以外の偶数（${E} 通り）のとき：最高位は 0 と一の位以外の ${k - 1} 通り、残りは $${P_(k - 1, dg - 2)}$ 通り → $${E}\\times ${k - 1}\\times ${nPr(k - 1, dg - 2)}=${E * mid}$`, `合計 $${c0}+${E * mid}=${v}$ 個`]
             : kind === "5の倍数"
               ? [`一の位が 0 のとき：$${P_(k, dg - 1)}=${c0}$`, has5 ? `一の位が 5 のとき：最高位は 0 と 5 以外の ${k - 1} 通り、残りは $${P_(k - 1, dg - 2)}$ 通り → $${mid}$` : `一の位が 5 の数は作れない（5 がない）`, `合計 ${v} 個`]
-              : ["各位の数字の和が 3 の倍数になる数字の組を選ぶ", "0 を含む組は最高位に 0 を置かないように並べる（全体 − 最高位が 0）", `合計 ${v} 個`];
+              : [
+                `各位の数字の和が 3 の倍数になる数字の組は${sets.length <= 8 ? ` ${sets.map((s) => `$\\{${s.join(",\\ ")}\\}$`).join(", ")} の` : ""} ${sets.length} 組（うち 0 を含む組は ${z} 組）`,
+                `0 を含む組は最高位に 0 を置かないように並べる（全体 − 最高位が 0）：$${dg}!-${dg - 1}!=${fz}$ 通りずつ${nz ? `。含まない組は $${dg}!=${fact(dg)}$ 通りずつ` : ""}`,
+                `合計 $${fz}\\times ${z}${nz ? `+${fact(dg)}\\times ${nz}` : ""}=${v}$ 個`,
+              ];
           return {
             q: `0 から ${k} までの数字から異なる ${dg} 個を使ってできる ${dg} 桁の整数のうち、${kind}は何個？`,
             ans: v,
@@ -213,6 +290,66 @@ export const UNITS = [
             ],
           };
         }),
+        t("HA-baai-3d", (r) => {
+          const n = r(4, 6);
+          const L = "abcdef".slice(0, n).split("");
+          const w = shuffle(r, L), word = w.join("");
+          let before = 0;
+          const parts = [];
+          w.forEach((ch, i) => {
+            const smaller = w.slice(i + 1).filter((x) => x < ch).sort();
+            if (!smaller.length) return;
+            const k = n - 1 - i, cnt = smaller.length * fact(k);
+            before += cnt;
+            parts.push(`${smaller.map((x) => w.slice(0, i).join("") + x + "□".repeat(k)).join(", ")} の形：$${smaller.length}\\times ${k}!=${cnt}$ 個`);
+          });
+          if (before === 0) return { skip: true };
+          return {
+            q: `${L.join(", ")} の ${n} 文字をすべて1回ずつ使ってできる文字列を、辞書式（アルファベット順）に並べる。${word} は何番目？`,
+            ans: before + 1,
+            unit: "番目",
+            hint: `${word} より前にくる文字列を、先頭から1文字ずつ見て「○□□…の形」ごとに数える。`,
+            steps: [
+              parts.slice(0, 2).join("、"),
+              ...(parts.length > 2 ? [parts.slice(2).join("、")] : []),
+              `${word} より前に ${before} 個あるので $${before}+1=${before + 1}$ 番目`,
+            ],
+          };
+        }),
+        t("HA-baai-3e", (r) => {
+          const none = r(0, 1) === 1;
+          if (r(0, 1)) {
+            const t3 = r(1, 4), ab = t3 + r(1, 5), bc = t3 + r(1, 5), ca = t3 + r(1, 5);
+            const A = ab + ca - t3 + r(2, 12), B = ab + bc - t3 + r(2, 12), C = bc + ca - t3 + r(2, 12);
+            const any = A + B + C - ab - bc - ca + t3, U = any + r(3, 15);
+            return {
+              q: `生徒 ${U} 人に3つの問題 A, B, C を解かせたところ、A を正解した人は ${A} 人、B は ${B} 人、C は ${C} 人、A と B の両方を正解した人は ${ab} 人、B と C の両方は ${bc} 人、C と A の両方は ${ca} 人、3問とも正解した人は ${t3} 人であった。${none ? "3問とも不正解だった" : "少なくとも1問を正解した"}人は何人？`,
+              ans: none ? U - any : any,
+              unit: "人",
+              hint: "$n(A\\cup B\\cup C)=n(A)+n(B)+n(C)-n(A\\cap B)-n(B\\cap C)-n(C\\cap A)+n(A\\cap B\\cap C)$",
+              steps: [
+                "問題 A, B, C を正解した人の集合を $A,\\ B,\\ C$ とする",
+                `$n(A\\cup B\\cup C)=${A}+${B}+${C}-${ab}-${bc}-${ca}+${t3}=${any}$`,
+                none ? `3問とも不正解の人は $${U}-${any}=${U - any}$ 人` : `少なくとも1問を正解した人は ${any} 人`,
+              ],
+            };
+          }
+          const N = r(10, 30) * 10, [a, b, c] = sample(r, [2, 3, 5, 7], 3).sort((x, y) => x - y);
+          const f = (k) => Math.floor(N / k);
+          const s1 = f(a) + f(b) + f(c), s2 = f(a * b) + f(b * c) + f(c * a), any = s1 - s2 + f(a * b * c);
+          return {
+            q: `1 から ${N} までの整数のうち、${a}, ${b}, ${c} の${none ? "どれでも割り切れない" : "少なくとも1つで割り切れる"}数は何個？`,
+            ans: none ? N - any : any,
+            unit: "個",
+            hint: "$n(A\\cup B\\cup C)=n(A)+n(B)+n(C)-n(A\\cap B)-n(B\\cap C)-n(C\\cap A)+n(A\\cap B\\cap C)$",
+            steps: [
+              `${a}, ${b}, ${c} の倍数の集合を $A,\\ B,\\ C$ とすると $n(A)=${f(a)},\\ n(B)=${f(b)},\\ n(C)=${f(c)}$`,
+              `$A\\cap B,\\ B\\cap C,\\ C\\cap A$ はそれぞれ ${a * b}, ${b * c}, ${c * a} の倍数で ${f(a * b)}, ${f(b * c)}, ${f(c * a)} 個、$A\\cap B\\cap C$ は ${a * b * c} の倍数で ${f(a * b * c)} 個`,
+              `$n(A\\cup B\\cup C)=${s1}-${s2}+${f(a * b * c)}=${any}$`,
+              ...(none ? [`どれでも割り切れない数は $${N}-${any}=${N - any}$ 個`] : []),
+            ],
+          };
+        }),
       ],
       4: [
         t("HA-baai-4a", (r) => {
@@ -242,7 +379,7 @@ export const UNITS = [
           const vars = ["x", "y", "z", "w"].slice(0, k);
           const v = pos ? nCr(n - 1, k - 1) : nCr(n + k - 1, k - 1);
           return {
-            q: `方程式 ${tex(`${vars.join("+")}=${n}`)} を満たす${pos ? "正の整数" : "0 以上の整数"}の組 ${tex(`(${vars.join(",\\ ")})`)} は何組？`,
+            q: `方程式 ${tex(`${vars.join("+")}=${n}`)} を満たす${pos ? "正の整数" : " 0 以上の整数"}の組 ${tex(`(${vars.join(",\\ ")})`)} は何組？`,
             ans: v,
             unit: "組",
             hint: pos ? "○を並べ、その間に仕切りを入れると考える（間は n−1 か所）。" : "○ と仕切り｜を並べる方法として数える（重複組合せ）。",
@@ -262,6 +399,66 @@ export const UNITS = [
             steps: rooms === 2
               ? [`空き部屋を許すと $2^{${n}}=${2 ** n}$`, `全員が A か全員が B の 2 通りを引く`, `$${2 ** n}-2=${v}$`]
               : [`空き部屋を許すと $3^{${n}}=${3 ** n}$`, `ちょうど1部屋が空く：空く部屋の選び方 3 通り × $(2^{${n}}-2)$ = ${3 * (2 ** n - 2)}`, `ちょうど2部屋が空く：3 通り`, `$${3 ** n}-${3 * (2 ** n - 2)}-3=${v}$`],
+          };
+        }),
+        t("HA-baai-4d", (r) => {
+          const n = r(4, 6), k = pick(r, [0, 0, 1, 2]), m = n - k;
+          const D = [1, 0, 1, 2, 9, 44, 265];
+          const v = nCr(n, k) * D[m];
+          const seq = [];
+          for (let j = 4; j <= m; j++) seq.push(`$D_{${j}}=${j - 1}(${D[j - 1]}+${D[j - 2]})=${D[j]}$`);
+          return {
+            q: `${n} 人がそれぞれプレゼントを1つずつ持ち寄って交換し、全員が1つずつ受け取る。${k === 0 ? "どの人も自分の持ってきたプレゼントを受け取らない" : `ちょうど ${k} 人だけが自分の持ってきたプレゼントを受け取る`}受け取り方は何通り？`,
+            ans: v,
+            unit: "通り",
+            hint: "$m$ 人で誰も自分のものを受け取らない受け取り方を $D_{m}$ 通りとおき、ある人のプレゼントを受け取る人に注目して漸化式を作る。",
+            steps: [
+              `$m$ 人で誰も自分のものを受け取らない受け取り方を $D_{m}$ 通りとすると $D_{2}=1,\\ D_{3}=2$`,
+              `人 1 のプレゼントを受け取る人 X は $m-1$ 通り。X のプレゼントを人 1 が受け取るなら残りは $D_{m-2}$ 通り、受け取らないなら（人 1 を X の代わりと考えて）$D_{m-1}$ 通り。よって $D_{m}=(m-1)(D_{m-1}+D_{m-2})$`,
+              ...(seq.length ? [seq.join("、")] : []),
+              k === 0 ? `$D_{${n}}=${v}$ 通り` : `自分のものを受け取る ${k} 人の選び方は $${C_(n, k)}=${nCr(n, k)}$ 通り、残りの ${m} 人は誰も自分のものを受け取らないので $${nCr(n, k)}\\times D_{${m}}=${nCr(n, k)}\\times ${D[m]}=${v}$ 通り`,
+            ],
+          };
+        }),
+        t("HA-baai-4e", (r) => {
+          const k = r(2, 4), n = r(2 * k + 2, 12);
+          const x = nCr(n - k - 1, k - 1), y = nCr(n - k, k), v = x + y;
+          return {
+            q: `円周上に等間隔に並んだ ${n} 個の点から ${k} 個を選ぶとき、選んだ点のどの2つも隣り合わない選び方は何通り？`,
+            ans: v,
+            unit: "通り",
+            hint: "特定の1点 P を選ぶか選ばないかで分けると、どちらも「1列に並んだ点から隣り合わないように選ぶ」問題になる。",
+            steps: [
+              `1列に並んだ $a$ 個から隣り合わない $b$ 個を選ぶ方法は、選ばない $a-b$ 個の間と両端の $a-b+1$ か所から $b$ か所を選ぶと考えて ${tex("{}_{a-b+1}\\mathrm{C}_{b}")} 通り`,
+              `点 P を選ぶとき：P の両隣は選べないので、残りの1列 ${n - 3} 個から ${k - 1} 個を選ぶ：$${C_(n - k - 1, k - 1)}=${x}$`,
+              `P を選ばないとき：残りの1列 ${n - 1} 個から ${k} 個を選ぶ：$${C_(n - k, k)}=${y}$`,
+              `$${x}+${y}=${v}$ 通り`,
+            ],
+          };
+        }),
+        t("HA-baai-4f", (r) => {
+          const N = r(10, 30) * 10, kind = r(0, 2);
+          const [a, b, c] = pick(r, [[2, 3, 5], [2, 3, 7], [2, 5, 7], [3, 5, 7], [4, 6, 9], [4, 6, 10], [6, 10, 15], [4, 10, 25], [6, 9, 15]]);
+          const f = (k) => Math.floor(N / k), lab = lcm(a, b), lbc = lcm(b, c), lca = lcm(c, a), l3 = lcm(lab, c);
+          const nA = f(a), nB = f(b), nC = f(c), nAB = f(lab), nBC = f(lbc), nCA = f(lca), n3 = f(l3);
+          const x = nB + nC - nBC, y = nAB + nCA - n3;
+          const v = [x - y, nA + nB + nC - 2 * (nAB + nBC + nCA) + 3 * n3, nAB + nBC + nCA - 3 * n3][kind];
+          return {
+            q: kind === 0
+              ? `1 から ${N} までの整数で、${a} の倍数の集合を $A$、${b} の倍数の集合を $B$、${c} の倍数の集合を $C$ とする。$n(\\overline{A}\\cap(B\\cup C))$ は？`
+              : `1 から ${N} までの整数のうち、${a}, ${b}, ${c} のうち${kind === 1 ? "ちょうど1つ" : "ちょうど2つ"}だけで割り切れる数は何個？`,
+            ans: v,
+            unit: "個",
+            hint: "ベン図をかいて、求める部分を共通部分の個数で表す。共通部分は最小公倍数の倍数になることに注意。",
+            steps: [
+              `${kind === 0 ? "" : `${a}, ${b}, ${c} の倍数の集合を $A,\\ B,\\ C$ とする。`}$n(A)=${nA},\\ n(B)=${nB},\\ n(C)=${nC}$`,
+              `$A\\cap B$ は ${lab} の倍数で ${nAB} 個、$B\\cap C$ は ${lbc} の倍数で ${nBC} 個、$C\\cap A$ は ${lca} の倍数で ${nCA} 個、$A\\cap B\\cap C$ は ${l3} の倍数で ${n3} 個（いずれも最小公倍数の倍数）`,
+              [
+                `$n(B\\cup C)=${nB}+${nC}-${nBC}=${x}$、$n(A\\cap(B\\cup C))=n(A\\cap B)+n(C\\cap A)-n(A\\cap B\\cap C)=${nAB}+${nCA}-${n3}=${y}$ なので $${x}-${y}=${v}$`,
+                `$n(A)+n(B)+n(C)$ は、ちょうど2つに入る数を2回、3つすべてに入る数を3回数えている。$n(A\\cap B)+n(B\\cap C)+n(C\\cap A)$ は、ちょうど2つに入る数を1回、3つすべてに入る数を3回数えている。よってちょうど1つは $(${nA}+${nB}+${nC})-2(${nAB}+${nBC}+${nCA})+3\\times ${n3}=${v}$`,
+                `$n(A\\cap B)+n(B\\cap C)+n(C\\cap A)$ では、3つすべてに入る数を3回数えているので、ちょうど2つは $(${nAB}+${nBC}+${nCA})-3\\times ${n3}=${v}$`,
+              ][kind],
+            ],
           };
         }),
       ],
@@ -324,6 +521,26 @@ export const UNITS = [
             steps: [`1回も 6 が出ない確率は $\\left(\\frac{5}{6}\\right)^{${n}}=\\frac{${5 ** n}}{${6 ** n}}$`, `$1-\\frac{${5 ** n}}{${6 ** n}}=${fracTex(6 ** n - 5 ** n, 6 ** n)}$`],
           };
         }),
+        t("HA-kakuritsu-1d", (r) => {
+          const n = r(4, 7), kind = r(0, 3);
+          const cnt = [fact(n - 1) * 2, fact(n - 2), 2 * fact(n - 2), (n - 2) * 2 * fact(n - 2)][kind];
+          const what = ["A と B が隣り合う", "A が左端、B が右端にくる", "A と B が両端にくる", "A と B の間にちょうど1人が入る"][kind];
+          return {
+            q: `A, B を含む ${n} 人が、くじで順番を決めて1列に並ぶ。${what}確率は？`,
+            ans: fracAns(cnt, fact(n)),
+            hint: "並び方の全体は $n!$ 通りで、どれも同様に確からしい。条件を満たす並び方を順列で数える。",
+            steps: [
+              `全体は $${n}!=${fact(n)}$ 通り`,
+              [
+                `A と B をひとまとめにして ${n - 1} 人の並び $${n - 1}!$ 通り、まとまりの中の並び 2 通り：$${fact(n - 1)}\\times 2=${cnt}$ 通り`,
+                `A, B の位置が決まり、残りの ${n - 2} 人の並びは $${n - 2}!=${cnt}$ 通り`,
+                `両端の A, B の並び 2 通り、残りの ${n - 2} 人の並び $${n - 2}!$ 通り：$2\\times ${fact(n - 2)}=${cnt}$ 通り`,
+                `間に入る人の選び方 ${n - 2} 通り、A□B か B□A かで 2 通り、その3人をひとまとめにして残りと並べる $${n - 2}!$ 通り：$${n - 2}\\times 2\\times ${fact(n - 2)}=${cnt}$ 通り`,
+              ][kind],
+              `$${fr(cnt, fact(n))}$`,
+            ],
+          };
+        }),
       ],
       2: [
         t("HA-kakuritsu-2a", (r) => {
@@ -365,6 +582,25 @@ export const UNITS = [
               : [`2人とも外れる確率 $${ft(q1)}\\times ${ft(q2)}=${ft(fmul(q1, q2))}$`, `$1-${ft(fmul(q1, q2))}=${ft(v)}$`],
           };
         }),
+        t("HA-kakuritsu-2d", (r) => {
+          const n = r(3, 4), kind = r(0, 2), T = 3 ** n;
+          const cnt = [3 * n, T - 3 * (2 ** n - 2), 3 * nCr(n, 2)][kind];
+          const what = ["1人だけが勝つ", "あいこになる", "ちょうど2人が勝つ"][kind];
+          return {
+            q: `${n} 人で1回じゃんけんをする。各人はグー・チョキ・パーを同様に確からしく出すとき、${what}確率は？`,
+            ans: fracAns(cnt, T),
+            hint: kind === 1 ? "勝負がつくのは、出た手がちょうど2種類のとき。あいこはその余事象。" : "「誰が」勝つか、「どの手で」勝つかを選ぶ。",
+            steps: [
+              `手の出し方は全部で $3^{${n}}=${T}$ 通り`,
+              [
+                `勝つ1人の選び方 ${n} 通り、勝つ手の選び方 3 通り：$${n}\\times 3=${cnt}$ 通り`,
+                `勝負がつくのは出た手が2種類のとき：2種類の手の選び方 3 通り、全員がそのどちらかを出して全員が同じではない出し方 $2^{${n}}-2=${2 ** n - 2}$ 通り。あいこは $${T}-3\\times ${2 ** n - 2}=${cnt}$ 通り`,
+                `勝つ2人の選び方 $${C_(n, 2)}=${nCr(n, 2)}$ 通り、勝つ手の選び方 3 通り：$${nCr(n, 2)}\\times 3=${cnt}$ 通り`,
+              ][kind],
+              `$${fr(cnt, T)}$`,
+            ],
+          };
+        }),
       ],
       3: [
         t("HA-kakuritsu-3a", (r) => {
@@ -390,8 +626,41 @@ export const UNITS = [
             ans: fa(v),
             hint: `${ev}の目が出る回数を $k$ として、${n} 回後の位置を $k$ で表す。`,
             steps: [
-              `${ev}が $k$ 回出ると位置は $${a === 1 ? "" : a}k-${b}(${n}-k)$。これが ${X} になるのは $k=${s}$`,
+              `${ev}が $k$ 回出ると位置は $${a === 1 ? "" : a}k-${b === 1 ? "" : b}(${n}-k)$。これが ${X} になるのは $k=${s}$`,
               `$${C_(n, s)}\\left(${ft(p)}\\right)^{${s}}\\left(${ft(q)}\\right)^{${n - s}}=${ft(v)}$`,
+            ],
+          };
+        }),
+        t("HA-kakuritsu-3c", (r) => {
+          const n = r(3, 4), kind = n === 3 ? r(0, 2) : r(0, 1), T = 6 ** n;
+          const vs = n === 3 ? "a,\\ b,\\ c" : "a,\\ b,\\ c,\\ d";
+          const inc = n === 3 ? "a<b<c" : "a<b<c<d", dec = n === 3 ? "a>b>c" : "a>b>c>d";
+          const cnt = [nCr(6, n), 2 * nCr(6, n), 55][kind];
+          const what = [`$${inc}$ となる`, `$${inc}$ または $${dec}$ となる`, "$a<b$ かつ $b>c$ となる"][kind];
+          return {
+            q: `1個のさいころを ${n} 回投げ、出た目を順に $${vs}$ とする。${what}確率は？`,
+            ans: fracAns(cnt, T),
+            hint: kind === 2 ? "真ん中の $b$ の値で場合分けする。" : "異なる目の組を先に選べば、小さい順（大きい順）に並べる方法は1通りに決まる。",
+            steps: kind === 2
+              ? ["$b=k$ のとき、$a,\\ c$ はどちらも $k$ より小さい $k-1$ 通りずつで $(k-1)^{2}$ 通り", "$b=1,\\ 2,\\ \\ldots,\\ 6$ について足して $0+1+4+9+16+25=55$ 通り", `$${fr(55, 216)}$`]
+              : [`異なる ${n} 個の目の選び方 $${C_(6, n)}=${nCr(6, n)}$ 通りに対して、${kind === 0 ? "小さい順に並べる並べ方は1通り" : "増加する並べ方・減少する並べ方はそれぞれ1通り"}`, `$\\frac{${kind === 0 ? "" : "2\\times "}${nCr(6, n)}}{${T}}=${fracTex(cnt, T)}$`],
+          };
+        }),
+        t("HA-kakuritsu-3d", (r) => {
+          const s = r(5, 16);
+          const combos = [];
+          for (let a = 1; a <= 6; a++) for (let b = a; b <= 6; b++) { const c = s - a - b; if (c >= b && c <= 6) combos.push([a, b, c]); }
+          const ks = combos.map(([a, b, c]) => (a === c ? 1 : a === b || b === c ? 3 : 6));
+          const cnt = ks.reduce((x, y) => x + y, 0);
+          const terms = [6, 3, 1].map((k) => [k, ks.filter((x) => x === k).length]).filter(([, c]) => c).map(([k, c]) => `${k}\\times ${c}`).join("+");
+          return {
+            q: `3個のさいころを同時に投げるとき、出た目の和が ${s} になる確率は？`,
+            ans: fracAns(cnt, 216),
+            hint: "目の組を大小の区別なしで書き出し、それぞれが何通りの出方にあたるか（並べ方）を数える。",
+            steps: [
+              `和が ${s} になる目の組（大小の区別なし）は ${combos.map((c) => `(${c.join(", ")})`).join(", ")}`,
+              `3つとも異なる組は $3!=6$ 通り、2つだけ同じ組は 3 通り、3つとも同じ組は 1 通りの出方にあたるので $${terms}=${cnt}$ 通り`,
+              `$${fr(cnt, 216)}$`,
             ],
           };
         }),
@@ -443,6 +712,39 @@ export const UNITS = [
             ],
           };
         }),
+        t("HA-kakuritsu-4d", (r) => {
+          const n = r(5, 10);
+          const a = [1, 2];
+          for (let k = 2; k <= n; k++) a.push(a[k - 1] + a[k - 2]);
+          return {
+            q: `1枚の硬貨を ${n} 回投げるとき、表が2回以上続けて出ることが一度もない確率は？`,
+            ans: fracAns(a[n], 2 ** n),
+            hint: "最後の回が裏か表かで場合分けして、表が続かない出方の数の漸化式を作る。",
+            steps: [
+              `$k$ 回投げて表が続かない出方を $a_{k}$ 通りとすると $a_{1}=2,\\ a_{2}=3$`,
+              `最後が裏ならその前の $k-1$ 回は表が続かない出方で $a_{k-1}$ 通り、最後が表ならその前は裏で、さらに前の $k-2$ 回が $a_{k-2}$ 通り。よって $a_{k}=a_{k-1}+a_{k-2}$`,
+              Array.from({ length: n - 2 }, (_, i) => `$a_{${i + 3}}=${a[i + 3]}$`).join("、"),
+              `$\\frac{${a[n]}}{2^{${n}}}=${fracTex(a[n], 2 ** n)}$`,
+            ],
+          };
+        }),
+        t("HA-kakuritsu-4e", (r) => {
+          const n = r(3, 5), k = r(2, 3);
+          const sur = k === 2 ? 2 ** n - 2 : 3 ** n - 3 * 2 ** n + 3;
+          const cnt = nCr(6, k) * sur, T = 6 ** n;
+          return {
+            q: `${n} 個のさいころを同時に投げるとき、出た目がちょうど ${k} 種類である確率は？`,
+            ans: fracAns(cnt, T),
+            hint: "先に「出る目の種類」を選び、その目だけを使ってどの目も少なくとも1回出る出方を数える（使われない目がある場合を除く）。",
+            steps: [
+              `出る ${k} 種類の目の選び方は $${C_(6, k)}=${nCr(6, k)}$ 通り`,
+              k === 2
+                ? `その2種類の目だけが出て、両方とも出る出方：$2^{${n}}-2=${sur}$ 通り（全部同じ目になる2通りを除く）`
+                : `その3種類の目だけが出て、3種類とも出る出方：$3^{${n}}-3\\times(2^{${n}}-2)-3=${sur}$ 通り（ちょうど2種類・1種類になる場合を除く）`,
+              `$\\frac{${nCr(6, k)}\\times ${sur}}{6^{${n}}}=${fr(cnt, T)}$`,
+            ],
+          };
+        }),
       ],
     },
   },
@@ -481,6 +783,7 @@ export const UNITS = [
           const a = r(1, 3), b = r(2, 8);
           if (a + b >= N) return { skip: true };
           const x = pick(r, [500, 1000, 2000, 3000, 5000]), y = pick(r, [100, 200, 300, 500]);
+          if (x === y) return { skip: true }; // 2種類の当たりが同じ金額にならないように
           const E = [x * a + y * b, N];
           return {
             q: `${N} 本のくじに、${x} 円の当たりが ${a} 本、${y} 円の当たりが ${b} 本入っていて、残りは外れ（0 円）である。このくじを1本引くときの賞金の期待値は？`,
@@ -488,6 +791,42 @@ export const UNITS = [
             unit: "円",
             hint: "（賞金）×（その確率）をすべて足す。",
             steps: [`$${x}\\times\\frac{${a}}{${N}}+${y}\\times\\frac{${b}}{${N}}+0$`, `$=\\frac{${x * a + y * b}}{${N}}=${fracTex(...E)}$ 円`],
+          };
+        }),
+        t("HA-joken-1c", (r) => {
+          const s = r(7, 10);
+          const conds = [["大きいさいころの目が偶数である", ([a]) => a % 2 === 0], ["少なくとも一方の目が 6 である", ([a, b]) => a === 6 || b === 6], ["目の和が偶数である", ([a, b]) => (a + b) % 2 === 0]];
+          const evs = [[`目の和が ${s} 以上である`, ([a, b]) => a + b >= s], ["2つの目が等しい", ([a, b]) => a === b], ["小さいさいころの目が 3 の倍数である", ([, b]) => b % 3 === 0]];
+          const [cn, cf] = pick(r, conds), [en, ef] = pick(r, evs);
+          const A = dice(2).filter(cf), AB = A.filter(ef);
+          if (AB.length === 0 || AB.length === A.length) return { skip: true };
+          return {
+            q: `大小2個のさいころを投げる。${cn}とき、${en}確率は？`,
+            ans: fracAns(AB.length, A.length),
+            hint: "条件となる出方だけを全体と考えて、その中で数える。$P_{A}(B)=\\frac{n(A\\cap B)}{n(A)}$",
+            steps: [`${cn}出方は ${A.length} 通り`, `そのうち${en}ものは ${AB.length} 通り`, `$${fr(AB.length, A.length)}$`],
+          };
+        }),
+        t("HA-joken-1d", (r) => {
+          if (r(0, 1)) {
+            const x = r(5, 12), y = r(2, 6), z = r(0, 3);
+            if (!(x > y && y > z)) return { skip: true };
+            return {
+              q: `1個のさいころを投げて、1 の目が出たら ${x} 点、2 か 3 の目が出たら ${y} 点、4 以上の目が出たら ${z} 点をもらえる。もらえる得点の期待値は？`,
+              ans: fracAns(x + 2 * y + 3 * z, 6),
+              unit: "点",
+              hint: "（得点）×（その得点をもらえる確率）をすべて足す。",
+              steps: ["それぞれの確率は $\\frac{1}{6},\\ \\frac{2}{6},\\ \\frac{3}{6}$", `$${x}\\times\\frac{1}{6}+${y}\\times\\frac{2}{6}+${z}\\times\\frac{3}{6}=${fr(x + 2 * y + 3 * z, 6)}$ 点`],
+            };
+          }
+          const x = pick(r, [800, 1000, 1200, 1600, 2000]), y = pick(r, [200, 400, 600, 800]);
+          if (y >= x) return { skip: true };
+          return {
+            q: `硬貨を3枚同時に投げて、3枚とも表なら ${x} 円、ちょうど2枚が表なら ${y} 円をもらい、それ以外は何ももらえない。もらえる金額の期待値は？`,
+            ans: fracAns(x + 3 * y, 8),
+            unit: "円",
+            hint: "（金額）×（その金額をもらえる確率）をすべて足す。表の枚数の確率は 8 通りの出方で数える。",
+            steps: [`3枚とも表：$\\frac{1}{8}$、ちょうど2枚が表：$\\frac{${C_(3, 2)}}{8}=\\frac{3}{8}$`, `$${x}\\times\\frac{1}{8}+${y}\\times\\frac{3}{8}+0=${fr(x + 3 * y, 8)}$ 円`],
           };
         }),
       ],
@@ -518,6 +857,38 @@ export const UNITS = [
             ],
           };
         }),
+        t("HA-joken-2c", (r) => {
+          const a1 = r(1, 5), b1 = r(1, 5), a2 = r(1, 5), b2 = r(1, 5);
+          const n1 = a1 + b1, n2 = a2 + b2;
+          const v = fadd(fmul([a1, n1], [a2 + 1, n2 + 1]), fmul([b1, n1], [a2, n2 + 1]));
+          return {
+            q: `袋 A には赤玉 ${a1} 個と白玉 ${b1} 個、袋 B には赤玉 ${a2} 個と白玉 ${b2} 個が入っている。袋 A から玉を1個取り出して袋 B に入れ、よくかき混ぜてから袋 B から玉を1個取り出す。袋 B から取り出した玉が赤玉である確率は？`,
+            ans: fa(v),
+            hint: "袋 A から移した玉が赤か白かで場合分けし、乗法定理で掛けてから足す。",
+            steps: [
+              `赤を移す（確率 $${fr(a1, n1)}$）と B は赤 ${a2 + 1} 個・白 ${b2} 個になり、赤を取り出す確率は $${fr(a2 + 1, n2 + 1)}$`,
+              `白を移す（確率 $${fr(b1, n1)}$）と B は赤 ${a2} 個・白 ${b2 + 1} 個になり、赤を取り出す確率は $${fr(a2, n2 + 1)}$`,
+              `$${ft([a1, n1])}\\times ${ft([a2 + 1, n2 + 1])}+${ft([b1, n1])}\\times ${ft([a2, n2 + 1])}=${ft(v)}$`,
+            ],
+          };
+        }),
+        t("HA-joken-2d", (r) => {
+          const a = r(1, 2), b = r(1, 3), c = r(3, 6), x = pick(r, [1000, 500]), y = pick(r, [100, 200]);
+          const N = a + b + c, T = nCr(N, 2);
+          const rows = [[2 * x, nCr(a, 2)], [x + y, a * b], [x, a * c], [2 * y, nCr(b, 2)], [y, b * c], [0, nCr(c, 2)]].filter(([, k]) => k > 0);
+          const S = rows.reduce((s, [v, k]) => s + v * k, 0);
+          return {
+            q: `${x} 円の当たりが ${a} 本、${y} 円の当たりが ${b} 本、外れが ${c} 本の、合わせて ${N} 本のくじがある。このくじを同時に2本引くとき、もらえる賞金の合計の期待値は？`,
+            ans: fracAns(S, T),
+            unit: "円",
+            hint: "引いた2本の組合せごとに賞金の合計がいくらになるかで場合を分け、それぞれの確率を求める。",
+            steps: [
+              `2本の引き方は全部で $${C_(N, 2)}=${T}$ 通り`,
+              `賞金の合計は ${rows.map(([v, k]) => `${v} 円が ${k} 通り`).join("、")}`,
+              `$\\frac{${rows.filter(([v]) => v > 0).map(([v, k]) => `${v}\\times ${k}`).join("+")}}{${T}}=${fr(S, T)}$ 円`,
+            ],
+          };
+        }),
       ],
       3: [
         t("HA-joken-3a", (r) => {
@@ -542,7 +913,7 @@ export const UNITS = [
         t("HA-joken-3b", (r) => {
           const kind = r(0, 2);
           const f = [(a, b) => Math.max(a, b), (a, b) => Math.min(a, b), (a, b) => Math.abs(a - b)][kind];
-          const name = ["大きい方の目（同じなら その目）", "小さい方の目（同じなら その目）", "目の差の絶対値"][kind];
+          const name = ["大きい方の目（同じならその目）", "小さい方の目（同じならその目）", "目の差の絶対値"][kind];
           const cnt = {};
           let sum = 0;
           for (const [a, b] of dice(2)) { const v = f(a, b); cnt[v] = (cnt[v] || 0) + 1; sum += v; }
@@ -553,6 +924,44 @@ export const UNITS = [
             steps: [
               Object.entries(cnt).map(([v, c]) => `$X=${v}$：${c} 通り`).join("、"),
               `$E=\\frac{${Object.entries(cnt).map(([v, c]) => `${v}\\cdot ${c}`).join("+")}}{36}=${fr(sum, 36)}$`,
+            ],
+          };
+        }),
+        t("HA-joken-3c", (r) => {
+          const a = r(2, 6), w = r(2, 6), N = a + w, kind = r(0, 2), D = N * (N - 1);
+          const second = kind === 2 ? "白" : "赤", first = kind === 1 ? "白" : "赤";
+          const s2 = kind === 2 ? w : a;
+          const [f1, f2] = [[a, a - 1], [w, a], [a, w]][kind];
+          const num = f1 * f2, den = s2 * (N - 1);
+          return {
+            q: `袋の中に赤玉 ${a} 個と白玉 ${w} 個が入っている。この袋から玉を1個ずつ2回取り出す（取り出した玉は戻さない）。2回目に取り出した玉が${second}玉であったとき、1回目に取り出した玉が${first}玉である確率は？`,
+            ans: fracAns(num, den),
+            hint: "2回目の結果がわかったときの、1回目についての条件付き確率。$P_{B}(A)=\\frac{P(A\\cap B)}{P(B)}$",
+            steps: [
+              `2回目が${second}玉である確率：$\\frac{${a}}{${N}}\\cdot\\frac{${kind === 2 ? w : a - 1}}{${N - 1}}+\\frac{${w}}{${N}}\\cdot\\frac{${kind === 2 ? w - 1 : a}}{${N - 1}}=\\frac{${den}}{${D}}$`,
+              `1回目が${first}玉で2回目が${second}玉である確率：$\\frac{${f1}}{${N}}\\cdot\\frac{${f2}}{${N - 1}}=\\frac{${num}}{${D}}$`,
+              `求める確率は $\\frac{${num}}{${D}}\\div\\frac{${den}}{${D}}=${fracTex(num, den)}$`,
+            ],
+          };
+        }),
+        t("HA-joken-3d", (r) => {
+          const n = r(3, 5);
+          const [ev, p] = pick(r, [["1 の目", [1, 6]], ["3 の倍数の目", [1, 3]], ["偶数の目", [1, 2]]]);
+          const qq = [p[1] - p[0], p[1]];
+          const ps = [];
+          for (let k = 1; k < n; k++) ps.push(fmul(fpow(qq, k - 1), p));
+          ps.push(fpow(qq, n - 1));
+          let E = [0, 1];
+          ps.forEach((x, i) => { E = fadd(E, fmul([i + 1, 1], x)); });
+          return {
+            q: `1個のさいころを、${ev}が出るか、${n} 回投げ終わるまで投げ続ける。投げる回数の期待値は？`,
+            ans: fa(E),
+            unit: "回",
+            hint: `$k$ 回目で終わる確率を求める。${n} 回目まで進んだら、${n} 回目の目に関係なく終わることに注意。`,
+            steps: [
+              `$k$ 回目（$k<${n}$）で終わる確率は $\\left(${ft(qq)}\\right)^{k-1}\\cdot ${ft(p)}$、${n} 回目まで投げる確率は $\\left(${ft(qq)}\\right)^{${n - 1}}$`,
+              `$${n === 3 ? "1,\\ 2,\\ 3" : `1,\\ 2,\\ \\ldots,\\ ${n}`}$ 回で終わる確率は順に ${ps.map((x) => tex(ft(x))).join(", ")}`,
+              `$E=${ps.map((x, i) => `${i + 1}\\times ${ft(x)}`).join("+")}=${ft(E)}$`,
             ],
           };
         }),
@@ -592,6 +1001,47 @@ export const UNITS = [
               `$k$ 回目に初めて赤：白が $k-1$ 回続いたあと赤。$k=1,\\ \\ldots,\\ ${w + 1}$`,
               `確率は順に ${ps.map((x) => tex(ft(x))).join(", ")}`,
               `$E=\\sum k\\,P(k)=${ft(E)}$`,
+            ],
+          };
+        }),
+        t("HA-joken-4c", (r) => {
+          const [m, shape] = pick(r, [[4, "正四面体"], [6, ""], [8, "正八面体"], [12, "正十二面体"], [20, "正二十面体"]]);
+          const T = r(2, 3);
+          const Es = [[m + 1, 2]];
+          const lines = [];
+          for (let t2 = 2; t2 <= T; t2++) {
+            const prev = Es[t2 - 2];
+            const th = Math.floor(prev[0] / prev[1]) + 1, cont = th - 1;
+            let sumStop = 0;
+            for (let x = th; x <= m; x++) sumStop += x;
+            const E = fmul(fadd([sumStop, 1], fmul([cont, 1], prev)), [1, m]);
+            Es.push(E);
+            lines.push(`${t2} 回まで投げられるとき：1回目の目が $${ft(prev)}$ より大きい ${th === m ? m : `${th}〜${m}`} ならやめ、${cont === 1 ? "1" : `1〜${cont}`} なら投げ直す（その後の期待値は $${ft(prev)}$）。期待値は $\\frac{${sumStop}+${cont}\\times ${ft(prev)}}{${m}}=${ft(E)}$`);
+          }
+          const ET = Es[T - 1];
+          return {
+            q: `${shape ? `1 から ${m} までの目が同様に確からしく出る${shape}のさいころ` : "1個のさいころ"}を投げて、出た目を得点としてやめるか、その目を捨てて投げ直すかを選べる。ただし投げられるのは最大 ${T} 回で、${T} 回目に出た目はそのまま得点になる。得点の期待値が最大になるように行動するとき、その期待値は？`,
+            ans: fa(ET),
+            unit: "点",
+            hint: "最後の回から逆に考える。「投げ直したときの期待値」と今の目を比べ、大きい方を選ぶ。",
+            steps: [`1回だけなら期待値は $\\frac{1+2+\\cdots+${m}}{${m}}=${ft(Es[0])}$`, ...lines, `よって期待値は $${ft(ET)}$`],
+          };
+        }),
+        t("HA-joken-4d", (r) => {
+          const n = r(3, 4), b = r(3, 5);
+          const sur = (k) => { let s = 0; for (let j = 0; j <= k; j++) s += (-1) ** j * nCr(k, j) * (k - j) ** b; return s; };
+          const rows = [];
+          for (let e = 0; e < n; e++) { const c = nCr(n, e) * sur(n - e); if (c > 0) rows.push([e, c, sur(n - e)]); }
+          const T = n ** b, S = rows.reduce((s, [e, c]) => s + e * c, 0);
+          return {
+            q: `区別のつく ${b} 個の玉を、区別のつく ${n} 個の箱に入れる。どの玉もどの箱にも同様に確からしく入るとき、空の箱の個数の期待値は？`,
+            ans: fracAns(S, T),
+            unit: "個",
+            hint: "空の箱の個数ごとに場合を分ける。「残りの箱すべてに少なくとも1個入る」入れ方は、空き箱ができる場合を除いて数える。",
+            steps: [
+              `入れ方は全部で $${n}^{${b}}=${T}$ 通り。$k$ 個の箱すべてに少なくとも1個入る入れ方は、$k=1$ で 1、$k=2$ で $2^{${b}}-2$、$k=3$ で $3^{${b}}-3(2^{${b}}-2)-3$${n === 4 ? `、$k=4$ で $4^{${b}}-4\\times ${sur(3)}-6\\times ${sur(2)}-4$` : ""} 通り`,
+              `空の箱が ${rows.map(([e, c, s]) => `${e} 個：$${C_(n, e)}\\times ${s}=${c}$ 通り`).join("、")}`,
+              `$E=\\frac{${rows.filter(([e]) => e > 0).map(([e, c]) => `${e}\\times ${c}`).join("+")}}{${T}}=${fr(S, T)}$ 個`,
             ],
           };
         }),
@@ -659,6 +1109,44 @@ export const UNITS = [
             steps: [`重心は中線 AM を $2:1$ に分けるので、G の高さは A の高さの $\\frac{1}{3}$`, `$${S}\\times\\frac{1}{3}=${S / 3}$`],
           };
         }),
+        t("HA-zukei-1d", (r) => {
+          const kind = r(0, 2), x = r(4, 17) * 5;
+          if (kind === 0) {
+            return {
+              q: `円 O に内接する $\\triangle ABC$ で $\\angle BAC=${x}^{\\circ}$ のとき、$\\angle BOC$ の大きさは？`,
+              ans: 2 * x,
+              unit: "度",
+              hint: "同じ弧に対する中心角は、円周角の2倍。",
+              steps: ["$\\angle BOC$ は弧 BC に対する中心角、$\\angle BAC$ は同じ弧に対する円周角", `$\\angle BOC=2\\times ${x}^{\\circ}=${2 * x}^{\\circ}$`],
+            };
+          }
+          if (kind === 1) {
+            const y = r(8, 28) * 5;
+            if (r(0, 1)) {
+              return {
+                q: `円に内接する四角形 ABCD で $\\angle ABC=${y}^{\\circ}$ のとき、$\\angle ADC$ の大きさは？`,
+                ans: 180 - y,
+                unit: "度",
+                hint: "円に内接する四角形の向かい合う角の和は $180^{\\circ}$。",
+                steps: ["$\\angle ABC$ と $\\angle ADC$ は向かい合う角なので、和は $180^{\\circ}$", `$\\angle ADC=180^{\\circ}-${y}^{\\circ}=${180 - y}^{\\circ}$`],
+              };
+            }
+            return {
+              q: `円に内接する四角形 ABCD で $\\angle BAD=${y}^{\\circ}$ とする。辺 BC の C を越える延長上に点 E をとるとき、$\\angle DCE$ の大きさは？`,
+              ans: y,
+              unit: "度",
+              hint: "円に内接する四角形の外角は、それととなり合う内角の対角に等しい。",
+              steps: [`$\\angle BCD=180^{\\circ}-\\angle BAD=${180 - y}^{\\circ}$（向かい合う角の和は $180^{\\circ}$）`, `$\\angle DCE=180^{\\circ}-\\angle BCD=${y}^{\\circ}$`],
+            };
+          }
+          return {
+            q: `円周上に3点 A, B, C がある。点 A における円の接線上に、直線 AB に関して C と反対側に点 T をとる。$\\angle BAT=${x}^{\\circ}$ のとき、$\\angle ACB$ の大きさは？`,
+            ans: x,
+            unit: "度",
+            hint: "接線と弦のつくる角は、その角の内部にある弧に対する円周角に等しい（接弦定理）。",
+            steps: ["接弦定理より、接線 AT と弦 AB のつくる角 $\\angle BAT$ は、弧 AB に対する円周角 $\\angle ACB$ に等しい", `$\\angle ACB=${x}^{\\circ}$`],
+          };
+        }),
       ],
       2: [
         t("HA-zukei-2a", (r) => {
@@ -693,6 +1181,22 @@ export const UNITS = [
             steps: [`$AR:RB=${m}:${n}$、$CQ:QA=${tt}:${s}$`, `$\\frac{${m}}{${n}}\\cdot\\frac{BP}{PC}\\cdot\\frac{${tt}}{${s}}=1$`, `$\\frac{BP}{PC}=\\frac{${n}\\cdot ${s}}{${m}\\cdot ${tt}}=${fracTex(n * s, m * tt)}$`],
           };
         }),
+        t("HA-zukei-2d", (r) => {
+          const a = r(4, 12), b = r(4, 12), c = r(4, 12);
+          if (a >= b + c || b >= a + c || c >= a + b) return { skip: true };
+          const which = r(0, 2);
+          const [nm, vr, sub2, num] = [["BP", "y", b, a + c - b], ["CQ", "z", c, a + b - c], ["AR", "x", a, b + c - a]][which];
+          return {
+            q: `$\\triangle ABC$ の内接円が辺 BC, CA, AB とそれぞれ点 P, Q, R で接している。$AB=${c},\\ BC=${a},\\ CA=${b}$ のとき、$${nm}$ の長さは？`,
+            ans: fracAns(num, 2),
+            hint: "円の外部の1点から引いた2本の接線の長さは等しい。3つの長さを文字でおいて連立する。",
+            steps: [
+              "$AR=AQ=x,\\ BP=BR=y,\\ CP=CQ=z$ とおく（接線の長さは等しい）",
+              `$x+y=${c},\\ y+z=${a},\\ z+x=${b}$ を足して $2(x+y+z)=${a + b + c}$ より $x+y+z=${fracTex(a + b + c, 2)}$`,
+              `$${nm}=${vr}=${fracTex(a + b + c, 2)}-${sub2}=${fracTex(num, 2)}$`,
+            ],
+          };
+        }),
       ],
       3: [
         t("HA-zukei-3a", (r) => {
@@ -720,6 +1224,40 @@ export const UNITS = [
               `$BD=${a}\\times\\frac{${c}}{${c}+${b}}=${fracTex(a * c, b + c)}$`,
               `$\\triangle ABD$ で $AI:ID=BA:BD=${c}:${fracTex(a * c, b + c)}$`,
               `$\\frac{AI}{ID}=\\frac{${b}+${c}}{${a}}=${fracTex(b + c, a)}$`,
+            ],
+          };
+        }),
+        t("HA-zukei-3c", (r) => {
+          const a = r(3, 10), b = r(3, 10), c = r(3, 10);
+          if (b === c || a >= b + c || b >= a + c || c >= a + b) return { skip: true };
+          const askB = r(0, 1) === 1, d = Math.abs(c - b);
+          const num = askB ? a * c : a * b;
+          return {
+            q: `$\\triangle ABC$ で $AB=${c},\\ BC=${a},\\ CA=${b}$ とする。$\\angle A$ の外角の二等分線と直線 BC の交点を E とするとき、$${askB ? "BE" : "CE"}$ の長さは？`,
+            ans: fracAns(num, d),
+            hint: "外角の二等分線は、対辺 BC を $AB:AC$ に外分する。E が B, C のどちらの側にあるかに注意。",
+            steps: [
+              `外角の二等分線の性質より $BE:EC=AB:AC=${c}:${b}$（E は辺 BC を外分する）`,
+              `$AB${c > b ? ">" : "<"}AC$ なので E は辺 BC の ${c > b ? "C" : "B"} の側の延長上にあり、${c > b ? "$BE-CE=BC$" : "$CE-BE=BC$"}。$BE=${c}k,\\ CE=${b}k$ とおくと $${d === 1 ? "" : d}k=${a}$`,
+              `$${askB ? "BE" : "CE"}=${askB ? c : b}\\times ${fracTex(a, d)}=${fracTex(num, d)}$`,
+            ],
+          };
+        }),
+        t("HA-zukei-3d", (r) => {
+          const r1 = r(2, 8), r2 = r(1, r1 - 1), ext = r(0, 1) === 1;
+          const d = r(r1 + r2 + 1, r1 + r2 + 8);
+          const h = ext ? r1 - r2 : r1 + r2, h2 = ext ? r1 + r2 : r1 - r2;
+          const L2 = d * d - h * h;
+          const ok = tex(sqrtTex(1, L2));
+          return {
+            q: `半径 ${r1} の円 O と半径 ${r2} の円 O' があり、中心間の距離は $OO'=${d}$ である。この2円の共通${ext ? "外" : "内"}接線の1つが円 O, O' と接する点をそれぞれ A, B とするとき、線分 AB の長さは？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(sqrtTex(1, d * d - h2 * h2)), tex(sqrtTex(1, d * d + h * h)), tex(String(L2))], (i) => tex(sqrtTex(1, L2 + i + 1))),
+            hint: `O' から直線 OA に垂線を引いて直角三角形をつくる（${ext ? "半径の差" : "半径の和"}が1辺になる）。`,
+            steps: [
+              `O' から直線 OA に垂線 O'H を引くと、四角形 ABO'H は長方形で $O'H=AB$、$OH=${ext ? `${r1}-${r2}` : `${r1}+${r2}`}=${h}$`,
+              `$\\triangle OO'H$ で三平方の定理より $AB^{2}=${d}^{2}-${h}^{2}=${L2}$`,
+              `$AB=${sqrtTex(1, L2)}$`,
             ],
           };
         }),
@@ -757,6 +1295,45 @@ export const UNITS = [
             ],
           };
         }),
+        t("HA-zukei-4c", (r) => {
+          const m = r(1, 5), n = r(1, 5);
+          if (m === n || gcd(m, n) !== 1) return { skip: true };
+          const S = m * m + m * n + n * n;
+          return {
+            q: `$\\triangle ABC$ の辺 BC, CA, AB を、それぞれ $${m}:${n}$ に内分する点を D, E, F とする（$BD:DC=CE:EA=AF:FB=${m}:${n}$）。線分 AD, BE, CF で囲まれる三角形の面積は、$\\triangle ABC$ の面積の何倍？`,
+            ans: fracAns((m - n) ** 2, S),
+            hint: "AD と BE の交点を R として、メネラウスの定理で $AR:RD$ を求め、$\\triangle ABR$ の面積を出す。残りの2つの三角形も同じ形（対称性）。",
+            steps: [
+              `AD と BE の交点を R とする。$\\triangle ADC$ と直線 BE でメネラウスの定理：$\\frac{AR}{RD}\\cdot\\frac{DB}{BC}\\cdot\\frac{CE}{EA}=1$ より $\\frac{AR}{RD}=\\frac{${m + n}}{${m}}\\cdot\\frac{${n}}{${m}}=${fracTex(n * (m + n), m * m)}$`,
+              `$\\triangle ABR=\\frac{BD}{BC}\\cdot\\frac{AR}{AD}\\triangle ABC$ で、$\\frac{${m}}{${m + n}}\\cdot\\frac{${n * (m + n)}}{${S}}=${fracTex(m * n, S)}$`,
+              `BE と CF の交点を P、CF と AD の交点を Q とすると、同じように $\\triangle BCP,\\ \\triangle CAQ$ も $\\triangle ABC$ の $${fracTex(m * n, S)}$ 倍`,
+              `$1-3\\times ${fracTex(m * n, S)}=${fracTex((m - n) ** 2, S)}$ 倍`,
+            ],
+          };
+        }),
+        t("HA-zukei-4d", (r) => {
+          const p = r(2, 9), q = r(2, 9), s = r(2, 9), u = r(2, 9);
+          if (2 * Math.max(p, q, s, u) >= p + q + s + u) return { skip: true };
+          const askA = r(0, 1) === 1;
+          const [nu, de] = askA ? [p * u, s * q] : [p * q, s * u];
+          if (nu === de) return { skip: true };
+          return {
+            q: `円に内接する四角形 ABCD で $AB=${p},\\ BC=${q},\\ CD=${s},\\ DA=${u}$ とする。対角線 AC と BD の交点を E とするとき、$${askA ? "\\frac{AE}{EC}" : "\\frac{BE}{ED}"}$ の値は？`,
+            ans: fracAns(nu, de),
+            hint: "対角線で分けられた4つの三角形のうち、円周角の定理で相似になる組を2つ見つけ、比をつなぐ。",
+            steps: askA
+              ? [
+                `円周角の定理より $\\triangle ABE\\sim\\triangle DCE$ なので $\\frac{AE}{DE}=\\frac{AB}{DC}=\\frac{${p}}{${s}}$`,
+                `同じように $\\triangle ADE\\sim\\triangle BCE$ なので $\\frac{DE}{CE}=\\frac{AD}{BC}=\\frac{${u}}{${q}}$`,
+                `$\\frac{AE}{EC}=\\frac{AE}{DE}\\cdot\\frac{DE}{CE}=\\frac{${p}\\cdot ${u}}{${s}\\cdot ${q}}=${fracTex(nu, de)}$`,
+              ]
+              : [
+                `円周角の定理より $\\triangle ABE\\sim\\triangle DCE$ なので $\\frac{BE}{CE}=\\frac{AB}{DC}=\\frac{${p}}{${s}}$`,
+                `同じように $\\triangle BCE\\sim\\triangle ADE$ なので $\\frac{CE}{DE}=\\frac{BC}{AD}=\\frac{${q}}{${u}}$`,
+                `$\\frac{BE}{ED}=\\frac{BE}{CE}\\cdot\\frac{CE}{DE}=\\frac{${p}\\cdot ${q}}{${s}\\cdot ${u}}=${fracTex(nu, de)}$`,
+              ],
+          };
+        }),
       ],
     },
   },
@@ -767,7 +1344,7 @@ export const UNITS = [
     prereqs: ["J1-u6"],
     points: [
       "$N=p^{a}q^{b}r^{c}$（素因数分解）のとき、約数の個数は $(a+1)(b+1)(c+1)$、約数の和は $(1+p+\\cdots+p^{a})(1+q+\\cdots+q^{b})(1+r+\\cdots+r^{c})$",
-      "ユークリッドの互除法：$a=bq+r$ のとき $\\gcd(a,\\ b)=\\gcd(b,\\ r)$。余りが0になる直前の割る数が最大公約数。",
+      "ユークリッドの互除法：$a=bq+r$ のとき $\\gcd(a,\\ b)=\\gcd(b,\\ r)$。余りが0になったときの割る数が最大公約数。",
       "$ax+by=c$（$a,\\ b$ は互いに素）は1組の解 $(x_{0},\\ y_{0})$ を見つけ、$x=x_{0}+bk,\\ y=y_{0}-ak$（$k$ は整数）",
       "$n$ 進法：$abc_{(n)}=a\\times n^{2}+b\\times n+c$。10進法から直すときは $n$ で割った余りを下から並べる。",
     ],
@@ -798,7 +1375,7 @@ export const UNITS = [
             q: `${g * Math.max(u, w)} と ${g * Math.min(u, w)} の最大公約数は？`,
             ans: g,
             hint: "ユークリッドの互除法：大きい方を小さい方で割り、余りで割ることをくり返す。",
-            steps: [...st.slice(0, 3), `最大公約数は ${g}`],
+            steps: [...(st.length <= 3 ? st : [st[0], st[1], st.slice(2).join("、")]), `最大公約数は ${g}`],
           };
         }),
         t("HA-seisu-1c", (r) => {
@@ -812,6 +1389,27 @@ export const UNITS = [
             ans: v,
             hint: "右から順に $n^{0},\\ n^{1},\\ n^{2},\\ \\ldots$ の位。各位の数字 × 位の大きさ を足す。",
             steps: [`$${terms}$`, `$=${v}$`],
+          };
+        }),
+        t("HA-seisu-1d", (r) => {
+          const k = pick(r, [3, 9, 4, 6]), len = r(4, 5);
+          const ds = [r(1, 9), ...Array.from({ length: len - 1 }, () => r(0, 9))];
+          const pos = k === 4 ? len - 1 : r(1, len - 2);
+          if (k === 6 && ds[len - 1] % 2 === 1) return { skip: true };
+          const str = ds.map((d, i) => (i === pos ? "□" : d)).join("");
+          const okd = [];
+          for (let x = 0; x <= 9; x++) if (Number(ds.map((d, i) => (i === pos ? x : d)).join("")) % k === 0) okd.push(x);
+          if (!okd.length) return { skip: true };
+          const known = ds.reduce((s, d, i) => (i === pos ? s : s + d), 0);
+          return {
+            q: `${len} 桁の整数 ${str} の □ に 0 から 9 までの数字を1つ入れる。この整数が ${k} の倍数になるような □ の数字は何個ある？`,
+            ans: okd.length,
+            unit: "個",
+            hint: `${k} の倍数の判定法を使う：${k === 4 ? "下2桁が 4 の倍数" : k === 6 ? "2 の倍数かつ 3 の倍数" : `各位の数字の和が ${k} の倍数`}。`,
+            steps: [
+              k === 4 ? `下2桁 ${ds[len - 2]}□ が 4 の倍数になればよい` : `${k === 6 ? "一の位が偶数なので 2 の倍数。あとは" : ""}各位の数字の和 $${known}+\\square$ が ${k === 6 ? 3 : k} の倍数になればよい`,
+              `□ に入るのは ${okd.join(", ")} の ${okd.length} 個`,
+            ],
           };
         }),
       ],
@@ -834,6 +1432,7 @@ export const UNITS = [
           const e = [r(1, 4), r(0, 2), r(0, 1)];
           const ps = [2, 3, 5];
           const N = ps.reduce((acc, p, i) => acc * p ** e[i], 1);
+          if (N === 2) return { skip: true }; // 自明な問題
           const used = ps.map((p, i) => [p, e[i]]).filter(([, k]) => k > 0);
           const sums = used.map(([p, k]) => (p ** (k + 1) - 1) / (p - 1));
           const v = sums.reduce((a, b) => a * b, 1);
@@ -843,7 +1442,7 @@ export const UNITS = [
             hint: "素因数分解 $p^{a}q^{b}$ のとき、約数の和は $(1+p+\\cdots+p^{a})(1+q+\\cdots+q^{b})$",
             steps: [
               `$${N}=${used.map(([p, k]) => (k === 1 ? `${p}` : `${p}^{${k}}`)).join("\\times ")}$`,
-              `$${used.map(([p, k]) => `(${Array.from({ length: k + 1 }, (_, i) => (i === 0 ? "1" : i === 1 ? `${p}` : `${p}^{${i}}`)).join("+")})`).join("")}=${sums.join("\\times ")}=${v}$`,
+              `$${used.map(([p, k]) => `(${Array.from({ length: k + 1 }, (_, i) => (i === 0 ? "1" : i === 1 ? `${p}` : `${p}^{${i}}`)).join("+")})`).join("")}=${sums.length > 1 ? `${sums.join("\\times ")}=` : ""}${v}$`,
             ],
           };
         }),
@@ -858,6 +1457,28 @@ export const UNITS = [
             ans: x,
             hint: "互除法を逆にたどって1組の解を見つけるか、$x=1,\\ 2,\\ \\ldots$ と代入して $1-ax$ が $b$ で割り切れるものを探す。",
             steps: [`$x=${x}$ のとき $${a}\\times ${x}+${b}\\times(${y})=1$`, `一般解は $x=${x}+${b}k$、$y=${y}-${a}k$ なので、正で最小の $x$ は ${x}`],
+          };
+        }),
+        t("HA-seisu-2d", (r) => {
+          const m = pick(r, [5, 6, 7, 9, 11]), ra = r(1, m - 1), rb = r(1, m - 1);
+          const [ex, f, st] = pick(r, [
+            ["a+b", (x, y) => x + y, (x, y) => `${x}+${y}`],
+            ["a-b", (x, y) => x - y, (x, y) => `${x}-${y}`],
+            ["ab", (x, y) => x * y, (x, y) => `${x}\\times ${y}`],
+            ["a^{2}+b", (x, y) => x * x + y, (x, y) => `${x}^{2}+${y}`],
+            ["2a+3b", (x, y) => 2 * x + 3 * y, (x, y) => `2\\times ${x}+3\\times ${y}`],
+            ["a^{2}+b^{2}", (x, y) => x * x + y * y, (x, y) => `${x}^{2}+${y}^{2}`],
+          ]);
+          const raw = f(ra, rb), v = ((raw % m) + m) % m;
+          return {
+            q: `整数 $a$ を ${m} で割ると ${ra} 余り、整数 $b$ を ${m} で割ると ${rb} 余る。$${ex}$ を ${m} で割った余りは？`,
+            ans: v,
+            hint: `$a=${m}k+${ra},\\ b=${m}l+${rb}$ のようにおいて代入し、${m} の倍数になる部分を除いて考える。`,
+            steps: [
+              `$a=${m}k+${ra},\\ b=${m}l+${rb}$（$k,\\ l$ は整数）とおく`,
+              `$${ex}$ を計算すると、${m} の倍数になる項を除いて $${st(ra, rb)}=${raw}$ が残る`,
+              raw >= 0 ? `${raw} を ${m} で割った余りは ${v}` : `$${raw}=${m}\\times(${Math.floor(raw / m)})+${v}$ なので、余りは ${v}`,
+            ],
           };
         }),
       ],
@@ -875,7 +1496,7 @@ export const UNITS = [
             hint: "1組の解を見つけて一般解を作り、$x>0,\\ y>0$ となる $k$ の範囲を調べる。",
             steps: [
               `1組の解 $(x,\\ y)=(${sols[0][0]},\\ ${sols[0][1]})$ から、一般解は $x=${sols[0][0]}+${b}k,\\ y=${sols[0][1]}-${a}k$`,
-              `$y>0$ となる $k$ は $k=0,\\ 1,\\ \\ldots,\\ ${sols.length - 1}$`,
+              `$x>0,\\ y>0$ となる $k$ は ${sols.length === 1 ? "$k=0$ のみ" : sols.length <= 3 ? `$k=${sols.map((_, i) => i).join(",\\ ")}$` : `$k=0,\\ 1,\\ \\ldots,\\ ${sols.length - 1}$`}`,
               `${sols.length} 組`,
             ],
           };
@@ -885,6 +1506,7 @@ export const UNITS = [
           if (gcd(a, b) !== 1) return { skip: true };
           const r1 = r(1, a - 1), r2 = r(1, b - 1), big = r(0, 1) === 1;
           const n0 = Array.from({ length: b }, (_, i) => r1 + a * i).find((x) => x % b === r2);
+          if (!big && (n0 === r1 || n0 === r2)) return { skip: true }; // 答えが与えた余りそのものになる自明な組
           const list = Array.from({ length: (n0 - r1) / a + 1 }, (_, i) => r1 + a * i);
           let n = 0;
           if (big) { for (let x = 999; x >= 100; x--) if (x % a === r1 && x % b === r2) { n = x; break; } }
@@ -913,6 +1535,27 @@ export const UNITS = [
             steps: [
               `5 の倍数の個数、25 の倍数の個数、… を足す：$${parts.join("+")}$`,
               `$=${v}$ 個`,
+            ],
+          };
+        }),
+        t("HA-seisu-3d", (r) => {
+          const n = r(20, 2026), last = r(0, 1) === 1;
+          const b = last ? pick(r, [2, 3, 7, 8, 12, 13, 17, 18, 23, 27]) : pick(r, [2, 3, 5]);
+          const m = last ? 10 : pick(r, [7, 9, 11, 13]);
+          if (gcd(b, m) !== 1 && !last) return { skip: true };
+          const seq = [];
+          for (let v = b % m; !seq.includes(v); v = (v * b) % m) seq.push(v);
+          const L = seq.length, k = n % L, ans = seq[(n - 1) % L];
+          return {
+            q: last ? `$${b}^{${n}}$ の一の位の数字は？` : `$${b}^{${n}}$ を ${m} で割った余りは？`,
+            ans,
+            hint: last ? "一の位だけに注目して、累乗の一の位がどのようにくり返すかを調べる。" : `余りの積の余りは、余りどうしの積から求められる。$${b}^{1},\\ ${b}^{2},\\ \\ldots$ を ${m} で割った余りのくり返しを調べる。`,
+            steps: [
+              last
+                ? `一の位だけを考えればよい。$${b}^{1},\\ ${b}^{2},\\ ${b}^{3},\\ \\ldots$ の一の位は ${seq.join(", ")} をくり返す（${L} 個で1周）`
+                : `$${b}^{1},\\ ${b}^{2},\\ ${b}^{3},\\ \\ldots$ を ${m} で割った余りは ${seq.join(", ")} をくり返す（${L} 個で1周）`,
+              `${n} を ${L} で割った余りは ${k}${k === 0 ? "（割り切れるので、1周の最後と同じ）" : `（1周の ${k} 番目と同じ）`}`,
+              `${last ? "一の位の数字" : "余り"}は ${ans}`,
             ],
           };
         }),
@@ -965,6 +1608,73 @@ export const UNITS = [
               `$${m * m}a+${m}b+c=${n * n}c+${n}b+a$`,
               `整理して、数字の範囲から調べると $a=${a},\\ b=${b},\\ c=${c}$`,
               `$N=${a}\\times ${m * m}+${b}\\times ${m}+${c}=${N}$`,
+            ],
+          };
+        }),
+        t("HA-seisu-4d", (r) => {
+          const kind = r(0, 3), askMax = r(0, 1) === 1;
+          const sols = [];
+          let eq, st;
+          if (kind < 3) {
+            const k = kind + 1, K = k === 1 ? "" : k;
+            for (let x = 1; x * x <= 3 * k; x++) for (let y = x; x * y <= 3 * k; y++) {
+              const den = x * y - k, num = k * (x + y);
+              if (den > 0 && num % den === 0 && num / den >= y) sols.push([x, y, num / den]);
+            }
+            eq = `$xyz=${K}${k === 1 ? "x+y+z" : "(x+y+z)"}$`;
+            st = [
+              `$x\\leqq y\\leqq z$ より $xyz=${K}${k === 1 ? "x+y+z" : "(x+y+z)"}\\leqq ${3 * k}z$、よって $xy\\leqq ${3 * k}$。とくに $x^{2}\\leqq ${3 * k}$ から $x\\leqq ${Math.floor(Math.sqrt(3 * k))}$`,
+              `各 $x,\\ y$ について $z=\\frac{${k === 1 ? "x+y" : `${k}(x+y)`}}{xy-${k}}$ が $y$ 以上の自然数になるものを調べる`,
+            ];
+          } else {
+            for (let x = 2; x <= 3; x++) for (let y = x; y <= 2 * x; y++) {
+              const den = (x - 1) * y - x, num = x * y;
+              if (den > 0 && num % den === 0 && num / den >= y) sols.push([x, y, num / den]);
+            }
+            eq = "$\\frac{1}{x}+\\frac{1}{y}+\\frac{1}{z}=1$";
+            st = [
+              "$x\\leqq y\\leqq z$ より $1=\\frac{1}{x}+\\frac{1}{y}+\\frac{1}{z}\\leqq\\frac{3}{x}$、よって $x\\leqq 3$。$x=1$ は成り立たないので $x=2,\\ 3$",
+              "$x=2$ のとき $\\frac{1}{y}+\\frac{1}{z}=\\frac{1}{2}\\leqq\\frac{2}{y}$ より $y\\leqq 4$、$x=3$ のとき $\\frac{1}{y}+\\frac{1}{z}=\\frac{2}{3}\\leqq\\frac{2}{y}$ より $y\\leqq 3$ で調べる",
+            ];
+          }
+          const zmax = Math.max(...sols.map((s) => s[2]));
+          return {
+            q: askMax
+              ? `$x\\leqq y\\leqq z$ を満たす自然数 $x,\\ y,\\ z$ が ${eq} を満たすとき、$z$ の最大値は？`
+              : `$x\\leqq y\\leqq z$ を満たす自然数の組 $(x,\\ y,\\ z)$ のうち、${eq} を満たすものは何組？`,
+            ans: askMax ? zmax : sols.length,
+            ...(askMax ? {} : { unit: "組" }),
+            hint: "$x\\leqq y\\leqq z$ を使って式の大きさを不等式で評価し、いちばん小さい $x$ のとりうる値をしぼる。",
+            steps: [
+              ...st,
+              `$(x,\\ y,\\ z)=${sols.map((s) => `(${s.join(",\\ ")})`).join(",\\ ")}$`,
+              askMax ? `$z$ の最大値は ${zmax}` : `${sols.length} 組`,
+            ],
+          };
+        }),
+        t("HA-seisu-4e", (r) => {
+          const a = r(1, 6), b = r(1, 20), M = a * a + b, kind = r(0, 2);
+          const fac = [];
+          for (let p = 2, x = M; x > 1; p++) if (x % p === 0) { let e = 0; while (x % p === 0) { x /= p; e++; } fac.push([p, e]); }
+          let n2 = 1;
+          while (gcd(n2 + a, M) === 1) n2++;
+          const p2 = fac.map(([p]) => p).find((p) => (n2 + a) % p === 0);
+          const v = [M, M - a, n2][kind];
+          return {
+            q: [
+              `$n$ を自然数とするとき、$n+${a}$ と $n^{2}+${b}$ の最大公約数として考えられる最大の値は？`,
+              `$n$ を自然数とする。$n+${a}$ と $n^{2}+${b}$ の最大公約数が最も大きくなるような $n$ のうち、最小のものは？`,
+              `$n$ を自然数とする。$n+${a}$ と $n^{2}+${b}$ が 1 以外の公約数をもつような $n$ のうち、最小のものは？`,
+            ][kind],
+            ans: v,
+            hint: `$n^{2}+${b}$ を $n+${a}$ で割った余りを考え、互除法の原理（$a=bq+r$ なら $a$ と $b$ の最大公約数は $b$ と $r$ の最大公約数に等しい）を使う。`,
+            steps: [
+              `$n^{2}+${b}=(n+${a})(n-${a})+${M}$ なので、互除法の原理より、$n+${a}$ と $n^{2}+${b}$ の最大公約数は $n+${a}$ と ${M} の最大公約数に等しい`,
+              [
+                `それは ${M} の約数なので ${M} 以下。$n=${M - a}$ のとき $n+${a}=${M}$ となり、最大公約数は ${M} になる。最大値は ${M}`,
+                `最大公約数が最大の ${M} になるのは、$n+${a}$ が ${M} の倍数のとき。$n+${a}\\geqq ${a + 1}$ なので最小は $n+${a}=${M}$ のときで、$n=${M - a}$`,
+                `${fac.length === 1 && fac[0][1] === 1 ? `${M} は素数なので、$n+${a}$ が ${M} の倍数になればよい` : `$${M}=${fac.map(([p, e]) => (e === 1 ? `${p}` : `${p}^{${e}}`)).join("\\times ")}$ なので、$n+${a}$ が ${fac.length === 1 ? `${fac[0][0]} の倍数` : `${fac.map(([p]) => p).join(", ")} のどれかの倍数`}になればよい`}。${a + 1} 以上で最小のものは ${n2 + a}（${p2} の倍数）なので $n=${n2}$`,
+              ][kind],
             ],
           };
         }),

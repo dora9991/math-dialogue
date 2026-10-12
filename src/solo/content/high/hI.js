@@ -22,6 +22,43 @@ const vx = (p) => (p ? `(x${signed(-p)})^{2}` : "x^{2}");
 const fr = (a, b) => (gcd(a, b) === 1 && b > 0 ? fracTex(a, b) : `\\frac{${a}}{${b}}=${fracTex(a, b)}`);
 /** (ax+b) / (ax+by) の TeX */
 const lin = (a, b, v = "x", w = "") => `(${coefVar(a, v)}${w ? signedVar(b, w) : b ? signed(b) : ""})`;
+/** (v-a)(v-b) の TeX（a か b が 0 なら v(v-…) の形に） */
+const fac2 = (a, b, v = "x") => (a === 0 ? `${v}(${v}${sh(-b)})` : b === 0 ? `${v}(${v}${sh(-a)})` : `(${v}${sh(-a)})(${v}${sh(-b)})`);
+/** 単項式 c x^p y^q の TeX（係数 ±1 は省略） */
+const mono = (c, p, q = 0, vx = "x", vy = "y") => {
+  const pw = (v, e) => (e === 0 ? "" : e === 1 ? v : `${v}^{${e}}`);
+  const body = pw(vx, p) + pw(vy, q);
+  if (!body) return String(c);
+  return (c === 1 ? "" : c === -1 ? "-" : String(c)) + body;
+};
+/** a+b√n の TeX（b≠0、n は平方因数なし） */
+const rad = (a, b, n) => {
+  const r = sqrtTex(b, n);
+  return a === 0 ? r : `${a}${r.startsWith("-") ? "" : "+"}${r}`;
+};
+/** 実数の部分集合（述語 f）を、整数の端をもつ区間の和として TeX に（lo〜hi の外は端の値と同じとみなす） */
+function setTex(f, lo, hi, v = "x") {
+  const pts = [];
+  for (let k = 2 * lo; k <= 2 * hi; k++) pts.push(k / 2); // 整数と半整数
+  const out = [];
+  let i = 0;
+  const inf0 = f(lo - 1), inf1 = f(hi + 1);
+  while (i < pts.length) {
+    if (!f(pts[i])) { i++; continue; }
+    let j = i;
+    while (j + 1 < pts.length && f(pts[j + 1])) j++;
+    const L = i === 0 && inf0 ? null : pts[i], R = j === pts.length - 1 && inf1 ? null : pts[j];
+    const lc = L !== null && Number.isInteger(L), rc = R !== null && Number.isInteger(R);
+    const Lv = lc ? L : L !== null ? L - 0.5 : null, Rv = rc ? R : R !== null ? R + 0.5 : null;
+    if (Lv === null && Rv === null) out.push("");
+    else if (Lv === null) out.push(`${v}${rc ? "\\leqq" : "<"} ${Rv}`);
+    else if (Rv === null) out.push(`${v}${lc ? "\\geqq" : ">"} ${Lv}`);
+    else if (Lv === Rv) out.push(`${v}=${Lv}`);
+    else out.push(`${Lv}${lc ? "\\leqq" : "<"} ${v}${rc ? "\\leqq" : "<"} ${Rv}`);
+    i = j + 1;
+  }
+  return out;
+}
 /** 多項式の TeX をかっこで包む */
 const par = (c, v = "x") => `(${poly(c, v)})`;
 /** 多変数の式 [[係数, "文字"], ...] → TeX */
@@ -92,54 +129,64 @@ for (let b = 1; b <= 16; b++) for (let c = 1; c <= 16; c++) for (const A of [60,
 const HERON = [[3, 4, 5, 6], [5, 5, 6, 12], [5, 5, 8, 12], [13, 14, 15, 84], [5, 12, 13, 30], [10, 13, 13, 60], [9, 10, 17, 36], [7, 15, 20, 42], [13, 20, 21, 126], [8, 15, 17, 60], [11, 13, 20, 66], [13, 13, 24, 60], [12, 17, 25, 90], [7, 24, 25, 84]]
   .filter(([a, b, c, S]) => (a + b + c) * (-a + b + c) * (a - b + c) * (a + b - c) === 16 * S * S);
 
+/**
+ * 0°≦θ≦180° の部分集合を TeX に。pts は境界の角（昇順）、inP[i] は角 pts[i] を含むか、
+ * inI[i] は pts[i] と pts[i+1] の間（端を除く）を含むか。含まれる部分が続くところはまとめる。
+ */
+function angTex(pts, inP, inI) {
+  const seq = [];
+  pts.forEach((A, k) => { seq.push({ on: inP[k], L: A, R: A, pt: true }); if (k + 1 < pts.length) seq.push({ on: inI[k], L: A, R: pts[k + 1], pt: false }); });
+  const out = [];
+  for (let s = 0; s < seq.length; s++) {
+    if (!seq[s].on) continue;
+    let e = s;
+    while (e + 1 < seq.length && seq[e + 1].on) e++;
+    const a = seq[s], b = seq[e];
+    if (s === e && a.pt) out.push(`\\theta=${deg(a.L)}`);
+    else out.push(`${deg(a.L)}${a.pt ? "\\leqq" : "<"}\\theta${b.pt ? "\\leqq " : "<"}${deg(b.R)}`);
+    s = e;
+  }
+  return out.join(",\\ ");
+}
+/** 点 (x, y)（どちらも0でない）がある象限 */
+const QUAD = (x, y) => (x > 0 ? (y > 0 ? "第1象限" : "第4象限") : y > 0 ? "第2象限" : "第3象限");
+// 0≦x≦L で常に x^2-2ax+sa+t>0（s=r1+r2, t=-r1r2）となる a の範囲が、整数を端とする区間になる組 [r1, r2, L, lo, hi]
+const ALWAYS_POS = [];
+for (let r1 = -4; r1 <= 4; r1++) for (let r2 = r1 + 1; r2 <= 6; r2++) for (const L of [1, 2, 3]) {
+  const sv = r1 + r2, tv = -r1 * r2;
+  if (sv <= 0 || 2 * L <= sv) continue;
+  // m(a)=min f は a<0 で sa+t、0≦a≦L で -a^2+sa+t、a>L で L^2-2aL+sa+t
+  const m = (a) => (a < 0 ? sv * a + tv : a <= L ? -a * a + sv * a + tv : L * L + (sv - 2 * L) * a + tv);
+  const pts = []; for (let k = -40; k <= 40; k++) pts.push(k / 2);
+  const ok = pts.filter((a) => m(a) > 0);
+  if (!ok.length) continue;
+  const lo = ok[0] - 0.5, hi = ok[ok.length - 1] + 0.5; // m は a について上に凸なので区間
+  if (!Number.isInteger(lo) || !Number.isInteger(hi) || m(lo) !== 0 || m(hi) !== 0 || lo <= -20 || hi >= 20) continue;
+  if (lo === Math.max(r1, 0) && hi === Math.min(r2, L)) continue; // 真ん中の場合だけで決まるものは除く
+  ALWAYS_POS.push([r1, r2, L, lo, hi]);
+}
+// 解が無理数になる 2次方程式 ax^2+bx+c=0 の係数 [a, b, c]（D>0 で平方数でない）
+const IRR_QUAD = [];
+for (let a = 1; a <= 3; a++) for (let b = -6; b <= 6; b++) for (let c = -5; c <= 5; c++) {
+  const D = b * b - 4 * a * c;
+  if (D > 0 && !Number.isInteger(Math.sqrt(D))) IRR_QUAD.push([a, b, c]);
+}
 const H = { grade: "H1", course: "数学I", rikei: false };
 
 export const UNITS = [
   // ─────────────────────────────────────────────────────
   {
     ...H,
-    id: "HI-tenkai", area: "num", name: "式の展開", desc: "3乗の公式・3項の展開・工夫した展開",
+    id: "HI-tenkai", area: "num", name: "式の展開", desc: "乗法公式・3項の展開・工夫した展開",
     prereqs: ["J3-g3c1u4"],
     points: [
-      "$(a+b)^{3}=a^{3}+3a^{2}b+3ab^{2}+b^{3}$、$(a-b)^{3}=a^{3}-3a^{2}b+3ab^{2}-b^{3}$",
-      "$(a+b)(a^{2}-ab+b^{2})=a^{3}+b^{3}$、$(a-b)(a^{2}+ab+b^{2})=a^{3}-b^{3}$",
+      "$(a\\pm b)^{2}=a^{2}\\pm 2ab+b^{2}$、$(a+b)(a-b)=a^{2}-b^{2}$、$(ax+b)(cx+d)=acx^{2}+(ad+bc)x+bd$",
+      "単項式の積は指数法則 $a^{m}a^{n}=a^{m+n}$、$(a^{m})^{n}=a^{mn}$、$(ab)^{n}=a^{n}b^{n}$ で計算する。",
       "$(a+b+c)^{2}=a^{2}+b^{2}+c^{2}+2ab+2bc+2ca$",
       "共通な部分は1つの文字に置き換える。かける順番の組み合わせを工夫すると計算が楽になる。",
     ],
     levels: {
       1: [
-        t("HI-tenkai-1a", (r) => {
-          const a = rnz(r, -4, 4);
-          const W = (c) => [tex(poly(c)), pkey(c)];
-          const ok = [1, 3 * a, 3 * a * a, a ** 3];
-          return {
-            q: `${tex(`(x${signed(a)})^{3}`)} を展開すると？`,
-            ...ec(r, W(ok), [W([1, 0, 0, a ** 3]), W([1, -3 * a, 3 * a * a, -(a ** 3)]), W([1, 3 * a, 3 * a, a ** 3]), W([1, a, a * a, a ** 3])],
-              (i) => W([1, 3 * a, 3 * a * a + i + 1, a ** 3])),
-            hint: "$(a+b)^{3}=a^{3}+3a^{2}b+3ab^{2}+b^{3}$ の $b$ に代入する。符号に注意。",
-            steps: [
-              `$(x${signed(a)})^{3}=x^{3}+3\\cdot x^{2}\\cdot (${a})+3\\cdot x\\cdot (${a})^{2}+(${a})^{3}$`,
-              `$=${poly(ok)}$`,
-            ],
-          };
-        }),
-        t("HI-tenkai-1b", (r) => {
-          const a = pick(r, [-5, -4, -3, -2, 2, 3, 4, 5]);
-          const W = (c) => [tex(poly(c)), pkey(c)];
-          const ok = [1, 0, 0, a ** 3];
-          return {
-            q: `${tex(`(x${signed(a)})${par([1, -a, a * a])}`)} を展開すると？`,
-            ...ec(r, W(ok), [W([1, 0, 0, -(a ** 3)]), W([1, 3 * a, 3 * a * a, a ** 3]), W([1, 0, 0, a]), W([1, 0, 0, a * a])],
-              (i) => W([1, 0, 0, a ** 3 + i + 1])),
-            hint: a > 0 ? "$(a+b)(a^{2}-ab+b^{2})$ の形になっていないか確かめよう。" : "$(a-b)(a^{2}+ab+b^{2})$ の形になっていないか確かめよう。",
-            steps: [
-              a > 0
-                ? `$a=x,\\ b=${a}$ とすると $(a+b)(a^{2}-ab+b^{2})=a^{3}+b^{3}$ の形`
-                : `$a=x,\\ b=${-a}$ とすると $(a-b)(a^{2}+ab+b^{2})=a^{3}-b^{3}$ の形`,
-              `$=x^{3}${a > 0 ? "+" : "-"}${Math.abs(a)}^{3}=${poly(ok)}$`,
-            ],
-          };
-        }),
         t("HI-tenkai-1c", (r) => {
           const p = rnz(r, -3, 3), q = rnz(r, -5, 5);
           const mons = ["x^{2}", "y^{2}", "", "xy", "y", "x"];
@@ -161,25 +208,66 @@ export const UNITS = [
             ],
           };
         }),
-      ],
-      2: [
-        t("HI-tenkai-2a", (r) => {
-          const a = r(2, 3) * sgn(r), b = rnz(r, -4, 4);
-          const k = r(1, 2); // x^k の係数
-          const coef = pmul(pmul([a, b], [a, b]), [a, b])[3 - k];
+        t("HI-tenkai-1d", (r) => {
+          const m = r(2, 3), c1 = m === 3 ? pick(r, [-2, 2]) : pick(r, [-3, -2, 2, 3]), a1 = r(1, 3), b1 = r(1, 2);
+          const c2 = rnz(r, -4, 4), a2 = r(1, 3), b2 = r(0, 2);
+          const C = c1 ** m * c2, X = a1 * m + a2, Y = b1 * m + b2;
+          const ok = tex(mono(C, X, Y));
           return {
-            q: `${tex(`(${a}x${signed(b)})^{3}`)} を展開したときの ${tex(k === 2 ? "x^{2}" : "x")} の係数は？`,
-            ans: coef,
-            hint: "$(a+b)^{3}=a^{3}+3a^{2}b+3ab^{2}+b^{3}$ で、どの項が求める次数になるか考える。",
+            q: `${tex(`(${mono(c1, a1, b1)})^{${m}}\\times ${c2 < 0 ? `(${mono(c2, a2, b2)})` : mono(c2, a2, b2)}`)} を計算すると？`,
+            ans: ok,
+            choices: choices4(r, ok, [
+              tex(mono(C, a1 + m + a2, b1 + m + b2)),
+              tex(mono(c1 * m * c2, X, Y)),
+              tex(mono(-C, X, Y)),
+              tex(mono(C, X, b1 + b2)),
+            ], (i) => tex(mono(C, X + i + 1, Y))),
+            hint: "係数と文字を分けて計算する。$(a^{m})^{n}=a^{mn}$、$a^{m}\\times a^{n}=a^{m+n}$",
             steps: [
-              k === 2
-                ? `$x^{2}$ の項は $3a^{2}b$ の部分：$3\\cdot (${a}x)^{2}\\cdot (${b})$`
-                : `$x$ の項は $3ab^{2}$ の部分：$3\\cdot (${a}x)\\cdot (${b})^{2}$`,
-              k === 2 ? `$=3\\cdot ${a * a}\\cdot (${b})\\,x^{2}=${coef}x^{2}$` : `$=3\\cdot (${a})\\cdot ${b * b}\\,x=${coef}x$`,
-              `係数は ${coef}`,
+              `$(${mono(c1, a1, b1)})^{${m}}=(${c1})^{${m}}${mono(1, a1 * m, b1 * m)}=${mono(c1 ** m, a1 * m, b1 * m)}$`,
+              `$${mono(c1 ** m, a1 * m, b1 * m)}\\times ${c2 < 0 ? `(${mono(c2, a2, b2)})` : mono(c2, a2, b2)}=${mono(C, X, Y)}$`,
             ],
           };
         }),
+        t("HI-tenkai-1e", (r) => {
+          const a = r(1, 4), c = r(1, 4), b = rnz(r, -6, 6), d = rnz(r, -6, 6);
+          if (a * c < 2) return { skip: true };
+          const W = (k) => [tex(poly(k)), pkey(k)];
+          const ok = [a * c, a * d + b * c, b * d];
+          return {
+            q: `${tex(lin(a, b) + lin(c, d))} を展開すると？`,
+            ...ec(r, W(ok), [W([a * c, a * d, b * d]), W([a * c, b * c, b * d]), W([a * c, a * d + b * c, -b * d]), W([a * c, 0, b * d]), W([a * c, -(a * d + b * c), b * d])],
+              (i) => W([a * c, a * d + b * c + i + 1, b * d])),
+            hint: "分配法則で4つの積を作り、同類項（$x$ の項）をまとめる。",
+            steps: [
+              `$x^{2}$ の係数は $${a}\\times ${c}=${a * c}$、$x$ の係数は $${a}\\times (${d})+(${b})\\times ${c}=${a * d + b * c}$、定数項は $(${b})\\times (${d})=${b * d}$`,
+              `$${lin(a, b)}${lin(c, d)}=${poly(ok)}$`,
+            ],
+          };
+        }),
+        t("HI-tenkai-1f", (r) => {
+          const a = r(1, 4), b = r(1, 4), kind = r(0, 2);
+          const W = (v) => [tex(mpoly([[v[0], "x^{2}"], [v[1], "xy"], [v[2], "y^{2}"]])), v.join(",")];
+          const e = [`(${coefVar(a)}+${coefVar(b, "y")})^{2}`, `(${coefVar(a)}-${coefVar(b, "y")})^{2}`, `(${coefVar(a)}+${coefVar(b, "y")})(${coefVar(a)}-${coefVar(b, "y")})`][kind];
+          const sg = kind === 1 ? -1 : 1;
+          const ok = kind === 2 ? [a * a, 0, -b * b] : [a * a, 2 * sg * a * b, b * b];
+          const wr = kind === 2
+            ? [W([a * a, 0, b * b]), W([a * a, -2 * a * b, b * b]), W([a, 0, -b]), W([a * a, -2 * a * b, -b * b])]
+            : [W([a * a, 0, b * b]), W([a * a, sg * a * b, b * b]), W([a, 2 * sg * a * b, b]), W([a * a, -2 * sg * a * b, b * b]), W([a * a, 2 * sg * a * b, -b * b])];
+          return {
+            q: `${tex(e)} を展開すると？`,
+            ...ec(r, W(ok), wr, (i) => W([a * a, ok[1] + 2 * (i + 1), ok[2]])),
+            hint: kind === 2 ? "$(A+B)(A-B)=A^{2}-B^{2}$ の $A,\\ B$ に何が入るか考える。" : "$(A\\pm B)^{2}=A^{2}\\pm 2AB+B^{2}$ の $A,\\ B$ に何が入るか考える。係数も2乗する。",
+            steps: [
+              kind === 2
+                ? `$A=${coefVar(a)},\\ B=${coefVar(b, "y")}$ とすると $A^{2}-B^{2}=(${coefVar(a)})^{2}-(${coefVar(b, "y")})^{2}$`
+                : `$A=${coefVar(a)},\\ B=${coefVar(b, "y")}$ とすると $(${coefVar(a)})^{2}${sg > 0 ? "+" : "-"}2\\cdot ${coefVar(a)}\\cdot ${coefVar(b, "y")}+(${coefVar(b, "y")})^{2}$`,
+              `$=${W(ok)[0].slice(1, -1)}$`,
+            ],
+          };
+        }),
+      ],
+      2: [
         t("HI-tenkai-2b", (r) => {
           const a = r(2, 4), A = a * a;
           const W = (c) => [tex(poly(c)), pkey(c)];
@@ -223,6 +311,56 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-tenkai-2d", (r) => {
+          const MON = ["x^{2}", "y^{2}", "z^{2}", "yz", "x", ""];
+          const W = (v) => [tex(mpoly(v.map((c, i) => [c, MON[i]]))), v.join(",")];
+          if (r(0, 1)) {
+            const p = rnz(r, -3, 3), q = rnz(r, -3, 3);
+            const P = `${coefVar(p, "y")}${signedVar(q, "z")}`;
+            const ok = [1, -p * p, -q * q, -2 * p * q, 0, 0];
+            return {
+              q: `${tex(`(x${signedVar(p, "y")}${signedVar(q, "z")})(x${signedVar(-p, "y")}${signedVar(-q, "z")})`)} を展開すると？`,
+              ...ec(r, W(ok), [W([1, -p * p, -q * q, 0, 0, 0]), W([1, -p * p, -q * q, 2 * p * q, 0, 0]), W([1, p * p, q * q, 2 * p * q, 0, 0]), W([1, -p * p, q * q, -2 * p * q, 0, 0])],
+                (i) => W([1, -p * p, -q * q, -2 * p * q - 2 * (i + 1), 0, 0])),
+              hint: "共通な部分を見つけて1つの文字に置き換え、$(A+B)(A-B)=A^{2}-B^{2}$ の形にする。",
+              steps: [
+                `$A=${P}$ とおくと $(x+A)(x-A)=x^{2}-A^{2}$`,
+                `$=x^{2}-(${P})^{2}=x^{2}-(${mpoly([[p * p, "y^{2}"], [2 * p * q, "yz"], [q * q, "z^{2}"]])})$`,
+                `$=${W(ok)[0].slice(1, -1)}$`,
+              ],
+            };
+          }
+          const p = r(1, 3), c = rnz(r, -4, 4);
+          const ok = [1, -p * p, 0, 0, 2 * c, c * c];
+          return {
+            q: `${tex(`(x${signedVar(p, "y")}${signed(c)})(x${signedVar(-p, "y")}${signed(c)})`)} を展開すると？`,
+            ...ec(r, W(ok), [W([1, -p * p, 0, 0, 0, c * c]), W([1, -p * p, 0, 0, 2 * c, -c * c]), W([1, p * p, 0, 0, 2 * c, c * c]), W([1, -p * p, 0, 0, c, c * c])],
+              (i) => W([1, -p * p, 0, 0, 2 * c, c * c + i + 1])),
+            hint: "共通な部分を見つけて1つの文字に置き換え、$(A+B)(A-B)=A^{2}-B^{2}$ の形にする。",
+            steps: [
+              `$A=x${signed(c)}$ とおくと $(A${signedVar(p, "y")})(A${signedVar(-p, "y")})=A^{2}-${p === 1 ? "" : p * p}y^{2}$`,
+              `$=(x${signed(c)})^{2}-${p === 1 ? "" : p * p}y^{2}=${W(ok)[0].slice(1, -1)}$`,
+            ],
+          };
+        }),
+        t("HI-tenkai-2e", (r) => {
+          const A = [pick(r, [1, 2, 3, -1, -2]), rnz(r, -5, 5), rnz(r, -5, 5)], B = [pick(r, [1, 2, 3, -1, -2]), rnz(r, -5, 5), rnz(r, -5, 5)];
+          const k = r(1, 3);
+          const P = pmul(A, B);
+          const v = P[4 - k];
+          const pairs = [];
+          for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (4 - i - j === k) pairs.push([i, j]);
+          const term = (c, e) => `${c < 0 ? `(${mono(c, e)})` : mono(c, e)}`;
+          return {
+            q: `${tex(par(A) + par(B))} を展開したときの ${tex(k === 1 ? "x" : `x^{${k}}`)} の係数は？`,
+            ans: v,
+            hint: "全部を展開しなくてよい。掛けると求める次数になる項の組を探す。",
+            steps: [
+              `次数の和が ${k} になる組：${pairs.map(([i, j]) => `$${term(A[i], 2 - i)}\\times ${term(B[j], 2 - j)}$`).join("、")}`,
+              `係数は $${pairs.map(([i, j]) => `(${A[i] * B[j]})`).join("+")}=${v}$`,
+            ],
+          };
+        }),
       ],
       3: [
         t("HI-tenkai-3a", (r) => {
@@ -250,19 +388,7 @@ export const UNITS = [
         }),
         t("HI-tenkai-3b", (r) => {
           const s = r(2, 6), p = rnz(r, -5, 5);
-          if (r(0, 1)) {
-            const v = s ** 3 - 3 * p * s;
-            return {
-              q: `${tex(`x+y=${s},\\ xy=${p}`)} のとき、${tex("x^{3}+y^{3}")} の値は？`,
-              ans: v,
-              hint: "$x^{3}+y^{3}$ を $x+y$ と $xy$ で表す。",
-              steps: [
-                "$x^{3}+y^{3}=(x+y)^{3}-3xy(x+y)$",
-                `$=${s}^{3}-3\\cdot (${p})\\cdot ${s}=${s ** 3}${signed(-3 * p * s)}$`,
-                `$=${v}$`,
-              ],
-            };
-          }
+          if (s * s < 4 * p) return { skip: true }; // x, y が実数になる組だけ
           return {
             q: `${tex(`x+y=${s},\\ xy=${p}`)} のとき、${tex("\\frac{y}{x}+\\frac{x}{y}")} の値は？`,
             ans: fracAns(s * s - 2 * p, p),
@@ -270,43 +396,117 @@ export const UNITS = [
             steps: [
               "$\\frac{y}{x}+\\frac{x}{y}=\\frac{x^{2}+y^{2}}{xy}$",
               `$x^{2}+y^{2}=(x+y)^{2}-2xy=${s * s}${signed(-2 * p)}=${s * s - 2 * p}$`,
-              `$\\frac{${s * s - 2 * p}}{${p}}=${fracTex(s * s - 2 * p, p)}$`,
+              `$\\frac{x^{2}+y^{2}}{xy}=${fr(s * s - 2 * p, p)}$`,
+            ],
+          };
+        }),
+        t("HI-tenkai-3c", (r) => {
+          const minus = r(0, 1) === 1; // x^2-kx-1=0 型（x-1/x）
+          const k = minus ? r(1, 6) : r(3, 6), four = r(0, 1) === 1;
+          const v2 = minus ? k * k + 2 : k * k - 2, v4 = v2 * v2 - 2;
+          return {
+            q: `${tex("x")} が2次方程式 ${tex(`${poly([1, -k, minus ? -1 : 1])}=0`)} を満たすとき、${tex(four ? "x^{4}+\\frac{1}{x^{4}}" : "x^{2}+\\frac{1}{x^{2}}")} の値は？`,
+            ans: four ? v4 : v2,
+            hint: "$x\\neq 0$ なので両辺を $x$ で割ると、$x$ と $\\frac{1}{x}$ の関係式が出る。",
+            steps: [
+              minus
+                ? `$x\\neq 0$ より両辺を $x$ で割って $x${signed(-k)}-\\frac{1}{x}=0$、$x-\\frac{1}{x}=${k}$`
+                : `$x\\neq 0$ より両辺を $x$ で割って $x${signed(-k)}+\\frac{1}{x}=0$、$x+\\frac{1}{x}=${k}$`,
+              minus
+                ? `$x^{2}+\\frac{1}{x^{2}}=\\left(x-\\frac{1}{x}\\right)^{2}+2=${k * k}+2=${v2}$`
+                : `$x^{2}+\\frac{1}{x^{2}}=\\left(x+\\frac{1}{x}\\right)^{2}-2=${k * k}-2=${v2}$`,
+              ...(four ? [`$x^{4}+\\frac{1}{x^{4}}=\\left(x^{2}+\\frac{1}{x^{2}}\\right)^{2}-2=${v2 * v2}-2=${v4}$`] : []),
+            ],
+          };
+        }),
+        t("HI-tenkai-3d", (r) => {
+          const s = r(1, 6), p = rnz(r, -8, 8);
+          if (s * s < 3 * p) return { skip: true }; // a, b, c が実数になる組だけ
+          const sq = s * s - 2 * p;
+          const kinds = [
+            ["(a-b)^{2}+(b-c)^{2}+(c-a)^{2}", 2 * sq - 2 * p, "2(a^{2}+b^{2}+c^{2})-2(ab+bc+ca)", `2\\cdot ${sq}-2\\cdot (${p})`],
+            ["(a+b)^{2}+(b+c)^{2}+(c+a)^{2}", 2 * sq + 2 * p, "2(a^{2}+b^{2}+c^{2})+2(ab+bc+ca)", `2\\cdot ${sq}+2\\cdot (${p})`],
+            ["(a+b)(b+c)+(b+c)(c+a)+(c+a)(a+b)", sq + 3 * p, "(a^{2}+b^{2}+c^{2})+3(ab+bc+ca)", `${sq}+3\\cdot (${p})`],
+          ];
+          const [E, v, form, calc] = pick(r, kinds);
+          return {
+            q: `${tex(`a+b+c=${s},\\ ab+bc+ca=${p}`)} のとき、${tex(E)} の値は？`,
+            ans: v,
+            hint: "まず $a^{2}+b^{2}+c^{2}$ を求め、求める式を展開して $a^{2}+b^{2}+c^{2}$ と $ab+bc+ca$ で表す。",
+            steps: [
+              `$a^{2}+b^{2}+c^{2}=(a+b+c)^{2}-2(ab+bc+ca)=${s * s}${signed(-2 * p)}=${sq}$`,
+              `展開して整理すると $${E}=${form}$`,
+              `$=${calc}=${v}$`,
             ],
           };
         }),
       ],
       4: [
-        t("HI-tenkai-4a", (r) => {
-          const s = r(1, 5), tt = rnz(r, -5, 5), u = rnz(r, -5, 5);
-          const sq = s * s - 2 * tt;
-          const v = s ** 3 - 3 * s * tt + 3 * u;
+        t("HI-tenkai-4b", (r) => {
+          const n = pick(r, [4, 6, 8]), k = n === 8 ? r(3, 4) : r(3, 6);
+          const a2 = k * k - 2, a4 = a2 * a2 - 2, a6 = a2 * a4 - a2, a8 = a4 * a4 - 2;
+          const st = [
+            `$x^{2}+\\frac{1}{x^{2}}=\\left(x+\\frac{1}{x}\\right)^{2}-2=${k * k}-2=${a2}$`,
+            `$x^{4}+\\frac{1}{x^{4}}=\\left(x^{2}+\\frac{1}{x^{2}}\\right)^{2}-2=${a2 * a2}-2=${a4}$`,
+          ];
+          if (n === 6) st.push(`$\\left(x^{2}+\\frac{1}{x^{2}}\\right)\\left(x^{4}+\\frac{1}{x^{4}}\\right)=x^{6}+\\frac{1}{x^{6}}+x^{2}+\\frac{1}{x^{2}}$ より $x^{6}+\\frac{1}{x^{6}}=${a2}\\cdot ${a4}-${a2}=${a6}$`);
+          if (n === 8) st.push(`$x^{8}+\\frac{1}{x^{8}}=\\left(x^{4}+\\frac{1}{x^{4}}\\right)^{2}-2=${a4 * a4}-2=${a8}$`);
           return {
-            q: `${tex(`a+b+c=${s},\\ ab+bc+ca=${tt},\\ abc=${u}`)} のとき、${tex("a^{3}+b^{3}+c^{3}")} の値は？`,
-            ans: v,
-            hint: "$a^{3}+b^{3}+c^{3}-3abc=(a+b+c)(a^{2}+b^{2}+c^{2}-ab-bc-ca)$ を使う。",
+            q: `${tex(`x+\\frac{1}{x}=${k}`)} のとき、${tex(`x^{${n}}+\\frac{1}{x^{${n}}}`)} の値は？`,
+            ans: { 4: a4, 6: a6, 8: a8 }[n],
+            hint: "$x\\cdot\\frac{1}{x}=1$ を利用して、2乗をくり返して次数を上げる。",
+            steps: st,
+          };
+        }),
+        t("HI-tenkai-4c", (r) => {
+          const m = rnz(r, -3, 3), n = pick(r, [2, 3, 5, 6, 7]);
+          const u = r(-3, 3), v = r(-3, 3), al = rnz(r, -4, 4), be = r(-5, 5);
+          const Q = [1, -2 * m, m * m - n];
+          const P = pmul(Q, [1, u, v]);
+          P[3] += al; P[4] += be;
+          const A = al * m + be;
+          const ok = tex(rad(A, al, n));
+          return {
+            q: `${tex(`x=${m}+\\sqrt{${n}}`)} のとき、${tex(poly(P))} の値は？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(rad(A, -al, n)), tex(rad(be, al, n)), tex(rad(-A, al, n)), tex(rad(A, 2 * al, n))], (i) => tex(rad(A + i + 1, al, n))),
+            hint: `そのまま代入せず、$x${signed(-m)}=\\sqrt{${n}}$ の両辺を2乗した2次式を使って次数を下げる。`,
             steps: [
-              `$a^{2}+b^{2}+c^{2}=(a+b+c)^{2}-2(ab+bc+ca)=${s * s}${signed(-2 * tt)}=${sq}$`,
-              `$a^{3}+b^{3}+c^{3}-3abc=${s}\\cdot (${sq}-(${tt}))=${s * (sq - tt)}$`,
-              `$a^{3}+b^{3}+c^{3}=${s * (sq - tt)}+3\\cdot (${u})=${v}$`,
+              `$x${signed(-m)}=\\sqrt{${n}}$ の両辺を2乗して $${poly(Q)}=0$`,
+              `与式 $=(${poly(Q)})(${poly([1, u, v])})${al === 0 ? "" : signedVar(al)}${sh(be)}$ と変形できる`,
+              `$=${poly([al, be])}=${al === 1 ? "" : al === -1 ? "-" : al}(${m}+\\sqrt{${n}})${sh(be)}=${rad(A, al, n)}$`,
             ],
           };
         }),
-        t("HI-tenkai-4b", (r) => {
-          const k = r(3, 6), n = r(3, 5);
-          const a = [2, k];
-          for (let i = 2; i <= 5; i++) a.push(k * a[i - 1] - a[i - 2]);
-          const st = [`$x^{2}+\\frac{1}{x^{2}}=\\left(x+\\frac{1}{x}\\right)^{2}-2=${a[2]}$`];
-          if (n === 3) st.push(`$x^{3}+\\frac{1}{x^{3}}=\\left(x+\\frac{1}{x}\\right)^{3}-3\\left(x+\\frac{1}{x}\\right)=${k ** 3}-${3 * k}=${a[3]}$`);
-          if (n === 4) st.push(`$x^{4}+\\frac{1}{x^{4}}=\\left(x^{2}+\\frac{1}{x^{2}}\\right)^{2}-2=${a[2] ** 2}-2=${a[4]}$`);
-          if (n === 5) {
-            st.push(`$x^{3}+\\frac{1}{x^{3}}=${k ** 3}-${3 * k}=${a[3]}$`);
-            st.push(`$x^{5}+\\frac{1}{x^{5}}=\\left(x^{2}+\\frac{1}{x^{2}}\\right)\\left(x^{3}+\\frac{1}{x^{3}}\\right)-\\left(x+\\frac{1}{x}\\right)=${a[2]}\\cdot ${a[3]}-${k}=${a[5]}$`);
-          }
+        t("HI-tenkai-4d", (r) => {
+          const k = r(3, 6), big = r(0, 1) === 1; // a>1 か 0<a<1 か
+          const sg = big ? 1 : -1;
+          const ok = tex(sqrtTex(sg * k, k * k - 4));
           return {
-            q: `${tex(`x+\\frac{1}{x}=${k}`)} のとき、${tex(`x^{${n}}+\\frac{1}{x^{${n}}}`)} の値は？`,
-            ans: a[n],
-            hint: "$x\\cdot\\frac{1}{x}=1$ を利用して、次数の低いものから順に求める。",
-            steps: st,
+            q: `${tex(big ? "a>1" : "0<a<1")} で ${tex(`a+\\frac{1}{a}=${k}`)} のとき、${tex("a^{2}-\\frac{1}{a^{2}}")} の値は？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(sqrtTex(-sg * k, k * k - 4)), tex(sqrtTex(sg, k * k - 4)), tex(String(k * k - 2)), tex(sqrtTex(sg * k, k * k + 4))]),
+            hint: "$a^{2}-\\frac{1}{a^{2}}=\\left(a+\\frac{1}{a}\\right)\\left(a-\\frac{1}{a}\\right)$。$a-\\frac{1}{a}$ の符号を $a$ の範囲から決める。",
+            steps: [
+              `$\\left(a-\\frac{1}{a}\\right)^{2}=\\left(a+\\frac{1}{a}\\right)^{2}-4=${k * k}-4=${k * k - 4}$`,
+              big ? `$a>1$ なので $a>\\frac{1}{a}$、$a-\\frac{1}{a}>0$ より $a-\\frac{1}{a}=${sqrtTex(1, k * k - 4)}$` : `$0<a<1$ なので $a<\\frac{1}{a}$、$a-\\frac{1}{a}<0$ より $a-\\frac{1}{a}=${sqrtTex(-1, k * k - 4)}$`,
+              `$a^{2}-\\frac{1}{a^{2}}=\\left(a+\\frac{1}{a}\\right)\\left(a-\\frac{1}{a}\\right)=${k}\\cdot (${sqrtTex(sg, k * k - 4)})=${sqrtTex(sg * k, k * k - 4)}$`,
+            ],
+          };
+        }),
+        t("HI-tenkai-4e", (r) => {
+          const p = rnz(r, -6, 6), q = rnz(r, -6, 6), w = -(p + q);
+          const sym = r(0, 1) === 1;
+          const v = sym ? (p * p + q * q + w * w) / 2 : p * q + q * w + w * p;
+          return {
+            q: `${tex(`a-b=${p},\\ b-c=${q}`)} のとき、${tex(sym ? "a^{2}+b^{2}+c^{2}-ab-bc-ca" : "(a-b)(b-c)+(b-c)(c-a)+(c-a)(a-b)")} の値は？`,
+            ans: v,
+            hint: "$c-a$ も $a-b$ と $b-c$ で表せる。求める式を $a-b,\\ b-c,\\ c-a$ だけで書けないか考える。",
+            steps: [
+              `$c-a=-(a-b)-(b-c)=${w}$`,
+              sym ? "$a^{2}+b^{2}+c^{2}-ab-bc-ca=\\frac{1}{2}\\{(a-b)^{2}+(b-c)^{2}+(c-a)^{2}\\}$" : "3つの差 $a-b,\\ b-c,\\ c-a$ をそのまま代入する",
+              sym ? `$=\\frac{1}{2}(${p * p}+${q * q}+${w * w})=${v}$` : `$=(${p})(${q})+(${q})(${w})+(${w})(${p})=${v}$`,
+            ],
           };
         }),
       ],
@@ -315,11 +515,11 @@ export const UNITS = [
   // ─────────────────────────────────────────────────────
   {
     ...H,
-    id: "HI-inbun", area: "num", name: "因数分解", desc: "たすき掛け・置き換え・3乗の因数分解",
+    id: "HI-inbun", area: "num", name: "因数分解", desc: "共通因数・公式・たすき掛け・置き換え",
     prereqs: ["HI-tenkai", "J3-g3c1u7"],
     points: [
+      "まず共通因数でくくる。$a^{2}\\pm 2ab+b^{2}=(a\\pm b)^{2}$、$a^{2}-b^{2}=(a+b)(a-b)$",
       "たすき掛け：$acx^{2}+(ad+bc)x+bd=(ax+b)(cx+d)$。$x^{2}$ の係数と定数項の分け方を試す。",
-      "$a^{3}+b^{3}=(a+b)(a^{2}-ab+b^{2})$、$a^{3}-b^{3}=(a-b)(a^{2}+ab+b^{2})$",
       "共通な部分は置き換える。文字が2つ以上なら、次数の低い文字について整理する。",
       "$x^{4}+kx^{2}+c^{2}$ は「平方の差」$(x^{2}+c)^{2}-(mx)^{2}$ に変形できないか考える。",
     ],
@@ -327,7 +527,7 @@ export const UNITS = [
       1: [
         t("HI-inbun-1a", (r) => {
           let p, q, rr, s;
-          do { p = r(1, 3); q = rnz(r, -5, 5); rr = r(1, 3); s = rnz(r, -5, 5); } while (p * rr < 2 || gcd(p, q) !== 1 || gcd(rr, s) !== 1);
+          do { p = r(1, 3); q = rnz(r, -5, 5); rr = r(1, 3); s = rnz(r, -5, 5); } while (p * rr < 2 || gcd(p, q) !== 1 || gcd(rr, s) !== 1 || (p === rr && q === s));
           const F = (a, b, c, d) => [tex(lin(a, b) + lin(c, d)), pkey(pmul([a, b], [c, d]))];
           const P = pmul([p, q], [rr, s]);
           return {
@@ -338,26 +538,6 @@ export const UNITS = [
               `$${P[0]}=${p}\\times ${rr}$、$${P[2]}=(${q})\\times (${s})$ と分ける`,
               `たすき掛け：$${p}\\times (${s})+${rr}\\times (${q})=${P[1]}$`,
               `$${poly(P)}=${lin(p, q)}${lin(rr, s)}$`,
-            ],
-          };
-        }),
-        t("HI-inbun-1b", (r) => {
-          const p = r(1, 3), q = r(1, 5), sg = sgn(r);
-          if (gcd(p, q) !== 1 || p === q) return { skip: true };
-          const F = (A, B) => [tex(par(A) + par(B)), pkey(pmul(A, B))];
-          const P = [p ** 3, 0, 0, sg * q ** 3];
-          return {
-            q: `${tex(poly(P))} を因数分解すると？`,
-            ...ec(r, F([p, sg * q], [p * p, -sg * p * q, q * q]), [
-              F([p, sg * q], [p * p, sg * p * q, q * q]),
-              F([p, -sg * q], [p * p, sg * p * q, q * q]),
-              F([p, sg * q], [p * p, -2 * sg * p * q, q * q]),
-            ], (i) => F([p, sg * q], [p * p, -sg * p * q, q * q + i + 1])),
-            hint: `$${p === 1 ? "x" : `${p}x`}$ と $${q}$ の3乗の${sg > 0 ? "和" : "差"}と見る。`,
-            steps: [
-              `$${poly(P)}=(${coefVar(p)})^{3}${sg > 0 ? "+" : "-"}${q}^{3}$`,
-              sg > 0 ? "$a^{3}+b^{3}=(a+b)(a^{2}-ab+b^{2})$ を使う" : "$a^{3}-b^{3}=(a-b)(a^{2}+ab+b^{2})$ を使う",
-              `$=${par([p, sg * q])}${par([p * p, -sg * p * q, q * q])}$`,
             ],
           };
         }),
@@ -376,11 +556,57 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-inbun-1d", (r) => {
+          const c = r(2, 6), p = r(0, 2), q = r(0, 2), a1 = r(1, 4), a2 = rnz(r, -4, 4), a3 = rnz(r, -3, 3);
+          if (p + q === 0 || gcd(gcd(a1, a2), a3) !== 1) return { skip: true };
+          const mb = (e, f) => (e === 0 && f === 0 ? "" : mono(1, e, f));
+          const E = mpoly([[c * a1, mb(p + 1, q)], [c * a2, mb(p, q + 1)], [c * a3, mb(p, q)]]);
+          const G = mono(c, p, q);
+          const F = (g, b1, b2, b3) => [tex(`${g}(${mpoly([[b1, "x"], [b2, "y"], [b3, ""]])})`), `${g}|${b1},${b2},${b3}`];
+          const keyOf = (gc, gp, gq, b1, b2, b3) => [[gc * b1, gp + 1, gq], [gc * b2, gp, gq + 1], [gc * b3, gp, gq]].filter(([k]) => k).map(([k, e, f]) => `${k}:${e},${f}`).sort().join(";");
+          const W = (gc, gp, gq, b1, b2, b3) => [tex(`${mono(gc, gp, gq)}(${mpoly([[b1, "x"], [b2, "y"], [b3, ""]])})`), keyOf(gc, gp, gq, b1, b2, b3)];
+          return {
+            q: `${tex(E)} を、共通因数をくくり出して因数分解すると？`,
+            ...ec(r, W(c, p, q, a1, a2, a3), [W(c, p, q, a1, a2, 0), W(c, p, q, a1, -a2, a3), W(c, p, q, a1, a2, -a3), W(c, p + 1, q, a1, a2, a3), W(c, p, q + 1, a1, a2, a3)],
+              (i) => W(c, p, q, a1 + i + 1, a2, a3)),
+            hint: "係数の最大公約数と、すべての項に共通な文字（いちばん低い次数）を見つける。",
+            steps: [
+              `各項に共通な因数は $${G}$`,
+              `$${E}=${G}(${mpoly([[a1, "x"], [a2, "y"], [a3, ""]])})$`,
+            ],
+          };
+        }),
+        t("HI-inbun-1e", (r) => {
+          const a = r(1, 5), b = r(1, 5), kind = r(0, 2);
+          if (gcd(a, b) !== 1) return { skip: true };
+          // key は [x^2, xy, y^2, x, 1] の係数
+          const L = (p, q, two) => (two ? `${coefVar(p)}${signedVar(q, "y")}` : `${coefVar(p)}${signed(q)}`);
+          const two = kind !== 2;
+          const sq = (p, q) => [tex(`(${L(p, q, two)})^{2}`), (two ? [p * p, 2 * p * q, q * q, 0, 0] : [p * p, 0, 0, 2 * p * q, q * q]).join(",")];
+          const pr = (p, q, u, v) => [tex(`(${L(p, q, two)})(${L(u, v, two)})`), (two ? [p * u, p * v + q * u, q * v, 0, 0] : [p * u, 0, 0, p * v + q * u, q * v]).join(",")];
+          let E, ok, wr;
+          if (kind === 0) { E = mpoly([[a * a, "x^{2}"], [-b * b, "y^{2}"]]); ok = pr(a, b, a, -b); wr = [sq(a, -b), sq(a, b), pr(b, a, b, -a), pr(a * a, b * b, 1, -1)]; }
+          else if (kind === 1) { E = mpoly([[a * a, "x^{2}"], [2 * a * b, "xy"], [b * b, "y^{2}"]]); ok = sq(a, b); wr = [sq(a, -b), pr(a, b, a, -b), sq(a, 2 * b), pr(a, 2 * b, a, b)]; }
+          else { E = mpoly([[a * a, "x^{2}"], [-2 * a * b, "x"], [b * b, ""]]); ok = sq(a, -b); wr = [sq(a, b), pr(a, b, a, -b), sq(a, -2 * b), pr(a, -2 * b, a, -b)]; }
+          return {
+            q: `${tex(E)} を因数分解すると？`,
+            ...ec(r, ok, wr),
+            hint: kind === 0 ? "$A^{2}-B^{2}=(A+B)(A-B)$ の形になっていないか確かめる。" : "$A^{2}\\pm 2AB+B^{2}=(A\\pm B)^{2}$ の形になっていないか確かめる。",
+            steps: [
+              kind === 0
+                ? `$${E}=(${coefVar(a)})^{2}-(${coefVar(b, "y")})^{2}$`
+                : kind === 1
+                  ? `$${E}=(${coefVar(a)})^{2}+2\\cdot ${coefVar(a)}\\cdot ${coefVar(b, "y")}+(${coefVar(b, "y")})^{2}$`
+                  : `$${E}=(${coefVar(a)})^{2}-2\\cdot ${coefVar(a)}\\cdot ${b}+${b}^{2}$`,
+              `$=${ok[0].slice(1, -1)}$`,
+            ],
+          };
+        }),
       ],
       2: [
         t("HI-inbun-2a", (r) => {
           let p, q, rr, s;
-          do { p = r(1, 3); q = rnz(r, -5, 5); rr = r(1, 3); s = rnz(r, -5, 5); } while (p * rr < 2 || gcd(p, q) !== 1 || gcd(rr, s) !== 1);
+          do { p = r(1, 3); q = rnz(r, -5, 5); rr = r(1, 3); s = rnz(r, -5, 5); } while (p * rr < 2 || gcd(p, q) !== 1 || gcd(rr, s) !== 1 || (p === rr && q === s));
           const F = (a, b, c, d) => [tex(lin(a, b, "x", "y") + lin(c, d, "x", "y")), pkey(pmul([a, b], [c, d]))];
           const P = pmul([p, q], [rr, s]);
           const e = mpoly([[P[0], "x^{2}"], [P[1], "xy"], [P[2], "y^{2}"]]);
@@ -418,6 +644,55 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-inbun-2c", (r) => {
+          const c = r(1, 4), e = r(0, 1), m = r(1, 5), kind = r(0, 2);
+          if (c === 1 && e === 0) return { skip: true };
+          const n = kind === 2 ? rnz(r, -5, 5) : 0;
+          if (kind === 2 && (n === m || n === -m)) return { skip: true };
+          // 中の2次式の根：kind0 は ±m、kind1 は重解 -m、kind2 は -m と -n
+          const roots = kind === 0 ? [m, -m] : kind === 1 ? [-m, -m] : [-m, -n];
+          const quad = pmul([1, -roots[0]], [1, -roots[1]]);
+          const head = mono(c, e);
+          const full = pmul([c, ...Array(e).fill(0)], quad);
+          const facs = (rs) => {
+            const cnt = new Map();
+            for (const x of rs) cnt.set(x, (cnt.get(x) || 0) + 1);
+            return [...cnt.entries()].sort((u, v) => v[0] - u[0]).map(([x, k]) => `(x${signed(-x)})${k > 1 ? `^{${k}}` : ""}`).join("");
+          };
+          const W = (hc, he, rs) => [tex(`${mono(hc, he) === "1" ? "" : mono(hc, he)}${facs(rs)}`), pkey(pmul([hc, ...Array(he).fill(0)], rs.reduce((acc, x) => pmul(acc, [1, -x]), [1])))];
+          const ok = W(c, e, roots);
+          const wr = kind === 0
+            ? [W(c, e, [m, m]), W(c, e, [-m, -m]), W(c, 1 - e, roots), W(c, e, [2 * m, -2 * m])]
+            : kind === 1
+              ? [W(c, e, [m, -m]), W(c, e, [m, m]), W(c, 1 - e, roots), W(c, e, [-m, m * 2])]
+              : [W(c, e, [m, n]), W(c, e, [-m, n]), W(c, 1 - e, roots), W(c, e, [m, -n])];
+          return {
+            q: `${tex(poly(full))} を、できるところまで因数分解すると？`,
+            ...ec(r, ok, wr, (i) => W(c, e, [roots[0] + i + 1, roots[1]])),
+            hint: "まず共通因数をくくり出し、残った2次式を公式やたすき掛けでさらに分解する。",
+            steps: [
+              `共通因数 $${head}$ をくくり出す：$${poly(full)}=${head}(${poly(quad)})$`,
+              `$${poly(quad)}=${facs(roots)}$`,
+              `$=${ok[0].slice(1, -1)}$`,
+            ],
+          };
+        }),
+        t("HI-inbun-2d", (r) => {
+          const p = rnz(r, -5, 5), q = rnz(r, -3, 3), rr = rnz(r, -5, 5);
+          const key = (a, b, c) => [b, a + c, a * b, a * c].join(","); // (x+a)(x+by+c) の [xy, x, y, 1]
+          const F = (a, b, c) => [tex(`(x${signed(a)})(x${signedVar(b, "y")}${signed(c)})`), key(a, b, c)];
+          const E = mpoly([[1, "x^{2}"], [q, "xy"], [p + rr, "x"], [p * q, "y"], [p * rr, ""]]);
+          return {
+            q: `${tex(E)} を因数分解すると？`,
+            ...ec(r, F(p, q, rr), [F(rr, q, p), F(-p, q, -rr), F(p, -q, rr), F(-p, -q, rr)], (i) => F(p, q, rr + i + 1)),
+            hint: "$y$ については1次式。$y$ について整理すると、共通因数が見えてくる。",
+            steps: [
+              `$y$ について整理：$${mpoly([[q, "x"], [p * q, ""]])}$ が $y$ の係数、残りは $${mpoly([[1, "x^{2}"], [p + rr, "x"], [p * rr, ""]])}$`,
+              `$=${coefVar(q, "y")}(x${signed(p)})+(x${signed(p)})(x${signed(rr)})$`,
+              `$=(x${signed(p)})(x${signedVar(q, "y")}${signed(rr)})$`,
+            ],
+          };
+        }),
       ],
       3: [
         t("HI-inbun-3a", (r) => {
@@ -431,7 +706,7 @@ export const UNITS = [
             ...ec(r, F([1, m, c], [1, -m, c]), [sq, F([1, m, -c], [1, -m, -c]), F([1, m, c], [1, m, -c])], (i) => F([1, m + i + 1, c], [1, -m - i - 1, c])),
             hint: `$(x^{2}+${c})^{2}$ を作って、ずれた分を引く（平方の差の形）。`,
             steps: [
-              `$${poly(P)}=(x^{2}+${c})^{2}-${m * m}x^{2}$`,
+              `$${poly(P)}=(x^{2}+${c})^{2}-${m === 1 ? "" : m * m}x^{2}$`,
               `$=(x^{2}+${c})^{2}-(${coefVar(m)})^{2}$`,
               `$=${par([1, m, c])}${par([1, -m, c])}$`,
             ],
@@ -449,9 +724,54 @@ export const UNITS = [
             ...ec(r, F(p, q, rr, s), [F(p, s, rr, q), F(p, -q, rr, -s), F(-p, q, -rr, s), F(rr, q, p, s)], (i) => F(p, q + i + 1, rr, s)),
             hint: "$x$ について整理し、定数項（$y$ の式）を先に因数分解してからたすき掛けをする。",
             steps: [
-              `$x$ について整理：$x^{2}+(${mpoly([[p + rr, "y"], [q + s, ""]])})x+(${mpoly([[p * rr, "y^{2}"], [p * s + q * rr, "y"], [q * s, ""]])})$`,
+              `$x$ について整理：$x^{2}${p + rr || q + s ? `+(${mpoly([[p + rr, "y"], [q + s, ""]])})x` : ""}+(${mpoly([[p * rr, "y^{2}"], [p * s + q * rr, "y"], [q * s, ""]])})$`,
               `定数項 $=(${mpoly([[p, "y"], [q, ""]])})(${mpoly([[rr, "y"], [s, ""]])})$`,
               `$=${fx(p, q)}${fx(rr, s)}$`,
+            ],
+          };
+        }),
+        t("HI-inbun-3c", (r) => {
+          const b = rnz(r, -4, 4), a1 = rnz(r, -4, 4), a2 = rnz(r, -4, 4);
+          const b1 = -b - a1, b2 = -b - a2; // x^2+bx-m=(x-a1)(x-b1)
+          if (b1 === 0 || b2 === 0) return { skip: true };
+          const m = -a1 * b1, n = -a2 * b2;
+          if (m === n) return { skip: true };
+          const X = `(x^{2}${signedVar(b)})`;
+          const E = `${X}^{2}${signedVar(-(m + n), X)}${signed(m * n)}`;
+          const facs = (rs) => {
+            const cnt = new Map();
+            for (const x of rs) cnt.set(x, (cnt.get(x) || 0) + 1);
+            return [...cnt.entries()].sort((u, v) => v[0] - u[0]).map(([x, k]) => `(x${signed(-x)})${k > 1 ? `^{${k}}` : ""}`).join("");
+          };
+          const W = (rs) => [tex(facs(rs)), pkey(rs.reduce((acc, x) => pmul(acc, [1, -x]), [1]))];
+          const rs = [a1, b1, a2, b2];
+          return {
+            q: `${tex(E)} を、できるところまで因数分解すると？`,
+            ...ec(r, W(rs), [W([-a1, -b1, -a2, -b2]), W([a1, b1, -a2, -b2]), W([-a1, -b1, a2, b2]), W([a1, -b1, a2, -b2])], (i) => W([a1 + i + 1, b1, a2, b2])),
+            hint: `$x^{2}${signedVar(b)}=X$ とおいて $X$ の2次式として因数分解し、もどしてからさらに分解できないか確かめる。`,
+            steps: [
+              `$X=x^{2}${signedVar(b)}$ とおくと $${poly([1, -(m + n), m * n], "X")}=(X${signed(-m)})(X${signed(-n)})$`,
+              `$=(x^{2}${signedVar(b)}${signed(-m)})(x^{2}${signedVar(b)}${signed(-n)})$`,
+              `$=${facs(rs)}$`,
+            ],
+          };
+        }),
+        t("HI-inbun-3d", (r) => {
+          const a = rnz(r, -4, 4), b = r(1, 3), c = rnz(r, -3, 3);
+          if (a === c || a === -c) return { skip: true };
+          const E = mpoly([[1, "x^{2}"], [-b * b, "y^{2}"], [2 * a, "x"], [-2 * b * c, "y"], [a * a - c * c, ""]]);
+          // (x+by+(a+c))(x-by+(a-c))
+          const key = (p, u, q, v) => [p + q, p * q, u + v, u * q + v * p, u * v].join(","); // (x+py+u)(x+qy+v) の [xy, y^2, x, y, 1]
+          const F = (p, u, q, v) => [tex(`(x${signedVar(p, "y")}${sh(u)})(x${signedVar(q, "y")}${sh(v)})`), key(p, u, q, v)];
+          return {
+            q: `${tex(E)} を因数分解すると？`,
+            ...ec(r, F(b, a + c, -b, a - c), [F(b, a - c, -b, a + c), F(b, c - a, -b, -a - c), F(b, a + c, b, a - c), F(-b, a + c, b, a + c)],
+              (i) => F(b, a + c + i + 1, -b, a - c)),
+            hint: "$x$ の項と定数項で $(x+a)^{2}$ を作り、残りを $(\\ )^{2}$ にして平方の差 $A^{2}-B^{2}$ の形にする。",
+            steps: [
+              `$${E}=(x${signed(a)})^{2}-(${coefVar(b, "y")}${sh(c)})^{2}$`,
+              `$=\\{(x${signed(a)})+(${coefVar(b, "y")}${sh(c)})\\}\\{(x${signed(a)})-(${coefVar(b, "y")}${sh(c)})\\}$`,
+              `$=(x${signedVar(b, "y")}${sh(a + c)})(x${signedVar(-b, "y")}${sh(a - c)})$`,
             ],
           };
         }),
@@ -499,6 +819,57 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-inbun-4c", (r) => {
+          const [A, B, C] = pick(r, [["a", "b", "c"], ["x", "y", "z"]]);
+          const L = (str) => str.replace(/A/g, A).replace(/B/g, B).replace(/C/g, C);
+          // 恒等式の一覧：[式, 答え, 正解の関数, 解説]
+          const D1 = "-(A-B)(B-C)(C-A)", D0 = "(A-B)(B-C)(C-A)", S0 = "(A+B)(B+C)(C+A)", T0 = "(A+B+C)(AB+BC+CA)";
+          const list = [
+            ["A^{2}(B-C)+B^{2}(C-A)+C^{2}(A-B)", D1, ["$A$ について整理：$(B-C)A^{2}-(B^{2}-C^{2})A+BC(B-C)$", "$=(B-C)\\{A^{2}-(B+C)A+BC\\}=(B-C)(A-B)(A-C)$"]],
+            ["AB(A-B)+BC(B-C)+CA(C-A)", D1, ["$A$ について整理：$(B-C)A^{2}-(B^{2}-C^{2})A+BC(B-C)$", "$=(B-C)\\{A^{2}-(B+C)A+BC\\}=(B-C)(A-B)(A-C)$"]],
+            ["A(B^{2}-C^{2})+B(C^{2}-A^{2})+C(A^{2}-B^{2})", D0, ["$A$ について整理：$-(B-C)A^{2}+(B^{2}-C^{2})A-BC(B-C)$", "$=-(B-C)\\{A^{2}-(B+C)A+BC\\}=-(B-C)(A-B)(A-C)$"]],
+            ["(A+B)(B+C)(C+A)+ABC", T0, ["展開して $A$ について整理：$(B+C)A^{2}+(B^{2}+3BC+C^{2})A+BC(B+C)$", "たすき掛けで $=\\{A+(B+C)\\}\\{(B+C)A+BC\\}$"]],
+            ["A^{2}B+AB^{2}+B^{2}C+BC^{2}+C^{2}A+CA^{2}+2ABC", S0, ["$A$ について整理：$(B+C)A^{2}+(B^{2}+2BC+C^{2})A+BC(B+C)$", "$=(B+C)A^{2}+(B+C)^{2}A+BC(B+C)=(B+C)\\{A^{2}+(B+C)A+BC\\}$", "$=(B+C)(A+B)(A+C)$"]],
+          ];
+          const [E, ans, st] = pick(r, list);
+          const val = {
+            [D1]: (a, b, c) => -(a - b) * (b - c) * (c - a),
+            [D0]: (a, b, c) => (a - b) * (b - c) * (c - a),
+            [S0]: (a, b, c) => (a + b) * (b + c) * (c + a),
+            [T0]: (a, b, c) => (a + b + c) * (a * b + b * c + c * a),
+            "-(A+B)(B+C)(C+A)": (a, b, c) => -(a + b) * (b + c) * (c + a),
+          };
+          const fp = (f) => [[1, 2, 3], [2, -1, 4], [-3, 5, 2], [4, 1, -2]].map(([a, b, c]) => f(a, b, c)).join(",");
+          const W = (k) => [tex(L(k)), fp(val[k])];
+          return {
+            q: `${tex(L(E))} を因数分解すると？`,
+            ...ec(r, W(ans), [W(D1), W(D0), W(S0), W(T0), W("-(A+B)(B+C)(C+A)")]),
+            hint: `1つの文字（例えば $${A}$）について整理すると、残りの文字の式が共通因数として見えてくる。`,
+            steps: [...st.map(L), `$=${L(ans)}$`],
+          };
+        }),
+        t("HI-inbun-4d", (r) => {
+          const lead = pick(r, [1, 1, 2]), c = pick(r, [-36, -30, -24, -20, -18, -12, -8, 8, 12, 18, 20, 24, 30, 36]);
+          const ks = new Set(), rows = [];
+          for (let q = -Math.abs(c); q <= Math.abs(c); q++) {
+            if (q === 0 || c % q !== 0) continue;
+            const p = c / q, k = lead * q + p; // (lead x + p)(x + q)
+            if (!ks.has(k)) { ks.add(k); rows.push([p, q, k]); }
+          }
+          const E = lead === 1 ? `x^{2}+kx${signed(c)}` : `2x^{2}+kx${signed(c)}`;
+          const pos = [...ks].filter((k) => k > 0).sort((u, v) => u - v);
+          return {
+            q: `${tex("k")} は整数とする。${tex(E)} が整数を係数とする ${tex("x")} の1次式の積に因数分解できるような ${tex("k")} は何個ある？`,
+            ans: ks.size,
+            unit: "個",
+            hint: lead === 1 ? `$x^{2}+kx${signed(c)}=(x+p)(x+q)$ とおくと $pq=${c}$、$k=p+q$。積が ${c} になる整数の組をすべて調べる。` : `$2x^{2}+kx${signed(c)}=(2x+p)(x+q)$ とおくと $pq=${c}$、$k=2q+p$。積が ${c} になる整数の組をすべて調べる。`,
+            steps: [
+              lead === 1 ? `$pq=${c}$ となる整数の組から $k=p+q$ を作る` : `$pq=${c}$ となる整数の組から $k=2q+p$ を作る`,
+              `正の値は ${pos.join(", ")}、負の値はその符号を変えたもの${ks.has(0) ? "、ほかに $k=0$" : ""}`,
+              `異なる $k$ は全部で ${ks.size} 個`,
+            ],
+          };
+        }),
       ],
     },
   },
@@ -542,6 +913,50 @@ export const UNITS = [
               `$${m}=\\sqrt{${m * m}}$ ${big ? ">" : "<"} $\\sqrt{${n}}$ なので $${m}-\\sqrt{${n}}$ は${big ? "正" : "負"}`,
               big ? `そのまま外して $${A}$` : `符号を変えて外す：$-(${A})=${B}$`,
             ],
+          };
+        }),
+        t("HI-jissu-1c", (r) => {
+          const n = pick(r, [2, 3, 5, 6, 7]), ks = sample(r, [1, 2, 3, 4, 5], 3), sg = [1, sgn(r), sgn(r)];
+          const tot = ks[0] * sg[0] + ks[1] * sg[1] + ks[2] * sg[2];
+          if (tot === 0) return { skip: true };
+          const rads = ks.map((k) => k * k * n);
+          const E = rads.map((v, i) => `${i === 0 ? "" : sg[i] > 0 ? "+" : "-"}\\sqrt{${v}}`).join("");
+          const ok = tex(sqrtTex(tot, n));
+          const naive = rads[0] + sg[1] * rads[1] + sg[2] * rads[2];
+          return {
+            q: `${tex(E)} を計算すると？`,
+            ans: ok,
+            choices: choices4(r, ok, [naive > 0 ? tex(sqrtTex(1, naive)) : null, tex(sqrtTex(ks[0] - sg[1] * ks[1] + sg[2] * ks[2], n)), tex(sqrtTex(ks[0] + ks[1] + ks[2], n)), tex(sqrtTex(-tot, n))].filter((x) => x && x !== "$0$"), (i) => tex(sqrtTex(tot + (i % 2 ? -1 : 1) * (Math.floor(i / 2) + 1), n))),
+            hint: "それぞれの根号を $a\\sqrt{b}$（$b$ はできるだけ小さく）に直してから、同じ根号どうしをまとめる。",
+            steps: [
+              rads.filter((v) => v !== n).map((v) => `$\\sqrt{${v}}=${sqrtTex(1, v)}$`).join("、"),
+              `$${ks.map((k, i) => `${i === 0 ? "" : sg[i] > 0 ? "+" : "-"}${sqrtTex(k, n)}`).join("")}=${sqrtTex(tot, n)}$`,
+            ],
+          };
+        }),
+        t("HI-jissu-1d", (r) => {
+          const kind = r(0, 2);
+          let shown, num, den, st;
+          if (kind === 0) {
+            const a = r(1, 8);
+            shown = `0.\\dot{${a}}`; num = a; den = 9;
+            st = [`$x=0.${a}${a}${a}\\cdots$ とおくと $10x=${a}.${a}${a}\\cdots$`, `辺々引いて $9x=${a}$`];
+          } else if (kind === 1) {
+            const a = r(0, 9), b = r(0, 9);
+            if (a === b) return { skip: true };
+            shown = `0.\\dot{${a}}\\dot{${b}}`; num = 10 * a + b; den = 99;
+            st = [`$x=0.${a}${b}${a}${b}\\cdots$ とおくと $100x=${a}${b}.${a}${b}\\cdots$`.replace("=0" + b + ".", "=" + b + "."), `辺々引いて $99x=${num}$`];
+          } else {
+            const a = r(1, 9), b = r(1, 8);
+            if (a === b) return { skip: true };
+            shown = `0.${a}\\dot{${b}}`; num = 9 * a + b; den = 90;
+            st = [`$x=0.${a}${b}${b}\\cdots$ とおくと $10x=${a}.${b}${b}\\cdots$、$100x=${a}${b}.${b}${b}\\cdots$`, `辺々引いて $90x=${a}${b}-${a}=${num}$`];
+          }
+          return {
+            q: `循環小数 ${tex(shown)} を分数で表すと？（約分した形で）`,
+            ans: fracAns(num, den),
+            hint: "循環する部分の桁数だけ10倍、100倍した数をつくり、引き算して循環部分を消す。",
+            steps: [...st, `$x=${fr(num, den)}$`],
           };
         }),
       ],
@@ -597,22 +1012,61 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-jissu-2c", (r) => {
+          const [m, n] = pick(r, [[2, 3], [2, 5], [3, 5], [2, 7], [3, 7]]);
+          const a = r(1, 3), b = rnz(r, -3, 3), c = r(1, 3), d = rnz(r, -3, 3);
+          const A = a * c * m + b * d * n, B = a * d + b * c;
+          const T = (p, q) => `${sqrtTex(p, m)}${q < 0 ? "" : "+"}${sqrtTex(q, n)}`;
+          const R = (u, v) => (v === 0 ? String(u) : rad(u, v, m * n));
+          const ok = tex(R(A, B));
+          return {
+            q: `${tex(`(${T(a, b)})(${T(c, d)})`)} を計算すると？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(R(A, -B)), tex(R(a * c + b * d, B)), tex(R(a * c * m - b * d * n, B)), tex(R(A + 1, B))], (i) => tex(R(A, B + i + 1))),
+            hint: "分配法則で4つの積を作る。$\\sqrt{a}\\times\\sqrt{a}=a$、$\\sqrt{a}\\times\\sqrt{b}=\\sqrt{ab}$",
+            steps: [
+              `$=${sqrtTex(a, m)}\\cdot ${sqrtTex(c, m)}+${sqrtTex(a, m)}\\cdot (${sqrtTex(d, n)})+(${sqrtTex(b, n)})\\cdot ${sqrtTex(c, m)}+(${sqrtTex(b, n)})(${sqrtTex(d, n)})$`,
+              `$=${a * c * m}${signed(b * d * n)}+(${a * d}${signed(b * c)})\\sqrt{${m * n}}$`,
+              `$=${R(A, B)}$`,
+            ],
+          };
+        }),
+        t("HI-jissu-2d", (r) => {
+          const pool = [];
+          for (const k of [1, 2, 3, 4]) for (const b of [2, 3, 5, 6, 7]) { const v = k * k * b; if (v >= 10 && v <= 50) pool.push([sqrtTex(k, b), v]); }
+          for (const k of [4, 5, 6, 7]) pool.push([String(k), k * k]);
+          const pickd = sample(r, pool, 12);
+          const four = [];
+          for (const x of pickd) if (four.length < 4 && !four.some((y) => y[1] === x[1])) four.push(x);
+          if (four.length < 4) return { skip: true };
+          const askMax = r(0, 1) === 1;
+          const best = four.reduce((u, v) => (askMax ? (v[1] > u[1] ? v : u) : (v[1] < u[1] ? v : u)));
+          const ok = tex(best[0]);
+          return {
+            q: `4つの数 ${four.map((x) => tex(x[0])).join("、")} のうち、${askMax ? "最も大きい" : "最も小さい"}ものは？`,
+            ans: ok,
+            choices: choices4(r, ok, four.filter((x) => x !== best).map((x) => tex(x[0]))),
+            hint: "正の数どうしは、2乗した値の大小で比べられる。$a\\sqrt{b}=\\sqrt{a^{2}b}$",
+            steps: [
+              `それぞれ2乗すると ${four.map((x) => `$(${x[0]})^{2}=${x[1]}$`).join("、")}`,
+              `2乗が${askMax ? "最も大きい" : "最も小さい"}のは $${best[0]}$`,
+            ],
+          };
+        }),
       ],
       3: [
         t("HI-jissu-3a", (r) => {
           const [b, a] = sample(r, [2, 3, 5, 6, 7], 2).sort((u, v) => u - v);
           const [n, d] = reduce(2 * (a + b), a - b); // x+y = n/d
-          const cube = r(0, 1) === 1;
-          const num = cube ? n ** 3 - 3 * n * d * d : n * n - 2 * d * d;
-          const den = cube ? d ** 3 : d * d;
+          const num = n * n - 2 * d * d, den = d * d;
           return {
-            q: `${tex(`x=\\frac{\\sqrt{${a}}+\\sqrt{${b}}}{\\sqrt{${a}}-\\sqrt{${b}}},\\ y=\\frac{\\sqrt{${a}}-\\sqrt{${b}}}{\\sqrt{${a}}+\\sqrt{${b}}}`)} のとき、${tex(cube ? "x^{3}+y^{3}" : "x^{2}+y^{2}")} の値は？`,
+            q: `${tex(`x=\\frac{\\sqrt{${a}}+\\sqrt{${b}}}{\\sqrt{${a}}-\\sqrt{${b}}},\\ y=\\frac{\\sqrt{${a}}-\\sqrt{${b}}}{\\sqrt{${a}}+\\sqrt{${b}}}`)} のとき、${tex("x^{2}+y^{2}")} の値は？`,
             ans: fracAns(num, den),
             hint: "$x$ と $y$ を別々に計算せず、$x+y$ と $xy$ を先に求める（対称式）。",
             steps: [
-              `$xy=1$、$x+y=\\frac{(\\sqrt{${a}}+\\sqrt{${b}})^{2}+(\\sqrt{${a}}-\\sqrt{${b}})^{2}}{${a}-${b}}=\\frac{${2 * (a + b)}}{${a - b}}=${fracTex(n, d)}$`,
-              cube ? "$x^{3}+y^{3}=(x+y)^{3}-3xy(x+y)$" : "$x^{2}+y^{2}=(x+y)^{2}-2xy$",
-              cube ? `$=\\left(${fracTex(n, d)}\\right)^{3}-3\\cdot ${fracTex(n, d)}=${fracTex(num, den)}$` : `$=\\left(${fracTex(n, d)}\\right)^{2}-2=${fracTex(num, den)}$`,
+              `$xy=1$、$x+y=\\frac{(\\sqrt{${a}}+\\sqrt{${b}})^{2}+(\\sqrt{${a}}-\\sqrt{${b}})^{2}}{${a}-${b}}=${fr(2 * (a + b), a - b)}$`,
+              "$x^{2}+y^{2}=(x+y)^{2}-2xy$",
+              `$=\\left(${fracTex(n, d)}\\right)^{2}-2=${fracTex(num, den)}$`,
             ],
           };
         }),
@@ -640,6 +1094,41 @@ export const UNITS = [
               `$\\frac{1}{\\sqrt{${n}}-${m}}=\\sqrt{${n}}+${m}$。$${m}<\\sqrt{${n}}<${m + 1}$ より整数部分は ${2 * m}`,
               `$b=\\sqrt{${n}}-${m}$、$\\frac{1}{b}=\\sqrt{${n}}+${m}$ なので $\\frac{1}{b}-b=${2 * m}$`,
               `$b^{2}+\\frac{1}{b^{2}}=\\left(\\frac{1}{b}-b\\right)^{2}+2=${4 * m * m}+2=${4 * m * m + 2}$`,
+            ],
+          };
+        }),
+        t("HI-jissu-3c", (r) => {
+          const sA = r(1, 3), tA = r(sA + 1, 5), a = sA * sA, b = tA * tA;
+          const rt = (k) => (Number.isInteger(Math.sqrt(k)) ? String(Math.sqrt(k)) : `\\sqrt{${k}}`);
+          const term = (k) => `\\frac{1}{${rt(k)}+${rt(k + 1)}}`;
+          const E = b - a === 3 ? `${term(a)}+${term(a + 1)}+${term(a + 2)}` : `${term(a)}+${term(a + 1)}+\\cdots+${term(b - 1)}`;
+          return {
+            q: `${tex(E)} を計算すると？`,
+            ans: tA - sA,
+            hint: "1つ1つの項の分母を有理化してみる。打ち消し合う項が出てくる。",
+            steps: [
+              `$\\frac{1}{\\sqrt{k}+\\sqrt{k+1}}=\\frac{\\sqrt{k+1}-\\sqrt{k}}{(k+1)-k}=\\sqrt{k+1}-\\sqrt{k}$`,
+              `与式 $=(${rt(a + 1)}-${rt(a)})+(${rt(a + 2)}-${rt(a + 1)})+\\cdots+(${rt(b)}-${rt(b - 1)})$`,
+              `$=${rt(b)}-${rt(a)}=${tA - sA}$`,
+            ],
+          };
+        }),
+        t("HI-jissu-3d", (r) => {
+          const u = r(-5, 3), v = u + r(1, 5), d = v - u;
+          let c = d + r(1, 6);
+          if ((u + v + c) % 2) c++;
+          const x1 = (u + v - c) / 2, x2 = (u + v + c) / 2;
+          const ok = tex(`x=${x1},\\ ${x2}`);
+          return {
+            q: `方程式 ${tex(`\\sqrt{${poly([1, -2 * v, v * v])}}+\\sqrt{${poly([1, -2 * u, u * u])}}=${c}`)} を解くと？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(`x=${x2}`), tex(`x=${x1}`), tex(`x=${u},\\ ${v}`), tex(`x=${u - c},\\ ${v + c}`)]),
+            hint: "根号の中を $(\\ )^{2}$ の形にして $\\sqrt{A^{2}}=|A|$ を使い、絶対値の方程式として場合分けする。",
+            steps: [
+              `与式は $|x${sh(-v)}|+|x${sh(-u)}|=${c}$`,
+              `$x<${u}$ のとき $-2x${sh(u + v)}=${c}$ より $x=${x1}$（適する）、$${u}\\leqq x\\leqq ${v}$ のとき $${d}=${c}$ となり解なし`,
+              `$x>${v}$ のとき $2x${sh(-(u + v))}=${c}$ より $x=${x2}$（適する）`,
+              `$x=${x1},\\ ${x2}$`,
             ],
           };
         }),
@@ -692,6 +1181,44 @@ export const UNITS = [
               `$\\sqrt{${m}${op}\\sqrt{${n}}}=\\sqrt{\\frac{${2 * m}${op}2\\sqrt{${n}}}{2}}=\\frac{\\sqrt{${a + b}${op}2\\sqrt{${a}\\cdot ${b}}}}{\\sqrt{2}}$`,
               `$=\\frac{${SA}${op}${SB}}{\\sqrt{2}}=\\frac{${sqrtTex(1, 2 * a)}${op}${sqrtTex(1, 2 * b)}}{2}$`,
               `$=${okS}$`,
+            ],
+          };
+        }),
+        t("HI-jissu-4c", (r) => {
+          const n = pick(r, [2, 3, 5]);
+          const p = r(1, 3), q = rnz(r, -2, 2), rr = rnz(r, -3, 3), sv = rnz(r, -2, 2);
+          if (p * sv - q * rr === 0) return { skip: true };
+          const a = rnz(r, -4, 4), b = rnz(r, -4, 4);
+          const T = p * a + rr * b, U = q * a + sv * b;
+          const askA = r(0, 1) === 1;
+          const f = (x, y) => `(${x}${y < 0 ? "-" : "+"}${Math.abs(y) === 1 ? "" : Math.abs(y)}\\sqrt{${n}})`;
+          const rhs = U === 0 ? String(T) : rad(T, U, n);
+          return {
+            q: `${tex("a,\\ b")} は有理数とする。${tex(`${f(p, q)}a+${f(rr, sv)}b=${rhs}`)} が成り立つとき、${tex(askA ? "a" : "b")} の値は？`,
+            ans: askA ? a : b,
+            hint: `$\\sqrt{${n}}$ は無理数。有理数の部分どうし、$\\sqrt{${n}}$ の係数どうしが等しくなる。`,
+            steps: [
+              `左辺を整理すると $(${p === 1 ? "" : p}a${signedVar(rr, "b")})+(${coefVar(q, "a")}${signedVar(sv, "b")})\\sqrt{${n}}$`,
+              `$a,\\ b$ は有理数で $\\sqrt{${n}}$ は無理数なので $${coefVar(p, "a")}${signedVar(rr, "b")}=${T}$、$${coefVar(q, "a")}${signedVar(sv, "b")}=${U}$`,
+              `これを解いて $a=${a},\\ b=${b}$`,
+            ],
+          };
+        }),
+        t("HI-jissu-4d", (r) => {
+          const pts = sample(r, [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6], 3).sort((u, v) => u - v);
+          const w = [pick(r, [1, 1, 2]), pick(r, [1, 1, 2]), pick(r, [1, 1, 2])];
+          const f = (x) => pts.reduce((acc, p, i) => acc + w[i] * Math.abs(x - p), 0);
+          const vals = pts.map(f), mn = Math.min(...vals);
+          const order = shuffle(r, [0, 1, 2]);
+          const E = order.map((i, k) => `${k === 0 ? "" : "+"}${w[i] === 1 ? "" : w[i]}|x${sh(-pts[i])}|`).join("");
+          return {
+            q: `${tex("x")} がすべての実数を動くとき、${tex(E)} の最小値は？`,
+            ans: mn,
+            hint: "折れ線のグラフになる。傾きが変わるのは絶対値の中が0になる点なので、その点での値を比べる（数直線上の距離の和と考えてもよい）。",
+            steps: [
+              `グラフは折れ線で、傾きが変わるのは $x=${pts.join(",\\ ")}$`,
+              pts.map((p, i) => `$x=${p}$ のとき ${vals[i]}`).join("、"),
+              `この中で最小の ${mn} が最小値`,
             ],
           };
         }),
@@ -748,6 +1275,55 @@ export const UNITS = [
               `移項して $${coefVar(dl)}${OPS[op]} ${d - b}$`,
               `$x${OPS[op2]} ${fracTex(d - b, dl)}$${dl < 0 ? "（負の数で割ったので向きが逆）" : ""}`,
               `これを満たす${lower ? "最小" : "最大"}の整数は ${v}`,
+            ],
+          };
+        }),
+        t("HI-futoshiki-1c", (r) => {
+          const k = r(2, 5), m = r(1, 9), lt = r(0, 1) === 1; // 前提 a<b か a>b か
+          const [A, B] = pick(r, [["a", "b"], ["x", "y"], ["p", "q"]]);
+          const V = (t) => t.replace(/\\frac/g, "§").replace(/a/g, "#").replace(/b/g, B).replace(/#/g, A).replace(/§/g, "\\frac");
+          const P = lt ? "<" : ">", N = lt ? ">" : "<";
+          const T = [`a${signed(m)}${P}b${signed(m)}`, `a-${m}${P}b-${m}`, `${k}a${P}${k}b`, `-${k}a${N}-${k}b`, `\\frac{a}{${k}}${P}\\frac{b}{${k}}`, `-a${N}-b`];
+          const F = [`${k}a${N}${k}b`, `-${k}a${P}-${k}b`, `a-${m}${N}b-${m}`, `-a${P}-b`, `\\frac{a}{${k}}${N}\\frac{b}{${k}}`, `${m}-a${P}${m}-b`];
+          const ok = tex(V(pick(r, T)));
+          return {
+            q: `${tex(`${A}${P}${B}`)} のとき、次のうち正しいものは？`,
+            ans: ok,
+            choices: choices4(r, ok, sample(r, F, 3).map((x) => tex(V(x)))),
+            hint: "両辺に同じ数を足す・引く、正の数を掛ける・割るときは向きはそのまま。負の数を掛ける・割ると向きが逆になる。",
+            steps: [
+              `負の数を掛けたり割ったりしたもの、$-${A}$ や $${m}-${A}$ の形は不等号の向きが逆になる`,
+              `正しいのは $${ok.slice(1, -1)}$`,
+            ],
+          };
+        }),
+        t("HI-futoshiki-1d", (r) => {
+          const a = r(-5, 5), b = r(1, 6), kind = r(0, 2);
+          const A = `|x${sh(-a)}|`;
+          if (kind === 0) {
+            const ok = tex(`x=${a - b},\\ ${a + b}`);
+            return {
+              q: `方程式 ${tex(`${A}=${b}`)} を解くと？`,
+              ans: ok,
+              choices: choices4(r, ok, [tex(`x=${-a - b},\\ ${-a + b}`), tex(`x=${a + b}`), tex(`x=${a - b}`), tex(`x=${-b},\\ ${b}`)]),
+              hint: "$|X|=c\\ (c>0)$ のとき $X=\\pm c$",
+              steps: [`$x${sh(-a)}=\\pm ${b}$`, `$x=${a}\\pm ${b}$ より $x=${a - b},\\ ${a + b}$`],
+            };
+          }
+          const eq = r(0, 1) === 1;
+          const inside = kind === 1;
+          const op = inside ? (eq ? "\\leqq" : "<") : eq ? "\\geqq" : ">";
+          const le = eq ? "\\leqq" : "<";
+          const IN = (u, v) => tex(`${u}${le} x${le} ${v}`), OUT = (u, v) => tex(`x${le} ${u},\\ ${v}${le} x`);
+          const ok = inside ? IN(a - b, a + b) : OUT(a - b, a + b);
+          return {
+            q: `不等式 ${tex(`${A}${op} ${b}`)} を解くと？`,
+            ans: ok,
+            choices: choices4(r, ok, [inside ? OUT(a - b, a + b) : IN(a - b, a + b), inside ? IN(-a - b, -a + b) : OUT(-a - b, -a + b), inside ? tex(`x${le} ${a + b}`) : tex(`x${eq ? "\\geqq" : ">"} ${a + b}`), inside ? IN(-b, b) : OUT(-b, b)]),
+            hint: inside ? "$c>0$ のとき $|X|<c \\iff -c<X<c$" : "$c>0$ のとき $|X|>c \\iff X<-c,\\ c<X$",
+            steps: [
+              inside ? `$-${b}${le} x${sh(-a)}${le} ${b}$` : `$x${sh(-a)}${le} -${b}$ または $${b}${le} x${sh(-a)}$`,
+              `$${ok.slice(1, -1)}$`,
             ],
           };
         }),
@@ -815,6 +1391,41 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-futoshiki-2c", (r) => {
+          const [p, q] = sample(r, [2, 3, 4, 5, 6], 2), a = r(-5, 5), b = r(-5, 5), c = r(-3, 3);
+          const op = pick(r, ["<", ">", "<=", ">="]);
+          const L = (p * q) / gcd(p, q), A = L / p - L / q;
+          const rhs = c * L + (L / p) * a + (L / q) * b;
+          const op2 = A > 0 ? op : FLIP[op];
+          const S = (o, n) => tex(`x${OPS[o]} ${fracTex(n, A)}`);
+          const ok = S(op2, rhs);
+          return {
+            q: `不等式 ${tex(`\\frac{x${sh(-a)}}{${p}}-\\frac{x${sh(b)}}{${q}}${OPS[op]} ${c}`)} を解くと？`,
+            ans: ok,
+            choices: choices4(r, ok, [S(FLIP[op2], rhs), S(op2, c + (L / p) * a + (L / q) * b), S(op2, c * L + (L / p) * a - (L / q) * b), S(op2, -rhs)], (i) => S(op2, rhs + (i + 1) * A)),
+            hint: `両辺に分母の最小公倍数 ${L} を掛けて分母をはらう。右辺にも掛けるのを忘れずに。`,
+            steps: [
+              `両辺に ${L} を掛けて $${L / p === 1 ? "" : L / p}(x${sh(-a)})-${L / q === 1 ? "" : L / q}(x${sh(b)})${OPS[op]} ${c * L}$`,
+              `整理して $${coefVar(A)}${OPS[op]} ${rhs}$${A < 0 ? "（負の数で割るので向きが逆）" : ""}`,
+              ...(A === 1 ? [] : [`$${ok.slice(1, -1)}$`]),
+            ],
+          };
+        }),
+        t("HI-futoshiki-2d", (r) => {
+          const q = pick(r, [50, 60, 80, 100, 120]), d = pick(r, [20, 30, 40, 50, 70]), p = q + d, n = r(10, 20);
+          const xm = r(2, n - 2), M = q * n + d * xm + 10 * r(0, d / 10 - 1);
+          return {
+            q: `1個 ${p} 円の品物 A と、1個 ${q} 円の品物 B を合わせて ${n} 個買い、代金の合計を ${M} 円以下にしたい。A をできるだけ多く買うとき、A は何個買える？`,
+            ans: xm,
+            unit: "個",
+            hint: "A を $x$ 個とすると B は $(" + n + "-x)$ 個。代金の条件を不等式で表す。",
+            steps: [
+              `A を $x$ 個とすると $${p}x+${q}(${n}-x)\\leqq ${M}$`,
+              `$${d}x\\leqq ${M - q * n}$ より $x\\leqq ${fr(M - q * n, d)}$`,
+              `$x$ は整数なので、最大で ${xm} 個`,
+            ],
+          };
+        }),
       ],
       3: [
         t("HI-futoshiki-3a", (r) => {
@@ -853,6 +1464,50 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-futoshiki-3c", (r) => {
+          const p = rnz(r, -5, 5), q = rnz(r, -4, 4), big = r(0, 1) === 1;
+          if (p === q) return { skip: true };
+          const op = pick(r, ["<", ">", "<=", ">="]);
+          const op2 = big ? op : FLIP[op];
+          const F = (u, v) => `\\frac{a${signed(-u)}}{a${signed(-v)}}`;
+          const S = (o, f) => tex(`x${OPS[o]} ${f}`);
+          const ok = S(op2, F(p, q));
+          return {
+            q: `${tex(big ? `a>${q}` : `a<${q}`)} のとき、${tex("x")} の不等式 ${tex(`ax${signed(p)}${OPS[op]} ${coefVar(q)}+a`)} を解くと？`,
+            ans: ok,
+            choices: choices4(r, ok, [S(FLIP[op2], F(p, q)), S(op2, F(q, p)), S(FLIP[op2], F(q, p)), S(op2, `\\frac{a${signed(p)}}{a${signed(-q)}}`)]),
+            hint: `$x$ の項を左辺に集めると $(a${signed(-q)})x$ の形になる。$a${signed(-q)}$ の符号で、割ったときの向きが決まる。`,
+            steps: [
+              `移項して $(a${signed(-q)})x${OPS[op]} a${signed(-p)}$`,
+              big ? `$a>${q}$ より $a${signed(-q)}>0$ なので、向きはそのまま` : `$a<${q}$ より $a${signed(-q)}<0$ なので、両辺を割ると向きが逆になる`,
+              `$${ok.slice(1, -1)}$`,
+            ],
+          };
+        }),
+        t("HI-futoshiki-3d", (r) => {
+          const m = r(-4, 4), K = r(-3, 6), e1 = r(0, 1) === 1, e2 = r(0, 1) === 1;
+          const c = r(2, 4), A = c + 1, B = r(-6, 6); // 2つ目：(c+1)x + B (<=/<) cx + B + K → x (<=/<) K
+          const none = r(0, 1) === 1;
+          const both = e1 && e2;
+          // 解をもつ ⇔ a+m < K（両方に等号があれば a+m ≦ K）
+          const T = K - m;
+          const opsHas = both ? "\\leqq" : "<";
+          const opsNone = both ? ">" : "\\geqq";
+          const S = (o) => tex(`a${o} ${T}`);
+          const ok = S(none ? opsNone : opsHas);
+          const all = ["<", "\\leqq", ">", "\\geqq"].map(S);
+          return {
+            q: `連立不等式 ${tex(`\\begin{cases} x-a${e1 ? "\\geqq" : ">"} ${m} \\\\ ${A}x${signed(B)}${e2 ? "\\leqq" : "<"} ${c}x${signed(B + K)} \\end{cases}`)} が${none ? "解をもたない" : "解をもつ"}ような、定数 ${tex("a")} の値の範囲は？`,
+            ans: ok,
+            choices: choices4(r, ok, all.filter((x) => x !== ok)),
+            hint: "それぞれを解いて数直線にかき、共通部分ができる（できない）条件を考える。端が一致するときに注意。",
+            steps: [
+              `1つ目より $x${e1 ? "\\geqq" : ">"} a${sh(m)}$、2つ目より $x${e2 ? "\\leqq" : "<"} ${K}$`,
+              both ? `共通部分があるのは $a${sh(m)}\\leqq ${K}$ のとき（等しいときは $x=${K}$ だけが解）` : `共通部分があるのは $a${sh(m)}<${K}$ のとき（等しいときは解がない）`,
+              `よって ${none ? "解をもたない" : "解をもつ"}のは $${ok.slice(1, -1)}$`,
+            ],
+          };
+        }),
       ],
       4: [
         t("HI-futoshiki-4a", (r) => {
@@ -867,7 +1522,7 @@ export const UNITS = [
             choices: choices4(r, ok, [tex(`${lo}\\leqq a<${hi}`), tex(`${lo}<a<${hi}`), tex(`${lo}\\leqq a\\leqq ${hi}`), tex(`${lo - m}<a\\leqq ${lo}`)]),
             hint: "1つ目は数だけで解ける。2つ目は $x<\\frac{a+c}{m}$ の形。整数がちょうど何個入るかを数直線で考える。",
             steps: [
-              `1つ目より $${coefVar(A)}${dir} ${A * L}$、$x>${L}$。2つ目より $x<\\frac{a${sh(c)}}{${m}}$`,
+              `1つ目より ${A === 1 ? "" : `$${coefVar(A)}${dir} ${A * L}$、`}$x>${L}$。2つ目より $x<\\frac{a${sh(c)}}{${m}}$`,
               `整数 ${Array.from({ length: k }, (_, i) => L + 1 + i).join(", ")} だけが入るには $${L + k}<\\frac{a${sh(c)}}{${m}}\\leqq ${L + k + 1}$`,
               `$${m * (L + k)}<a${sh(c)}\\leqq ${m * (L + k + 1)}$ より $${lo}<a\\leqq ${hi}$`,
             ],
@@ -890,6 +1545,64 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-futoshiki-4c", (r) => {
+          const p = rnz(r, -4, 4), gt = r(0, 1) === 1, sol = r(0, 1) === 1; // 1つ目は ax+b>0（gt）か <0、解は x<p（sol）か x>p
+          const aPos = gt ? !sol : sol; // ax+b>0 の解が x<p ⇔ a<0
+          const op2 = pick(r, ["<", ">"]);
+          // 2つ目：bx+a op2 0、b=-ap → a(1-px) op2 0
+          const o1 = aPos ? op2 : FLIP[op2]; // 1-px o1 0
+          const o2 = FLIP[o1]; // px o2 1
+          const o3 = p > 0 ? o2 : FLIP[o2]; // x o3 1/p
+          const S = (o, v) => tex(`x${OPS[o]} ${v}`);
+          const ok = S(o3, fracTex(1, p));
+          return {
+            q: `${tex("x")} の不等式 ${tex(`ax+b${gt ? ">" : "<"}0`)} の解が ${tex(`x${sol ? "<" : ">"}${p}`)} であるとき、${tex("x")} の不等式 ${tex(`bx+a${OPS[op2]}0`)} を解くと？`,
+            ans: ok,
+            choices: choices4(r, ok, [S(FLIP[o3], fracTex(1, p)), S(o3, fracTex(-1, p)), S(FLIP[o3], fracTex(-1, p))]),
+            hint: "解の不等号の向きから $a$ の符号がわかる。さらに解の境目から $b$ を $a$ で表す。",
+            steps: [
+              `解が $x${sol ? "<" : ">"}${p}$ になるのは、$a${aPos ? ">" : "<"}0$ で $-\\frac{b}{a}=${p}$ のとき。よって $b=${p === 1 ? "-" : p === -1 ? "" : -p}a$`,
+              `$bx+a=a(1${p > 0 ? "-" : "+"}${Math.abs(p) === 1 ? "" : Math.abs(p)}x)$ なので $a(1${p > 0 ? "-" : "+"}${Math.abs(p) === 1 ? "" : Math.abs(p)}x)${OPS[op2]}0$`,
+              `$a${aPos ? ">" : "<"}0$ で割って $1${p > 0 ? "-" : "+"}${Math.abs(p) === 1 ? "" : Math.abs(p)}x${OPS[o1]}0$、これを解いて $x${OPS[o3]} ${fracTex(1, p)}$`,
+            ],
+          };
+        }),
+        t("HI-futoshiki-4d", (r) => {
+          const c1 = r(-3, 3), c2 = r(1, 6), k = r(2, 3), e1 = r(0, 1) === 1, e2 = !e1; // 等号は片方だけ（答えが1つの区間になる）
+          // 2a+c1 (<,≦) x (<,≦) a+c2 を満たす整数の個数 N(a)
+          const N = (a) => { let n = 0; for (let x = -60; x <= 60; x++) { const L = 2 * a + c1, R = a + c2; if ((e1 ? x >= L : x > L) && (e2 ? x <= R : x < R)) n++; } return n; };
+          // a は 1/2 刻みの点で N が変わる。1/4 刻みで調べて区間にまとめる
+          const lo = c2 - c1 - k - 3, hi = c2 - c1 - k + 3;
+          const pts = []; for (let t = lo * 4; t <= hi * 4; t++) pts.push(t / 4);
+          const good = pts.map((a) => N(a) === k);
+          if (good[0] || good[good.length - 1] || !good.some((g) => g)) return { skip: true };
+          const iv = [];
+          for (let i = 0; i < pts.length; i++) {
+            if (!good[i]) continue;
+            let j = i; while (j + 1 < pts.length && good[j + 1]) j++;
+            // 端は 1/2 の倍数の点。pts[i] が 1/2 の倍数なら閉、そうでなければ開（その左の 1/2 の倍数）
+            const L = pts[i] * 2 === Math.round(pts[i] * 2) ? [pts[i], true] : [pts[i] - 0.25, false];
+            const R = pts[j] * 2 === Math.round(pts[j] * 2) ? [pts[j], true] : [pts[j] + 0.25, false];
+            iv.push([L, R]);
+            i = j;
+          }
+          const fq = (v) => fracTex(Math.round(v * 2), 2);
+          const piece = ([[l, lc], [rr2, rc]]) => (l === rr2 ? `a=${fq(l)}` : `${fq(l)}${lc ? "\\leqq" : "<"} a${rc ? "\\leqq" : "<"} ${fq(rr2)}`);
+          const show = (list) => tex(list.map(piece).join(",\\ "));
+          const ok = show(iv);
+          const tog = (f) => show(iv.map(([[l, lc], [rr2, rc]]) => (l === rr2 ? [[l, lc], [rr2, rc]] : f([[l, lc], [rr2, rc]]))));
+          return {
+            q: `連立不等式 ${tex(`\\begin{cases} x-2a${e1 ? "\\geqq" : ">"} ${c1} \\\\ x-a${e2 ? "\\leqq" : "<"} ${c2} \\end{cases}`)} を満たす整数 ${tex("x")} がちょうど ${k} 個となるような、定数 ${tex("a")} の値の範囲は？`,
+            ans: ok,
+            choices: choices4(r, ok, [tog(([[l, lc], [q2, rc]]) => [[l, !lc], [q2, !rc]]), tog(([[l, lc], [q2, rc]]) => [[l, !lc], [q2, rc]]), tog(([[l, lc], [q2, rc]]) => [[l, lc], [q2, !rc]]), tog(([[l, lc], [q2, rc]]) => [[l - 0.5, lc], [q2 - 0.5, rc]])]),
+            hint: "解は $2a+(\\text{定数})$ と $a+(\\text{定数})$ ではさまれた範囲。両端が $a$ とともに動くので、$a$ を少しずつ動かしたときの整数の個数の変化を、端が整数をまたぐ $a$ の値で区切って調べる。",
+            steps: [
+              `解は $2a${signed(c1)}${e1 ? "\\leqq" : "<"} x${e2 ? "\\leqq" : "<"} a${signed(c2)}$`,
+              "端が整数になるのは $a$ が $\\frac{1}{2}$ の倍数（左端）か整数（右端）のとき。その値で区切って整数の個数を数える",
+              `整数がちょうど ${k} 個になるのは $${ok.slice(1, -1)}$`,
+            ],
+          };
+        }),
       ],
     },
   },
@@ -899,31 +1612,40 @@ export const UNITS = [
     id: "HI-shugo", area: "num", name: "集合と命題", desc: "共通部分・和集合・必要条件と十分条件・対偶",
     prereqs: ["HI-futoshiki"],
     points: [
-      "$A\\cap B$ は共通部分、$A\\cup B$ は和集合、$\\overline{A}$ は補集合。ド・モルガン $\\overline{A\\cup B}=\\overline{A}\\cap\\overline{B}$",
-      "$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)$（重なりを2回数えないように引く）",
+      "$A\\cap B$ は共通部分、$A\\cup B$ は和集合、$\\overline{A}$ は補集合。ド・モルガン $\\overline{A\\cup B}=\\overline{A}\\cap\\overline{B}$、$\\overline{A\\cap B}=\\overline{A}\\cup\\overline{B}$",
+      "不等式で表された集合は数直線で考える。端の値が入るか（$\\leqq$ か $<$ か）に注意する。",
       "$p\\Rightarrow q$ が真のとき、$p$ は $q$ であるための十分条件、$q$ は $p$ であるための必要条件。",
-      "命題 $p\\Rightarrow q$ と対偶 $\\overline{q}\\Rightarrow\\overline{p}$ の真偽は一致する。条件を集合で表すと「小さい方が十分条件」。",
+      "命題 $p\\Rightarrow q$ と対偶 $\\overline{q}\\Rightarrow\\overline{p}$ の真偽は一致する。条件を集合で表すと「小さい方が十分条件」。「かつ」の否定は「または」、「すべての」の否定は「ある」。",
     ],
     levels: {
       1: [
         t("HI-shugo-1a", (r) => {
           const U = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
           const A = sample(r, U, r(3, 6)).sort((x, y) => x - y), B = sample(r, U, r(3, 6)).sort((x, y) => x - y);
+          const inA = (x) => A.includes(x), inB = (x) => B.includes(x);
           const kinds = [
-            ["A\\cap B", U.filter((x) => A.includes(x) && B.includes(x))],
-            ["A\\cup B", U.filter((x) => A.includes(x) || B.includes(x))],
-            ["\\overline{A}\\cap B", U.filter((x) => !A.includes(x) && B.includes(x))],
-            ["\\overline{A\\cup B}", U.filter((x) => !A.includes(x) && !B.includes(x))],
+            ["A\\cap B", U.filter((x) => inA(x) && inB(x))],
+            ["A\\cup B", U.filter((x) => inA(x) || inB(x))],
+            ["\\overline{A}\\cap B", U.filter((x) => !inA(x) && inB(x))],
+            ["\\overline{A\\cup B}", U.filter((x) => !inA(x) && !inB(x))],
           ];
           const [name, S] = pick(r, kinds);
+          const ST = (arr) => tex(arr.length ? `\\{${arr.join(",")}\\}` : "\\varnothing");
+          const ok = ST(S);
+          const traps = [
+            ...kinds.filter(([n]) => n !== name).map(([, v]) => v),
+            U.filter((x) => inA(x) && !inB(x)),
+            U.filter((x) => !(inA(x) && inB(x))),
+            U.filter((x) => !inA(x)),
+          ];
           return {
-            q: `全体集合 ${tex("U=\\{1,2,3,\\ldots,10\\}")} の部分集合 ${tex(`A=\\{${A.join(",")}\\}`)}、${tex(`B=\\{${B.join(",")}\\}`)} について、${tex(`n(${name})`)} は？`,
-            ans: S.length,
-            unit: "個",
+            q: `全体集合 ${tex("U=\\{1,2,3,\\ldots,10\\}")} の部分集合 ${tex(`A=\\{${A.join(",")}\\}`)}、${tex(`B=\\{${B.join(",")}\\}`)} について、${tex(name)} は？`,
+            ans: ok,
+            choices: choices4(r, ok, traps.map(ST), () => ST(U.filter(() => r(0, 1) === 1))),
             hint: "記号の意味（$\\cap$ は「かつ」、$\\cup$ は「または」、上の線は「でない」）を確かめて、要素を書き出す。",
             steps: [
-              `$${name}=${S.length ? `\\{${S.join(",")}\\}` : "\\varnothing"}$`,
-              `要素の個数は ${S.length} 個`,
+              name === "\\overline{A}\\cap B" ? `$\\overline{A}=${ST(U.filter((x) => !inA(x))).slice(1, -1)}$` : name === "\\overline{A\\cup B}" ? `$A\\cup B=${ST(kinds[1][1]).slice(1, -1)}$` : "$A$ と $B$ の要素を1つずつ調べる",
+              `$${name}=${ok.slice(1, -1)}$`,
             ],
           };
         }),
@@ -978,6 +1700,29 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-shugo-1d", (r) => {
+          const C = [
+            ["A\\cap B", (a, b) => a && b], ["A\\cup B", (a, b) => a || b],
+            ["\\overline{A}\\cap\\overline{B}", (a, b) => !a && !b], ["\\overline{A}\\cup\\overline{B}", (a, b) => !a || !b],
+            ["A\\cap\\overline{B}", (a, b) => a && !b], ["\\overline{A}\\cap B", (a, b) => !a && b],
+            ["\\overline{A}\\cup B", (a, b) => !a || b], ["A\\cup\\overline{B}", (a, b) => a || !b],
+          ];
+          const ask = pick(r, [
+            ["\\overline{A\\cup B}", 2, 3, "\\overline{A}\\cap\\overline{B}"], ["\\overline{A\\cap B}", 3, 2, "\\overline{A}\\cup\\overline{B}"],
+            ["\\overline{\\overline{A}\\cup B}", 4, 6, "\\overline{\\overline{A}}\\cap\\overline{B}=A\\cap\\overline{B}"], ["\\overline{A\\cap\\overline{B}}", 6, 4, "\\overline{A}\\cup\\overline{\\overline{B}}=\\overline{A}\\cup B"],
+            ["\\overline{\\overline{A}\\cap\\overline{B}}", 1, 0, "\\overline{\\overline{A}}\\cup\\overline{\\overline{B}}=A\\cup B"], ["\\overline{A\\cup\\overline{B}}", 5, 7, "\\overline{A}\\cap\\overline{\\overline{B}}=\\overline{A}\\cap B"],
+          ]);
+          const [E, okI, trapI, how] = ask;
+          const ok = tex(C[okI][0]);
+          const rest = C.map((c, i) => i).filter((i) => i !== okI && i !== trapI);
+          return {
+            q: `全体集合を ${tex("U")} とし、${tex("A,\\ B")} をその部分集合とする。${tex(E)} と等しい集合は？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(C[trapI][0]), ...sample(r, rest, 2).map((i) => tex(C[i][0]))]),
+            hint: "ド・モルガンの法則：$\\overline{A\\cup B}=\\overline{A}\\cap\\overline{B}$、$\\overline{A\\cap B}=\\overline{A}\\cup\\overline{B}$。上の線をはずすと $\\cap$ と $\\cup$ が入れかわる。",
+            steps: [`ド・モルガンの法則より $${E}=${how}$`, `等しいのは $${C[okI][0]}$`],
+          };
+        }),
       ],
       2: [
         t("HI-shugo-2a", (r) => {
@@ -1003,43 +1748,95 @@ export const UNITS = [
             ],
           };
         }),
-        t("HI-shugo-2b", (r) => {
-          const N = r(5, 20) * 10, [a, b] = sample(r, [2, 3, 4, 5, 6, 7, 8, 9], 2);
-          const L = (a * b) / gcd(a, b);
-          const na = Math.floor(N / a), nb = Math.floor(N / b), nab = Math.floor(N / L);
-          const kind = r(0, 2);
-          const v = [na + nb - nab, N - (na + nb - nab), na - nab][kind];
-          const what = [`${a} または ${b} で割り切れる数`, `${a} でも ${b} でも割り切れない数`, `${a} で割り切れるが ${b} では割り切れない数`][kind];
+        t("HI-shugo-2c", (r) => {
+          const a1 = r(-5, 0), b1 = a1 + r(1, 3), a2 = b1 + r(1, 3), b2 = a2 + r(1, 3);
+          // A: a1〜a2、B: b1〜b2（a1<b1<a2<b2）。等号はランダム
+          const [e1, e2, e3, e4] = [r(0, 1), r(0, 1), r(0, 1), r(0, 1)].map((x) => x === 1);
+          const inA = (x) => (e1 ? x >= a1 : x > a1) && (e2 ? x <= a2 : x < a2);
+          const inB = (x) => (e3 ? x >= b1 : x > b1) && (e4 ? x <= b2 : x < b2);
+          const ops = [
+            ["A\\cap B", (x) => inA(x) && inB(x)], ["A\\cup B", (x) => inA(x) || inB(x)],
+            ["\\overline{A}\\cap B", (x) => !inA(x) && inB(x)], ["A\\cap\\overline{B}", (x) => inA(x) && !inB(x)],
+          ];
+          const [name, f] = pick(r, ops);
+          const T = (g) => { const p = setTex(g, a1 - 2, b2 + 2); return p.length ? tex(p.join(",\\ ")) : "空集合"; };
+          const ok = T(f);
+          const lt = (eq) => (eq ? "\\leqq" : "<");
+          const traps = [...ops.filter(([n]) => n !== name).map(([, g]) => T(g)), T((x) => !f(x)), T((x) => f(x) || x === b1 || x === a2)];
           return {
-            q: `1 から ${N} までの整数のうち、${what}は何個？`,
-            ans: v,
-            unit: "個",
-            hint: "$a$ の倍数の集合を $A$、$b$ の倍数の集合を $B$ として、$n(A\\cup B)=n(A)+n(B)-n(A\\cap B)$ を使う。",
+            q: `実数全体を全体集合とし、${tex(`A=\\{x\\mid ${a1}${lt(e1)} x${lt(e2)} ${a2}\\}`)}、${tex(`B=\\{x\\mid ${b1}${lt(e3)} x${lt(e4)} ${b2}\\}`)} とする。${tex(name)} を表すものは？`,
+            ans: ok,
+            choices: choices4(r, ok, traps, (i) => T((x) => f(x) || x === a1 + i)),
+            hint: "数直線に $A$ と $B$ をかき、端の値（●か○か）に注意して範囲を読み取る。上の線は「でない」部分。",
             steps: [
-              `$n(A)=${na}$、$n(B)=${nb}$、$A\\cap B$ は ${L} の倍数で $n(A\\cap B)=${nab}$`,
-              [`$n(A\\cup B)=${na}+${nb}-${nab}=${v}$`, `$${N}-n(A\\cup B)=${N}-${na + nb - nab}=${v}$`, `$n(A)-n(A\\cap B)=${na}-${nab}=${v}$`][kind],
+              `数直線で $A$ は $${a1}$ から $${a2}$、$B$ は $${b1}$ から $${b2}$（端の等号に注意）`,
+              `$${name}$ は ${ok}`,
             ],
+          };
+        }),
+        t("HI-shugo-2d", (r) => {
+          const a = r(-3, 5), b = r(-3, 5), kind = r(0, 2);
+          const NOT = { ">": "\\leqq", "\\geqq": "<", "<": "\\geqq", "\\leqq": ">" };
+          const o1 = pick(r, [">", "\\geqq", "<", "\\leqq"]), o2 = pick(r, [">", "\\geqq", "<", "\\leqq"]);
+          const C1 = `x${o1} ${a}`, C2 = `y${o2} ${b}`, N1 = `x${NOT[o1]} ${a}`, N2 = `y${NOT[o2]} ${b}`;
+          const W1 = `x${{ ">": "<", "\\geqq": "\\leqq", "<": ">", "\\leqq": "\\geqq" }[o1]} ${a}`, W2 = `y${{ ">": "<", "\\geqq": "\\leqq", "<": ">", "\\leqq": "\\geqq" }[o2]} ${b}`;
+          const J = (p, c, q) => `$${p}$ ${c} $${q}$`;
+          if (kind === 2) {
+            const lo = r(-4, 2), hi = lo + r(1, 5), e1 = r(0, 1) === 1, e2 = r(0, 1) === 1;
+            const P = `${lo}${e1 ? "\\leqq" : "<"} x${e2 ? "\\leqq" : "<"} ${hi}`;
+            const ok = J(`x${e1 ? "<" : "\\leqq"} ${lo}`, "または", `x${e2 ? ">" : "\\geqq"} ${hi}`);
+            return {
+              q: `条件「${tex(P)}」の否定は？`,
+              ans: ok,
+              choices: choices4(r, ok, [J(`x${e1 ? "<" : "\\leqq"} ${lo}`, "かつ", `x${e2 ? ">" : "\\geqq"} ${hi}`), J(`x${e1 ? "\\leqq" : "<"} ${lo}`, "または", `x${e2 ? "\\geqq" : ">"} ${hi}`), J(`x${e1 ? "\\geqq" : ">"} ${lo}`, "または", `x${e2 ? "\\leqq" : "<"} ${hi}`)]),
+              hint: "「$a\\leqq x\\leqq b$」は「$x\\geqq a$ かつ $x\\leqq b$」のこと。「かつ」の否定は「または」。",
+              steps: [`「${tex(P)}」は「${J(`x${e1 ? "\\geqq" : ">"} ${lo}`, "かつ", `x${e2 ? "\\leqq" : "<"} ${hi}`)}」`, `否定は「${ok}」`],
+            };
+          }
+          const and = kind === 0;
+          const ok = J(N1, and ? "または" : "かつ", N2);
+          return {
+            q: `${tex("x,\\ y")} は実数とする。条件「${J(C1, and ? "かつ" : "または", C2)}」の否定は？`,
+            ans: ok,
+            choices: choices4(r, ok, [J(N1, and ? "かつ" : "または", N2), J(W1, and ? "または" : "かつ", W2), J(W1, and ? "かつ" : "または", W2)]),
+            hint: "ド・モルガンの法則：「$p$ かつ $q$」の否定は「$\\overline{p}$ または $\\overline{q}$」、「$p$ または $q$」の否定は「$\\overline{p}$ かつ $\\overline{q}$」。",
+            steps: [`$${C1}$ の否定は $${N1}$、$${C2}$ の否定は $${N2}$`, `「${and ? "かつ" : "または"}」は「${and ? "または" : "かつ"}」に変わるので「${ok}」`],
+          };
+        }),
+        t("HI-shugo-2e", (r) => {
+          const k = r(1, 5);
+          const T = [
+            [`x>${k + 1}`, `x>${k}`], [`x=${k}`, `x^{2}=${k * k}`], [`x^{2}<${k * k}`, `x<${k}`], [`|x|<${k}`, `x>-${k}`], [`x>${k}`, `x^{2}>${k * k}`],
+          ];
+          const F = [
+            [`x^{2}=${k * k}`, `x=${k}`, `x=-${k}`], [`x<${k}`, `x^{2}<${k * k}`, `x=-${k + 1}`], [`x^{2}>${k * k}`, `x>${k}`, `x=-${k + 1}`],
+            [`|x|>${k}`, `x>${k}`, `x=-${k + 1}`], [`x>${k}`, `x>${k + 1}`, `x=${k + 1}`], [`x>-${k}`, `|x|<${k}`, `x=${k}`],
+          ];
+          const v = pick(r, ["x", "t", "a"]), askTrue = r(0, 1) === 1;
+          const S = ([p, q]) => `$${p.replace(/x/g, v)}$ ならば $${q.replace(/x/g, v)}$`;
+          if (askTrue) {
+            const t0 = pick(r, T), fs = sample(r, F, 3);
+            const ok = S(t0);
+            return {
+              q: `${tex(v)} は実数とする。次の命題のうち、真であるものは？`,
+              ans: ok,
+              choices: choices4(r, ok, fs.map(S)),
+              hint: "偽の命題は、仮定を満たすのに結論を満たさない例（反例）が1つあればよい。",
+              steps: [...fs.map((f) => `「${S(f)}」は偽（反例 $${f[2].replace(/x/g, v)}$）`), `よって真であるのは「${ok}」`],
+            };
+          }
+          const f0 = pick(r, F), ts = sample(r, T, 3);
+          const ok = S(f0);
+          return {
+            q: `${tex(v)} は実数とする。次の命題のうち、偽であるものは？`,
+            ans: ok,
+            choices: choices4(r, ok, ts.map(S)),
+            hint: "偽の命題は、仮定を満たすのに結論を満たさない例（反例）が1つあればよい。",
+            steps: [`「${ok}」は反例 $${f0[2].replace(/x/g, v)}$ があるので偽`, "ほかの3つは、仮定を満たすものがすべて結論を満たすので真"],
           };
         }),
       ],
       3: [
-        t("HI-shugo-3a", (r) => {
-          const N = r(10, 30) * 10, [a, b, c] = sample(r, [2, 3, 5, 7], 3).sort((x, y) => x - y);
-          const f = (k) => Math.floor(N / k);
-          const any = f(a) + f(b) + f(c) - f(a * b) - f(b * c) - f(c * a) + f(a * b * c);
-          const none = r(0, 1) === 1;
-          return {
-            q: `1 から ${N} までの整数のうち、${a}, ${b}, ${c} の${none ? "どれでも割り切れない" : "少なくとも1つで割り切れる"}数は何個？`,
-            ans: none ? N - any : any,
-            unit: "個",
-            hint: "$n(A\\cup B\\cup C)=n(A)+n(B)+n(C)-n(A\\cap B)-n(B\\cap C)-n(C\\cap A)+n(A\\cap B\\cap C)$",
-            steps: [
-              `${a}, ${b}, ${c} の倍数：${f(a)}, ${f(b)}, ${f(c)} 個。${a * b}, ${b * c}, ${c * a} の倍数：${f(a * b)}, ${f(b * c)}, ${f(c * a)} 個。${a * b * c} の倍数：${f(a * b * c)} 個`,
-              `$n(A\\cup B\\cup C)=${f(a) + f(b) + f(c)}-${f(a * b) + f(b * c) + f(c * a)}+${f(a * b * c)}=${any}$`,
-              none ? `どれでも割り切れない数は $${N}-${any}=${N - any}$` : `答えは ${any} 個`,
-            ],
-          };
-        }),
         t("HI-shugo-3b", (r) => {
           const L = -r(1, 6), U = r(1, 6);
           if (-L === U) return { skip: true };
@@ -1056,25 +1853,74 @@ export const UNITS = [
             ],
           };
         }),
-      ],
-      4: [
-        t("HI-shugo-4a", (r) => {
-          const N = r(10, 30) * 10, [a, b, c] = sample(r, [2, 3, 5, 7], 3);
-          const f = (k) => Math.floor(N / k);
-          let v = 0;
-          for (let x = 1; x <= N; x++) if (x % a !== 0 && (x % b === 0 || x % c === 0)) v++;
-          const bc = f(b) + f(c) - f(b * c), abc = f(a * b) + f(a * c) - f(a * b * c);
+        t("HI-shugo-3c", (r) => {
+          const a0 = pick(r, [-3, -2, -1, 1, 2, 3]), m = r(3, 9), e = m - a0 * a0, d = m - a0;
+          const others = sample(r, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter((x) => x !== m && x !== m - 2 * a0), 4);
+          const [c1, c2, c3, c4] = others;
+          const elA = shuffle(r, [String(c1), String(c2), `a^{2}${sh(e)}`]), elB = shuffle(r, [`a${sh(d)}`, String(c3), String(c4)]);
           return {
-            q: `1 から ${N} までの整数で、${a} の倍数の集合を ${tex("A")}、${b} の倍数の集合を ${tex("B")}、${c} の倍数の集合を ${tex("C")} とする。${tex("n(\\overline{A}\\cap(B\\cup C))")} は？`,
-            ans: v,
-            hint: "$n(\\overline{A}\\cap X)=n(X)-n(A\\cap X)$。$A\\cap(B\\cup C)=(A\\cap B)\\cup(A\\cap C)$ と分配する。",
+            q: `${tex(`A=\\{${elA.join(",\\ ")}\\}`)}、${tex(`B=\\{${elB.join(",\\ ")}\\}`)} について、${tex(`A\\cap B=\\{${m}\\}`)} となるような定数 ${tex("a")} の値は？`,
+            ans: a0,
+            hint: `${m} は $A$ の要素なので、まず $A$ の中で ${m} になれる要素を考える。求めた値が条件を満たすか必ず確かめる。`,
             steps: [
-              `$n(B\\cup C)=${f(b)}+${f(c)}-${f(b * c)}=${bc}$`,
-              `$n(A\\cap(B\\cup C))=n(A\\cap B)+n(A\\cap C)-n(A\\cap B\\cap C)=${f(a * b)}+${f(a * c)}-${f(a * b * c)}=${abc}$`,
-              `$${bc}-${abc}=${v}$`,
+              `$${m}\\in A$ より $a^{2}${sh(e)}=${m}$、$a^{2}=${a0 * a0}$、$a=\\pm ${Math.abs(a0)}$`,
+              `$a=${-a0}$ のとき $B=\\{${elB.map((x) => x === `a${sh(d)}` ? String(-a0 + d) : x).join(",\\ ")}\\}$ で ${m} を含まないので不適`,
+              `$a=${a0}$ のとき $B=\\{${elB.map((x) => x === `a${sh(d)}` ? String(a0 + d) : x).join(",\\ ")}\\}$、$A\\cap B=\\{${m}\\}$ となり適する。よって $a=${a0}$`,
             ],
           };
         }),
+        t("HI-shugo-3d", (r) => {
+          const U = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+          const reg = U.map(() => r(0, 3)); // 0:A∩B 1:A∩B̄ 2:Ā∩B 3:Ā∩B̄
+          const R = [0, 1, 2, 3].map((k) => U.filter((x, i) => reg[i] === k));
+          if (R.some((g) => g.length === 0)) return { skip: true };
+          const askA = r(0, 1) === 1;
+          const hide = askA ? 1 : 2; // 求める集合の片側の部分を隠す
+          const name = ["A\\cap B", "A\\cap\\overline{B}", "\\overline{A}\\cap B", "\\overline{A}\\cap\\overline{B}"];
+          const given = [0, 1, 2, 3].filter((k) => k !== hide);
+          const ST = (arr) => tex(`\\{${[...arr].sort((u, v) => u - v).join(",")}\\}`);
+          const ans = askA ? [...R[0], ...R[1]] : [...R[0], ...R[2]];
+          const ok = ST(ans);
+          const traps = [ST(R[0]), ST(askA ? [...R[0], ...R[2]] : [...R[0], ...R[1]]), ST([...R[0], ...R[3]]), ST(R[hide]), ST([...R[hide], ...R[3]])];
+          return {
+            q: `全体集合 ${tex("U=\\{1,2,3,\\ldots,10\\}")} の部分集合 ${tex("A,\\ B")} について、${given.map((k) => tex(`${name[k]}=\\{${R[k].join(",")}\\}`)).join("、")} であるとき、${tex(askA ? "A" : "B")} は？`,
+            ans: ok,
+            choices: choices4(r, ok, traps),
+            hint: "4つの部分 $A\\cap B$、$A\\cap\\overline{B}$、$\\overline{A}\\cap B$、$\\overline{A}\\cap\\overline{B}$ に分けた図（ベン図）をかき、残りの部分を求める。",
+            steps: [
+              `残りの $${name[hide]}$ は $U$ から与えられた3つを除いたもの：$\\{${R[hide].join(",")}\\}$`,
+              askA ? "$A=(A\\cap B)\\cup(A\\cap\\overline{B})$" : "$B=(A\\cap B)\\cup(\\overline{A}\\cap B)$",
+              `$${askA ? "A" : "B"}=${ok.slice(1, -1)}$`,
+            ],
+          };
+        }),
+        t("HI-shugo-3e", (r) => {
+          const k = r(1, 5), kind = r(0, 2);
+          const J = (p, c, q) => `$${p}$ ${c} $${q}$`;
+          let P, ok, wr;
+          if (kind === 0) {
+            P = `$x+y>${2 * k}$ ならば ${J(`x>${k}`, "または", `y>${k}`)}`;
+            ok = `${J(`x\\leqq ${k}`, "かつ", `y\\leqq ${k}`)} ならば $x+y\\leqq ${2 * k}$`;
+            wr = [`${J(`x\\leqq ${k}`, "または", `y\\leqq ${k}`)} ならば $x+y\\leqq ${2 * k}$`, `${J(`x>${k}`, "または", `y>${k}`)} ならば $x+y>${2 * k}$`, `$x+y\\leqq ${2 * k}$ ならば ${J(`x\\leqq ${k}`, "かつ", `y\\leqq ${k}`)}`];
+          } else if (kind === 1) {
+            P = `${J(`x>${k}`, "かつ", `y>${k}`)} ならば $x+y>${2 * k}$`;
+            ok = `$x+y\\leqq ${2 * k}$ ならば ${J(`x\\leqq ${k}`, "または", `y\\leqq ${k}`)}`;
+            wr = [`$x+y\\leqq ${2 * k}$ ならば ${J(`x\\leqq ${k}`, "かつ", `y\\leqq ${k}`)}`, `$x+y>${2 * k}$ ならば ${J(`x>${k}`, "かつ", `y>${k}`)}`, `${J(`x\\leqq ${k}`, "または", `y\\leqq ${k}`)} ならば $x+y\\leqq ${2 * k}$`];
+          } else {
+            P = `$x^{2}+y^{2}>${2 * k * k}$ ならば ${J(`|x|>${k}`, "または", `|y|>${k}`)}`;
+            ok = `${J(`|x|\\leqq ${k}`, "かつ", `|y|\\leqq ${k}`)} ならば $x^{2}+y^{2}\\leqq ${2 * k * k}$`;
+            wr = [`${J(`|x|\\leqq ${k}`, "または", `|y|\\leqq ${k}`)} ならば $x^{2}+y^{2}\\leqq ${2 * k * k}$`, `${J(`|x|>${k}`, "または", `|y|>${k}`)} ならば $x^{2}+y^{2}>${2 * k * k}$`, `$x^{2}+y^{2}\\leqq ${2 * k * k}$ ならば ${J(`|x|\\leqq ${k}`, "かつ", `|y|\\leqq ${k}`)}`];
+          }
+          return {
+            q: `${tex("x,\\ y")} は実数とする。命題「${P}」の対偶は？`,
+            ans: ok,
+            choices: choices4(r, ok, wr),
+            hint: "$p\\Rightarrow q$ の対偶は $\\overline{q}\\Rightarrow\\overline{p}$。「または」の否定は「かつ」、「かつ」の否定は「または」になる。",
+            steps: ["対偶は「(結論の否定) ならば (仮定の否定)」", "結論・仮定をそれぞれ否定するとき、「かつ」と「または」が入れかわる", `「${ok}」`],
+          };
+        }),
+      ],
+      4: [
         t("HI-shugo-4b", (r) => {
           const c = r(-3, 3), d = r(3, 7), a = c + r(-(d - 1), d - 1);
           const suf = r(0, 1) === 1;
@@ -1105,7 +1951,6 @@ export const UNITS = [
             ["|x+y|=|x|+|y|", "xy\\geqq 0", true, true, "両辺を2乗すると $xy=|xy|$", "同符号（または0）なら等号が成り立つ"],
             ["xy>1", "x>1,\\ y>1", false, true, "反例 $x=y=-2$", "両方1より大きければ積は1より大きい"],
             ["|x|+|y|<1", "x^{2}+y^{2}<1", true, false, "$x^{2}+y^{2}\\leqq(|x|+|y|)^{2}<1$", "反例 $x=y=0.6$"],
-            ["x>y", "x^{3}>y^{3}", true, true, "$x^{3}-y^{3}=(x-y)(x^{2}+xy+y^{2})$ で第2因数は正", "同じ式から逆も成り立つ"],
           ];
           const [P0, Q0, pq0, qp0, w10, w20] = pick(r, L);
           const sw = r(0, 1) === 1;
@@ -1121,6 +1966,43 @@ export const UNITS = [
               `前 ⇒ 後：${pq ? "真" : "偽"}（${w1}）`,
               `後 ⇒ 前：${qp ? "真" : "偽"}（${w2}）`,
               `よって ${ok}`,
+            ],
+          };
+        }),
+        t("HI-shugo-4d", (r) => {
+          const suf = r(0, 1) === 1, w = suf ? r(1, 5) : r(3, 7);
+          const rr = suf ? r(Math.floor(w / 2) + 1, 4) : r(1, Math.ceil(w / 2) - 1), al = r(-4, 2), be = al + w; // 十分なら 2r>w、必要なら 2r<w
+          // 十分：α≦x≦β ⊂ a-r<x<a+r ⇔ β-r<a<α+r、必要：a-r<x<a+r ⊂ α≦x≦β ⇔ α+r≦a≦β-r
+          const L = suf ? be - rr : al + rr, R = suf ? al + rr : be - rr;
+          const S = (l, rc) => tex(`${L}${l ? "\\leqq" : "<"} a${rc ? "\\leqq" : "<"} ${R}`);
+          const ok = suf ? S(false, false) : S(true, true);
+          return {
+            q: `${tex("x")} についての条件 ${tex(`p:\\ ${poly([1, -(al + be), al * be])}\\leqq 0`)}、${tex(`q:\\ |x-a|<${rr}`)} がある。${tex("p")} が ${tex("q")} であるための${suf ? "十分条件" : "必要条件"}となるような定数 ${tex("a")} の値の範囲は？`,
+            ans: ok,
+            choices: choices4(r, ok, [S(suf, suf), S(true, false), S(false, true)]),
+            hint: `それぞれの条件を満たす $x$ の範囲（集合 $P,\\ Q$）を求め、${suf ? "$P\\subset Q$" : "$Q\\subset P$"} となる条件を考える。端が等しくてよいかに注意。`,
+            steps: [
+              `$P:\\ ${al}\\leqq x\\leqq ${be}$、$Q:\\ a-${rr}<x<a+${rr}$`,
+              suf ? `$P\\subset Q$ となるのは $a-${rr}<${al}$ かつ $${be}<a+${rr}$（端は等しくてはいけない）` : `$Q\\subset P$ となるのは $${al}\\leqq a-${rr}$ かつ $a+${rr}\\leqq ${be}$（端は等しくてよい）`,
+              `$${ok.slice(1, -1)}$`,
+            ],
+          };
+        }),
+        t("HI-shugo-4e", (r) => {
+          const k = r(1, 5), strict = r(0, 1) === 1, two = r(0, 1) === 1;
+          // 命題「すべての実数 x について x^2 + 2ax + k^2 (>,≧) 0」の否定が真となる a
+          const E = two ? `x^{2}+2ax+${k * k}` : `x^{2}-2ax+${k * k}`;
+          const S = (eq) => tex(`a${eq ? "\\leqq" : "<"} -${k},\\ ${k}${eq ? "\\leqq" : "<"} a`);
+          const ok = S(strict);
+          return {
+            q: `命題「すべての実数 ${tex("x")} について ${tex(`${E}${strict ? ">" : "\\geqq"} 0`)}」の否定が真となるような、定数 ${tex("a")} の値の範囲は？`,
+            ans: ok,
+            choices: choices4(r, ok, [S(!strict), tex(`-${k}<a<${k}`), tex(`-${k}\\leqq a\\leqq ${k}`)]),
+            hint: "「すべての $x$ について〜」の否定は「ある $x$ について〜でない」。それが真となる条件を、グラフ（判別式）で考える。",
+            steps: [
+              `否定は「ある実数 $x$ について $${E}${strict ? "\\leqq" : "<"} 0$」`,
+              strict ? `放物線が $x$ 軸と共有点をもてばよいので $\\frac{D}{4}=a^{2}-${k * k}\\geqq 0$` : `放物線が $x$ 軸より下にくる部分があればよいので $\\frac{D}{4}=a^{2}-${k * k}>0$`,
+              `$${ok.slice(1, -1)}$`,
             ],
           };
         }),
@@ -1184,6 +2066,20 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-niji-1d", (r) => {
+          const a = pick(r, [1, -1, 2, -2]), p = rnz(r, -4, 4), q = rnz(r, -6, 6);
+          const ok = QUAD(p, q);
+          return {
+            q: `放物線 ${tex(`y=${poly([a, -2 * a * p, a * p * p + q])}`)} の頂点は、座標平面のどの象限にある？`,
+            ans: ok,
+            choices: ["第1象限", "第2象限", "第3象限", "第4象限"],
+            hint: "平方完成して頂点の座標を求め、$x$ 座標・$y$ 座標の符号を見る。",
+            steps: [
+              `$y=${a === 1 ? "" : a === -1 ? "-" : a}${vx(p)}${sh(q)}$ より頂点は $(${p},\\ ${q})$`,
+              `$x$ 座標が${p > 0 ? "正" : "負"}、$y$ 座標が${q > 0 ? "正" : "負"}なので ${ok}`,
+            ],
+          };
+        }),
       ],
       2: [
         t("HI-niji-2a", (r) => {
@@ -1234,6 +2130,22 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-niji-2d", (r) => {
+          const a = pick(r, [1, 2, 3, -1, -2, -3]), p = rnz(r, -3, 3), q = r(-6, 6), x1 = p + rnz(r, -3, 3), y1 = a * (x1 - p) ** 2 + q;
+          const V = (A, P, Qv) => [A, -2 * A * P, A * P * P + Qv];
+          const W = (c) => [tex(`y=${poly(c)}`), pkey(c)];
+          const a2 = (y1 - q) / (x1 - p);
+          return {
+            q: `頂点が点 ${tex(`(${p},\\ ${q})`)} で、点 ${tex(`(${x1},\\ ${y1})`)} を通る放物線の方程式は？`,
+            ...ec(r, W(V(a, p, q)), [W(V(a, -p, q)), Number.isInteger(a2) ? W(V(a2, p, q)) : null, W(V(-a, p, q)), W(V(a, p, -q))], (i) => W(V(a, p, q + i + 1))),
+            hint: "頂点が $(p,\\ q)$ なので $y=a(x-p)^{2}+q$ とおき、通る点を代入して $a$ を求める。",
+            steps: [
+              `$y=a${vx(p)}${sh(q)}$ とおく`,
+              `点 $(${x1},\\ ${y1})$ を通るので $${y1}=a\\cdot (${x1 - p})^{2}${sh(q)}$、$a=${a}$`,
+              `$y=${a === 1 ? "" : a === -1 ? "-" : a}${vx(p)}${sh(q)}=${poly(V(a, p, q))}$`,
+            ],
+          };
+        }),
       ],
       3: [
         t("HI-niji-3a", (r) => {
@@ -1248,8 +2160,8 @@ export const UNITS = [
             ans: askA ? a : q,
             hint: "軸がわかっているので $y=a(x-p)^{2}+q$ とおき、2点を代入する。",
             steps: [
-              `$${f(x1)}=${u1}a+q$、$${f(x2)}=${u2}a+q$`,
-              `辺々引いて $${f(x1) - f(x2)}=${u1 - u2}a$ より $a=${a}$`,
+              `$${f(x1)}=${coefVar(u1, "a")}+q$、$${f(x2)}=${coefVar(u2, "a")}+q$`,
+              `辺々引いて $${f(x1) - f(x2)}=${coefVar(u1 - u2, "a")}$ より $a=${a}$`,
               `$q=${f(x1)}-${u1}\\cdot (${a})=${q}$`,
             ],
           };
@@ -1267,6 +2179,41 @@ export const UNITS = [
             ...ec(r, W(kinds[ask]), [...others, W([a, b, -c]), W([-a, -b, c])]),
             hint: "対称移動では、$x$ や $y$ をどう置き換えるかを考える。",
             steps: [rule, `$y=${poly(kinds[ask])}$`],
+          };
+        }),
+        t("HI-niji-3c", (r) => {
+          const a = pick(r, [1, 2, 3, -1, -2, -3]), [al, be] = sample(r, [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5], 2).sort((u, v) => u - v);
+          const cand = [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6].filter((x) => x !== al && x !== be);
+          const x1 = pick(r, cand), y1 = a * (x1 - al) * (x1 - be);
+          const vy = [-a * (be - al) ** 2, 4]; // a((β-α)/2)^2 の符号反転：頂点 y = -a(β-α)^2/4
+          return {
+            q: `放物線が ${tex("x")} 軸と2点 ${tex(`(${al},\\ 0)`)}、${tex(`(${be},\\ 0)`)} で交わり、点 ${tex(`(${x1},\\ ${y1})`)} を通るとき、この放物線の頂点の ${tex("y")} 座標は？`,
+            ans: fracAns(...vy),
+            hint: "$x$ 軸との交点が $\\alpha,\\ \\beta$ なら $y=a(x-\\alpha)(x-\\beta)$ とおける。",
+            steps: [
+              `$y=a(x${sh(-al)})(x${sh(-be)})$ とおき、点 $(${x1},\\ ${y1})$ を代入して $${y1}=a\\cdot (${x1 - al})\\cdot (${x1 - be})$、$a=${a}$`,
+              `軸は $x=${fracTex(al + be, 2)}$（2つの交点の真ん中）`,
+              `頂点の $y$ 座標は $${a}\\cdot \\left(${fracTex(al + be, 2)}${al === 0 ? "" : `-(${al})`}\\right)\\left(${fracTex(al + be, 2)}-(${be})\\right)=${fracTex(...vy)}$`,
+            ],
+          };
+        }),
+        t("HI-niji-3d", (r) => {
+          const a = pick(r, [1, -1]), p = rnz(r, -4, 4), q = rnz(r, -6, 6), c = a * p * p + q;
+          if (c === 0) return { skip: true };
+          const b = -2 * a * p;
+          const sg = (v) => (v > 0 ? ">0" : "<0");
+          const T = (sa, sb, sc) => tex(`a${sa},\\ b${sb},\\ c${sc}`);
+          const ok = T(sg(a), sg(b), sg(c));
+          return {
+            q: `放物線 ${tex("y=ax^{2}+bx+c")} は${a > 0 ? "下に凸" : "上に凸"}で、頂点は${QUAD(p, q)}にあり、${tex("y")} 軸とは ${tex(c > 0 ? "y>0" : "y<0")} の部分で交わる。${tex("a,\\ b,\\ c")} の符号の組み合わせは？`,
+            ans: ok,
+            choices: choices4(r, ok, [T(sg(a), sg(-b), sg(c)), T(sg(a), sg(b), sg(-c)), T(sg(-a), sg(b), sg(c)), T(sg(-a), sg(-b), sg(c))]),
+            hint: "凸の向きで $a$、$y$ 軸との交点で $c$ がわかる。軸 $x=-\\frac{b}{2a}$ の位置（頂点の $x$ 座標の符号）から $b$ の符号を決める。",
+            steps: [
+              `${a > 0 ? "下に凸" : "上に凸"}なので $a${sg(a)}$、$y$ 軸との交点は $(0,\\ c)$ なので $c${sg(c)}$`,
+              `頂点は${QUAD(p, q)}なので軸 $x=-\\frac{b}{2a}$ は ${p > 0 ? "正" : "負"}`,
+              `$a${sg(a)}$ だから $b${sg(b)}$`,
+            ],
           };
         }),
       ],
@@ -1300,6 +2247,44 @@ export const UNITS = [
               `$y=(x-a)^{2}-a^{2}+${mpoly([[k, "a^{2}"], [l, "a"], [c, ""]])}$ より頂点の $y$ 座標は $${mpoly([[K, "a^{2}"], [l, "a"], [c, ""]])}$`,
               `$=${K === 1 ? "" : K}\\left(a${l > 0 ? "+" : "-"}${fracTex(Math.abs(l), 2 * K)}\\right)^{2}${4 * K * c - l * l === 0 ? "" : (4 * K * c - l * l > 0 ? "+" : "") + fracTex(4 * K * c - l * l, 4 * K)}$`,
               `$a=${fracTex(-l, 2 * K)}$ のとき最小値 $${fracTex(4 * K * c - l * l, 4 * K)}$`,
+            ],
+          };
+        }),
+        t("HI-niji-4c", (r) => {
+          const al = r(-5, 1), w = 2 * r(1, 3), be = al + w, m = (al + be) / 2, M = (w / 2) ** 2;
+          const f = poly([1, -(al + be), al * be]);
+          const ask3 = r(0, 1) === 1;
+          const base = {
+            hint: "$y=|f(x)|$ のグラフは、$y=f(x)$ の $x$ 軸より下の部分を $x$ 軸に関して折り返したもの。直線 $y=k$ を上下に動かして交点を数える。",
+            steps: [
+              `$${f}=${vx(m)}-${M}$ なので、頂点 $(${m},\\ -${M})$ が折り返されて $(${m},\\ ${M})$ になる`,
+              `$0<k<${M}$ で4個、$k=${M}$ で3個、$k=0$ または $k>${M}$ で2個`,
+            ],
+          };
+          if (ask3) return { q: `関数 ${tex(`y=|${f}|`)} のグラフと直線 ${tex("y=k")} の共有点がちょうど3個となるような定数 ${tex("k")} の値は？`, ans: M, ...base };
+          const ok = tex(`0<k<${M}`);
+          return {
+            q: `関数 ${tex(`y=|${f}|`)} のグラフと直線 ${tex("y=k")} の共有点がちょうど4個となるような定数 ${tex("k")} の値の範囲は？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(`0\\leqq k\\leqq ${M}`), tex(`k>${M}`), tex(`0<k<${al * be < 0 ? -al * be : M + 1}`), tex(`-${M}<k<${M}`)]),
+            ...base,
+          };
+        }),
+        t("HI-niji-4d", (r) => {
+          const m = pick(r, [-2, 2, -3, 3, -4, 4]), h = rnz(r, -3, 3), p = r(-4, 4), rr = r(-5, 5);
+          const E = mpoly([[1, "x^{2}"], [m, "ax"], [p, "x"], [-m * h, "a"], [rr, ""]]);
+          const Y = h * h + p * h + rr;
+          const P = (x, y) => tex(`(${x},\\ ${y})`);
+          const ok = P(h, Y);
+          return {
+            q: `${tex("a")} がどんな値をとっても、放物線 ${tex(`y=${E}`)} が通る点の座標は？`,
+            ans: ok,
+            choices: choices4(r, ok, [P(-h, h * h - p * h + rr), P(h, rr), P(0, rr), P(h, Y + m * h)], (i) => P(h, Y + i + 1)),
+            hint: "$a$ について整理し、「$a$ がどんな値でも成り立つ」ためには $a$ の係数が0、残りも等しくなればよい。",
+            steps: [
+              `$a$ について整理すると $${mpoly([[m, "x"], [-m * h, ""]])}$ が $a$ の係数：$y=${mpoly([[1, "x^{2}"], [p, "x"], [rr, ""]])}+(${mpoly([[m, "x"], [-m * h, ""]])})a$`,
+              `どんな $a$ でも成り立つのは $${mpoly([[m, "x"], [-m * h, ""]])}=0$、すなわち $x=${h}$ のとき`,
+              `そのとき $y=${h * h}${sh(p * h)}${sh(rr)}=${Y}$ なので、点 $(${h},\\ ${Y})$`,
             ],
           };
         }),
@@ -1348,11 +2333,47 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-saidai-1c", (r) => {
+          const a = pick(r, [1, 2, -1, -2]), p = rnz(r, -4, 4), m = r(-6, 6), c = m + a * p * p;
+          const word = a > 0 ? "最小値" : "最大値";
+          return {
+            q: `2次関数 ${tex(`y=${a === 1 ? "" : a === -1 ? "-" : a}x^{2}${signedVar(-2 * a * p)}+c`)} の${word}が ${tex(String(m))} となるような定数 ${tex("c")} の値は？`,
+            ans: c,
+            hint: `平方完成して頂点の $y$ 座標を $c$ で表す。$x^{2}$ の係数が${a > 0 ? "正なので頂点で最小" : "負なので頂点で最大"}。`,
+            steps: [
+              `$y=${a === 1 ? "" : a === -1 ? "-" : a}${vx(p)}${signed(-a * p * p)}+c$`,
+              `${word}は $${-a * p * p}+c$ なので $${-a * p * p}+c=${m}$`,
+              `$c=${c}$`,
+            ],
+          };
+        }),
+        t("HI-saidai-1d", (r) => {
+          const a = pick(r, [1, 2, -1, -2]), p = r(-3, 3), q = r(-5, 5), s0 = p + r(-3, 1), t0 = s0 + r(2, 5);
+          const f = (x) => a * (x - p) ** 2 + q;
+          const vals = [f(s0), f(t0)];
+          if (p >= s0 && p <= t0) vals.push(q);
+          const lo = Math.min(...vals), hi = Math.max(...vals);
+          if (lo === hi) return { skip: true };
+          const R = (u, v) => tex(`${u}\\leqq y\\leqq ${v}`);
+          const ok = R(lo, hi);
+          const e1 = Math.min(f(s0), f(t0)), e2 = Math.max(f(s0), f(t0));
+          return {
+            q: `2次関数 ${tex(`y=${poly([a, -2 * a * p, a * p * p + q])}\\ (${s0}\\leqq x\\leqq ${t0})`)} の値域は？`,
+            ans: ok,
+            choices: choices4(r, ok, [R(e1, e2), R(Math.min(q, e1), Math.max(q, e2)), R(lo, hi + 1), tex(`${lo}<y<${hi}`)], (i) => R(lo - i - 1, hi)),
+            hint: "平方完成して頂点を求め、定義域の両端と頂点（軸が定義域内なら）での値を比べる。",
+            steps: [
+              `$y=${a === 1 ? "" : a === -1 ? "-" : a}${vx(p)}${sh(q)}$、軸 $x=${p}$ は定義域の${p >= s0 && p <= t0 ? "中" : "外"}`,
+              `$x=${s0}$ で $y=${f(s0)}$、$x=${t0}$ で $y=${f(t0)}$${p >= s0 && p <= t0 ? `、頂点で $y=${q}$` : ""}`,
+              `値域は $${lo}\\leqq y\\leqq ${hi}$`,
+            ],
+          };
+        }),
       ],
       2: [
         t("HI-saidai-2a", (r) => {
           const p = r(-3, 3), c = r(-5, 5), left = r(0, 1) === 1;
-          const s = left ? p + r(1, 3) : p - r(3, 6), tt = s + r(1, 3);
+          const s = left ? p + r(1, 3) : p - r(4, 6), tt = s + r(1, 3);
           const q = c - p * p, f = (x) => (x - p) ** 2 + q;
           const askMax = r(0, 1) === 1;
           const v = askMax ? Math.max(f(s), f(tt)) : Math.min(f(s), f(tt));
@@ -1384,6 +2405,48 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-saidai-2c", (r) => {
+          if (r(0, 1)) {
+            const k = r(2, 8), L = 4 * k;
+            return {
+              q: `長さ ${L} m の金網で、まっすぐな壁を1辺に利用して長方形の囲いを作る（壁の側には金網を使わない）。囲いの面積の最大値は何 ${tex("\\mathrm{m}^{2}")}？`,
+              ans: 2 * k * k,
+              hint: "壁に垂直な辺の長さを $x$ とおき、面積を $x$ の2次関数で表す。$x$ のとりうる範囲にも注意。",
+              steps: [
+                `壁に垂直な辺を $x$ m とすると、壁に平行な辺は $(${L}-2x)$ m で、$0<x<${L / 2}$`,
+                `面積は $x(${L}-2x)=-2x^{2}+${L}x=-2(x-${k})^{2}+${2 * k * k}$`,
+                `$x=${k}$ のとき最大値 ${2 * k * k}`,
+              ],
+            };
+          }
+          const k = r(2, 9), L = 2 * k;
+          return {
+            q: `直角をはさむ2辺の長さの和が ${L} の直角三角形のうち、面積が最大のものの面積は？`,
+            ans: fracAns(k * k, 2),
+            hint: "直角をはさむ1辺を $x$ とおき、面積を $x$ の2次関数で表す。",
+            steps: [
+              `1辺を $x$ とすると他方は $${L}-x$（$0<x<${L}$）で、面積は $\\frac{1}{2}x(${L}-x)$`,
+              `$=-\\frac{1}{2}(x-${k})^{2}+${fracTex(k * k, 2)}$`,
+              `$x=${k}$ のとき最大値 $${fracTex(k * k, 2)}$`,
+            ],
+          };
+        }),
+        t("HI-saidai-2d", (r) => {
+          const p = r(2, 5), c = r(-4, 6), inner = r(0, 1) === 1; // 0<a<p か a≧p か
+          const okS = inner ? poly([1, -2 * p, c], "a") : String(c - p * p);
+          const ok = tex(okS);
+          return {
+            q: `${tex("a")} は正の定数で、${tex(inner ? `0<a<${p}` : `a\\geqq ${p}`)} とする。2次関数 ${tex(`y=${poly([1, -2 * p, c])}\\ (0\\leqq x\\leqq a)`)} の最小値は？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(inner ? String(c - p * p) : poly([1, -2 * p, c], "a")), tex(String(c)), tex(poly([1, 2 * p, c], "a")), tex(String(c + p * p))]),
+            hint: `軸 $x=${p}$ が定義域 $0\\leqq x\\leqq a$ の中にあるか、右の外にあるかで考える。`,
+            steps: [
+              `$y=${vx(p)}${sh(c - p * p)}$、軸は $x=${p}$`,
+              inner ? `$0<a<${p}$ のとき軸は定義域の右の外なので、定義域で減少し、$x=a$ で最小` : `$a\\geqq ${p}$ のとき軸は定義域の中なので、頂点で最小`,
+              `最小値は $${okS}$`,
+            ],
+          };
+        }),
       ],
       3: [
         t("HI-saidai-3a", (r) => {
@@ -1411,9 +2474,41 @@ export const UNITS = [
             hint: "軸 $x=a$ が定義域の中にあるときと、右の外にあるときで場合分けする。",
             steps: [
               `$y=(x-a)^{2}-a^{2}${sh(c)}$、軸は $x=a$`,
-              `$0<a\\leqq ${d}$ のとき最小値 $-a^{2}${sh(c)}=${m}$ → $a^{2}=${c - m}$${mid ? `、$a=${a0}$（適する）` : `（$a=\\sqrt{${c - m}}>${d}$ なので不適）`}`,
+              `$0<a\\leqq ${d}$ のとき最小値 $-a^{2}${sh(c)}=${m}$ → $a^{2}=${c - m}$${mid ? `、$a=${a0}$（適する）` : `（$a=${sqrtTex(1, c - m)}>${d}$ なので不適）`}`,
               `$a>${d}$ のとき最小値 $f(${d})=${d * d}-${2 * d}a${sh(c)}=${m}$ → $a=${fracTex(d * d + c - m, 2 * d)}$${mid ? `（$${d}$ 以下なので不適）` : "（適する）"}`,
               `よって $a=${a0}$`,
+            ],
+          };
+        }),
+        t("HI-saidai-3c", (r) => {
+          const [u, v] = sample(r, [1, 2, 3, 4], 2), k = r(1, 4), askMax = r(0, 1) === 1;
+          // x+y=k, x≧0, y≧0 のとき u x^2 + v y^2：f(x)=(u+v)x^2-2vkx+vk^2 (0≦x≦k)
+          const mx = Math.max(u, v) * k * k, mn = [u * v * k * k, u + v];
+          return {
+            q: `${tex(`x\\geqq 0,\\ y\\geqq 0,\\ x+y=${k}`)} のとき、${tex(`${u === 1 ? "" : u}x^{2}+${v === 1 ? "" : v}y^{2}`)} の${askMax ? "最大値" : "最小値"}は？`,
+            ans: askMax ? mx : fracAns(...mn),
+            hint: "$y=" + k + "-x$ を代入して $x$ の2次関数にする。$y\\geqq 0$ から $x$ の範囲も決まる。",
+            steps: [
+              `$y=${k}-x$ と $y\\geqq 0$ より $0\\leqq x\\leqq ${k}$`,
+              `$${u === 1 ? "" : u}x^{2}+${v === 1 ? "" : v}(${k}-x)^{2}=${poly([u + v, -2 * v * k, v * k * k])}$、軸は $x=${fracTex(v * k, u + v)}$（範囲内）`,
+              askMax ? `最大値は端の値 $x=0$ で ${v * k * k}、$x=${k}$ で ${u * k * k} の大きい方の ${mx}` : `最小値は軸で $${fracTex(...mn)}$`,
+            ],
+          };
+        }),
+        t("HI-saidai-3d", (r) => {
+          const h = r(1, 2), c = r(-3, 6), d = r(-5, 5);
+          // t = x^2+2hx ≧ -h^2、y = t^2 + 2ct + d
+          const tmin = -h * h, inside = -c >= tmin;
+          const v = inside ? d - c * c : tmin * tmin + 2 * c * tmin + d;
+          const X = `(x^{2}+${2 * h}x)`;
+          return {
+            q: `関数 ${tex(`y=${X}^{2}${signedVar(2 * c, X)}${sh(d)}`)} の最小値は？`,
+            ans: v,
+            hint: `$t=x^{2}+${2 * h}x$ とおくと $y$ は $t$ の2次関数。$t$ がとりうる値の範囲に注意する。`,
+            steps: [
+              `$t=x^{2}+${2 * h}x=(x+${h})^{2}-${h * h}$ より $t\\geqq ${tmin}$`,
+              `$y=${poly([1, 2 * c, d], "t")}=(t${signed(c)})^{2}${sh(d - c * c)}$、軸は $t=${-c}$`,
+              inside ? `軸は $t\\geqq ${tmin}$ の中なので、$t=${-c}$ で最小値 ${v}` : `軸は $t\\geqq ${tmin}$ の左の外なので、$t=${tmin}$ で最小値 ${v}`,
             ],
           };
         }),
@@ -1447,6 +2542,38 @@ export const UNITS = [
               `区間の中央 $t+${L / 2}$ が軸より左なら $M(t)=f(t)$、右なら $M(t)=f(t+${L})$`,
               `$M(t)$ が最小になるのは中央が軸と一致する $t=${p - L / 2}$ のとき`,
               `最小値は $f(${p - L / 2})=${a === 1 ? "" : `${a}\\cdot `}${(L / 2) ** 2}${sh(q)}=${v}$`,
+            ],
+          };
+        }),
+        t("HI-saidai-4c", (r) => {
+          const p = r(-2, 2), q = r(-3, 3), k = r(1, 2), rr = r(-3, 3), m = r(-5, 5);
+          // (x - p y - q)^2 + k (y - r)^2 + m を展開
+          const E = mpoly([[1, "x^{2}"], [-2 * p, "xy"], [p * p + k, "y^{2}"], [-2 * q, "x"], [2 * p * q - 2 * k * rr, "y"], [q * q + k * rr * rr + m, ""]]);
+          const inner = `x${p === 0 ? "" : signedVar(-p, "y")}${sh(-q)}`;
+          return {
+            q: `${tex("x,\\ y")} が実数全体を動くとき、${tex(E)} の最小値は？`,
+            ans: m,
+            hint: "まず $x$ について平方完成し、残った $y$ の2次式をさらに平方完成する。",
+            steps: [
+              `$x$ について平方完成：$(${inner})^{2}+${k === 1 ? "" : k}y^{2}${signedVar(-2 * k * rr, "y")}${sh(k * rr * rr + m)}$`,
+              `$=(${inner})^{2}+${k === 1 ? "" : k}${vx(rr).replace("x", "y")}${sh(m)}$`,
+              `$y=${rr},\\ x=${p * rr + q}$ のとき最小値 ${m}`,
+            ],
+          };
+        }),
+        t("HI-saidai-4d", (r) => {
+          const w = r(1, 2), j = w + r(1, 2), c = r(-5, 5), k = 4 * w * j;
+          // f(x)=x^2-2ax+c (0≦x≦2w) の 最大値−最小値 = k となる a は w±j
+          const ok = tex(`a=${w - j},\\ ${w + j}`);
+          return {
+            q: `${tex("a")} を定数とする。関数 ${tex(`f(x)=x^{2}-2ax${sh(c)}\\ (0\\leqq x\\leqq ${2 * w})`)} の最大値と最小値の差が ${k} となるような ${tex("a")} の値は？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(`a=${w + j}`), tex(`a=${w - j}`), tex(`a=${-j},\\ ${j}`), tex(`a=${fracTex(2 * w - j, 2)},\\ ${fracTex(2 * w + j, 2)}`)]),
+            hint: `軸 $x=a$ の位置で、$a<0$、$0\\leqq a\\leqq ${w}$、$${w}\\leqq a\\leqq ${2 * w}$、$a>${2 * w}$ の4つに分けて「最大値−最小値」を求める。`,
+            steps: [
+              `$a<0$ のとき 差 $=f(${2 * w})-f(0)=${4 * w * w}-${4 * w}a$、$a>${2 * w}$ のとき 差 $=f(0)-f(${2 * w})=${4 * w}a-${4 * w * w}$`,
+              `$0\\leqq a\\leqq ${2 * w}$ のときは差は $${w * w}$ 以上 $${4 * w * w}$ 以下なので、${k} にはならない`,
+              `$${4 * w * w}-${4 * w}a=${k}$ より $a=${w - j}$、$${4 * w}a-${4 * w * w}=${k}$ より $a=${w + j}$（どちらも範囲に合う）`,
             ],
           };
         }),
@@ -1496,9 +2623,51 @@ export const UNITS = [
             choices: choices4(r, ok, [isIn ? outside(al, be, eq) : inside(al, be, eq), isIn ? inside(-be, -al, eq) : outside(-be, -al, eq), isIn ? inside(al, be, !eq) : outside(al, be, !eq), isIn ? outside(al, be, !eq) : inside(al, be, !eq)]),
             hint: "左辺を因数分解して、グラフが $x$ 軸より下（または上）になる範囲を考える。",
             steps: [
-              `$(x${sh(-al)})(x${sh(-be)})${OPS[op]} 0$`,
+              `$${fac2(al, be)}${OPS[op]} 0$`,
               `グラフは下に凸で $x=${al},\\ ${be}$ で $x$ 軸と交わる`,
               `${ok}`,
+            ],
+          };
+        }),
+        t("HI-nijifuto-1c", (r) => {
+          const [a, b, c] = pick(r, IRR_QUAD), D = b * b - 4 * a * c;
+          const RT = (B, DD, A) => {
+            const [k, m] = sqrtSimp(DD);
+            const g = gcd(gcd(Math.abs(B), k), 2 * A);
+            const nb = -B / g, nk = k / g, den = (2 * A) / g;
+            const top = `${nb === 0 ? "" : nb}\\pm ${sqrtTex(nk, m)}`;
+            return tex(`x=${den === 1 ? top : `\\frac{${top}}{${den}}`}`);
+          };
+          const ok = RT(b, D, a);
+          const D2 = b * b + 4 * a * c;
+          return {
+            q: `2次方程式 ${tex(`${poly([a, b, c])}=0`)} を解くと？`,
+            ans: ok,
+            choices: choices4(r, ok, [RT(-b, D, a), D2 > 0 && !Number.isInteger(Math.sqrt(D2)) ? RT(b, D2, a) : null, (() => { const [k, m] = sqrtSimp(D); const g = gcd(gcd(Math.abs(b), k), a); return tex(`x=${a / g === 1 ? `${-b / g === 0 ? "" : -b / g}\\pm ${sqrtTex(k / g, m)}` : `\\frac{${-b / g === 0 ? "" : -b / g}\\pm ${sqrtTex(k / g, m)}}{${a / g}}`}`); })()].filter(Boolean), (i) => RT(b + 2 * (i + 1), D, a)),
+            hint: "解の公式 $x=\\frac{-b\\pm\\sqrt{b^{2}-4ac}}{2a}$。最後に約分できるか確かめる。",
+            steps: [
+              `$a=${a},\\ b=${b},\\ c=${c}$ を解の公式に代入：$x=\\frac{${-b}\\pm\\sqrt{${b * b}${signed(-4 * a * c)}}}{${2 * a}}=\\frac{${-b}\\pm\\sqrt{${D}}}{${2 * a}}$`,
+              `${sqrtSimp(D)[0] === 1 ? "" : `$\\sqrt{${D}}=${sqrtTex(1, D)}$ として`}${gcd(gcd(Math.abs(b), sqrtSimp(D)[0]), 2 * a) > 1 ? "約分すると" : "これ以上約分できないので"} $${ok.slice(1, -1)}$`,
+            ],
+          };
+        }),
+        t("HI-nijifuto-1d", (r) => {
+          const op = pick(r, [">", "<", ">=", "<="]), sq = r(0, 1) === 1;
+          const p = r(-4, 4);
+          const P = sq ? [1, -2 * p, p * p] : [1, -2 * p, p * p + r(1, 4)];
+          const cats = { all: "すべての実数", ex: `${tex(String(p))} 以外のすべての実数`, none: "解なし", one: tex(`x=${p}`) };
+          let key;
+          if (sq) key = { ">": "ex", ">=": "all", "<": "none", "<=": "one" }[op];
+          else key = op[0] === ">" ? "all" : "none";
+          const ok = cats[key];
+          return {
+            q: `2次不等式 ${tex(`${poly(P)}${OPS[op]} 0`)} を解くと？`,
+            ans: ok,
+            choices: choices4(r, ok, Object.values(cats).filter((x) => x !== ok)),
+            hint: "左辺を平方完成して、グラフと $x$ 軸の位置関係（接する・離れている）を考える。",
+            steps: [
+              sq ? `左辺 $=${vx(p)}$（$x=${p}$ で $x$ 軸に接する）` : `左辺 $=${vx(p)}+${P[2] - p * p}$（つねに正）`,
+              `よって解は「${ok}」`,
             ],
           };
         }),
@@ -1559,8 +2728,22 @@ export const UNITS = [
             ans: be - al,
             hint: "$y=0$ とおいた2次方程式の2つの解が、$x$ 軸との交点の $x$ 座標。",
             steps: [
-              `$${poly(P)}=0$ より $${a === 1 ? "" : a === -1 ? "-" : a}(x${sh(-al)})(x${sh(-be)})=0$`,
+              `$${poly(P)}=0$ より $${a === 1 ? "" : a === -1 ? "-" : a}${fac2(al, be)}=0$`,
               `$x=${al},\\ ${be}$ なので長さは $${be}-(${al})=${be - al}$`,
+            ],
+          };
+        }),
+        t("HI-nijifuto-2d", (r) => {
+          const b = r(-5, 5), c = r(-5, 5), m = pick(r, [-4, -3, -2, -1, 0, 1, 2, 3, 4].filter((v) => (b - v) % 2 === 0)); // b-m は偶数
+          const h = (b - m) / 2, k = c - h * h;
+          return {
+            q: `放物線 ${tex(`y=${poly([1, b, c])}`)} と直線 ${tex(`y=${m === 0 ? "" : coefVar(m)}+k`.replace("=+", "="))} が接するような定数 ${tex("k")} の値は？`,
+            ans: k,
+            hint: "2つの式から $y$ を消去した $x$ の2次方程式が重解をもつ（判別式が0）。",
+            steps: [
+              `$${poly([1, b, c])}=${m === 0 ? "" : coefVar(m)}+k$`.replace("=+", "=") + ` より $${poly([1, b - m, 0])}${sh(c)}-k=0$`,
+              `$\\frac{D}{4}=(${h})^{2}-(${c}-k)=0$`,
+              `$k=${c}-${h * h}=${k}$`,
             ],
           };
         }),
@@ -1572,13 +2755,13 @@ export const UNITS = [
           const m = k1 + k2, n = -k1 * k2;
           const ok = tex(`${k1}<k<${k2}`);
           return {
-            q: `すべての実数 ${tex("x")} について ${tex(`x^{2}+2kx${signedVar(m, "k")}${signed(n)}>0`)} が成り立つような定数 ${tex("k")} の値の範囲は？`,
+            q: `すべての実数 ${tex("x")} について ${tex(`x^{2}+2kx${signedVar(m, "k")}${sh(n)}>0`)} が成り立つような定数 ${tex("k")} の値の範囲は？`,
             ans: ok,
             choices: choices4(r, ok, [tex(`k<${k1},\\ ${k2}<k`), tex(`${k1}\\leqq k\\leqq ${k2}`), tex(`${-k2}<k<${-k1}`)]),
             hint: "下に凸の放物線が $x$ 軸より常に上 ⇔ $x$ 軸と共有点をもたない ⇔ $D<0$",
             steps: [
               `$\\frac{D}{4}=k^{2}-(${mpoly([[m, "k"], [n, ""]])})<0$`,
-              `$${poly([1, -m, -n], "k")}<0$、$(k${sh(-k1)})(k${sh(-k2)})<0$`,
+              `$${poly([1, -m, -n], "k")}<0$、$${fac2(k1, k2, "k")}<0$`,
               `$${k1}<k<${k2}$`,
             ],
           };
@@ -1600,6 +2783,43 @@ export const UNITS = [
               `1つ目：$${al}${e1 ? "\\leqq" : "<"} x${e1 ? "\\leqq" : "<"} ${be}$`,
               `2つ目：$x${e2 ? "\\leqq" : "<"} ${ga},\\ ${de}${e2 ? "\\leqq" : "<"} x$`,
               `共通部分の整数は ${xs.join(", ")} の ${xs.length} 個`,
+            ],
+          };
+        }),
+        t("HI-nijifuto-3c", (r) => {
+          const [al, be] = sample(r, [-4, -3, -2, -1, 1, 2, 3, 4, 5], 2).sort((u, v) => u - v);
+          const inside = r(0, 1) === 1, gt = r(0, 1) === 1, k = r(1, 2);
+          // ax^2+bx+c (gt ? > : <) 0 の解が inside なら α<x<β、そうでなければ x<α, β<x
+          const aSign = gt === inside ? -1 : 1;
+          const a = aSign * k, b = -a * (al + be), c = a * al * be;
+          const askA = r(0, 1) === 1;
+          const sol = inside ? `${al}<x<${be}` : `x<${al},\\ ${be}<x`;
+          return {
+            q: `2次不等式 ${tex(`ax^{2}+bx${signed(c)}${gt ? ">" : "<"}0`)} の解が ${tex(sol)} であるとき、定数 ${tex(askA ? "a" : "b")} の値は？`,
+            ans: askA ? a : b,
+            hint: `解が ${tex(sol)} になるのは、グラフが $x=${al},\\ ${be}$ で $x$ 軸と交わり、その${inside ? "間" : "外側"}で $x$ 軸より${gt ? "上" : "下"}にあるとき。`,
+            steps: [
+              `解の形から $a${aSign > 0 ? ">" : "<"}0$ で、$ax^{2}+bx${signed(c)}=a(x${sh(-al)})(x${sh(-be)})$`,
+              `定数項を比べて $a\\cdot (${al})\\cdot (${be})=${c}$、$a=${a}$`,
+              `$x$ の係数を比べて $b=-a(${al}${signed(be)})=${b}$`,
+            ],
+          };
+        }),
+        t("HI-nijifuto-3d", (r) => {
+          const k = r(2, 4), m = 1, kind = r(0, 2);
+          // f1: x^2+2ax+k^2=0（|a|≧k で実数解）、f2: x^2-2x+a=0（a≦1 で実数解）
+          const T = (str) => tex(str);
+          const ok = [T(`a\\leqq ${m},\\ ${k}\\leqq a`), T(`a\\leqq -${k}`), T(`${m}<a<${k}`)][kind];
+          const what = ["少なくとも一方が実数解をもつ", "どちらも実数解をもつ", "どちらも実数解をもたない"][kind];
+          return {
+            q: `2つの2次方程式 ${tex(`x^{2}+2ax+${k * k}=0`)}、${tex(`x^{2}-2x+a=0`)} の${what}ような、定数 ${tex("a")} の値の範囲は？`,
+            ans: ok,
+            choices: choices4(r, ok, [T(`a\\leqq ${m},\\ ${k}\\leqq a`), T(`a\\leqq -${k}`), T(`${m}<a<${k}`), T(`-${k}<a\\leqq ${m}`), T(`a\\leqq -${k},\\ ${k}\\leqq a`)].filter((x) => x !== ok).slice(0, 3)),
+            hint: "それぞれの判別式の条件を数直線にかき、「または」「かつ」「どちらでもない」に合う部分をとる。",
+            steps: [
+              `1つ目：$\\frac{D_{1}}{4}=a^{2}-${k * k}\\geqq 0$ より $a\\leqq -${k},\\ ${k}\\leqq a$`,
+              `2つ目：$\\frac{D_{2}}{4}=1-a\\geqq 0$ より $a\\leqq 1$`,
+              [`少なくとも一方は和集合：$a\\leqq ${m},\\ ${k}\\leqq a$`, `どちらもは共通部分：$a\\leqq -${k}$`, `どちらももたないのは、少なくとも一方がもつ範囲の外：$${m}<a<${k}$`][kind],
             ],
           };
         }),
@@ -1643,6 +2863,41 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-nijifuto-4c", (r) => {
+          const [r1, r2, L, lo, hi] = pick(r, ALWAYS_POS);
+          const sv = r1 + r2, tv = -r1 * r2;
+          const ok = tex(`${lo}<a<${hi}`);
+          return {
+            q: `${tex(`0\\leqq x\\leqq ${L}`)} を満たすすべての ${tex("x")} に対して、${tex(`x^{2}-2ax${signedVar(sv, "a")}${sh(tv)}>0`)} が成り立つような定数 ${tex("a")} の値の範囲は？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(`${lo}\\leqq a\\leqq ${hi}`), tex(`${r1}<a<${r2}`), tex(`${Math.max(r1, 0)}<a<${Math.min(r2, L)}`), tex(`a<${hi}`)]),
+            hint: `左辺を $f(x)$ とおき、$0\\leqq x\\leqq ${L}$ での最小値が正になる条件を考える。軸 $x=a$ の位置で $a<0$、$0\\leqq a\\leqq ${L}$、$a>${L}$ に分ける。`,
+            steps: [
+              `$a<0$ のとき最小値 $f(0)=${coefVar(sv, "a")}${sh(tv)}>0$、$0\\leqq a\\leqq ${L}$ のとき最小値 $f(a)=-a^{2}${signedVar(sv, "a")}${sh(tv)}>0$`,
+              `$a>${L}$ のとき最小値 $f(${L})=${poly([sv - 2 * L, L * L + tv], "a")}>0$`,
+              `それぞれを解いて合わせると $${lo}<a<${hi}$`,
+            ],
+          };
+        }),
+        t("HI-nijifuto-4d", (r) => {
+          const b = r(1, 3);
+          const prs = [];
+          for (let r1 = -9; r1 <= -1; r1++) if ((b * b) % -r1 === 0) prs.push([r1, (b * b) / -r1]); // r1 r2 = -b^2
+          const [r1, r2] = pick(r, prs);
+          const c = -(r1 + r2); // a^2 + c a - b^2 = (a-r1)(a-r2)
+          const ok = tex(`a>${r2}`);
+          return {
+            q: `すべての実数 ${tex("x")} に対して ${tex(`ax^{2}+${2 * b}x+a${sh(c)}>0`)} が成り立つような定数 ${tex("a")} の値の範囲は？`,
+            ans: ok,
+            choices: choices4(r, ok, [tex(`a<${r1},\\ ${r2}<a`), tex(`${r1}<a<${r2}`), tex(`a\\geqq ${r2}`), tex("a>0")]),
+            hint: "$x^{2}$ の係数に文字があるので、$a=0$ の場合と $a\\neq 0$ の場合に分ける。$a\\neq 0$ なら下に凸で $x$ 軸と共有点をもたない条件を考える。",
+            steps: [
+              `$a=0$ のとき $${2 * b}x${sh(c)}>0$ はすべての $x$ では成り立たない`,
+              `$a\\neq 0$ のとき、$a>0$ かつ $\\frac{D}{4}=${b * b}-${c === 0 ? "a^{2}" : `a(a${signed(c)})`}<0$、すなわち $a>0$ かつ $(a${signed(-r1)})(a${signed(-r2)})>0$`,
+              `$a>0$ と $a<${r1},\\ ${r2}<a$ の共通部分で $a>${r2}$`,
+            ],
+          };
+        }),
       ],
     },
   },
@@ -1656,6 +2911,7 @@ export const UNITS = [
       "$\\sin^{2}\\theta+\\cos^{2}\\theta=1$、$\\tan\\theta=\\frac{\\sin\\theta}{\\cos\\theta}$、$1+\\tan^{2}\\theta=\\frac{1}{\\cos^{2}\\theta}$",
       "$\\sin(180^{\\circ}-\\theta)=\\sin\\theta$、$\\cos(180^{\\circ}-\\theta)=-\\cos\\theta$。鈍角では $\\cos$ と $\\tan$ が負。",
       "$0^{\\circ}\\leqq\\theta\\leqq 180^{\\circ}$ では $\\sin\\theta\\geqq 0$。$\\cos$ の符号で鋭角か鈍角かが決まる。",
+      "三角比の方程式・不等式は単位円で考える。$\\sin\\theta=t$ とおくと、$0\\leqq t<1$ の $t$ 1つに $\\theta$ は2つ、$t=1$ には $\\theta=90^{\\circ}$ の1つが対応する。",
     ],
     levels: {
       1: [
@@ -1669,7 +2925,7 @@ export const UNITS = [
             q: `${tex(`\\${f} ${deg(A)}`)} の値は？`,
             ans: ok,
             choices: choices4(r, ok, [...others, neg(f)], () => tex(tv(f, pick(r, Object.keys(TRIG[f]).map(Number))))),
-            hint: A <= 90 ? "30°・45°・60° の直角三角形（辺の比 $1:\\sqrt{3}:2$、$1:1:\\sqrt{2}$）を思い出す。" : "単位円の上の点 $(\\cos\\theta,\\ \\sin\\theta)$ で考える。$180^{\\circ}-\\theta$ の関係も使える。",
+            hint: A > 0 && A < 90 ? "30°・45°・60° の直角三角形（辺の比 $1:\\sqrt{3}:2$、$1:1:\\sqrt{2}$）を思い出す。" : "単位円の上の点 $(\\cos\\theta,\\ \\sin\\theta)$ で考える。$180^{\\circ}-\\theta$ の関係も使える。",
             steps: [
               A > 90 && A < 180 ? `$${deg(A)}=180^{\\circ}-${deg(180 - A)}$ より ${f === "sin" ? "符号はそのまま" : "符号が変わる"}` : `単位円で $${deg(A)}$ の点を考える`,
               `$\\${f} ${deg(A)}=${tv(f, A)}$`,
@@ -1691,6 +2947,51 @@ export const UNITS = [
               `斜辺は AB $=${h}$、角 ${ang} の対辺は ${atA ? "BC" : "CA"} $=${opp}$、隣辺は ${atA ? "CA" : "BC"} $=${adj}$`,
               `$\\${f} ${ang}=${fr(v[0], v[1])}$`,
             ],
+          };
+        }),
+        t("HI-sankakuhi-1c", (r) => {
+          const f = pick(r, ["sin", "cos", "tan"]);
+          const A = pick(r, [95, 100, 105, 110, 115, 120, 125, 130, 140, 145, 150, 155, 160, 165, 170, 175]), B = 180 - A;
+          const T = (s, g, x) => tex(`${s}\\${g} ${deg(x)}`);
+          const ok = f === "sin" ? T("", "sin", B) : T("-", f, B);
+          const g = f === "sin" ? "cos" : "sin";
+          const wr = f === "tan" ? [T("", "tan", B), T("-", "tan", A - 90), T("", "tan", A - 90)] : [T(f === "sin" ? "-" : "", f, B), T("", g, B), T("-", g, B)];
+          return {
+            q: `${tex(`\\${f} ${deg(A)}`)} と等しいものは？`,
+            ans: ok,
+            choices: choices4(r, ok, wr),
+            hint: `$${deg(A)}=180^{\\circ}-${deg(B)}$ と考えて、$180^{\\circ}-\\theta$ の三角比の公式を使う。`,
+            steps: [
+              `$\\${f}(180^{\\circ}-\\theta)=${f === "sin" ? "" : "-"}\\${f}\\theta$`,
+              `$\\${f} ${deg(A)}=\\${f}(180^{\\circ}-${deg(B)})=${ok.slice(1, -1)}$`,
+            ],
+          };
+        }),
+        t("HI-sankakuhi-1d", (r) => {
+          // 三角比の表の値（小数第4位まで）[sin, cos, tan]
+          const TB = { 10: ["0.1736", "0.9848", "0.1763"], 15: ["0.2588", "0.9659", "0.2679"], 20: ["0.3420", "0.9397", "0.3640"], 25: ["0.4226", "0.9063", "0.4663"], 35: ["0.5736", "0.8192", "0.7002"], 40: ["0.6428", "0.7660", "0.8391"], 50: ["0.7660", "0.6428", "1.1918"], 55: ["0.8192", "0.5736", "1.4281"] };
+          const kind = r(0, 2);
+          const th = pick(r, kind === 0 ? [20, 25, 35, 40, 50, 55] : [10, 15, 20, 25]);
+          const d = kind === 0 ? r(5, 30) : 10 * r(3, 30);
+          const fi = [2, 0, 1][kind], fn = ["tan", "sin", "cos"][kind], val = TB[th][fi];
+          const h = kind === 0 ? pick(r, ["1.5", "1.6"]) : "0";
+          const X = d * Math.round(Number(val) * 10000) + Math.round(Number(h) * 10000); // 1万分の1 m 単位
+          const ans = round(Math.round(X / 1000) / 10);
+          const prod = round((d * Math.round(Number(val) * 10000)) / 10000, 4), tot = round(X / 10000, 4);
+          const given = `ただし ${tex(`\\${fn} ${deg(th)}=${val}`)} とし、小数第2位を四捨五入する。`;
+          const q = [
+            `水平な地面に立つ木の根元から ${d} m 離れた地点で、木の先端を見上げる角（仰角）が ${tex(deg(th))} であった。目の高さを ${h} m とするとき、木の高さは約何 m？ ${given}`,
+            `傾斜角が ${tex(deg(th))} のまっすぐな坂道を ${d} m 登ると、高さは約何 m 上がる？ ${given}`,
+            `傾斜角が ${tex(deg(th))} のまっすぐな坂道を ${d} m 登ると、水平方向には約何 m 進む？ ${given}`,
+          ][kind];
+          return {
+            q,
+            ans,
+            unit: "m",
+            hint: ["目の高さより上の部分は（水平距離）$\\times\\tan$（仰角）。最後に目の高さを足す。", "坂道の長さが斜辺。上がる高さは（斜辺）$\\times\\sin$（傾斜角）。", "坂道の長さが斜辺。水平方向の距離は（斜辺）$\\times\\cos$（傾斜角）。"][kind],
+            steps: kind === 0
+              ? [`目の高さより上の部分は $${d}\\tan ${deg(th)}=${d}\\times ${val}=${prod}$`, `目の高さを足して $${prod}+${h}=${tot}$`, `小数第2位を四捨五入して ${ans} m`]
+              : [`$${d}\\${fn} ${deg(th)}=${d}\\times ${val}=${prod}$`, `小数第2位を四捨五入して ${ans} m`],
           };
         }),
       ],
@@ -1752,6 +3053,37 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-sankakuhi-2d", (r) => {
+          const f = pick(r, ["sin", "cos", "tan"]);
+          const al = pick(r, f === "sin" ? [30, 45, 60] : [30, 45, 60, 120, 135, 150]);
+          const op = pick(r, ["<", ">", "<=", ">="]);
+          const rad0 = Math.PI / 180;
+          const val = (A) => (f === "sin" ? Math.sin(A * rad0) : f === "cos" ? Math.cos(A * rad0) : Math.tan(A * rad0));
+          // f(θ) o f(A0) を満たす θ（0°≦θ≦mx）の範囲。有名角での大小は表の値で、それ以外は数値で比べる
+          const solve = (A0, o, mx = 180) => {
+            const V = TRIG[f][A0], Vn = (V[0] * Math.sqrt(V[1])) / V[2];
+            const cmp = (A) => { const e = TRIG[f][A]; if (e && e.join() === V.join()) return 0; const x = e ? (e[0] * Math.sqrt(e[1])) / e[2] : val(A); return x < Vn ? -1 : 1; };
+            const ok = (A) => { if (f === "tan" && A === 90) return false; const s = cmp(A); return o === "<" ? s < 0 : o === ">" ? s > 0 : o === "<=" ? s <= 0 : s >= 0; };
+            const pts = [...new Set([0, A0, 180 - A0, 90, mx])].filter((x) => x <= mx).sort((x, y) => x - y);
+            return angTex(pts, pts.map(ok), pts.slice(1).map((B, i) => ok((pts[i] + B) / 2)));
+          };
+          const T = (s) => (s ? tex(s) : null);
+          const ok = T(solve(al, op));
+          const strict = { "<": "<=", "<=": "<", ">": ">=", ">=": ">" }[op], rev = { "<": ">", ">": "<", "<=": ">=", ">=": "<=" }[op];
+          const al2 = f === "sin" ? 90 - al : 180 - al;
+          const vt = tv(f, al);
+          const eqA = f === "sin" && al !== 90 ? [al, 180 - al] : [al];
+          return {
+            q: `${tex("0^{\\circ}\\leqq\\theta\\leqq 180^{\\circ}")} のとき、不等式 ${tex(`\\${f}\\theta${OPS[op]} ${vt}`)} を満たす ${tex("\\theta")} の値の範囲は？`,
+            ans: ok,
+            choices: choices4(r, ok, [T(solve(al, strict)), T(solve(al, rev)), al2 !== al ? T(solve(al2, op)) : null, T(solve(al, op, 90))], (i) => T(solve(pick(r, f === "sin" ? [30, 45, 60] : [30, 45, 60, 120, 135, 150]), pick(r, ["<", ">", "<=", ">="])))),
+            hint: `まず ${tex(`\\${f}\\theta=${vt}`)} となる ${tex("\\theta")} を求め、${f === "sin" ? "単位円の $y$ 座標" : f === "cos" ? "単位円の $x$ 座標" : "原点を通る直線の傾き"}の大小で範囲を読みとる。`,
+            steps: [
+              `$\\${f}\\theta=${vt}$ となる $\\theta$ は $${eqA.map(deg).join(",\\ ")}$`,
+              `${f === "tan" ? "$\\theta=90^{\\circ}$ では $\\tan\\theta$ が定義されないことに注意して、" : ""}単位円で考えると ${ok}`,
+            ],
+          };
+        }),
       ],
       3: [
         t("HI-sankakuhi-3a", (r) => {
@@ -1774,17 +3106,84 @@ export const UNITS = [
         t("HI-sankakuhi-3b", (r) => {
           const q = r(2, 5), p = rnz(r, -q + 1, Math.floor(Math.sqrt(2) * q));
           if (p * p >= 2 * q * q) return { skip: true };
-          const cube = r(0, 1) === 1;
           const sc = [p * p - q * q, 2 * q * q];
-          const cu = [p * (3 * q * q - p * p), 2 * q ** 3];
           return {
-            q: `${tex("0^{\\circ}\\leqq\\theta\\leqq 180^{\\circ}")} で ${tex(`\\sin\\theta+\\cos\\theta=${fracTex(p, q)}`)} のとき、${tex(cube ? "\\sin^{3}\\theta+\\cos^{3}\\theta" : "\\sin\\theta\\cos\\theta")} の値は？`,
-            ans: fracAns(...(cube ? cu : sc)),
+            q: `${tex("0^{\\circ}\\leqq\\theta\\leqq 180^{\\circ}")} で ${tex(`\\sin\\theta+\\cos\\theta=${fracTex(p, q)}`)} のとき、${tex("\\sin\\theta\\cos\\theta")} の値は？`,
+            ans: fracAns(...sc),
             hint: "両辺を2乗して $\\sin^{2}\\theta+\\cos^{2}\\theta=1$ を使う。",
             steps: [
               `2乗して $1+2\\sin\\theta\\cos\\theta=${fracTex(p * p, q * q)}$`,
               `$\\sin\\theta\\cos\\theta=${fracTex(...sc)}$`,
-              ...(cube ? [`$\\sin^{3}\\theta+\\cos^{3}\\theta=(\\sin\\theta+\\cos\\theta)(1-\\sin\\theta\\cos\\theta)=${fracTex(p, q)}\\cdot\\left(1-\\left(${fracTex(...sc)}\\right)\\right)=${fracTex(...cu)}$`] : []),
+            ],
+          };
+        }),
+        t("HI-sankakuhi-3c", (r) => {
+          const useSin = r(0, 1) === 1; // 2次方程式を sinθ の式にするか cosθ の式にするか
+          const U = useSin ? "\\sin\\theta" : "\\cos\\theta", U2 = useSin ? "\\sin^{2}\\theta" : "\\cos^{2}\\theta", W2 = useSin ? "\\cos^{2}\\theta" : "\\sin^{2}\\theta";
+          const AT = useSin ? { 0: [0, 180], 0.5: [30, 150], 1: [90] } : { 1: [0], 0.5: [60], 0: [90], "-0.5": [120], "-1": [180] };
+          const valid = useSin ? [0, 0.5, 1] : [-1, -0.5, 0, 0.5, 1];
+          const t1 = pick(r, valid);
+          const t2 = pick(r, [...valid, ...(useSin ? [-1, -0.5, 1.5, 2] : [-2, -1.5, 1.5, 2])].filter((x) => x !== t1 && x !== -t1));
+          const K = (Number.isInteger(t1) ? 1 : 2) * (Number.isInteger(t2) ? 1 : 2);
+          const A = K, B = -K * (t1 + t2), C = K * t1 * t2; // A u^2 + B u + C = 0（u は U）
+          const angs = (t) => AT[String(t)] || [];
+          const setOf = (ts) => [...new Set(ts.flatMap(angs))].sort((x, y) => x - y);
+          const S = (arr) => (arr.length ? tex(`\\theta=${arr.map(deg).join(",\\ ")}`) : null);
+          const sol = setOf([t1, t2]);
+          const ok = S(sol);
+          const both = valid.includes(t2);
+          const wr = [both ? S(setOf([t1])) : null, both ? S(setOf([t2])) : null, S(sol.filter((x) => x <= 90)), S([...new Set(sol.map((x) => 180 - x))].sort((x, y) => x - y)), S(setOf([-t1, -t2]))];
+          const fac = (t) => (t === 0 ? U : Number.isInteger(t) ? `(${U}${sh(-t)})` : `(2${U}${sh(-2 * t)})`);
+          const F = [t1, t2].sort((x, y) => (x === 0 ? -1 : y === 0 ? 1 : 0)).map(fac).join("");
+          const ft = (t) => fracTex(2 * t, 2);
+          const bad = [t1, t2].filter((t) => !valid.includes(t));
+          return {
+            q: `${tex("0^{\\circ}\\leqq\\theta\\leqq 180^{\\circ}")} のとき、方程式 ${tex(`${A === 1 ? "" : A}${W2}${signedVar(-B, U)}${sh(-(A + C))}=0`)} を満たす ${tex("\\theta")} は？`,
+            ans: ok,
+            choices: choices4(r, ok, wr, () => S(setOf([pick(r, valid)]))),
+            hint: "$\\sin^{2}\\theta+\\cos^{2}\\theta=1$ を使って1種類の三角比で表し、2次方程式として解く。三角比のとりうる値の範囲に注意。",
+            steps: [
+              `$${W2}=1-${U2}$ を代入して整理すると $${A === 1 ? "" : A}${U2}${signedVar(B, U)}${sh(C)}=0$`,
+              `$${F}=0$ より $${U}=${[t1, t2].map(ft).join(",\\ ")}$`,
+              `$${useSin ? "0\\leqq\\sin\\theta\\leqq 1" : "-1\\leqq\\cos\\theta\\leqq 1"}$ なので $${U}=${[t1, t2].filter((t) => valid.includes(t)).map(ft).join(",\\ ")}$${bad.length ? `（$${U}=${bad.map(ft).join(",\\ ")}$ は不適）` : ""}`,
+              `$\\theta=${sol.map(deg).join(",\\ ")}$`,
+            ],
+          };
+        }),
+        t("HI-sankakuhi-3d", (r) => {
+          const [tn, td] = pick(r, [[2, 1], [3, 1], [4, 1], [-2, 1], [-3, 1], [1, 2], [-1, 2], [1, 3], [-1, 3], [3, 2], [-3, 2], [2, 3], [-2, 3]]);
+          const T = fracTex(tn, td);
+          if (r(0, 1) === 1) {
+            // 1次の同次式の分数式
+            const a = r(1, 3), b = rnz(r, -3, 3), c = r(1, 3), d = rnz(r, -3, 3);
+            const N = a * tn + b * td, D = c * tn + d * td;
+            if (D === 0 || a * d === b * c) return { skip: true };
+            const L = (u, w) => `${coefVar(u, "\\sin\\theta")}${signedVar(w, "\\cos\\theta")}`;
+            const Lt = (u, w) => `${coefVar(u, "\\tan\\theta")}${signed(w)}`;
+            return {
+              q: `${tex(`\\tan\\theta=${T}`)} のとき、${tex(`\\frac{${L(a, b)}}{${L(c, d)}}`)} の値は？`,
+              ans: fracAns(N, D),
+              hint: "分母と分子を $\\cos\\theta$ で割ると、$\\tan\\theta$ だけの式になる。",
+              steps: [
+                `$\\tan\\theta$ の値があるので $\\cos\\theta\\neq 0$。分母・分子を $\\cos\\theta$ で割ると $\\frac{${Lt(a, b)}}{${Lt(c, d)}}$`,
+                `$\\tan\\theta=${T}$ を代入して $${fracTex(N, D)}$`,
+              ],
+            };
+          }
+          // 2次の同次式：sin^2θ+cos^2θ（=1）で割る
+          let a = r(-3, 3), b = r(-4, 4), c = r(-3, 3);
+          if ([a, b, c].filter((x) => x !== 0).length < 2 || (a === c && b === 0)) return { skip: true };
+          if ((a || b) < 0) [a, b, c] = [-a, -b, -c]; // 先頭の係数を正に
+          const E = mpoly([[a, "\\sin^{2}\\theta"], [b, "\\sin\\theta\\cos\\theta"], [c, "\\cos^{2}\\theta"]]);
+          const N = a * tn * tn + b * tn * td + c * td * td, D = tn * tn + td * td;
+          return {
+            q: `${tex(`\\tan\\theta=${T}`)} のとき、${tex(E)} の値は？`,
+            ans: fracAns(N, D),
+            hint: "$\\sin^{2}\\theta+\\cos^{2}\\theta=1$ を分母とみて、分母・分子を $\\cos^{2}\\theta$ で割る。",
+            steps: [
+              `与式 $=\\frac{${E}}{\\sin^{2}\\theta+\\cos^{2}\\theta}$（分母は $1$）`,
+              `分母・分子を $\\cos^{2}\\theta$ で割ると $\\frac{${mpoly([[a, "\\tan^{2}\\theta"], [b, "\\tan\\theta"], [c, ""]])}}{\\tan^{2}\\theta+1}$`,
+              `$\\tan\\theta=${T}$ を代入して $${fracTex(N, D)}$`,
             ],
           };
         }),
@@ -1837,6 +3236,75 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-sankakuhi-4c", (r) => {
+          const A = r(1, 3), B = r(1, 2 * A - 1), want = A === B ? 4 : pick(r, [4, 2]); // A=B で2個は k=M の1点だけなので出さない
+          // t=sinθ（0≦t≦1）で f(t)=A(1-t^2)+Bt。頂点 t=B/(2A) は 0 と 1 の間、f(0)=A、f(1)=B、最大値 M
+          const M = fracTex(4 * A * A + B * B, 4 * A);
+          const lt = (x, y, e1, e2) => `${x}${e1 ? "\\leqq " : "<"}k${e2 ? "\\leqq " : "<"}${y}`;
+          let ok, wr;
+          if (want === 4) {
+            if (B < A) { ok = lt(A, M, 1, 0); wr = [lt(A, M, 0, 0), lt(B, M, 0, 0), lt(A, M, 1, 1)]; }
+            else if (B > A) { ok = lt(B, M, 0, 0); wr = [lt(B, M, 1, 0), lt(A, M, 0, 0), lt(B, M, 0, 1)]; }
+            else { ok = lt(A, M, 0, 0); wr = [lt(A, M, 1, 0), lt(A, M, 0, 1), lt(A, M, 1, 1)]; }
+          } else {
+            const km = `,\\ k=${M}`;
+            if (B < A) { ok = lt(B, A, 0, 0) + km; wr = [lt(B, A, 0, 0), lt(B, A, 1, 0) + km, lt(B, A, 0, 1) + km]; }
+            else { ok = lt(A, B, 1, 0) + km; wr = [lt(A, B, 0, 0) + km, lt(A, B, 1, 0), lt(A, B, 1, 1) + km]; }
+          }
+          const cnt = want === 4
+            ? `$\\theta$ が4個 ⇔ $0\\leqq t<1$ の範囲に $t$ が2個。よって $${ok}$`
+            : `$\\theta$ が2個 ⇔ $0\\leqq t<1$ の範囲に $t$ が1個で、$t=1$ は解でない。よって $${ok}$`;
+          return {
+            q: `${tex("0^{\\circ}\\leqq\\theta\\leqq 180^{\\circ}")} のとき、${tex("\\theta")} の方程式 ${tex(`${A === 1 ? "" : A}\\cos^{2}\\theta${signedVar(B, "\\sin\\theta")}=k`)} の異なる解がちょうど ${want} 個となるような定数 ${tex("k")} の値の範囲は？`,
+            ans: tex(ok),
+            choices: choices4(r, tex(ok), wr.map(tex)),
+            hint: "$\\sin\\theta=t$ とおき、$t$ の2次関数のグラフと直線 $y=k$ の共有点を考える。1つの $t$ に対応する $\\theta$ の個数に注意。",
+            steps: [
+              `$\\sin\\theta=t$ とおくと $0\\leqq t\\leqq 1$ で、$f(t)=${A === 1 ? "" : A}(1-t^{2})${signedVar(B, "t")}=-${A === 1 ? "" : A}\\left(t-${fracTex(B, 2 * A)}\\right)^{2}+${M}$ について $f(t)=k$`,
+              `$f(0)=${A}$、$f(1)=${B}$、最大値 $f\\left(${fracTex(B, 2 * A)}\\right)=${M}$`,
+              "$0\\leqq t<1$ の $t$ 1つに $\\theta$ は2つ（$\\theta$ と $180^{\\circ}-\\theta$）、$t=1$ には $\\theta=90^{\\circ}$ の1つが対応する",
+              cnt,
+            ],
+          };
+        }),
+        t("HI-sankakuhi-4d", (r) => {
+          const useCos = r(0, 1) === 1; // t=cosθ（-1≦t≦1）か t=sinθ（0≦t≦1）か
+          const p = useCos ? r(1, 3) : r(2, 4);
+          const q = useCos ? r(1 - p, p - 1) : -r(1, p - 1);
+          const c = useCos ? r(1, 3) : r(0, 2);
+          const U = useCos ? "\\cos\\theta" : "\\sin\\theta", t0 = useCos ? -1 : 0;
+          const E = `${useCos ? "\\sin" : "\\cos"}^{2}\\theta${signedVar(p, "a" + U)}${signedVar(q, "a")}${sh(c)}`;
+          // f(t)=-t^2+pat+qa+1+c。端での値 f(t)=αa+β を [α, β] で
+          const at = (t) => [q + p * t, 1 + c - t * t];
+          const e0 = at(t0), e1 = at(1);
+          // α a + β > 0 をすべて満たす a の範囲の TeX（eq なら等号つき）
+          const solve2 = (cs, eq = false) => {
+            let L = null, R = null;
+            for (const [al, be] of cs) {
+              if (al > 0) { const v = [-be, al]; if (!L || v[0] * L[1] > L[0] * v[1]) L = v; }
+              else if (al < 0) { const v = [be, -al]; if (!R || v[0] * R[1] < R[0] * v[1]) R = v; }
+              else if (be <= 0) return null;
+            }
+            if (L && R && L[0] * R[1] >= R[0] * L[1]) return null;
+            const o = eq ? "\\leqq " : "<", g = eq ? "\\geqq " : ">";
+            return L && R ? `${fracTex(...L)}${o}a${o}${fracTex(...R)}` : L ? `a${g}${fracTex(...L)}` : R ? `a${o}${fracTex(...R)}` : null;
+          };
+          const okS = solve2([e0, e1]);
+          const T = (s) => (s ? tex(s) : null);
+          const lin = (e) => `${coefVar(e[0], "a")}${sh(e[1])}`;
+          return {
+            q: `${tex("0^{\\circ}\\leqq\\theta\\leqq 180^{\\circ}")} を満たすすべての ${tex("\\theta")} に対して、不等式 ${tex(`${E}>0`)} が成り立つような定数 ${tex("a")} の値の範囲は？`,
+            ans: tex(okS),
+            choices: choices4(r, tex(okS), [T(solve2([e0, e1], true)), T(solve2([useCos ? at(0) : at(-1), e1])), T(solve2([e1])), T(solve2([e0]))]),
+            hint: `$${U}=t$ とおくと $t$ の2次関数になる。$t$ のとりうる値の範囲と、グラフの形に注目する。`,
+            steps: [
+              `$t=${U}$ とおくと $${t0}\\leqq t\\leqq 1$、${useCos ? "$\\sin^{2}\\theta" : "$\\cos^{2}\\theta"}=1-t^{2}$ より 左辺 $=f(t)=-t^{2}${signedVar(p, "at")}${signedVar(q, "a")}${sh(1 + c)}$`,
+              `$f(t)$ のグラフは上に凸なので、$${t0}\\leqq t\\leqq 1$ での最小値は $f(${t0})$ か $f(1)$`,
+              `$f(${t0})=${lin(e0)}>0$ かつ $f(1)=${lin(e1)}>0$`,
+              `よって $${okS}$`,
+            ],
+          };
+        }),
       ],
     },
   },
@@ -1850,6 +3318,7 @@ export const UNITS = [
       "余弦定理：$a^{2}=b^{2}+c^{2}-2bc\\cos A$、$\\cos A=\\frac{b^{2}+c^{2}-a^{2}}{2bc}$。2辺と間の角、または3辺がわかるときに使う。",
       "面積 $S=\\frac{1}{2}bc\\sin A$。内接円の半径 $r$ は $S=\\frac{1}{2}r(a+b+c)$ から求める。",
       "円に内接する四角形では向かい合う角の和が $180^{\\circ}$ なので $\\cos D=-\\cos B$。",
+      "$A$ が鋭角 $\\iff a^{2}<b^{2}+c^{2}$、直角 $\\iff a^{2}=b^{2}+c^{2}$、鈍角 $\\iff a^{2}>b^{2}+c^{2}$。最も大きい角は最も長い辺の向かい側にある。",
     ],
     levels: {
       1: [
@@ -1901,6 +3370,31 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-seigen-1d", (r) => {
+          let S;
+          if (r(0, 3) === 0) S = pick(r, [[3, 4, 5], [6, 8, 10], [5, 12, 13], [9, 12, 15], [8, 15, 17]]);
+          else { const L = r(4, 12), x = r(2, L - 1); S = [L, x, r(L - x + 1, L - 1)]; } // 最大の辺 L は1つだけ、三角形ができる
+          const [a, b, c] = shuffle(r, S); // BC=a, CA=b, AB=c
+          const L = Math.max(a, b, c), X = a === L ? "A" : b === L ? "B" : "C";
+          const [u, v] = X === "A" ? [b, c] : X === "B" ? [c, a] : [a, b]; // 角 X をはさむ2辺
+          const nm = u * u + v * v - L * L, kinds = ["鋭角", "直角", "鈍角"];
+          const kind = nm > 0 ? "鋭角" : nm === 0 ? "直角" : "鈍角";
+          const C = (Y, k) => `${tex(`\\angle ${Y}`)} が最大で、${k}`;
+          const ok = C(X, kind);
+          const other = ["A", "B", "C"].filter((Y) => Y !== X);
+          const side = { A: "BC", B: "CA", C: "AB" }[X];
+          return {
+            q: `${tex("\\triangle ABC")} で ${tex(`BC=${a},\\ CA=${b},\\ AB=${c}`)} のとき、最も大きい角と、その角が鋭角・直角・鈍角のどれかの組み合わせとして正しいものは？`,
+            ans: ok,
+            choices: choices4(r, ok, [...kinds.filter((k) => k !== kind).map((k) => C(X, k)), C(pick(r, other), kind)]),
+            hint: "最も大きい角は、最も長い辺の向かい側にある。その角の $\\cos$ の符号を余弦定理で調べる。",
+            steps: [
+              `最も長い辺は ${side} $=${L}$ なので、最も大きい角は $\\angle ${X}$`,
+              `$\\cos ${X}=\\frac{${u}^{2}+${v}^{2}-${L}^{2}}{2\\cdot ${u}\\cdot ${v}}=${fr(nm, 2 * u * v)}$`,
+              `$\\cos ${X}${nm > 0 ? ">" : nm === 0 ? "=" : "<"}0$ なので $\\angle ${X}$ は${kind}`,
+            ],
+          };
+        }),
       ],
       2: [
         t("HI-seigen-2a", (r) => {
@@ -1912,7 +3406,7 @@ export const UNITS = [
             hint: "最大の角は最大の辺と向かい合う。余弦定理を $\\cos$ について解いた形を使う。",
             steps: [
               `最大の角は長さ ${c} の辺の向かい側`,
-              `$\\cos\\theta=\\frac{${a}^{2}+${b}^{2}-${c}^{2}}{2\\cdot ${a}\\cdot ${b}}=\\frac{${a * a + b * b - c * c}}{${2 * a * b}}=${fracTex(a * a + b * b - c * c, 2 * a * b)}$`,
+              `$\\cos\\theta=\\frac{${a}^{2}+${b}^{2}-${c}^{2}}{2\\cdot ${a}\\cdot ${b}}=${fr(a * a + b * b - c * c, 2 * a * b)}$`,
             ],
           };
         }),
@@ -1947,6 +3441,28 @@ export const UNITS = [
             steps: [
               `$\\frac{CA}{\\sin B}=\\frac{BC}{\\sin A}$ より $CA=\\frac{${a}\\sin ${deg(B)}}{\\sin ${deg(A)}}$`,
               `$=${a}\\cdot ${tv("sin", B)}\\div ${tv("sin", A)}=${okS}$`,
+            ],
+          };
+        }),
+        t("HI-seigen-2d", (r) => {
+          // BC=x の2次方程式 x^2-sx+P=0 の解 r1, r2 から作る（s=r1+r2、P=r1r2=AB^2-CA^2）
+          const r1 = r(1, 6), r2 = pick(r, [-8, -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7, 8].filter((x) => x !== r1 && x !== -r1));
+          const s = r1 + r2, B = s > 0 ? 60 : 120, c = Math.abs(s), b2 = c * c - r1 * r2;
+          const vals = [r1, r2].filter((x) => x > 0).sort((x, y) => x - y);
+          const V = (arr) => tex(`BC=${arr.join(",\\ ")}`);
+          const ok = V(vals);
+          // ∠B を CA と AB の間の角と取り違えたときの値（CA が整数のときだけ）
+          const bb = Math.round(Math.sqrt(b2)), wp = bb * bb === b2 ? tex(`BC=${sqrtTex(1, b2 + c * c - (B === 60 ? 1 : -1) * c * bb)}`) : null;
+          const wr = vals.length === 2 ? [V([vals[0]]), V([vals[1]]), wp] : [V([r1, Math.abs(r2)].sort((x, y) => x - y)), V([Math.abs(r2)]), wp];
+          return {
+            q: `${tex("\\triangle ABC")} で ${tex(`CA=${sqrtTex(1, b2)},\\ AB=${c},\\ \\angle B=${deg(B)}`)} のとき、辺 ${tex("BC")} の長さとして考えられる値をすべて挙げたものは？`,
+            ans: ok,
+            choices: choices4(r, ok, wr, (i) => V([vals[vals.length - 1] + i + 1])),
+            hint: "$\\angle B$ をはさむ2辺は $AB$ と $BC$。$BC=x$ とおき、辺 $CA$ について余弦定理の式を立てる。",
+            steps: [
+              `$BC=x$ とおくと、余弦定理より $${b2}=${c}^{2}+x^{2}-2\\cdot ${c}\\cdot x\\cos ${deg(B)}$`,
+              `整理して $${poly([1, -s, r1 * r2])}=0$、$${fac2(r1, r2)}=0$`,
+              `$x>0$ より $BC=${vals.join(",\\ ")}$${vals.length === 2 ? "（条件に合う三角形は2通りある）" : ""}`,
             ],
           };
         }),
@@ -1998,6 +3514,31 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-seigen-3d", (r) => {
+          const p = r(1, 6), q = r(1, 6), h = r(1, 6); // AB=p, AD=q, AE=h
+          const AC = p * p + q * q, AF = p * p + h * h, CF = q * q + h * h, X = AC * AF;
+          const N = p * p * q * q + q * q * h * h + h * h * p * p;
+          const okS = fsq(1, N, 2);
+          const seen = new Set([Math.sqrt(N) / 2]);
+          const ws = [];
+          for (const [tx, v] of [[fsq(1, X, 2), Math.sqrt(X) / 2], [fsq(1, N, 1), Math.sqrt(N)], [fsq(1, AF * CF, 2), Math.sqrt(AF * CF) / 2], [fsq(1, N, 4), Math.sqrt(N) / 4], [fsq(1, AC * CF, 2), Math.sqrt(AC * CF) / 2]]) {
+            if ([...seen].some((w) => Math.abs(w - v) < 1e-9)) continue;
+            seen.add(v); ws.push(tex(tx));
+          }
+          const Rt = (n) => sqrtTex(1, n);
+          return {
+            q: `直方体 ABCD-EFGH（AE, BF, CG, DH は平行な辺）で ${tex(`AB=${p},\\ AD=${q},\\ AE=${h}`)} のとき、${tex("\\triangle AFC")} の面積は？`,
+            ans: tex(okS),
+            choices: choices4(r, tex(okS), ws),
+            hint: "3辺を三平方の定理で求め、余弦定理で1つの角の $\\cos$、そこから $\\sin$ を出して面積を求める。",
+            steps: [
+              `三平方の定理より $AC=${Rt(AC)}$、$AF=${Rt(AF)}$、$CF=${Rt(CF)}$`,
+              `$\\cos\\angle CAF=\\frac{AC^{2}+AF^{2}-CF^{2}}{2\\cdot AC\\cdot AF}=\\frac{${2 * p * p}}{2\\sqrt{${AC}}\\sqrt{${AF}}}=\\frac{${p * p}}{\\sqrt{${X}}}$`,
+              `$\\sin\\angle CAF=\\sqrt{1-\\frac{${p ** 4}}{${X}}}=\\frac{\\sqrt{${N}}}{\\sqrt{${X}}}$`,
+              `$S=\\frac{1}{2}\\cdot AC\\cdot AF\\sin\\angle CAF=\\frac{1}{2}\\sqrt{${N}}=${okS}$`,
+            ],
+          };
+        }),
       ],
       4: [
         t("HI-seigen-4a", (r) => {
@@ -2046,19 +3587,78 @@ export const UNITS = [
             steps: [...base, `$\\frac{1}{2}x(${b + c})\\cdot ${tv("sin", half)}=\\frac{1}{2}\\cdot ${b * c}\\cdot ${tv("sin", A)}$`, `$x=${okS}$`],
           };
         }),
+        t("HI-seigen-4c", (r) => {
+          const a = r(1, 6), b = r(a + 1, 8), obtuse = r(0, 1) === 1;
+          const Sq = (n) => sqrtTex(1, n), lo = Sq(b * b - a * a), hi = Sq(a * a + b * b);
+          const ok = obtuse ? `${b - a}<x<${lo},\\ ${hi}<x<${a + b}` : `${lo}<x<${hi}`;
+          const wr = obtuse
+            ? [`${hi}<x<${a + b}`, `0<x<${lo},\\ ${hi}<x<${a + b}`, `${b - a}<x<${lo},\\ ${hi}<x`, `${hi}<x`]
+            : [`${b - a}<x<${hi}`, `${b}<x<${hi}`, `${lo}<x<${a + b}`, `${b - a}<x<${a + b}`];
+          return {
+            q: `3辺の長さが ${a}, ${b}, ${tex("x")} である三角形が${obtuse ? "鈍角" : "鋭角"}三角形となるような ${tex("x")} の値の範囲は？`,
+            ans: tex(ok),
+            choices: choices4(r, tex(ok), wr.map(tex)),
+            hint: `三角形ができる条件と、どの辺が最も長いかの場合分けで考える。${obtuse ? "鈍角" : "鋭角"}かどうかは、最も長い辺の向かい側の角で決まる。`,
+            steps: [
+              `三角形ができる条件は $${b - a}<x<${a + b}$`,
+              obtuse ? `$x\\geqq ${b}$ のとき最も長い辺は $x$：$x^{2}>${a * a}+${b * b}$ より $x>${hi}$` : `$x\\geqq ${b}$ のとき最も長い辺は $x$：$x^{2}<${a * a}+${b * b}$ より $${b}\\leqq x<${hi}$`,
+              obtuse ? `$x<${b}$ のとき最も長い辺は ${b}：$${b * b}>${a * a}+x^{2}$ より $x<${lo}$` : `$x<${b}$ のとき最も長い辺は ${b}：$${b * b}<${a * a}+x^{2}$ より $${lo}<x<${b}$`,
+              `三角形ができる条件と合わせて $${ok}$`,
+            ],
+          };
+        }),
+        t("HI-seigen-4d", (r) => {
+          const k = 2 * r(2, 6), h = k / 2, A = pick(r, [60, 90, 120]), askBC = r(0, 1) === 1;
+          const m = { 60: 3, 90: 2, 120: 1 }[A]; // BC^2 = m x^2 - m k x + k^2（m = 2+2cos A）
+          const s = { 60: 1, 90: 2, 120: 3 }[A]; // BC の最小値 = h√s
+          const pick3 = (ok, cands) => { const seen = [ok[1]], ws = []; for (const [tx, v] of cands) { if (seen.some((w) => Math.abs(w - v) < 1e-9)) continue; seen.push(v); ws.push(tex(tx)); } return choices4(r, tex(ok[0]), ws.slice(0, 3)); };
+          const head = `${tex("\\triangle ABC")} で ${tex(`AB+AC=${k},\\ \\angle A=${deg(A)}`)} のとき、`;
+          const st0 = `$AB=x$ とおくと $AC=${k}-x$（$0<x<${k}$）`;
+          if (askBC) {
+            const ok = [fsq(h, s), h * Math.sqrt(s)];
+            const err = { 60: 3, 90: 2, 120: 1 }[A]; // cos の符号を間違えたとき
+            return {
+              q: head + `辺 ${tex("BC")} の長さの最小値は？`,
+              ans: tex(ok[0]),
+              choices: pick3(ok, [[fsq(h, err), h * Math.sqrt(err)], [String(s * h * h), s * h * h], [String(k), k], [fsq(h, 1), h], [fsq(h, 2), h * Math.SQRT2], [fsq(h, 3), h * Math.sqrt(3)]]),
+              hint: `$AB=x$ とおくと $AC=${k}-x$。$BC^{2}$ を $x$ の2次関数で表す。`,
+              steps: [
+                st0,
+                `$BC^{2}=x^{2}+(${k}-x)^{2}-2x(${k}-x)\\cos ${deg(A)}=${poly([m, -m * k, k * k])}$`,
+                `$=${m === 1 ? "" : m}(x-${h})^{2}+${s * h * h}$`,
+                `$x=${h}$ のとき最小で、$BC=\\sqrt{${s * h * h}}=${ok[0]}$`,
+              ],
+            };
+          }
+          const sv = A === 90 ? [1, 1] : [1, 3]; // sin A = √sv[1]/(2 or 1)
+          const sd = A === 90 ? 1 : 2;
+          const okT = fsq(h * h, sv[1], 2 * sd), okV = (h * h * Math.sqrt(sv[1])) / (2 * sd);
+          return {
+            q: head + `${tex("\\triangle ABC")} の面積の最大値は？`,
+            ans: tex(okT),
+            choices: pick3([okT, okV], [[fsq(h * h, sv[1], sd), okV * 2], [fsq(h * h, 1, 2), (h * h) / 2], [fsq(k * k, sv[1], 2 * sd), okV * 4], [fsq(h * h, sv[1], 4 * sd), okV / 2]]),
+            hint: `$AB=x$ とおくと $AC=${k}-x$。面積を $x$ の2次関数で表す。`,
+            steps: [
+              st0,
+              `$S=\\frac{1}{2}x(${k}-x)\\sin ${deg(A)}=${fsq(1, sv[1], 2 * sd)}(-x^{2}+${k}x)=${fsq(1, sv[1], 2 * sd)}\\left\\{-(x-${h})^{2}+${h * h}\\right\\}$`,
+              `$x=${h}$ のとき最大で、$S=${fsq(1, sv[1], 2 * sd)}\\cdot ${h * h}=${okT}$`,
+            ],
+          };
+        }),
       ],
     },
   },
   // ─────────────────────────────────────────────────────
   {
     ...H,
-    id: "HI-data", area: "data", name: "データの分析", desc: "四分位数・分散・標準偏差・相関係数",
+    id: "HI-data", area: "data", name: "データの分析", desc: "四分位数・外れ値・分散・相関係数・仮説検定",
     prereqs: ["J1-d1"],
     points: [
       "四分位数：小さい順に並べ、中央値 $Q_{2}$ で前半・後半に分ける（個数が奇数なら中央値は除く）。前半の中央値が $Q_{1}$、後半が $Q_{3}$。四分位範囲は $Q_{3}-Q_{1}$",
       "分散 $s^{2}=\\frac{1}{n}\\sum(x_{i}-\\overline{x})^{2}=\\overline{x^{2}}-(\\overline{x})^{2}$、標準偏差 $s=\\sqrt{s^{2}}$",
       "$y=ax+b$ と変換すると $\\overline{y}=a\\overline{x}+b$、$s_{y}^{2}=a^{2}s_{x}^{2}$、$s_{y}=|a|s_{x}$",
       "相関係数 $r=\\frac{s_{xy}}{s_{x}s_{y}}$（$-1\\leqq r\\leqq 1$）。共分散 $s_{xy}=\\frac{1}{n}\\sum(x_{i}-\\overline{x})(y_{i}-\\overline{y})$",
+      "外れ値：$Q_{1}-1.5(Q_{3}-Q_{1})$ 以下、または $Q_{3}+1.5(Q_{3}-Q_{1})$ 以上の値。仮説検定：仮説が正しいとして、実際の結果（またはそれ以上にかたよった結果）が起こる確率が基準（0.05 など）以下なら、仮説は正しくなかったと判断する。",
     ],
     levels: {
       1: [
@@ -2098,6 +3698,45 @@ export const UNITS = [
             ],
           };
         }),
+        t("HI-data-1c", (r) => {
+          const score = r(0, 1) === 1; // 得点（10点きざみ）か通学時間（20分きざみ）
+          const w = score ? 10 : 20, s0 = score ? pick(r, [30, 40, 50]) : 0, k = score ? r(4, 5) : 4, u = score ? "点" : "分";
+          const N = pick(r, [10, 20, 25, 40, 50]);
+          const cuts = sample(r, Array.from({ length: N - 1 }, (_, i) => i + 1), k - 1).sort((a, b) => a - b);
+          const f = [...cuts, N].map((c, i) => c - (i ? cuts[i - 1] : 0)); // 度数（合計 N、どれも1以上）
+          const marks = f.map((_, i) => s0 + w * i + w / 2);
+          const S = f.reduce((a, x, i) => a + x * marks[i], 0);
+          const mx = Math.max(...f), modeOk = f.filter((x) => x === mx).length === 1;
+          const askMode = modeOk && r(0, 3) === 0;
+          const rows = f.map((x, i) => `${s0 + w * i}${u}以上${s0 + w * (i + 1)}${u}未満が ${x} 人`).join("、");
+          const im = f.indexOf(mx);
+          return {
+            q: `ある ${N} 人の${score ? "テストの得点" : "通学時間"}の度数分布表は「${rows}」である。${askMode ? "最頻値" : "階級値を用いて計算した平均値"}は何${u}？`,
+            ans: askMode ? marks[im] : round(S / N),
+            unit: u,
+            hint: askMode ? "度数がいちばん大きい階級の階級値（階級のまん中の値）が最頻値。" : "各階級の階級値（まん中の値）×度数 の合計を、人数で割る。",
+            steps: askMode
+              ? [`度数がいちばん大きいのは ${s0 + w * im}${u}以上${s0 + w * (im + 1)}${u}未満の階級（${mx} 人）`, `最頻値はその階級値で ${marks[im]}${u}`]
+              : [`階級値は ${marks.join(", ")}`, `（階級値）×（度数）の和は $${marks.map((m, i) => `${m}\\times ${f[i]}`).join("+")}=${S}$`, `平均値は $\\frac{${S}}{${N}}=${round(S / N)}$`],
+          };
+        }),
+        t("HI-data-1d", (r) => {
+          const D = [[-2, -1, 0, 1, 2], [-3, -1, 0, 1, 3], [-4, -1, 0, 2, 3], [-2, -2, 0, 1, 3], [-3, -2, 1, 2, 2], [-4, -2, 1, 2, 3]];
+          const dx = shuffle(r, pick(r, D)), dy = shuffle(r, pick(r, D));
+          const mx = r(5, 12), my = r(5, 20); // データはすべて正の値
+          const pr = dx.map((d, i) => d * dy[i]), sum = pr.reduce((a, b) => a + b, 0);
+          const cov = round(sum / 5);
+          return {
+            q: `5組のデータ ${dx.map((d, i) => tex(`(${mx + d},\\ ${my + dy[i]})`)).join("、")}（${tex("(x,\\ y)")} の組）について、${tex("x")} と ${tex("y")} の共分散は？`,
+            ans: cov,
+            hint: "それぞれの平均値を求め、偏差の積 $(x-\\overline{x})(y-\\overline{y})$ の平均をとる。",
+            steps: [
+              `$\\overline{x}=${mx}$、$\\overline{y}=${my}$`,
+              `偏差の積は ${pr.join(", ")}、その和は ${sum}`,
+              `共分散は $${sum < 0 ? "-" : ""}\\frac{${Math.abs(sum)}}{5}=${cov}$`,
+            ],
+          };
+        }),
       ],
       2: [
         t("HI-data-2a", (r) => {
@@ -2126,6 +3765,54 @@ export const UNITS = [
             steps: [
               `$\\overline{x}=\\frac{${S}}{${n}}=${round(S / n)}$、$\\overline{x^{2}}=\\frac{${T}}{${n}}=${round(T / n)}$`,
               `分散 $=${round(T / n)}-${round(S / n)}^{2}=${V}$`,
+            ],
+          };
+        }),
+        t("HI-data-2c", (r) => {
+          // [回数 n, 回数 k, 1000セット中で表が k 回以上のセット数（二項分布から）]
+          const [n, k] = pick(r, [[10, 7], [10, 8], [10, 9], [15, 10], [15, 11], [15, 12], [20, 13], [20, 14], [20, 15], [20, 16], [30, 19], [30, 21], [30, 22]]);
+          let tail = 0, cnk = 1;
+          for (let j = 0; j <= n; j++) { if (j > 0) cnk = (cnk * (n - j + 1)) / j; if (j >= k) tail += cnk; }
+          const m = Math.round((1000 * tail) / 2 ** n);
+          const game = r(0, 1) === 1;
+          const ctx = game ? `A さんと B さんがあるゲームを ${n} 回行ったところ、A さんが ${k} 回勝った` : `新しいお茶とこれまでのお茶を ${n} 人に飲み比べてもらったところ、${k} 人が新しいお茶の方がおいしいと答えた`;
+          const claim = game ? "A さんの方が強い" : "新しいお茶の方がおいしいと評価されている";
+          const nul = game ? "2人の強さは同じ（A さんが勝つ確率は $\\frac{1}{2}$）" : "どちらのお茶も同じように選ばれる（新しいお茶を選ぶ確率は $\\frac{1}{2}$）";
+          const opp = game ? "B さんの方が強い" : "これまでのお茶の方がおいしいと評価されている";
+          const yes = `「${claim}」と判断できる`, no = `「${claim}」とは判断できない`;
+          const rej = m <= 50, ok = rej ? yes : no;
+          return {
+            q: `${ctx}。「${claim}」といえるかを、基準となる確率を 0.05 として仮説検定の考え方で調べる。「${nul}」という仮説のもとで、公正なコインを ${n} 回投げて表の出た回数を記録する実験を 1000 セット行ったところ、表が ${k} 回以上出たのは ${m} セットであった。正しいものは？`,
+            ans: ok,
+            choices: choices4(r, ok, [rej ? no : yes, `「${nul.replace(/（.*）$/, "")}」と判断できる`, `「${opp}」と判断できる`]),
+            hint: "仮説が正しいとしたとき、実際の結果（またはそれ以上にかたよった結果）が起こる割合を、基準の 0.05 と比べる。",
+            steps: [
+              `仮説のもとで、表が ${k} 回以上になる割合は ${tex(`\\frac{${m}}{1000}=${round(m / 1000)}`)}`,
+              rej ? `${round(m / 1000)} は 0.05 以下なので、めったに起こらないことが起きたと考え、仮説は正しくなかったと判断する` : `${round(m / 1000)} は 0.05 より大きいので、仮説が正しくないとはいえない（仮説が正しいと判断できるわけでもない）`,
+              `よって${ok}`,
+            ],
+          };
+        }),
+        t("HI-data-2d", (r) => {
+          const n = r(9, 12), o = r(0, 2);
+          const xs = Array.from({ length: n - o }, () => r(20, 40));
+          for (let i = 0; i < o; i++) xs.push(r(0, 1) ? r(55, 80) : r(0, 6));
+          const d = shuffle(r, xs);
+          const s = [...d].sort((a, b) => a - b);
+          const med = (arr) => (arr.length % 2 ? arr[(arr.length - 1) / 2] : (arr[arr.length / 2 - 1] + arr[arr.length / 2]) / 2);
+          const h = Math.floor(n / 2), q1 = med(s.slice(0, h)), q3 = med(s.slice(n - h)), iqr = q3 - q1;
+          const L = round(q1 - 1.5 * iqr), U = round(q3 + 1.5 * iqr);
+          const outs = s.filter((x) => x <= L || x >= U);
+          return {
+            q: `次の ${n} 個のデータの外れ値は何個？ ただし、${tex("Q_{1}-1.5(Q_{3}-Q_{1})")} 以下、または ${tex("Q_{3}+1.5(Q_{3}-Q_{1})")} 以上の値を外れ値とする（${tex("Q_{1}")}、${tex("Q_{3}")} は第1・第3四分位数）。　${d.join(", ")}`,
+            ans: outs.length,
+            unit: "個",
+            hint: "小さい順に並べて $Q_{1}$、$Q_{3}$ を求め、外れ値の境目の値を計算する。",
+            steps: [
+              `並べると ${s.join(", ")}`,
+              `$Q_{1}=${q1}$、$Q_{3}=${q3}$、四分位範囲は $${iqr}$`,
+              `$Q_{1}-1.5\\times ${iqr}=${L}$、$Q_{3}+1.5\\times ${iqr}=${U}$`,
+              outs.length ? `${L} 以下または ${U} 以上の値は ${outs.join(", ")} の ${outs.length} 個` : `${L} 以下または ${U} 以上の値はないので 0 個`,
             ],
           };
         }),
@@ -2166,6 +3853,45 @@ export const UNITS = [
               `和 $=${n}\\times ${m}=${S}$、2乗の和 $=${n}\\times(${V}+${m}^{2})=${T}$`,
               `正しい和 $=${S}-${w}+${u}=${S2}$、正しい2乗の和 $=${T}-${w * w}+${u * u}=${T2}$`,
               `分散 $=\\frac{${T2}}{${n}}-\\left(\\frac{${S2}}{${n}}\\right)^{2}=${V2}$`,
+            ],
+          };
+        }),
+        t("HI-data-3c", (r) => {
+          let x = r(1, 15), y = r(1, 15);
+          if (x === y) return { skip: true };
+          if (x > y) [x, y] = [y, x];
+          const k1 = r(1, 15), k2 = r(1, 15);
+          const k3 = pick(r, Array.from({ length: 15 }, (_, i) => i + 1).filter((v) => (k1 + k2 + v + x + y) % 5 === 0)); // 平均が整数になるように
+          const kn = [k1, k2, k3], all = [...kn, x, y];
+          const m = all.reduce((a, b) => a + b, 0) / 5;
+          const V = round(all.reduce((a, b) => a + (b - m) ** 2, 0) / 5);
+          const A = x + y, B = x * x + y * y, askX = r(0, 1) === 1;
+          return {
+            q: `5個のデータ ${kn.join(", ")}, ${tex("x")}, ${tex("y")} の平均値が ${m}、分散が ${V} である。${tex("x<y")} のとき、${tex(askX ? "x" : "y")} の値は？`,
+            ans: askX ? x : y,
+            hint: "平均値から $x+y$、分散（$=$ 2乗の平均 $-$ 平均の2乗）から $x^{2}+y^{2}$ を求めて、連立方程式を解く。",
+            steps: [
+              `平均値から $${kn.join("+")}+x+y=5\\times ${m}$ より $x+y=${A}$`,
+              `2乗の平均 $=${V}+${m}^{2}$ より $${kn.map((v) => `${v}^{2}`).join("+")}+x^{2}+y^{2}=5\\times ${round(V + m * m)}$、$x^{2}+y^{2}=${B}$`,
+              `$y=${A}-x$ を代入して整理すると $${poly([1, -A, x * y])}=0$、$${fac2(x, y)}=0$`,
+              `$x<y$ より $x=${x}$、$y=${y}$`,
+            ],
+          };
+        }),
+        t("HI-data-3d", (r) => {
+          const xs = Array.from({ length: 5 }, () => r(1, 12));
+          const S = xs.reduce((a, b) => a + b, 0), T = xs.reduce((a, b) => a + b * b, 0);
+          const mean = round(S / 5), mn = round(T - (S * S) / 5);
+          if (new Set(xs).size === 1) return { skip: true };
+          const askMin = r(0, 1) === 1;
+          return {
+            q: `5個のデータ ${xs.join(", ")} について、各値と実数 ${tex("a")} との差の2乗の和を ${tex("f(a)")} とする。${askMin ? `${tex("f(a)")} の最小値` : `${tex("f(a)")} を最小にする ${tex("a")} の値`}は？`,
+            ans: askMin ? mn : mean,
+            hint: "$f(a)$ を展開して $a$ の2次関数とみて、平方完成する。",
+            steps: [
+              `$f(a)=${xs.map((v) => `(${v}-a)^{2}`).join("+")}=5a^{2}-${2 * S}a+${T}$`,
+              `$=5(a-${mean})^{2}+${mn}$`,
+              `$a=${mean}$（平均値）のとき最小で、最小値は $${mn}$（データの個数 $\\times$ 分散）`,
             ],
           };
         }),
@@ -2213,7 +3939,41 @@ export const UNITS = [
             hint: "共分散は $s_{uv}=ac\\,s_{xy}$。相関係数は $a,\\ c$ の符号だけで変わる。",
             steps: [
               `$s_{xy}=r\\,s_{x}s_{y}=${round(rr)}\\times ${sx}\\times ${sy}=${cov}$`,
-              askCov ? `$s_{uv}=(${a})\\times(${c})\\times(${cov})=${v}$` : `$s_{u}=${Math.abs(a)}s_{x}$、$s_{v}=${Math.abs(c)}s_{y}$、$s_{uv}=${a * c}s_{xy}$ より $r_{uv}=${a * c > 0 ? "" : "-"}r_{xy}=${v}$`,
+              askCov ? `$s_{uv}=(${a})\\times(${c})\\times(${cov})=${v}$` : `$s_{u}=${coefVar(Math.abs(a), "s_{x}")}$、$s_{v}=${coefVar(Math.abs(c), "s_{y}")}$、$s_{uv}=${coefVar(a * c, "s_{xy}")}$ より $r_{uv}=${a * c > 0 ? "" : "-"}r_{xy}=${v}$`,
+            ],
+          };
+        }),
+        t("HI-data-4d", (r) => {
+          const vx = pick(r, [4, 9, 16, 25, 36]), vy = pick(r, [1, 4, 9, 16]);
+          const lim = Math.sqrt(vx * vy); // |共分散| < s_x s_y
+          const c = pick(r, Array.from({ length: 2 * lim - 1 }, (_, i) => i - lim + 1).filter((v) => v !== 0));
+          const askT = r(0, 1) === 1;
+          const tS = fracTex(-c, vy), mnS = fracTex(vx * vy - c * c, vy);
+          return {
+            q: `2つの変量 ${tex("x,\\ y")} のデータについて、${tex("x")} の分散が ${vx}、${tex("y")} の分散が ${vy}、${tex("x")} と ${tex("y")} の共分散が ${c} である。定数 ${tex("t")} に対して、変量 ${tex("z=x+ty")} の分散${askT ? `を最小にする ${tex("t")} の値` : "の最小値"}は？`,
+            ans: askT ? fracAns(-c, vy) : fracAns(vx * vy - c * c, vy),
+            hint: "$z$ の偏差は $(x-\\overline{x})+t(y-\\overline{y})$。これを2乗して平均をとると、$z$ の分散は $t$ の2次式になる。",
+            steps: [
+              `$s_{z}^{2}=s_{x}^{2}+2ts_{xy}+t^{2}s_{y}^{2}=${poly([vy, 2 * c, vx], "t")}$`,
+              `$=${vy === 1 ? "" : vy}\\left(t${c > 0 ? "+" : "-"}${fracTex(Math.abs(c), vy)}\\right)^{2}+${mnS}$`,
+              `$t=${tS}$ のとき最小で、最小値は $${mnS}$`,
+            ],
+          };
+        }),
+        t("HI-data-4e", (r) => {
+          const sx = r(1, 6), sy = r(1, 6), p = pick(r, [1, 2, 3]), q = pick(r, [-3, -2, -1, 1, 2, 3]);
+          const P = p * sx, Qy = Math.abs(q) * sy, base = p * p * sx * sx + q * q * sy * sy, cr = 2 * Math.abs(p * q) * sx * sy;
+          const I = (lo, hi) => tex(`${lo}\\leqq s_{z}^{2}\\leqq ${hi}`);
+          const ok = I((P - Qy) ** 2, (P + Qy) ** 2);
+          return {
+            q: `2つの変量 ${tex("x,\\ y")} の標準偏差がそれぞれ ${sx}, ${sy} である。${tex("x")} と ${tex("y")} の相関係数がわからないとき、変量 ${tex(`z=${coefVar(p, "x")}${signedVar(q, "y")}`)} の分散 ${tex("s_{z}^{2}")} のとりうる値の範囲は？`,
+            ans: ok,
+            choices: choices4(r, ok, [I(0, (P + Qy) ** 2), I(base - cr / 2, base + cr / 2), I(Math.abs(P - Qy), P + Qy), I(base - cr, base)]),
+            hint: "$z$ の分散を $x,\\ y$ の分散と共分散 $s_{xy}$ で表す。$s_{xy}=rs_{x}s_{y}$（$r$ は相関係数）で、$-1\\leqq r\\leqq 1$。",
+            steps: [
+              `$s_{z}^{2}=${p * p === 1 ? "" : p * p}s_{x}^{2}${signed(2 * p * q)}s_{xy}+${q * q === 1 ? "" : q * q}s_{y}^{2}=${base}${signed(2 * p * q * sx * sy)}r$（$s_{xy}=${sx * sy}r$）`,
+              `$-1\\leqq r\\leqq 1$ より、$s_{z}^{2}$ は $${base}-${cr}$ 以上 $${base}+${cr}$ 以下`,
+              `$${(P - Qy) ** 2}\\leqq s_{z}^{2}\\leqq ${(P + Qy) ** 2}$`,
             ],
           };
         }),
