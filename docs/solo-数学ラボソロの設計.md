@@ -3,9 +3,9 @@
 小学1年〜高校3年の数学を、**授業とは別に、一人で習熟する**ためのアプリ。
 「目標（志望校）→ 現在地（診断）→ 毎日のおすすめ」の流れで、講義・演習・確認テスト・復習を自動で回す。
 
-- 入口：`solo/index.html` → `src/solo/main.jsx`
-- 公開URL（GitHub Pages）：`https://<ユーザー>.github.io/math-dialogue/solo/`
-- 開発：`npm run dev` → `http://localhost:5173/math-dialogue/solo/`
+- 入口：`solo-lab/index.html` → `src/solo/main.jsx`
+- 公開URL（GitHub Pages）：`https://<ユーザー>.github.io/math-dialogue/solo-lab/`（`/solo/` は別の版が使っている）
+- 開発：`npm run dev` → `http://localhost:5173/math-dialogue/solo-lab/`
 - 数学ラボ本体（ゲーム）の「学習」メニューからもリンクしている
 
 ## 1. 学習の流れ

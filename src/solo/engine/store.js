@@ -14,7 +14,9 @@
 //  将来サーバー保存にするときは、load/save だけ差し替えればよい。
 // ============================================================
 
-const KEY = "mathlab-solo-v1";
+// ※ 同じサイト（github.io）の別の版「コツコツくん」が mathlab-solo-v1 を使っているので、記録が混ざらないよう別の名前にする
+const KEY = "mathlab-solo-lab-v1";
+const APP = "mathlab-solo-lab";
 
 export function blankState() {
   return {
@@ -52,11 +54,13 @@ export function save(state) {
 }
 
 export function exportJson(state) {
-  return JSON.stringify({ app: "mathlab-solo", exportedAt: new Date().toISOString(), state }, null, 1);
+  return JSON.stringify({ app: APP, exportedAt: new Date().toISOString(), state }, null, 1);
 }
 
 export function importJson(text) {
   const obj = JSON.parse(text);
+  // 別の版（コツコツくんなど）の書き出しは、記録の形がちがうことがあるので読み込まない
+  if (obj?.app && obj.app !== APP) throw new Error("このファイルは別の版のアプリの記録のようです（この版では読み込めません）");
   const s = obj?.state || obj;
   if (!s || s.v !== 1) throw new Error("数学ラボ ソロのデータではないようです");
   return { ...blankState(), ...s };
