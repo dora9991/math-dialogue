@@ -1,0 +1,1231 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- 下書きのあいだは検索に出さない。正式に公開するときは、次の1行を消す -->
+<meta name="robots" content="noindex,nofollow">
+<title>致遠館FC</title>
+<meta name="description" content="佐賀市の中学生のための地域サッカークラブ。サッカーと学業の両立を土台に、競技力を高める。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
+<style>
+/* 構成：放課後の「時間割」を軸にした1枚のクラブ案内。
+   色：ピッチの緑＝クラブ／チョークの白＝地／照明の琥珀＝呼びかけと照明プロジェクト／夕暮れの藍＝暗い時間 */
+:root{
+  --paper:#f3f6f1; --surface:#ffffff; --surface-2:#e8eee7;
+  --ink:#16211a; --ink-2:#425148; --ink-3:#5f6e64;
+  --line:#d3dcd3; --grid:#e4e9e3;
+  --pitch:#1d6b43; --pitch-strong:#13502f; --pitch-soft:#dbeadf; --on-pitch:#ffffff;
+  --flood:#efae36; --flood-soft:#f7e4b9; --on-flood:#2a1c00; --tbd-ink:#6a4600;
+  --night:#3f51a3; --night-soft:#e1e5f4;
+  --dusk-line:#b86e00; --chart-day:#f3dca6;
+  --muted-fill:#425148; --on-muted:#ffffff;
+  --sun:#c2410c; --sat:#1d4ed8;
+  --veil:rgba(13,19,16,.45);
+  --shadow:0 1px 2px rgba(22,33,26,.05),0 10px 30px rgba(22,33,26,.07);
+  --f-display:"Dela Gothic One","Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+  --f-num:"Barlow Condensed","Zen Kaku Gothic New","Hiragino Sans",sans-serif;
+  --r:14px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0d1310; --surface:#141c17; --surface-2:#18221c;
+    --ink:#e5ece7; --ink-2:#b1bfb6; --ink-3:#93a198;
+    --line:#2a372f; --grid:#212c25;
+    --pitch:#5cbf88; --pitch-strong:#8ad8aa; --pitch-soft:#163222; --on-pitch:#06140c;
+    --flood:#f2b544; --flood-soft:#3b2d10; --on-flood:#211600; --tbd-ink:#f3cf86;
+    --night:#7282d6; --night-soft:#1d2444;
+    --dusk-line:#c28414; --chart-day:#4b3b17;
+    --muted-fill:#53635a; --on-muted:#ffffff;
+    --sun:#f08a5d; --sat:#8fb0ff;
+    --veil:rgba(0,0,0,.6);
+    --shadow:none;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0d1310; --surface:#141c17; --surface-2:#18221c;
+  --ink:#e5ece7; --ink-2:#b1bfb6; --ink-3:#93a198;
+  --line:#2a372f; --grid:#212c25;
+  --pitch:#5cbf88; --pitch-strong:#8ad8aa; --pitch-soft:#163222; --on-pitch:#06140c;
+  --flood:#f2b544; --flood-soft:#3b2d10; --on-flood:#211600; --tbd-ink:#f3cf86;
+  --night:#7282d6; --night-soft:#1d2444;
+  --dusk-line:#c28414; --chart-day:#4b3b17;
+  --muted-fill:#53635a; --on-muted:#ffffff;
+  --sun:#f08a5d; --sat:#8fb0ff;
+  --veil:rgba(0,0,0,.6);
+  --shadow:none;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;scroll-padding-top:120px}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.85;letter-spacing:.02em;-webkit-text-size-adjust:100%;overflow-x:hidden}
+img,svg{max-width:100%}
+a{color:var(--pitch)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--pitch);outline-offset:3px;border-radius:6px}
+h1,h2,h3{font-feature-settings:"palt";text-wrap:balance;word-break:auto-phrase}
+.kp{word-break:keep-all;overflow-wrap:anywhere}
+.wrap{max-width:1120px;margin-inline:auto;padding-inline:20px}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.num{font-family:var(--f-num);font-weight:600;letter-spacing:.01em}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
+
+/* ---------- 下書きのお知らせ・ヘッダー ---------- */
+.draft{background:var(--flood-soft);color:var(--tbd-ink);font-size:13px;line-height:1.6;text-align:center;padding:7px 16px;font-weight:500}
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--paper);background:color-mix(in srgb,var(--paper) 90%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar-in{display:flex;align-items:center;gap:20px;min-height:60px}
+.brand{display:inline-flex;align-items:baseline;gap:8px;text-decoration:none;color:var(--ink);font-family:var(--f-display);font-size:21px;line-height:1;white-space:nowrap}
+.brand b{font-weight:400;color:var(--pitch)}
+.nav{display:flex;gap:2px;margin-left:auto;overflow-x:auto;scrollbar-width:none;min-width:0}
+.nav::-webkit-scrollbar{display:none}
+.nav a{display:block;padding:8px 10px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:14px;font-weight:700;white-space:nowrap}
+.nav a:hover{background:var(--surface-2);color:var(--ink)}
+.topbar .btn{min-height:40px;padding:0 16px;font-size:14px}
+@media (max-width:860px){
+  .topbar-in{flex-wrap:wrap;gap:0;padding-block:8px 0}
+  .topbar .btn{display:none}
+  .nav{order:3;flex-basis:100%;margin:6px -10px 0;padding-bottom:4px}
+}
+
+/* ---------- ボタン・ラベル ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 24px;border-radius:999px;font-weight:700;font-size:15px;line-height:1.3;text-align:center;text-decoration:none;cursor:pointer;border:1.5px solid transparent;transition:filter .15s,background-color .15s}
+.btn-primary{background:var(--flood);color:var(--on-flood)}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{border-color:var(--pitch);color:var(--pitch);background:transparent}
+.btn-ghost:hover{background:var(--pitch-soft)}
+.btn[aria-disabled="true"]{background:var(--surface-2);color:var(--ink-3);border-color:var(--line);cursor:not-allowed;filter:none}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:999px;background:var(--pitch-soft);color:var(--pitch-strong);font-size:13px;font-weight:700;line-height:1.6;white-space:nowrap}
+.tbd{display:inline-block;margin-left:6px;padding:0 8px;border-radius:999px;background:var(--flood-soft);color:var(--tbd-ink);font-size:12px;font-weight:700;line-height:1.7;vertical-align:2px;white-space:nowrap}
+
+/* ---------- ヒーロー ---------- */
+.hero{position:relative;overflow:hidden;padding-block:56px 80px}
+.hero-art{position:absolute;right:-180px;top:-140px;width:620px;height:620px;color:var(--line);pointer-events:none}
+.hero-grid{position:relative;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:56px;align-items:center}
+.eyebrow{margin:0;font-size:14px;font-weight:700;color:var(--pitch);letter-spacing:.06em}
+.wordmark{font-family:var(--f-display);font-weight:400;font-size:clamp(56px,9.4vw,96px);line-height:1;letter-spacing:.01em;margin:14px 0 22px}
+.wordmark b{font-weight:400;color:var(--pitch);margin-left:.04em}
+.hero-lead{font-size:clamp(23px,3.1vw,31px);font-weight:900;line-height:1.5;margin:0 0 14px}
+.hero-sub{color:var(--ink-2);max-width:32em;margin:0 0 20px}
+.hero-tags{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 28px}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px}
+@media (max-width:900px){.hero-grid{grid-template-columns:1fr;gap:40px}.hero{padding-block:36px 56px}.hero-art{right:-260px;top:-200px}}
+
+/* 放課後の時間割 */
+.tt{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 22px 18px;box-shadow:var(--shadow)}
+.tt-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:16px}
+.tt-head h2{margin:0;font-size:18px;font-weight:900;letter-spacing:.04em}
+.tt-head small{font-size:12px;color:var(--ink-3)}
+.tt-row{margin-bottom:16px}
+.tt-label{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;font-weight:700;color:var(--ink-2);margin-bottom:6px}
+.tt-label .gain{color:var(--ink);font-weight:900}
+.tt-track{position:relative;height:50px;border-radius:8px;background-color:var(--surface-2);background-image:linear-gradient(to right,var(--line) 1px,transparent 1px);background-size:12.5% 100%}
+.seg{position:absolute;top:4px;bottom:4px;border-radius:6px;display:flex;flex-direction:column;justify-content:center;padding:0 7px;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap}
+.seg-prac{background:var(--pitch);color:var(--on-pitch)}
+.seg-warm{background:var(--pitch-soft);box-shadow:inset 0 0 0 1.5px var(--pitch)}
+.seg-move{background:repeating-linear-gradient(135deg,var(--line) 0 3px,transparent 3px 7px)}
+.seg-home{background:var(--flood-soft);color:var(--tbd-ink)}
+.seg-home small{font-weight:500;font-size:11px}
+.seg-gray{background:var(--muted-fill);color:var(--on-muted)}
+.seg-homegray{background:var(--surface);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line)}
+.tt-axis{position:relative;height:20px;margin-top:2px;font-family:var(--f-num);font-size:13px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.tt-axis span{position:absolute;transform:translateX(-50%)}
+.tt-axis span:first-child{transform:none}
+.tt-axis span:last-child{transform:translateX(-100%)}
+.tt-body{position:relative}
+.tt-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 0;padding:0;list-style:none;font-size:12px;color:var(--ink-2)}
+.tt-legend li{display:inline-flex;align-items:center;gap:6px}
+.tt-legend i{display:inline-block;width:14px;height:10px;border-radius:3px}
+.tt-note{margin:14px 0 0;padding-top:14px;border-top:1px solid var(--line);font-size:15px}
+.tt-note strong{font-family:var(--f-num);font-size:20px;color:var(--pitch);white-space:nowrap}
+.tt-fine{margin:6px 0 0;font-size:12px;color:var(--ink-3);line-height:1.6}
+@media (max-width:420px){.tt{padding:18px 14px 14px}.tt-axis span:nth-child(even){display:none}.tt-axis span:last-child{display:inline}}
+
+/* ---------- セクション共通 ---------- */
+.sec{padding-block:88px}
+.sec-alt{background:var(--surface-2)}
+.sec-head{max-width:42em;margin-bottom:36px}
+.kicker{display:inline-flex;align-items:center;gap:10px;margin:0;font-size:14px;font-weight:700;color:var(--pitch);letter-spacing:.08em}
+.kicker::before{content:"";width:22px;height:2px;background:currentColor}
+.sec-head h2{margin:8px 0 12px;font-size:clamp(26px,3.6vw,36px);font-weight:900;line-height:1.4;letter-spacing:.04em}
+.sec-head p{margin:0;color:var(--ink-2)}
+@media (max-width:720px){.sec{padding-block:64px}}
+
+/* 思い */
+.omoi{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:56px;align-items:start}
+.quote{margin:0;font-size:clamp(23px,2.9vw,31px);font-weight:900;line-height:1.65;font-feature-settings:"palt";letter-spacing:.03em}
+.quote::before{content:"";display:block;width:56px;height:6px;border-radius:3px;background:var(--pitch);margin-bottom:22px}
+.quote cite{display:block;margin-top:16px;font-size:14px;font-style:normal;font-weight:500;color:var(--ink-3);letter-spacing:.02em}
+.prose p{margin:0 0 1.1em;max-width:38em}
+.name-note{margin:24px 0 0;padding-top:18px;border-top:1px solid var(--line);font-size:15px;color:var(--ink-2)}
+.name-note b{font-weight:900;color:var(--ink)}
+@media (max-width:860px){.omoi{grid-template-columns:1fr;gap:28px}}
+
+/* 3つの柱・1日の流れ */
+.pillars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.pillar{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:26px 24px 24px;min-width:0}
+.pillar-key{display:block;font-family:var(--f-display);font-size:44px;line-height:1;color:var(--pitch)}
+.pillar h3{margin:16px 0 8px;font-size:19px;font-weight:900;line-height:1.5}
+.pillar p{margin:0;color:var(--ink-2);font-size:15px}
+@media (max-width:860px){.pillars{grid-template-columns:1fr}}
+.flow-wrap{margin-top:56px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:40px;align-items:start}
+.flow-wrap h3{margin:0 0 20px;font-size:20px;font-weight:900}
+.flow{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:2px solid var(--pitch)}
+.flow li{position:relative;padding:22px 14px 0 0;min-width:0}
+.flow li::before{content:"";position:absolute;top:-8px;left:0;width:14px;height:14px;border-radius:50%;background:var(--paper);border:2.5px solid var(--pitch)}
+.sec-alt .flow li::before{background:var(--surface-2)}
+.flow time{display:block;font-family:var(--f-num);font-weight:700;font-size:36px;line-height:1;color:var(--ink)}
+.flow time small{font-size:15px;font-family:var(--f-body);font-weight:700;color:var(--ink-2);margin-left:2px}
+.flow p{margin:8px 0 0;font-size:15px;color:var(--ink-2);line-height:1.7}
+.flow-note{margin:18px 0 0;font-size:14px;color:var(--ink-3)}
+.open-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px}
+.open-box h3{margin:0 0 8px;font-size:18px}
+.open-box p{margin:0;color:var(--ink-2);font-size:15px}
+@media (max-width:860px){.flow-wrap{grid-template-columns:1fr}}
+@media (max-width:520px){
+  .flow{grid-template-columns:1fr;border-top:0;border-left:2px solid var(--pitch);margin-left:7px}
+  .flow li{padding:0 0 22px 24px}
+  .flow li::before{top:4px;left:-9px}
+}
+
+/* ---------- カレンダー ---------- */
+.cal{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:24px;align-items:start}
+@media (max-width:960px){.cal{grid-template-columns:1fr}}
+.cal-main{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.cal-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.cal-title{margin:0 auto 0 4px;font-family:var(--f-num);font-size:26px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.cal-title small{font-family:var(--f-body);font-size:15px;font-weight:700}
+.icon-btn{min-width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;font-weight:700;padding:0 12px}
+.icon-btn:hover{background:var(--surface-2)}
+.cal-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 12px;padding:0;list-style:none;font-size:13px;color:var(--ink-2)}
+.cal-legend li{display:inline-flex;align-items:center;gap:6px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none;background:var(--ink-3)}
+.t-practice .dot,.dot.t-practice{background:var(--pitch)}
+.t-match .dot,.dot.t-match{background:var(--flood)}
+.t-event .dot,.dot.t-event{background:var(--night)}
+.t-off .dot,.dot.t-off{background:transparent;box-shadow:inset 0 0 0 2px var(--ink-3)}
+.t-other .dot,.dot.t-other{background:var(--ink-3)}
+.sample{display:inline-flex;align-items:center;gap:6px;margin:0 0 10px;font-size:13px;color:var(--tbd-ink);background:var(--flood-soft);border-radius:8px;padding:4px 10px;font-weight:500}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.cal-dow{padding:6px 0;text-align:center;font-size:12px;font-weight:700;color:var(--ink-2);border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--surface-2)}
+.cal-dow.sun{color:var(--sun)}.cal-dow.sat{color:var(--sat)}
+.cal-day{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:3px;min-height:96px;min-width:0;padding:6px 6px 8px;border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--surface);text-align:left;cursor:pointer;font:inherit;color:inherit}
+.cal-day:hover{background:var(--surface-2)}
+.cal-day.blank{cursor:default;background:var(--paper)}
+.cal-day.blank:hover{background:var(--paper)}
+.cal-day[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--pitch)}
+.cal-num{font-family:var(--f-num);font-size:17px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.cal-day.sun .cal-num,.cal-day.hol .cal-num{color:var(--sun)}
+.cal-day.sat .cal-num{color:var(--sat)}
+.cal-day.today .cal-num{display:inline-grid;place-items:center;width:26px;height:26px;margin:-3px 0 0 -3px;border-radius:50%;background:var(--pitch);color:var(--on-pitch)}
+.cal-hol{font-size:10px;line-height:1.3;color:var(--sun);font-weight:700;overflow-wrap:anywhere}
+.chip{display:flex;align-items:center;gap:5px;min-width:0;font-size:11.5px;line-height:1.35;color:var(--ink)}
+.chip span{min-width:0;overflow-wrap:anywhere}
+.chip.t-off span{color:var(--ink-3)}
+.chip-more{font-size:11px;color:var(--ink-3)}
+.cal-dots{display:none;gap:3px;flex-wrap:wrap}
+@media (max-width:640px){
+  .cal-main{padding:12px 10px}
+  .cal-day{min-height:58px;padding:5px 4px 6px;align-items:center;text-align:center}
+  .cal-day .chip,.cal-day .chip-more,.cal-hol{display:none}
+  .cal-dots{display:flex;justify-content:center}
+  .cal-num{font-size:16px}
+  .cal-day.today .cal-num{margin:0}
+}
+.cal-side{display:grid;gap:16px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 16px;min-width:0}
+.panel h3{margin:0 0 12px;font-size:16px;font-weight:900;display:flex;align-items:baseline;gap:8px}
+.panel h3 small{font-weight:500;color:var(--ink-3);font-size:13px}
+.ev-list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.ev{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:baseline}
+.ev .dot{margin-top:2px}
+.ev-when{font-size:13px;color:var(--ink-3);font-weight:700;font-variant-numeric:tabular-nums}
+.ev-title{grid-column:2;font-weight:700;line-height:1.5}
+.ev-meta{grid-column:2;font-size:13px;color:var(--ink-2);line-height:1.6}
+.ev.is-off .ev-title{color:var(--ink-2)}
+.weekly{margin:0 0 14px;padding:12px 14px;border-radius:10px;background:var(--pitch-soft);font-size:14px;line-height:1.7}
+.weekly b{color:var(--pitch-strong)}
+.empty{margin:0;color:var(--ink-3);font-size:14px}
+.cal-msg{margin:10px 0 0;font-size:13px;color:var(--ink-3)}
+
+/* ---------- 照明プロジェクト ---------- */
+.light-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:980px){.light-grid{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;min-width:0}
+.card h3{margin:0 0 4px;font-size:18px;font-weight:900}
+.card .sub{margin:0 0 14px;font-size:14px;color:var(--ink-2)}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 18px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
+.fact dt{font-size:13px;color:var(--ink-2);font-weight:700;line-height:1.5}
+.fact dd{margin:4px 0 0;font-family:var(--f-num);font-size:30px;font-weight:700;line-height:1.15}
+.fact dd small{font-family:var(--f-body);font-size:14px;font-weight:700;color:var(--ink-2)}
+@media (max-width:420px){.facts{grid-template-columns:1fr}}
+.chart-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 6px;padding:0;list-style:none;font-size:13px;color:var(--ink-2)}
+.chart-legend li{display:inline-flex;align-items:center;gap:7px}
+.sw{display:inline-block;width:14px;height:12px;border-radius:3px}
+.sw-day{background:var(--chart-day)}
+.sw-night{background:var(--night)}
+.sw-line{width:18px;height:0;border-top:2px solid var(--dusk-line);border-radius:0}
+.chart-box{position:relative}
+#sunChart{display:block;width:100%;height:auto;touch-action:pan-y}
+#sunChart text{font-family:var(--f-body)}
+#sunChart .tick{font-family:var(--f-num);font-size:13px;fill:var(--ink-3)}
+#sunChart .xl{font-size:12px;fill:var(--ink-2)}
+#sunChart .lab{font-family:var(--f-num);font-size:14px;font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
+#sunChart .ref{font-size:11px;fill:var(--ink-3)}
+#sunChart .hit{fill:transparent;cursor:pointer}
+#sunChart .hit:focus{outline:none}
+#sunChart .hit:focus-visible{stroke:var(--pitch);stroke-width:2}
+.tip{position:absolute;z-index:3;min-width:190px;max-width:240px;padding:10px 12px;border-radius:10px;background:var(--surface);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.14);font-size:13px;line-height:1.55;pointer-events:none}
+.tip b{display:block;font-size:13px;color:var(--ink-2);margin-bottom:4px}
+.tip .row{display:flex;align-items:center;gap:8px}
+.tip .row strong{font-family:var(--f-num);font-size:17px;min-width:44px}
+.tip .k{display:inline-block;width:14px;flex:none}
+.tip .k-line{border-top:2px solid var(--dusk-line)}
+.tip .k-night{height:10px;border-radius:2px;background:var(--night)}
+.tip .k-none{height:0}
+.src{margin:10px 0 0;font-size:12px;color:var(--ink-3);line-height:1.6}
+details.tbl{margin-top:12px}
+details.tbl summary{cursor:pointer;font-size:14px;font-weight:700;color:var(--pitch)}
+.tbl-scroll{overflow-x:auto}
+.tbl table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th,.tbl td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl thead th{font-size:12px;color:var(--ink-2)}
+.cf-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.cf-top h3{margin:0}
+.st{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:999px;font-size:13px;font-weight:700;background:var(--surface-2);color:var(--ink-2)}
+.st::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.st.open{background:var(--pitch-soft);color:var(--pitch-strong)}
+.st.closed{background:var(--night-soft);color:var(--ink)}
+.meter{height:14px;border-radius:999px;background:var(--flood-soft);overflow:hidden}
+.meter i{display:block;height:100%;width:0;border-radius:999px;background:var(--flood)}
+.cf-pct{display:flex;justify-content:space-between;margin:6px 0 14px;font-size:13px;color:var(--ink-2)}
+.cf-pct b{font-family:var(--f-num);font-size:18px;color:var(--ink)}
+.cf-nums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;margin:0 0 18px}
+.cf-nums dt{font-size:12px;color:var(--ink-3);font-weight:700}
+.cf-nums dd{margin:2px 0 0;font-size:18px;font-weight:700;line-height:1.3}
+.cf-nums dd .num{font-size:22px}
+.cf-btn{width:100%}
+.use{margin:18px 0 0;padding:14px 16px;border-radius:12px;background:var(--flood-soft);color:var(--tbd-ink);font-size:14px;line-height:1.7}
+.use b{display:block;color:var(--ink);font-size:15px;margin-bottom:2px}
+.steps{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:10px;counter-reset:s}
+.steps li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;font-size:14px;line-height:1.65;color:var(--ink-2)}
+.steps li::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--pitch-soft);color:var(--pitch-strong);font-family:var(--f-num);font-weight:700;font-size:15px}
+.steps b{color:var(--ink)}
+.fine{margin:14px 0 0;font-size:13px;color:var(--ink-3);line-height:1.7}
+
+/* ---------- パートナー ---------- */
+.plans{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+@media (max-width:980px){.plans{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.plans{grid-template-columns:1fr}}
+.plan{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px 20px;min-width:0;display:flex;flex-direction:column}
+.plan h3{margin:0;font-size:18px;font-weight:900}
+.plan .who{margin:4px 0 14px;font-size:13px;color:var(--ink-3)}
+.plan ul{margin:0;padding:0 0 0 1.1em;font-size:14px;color:var(--ink-2);line-height:1.75}
+.plan .price{margin-top:auto;padding-top:14px;font-size:13px;color:var(--ink-3)}
+.plan.is-light{border-color:var(--flood)}
+.plan.is-light h3::after{content:"照明";display:inline-block;margin-left:8px;padding:0 8px;border-radius:999px;background:var(--flood);color:var(--on-flood);font-size:11px;vertical-align:3px}
+.partner-foot{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;margin-top:24px}
+.partner-foot p{margin:0;font-size:14px;color:var(--ink-2);max-width:46em}
+@media (max-width:760px){.partner-foot{grid-template-columns:1fr}}
+.logos{margin-top:40px}
+.logos h3{margin:0 0 14px;font-size:16px;font-weight:900}
+.logo-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.logo{display:grid;place-items:center;min-height:84px;padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--line);text-align:center;font-weight:700;text-decoration:none;color:var(--ink);overflow-wrap:anywhere}
+.logo small{display:block;font-size:11px;font-weight:500;color:var(--ink-3)}
+.logo.empty-slot{border-style:dashed;color:var(--ink-3);font-weight:500;font-size:13px;background:transparent}
+
+/* ---------- Q&A・概要 ---------- */
+.qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 28px;margin:0}
+.qa > div{padding:20px 0;border-top:1px solid var(--line);min-width:0}
+.qa dt{font-weight:900;font-size:17px;line-height:1.55;display:grid;grid-template-columns:28px minmax(0,1fr);gap:6px}
+.qa dt::before{content:"Q";font-weight:900;font-size:19px;line-height:1.4;color:var(--pitch)}
+.qa dd{margin:8px 0 0 34px;color:var(--ink-2);font-size:15px}
+@media (max-width:820px){.qa{grid-template-columns:1fr;gap:0}}
+.about{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 28px;margin:0}
+.about > div{display:grid;grid-template-columns:7em minmax(0,1fr);gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.about dt{font-size:14px;color:var(--ink-3);font-weight:700}
+.about dd{margin:0;font-weight:500}
+@media (max-width:820px){.about{grid-template-columns:1fr}}
+.closing{margin-top:56px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;padding:28px;border-radius:18px;background:var(--pitch);color:var(--on-pitch)}
+.closing h2{margin:0;font-size:clamp(20px,2.6vw,26px);font-weight:900;line-height:1.5}
+.closing p{margin:6px 0 0;font-size:15px;opacity:.92}
+@media (max-width:760px){.closing{grid-template-columns:1fr}}
+
+footer{padding-block:36px 48px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-3)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
+footer b{font-family:var(--f-display);font-weight:400;color:var(--ink);font-size:16px}
+
+/* ---------- スマホの下の固定ボタン・相談ダイアログ ---------- */
+.mbar{display:none}
+@media (max-width:720px){
+  .mbar{display:flex;gap:8px;position:fixed;left:0;right:0;bottom:0;z-index:30;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line)}
+  .mbar .btn{flex:1;min-height:46px;padding:0 12px;font-size:14px}
+  footer{padding-bottom:110px}
+}
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:20px;background:var(--veil)}
+.modal-card{width:min(440px,100%);background:var(--surface);color:var(--ink);border-radius:18px;padding:26px 24px 22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-card h2{margin:0 0 8px;font-size:20px;font-weight:900}
+.modal-card p{margin:0 0 18px;color:var(--ink-2);font-size:15px}
+.modal-card .btn{width:100%}
+</style>
+</head>
+<body>
+<div class="site" lang="ja">
+
+<p class="draft" id="draftNote">公開前の下書きです。内容は関係者で調整中のため、変わることがあります。</p>
+
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="#top">致遠館<b>FC</b></a>
+    <nav class="nav" aria-label="ページ内の案内">
+      <a href="#omoi">思い</a>
+      <a href="#hashira">3つの柱</a>
+      <a href="#calendar">カレンダー</a>
+      <a href="#light">照明プロジェクト</a>
+      <a href="#partner">パートナー</a>
+      <a href="#qa">Q&amp;A</a>
+      <a href="#about">概要</a>
+    </nav>
+    <a class="btn btn-primary js-contact" href="#contact">相談する</a>
+  </div>
+</header>
+
+<main id="top">
+
+<section class="hero">
+  <svg class="hero-art" viewBox="0 0 620 620" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <circle cx="310" cy="310" r="210"/><circle cx="310" cy="310" r="5" fill="currentColor"/><path d="M0 310H620"/>
+  </svg>
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">佐賀市・中学生のための地域サッカークラブ</p>
+      <h1 class="wordmark">致遠館<b>FC</b></h1>
+      <p class="hero-lead kp">部活動のような<wbr>身近さと、<br>クラブチームの<wbr>専門性を。</p>
+      <p class="hero-sub">サッカーと学業の両立を土台に、競技力を高める。練習を早く始めて早く終えることで、家での学習や睡眠の時間を守ります。</p>
+      <p class="hero-tags"><span class="pill">2027年6月 始動予定</span><span class="pill">学校を問わず参加できます</span></p>
+      <div class="cta-row">
+        <a class="btn btn-primary js-contact" href="#contact">入団・体験の相談をする</a>
+        <a class="btn btn-ghost" href="#calendar">活動カレンダーを見る</a>
+      </div>
+    </div>
+
+    <figure class="tt" aria-labelledby="ttTitle">
+      <div class="tt-head"><h2 id="ttTitle">放課後の時間割</h2><small>イメージ</small></div>
+      <p class="vh">18時に始まる練習の例では、練習が20時に終わり、家での時間はおよそ2時間。致遠館FCでは16時30分に集合し18時30分に終わるので、家での時間はおよそ3時間30分になります。</p>
+      <div class="tt-body" aria-hidden="true">
+        <div class="tt-row">
+          <div class="tt-label"><span>18時に始まる練習の例</span><span>家で 約2時間</span></div>
+          <div class="tt-track">
+            <div class="seg seg-gray" style="left:37.5%;width:25%">練習</div>
+            <div class="seg seg-move" style="left:62.5%;width:6.25%"></div>
+            <div class="seg seg-homegray" style="left:68.75%;width:25%">家での時間</div>
+          </div>
+        </div>
+        <div class="tt-row">
+          <div class="tt-label"><span style="color:var(--pitch)">致遠館FC</span><span class="gain">家で 約3時間30分</span></div>
+          <div class="tt-track">
+            <div class="seg seg-warm" style="left:18.75%;width:6.25%"></div>
+            <div class="seg seg-prac" style="left:25%;width:18.75%">練習</div>
+            <div class="seg seg-move" style="left:43.75%;width:6.25%"></div>
+            <div class="seg seg-home" style="left:50%;width:43.75%">家での時間<small>学習・食事・入浴</small></div>
+          </div>
+        </div>
+        <div class="tt-axis"><span style="left:0">15:00</span><span style="left:12.5%">16:00</span><span style="left:25%">17:00</span><span style="left:37.5%">18:00</span><span style="left:50%">19:00</span><span style="left:62.5%">20:00</span><span style="left:75%">21:00</span><span style="left:87.5%">22:00</span><span style="left:100%">23:00</span></div>
+      </div>
+      <ul class="tt-legend" aria-hidden="true">
+        <li><i style="background:var(--pitch)"></i>練習</li>
+        <li><i style="background:var(--pitch-soft);box-shadow:inset 0 0 0 1.5px var(--pitch)"></i>準備・ウォーミングアップ</li>
+        <li><i style="background:repeating-linear-gradient(135deg,var(--line) 0 3px,transparent 3px 7px)"></i>移動</li>
+        <li><i style="background:var(--flood-soft)"></i>家での時間</li>
+      </ul>
+      <p class="tt-note">練習を早く始めて、早く終える。家で過ごす時間が、およそ<strong>1時間30分</strong>ふえます。</p>
+      <p class="tt-fine">帰宅に30分、就寝を22時30分として計算した目安です。時刻は現段階の案です。</p>
+    </figure>
+  </div>
+</section>
+
+<section class="sec sec-alt" id="omoi">
+  <div class="wrap omoi">
+    <div>
+      <p class="kicker">思い</p>
+      <blockquote class="quote kp">学業を大切にすることと、<wbr>サッカーで<wbr>高いレベルを<wbr>目指すことは、<wbr>決して<wbr>矛盾しない。<cite>致遠館FC 構想より</cite></blockquote>
+    </div>
+    <div class="prose">
+      <h2 class="vh">私たちの思い</h2>
+      <p>「サッカーに本気で取り組みたい。でも、勉強も、自分の将来も大切にしたい。」そんな中学生が、どちらもあきらめずに成長できる環境をつくりたい。致遠館FCは、その思いから生まれるクラブです。</p>
+      <p>私たちは、学力との両立を第一に考え、その土台の上で競技力の向上を目指します。学校の部活動のように、日々の生活や学業も含めて子どもの成長を支える。一方で、指導体制や運営は、長く続けられるクラブチームとして整えていきます。</p>
+      <p>競技力の向上だけを目的にはしません。サッカー・学業・家庭生活のバランスを大切にしながら、選手一人ひとりが伸びていける場所でありたいと考えています。そしてこの環境を、熱意のある一人の大人だけに頼るのではなく、地域の指導者と力を合わせて続けていきます。</p>
+      <p class="name-note">クラブ名にある<b>「致遠」</b>には、志を遠大にする、遠くへ到る、という意味が込められています。目の前の一試合だけでなく、その先の人生まで届く3年間を、子どもたちと一緒につくります。</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="hashira">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">特徴</p>
+      <h2 class="kp">コンセプトを支える、<wbr>3つの柱</h2>
+      <p>限られた時間の中で、サッカーも学業も伸ばす。そのために、3つのことを大切にします。</p>
+    </div>
+    <div class="pillars">
+      <article class="pillar">
+        <span class="pillar-key">時間</span>
+        <h3 class="kp">学業との両立を<wbr>可能にする</h3>
+        <p>早い時間に練習を始め、終わる時刻も早めます。帰宅後に家庭学習・食事・入浴・睡眠の時間をとりやすくします。練習時間だけでなく、活動日数も学業との両立を基準に決めます。</p>
+      </article>
+      <article class="pillar">
+        <span class="pillar-key">指導</span>
+        <h3 class="kp">限られた時間で、<wbr>質の高い<wbr>トレーニングを</h3>
+        <p>経験豊富な指導者を中心に、目的と計画がはっきりしたトレーニングを行います。活動時間が短いことを、競技力の妥協にはしません。練習の質と効率を高めます。</p>
+      </article>
+      <article class="pillar">
+        <span class="pillar-key">運営</span>
+        <h3 class="kp">特定の人に<wbr>頼りきらない<wbr>仕組み</h3>
+        <p>複数の指導者が役割を分担し、施設の管理や日々の運営を続けられる体制を整えます。指導者の異動や退職に左右されず、続いていくクラブを目指します。</p>
+      </article>
+    </div>
+
+    <div class="flow-wrap">
+      <div>
+        <h3>平日の1日の流れ<span class="tbd">案</span></h3>
+        <ol class="flow">
+          <li><time>16:30</time><p>到着・着替え・準備・ウォーミングアップ</p></li>
+          <li><time>17:00</time><p>全体トレーニング開始</p></li>
+          <li><time>18:30<small>ごろ</small></time><p>練習終了・片付け・解散</p></li>
+        </ol>
+        <p class="flow-note">選手が到着してから解散するまで、責任ある大人が安全を見守ります。時刻は、施設の利用許可・移動時間・季節や日没に合わせて調整します。</p>
+      </div>
+      <div class="open-box">
+        <h3 class="kp">どの学校の<wbr>中学生も<wbr>参加できます</h3>
+        <p>学校との関係や、特定の高校への進学を前提にしません。地域の子どもが参加しやすい、開かれたクラブを目指します。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-alt" id="calendar">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">カレンダー</p>
+      <h2>活動カレンダー</h2>
+      <p>練習・試合・体験会・お休み（テスト前など）をお知らせします。予定は決まり次第、ここに載せます。</p>
+    </div>
+    <div class="cal">
+      <div class="cal-main">
+        <p class="sample" id="calSample" hidden>表示しているのはサンプルの予定です</p>
+        <div class="cal-bar">
+          <h3 class="cal-title" id="calTitle" aria-live="polite"></h3>
+          <button class="icon-btn" id="calPrev" type="button" aria-label="前の月">‹</button>
+          <button class="icon-btn" id="calToday" type="button">今月</button>
+          <button class="icon-btn" id="calNext" type="button" aria-label="次の月">›</button>
+        </div>
+        <ul class="cal-legend">
+          <li><span class="dot t-practice"></span>練習</li>
+          <li><span class="dot t-match"></span>試合・大会</li>
+          <li><span class="dot t-event"></span>体験会・説明会</li>
+          <li><span class="dot t-off"></span>お休み</li>
+        </ul>
+        <div class="cal-grid" id="calGrid"></div>
+        <p class="cal-msg" id="calMsg" hidden></p>
+      </div>
+      <aside class="cal-side">
+        <section class="panel" aria-labelledby="dayTitle">
+          <h3 id="dayTitle"></h3>
+          <ul class="ev-list" id="dayList"></ul>
+        </section>
+        <section class="panel" aria-labelledby="upTitle">
+          <h3 id="upTitle">これからの予定</h3>
+          <p class="weekly" id="weekly" hidden></p>
+          <ul class="ev-list" id="upList"></ul>
+        </section>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="light">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">照明プロジェクト（準備中）</p>
+      <h2>冬も、18:30まで安全に。<br>グラウンドに灯りを。</h2>
+      <p>佐賀の12月は、17時すぎに日が沈みます。早く始めて早く終える私たちの練習でも、10月から2月にかけては、後半が暗い時間に入ります。子どもたちが最後まで安全にボールを追えるよう、グラウンドの照明設備を整えるための支援を募る予定です。</p>
+    </div>
+    <div class="light-grid">
+      <div>
+        <dl class="facts">
+          <div class="fact"><dt>練習の終わりが暗くなる時期</dt><dd id="factSpan">10月〜2月</dd></div>
+          <div class="fact"><dt>12月の全体トレーニング90分のうち、暗い時間</dt><dd id="factDec">約50<small>分</small></dd></div>
+        </dl>
+        <div class="card">
+          <h3>練習時間と、空が暗くなる時刻</h3>
+          <p class="sub">佐賀市・各月15日。棒は平日の練習時間（16:30〜18:30）です。</p>
+          <ul class="chart-legend">
+            <li><span class="sw sw-day"></span>明るいうちの練習</li>
+            <li><span class="sw sw-night"></span>暗い中での練習（照明が必要）</li>
+            <li><span class="sw sw-line"></span>空が暗くなる時刻</li>
+          </ul>
+          <div class="chart-box" id="chartBox">
+            <svg id="sunChart" role="img" aria-labelledby="sunDesc"><desc id="sunDesc">各月15日の、空が暗くなる時刻と練習時間の重なり。10月から2月は練習の後半が暗くなり、12月はおよそ50分が暗い時間になる。</desc></svg>
+            <div class="tip" id="tip" hidden></div>
+          </div>
+          <p class="src">「空が暗くなる時刻」は市民薄明の終わり（日の入りのおよそ25分後）で、これを過ぎると照明なしで屋外活動をするのは難しくなります。佐賀市（北緯33.28度・東経130.31度）について、太陽の位置の計算式（NOAA）で求めました。</p>
+          <details class="tbl">
+            <summary>数値を表で見る</summary>
+            <div class="tbl-scroll"><table id="sunTable"><thead><tr><th>月（15日）</th><th>日の入り</th><th>暗くなる時刻</th><th>暗い時間（17:00〜18:30のうち）</th></tr></thead><tbody></tbody></table></div>
+          </details>
+        </div>
+      </div>
+
+      <div class="card" id="cfCard">
+        <div class="cf-top"><h3>照明プロジェクト</h3><span class="st" id="cfStatus">準備中</span></div>
+        <div class="meter" role="progressbar" aria-label="集まった金額の割合" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="cfMeter"><i id="cfFill"></i></div>
+        <div class="cf-pct"><span>達成率</span><b id="cfPct">—</b></div>
+        <dl class="cf-nums">
+          <div><dt>集まった金額</dt><dd id="cfRaised">—</dd></div>
+          <div><dt>目標金額</dt><dd id="cfGoal">—</dd></div>
+          <div><dt>支援した人</dt><dd id="cfPeople">—</dd></div>
+          <div><dt>のこり</dt><dd id="cfDays">—</dd></div>
+        </dl>
+        <a class="btn btn-primary cf-btn" id="cfBtn" href="#light">準備中です</a>
+        <div class="use"><b>いただいたご支援は、照明設備にだけ使います。</b>機器の購入と設置にあてます。指導者への謝金や大会参加費などの運営費には使いません。</div>
+        <ol class="steps">
+          <li><span><b>学校・県と相談する</b>　設置できる場所、電源、使い方と管理の方法</span></li>
+          <li><span><b>照明の方式と目標金額を決める</b>　持ち運べるLED照明から、段階的に</span></li>
+          <li><span><b>クラウドファンディングを始める</b>　このページでもお知らせします</span></li>
+          <li><span><b>設置して、報告する</b>　使いみちと結果をすべて公開します</span></li>
+        </ol>
+        <p class="fine">グラウンドは佐賀県の施設です。照明の設置は、学校と県の許可を得てから進めます。支援の方法（クラウドファンディング、ふるさと納税など）、開始時期、目標金額は、相談がまとまり次第お知らせします。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-alt" id="partner">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">パートナー</p>
+      <h2 class="kp">地域の企業・<wbr>お店の<wbr>みなさまへ</h2>
+      <p>中学生が、サッカーと学業を両立できる環境を、地域で一緒に支えていただけませんか。ご協賛は、指導体制・用具・大会参加など、クラブを続けるための土台に使わせていただきます。</p>
+    </div>
+    <div class="plans">
+      <article class="plan">
+        <h3>オフィシャルパートナー</h3>
+        <p class="who">クラブを中心となって支えていただく企業さま</p>
+        <ul><li>ユニフォーム・練習着へのロゴ掲出（※）</li><li>ウェブサイトの目立つ位置にロゴを掲載</li><li>年2回の活動報告</li></ul>
+        <p class="price" data-plan="オフィシャル">金額はご相談ください</p>
+      </article>
+      <article class="plan">
+        <h3>サポートパートナー</h3>
+        <p class="who">継続して応援していただく企業・団体さま</p>
+        <ul><li>ウェブサイトにロゴを掲載</li><li>活動報告</li></ul>
+        <p class="price" data-plan="サポート">金額はご相談ください</p>
+      </article>
+      <article class="plan">
+        <h3>応援団</h3>
+        <p class="who">個人の方・小さなお店から気軽に</p>
+        <ul><li>ウェブサイトにお名前を掲載（ご希望の方）</li><li>活動報告</li></ul>
+        <p class="price" data-plan="応援団">金額はご相談ください</p>
+      </article>
+      <article class="plan is-light">
+        <h3>照明パートナー</h3>
+        <p class="who">照明プロジェクトへのご協賛</p>
+        <ul><li>照明設備のためだけに使います</li><li>ご紹介の方法は、学校・県と相談して決めます</li></ul>
+        <p class="price" data-plan="照明">金額はご相談ください</p>
+      </article>
+    </div>
+    <div class="partner-foot">
+      <p>ボール・飲み物・印刷・けがのケアなど、物品やサービスでのご協力も歓迎です。<br>※ユニフォームへの広告は、日本サッカー協会の規程にもとづく手続きをとって掲出します。</p>
+      <a class="btn btn-ghost js-contact" href="#contact">協賛について相談する</a>
+    </div>
+    <div class="logos">
+      <h3>応援してくださっている企業・団体</h3>
+      <div class="logo-row" id="logoRow"></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="qa">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Q&amp;A</p>
+      <h2>よくあるご質問</h2>
+      <p>決まっていないことは「調整中」と書いています。決まり次第、更新します。</p>
+    </div>
+    <dl class="qa">
+      <div><dt>だれが参加できますか？</dt><dd>地域の中学生が参加できます。学校は問いません。特定の高校への進学も前提にしません。対象学年・募集人数・参加の条件は調整中です。<span class="tbd">調整中</span></dd></div>
+      <div><dt>練習は週に何日ですか？</dt><dd>活動日数は、学業との両立を基準に決めます。平日は16:30ごろ集合、18:30ごろ解散の予定です。曜日は決まり次第カレンダーでお知らせします。<span class="tbd">調整中</span></dd></div>
+      <div><dt>会費はいくらですか？</dt><dd>指導者への謝金・保険・用具・大会参加費などを続けてまかなえる額にしつつ、ご家庭の負担が大きくなりすぎないよう検討しています。<span class="tbd">調整中</span></dd></div>
+      <div><dt>テスト前はどうなりますか？</dt><dd>学業との両立がクラブの土台です。テスト前は活動を減らす・休むなどの期間を設ける方向で考えています。<span class="tbd">調整中</span></dd></div>
+      <div><dt>けがや事故への備えは？</dt><dd>選手が到着してから解散するまで、責任ある大人が安全を見守ります。全員が保険に加入し、緊急時の連絡体制と責任の分担を、入会前に保護者のみなさまへ説明します。</dd></div>
+      <div><dt>送り迎えは必要ですか？</dt><dd>16:30に集合するための移動・集合の方法と、大人の見守り体制を調整しています。<span class="tbd">調整中</span></dd></div>
+      <div><dt>学校の部活動ですか？</dt><dd>学校の部活動ではなく、地域のクラブとして運営します。学校のグラウンドを活動場所にするため、学校・関係機関の正式な許可を得て進めます。</dd></div>
+      <div><dt>中学校の大会には出られますか？</dt><dd>佐賀県の中学校総合体育大会（中総体）には、条件を満たした地域クラブが出場できる仕組みがあります。中学校体育連盟の大会と、日本サッカー協会のリーグ・大会のどちらに、どう登録して出るかを確認しています。<span class="tbd">調整中</span></dd></div>
+    </dl>
+  </div>
+</section>
+
+<section class="sec sec-alt" id="about">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">概要</p>
+      <h2>クラブ概要</h2>
+    </div>
+    <dl class="about">
+      <div><dt>名称</dt><dd>致遠館FC</dd></div>
+      <div><dt>種類</dt><dd>地域クラブ（中学生年代のサッカー）</dd></div>
+      <div><dt>対象</dt><dd>地域の中学生（学校は問いません）</dd></div>
+      <div><dt>活動場所</dt><dd>致遠館中学校・高等学校 グラウンド<span class="tbd">予定</span></dd></div>
+      <div><dt>活動時間</dt><dd>平日 16:30〜18:30ごろ<span class="tbd">案</span></dd></div>
+      <div><dt>始動</dt><dd>2027年6月<span class="tbd">予定</span></dd></div>
+      <div><dt>代表</dt><dd><span class="tbd" style="margin-left:0">調整中</span></dd></div>
+      <div><dt>お問い合わせ</dt><dd><a class="js-contact" href="#contact">相談窓口</a></dd></div>
+    </dl>
+    <div class="closing">
+      <div>
+        <h2 class="kp">入団・体験・協賛の<wbr>ご相談は、<wbr>こちらから。</h2>
+        <p>「うちの子に合うかな」という段階のご相談も歓迎です。</p>
+      </div>
+      <a class="btn btn-primary js-contact" href="#contact">相談する</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span><b>致遠館FC</b>　佐賀市・中学生のための地域サッカークラブ</span>
+    <span>このサイトには準備中の内容が含まれます。</span>
+  </div>
+</footer>
+
+<div class="mbar">
+  <a class="btn btn-ghost" href="#calendar">カレンダー</a>
+  <a class="btn btn-primary js-contact" href="#contact">相談する</a>
+</div>
+
+<div class="modal" id="contactModal" role="dialog" aria-modal="true" aria-labelledby="cmTitle" hidden>
+  <div class="modal-card">
+    <h2 id="cmTitle">相談窓口は準備中です</h2>
+    <p>入団・体験・協賛などのご相談を受け付ける窓口を準備しています。開設したら、このボタンからそのままご相談いただけるようになります。</p>
+    <button class="btn btn-primary" type="button" id="cmClose">閉じる</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+/* =====================================================================
+   設定：ここだけ書きかえれば、サイトの内容を更新できます。
+   スプレッドシートを使う場合は、下の2つのURLを入れるだけで、
+   予定・相談窓口・照明プロジェクトの数字・パートナーを
+   スプレッドシート側から更新できます（このファイルは触らなくてよくなります）。
+   ===================================================================== */
+const CONFIG = {
+  // 公開前の下書き表示。正式に公開するときは false にする
+  draft: true,
+
+  // 相談窓口：Googleフォームや LINE公式アカウントのURL。空のあいだは「準備中」の案内が出る
+  contactUrl: "",
+
+  // Googleスプレッドシート「ファイル → 共有 → ウェブに公開 → CSV」のURL（空ならこのファイルの中のデータを使う）
+  scheduleCsvUrl: "",   // 予定のシート
+  settingsCsvUrl: "",   // 設定のシート（相談URL・照明プロジェクトの数字・パートナー）
+
+  // 照明プロジェクト（クラウドファンディング）。状態は「準備中」「受付中」「終了」のどれか
+  crowdfunding: { 状態: "準備中", 目標金額: 0, 現在金額: 0, 支援者数: 0, 締切: "", ページURL: "" },
+
+  // パートナー（決まったら追加）。区分は「オフィシャル」「サポート」「応援団」「照明」
+  partners: [
+    // { 名前: "○○株式会社", 区分: "オフィシャル", URL: "https://..." },
+  ],
+
+  // パートナー募集の金額の目安（空なら「金額はご相談ください」）
+  planPrices: { オフィシャル: "", サポート: "", 応援団: "", 照明: "" },
+
+  // 予定（サンプル）。スプレッドシートの「予定」シートと同じ形です。
+  //  ・1日だけの予定 … 日付に日付を書く
+  //  ・何日か続く予定（お休みなど）… 日付と終了日を書く
+  //  ・毎週のきまり … 曜日（例：月水金）を書き、日付＝始まる日、終了日＝終わる日。祝日は自動でお休み（曜日に「祝」を入れると祝日も練習）
+  //  ・種別 … 練習／試合／大会／体験会／説明会／休み など
+  schedule: [
+    { 日付: "2027-03-20", 開始: "10:00", 終了: "11:30", 種別: "説明会", 内容: "保護者・選手向け説明会（例）", 場所: "調整中" },
+    { 日付: "2027-04-24", 開始: "9:00", 終了: "11:00", 種別: "体験会", 内容: "体験会（例）", 場所: "調整中", メモ: "動きやすい服装とボールを持ってきてください" },
+    { 日付: "2027-05-15", 開始: "9:00", 終了: "11:00", 種別: "体験会", 内容: "体験会（例）", 場所: "調整中" },
+    { 日付: "2027-06-01", 開始: "16:30", 終了: "18:30", 種別: "練習", 内容: "始動・初回練習（例）" },
+    { 日付: "2027-06-02", 終了日: "2028-03-31", 曜日: "月水金", 開始: "16:30", 終了: "18:30", 種別: "練習", 内容: "練習" },
+    { 日付: "2027-06-21", 終了日: "2027-06-25", 種別: "休み", 内容: "テスト前のお休み（例）" },
+    { 日付: "2027-07-10", 開始: "13:00", 終了: "16:00", 種別: "試合", 内容: "練習試合（例）", 場所: "調整中" },
+  ],
+};
+</script>
+<script>
+(() => {
+"use strict";
+const $ = (s, el = document) => el.querySelector(s);
+const DOW = "日月火水木金土";
+const pad = n => String(n).padStart(2, "0");
+const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const toNum = v => Number(String(v ?? "").replace(/[^\d.]/g, "")) || 0;
+const yen = n => `${Math.round(n).toLocaleString("ja-JP")}円`;
+const TODAY = (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); })();
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+function parseDate(s) {
+  const m = String(s ?? "").trim().match(/^(\d{4})\s*[-/.年]\s*(\d{1,2})\s*[-/.月]\s*(\d{1,2})/);
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+}
+function parseTime(s) {
+  const m = String(s ?? "").trim().replace(/[０-９：]/g, c => c === "：" ? ":" : String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).match(/^(\d{1,2})\s*[:時]\s*(\d{2})?/);
+  return m ? `${+m[1]}:${m[2] || "00"}` : "";
+}
+const minutes = t => { const m = String(t).match(/^(\d+):(\d+)/); return m ? +m[1] * 60 + +m[2] : -1; };
+const fmtMD = d => `${d.getMonth() + 1}/${d.getDate()}（${DOW[d.getDay()]}）`;
+const fmtTime = e => e.from ? (e.to ? `${e.from}〜${e.to}` : `${e.from}〜`) : "";
+
+/* ---------- 祝日（法律のきまりから計算。振替休日・国民の休日も） ---------- */
+const holidayCache = new Map();
+function holidays(y) {
+  if (holidayCache.has(y)) return holidayCache.get(y);
+  const H = new Map();
+  const add = (m, d, n) => H.set(`${y}-${pad(m)}-${pad(d)}`, n);
+  const monday = (m, nth) => { const w = new Date(y, m - 1, 1).getDay(); return 1 + ((8 - w) % 7) + (nth - 1) * 7; };
+  const eq = (base) => Math.floor(base + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4));
+  add(1, 1, "元日"); add(1, monday(1, 2), "成人の日"); add(2, 11, "建国記念の日"); add(2, 23, "天皇誕生日");
+  add(3, eq(20.8431), "春分の日"); add(4, 29, "昭和の日"); add(5, 3, "憲法記念日"); add(5, 4, "みどりの日"); add(5, 5, "こどもの日");
+  add(7, monday(7, 3), "海の日"); add(8, 11, "山の日"); add(9, monday(9, 3), "敬老の日"); add(9, eq(23.2488), "秋分の日");
+  add(10, monday(10, 2), "スポーツの日"); add(11, 3, "文化の日"); add(11, 23, "勤労感謝の日");
+  const base = new Map(H);
+  for (let d = new Date(y, 0, 2); d.getFullYear() === y; d = addDays(d, 1)) {   // 国民の休日（祝日にはさまれた日）
+    const k = keyOf(d);
+    if (!base.has(k) && d.getDay() !== 0 && base.has(keyOf(addDays(d, -1))) && base.has(keyOf(addDays(d, 1)))) H.set(k, "国民の休日");
+  }
+  for (const [k] of base) {                                                       // 振替休日（日曜の祝日の、次の平日）
+    const [yy, mm, dd] = k.split("-").map(Number);
+    if (new Date(yy, mm - 1, dd).getDay() !== 0) continue;
+    let n = new Date(yy, mm - 1, dd + 1);
+    while (H.has(keyOf(n))) n = addDays(n, 1);
+    H.set(keyOf(n), "振替休日");
+  }
+  holidayCache.set(y, H);
+  return H;
+}
+const holidayOf = d => holidays(d.getFullYear()).get(keyOf(d)) || "";
+
+/* ---------- CSV（スプレッドシートの「ウェブに公開」） ---------- */
+function parseCSV(text) {
+  text = text.replace(/^﻿/, "");
+  const rows = []; let row = [], f = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === ",") { row.push(f); f = ""; }
+    else if (c === "\n") { row.push(f); rows.push(row); row = []; f = ""; }
+    else if (c !== "\r") f += c;
+  }
+  if (f !== "" || row.length) { row.push(f); rows.push(row); }
+  const head = (rows.shift() || []).map(h => h.trim());
+  return rows.filter(r => r.some(v => v.trim() !== "")).map(r => Object.fromEntries(head.map((h, i) => [h, (r[i] ?? "").trim()])));
+}
+async function fetchCSV(url) {
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return parseCSV(await res.text());
+}
+
+/* ---------- 予定 ---------- */
+function typeOf(s) {
+  s = String(s || "");
+  if (/休|中止|なし/.test(s)) return "off";
+  if (/試合|大会|リーグ|カップ|杯/.test(s)) return "match";
+  if (/体験|説明|見学|イベント/.test(s)) return "event";
+  if (/練習|トレーニング/.test(s)) return "practice";
+  return "other";
+}
+const TYPE_LABEL = { practice: "練習", match: "試合・大会", event: "体験会・説明会", off: "お休み", other: "その他" };
+let SCHED = { singles: [], weekly: [] };
+function normalize(rows) {
+  const singles = [], weekly = [];
+  for (const r of rows) {
+    const start = parseDate(r["日付"]);
+    if (!start) continue;
+    const item = {
+      start, end: parseDate(r["終了日"]), from: parseTime(r["開始"]), to: parseTime(r["終了"]),
+      type: typeOf(r["種別"] || r["内容"]), title: String(r["内容"] || r["種別"] || "予定").trim(),
+      place: String(r["場所"] || "").trim(), note: String(r["メモ"] || "").trim(),
+    };
+    const dw = String(r["曜日"] || "");
+    const days = [...new Set([...dw.replace(/[^日月火水木金土]/g, "")].map(c => DOW.indexOf(c)))];
+    if (days.length) weekly.push({ ...item, days, withHolidays: /祝/.test(dw) });
+    else singles.push(item);
+  }
+  return { singles, weekly };
+}
+const inSpan = (d, e) => d >= e.start && d <= (e.end || e.start);
+const inRule = (d, w) => d >= w.start && (!w.end || d <= w.end);
+function entriesOn(d) {
+  const out = SCHED.singles.filter(e => inSpan(d, e));
+  const off = out.some(e => e.type === "off");
+  const hol = holidayOf(d);
+  if (!off && !out.some(e => e.type === "practice")) {
+    for (const w of SCHED.weekly) {
+      if (!inRule(d, w) || !w.days.includes(d.getDay()) || (hol && !w.withHolidays)) continue;
+      out.push({ ...w, weekly: true });
+    }
+  }
+  return out.sort((a, b) => minutes(a.from) - minutes(b.from));
+}
+function firstUpcoming() {
+  for (let i = 0, d = TODAY; i < 800; i++, d = addDays(d, 1)) if (entriesOn(d).length) return d;
+  return null;
+}
+
+/* ---------- カレンダーの表示 ---------- */
+let view = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+let selected = TODAY;
+function chipFor(e) {
+  const c = el("span", `chip t-${e.type}`);
+  c.append(el("i", "dot"), el("span", "", `${e.from ? e.from + " " : ""}${e.title}`));
+  return c;
+}
+function renderMonth() {
+  const y = view.getFullYear(), m = view.getMonth();
+  const title = $("#calTitle");
+  title.textContent = "";
+  title.append(document.createTextNode(`${y}.${pad(m + 1)} `), el("small", "", `${y}年${m + 1}月`));
+  const grid = $("#calGrid");
+  grid.textContent = "";
+  [...DOW].forEach((w, i) => grid.append(el("div", `cal-dow${i === 0 ? " sun" : i === 6 ? " sat" : ""}`, w)));
+  const lead = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+  for (let i = 0; i < lead; i++) grid.append(Object.assign(el("div", "cal-day blank"), { ariaHidden: "true" }));
+  for (let day = 1; day <= days; day++) {
+    const d = new Date(y, m, day), list = entriesOn(d), hol = holidayOf(d);
+    const b = el("button", "cal-day");
+    b.type = "button";
+    if (d.getDay() === 0) b.classList.add("sun");
+    if (d.getDay() === 6) b.classList.add("sat");
+    if (hol) b.classList.add("hol");
+    if (sameDay(d, TODAY)) b.classList.add("today");
+    b.setAttribute("aria-pressed", String(sameDay(d, selected)));
+    b.setAttribute("aria-label", `${m + 1}月${day}日（${DOW[d.getDay()]}）${hol ? " " + hol : ""}${list.length ? " " + list.map(e => `${e.title}${e.from ? " " + fmtTime(e) : ""}`).join("、") : " 予定なし"}`);
+    b.append(el("span", "cal-num", String(day)));
+    if (hol) b.append(el("span", "cal-hol", hol));
+    list.slice(0, 2).forEach(e => b.append(chipFor(e)));
+    if (list.length > 2) b.append(el("span", "chip-more", `ほか${list.length - 2}件`));
+    const dots = el("span", "cal-dots");
+    list.slice(0, 3).forEach(e => dots.append(el("i", `dot t-${e.type}`)));
+    b.append(dots);
+    b.addEventListener("click", () => { selected = d; renderMonth(); renderDay(); });
+    grid.append(b);
+  }
+  const tail = (7 - ((lead + days) % 7)) % 7;
+  for (let i = 0; i < tail; i++) grid.append(Object.assign(el("div", "cal-day blank"), { ariaHidden: "true" }));
+}
+function evItem(e, d) {
+  const li = el("li", `ev t-${e.type}${e.type === "off" ? " is-off" : ""}`);
+  li.append(el("span", "dot"));
+  li.append(el("span", "ev-when", [d ? fmtMD(d) : "", fmtTime(e)].filter(Boolean).join("　") || "終日"));
+  li.append(el("span", "ev-title", e.title));
+  const meta = [e.place && `場所：${e.place}`, e.note].filter(Boolean).join("　");
+  if (meta) li.append(el("span", "ev-meta", meta));
+  return li;
+}
+function renderDay() {
+  const d = selected, hol = holidayOf(d);
+  const h = $("#dayTitle");
+  h.textContent = "";
+  h.append(document.createTextNode(`${d.getMonth() + 1}月${d.getDate()}日（${DOW[d.getDay()]}）`));
+  if (hol) h.append(el("small", "", hol));
+  const ul = $("#dayList");
+  ul.textContent = "";
+  const list = entriesOn(d);
+  if (!list.length) { ul.append(el("li", "empty", "この日の予定はありません")); return; }
+  list.forEach(e => ul.append(evItem(e)));
+}
+function renderUpcoming() {
+  const wk = $("#weekly");
+  const rules = SCHED.weekly.filter(w => !w.end || w.end >= TODAY);
+  wk.hidden = !rules.length;
+  wk.textContent = "";
+  rules.forEach((w, i) => {
+    if (i) wk.append(el("br"));
+    wk.append(el("b", "", `毎週 ${w.days.map(n => DOW[n]).join("・")}`));
+    wk.append(document.createTextNode(` ${fmtTime(w)} ${w.title}（${w.start.getFullYear()}年${w.start.getMonth() + 1}月${w.start.getDate()}日から${w.withHolidays ? "" : "・祝日はお休み"}）`));
+  });
+  const ul = $("#upList");
+  ul.textContent = "";
+  const items = [];
+  for (let i = 0, d = TODAY; i < 800 && items.length < 6; i++, d = addDays(d, 1)) {
+    for (const e of SCHED.singles) {
+      if (sameDay(d, e.start) || (sameDay(d, TODAY) && inSpan(d, e) && !sameDay(d, e.start))) items.push([e, e.start < TODAY ? TODAY : d]);
+    }
+  }
+  if (!items.length) { ul.append(el("li", "empty", "決まり次第、お知らせします")); return; }
+  items.slice(0, 6).forEach(([e, d]) => {
+    const li = evItem(e, d);
+    if (e.end && !sameDay(e.end, e.start)) li.querySelector(".ev-when").textContent = `${fmtMD(e.start)}〜${fmtMD(e.end)}`;
+    ul.append(li);
+  });
+}
+function initCalendar(note) {
+  const first = firstUpcoming();
+  const anchor = first && (first.getFullYear() !== TODAY.getFullYear() || first.getMonth() !== TODAY.getMonth()) && !entriesOn(TODAY).length
+    ? first : TODAY;
+  view = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+  selected = anchor;
+  renderMonth(); renderDay(); renderUpcoming();
+  const msg = $("#calMsg");
+  msg.hidden = !note;
+  msg.textContent = note || "";
+}
+$("#calPrev").addEventListener("click", () => { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); renderMonth(); });
+$("#calNext").addEventListener("click", () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); renderMonth(); });
+$("#calToday").addEventListener("click", () => { view = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1); selected = TODAY; renderMonth(); renderDay(); });
+
+/* ---------- 相談ボタン ---------- */
+let lastOpener = null;
+function openModal(from) { lastOpener = from; $("#contactModal").hidden = false; $("#cmClose").focus(); }
+function closeModal() { $("#contactModal").hidden = true; if (lastOpener) lastOpener.focus(); }
+$("#cmClose").addEventListener("click", closeModal);
+$("#contactModal").addEventListener("click", e => { if (e.target.id === "contactModal") closeModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#contactModal").hidden) closeModal(); });
+function wireContact() {
+  const url = String(CONFIG.contactUrl || "").trim();
+  document.querySelectorAll(".js-contact").forEach(a => {
+    if (url) { a.href = url; a.target = "_blank"; a.rel = "noopener"; a.onclick = null; a.removeAttribute("aria-haspopup"); }
+    else { a.href = "#contact"; a.setAttribute("aria-haspopup", "dialog"); a.onclick = ev => { ev.preventDefault(); openModal(a); }; }
+  });
+}
+
+/* ---------- 照明プロジェクト（クラウドファンディング） ---------- */
+function renderCF() {
+  const cf = CONFIG.crowdfunding;
+  const st = String(cf.状態 || "準備中");
+  const open = /受付|実施|募集|公開/.test(st), closed = /終了|達成/.test(st);
+  const goal = toNum(cf.目標金額), raised = toNum(cf.現在金額), people = toNum(cf.支援者数);
+  const badge = $("#cfStatus");
+  badge.textContent = open ? "受付中" : closed ? "終了" : "準備中";
+  badge.className = `st${open ? " open" : closed ? " closed" : ""}`;
+  const started = open || closed, pct = goal > 0 ? raised / goal : 0;
+  $("#cfFill").style.width = `${Math.min(pct, 1) * 100}%`;
+  $("#cfMeter").setAttribute("aria-valuenow", String(Math.round(Math.min(pct, 1) * 100)));
+  $("#cfPct").textContent = started && goal > 0 ? `${Math.floor(pct * 100)}%` : "—";
+  $("#cfRaised").textContent = started ? yen(raised) : "—";
+  $("#cfGoal").textContent = goal > 0 ? yen(goal) : "相談のうえ決定";
+  $("#cfPeople").textContent = started ? `${people.toLocaleString("ja-JP")}人` : "—";
+  const dl = parseDate(cf.締切);
+  $("#cfDays").textContent = dl && open ? (dl >= TODAY ? `${Math.round((dl - TODAY) / 864e5)}日` : "締切") : closed ? "終了" : "—";
+  const btn = $("#cfBtn"), url = String(cf.ページURL || "").trim();
+  if ((open || closed) && url) {
+    btn.textContent = open ? "このプロジェクトを支援する" : "プロジェクトのページを見る";
+    btn.href = url; btn.target = "_blank"; btn.rel = "noopener"; btn.removeAttribute("aria-disabled"); btn.onclick = null;
+  } else {
+    btn.textContent = "準備中です（始まったら、ここから支援できます）";
+    btn.href = "#light"; btn.setAttribute("aria-disabled", "true"); btn.onclick = ev => ev.preventDefault();
+  }
+}
+
+/* ---------- パートナー ---------- */
+function renderPartners() {
+  document.querySelectorAll(".price[data-plan]").forEach(p => {
+    const v = String(CONFIG.planPrices[p.dataset.plan] || "").trim();
+    p.textContent = v ? `目安：${v}` : "金額はご相談ください";
+  });
+  const row = $("#logoRow");
+  row.textContent = "";
+  const list = CONFIG.partners.filter(p => p && p.名前);
+  list.forEach(p => {
+    const url = String(p.URL || "").trim();
+    const a = el(url ? "a" : "div", "logo", p.名前);
+    if (url) { a.href = url; a.target = "_blank"; a.rel = "noopener"; }
+    if (p.区分) a.append(el("small", "", `${p.区分}パートナー`.replace("応援団パートナー", "応援団")));
+    row.append(a);
+  });
+  const empties = list.length ? 0 : 3;
+  for (let i = 0; i < empties; i++) row.append(el("div", "logo empty-slot", "パートナーを募集しています"));
+}
+
+/* ---------- 設定シート ---------- */
+function applySettings(rows) {
+  const cf = CONFIG.crowdfunding, partners = [];
+  const map = {
+    "相談URL": v => { CONFIG.contactUrl = v; },
+    "照明CF状態": v => { cf.状態 = v; }, "照明CF目標金額": v => { cf.目標金額 = v; }, "照明CF現在金額": v => { cf.現在金額 = v; },
+    "照明CF支援者数": v => { cf.支援者数 = v; }, "照明CF締切": v => { cf.締切 = v; }, "照明CFページURL": v => { cf.ページURL = v; },
+    "パートナー": v => { const [名前, 区分, URL] = v.split(/[|｜]/).map(s => s.trim()); if (名前) partners.push({ 名前, 区分, URL }); },
+  };
+  for (const r of rows) {
+    const k = String(r["項目"] || "").trim(), v = String(r["値"] ?? "").trim();
+    if (k.startsWith("金額目安:") || k.startsWith("金額目安：")) { CONFIG.planPrices[k.slice(5)] = v; continue; }
+    if (map[k]) map[k](v);
+  }
+  if (partners.length) CONFIG.partners = partners;
+}
+
+/* ---------- 日の入りと「暗くなる時刻」（佐賀市・NOAAの太陽位置の式） ---------- */
+const LAT = 33.28, LON = 130.31, TZ = 9, RAD = Math.PI / 180;
+function sunAlt(y, mo, d, minJST) {
+  const jd = (Date.UTC(y, mo - 1, d) + (minJST - TZ * 60) * 60000) / 864e5 + 2440587.5;
+  const T = (jd - 2451545) / 36525;
+  const L0 = (280.46646 + T * (36000.76983 + T * 0.0003032)) % 360;
+  const M = 357.52911 + T * (35999.05029 - 0.0001537 * T), Mr = M * RAD;
+  const e = 0.016708634 - T * (0.000042037 + 0.0000001267 * T);
+  const C = Math.sin(Mr) * (1.914602 - T * (0.004817 + 0.000014 * T)) + Math.sin(2 * Mr) * (0.019993 - 0.000101 * T) + Math.sin(3 * Mr) * 0.000289;
+  const om = 125.04 - 1934.136 * T;
+  const lam = L0 + C - 0.00569 - 0.00478 * Math.sin(om * RAD);
+  const eps = 23 + (26 + (21.448 - T * (46.815 + T * (0.00059 - T * 0.001813))) / 60) / 60 + 0.00256 * Math.cos(om * RAD);
+  const decl = Math.asin(Math.sin(eps * RAD) * Math.sin(lam * RAD));
+  const yv = Math.tan(eps * RAD / 2) ** 2, L0r = L0 * RAD;
+  const eqt = 4 / RAD * (yv * Math.sin(2 * L0r) - 2 * e * Math.sin(Mr) + 4 * e * yv * Math.sin(Mr) * Math.cos(2 * L0r) - 0.5 * yv * yv * Math.sin(4 * L0r) - 1.25 * e * e * Math.sin(2 * Mr));
+  const tst = (((minJST + eqt + 4 * LON - 60 * TZ) % 1440) + 1440) % 1440;
+  const ha = (tst / 4 - 180) * RAD;
+  return 90 - Math.acos(Math.sin(LAT * RAD) * Math.sin(decl) + Math.cos(LAT * RAD) * Math.cos(decl) * Math.cos(ha)) / RAD;
+}
+function crossing(y, mo, d, alt) {
+  let prev = sunAlt(y, mo, d, 15 * 60);
+  for (let m = 15 * 60 + 1; m <= 21 * 60; m++) { const a = sunAlt(y, mo, d, m); if (prev >= alt && a < alt) return m; prev = a; }
+  return null;
+}
+const hm = m => `${Math.floor(m / 60)}:${pad(m % 60)}`;
+const PRAC_START = 16 * 60 + 30, MAIN_START = 17 * 60, PRAC_END = 18 * 60 + 30;
+const SEASON_Y = 2027;   // 4月始まりの1年（2027年4月〜2028年3月）で計算
+const MONTHS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3];
+const SUN = MONTHS.map(mo => {
+  const y = mo >= 4 ? SEASON_Y : SEASON_Y + 1;
+  const ss = crossing(y, mo, 15, -0.833), cd = crossing(y, mo, 15, -6);
+  return { mo, ss, cd, dark: Math.max(0, Math.min(PRAC_END - cd, PRAC_END - MAIN_START)) };
+});
+function sunFacts() {
+  let first = null, last = null; const dec = [];
+  for (let d = new Date(SEASON_Y, 3, 1); d <= new Date(SEASON_Y + 1, 2, 31); d = addDays(d, 1)) {
+    const cd = crossing(d.getFullYear(), d.getMonth() + 1, d.getDate(), -6);
+    const dark = Math.max(0, PRAC_END - cd);
+    if (dark > 0) { first = first || d; last = d; }
+    if (d.getMonth() === 11) dec.push(dark);
+  }
+  if (first) $("#factSpan").textContent = `${first.getMonth() + 1}月〜${last.getMonth() + 1}月`;
+  const avg = Math.round(dec.reduce((a, b) => a + b, 0) / dec.length / 5) * 5;
+  const dd = $("#factDec");
+  dd.textContent = `約${avg}`;
+  dd.append(el("small", "", "分"));
+}
+function renderSunTable() {
+  const tb = $("#sunTable tbody");
+  tb.textContent = "";
+  SUN.forEach(s => {
+    const tr = el("tr");
+    [`${s.mo}月`, hm(s.ss), hm(s.cd), s.dark ? `${s.dark}分` : "なし"].forEach(v => tr.append(el("td", "", v)));
+    tb.append(tr);
+  });
+}
+const NS = "http://www.w3.org/2000/svg";
+const svgEl = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+function roundedRect(x, y, w, h, rt, rb) {
+  return `M${x},${y + rt}a${rt},${rt} 0 0 1 ${rt},${-rt}h${w - 2 * rt}a${rt},${rt} 0 0 1 ${rt},${rt}v${h - rt - rb}a${rb},${rb} 0 0 1 ${-rb},${rb}h${-(w - 2 * rb)}a${rb},${rb} 0 0 1 ${-rb},${-rb}z`;
+}
+let lastW = 0;
+function renderSunChart() {
+  const box = $("#chartBox"), svg = $("#sunChart"), tip = $("#tip");
+  const W = Math.max(300, Math.round(box.clientWidth));
+  if (W === lastW) return;
+  lastW = W;
+  const H = W < 480 ? 300 : 320, M = { l: 44, r: W < 480 ? 52 : 70, t: 24, b: 30 };
+  const T0 = 16 * 60, T1 = 20 * 60 + 30;
+  const pw = W - M.l - M.r, ph = H - M.t - M.b;
+  const yOf = t => M.t + (t - T0) / (T1 - T0) * ph;
+  const slot = pw / 12, xOf = i => M.l + slot * (i + 0.5), bw = Math.min(24, slot * 0.56);
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  [...svg.querySelectorAll(":scope > :not(desc)")].forEach(n => n.remove());
+  const g = svgEl("g", {});
+  for (let t = T0; t <= 20 * 60; t += 60) {
+    g.append(svgEl("line", { x1: M.l, x2: W - M.r, y1: yOf(t), y2: yOf(t), stroke: "var(--grid)", "stroke-width": 1 }));
+    const tx = svgEl("text", { x: M.l - 8, y: yOf(t) + 4, "text-anchor": "end", class: "tick" }); tx.textContent = hm(t); g.append(tx);
+  }
+  [[PRAC_START, "集合 16:30"], [PRAC_END, "解散 18:30"]].forEach(([t, s]) => {
+    g.append(svgEl("line", { x1: M.l, x2: W - M.r + 4, y1: yOf(t), y2: yOf(t), stroke: "var(--line)", "stroke-width": 1 }));
+    const tx = svgEl("text", { x: W - M.r + 8, y: yOf(t) + 4, class: "ref" }); tx.textContent = W < 480 ? s.split(" ")[0] : s; g.append(tx);
+  });
+  SUN.forEach((s, i) => {
+    const x = xOf(i) - bw / 2, dusk = Math.max(PRAC_START, Math.min(s.cd, PRAC_END));
+    if (dusk > PRAC_START) {
+      const y0 = yOf(PRAC_START), y1 = yOf(dusk) - (dusk < PRAC_END ? 1 : 0);
+      g.append(svgEl("path", { d: roundedRect(x, y0, bw, y1 - y0, 4, dusk < PRAC_END ? 0 : 4), fill: "var(--chart-day)" }));
+    }
+    if (dusk < PRAC_END) {
+      const y0 = yOf(dusk) + 1, y1 = yOf(PRAC_END);
+      g.append(svgEl("path", { d: roundedRect(x, y0, bw, Math.max(1, y1 - y0), 0, 4), fill: "var(--night)" }));
+    }
+    const xl = svgEl("text", { x: xOf(i), y: H - 10, "text-anchor": "middle", class: "xl" }); xl.textContent = slot < 34 ? String(s.mo) : `${s.mo}月`; g.append(xl);
+  });
+  g.append(svgEl("polyline", { points: SUN.map((s, i) => `${xOf(i)},${yOf(s.cd)}`).join(" "), fill: "none", stroke: "var(--dusk-line)", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+  SUN.forEach((s, i) => g.append(svgEl("circle", { cx: xOf(i), cy: yOf(s.cd), r: 4, fill: "var(--dusk-line)", stroke: "var(--surface)", "stroke-width": 2 })));
+  const jun = SUN.findIndex(s => s.mo === 6), worst = SUN.reduce((a, s, i) => s.dark > SUN[a].dark ? i : a, 0);
+  const junLab = svgEl("text", { x: xOf(jun), y: yOf(SUN[jun].cd) - 12, "text-anchor": "middle", class: "lab" }); junLab.textContent = hm(SUN[jun].cd); g.append(junLab);
+  const darkLab = svgEl("text", { x: xOf(worst), y: yOf(PRAC_END) + 20, "text-anchor": "middle", class: "lab" }); darkLab.textContent = `暗い${SUN[worst].dark}分`; g.append(darkLab);
+  if (slot < 34) { const u = svgEl("text", { x: W - M.r + 8, y: H - 10, class: "xl" }); u.textContent = "月"; g.append(u); }
+  svg.append(g);
+  SUN.forEach((s, i) => {
+    const hit = svgEl("rect", { x: M.l + slot * i, y: M.t, width: slot, height: ph, class: "hit", tabindex: 0, role: "img",
+      "aria-label": `${s.mo}月15日：日の入り${hm(s.ss)}、暗くなる時刻${hm(s.cd)}、練習のうち暗い時間${s.dark ? s.dark + "分" : "なし"}` });
+    const show = () => {
+      tip.textContent = "";
+      tip.append(el("b", "", `${s.mo}月15日ごろ`));
+      const row = (cls, v, t) => { const r = el("div", "row"); r.append(el("i", `k ${cls}`), el("strong", "", v), el("span", "", t)); tip.append(r); };
+      row("k-line", hm(s.cd), "空が暗くなる");
+      row("k-none", hm(s.ss), "日の入り");
+      row("k-night", s.dark ? `${s.dark}分` : "0分", "練習のうち暗い時間");
+      tip.hidden = false;
+      const bx = xOf(i), left = bx + 14 + 200 > W ? bx - 14 - tip.offsetWidth : bx + 14;
+      tip.style.left = `${Math.max(0, left)}px`;
+      tip.style.top = `${Math.max(0, yOf(PRAC_START) - 10)}px`;
+    };
+    hit.addEventListener("pointerenter", show);
+    hit.addEventListener("focus", show);
+    hit.addEventListener("pointerleave", () => { tip.hidden = true; });
+    hit.addEventListener("blur", () => { tip.hidden = true; });
+    svg.append(hit);
+  });
+}
+
+/* ---------- はじめに ---------- */
+async function boot() {
+  $("#draftNote").hidden = !CONFIG.draft;
+  let note = "";
+  if (CONFIG.settingsCsvUrl) {
+    try { applySettings(await fetchCSV(CONFIG.settingsCsvUrl)); }
+    catch (e) { console.warn("設定シートを読み込めませんでした", e); }
+  }
+  let rows = CONFIG.schedule, sample = !CONFIG.scheduleCsvUrl;
+  if (CONFIG.scheduleCsvUrl) {
+    try { rows = await fetchCSV(CONFIG.scheduleCsvUrl); }
+    catch (e) { sample = true; note = "最新の予定を読み込めませんでした。通信の状態を確かめて、もう一度開いてください。"; console.warn(e); }
+  }
+  SCHED = normalize(rows);
+  $("#calSample").hidden = !sample;
+  initCalendar(note);
+  wireContact();
+  renderCF();
+  renderPartners();
+}
+renderSunTable();
+sunFacts();
+renderSunChart();
+let rz = 0;
+window.addEventListener("resize", () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(renderSunChart); });
+wireContact();
+boot();
+})();
+</script>
+</body>
+</html>
