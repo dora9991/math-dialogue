@@ -260,18 +260,32 @@ if (!args.length && fs.existsSync(LECT)) {
   }
 }
 
-// 解説動画の登録表の検査：単元IDが実在するか・YouTube の動画IDの形か
+// 解説動画・会話授業の登録表の検査：単元IDが実在するか・YouTube の動画IDの形か・URLは https か・規則で作ったURLが正しいか
 let nVideo = 0;
 if (!args.length && fs.existsSync(path.join(LECT, "videos.js"))) {
-  const { VIDEOS } = await import(pathToFileURL(path.join(LECT, "videos.js")).href);
+  const { VIDEOS, TALK, isHttps, talkOf } = await import(pathToFileURL(path.join(LECT, "videos.js")).href);
   for (const [uid, list] of Object.entries(VIDEOS || {})) {
     if (!ids.has(uid)) err(`videos.js ${uid}`, "この単元IDはない");
     if (!Array.isArray(list) || !list.length) { err(`videos.js ${uid}`, "動画の配列が空"); continue; }
     for (const v of list) {
       nVideo++;
-      if (!/^[A-Za-z0-9_-]{11}$/.test(v?.yt || "")) err(`videos.js ${uid}`, `yt は11文字の YouTube 動画ID: ${v?.yt}`);
+      const hasYt = v?.yt != null, hasUrl = v?.url != null;
+      if (hasYt === hasUrl) err(`videos.js ${uid}`, "yt（YouTubeの動画ID）か url（https://…）のどちらか1つだけを書く");
+      else if (hasYt && !/^[A-Za-z0-9_-]{11}$/.test(v.yt)) err(`videos.js ${uid}`, `yt は11文字の YouTube 動画ID: ${v.yt}`);
+      else if (hasUrl && !isHttps(v.url)) err(`videos.js ${uid}`, `url は https:// から始める: ${v.url}`);
     }
   }
+  // 規則（TALK）：units と pattern の両方がそろっているか。出てくる単元のURLがすべて https か
+  const talkIds = Array.isArray(TALK?.units) ? TALK.units : typeof TALK?.units === "function" ? [...ids].filter((id) => TALK.units(id)) : [];
+  if (talkIds.length && !TALK.pattern) err("videos.js TALK", "units があるのに pattern が空");
+  if (TALK?.pattern && !talkIds.length) err("videos.js TALK", "pattern があるのに units が空（どの単元に出すか書く）");
+  for (const uid of talkIds) {
+    if (!ids.has(uid)) { err(`videos.js TALK ${uid}`, "この単元IDはない"); continue; }
+    nVideo++;
+    if (!talkOf(uid)) err(`videos.js TALK ${uid}`, "規則から https のURLが作れない（pattern を確認）");
+  }
+  const urls = talkIds.map((uid) => talkOf(uid)?.url).filter(Boolean);
+  if (new Set(urls).size !== urls.length) err("videos.js TALK", "ちがう単元に、同じURLが当たっている（pattern に {id} が入っているか確認）");
 }
 
 const nTpl = targets.reduce((s, u) => s + Object.values(u.levels || {}).reduce((a, l) => a + (l?.length || 0), 0), 0);

@@ -37,15 +37,37 @@ export default {
 
 数式は問題データと同じく `$...$`（KaTeX）。JS の文字列ではバックスラッシュを2つ（`"$\\frac{1}{2}$"`）。
 
-## 解説動画（ホー先生）を単元に紐づける
+## 解説動画・会話授業（ホー先生）を単元に紐づける
 
-動画は `src/solo/lectures/videos.js` に、単元IDと YouTube の動画IDで登録する。登録した単元の「講義」タブに「ホー先生の解説動画」が出る（スライドの解説がある単元でも出る）。
+`src/solo/lectures/videos.js` に登録すると、その単元の「講義」タブの先頭に「ホー先生の解説動画」が出る（スライドの解説がある単元でも出る）。登録のしかたは3通り。同じ単元に混ぜてもよい。
+
+**① URLの規則で自動（会話授業 `math-talk.pages.dev` など）** — `TALK` に書くだけ。
+
+```js
+export const TALK = {
+  title: "ホー先生の会話授業",
+  units: (id) => id.startsWith("J1-"),                  // 会話授業がある単元（IDの配列でも、関数でもよい）
+  pattern: "https://math-talk.pages.dev/{id}/",         // {id}=単元ID（J1-u2）、{lc}=小文字（j1-u2）。関数 (id) => URL でもよい
+};
+```
+
+`units` か `pattern` が空のあいだは何も出ない。URLは `https://` だけ。講義タブでは「この画面で見る」（ページの中で再生）と「別タブ」の両方を出す。
+
+**② 1本ずつURL** — 規則に合わない単元や、複数本あるとき。
 
 ```js
 export const VIDEOS = {
-  "J1-u2": [{ title: "正の数・負の数のたし算", yt: "YouTubeの動画ID" }],
+  "J1-u2": [{ title: "正の数・負の数のたし算", url: "https://math-talk.pages.dev/…" }],
 };
 ```
+
+**③ YouTube** — 動画IDだけ書く（限定公開でも埋め込める）。
+
+```js
+  "J1-u3": [{ title: "正の数・負の数のひき算", yt: "YouTubeの動画ID" }],
+```
+
+1本の項目には `url` か `yt` のどちらか1つだけ。登録したら `node scripts/solo-verify.mjs` で、単元IDが実在するか・URLが https か・規則で作ったURLが重なっていないかを確認できる。
 
 ## 解説づくりの方針（対話授業と同じ考え方）
 

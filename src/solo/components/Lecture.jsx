@@ -97,15 +97,66 @@ function SlidePlayer({ lecture, onFinish }) {
   );
 }
 
+/** ホー先生の解説動画・会話授業（lectures/videos.js）。url はこの画面の中で再生／別タブで開く、yt は YouTube の埋め込み */
+function VideoCard({ videos }) {
+  const [video, setVideo] = useState(null);
+  return (
+    <div className="card">
+      <h2>📺 {TEACHER.name}の解説動画</h2>
+      {video?.yt && (
+        <div className="video"><iframe src={`https://www.youtube-nocookie.com/embed/${video.yt}?autoplay=1`} title="解説動画" allow="autoplay; encrypted-media" allowFullScreen /></div>
+      )}
+      {video?.url && (
+        <div>
+          <iframe
+            className="talkframe" src={video.url} title={video.title || "会話授業"}
+            allow="autoplay; fullscreen; encrypted-media" allowFullScreen referrerPolicy="no-referrer"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+          />
+          <div className="tiny muted mt8">
+            うまく表示されない・画面が小さいときは、
+            <a href={video.url} target="_blank" rel="noopener noreferrer">新しいタブで開く ↗</a>
+          </div>
+        </div>
+      )}
+      <div className="mt8">
+        {videos.map((v) => {
+          const key = v.yt || v.url;
+          const on = video && (video.yt || video.url) === key;
+          const name = v.title || `${TEACHER.name}の解説`;
+          if (v.yt) {
+            return (
+              <button key={key} className="rec" onClick={() => setVideo(on ? null : v)} style={{ marginBottom: 6 }}>
+                <span className="badge" style={{ background: "#fff7e6" }}>▶</span>
+                <span className="grow"><span className="nm">{name}</span></span>
+              </button>
+            );
+          }
+          return (
+            <div key={key} className="row" style={{ gap: 8, marginBottom: 6, alignItems: "stretch" }}>
+              <button className="rec grow" onClick={() => setVideo(on ? null : v)} style={{ marginBottom: 0, borderColor: on ? "var(--pri)" : undefined }}>
+                <span className="badge" style={{ background: "#fff7e6" }}>▶</span>
+                <span className="grow"><span className="nm">{name}</span><span className="why" style={{ display: "block" }}>{on ? "上で再生中（もう一度おすと閉じます）" : "この画面で見る"}</span></span>
+              </button>
+              <a className="btn sm ghost" href={v.url} target="_blank" rel="noopener noreferrer" style={{ display: "grid", placeItems: "center", textDecoration: "none" }} aria-label={`${name}を新しいタブで開く`}>↗<br /><span className="tiny">別タブ</span></a>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function Lecture({ unit, onStartPractice }) {
   const lecture = getLecture(unit.id);
   const [mode, setMode] = useState(lecture ? "slides" : "summary");
   const example = useMemo(() => genProblem(unit.id, 1), [unit.id]);
   const videos = getVideos(unit.id);
-  const [video, setVideo] = useState(null);
+  const vcard = videos.length > 0 && <VideoCard key={unit.id} videos={videos} />;
 
+  // スライドの解説がある単元でも、動画・会話授業は先頭に出す
   if (lecture && mode === "slides") {
-    return <SlidePlayer lecture={lecture} onFinish={onStartPractice} />;
+    return <div>{vcard}<SlidePlayer lecture={lecture} onFinish={onStartPractice} /></div>;
   }
 
   return (
@@ -121,6 +172,8 @@ export default function Lecture({ unit, onStartPractice }) {
           </Coach>
         </div>
       )}
+
+      {vcard}
 
       <div className="card">
         <h2>📌 この単元の要点</h2>
@@ -138,23 +191,6 @@ export default function Lecture({ unit, onStartPractice }) {
             ans: example.choices ? String(example.ans) : `${example.ans}${example.unit ? " " + example.unit : ""}`,
           }} />
           {example.hint && <div className="small muted mt8">💡 考え方：<M>{example.hint}</M></div>}
-        </div>
-      )}
-
-      {videos.length > 0 && (
-        <div className="card">
-          <h2>📺 {TEACHER.name}の解説動画</h2>
-          {video && (
-            <div className="video"><iframe src={`https://www.youtube-nocookie.com/embed/${video}?autoplay=1`} title="解説動画" allow="autoplay; encrypted-media" allowFullScreen /></div>
-          )}
-          <div className="mt8">
-            {videos.map((v) => (
-              <button key={v.yt} className="rec" onClick={() => setVideo(v.yt)} style={{ marginBottom: 6 }}>
-                <span className="badge" style={{ background: "#fff7e6" }}>▶</span>
-                <span className="grow"><span className="nm">{v.title || `${TEACHER.name}の解説`}</span></span>
-              </button>
-            ))}
-          </div>
         </div>
       )}
 
