@@ -73,10 +73,33 @@ settingsCsvUrl: "https://docs.google.com/spreadsheets/d/e/……/pub?gid=123456&
 
 ## 公開のしかた
 
-まだ**公開しない**（下記「公開する前に」がそろってから）。いまは検索に出ない設定（`noindex`）と、上部の「公開前の下書きです」の帯がついている。
+正式な公開は、下記「公開する前に」がそろってから。いまは検索に出ない設定（`noindex`）と、上部の「公開前の下書きです」の帯がついている。
+
+### いまのプレビュー（関係者に見せる用）
+
+**https://dora9991.github.io/math-dialogue/chienkan-fc-5a5b68ae/**
+
+学校・県の了解前なので、推測しにくいURLにしてある（QRコードやLINEで関係者にだけ渡す）。
+`gh-pages` ブランチに、このフォルダを**足しただけ**（ほかの公開物は変えていない）。
+
+プレビューを新しくするとき（`index.html` を直したら）：
+
+```bash
+git fetch origin gh-pages
+git worktree add --detach ../ghp origin/gh-pages
+cp chienkan-fc/index.html ../ghp/chienkan-fc-5a5b68ae/index.html
+cd ../ghp && git add -A && git commit -m "致遠館FC プレビューを更新（足すだけ）" && git push origin HEAD:gh-pages
+cd - && git worktree remove ../ghp
+```
+
+スプレッドシートで更新するもの（予定・相談URL・照明の数字・パートナー）は、これをやり直さなくても反映される。
+
+> **注意：`npm run deploy` は使わない。** `gh-pages` ブランチを丸ごと置きかえるので、このプレビューや、main にない公開物（`solo-lab/` など）が消える。
+
+### 正式に公開するとき
 
 - **Cloudflare Pages**（ikkan と同じやり方）：Cloudflare の画面で新しいプロジェクトを作り、`index.html` をアップロードするだけ。
-- **GitHub Pages**：`public/chienkan-fc/` にコピーして `npm run deploy`。ただし URL が `dora9991.github.io/math-dialogue/chienkan-fc/` になる。
+- **GitHub Pages**：上のプレビューと同じように、`gh-pages` に `chienkan-fc/` などのフォルダを足す。URL は `dora9991.github.io/math-dialogue/…` になる。
 
 クラブの正式なサイトにするなら、**クラブのアカウント（クラブのメールで作ったもの）で公開する**のがよい。特定の人の個人アカウントに依存しないため（構想の「運営：特定の教員に依存しない仕組み」と同じ考え方）。独自ドメイン（例：chienkan-fc.jp）を使う場合は、年に数千円かかる。
 
