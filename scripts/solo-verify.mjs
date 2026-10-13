@@ -198,6 +198,34 @@ if (!args.length) {
   for (const u of all) visit(u.id, []);
 }
 
+// 単元（章）のまとめ方の検査：小学校・高校の小単元が、ちょうど1つの章に入っているか／学年が合っているか
+if (!args.length) {
+  const { CHAPTER_DEFS } = await import(pathToFileURL(path.join(CONTENT, "chapters.js")).href);
+  const byId = new Map(all.map((u) => [u.id, u]));
+  const seen = new Map();
+  const namesByGrade = new Map();
+  for (const [grade, name, course, uids] of CHAPTER_DEFS) {
+    const W = `chapters.js ${grade} ${name}`;
+    if (!GRADES.includes(grade)) err(W, `学年が不正: ${grade}`);
+    if (!name) err(W, "章の名前がない");
+    const key = `${grade}|${course || ""}|${name}`;
+    if (namesByGrade.has(key)) err(W, "同じ学年・科目に、同じ名前の章がある");
+    namesByGrade.set(key, 1);
+    if (grade.startsWith("H") && !course) err(W, "高校の章には、科目（数学I など）が必要");
+    if (!Array.isArray(uids) || !uids.length) err(W, "小単元が空");
+    for (const uid of uids || []) {
+      const u = byId.get(uid);
+      if (!u) { err(W, `小単元 ${uid} が見つからない`); continue; }
+      if (u.grade !== grade) err(W, `${uid} の学年は ${u.grade}（章は ${grade}）`);
+      if (seen.has(uid)) err(W, `${uid} が、${seen.get(uid)} にも入っている`);
+      seen.set(uid, W);
+    }
+  }
+  for (const u of all) {
+    if (/^[EH]/.test(u.grade) && !seen.has(u.id)) err(u.id, "どの章にも入っていない（chapters.js に足す）");
+  }
+}
+
 // 講義（ホー先生の解説）の検査：単元があるか・数式が描けるか・理解チェックに正解が入っているか
 const LECT = path.join(ROOT, "src/solo/lectures");
 let nLect = 0;

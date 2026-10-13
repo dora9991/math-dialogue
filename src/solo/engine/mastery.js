@@ -127,7 +127,7 @@ export const STATUS_INFO = {
   learning: { label: "学習中", color: "#fbbf24" },
   weak: { label: "要復習", color: "#f87171" },
   unknown: { label: "未確認", color: "#cbd5e1" },
-  future: { label: "これから習う", color: "#eef2f7" },
+  future: { label: "未修（まだ習っていない）", color: "#eef2f7" },
   out: { label: "目標の範囲外", color: "#f8fafc" },
 };
 

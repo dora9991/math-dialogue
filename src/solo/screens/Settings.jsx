@@ -3,7 +3,7 @@
 // ============================================================
 import { useRef, useState } from "react";
 import { Brand, Coach } from "../components/ui.jsx";
-import { tierOf } from "../engine/goals.js";
+import { tierOf, stageOfGrade } from "../engine/goals.js";
 import { exportJson, importJson } from "../engine/store.js";
 import { GRADE_LABEL, UNITS } from "../content/index.js";
 import { TEACHER } from "../lectures/index.js";
@@ -42,8 +42,9 @@ export default function Settings({ state, onEditProfile, onDiag, onReplace, onRe
       <div className="card">
         <h2>🎓 目標と学年</h2>
         <div className="small">{p.name ? `${p.name}さん・` : ""}{p.grade === "R" ? "既卒" : GRADE_LABEL[p.grade]}</div>
-        <div className="small">目標：<b>{p.goal?.uni || "（志望校未入力）"}</b>（{tierOf(p).label}・{{ bunkei: "文系", rikei: "理系", mitei: "文理未定" }[p.goal?.track] || "文理未定"}）</div>
-        <div className="small">1日の目標：{p.dailyGoal}問</div>
+        <div className="small">志望校：<b>{p.goal?.uni || "（未入力）"}</b></div>
+        <div className="small">目標レベル：<b>{tierOf(p).label}</b>{stageOfGrade(p.grade) === "H" && <>（{{ bunkei: "文系", rikei: "理系", mitei: "文理未定" }[p.goal?.track] || "文理未定"}）</>}</div>
+        <div className="small">習った範囲：{(p.learned || []).length} 小単元（未修は、単元一覧・マップから見られます）</div>
         <button className="btn sm mt12" onClick={onEditProfile}>変更する</button>
       </div>
       <div className="card">
@@ -65,9 +66,10 @@ export default function Settings({ state, onEditProfile, onDiag, onReplace, onRe
         <h2>🔍 このアプリのしくみ</h2>
         <Coach><span className="small">先生・保護者の方へ。どうやって「おすすめ」を決めているか、短くまとめました。</span></Coach>
         <ul className="small" style={{ paddingLeft: 20, lineHeight: 1.8, marginBottom: 0 }}>
-          <li><b>単元マップ</b>：小1〜高3の {nUnits} 単元を「前提 → 発展」のつながりで結んでいます。問題テンプレートは {nTpl} 種類（数字が毎回変わる）。</li>
-          <li><b>目標</b>：志望校のレベルから、小・中・高それぞれ「簡単／標準／応用／難関」のどこまで必要かを決めます。</li>
-          <li><b>診断</b>：最近習った単元から出題し、まちがえたら前提の単元へさかのぼって「つまずきの根っこ」を探します。</li>
+          <li><b>単元</b>：小1〜高3を「学年 → 単元（章）→ 小単元」に整理（{nUnits} 小単元）。「前提 → 発展」のつながりで結び、問題テンプレートは {nTpl} 種類（数字が毎回変わる）。</li>
+          <li><b>目標</b>：志望校（高校・大学）や目標レベルから、「どの単元を、どのレベルまで」を決めます。小・中学生は「基礎／標準／応用／入試レベル」、高校生は5段階。</li>
+          <li><b>習った範囲</b>：学校で習った小単元をチェック。習っていない「未修」の単元は、印がつきます。</li>
+          <li><b>診断（任意）</b>：習った単元から出題し、まちがえたら前提の単元へさかのぼって「つまずきの根っこ」を探します。</li>
           <li><b>理解度</b>：レベルごとに「次も正解できる見込み」を、最近の結果ほど重く計算。3問以上で80%以上、または確認テスト（5問中4問）合格で「習得」。</li>
           <li><b>おすすめ</b>：①つまずきの根っこ ②目標に届いていない単元 ③復習の時期（3→7→16→35日）④未確認 ⑤予習 の順。土台になる単元ほど優先。</li>
           <li><b>演習</b>：2問続けて正解でレベルアップ、2問続けて不正解でレベルダウン。いちばん下でもつまずくと、前提へのさかのぼりを提案します。</li>

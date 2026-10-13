@@ -2,7 +2,7 @@
 // ui.jsx — 小さな共通部品（バー・ナビ・先生の吹き出し・レベルのつぶ・リング・グラフ）
 // ============================================================
 import { useEffect } from "react";
-import { LEVEL_INFO, AREA_INFO, AREAS } from "../content/index.js";
+import { LEVEL_INFO, AREA_INFO, AREAS, levelName } from "../content/index.js";
 import { TEACHER } from "../lectures/index.js";
 
 export function TopBar({ title, onBack, backLabel = "もどる", right }) {
@@ -26,6 +26,7 @@ export function Brand({ right }) {
 
 const NAV = [
   { id: "home", icon: "🏠", label: "ホーム" },
+  { id: "units", icon: "📚", label: "単元" },
   { id: "map", icon: "🗺️", label: "マップ" },
   { id: "records", icon: "📊", label: "記録" },
   { id: "settings", icon: "⚙️", label: "設定" },
@@ -55,9 +56,9 @@ export function Coach({ children, face = TEACHER.icon, name = TEACHER.name }) {
 }
 
 /** レベルのつぶ（4つ）。level=今のレベル、req=目標（線）、max=この単元の最高 */
-export function LevelPips({ level = 0, req = 0, max = 4, estimated = false, size = 1 }) {
+export function LevelPips({ level = 0, req = 0, max = 4, estimated = false, size = 1, grade }) {
   return (
-    <span className="pips" title={`今：${LEVEL_INFO[level]?.label || "まだ"} ／ 目標：${LEVEL_INFO[req]?.label || "-"}`}>
+    <span className="pips" title={`今：${levelName(level, grade) || "まだ"} ／ 目標：${levelName(req, grade) || "-"}`}>
       {[1, 2, 3, 4].map((L) => (
         <span
           key={L}
@@ -73,10 +74,10 @@ export function LevelPips({ level = 0, req = 0, max = 4, estimated = false, size
   );
 }
 
-export function LevelChip({ level }) {
+export function LevelChip({ level, grade }) {
   const info = LEVEL_INFO[level];
   if (!info) return null;
-  return <span className="chip" style={{ background: info.color + "1f", color: info.color }}>{info.label}</span>;
+  return <span className="chip" style={{ background: info.color + "1f", color: info.color }}>{levelName(level, grade)}</span>;
 }
 
 export function AreaChip({ area }) {
@@ -136,24 +137,26 @@ export function Radar({ scores = {}, size = 230 }) {
   );
 }
 
-/** 日ごとの棒グラフ（days: [{label, dow, n}]、goal: 目標の線） */
-export function DayBars({ days, goal = 10, height = 120 }) {
+/** 日ごとの棒グラフ（days: [{label, dow, n}]、goal: 目標の線。0 なら線を出さない） */
+export function DayBars({ days, goal = 0, height = 120 }) {
   const max = Math.max(goal, ...days.map((d) => d.n), 1);
   const w = 100 / days.length;
   return (
     <svg width="100%" viewBox={`0 0 100 ${height / 3}`} preserveAspectRatio="none" style={{ height, display: "block" }} role="img" aria-label="毎日の解いた問題数">
       {days.map((d, i) => {
         const h = (d.n / max) * (height / 3 - 6);
-        const reached = d.n >= goal;
+        const reached = goal > 0 && d.n >= goal;
         return (
           <g key={d.key}>
             <rect x={i * w + w * 0.18} y={height / 3 - 4 - h} width={w * 0.64} height={Math.max(h, d.n ? 0.8 : 0)} rx="0.8"
-              fill={reached ? "#4f46e5" : "#a5b4fc"}><title>{`${d.label}（${d.dow}）${d.n}問`}</title></rect>
+              fill={goal > 0 ? (reached ? "#4f46e5" : "#a5b4fc") : "#6366f1"}><title>{`${d.label}（${d.dow}）${d.n}問`}</title></rect>
           </g>
         );
       })}
-      <line x1="0" x2="100" y1={height / 3 - 4 - (goal / max) * (height / 3 - 6)} y2={height / 3 - 4 - (goal / max) * (height / 3 - 6)}
-        stroke="#f59e0b" strokeWidth="0.3" strokeDasharray="1.2 1" />
+      {goal > 0 && (
+        <line x1="0" x2="100" y1={height / 3 - 4 - (goal / max) * (height / 3 - 6)} y2={height / 3 - 4 - (goal / max) * (height / 3 - 6)}
+          stroke="#f59e0b" strokeWidth="0.3" strokeDasharray="1.2 1" />
+      )}
     </svg>
   );
 }

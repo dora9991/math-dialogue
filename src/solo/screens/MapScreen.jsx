@@ -5,7 +5,7 @@
 // ============================================================
 import { useMemo, useState } from "react";
 import { Brand, LevelPips, AreaChip, Radar } from "../components/ui.jsx";
-import { UNITS, AREAS, AREA_INFO, GRADE_ORDER, GRADE_LABEL, LEVEL_INFO, getUnit, prereqsOf, dependentsOf, unitTitle } from "../content/index.js";
+import { UNITS, AREAS, AREA_INFO, GRADE_ORDER, GRADE_LABEL, levelName, getUnit, prereqsOf, dependentsOf, unitTitle } from "../content/index.js";
 import { analyze, areaScores, goalProgress } from "../engine/recommend.js";
 import { STATUS_INFO } from "../engine/mastery.js";
 import { profileGradeIndex, tierOf } from "../engine/goals.js";
@@ -29,7 +29,6 @@ export default function MapScreen({ state, onOpenUnit }) {
       <Brand />
       <div className="seg" style={{ marginBottom: 12 }}>
         <button className={view === "map" ? "on" : ""} onClick={() => setView("map")}>🗺️ マップ</button>
-        <button className={view === "list" ? "on" : ""} onClick={() => setView("list")}>📋 一覧</button>
         <button className={view === "radar" ? "on" : ""} onClick={() => setView("radar")}>🕸️ 分野</button>
       </div>
 
@@ -75,33 +74,6 @@ export default function MapScreen({ state, onOpenUnit }) {
         </div>
       )}
 
-      {view === "list" && (
-        <div>
-          {GRADE_ORDER.map((g) => {
-            const list = UNITS.filter((u) => u.grade === g && info.get(u.id).req);
-            if (!list.length) return null;
-            const done = list.filter((u) => info.get(u.id).level >= info.get(u.id).req).length;
-            return (
-              <div key={g} className="card">
-                <h2>{GRADE_LABEL[g]}{GRADE_ORDER.indexOf(g) === gi && <span className="chip" style={{ background: "#4f46e5", color: "#fff" }}>いまの学年</span>}<span className="sub">{done}/{list.length} 達成</span></h2>
-                <div className="ulist">
-                  {list.map((u) => {
-                    const x = info.get(u.id);
-                    return (
-                      <div key={u.id} className="it" onClick={() => onOpenUnit(u.id)}>
-                        <span className="dot" style={{ background: STATUS_INFO[x.status].color, border: "1px solid rgba(0,0,0,.08)" }} />
-                        <span className="grow" style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.35 }}>{u.name}<span className="tiny muted" style={{ display: "block", fontWeight: 500 }}>{u.course ? `${u.course}・` : ""}{u.desc}</span></span>
-                        <LevelPips level={x.level} req={x.req} max={u.maxLevel} estimated={x.estimated} />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {view === "radar" && (
         <div className="card">
           <h2>分野ごとの理解度<span className="sub">もう習った範囲・目標レベルに対して</span></h2>
@@ -134,8 +106,8 @@ function UnitSheet({ id, info, onClose, onOpen, onSel }) {
         <div className="small muted">{u.desc}</div>
         <div className="row mt12">
           <span className="chip" style={{ background: st.color, color: "#1e2433" }}>{st.label}</span>
-          <LevelPips level={x.level} req={x.req} max={u.maxLevel} estimated={x.estimated} size={1.2} />
-          <span className="tiny muted">目標：{LEVEL_INFO[x.req]?.label || "範囲外"}</span>
+          <LevelPips level={x.level} req={x.req} max={u.maxLevel} estimated={x.estimated} size={1.2} grade={u.grade} />
+          <span className="tiny muted">目標：{levelName(x.req, u.grade) || "範囲外"}</span>
         </div>
         {pre.length > 0 && <div className="mt12"><div className="tiny muted" style={{ fontWeight: 800 }}>⬇ この単元の前提（さかのぼり先）</div><div className="row wrap mt8" style={{ gap: 6 }}>{pre.map(chip)}</div></div>}
         {next.length > 0 && <div className="mt12"><div className="tiny muted" style={{ fontWeight: 800 }}>⬆ この単元を土台にする単元</div><div className="row wrap mt8" style={{ gap: 6 }}>{next.slice(0, 8).map(chip)}</div></div>}

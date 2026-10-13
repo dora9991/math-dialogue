@@ -151,7 +151,7 @@ export default function Problem({ p, mode = "practice", index, total, onAnswer, 
       <div className="qcard">
         <div className="qmeta">
           {total != null && <span className="chip">{index + 1} / {total}</span>}
-          {mode !== "diag" && <LevelChip level={p.level} />}
+          {mode !== "diag" && <LevelChip level={p.level} grade={unit?.grade} />}
           {(showUnit || mode === "diag") && unit && <span className="chip">{GRADE_LABEL[unit.grade]}・{unit.name}</span>}
           {mode === "test" && <span className="chip" style={{ background: "#fff4e0", color: "#b45309" }}>確認テスト</span>}
         </div>

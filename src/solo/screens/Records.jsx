@@ -16,7 +16,6 @@ export default function Records({ state, onOpenUnit }) {
   const week = days.slice(-7).reduce((s, d) => s + d.n, 0);
   const pl = playerLevel(t.xp);
   const reached = Object.entries(state.reached || {}).sort((a, b) => b[1] - a[1]);
-  const goal = state.profile.dailyGoal || 10;
 
   return (
     <div>
@@ -34,9 +33,9 @@ export default function Records({ state, onOpenUnit }) {
 
       <div className="card">
         <h2>📅 毎日の問題数<span className="sub">この1週間で {week} 問</span></h2>
-        <DayBars days={days} goal={goal} />
+        <DayBars days={days} />
         <div className="row tiny muted" style={{ justifyContent: "space-between" }}>
-          <span>{days[0].label}</span><span>点線＝1日の目標（{goal}問）</span><span>今日</span>
+          <span>{days[0].label}</span><span>今日</span>
         </div>
       </div>
 

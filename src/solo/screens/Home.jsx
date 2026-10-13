@@ -1,11 +1,12 @@
 // ============================================================
-// Home.jsx — ホーム（目標までの道のり・今日のおすすめ・今日の目標・連続日数）
+// Home.jsx — ホーム（診断のおすすめ・目標までの道のり・今日のおすすめ・単元から学ぶ・連続日数）
+//   診断は任意。まだ受けていない人には、いちばん上に出す。
 // ============================================================
 import { useMemo } from "react";
 import { Brand, Coach, Ring, LevelPips, AreaChip } from "../components/ui.jsx";
 import { GRADE_LABEL } from "../content/index.js";
 import { analyze, recommend, goalProgress } from "../engine/recommend.js";
-import { tierOf, examDate, daysUntil } from "../engine/goals.js";
+import { tierOf, examInfo, daysUntil, remainText } from "../engine/goals.js";
 import { streakDays, todayKey, playerLevel, greeting, cheer } from "../engine/motivation.js";
 
 const KIND = {
@@ -24,20 +25,29 @@ export default function Home({ state, onOpenUnit, onMix, onDiag, onGo }) {
   const gp = useMemo(() => goalProgress(state, info), [state, info]);
   const profile = state.profile;
   const tier = tierOf(profile);
-  const days = daysUntil(examDate(profile));
+  const exam = examInfo(profile);
+  const days = daysUntil(exam.date);
   const today = state.daily[todayKey()] || { n: 0, c: 0, xp: 0 };
-  const goal = profile.dailyGoal || 10;
   const streak = streakDays(state.daily);
   const pl = playerLevel(state.totals.xp);
   const remainingUnits = gp.total - gp.done;
   // ペース：残りの単元 ÷ 残りの週
   const weeks = Math.max(1, Math.round(days / 7));
   const pace = Math.max(1, Math.ceil(remainingUnits / weeks));
-  const msg = today.n >= goal ? "今日の目標クリア！ 余裕があれば、もう少しだけ。" : recs[0]?.kind === "sakanobori" ? cheer("sakanobori") : greeting(profile.name);
+  const msg = recs[0]?.kind === "sakanobori" ? cheer("sakanobori") : greeting(profile.name);
 
   return (
     <div>
       <Brand right={<span className="chip" title="学習者レベル">Lv.{pl.lv}</span>} />
+
+      {/* 診断は任意。まだ受けていない人には、いちばん上に出す */}
+      {!state.diag && (
+        <div className="card" style={{ border: "2px solid #c7cdf9", background: "#f6f5ff" }}>
+          <h2>🧭 理解度診断<span className="sub">任意・10〜25問</span></h2>
+          <div className="small muted">今の理解度と「つまずきの根っこ」がわかります。受けなくても、下の「単元から学ぶ」から自由に始められます。</div>
+          <button className="btn block mt12" onClick={onDiag}>診断してみる</button>
+        </div>
+      )}
 
       <div className="hero">
         <div className="row" style={{ alignItems: "center", gap: 14 }}>
@@ -48,7 +58,7 @@ export default function Home({ state, onOpenUnit, onMix, onDiag, onGo }) {
             <div className="lbl">🎓 目標</div>
             <div className="goal">{profile.goal?.uni || tier.label}</div>
             <div className="meta">{tier.label}　・　{profile.grade === "R" ? "既卒" : GRADE_LABEL[profile.grade]}</div>
-            <div className="meta mt8">共通テストまで <b style={{ fontSize: 16 }}>{days}</b> 日　・　1週間に <b>{pace}</b> 単元のペースで間に合う</div>
+            <div className="meta mt8">{exam.label}まで <b style={{ fontSize: 16 }}>{remainText(days)}</b>{gp.total > gp.done && <>　・　1週間に <b>{pace}</b> 単元のペースで間に合う</>}</div>
           </div>
         </div>
         <div className="row mt12 small" style={{ gap: 6, opacity: .95 }}>
@@ -68,26 +78,14 @@ export default function Home({ state, onOpenUnit, onMix, onDiag, onGo }) {
       <div className="card"><Coach>{msg}</Coach></div>
 
       <div className="stats" style={{ marginBottom: 14 }}>
-        <div className="stat">
-          <div className="v" style={{ color: today.n >= goal ? "#16a34a" : undefined }}>{today.n}<span className="small muted">/{goal}</span></div>
-          <div className="k">今日の問題</div>
-          <div className="progress mt8" style={{ height: 5 }}><i style={{ width: `${Math.min(100, (today.n / goal) * 100)}%` }} /></div>
-        </div>
+        <div className="stat"><div className="v">{today.n}<span className="small muted">問</span></div><div className="k">今日解いた問題</div></div>
         <div className="stat"><div className="v">🔥{streak}</div><div className="k">連続日数</div></div>
         <div className="stat"><div className="v">{state.totals.xp}</div><div className="k">XP（次のLvまで {pl.need - pl.cur}）</div></div>
       </div>
 
-      {!state.diag && (
-        <div className="card" style={{ border: "2px solid #c7cdf9" }}>
-          <h2>🧭 まずは理解度診断から</h2>
-          <div className="small muted">10〜25問で、今の理解度と「つまずきの根っこ」を見つけます。</div>
-          <button className="btn block mt12" onClick={onDiag}>診断をはじめる</button>
-        </div>
-      )}
-
       <div className="card">
         <h2>✨ 今日のおすすめ<span className="sub">理解度と目標から</span></h2>
-        {recs.length === 0 && <div className="small muted">おすすめはまだありません。マップから単元を選んでみよう。</div>}
+        {recs.length === 0 && <div className="small muted">おすすめはまだありません。「単元から学ぶ」から、好きな単元を選んでみよう。</div>}
         {recs.map((r) => {
           const x = info.get(r.unitId);
           const k = KIND[r.kind] || KIND.goal;
@@ -101,7 +99,7 @@ export default function Home({ state, onOpenUnit, onMix, onDiag, onGo }) {
                 </span>
                 <span className="nm" style={{ display: "block", marginTop: 2 }}>{x.u.name}</span>
                 <span className="why" style={{ display: "block" }}>{r.reason}</span>
-                <span className="row mt8" style={{ gap: 8 }}><LevelPips level={x.level} req={x.req} max={x.u.maxLevel} estimated={x.estimated} /><AreaChip area={x.u.area} /></span>
+                <span className="row mt8" style={{ gap: 8 }}><LevelPips level={x.level} req={x.req} max={x.u.maxLevel} estimated={x.estimated} grade={x.u.grade} /><AreaChip area={x.u.area} /></span>
               </span>
               <span className="go">›</span>
             </button>
@@ -112,6 +110,10 @@ export default function Home({ state, onOpenUnit, onMix, onDiag, onGo }) {
         )}
       </div>
 
+      {/* AI のおすすめに加えて、学年・単元・小単元の一覧から、自分で選んで学ぶ */}
+      <button className="btn block soft" style={{ marginBottom: 10, padding: "15px 18px" }} onClick={() => onGo("units")}>
+        📚 単元から学ぶ<span className="small" style={{ fontWeight: 600, display: "block", opacity: .85 }}>学年ごとの単元・小単元の一覧から、講義・演習・確認テスト</span>
+      </button>
       <div className="row" style={{ gap: 10 }}>
         <button className="btn ghost grow" onClick={() => onGo("map")}>🗺️ 理解度マップ</button>
         <button className="btn ghost grow" onClick={() => onGo("records")}>📊 学習の記録</button>
