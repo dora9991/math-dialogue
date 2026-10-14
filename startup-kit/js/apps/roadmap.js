@@ -153,6 +153,8 @@
       let state = await Kit.store.get('roadmap', { sample: SAMPLE, blank: BLANK });
       state.done = state.done || {}; state.memo = state.memo || {}; state.custom = state.custom || [];
       const open = new Set(Kit.pref.get('roadmap.open', ['s0', 's1', 's2']));
+      // 案内などから特定の手順を開くときは、その段階を開いておく
+      if (params.step) { const st = STEPS.concat(state.custom || []).find((x) => x.id === params.step); if (st) open.add(st.stage); }
 
       const save = () => { delete state._sample; Kit.store.set('roadmap', state); };
       const allSteps = () => STEPS.concat(state.custom.map((c) => ({ id: c.id, stage: c.stage, title: c.title, why: c.why || '', how: [], custom: true })));

@@ -12,7 +12,8 @@
                targetPhone?: 'スマホでのセレクタ', skipOnPhone?: true, params?: {Kit.go に渡す} }],
      related: ['つながるアプリid', …] }
    task の形：
-   { id, title: 'やりたいこと（〜する）', words: '言いかえ・検索語（空白区切り）', app, params?, target?, targetPhone?, tip: '光らせたときの一言' } */
+   { id, title: 'やりたいこと（〜する）', words: '言いかえ・検索語（空白区切り）', app, params?, target?, targetPhone?, tip: '光らせたときの一言',
+     pin?: true（検索の「よく使うこと」に出す）, hidden?: true（検索には出さない。入口のページなどから呼ぶだけ）, run?: () => {}（光らせる代わりに動かす） } */
 (function () {
   'use strict';
   const helps = new Map();
@@ -41,6 +42,7 @@
       const words = raw.split(/[\s　]+/).map(norm).filter(Boolean);
       const out = [];
       for (const t of tasks.values()) {
+        if (t.hidden) continue;
         const def = window.Kit && Kit.appDef ? Kit.appDef(t.app) : null;
         const title = norm(t.title), hay = title + ' ' + norm(t.words) + ' ' + norm(def ? def.title : '');
         let score = 0, ok = true;

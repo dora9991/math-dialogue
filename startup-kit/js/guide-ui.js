@@ -156,6 +156,7 @@
     if (i >= t.list.length) { endTour(); return; }
     if (i < 0) return;
     const seq = ++t.seq;
+    const dir = i >= t.idx ? 1 : -1;
     t.idx = i;
     const st = t.list[i];
     renderCard(t, st, true);
@@ -164,12 +165,18 @@
     // 同じ画面・同じ指定が続くときは、開き直さない（スクロールや入力がそのまま残る）
     const params = val(st.params, t.ctx);
     const nav = st.app ? st.app + JSON.stringify(params || null) : '';
-    if (st.app && (Kit.current() !== st.app || (params && nav !== t.lastNav))) await Kit.go(st.app, params || undefined);
+    const moved = st.app && (Kit.current() !== st.app || (params && nav !== t.lastNav));
+    if (moved) await Kit.go(st.app, params || undefined);
     t.lastNav = nav;
     if (seq !== t.seq || t.done) return;
     const sel = val(narrow() && st.targetPhone ? st.targetPhone : st.target, t.ctx);
-    const el = sel ? await findTarget(sel) : null;
+    // 画面を開いた直後は少し長めに待つ。開いたままなら、ないものはすぐ「ない」とする
+    const el = sel ? await findTarget(sel, moved ? 2600 : 900) : null;
     if (seq !== t.seq || t.done) return;
+    if (sel && !el && !t.opts.tip) {
+      const nextI = i + dir;
+      if (nextI >= 0 && nextI < t.list.length) { go(t, nextI); return; }
+    }
     t.el = el;
     if (el) {
       const r = el.getBoundingClientRect();
@@ -191,7 +198,7 @@
       Kit.btn('', () => endTour(), { icon: 'close', title: opts.tip ? '閉じる' : '案内を終わる', kind: 'ghost', sm: true, class: 'gd-x' }));
     card.append(top, h('h3', null, st.title || ''), st.body ? h('p', null, st.body) : null);
     if (loading) { card.append(h('p', { class: 'small muted' }, '画面を開いています…')); return; }
-    if (!t.el && (st.target || st.targetPhone)) card.append(h('p', { class: 'small muted' }, 'この画面では、示す場所が見つかりませんでした。'));
+    if (!t.el && (st.target || st.targetPhone)) card.append(h('p', { class: 'small muted' }, 'いまの画面には、この場所が出ていません（中身がまだないか、別のタブにあります）。'));
     const row = h('div', { class: 'btn-row' });
     if (!opts.tip && list.length > 1) row.append(h('span', { class: 'gd-dots', 'aria-hidden': 'true' }, list.map((_, k) => h('i', { class: k === idx ? 'on' : null }))));
     if (opts.tip) row.append(Kit.btn('わかった', () => endTour(), { kind: 'primary', sm: true }));
@@ -303,7 +310,7 @@
         before: async (c) => { const l = await Kit.store.getItem('leads', c.leadId); if (l && !l.meetingAt) await Kit.store.put('leads', Object.assign(l, { meetingAt: meetDay + 'T15:00', status: 'talking' })); },
       },
       { app: 'invoice', params: (c) => ({ fromLead: c.leadId }), target: '.app-invoice .inv-paper', targetPhone: '.app-invoice .inv-ed-switch', title: '決まったら、見積書', body: '問い合わせから「見積書をつくる」を押すと、宛先が入った見積書ができます。インボイス制度に合わせた計算で、PDFにして送れます。' },
-      { app: 'money', target: '.app-money .mo-kpis', title: '計画と、くらべる', body: '売上はマネタイズ計画の数字とくらべられます。1か月に使える時間の上限も見えるので、無理のない計画にできます。' },
+      { app: 'money', params: { tab: 'sim' }, target: '.app-money .mo-kpis', title: '計画と、くらべる', body: '売上はマネタイズ計画の数字とくらべられます。1か月に使える時間の上限も見えるので、無理のない計画にできます。' },
       { app: 'dashboard', target: '.app-dashboard .db-todo', title: 'ぜんぶ、ここに戻ってきます', body: 'さっきの問い合わせや予定が、今日やることに並びます。デモはここまで。自分の事業で始めるなら、「まずはここから」の最初の3歩へどうぞ。' },
     ];
     await G.tour(steps, {

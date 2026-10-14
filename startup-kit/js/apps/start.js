@@ -8,16 +8,16 @@
   G.tasks([
     { id: 'start-demo', app: 'start', pin: true, title: '3分デモを見る', words: 'デモ 見本 使い方 全体 体験 ためす お試し チュートリアル', tip: '問い合わせが売上になるまでを、実際の画面で追いかけます。保存はされません。', run: () => G.demo() },
     { id: 'start-profile', app: 'dashboard', pin: true, title: '事業プロフィールを入れる', words: '屋号 名前 会社名 連絡先 メール 住所 プロフィール 設定 はじめる', tip: '屋号や連絡先は、ホームページ・請求書などすべてのツールで使い回されます。', run: async () => { await Kit.profile.edit(); Kit.remount(); } },
-    { id: 'start-canvas', app: 'canvas', target: '.app-canvas .cv-block', title: 'リーンキャンバスで事業の骨組みを書く', words: 'アイデア 骨組み 整理 ビジネスモデル キャンバス 課題 顧客', tip: 'まずは「課題」から。空欄があっても大丈夫。1行ずつ書き足せます。' },
-    { id: 'start-money', app: 'money', target: '.app-money .mo-kpis', title: 'マネタイズ計画で数字を確かめる', words: '売上 収入 試算 いくら 稼ぐ 計画 黒字 損益', tip: '収入の柱の数字を書きかえると、12か月の見通しがここに出ます。' },
-    { id: 'start-rule', app: 'roadmap', params: { step: 'rule' }, target: '.app-roadmap [data-step="rule"]', title: '副業・兼業のルールを確かめる', words: '副業 兼業 許可 公務員 先生 教員 会社 就業規則 育休', tip: '勤め先によっては許可が必要です。始める前に、ここだけは確かめてください。' },
-    { id: 'start-site', app: 'editor', target: '.app-editor .ed-list', title: 'ホームページを自分の内容に書きかえる', words: 'ホームページ HP サイト 作る 書きかえ 編集 文章 写真', tip: 'セクションを選ぶと、文章や写真を直せます。サンプルを書きかえるだけでも大丈夫です。' },
-    { id: 'start-delivery', app: 'inbox', params: { tab: 'form' }, target: '.app-inbox .ib-fgrid .card:has(.ib-dv)', title: '問い合わせの送信先を決める', words: 'フォーム 届く 届かない 受け取る メール スプレッドシート 送信先', tip: 'ここで決めた送り先に、ホームページの問い合わせが届きます。いちばん簡単なのはメールです。' },
-    { id: 'start-publish', app: 'site', target: '.app-site .site-bar .btn:has(.site-long)', title: 'ホームページを公開する', words: '公開 アップ 書き出し HTML ネット 載せる URL', tip: 'ここで1つのファイルに書き出して、無料のサービスに置きます。手順は「公開のしかた」に。' },
-    { id: 'start-first-plan', app: 'calendar', target: '.app-calendar .cal-quick', title: '最初の予定を入れる', words: '予定 スケジュール 体験会 予約 入れる', tip: '「明日 19時 打ち合わせ」のように書くだけで、予定に入ります。' },
-    { id: 'start-inbox', app: 'inbox', target: '.app-inbox .ib-filters', title: '問い合わせを状態ごとに見る', words: '問い合わせ 返信 商談 成約 管理 顧客 お客さん', tip: '新規・返信済み・商談中…と、状態ごとに絞りこめます。' },
-    { id: 'start-sns', app: 'sns', target: '.app-sns .sns-head-rh', title: 'SNSの投稿リズムを作る', words: 'SNS 投稿 インスタ X リズム 予定 計画 発信', tip: '週に何回投稿するかを決めると、ネタの枠がまとめてできます。' },
-    { id: 'start-invoice', app: 'invoice', target: '.app-invoice .app-head .btn.primary', title: '見積書・請求書を作る', words: '見積 請求 領収 書類 インボイス お金 PDF', tip: 'ここから見積書・請求書・領収書を作れます。' },
+    { id: 'start-canvas', hidden: true, app: 'canvas', target: '.app-canvas .cv-block', title: 'リーンキャンバスで事業の骨組みを書く', words: 'アイデア 骨組み 整理 ビジネスモデル キャンバス 課題 顧客', tip: 'まずは「課題」から。空欄があっても大丈夫。1行ずつ書き足せます。' },
+    { id: 'start-money', hidden: true, app: 'money', params: { tab: 'sim' }, target: '.app-money .mo-kpis', title: 'マネタイズ計画で数字を確かめる', words: '売上 収入 試算 いくら 稼ぐ 計画 黒字 損益', tip: '収入の柱の数字を書きかえると、12か月の見通しがここに出ます。' },
+    { id: 'start-rule', hidden: true, app: 'roadmap', params: { step: 'rule' }, target: '.app-roadmap [data-step="rule"]', title: '副業・兼業のルールを確かめる', words: '副業 兼業 許可 公務員 先生 教員 会社 就業規則 育休', tip: '勤め先によっては許可が必要です。始める前に、ここだけは確かめてください。' },
+    { id: 'start-site', hidden: true, app: 'editor', target: '.app-editor .ed-list', title: 'ホームページを自分の内容に書きかえる', words: 'ホームページ HP サイト 作る 書きかえ 編集 文章 写真', tip: 'セクションを選ぶと、文章や写真を直せます。サンプルを書きかえるだけでも大丈夫です。' },
+    { id: 'start-delivery', hidden: true, app: 'inbox', params: { tab: 'form' }, target: '.app-inbox .ib-fgrid .card:has(.ib-dv)', title: '問い合わせの送信先を決める', words: 'フォーム 届く 届かない 受け取る メール スプレッドシート 送信先', tip: 'ここで決めた送り先に、ホームページの問い合わせが届きます。いちばん簡単なのはメールです。' },
+    { id: 'start-publish', hidden: true, app: 'site', target: '.app-site .site-bar .btn:has(.site-long)', title: 'ホームページを公開する', words: '公開 アップ 書き出し HTML ネット 載せる URL', tip: 'ここで1つのファイルに書き出して、無料のサービスに置きます。手順は「公開のしかた」に。' },
+    { id: 'start-first-plan', hidden: true, app: 'calendar', target: '.app-calendar .cal-quick', title: '最初の予定を入れる', words: '予定 スケジュール 体験会 予約 入れる', tip: '「明日 19時 打ち合わせ」のように書くだけで、予定に入ります。' },
+    { id: 'start-inbox', hidden: true, app: 'inbox', target: '.app-inbox .ib-filters', title: '問い合わせを状態ごとに見る', words: '問い合わせ 返信 商談 成約 管理 顧客 お客さん', tip: '新規・返信済み・商談中…と、状態ごとに絞りこめます。' },
+    { id: 'start-sns', hidden: true, app: 'sns', target: '.app-sns .sns-head-rh', title: 'SNSの投稿リズムを作る', words: 'SNS 投稿 インスタ X リズム 予定 計画 発信', tip: '週に何回投稿するかを決めると、ネタの枠がまとめてできます。' },
+    { id: 'start-invoice', hidden: true, app: 'invoice', target: '.app-invoice .app-head .btn.primary', title: '見積書・請求書を作る', words: '見積 請求 領収 書類 インボイス お金 PDF', tip: 'ここから見積書・請求書・領収書を作れます。' },
   ]);
 
   // いまの段階ごとの、最初の3歩
