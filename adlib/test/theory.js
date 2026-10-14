@@ -49,6 +49,7 @@ const CH = [
   ['CM7', 'maj', '1:C 3:E 5:G 7:B'],
   ['C^7', 'maj', '1:C 3:E 5:G 7:B'],
   ['CΔ7', 'maj', '1:C 3:E 5:G 7:B'],
+  ['C∆7', 'maj', '1:C 3:E 5:G 7:B'],
   ['CΔ', 'maj', '1:C 3:E 5:G 7:B'],
   ['Cmaj', 'maj', '1:C 3:E 5:G 7:B'],
   ['Cmaj9', 'maj', '1:C 3:E 5:G 7:B 9:D'],

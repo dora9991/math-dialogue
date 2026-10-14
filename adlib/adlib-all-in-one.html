@@ -683,7 +683,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     // ---- 基本形（頭の部分） ----
     let head = parts[0], m;
     const take = re => { const mm = re.exec(head); if (mm) head = head.slice(mm[0].length); return mm; };
-    if (take(/^(maj|Maj|MAJ|ma|Ma|Δ|△|\^|M(?![a-z]))/)) {
+    if (take(/^(maj|Maj|MAJ|ma|Ma|Δ|∆|△|▵|\^|M(?![a-z]))/)) {
       st.third = 'M'; st.seventh = '7';              // ジャズでは Cmaj / CΔ は maj7 の意味
       if (take(/^69/)) { st.seventh = null; st.six = true; addExt(9, 0); }
       else if (take(/^6/)) { st.seventh = null; st.six = true; }
@@ -6519,7 +6519,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     el.inst = U.select(instOptions(), st().soloInst, v => App.setSoloParams({ soloInst: v }), { id: 'soloInst', 'aria-label': 'ソロの楽器' });
     el.level = U.seg(LEVELS, st().level, v => App.setSoloParams({ level: v }), '難しさ');
     el.density = U.seg(DENS, st().density, v => App.setSoloParams({ density: v }), '音の多さ');
-    el.concert = U.seg([[true, '実音（コンサートピッチ）'], [false, '楽器の楽譜（移調あり）']], st().concert, v => { App.set({ concert: v }, 'solo'); refreshInstOptions(); }, '譜面の書き方');
+    el.concert = U.seg([[true, '実音', '鳴っている音のまま（コンサートピッチ）'], [false, '移調譜', 'その楽器の人が読む楽譜（アルトは長6度上、トランペット・テナーは長2度・長9度上、ギターは1オクターブ上）']], st().concert, v => { App.set({ concert: v }, 'solo'); refreshInstOptions(); }, '譜面の書き方');
     const newBtn = h('button', { type: 'button', class: 'btn primary', onclick: () => App.newSolo(), title: '同じコード進行で、別のソロを作る' }, '🎲 新しいソロ');
     const listenBtn = h('button', { type: 'button', class: 'btn', onclick: () => { if (st().soloMode === 'off') { st().soloMode = 'same'; App.ui.soloSel.value = 'same'; } App.play(); } }, '▶ 伴奏とソロを聴く');
     el.seed = h('span', { class: 'muted small', id: 'soloSeed' });
@@ -6530,7 +6530,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
         U.field('楽器', el.inst),
         U.field('難しさ', el.level, 'むずかしいほど、ビバップ風・オルタード・16分音符が混ざります'),
         U.field('音の多さ', el.density, 'まばらなほど、間（休符）が多くなります'),
-        U.field('譜面の書き方', el.concert, '移調楽器は、実際に楽譜を読む音で書きます')),
+        U.field('譜面の書き方', el.concert, '実音＝鳴っている音のまま。移調譜＝その楽器の人が読む楽譜')),
       el.seed));
 
     el.scoreWrap = h('div', { class: 'score-wrap', id: 'scoreWrap' });
@@ -6875,14 +6875,14 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     el.key = U.select(KEY_NAMES.map((n, i) => [i, n]), st().dictKey, v => { App.set({ dictKey: +v }, 'dict-key'); D.limit = 24; renderList(); }, { id: 'dictKey', 'aria-label': 'リックを書くキー（実音）' });
     el.level = U.seg([[0, 'すべて'], [1, 'Lv.1 やさしい'], [2, 'Lv.2'], [3, 'Lv.3 むずかしい']], D.level, v => { D.level = v; D.limit = 24; renderList(); }, '難しさ');
     el.degrees = U.switchEl('コードに対する度数を表示', D.degrees, v => { D.degrees = v; renderList(); }, '各音が、コードのルートから見て何度かを示します');
-    el.concert = U.seg([[true, '実音'], [false, '楽器の楽譜']], st().concert, v => { App.set({ concert: v }, 'solo'); renderList(); }, '譜面の書き方');
+    el.concert = U.seg([[true, '実音'], [false, '移調譜']], st().concert, v => { App.set({ concert: v }, 'solo'); renderList(); }, '譜面の書き方');
     root.appendChild(h('div', { class: 'card' },
       h('div', { class: 'card-h' }, h('h2', null, 'リック辞典'), h('span', { class: 'muted' }, '全 ' + total + ' 本')),
       h('p', { class: 'muted' }, 'コードの種類・進行ごとに、そのまま使えるリックを集めました。「▶」で伴奏つきで聴けます。ソロの自動作成も、ここから選んでいます。'),
       h('div', { class: 'row gap wrap' }, el.q),
       h('div', { class: 'fields mt' },
         U.field('書くキー（実音）', el.key, 'ここで選んだキーの ii–V–I などとして、楽譜と音が出ます'),
-        U.field('難しさ', el.level), U.field('譜面の書き方', el.concert, '「楽器の楽譜」は、ソロの楽器（' + App.soloInstDef().jp + '）の移調譜です'), h('div', { class: 'field' }, el.degrees))));
+        U.field('難しさ', el.level), U.field('譜面の書き方', el.concert, '「移調譜」は、ソロの楽器（' + App.soloInstDef().jp + '）の人が読む楽譜です'), h('div', { class: 'field' }, el.degrees))));
 
     // 分類ボタン
     el.nav = h('div', { class: 'card dict-nav' });

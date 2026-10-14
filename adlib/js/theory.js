@@ -155,7 +155,7 @@
     // ---- 基本形（頭の部分） ----
     let head = parts[0], m;
     const take = re => { const mm = re.exec(head); if (mm) head = head.slice(mm[0].length); return mm; };
-    if (take(/^(maj|Maj|MAJ|ma|Ma|Δ|△|\^|M(?![a-z]))/)) {
+    if (take(/^(maj|Maj|MAJ|ma|Ma|Δ|∆|△|▵|\^|M(?![a-z]))/)) {
       st.third = 'M'; st.seventh = '7';              // ジャズでは Cmaj / CΔ は maj7 の意味
       if (take(/^69/)) { st.seventh = null; st.six = true; addExt(9, 0); }
       else if (take(/^6/)) { st.seventh = null; st.six = true; }

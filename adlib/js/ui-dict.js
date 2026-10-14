@@ -66,14 +66,14 @@
     el.key = U.select(KEY_NAMES.map((n, i) => [i, n]), st().dictKey, v => { App.set({ dictKey: +v }, 'dict-key'); D.limit = 24; renderList(); }, { id: 'dictKey', 'aria-label': 'リックを書くキー（実音）' });
     el.level = U.seg([[0, 'すべて'], [1, 'Lv.1 やさしい'], [2, 'Lv.2'], [3, 'Lv.3 むずかしい']], D.level, v => { D.level = v; D.limit = 24; renderList(); }, '難しさ');
     el.degrees = U.switchEl('コードに対する度数を表示', D.degrees, v => { D.degrees = v; renderList(); }, '各音が、コードのルートから見て何度かを示します');
-    el.concert = U.seg([[true, '実音'], [false, '楽器の楽譜']], st().concert, v => { App.set({ concert: v }, 'solo'); renderList(); }, '譜面の書き方');
+    el.concert = U.seg([[true, '実音'], [false, '移調譜']], st().concert, v => { App.set({ concert: v }, 'solo'); renderList(); }, '譜面の書き方');
     root.appendChild(h('div', { class: 'card' },
       h('div', { class: 'card-h' }, h('h2', null, 'リック辞典'), h('span', { class: 'muted' }, '全 ' + total + ' 本')),
       h('p', { class: 'muted' }, 'コードの種類・進行ごとに、そのまま使えるリックを集めました。「▶」で伴奏つきで聴けます。ソロの自動作成も、ここから選んでいます。'),
       h('div', { class: 'row gap wrap' }, el.q),
       h('div', { class: 'fields mt' },
         U.field('書くキー（実音）', el.key, 'ここで選んだキーの ii–V–I などとして、楽譜と音が出ます'),
-        U.field('難しさ', el.level), U.field('譜面の書き方', el.concert, '「楽器の楽譜」は、ソロの楽器（' + App.soloInstDef().jp + '）の移調譜です'), h('div', { class: 'field' }, el.degrees))));
+        U.field('難しさ', el.level), U.field('譜面の書き方', el.concert, '「移調譜」は、ソロの楽器（' + App.soloInstDef().jp + '）の人が読む楽譜です'), h('div', { class: 'field' }, el.degrees))));
 
     // 分類ボタン
     el.nav = h('div', { class: 'card dict-nav' });

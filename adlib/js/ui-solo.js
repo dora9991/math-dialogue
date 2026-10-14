@@ -52,7 +52,7 @@
     el.inst = U.select(instOptions(), st().soloInst, v => App.setSoloParams({ soloInst: v }), { id: 'soloInst', 'aria-label': 'ソロの楽器' });
     el.level = U.seg(LEVELS, st().level, v => App.setSoloParams({ level: v }), '難しさ');
     el.density = U.seg(DENS, st().density, v => App.setSoloParams({ density: v }), '音の多さ');
-    el.concert = U.seg([[true, '実音（コンサートピッチ）'], [false, '楽器の楽譜（移調あり）']], st().concert, v => { App.set({ concert: v }, 'solo'); refreshInstOptions(); }, '譜面の書き方');
+    el.concert = U.seg([[true, '実音', '鳴っている音のまま（コンサートピッチ）'], [false, '移調譜', 'その楽器の人が読む楽譜（アルトは長6度上、トランペット・テナーは長2度・長9度上、ギターは1オクターブ上）']], st().concert, v => { App.set({ concert: v }, 'solo'); refreshInstOptions(); }, '譜面の書き方');
     const newBtn = h('button', { type: 'button', class: 'btn primary', onclick: () => App.newSolo(), title: '同じコード進行で、別のソロを作る' }, '🎲 新しいソロ');
     const listenBtn = h('button', { type: 'button', class: 'btn', onclick: () => { if (st().soloMode === 'off') { st().soloMode = 'same'; App.ui.soloSel.value = 'same'; } App.play(); } }, '▶ 伴奏とソロを聴く');
     el.seed = h('span', { class: 'muted small', id: 'soloSeed' });
@@ -63,7 +63,7 @@
         U.field('楽器', el.inst),
         U.field('難しさ', el.level, 'むずかしいほど、ビバップ風・オルタード・16分音符が混ざります'),
         U.field('音の多さ', el.density, 'まばらなほど、間（休符）が多くなります'),
-        U.field('譜面の書き方', el.concert, '移調楽器は、実際に楽譜を読む音で書きます')),
+        U.field('譜面の書き方', el.concert, '実音＝鳴っている音のまま。移調譜＝その楽器の人が読む楽譜')),
       el.seed));
 
     el.scoreWrap = h('div', { class: 'score-wrap', id: 'scoreWrap' });
