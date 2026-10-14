@@ -1849,7 +1849,7 @@ async function refreshTests(){
           ${quizOn
             ? `<button class="btn" id="go" style="flex:1">この小テストをはじめる</button>`
             : `<div class="notice" style="flex:1">小テストは先生がまだ配布していません。</div>`}
-          ${S.sid && reflOn ? `<button class="btn ghost" id="go-reflect" style="flex:none">📝 振り返り</button>` : ""}
+          ${S.sid && reflOn ? `<button class="btn ghost" id="go-reflect" style="flex:none;width:auto">📝 振り返り</button>` : ""}
         </div>
         ${!S.sid ? `<div class="notice warn" style="margin-top:8px">振り返りを書くには先にログインしてください。</div>` : ""}
         <div id="idleSlot"></div>`;
