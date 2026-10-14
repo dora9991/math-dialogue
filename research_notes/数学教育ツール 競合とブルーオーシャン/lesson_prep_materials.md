@@ -244,7 +244,7 @@
 
 **Eureka Math / EngageNY（Great Minds）**
 - ライセンスは CC BY-NC-SA 3.0（第三者のサイトの表記。Great Minds 本体のページでは未確認） — [ASSISTments](https://www.assistments.org/copyright-notice/great-minds-copyright-notice)
-- 成り立ち：Great Minds がニューヨーク州教育局のために Eureka Math を作り、EngageNY として配布した。2012年に助成を受けた — [OER Commons](https://oercommons.org/authoring/56715-oer-options-for-district-adoption-goopen-remix/view)(検索抜粋)
+- 成り立ち：Great Minds がニューヨーク州教育局のために Eureka Math を作り、EngageNY として配布した。Great Minds のパンフレットでは、EngageNY Math を作るために2012年に助成を受けたとされる。⚠2024以前 — [Great Minds パンフレット（issuu）](https://issuu.com/docs/ca7717bc47a644549307d812507f3d5e)(検索抜粋。どのパンフレットかは特定できていない)。OER として教育委員会が採用するときの選択肢の一つとしても挙げられている — [OER Commons「OER Options for District Adoption」](https://oercommons.org/authoring/56715-oer-options-for-district-adoption-goopen-remix/view)(検索結果に出たページで、本文は未確認)
 - 米国の教師の50％以上が Eureka Math か EngageNY 版にアクセスしたことがある（RAND の数字。Great Minds のパンフレットでの引用。どのパンフレットかは特定できていない）。⚠2024以前 — [Great Minds パンフレット（issuu）](https://issuu.com/docs/ca7717bc47a644549307d812507f3d5e)(検索抜粋)
 
 **Teachers Pay Teachers（TPT）**
