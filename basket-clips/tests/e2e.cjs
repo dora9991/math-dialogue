@@ -19,9 +19,9 @@ let pass = 0, fail = 0;
 const ok = (c, name, extra) => { if (c) { pass++; console.log('  ok  ', name); } else { fail++; console.log('  FAIL', name, extra !== undefined ? JSON.stringify(extra) : ''); } };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function ensureVideo(name, segs) {
+async function ensureVideo(name, segs, rim) {
   const file = path.join(WORK, name);
-  if (!fs.existsSync(file) || !fs.existsSync(file + '.json')) { console.log(`（合成動画を作っています：${name} ${segs}）`); await make(file, segs, 30, 4); }
+  if (!fs.existsSync(file) || !fs.existsSync(file + '.json')) { console.log(`（合成動画を作っています：${name} ${segs}${rim ? '・リングに当たるシュート入り' : ''}）`); await make(file, segs, 30, 4, rim || null); }
   return { file, truth: JSON.parse(fs.readFileSync(file + '.json', 'utf8')) };
 }
 
@@ -282,6 +282,24 @@ const tabText = (page) => page.evaluate(() => [0, 1].map((i) => document.querySe
       ok(P3.errors.length === 0, 'ページのエラーがない', P3.errors.slice(0, 3));
       await page3.close();
     }
+
+    // リングに当たってから入る得点・ゴールの追跡（この 60 秒で、もとのエンジンはゴールを 40 秒見失い、リングを回って入った 2 本を落とした）
+    console.log('\n■ リングに当たってから入る得点（ゴールを見失わない）');
+    const v4 = await ensureVideo('rim360.mp4', '360-420', { makes: 0.7, misses: 0.6 });
+    const P4 = await openPage(browser, srv.url);
+    const page4 = P4.page;
+    await page4.evaluate(() => localStorage.clear());
+    await openVideo(page4, v4.file);
+    for (const i of [0, 1]) await markGoal(page4, i, v4.truth.marks[i]);
+    await page4.click('.teambtn[data-hoop="0"][data-team="1"]');
+    const r4 = await analyse(page4);
+    const cmp4 = compare(r4.items, v4.truth);
+    cmp4.rows.forEach((r) => console.log(`     正解 ${r.s.t.toFixed(1)} ${r.s.rim || 'きれい'} ${r.s.team ? '赤' : '青'} → ${r.it ? `${r.it.t.toFixed(1)} ${r.it.team ? '入れられた' : '入れた'}` : '★見つからない'}`));
+    const rimIns = cmp4.rows.filter((r) => r.s.rim);
+    ok(rimIns.length >= 2 && rimIns.every((r) => r.it && r.it.team === r.s.team), `リングを転がって・回って入った得点 ${rimIns.length} 本を、正しいチームで見つけた`, rimIns.map((r) => [r.s.t, r.s.rim, !!r.it]));
+    ok(cmp4.found === cmp4.rows.length && cmp4.teamOk === cmp4.found, `この区間の得点 ${cmp4.rows.length} 本をすべて見つけた`, { found: cmp4.found, teamOk: cmp4.teamOk });
+    ok(P4.errors.length === 0, 'ページのエラーがない', P4.errors.slice(0, 3));
+    await page4.close();
   } catch (e) {
     fail++;
     console.log('  FAIL 途中で止まりました:', e && e.stack || e);
