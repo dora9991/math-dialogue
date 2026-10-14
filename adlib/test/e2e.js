@@ -18,7 +18,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push('console.error: ' + m.text()); });
   page.on('dialog', d => d.accept('E2Eテスト譜面'));
-  const url = 'file://' + path.resolve(__dirname, '../index.html');
+  const url = 'file://' + (process.env.ADLIB_FILE ? path.resolve(process.env.ADLIB_FILE) : path.resolve(__dirname, '../index.html'));
   await page.goto(url);
   await page.waitForTimeout(500);
 

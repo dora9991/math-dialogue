@@ -231,12 +231,14 @@
     if (!App.ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) throw new Error('このブラウザは音の合成（Web Audio）に対応していません');
+      // iPhone の消音スイッチがオンでも鳴らす（Safari 16.4 以降）
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* 対応していないブラウザ */ }
       App.ctx = new AC({ latencyHint: 'interactive' });
       App.engine = new Au.Engine(App.ctx);
       App.player = new Au.Player(App.engine);
       App.player.on('stop', () => { stopFrames(); setPlayKind(null); }).on('end', () => { stopFrames(); setPlayKind(null); });
     }
-    if (App.ctx.state === 'suspended') App.ctx.resume();
+    if (App.ctx.state !== 'running') { const p = App.ctx.resume(); if (p && p.catch) p.catch(() => {}); }
     App.applyAudio();
     return App.engine;
   };

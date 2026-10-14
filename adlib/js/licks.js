@@ -41,7 +41,7 @@
     // ---- 2コード ----
     'V-I': { group: 'two', jp: 'V7 → Imaj7（メジャーへ解決）', ref: ['G7', 'Cmaj7'], note: '5度下行の解決。V7 から I の 3rd や 5th へ' },
     'V-i': { group: 'two', jp: 'V7 → Im7（マイナーへ解決）', ref: ['G7alt', 'Cm7'], note: 'オルタードやフリジアン・ドミナントでマイナーへ' },
-    'ii-V': { group: 'two', jp: 'IIm7 → V7（ツーファイブ）', ref: ['Dm7', 'G7'], note: '解決先がなくても使える ii–V（次の I は別のフレーズで）' },
+    'ii-V': { group: 'two', jp: 'IIm7 → V7（ツーファイブ）', ref: ['Dm7', 'G7'], note: '2-5。解決先がなくても使える ii–V（次の I は別のフレーズで）' },
     'iio-V': { group: 'two', jp: 'IIm7♭5 → V7（マイナーのツーファイブ）', ref: ['Dm7b5', 'G7alt'], note: 'マイナーの ii–V（解決先がなくても）' },
     'bII-I': { group: 'two', jp: '♭II7 → Imaj7（裏コードの解決）', ref: ['Db7', 'Cmaj7'], note: '半音下からの解決。リディアン♭7' },
     'bII-i': { group: 'two', jp: '♭II7 → Im7（裏コードからマイナーへ）', ref: ['Db7', 'Cm7'], note: '半音下からマイナーへ' },
@@ -49,8 +49,8 @@
     'V-I7': { group: 'two', jp: 'V7 → I7（ドミナントの連鎖・ブルースの I7→IV7）', ref: ['C7', 'F7'], note: 'ドミナント7th が5度下行でつながる。ブルースの I7→IV7' },
     'IV7-I7': { group: 'two', jp: 'IV7 → I7（ブルースの下属→主）', ref: ['F7', 'C7'], note: 'ブルースの IV7→I7' },
     // ---- 3コード ----
-    'ii-V-I': { group: 'three', jp: 'ii–V–I（メジャー）', ref: ['Dm7', 'G7', 'Cmaj7'], note: 'ジャズの基本。ii の準備 → V の緊張 → I の着地' },
-    'ii-V-i': { group: 'three', jp: 'ii–V–i（マイナー）', ref: ['Dm7b5', 'G7alt', 'Cm7'], note: 'マイナーの ii–V–i。♭9・♭13 のオルタード系' },
+    'ii-V-I': { group: 'three', jp: 'ii–V–I（ツーファイブワン・メジャー）', ref: ['Dm7', 'G7', 'Cmaj7'], note: '2-5-1。ジャズの基本。ii の準備 → V の緊張 → I の着地' },
+    'ii-V-i': { group: 'three', jp: 'ii–V–i（ツーファイブワン・マイナー）', ref: ['Dm7b5', 'G7alt', 'Cm7'], note: 'マイナーの 2-5-1。♭9・♭13 のオルタード系' },
     'ii-bII-I': { group: 'three', jp: 'ii–♭II7–I（裏コードのツーファイブ）', ref: ['Dm7', 'Db7', 'Cmaj7'], note: 'V7 を裏コードにした ii–V–I。ルートが半音ずつ下がる' },
     'iv-bVII-I': { group: 'three', jp: 'バックドア ii–V（IVm7–♭VII7–I）', ref: ['Fm7', 'Bb7', 'Cmaj7'], note: 'サブドミナント・マイナーから入る裏口の ii–V' },
     // ---- 4コード（ターンアラウンド） ----
