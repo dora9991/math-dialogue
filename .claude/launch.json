@@ -92,6 +92,12 @@
       "port": 8784
     },
     {
+      "name": "startup-kit",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8786", "--directory", "startup-kit"],
+      "port": 8786
+    },
+    {
       "name": "home",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8785", "--directory", "home"],
