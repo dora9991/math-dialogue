@@ -138,7 +138,9 @@
     const box = U.clear(el.list), more = U.clear(el.more);
     if (!list.length) { box.appendChild(h('p', { class: 'empty' }, 'あてはまるリックがありません。条件をゆるめてみてください。')); return; }
     const K = st().dictKey, shown = list.slice(0, D.limit);
-    const width = Math.max(280, Math.min(640, (el.list.clientWidth || 600) - 4));
+    // 1枚のカードの幅（CSS の grid：最小400px・すき間10px）から、楽譜の幅を決める
+    const lw = el.list.clientWidth || 600, nCols = Math.max(1, Math.floor((lw + 10) / 410)), cardW = (lw - 10 * (nCols - 1)) / nCols;
+    const width = Math.max(260, Math.min(640, Math.floor(cardW - 28)));
     // 重くならないよう、少しずつ描く
     let i = 0;
     const step = () => {

@@ -215,8 +215,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   }
 
   /* 10) 共有リンク：別のブラウザ（保存なし）で開くと、同じコード譜・曲名・スタイルが出る */
-  await page.evaluate(() => AL.App.loadPreset('bossa'));
+  await page.evaluate(() => { const A = AL.App; A.loadPreset('bossa'); A.setSoloParams({ soloSeed: 4242, level: 3, density: 2, soloInst: 'tenorsax' }); A.swapLick(1, A.suggest(A.solo.decisions[1].i0, 5).list.find(l => l.id !== A.solo.decisions[1].id).id); });
   const shareUrl = await page.evaluate(() => AL.App.shareUrl());
+  const soloKey = await page.evaluate(() => JSON.stringify(AL.App.solo.events.map(e => [e.t, e.midi, e.dur])));
   const ctx2 = await browser.newContext({ viewport: { width: 900, height: 800 } });
   const page2 = await ctx2.newPage();
   const errors2 = [];
@@ -226,6 +227,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const sh = await page2.evaluate(() => ({ text: AL.App.st.text, style: AL.App.st.style, title: AL.App.st.title, bars: document.querySelectorAll('#chartGrid .bar').length }));
   const want = await page.evaluate(() => ({ text: AL.App.st.text, style: AL.App.st.style, title: AL.App.st.title }));
   ok(sh.text === want.text && sh.style === 'bossa' && sh.title === want.title && sh.bars === 8, '共有リンクで同じ譜面が開く：' + JSON.stringify(sh).slice(0, 120));
+  const soloKey2 = await page2.evaluate(() => JSON.stringify(AL.App.solo.events.map(e => [e.t, e.midi, e.dur])));
+  ok(soloKey === soloKey2 && soloKey.length > 100, '共有リンクで同じソロ（差しかえたリックも）が再現される');
+  ok(await page2.evaluate(() => AL.App.st.soloInst === 'tenorsax' && AL.App.st.level === 3 && AL.App.st.soloSeed === 4242), '共有リンクで楽器・難しさ・番号も再現される');
   ok(errors2.length === 0, '共有リンクのページのエラー：' + errors2.join(' | '));
   await ctx2.close();
 

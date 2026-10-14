@@ -5837,8 +5837,15 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   }
 
   /* ---------------- 共有リンク ---------------- */
+  // 共有リンク：コード譜・スタイル・テンポに加えて、ソロの条件（番号・難しさ・音の多さ・楽器）と差しかえたリックも入れる。
+  // 開いた人にも、同じソロが同じように鳴る
   App.shareHash = function () {
-    const data = { t: st.text, s: st.style, p: st.tempo, ti: st.title, k: st.keyOverride };
+    const base = S.generate(App.hs, App.an, App.soloOpts());
+    const swaps = [];
+    App.solo.decisions.forEach((d, i) => { if (!base.decisions[i] || base.decisions[i].id !== d.id) swaps.push([i, d.id]); });
+    const data = { t: st.text, s: st.style, p: st.tempo, ti: st.title, k: st.keyOverride, ss: st.soloSeed, lv: st.level, dn: st.density, si: st.soloInst, sd: st.seed, cn: st.concert ? 1 : 0 };
+    if (st.swing != null) data.sw = st.swing;
+    if (swaps.length) data.sx = swaps;
     const json = JSON.stringify(data);
     const b64 = btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     return '#s=' + b64;
@@ -5851,7 +5858,16 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       const b64 = m[1].replace(/-/g, '+').replace(/_/g, '/');
       const json = decodeURIComponent(escape(atob(b64 + '==='.slice((b64.length + 3) % 4))));
       const d = JSON.parse(json);
-      return { text: d.t, style: d.s, tempo: d.p, title: d.ti, keyOverride: d.k, presetId: '' };
+      const patch = { text: d.t, style: d.s, tempo: d.p, title: d.ti, keyOverride: d.k, presetId: '' };
+      if (d.ss != null) patch.soloSeed = d.ss;
+      if (d.lv != null) patch.level = d.lv;
+      if (d.dn != null) patch.density = d.dn;
+      if (d.si != null) patch.soloInst = d.si;
+      if (d.sd != null) patch.seed = d.sd;
+      if (d.sw != null) patch.swing = d.sw;
+      if (d.cn != null) patch.concert = !!d.cn;
+      App._shareSwaps = Array.isArray(d.sx) ? d.sx : null;
+      return patch;
     } catch (e) { return null; }
   }
 
@@ -5924,6 +5940,14 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     if (shared) ns = sanitize(Object.assign({}, ns, shared));
     Object.assign(st, ns);   // st の入れ物は同じまま、中身だけ入れかえる（ほかのファイルが持っている参照を保つ）
     App.derive();
+    // 共有リンクにあった、差しかえたリック
+    if (shared && App._shareSwaps) {
+      App._shareSwaps.forEach(sw => {
+        const i = sw && sw[0], id = sw && sw[1], d = App.solo.decisions[i], lk = L.byId[id];
+        if (d && lk && lk.segs.length === L.byId[d.id].segs.length) App.solo = S.swap(App.hs, App.an, App.solo, i, id);
+      });
+      App._shareSwaps = null;
+    }
     buildTransport();
     refreshTransport();
     App.emit('init');
@@ -5932,6 +5956,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     App.emit('chart');
     App.emit('solo');
     document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && App.playKind) { App.stop(); return; }
       if (e.code !== 'Space' || e.repeat) return;
       const tg = e.target;
       if (tg && (/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(tg.tagName) || tg.isContentEditable)) return;
@@ -5999,7 +6024,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     const saveBtn = h('button', { type: 'button', class: 'btn sm', onclick: saveCurrent }, '保存');
     const delBtn = h('button', { type: 'button', class: 'btn sm ghost', onclick: deleteSaved }, '削除');
     const copyBtn = h('button', { type: 'button', class: 'btn sm', onclick: () => copyText(el.text.value, 'コード譜をコピーしました') }, 'コピー');
-    const shareBtn = h('button', { type: 'button', class: 'btn sm', title: 'このコード譜を開くリンクをコピー', onclick: () => copyText(App.shareUrl(), '共有リンクをコピーしました') }, 'リンク');
+    const shareBtn = h('button', { type: 'button', class: 'btn sm', title: 'このコード譜と、いまのソロ（差しかえたリックも）をそのまま開けるリンクをコピー', onclick: () => copyText(App.shareUrl(), '共有リンクをコピーしました') }, 'リンク');
     root.appendChild(h('div', { class: 'card' },
       h('div', { class: 'card-h' }, h('h2', null, 'コード譜'), h('div', { class: 'row gap' }, el.preset)),
       h('div', { class: 'row gap wrap mt' }, el.title, el.saved, saveBtn, delBtn),
@@ -6947,7 +6972,9 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     const box = U.clear(el.list), more = U.clear(el.more);
     if (!list.length) { box.appendChild(h('p', { class: 'empty' }, 'あてはまるリックがありません。条件をゆるめてみてください。')); return; }
     const K = st().dictKey, shown = list.slice(0, D.limit);
-    const width = Math.max(280, Math.min(640, (el.list.clientWidth || 600) - 4));
+    // 1枚のカードの幅（CSS の grid：最小400px・すき間10px）から、楽譜の幅を決める
+    const lw = el.list.clientWidth || 600, nCols = Math.max(1, Math.floor((lw + 10) / 410)), cardW = (lw - 10 * (nCols - 1)) / nCols;
+    const width = Math.max(260, Math.min(640, Math.floor(cardW - 28)));
     // 重くならないよう、少しずつ描く
     let i = 0;
     const step = () => {
@@ -7087,7 +7114,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
         h('li', null, h('b', null, 'コードの役割を知る'), '　譜面のコードをタップすると、そのコードが ii・V・I のどれか、セカンダリー・ドミナントか裏コードか…と、役割をいくつも読みとって教えます。'),
         h('li', null, h('b', null, 'ソロを聴く・見る'), '　「② ソロ」で、役割に合うリックをつないだソロが楽譜になって鳴ります。フレーズをタップして、別のリックに差しかえられます。'),
         h('li', null, h('b', null, 'リックを集める'), '　「③ リック辞典」には、ドミナント・ii–V–I・ターンアラウンドなど、種類ごとのリックが入っています。キーを変えて、楽譜と音で確かめられます。')),
-      h('p', { class: 'muted small' }, '操作は、このブラウザの中だけで完結します（コード譜や設定の保存も、このブラウザの中だけ）。')));
+      h('p', { class: 'muted small' }, 'キーボード：スペース＝再生／停止、Esc＝停止。操作は、このブラウザの中だけで完結します（コード譜や設定の保存も、このブラウザの中だけ）。')));
 
     /* --- 楽器 --- */
     el.comp = U.select(Au.INSTRUMENTS.comp.map(i => [i.id, i.jp]), st().comp, v => App.setBacking({ comp: v }), { 'aria-label': 'コードの楽器' });

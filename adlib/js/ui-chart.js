@@ -50,7 +50,7 @@
     const saveBtn = h('button', { type: 'button', class: 'btn sm', onclick: saveCurrent }, '保存');
     const delBtn = h('button', { type: 'button', class: 'btn sm ghost', onclick: deleteSaved }, '削除');
     const copyBtn = h('button', { type: 'button', class: 'btn sm', onclick: () => copyText(el.text.value, 'コード譜をコピーしました') }, 'コピー');
-    const shareBtn = h('button', { type: 'button', class: 'btn sm', title: 'このコード譜を開くリンクをコピー', onclick: () => copyText(App.shareUrl(), '共有リンクをコピーしました') }, 'リンク');
+    const shareBtn = h('button', { type: 'button', class: 'btn sm', title: 'このコード譜と、いまのソロ（差しかえたリックも）をそのまま開けるリンクをコピー', onclick: () => copyText(App.shareUrl(), '共有リンクをコピーしました') }, 'リンク');
     root.appendChild(h('div', { class: 'card' },
       h('div', { class: 'card-h' }, h('h2', null, 'コード譜'), h('div', { class: 'row gap' }, el.preset)),
       h('div', { class: 'row gap wrap mt' }, el.title, el.saved, saveBtn, delBtn),

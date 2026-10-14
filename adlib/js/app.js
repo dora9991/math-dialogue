@@ -363,8 +363,15 @@
   }
 
   /* ---------------- 共有リンク ---------------- */
+  // 共有リンク：コード譜・スタイル・テンポに加えて、ソロの条件（番号・難しさ・音の多さ・楽器）と差しかえたリックも入れる。
+  // 開いた人にも、同じソロが同じように鳴る
   App.shareHash = function () {
-    const data = { t: st.text, s: st.style, p: st.tempo, ti: st.title, k: st.keyOverride };
+    const base = S.generate(App.hs, App.an, App.soloOpts());
+    const swaps = [];
+    App.solo.decisions.forEach((d, i) => { if (!base.decisions[i] || base.decisions[i].id !== d.id) swaps.push([i, d.id]); });
+    const data = { t: st.text, s: st.style, p: st.tempo, ti: st.title, k: st.keyOverride, ss: st.soloSeed, lv: st.level, dn: st.density, si: st.soloInst, sd: st.seed, cn: st.concert ? 1 : 0 };
+    if (st.swing != null) data.sw = st.swing;
+    if (swaps.length) data.sx = swaps;
     const json = JSON.stringify(data);
     const b64 = btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     return '#s=' + b64;
@@ -377,7 +384,16 @@
       const b64 = m[1].replace(/-/g, '+').replace(/_/g, '/');
       const json = decodeURIComponent(escape(atob(b64 + '==='.slice((b64.length + 3) % 4))));
       const d = JSON.parse(json);
-      return { text: d.t, style: d.s, tempo: d.p, title: d.ti, keyOverride: d.k, presetId: '' };
+      const patch = { text: d.t, style: d.s, tempo: d.p, title: d.ti, keyOverride: d.k, presetId: '' };
+      if (d.ss != null) patch.soloSeed = d.ss;
+      if (d.lv != null) patch.level = d.lv;
+      if (d.dn != null) patch.density = d.dn;
+      if (d.si != null) patch.soloInst = d.si;
+      if (d.sd != null) patch.seed = d.sd;
+      if (d.sw != null) patch.swing = d.sw;
+      if (d.cn != null) patch.concert = !!d.cn;
+      App._shareSwaps = Array.isArray(d.sx) ? d.sx : null;
+      return patch;
     } catch (e) { return null; }
   }
 
@@ -450,6 +466,14 @@
     if (shared) ns = sanitize(Object.assign({}, ns, shared));
     Object.assign(st, ns);   // st の入れ物は同じまま、中身だけ入れかえる（ほかのファイルが持っている参照を保つ）
     App.derive();
+    // 共有リンクにあった、差しかえたリック
+    if (shared && App._shareSwaps) {
+      App._shareSwaps.forEach(sw => {
+        const i = sw && sw[0], id = sw && sw[1], d = App.solo.decisions[i], lk = L.byId[id];
+        if (d && lk && lk.segs.length === L.byId[d.id].segs.length) App.solo = S.swap(App.hs, App.an, App.solo, i, id);
+      });
+      App._shareSwaps = null;
+    }
     buildTransport();
     refreshTransport();
     App.emit('init');
@@ -458,6 +482,7 @@
     App.emit('chart');
     App.emit('solo');
     document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && App.playKind) { App.stop(); return; }
       if (e.code !== 'Space' || e.repeat) return;
       const tg = e.target;
       if (tg && (/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(tg.tagName) || tg.isContentEditable)) return;
