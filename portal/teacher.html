@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>数学ポータル｜先生用</title>
+<script src="config.js"></script>
+<script src="common.js"></script>
+<!-- 小テストの回（CH）と、アカウントIDの決まりは quiz と共通。応用チャレンジの回（SETS）は applied と共通 -->
+<script src="../quiz/quizdata.js"></script>
+<script src="../applied/problems.js"></script>
+<!-- QRコード（qrcode-generator, MIT。応用チャレンジと同じもの） -->
+<script src="../applied/vendor/qrcode.js"></script>
+<style>
+:root{
+  --ink:#16202e;
+  --ink-soft:#4a5768;
+  --ai:#24467d;
+  --ai-weak:#e8eef7;
+  --shu:#c8322d;
+  --shu-weak:#fbecea;
+  --kin:#8a5a12;
+  --kin-weak:#fbf3e2;
+  --paper:#fcfcfa;
+  --rule:#d9dfe7;
+  --grid:#e6ebf1;
+  --ok:#1d6b4f;
+  --ok-weak:#e6f2ec;
+  --mincho:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP",serif;
+  --gothic:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+  --mono:"SFMono-Regular",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--gothic);color:var(--ink);background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;line-height:1.7;-webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px 96px}
+header.sheet{
+  background:#fff;border:1px solid var(--rule);border-top:4px solid var(--ai);
+  margin:20px 0 0;padding:16px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+header.sheet .ttl{flex:1;min-width:200px}
+h1{font-family:var(--mincho);font-size:20px;font-weight:600;margin:0;letter-spacing:.04em}
+.sub{font-size:13px;color:var(--ink-soft);margin-top:2px}
+.who{font-size:13px;color:var(--ink-soft);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.card{background:#fff;border:1px solid var(--rule);padding:18px 20px;margin-top:14px}
+.card h2{font-family:var(--mincho);font-size:16px;margin:0 0 12px;font-weight:600;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.card h2 .aside{margin-left:auto;font-family:var(--gothic);font-size:12.5px;font-weight:400;color:var(--ink-soft)}
+label.f{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px}
+select,input[type=text],input[type=password],input[type=number],input[type=date]{
+  font:inherit;font-size:15px;padding:9px 11px;width:100%;
+  border:1px solid var(--rule);background:#fff;color:var(--ink);border-radius:2px;
+}
+input[type=text],input[type=password],input[type=number]{font-family:var(--mono)}
+select:focus,input:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--ai);outline-offset:1px}
+button{font:inherit;cursor:pointer;border-radius:2px;border:1px solid transparent}
+.btn{background:var(--ai);color:#fff;padding:11px 18px;font-weight:600;font-size:15px}
+.btn.wide{width:100%}
+.btn:disabled{background:#9aa6b6;cursor:not-allowed;border-color:#9aa6b6}
+.btn.ghost{background:#fff;color:var(--ai);border-color:var(--ai)}
+.btn.mini{padding:6px 12px;font-size:13px;font-weight:400}
+.btn.danger{background:#fff;color:var(--shu);border-color:var(--shu)}
+.linklike{background:none;border:0;padding:0;color:var(--ink-soft);text-decoration:underline;font-size:13px}
+.hint{font-size:12.5px;color:var(--ink-soft);margin-top:6px}
+.notice{border:1px solid var(--rule);background:#fff;padding:10px 14px;font-size:13px;margin-top:10px}
+.notice.warn{border-color:var(--shu);background:var(--shu-weak);color:#7d211d}
+.notice.ok{border-color:var(--ok);background:var(--ok-weak);color:#12503a}
+.hidden{display:none !important}
+a{color:var(--ai)}
+.row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.row > div{flex:1;min-width:140px}
+
+/* クラス選択 */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{font-size:15px;padding:9px 16px;background:#fff;border:1px solid var(--rule);color:var(--ink);min-width:88px}
+.chips button[aria-pressed=true]{background:var(--ai);border-color:var(--ai);color:#fff;font-weight:600}
+
+/* 授業を進める */
+.lessons{display:grid;gap:6px}
+.lrow{display:flex;align-items:center;gap:10px;border:1px solid var(--rule);padding:8px 12px;flex-wrap:wrap}
+.lrow.on{border-left:4px solid var(--ai);background:#fbfcfe}
+.lrow .no{font-family:var(--mono);color:var(--ai);font-size:13px;flex:none;min-width:34px}
+.lrow .nm{flex:1;min-width:120px}
+.lrow .acts{display:flex;gap:6px;flex-wrap:wrap}
+.lrow .acts button{min-width:118px}
+.lrow .acts button[aria-pressed=true]{background:var(--ai);color:#fff;border-color:var(--ai)}
+
+/* 今日のようす */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.stat{border:1px solid var(--rule);padding:10px 12px}
+.stat .k{font-size:12px;color:var(--ink-soft)}
+.stat .v{font-family:var(--mincho);font-size:24px;font-variant-numeric:tabular-nums;line-height:1.35}
+.stat .v small{font-size:13px;color:var(--ink-soft);margin-left:2px}
+.stat .miss{font-size:12px;color:var(--shu);margin-top:2px;word-break:break-all}
+.follow{border:1px solid var(--shu);background:var(--shu-weak);padding:10px 14px;margin-top:12px}
+.follow h3{font-size:14px;margin:0 0 4px;color:#7d211d}
+.follow .item{font-size:13.5px;padding:4px 0;border-top:1px dashed #e7b9b5}
+.follow .item:first-of-type{border-top:0}
+.tablewrap{overflow-x:auto;margin-top:12px;border:1px solid var(--rule)}
+table.mx{border-collapse:collapse;width:100%;font-size:13.5px;background:#fff}
+table.mx th,table.mx td{border-bottom:1px solid var(--rule);padding:6px 10px;text-align:left;white-space:nowrap;vertical-align:top}
+table.mx th{background:#f4f6fa;font-weight:600;font-size:12.5px;position:sticky;top:0}
+table.mx td.n{font-family:var(--mono);color:var(--ink-soft)}
+table.mx td.num{font-family:var(--mono)}
+table.mx tr.none td{background:var(--shu-weak)}
+table.mx .dim{color:#a3adbb}
+table.mx .low{color:var(--shu);font-weight:600}
+.badge{display:inline-block;font-size:11px;padding:0 6px;border:1px solid var(--rule);margin-left:4px;font-family:var(--mono)}
+.badge.warn{border-color:var(--shu);color:var(--shu)}
+.badge.good{border-color:var(--kin);color:var(--kin);background:var(--kin-weak)}
+.refl{border-top:1px dashed var(--rule);padding:8px 0;font-size:13.5px}
+.refl:first-child{border-top:0}
+.refl .hd{font-family:var(--mono);font-size:12.5px;color:var(--ink-soft)}
+.refl .cm{white-space:pre-wrap;word-break:break-word}
+.refl .rp{color:var(--ai);font-size:12.5px}
+.refl.flag{background:var(--shu-weak)}
+
+/* 先生の管理 */
+table.tc{border-collapse:collapse;width:100%;font-size:13.5px}
+table.tc th,table.tc td{border-bottom:1px solid var(--rule);padding:6px 8px;text-align:left;vertical-align:middle}
+table.tc th{font-size:12.5px;color:var(--ink-soft);font-weight:600}
+.clsgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.clsgrid label{display:flex;align-items:center;justify-content:center;gap:4px;border:1px solid var(--rule);padding:6px 2px;font-size:13px;cursor:pointer}
+.clsgrid input{margin:0}
+
+/* QR（投影） */
+#qrproj{position:fixed;inset:0;background:#fff;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px}
+#qrproj .close{position:fixed;top:14px;right:16px}
+#qrproj .cls{font-family:var(--mincho);font-size:36px;text-align:center}
+#qrproj .qr{padding:20px;background:#fff;border:1px solid var(--rule);width:min(360px,80vw)}
+#qrproj .qr svg{display:block;width:100%;height:auto}
+#qrproj .url{font-family:var(--mono);font-size:15px;color:var(--ink-soft);word-break:break-all;text-align:center}
+#qrproj .say{font-size:18px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="qrproj" class="hidden"></div>
+
+<script>
+/* ============================================================
+   設定
+   ============================================================ */
+const GRADES = [1,2,3], CLASSES = [1,2,3,4,5,6], CLASS_SIZE = 40;
+const AUTH_KEY = "portal:teacher";        // sessionStorage：このタブを閉じるまでログインを覚える
+const CLASS_KEY = "portal:teacher:class";  // localStorage：最後に開いたクラス
+const POLL_MS = 20000;                     // 「今日のようす」を自動で更新する間隔
+const OLD_TOOLS = [
+  { href:"../quiz/teacher.html",  name:"小テスト管理", note:"問題別・生徒別の分析、制限時間、Excel出力" },
+  { href:"../applied/teacher.html", name:"応用チャレンジ", note:"誰がどの問題で何を書いたか" },
+  { href:"../home/analyze.html",  name:"家庭学習ノート", note:"学習時間の推移、問題別の間違い" },
+];
+
+const store = Portal.local, sess = Portal.session;
+const SETS_LIST = window.SETS || [];
+const app = document.getElementById("app");
+const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clsLabel = c => { const m = /^(\d)-(\d)$/.exec(c||""); return m ? `${m[1]}年${m[2]}組` : String(c||""); };
+
+let T = null;          // ログイン中の先生 {teacher_id, display_name, school, is_admin, classes, open_classes}
+let AUTH = null;       // {id, pw}
+let CLS = null;        // 選んでいるクラス（例: 1-2）
+let DAY = null;        // 選んでいる日（null = 今日）
+let TODAY = null;      // サーバーの「今日」（日本時間）
+let DATA = null;       // portal_class_day の結果
+let REFL_OPEN = null;  // 「振り返りを読む」を開いているか（自動更新しても閉じないように覚える）
+let ROSTER_SIG = null; // いま名簿カードに出している名簿（変わったときだけ描き直す＝入力中の欄を消さない）
+let pollTimer = null;
+
+/* ============================================================
+   通信（先生のID・パスワードを毎回つける）
+   ============================================================ */
+async function call(fn, args){
+  const r = await Portal.rpc(fn, { p_teacher_id:AUTH.id, p_password:AUTH.pw, ...args });
+  if(r && r.error==="bad_login"){
+    logout("ログインが切れました（パスワードが変わったか、間違いが続いてロックされています）。もう一度ログインしてください。");
+    throw new Error("bad_login");
+  }
+  return r;
+}
+function failMsg(e){ return e && e.message==="bad_login" ? null : "通信エラーです。もう一度お試しください。"; }
+
+/* ============================================================
+   ログイン
+   ============================================================ */
+function renderLogin(msg){
+  stopPolling();
+  T = null; AUTH = null; CLS = null; DATA = null;
+  app.innerHTML = `
+    <header class="sheet"><div class="ttl"><h1>数学ポータル　先生用</h1>
+      <div class="sub">授業の開始・小テストの配布と、クラスの今日のようす</div></div></header>
+    <div class="card" style="max-width:440px">
+      <h2>ログイン</h2>
+      ${msg?`<div class="notice warn" style="margin:0 0 10px">${esc(msg)}</div>`:""}
+      <label class="f" for="lg-id">先生のID</label>
+      <input type="text" id="lg-id" autocomplete="username" spellcheck="false" autocapitalize="off">
+      <label class="f" for="lg-pw" style="margin-top:10px">パスワード</label>
+      <input type="password" id="lg-pw" autocomplete="current-password">
+      <button class="btn wide" id="lg-go" style="margin-top:14px">ログイン</button>
+      <div class="hint">IDは管理者の先生が発行します。パスワードを忘れたときも、管理者の先生に設定し直してもらってください。</div>
+    </div>`;
+  const go = async ()=>{
+    const id = document.getElementById("lg-id").value.trim().toLowerCase();
+    const pw = document.getElementById("lg-pw").value;
+    if(!id || !pw){ alert("IDとパスワードを入力してください。"); return; }
+    const btn = document.getElementById("lg-go");
+    btn.disabled = true; btn.textContent = "確認中…";
+    await tryLogin(id, pw);
+  };
+  document.getElementById("lg-go").onclick = go;
+  document.getElementById("lg-pw").addEventListener("keydown", e=>{ if(e.key==="Enter") go(); });
+  document.getElementById("lg-id").focus();
+}
+
+async function tryLogin(id, pw){
+  let r;
+  try{ r = await Portal.rpc("portal_teacher_login", {p_teacher_id:id, p_password:pw}); }
+  catch(e){ renderLogin("通信エラーです。もう一度お試しください。"); return; }
+  if(r && r.ok){
+    AUTH = {id, pw}; T = r.teacher;
+    sess.set(AUTH_KEY, JSON.stringify(AUTH));
+    renderMain();
+  } else if(r && r.error==="locked"){
+    sess.del(AUTH_KEY);
+    renderLogin("パスワードの間違いが続いたため、15分間ロックしています。時間をおくか、管理者の先生に設定し直してもらってください。");
+  } else {
+    sess.del(AUTH_KEY);
+    renderLogin("IDまたはパスワードが正しくありません。");
+  }
+}
+
+function logout(msg){
+  sess.del(AUTH_KEY);
+  renderLogin(msg);
+}
+
+/* ============================================================
+   メイン画面
+   ============================================================ */
+function renderMain(){
+  app.innerHTML = `
+    <header class="sheet">
+      <div class="ttl"><h1>数学ポータル　先生用</h1><div class="sub">学校コード ${esc(T.school)}</div></div>
+      <div class="who">
+        <span>${esc(T.display_name || T.teacher_id)}${T.is_admin?"（管理者）":""}</span>
+        <button class="linklike" id="pwchg">パスワード変更</button>
+        <button class="linklike" id="logout">ログアウト</button>
+      </div>
+    </header>
+    <div class="card hidden" id="pwcard"></div>
+    <div class="card" id="classcard"></div>
+    <div id="classarea"></div>
+    ${T.is_admin ? `<div class="card" id="admincard"></div>` : ""}`;
+  document.getElementById("logout").onclick = ()=>logout();
+  document.getElementById("pwchg").onclick = togglePwCard;
+  const saved = store.get(CLASS_KEY);
+  CLS = (T.open_classes||[]).includes(saved) ? saved : ((T.open_classes||[])[0] || null);
+  renderClassPicker();
+  renderClassArea();
+  if(T.is_admin) loadTeachers();
+}
+
+function togglePwCard(){
+  const box = document.getElementById("pwcard");
+  if(!box.classList.contains("hidden")){ box.classList.add("hidden"); return; }
+  box.classList.remove("hidden");
+  box.innerHTML = `
+    <h2>パスワードを変える</h2>
+    <div class="row">
+      <div><label class="f" for="pw-new">新しいパスワード（6文字以上）</label><input type="password" id="pw-new" autocomplete="new-password"></div>
+      <div><label class="f" for="pw-new2">もう一度</label><input type="password" id="pw-new2" autocomplete="new-password"></div>
+      <div style="flex:none"><button class="btn" id="pw-go">変更する</button></div>
+    </div>`;
+  document.getElementById("pw-go").onclick = async ()=>{
+    const a = document.getElementById("pw-new").value, b = document.getElementById("pw-new2").value;
+    if(a.length < 6){ alert("6文字以上にしてください。"); return; }
+    if(a !== b){ alert("2回目の入力が一致しません。"); return; }
+    try{
+      const r = await call("portal_teacher_set_password", {p_new:a});
+      if(r && r.ok){
+        AUTH.pw = a; sess.set(AUTH_KEY, JSON.stringify(AUTH));
+        box.innerHTML = `<div class="notice ok" style="margin:0">パスワードを変更しました。</div>`;
+        setTimeout(()=>box.classList.add("hidden"), 2500);
+      } else alert("変更できませんでした。");
+    }catch(e){ const m = failMsg(e); if(m) alert(m); }
+  };
+}
+
+/* ---------- クラスを選ぶ ---------- */
+function renderClassPicker(){
+  const box = document.getElementById("classcard");
+  const list = T.open_classes || [];
+  box.innerHTML = `
+    <h2>クラスを選ぶ${T.is_admin?`<span class="aside">管理者は学校のどのクラスも開けます</span>`:""}</h2>
+    ${list.length ? `<div class="chips">${list.map(c=>`<button data-cls="${esc(c)}" aria-pressed="${c===CLS}">${esc(clsLabel(c))}</button>`).join("")}</div>`
+      : T.is_admin ? `<div class="notice" style="margin:0">まだ開けるクラスがありません。下の「ほかのクラスを開く」で選ぶか、「先生の管理」で自分の担当クラスを設定してください。</div>`
+      : `<div class="notice warn" style="margin:0">担当クラスがまだ登録されていません。管理者の先生に、担当クラスを設定してもらってください。</div>`}
+    ${T.is_admin ? `
+      <div class="row" style="margin-top:12px">
+        <div style="flex:none;min-width:0"><label class="f" for="oc-g">ほかのクラスを開く</label>
+          <div style="display:flex;gap:6px">
+            <select id="oc-g" style="width:auto">${GRADES.map(g=>`<option value="${g}">${g}年</option>`).join("")}</select>
+            <select id="oc-c" style="width:auto">${CLASSES.map(c=>`<option value="${c}">${c}組</option>`).join("")}</select>
+            <button class="btn mini ghost" id="oc-go">開く</button>
+          </div></div>
+      </div>` : ""}`;
+  box.querySelectorAll("[data-cls]").forEach(b=>b.onclick=()=>selectClass(b.dataset.cls));
+  if(T.is_admin){
+    document.getElementById("oc-go").onclick = ()=>{
+      const c = `${document.getElementById("oc-g").value}-${document.getElementById("oc-c").value}`;
+      if(!T.open_classes.includes(c)) T.open_classes = [...T.open_classes, c].sort();
+      selectClass(c);
+    };
+  }
+}
+function selectClass(c){
+  CLS = c; DAY = null; DATA = null; REFL_OPEN = null;
+  store.set(CLASS_KEY, c);
+  renderClassPicker();
+  renderClassArea();
+}
+
+/* ============================================================
+   クラスの画面（授業を進める・生徒の入口・今日のようす・名簿）
+   ============================================================ */
+function renderClassArea(){
+  stopPolling();
+  ROSTER_SIG = null;
+  const area = document.getElementById("classarea");
+  if(!CLS){ area.innerHTML = ""; return; }
+  area.innerHTML = `
+    <div class="card" id="lessoncard"><h2>${esc(clsLabel(CLS))}の授業を進める</h2><p class="hint">読み込み中…</p></div>
+    <div class="card" id="entrycard"></div>
+    <div class="card" id="daycard"><h2>今日のようす</h2><p class="hint">読み込み中…</p></div>
+    <div class="card" id="rostercard"></div>
+    <div class="card" id="resetcard"></div>
+    <div class="card" id="oldcard"></div>`;
+  renderEntry();
+  renderReset();
+  renderOldTools();
+  loadDay();
+}
+
+/** クラスのその日のまとめを読み込んで描き直す。自動更新（poll）のときは、先生が操作中のカード（入力欄に
+    フォーカスがある）は描き直さず、名簿の入力欄も触らない。 */
+async function loadDay(opts = {}){
+  const cls = CLS, day = DAY;
+  let r;
+  try{ r = await call("portal_class_day", { p_class:cls, ...(day?{p_date:day}:{}) }); }
+  catch(e){
+    const m = failMsg(e);
+    if(m && !opts.poll){ const b = document.getElementById("daycard"); if(b) b.innerHTML = `<h2>今日のようす</h2><div class="notice warn">${m}</div>`; }
+    return;
+  }
+  if(cls !== CLS || day !== DAY) return; // 読み込み中にクラスや日付を変えた
+  if(!r || !r.ok){
+    document.getElementById("classarea").innerHTML = `<div class="card"><div class="notice warn" style="margin:0">このクラスは担当になっていないため、開けません。</div></div>`;
+    return;
+  }
+  DATA = r;
+  if(!DAY) TODAY = r.date;
+  const busy = id => { const el = document.getElementById(id); return opts.poll && el && el.contains(document.activeElement); };
+  if(!busy("lessoncard")) renderLessons();
+  if(!busy("daycard")) renderDay();
+  const sig = `${cls}:${JSON.stringify(r.roster)}`;
+  if(sig !== ROSTER_SIG){ ROSTER_SIG = sig; renderRoster(); }
+  startPolling();
+}
+
+/* ---------- 授業を進める（quiz_state を切り替える） ---------- */
+function renderLessons(){
+  const box = document.getElementById("lessoncard");
+  if(!box || !DATA) return;
+  const st = id => (DATA.states||[]).find(s=>s.quiz_id===id) || {is_active:false, reflection_active:false};
+  box.innerHTML = `
+    <h2>${esc(clsLabel(CLS))}の授業を進める</h2>
+    <div class="lessons">
+      ${CH.map(t=>{ const s = st(t.id); const on = s.is_active || s.reflection_active; return `
+        <div class="lrow${on?" on":""}">
+          <span class="no">${esc(t.no)}</span><span class="nm">${esc(t.name)}</span>
+          <span class="acts">
+            <button class="btn mini ghost" data-kind="lesson" data-id="${esc(t.id)}" aria-pressed="${s.reflection_active}">${s.reflection_active?"授業中（停止）":"授業を開始"}</button>
+            <button class="btn mini ghost" data-kind="quiz" data-id="${esc(t.id)}" aria-pressed="${s.is_active}">${s.is_active?"配布中（停止）":"小テストを配布"}</button>
+          </span>
+        </div>`; }).join("")}
+    </div>
+    <div class="hint">「授業を開始」すると、生徒のポータルに、その回の振り返り・学習時間の記録・応用チャレンジが出ます。
+      小テストは「小テストを配布」を押したときだけ受けられます。授業が終わったら停止してください。
+      （小テスト管理の画面と同じ設定です。どちらで切り替えても同じになります）</div>`;
+  box.querySelectorAll("[data-kind]").forEach(b=>b.onclick=async ()=>{
+    const active = b.getAttribute("aria-pressed")!=="true";
+    b.disabled = true;
+    try{
+      const r = await call("portal_set_lesson", {p_class:CLS, p_quiz_id:b.dataset.id, p_kind:b.dataset.kind, p_active:active});
+      if(!r || !r.ok) alert("切り替えられませんでした。");
+      await loadDay();
+    }catch(e){ const m = failMsg(e); if(m){ alert(m); b.disabled = false; } }
+  });
+}
+
+/* ---------- 生徒の入口（QR） ---------- */
+function studentUrl(){
+  const u = new URL("index.html", location.href);
+  u.search = "?c=" + CLS;   // 新規登録の学年・組を、このクラスに固定する
+  return u.toString();
+}
+function renderEntry(){
+  const box = document.getElementById("entrycard");
+  const url = studentUrl();
+  box.innerHTML = `
+    <h2>生徒の入口</h2>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div style="font-family:var(--mono);font-size:13px;word-break:break-all;flex:1;min-width:200px">${esc(url)}</div>
+      <button class="btn mini" id="qr-show">QRを投影する</button>
+    </div>
+    <div class="hint">生徒はこの1つのQRから入ります。ログインは1回だけで、小テスト・振り返り・応用チャレンジ・家庭学習ノートへ進めます。
+      最初の1回は「新規登録」（学校コード ${esc(T.school)}・出席番号・パスワード）。小テストのIDをすでに持っている生徒は、そのままログインできます。</div>`;
+  document.getElementById("qr-show").onclick = ()=>{
+    const el = document.getElementById("qrproj");
+    el.innerHTML = `
+      <button class="btn close" id="qr-close">閉じる</button>
+      <div class="cls">${esc(clsLabel(CLS))}　数学ポータル</div>
+      <div class="qr" id="qr-img"></div>
+      <div class="say">QRを読んで、ログインしよう</div>
+      <div class="url">${esc(url)}</div>`;
+    el.classList.remove("hidden");
+    document.getElementById("qr-close").onclick = ()=>el.classList.add("hidden");
+    const qr = qrcode(0, "M");
+    qr.addData(url);
+    qr.make();
+    document.getElementById("qr-img").innerHTML = qr.createSvgTag({ scalable: true, margin: 1 });
+  };
+}
+
+/* ---------- 今日のようす ---------- */
+function numbersInData(d){
+  const s = new Set();
+  ["attempts","reflections","study_time","home","applied"].forEach(k=>(d[k]||[]).forEach(x=>s.add(x.n)));
+  return [...s].sort((a,b)=>a-b);
+}
+const quizName = id => { const t = CH.find(x=>x.id===baseQuizId(id)); return t ? `${t.no} ${t.name}` : id; };
+const quizNo = id => { const t = CH.find(x=>x.id===baseQuizId(id)); return t ? t.no : id; };
+const setNo = id => { const s = SETS_LIST.find(x=>x.id===id); return s ? s.no.replace(/^(\d+)章(\d+)限目$/,"$1-$2") : id; };
+
+function renderDay(){
+  const box = document.getElementById("daycard");
+  if(!box || !DATA) return;
+  const d = DATA;
+  const roster = d.roster;                       // null = 名簿なし
+  const nums = roster ? roster : numbersInData(d);
+  const by = (k)=>{ const m = new Map(); (d[k]||[]).forEach(x=>{ if(!m.has(x.n)) m.set(x.n, []); m.get(x.n).push(x); }); return m; };
+  const A = by("attempts"), R = by("reflections"), ST = by("study_time"), H = by("home"), AP = by("applied");
+  // 小テストの列：配布中の回 ＋ その日に提出があった回
+  const quizIds = [...new Set([...(d.states||[]).filter(s=>s.is_active).map(s=>s.quiz_id), ...(d.attempts||[]).map(a=>a.quiz_id)])]
+    .sort((a,b)=>CH.findIndex(t=>t.id===a)-CH.findIndex(t=>t.id===b));
+  const total = nums.length;
+  const count = m => nums.filter(n=>m.has(n)).length;
+  const missing = m => nums.filter(n=>!m.has(n));
+  const missTxt = m => roster && missing(m).length && missing(m).length < total ? `<div class="miss">まだ：${missing(m).join(", ")}</div>` : "";
+  const quizDone = n => quizIds.length && quizIds.every(id=>(A.get(n)||[]).some(a=>a.quiz_id===id));
+  const quizDoneCount = nums.filter(quizDone).length;
+  const quizMissing = nums.filter(n=>!quizDone(n));
+  const isToday = !DAY;
+
+  const follow = (d.reflections||[]).filter(r=>r.understanding===1 || r.flag);
+  const stats = `
+    <div class="stats">
+      ${quizIds.length ? `<div class="stat"><div class="k">小テスト（${quizIds.map(quizNo).join("・")}）</div>
+        <div class="v">${quizDoneCount}<small>/ ${total}人</small></div>
+        ${roster && quizMissing.length && quizMissing.length < total ? `<div class="miss">まだ：${quizMissing.join(", ")}</div>`:""}</div>` : ""}
+      <div class="stat"><div class="k">振り返り</div><div class="v">${count(R)}<small>/ ${total}人</small></div>${missTxt(R)}</div>
+      <div class="stat"><div class="k">学習時間の記録</div><div class="v">${count(ST)}<small>/ ${total}人</small></div>${missTxt(ST)}</div>
+      <div class="stat"><div class="k">家庭学習ノート</div><div class="v">${count(H)}<small>/ ${total}人</small></div></div>
+      <div class="stat"><div class="k">応用チャレンジ</div><div class="v">${count(AP)}<small>/ ${total}人</small></div></div>
+    </div>`;
+
+  const followHTML = follow.length ? `
+    <div class="follow"><h3>⚠ 要フォロー（${follow.length}人）</h3>
+      ${follow.map(r=>`<div class="item"><b>${r.n}番</b>　理解度 ${r.understanding}・意欲 ${r.effort}${r.comment?`　「${esc(r.comment)}」`:""}</div>`).join("")}
+    </div>` : "";
+
+  const cellQuiz = (n,id)=>{ const a = (A.get(n)||[]).find(x=>x.quiz_id===id); if(!a) return `<span class="dim">—</span>`;
+    const low = a.max>0 && a.score/a.max < 0.5; return `<span class="${low?"low":""}">${a.score}/${a.max}</span>`; };
+  const cellRefl = n=>{ const rs = R.get(n); if(!rs) return `<span class="dim">—</span>`;
+    return rs.map(r=>`<span class="${r.understanding===1?"low":""}">${r.understanding}・${r.effort}</span>${r.flag?`<span class="badge warn">⚠</span>`:""}${r.good?`<span class="badge good">⭐</span>`:""}${r.is_duplicate?`<span class="badge">📋</span>`:""}`).join(" "); };
+  const cellST = n=>{ const s = ST.get(n); return s ? `${s.reduce((a,x)=>a+x.minutes,0)}分` : `<span class="dim">—</span>`; };
+  const cellHome = n=>{ const hs = H.get(n); if(!hs) return `<span class="dim">—</span>`;
+    const mins = hs.reduce((a,x)=>a+(x.minutes ?? Math.round((x.auto_seconds||0)/60)),0), solved = hs.reduce((a,x)=>a+x.solved,0);
+    return `${mins}分・${solved}問`; };
+  const cellAp = n=>{ const as = AP.get(n); if(!as) return `<span class="dim">—</span>`;
+    const best = {}; as.forEach(a=>{ if(!best[a.set_id] || a.score>best[a.set_id].score) best[a.set_id]=a; });
+    return Object.values(best).map(a=>`${setNo(a.set_id)} ${a.score}/${a.max}`).join("、") + (as.length>1?` <span class="dim">(${as.length}回)</span>`:""); };
+  const any = n => A.has(n)||R.has(n)||ST.has(n)||H.has(n)||AP.has(n);
+
+  const table = nums.length ? `
+    <div class="tablewrap"><table class="mx">
+      <thead><tr><th>番号</th>${quizIds.map(id=>`<th>小テスト ${esc(quizNo(id))}</th>`).join("")}<th>振り返り（理解度・意欲）</th><th>学習時間</th><th>家庭学習</th><th>応用</th></tr></thead>
+      <tbody>${nums.map(n=>`<tr class="${any(n)?"":"none"}"><td class="n">${n}</td>${quizIds.map(id=>`<td class="num">${cellQuiz(n,id)}</td>`).join("")}<td>${cellRefl(n)}</td><td class="num">${cellST(n)}</td><td class="num">${cellHome(n)}</td><td class="num">${cellAp(n)}</td></tr>`).join("")}</tbody>
+    </table></div>` : `<div class="notice" style="margin-top:12px">${isToday?"今日は":"この日は"}、まだ記録がありません。</div>`;
+
+  const refls = (d.reflections||[]).slice().sort((a,b)=>(b.flag-a.flag)||(a.understanding-b.understanding)||(a.n-b.n));
+  const reflList = refls.length ? `
+    <details id="refl-list" style="margin-top:12px" ${(REFL_OPEN ?? refls.length<=8)?"open":""}>
+      <summary style="cursor:pointer;font-size:14px;font-weight:600">振り返りを読む（${refls.length}件）</summary>
+      <div style="margin-top:6px">${refls.map(r=>`
+        <div class="refl${r.understanding===1||r.flag?" flag":""}">
+          <div class="hd">${r.n}番　${esc(quizName(r.quiz_id))}　理解度 ${r.understanding}・意欲 ${r.effort}${r.flag?"　⚠要フォロー":""}${r.good?"　⭐得意サイン":""}${r.is_duplicate?"　📋コピー疑い":""}</div>
+          ${r.comment?`<div class="cm">${esc(r.comment)}</div>`:""}
+          ${r.toikaeshi?`<div class="rp">→ 生徒に返した問い返し：${esc(r.toikaeshi)}</div>`:""}
+        </div>`).join("")}</div>
+    </details>` : "";
+
+  box.innerHTML = `
+    <h2>${isToday?"今日":"この日"}のようす<span class="aside">
+      <input type="date" id="day-pick" value="${esc(d.date)}" style="width:auto;padding:5px 8px;font-size:13px">
+      ${isToday?`<span>（${POLL_MS/1000}秒ごとに自動更新）</span>`:`<button class="btn mini ghost" id="day-today">今日にもどる</button>`}</span></h2>
+    ${roster ? "" : `<div class="notice" style="margin:0 0 10px">名簿がないので、記録がある番号だけを表にしています。下の「名簿」で人数を入れると、まだの生徒も出せます。</div>`}
+    ${total ? stats : ""}${followHTML}${table}${reflList}
+    ${nums.length ? `<div class="hint">表の赤い行は、この日まだ何も記録がない生徒です。家庭学習ノートと応用チャレンジは、学年・組・番号の4桁で集計しています。</div>` : ""}`;
+  document.getElementById("day-pick").onchange = e=>{ const v = e.target.value; DAY = (v && v!==TODAY) ? v : null; loadDay(); };
+  const rl = document.getElementById("refl-list");
+  if(rl) rl.addEventListener("toggle", ()=>{ REFL_OPEN = rl.open; });
+  const back = document.getElementById("day-today");
+  if(back) back.onclick = ()=>{ DAY = null; loadDay(); };
+}
+
+function startPolling(){
+  stopPolling();
+  if(DAY) return; // 過去の日を見ているときは更新しない
+  pollTimer = setInterval(()=>{ if(document.visibilityState==="visible") loadDay({poll:true}); }, POLL_MS);
+}
+function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer = null; } }
+
+/* ---------- 名簿（番号だけ） ---------- */
+function rangeText(nums){
+  if(!nums || !nums.length) return "";
+  const out = []; let s = nums[0], p = nums[0];
+  for(let i=1;i<=nums.length;i++){
+    const n = nums[i];
+    if(n === p+1){ p = n; continue; }
+    out.push(s===p ? `${s}` : `${s}〜${p}`); s = p = n;
+  }
+  return out.join("、");
+}
+function parseNumbers(text){
+  const out = new Set();
+  String(text||"").replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).split(/[,、\s]+/).forEach(part=>{
+    const m = /^(\d+)(?:[-~〜ー](\d+))?$/.exec(part.trim());
+    if(!m) return;
+    const a = +m[1], b = m[2] ? +m[2] : a;
+    for(let n=Math.min(a,b); n<=Math.max(a,b) && n<=99; n++) if(n>=1) out.add(n);
+  });
+  return [...out].sort((a,b)=>a-b);
+}
+function renderRoster(){
+  const box = document.getElementById("rostercard");
+  if(!box || !DATA) return;
+  const roster = DATA.roster;
+  box.innerHTML = `
+    <h2>名簿（番号だけ）<span class="aside">${roster?`${roster.length}人：${esc(rangeText(roster))}`:"未登録"}</span></h2>
+    <div class="row">
+      <div><label class="f" for="rs-text">在籍している出席番号</label>
+        <input type="text" id="rs-text" value="${esc(rangeText(roster||[]).replace(/〜/g,"-"))}" placeholder="例：1-38　／　1-20, 22-38（21番が欠番）"></div>
+      <div style="flex:none"><button class="btn" id="rs-go">保存</button></div>
+    </div>
+    <div class="hint">名前は入れません（番号だけ）。名簿があると、提出していない生徒の番号を出せます。空にして保存すると名簿を消します。</div>`;
+  document.getElementById("rs-go").onclick = async ()=>{
+    const nums = parseNumbers(document.getElementById("rs-text").value);
+    if(document.getElementById("rs-text").value.trim() && !nums.length){ alert("番号を読み取れませんでした（例：1-38）。"); return; }
+    try{
+      const r = await call("portal_save_roster", {p_class:CLS, p_numbers:nums});
+      if(r && r.ok) await loadDay(); else alert("保存できませんでした。");
+    }catch(e){ const m = failMsg(e); if(m) alert(m); }
+  };
+}
+
+/* ---------- パスワードを忘れた生徒 ---------- */
+function renderReset(){
+  const box = document.getElementById("resetcard");
+  const m = /^(\d)-(\d)$/.exec(CLS);
+  box.innerHTML = `
+    <h2>パスワードを忘れた生徒</h2>
+    <div class="row">
+      <div style="flex:none;min-width:0"><label class="f" for="rp-n">${esc(clsLabel(CLS))}の</label>
+        <select id="rp-n" style="width:auto"><option value="">番号</option>${Array.from({length:CLASS_SIZE},(_,i)=>`<option value="${i+1}">${i+1}番</option>`).join("")}</select></div>
+      <div style="flex:none"><button class="btn mini danger" id="rp-go">パスワードをリセット</button></div>
+    </div>
+    <div class="hint">IDとパスワードの組だけを消します。本人が同じID（学校コード・出席番号）で「新規登録」し直せば、これまでの記録はそのまま使えます。</div>
+    <div id="rp-msg"></div>`;
+  document.getElementById("rp-go").onclick = async ()=>{
+    const n = document.getElementById("rp-n").value;
+    if(!n){ alert("番号を選んでください。"); return; }
+    const p = /^([A-Z])-(\d+)$/.exec(T.school);
+    const id = buildAccountId(p[1], p[2], makeSid(m[1], m[2], n));
+    if(!confirm(`${clsLabel(CLS)}${n}番（ID ${id}）のパスワードをリセットします。本人は同じIDで新規登録からやり直します。よろしいですか？`)) return;
+    try{
+      const r = await call("portal_reset_student", {p_account_id:id});
+      const msg = document.getElementById("rp-msg");
+      if(r && r.ok) msg.innerHTML = r.existed
+        ? `<div class="notice ok">${esc(id)} をリセットしました。本人に「新規登録」からやり直すよう伝えてください。</div>`
+        : `<div class="notice">${esc(id)} は、まだ登録されていません（そのまま新規登録できます）。</div>`;
+      else msg.innerHTML = `<div class="notice warn">リセットできませんでした。</div>`;
+    }catch(e){ const m2 = failMsg(e); if(m2) alert(m2); }
+  };
+}
+
+/* ---------- くわしい分析（これまでのツール） ---------- */
+function renderOldTools(){
+  document.getElementById("oldcard").innerHTML = `
+    <h2>くわしい分析</h2>
+    <div class="lessons">${OLD_TOOLS.map(t=>`
+      <div class="lrow"><span class="nm"><a href="${t.href}" target="_blank" rel="noopener">${esc(t.name)}</a>
+        <span class="hint" style="margin-left:8px">${esc(t.note)}</span></span></div>`).join("")}</div>
+    <div class="hint">これまでの先生画面です（それぞれのPINが必要です）。</div>`;
+}
+
+/* ============================================================
+   先生の管理（管理者だけ）
+   ============================================================ */
+let TEACHERS = [];
+async function loadTeachers(){
+  const box = document.getElementById("admincard");
+  try{
+    const r = await call("portal_admin_list_teachers", {});
+    if(!r || !r.ok){ box.innerHTML = `<h2>先生の管理</h2><div class="notice warn">読み込めませんでした。</div>`; return; }
+    TEACHERS = r.teachers || [];
+    renderTeachers();
+  }catch(e){ const m = failMsg(e); if(m) box.innerHTML = `<h2>先生の管理</h2><div class="notice warn">${m}</div>`; }
+}
+function renderTeachers(editing){
+  const box = document.getElementById("admincard");
+  const ed = editing || null;
+  const allCls = GRADES.flatMap(g=>CLASSES.map(c=>`${g}-${c}`));
+  box.innerHTML = `
+    <h2>先生の管理<span class="aside">学校コード ${esc(T.school)} の先生</span></h2>
+    <div class="tablewrap" style="margin-top:0"><table class="tc">
+      <thead><tr><th>ID</th><th>呼び名</th><th>担当クラス</th><th></th></tr></thead>
+      <tbody>${TEACHERS.map(t=>`
+        <tr><td style="font-family:var(--mono)">${esc(t.teacher_id)}${t.is_admin?` <span class="badge">管理者</span>`:""}${t.locked?` <span class="badge warn">ロック中</span>`:""}</td>
+          <td>${esc(t.display_name)}</td>
+          <td>${(t.classes||[]).map(clsLabel).map(esc).join("、") || `<span class="hint">なし</span>`}</td>
+          <td style="text-align:right;white-space:nowrap"><button class="btn mini ghost" data-edit="${esc(t.teacher_id)}">編集</button>
+            ${t.teacher_id!==T.teacher_id?`<button class="btn mini danger" data-del="${esc(t.teacher_id)}">削除</button>`:""}</td></tr>`).join("")}
+      </tbody></table></div>
+
+    <h2 style="margin-top:18px">${ed?`${esc(ed.teacher_id)} を編集`:"先生を追加"}</h2>
+    <div class="row">
+      <div><label class="f" for="tc-id">ID（英小文字・数字・-_）</label>
+        <input type="text" id="tc-id" value="${esc(ed?ed.teacher_id:"")}" ${ed?"readonly":""} autocapitalize="off" spellcheck="false" placeholder="例：tanaka"></div>
+      <div><label class="f" for="tc-name">呼び名（本名でなくてOK）</label>
+        <input type="text" id="tc-name" value="${esc(ed?ed.display_name:"")}" style="font-family:var(--gothic)" placeholder="例：田中先生"></div>
+      <div><label class="f" for="tc-pw">${ed?"新しいパスワード（変えるときだけ）":"初期パスワード（6文字以上）"}</label>
+        <input type="text" id="tc-pw" autocomplete="off" spellcheck="false"></div>
+    </div>
+    <label class="f" style="margin-top:12px">担当クラス</label>
+    <div class="clsgrid">${allCls.map(c=>`<label><input type="checkbox" value="${c}" ${ed&&(ed.classes||[]).includes(c)?"checked":""}>${clsLabel(c)}</label>`).join("")}</div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:10px">
+      <input type="checkbox" id="tc-admin" ${ed&&ed.is_admin?"checked":""} ${ed&&ed.teacher_id===T.teacher_id?"disabled":""}> 管理者にする（同じ学校の全クラスを開け、先生を追加できる）
+    </label>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn" id="tc-save">${ed?"保存":"追加する"}</button>
+      ${ed?`<button class="btn ghost" id="tc-cancel">やめる</button>`:""}
+    </div>
+    <div class="hint">初期パスワードは、本人に口頭か紙で伝えてください。ログイン後に本人が「パスワード変更」で変えられます。
+      パスワードの間違いが続いてロックされた先生は、ここで新しいパスワードを設定するとロックが解けます。</div>
+    <div id="tc-msg"></div>`;
+  box.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{ renderTeachers(TEACHERS.find(t=>t.teacher_id===b.dataset.edit)); document.getElementById("tc-name").focus(); });
+  box.querySelectorAll("[data-del]").forEach(b=>b.onclick=async ()=>{
+    if(!confirm(`${b.dataset.del} を削除します。よろしいですか？（生徒の記録は消えません）`)) return;
+    try{ await call("portal_admin_delete_teacher", {p_target_id:b.dataset.del}); await loadTeachers(); }
+    catch(e){ const m = failMsg(e); if(m) alert(m); }
+  });
+  if(ed) document.getElementById("tc-cancel").onclick = ()=>renderTeachers();
+  document.getElementById("tc-save").onclick = async ()=>{
+    const id = document.getElementById("tc-id").value.trim().toLowerCase();
+    const pw = document.getElementById("tc-pw").value;
+    const classes = [...box.querySelectorAll(".clsgrid input:checked")].map(i=>i.value);
+    const isAdmin = ed && ed.teacher_id===T.teacher_id ? true : document.getElementById("tc-admin").checked;
+    if(!/^[a-z0-9_-]{2,20}$/.test(id)){ alert("IDは、英小文字・数字・-_ の2〜20文字にしてください。"); return; }
+    if(!ed && pw.length < 6){ alert("初期パスワードを6文字以上で入れてください。"); return; }
+    if(ed && pw && pw.length < 6){ alert("新しいパスワードは6文字以上にしてください。"); return; }
+    if(!ed && TEACHERS.some(t=>t.teacher_id===id)){ alert("そのIDはすでにあります。一覧の「編集」から変えてください。"); return; }
+    try{
+      const r = await call("portal_admin_save_teacher", {p_target_id:id, p_display_name:document.getElementById("tc-name").value.trim(),
+        p_classes:classes, p_is_admin:isAdmin, p_new_password: pw ? pw : null});
+      if(r && r.ok){
+        await loadTeachers();
+        document.getElementById("tc-msg").innerHTML = `<div class="notice ok">${esc(id)} を${r.created?"追加":"保存"}しました。${r.created||pw?"パスワードを本人に伝えてください。":""}</div>`;
+        if(id===T.teacher_id){ T.classes = classes; T.open_classes = [...new Set([...T.open_classes, ...classes])].sort(); renderClassPicker(); }
+      } else {
+        const why = {other_school:"そのIDは別の学校で使われています。別のIDにしてください。", bad_id:"IDの形が正しくありません。",
+          weak_password:"パスワードは6文字以上にしてください。", need_password:"新しい先生には初期パスワードが必要です。",
+          self_admin:"自分の管理者の設定は外せません。"}[r && r.error] || "保存できませんでした。";
+        alert(why);
+      }
+    }catch(e){ const m = failMsg(e); if(m) alert(m); }
+  };
+}
+
+/* ============================================================
+   起動
+   ============================================================ */
+(function boot(){
+  if(!Portal.configReady()){
+    app.innerHTML = `<div class="card"><h2>準備中です</h2><p class="hint">config.js に Supabase の接続情報を設定してください。</p></div>`;
+    return;
+  }
+  let saved = null;
+  try{ saved = JSON.parse(sess.get(AUTH_KEY) || "null"); }catch(e){}
+  if(saved && saved.id && saved.pw){
+    app.innerHTML = `<div class="card"><p class="hint" style="margin:0">ログイン確認中…</p></div>`;
+    tryLogin(saved.id, saved.pw);
+  } else renderLogin();
+})();
+</script>
+</body>
+</html>
