@@ -1,0 +1,3544 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>バスケ得点クリップ</title>
+<meta name="description" content="バスケの試合動画から、点を入れた場面・入れられた場面を5秒ずつ切り出して、続けて見たり1本の動画にしたりするブラウザアプリ（動画はどこにも送りません）">
+<style>
+/* バスケ得点クリップ */
+:root {
+  --bg: #f4f6fa;
+  --panel: #ffffff;
+  --panel2: #f1f4f9;
+  --line: #dde3ec;
+  --line2: #c9d2df;
+  --text: #182031;
+  --muted: #5d6b82;
+  --accent: #2563eb;
+  --accent-soft: rgba(37, 99, 235, 0.10);
+  --good: #16a34a;
+  --warn: #b45309;
+  --warn-soft: rgba(245, 158, 11, 0.14);
+  --bad: #dc2626;
+  --radius: 12px;
+  --font: system-ui, -apple-system, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d121c;
+    --panel: #151c2a;
+    --panel2: #1c2536;
+    --line: #273248;
+    --line2: #34425e;
+    --text: #e8eef8;
+    --muted: #9aa8c0;
+    --accent: #4f8cff;
+    --accent-soft: rgba(79, 140, 255, 0.16);
+    --good: #22c55e;
+    --warn: #fbbf24;
+    --warn-soft: rgba(251, 191, 36, 0.14);
+    --bad: #f87171;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+[hidden] { display: none !important; }
+
+/* ---------- ヘッダー ---------- */
+.topbar { display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 30; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.brand .logo { font-size: 26px; }
+.brand b { display: block; font-size: 16px; letter-spacing: 0.02em; }
+.brand small { display: block; color: var(--muted); font-size: 11.5px; margin-top: -2px; }
+.actions { display: flex; gap: 6px; align-items: center; }
+
+/* ---------- ボタン ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 6px 12px; font-size: 13px; line-height: 1.3; white-space: nowrap; transition: background 0.12s, border-color 0.12s; }
+.btn:hover { border-color: var(--accent); }
+.btn:active { transform: translateY(1px); }
+.btn .ico { pointer-events: none; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.good { background: var(--good); border-color: var(--good); color: #fff; }
+.btn.danger { color: var(--bad); }
+.btn.small { padding: 3px 9px; font-size: 12.5px; border-radius: 7px; }
+.btn.big { padding: 10px 18px; font-size: 15px; font-weight: 700; border-radius: 10px; }
+.btn.icon { padding: 6px 9px; }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.btn.on { background: var(--accent-soft); border-color: var(--accent); }
+a.btn { text-decoration: none; }
+
+/* ---------- レイアウト ---------- */
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(360px, 1fr); gap: 14px; padding: 14px; align-items: start; max-width: 1500px; margin: 0 auto; }
+.stage { display: flex; flex-direction: column; gap: 8px; position: sticky; top: 64px; min-width: 0; }
+.panel { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+@media (max-width: 900px) {
+  .main { grid-template-columns: 1fr; padding: 10px 16px; }
+  .stage { position: static; }
+}
+
+/* ---------- 映像 ---------- */
+.viewer { position: relative; background: #000; border-radius: var(--radius); overflow: hidden; aspect-ratio: 16 / 9; }
+.media-slot { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.media-el { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
+.empty-media { color: #9aa8c0; text-align: center; padding: 20px; }
+.empty-media b { color: #e8eef8; font-size: 16px; }
+#overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; touch-action: none; }
+.ov-badge { position: absolute; left: 12px; top: 12px; display: flex; flex-direction: column; background: rgba(8, 12, 20, 0.78); color: #fff; border-left: 6px solid var(--team, #3b82f6); border-radius: 8px; padding: 5px 12px 6px; pointer-events: none; }
+.ov-badge b { font-size: 15px; }
+.ov-badge span { font-size: 12px; color: #c9d4e6; }
+.ov-drop { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(37, 99, 235, 0.55); color: #fff; font-size: 20px; font-weight: 700; border: 3px dashed #fff; border-radius: var(--radius); pointer-events: none; }
+.transport { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.transport .btn.play { min-width: 44px; font-size: 15px; }
+.transport select { background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 5px 6px; font-size: 13px; }
+.time { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; margin-left: 4px; }
+.spacer { flex: 1; }
+.reelbar { display: inline-flex; align-items: center; gap: 4px; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 8px; padding: 2px 6px; font-size: 12.5px; }
+#timeline { width: 100%; height: 40px; border-radius: 8px; cursor: pointer; display: block; touch-action: none; }
+
+/* ---------- カード ---------- */
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.step-h { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.step-h b { font-size: 15.5px; }
+.step-h small { color: var(--muted); font-size: 12px; }
+.step-h .num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex: none; }
+.step-h .num.done { background: var(--good); }
+.card p { margin: 6px 0; }
+.note { color: var(--muted); font-size: 12.5px; }
+.note.warn, .warn { color: var(--warn); }
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fname { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.switch { display: flex; align-items: flex-start; gap: 6px; font-size: 13px; margin: 8px 0 2px; cursor: pointer; }
+.switch input { margin-top: 3px; }
+.chip { display: inline-block; width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(128, 128, 128, 0.6); vertical-align: -2px; flex: none; }
+
+/* チームの色 */
+.teamrow { display: grid; grid-template-columns: 1fr; gap: 6px; padding: 8px 0; border-top: 1px solid var(--line); }
+.teamrow:first-of-type { border-top: 0; }
+.tlabel { display: flex; align-items: center; gap: 8px; }
+.tlabel b { font-size: 14px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sw { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(128, 128, 128, 0.55); padding: 0; position: relative; }
+.sw.on { outline: 3px solid var(--accent); outline-offset: 2px; }
+.sw.on::after { content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; color: #fff; text-shadow: 0 0 3px #000, 0 0 2px #000; }
+.swc { width: 34px; height: 30px; padding: 0 2px; border: 1px dashed var(--line2); border-radius: 8px; background: var(--panel2); cursor: pointer; }
+.tname { background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 6px 10px; max-width: 280px; }
+
+/* ゴール */
+.howto { margin: 4px 0 10px; }
+.howto summary, .half summary, .setupfold summary { cursor: pointer; font-size: 13px; color: var(--accent); }
+.howfig { color: var(--muted); max-width: 360px; margin: 8px 0; }
+.howfig svg { width: 100%; height: auto; display: block; }
+.howto ol { margin: 6px 0; padding-left: 20px; font-size: 13px; }
+.markcard { border: 2px solid var(--warn); background: var(--warn-soft); border-radius: 10px; padding: 8px 10px; margin: 8px 0; font-size: 13px; }
+.goal { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 8px 0; display: flex; flex-direction: column; gap: 8px; }
+.goal.done { border-color: rgba(22, 163, 74, 0.5); }
+.goal-h { display: flex; align-items: center; gap: 6px; }
+.goal-h .note { margin-left: 6px; }
+.thumbrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.hoopthumb { border-radius: 6px; background: #000; }
+.attack { display: flex; flex-direction: column; gap: 4px; }
+.teambtn .chip { width: 12px; height: 12px; }
+.half { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
+.half p { font-size: 12.5px; }
+.progress { height: 8px; background: var(--panel2); border-radius: 99px; overflow: hidden; margin: 8px 0; border: 1px solid var(--line); }
+.progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
+.setupfold { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; }
+.setupfold[open] { display: flex; flex-direction: column; gap: 12px; }
+.setupfold .card { border: 0; padding: 4px 0 0; border-top: 1px solid var(--line); border-radius: 0; }
+
+/* ---------- 結果 ---------- */
+.results { display: flex; flex-direction: column; gap: 10px; }
+.tabs2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tab2 { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; align-items: center; gap: 2px 8px; text-align: left; background: var(--panel2); border: 2px solid var(--line); border-radius: 12px; padding: 10px 12px; position: relative; overflow: hidden; }
+.tab2::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--team); border-right: 1px solid rgba(128, 128, 128, 0.4); }
+.tab2 .big { font-size: 16px; font-weight: 800; padding-left: 4px; }
+.tab2 .cnt { grid-row: span 2; font-size: 13px; }
+.tab2 .cnt b { font-size: 28px; line-height: 1; margin-right: 2px; }
+.tab2 small { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 5px; padding-left: 4px; }
+.tab2.on { border-color: var(--accent); background: var(--accent-soft); }
+.tab2 .big, .tab2 small { white-space: nowrap; }
+@media (max-width: 520px) {
+  .tab2 { grid-template-columns: 1fr; padding: 8px 10px; }
+  .tab2 .big { font-size: 15px; }
+  .tab2 .cnt { grid-row: auto; padding-left: 4px; }
+  .tab2 .cnt b { font-size: 24px; }
+  .winrow input { width: 52px; }
+}
+.winrow { font-size: 13px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.winrow input { width: 64px; background: var(--panel2); border: 1px solid var(--line2); border-radius: 6px; padding: 3px 6px; }
+.cliplist { display: flex; flex-direction: column; gap: 6px; max-height: 470px; overflow-y: auto; padding-right: 2px; }
+.cliplist .empty { padding: 10px; }
+.clip { display: grid; grid-template-columns: auto auto 112px 1fr auto; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-left: 5px solid var(--team); border-radius: 10px; background: var(--panel); cursor: pointer; }
+.clip:hover { border-color: var(--accent); border-left-color: var(--team); }
+.clip.off { opacity: 0.5; }
+.clip.playing { background: var(--accent-soft); border-color: var(--accent); border-left-color: var(--team); }
+.clip .ix { font-weight: 800; color: var(--muted); min-width: 18px; text-align: right; }
+.clip .thumb { width: 112px; height: 63px; object-fit: cover; border-radius: 6px; background: #0b1020; display: block; }
+.clip .ct { display: flex; flex-direction: column; min-width: 0; }
+.clip .ct b { font-size: 15px; font-variant-numeric: tabular-nums; }
+.clip .tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.tag { font-size: 11px; padding: 0 6px; border-radius: 99px; background: var(--panel2); border: 1px solid var(--line2); color: var(--muted); }
+.tag.warn { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+.clip .cops { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 520px) {
+  .clip { grid-template-columns: auto 88px 1fr; }
+  .clip .ix { display: none; }
+  .clip .thumb { width: 88px; height: 50px; }
+  .clip .cops { grid-column: 1 / -1; justify-content: flex-start; }
+}
+.acts { margin-top: 2px; }
+.exportbox { border: 1px dashed var(--line2); border-radius: 10px; padding: 8px 12px; }
+.exportbox .outvideo { width: 100%; max-height: 260px; background: #000; border-radius: 8px; margin: 6px 0; display: block; }
+.tools { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; }
+.tool { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 13px; }
+.tool.hint { background: var(--warn-soft); border: 1px solid var(--warn); border-radius: 10px; padding: 8px 10px; }
+
+/* ---------- 小窓・お知らせ ---------- */
+.modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+.modal-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; width: min(640px, 100%); max-height: calc(100vh - 32px); display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35); }
+.modal-card header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.modal-card header .x { background: none; border: 0; font-size: 22px; line-height: 1; color: var(--muted); }
+.modal-body { padding: 12px 18px; overflow-y: auto; font-size: 13.5px; }
+.modal-body h4 { margin: 14px 0 4px; }
+.modal-body ol, .modal-body ul { padding-left: 20px; margin: 6px 0; }
+.modal-body li { margin: 3px 0; }
+.modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--line); }
+.toasts { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; z-index: 120; width: min(560px, calc(100% - 32px)); pointer-events: none; }
+.toast { background: #1f2937; color: #fff; padding: 9px 14px; border-radius: 10px; font-size: 13px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); border-left: 5px solid #64748b; }
+.toast.ok { border-left-color: #22c55e; }
+.toast.warn { border-left-color: #f59e0b; }
+.toast.err { border-left-color: #ef4444; }
+
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><span class="logo" aria-hidden="true">🏀</span><div><b>バスケ得点クリップ</b><small>点を入れた・入れられた場面を5秒ずつ</small></div></div>
+    <div class="actions">
+      <button id="btnOpen" class="btn primary">🎬 動画を選ぶ</button>
+      <button id="btnHelp" class="btn icon" title="使い方" aria-label="使い方">❓</button>
+    </div>
+    <input type="file" id="fileVideo" accept="video/*,.mp4,.mov,.m4v,.webm" hidden>
+  </header>
+
+  <main class="main">
+    <section class="stage" aria-label="映像">
+      <div class="viewer" id="viewer">
+        <div class="media-slot" id="mediaSlot">
+          <div class="empty-media"><b>試合の動画を選んでください</b><br>「🎬 動画を選ぶ」か、ここに動画ファイルをドロップ</div>
+        </div>
+        <canvas id="overlay" aria-hidden="true"></canvas>
+        <div class="ov-badge" id="ovBadge" hidden></div>
+        <div class="ov-drop" id="ovDrop" hidden>ここに動画ファイルをドロップ</div>
+      </div>
+      <div class="transport" id="transport">
+        <button class="btn play" id="btnPlay" title="再生 / 一時停止（スペース）"><span class="ico">▶</span></button>
+        <button class="btn" id="btnBack" title="5秒戻る（← で2秒）">−5秒</button>
+        <button class="btn" id="btnFwd" title="5秒進む（→ で2秒）">+5秒</button>
+        <button class="btn small" id="btnPrevF" title="1コマ戻る（,）">◂</button>
+        <button class="btn small" id="btnNextF" title="1コマ進む（.）">▸</button>
+        <select id="speedSel" title="再生の速さ" aria-label="再生の速さ"><option value="0.5">0.5倍</option><option value="1" selected>1倍</option><option value="2">2倍</option></select>
+        <span class="time" id="timeText">0:00 / 0:00</span>
+        <span class="spacer"></span>
+        <span class="reelbar" id="reelBar" hidden>
+          <span id="reelLabel"></span>
+          <button class="btn small" id="reelPrev" title="前の場面">⏮</button>
+          <button class="btn small" id="reelStop" title="続けて再生をやめる">⏹</button>
+          <button class="btn small" id="reelNext" title="次の場面">⏭</button>
+        </span>
+      </div>
+      <canvas id="timeline" title="クリック・ドラッグで移動（上の段＝入れた、下の段＝入れられた）"></canvas>
+    </section>
+
+    <section class="panel" id="panel" aria-label="操作"></section>
+  </main>
+</div>
+<div id="modal" class="modal" hidden></div>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script>
+/* js/core.js */
+/* バスケ得点クリップ — 共通の小さな道具（名前空間・数値・時刻の書式・イベント）
+   DOM に依存しないので node のテストからも読み込める。
+   名前空間は「バスケ分析スタジオ」と同じ BS（解析エンジンのファイルを、そのまま共有するため）。 */
+(function (root) {
+  'use strict';
+  const BS = root.BS = root.BS || {};
+  BS.APP = 'バスケ得点クリップ';
+
+  BS.clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+
+  /* 秒 → 「m:ss」（1時間以上は「h:mm:ss」）。withTenths で 0.1 秒まで */
+  BS.fmtTime = function (sec, withTenths) {
+    if (!isFinite(sec) || sec < 0) sec = 0;
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = Math.floor(sec % 60);
+    const pad = (n) => String(n).padStart(2, '0');
+    let out = (h ? h + ':' + pad(m) : String(m)) + ':' + pad(s);
+    if (withTenths) out += '.' + Math.floor((sec * 10) % 10);
+    return out;
+  };
+
+  /* 小さなイベントの仕組み（on で登録、emit で通知） */
+  BS.emitter = function () {
+    const map = new Map();
+    return {
+      on(name, fn) { if (!map.has(name)) map.set(name, new Set()); map.get(name).add(fn); return () => map.get(name).delete(fn); },
+      off(name, fn) { if (map.has(name)) map.get(name).delete(fn); },
+      emit(name, payload) {
+        if (!map.has(name)) return;
+        for (const fn of Array.from(map.get(name))) {
+          try { fn(payload); } catch (err) { if (typeof console !== 'undefined') console.error('[BS] handler error', name, err); }
+        }
+      }
+    };
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/vision.js */
+/* バスケ分析スタジオ — 画像処理の部品（DOM 非依存・node でも動く）
+   グレースケール化、縮小、テンプレート照合（NCC）、全体の動き推定、連結成分、パッチ切り出し。 */
+(function (root) {
+  function mod(root) {
+    'use strict';
+    const BS = root.BS = root.BS || {};
+
+    /* RGBA / BGRA → グレースケール（Uint8） */
+    function toGray(src, w, h, order, out) {
+      const n = w * h;
+      const g = out || new Uint8Array(n);
+      const ri = order === 'bgra' ? 2 : 0, bi = order === 'bgra' ? 0 : 2;
+      for (let i = 0, p = 0; i < n; i++, p += 4) {
+        g[i] = (src[p + ri] * 77 + src[p + 1] * 150 + src[p + bi] * 29) >> 8;
+      }
+      return g;
+    }
+
+    /* グレースケールを整数倍で縮小（平均） */
+    function shrinkGray(src, w, h, k) {
+      const dw = Math.floor(w / k), dh = Math.floor(h / k);
+      const out = new Uint8Array(dw * dh);
+      const kk = k * k;
+      for (let y = 0; y < dh; y++) {
+        for (let x = 0; x < dw; x++) {
+          let s = 0;
+          for (let j = 0; j < k; j++) {
+            const row = (y * k + j) * w + x * k;
+            for (let i = 0; i < k; i++) s += src[row + i];
+          }
+          out[y * dw + x] = (s / kk) | 0;
+        }
+      }
+      return { data: out, w: dw, h: dh };
+    }
+
+    /* カラー画像（RGBA/BGRA）を整数倍で縮小してグレースケールにする（速い） */
+    function grayShrink(src, w, h, k, order) {
+      const dw = Math.floor(w / k), dh = Math.floor(h / k);
+      const out = new Uint8Array(dw * dh);
+      const ri = order === 'bgra' ? 2 : 0, bi = order === 'bgra' ? 0 : 2;
+      const kk = k * k;
+      for (let y = 0; y < dh; y++) {
+        for (let x = 0; x < dw; x++) {
+          let s = 0;
+          for (let j = 0; j < k; j++) {
+            let p = ((y * k + j) * w + x * k) * 4;
+            for (let i = 0; i < k; i++, p += 4) s += src[p + ri] * 77 + src[p + 1] * 150 + src[p + bi] * 29;
+          }
+          out[y * dw + x] = (s / kk) >> 8;
+        }
+      }
+      return { data: out, w: dw, h: dh };
+    }
+
+    /* グレースケールの一部を任意倍率で取り出す（双線形）: (x0,y0) から sw×sh を dw×dh に */
+    function sampleGray(src, w, h, x0, y0, sw, sh, dw, dh) {
+      const out = new Uint8Array(dw * dh);
+      const fx = sw / dw, fy = sh / dh;
+      for (let y = 0; y < dh; y++) {
+        const sy = y0 + (y + 0.5) * fy - 0.5;
+        let iy = Math.floor(sy); const ty = sy - iy;
+        if (iy < 0) iy = 0; if (iy > h - 2) iy = h - 2;
+        for (let x = 0; x < dw; x++) {
+          const sx = x0 + (x + 0.5) * fx - 0.5;
+          let ix = Math.floor(sx); const tx = sx - ix;
+          if (ix < 0) ix = 0; if (ix > w - 2) ix = w - 2;
+          const p = iy * w + ix;
+          const a = src[p] + (src[p + 1] - src[p]) * tx;
+          const b = src[p + w] + (src[p + w + 1] - src[p + w]) * tx;
+          out[y * dw + x] = (a + (b - a) * ty) | 0;
+        }
+      }
+      return out;
+    }
+
+    /* テンプレート（グレースケールの小片）。照合は間引いた点だけで行う */
+    function makeTemplate(data, tw, th, step) {
+      step = step || 1;
+      const xs = [], ys = [], vals = [];
+      let sum = 0, sum2 = 0;
+      for (let y = 0; y < th; y += step) {
+        for (let x = 0; x < tw; x += step) {
+          const v = data[y * tw + x];
+          xs.push(x); ys.push(y); vals.push(v);
+          sum += v; sum2 += v * v;
+        }
+      }
+      const n = vals.length;
+      const mean = sum / n;
+      const sd = Math.sqrt(Math.max(1e-6, sum2 / n - mean * mean));
+      return { tw, th, n, xs: Int16Array.from(xs), ys: Int16Array.from(ys), vals: Float32Array.from(vals.map((v) => v - mean)), sd, data };
+    }
+
+    /* 位置 (x,y) にテンプレートの左上を置いたときの NCC（−1〜1）。画面外の点は無視（6割以上が画面内のときだけ） */
+    function nccAt(img, w, h, T, x, y) {
+      let s = 0, s2 = 0, st = 0, cnt = 0, sv = 0, sv2 = 0;
+      const xs = T.xs, ys = T.ys, vals = T.vals, n = T.n;
+      const inside = x >= 0 && y >= 0 && x + T.tw <= w && y + T.th <= h;
+      if (inside) {
+        for (let i = 0; i < n; i++) {
+          const v = img[(y + ys[i]) * w + x + xs[i]];
+          s += v; s2 += v * v; st += v * vals[i];
+        }
+        const mean = s / n;
+        const sd = Math.sqrt(Math.max(1e-6, s2 / n - mean * mean));
+        if (sd < 3) return 0;
+        return st / (n * sd * T.sd);
+      }
+      for (let i = 0; i < n; i++) {
+        const px = x + xs[i], py = y + ys[i];
+        if (px < 0 || py < 0 || px >= w || py >= h) continue;
+        const v = img[py * w + px];
+        const tv = vals[i];
+        s += v; s2 += v * v; st += v * tv; sv += tv; sv2 += tv * tv; cnt++;
+      }
+      if (cnt < n * 0.6) return -1;
+      const mean = s / cnt, tm = sv / cnt;
+      const sd = Math.sqrt(Math.max(1e-6, s2 / cnt - mean * mean));
+      const tsd = Math.sqrt(Math.max(1e-6, sv2 / cnt - tm * tm));
+      if (sd < 3 || tsd < 3) return 0;
+      return (st / cnt - mean * tm) / (sd * tsd);
+    }
+
+    /* 速い版：テンプレート全体が画面内にあるときだけ使う（画素の位置を先に計算しておく） */
+    function nccFast(img, w, T, x, y) {
+      if (T._w !== w) {
+        T._w = w;
+        T.offs = new Int32Array(T.n);
+        for (let i = 0; i < T.n; i++) T.offs[i] = T.ys[i] * w + T.xs[i];
+      }
+      const offs = T.offs, vals = T.vals, n = T.n;
+      const base = y * w + x;
+      let s = 0, s2 = 0, st = 0;
+      for (let i = 0; i < n; i++) {
+        const v = img[base + offs[i]];
+        s += v; s2 += v * v; st += v * vals[i];
+      }
+      const mean = s / n;
+      const va = s2 / n - mean * mean;
+      if (va < 9) return 0;
+      return st / (n * Math.sqrt(va) * T.sd);
+    }
+
+    /* (cx,cy) を中心に ±radius の範囲で最も合う位置を探す */
+    function nccSearch(img, w, h, T, cx, cy, radius, step) {
+      step = step || 1;
+      let best = -2, bx = cx, by = cy;
+      const allInside = cx - radius >= 0 && cy - radius >= 0 && cx + radius + T.tw <= w && cy + radius + T.th <= h;
+      for (let y = cy - radius; y <= cy + radius; y += step) {
+        for (let x = cx - radius; x <= cx + radius; x += step) {
+          const s = allInside ? nccFast(img, w, T, x, y) : nccAt(img, w, h, T, x, y);
+          if (s > best) { best = s; bx = x; by = y; }
+        }
+      }
+      if (step > 1) {
+        const c = nccSearch(img, w, h, T, bx, by, step - 1, 1);
+        if (c.score > best) return c;
+      }
+      return { x: bx, y: by, score: best };
+    }
+
+    /* 画面全体の動き（カメラのパン）を、小さな画像どうしのずれ（SAD 最小）で推定 */
+    function globalShift(prev, cur, w, h, maxShift) {
+      let best = Infinity, bdx = 0, bdy = 0;
+      const m = maxShift;
+      const x0 = m, x1 = w - m, y0 = m, y1 = h - m;
+      const eval_ = (dx, dy) => {
+        let s = 0;
+        for (let y = y0; y < y1; y += 2) {
+          const a = y * w, b = (y + dy) * w + dx;
+          for (let x = x0; x < x1; x += 2) {
+            const d = prev[a + x] - cur[b + x];
+            s += d < 0 ? -d : d;
+          }
+        }
+        return s;
+      };
+      // 粗く（2px 刻み）→ 細かく
+      for (let dy = -m; dy <= m; dy += 2) {
+        for (let dx = -m; dx <= m; dx += 2) {
+          const s = eval_(dx, dy);
+          if (s < best) { best = s; bdx = dx; bdy = dy; }
+        }
+      }
+      const cx = bdx, cy = bdy;
+      for (let dy = cy - 1; dy <= cy + 1; dy++) {
+        for (let dx = cx - 1; dx <= cx + 1; dx++) {
+          if (dx < -m || dx > m || dy < -m || dy > m) continue;
+          const s = eval_(dx, dy);
+          if (s < best) { best = s; bdx = dx; bdy = dy; }
+        }
+      }
+      const n = ((x1 - x0) / 2) * ((y1 - y0) / 2);
+      return { dx: bdx, dy: bdy, err: best / n };
+    }
+
+    /* カラー画像から、中心 (cx,cy)・1辺 size（元画像の画素）の正方形を out×out に取り出す（RGB, 双線形） */
+    function extractPatch(src, w, h, cx, cy, size, outSize, order, out) {
+      const o = out || new Uint8Array(outSize * outSize * 3);
+      const ri = order === 'bgra' ? 2 : 0, bi = order === 'bgra' ? 0 : 2;
+      const f = size / outSize;
+      const x0 = cx - size / 2, y0 = cy - size / 2;
+      let q = 0;
+      for (let y = 0; y < outSize; y++) {
+        const sy = y0 + (y + 0.5) * f - 0.5;
+        let iy = Math.floor(sy); let ty = sy - iy;
+        if (iy < 0) { iy = 0; ty = 0; } else if (iy > h - 2) { iy = h - 2; ty = 1; }
+        for (let x = 0; x < outSize; x++) {
+          const sx = x0 + (x + 0.5) * f - 0.5;
+          let ix = Math.floor(sx); let tx = sx - ix;
+          if (ix < 0) { ix = 0; tx = 0; } else if (ix > w - 2) { ix = w - 2; tx = 1; }
+          const p = (iy * w + ix) * 4, p2 = p + w * 4;
+          const w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 = tx * ty;
+          o[q++] = src[p + ri] * w00 + src[p + 4 + ri] * w10 + src[p2 + ri] * w01 + src[p2 + 4 + ri] * w11;
+          o[q++] = src[p + 1] * w00 + src[p + 5] * w10 + src[p2 + 1] * w01 + src[p2 + 5] * w11;
+          o[q++] = src[p + bi] * w00 + src[p + 4 + bi] * w10 + src[p2 + bi] * w01 + src[p2 + 4 + bi] * w11;
+        }
+      }
+      return o;
+    }
+
+    /* 2値マスクの連結成分（8近傍）。小さすぎるものは捨てる */
+    function components(mask, w, h, minArea) {
+      const label = new Int32Array(w * h);
+      const out = [];
+      const stack = new Int32Array(w * h);
+      let cur = 0;
+      for (let i = 0; i < w * h; i++) {
+        if (!mask[i] || label[i]) continue;
+        cur++;
+        let sp = 0;
+        stack[sp++] = i; label[i] = cur;
+        let area = 0, sx = 0, sy = 0, x0 = w, x1 = 0, y0 = h, y1 = 0;
+        while (sp > 0) {
+          const p = stack[--sp];
+          const px = p % w, py = (p / w) | 0;
+          area++; sx += px; sy += py;
+          if (px < x0) x0 = px; if (px > x1) x1 = px; if (py < y0) y0 = py; if (py > y1) y1 = py;
+          for (let dy = -1; dy <= 1; dy++) {
+            const ny = py + dy;
+            if (ny < 0 || ny >= h) continue;
+            for (let dx = -1; dx <= 1; dx++) {
+              const nx = px + dx;
+              if (nx < 0 || nx >= w) continue;
+              const q = ny * w + nx;
+              if (mask[q] && !label[q]) { label[q] = cur; stack[sp++] = q; }
+            }
+          }
+        }
+        if (area >= (minArea || 1)) out.push({ id: cur, area, cx: sx / area, cy: sy / area, x0, x1, y0, y1 });
+      }
+      return { blobs: out, label, count: cur };
+    }
+
+    BS.vision = { toGray, shrinkGray, grayShrink, sampleGray, makeTemplate, nccAt, nccFast, nccSearch, globalShift, extractPatch, components };
+  }
+  mod(root);
+  (root.BS.src = root.BS.src || {}).vision = mod;   // Worker に同じコードを渡すため
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/auto.js */
+/* バスケ分析スタジオ — 自動解析（映像からゴール・ボール・得点を検出）
+   1) ゴール追跡：人が1回だけ指定したゴール（バックボード）を、テンプレート照合で毎コマ追う。
+      手持ちカメラのパン・ズームに対応（全体の動き推定で位置を予測、倍率も少しずつ追従）。
+   2) ゴールを中心に切り出した小さな画像（パッチ）で背景差分 → ボール候補。
+   3) ボールがリングの内側を上から下へ抜け、ネットが動いたら「得点」。近づいて抜けなければ「失敗」。
+   DOM 非依存（ブラウザでも node でも同じコードが動く）。 */
+(function (root) {
+  function mod(root) {
+    'use strict';
+    const BS = root.BS;
+    const V = BS.vision;
+
+    const AW = 640;            // 追跡用の解析幅（px）
+    const TH_KEEP = 0.5;       // 追跡を続ける NCC のしきい値
+    const TH_ACQ = 0.62;       // 見失った後に、画面全体から探して再び捉える NCC
+    const TH_NEAR = 0.55;      // 見失った後に、「いるはずの場所」の近くで再び捉える NCC（場所の手がかりがあるぶん低くてよい）
+    const TH_COARSE = 0.45;    // 1/4 の解像度で探すときの候補しきい値
+    const GLOBAL_SCALES = [1, 0.9, 1.1, 0.8, 1.22, 0.7, 1.4];   // 画面全体から探すときに順に試す倍率（指定したときの大きさ＝1 から。前後 8% は詰めるときに試すので、0.65〜1.5 倍を切れ目なく覆う）
+    const SC_STEP = 1.03;      // 追跡中に試す倍率の刻み
+    const PRIOR_FRAMES = 150;  // 見失ってから「いるはずの場所」を信じるコマ数（約10秒。長く信じると、似た模様の床などに誤って張り付く）
+    const clampN = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+
+    /* ---------- ゴール追跡 ---------- */
+    function createHoopTracker(mark, srcW, srcH, phase) {
+      // mark: { id, box:{x,y,w,h}, rim:{cx,cy,w} }  … 元画像（srcW×srcH）の座標
+      const k = srcW / AW;
+      const AH = Math.round(srcH / k);
+      const st = {
+        id: mark.id, k, AH,
+        bw: Math.max(8, Math.round(mark.box.w / k)), bh: Math.max(8, Math.round(mark.box.h / k)),
+        rimOff: { x: (mark.rim.cx - mark.box.x) / k, y: (mark.rim.cy - mark.box.y) / k },
+        rimW0: mark.rim.w / k,
+        tpl0: null, T: null, Tq: {}, Tc: {}, TcN: 0, scale: 1,
+        x: mark.box.x / k, y: mark.box.y / k,
+        fx: 0, fy: 0, fine: 0,          // 1画素より細かい位置のずれ、倍率の端数（SC_STEP の何乗ぶんか）
+        drift: 0,                       // 見失ってからの全体の動きの合計（推定位置のあやしさ）
+        tracked: false, score: 0, lost: 1e6, frame: 0, everSeen: false
+      };
+      function buildTemplate(scale) {
+        // 同じ倍率のテンプレートは作り直さない（作るのが重い）
+        const key = scale.toFixed(3);
+        let T = st.Tc[key];
+        if (T) return T;
+        const tw = Math.max(8, Math.round(st.bw * scale)), th = Math.max(8, Math.round(st.bh * scale));
+        const data = V.sampleGray(st.tpl0, st.bw, st.bh, 0, 0, st.bw, st.bh, tw, th);
+        if (++st.TcN > 120) { st.Tc = {}; st.TcN = 1; }
+        T = st.Tc[key] = V.makeTemplate(data, tw, th, tw * th > 6000 ? 3 : tw * th > 1200 ? 2 : 1);
+        return T;
+      }
+      function quarterTemplate(sc) {
+        const key = sc.toFixed(2);
+        let T = st.Tq[key];
+        if (!T) {
+          const tw = Math.max(5, Math.round(st.bw * sc / 4)), th = Math.max(5, Math.round(st.bh * sc / 4));
+          const data = V.sampleGray(st.tpl0, st.bw, st.bh, 0, 0, st.bw, st.bh, tw, th);
+          const step = tw * th > 320 ? 2 : 1;
+          T = st.Tq[key] = V.makeTemplate(data, tw, th, step);
+          T.sparse = V.makeTemplate(data, tw, th, step + 1);     // 下見用（点を減らしたもの）。見込みのある位置だけ T で測り直す
+        }
+        return T;
+      }
+      function setScale(scale) { st.scale = scale; st.T = buildTemplate(scale); }
+      /* 指定した時刻のコマ（解析幅のグレースケール）からテンプレートを作る */
+      function init(gray, w, h) {
+        const x0 = Math.round(mark.box.x / k), y0 = Math.round(mark.box.y / k);
+        st.tpl0 = V.sampleGray(gray, w, h, x0, y0, st.bw, st.bh, st.bw, st.bh);
+        setScale(1);
+      }
+      function tryScales(gray, w, h, cx, cy, scales, radius, step) {
+        let best = null;
+        for (const sc of scales) {
+          const T = sc === st.scale ? st.T : buildTemplate(sc);
+          const r = V.nccSearch(gray, w, h, T, Math.round(cx - T.tw / 2), Math.round(cy - T.th / 2), radius, step);
+          if (!best || r.score > best.score) best = { x: r.x, y: r.y, score: r.score, scale: sc, T };
+        }
+        return best;
+      }
+      function accept(b) {
+        st.x = b.x; st.y = b.y; st.score = b.score;
+        if (b.scale !== st.scale) {
+          // 倍率を切り替えても、見かけの倍率（端数込み）がなめらかにつながるようにする
+          const stepN = Math.log(b.scale / st.scale) / Math.log(SC_STEP);
+          st.fine = Math.abs(stepN) < 1.5 ? clampN(st.fine - stepN, -1, 1) : 0;
+          st.scale = b.scale; st.T = b.T;
+        }
+        if (!st.tracked) { st.fx = 0; st.fy = 0; }
+        st.tracked = true; st.lost = 0; st.drift = 0; st.everSeen = true;
+      }
+      /* 1画素より細かい位置：最もよく合った位置の上下左右の合い具合から、山の頂上を放物線で求める */
+      function subpixel(gray, w, h) {
+        const T = st.T, s0 = st.score;
+        const peak = (a, b) => { const den = a - 2 * s0 + b; return den < -1e-5 ? clampN(0.5 * (a - b) / den, -0.5, 0.5) : 0; };
+        st.fx = peak(V.nccAt(gray, w, h, T, st.x - 1, st.y), V.nccAt(gray, w, h, T, st.x + 1, st.y));
+        st.fy = peak(V.nccAt(gray, w, h, T, st.x, st.y - 1), V.nccAt(gray, w, h, T, st.x, st.y + 1));
+      }
+      function centerOf() { return { cx: st.x + st.T.tw / 2, cy: st.y + st.T.th / 2 }; }
+
+      /* 1コマ進める。gray: 解析幅のグレースケール、quarter: その 1/4 の解像度、shift: 全体の動き（解析幅の画素） */
+      function update(gray, w, h, quarter, shift) {
+        st.frame++;
+        const c0 = centerOf();
+        const sdx = shift ? shift.dx : 0, sdy = shift ? shift.dy : 0;
+        const cx = c0.cx + sdx, cy = c0.cy + sdy;
+        // 「捉えた」と判断したあとで取り消せるように、直前の状態を覚えておく（リングの色での確認に落ちたとき用）
+        st.snap = { tracked: st.tracked, scale: st.scale, T: st.T, lost: st.lost, drift: st.drift + Math.abs(sdx) + Math.abs(sdy), fine: st.fine, px: cx - st.T.tw / 2, py: cy - st.T.th / 2 };
+        if (st.tracked || st.lost < 6) {
+          const cur = tryScales(gray, w, h, cx, cy, [st.scale], st.tracked ? 7 : 12, 1);
+          let b = cur;
+          if (st.frame % 2 === 0) {
+            // 倍率（ズーム）への追従：いまの倍率より 0.02 以上よく合うときだけ切り替える（行ったり来たりすると背景差分が荒れる）
+            const ccx = cur.x + cur.T.tw / 2, ccy = cur.y + cur.T.th / 2;
+            const up = st.scale * SC_STEP < 2.4 ? tryScales(gray, w, h, ccx, ccy, [st.scale * SC_STEP], 2, 1) : null;
+            const dn = st.scale / SC_STEP > 0.45 ? tryScales(gray, w, h, ccx, ccy, [st.scale / SC_STEP], 2, 1) : null;
+            const alt = up && (!dn || up.score >= dn.score) ? up : dn;
+            if (alt && alt.score > cur.score + 0.02) b = alt;
+            else if (up && dn && cur.score >= TH_KEEP) {
+              // 倍率の端数：3つの倍率での合い具合から、山の頂上を放物線で求めてゆっくり寄せる
+              const den = dn.score - 2 * cur.score + up.score;
+              const d = den < -1e-5 ? clampN(0.5 * (dn.score - up.score) / den, -1, 1) : (up.score > cur.score ? 1 : dn.score > cur.score ? -1 : 0);
+              st.fine += (d - st.fine) * 0.5;
+            }
+          }
+          // ときどき、離れた倍率も試す。少しずつ倍率を動かすだけだと、まちがった大きさのまま抜け出せないことがある
+          // （バックボードの枠と内側の四角が似ているので、小さめの大きさでもそこそこ合ってしまう）
+          if (b.score >= TH_KEEP && (st.frame + (phase || 0) * 2) % 5 === 0) {
+            const ccx = b.x + b.T.tw / 2, ccy = b.y + b.T.th / 2;
+            const far = tryScales(gray, w, h, ccx, ccy, [0.8, 0.88, 1.14, 1.25].map((f) => b.scale * f).filter((sc) => sc > 0.45 && sc < 2.4), 6, 2);
+            if (far && far.score > b.score + 0.15) { b = far; st.fine = 0; }
+          }
+          if (b.score >= TH_KEEP) { accept(b); subpixel(gray, w, h); return status(); }
+          st.tracked = false; st.lost++; st.score = b.score;
+          st.x = cx - st.T.tw / 2; st.y = cy - st.T.th / 2;
+          st.drift += Math.abs(sdx) + Math.abs(sdy);
+          return status();
+        }
+        // 見失っている：全体の動きで位置を推定し続ける
+        st.lost++;
+        st.x = cx - st.T.tw / 2; st.y = cy - st.T.th / 2;
+        st.drift += Math.abs(sdx) + Math.abs(sdy);
+        // (a) 推定した場所の近くを毎コマ探す。画面の端で一部しか映っていなくてもよい
+        if (st.everSeen && st.lost < PRIOR_FRAMES) {
+          const R = Math.min(60, 16 + 0.1 * st.drift);
+          const sc = [st.scale, st.scale * 1.08, st.scale / 1.08][st.frame % 3];
+          if (sc > 0.45 && sc < 2.4) {
+            const b = nearSearch(gray, w, h, quarter, sc, cx, cy, R);
+            if (b && b.score >= TH_NEAR) { accept(b); subpixel(gray, w, h); return status(); }
+          }
+        }
+        // (b) 画面全体から探す（1/4 の解像度で粗く → 候補だけ解析幅で詰める）。1コマにつき倍率を1つ。
+        //     偶数コマ：決まった倍率を順番に。奇数コマ：最後に見えていたときの倍率（同じ大きさで戻ってくることが多い。画面の端で一部だけ映っていてもよい）
+        const turn = (st.frame + (phase || 0)) % 2 === 0;
+        if (turn || st.everSeen) {
+          const sc = turn ? GLOBAL_SCALES[(st.frame >> 1) % GLOBAL_SCALES.length] : st.scale;
+          const cands = globalSearch(quarter, sc, !turn);
+          let bestB = null;
+          for (const g of cands) {
+            // まず同じ倍率で詰め、見込みがあるときだけ前後の倍率も試す
+            let b = tryScales(gray, w, h, g.cx * 4, g.cy * 4, [sc], 8, 2);
+            if (b.score >= TH_ACQ - 0.12) {
+              const b2 = tryScales(gray, w, h, b.x + b.T.tw / 2, b.y + b.T.th / 2, [sc * 1.08, sc / 1.08], 4, 2);
+              if (b2.score > b.score) b = b2;
+            }
+            if (!bestB || b.score > bestB.score) bestB = b;
+          }
+          if (bestB && bestB.score >= TH_ACQ) { accept(bestB); subpixel(gray, w, h); return status(); }
+        }
+        return status();
+      }
+      /* 推定位置 (cx,cy)（解析幅の画素）のまわり ±R を、1/4 の解像度で粗く探してから解析幅で詰める */
+      function nearSearch(gray, w, h, q, sc, cx, cy, R) {
+        const T = quarterTemplate(sc);
+        const r = Math.ceil(R / 4);
+        const x0 = Math.round(cx / 4 - T.tw / 2), y0 = Math.round(cy / 4 - T.th / 2);
+        let best = -2, bx = 0, by = 0;
+        const xMax = q.w - T.tw, yMax = q.h - T.th;
+        for (let y = y0 - r; y <= y0 + r; y++) {
+          for (let x = x0 - r; x <= x0 + r; x++) {
+            const sco = (x >= 0 && y >= 0 && x <= xMax && y <= yMax) ? V.nccFast(q.data, q.w, T, x, y) : V.nccAt(q.data, q.w, q.h, T, x, y);
+            if (sco > best) { best = sco; bx = x; by = y; }
+          }
+        }
+        if (best < TH_COARSE) return null;
+        return tryScales(gray, w, h, (bx + T.tw / 2) * 4, (by + T.th / 2) * 4, [sc], 6, 2);
+      }
+      /* 1/4 の解像度で、ある倍率のテンプレートを全体に当てて、上位の候補を返す。partial: 画面の端からはみ出した位置（4割まで）も調べる */
+      function globalSearch(q, sc, partial) {
+        const T = quarterTemplate(sc);
+        const top = [];
+        const xMax = q.w - T.tw, yMax = q.h - T.th;
+        const data = q.data, qw = q.w;
+        const mx = partial ? Math.floor(T.tw * 0.4) : 0, my = partial ? Math.floor(T.th * 0.4) : 0;
+        for (let y = -my; y <= yMax + my; y++) {
+          for (let x = -mx; x <= xMax + mx; x++) {
+            const inside = x >= 0 && y >= 0 && x <= xMax && y <= yMax;
+            if (!inside && ((x & 1) || (y & 1))) continue;      // はみ出した位置は1つおき（遅い計算なので）
+            if (inside && V.nccFast(data, qw, T.sparse, x, y) < TH_COARSE - 0.1) continue;   // 下見
+            const sco = inside ? V.nccFast(data, qw, T, x, y) : V.nccAt(data, qw, q.h, T, x, y);
+            if (sco < TH_COARSE + 0.03) continue;
+            const cx = x + T.tw / 2, cy = y + T.th / 2;
+            let merged = false;
+            for (const c of top) {
+              if (Math.abs(c.cx - cx) < T.tw * 0.6 && Math.abs(c.cy - cy) < T.th * 0.6) { if (sco > c.score) { c.score = sco; c.cx = cx; c.cy = cy; } merged = true; break; }
+            }
+            if (!merged) top.push({ score: sco, cx, cy });
+          }
+        }
+        top.sort((p, r) => r.score - p.score);
+        return top.slice(0, 2);
+      }
+      /* いまのコマで「捉えた」のを取り消して、見失った状態に戻す */
+      function revert() {
+        const p = st.snap;
+        if (!p) return;
+        st.scale = p.scale; st.T = p.T; st.fine = p.fine;
+        st.tracked = false; st.lost = p.lost + 1; st.drift = p.drift; st.score = 0;
+        st.x = p.px; st.y = p.py;
+      }
+      /* 追跡をやめる（別のものに張り付いていると分かったとき）。場所の手がかりも捨てる */
+      function drop() { st.tracked = false; st.lost = PRIOR_FRAMES; st.score = 0; }
+      function status() {
+        // 見かけの倍率（端数込み）と、1画素より細かい位置で、リングの位置と幅を出す
+        const es = st.scale * Math.pow(SC_STEP, st.tracked ? st.fine : 0);
+        const fx = st.tracked ? st.fx : 0, fy = st.tracked ? st.fy : 0;
+        const ccx = st.x + fx + st.T.tw / 2, ccy = st.y + fy + st.T.th / 2;
+        const rimCx = (ccx + (st.rimOff.x - st.bw / 2) * es) * k, rimCy = (ccy + (st.rimOff.y - st.bh / 2) * es) * k;
+        return {
+          id: st.id, tracked: st.tracked, acquired: st.tracked && !!st.snap && !st.snap.tracked, score: st.score, scale: es,
+          box: { x: (ccx - st.bw * es / 2) * k, y: (ccy - st.bh * es / 2) * k, w: st.bw * es * k, h: st.bh * es * k },
+          rim: { cx: rimCx, cy: rimCy, w: st.rimW0 * es * k },
+          inFrame: rimCx > 0 && rimCx < srcW && rimCy > 0 && rimCy < srcH
+        };
+      }
+      return { init, update, status, revert, drop, state: st };
+    }
+
+    /* ---------- 固定カメラ用のゴール ----------
+       360°カメラ・広角カメラなど、コート全体が映りっぱなしでカメラが動かない映像では、ゴールは動かない。
+       追いかけずに、指定した場所をそのまま見張る（バックボードの模様が小さくて追跡が不安定になることもない）。
+       リングの色での確認（verifyRim）は、そのまま使う。リングが選手に隠れたコマは、そのコマだけ使わない。 */
+    function createFixedTracker(mark, srcW, srcH) {
+      const st = { id: mark.id, frame: 0, tracked: true, score: 1, lost: 0, everSeen: true, fixed: true };
+      let first = true;
+      function status() {
+        const rim = { cx: mark.rim.cx, cy: mark.rim.cy, w: mark.rim.w };
+        return {
+          id: mark.id, tracked: true, acquired: first, score: 1, scale: 1, fixed: true,
+          box: { x: mark.box.x, y: mark.box.y, w: mark.box.w, h: mark.box.h }, rim,
+          inFrame: rim.cx > 0 && rim.cx < srcW && rim.cy > 0 && rim.cy < srcH
+        };
+      }
+      function update() { st.frame++; const s = status(); first = false; return s; }
+      return { init() {}, update, status, revert() {}, drop() {}, state: st };
+    }
+
+    /* ---------- リングの色での確認と、位置の微調整 ----------
+       バックボードの模様（白黒）だけでは、床の反射などに誤って張り付くことがある。
+       リングは赤〜オレンジの輪なので、「リングのまわりの赤みの模様」を、指定したときのものと照合する。
+       本物なら 0.7 以上、床などの偽物なら 0.3 以下になる（実動画で確認）。合った位置のずれは、リング位置の微調整に使う。 */
+    const RV = 64;                  // リングを中心に、リング幅の2倍の範囲を RV×RV に切り出す（リング幅 = WC 画素）
+    const RCW = 48, RCH = 28;       // 照合に使う中心部分（横 ±0.75w・縦 ±0.44w）
+    const RSH = 5;                  // ずれを探す範囲（画素）
+    const TH_RIM_ACQ = 0.45;        // 捉えた瞬間、これ未満なら取り消す
+    const TH_RIM_OK = 0.6;          // これ以上なら位置の微調整に使う
+    const TH_RIM_LOW = 0.25, RIM_LOW_FRAMES = 15;   // これ未満が約1秒続いたら、別のものに張り付いているとみなして追跡をやめる
+    function redness(rgb, out) {
+      const n = RV * RV, raw = new Float32Array(n);
+      for (let i = 0, p = 0; i < n; i++, p += 3) raw[i] = rgb[p] / (rgb[p] + rgb[p + 1] + rgb[p + 2] + 1);
+      const o = out || new Float32Array(n);
+      for (let y = 0; y < RV; y++) {
+        const y0 = y > 0 ? y - 1 : 0, y1 = y < RV - 1 ? y + 1 : RV - 1;
+        for (let x = 0; x < RV; x++) {
+          const x0 = x > 0 ? x - 1 : 0, x1 = x < RV - 1 ? x + 1 : RV - 1;
+          o[y * RV + x] = (raw[y0 * RV + x0] + raw[y0 * RV + x] + raw[y0 * RV + x1] + raw[y * RV + x0] + raw[y * RV + x] + raw[y * RV + x1] + raw[y1 * RV + x0] + raw[y1 * RV + x] + raw[y1 * RV + x1]) / 9;
+        }
+      }
+      return o;
+    }
+    function createRimChecker() {
+      let ref = null, usable = false;
+      const cur = new Float32Array(RV * RV);
+      const cx0 = (RV - RCW) / 2, cy0 = (RV - RCH) / 2;
+      /* 指定したコマのリング周辺（RGB, RV×RV）を見本にする */
+      function init(rgb) {
+        ref = redness(rgb);
+        let s = 0, s2 = 0;
+        for (let y = 0; y < RCH; y++) for (let x = 0; x < RCW; x++) { const v = ref[(cy0 + y) * RV + cx0 + x]; s += v; s2 += v * v; }
+        const n = RCW * RCH;
+        usable = s2 / n - (s / n) * (s / n) > 1e-4;      // 赤みの模様がほとんど無いリング（色あせ・白黒映像）では確認しない
+      }
+      /* (dx,dy) だけずらしたときの照合。valid: 画面内にある範囲（切り出し上の座標） */
+      function nccShift(dx, dy, v) {
+        let sa = 0, sb = 0, saa = 0, sbb = 0, sab = 0, n = 0;
+        for (let y = 0; y < RCH; y++) {
+          const yy = cy0 + y + dy;
+          if (yy < v.y0 || yy > v.y1) continue;
+          const ra = (cy0 + y) * RV + cx0, rb = yy * RV + cx0 + dx;
+          for (let x = 0; x < RCW; x++) {
+            const xx = cx0 + x + dx;
+            if (xx < v.x0 || xx > v.x1) continue;
+            const a = ref[ra + x], b = cur[rb + x];
+            sa += a; sb += b; saa += a * a; sbb += b * b; sab += a * b; n++;
+          }
+        }
+        if (n < RCW * RCH * 0.4) return null;
+        const va = saa / n - (sa / n) * (sa / n), vb = sbb / n - (sb / n) * (sb / n);
+        if (va < 1e-7 || vb < 1e-7) return 0;
+        return (sab / n - (sa / n) * (sb / n)) / Math.sqrt(va * vb);
+      }
+      /* いまのコマのリング周辺と見本を照合。戻り値: { score（確認できないときは null）, dx, dy（切り出し上の画素。1画素より細かい） } */
+      function check(rgb, valid) {
+        if (!usable) return { score: null, dx: 0, dy: 0 };
+        redness(rgb, cur);
+        let best = -2, bx = 0, by = 0;
+        for (let dy = -RSH; dy <= RSH; dy++) for (let dx = -RSH; dx <= RSH; dx++) {
+          const sc = nccShift(dx, dy, valid);
+          if (sc != null && sc > best) { best = sc; bx = dx; by = dy; }
+        }
+        if (best < -1) return { score: null, dx: 0, dy: 0 };
+        const peak = (a, b) => { if (a == null || b == null) return 0; const den = a - 2 * best + b; return den < -1e-6 ? clampN(0.5 * (a - b) / den, -0.5, 0.5) : 0; };
+        const fx = Math.abs(bx) < RSH ? peak(nccShift(bx - 1, by, valid), nccShift(bx + 1, by, valid)) : 0;
+        const fy = Math.abs(by) < RSH ? peak(nccShift(bx, by - 1, valid), nccShift(bx, by + 1, valid)) : 0;
+        return { score: best, dx: bx + fx, dy: by + fy };
+      }
+      return { init, check };
+    }
+
+    /* ---------- ゴール周辺の監視（ボール候補を見つける） ----------
+       ゴール（リング）を中心に、リング幅が WC 画素になるよう拡大縮小した正方形（パッチ）を切り出す。
+       カメラが動いてもパッチの中ではゴールが動かないので、背景との差分で「動いているもの」だけが残る。 */
+    const WC = 32;                 // パッチ上でのリング幅（画素）
+    const PS = 208;                // パッチの1辺（= 6.5 × リング幅）
+    const PCY = 0.25;              // パッチ中心はリング中心より 0.25w 下（リングの下も広く見る）
+    const STILL_DIFF = 30;         // 1コマ前との差（RGB の合計）がこれ未満なら「変わっていない」
+    const STILL_FRAMES = 5;        // これだけ続けて変わっていない画素は「止まっている」
+    const GHOST_FRAMES = 10;       // 前景のままこれだけ止まっていたら、背景に取り込み始める
+    const BALL_D = 0.53 * WC;      // ボールの直径（リング幅の 0.53 倍）
+    const BALL_A = Math.PI * (BALL_D / 2) * (BALL_D / 2);
+
+    function createHoopWatcher(id) {
+      const n = PS * PS;
+      const bg = new Float32Array(n * 3);
+      const mask = new Uint8Array(n);
+      const patch = new Uint8Array(n * 3);
+      const prev = new Uint8Array(n * 3);      // 1コマ前の画像
+      const still = new Uint8Array(n);         // その画素が何コマ続けて変わっていないか
+      const st = { id, warm: 0, valid: false, lastT: -1 };
+      function reset() { st.warm = 0; st.valid = false; still.fill(0); }
+
+      /* 1コマ処理。戻り値: ボール候補の配列（リング基準の座標、単位 = リング幅） */
+      /* patchIn: ゴール中心で切り出した RGB（PS×PS）。省略時は src から切り出す */
+      function step(src, srcW, srcH, order, rim, t, patchIn) {
+        if (st.lastT >= 0 && t - st.lastT > 0.5) reset();
+        st.lastT = t;
+        if (patchIn) patch.set(patchIn);
+        else V.extractPatch(src, srcW, srcH, rim.cx, rim.cy + PCY * rim.w, PS / WC * rim.w, PS, order, patch);
+        if (!st.valid) {
+          for (let i = 0; i < n * 3; i++) bg[i] = patch[i];
+          prev.set(patch);
+          st.valid = true; st.warm = 1;
+          return { cands: [], fg: 0, netFg: 0, netOnly: 0, patch, mask };
+        }
+        st.warm++;
+        // 背景との差（上下左右1画素のずれは許す）
+        const TH = 54;
+        let fgCount = 0;
+        for (let y = 1; y < PS - 1; y++) {
+          for (let x = 1; x < PS - 1; x++) {
+            const i = y * PS + x, p = i * 3;
+            const r = patch[p], g = patch[p + 1], b = patch[p + 2];
+            let d = Math.abs(r - bg[p]) + Math.abs(g - bg[p + 1]) + Math.abs(b - bg[p + 2]);
+            if (d > TH) {
+              // 近傍の背景とも比べて、最小の差をとる（位置合わせの誤差に強くする）
+              for (let k = 0; k < 4 && d > TH; k++) {
+                const q = p + (k === 0 ? -3 : k === 1 ? 3 : k === 2 ? -PS * 3 : PS * 3);
+                const d2 = Math.abs(r - bg[q]) + Math.abs(g - bg[q + 1]) + Math.abs(b - bg[q + 2]);
+                if (d2 < d) d = d2;
+              }
+            }
+            const f = d > TH ? 1 : 0;
+            mask[i] = f; fgCount += f;
+          }
+        }
+        // 背景の更新（動いていない所は速く、動いている所はゆっくり）。
+        // 「前景なのにずっと変わらない」画素は、立ち去った人の跡（床が前景に見える）なので、早めに背景に取り込む
+        const aB = st.warm < 5 ? 0.5 : 0.07, aF = st.warm < 5 ? 0.5 : 0.012;
+        for (let i = 0, p = 0; i < n; i++, p += 3) {
+          const dp = Math.abs(patch[p] - prev[p]) + Math.abs(patch[p + 1] - prev[p + 1]) + Math.abs(patch[p + 2] - prev[p + 2]);
+          still[i] = dp < STILL_DIFF ? (still[i] < 250 ? still[i] + 1 : 250) : 0;
+          const a = mask[i] ? (still[i] >= GHOST_FRAMES ? 0.2 : aF) : aB;
+          bg[p] += (patch[p] - bg[p]) * a; bg[p + 1] += (patch[p + 1] - bg[p + 1]) * a; bg[p + 2] += (patch[p + 2] - bg[p + 2]) * a;
+        }
+        prev.set(patch);
+        if (st.warm < 5) return { cands: [], fg: fgCount / n, netFg: 0, netOnly: 0, patch, mask };
+        const cc = V.components(mask, PS, PS, 30);
+        const cands = [];
+        const isCand = new Uint8Array(cc.count + 1);     // ボールらしい形のかたまり（ネットの動きから除くため）
+        const ox = PS / 2, oy = PS / 2 - PCY * WC;   // パッチ上のリング中心
+        for (const b of cc.blobs) {
+          const bw = b.x1 - b.x0 + 1, bh = b.y1 - b.y0 + 1;
+          if (b.area < BALL_A * 0.32 || b.area > BALL_A * 2.3) continue;
+          const asp = bw / bh;
+          if (asp < 0.55 || asp > 1.8) continue;
+          const fill = b.area / (bw * bh);
+          if (fill < 0.5) continue;
+          if (Math.max(bw, bh) > BALL_D * 1.9) continue;
+          // 色（ボールらしさ）：成分の平均色
+          let sr = 0, sg = 0, sb = 0, cnt = 0, nStill = 0;
+          for (let y = b.y0; y <= b.y1; y++) for (let x = b.x0; x <= b.x1; x++) {
+            const i = y * PS + x;
+            if (cc.label[i] !== b.id) continue;
+            sr += patch[i * 3]; sg += patch[i * 3 + 1]; sb += patch[i * 3 + 2]; cnt++;
+            if (still[i] >= STILL_FRAMES) nStill++;
+          }
+          const r = sr / cnt, g = sg / cnt, bl = sb / cnt;
+          cands.push({ x: (b.cx - ox) / WC, y: (b.cy - oy) / WC, area: b.area / BALL_A, asp, fill, r, g, b: bl, still: nStill / cnt, px: b.cx, py: b.cy });
+          isCand[b.id] = 1;
+        }
+        // ネット付近（リングの真下）の動き。netFg: 動いている画素の割合／netOnly: そのうち、ボールらしい形のかたまりを除いた分
+        // （ボールがネットの「手前」を素通りしただけなら netOnly はほぼ 0。ネットを通ると、ネットそのものが動くので大きくなる）
+        let netFg = 0, netOnly = 0, netN = 0;
+        const nx0 = Math.round(ox - 0.5 * WC), nx1 = Math.round(ox + 0.5 * WC), ny0 = Math.round(oy + 0.12 * WC), ny1 = Math.round(oy + 1.05 * WC);
+        for (let y = ny0; y <= ny1; y++) for (let x = nx0; x <= nx1; x++) {
+          const i = y * PS + x;
+          netN++;
+          if (!mask[i]) continue;
+          netFg++;
+          if (!isCand[cc.label[i]]) netOnly++;
+        }
+        return { cands, fg: fgCount / n, netFg: netFg / netN, netOnly: netOnly / netN, patch, mask };
+      }
+      return { step, reset, state: st };
+    }
+
+    /* ---------- シュートの判定（ゴールごと） ----------
+       座標はリング中心が原点、単位はリング幅（w）、下が＋。
+       成功：ネットが大きく動いた直後に、ボールがリングの真下（|x|≤0.5w）へゆっくり出てくる。
+       失敗：ボールがリングの高さ・近く（|x|≤0.95w, y≤0.25w）まで来たのに、成功の形にならない。 */
+    function ballLike(c, maxBright) {
+      if (c.area < 0.4 || c.area > 2.0 || c.fill < 0.48) return false;
+      if (c.still > 0.7) return false;                 // 止まっているもの（立ち去った人の跡など）
+      const mx = Math.max(c.r, c.g, c.b), mn = Math.min(c.r, c.g, c.b);
+      if (mx > (maxBright || 235)) return false;       // 白っぽいもの（白い服・床の照り返し）。明るいオレンジのボールは通す
+      if (c.b > c.r + 6) return false;                 // 青っぽい（ビブスなど）
+      if (mx - mn < 10 && mx > 70) return false;       // 灰色
+      return true;
+    }
+    const BORN_SPEED_MIN = 2.8;  // ネットの中から現れたボールの、落ちる速さの下限（実測 4.5〜6.0。歩く人の頭は 1〜2）
+    const NET_SPEED_MAX = 7.6;   // ネットを通るときの落下の速さの上限（リング幅/秒）。素通りは 8 以上になる
+    const NET_HIDE_MAX = 0.65;   // ボールがネットの中に隠れていられる最長の時間（秒）。リングの上で転がって入るときは 0.5 秒ほど見えなくなる
+    function createShotDetector(id, opts) {
+      // opts は検証・調整用（しきい値の上書き）。ふだんは省略
+      const P = Object.assign({ colorGate: 100, areaGate: 2.6, bornSpeedMin: BORN_SPEED_MIN, netSpeedMax: NET_SPEED_MAX, xinMax: 0.45, freeFallMin: 6.2 }, opts || {});
+      let tracks = [];       // 動くもの（ボール候補）の軌跡
+      const nets = [];       // ネットの動き {t,v}
+      const seen = [];       // リングの口〜ネットの下に、ボール候補が見えた時刻
+      let netBase = null;
+      let pending = null;    // リングに近づいた（まだ成功/失敗を決めていない）{ t0: 気づいた時刻, t: 最も近づいた時刻, d: そのときの距離 }
+      let held = null;       // 「失敗」と決めたが、まだ出していないもの（直後に成功と分かったら取り消す）{ t, conf, at: 出す時刻, below }
+      let cool = -1;         // 成功の直後：この時刻までは新しい出来事を出さない（ネットの下で弾むボールを数えない）
+      let lastMiss = -10;    // 直前に記録した失敗の時刻
+      let lastBelow = false; // その失敗のボールが、リングの下まで落ちたのを見届けたか
+      const out = [];
+      function netPeak(t0, t1) { let m = 0; for (const n of nets) if (n.t >= t0 && n.t <= t1 && n.v > m) m = n.v; return m; }
+      function netOnlyPeak(t0, t1) { let m = 0; for (const n of nets) if (n.t >= t0 && n.t <= t1 && n.o > m) m = n.o; return m; }
+      /* t0〜t1 の間、ネットが動き続けていたコマの割合 */
+      function netBusy(t0, t1) { let n = 0, k = 0; for (const e of nets) if (e.t > t0 && e.t < t1) { n++; if (e.v >= netBase + 0.07) k++; } return n ? k / n : 0; }
+      function isStatic(tr) {
+        if (tr.pts.length < 5) return false;
+        let x0 = 9, x1 = -9, y0 = 9, y1 = -9;
+        for (const p of tr.pts) { if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x; if (p.y < y0) y0 = p.y; if (p.y > y1) y1 = p.y; }
+        return (x1 - x0) + (y1 - y0) < 0.4;
+      }
+      /* リングの口（ここで見えなくなったら、ネットの中にいるかもしれない） */
+      const atMouth = (p) => Math.abs(p.x) <= 0.7 && p.y >= -0.4 && p.y <= 0.9;
+      /* リングの口へ向かっているか：口にいる、または、すぐ上（リング幅 1.3 個ぶんまで）から口の内側へ落ちてくる途中 */
+      function mouthBound(p, prev) {
+        if (atMouth(p)) return true;
+        if (!prev || p.t - prev.t > 0.2 || p.y < -1.3 || p.y >= -0.4 || Math.abs(p.x) > 0.9) return false;
+        const vy = (p.y - prev.y) / (p.t - prev.t), vx = (p.x - prev.x) / (p.t - prev.t);
+        if (vy < 2) return false;
+        return Math.abs(p.x + vx * (-p.y / vy)) <= 0.6;       // このまま進むと、リングの高さでどこを通るか
+      }
+      /* 2点の間が空いていてもよいか：ふつうは 0.34 秒まで。リングの口で消えてネットの下に現れたときだけ NET_HIDE_MAX まで */
+      const gapOK = (a, b) => b.t - a.t <= 0.34 || (b.t - a.t <= NET_HIDE_MAX && a.m && b.y >= 0.8);
+      /* 成功かどうか：軌跡の最後が「リングの内側を、ゆっくり、下へ抜けた」形か */
+      function checkMade(tr) {
+        const pts = tr.pts, n = pts.length;
+        if (n < 2) return null;
+        const b = pts[n - 1];
+        if (b.y < 1.1 || b.y > 2.7 || Math.abs(b.x) > 0.62) return null;
+        // 最後から遡って、リングの内側（|x|≤0.62）を下向きに動いている区間
+        let i = n - 1;
+        // （リングの少し上から斜めに落ちてくる途中の点は、内側でなくても「リングの口へ向かっている」なら続きとみなす）
+        while (i > 0 && (Math.abs(pts[i - 1].x) <= 0.62 || pts[i - 1].m) && pts[i - 1].y <= pts[i].y + 0.08 && gapOK(pts[i - 1], pts[i])) i--;
+        const first = pts[i];
+        if (i === n - 1) return null;
+        let p0 = null, p1 = null;
+        for (let k = i; k < n; k++) { if (pts[k].y <= 0.6) p0 = pts[k]; if (!p1 && pts[k].y >= 1.0) p1 = pts[k]; }
+        let speed, tRef, born = false;
+        if (p0 && p1 && p1.t > p0.t) {
+          speed = (p1.y - p0.y) / (p1.t - p0.t); tRef = p0.t;
+          // リングの上（p0）からネットの下（p1）まで、途中が見えなかった場合：
+          // その間ネットが動き続けていたこと（半分以上のコマで）を求める。リングの横をかすめて落ちたボールは、ネットが一瞬しか動かない。
+          // 長く見えなかったときは、遅すぎないことも求める（外れた後、たまたま下に別の物が現れただけ、を成功にしない）
+          if (p1.t - p0.t > 0.18 && netBusy(p0.t, p1.t) < 0.5) return null;
+          if (p1.t - p0.t > 0.34 && speed < 1.5) return null;
+        } else if (!p0 && i === 0 && first.y >= 0.6 && first.y <= 1.7) {
+          // ネットの中から現れた（カメラが遅れて向いた・ネットに隠れていた）。
+          // ネットの向こうを歩く人の頭などと区別するため、「続けて2コマ・落ちる速さが十分」を求める
+          const q = pts[i + 1];
+          if (q.t - first.t > 0.14) return null;
+          speed = (q.y - first.y) / Math.max(0.03, q.t - first.t); tRef = first.t - 0.15; born = true;
+          if (b.y < first.y + 0.25 || speed < P.bornSpeedMin) return null;
+        } else return null;
+        // ネットを通る速さの上限。ネットから現れた場合は、抜けたあと（また加速している所）を測っているので少し速くてよい
+        if (speed > (born ? P.netSpeedMax + 1.4 : P.netSpeedMax) || speed <= 0) return null;
+        const peak = netPeak(tRef - (born ? 0.4 : 0.1), b.t);
+        const need = Math.max(born ? 0.15 : 0.13, netBase + (born ? 0.1 : 0.07));
+        if (peak < need) return null;
+        // ネットそのものが動いた証拠（ボールの形を除いた動き）があるか。ボールがずっと丸く見えたまま落ちたときは、
+        // 「ネットの中を通った」のか「リングの手前を落ちただけ」なのか映像からは区別しにくいので、自信を下げて「要確認」にする
+        const only = netOnlyPeak(tRef - (born ? 0.4 : 0.1), b.t);
+        const sure = only >= Math.max(0.1, netBase + 0.07);
+        let conf = Math.min(0.99, 0.5 + (peak - netBase) * 1.1 + (P.netSpeedMax - speed) * 0.04 + (born ? -0.08 : 0.08));
+        if (!sure) conf = Math.min(conf, 0.6);
+        // リングの高さ〜ネットの上半分で、リングの中心にいちばん近づいたときの横ずれ。
+        // ボールが輪の中を通るには、中心がリング幅の 0.24 倍以内に入らないといけない。ずっと離れたまま落ちたのなら輪の外（リングの横を落ちた）。
+        // ・最大ではなく最小で見る（ネットと重なって形がくずれた1コマに引きずられないため）
+        // ・ネットを抜けたあと（下半分）は横に流れるので見ない。その高さで一度も見えなかった（ネットに隠れていた）ときは調べない
+        let xin = Infinity;
+        for (let k = i; k < n; k++) if (pts[k].y >= -0.1 && pts[k].y <= 0.7 && Math.abs(pts[k].x) < xin) xin = Math.abs(pts[k].x);
+        if (xin === Infinity) xin = 0;
+        if (xin > P.xinMax) return null;
+        // ネットが動いた証拠がなく、落ちる速さが「何にも当たらず落ちた」ときと同じ（リングの高さから落ちても 6.5 以上になる）なら、
+        // リングの手前を落ちただけ。ネットを通ったボールは減速する（実測 1.9〜6.1）
+        if (!sure && !born && speed > P.freeFallMin) return null;
+        return { t: tRef, made: true, conf: +Math.max(0.5, conf).toFixed(2), speed: +speed.toFixed(1), net: +peak.toFixed(2), netOnly: +only.toFixed(2), sure, born, xin: +xin.toFixed(2) };
+      }
+      /* netOnly: ネットの動きのうち、ボールらしい形のかたまりを除いた分（省略時は netFg と同じ扱い） */
+      function push(t, cands, netFg, netOnly) {
+        while (nets.length && t - nets[0].t > 2.5) nets.shift();
+        nets.push({ t, v: netFg, o: netOnly == null ? netFg : netOnly });
+        const balls = cands.filter((c) => ballLike(c, P.maxBright) && Math.abs(c.x) <= 3.05 && c.y <= 3.0 && c.y >= -3.0);
+        // 既存の軌跡に割り当て（予測位置に最も近い候補）。リングの口で消えた軌跡は、ネットを抜けてくるのを少し長く待つ
+        tracks = tracks.filter((tr) => { const L = tr.pts[tr.pts.length - 1], dt = t - L.t; return dt <= 0.34 || (dt <= NET_HIDE_MAX && L.m); });
+        const used = new Set();
+        const updated = [];
+        // すべての（軌跡, 候補）の組を距離の近い順に割り当てる（近い軌跡が優先）
+        const pairs = [];
+        tracks.forEach((tr, ti) => {
+          const n = tr.pts.length, last = tr.pts[n - 1];
+          const dt = t - last.t;
+          const waiting = dt > 0.34;      // ネットの中に隠れているかもしれない
+          let px = last.x, py = last.y;
+          if (!waiting && n >= 2 && last.t - tr.pts[n - 2].t <= 0.2) {
+            const pv = tr.pts[n - 2], d0 = last.t - pv.t;
+            px += (last.x - pv.x) / d0 * dt; py += (last.y - pv.y) / d0 * dt;
+          }
+          const gate = (n >= 2 ? 0.7 : 1.4) + 6 * dt;
+          for (let k = 0; k < balls.length; k++) {
+            const c = balls[k];
+            let d;
+            if (waiting) {
+              // ネットの真下（リングの内側）に出てきたものだけをつなぐ
+              if (Math.abs(c.x) > 0.62 || c.y < 0.8 || c.y > 2.4) continue;
+              d = Math.abs(c.x) + 0.5;
+            } else {
+              // 予測した位置（速さを延長）か、直前の位置の近く。リングに当たると向きが変わるので、予測だけでは見失う
+              d = Math.min(Math.hypot(c.x - px, c.y - py), Math.hypot(c.x - last.x, c.y - last.y) + 0.15);
+              if (d >= gate) continue;
+            }
+            // 見た目（色・大きさ）が大きく違うものは、同じボールではない（別の物どうしをつないで「動いた」と誤解しない）
+            if (Math.abs(c.r - last.r) + Math.abs(c.g - last.g) + Math.abs(c.b - last.b) > P.colorGate) continue;
+            if (c.area > last.a * P.areaGate || last.a > c.area * P.areaGate) continue;
+            pairs.push({ ti, k, d });
+          }
+        });
+        pairs.sort((p, q) => p.d - q.d);
+        const usedTr = new Set();
+        for (const pr of pairs) {
+          if (usedTr.has(pr.ti) || used.has(pr.k)) continue;
+          usedTr.add(pr.ti); used.add(pr.k);
+          const tr = tracks[pr.ti], c = balls[pr.k];
+          const pt = { t, x: c.x, y: c.y, r: c.r, g: c.g, b: c.b, a: c.area };
+          pt.m = mouthBound(pt, tr.pts[tr.pts.length - 1]);
+          tr.pts.push(pt);
+          if (tr.pts.length > 60) tr.pts.shift();
+          updated.push(tr);
+        }
+        for (let k = 0; k < balls.length; k++) if (!used.has(k)) { const c = balls[k]; const pt = { t, x: c.x, y: c.y, r: c.r, g: c.g, b: c.b, a: c.area }; pt.m = mouthBound(pt, null); tracks.push({ pts: [pt] }); }
+        // ネットの動きの基準値（ボールがネット付近にないときにゆっくり更新）
+        const nearNet = balls.some((c) => Math.abs(c.x) < 1.2 && c.y > -0.6 && c.y < 1.6);
+        if (netBase == null) netBase = Math.min(netFg, 0.08);
+        else if (!nearNet && netFg < netBase + 0.06) netBase += (netFg - netBase) * 0.05;
+        while (seen.length && t - seen[0] > 1) seen.shift();
+        if (balls.some((c) => Math.abs(c.x) <= 0.75 && c.y >= -0.4 && c.y <= 2.4)) seen.push(t);
+        if (t < cool) { pending = null; return; }
+        // --- 成功 ---
+        for (const tr of updated) {
+          if (isStatic(tr)) continue;
+          const m = checkMade(tr);
+          if (m) {
+            // 直前に「失敗かも」と見ていたものがあれば、同じシュート（リングの上で弾んでから入った）か、
+            // 別のシュート（外れ → リバウンド → すぐ打ち直して成功）かを見分ける
+            const prior = held || (pending ? { t: pending.t, conf: +(0.5 + Math.max(0, 0.9 - pending.d) * 0.4).toFixed(2) } : null);
+            if (prior && !sameShot(tr, prior.t, m.t)) pushMiss(prior.t, prior.conf, prior.below);
+            held = null; pending = null;
+            out.push({ t: m.t, hoop: id, made: true, conf: m.conf, speed: m.speed, net: m.net, netOnly: m.netOnly, sure: m.sure, born: m.born, xin: m.xin });
+            cool = t + 1.6;
+            return;
+          }
+        }
+        // --- リングに近づいた（失敗の候補） ---
+        for (const tr of updated) {
+          if (isStatic(tr)) continue;
+          const n = tr.pts.length, p = tr.pts[n - 1];
+          // この 0.35 秒の間に、リングの近く（|x|≤0.95w, −1.1w≤y≤0.25w）を通ったか。いちばん近づいた所を覚える
+          let dmin = Infinity, tNear = 0;
+          for (let i = n - 1; i >= 0 && t - tr.pts[i].t <= 0.35; i--) {
+            const q = tr.pts[i];
+            if (Math.abs(q.x) > 0.95 || q.y > 0.25 || q.y < -1.1) continue;
+            // 勢いよく上がっていく途中（打ち上げたボールがリングの前を通るだけ）は数えない。前の点（なければ次の点）との差で見る
+            const o = i > 0 && q.t - tr.pts[i - 1].t <= 0.2 ? tr.pts[i - 1] : (i < n - 1 && tr.pts[i + 1].t - q.t <= 0.2 ? tr.pts[i + 1] : null);
+            if (o && (q.y - o.y) / (q.t - o.t) < -2.5) continue;
+            const d = Math.hypot(q.x, q.y);
+            if (d < dmin) { dmin = d; tNear = q.t; }
+          }
+          if (dmin === Infinity) continue;
+          // その前後で十分に動いているか（その場に留まっているものは数えない）
+          let moved = false;
+          for (let i = n - 2; i >= 0 && t - tr.pts[i].t <= 0.6; i--) {
+            if (Math.hypot(tr.pts[i].x - p.x, tr.pts[i].y - p.y) >= 0.7) { moved = true; break; }
+          }
+          if (!moved) continue;
+          if (!pending) pending = { t0: t, t: tNear, d: dmin, tr };
+          else if (dmin < pending.d) { pending.t = tNear; pending.d = dmin; pending.tr = tr; }
+        }
+        if (pending) {
+          // 「失敗」と決めるのは、(a) そのボールがリングのそばを離れた（下に落ちた・遠くへ弾んだ）とき、または
+          // (b) 近づいてから 1.1 秒たっても成功にならないとき。ただし (b) は、まだリングの口〜ネットにボールがいる間
+          // （ネットが動いている・ボール候補が見えている）は待つ。最長 2.6 秒
+          const L = updated.indexOf(pending.tr) >= 0 ? pending.tr.pts[pending.tr.pts.length - 1] : null;
+          const below = !!L && L.y > 1.1;       // リングの下まで落ちた（もう一度リングに来るには、誰かが打ち直すしかない）
+          const left = L && (Math.hypot(L.x, L.y) > 1.5 || below);
+          const busy = (seen.length && t - seen[seen.length - 1] <= 0.25) || netPeak(t - 0.25, t) >= netBase + 0.07;
+          if (left || (t - pending.t0 > 1.1 && (!busy || t - pending.t0 > 2.6))) {
+            hold(pending.t, +(0.5 + Math.max(0, 0.9 - pending.d) * 0.4).toFixed(2), t, below);
+            pending = null;
+          }
+        }
+        if (held && t >= held.at) { pushMiss(held.t, held.conf, held.below); held = null; }
+      }
+      /* 「失敗」と決めたものを、少しの間だけ手元に置く（直後に入ったら取り消すため）。
+         リングの上で何度か弾むと続けて来るので、2秒以内なら1本にまとめ、いちばんリングに近づいた瞬間を採る。
+         ただし、前のボールがリングの下まで落ちたのを見届けていたら、次に来たのは打ち直し（タップ・リバウンドシュート）なので別の1本 */
+      function hold(tm, conf, t, below) {
+        if (held) {
+          if (tm - held.t < 2.0 && !held.below) { if (conf > held.conf) { held.t = tm; held.conf = conf; } held.at = t + 1.3; held.below = below; return; }
+          pushMiss(held.t, held.conf, held.below);
+        }
+        held = { t: tm, conf, at: t + 1.3, below };
+      }
+      /* tA（リングに最も近づいた時刻）から tB（ネットに入り始めた時刻）まで、ボールがリングのそばに居続けたか。
+         居続けた＝同じシュートがリングの上で弾んでいただけ。いったん離れた（下に落ちた・遠くへ行った）＝別のシュート */
+      function sameShot(tr, tA, tB) {
+        const pts = tr.pts.filter((p) => p.t >= tA - 0.01 && p.t <= tB + 0.01);
+        if (!pts.length || pts[0].t > tA + 0.15) return tB - tA < 0.9;      // 軌跡が途切れている：間が短ければ同じシュート
+        return pts.every((p) => Math.hypot(p.x, p.y) <= 1.4 && p.y <= 1.0);
+      }
+      /* 失敗を記録。リングの上で弾んでいる間に2回数えないよう、直前の失敗から2秒以内は同じシュートとみなす
+         （直前のボールがリングの下まで落ちたのを見届けていた場合を除く。1秒以内は、その場合でも同じとみなす） */
+      function pushMiss(tm, conf, below) {
+        if (tm - lastMiss < (lastBelow ? 1.0 : 2.0)) return;
+        lastMiss = tm; lastBelow = !!below;
+        out.push({ t: tm, hoop: id, made: false, conf });
+      }
+      function flush() {
+        if (held) { pushMiss(held.t, held.conf, held.below); held = null; }
+        if (pending) { pushMiss(pending.t, 0.5, false); pending = null; }
+        tracks = [];
+      }
+      function take() { return out.splice(0, out.length); }
+      return { push, flush, take, events: out };
+    }
+
+    /* ---------- 1コマぶんの前処理（解析幅・半分・1/4 のグレースケール） ---------- */
+    function prepFrame(src, srcW, srcH, order) {
+      const k = srcW / AW;
+      const ki = Math.round(k);
+      let g;
+      if (Math.abs(k - ki) < 1e-6 && ki >= 1) g = ki === 1 ? { data: V.toGray(src, srcW, srcH, order), w: srcW, h: srcH } : V.grayShrink(src, srcW, srcH, ki, order);
+      else {
+        const full = V.toGray(src, srcW, srcH, order);
+        const h = Math.round(srcH / k);
+        g = { data: V.sampleGray(full, srcW, srcH, 0, 0, srcW, srcH, AW, h), w: AW, h };
+      }
+      const half = V.shrinkGray(g.data, g.w, g.h, 2);
+      const quarter = V.shrinkGray(half.data, half.w, half.h, 2);
+      return { gray: g, half, quarter };
+    }
+
+    /* ---------- 解析のまとめ役 ----------
+       使い方：
+         const an = createAnalyzer({ srcW, srcH, hoops: [{ id, box, rim }] });
+         an.initHoop(i, gray640)                      // ゴールを指定したコマで呼ぶ（テンプレートを作る）
+         const live = an.process({ t, gray, quarter, getPatch(cx, cy, size) → RGB(PS×PS) })
+         const result = an.finish()
+       フレームの作り方は環境ごとに違う（node: 全画面から切り出し／ブラウザ: 小さな canvas に描いて読む）ので、ここでは受け取るだけ。 */
+    function createAnalyzer(cfg) {
+      const fixed = !!cfg.fixed;       // true: カメラが動かない（全景カメラ）。ゴールを追わず、指定した場所を見張る
+      const trackers = cfg.hoops.map((m, i) => (fixed ? createFixedTracker(m, cfg.srcW, cfg.srcH) : createHoopTracker(m, cfg.srcW, cfg.srcH, i)));
+      const rims = cfg.hoops.map(() => createRimChecker());
+      const rimState = cfg.hoops.map(() => ({ dx: 0, dy: 0, low: 0, score: null }));
+      const watchers = cfg.hoops.map((m) => createHoopWatcher(m.id));
+      const detectors = cfg.hoops.map((m, i) => createShotDetector(i));
+      const lastSeen = cfg.hoops.map(() => -1);
+      const shots = [];
+      const vis = [];          // どのゴールが映っていたか {t, on:[bool...]}（攻守の行き来の推定に使う）
+      let prevQ = null, frames = 0;
+      /* ゴールを指定したコマで呼ぶ。getPatch(cx, cy, size, outSize) → RGB（outSize×outSize） */
+      function initHoop(i, gray, w, h, getPatch) {
+        trackers[i].init(gray, w, h);
+        const m = cfg.hoops[i];
+        if (getPatch) rims[i].init(getPatch(m.rim.cx, m.rim.cy, RV / WC * m.rim.w, RV));
+      }
+      /* リングの色で確認して、位置を微調整する。偽物なら追跡を取り消す。戻り値: 使ってよい status
+         （リングの輪の一致で「大きさ」まで直す方法も試したが、ボールがリングに重なった瞬間や、捉えた直後に
+           別の大きさのほうが合って見えることがあり、かえって見失った。大きさはバックボードの照合に任せる） */
+      function verifyRim(i, s, f) {
+        const tr = trackers[i], rs = rimState[i];
+        if (s.acquired) { rs.dx = 0; rs.dy = 0; rs.low = 0; }
+        const k = WC / s.rim.w;      // 元の画素 → 切り出し上の画素
+        const valid = { x0: Math.ceil(RV / 2 - s.rim.cx * k), x1: Math.floor(RV / 2 + (cfg.srcW - 1 - s.rim.cx) * k), y0: Math.ceil(RV / 2 - s.rim.cy * k), y1: Math.floor(RV / 2 + (cfg.srcH - 1 - s.rim.cy) * k) };
+        const c = rims[i].check(f.getPatch(s.rim.cx, s.rim.cy, RV / WC * s.rim.w, RV), valid);
+        rs.score = c.score;
+        if (c.score == null) return s;                       // 画面の端などで確認できない：そのまま使う
+        if (s.acquired && c.score < TH_RIM_ACQ) { tr.revert(); return tr.status(); }
+        if (c.score < TH_RIM_LOW) {
+          // リングが見当たらないコマは使わない（追跡そのものは続ける。約1秒続いたら追跡をやめる。固定カメラは追跡しないので、やめない：
+          // やめると、そのコマだけ「見えている」扱いになってしまう）
+          if (!fixed && ++rs.low >= RIM_LOW_FRAMES) { tr.drop(); rs.low = 0; return tr.status(); }
+          s.tracked = false; s.rimScore = c.score;
+          return s;
+        }
+        rs.low = 0;
+        if (c.score >= TH_RIM_OK) { rs.dx += (c.dx - rs.dx) * 0.5; rs.dy += (c.dy - rs.dy) * 0.5; }
+        s.rim.cx += rs.dx / k; s.rim.cy += rs.dy / k;
+        s.rimScore = c.score;
+        s.inFrame = s.rim.cx > 0 && s.rim.cx < cfg.srcW && s.rim.cy > 0 && s.rim.cy < cfg.srcH;
+        return s;
+      }
+      function process(f) {
+        frames++;
+        let shift = null;
+        if (!fixed && prevQ && prevQ.w === f.quarter.w) {
+          // 画面全体が前のコマからどれだけ動いたか（＝ゴールも同じだけ動いて見える）。1/4 の解像度で測るので 4 倍する
+          const s = V.globalShift(prevQ.data, f.quarter.data, f.quarter.w, f.quarter.h, 12);
+          shift = { dx: s.dx * 4, dy: s.dy * 4, err: s.err };
+        }
+        if (!fixed) prevQ = f.quarter;
+        const status = [];
+        const fresh = [];
+        trackers.forEach((tr, i) => {
+          let s = fixed ? tr.update() : tr.update(f.gray.data, f.gray.w, f.gray.h, f.quarter, shift);
+          if (s.tracked && s.inFrame) s = verifyRim(i, s, f);
+          status.push(s);
+          if (!s.tracked || !s.inFrame) return;
+          if (lastSeen[i] >= 0 && f.t - lastSeen[i] > 0.6) detectors[i].flush();
+          lastSeen[i] = f.t;
+          const patch = f.getPatch(s.rim.cx, s.rim.cy + PCY * s.rim.w, PS / WC * s.rim.w, PS);
+          const r = watchers[i].step(null, 0, 0, null, s.rim, f.t, patch);
+          detectors[i].push(f.t, r.cands, r.netFg, r.netOnly);
+          for (const ev of detectors[i].take()) { ev.hoop = i; shots.push(ev); fresh.push(ev); }
+          s.cands = r.cands; s.net = r.netFg; s.netOnly = r.netOnly; s.fg = r.fg;
+        });
+        vis.push({ t: f.t, on: status.map((s) => s.tracked && s.inFrame) });
+        return { status, events: fresh, motion: shift ? shift.err : 0 };
+      }
+      function finish() {
+        detectors.forEach((d, i) => { d.flush(); for (const ev of d.take()) { ev.hoop = i; shots.push(ev); } });
+        shots.sort((a, b) => a.t - b.t);
+        // ゴールが映っていた区間（[開始, 終了, ビット：ゴール i が映っていれば 1<<i]）と、映っていたコマ数
+        const spans = [], seen = cfg.hoops.map(() => 0);
+        for (const v of vis) {
+          let mask = 0;
+          v.on.forEach((on, i) => { if (on) { mask |= 1 << i; seen[i]++; } });
+          const last = spans[spans.length - 1];
+          if (last && last[2] === mask && v.t - last[1] <= 0.5) last[1] = v.t;
+          else spans.push([v.t, v.t, mask]);
+        }
+        return { shots, frames, spans, seen };
+      }
+      return { initHoop, process, finish, trackers, shots, vis };
+    }
+
+    /* ---------- 検出結果 → タグ（イベント） ----------
+       opts: { hoopTeam: [team for hoop0, team for hoop1] (前半), periods: [{n,t0}], halfSwitch: true }
+       - ゴール → 攻めているチーム（後半は入れ替え）
+       - 成功は 2点として仮に記録（3P・FT は確認モードで直す）
+       - 外れの後：同じゴールで 12秒以内に次のシュート → オフェンスリバウンド（推定）、そうでなければディフェンスリバウンド（推定） */
+    function toEvents(result, opts) {
+      const evs = [];
+      const perAt = (t) => { let n = 1; (opts.periods || []).forEach((p) => { if (t >= p.t0) n = p.n; }); return n; };
+      const teamOf = (hoop, t) => {
+        const base = opts.hoopTeam[hoop];
+        const second = opts.halfSwitch !== false && perAt(t) >= 3;
+        return second ? 1 - base : base;
+      };
+      const shots = result.shots;
+      shots.forEach((s, i) => {
+        const team = teamOf(s.hoop, s.t);
+        const tShot = Math.max(0, s.t - 0.9);     // リング到達の約0.9秒前を「シュートの時刻」とする
+        const id = 'a' + Math.round(s.t * 100) + (s.made ? 'm' : 'x') + s.hoop;
+        const ev = { id, t: +tShot.toFixed(2), type: 'shot', team, pid: null, made: s.made, pts: 2, sx: null, sy: null, ast: null, blk: null, auto: true, conf: s.conf, tDet: +s.t.toFixed(2), hoop: s.hoop };
+        if (s.made && s.sure === false) ev.unsure = true;      // ネットの動きを確認できなかった得点（要確認）
+        evs.push(ev);
+        if (!s.made) {
+          const next = shots[i + 1];
+          const again = next && next.hoop === s.hoop && next.t - s.t <= 12;
+          evs.push({ id: id + 'r', t: +(s.t + 1.0).toFixed(2), type: 'reb', team: again ? team : 1 - team, pid: null, off: !!again, auto: true, est: true, conf: again ? 0.6 : 0.55, hoop: s.hoop });
+        }
+      });
+      return evs;
+    }
+
+    /* ---------- 画像（canvas に描けるもの）をそのまま渡して解析する ----------
+       ブラウザ／Worker 用。source は VideoFrame・ImageBitmap・canvas・video のどれでもよい。
+       makeCanvas(w, h) は canvas（Worker では OffscreenCanvas）を作る関数。
+       作業用の画像は幅 FW_MAX 以下に縮める。そこから先は node での検証（real-run.cjs）と同じ計算。 */
+    const FW_MAX = 1280;
+    const FW_MAX_PIXELS = 40e6;        // 固定カメラで元の大きさのまま持つ作業画像の上限（8K の 7680×4320 まで）
+    const RIM_WORK = 40;               // 固定カメラ：作業画像の上でリングがこの幅（画素）以上になる範囲で、できるだけ縮める
+    function createFrameAnalyzer(cfg, makeCanvas) {
+      const an = createAnalyzer(cfg);
+      const fixed = !!cfg.fixed;                                // カメラが動かない映像（全景カメラ）：ゴールを追わないので、全体のグレー画像などは作らない
+      /* 元の画素 → 作業用の画素（kf）。ふつうは横 1280 に縮める。
+         全景カメラでは、ゴールが小さく映る（リング幅 30 画素ほど）ので、縮めるとリングやボールがつぶれる。
+         リングが作業画像の上で RIM_WORK 画素になる範囲までしか縮めない（小さいゴールなら、元の大きさのまま）。
+         Safari のエンジンは、復号した VideoFrame の「一部だけ切り出して描く」指定を無視するので、
+         切り出しではなく「全体を1回描いて、必要な領域だけ getImageData で読む」方法にしてある（Chrome でも、これが速い）。 */
+      let kf = Math.max(1, cfg.srcW / FW_MAX);
+      if (fixed) {
+        const minRim = Math.min.apply(null, cfg.hoops.map((m) => m.rim.w));
+        kf = Math.min(kf, Math.max(1, minRim / RIM_WORK));
+        kf = Math.max(kf, Math.sqrt(cfg.srcW * cfg.srcH / FW_MAX_PIXELS));
+        kf = Math.max(1, kf);
+      }
+      const fw = Math.round(cfg.srcW / kf), fh = Math.round(cfg.srcH / kf);
+      const ah = Math.round(AW * cfg.srcH / cfg.srcW);
+      /* 作業画像の canvas。固定カメラで大きな映像のときは、GPU の canvas のほうが速い（描くのが GPU の中で済み、読むのは必要な領域だけ）。
+         Worker の中で、新しい復号フレームごとにかかる時間：4K Chrome 38→11 ミリ秒・5.7K 70→16、Safari 系 4K 45→29・5.7K 88→54（実測）。
+         ふつうのカメラ（縮めた作業画像の全体を毎コマ読む）は、CPU の canvas のまま。 */
+      const gpu = cfg.gpu != null ? !!cfg.gpu : fixed && fw * fh > 1.5e6;      // cfg.gpu: 検証用（true/false で強制）。2560×1440 でも Chrome 40→21 秒・Safari 系 46→32 秒（120 秒の映像）
+      const cF = makeCanvas(fw, fh), gF = cF.getContext('2d', gpu ? {} : { willReadFrequently: true });
+      const cA = fixed ? null : makeCanvas(AW, ah), gA = cA ? cA.getContext('2d', { willReadFrequently: true }) : null;
+      if (kf > 2) gF.imageSmoothingQuality = 'medium';
+      const bufs = {};          // 切り出しの出力先（大きさごとに使い回す）
+      let gray = null;
+      /* rot: 映像トラックの回転（0/90/180/270）。<video> は自動で回して表示するので、同じ向きにそろえる */
+      function load(source, rot) {
+        if (rot) {
+          gF.save(); gF.translate(fw / 2, fh / 2); gF.rotate(rot * Math.PI / 180);
+          if (rot === 180) gF.drawImage(source, -fw / 2, -fh / 2, fw, fh); else gF.drawImage(source, -fh / 2, -fw / 2, fh, fw);
+          gF.restore();
+        } else gF.drawImage(source, 0, 0, fw, fh);
+        if (fixed) return null;
+        gA.drawImage(cF, 0, 0, AW, ah);
+        gray = { data: V.toGray(gA.getImageData(0, 0, AW, ah).data, AW, ah, 'rgba'), w: AW, h: ah };
+        return gray;
+      }
+      /* 中心 (cx,cy)・1辺 size（元の画素）の正方形を outSize×outSize の RGB で返す。必要な範囲だけ読んで、node と同じ extractPatch に渡す */
+      function getPatch(cx, cy, size, outSize) {
+        const patch = bufs[outSize] || (bufs[outSize] = new Uint8Array(outSize * outSize * 3));
+        const s = size / kf, px = cx / kf, py = cy / kf;
+        const x0 = Math.max(0, Math.floor(px - s / 2) - 2), y0 = Math.max(0, Math.floor(py - s / 2) - 2);
+        const x1 = Math.min(fw, Math.ceil(px + s / 2) + 3), y1 = Math.min(fh, Math.ceil(py + s / 2) + 3);
+        if (x1 - x0 < 2 || y1 - y0 < 2) { patch.fill(0); return patch; }
+        const d = gF.getImageData(x0, y0, x1 - x0, y1 - y0).data;
+        return V.extractPatch(d, x1 - x0, y1 - y0, px - x0, py - y0, s, outSize, 'rgba', patch);
+      }
+      /* いま読み込んである画像（load 済み）からゴールのテンプレートを作る */
+      function initHoop(i) { an.initHoop(i, gray ? gray.data : null, gray ? gray.w : 0, gray ? gray.h : 0, getPatch); }
+      function frame(t, source, rot) {
+        const g = load(source, rot);
+        if (fixed) return an.process({ t, gray: null, quarter: null, getPatch });
+        const half = V.shrinkGray(g.data, g.w, g.h, 2), quarter = V.shrinkGray(half.data, half.w, half.h, 2);
+        return an.process({ t, gray: g, quarter, getPatch });
+      }
+      return { load, initHoop, frame, finish: an.finish, analyzer: an, canvas: cF, width: fw, height: fh, fixed, kf };
+    }
+
+    BS.auto = { AW, WC, PS, PCY, RV, createHoopTracker, createFixedTracker, createRimChecker, createHoopWatcher, createShotDetector, createAnalyzer, createFrameAnalyzer, toEvents, ballLike, prepFrame };
+  }
+  mod(root);
+  (root.BS.src = root.BS.src || {}).auto = mod;   // Worker に同じコードを渡すため
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/mp4.js */
+/* バスケ分析スタジオ — MP4 / MOV の読み取り（映像トラックの位置表だけを取り出す）
+   自動解析で「全部のコマを順番に・取りこぼしなく」調べるために、動画ファイルを自分で読んで WebCodecs に渡す。
+   対応：MP4 / MOV（H.264・HEVC。バスケ得点クリップでは VP9・AV1 も）。それ以外は呼び出し側が <video> 再生方式に切り替える。
+   DOM 非依存（ブラウザ・Worker・node のどれでも動く）。 */
+(function (root) {
+  function mod(root) {
+    'use strict';
+    const BS = root.BS = root.BS || {};
+
+    const fourcc = (u8, p) => String.fromCharCode(u8[p], u8[p + 1], u8[p + 2], u8[p + 3]);
+    const u32 = (u8, p) => ((u8[p] << 24) | (u8[p + 1] << 16) | (u8[p + 2] << 8) | u8[p + 3]) >>> 0;
+    const i32 = (u8, p) => (u8[p] << 24) | (u8[p + 1] << 16) | (u8[p + 2] << 8) | u8[p + 3];
+    const u16 = (u8, p) => (u8[p] << 8) | u8[p + 1];
+    const u64 = (u8, p) => u32(u8, p) * 4294967296 + u32(u8, p + 4);
+
+    /* u8 の [start,end) に並ぶボックスを列挙：{ type, start(中身の先頭), end } */
+    function boxes(u8, start, end) {
+      const out = [];
+      let p = start;
+      while (p + 8 <= end) {
+        let size = u32(u8, p), hdr = 8;
+        const type = fourcc(u8, p + 4);
+        if (size === 1) { size = u64(u8, p + 8); hdr = 16; } else if (size === 0) size = end - p;
+        if (size < hdr || p + size > end) break;
+        out.push({ type, start: p + hdr, end: p + size });
+        p += size;
+      }
+      return out;
+    }
+    const child = (u8, b, type) => boxes(u8, b.start, b.end).find((x) => x.type === type) || null;
+
+    /* ファイルの先頭から順にボックスの見出しだけを読んで moov を探す。reader: { size, read(start,end) → Promise<Uint8Array> } */
+    async function readMoov(reader) {
+      let pos = 0;
+      while (pos + 8 <= reader.size) {
+        const head = await reader.read(pos, Math.min(reader.size, pos + 16));
+        let size = u32(head, 0), hdr = 8;
+        const type = fourcc(head, 4);
+        if (size === 1) { size = u64(head, 8); hdr = 16; } else if (size === 0) size = reader.size - pos;
+        if (size < hdr) break;
+        if (type === 'moov') {
+          if (size > 256 * 1024 * 1024) throw new Error('moov が大きすぎます');
+          return reader.read(pos + hdr, pos + size);
+        }
+        pos += size;
+      }
+      throw new Error('MP4 / MOV の目次（moov）が見つかりません');
+    }
+
+    function hex2(n) { return (n < 16 ? '0' : '') + n.toString(16); }
+    function avcCodec(type, c) { return (type === 'avc3' ? 'avc3.' : 'avc1.') + hex2(c[1]) + hex2(c[2]) + hex2(c[3]); }
+    /* VP9（vpcC：FullBox。版1 なら profile, level, bitDepth(上位4ビット)…） → 'vp09.PP.LL.DD' */
+    function vp9Codec(u8, b) {
+      const p = b.start + 4;
+      const dd = (n) => (n < 10 ? '0' : '') + n;
+      return 'vp09.' + dd(u8[p]) + '.' + dd(u8[p + 1]) + '.' + dd(u8[p + 2] >> 4);
+    }
+    /* AV1（av1C：marker/version, seq_profile(3)+seq_level_idx_0(5), tier(1)+high_bitdepth(1)+twelve_bit(1)…） → 'av01.P.LLT.DD' */
+    function av1Codec(c) {
+      const profile = c[1] >> 5, level = c[1] & 31, tier = c[2] >> 7, hi = (c[2] >> 6) & 1, twelve = (c[2] >> 5) & 1;
+      const depth = hi ? (twelve ? 12 : 10) : 8;
+      return 'av01.' + profile + '.' + (level < 10 ? '0' : '') + level + (tier ? 'H' : 'M') + '.' + (depth < 10 ? '0' : '') + depth;
+    }
+    function hevcCodec(type, c) {
+      const b1 = c[1];
+      const space = ['', 'A', 'B', 'C'][b1 >> 6], tier = (b1 >> 5) & 1, profile = b1 & 31;
+      let compat = u32(c, 2), rev = 0;
+      for (let i = 0; i < 32; i++) { rev = (rev * 2) + (compat & 1); compat = Math.floor(compat / 2); }
+      const cons = [c[6], c[7], c[8], c[9], c[10], c[11]];
+      while (cons.length && cons[cons.length - 1] === 0) cons.pop();
+      return (type === 'hev1' ? 'hev1.' : 'hvc1.') + space + profile + '.' + rev.toString(16).toUpperCase() + '.' + (tier ? 'H' : 'L') + c[12] +
+        cons.map((x) => '.' + x.toString(16).toUpperCase()).join('');
+    }
+
+    /* moov（中身）→ 映像トラックの情報とサンプル表 */
+    function parseMoov(u8) {
+      const top = boxes(u8, 0, u8.length);
+      const mvhd = top.find((b) => b.type === 'mvhd');
+      let movieScale = 600;
+      if (mvhd) movieScale = u8[mvhd.start] === 1 ? u32(u8, mvhd.start + 20) : u32(u8, mvhd.start + 12);
+      for (const trak of top.filter((b) => b.type === 'trak')) {
+        const mdia = child(u8, trak, 'mdia');
+        if (!mdia) continue;
+        const hdlr = child(u8, mdia, 'hdlr');
+        if (!hdlr || fourcc(u8, hdlr.start + 8) !== 'vide') continue;
+        const mdhd = child(u8, mdia, 'mdhd');
+        const v1 = u8[mdhd.start] === 1;
+        const timescale = v1 ? u32(u8, mdhd.start + 20) : u32(u8, mdhd.start + 12);
+        const minf = child(u8, mdia, 'minf');
+        const stbl = minf && child(u8, minf, 'stbl');
+        if (!stbl) continue;
+        const sb = {};
+        boxes(u8, stbl.start, stbl.end).forEach((b) => { sb[b.type] = b; });
+        if (!sb.stsd || !sb.stts || !sb.stsc || !sb.stsz || !(sb.stco || sb.co64)) continue;
+
+        // --- コーデック ---
+        const ent = sb.stsd.start + 8;                 // 最初のサンプル記述
+        const entSize = u32(u8, ent), entType = fourcc(u8, ent + 4);
+        const width = u16(u8, ent + 32), height = u16(u8, ent + 34);
+        let codec = null, description = null;
+        for (const b of boxes(u8, ent + 86, ent + entSize)) {
+          if (b.type === 'avcC') { description = u8.slice(b.start, b.end); codec = avcCodec(entType, description); }
+          else if (b.type === 'hvcC') { description = u8.slice(b.start, b.end); codec = hevcCodec(entType, description); }
+          else if (b.type === 'vpcC') codec = vp9Codec(u8, b);
+          else if (b.type === 'av1C') { description = u8.slice(b.start, b.end); codec = av1Codec(description); }
+        }
+        if (!codec) throw new Error('対応していない映像形式です（' + entType + '）');
+
+        // --- 回転（tkhd の行列） ---
+        const tkhd = child(u8, trak, 'tkhd');
+        let rotation = 0;
+        if (tkhd) {
+          const m = tkhd.start + (u8[tkhd.start] === 1 ? 52 : 40);
+          const a = i32(u8, m) / 65536, b = i32(u8, m + 4) / 65536, c = i32(u8, m + 12) / 65536, d = i32(u8, m + 16) / 65536;
+          if (a === 0 && d === 0) rotation = b > 0 && c < 0 ? 90 : b < 0 && c > 0 ? 270 : 0;
+          else if (a < 0 && d < 0) rotation = 180;
+        }
+
+        // --- 編集リスト（表示時刻の原点） ---
+        let mediaStart = 0, startOffset = 0;
+        const edts = child(u8, trak, 'edts'), elst = edts && child(u8, edts, 'elst');
+        if (elst) {
+          const ev1 = u8[elst.start] === 1, n = u32(u8, elst.start + 4);
+          let p = elst.start + 8;
+          for (let i = 0; i < n; i++) {
+            const dur = ev1 ? u64(u8, p) : u32(u8, p);
+            const mt = ev1 ? (u32(u8, p + 8) === 0xFFFFFFFF && u32(u8, p + 12) === 0xFFFFFFFF ? -1 : u64(u8, p + 8)) : i32(u8, p + 4);
+            p += ev1 ? 20 : 12;
+            if (mt < 0) { startOffset += dur / movieScale; continue; }
+            mediaStart = mt; break;
+          }
+        }
+
+        // --- サンプル表 ---
+        const count = u32(u8, sb.stsz.start + 8), fixed = u32(u8, sb.stsz.start + 4);
+        if (!count) throw new Error('この MP4 は断片化された形式（録画ソフトなどが作る形）で、位置の表がありません');
+        const size = new Uint32Array(count), offset = new Float64Array(count), dts = new Float64Array(count), cts = new Float64Array(count), sync = new Uint8Array(count);
+        for (let i = 0; i < count; i++) size[i] = fixed || u32(u8, sb.stsz.start + 12 + i * 4);
+        // 時刻（デコード順）
+        { let p = sb.stts.start + 8, n = u32(u8, sb.stts.start + 4), i = 0, t = 0;
+          for (let e = 0; e < n && i < count; e++, p += 8) { const c = u32(u8, p), d = u32(u8, p + 4); for (let k = 0; k < c && i < count; k++) { dts[i++] = t; t += d; } }
+          for (; i < count; i++) dts[i] = t; }
+        // 表示時刻とのずれ
+        cts.set(dts);
+        if (sb.ctts) {
+          let p = sb.ctts.start + 8, n = u32(u8, sb.ctts.start + 4), i = 0;
+          for (let e = 0; e < n && i < count; e++, p += 8) { const c = u32(u8, p), o = i32(u8, p + 4); for (let k = 0; k < c && i < count; k++) cts[i++] += o; }
+        }
+        // キーフレーム
+        if (sb.stss) { const n = u32(u8, sb.stss.start + 4); for (let e = 0; e < n; e++) { const s = u32(u8, sb.stss.start + 8 + e * 4) - 1; if (s >= 0 && s < count) sync[s] = 1; } } else sync.fill(1);
+        // ファイル内の位置（チャンク → サンプル）
+        { const co64 = !!sb.co64, cb = sb.co64 || sb.stco, nChunk = u32(u8, cb.start + 4);
+          const nEnt = u32(u8, sb.stsc.start + 4);
+          let i = 0;
+          for (let e = 0; e < nEnt && i < count; e++) {
+            const p = sb.stsc.start + 8 + e * 12;
+            const first = u32(u8, p), per = u32(u8, p + 4);
+            const next = e + 1 < nEnt ? u32(u8, p + 12) : nChunk + 1;
+            for (let ch = first; ch < next && i < count; ch++) {
+              let off = co64 ? u64(u8, cb.start + 8 + (ch - 1) * 8) : u32(u8, cb.start + 8 + (ch - 1) * 4);
+              for (let k = 0; k < per && i < count; k++) { offset[i] = off; off += size[i]; i++; }
+            }
+          } }
+        const time = new Float64Array(count);
+        let duration = 0;
+        for (let i = 0; i < count; i++) { time[i] = (cts[i] - mediaStart) / timescale + startOffset; if (time[i] > duration) duration = time[i]; }
+        const fps = count > 1 ? (count - 1) / Math.max(1e-6, (dts[count - 1] - dts[0]) / timescale) : 30;
+        // description が無い形式（VP9）は undefined にしておく（VideoDecoder の設定に null を渡すと受け付けないため）
+        return { codec, description: description || undefined, width, height, rotation, timescale, count, size, offset, time, sync, duration: duration + 1 / fps, fps, entType };
+      }
+      throw new Error('映像トラックが見つかりません');
+    }
+
+    /* 時刻 t のコマを得るために、どのサンプルからデコードを始めるか（その前の最後のキーフレーム） */
+    function keyBefore(track, t) {
+      let best = 0;
+      for (let i = 0; i < track.count; i++) { if (track.sync[i] && track.time[i] <= t + 1e-6) best = i; else if (track.sync[i]) break; }
+      return best;
+    }
+
+    /* File（Blob）や URL を「範囲を指定して読む」形にそろえる */
+    function blobReader(blob) {
+      return { size: blob.size, read: async (a, b) => new Uint8Array(await blob.slice(a, b).arrayBuffer()) };
+    }
+    async function urlReader(url) {
+      const head = await fetch(url, { method: 'GET', headers: { Range: 'bytes=0-0' } });
+      const cr = head.headers.get('Content-Range');
+      const size = cr ? Number(cr.split('/')[1]) : Number(head.headers.get('Content-Length'));
+      if (!isFinite(size) || size <= 0) throw new Error('動画の大きさが分かりません');
+      // 通信が一瞬切れても止まらないよう、3回までやり直す
+      const read = async (a, b) => {
+        let lastErr = null;
+        for (let k = 0; k < 3; k++) {
+          try {
+            const r = await fetch(url, { headers: { Range: `bytes=${a}-${b - 1}` } });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const u8 = new Uint8Array(await r.arrayBuffer());
+            if (u8.length !== b - a) throw new Error('読み込みが途中で切れました');
+            return u8;
+          } catch (e) { lastErr = e; await new Promise((res) => setTimeout(res, 300 * (k + 1))); }
+        }
+        throw lastErr;
+      };
+      return { size, read };
+    }
+
+    async function open(reader) {
+      const moov = await readMoov(reader);
+      return parseMoov(moov);
+    }
+
+    BS.mp4 = { open, readMoov, parseMoov, keyBefore, blobReader, urlReader, boxes };
+  }
+  mod(root);
+  (root.BS.src = root.BS.src || {}).mp4 = mod;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/auto-engine.js */
+/* バスケ分析スタジオ — 自動解析の実行部
+   同じコードが Worker（別スレッド）でも画面側でも動く。入力のしかたは2つ：
+   A) decode … 動画ファイル（MP4 / MOV）を自分で読み、WebCodecs で全コマを順にデコードして調べる。
+               コマの取りこぼしがなく、毎回同じ結果になり、タブが裏に回っても止まらない。
+   B) push   … 画面側が1コマずつ画像を送る（合成サンプル、WebCodecs が使えない動画）。
+   どちらも、調べるコマは約15コマ/秒（判定のしきい値はこの間隔で合わせてある）。 */
+(function (root) {
+  function mod(root) {
+    'use strict';
+    const BS = root.BS;
+    const A = BS.auto, MP4 = BS.mp4;
+    const MIN_STEP = 0.06;          // これより近いコマは飛ばす（30fps の動画なら1コマおき）
+
+    /* env: { makeCanvas(w,h), preview(canvas) → 画面に送れる画像（なければ null） } */
+    function create(env) {
+      let fa = null, cfg = null, cancelled = false;
+      const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
+      let dbg = null;               // 検証用：コマごとのボール候補（tests/real-shots.cjs で読む形）。init の cfg.debug か decode の debug で有効
+      function init(c) { cfg = c; cancelled = false; dbg = c.debug ? [] : null; fa = A.createFrameAnalyzer(c, env.makeCanvas); }
+      function record(t, live) {
+        if (!dbg) return;
+        live.status.forEach((s, i) => {
+          if (!s.tracked || !s.inFrame) return;
+          dbg.push({ t: +t.toFixed(3), h: i, sc: +s.score.toFixed(2), rs: s.rimScore == null ? null : +s.rimScore.toFixed(2), rim: [Math.round(s.rim.cx), Math.round(s.rim.cy), +s.rim.w.toFixed(1)], fg: +(s.fg || 0).toFixed(3), net: +(s.net || 0).toFixed(3), no: +(s.netOnly || 0).toFixed(3),
+            c: (s.cands || []).map((c) => [+c.x.toFixed(2), +c.y.toFixed(2), +c.area.toFixed(2), Math.round(c.r), Math.round(c.g), Math.round(c.b), +c.fill.toFixed(2), +(c.still || 0).toFixed(2)]) });
+        });
+      }
+      /* 画面に返す分だけに絞る（枠・リング・ボール候補） */
+      function slim(live) {
+        return {
+          status: live.status.map((s) => ({
+            tracked: s.tracked && s.inFrame, score: +s.score.toFixed(2), box: s.box, rim: s.rim,
+            balls: (s.cands || []).filter(A.ballLike).map((c) => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2) }))
+          })),
+          events: live.events
+        };
+      }
+      function closeImage(img) { if (img && typeof img.close === 'function') { try { img.close(); } catch (e) { /* すでに閉じている */ } } }
+
+      /* ファイルを自分で読めないとき（Safari でローカルの HTML から開くと、Worker の中からは選んだファイルを読めない）は、
+         画面側に「ここからここまで読んで」と頼む。post({ ev:'read', rid, a, b }) → 画面側が { cmd:'data', rid, buf } を返す */
+      let rseq = 0;
+      const reads = new Map();
+      function proxyReader(size, post) {
+        return { size, proxy: true, read: (a, b) => new Promise((resolve, reject) => { const rid = ++rseq; reads.set(rid, { resolve, reject }); post({ ev: 'read', rid, a, b }); }) };
+      }
+      function onData(m) {
+        const p = reads.get(m.rid);
+        if (!p) return;
+        reads.delete(m.rid);
+        if (m.error || !m.buf) p.reject(new Error(m.error || '読み込めませんでした')); else p.resolve(new Uint8Array(m.buf));
+      }
+
+      /* ---- B) push ---- */
+      function tpl(i, image) { fa.load(image); fa.initHoop(i); closeImage(image); }
+      function frame(t, image, wantPreview) {
+        const raw = fa.frame(t, image);
+        record(t, raw);
+        const live = slim(raw);
+        closeImage(image);
+        if (wantPreview && env.preview) live.preview = env.preview(fa.canvas);
+        return live;
+      }
+
+      /* ---- A) decode ---- */
+      /* start 番目のサンプル（キーフレーム）から順にデコードして onFrame(frame, 秒) を呼ぶ。false を返すと打ち切り */
+      async function decodeFrom(track, reader, config, start, onFrame) {
+        let stop = false, error = null, fed = 0, handled = 0, wake = null;
+        const dec = new VideoDecoder({
+          output: (f) => {
+            handled++;
+            try { if (!stop && !cancelled && onFrame(f, f.timestamp / 1e6) === false) stop = true; }
+            catch (e) { error = e; stop = true; }
+            finally { f.close(); if (wake) wake(); }
+          },
+          error: (e) => { error = error || e; stop = true; if (wake) wake(); }
+        });
+        dec.configure(config);
+        const BLOCK = 8 * 1024 * 1024;
+        let buf = null, b0 = 0, b1 = 0;
+        const keyT = track.time[start];
+        for (let i = start; i < track.count && !stop && !cancelled; i++) {
+          const off = track.offset[i], sz = track.size[i];
+          if (!sz) continue;
+          // 始めのキーフレームより「前に表示される」コマは渡さない。iPhone の HEVC などは、キーフレームの直後に
+          // 「それより前のコマを参照する」コマが続く（open GOP）。途中から始めるとそれらはデコードできず、Safari では全体が失敗になる。
+          if (i > start && track.time[i] < keyT - 1e-6) continue;
+          if (!buf || off < b0 || off + sz > b1) {
+            b0 = off; b1 = Math.min(reader.size, Math.max(off + sz, off + BLOCK));
+            buf = await reader.read(b0, b1);
+          }
+          // デコーダーに渡しすぎない（出てきたコマを処理し終えるのを待つ）
+          while (!stop && !cancelled && (fed - handled > 24 || dec.decodeQueueSize > 12)) await new Promise((r) => { wake = r; setTimeout(r, 30); });
+          if (stop || cancelled) break;
+          dec.decode(new EncodedVideoChunk({ type: track.sync[i] ? 'key' : 'delta', timestamp: Math.round(track.time[i] * 1e6), data: buf.subarray(off - b0, off - b0 + sz) }));
+          fed++;
+        }
+        if (!stop && !cancelled && !error) { try { await dec.flush(); } catch (e) { error = error || e; } }
+        try { dec.close(); } catch (e) { /* すでに閉じている */ }
+        if (error) throw error;
+      }
+
+      /* opts: { file | url, marks: [{ i, t }], t0, t1 }。途中経過は post({ ev:'progress', ... }) */
+      async function decode(opts, post) {
+        if (typeof VideoDecoder === 'undefined') throw Object.assign(new Error('このブラウザは WebCodecs に対応していません'), { code: 'unsupported' });
+        let reader, track;
+        try {
+          if (opts.file) {
+            reader = MP4.blobReader(opts.file);
+            try { await reader.read(0, Math.min(16, reader.size)); }
+            catch (e) { reader = proxyReader(opts.file.size, post); }       // ここからは読めない → 画面側に読んでもらう
+          } else reader = await MP4.urlReader(opts.url);
+          track = await MP4.open(reader);
+        } catch (e) { throw Object.assign(new Error(e.message || String(e)), { code: 'unsupported' }); }
+        const config = { codec: track.codec, codedWidth: track.width, codedHeight: track.height, description: track.description };
+        let ok = false;
+        try { ok = (await VideoDecoder.isConfigSupported(config)).supported; } catch (e) { ok = false; }
+        if (!ok) throw Object.assign(new Error('このブラウザでは ' + track.codec + ' をデコードできません'), { code: 'unsupported' });
+        const rot = track.rotation || 0;
+        post({ ev: 'info', codec: track.codec, fps: +track.fps.toFixed(2), frames: track.count, duration: track.duration, rotation: rot, reader: reader.proxy ? 'proxy' : 'direct' });
+
+        // ゴールのテンプレート：指定したコマ（画面に出ていたコマ＝時刻 t 以前で最後のコマ）から作る
+        for (const m of opts.marks) {
+          let loaded = false;
+          await decodeFrom(track, reader, config, MP4.keyBefore(track, m.t), (f, t) => {
+            if (t > m.t + 1e-4 && loaded) return false;
+            if (t >= m.t - 0.12) { fa.load(f, rot); loaded = true; }
+            return true;
+          });
+          if (!loaded) throw new Error('ゴールを指定したコマを読めませんでした');
+          fa.initHoop(m.i);
+        }
+
+        // 本番：頭から順に
+        const t0 = opts.t0 || 0, t1 = opts.t1 != null ? opts.t1 : Infinity;
+        let lastT = -1, n = 0, lastPost = 0, skip = opts.phase || 0, spent = 0;      // spent: 1コマの解析（fa.frame）にかかった時間の合計（ミリ秒）。デコードにかかった時間との切り分け用
+        if (opts.debug && !dbg) dbg = [];
+        const started = now();
+        await decodeFrom(track, reader, config, MP4.keyBefore(track, t0), (f, t) => {
+          if (t < t0 - 1e-6) return true;
+          if (t > t1) return false;
+          if (skip > 0) { skip--; return true; }
+          if (t - lastT < MIN_STEP) return true;
+          lastT = t; n++;
+          const tf = now();
+          const live = fa.frame(t, f, rot);
+          spent += now() - tf;
+          record(t, live);
+          const w = now();
+          if (live.events.length || w - lastPost > 200) {
+            const msg = { ev: 'progress', t, frames: n, elapsed: (w - started) / 1000, live: slim(live) };
+            let tr = [];
+            if (w - lastPost > 200 && env.preview) { msg.preview = env.preview(fa.canvas); if (msg.preview && env.transferable) tr = [msg.preview]; }
+            lastPost = w;
+            post(msg, tr);
+          }
+          return true;
+        });
+        if (cancelled) throw Object.assign(new Error('中止しました'), { code: 'cancelled' });
+        const res = fa.finish();
+        res.elapsed = (now() - started) / 1000;
+        res.analyseSec = spent / 1000;
+        res.mode = 'decode';
+        if (dbg) res.log = dbg;
+        return res;
+      }
+
+      function finish() { const res = fa.finish(); res.mode = 'push'; if (dbg) res.log = dbg; return res; }
+      function cancel() { cancelled = true; }
+
+      /* メッセージ1つを処理する（Worker でも画面側でも共通） */
+      async function handle(m, post) {
+        try {
+          let out = null;
+          if (m.cmd === 'init') init(m.cfg);
+          else if (m.cmd === 'tpl') tpl(m.i, m.image);
+          else if (m.cmd === 'frame') out = { live: frame(m.t, m.image, m.preview) };
+          else if (m.cmd === 'decode') out = { result: await decode(m, post) };
+          else if (m.cmd === 'finish') out = { result: finish() };
+          else if (m.cmd === 'cancel') { cancel(); return; }
+          else if (m.cmd === 'data') { onData(m); return; }
+          else throw new Error('unknown cmd ' + m.cmd);
+          const tr = out && out.live && out.live.preview && env.transferable ? [out.live.preview] : [];
+          post(Object.assign({ id: m.id, ok: true }, out), tr);
+        } catch (e) {
+          post({ id: m.id, ok: false, error: (e && e.message) || String(e), code: (e && e.code) || null });
+        }
+      }
+      return { handle, cancel };
+    }
+
+    /* Worker の中で呼ぶ：メッセージを受けて処理する */
+    function serve(scope) {
+      let pv = null, pg = null;
+      const core = create({
+        makeCanvas: (w, h) => new OffscreenCanvas(w, h),
+        transferable: true,
+        preview(canvas) {
+          const w = 640, h = Math.round(640 * canvas.height / canvas.width);
+          if (!pv || pv.height !== h) { pv = new OffscreenCanvas(w, h); pg = pv.getContext('2d'); }
+          pg.drawImage(canvas, 0, 0, w, h);
+          return pv.transferToImageBitmap();
+        }
+      });
+      scope.onmessage = (e) => { core.handle(e.data, (msg, tr) => scope.postMessage(msg, tr || [])); };
+    }
+
+    BS.autoEngine = { create, serve, MIN_STEP };
+  }
+  mod(root);
+  (root.BS.src = root.BS.src || {}).autoEngine = mod;   // Worker に同じコードを渡すため
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/clips.js */
+/* バスケ得点クリップ — 見つけた得点を「入れた（自分）／入れられた（相手）」に分けて、5秒の区間（クリップ）にする
+   DOM 非依存（node のテストからも読み込める）。
+
+   どちらのチームの得点かは「どちらのゴールに入ったか」で決める。
+   バスケは、前半・後半それぞれで、チームが攻めるゴールが決まっている（ハーフタイムで入れ替わる。延長は後半と同じ向き）。
+   なので「動画のはじめに、そのゴールを攻めていたチーム」と「後半の始まり（あれば）」が分かれば、全部の得点のチームが決まる。
+   ユニフォームの色を映像から見分けるより、ずっと確実（選手どうしが重なっても、照明が変わっても間違えない）。
+
+   チームの番号：0 = 自分、1 = 相手。
+   setup  : { hoopTeam: [ゴールA を攻めるチーム, ゴールB を攻めるチーム]（動画のはじめ）, halfT: 後半の始まり（秒）| null }
+   result : 自動解析の結果 { shots: [{ t（ボールがリングを通った時刻）, hoop, made, sure }], spans, ... }
+   edits  : 手直し { fix: { id: 0|1 }（チームを手で決めた）, off: { id: true }（再生・書き出しから外す）, added: [{ id, t, team }]（手で足した得点） } */
+(function (root) {
+  'use strict';
+  const BS = root.BS = root.BS || {};
+
+  const WIN = { lead: 4, lag: 1 };      // 入った瞬間の「前 4 秒・後 1 秒」＝ 5 秒
+
+  /* 自動で見つけた得点の id（同じ動画・同じゴールの指定なら、毎回同じになる） */
+  const shotId = (s) => 's' + Math.round(s.t * 100) + '_' + s.hoop;
+
+  /* ゴールと時刻から決まるチーム（手直しの前） */
+  function baseTeam(shot, setup) {
+    const ht = (setup && setup.hoopTeam) || [0, 1];
+    const first = ht[shot.hoop] === 0 || ht[shot.hoop] === 1 ? ht[shot.hoop] : shot.hoop;
+    const second = setup && setup.halfT != null && shot.t >= setup.halfT;
+    return second ? 1 - first : first;
+  }
+
+  function emptyEdits() { return { fix: {}, off: {}, added: [] }; }
+
+  /* 得点の一覧（時刻順）。{ id, t, team, auto, hoop, unsure, fixed, on, half } */
+  function items(result, setup, edits) {
+    const E = edits || emptyEdits();
+    const out = [];
+    ((result && result.shots) || []).forEach((s) => {
+      if (!s.made) return;
+      const id = shotId(s);
+      const fixed = E.fix && (E.fix[id] === 0 || E.fix[id] === 1);
+      out.push({ id, t: s.t, team: fixed ? E.fix[id] : baseTeam(s, setup), auto: true, hoop: s.hoop, unsure: s.sure === false, fixed, on: !(E.off && E.off[id]) });
+    });
+    (E.added || []).forEach((a) => out.push({ id: a.id, t: a.t, team: a.team, auto: false, hoop: null, unsure: false, fixed: true, on: !(E.off && E.off[a.id]) }));
+    out.sort((a, b) => a.t - b.t);
+    out.forEach((it) => { it.half = setup && setup.halfT != null ? (it.t >= setup.halfT ? 2 : 1) : 0; });
+    return out;
+  }
+
+  /* そのチームの得点だけを、クリップ（区間）にする。win: { lead, lag }、duration: 動画の長さ（秒） */
+  function clipsOf(list, team, win, duration) {
+    const w = Object.assign({}, WIN, win || {});
+    const end = duration > 0 ? duration : Infinity;
+    const mine = list.filter((it) => it.team === team);
+    return mine.map((it, i) => ({
+      id: it.id, at: it.t, team, n: i + 1, total: mine.length, on: it.on, unsure: it.unsure, auto: it.auto, fixed: it.fixed, half: it.half,
+      t0: Math.max(0, it.t - w.lead), t1: Math.min(end, it.t + w.lag)
+    }));
+  }
+
+  /* 続けて再生・書き出しするときの区間。外したものは入れない。
+     となりの区間と重なるときは、同じところを2回見せないように、重なった分を後ろの区間から削る（ほとんど重なるなら1つにまとめる） */
+  function reel(clips) {
+    const out = [];
+    clips.filter((c) => c.on !== false).slice().sort((a, b) => a.t0 - b.t0).forEach((c) => {
+      const seg = Object.assign({}, c, { ids: [c.id] });
+      const prev = out[out.length - 1];
+      if (prev && seg.t0 < prev.t1) {
+        if (seg.t1 - prev.t1 < 0.5) { prev.t1 = Math.max(prev.t1, seg.t1); prev.ids.push(c.id); return; }
+        seg.t0 = prev.t1;
+      }
+      out.push(seg);
+    });
+    return out;
+  }
+
+  /* ハーフタイムらしい「シュートが1本もない長い時間」を探す（後半の始まりの候補）。
+     解析で見つけたシュート（成功も失敗も）の間の、いちばん長いすき間が 4 分以上で、動画の真ん中あたり（15〜85%）にあり、
+     その前後にシュートが 3 本以上ずつあれば、ハーフタイムとして提案する。決めるのは使う人（提案するだけ） */
+  const HALF_GAP = 240;
+  function suggestHalf(result, duration) {
+    const ts = ((result && result.shots) || []).map((s) => s.t).sort((a, b) => a - b);
+    if (ts.length < 6) return null;
+    let best = null;
+    for (let i = 1; i < ts.length; i++) {
+      const gap = ts[i] - ts[i - 1];
+      if (!best || gap > best.gap) best = { gap, from: ts[i - 1], to: ts[i], i };
+    }
+    if (!best || best.gap < HALF_GAP) return null;
+    const mid = (best.from + best.to) / 2;
+    if (duration > 0 && (mid < duration * 0.15 || mid > duration * 0.85)) return null;
+    if (best.i < 3 || ts.length - best.i < 3) return null;
+    return { from: best.from, to: best.to, at: Math.round(Math.max(best.from + 1, best.to - 10) * 10) / 10 };
+  }
+
+  /* 解析をやり直したとき、前の結果に付けた手直し（チーム・外す）を、新しい結果の「同じ得点」（同じゴールで、時刻の差が 1.5 秒以内）へ移す */
+  function carryEdits(oldResult, newResult, edits) {
+    const E = edits || emptyEdits();
+    const next = { fix: {}, off: {}, added: (E.added || []).slice() };
+    const oldMade = ((oldResult && oldResult.shots) || []).filter((s) => s.made);
+    const newMade = ((newResult && newResult.shots) || []).filter((s) => s.made);
+    const map = {};
+    oldMade.forEach((o) => {
+      let best = null;
+      newMade.forEach((n) => { const d = Math.abs(n.t - o.t); if (n.hoop === o.hoop && d < 1.5 && (!best || d < best.d)) best = { d, id: shotId(n) }; });
+      if (best) map[shotId(o)] = best.id;
+    });
+    const manual = new Set(next.added.map((a) => a.id));
+    Object.keys(E.fix || {}).forEach((id) => { if (map[id]) next.fix[map[id]] = E.fix[id]; });
+    Object.keys(E.off || {}).forEach((id) => { if (map[id]) next.off[map[id]] = true; else if (manual.has(id)) next.off[id] = true; });
+    return next;
+  }
+
+  /* ゴールが映っていた（調べられた）時間の割合。spans: [[開始, 終了, ビット（ゴール i が映っていれば 1<<i）], ...] */
+  function coverage(result, duration, nHoops) {
+    const out = [];
+    const spans = (result && result.spans) || [];
+    const dur = duration > 0 ? duration : 1;
+    for (let i = 0; i < (nHoops || 2); i++) {
+      let sec = 0;
+      spans.forEach((sp) => { if (sp[2] & (1 << i)) sec += sp[1] - sp[0] + 1 / 15; });
+      out.push(Math.min(1, sec / dur));
+    }
+    return out;
+  }
+
+  BS.clips = { WIN, HALF_GAP, shotId, baseTeam, emptyEdits, items, clipsOf, reel, suggestHalf, carryEdits, coverage };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/store.js */
+/* バスケ得点クリップ — 保存（このブラウザの中だけ。動画そのものは保存しない）
+   動画ごとに「チームの色・ゴールの指定・解析の結果・手直し」を覚えておき、同じ動画を開き直すと続きから使える。
+   動画の見分けは「ファイル名・大きさ・更新日時」。 */
+(function (root) {
+  'use strict';
+  const BS = root.BS;
+  const PREFIX = 'bclip:v1:';
+  const INDEX = 'bclip:index';
+  const PREFS = 'bclip:prefs';
+  const KEEP = 30;          // 覚えておく動画の数（古いものから消す）
+
+  function ls() { try { return root.localStorage || null; } catch (e) { return null; } }
+  function readJSON(k) { const s = ls(); if (!s) return null; try { const v = s.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+  function writeJSON(k, v) { const s = ls(); if (!s) return false; try { s.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+
+  function videoKey(file) {
+    if (!file) return null;
+    if (typeof file === 'string') return 'url:' + file;
+    return [file.name, file.size, file.lastModified || 0].join('|');
+  }
+
+  /* 前回のチームの色・クリップの長さ（次の動画でも同じにする） */
+  function prefs() {
+    return Object.assign({
+      teams: [{ color: '#f4f4f4', colorName: '白', name: '' }, { color: '#2f6fed', colorName: '青', name: '' }],
+      win: { lead: BS.clips.WIN.lead, lag: BS.clips.WIN.lag }, captions: true
+    }, readJSON(PREFS) || {});
+  }
+  function savePrefs(st) { writeJSON(PREFS, { teams: st.teams, win: st.win, captions: st.captions }); }
+
+  function fresh() {
+    const p = prefs();
+    return {
+      v: 1, teams: JSON.parse(JSON.stringify(p.teams)), hoops: [null, null], hoopTeam: [0, 1], fixed: false,
+      halfT: null, halfNo: null, result: null, edits: BS.clips.emptyEdits(), win: Object.assign({}, p.win), captions: p.captions !== false
+    };
+  }
+
+  function load(key) {
+    if (!key) return null;
+    const st = readJSON(PREFIX + key);
+    if (!st || st.v !== 1) return null;
+    const base = fresh();
+    const out = Object.assign(base, st);
+    out.edits = Object.assign(BS.clips.emptyEdits(), st.edits || {});
+    return out;
+  }
+
+  function save(key, st) {
+    if (!key || !st) return false;
+    st.savedAt = Date.now();
+    const idx = readJSON(INDEX) || {};
+    idx[key] = st.savedAt;
+    // 古いものを消す（数が多すぎる・入りきらないとき）
+    const prune = (n) => {
+      const keys = Object.keys(idx).filter((k) => k !== key).sort((a, b) => idx[a] - idx[b]);
+      for (let i = 0; i < n && i < keys.length; i++) { try { ls().removeItem(PREFIX + keys[i]); } catch (e) { /* 無視 */ } delete idx[keys[i]]; }
+    };
+    if (Object.keys(idx).length > KEEP) prune(Object.keys(idx).length - KEEP);
+    let ok = writeJSON(PREFIX + key, st);
+    if (!ok) { prune(10); ok = writeJSON(PREFIX + key, st); }
+    writeJSON(INDEX, idx);
+    savePrefs(st);
+    return ok;
+  }
+
+  BS.store = { videoKey, prefs, fresh, load, save };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/media.js */
+/* バスケ得点クリップ — 動画ファイル（<video>）の操作
+   「バスケ分析スタジオ」の media.js から、実動画の部分だけを持ってきたもの（Safari で見つかった癖への対策もそのまま）。 */
+(function (root) {
+  'use strict';
+  const BS = root.BS;
+
+  function createVideoMedia(file) {
+    const video = document.createElement('video');
+    video.className = 'media-el';
+    video.playsInline = true;
+    video.preload = 'auto';
+    // file は File（通常）か、URL 文字列（開発時の確認用）
+    const isUrl = typeof file === 'string';
+    const url = isUrl ? file : URL.createObjectURL(file);
+    video.src = url;
+    const bus = BS.emitter();
+    let raf = 0;
+    function loop() {
+      bus.emit('time', video.currentTime);
+      if (!video.paused && !video.ended) raf = requestAnimationFrame(loop);
+    }
+    // （play / pause の通知は、届いた時点の実際の状態と合うものだけを伝える）
+    let kick = false;          // 止めた後、まだ1回もシークしていない（次のシークは2回に分ける）
+    let wantPlay = false;      // 再生を頼んだ（まだ止めていない）
+    video.addEventListener('play', () => { if (video.paused) return; bus.emit('play'); cancelAnimationFrame(raf); raf = requestAnimationFrame(loop); });
+    video.addEventListener('pause', () => { kick = true; if (!video.paused) return; cancelAnimationFrame(raf); bus.emit('pause'); bus.emit('time', video.currentTime); });
+    video.addEventListener('seeked', () => { bus.emit('time', video.currentTime); bus.emit('seeked', video.currentTime); });
+    video.addEventListener('timeupdate', () => { if (video.paused) bus.emit('time', video.currentTime); });
+    video.addEventListener('loadedmetadata', () => bus.emit('ready', { duration: video.duration, width: video.videoWidth, height: video.videoHeight }));
+    video.addEventListener('loadeddata', () => bus.emit('time', video.currentTime));
+    video.addEventListener('ended', () => { wantPlay = false; bus.emit('ended'); });
+    video.addEventListener('error', () => bus.emit('error', video.error));
+    /* 自動再生の制限への対応。Safari などは「操作（クリック・キー）の直後」でないと、音つきの動画をプログラムから再生させない。
+       ただし、操作（ファイル選択・ドロップ）の処理の中で作った <video> には、この制限がそもそもかからないので、ふつうの使い方では困らない。
+       万一断られたときだけ、音を消して再生し、次の操作で音を戻す。
+       （「最初の操作で play() → すぐ pause()」で一律に解除する方法は使わない。下の Safari の癖を自分で踏むことになる）
+
+       Safari（WebKit）の癖：再生が実際に始まる前に pause() すると（すばやい再生→停止）、
+         ・その次のシークで、絵が変わらない（時刻だけ進む）。もう一度シークすると直る
+         ・その直後の play() が効かないことがある
+       → 止めた後の最初のシークは「わずかにずらして2回」行い、play() は少し後に本当に再生が始まったかを確かめて、だめならやり直す。 */
+    let mutedByPolicy = false;
+    const onGesture = (e) => {
+      if (e && e.isTrusted === false) return;
+      if (mutedByPolicy) { mutedByPolicy = false; video.muted = false; }
+    };
+    const GESTURES = ['pointerdown', 'keydown'];
+    GESTURES.forEach((ty) => document.addEventListener(ty, onGesture, true));
+    const api = {
+      kind: 'video', el: video, file, url,
+      get duration() { return isFinite(video.duration) ? video.duration : 0; },
+      get time() { return video.currentTime; },
+      get paused() { return video.paused; },
+      get rate() { return video.playbackRate; },
+      set rate(r) { video.playbackRate = r; bus.emit('rate', r); },
+      get width() { return video.videoWidth || 1280; },
+      get height() { return video.videoHeight || 720; },
+      get ready() { return video.readyState >= 1 && video.videoWidth > 0; },
+      seek(x) {
+        return new Promise((resolve) => {
+          const target = BS.clamp(x, 0, api.duration || x);
+          // 1回ぶんのシーク：seeked を待つ（来なければ 3 秒であきらめる）
+          const go = (t, then) => {
+            let fired = false;
+            const done = () => { if (fired) return; fired = true; video.removeEventListener('seeked', done); then(); };
+            video.addEventListener('seeked', done);
+            video.currentTime = t;
+            setTimeout(done, 3000);
+          };
+          if (kick && video.paused) {
+            // 止めた後の最初のシーク：いったん「わずかにずらした時刻」へ行ってから、目的の時刻へ（Safari で絵が変わらないことへの対策）
+            kick = false;
+            const near = target + 0.01 <= (api.duration || target + 1) ? target + 0.01 : Math.max(0, target - 0.01);      // 1コマ（1/30〜1/60 秒）より小さいずれ
+            go(near, () => go(target, resolve));
+            return;
+          }
+          if (Math.abs(video.currentTime - target) < 0.01) { bus.emit('time', target); resolve(); return; }
+          go(target, resolve);
+        });
+      },
+      play() {
+        wantPlay = true;
+        let p = null;
+        try { p = video.play(); } catch (err) { p = null; }
+        // 少し後に、本当に再生が始まったかを確かめる（すばやい 再生→停止→再生 の3つ目が、Safari では効かないことがある）
+        setTimeout(() => { if (wantPlay && video.paused && !video.ended && !video.error) { const q = video.play(); if (q && q.catch) q.catch(() => {}); } }, 350);
+        if (!p || !p.then) return Promise.resolve();
+        return p.catch((err) => {
+          if (!err || err.name !== 'NotAllowedError' || video.muted) return undefined;
+          video.muted = true; mutedByPolicy = true;
+          bus.emit('notice', 'ブラウザの制限で、音を消して再生しています（画面をクリックすると音が出ます）');
+          return video.play().catch(() => {});
+        });
+      },
+      pause() { if (!video.paused || wantPlay) kick = true; wantPlay = false; video.pause(); },
+      frameTo(ctx, w, h) { try { ctx.drawImage(video, 0, 0, w, h); } catch (e) { /* 未読み込み */ } },
+      on: bus.on,
+      destroy() { wantPlay = false; GESTURES.forEach((ty) => document.removeEventListener(ty, onGesture, true)); video.pause(); cancelAnimationFrame(raf); if (!isUrl) URL.revokeObjectURL(url); video.removeAttribute('src'); video.load(); }
+    };
+    return api;
+  }
+
+  BS.createVideoMedia = createVideoMedia;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/export.js */
+/* バスケ得点クリップ — 動画の書き出し
+   区間（クリップ）を順に再生しながら Canvas に描き、MediaRecorder で録画して1本の動画にする。
+   実時間で録るので、書き出しにかかる時間 ≒ できる動画の長さ（5秒 × 本数 ＋ 最初と最後の数秒）。
+   「バスケ分析スタジオ」の export.js をもとに、表示を小さくしたもの（音声の扱い・再生が始まらないときの失敗の出し方は同じ）。 */
+(function (root) {
+  'use strict';
+  const BS = root.BS;
+
+  function pickMime() {
+    if (typeof MediaRecorder === 'undefined') return null;
+    const list = [
+      ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'mp4'],
+      ['video/mp4;codecs=avc1', 'mp4'],
+      ['video/mp4', 'mp4'],
+      ['video/webm;codecs=vp9,opus', 'webm'],
+      ['video/webm;codecs=vp8,opus', 'webm'],
+      ['video/webm', 'webm']
+    ];
+    for (const [m, ext] of list) { try { if (MediaRecorder.isTypeSupported(m)) return { mime: m, ext }; } catch (e) { /* 次 */ } }
+    return null;
+  }
+
+  function sizeFor(media) {
+    let w = media.width || 1280, h = media.height || 720;
+    if (w > 1280) { h = Math.round(h * 1280 / w); w = 1280; }
+    return { w: w - (w % 2), h: h - (h % 2) };
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  const FONT = '"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif';
+
+  /* 左上の小さな札：「入れた 3 / 12」と時刻（チームの色の帯つき） */
+  function drawCaption(ctx, W, H, clip, opts) {
+    const s = W / 1280;
+    const title = clip.label || '', sub = clip.sub || '';
+    ctx.save();
+    ctx.font = `bold ${26 * s}px ${FONT}`;
+    const w1 = ctx.measureText(title).width;
+    ctx.font = `${19 * s}px ${FONT}`;
+    const w2 = ctx.measureText(sub).width;
+    const bw = Math.max(w1, w2) + 52 * s, bh = sub ? 74 * s : 48 * s, bx = 24 * s, by = 22 * s;
+    ctx.fillStyle = 'rgba(8,12,20,0.74)';
+    roundRect(ctx, bx, by, bw, bh, 10 * s); ctx.fill();
+    ctx.fillStyle = clip.color || opts.accent || '#3b82f6';
+    ctx.fillRect(bx, by, 9 * s, bh);
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.font = `bold ${26 * s}px ${FONT}`;
+    ctx.fillText(title, bx + 26 * s, by + (sub ? 25 : 24) * s);
+    if (sub) { ctx.font = `${19 * s}px ${FONT}`; ctx.fillStyle = '#c9d4e6'; ctx.fillText(sub, bx + 26 * s, by + 53 * s); }
+    ctx.restore();
+  }
+
+  function drawCard(ctx, W, H, lines, opts) {
+    const s = W / 1280;
+    const g = ctx.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, '#0e1422'); g.addColorStop(1, '#1b2944');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = opts.accent || '#3b82f6';
+    ctx.fillRect(W / 2 - 60 * s, H / 2 - 112 * s, 120 * s, 7 * s);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    lines.forEach((ln, i) => {
+      ctx.fillStyle = i === 0 ? '#ffffff' : '#c9d4e6';
+      ctx.font = `${i === 0 ? 'bold ' : ''}${(i === 0 ? 54 : 30) * s}px ${FONT}`;
+      ctx.fillText(ln, W / 2, H / 2 - 50 * s + i * 60 * s);
+    });
+    ctx.font = `${18 * s}px ${FONT}`; ctx.fillStyle = '#7f8ba3';
+    ctx.fillText(BS.APP, W / 2, H - 40 * s);
+  }
+  function drawFade(ctx, W, H, a) {
+    if (a <= 0) return;
+    ctx.save(); ctx.globalAlpha = BS.clamp(a, 0, 1); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+
+  /* media: BS.createVideoMedia、clips: [{ t0, t1, label, sub, color }]
+     opts: { title: [行…], end: [行…], accent, captions（false で札なし）, cards（false で最初と最後の画面なし）, audio（false で音なし） }
+     onProgress(0〜1, 文字) / 戻り値 { blob, url, mime, ext, seconds, audio }（中止したら null） */
+  async function exportReel(media, clips, opts, onProgress, signal) {
+    opts = opts || {};
+    const fmt = pickMime();
+    if (!fmt) throw new Error('このブラウザは動画の書き出しに対応していません。Chrome・Edge・Safari の新しい版をお使いください。');
+    if (!clips.length) throw new Error('書き出す場面がありません');
+    const { w: W, h: H } = sizeFor(media);
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const stream = canvas.captureStream(30);
+    const cards = opts.cards !== false;
+    // （音声の準備は、ボタンを押した直後＝最初の await より前に始める。Safari などは、操作の直後でないと音を扱わせない）
+    let audioDest = null;
+    if (opts.audio !== false) {
+      try {
+        const AC = root.AudioContext || root.webkitAudioContext;
+        const wake = (actx) => (actx.state === 'running' ? Promise.resolve() : Promise.race([actx.resume(), new Promise((r) => setTimeout(r, 700))]));
+        if (!media._actx) {
+          // 音声は Web Audio を通して録る。ブラウザが音を出すことを許していない（ボタンを押した直後でない等）ときは、音声なしで書き出す。
+          // 許されていないまま動画の音声をつなぎ替えると、そのあと普通に再生しても音が出なくなるので、つなぐ前に確かめる
+          const actx = new AC();
+          await wake(actx);
+          if (actx.state !== 'running') { try { actx.close(); } catch (e) { /* 無視 */ } throw new Error('audio is not allowed'); }
+          media._actx = actx;
+          media._src = actx.createMediaElementSource(media.el);
+          media._src.connect(actx.destination);
+        } else await wake(media._actx);
+        audioDest = media._actx.createMediaStreamDestination();
+        media._src.connect(audioDest);
+        audioDest.stream.getAudioTracks().forEach((tr) => stream.addTrack(tr));
+      } catch (e) { audioDest = null; }
+    }
+    const rec = new MediaRecorder(stream, { mimeType: fmt.mime, videoBitsPerSecond: 5000000 });
+    const chunks = [];
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    const stopped = new Promise((res) => { rec.onstop = res; });
+    const TITLE = cards ? 2.5 : 0, END = cards ? 2.2 : 0;
+    const total = clips.reduce((s, c) => s + (c.t1 - c.t0), 0) + TITLE + END;
+    let done = 0;
+    const frame = () => new Promise((res) => requestAnimationFrame(res));
+    const aborted = () => signal && signal.aborted;
+    const report = (label) => onProgress && onProgress(Math.min(1, done / Math.max(0.1, total)), label);
+
+    media.pause();
+    rec.start(250);
+    try {
+      let t0 = performance.now();
+      if (cards) {
+        while (performance.now() - t0 < TITLE * 1000 && !aborted()) {
+          drawCard(ctx, W, H, opts.title || ['得点シーン'], opts);
+          await frame();
+          done = (performance.now() - t0) / 1000; report('はじめの画面');
+        }
+      }
+      let acc = 0;
+      for (let i = 0; i < clips.length && !aborted(); i++) {
+        const c = clips[i];
+        const len = c.t1 - c.t0;
+        // 暗転中にシーク
+        drawFade(ctx, W, H, 1);
+        await media.seek(c.t0);
+        await media.play();
+        t0 = performance.now();
+        while (!aborted()) {
+          const el = (performance.now() - t0) / 1000;
+          const vt = media.time;
+          if (vt >= c.t1 || el > len + 3 || media.el.ended) break;
+          // 再生が始まらない（ブラウザに止められた等）まま録ると、止まった絵の動画になってしまう → はっきり失敗にする
+          if (el > 2.5 && vt - c.t0 < 0.05) throw new Error('動画の再生が始まりませんでした。映像の ▶ で再生できることを確かめてから、もう一度書き出してください');
+          ctx.drawImage(media.el, 0, 0, W, H);
+          const k = vt - c.t0, left = c.t1 - vt;
+          if (k < 0.25) drawFade(ctx, W, H, 1 - k / 0.25);
+          if (left < 0.25) drawFade(ctx, W, H, 1 - left / 0.25);
+          if (opts.captions !== false) drawCaption(ctx, W, H, c, opts);
+          done = TITLE + acc + Math.min(Math.max(0, k), len);
+          report(`${i + 1} / ${clips.length}`);
+          await frame();
+        }
+        media.pause();
+        acc += len;
+      }
+      if (cards) {
+        t0 = performance.now();
+        while (performance.now() - t0 < END * 1000 && !aborted()) {
+          drawCard(ctx, W, H, opts.end || ['おわり'], opts);
+          await frame();
+          done = TITLE + acc + (performance.now() - t0) / 1000; report('おわりの画面');
+        }
+      }
+    } finally {
+      rec.stop();
+      await stopped;
+      stream.getTracks().forEach((tr) => tr.stop());
+      if (audioDest && media._src) { try { media._src.disconnect(audioDest); } catch (e) { /* 無視 */ } }
+    }
+    if (aborted()) return null;
+    const blob = new Blob(chunks, { type: fmt.mime.split(';')[0] });
+    return { blob, url: URL.createObjectURL(blob), mime: fmt.mime, ext: fmt.ext, seconds: total, audio: !!audioDest };
+  }
+
+  BS.exportReel = exportReel;
+  BS.exportSupport = pickMime;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/ui.js */
+/* バスケ得点クリップ — 画面の部品（要素づくり・お知らせ・小窓・ダウンロード） */
+(function (root) {
+  'use strict';
+  const BS = root.BS;
+
+  /* h('div', { class: 'x', onclick: fn }, 子要素…) */
+  function h(tag, attrs, ...kids) {
+    const el = document.createElement(tag);
+    if (attrs) {
+      for (const k in attrs) {
+        const v = attrs[k];
+        if (v == null || v === false) continue;
+        if (k === 'class') el.className = v;
+        else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+        else if (k === 'html') el.innerHTML = v;
+        else if (k === 'text') el.textContent = v;
+        else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+        else if (k === 'dataset') Object.assign(el.dataset, v);
+        else if (v === true) el.setAttribute(k, '');
+        else el.setAttribute(k, v);
+      }
+    }
+    for (const kid of kids.flat(Infinity)) {
+      if (kid == null || kid === false) continue;
+      el.appendChild(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+    }
+    return el;
+  }
+  const $ = (sel, rootEl) => (rootEl || document).querySelector(sel);
+
+  function toast(text, kind, ms) {
+    const box = $('#toasts');
+    if (!box) return;
+    const el = h('div', { class: 'toast ' + (kind || '') }, text);
+    box.appendChild(el);
+    while (box.children.length > 3) box.firstChild.remove();
+    setTimeout(() => el.remove(), ms || 3200);
+  }
+
+  let modalClose = null;
+  function modal(opts) {
+    const m = $('#modal');
+    m.innerHTML = '';
+    const card = h('div', { class: 'modal-card', role: 'dialog', 'aria-modal': 'true' });
+    const close = () => { m.hidden = true; m.innerHTML = ''; modalClose = null; if (opts.onClose) opts.onClose(); };
+    card.appendChild(h('header', null, h('b', null, opts.title || ''), h('button', { class: 'x', 'aria-label': '閉じる', onclick: close }, '×')));
+    const body = h('div', { class: 'modal-body' });
+    if (typeof opts.body === 'string') body.innerHTML = opts.body; else if (opts.body) body.appendChild(opts.body);
+    card.appendChild(body);
+    if (opts.buttons && opts.buttons.length) {
+      const foot = h('div', { class: 'modal-foot' });
+      opts.buttons.forEach((b) => foot.appendChild(h('button', { class: 'btn ' + (b.cls || ''), onclick: () => { const r = b.onClick ? b.onClick(body) : true; if (r !== false) close(); } }, b.label)));
+      card.appendChild(foot);
+    }
+    m.appendChild(card);
+    m.hidden = false;
+    m.onclick = (e) => { if (e.target === m) close(); };
+    modalClose = close;
+    return { close, body };
+  }
+  function closeModal() { if (modalClose) modalClose(); }
+  function modalOpen() { const m = $('#modal'); return !!m && !m.hidden; }
+
+  function download(name, blobOrUrl) {
+    const url = typeof blobOrUrl === 'string' ? blobOrUrl : URL.createObjectURL(blobOrUrl);
+    const a = h('a', { href: url, download: name });
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { if (typeof blobOrUrl !== 'string') URL.revokeObjectURL(url); a.remove(); }, 1500);
+  }
+
+  BS.ui = { h, $, toast, modal, closeModal, modalOpen, download };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/app.js */
+/* バスケ得点クリップ — 画面（動画を選ぶ → チームの色 → ゴールを教える → 解析 → 入れた／入れられたを見る・動画にする）
+   ゴールの指定と解析の実行は「バスケ分析スタジオ」の ui-auto.js から持ってきたもの（解析エンジンは同じファイル）。 */
+(function (root) {
+  'use strict';
+  const BS = root.BS;
+  const { h, $ } = BS.ui;
+  const C = BS.clips;
+
+  /* ユニフォームの色（よくある色）。白・黒も選べるように、見本には枠を付ける */
+  const COLORS = [
+    { name: '白', hex: '#f4f4f4' }, { name: '黒', hex: '#222222' }, { name: '赤', hex: '#d93636' }, { name: '青', hex: '#2f6fed' },
+    { name: '紺', hex: '#1f2f6e' }, { name: '水色', hex: '#45b0e6' }, { name: '緑', hex: '#2e9e5b' }, { name: '黄', hex: '#f2c230' },
+    { name: 'オレンジ', hex: '#f08a24' }, { name: '紫', hex: '#7d4cc9' }, { name: 'ピンク', hex: '#e86aa6' }, { name: 'グレー', hex: '#8a8f98' }
+  ];
+  const HOOP = ['ゴールA', 'ゴールB'];
+  const HOOP_COL = ['#22c55e', '#e879f9'];
+  const ICON = ['🏀', '🛡'];
+  const WHAT = ['入れた', '入れられた'];
+
+  const S = {
+    media: null, key: null, st: BS.store.fresh(),
+    marking: null, running: null, live: null,
+    tab: 0, openSetup: false, openHow: null,
+    reel: { active: false, list: [], i: -1, label: '', team: 0 },
+    exporting: null, out: [null, null],
+    thumbs: {}, thumbJob: null, saveTimer: 0
+  };
+
+  /* ---------- 小さな道具 ---------- */
+  const duration = () => (S.media ? S.media.duration : 0) || 0;
+  const now = () => (S.media ? S.media.time : 0);
+  const teamName = (i) => { const t = S.st.teams[i] || {}; return (t.name || '').trim() || t.colorName || (i ? '相手' : '自分'); };
+  const teamTag = (i) => `${teamName(i)}（${i ? '相手' : '自分'}）`;
+  const teamColor = (i) => (S.st.teams[i] && S.st.teams[i].color) || (i ? '#2f6fed' : '#f4f4f4');
+  const setupOf = () => ({ hoopTeam: S.st.hoopTeam, halfT: S.st.halfT });
+  const list = () => C.items(S.st.result, setupOf(), S.st.edits);
+  const clipsFor = (team) => C.clipsOf(list(), team, S.st.win, duration());
+  const marksKey = () => JSON.stringify(S.st.hoops.map((m) => (m ? [m.t, m.box, m.rim] : null))) + (S.st.fixed ? '|fixed' : '');
+  const stale = () => !!(S.st.result && S.st.result.marks !== marksKey());
+  const halfLabel = (it) => (it.half === 2 ? '後半' : it.half === 1 ? '前半' : '');
+  function save() {
+    clearTimeout(S.saveTimer);
+    S.saveTimer = setTimeout(() => { if (S.key) BS.store.save(S.key, S.st); }, 150);
+  }
+  function hexRGB(hex) { const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || ''); return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [128, 128, 128]; }
+  /* 自由に選んだ色の呼び名：いちばん近い見本の色の名前 */
+  function nearestName(hex) {
+    const [r, g, b] = hexRGB(hex);
+    let best = null;
+    COLORS.forEach((c) => { const [r2, g2, b2] = hexRGB(c.hex); const d = (r - r2) ** 2 + (g - g2) ** 2 + (b - b2) ** 2; if (!best || d < best.d) best = { d, name: c.name }; });
+    return best.name;
+  }
+
+  /* ---------- 動画を開く ---------- */
+  function openFile(file) {
+    if (!file) return;
+    const okType = /^video\//.test(file.type || '') || /\.(mp4|mov|m4v|webm|mkv)$/i.test(file.name || '');
+    if (!okType) { BS.ui.toast('動画ファイル（MP4・MOV など）を選んでください', 'err'); return; }
+    if (S.running) { BS.ui.toast('解析中です。中止してから開いてください', 'warn'); return; }
+    if (S.exporting) { BS.ui.toast('書き出し中です。終わってから開いてください', 'warn'); return; }
+    stopReel(true);
+    cancelMarking();
+    if (S.thumbJob) S.thumbJob.cancel = true;
+    if (S.media) S.media.destroy();
+    const m = BS.createVideoMedia(file);
+    S.media = m;
+    S.key = BS.store.videoKey(file);
+    const saved = BS.store.load(S.key);
+    S.st = saved || BS.store.fresh();
+    S.thumbs = {}; S.out = [null, null]; S.tab = 0; S.openSetup = false; S.openHow = null; S.live = null;
+    const slot = $('#mediaSlot');
+    slot.innerHTML = '';
+    slot.appendChild(m.el);
+    m.on('time', onTime);
+    m.on('play', updatePlayBtn);
+    m.on('pause', updatePlayBtn);
+    m.on('ready', () => { render(); drawTimeline(); drawOverlay(); if (S.st.result) makeThumbs(); });
+    m.on('error', () => BS.ui.toast('この動画は、このブラウザでは再生できないようです（MP4・MOV をお試しください）', 'err', 7000));
+    m.on('notice', (t) => BS.ui.toast(t, 'warn', 6000));
+    document.body.classList.add('has-video');
+    if (saved && saved.result) BS.ui.toast('前に解析した結果を開きました（同じ動画です）', 'ok', 4000);
+    render(); drawTimeline(); updatePlayBtn();
+  }
+  function pickFile() { const inp = $('#fileVideo'); inp.value = ''; inp.click(); }
+
+  /* ---------- 再生 ---------- */
+  function play() { if (S.media) S.media.play(); }
+  function pause() { if (S.media) S.media.pause(); }
+  // （書き出し中は、映像を書き出しの処理が動かしているので、ボタンやキーでは動かさない）
+  function toggle() { if (!S.media || S.exporting) return; if (S.media.paused) play(); else pause(); }
+  function seek(t, fromReel) {
+    if (!S.media || S.exporting) return Promise.resolve();
+    if (!fromReel && S.reel.active) stopReel(true);
+    return S.media.seek(BS.clamp(t, 0, duration() || t));
+  }
+  let lastTimeText = '';
+  function onTime(t) {
+    const tt = $('#timeText');
+    const s = `${BS.fmtTime(t)} / ${BS.fmtTime(duration())}`;
+    if (tt && s !== lastTimeText) { lastTimeText = s; tt.textContent = s; }
+    reelTick(t);
+    if (S.marking) markingTimeCheck(t);
+    drawTimeline();
+    if (!S.running) drawOverlay();
+  }
+  function updatePlayBtn() {
+    // 記号は span に入れ、変わったときだけ書き換える（押している間に中身が入れ替わると、Safari ではクリックにならない）
+    const ico = $('#btnPlay .ico'), mark = !S.media || S.media.paused ? '▶' : '⏸';
+    if (ico && ico.textContent !== mark) ico.textContent = mark;
+  }
+
+  /* ---------- 画面（右のパネル） ---------- */
+  function render() {
+    const P = $('#panel');
+    if (!P) return;
+    const keepScroll = P.scrollTop;
+    P.innerHTML = '';
+    const hasRes = !!(S.st.result && S.media);
+    if (hasRes && !S.running) {
+      P.append(resultsCard());
+      const d = h('details', { class: 'setupfold' }, h('summary', null, '設定を変える（動画・チームの色・ゴール・後半）'),
+        stepVideo(), stepTeams(), stepGoals(), stepRun());
+      d.open = !!S.openSetup || !!S.marking;
+      d.querySelector('summary').addEventListener('click', () => { S.openSetup = !d.open; });
+      P.append(d);
+    } else {
+      P.append(stepVideo(), stepTeams(), stepGoals(), stepRun());
+    }
+    P.scrollTop = keepScroll;
+  }
+  function stepHead(n, title, sub, done) {
+    return h('div', { class: 'step-h' }, h('span', { class: 'num' + (done ? ' done' : '') }, done ? '✓' : String(n)), h('b', null, title), sub ? h('small', null, sub) : null);
+  }
+
+  /* ① 動画 */
+  function stepVideo() {
+    const m = S.media;
+    const card = h('section', { class: 'card step', id: 'stepVideo' }, stepHead(1, '試合の動画を選ぶ', null, !!m));
+    if (!m) {
+      card.append(
+        h('p', null, 'スマホやビデオカメラで撮った試合の動画（MP4・MOV）を選びます。'),
+        h('div', { class: 'row' }, h('button', { class: 'btn primary big', onclick: pickFile }, '🎬 動画を選ぶ'), h('span', { class: 'note' }, 'ここへドラッグ＆ドロップでも開けます')),
+        h('p', { class: 'note' }, '🔒 動画はこの端末の中だけで扱います。インターネットには送りません。'));
+    } else {
+      const f = m.file;
+      card.append(h('div', { class: 'row' },
+        h('span', { class: 'fname', title: f.name || '' }, f.name || String(f)),
+        h('span', { class: 'note' }, duration() ? `長さ ${BS.fmtTime(duration())}` : '読み込み中…'),
+        h('button', { class: 'btn small', onclick: pickFile }, '別の動画を選ぶ')));
+    }
+    return card;
+  }
+
+  /* ② チームの色 */
+  function stepTeams() {
+    const card = h('section', { class: 'card step', id: 'stepTeams' }, stepHead(2, 'どっちの色が自分のチーム？', 'ユニフォームの色', !!S.media));
+    [0, 1].forEach((i) => {
+      const T = S.st.teams[i];
+      const sw = h('div', { class: 'swatches', role: 'radiogroup', 'aria-label': i ? '相手のチームの色' : '自分のチームの色' });
+      COLORS.forEach((c) => {
+        const on = T.color.toLowerCase() === c.hex.toLowerCase();
+        sw.append(h('button', {
+          class: 'sw' + (on ? ' on' : ''), style: { background: c.hex }, title: c.name, 'aria-label': c.name, role: 'radio', 'aria-checked': on ? 'true' : 'false', dataset: { team: i, color: c.name },
+          onclick: () => setTeamColor(i, c.hex, c.name)
+        }));
+      });
+      const custom = h('input', { type: 'color', class: 'swc', title: 'ほかの色', value: T.color, onchange: (e) => setTeamColor(i, e.target.value, nearestName(e.target.value)) });
+      sw.append(custom);
+      const name = h('input', { type: 'text', class: 'tname', placeholder: 'チーム名（なくてもOK）', value: T.name || '', maxlength: 20,
+        onchange: (e) => { T.name = e.target.value.trim(); save(); render(); drawTimeline(); } });
+      card.append(h('div', { class: 'teamrow' },
+        h('div', { class: 'tlabel' }, h('span', { class: 'chip', style: { background: T.color } }), h('b', null, i ? '相手' : '自分'), h('span', { class: 'note' }, `${T.colorName}${T.name ? '・' + T.name : ''}`)),
+        sw, name));
+    });
+    if (S.st.teams[0].color.toLowerCase() === S.st.teams[1].color.toLowerCase()) card.append(h('p', { class: 'note warn' }, '⚠ 自分と相手が同じ色になっています。見分けやすいように、どちらかを変えてください（解析には影響しません）。'));
+    card.append(h('p', { class: 'note' }, 'どちらのチームの得点かは、ボールが入った「ゴール」で決めます（前半・後半で攻めるゴールは決まっているため）。色は、画面と書き出す動画の表示に使います。'));
+    return card;
+  }
+  function setTeamColor(i, hex, name) {
+    S.st.teams[i].color = hex; S.st.teams[i].colorName = name;
+    save(); render(); drawTimeline();
+  }
+
+  /* ③ ゴール */
+  const FIG = '<svg viewBox="0 0 330 122" role="img" aria-label="ゴールの指定のしかた：バックボードを囲み、次にリングの左端から右端までなぞる">' +
+    '<defs><clipPath id="figClip2"><rect x="0" y="0" width="155" height="96" rx="8"/></clipPath></defs>' +
+    '<g><rect x="0" y="0" width="155" height="96" rx="8" fill="#26334d"/>' +
+    '<rect x="42" y="18" width="72" height="44" rx="2" fill="#e5e7eb" stroke="#94a3b8"/><rect x="66" y="38" width="24" height="18" fill="none" stroke="#64748b" stroke-width="2"/>' +
+    '<ellipse cx="78" cy="65" rx="13" ry="3.5" fill="none" stroke="#f97316" stroke-width="3"/>' +
+    '<path d="M66 67 L70 84 M73 69 L74 84 M83 69 L82 84 M90 67 L86 84 M70 84 L86 84" stroke="#e5e7eb" stroke-width="1" fill="none"/>' +
+    '<rect x="35" y="11" width="86" height="57" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="6 4"/>' +
+    '<circle cx="35" cy="11" r="4" fill="#fbbf24"/><path d="M121 68 l-10 -1 l6 -8 z" fill="#fbbf24"/>' +
+    '<text x="77" y="114" text-anchor="middle" fill="currentColor" font-size="11.5">① 板（バックボード）を囲む</text></g>' +
+    '<path d="M159 48 l10 0 m-4 -4 l4 4 l-4 4" stroke="#94a3b8" stroke-width="2" fill="none"/>' +
+    '<g transform="translate(175,0)"><rect x="0" y="0" width="155" height="96" rx="8" fill="#26334d"/>' +
+    '<g clip-path="url(#figClip2)"><rect x="8" y="-40" width="139" height="72" rx="2" fill="#e5e7eb" stroke="#94a3b8"/><rect x="52" y="-6" width="52" height="34" fill="none" stroke="#64748b" stroke-width="3"/>' +
+    '<ellipse cx="78" cy="46" rx="38" ry="9" fill="none" stroke="#f97316" stroke-width="5"/>' +
+    '<path d="M42 50 L54 92 M58 54 L64 92 M78 55 L78 92 M98 54 L92 92 M114 50 L102 92 M50 72 L106 72" stroke="#e5e7eb" stroke-width="1.5" fill="none"/></g>' +
+    '<path d="M40 46 L116 46" stroke="#fde047" stroke-width="3"/><circle cx="40" cy="46" r="4.5" fill="#fde047"/><path d="M116 46 l-9 -5 l0 10 z" fill="#fde047"/>' +
+    '<text x="77" y="114" text-anchor="middle" fill="currentColor" font-size="11.5">② リングの左端 → 右端をなぞる</text></g></svg>';
+  function stepGoals() {
+    const st = S.st;
+    const nMark = st.hoops.filter(Boolean).length;
+    const card = h('section', { class: 'card step', id: 'stepGoals' }, stepHead(3, 'ゴールを教える', '最初の1回だけ・ゴール1つにドラッグ2回', nMark >= 2));
+    if (!S.media) { card.append(h('p', { class: 'note' }, '動画を選ぶと、ここでゴールを教えられます。')); return card; }
+    const how = h('details', { class: 'howto' }, h('summary', null, 'やり方（絵で見る）'),
+      h('div', { class: 'howfig', html: FIG }),
+      h('ol', null,
+        h('li', null, '映像の下のバーを動かして、ゴールが', h('b', null, '大きく・はっきり'), '映っている場面で止める（板の前に人やボールが重なっていないコマ）'),
+        h('li', null, '「このゴールを指定する」を押して、', h('b', null, 'バックボード（板）全体'), 'をドラッグで囲む'),
+        h('li', null, '拡大されるので、', h('b', null, 'リング（輪）の左端から右端まで'), 'をドラッグでなぞる'),
+        h('li', null, 'もう1つのゴールも、映っている場面で同じように')));
+    how.open = S.openHow != null ? S.openHow : nMark < 2;
+    how.querySelector('summary').addEventListener('click', () => { S.openHow = !how.open; });
+    card.append(how);
+    if (S.marking) {
+      const mk = S.marking;
+      card.append(h('div', { class: 'markcard' },
+        h('b', null, `${HOOP[mk.i]} を指定中：`),
+        mk.step === -1 ? ' まず、映像の上でゴールのあたりを1回クリック（そこを拡大します）。' : mk.step === 0 ? ' 映像の上で、バックボード（板）全体をドラッグで囲んでください。' : ' 次に、リング（輪）の左端から右端まで、ぴったりなぞってください。',
+        h('div', { class: 'row', style: { marginTop: '6px' } },
+          mk.step === 1 ? h('button', { class: 'btn small', onclick: () => { mk.step = 0; mk.box = null; mk.view = mk.pre || null; render(); drawOverlay(); } }, '囲み直す') : null,
+          h('button', { class: 'btn small', onclick: cancelMarking }, 'やめる'),
+          h('span', { class: 'note' }, 'Esc でもやめられます'))));
+    }
+    [0, 1].forEach((i) => {
+      const m = st.hoops[i];
+      const att = h('div', { class: 'attack' }, h('span', { class: 'note' }, '動画のはじめに、このゴールを攻めているのは？'),
+        h('div', { class: 'row' }, [0, 1].map((tm) => h('button', {
+          class: 'btn small teambtn' + (st.hoopTeam[i] === tm ? ' on' : ''), dataset: { hoop: i, team: tm },
+          onclick: () => { st.hoopTeam[i] = tm; st.hoopTeam[1 - i] = 1 - tm; save(); render(); drawTimeline(); }
+        }, h('span', { class: 'chip', style: { background: teamColor(tm) } }), teamTag(tm)))));
+      card.append(h('div', { class: 'goal' + (m ? ' done' : '') },
+        h('div', { class: 'goal-h' }, h('b', { style: { color: HOOP_COL[i] } }, '■ '), h('b', null, HOOP[i]), h('span', { class: 'note' }, m ? `✓ 指定ずみ（${BS.fmtTime(m.t)} のコマ）` : '未指定')),
+        h('div', { class: 'row' },
+          h('button', { class: 'btn small ' + (m ? '' : 'primary'), id: 'btnMark' + i, disabled: !!S.running, onclick: () => startMarking(i) }, m ? '指定し直す' : 'このゴールを指定する'),
+          m ? h('button', { class: 'btn small', onclick: () => seek(m.t).then(() => { S.thumbs['hoop' + i] = hoopThumb(i); render(); }) }, '指定したコマへ') : null),
+        m && S.thumbs['hoop' + i] ? h('div', { class: 'thumbrow' }, S.thumbs['hoop' + i], h('span', { class: 'note' }, '枠＝バックボード、黄色の線＝リング。ずれていたら「指定し直す」')) : null,
+        att));
+    });
+    // カメラの種類（三脚で固定してコート全体を撮った映像は、ゴールを追わずに見張る）
+    card.append(h('label', { class: 'switch' },
+      h('input', { type: 'checkbox', id: 'optFixed', checked: !!st.fixed, disabled: !!S.running, onchange: (e) => { st.fixed = e.target.checked; save(); render(); drawOverlay(); } }),
+      ' 三脚で固定して、コート全体（両方のゴール）を映したまま撮った（360°・広角カメラなど）'));
+    // 後半（攻めるゴールが入れ替わる）
+    const half = h('details', { class: 'half' },
+      h('summary', null, st.halfT != null ? `後半の始まり：${BS.fmtTime(st.halfT)}（ここから攻めるゴールが入れ替わります）` : '1本の動画に、前半と後半の両方が入っているとき'),
+      h('p', { class: 'note' }, 'ハーフタイムで攻めるゴールが入れ替わります。後半が始まる場面で映像を止めて、ボタンを押してください。クォーターごとに分けて撮った動画なら、ここは使わず、動画ごとに上の「攻めているのは？」を選びます。'),
+      h('div', { class: 'row' },
+        h('button', { class: 'btn small', id: 'btnHalf', onclick: () => setHalf(now()) }, st.halfT != null ? 'いまの位置を後半の始まりにする' : 'いまの位置から後半にする'),
+        st.halfT != null ? h('button', { class: 'btn small', onclick: () => setHalf(null) }, '取り消す') : null,
+        h('span', { class: 'note' }, `いまの位置：${BS.fmtTime(now())}`)));
+    half.open = st.halfT != null;
+    card.append(half);
+    return card;
+  }
+  function setHalf(t) {
+    S.st.halfT = t == null ? null : Math.round(t * 10) / 10;
+    save(); render(); drawTimeline();
+    BS.ui.toast(t == null ? '後半の設定を取り消しました' : `${BS.fmtTime(t)} から後半にしました（攻めるゴールが入れ替わります）`, 'ok');
+  }
+
+  /* ④ 解析 */
+  function stepRun() {
+    const nMark = S.st.hoops.filter(Boolean).length;
+    const card = h('section', { class: 'card step', id: 'stepRun' }, stepHead(4, '得点シーンを探す', null, !!S.st.result && !stale()));
+    if (!S.media) { card.append(h('p', { class: 'note' }, '動画を選んで、ゴールを教えると、ここで探せます。')); return card; }
+    if (S.running) {
+      card.append(h('b', null, '探しています… '), h('span', { id: 'runLabel', class: 'note' }, ''),
+        h('div', { class: 'progress' }, h('i', { id: 'runBar' })),
+        h('div', { class: 'note', id: 'runLive' }, ''),
+        h('p', { class: 'note' }, '動画を最初から最後まで調べています。終わるまで、このページは開いたままにしてください（ほかのタブを見ていても進みます）。'),
+        h('button', { class: 'btn small danger', onclick: cancelRun }, '中止'));
+      return card;
+    }
+    card.append(h('div', { class: 'row' },
+      h('button', { class: 'btn primary big', id: 'btnRun', disabled: !nMark, onclick: () => run() }, S.st.result ? '⚡ もう一度探す' : '⚡ 得点シーンを探す'),
+      h('span', { class: 'note' }, nMark ? `目安 ${BS.fmtTime(duration() / 3)}（パソコンの速さで変わります）${nMark === 1 ? '。ゴールが1つだけなので、もう片方のゴールの得点は見つかりません' : ''}` : '先に ③ でゴールを指定してください')));
+    if (stale()) card.append(h('p', { class: 'note warn' }, '⚠ ゴールの指定を変えました。もう一度探すと、新しい指定で探し直します。'));
+    return card;
+  }
+
+  /* ⑤ 結果 */
+  function resultsCard() {
+    const card = h('section', { class: 'card results', id: 'results' });
+    const its = list();
+    const n = [0, 1].map((tm) => its.filter((it) => it.team === tm).length);
+    card.append(h('div', { class: 'tabs2', role: 'tablist' }, [0, 1].map((tm) => h('button', {
+      class: 'tab2' + (S.tab === tm ? ' on' : ''), role: 'tab', 'aria-selected': S.tab === tm ? 'true' : 'false', id: 'tab' + tm,
+      style: { '--team': teamColor(tm) }, onclick: () => { S.tab = tm; render(); }
+    },
+    h('span', { class: 'big' }, `${ICON[tm]} ${WHAT[tm]}`),
+    h('span', { class: 'cnt' }, h('b', null, String(n[tm])), '本'),
+    h('small', null, h('span', { class: 'chip', style: { background: teamColor(tm) } }), `${teamTag(tm)}の得点`)))));
+    if (stale()) card.append(h('p', { class: 'note warn' }, '⚠ ゴールの指定を変えました。下の「設定を変える」の ④ で、もう一度探してください。'));
+
+    // 1場面の長さ
+    const w = S.st.win;
+    const num = (key, max) => h('input', { type: 'number', min: 0, max, step: 0.5, value: w[key], class: 'num', id: 'win' + key,
+      onchange: (e) => { const v = Number(e.target.value); if (isFinite(v) && v >= 0 && v <= max) { w[key] = v; save(); } render(); } });
+    card.append(h('div', { class: 'winrow' }, '1場面の長さ：入った瞬間の 前 ', num('lead', 20), ' 秒 ＋ 後 ', num('lag', 10), ` 秒（＝ ${+(w.lead + w.lag).toFixed(1)} 秒）`));
+
+    // 一覧
+    const cl = clipsFor(S.tab);
+    const box = h('div', { class: 'cliplist', id: 'clipList' });
+    if (!cl.length) box.append(h('p', { class: 'note empty' }, S.tab === 0 ? `${teamTag(0)}の得点は見つかりませんでした。自分と相手が逆なら、下の「⇄ 入れ替える」を押してください。` : `${teamTag(1)}の得点は見つかりませんでした。`));
+    cl.forEach((c) => box.append(clipRow(c)));
+    card.append(box);
+
+    // 続けて再生・動画にする
+    const on = cl.filter((c) => c.on);
+    const segs = C.reel(cl);
+    const secs = segs.reduce((s, c) => s + (c.t1 - c.t0), 0);
+    const exp = S.exporting;
+    card.append(h('div', { class: 'row acts' },
+      h('button', { class: 'btn primary', id: 'btnReel', disabled: !on.length || !!exp, onclick: () => playReel(S.tab) }, `▶ 続けて再生（${on.length}本・${BS.fmtTime(secs)}）`),
+      h('button', { class: 'btn good', id: 'btnExport', disabled: !on.length || !!exp, onclick: () => doExport(S.tab) }, '🎬 動画にする'),
+      h('label', { class: 'switch' }, h('input', { type: 'checkbox', checked: S.st.captions !== false, onchange: (e) => { S.st.captions = e.target.checked; save(); } }), ' 動画に「入れた 3/12」などの文字を入れる')));
+    card.append(exportBox(S.tab));
+
+    // 直す・足す
+    const tools = h('div', { class: 'tools' });
+    const marked = S.st.hoops.map((m, i) => (m ? i : -1)).filter((i) => i >= 0);
+    tools.append(h('div', { class: 'tool' },
+      h('div', null, h('b', null, '自分と相手が逆になっていたら'), h('br'),
+        h('span', { class: 'note' }, marked.map((i) => `${HOOP[i]} に入った得点 → ${teamTag(S.st.hoopTeam[i])}`).join('、') + (S.st.halfT != null ? `（${BS.fmtTime(S.st.halfT)} から後半：入れ替わる）` : '（動画のはじめ）'))),
+      h('button', { class: 'btn small', id: 'btnSwap', onclick: swapTeams }, '⇄ 入れ替える')));
+    const sug = C.suggestHalf(S.st.result, duration());
+    const sugKey = sug ? sug.from + '-' + sug.to : null;
+    if (sug && S.st.halfT == null && S.st.halfNo !== sugKey) {
+      tools.append(h('div', { class: 'tool hint', id: 'halfHint' },
+        h('div', null, h('b', null, `⏸ ${BS.fmtTime(sug.from)}〜${BS.fmtTime(sug.to)} の間、シュートが1本もありません`), h('br'),
+          h('span', { class: 'note' }, 'ハーフタイムなら、そのあとは攻めるゴールが入れ替わります。')),
+        h('div', { class: 'row' },
+          h('button', { class: 'btn small', onclick: () => { seek(sug.to - 8); play(); } }, '▶ 見てみる'),
+          h('button', { class: 'btn small primary', id: 'btnHalfYes', onclick: () => setHalf(sug.at) }, 'ここから後半にする'),
+          h('button', { class: 'btn small', onclick: () => { S.st.halfNo = sugKey; save(); render(); } }, 'ちがう'))));
+    }
+    tools.append(h('div', { class: 'tool' },
+      h('div', null, h('b', null, '見つからなかった得点を足す'), h('br'),
+        h('span', { class: 'note' }, `映像を、ボールがリングを通った瞬間で止めてから押します（いま ${BS.fmtTime(now())}）`)),
+      h('div', { class: 'row' },
+        h('button', { class: 'btn small', id: 'btnAdd0', onclick: () => addManual(0) }, `＋ ${WHAT[0]}`),
+        h('button', { class: 'btn small', id: 'btnAdd1', onclick: () => addManual(1) }, `＋ ${WHAT[1]}`))));
+    const cov = C.coverage(S.st.result, duration(), 2);
+    const covText = marked.map((i) => `${HOOP[i]} ${Math.round(cov[i] * 100)}%`).join('・');
+    tools.append(h('p', { class: 'note' }, S.st.fixed
+      ? `ゴールを見張れた時間：${covText}。リングが人で隠れた一瞬の得点は見つかりません。`
+      : `ゴールが画面に映っていた時間：${covText}。映っていない間の得点は見つかりません（足したいときは上の「＋」で）。`));
+    if (its.some((it) => it.unsure && it.auto)) tools.append(h('p', { class: 'note' }, '「要確認」の印は、ネットの動きをはっきり確かめられなかった得点です（リングの手前を落ちただけかもしれません）。外れていたら、左のチェックを外すと再生・書き出しに入りません。'));
+    card.append(tools);
+    return card;
+  }
+  function clipRow(c) {
+    const it = list().find((x) => x.id === c.id) || {};
+    const playing = S.reel.active && S.reel.list[S.reel.i] && S.reel.list[S.reel.i].ids.includes(c.id);
+    const img = h('img', { class: 'thumb', alt: '', dataset: { thumb: c.id } });
+    if (S.thumbs[c.id]) img.src = S.thumbs[c.id];
+    const row = h('div', { class: 'clip' + (c.on ? '' : ' off') + (playing ? ' playing' : ''), dataset: { id: c.id }, style: { '--team': teamColor(c.team) } },
+      h('input', { type: 'checkbox', checked: c.on, title: '続けて再生・動画にするときに入れる', 'aria-label': `${c.n}番目を入れる`, onchange: (e) => setOn(c.id, e.target.checked), onclick: (e) => e.stopPropagation() }),
+      h('span', { class: 'ix' }, String(c.n)),
+      img,
+      h('div', { class: 'ct' },
+        h('b', null, BS.fmtTime(c.at)),
+        h('span', { class: 'note' }, [halfLabel(it), it.hoop != null ? HOOP[it.hoop] : ''].filter(Boolean).join('・')),
+        h('span', { class: 'tags' },
+          c.unsure && c.auto ? h('span', { class: 'tag warn', title: 'ネットの動きを確かめられなかった得点です' }, '要確認') : null,
+          !c.auto ? h('span', { class: 'tag' }, '手で足した') : c.fixed ? h('span', { class: 'tag' }, '手で直した') : null)),
+      h('div', { class: 'cops' },
+        h('button', { class: 'btn small', title: 'この場面を見る', onclick: (e) => { e.stopPropagation(); playOne(c); } }, '▶'),
+        h('button', { class: 'btn small', title: c.team ? '「入れた」に移す（自分の得点だった）' : '「入れられた」に移す（相手の得点だった）', dataset: { move: c.id }, onclick: (e) => { e.stopPropagation(); moveTeam(c.id); } }, c.team ? '⇄ 入れたへ' : '⇄ 入れられたへ'),
+        h('button', { class: 'btn small', title: 'この場面だけを動画にする', disabled: !!S.exporting, onclick: (e) => { e.stopPropagation(); doExport(c.team, c); } }, '⬇'),
+        !c.auto ? h('button', { class: 'btn small', title: 'この場面を消す', onclick: (e) => { e.stopPropagation(); removeManual(c.id); } }, '🗑') : null));
+    row.addEventListener('click', () => playOne(c));
+    return row;
+  }
+  function setOn(id, on) {
+    const E = S.st.edits;
+    if (on) delete E.off[id]; else E.off[id] = true;
+    save(); render(); drawTimeline();
+  }
+  function moveTeam(id) {
+    const it = list().find((x) => x.id === id);
+    if (!it) return;
+    const to = 1 - it.team;
+    const E = S.st.edits;
+    if (it.auto) {
+      const shot = S.st.result.shots.find((s) => C.shotId(s) === id);
+      if (shot && C.baseTeam(shot, setupOf()) === to) delete E.fix[id]; else E.fix[id] = to;
+    } else {
+      const a = E.added.find((x) => x.id === id);
+      if (a) a.team = to;
+    }
+    save(); render(); drawTimeline();
+    BS.ui.toast(`${BS.fmtTime(it.t)} の得点を「${WHAT[to]}」に移しました`, 'ok');
+  }
+  function swapTeams() {
+    S.st.hoopTeam = [1 - S.st.hoopTeam[0], 1 - S.st.hoopTeam[1]];
+    save(); render(); drawTimeline();
+    BS.ui.toast('自分と相手を入れ替えました（手で直した場面はそのまま）', 'ok');
+  }
+  function addManual(team) {
+    if (!S.media) return;
+    const t = Math.round(now() * 100) / 100;
+    if (list().some((it) => Math.abs(it.t - t) < 1)) { BS.ui.toast('この位置には、もう得点があります', 'warn'); return; }
+    const id = 'm' + Date.now().toString(36);
+    S.st.edits.added.push({ id, t, team });
+    S.tab = team;
+    save(); render(); drawTimeline(); makeThumbs();
+    BS.ui.toast(`${BS.fmtTime(t)} を「${WHAT[team]}」に足しました`, 'ok');
+  }
+  function removeManual(id) {
+    const E = S.st.edits;
+    E.added = E.added.filter((a) => a.id !== id);
+    delete E.off[id];
+    save(); render(); drawTimeline();
+  }
+
+  /* ---------- 続けて再生 ---------- */
+  function segLabel(seg) { return `${ICON[seg.team]} ${WHAT[seg.team]} ${seg.n} / ${seg.total}`; }
+  function playReel(team) {
+    const segs = C.reel(clipsFor(team));
+    if (!segs.length) { BS.ui.toast('再生する場面がありません', 'warn'); return; }
+    startReel(segs, team);
+  }
+  function playOne(c) { startReel(C.reel([Object.assign({}, c, { on: true })]), c.team); }
+  function startReel(segs, team) {
+    if (!S.media || S.exporting) return;
+    cancelMarking();
+    S.reel = { active: true, list: segs, i: -1, team };
+    startSeg(0);
+  }
+  function startSeg(i) {
+    const R = S.reel;
+    R.i = i;
+    const seg = R.list[i];
+    seek(seg.t0, true).then(() => { if (S.reel === R && R.active && R.i === i) play(); });
+    updateReelUI();
+  }
+  function stepReel(d) {
+    const R = S.reel;
+    if (!R.active) return;
+    const j = R.i + d;
+    if (j < 0) startSeg(0);
+    else if (j >= R.list.length) stopReel();
+    else startSeg(j);
+  }
+  function stopReel(silent) {
+    if (!S.reel.active) return;
+    S.reel.active = false;
+    pause();
+    updateReelUI();
+    if (!silent) BS.ui.toast('続けて再生を終わりました', 'ok');
+  }
+  function reelTick(t) {
+    const R = S.reel;
+    if (!R.active || S.exporting) return;
+    const seg = R.list[R.i];
+    if (!seg) { stopReel(true); return; }
+    if (t >= seg.t1 - 0.03 || (S.media && S.media.el.ended)) {
+      if (R.i + 1 < R.list.length) startSeg(R.i + 1);
+      else { R.active = false; pause(); updateReelUI(); if (R.list.length > 1) BS.ui.toast(`${WHAT[R.team]}を最後まで再生しました`, 'ok'); }
+    }
+  }
+  function updateReelUI() {
+    const R = S.reel;
+    const bar = $('#reelBar'), badge = $('#ovBadge');
+    if (!R.active) {
+      bar.hidden = true; badge.hidden = true;
+      document.querySelectorAll('.clip.playing').forEach((r) => r.classList.remove('playing'));
+      return;
+    }
+    const seg = R.list[R.i];
+    bar.hidden = false;
+    $('#reelLabel').textContent = `${WHAT[R.team]} ${R.i + 1}/${R.list.length}`;
+    badge.innerHTML = '';
+    badge.style.setProperty('--team', teamColor(seg.team));
+    badge.append(h('b', null, segLabel(seg)), h('span', null, `${seg.half ? (seg.half === 2 ? '後半・' : '前半・') : ''}${BS.fmtTime(seg.at)}`));
+    badge.hidden = false;
+    document.querySelectorAll('.clip').forEach((r) => r.classList.toggle('playing', seg.ids.includes(r.dataset.id)));
+  }
+
+  /* ---------- 動画にする ---------- */
+  function baseName() { const f = S.media && S.media.file; const n = (f && f.name) || 'game'; return n.replace(/\.[^.]+$/, '').replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 40); }
+  function exportBox(team) {
+    const box = h('div', { class: 'exportbox', id: 'exportBox' });
+    const sup = BS.exportSupport();
+    const exp = S.exporting;
+    if (!sup) { box.append(h('p', { class: 'note' }, 'このブラウザは動画の書き出しに対応していません（Chrome・Edge・Safari の新しい版で使えます）。続けて再生は使えます。')); return box; }
+    if (exp) {
+      box.append(h('b', null, `🎬 ${exp.single ? 'この場面を' : WHAT[exp.team] + 'を'}動画にしています… `), h('span', { id: 'expLabel', class: 'note' }, ''),
+        h('div', { class: 'progress' }, h('i', { id: 'expBar' })),
+        h('p', { class: 'note' }, '実際の長さの時間がかかります。このタブを表示したままにしてください（別のタブにすると止まります）。'),
+        h('button', { class: 'btn small danger', onclick: () => exp.ctrl.abort() }, '中止'));
+      return box;
+    }
+    const r = S.out[team];
+    if (r) {
+      box.append(h('div', { class: 'row' }, h('b', null, '✅ 動画ができました '),
+        h('span', { class: 'note' }, `${r.ext.toUpperCase()}・${(r.blob.size / 1048576).toFixed(1)}MB・約${Math.round(r.seconds)}秒${r.audio ? '' : '・音声なし'}`)),
+        h('video', { src: r.url, controls: true, playsinline: true, class: 'outvideo' }),
+        h('div', { class: 'row' },
+          h('a', { class: 'btn primary', href: r.url, download: r.name, id: 'btnDownload' }, '⬇ 保存する'),
+          h('span', { class: 'note' }, r.ext === 'webm' ? 'WebM 形式です。iPhone で見るときは、MP4 に変換が必要なことがあります。' : 'MP4 形式です。スマホ・LINE でも見られます。')));
+    } else {
+      box.append(h('p', { class: 'note' }, `選んだ場面をつないで、1本の動画（${sup.ext.toUpperCase()}）にします。音声も入ります。できる動画と同じくらいの時間がかかります。`));
+    }
+    return box;
+  }
+  async function doExport(team, single) {
+    if (S.exporting || !S.media) return;
+    stopReel(true);
+    cancelMarking();
+    const segs = single ? C.reel([Object.assign({}, single, { on: true })]) : C.reel(clipsFor(team));
+    if (!segs.length) { BS.ui.toast('動画にする場面がありません', 'warn'); return; }
+    const clips = segs.map((seg) => ({ t0: seg.t0, t1: seg.t1, label: segLabel(seg), sub: `${seg.half ? (seg.half === 2 ? '後半・' : '前半・') : ''}${BS.fmtTime(seg.at)}`, color: teamColor(seg.team) }));
+    const ctrl = new AbortController();
+    S.exporting = { team, ctrl, single: !!single };
+    S.out[team] = null;
+    render();
+    const title = [`${ICON[team]} ${WHAT[team]}ところ`, `${teamTag(0)} vs ${teamTag(1)}`, `${segs.length}シーン`];
+    try {
+      const res = await BS.exportReel(S.media, clips, {
+        title, end: [`${WHAT[team]}ところ ${segs.length}シーン`, `${teamTag(0)} vs ${teamTag(1)}`],
+        accent: teamColor(team), captions: S.st.captions !== false, cards: !single
+      }, (frac, label) => {
+        const bar = $('#expBar'), lab = $('#expLabel');
+        if (bar) bar.style.width = (frac * 100).toFixed(1) + '%';
+        if (lab) lab.textContent = `${label}（${Math.round(frac * 100)}%）`;
+      }, ctrl.signal);
+      if (res) {
+        res.name = `${baseName()}_${WHAT[team]}${single ? '_' + BS.fmtTime(single.at).replace(/:/g, '-') : '_' + segs.length + '本'}.${res.ext}`;
+        S.out[team] = res;
+        S.tab = team;
+        BS.ui.toast('動画ができました。「⬇ 保存する」で保存できます', 'ok', 5000);
+      } else BS.ui.toast('書き出しを中止しました', 'warn');
+    } catch (err) {
+      console.error('[export]', err);
+      BS.ui.toast('書き出しに失敗しました：' + err.message, 'err', 8000);
+    }
+    S.exporting = null;
+    render();
+  }
+
+  /* ---------- サムネイル（場面の小さな絵） ---------- */
+  function hoopThumb(i) {
+    const m = S.st.hoops[i];
+    if (!m || !S.media) return null;
+    const W = S.media.width, H = S.media.height;
+    const pad = Math.max(m.box.w, m.box.h) * 0.3;
+    const x0 = Math.max(0, m.box.x - pad), y0 = Math.max(0, m.box.y - pad);
+    const x1 = Math.min(W, m.box.x + m.box.w + pad), y1 = Math.min(H, Math.max(m.box.y + m.box.h, m.rim.cy + m.rim.w * 0.9) + pad);
+    const sw = x1 - x0, sh = y1 - y0;
+    if (sw < 4 || sh < 4) return null;
+    const k = Math.min(190 / sw, 120 / sh);
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(sw * k * 2); cv.height = Math.round(sh * k * 2);
+    cv.style.width = Math.round(sw * k) + 'px'; cv.style.height = Math.round(sh * k) + 'px';
+    cv.className = 'hoopthumb';
+    const g = cv.getContext('2d');
+    try { g.drawImage(S.media.el, x0, y0, sw, sh, 0, 0, cv.width, cv.height); } catch (e) { return null; }
+    const q = cv.width / sw;
+    g.strokeStyle = HOOP_COL[i]; g.lineWidth = 3; g.strokeRect((m.box.x - x0) * q, (m.box.y - y0) * q, m.box.w * q, m.box.h * q);
+    g.strokeStyle = '#fde047'; g.lineWidth = 4; g.beginPath(); g.moveTo((m.rim.cx - m.rim.w / 2 - x0) * q, (m.rim.cy - y0) * q); g.lineTo((m.rim.cx + m.rim.w / 2 - x0) * q, (m.rim.cy - y0) * q); g.stroke();
+    return cv;
+  }
+  /* 得点の場面の絵は、見えない別の <video> でその時刻へ移って描く（再生中の映像を動かさない） */
+  async function makeThumbs() {
+    if (!S.media) return;
+    if (S.thumbJob) S.thumbJob.cancel = true;
+    const job = { cancel: false };
+    S.thumbJob = job;
+    const todo = list().filter((it) => !S.thumbs[it.id]);
+    if (!todo.length) return;
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.preload = 'auto';
+    v.style.cssText = 'position:fixed;left:-10px;top:-10px;width:2px;height:2px;opacity:0;pointer-events:none';
+    document.body.appendChild(v);
+    const once = (ev, ms) => new Promise((res) => { let done = false; const f = () => { if (done) return; done = true; v.removeEventListener(ev, f); res(); }; v.addEventListener(ev, f); setTimeout(f, ms); });
+    try {
+      v.src = S.media.url;
+      await once('loadeddata', 8000);
+      const cv = document.createElement('canvas');
+      cv.width = 192; cv.height = 108;
+      const g = cv.getContext('2d');
+      for (const it of todo) {
+        if (job.cancel) break;
+        v.currentTime = Math.max(0, it.t - 0.3);
+        await once('seeked', 4000);
+        if (job.cancel) break;
+        const vw = v.videoWidth || 16, vh = v.videoHeight || 9;
+        const k = Math.min(cv.width / vw, cv.height / vh);
+        g.fillStyle = '#000'; g.fillRect(0, 0, cv.width, cv.height);
+        try { g.drawImage(v, (cv.width - vw * k) / 2, (cv.height - vh * k) / 2, vw * k, vh * k); } catch (e) { continue; }
+        S.thumbs[it.id] = cv.toDataURL('image/jpeg', 0.72);
+        document.querySelectorAll(`img[data-thumb="${it.id}"]`).forEach((img) => { img.src = S.thumbs[it.id]; });
+      }
+    } catch (e) { /* 絵が作れなくても、ほかは使える */ }
+    v.removeAttribute('src'); v.load(); v.remove();
+  }
+
+  /* ---------- ゴールの指定（映像の上でドラッグ） ---------- */
+  function setOverlayActive(on) { const cv = $('#overlay'); cv.style.pointerEvents = on ? 'auto' : 'none'; cv.style.cursor = on ? 'crosshair' : 'default'; }
+  function startMarking(i) {
+    if (!S.media || S.running || S.exporting) return;
+    stopReel(true);
+    pause();
+    S.openSetup = true;
+    S.marking = { i, step: S.st.fixed ? -1 : 0, box: null, drag: null, pre: null, view: null, t: now() };      // 全景カメラ：ゴールが小さいので、まずクリックで拡大してから囲む（step -1）
+    setOverlayActive(true);
+    render(); drawOverlay();
+    const mc = document.querySelector('.markcard');
+    if (mc && mc.scrollIntoView) mc.scrollIntoView({ block: 'nearest' });
+  }
+  function cancelMarking() {
+    if (!S.marking) return;
+    S.marking = null; setOverlayActive(false);
+    render(); drawOverlay();
+  }
+  /* 映像の画素 ⇄ 画面上の位置。ふだんは映像全体（黒帯つき）、リングをなぞるときは拡大表示（mk.view の範囲を画面いっぱいに） */
+  function mapping(r) {
+    const W = S.media.width, H = S.media.height;
+    const mk = S.marking;
+    if (mk && mk.view) return { s: r.width / mk.view.w, ox: 0, oy: 0, vx: mk.view.x, vy: mk.view.y };
+    const s = Math.min(r.width / W, r.height / H);
+    return { s, ox: (r.width - W * s) / 2, oy: (r.height - H * s) / 2, vx: 0, vy: 0 };
+  }
+  function toSrc(ev) {
+    const r = $('#overlay').getBoundingClientRect();
+    const m = mapping(r);
+    return { x: BS.clamp(m.vx + (ev.clientX - r.left - m.ox) / m.s, 0, S.media.width), y: BS.clamp(m.vy + (ev.clientY - r.top - m.oy) / m.s, 0, S.media.height) };
+  }
+  /* 映像の画素 → ブラウザの画面座標（テストから、いまの表示での位置を知るため） */
+  function toScreen(x, y) {
+    const r = $('#overlay').getBoundingClientRect();
+    const m = mapping(r);
+    return { x: r.left + m.ox + (x - m.vx) * m.s, y: r.top + m.oy + (y - m.vy) * m.s };
+  }
+  /* リングは小さい（画面上で 20 画素ほどのこともある）ので、バックボードを囲んだら、その周りを拡大して見せる */
+  function zoomFor(box) {
+    const r = $('#overlay').getBoundingClientRect();
+    const W = S.media.width, H = S.media.height;
+    const base = Math.min(r.width / W, r.height / H);
+    const vw = Math.min(W, box.w / 0.42);                       // バックボードの幅が画面の約 4 割になるように
+    if (r.width / vw < base * 1.4) return null;                 // もともと大きく映っているなら拡大しない
+    const vh = vw * r.height / r.width;
+    return { x: box.x + box.w / 2 - vw / 2, y: box.y + box.h * 0.8 - vh / 2, w: vw, h: vh };
+  }
+  /* 全景カメラ：クリックした場所のまわりを、映像の横幅の 1/7 ほどの範囲で拡大して見せる（板が見切れないよう、クリックより少し上を中心に） */
+  function viewAround(pt) {
+    const r = $('#overlay').getBoundingClientRect();
+    const W = S.media.width, H = S.media.height;
+    const vw = Math.min(W, Math.max(200, W / 7));
+    const vh = Math.min(H, vw * r.height / r.width);
+    return { x: BS.clamp(pt.x - vw / 2, 0, Math.max(0, W - vw)), y: BS.clamp(pt.y - vh * 0.6, 0, Math.max(0, H - vh)), w: vw, h: vh };
+  }
+  function onDown(ev) { if (!S.marking) return; ev.preventDefault(); const p = toSrc(ev); S.marking.drag = { a: p, b: p }; $('#overlay').setPointerCapture(ev.pointerId); drawOverlay(); }
+  function onMove(ev) { if (!S.marking || !S.marking.drag) return; S.marking.drag.b = toSrc(ev); drawOverlay(); }
+  function onUp(ev) {
+    const mk = S.marking;
+    if (!mk || !mk.drag) return;
+    mk.drag.b = toSrc(ev);
+    const { a, b } = mk.drag;
+    mk.drag = null;
+    if (mk.step === -1) { mk.view = mk.pre = viewAround(b); mk.step = 0; render(); drawOverlay(); return; }
+    if (mk.step === 0) {
+      const box = { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y) };
+      const small = S.st.fixed ? 8 : 12;      // 全景カメラのゴールは小さい
+      if (box.w < small + 4 || box.h < small) { BS.ui.toast('小さすぎます。バックボード全体を囲んでください', 'err'); drawOverlay(); return; }
+      mk.box = box; mk.step = 1; mk.view = zoomFor(box); mk.t = now();
+    } else {
+      const w = Math.hypot(a.x - b.x, a.y - b.y);
+      if (w < 8) { BS.ui.toast('リングの左端から右端までドラッグしてください', 'err'); drawOverlay(); return; }
+      const rim = { cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, w };
+      S.st.hoops[mk.i] = { id: mk.i === 0 ? 'A' : 'B', t: Math.round(now() * 1000) / 1000, box: mk.box, rim };
+      save();
+      S.marking = null; setOverlayActive(false);
+      S.thumbs['hoop' + mk.i] = hoopThumb(mk.i);
+      const far = rim.cx < mk.box.x - mk.box.w * 0.5 || rim.cx > mk.box.x + mk.box.w * 1.5 || rim.cy < mk.box.y - mk.box.h * 0.5 || rim.cy > mk.box.y + mk.box.h * 2;
+      const both = S.st.hoops.filter(Boolean).length >= 2;
+      if (far) BS.ui.toast('リングの線が、囲んだバックボードから離れています。同じゴールのリングをなぞり直してください（「指定し直す」）', 'warn', 8000);
+      else if (S.st.fixed ? w < 14 : w / S.media.width < 0.0125) BS.ui.toast(`${HOOP[mk.i]} を指定しました。ただしリングが小さく映っています。もっと大きく映っている場面があれば、そこで指定し直すと見つけやすくなります`, 'warn', 8000);
+      else BS.ui.toast(`${HOOP[mk.i]} を指定しました${both ? '。④ の「得点シーンを探す」を押してください' : '。もう1つのゴールも、映っている場面で同じように指定します'}`, 'ok', 5000);
+    }
+    render(); drawOverlay();
+  }
+  /* 板を囲んだあとでコマが動いた：枠とリングが別のコマになってしまうので、囲むところからやり直す */
+  function markingTimeCheck(t) {
+    const mk = S.marking;
+    if (mk && mk.step === 1 && Math.abs(t - mk.t) > 0.02) {
+      mk.step = 0; mk.box = null; mk.view = mk.pre || null; mk.drag = null;
+      BS.ui.toast('コマが動いたので、バックボードを囲むところからやり直してください', 'warn', 4500);
+      render();
+    }
+  }
+  function drawOverlay() {
+    const cv = $('#overlay');
+    if (!cv) return;
+    const r = cv.getBoundingClientRect();
+    const dpr = root.devicePixelRatio || 1;
+    if (cv.width !== Math.round(r.width * dpr) || cv.height !== Math.round(r.height * dpr)) { cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); }
+    const g = cv.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, r.width, r.height);
+    if (!S.media || !S.media.ready) return;
+    const W = S.media.width, H = S.media.height;
+    const mp = mapping(r);
+    const sc = mp.s, ox = mp.ox - mp.vx * mp.s, oy = mp.oy - mp.vy * mp.s;
+    const X = (x) => ox + x * sc, Y = (y) => oy + y * sc;
+    const rect = (b, col, lab) => { g.strokeStyle = col; g.lineWidth = 2; g.strokeRect(X(b.x), Y(b.y), b.w * sc, b.h * sc); if (lab) { g.fillStyle = col; g.font = 'bold 12px sans-serif'; g.fillText(lab, X(b.x) + 3, Y(b.y) - 4); } };
+    const rimLine = (rm, col) => { g.strokeStyle = col; g.lineWidth = 3; g.beginPath(); g.moveTo(X(rm.cx - rm.w / 2), Y(rm.cy)); g.lineTo(X(rm.cx + rm.w / 2), Y(rm.cy)); g.stroke(); };
+    const mk = S.marking;
+    if (mk) {
+      if (mk.view) {
+        g.fillStyle = '#000'; g.fillRect(0, 0, r.width, r.height);
+        try { g.drawImage(S.media.el, mk.view.x, mk.view.y, mk.view.w, mk.view.h, 0, 0, r.width, r.height); } catch (e) { /* まだ描けるコマがない */ }
+      } else { g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(0, 0, r.width, r.height); }
+      if (mk.box) rect(mk.box, HOOP_COL[mk.i], HOOP[mk.i]);
+      if (mk.drag) {
+        const { a, b } = mk.drag;
+        if (mk.step === 0) rect({ x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y) }, '#fbbf24');
+        else if (mk.step === 1) { g.strokeStyle = '#fbbf24'; g.lineWidth = 3; g.beginPath(); g.moveTo(X(a.x), Y(a.y)); g.lineTo(X(b.x), Y(b.y)); g.stroke(); }
+      }
+      g.fillStyle = 'rgba(0,0,0,0.66)'; g.fillRect(0, 0, r.width, 28);
+      g.fillStyle = '#fde047'; g.font = 'bold 13.5px sans-serif';
+      g.fillText(mk.step === -1 ? `${HOOP[mk.i]}：ゴールのあたりを1回クリック（拡大します）` : mk.step === 0 ? `${HOOP[mk.i]}：バックボード（板）全体を、ドラッグで囲む` : `${HOOP[mk.i]}：${mk.view ? '🔍 拡大中　' : ''}リング（輪）の左端 → 右端 を、ぴったりドラッグ`, 10, 19);
+      return;
+    }
+    if (S.live) {
+      if (S.live.preview) { g.fillStyle = '#000'; g.fillRect(0, 0, r.width, r.height); try { g.drawImage(S.live.preview, X(0), Y(0), W * sc, H * sc); } catch (e) { /* 閉じた絵 */ } }
+      const idx = (S.running && S.running.idx) || [0, 1];
+      S.live.status.forEach((s, i) => {
+        if (!s.tracked) return;
+        const hi = idx[i] != null ? idx[i] : i;
+        rect(s.box, HOOP_COL[hi], HOOP[hi]);
+        rimLine(s.rim, '#fde047');
+        (s.balls || []).forEach((c) => { g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(X(s.rim.cx + c.x * s.rim.w), Y(s.rim.cy + c.y * s.rim.w), 0.3 * s.rim.w * sc, 0, Math.PI * 2); g.stroke(); });
+      });
+      return;
+    }
+    // 指定ずみのゴール（指定したコマにいるとき、または全景カメラのときに表示。設定を開いているときだけ）
+    const setupVisible = !S.st.result || S.openSetup;
+    if (setupVisible) S.st.hoops.forEach((m, i) => { if (m && (S.st.fixed || Math.abs(now() - m.t) < 0.2)) { rect(m.box, HOOP_COL[i], HOOP[i]); rimLine(m.rim, '#fde047'); } });
+  }
+
+  /* ---------- 解析（できれば Worker で、だめなら画面側で同じコードを動かす） ---------- */
+  function yieldNow() {       // setTimeout はタブが裏に回ると遅くなるので MessageChannel で一息つく
+    return new Promise((r) => { const ch = new MessageChannel(); ch.port1.onmessage = () => r(); ch.port2.postMessage(0); });
+  }
+  async function openEngine(cfgA, onEvent) {
+    const make = (useWorker) => {
+      let worker = null, core = null, seq = 0, dead = null, source = null;
+      const pend = new Map();
+      /* Worker が「ファイルのここを読んで」と頼んできたとき（Worker の中からは読めない環境）に、画面側で読んで渡す */
+      const serveRead = (m) => {
+        const reply = (o, tr) => { const msg = Object.assign({ cmd: 'data', rid: m.rid }, o); if (worker) worker.postMessage(msg, tr || []); else core.handle(msg, receive); };
+        if (!source || typeof source.slice !== 'function') { reply({ error: 'ファイルがありません' }); return; }
+        source.slice(m.a, m.b).arrayBuffer().then((buf) => reply({ buf }, [buf]), (err) => reply({ error: String((err && err.message) || err) }));
+      };
+      const receive = (m) => {
+        if (m.ev === 'read') { serveRead(m); return; }
+        if (m.ev) { onEvent(m); return; }
+        const p = pend.get(m.id);
+        if (!p) return;
+        pend.delete(m.id);
+        if (m.ok) p.resolve(m); else p.reject(Object.assign(new Error(m.error), { code: m.code }));
+      };
+      if (useWorker) {
+        const code = ['vision', 'auto', 'mp4', 'autoEngine'].map((k) => '(' + BS.src[k].toString() + ')(self);').join('\n') + '\nBS.autoEngine.serve(self);';
+        const url = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
+        worker = new Worker(url);
+        worker.onmessage = (e) => receive(e.data);
+        worker.onerror = (e) => { dead = new Error(e.message || 'Worker error'); pend.forEach((p) => p.reject(dead)); pend.clear(); };
+      } else {
+        core = BS.autoEngine.create({
+          makeCanvas: (w, hh) => { const c = document.createElement('canvas'); c.width = w; c.height = hh; return c; },
+          transferable: false, preview: (c) => c
+        });
+      }
+      return {
+        kind: useWorker ? 'worker' : 'local',
+        call(cmd, payload, transfer) {
+          return new Promise((resolve, reject) => {
+            if (dead) { reject(dead); return; }
+            const m = Object.assign({ id: ++seq, cmd }, payload || {});
+            if (payload && payload.file) source = payload.file;
+            pend.set(m.id, { resolve, reject });
+            if (worker) worker.postMessage(m, transfer || []); else core.handle(m, receive);
+          });
+        },
+        cancel() { if (worker) worker.postMessage({ cmd: 'cancel' }); else core.cancel(); },
+        close() { if (worker) worker.terminate(); }
+      };
+    };
+    if (typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined') {
+      let eng = null;
+      try { eng = make(true); await eng.call('init', { cfg: cfgA }); return eng; }
+      catch (err) { console.warn('[auto] Worker を使えないので画面側で解析します', err); if (eng) eng.close(); }
+    }
+    const eng = make(false);
+    await eng.call('init', { cfg: cfgA });
+    return eng;
+  }
+
+  /* WebCodecs で直接読めない動画：<video> を等速で再生しながら、表示されたコマを送る。
+     表示されているコマしか取れないので、このタブを表示している間だけ進む（裏に回ると一時停止）。 */
+  async function runVideoPlayback(eng, media, marks, st, onLive) {
+    const v = media.el;
+    if (!v.requestVideoFrameCallback) throw new Error('このブラウザは、この動画形式の解析に対応していません');
+    const prevRate = v.playbackRate, prevMuted = v.muted;
+    for (let k = 0; k < marks.length; k++) {
+      await media.seek(marks[k].t);
+      await new Promise((r) => setTimeout(r, 250));
+      const bm = await createImageBitmap(v);
+      await eng.call('tpl', { i: k, image: bm }, eng.kind === 'worker' ? [bm] : []);
+    }
+    await media.seek(0);
+    v.muted = true; v.playbackRate = 1;      // 等速。2倍速だと表示の間に合わないコマが出て、調べる間隔が不ぞろいになる（判定は約15コマ/秒で合わせてある）
+    const dur = media.duration, MIN_STEP = BS.autoEngine.MIN_STEP;
+    let inflight = 0, lastT = -1, frames = 0, gaps = 0, holdQueue = false, holdHidden = false, lastPrev = 0, failed = null;
+    const resume = () => { if (!holdQueue && !holdHidden && !st.cancel) v.play().catch(() => {}); };
+    await new Promise((resolve) => {
+      let over = false;
+      const onVis = () => { if (document.hidden) { holdHidden = true; v.pause(); } else if (holdHidden) { holdHidden = false; resume(); } };
+      const end = () => { if (over) return; over = true; v.removeEventListener('ended', end); document.removeEventListener('visibilitychange', onVis); resolve(); };
+      v.addEventListener('ended', end);
+      document.addEventListener('visibilitychange', onVis);
+      const onFrame = (nowMs, meta) => {
+        if (over) return;
+        if (st.cancel || failed) { v.pause(); end(); return; }
+        const t = meta.mediaTime;
+        if (t - lastT >= MIN_STEP) {
+          if (lastT >= 0 && t - lastT > 0.11) gaps++;
+          lastT = t; frames++; inflight++;
+          const preview = nowMs - lastPrev > 200;
+          if (preview) lastPrev = nowMs;
+          createImageBitmap(v)
+            .then((bm) => eng.call('frame', { t, image: bm, preview }, eng.kind === 'worker' ? [bm] : []))
+            .then((r) => { inflight--; onLive(t, r.live); if (holdQueue && inflight <= 2) { holdQueue = false; resume(); } })
+            .catch((err) => { inflight--; failed = err; });
+          if (inflight > 6 && !holdQueue) { holdQueue = true; v.pause(); }
+        }
+        if (t >= dur - 0.15) { end(); return; }
+        v.requestVideoFrameCallback(onFrame);
+      };
+      v.requestVideoFrameCallback(onFrame);
+      if (document.hidden) holdHidden = true; else v.play().catch(() => end());
+    });
+    v.pause();
+    while (inflight > 0) await yieldNow();
+    v.playbackRate = prevRate; v.muted = prevMuted;
+    if (failed) throw failed;
+    const res = (await eng.call('finish')).result;
+    res.mode = 'playback'; res.gaps = gaps; res.pushed = frames;
+    return res;
+  }
+
+  async function run(opts) {
+    if (S.running || !S.media) return;
+    opts = opts || {};
+    const st0 = S.st;
+    const marks = st0.hoops.filter(Boolean);
+    if (!marks.length) return;
+    const media = S.media;
+    stopReel(true);
+    cancelMarking();
+    media.pause();
+    const idx = st0.hoops.map((m, i) => (m ? i : -1)).filter((i) => i >= 0);
+    const st = S.running = { cancel: false, n: [0, 0], t: 0, eng: null, idx };
+    render();
+    const dur = opts.t1 != null ? Math.min(opts.t1, duration()) : duration();
+    const t0w = performance.now();
+    const onLive = (t, live, preview) => {
+      st.t = t;
+      for (const e of live.events) if (e.made) st.n[C.baseTeam({ hoop: idx[e.hoop], t: e.t }, setupOf())]++;
+      const old = S.live && S.live.preview;
+      const pv = preview || live.preview || null;
+      if (pv && old && old !== pv && typeof old.close === 'function') old.close();
+      S.live = { status: live.status, preview: pv || old || null };
+      const bar = $('#runBar'), lab = $('#runLabel'), lv = $('#runLive');
+      const sec = Math.max(0.5, (performance.now() - t0w) / 1000);
+      if (bar) bar.style.width = (BS.clamp(t / dur, 0, 1) * 100).toFixed(1) + '%';
+      if (lab) lab.textContent = `${BS.fmtTime(t)} / ${BS.fmtTime(dur)}（${(t / sec).toFixed(1)}倍速）`;
+      if (lv) lv.textContent = `見つけた得点：${WHAT[0]} ${st.n[0]}・${WHAT[1]} ${st.n[1]}`;
+      drawOverlay();
+    };
+    let eng = null, res = null;
+    try {
+      eng = st.eng = await openEngine({ srcW: media.width, srcH: media.height, fixed: !!st0.fixed, hoops: marks.map((m) => ({ id: m.id, box: m.box, rim: m.rim })) },
+        (m) => { if (m.ev === 'progress') onLive(m.t, m.live, m.preview); else if (m.ev === 'info') st.info = m; });
+      try {
+        st.mode = 'decode';
+        const src = typeof media.file === 'string' ? { url: new URL(media.file, root.location.href).href } : { file: media.file };
+        res = (await eng.call('decode', Object.assign({ marks: marks.map((m, i) => ({ i, t: m.t })), t0: 0, t1: opts.t1 }, src))).result;
+      } catch (err) {
+        if (err.code !== 'unsupported') throw err;
+        console.warn('[auto] ファイルを直接読めないので、再生しながら解析します：', err.message);
+        BS.ui.toast('この動画形式は直接読めないので、再生しながら探します（動画と同じ長さの時間がかかります。このタブを表示したままにしてください）', 'warn', 9000);
+        st.mode = 'playback';
+        res = await runVideoPlayback(eng, media, marks, st, onLive);
+      }
+      if (st.cancel) throw Object.assign(new Error('中止しました'), { code: 'cancelled' });
+      apply(res, idx, dur, st.mode, (performance.now() - t0w) / 1000);
+    } catch (err) {
+      if (err.code === 'cancelled' || st.cancel) BS.ui.toast('探すのを中止しました', 'warn');
+      else { console.error('[auto]', err); BS.ui.toast('うまく探せませんでした：' + err.message, 'err', 9000); }
+    }
+    if (eng) eng.close();
+    if (S.live && S.live.preview && typeof S.live.preview.close === 'function') S.live.preview.close();
+    S.running = null; S.live = null;
+    render(); drawOverlay(); drawTimeline();
+    return res;
+  }
+  function cancelRun() { const st = S.running; if (!st) return; st.cancel = true; if (st.eng) st.eng.cancel(); }
+  function apply(res, idx, until, mode, wall) {
+    const mapMask = (m) => { let o = 0; idx.forEach((hi, i) => { if (m & (1 << i)) o |= 1 << hi; }); return o; };
+    const result = {
+      shots: res.shots.map((s) => ({ t: +s.t.toFixed(2), hoop: idx[s.hoop], made: !!s.made, sure: s.sure !== false, conf: s.conf })),
+      spans: (res.spans || []).filter((sp) => sp[2]).map((sp) => [+sp[0].toFixed(1), +sp[1].toFixed(1), mapMask(sp[2])]),
+      mode, frames: res.frames, wall: Math.round(wall), dur: +duration().toFixed(1), until: +until.toFixed(1), marks: marksKey(), at: Date.now()
+    };
+    if (S.st.result) S.st.edits = C.carryEdits(S.st.result, result, S.st.edits);
+    S.st.result = result;
+    S.thumbs = Object.fromEntries(Object.entries(S.thumbs).filter(([k]) => k.startsWith('hoop')));
+    S.out = [null, null]; S.tab = 0; S.openSetup = false;
+    save();
+    const its = list();
+    const n0 = its.filter((it) => it.team === 0).length, n1 = its.length - n0;
+    BS.ui.toast(`見つかりました：${WHAT[0]} ${n0}本・${WHAT[1]} ${n1}本`, 'ok', 6000);
+    makeThumbs();
+  }
+
+  /* ---------- タイムライン（映像の下のバー。得点の位置に印） ---------- */
+  function drawTimeline() {
+    const cv = $('#timeline');
+    if (!cv) return;
+    const w = cv.clientWidth || 600, Hh = 40;
+    const dpr = root.devicePixelRatio || 1;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(Hh * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(Hh * dpr); }
+    const g = cv.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, w, Hh);
+    g.fillStyle = '#172033'; g.fillRect(0, 0, w, Hh);
+    const dur = duration();
+    if (!dur) return;
+    const X = (t) => t / dur * w;
+    // 後半
+    if (S.st.halfT != null) {
+      const x = X(S.st.halfT);
+      g.strokeStyle = 'rgba(255,255,255,0.45)'; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(x, 0); g.lineTo(x, Hh); g.stroke(); g.setLineDash([]);
+      g.fillStyle = '#cbd5e1'; g.font = 'bold 10px sans-serif'; g.fillText('後半', Math.min(x + 3, w - 26), 10);
+    }
+    // 得点（上の段：入れた、下の段：入れられた）
+    if (S.st.result) {
+      list().forEach((it) => {
+        const x = X(it.t), y = it.team ? 22 : 6;
+        g.globalAlpha = it.on ? 1 : 0.3;
+        g.fillStyle = teamColor(it.team); g.fillRect(x - 2, y, 4, 12);
+        g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 1; g.strokeRect(x - 2, y, 4, 12);
+        g.globalAlpha = 1;
+      });
+    }
+    // 再生位置
+    const x = X(now());
+    g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, Hh); g.stroke();
+  }
+  function initTimeline() {
+    const cv = $('#timeline');
+    let dragging = false;
+    const toT = (ev) => { const r = cv.getBoundingClientRect(); return BS.clamp((ev.clientX - r.left) / r.width, 0, 1) * duration(); };
+    cv.addEventListener('pointerdown', (ev) => { if (!S.media || S.running || S.exporting) return; dragging = true; cv.setPointerCapture(ev.pointerId); seek(toT(ev)); });
+    cv.addEventListener('pointermove', (ev) => { if (dragging) seek(toT(ev)); });
+    cv.addEventListener('pointerup', () => { dragging = false; });
+  }
+
+  /* ---------- 使い方 ---------- */
+  function help() {
+    BS.ui.modal({
+      title: '使い方', body: h('div', { class: 'help' },
+        h('ol', null,
+          h('li', null, h('b', null, '試合の動画を選ぶ'), '（MP4・MOV。ドラッグ＆ドロップでも）'),
+          h('li', null, h('b', null, 'どっちの色が自分のチームか'), 'を選ぶ（相手の色も）'),
+          h('li', null, h('b', null, 'ゴールを教える'), '：ゴールが大きく映っている場面で止めて、板を囲む → リングをなぞる。2つとも。', h('br'), '「動画のはじめに、このゴールを攻めているのは？」で、自分か相手かを選ぶ'),
+          h('li', null, h('b', null, '「得点シーンを探す」'), '：ボールがリングを通った場面を、動画の最初から最後まで探します'),
+          h('li', null, h('b', null, '🏀 入れた／🛡 入れられた'), 'を切り替えて、▶ で1本ずつ、「▶ 続けて再生」でまとめて見る。「🎬 動画にする」で1本の動画に')),
+        h('h4', null, 'どちらのチームの得点か'),
+        h('p', null, 'ボールが入った「ゴール」で決めます。前半・後半それぞれ、チームが攻めるゴールは決まっているからです。1本の動画に後半も入っているときは、後半の始まりを教えてください（解析のあとに、ハーフタイムらしい場面を教えてくれることもあります）。逆になっていたら「⇄ 入れ替える」、1本だけ違うなら、その場面の「⇄」で直せます。'),
+        h('h4', null, 'うまく見つけるための撮り方'),
+        h('ul', null,
+          h('li', null, 'ゴール（リングとネット）が画面に入るように撮る。シュートの瞬間にゴールが映っていないと見つけられません'),
+          h('li', null, '高い位置から、少し引きぎみに。横 1280 画素（720p）以上の画質で'),
+          h('li', null, 'オレンジ〜茶色のボールを想定しています')),
+        h('h4', null, 'できないこと'),
+        h('ul', null,
+          h('li', null, '審判の判定（笛で取り消された得点など）は分かりません。外れていたら、チェックを外してください'),
+          h('li', null, '2点・3点・フリースローの区別はしません（どれも「入れた／入れられた」の1場面になります）')),
+        h('p', { class: 'note' }, '🔒 動画はこの端末の中だけで扱い、どこにも送りません。チームの色・ゴールの指定・結果は、このブラウザに保存されます（同じ動画を開き直すと続きから）。得点の検出には「バスケ分析スタジオ」と同じしくみを使っています。')),
+      buttons: [{ label: '閉じる', cls: 'primary' }]
+    });
+  }
+
+  /* ---------- キー操作 ---------- */
+  function onKey(e) {
+    if (BS.ui.modalOpen()) { if (e.code === 'Escape') BS.ui.closeModal(); return; }
+    const tag = (e.target && e.target.tagName) || '';
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) && e.target.type !== 'checkbox') return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.code === 'Escape') { if (S.marking) cancelMarking(); else if (S.reel.active) stopReel(); return; }
+    if (!S.media) return;
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.code === 'ArrowLeft') { e.preventDefault(); seek(now() - (e.shiftKey ? 10 : 2)); }
+    else if (e.code === 'ArrowRight') { e.preventDefault(); seek(now() + (e.shiftKey ? 10 : 2)); }
+    else if (e.code === 'Comma') seek(now() - 1 / 30);
+    else if (e.code === 'Period') seek(now() + 1 / 30);
+  }
+
+  /* ---------- 起動 ---------- */
+  function init() {
+    const ov = $('#overlay');
+    ov.addEventListener('pointerdown', onDown);
+    ov.addEventListener('pointermove', onMove);
+    ov.addEventListener('pointerup', onUp);
+    $('#btnOpen').addEventListener('click', pickFile);
+    $('#btnHelp').addEventListener('click', help);
+    $('#fileVideo').addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; if (f) openFile(f); });
+    $('#btnPlay').addEventListener('click', toggle);
+    $('#btnBack').addEventListener('click', () => seek(now() - 5));
+    $('#btnFwd').addEventListener('click', () => seek(now() + 5));
+    $('#btnPrevF').addEventListener('click', () => seek(now() - 1 / 30));
+    $('#btnNextF').addEventListener('click', () => seek(now() + 1 / 30));
+    $('#speedSel').addEventListener('change', (e) => { if (S.media) S.media.rate = Number(e.target.value); });
+    $('#reelPrev').addEventListener('click', () => stepReel(-1));
+    $('#reelStop').addEventListener('click', () => stopReel());
+    $('#reelNext').addEventListener('click', () => stepReel(1));
+    initTimeline();
+    document.addEventListener('keydown', onKey);
+    // ドラッグ＆ドロップ
+    let depth = 0;
+    const drop = $('#ovDrop');
+    root.addEventListener('dragenter', (e) => { if (e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files')) { depth++; drop.hidden = false; } });
+    root.addEventListener('dragleave', () => { depth = Math.max(0, depth - 1); if (!depth) drop.hidden = true; });
+    root.addEventListener('dragover', (e) => { e.preventDefault(); });
+    root.addEventListener('drop', (e) => {
+      e.preventDefault(); depth = 0; drop.hidden = true;
+      const f = e.dataTransfer && Array.from(e.dataTransfer.files || []).find((x) => /^video\//.test(x.type) || /\.(mp4|mov|m4v|webm|mkv)$/i.test(x.name));
+      if (f) openFile(f); else BS.ui.toast('動画ファイル（MP4・MOV など）をドロップしてください', 'err');
+    });
+    root.addEventListener('resize', () => { drawOverlay(); drawTimeline(); });
+    root.addEventListener('beforeunload', (e) => { if (S.running || S.exporting) { e.preventDefault(); e.returnValue = ''; } });
+    render(); drawTimeline();
+  }
+
+  BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, list, clipsFor, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs };
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+  }
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+</body>
+</html>
