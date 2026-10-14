@@ -1698,6 +1698,8 @@
         if (d) showEditor(d);
         else { Kit.toast('書類が見つかりませんでした', { type: 'bad' }); showList(); }
       } else if (params.fromLead) await openFromLead(params.fromLead);
+      // 案内などから開くとき：Kit.go('invoice', { new: 'estimate' | 'invoice' | 'receipt' })。新しい書類を入力の画面で開く（書きかえるまで保存しない）
+      else if (TYPE_KEYS.includes(params.new)) { Kit.pref.set('invoice:pane', 'form'); showEditor(newDoc(params.new), { isNew: true }); }
       else showList();
       return () => leaveView();
     },

@@ -567,12 +567,15 @@ table.mo-proj .mo-yr { display: block; font-size: 10.5px; color: var(--ink-3); f
     id: 'money', title: 'マネタイズ計画', group: 'earn', icon: 'yen', order: 30,
     desc: '売上のしくみを組み立てて、12か月を試算する',
     docs: ['plan'],
-    async mount(root) {
+    async mount(root, params) {
       let plan = normalize(await Kit.store.get('plan', { sample: SAMPLE_PLAN, blank: blankPlan() }));
       let scenario = Kit.pref.get('money.scenario', 'base');
       if (!SCENARIOS.some((x) => x.id === scenario)) scenario = 'base';
       let tab = Kit.pref.get('money.tab', 'sim');
       if (!['sim', 'text', 'doc'].includes(tab)) tab = 'sim';
+      // 案内などから開くとき：Kit.go('money', { tab: 'sim' | 'text' | 'doc' })。'example' は 'doc'（計画書の例）と同じ
+      const want = params && (params.tab === 'example' ? 'doc' : params.tab);
+      if (['sim', 'text', 'doc'].includes(want)) { tab = want; Kit.pref.set('money.tab', tab); }
       let els = {};
       let selfWrites = 0, busy = false, alive = true, chartW = 0;
       const openSet = new Set(); // 「くわしい設定」を開いている柱
