@@ -29,6 +29,14 @@
     const root = $('#tab-chart');
     U.clear(root);
 
+    /* --- はじめての方へ（いちど閉じたら出さない） --- */
+    if (!U.store.get('seenHint', false)) {
+      const banner = h('div', { class: 'banner', role: 'note' },
+        h('div', null, h('b', null, 'はじめての方へ　'), '▶（またはスペースキー）で伴奏が鳴ります。譜面のコードをタップすると、そのコードの役割と、合うリックが出ます。「② ソロ」では、リックをつないだソロが楽譜になって鳴ります。'),
+        h('button', { type: 'button', class: 'btn sm', onclick: () => { U.store.set('seenHint', true); banner.remove(); } }, 'わかった'));
+      root.appendChild(banner);
+    }
+
     /* --- カード1：コード譜 --- */
     el.preset = U.select(presetOptions(), st().presetId, id => { if (id) App.loadPreset(id); else el.preset.value = st().presetId; }, { id: 'presetSel', 'aria-label': 'サンプルのコード進行をえらぶ' });
     el.saved = U.select([['', 'マイ譜面…']], '', v => { if (v) openSaved(v); el.saved.value = ''; }, { id: 'savedSel', 'aria-label': '保存した譜面を開く' });
@@ -264,7 +272,7 @@
         const hs = hsIdx != null ? App.hs[hsIdx] : null;
         const firstOfHs = hs && hs.parts[0] === slotIdx, lastOfHs = hs && hs.parts[hs.parts.length - 1] === slotIdx;
         const ph = hsIdx != null ? App.phraseOf[hsIdx] : null;
-        const cc = h('div', { class: 'cc' + (c.chord && c.chord.bad ? ' bad' : '') + (bar.copy ? ' cp' : '') + (ph && ph.color >= 0 ? ' ph c' + ph.color + (ph.first && firstOfHs ? ' first' : '') + (ph.last && lastOfHs ? ' last' : '') : ''), style: { flexGrow: c.dur }, data: { bar: bi, k: k, hs: hsIdx == null ? '' : hsIdx }, title: c.chord && c.chord.bad ? '読めないコード：' + c.src : null });
+        const cc = h('div', { tabindex: '0', role: 'button', 'aria-label': (c.src || '') + ' の役割を見る', class: 'cc' + (c.chord && c.chord.bad ? ' bad' : '') + (bar.copy ? ' cp' : '') + (ph && ph.color >= 0 ? ' ph c' + ph.color + (ph.first && firstOfHs ? ' first' : '') + (ph.last && lastOfHs ? ' last' : '') : ''), style: { flexGrow: c.dur }, data: { bar: bi, k: k, hs: hsIdx == null ? '' : hsIdx }, title: c.chord && c.chord.bad ? '読めないコード：' + c.src : null });
         cc.appendChild(bar.copy ? h('span', { class: 'cs pct', title: '前の小節と同じ' }, '%') : U.chordHtml(c.chord, c.src));
         const chipsBox = h('div', { class: 'chips' });
         if (info && firstOfHs && !bar.copy) (info.chips || []).forEach(ch => chipsBox.appendChild(chipEl(ch)));
@@ -471,6 +479,15 @@
     build();
     el.grid.addEventListener('click', onGridClick);
     el.grid.addEventListener('dblclick', onGridDbl);
+    el.grid.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.code !== 'Space') return;
+      const cc = e.target.closest && e.target.closest('.cc');
+      if (!cc) return;
+      e.preventDefault(); e.stopPropagation();   // スペースキーの「再生・停止」に流さない
+      const bi = +cc.dataset.bar;
+      if (rangeMode) { rangeClick(bi); return; }
+      App.select({ hs: cc.dataset.hs !== '' ? +cc.dataset.hs : null, bar: bi });
+    });
     window.addEventListener('resize', U.debounce(() => { /* グリッドは CSS で伸縮 */ }, 200));
   }
   App.on('init', onInit);

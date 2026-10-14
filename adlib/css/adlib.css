@@ -167,6 +167,11 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
 .toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%) translateY(10px); background: #263340; color: #fff; padding: 10px 18px; border-radius: 12px; font-size: .88rem; max-width: min(92vw, 560px); z-index: 60; opacity: 0; transition: opacity .2s, transform .2s; box-shadow: 0 6px 24px rgba(0, 0, 0, .3); pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ---- はじめての方へ ---- */
+.banner { display: flex; align-items: center; gap: 12px; justify-content: space-between; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); color: var(--ink); border-radius: var(--radius); padding: 10px 14px; font-size: .88rem; line-height: 1.6; }
+.banner b { color: var(--accent); }
+.cc:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: -3px; }
+
 /* ---- コードパレット・ヘルプ ---- */
 .palette { margin-top: 10px; padding: 12px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; }
 .pal-t { font-size: .78rem; color: var(--muted); margin-bottom: 6px; }
