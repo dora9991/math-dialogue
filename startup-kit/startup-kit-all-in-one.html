@@ -186,7 +186,7 @@ p { margin: 0; }
 @media (min-width: 1000px) { .mb-top { display: none; } }
 .mb-top .mb-menu-btn { color: var(--on-noren); background: transparent; border: 0; width: 40px; height: 40px; margin-left: -8px; border-radius: 8px; display: grid; place-items: center; cursor: pointer; }
 .mb-top .mb-menu-btn:hover { background: rgba(255, 255, 255, .12); }
-.mb-top .mb-top-brand { font-family: var(--font-display); font-weight: 800; letter-spacing: .08em; font-size: 17px; }
+.mb-top .mb-top-brand { font-family: var(--font-display); font-weight: 800; letter-spacing: .08em; font-size: 17px; white-space: nowrap; flex: none; }
 .mb-top .mb-top-app { margin-left: auto; font-size: 13px; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
 .mb-side {
@@ -237,6 +237,7 @@ p { margin: 0; }
 .mb-save-state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); flex: none; }
 .mb-save-state[data-mode="db"]::before { background: var(--ok); }
 .mb-save-state[data-mode="local"]::before { background: var(--warn); }
+.mb-save-state[data-mode="demo"]::before { background: var(--shu); }
 
 .mb-main { min-width: 0; }
 .mb-view {
@@ -3224,7 +3225,8 @@ var qrcode = function() {
   function queue(key, fn, delay = 350) {
     let j = jobs.get(key);
     if (!j) { j = { fn: null, timer: 0, running: null }; jobs.set(key, j); }
-    j.fn = fn;
+    const b = backend; // 積んだ時点の保存先に書く（デモ中の書き込みが本物に混ざらない）
+    j.fn = () => fn(b);
     clearTimeout(j.timer);
     j.timer = setTimeout(() => run(key), delay);
     saveState('saving');
@@ -3297,14 +3299,14 @@ var qrcode = function() {
       if (v && typeof v === 'object' && !Array.isArray(v)) delete v._sample;
       cache.docs.set(key, v);
       known.docs.add(key);
-      queue('d:' + key, () => backend.setDoc(key, v));
+      queue('d:' + key, (b) => b.setDoc(key, v));
       emit('doc:' + key);
       return clone(v);
     },
     async del(key) {
       await store.init();
       cache.docs.set(key, undefined);
-      queue('d:' + key, () => backend.delDoc(key));
+      queue('d:' + key, (b) => b.delDoc(key));
       emit('doc:' + key);
     },
     isSample(value) { return !!(value && value._sample); },
@@ -3339,7 +3341,7 @@ var qrcode = function() {
       const items = virtual.get(name);
       virtual.delete(name);
       const m = cache.colls.get(name) || new Map();
-      for (const it of items) { m.set(it.id, it); queue('c:' + name + ':' + it.id, () => backend.putItem(name, it), 100); }
+      for (const it of items) { m.set(it.id, it); queue('c:' + name + ':' + it.id, (b) => b.putItem(name, it), 100); }
       cache.colls.set(name, m);
       await touch(name);
     },
@@ -3353,7 +3355,7 @@ var qrcode = function() {
       it.updatedAt = now;
       cache.colls.get(name).set(it.id, it);
       if (!meta.touched[name]) await touch(name);
-      queue('c:' + name + ':' + it.id, () => backend.putItem(name, it), 200);
+      queue('c:' + name + ':' + it.id, (b) => b.putItem(name, it), 200);
       emit('coll:' + name);
       return clone(it);
     },
@@ -3363,7 +3365,7 @@ var qrcode = function() {
       await store._materialize(name);
       cache.colls.get(name).delete(id);
       if (!meta.touched[name]) await touch(name);
-      queue('c:' + name + ':' + id, () => backend.delItem(name, id), 100);
+      queue('c:' + name + ':' + id, (b) => b.delItem(name, id), 100);
       emit('coll:' + name);
     },
     async clear(name) {
@@ -3373,7 +3375,7 @@ var qrcode = function() {
       const ids = [...m.keys()];
       m.clear();
       await touch(name);
-      for (const id of ids) queue('c:' + name + ':' + id, () => backend.delItem(name, id), 100);
+      for (const id of ids) queue('c:' + name + ':' + id, (b) => b.delItem(name, id), 100);
       emit('coll:' + name);
     },
 
@@ -3387,7 +3389,7 @@ var qrcode = function() {
         for (const it of items) if (it.sample) await store.remove(name, it.id);
         emit('coll:' + name);
       }
-      queue('d:' + META, () => backend.setDoc(META, clone(meta)));
+      queue('d:' + META, (b) => b.setDoc(META, clone(meta)));
       for (const key of known.docs) emit('doc:' + key);
     },
     samplesShown() { return !meta.samplesOff; },
@@ -3406,11 +3408,11 @@ var qrcode = function() {
       for (const [key, v] of Object.entries(data.docs || {})) { if (key !== META) await store.set(key, v); }
       for (const [name, items] of Object.entries(data.colls || {})) {
         await store.clear(name);
-        for (const it of items || []) { const m = cache.colls.get(name); m.set(it.id, it); queue('c:' + name + ':' + it.id, () => backend.putItem(name, it), 100); }
+        for (const it of items || []) { const m = cache.colls.get(name); m.set(it.id, it); queue('c:' + name + ':' + it.id, (b) => b.putItem(name, it), 100); }
         emit('coll:' + name);
       }
       meta.samplesOff = true;
-      queue('d:' + META, () => backend.setDoc(META, clone(meta)));
+      queue('d:' + META, (b) => b.setDoc(META, clone(meta)));
       await store.flush();
     },
     async wipeAll() {
@@ -3419,17 +3421,58 @@ var qrcode = function() {
       for (const key of known.docs) if (key !== META) await store.del(key);
       meta = { samplesOff: false, touched: {} };
       virtual.clear();
-      queue('d:' + META, () => backend.setDoc(META, clone(meta)));
+      queue('d:' + META, (b) => b.setDoc(META, clone(meta)));
       await store.flush();
       for (const name of known.colls) emit('coll:' + name);
     },
     async flush() { await Promise.all([...jobs.keys()].map((k) => run(k))); await Promise.all([...jobs.values()].map((j) => j.running).filter(Boolean)); },
   });
 
+  // デモ用の試し箱。中では何を書いても、閉じれば消える（本物の保存先には触らない）
+  function memoryBackend() {
+    const mem = new Map();
+    return {
+      mode: 'demo',
+      async getDoc(key) { return clone(mem.get('d:' + key)); },
+      async setDoc(key, v) { mem.set('d:' + key, clone(v)); },
+      async delDoc(key) { mem.delete('d:' + key); },
+      async listColl(name) { return Object.values(clone(mem.get('c:' + name)) || {}); },
+      async putItem(name, item) { const o = mem.get('c:' + name) || {}; o[item.id] = clone(item); mem.set('c:' + name, o); },
+      async delItem(name, id) { const o = mem.get('c:' + name) || {}; delete o[id]; mem.set('c:' + name, o); },
+      async clearColl(name) { mem.delete('c:' + name); },
+      watch() {},
+    };
+  }
+  let saved = null;
+  store.demo = false;
+  store.sandbox = async (on) => {
+    await store.init();
+    if (on && !saved) {
+      await store.flush();
+      saved = { backend, mode: store.mode, meta, docs: cache.docs, colls: cache.colls, virtual: new Map(virtual) };
+      backend = memoryBackend();
+      store.mode = 'demo';
+      cache.docs = new Map(); cache.colls = new Map(); virtual.clear();
+      meta = { samplesOff: false, touched: {} };
+      store.demo = true;
+    } else if (!on && saved) {
+      await store.flush();
+      backend = saved.backend; store.mode = saved.mode; meta = saved.meta;
+      cache.docs = saved.docs; cache.colls = saved.colls;
+      virtual.clear(); for (const [k, v] of saved.virtual) virtual.set(k, v);
+      saved = null;
+      store.demo = false;
+    } else return;
+    saveState('saved');
+    saveWhere();
+    for (const key of known.docs) emit('doc:' + key);
+    for (const name of known.colls) emit('coll:' + name);
+  };
+
   async function touch(name) {
     if (meta.touched[name]) return;
     meta.touched[name] = true;
-    queue('d:' + META, () => backend.setDoc(META, clone(meta)));
+    queue('d:' + META, (b) => b.setDoc(META, clone(meta)));
   }
 
   async function chooseBackend() {
@@ -3915,7 +3958,7 @@ var qrcode = function() {
     store.declare('docs', def.docs);
     store.declare('colls', def.colls);
   };
-  Kit.apps = () => apps.slice().sort((a, b) => (a.order || 99) - (b.order || 99));
+  Kit.apps = () => apps.slice().sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
   Kit.appDef = (id) => appMap.get(id);
 
   let shell = null;
@@ -3923,14 +3966,21 @@ var qrcode = function() {
   let params = {};
   let mountSeq = 0;
 
-  Kit.go = (id, p) => {
+  // 画面が開いたことを知らせる（案内のツアーが使う）。Kit.go は開き終わるまで待てる
+  const mountListeners = new Set();
+  Kit.onMount = (fn) => { mountListeners.add(fn); return () => mountListeners.delete(fn); };
+  Kit.go = (id, p) => new Promise((resolve) => {
+    const target = appMap.has(id) ? id : null;
+    let timer = 0;
+    const off = Kit.onMount((mid) => { if (!target || mid === target) { off(); clearTimeout(timer); resolve(mid); } });
+    timer = setTimeout(() => { off(); resolve(Kit.current()); }, 8000);
     params = p || {};
     if (location.hash.slice(1) !== id) {
       try { location.hash = id; } catch (e) { mount(id); }
       // ハッシュが変わらない環境でも切り替える
       setTimeout(() => { if (!current || current.id !== id) mount(id); }, 60);
     } else mount(id);
-  };
+  });
 
   function buildShell() {
     const root = document.getElementById('kit') || document.body.appendChild(h('div', { id: 'kit' }));
@@ -3972,12 +4022,13 @@ var qrcode = function() {
   function saveState(s) {
     if (!shell) return;
     const el = shell.side.querySelector('.mb-save-state');
-    el.dataset.mode = store.mode === 'db' ? 'db' : 'local';
-    el.textContent = s === 'saving' ? '保存中…' : s === 'error' ? '保存できませんでした' : store.mode === 'db' ? 'アカウントに保存済み' : store.mode === 'memory' ? '保存できない環境です' : 'このブラウザに保存済み';
+    el.dataset.mode = store.mode === 'db' ? 'db' : store.mode === 'demo' ? 'demo' : 'local';
+    el.textContent = store.mode === 'demo' ? 'デモ中（保存しません）' : s === 'saving' ? '保存中…' : s === 'error' ? '保存できませんでした' : store.mode === 'db' ? 'アカウントに保存済み' : store.mode === 'memory' ? '保存できない環境です' : 'このブラウザに保存済み';
   }
   function saveWhere() {
     const el = shell.side.querySelector('.mb-save-where');
-    el.textContent = store.mode === 'db' ? 'ほかの端末で開いても同じ内容です。'
+    el.textContent = store.mode === 'demo' ? 'デモが終わると、元の内容に戻ります。'
+      : store.mode === 'db' ? 'ほかの端末で開いても同じ内容です。'
       : env.artifact ? '共有で開いているため、このブラウザだけに保存されます。'
         : store.mode === 'memory' ? 'ページを閉じると消えます。バックアップを書き出してください。'
           : 'ときどきダッシュボードからバックアップを。';
@@ -4006,9 +4057,17 @@ var qrcode = function() {
       console.error(e);
       if (seq === mountSeq) root.append(h('div', { class: 'empty' }, h('div', { class: 'empty-title' }, 'この画面を開けませんでした'), h('p', { class: 'small mono' }, String((e && e.message) || e))));
     }
-    if (seq === mountSeq) window.scrollTo(0, 0);
+    if (seq === mountSeq) {
+      window.scrollTo(0, 0);
+      for (const fn of [...mountListeners]) { try { fn(def.id); } catch (e) { console.error(e); } }
+    }
   }
   Kit.current = () => (current ? current.id : null);
+  Kit.shellEl = () => shell;
+  let startedResolve;
+  Kit.started = new Promise((r) => (startedResolve = r));
+  // ハッシュなしで開いたときの最初の画面。はじめての端末は「まずはここから」
+  Kit.firstApp = () => (appMap.has('start') && !Kit.pref.get('guide.seen', false) ? 'start' : 'dashboard');
   Kit.remount = () => { if (current) mount(current.id); };
 
   Kit.start = async () => {
@@ -4018,8 +4077,9 @@ var qrcode = function() {
     await store.init();
     saveState('saved');
     saveWhere();
-    const route = () => mount(location.hash.slice(1) || 'dashboard');
+    const route = () => mount(location.hash.slice(1) || Kit.firstApp());
     window.addEventListener('hashchange', route);
+    startedResolve(shell);
     route();
     const flush = () => { store.flush(); };
     window.addEventListener('pagehide', flush);
@@ -5588,6 +5648,820 @@ ${scriptsHtml(e)}
   if (window.Kit && Kit.store && typeof Kit.store.sample === 'function') Kit.store.sample('site', SAMPLE);
 })();
 
+/* ---- js/guide.js ---- */
+/* みせびらき — 迷わないための案内（登録と検索）
+   ・Guide.help(アプリid, {...}) … そのツールの「使い方」（できること・まずはこの3つ・迷いやすいところ・ツアー）
+   ・Guide.tasks([...])           … 「やりたいことから探す」の項目（押すと、その画面へ行って押す場所を光らせる）
+   画面に出す部分（光らせる・パネル・検索窓）は guide-ui.js。ここはデータと検索だけ。
+
+   help の形：
+   { lead: 'ひとことで',
+     can:   ['できること', …],                       // 3〜5
+     first: [{ text: 'まずやること', task: 'タスクid' }], // 3つ。task は省略可
+     faq:   [{ q: '迷いやすいところ', a: '答え' }],    // 3〜5
+     tour:  [{ target: 'CSSセレクタ', title, body,    // 3〜6。画面の要素を順に光らせる
+               targetPhone?: 'スマホでのセレクタ', skipOnPhone?: true, params?: {Kit.go に渡す} }],
+     related: ['つながるアプリid', …] }
+   task の形：
+   { id, title: 'やりたいこと（〜する）', words: '言いかえ・検索語（空白区切り）', app, params?, target?, targetPhone?, tip: '光らせたときの一言',
+     hidden?: true（検索には出さない。入口のページなどから呼ぶだけ）, when?: () => boolean（いまの状態で意味があるときだけ出す）,
+     run?: () => {}（光らせる代わりに動かす） }
+   「よく使うこと」は Guide.pinned([id, …]) で決める。 */
+(function () {
+  'use strict';
+  const helps = new Map();
+  const tasks = new Map();
+
+  // 検索用に、全角半角・カタカナひらがな・大文字小文字をそろえる
+  function norm(s) {
+    return String(s || '').normalize('NFKC').toLowerCase()
+      .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60))
+      .replace(/[\s・、。,.!?！？「」『』（）()［］\[\]〜~ー－\-_/／:：]+/g, '');
+  }
+
+  // ふだんの言い方 → ツールの中の言葉（ひらがな・カタカナ・漢字の違いを越えるための小さな辞書）
+  const ALIAS = {
+    'おかね': '売上 請求 入金 料金 利益 お金 値段', 'かね': '売上 請求 入金 料金 お金', 'もうけ': '利益 黒字 売上', 'うりあげ': '売上', 'しゅうにゅう': '収入 売上',
+    'きゃく': 'お客 顧客 問い合わせ ペルソナ', 'おきゃく': 'お客 顧客 問い合わせ ペルソナ', 'こきゃく': '顧客 問い合わせ', 'よやく': '予約', 'よてい': '予定',
+    'いんすた': 'instagram インスタ', 'ついったー': 'x', 'twitter': 'x', 'えっくす': 'x', 'らいん': 'line', 'ゆーちゅーぶ': 'youtube',
+    'ほーむぺーじ': 'ホームページ サイト', 'hp': 'ホームページ', 'さいと': 'ホームページ サイト', 'うぇぶ': 'ホームページ web',
+    'どうが': '動画', 'むーびー': '動画', 'えいぞう': '動画', 'ちらし': 'チラシ qr', 'めいし': '名刺 qr', 'めーる': 'メール',
+    'ぜいきん': 'インボイス 源泉 確定申告 消費税', 'ぜい': 'インボイス 源泉 消費税', 'かくていしんこく': '確定申告', 'かいぎょう': '開業', 'ふくぎょう': '副業 兼業', 'けんぎょう': '兼業 副業',
+    'けいかく': '計画', 'しょるい': '書類 見積 請求', 'みつもり': '見積', 'せいきゅう': '請求', 'りょうしゅう': '領収', 'すまほ': 'スマホ', 'でーた': 'データ バックアップ', 'ほぞん': '保存 バックアップ 書き出し',
+  };
+  const expand = (w) => { const a = ALIAS[w]; return a ? [w].concat(a.split(' ').map(norm)) : [w]; };
+
+  // いまの状態で意味のある項目か（例：サンプルを片付けたあとの「サンプルを片付ける」は出さない）
+  const applies = (t) => { try { return !t.when || !!t.when(); } catch (e) { return true; } };
+  let pins = [];
+
+  window.Guide = {
+    norm,
+    applies,
+    // 検索の「よく使うこと」に出す項目（順番どおり）
+    pinned(ids) { if (ids) pins = ids.slice(); return pins.map((id) => tasks.get(id)).filter((t) => t && applies(t)); },
+    help(id, def) { helps.set(id, Object.assign({ can: [], first: [], faq: [], tour: [], related: [] }, def)); },
+    getHelp(id) { return helps.get(id) || null; },
+    allHelp() { return [...helps.entries()]; },
+    tasks(list) { for (const t of [].concat(list || [])) { if (!t || !t.id || !t.app) throw new Error('Guide.tasks: id と app が必要です'); tasks.set(t.id, t); } },
+    getTask(id) { return tasks.get(id) || null; },
+    allTasks() { return [...tasks.values()]; },
+
+    // 「やりたいこと」を探す。言葉ごとに分けて、どれもが含まれるものを、タイトルに近い順に
+    search(q, limit = 8) {
+      const raw = String(q || '').trim();
+      if (!raw) return [];
+      const words = raw.split(/[\s　]+/).map(norm).filter(Boolean).map(expand);
+      const all = [], some = [];
+      for (const t of tasks.values()) {
+        if (t.hidden || !applies(t)) continue;
+        const def = window.Kit && Kit.appDef ? Kit.appDef(t.app) : null;
+        const title = norm(t.title), hay = title + ' ' + norm(t.words) + ' ' + norm(def ? def.title : '');
+        let score = 0, hit = 0;
+        for (const alts of words) {
+          const w = alts.find((x) => x && hay.includes(x));
+          if (!w) continue;
+          hit++;
+          score += title.startsWith(w) ? 6 : title.includes(w) ? 4 : 1;
+        }
+        const item = { t, hit, score: score + (pins.includes(t.id) ? 1 : 0) };
+        if (hit === words.length) all.push(item); else if (hit) some.push(item);
+      }
+      // ぜんぶの言葉に合うものを先に。なければ、いくつかに合うものを（合った数の多い順）
+      const list = all.length ? all : some;
+      list.sort((a, b) => b.hit - a.hit || b.score - a.score || a.t.title.length - b.t.title.length);
+      return list.slice(0, limit).map((x) => x.t);
+    },
+  };
+})();
+
+/* ---- js/guide-ui.js ---- */
+/* みせびらき — 迷わないための案内（画面の部分）
+   ・Guide.tour(steps, opts)  … 画面の要素を順に光らせて説明する（各ツールのツアー・3分デモ）
+   ・Guide.runTask(task|id)   … その画面へ行き、押す場所を光らせる（「やりたいこと」を選んだとき）
+   ・Guide.openHelp(appId)    … 右から出る「使い方」パネル
+   ・Guide.openSearch(q)      … やりたいことから探す
+   ・Guide.demo()             … 3分デモ。保存しない試し箱（Kit.store.sandbox）の中で動く
+   入口：メニューの「やりたいことを探す」「このページの使い方」、スマホ上部の2つのボタン、キーの / と ? */
+(function () {
+  'use strict';
+  const { h } = Kit;
+  const G = window.Guide;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const reduced = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const narrow = () => window.innerWidth < 640;
+
+  Kit.css('guide', `
+    .gd-side-tools { padding: 18px 14px 0; }
+    .gd-search-btn { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 38px; padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface); color: var(--ink-3); font: inherit; font-size: 13.5px; cursor: pointer; text-align: left; }
+    .gd-search-btn:hover { border-color: var(--gosu); color: var(--ink-2); }
+    .gd-search-btn svg { width: 16px; height: 16px; flex: none; }
+    .gd-search-btn span { flex: 1; min-width: 0; }
+    .gd-search-btn kbd { font-size: 11px; }
+    .gd-help-btn { display: flex; align-items: center; gap: 6px; width: 100%; padding: 6px 0; border: 0; background: transparent; color: var(--gosu); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; text-align: left; }
+    .gd-help-btn svg { width: 16px; height: 16px; }
+    .gd-help-btn:hover { text-decoration: underline; }
+    .mb-top .gd-top-btn { flex: none; color: var(--on-noren); background: transparent; border: 0; width: 38px; height: 38px; border-radius: 8px; display: grid; place-items: center; cursor: pointer; }
+    .mb-top .gd-top-btn:hover { background: rgba(255, 255, 255, .12); }
+    .mb-top .gd-top-btn svg { width: 20px; height: 20px; }
+    .mb-top .gd-top-btns { display: flex; gap: 2px; margin-right: -6px; }
+
+    /* 光らせる */
+    .gd-layer { position: fixed; inset: 0; z-index: 150; pointer-events: none; }
+    .gd-spot { position: fixed; border-radius: 10px; pointer-events: none; box-shadow: 0 0 0 3px var(--shu), 0 0 0 9999px rgba(8, 13, 26, .58); transition: top .25s ease, left .25s ease, width .25s ease, height .25s ease; }
+    .gd-layer.is-tip .gd-spot { box-shadow: 0 0 0 3px var(--shu), 0 0 0 9999px rgba(8, 13, 26, .38); }
+    .gd-layer.no-target .gd-spot { box-shadow: 0 0 0 9999px rgba(8, 13, 26, .58); }
+    .gd-block { position: fixed; pointer-events: auto; background: transparent; }
+    .gd-card { position: fixed; pointer-events: auto; width: min(370px, calc(100vw - 24px)); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-2); padding: 14px 16px 12px; display: grid; gap: 8px; transition: top .2s ease, left .2s ease; }
+    .gd-card:focus { outline: none; }
+    .gd-card-top { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-3); }
+    .gd-card-top .chip { font-size: 11px; }
+    .gd-card-top .gd-x { margin-left: auto; }
+    .gd-card h3 { font-size: 16.5px; font-weight: 700; line-height: 1.45; }
+    .gd-card p { font-size: 14px; color: var(--ink-2); line-height: 1.7; }
+    .gd-card .btn-row { justify-content: flex-end; margin-top: 2px; }
+    .gd-dots { display: flex; gap: 4px; margin-right: auto; }
+    .gd-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong); }
+    .gd-dots i.on { background: var(--shu); }
+    .gd-card.is-dock { left: 12px !important; right: 12px; width: auto; }
+
+    /* 使い方パネル */
+    .gd-panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 95; width: min(430px, 100vw); background: var(--surface); border-left: 1px solid var(--line); box-shadow: var(--shadow-2); overflow-y: auto; overscroll-behavior: contain; padding: 0 0 calc(24px + env(safe-area-inset-bottom, 0px)); animation: gd-in .2s ease-out; }
+    @keyframes gd-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .gd-panel-h { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; padding: calc(12px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 10px 18px; background: var(--surface); border-bottom: 1px solid var(--line); }
+    .gd-panel-h h2 { font-family: var(--font-display); font-size: 19px; font-weight: 800; flex: 1; min-width: 0; }
+    .gd-panel-b { padding: 14px max(18px, env(safe-area-inset-right, 0px)) 0 18px; display: grid; gap: 18px; }
+    .gd-lead { font-size: 14.5px; color: var(--ink); }
+    .gd-sec h3 { font-size: 12px; letter-spacing: .14em; color: var(--ink-3); font-weight: 700; margin-bottom: 8px; }
+    .gd-can { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; font-size: 14px; color: var(--ink-2); }
+    .gd-first { display: grid; gap: 8px; }
+    .gd-first-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); text-align: left; font: inherit; color: inherit; cursor: pointer; width: 100%; }
+    .gd-first-item:hover { border-color: var(--gosu); }
+    .gd-first-item .n { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--gosu); color: var(--on-gosu); font-size: 12.5px; font-weight: 700; }
+    .gd-first-item .t { font-size: 14px; font-weight: 500; }
+    .gd-first-item svg { width: 16px; height: 16px; color: var(--ink-3); }
+    .gd-faq details { border-bottom: 1px solid var(--line); padding: 9px 0; }
+    .gd-faq summary { cursor: pointer; font-weight: 500; font-size: 14px; list-style: none; display: flex; gap: 8px; }
+    .gd-faq summary::-webkit-details-marker { display: none; }
+    .gd-faq summary::before { content: "Q"; font-weight: 800; color: var(--gosu); flex: none; }
+    .gd-faq details p { font-size: 13.5px; color: var(--ink-2); margin-top: 6px; padding-left: 1.2em; }
+    .gd-related { display: flex; flex-wrap: wrap; gap: 6px; }
+    .gd-mini-results { display: grid; gap: 4px; margin-top: 8px; }
+    .gd-ask { display: grid; gap: 8px; }
+    .gd-ask-out { font-size: 14px; color: var(--ink-2); white-space: pre-wrap; }
+
+    /* やりたいことから探す */
+    .gd-pal-back { position: fixed; inset: 0; z-index: 130; background: var(--scrim); display: flex; justify-content: center; align-items: flex-start; padding: max(10vh, calc(16px + env(safe-area-inset-top, 0px))) max(12px, env(safe-area-inset-right, 0px)) 16px max(12px, env(safe-area-inset-left, 0px)); animation: mb-fade .12s ease-out; }
+    .gd-pal { width: min(640px, 100%); max-height: min(78vh, 640px); display: flex; flex-direction: column; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-2); overflow: hidden; }
+    .gd-pal-in { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+    .gd-pal-in svg { width: 20px; height: 20px; color: var(--ink-3); flex: none; }
+    .gd-pal-in input { border: 0; outline: none; font-size: 17px; padding: 6px 0; background: transparent; min-height: 0; }
+    .gd-pal-in input:focus { outline: none; }
+    .gd-pal-list { overflow-y: auto; padding: 6px; }
+    .gd-pal-h { font-size: 11.5px; letter-spacing: .14em; color: var(--ink-3); font-weight: 700; padding: 10px 10px 4px; }
+    .gd-pal-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; width: 100%; padding: 9px 10px; border: 0; border-radius: 9px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+    .gd-pal-item[aria-selected="true"], .gd-pal-item:hover { background: var(--gosu-wash); }
+    .gd-pal-item .ic { grid-row: span 2; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); color: var(--gosu); }
+    .gd-pal-item .ic svg { width: 16px; height: 16px; }
+    .gd-pal-item .t { font-size: 14.5px; font-weight: 500; min-width: 0; }
+    .gd-pal-item .s { grid-column: 2; font-size: 12.5px; color: var(--ink-3); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .gd-pal-item .chip { grid-row: span 2; }
+    .gd-pal-foot { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 9px 14px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-3); }
+    .gd-pal-foot .btn { margin-left: auto; }
+    .gd-pal-empty { padding: 18px 12px; font-size: 14px; color: var(--ink-2); display: grid; gap: 10px; }
+    @media (max-width: 640px) { .gd-pal-item .chip { display: none; } .gd-pal-foot .gd-keys { display: none; } }
+  `);
+
+  /* ───────── 光らせる（ツアー） ───────── */
+  let tour = null; // いま動いているツアー
+
+  function visibleMatch(sel) {
+    if (!sel) return null;
+    let list;
+    try { list = document.querySelectorAll(sel); } catch (e) { console.warn('案内：セレクタが正しくありません', sel); return null; }
+    for (const el of list) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 4 && r.height > 4 && getComputedStyle(el).visibility !== 'hidden') return el;
+    }
+    return null;
+  }
+  async function findTarget(sel, timeout = 2600) {
+    const t0 = performance.now();
+    for (;;) {
+      const el = visibleMatch(sel);
+      if (el || performance.now() - t0 > timeout) return el;
+      await sleep(120);
+    }
+  }
+  const val = (v, ctx) => (typeof v === 'function' ? v(ctx) : v);
+
+  // steps: [{ app, params, target, targetPhone, skipOnPhone, title, body, before(ctx) }]
+  // opts: { tip: 1つだけの「ここです」表示, label: 上に出す札, onEnd(), nextLabel, doneLabel }
+  G.tour = (steps, opts = {}) => {
+    endTour(true);
+    const list = steps.filter((s) => !(narrow() && s.skipOnPhone));
+    if (!list.length) return Promise.resolve();
+    return new Promise((resolve) => {
+      const layer = h('div', { class: 'gd-layer' + (opts.tip ? ' is-tip' : ''), 'aria-hidden': 'false' });
+      const spot = h('div', { class: 'gd-spot' });
+      const blocks = opts.tip ? [] : [0, 1, 2, 3].map(() => h('div', { class: 'gd-block', onclick: () => card.focus() }));
+      const card = h('div', { class: 'gd-card', role: 'dialog', 'aria-live': 'polite', tabindex: -1 });
+      layer.append(spot, ...blocks, card);
+      document.body.append(layer);
+      const prevFocus = document.activeElement;
+      const ctx = {};
+      const t = (tour = { idx: -1, seq: 0, el: null, layer, spot, blocks, card, list, opts, ctx, resolve, prevFocus, raf: 0, done: false });
+      const onMove = () => { cancelAnimationFrame(t.raf); t.raf = requestAnimationFrame(() => place(t)); };
+      const onKey = (e) => {
+        if (t.done) return;
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); endTour(); }
+        else if (!opts.tip && (e.key === 'ArrowRight' || (e.key === 'Enter' && document.activeElement === card))) { e.preventDefault(); go(t, t.idx + 1); }
+        else if (!opts.tip && e.key === 'ArrowLeft' && t.idx > 0) { e.preventDefault(); go(t, t.idx - 1); }
+      };
+      // 1つだけの表示は、どこかを押したら消える（押した先の操作はそのまま効く）
+      const onDown = (e) => { if (opts.tip && !card.contains(e.target)) setTimeout(() => endTour(), 0); };
+      window.addEventListener('resize', onMove);
+      window.addEventListener('scroll', onMove, true);
+      document.addEventListener('keydown', onKey, true);
+      document.addEventListener('pointerdown', onDown, true);
+      t.cleanup = () => { window.removeEventListener('resize', onMove); window.removeEventListener('scroll', onMove, true); document.removeEventListener('keydown', onKey, true); document.removeEventListener('pointerdown', onDown, true); cancelAnimationFrame(t.raf); };
+      go(t, 0);
+    });
+  };
+
+  async function go(t, i) {
+    if (t.done) return;
+    if (i >= t.list.length) { endTour(); return; }
+    if (i < 0) return;
+    const seq = ++t.seq;
+    const dir = i >= t.idx ? 1 : -1;
+    t.idx = i;
+    const st = t.list[i];
+    renderCard(t, st, true);
+    try { if (st.before) await st.before(t.ctx); } catch (e) { console.error(e); }
+    if (seq !== t.seq || t.done) return;
+    // 同じ画面・同じ指定が続くときは、開き直さない（スクロールや入力がそのまま残る）
+    const params = val(st.params, t.ctx);
+    const nav = st.app ? st.app + JSON.stringify(params || null) : '';
+    const moved = st.app && (Kit.current() !== st.app || (params && nav !== t.lastNav));
+    if (moved) await Kit.go(st.app, params || undefined);
+    t.lastNav = nav;
+    if (seq !== t.seq || t.done) return;
+    const sel = val(narrow() && st.targetPhone ? st.targetPhone : st.target, t.ctx);
+    // 画面を開いた直後は少し長めに待つ。開いたままなら、ないものはすぐ「ない」とする
+    const el = sel ? await findTarget(sel, moved ? 2600 : 900) : null;
+    if (seq !== t.seq || t.done) return;
+    if (sel && !el && !t.opts.tip) {
+      const nextI = i + dir;
+      if (nextI >= 0 && nextI < t.list.length) { go(t, nextI); return; }
+    }
+    t.el = el;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      const fits = r.top >= 60 && r.bottom <= window.innerHeight - 40;
+      if (!fits) { el.scrollIntoView({ block: r.height > window.innerHeight * 0.7 ? 'start' : 'center', inline: 'nearest', behavior: reduced() ? 'auto' : 'smooth' }); await sleep(reduced() ? 60 : 360); }
+    }
+    if (seq !== t.seq || t.done) return;
+    renderCard(t, st, false);
+    place(t);
+    try { t.card.focus({ preventScroll: true }); } catch (e) { /* noop */ }
+  }
+
+  function renderCard(t, st, loading) {
+    const { card, list, opts, idx } = t;
+    Kit.clear(card);
+    const top = h('div', { class: 'gd-card-top' },
+      opts.label ? h('span', { class: 'chip shu' }, opts.label) : null,
+      !opts.tip && list.length > 1 ? h('span', { class: 'num' }, (idx + 1) + ' / ' + list.length) : null,
+      Kit.btn('', () => endTour(), { icon: 'close', title: opts.tip ? '閉じる' : '案内を終わる', kind: 'ghost', sm: true, class: 'gd-x' }));
+    card.append(top, h('h3', null, st.title || ''), st.body ? h('p', null, st.body) : null);
+    if (loading) { card.append(h('p', { class: 'small muted' }, '画面を開いています…')); return; }
+    if (!t.el && (st.target || st.targetPhone)) card.append(h('p', { class: 'small muted' }, 'いまの画面には、この場所が出ていません（中身がまだないか、別のタブにあります）。'));
+    const row = h('div', { class: 'btn-row' });
+    if (!opts.tip && list.length > 1) row.append(h('span', { class: 'gd-dots', 'aria-hidden': 'true' }, list.map((_, k) => h('i', { class: k === idx ? 'on' : null }))));
+    if (opts.tip) row.append(Kit.btn('わかった', () => endTour(), { kind: 'primary', sm: true }));
+    else {
+      if (idx > 0) row.append(Kit.btn('戻る', () => go(t, idx - 1), { kind: 'ghost', sm: true }));
+      const last = idx === list.length - 1;
+      row.append(Kit.btn(last ? (opts.doneLabel || '終わる') : (st.next || opts.nextLabel || '次へ'), () => go(t, idx + 1), { kind: 'primary', sm: true, icon: last ? 'check' : 'right' }));
+    }
+    card.append(row);
+  }
+
+  function place(t) {
+    if (!t || t.done) return;
+    const { el, spot, blocks, card, layer } = t;
+    const W = window.innerWidth, H = window.innerHeight, pad = 6;
+    let r = el && el.isConnected ? el.getBoundingClientRect() : null;
+    if (r && (r.width < 2 || r.bottom < 0 || r.top > H)) r = el && el.isConnected ? r : null;
+    layer.classList.toggle('no-target', !r);
+    let box;
+    if (r) {
+      const top = Math.max(6, r.top - pad), left = Math.max(6, r.left - pad);
+      const bottom = Math.min(H - 6, r.bottom + pad), right = Math.min(W - 6, r.right + pad);
+      box = { top, left, width: Math.max(10, right - left), height: Math.max(10, bottom - top) };
+    } else box = { top: H / 2, left: W / 2, width: 0, height: 0 };
+    Object.assign(spot.style, { top: box.top + 'px', left: box.left + 'px', width: box.width + 'px', height: box.height + 'px' });
+    if (blocks.length) {
+      const [b1, b2, b3, b4] = blocks;
+      Object.assign(b1.style, { top: 0, left: 0, width: W + 'px', height: box.top + 'px' });
+      Object.assign(b2.style, { top: box.top + box.height + 'px', left: 0, width: W + 'px', height: Math.max(0, H - box.top - box.height) + 'px' });
+      Object.assign(b3.style, { top: box.top + 'px', left: 0, width: box.left + 'px', height: box.height + 'px' });
+      Object.assign(b4.style, { top: box.top + 'px', left: box.left + box.width + 'px', width: Math.max(0, W - box.left - box.width) + 'px', height: box.height + 'px' });
+    }
+    // 説明のカード：的の下 → 上 → 右 → 左。入らなければ画面の端に寄せる
+    const cw = card.offsetWidth, ch = card.offsetHeight, gap = 12;
+    const sTop = parseFloat(getComputedStyle(document.documentElement).paddingTop) || 0;
+    card.classList.remove('is-dock');
+    card.style.right = ''; card.style.bottom = '';
+    let x, y;
+    if (!r) { x = (W - cw) / 2; y = Math.max(16, (H - ch) / 2); }
+    else if (narrow()) {
+      card.classList.add('is-dock');
+      const below = box.top + box.height / 2 < H / 2;
+      y = below ? H - ch - 12 - (parseFloat(getComputedStyle(document.documentElement).paddingBottom) || 0) : 12 + sTop;
+      x = 12;
+    } else if (box.top + box.height + gap + ch <= H - 8) { y = box.top + box.height + gap; x = box.left; }
+    else if (box.top - gap - ch >= 8) { y = box.top - gap - ch; x = box.left; }
+    else if (box.left + box.width + gap + cw <= W - 8) { x = box.left + box.width + gap; y = box.top + 12; }
+    else if (box.left - gap - cw >= 8) { x = box.left - gap - cw; y = box.top + 12; }
+    else { x = W - cw - 16; y = H - ch - 16; }
+    x = Kit.clamp(x, 8, Math.max(8, W - cw - 8));
+    y = Kit.clamp(y, 8, Math.max(8, H - ch - 8));
+    card.style.left = x + 'px';
+    card.style.top = y + 'px';
+  }
+
+  function endTour(silent) {
+    const t = tour;
+    if (!t || t.done) return;
+    t.done = true;
+    t.cleanup();
+    t.layer.remove();
+    tour = null;
+    if (!silent && t.prevFocus && t.prevFocus.isConnected && t.prevFocus.focus) { try { t.prevFocus.focus({ preventScroll: true }); } catch (e) { /* noop */ } }
+    if (t.opts.onEnd) { try { t.opts.onEnd(t.idx >= t.list.length - 1); } catch (e) { console.error(e); } }
+    t.resolve();
+  }
+  G.endTour = () => endTour();
+  G.touring = () => !!tour;
+
+  // そのツールの「画面をひとめぐり」
+  G.tourApp = (appId = Kit.current()) => {
+    const help = G.getHelp(appId);
+    if (!help || !help.tour || !help.tour.length) { Kit.toast('このツールのツアーは、まだありません'); return; }
+    closeHelp();
+    const def = Kit.appDef(appId);
+    return G.tour(help.tour.map((s) => Object.assign({ app: appId }, s)), { label: (def ? def.title : '') + 'のツアー', doneLabel: 'わかった' });
+  };
+
+  // やりたいこと：その画面へ行き、押す場所を光らせる
+  G.runTask = async (t) => {
+    if (typeof t === 'string') t = G.getTask(t);
+    if (!t) return;
+    closeHelp(); closeSearch();
+    Kit.pref.set('guide.lastTask', t.id);
+    if (typeof t.run === 'function') return t.run();
+    if (!t.target && !t.targetPhone) { await Kit.go(t.app, t.params); if (t.tip) Kit.toast(t.tip); return; }
+    return G.tour([{ app: t.app, params: t.params || {}, target: t.target, targetPhone: t.targetPhone, title: t.title, body: t.tip }], { tip: true, label: 'ここです' });
+  };
+
+  /* ───────── 3分デモ（保存しない試し箱の中で） ───────── */
+  const DEMO_LEAD = { name: '森 はるか', email: 'haruka.mori@example.com', phone: '', kind: '無料体験レッスンの予約', message: '高1の息子が、二次関数でつまずいています。図で考える授業が気になりました。体験レッスンを受けてみたいです。', source: 'Instagram', status: 'new', value: 16000, tags: ['高校生', '保護者'], notes: [], nextAt: '', meetingAt: '', channel: 'form', preferredAt: '' };
+  G.demo = async () => {
+    if (G.touring()) endTour(true);
+    closeHelp(); closeSearch();
+    await Kit.store.sandbox(true);
+    const meetDay = Kit.rel(2);
+    const steps = [
+      { app: 'dashboard', target: '.app-dashboard .db-top', title: 'ここが、お店の帳場です', body: '今日やることと、今月の数字が集まる場所です。これから、ひとつの問い合わせが売上になるまでを、実際の画面で追いかけます（デモの中の変更は保存されません）。' },
+      { app: 'site', target: '.app-site iframe', title: 'お客さんが見るページ', body: 'ホームページです。エディターで文章や写真を直して、1つのファイルに書き出して公開します。お客さんはここのフォームから問い合わせます。' },
+      {
+        app: 'inbox', params: (c) => ({ lead: c.leadId }), target: '.app-inbox .ib-detail .ib-d-head', title: '問い合わせが届きました',
+        body: 'フォームから届いた問い合わせは、集客窓口の受付箱に入ります。だれから、何の用件かがひとめで分かります。',
+        before: async (c) => { if (!c.leadId) { const l = await Kit.store.put('leads', Object.assign({}, DEMO_LEAD, { preferredAt: meetDay + 'T15:00' })); c.leadId = l.id; } },
+      },
+      { app: 'inbox', params: (c) => ({ lead: c.leadId }), target: '.app-inbox .ib-detail .btn.primary', title: '返信は、ひな形から', body: '「返信文をつくる」を押すと、名前や希望日時が入った返信文ができます。返したら、状態を「返信済み」へ1クリックで進めます。' },
+      {
+        app: 'calendar', params: { date: meetDay }, target: (c) => '.app-calendar .cal-ev[data-key="lm:' + c.leadId + '"]', targetPhone: '.app-calendar [data-date="' + meetDay + '"]',
+        title: '予約は、カレンダーへ', body: '問い合わせに予約の日時を入れると、カレンダーに自動で出ます（点線の予定）。空いている日時の案内文も、ここで作れます。',
+        before: async (c) => { const l = await Kit.store.getItem('leads', c.leadId); if (l && !l.meetingAt) await Kit.store.put('leads', Object.assign(l, { meetingAt: meetDay + 'T15:00', status: 'talking' })); },
+      },
+      { app: 'invoice', params: (c) => ({ fromLead: c.leadId }), target: '.app-invoice .inv-paper', targetPhone: '.app-invoice .inv-ed-switch', title: '決まったら、見積書', body: '問い合わせから「見積書をつくる」を押すと、宛先が入った見積書ができます。インボイス制度に合わせた計算で、PDFにして送れます。' },
+      { app: 'money', params: { tab: 'sim' }, target: '.app-money .mo-kpis', title: '計画と、くらべる', body: '売上はマネタイズ計画の数字とくらべられます。1か月に使える時間の上限も見えるので、無理のない計画にできます。' },
+      { app: 'dashboard', target: '.app-dashboard .db-todo', title: 'ぜんぶ、ここに戻ってきます', body: 'さっきの問い合わせや予定が、今日やることに並びます。デモはここまで。自分の事業で始めるなら、「まずはここから」の最初の3歩へどうぞ。' },
+    ];
+    await G.tour(steps, {
+      label: 'デモ中（保存されません）', doneLabel: 'デモを終わる',
+      onEnd: () => {},
+    });
+    await Kit.store.sandbox(false);
+    await Kit.go('start');
+    Kit.toast('デモを終わりました。元の内容に戻っています');
+  };
+
+  /* ───────── 使い方パネル ───────── */
+  let panel = null;
+  function closeHelp() { if (panel) { panel.cleanup(); panel = null; } }
+  G.closeHelp = closeHelp;
+  G.openHelp = (appId = Kit.current()) => {
+    if (panel && panel.app === appId) { closeHelp(); return; }
+    closeHelp(); closeSearch();
+    const def = Kit.appDef(appId) || { title: 'このページ' };
+    const help = G.getHelp(appId);
+    const prev = document.activeElement;
+    const body = h('div', { class: 'gd-panel-b' });
+    const el = h('aside', { class: 'gd-panel', role: 'dialog', 'aria-label': def.title + 'の使い方', tabindex: -1 },
+      h('div', { class: 'gd-panel-h' }, h('h2', null, def.title + 'の使い方'), Kit.btn('', closeHelp, { icon: 'close', title: '閉じる', kind: 'ghost', sm: true })),
+      body);
+    if (help) {
+      if (help.lead) body.append(h('p', { class: 'gd-lead' }, help.lead));
+      if (help.tour && help.tour.length) body.append(h('div', { class: 'btn-row' }, Kit.btn('画面をひとめぐり（' + help.tour.length + '）', () => G.tourApp(appId), { kind: 'primary', icon: 'eye' })));
+      if (help.first && help.first.length) {
+        body.append(h('section', { class: 'gd-sec' }, h('h3', null, 'まずはこの3つ'),
+          h('div', { class: 'gd-first' }, help.first.map((f, i) => h('button', { type: 'button', class: 'gd-first-item', onclick: () => (f.task ? G.runTask(f.task) : null), disabled: !f.task },
+            h('span', { class: 'n' }, String(i + 1)), h('span', { class: 't' }, f.text), f.task ? Kit.icon('right') : h('span'))))));
+      }
+      if (help.can && help.can.length) body.append(h('section', { class: 'gd-sec' }, h('h3', null, 'できること'), h('ul', { class: 'gd-can' }, help.can.map((c) => h('li', null, c)))));
+      if (help.faq && help.faq.length) body.append(h('section', { class: 'gd-sec gd-faq' }, h('h3', null, '迷いやすいところ'), help.faq.map((f) => h('details', null, h('summary', null, f.q), h('p', null, f.a)))));
+      if (help.related && help.related.length) {
+        body.append(h('section', { class: 'gd-sec' }, h('h3', null, 'つながるツール'),
+          h('div', { class: 'gd-related' }, help.related.filter((id) => Kit.appDef(id)).map((id) => h('button', { type: 'button', class: 'chip line', onclick: () => { closeHelp(); Kit.go(id); } }, Kit.appDef(id).title)))));
+      }
+    } else {
+      body.append(h('p', { class: 'gd-lead' }, 'このツールの説明は、まだありません。やりたいことから探すか、「まずはここから」をどうぞ。'));
+    }
+    // パネルの中でも探せる
+    const q = h('input', { type: 'search', placeholder: '例：請求書、QRコード、予約', id: 'gd-panel-q', 'aria-label': 'やりたいことを入力' });
+    const res = h('div', { class: 'gd-mini-results' });
+    q.addEventListener('input', () => {
+      Kit.clear(res);
+      for (const t of G.search(q.value, 5)) res.append(resultItem(t, () => G.runTask(t)));
+      if (q.value.trim() && !res.firstChild) res.append(h('p', { class: 'small muted' }, '見つかりませんでした。言いかえてみてください。'));
+    });
+    body.append(h('section', { class: 'gd-sec' }, h('h3', null, 'やりたいことから探す'), q, res));
+    body.append(askBox(appId));
+    body.append(h('section', { class: 'gd-sec' }, h('div', { class: 'btn-row' },
+      Kit.btn('3分デモを見る', () => G.demo(), { icon: 'play', sm: true }),
+      Kit.btn('まずはここから', () => { closeHelp(); Kit.go('start'); }, { icon: 'star', sm: true, kind: 'ghost' }))));
+    document.body.append(el);
+    const onKey = (e) => { if (e.key === 'Escape' && !document.querySelector('.modal-back') && !tour) { e.preventDefault(); closeHelp(); } };
+    document.addEventListener('keydown', onKey);
+    const offMount = Kit.onMount((id) => { if (panel && id !== appId) closeHelp(); });
+    panel = { app: appId, el, cleanup: () => { document.removeEventListener('keydown', onKey); offMount(); el.remove(); if (prev && prev.isConnected && prev.focus) try { prev.focus({ preventScroll: true }); } catch (e) { /* noop */ } } };
+    setTimeout(() => el.focus({ preventScroll: true }), 20);
+  };
+
+  // AIに聞く（使える画面だけ）
+  function askBox(appId) {
+    const ta = h('textarea', { rows: 2, placeholder: '例：お客さんに日程の候補を送るには？', id: 'gd-ask-q', 'aria-label': 'AIへの質問' });
+    const out = h('div', { class: 'gd-ask-out', 'aria-live': 'polite' });
+    const btns = h('div', { class: 'gd-mini-results' });
+    const run = async () => {
+      const question = ta.value.trim();
+      if (!question) { ta.focus(); return; }
+      out.textContent = '考え中…'; Kit.clear(btns);
+      const list = G.allTasks().map((t) => t.id + '：' + t.title + '（' + ((Kit.appDef(t.app) || {}).title || t.app) + '）').join('\n');
+      const prompt = 'あなたは、起業ツール一式「みせびらき」の使い方の案内係です。使う人は、ITにくわしくない一人の事業者です。\n'
+        + 'いまの画面：' + ((Kit.appDef(appId) || {}).title || appId) + '\n'
+        + '次の「できること一覧」から、質問に合うものを最大3つ選び、やさしい日本語で3文以内の答えをつけてください。一覧にないことは、できないと正直に答えてください。\n'
+        + 'JSONだけで返してください：{"answer": "答え", "tasks": ["id", "id"]}\n\n【できること一覧】\n' + list + '\n\n【質問】\n' + question;
+      try {
+        const r = await Kit.ai.ask(prompt, { json: true, tier: 'quick' });
+        out.textContent = (r && r.answer) || '';
+        for (const id of (r && r.tasks) || []) { const t = G.getTask(id); if (t) btns.append(resultItem(t, () => G.runTask(t))); }
+      } catch (e) { out.textContent = (e && e.message) || Kit.ai.message(); }
+    };
+    return h('section', { class: 'gd-sec gd-ask ai-only' }, h('h3', null, 'AIに聞く'), ta, h('div', { class: 'btn-row' }, Kit.btn('聞く', run, { icon: 'sparkle', sm: true, kind: 'ai' })), out, btns);
+  }
+
+  function resultItem(t, onClick, selected) {
+    const def = Kit.appDef(t.app);
+    return h('button', { type: 'button', class: 'gd-pal-item', 'aria-selected': selected ? 'true' : 'false', onclick: onClick },
+      h('span', { class: 'ic' }, Kit.icon(def ? def.icon : 'info')),
+      h('span', { class: 't' }, t.title),
+      h('span', { class: 'chip' }, def ? def.title : t.app),
+      t.tip ? h('span', { class: 's' }, t.tip) : null);
+  }
+
+  /* ───────── やりたいことから探す ───────── */
+  let pal = null;
+  function closeSearch() { if (pal) { pal.cleanup(); pal = null; } }
+  G.closeSearch = closeSearch;
+  G.openSearch = (initial = '') => {
+    if (pal) { pal.input.focus(); return; }
+    closeHelp();
+    const prev = document.activeElement;
+    const input = h('input', { type: 'text', inputmode: 'search', enterkeyhint: 'search', id: 'gd-pal-q', placeholder: 'やりたいことを入力（例：請求書、チラシのQR、予約）', 'aria-label': 'やりたいことを入力', autocomplete: 'off' });
+    input.value = initial;
+    const list = h('div', { class: 'gd-pal-list', role: 'listbox' });
+    const box = h('div', { class: 'gd-pal', role: 'dialog', 'aria-label': 'やりたいことから探す' },
+      h('div', { class: 'gd-pal-in' }, Kit.icon('search'), input, Kit.btn('', () => closeSearch(), { icon: 'close', title: '閉じる', kind: 'ghost', sm: true })),
+      list,
+      h('div', { class: 'gd-pal-foot' }, h('span', { class: 'gd-keys' }, h('kbd', null, '↑↓'), ' えらぶ　', h('kbd', null, 'Enter'), ' ひらく　', h('kbd', null, 'Esc'), ' とじる'),
+        Kit.btn('このページの使い方', () => { closeSearch(); G.openHelp(); }, { sm: true, kind: 'ghost', icon: 'info' })));
+    const back = h('div', { class: 'gd-pal-back' }, box);
+    let items = [], sel = 0;
+    const appEntries = () => Kit.apps().map((a) => ({ id: 'app:' + a.id, app: a.id, title: a.title + 'を開く', tip: a.desc, words: a.desc }));
+    const render = () => {
+      Kit.clear(list);
+      const q = input.value.trim();
+      if (!q) {
+        const pinned = G.pinned().slice(0, 8);
+        let last = G.getTask(Kit.pref.get('guide.lastTask', ''));
+        if (last && (last.hidden || !G.applies(last))) last = null;
+        items = (last && !pinned.includes(last) ? [last] : []).concat(pinned);
+        if (items.length) list.append(h('div', { class: 'gd-pal-h' }, 'よく使うこと'));
+      } else {
+        items = G.search(q, 9);
+        const nq = G.norm(q);
+        const apps = appEntries().filter((a) => G.norm(a.title + a.words).includes(nq)).slice(0, 3);
+        items = items.concat(apps.filter((a) => !items.some((t) => t.app === a.app && !t.target)));
+      }
+      sel = Math.min(sel, Math.max(0, items.length - 1));
+      items.forEach((t, i) => list.append(resultItem(t, () => choose(t), i === sel)));
+      if (q && !items.length) {
+        list.append(h('div', { class: 'gd-pal-empty' },
+          h('p', null, '「' + q + '」に合うものが見つかりませんでした。短い言葉や、別の言い方で試してみてください（例：「見積」「投稿」「予約」）。'),
+          h('div', { class: 'btn-row' }, Kit.ai.button('AIに聞いてみる', async () => { closeSearch(); G.openHelp(); const ta = document.getElementById('gd-ask-q'); if (ta) { ta.value = q; ta.focus(); } }, { sm: true }))));
+      }
+    };
+    const choose = (t) => { closeSearch(); if (String(t.id).startsWith('app:')) Kit.go(t.app); else G.runTask(t); };
+    input.addEventListener('input', () => { sel = 0; render(); });
+    input.addEventListener('keydown', (e) => {
+      if (e.isComposing) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(items.length - 1, sel + 1); render(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(0, sel - 1); render(); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (items[sel]) choose(items[sel]); }
+    });
+    const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeSearch(); } };
+    document.addEventListener('keydown', onKey, true);
+    back.addEventListener('mousedown', (e) => { if (e.target === back) closeSearch(); });
+    document.body.append(back);
+    render();
+    setTimeout(() => input.focus(), 20);
+    pal = { input, cleanup: () => { document.removeEventListener('keydown', onKey, true); back.remove(); if (prev && prev.isConnected && prev.focus) try { prev.focus({ preventScroll: true }); } catch (e) { /* noop */ } } };
+  };
+
+  /* ───────── 入口（メニュー・スマホ上部・キー） ───────── */
+  Kit.started.then((shell) => {
+    const isMac = /Mac|iPhone|iPad/.test(navigator.platform || '');
+    const sideTools = h('div', { class: 'gd-side-tools' },
+      h('button', { type: 'button', class: 'gd-search-btn', onclick: () => G.openSearch() }, Kit.icon('search'), h('span', null, 'やりたいことを探す'), h('kbd', null, '/')));
+    const noren = shell.side.querySelector('.noren');
+    if (noren) noren.after(sideTools);
+    const foot = shell.side.querySelector('.mb-side-foot');
+    if (foot) foot.prepend(h('button', { type: 'button', class: 'gd-help-btn', onclick: () => G.openHelp() }, Kit.icon('info'), 'このページの使い方'));
+    shell.top.append(h('span', { class: 'gd-top-btns' },
+      h('button', { type: 'button', class: 'gd-top-btn', 'aria-label': 'やりたいことを探す', title: 'やりたいことを探す', onclick: () => G.openSearch() }, Kit.icon('search')),
+      h('button', { type: 'button', class: 'gd-top-btn', 'aria-label': 'このページの使い方', title: 'このページの使い方', onclick: () => G.openHelp() }, Kit.icon('info'))));
+    document.addEventListener('keydown', (e) => {
+      if (e.defaultPrevented || tour) return;
+      const tag = (e.target && e.target.tagName) || '';
+      const typing = /INPUT|TEXTAREA|SELECT/.test(tag) || (e.target && e.target.isContentEditable);
+      if (document.querySelector('.modal-back')) return;
+      if ((e.key === 'k' || e.key === 'K') && (isMac ? e.metaKey : e.ctrlKey)) { e.preventDefault(); G.openSearch(); return; }
+      if (typing) return;
+      if (e.key === '/') { e.preventDefault(); G.openSearch(); }
+      else if (e.key === '?') { e.preventDefault(); G.openHelp(); }
+    });
+  });
+})();
+
+/* ---- js/apps/start.js ---- */
+// まずはここから：はじめての人の入口。3分デモ、いまの段階に合わせた最初の3歩、はじめの5つ、ツールのつながり
+(function () {
+  'use strict';
+  const { h } = Kit;
+  const G = window.Guide;
+
+  // 入口から案内する「やりたいこと」。ほかは各ツールの項目（js/guide/help-*.js）を使う
+  G.tasks([
+    { id: 'start-demo', app: 'start', title: '3分デモを見る', words: 'デモ 見本 使い方 全体 体験 ためす お試し チュートリアル', tip: '問い合わせが売上になるまでを、実際の画面で追いかけます。保存はされません。', run: () => G.demo() },
+    { id: 'start-profile', app: 'dashboard', title: '事業プロフィールを入れる', words: '屋号 名前 会社名 連絡先 メール 住所 プロフィール 設定 はじめる', tip: '屋号や連絡先は、ホームページ・請求書などすべてのツールで使い回されます。', run: async () => { await Kit.profile.edit(); Kit.remount(); } },
+  ]);
+  // 検索の「よく使うこと」
+  G.pinned(['start-demo', 'start-profile', 'inbox-delivery', 'site-publish', 'inbox-reply', 'invoice-pdf', 'calendar-booking', 'dash-backup']);
+
+  // いまの段階ごとの、最初の3歩
+  const STAGES = [
+    { id: 'idea', icon: 'canvas', name: '考え中', sub: 'アイデアを形にしたい', steps: [
+      ['canvas-write', '事業の骨組みを1枚に書く', 'だれの、どんな困りごとを解決するかを、短い言葉で並べます。'],
+      ['money-profit', '数字で確かめる', '値段と件数を入れると、無理のない計画かどうかが見えます。'],
+      ['roadmap-rule', '兼業のルールを確かめる', '勤め先によっては許可が要ります。先に確かめておくと安心です。'],
+    ] },
+    { id: 'prep', icon: 'store', name: '準備中', sub: '届出や、お店の顔をつくる', steps: [
+      ['start-profile', '事業プロフィールを入れる', '屋号や連絡先を一度入れると、全部のツールで使われます。'],
+      ['editor-text', 'ホームページを書きかえる', 'サンプルの文章を自分の言葉に直すところから。'],
+      ['inbox-delivery', '問い合わせの送信先を決める', 'これを決めないと、公開したページの問い合わせが届きません。'],
+    ] },
+    { id: 'run', icon: 'chart', name: '始めている', sub: 'お客さんを増やしたい・お金を整えたい', steps: [
+      ['inbox-status', '問い合わせを受付箱で見守る', '返信・商談・成約を、状態ごとに追いかけます。'],
+      ['sns-rhythm', '投稿のリズムを作る', '続けられる回数を決めて、ネタの枠を先に用意します。'],
+      ['invoice-new', '見積書・請求書を出す', 'インボイス制度に合わせた書類を、PDFで送れます。'],
+    ] },
+  ];
+
+  // はじめの5つ（保存されている内容から、できたかどうかを自動で判断する）
+  async function checklist() {
+    const [p, site, form, events, posts] = await Promise.all([Kit.profile.get(), Kit.store.get('site'), Kit.store.get('form'), Kit.store.list('events'), Kit.store.list('posts')]);
+    const d = (form && form.delivery) || {};
+    const ready = d.type === 'mailto' ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.to || '') : d.type && d.type !== 'demo' ? /^https:\/\/\S+$/i.test(d.url || '') : false;
+    return [
+      { done: !p._sample && !!p.name, task: 'start-profile', title: '事業プロフィールを自分のものにする', why: '屋号・連絡先が、ホームページや請求書に入ります。' },
+      { done: !!site && !site._sample, task: 'editor-text', title: 'ホームページを自分の内容に書きかえる', why: 'サンプルの文章を1か所直すだけでも、自分のページになります。' },
+      { done: ready, task: 'inbox-delivery', title: '問い合わせの送信先を決める', why: '決めるまでは、公開したページの問い合わせがどこにも届きません。' },
+      { done: !!(site && site.publishedUrl), task: 'site-publish', title: 'ホームページを公開して、URLを入れる', why: 'URLを入れると、チラシ用のQRコードが作れます。' },
+      { done: events.some((e) => !e.sample) || posts.some((x) => !x.sample && x.status !== 'idea'), task: 'calendar-quick', title: '最初の予定か投稿を入れる', why: '体験会や投稿の日を決めると、動き出せます。' },
+    ];
+  }
+  window.StartGuide = { checklist };
+
+  // ツールのつながり（左から右へ）
+  const FLOW = [
+    { name: '骨組み', tools: ['canvas'] },
+    { name: '数字', tools: ['money'] },
+    { name: 'お店の顔', tools: ['editor', 'video'] },
+    { name: '発信', tools: ['sns'] },
+    { name: '受付', tools: ['inbox', 'calendar'] },
+    { name: 'いただく', tools: ['invoice'] },
+  ];
+
+  const FAQ = [
+    ['データはどこに保存されますか？', 'Claude のページとして開いているときは、あなたのアカウントに保存されます（スマホとパソコンで同じ内容）。ファイルをダウンロードして開いたときは、そのブラウザに保存されます。どちらも、ダッシュボードの「バックアップを書き出す」で控えをとれます。'],
+    ['スマホでも使えますか？', '使えます。メニューは左上のボタン、やりたいことの検索と使い方は右上のボタンです。動画の書き出しなど重い作業は、パソコンのほうが快適です。'],
+    ['サンプルを消したい／もう一度見たい', 'ダッシュボードの「サンプルを片付ける」で消せます。自分で入力したものは残ります。もう一度見たいときは、この画面の「3分デモを見る」で、いつでもサンプルの世界を見られます（保存はされません）。'],
+    ['ホームページを公開するには？', 'エディターで「公開用HTMLを書き出す」を押すと、1つのファイルができます。Netlify Drop などの無料サービスに置けば公開できます。手順はホームページの画面の「公開のしかた」にあります。'],
+    ['人にすすめたいときは？', 'このページを共有すると、受け取った人はそれぞれ自分のブラウザで、自分のデータで使えます。あなたのデータは見えません。'],
+    ['AIのボタンが出てきません', 'AIの提案ボタンは、Claude のページとして開いたときだけ出ます。ダウンロードしたファイルで開いたときは出ませんが、ほかの機能はすべて使えます。'],
+  ];
+
+  Kit.css('start', `
+    .st-hero { display: grid; gap: 24px; grid-template-columns: 1fr; align-items: center; padding: 8px 0 26px; border-bottom: 1px solid var(--line); }
+    @media (min-width: 900px) { .st-hero { grid-template-columns: minmax(0, 1fr) 260px; } }
+    .st-eyebrow { font-size: 12.5px; font-weight: 700; letter-spacing: .2em; color: var(--shu); }
+    .st-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(34px, 6vw, 54px); letter-spacing: .04em; line-height: 1.2; margin: 8px 0 14px; }
+    .st-lead { font-size: 16px; color: var(--ink-2); max-width: 36em; line-height: 1.85; }
+    .st-hero .btn-row { margin-top: 20px; }
+    .st-hero .btn.primary { min-height: 46px; padding: 10px 20px; font-size: 15.5px; }
+    .st-hero .btn.big { min-height: 46px; padding: 10px 18px; font-size: 15px; }
+    .st-note { font-size: 12.5px; color: var(--ink-3); margin-top: 10px; }
+    /* のれん（飾り） */
+    .st-noren { position: relative; height: 220px; display: none; }
+    @media (min-width: 900px) { .st-noren { display: block; } }
+    .st-noren .rod { position: absolute; left: 6px; right: 6px; top: 12px; height: 8px; border-radius: 4px; background: var(--ink-2); }
+    .st-noren .panels { position: absolute; left: 22px; right: 22px; top: 18px; bottom: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+    .st-noren .panels i { background: var(--noren); border-radius: 0 0 6px 6px; position: relative; }
+    .st-noren .mon { position: absolute; left: 50%; top: 42%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; border: 3px solid var(--on-noren); display: grid; place-items: center; color: var(--on-noren); font-family: var(--font-display); font-weight: 800; font-size: 26px; }
+    .st-noren .seal { position: absolute; right: 8px; bottom: 0; width: 38px; height: 38px; border-radius: 6px; background: var(--shu); color: var(--on-shu); display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; font-size: 19px; transform: rotate(-5deg); box-shadow: var(--shadow-1); }
+
+    .st-sec { padding: 26px 0; border-bottom: 1px solid var(--line); }
+    .st-sec:last-child { border-bottom: 0; }
+    .st-h2 { font-family: var(--font-display); font-weight: 800; font-size: 22px; letter-spacing: .03em; margin-bottom: 6px; }
+    .st-sub { color: var(--ink-2); font-size: 14px; margin-bottom: 14px; }
+    .st-stages { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+    .st-stage { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; align-items: center; text-align: left; padding: 14px; border-radius: var(--r); border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; }
+    .st-stage:hover { border-color: var(--gosu); }
+    .st-stage[aria-checked="true"] { border-color: var(--gosu); background: var(--gosu-wash); }
+    .st-stage .ic { grid-row: span 2; width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: var(--surface-2); color: var(--gosu); }
+    .st-stage[aria-checked="true"] .ic { background: var(--gosu); color: var(--on-gosu); }
+    .st-stage .ic svg { width: 20px; height: 20px; }
+    .st-stage .nm { font-weight: 700; font-size: 16px; }
+    .st-stage .sb { font-size: 13px; color: var(--ink-2); }
+    .st-steps { display: grid; gap: 10px; margin-top: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+    .st-step { display: grid; grid-template-rows: auto auto 1fr auto; gap: 6px; padding: 16px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); }
+    .st-step .no { font-family: var(--font-display); font-weight: 800; font-size: 28px; line-height: 1; color: var(--gosu); }
+    .st-step .tt { font-weight: 700; font-size: 16px; }
+    .st-step .wy { font-size: 13.5px; color: var(--ink-2); }
+    .st-step .btn { justify-self: start; margin-top: 4px; }
+    .st-check-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .st-check-head .meter { flex: 1 1 160px; max-width: 280px; }
+    .st-checks { list-style: none; margin: 14px 0 0; padding: 0; display: grid; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; }
+    .st-checks li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+    .st-checks li:last-child { border-bottom: 0; }
+    .st-checks .mk { grid-row: span 2; width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--line-strong); display: grid; place-items: center; color: transparent; }
+    .st-checks .mk svg { width: 15px; height: 15px; }
+    .st-checks li.is-done .mk { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+    .st-checks .tt { font-weight: 700; font-size: 14.5px; }
+    .st-checks li.is-done .tt { color: var(--ink-3); }
+    .st-checks .wy { grid-column: 2; font-size: 12.5px; color: var(--ink-3); }
+    .st-checks .btn { grid-row: span 2; }
+    .st-done-line { margin-top: 12px; font-size: 14px; color: var(--ok); font-weight: 700; }
+    .st-flow { display: grid; gap: 8px; grid-template-columns: 1fr; counter-reset: st; }
+    @media (min-width: 900px) { .st-flow { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+    .st-node { position: relative; padding: 12px; border-radius: var(--r); background: var(--surface-2); display: grid; gap: 6px; align-content: start; }
+    .st-node .lb { font-weight: 700; font-size: 15px; display: flex; align-items: baseline; gap: 6px; }
+    .st-node .lb::before { counter-increment: st; content: counter(st); font-family: var(--font-display); font-weight: 800; color: var(--gosu); font-size: 14px; }
+    .st-node .tl { display: flex; flex-wrap: wrap; gap: 4px; }
+    .st-node .tl .chip { cursor: pointer; }
+    @media (min-width: 900px) { .st-node:not(:last-child)::after { content: ""; position: absolute; right: -7px; top: 50%; width: 8px; height: 8px; border-top: 2px solid var(--ink-3); border-right: 2px solid var(--ink-3); transform: translateY(-50%) rotate(45deg); } }
+    @media (max-width: 899px) { .st-node:not(:last-child)::after { content: ""; position: absolute; left: 22px; bottom: -7px; width: 8px; height: 8px; border-right: 2px solid var(--ink-3); border-bottom: 2px solid var(--ink-3); transform: rotate(45deg); } }
+    .st-tips { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+    .st-tip { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; padding: 14px; border-radius: var(--r); border: 1px solid var(--line); background: var(--surface); text-align: left; font: inherit; color: inherit; cursor: pointer; }
+    .st-tip:hover { border-color: var(--gosu); }
+    .st-tip .ic { grid-row: span 2; width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--gosu-wash); color: var(--gosu); }
+    .st-tip .ic svg { width: 18px; height: 18px; }
+    .st-tip .tt { font-weight: 700; }
+    .st-tip .wy { font-size: 13px; color: var(--ink-2); }
+    .st-faq details { border-bottom: 1px solid var(--line); padding: 12px 0; }
+    .st-faq summary { cursor: pointer; font-weight: 700; list-style: none; display: flex; gap: 10px; }
+    .st-faq summary::-webkit-details-marker { display: none; }
+    .st-faq summary::before { content: "Q"; font-family: var(--font-display); font-weight: 800; color: var(--gosu); }
+    .st-faq details p { margin-top: 8px; padding-left: 1.4em; color: var(--ink-2); font-size: 14px; max-width: 46em; }
+  `);
+
+  G.help('start', {
+    lead: 'はじめての人のための入口です。デモで全体を見て、いまの段階に合う最初の3歩から始めます。',
+    can: ['3分デモで、ツールのつながりを見る（保存されません）', 'いまの段階に合う、最初の3歩を知る', 'はじめの5つの進み具合を見る', 'やりたいことから、その画面へ行く'],
+    first: [{ text: '3分デモを見る', task: 'start-demo' }, { text: '事業プロフィールを入れる', task: 'start-profile' }, { text: '問い合わせの送信先を決める', task: 'inbox-delivery' }],
+    faq: FAQ.slice(0, 4).map(([q, a]) => ({ q, a })),
+    tour: [
+      { target: '.app-start .st-hero .btn.primary', title: 'まずはデモから', body: '「3分デモを見る」で、問い合わせが売上になるまでを実際の画面で追いかけます。触っても保存されません。' },
+      { target: '.app-start .st-stages', title: 'いまの段階を選ぶ', body: '考え中・準備中・始めているから選ぶと、下に最初の3歩が出ます。' },
+      { target: '.app-start .st-checks', title: 'はじめの5つ', body: 'できたものには自動で印がつきます。全部できたら、あとは一つずつで大丈夫です。' },
+      { target: '.app-start .st-tips', title: '迷ったときは', body: 'やりたいことを言葉で探すか、そのページの使い方を開けます。メニューの上と下、スマホでは右上にあります。' },
+    ],
+    related: ['dashboard', 'roadmap'],
+  });
+
+  Kit.app({
+    id: 'start', title: 'まずはここから', group: 'home', icon: 'star', order: 0,
+    desc: 'はじめての人の入口。3分デモと、最初の3歩',
+    async mount(root) {
+      Kit.pref.set('guide.seen', true);
+      let alive = true;
+      let stage = Kit.pref.get('guide.stage', 'prep');
+
+      const hero = h('section', { class: 'st-hero' },
+        h('div', null,
+          h('p', { class: 'st-eyebrow' }, 'はじめての方へ'),
+          h('h1', { class: 'st-title' }, 'まずは、ここから。'),
+          h('p', { class: 'st-lead' }, '11のツールがありますが、全部を使う必要はありません。いまのあなたに合う最初の3歩と、迷ったときの探し方を案内します。'),
+          h('div', { class: 'btn-row' },
+            Kit.btn('3分デモを見る', () => G.demo(), { kind: 'primary', icon: 'play' }),
+            Kit.btn('やりたいことから探す', () => G.openSearch(), { icon: 'search', class: 'big' })),
+          h('p', { class: 'st-note' }, 'デモの中で触ったものは保存されません。何度でも見られます。')),
+        h('div', { class: 'st-noren', 'aria-hidden': 'true' }, h('span', { class: 'rod' }), h('span', { class: 'panels' }, h('i'), h('i'), h('i')), h('span', { class: 'mon' }, '店'), h('span', { class: 'seal' }, '開')));
+
+      const stageBox = h('div', { class: 'st-stages', role: 'radiogroup', 'aria-label': 'いまの段階' });
+      const stepsBox = h('div', { class: 'st-steps' });
+      const renderStages = () => {
+        Kit.clear(stageBox);
+        for (const s of STAGES) {
+          stageBox.append(h('button', { type: 'button', class: 'st-stage', role: 'radio', 'aria-checked': String(s.id === stage), onclick: () => { stage = s.id; Kit.pref.set('guide.stage', stage); renderStages(); } },
+            h('span', { class: 'ic' }, Kit.icon(s.icon)), h('span', { class: 'nm' }, s.name), h('span', { class: 'sb' }, s.sub)));
+        }
+        Kit.clear(stepsBox);
+        const cur = STAGES.find((s) => s.id === stage) || STAGES[1];
+        cur.steps.forEach(([task, title, why], i) => stepsBox.append(h('div', { class: 'st-step' },
+          h('span', { class: 'no' }, String(i + 1)), h('span', { class: 'tt' }, title), h('span', { class: 'wy' }, why),
+          Kit.btn('ここを開く', () => G.runTask(task), { sm: true, kind: i === 0 ? 'primary' : '', icon: 'right' }))));
+      };
+      renderStages();
+
+      const checkBox = h('section', { class: 'st-sec', 'aria-label': 'はじめの5つ' });
+      const renderChecks = async () => {
+        const items = await checklist();
+        if (!alive) return;
+        const n = items.filter((x) => x.done).length;
+        Kit.clear(checkBox);
+        checkBox.append(
+          h('div', { class: 'st-check-head' }, h('h2', { class: 'st-h2' }, 'はじめの5つ'), h('span', { class: 'num ink-2' }, n + ' / 5'),
+            h('div', { class: 'meter' + (n === 5 ? ' ok' : ''), role: 'progressbar', 'aria-valuenow': n * 20, 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-label': 'はじめの5つの進み具合' }, h('i', { style: { width: n * 20 + '%' } }))),
+          h('p', { class: 'st-sub' }, 'お店として動き出すための、最初の5つです。できたものには自動で印がつきます。'),
+          h('ol', { class: 'st-checks' }, items.map((x) => h('li', { class: x.done ? 'is-done' : null },
+            h('span', { class: 'mk', 'aria-label': x.done ? 'できています' : 'まだです' }, Kit.icon('check')),
+            h('span', { class: 'tt' }, x.title), h('span', { class: 'wy' }, x.why),
+            x.done ? h('span', { class: 'chip ok' }, 'できました') : Kit.btn('やる', () => G.runTask(x.task), { sm: true, icon: 'right' })))),
+          n === 5 ? h('p', { class: 'st-done-line' }, '5つ全部できました。ここから先は、いまの波で一つずつで大丈夫です。') : null);
+      };
+
+      const flow = h('section', { class: 'st-sec', 'aria-label': 'ツールのつながり' },
+        h('h2', { class: 'st-h2' }, 'ツールのつながり'),
+        h('p', { class: 'st-sub' }, '左から右へ、お店ができて、お客さんが来て、お金をいただくまで。名前を押すと、その画面のツアーが始まります。'),
+        h('div', { class: 'st-flow' }, FLOW.map((f) => h('div', { class: 'st-node' }, h('span', { class: 'lb' }, f.name),
+          h('span', { class: 'tl' }, f.tools.filter((id) => Kit.appDef(id)).map((id) => h('button', { type: 'button', class: 'chip line', onclick: () => G.tourApp(id) }, Kit.appDef(id).title)))))));
+
+      const tips = h('section', { class: 'st-sec', 'aria-label': '迷ったときは' },
+        h('h2', { class: 'st-h2' }, '迷ったときは'),
+        h('div', { class: 'st-tips' },
+          h('button', { type: 'button', class: 'st-tip', onclick: () => G.openSearch() }, h('span', { class: 'ic' }, Kit.icon('search')), h('span', { class: 'tt' }, 'やりたいことを探す'), h('span', { class: 'wy' }, '「請求書」「予約」のように言葉で探すと、その画面へ行って押す場所を光らせます。キーボードの / でも開けます。')),
+          h('button', { type: 'button', class: 'st-tip', onclick: () => G.openHelp('start') }, h('span', { class: 'ic' }, Kit.icon('info')), h('span', { class: 'tt' }, 'このページの使い方'), h('span', { class: 'wy' }, 'どの画面でも、メニューの下（スマホは右上の i）から、その画面の使い方とツアーを開けます。')),
+          h('button', { type: 'button', class: 'st-tip', onclick: () => Kit.go('dashboard') }, h('span', { class: 'ic' }, Kit.icon('home')), h('span', { class: 'tt' }, '今日やることを見る'), h('span', { class: 'wy' }, 'ダッシュボードに、返信待ちや予定、入金期限が並びます。毎日ここから始めれば大丈夫です。'))));
+
+      const faq = h('section', { class: 'st-sec st-faq', 'aria-label': 'よくある質問' }, h('h2', { class: 'st-h2' }, 'よくある質問'), FAQ.map(([q, a]) => h('details', null, h('summary', null, q), h('p', null, a))));
+
+      root.append(hero,
+        h('section', { class: 'st-sec', 'aria-label': 'いまの段階' }, h('h2', { class: 'st-h2' }, 'いまは、どの段階ですか？'), h('p', { class: 'st-sub' }, '選ぶと、最初の3歩が出ます。あとから選びなおせます。'), stageBox, stepsBox),
+        checkBox, flow, tips, faq,
+        h('div', { class: 'btn-row', style: { paddingTop: '8px' } }, Kit.btn('ダッシュボードへ', () => Kit.go('dashboard'), { icon: 'home' }), Kit.btn('3分デモをもう一度', () => G.demo(), { kind: 'ghost', icon: 'play' })));
+      await renderChecks();
+      const off = Kit.store.on('*', Kit.debounce(() => { if (alive) renderChecks(); }, 200));
+      return () => { alive = false; off(); };
+    },
+  });
+})();
+
 /* ---- js/apps/dashboard.js ---- */
 // ダッシュボード：今日やること・今月の数字・道具箱・バックアップ。ほかのツールのデータを読むだけ（書かない）
 (function () {
@@ -5631,6 +6505,10 @@ ${scriptsHtml(e)}
     .db-flow-name { font-weight: 700; font-size: 14px; }
     .db-flow-tool { font-size: 12px; color: var(--ink-3); }
     .db-backup .btn-row { margin-top: 10px; }
+    .db-start { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 14px; margin-bottom: 16px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); font-size: 14px; }
+    .db-start-n { font-family: var(--font-display); font-weight: 800; color: var(--gosu); font-size: 18px; }
+    .db-start-t { flex: 1 1 240px; min-width: 0; color: var(--ink-2); }
+    .db-start-t b { color: var(--ink); }
     .db-welcome { display: grid; gap: 8px; }
   `);
 
@@ -5705,6 +6583,20 @@ ${scriptsHtml(e)}
             h('div', { class: 'btn-row' },
               Kit.btn('自分の事業で始める', startOwn, { sm: true, kind: 'primary', icon: 'store' }),
               Kit.btn('サンプルを片付ける', clearSamples, { sm: true, kind: 'ghost', icon: 'trash' }))));
+        }
+
+        /* ── はじめの5つ（まだ終わっていなければ、一行で知らせる） ── */
+        if (window.StartGuide) {
+          const items = await window.StartGuide.checklist();
+          if (!alive) return;
+          const n = items.filter((x) => x.done).length;
+          if (n < items.length) {
+            const next = items.find((x) => !x.done);
+            root.append(h('div', { class: 'db-start' },
+              h('span', { class: 'db-start-n num' }, n + ' / ' + items.length),
+              h('span', { class: 'db-start-t' }, h('b', null, 'はじめの5つ'), '　次は「' + next.title + '」'),
+              h('div', { class: 'btn-row' }, Kit.btn('やる', () => window.Guide.runTask(next.task), { sm: true, kind: 'primary', icon: 'right' }), Kit.btn('まずはここから', () => Kit.go('start'), { sm: true, kind: 'ghost' }))));
+          }
         }
 
         /* ── 今日やること ── */
@@ -9856,8 +10748,10 @@ ${scriptsHtml(e)}
     wide: true,
     docs: ['video'],
     debug: () => ({ S, PB, getLayout, drawFrame, fixWebmDuration }),
-    async mount(root) {
+    async mount(root, params) {
       if (!S.project || stale || (S.project._sample && !Kit.store.samplesShown())) await loadProject();
+      // 案内などから開くとき：Kit.go('video', { tab: 'bin' | 'timeline' | 'edit' })。狭い画面で見せる作業（素材・タイムライン・編集）を選んでおく
+      if (params && ['bin', 'timeline', 'edit'].includes(params.tab)) setPanel(params.tab);
       const v = buildView(root);
       V = v;
       // ファイルを画面に落とす
@@ -13644,12 +14538,15 @@ table.mo-proj .mo-yr { display: block; font-size: 10.5px; color: var(--ink-3); f
     id: 'money', title: 'マネタイズ計画', group: 'earn', icon: 'yen', order: 30,
     desc: '売上のしくみを組み立てて、12か月を試算する',
     docs: ['plan'],
-    async mount(root) {
+    async mount(root, params) {
       let plan = normalize(await Kit.store.get('plan', { sample: SAMPLE_PLAN, blank: blankPlan() }));
       let scenario = Kit.pref.get('money.scenario', 'base');
       if (!SCENARIOS.some((x) => x.id === scenario)) scenario = 'base';
       let tab = Kit.pref.get('money.tab', 'sim');
       if (!['sim', 'text', 'doc'].includes(tab)) tab = 'sim';
+      // 案内などから開くとき：Kit.go('money', { tab: 'sim' | 'text' | 'doc' })。'example' は 'doc'（計画書の例）と同じ
+      const want = params && (params.tab === 'example' ? 'doc' : params.tab);
+      if (['sim', 'text', 'doc'].includes(want)) { tab = want; Kit.pref.set('money.tab', tab); }
       let els = {};
       let selfWrites = 0, busy = false, alive = true, chartW = 0;
       const openSet = new Set(); // 「くわしい設定」を開いている柱
@@ -16099,6 +16996,8 @@ table.mo-proj .mo-yr { display: block; font-size: 10.5px; color: var(--ink-3); f
         if (d) showEditor(d);
         else { Kit.toast('書類が見つかりませんでした', { type: 'bad' }); showList(); }
       } else if (params.fromLead) await openFromLead(params.fromLead);
+      // 案内などから開くとき：Kit.go('invoice', { new: 'estimate' | 'invoice' | 'receipt' })。新しい書類を入力の画面で開く（書きかえるまで保存しない）
+      else if (TYPE_KEYS.includes(params.new)) { Kit.pref.set('invoice:pane', 'form'); showEditor(newDoc(params.new), { isNew: true }); }
       else showList();
       return () => leaveView();
     },
@@ -18260,6 +19159,8 @@ button.cal-dnum:hover{background:var(--surface-3)}
       let state = await Kit.store.get('roadmap', { sample: SAMPLE, blank: BLANK });
       state.done = state.done || {}; state.memo = state.memo || {}; state.custom = state.custom || [];
       const open = new Set(Kit.pref.get('roadmap.open', ['s0', 's1', 's2']));
+      // 案内などから特定の手順を開くときは、その段階を開いておく
+      if (params.step) { const st = STEPS.concat(state.custom || []).find((x) => x.id === params.step); if (st) open.add(st.stage); }
 
       const save = () => { delete state._sample; Kit.store.set('roadmap', state); };
       const allSteps = () => STEPS.concat(state.custom.map((c) => ({ id: c.id, stage: c.stage, title: c.title, why: c.why || '', how: [], custom: true })));
@@ -18375,6 +19276,648 @@ button.cal-dnum:hover{background:var(--surface-3)}
       return { done: all.filter((s) => done[s.id]).length, total: all.length, next };
     },
   };
+})();
+
+/* ---- js/guide/help-1.js ---- */
+// 使い方：ダッシュボード・ホームページ・ホームページエディター・動画エディター・集客窓口・SNS投稿プランナー
+(function () {
+  'use strict';
+  const G = window.Guide;
+
+  /* ───────── ダッシュボード ───────── */
+  G.help('dashboard', {
+    lead: '今日やることと今月の数字が、ひと目でわかる場所です。',
+    can: [
+      '返信待ち・予定・入金の期限をまとめて見る',
+      '今月の売上・未入金・問い合わせの数を見る',
+      '売上の実績と計画を、月ごとにくらべる',
+      '屋号や連絡先を、全部のツールで使い回す',
+      '全部の内容を、バックアップで保存・復元する',
+    ],
+    first: [
+      { text: 'まず、事業プロフィールを入れる', task: 'dash-profile' },
+      { text: '例を見終わったら、サンプルを片付ける', task: 'dash-clear-samples' },
+      { text: 'ときどきバックアップを書き出す', task: 'dash-backup' },
+    ],
+    faq: [
+      { q: '入力した内容は、どこに保存されますか？', a: '書きかえると自動で保存されます。保存先はメニューのいちばん下に出ています。「このブラウザに保存済み」のときは、ブラウザのデータを消すと消えるので、ときどき「バックアップを書き出す」で控えをとってください。' },
+      { q: 'サンプル（ひらめき数学舎）は消してもいい？', a: 'はい。「サンプルを片付ける」で、全部のツールから例が消えます。自分で入力・編集したものは残ります。「すべて消して最初から」を押すと例は戻りますが、自分の内容も消えます。' },
+      { q: '別のスマホやパソコンでも同じ内容を使いたい', a: '「バックアップを書き出す」でできた .json のファイルを、もう一方の端末で「バックアップから戻す」で読み込みます。その端末のいまの内容は、バックアップの内容に置きかわります。' },
+      { q: 'バックアップに入らないものはありますか？', a: '動画エディターに入れた素材のファイル（動画・写真・音楽）は入りません。場面やテロップなど動画の組み立ては入るので、戻したあとで同じファイルを入れ直してください。' },
+      { q: '売上が ¥0 のままです', a: '売上は、見積書・請求書で「入金済み」にした請求書から数えます（請求書なしで出した領収書もふくみます）。グラフの計画の線は、マネタイズ計画を作ると重なります。' },
+    ],
+    tour: [
+      { target: '.app-dashboard .app-actions .btn', title: '事業プロフィール', body: 'ここを押すと、屋号・連絡先・振込先などを入れられます。ホームページや請求書、返信文に使われます。' },
+      { target: '.app-dashboard .db-top > .card', title: '今日・明日やること', body: '返信待ち・連絡する日・予定・投稿・入金の期限が集まります。押すと、そのツールの画面が開きます。' },
+      { target: '.app-dashboard .db-kpis', title: '今月の数字', body: '入金済みの売上・未入金・問い合わせ・投稿の数です。請求書を入金済みにすると、売上に入ります。' },
+      { target: '.app-dashboard .db-top + .card', title: '売上の実績と計画', body: '棒は入金済みの売上、線はマネタイズ計画の数字です。「計画を開く」を押すと、計画を直せます。' },
+      { target: '.app-dashboard .db-group', title: '道具箱', body: '押すとそのツールが開き、小さな字に今のようすが出ます。全部使わなくて大丈夫、必要なものからどうぞ。' },
+      { target: '.app-dashboard .db-backup', title: '保存とバックアップ', body: '「バックアップを書き出す」で、全部の内容を1つのファイルに保存できます。ときどき押しておくと安心です。' },
+    ],
+    related: ['inbox', 'calendar', 'sns', 'invoice', 'money', 'roadmap'],
+  });
+  G.tasks([
+    { id: 'dash-start-own', when: () => Kit.store.samplesShown(), app: 'dashboard', target: '.app-dashboard .sample-bar .btn.primary', title: '自分の事業で始める',
+      words: '始める はじめる スタート 使い始める 本番 自分の じぶん 例 サンプル 切りかえ 開業 準備 屋号 プロフィール ほんばん',
+      tip: 'ここを押すと、プロフィールを書いてから、例を片付けるかどうか選べます。' },
+    { id: 'dash-profile', app: 'dashboard', target: '.app-dashboard .app-actions .btn', title: '屋号や連絡先を直す（事業プロフィール）',
+      words: 'プロフィール 屋号 店名 名前 事業名 会社名 代表者 連絡先 メール 電話 住所 振込先 口座 登録番号 インボイス キャッチコピー 説明 設定 やごう れんらくさき なまえ じゅうしょ',
+      tip: 'ここを押すと、屋号・連絡先・振込先などを直せます。全部のツールで使われます。' },
+    { id: 'dash-clear-samples', when: () => Kit.store.samplesShown(), app: 'dashboard', target: '.app-dashboard .sample-bar .btn.ghost', title: 'サンプル（例）を片付ける',
+      words: 'サンプル 例 消す 削除 片付け かたづける けす れい 架空 ひらめき数学舎 デモ データ クリア 空にする 白紙',
+      tip: 'ここを押すと、全部のツールから例が消えます。自分で入れたものは残ります。' },
+    { id: 'dash-today', app: 'dashboard', target: '.app-dashboard .db-top > .card', title: '今日やることを確かめる',
+      words: '今日 明日 きょう あした やること ToDo タスク 予定 用事 返信待ち 連絡 期限 締め切り しめきり 忘れ よてい',
+      tip: '返信待ち・予定・投稿・入金の期限がここに集まります。押すと開きます。' },
+    { id: 'dash-numbers', app: 'dashboard', target: '.app-dashboard .db-kpis', title: '今月の売上と未入金を見る',
+      words: '売上 売り上げ うりあげ 数字 すうじ 今月 こんげつ 月商 入金 未入金 にゅうきん 実績 成績 問い合わせ数 投稿数 KPI グラフ',
+      tip: '入金済みの売上・未入金・問い合わせ・投稿の数が、ここに出ます。' },
+    { id: 'dash-backup', app: 'dashboard', target: '.app-dashboard .db-backup .btn', title: 'バックアップを保存する',
+      words: 'バックアップ 保存 ほぞん 控え ひかえ 書き出し かきだし ダウンロード エクスポート export JSON データ 引っ越し 機種変更 移す',
+      tip: 'ここを押すと、全部のツールの内容を1つのファイルに保存できます。' },
+    { id: 'dash-restore', app: 'dashboard', target: '.app-dashboard .db-backup .btn-row', title: 'バックアップから戻す（別の端末へ移す）',
+      words: 'バックアップ 戻す もどす 復元 ふくげん 読み込み よみこみ 取り込み インポート import 別の端末 パソコン スマホ 機種変更 引っ越し 移す',
+      tip: '「バックアップから戻す」で、保存したファイルの内容に置きかえられます。' },
+    { id: 'dash-wipe', app: 'dashboard', target: '.app-dashboard .db-backup .btn.danger', title: 'すべて消して最初からやり直す',
+      words: 'リセット 初期化 しょきか 全部消す ぜんぶけす 削除 消去 最初から さいしょから やり直し やりなおし クリア 白紙',
+      tip: '全部の内容が消えます。押す前に、バックアップを書き出しておくと安心です。' },
+  ]);
+
+  /* ───────── ホームページ ───────── */
+  G.help('site', {
+    lead: 'お客さんが見るページを確かめて、公開用に書き出す場所です。',
+    can: [
+      'PCとスマホでの見え方を、そのまま確かめる',
+      '公開用の index.html を書き出す',
+      '無料のサービスで公開する手順を見る',
+      '公開したURLのQRコードを作って保存する',
+      'フォームから試しに送って、届くか確かめる',
+    ],
+    first: [
+      { text: '「編集する」で、文章や写真を直す', task: 'site-edit' },
+      { text: '問い合わせの送信先を決める', task: 'inbox-delivery' },
+      { text: '書き出して、無料のサービスで公開する', task: 'site-publish' },
+    ],
+    faq: [
+      { q: 'この画面で文章を直せないのですか？', a: 'ここは見え方を確かめる場所です。文章・写真・色は「編集する」から、ホームページエディターで直します。直した内容は自動で保存され、この画面にもすぐ出ます。' },
+      { q: '公開するのに、お金はかかりますか？', a: 'かかりません。書き出した index.html を、Netlify Drop などの無料サービスに置くと公開できます。手順は「公開のしかた」にあります。' },
+      { q: '公開したページの問い合わせは届きますか？', a: '送信先を決めるまでは、どこにも届きません。上の「送信先を設定する」を押して、集客窓口のフォーム設定でメールやGoogleスプレッドシートを選んでください。' },
+      { q: 'プレビューのフォームで送信するとどうなる？', a: '試しの問い合わせとして、集客窓口の受付箱に入ります。受付方法は、ホームページ（試し送信）と出ます。確かめたら、受付箱で消してかまいません。' },
+      { q: '直したら、公開中のページも変わりますか？', a: '自動では変わりません。直したあとで、もう一度書き出して、同じ場所に置き直してください。更新のしかたも「公開のしかた」にあります。' },
+    ],
+    tour: [
+      { target: '.app-site .site-bar .seg', title: 'PCとスマホで確かめる', body: '「PC」「スマホ」を押すと、お客さんの画面での見え方を切りかえられます。' },
+      { target: '.app-site .site-bar .btn.primary', title: '文章や写真を直す', body: '「編集する」を押すと、ホームページエディターが開きます。直した内容は、ここにもすぐ出ます。' },
+      { target: '.app-site .site-bar .btn-row .btn:not(.primary)', title: '公開用に書き出す', body: 'ここを押すと、公開用の index.html ができます。置き場所の手順は、となりの「公開のしかた」にあります。' },
+      { target: '.app-site .site-status', title: 'フォームの送信先', body: '問い合わせがどこに届くかが出ます。未設定なら「送信先を設定する」を押して、集客窓口で決めてください。' },
+      { target: '.app-site .sr-stage', title: 'お客さんが見るページ', body: '実際のページです。いちばん下のフォームから試しに送ると、集客窓口の受付箱に届きます。' },
+    ],
+    related: ['editor', 'inbox'],
+  });
+  G.tasks([
+    { id: 'site-phone', app: 'site', target: '.app-site .site-bar .seg', title: 'スマホでの見え方を確かめる',
+      words: 'スマホ すまほ 携帯 けいたい iPhone Android 見え方 みえかた 表示 確認 かくにん プレビュー PC パソコン 画面 レスポンシブ',
+      tip: '「スマホ」を押すと、スマホで見たときの形になります。' },
+    { id: 'site-edit', app: 'site', target: '.app-site .site-bar .btn.primary', title: 'ホームページの文章や写真を直す',
+      words: '編集 へんしゅう 直す なおす 修正 しゅうせい 変更 書きかえ 文章 ぶんしょう 写真 画像 色 エディター HP サイト edit',
+      tip: 'ここを押すと、エディターで文章・写真・色を直せます。' },
+    { id: 'site-export', app: 'site', target: '.app-site .site-bar .btn-row .btn:not(.primary)', title: '公開用のHTMLを書き出す',
+      words: 'HTML index.html 書き出し かきだし ダウンロード 保存 ほぞん ファイル エクスポート export 公開用 ホームページ HP サイト',
+      tip: 'ここを押すと、公開用の index.html を保存できます。' },
+    { id: 'site-publish', app: 'site', target: '.app-site .site-bar .btn-row', title: 'ホームページを公開する（無料）',
+      words: '公開 こうかい アップ アップロード ネット インターネット 載せる 出す 無料 サーバー Netlify Cloudflare GitHub URL ドメイン HP サイト',
+      tip: '「公開のしかた」に、無料のサービスで公開する手順があります。' },
+    { id: 'site-qr', app: 'site', target: '.app-site .site-bar .btn-row', title: 'ホームページのQRコードを作る',
+      words: 'QR QRコード キューアール きゅーあーる チラシ ちらし 名刺 めいし ポスター 印刷 画像 PNG URL 公開したURL 保存',
+      tip: '「QRコード」を押すと、公開したURLを保存して、QRコードを画像にできます。' },
+    { id: 'site-test', app: 'site', target: '.app-site .sr-stage', title: '問い合わせフォームを試しに送ってみる',
+      words: '試し ためし テスト 試し送信 送信 フォーム 問い合わせ といあわせ 確認 届くか 動作確認 プレビュー',
+      tip: 'ページのいちばん下のフォームから送ると、受付箱に試しの問い合わせが入ります。' },
+  ]);
+
+  /* ───────── ホームページエディター ───────── */
+  G.help('editor', {
+    lead: 'ホームページの文章・写真・色を、見ながら直す場所です。',
+    can: [
+      '見出しや説明を、見え方を確かめながら書きかえる',
+      '写真やイラストを入れかえる',
+      'セクションを足す・並べかえる・隠す',
+      '色の組み合わせ・字体・アクセント色を選ぶ',
+      '検索やSNSに出るタイトルと説明文を整える',
+    ],
+    first: [
+      { text: 'トップの見出しを自分の言葉に直す', task: 'editor-text' },
+      { text: '写真を自分のものに入れかえる', task: 'editor-photo' },
+      { text: '色と字体を選ぶ', task: 'editor-theme' },
+    ],
+    faq: [
+      { q: '保存ボタンが見当たりません', a: '書きかえると自動で保存されます。まちがえたときは、上の矢印のボタンか Ctrl+Z で元に戻せます。セクションを消したときも、直後に出る「元に戻す」で戻せます。' },
+      { q: 'プレビューの中で、文字を直接直せません', a: 'プレビューで押した所が選ばれて、編集の欄（スマホは「編集」）に、その部分の文章や写真が出ます。そこで書きかえると、すぐプレビューに出ます。' },
+      { q: '例の文章を、まとめて自分の事業に変えたい', a: '「自分の事業で作り直す」を押すと、事業プロフィールから新しいページの下書きができます。色と字体はそのままです。あとから「元に戻す」で戻せます。' },
+      { q: '問い合わせフォームの項目はどこで直す？', a: 'ご用件の選択肢・入力する欄・送信先は、集客窓口のフォーム設定で決めます。お問い合わせのセクションにある「フォームを設定する」から開けます。' },
+      { q: '作ったページは、どうやって公開する？', a: '「公開用HTMLを書き出す」で index.html を保存して、無料のサービスに置きます。手順は、ホームページの画面の「公開のしかた」にあります。' },
+    ],
+    tour: [
+      { target: '.app-editor .ed-bar', params: {}, title: '戻す・書き出す', body: '矢印で直す前に戻せます。保存は自動です。「公開用HTMLを書き出す」で、公開用のファイルを保存します。' },
+      { target: '.app-editor .ed-site', params: {}, title: 'サイト全体', body: 'ここを押すと、色の組み合わせ・字体・ページのタイトルや説明文を直せます。' },
+      { target: '.app-editor .ed-secs', params: {}, title: 'ページの部品', body: 'ページの上から順に並んでいます。押すとその部分を直せます。目のボタンで隠し、つまみで並べかえます。' },
+      { target: '.app-editor .ed-add', params: {}, title: '部品を足す', body: '「セクションを追加」を押すと、料金・よくある質問・お客さまの声などを足せます。' },
+      { target: '.app-editor[data-layout="one"] .ed-tabs .seg, .app-editor:not([data-layout="one"]) .ed-pv-bar .seg', targetPhone: '.app-editor .ed-tabs .seg', params: {}, title: '見え方を確かめる', body: '「PC」「スマホ」で見え方を切りかえます。スマホで使っているときは、先に「プレビュー」を押してください。' },
+      { target: '.app-editor .ed-props', params: { section: 'hero' }, title: '選んだ部分を直す', body: '選んだセクションの文章・写真・ボタンを、ここで書きかえます。書いたそばからプレビューに出ます。' },
+    ],
+    related: ['site', 'inbox'],
+  });
+  G.tasks([
+    { id: 'editor-text', app: 'editor', params: { section: 'hero' }, target: '.app-editor .ed-props textarea', title: 'トップの見出しを書きかえる',
+      words: '見出し みだし キャッチコピー タイトル 文章 ぶんしょう 文字 もじ 言葉 書きかえ 変更 直す なおす 修正 テキスト トップ ホームページ HP',
+      tip: 'ページでいちばん大きく出る見出しです。書きかえると、すぐプレビューに出ます。' },
+    { id: 'editor-photo', app: 'editor', params: { section: 'hero' }, target: '.app-editor .ed-props .ed-img', title: 'ホームページの写真を入れかえる',
+      words: '写真 しゃしん 画像 がぞう イラスト 入れかえ 差しかえ 変更 載せる 追加 アップロード photo 写真変更 ホームページ HP',
+      tip: '「変える」（まだないときは「画像を選ぶ」）を押すと、写真やイラストを選べます。' },
+    { id: 'editor-theme', app: 'editor', params: {}, target: '.app-editor .ed-site', title: 'ホームページの色や字体を変える',
+      words: '色 いろ カラー テーマ デザイン 配色 字体 じたい フォント 書体 明朝 ゴシック 雰囲気 見た目 アクセント ホームページ HP',
+      tip: 'ここを押すと、色の組み合わせ・字体・アクセント色を選べます。' },
+    { id: 'editor-add', app: 'editor', params: {}, target: '.app-editor .ed-add', title: 'セクション（料金・よくある質問など）を足す',
+      words: 'セクション 追加 ついか 足す たす 部品 ブロック 料金 料金表 よくある質問 FAQ お知らせ ギャラリー お客さまの声 流れ プロフィール',
+      tip: 'ここを押すと、料金・よくある質問・お知らせなどを足せます。' },
+    { id: 'editor-order', app: 'editor', params: {}, target: '.app-editor .ed-secs', title: 'セクションを並べかえる・隠す',
+      words: '並べかえ ならべかえ 順番 じゅんばん 入れかえ 移動 上へ 下へ 隠す かくす 非表示 ひひょうじ 表示 消す 削除 複製',
+      tip: 'つまみをドラッグすると並べかわり、目のボタンで隠せます。' },
+    { id: 'editor-contact', app: 'editor', params: { section: 'contact' }, target: '.app-editor .ed-props .ed-info', title: 'お問い合わせのセクションを直す',
+      words: '問い合わせ といあわせ お問い合わせ フォーム 申し込み 連絡 項目 こうもく 入力欄 電話番号 希望日時 ご用件 選択肢 送信先 問合せ コンタクト contact',
+      tip: '「フォームを設定する」で、項目や送信先を集客窓口で決められます。' },
+    { id: 'editor-seo', app: 'editor', params: {}, target: '.app-editor .ed-site', title: '検索やSNSに出るタイトルを直す',
+      words: 'SEO 検索 けんさく グーグル Google タイトル 説明文 ディスクリプション OGP SNS シェア 共有 カード 画像 公開したURL',
+      tip: '「サイト全体」を押すと、ページのタイトルや説明文、共有の画像を直せます。' },
+    { id: 'editor-rebuild', app: 'editor', params: {}, target: '.app-editor .ed-note .btn.primary, .app-editor .ed-site', title: '事業プロフィールからページを作り直す',
+      words: '作り直す つくりなおす 作り直し 最初から 自分の事業 プロフィール 下書き 白紙 リセット サンプル 例 置きかえ',
+      tip: '「自分の事業で作り直す」で作り直せます。サイト全体のいちばん下にもあります。' },
+  ]);
+
+  /* ───────── 動画エディター ───────── */
+  G.help('video', {
+    lead: '短い宣伝動画を、切ってつないで書き出す場所です。',
+    can: [
+      '縦・横・正方形の動画を作る',
+      '動画や写真をつないで、長さを切りそろえる',
+      'テロップ・タイトル・BGMを入れる',
+      'ひな形から、お知らせ動画をすぐ作る',
+      'MP4などで書き出し、場面を画像でも保存する',
+    ],
+    first: [
+      { text: '「新しく作る」で、ひな形を選ぶ', task: 'video-new' },
+      { text: '動画や写真（素材）を入れる', task: 'video-media' },
+      { text: '「動画を書き出す」で保存する', task: 'video-export' },
+    ],
+    faq: [
+      { q: '入れた動画や写真は保存されますか？', a: '素材のファイル（動画・写真・音楽）は、開いている間だけ使い、保存しません。保存されるのは場面やテロップなどの組み立てです。開き直したら、同じファイルを入れ直すと元どおりにつながります。' },
+      { q: '書き出しに時間がかかります', a: '動画と同じ長さの時間がかかります。終わるまで、この画面を開いたままにしてください。ほかのタブやアプリに切りかえると、映像が止まったりカクついたりします。' },
+      { q: 'MP4ではなく WebM になりました', a: 'ブラウザによって形式が変わります。WebM は YouTube・TikTok にそのまま載せられます。Instagram に載せるときは、パソコンの Chrome や Safari で書き出すと MP4 になります。' },
+      { q: 'まちがえて消してしまいました', a: '消した直後に出る「元に戻す」を押すか、タイムラインの左上の矢印のボタン（Ctrl+Z）で戻せます。' },
+      { q: 'ファイルを入れても開けません', a: 'iPhone の HEIC の写真は、JPEG で保存し直すと入ります。動画は MP4（H.264）が確実です。共有のページで開いていて動画や音楽が開けないときは、手元のブラウザで開くと使えます。' },
+    ],
+    tour: [
+      { target: '.app-video .app-actions', title: '作る・書き出す', body: '「新しく作る」で空の動画かひな形を選びます。できあがったら「動画を書き出す」で保存します。' },
+      { target: '.app-video .vid-bin', params: { tab: 'bin' }, title: '素材を入れる', body: '「素材を入れる」で、動画・写真・音楽のファイルを選びます。この画面にドラッグしても入ります。' },
+      { target: '.app-video .vid-stage-bar .seg', title: '画面の形', body: '「縦 9:16」はリールやショート、「横 16:9」は YouTube 向けです。押すと切りかわります。' },
+      { target: '.app-video .vid-insp', params: { tab: 'edit' }, title: '選んだものを直す', body: 'タイムラインで選んだ場面・テロップ・BGMの文字や色、長さを、ここで直します。' },
+      { target: '.app-video .vid-tl-bar', params: { tab: 'timeline' }, title: 'タイムライン', body: '場面を選び、はさみの「分ける」で切ります。「テロップ」「タイトル」で文字を足せます。' },
+    ],
+    related: ['sns'],
+  });
+  G.tasks([
+    { id: 'video-new', app: 'video', target: '.app-video .app-actions .btn:not(.accent)', title: '新しい動画を作る（ひな形から）',
+      words: '新しく あたらしく 新規 しんき 作る つくる 作成 ひな形 ひながた テンプレート 空 はじめから お知らせ サービス紹介 ビフォーアフター 動画',
+      tip: 'ここを押すと、空の動画か、お知らせなどのひな形を選べます。' },
+    { id: 'video-media', app: 'video', params: { tab: 'bin' }, target: '.app-video .vid-bin .btn.primary', title: '動画や写真（素材）を入れる',
+      words: '素材 そざい 動画 どうが 写真 しゃしん 画像 ファイル 入れる いれる 追加 読み込み 取り込み アップロード mp4 mov 撮った',
+      tip: 'ここを押すと、動画・写真・音楽を選べます。画面へのドラッグでも入ります。' },
+    { id: 'video-format', app: 'video', target: '.app-video .vid-stage-bar .seg', title: '縦動画（リール・ショート）にする',
+      words: '縦 たて 横 よこ 正方形 サイズ 大きさ 形 比率 アスペクト 9:16 16:9 1:1 リール ショート TikTok YouTube インスタ Instagram 縦動画',
+      tip: '「縦 9:16」「横 16:9」「正方形 1:1」から、画面の形を選べます。' },
+    { id: 'video-telop', app: 'video', params: { tab: 'timeline' }, target: '.app-video .vid-tl-bar', title: 'テロップ（字幕）を入れる',
+      words: 'テロップ 字幕 じまく 文字 もじ 文字入れ テキスト キャプション 説明 タイトル 見出し 動画',
+      tip: '「テロップ」を押すと、再生位置に文字が入ります。文字は編集の欄で直せます。' },
+    { id: 'video-bgm', app: 'video', params: { tab: 'timeline' }, target: '.app-video .vid-track-audio .vid-track-add, .app-video .vid-blk-audio', title: 'BGM（音楽）を入れる',
+      words: 'BGM 音楽 おんがく 音 おと 曲 きょく ミュージック サウンド オーディオ mp3 m4a 効果音 動画',
+      tip: '「BGM を入れる」で音楽のファイルを選びます。入れたあとは、帯を押すと音量などを直せます。' },
+    { id: 'video-cut', app: 'video', params: { tab: 'timeline' }, target: '.app-video .vid-tl-edit', title: '動画を切る・短くする',
+      words: 'カット 切る きる 分ける わける 分割 短く みじかく トリミング 長さ 削る 削除 はさみ 編集 動画',
+      tip: '場面を選び、再生位置を合わせてから「分ける」を押すと、2つに切れます。' },
+    { id: 'video-export', app: 'video', target: '.app-video .app-actions .btn.accent', title: '動画を書き出す（保存する）',
+      words: '書き出し かきだし 保存 ほぞん ダウンロード エクスポート export 出力 完成 MP4 WebM 投稿 動画',
+      tip: 'ここを押すと、MP4 などの動画ファイルで保存できます。' },
+    { id: 'video-thumb', app: 'video', target: '.app-video .vid-pic', title: 'サムネイル画像を保存する',
+      words: 'サムネイル サムネ さむね 画像 がぞう 静止画 写真 PNG カバー 表紙 キャプチャ 切り出し 動画',
+      tip: 'いま映っている場面を、PNG の画像で保存できます。' },
+  ]);
+
+  /* ───────── 集客窓口 ───────── */
+  G.help('inbox', {
+    lead: '問い合わせの入口と、その後の返信・商談をまとめて見守る場所です。',
+    can: [
+      'ホームページのフォームの項目と送信先を決める',
+      '問い合わせを、新規から成約まで追いかける',
+      'ひな形から返信文をつくって、コピーで送る',
+      '配る場所ごとのQRコードで、反応をくらべる',
+      '問い合わせの数・成約率・来た場所を見る',
+    ],
+    first: [
+      { text: 'フォームの送信先を決める', task: 'inbox-delivery' },
+      { text: '返信テンプレートを、自分の言葉に直す', task: 'inbox-template' },
+      { text: '問い合わせに返信して、状態を進める', task: 'inbox-reply' },
+    ],
+    faq: [
+      { q: '公開したページの問い合わせは、ここに自動で入る？', a: '自動では入りません。メールで受け取った分は「問い合わせを記録」で、スプレッドシートやフォームサービスの分は「まとめて取り込む」で入れます。同じものは重複として飛ばします。' },
+      { q: '送信先は、どれを選べばいい？', a: 'いちばん簡単なのは「メールで受け取る」です。メールアプリを使わない人からも受けたいときは、「Googleスプレッドシートに貯める」（無料、はじめに10分ほどの設定）がおすすめです。' },
+      { q: '状態をまちがえて変えた・消してしまった', a: '状態は、変えた直後に出る「もとに戻す」で戻せます。問い合わせを消すと元に戻せないので、迷ったら「見送り」にしておくと安心です。' },
+      { q: '予約の日時や次に連絡する日は、どこに出る？', a: '「予約・商談の日時」と「次に連絡する日」は、カレンダーに出ます。連絡する日の前日からは、ダッシュボードの今日やることにも出ます。決まったら「見積書をつくる」で見積書へ進めます。' },
+      { q: '問い合わせの一覧を、表計算ソフトで見たい', a: '受付箱の「CSVで書き出す」で、状態やメモも入ったCSVを保存できます。Excel や Googleスプレッドシートで開けます。' },
+    ],
+    tour: [
+      { target: '.app-inbox .ib-tabs', params: { tab: 'inbox' }, title: '画面の切りかえ', body: 'ここで「受付箱」「フォーム設定」などに切りかえます。スマホでは「フォーム」のように短く出ます。' },
+      { target: '.app-inbox .ib-tools .btn.primary, .app-inbox .ib-inbox > .empty .btn.primary', params: { tab: 'inbox' }, title: '問い合わせを記録', body: '電話・対面・SNSのDMで受けた分は、ここを押して入れます。スマホでは「記録」と出ます。' },
+      { target: '.app-inbox .ib-acts, .app-inbox .ib-split:not(:has(.ib-detail)) .ib-row, .app-inbox .ib-card, .app-inbox .ib-inbox > .empty', targetPhone: '.app-inbox .ib-row, .app-inbox .ib-card, .app-inbox .ib-inbox > .empty', params: { tab: 'inbox' }, title: '返信と見積書', body: '問い合わせを開くと「返信文をつくる」「見積書をつくる」が出ます。状態もそこで「商談中」などに進めます。' },
+      { target: '.app-inbox .ib-dv', params: { tab: 'form' }, title: '送信先を決める', body: 'ホームページのフォームの内容を、どこで受け取るか選びます。いちばん簡単なのは「メールで受け取る」です。' },
+      { target: '.app-inbox .ib-qgrid', targetPhone: '.app-inbox .ib-qgrid .card', params: { tab: 'links' }, title: '配る場所ごとのQR', body: '「どこで配るか」を選ぶと、チラシや名刺ごとのQRコードができます。どこから来たかが分析に出ます。' },
+      { target: '.app-inbox .ib-tpl-list', params: { tab: 'replies' }, title: '返信テンプレート', body: 'よく送る返信を、ひな形にしておけます。選ぶと本文を直せます。{お名前} などは、返信をつくるときに自動で入ります。' },
+    ],
+    related: ['site', 'calendar', 'invoice', 'dashboard'],
+  });
+  G.tasks([
+    { id: 'inbox-delivery', app: 'inbox', params: { tab: 'form' }, target: '.app-inbox .ib-dv', title: '問い合わせの送信先を決める',
+      words: 'フォーム 送信先 そうしんさき 届かない 届く とどく 受け取る うけとる メール スプレッドシート Google GAS Formspree Googleフォーム 設定 つながらない 来ない',
+      tip: 'フォームの内容を受け取る方法を選びます。いちばん簡単なのはメールです。' },
+    { id: 'inbox-record', app: 'inbox', params: { tab: 'inbox' }, target: '.app-inbox .ib-tools .btn.primary, .app-inbox .ib-inbox > .empty .btn.primary', title: '電話やDMの問い合わせを記録する',
+      words: '記録 きろく 追加 ついか 入力 手入力 登録 電話 でんわ DM メール 対面 口頭 LINE 問い合わせ 新規 顧客',
+      tip: 'ここを押すと、電話・対面・SNSのDMなどで受けた問い合わせを入れられます。' },
+    { id: 'inbox-import', app: 'inbox', params: { tab: 'inbox' }, target: '.app-inbox .ib-tools .ib-io:not(.ghost), .app-inbox .ib-iofoot .btn:not(.ghost), .app-inbox .ib-inbox > .empty .btn:not(.primary)', title: '問い合わせをまとめて取り込む',
+      words: '取り込む とりこむ 取り込み インポート import 読み込み CSV スプレッドシート Googleフォーム Formspree 貼り付け まとめて 一括',
+      tip: 'ここを押すと、スプレッドシートやGoogleフォームの表を受付箱に入れられます。' },
+    { id: 'inbox-reply', app: 'inbox', params: { tab: 'inbox' }, target: '.app-inbox .ib-acts, .app-inbox .ib-split:not(:has(.ib-detail)) .ib-row, .app-inbox .ib-card, .app-inbox .ib-inbox > .empty', targetPhone: '.app-inbox .ib-row, .app-inbox .ib-card, .app-inbox .ib-inbox > .empty', title: '問い合わせに返信する',
+      words: '返信 へんしん 返事 へんじ 返す お返事 メール 回答 連絡 文面 例文 テンプレート コピー',
+      tip: '問い合わせを開いて「返信文をつくる」を押すと、ひな形から返信を書けます。' },
+    { id: 'inbox-template', app: 'inbox', params: { tab: 'replies' }, target: '.app-inbox .ib-tpl-list', title: '返信テンプレートを作る・直す',
+      words: 'テンプレート ひな形 ひながた 定型文 ていけいぶん 例文 返信文 文面 署名 しょめい メール 差し込み',
+      tip: 'テンプレートを選ぶと本文を直せます。新しく作るときは、すぐ下の「テンプレートを足す」で。' },
+    { id: 'inbox-status', app: 'inbox', params: { tab: 'inbox' }, target: '.app-inbox .ib-steps, .app-inbox .ib-split:not(:has(.ib-detail)) .ib-row, .app-inbox .ib-card, .app-inbox .ib-inbox > .empty', targetPhone: '.app-inbox .ib-row, .app-inbox .ib-card, .app-inbox .ib-inbox > .empty', title: '問い合わせの状態を進める（商談中・成約）',
+      words: '状態 じょうたい ステータス 進める 商談 しょうだん 成約 せいやく 見送り 失注 返信済み 進み具合 管理 顧客管理',
+      tip: '問い合わせを開いて、「返信済み」「商談中」「成約」などを押すと切りかわります。' },
+    { id: 'inbox-meeting', app: 'inbox', params: { tab: 'inbox' }, target: '.app-inbox .ib-fields, .app-inbox .ib-split:not(:has(.ib-detail)) .ib-row, .app-inbox .ib-card, .app-inbox .ib-inbox > .empty', targetPhone: '.app-inbox .ib-row, .app-inbox .ib-card, .app-inbox .ib-inbox > .empty', title: '予約・商談の日時を入れる',
+      words: '予約 よやく 商談 しょうだん 打ち合わせ 面談 体験 日時 日程 にってい スケジュール カレンダー 次に連絡する日 連絡日 リマインド 見込み金額',
+      tip: '問い合わせを開いて「予約・商談の日時」を入れると、カレンダーに出ます。' },
+    { id: 'inbox-qr', app: 'inbox', params: { tab: 'links' }, target: '.app-inbox .ib-qgrid', targetPhone: '.app-inbox .ib-qgrid .card', title: 'チラシ用のQRコードを作る',
+      words: 'QR QRコード キューアール きゅーあーる チラシ ちらし 名刺 めいし ポスター 配る リンク URL 印刷 どこから 経路 効果',
+      tip: 'ホームページのURLと配る場所を入れるとできます。「QRコードを画像で保存」で保存できます。' },
+  ]);
+
+  /* ───────── SNS投稿プランナー ───────── */
+  G.help('sns', {
+    lead: '投稿のネタ・下書き・予定を、文字数を見ながらまとめる場所です。',
+    can: [
+      '投稿先ごとの文字数とタグの数を確かめる',
+      'ネタ・下書き・予約・投稿済みを並べて管理する',
+      '投稿の型から、本文を書きはじめる',
+      '曜日と回数から、ネタの枠をまとめて置く',
+      '柱のかたよりと、反応のよかった投稿を見る',
+    ],
+    first: [
+      { text: '「投稿をつくる」で、1本書いてみる', task: 'sns-new' },
+      { text: '「投稿リズムを作る」で、ネタ枠を置く', task: 'sns-rhythm' },
+      { text: '投稿したら、いいねや保存の数を入れる', task: 'sns-metrics' },
+    ],
+    faq: [
+      { q: 'ここから直接SNSに投稿できますか？', a: 'できません。投稿先ごとの見え方にある「コピー」で本文をコピーして、各アプリに貼りつけて投稿します。投稿したら「投稿済みにする」を押すと記録が残ります。' },
+      { q: 'X の文字数が思ったより多く出ます', a: 'X は全角1字を2、半角1字を1、URLは1つ23として数えます（タグもふくみます）。上限は280なので、全角だけならおよそ140字です。' },
+      { q: '予約にすると、自動で投稿されますか？', a: '自動では投稿されません。予約は、出す日を決めておく印です。日付を入れた投稿はカレンダーに出て、前日からはダッシュボードの今日やることにも出ます。' },
+      { q: '投稿の柱とは何ですか？', a: '「教える」「お知らせ」など、投稿のテーマの分け方です。「柱とハッシュタグ」で目標の割合を決めると、「投稿の柱のバランス」で直近30日のかたよりが見えます。' },
+      { q: '投稿をまちがえて消してしまいました', a: '消した直後に出る「元に戻す」を押すと、付けた画像ごと戻せます。少し時間がたって知らせが消えたあとは、戻せません。' },
+    ],
+    tour: [
+      { target: '.app-sns .app-actions .btn.primary', title: '投稿をつくる', body: 'ここを押すと、本文・タグ・日付を書けます。投稿先ごとの文字数と見え方も、同じ画面で確かめられます。' },
+      { target: '.app-sns .sns-head-rh', title: '投稿リズム', body: '「投稿リズムを作る」で、曜日と回数からネタの枠をまとめて置けます。スマホではカレンダーの印です。' },
+      { target: '.app-sns .sns-head-set', title: '柱とハッシュタグ', body: 'ここを押すと、投稿のテーマ（柱）と目標の割合、よく使うタグのセットを決められます。' },
+      { target: '.app-sns .sns-bar .seg', title: '並べ方を切りかえる', body: '「ボード」「カレンダー」「一覧」を押すと、投稿の並べ方が変わります。' },
+      { target: '.app-sns .sns-view', title: '投稿の進み具合', body: '投稿は「ネタ」「下書き」「予約」「投稿済み」と進めます。カードを押すと、開いて直せます。' },
+      { target: '.app-sns .sns-cards', title: '柱のバランスと反応', body: '直近30日の柱のかたよりと、反応のよかった投稿が出ます。投稿済みに反応を入れると並びます。' },
+    ],
+    related: ['calendar', 'dashboard', 'video'],
+  });
+  G.tasks([
+    { id: 'sns-new', app: 'sns', target: '.app-sns .app-actions .btn.primary', title: 'SNSの投稿をつくる（下書き）',
+      words: '投稿 とうこう 作る つくる 書く かく 下書き したがき 新規 文章 本文 キャプション ポスト ツイート 文字数 字数 カウント Instagram インスタ X Threads LINE note',
+      tip: 'ここを押すと、本文・タグ・日付を書いて、文字数を確かめられます。' },
+    { id: 'sns-rhythm', app: 'sns', target: '.app-sns .sns-head-rh', title: '投稿の予定をまとめて作る（投稿リズム）',
+      words: 'リズム 予定 よてい スケジュール 計画 けいかく 曜日 回数 頻度 毎週 定期 続ける ネタ枠 枠 まとめて カレンダー',
+      tip: '曜日と回数を決めると、数週間ぶんのネタの枠がまとめて入ります。' },
+    { id: 'sns-settings', app: 'sns', target: '.app-sns .sns-head-set', title: '投稿の柱とハッシュタグを決める',
+      words: 'ハッシュタグ タグ たぐ # 柱 はしら テーマ カテゴリ ジャンル 割合 バランス セット 設定 よく使う',
+      tip: '投稿のテーマ（柱）の割合と、よく使うタグのセットを決められます。' },
+    { id: 'sns-template', app: 'sns', target: '.app-sns .app-actions .btn.primary', title: '投稿の型（ひな形）から書く',
+      words: '型 かた ひな形 ひながた テンプレート 例文 文例 書き方 お知らせ 募集 体験会 キャンペーン お客さんの声 よくある質問',
+      tip: '「投稿をつくる」の中の「型から書く」で、お知らせや募集のひな形を使えます。' },
+    { id: 'sns-calendar', app: 'sns', target: '.app-sns .sns-bar .seg', title: '投稿の予定をカレンダーで見る',
+      words: 'カレンダー 予定 よてい 日付 ひづけ 月 スケジュール 一覧 予約 いつ 投稿日',
+      tip: '「カレンダー」を押すと、月ごとの投稿の予定が見られます。' },
+    { id: 'sns-copy', app: 'sns', target: '.app-sns .sns-view', title: '投稿文をコピーしてSNSに貼る',
+      words: 'コピー こぴー 貼り付け はりつけ 貼る コピペ 投稿する 載せる 転記 アプリ 共有',
+      tip: 'カードを開くと、投稿先ごとの「コピー」で本文をコピーできます。' },
+    { id: 'sns-posted', app: 'sns', target: '.app-sns .sns-view', title: '投稿済みにする',
+      words: '投稿済み 済み 完了 かんりょう 記録 状態 ステータス 予約 下書き ネタ 移す 投稿した',
+      tip: 'カードを開いて「投稿済みにする」を押すと、今日の日付で記録されます。' },
+    { id: 'sns-metrics', app: 'sns', target: '.app-sns .sns-cards', title: 'いいね・保存の数を記録する',
+      words: '反応 はんのう いいね 保存 リーチ インサイト 分析 数字 効果 記録 エンゲージメント 人気 伸びた',
+      tip: '投稿済みを開いて、いいね・保存・リーチを入れると、「反応のよかった投稿」に並びます。' },
+  ]);
+})();
+
+/* ---- js/guide/help-2.js ---- */
+// 使い方：マネタイズ計画・見積書・請求書・カレンダー・リーンキャンバス・開業ロードマップ
+(function () {
+  'use strict';
+  const G = window.Guide;
+
+  /* ───────── マネタイズ計画 ───────── */
+  G.help('money', {
+    lead: '収入の柱を組み立てて、毎月の売上・利益・作業時間を試算する場所です。',
+    can: [
+      '売り物ごとに、12か月（24か月）の売上を試算する',
+      '黒字になる月と、作業時間が足りるかが分かる',
+      '目標の月商から、何をどれだけ売ればよいか逆算する',
+      '計画を文章にして、コピーや .md で保存する',
+      '「計画書の例」で、ひらめき数学舎の計画書を読める',
+    ],
+    first: [
+      { text: '「計画書の例」で、考え方の順番をつかむ', task: 'money-example' },
+      { text: '収入の柱を、自分の売り物と値段に書きかえる', task: 'money-stream' },
+      { text: '目標の月商を入れて、何をどれだけ売るか見る', task: 'money-target' },
+    ],
+    faq: [
+      { q: 'サンプルの数字は、どうすればいい？', a: 'そのまま書きかえて使えます。書きかえた時点で、自分の計画として保存されます。空から始めるなら、書きかえる前に「サンプルを片付ける」を押してください（ほかのツールの例も消えます）。' },
+      { q: '「ひな形から始める」と、いまの計画は消える？', a: 'はい、選んだ例で置きかわります。読み込んだ直後に出る「元に戻す」を押せば、前の計画に戻ります。収入の柱を消したときも、同じように「元に戻す」が出ます。' },
+      { q: '「時間が足りません」と出たら？', a: '時間を使う商品の数が、使える時間（1か月）をこえています。数をふやすより、値上げや、教材・月額・印税のように時間を使わない柱を考えましょう。月の上限を入れておくと、計算もそこで止まります。' },
+      { q: '入れた数字は、ほかのツールで使われる？', a: '打つたびに自動で保存され、ダッシュボードの「売上の実績と計画」に計画の線として出ます。棒は入金済みの請求書・領収書の実績なので、月に一度、計画とのずれを見比べてください。' },
+      { q: '計画書の例の数字を、自分の計画に使いたい', a: '計画書の中の「この数字をシミュレーターで開く」を押すと、「試算する」に読み込まれます。いまの計画は置きかわりますが、直後に出る「元に戻す」で戻せます。' },
+    ],
+    tour: [
+      { target: '.app-money .mo-tabs', params: { tab: 'sim' }, title: '3つのタブ', body: '「試算する」で数字を入れ、「文章にする」で人に見せる文にします。迷ったら「計画書の例」を押して、見本を読んでください。' },
+      { target: '.app-money .mo-kpis', params: { tab: 'sim' }, title: '見通しのまとめ', body: '12か月目の月商、年間の売上と利益、黒字になる月、作業時間のピークが並びます。下の数字を変えると、すぐに変わります。' },
+      { target: '.app-money .mo-stream, .app-money .mo-editor .empty .btn.primary', params: { tab: 'sim' }, title: '収入の柱', body: '売り物ごとに、料金と月の数を入れます。「くわしい設定」で伸びや手数料も。新しい売り物は「収入の柱を足す」から。' },
+      { target: '.app-money #mo-target', params: { tab: 'sim' }, title: '目標から逆算', body: '目標の月商を入れると、すぐ下に、何をどれだけ売ればよいかと、かかる作業時間が出ます。' },
+      { target: '.app-money .mo-details .card-h .btn', params: { tab: 'sim' }, title: '月ごとの表', body: '「CSVで保存」を押すと、下の月ごとの表（売上・費用・利益・作業時間）を、表計算ソフトで開けるファイルにできます。' },
+    ],
+    related: ['dashboard', 'invoice', 'canvas', 'roadmap'],
+  });
+  G.tasks([
+    { id: 'money-example', app: 'money', params: { tab: 'doc' }, target: '.app-money .mo-doc-head', title: '計画書の例を読む',
+      words: 'マネタイズ計画（例） マネタイズ計画の例 計画書 事業計画 事業計画書 例 見本 手本 お手本 参考 サンプル 書き方 ひな形 テンプレート 読む けいかくしょ みほん れい ひらめき数学舎 価格 値段 値上げ 松竹梅 時間単価 リスク 副業 開業届 インボイス',
+      tip: 'ひらめき数学舎を例にした計画書です。考え方の順番をまねして、自分の事業に置きかえてください。' },
+    { id: 'money-preset', app: 'money', target: '.app-money .app-actions .btn', title: 'ひな形から計画を始める',
+      words: 'ひな形 雛形 テンプレート 例 業種 カフェ 飲食 ハンドメイド ネットショップ Web制作 受託 コーチング オンライン講座 最初から 作り直す 読み込む ひながた',
+      tip: 'ここを押すと、カフェやWeb制作など5つの例から、数字の入った計画を読み込めます。' },
+    { id: 'money-stream', app: 'money', params: { tab: 'sim' }, target: '.app-money .mo-stream, .app-money .mo-editor .empty .btn.primary', title: '売り物と値段を入れる',
+      words: '収入の柱 柱 商品 サービス 売り物 売るもの 値段 価格 料金 単価 金額 回数 件数 追加 足す 増やす 入れる 変える 直す 種類 レッスン 講座 教材 月額 サブスク メンバーシップ 会員 印税 Kindle 本 ねだん かかく しょうひん りょうきん',
+      tip: '売り物ごとに料金と月の数を入れます。新しい売り物は「収入の柱を足す」から。' },
+    { id: 'money-costs', app: 'money', params: { tab: 'sim' }, target: '.app-money .mo-rows', title: '固定費と初期費用を入れる',
+      words: '固定費 初期費用 費用 経費 コスト 支出 出費 家賃 通信費 ツール代 月額 広告費 機材 開業資金 元手 かかるお金 こていひ しょきひよう けいひ',
+      tip: '毎月かかるお金を入れます。下の「固定費を足す」で行を足し、その下の初期費用も同じように入れます。' },
+    { id: 'money-target', app: 'money', params: { tab: 'sim' }, target: '.app-money #mo-target', title: '目標の月商から逆算する',
+      words: '目標 月商 売上目標 逆算 何件 何人 いくら売れば 必要な数 ノルマ 目安 月収 稼ぎたい もくひょう ぎゃくさん げっしょう',
+      tip: '目標の月商を入れると、すぐ下に、何をどれだけ売ればよいかが出ます。' },
+    { id: 'money-profit', app: 'money', params: { tab: 'sim' }, target: '.app-money .mo-kpis', title: '黒字になる月と作業時間を確かめる',
+      words: '黒字 赤字 損益分岐 損益分岐点 いつ 回収 元が取れる 利益 もうけ 作業時間 時間 足りない 忙しい 無理 上限 ピーク シナリオ 慎重 挑戦 くろじ りえき じかん',
+      tip: '「黒字になる月（損益分岐）」と「月の作業時間（ピーク）」の欄を見ます。シナリオでも比べられます。' },
+    { id: 'money-text', app: 'money', params: { tab: 'text' }, target: '.app-money .mo-panel .btn-row', title: '計画を文章にしてコピーする',
+      words: '文章 テキスト コピー 貼り付け まとめ 説明 申請書 補助金 融資 相談 メモ 下書き Markdown md 保存 書き出し 人に見せる ぶんしょう',
+      tip: '「文章をコピー」を押すと、いまの計画が人に見せられる文章でコピーされます。' },
+    { id: 'money-csv', app: 'money', params: { tab: 'sim' }, target: '.app-money .mo-details .card-h .btn', title: '月ごとの見通しをCSVで保存する',
+      words: 'CSV エクセル Excel スプレッドシート 表 一覧 書き出し 保存 ダウンロード エクスポート 月ごと 12か月 見通し 表計算 ひょう',
+      tip: 'ここを押すと、月ごとの表をCSVで保存できます。エクセルやスプレッドシートで開けます。' },
+  ]);
+
+  /* ───────── 見積書・請求書 ───────── */
+  G.help('invoice', {
+    lead: '見積書・請求書・領収書をつくって、A4のPDFで保存する場所です。',
+    can: [
+      'インボイス制度に合わせた見積書・請求書・領収書',
+      'A4 1枚のPDFや画像で保存して、相手に送れる',
+      '見積書を請求書に、請求書を領収書に作りかえる',
+      '未入金や期限切れが、一覧とカレンダーで分かる',
+      '軽減税率（8%）や源泉徴収も計算できる',
+    ],
+    first: [
+      { text: '屋号・登録番号・振込先を入れておく', task: 'invoice-issuer' },
+      { text: '「新しく作る」から請求書を1枚つくる', task: 'invoice-new' },
+      { text: '書きおえたら「PDFで保存」して送る', task: 'invoice-pdf' },
+    ],
+    faq: [
+      { q: 'サンプルの書類を書きかえて使ってもいい？', a: 'サンプルは「サンプルを片付ける」を押すと消えます。自分の書類として使うなら、開いて「複製する」を押してから書きかえてください。' },
+      { q: '保存ボタンが見当たらない', a: '書きかえると自動で保存され、入力のいちばん下に「保存しました」と出ます。新しく作っただけで何も書かずに一覧へ戻ると、その書類は残りません。' },
+      { q: 'PDFの文字が検索・コピーできない', a: 'PDFは、書類の画像をA4 1枚にしたものなので、文字の検索やコピーはできません。見た目はふつうの書類なので、メールで送ったり印刷したりするのには困りません。' },
+      { q: '入金されたら、どうする？', a: '一覧の「…」から「入金済みにする」を押すか、書類を開いて状態を「入金済み」にします。ダッシュボードの売上に入り、続けて「領収書を作る」もできます。' },
+      { q: '消してしまった書類は戻せる？', a: '書類の削除は元に戻せません。心配なときは、ダッシュボードの「バックアップを書き出す」で控えをとっておきましょう。明細の行を消したときは、直後に出る「元に戻す」で戻せます。' },
+    ],
+    tour: [
+      { target: '.app-invoice .app-actions [aria-haspopup]', params: {}, title: '新しく作る', body: 'ここを押して、見積書・請求書・領収書から選びます。作った書類は、下の一覧に新しい順で並びます。' },
+      { target: '.app-invoice .inv-kpis', params: {}, title: 'お金の動き', body: '今月の請求額、未入金の合計、今年の入金済みが出ます。期限を過ぎた請求書があると、ここで分かります。' },
+      { target: '.app-invoice .inv-acts, .app-invoice .inv-list .empty', params: {}, title: '書類を開く', body: '作った書類は一覧に並び、「開く」で書きかえます。「…」からは、複製、見積書を請求書に変える、入金済みにする、などができます。' },
+      { target: '.app-invoice .inv-top ~ .app-head', params: { new: 'invoice' }, title: '書類の画面', body: '「新しく作る」で開くのが、この画面です。書きおえたら「PDFで保存」を押すと、A4 1枚のPDFになります。' },
+      { target: '.app-invoice .inv-items', params: { new: 'invoice' }, title: '明細', body: '品目・数量・単価・税率を入れると、消費税と合計を自動で計算します。行は「行を追加」かEnterで増やせます。' },
+      { target: '.app-invoice .inv-sec > h2 > .btn', params: { new: 'invoice' }, title: '発行者の情報', body: '屋号・住所・登録番号・振込先は、ここから一度入れておけば、次からの書類に入ります。' },
+    ],
+    related: ['inbox', 'calendar', 'dashboard'],
+  });
+  G.tasks([
+    { id: 'invoice-new', app: 'invoice', params: {}, target: '.app-invoice .app-actions [aria-haspopup]', title: '請求書をつくる',
+      words: '請求書 見積書 領収書 作る つくる 新しく 新規 書類 インボイス 発行 出す 作成 請求 見積もり 見積 レシート せいきゅうしょ みつもりしょ りょうしゅうしょ',
+      tip: 'ここを押して「請求書」を選びます。見積書・領収書も、ここから作れます。' },
+    { id: 'invoice-pdf', app: 'invoice', params: {}, target: '.app-invoice .inv-acts .btn:not([aria-haspopup]), .app-invoice .inv-list .empty .btn.primary', title: '請求書をPDFで保存する',
+      words: 'PDF 保存 ダウンロード 送る 渡す 書き出し メール 添付 印刷 画像 PNG 紙 プリント 見積書 領収書 請求書 ほぞん',
+      tip: '書類を「開く」か新しく作ると、画面の上の「PDFで保存」でA4 1枚のPDFになります。' },
+    { id: 'invoice-issuer', app: 'invoice', params: { new: 'invoice' }, target: '.app-invoice .inv-sec > h2 > .btn', title: '屋号・登録番号・振込先を入れる',
+      words: '発行者 屋号 名前 住所 電話 登録番号 インボイス番号 適格請求書 T番号 振込先 口座 銀行 印鑑 はんこ 印影 角印 プロフィール 自分の情報 とうろくばんごう ふりこみさき',
+      tip: 'ここを押して屋号・登録番号・振込先を入れます。角印は、すぐ下のチェックで載せられます。' },
+    { id: 'invoice-paid', app: 'invoice', params: {}, target: '.app-invoice .inv-acts [aria-haspopup]', title: '入金済みにする',
+      words: '入金 入金済み 支払い 払ってもらった 振り込まれた 振込 未入金 消し込み 売上 回収 にゅうきん しはらい',
+      tip: '送付済みの請求書は、「…」から「入金済みにする」を選ぶと売上に入ります。' },
+    { id: 'invoice-convert', app: 'invoice', params: {}, target: '.app-invoice .inv-acts [aria-haspopup]', title: '見積書から請求書・領収書をつくる',
+      words: '見積書から 請求書に変える 領収書を作る 変換 引き継ぐ 写す 複製 コピー 同じ内容 もう一枚 毎月 再発行 へんかん ふくせい',
+      tip: '「…」から、見積書は「請求書に変える」、入金済みの請求書は「領収書を作る」を選べます。' },
+    { id: 'invoice-withholding', app: 'invoice', params: { new: 'invoice' }, target: '.app-invoice label.check:has(#inv-f-wh)', title: '源泉徴収をする（講師料など）',
+      words: '源泉徴収 源泉 源泉所得税 10.21% 講師料 原稿料 謝礼 報酬 差し引く 天引き 手取り 学校 研修 げんせん',
+      tip: 'チェックを入れると、源泉所得税（10.21%）を差し引いた金額で請求できます。' },
+    { id: 'invoice-settings', app: 'invoice', params: {}, target: '.app-invoice .app-actions .btn.ghost', title: '番号の付け方や支払期限を変える',
+      words: '設定 番号 書式 連番 頭 支払期限 期限 月末 端数 四捨五入 切り捨て 税込 税抜 備考 定型文 いつもの文 印影 せってい',
+      tip: 'ここを押すと、番号の頭・支払期限・端数処理・いつもの備考を変えられます。' },
+    { id: 'invoice-find', app: 'invoice', params: {}, target: '.app-invoice .inv-filters', title: '書類を探す・絞りこむ',
+      words: '探す 検索 絞りこみ 絞り込み フィルター 未入金 期限切れ 下書き 送付済み 一覧 宛先 件名 さがす けんさく',
+      tip: '種類と状態で絞りこんだり、番号・宛先・件名で探したりできます。' },
+  ]);
+
+  /* ───────── カレンダー ───────── */
+  G.help('calendar', {
+    lead: '予定・予約・投稿日・入金期限を、ひとつのカレンダーで見る場所です。',
+    can: [
+      '予定・予約・投稿日・入金期限を1か所で見る',
+      '「明日 19時 打ち合わせ」と書くだけで予定に入る',
+      '空いている時間から、予約の案内文をつくる',
+      'くり返しの予定（毎週・毎月）を入れる',
+      'Googleカレンダー用CSVで書き出し、.icsを読み込む',
+    ],
+    first: [
+      { text: '「すばやく追加」で予定を1つ入れる', task: 'calendar-quick' },
+      { text: '「予約枠の案内」で、空き時間の案内文をコピーする', task: 'calendar-booking' },
+      { text: 'Googleカレンダー用CSVで書き出す', task: 'calendar-csv' },
+    ],
+    faq: [
+      { q: '点線の予定は何？', a: '集客窓口の予約・連絡する日、SNS投稿プランナーの投稿日、請求書の入金期限です。ここでは読むだけで、押すとそのツールが開きます。隠すときは「ほかのツールの予定も表示」のチェックを外します。' },
+      { q: 'Googleカレンダーに入れるには？', a: '「書き出し・読み込み」から「Googleカレンダー用CSV」を保存し、パソコンのGoogleカレンダーの設定にある「インポート / エクスポート」で取りこみます。1件だけなら、予定を開いて「Googleカレンダーに追加」を押します。' },
+      { q: 'くり返しの予定を、1回だけ変えたい', a: 'くり返しの予定を直すと、すべての回が変わります（1回だけ変えることはできません）。その回だけ違うときは、別の予定として足してください。消すときも、すべての回が消えます。' },
+      { q: '予約枠の案内は、どう決まる？', a: '「受けられる曜日と時間」から、カレンダーの予定や集客窓口の予約と重ならない枠を出します。枠を押すと案内から外せます。「案内の文をコピー」で、メールやSNSにそのまま貼れます。' },
+      { q: '消した予定は戻せる？', a: '消した直後に出る「元に戻す」で戻せます。サンプルの予定は、書きかえて保存すると自分の予定になり、「サンプルを片付ける」を押しても残ります。' },
+    ],
+    tour: [
+      { target: '.app-calendar .app-actions', title: 'よく使うボタン', body: '「予定を追加」で予定を入れ、「予約枠の案内」で空き時間の案内文をつくります。右のボタンは、書き出しと読み込みです。' },
+      { target: '.app-calendar .cal-quick', title: 'すばやく追加', body: '「明日 19時 打ち合わせ」のように書いて「追加」を押すと、日付と時刻を読み取って予定に入ります。' },
+      { target: '.app-calendar .cal-bar', title: '表示の切りかえ', body: '矢印で前や次へ、「今日」で今日に戻ります。「月」「週」「予定リスト」を押すと、見え方が変わります。' },
+      { target: '.app-calendar .cal-filters', title: '種類で絞りこむ', body: '種類を押すと、その予定を隠せます。点線の予定はほかのツールから来たもので、押すとそのツールが開きます。' },
+      { target: '.app-calendar .cal-view', title: 'カレンダー', body: '予定を押すと直せます。日付を押すと、その日に予定を足せます（スマホでは下に出る「この日に追加」から）。' },
+    ],
+    related: ['inbox', 'sns', 'invoice', 'dashboard'],
+  });
+  G.tasks([
+    { id: 'calendar-quick', app: 'calendar', target: '.app-calendar .cal-quick-row', title: '予定を入れる',
+      words: '予定 追加 入れる 登録 書く スケジュール 予約 打ち合わせ 面談 レッスン 体験会 明日 来週 すばやく 入力 よてい ついか とうろく',
+      tip: '「明日 19時 打ち合わせ」のように書いて「追加」を押すと、予定に入ります。' },
+    { id: 'calendar-booking', app: 'calendar', target: '.app-calendar .app-actions .btn:not(.primary):not(.cal-io-btn)', title: '予約の空き時間を案内する',
+      words: '予約枠 予約 空き 空いている 空き時間 日程 日時 候補 日程調整 案内 調整 枠 コピー 送る 体験会 アポ よやく あき にってい',
+      tip: 'ここを押すと、予定と重ならない空き時間から、そのまま送れる案内の文ができます。' },
+    { id: 'calendar-csv', app: 'calendar', target: '.app-calendar .cal-io-btn', title: 'Googleカレンダー用に書き出す',
+      words: 'Google グーグル Googleカレンダー CSV 書き出し エクスポート 移す 連携 同期 保存 ダウンロード ics スマホ iPhone',
+      tip: 'ここを押して「Googleカレンダー用CSV」を選ぶと、取りこめるファイルで保存できます。' },
+    { id: 'calendar-import', app: 'calendar', target: '.app-calendar .cal-io-btn', title: 'ほかのカレンダーの予定を取りこむ',
+      words: 'ics 読み込み 読み込む 取りこむ 取り込む インポート 移す 引っ越し Google Googleカレンダー iPhone Outlook ファイル よみこみ とりこみ',
+      tip: 'ここを押して「ファイルを選ぶ」から .ics を選ぶと、中身を確かめてから読み込めます。' },
+    { id: 'calendar-repeat', app: 'calendar', target: '.app-calendar .app-actions .btn.primary', title: '毎週・毎月の予定を入れる',
+      words: 'くり返し 繰り返し 毎週 毎月 定期 定例 曜日 週1 月1 習い事 レッスン くりかえし まいしゅう まいつき',
+      tip: 'ここを押して、「くり返し」の欄で毎週か毎月を選びます。' },
+    { id: 'calendar-view', app: 'calendar', target: '.app-calendar .cal-bar .seg', title: '週ごと・リストで見る',
+      words: '週 月 リスト 一覧 予定リスト 表示 切り替え 切りかえ 見え方 今週 3日 しゅう いちらん',
+      tip: '「月」「週」「予定リスト」を押すと、見え方が変わります。' },
+    { id: 'calendar-filter', app: 'calendar', target: '.app-calendar .cal-filters', title: 'ほかのツールの予定を隠す',
+      words: '隠す 非表示 消す 絞りこみ 絞り込み フィルター 種類 色 点線 ほかのツール 入金期限 投稿日 SNS 請求書 予約 私用 かくす',
+      tip: '種類を押すと隠せます。点線の予定は、「ほかのツールの予定も表示」を外すと消えます。' },
+    { id: 'calendar-week', app: 'calendar', target: '.app-calendar .cal-foot', title: '週のはじまりを月曜にする',
+      words: '月曜 日曜 週のはじまり 週の始まり 月曜始まり 月曜日 並び 設定 げつよう',
+      tip: 'ここで「月曜」を押すと、カレンダーが月曜はじまりになります。' },
+  ]);
+
+  /* ───────── リーンキャンバス ───────── */
+  G.help('canvas', {
+    lead: '事業の骨組みとお客さんの姿を、1枚にまとめる場所です。',
+    can: [
+      '課題・お客さん・価値など9つの欄で、事業を1枚に',
+      'お客さん1人の姿（ペルソナ）を、具体的に描く',
+      '「見直しのヒント」が、抜けや多すぎを知らせる',
+      '画像で保存したり、文章（Markdown）でコピーしたり',
+      '何枚でも作れて、複製して書き比べられる',
+    ],
+    first: [
+      { text: '番号の順に、短い言葉で書きこむ', task: 'canvas-write' },
+      { text: 'お客さん像（ペルソナ）を1枚つくる', task: 'canvas-persona' },
+      { text: '「見直しのヒント」で抜けを確かめる', task: 'canvas-checks' },
+    ],
+    faq: [
+      { q: 'サンプルを書きかえたら、どうなる？', a: '書きかえた時点で、自分のキャンバスとして保存されます。「サンプルを片付ける」を押しても、書きかえたものは残ります。まっさらから作るなら「新しく作る」を押してください。' },
+      { q: '項目を直したい・並べかえたい', a: '項目を押すと書きかえられます（Enterで決定）。パソコンはドラッグで、スマホは矢印のボタンで並べかえます。消したときは、直後に出る「元に戻す」で戻せます。' },
+      { q: '1つの欄に、いくつまで書ける？', a: '8つまでです。3つほどに絞ると1枚で見渡せるので、多いときは欄の下に知らせが出ます。書いたことは仮説なので、お客さんに会って確かめたら書きかえましょう。' },
+      { q: '書いた内容は、ほかのツールに入る？', a: '自動では入りません（書くたびに保存はされます）。「文章でコピー」で写して、計画書やホームページの文章づくりに使ってください。ペルソナの決め手は、ホームページの最初に置くと伝わります。' },
+      { q: '「AIと考える」のボタンが出ない', a: 'AIのボタンは、Claude のページとして開いたときだけ出ます。ダウンロードしたファイルで開いたときは出ませんが、ほかの機能はすべて使えます。' },
+    ],
+    tour: [
+      { target: '.app-canvas .cv-bar, .app-canvas .empty', title: 'キャンバスを作る・選ぶ', body: 'リーンキャンバスかペルソナを作って始めます。作ったキャンバスは、ここで切りかえたり、名前を変えたり、複製・削除したりできます。' },
+      { target: '.app-canvas .cv-export', title: '保存とコピー', body: '「画像で保存」で1枚の画像（PNG）に、「文章でコピー」で見出しつきの文章になります。' },
+      { target: '.app-canvas .cv-block', title: '欄に書きこむ', body: '番号の順に、問いかけに答えて書きます。点線の枠に書いてEnterで追加、項目を押すと書きかえられます。' },
+      { target: '.app-canvas .cv-side > .card', title: '見直しのヒント', body: '書いた内容から、抜けや多すぎるところを知らせます。「見直す」と出た項目から手を入れてください。' },
+      { target: '.app-canvas .cv-howto', title: '書き方', body: '迷ったら、ここを押してください。書く順番やこつ、並べかえ方が読めます。' },
+    ],
+    related: ['money', 'editor', 'sns', 'roadmap'],
+  });
+  G.tasks([
+    { id: 'canvas-write', app: 'canvas', target: '.app-canvas .cv-block, .app-canvas .empty .btn.primary', title: 'リーンキャンバスを書く',
+      words: 'リーンキャンバス キャンバス 書く 書き方 埋める 課題 顧客 顧客セグメント 価値提案 ソリューション 事業 骨組み ビジネスモデル アイデア 整理 lean canvas かだい こきゃく じぎょう ほねぐみ',
+      tip: '問いかけに答えて書き、Enterで追加します。まだ1枚もなければ「リーンキャンバスを作る」から。' },
+    { id: 'canvas-persona', app: 'canvas', target: '.app-canvas .cv-acts .btn:not(.cv-mini), .app-canvas .empty .btn:not(.primary)', title: 'お客さん像（ペルソナ）を作る',
+      words: 'ペルソナ お客さん像 顧客像 ターゲット 理想のお客さん 客層 人物像 お客様 誰に 新しく作る おきゃくさん こきゃく',
+      tip: 'ここからペルソナを作ると、お客さん1人の姿を描く1枚ができます。' },
+    { id: 'canvas-png', app: 'canvas', target: '.app-canvas .cv-export', title: 'キャンバスを画像で保存する',
+      words: '画像 保存 PNG 写真 ダウンロード 書き出し 印刷 共有 送る 見せる 発表 がぞう',
+      tip: '「画像で保存」を押すと、1枚の画像（PNG）で保存できます。' },
+    { id: 'canvas-copy', app: 'canvas', target: '.app-canvas .cv-export', title: 'キャンバスを文章にしてコピーする',
+      words: '文章 コピー テキスト Markdown マークダウン 貼る 貼り付け 計画書 メモ note ぶんしょう',
+      tip: '「文章でコピー」を押すと、見出しつきの文章（Markdown）でコピーできます。' },
+    { id: 'canvas-checks', app: 'canvas', target: '.app-canvas .cv-side > .card', title: '足りないところを確かめる',
+      words: '見直し ヒント チェック 足りない 抜け 確認 アドバイス 添削 評価 講評 AI みなおし',
+      tip: '「見直す」と出た項目から手を入れると、筋の通った1枚になります。' },
+    { id: 'canvas-switch', app: 'canvas', target: '.app-canvas .cv-pick', title: 'キャンバスを切りかえる・複製する',
+      words: '切り替え 切りかえ 選ぶ 一覧 複製 コピー 名前 名前を変える 削除 消す 何枚 別の きりかえ',
+      tip: 'ここで作ったキャンバスを選びます。名前を変える・複製・削除は、すぐそばのボタンから。' },
+    { id: 'canvas-move', app: 'canvas', target: '.app-canvas .cv-item', title: '項目を並べかえる・消す',
+      words: '並べかえ 並び替え 順番 移動 ドラッグ 消す 削除 直す 書きかえ 編集 修正 元に戻す ならべかえ けす',
+      tip: '押すと書きかえ。パソコンはドラッグ、スマホは矢印で並べかえ、×で消せます。' },
+  ]);
+
+  /* ───────── 開業ロードマップ ───────── */
+  G.help('roadmap', {
+    lead: '開業までの手順を順に並べ、いまやる一歩をひとつだけ示す場所です。',
+    can: [
+      'いまやることを「いまの一歩」でひとつだけ示す',
+      '副業のルールや開業届など、確かめることが分かる',
+      '済んだ手順にチェックをつけて、進み具合を見る',
+      '手順ごとに、相談した相手や期限をメモできる',
+      '手順から、関係するツールへそのまま移れる',
+    ],
+    first: [
+      { text: '「いまの一歩」を見て、ひとつだけ進める', task: 'roadmap-next' },
+      { text: '副業・兼業のルールを確かめる', task: 'roadmap-rule' },
+      { text: '済んだ手順にチェックをつける', task: 'roadmap-check' },
+    ],
+    faq: [
+      { q: '最初からチェックが付いているのは？', a: '例として付けてあります。「サンプルを片付ける」を押すと外れます（ほかのツールの例も消えます）。先に付け外しやメモをすると、例のチェックもそのまま自分の記録になるので、手で外してください。' },
+      { q: '公立学校の先生は、何を確かめればいい？', a: '報酬を得て事業をするには、教育委員会などの許可が必要な場合があります（地方公務員法38条・教育公務員特例法17条）。始める前に相談し、育休中なら手当金への影響もあわせて確かめてください。' },
+      { q: '期限や手続きの中身は、これで正しい？', a: '「確かめること」の札がついた手順は、期限や条件が変わることがあります。税務署・自治体・勤め先の最新の案内で確かめてから進めてください。' },
+      { q: '自分だけの手順を足せる？', a: '「手順を追加」を押して、やることと段階を選びます。足した手順には「自分で追加」の札がつき、「この手順を消す」で消せます。' },
+    ],
+    tour: [
+      { target: '.app-roadmap .rm-next', title: 'いまの一歩', body: '次にやることが、ひとつだけ出ます。済んだら「済みにする」を押すと、次の一歩に進みます。' },
+      { target: '.app-roadmap .rm-stage > summary', title: '段階ごとのまとまり', body: '手順は6つの段階に分かれています。見出しを押すと開け閉めでき、「3/4」のような数字は済んだ数です。' },
+      { target: '.app-roadmap [data-step="rule"]', title: '副業・兼業のルール', body: '公立学校の先生は、許可が要る場合があります。確かめたら左の四角を押し、相談した相手は下のメモへ。' },
+    ],
+    related: ['dashboard', 'money', 'canvas', 'invoice'],
+  });
+  G.tasks([
+    { id: 'roadmap-next', app: 'roadmap', target: '.app-roadmap .rm-next', title: 'いまやることを知る',
+      words: 'いまの一歩 次 やること 何から 始める 最初 進め方 順番 手順 わからない なにから つぎ 開業 準備 ロードマップ かいぎょう じゅんび',
+      tip: '次にやることが、ここにひとつだけ出ます。済んだら「済みにする」を押します。' },
+    { id: 'roadmap-rule', app: 'roadmap', params: { step: 'rule' }, target: '.app-roadmap [data-step="rule"]', title: '副業・兼業のルールを確かめる',
+      words: '副業 兼業 許可 公務員 先生 教員 教師 学校 教育委員会 就業規則 会社員 勤め先 育休 育児休業 給付金 手当金 規定 ルール 届け出 ふくぎょう けんぎょう',
+      tip: '公立学校の先生は、教育委員会などの許可が必要な場合があります。始める前に確かめます。' },
+    { id: 'roadmap-check', app: 'roadmap', target: '.app-roadmap .rm-check', title: '済んだ手順にチェックをつける',
+      words: '済み チェック 完了 終わった できた 進み具合 進捗 外す 戻す 未済 達成 すみ',
+      tip: '左の四角を押すと済みになり、もう一度押すと未済に戻ります。' },
+    { id: 'roadmap-kaigyo', app: 'roadmap', params: { step: 'kaigyo' }, target: '.app-roadmap [data-step="kaigyo"]', title: '開業届と青色申告を確かめる',
+      words: '開業届 青色申告 届出 届け出 税務署 個人事業主 個人事業 申請 手続き e-Tax 控除 65万円 かいぎょうとどけ あおいろしんこく',
+      tip: '開業届は始めた日から1か月以内、青色申告の申請は2か月以内に出します。費用はかかりません。' },
+    { id: 'roadmap-invoice', app: 'roadmap', params: { step: 'invoice-reg' }, target: '.app-roadmap [data-step="invoice-reg"]', title: 'インボイス登録をするか決める',
+      words: 'インボイス インボイス制度 登録 適格請求書 消費税 登録番号 T番号 免税 課税 取引先 とうろく しょうひぜい',
+      tip: '取引先が会社や学校なら、登録番号を求められることがあります。迷ったら税務署か税理士へ。' },
+    { id: 'roadmap-add', app: 'roadmap', target: '.app-roadmap .app-actions .btn', title: '自分の手順を足す',
+      words: '追加 足す 自分 手順 やること カスタム 増やす 書き足す 新しい TODO タスク ついか',
+      tip: 'ここを押すと、やることと段階を選んで、自分の手順を足せます。' },
+    { id: 'roadmap-memo', app: 'roadmap', target: '.app-roadmap .rm-memo', title: '相談したことをメモする',
+      words: 'メモ 記録 書く 相談 期限 決めたこと 残す 控え ノート めも',
+      tip: '手順ごとに、相談した相手や期限を書いておけます。打つと自動で保存されます。' },
+  ]);
 })();
 
 /* ---- js/start.js ---- */

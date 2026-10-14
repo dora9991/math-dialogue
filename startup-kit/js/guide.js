@@ -28,6 +28,18 @@
       .replace(/[\s・、。,.!?！？「」『』（）()［］\[\]〜~ー－\-_/／:：]+/g, '');
   }
 
+  // ふだんの言い方 → ツールの中の言葉（ひらがな・カタカナ・漢字の違いを越えるための小さな辞書）
+  const ALIAS = {
+    'おかね': '売上 請求 入金 料金 利益 お金 値段', 'かね': '売上 請求 入金 料金 お金', 'もうけ': '利益 黒字 売上', 'うりあげ': '売上', 'しゅうにゅう': '収入 売上',
+    'きゃく': 'お客 顧客 問い合わせ ペルソナ', 'おきゃく': 'お客 顧客 問い合わせ ペルソナ', 'こきゃく': '顧客 問い合わせ', 'よやく': '予約', 'よてい': '予定',
+    'いんすた': 'instagram インスタ', 'ついったー': 'x', 'twitter': 'x', 'えっくす': 'x', 'らいん': 'line', 'ゆーちゅーぶ': 'youtube',
+    'ほーむぺーじ': 'ホームページ サイト', 'hp': 'ホームページ', 'さいと': 'ホームページ サイト', 'うぇぶ': 'ホームページ web',
+    'どうが': '動画', 'むーびー': '動画', 'えいぞう': '動画', 'ちらし': 'チラシ qr', 'めいし': '名刺 qr', 'めーる': 'メール',
+    'ぜいきん': 'インボイス 源泉 確定申告 消費税', 'ぜい': 'インボイス 源泉 消費税', 'かくていしんこく': '確定申告', 'かいぎょう': '開業', 'ふくぎょう': '副業 兼業', 'けんぎょう': '兼業 副業',
+    'けいかく': '計画', 'しょるい': '書類 見積 請求', 'みつもり': '見積', 'せいきゅう': '請求', 'りょうしゅう': '領収', 'すまほ': 'スマホ', 'でーた': 'データ バックアップ', 'ほぞん': '保存 バックアップ 書き出し',
+  };
+  const expand = (w) => { const a = ALIAS[w]; return a ? [w].concat(a.split(' ').map(norm)) : [w]; };
+
   // いまの状態で意味のある項目か（例：サンプルを片付けたあとの「サンプルを片付ける」は出さない）
   const applies = (t) => { try { return !t.when || !!t.when(); } catch (e) { return true; } };
   let pins = [];
@@ -48,21 +60,26 @@
     search(q, limit = 8) {
       const raw = String(q || '').trim();
       if (!raw) return [];
-      const words = raw.split(/[\s　]+/).map(norm).filter(Boolean);
-      const out = [];
+      const words = raw.split(/[\s　]+/).map(norm).filter(Boolean).map(expand);
+      const all = [], some = [];
       for (const t of tasks.values()) {
         if (t.hidden || !applies(t)) continue;
         const def = window.Kit && Kit.appDef ? Kit.appDef(t.app) : null;
         const title = norm(t.title), hay = title + ' ' + norm(t.words) + ' ' + norm(def ? def.title : '');
-        let score = 0, ok = true;
-        for (const w of words) {
-          if (!hay.includes(w)) { ok = false; break; }
+        let score = 0, hit = 0;
+        for (const alts of words) {
+          const w = alts.find((x) => x && hay.includes(x));
+          if (!w) continue;
+          hit++;
           score += title.startsWith(w) ? 6 : title.includes(w) ? 4 : 1;
         }
-        if (ok) out.push({ t, score: score + (pins.includes(t.id) ? 1 : 0) });
+        const item = { t, hit, score: score + (pins.includes(t.id) ? 1 : 0) };
+        if (hit === words.length) all.push(item); else if (hit) some.push(item);
       }
-      out.sort((a, b) => b.score - a.score || a.t.title.length - b.t.title.length);
-      return out.slice(0, limit).map((x) => x.t);
+      // ぜんぶの言葉に合うものを先に。なければ、いくつかに合うものを（合った数の多い順）
+      const list = all.length ? all : some;
+      list.sort((a, b) => b.hit - a.hit || b.score - a.score || a.t.title.length - b.t.title.length);
+      return list.slice(0, limit).map((x) => x.t);
     },
   };
 })();
