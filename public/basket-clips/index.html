@@ -596,6 +596,12 @@ a.btn { text-decoration: none; }
     const GLOBAL_SCALES = [1, 0.9, 1.1, 0.8, 1.22, 0.7, 1.4];   // 画面全体から探すときに順に試す倍率（指定したときの大きさ＝1 から。前後 8% は詰めるときに試すので、0.65〜1.5 倍を切れ目なく覆う）
     const SC_STEP = 1.03;      // 追跡中に試す倍率の刻み
     const PRIOR_FRAMES = 150;  // 見失ってから「いるはずの場所」を信じるコマ数（約10秒。長く信じると、似た模様の床などに誤って張り付く）
+    // （バスケ得点クリップで足したもの）リングが画面の外にはみ出した位置の扱い。そこではリングの色で確かめられないので、
+    // 画面の端の、少し似ているだけの物（一致 0.6 ほど）に張り付いたまま、本物のゴールが戻ってきても探し直さないことがあった
+    // （合成映像で、ゴールを 40 秒見失い、その間の得点を落とした）。
+    const TH_ACQ_EDGE = 0.8;   // リングが画面の外になる位置で捉えるには、これだけよく合うこと
+    const TH_KEEP_EDGE = 0.75; // リングが画面の外のまま OUT_MAX コマを過ぎたら、これ未満の一致では追い続けない（手放して探し直す）
+    const OUT_MAX = 15;
     const clampN = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
     /* ---------- ゴール追跡 ---------- */
@@ -612,7 +618,8 @@ a.btn { text-decoration: none; }
         x: mark.box.x / k, y: mark.box.y / k,
         fx: 0, fy: 0, fine: 0,          // 1画素より細かい位置のずれ、倍率の端数（SC_STEP の何乗ぶんか）
         drift: 0,                       // 見失ってからの全体の動きの合計（推定位置のあやしさ）
-        tracked: false, score: 0, lost: 1e6, frame: 0, everSeen: false
+        tracked: false, score: 0, lost: 1e6, frame: 0, everSeen: false,
+        outN: 0                         // リングが画面の外のまま追っているコマ数
       };
       function buildTemplate(scale) {
         // 同じ倍率のテンプレートは作り直さない（作るのが重い）
@@ -672,6 +679,13 @@ a.btn { text-decoration: none; }
         st.fy = peak(V.nccAt(gray, w, h, T, st.x, st.y - 1), V.nccAt(gray, w, h, T, st.x, st.y + 1));
       }
       function centerOf() { return { cx: st.x + st.T.tw / 2, cy: st.y + st.T.th / 2 }; }
+      /* 候補の位置（左上 b.x,b.y・倍率 b.scale）で、リングの中心が画面の中に入るか */
+      function rimIn(b) {
+        const rx = (b.x + b.T.tw / 2 + (st.rimOff.x - st.bw / 2) * b.scale) * k, ry = (b.y + b.T.th / 2 + (st.rimOff.y - st.bh / 2) * b.scale) * k;
+        return rx > 0 && rx < srcW && ry > 0 && ry < srcH;
+      }
+      /* 見失った後に捉えてよいか：リングが画面の中か、画面の外でもよく合う */
+      const acqOK = (b, th) => b && b.score >= th && (rimIn(b) || b.score >= TH_ACQ_EDGE);
 
       /* 1コマ進める。gray: 解析幅のグレースケール、quarter: その 1/4 の解像度、shift: 全体の動き（解析幅の画素） */
       function update(gray, w, h, quarter, shift) {
@@ -705,7 +719,12 @@ a.btn { text-decoration: none; }
             const far = tryScales(gray, w, h, ccx, ccy, [0.8, 0.88, 1.14, 1.25].map((f) => b.scale * f).filter((sc) => sc > 0.45 && sc < 2.4), 6, 2);
             if (far && far.score > b.score + 0.15) { b = far; st.fine = 0; }
           }
-          if (b.score >= TH_KEEP) { accept(b); subpixel(gray, w, h); return status(); }
+          if (b.score >= TH_KEEP) {
+            const inF = rimIn(b);
+            st.outN = inF ? 0 : st.outN + 1;
+            if (inF || st.outN <= OUT_MAX || b.score >= TH_KEEP_EDGE) { accept(b); subpixel(gray, w, h); return status(); }
+            st.outN = 0;      // 画面の外の、それほど似ていない物に長く張り付いている → 手放して探し直す
+          }
           st.tracked = false; st.lost++; st.score = b.score;
           st.x = cx - st.T.tw / 2; st.y = cy - st.T.th / 2;
           st.drift += Math.abs(sdx) + Math.abs(sdy);
@@ -721,7 +740,7 @@ a.btn { text-decoration: none; }
           const sc = [st.scale, st.scale * 1.08, st.scale / 1.08][st.frame % 3];
           if (sc > 0.45 && sc < 2.4) {
             const b = nearSearch(gray, w, h, quarter, sc, cx, cy, R);
-            if (b && b.score >= TH_NEAR) { accept(b); subpixel(gray, w, h); return status(); }
+            if (acqOK(b, TH_NEAR)) { st.outN = 0; accept(b); subpixel(gray, w, h); return status(); }
           }
         }
         // (b) 画面全体から探す（1/4 の解像度で粗く → 候補だけ解析幅で詰める）。1コマにつき倍率を1つ。
@@ -738,9 +757,10 @@ a.btn { text-decoration: none; }
               const b2 = tryScales(gray, w, h, b.x + b.T.tw / 2, b.y + b.T.th / 2, [sc * 1.08, sc / 1.08], 4, 2);
               if (b2.score > b.score) b = b2;
             }
+            if (!acqOK(b, TH_ACQ)) continue;      // リングが画面の外になる、それほど似ていない位置は捉えない
             if (!bestB || b.score > bestB.score) bestB = b;
           }
-          if (bestB && bestB.score >= TH_ACQ) { accept(bestB); subpixel(gray, w, h); return status(); }
+          if (bestB) { st.outN = 0; accept(bestB); subpixel(gray, w, h); return status(); }
         }
         return status();
       }
