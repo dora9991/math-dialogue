@@ -1177,6 +1177,13 @@
       if (PB.held) setHeld(false, PB.at); else syncMedia(S.t, true);
     } else { syncMedia(S.t, false); requestDraw(); }
     updateTransport();
+    reveal();
+  }
+  // 再生位置がタイムラインの外にあれば、見える所までずらす（操作で位置を変えたときだけ）
+  function reveal() {
+    if (!V || !V.ph) return;
+    const sc = V.tlScroll, x = xOf(S.t);
+    if (sc.clientWidth && (x > sc.scrollLeft + sc.clientWidth - 24 || x < sc.scrollLeft + 8)) sc.scrollLeft = Math.max(0, x - sc.clientWidth * 0.3);
   }
   const stepBy = (d) => { if (PB.playing) pause(); seek(S.t + d); };
 
@@ -1658,7 +1665,10 @@
     target = target || {};
     pause();
     const fresh = [], relinked = [];
-    let i = 0;
+    let i = 0, blocked = false;
+    // 画面の設定（CSP）でファイルの再生が止められたときは、そう伝える
+    const onCsp = (e) => { if (/^blob/.test(String(e.blockedURI || ''))) blocked = true; };
+    document.addEventListener('securitypolicyviolation', onCsp);
     for (const f of files) {
       i++;
       const type = mediaType(f);
@@ -1675,10 +1685,12 @@
         const m = await loadMedia(f, type, id);
         (id ? relinked : fresh).push(m);
       } catch (e) {
-        Kit.toast('「' + f.name + '」を開けませんでした。' + (type === 'video' ? 'この形式の動画は、このブラウザでは再生できないようです。MP4（H.264）で保存したものを試してください。' : 'ファイルが壊れていないか確かめてください。'), { type: 'bad', ms: 8000 });
+        if (blocked) Kit.toast('この画面では、動画や音楽のファイルを開けないようになっています。手元のブラウザでみせびらきを開くと使えます', { type: 'bad', ms: 9000 });
+        else Kit.toast('「' + f.name + '」を開けませんでした。' + (type === 'video' ? 'この形式の動画は、このブラウザでは再生できないようです。MP4（H.264）で保存したものを試してください。' : 'ファイルが壊れていないか確かめてください。'), { type: 'bad', ms: 8000 });
       }
-      if (target.relink) break;
+      if (target.relink || blocked) break;
     }
+    document.removeEventListener('securitypolicyviolation', onCsp);
     setBusy('');
     if (!V) return;
     // つなぎ直した動画が前より短いときは、使う範囲を合わせる
@@ -1799,7 +1811,7 @@
     if (!V) return;
     V.work.dataset.panel = p;
     V.switchSeg.setValue(p);
-    if (p === 'timeline') { if (S.zoomAuto) S.zoom = 0; renderTimeline(); }
+    if (p === 'timeline') { if (S.zoomAuto) S.zoom = 0; renderTimeline(); reveal(); }
   }
   function setBusy(msg) { if (!V) return; V.busy.textContent = msg; V.busy.hidden = !msg; }
 

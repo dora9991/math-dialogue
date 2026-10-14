@@ -1414,6 +1414,16 @@ ${scriptsHtml(e)}
       const ro = window.ResizeObserver ? new ResizeObserver(fit) : null;
       if (ro) ro.observe(stage); else window.addEventListener('resize', fit);
       const post = (m) => { if (frame.contentWindow) frame.contentWindow.postMessage(m, '*'); };
+      // ページのスクリプトが動かない環境（CSP など）では、差分の入れかえをやめて丸ごと読み直す
+      let scriptless = false, loads = 0;
+      frame.addEventListener('load', () => {
+        const n = ++loads;
+        setTimeout(() => {
+          if (ready || n !== loads) return;
+          scriptless = true;
+          if (pending != null) { const p = pending; pending = null; frame.srcdoc = p; }
+        }, 1500);
+      });
       const onMsg = (e) => {
         if (e.source !== frame.contentWindow) return;
         const m = e.data;
@@ -1429,7 +1439,7 @@ ${scriptsHtml(e)}
         el: stage, frame, fit,
         get ready() { return ready; },
         load(html) { ready = false; pending = null; frame.srcdoc = html; setTimeout(fit, 0); },
-        update(html) { if (ready) post({ type: 'mise:update', html }); else pending = html; },
+        update(html) { if (ready) post({ type: 'mise:update', html }); else if (scriptless) frame.srcdoc = html; else pending = html; },
         post(m) { if (ready) post(m); },
         setDevice(d) { device = d === 'phone' ? 'phone' : 'pc'; stage.dataset.device = device; fit(); },
         destroy() { if (ro) ro.disconnect(); else window.removeEventListener('resize', fit); window.removeEventListener('message', onMsg); },

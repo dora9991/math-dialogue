@@ -58,7 +58,7 @@
 .inv-side{display:grid;gap:10px;min-width:0;align-content:start}
 @container inved (min-width:860px){
   .inv-ed-switch{display:none}
-  .inv-ed-grid{grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);align-items:start}
+  .inv-ed-grid{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);align-items:start}
   .inv-side{position:sticky;top:16px}
   .inv-paper canvas{max-width:calc((100dvh - 170px) * .7072)}
 }
@@ -96,13 +96,15 @@
 .inv-cell input.r{text-align:right;font-variant-numeric:tabular-nums}
 .inv-i-amt output{font-weight:700;font-variant-numeric:tabular-nums;min-height:38px;display:flex;align-items:center;justify-content:flex-end;white-space:nowrap}
 .inv-mark{color:var(--shu);font-weight:700;margin-left:2px}
-@container invitems (min-width:520px){
+@media (pointer:coarse){.inv-keyhint{display:none}}
+@container invitems (min-width:470px){
   .inv-i-act .inv-mv{display:inline-flex}
   .inv-i-act .inv-i-menu{display:none}
-  .inv-item{grid-template-columns:24px minmax(0,.8fr) minmax(0,.7fr) minmax(0,1.1fr) minmax(0,1.25fr) minmax(0,1fr) auto;
-    grid-template-areas:"no name name name name name act" "no qty unit price rate amt amt"}
+  .inv-item{grid-template-columns:24px minmax(0,.8fr) minmax(0,.7fr) minmax(0,1.1fr) minmax(0,1.2fr) minmax(122px,1fr);
+    grid-template-areas:"no name name name name act" "no qty unit price rate amt"}
+  .inv-i-act{justify-content:flex-end}
 }
-@container invitems (min-width:760px){
+@container invitems (min-width:880px){
   .inv-ihead{display:grid;gap:8px;padding:0 10px;font-size:12px;font-weight:700;color:var(--ink-3);grid-template-columns:24px minmax(0,1fr) 72px 64px 108px 122px 104px 126px}
   .inv-ihead span.r{text-align:right}
   .inv-item{grid-template-columns:24px minmax(0,1fr) 72px 64px 108px 122px 104px 126px;grid-template-areas:"no name qty unit price rate amt act";align-items:center;padding:6px 10px}
@@ -143,7 +145,7 @@
   };
   const TYPE_KEYS = ['estimate', 'invoice', 'receipt'];
   const RATES = [10, 8, 0];
-  const RATE_LABEL = { 10: '10%', 8: '8%（軽減）', 0: '対象外・非課税' };
+  const RATE_LABEL = { 10: '10%', 8: '8%軽減', 0: '対象外' };
   const RATE_DOC = { 10: '10%対象', 8: '8%対象（軽減）', 0: '非課税・対象外' };
   const ROUND = { floor: '切り捨て', round: '四捨五入', ceil: '切り上げ' };
   const DUE_RULES = { eom1: '翌月末', eom0: '発行した月の末日', d30: '発行日から30日後', d14: '発行日から14日後' };
@@ -923,19 +925,23 @@
         Kit.toast('複製しました（' + d.number + '）');
         showEditor(d);
       }
+      // すでに作ってあるときは、もう1枚作るか確かめる
+      const again = async (made, what) => !made || Kit.confirm({ title: 'もう1枚作りますか', body: 'この書類からは、すでに' + what + ' ' + (made.number || '') + ' を作っています。', ok: 'もう1枚作る' });
       async function toInvoice(est) {
+        if (!(await again(st.docs.find((x) => x.type === 'invoice' && x.fromEstimate === est.id), '請求書'))) return;
         const d = await putDoc(derive(est, 'invoice', { fromEstimate: est.id, fromLead: est.fromLead || '' }));
         Kit.toast('見積書 ' + (est.number || '') + ' から請求書をつくりました');
         showEditor(d);
       }
       async function toReceipt(inv) {
+        if (!(await again(st.docs.find((x) => x.type === 'receipt' && x.fromInvoice === inv.id), '領収書'))) return;
         const d = await putDoc(derive(inv, 'receipt', { fromInvoice: inv.id, fromLead: inv.fromLead || '', issueDate: inv.paidAt || today(), notes: st.settings.notes.receipt || '' }));
         Kit.toast('請求書 ' + (inv.number || '') + ' の領収書をつくりました');
         showEditor(d);
       }
       async function markPaid(inv) {
         await putDoc(Object.assign(Kit.clone(inv), { status: 'paid', paidAt: inv.paidAt || today() }));
-        Kit.toast((inv.number || '請求書') + ' を入金済みにしました', { action: { label: '領収書を作る', onClick: () => { const d = st.docs.find((x) => x.id === inv.id); if (d) toReceipt(d); } } });
+        Kit.toast((inv.number || '請求書') + ' を入金済みにしました', { action: { label: '領収書を作る', onClick: () => { const d = st.docs.find((x) => x.id === inv.id); if (d && root.isConnected) toReceipt(d); } } });
       }
       async function removeDoc(d, after) {
         const ok = await Kit.confirm({
@@ -1573,12 +1579,12 @@
           sec('書類', null, basicsBody),
           sec('宛先と件名', null, clientBody),
           sec('明細', null, itemsWarn, itemsBox,
-            h('div', { class: 'row' }, Kit.btn('行を追加', addItem, { icon: 'plus' }), h('span', { class: 'small muted' }, 'Enter で次の行／Alt＋↑↓ で並べかえ')),
+            h('div', { class: 'row' }, Kit.btn('行を追加', addItem, { icon: 'plus' }), h('span', { class: 'small muted inv-keyhint' }, 'Enter で次の行／Alt＋↑↓ で並べかえ')),
             h('details', { class: 'help' }, h('summary', null, '税率の選び方'),
               h('ul', null,
                 h('li', null, '10%：ふつうの商品・サービス（レッスン、講座、教材、出張講師料、交通費など）'),
                 h('li', null, '8%（軽減）：飲食料品（お酒・外食を除く）と定期購読の新聞。8%の行には書類で ※ が付き、「※は軽減税率(8%)対象」と書かれます。'),
-                h('li', null, '対象外・非課税：消費税がかからないもの（立て替えた実費など）')))),
+                h('li', null, '対象外：消費税がかからないもの（非課税・不課税、立て替えた実費など）')))),
           sec('税と合計', null,
             h('div', { class: 'row' }, h('span', { class: 'small ink-2' }, '単価の入れ方'), modeSeg),
             Kit.field({ label: '消費税の端数処理', input: roundSel, id: 'inv-f-round', hint: '消費税の1円未満は、税率ごとに合計してから1回だけ処理します（行ごとには丸めません）。' }),
