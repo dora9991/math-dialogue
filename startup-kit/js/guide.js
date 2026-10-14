@@ -13,7 +13,9 @@
      related: ['つながるアプリid', …] }
    task の形：
    { id, title: 'やりたいこと（〜する）', words: '言いかえ・検索語（空白区切り）', app, params?, target?, targetPhone?, tip: '光らせたときの一言',
-     pin?: true（検索の「よく使うこと」に出す）, hidden?: true（検索には出さない。入口のページなどから呼ぶだけ）, run?: () => {}（光らせる代わりに動かす） } */
+     hidden?: true（検索には出さない。入口のページなどから呼ぶだけ）, when?: () => boolean（いまの状態で意味があるときだけ出す）,
+     run?: () => {}（光らせる代わりに動かす） }
+   「よく使うこと」は Guide.pinned([id, …]) で決める。 */
 (function () {
   'use strict';
   const helps = new Map();
@@ -26,8 +28,15 @@
       .replace(/[\s・、。,.!?！？「」『』（）()［］\[\]〜~ー－\-_/／:：]+/g, '');
   }
 
+  // いまの状態で意味のある項目か（例：サンプルを片付けたあとの「サンプルを片付ける」は出さない）
+  const applies = (t) => { try { return !t.when || !!t.when(); } catch (e) { return true; } };
+  let pins = [];
+
   window.Guide = {
     norm,
+    applies,
+    // 検索の「よく使うこと」に出す項目（順番どおり）
+    pinned(ids) { if (ids) pins = ids.slice(); return pins.map((id) => tasks.get(id)).filter((t) => t && applies(t)); },
     help(id, def) { helps.set(id, Object.assign({ can: [], first: [], faq: [], tour: [], related: [] }, def)); },
     getHelp(id) { return helps.get(id) || null; },
     allHelp() { return [...helps.entries()]; },
@@ -42,7 +51,7 @@
       const words = raw.split(/[\s　]+/).map(norm).filter(Boolean);
       const out = [];
       for (const t of tasks.values()) {
-        if (t.hidden) continue;
+        if (t.hidden || !applies(t)) continue;
         const def = window.Kit && Kit.appDef ? Kit.appDef(t.app) : null;
         const title = norm(t.title), hay = title + ' ' + norm(t.words) + ' ' + norm(def ? def.title : '');
         let score = 0, ok = true;
@@ -50,7 +59,7 @@
           if (!hay.includes(w)) { ok = false; break; }
           score += title.startsWith(w) ? 6 : title.includes(w) ? 4 : 1;
         }
-        if (ok) out.push({ t, score: score + (t.pin ? 1 : 0) });
+        if (ok) out.push({ t, score: score + (pins.includes(t.id) ? 1 : 0) });
       }
       out.sort((a, b) => b.score - a.score || a.t.title.length - b.t.title.length);
       return out.slice(0, limit).map((x) => x.t);

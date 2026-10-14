@@ -4,38 +4,30 @@
   const { h } = Kit;
   const G = window.Guide;
 
-  // 入口から案内する「やりたいこと」（どれも、押す場所を光らせる）
+  // 入口から案内する「やりたいこと」。ほかは各ツールの項目（js/guide/help-*.js）を使う
   G.tasks([
-    { id: 'start-demo', app: 'start', pin: true, title: '3分デモを見る', words: 'デモ 見本 使い方 全体 体験 ためす お試し チュートリアル', tip: '問い合わせが売上になるまでを、実際の画面で追いかけます。保存はされません。', run: () => G.demo() },
-    { id: 'start-profile', app: 'dashboard', pin: true, title: '事業プロフィールを入れる', words: '屋号 名前 会社名 連絡先 メール 住所 プロフィール 設定 はじめる', tip: '屋号や連絡先は、ホームページ・請求書などすべてのツールで使い回されます。', run: async () => { await Kit.profile.edit(); Kit.remount(); } },
-    { id: 'start-canvas', hidden: true, app: 'canvas', target: '.app-canvas .cv-block', title: 'リーンキャンバスで事業の骨組みを書く', words: 'アイデア 骨組み 整理 ビジネスモデル キャンバス 課題 顧客', tip: 'まずは「課題」から。空欄があっても大丈夫。1行ずつ書き足せます。' },
-    { id: 'start-money', hidden: true, app: 'money', params: { tab: 'sim' }, target: '.app-money .mo-kpis', title: 'マネタイズ計画で数字を確かめる', words: '売上 収入 試算 いくら 稼ぐ 計画 黒字 損益', tip: '収入の柱の数字を書きかえると、12か月の見通しがここに出ます。' },
-    { id: 'start-rule', hidden: true, app: 'roadmap', params: { step: 'rule' }, target: '.app-roadmap [data-step="rule"]', title: '副業・兼業のルールを確かめる', words: '副業 兼業 許可 公務員 先生 教員 会社 就業規則 育休', tip: '勤め先によっては許可が必要です。始める前に、ここだけは確かめてください。' },
-    { id: 'start-site', hidden: true, app: 'editor', target: '.app-editor .ed-list', title: 'ホームページを自分の内容に書きかえる', words: 'ホームページ HP サイト 作る 書きかえ 編集 文章 写真', tip: 'セクションを選ぶと、文章や写真を直せます。サンプルを書きかえるだけでも大丈夫です。' },
-    { id: 'start-delivery', hidden: true, app: 'inbox', params: { tab: 'form' }, target: '.app-inbox .ib-fgrid .card:has(.ib-dv)', title: '問い合わせの送信先を決める', words: 'フォーム 届く 届かない 受け取る メール スプレッドシート 送信先', tip: 'ここで決めた送り先に、ホームページの問い合わせが届きます。いちばん簡単なのはメールです。' },
-    { id: 'start-publish', hidden: true, app: 'site', target: '.app-site .site-bar .btn:has(.site-long)', title: 'ホームページを公開する', words: '公開 アップ 書き出し HTML ネット 載せる URL', tip: 'ここで1つのファイルに書き出して、無料のサービスに置きます。手順は「公開のしかた」に。' },
-    { id: 'start-first-plan', hidden: true, app: 'calendar', target: '.app-calendar .cal-quick', title: '最初の予定を入れる', words: '予定 スケジュール 体験会 予約 入れる', tip: '「明日 19時 打ち合わせ」のように書くだけで、予定に入ります。' },
-    { id: 'start-inbox', hidden: true, app: 'inbox', target: '.app-inbox .ib-filters', title: '問い合わせを状態ごとに見る', words: '問い合わせ 返信 商談 成約 管理 顧客 お客さん', tip: '新規・返信済み・商談中…と、状態ごとに絞りこめます。' },
-    { id: 'start-sns', hidden: true, app: 'sns', target: '.app-sns .sns-head-rh', title: 'SNSの投稿リズムを作る', words: 'SNS 投稿 インスタ X リズム 予定 計画 発信', tip: '週に何回投稿するかを決めると、ネタの枠がまとめてできます。' },
-    { id: 'start-invoice', hidden: true, app: 'invoice', target: '.app-invoice .app-head .btn.primary', title: '見積書・請求書を作る', words: '見積 請求 領収 書類 インボイス お金 PDF', tip: 'ここから見積書・請求書・領収書を作れます。' },
+    { id: 'start-demo', app: 'start', title: '3分デモを見る', words: 'デモ 見本 使い方 全体 体験 ためす お試し チュートリアル', tip: '問い合わせが売上になるまでを、実際の画面で追いかけます。保存はされません。', run: () => G.demo() },
+    { id: 'start-profile', app: 'dashboard', title: '事業プロフィールを入れる', words: '屋号 名前 会社名 連絡先 メール 住所 プロフィール 設定 はじめる', tip: '屋号や連絡先は、ホームページ・請求書などすべてのツールで使い回されます。', run: async () => { await Kit.profile.edit(); Kit.remount(); } },
   ]);
+  // 検索の「よく使うこと」
+  G.pinned(['start-demo', 'start-profile', 'inbox-delivery', 'site-publish', 'inbox-reply', 'invoice-pdf', 'calendar-booking', 'dash-backup']);
 
   // いまの段階ごとの、最初の3歩
   const STAGES = [
     { id: 'idea', icon: 'canvas', name: '考え中', sub: 'アイデアを形にしたい', steps: [
-      ['start-canvas', '事業の骨組みを1枚に書く', 'だれの、どんな困りごとを解決するかを、短い言葉で並べます。'],
-      ['start-money', '数字で確かめる', '値段と件数を入れると、無理のない計画かどうかが見えます。'],
-      ['start-rule', '兼業のルールを確かめる', '勤め先によっては許可が要ります。先に確かめておくと安心です。'],
+      ['canvas-write', '事業の骨組みを1枚に書く', 'だれの、どんな困りごとを解決するかを、短い言葉で並べます。'],
+      ['money-profit', '数字で確かめる', '値段と件数を入れると、無理のない計画かどうかが見えます。'],
+      ['roadmap-rule', '兼業のルールを確かめる', '勤め先によっては許可が要ります。先に確かめておくと安心です。'],
     ] },
     { id: 'prep', icon: 'store', name: '準備中', sub: '届出や、お店の顔をつくる', steps: [
       ['start-profile', '事業プロフィールを入れる', '屋号や連絡先を一度入れると、全部のツールで使われます。'],
-      ['start-site', 'ホームページを書きかえる', 'サンプルの文章を自分の言葉に直すところから。'],
-      ['start-delivery', '問い合わせの送信先を決める', 'これを決めないと、公開したページの問い合わせが届きません。'],
+      ['editor-text', 'ホームページを書きかえる', 'サンプルの文章を自分の言葉に直すところから。'],
+      ['inbox-delivery', '問い合わせの送信先を決める', 'これを決めないと、公開したページの問い合わせが届きません。'],
     ] },
     { id: 'run', icon: 'chart', name: '始めている', sub: 'お客さんを増やしたい・お金を整えたい', steps: [
-      ['start-inbox', '問い合わせを受付箱で見守る', '返信・商談・成約を、状態ごとに追いかけます。'],
-      ['start-sns', '投稿のリズムを作る', '続けられる回数を決めて、ネタの枠を先に用意します。'],
-      ['start-invoice', '見積書・請求書を出す', 'インボイス制度に合わせた書類を、PDFで送れます。'],
+      ['inbox-status', '問い合わせを受付箱で見守る', '返信・商談・成約を、状態ごとに追いかけます。'],
+      ['sns-rhythm', '投稿のリズムを作る', '続けられる回数を決めて、ネタの枠を先に用意します。'],
+      ['invoice-new', '見積書・請求書を出す', 'インボイス制度に合わせた書類を、PDFで送れます。'],
     ] },
   ];
 
@@ -46,10 +38,10 @@
     const ready = d.type === 'mailto' ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.to || '') : d.type && d.type !== 'demo' ? /^https:\/\/\S+$/i.test(d.url || '') : false;
     return [
       { done: !p._sample && !!p.name, task: 'start-profile', title: '事業プロフィールを自分のものにする', why: '屋号・連絡先が、ホームページや請求書に入ります。' },
-      { done: !!site && !site._sample, task: 'start-site', title: 'ホームページを自分の内容に書きかえる', why: 'サンプルの文章を1か所直すだけでも、自分のページになります。' },
-      { done: ready, task: 'start-delivery', title: '問い合わせの送信先を決める', why: '決めるまでは、公開したページの問い合わせがどこにも届きません。' },
-      { done: !!(site && site.publishedUrl), task: 'start-publish', title: 'ホームページを公開して、URLを入れる', why: 'URLを入れると、チラシ用のQRコードが作れます。' },
-      { done: events.some((e) => !e.sample) || posts.some((x) => !x.sample && x.status !== 'idea'), task: 'start-first-plan', title: '最初の予定か投稿を入れる', why: '体験会や投稿の日を決めると、動き出せます。' },
+      { done: !!site && !site._sample, task: 'editor-text', title: 'ホームページを自分の内容に書きかえる', why: 'サンプルの文章を1か所直すだけでも、自分のページになります。' },
+      { done: ready, task: 'inbox-delivery', title: '問い合わせの送信先を決める', why: '決めるまでは、公開したページの問い合わせがどこにも届きません。' },
+      { done: !!(site && site.publishedUrl), task: 'site-publish', title: 'ホームページを公開して、URLを入れる', why: 'URLを入れると、チラシ用のQRコードが作れます。' },
+      { done: events.some((e) => !e.sample) || posts.some((x) => !x.sample && x.status !== 'idea'), task: 'calendar-quick', title: '最初の予定か投稿を入れる', why: '体験会や投稿の日を決めると、動き出せます。' },
     ];
   }
   window.StartGuide = { checklist };
@@ -150,7 +142,7 @@
   G.help('start', {
     lead: 'はじめての人のための入口です。デモで全体を見て、いまの段階に合う最初の3歩から始めます。',
     can: ['3分デモで、ツールのつながりを見る（保存されません）', 'いまの段階に合う、最初の3歩を知る', 'はじめの5つの進み具合を見る', 'やりたいことから、その画面へ行く'],
-    first: [{ text: '3分デモを見る', task: 'start-demo' }, { text: '事業プロフィールを入れる', task: 'start-profile' }, { text: '問い合わせの送信先を決める', task: 'start-delivery' }],
+    first: [{ text: '3分デモを見る', task: 'start-demo' }, { text: '事業プロフィールを入れる', task: 'start-profile' }, { text: '問い合わせの送信先を決める', task: 'inbox-delivery' }],
     faq: FAQ.slice(0, 4).map(([q, a]) => ({ q, a })),
     tour: [
       { target: '.app-start .st-hero .btn.primary', title: 'まずはデモから', body: '「3分デモを見る」で、問い合わせが売上になるまでを実際の画面で追いかけます。触っても保存されません。' },

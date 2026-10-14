@@ -64,6 +64,28 @@ const ok = (c, m) => { console.log((c ? 'OK  ' : 'NG  ') + m); if (!c) failed++;
     const pan = await page.evaluate(() => { const p = document.querySelector('.gd-panel'); return p ? p.querySelector('h2').textContent : null; });
     ok(!!pan, `${tag}：使い方パネルが開く（${pan}）`);
     await page.screenshot({ path: path.join(OUT, `guide-panel-${phone ? 'phone' : 'pc'}.png`) });
+    // サンプルを片付けたあとも、各ツールのツアーが最後まで進むか（示す場所がない場面は飛ばす）
+    await page.evaluate(async () => { await Kit.store.samplesOff(); await Kit.store.flush(); });
+    const ids = await page.evaluate(() => Guide.allHelp().filter(([, h]) => h.tour && h.tour.length).map(([id]) => id));
+    for (const id of ids) {
+      await page.evaluate((a) => Kit.go(a), id);
+      await page.waitForTimeout(400);
+      page.evaluate((a) => Guide.tourApp(a), id);
+      let steps = 0;
+      for (let k = 0; k < 12; k++) {
+        const has = await page.waitForSelector('.gd-card .btn.primary', { timeout: 6000 }).then(() => true, () => false);
+        if (!has) break;
+        await page.waitForFunction(() => { const c = document.querySelector('.gd-card'); return !c || !/画面を開いています/.test(c.textContent); }, null, { timeout: 8000 }).catch(() => {});
+        if (!(await page.$('.gd-card'))) break;
+        steps++;
+        await page.click('.gd-card .btn.primary').catch(() => {});
+        await page.waitForTimeout(250);
+        if (!(await page.$('.gd-card'))) break;
+      }
+      const stuck = !!(await page.$('.gd-card'));
+      if (stuck) await page.keyboard.press('Escape');
+      ok(!stuck && steps > 0, `${tag}：サンプルなしでも「${id}」のツアーが最後まで進む（${steps}場面）`);
+    }
     ok(errs.length === 0, `${tag}：コンソールにエラーがない` + (errs.length ? '\n    ' + errs.join('\n    ') : ''));
     await close();
   }

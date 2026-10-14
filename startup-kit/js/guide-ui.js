@@ -285,7 +285,7 @@
     Kit.pref.set('guide.lastTask', t.id);
     if (typeof t.run === 'function') return t.run();
     if (!t.target && !t.targetPhone) { await Kit.go(t.app, t.params); if (t.tip) Kit.toast(t.tip); return; }
-    return G.tour([{ app: t.app, params: t.params, target: t.target, targetPhone: t.targetPhone, title: t.title, body: t.tip }], { tip: true, label: 'ここです' });
+    return G.tour([{ app: t.app, params: t.params || {}, target: t.target, targetPhone: t.targetPhone, title: t.title, body: t.tip }], { tip: true, label: 'ここです' });
   };
 
   /* ───────── 3分デモ（保存しない試し箱の中で） ───────── */
@@ -429,8 +429,9 @@
       Kit.clear(list);
       const q = input.value.trim();
       if (!q) {
-        const pinned = G.allTasks().filter((t) => t.pin).slice(0, 7);
-        const last = G.getTask(Kit.pref.get('guide.lastTask', ''));
+        const pinned = G.pinned().slice(0, 8);
+        let last = G.getTask(Kit.pref.get('guide.lastTask', ''));
+        if (last && (last.hidden || !G.applies(last))) last = null;
         items = (last && !pinned.includes(last) ? [last] : []).concat(pinned);
         if (items.length) list.append(h('div', { class: 'gd-pal-h' }, 'よく使うこと'));
       } else {

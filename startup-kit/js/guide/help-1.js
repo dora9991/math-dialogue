@@ -14,7 +14,7 @@
       '全部の内容を、バックアップで保存・復元する',
     ],
     first: [
-      { text: '事業プロフィールに、屋号と連絡先を入れる', task: 'dash-profile' },
+      { text: 'まず、事業プロフィールを入れる', task: 'dash-profile' },
       { text: '例を見終わったら、サンプルを片付ける', task: 'dash-clear-samples' },
       { text: 'ときどきバックアップを書き出す', task: 'dash-backup' },
     ],
@@ -36,13 +36,13 @@
     related: ['inbox', 'calendar', 'sns', 'invoice', 'money', 'roadmap'],
   });
   G.tasks([
-    { id: 'dash-start-own', app: 'dashboard', target: '.app-dashboard .sample-bar .btn.primary', title: '自分の事業で始める',
+    { id: 'dash-start-own', when: () => Kit.store.samplesShown(), app: 'dashboard', target: '.app-dashboard .sample-bar .btn.primary', title: '自分の事業で始める',
       words: '始める はじめる スタート 使い始める 本番 自分の じぶん 例 サンプル 切りかえ 開業 準備 屋号 プロフィール ほんばん',
       tip: 'ここを押すと、プロフィールを書いてから、例を片付けるかどうか選べます。' },
     { id: 'dash-profile', app: 'dashboard', target: '.app-dashboard .app-actions .btn', title: '屋号や連絡先を直す（事業プロフィール）',
       words: 'プロフィール 屋号 店名 名前 事業名 会社名 代表者 連絡先 メール 電話 住所 振込先 口座 登録番号 インボイス キャッチコピー 説明 設定 やごう れんらくさき なまえ じゅうしょ',
       tip: 'ここを押すと、屋号・連絡先・振込先などを直せます。全部のツールで使われます。' },
-    { id: 'dash-clear-samples', app: 'dashboard', target: '.app-dashboard .sample-bar .btn.ghost', title: 'サンプル（例）を片付ける',
+    { id: 'dash-clear-samples', when: () => Kit.store.samplesShown(), app: 'dashboard', target: '.app-dashboard .sample-bar .btn.ghost', title: 'サンプル（例）を片付ける',
       words: 'サンプル 例 消す 削除 片付け かたづける けす れい 架空 ひらめき数学舎 デモ データ クリア 空にする 白紙',
       tip: 'ここを押すと、全部のツールから例が消えます。自分で入れたものは残ります。' },
     { id: 'dash-today', app: 'dashboard', target: '.app-dashboard .db-top > .card', title: '今日やることを確かめる',
@@ -73,7 +73,7 @@
       'フォームから試しに送って、届くか確かめる',
     ],
     first: [
-      { text: '「編集する」で、文章や写真を自分の事業に直す', task: 'site-edit' },
+      { text: '「編集する」で、文章や写真を直す', task: 'site-edit' },
       { text: '問い合わせの送信先を決める', task: 'inbox-delivery' },
       { text: '書き出して、無料のサービスで公開する', task: 'site-publish' },
     ],
@@ -125,7 +125,7 @@
       '検索やSNSに出るタイトルと説明文を整える',
     ],
     first: [
-      { text: 'トップの見出しを、自分の言葉に書きかえる', task: 'editor-text' },
+      { text: 'トップの見出しを自分の言葉に直す', task: 'editor-text' },
       { text: '写真を自分のものに入れかえる', task: 'editor-photo' },
       { text: '色と字体を選ぶ', task: 'editor-theme' },
     ],
@@ -184,7 +184,7 @@
       'MP4などで書き出し、場面を画像でも保存する',
     ],
     first: [
-      { text: '「新しく作る」で、画面の形かひな形を選ぶ', task: 'video-new' },
+      { text: '「新しく作る」で、ひな形を選ぶ', task: 'video-new' },
       { text: '動画や写真（素材）を入れる', task: 'video-media' },
       { text: '「動画を書き出す」で保存する', task: 'video-export' },
     ],
@@ -244,7 +244,7 @@
     first: [
       { text: 'フォームの送信先を決める', task: 'inbox-delivery' },
       { text: '返信テンプレートを、自分の言葉に直す', task: 'inbox-template' },
-      { text: '届いた問い合わせに返信して、状態を進める', task: 'inbox-reply' },
+      { text: '問い合わせに返信して、状態を進める', task: 'inbox-reply' },
     ],
     faq: [
       { q: '公開したページの問い合わせは、ここに自動で入る？', a: '自動では入りません。メールで受け取った分は「問い合わせを記録」で、スプレッドシートやフォームサービスの分は「まとめて取り込む」で入れます。同じものは重複として飛ばします。' },
@@ -302,8 +302,8 @@
     ],
     first: [
       { text: '「投稿をつくる」で、1本書いてみる', task: 'sns-new' },
-      { text: '「投稿リズムを作る」で、ネタの枠を先に置く', task: 'sns-rhythm' },
-      { text: '投稿したら、反応（いいね・保存）を入れる', task: 'sns-metrics' },
+      { text: '「投稿リズムを作る」で、ネタ枠を置く', task: 'sns-rhythm' },
+      { text: '投稿したら、いいねや保存の数を入れる', task: 'sns-metrics' },
     ],
     faq: [
       { q: 'ここから直接SNSに投稿できますか？', a: 'できません。投稿先ごとの見え方にある「コピー」で本文をコピーして、各アプリに貼りつけて投稿します。投稿したら「投稿済みにする」を押すと記録が残ります。' },

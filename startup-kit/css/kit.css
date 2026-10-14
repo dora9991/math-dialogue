@@ -177,7 +177,7 @@ p { margin: 0; }
 @media (min-width: 1000px) { .mb-top { display: none; } }
 .mb-top .mb-menu-btn { color: var(--on-noren); background: transparent; border: 0; width: 40px; height: 40px; margin-left: -8px; border-radius: 8px; display: grid; place-items: center; cursor: pointer; }
 .mb-top .mb-menu-btn:hover { background: rgba(255, 255, 255, .12); }
-.mb-top .mb-top-brand { font-family: var(--font-display); font-weight: 800; letter-spacing: .08em; font-size: 17px; }
+.mb-top .mb-top-brand { font-family: var(--font-display); font-weight: 800; letter-spacing: .08em; font-size: 17px; white-space: nowrap; flex: none; }
 .mb-top .mb-top-app { margin-left: auto; font-size: 13px; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
 .mb-side {
