@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>数学ポータル</title>
+<script src="config.js"></script>
+<script src="common.js"></script>
+<!-- 小テストの回（CH）と、アカウントIDの決まり（parseAccountId など）は quiz と共通 -->
+<script src="../quiz/quizdata.js"></script>
+<!-- 応用チャレンジの回（SETS） -->
+<script src="../applied/problems.js"></script>
+<style>
+:root{
+  --ink:#16202e;
+  --ink-soft:#4a5768;
+  --ai:#24467d;          /* 藍：主要アクション */
+  --ai-weak:#e8eef7;
+  --shu:#c8322d;         /* 朱：赤ペン */
+  --shu-weak:#fbecea;
+  --paper:#fcfcfa;
+  --rule:#d9dfe7;
+  --grid:#e6ebf1;
+  --ok:#1d6b4f;
+  --ok-weak:#e6f2ec;
+  --mincho:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP",serif;
+  --gothic:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+  --mono:"SFMono-Regular",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--gothic);
+  color:var(--ink);
+  background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+  line-height:1.75;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 96px}
+header.sheet{
+  background:#fff;border:1px solid var(--rule);border-top:4px solid var(--ai);
+  margin:20px 0 0;padding:18px 20px;display:flex;align-items:center;gap:12px;
+}
+header.sheet .ttl{flex:1;min-width:0}
+h1{font-family:var(--mincho);font-size:20px;font-weight:600;margin:0;letter-spacing:.04em}
+.sub{font-size:13px;color:var(--ink-soft);margin-top:4px;text-wrap:balance}
+.card{background:#fff;border:1px solid var(--rule);padding:18px 20px;margin-top:14px}
+.card h2{font-family:var(--mincho);font-size:16px;margin:0 0 12px;font-weight:600;display:flex;align-items:baseline;gap:8px}
+.card h2 .aside{margin-left:auto;font-family:var(--gothic);font-size:12px;font-weight:400;color:var(--ink-soft)}
+label.f{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px}
+select,input[type=text],input[type=password]{
+  font:inherit;font-size:16px;padding:11px 12px;width:100%;
+  border:1px solid var(--rule);background:#fff;color:var(--ink);border-radius:2px;
+}
+input[type=text],input[type=password]{font-family:var(--mono);}
+select:focus,input:focus,button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--ai);outline-offset:1px}
+button{font:inherit;cursor:pointer;border-radius:2px;border:1px solid transparent}
+.btn{background:var(--ai);color:#fff;padding:13px 20px;font-weight:600;width:100%;font-size:16px}
+.btn:disabled{background:#9aa6b6;cursor:not-allowed}
+.btn.ghost{background:#fff;color:var(--ai);border-color:var(--ai);}
+.btn.mini{width:auto;padding:8px 14px;font-size:13px;font-weight:400}
+.hint{font-size:12.5px;color:var(--ink-soft);margin-top:8px}
+.notice{border:1px solid var(--rule);background:#fff;padding:12px 14px;font-size:13px;margin-top:12px}
+.notice.warn{border-color:var(--shu);background:var(--shu-weak);color:#7d211d}
+.notice.ok{border-color:var(--ok);background:var(--ok-weak);color:#12503a}
+.subq{display:flex;align-items:center;gap:10px;margin-top:10px}
+
+/* 今日の授業 */
+.lesson{border:1px solid var(--rule);border-left:4px solid var(--ai);padding:12px 14px;margin-top:10px}
+.lesson-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.lesson-head .no{font-family:var(--mono);font-size:13px;color:var(--ai);letter-spacing:.05em}
+.lesson-head .nm{font-size:16px;font-weight:600}
+.tag{font-size:11px;font-family:var(--mono);border:1px solid var(--rule);padding:1px 7px;white-space:nowrap;color:var(--ink-soft)}
+.tag.on{border-color:var(--ai);color:var(--ai);background:var(--ai-weak)}
+.todo{display:grid;gap:6px;margin-top:8px}
+.todo-row{display:flex;align-items:center;gap:10px;min-height:44px;border-top:1px dashed var(--rule);padding-top:6px}
+.todo-row .what{flex:1;min-width:0;font-size:14.5px}
+.todo-row .what small{display:block;font-size:12px;color:var(--ink-soft);line-height:1.5}
+a.go{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 16px;background:var(--ai);color:#fff;
+  font-weight:600;font-size:14px;text-decoration:none;border:1px solid var(--ai);border-radius:2px;white-space:nowrap}
+a.go.ghost{background:#fff;color:var(--ai)}
+a.go.small{min-height:32px;padding:4px 10px;font-size:12.5px;font-weight:400}
+.done{color:var(--ok);font-size:14px;font-weight:600;white-space:nowrap}
+.done::before{content:"✓ "}
+.empty{font-size:14px;color:var(--ink-soft)}
+
+/* いつでもできること */
+.menu{display:grid;gap:8px}
+.menu a,.menu button{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--rule);padding:12px 14px;
+  text-align:left;width:100%;color:var(--ink);text-decoration:none;font-size:15px;min-height:52px}
+.menu a:hover,.menu button:hover{border-color:var(--ai);background:var(--ai-weak)}
+.menu .ic{font-size:20px;flex:none;width:28px;text-align:center}
+.menu .lb{flex:1;min-width:0}
+.menu .lb small{display:block;font-size:12px;color:var(--ink-soft);line-height:1.5}
+details.sets{border:1px solid var(--rule)}
+details.sets summary{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;font-size:15px;min-height:52px;list-style:none}
+details.sets summary::-webkit-details-marker{display:none}
+details.sets summary::after{content:"＋";margin-left:auto;color:var(--ai)}
+details.sets[open] summary::after{content:"－"}
+details.sets .list{display:grid;gap:6px;padding:0 14px 12px}
+details.sets .list a{gap:10px;align-items:baseline;padding:8px 10px;font-size:14px;min-height:44px}
+details.sets .list a:hover{border-color:var(--ai);background:var(--ai-weak)}
+details.sets .list .no{font-family:var(--mono);font-size:12px;color:var(--ai);flex:none}
+
+/* わたしの記録 */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.stat{border:1px solid var(--rule);padding:10px 12px}
+.stat .k{font-size:12px;color:var(--ink-soft)}
+.stat .v{font-family:var(--mincho);font-size:22px;font-variant-numeric:tabular-nums;line-height:1.4}
+.stat .v small{font-size:13px;color:var(--ink-soft);margin-left:2px}
+.day{margin-top:18px}
+.day h3{font-family:var(--mincho);font-size:15px;font-weight:600;margin:0 0 6px;padding-bottom:4px;border-bottom:1px solid var(--rule)}
+.ev{display:flex;gap:10px;padding:8px 0;border-bottom:1px dashed var(--rule);font-size:14px}
+.ev:last-child{border-bottom:0}
+.ev .ic{flex:none;width:24px;text-align:center}
+.ev .body{flex:1;min-width:0}
+.ev .what{font-weight:600}
+.ev .meta{font-size:12.5px;color:var(--ink-soft)}
+.ev .quote{font-size:13.5px;margin-top:2px;white-space:pre-wrap;word-break:break-word}
+.ev .reply{font-size:13px;color:var(--ai);margin-top:2px}
+.ev .num{font-family:var(--mono);white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* ============================================================
+   設定
+   ============================================================ */
+const CONFIG = {
+  GRADES: [1,2,3],                    // 学年
+  CLASSES: [1,2,3,4,5,6],             // 組
+  CLASS_SIZE: 40,                     // 出席番号の最大
+  GROUP_LETTERS: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), // 学校コード（アルファベット側）
+  GROUP_NUMBERS: Array.from({length:100},(_,i)=>i+1),     // 学校コード（数字側・1〜100）
+};
+/* quiz / applied / home と同じ保存キー。同じサイト（同じドメイン）で公開すると、
+   ポータルで1回ログインすれば、3つのツールがそのまま本人を覚えている状態になる。 */
+const KEYS = {
+  account:  "quiz:account_id",   // quiz/index.html の ACCOUNT_KEY（例：E-101236）
+  password: "quiz:account_pw",   // quiz/index.html の ACCOUNT_PW_KEY（「保存する」を選んだときだけ）
+  applied:  "applied:student",   // applied/challenge.html の STUDENT_KEY（{"sid":"1236"}）
+  home:     "study:student",     // home/index.html の STUDENT_KEY（{"sid":"1236"}）
+};
+const SESSION_PW_KEY = "portal:pw"; // 保存しないときは、このタブを閉じるまでだけ覚える
+const LINKS = {
+  quiz:    id => `../quiz/index.html?quiz=${encodeURIComponent(id)}`,
+  applied: id => `../applied/challenge.html?set=${encodeURIComponent(id)}`,
+  home:    () => `../home/index.html`,
+};
+const POLL_MS = 15000;               // 「今日の授業」を自動で確かめる間隔（先生が授業を開始したら出てくる）
+const qsp = new URLSearchParams(location.search);
+const CLASS_ID = qsp.get("c") || ""; // 例: ?c=1-3（新規登録の学年・組を固定。quiz と同じ）
+
+const store = Portal.local, sess = Portal.session;
+const SETS_LIST = window.SETS || [];
+const app = document.getElementById("app");
+const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+let S = { id:null, pw:null, today:null, view:"home" };
+let pollTimer = null;
+
+/* ============================================================
+   表示用のことば
+   ============================================================ */
+function lessonTitle(id){
+  const t = CH.find(x=>x.id===baseQuizId(id));
+  if(!t) return { no:"", name:id };
+  const k = reflectionOccurrence(id);
+  return { no:t.no, name: t.name + (k>1 ? `（${k}回目）` : "") };
+}
+const setOf = id => SETS_LIST.find(s=>s.id===id) || null;
+function setTitle(id){
+  if(id==="mix") return { no:"", name:"いろいろな回をまぜて" };
+  const s = setOf(id);
+  return s ? { no:s.no, name:s.name } : { no:"", name:id };
+}
+function dateLabel(ymd){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd||"");
+  if(!m) return ymd||"";
+  const d = new Date(+m[1], +m[2]-1, +m[3]);
+  return `${+m[2]}月${+m[3]}日（${"日月火水木金土"[d.getDay()]}）`;
+}
+function errorText(code){
+  if(code==="no_such_id") return "そのIDは登録されていません。「新規登録」からはじめてください。";
+  if(code==="bad_password") return "IDまたはパスワードが正しくありません。";
+  return "うまくいきませんでした。もう一度お試しください。";
+}
+
+/* ============================================================
+   ログイン情報（quiz / applied / home と共有）
+   ============================================================ */
+function saveIdentity(id, pw, remember){
+  const p = parseAccountId(id);
+  store.set(KEYS.account, id);
+  if(remember){ store.set(KEYS.password, pw); sess.del(SESSION_PW_KEY); }
+  else { store.del(KEYS.password); sess.set(SESSION_PW_KEY, pw); }
+  // 応用チャレンジ・家庭学習ノートは4桁の番号で本人を覚えている
+  store.set(KEYS.applied, JSON.stringify({sid:p.sid4}));
+  store.set(KEYS.home, JSON.stringify({sid:p.sid4}));
+}
+function clearIdentity(){
+  Object.values(KEYS).forEach(k=>store.del(k));
+  sess.del(SESSION_PW_KEY);
+}
+
+/* ============================================================
+   画面の外枠
+   ============================================================ */
+function renderShell(){
+  app.innerHTML = `
+    <header class="sheet">
+      <div class="ttl">
+        <h1>数学ポータル</h1>
+        <div class="sub">小テスト・振り返り・応用チャレンジ・家庭学習の入口</div>
+      </div>
+    </header>
+    <div class="card" id="me"></div>
+    <div id="main"></div>`;
+}
+const meBox = () => document.getElementById("me");
+const mainBox = () => document.getElementById("main");
+
+/* ============================================================
+   ログイン・新規登録（quiz/index.html と同じアカウント）
+   ============================================================ */
+function renderLoginForm(prefillId, msg){
+  stopPolling();
+  S = { id:null, pw:null, today:null, view:"home" };
+  if(!document.getElementById("me")) renderShell();
+  mainBox().innerHTML = "";
+  meBox().innerHTML = `
+    <h2>ログイン</h2>
+    ${msg?`<div class="notice warn" style="margin:0 0 10px">${esc(msg)}</div>`:""}
+    <label class="f" for="li-id">ID</label>
+    <input type="text" id="li-id" autocomplete="username" spellcheck="false" value="${esc(prefillId||"")}" placeholder="例：E-101236">
+    <label class="f" for="li-pw" style="margin-top:10px">パスワード</label>
+    <input type="password" id="li-pw" autocomplete="current-password">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);margin-top:10px">
+      <input type="checkbox" id="li-remember" checked> この端末にパスワードを保存する
+    </label>
+    <div class="hint" style="margin-top:2px">保存しないと、小テストを開くときにもう一度パスワードを聞かれます。みんなで使う端末では保存しないでください。</div>
+    <button class="btn" id="li-go" style="margin-top:14px">ログイン</button>
+    <div class="hint" style="margin-top:12px">
+      はじめての人は　<button class="btn mini ghost" type="button" id="li-toreg">新規登録はこちら</button>
+    </div>`;
+  document.getElementById("li-toreg").onclick = ()=>renderRegisterForm();
+  const go = async ()=>{
+    const id = document.getElementById("li-id").value.trim().toUpperCase();
+    const pw = document.getElementById("li-pw").value;
+    const remember = document.getElementById("li-remember").checked;
+    if(!parseAccountId(id)){ alert("IDの形式が正しくありません（例：E-101236）。"); return; }
+    if(!pw){ alert("パスワードを入力してください。"); return; }
+    const btn = document.getElementById("li-go");
+    btn.disabled = true; btn.textContent = "確認中…";
+    await tryLogin(parseAccountId(id).id, pw, remember);
+  };
+  document.getElementById("li-go").onclick = go;
+  document.getElementById("li-pw").addEventListener("keydown", e=>{ if(e.key==="Enter") go(); });
+}
+
+/** ID・パスワードを確かめて、今日の授業を読み込む。成功したらホームへ、失敗したらログイン画面へ。 */
+async function tryLogin(id, pw, remember){
+  let r;
+  try{ r = await Portal.rpc("portal_student_today", {p_account_id:id, p_password:pw}); }
+  catch(e){ renderLoginForm(id, "通信エラーです。もう一度お試しください。"); return; }
+  if(r && r.ok){
+    saveIdentity(id, pw, remember);
+    S = { id, pw, today:r, view:"home" };
+    renderHome();
+  } else {
+    // 覚えていたパスワードが使えなくなった（先生がリセットした等）ら、quiz の自動ログインにも使われないよう消す
+    if(r && (r.error==="bad_password" || r.error==="no_such_id") && store.get(KEYS.account)===id){
+      store.del(KEYS.password); sess.del(SESSION_PW_KEY);
+    }
+    renderLoginForm(id, errorText(r && r.error));
+  }
+}
+
+function renderRegisterForm(){
+  const pre = CLASS_ID.match(/^(\d)-(\d)$/);
+  const opt=(arr,suf)=>arr.map(v=>`<option value="${v}">${v}${suf||""}</option>`).join("");
+  meBox().innerHTML = `
+    <h2>新規登録</h2>
+    <div class="hint" style="margin-top:0">先生から伝えられた「学校コード」を選んでください。</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+      <div><label class="f" for="rg-l">学校コード（アルファベット）</label>
+        <select id="rg-l">${opt(CONFIG.GROUP_LETTERS)}</select></div>
+      <div><label class="f" for="rg-gn">学校コード（数字）</label>
+        <select id="rg-gn">${opt(CONFIG.GROUP_NUMBERS)}</select></div>
+    </div>
+    <div class="hint" style="margin-top:12px">あなたの出席番号を選んでください。</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:8px;margin-top:6px">
+      <div><label class="f" for="rg-g">学年</label>
+        <select id="rg-g" ${pre?"disabled":""}>${opt(CONFIG.GRADES,"年")}</select></div>
+      <div><label class="f" for="rg-c">組</label>
+        <select id="rg-c" ${pre?"disabled":""}>${opt(CONFIG.CLASSES,"組")}</select></div>
+      <div><label class="f" for="rg-n">番号</label>
+        <select id="rg-n"><option value="">選ぶ</option>${opt(Array.from({length:CONFIG.CLASS_SIZE},(_,i)=>i+1),"番")}</select></div>
+    </div>
+    <div class="subq" style="margin-top:12px">
+      <span style="font-size:13px;color:var(--ink-soft)">あなたのID：</span>
+      <div id="rg-prev" style="font-family:var(--mono);font-size:20px;margin-left:auto">----</div>
+    </div>
+    <label class="f" for="rg-pw" style="margin-top:16px">パスワード（4文字以上）</label>
+    <input type="password" id="rg-pw" autocomplete="new-password">
+    <label class="f" for="rg-pw2" style="margin-top:10px">パスワード（確認）</label>
+    <input type="password" id="rg-pw2" autocomplete="new-password">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);margin-top:10px">
+      <input type="checkbox" id="rg-remember" checked> この端末にパスワードを保存する
+    </label>
+    <button class="btn" id="rg-go" style="margin-top:14px">登録する</button>
+    <div class="hint" style="margin-top:12px">
+      登録ずみの人は　<button class="btn mini ghost" type="button" id="rg-tologin">ログインはこちら</button>
+    </div>
+    <div class="hint" style="margin-top:8px">IDとパスワードは、先生や友達に教えないでください。小テスト・応用チャレンジ・家庭学習ノートも、このIDで記録されます。</div>`;
+
+  if(pre){ document.getElementById("rg-g").value=+pre[1]; document.getElementById("rg-c").value=+pre[2]; }
+  document.getElementById("rg-tologin").onclick = ()=>renderLoginForm(store.get(KEYS.account)||"");
+  const idNow = ()=>{
+    const n = document.getElementById("rg-n").value;
+    if(!n) return null;
+    return buildAccountId(document.getElementById("rg-l").value, document.getElementById("rg-gn").value,
+      makeSid(document.getElementById("rg-g").value, document.getElementById("rg-c").value, n));
+  };
+  const sync = ()=>{ document.getElementById("rg-prev").textContent = idNow() || "----"; };
+  ["rg-l","rg-gn","rg-g","rg-c","rg-n"].forEach(id=>document.getElementById(id).onchange=sync);
+  sync();
+
+  document.getElementById("rg-go").onclick = async ()=>{
+    const id = idNow();
+    if(!id){ alert("出席番号を選んでください。"); return; }
+    const pw = document.getElementById("rg-pw").value, pw2 = document.getElementById("rg-pw2").value;
+    const remember = document.getElementById("rg-remember").checked;
+    if(pw.length < 4){ alert("パスワードは4文字以上にしてください。"); return; }
+    if(pw !== pw2){ alert("パスワード（確認）が一致しません。"); return; }
+    const btn = document.getElementById("rg-go");
+    btn.disabled=true; btn.textContent="登録中…";
+    let r;
+    try{ r = await Portal.rpc("quiz_register", {p_account_id:id, p_password:pw}); }
+    catch(e){ btn.disabled=false; btn.textContent="登録する"; alert("通信エラーです。もう一度お試しください。"); return; }
+    if(r && r.ok){
+      await tryLogin(id, pw, remember);
+    } else if(r && r.error==="id_taken"){
+      btn.disabled=false; btn.textContent="登録する";
+      alert("このIDはすでに登録されています。番号が正しいか確認するか、ログインをお試しください。");
+    } else {
+      btn.disabled=false; btn.textContent="登録する";
+      alert("登録できませんでした。入力内容を確認してください。");
+    }
+  };
+}
+
+/* ============================================================
+   ホーム（今日やること・いつでもできること）
+   ============================================================ */
+function renderHome(){
+  S.view = "home";
+  if(!document.getElementById("me")) renderShell();
+  meBox().innerHTML = `
+    <h2>ログイン中</h2>
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <div style="font-family:var(--mono);font-size:18px;letter-spacing:.03em">${esc(S.id)}</div>
+      <div style="font-size:14px;color:var(--ink-soft)">${esc(accountLabel(S.id))}</div>
+      <button class="btn mini ghost" id="logout" style="margin-left:auto">ログアウト</button>
+    </div>
+    <div class="hint">小テスト・応用チャレンジ・家庭学習ノートも、このIDのまま使えます。</div>`;
+  document.getElementById("logout").onclick = ()=>{
+    clearIdentity();
+    renderLoginForm("");
+  };
+  mainBox().innerHTML = `
+    <div class="card" id="today"></div>
+    <div class="card">
+      <h2>いつでもできること</h2>
+      <div class="menu" id="always"></div>
+    </div>`;
+  renderToday();
+  renderAlways();
+  startPolling();
+}
+
+function renderToday(){
+  const box = document.getElementById("today");
+  if(!box || !S.today) return;
+  const lessons = S.today.lessons || [];
+  const head = `<h2>今日の授業<span class="aside">${esc(dateLabel(S.today.date))}</span></h2>`;
+  if(!lessons.length){
+    box.innerHTML = head + `
+      <div class="empty">いま、先生が開始している授業はありません。</div>
+      <div class="hint">授業が始まると、ここに「やること」が出ます（自動で更新されます）。</div>`;
+    return;
+  }
+  box.innerHTML = head + lessons.map(lessonHTML).join("");
+}
+
+function lessonHTML(L){
+  const t = lessonTitle(L.quiz_id);
+  const rows = [];
+  if(L.quiz_active){
+    rows.push(todoRow("小テスト", "",
+      L.attempt ? `<span class="done">提出ずみ　${L.attempt.score} / ${L.attempt.max}点</span>`
+                : `<a class="go" href="${LINKS.quiz(L.quiz_id)}">受ける</a>`));
+  }
+  if(L.lesson_active){
+    rows.push(todoRow("振り返り", "理解度・意欲・ひとこと",
+      L.reflected ? `<span class="done">書いた</span> <a class="go ghost small" href="${LINKS.quiz(L.quiz_id)}">書き直す</a>`
+                  : `<a class="go" href="${LINKS.quiz(L.quiz_id)}">書く</a>`));
+    rows.push(todoRow("学習時間", "家で何分勉強したか",
+      L.study_minutes!=null ? `<span class="done">${L.study_minutes}分</span>`
+                            : `<a class="go ghost" href="${LINKS.quiz(L.quiz_id)}">記録する</a>`));
+  }
+  const set = setOf(L.quiz_id);
+  if(set){
+    rows.push(todoRow("応用チャレンジ", `${set.no}　${set.name}`,
+      `<a class="go ghost" href="${LINKS.applied(set.id)}">挑戦する</a>`));
+  }
+  return `
+    <div class="lesson">
+      <div class="lesson-head">
+        ${t.no?`<span class="no">${esc(t.no)}</span>`:""}<span class="nm">${esc(t.name)}</span>
+        ${L.lesson_active?`<span class="tag on">授業中</span>`:""}
+        ${L.quiz_active?`<span class="tag on">小テスト配布中</span>`:""}
+      </div>
+      <div class="todo">${rows.join("")}</div>
+    </div>`;
+}
+const todoRow = (name, small, action) => `
+  <div class="todo-row">
+    <div class="what">${esc(name)}${small?`<small>${esc(small)}</small>`:""}</div>
+    <div>${action}</div>
+  </div>`;
+
+function renderAlways(){
+  const box = document.getElementById("always");
+  if(!box) return;
+  const h = (S.today && S.today.home_today) || {sessions:0};
+  const homeSub = h.sessions > 0 ? `今日は ${h.minutes}分・${h.solved}問 記録ずみ` : "家でやった学習を記録します";
+  box.innerHTML = `
+    <a href="${LINKS.home()}"><span class="ic">🏠</span><span class="lb">家庭学習ノート<small>${esc(homeSub)}</small></span></a>
+    ${SETS_LIST.length ? `
+    <details class="sets">
+      <summary><span class="ic">🎯</span>
+        <span class="lb">応用チャレンジ<small>入試・実力レベル（全${SETS_LIST.length}回）。何度でも挑戦できます</small></span></summary>
+      <div class="list">
+        ${SETS_LIST.map(s=>`<a href="${LINKS.applied(s.id)}"><span class="no">${esc(s.no)}</span><span>${esc(s.name)}</span></a>`).join("")}
+      </div>
+    </details>` : ""}
+    <button type="button" id="go-records"><span class="ic">📋</span><span class="lb">わたしの記録<small>小テスト・振り返り・家庭学習・応用チャレンジをまとめて見る</small></span></button>`;
+  document.getElementById("go-records").onclick = renderRecords;
+}
+
+/* ---------- 自動更新（先生が授業を開始したら出てくる） ---------- */
+async function refreshToday(){
+  if(!S.id || S.view!=="home" || document.visibilityState!=="visible") return;
+  let r;
+  try{ r = await Portal.rpc("portal_student_today", {p_account_id:S.id, p_password:S.pw}); }
+  catch(e){ return; } // 通信が切れていても画面はそのまま。次の回にまた確かめる
+  if(r && r.ok){ S.today = r; renderToday(); renderAlways(); }
+  else if(r && (r.error==="bad_password" || r.error==="no_such_id")){
+    // 先生がパスワードをリセットした等
+    const id = S.id;
+    store.del(KEYS.password); sess.del(SESSION_PW_KEY);
+    renderLoginForm(id, errorText(r.error));
+  }
+}
+function startPolling(){ stopPolling(); pollTimer = setInterval(refreshToday, POLL_MS); }
+function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer = null; } }
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") refreshToday(); });
+// 小テストなどから「戻る」で帰ってきたとき（ページがそのまま復元される場合）も最新にする
+window.addEventListener("pageshow", e=>{ if(e.persisted) refreshToday(); });
+
+/* ============================================================
+   わたしの記録
+   ============================================================ */
+async function renderRecords(){
+  S.view = "records";
+  stopPolling();
+  mainBox().innerHTML = `
+    <div class="card">
+      <h2>わたしの記録<span class="aside"><button class="btn mini ghost" id="rec-back">← ホームへ</button></span></h2>
+      <div id="rec-body"><p class="hint" style="margin:0">読み込み中…</p></div>
+    </div>`;
+  document.getElementById("rec-back").onclick = ()=>{ renderHome(); refreshToday(); };
+  window.scrollTo(0,0);
+  let r;
+  try{ r = await Portal.rpc("portal_student_records", {p_account_id:S.id, p_password:S.pw}); }
+  catch(e){ document.getElementById("rec-body").innerHTML = `<div class="notice warn">通信エラーです。もう一度お試しください。</div>`; return; }
+  if(S.view!=="records") return;
+  if(!r || !r.ok){ document.getElementById("rec-body").innerHTML = `<div class="notice warn">${esc(errorText(r && r.error))}</div>`; return; }
+  document.getElementById("rec-body").innerHTML = recordsHTML(r);
+}
+
+function recordsHTML(r){
+  const quiz = r.quiz||[], refl = r.reflections||[], st = r.study_time||[], home = r.home||[], ap = r.applied||[];
+  if(!quiz.length && !refl.length && !st.length && !home.length && !ap.length){
+    return `<div class="empty">まだ記録はありません。小テストや家庭学習ノートに取り組むと、ここにたまっていきます。</div>`;
+  }
+  const pct = (s,m)=> m>0 ? Math.round(s/m*100) : null;
+  const quizPcts = quiz.map(q=>pct(q.score,q.max)).filter(v=>v!=null);
+  // 家庭学習ノートで記録した分（自己申告）。授業で記録する「学習時間」とは重なりうるので足さない
+  const homeMin = home.reduce((a,h)=>a+(h.minutes||0),0);
+  const stats = `
+    <div class="stats">
+      <div class="stat"><div class="k">小テスト</div><div class="v">${quiz.length}<small>回</small></div>
+        ${quizPcts.length?`<div class="k">平均 ${Math.round(quizPcts.reduce((a,b)=>a+b,0)/quizPcts.length)}%</div>`:""}</div>
+      <div class="stat"><div class="k">振り返り</div><div class="v">${refl.length}<small>回</small></div></div>
+      <div class="stat"><div class="k">家庭学習ノート</div><div class="v">${home.length}<small>回</small></div>
+        ${homeMin?`<div class="k">合計 ${homeMin}分</div>`:""}</div>
+      <div class="stat"><div class="k">応用チャレンジ</div><div class="v">${ap.length}<small>回</small></div></div>
+    </div>`;
+
+  // 日付ごとにまとめる（新しい日が上）
+  const days = {};
+  const add = (date, order, html) => { (days[date] = days[date] || []).push({order, html}); };
+  quiz.forEach(q=>{
+    const t = lessonTitle(q.quiz_id);
+    add(q.date, 1, ev("📝", `小テスト　${t.no} ${t.name}`, `<span class="num">${q.score} / ${q.max}点</span>`));
+  });
+  refl.forEach(f=>{
+    const t = lessonTitle(f.quiz_id);
+    add(f.date, 2, ev("💬", `振り返り　${t.no} ${t.name}`, `理解度 ${f.understanding}・意欲 ${f.effort}`,
+      (f.comment?`<div class="quote">${esc(f.comment)}</div>`:"") + (f.toikaeshi?`<div class="reply">→ ${esc(f.toikaeshi)}</div>`:"")));
+  });
+  st.forEach(s=>{
+    add(s.date, 3, ev("⏱", "学習時間", `<span class="num">${s.minutes}分</span>`,
+      s.note?`<div class="quote">${esc(s.note)}</div>`:""));
+  });
+  home.forEach(h=>{
+    const u = setTitle(h.unit);
+    const mins = h.minutes!=null ? `${h.minutes}分` : `約${Math.max(1,Math.round((h.auto_seconds||0)/60))}分（自動）`;
+    const extra = [h.challenge?`応用 ${h.challenge}問`:"", h.redo?`やり直し ${h.redo}問`:""].filter(Boolean).join("・");
+    add(h.date, 4, ev("🏠", `家庭学習　${u.no} ${u.name}`,
+      `<span class="num">${mins}</span>・${h.solved}問中 ${h.correct}問正解${extra?`（${extra}）`:""}${h.level&&h.level!=="mix"?`・${esc(h.level)}`:""}`));
+  });
+  ap.forEach(a=>{
+    const u = setTitle(a.set_id);
+    add(a.date, 5, ev("🎯", `応用チャレンジ　${u.no} ${u.name}`, `<span class="num">${a.score} / ${a.max}点</span>`));
+  });
+  const list = Object.keys(days).sort().reverse().map(d=>`
+    <div class="day">
+      <h3>${esc(dateLabel(d))}</h3>
+      ${days[d].sort((a,b)=>a.order-b.order).map(x=>x.html).join("")}
+    </div>`).join("");
+  return stats + list;
+}
+/** 記録1行。what はテキスト（エスケープする）、meta と more はHTML（呼び出し側でエスケープ済み） */
+const ev = (icon, what, meta, more) => `
+  <div class="ev"><div class="ic">${icon}</div><div class="body">
+    <div class="what">${esc(what)}</div>
+    <div class="meta">${meta||""}</div>${more||""}
+  </div></div>`;
+
+/* ============================================================
+   起動
+   ============================================================ */
+(function boot(){
+  if(!Portal.configReady()){
+    app.innerHTML = `<div class="card"><h2>準備中です</h2><p class="hint">config.js に Supabase の接続情報を設定してください。</p></div>`;
+    return;
+  }
+  renderShell();
+  const id = store.get(KEYS.account);
+  const savedPw = store.get(KEYS.password);
+  const pw = savedPw || sess.get(SESSION_PW_KEY);
+  if(id && pw && parseAccountId(id)){
+    meBox().innerHTML = `<p class="hint" style="margin:0">ログイン確認中…</p>`;
+    tryLogin(id, pw, !!savedPw);
+  } else {
+    renderLoginForm(id || "");
+  }
+})();
+</script>
+</body>
+</html>
