@@ -160,12 +160,12 @@
     return h('div', { class: 'lick', data: { id: l.id } },
       h('div', { class: 'lick-h' },
         h('button', { type: 'button', class: 'mini-play' + (playing ? ' on' : ''), 'aria-label': l.name + 'を聴く', onclick: () => playLick(l, K) }, '▶'),
-        h('b', { class: 'lick-name' }, l.name),
+        h('b', { class: 'lick-name' }, App.lickText(l.name, l, pl.chords[0])),
         D.ctx === '*' ? h('span', { class: 'muted small' }, short(L.CTX[l.ctx].jp)) : null),
       tags,
       h('div', { class: 'mini-score', html: notation(l, pl, width) }),
       D.degrees ? degreeRows(l, pl) : null,
-      App.lickDesc(l) ? h('p', { class: 'muted small' }, App.lickDesc(l)) : null);
+      App.lickDesc(l) ? h('p', { class: 'muted small' }, App.lickText(App.lickDesc(l), l, pl.chords[0])) : null);
   }
 
   /* ---------------- 外から開く ---------------- */

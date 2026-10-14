@@ -343,6 +343,21 @@
     return out;
   }
 
+  // 文章（リックの名前・説明）のなかの音名・コード名（C, Gm, B♭maj7, F♯ …）の根音だけを、semis 半音ずらす。接尾辞や度数はそのまま。
+  // 「Dorian」「Bebop」のような語は触らない（根音のあとに続く小文字が、コードの種類の書き出しのときだけ根音とみなす）。ctx は spellInKey と同じ
+  const QUAL_START = ['maj', 'min', 'dim', 'aug', 'sus', 'alt', 'add', 'm'];
+  function transposeNotesInText(text, semis, ctx) {
+    const src = String(text == null ? '' : text);
+    if (!mod(semis, 12)) return src;
+    return src.replace(/(^|[^A-Za-z0-9])([A-G])([♭♯#]|b(?![a-zA-Z]|[0-9]b))?/g, (m, pre, letter, acc, off) => {
+      const end = off + m.length, rest = src.slice(end);
+      if (/^[a-z]/.test(rest) && !QUAL_START.some(q => rest.indexOf(q) === 0)) return m;   // 語の一部（Dorian など）
+      const a = !acc ? 0 : acc === 'b' || acc === '♭' ? -1 : 1;
+      const pc = mod(LETTER_PC[LETTERS.indexOf(letter)] + a + semis, 12);
+      return pre + spellStr(spellInKey(pc, ctx || {}), true);
+    });
+  }
+
   /* ---------------- スケール辞典 ---------------- */
   // f：度数の並び（綴りは度数から決まる）。jp：日本語名。use：どんなときに使うか
   const SCALES = {
@@ -440,7 +455,7 @@
     parseDegree, degreeSpell, intervalFromRoot, semisToDegreeName,
     keySigAccs, keyFifths, keySpell, keyPrefersFlat, MAJOR_KEY_NAMES, MINOR_KEY_NAMES,
     prettyAcc, parseChord, chordParts, chordText, CLASS_JP,
-    transposeRoot, spellInKey, transposeChordStr,
+    transposeRoot, spellInKey, transposeChordStr, transposeNotesInText,
     SCALES, scaleNotes, scalePcs, defaultScales,
     ROMAN, romanLabel, romanDeg, midiToFreq,
   });

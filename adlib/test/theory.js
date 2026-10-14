@@ -210,6 +210,22 @@ eq(T.keySigAccs(0), [0, 0, 0, 0, 0, 0, 0]);
   }
 }
 
+/* ---- 文章のなかの音名の移調 ---- */
+{
+  const tn = (t, semis, fifths) => T.transposeNotesInText(t, semis, { tonicPc: 0, fifths });
+  eq(tn('C7 の上で Gm のペンタ', 7, 1), 'G7 の上で Dm のペンタ');
+  eq(tn('Em7♭5 の分散', 5, -1), 'Am7♭5 の分散');
+  eq(tn('13th（A）で折り返す', 3, -3), '13th（C）で折り返す');
+  eq(tn('D♭m(maj7) をそえる', 2, -1), 'E♭m(maj7) をそえる');
+  eq(tn('Dorian と Bebop と Aeolian', 5, -1), 'Dorian と Bebop と Aeolian');   // 語は触らない
+  eq(tn('F♯ を通る', 1, -5), 'G を通る');
+  eq(tn('B♭ と E° の三和音', 2, 2), 'C と F♯° の三和音');
+  eq(tn('C6/9 と Cmaj7 と Csus4', 7, 1), 'G6/9 と Gmaj7 と Gsus4');
+  eq(tn('ii–V–I の V', 7, 1), 'ii–V–I の V');                                      // V・I は音名ではない
+  eq(tn('そのまま', 5, -1), 'そのまま');
+  eq(T.transposeNotesInText('C と G', 0, {}), 'C と G');
+}
+
 /* ---- ローマ数字 ---- */
 {
   const r = (s, t) => T.romanLabel(T.parseChord(s), t);

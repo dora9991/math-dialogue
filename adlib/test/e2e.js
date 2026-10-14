@@ -183,6 +183,23 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   ok(outR.rangeMode === false && outR.bar >= 8, '範囲の外から：全体を演奏 ' + JSON.stringify(outR));
   await page.evaluate(() => { AL.App.stop(); AL.App.setRange(null); AL.App.st.countIn = 1; });
 
+  // くり返すたびにキーを上げる：2コーラス目は4度上（F → B♭）で鳴る。画面の譜面（もとのキー）はそのまま
+  await page.evaluate(() => { const A = AL.App; A.loadPreset('ii-V-I'); A.setBacking({}); A.set({ keyCycle: 5 }); A._backing = {}; A._cyc = {}; A.st.countIn = 0; A.st.loops = 3; A.setTempo(320); });
+  const kc = await page.evaluate(() => {
+    const A = AL.App, root0 = A.slots[0].chord.rootPc;
+    const b0 = A.makePlan().chorus(0).bass[0].midi % 12, b1 = A.makePlan().chorus(1).bass[0].midi % 12;
+    const s0 = A.makePlan().chorus(0).solo.length, s1 = A.makePlan().chorus(1).solo.length;
+    return { root0, b0, b1, s0, s1, name1: A.keyNameAt(1), name0: A.keyNameAt(0) };
+  });
+  ok(kc.b0 === kc.root0 && kc.b1 === (kc.root0 + 5) % 12 && kc.s1 > 5, 'キーを順に変える：コーラス2は4度上 ' + JSON.stringify(kc));
+  await page.evaluate(() => AL.App.play());
+  let kpos = null;
+  for (let i = 0; i < 60 && !(kpos && kpos.chorus === 1); i++) { await page.waitForTimeout(100); kpos = await page.evaluate(() => AL.App.player.position()); }
+  await page.waitForTimeout(200);
+  const ktxt = await page.evaluate(() => document.getElementById('posText').innerText.replace(/\n/g, ' '));
+  ok(kpos && kpos.chorus === 1 && /コーラス 2 \/ 3・キー F/.test(ktxt), '再生バーにいまのキーが出る：' + ktxt);
+  await page.evaluate(() => { const A = AL.App; A.stop(); A.set({ keyCycle: 0 }); A._backing = {}; A._cyc = {}; A.setTempo(140); A.st.countIn = 1; });
+
   /* 8) 書き出し */
   await page.click('#tabs button[data-tab="sound"]');
   await page.waitForTimeout(200);

@@ -40,6 +40,20 @@
   // 部品の組み合わせで作ったリックの説明（'部品の組み合わせ：a1 + g2'）は、見せない
   const lickDesc = l => (l.desc && l.desc.indexOf('部品の組み合わせ') !== 0 ? l.desc : '');
   App.lickDesc = lickDesc;
+  // リックの名前・説明のなかの音名（C 基準で書いてある）を、実際に弾くキー（移調譜なら楽器の書き音）にあわせて書きかえる。
+  // chord0：そのリックの最初のコード（実音のもの）
+  App.lickText = function (text, lick, chord0) {
+    if (!text || !chord0 || chord0.nc || !chord0.root) return text;
+    const inst = App.writtenInst(), it = inst.transpose || 0;
+    const semis = T.mod(chord0.rootPc - lick.ref[0].rootPc + it, 12);
+    if (!semis) return text;
+    // 書く音での最初のコードの根音（綴り）から、♭系か♯系かを決める
+    let root = chord0.root;
+    if (it) { const q = T.shiftPitch({ l: root.l, a: root.a, oct: 4 }, N.STEPS_OF_SEMIS[it] != null ? N.STEPS_OF_SEMIS[it] : 0, it); root = q ? { l: q.l, a: q.a } : T.spellFromPc(T.mod(chord0.rootPc + it, 12), true); }
+    const minorish = chord0.cls === 'min' || chord0.cls === 'hdim' || chord0.cls === 'minmaj';
+    const flat = root.a < 0 ? true : root.a > 0 ? false : T.keyPrefersFlat(root, minorish ? 'minor' : 'major');
+    return T.transposeNotesInText(text, semis, { tonicPc: T.spellPc(root), fifths: flat ? -1 : 1 });
+  };
 
   /* ---------------- 組み立て ---------------- */
   function instOptions() {
@@ -216,7 +230,7 @@
           const lk = L.byId[dd.id], hsx = App.hs[dd.i0];
           list.appendChild(h('button', { type: 'button', class: 'phrase-item', onclick: () => { candOpen = false; candLimit = 18; App.select({ dec: i }); } },
             h('span', { class: 'pi-n' }, String(i + 1)),
-            h('span', { class: 'pi-b' }, h('b', null, dd.kind === 'pattern' ? App.patLabel(dd.pat) : (L.CTX[dd.ctx] ? L.CTX[dd.ctx].jp.replace(/（.*$/, '') : dd.ctx)), h('span', { class: 'muted' }, '　' + (hsx.bar + 1) + '小節目〜　' + lk.name))));
+            h('span', { class: 'pi-b' }, h('b', null, dd.kind === 'pattern' ? App.patLabel(dd.pat) : (L.CTX[dd.ctx] ? L.CTX[dd.ctx].jp.replace(/（.*$/, '') : dd.ctx)), h('span', { class: 'muted' }, '　' + (hsx.bar + 1) + '小節目〜　' + App.lickText(lk.name, lk, hsx.chord)))));
         });
         box.appendChild(list);
       }
@@ -224,6 +238,7 @@
     }
     const lick = L.byId[d.id], n = solo.decisions.length;
     const hsx = App.hs[d.i0];
+    const txt = (t, lk) => App.lickText(t, lk || lick, hsx.chord);
     const pl = placeLick(solo, di, lick);
     const ctxJp = L.CTX[d.ctx] ? L.CTX[d.ctx].jp : d.ctx;
     const prevBtn = h('button', { type: 'button', class: 'btn sm', disabled: di <= 0 ? true : null, onclick: () => App.select({ dec: di - 1 }) }, '◀ 前');
@@ -236,9 +251,9 @@
     const mini = h('div', { class: 'mini-score', html: miniNotation(pl, Math.min(620, (el.phrase.clientWidth || 600) - 40)) });
     const roles = (App.an.chords[d.i0].chips || []).map(c => h('span', { class: 'chip tone-' + (c.tone || 'x') }, c.label));
     box.appendChild(h('div', { class: 'phrase-main' },
-      h('div', { class: 'ph-title' }, h('b', { class: 'lick-name' }, lick.name), tags),
+      h('div', { class: 'ph-title' }, h('b', { class: 'lick-name' }, txt(lick.name)), tags),
       h('p', { class: 'muted' }, ctxJp + '　／　' + hsx.src + (d.n > 1 ? ' から ' + d.n + ' コード' : '') + '　' + (hsx.bar + 1) + '小節目'),
-      lickDesc(lick) ? h('p', null, lickDesc(lick)) : null,
+      lickDesc(lick) ? h('p', null, txt(lickDesc(lick))) : null,
       mini,
       degreeLine(solo, di),
       h('div', { class: 'row gap wrap mt' },
@@ -280,12 +295,12 @@
       wrap.appendChild(h('div', { class: 'cand' + (isCur ? ' cur' : '') },
         h('div', { class: 'cand-h' },
           h('button', { type: 'button', class: 'mini-play', 'aria-label': l.name + 'を聴く', onclick: () => previewLick(solo, di, l) }, '▶'),
-          h('b', { class: 'cand-name' }, l.name),
+          h('b', { class: 'cand-name' }, App.lickText(l.name, l, App.hs[d.i0].chord)),
           h('div', { class: 'grow' }),
           isCur ? h('span', { class: 'badge' }, '今のリック') : h('button', { type: 'button', class: 'btn sm primary', onclick: () => { App.swapLick(di, l.id); } }, 'これにする')),
         tags,
         h('div', { class: 'mini-score', html: miniNotation(pl, candW) }),
-        lickDesc(l) ? h('p', { class: 'muted small' }, lickDesc(l)) : null));
+        lickDesc(l) ? h('p', { class: 'muted small' }, App.lickText(lickDesc(l), l, App.hs[d.i0].chord)) : null));
     });
     box.appendChild(wrap);
     if (list.length > candLimit) box.appendChild(h('div', { class: 'row center mt' }, h('button', { type: 'button', class: 'btn', onclick: () => { candLimit += 18; renderPhrase(); } }, 'もっと見る（残り ' + (list.length - candLimit) + '本）')));

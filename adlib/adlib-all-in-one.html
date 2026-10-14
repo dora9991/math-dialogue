@@ -871,6 +871,21 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     return out;
   }
 
+  // 文章（リックの名前・説明）のなかの音名・コード名（C, Gm, B♭maj7, F♯ …）の根音だけを、semis 半音ずらす。接尾辞や度数はそのまま。
+  // 「Dorian」「Bebop」のような語は触らない（根音のあとに続く小文字が、コードの種類の書き出しのときだけ根音とみなす）。ctx は spellInKey と同じ
+  const QUAL_START = ['maj', 'min', 'dim', 'aug', 'sus', 'alt', 'add', 'm'];
+  function transposeNotesInText(text, semis, ctx) {
+    const src = String(text == null ? '' : text);
+    if (!mod(semis, 12)) return src;
+    return src.replace(/(^|[^A-Za-z0-9])([A-G])([♭♯#]|b(?![a-zA-Z]|[0-9]b))?/g, (m, pre, letter, acc, off) => {
+      const end = off + m.length, rest = src.slice(end);
+      if (/^[a-z]/.test(rest) && !QUAL_START.some(q => rest.indexOf(q) === 0)) return m;   // 語の一部（Dorian など）
+      const a = !acc ? 0 : acc === 'b' || acc === '♭' ? -1 : 1;
+      const pc = mod(LETTER_PC[LETTERS.indexOf(letter)] + a + semis, 12);
+      return pre + spellStr(spellInKey(pc, ctx || {}), true);
+    });
+  }
+
   /* ---------------- スケール辞典 ---------------- */
   // f：度数の並び（綴りは度数から決まる）。jp：日本語名。use：どんなときに使うか
   const SCALES = {
@@ -968,7 +983,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     parseDegree, degreeSpell, intervalFromRoot, semisToDegreeName,
     keySigAccs, keyFifths, keySpell, keyPrefersFlat, MAJOR_KEY_NAMES, MINOR_KEY_NAMES,
     prettyAcc, parseChord, chordParts, chordText, CLASS_JP,
-    transposeRoot, spellInKey, transposeChordStr,
+    transposeRoot, spellInKey, transposeChordStr, transposeNotesInText,
     SCALES, scaleNotes, scalePcs, defaultScales,
     ROMAN, romanLabel, romanDeg, midiToFreq,
   });
@@ -2983,9 +2998,9 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     ['ワルツ：サスの上行', 'F4 G4 Bb4 C5 D5 C5', '4度から上がって 9th で折り返す。', { tags: ['scale'] }],
   ]);
   L.pack(Object.assign({ ctx: 'blues7', ref: 'C7' }, W), [
-    ['ワルツ・ブルース：♭3 から3度へ', 'C4 Eb4 E4 G4 Bb4 G4', '♭3→3 のブルースらしい入り。', { tags: ['blues', 'chromatic'] }],
+    ['ワルツ・ブルース：根音から♭3→3度へ', 'C4 Eb4 E4 G4 Bb4 G4', '根音から ♭3→3 と半音でにじんで上がる、ブルースらしい入り。', { tags: ['blues', 'chromatic'] }],
     ['ワルツ・ブルース：下降', 'C5 Bb4 G4 Gb4 F4 E4', '♭5（ブルーノート）を通って3度へ降りる。', { tags: ['blues', 'scale'] }],
-    ['ワルツ・ブルース：♭3 の上行', 'G4 Bb4 C5 Eb5 C5 Bb4', '5度から上がって ♭3 のオクターブ上へ。', { tags: ['blues', 'pent'] }],
+    ['ワルツ・ブルース：5度から♭3 へ', 'G4 Bb4 C5 Eb5 C5 Bb4', '5度から上がって高い ♭3（ブルーノート）へ行き、降りて戻る。', { tags: ['blues', 'pent'] }],
   ]);
   L.pack(Object.assign({ ctx: 'maj7', ref: 'Cmaj7' }, W), [
     ['ワルツ：分散の上がり下がり', 'C4 E4 G4 B4 G4 E4', '1-3-5-7 を上がって降りる。着地にふさわしい形。', { tags: ['arp'] }],
@@ -2993,7 +3008,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     ['ワルツ：スケールで上がる', 'G4 A4 B4 C5 D5 E5', '5度からアイオニアンで上がる。', { tags: ['scale'] }],
     ['ワルツ：スケールで降りる', 'E5 D5 C5 B4 G4 E4', '3度から降りる。', { tags: ['scale'] }],
     ['ワルツ：7度から折り返す', 'B4 C5 D5 E5 D5 C5', '7度（導音）から根音へ上がって、山をつくる。', { tags: ['scale'] }],
-    ['ワルツ：5度から降りる', 'C5 B4 A4 G4 E4 C4', '根音から降りて、また根音へ。', { tags: ['scale'] }],
+    ['ワルツ：根音から降りて根音へ', 'C5 B4 A4 G4 E4 C4', '根音から順に降りて、低い根音へ。', { tags: ['scale'] }],
     ['ワルツ：4分音符の分散', 'E4:q G4:q C5:q', '3度・5度・根音を4分音符で。', { tags: ['arp', 'rhythm'] }],
     ['ワルツ：付点4分で歌う', 'C5:q. B4 G4:q', '付点4分音符＋8分音符のなめらかな下降。', { tags: ['rhythm'] }],
     ['ワルツ：根音を伸ばして終わる', 'E4 G4 B4 C5:q.', '分散で上がって、根音を1拍半のばす。フレーズの終わりに。', { tags: ['arp', 'rhythm'] }],
@@ -3010,7 +3025,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     ['ワルツ：分散で降りて9thへ', 'Bb4 G4 Eb4 C4 D4 Eb4', '♭7 から降りて、9th を経て♭3 へ。', { tags: ['arp'] }],
     ['ワルツ：♭3 から上がって折り返す', 'Eb4 F4 G4 Bb4 C5 Bb4', 'ドリアンで上がって、根音で折り返す。', { tags: ['scale'] }],
     ['ワルツ：ドリアンの下降', 'C5 Bb4 A4 G4 F4 Eb4', '6th（A）を含むドリアンの下降。', { tags: ['scale'] }],
-    ['ワルツ：9th から降りる', 'D4 Eb4 G4 F4 Eb4 C4', '9th・♭3・5度から降りて根音へ。', { tags: ['scale'] }],
+    ['ワルツ：9th から上がって根音へ降りる', 'D4 Eb4 G4 F4 Eb4 C4', '9th から ♭3・5度へ上がって、4度・♭3 を経て根音へ降りる。', { tags: ['scale'] }],
     ['ワルツ：4分音符の分散', 'G4:q Bb4:q C5:q', '5度・♭7・根音を4分音符で。', { tags: ['arp', 'rhythm'] }],
     ['ワルツ：付点4分で歌う', 'Eb5:q. D5 C5:q', '♭3 から付点4分で降りる。', { tags: ['rhythm'] }],
     ['ワルツ：下から入る', 'Bb3 C4 Eb4 G4 Bb4:q', '低い♭7 から立ち上がり、♭7 を1拍のばす。', { tags: ['arp', 'rhythm'] }],
@@ -3019,7 +3034,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   L.pack(Object.assign({ ctx: 'min6', ref: 'Cm6' }, W), [
     ['ワルツ：m6 の分散', 'C4 Eb4 G4 A4 G4 Eb4', '6th（A）を含む分散で上がって降りる。', { tags: ['arp'] }],
     ['ワルツ：6th から降りる', 'A4 G4 Eb4 C4 D4 Eb4', '6th から降りて、9th を経て♭3 へ。', { tags: ['arp'] }],
-    ['ワルツ：メロディックマイナーの上行', 'G4 A4 C5 Eb5 D5 C5', '5度から上がって♭3 で折り返し、降りる。', { tags: ['scale'] }],
+    ['ワルツ：5度から6thへ上がって折り返す', 'G4 A4 C5 Eb5 D5 C5', '5度・6th から上がって♭3 で折り返し、9th・根音へ降りる。', { tags: ['scale'] }],
   ]);
   L.pack(Object.assign({ ctx: 'minmaj7', ref: 'Cm(maj7)' }, W), [
     ['ワルツ：m(maj7) の分散', 'C4 Eb4 G4 B4 G4 Eb4', '1-♭3-5-7 を上がって降りる。', { tags: ['arp'] }],
@@ -3043,24 +3058,24 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   // Dm7（ii）3拍
   const D = {
     d1: ['D4 F4 A4 C5 A4 F4', 'Dm7 の分散'],
-    d2: ['A4 C5 D5 C5 A4 F4', '5度から分散で降りる'],
+    d2: ['A4 C5 D5 C5 A4 F4', '5度から上がって降りる分散'],
     d3: ['F4 A4 C5 E5 D5 C5', '3度から9thへ上がって降りる'],
     d4: ['C5 A4 F4 D4 E4 F4', '♭7 から谷をつくる'],
     d5: ['E4 F4 A4 G4 F4 E4', '9th から小さく山をつくる'],
-    d6: ['D5 C5 A4 F4 A4 C5', '9th から降りて昇る'],
+    d6: ['D5 C5 A4 F4 A4 C5', '根音から降りて昇る'],
     d7: ['F4:q A4:q C5:q', '4分音符の分散'],
     d8: ['A4:q. G4 F4:q', '付点4分で歌う'],
     d9: ['C5 D5 E5 D5 C5 A4', 'ドリアンの山形'],
-    d10: ['A4 G4 F4 E4 D4 E4', '5度から順に降りる'],
+    d10: ['A4 G4 F4 E4 D4 E4', '5度から順に降りて折り返す'],
   };
   // G7（V）3拍
   const G = {
-    g1: ['B4 A4 G4 F4 D4 B3', 'ミクソリディアン下降'],
+    g1: ['B4 A4 G4 F4 D4 B3', 'ミクソリディアンで降りて3度へ'],
     g2: ['D5 B4 G4 F4 D4 B3', '5度から降りる分散'],
     g3: ['F4 D4 B3 D4 F4 G4', '♭7 から谷をつくる'],
-    g4: ['G4 B4 D5 F5 E5 D5', '根音から上がる分散'],
+    g4: ['G4 B4 D5 F5 E5 D5', '根音から分散で上がって13thへ降りる'],
     g5: ['B4 D5 F5 D5 B4 G4', '3度から上がって折り返す'],
-    g6: ['A4 G4 F4 E4 D4 B3', '13th から降りる'],
+    g6: ['A4 G4 F4 E4 D4 B3', '9th から降りる（13th を通って3度へ）'],
     g7: ['F4:q D4:q B3:q', '4分音符で降りる（♭7-5-3）'],
     g8: ['G4:q B4:q D5:q', '4分音符で上がる'],
     g9: ['D5 C5 B4 A4 G4 F4', '5度から順に降りる'],
@@ -3071,14 +3086,14 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     c1: ['E4 G4 C5 B4 G4 E4', '3度から分散'],
     c2: ['C5 B4 G4 E4 G4 C5', '根音から降りて戻る'],
     c3: ['G4 E4 C4 E4 G4 B4', '谷をつくって昇る'],
-    c4: ['E5 D5 C5 B4 G4 E4', '3度のオクターブ上から降りる'],
+    c4: ['E5 D5 C5 B4 G4 E4', '3度から1オクターブ降りる'],
     c5: ['E4 G4 B4 C5:q.', '分散で上がって根音を伸ばす'],
     c6: ['G4 B4 C5:h', '5度から上がって根音を伸ばす'],
     c7: ['C5:h.', '根音をゆったり'],
     c8: ['E5:q C5:q G4:q', '4分音符で降りる'],
     c9: ['B4 C5 D5 E5 D5 C5', '7度から上がって折り返す'],
     c11: ['G4 E4 C4 E4 G4:q', '谷をつくって5度で止まる'],
-    c12: ['C4 E4 G4 C5 B4 G4', '導音から分散で上がる'],
+    c12: ['C4 E4 G4 C5 B4 G4', '根音から分散で上がって7度へ'],
     c13: ['C4 E4 G4 B4 G4 E4', '根音から分散で上がって降りる'],
   };
   const R3 = ['Dm7', 'G7', 'Cmaj7'];
@@ -5507,7 +5522,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       comp: 'piano', bass: 'upright', drums: 'jazz', soloInst: 'altosax',
       mix: Object.assign({}, MIX_DEF), reverb: Object.assign({}, REV_DEF), muted: {},
       seed: 1, soloSeed: 3, level: 2, density: 1, soloMode: 'same', concert: true,
-      keyOverride: null, perRow: 4, range: null, tab: 'chart', dictKey: 0,
+      keyOverride: null, keyCycle: 0, perRow: 4, range: null, tab: 'chart', dictKey: 0,
     };
   }
   const inList = (list, v, def) => (list.indexOf(v) >= 0 ? v : def);
@@ -5539,6 +5554,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     o.soloMode = inList(['off', 'same', 'fresh'], o.soloMode, 'same');
     o.concert = !!o.concert;
     o.keyOverride = o.keyOverride && typeof o.keyOverride.tonicPc === 'number' && (o.keyOverride.mode === 'major' || o.keyOverride.mode === 'minor') ? { tonicPc: mod(o.keyOverride.tonicPc | 0, 12), mode: o.keyOverride.mode } : null;
+    o.keyCycle = inList([0, 1, 2, 5], o.keyCycle, 0);
     o.perRow = inList([2, 3, 4, 6, 8], o.perRow, 4);
     o.range = o.range && typeof o.range.a === 'number' && typeof o.range.b === 'number' ? { a: Math.max(0, o.range.a | 0), b: Math.max(0, o.range.b | 0) } : null;
     o.tab = inList(['chart', 'solo', 'dict', 'sound'], o.tab, 'chart');
@@ -5584,6 +5600,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     });
     App._backing = {};
     App._fresh = {};
+    App._cyc = {};
     App.hasChords = App.hs.some(x => !x.chord.nc && !x.chord.bad);
     App.makeSolo();
   };
@@ -5593,22 +5610,44 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   };
   App.makeSolo = function () {
     App.solo = S.generate(App.hs, App.an, App.soloOpts());
-    App._fresh = {};
+    App._fresh = {}; App._cyc = {};
   };
   // 楽器だけ変えたとき：リックの選びはそのままで、音域に合わせて置きなおす
   App.refitSolo = function () {
     const o = Object.assign({}, App.solo.opts, { lo: App.soloOpts().lo, hi: App.soloOpts().hi });
     App.solo = S.realize(App.hs, App.an, Object.assign({}, App.solo, { opts: o }));
-    App._fresh = {};
+    App._fresh = {}; App._cyc = {};
   };
+  // k コーラス目に演奏するデータ。「キーを順に変える」のときは、もとのコード譜を移調したもの（画面の譜面はもとのキーのまま）
+  App.dataFor = function (k) {
+    const step = st.keyCycle | 0, semis = step ? (k * step) % 12 : 0;
+    if (!semis) return { slots: App.slots, hs: App.hs, an: App.an, solo: App.solo, semis: 0 };
+    if (!App._cyc[semis]) {
+      const key = App.an.key, pc = mod(key.tonicPc + semis, 12), sp = T.keySpell(pc, key.mode);
+      const text = C.transposeText(st.text, semis, { tonicPc: pc, fifths: T.keyFifths(sp, key.mode) });
+      const chart = C.parse(text, { beatsPerBar: App.bpb }), slots = C.slotsOf(chart), hs = C.harmonicSlots(slots);
+      const an = A.analyze(hs, { beatsPerBar: App.bpb, key: st.keyOverride ? { tonicPc: mod(st.keyOverride.tonicPc + semis, 12), mode: st.keyOverride.mode } : undefined });
+      // 同じ番号・同じリックの選びで、移調したソロ（差しかえたリックもそのまま）
+      let solo = S.generate(hs, an, App.soloOpts());
+      App.solo.decisions.forEach((d, i) => {
+        const e = solo.decisions[i];
+        if (e && e.id !== d.id && L.byId[d.id] && L.byId[d.id].segs.length === L.byId[e.id].segs.length) solo = S.swap(hs, an, solo, i, d.id);
+      });
+      App._cyc[semis] = { slots, hs, an, solo, semis };
+    }
+    return App._cyc[semis];
+  };
+  // k コーラス目のキーの名前（「B♭」「Gm」など）
+  App.keyNameAt = k => App.dataFor(k).an.key.short;
   // k コーラス目のソロ（'fresh' のときは、毎回あたらしく作る）
   App.soloFor = function (k) {
-    if (k === 0 || st.soloMode !== 'fresh') return App.solo;
-    if (!App._fresh[k]) App._fresh[k] = S.generate(App.hs, App.an, Object.assign(App.soloOpts(), { seed: (st.soloSeed * 101 + k * 977) % 99991 + 1 }));
+    const d = App.dataFor(k);
+    if (k === 0 || st.soloMode !== 'fresh') return d.solo;
+    if (!App._fresh[k]) App._fresh[k] = S.generate(d.hs, d.an, Object.assign(App.soloOpts(), { seed: (st.soloSeed * 101 + k * 977) % 99991 + 1 }));
     return App._fresh[k];
   };
   App.backing = function (k) {
-    if (!App._backing[k]) App._backing[k] = B.generate(App.slots, { style: st.style, kind: st.comp, seed: st.seed * 31 + k * 7919, bpb: App.bpb });
+    if (!App._backing[k]) App._backing[k] = B.generate(App.dataFor(k).slots, { style: st.style, kind: st.comp, seed: st.seed * 31 + k * 7919, bpb: App.bpb });
     return App._backing[k];
   };
 
@@ -5677,12 +5716,12 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   App.newSolo = function () { App.setSoloParams({ soloSeed: (st.soloSeed * 7 + 13 + Math.floor(Math.random() * 1000)) % 99991 + 1 }); };
   App.swapLick = function (di, lickId) {
     App.solo = S.swap(App.hs, App.an, App.solo, di, lickId);
-    App._fresh = {};
+    App._fresh = {}; App._cyc = {};
     App.emit('solo');
   };
   App.rerollDecision = function (di) {
     App.solo = S.reroll(App.hs, App.an, App.solo, di, Math.floor(Math.random() * 1e9));
-    App._fresh = {};
+    App._fresh = {}; App._cyc = {};
     App.emit('solo');
   };
   App.set = function (patch, evt) { Object.assign(st, patch); save(); App.emit(evt || 'settings'); };
@@ -5926,7 +5965,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     if (App.playKind !== 'main' || !pos) return;
     if (pos.countIn) { setPosText('カウントイン', String(U.clamp((pos.ci || 0) + 1, 1, 99))); return; }
     const total = st.loops === 0 ? '∞' : st.loops;
-    setPosText('コーラス ' + (pos.chorus + 1) + ' / ' + total, '小節 ' + (pos.bar + 1) + '・' + (Math.floor(pos.beatInBar + 1e-9) + 1) + '拍');
+    setPosText('コーラス ' + (pos.chorus + 1) + ' / ' + total + (st.keyCycle ? '・キー ' + App.keyNameAt(pos.chorus) : ''), '小節 ' + (pos.bar + 1) + '・' + (Math.floor(pos.beatInBar + 1e-9) + 1) + '拍');
   });
   App.on('chart', () => refreshTransport());
   App.on('settings', () => refreshTransport());
@@ -6053,6 +6092,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     el.swingReset = h('button', { type: 'button', class: 'btn sm ghost', onclick: () => { App.set({ swing: null }); refreshSettings(); } }, '標準にもどす');
     el.countIn = U.seg([[0, 'なし'], [1, '1小節'], [2, '2小節']], st().countIn, v => App.set({ countIn: v }), 'カウントイン');
     el.click = U.switchEl('メトロノーム（クリック）', st().click, v => App.set({ click: v }));
+    el.keyCycle = U.seg([[0, 'しない'], [1, '半音ずつ'], [2, '全音ずつ'], [5, '4度ずつ']], st().keyCycle, v => { App.set({ keyCycle: v }); App._backing = {}; App._cyc = {}; if (App.playKind === 'main') App.stop(); }, 'キーを順に変える');
     el.perRow = U.seg([[2, '2'], [3, '3'], [4, '4'], [6, '6'], [8, '8']], st().perRow, v => { App.set({ perRow: v }); renderGrid(); }, '1行の小節数');
     root.appendChild(h('div', { class: 'card' },
       h('div', { class: 'card-h' }, h('h2', null, '演奏の設定')),
@@ -6061,6 +6101,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
         h('div', { class: 'field' }, h('label', { class: 'f-label', for: 'keySel' }, 'キー（まるごと移調）'), h('div', { class: 'row gap' }, keyDown, el.keySel, keyUp), el.keyNote),
         h('div', { class: 'field' }, h('label', { class: 'f-label' }, 'スウィングの深さ'), h('div', { class: 'row gap' }, el.swing, el.swingVal), h('div', { class: 'row gap' }, el.swingReset, h('p', { class: 'f-hint' }, '50% は均等な8分音符、67% で3連符のハネ。'))),
         U.field('カウントイン', el.countIn, null),
+        U.field('くり返すたびにキーを上げる（練習用）', el.keyCycle, '1コーラスごとに、コード譜をキーごと移調して演奏します（画面の譜面はもとのキーのまま。いまのキーは再生バーに出ます）。同じリックを全部のキーで練習したいときに。'),
         h('div', { class: 'field' }, el.click),
         U.field('譜面の1行あたりの小節数', el.perRow, null),
       ), el.styleNote));
@@ -6186,6 +6227,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     el.swing.value = Math.round(App.swing() * 100);
     updateSwingLabel();
     el.countIn.set(st().countIn);
+    el.keyCycle.set(st().keyCycle);
     el.click.input.checked = !!st().click;
     el.perRow.set(st().perRow);
     el.title.value = st().title || '';
@@ -6415,12 +6457,12 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
         cards.appendChild(h('div', { class: 'cand' + (isCur ? ' cur' : '') },
           h('div', { class: 'cand-h' },
             h('button', { type: 'button', class: 'mini-play', 'aria-label': l.name + 'を聴く', onclick: () => V.previewLickAt(App.solo, sg.d, l) }, '▶'),
-            h('b', { class: 'cand-name' }, l.name), h('div', { class: 'grow' }),
+            h('b', { class: 'cand-name' }, App.lickText(l.name, l, App.hs[sg.d.i0].chord)), h('div', { class: 'grow' }),
             isCur ? h('span', { class: 'badge' }, 'いまのソロで使用中')
               : sg.di >= 0 ? h('button', { type: 'button', class: 'btn sm primary', onclick: () => { App.swapLick(sg.di, l.id); U.toast('ソロの ' + (sg.di + 1) + ' 番目のフレーズを差しかえました'); } }, 'ソロに採用') : null),
           tags,
           h('div', { class: 'mini-score', html: V.miniNotation(pl, miniW) }),
-          App.lickDesc(l) ? h('p', { class: 'muted small' }, App.lickDesc(l)) : null));
+          App.lickDesc(l) ? h('p', { class: 'muted small' }, App.lickText(App.lickDesc(l), l, App.hs[sg.d.i0].chord)) : null));
       });
       box.appendChild(cards);
       box.appendChild(h('div', { class: 'row gap wrap mt' },
@@ -6532,6 +6574,20 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   // 部品の組み合わせで作ったリックの説明（'部品の組み合わせ：a1 + g2'）は、見せない
   const lickDesc = l => (l.desc && l.desc.indexOf('部品の組み合わせ') !== 0 ? l.desc : '');
   App.lickDesc = lickDesc;
+  // リックの名前・説明のなかの音名（C 基準で書いてある）を、実際に弾くキー（移調譜なら楽器の書き音）にあわせて書きかえる。
+  // chord0：そのリックの最初のコード（実音のもの）
+  App.lickText = function (text, lick, chord0) {
+    if (!text || !chord0 || chord0.nc || !chord0.root) return text;
+    const inst = App.writtenInst(), it = inst.transpose || 0;
+    const semis = T.mod(chord0.rootPc - lick.ref[0].rootPc + it, 12);
+    if (!semis) return text;
+    // 書く音での最初のコードの根音（綴り）から、♭系か♯系かを決める
+    let root = chord0.root;
+    if (it) { const q = T.shiftPitch({ l: root.l, a: root.a, oct: 4 }, N.STEPS_OF_SEMIS[it] != null ? N.STEPS_OF_SEMIS[it] : 0, it); root = q ? { l: q.l, a: q.a } : T.spellFromPc(T.mod(chord0.rootPc + it, 12), true); }
+    const minorish = chord0.cls === 'min' || chord0.cls === 'hdim' || chord0.cls === 'minmaj';
+    const flat = root.a < 0 ? true : root.a > 0 ? false : T.keyPrefersFlat(root, minorish ? 'minor' : 'major');
+    return T.transposeNotesInText(text, semis, { tonicPc: T.spellPc(root), fifths: flat ? -1 : 1 });
+  };
 
   /* ---------------- 組み立て ---------------- */
   function instOptions() {
@@ -6708,7 +6764,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
           const lk = L.byId[dd.id], hsx = App.hs[dd.i0];
           list.appendChild(h('button', { type: 'button', class: 'phrase-item', onclick: () => { candOpen = false; candLimit = 18; App.select({ dec: i }); } },
             h('span', { class: 'pi-n' }, String(i + 1)),
-            h('span', { class: 'pi-b' }, h('b', null, dd.kind === 'pattern' ? App.patLabel(dd.pat) : (L.CTX[dd.ctx] ? L.CTX[dd.ctx].jp.replace(/（.*$/, '') : dd.ctx)), h('span', { class: 'muted' }, '　' + (hsx.bar + 1) + '小節目〜　' + lk.name))));
+            h('span', { class: 'pi-b' }, h('b', null, dd.kind === 'pattern' ? App.patLabel(dd.pat) : (L.CTX[dd.ctx] ? L.CTX[dd.ctx].jp.replace(/（.*$/, '') : dd.ctx)), h('span', { class: 'muted' }, '　' + (hsx.bar + 1) + '小節目〜　' + App.lickText(lk.name, lk, hsx.chord)))));
         });
         box.appendChild(list);
       }
@@ -6716,6 +6772,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     }
     const lick = L.byId[d.id], n = solo.decisions.length;
     const hsx = App.hs[d.i0];
+    const txt = (t, lk) => App.lickText(t, lk || lick, hsx.chord);
     const pl = placeLick(solo, di, lick);
     const ctxJp = L.CTX[d.ctx] ? L.CTX[d.ctx].jp : d.ctx;
     const prevBtn = h('button', { type: 'button', class: 'btn sm', disabled: di <= 0 ? true : null, onclick: () => App.select({ dec: di - 1 }) }, '◀ 前');
@@ -6728,9 +6785,9 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     const mini = h('div', { class: 'mini-score', html: miniNotation(pl, Math.min(620, (el.phrase.clientWidth || 600) - 40)) });
     const roles = (App.an.chords[d.i0].chips || []).map(c => h('span', { class: 'chip tone-' + (c.tone || 'x') }, c.label));
     box.appendChild(h('div', { class: 'phrase-main' },
-      h('div', { class: 'ph-title' }, h('b', { class: 'lick-name' }, lick.name), tags),
+      h('div', { class: 'ph-title' }, h('b', { class: 'lick-name' }, txt(lick.name)), tags),
       h('p', { class: 'muted' }, ctxJp + '　／　' + hsx.src + (d.n > 1 ? ' から ' + d.n + ' コード' : '') + '　' + (hsx.bar + 1) + '小節目'),
-      lickDesc(lick) ? h('p', null, lickDesc(lick)) : null,
+      lickDesc(lick) ? h('p', null, txt(lickDesc(lick))) : null,
       mini,
       degreeLine(solo, di),
       h('div', { class: 'row gap wrap mt' },
@@ -6772,12 +6829,12 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       wrap.appendChild(h('div', { class: 'cand' + (isCur ? ' cur' : '') },
         h('div', { class: 'cand-h' },
           h('button', { type: 'button', class: 'mini-play', 'aria-label': l.name + 'を聴く', onclick: () => previewLick(solo, di, l) }, '▶'),
-          h('b', { class: 'cand-name' }, l.name),
+          h('b', { class: 'cand-name' }, App.lickText(l.name, l, App.hs[d.i0].chord)),
           h('div', { class: 'grow' }),
           isCur ? h('span', { class: 'badge' }, '今のリック') : h('button', { type: 'button', class: 'btn sm primary', onclick: () => { App.swapLick(di, l.id); } }, 'これにする')),
         tags,
         h('div', { class: 'mini-score', html: miniNotation(pl, candW) }),
-        lickDesc(l) ? h('p', { class: 'muted small' }, lickDesc(l)) : null));
+        lickDesc(l) ? h('p', { class: 'muted small' }, App.lickText(lickDesc(l), l, App.hs[d.i0].chord)) : null));
     });
     box.appendChild(wrap);
     if (list.length > candLimit) box.appendChild(h('div', { class: 'row center mt' }, h('button', { type: 'button', class: 'btn', onclick: () => { candLimit += 18; renderPhrase(); } }, 'もっと見る（残り ' + (list.length - candLimit) + '本）')));
@@ -6994,12 +7051,12 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     return h('div', { class: 'lick', data: { id: l.id } },
       h('div', { class: 'lick-h' },
         h('button', { type: 'button', class: 'mini-play' + (playing ? ' on' : ''), 'aria-label': l.name + 'を聴く', onclick: () => playLick(l, K) }, '▶'),
-        h('b', { class: 'lick-name' }, l.name),
+        h('b', { class: 'lick-name' }, App.lickText(l.name, l, pl.chords[0])),
         D.ctx === '*' ? h('span', { class: 'muted small' }, short(L.CTX[l.ctx].jp)) : null),
       tags,
       h('div', { class: 'mini-score', html: notation(l, pl, width) }),
       D.degrees ? degreeRows(l, pl) : null,
-      App.lickDesc(l) ? h('p', { class: 'muted small' }, App.lickDesc(l)) : null);
+      App.lickDesc(l) ? h('p', { class: 'muted small' }, App.lickText(App.lickDesc(l), l, pl.chords[0])) : null);
   }
 
   /* ---------------- 外から開く ---------------- */

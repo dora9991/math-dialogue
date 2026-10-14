@@ -79,6 +79,7 @@
     el.swingReset = h('button', { type: 'button', class: 'btn sm ghost', onclick: () => { App.set({ swing: null }); refreshSettings(); } }, '標準にもどす');
     el.countIn = U.seg([[0, 'なし'], [1, '1小節'], [2, '2小節']], st().countIn, v => App.set({ countIn: v }), 'カウントイン');
     el.click = U.switchEl('メトロノーム（クリック）', st().click, v => App.set({ click: v }));
+    el.keyCycle = U.seg([[0, 'しない'], [1, '半音ずつ'], [2, '全音ずつ'], [5, '4度ずつ']], st().keyCycle, v => { App.set({ keyCycle: v }); App._backing = {}; App._cyc = {}; if (App.playKind === 'main') App.stop(); }, 'キーを順に変える');
     el.perRow = U.seg([[2, '2'], [3, '3'], [4, '4'], [6, '6'], [8, '8']], st().perRow, v => { App.set({ perRow: v }); renderGrid(); }, '1行の小節数');
     root.appendChild(h('div', { class: 'card' },
       h('div', { class: 'card-h' }, h('h2', null, '演奏の設定')),
@@ -87,6 +88,7 @@
         h('div', { class: 'field' }, h('label', { class: 'f-label', for: 'keySel' }, 'キー（まるごと移調）'), h('div', { class: 'row gap' }, keyDown, el.keySel, keyUp), el.keyNote),
         h('div', { class: 'field' }, h('label', { class: 'f-label' }, 'スウィングの深さ'), h('div', { class: 'row gap' }, el.swing, el.swingVal), h('div', { class: 'row gap' }, el.swingReset, h('p', { class: 'f-hint' }, '50% は均等な8分音符、67% で3連符のハネ。'))),
         U.field('カウントイン', el.countIn, null),
+        U.field('くり返すたびにキーを上げる（練習用）', el.keyCycle, '1コーラスごとに、コード譜をキーごと移調して演奏します（画面の譜面はもとのキーのまま。いまのキーは再生バーに出ます）。同じリックを全部のキーで練習したいときに。'),
         h('div', { class: 'field' }, el.click),
         U.field('譜面の1行あたりの小節数', el.perRow, null),
       ), el.styleNote));
@@ -212,6 +214,7 @@
     el.swing.value = Math.round(App.swing() * 100);
     updateSwingLabel();
     el.countIn.set(st().countIn);
+    el.keyCycle.set(st().keyCycle);
     el.click.input.checked = !!st().click;
     el.perRow.set(st().perRow);
     el.title.value = st().title || '';
@@ -441,12 +444,12 @@
         cards.appendChild(h('div', { class: 'cand' + (isCur ? ' cur' : '') },
           h('div', { class: 'cand-h' },
             h('button', { type: 'button', class: 'mini-play', 'aria-label': l.name + 'を聴く', onclick: () => V.previewLickAt(App.solo, sg.d, l) }, '▶'),
-            h('b', { class: 'cand-name' }, l.name), h('div', { class: 'grow' }),
+            h('b', { class: 'cand-name' }, App.lickText(l.name, l, App.hs[sg.d.i0].chord)), h('div', { class: 'grow' }),
             isCur ? h('span', { class: 'badge' }, 'いまのソロで使用中')
               : sg.di >= 0 ? h('button', { type: 'button', class: 'btn sm primary', onclick: () => { App.swapLick(sg.di, l.id); U.toast('ソロの ' + (sg.di + 1) + ' 番目のフレーズを差しかえました'); } }, 'ソロに採用') : null),
           tags,
           h('div', { class: 'mini-score', html: V.miniNotation(pl, miniW) }),
-          App.lickDesc(l) ? h('p', { class: 'muted small' }, App.lickDesc(l)) : null));
+          App.lickDesc(l) ? h('p', { class: 'muted small' }, App.lickText(App.lickDesc(l), l, App.hs[sg.d.i0].chord)) : null));
       });
       box.appendChild(cards);
       box.appendChild(h('div', { class: 'row gap wrap mt' },

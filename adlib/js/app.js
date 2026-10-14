@@ -33,7 +33,7 @@
       comp: 'piano', bass: 'upright', drums: 'jazz', soloInst: 'altosax',
       mix: Object.assign({}, MIX_DEF), reverb: Object.assign({}, REV_DEF), muted: {},
       seed: 1, soloSeed: 3, level: 2, density: 1, soloMode: 'same', concert: true,
-      keyOverride: null, perRow: 4, range: null, tab: 'chart', dictKey: 0,
+      keyOverride: null, keyCycle: 0, perRow: 4, range: null, tab: 'chart', dictKey: 0,
     };
   }
   const inList = (list, v, def) => (list.indexOf(v) >= 0 ? v : def);
@@ -65,6 +65,7 @@
     o.soloMode = inList(['off', 'same', 'fresh'], o.soloMode, 'same');
     o.concert = !!o.concert;
     o.keyOverride = o.keyOverride && typeof o.keyOverride.tonicPc === 'number' && (o.keyOverride.mode === 'major' || o.keyOverride.mode === 'minor') ? { tonicPc: mod(o.keyOverride.tonicPc | 0, 12), mode: o.keyOverride.mode } : null;
+    o.keyCycle = inList([0, 1, 2, 5], o.keyCycle, 0);
     o.perRow = inList([2, 3, 4, 6, 8], o.perRow, 4);
     o.range = o.range && typeof o.range.a === 'number' && typeof o.range.b === 'number' ? { a: Math.max(0, o.range.a | 0), b: Math.max(0, o.range.b | 0) } : null;
     o.tab = inList(['chart', 'solo', 'dict', 'sound'], o.tab, 'chart');
@@ -110,6 +111,7 @@
     });
     App._backing = {};
     App._fresh = {};
+    App._cyc = {};
     App.hasChords = App.hs.some(x => !x.chord.nc && !x.chord.bad);
     App.makeSolo();
   };
@@ -119,22 +121,44 @@
   };
   App.makeSolo = function () {
     App.solo = S.generate(App.hs, App.an, App.soloOpts());
-    App._fresh = {};
+    App._fresh = {}; App._cyc = {};
   };
   // 楽器だけ変えたとき：リックの選びはそのままで、音域に合わせて置きなおす
   App.refitSolo = function () {
     const o = Object.assign({}, App.solo.opts, { lo: App.soloOpts().lo, hi: App.soloOpts().hi });
     App.solo = S.realize(App.hs, App.an, Object.assign({}, App.solo, { opts: o }));
-    App._fresh = {};
+    App._fresh = {}; App._cyc = {};
   };
+  // k コーラス目に演奏するデータ。「キーを順に変える」のときは、もとのコード譜を移調したもの（画面の譜面はもとのキーのまま）
+  App.dataFor = function (k) {
+    const step = st.keyCycle | 0, semis = step ? (k * step) % 12 : 0;
+    if (!semis) return { slots: App.slots, hs: App.hs, an: App.an, solo: App.solo, semis: 0 };
+    if (!App._cyc[semis]) {
+      const key = App.an.key, pc = mod(key.tonicPc + semis, 12), sp = T.keySpell(pc, key.mode);
+      const text = C.transposeText(st.text, semis, { tonicPc: pc, fifths: T.keyFifths(sp, key.mode) });
+      const chart = C.parse(text, { beatsPerBar: App.bpb }), slots = C.slotsOf(chart), hs = C.harmonicSlots(slots);
+      const an = A.analyze(hs, { beatsPerBar: App.bpb, key: st.keyOverride ? { tonicPc: mod(st.keyOverride.tonicPc + semis, 12), mode: st.keyOverride.mode } : undefined });
+      // 同じ番号・同じリックの選びで、移調したソロ（差しかえたリックもそのまま）
+      let solo = S.generate(hs, an, App.soloOpts());
+      App.solo.decisions.forEach((d, i) => {
+        const e = solo.decisions[i];
+        if (e && e.id !== d.id && L.byId[d.id] && L.byId[d.id].segs.length === L.byId[e.id].segs.length) solo = S.swap(hs, an, solo, i, d.id);
+      });
+      App._cyc[semis] = { slots, hs, an, solo, semis };
+    }
+    return App._cyc[semis];
+  };
+  // k コーラス目のキーの名前（「B♭」「Gm」など）
+  App.keyNameAt = k => App.dataFor(k).an.key.short;
   // k コーラス目のソロ（'fresh' のときは、毎回あたらしく作る）
   App.soloFor = function (k) {
-    if (k === 0 || st.soloMode !== 'fresh') return App.solo;
-    if (!App._fresh[k]) App._fresh[k] = S.generate(App.hs, App.an, Object.assign(App.soloOpts(), { seed: (st.soloSeed * 101 + k * 977) % 99991 + 1 }));
+    const d = App.dataFor(k);
+    if (k === 0 || st.soloMode !== 'fresh') return d.solo;
+    if (!App._fresh[k]) App._fresh[k] = S.generate(d.hs, d.an, Object.assign(App.soloOpts(), { seed: (st.soloSeed * 101 + k * 977) % 99991 + 1 }));
     return App._fresh[k];
   };
   App.backing = function (k) {
-    if (!App._backing[k]) App._backing[k] = B.generate(App.slots, { style: st.style, kind: st.comp, seed: st.seed * 31 + k * 7919, bpb: App.bpb });
+    if (!App._backing[k]) App._backing[k] = B.generate(App.dataFor(k).slots, { style: st.style, kind: st.comp, seed: st.seed * 31 + k * 7919, bpb: App.bpb });
     return App._backing[k];
   };
 
@@ -203,12 +227,12 @@
   App.newSolo = function () { App.setSoloParams({ soloSeed: (st.soloSeed * 7 + 13 + Math.floor(Math.random() * 1000)) % 99991 + 1 }); };
   App.swapLick = function (di, lickId) {
     App.solo = S.swap(App.hs, App.an, App.solo, di, lickId);
-    App._fresh = {};
+    App._fresh = {}; App._cyc = {};
     App.emit('solo');
   };
   App.rerollDecision = function (di) {
     App.solo = S.reroll(App.hs, App.an, App.solo, di, Math.floor(Math.random() * 1e9));
-    App._fresh = {};
+    App._fresh = {}; App._cyc = {};
     App.emit('solo');
   };
   App.set = function (patch, evt) { Object.assign(st, patch); save(); App.emit(evt || 'settings'); };
@@ -452,7 +476,7 @@
     if (App.playKind !== 'main' || !pos) return;
     if (pos.countIn) { setPosText('カウントイン', String(U.clamp((pos.ci || 0) + 1, 1, 99))); return; }
     const total = st.loops === 0 ? '∞' : st.loops;
-    setPosText('コーラス ' + (pos.chorus + 1) + ' / ' + total, '小節 ' + (pos.bar + 1) + '・' + (Math.floor(pos.beatInBar + 1e-9) + 1) + '拍');
+    setPosText('コーラス ' + (pos.chorus + 1) + ' / ' + total + (st.keyCycle ? '・キー ' + App.keyNameAt(pos.chorus) : ''), '小節 ' + (pos.bar + 1) + '・' + (Math.floor(pos.beatInBar + 1e-9) + 1) + '拍');
   });
   App.on('chart', () => refreshTransport());
   App.on('settings', () => refreshTransport());
