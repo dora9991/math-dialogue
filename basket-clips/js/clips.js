@@ -9,7 +9,8 @@
    チームの番号：0 = 自分、1 = 相手。
    setup  : { hoopTeam: [ゴールA を攻めるチーム, ゴールB を攻めるチーム]（動画のはじめ）, halfT: 後半の始まり（秒）| null }
    result : 自動解析の結果 { shots: [{ t（ボールがリングを通った時刻）, hoop, made, sure }], spans, ... }
-   edits  : 手直し { fix: { id: 0|1 }（チームを手で決めた）, off: { id: true }（再生・書き出しから外す）, added: [{ id, t, team }]（手で足した得点） } */
+   edits  : 手直し { fix: { id: 0|1 }（チームを手で決めた）, off: { id: true }（再生・書き出しから外す）, added: [{ id, t, team }]（手で足した得点）,
+                     promote: { id: true }（「外れ」と判定したシュートを、使う人が「入っていた」にした） } */
 (function (root) {
   'use strict';
   const BS = root.BS = root.BS || {};
@@ -27,17 +28,22 @@
     return second ? 1 - first : first;
   }
 
-  function emptyEdits() { return { fix: {}, off: {}, added: [] }; }
+  function emptyEdits() { return { fix: {}, off: {}, added: [], promote: {} }; }
 
-  /* 得点の一覧（時刻順）。{ id, t, team, auto, hoop, unsure, fixed, on, half } */
+  /* 「外れ」と判定したシュートを「入っていた」にしたとき、場面の後ろを長めにする秒数。
+     外れの時刻は「ボールがリングにいちばん近づいた瞬間」で、リングで弾んでから入るまでに 0.5〜1.5 秒かかるため */
+  const PROMOTE_TAIL = 1.5;
+
+  /* 得点の一覧（時刻順）。{ id, t, team, auto, hoop, unsure, fixed, on, half, promoted, tail } */
   function items(result, setup, edits) {
     const E = edits || emptyEdits();
     const out = [];
     ((result && result.shots) || []).forEach((s) => {
-      if (!s.made) return;
       const id = shotId(s);
+      const promoted = !s.made && !!(E.promote && E.promote[id]);
+      if (!s.made && !promoted) return;
       const fixed = E.fix && (E.fix[id] === 0 || E.fix[id] === 1);
-      out.push({ id, t: s.t, team: fixed ? E.fix[id] : baseTeam(s, setup), auto: true, hoop: s.hoop, unsure: s.sure === false, fixed, on: !(E.off && E.off[id]) });
+      out.push({ id, t: s.t, team: fixed ? E.fix[id] : baseTeam(s, setup), auto: true, hoop: s.hoop, unsure: s.sure === false, fixed, on: !(E.off && E.off[id]), promoted, tail: promoted ? PROMOTE_TAIL : 0 });
     });
     (E.added || []).forEach((a) => out.push({ id: a.id, t: a.t, team: a.team, auto: false, hoop: null, unsure: false, fixed: true, on: !(E.off && E.off[a.id]) }));
     out.sort((a, b) => a.t - b.t);
@@ -51,9 +57,27 @@
     const end = duration > 0 ? duration : Infinity;
     const mine = list.filter((it) => it.team === team);
     return mine.map((it, i) => ({
-      id: it.id, at: it.t, team, n: i + 1, total: mine.length, on: it.on, unsure: it.unsure, auto: it.auto, fixed: it.fixed, half: it.half,
-      t0: Math.max(0, it.t - w.lead), t1: Math.min(end, it.t + w.lag)
+      id: it.id, at: it.t, team, n: i + 1, total: mine.length, on: it.on, unsure: it.unsure, auto: it.auto, fixed: it.fixed, half: it.half, promoted: !!it.promoted,
+      t0: Math.max(0, it.t - w.lead), t1: Math.min(end, it.t + w.lag + (it.tail || 0))
     }));
+  }
+
+  /* 「入っていたかも？」の候補：解析で「外れ」と判定したシュート（リングまで来て、入らなかったと見えたもの）。
+     リングに当たって弾んでから入った得点は、ここに入っていることがある。使う人が ▶ で確かめて「入っていた」にできる。
+     チームは「そのゴールを攻めていたチーム」（＝打ったチーム）。すでに得点がある場面（同じゴールで 2.5 秒以内）は出さない */
+  function maybes(result, setup, edits, list) {
+    const E = edits || emptyEdits();
+    const made = list || items(result, setup, E);
+    const out = [];
+    ((result && result.shots) || []).forEach((s) => {
+      if (s.made) return;
+      const id = shotId(s);
+      if (E.promote && E.promote[id]) return;
+      if (made.some((it) => (it.hoop === s.hoop || it.hoop == null) && Math.abs(it.t - s.t) < 2.5)) return;
+      const fixed = E.fix && (E.fix[id] === 0 || E.fix[id] === 1);
+      out.push({ id, t: s.t, team: fixed ? E.fix[id] : baseTeam(s, setup), hoop: s.hoop, half: setup && setup.halfT != null ? (s.t >= setup.halfT ? 2 : 1) : 0 });
+    });
+    return out.sort((a, b) => a.t - b.t);
   }
 
   /* 続けて再生・書き出しするときの区間。外したものは入れない。
@@ -91,21 +115,26 @@
     return { from: best.from, to: best.to, at: Math.round(Math.max(best.from + 1, best.to - 10) * 10) / 10 };
   }
 
-  /* 解析をやり直したとき、前の結果に付けた手直し（チーム・外す）を、新しい結果の「同じ得点」（同じゴールで、時刻の差が 1.5 秒以内）へ移す */
+  /* 解析をやり直したとき、前の結果に付けた手直し（チーム・外す・入っていた）を、新しい結果の「同じシュート」（同じゴールで、時刻の差が 1.5 秒以内）へ移す。
+     「入っていた」にした外れが、やり直しで得点と判定されたときは、そのまま得点になる（印は残っても害はない） */
   function carryEdits(oldResult, newResult, edits) {
     const E = edits || emptyEdits();
-    const next = { fix: {}, off: {}, added: (E.added || []).slice() };
-    const oldMade = ((oldResult && oldResult.shots) || []).filter((s) => s.made);
-    const newMade = ((newResult && newResult.shots) || []).filter((s) => s.made);
+    const next = { fix: {}, off: {}, added: (E.added || []).slice(), promote: {} };
+    const oldShots = (oldResult && oldResult.shots) || [];
+    const newShots = (newResult && newResult.shots) || [];
     const map = {};
-    oldMade.forEach((o) => {
+    oldShots.forEach((o) => {
       let best = null;
-      newMade.forEach((n) => { const d = Math.abs(n.t - o.t); if (n.hoop === o.hoop && d < 1.5 && (!best || d < best.d)) best = { d, id: shotId(n) }; });
+      newShots.forEach((n) => {
+        const d = Math.abs(n.t - o.t) + (n.made === o.made ? 0 : 0.01);      // 同じくらい近ければ、成否が同じものを選ぶ
+        if (n.hoop === o.hoop && Math.abs(n.t - o.t) < 1.5 && (!best || d < best.d)) best = { d, id: shotId(n) };
+      });
       if (best) map[shotId(o)] = best.id;
     });
     const manual = new Set(next.added.map((a) => a.id));
     Object.keys(E.fix || {}).forEach((id) => { if (map[id]) next.fix[map[id]] = E.fix[id]; });
     Object.keys(E.off || {}).forEach((id) => { if (map[id]) next.off[map[id]] = true; else if (manual.has(id)) next.off[id] = true; });
+    Object.keys(E.promote || {}).forEach((id) => { if (map[id]) next.promote[map[id]] = true; });
     return next;
   }
 
@@ -122,5 +151,5 @@
     return out;
   }
 
-  BS.clips = { WIN, HALF_GAP, shotId, baseTeam, emptyEdits, items, clipsOf, reel, suggestHalf, carryEdits, coverage };
+  BS.clips = { WIN, HALF_GAP, PROMOTE_TAIL, shotId, baseTeam, emptyEdits, items, clipsOf, maybes, reel, suggestHalf, carryEdits, coverage };
 })(typeof window !== 'undefined' ? window : globalThis);

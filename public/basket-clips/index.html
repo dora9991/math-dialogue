@@ -192,6 +192,12 @@ a.btn { text-decoration: none; }
   .clip .thumb { width: 88px; height: 50px; }
   .clip .cops { grid-column: 1 / -1; justify-content: flex-start; }
 }
+.maybes { border: 1px dashed var(--line2); border-radius: 10px; padding: 8px 12px; }
+.maybes summary { cursor: pointer; font-size: 13px; font-weight: 700; }
+.maybes p { margin: 6px 0; }
+.mblist { display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow-y: auto; }
+.mb { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 8px; background: var(--panel2); }
+.mb b { font-variant-numeric: tabular-nums; }
 .acts { margin-top: 2px; }
 .exportbox { border: 1px dashed var(--line2); border-radius: 10px; padding: 8px 12px; }
 .exportbox .outvideo { width: 100%; max-height: 260px; background: #000; border-radius: 8px; margin: 6px 0; display: block; }
@@ -1918,7 +1924,8 @@ a.btn { text-decoration: none; }
    チームの番号：0 = 自分、1 = 相手。
    setup  : { hoopTeam: [ゴールA を攻めるチーム, ゴールB を攻めるチーム]（動画のはじめ）, halfT: 後半の始まり（秒）| null }
    result : 自動解析の結果 { shots: [{ t（ボールがリングを通った時刻）, hoop, made, sure }], spans, ... }
-   edits  : 手直し { fix: { id: 0|1 }（チームを手で決めた）, off: { id: true }（再生・書き出しから外す）, added: [{ id, t, team }]（手で足した得点） } */
+   edits  : 手直し { fix: { id: 0|1 }（チームを手で決めた）, off: { id: true }（再生・書き出しから外す）, added: [{ id, t, team }]（手で足した得点）,
+                     promote: { id: true }（「外れ」と判定したシュートを、使う人が「入っていた」にした） } */
 (function (root) {
   'use strict';
   const BS = root.BS = root.BS || {};
@@ -1936,17 +1943,22 @@ a.btn { text-decoration: none; }
     return second ? 1 - first : first;
   }
 
-  function emptyEdits() { return { fix: {}, off: {}, added: [] }; }
+  function emptyEdits() { return { fix: {}, off: {}, added: [], promote: {} }; }
 
-  /* 得点の一覧（時刻順）。{ id, t, team, auto, hoop, unsure, fixed, on, half } */
+  /* 「外れ」と判定したシュートを「入っていた」にしたとき、場面の後ろを長めにする秒数。
+     外れの時刻は「ボールがリングにいちばん近づいた瞬間」で、リングで弾んでから入るまでに 0.5〜1.5 秒かかるため */
+  const PROMOTE_TAIL = 1.5;
+
+  /* 得点の一覧（時刻順）。{ id, t, team, auto, hoop, unsure, fixed, on, half, promoted, tail } */
   function items(result, setup, edits) {
     const E = edits || emptyEdits();
     const out = [];
     ((result && result.shots) || []).forEach((s) => {
-      if (!s.made) return;
       const id = shotId(s);
+      const promoted = !s.made && !!(E.promote && E.promote[id]);
+      if (!s.made && !promoted) return;
       const fixed = E.fix && (E.fix[id] === 0 || E.fix[id] === 1);
-      out.push({ id, t: s.t, team: fixed ? E.fix[id] : baseTeam(s, setup), auto: true, hoop: s.hoop, unsure: s.sure === false, fixed, on: !(E.off && E.off[id]) });
+      out.push({ id, t: s.t, team: fixed ? E.fix[id] : baseTeam(s, setup), auto: true, hoop: s.hoop, unsure: s.sure === false, fixed, on: !(E.off && E.off[id]), promoted, tail: promoted ? PROMOTE_TAIL : 0 });
     });
     (E.added || []).forEach((a) => out.push({ id: a.id, t: a.t, team: a.team, auto: false, hoop: null, unsure: false, fixed: true, on: !(E.off && E.off[a.id]) }));
     out.sort((a, b) => a.t - b.t);
@@ -1960,9 +1972,27 @@ a.btn { text-decoration: none; }
     const end = duration > 0 ? duration : Infinity;
     const mine = list.filter((it) => it.team === team);
     return mine.map((it, i) => ({
-      id: it.id, at: it.t, team, n: i + 1, total: mine.length, on: it.on, unsure: it.unsure, auto: it.auto, fixed: it.fixed, half: it.half,
-      t0: Math.max(0, it.t - w.lead), t1: Math.min(end, it.t + w.lag)
+      id: it.id, at: it.t, team, n: i + 1, total: mine.length, on: it.on, unsure: it.unsure, auto: it.auto, fixed: it.fixed, half: it.half, promoted: !!it.promoted,
+      t0: Math.max(0, it.t - w.lead), t1: Math.min(end, it.t + w.lag + (it.tail || 0))
     }));
+  }
+
+  /* 「入っていたかも？」の候補：解析で「外れ」と判定したシュート（リングまで来て、入らなかったと見えたもの）。
+     リングに当たって弾んでから入った得点は、ここに入っていることがある。使う人が ▶ で確かめて「入っていた」にできる。
+     チームは「そのゴールを攻めていたチーム」（＝打ったチーム）。すでに得点がある場面（同じゴールで 2.5 秒以内）は出さない */
+  function maybes(result, setup, edits, list) {
+    const E = edits || emptyEdits();
+    const made = list || items(result, setup, E);
+    const out = [];
+    ((result && result.shots) || []).forEach((s) => {
+      if (s.made) return;
+      const id = shotId(s);
+      if (E.promote && E.promote[id]) return;
+      if (made.some((it) => (it.hoop === s.hoop || it.hoop == null) && Math.abs(it.t - s.t) < 2.5)) return;
+      const fixed = E.fix && (E.fix[id] === 0 || E.fix[id] === 1);
+      out.push({ id, t: s.t, team: fixed ? E.fix[id] : baseTeam(s, setup), hoop: s.hoop, half: setup && setup.halfT != null ? (s.t >= setup.halfT ? 2 : 1) : 0 });
+    });
+    return out.sort((a, b) => a.t - b.t);
   }
 
   /* 続けて再生・書き出しするときの区間。外したものは入れない。
@@ -2000,21 +2030,26 @@ a.btn { text-decoration: none; }
     return { from: best.from, to: best.to, at: Math.round(Math.max(best.from + 1, best.to - 10) * 10) / 10 };
   }
 
-  /* 解析をやり直したとき、前の結果に付けた手直し（チーム・外す）を、新しい結果の「同じ得点」（同じゴールで、時刻の差が 1.5 秒以内）へ移す */
+  /* 解析をやり直したとき、前の結果に付けた手直し（チーム・外す・入っていた）を、新しい結果の「同じシュート」（同じゴールで、時刻の差が 1.5 秒以内）へ移す。
+     「入っていた」にした外れが、やり直しで得点と判定されたときは、そのまま得点になる（印は残っても害はない） */
   function carryEdits(oldResult, newResult, edits) {
     const E = edits || emptyEdits();
-    const next = { fix: {}, off: {}, added: (E.added || []).slice() };
-    const oldMade = ((oldResult && oldResult.shots) || []).filter((s) => s.made);
-    const newMade = ((newResult && newResult.shots) || []).filter((s) => s.made);
+    const next = { fix: {}, off: {}, added: (E.added || []).slice(), promote: {} };
+    const oldShots = (oldResult && oldResult.shots) || [];
+    const newShots = (newResult && newResult.shots) || [];
     const map = {};
-    oldMade.forEach((o) => {
+    oldShots.forEach((o) => {
       let best = null;
-      newMade.forEach((n) => { const d = Math.abs(n.t - o.t); if (n.hoop === o.hoop && d < 1.5 && (!best || d < best.d)) best = { d, id: shotId(n) }; });
+      newShots.forEach((n) => {
+        const d = Math.abs(n.t - o.t) + (n.made === o.made ? 0 : 0.01);      // 同じくらい近ければ、成否が同じものを選ぶ
+        if (n.hoop === o.hoop && Math.abs(n.t - o.t) < 1.5 && (!best || d < best.d)) best = { d, id: shotId(n) };
+      });
       if (best) map[shotId(o)] = best.id;
     });
     const manual = new Set(next.added.map((a) => a.id));
     Object.keys(E.fix || {}).forEach((id) => { if (map[id]) next.fix[map[id]] = E.fix[id]; });
     Object.keys(E.off || {}).forEach((id) => { if (map[id]) next.off[map[id]] = true; else if (manual.has(id)) next.off[id] = true; });
+    Object.keys(E.promote || {}).forEach((id) => { if (map[id]) next.promote[map[id]] = true; });
     return next;
   }
 
@@ -2031,7 +2066,7 @@ a.btn { text-decoration: none; }
     return out;
   }
 
-  BS.clips = { WIN, HALF_GAP, shotId, baseTeam, emptyEdits, items, clipsOf, reel, suggestHalf, carryEdits, coverage };
+  BS.clips = { WIN, HALF_GAP, PROMOTE_TAIL, shotId, baseTeam, emptyEdits, items, clipsOf, maybes, reel, suggestHalf, carryEdits, coverage };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -2503,7 +2538,7 @@ a.btn { text-decoration: none; }
   const S = {
     media: null, key: null, st: BS.store.fresh(),
     marking: null, running: null, live: null,
-    tab: 0, openSetup: false, openHow: null,
+    tab: 0, openSetup: false, openHow: null, openMaybe: false,
     reel: { active: false, list: [], i: -1, label: '', team: 0 },
     exporting: null, out: [null, null],
     thumbs: {}, thumbJob: null, saveTimer: 0, debug: false, lastLog: null
@@ -2790,6 +2825,18 @@ a.btn { text-decoration: none; }
     cl.forEach((c) => box.append(clipRow(c)));
     card.append(box);
 
+    // 入っていたかも？：解析で「外れ」と判定したシュート（このチームが打ったもの）。リングで弾んでから入った得点は、ここに入っていることがある
+    const mb = C.maybes(S.st.result, setupOf(), S.st.edits, its).filter((m) => m.team === S.tab);
+    if (mb.length) {
+      const det = h('details', { class: 'maybes', id: 'maybes' },
+        h('summary', null, `🤔 入っていたかも？（${teamTag(S.tab)}の「外れ」と判定したシュート ${mb.length}本）`),
+        h('p', { class: 'note' }, 'リングに当たって弾んでから入った得点は、ここに入っていることがあります。▶ で確かめて、入っていたら「入っていた」を押すと、上の一覧に入ります。'),
+        h('div', { class: 'mblist' }, mb.map(mayRow)));
+      det.open = !!S.openMaybe;
+      det.querySelector('summary').addEventListener('click', () => { S.openMaybe = !det.open; });
+      card.append(det);
+    }
+
     // 続けて再生・動画にする
     const on = cl.filter((c) => c.on);
     const segs = C.reel(cl);
@@ -2848,12 +2895,13 @@ a.btn { text-decoration: none; }
         h('span', { class: 'note' }, [halfLabel(it), it.hoop != null ? HOOP[it.hoop] : ''].filter(Boolean).join('・')),
         h('span', { class: 'tags' },
           c.unsure && c.auto ? h('span', { class: 'tag warn', title: 'ネットの動きを確かめられなかった得点です' }, '要確認') : null,
-          !c.auto ? h('span', { class: 'tag' }, '手で足した') : c.fixed ? h('span', { class: 'tag' }, '手で直した') : null)),
+          !c.auto ? h('span', { class: 'tag' }, '手で足した') : c.promoted ? h('span', { class: 'tag' }, '外れ→入っていた') : c.fixed ? h('span', { class: 'tag' }, '手で直した') : null)),
       h('div', { class: 'cops' },
         h('button', { class: 'btn small', title: 'この場面を見る', onclick: (e) => { e.stopPropagation(); playOne(c); } }, '▶'),
         h('button', { class: 'btn small', title: c.team ? '「入れた」に移す（自分の得点だった）' : '「入れられた」に移す（相手の得点だった）', dataset: { move: c.id }, onclick: (e) => { e.stopPropagation(); moveTeam(c.id); } }, c.team ? '⇄ 入れたへ' : '⇄ 入れられたへ'),
         h('button', { class: 'btn small', title: 'この場面だけを動画にする', disabled: !!S.exporting, onclick: (e) => { e.stopPropagation(); doExport(c.team, c); } }, '⬇'),
-        !c.auto ? h('button', { class: 'btn small', title: 'この場面を消す', onclick: (e) => { e.stopPropagation(); removeManual(c.id); } }, '🗑') : null));
+        !c.auto ? h('button', { class: 'btn small', title: 'この場面を消す', onclick: (e) => { e.stopPropagation(); removeManual(c.id); } }, '🗑') : null,
+        c.promoted ? h('button', { class: 'btn small', title: '「外れ」に戻す（下の「入っていたかも？」に戻ります）', dataset: { unpromote: c.id }, onclick: (e) => { e.stopPropagation(); unpromote(c.id); } }, '↩') : null));
     row.addEventListener('click', () => playOne(c));
     return row;
   }
@@ -2892,6 +2940,32 @@ a.btn { text-decoration: none; }
     save(); render(); drawTimeline(); makeThumbs();
     BS.ui.toast(`${BS.fmtTime(t)} を「${WHAT[team]}」に足しました`, 'ok');
   }
+  function mayRow(m) {
+    return h('div', { class: 'mb', dataset: { may: m.id } },
+      h('b', null, BS.fmtTime(m.t)),
+      h('span', { class: 'note' }, [halfLabel(m), m.hoop != null ? HOOP[m.hoop] : ''].filter(Boolean).join('・')),
+      h('span', { class: 'spacer' }),
+      h('button', { class: 'btn small', title: 'この場面を見る（入ったかどうかが分かるように、少し長めに）', onclick: () => playMaybe(m) }, '▶'),
+      h('button', { class: 'btn small primary', dataset: { promote: m.id }, onclick: () => promote(m.id) }, '入っていた'));
+  }
+  function playMaybe(m) {
+    const w = S.st.win;
+    const seg = { id: m.id, at: m.t, team: m.team, n: 0, total: 0, on: true, half: m.half, maybe: true, t0: Math.max(0, m.t - w.lead), t1: Math.min(duration() || Infinity, m.t + w.lag + C.PROMOTE_TAIL) };
+    startReel(C.reel([seg]), m.team);
+  }
+  function promote(id) {
+    S.st.edits.promote = S.st.edits.promote || {};
+    S.st.edits.promote[id] = true;
+    save(); render(); drawTimeline(); makeThumbs();
+    const it = list().find((x) => x.id === id);
+    if (it) BS.ui.toast(`${BS.fmtTime(it.t)} を「${WHAT[it.team]}」に入れました`, 'ok');
+  }
+  function unpromote(id) {
+    if (S.st.edits.promote) delete S.st.edits.promote[id];
+    delete S.st.edits.off[id];
+    save(); render(); drawTimeline();
+    BS.ui.toast('「外れ」に戻しました', 'ok');
+  }
   function removeManual(id) {
     const E = S.st.edits;
     E.added = E.added.filter((a) => a.id !== id);
@@ -2900,7 +2974,7 @@ a.btn { text-decoration: none; }
   }
 
   /* ---------- 続けて再生 ---------- */
-  function segLabel(seg) { return `${ICON[seg.team]} ${WHAT[seg.team]} ${seg.n} / ${seg.total}`; }
+  function segLabel(seg) { return seg.maybe ? '🤔 入っていたかも？' : `${ICON[seg.team]} ${WHAT[seg.team]} ${seg.n} / ${seg.total}`; }
   function playReel(team) {
     const segs = C.reel(clipsFor(team));
     if (!segs.length) { BS.ui.toast('再生する場面がありません', 'warn'); return; }
@@ -2955,7 +3029,7 @@ a.btn { text-decoration: none; }
     }
     const seg = R.list[R.i];
     bar.hidden = false;
-    $('#reelLabel').textContent = `${WHAT[R.team]} ${R.i + 1}/${R.list.length}`;
+    $('#reelLabel').textContent = seg.maybe ? '入っていたかも？' : `${WHAT[R.team]} ${R.i + 1}/${R.list.length}`;
     badge.innerHTML = '';
     badge.style.setProperty('--team', teamColor(seg.team));
     badge.append(h('b', null, segLabel(seg)), h('span', null, `${seg.half ? (seg.half === 2 ? '後半・' : '前半・') : ''}${BS.fmtTime(seg.at)}`));
@@ -3470,6 +3544,8 @@ a.btn { text-decoration: none; }
           h('li', null, h('b', null, '🏀 入れた／🛡 入れられた'), 'を切り替えて、▶ で1本ずつ、「▶ 続けて再生」でまとめて見る。「🎬 動画にする」で1本の動画に')),
         h('h4', null, 'どちらのチームの得点か'),
         h('p', null, 'ボールが入った「ゴール」で決めます。前半・後半それぞれ、チームが攻めるゴールは決まっているからです。1本の動画に後半も入っているときは、後半の始まりを教えてください（解析のあとに、ハーフタイムらしい場面を教えてくれることもあります）。逆になっていたら「⇄ 入れ替える」、1本だけ違うなら、その場面の「⇄」で直せます。'),
+        h('h4', null, '見つからなかった得点があるとき'),
+        h('p', null, 'リングに当たって弾んでから入った得点は、「外れ」と判定されることがあります。一覧の下の「🤔 入っていたかも？」を開いて ▶ で確かめ、入っていたら「入っていた」を押してください。そこにもないときは、ボールが入った瞬間で止めて「＋」で足せます。'),
         h('h4', null, 'うまく見つけるための撮り方'),
         h('ul', null,
           h('li', null, 'ゴール（リングとネット）が画面に入るように撮る。シュートの瞬間にゴールが映っていないと見つけられません'),
@@ -3535,7 +3611,7 @@ a.btn { text-decoration: none; }
     render(); drawTimeline();
   }
 
-  BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, list, clipsFor, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs };
+  BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, list, clipsFor, maybes: () => C.maybes(S.st.result, setupOf(), S.st.edits, list()), promote, unpromote, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }

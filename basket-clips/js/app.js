@@ -20,7 +20,7 @@
   const S = {
     media: null, key: null, st: BS.store.fresh(),
     marking: null, running: null, live: null,
-    tab: 0, openSetup: false, openHow: null,
+    tab: 0, openSetup: false, openHow: null, openMaybe: false,
     reel: { active: false, list: [], i: -1, label: '', team: 0 },
     exporting: null, out: [null, null],
     thumbs: {}, thumbJob: null, saveTimer: 0, debug: false, lastLog: null
@@ -307,6 +307,18 @@
     cl.forEach((c) => box.append(clipRow(c)));
     card.append(box);
 
+    // 入っていたかも？：解析で「外れ」と判定したシュート（このチームが打ったもの）。リングで弾んでから入った得点は、ここに入っていることがある
+    const mb = C.maybes(S.st.result, setupOf(), S.st.edits, its).filter((m) => m.team === S.tab);
+    if (mb.length) {
+      const det = h('details', { class: 'maybes', id: 'maybes' },
+        h('summary', null, `🤔 入っていたかも？（${teamTag(S.tab)}の「外れ」と判定したシュート ${mb.length}本）`),
+        h('p', { class: 'note' }, 'リングに当たって弾んでから入った得点は、ここに入っていることがあります。▶ で確かめて、入っていたら「入っていた」を押すと、上の一覧に入ります。'),
+        h('div', { class: 'mblist' }, mb.map(mayRow)));
+      det.open = !!S.openMaybe;
+      det.querySelector('summary').addEventListener('click', () => { S.openMaybe = !det.open; });
+      card.append(det);
+    }
+
     // 続けて再生・動画にする
     const on = cl.filter((c) => c.on);
     const segs = C.reel(cl);
@@ -365,12 +377,13 @@
         h('span', { class: 'note' }, [halfLabel(it), it.hoop != null ? HOOP[it.hoop] : ''].filter(Boolean).join('・')),
         h('span', { class: 'tags' },
           c.unsure && c.auto ? h('span', { class: 'tag warn', title: 'ネットの動きを確かめられなかった得点です' }, '要確認') : null,
-          !c.auto ? h('span', { class: 'tag' }, '手で足した') : c.fixed ? h('span', { class: 'tag' }, '手で直した') : null)),
+          !c.auto ? h('span', { class: 'tag' }, '手で足した') : c.promoted ? h('span', { class: 'tag' }, '外れ→入っていた') : c.fixed ? h('span', { class: 'tag' }, '手で直した') : null)),
       h('div', { class: 'cops' },
         h('button', { class: 'btn small', title: 'この場面を見る', onclick: (e) => { e.stopPropagation(); playOne(c); } }, '▶'),
         h('button', { class: 'btn small', title: c.team ? '「入れた」に移す（自分の得点だった）' : '「入れられた」に移す（相手の得点だった）', dataset: { move: c.id }, onclick: (e) => { e.stopPropagation(); moveTeam(c.id); } }, c.team ? '⇄ 入れたへ' : '⇄ 入れられたへ'),
         h('button', { class: 'btn small', title: 'この場面だけを動画にする', disabled: !!S.exporting, onclick: (e) => { e.stopPropagation(); doExport(c.team, c); } }, '⬇'),
-        !c.auto ? h('button', { class: 'btn small', title: 'この場面を消す', onclick: (e) => { e.stopPropagation(); removeManual(c.id); } }, '🗑') : null));
+        !c.auto ? h('button', { class: 'btn small', title: 'この場面を消す', onclick: (e) => { e.stopPropagation(); removeManual(c.id); } }, '🗑') : null,
+        c.promoted ? h('button', { class: 'btn small', title: '「外れ」に戻す（下の「入っていたかも？」に戻ります）', dataset: { unpromote: c.id }, onclick: (e) => { e.stopPropagation(); unpromote(c.id); } }, '↩') : null));
     row.addEventListener('click', () => playOne(c));
     return row;
   }
@@ -409,6 +422,32 @@
     save(); render(); drawTimeline(); makeThumbs();
     BS.ui.toast(`${BS.fmtTime(t)} を「${WHAT[team]}」に足しました`, 'ok');
   }
+  function mayRow(m) {
+    return h('div', { class: 'mb', dataset: { may: m.id } },
+      h('b', null, BS.fmtTime(m.t)),
+      h('span', { class: 'note' }, [halfLabel(m), m.hoop != null ? HOOP[m.hoop] : ''].filter(Boolean).join('・')),
+      h('span', { class: 'spacer' }),
+      h('button', { class: 'btn small', title: 'この場面を見る（入ったかどうかが分かるように、少し長めに）', onclick: () => playMaybe(m) }, '▶'),
+      h('button', { class: 'btn small primary', dataset: { promote: m.id }, onclick: () => promote(m.id) }, '入っていた'));
+  }
+  function playMaybe(m) {
+    const w = S.st.win;
+    const seg = { id: m.id, at: m.t, team: m.team, n: 0, total: 0, on: true, half: m.half, maybe: true, t0: Math.max(0, m.t - w.lead), t1: Math.min(duration() || Infinity, m.t + w.lag + C.PROMOTE_TAIL) };
+    startReel(C.reel([seg]), m.team);
+  }
+  function promote(id) {
+    S.st.edits.promote = S.st.edits.promote || {};
+    S.st.edits.promote[id] = true;
+    save(); render(); drawTimeline(); makeThumbs();
+    const it = list().find((x) => x.id === id);
+    if (it) BS.ui.toast(`${BS.fmtTime(it.t)} を「${WHAT[it.team]}」に入れました`, 'ok');
+  }
+  function unpromote(id) {
+    if (S.st.edits.promote) delete S.st.edits.promote[id];
+    delete S.st.edits.off[id];
+    save(); render(); drawTimeline();
+    BS.ui.toast('「外れ」に戻しました', 'ok');
+  }
   function removeManual(id) {
     const E = S.st.edits;
     E.added = E.added.filter((a) => a.id !== id);
@@ -417,7 +456,7 @@
   }
 
   /* ---------- 続けて再生 ---------- */
-  function segLabel(seg) { return `${ICON[seg.team]} ${WHAT[seg.team]} ${seg.n} / ${seg.total}`; }
+  function segLabel(seg) { return seg.maybe ? '🤔 入っていたかも？' : `${ICON[seg.team]} ${WHAT[seg.team]} ${seg.n} / ${seg.total}`; }
   function playReel(team) {
     const segs = C.reel(clipsFor(team));
     if (!segs.length) { BS.ui.toast('再生する場面がありません', 'warn'); return; }
@@ -472,7 +511,7 @@
     }
     const seg = R.list[R.i];
     bar.hidden = false;
-    $('#reelLabel').textContent = `${WHAT[R.team]} ${R.i + 1}/${R.list.length}`;
+    $('#reelLabel').textContent = seg.maybe ? '入っていたかも？' : `${WHAT[R.team]} ${R.i + 1}/${R.list.length}`;
     badge.innerHTML = '';
     badge.style.setProperty('--team', teamColor(seg.team));
     badge.append(h('b', null, segLabel(seg)), h('span', null, `${seg.half ? (seg.half === 2 ? '後半・' : '前半・') : ''}${BS.fmtTime(seg.at)}`));
@@ -987,6 +1026,8 @@
           h('li', null, h('b', null, '🏀 入れた／🛡 入れられた'), 'を切り替えて、▶ で1本ずつ、「▶ 続けて再生」でまとめて見る。「🎬 動画にする」で1本の動画に')),
         h('h4', null, 'どちらのチームの得点か'),
         h('p', null, 'ボールが入った「ゴール」で決めます。前半・後半それぞれ、チームが攻めるゴールは決まっているからです。1本の動画に後半も入っているときは、後半の始まりを教えてください（解析のあとに、ハーフタイムらしい場面を教えてくれることもあります）。逆になっていたら「⇄ 入れ替える」、1本だけ違うなら、その場面の「⇄」で直せます。'),
+        h('h4', null, '見つからなかった得点があるとき'),
+        h('p', null, 'リングに当たって弾んでから入った得点は、「外れ」と判定されることがあります。一覧の下の「🤔 入っていたかも？」を開いて ▶ で確かめ、入っていたら「入っていた」を押してください。そこにもないときは、ボールが入った瞬間で止めて「＋」で足せます。'),
         h('h4', null, 'うまく見つけるための撮り方'),
         h('ul', null,
           h('li', null, 'ゴール（リングとネット）が画面に入るように撮る。シュートの瞬間にゴールが映っていないと見つけられません'),
@@ -1052,7 +1093,7 @@
     render(); drawTimeline();
   }
 
-  BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, list, clipsFor, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs };
+  BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, list, clipsFor, maybes: () => C.maybes(S.st.result, setupOf(), S.st.edits, list()), promote, unpromote, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }

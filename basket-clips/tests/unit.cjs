@@ -54,6 +54,28 @@ const swapped = C.items(result, { hoopTeam: [0, 1], halfT: 100 }, edits);
 ok(swapped.find((it) => it.id === id30).team === 0 && swapped.find((it) => it.id === 'm1').team === 1, '「⇄ 入れ替える」でも、手で決めたものはそのまま');
 ok(swapped.find((it) => it.t === 120).team === 0, '「⇄ 入れ替える」で、自動の分は入れ替わる');
 
+section('「入っていたかも？」（外れと判定したシュート）と「入っていた」');
+const r3 = { shots: [
+  { t: 10.0, hoop: 1, made: true },
+  { t: 11.5, hoop: 1, made: false },      // 得点の直後（同じゴール・2.5 秒以内）→ 候補に出さない
+  { t: 40.0, hoop: 1, made: false },      // 自分が打った外れ（ゴールB は自分が攻める）
+  { t: 55.0, hoop: 0, made: false }       // 相手が打った外れ
+] };
+const set3 = { hoopTeam: [1, 0], halfT: null };
+let mb = C.maybes(r3, set3, C.emptyEdits());
+ok(mb.length === 2 && mb[0].t === 40 && mb[0].team === 0 && mb[1].team === 1, '外れの候補：打ったチームに分かれ、得点の直後のものは出ない', mb.map((m) => [m.t, m.team]));
+const e3 = C.emptyEdits();
+e3.promote[C.shotId(r3.shots[2])] = true;
+const it3 = C.items(r3, set3, e3);
+const pr = it3.find((it) => it.t === 40);
+ok(pr && pr.promoted && pr.team === 0 && pr.auto, '「入っていた」にした外れは、得点の一覧に入る（ゴールでチームが決まる）');
+ok(C.maybes(r3, set3, e3).every((m) => m.t !== 40), '「入っていた」にしたものは候補から消える');
+const pc = C.clipsOf(it3, 0, { lead: 4, lag: 1 }, 100).find((c) => c.at === 40);
+ok(pc && pc.t1 === 40 + 1 + C.PROMOTE_TAIL, '「入っていた」の場面は、後ろを長めにする（弾んでから入るまで見える）', pc && pc.t1);
+const r4 = { shots: [{ t: 40.6, hoop: 1, made: true }] };
+const e4 = C.carryEdits(r3, r4, e3);
+ok(e4.promote[C.shotId(r4.shots[0])], '解析をやり直しても「入っていた」の印は同じシュートへ引き継ぐ', e4.promote);
+
 section('クリップ（5秒）と、続けて再生の区間');
 const cl = C.clipsOf(C.items(result, setup, C.emptyEdits()), 0, null, 140);
 ok(cl.length === 2 && cl[0].t0 === 6 && cl[0].t1 === 11, '入った瞬間の前4秒・後1秒（＝5秒）', cl[0]);
