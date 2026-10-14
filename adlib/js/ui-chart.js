@@ -403,10 +403,37 @@
       box.appendChild(list);
     }
 
+    // 提案：このコード（かたまり）に合うリック。楽譜つき・聴ける・ソロに採用できる
+    const sg = App.suggest ? App.suggest(i, 6) : null;
+    if (sg && sg.list.length) {
+      box.appendChild(h('h3', null, 'ソロの提案：このコードに合うリック'));
+      box.appendChild(h('p', { class: 'muted small' }, sg.ctxJp + ' 用のリック全 ' + sg.total + ' 本から、いまの難しさに近い順に ' + sg.list.length + ' 本。'));
+      const cards = h('div', { class: 'cands' });
+      const V = App.lickView;
+      const cw = el.detail.clientWidth || 640, cols = cw >= 760 ? 2 : 1, miniW = Math.max(260, Math.floor((cw - 36 - (cols - 1) * 10) / cols - 28));
+      sg.list.forEach(l => {
+        const pl = V.placeLickAt(App.solo, sg.d, l), isCur = l.id === sg.current;
+        const tags = h('div', { class: 'tags' }, h('span', { class: 'chip lvl' + l.lvl }, 'Lv.' + l.lvl));
+        l.tags.slice(0, 4).forEach(t => tags.appendChild(h('span', { class: 'chip tag' }, t)));
+        cards.appendChild(h('div', { class: 'cand' + (isCur ? ' cur' : '') },
+          h('div', { class: 'cand-h' },
+            h('button', { type: 'button', class: 'mini-play', 'aria-label': l.name + 'を聴く', onclick: () => V.previewLickAt(App.solo, sg.d, l) }, '▶'),
+            h('b', { class: 'cand-name' }, l.name), h('div', { class: 'grow' }),
+            isCur ? h('span', { class: 'badge' }, 'いまのソロで使用中')
+              : sg.di >= 0 ? h('button', { type: 'button', class: 'btn sm primary', onclick: () => { App.swapLick(sg.di, l.id); U.toast('ソロの ' + (sg.di + 1) + ' 番目のフレーズを差しかえました'); } }, 'ソロに採用') : null),
+          tags,
+          h('div', { class: 'mini-score', html: V.miniNotation(pl, miniW) }),
+          App.lickDesc(l) ? h('p', { class: 'muted small' }, App.lickDesc(l)) : null));
+      });
+      box.appendChild(cards);
+      box.appendChild(h('div', { class: 'row gap wrap mt' },
+        sg.di >= 0 ? h('button', { type: 'button', class: 'btn', onclick: () => { App.select({ dec: sg.di }); App.showTab('solo'); } }, 'ソロの楽譜で見る・ほかの候補も見る') : null));
+    }
+
     // リックの種類
     const pools = info.pools || [];
     const ph = App.phraseOf[i];
-    box.appendChild(h('h3', null, 'このコードに使えるリック'));
+    box.appendChild(h('h3', null, 'このコードに使えるリックの種類（辞典）'));
     const lk = h('div', { class: 'lickrefs' });
     if (ph && ph.match) {
       const m = ph.match, ctx = S.ctxOfMatch(m), n = L.byCtx[ctx] ? L.byCtx[ctx].length : 0;
@@ -453,4 +480,5 @@
   App.on('pos', onPos);
   App.on('settings', () => { if (el.style) { refreshSettings(); } });
   App.on('playstate', () => { if (App.sel.hs != null) renderDetail(); });
+  App.on('solo', () => { if (el.detail && App.sel.hs != null) renderDetail(); });
 })();

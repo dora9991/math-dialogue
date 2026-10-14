@@ -5,7 +5,7 @@ const path = require('path'), fs = require('fs');
 const { chromium } = require('playwright');
 const JS = path.join(__dirname, '../js');
 const FILES = ['theory', 'chart', 'analysis', 'licks', ...fs.readdirSync(JS).filter(f => /^licks-.*\.js$/.test(f)).map(f => f.replace(/\.js$/, '')).sort(), 'solo', 'glyphs', 'notation'];
-const CSS = `body{margin:0;padding:12px;background:#fff;color:#1d1d1f}.ntn{display:block}.ntn .staff,.ntn .bar,.ntn .stem,.ntn .ledger,.ntn .tie,.ntn .tupb{stroke:currentColor}.ntn .g,.ntn .beam{fill:currentColor}.ntn text{fill:currentColor;font-family:system-ui,"Hiragino Sans","Noto Sans JP",sans-serif}.ntn .chord{font-weight:600}.ntn .feel{font-style:italic}.ntn .tup{font-style:italic;font-weight:600}.ntn .rehearsal rect{fill:none;stroke:currentColor}.ntn .mark path{stroke:currentColor;opacity:.5}.ntn .mark text{opacity:.7}.ntn .barno{opacity:.6}.ntn .chord.nc{opacity:.6}`;
+const CSS = `body{margin:0;padding:12px;background:#fff;color:#1d1d1f}.ntn{display:block}.ntn .staff,.ntn .bar,.ntn .stem,.ntn .ledger,.ntn .tie,.ntn .tupb{stroke:currentColor}.ntn .g,.ntn .beam{fill:currentColor}.ntn text{fill:currentColor;font-family:system-ui,"Hiragino Sans","Noto Sans JP",sans-serif}.ntn .chord{font-weight:600}.ntn .feel{font-style:italic}.ntn .tup{font-style:italic;font-weight:600}.ntn .rehearsal rect{fill:none;stroke:currentColor}.ntn .mark path{stroke:currentColor;opacity:.5}.ntn .mark .hit{stroke-opacity:0}.ntn .mark text{opacity:.7}.ntn .barno{opacity:.6}.ntn .chord.nc{opacity:.6}`;
 (async () => {
   const [text, out, seed, instId, width, bpbArg] = process.argv.slice(2);
   const browser = await chromium.launch();

@@ -348,7 +348,7 @@
           const xa = bs >= b0 ? layout.bars[bs].timeToX(m.t0 - bs * bpb) - 0.4 * ss : sys.left - 0.5 * ss;
           const xb = be < b1 ? Math.min(layout.bars[be].x1 - 0.3 * ss, layout.bars[be].timeToX(m.t1 - be * bpb - 0.02) + 1.5 * ss) : sysEnd - 0.4 * ss;
           const yy = sBot + extraBot + 2.1 * ss;
-          out.push(`<g class="mark m${(m.tone || 0) % 4}" data-mark="${mi}"><path class="hit" d="M${f2(xa)} ${f2(yy - 0.3 * ss)} H${f2(xb)}" fill="none" stroke-width="${f2(2 * ss)}"/><path d="M${f2(xa)} ${f2(yy - 0.55 * ss)} V${f2(yy)} H${f2(xb)} V${f2(yy - 0.55 * ss)}" fill="none" stroke-width="${f2(0.14 * ss)}"/>${bs >= b0 ? `<text x="${f2(xa + 0.2 * ss)}" y="${f2(yy + 1.35 * ss)}" font-size="${f2(1.15 * ss)}">${esc(m.label)}</text>` : ''}</g>`);
+          out.push(`<g class="mark m${(m.tone || 0) % 4}" data-mark="${mi}"><path class="hit" d="M${f2(xa)} ${f2(yy - 0.3 * ss)} H${f2(xb)}" fill="none" stroke="#000" stroke-opacity="0" pointer-events="stroke" stroke-width="${f2(2 * ss)}"/><path d="M${f2(xa)} ${f2(yy - 0.55 * ss)} V${f2(yy)} H${f2(xb)} V${f2(yy - 0.55 * ss)}" fill="none" stroke-width="${f2(0.14 * ss)}"/>${bs >= b0 ? `<text x="${f2(xa + 0.2 * ss)}" y="${f2(yy + 1.35 * ss)}" font-size="${f2(1.15 * ss)}">${esc(m.label)}</text>` : ''}</g>`);
         });
       }
       y = sBot + extraBot + 3.2 * ss + (hasMarks ? 2.4 * ss : 0);

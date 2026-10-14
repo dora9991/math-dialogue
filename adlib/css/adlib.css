@@ -263,7 +263,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
 .ntn .mark path { stroke: currentColor; opacity: .4; }
 .ntn .mark text { opacity: .7; font-family: var(--font); }
 .ntn .mark { cursor: pointer; }
-.ntn .mark .hit { stroke: transparent; fill: none; pointer-events: stroke; opacity: 1; }
+.ntn .mark .hit { stroke-opacity: 0; opacity: 1; }
 .ntn .mark:hover path:not(.hit) { opacity: .9; }
 .ntn .mark.sel path:not(.hit) { stroke: var(--accent); opacity: 1; stroke-width: 2.4px; }
 .ntn .mark.sel text { fill: var(--accent); opacity: 1; font-weight: 700; }
@@ -293,7 +293,8 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
 .cand { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--surface); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .cand.cur { border-color: var(--accent); background: var(--surface-2); }
 .cand-h { display: flex; align-items: center; gap: 8px; }
-.cand-name { font-size: .92rem; line-height: 1.35; }
+.cand-name { font-size: .92rem; line-height: 1.35; min-width: 0; }
+.cand-h .btn, .cand-h .badge { flex: none; white-space: nowrap; }
 
 /* ---- リック辞典 ---- */
 .dict-nav { display: flex; flex-direction: column; gap: 4px; }

@@ -183,7 +183,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const wp = await wav.path(), wb = fs.readFileSync(wp);
   ok(wb.slice(0, 4).toString() === 'RIFF' && wb.length > 100000, 'WAV の書き出し：' + wb.length + 'B');
   // ミキサー
-  await page.evaluate(() => { const r = document.querySelector('#tab-sound .mix-grid input[type=range]'); r.value = 0.5; r.dispatchEvent(new Event('input', { bubbles: true })); });
+  await page.evaluate(() => { const r = document.querySelector('#tab-sound .mix-row input[type=range]'); r.value = 0.5; r.dispatchEvent(new Event('input', { bubbles: true })); });
   ok(await page.evaluate(() => Math.abs(AL.App.st.mix.comp - 0.5) < 1e-6), 'ミキサーの音量');
   if (shots) await page.screenshot({ path: path.join(shots, 'e2e-sound.png'), fullPage: true });
 

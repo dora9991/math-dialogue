@@ -161,13 +161,13 @@
   }
 
   /* ---------------- フレーズのパネル ---------------- */
-  // d の位置に lick を置いたときの音（実音）と、そのための和音
-  function placeLick(solo, di, lick) {
-    const d = solo.decisions[di], o = solo.opts;
+  // d（{ i0, t }：どのコードの、どの拍から）に lick を置いたときの音（実音）と、そのための和音。solo は直前の音を知るために使う
+  function placeLickAt(solo, d, lick) {
+    const o = solo.opts;
     const chords = App.hs.slice(d.i0, d.i0 + lick.segs.length).map(x => x.chord);
     const lead = d.t - App.hs[d.i0].t0;
     let prev = null;
-    for (let i = solo.events.length - 1; i >= 0; i--) { if (solo.events[i].dec < di) { prev = solo.events[i].midi; break; } }
+    for (let i = solo.events.length - 1; i >= 0; i--) { if (solo.events[i].t < d.t - 1e-6) { prev = solo.events[i].midi; break; } }
     const f = lick.segs.length === 1 ? L.fit(lick, [App.hs[d.i0].t0 + App.hs[d.i0].dur - d.t]) : null;
     const cut = f && f.cut ? f.cut : null;
     const r = L.realize(lick, chords, { t0: lead, lo: o.lo, hi: o.hi, prev, limit: cut || undefined, center: o.lo + (o.hi - o.lo) * 0.55 });
@@ -176,10 +176,13 @@
     if (cut) beats[0] = lead + cut;
     return { evs, chords, srcs: App.hs.slice(d.i0, d.i0 + lick.segs.length).map(x => x.src), beats, lead };
   }
+  const placeLick = (solo, di, lick) => placeLickAt(solo, solo.decisions[di], lick);
+
   function miniNotation(pl, width) {
     const inst = App.writtenInst();
     const events = pl.evs.map((e, i) => ({ t: e.t, dur: e.dur, p: e.p, tie: e.tie, accent: e.accent, stac: e.stac, id: i }));
-    const r = N.preview(events, pl.srcs, pl.beats, { bpb: App.bpb, keySpell: App.an.key.spell, keyMode: App.an.key.mode, inst: { transpose: inst.transpose, clef: inst.clef }, width, ss: 6 });
+    const bars = Math.ceil(pl.beats.reduce((a, b) => a + b, 0) / App.bpb - 1e-6);
+    const r = N.preview(events, pl.srcs, pl.beats, { bpb: App.bpb, keySpell: App.an.key.spell, keyMode: App.an.key.mode, inst: { transpose: inst.transpose, clef: inst.clef }, width, ss: bars >= 3 ? 5.3 : 6, barsPerSystem: 4 });
     return r.svg;
   }
   function degreeLine(solo, di) {
@@ -252,12 +255,13 @@
     if (st().soloMode === 'off') { st().soloMode = 'same'; App.ui.soloSel.value = 'same'; }
     App.play({ fromBar: from, toBar: Math.max(to, from + 1), loops: 2, countIn: 1 });
   }
-  function previewLick(solo, di, lick) {
-    const pl = placeLick(solo, di, lick);
+  function previewLickAt(solo, d, lick) {
+    const pl = placeLickAt(solo, d, lick);
     const chords = pl.srcs.map((s, i) => ({ src: s, dur: pl.beats[i] }));
     const events = pl.evs.map(e => ({ t: e.t, dur: e.dur, midi: e.midi, vel: 84, tie: e.tie, stac: e.stac, accent: e.accent }));
     App.playPreview({ id: 'lick:' + lick.id, chords, solo: Au.mergeTies(events), bpb: App.bpb === 3 ? 4 : App.bpb, tempo: Math.max(80, Math.min(160, st().tempo)) });
   }
+  const previewLick = (solo, di, lick) => previewLickAt(solo, solo.decisions[di], lick);
 
   function renderCandidates(box, solo, di) {
     const d = solo.decisions[di];
@@ -267,6 +271,7 @@
     box.appendChild(h('h3', null, '差しかえ候補（' + list.length + '本）'));
     if (!list.length) { box.appendChild(h('p', { class: 'muted' }, 'このフレーズには、ほかの候補がありません。')); return; }
     const wrap = h('div', { class: 'cands' });
+    const cw = el.phrase.clientWidth || 640, candCols = cw >= 760 ? 2 : 1, candW = Math.max(260, Math.floor((cw - 36 - (candCols - 1) * 10) / candCols - 28));
     list.slice(0, candLimit).forEach(l => {
       const pl = placeLick(solo, di, l);
       const isCur = l.id === d.id;
@@ -279,12 +284,37 @@
           h('div', { class: 'grow' }),
           isCur ? h('span', { class: 'badge' }, '今のリック') : h('button', { type: 'button', class: 'btn sm primary', onclick: () => { App.swapLick(di, l.id); } }, 'これにする')),
         tags,
-        h('div', { class: 'mini-score', html: miniNotation(pl, 360) }),
+        h('div', { class: 'mini-score', html: miniNotation(pl, candW) }),
         lickDesc(l) ? h('p', { class: 'muted small' }, lickDesc(l)) : null));
     });
     box.appendChild(wrap);
     if (list.length > candLimit) box.appendChild(h('div', { class: 'row center mt' }, h('button', { type: 'button', class: 'btn', onclick: () => { candLimit += 18; renderPhrase(); } }, 'もっと見る（残り ' + (list.length - candLimit) + '本）')));
   }
+
+  /* ---------------- ほかの画面から使う（コード譜タブの「リックの提案」） ---------------- */
+  // hsIdx のコードに合うリックを、いまのレベルに近い順に。{ di（ソロの何番目のフレーズか。なければ -1）, d, list, total, ctxJp }
+  App.suggest = function (hsIdx, n) {
+    const solo = App.solo, hsx = App.hs[hsIdx];
+    if (!hsx || hsx.chord.nc || hsx.chord.bad) return null;
+    const di = solo.decisions.findIndex(d => d.i0 <= hsIdx && hsIdx < d.i0 + d.n);
+    let list, d, ctxJp = '';
+    if (di >= 0) {
+      d = solo.decisions[di];
+      list = S.candidates(App.hs, App.an, solo, di);
+      ctxJp = d.kind === 'pattern' ? (AL.A.PAT_BY_ID[d.pat] ? AL.A.PAT_BY_ID[d.pat].jp : App.patLabel(d.pat)) : (L.CTX[d.ctx] ? L.CTX[d.ctx].jp : d.ctx);
+    } else {
+      d = { i0: hsIdx, t: hsx.t0, n: 1, cut: null };
+      const pools = (App.an.chords[hsIdx].pools || []).map(p => p.ctx);
+      list = [];
+      pools.forEach(c => { list = list.concat(L.find(c, { durs: [hsx.dur], chords: [hsx.chord], lvlMax: 3, bpb: App.bpb })); });
+      ctxJp = pools.length && L.CTX[pools[0]] ? L.CTX[pools[0]].jp : '';
+    }
+    const order = new Map(L.all.map((l, i) => [l.id, i]));
+    const cur = di >= 0 ? solo.decisions[di].id : null;
+    list = list.slice().sort((a, b) => (a.id === cur ? -1 : b.id === cur ? 1 : 0) || Math.abs(a.lvl - st().level) - Math.abs(b.lvl - st().level) || order.get(a.id) - order.get(b.id));
+    return { di, d, list: list.slice(0, n || 6), total: list.length, ctxJp, current: cur };
+  };
+  App.lickView = { placeLickAt, miniNotation, previewLickAt, degreeLine };
 
   /* ---------------- 受けとり ---------------- */
   function refreshControls() {

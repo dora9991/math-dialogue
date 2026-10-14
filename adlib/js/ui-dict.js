@@ -33,7 +33,8 @@
   function notation(lick, pl, width) {
     const inst = App.writtenInst();
     const events = pl.evs.map((e, i) => ({ t: e.t, dur: e.dur, p: e.p, tie: e.tie, accent: e.accent, stac: e.stac, id: i }));
-    return N.preview(events, pl.srcs, lick.segs, { bpb: lick.bpb || 4, keySpell: pl.tonic, keyMode: pl.mode, inst: { transpose: inst.transpose, clef: inst.clef }, width, ss: 6.4 }).svg;
+    const bars = Math.ceil(lick.segs.reduce((a, b) => a + b, 0) / (lick.bpb || 4) - 1e-6);
+    return N.preview(events, pl.srcs, lick.segs, { bpb: lick.bpb || 4, keySpell: pl.tonic, keyMode: pl.mode, inst: { transpose: inst.transpose, clef: inst.clef }, width, ss: bars >= 3 ? 5.4 : 6.4, barsPerSystem: 4 }).svg;
   }
   function playLick(lick, K) {
     const pl = place(lick, K);
