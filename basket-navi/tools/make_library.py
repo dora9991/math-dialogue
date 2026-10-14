@@ -6,14 +6,20 @@
   （.gitignore で守ってある）。置き場所は、basket-navi.html と同じフォルダ（OneDrive の「バスケ動画」など）。
 
 使い方
-  # ① フォルダを走査して、動画ぶんの項目を作る（いちばん簡単。一覧がなくてもできる）
+  # ★ いちばん簡単：走査して library.js を作り、basket-navi.html も動画フォルダに置いて、ブラウザで開く（1行）
+  python3 make_library.py setup --icloud "フォルダ名" --open        # iCloud Drive（Mac）の中のフォルダ
+  python3 make_library.py setup "<動画フォルダ>" --open            # それ以外（OneDrive など）
+  python3 make_library.py setup --icloud                          # フォルダ名がわからないとき：動画のあるフォルダを探して並べる
+
+  # ① フォルダを走査して、動画ぶんの項目を作る（一覧がなくてもできる）
   python3 make_library.py scan <動画フォルダ> [--base <basket-navi.html を置くフォルダ>] [--out library.js] [--probe]
 
   # ② Excel / CSV の一覧から作る（まとめの文章・OneDrive のリンクも取りこめる）
   python3 make_library.py list <一覧.xlsx|一覧.csv> [--sheet シート名 ...] [--map 項目=見出し,...]
                                [--videos <動画フォルダ> [--base <HTMLの置き場所>]] [--out library.js]
 
-  --probe   ffprobe があれば、動画の長さ（秒）も入れる
+  --probe   ffprobe があれば、動画の長さ（秒）も入れる（iCloud で Mac にまだ無い動画は、ダウンロードが始まらないよう飛ばす）
+  --open    できあがった basket-navi.html をブラウザで開く（Mac は Chrome → Edge → 既定の順）
   --map     見出しの自動判定が合わないとき。項目は title / category / file / url / summary / tags / source
             例：--map title=動画名,summary=内容
   --videos  一覧にファイルの場所がないとき、動画フォルダから「名前が一致する動画」を探して file を埋める
@@ -33,6 +39,8 @@ import sys
 import unicodedata
 from pathlib import Path
 
+ICLOUD_ROOT = Path.home() / 'Library' / 'Mobile Documents' / 'com~apple~CloudDocs'   # Mac の iCloud Drive の入り口
+SF_DATALESS = 0x40000000   # macOS：iCloud 上だけにあって、まだ Mac にダウンロードされていないファイルの印
 VIDEO_EXT = {'.mp4', '.m4v', '.mov', '.webm', '.mkv', '.avi', '.wmv', '.mpg', '.mpeg', '.flv', '.ts', '.m2ts'}
 CATS = [{'id': 'coaching', 'name': '指導法'}, {'id': 'tactics', 'name': '戦術'}, {'id': 'training', 'name': 'トレーニング'}]
 CAT_NAMES = {c['name']: c['id'] for c in CATS}
@@ -168,14 +176,41 @@ def probe(path):
 
 
 # ---------- ① scan ----------
+def is_dataless(p):
+    """iCloud Drive で、Mac にまだダウンロードされていないファイルか（macOS だけ。ほかの OS では常に False）。"""
+    try:
+        return bool(getattr(os.stat(p), 'st_flags', 0) & SF_DATALESS)
+    except OSError:
+        return False
+
+
+def icloud_placeholder_name(fn):
+    """古い macOS の iCloud Drive は、未ダウンロードの動画を「.名前.icloud」という小さな目印のファイルにする。本来の名前を返す（目印でなければ空）。"""
+    return fn[1:-len('.icloud')] if (fn.startswith('.') and fn.endswith('.icloud') and len(fn) > len('..icloud')) else ''
+
+
 def walk_videos(root):
+    """(動画のパス, まだ Mac にダウンロードされていないか) を返す。目印のファイルも動画として数える。"""
     for dp, dns, fns in os.walk(root):
         dns[:] = [d for d in dns if not d.startswith('.') and d not in ('@eaDir', '__MACOSX')]
         for fn in fns:
-            if fn.startswith('.') or fn.startswith('._'):
+            if fn.startswith('._'):
+                continue
+            real = icloud_placeholder_name(fn)
+            if real:
+                if os.path.splitext(real)[1].lower() in VIDEO_EXT:
+                    yield Path(dp) / real, True
+                continue
+            if fn.startswith('.'):
                 continue
             if os.path.splitext(fn)[1].lower() in VIDEO_EXT:
-                yield Path(dp) / fn
+                p = Path(dp) / fn
+                yield p, is_dataless(p)
+
+
+def present(p):
+    """実ファイルがあるか、iCloud の未ダウンロードの目印があるか。"""
+    return p.exists() or (p.parent / ('.' + p.name + '.icloud')).exists()
 
 
 def tags_from(parts):
@@ -200,31 +235,37 @@ def cmd_scan(a):
     lib = read_lib(out) or new_lib()
     have = {key(v['file']): v for v in lib['videos'] if v.get('file')}
     n = next_id_number(lib['videos'])
-    found = added = 0
-    for p in sorted(walk_videos(root), key=natural_key):
+    found = added = offline_n = 0
+    for p, offline in sorted(walk_videos(root), key=lambda t: natural_key(t[0])):
         found += 1
+        offline_n += 1 if offline else 0
         rel = p.relative_to(base).as_posix()
         v = have.get(key(rel))
+        can_probe = a.probe and not offline          # iCloud の未ダウンロードを probe すると、ダウンロードが始まってしまう
         if v is not None:
-            if a.probe and not v.get('duration'):
+            if can_probe and not v.get('duration'):
                 v['duration'] = probe(p)
             continue
         parts = list(p.relative_to(root).parts[:-1])
         title = nfc(p.stem)
         lib['videos'].append(new_video(n, title, guess_category(parts, title), rel,
-                                       tags=tags_from(parts), duration=probe(p) if a.probe else 0))
+                                       tags=tags_from(parts), duration=probe(p) if can_probe else 0))
         n += 1
         added += 1
-    missing = [v for v in lib['videos'] if v.get('file') and not (base / v['file']).exists()]
+    missing = [v for v in lib['videos'] if v.get('file') and not present(base / v['file'])]
     write_lib(out, lib)
     print(f'動画 {found} 本を見つけた ／ 新しく追加 {added} 本 ／ もとから入っていた {found - added} 本')
+    if offline_n:
+        print(f'iCloud Drive で、まだ Mac にダウンロードされていない動画 {offline_n} 本：Finder で動画（またはフォルダ）を右クリック →「今すぐダウンロード」にすると、再生できます。'
+              + ('動画の長さは、ダウンロード後に --probe 付きでもう一度実行すると入ります。' if a.probe else ''))
     unclassified = sum(1 for v in lib['videos'] if not v.get('category'))
     if unclassified:
         print(f'分類がわからなかった動画 {unclassified} 本 → 「未分類」で入っています。library.js の category を直すと分類されます')
     if missing:
         print(f'ファイルが見つからない項目 {len(missing)} 件（移動・名前変更の可能性）：' + '、'.join(v['title'] for v in missing[:5]) + (' …' if len(missing) > 5 else ''))
     print(f'書き出した：{out}')
-    print('basket-navi.html を同じフォルダに置いて、開いてください。')
+    if not getattr(a, 'from_setup', False):
+        print('basket-navi.html を同じフォルダに置いて、開いてください。')
 
 
 # ---------- ② list ----------
@@ -361,7 +402,7 @@ def cmd_list(a):
         die('一覧から、動画の行を読めませんでした。')
     root = Path(a.videos).expanduser().resolve() if a.videos else None
     base = Path(a.base).expanduser().resolve() if a.base else root
-    files = sorted(walk_videos(root), key=natural_key) if root else []
+    files = sorted((p for p, _ in walk_videos(root)), key=natural_key) if root else []
     out = Path(a.out).expanduser() if a.out else (base / 'library.js' if base else Path('library.js'))
     lib = read_lib(out) or new_lib()
     by_title = {key(v['title']): v for v in lib['videos']}
@@ -401,9 +442,100 @@ def cmd_list(a):
     print(f'書き出した：{out}')
 
 
+# ---------- ★ setup ----------
+def count_videos(dirpath, cap_files=30000):
+    """動画の数（iCloud の未ダウンロードの目印も数える）。大きなフォルダでは途中でやめる。"""
+    n = seen = 0
+    for dp, dns, fns in os.walk(dirpath):
+        dns[:] = [d for d in dns if not d.startswith('.')]
+        for fn in fns:
+            seen += 1
+            name = icloud_placeholder_name(fn) or fn
+            if not name.startswith('.') and os.path.splitext(name)[1].lower() in VIDEO_EXT:
+                n += 1
+            if seen >= cap_files:
+                return n
+    return n
+
+
+def pick_icloud_folder(root, name):
+    if not root.is_dir():
+        die(f'iCloud Drive の場所が見つかりません：{root}\n  → Mac で iCloud Drive をオンにして、動画をそこに入れてください。Mac 以外では、動画のフォルダを直接指定してください。')
+    dirs = sorted((d for d in root.iterdir() if d.is_dir() and not d.name.startswith('.')), key=lambda d: natural_key(d.name))
+    if name:
+        hit = next((d for d in dirs if key(d.name) == key(name)), None)
+        if hit is None:
+            die(f'iCloud Drive に「{name}」というフォルダがありません。いまあるフォルダ：' + '、'.join(nfc(d.name) for d in dirs[:30]))
+        return hit
+    cands = sorted(((count_videos(d), d) for d in dirs), key=lambda t: -t[0])
+    cands = [(n, d) for n, d in cands if n > 0]
+    if not cands:
+        die('iCloud Drive の中に、動画のあるフォルダが見つかりませんでした。動画を入れたフォルダの名前を、--icloud の後ろに書いてください。')
+    if len(cands) > 1:
+        print('iCloud Drive に、動画のあるフォルダが複数あります。使うフォルダの名前を指定して、もう一度実行してください：')
+        for n, d in cands[:10]:
+            print(f'  {n:>4} 本  {nfc(d.name)}')
+        print(f'  例：python3 tools/make_library.py setup --icloud "{nfc(cands[0][1].name)}" --open')
+        sys.exit(2)
+    print(f'iCloud Drive の「{nfc(cands[0][1].name)}」（動画 {cands[0][0]} 本）を使います。')
+    return cands[0][1]
+
+
+def open_in_browser(path):
+    """できあがった HTML をブラウザで開く。開いたブラウザの名前を返す。"""
+    if sys.platform == 'darwin':
+        for app in ('Google Chrome', 'Microsoft Edge'):
+            if subprocess.run(['open', '-a', app, str(path)], capture_output=True).returncode == 0:
+                return app
+        subprocess.run(['open', str(path)], check=True)
+    elif sys.platform.startswith('win'):
+        os.startfile(str(path))  # noqa: S606
+    else:
+        subprocess.run(['xdg-open', str(path)], check=True)
+    return '既定のブラウザ'
+
+
+def cmd_setup(a):
+    root = Path(a.icloud_root).expanduser() if a.icloud_root else ICLOUD_ROOT
+    if a.icloud is not None:
+        if a.folder:
+            die('--icloud と、フォルダの指定は、どちらか片方にしてください。')
+        folder = pick_icloud_folder(root, a.icloud)
+    elif a.folder:
+        folder = Path(a.folder).expanduser()
+    else:
+        die('動画のフォルダを指定してください（iCloud Drive なら --icloud ["フォルダ名"]）。\n  例：python3 tools/make_library.py setup --icloud "バスケ動画" --open')
+    folder = folder.resolve()
+    if not folder.is_dir():
+        die(f'フォルダが見つかりません：{folder}')
+    src = Path(__file__).resolve().parent.parent / 'basket-navi.html'
+    if not src.exists():
+        die(f'{src} がありません。先に node tools/bundle.cjs を実行してください。')
+    cmd_scan(argparse.Namespace(folder=str(folder), base=None, out=None, probe=a.probe, from_setup=True))
+    dst = folder / 'basket-navi.html'
+    same = dst.exists() and dst.read_bytes() == src.read_bytes()
+    if not same:
+        shutil.copy2(src, dst)
+    print(f'basket-navi.html は{"すでに最新です" if same else "動画フォルダに置きました"}：{dst}')
+    if a.open:
+        try:
+            print(f'{open_in_browser(dst)} で開きました。')
+        except Exception as e:  # noqa: BLE001
+            print(f'ブラウザを開けませんでした（{e}）。{dst} をダブルクリックしてください。')
+    else:
+        print('basket-navi.html をダブルクリックして開いてください（Chrome か Edge がおすすめ）。')
+
+
 def main():
     ap = argparse.ArgumentParser(description='バスケ動画のライブラリ（library.js）を作る・育てる', formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
     sub = ap.add_subparsers(dest='cmd', required=True)
+    su = sub.add_parser('setup', help='走査して library.js を作り、basket-navi.html も動画フォルダに置いて開く（いちばん簡単）')
+    su.add_argument('folder', nargs='?')
+    su.add_argument('--icloud', nargs='?', const='', default=None, metavar='フォルダ名', help='iCloud Drive（Mac）の中のフォルダ。名前を省くと、動画のあるフォルダを探す')
+    su.add_argument('--icloud-root', help=argparse.SUPPRESS)
+    su.add_argument('--probe', action='store_true')
+    su.add_argument('--open', action='store_true')
+    su.set_defaults(fn=cmd_setup)
     s = sub.add_parser('scan', help='動画フォルダを走査して項目を作る')
     s.add_argument('folder')
     s.add_argument('--base')

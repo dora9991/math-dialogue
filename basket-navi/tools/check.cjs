@@ -17,6 +17,7 @@ fs.mkdirSync(outDir, { recursive: true });
 const failures = [];
 const ok = (cond, msg) => { console.log((cond ? '  ✓ ' : '  ✗ ') + msg); if (!cond) failures.push(msg); };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const readLib = f => { const t = fs.readFileSync(f, 'utf8'); return JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); };
 
 (async () => {
   /* ---- 準備：サンプル表示用と、library.js 表示用のフォルダ ---- */
@@ -43,6 +44,30 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const scan = spawnSync('python3', ['-I', path.join(__dirname, 'make_library.py'), 'scan', od, '--probe'], { encoding: 'utf8' });
   ok(scan.status === 0, 'make_library.py scan で library.js ができる' + (scan.status ? '：' + scan.stderr : ''));
   if (scan.status !== 0) { console.log(scan.stdout, scan.stderr); process.exit(1); }
+  // 配布用の basket-navi.html が、いまのソースと一致しているか（コードを直したのにまとめ直し忘れていないか）
+  const verify = path.join(tmp, 'verify.html');
+  bundle(verify);
+  ok(fs.readFileSync(verify, 'utf8') === fs.readFileSync(path.join(root, 'basket-navi.html'), 'utf8'), '配布用の basket-navi.html が、いまのソースと一致する（違うときは node tools/bundle.cjs）');
+
+  // iCloud Drive 風のフォルダで setup（未ダウンロードの目印ファイル・フォルダの自動検出・HTML の配置）
+  const ic = path.join(tmp, 'Library', 'Mobile Documents', 'com~apple~CloudDocs');
+  fs.mkdirSync(path.join(ic, 'バスケ動画', '指導法'), { recursive: true });
+  fs.mkdirSync(path.join(ic, '書類'), { recursive: true });
+  fs.writeFileSync(path.join(ic, 'バスケ動画', '指導法', '.01_声かけ.mp4.icloud'), 'x');   // 古い macOS の「まだ Mac にない」目印
+  fs.writeFileSync(path.join(ic, 'バスケ動画', '指導法', '.メモ.txt.icloud'), 'x');          // 動画でない目印は無視される
+  fs.writeFileSync(path.join(ic, '書類', 'メモ.txt'), 'x');
+  const su = spawnSync('python3', ['-I', path.join(__dirname, 'make_library.py'), 'setup', '--icloud', '--icloud-root', ic], { encoding: 'utf8' });
+  ok(su.status === 0 && fs.existsSync(path.join(ic, 'バスケ動画', 'library.js')) && fs.existsSync(path.join(ic, 'バスケ動画', 'basket-navi.html')), 'setup --icloud：動画のあるフォルダを自動で選び、library.js と basket-navi.html を置く' + (su.status ? '：' + su.stderr + su.stdout : ''));
+  ok(/まだ Mac にダウンロードされていない動画 1 本/.test(su.stdout), 'iCloud の「まだ Mac にない動画」を数えて知らせる');
+  const icLib = readLib(path.join(ic, 'バスケ動画', 'library.js'));
+  ok(icLib.videos.length === 1 && icLib.videos[0].file === '指導法/01_声かけ.mp4' && icLib.videos[0].category === 'coaching', '目印ファイルは、本来の名前の動画として入る（動画でない目印は入らない）');
+  fs.mkdirSync(path.join(ic, '家族'), { recursive: true });
+  fs.writeFileSync(path.join(ic, '家族', '運動会.mov'), 'x');
+  const su2 = spawnSync('python3', ['-I', path.join(__dirname, 'make_library.py'), 'setup', '--icloud', '--icloud-root', ic], { encoding: 'utf8' });
+  ok(su2.status === 2 && /動画のあるフォルダが複数/.test(su2.stdout), '動画のあるフォルダが複数あるときは、一覧を出して止まる');
+  const su3 = spawnSync('python3', ['-I', path.join(__dirname, 'make_library.py'), 'setup', '--icloud', 'バスケ動画', '--icloud-root', ic], { encoding: 'utf8' });
+  ok(su3.status === 0 && readLib(path.join(ic, 'バスケ動画', 'library.js')).videos.length === 1 && /すでに最新/.test(su3.stdout), 'もう一度 setup しても、重複せず、HTML は最新のまま');
+
   // 要約・見どころ・URL を足す（手で書いた想定）
   const libPath = path.join(od, 'library.js');
   const txt = fs.readFileSync(libPath, 'utf8'), lib = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1));

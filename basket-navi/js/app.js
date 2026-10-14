@@ -310,7 +310,7 @@
       e.hidden = false;
       e.innerHTML = `<b>動画を開けませんでした</b>
         <p>探した場所：<code>${esc(safeDecode(s))}</code></p>
-        <p>考えられること：<br>・ <code>basket-navi.html</code> を、動画のフォルダ（または、その上のフォルダ）に置いていない<br>・ OneDrive が「オンラインのみ」になっている（フォルダを右クリック →「この端末に常に保持」）<br>・ ブラウザで再生できない形式（.mov / .avi / .wmv など）。mp4（H.264）に変換するか、下のリンクで開く</p>
+        <p>考えられること：<br>・ <code>basket-navi.html</code> を、動画のフォルダ（または、その上のフォルダ）に置いていない<br>・ OneDrive / iCloud Drive が「オンラインのみ」になっている（OneDrive：フォルダを右クリック →「この端末に常に保持」／iCloud Drive：Finder で動画を右クリック →「今すぐダウンロード」）<br>・ ブラウザで再生できない形式（.mov / .avi / .wmv など）。mp4（H.264）に変換するか、下のリンクで開く</p>
         <p><a href="${esc(s)}" target="_blank" rel="noopener">ファイルを直接開く ↗</a>${v.url ? ` ／ <a href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">OneDrive などで開く ↗</a>` : ''}</p>`;
     });
     vp.addEventListener('loadedmetadata', () => {
@@ -744,18 +744,17 @@
         <section class="blk card-plain">
           <h2>いま表示しているデータ</h2>
           <dl class="kv"><dt>データの元</dt><dd>${esc(srcName)}</dd><dt>動画</dt><dd>${LIB.videos.length}本</dd><dt>動画の場所</dt><dd><code>${esc(baseUrl())}</code></dd><dt>この端末の記録</dt><dd>メモ ${nNotes}・印 ${nMarks}・計画 ${st.plans.length}</dd></dl>
-          ${SRC === 'sample' ? `<p><b>自分の動画を入れるには</b></p>
-            <ol>
-              <li><code>basket-navi.html</code> を、動画のフォルダ（OneDrive の「バスケ動画」など）に置く</li>
-              <li>パソコンで <code>python3 tools/make_library.py scan 動画のフォルダ --probe</code> を実行 → <code>library.js</code> ができる（一覧のExcelからも作れます）</li>
-              <li>同じフォルダに <code>library.js</code> を置いて、このページを開き直す</li>
-            </ol>
-            <p class="sub">くわしくは README を見てください。スマホ・タブレットなら、下の「ライブラリの取り込み」も使えます。</p>` : ''}
+          ${SRC === 'sample' ? `<p><b>自分の動画を入れるには</b>（パソコンのターミナルで、1行）</p>
+            <ul>
+              <li>iCloud Drive の動画：<code>python3 tools/make_library.py setup --icloud "フォルダ名" --open</code></li>
+              <li>それ以外のフォルダ（OneDrive など）：<code>python3 tools/make_library.py setup "動画のフォルダ" --open</code></li>
+            </ul>
+            <p class="sub">動画のフォルダに <code>library.js</code>（動画の一覧）と <code>basket-navi.html</code> ができて、ブラウザで開きます。一覧の Excel からも作れます。くわしくは README を見てください。スマホ・タブレットなら、下の「ライブラリの取り込み」も使えます。</p>` : ''}
           ${SRC === 'library' && imp ? '<p class="sub">取り込んだライブラリもありますが、<code>library.js</code> のほうを優先しています。</p>' : ''}
         </section>
         <section class="blk card-plain">
           <h2>動画の場所</h2>
-          <p class="sub">ふつうは触らなくてOK（<code>basket-navi.html</code> と同じ場所を見ます）。別の場所に置いたときだけ、動画のフォルダの場所を入れます。例：<code>file:///Users/○○/Library/CloudStorage/OneDrive-Personal/バスケ動画/</code>　<code>C:\\Users\\○○\\OneDrive\\バスケ動画</code></p>
+          <p class="sub">ふつうは触らなくてOK（<code>basket-navi.html</code> と同じ場所を見ます）。別の場所に置いたときだけ、動画のフォルダの場所を入れます。例：<code>file:///Users/○○/Library/Mobile Documents/com~apple~CloudDocs/バスケ動画/</code>（iCloud Drive）　<code>file:///Users/○○/Library/CloudStorage/OneDrive-Personal/バスケ動画/</code>　<code>C:\\Users\\○○\\OneDrive\\バスケ動画</code></p>
           <div class="row"><input id="base" type="text" value="${esc(st.base)}" placeholder="（空 = このHTMLと同じ場所）" aria-label="動画の場所"><button class="btn" data-act="savebase">保存</button><button class="btn ghost" data-act="resetbase">もどす</button></div>
         </section>
         <section class="blk card-plain">
@@ -771,7 +770,7 @@
         <section class="blk card-plain">
           <h2>うまくいかないとき</h2>
           <p class="sub"><b>サンプルのまま変わらない</b>：<code>library.js</code> を <code>basket-navi.html</code> と<b>同じフォルダ</b>に置いたか確認。それでもだめなら、<code>library.js</code> の中身が壊れている（カンマや引用符の消えなど）かもしれません。<code>make_library.py</code> で作り直すと確実です（手で書いた部分は残ります）。</p>
-          <p class="sub"><b>動画が出ない</b>：動画のページに、探した場所と原因の候補が出ます。OneDrive の「オンラインのみ」と、ブラウザで再生できない形式（.mov / .avi / .wmv）が多いです。ブラウザは Chrome か Edge がおすすめです。</p>
+          <p class="sub"><b>動画が出ない</b>：動画のページに、探した場所と原因の候補が出ます。OneDrive・iCloud Drive の「オンラインのみ」と、ブラウザで再生できない形式（.mov / .avi / .wmv）が多いです。ブラウザは Chrome か Edge がおすすめです。</p>
         </section>
         <section class="blk card-plain">
           <h2>使いかた（キー操作）</h2>

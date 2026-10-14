@@ -17,12 +17,36 @@
 `.gitignore` で守ってある（`basket-navi/library.js`、`basket-navi/data/library.js`、動画の拡張子など）。
 ここに入っているのは「道具（コード）」と「サンプル（形の見本）」だけ。さらに安心したいなら、このフォルダだけ非公開のリポジトリに移してもよい。
 
-## いちばん簡単な始め方
+## いちばん簡単な始め方（Mac・パソコン）
 
-1. **`basket-navi.html`** をダウンロードする（GitHub でこのファイルを開いて、右上の「Download raw file」）。
-2. OneDrive の動画フォルダ（「バスケ動画」など。**動画のあるフォルダ、またはその上のフォルダ**）に置いて、ダブルクリックで開く。
-   ブラウザは **Chrome か Edge** がおすすめ。最初は「サンプル」が出るので、操作を試せる。
-3. 自分の動画を入れる（下の「自分の動画を入れる」）。同じフォルダに `library.js` ができたら、開き直す。
+動画を入れたフォルダ（iCloud Drive でも OneDrive でもよい）に対して、**ターミナルで1行**。`basket-navi` フォルダに移ってから：
+
+```bash
+# iCloud Drive の「バスケ動画」フォルダなら
+python3 tools/make_library.py setup --icloud "バスケ動画" --probe --open
+
+# フォルダ名がわからないとき（iCloud Drive の中で、動画のあるフォルダを探して並べる）
+python3 tools/make_library.py setup --icloud
+
+# それ以外（OneDrive など）
+python3 tools/make_library.py setup "/Users/○○/Library/CloudStorage/OneDrive-Personal/バスケ動画" --open
+```
+
+これで、**動画フォルダの中**に `library.js`（動画の一覧）と `basket-navi.html`（アプリ）ができて、ブラウザで開く。
+次からは、そのフォルダの `basket-navi.html` をダブルクリックするだけ（ブラウザは **Chrome か Edge** がおすすめ）。
+新しい動画を足したら、同じコマンドをもう一度（手で書いた要約・見どころは消えない）。
+
+最新のコードは、`git fetch origin && git checkout claude/basketball-video-learning-8itlq0 && git pull`（PR がマージされたあとは `main`）。
+
+手で置くこともできる：`basket-navi.html` をダウンロード（GitHub で開いて、右上の「Download raw file」）→ 動画のフォルダ（または、その上のフォルダ）に置く → 開く。`library.js` がなければ「サンプル」が出る。
+
+### iCloud Drive について
+
+- Mac の iCloud Drive の場所は `~/Library/Mobile Documents/com~apple~CloudDocs/`。`--icloud` はここを見に行くので、長いパスを打たなくてよい。
+- **「Mac のストレージを最適化」**がオンだと、動画が iCloud 上だけにあって、Mac には無いことがある（Finder では雲のマーク）。`setup` は、そういう動画を数えて知らせる。再生するには、Finder で動画（またはフォルダ）を右クリック →「今すぐダウンロード」。
+  未ダウンロードの動画の「長さ」は、調べるとダウンロードが始まってしまうので、わざと調べない。ダウンロード後に `--probe` 付きでもう一度実行すると入る。
+- 初回に、ブラウザが iCloud Drive にアクセスしてよいか、Mac が聞いてくることがある。許可する（断ったときは、システム設定の「プライバシーとセキュリティ」→「ファイルとフォルダ」で許可）。
+- **iPhone / iPad**：ファイルアプリの中から `basket-navi.html` を動かすことはできない（ローカルの HTML は、動画つきでは開けない）。使いたいときは相談してほしい（案：アプリ本体だけを置く場所を用意し、`library.js` を取りこみ、動画はファイルを選んで再生）。
 
 ## 画面
 
@@ -75,7 +99,7 @@ python3 tools/make_library.py list "バスケ動画一覧.xlsx" --videos "<動�
 - **形式**：mp4（H.264）がいちばん確実。`.mov` / `.avi` / `.wmv` はブラウザで再生できないことがある。変換するなら `ffmpeg -i 元.avi -c:v libx264 -c:a aac 先.mp4`。
 - **記録の置き場所**：お気に入り・視聴済み・メモ・印・計画・実践の記録は、**そのブラウザの中**（localStorage）にだけ入る。ブラウザの掃除や別の端末では消える／移らないので、**ときどき設定の「書き出す」でバックアップ**する（14日たつと、設定で案内が出る）。
 - **スマホ・タブレット**：端末に置いた HTML では OneDrive のファイルを直接読めない。`library.js` の `url` に OneDrive の共有リンクを入れておくと「OneDrive などで開く」ボタンで動画を開ける。`library.js` は設定の「ライブラリの取り込み」で端末に入れる（中身は端末の中にだけ入り、どこにも送られない）。ただし、アプリ本体を開く場所（HTML を置く場所）は、まだ用意していない。
-- **動かして確かめたもの**：Chromium（ヘッドレス）で、サンプル表示・`library.js` 表示・動画の再生と見どころへのジャンプ・印・計画・印刷表示・実施モード・バックアップ・スマホ幅・暗い画面。**未確認**：Safari、Windows、実際の OneDrive 同期フォルダ。
+- **動かして確かめたもの**：Chromium（ヘッドレス）で、サンプル表示・`library.js` 表示・動画の再生と見どころへのジャンプ・印・計画・印刷表示・実施モード・バックアップ・スマホ幅・暗い画面。iCloud Drive 向けの処理（`setup`・フォルダの自動検出・未ダウンロードの目印ファイル）は、疑似的なフォルダで確認した。**未確認**：実際の Mac と iCloud Drive、Safari、Windows、実際の OneDrive 同期フォルダ。
 
 ## これから（いまは入っていない）
 
