@@ -192,6 +192,12 @@ a.btn { text-decoration: none; }
   .clip .thumb { width: 88px; height: 50px; }
   .clip .cops { grid-column: 1 / -1; justify-content: flex-start; }
 }
+.maybes { border: 1px dashed var(--line2); border-radius: 10px; padding: 8px 12px; }
+.maybes summary { cursor: pointer; font-size: 13px; font-weight: 700; }
+.maybes p { margin: 6px 0; }
+.mblist { display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow-y: auto; }
+.mb { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 8px; background: var(--panel2); }
+.mb b { font-variant-numeric: tabular-nums; }
 .acts { margin-top: 2px; }
 .exportbox { border: 1px dashed var(--line2); border-radius: 10px; padding: 8px 12px; }
 .exportbox .outvideo { width: 100%; max-height: 260px; background: #000; border-radius: 8px; margin: 6px 0; display: block; }
@@ -590,6 +596,12 @@ a.btn { text-decoration: none; }
     const GLOBAL_SCALES = [1, 0.9, 1.1, 0.8, 1.22, 0.7, 1.4];   // 画面全体から探すときに順に試す倍率（指定したときの大きさ＝1 から。前後 8% は詰めるときに試すので、0.65〜1.5 倍を切れ目なく覆う）
     const SC_STEP = 1.03;      // 追跡中に試す倍率の刻み
     const PRIOR_FRAMES = 150;  // 見失ってから「いるはずの場所」を信じるコマ数（約10秒。長く信じると、似た模様の床などに誤って張り付く）
+    // （バスケ得点クリップで足したもの）リングが画面の外にはみ出した位置の扱い。そこではリングの色で確かめられないので、
+    // 画面の端の、少し似ているだけの物（一致 0.6 ほど）に張り付いたまま、本物のゴールが戻ってきても探し直さないことがあった
+    // （合成映像で、ゴールを 40 秒見失い、その間の得点を落とした）。
+    const TH_ACQ_EDGE = 0.8;   // リングが画面の外になる位置で捉えるには、これだけよく合うこと
+    const TH_KEEP_EDGE = 0.75; // リングが画面の外のまま OUT_MAX コマを過ぎたら、これ未満の一致では追い続けない（手放して探し直す）
+    const OUT_MAX = 15;
     const clampN = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
     /* ---------- ゴール追跡 ---------- */
@@ -606,7 +618,8 @@ a.btn { text-decoration: none; }
         x: mark.box.x / k, y: mark.box.y / k,
         fx: 0, fy: 0, fine: 0,          // 1画素より細かい位置のずれ、倍率の端数（SC_STEP の何乗ぶんか）
         drift: 0,                       // 見失ってからの全体の動きの合計（推定位置のあやしさ）
-        tracked: false, score: 0, lost: 1e6, frame: 0, everSeen: false
+        tracked: false, score: 0, lost: 1e6, frame: 0, everSeen: false,
+        outN: 0                         // リングが画面の外のまま追っているコマ数
       };
       function buildTemplate(scale) {
         // 同じ倍率のテンプレートは作り直さない（作るのが重い）
@@ -666,6 +679,13 @@ a.btn { text-decoration: none; }
         st.fy = peak(V.nccAt(gray, w, h, T, st.x, st.y - 1), V.nccAt(gray, w, h, T, st.x, st.y + 1));
       }
       function centerOf() { return { cx: st.x + st.T.tw / 2, cy: st.y + st.T.th / 2 }; }
+      /* 候補の位置（左上 b.x,b.y・倍率 b.scale）で、リングの中心が画面の中に入るか */
+      function rimIn(b) {
+        const rx = (b.x + b.T.tw / 2 + (st.rimOff.x - st.bw / 2) * b.scale) * k, ry = (b.y + b.T.th / 2 + (st.rimOff.y - st.bh / 2) * b.scale) * k;
+        return rx > 0 && rx < srcW && ry > 0 && ry < srcH;
+      }
+      /* 見失った後に捉えてよいか：リングが画面の中か、画面の外でもよく合う */
+      const acqOK = (b, th) => b && b.score >= th && (rimIn(b) || b.score >= TH_ACQ_EDGE);
 
       /* 1コマ進める。gray: 解析幅のグレースケール、quarter: その 1/4 の解像度、shift: 全体の動き（解析幅の画素） */
       function update(gray, w, h, quarter, shift) {
@@ -699,7 +719,12 @@ a.btn { text-decoration: none; }
             const far = tryScales(gray, w, h, ccx, ccy, [0.8, 0.88, 1.14, 1.25].map((f) => b.scale * f).filter((sc) => sc > 0.45 && sc < 2.4), 6, 2);
             if (far && far.score > b.score + 0.15) { b = far; st.fine = 0; }
           }
-          if (b.score >= TH_KEEP) { accept(b); subpixel(gray, w, h); return status(); }
+          if (b.score >= TH_KEEP) {
+            const inF = rimIn(b);
+            st.outN = inF ? 0 : st.outN + 1;
+            if (inF || st.outN <= OUT_MAX || b.score >= TH_KEEP_EDGE) { accept(b); subpixel(gray, w, h); return status(); }
+            st.outN = 0;      // 画面の外の、それほど似ていない物に長く張り付いている → 手放して探し直す
+          }
           st.tracked = false; st.lost++; st.score = b.score;
           st.x = cx - st.T.tw / 2; st.y = cy - st.T.th / 2;
           st.drift += Math.abs(sdx) + Math.abs(sdy);
@@ -715,7 +740,7 @@ a.btn { text-decoration: none; }
           const sc = [st.scale, st.scale * 1.08, st.scale / 1.08][st.frame % 3];
           if (sc > 0.45 && sc < 2.4) {
             const b = nearSearch(gray, w, h, quarter, sc, cx, cy, R);
-            if (b && b.score >= TH_NEAR) { accept(b); subpixel(gray, w, h); return status(); }
+            if (acqOK(b, TH_NEAR)) { st.outN = 0; accept(b); subpixel(gray, w, h); return status(); }
           }
         }
         // (b) 画面全体から探す（1/4 の解像度で粗く → 候補だけ解析幅で詰める）。1コマにつき倍率を1つ。
@@ -732,9 +757,10 @@ a.btn { text-decoration: none; }
               const b2 = tryScales(gray, w, h, b.x + b.T.tw / 2, b.y + b.T.th / 2, [sc * 1.08, sc / 1.08], 4, 2);
               if (b2.score > b.score) b = b2;
             }
+            if (!acqOK(b, TH_ACQ)) continue;      // リングが画面の外になる、それほど似ていない位置は捉えない
             if (!bestB || b.score > bestB.score) bestB = b;
           }
-          if (bestB && bestB.score >= TH_ACQ) { accept(bestB); subpixel(gray, w, h); return status(); }
+          if (bestB) { st.outN = 0; accept(bestB); subpixel(gray, w, h); return status(); }
         }
         return status();
       }
@@ -834,6 +860,10 @@ a.btn { text-decoration: none; }
     const TH_RIM_ACQ = 0.45;        // 捉えた瞬間、これ未満なら取り消す
     const TH_RIM_OK = 0.6;          // これ以上なら位置の微調整に使う
     const TH_RIM_LOW = 0.25, RIM_LOW_FRAMES = 15;   // これ未満が約1秒続いたら、別のものに張り付いているとみなして追跡をやめる
+    // （バスケ得点クリップで足したもの）リングが「隠れているだけ」とみなす条件：直前にリングを確かめられてから OCCL_MAX 秒以内で、
+    // バックボードの模様はよく合っている（OCCL_NCC 以上）。ボールがリングの上で弾む・転がる間は、オレンジのボールが輪に重なって
+    // 赤みの模様が崩れるため、そのコマを捨てると、ネットから出てくるボールを見逃す（背景の学び直しで数コマ何も見えなくなる）
+    const OCCL_MAX = 1.5, OCCL_NCC = 0.7;
     function redness(rgb, out) {
       const n = RV * RV, raw = new Float32Array(n);
       for (let i = 0, p = 0; i < n; i++, p += 3) raw[i] = rgb[p] / (rgb[p] + rgb[p + 1] + rgb[p + 2] + 1);
@@ -1021,7 +1051,11 @@ a.btn { text-decoration: none; }
     const NET_HIDE_MAX = 0.65;   // ボールがネットの中に隠れていられる最長の時間（秒）。リングの上で転がって入るときは 0.5 秒ほど見えなくなる
     function createShotDetector(id, opts) {
       // opts は検証・調整用（しきい値の上書き）。ふだんは省略
-      const P = Object.assign({ colorGate: 100, areaGate: 2.6, bornSpeedMin: BORN_SPEED_MIN, netSpeedMax: NET_SPEED_MAX, xinMax: 0.45, freeFallMin: 6.2 }, opts || {});
+      // bornYMax・bornGap はバスケ得点クリップで広げたもの（もとは 1.7・0.14）：リングの上で弾んでから入ったボールは、
+      // 揺れるネットや下の選手に重なって、ネットを出てすぐには見えないことがある（少し下で初めて見える・1コマ見えない）。
+      // ネットの手前を落ちただけのボールは、その高さでは速すぎる（リングの高さからの自由落下で 9 前後）ので、速さの上限で外れる。
+      // 2つ目の点は 2.7 より上でないといけないので、最初の点は 2.0 まで
+      const P = Object.assign({ colorGate: 100, areaGate: 2.6, bornSpeedMin: BORN_SPEED_MIN, netSpeedMax: NET_SPEED_MAX, xinMax: 0.45, freeFallMin: 6.2, bornYMax: 2.0, bornGap: 0.21 }, opts || {});
       let tracks = [];       // 動くもの（ボール候補）の軌跡
       const nets = [];       // ネットの動き {t,v}
       const seen = [];       // リングの口〜ネットの下に、ボール候補が見えた時刻
@@ -1076,11 +1110,11 @@ a.btn { text-decoration: none; }
           // 長く見えなかったときは、遅すぎないことも求める（外れた後、たまたま下に別の物が現れただけ、を成功にしない）
           if (p1.t - p0.t > 0.18 && netBusy(p0.t, p1.t) < 0.5) return null;
           if (p1.t - p0.t > 0.34 && speed < 1.5) return null;
-        } else if (!p0 && i === 0 && first.y >= 0.6 && first.y <= 1.7) {
+        } else if (!p0 && i === 0 && first.y >= 0.6 && first.y <= P.bornYMax) {
           // ネットの中から現れた（カメラが遅れて向いた・ネットに隠れていた）。
           // ネットの向こうを歩く人の頭などと区別するため、「続けて2コマ・落ちる速さが十分」を求める
           const q = pts[i + 1];
-          if (q.t - first.t > 0.14) return null;
+          if (q.t - first.t > P.bornGap) return null;
           speed = (q.y - first.y) / Math.max(0.03, q.t - first.t); tRef = first.t - 0.15; born = true;
           if (b.y < first.y + 0.25 || speed < P.bornSpeedMin) return null;
         } else return null;
@@ -1282,7 +1316,8 @@ a.btn { text-decoration: none; }
       const fixed = !!cfg.fixed;       // true: カメラが動かない（全景カメラ）。ゴールを追わず、指定した場所を見張る
       const trackers = cfg.hoops.map((m, i) => (fixed ? createFixedTracker(m, cfg.srcW, cfg.srcH) : createHoopTracker(m, cfg.srcW, cfg.srcH, i)));
       const rims = cfg.hoops.map(() => createRimChecker());
-      const rimState = cfg.hoops.map(() => ({ dx: 0, dy: 0, low: 0, score: null }));
+      const rimState = cfg.hoops.map(() => ({ dx: 0, dy: 0, low: 0, score: null, okT: null }));
+      const occlusion = cfg.rimOcclusion !== false;      // 検証用に false で、もとの動き（隠れたコマは使わない）
       const watchers = cfg.hoops.map((m) => createHoopWatcher(m.id));
       const detectors = cfg.hoops.map((m, i) => createShotDetector(i));
       const lastSeen = cfg.hoops.map(() => -1);
@@ -1308,13 +1343,21 @@ a.btn { text-decoration: none; }
         if (c.score == null) return s;                       // 画面の端などで確認できない：そのまま使う
         if (s.acquired && c.score < TH_RIM_ACQ) { tr.revert(); return tr.status(); }
         if (c.score < TH_RIM_LOW) {
+          // リングが一時的に隠れているだけ（ボールや手が輪に重なった）なら、直前のずれのまま、このコマも使う
+          if (occlusion && !s.acquired && rs.okT != null && f.t - rs.okT <= OCCL_MAX && (fixed || s.score >= OCCL_NCC)) {
+            rs.low++;
+            s.rim.cx += rs.dx / k; s.rim.cy += rs.dy / k;
+            s.rimScore = c.score; s.occluded = true;
+            s.inFrame = s.rim.cx > 0 && s.rim.cx < cfg.srcW && s.rim.cy > 0 && s.rim.cy < cfg.srcH;
+            return s;
+          }
           // リングが見当たらないコマは使わない（追跡そのものは続ける。約1秒続いたら追跡をやめる。固定カメラは追跡しないので、やめない：
           // やめると、そのコマだけ「見えている」扱いになってしまう）
           if (!fixed && ++rs.low >= RIM_LOW_FRAMES) { tr.drop(); rs.low = 0; return tr.status(); }
           s.tracked = false; s.rimScore = c.score;
           return s;
         }
-        rs.low = 0;
+        rs.low = 0; rs.okT = f.t;
         if (c.score >= TH_RIM_OK) { rs.dx += (c.dx - rs.dx) * 0.5; rs.dy += (c.dy - rs.dy) * 0.5; }
         s.rim.cx += rs.dx / k; s.rim.cy += rs.dy / k;
         s.rimScore = c.score;
@@ -1918,7 +1961,8 @@ a.btn { text-decoration: none; }
    チームの番号：0 = 自分、1 = 相手。
    setup  : { hoopTeam: [ゴールA を攻めるチーム, ゴールB を攻めるチーム]（動画のはじめ）, halfT: 後半の始まり（秒）| null }
    result : 自動解析の結果 { shots: [{ t（ボールがリングを通った時刻）, hoop, made, sure }], spans, ... }
-   edits  : 手直し { fix: { id: 0|1 }（チームを手で決めた）, off: { id: true }（再生・書き出しから外す）, added: [{ id, t, team }]（手で足した得点） } */
+   edits  : 手直し { fix: { id: 0|1 }（チームを手で決めた）, off: { id: true }（再生・書き出しから外す）, added: [{ id, t, team }]（手で足した得点）,
+                     promote: { id: true }（「外れ」と判定したシュートを、使う人が「入っていた」にした） } */
 (function (root) {
   'use strict';
   const BS = root.BS = root.BS || {};
@@ -1936,17 +1980,22 @@ a.btn { text-decoration: none; }
     return second ? 1 - first : first;
   }
 
-  function emptyEdits() { return { fix: {}, off: {}, added: [] }; }
+  function emptyEdits() { return { fix: {}, off: {}, added: [], promote: {} }; }
 
-  /* 得点の一覧（時刻順）。{ id, t, team, auto, hoop, unsure, fixed, on, half } */
+  /* 「外れ」と判定したシュートを「入っていた」にしたとき、場面の後ろを長めにする秒数。
+     外れの時刻は「ボールがリングにいちばん近づいた瞬間」で、リングで弾んでから入るまでに 0.5〜1.5 秒かかるため */
+  const PROMOTE_TAIL = 1.5;
+
+  /* 得点の一覧（時刻順）。{ id, t, team, auto, hoop, unsure, fixed, on, half, promoted, tail } */
   function items(result, setup, edits) {
     const E = edits || emptyEdits();
     const out = [];
     ((result && result.shots) || []).forEach((s) => {
-      if (!s.made) return;
       const id = shotId(s);
+      const promoted = !s.made && !!(E.promote && E.promote[id]);
+      if (!s.made && !promoted) return;
       const fixed = E.fix && (E.fix[id] === 0 || E.fix[id] === 1);
-      out.push({ id, t: s.t, team: fixed ? E.fix[id] : baseTeam(s, setup), auto: true, hoop: s.hoop, unsure: s.sure === false, fixed, on: !(E.off && E.off[id]) });
+      out.push({ id, t: s.t, team: fixed ? E.fix[id] : baseTeam(s, setup), auto: true, hoop: s.hoop, unsure: s.sure === false, fixed, on: !(E.off && E.off[id]), promoted, tail: promoted ? PROMOTE_TAIL : 0 });
     });
     (E.added || []).forEach((a) => out.push({ id: a.id, t: a.t, team: a.team, auto: false, hoop: null, unsure: false, fixed: true, on: !(E.off && E.off[a.id]) }));
     out.sort((a, b) => a.t - b.t);
@@ -1960,9 +2009,27 @@ a.btn { text-decoration: none; }
     const end = duration > 0 ? duration : Infinity;
     const mine = list.filter((it) => it.team === team);
     return mine.map((it, i) => ({
-      id: it.id, at: it.t, team, n: i + 1, total: mine.length, on: it.on, unsure: it.unsure, auto: it.auto, fixed: it.fixed, half: it.half,
-      t0: Math.max(0, it.t - w.lead), t1: Math.min(end, it.t + w.lag)
+      id: it.id, at: it.t, team, n: i + 1, total: mine.length, on: it.on, unsure: it.unsure, auto: it.auto, fixed: it.fixed, half: it.half, promoted: !!it.promoted,
+      t0: Math.max(0, it.t - w.lead), t1: Math.min(end, it.t + w.lag + (it.tail || 0))
     }));
+  }
+
+  /* 「入っていたかも？」の候補：解析で「外れ」と判定したシュート（リングまで来て、入らなかったと見えたもの）。
+     リングに当たって弾んでから入った得点は、ここに入っていることがある。使う人が ▶ で確かめて「入っていた」にできる。
+     チームは「そのゴールを攻めていたチーム」（＝打ったチーム）。すでに得点がある場面（同じゴールで 2.5 秒以内）は出さない */
+  function maybes(result, setup, edits, list) {
+    const E = edits || emptyEdits();
+    const made = list || items(result, setup, E);
+    const out = [];
+    ((result && result.shots) || []).forEach((s) => {
+      if (s.made) return;
+      const id = shotId(s);
+      if (E.promote && E.promote[id]) return;
+      if (made.some((it) => (it.hoop === s.hoop || it.hoop == null) && Math.abs(it.t - s.t) < 2.5)) return;
+      const fixed = E.fix && (E.fix[id] === 0 || E.fix[id] === 1);
+      out.push({ id, t: s.t, team: fixed ? E.fix[id] : baseTeam(s, setup), hoop: s.hoop, half: setup && setup.halfT != null ? (s.t >= setup.halfT ? 2 : 1) : 0 });
+    });
+    return out.sort((a, b) => a.t - b.t);
   }
 
   /* 続けて再生・書き出しするときの区間。外したものは入れない。
@@ -2000,21 +2067,26 @@ a.btn { text-decoration: none; }
     return { from: best.from, to: best.to, at: Math.round(Math.max(best.from + 1, best.to - 10) * 10) / 10 };
   }
 
-  /* 解析をやり直したとき、前の結果に付けた手直し（チーム・外す）を、新しい結果の「同じ得点」（同じゴールで、時刻の差が 1.5 秒以内）へ移す */
+  /* 解析をやり直したとき、前の結果に付けた手直し（チーム・外す・入っていた）を、新しい結果の「同じシュート」（同じゴールで、時刻の差が 1.5 秒以内）へ移す。
+     「入っていた」にした外れが、やり直しで得点と判定されたときは、そのまま得点になる（印は残っても害はない） */
   function carryEdits(oldResult, newResult, edits) {
     const E = edits || emptyEdits();
-    const next = { fix: {}, off: {}, added: (E.added || []).slice() };
-    const oldMade = ((oldResult && oldResult.shots) || []).filter((s) => s.made);
-    const newMade = ((newResult && newResult.shots) || []).filter((s) => s.made);
+    const next = { fix: {}, off: {}, added: (E.added || []).slice(), promote: {} };
+    const oldShots = (oldResult && oldResult.shots) || [];
+    const newShots = (newResult && newResult.shots) || [];
     const map = {};
-    oldMade.forEach((o) => {
+    oldShots.forEach((o) => {
       let best = null;
-      newMade.forEach((n) => { const d = Math.abs(n.t - o.t); if (n.hoop === o.hoop && d < 1.5 && (!best || d < best.d)) best = { d, id: shotId(n) }; });
+      newShots.forEach((n) => {
+        const d = Math.abs(n.t - o.t) + (n.made === o.made ? 0 : 0.01);      // 同じくらい近ければ、成否が同じものを選ぶ
+        if (n.hoop === o.hoop && Math.abs(n.t - o.t) < 1.5 && (!best || d < best.d)) best = { d, id: shotId(n) };
+      });
       if (best) map[shotId(o)] = best.id;
     });
     const manual = new Set(next.added.map((a) => a.id));
     Object.keys(E.fix || {}).forEach((id) => { if (map[id]) next.fix[map[id]] = E.fix[id]; });
     Object.keys(E.off || {}).forEach((id) => { if (map[id]) next.off[map[id]] = true; else if (manual.has(id)) next.off[id] = true; });
+    Object.keys(E.promote || {}).forEach((id) => { if (map[id]) next.promote[map[id]] = true; });
     return next;
   }
 
@@ -2031,7 +2103,7 @@ a.btn { text-decoration: none; }
     return out;
   }
 
-  BS.clips = { WIN, HALF_GAP, shotId, baseTeam, emptyEdits, items, clipsOf, reel, suggestHalf, carryEdits, coverage };
+  BS.clips = { WIN, HALF_GAP, PROMOTE_TAIL, shotId, baseTeam, emptyEdits, items, clipsOf, maybes, reel, suggestHalf, carryEdits, coverage };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -2503,10 +2575,10 @@ a.btn { text-decoration: none; }
   const S = {
     media: null, key: null, st: BS.store.fresh(),
     marking: null, running: null, live: null,
-    tab: 0, openSetup: false, openHow: null,
+    tab: 0, openSetup: false, openHow: null, openMaybe: false,
     reel: { active: false, list: [], i: -1, label: '', team: 0 },
     exporting: null, out: [null, null],
-    thumbs: {}, thumbJob: null, saveTimer: 0
+    thumbs: {}, thumbJob: null, saveTimer: 0, debug: false, lastLog: null
   };
 
   /* ---------- 小さな道具 ---------- */
@@ -2790,6 +2862,18 @@ a.btn { text-decoration: none; }
     cl.forEach((c) => box.append(clipRow(c)));
     card.append(box);
 
+    // 入っていたかも？：解析で「外れ」と判定したシュート（このチームが打ったもの）。リングで弾んでから入った得点は、ここに入っていることがある
+    const mb = C.maybes(S.st.result, setupOf(), S.st.edits, its).filter((m) => m.team === S.tab);
+    if (mb.length) {
+      const det = h('details', { class: 'maybes', id: 'maybes' },
+        h('summary', null, `🤔 入っていたかも？（${teamTag(S.tab)}の「外れ」と判定したシュート ${mb.length}本）`),
+        h('p', { class: 'note' }, 'リングに当たって弾んでから入った得点は、ここに入っていることがあります。▶ で確かめて、入っていたら「入っていた」を押すと、上の一覧に入ります。'),
+        h('div', { class: 'mblist' }, mb.map(mayRow)));
+      det.open = !!S.openMaybe;
+      det.querySelector('summary').addEventListener('click', () => { S.openMaybe = !det.open; });
+      card.append(det);
+    }
+
     // 続けて再生・動画にする
     const on = cl.filter((c) => c.on);
     const segs = C.reel(cl);
@@ -2848,12 +2932,13 @@ a.btn { text-decoration: none; }
         h('span', { class: 'note' }, [halfLabel(it), it.hoop != null ? HOOP[it.hoop] : ''].filter(Boolean).join('・')),
         h('span', { class: 'tags' },
           c.unsure && c.auto ? h('span', { class: 'tag warn', title: 'ネットの動きを確かめられなかった得点です' }, '要確認') : null,
-          !c.auto ? h('span', { class: 'tag' }, '手で足した') : c.fixed ? h('span', { class: 'tag' }, '手で直した') : null)),
+          !c.auto ? h('span', { class: 'tag' }, '手で足した') : c.promoted ? h('span', { class: 'tag' }, '外れ→入っていた') : c.fixed ? h('span', { class: 'tag' }, '手で直した') : null)),
       h('div', { class: 'cops' },
         h('button', { class: 'btn small', title: 'この場面を見る', onclick: (e) => { e.stopPropagation(); playOne(c); } }, '▶'),
         h('button', { class: 'btn small', title: c.team ? '「入れた」に移す（自分の得点だった）' : '「入れられた」に移す（相手の得点だった）', dataset: { move: c.id }, onclick: (e) => { e.stopPropagation(); moveTeam(c.id); } }, c.team ? '⇄ 入れたへ' : '⇄ 入れられたへ'),
         h('button', { class: 'btn small', title: 'この場面だけを動画にする', disabled: !!S.exporting, onclick: (e) => { e.stopPropagation(); doExport(c.team, c); } }, '⬇'),
-        !c.auto ? h('button', { class: 'btn small', title: 'この場面を消す', onclick: (e) => { e.stopPropagation(); removeManual(c.id); } }, '🗑') : null));
+        !c.auto ? h('button', { class: 'btn small', title: 'この場面を消す', onclick: (e) => { e.stopPropagation(); removeManual(c.id); } }, '🗑') : null,
+        c.promoted ? h('button', { class: 'btn small', title: '「外れ」に戻す（下の「入っていたかも？」に戻ります）', dataset: { unpromote: c.id }, onclick: (e) => { e.stopPropagation(); unpromote(c.id); } }, '↩') : null));
     row.addEventListener('click', () => playOne(c));
     return row;
   }
@@ -2892,6 +2977,32 @@ a.btn { text-decoration: none; }
     save(); render(); drawTimeline(); makeThumbs();
     BS.ui.toast(`${BS.fmtTime(t)} を「${WHAT[team]}」に足しました`, 'ok');
   }
+  function mayRow(m) {
+    return h('div', { class: 'mb', dataset: { may: m.id } },
+      h('b', null, BS.fmtTime(m.t)),
+      h('span', { class: 'note' }, [halfLabel(m), m.hoop != null ? HOOP[m.hoop] : ''].filter(Boolean).join('・')),
+      h('span', { class: 'spacer' }),
+      h('button', { class: 'btn small', title: 'この場面を見る（入ったかどうかが分かるように、少し長めに）', onclick: () => playMaybe(m) }, '▶'),
+      h('button', { class: 'btn small primary', dataset: { promote: m.id }, onclick: () => promote(m.id) }, '入っていた'));
+  }
+  function playMaybe(m) {
+    const w = S.st.win;
+    const seg = { id: m.id, at: m.t, team: m.team, n: 0, total: 0, on: true, half: m.half, maybe: true, t0: Math.max(0, m.t - w.lead), t1: Math.min(duration() || Infinity, m.t + w.lag + C.PROMOTE_TAIL) };
+    startReel(C.reel([seg]), m.team);
+  }
+  function promote(id) {
+    S.st.edits.promote = S.st.edits.promote || {};
+    S.st.edits.promote[id] = true;
+    save(); render(); drawTimeline(); makeThumbs();
+    const it = list().find((x) => x.id === id);
+    if (it) BS.ui.toast(`${BS.fmtTime(it.t)} を「${WHAT[it.team]}」に入れました`, 'ok');
+  }
+  function unpromote(id) {
+    if (S.st.edits.promote) delete S.st.edits.promote[id];
+    delete S.st.edits.off[id];
+    save(); render(); drawTimeline();
+    BS.ui.toast('「外れ」に戻しました', 'ok');
+  }
   function removeManual(id) {
     const E = S.st.edits;
     E.added = E.added.filter((a) => a.id !== id);
@@ -2900,7 +3011,7 @@ a.btn { text-decoration: none; }
   }
 
   /* ---------- 続けて再生 ---------- */
-  function segLabel(seg) { return `${ICON[seg.team]} ${WHAT[seg.team]} ${seg.n} / ${seg.total}`; }
+  function segLabel(seg) { return seg.maybe ? '🤔 入っていたかも？' : `${ICON[seg.team]} ${WHAT[seg.team]} ${seg.n} / ${seg.total}`; }
   function playReel(team) {
     const segs = C.reel(clipsFor(team));
     if (!segs.length) { BS.ui.toast('再生する場面がありません', 'warn'); return; }
@@ -2955,7 +3066,7 @@ a.btn { text-decoration: none; }
     }
     const seg = R.list[R.i];
     bar.hidden = false;
-    $('#reelLabel').textContent = `${WHAT[R.team]} ${R.i + 1}/${R.list.length}`;
+    $('#reelLabel').textContent = seg.maybe ? '入っていたかも？' : `${WHAT[R.team]} ${R.i + 1}/${R.list.length}`;
     badge.innerHTML = '';
     badge.style.setProperty('--team', teamColor(seg.team));
     badge.append(h('b', null, segLabel(seg)), h('span', null, `${seg.half ? (seg.half === 2 ? '後半・' : '前半・') : ''}${BS.fmtTime(seg.at)}`));
@@ -3369,12 +3480,13 @@ a.btn { text-decoration: none; }
     };
     let eng = null, res = null;
     try {
-      eng = st.eng = await openEngine({ srcW: media.width, srcH: media.height, fixed: !!st0.fixed, hoops: marks.map((m) => ({ id: m.id, box: m.box, rim: m.rim })) },
+      // S.debug：検証用（コマごとのボール候補の記録を S.lastLog に残す。tests/rim-check.cjs が使う）
+      eng = st.eng = await openEngine({ srcW: media.width, srcH: media.height, fixed: !!st0.fixed, hoops: marks.map((m) => ({ id: m.id, box: m.box, rim: m.rim })), debug: !!S.debug, rimOcclusion: S.rimOcclusion },
         (m) => { if (m.ev === 'progress') onLive(m.t, m.live, m.preview); else if (m.ev === 'info') st.info = m; });
       try {
         st.mode = 'decode';
         const src = typeof media.file === 'string' ? { url: new URL(media.file, root.location.href).href } : { file: media.file };
-        res = (await eng.call('decode', Object.assign({ marks: marks.map((m, i) => ({ i, t: m.t })), t0: 0, t1: opts.t1 }, src))).result;
+        res = (await eng.call('decode', Object.assign({ marks: marks.map((m, i) => ({ i, t: m.t })), t0: 0, t1: opts.t1, debug: !!S.debug }, src))).result;
       } catch (err) {
         if (err.code !== 'unsupported') throw err;
         console.warn('[auto] ファイルを直接読めないので、再生しながら解析します：', err.message);
@@ -3383,6 +3495,7 @@ a.btn { text-decoration: none; }
         res = await runVideoPlayback(eng, media, marks, st, onLive);
       }
       if (st.cancel) throw Object.assign(new Error('中止しました'), { code: 'cancelled' });
+      if (res.log) { S.lastLog = { idx, log: res.log }; delete res.log; }
       apply(res, idx, dur, st.mode, (performance.now() - t0w) / 1000);
     } catch (err) {
       if (err.code === 'cancelled' || st.cancel) BS.ui.toast('探すのを中止しました', 'warn');
@@ -3468,6 +3581,8 @@ a.btn { text-decoration: none; }
           h('li', null, h('b', null, '🏀 入れた／🛡 入れられた'), 'を切り替えて、▶ で1本ずつ、「▶ 続けて再生」でまとめて見る。「🎬 動画にする」で1本の動画に')),
         h('h4', null, 'どちらのチームの得点か'),
         h('p', null, 'ボールが入った「ゴール」で決めます。前半・後半それぞれ、チームが攻めるゴールは決まっているからです。1本の動画に後半も入っているときは、後半の始まりを教えてください（解析のあとに、ハーフタイムらしい場面を教えてくれることもあります）。逆になっていたら「⇄ 入れ替える」、1本だけ違うなら、その場面の「⇄」で直せます。'),
+        h('h4', null, '見つからなかった得点があるとき'),
+        h('p', null, 'リングに当たって弾んでから入った得点は、「外れ」と判定されることがあります。一覧の下の「🤔 入っていたかも？」を開いて ▶ で確かめ、入っていたら「入っていた」を押してください。そこにもないときは、ボールが入った瞬間で止めて「＋」で足せます。'),
         h('h4', null, 'うまく見つけるための撮り方'),
         h('ul', null,
           h('li', null, 'ゴール（リングとネット）が画面に入るように撮る。シュートの瞬間にゴールが映っていないと見つけられません'),
@@ -3533,7 +3648,7 @@ a.btn { text-decoration: none; }
     render(); drawTimeline();
   }
 
-  BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, list, clipsFor, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs };
+  BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, list, clipsFor, maybes: () => C.maybes(S.st.result, setupOf(), S.st.edits, list()), promote, unpromote, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }
