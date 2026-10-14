@@ -103,11 +103,20 @@
   function refreshNav() { $$('.ctx-b', el.nav).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ctx === D.ctx))); }
 
   /* ---------------- 一覧 ---------------- */
+  // いま表示している（キーに移調した）名前・説明。検索は、C で書いた元の文字と、この文字の両方に当てる
+  function shownText(l) {
+    const K = st().dictKey | 0;
+    if (!K && !(App.writtenInst().transpose)) return '';
+    const mode = modeOf(l), tonic = T.keySpell(K, mode);
+    const ctx = { tonicPc: K, fifths: T.keyFifths(tonic, mode) };
+    const c0 = T.parseChord(K ? T.transposeChordStr(l.refSrc[0], K, ctx) : l.refSrc[0]);
+    return App.lickText(l.name + ' ' + App.lickDesc(l), l, c0);
+  }
   function matches(l) {
     if (D.level && l.lvl !== D.level) return false;
     if (D.tag && l.tags.indexOf(D.tag) < 0) return false;
     if (D.q) {
-      const hay = (l.name + ' ' + l.desc + ' ' + l.tags.join(' ') + ' ' + (L.CTX[l.ctx] ? L.CTX[l.ctx].jp : '')).toLowerCase();
+      const hay = (l.name + ' ' + App.lickDesc(l) + ' ' + shownText(l) + ' ' + l.tags.join(' ') + ' ' + (L.CTX[l.ctx] ? L.CTX[l.ctx].jp : '')).toLowerCase();
       if (!D.q.toLowerCase().split(/\s+/).every(w => hay.indexOf(w) >= 0)) return false;
     }
     return true;
@@ -157,10 +166,11 @@
     const tags = h('div', { class: 'tags' }, h('span', { class: 'chip lvl' + l.lvl }, 'Lv.' + l.lvl));
     l.tags.forEach(t => tags.appendChild(h('button', { type: 'button', class: 'chip tag btnchip', 'aria-pressed': String(D.tag === t), title: 'この特徴で絞る', onclick: () => { D.tag = D.tag === t ? '' : t; D.limit = 24; renderList(); } }, t)));
     const playing = App.playKind === 'preview' && App.previewId === 'dict:' + l.id;
+    const shown = App.lickText(l.name, l, pl.chords[0]);
     return h('div', { class: 'lick', data: { id: l.id } },
       h('div', { class: 'lick-h' },
-        h('button', { type: 'button', class: 'mini-play' + (playing ? ' on' : ''), 'aria-label': l.name + 'を聴く', onclick: () => playLick(l, K) }, '▶'),
-        h('b', { class: 'lick-name' }, App.lickText(l.name, l, pl.chords[0])),
+        h('button', { type: 'button', class: 'mini-play' + (playing ? ' on' : ''), 'aria-label': shown + 'を聴く', onclick: () => playLick(l, K) }, '▶'),
+        h('b', { class: 'lick-name' }, shown),
         D.ctx === '*' ? h('span', { class: 'muted small' }, short(L.CTX[l.ctx].jp)) : null),
       tags,
       h('div', { class: 'mini-score', html: notation(l, pl, width) }),

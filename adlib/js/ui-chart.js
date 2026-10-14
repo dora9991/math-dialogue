@@ -441,10 +441,11 @@
         const pl = V.placeLickAt(App.solo, sg.d, l), isCur = l.id === sg.current;
         const tags = h('div', { class: 'tags' }, h('span', { class: 'chip lvl' + l.lvl }, 'Lv.' + l.lvl));
         l.tags.slice(0, 4).forEach(t => tags.appendChild(h('span', { class: 'chip tag' }, t)));
+        const shown = App.lickText(l.name, l, App.hs[sg.d.i0].chord);
         cards.appendChild(h('div', { class: 'cand' + (isCur ? ' cur' : '') },
           h('div', { class: 'cand-h' },
-            h('button', { type: 'button', class: 'mini-play', 'aria-label': l.name + 'を聴く', onclick: () => V.previewLickAt(App.solo, sg.d, l) }, '▶'),
-            h('b', { class: 'cand-name' }, App.lickText(l.name, l, App.hs[sg.d.i0].chord)), h('div', { class: 'grow' }),
+            h('button', { type: 'button', class: 'mini-play', 'aria-label': shown + 'を聴く', onclick: () => V.previewLickAt(App.solo, sg.d, l) }, '▶'),
+            h('b', { class: 'cand-name' }, shown), h('div', { class: 'grow' }),
             isCur ? h('span', { class: 'badge' }, 'いまのソロで使用中')
               : sg.di >= 0 ? h('button', { type: 'button', class: 'btn sm primary', onclick: () => { App.swapLick(sg.di, l.id); U.toast('ソロの ' + (sg.di + 1) + ' 番目のフレーズを差しかえました'); } }, 'ソロに採用') : null),
           tags,

@@ -46,13 +46,16 @@
     if (!text || !chord0 || chord0.nc || !chord0.root) return text;
     const inst = App.writtenInst(), it = inst.transpose || 0;
     const semis = T.mod(chord0.rootPc - lick.ref[0].rootPc + it, 12);
-    if (!semis) return text;
-    // 書く音での最初のコードの根音（綴り）から、♭系か♯系かを決める
+    // 楽譜の音と同じ綴り方（文字のずれ＋半音）で書きかえる。移調譜のときは、楽器の書き音のぶんもずらす
+    const steps = it ? (N.STEPS_OF_SEMIS[it] != null ? N.STEPS_OF_SEMIS[it] : 0) : 0;
+    const dl = T.mod(chord0.root.l - lick.ref[0].root.l + steps, 7);
+    if (!semis && !dl) return text;
+    // 書く音での最初のコードの根音（綴り）から、♭系か♯系か（二重の♯♭になるときの綴りなおし用）を決める
     let root = chord0.root;
-    if (it) { const q = T.shiftPitch({ l: root.l, a: root.a, oct: 4 }, N.STEPS_OF_SEMIS[it] != null ? N.STEPS_OF_SEMIS[it] : 0, it); root = q ? { l: q.l, a: q.a } : T.spellFromPc(T.mod(chord0.rootPc + it, 12), true); }
+    if (it) { const q = T.shiftPitch({ l: root.l, a: root.a, oct: 4 }, steps, it); root = q ? { l: q.l, a: q.a } : T.spellFromPc(T.mod(chord0.rootPc + it, 12), true); }
     const minorish = chord0.cls === 'min' || chord0.cls === 'hdim' || chord0.cls === 'minmaj';
     const flat = root.a < 0 ? true : root.a > 0 ? false : T.keyPrefersFlat(root, minorish ? 'minor' : 'major');
-    return T.transposeNotesInText(text, semis, { tonicPc: T.spellPc(root), fifths: flat ? -1 : 1 });
+    return T.transposeNotesInText(text, semis, { tonicPc: T.spellPc(root), fifths: flat ? -1 : 1 }, dl);
   };
 
   /* ---------------- 組み立て ---------------- */
@@ -292,10 +295,11 @@
       const isCur = l.id === d.id;
       const tags = h('div', { class: 'tags' }, h('span', { class: 'chip lvl' + l.lvl }, 'Lv.' + l.lvl));
       l.tags.slice(0, 4).forEach(t => tags.appendChild(h('span', { class: 'chip tag' }, t)));
+      const shown = App.lickText(l.name, l, App.hs[d.i0].chord);
       wrap.appendChild(h('div', { class: 'cand' + (isCur ? ' cur' : '') },
         h('div', { class: 'cand-h' },
-          h('button', { type: 'button', class: 'mini-play', 'aria-label': l.name + 'を聴く', onclick: () => previewLick(solo, di, l) }, '▶'),
-          h('b', { class: 'cand-name' }, App.lickText(l.name, l, App.hs[d.i0].chord)),
+          h('button', { type: 'button', class: 'mini-play', 'aria-label': shown + 'を聴く', onclick: () => previewLick(solo, di, l) }, '▶'),
+          h('b', { class: 'cand-name' }, shown),
           h('div', { class: 'grow' }),
           isCur ? h('span', { class: 'badge' }, '今のリック') : h('button', { type: 'button', class: 'btn sm primary', onclick: () => { App.swapLick(di, l.id); } }, 'これにする')),
         tags,

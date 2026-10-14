@@ -82,8 +82,9 @@
   }
   const DEG_NAMES = { 0: '1', 1: 'b9', 2: '9', 3: '#9', 4: '3', 5: '11', 6: '#11', 7: '5', 8: 'b13', 9: '13', 10: 'b7', 11: '7' };
   // 半音数（0〜11）→ ジャズ式の度数名。コードの種類 cls を渡すと、その種類らしい呼び名になる（短調系の 3 半音は b3 など）
-  function semisToDegreeName(semis, cls) {
+  function semisToDegreeName(semis, cls, chord) {
     const s = mod(semis, 12);
+    if (s === 6 && chord && chord.alt) return 'b5';   // オルタード・ドミナントのトライトーンは ♭5（♯11 とは呼ばない）
     const minorish = cls === 'min' || cls === 'minmaj' || cls === 'hdim' || cls === 'dim';
     if (minorish) {
       const m = { 3: 'b3', 6: 'b5', 8: 'b6', 9: cls === 'dim' ? 'bb7' : '6' };
@@ -329,6 +330,23 @@
     if (d === 1 || d === 6) return spellFromPc(pc, !minorish); // m7 系は C♯m・F♯m7♭5、ドミナントやmaj7は D♭・G♭
     return spellFromPc(pc, true);
   }
+  // pc が、調号（fifths：♯の数、♭は負）に入っている音か
+  function inKeySig(pc, fifths) {
+    for (let i = fifths - 1; i <= fifths + 5; i++) if (mod(7 * i, 12) === pc) return true;
+    return false;
+  }
+  // コードの根音の綴り。調号に入っている音は spellInKey と同じ。
+  // 調号に入っていない音（借用和音・裏コードなど）は、調の主音からの度数とコードの種類で決める：
+  // ♭II7・♭III・♭VI・♭VII は♭（D♯7 でなく E♭7）、ディミニッシュの ♯I°・m7 系の ♯IV は♯
+  function spellRootInKey(pc, ctx) {
+    pc = mod(pc, 12);
+    const f = ctx.fifths == null ? 0 : ctx.fifths;
+    if (!f || ctx.tonicPc == null || inKeySig(pc, f)) return spellInKey(pc, ctx);
+    const d = mod(pc - ctx.tonicPc, 12), cls = ctx.cls || 'maj';
+    if (cls === 'dim') return spellFromPc(pc, false);
+    if (d === 1 || d === 6) return spellFromPc(pc, !(cls === 'min' || cls === 'hdim' || cls === 'minmaj'));
+    return spellFromPc(pc, true);
+  }
   // コード文字列を semis だけ移調（接尾辞はそのまま）。ctx は spellInKey と同じ
   function transposeChordStr(src, semis, ctx) {
     const s = String(src);
@@ -337,23 +355,30 @@
     const chord = parseChord(s);
     if (!chord || chord.nc) return s;
     const c2 = Object.assign({}, ctx || {}, { cls: chord.cls });
-    const nr = spellInKey(chord.rootPc + semis, c2);
+    const nr = spellRootInKey(chord.rootPc + semis, c2);
     let out = spellStr(nr, false) + chord.suffix;
-    if (chord.bass) out += '/' + spellStr(spellInKey(chord.bassPc + semis, Object.assign({}, c2, { cls: 'maj' })), false);
+    if (chord.bass) out += '/' + spellStr(spellRootInKey(chord.bassPc + semis, Object.assign({}, c2, { cls: 'maj' })), false);
     return out;
   }
 
   // 文章（リックの名前・説明）のなかの音名・コード名（C, Gm, B♭maj7, F♯ …）の根音だけを、semis 半音ずらす。接尾辞や度数はそのまま。
-  // 「Dorian」「Bebop」のような語は触らない（根音のあとに続く小文字が、コードの種類の書き出しのときだけ根音とみなす）。ctx は spellInKey と同じ
+  // 「Dorian」「Bebop」のような語は触らない（根音のあとに続く小文字が、コードの種類の書き出しのときだけ根音とみなす）。ctx は spellInKey と同じ。
+  // dl を渡すと、楽譜の音と同じ数え方（文字を dl つぶんずらして semis 半音上げる）で綴る。♯♭が2つ以上になるときだけ ctx で綴りなおす
   const QUAL_START = ['maj', 'min', 'dim', 'aug', 'sus', 'alt', 'add', 'm'];
-  function transposeNotesInText(text, semis, ctx) {
+  function transposeNotesInText(text, semis, ctx, dl) {
     const src = String(text == null ? '' : text);
-    if (!mod(semis, 12)) return src;
+    const dlm = dl == null ? null : mod(dl, 7);
+    if (!mod(semis, 12) && !dlm) return src;
     return src.replace(/(^|[^A-Za-z0-9])([A-G])([♭♯#]|b(?![a-zA-Z]|[0-9]b))?/g, (m, pre, letter, acc, off) => {
       const end = off + m.length, rest = src.slice(end);
       if (/^[a-z]/.test(rest) && !QUAL_START.some(q => rest.indexOf(q) === 0)) return m;   // 語の一部（Dorian など）
       const a = !acc ? 0 : acc === 'b' || acc === '♭' ? -1 : 1;
-      const pc = mod(LETTER_PC[LETTERS.indexOf(letter)] + a + semis, 12);
+      const li = LETTERS.indexOf(letter);
+      const pc = mod(LETTER_PC[li] + a + semis, 12);
+      if (dlm != null) {
+        const nl = mod(li + dlm, 7), na = mod(pc - LETTER_PC[nl] + 6, 12) - 6;
+        if (na >= -1 && na <= 1) return pre + spellStr({ l: nl, a: na }, true);
+      }
       return pre + spellStr(spellInKey(pc, ctx || {}), true);
     });
   }
@@ -455,7 +480,7 @@
     parseDegree, degreeSpell, intervalFromRoot, semisToDegreeName,
     keySigAccs, keyFifths, keySpell, keyPrefersFlat, MAJOR_KEY_NAMES, MINOR_KEY_NAMES,
     prettyAcc, parseChord, chordParts, chordText, CLASS_JP,
-    transposeRoot, spellInKey, transposeChordStr, transposeNotesInText,
+    transposeRoot, spellInKey, spellRootInKey, transposeChordStr, transposeNotesInText,
     SCALES, scaleNotes, scalePcs, defaultScales,
     ROMAN, romanLabel, romanDeg, midiToFreq,
   });

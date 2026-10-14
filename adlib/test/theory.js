@@ -245,4 +245,36 @@ eq(T.keySigAccs(0), [0, 0, 0, 0, 0, 0, 0]);
   eq(r('C#m7', 0), '♯Im7');
   eq(r('Gbm7b5', 0), '♭Vm7♭5');
 }
+/* ---- コードの移調：調号に入っていない音（裏コード・借用和音）の綴り ---- */
+{
+  const tr = (src, semis, tonicPc, mode) => T.transposeChordStr(src, semis, { tonicPc, fifths: T.keyFifths(T.keySpell(tonicPc, mode), mode) });
+  eq(tr('Db7', 2, 2, 'major'), 'Eb7');       // D の調の ♭II7 は D♯7 でなく E♭7
+  eq(tr('Db7', 7, 7, 'major'), 'Ab7');       // G
+  eq(tr('Db7', 9, 9, 'major'), 'Bb7');       // A
+  eq(tr('Db7', 3, 3, 'major'), 'E7');        // E♭ の ♭II7 は F♭7 の異名 E7
+  eq(tr('Bb7', 2, 2, 'major'), 'C7');        // D の ♭VII7
+  eq(tr('Eb7', 7, 7, 'major'), 'Bb7');       // G の ♭III7
+  eq(tr('Dm7', 2, 2, 'major'), 'Em7');       // 調号に入っている音は、これまでどおり
+  eq(tr('G7', 2, 2, 'major'), 'A7');
+  eq(tr('C#dim7', 5, 5, 'major'), 'F#dim7'); // ♭系の調でも、経過のディミニッシュ（♯I°）は♯
+  eq(tr('G#dim7', 5, 2, 'minor'), 'C#dim7'); // A マイナーの vii°7 を D マイナーへ（C♯°7）
+  eq(tr('F#m7b5', 7, 7, 'major'), 'C#m7b5'); // G の ♯IVm7♭5
+  eq(tr('Gb7', 2, 2, 'major'), 'Ab7');       // ♭V7 は♭のまま
+  eq(tr('Db7/F', 7, 7, 'major'), 'Ab7/C');
+}
+/* ---- 文章のなかの音名：楽譜の音と同じ綴り（文字のずれ＋半音） ---- */
+{
+  const tn = (t, semis, dl) => T.transposeNotesInText(t, semis, { tonicPc: 8, fifths: -1 }, dl);
+  eq(tn('4分で F-A♭ の分散', 3, 2), '4分で A♭-C♭ の分散');   // Dm7♭5 → Fm7♭5（文字を2つ、半音を3つ）
+  eq(tn('F-A♭ の分散', 3), 'A♭-B の分散');                    // dl なし＝これまでの綴り
+  eq(tn('E♭ トライアド', 1, 1), 'F♭ トライアド');               // C → D♭（短2度上）に合わせて、E♭ は F♭
+  eq(tn('Dorian と Bebop は触らない。D♯m7', 2, 1), 'Dorian と Bebop は触らない。E♯m7');   // 長2度上（D→E）なので D♯ は E♯
+  eq(tn('F♯ のとき', 2, 0), 'A♭ のとき');                     // ♯が2つになるときは、調号の側（ここでは♭系）で綴りなおす
+}
+/* ---- 度数名：オルタードのトライトーンは ♭5 ---- */
+{
+  eq(T.semisToDegreeName(6, 'dom', T.parseChord('G7alt')), 'b5');
+  eq(T.semisToDegreeName(6, 'dom', T.parseChord('G7#11')), '#11');
+  eq(T.semisToDegreeName(6, 'dom'), '#11');
+}
 console.log(`theory: OK（${n}件）`);

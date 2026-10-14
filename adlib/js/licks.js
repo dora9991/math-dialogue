@@ -20,6 +20,7 @@
   const T = AL.T;
   const L = (AL.L = AL.L || {});
   const mod = T.mod;
+  const LPC = [0, 2, 4, 5, 7, 9, 11];   // C D E F G A B の高さ（半音）
   L.all = []; L.byId = {}; L.byCtx = {}; L.errors = [];
   const TPB = 12;   // 1拍 = 12 ティック（2・3・4 分割がすべて割りきれる）
 
@@ -168,7 +169,7 @@
       if (!e.rest) {
         Object.assign(ev, { p: e.p, midi: e.midi, tie: e.tie, accent: e.accent, stac: e.stac });
         ev.rel = mod(e.midi - ref[seg].rootPc, 12);
-        ev.deg = T.semisToDegreeName(ev.rel, ref[seg].cls);
+        ev.deg = T.semisToDegreeName(ev.rel, ref[seg].cls, ref[seg]);
         if (e.midi < min) min = e.midi; if (e.midi > max) max = e.midi;
         if (first == null) first = e.midi; last = e.midi;
       }
@@ -238,7 +239,7 @@
         // 半音で入る／半音で出る 経過音・装飾音ならよい（短く、あとが今のスケールの音）
         const nbIn = (n) => n && Math.abs(n.midi - e.midi) <= 1 && allowed[n.seg].has(mod(n.midi, 12));
         const short = e.dur <= 0.5 + 1e-9;
-        if (!(short && (nbIn(next) || nbIn(prev)))) errors.push(`スケール外の音 ${T.pitchStr(e.p)}（${e.t} 拍目、${T.semisToDegreeName(e.rel, lick.ref[e.seg].cls)}）`);
+        if (!(short && (nbIn(next) || nbIn(prev)))) errors.push(`スケール外の音 ${T.pitchStr(e.p)}（${e.t} 拍目、${T.semisToDegreeName(e.rel, lick.ref[e.seg].cls, lick.ref[e.seg])}）`);
         else if (onBeat) warns.push(`拍頭の半音アプローチ ${T.pitchStr(e.p)}（${e.t} 拍目）`);
         weakNon++;
       }
@@ -332,8 +333,23 @@
   function realize(lick, chords, opts) {
     opts = opts || {};
     const ref0 = lick.ref[0], tgt0 = chords[0];
-    const dl = mod(tgt0.root.l - ref0.root.l, 7);
     const ds0 = mod(tgt0.rootPc - ref0.rootPc, 12);
+    // 文字のずれ（上へ何文字か）：半音のずれ ds0 と矛盾しないほうを選ぶ（C♯ → C は、0 文字でなく 7 文字で 11 半音）
+    const stepsFor = (refL, dl0) => {
+      let best = dl0, bestD = 99;
+      for (const S of [dl0 - 7, dl0, dl0 + 7]) {
+        const abs = refL + S, nat = 12 * Math.floor(abs / 7) + LPC[mod(abs, 7)] - LPC[refL];
+        if (Math.abs(ds0 - nat) < bestD) { bestD = Math.abs(ds0 - nat); best = S; }
+      }
+      return best;
+    };
+    const dl = stepsFor(ref0.root.l, mod(tgt0.root.l - ref0.root.l, 7));
+    // 綴りの文字のずれはコードごとに求める。コード記号が E7（F♭7 の異名）のように綴られていても、
+    // 次のコードの音は、そのコードの根音を基準に綴る（最初のコードのずれを全部に当てると D♯・F𝄪 のようになる）
+    const dls = lick.ref.map((r, k) => {
+      const t = chords[k];
+      return t && !t.nc && t.root && mod(t.rootPc - r.rootPc, 12) === ds0 ? stepsFor(r.root.l, mod(t.root.l - r.root.l, 7)) : dl;
+    });
     const lo = opts.lo == null ? 55 : opts.lo, hi = opts.hi == null ? 84 : opts.hi, center = opts.center == null ? (lo + hi) / 2 : opts.center;
     let best = null;
     for (let k = -3; k <= 3; k++) {
@@ -351,8 +367,8 @@
       if (e.t >= limit - EPS) break;
       const dur = Math.min(e.dur, limit - e.t);
       if (e.rest) { evs.push({ t: t0 + e.t, dur, rest: true, seg: e.seg }); continue; }
-      let p = T.shiftPitch(e.p, dl + 7 * best.k, best.sh);
-      if (!p) p = T.pitchFromMidi(e.midi + best.sh, preferFlat);
+      let p = T.shiftPitch(e.p, dls[e.seg] + 7 * best.k, best.sh);
+      if (!p || Math.abs(p.a) > 1) p = T.pitchFromMidi(e.midi + best.sh, preferFlat);   // 二重の♯♭（E𝄫・F𝄪）は読みにくいので、ふつうの綴りに
       evs.push({ t: t0 + e.t, dur, p, midi: e.midi + best.sh, seg: e.seg, tie: e.tie && dur === e.dur, accent: e.accent, stac: e.stac, rel: e.rel, deg: e.deg });
     }
     return { events: evs, shift: best.sh, k: best.k, lo: lick.midi.min + best.sh, hi: lick.midi.max + best.sh, first: lick.midi.first + best.sh, last: lick.midi.last + best.sh };
