@@ -289,7 +289,8 @@
   };
 
   const modalStack = []; // 重なったダイアログ。Escape はいちばん上だけが受け取る
-  Kit.modal = ({ title, body, actions, wide, onClose, dismissable = true }) => {
+  // autofocus: 'input' … 最初の入力欄に（Kit.ask など）。既定はダイアログ自体（スマホでキーボードが勝手に開かない・下まで飛ばない）
+  Kit.modal = ({ title, body, actions, wide, onClose, dismissable = true, autofocus }) => {
     const prevFocus = document.activeElement;
     const box = h('div', { class: 'modal' + (wide ? ' wide' : ''), role: 'dialog', 'aria-modal': 'true', 'aria-label': title || null });
     const back = h('div', { class: 'modal-back' }, box);
@@ -316,7 +317,12 @@
     document.addEventListener('keydown', onKey, true);
     modalStack.push(back);
     document.body.append(back);
-    setTimeout(() => { const f = b.querySelector('input, textarea, select') || box.querySelector('.modal-f .btn.primary, .modal-f .btn.accent, .modal-f .btn.danger') || box.querySelector('button'); if (f) f.focus(); }, 30);
+    box.tabIndex = -1;
+    setTimeout(() => {
+      const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+      const f = autofocus === 'input' && !coarse ? b.querySelector('input, textarea, select') : null;
+      (f || box).focus({ preventScroll: true });
+    }, 30);
     return { el: box, body: b, close };
   };
 
@@ -328,7 +334,7 @@
     const input = multiline ? h('textarea', { placeholder, rows: 5 }) : h('input', { type: 'text', placeholder });
     input.value = value;
     const m = Kit.modal({
-      title, body: Kit.field({ label, input, id: 'mb-ask-input' }), onClose: (v) => resolve(v === undefined ? null : v),
+      title, body: Kit.field({ label, input, id: 'mb-ask-input' }), autofocus: 'input', onClose: (v) => resolve(v === undefined ? null : v),
       actions: [{ label: 'やめる', value: null, kind: 'ghost' }, { label: ok, kind: 'primary', onClick: () => input.value }],
     });
     if (!multiline) input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); m.close(input.value); } });
@@ -908,7 +914,17 @@
       holder.insertBefore(svg, tip);
     };
     render();
-    if (window.ResizeObserver) { let last = holder.clientWidth; const ro = new ResizeObserver(() => { if (Math.abs(holder.clientWidth - last) > 4) { last = holder.clientWidth; render(); } }); ro.observe(holder); }
+    // 幅が変わったら描き直す。描き直しのたびに前の見張りを外す（たまらないように）
+    if (el._kitRO) el._kitRO.disconnect();
+    if (window.ResizeObserver) {
+      let last = holder.clientWidth;
+      const ro = new ResizeObserver(() => {
+        if (!holder.isConnected) { ro.disconnect(); return; }
+        if (Math.abs(holder.clientWidth - last) > 4) { last = holder.clientWidth; render(); }
+      });
+      ro.observe(holder);
+      el._kitRO = ro;
+    }
     return el;
   }
   function showTip(tip, holder, x, y, head, rows) {
@@ -1029,7 +1045,8 @@
         const svg = sv('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opt.title || 'グラフ' });
         ticks.forEach((t) => { svg.append(sv('line', { x1: padL, x2: W - padR, y1: Y(t), y2: Y(t), stroke: t === 0 ? 'var(--chart-axis)' : 'var(--chart-grid)', 'stroke-width': 1 })); svg.append(sv('text', { x: padL - 6, y: Y(t) + 4, 'text-anchor': 'end' }, (opt.tick || fmt)(t))); });
         const every = xLabelEvery(n, plotW, opt.labelWidth || 44);
-        labels.forEach((lb, i) => { if (i % every === 0 || i === n - 1) svg.append(sv('text', { x: X(i), y: H - 8, 'text-anchor': i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle' }, lb)); });
+        // 最後の目盛りは必ず出し、その手前で近すぎるものは出さない（重ならないように）
+        labels.forEach((lb, i) => { if ((i % every === 0 && n - 1 - i >= every) || i === n - 1) svg.append(sv('text', { x: X(i), y: H - 8, 'text-anchor': i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle' }, lb)); });
         series.forEach((s, si) => {
           const col = colorOf(s, si);
           const { d, last, first } = linePath(s.values, X, Y);

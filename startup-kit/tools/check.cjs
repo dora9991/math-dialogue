@@ -35,7 +35,8 @@ function serve() {
 }
 
 let browser = null;
-async function getBrowser() { if (!browser) browser = await chromium.launch({}); return browser; }
+// 日本語のファイル名を正しく扱えるよう、UTF-8 の言語設定で起動する
+async function getBrowser() { if (!browser) browser = await chromium.launch({ env: Object.assign({}, process.env, { LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' }) }); return browser; }
 
 // 1画面を開く。外部への通信（Google Fonts など）は止めて、手元の字体で表示する
 async function open(o = {}) {

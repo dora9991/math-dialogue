@@ -168,7 +168,7 @@
         const salesNow = sales[ym] || 0, planNow = planned[ym];
         const unpaid = invoices.filter((d) => d.type === 'invoice' && d.status === 'sent');
         const leadsNow = leads.filter((l) => inMonth(l.createdAt, ym));
-        const won = leads.filter((l) => l.status === 'won' && inMonth(l.updatedAt || l.createdAt, ym)).length;
+        const won = leads.filter((l) => l.status === 'won' && inMonth(l.closedAt || l.updatedAt || l.createdAt, ym)).length;
         const talking = leads.filter((l) => l.status === 'talking').length;
         const postsNow = posts.filter((p) => inMonth(p.date, ym));
         const posted = postsNow.filter((p) => p.status === 'posted').length;
