@@ -24,6 +24,7 @@
 .site-step{display:flex;gap:10px;align-items:flex-start}
 .site-step b{flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--gosu-wash);color:var(--gosu);font-size:13px}
 .site-extra{display:grid;gap:8px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2)}
+@media (pointer:coarse){.app-site .btn.sm,.site-bar .seg>button{min-height:36px}}
 `);
 
   // data: URL → Blob（Artifact では fetch が通らないことがあるので自分で読む）
@@ -114,7 +115,9 @@
       const render = () => {
         renderStatus();
         renderNote();
-        pv.load(SR().html(data.site, { profile: data.profile, form: data.form, images: data.images, mode: 'preview' }));
+        const page = SR().html(data.site, { profile: data.profile, form: data.form, images: data.images, mode: 'preview' });
+        // 2回目からは差分だけ入れかえる（見ていた位置がずれない）
+        if (pv.ready) pv.update(page); else pv.load(page);
         fitHeight();
       };
       async function reload() { data = await T.load(); render(); }

@@ -764,7 +764,10 @@ a:hover{text-decoration-thickness:2px}
 .ft-in{display:grid;gap:36px}
 @media (min-width:860px){.ft-in{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto;align-items:start}}
 .ft-name{display:flex;align-items:center;gap:12px;font-family:var(--font-head);font-size:19px;font-weight:var(--head-w);letter-spacing:.08em}
-.ft-name .brand-mark{width:34px;height:34px;font-size:17px}
+.ft-name .brand-mark{width:34px;height:34px;font-size:17px;background:var(--foot-ink);color:var(--foot-bg)}
+.ft-copy{display:flex;flex-wrap:wrap;align-items:center;gap:6px 20px}
+.ft-top{text-decoration:none;white-space:nowrap}
+.ft-top:hover{text-decoration:underline}
 .ft-tag{margin-top:14px;color:var(--foot-soft)}
 .ft-meta{margin-top:6px;color:var(--foot-soft);font-size:13.5px}
 .ft-nav ul{display:grid;grid-template-columns:repeat(2,minmax(0,max-content));gap:8px 32px}
@@ -1318,7 +1321,7 @@ ${e.mode === 'edit' ? '<style id="mise-sel"></style>\n' : ''}${e.mode === 'expor
     const p = e.profile, sns = snsList(p);
     const ed = e.mode === 'edit' ? ' data-sid="__site"' : '';
     const meta = [p.area, p.email].filter(has).map((x) => esc(x.trim())).join('　');
-    return `<footer class="ft" data-k="ft"${ed}><div class="wrap ft-in"><div><p class="ft-name">${mark(e.name)}<span>${esc(e.name)}</span></p>${has(p.tagline) ? `<p class="ft-tag">${esc(p.tagline)}</p>` : ''}${meta ? `<p class="ft-meta">${meta}</p>` : ''}</div>${nav.length ? `<nav class="ft-nav" aria-label="フッターのメニュー"><ul role="list">${nav.map((n) => `<li><a href="#${esc(n.id)}">${esc(n.label)}</a></li>`).join('')}</ul></nav>` : '<div></div>'}${sns.length ? `<ul class="sns" role="list">${sns.map((x) => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener" aria-label="${esc(x.label)}（新しいタブで開きます）" title="${esc(x.label)}">${icon(x.k)}</a></li>`).join('')}</ul>` : ''}</div><div class="wrap ft-bottom">${has(site.footer.note) ? `<p class="ft-note">${lines(site.footer.note)}</p>` : '<span></span>'}<p><small>© <span data-year>${new Date().getFullYear()}</span> ${esc(e.name)}</small></p></div></footer>`;
+    return `<footer class="ft" data-k="ft"${ed}><div class="wrap ft-in"><div><p class="ft-name">${mark(e.name)}<span>${esc(e.name)}</span></p>${has(p.tagline) ? `<p class="ft-tag">${esc(p.tagline)}</p>` : ''}${meta ? `<p class="ft-meta">${meta}</p>` : ''}</div>${nav.length ? `<nav class="ft-nav" aria-label="フッターのメニュー"><ul role="list">${nav.map((n) => `<li><a href="#${esc(n.id)}">${esc(n.label)}</a></li>`).join('')}</ul></nav>` : '<div></div>'}${sns.length ? `<ul class="sns" role="list">${sns.map((x) => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener" aria-label="${esc(x.label)}（新しいタブで開きます）" title="${esc(x.label)}">${icon(x.k)}</a></li>`).join('')}</ul>` : ''}</div><div class="wrap ft-bottom">${has(site.footer.note) ? `<p class="ft-note">${lines(site.footer.note)}</p>` : '<span></span>'}<p class="ft-copy"><small>© <span data-year>${new Date().getFullYear()}</span> ${esc(e.name)}</small><a class="ft-top" href="#top">ページの先頭へ ↑</a></p></div></footer>`;
   }
   function scriptsHtml(e) {
     const cfg = { mode: e.mode, delivery: { type: e.form.delivery.type, to: e.form.delivery.to, url: e.form.delivery.url, ready: e.form.delivery.ready }, sourceParam: e.form.sourceParam, email: has(e.profile.email) ? e.profile.email.trim() : '' };
@@ -1410,6 +1413,7 @@ ${scriptsHtml(e)}
 .sr-stage{position:relative;overflow:hidden;min-height:0;background:var(--surface-2)}
 .sr-box{position:absolute;top:0;left:0;overflow:hidden;background:var(--surface)}
 .sr-stage[data-device="phone"] .sr-box{border:1px solid var(--line-strong);border-radius:28px;box-shadow:var(--shadow-2)}
+.sr-stage.is-full .sr-box{border:0;border-radius:0;box-shadow:none}
 .sr-frame{display:block;border:0;transform-origin:0 0;background:var(--surface)}
 `;
   const tools = {
@@ -1427,7 +1431,8 @@ ${scriptsHtml(e)}
         if (device === 'phone') {
           const pad = W > 440 ? 16 : 0;
           L = 390; sc = Math.min(1, (W - pad * 2) / 390); bw = Math.round(390 * sc); bh = H - pad * 2; left = Math.round((W - bw) / 2); top = pad;
-        } else { L = Math.max(W, 1024); sc = W / L; bw = W; bh = H; }
+          stage.classList.toggle('is-full', !pad);
+        } else { L = Math.max(W, 1024); sc = W / L; bw = W; bh = H; stage.classList.remove('is-full'); }
         Object.assign(box.style, { left: left + 'px', top: top + 'px', width: bw + 'px', height: bh + 'px' });
         Object.assign(frame.style, { width: L + 'px', height: Math.ceil(bh / sc) + 'px', transform: sc < 1 ? 'scale(' + sc + ')' : '' });
       };
@@ -1535,7 +1540,8 @@ ${scriptsHtml(e)}
     html, formPage, blank, imageRefs,
     themes: THEMES.map((t) => Object.assign({}, t, { colors: t.c })),
     fonts: FONTS,
-    sectionTypes: TYPES,
+    // make(profile, site?) → id・type・hidden までそろった新しいセクション
+    sectionTypes: TYPES.map((t) => Object.assign({}, t, { make: (profile, site) => makeSection(t.type, profile, site) })),
     SAMPLE, FORM_SAMPLE, FORM_BLANK,
     normalize, normForm, typeOf, themeOf, fontOf, palette, uniqueId, makeSection,
     illustrations: Object.keys(ART).map((k) => ({ ref: 'svg:' + k, name: ART[k].name, w: ART[k].w, h: ART[k].h })),

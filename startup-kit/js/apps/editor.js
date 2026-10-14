@@ -115,6 +115,7 @@
 .ed-ai dt{font-size:12px;font-weight:700;color:var(--ink-3)}
 .ed-ai dd{margin:0 0 6px;white-space:pre-wrap}
 .ed-ai ol{margin:0;padding-left:1.3em;display:grid;gap:6px}
+@media (pointer:coarse){.app-editor .btn.sm,.ed-pv-bar .seg>button{min-height:36px}.app-editor .btn.icon.sm{width:36px;min-width:36px}.ed-grip{width:34px;height:40px}.ed-sec-acts{padding-left:6px}}
 `);
 
   const SVGNS = 'http://www.w3.org/2000/svg';
