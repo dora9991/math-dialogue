@@ -44,6 +44,7 @@ Classi のような「ログインすれば、今日やることが全部見え�
    - 管理者がパスワードを忘れたときも、同じ文で設定し直せる（ロックも解ける）。
 4. **公開**（リポジトリのいちばん上で）:
    ```bash
+   npx wrangler pages project create math-portal --production-branch main   # 初回だけ（プロジェクトを作る）
    node portal/tools/deploy.cjs           # 初回だけ先に：npx wrangler login
    ```
    Cloudflare Pages の `math-portal` に出る。名前がすでに使われていたら、`tools/deploy.cjs` の `PROJECT` を変える。
