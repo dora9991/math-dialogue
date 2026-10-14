@@ -24,7 +24,7 @@ Artifact で開いたときだけ、AI の提案ボタン（文章案・返信�
 |---|---|---|
 | ダッシュボード | `js/apps/dashboard.js` | 今日・明日やること、今月の数字（売上・未入金・問い合わせ・投稿）、売上の推移、道具箱、バックアップ |
 | ホームページ | `js/apps/site.js` | お客さんが見るページを、PC・スマホの幅で確かめる。公開用の HTML（1ファイル）を書き出す。QRコード |
-| ホームページエディター | `js/apps/editor.js` | セクションの追加・並べかえ・文章・写真・テーマ・文字、見ながら直す。元に戻す／やり直す |
+| ホームページエディター | `js/apps/editor.js` | セクション（12種）の追加・並べかえ・文章・写真、テーマ6種・字体3種、見ながら直す。元に戻す／やり直す |
 | 動画エディター | `js/apps/video.js` | 切る・つなぐ・テロップ・タイトル・BGM。縦（リール・ショート）／横／正方形で書き出す |
 | 集客窓口 | `js/apps/inbox.js` | 問い合わせフォームの設定と送信先、受付箱（返信・商談・成約の管理）、取り込み、分析、チラシ用QR、返信テンプレート |
 | SNS投稿プランナー | `js/apps/sns.js` | 下書き・予約・投稿済みの管理、SNSごとの文字数、投稿の型、投稿リズム |
@@ -81,6 +81,7 @@ startup-kit/
 - サンプルは `Kit.store.sample(名前, 値)` で登録する。最初に書きかえた時点で保存される（開いただけでは書かない）。
 - 色は `css/kit.css` の変数だけを使う（ダーク表示がそろう）。`alert` `confirm` `prompt` は使わない（Artifact では動かない）→ `Kit.toast` `Kit.confirm` `Kit.ask`。
 - ファイルの保存は `Kit.download`。印刷ボタンには `local-only` を付ける（Artifact では印刷できない）。AI のボタンは `Kit.ai.button`（使えない画面では出ない）。
+- `gas/inquiry.gs` を直したら、`js/apps/inbox.js` の `GAS_SCRIPT`（画面に出す設定手順の中身）にも同じものを貼る。
 - 直したら `node tools/bundle.cjs` で all-in-one を作り直す。
 
 ## 動作確認
@@ -89,6 +90,7 @@ startup-kit/
 cd startup-kit
 node tools/check.cjs                  # 全ツール × PC/スマホ × ライト/ダーク。エラーと横はみ出しを調べ、tools/_out/ に画面を保存
 node tools/check.cjs --app inbox --fresh   # 1ツールだけ、初めて開いた状態で
+node tools/flow.cjs                   # ツールどうしの受け渡し（問い合わせ→見積書・カレンダーなど）を通しで確認
 node tools/bundle.cjs                 # all-in-one を作り直す
 node tools/bundle.cjs --artifact      # Artifact 用（dist/artifact.html）
 ```
