@@ -114,7 +114,7 @@ basket-clips/
 ```bash
 node basket-clips/build.mjs              # 1ファイル版を作り直す（公開するのはこれ）
 node basket-clips/tests/unit.cjs         # 回帰テスト（44件。ffmpeg があれば MP4 の読み取りも）
-node basket-clips/tests/e2e.cjs built    # 画面を通した確認（44件・約5分。初回は合成動画を作るので +3分）
+node basket-clips/tests/e2e.cjs built    # 画面を通した確認（53件・約5分。初回は合成動画を作るので +4分）
 node basket-clips/tests/e2e.cjs dev      # 開発版で同じ確認
 node basket-clips/tests/server.cjs       # 開発用サーバー → http://127.0.0.1:5192/
 
