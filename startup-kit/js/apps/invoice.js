@@ -133,7 +133,8 @@
 @media print{
   body.inv-printing>*:not(.inv-print){display:none!important}
   body.inv-printing>.inv-print{display:block!important}
-  .inv-print img{display:block;width:100%;height:auto}
+  .inv-print{break-inside:avoid}
+  .inv-print img{display:block;width:auto;height:auto;max-width:100%;max-height:98vh;margin:0 auto}
 }
 `);
 
