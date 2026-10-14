@@ -1,7 +1,7 @@
 /* バスケ指導ナビ：オフラインで開けるようにする（体育館の電波が弱くても使えるように）。
    覚えるのは、アプリ本体だけ。動画・library.js・記録（localStorage）には触らない。
    つながっているときは、いつも最新を取りにいき、つながらないときだけ、覚えているものを出す。 */
-const CACHE = 'basket-navi-15701a6fd5';
+const CACHE = 'basket-navi-976f575211';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
