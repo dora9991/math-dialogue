@@ -63,6 +63,7 @@ async function open(o = {}) {
     await page.evaluate((state) => { localStorage.clear(); if (state) for (const [k, v] of Object.entries(state)) localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); }, o.state || null);
   }
   await page.goto(base + (o.app ? '#' + o.app : ''));
+  if (o.fresh || o.state) await page.reload(); // ハッシュだけの移動では読み直さないので、保存データを読ませるために再読み込み
   if (o.app) await page.waitForSelector('.app-' + o.app, { timeout: 8000 }).catch(() => errs.push('timeout: .app-' + o.app + ' が出てこない'));
   await page.waitForTimeout(o.wait == null ? 500 : o.wait);
   const close = async () => { await ctx.close(); };

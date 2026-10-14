@@ -186,20 +186,21 @@
         root.append(h('div', { class: 'db-top' }, todoCard, numbers));
 
         /* ── 売上の推移（実績と計画） ── */
+        // 過去3か月〜先2か月。実績は棒、計画は線（計画のない月は線を描かない）
         const months = [];
-        for (let i = -5; i <= 0; i++) months.push(Kit.ym(Kit.addMonths(Kit.parseYmd(ym + '-01'), i)));
+        for (let i = -3; i <= 2; i++) months.push(Kit.ym(Kit.addMonths(Kit.parseYmd(ym + '-01'), i)));
         const hasPlan = months.some((m) => planned[m] != null);
         const hasSales = months.some((m) => sales[m]);
         const chartBox = h('div');
         const trend = h('section', { class: 'card', style: { marginTop: '16px' }, 'aria-label': '売上の推移' },
-          h('div', { class: 'card-h' }, h('h2', null, '売上の推移（6か月）'), h('span', { class: 'spacer' }), Kit.btn('計画を開く', () => Kit.go('money'), { sm: true, kind: 'ghost', icon: 'yen' })),
+          h('div', { class: 'card-h' }, h('h2', null, '売上の実績と計画'), h('span', { class: 'spacer' }), Kit.btn('計画を開く', () => Kit.go('money'), { sm: true, kind: 'ghost', icon: 'yen' })),
           hasPlan || hasSales ? chartBox : h('p', { class: 'small muted' }, '入金済みの請求書がたまると、ここに月ごとの売上が出ます。マネタイズ計画を作ると、計画の線も重なります。'));
         root.append(trend);
         if (hasPlan || hasSales) {
           Kit.chart.bars(chartBox, {
             labels: months.map((m) => +m.slice(5) + '月'),
-            series: [{ name: '売上（実績）', values: months.map((m) => sales[m] || 0) }],
-            lines: hasPlan ? [{ name: '計画', values: months.map((m) => planned[m] || 0), color: 'var(--series-2)' }] : [],
+            series: [{ name: '売上（実績）', values: months.map((m) => (m > ym ? null : sales[m] || 0)) }],
+            lines: hasPlan ? [{ name: '計画', values: months.map((m) => (planned[m] == null ? null : planned[m])), color: 'var(--series-2)' }] : [],
             format: Kit.yen, tick: Kit.yenShort, height: 200,
           });
         }

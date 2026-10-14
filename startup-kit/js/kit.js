@@ -288,6 +288,7 @@
     setTimeout(() => t.remove(), o.ms || (o.action ? 6000 : 3200));
   };
 
+  const modalStack = []; // 重なったダイアログ。Escape はいちばん上だけが受け取る
   Kit.modal = ({ title, body, actions, wide, onClose, dismissable = true }) => {
     const prevFocus = document.activeElement;
     const box = h('div', { class: 'modal' + (wide ? ' wide' : ''), role: 'dialog', 'aria-modal': 'true', 'aria-label': title || null });
@@ -296,10 +297,11 @@
     const close = (v) => {
       if (closed) return; closed = true;
       back.remove(); document.removeEventListener('keydown', onKey, true);
+      const i = modalStack.indexOf(back); if (i >= 0) modalStack.splice(i, 1);
       if (prevFocus && prevFocus.focus) try { prevFocus.focus(); } catch (e) { /* noop */ }
       if (onClose) onClose(v);
     };
-    const onKey = (e) => { if (e.key === 'Escape' && dismissable) { e.stopPropagation(); close(undefined); } };
+    const onKey = (e) => { if (e.key === 'Escape' && dismissable && modalStack[modalStack.length - 1] === back) { e.stopPropagation(); close(undefined); } };
     if (title) box.append(h('div', { class: 'modal-h' }, h('h2', null, title), dismissable ? Kit.btn('', () => close(undefined), { icon: 'close', title: '閉じる', kind: 'ghost', sm: true }) : null));
     const b = h('div', { class: 'modal-b' });
     if (body != null) add(b, [typeof body === 'string' ? h('p', null, body) : body]);
@@ -312,6 +314,7 @@
     }
     back.addEventListener('mousedown', (e) => { if (e.target === back && dismissable) close(undefined); });
     document.addEventListener('keydown', onKey, true);
+    modalStack.push(back);
     document.body.append(back);
     setTimeout(() => { const f = b.querySelector('input, textarea, select') || box.querySelector('.modal-f .btn.primary, .modal-f .btn.accent, .modal-f .btn.danger') || box.querySelector('button'); if (f) f.focus(); }, 30);
     return { el: box, body: b, close };
@@ -894,7 +897,7 @@
     if (opt.table !== false && opt.labels) {
       const toggle = Kit.btn('表で見る', () => { tableOpen = !tableOpen; tbl.hidden = !tableOpen; toggle.querySelector('span').textContent = tableOpen ? '表を閉じる' : '表で見る'; }, { sm: true, kind: 'ghost', class: 'chart-table-toggle' });
       const t = h('table', { class: 'tbl' }, h('thead', null, h('tr', null, h('th', null, ''), series.map((s) => h('th', { class: 'r' }, s.name)))),
-        h('tbody', null, opt.labels.map((lb, i) => h('tr', null, h('td', null, lb), series.map((s) => h('td', { class: 'r' }, fmt(s.values[i])))))));
+        h('tbody', null, opt.labels.map((lb, i) => h('tr', null, h('td', null, lb), series.map((s) => h('td', { class: 'r' }, fmtOrDash(fmt, s.values[i])))))));
       tbl.append(t);
       el.append(toggle, tbl);
     }
@@ -918,6 +921,18 @@
     tip.style.top = Math.max(0, y - 10) + 'px';
   }
   const colorOf = (s, i) => s.color || 'var(--series-' + ((i % 8) + 1) + ')';
+  const fmtOrDash = (fmt, v) => (v == null || v === '' ? '—' : fmt(v));
+  // 折れ線の道筋。値が null の点で線を途切れさせる
+  function linePath(values, X, Y) {
+    let d = '', pen = false, last = null, first = null;
+    values.forEach((v, i) => {
+      if (v == null || v === '' || !Number.isFinite(+v)) { pen = false; return; }
+      const p = [X(i), Y(+v)];
+      d += (pen ? 'L' : 'M') + p[0] + ',' + p[1];
+      pen = true; last = p; if (!first) first = p;
+    });
+    return { d, last, first };
+  }
   const xLabelEvery = (n, plotW, avg = 40) => Math.max(1, Math.ceil(n / Math.max(1, Math.floor(plotW / avg))));
 
   Kit.chart = {
@@ -978,11 +993,10 @@
           }
         });
         lines.forEach((s, li) => {
-          const pts = s.values.map((v, i) => [padL + band * i + band / 2, Y(+v || 0)]);
           const col = colorOf(s, series.length + li);
-          svg.append(sv('path', { d: 'M' + pts.map((p) => p.join(',')).join('L'), fill: 'none', stroke: col, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
-          const e = pts[pts.length - 1];
-          if (e) svg.append(sv('circle', { cx: e[0], cy: e[1], r: 4, fill: col, stroke: 'var(--surface)', 'stroke-width': 2 }));
+          const { d, last } = linePath(s.values, (i) => padL + band * i + band / 2, Y);
+          if (d) svg.append(sv('path', { d, fill: 'none', stroke: col, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+          if (last) svg.append(sv('circle', { cx: last[0], cy: last[1], r: 4, fill: col, stroke: 'var(--surface)', 'stroke-width': 2 }));
         });
         const hover = sv('rect', { x: 0, y: padT, width: band, height: plotH, fill: 'var(--ink)', opacity: 0, 'pointer-events': 'none' });
         svg.append(hover);
@@ -990,7 +1004,7 @@
           const hit = sv('rect', { x: padL + band * i, y: padT, width: band, height: plotH, fill: 'transparent', tabindex: 0 });
           const on = () => {
             hover.setAttribute('x', padL + band * i); hover.setAttribute('opacity', 0.05);
-            const rows = series.map((s, si) => ({ name: s.name, value: fmt(s.values[i]), color: colorOf(s, si) })).concat(lines.map((s, li) => ({ name: s.name, value: fmt(s.values[i]), color: colorOf(s, series.length + li) })));
+            const rows = series.map((s, si) => ({ name: s.name, value: fmtOrDash(fmt, s.values[i]), color: colorOf(s, si) })).concat(lines.map((s, li) => ({ name: s.name, value: fmtOrDash(fmt, s.values[i]), color: colorOf(s, series.length + li) })));
             showTip(tip, el.querySelector('.chart > div') || el, padL + band * i + band / 2, padT, lb, rows);
           };
           const off = () => { hover.setAttribute('opacity', 0); tip.hidden = true; };
@@ -1006,7 +1020,7 @@
       return chartFrame(el, opt, (W, tip, fmt) => {
         const H = opt.height || 220, padL = 48, padR = 14, padT = 12, padB = 26;
         const labels = opt.labels, n = labels.length, series = opt.series || [];
-        const all = series.flatMap((s) => s.values.map((v) => +v || 0));
+        const all = series.flatMap((s) => s.values.filter((v) => v != null).map((v) => +v || 0));
         const ticks = niceTicks(Math.min(0, ...all), Math.max(1, ...all));
         const y0 = ticks[0], y1 = ticks[ticks.length - 1];
         const plotW = W - padL - padR, plotH = H - padT - padB;
@@ -1018,11 +1032,12 @@
         labels.forEach((lb, i) => { if (i % every === 0 || i === n - 1) svg.append(sv('text', { x: X(i), y: H - 8, 'text-anchor': i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle' }, lb)); });
         series.forEach((s, si) => {
           const col = colorOf(s, si);
-          const pts = s.values.map((v, i) => [X(i), Y(+v || 0)]);
-          if (opt.area && series.length === 1) svg.append(sv('path', { d: 'M' + pts.map((p) => p.join(',')).join('L') + `L${X(n - 1)},${Y(Math.max(y0, 0))}L${X(0)},${Y(Math.max(y0, 0))}Z`, fill: col, opacity: 0.1 }));
-          svg.append(sv('path', { d: 'M' + pts.map((p) => p.join(',')).join('L'), fill: 'none', stroke: col, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
-          const e = pts[pts.length - 1];
-          if (e) svg.append(sv('circle', { cx: e[0], cy: e[1], r: 4, fill: col, stroke: 'var(--surface)', 'stroke-width': 2 }));
+          const { d, last, first } = linePath(s.values, X, Y);
+          if (!d) return;
+          if (opt.area && series.length === 1 && !s.values.some((v) => v == null)) svg.append(sv('path', { d: d + `L${X(n - 1)},${Y(Math.max(y0, 0))}L${X(0)},${Y(Math.max(y0, 0))}Z`, fill: col, opacity: 0.1 }));
+          svg.append(sv('path', { d, fill: 'none', stroke: col, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+          if (last) svg.append(sv('circle', { cx: last[0], cy: last[1], r: 4, fill: col, stroke: 'var(--surface)', 'stroke-width': 2 }));
+          if (first && first === last) svg.append(sv('circle', { cx: first[0], cy: first[1], r: 4, fill: col }));
         });
         const cross = sv('line', { x1: 0, x2: 0, y1: padT, y2: padT + plotH, stroke: 'var(--ink-3)', 'stroke-width': 1, opacity: 0 });
         svg.append(cross);
@@ -1031,7 +1046,7 @@
           const r = svg.getBoundingClientRect(); const px = ((e.clientX - r.left) / r.width) * W;
           const i = Kit.clamp(Math.round(((px - padL) / plotW) * (n - 1)), 0, n - 1);
           cross.setAttribute('x1', X(i)); cross.setAttribute('x2', X(i)); cross.setAttribute('opacity', 0.5);
-          showTip(tip, el.querySelector('.chart > div') || el, (X(i) / W) * r.width, padT, labels[i], series.map((s, si) => ({ name: s.name, value: fmt(s.values[i]), color: colorOf(s, si) })));
+          showTip(tip, el.querySelector('.chart > div') || el, (X(i) / W) * r.width, padT, labels[i], series.map((s, si) => ({ name: s.name, value: fmtOrDash(fmt, s.values[i]), color: colorOf(s, si) })));
         });
         hit.addEventListener('pointerleave', () => { cross.setAttribute('opacity', 0); tip.hidden = true; });
         svg.append(hit);
