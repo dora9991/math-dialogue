@@ -24,7 +24,7 @@
   - 民間調査（2026年9月、保護者60人）：63.3%が「家庭学習が出席扱いになることを知らなかった」— [DreamNews配信](https://animeanime.jp/release/dreamnews/20260908/310883.html)【二次・小標本】
   - 東京都の報告書（2022年度の文科省調査を引用）：都内公立中の不登校のうち、民間団体・施設で相談・指導を受けたのは4.5%、教育支援センター利用は13.0% — [東京都教育委員会](https://www.kyoiku.metro.tokyo.lg.jp/documents/d/kyoiku/2024outline)【旧・要確認】
 - **校内教育支援センター（新潟県の例）**：公立中学校の設置率 86.9%（2024年6月）→88.6%（2025年6月）、小学校は46.0%→61.3% — [新潟県](https://www.pref.niigata.lg.jp/uploaded/attachment/485055.pdf)
-- **学びの多様化学校**：2025年度に23校が新たに開校し、23都道府県で58校（2025年4月、公立37・私立21）。目標は令和9年度までに全都道府県・政令市、将来は分教室型を含め全国300校 — [文科省（大臣視察 2025-04-21）](https://www.mext.go.jp/b_menu/activity/detail/2025/20250421.html)、[北九州市](https://www.city.kitakyushu.lg.jp/files/001143812.pdf)
+- **学びの多様化学校**：2025年度に23校が新たに開校し、23都道府県で58校（2025年4月、公立37・私立21）。目標は令和9年度までに全都道府県・政令市、将来は分教室型を含め全国300校 — [文科省（大臣視察 2025-04-21）](https://www.mext.go.jp/b_menu/activity/detail/2025/20250421.html)、[北九州市](https://www.city.kitakyushu.lg.jp/files/001143812.pdf)【公立37・私立21の内訳は北九州市資料による。同市の別PDFの可能性あり、要確認】
   - 2026年4月の開校例：静岡市立末広中学校分教室（県内公立初）、さいたま市 — [静岡市](https://www.city.shizuoka.lg.jp/s8273/s013049.html)、[さいたま市](https://www.city.saitama.lg.jp/003/002/001/p117896.html)。さいたま市のリーフレットは「全国35校」としており、58校と食い違う（作成時期の差か）— [さいたま市リーフレット](https://www.city.saitama.lg.jp/003/002/001/p117896_d/fil/leaflet.pdf)
 - **メタバース・オンラインの居場所**：東京都のバーチャル・ラーニング・プラットフォーム（VLP）は2024年4月時点で30自治体等に展開 — [レノボ・ジャパン](https://www.lenovo.com/jp/ja/news/article/0326042024.html)【旧】。埼玉県は2025-11-26にメタバース上の学習・相談支援を本格開始 — [埼玉県](https://www.pref.saitama.lg.jp/f2209/news/page/news2025112601.html)。愛知県は不登校の中学生向けにメタバース事業を行い、KPIに参加率やログイン回数を置く — [愛知県](https://www.pref.aichi.jp/uploaded/attachment/623801.pdf)
 - **有料ICT教材（例：すらら）**：月額8,800円（税込）から・5教科 — [アルク（比較記事）](https://www.alc.co.jp/license/?p=26570)【二次】。自治体の不登校支援での導入数が過去最高、利用ID数は直近5年で約15倍とIRで説明 — [EDINET DB（すららネットIR要約）](https://edinetdb.jp/company/E33626/earnings/FY2026-Q1)【二次・年度要確認】。保護者向けの「ICT出席扱い制度説明会」を2025-01-23に開催 — [リセマム](https://resemom.jp/release/prtimes/20250120/133516.html)
@@ -135,7 +135,7 @@
 ### Cited Findings
 - **夜間中学の設置**：全国69校（2026年4月）、2025年10月時点では62校 — [文科省資料 2026-04-27](https://www.mext.go.jp/content/20260427-mtx_syoto02-000021383-2.pdf)、[新潟市資料](https://www.city.niigata.lg.jp/higashi/torikumi/zitikyou/kaisaijoukyo/kaigi_shiryo/reiwa8kaigisiryou.files/2026-2siryo6.pdf)
 - 2026年度の設置予定（2025年11月時点）：栃木県、福井県、愛知県（3校）、和歌山県、大分県 — [文科省資料 2025-11-14](https://www.mext.go.jp/content/20251114-mtx_syoto02-000021383_11.pdf)
-- 2025年10月時点で26都道府県・15指定都市に62校。政府目標は全ての都道府県・指定都市に少なくとも1校。新潟市は2027年4月の開校予定 — [新潟市 基本計画](https://www.city.niigata.lg.jp/kosodate/gakko/sho_chu_school/yakanchugaku/kihonkeikaku.files/kihonkeikaku-new.pdf)。2023年4月は23都道府県・指定都市で44校 — [文科省](https://www.mext.go.jp/content/20230915-mxt_syoto02-000031906_003.pdf)【旧】
+- 2025年10月時点で26都道府県・15指定都市に62校。政府目標は全ての都道府県・指定都市に少なくとも1校。新潟市は2027年4月の開校予定 — [新潟市 基本計画](https://www.city.niigata.lg.jp/kosodate/gakko/sho_chu_school/yakanchugaku/kihonkeikaku.files/kihonkeikaku-new.pdf)。2023年4月は23都道府県・指定都市で44校 — [文科省](https://www.mext.go.jp/content/20230915-mxt_syoto02-000031906_003.pdf)【旧・要確認：[2024-04の文科省PDF](https://www.mext.go.jp/content/20240419-mtx_syoto02-100003094-01.pdf)の可能性あり】
 - **生徒（2024年5月1日時点）**：外国籍1,256人（63.8%）、義務教育未修了の日本国籍154人（7.8%）、入学を希望した既卒の日本国籍559人（28.4%）。1校平均37.2人（53校）— [新潟市 有識者会議資料（文科省調査を引用）](https://www.city.niigata.lg.jp/kosodate/gakko/sho_chu_school/yakanchugaku/yushikishakaigi.files/yatyuu01_siryou2kaigisiryou.pdf)【二次】
 - 2022年度は全生徒1,558人、うち外国籍1,039人（66.6%）。日本国籍の生徒が調査開始以来初めて3割を超えた（不登校経験者などの学び直し）— [東洋経済](https://toyokeizai.net/articles/-/793391?display=b)【旧】
 - **通信制高校**：2025年度は333校（公立82・私立251）、生徒約30.5万人（公立約6.2万・私立約24.3万）— [名古屋大学 高等教育研究論文](https://web.cshe.nagoya-u.ac.jp/publication/journal/img/no26/04.pdf)。2024年度は290,087人で過去最高。2015年度の180,393人から約1.6倍 — [リクルート進学総研](https://souken.shingakunet.com/research/pdf/2024_souken_report/2024_souken_report_tsushin.pdf)
@@ -158,7 +158,7 @@
 
 ### Cited Findings
 - **貧困**：2025年国民生活基礎調査（2026年7月公表）で子どもの相対的貧困率11.0%（前回11.5%）、ひとり親世帯の貧困率44.7%（前回44.5%）。生活が「苦しい」は子どものいる世帯で61.5%、母子世帯で82.1% — [PR TIMES（支援団体のリリース）](https://prtimes.jp/main/html/rd/p/000000139.000005375.html)、[財経新聞](https://zaikei.co.jp/releases/3528448/)【二次。厚労省の一次資料は未確認】
-- **公的な学習支援**：生活困窮者自立支援制度の「子どもの学習・生活支援事業」の実施率は66%（令和7年度、福祉事務所設置自治体 n=906）— [厚労省資料](https://www.mhlw.go.jp/content/001719390.pdf)【要確認：同系列の [001719389](https://www.mhlw.go.jp/content/001719389.pdf) の可能性あり】。対象は生活保護世帯を含む困窮世帯の中学生など（吹田市の例）— [吹田市](https://www.city.suita.osaka.jp/_res/projects/default_project/_page_/001/017/160/R7-15-2.pdf)
+- **公的な学習支援**：生活困窮者自立支援制度の「子どもの学習・生活支援事業」の実施率は66%（令和7年度、福祉事務所設置自治体 n=906）— [厚労省資料](https://www.mhlw.go.jp/content/001719390.pdf)【要確認：同系列の [001719389](https://www.mhlw.go.jp/content/001719389.pdf) の可能性あり】。対象は生活保護世帯を含む困窮世帯の中学生など（吹田市の例）— [吹田市](https://www.city.suita.osaka.jp/_res/projects/default_project/_page_/001/017/160/R7-15-2.pdf)【要確認：R8版の可能性あり】
 - **NPO**：キッズドアの学習会には2024年度に2,112人が参加。経常収益16億円のうち助成金が46.3% — [東洋経済](https://toyokeizai.net/articles/-/898976)。無料の学習支援を始めたい団体・個人向けのオンライン研修（2026年度の参加者募集）も行われている — [PR TIMES](https://prtimes.jp/main/html/rd/p/000000111.000100140.html)
 - **葉一（とある男が授業をしてみた）**：登録者は約198万人（2024年1月）→208万人（2024年11月）、2025年に200万人超。公式サイト19chで2,000本以上の授業動画を無料公開し、問題集PDFも無料配布 — [山形県](https://www100.pref.yamagata.jp/documents/37678/060119_02_profeel.pdf)、[東京都](https://www.metro.tokyo.lg.jp/information/press/2024/11/2024112207)、[コエテコ](https://coeteco.jp/articles/10607)
 - **へき地**：高知県では公立小中265校のうち、へき地学校が42校（約15.8%、2025年5月1日）— [高知県](https://www.pref.kochi.lg.jp/doc/2024082200163/file_contents/file_20257281155847_1.pdf)
@@ -183,7 +183,7 @@
 精神疾患による教員の病気休職は **7,087人**（2024年度、0.77%）で、過去最多だった2023年度（7,119人）並みの高止まり。精神疾患による離職は **1,319人**（2024年度、過去最多）。始業日の教員不足は **4,317人**（2025年度、2021年度から悪化）。中学校の免許外教科担任の許可は年 **約6,800件**。授業と子どもとの関わりへの若手の不安は約4分の3。「そのまま授業できる、改変して共有できる無料の授業一式」の需要は大きい（推論）。
 
 ### Cited Findings
-- **精神疾患による病気休職**：2024年度7,087人（全教育職員の0.77%）。2023年度7,119人（0.77%、過去最多）、2022年度6,539人 — [文科省 令和6年度 人事行政状況調査](https://www.mext.go.jp/a_menu/shotou/jinji/1411820_00009.htm)、[文科省PDF（2025-12）](https://www.mext.go.jp/content/20251217-mxt_syoto01-000046407_10.pdf)、[文科省 令和5年度調査](https://www.mext.go.jp/a_menu/shotou/jinji/1411820_00008.htm)
+- **精神疾患による病気休職**：2024年度7,087人（全教育職員の0.77%）。2023年度7,119人（0.77%、過去最多）、2022年度6,539人 — [文科省 令和6年度 人事行政状況調査](https://www.mext.go.jp/a_menu/shotou/jinji/1411820_00009.htm)、[文科省PDF（2025-12）](https://www.mext.go.jp/content/20251217-mxt_syoto01-000046407_10.pdf)、[文科省 令和5年度調査](https://www.mext.go.jp/a_menu/shotou/jinji/1411820_00008.htm)【要確認：00008が令和5年度のページかは推定】
   - 公表は2025-12-22 — [教育委員会月報 2026年2月号（文科省PDF）](https://www.mext.go.jp/content/20260209-mxt_syoto01-000047272_06.pdf)
   - 休職発令時点の所属校での勤務年数は「6月未満」546人、「6月以上1年未満」1,187人 — [文科省PDF（2025-12）](https://www.mext.go.jp/content/20251217-mxt_syoto01-000046407_10.pdf)
   - 教育委員会が挙げた要因は「児童・生徒への指導そのもの」「職場の人間関係」「校務分掌や事務的業務」— [文科省](https://www.mext.go.jp/a_menu/shotou/jinji/1411820_00009.htm)
