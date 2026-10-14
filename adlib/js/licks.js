@@ -276,19 +276,25 @@
 
   /* ---------------- 検索 ---------------- */
   const EPS = 1e-6;
-  // コードの長さ durs（拍）に、そのまま置けるか。最後のコードは長くてもよい（あとは休むか別のリック）。
-  // 1つだけのリックは、cut（途中で切れる位置）まででも置ける。戻り値：置ける長さ（拍）or null
-  function fitLength(lick, durs) {
-    if (durs.length !== lick.segs.length) return null;
-    for (let k = 0; k < durs.length - 1; k++) if (Math.abs(durs[k] - lick.segs[k]) > EPS) return null;
-    const last = durs.length - 1;
-    if (durs[last] >= lick.segs[last] - EPS) return lick.total;
-    if (durs.length === 1) {
+  // コードの長さ durs（拍）に置けるか。置けるなら { lead, tail, len, cut }：
+  //   lead … 最初のコードが長いときの手前のあき（その前に別のリックを置く）
+  //   tail … 最後のコードが長いときのあと（あとで別のリックを置く）
+  //   len … このリックが使う拍数。1コードだけのリックは、cut（途中で切れる位置）まででも置ける
+  // 途中のコードの長さは、リックの書いた長さと一致していること
+  function fit(lick, durs) {
+    const n = lick.segs.length;
+    if (durs.length !== n) return null;
+    for (let k = 1; k < n - 1; k++) if (Math.abs(durs[k] - lick.segs[k]) > EPS) return null;
+    if (n === 1) {
+      if (durs[0] >= lick.segs[0] - EPS) return { lead: 0, tail: durs[0] - lick.segs[0], len: lick.total, cut: null };
       const cut = lick.cuts.filter(c => c <= durs[0] + EPS).pop();
-      if (cut && cut >= 1.5) return cut;
+      if (cut && cut >= 1.5) return { lead: 0, tail: durs[0] - cut, len: cut, cut };
+      return null;
     }
-    return null;
+    if (durs[0] < lick.segs[0] - EPS || durs[n - 1] < lick.segs[n - 1] - EPS) return null;
+    return { lead: durs[0] - lick.segs[0], tail: durs[n - 1] - lick.segs[n - 1], len: lick.total, cut: null };
   }
+  const fitLength = (lick, durs) => { const f = fit(lick, durs); return f ? f.len : null; };
   // 実際のコードの7thの種類と、リックの最後のコードでの7thの使い方が衝突していないか（拍頭か長い音だけ見る）
   function seventhConflict(lick, segIdx, chord) {
     if (!chord || chord.nc) return false;
@@ -299,6 +305,8 @@
     if (!forb.length) return false;
     return lick.events.some(e => !e.rest && e.seg === segIdx && forb.indexOf(e.rel) >= 0 && (e.t12 % TPB === 0 || e.dur >= 1));
   }
+  // 拍子：4拍のリックは、3拍子などでは「1つのコード用」だけを切って使う
+  const bpbOK = (l, bpb) => l.bpb === bpb || (bpb !== 4 && l.bpb === 4 && l.segs.length === 1);
   function find(ctx, opts) {
     opts = opts || {};
     const list = L.byCtx[ctx] || [];
@@ -306,9 +314,9 @@
       if (opts.lvlMax && l.lvl > opts.lvlMax) return false;
       if (opts.tags && opts.tags.length && !opts.tags.some(t => l.tags.indexOf(t) >= 0)) return false;
       if (opts.exclude && opts.exclude.has && opts.exclude.has(l.id)) return false;
-      if (opts.bpb && l.bpb !== opts.bpb) return false;
+      if (opts.bpb && !bpbOK(l, opts.bpb)) return false;
       if (opts.anyTonic && !l.anyTonic) return false;
-      if (opts.durs && fitLength(l, opts.durs) == null) return false;
+      if (opts.durs && fit(l, opts.durs) == null) return false;
       if (opts.chords) {
         for (let k = 0; k < l.segs.length; k++) if (seventhConflict(l, k, opts.chords[k])) return false;
       }
@@ -331,7 +339,7 @@
     for (let k = -3; k <= 3; k++) {
       const sh = ds0 + 12 * k, mn = lick.midi.min + sh, mx = lick.midi.max + sh;
       let cost = Math.max(0, lo - mn) * 4 + Math.max(0, mx - hi) * 4;
-      if (opts.prev != null) cost += Math.abs(lick.midi.first + sh - opts.prev) * 0.6 + Math.abs((mn + mx) / 2 - center) * 0.05;
+      if (opts.prev != null) cost += Math.abs(lick.midi.first + sh - opts.prev) * 0.5 + Math.abs((mn + mx) / 2 - center) * 0.42;
       else cost += Math.abs((mn + mx) / 2 - center) * 0.4;
       if (opts.octave != null) cost = Math.abs(k - opts.octave) * 1000;
       if (!best || cost < best.cost) best = { k, sh, cost };
@@ -375,6 +383,6 @@
     });
   }
 
-  Object.assign(L, { parseNotes, compile, lint, add, pack, assemble, find, has, fitLength, realize, allowedPcs, seventhConflict, TPB });
+  Object.assign(L, { parseNotes, compile, lint, add, pack, assemble, find, has, fit, fitLength, realize, allowedPcs, seventhConflict, TPB });
   if (typeof module !== 'undefined' && module.exports) module.exports = AL;
 })();
