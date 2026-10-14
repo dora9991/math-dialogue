@@ -17,10 +17,11 @@
     return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   }
 
-  // 楽器ごとの実音の音域（コンサート・ピッチ）
+  // 楽器ごとの実音の音域（コンサート・ピッチ）。移調楽器でも、譜面に書いたとき五線から出すぎないように選んである
+  //   アルト（書く音は +9）E♭管 / テナー（+14）B♭管 / トランペット・クラリネット（+2）/ ギター（書く音は1オクターブ上）
   S.RANGES = {
-    piano: [48, 84], altosax: [55, 80], tenorsax: [50, 77], trumpet: [58, 82], guitar: [52, 79], flute: [60, 88], vibes: [53, 84],
-    clarinet: [55, 84], trombone: [46, 72], bass: [36, 60], default: [55, 84],
+    piano: [55, 84], ep: [55, 84], vibes: [57, 84], altosax: [52, 77], tenorsax: [46, 72], trumpet: [57, 82], guitar: [52, 74], flute: [60, 86],
+    clarinet: [57, 82], trombone: [43, 67], bass: [36, 60], default: [55, 84],
   };
 
   const ctxOfMatch = m => m.pattern.ctxAlias || m.id;
