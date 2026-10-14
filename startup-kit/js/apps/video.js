@@ -2886,8 +2886,10 @@
     wide: true,
     docs: ['video'],
     debug: () => ({ S, PB, getLayout, drawFrame, fixWebmDuration }),
-    async mount(root) {
+    async mount(root, params) {
       if (!S.project || stale || (S.project._sample && !Kit.store.samplesShown())) await loadProject();
+      // 案内などから開くとき：Kit.go('video', { tab: 'bin' | 'timeline' | 'edit' })。狭い画面で見せる作業（素材・タイムライン・編集）を選んでおく
+      if (params && ['bin', 'timeline', 'edit'].includes(params.tab)) setPanel(params.tab);
       const v = buildView(root);
       V = v;
       // ファイルを画面に落とす
