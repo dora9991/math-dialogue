@@ -23,7 +23,7 @@
     tab: 0, openSetup: false, openHow: null,
     reel: { active: false, list: [], i: -1, label: '', team: 0 },
     exporting: null, out: [null, null],
-    thumbs: {}, thumbJob: null, saveTimer: 0
+    thumbs: {}, thumbJob: null, saveTimer: 0, debug: false, lastLog: null
   };
 
   /* ---------- 小さな道具 ---------- */
@@ -886,12 +886,13 @@
     };
     let eng = null, res = null;
     try {
-      eng = st.eng = await openEngine({ srcW: media.width, srcH: media.height, fixed: !!st0.fixed, hoops: marks.map((m) => ({ id: m.id, box: m.box, rim: m.rim })) },
+      // S.debug：検証用（コマごとのボール候補の記録を S.lastLog に残す。tests/rim-check.cjs が使う）
+      eng = st.eng = await openEngine({ srcW: media.width, srcH: media.height, fixed: !!st0.fixed, hoops: marks.map((m) => ({ id: m.id, box: m.box, rim: m.rim })), debug: !!S.debug },
         (m) => { if (m.ev === 'progress') onLive(m.t, m.live, m.preview); else if (m.ev === 'info') st.info = m; });
       try {
         st.mode = 'decode';
         const src = typeof media.file === 'string' ? { url: new URL(media.file, root.location.href).href } : { file: media.file };
-        res = (await eng.call('decode', Object.assign({ marks: marks.map((m, i) => ({ i, t: m.t })), t0: 0, t1: opts.t1 }, src))).result;
+        res = (await eng.call('decode', Object.assign({ marks: marks.map((m, i) => ({ i, t: m.t })), t0: 0, t1: opts.t1, debug: !!S.debug }, src))).result;
       } catch (err) {
         if (err.code !== 'unsupported') throw err;
         console.warn('[auto] ファイルを直接読めないので、再生しながら解析します：', err.message);
@@ -900,6 +901,7 @@
         res = await runVideoPlayback(eng, media, marks, st, onLive);
       }
       if (st.cancel) throw Object.assign(new Error('中止しました'), { code: 'cancelled' });
+      if (res.log) { S.lastLog = { idx, log: res.log }; delete res.log; }
       apply(res, idx, dur, st.mode, (performance.now() - t0w) / 1000);
     } catch (err) {
       if (err.code === 'cancelled' || st.cancel) BS.ui.toast('探すのを中止しました', 'warn');

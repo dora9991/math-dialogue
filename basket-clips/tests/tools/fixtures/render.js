@@ -246,7 +246,10 @@
     }
 
     /* swish: 得点からの経過秒（そのゴールでネットが揺れている間だけ。それ以外は -1） */
-    function drawHoop(side, list, swish) {
+    const rimHits = tr.rimHits || [];
+    function rimHitAt(side, t) { let best = null; for (const hh of rimHits) { if (hh.side === side && hh.t <= t && t - hh.t <= 0.6) best = hh; } return best; }
+    function drawHoop(side, list, swish, amp) {
+      if (amp == null) amp = 1;
       const d = side === 0 ? 1 : -1;
       const bx = side === 0 ? 0 : CT.L;
       const rimX = bx + d * CT.rimFromBaseline;
@@ -266,6 +269,7 @@
           if (swish >= 0) {
             if (swish <= 0.6) { e = Math.sin(Math.PI * swish / 0.6); wob = e; }
             else { wob = 0.35 * (1 - (swish - 0.6) / 0.3); e = wob * Math.sin((swish - 0.6) * 38); }
+            e *= amp; wob *= amp;
           }
           ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 1.2;
           for (let i = 0; i < 12; i++) {
@@ -416,8 +420,10 @@
       const list = [];
       const sc = scoreAt(t);
       const scSide = sc ? (ballRaw(sc.ts).x < CT.L / 2 ? 0 : 1) : -1;
-      drawHoop(0, list, scSide === 0 ? sc.tau : -1);
-      drawHoop(1, list, scSide === 1 ? sc.tau : -1);
+      // （テスト用に足したもの：rimplay.js がリングに当てたシュートでは、当たった直後にネットを少し揺らす）
+      const hk = (side) => { if (scSide === side) return [sc.tau, 1]; const hh = rimHitAt(side, t); return hh ? [t - hh.t, hh.amp] : [-1, 1]; };
+      drawHoop(0, list, ...hk(0));
+      drawHoop(1, list, ...hk(1));
       // 審判（ボールを追う）
       const refX1 = BS.clamp(panX + 3.5, 2, CT.L - 2), refX2 = BS.clamp(panX - 5.5, 1.5, CT.L - 1.5);
       [[refX1, -0.55, 0], [refX2, -0.35, 1]].forEach(([x, y, k]) => {

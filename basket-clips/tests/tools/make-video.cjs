@@ -1,6 +1,7 @@
 // テスト用の合成試合の動画（VP9 の MP4）と、その正解（得点の時刻・チーム、ゴールの位置）を作る。
 //   node basket-clips/tests/tools/make-video.cjs <出力.mp4> [区間=0-150] [fps=30] [Mbps=4]
 //   区間は「元の試合の秒」。カンマで区切ると、つないだ1本の動画になる（例：0-120,805-925 ＝ 前半の頭と後半の頭）。
+//   最後に rim を付けると、シュートの一部を「リングに当たってから入る／外れる」形にする（fixtures/rimplay.js。正解の shots[].rim に形の名前）。
 // 映像は「バスケ分析スタジオ」のサンプル試合（fixtures/。シード 204・ブルー vs レッド）を、ブラウザの WebCodecs で1コマずつ描いて作る。
 // 実時間の録画ではないので、コマ落ちがなく、毎回同じ動画になる。
 // VP9 にしているのは、テストに使う Chromium（Playwright 同梱）が H.264 を扱えないため（ふつうの Chrome・Safari では H.264 の動画も同じように読める）。
@@ -48,6 +49,8 @@ function mux(chunks, W, H, fps) {
 async function renderInPage(opts) {
   const { segs, fps, W, H, mbps } = opts;
   const game = BS.sim.generate({});
+  // リングに当たってから入る／外れるシュートを混ぜる（opts.rim：{ makes, misses } 変える割合）
+  const rimPlay = opts.rim ? BS.rimPlay(game, opts.rim) : [];
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const rd = BS.Renderer(game, cv, {});
   const chunks = []; let err = null;
@@ -79,7 +82,8 @@ async function renderInPage(opts) {
   const shots = game.events.filter((e) => (e.type === 'shot' || e.type === 'ft') && !e.blk).map((e) => {
     const m = map.find((x) => e.t >= x.a && e.t < x.b - 2.5);
     if (!m) return null;
-    return { t: +(e.t - m.a + m.off).toFixed(2), src: e.t, team: e.team, made: !!e.made, type: e.type, side: ((e.team === 0) === (per(e.t) <= 2)) ? 1 : 0, half: per(e.t) <= 2 ? 1 : 2 };
+    const rp = rimPlay.find((x) => Math.abs(x.t - e.t) < 0.011);
+    return { t: +(e.t - m.a + m.off).toFixed(2), src: e.t, team: e.team, made: !!e.made, type: e.type, side: ((e.team === 0) === (per(e.t) <= 2)) ? 1 : 0, half: per(e.t) <= 2 ? 1 : 2, rim: rp ? rp.kind : null };
   }).filter(Boolean);
   // ゴールの位置：カメラがそのゴール側の端まで寄っていて、ボールがゴールから離れているコマ（hoopMark と同じ条件。そのときの枠はどのコマでも同じ）
   const marks = [0, 1].map((side) => {
@@ -100,7 +104,7 @@ async function renderInPage(opts) {
   return { frames: chunks.length, duration: off, bytes: window.__blob.size, sec: (performance.now() - t0) / 1000, segs: map, shots, marks, teams: game.teams.map((t) => ({ name: t.name, color: t.color })), toOutCheck: toOut(segs[0].a + 1) };
 }
 
-async function make(out, segSpec, fps, mbps) {
+async function make(out, segSpec, fps, mbps, rim) {
   const segs = String(segSpec || '0-150').split(',').map((s) => { const [a, b] = s.split('-').map(Number); return { a, b }; });
   const srv = await start(0);
   const browser = await chromium.launch({ args: ['--disable-background-timer-throttling', '--disable-renderer-backgrounding'] });
@@ -109,7 +113,7 @@ async function make(out, segSpec, fps, mbps) {
     await page.goto(srv.url + 'tests/tools/render.html');
     await page.waitForFunction(() => window.BS && BS.Renderer && BS.sim);
     await page.addScriptTag({ content: MUX + '\nwindow.__mux = mux;' });
-    const info = await page.evaluate(renderInPage, { segs, fps: fps || 30, W: 1280, H: 720, mbps: mbps || 4 });
+    const info = await page.evaluate(renderInPage, { segs, fps: fps || 30, W: 1280, H: 720, mbps: mbps || 4, rim: rim || null });
     if (info.error) throw new Error(info.error);
     // ページの中の動画を、ダウンロードとして受け取る
     const [dl] = await Promise.all([
@@ -119,12 +123,13 @@ async function make(out, segSpec, fps, mbps) {
     fs.mkdirSync(path.dirname(out), { recursive: true });
     await dl.saveAs(out);
     fs.writeFileSync(out + '.json', JSON.stringify(Object.assign({ file: path.basename(out), fps: fps || 30 }, info), null, 1));
-    return Object.assign({ file: out, size: fs.statSync(out).size }, { frames: info.frames, duration: info.duration, sec: info.sec, shots: info.shots.length, made: info.shots.filter((s) => s.made).length, marks: info.marks.map((m) => m && m.t) });
+    return Object.assign({ file: out, size: fs.statSync(out).size }, { frames: info.frames, duration: info.duration, sec: info.sec, shots: info.shots.length, made: info.shots.filter((s) => s.made).length, rim: info.shots.filter((s) => s.rim).length, marks: info.marks.map((m) => m && m.t) });
   } finally { await browser.close(); await srv.close(); }
 }
 module.exports = { make };
 if (require.main === module) {
   const out = path.resolve(process.argv[2] || 'game.mp4');
-  make(out, process.argv[3], Number(process.argv[4] || 30), Number(process.argv[5] || 4))
+  // 6番目の引数に rim を渡すと、リングに当たるシュートを混ぜる（例：node make-video.cjs out.mp4 0-400 30 4 rim）
+  make(out, process.argv[3], Number(process.argv[4] || 30), Number(process.argv[5] || 4), process.argv[6] === 'rim' ? { makes: 0.7, misses: 0.6 } : null)
     .then((r) => console.log(JSON.stringify(r))).catch((e) => { console.error(e); process.exit(1); });
 }
