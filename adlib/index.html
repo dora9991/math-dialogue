@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>アドリブ・ラボ</title>
+<meta name="description" content="コードを打ち込むと伴奏が鳴り、コードの役割を読みとって、合うリックを楽譜と音で提案するアドリブ練習アプリ">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f6f78'/%3E%3Cpath d='M20 6v14.2a3.6 3.6 0 1 1-2-3.2V9.4l-7 1.6v11.2a3.6 3.6 0 1 1-2-3.2V9.6z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/adlib.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7"/><path d="M20 6v14.2a3.6 3.6 0 1 1-2-3.2V9.4l-7 1.6v11.2a3.6 3.6 0 1 1-2-3.2V9.6z"/></svg>
+      <div><h1>アドリブ・ラボ</h1><p class="tag">コードを打つ → 伴奏が鳴る → 役割がわかる → ソロを楽譜で</p></div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="画面の切りかえ" id="tabs">
+      <button role="tab" data-tab="chart" aria-selected="true">① コード譜</button>
+      <button role="tab" data-tab="solo" aria-selected="false">② ソロ</button>
+      <button role="tab" data-tab="dict" aria-selected="false">③ リック辞典</button>
+      <button role="tab" data-tab="sound" aria-selected="false">④ 音と書き出し</button>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="tab" id="tab-chart" data-tab="chart" role="tabpanel"></section>
+  <section class="tab" id="tab-solo" data-tab="solo" role="tabpanel" hidden></section>
+  <section class="tab" id="tab-dict" data-tab="dict" role="tabpanel" hidden></section>
+  <section class="tab" id="tab-sound" data-tab="sound" role="tabpanel" hidden></section>
+  <footer class="foot">
+    <p>アドリブ・ラボ ― 音はすべてブラウザの中で合成しています（音源ファイルなし）。譜面の音符は <a href="https://www.smufl.org/fonts/" target="_blank" rel="noopener">Bravura</a>（SIL Open Font License）の字形を使っています。</p>
+  </footer>
+</main>
+
+<div class="transport" id="transport" role="group" aria-label="再生"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<noscript><p style="padding:2rem">このアプリは JavaScript を使います。ブラウザの設定で JavaScript を有効にしてください。</p></noscript>
+
+<!-- 音楽の部品（エンジン） -->
+<script src="js/theory.js"></script>
+<script src="js/chart.js"></script>
+<script src="js/analysis.js"></script>
+<script src="js/licks.js"></script>
+<script src="js/licks-dom.js"></script>
+<script src="js/licks-chords.js"></script>
+<script src="js/licks-251.js"></script>
+<script src="js/licks-turn.js"></script>
+<script src="js/solo.js"></script>
+<script src="js/comping.js"></script>
+<script src="js/synth.js"></script>
+<script src="js/player.js"></script>
+<script src="js/glyphs.js"></script>
+<script src="js/notation.js"></script>
+<script src="js/presets.js"></script>
+<script src="js/export.js"></script>
+<!-- 画面 -->
+<script src="js/ui-core.js"></script>
+<script src="js/app.js"></script>
+<script src="js/ui-chart.js"></script>
+<script src="js/ui-solo.js"></script>
+<script src="js/ui-dict.js"></script>
+<script src="js/ui-sound.js"></script>
+<script src="js/boot.js"></script>
+</body>
+</html>
