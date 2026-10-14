@@ -72,7 +72,7 @@
     return -0.3;
   }
   const isTonicOf = (c, d, mode) => d === 0 && (mode === 'major' ? c.cls === 'maj' || c.cls === 'dom' : c.cls === 'min' || c.cls === 'minmaj');
-  function estimateKey(hs) {
+  function estimateKey(hs, bpb) {
     const cs = hs.filter(h => !h.chord.nc);
     if (!cs.length) return { tonicPc: 0, mode: 'major', score: 0, list: [] };
     const total = cs.reduce((a, h) => a + h.dur, 0);
@@ -90,9 +90,18 @@
       return (P.min(c) || P.hdim(c)) && ((P.domLike(n) && mv === 5) || (P.dom(n) && mv === 11));   // 裏コード(♭II7)へ進む ii も
     };
     const lastIdx = L - 1;
+    // 解決先（I）が書かれていない ii–V や iii–vi–ii–V は、「この調の中の動き」という手がかり。次のコードがその主音なら、終止の得点（下）で数えるのでここでは足さない
+    const implied = {}, IMPLY = ['ii-V', 'iio-V', 'iii-vi-ii-V', 'I-vi-ii-V', 'I-VI-ii-V', 'I-#Io-ii-V'];
+    findMatches(cs).forEach(m => {
+      const p = m.pattern;
+      if (IMPLY.indexOf(p.id) < 0 || cs[(m.at + m.n) % L].chord.rootPc === m.tonicPc) return;
+      implied[m.tonicPc + ':' + m.mode] = (implied[m.tonicPc + ':' + m.mode] || 0) + p.score * 0.45;
+    });
     const results = [];
     for (let t = 0; t < 12; t++) for (const mode of ['major', 'minor']) {
-      let s = 0, tonicTime = 0;
+      let s = implied[t + ':' + mode] || 0, tonicTime = 0;
+      // 12小節ブルースの型（I7・IV7・V7 が主役の曲）は、その調のものと見なす
+      if (bpb) { const f = detectForm(hs, { tonicPc: t }, bpb); if (f && f.minor === (mode === 'minor')) s += 7; }
       cs.forEach((h, k) => {
         const c = h.chord, d = mod(c.rootPc - t, 12), w = Math.min(h.dur, 8) / 4;
         s += w * fit(c, d, mode);
@@ -232,7 +241,7 @@
   function analyze(hs, opts) {
     opts = opts || {};
     const bpb = opts.beatsPerBar || 4;
-    const est = estimateKey(hs);
+    const est = estimateKey(hs, bpb);
     const key = opts.key ? keyInfo(opts.key.tonicPc, opts.key.mode, hs) : keyInfo(est.tonicPc, est.mode, hs);
     key.auto = !opts.key;
     key.candidates = est.list.map(r => keyInfo(r.tonicPc, r.mode, hs));
