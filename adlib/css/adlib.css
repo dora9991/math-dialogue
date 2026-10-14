@@ -223,7 +223,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
 .cc.ph.last::after { border-radius: 0 4px 4px 0; right: 4px; }
 .cc.ph.first.last::after { border-radius: 4px; }
 .cc.c0 { --phc: var(--c0); } .cc.c1 { --phc: var(--c1); } .cc.c2 { --phc: var(--c2); } .cc.c3 { --phc: var(--c3); }
-.cc .ph-l { position: absolute; left: 6px; bottom: 7px; font-size: .62rem; font-weight: 700; color: var(--phc); background: var(--surface); padding: 0 4px; border-radius: 4px; line-height: 1.3; transform: translateY(0); opacity: 0; pointer-events: none; }
+.cc .chip.phase { background: transparent; border: 1.5px solid var(--phc); color: var(--ink); font-weight: 700; }
 .cc.sel { background: var(--sel); outline: 2px solid var(--accent); outline-offset: -2px; }
 .bar.inrange { background: var(--range); }
 .bar.playing { background: var(--play); }

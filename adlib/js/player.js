@@ -54,7 +54,7 @@
     on(name, fn) { this.listeners[name] = fn; return this; }
     emit(name, a) { if (this.listeners[name]) this.listeners[name](a); }
 
-    // opts：{ fromBar, toBar（範囲くり返し）, loops（Infinity も可）, countIn（小節）, solo: true/false }
+    // opts：{ fromBar, toBar（範囲くり返し）, startBar（途中の小節から始める。そのあとは頭にもどって、全体か範囲をくり返す）, loops（Infinity も可）, countIn（小節）, solo: true/false }
     start(plan, opts) {
       opts = opts || {};
       this.stop(true);
@@ -68,13 +68,16 @@
       this.cycle0 = this.rangeMode ? 0 : 0;
       this.loops = opts.loops == null ? Infinity : opts.loops;
       this.countIn = (opts.countIn || 0) * plan.bpb;
+      // 途中から始めるときの、最初の音の位置（タイムライン u：範囲の頭が 0）
+      this.skipBefore = 0;
+      if (opts.startBar != null) { const x = opts.startBar * plan.bpb; if (x >= this.a - 1e-9 && x < this.b - 1e-9) this.skipBefore = x - this.a; }
       this.soloOn = opts.solo !== false;
       this.soloCache = {};
       this.cache = {};
       E.startSession();
       const r = plan.swing(), bpm = plan.tempo();
       this.spb = 60 / bpm;
-      this.startU = -this.countIn;
+      this.startU = this.skipBefore - this.countIn;
       this.anchor = { time: ctx.currentTime + 0.15, sbeat: swingMap(this.startU, r) };
       this.nextU = this.startU;
       this.endU = this.loops === Infinity ? Infinity : this.loops * this.cycleBeats;
@@ -104,7 +107,7 @@
       const r = this.plan.swing();
       const sb = this.anchor.sbeat + (this.ctx.currentTime - this.anchor.time) / this.spb;
       const u = unswing(sb, r);
-      if (u < 0) return { u, countIn: true, beat: 0, bar: 0, cycle: 0, chorus: 0 };
+      if (u < (this.skipBefore || 0) - 1e-9) return { u, countIn: true, ci: Math.max(0, Math.floor(u - this.startU + 1e-9)), beat: 0, bar: 0, cycle: 0, chorus: 0 };
       const cycle = Math.floor(u / this.cycleBeats), x = this.a + (u - cycle * this.cycleBeats);
       return { u, cycle, chorus: this.rangeMode ? 0 : this.cycle0 + cycle, beat: x, bar: Math.floor(x / this.bpb + 1e-9), beatInBar: x - Math.floor(x / this.bpb + 1e-9) * this.bpb, countIn: false };
     }
@@ -137,12 +140,13 @@
     schedule(u0, u1, r) {
       const E = this.E, plan = this.plan;
       // count-in とメトロノーム
+      const skip = this.skipBefore || 0;
       for (let u = Math.ceil(u0 - 1e-9); u < u1 - 1e-9; u++) {
-        if (u < 0) E.click(this.timeOf(u, r), u % this.bpb === 0 || (u + this.countIn) % this.bpb === 0);
-        else if (plan.metronome) E.click(this.timeOf(u, r), u % this.bpb === 0);
+        if (u < skip) E.click(this.timeOf(u, r), (u - (skip - this.countIn)) % this.bpb === 0);
+        else if (plan.metronome) E.click(this.timeOf(u, r), (u + this.a) % this.bpb === 0);
       }
-      if (u1 <= 0) return;
-      const lo = Math.max(0, u0), cStart = Math.floor(lo / this.cycleBeats), cEnd = Math.floor((u1 - 1e-9) / this.cycleBeats);
+      if (u1 <= skip) return;
+      const lo = Math.max(skip, u0), cStart = Math.floor(lo / this.cycleBeats), cEnd = Math.floor((u1 - 1e-9) / this.cycleBeats);
       for (let c = cStart; c <= cEnd; c++) {
         const k = this.rangeMode ? 0 : c;
         const ch = this.chorusEvents(k), base = c * this.cycleBeats - this.a;

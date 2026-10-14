@@ -423,7 +423,7 @@
     if (d === 6 && (chord.cls === 'dom' || chord.cls === 'maj' || chord.cls === 'sus')) r = '♭V';
     // ディミニッシュは、解決先の半音下から入る＝♯で数える（♯Io7, ♯IIo7 …）。m7(♭5)・m7 も 1 と 6 は♯（♯IVm7♭5）
     if (chord.cls === 'dim' && SHARP_ROMAN[d]) r = SHARP_ROMAN[d];
-    else if ((chord.cls === 'hdim' || chord.cls === 'min') && (d === 1 || d === 6)) r = SHARP_ROMAN[d];
+    else if ((chord.cls === 'hdim' || chord.cls === 'min') && (d === 1 || d === 6)) r = chord.root && chord.root.a < 0 ? (d === 1 ? '♭II' : '♭V') : SHARP_ROMAN[d];   // 根音がフラットで書かれていれば ♭IIm7、そうでなければ ♯Im7・♯IVm7♭5
     let out = r + prettyAcc(chord.suffix);
     if (chord.bass && chord.bassPc !== chord.rootPc) out += '/' + ROMAN[mod(chord.bassPc - tonicPc, 12)];
     return out;

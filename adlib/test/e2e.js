@@ -167,6 +167,22 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await page.evaluate(() => AL.App.stop());
   await page.click('.range-info button:has-text("解除")');
 
+  // 途中の小節から始める：カウントイン → 11小節目から → 最後まで → 頭にもどって2コーラス目
+  await page.evaluate(() => { const A = AL.App; A.setRange(null); A.st.countIn = 1; A.st.loops = 3; A.setTempo(320); A.playFromBar(10); });
+  await page.waitForTimeout(250);
+  const ci = await page.evaluate(() => AL.App.player.position());
+  ok(ci && ci.countIn === true && ci.ci >= 0 && ci.ci <= 3, '途中から：まずカウントイン ' + JSON.stringify(ci));
+  let seen = null;
+  for (let i = 0; i < 60 && !(seen && seen.chorus === 1); i++) { await page.waitForTimeout(100); seen = await page.evaluate(() => AL.App.player.position()); }
+  ok(seen && seen.chorus === 1 && seen.bar <= 3, '途中から：最後まで演奏して頭にもどる ' + JSON.stringify(seen));
+  await page.evaluate(() => { AL.App.stop(); AL.App.setTempo(140); });
+  // 選んだ範囲の外から始めると、範囲は使わず全体を演奏する
+  await page.evaluate(() => { const A = AL.App; A.setRange({ a: 0, b: 1 }); A.st.countIn = 0; A.playFromBar(8); });
+  await page.waitForTimeout(300);
+  const outR = await page.evaluate(() => { const p = AL.App.player.position(); return { bar: p && p.bar, rangeMode: AL.App.player.rangeMode }; });
+  ok(outR.rangeMode === false && outR.bar >= 8, '範囲の外から：全体を演奏 ' + JSON.stringify(outR));
+  await page.evaluate(() => { AL.App.stop(); AL.App.setRange(null); AL.App.st.countIn = 1; });
+
   /* 8) 書き出し */
   await page.click('#tabs button[data-tab="sound"]');
   await page.waitForTimeout(200);
@@ -197,6 +213,21 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     const s = await page.evaluate(() => ({ svg: !!document.querySelector('#scoreWrap svg.ntn'), notes: document.querySelectorAll('#scoreWrap .note').length, marks: document.querySelectorAll('#scoreWrap .mark').length }));
     ok(r.bars > 0 && r.cc >= r.bars && r.errs === 0 && s.svg && s.notes > 5 && s.marks > 0, `サンプル ${id}：${JSON.stringify(r)} ${JSON.stringify(s)}`);
   }
+
+  /* 10) 共有リンク：別のブラウザ（保存なし）で開くと、同じコード譜・曲名・スタイルが出る */
+  await page.evaluate(() => AL.App.loadPreset('bossa'));
+  const shareUrl = await page.evaluate(() => AL.App.shareUrl());
+  const ctx2 = await browser.newContext({ viewport: { width: 900, height: 800 } });
+  const page2 = await ctx2.newPage();
+  const errors2 = [];
+  page2.on('pageerror', e => errors2.push(e.message));
+  await page2.goto(shareUrl);
+  await page2.waitForTimeout(500);
+  const sh = await page2.evaluate(() => ({ text: AL.App.st.text, style: AL.App.st.style, title: AL.App.st.title, bars: document.querySelectorAll('#chartGrid .bar').length }));
+  const want = await page.evaluate(() => ({ text: AL.App.st.text, style: AL.App.st.style, title: AL.App.st.title }));
+  ok(sh.text === want.text && sh.style === 'bossa' && sh.title === want.title && sh.bars === 8, '共有リンクで同じ譜面が開く：' + JSON.stringify(sh).slice(0, 120));
+  ok(errors2.length === 0, '共有リンクのページのエラー：' + errors2.join(' | '));
+  await ctx2.close();
 
   ok(errors.length === 0, 'ブラウザのエラー：' + errors.join(' | '));
   await browser.close();

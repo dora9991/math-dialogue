@@ -249,6 +249,12 @@
   function chipEl(c) {
     return h('span', { class: 'chip tone-' + (c.tone || 'x') + ' k-' + c.kind, title: c.sub || null }, c.label);
   }
+  // パターンの調が、全体のキーとちがうときだけ「(B♭)」のように添える
+  function localKeyTag(m) {
+    const key = App.an.key;
+    if (m.tonicPc === key.tonicPc && m.mode === key.mode) return '';
+    return ' (' + T.spellStr(m.tonicSpell, true) + (m.mode === 'minor' ? 'm' : '') + ')';
+  }
   function renderGrid() {
     const chart = App.chart, an = App.an, grid = U.clear(el.grid);
     grid.style.setProperty('--cols', st().perRow);
@@ -275,9 +281,10 @@
         const cc = h('div', { tabindex: '0', role: 'button', 'aria-label': (c.src || '') + ' の役割を見る', class: 'cc' + (c.chord && c.chord.bad ? ' bad' : '') + (bar.copy ? ' cp' : '') + (ph && ph.color >= 0 ? ' ph c' + ph.color + (ph.first && firstOfHs ? ' first' : '') + (ph.last && lastOfHs ? ' last' : '') : ''), style: { flexGrow: c.dur }, data: { bar: bi, k: k, hs: hsIdx == null ? '' : hsIdx }, title: c.chord && c.chord.bad ? '読めないコード：' + c.src : null });
         cc.appendChild(bar.copy ? h('span', { class: 'cs pct', title: '前の小節と同じ' }, '%') : U.chordHtml(c.chord, c.src));
         const chipsBox = h('div', { class: 'chips' });
+        // かたまりの名前（先頭のコードに）。ほかのキーに移っているときは、そのキーも
+        if (ph && ph.color >= 0 && ph.first && firstOfHs && ph.match && !bar.copy) chipsBox.appendChild(h('span', { class: 'chip phase', title: ph.match.pattern.jp, style: { '--phc': 'var(--c' + ph.color + ')' } }, App.patLabel(ph.match.id) + localKeyTag(ph.match)));
         if (info && firstOfHs && !bar.copy) (info.chips || []).forEach(ch => chipsBox.appendChild(chipEl(ch)));
         cc.appendChild(chipsBox);
-        if (ph && ph.color >= 0 && ph.first && firstOfHs && ph.match) cc.appendChild(h('span', { class: 'ph-l' }, App.patLabel(ph.match.id)));
         chords.appendChild(cc);
       });
       cell.appendChild(chords);
@@ -369,6 +376,14 @@
   function noteNames(chord, scaleId) {
     return T.scaleNotes(chord.root, scaleId).map(sp => T.spellStr(sp, true)).join(' ');
   }
+  // 見出しのローマ数字：全体のキーに入らないコードが、パターンの一員のときは、そのパターンの調で数える
+  function headRoman(i, info, chord) {
+    const ph = App.phraseOf[i];
+    if (ph && ph.match && !info.diatonic && !(ph.match.tonicPc === App.an.key.tonicPc && ph.match.mode === App.an.key.mode)) {
+      return T.romanLabel(chord, ph.match.tonicPc) + '（' + T.spellStr(ph.match.tonicSpell, true) + (ph.match.mode === 'minor' ? 'm' : '') + ' の中で）';
+    }
+    return info.roman;
+  }
   function renderDetail() {
     const box = U.clear(el.detail), i = App.sel.hs, info = i != null ? App.an.chords[i] : null;
     if (!info) {
@@ -381,10 +396,10 @@
     box.appendChild(h('div', { class: 'detail-h' },
       h('div', { class: 'big-cs' }, U.chordHtml(chord, hs.src)),
       h('div', null,
-        h('div', { class: 'dh-line' }, h('b', null, info.roman), h('span', { class: 'muted' }, '　' + (T.CLASS_JP ? T.CLASS_JP[chord.cls] || '' : ''))),
+        h('div', { class: 'dh-line' }, h('b', null, headRoman(i, info, chord)), h('span', { class: 'muted' }, '　' + (T.CLASS_JP ? T.CLASS_JP[chord.cls] || '' : ''))),
         h('div', { class: 'muted small' }, barNo + '小節目・' + (hs.dur % 1 === 0 ? hs.dur : hs.dur.toFixed(1)) + '拍')),
       h('div', { class: 'grow' }),
-      h('button', { type: 'button', class: 'btn', onclick: () => { const b = hs.bar; App.play({ fromBar: b, toBar: App.chart.order.length }); } }, '▶ ここから再生')));
+      h('button', { type: 'button', class: 'btn', onclick: () => App.play({ startBar: hs.bar }) }, '▶ ここから再生')));
     if (chord.nc || chord.bad) { box.appendChild(h('p', { class: 'muted' }, chord.bad ? 'このコードは読みとれませんでした。' : 'ノーコード（休み）です。')); return; }
 
     // 役割

@@ -223,5 +223,9 @@ eq(T.keySigAccs(0), [0, 0, 0, 0, 0, 0, 0]);
   eq(r('C/E', 0), 'I/III');
   eq(r('Ab', 3), 'IV');          // E♭ の調の A♭ は IV
   eq(r('Abmaj7', 3), 'IVmaj7');
+  eq(r('Ebm7', 2), '♭IIm7');      // D のドリアンから E♭m7
+  eq(r('Dbm7', 0), '♭IIm7');
+  eq(r('C#m7', 0), '♯Im7');
+  eq(r('Gbm7b5', 0), '♭Vm7♭5');
 }
 console.log(`theory: OK（${n}件）`);

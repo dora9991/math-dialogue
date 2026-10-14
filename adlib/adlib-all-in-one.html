@@ -332,7 +332,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
 .cc.ph.last::after { border-radius: 0 4px 4px 0; right: 4px; }
 .cc.ph.first.last::after { border-radius: 4px; }
 .cc.c0 { --phc: var(--c0); } .cc.c1 { --phc: var(--c1); } .cc.c2 { --phc: var(--c2); } .cc.c3 { --phc: var(--c3); }
-.cc .ph-l { position: absolute; left: 6px; bottom: 7px; font-size: .62rem; font-weight: 700; color: var(--phc); background: var(--surface); padding: 0 4px; border-radius: 4px; line-height: 1.3; transform: translateY(0); opacity: 0; pointer-events: none; }
+.cc .chip.phase { background: transparent; border: 1.5px solid var(--phc); color: var(--ink); font-weight: 700; }
 .cc.sel { background: var(--sel); outline: 2px solid var(--accent); outline-offset: -2px; }
 .bar.inrange { background: var(--range); }
 .bar.playing { background: var(--play); }
@@ -951,7 +951,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     if (d === 6 && (chord.cls === 'dom' || chord.cls === 'maj' || chord.cls === 'sus')) r = '♭V';
     // ディミニッシュは、解決先の半音下から入る＝♯で数える（♯Io7, ♯IIo7 …）。m7(♭5)・m7 も 1 と 6 は♯（♯IVm7♭5）
     if (chord.cls === 'dim' && SHARP_ROMAN[d]) r = SHARP_ROMAN[d];
-    else if ((chord.cls === 'hdim' || chord.cls === 'min') && (d === 1 || d === 6)) r = SHARP_ROMAN[d];
+    else if ((chord.cls === 'hdim' || chord.cls === 'min') && (d === 1 || d === 6)) r = chord.root && chord.root.a < 0 ? (d === 1 ? '♭II' : '♭V') : SHARP_ROMAN[d];   // 根音がフラットで書かれていれば ♭IIm7、そうでなければ ♯Im7・♯IVm7♭5
     let out = r + prettyAcc(chord.suffix);
     if (chord.bass && chord.bassPc !== chord.rootPc) out += '/' + ROMAN[mod(chord.bassPc - tonicPc, 12)];
     return out;
@@ -4252,7 +4252,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     on(name, fn) { this.listeners[name] = fn; return this; }
     emit(name, a) { if (this.listeners[name]) this.listeners[name](a); }
 
-    // opts：{ fromBar, toBar（範囲くり返し）, loops（Infinity も可）, countIn（小節）, solo: true/false }
+    // opts：{ fromBar, toBar（範囲くり返し）, startBar（途中の小節から始める。そのあとは頭にもどって、全体か範囲をくり返す）, loops（Infinity も可）, countIn（小節）, solo: true/false }
     start(plan, opts) {
       opts = opts || {};
       this.stop(true);
@@ -4266,13 +4266,16 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       this.cycle0 = this.rangeMode ? 0 : 0;
       this.loops = opts.loops == null ? Infinity : opts.loops;
       this.countIn = (opts.countIn || 0) * plan.bpb;
+      // 途中から始めるときの、最初の音の位置（タイムライン u：範囲の頭が 0）
+      this.skipBefore = 0;
+      if (opts.startBar != null) { const x = opts.startBar * plan.bpb; if (x >= this.a - 1e-9 && x < this.b - 1e-9) this.skipBefore = x - this.a; }
       this.soloOn = opts.solo !== false;
       this.soloCache = {};
       this.cache = {};
       E.startSession();
       const r = plan.swing(), bpm = plan.tempo();
       this.spb = 60 / bpm;
-      this.startU = -this.countIn;
+      this.startU = this.skipBefore - this.countIn;
       this.anchor = { time: ctx.currentTime + 0.15, sbeat: swingMap(this.startU, r) };
       this.nextU = this.startU;
       this.endU = this.loops === Infinity ? Infinity : this.loops * this.cycleBeats;
@@ -4302,7 +4305,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       const r = this.plan.swing();
       const sb = this.anchor.sbeat + (this.ctx.currentTime - this.anchor.time) / this.spb;
       const u = unswing(sb, r);
-      if (u < 0) return { u, countIn: true, beat: 0, bar: 0, cycle: 0, chorus: 0 };
+      if (u < (this.skipBefore || 0) - 1e-9) return { u, countIn: true, ci: Math.max(0, Math.floor(u - this.startU + 1e-9)), beat: 0, bar: 0, cycle: 0, chorus: 0 };
       const cycle = Math.floor(u / this.cycleBeats), x = this.a + (u - cycle * this.cycleBeats);
       return { u, cycle, chorus: this.rangeMode ? 0 : this.cycle0 + cycle, beat: x, bar: Math.floor(x / this.bpb + 1e-9), beatInBar: x - Math.floor(x / this.bpb + 1e-9) * this.bpb, countIn: false };
     }
@@ -4335,12 +4338,13 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     schedule(u0, u1, r) {
       const E = this.E, plan = this.plan;
       // count-in とメトロノーム
+      const skip = this.skipBefore || 0;
       for (let u = Math.ceil(u0 - 1e-9); u < u1 - 1e-9; u++) {
-        if (u < 0) E.click(this.timeOf(u, r), u % this.bpb === 0 || (u + this.countIn) % this.bpb === 0);
-        else if (plan.metronome) E.click(this.timeOf(u, r), u % this.bpb === 0);
+        if (u < skip) E.click(this.timeOf(u, r), (u - (skip - this.countIn)) % this.bpb === 0);
+        else if (plan.metronome) E.click(this.timeOf(u, r), (u + this.a) % this.bpb === 0);
       }
-      if (u1 <= 0) return;
-      const lo = Math.max(0, u0), cStart = Math.floor(lo / this.cycleBeats), cEnd = Math.floor((u1 - 1e-9) / this.cycleBeats);
+      if (u1 <= skip) return;
+      const lo = Math.max(skip, u0), cStart = Math.floor(lo / this.cycleBeats), cEnd = Math.floor((u1 - 1e-9) / this.cycleBeats);
       for (let c = cStart; c <= cEnd; c++) {
         const k = this.rangeMode ? 0 : c;
         const ch = this.chorusEvents(k), base = c * this.cycleBeats - this.a;
@@ -5759,20 +5763,23 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     if (!App.hasChords) { U.toast('先に、コード譜にコードを入力してください'); return; }
     try { App.ensureAudio(); } catch (e) { U.toast(e.message); return; }
     const plan = App.makePlan();
-    const rb = opts.fromBar != null ? { fromBar: opts.fromBar, toBar: opts.toBar } : App.rangeBars();
+    let rb = opts.fromBar != null ? { fromBar: opts.fromBar, toBar: opts.toBar } : App.rangeBars();
+    // 選んでいる範囲の外から始めるときは、範囲はやめて全体を演奏する
+    if (opts.startBar != null && rb && (opts.startBar < rb.fromBar || opts.startBar >= rb.toBar)) rb = null;
     const o = { loops: st.loops === 0 ? Infinity : st.loops, countIn: opts.countIn != null ? opts.countIn : st.countIn, solo: st.soloMode !== 'off' };
     if (opts.loops != null) o.loops = opts.loops;
     if (rb) Object.assign(o, rb);
+    if (opts.startBar != null) o.startBar = opts.startBar;
     App.lastPlay = { range: rb };
     App.player.start(plan, o);
     setPlayKind('main');
     startFrames();
   };
   App.playFromBar = function (srcBar) {
-    // 書いてある小節 → 演奏順の最初に現れる位置から、最後まで
+    // 書いてある小節 → 演奏順の最初に現れる位置から始めて、最後まで演奏し、そのあとは頭にもどってくり返す
     const p = App.chart.order.indexOf(srcBar);
     if (p < 0) return;
-    App.play({ fromBar: p, toBar: App.chart.order.length });
+    App.play({ startBar: p });
   };
   App.stop = function () {
     if (App.player && App.playKind) { App.player.stop(); }
@@ -5901,7 +5908,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   App.on('tempo', () => { if (App.ui.tempoNum && document.activeElement !== App.ui.tempoNum) App.ui.tempoNum.value = st.tempo; if (App.ui.tempoRange) App.ui.tempoRange.value = st.tempo; });
   App.on('pos', pos => {
     if (App.playKind !== 'main' || !pos) return;
-    if (pos.countIn) { const n = Math.floor(pos.u + st.countIn * App.bpb + 1e-9) + 1; setPosText('カウントイン', String(U.clamp(n, 1, 99))); return; }
+    if (pos.countIn) { setPosText('カウントイン', String(U.clamp((pos.ci || 0) + 1, 1, 99))); return; }
     const total = st.loops === 0 ? '∞' : st.loops;
     setPosText('コーラス ' + (pos.chorus + 1) + ' / ' + total, '小節 ' + (pos.bar + 1) + '・' + (Math.floor(pos.beatInBar + 1e-9) + 1) + '拍');
   });
@@ -6191,6 +6198,12 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   function chipEl(c) {
     return h('span', { class: 'chip tone-' + (c.tone || 'x') + ' k-' + c.kind, title: c.sub || null }, c.label);
   }
+  // パターンの調が、全体のキーとちがうときだけ「(B♭)」のように添える
+  function localKeyTag(m) {
+    const key = App.an.key;
+    if (m.tonicPc === key.tonicPc && m.mode === key.mode) return '';
+    return ' (' + T.spellStr(m.tonicSpell, true) + (m.mode === 'minor' ? 'm' : '') + ')';
+  }
   function renderGrid() {
     const chart = App.chart, an = App.an, grid = U.clear(el.grid);
     grid.style.setProperty('--cols', st().perRow);
@@ -6217,9 +6230,10 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
         const cc = h('div', { tabindex: '0', role: 'button', 'aria-label': (c.src || '') + ' の役割を見る', class: 'cc' + (c.chord && c.chord.bad ? ' bad' : '') + (bar.copy ? ' cp' : '') + (ph && ph.color >= 0 ? ' ph c' + ph.color + (ph.first && firstOfHs ? ' first' : '') + (ph.last && lastOfHs ? ' last' : '') : ''), style: { flexGrow: c.dur }, data: { bar: bi, k: k, hs: hsIdx == null ? '' : hsIdx }, title: c.chord && c.chord.bad ? '読めないコード：' + c.src : null });
         cc.appendChild(bar.copy ? h('span', { class: 'cs pct', title: '前の小節と同じ' }, '%') : U.chordHtml(c.chord, c.src));
         const chipsBox = h('div', { class: 'chips' });
+        // かたまりの名前（先頭のコードに）。ほかのキーに移っているときは、そのキーも
+        if (ph && ph.color >= 0 && ph.first && firstOfHs && ph.match && !bar.copy) chipsBox.appendChild(h('span', { class: 'chip phase', title: ph.match.pattern.jp, style: { '--phc': 'var(--c' + ph.color + ')' } }, App.patLabel(ph.match.id) + localKeyTag(ph.match)));
         if (info && firstOfHs && !bar.copy) (info.chips || []).forEach(ch => chipsBox.appendChild(chipEl(ch)));
         cc.appendChild(chipsBox);
-        if (ph && ph.color >= 0 && ph.first && firstOfHs && ph.match) cc.appendChild(h('span', { class: 'ph-l' }, App.patLabel(ph.match.id)));
         chords.appendChild(cc);
       });
       cell.appendChild(chords);
@@ -6311,6 +6325,14 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   function noteNames(chord, scaleId) {
     return T.scaleNotes(chord.root, scaleId).map(sp => T.spellStr(sp, true)).join(' ');
   }
+  // 見出しのローマ数字：全体のキーに入らないコードが、パターンの一員のときは、そのパターンの調で数える
+  function headRoman(i, info, chord) {
+    const ph = App.phraseOf[i];
+    if (ph && ph.match && !info.diatonic && !(ph.match.tonicPc === App.an.key.tonicPc && ph.match.mode === App.an.key.mode)) {
+      return T.romanLabel(chord, ph.match.tonicPc) + '（' + T.spellStr(ph.match.tonicSpell, true) + (ph.match.mode === 'minor' ? 'm' : '') + ' の中で）';
+    }
+    return info.roman;
+  }
   function renderDetail() {
     const box = U.clear(el.detail), i = App.sel.hs, info = i != null ? App.an.chords[i] : null;
     if (!info) {
@@ -6323,10 +6345,10 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     box.appendChild(h('div', { class: 'detail-h' },
       h('div', { class: 'big-cs' }, U.chordHtml(chord, hs.src)),
       h('div', null,
-        h('div', { class: 'dh-line' }, h('b', null, info.roman), h('span', { class: 'muted' }, '　' + (T.CLASS_JP ? T.CLASS_JP[chord.cls] || '' : ''))),
+        h('div', { class: 'dh-line' }, h('b', null, headRoman(i, info, chord)), h('span', { class: 'muted' }, '　' + (T.CLASS_JP ? T.CLASS_JP[chord.cls] || '' : ''))),
         h('div', { class: 'muted small' }, barNo + '小節目・' + (hs.dur % 1 === 0 ? hs.dur : hs.dur.toFixed(1)) + '拍')),
       h('div', { class: 'grow' }),
-      h('button', { type: 'button', class: 'btn', onclick: () => { const b = hs.bar; App.play({ fromBar: b, toBar: App.chart.order.length }); } }, '▶ ここから再生')));
+      h('button', { type: 'button', class: 'btn', onclick: () => App.play({ startBar: hs.bar }) }, '▶ ここから再生')));
     if (chord.nc || chord.bad) { box.appendChild(h('p', { class: 'muted' }, chord.bad ? 'このコードは読みとれませんでした。' : 'ノーコード（休み）です。')); return; }
 
     // 役割

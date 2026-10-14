@@ -289,20 +289,23 @@
     if (!App.hasChords) { U.toast('先に、コード譜にコードを入力してください'); return; }
     try { App.ensureAudio(); } catch (e) { U.toast(e.message); return; }
     const plan = App.makePlan();
-    const rb = opts.fromBar != null ? { fromBar: opts.fromBar, toBar: opts.toBar } : App.rangeBars();
+    let rb = opts.fromBar != null ? { fromBar: opts.fromBar, toBar: opts.toBar } : App.rangeBars();
+    // 選んでいる範囲の外から始めるときは、範囲はやめて全体を演奏する
+    if (opts.startBar != null && rb && (opts.startBar < rb.fromBar || opts.startBar >= rb.toBar)) rb = null;
     const o = { loops: st.loops === 0 ? Infinity : st.loops, countIn: opts.countIn != null ? opts.countIn : st.countIn, solo: st.soloMode !== 'off' };
     if (opts.loops != null) o.loops = opts.loops;
     if (rb) Object.assign(o, rb);
+    if (opts.startBar != null) o.startBar = opts.startBar;
     App.lastPlay = { range: rb };
     App.player.start(plan, o);
     setPlayKind('main');
     startFrames();
   };
   App.playFromBar = function (srcBar) {
-    // 書いてある小節 → 演奏順の最初に現れる位置から、最後まで
+    // 書いてある小節 → 演奏順の最初に現れる位置から始めて、最後まで演奏し、そのあとは頭にもどってくり返す
     const p = App.chart.order.indexOf(srcBar);
     if (p < 0) return;
-    App.play({ fromBar: p, toBar: App.chart.order.length });
+    App.play({ startBar: p });
   };
   App.stop = function () {
     if (App.player && App.playKind) { App.player.stop(); }
@@ -431,7 +434,7 @@
   App.on('tempo', () => { if (App.ui.tempoNum && document.activeElement !== App.ui.tempoNum) App.ui.tempoNum.value = st.tempo; if (App.ui.tempoRange) App.ui.tempoRange.value = st.tempo; });
   App.on('pos', pos => {
     if (App.playKind !== 'main' || !pos) return;
-    if (pos.countIn) { const n = Math.floor(pos.u + st.countIn * App.bpb + 1e-9) + 1; setPosText('カウントイン', String(U.clamp(n, 1, 99))); return; }
+    if (pos.countIn) { setPosText('カウントイン', String(U.clamp((pos.ci || 0) + 1, 1, 99))); return; }
     const total = st.loops === 0 ? '∞' : st.loops;
     setPosText('コーラス ' + (pos.chorus + 1) + ' / ' + total, '小節 ' + (pos.bar + 1) + '・' + (Math.floor(pos.beatInBar + 1e-9) + 1) + '拍');
   });
