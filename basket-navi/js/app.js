@@ -1,0 +1,892 @@
+/* バスケ指導ナビ：画面とふるまい。ビルド不要（ダブルクリックで開ける）。
+   流れ：動画を見る →「ここに印をつける」で見どころを貯める → 練習メニューとして今日の練習に並べる → 体育館で実施モード。
+   ① 道具 ② データ ③ ライブラリ ④ 動画ページ ⑤ 練習メニュー ⑥ 今日の練習 ⑦ 実施モード ⑧ 設定 ⑨ ルーター */
+(function () {
+  'use strict';
+  const S = window.BN.store, D = () => S.d;
+
+  /* ===== ① 道具 ===== */
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const pad = n => String(n).padStart(2, '0');
+  const fmt = t => { t = Math.max(0, Math.floor(+t || 0)); const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60; return (h ? h + ':' + pad(m) : m) + ':' + pad(s); };
+  const parseT = s => {
+    s = String(s == null ? '' : s).normalize('NFKC').trim();
+    if (!s) return NaN;
+    if (/^\d+(\.\d+)?$/.test(s)) return +s;
+    const p = s.split(':');
+    if (p.length > 3 || p.some(x => !/^\d+$/.test(x))) return NaN;
+    return p.reduce((a, x) => a * 60 + (+x), 0);
+  };
+  const norm = s => String(s == null ? '' : s).normalize('NFKC').toLowerCase();
+  const safeDecode = s => { try { return decodeURI(s); } catch (e) { return s; } };
+  const safeUrl = u => { u = String(u || '').trim(); return /^https?:\/\//i.test(u) ? u : ''; };
+  const today = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+  const dateJa = s => {
+    const m = /^(\d+)-(\d+)-(\d+)$/.exec(s || '');
+    if (!m) return s || '';
+    return `${m[1]}年${+m[2]}月${+m[3]}日（${'日月火水木金土'[new Date(+m[1], m[2] - 1, +m[3]).getDay()]}）`;
+  };
+  const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  const hm = m => { m = ((Math.round(m) % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + ':' + pad(m % 60); };
+  const toMin = s => { const m = /^(\d{1,2}):(\d{2})$/.exec(s || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; };
+  const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
+  let toastTimer = 0, toastAt = 0;
+  function toast(msg, href, label) {
+    const t = $('#toast'); if (!t) return;
+    toastAt = Date.now();
+    t.innerHTML = esc(msg) + (href ? ` <a href="${esc(href)}">${esc(label || '見る')}</a>` : '');
+    t.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('on'), 4200);
+  }
+  function openDlg(html) { const d = $('#dlg'); d.innerHTML = html; if (!d.open) d.showModal(); }
+  function download(name, text) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  const readFile = f => new Promise((ok, ng) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => ng(new Error('ファイルを読めませんでした')); r.readAsText(f); });
+  function legacyCopy(t) {
+    return new Promise((ok, ng) => {
+      const a = document.createElement('textarea'); a.value = t; a.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(a); a.select();
+      let r = false; try { r = document.execCommand('copy'); } catch (e) { /* 何もしない */ }
+      a.remove(); r ? ok() : ng(new Error('copy'));
+    });
+  }
+  const copyText = t => (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(t).catch(() => legacyCopy(t)) : legacyCopy(t);
+  function prose(text) {
+    const out = []; let para = [], list = [];
+    const fp = () => { if (para.length) out.push('<p>' + para.map(esc).join('<br>') + '</p>'); para = []; };
+    const fl = () => { if (list.length) out.push('<ul>' + list.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>'); list = []; };
+    String(text).split('\n').forEach(line => {
+      const m = /^\s*[・•*-]\s*(.*)$/.exec(line);
+      if (m) { fp(); list.push(m[1]); }
+      else if (!line.trim()) { fp(); fl(); }
+      else { fl(); para.push(line); }
+    });
+    fp(); fl();
+    return out.join('');
+  }
+
+  /* ===== ② データ（library.js → 取り込み → サンプル の順に使う） ===== */
+  const CATS = [{ id: 'coaching', name: '指導法' }, { id: 'tactics', name: '戦術' }, { id: 'training', name: 'トレーニング' }];
+  const TYPES = { point: 'ポイント', drill: '練習', play: 'プレー' };
+  let LIB = { categories: CATS, videos: [], config: {} }, SRC = 'sample', VID = {};
+
+  const secs = x => (typeof x === 'string' ? parseT(x) : parseFloat(x)) || 0;   // 90 でも '1:30' でも秒にする
+  function clipNorm(c, v, mine, used) {
+    const at = Math.max(0, secs(c.at));
+    let id = String(c.id || (v.id + '@' + at));
+    if (used) { while (used.has(id)) id += '+'; used.add(id); }
+    return { id, vid: v.id, at, end: secs(c.end), title: String(c.title || '（無題）'), type: TYPES[c.type] ? c.type : 'point', minutes: Math.max(0, parseFloat(c.minutes) || 0), note: String(c.note || ''), mine: !!mine };
+  }
+  function normalize(raw) {
+    const cats = (Array.isArray(raw.categories) && raw.categories.length ? raw.categories : CATS).map(c => ({ id: String(c.id), name: String(c.name || c.id) }));
+    const known = new Set(cats.map(c => c.id)), ids = new Set();
+    const videos = (Array.isArray(raw.videos) ? raw.videos : []).map((r, i) => {
+      let id = String(r.id || 'v' + String(i + 1).padStart(3, '0'));
+      while (ids.has(id)) id += '_';
+      ids.add(id);
+      const tags = Array.isArray(r.tags) ? r.tags : String(r.tags || '').split(/[,、，]/);
+      const v = {
+        id, title: String(r.title || r.file || '（無題）'), category: known.has(String(r.category)) ? String(r.category) : 'other',
+        file: String(r.file || '').replace(/\\/g, '/'), url: safeUrl(r.url), duration: secs(r.duration),
+        tags: tags.map(s => String(s).trim()).filter(Boolean), summary: String(r.summary || ''), source: String(r.source || ''), clips: []
+      };
+      const used = new Set();
+      v.clips = (Array.isArray(r.clips) ? r.clips : []).map(c => clipNorm(c, v, false, used)).sort((a, b) => a.at - b.at);
+      return v;
+    });
+    if (videos.some(v => v.category === 'other') && !known.has('other')) cats.push({ id: 'other', name: '未分類' });
+    return { title: String(raw.title || ''), config: raw.config || {}, categories: cats, videos };
+  }
+  function boot() {
+    const f = window.BASKET_LIBRARY, imp = S.libGet();
+    let raw, src = 'sample';
+    if (f && Array.isArray(f.videos)) { raw = f; src = 'library'; }
+    else if (imp && Array.isArray(imp.videos)) { raw = imp; src = 'imported'; }
+    else raw = window.BASKET_SAMPLE || { videos: [] };
+    LIB = normalize(raw); SRC = src; VID = {};
+    LIB.videos.forEach(v => { VID[v.id] = v; });
+  }
+  function clipsOf(v) {
+    const mine = (D().marks[v.id] || []).map(m => clipNorm(m, v, true));
+    return v.clips.concat(mine).sort((a, b) => a.at - b.at);
+  }
+  const findClip = (vid, cid) => { const v = VID[vid]; return v ? (clipsOf(v).find(c => c.id === cid) || null) : null; };
+  const catName = id => { const c = LIB.categories.find(x => x.id === id); return c ? c.name : '未分類'; };
+  const catBadge = id => `<span class="cat c-${esc(id)}">${esc(catName(id))}</span>`;
+
+  function baseUrl() {
+    let b = String(D().base || (LIB.config && LIB.config.videoBase) || './').trim().replace(/\\/g, '/');
+    if (/^[A-Za-z]:\//.test(b)) b = 'file:///' + b;
+    else if (b.charAt(0) === '/' && location.protocol === 'file:') b = 'file://' + b;
+    return b.endsWith('/') ? b : b + '/';
+  }
+  function videoSrc(v) {
+    if (!v.file) return '';
+    if (/^(https?|file|blob):/i.test(v.file)) return v.file;
+    return baseUrl() + v.file.split('/').filter(x => x !== '').map(encodeURIComponent).join('/');
+  }
+
+  /* ===== ③ ライブラリ ===== */
+  const UI = { cat: 'all', q: '', tag: '', fav: false, unseen: false, dtype: 'drill', dcat: 'all', dq: '', rate: 1 };
+  const A = {};          // data-act の処理
+  let teardown = null;   // 画面を離れるときの後始末
+
+  function matchVideo(v) {
+    const st = D();
+    if (UI.cat !== 'all' && v.category !== UI.cat) return false;
+    if (UI.tag && v.tags.indexOf(UI.tag) < 0) return false;
+    if (UI.fav && !st.fav[v.id]) return false;
+    if (UI.unseen && st.seen[v.id]) return false;
+    const terms = norm(UI.q).split(/[\s　]+/).filter(Boolean);
+    if (terms.length) {
+      const hay = norm([v.title, v.summary, v.source, v.tags.join(' '), clipsOf(v).map(c => c.title + ' ' + c.note).join(' '), st.notes[v.id] || ''].join(' '));
+      if (!terms.every(t => hay.indexOf(t) >= 0)) return false;
+    }
+    return true;
+  }
+  function topTags(n) {
+    const cnt = {};
+    LIB.videos.forEach(v => v.tags.forEach(t => { cnt[t] = (cnt[t] || 0) + 1; }));
+    const list = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a] || a.localeCompare(b, 'ja')).slice(0, n);
+    if (UI.tag && list.indexOf(UI.tag) < 0) list.push(UI.tag);
+    return list;
+  }
+  const chipsHtml = () =>
+    `<button data-act="flag" data-v="fav" class="${UI.fav ? 'on' : ''}">★ お気に入り</button>` +
+    `<button data-act="flag" data-v="unseen" class="${UI.unseen ? 'on' : ''}">未視聴だけ</button>` +
+    topTags(16).map(t => `<button data-act="tag" data-v="${esc(t)}" class="${UI.tag === t ? 'on' : ''}">${esc(t)}</button>`).join('');
+
+  function vcard(v) {
+    const st = D(), n = clipsOf(v).length;
+    return `<a class="card" href="#/v/${encodeURIComponent(v.id)}">
+      <div class="top1">${catBadge(v.category)}${st.fav[v.id] ? '<span class="mark-fav" aria-label="お気に入り">★</span>' : ''}${st.seen[v.id] ? '<span class="mark-seen">✓ 視聴済み</span>' : ''}</div>
+      <h3>${esc(v.title)}</h3>
+      ${v.summary ? `<p class="sum">${esc(v.summary.replace(/\n+/g, ' '))}</p>` : ''}
+      <div class="meta">${v.duration ? `<span>${fmt(v.duration)}</span>` : ''}${n ? `<span>見どころ ${n}</span>` : ''}${v.tags.slice(0, 3).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
+    </a>`;
+  }
+  function trail() {
+    const st = D(), total = LIB.videos.length;
+    const seen = LIB.videos.filter(v => st.seen[v.id]).length;
+    const marks = LIB.videos.reduce((a, v) => a + (st.marks[v.id] || []).length, 0);
+    const prac = Object.keys(st.done).reduce((a, k) => a + (st.done[k].n || 0), 0);
+    if (!seen && !marks && !prac) return '';
+    return `<p class="trail">ここまでの足あと：視聴 <b>${seen}</b>／${total}本 ・ 自分の印 <b>${marks}</b>個 ・ 実践 <b>${prac}</b>回</p>`;
+  }
+  function pageLibrary() {
+    const vs = LIB.videos;
+    const seg = (id, label, n) => `<button data-act="cat" data-v="${esc(id)}" class="${UI.cat === id ? 'on' : ''}">${esc(label)}<i>${n}</i></button>`;
+    $('#main').innerHTML = `
+      ${SRC === 'sample' ? '<div class="banner"><b>いまは「サンプル」を表示しています。</b> 自分の動画を入れると置きかわります。やり方は <a href="#/settings">設定</a> の一番上。</div>' : ''}
+      ${trail()}
+      <div class="seg" role="group" aria-label="分類">${seg('all', 'すべて', vs.length)}${LIB.categories.map(c => seg(c.id, c.name, vs.filter(v => v.category === c.id).length)).join('')}</div>
+      <input id="q" class="search" type="search" placeholder="タイトル・タグ・メモで探す" value="${esc(UI.q)}" autocomplete="off" aria-label="探す">
+      <div class="chips" id="chips">${chipsHtml()}</div>
+      <div id="vlist"></div>`;
+    renderVList();
+  }
+  function renderVList() {
+    const box = $('#vlist'); if (!box) return;
+    const list = LIB.videos.filter(matchVideo);
+    if (!LIB.videos.length) box.innerHTML = '<p class="empty">動画がまだ入っていません。<code>library.js</code> を作ると、ここに並びます（設定の一番上を見てください）。</p>';
+    else if (!list.length) box.innerHTML = '<p class="empty">条件に合う動画がありません。<br><button class="btn sm" data-act="clearf">条件をクリア</button></p>';
+    else box.innerHTML = `<div class="grid">${list.map(vcard).join('')}</div><p class="count">${list.length}本</p>`;
+  }
+  A.cat = el => { UI.cat = el.dataset.v; pageLibrary(); };
+  A.tag = el => { UI.tag = UI.tag === el.dataset.v ? '' : el.dataset.v; $('#chips').innerHTML = chipsHtml(); renderVList(); };
+  A.flag = el => { UI[el.dataset.v] = !UI[el.dataset.v]; $('#chips').innerHTML = chipsHtml(); renderVList(); };
+  A.clearf = () => { Object.assign(UI, { cat: 'all', q: '', tag: '', fav: false, unseen: false }); pageLibrary(); };
+
+  /* ===== ④ 動画ページ ===== */
+  let CURV = null, nowIdx = -1;   // いま開いている動画／再生位置に合わせて光らせている見どころ
+
+  function playerHtml(v) {
+    const src = videoSrc(v);
+    if (!src) {
+      return `<div class="player none"><div><b>この項目には、動画ファイルがひも付いていません</b>
+        <p>${SRC === 'sample' ? 'サンプルなので動画はありません。' : '<code>library.js</code> の <code>file</code> に動画のパスを書くと、ここで再生できます。'}</p>
+        ${v.url ? `<a class="btn primary" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">リンクを開く ↗</a>` : ''}</div></div>`;
+    }
+    return `<div class="player"><video id="vp" controls playsinline preload="metadata" src="${esc(src)}"></video><div class="verr" id="verr" hidden></div></div>`;
+  }
+  function clipRow(c, v, withVideo) {
+    const dn = D().done[v.id + '|' + c.id];
+    return `<li class="clip" data-cid="${esc(c.id)}">
+      <button class="time" data-act="seek" data-vid="${esc(v.id)}" data-at="${c.at}" title="この位置から再生" aria-label="${fmt(c.at)} から再生">${fmt(c.at)}</button>
+      <div>
+        <div class="ctitle"><span class="ty ty-${c.type}">${TYPES[c.type]}</span>${esc(c.title)}${c.mine ? '<em class="mine">自分の印</em>' : ''}</div>
+        ${withVideo ? `<div class="cvid"><a href="#/v/${encodeURIComponent(v.id)}?t=${c.at}">${esc(v.title)}</a></div>` : ''}
+        ${c.note ? `<div class="cnote">${esc(c.note)}</div>` : ''}
+        <div class="cmeta">${c.minutes ? `<span>目安 ${c.minutes}分</span>` : ''}${dn ? `<span>実践 ${dn.n}回（最近 ${esc(dn.last)}）</span>` : ''}</div>
+      </div>
+      <div class="cact">
+        <button class="btn sm primary" data-act="addplan" data-vid="${esc(v.id)}" data-cid="${esc(c.id)}">＋ 今日の練習</button>
+        ${c.mine ? `<button class="btn sm ghost" data-act="markedit" data-vid="${esc(v.id)}" data-cid="${esc(c.id)}">編集</button>` : ''}
+      </div></li>`;
+  }
+  function renderClips(v) {
+    const ul = $('#clips'); if (!ul) return;
+    const cs = clipsOf(v);
+    ul.innerHTML = cs.length ? cs.map(c => clipRow(c, v, false)).join('') : '<li class="empty">まだ見どころがありません。動画を見ながら「ここに印をつける」を押すと、ここに貯まります。</li>';
+    const n = $('#ccount'); if (n) n.textContent = cs.length ? cs.length + '個' : '';
+    nowIdx = -1;
+    const vp = $('#vp'); if (vp) highlight(vp.currentTime);
+  }
+  function highlight(t) {
+    if (!CURV) return;
+    const cs = clipsOf(CURV); let idx = -1;
+    for (let i = 0; i < cs.length; i++) { if (cs[i].at <= t + 0.3) idx = i; else break; }
+    if (idx === nowIdx) return;
+    nowIdx = idx;
+    $$('#clips .clip').forEach((li, i) => li.classList.toggle('now', i === idx));
+  }
+  function savePos(v, vp) {
+    const t = vp.currentTime, d = vp.duration;
+    if (!(t > 0)) return;
+    D().pos[v.id] = (t > 10 && !(d && d - t < 10)) ? Math.floor(t) : 0;
+    S.saveSoon();
+  }
+  function pageVideo(id, q) {
+    const v = VID[id], st = D();
+    if (!v) { $('#main').innerHTML = '<p class="empty">この動画は見つかりません。<br><a href="#/">ライブラリへもどる</a></p>'; return; }
+    CURV = v;
+    const t0 = parseT(q.get('t')), pos = st.pos[v.id] || 0, src = videoSrc(v);
+    $('#main').innerHTML = `
+      <a class="back" href="#/">← ライブラリ</a>
+      <article>
+        <header class="vhead">
+          <div class="vtags">${catBadge(v.category)}${v.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
+          <h1>${esc(v.title)}</h1>
+          <div class="vbtns">
+            <button class="btn ${st.fav[v.id] ? 'on' : ''}" data-act="fav" data-id="${esc(v.id)}" aria-pressed="${!!st.fav[v.id]}">${st.fav[v.id] ? '★ お気に入り' : '☆ お気に入り'}</button>
+            <button class="btn ${st.seen[v.id] ? 'on' : ''}" data-act="seen" data-id="${esc(v.id)}" aria-pressed="${!!st.seen[v.id]}">${st.seen[v.id] ? '✓ 視聴済み' : '視聴済みにする'}</button>
+            ${v.url ? `<a class="btn" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">OneDrive などで開く ↗</a>` : ''}
+          </div>
+        </header>
+        ${playerHtml(v)}
+        <div class="pctl no-print">
+          ${src && pos > 10 && isNaN(t0) ? `<button class="btn sm" data-act="seek" data-vid="${esc(v.id)}" data-at="${pos}">▶ 続きから ${fmt(pos)}</button>` : ''}
+          <div class="grp" role="group" aria-label="再生速度">${RATES.map(r => `<button data-act="rate" data-r="${r}" class="${UI.rate === r ? 'on' : ''}">${r}×</button>`).join('')}</div>
+          <div class="grp" role="group" aria-label="移動"><button data-act="skip" data-d="-10">−10秒</button><button data-act="skip" data-d="10">＋10秒</button></div>
+          <button class="btn primary sm" data-act="mark">＋ ここに印をつける <kbd>M</kbd></button>
+        </div>
+        <form id="markForm" class="form" hidden autocomplete="off">
+          <div class="row2">
+            <label>時刻（分:秒）<input name="at" required inputmode="numeric" placeholder="例 12:30"></label>
+            <label>種類<select name="type"><option value="point">ポイント（コツ・気づき）</option><option value="drill">練習（メニューにできる）</option><option value="play">プレー（戦術・セット）</option></select></label>
+          </div>
+          <label>タイトル<input name="title" required maxlength="80" placeholder="例 スクリーンの角度"></label>
+          <div class="row2">
+            <label data-for="mins">目安の時間（分）<input name="minutes" type="number" min="1" max="120" value="10"></label>
+            <label>ひとことメモ（任意）<input name="note" maxlength="200"></label>
+          </div>
+          <div class="acts">
+            <button class="btn primary" type="submit">保存</button>
+            <button class="btn" type="button" data-act="markcancel">やめる</button>
+            <button class="btn ghost" type="button" data-act="nowtime">いまの位置を入れる</button>
+            <button class="btn danger" type="button" data-act="markdel" hidden>この印を削除</button>
+          </div>
+        </form>
+        <section class="blk"><h2>要点</h2>${v.summary ? `<div class="prose">${prose(v.summary)}</div>` : '<p class="lead">要点はまだありません。<code>library.js</code> の <code>summary</code> に書くか、下の「見どころ」に印を貯めていきます。</p>'}</section>
+        <section class="blk"><h2>見どころ・練習メニュー <small id="ccount"></small></h2><ul class="clips" id="clips"></ul></section>
+        <section class="blk"><h2>自分のメモ</h2><textarea id="vnote" class="memo" placeholder="気づいたこと、チームに持ち帰ること">${esc(st.notes[v.id] || '')}</textarea></section>
+        <p class="vfoot">${v.source ? '出典：' + esc(v.source) + '<br>' : ''}${v.file ? 'ファイル：' + esc(v.file) : ''}</p>
+      </article>`;
+    renderClips(v);
+    const vp = $('#vp');
+    if (!vp) return;
+    vp.addEventListener('error', () => {
+      const e = $('#verr'); if (!e) return;
+      const s = vp.currentSrc || vp.getAttribute('src');
+      vp.removeAttribute('controls');
+      e.hidden = false;
+      e.innerHTML = `<b>動画を開けませんでした</b>
+        <p>探した場所：<code>${esc(safeDecode(s))}</code></p>
+        <p>考えられること：<br>・ <code>basket-navi.html</code> を、動画のフォルダ（または、その上のフォルダ）に置いていない<br>・ OneDrive が「オンラインのみ」になっている（フォルダを右クリック →「この端末に常に保持」）<br>・ ブラウザで再生できない形式（.mov / .avi / .wmv など）。mp4（H.264）に変換するか、下のリンクで開く</p>
+        <p><a href="${esc(s)}" target="_blank" rel="noopener">ファイルを直接開く ↗</a>${v.url ? ` ／ <a href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">OneDrive などで開く ↗</a>` : ''}</p>`;
+    });
+    vp.addEventListener('loadedmetadata', () => {
+      vp.playbackRate = UI.rate || 1;
+      if (!isNaN(t0)) { vp.currentTime = Math.min(t0, vp.duration || t0); const pr = vp.play(); if (pr && pr.catch) pr.catch(() => {}); }
+    });
+    let lastSave = 0;
+    vp.addEventListener('timeupdate', () => {
+      highlight(vp.currentTime);
+      if (Math.abs(vp.currentTime - lastSave) >= 5) { lastSave = vp.currentTime; savePos(v, vp); }
+    });
+    vp.addEventListener('pause', () => savePos(v, vp));
+    vp.addEventListener('ended', () => { D().pos[v.id] = 0; S.saveSoon(); });
+    teardown = () => { savePos(v, vp); CURV = null; };
+  }
+  A.fav = el => {
+    const st = D(), id = el.dataset.id;
+    if (st.fav[id]) delete st.fav[id]; else st.fav[id] = 1;
+    S.save();
+    el.classList.toggle('on', !!st.fav[id]); el.setAttribute('aria-pressed', !!st.fav[id]);
+    el.textContent = st.fav[id] ? '★ お気に入り' : '☆ お気に入り';
+  };
+  A.seen = el => {
+    const st = D(), id = el.dataset.id;
+    if (st.seen[id]) delete st.seen[id]; else st.seen[id] = 1;
+    S.save();
+    el.classList.toggle('on', !!st.seen[id]); el.setAttribute('aria-pressed', !!st.seen[id]);
+    el.textContent = st.seen[id] ? '✓ 視聴済み' : '視聴済みにする';
+  };
+  A.seek = el => {
+    const vid = el.dataset.vid, at = +el.dataset.at, vp = $('#vp');
+    if (CURV && CURV.id === vid) {
+      if (!vp) { toast('この項目には動画ファイルがひも付いていません'); return; }
+      vp.currentTime = at;
+      const pr = vp.play(); if (pr && pr.catch) pr.catch(() => {});
+      vp.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    } else location.hash = '#/v/' + encodeURIComponent(vid) + '?t=' + at;
+  };
+  A.rate = el => {
+    UI.rate = +el.dataset.r;
+    const vp = $('#vp'); if (vp) vp.playbackRate = UI.rate;
+    $$('[data-act=rate]').forEach(b => b.classList.toggle('on', +b.dataset.r === UI.rate));
+  };
+  A.skip = el => { const vp = $('#vp'); if (vp) vp.currentTime = Math.max(0, vp.currentTime + (+el.dataset.d)); };
+
+  /* 印（自分の見どころ）：動画を見ながら貯める。この端末のブラウザに保存される */
+  function syncMarkForm() { const f = $('#markForm'); if (f) f.querySelector('[data-for=mins]').hidden = f.elements.type.value === 'point'; }
+  function openMarkForm(edit) {
+    const f = $('#markForm'); if (!f) return;
+    const vp = $('#vp'), e = f.elements;
+    if (vp && !vp.paused) vp.pause();
+    f.hidden = false; f.dataset.edit = edit ? edit.id : '';
+    e.at.value = fmt(edit ? edit.at : (vp ? vp.currentTime : 0));
+    e.type.value = edit ? edit.type : 'point';
+    e.title.value = edit ? edit.title : '';
+    e.minutes.value = edit && edit.minutes ? edit.minutes : 10;
+    e.note.value = edit ? edit.note : '';
+    f.querySelector('[type=submit]').textContent = edit ? '更新' : '保存';
+    f.querySelector('[data-act=markdel]').hidden = !edit;
+    syncMarkForm();
+    f.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    e.title.focus();
+  }
+  function saveMark(f) {
+    const v = CURV; if (!v) return;
+    const e = f.elements, at = parseT(e.at.value);
+    if (isNaN(at)) { toast('時刻は「12:30」のように入れてください'); e.at.focus(); return; }
+    const title = e.title.value.trim();
+    if (!title) { e.title.focus(); return; }
+    const type = e.type.value, st = D(), list = st.marks[v.id] || (st.marks[v.id] = []), editId = f.dataset.edit;
+    const rec = { id: editId || uid('m'), at, title, type, minutes: type === 'point' ? 0 : Math.max(0, parseInt(e.minutes.value, 10) || 0), note: e.note.value.trim() };
+    const i = editId ? list.findIndex(m => m.id === editId) : -1;
+    if (i >= 0) list[i] = rec; else list.push(rec);
+    S.save(); f.hidden = true; f.dataset.edit = '';
+    renderClips(v);
+    toast(editId ? '印を更新しました' : '印をつけました');
+  }
+  A.mark = () => openMarkForm();
+  A.markcancel = () => { const f = $('#markForm'); if (f) f.hidden = true; };
+  A.nowtime = () => { const vp = $('#vp'), f = $('#markForm'); if (vp && f) f.elements.at.value = fmt(vp.currentTime); };
+  A.markedit = el => { const c = findClip(el.dataset.vid, el.dataset.cid); if (c && c.mine) openMarkForm(c); };
+  A.markdel = () => {
+    const f = $('#markForm'), v = CURV, id = f && f.dataset.edit; if (!v || !id) return;
+    if (!confirm('この印を削除しますか？')) return;
+    const st = D(); st.marks[v.id] = (st.marks[v.id] || []).filter(m => m.id !== id);
+    if (!st.marks[v.id].length) delete st.marks[v.id];
+    S.save(); f.hidden = true; f.dataset.edit = ''; renderClips(v);
+    toast('印を削除しました');
+  };
+
+  /* ===== ⑤ 練習メニュー（全動画の見どころを横断して探す） ===== */
+  function allClips() { const rows = []; LIB.videos.forEach(v => clipsOf(v).forEach(c => rows.push({ v, c }))); return rows; }
+  function pageDrills() {
+    const rows = allClips(), cnt = t => rows.filter(r => t === 'all' || r.c.type === t).length;
+    const seg = (act, key, cur, label, n) => `<button data-act="${act}" data-v="${esc(key)}" class="${cur === key ? 'on' : ''}">${esc(label)}${n == null ? '' : `<i>${n}</i>`}</button>`;
+    $('#main').innerHTML = `
+      <h1 class="pagetitle">練習メニュー</h1>
+      <p class="lead">動画の「見どころ」を横断して集めています。使いたいものを「＋ 今日の練習」で計画に入れます。</p>
+      <div class="seg" role="group" aria-label="種類">${[['drill', '練習'], ['play', 'プレー'], ['point', 'ポイント'], ['all', 'すべて']].map(([k, n]) => seg('dtype', k, UI.dtype, n, cnt(k))).join('')}</div>
+      <div class="seg" role="group" aria-label="分類">${seg('dcat', 'all', UI.dcat, 'すべて')}${LIB.categories.map(c => seg('dcat', c.id, UI.dcat, c.name)).join('')}</div>
+      <input id="dq" class="search" type="search" placeholder="メニューを探す（名前・メモ・動画名・タグ）" value="${esc(UI.dq)}" autocomplete="off" aria-label="探す">
+      <ul class="clips" id="dlist"></ul>`;
+    renderDrills();
+  }
+  function renderDrills() {
+    const ul = $('#dlist'); if (!ul) return;
+    const terms = norm(UI.dq).split(/[\s　]+/).filter(Boolean);
+    const rows = allClips().filter(({ v, c }) => {
+      if (UI.dtype !== 'all' && c.type !== UI.dtype) return false;
+      if (UI.dcat !== 'all' && v.category !== UI.dcat) return false;
+      if (!terms.length) return true;
+      const hay = norm([c.title, c.note, v.title, v.tags.join(' ')].join(' '));
+      return terms.every(t => hay.indexOf(t) >= 0);
+    });
+    ul.innerHTML = rows.length ? rows.map(({ v, c }) => clipRow(c, v, true)).join('')
+      : `<li class="empty">${allClips().length ? '条件に合うものがありません。' : 'まだ見どころがありません。'}<br>動画を見ながら「ここに印をつける」を押すと、ここに貯まります。<br><a href="#/">ライブラリへ</a></li>`;
+  }
+  A.dtype = el => { UI.dtype = el.dataset.v; pageDrills(); };
+  A.dcat = el => { UI.dcat = el.dataset.v; pageDrills(); };
+
+  /* ===== ⑥ 今日の練習 ===== */
+  const newPlan = () => ({ id: uid('p'), date: today(), title: '', start: '', limit: 90, items: [], review: '', doneAt: 0 });
+  function curPlan(create) {
+    const d = D(); let p = d.plans.find(x => x.id === d.cur) || null;
+    if (!p && create) { p = newPlan(); d.plans.unshift(p); d.cur = p.id; S.save(); }
+    if (p && !Array.isArray(p.items)) p.items = [];
+    return p;
+  }
+  const planTotal = p => p.items.reduce((a, it) => a + (+it.minutes || 0), 0);
+  const planLabel = x => `${dateJa(x.date)} ${x.title || ''}（${planTotal(x)}分）`;
+  const mins = it => Math.max(0, +it.minutes || 0);
+  function timeLabels(p) {
+    const base = toMin(p.start); let acc = 0;
+    return p.items.map(it => { const a = acc; acc += mins(it); return base == null ? `${a}〜${acc}分` : `${hm(base + a)}〜${hm(base + acc)}`; });
+  }
+  const videoRef = it => { const v = it.vid ? VID[it.vid] : null; return v ? `${v.title} ${fmt(it.at || 0)}` : ''; };
+  function planText(p) {
+    const labs = timeLabels(p);
+    return [`【練習計画】${p.title ? p.title + ' ' : ''}${dateJa(p.date)}（合計${planTotal(p)}分）`]
+      .concat(p.items.map((it, i) => `${i + 1}. ${labs[i]} ${it.title || '（名前なし）'}（${mins(it)}分）${it.note ? ' — ' + it.note : ''}${videoRef(it) ? '　▶ ' + videoRef(it) : ''}`)).join('\n');
+  }
+  function updateBadge() {
+    const b = $('#badge'); if (!b) return;
+    const p = curPlan(false); b.textContent = p && p.items.length ? p.items.length : '';
+  }
+  function addToPlan(it) {
+    const p = curPlan(true);
+    p.items.push(Object.assign({ id: uid('i'), title: '', minutes: 10, note: '' }, it));
+    S.save(); updateBadge();
+    return p;
+  }
+  function itemRow(it, i, labs, last) {
+    const v = it.vid ? VID[it.vid] : null;
+    return `<li class="pi" data-i="${i}">
+      <div class="pn">${i + 1}</div>
+      <div class="pmain">
+        <input class="pin t" value="${esc(it.title)}" aria-label="メニュー名" placeholder="メニュー名">
+        <div class="psub"><span class="ptime">${esc(labs[i])}</span>${v ? `<a href="#/v/${encodeURIComponent(v.id)}?t=${it.at || 0}">▶ ${esc(v.title)} ${fmt(it.at || 0)}</a>` : ''}</div>
+        <input class="pin n" value="${esc(it.note)}" aria-label="メモ" placeholder="メモ（ねらい・人数・声かけ）">
+      </div>
+      <div class="pmin"><button class="btn" data-act="pmin" data-d="-5" aria-label="5分減らす">−</button><input class="m" type="number" min="0" max="180" value="${mins(it)}" aria-label="分"><span>分</span><button class="btn" data-act="pmin" data-d="5" aria-label="5分増やす">＋</button></div>
+      <div class="pmv"><button class="btn" data-act="pup" aria-label="上へ" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn" data-act="pdown" aria-label="下へ" ${i === last ? 'disabled' : ''}>↓</button><button class="btn danger" data-act="pdel" aria-label="削除">✕</button></div>
+    </li>`;
+  }
+  function refreshMeta(p) {
+    const m = $('#meter'); if (!m) return;
+    const total = planTotal(p), limit = +p.limit || 0, over = limit > 0 && total > limit;
+    m.classList.toggle('over', over);
+    $('.bar i', m).style.width = (limit ? Math.min(100, total / limit * 100) : (total ? 100 : 0)) + '%';
+    $('.sum1', m).textContent = `合計 ${total}分` + (limit ? ` ／ ${limit}分` : '');
+    $('.rest', m).textContent = limit ? (over ? `${total - limit}分オーバー` : `あと ${limit - total}分`) : '';
+    const labs = timeLabels(p);
+    $$('#items .ptime').forEach((e, i) => { e.textContent = labs[i] || ''; });
+    const o = $('#planSel option:checked'); if (o) o.textContent = planLabel(p);
+    refreshPrint(p);
+    updateBadge();
+  }
+  function refreshPrint(p) { const s = $('.print-only'); if (s) s.innerHTML = printSheet(p); }
+  function renderItems(p) {
+    const ol = $('#items'); if (!ol) return;
+    const labs = timeLabels(p);
+    ol.innerHTML = p.items.length ? p.items.map((it, i) => itemRow(it, i, labs, p.items.length - 1)).join('')
+      : '<li class="empty">まだメニューがありません。下の「練習メニューから追加」か、動画の見どころの「＋ 今日の練習」で入れます。</li>';
+    refreshMeta(p);
+  }
+  function printSheet(p) {
+    const labs = timeLabels(p);
+    const rows = p.items.map((it, i) => `<tr><td>${esc(labs[i])}</td><td><b>${esc(it.title)}</b>${it.note ? '<br>' + esc(it.note) : ''}${videoRef(it) ? '<br>▶ ' + esc(videoRef(it)) : ''}</td><td class="mn">${mins(it)}</td></tr>`).join('');
+    return `<h1>${esc(p.title || '練習計画')}</h1><p>${esc(dateJa(p.date))} ・ 合計 ${planTotal(p)}分${p.limit ? '／' + p.limit + '分' : ''}</p>
+      <table class="sheet"><thead><tr><th>時間</th><th>メニュー・メモ・動画</th><th class="mn">分</th></tr></thead><tbody>${rows}</tbody></table><div class="review">ふりかえり：</div>`;
+  }
+  function pagePlan() {
+    const d = D(), p = curPlan(true);
+    $('#main').innerHTML = `
+      <div class="screen-only">
+        <h1 class="pagetitle">今日の練習</h1>
+        <p class="lead">動画の「見どころ」を並べて、その日の練習をつくります。体育館では「実施モード」を使います。</p>
+        <div class="planbar">
+          <select id="planSel" aria-label="計画をえらぶ">${d.plans.map(x => `<option value="${esc(x.id)}" ${x.id === p.id ? 'selected' : ''}>${esc(planLabel(x))}</option>`).join('')}</select>
+          <button class="btn sm" data-act="newplan">＋ 新しい計画</button><button class="btn sm" data-act="dupplan">複製</button><button class="btn sm danger" data-act="delplan">削除</button>
+        </div>
+        <div class="planhead">
+          <label class="field">日付<input type="date" data-pf="date" value="${esc(p.date)}"></label>
+          <label class="field">タイトル（任意）<input type="text" data-pf="title" value="${esc(p.title)}" placeholder="例 火曜 ドリブル中心"></label>
+          <label class="field">開始時刻（任意）<input type="time" data-pf="start" value="${esc(p.start)}"></label>
+          <label class="field">使える時間（分）<input type="number" data-pf="limit" min="0" max="300" step="5" value="${+p.limit || ''}"></label>
+        </div>
+        <div class="meter" id="meter"><div class="txt"><span class="sum1"></span><span class="rest"></span></div><div class="bar"><i></i></div></div>
+        <ol class="items" id="items"></ol>
+        <div class="adders"><button class="btn" data-act="pick">＋ 練習メニューから追加</button><button class="btn" data-act="free">＋ 自由に入力して追加</button></div>
+        <div class="pact"><button class="btn primary" data-act="run">▶ 実施モードで始める</button><button class="btn" data-act="print">印刷</button><button class="btn" data-act="copy">テキストをコピー</button></div>
+        ${p.doneAt ? `<section class="blk"><h2>ふりかえり <small>${esc(new Date(p.doneAt).toLocaleDateString('ja-JP'))} に実施</small></h2><textarea class="memo" data-pf="review" placeholder="うまくいったこと、次にやること">${esc(p.review)}</textarea></section>` : ''}
+      </div>
+      <section class="print-only">${printSheet(p)}</section>`;
+    renderItems(p);
+  }
+  const itemIdx = el => +el.closest('.pi').dataset.i;
+  A.newplan = () => { const p = newPlan(); D().plans.unshift(p); D().cur = p.id; S.save(); pagePlan(); };
+  A.dupplan = () => {
+    const p = curPlan(); if (!p) return;
+    const q = JSON.parse(JSON.stringify(p));
+    q.id = uid('p'); q.date = today(); q.doneAt = 0; q.review = ''; q.title = p.title ? p.title + '（コピー）' : '';
+    q.items.forEach(it => { it.id = uid('i'); });
+    D().plans.unshift(q); D().cur = q.id; S.save(); pagePlan(); toast('複製しました');
+  };
+  A.delplan = () => {
+    const d = D(), p = curPlan(); if (!p) return;
+    if (!confirm('この計画を削除しますか？')) return;
+    d.plans = d.plans.filter(x => x.id !== p.id); d.cur = d.plans[0] ? d.plans[0].id : null;
+    if (d.run && d.run.plan === p.id) d.run = null;
+    S.save(); pagePlan();
+  };
+  A.pmin = el => { const p = curPlan(), it = p.items[itemIdx(el)]; it.minutes = Math.max(0, mins(it) + (+el.dataset.d)); S.save(); renderItems(p); };
+  A.pup = el => { const p = curPlan(), i = itemIdx(el); if (i > 0) { [p.items[i - 1], p.items[i]] = [p.items[i], p.items[i - 1]]; S.save(); renderItems(p); } };
+  A.pdown = el => { const p = curPlan(), i = itemIdx(el); if (i < p.items.length - 1) { [p.items[i + 1], p.items[i]] = [p.items[i], p.items[i + 1]]; S.save(); renderItems(p); } };
+  A.pdel = el => { const p = curPlan(); p.items.splice(itemIdx(el), 1); S.save(); renderItems(p); };
+  A.free = () => {
+    const p = curPlan(true); p.items.push({ id: uid('i'), title: '', minutes: 10, note: '' }); S.save(); renderItems(p);
+    const rows = $$('#items .pi'), last = rows[rows.length - 1];
+    if (last) { last.scrollIntoView({ block: 'center' }); $('.pin.t', last).focus(); }
+  };
+  A.addplan = el => {
+    const c = findClip(el.dataset.vid, el.dataset.cid), v = VID[el.dataset.vid]; if (!c || !v) return;
+    const p = addToPlan({ title: c.title, minutes: c.minutes || 10, note: c.note, vid: v.id, cid: c.id, at: c.at });
+    toast(`「${c.title}」を今日の練習に入れました（合計 ${planTotal(p)}分）`, '#/plan', '計画を見る');
+  };
+  A.print = () => window.print();
+  A.copy = () => { const p = curPlan(); if (!p) return; copyText(planText(p)).then(() => toast('テキストをコピーしました'), () => toast('コピーできませんでした')); };
+  A.run = () => { const p = curPlan(); if (!p || !p.items.length) { toast('メニューを入れてから始めます'); return; } location.hash = '#/run'; };
+
+  /* 計画に入れるメニューを選ぶ窓 */
+  A.pick = () => {
+    openDlg(`<div class="dlg-h"><h2>練習メニューから追加</h2><button class="btn sm" data-act="closedlg">閉じる</button></div>
+      <div class="dlg-b"><input id="pickq" class="search" type="search" placeholder="探す（名前・メモ・動画名・タグ）" autocomplete="off" aria-label="探す"><div id="picklist"></div></div>`);
+    renderPick(); $('#pickq').focus();
+  };
+  function renderPick() {
+    const box = $('#picklist'), qi = $('#pickq'); if (!box || !qi) return;
+    const terms = norm(qi.value).split(/[\s　]+/).filter(Boolean), order = { drill: 0, play: 1, point: 2 };
+    const rows = allClips().filter(({ v, c }) => {
+      if (!terms.length) return true;
+      const hay = norm([c.title, c.note, v.title, v.tags.join(' ')].join(' '));
+      return terms.every(t => hay.indexOf(t) >= 0);
+    }).sort((a, b) => order[a.c.type] - order[b.c.type]).slice(0, 80);
+    box.innerHTML = rows.length ? rows.map(({ v, c }) => `<div class="pick"><div class="pt"><span class="ty ty-${c.type}">${TYPES[c.type]}</span><b>${esc(c.title)}</b><small>${esc(v.title)} ・ ${fmt(c.at)}${c.minutes ? ' ・ 目安 ' + c.minutes + '分' : ''}</small></div><button class="btn sm primary" data-act="pickadd" data-vid="${esc(v.id)}" data-cid="${esc(c.id)}">追加</button></div>`).join('')
+      : '<p class="empty">見つかりません。動画の「ここに印をつける」で見どころを貯めると、ここに出てきます。</p>';
+  }
+  A.pickadd = el => {
+    const c = findClip(el.dataset.vid, el.dataset.cid), v = VID[el.dataset.vid]; if (!c || !v) return;
+    const p = addToPlan({ title: c.title, minutes: c.minutes || 10, note: c.note, vid: v.id, cid: c.id, at: c.at });
+    el.textContent = '✓ 追加ずみ'; el.classList.remove('primary');
+    renderItems(p);
+  };
+  A.closedlg = () => { const d = $('#dlg'); if (d.open) d.close(); };
+
+  /* ===== ⑦ 実施モード（体育館用：大きなタイマー） ===== */
+  const R = { p: null, i: 0, left: 0, endAt: 0, running: false, up: false, fin: false, iv: 0, wake: null, ac: null };
+  const clock = ms => { const s = Math.ceil(ms / 1000); return pad(Math.floor(s / 60)) + ':' + pad(s % 60); };
+  function saveRun() { D().run = R.fin ? null : { plan: R.p.id, i: R.i, left: R.left, endAt: R.running ? R.endAt : 0 }; S.saveSoon(); }
+  function audio() {
+    try { if (!R.ac) R.ac = new (window.AudioContext || window.webkitAudioContext)(); if (R.ac.state === 'suspended') R.ac.resume(); } catch (e) { /* 音が出なくても動く */ }
+  }
+  function beep() {
+    try {
+      audio(); const ac = R.ac; if (!ac) return;
+      [0, 0.28, 0.56].forEach(dt => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'square'; o.frequency.value = 880; g.gain.value = 0.08;
+        o.connect(g); g.connect(ac.destination);
+        o.start(ac.currentTime + dt); o.stop(ac.currentTime + dt + 0.18);
+      });
+    } catch (e) { /* 音が出なくても動く */ }
+  }
+  function holdWake() {
+    try { if (navigator.wakeLock && !R.wake) navigator.wakeLock.request('screen').then(l => { R.wake = l; l.addEventListener('release', () => { R.wake = null; }); }, () => {}); } catch (e) { /* 画面が消えるだけ */ }
+  }
+  function releaseWake() { try { if (R.wake) R.wake.release(); } catch (e) { /* 何もしない */ } R.wake = null; }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && R.running && !R.wake) holdWake(); });
+
+  function paintTimer() {
+    const t = $('#timer'); if (!t) return;
+    t.textContent = clock(R.left);
+    t.className = 'timer' + (R.up ? ' up' : (R.running && R.left <= 30000 ? ' low' : ''));
+  }
+  function tickRun() {
+    if (!R.running) return;
+    R.left = Math.max(0, R.endAt - Date.now());
+    if (R.left <= 0) {
+      R.running = false; R.endAt = 0; R.up = true; releaseWake(); beep();
+      if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+      saveRun(); renderRun(); return;
+    }
+    paintTimer();
+  }
+  function renderRun() {
+    if (R.fin) { renderFinish(); return; }
+    const p = R.p, it = p.items[R.i], n = p.items.length, v = it.vid ? VID[it.vid] : null, nx = p.items[R.i + 1];
+    const rest = Math.ceil((p.items.slice(R.i + 1).reduce((a, x) => a + mins(x), 0) * 60000 + R.left) / 60000);
+    $('#main').innerHTML = `
+      <div class="run">
+        <div class="rtop"><button class="btn sm" data-act="rexit">← 計画へ</button><span class="rprog">${R.i + 1} / ${n}</span><span class="sp"></span><span class="rprog">全体 あと${rest}分</span></div>
+        <section class="rnow">
+          <div class="rlabel">いまのメニュー</div>
+          <h1>${esc(it.title || '（名前なし）')}</h1>
+          ${it.note ? `<div class="rnote">${esc(it.note)}</div>` : ''}
+          <div id="timer" class="timer">${clock(R.left)}</div>
+          <div class="rbtns">
+            <button class="btn" data-act="rprev" ${R.i === 0 ? 'disabled' : ''}>← 前</button>
+            <button class="btn primary go" data-act="rtoggle">${R.running ? '一時停止' : (R.up ? 'もう一度' : '▶ スタート')}</button>
+            <button class="btn" data-act="rnext">${R.i === n - 1 ? '終わる' : '次へ →'}</button>
+          </div>
+          <div class="radj"><button class="btn sm" data-act="radj" data-d="-1">−1分</button><button class="btn sm" data-act="radj" data-d="1">＋1分</button>${v ? `<button class="btn sm" data-act="rvideo">動画を見る ${fmt(it.at || 0)}</button>` : ''}</div>
+        </section>
+        ${nx ? `<p class="rnext">つぎ：<b>${esc(nx.title || '（名前なし）')}</b>（${mins(nx)}分）</p>` : ''}
+        <ol class="rlist">${p.items.map((x, k) => `<li class="${k === R.i ? 'cur' : (k < R.i ? 'past' : '')}"><span>${k + 1}.</span><span>${esc(x.title || '（名前なし）')}</span><span class="m">${mins(x)}分</span></li>`).join('')}</ol>
+      </div>`;
+    paintTimer();
+  }
+  function renderFinish() {
+    const p = R.p;
+    $('#main').innerHTML = `
+      <div class="run">
+        <section class="rnow">
+          <div class="rlabel">おつかれさまでした</div>
+          <h1>${esc(p.title || '今日の練習')}</h1>
+          <p class="rnote">${p.items.length}メニュー ・ 予定 ${planTotal(p)}分</p>
+        </section>
+        <section class="blk"><h2>ふりかえり</h2><textarea id="review" class="memo" placeholder="うまくいったこと、次にやること（計画のページにも残ります）">${esc(p.review || '')}</textarea></section>
+        <div class="pact"><button class="btn primary" data-act="rdone">実践として記録して、計画にもどる</button><button class="btn" data-act="rexit">記録しないでもどる</button></div>
+      </div>`;
+  }
+  function pageRun() {
+    const p = curPlan();
+    if (!p || !p.items.length) { location.hash = '#/plan'; return; }
+    document.body.classList.add('run-on');
+    const sv = D().run;
+    R.p = p; R.fin = false; R.up = false;
+    if (sv && sv.plan === p.id && sv.i < p.items.length) {
+      R.i = sv.i; R.left = sv.left; R.endAt = sv.endAt; R.running = !!sv.endAt;
+      if (R.running) { R.left = Math.max(0, R.endAt - Date.now()); if (R.left <= 0) { R.running = false; R.endAt = 0; R.up = true; } }
+    } else { R.i = 0; R.left = mins(p.items[0]) * 60000; R.endAt = 0; R.running = false; }
+    renderRun();
+    R.iv = setInterval(tickRun, 250);
+    if (R.running) holdWake();
+    teardown = () => { clearInterval(R.iv); R.iv = 0; releaseWake(); saveRun(); };
+  }
+  function goItem(k) {
+    R.i = k; R.up = false; R.running = false; R.endAt = 0; R.left = mins(R.p.items[k]) * 60000;
+    releaseWake(); saveRun(); renderRun();
+  }
+  A.rtoggle = () => {
+    if (R.running) { R.left = Math.max(0, R.endAt - Date.now()); R.running = false; R.endAt = 0; releaseWake(); }
+    else {
+      if (R.up || R.left <= 0) { R.up = false; R.left = mins(R.p.items[R.i]) * 60000; }
+      R.endAt = Date.now() + R.left; R.running = true; audio(); holdWake();
+    }
+    saveRun(); renderRun();
+  };
+  A.rnext = () => {
+    if (R.i >= R.p.items.length - 1) { R.fin = true; R.running = false; R.endAt = 0; releaseWake(); saveRun(); renderRun(); }
+    else goItem(R.i + 1);
+  };
+  A.rprev = () => { if (R.i > 0) goItem(R.i - 1); };
+  A.radj = el => {
+    const d = (+el.dataset.d) * 60000;
+    if (R.running) { R.endAt = Math.max(Date.now() + 1000, R.endAt + d); R.left = R.endAt - Date.now(); }
+    else { R.left = Math.max(0, R.left + d); R.up = false; }
+    saveRun(); renderRun();
+  };
+  A.rexit = () => { location.hash = '#/plan'; };
+  A.rdone = () => {
+    const p = R.p, st = D(), day = today();
+    p.items.forEach(it => {
+      if (!(it.vid && it.cid)) return;
+      const k = it.vid + '|' + it.cid, o = st.done[k] || (st.done[k] = { n: 0, last: '' });
+      o.n++; o.last = day;
+    });
+    p.doneAt = Date.now(); R.fin = true; st.run = null; S.save();
+    location.hash = '#/plan'; toast('実践を記録しました');
+  };
+  A.rvideo = () => {
+    const it = R.p.items[R.i], v = it.vid ? VID[it.vid] : null; if (!v) return;
+    const src = videoSrc(v);
+    openDlg(`<div class="dlg-h"><h2>${esc(v.title)}</h2><button class="btn sm" data-act="closedlg">閉じる</button></div>
+      <div class="dlg-b">${src ? `<video id="rv" controls playsinline src="${esc(src)}"></video>` : '<p class="lead">この項目には動画ファイルがひも付いていません。</p>'}
+      <p class="lead">${esc(it.title)} ／ ${fmt(it.at || 0)} から</p>${v.url ? `<a class="btn" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">OneDrive などで開く ↗</a>` : ''}</div>`);
+    const rv = $('#rv'); if (!rv) return;
+    rv.addEventListener('loadedmetadata', () => { rv.currentTime = Math.min(it.at || 0, rv.duration || 0); const pr = rv.play(); if (pr && pr.catch) pr.catch(() => {}); });
+    rv.addEventListener('error', () => { rv.insertAdjacentHTML('afterend', '<p class="lead">動画を開けませんでした。動画ページで原因を確認できます。</p>'); });
+  };
+
+  /* ===== ⑧ 設定・データ ===== */
+  function parseLib(txt) {
+    const a = txt.indexOf('{'), b = txt.lastIndexOf('}');
+    if (a < 0 || b < a) throw new Error('ライブラリの形ではありません');
+    const o = JSON.parse(txt.slice(a, b + 1));
+    if (!o || !Array.isArray(o.videos)) throw new Error('videos がありません');
+    return o;
+  }
+  function pageSettings() {
+    const st = D(), imp = S.libGet();
+    const nMarks = Object.keys(st.marks).reduce((a, k) => a + st.marks[k].length, 0), nNotes = Object.keys(st.notes).length;
+    const hasData = nMarks + nNotes + st.plans.length > 0;
+    const stale = hasData && (!st.backedUp || Date.now() - st.backedUp > 14 * 864e5);
+    const srcName = { sample: 'サンプル', library: 'library.js（このHTMLと同じフォルダ）', imported: '取り込んだライブラリ（このブラウザの中）' }[SRC];
+    $('#main').innerHTML = `
+      <h1 class="pagetitle">設定・データ</h1>
+      <div class="set">
+        ${S.usable() ? '' : '<div class="banner warn"><b>この環境では、記録を保存できません。</b>（プライベートブラウズなど）通常のウィンドウで開いてください。</div>'}
+        ${stale ? '<div class="banner warn"><b>バックアップがしばらくありません。</b> メモ・印・計画は、このブラウザの中にだけあります。下の「書き出す」で保存しておくと安心です。</div>' : ''}
+        <section class="blk card-plain">
+          <h2>いま表示しているデータ</h2>
+          <dl class="kv"><dt>データの元</dt><dd>${esc(srcName)}</dd><dt>動画</dt><dd>${LIB.videos.length}本</dd><dt>動画の場所</dt><dd><code>${esc(baseUrl())}</code></dd><dt>この端末の記録</dt><dd>メモ ${nNotes}・印 ${nMarks}・計画 ${st.plans.length}</dd></dl>
+          ${SRC === 'sample' ? `<p><b>自分の動画を入れるには</b></p>
+            <ol>
+              <li><code>basket-navi.html</code> を、動画のフォルダ（OneDrive の「バスケ動画」など）に置く</li>
+              <li>パソコンで <code>python3 tools/make_library.py scan 動画のフォルダ --probe</code> を実行 → <code>library.js</code> ができる（一覧のExcelからも作れます）</li>
+              <li>同じフォルダに <code>library.js</code> を置いて、このページを開き直す</li>
+            </ol>
+            <p class="sub">くわしくは README を見てください。スマホ・タブレットなら、下の「ライブラリの取り込み」も使えます。</p>` : ''}
+          ${SRC === 'library' && imp ? '<p class="sub">取り込んだライブラリもありますが、<code>library.js</code> のほうを優先しています。</p>' : ''}
+        </section>
+        <section class="blk card-plain">
+          <h2>動画の場所</h2>
+          <p class="sub">ふつうは触らなくてOK（<code>basket-navi.html</code> と同じ場所を見ます）。別の場所に置いたときだけ、動画のフォルダの場所を入れます。例：<code>file:///Users/○○/Library/CloudStorage/OneDrive-Personal/バスケ動画/</code>　<code>C:\\Users\\○○\\OneDrive\\バスケ動画</code></p>
+          <div class="row"><input id="base" type="text" value="${esc(st.base)}" placeholder="（空 = このHTMLと同じ場所）" aria-label="動画の場所"><button class="btn" data-act="savebase">保存</button><button class="btn ghost" data-act="resetbase">もどす</button></div>
+        </section>
+        <section class="blk card-plain">
+          <h2>ライブラリの取り込み（スマホ・タブレット向け）</h2>
+          <p class="sub">パソコンで作った <code>library.js</code>（または <code>.json</code>）を、この端末のブラウザに取り込みます。中身はこの端末の中にだけ入り、どこにも送られません。</p>
+          <div class="row"><label class="btn" for="ldlib">ファイルを選ぶ…</label><input id="ldlib" type="file" accept=".js,.json,application/json" hidden>${imp ? '<button class="btn danger" data-act="dellib">取り込みを消す</button>' : ''}</div>
+        </section>
+        <section class="blk card-plain">
+          <h2>バックアップ</h2>
+          <p class="sub">お気に入り・視聴済み・メモ・印・計画・実践の記録を、ファイルに書き出します。最後のバックアップ：${st.backedUp ? esc(new Date(st.backedUp).toLocaleString('ja-JP')) : 'まだありません'}</p>
+          <div class="row"><button class="btn primary" data-act="dlbackup">書き出す</button><label class="btn" for="ldbackup">読み込む…</label><input id="ldbackup" type="file" accept=".json,application/json" hidden></div>
+        </section>
+        <section class="blk card-plain">
+          <h2>うまくいかないとき</h2>
+          <p class="sub"><b>サンプルのまま変わらない</b>：<code>library.js</code> を <code>basket-navi.html</code> と<b>同じフォルダ</b>に置いたか確認。それでもだめなら、<code>library.js</code> の中身が壊れている（カンマや引用符の消えなど）かもしれません。<code>make_library.py</code> で作り直すと確実です（手で書いた部分は残ります）。</p>
+          <p class="sub"><b>動画が出ない</b>：動画のページに、探した場所と原因の候補が出ます。OneDrive の「オンラインのみ」と、ブラウザで再生できない形式（.mov / .avi / .wmv）が多いです。ブラウザは Chrome か Edge がおすすめです。</p>
+        </section>
+        <section class="blk card-plain">
+          <h2>使いかた（キー操作）</h2>
+          <p class="sub">動画ページ：<kbd>M</kbd> 印をつける ／ <kbd>←</kbd><kbd>→</kbd> 5秒移動 ／ <kbd>Space</kbd> 再生・停止　実施モード：<kbd>Space</kbd> スタート・一時停止</p>
+        </section>
+        <section class="blk card-plain">
+          <h2>記録を消す</h2>
+          <p class="sub">この端末のお気に入り・メモ・印・計画・実践の記録をすべて消します（元に戻せません）。動画ファイルや <code>library.js</code> は消えません。</p>
+          <div class="row"><button class="btn danger" data-act="wipe">すべての記録を消す</button></div>
+        </section>
+      </div>`;
+  }
+  A.savebase = () => { D().base = $('#base').value.trim(); S.save(); toast('動画の場所を保存しました'); pageSettings(); };
+  A.resetbase = () => { D().base = ''; S.save(); pageSettings(); };
+  A.dlbackup = () => { download('basket-navi-backup-' + today() + '.json', JSON.stringify(S.exportAll(), null, 1)); D().backedUp = Date.now(); S.save(); pageSettings(); };
+  A.dellib = () => { if (!confirm('取り込んだライブラリを消しますか？（メモや印は消えません）')) return; S.libClear(); boot(); pageSettings(); };
+  A.wipe = () => { if (!confirm('この端末の記録（お気に入り・メモ・印・計画・実践）をすべて消します。元に戻せません。よろしいですか？')) return; S.wipe(); updateBadge(); pageSettings(); toast('記録を消しました'); };
+
+  /* ===== ⑨ ルーター・イベント ===== */
+  const BALL = '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#c2410c"/><path d="M16 2v28M2 16h28M5.5 6.5c5 4 5 15 0 19M26.5 6.5c-5 4-5 15 0 19" fill="none" stroke="#1c2430" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  function shell() {
+    $('#app').innerHTML = `<header class="top"><div class="in"><a class="brand" href="#/" aria-label="バスケ指導ナビ ホーム">${BALL}<span>バスケ指導ナビ</span></a>
+      <nav class="tabs" aria-label="メニュー"><a href="#/" data-tab="lib">ライブラリ</a><a href="#/drills" data-tab="drills">練習メニュー</a><a href="#/plan" data-tab="plan">今日の練習<span class="badge" id="badge"></span></a><a href="#/settings" data-tab="settings">設定</a></nav>
+      ${S.usable() ? '' : '<span class="warnchip">保存できない環境です</span>'}</div></header>
+      <main id="main" tabindex="-1"></main><div id="toast" role="status" aria-live="polite"></div><dialog id="dlg"></dialog>`;
+    const dg = $('#dlg');
+    dg.addEventListener('click', e => { if (e.target === dg) dg.close(); });
+    dg.addEventListener('close', () => { dg.innerHTML = ''; });
+  }
+  function route() {
+    if (teardown) { try { teardown(); } catch (e) { /* 後始末の失敗は無視 */ } teardown = null; }
+    const dg = $('#dlg'); if (dg && dg.open) dg.close();
+    document.body.classList.remove('run-on');
+    CURV = null;
+    if (Date.now() - toastAt > 600) { const t = $('#toast'); if (t) t.classList.remove('on'); }
+    const h = location.hash || '#/', qi = h.indexOf('?'), path = qi < 0 ? h : h.slice(0, qi), q = new URLSearchParams(qi < 0 ? '' : h.slice(qi + 1));
+    let tab = 'lib', m;
+    if ((m = /^#\/v\/(.+)$/.exec(path))) pageVideo(decodeURIComponent(m[1]), q);
+    else if (path === '#/drills') { tab = 'drills'; pageDrills(); }
+    else if (path === '#/plan') { tab = 'plan'; pagePlan(); }
+    else if (path === '#/run') { tab = 'plan'; pageRun(); }
+    else if (path === '#/settings') { tab = 'settings'; pageSettings(); }
+    else pageLibrary();
+    $$('.tabs a').forEach(a => { if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    updateBadge();
+    window.scrollTo(0, 0);
+  }
+
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-act]'); if (!el) return;
+    const f = A[el.dataset.act]; if (f) f(el, e);
+  });
+  document.addEventListener('submit', e => { if (e.target.id === 'markForm') { e.preventDefault(); saveMark(e.target); } });
+  document.addEventListener('input', e => {
+    const t = e.target, st = D();
+    if (t.id === 'q') { UI.q = t.value; renderVList(); }
+    else if (t.id === 'dq') { UI.dq = t.value; renderDrills(); }
+    else if (t.id === 'pickq') renderPick();
+    else if (t.id === 'vnote' && CURV) { if (t.value) st.notes[CURV.id] = t.value; else delete st.notes[CURV.id]; S.saveSoon(); }
+    else if (t.id === 'review' && R.p) { R.p.review = t.value; S.saveSoon(); }
+    else if (t.dataset && t.dataset.pf) {
+      const p = curPlan(); if (!p) return;
+      const k = t.dataset.pf;
+      p[k] = t.type === 'number' ? (parseInt(t.value, 10) || 0) : t.value;
+      S.saveSoon(); refreshMeta(p);
+    } else if (t.closest && t.closest('#items')) {
+      const li = t.closest('.pi'), p = curPlan(); if (!li || !p) return;
+      const it = p.items[+li.dataset.i]; if (!it) return;
+      if (t.classList.contains('t')) it.title = t.value;
+      else if (t.classList.contains('n')) it.note = t.value;
+      else if (t.classList.contains('m')) { it.minutes = Math.max(0, Math.min(180, parseInt(t.value, 10) || 0)); refreshMeta(p); }
+      S.saveSoon();
+    }
+  });
+  document.addEventListener('change', e => {
+    const t = e.target;
+    if (t.id === 'planSel') { D().cur = t.value; S.save(); pagePlan(); }
+    else if (t.name === 'type' && t.closest('#markForm')) syncMarkForm();
+    else if (t.id === 'ldbackup' && t.files[0]) {
+      readFile(t.files[0]).then(txt => {
+        if (!confirm('いまの記録を、このバックアップで置きかえます。よろしいですか？')) return;
+        S.importAll(JSON.parse(txt)); route(); toast('記録を読み込みました');
+      }).catch(err => toast('読み込めませんでした：' + err.message));
+      t.value = '';
+    } else if (t.id === 'ldlib' && t.files[0]) {
+      readFile(t.files[0]).then(txt => {
+        const o = parseLib(txt);
+        if (!S.libSet(o)) throw new Error('保存できませんでした（大きすぎるか、保存が許可されていません）');
+        boot(); route(); toast(`ライブラリを取り込みました（${LIB.videos.length}本）`);
+      }).catch(err => toast('取り込めませんでした：' + err.message));
+      t.value = '';
+    }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+    const tg = e.target, tn = tg && tg.tagName;
+    if (tn === 'INPUT' || tn === 'TEXTAREA' || tn === 'SELECT' || (tg && tg.isContentEditable) || $('dialog[open]')) return;
+    const vp = $('#vp');
+    if (CURV && vp) {
+      if (e.key === 'm' || e.key === 'M') { e.preventDefault(); openMarkForm(); }
+      else if (e.key === 'ArrowLeft' && tg !== vp) { e.preventDefault(); vp.currentTime = Math.max(0, vp.currentTime - 5); }
+      else if (e.key === 'ArrowRight' && tg !== vp) { e.preventDefault(); vp.currentTime += 5; }
+      else if (e.key === ' ' && tg === document.body) { e.preventDefault(); if (vp.paused) vp.play(); else vp.pause(); }
+      else if (e.key === '[' || e.key === ']') {
+        const i = Math.max(0, Math.min(RATES.length - 1, RATES.indexOf(UI.rate) + (e.key === ']' ? 1 : -1)));
+        A.rate({ dataset: { r: RATES[i] } });
+      }
+    } else if (R.p && document.body.classList.contains('run-on') && !R.fin && e.key === ' ' && tg === document.body) {
+      e.preventDefault(); A.rtoggle();
+    }
+  });
+  window.addEventListener('hashchange', route);
+  window.addEventListener('beforeprint', () => { const p = curPlan(); if (p) refreshPrint(p); });   // Ctrl+P で直接印刷しても、いまの内容で出る
+
+  boot();
+  shell();
+  route();
+})();
