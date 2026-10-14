@@ -2729,7 +2729,7 @@
 .vid-screen-empty .btn-row { justify-content: center; margin-top: 6px; }
 .vid-transport { display: grid; gap: 4px; }
 .vid-transport-row { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; min-width: 0; }
-.vid-root .btn.vid-play { width: 44px; min-width: 44px; height: 44px; border-radius: 50%; }
+.vid-root .vid-transport .btn.vid-play { width: 44px; min-width: 44px; height: 44px; border-radius: 50%; }
 .vid-time { font-size: 13px; color: var(--ink-2); white-space: nowrap; }
 .vid-seek { min-width: 0; width: 100%; margin: 0; }
 .vid-toggle[aria-pressed="true"] { --btn-bg: var(--gosu-wash); color: var(--gosu); }
