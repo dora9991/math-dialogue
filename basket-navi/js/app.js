@@ -21,6 +21,8 @@
   };
   const norm = s => String(s == null ? '' : s).normalize('NFKC').toLowerCase();
   const safeDecode = s => { try { return decodeURI(s); } catch (e) { return s; } };
+  const nk = s => String(s == null ? '' : s).normalize('NFKC').toLowerCase().replace(/\s+/g, '');   // 名前くらべ用（全角半角・大文字小文字・空白を無視）
+  const stem = s => String(s).replace(/\.[^./\\]+$/, '');
   const safeUrl = u => { u = String(u || '').trim(); return /^https?:\/\//i.test(u) ? u : ''; };
   const today = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
   const dateJa = s => {
@@ -128,11 +130,47 @@
     else if (b.charAt(0) === '/' && location.protocol === 'file:') b = 'file://' + b;
     return b.endsWith('/') ? b : b + '/';
   }
+  /* この端末で「選んだ」動画ファイル（iPad など）。アプリを閉じるまで有効。動画の中身は、どこにも送らない・保存しない */
+  const ATT = {};   // 動画ID → { url, name }
+  function canPath() {   // 「フォルダの場所」から動画を読めるか。公開された https のページ（iPad など）では読めないので、ファイルを選ぶ方式になる
+    const m = D().pickMode;
+    if (m === 'on') return false;
+    if (m === 'off') return true;
+    return location.protocol !== 'https:' || !!D().base || !!(LIB.config && LIB.config.videoBase);
+  }
   function videoSrc(v) {
+    if (ATT[v.id]) return ATT[v.id].url;
     if (!v.file) return '';
     if (/^(https?|file|blob):/i.test(v.file)) return v.file;
+    if (!canPath()) return '';
     return baseUrl() + v.file.split('/').filter(x => x !== '').map(encodeURIComponent).join('/');
   }
+  function attachFile(vid, file) {
+    if (ATT[vid]) URL.revokeObjectURL(ATT[vid].url);
+    ATT[vid] = { url: URL.createObjectURL(file), name: file.name };
+  }
+  function attachMany(files, onlyVid) {   // 1本だけ選んだら、いまの動画にそのまま使う。複数なら、ファイル名でライブラリの動画に割り当てる
+    files = Array.from(files);
+    const res = { ok: [], none: [], dup: [] };
+    if (onlyVid && files.length === 1) { attachFile(onlyVid, files[0]); res.ok.push(onlyVid); return res; }
+    const byFile = {}, byStem = {};
+    LIB.videos.forEach(v => {
+      const base = v.file ? v.file.split('/').pop() : '', sk = nk(base ? stem(base) : v.title);
+      if (base) (byFile[nk(base)] = byFile[nk(base)] || []).push(v);
+      (byStem[sk] = byStem[sk] || []).push(v);
+    });
+    files.forEach(f => {
+      let hit = byFile[nk(f.name)] || [];
+      if (!hit.length) hit = byStem[nk(stem(f.name))] || [];
+      if (hit.length === 1) { attachFile(hit[0].id, f); res.ok.push(hit[0].id); }
+      else if (hit.length > 1) res.dup.push(f.name);
+      else res.none.push(f.name);
+    });
+    return res;
+  }
+  const attachMsg = r => (r.ok.length ? `${r.ok.length}本を用意しました` : '名前が合う動画が見つかりませんでした')
+    + (r.none.length ? `（${r.none.length}本は、ライブラリのどの動画か決められませんでした）` : '')
+    + (r.dup.length ? `（${r.dup.length}本は、同じ名前の動画が複数あって決められませんでした）` : '');
 
   /* ===== ③ ライブラリ ===== */
   const UI = { cat: 'all', q: '', tag: '', fav: false, unseen: false, dtype: 'drill', dcat: 'all', dq: '', rate: 1 };
@@ -210,6 +248,13 @@
 
   function playerHtml(v) {
     const src = videoSrc(v);
+    if (!src && v.file && !canPath()) {   // この端末では、動画ファイルを「選んで」見る（iPad など）
+      return `<div class="player none"><div><b>この端末では、動画ファイルを選んで見ます</b>
+        <p>選ぶファイル：<code>${esc(v.file.split('/').pop())}</code>（ファイルアプリ・iCloud Drive から）</p>
+        <button class="btn primary" data-act="pickvideo" data-vid="${esc(v.id)}">動画ファイルを選ぶ…</button>
+        <p class="sub">いくつかまとめて選ぶと、名前が合う動画に、それぞれ割り当てます。選んだ動画は、アプリを閉じるまで使えます。</p>
+        ${v.url ? `<a class="btn" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">リンクを開く ↗</a>` : ''}</div></div>`;
+    }
     if (!src) {
       return `<div class="player none"><div><b>この項目には、動画ファイルがひも付いていません</b>
         <p>${SRC === 'sample' ? 'サンプルなので動画はありません。' : '<code>library.js</code> の <code>file</code> に動画のパスを書くと、ここで再生できます。'}</p>
@@ -311,6 +356,7 @@
       e.innerHTML = `<b>動画を開けませんでした</b>
         <p>探した場所：<code>${esc(safeDecode(s))}</code></p>
         <p>考えられること：<br>・ <code>basket-navi.html</code> を、動画のフォルダ（または、その上のフォルダ）に置いていない<br>・ OneDrive / iCloud Drive が「オンラインのみ」になっている（OneDrive：フォルダを右クリック →「この端末に常に保持」／iCloud Drive：Finder で動画を右クリック →「今すぐダウンロード」）<br>・ ブラウザで再生できない形式（.mov / .avi / .wmv など）。mp4（H.264）に変換するか、下のリンクで開く</p>
+        <p><button class="btn sm" data-act="pickvideo" data-vid="${esc(v.id)}">動画ファイルを選ぶ…</button></p>
         <p><a href="${esc(s)}" target="_blank" rel="noopener">ファイルを直接開く ↗</a>${v.url ? ` ／ <a href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">OneDrive などで開く ↗</a>` : ''}</p>`;
     });
     vp.addEventListener('loadedmetadata', () => {
@@ -488,7 +534,19 @@
     refreshPrint(p);
     updateBadge();
   }
-  function refreshPrint(p) { const s = $('.print-only'); if (s) s.innerHTML = printSheet(p); }
+  function refreshPrint(p) {
+    const s = $('.print-only'); if (s) s.innerHTML = printSheet(p);
+    const w = $('#prepwrap'); if (w) w.innerHTML = prepBlock(p);
+  }
+  function prepBlock(p) {   // この端末で動画ファイルを「選んで」見る場合だけ：今日の計画で使う動画の準備
+    if (canPath()) return '';
+    const ids = []; p.items.forEach(it => { if (it.vid && VID[it.vid] && ids.indexOf(it.vid) < 0) ids.push(it.vid); });
+    if (!ids.length) return '';
+    return `<section class="blk card-plain"><h2>動画の準備 <small>この端末では、動画ファイルを選んで見ます</small></h2>
+      <ul class="prep">${ids.map(id => `<li><span class="${ATT[id] ? 'ok' : 'ng'}">${ATT[id] ? '✓ 準備ずみ' : '未準備'}</span>${esc(VID[id].title)}</li>`).join('')}</ul>
+      <div class="row"><button class="btn primary" data-act="prepvideos">今日の動画を用意…</button></div>
+      <p class="sub">いくつかまとめて選ぶと、名前が合う動画に割り当てます。体育館の電波が弱いときは、先にファイルアプリで動画のフォルダを長押し →「ダウンロードを保持」（Keep Downloaded）にしておくと安心です。</p></section>`;
+  }
   function renderItems(p) {
     const ol = $('#items'); if (!ol) return;
     const labs = timeLabels(p);
@@ -510,7 +568,7 @@
         <p class="lead">動画の「見どころ」を並べて、その日の練習をつくります。体育館では「実施モード」を使います。</p>
         <div class="planbar">
           <select id="planSel" aria-label="計画をえらぶ">${d.plans.map(x => `<option value="${esc(x.id)}" ${x.id === p.id ? 'selected' : ''}>${esc(planLabel(x))}</option>`).join('')}</select>
-          <button class="btn sm" data-act="newplan">＋ 新しい計画</button><button class="btn sm" data-act="dupplan">複製</button><button class="btn sm danger" data-act="delplan">削除</button>
+          <button class="btn sm" data-act="newplan">＋ 新しい計画</button><button class="btn sm" data-act="dupplan">複製</button><button class="btn sm" data-act="planexport">この計画を書き出す</button><label class="btn sm" for="ldplan">計画を読み込む…</label><button class="btn sm danger" data-act="delplan">削除</button>
         </div>
         <div class="planhead">
           <label class="field">日付<input type="date" data-pf="date" value="${esc(p.date)}"></label>
@@ -522,6 +580,7 @@
         <ol class="items" id="items"></ol>
         <div class="adders"><button class="btn" data-act="pick">＋ 練習メニューから追加</button><button class="btn" data-act="free">＋ 自由に入力して追加</button></div>
         <div class="pact"><button class="btn primary" data-act="run">▶ 実施モードで始める</button><button class="btn" data-act="print">印刷</button><button class="btn" data-act="copy">テキストをコピー</button></div>
+        <div id="prepwrap">${prepBlock(p)}</div>
         ${p.doneAt ? `<section class="blk"><h2>ふりかえり <small>${esc(new Date(p.doneAt).toLocaleDateString('ja-JP'))} に実施</small></h2><textarea class="memo" data-pf="review" placeholder="うまくいったこと、次にやること">${esc(p.review)}</textarea></section>` : ''}
       </div>
       <section class="print-only">${printSheet(p)}</section>`;
@@ -557,6 +616,31 @@
     const p = addToPlan({ title: c.title, minutes: c.minutes || 10, note: c.note, vid: v.id, cid: c.id, at: c.at });
     toast(`「${c.title}」を今日の練習に入れました（合計 ${planTotal(p)}分）`, '#/plan', '計画を見る');
   };
+  A.planexport = () => {
+    const p = curPlan(); if (!p) return;
+    download('basket-navi-plan-' + (p.date || today()) + '.json', JSON.stringify({ kind: 'basket-navi-plan', v: 1, savedAt: new Date().toISOString(), plan: p }, null, 1));
+    toast('計画を書き出しました（AirDrop や iCloud Drive で、もう一方の端末に送れます）');
+  };
+  function cleanPlan(p) {
+    const n = x => String(x == null ? '' : x);
+    return {
+      id: n(p.id) || uid('p'), date: /^\d{4}-\d{2}-\d{2}$/.test(n(p.date)) ? n(p.date) : today(), title: n(p.title),
+      start: /^\d{1,2}:\d{2}$/.test(n(p.start)) ? n(p.start) : '', limit: Math.max(0, parseInt(p.limit, 10) || 0), review: n(p.review), doneAt: +p.doneAt || 0,
+      items: p.items.map(it => ({ id: n(it.id) || uid('i'), title: n(it.title), minutes: Math.max(0, Math.min(180, parseInt(it.minutes, 10) || 0)), note: n(it.note), vid: n(it.vid) || undefined, cid: n(it.cid) || undefined, at: +it.at || 0 }))
+    };
+  }
+  function importPlan(txt) {
+    const o = JSON.parse(txt);
+    if (!o || o.kind !== 'basket-navi-plan' || !o.plan || !Array.isArray(o.plan.items)) throw new Error('このアプリの計画ファイルではありません');
+    const d = D(), p = cleanPlan(o.plan), i = d.plans.findIndex(x => x.id === p.id);
+    if (i >= 0 && !confirm('同じ計画が、この端末にあります。上書きしますか？')) return;
+    if (i >= 0) d.plans[i] = p; else d.plans.unshift(p);
+    d.cur = p.id; S.save();
+    if (location.hash.indexOf('#/plan') === 0) pagePlan(); else location.hash = '#/plan';
+    updateBadge(); toast(`計画を読み込みました（${p.items.length}メニュー）`);
+  }
+  A.pickvideo = el => { const f = $('#vfile'); f.dataset.vid = el.dataset.vid || ''; f.click(); };
+  A.prepvideos = () => A.pickvideo({ dataset: {} });
   A.print = () => window.print();
   A.copy = () => { const p = curPlan(); if (!p) return; copyText(planText(p)).then(() => toast('テキストをコピーしました'), () => toast('コピーできませんでした')); };
   A.run = () => { const p = curPlan(); if (!p || !p.items.length) { toast('メニューを入れてから始めます'); return; } location.hash = '#/run'; };
@@ -715,7 +799,7 @@
     const it = R.p.items[R.i], v = it.vid ? VID[it.vid] : null; if (!v) return;
     const src = videoSrc(v);
     openDlg(`<div class="dlg-h"><h2>${esc(v.title)}</h2><button class="btn sm" data-act="closedlg">閉じる</button></div>
-      <div class="dlg-b">${src ? `<video id="rv" controls playsinline src="${esc(src)}"></video>` : '<p class="lead">この項目には動画ファイルがひも付いていません。</p>'}
+      <div class="dlg-b">${src ? `<video id="rv" controls playsinline src="${esc(src)}"></video>` : (v.file && !canPath() ? `<p class="lead">この動画ファイル（<code>${esc(v.file.split('/').pop())}</code>）を、この端末で選びます。</p><p><button class="btn primary" data-act="pickvideo" data-vid="${esc(v.id)}">動画ファイルを選ぶ…</button></p>` : '<p class="lead">この項目には動画ファイルがひも付いていません。</p>')}
       <p class="lead">${esc(it.title)} ／ ${fmt(it.at || 0)} から</p>${v.url ? `<a class="btn" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">OneDrive などで開く ↗</a>` : ''}</div>`);
     const rv = $('#rv'); if (!rv) return;
     rv.addEventListener('loadedmetadata', () => { rv.currentTime = Math.min(it.at || 0, rv.duration || 0); const pr = rv.play(); if (pr && pr.catch) pr.catch(() => {}); });
@@ -756,16 +840,20 @@
           <h2>動画の場所</h2>
           <p class="sub">ふつうは触らなくてOK（<code>basket-navi.html</code> と同じ場所を見ます）。別の場所に置いたときだけ、動画のフォルダの場所を入れます。例：<code>file:///Users/○○/Library/Mobile Documents/com~apple~CloudDocs/バスケ動画/</code>（iCloud Drive）　<code>file:///Users/○○/Library/CloudStorage/OneDrive-Personal/バスケ動画/</code>　<code>C:\\Users\\○○\\OneDrive\\バスケ動画</code></p>
           <div class="row"><input id="base" type="text" value="${esc(st.base)}" placeholder="（空 = このHTMLと同じ場所）" aria-label="動画の場所"><button class="btn" data-act="savebase">保存</button><button class="btn ghost" data-act="resetbase">もどす</button></div>
+          <div class="row"><label class="sub" for="pickmode">動画の読み込み方</label>
+            <select id="pickmode"><option value="" ${st.pickMode ? '' : 'selected'}>自動</option><option value="on" ${st.pickMode === 'on' ? 'selected' : ''}>ファイルを選んで再生（iPad・スマホ向け）</option><option value="off" ${st.pickMode === 'off' ? 'selected' : ''}>フォルダの場所から再生（パソコン向け）</option></select></div>
+          <p class="sub">自動：このHTMLをパソコンで開いているときは「フォルダの場所」から、公開されたページ（https。iPad など）では「ファイルを選んで」再生します。いまは <b>${canPath() ? 'フォルダの場所から' : 'ファイルを選んで'}</b> です。</p>
         </section>
         <section class="blk card-plain">
-          <h2>ライブラリの取り込み（スマホ・タブレット向け）</h2>
+          <h2>ライブラリの取り込み（iPad・スマホ向け）</h2>
           <p class="sub">パソコンで作った <code>library.js</code>（または <code>.json</code>）を、この端末のブラウザに取り込みます。中身はこの端末の中にだけ入り、どこにも送られません。</p>
-          <div class="row"><label class="btn" for="ldlib">ファイルを選ぶ…</label><input id="ldlib" type="file" accept=".js,.json,application/json" hidden>${imp ? '<button class="btn danger" data-act="dellib">取り込みを消す</button>' : ''}</div>
+          <div class="row"><label class="btn" for="ldlib">ファイルを選ぶ…</label><input id="ldlib" class="vh" type="file">${imp ? '<button class="btn danger" data-act="dellib">取り込みを消す</button>' : ''}</div>
         </section>
         <section class="blk card-plain">
           <h2>バックアップ</h2>
           <p class="sub">お気に入り・視聴済み・メモ・印・計画・実践の記録を、ファイルに書き出します。最後のバックアップ：${st.backedUp ? esc(new Date(st.backedUp).toLocaleString('ja-JP')) : 'まだありません'}</p>
-          <div class="row"><button class="btn primary" data-act="dlbackup">書き出す</button><label class="btn" for="ldbackup">読み込む…</label><input id="ldbackup" type="file" accept=".json,application/json" hidden></div>
+          <div class="row"><button class="btn primary" data-act="dlbackup">書き出す</button><label class="btn" for="ldbackup">読み込む（足しあわせ）</label><label class="btn ghost" for="ldbackupr">読み込む（置きかえ）</label><input id="ldbackup" class="vh" type="file"><input id="ldbackupr" class="vh" type="file"></div>
+          <p class="sub">パソコンと iPad で記録を行き来させるときは「足しあわせ」（いまの記録は消えません）。AirDrop や iCloud Drive でファイルを送れます。</p>
         </section>
         <section class="blk card-plain">
           <h2>うまくいかないとき</h2>
@@ -795,7 +883,8 @@
     $('#app').innerHTML = `<header class="top"><div class="in"><a class="brand" href="#/" aria-label="バスケ指導ナビ ホーム">${BALL}<span>バスケ指導ナビ</span></a>
       <nav class="tabs" aria-label="メニュー"><a href="#/" data-tab="lib">ライブラリ</a><a href="#/drills" data-tab="drills">練習メニュー</a><a href="#/plan" data-tab="plan">今日の練習<span class="badge" id="badge"></span></a><a href="#/settings" data-tab="settings">設定</a></nav>
       ${S.usable() ? '' : '<span class="warnchip">保存できない環境です</span>'}</div></header>
-      <main id="main" tabindex="-1"></main><div id="toast" role="status" aria-live="polite"></div><dialog id="dlg"></dialog>`;
+      <main id="main" tabindex="-1"></main><div id="toast" role="status" aria-live="polite"></div><dialog id="dlg"></dialog>
+      <input id="vfile" class="vh" type="file" accept="video/*" multiple aria-label="動画ファイルを選ぶ"><input id="ldplan" class="vh" type="file" aria-label="計画ファイルを選ぶ">`;
     const dg = $('#dlg');
     dg.addEventListener('click', e => { if (e.target === dg) dg.close(); });
     dg.addEventListener('close', () => { dg.innerHTML = ''; });
@@ -849,10 +938,25 @@
     const t = e.target;
     if (t.id === 'planSel') { D().cur = t.value; S.save(); pagePlan(); }
     else if (t.name === 'type' && t.closest('#markForm')) syncMarkForm();
-    else if (t.id === 'ldbackup' && t.files[0]) {
+    else if (t.id === 'pickmode') { D().pickMode = t.value; S.save(); toast('動画の読み込み方を変えました'); pageSettings(); }
+    else if (t.id === 'vfile' && t.files.length) {
+      const res = attachMany(t.files, t.dataset.vid || '');
+      t.value = '';
+      toast(attachMsg(res));
+      if (res.ok.length) { if ($('#dlg').open && R.p && document.body.classList.contains('run-on')) A.rvideo(); else route(); }
+    } else if (t.id === 'ldplan' && t.files[0]) {
+      readFile(t.files[0]).then(importPlan).catch(err => toast('読み込めませんでした：' + err.message));
+      t.value = '';
+    } else if (t.id === 'ldbackup' && t.files[0]) {   // 足しあわせ（いまの記録は消えない）
+      readFile(t.files[0]).then(txt => {
+        const r = S.mergeAll(JSON.parse(txt)); route();
+        toast(`記録を足しあわせました（計画 +${r.plans}・印 +${r.marks}）`);
+      }).catch(err => toast('読み込めませんでした：' + err.message));
+      t.value = '';
+    } else if (t.id === 'ldbackupr' && t.files[0]) {   // 置きかえ
       readFile(t.files[0]).then(txt => {
         if (!confirm('いまの記録を、このバックアップで置きかえます。よろしいですか？')) return;
-        S.importAll(JSON.parse(txt)); route(); toast('記録を読み込みました');
+        S.importAll(JSON.parse(txt)); route(); toast('記録を読み込みました（置きかえ）');
       }).catch(err => toast('読み込めませんでした：' + err.message));
       t.value = '';
     } else if (t.id === 'ldlib' && t.files[0]) {
@@ -885,6 +989,7 @@
   window.addEventListener('hashchange', route);
   window.addEventListener('beforeprint', () => { const p = curPlan(); if (p) refreshPrint(p); });   // Ctrl+P で直接印刷しても、いまの内容で出る
 
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* できなくても動く */ }   // iPad などで、記録が勝手に消されにくくなる（できれば）
   boot();
   shell();
   route();

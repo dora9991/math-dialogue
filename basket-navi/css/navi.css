@@ -16,6 +16,8 @@
   }
 }
 * { box-sizing: border-box; }
+button, a, input, select, textarea, label, summary { touch-action: manipulation; }   /* iPad で、ダブルタップの拡大をさせない */
+.vh { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }   /* ファイルを選ぶ入力（見えないが、押せる） */
 [hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -81,6 +83,8 @@ main { max-width: 980px; margin: 0 auto; padding: 16px; outline: none; }
 .blk { margin-top: 24px; }
 .blk > h2 { font-size: 17px; margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; }
 .blk > h2 small { color: var(--muted); font-weight: 500; font-size: 13px; }
+.sub { color: var(--muted); font-size: 13.5px; }
+.card-plain .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 10px 0; }
 .card-plain { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; }
 
 /* ---- ライブラリ ---- */
@@ -221,6 +225,10 @@ dialog::backdrop { background: rgba(10, 14, 20, .55); }
 .set .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
 .set .row input[type=text] { flex: 1 1 260px; }
 .set p { font-size: 14.5px; margin-top: 6px; }
+.set select { flex: 1 1 260px; min-height: 44px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.prep { list-style: none; padding: 0; margin: 0 0 10px; display: grid; gap: 4px; font-size: 14.5px; }
+.prep .ok { color: var(--ok); font-weight: 800; margin-right: 10px; }
+.prep .ng { color: var(--warn); font-weight: 800; margin-right: 10px; }
 .set .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 14px; margin-top: 8px; }
 .set .kv dt { color: var(--muted); }
 .set .kv dd { margin: 0; word-break: break-all; }

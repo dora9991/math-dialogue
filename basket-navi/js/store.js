@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   const KEY = 'basketNavi.v1', LIBKEY = 'basketNavi.library.v1';
-  const blank = () => ({ v: 1, fav: {}, seen: {}, notes: {}, marks: {}, pos: {}, done: {}, plans: [], cur: null, run: null, base: '', backedUp: 0 });
+  const blank = () => ({ v: 1, fav: {}, seen: {}, notes: {}, marks: {}, pos: {}, done: {}, plans: [], cur: null, run: null, base: '', pickMode: '', backedUp: 0 });
   let d = blank(), usable = true, timer = 0;
 
   const read = key => { try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : null; } catch (e) { usable = false; return null; } };
@@ -26,6 +26,31 @@
       if (!o || o.kind !== 'basket-navi-backup' || !o.data || typeof o.data !== 'object') throw new Error('このアプリのバックアップではありません');
       d = Object.assign(blank(), o.data);
       S.save();
+    },
+    mergeAll(o) {   // いまの記録を消さずに足しあわせる（同じ id のものは、いまの記録を優先）。別の端末の記録を持ちこむとき用
+      if (!o || o.kind !== 'basket-navi-backup' || !o.data || typeof o.data !== 'object') throw new Error('このアプリのバックアップではありません');
+      const b = Object.assign(blank(), o.data), r = { plans: 0, marks: 0 };
+      ['fav', 'seen'].forEach(k => Object.keys(b[k] || {}).forEach(id => { d[k][id] = 1; }));
+      Object.keys(b.notes || {}).forEach(id => {
+        const x = String(b.notes[id] || '');
+        if (!x) return;
+        if (!d.notes[id]) d.notes[id] = x; else if (d.notes[id].indexOf(x) < 0) d.notes[id] += '\n――\n' + x;
+      });
+      Object.keys(b.marks || {}).forEach(vid => {
+        const have = d.marks[vid] || (d.marks[vid] = []);
+        (b.marks[vid] || []).forEach(m => { if (m && m.id && !have.some(h => h.id === m.id)) { have.push(m); r.marks++; } });
+        if (!have.length) delete d.marks[vid];
+      });
+      Object.keys(b.pos || {}).forEach(id => { if (!d.pos[id]) d.pos[id] = b.pos[id]; });
+      Object.keys(b.done || {}).forEach(k => {
+        const x = b.done[k] || {}, y = d.done[k] || (d.done[k] = { n: 0, last: '' });
+        y.n = Math.max(y.n || 0, x.n || 0);
+        y.last = (y.last || '') > (x.last || '') ? y.last : (x.last || '');
+      });
+      (b.plans || []).forEach(p => { if (p && p.id && Array.isArray(p.items) && !d.plans.some(q => q.id === p.id)) { d.plans.push(p); r.plans++; } });
+      if (!d.cur && d.plans[0]) d.cur = d.plans[0].id;
+      S.save();
+      return r;
     },
     wipe() { d = blank(); S.save(); },
     libGet: () => read(LIBKEY),

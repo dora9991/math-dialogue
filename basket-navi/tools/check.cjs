@@ -8,6 +8,7 @@
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const http = require('http');
 const { spawnSync } = require('child_process');
 const { chromium } = require('playwright');
 
@@ -49,6 +50,14 @@ const readLib = f => { const t = fs.readFileSync(f, 'utf8'); return JSON.parse(t
   bundle(verify);
   ok(fs.readFileSync(verify, 'utf8') === fs.readFileSync(path.join(root, 'basket-navi.html'), 'utf8'), '配布用の basket-navi.html が、いまのソースと一致する（違うときは node tools/bundle.cjs）');
 
+  // 公開用（iPad・スマホ向け PWA）のフォルダが、いまのソースと一致するか。library.js を読まないこと
+  const pwaTmp = path.join(tmp, 'pwa');
+  ok(spawnSync(process.execPath, [path.join(__dirname, 'bundle.cjs'), '--pwa', pwaTmp]).status === 0, 'bundle.cjs --pwa で、公開用のフォルダ（index.html・manifest・sw.js・アイコン）ができる');
+  const pubDir = path.join(root, '..', 'public', 'basket-navi');
+  const pwaFiles = fs.readdirSync(pwaTmp);
+  ok(fs.existsSync(pubDir) && fs.readdirSync(pubDir).length === pwaFiles.length && pwaFiles.every(f => fs.existsSync(path.join(pubDir, f)) && Buffer.compare(fs.readFileSync(path.join(pwaTmp, f)), fs.readFileSync(path.join(pubDir, f))) === 0), '公開用の public/basket-navi/ が、いまのソースと一致する（違うときは node tools/bundle.cjs --all）');
+  ok(!/<script src="library\.js"/.test(fs.readFileSync(path.join(pwaTmp, 'index.html'), 'utf8')), '公開用のページは library.js を読まない（動画の一覧は、公開ページに置かない）');
+
   // iCloud Drive 風のフォルダで setup（未ダウンロードの目印ファイル・フォルダの自動検出・HTML の配置）
   const ic = path.join(tmp, 'Library', 'Mobile Documents', 'com~apple~CloudDocs');
   fs.mkdirSync(path.join(ic, 'バスケ動画', '指導法'), { recursive: true });
@@ -80,6 +89,8 @@ const readLib = f => { const t = fs.readFileSync(f, 'utf8'); return JSON.parse(t
   lib.videos.push(ghost);
   fs.writeFileSync(libPath, 'window.BASKET_LIBRARY = ' + JSON.stringify(lib) + ';');
 
+  const webm = withVideo ? fs.readFileSync(path.join(od, '戦術', 'ピック＆ロール', '02_ピック＆ロール入門.webm')) : null;
+  const pickFile = (name, buf) => ({ name, mimeType: 'video/webm', buffer: buf });
   let browser;
   try { browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] }); }
   catch (e) { browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium/chrome-linux/chrome', args: ['--autoplay-policy=no-user-gesture-required'] }); }
@@ -320,6 +331,150 @@ const readLib = f => { const t = fs.readFileSync(f, 'utf8'); return JSON.parse(t
     ok(new Set(tops).size === 1, '実施モードの3つのボタンが、スマホ幅でも1行に並ぶ');
     ok((await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 1, '実施モードが横にはみ出さない');
     await ctx.close();
+  }
+
+  /* ---- D. iPad・公開ページ（ホーム画面に追加・オフライン・動画を選ぶ・Mac との受け渡し） ---- */
+  console.log('D. iPad・公開ページ');
+  {
+    const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
+    const server = http.createServer((req, res) => {
+      const u = decodeURIComponent((req.url || '/').split('?')[0]);
+      const f = path.join(pwaTmp, u === '/' ? 'index.html' : u.replace(/^\/+/, ''));
+      if (!f.startsWith(pwaTmp) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); res.end('not found'); return; }
+      res.writeHead(200, { 'Content-Type': types[path.extname(f)] || 'application/octet-stream' });
+      res.end(fs.readFileSync(f));
+    });
+    await new Promise(r => server.listen(0, '127.0.0.1', r));
+    const url = `http://127.0.0.1:${server.address().port}/`;
+    const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 }, hasTouch: true, acceptDownloads: true });
+    const page = await ctx.newPage(); watch(page);
+    await page.goto(url);
+    await page.waitForSelector('.card');
+    const mf = await page.evaluate(() => fetch('manifest.webmanifest').then(r => r.json()));
+    ok(mf.display === 'standalone' && mf.icons.length >= 2 && (await page.locator('link[rel=apple-touch-icon]').count()) === 1, 'manifest と apple-touch-icon がある（ホーム画面に追加できる）');
+    await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
+    await page.waitForFunction(() => caches.keys().then(k => k.length > 0), null, { timeout: 8000 });
+    await page.reload();
+    await page.waitForSelector('.card');
+    await ctx.setOffline(true);
+    await page.reload();
+    await page.waitForSelector('.card', { timeout: 8000 });
+    ok(true, 'ネットがなくても開ける（オフライン。体育館の電波が弱くても使える）');
+    await ctx.setOffline(false);
+    await shot(page, 'D1-library-ipad-landscape.png');
+
+    // ライブラリの取り込み → 「ファイルを選んで再生」方式（公開された https のページを想定）
+    await page.click('.tabs a[data-tab=settings]');
+    await page.setInputFiles('#ldlib', { name: 'library.js', mimeType: 'text/javascript', buffer: fs.readFileSync(libPath) });
+    await page.waitForFunction(() => /取り込みました/.test(document.querySelector('#toast').textContent), null, { timeout: 4000 });
+    await page.selectOption('#pickmode', 'on');
+    ok(/ファイルを選んで/.test(await text(page, '.set')) && (await page.inputValue('#pickmode')) === 'on', '設定で「ファイルを選んで再生」に切りかえられる');
+    await page.click('.tabs a[data-tab=lib]');
+    await page.waitForSelector('.card');
+    await page.click('.card:has-text("ピック")');
+    await page.waitForSelector('.player.none [data-act=pickvideo]');
+    ok((await page.locator('#vp').count()) === 0, '選ぶ方式では、動画の場所を探さず、「動画ファイルを選ぶ」案内が出る');
+    await shot(page, 'D2-video-pick-ipad.png');
+    if (withVideo) {
+      const [fc] = await Promise.all([page.waitForEvent('filechooser'), page.click('[data-act=pickvideo]')]);
+      await fc.setFiles(pickFile('なんでもいい名前.webm', webm));
+      await page.waitForSelector('#vp');
+      ok((await page.getAttribute('#vp', 'src')).startsWith('blob:'), '選んだ動画ファイルが、その場で再生できる状態になる（1本選ぶと、いまの動画に使う）');
+      await page.waitForFunction(() => { const v = document.querySelector('#vp'); return v && v.readyState >= 1; }, null, { timeout: 8000 });
+      await page.click('#clips .clip >> nth=1 >> .time');
+      await page.waitForFunction(() => document.querySelector('#vp').currentTime >= 19, null, { timeout: 5000 });
+      ok(true, '選んだ動画で、見どころの時刻から再生できる');
+    }
+
+    // 計画に入れて、「今日の動画を用意」（複数まとめて・名前で割り当て）
+    await page.goto(url + '#/v/v-miss');
+    await page.waitForSelector('#clips .clip');
+    await page.click('#clips .clip >> nth=0 >> [data-act=addplan]');
+    await page.goto(url + '#/v/' + encodeURIComponent(lib.videos.find(v => v.title.includes('ピック')).id));
+    await page.waitForSelector('#clips .clip');
+    await page.click('#clips .clip >> nth=1 >> [data-act=addplan]');
+    await page.reload();                        // 選んだ動画は、アプリを開き直すと、いったん消える
+    await page.click('.tabs a[data-tab=plan]');
+    await page.waitForSelector('.prep li');
+    ok((await page.locator('.prep li').count()) === 2 && (await page.locator('.prep .ng').count()) === 2, '計画ページに「動画の準備」（2本とも未準備）が出る');
+    if (withVideo) {
+      await page.setInputFiles('#vfile', [pickFile('02_ピック＆ロール入門.webm', webm), pickFile('xyz.webm', webm)]);
+      await page.waitForFunction(() => /1本を用意しました/.test(document.querySelector('#toast').textContent), null, { timeout: 4000 });
+      ok((await page.locator('.prep .ok').count()) === 1 && /決められません/.test(await text(page, '#toast')), 'まとめて選ぶと、名前が合う動画に割り当て、合わないものは知らせる');
+    }
+    await shot(page, 'D3-plan-prep-ipad.png', true);
+
+    // 実施モードで、動画を見る
+    await page.click('[data-act=run]');
+    await page.waitForSelector('#timer');
+    await shot(page, 'D4-run-ipad.png');
+    if (withVideo) {
+      const first = await text(page, '.rnow h1');
+      await page.click('[data-act=rvideo]');
+      await page.waitForSelector('dialog[open]');
+      const hasVideo = await page.locator('dialog video').count();
+      ok(hasVideo === 1 || (await page.locator('dialog [data-act=pickvideo]').count()) === 1, '実施モードの「動画を見る」：用意ずみなら再生、未準備なら「選ぶ」案内（' + first + '）');
+      await page.click('dialog [data-act=closedlg]');
+      await page.click('[data-act=rnext]');
+      await page.click('[data-act=rvideo]');
+      await page.waitForSelector('dialog[open]');
+      ok((await page.locator('dialog video').count()) + (await page.locator('dialog [data-act=pickvideo]').count()) === 1, '次のメニューでも、同じように動画を開ける／選べる');
+      await page.click('dialog [data-act=closedlg]');
+    }
+    await page.click('[data-act=rexit]');
+
+    // Mac との受け渡し：計画の書き出し・読み込み
+    await page.waitForSelector('#items .pi');
+    const nItems = await page.locator('#items .pi').count();
+    await page.fill('[data-pf=title]', 'Macで作った計画');
+    const [pdl] = await Promise.all([page.waitForEvent('download'), page.click('[data-act=planexport]')]);
+    const planPath = path.join(tmp, 'plan.json');
+    await pdl.saveAs(planPath);
+    const exported = JSON.parse(fs.readFileSync(planPath, 'utf8'));
+    ok(exported.kind === 'basket-navi-plan' && exported.plan.items.length === nItems, '計画を、ファイルに書き出せる');
+    await page.click('[data-act=delplan]');
+    await page.setInputFiles('#ldplan', planPath);
+    await page.waitForFunction(() => /計画を読み込みました/.test(document.querySelector('#toast').textContent), null, { timeout: 4000 });
+    ok((await page.inputValue('[data-pf=title]')) === 'Macで作った計画' && (await page.locator('#items .pi').count()) === nItems, '書き出した計画を、もう一方の端末（ここでは消したあと）に読み込める');
+    await page.setInputFiles('#ldplan', planPath);     // 同じ計画 → 上書きの確認（自動で「はい」）
+    await page.waitForFunction(() => /計画を読み込みました/.test(document.querySelector('#toast').textContent), null, { timeout: 4000 });
+    ok((await page.evaluate(() => JSON.parse(localStorage.getItem('basketNavi.v1')).plans.filter(p => p.title === 'Macで作った計画').length)) === 1, '同じ計画を読み込むと、増えずに上書きされる');
+
+    // 記録の「足しあわせ」読み込み（iPad で作った記録を消さずに、Mac の記録を持ちこむ）
+    await page.goto(url + '#/v/' + encodeURIComponent(lib.videos.find(v => v.title.includes('ピック')).id));
+    await page.waitForSelector('[data-act=mark]');
+    await page.click('[data-act=mark]');
+    await page.fill('#markForm [name=title]', 'Macでつけた印');
+    await page.click('#markForm [type=submit]');
+    await page.click('.tabs a[data-tab=settings]');
+    const [bdl] = await Promise.all([page.waitForEvent('download'), page.click('[data-act=dlbackup]')]);
+    const bkPath2 = path.join(tmp, 'backup2.json');
+    await bdl.saveAs(bkPath2);
+    await page.click('[data-act=wipe]');
+    await page.click('.tabs a[data-tab=plan]');
+    await page.waitForSelector('[data-pf=title]');
+    await page.fill('[data-pf=title]', 'iPadで作った計画');
+    await page.click('.tabs a[data-tab=settings]');
+    await page.setInputFiles('#ldbackup', bkPath2);
+    await page.waitForFunction(() => /足しあわせました/.test(document.querySelector('#toast').textContent), null, { timeout: 4000 });
+    const merged = await page.evaluate(() => JSON.parse(localStorage.getItem('basketNavi.v1')));
+    const titles = merged.plans.map(p => p.title);
+    ok(titles.includes('iPadで作った計画') && titles.includes('Macで作った計画'), '足しあわせ読み込み：いまの計画（iPad）を残したまま、持ちこんだ計画（Mac）が加わる');
+    ok(Object.keys(merged.marks).length === 1 && Object.values(merged.marks)[0].some(m => m.title === 'Macでつけた印'), '足しあわせ読み込み：印も持ちこまれる');
+    await page.setInputFiles('#ldbackup', bkPath2);   // もう一度読み込んでも、増えない
+    await page.waitForFunction(() => /足しあわせました（計画 \+0・印 \+0）/.test(document.querySelector('#toast').textContent), null, { timeout: 4000 });
+    ok(true, '同じバックアップをもう一度足しあわせても、増えない');
+    await ctx.close();
+
+    // iPad の縦向き
+    const ctx2 = await browser.newContext({ viewport: { width: 768, height: 1024 }, hasTouch: true });
+    const page2 = await ctx2.newPage(); watch(page2);
+    await page2.goto(url);
+    await page2.waitForSelector('.card');
+    await shot(page2, 'D5-library-ipad-portrait.png');
+    ok((await page2.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 1, 'iPad の縦向きでも、横にはみ出さない');
+    await ctx2.close();
+    await new Promise(r => server.close(r));
   }
 
   await browser.close();
