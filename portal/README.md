@@ -42,12 +42,13 @@ Classi のような「ログインすれば、今日やることが全部見え�
    - 3つ目は、生徒に伝えている学校コード。
    - SQL Editor の履歴にパスワードが残るので、ログインしたら「パスワード変更」で変える。
    - 管理者がパスワードを忘れたときも、同じ文で設定し直せる（ロックも解ける）。
-4. **公開**（リポジトリのいちばん上で）:
+4. **公開**（リポジトリのいちばん上で）。初回だけ、先に `npx wrangler login` と、プロジェクトを作る1行目を実行する:
    ```bash
-   npx wrangler pages project create math-portal --production-branch main   # 初回だけ（プロジェクトを作る）
-   node portal/tools/deploy.cjs           # 初回だけ先に：npx wrangler login
+   npx wrangler pages project create math-portal --production-branch main
+   node portal/tools/deploy.cjs
    ```
    Cloudflare Pages の `math-portal` に出る。名前がすでに使われていたら、`tools/deploy.cjs` の `PROJECT` を変える。
+   （Mac のターミナル＝zsh では、コマンドの後ろに書いた `# ...` もコマンドの一部として渡されるので、コードには注釈を書いていない）
 5. `https://math-portal.pages.dev/portal/teacher.html` に管理者でログイン →「先生の管理」で同僚を追加（ID・初期パスワード・担当クラス）→ 初期パスワードを口頭か紙で伝える。
 
 ## 授業での使い方
@@ -59,8 +60,9 @@ Classi のような「ログインすれば、今日やることが全部見え�
 
 ## 手元で確かめる
 
+リポジトリのいちばん上で（portal は `../quiz` などを読むため）:
 ```bash
-python3 -m http.server 8793      # リポジトリのいちばん上で（portal は ../quiz などを読むため）
+python3 -m http.server 8793
 ```
 → `http://localhost:8793/portal/`（生徒）／ `.../portal/teacher.html`（先生）。
 「← 数学ポータル」のリンクは、公開用に組み立てたときだけ出る。組み立てた中身は `node portal/tools/deploy.cjs --out <フォルダ>` で見られる。
