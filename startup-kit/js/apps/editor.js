@@ -320,7 +320,7 @@
         renderList();
         if (changed) renderProps(false);
         pv.post({ type: 'mise:focus', id, scroll: from !== 'preview' });
-        if (st.layout !== 'three' && (from === 'list' || (from === 'preview' && st.layout === 'one'))) setTab('props');
+        if (st.layout !== 'three' && (from === 'list' || from === 'preview')) setTab('props');
       }
 
       /* ── セクションの一覧 ── */
