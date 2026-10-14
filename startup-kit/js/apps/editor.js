@@ -669,7 +669,7 @@
         }
         out.push(group('色の組み合わせ（テーマ）', themes));
         // 字体
-        const fontHint = h('div', { class: 'hint' }, (SR().fontOf(site.font) || {}).desc || '');
+        const fontHint = h('div', { class: 'small muted' }, (SR().fontOf(site.font) || {}).desc || '');
         out.push(group('文字の雰囲気', Kit.seg(SR().fonts.map((f) => ({ value: f.id, label: f.name })), site.font, (v) => { change(() => { site.font = v; }); fontHint.textContent = SR().fontOf(v).desc; }, { label: '文字の雰囲気' }), fontHint));
         // アクセント色
         const base = SR().themeOf(site.theme).c.accent;
@@ -678,12 +678,12 @@
         out.push(group('アクセント色（ボタンなど）',
           h('div', { class: 'ed-accent' }, color, h('span', { class: 'small muted' }, site.accent ? '自分で選んだ色' : 'テーマの色'),
             site.accent ? Kit.btn('テーマの色に戻す', () => { change(() => { site.accent = ''; }); renderProps(true); }, { sm: true, kind: 'ghost' }) : null),
-          h('div', { class: 'hint' }, '文字が読みにくくならないよう、明るさは自動で調整します。')));
+          h('div', { class: 'small muted' }, '文字が読みにくくならないよう、明るさは自動で調整します。')));
         // メニュー
         const navCb = h('input', { type: 'checkbox', id: 'ed-site-nav' });
         navCb.checked = site.nav !== false;
         navCb.addEventListener('change', () => change(() => { site.nav = navCb.checked; }));
-        out.push(group('ページ上部のメニュー', h('label', { class: 'check' }, navCb, 'メニューを出す（スマホでは≡ボタン）'), h('div', { class: 'hint' }, 'どのセクションを出すかは、各セクションの「小見出しとメニュー」で選べます。')));
+        out.push(group('ページ上部のメニュー', h('label', { class: 'check' }, navCb, 'メニューを出す（スマホでは≡ボタン）'), h('div', { class: 'small muted' }, 'どのセクションを出すかは、各セクションの「小見出しとメニュー」で選べます。')));
         // 検索・SNS
         const defTitle = [p.name, p.tagline].filter(Boolean).join('｜');
         const title = h('input', { type: 'text', id: 'ed-meta-title', placeholder: defTitle || '屋号｜キャッチコピー' });

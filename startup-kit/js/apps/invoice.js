@@ -788,7 +788,7 @@
     m.off();
     m.menu.remove();
     m.anchor.setAttribute('aria-expanded', 'false');
-    if (focusAnchor) try { m.anchor.focus(); } catch (e) { /* noop */ }
+    if (focusAnchor) try { m.anchor.focus(); } catch (e) { /* フォーカスできなくてもよい */ }
   }
   function toggleMenu(anchor, items) {
     if (openMenu && openMenu.anchor === anchor) { closeMenu(); return; }
@@ -800,12 +800,17 @@
       menu.append(h('button', { type: 'button', role: 'menuitem', class: it.danger ? 'danger' : null, onclick: () => { closeMenu(); it.onClick(); } }, it.icon ? Kit.icon(it.icon) : null, h('span', null, it.label)));
     }
     document.body.append(menu);
-    const r = anchor.getBoundingClientRect(), mw = menu.offsetWidth, mh = menu.offsetHeight;
-    const left = Math.max(8, Math.min(r.right - mw, window.innerWidth - mw - 8));
-    let top = r.bottom + 4;
-    if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
-    menu.style.left = left + 'px';
-    menu.style.top = top + 'px';
+    // ボタンの下（入らなければ上）に置く。スクロールしたら付いていき、ボタンが見えなくなったら閉じる
+    const place = () => {
+      const r = anchor.getBoundingClientRect();
+      if (!anchor.isConnected || r.bottom < 0 || r.top > window.innerHeight) { closeMenu(); return; }
+      const mw = menu.offsetWidth, mh = menu.offsetHeight;
+      let top = r.bottom + 4;
+      if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
+      menu.style.left = Math.max(8, Math.min(r.right - mw, window.innerWidth - mw - 8)) + 'px';
+      menu.style.top = top + 'px';
+    };
+    place();
     anchor.setAttribute('aria-expanded', 'true');
     const btns = [...menu.querySelectorAll('button')];
     if (btns[0]) btns[0].focus();
@@ -815,7 +820,7 @@
       else if (e.key === 'Tab') closeMenu();
     };
     const onDown = (e) => { if (!menu.contains(e.target) && !anchor.contains(e.target)) closeMenu(); };
-    const onMove = () => closeMenu();
+    const onMove = () => { if (openMenu && openMenu.menu === menu) place(); };
     document.addEventListener('keydown', onKey, true);
     document.addEventListener('pointerdown', onDown, true);
     window.addEventListener('resize', onMove);
@@ -1491,12 +1496,14 @@
           renderIssuer();
           renderBankNotes();
           schedulePreview();
-        }, { icon: 'user', sm: true });
+        }, { icon: 'user' });
 
         /* 振込先・備考 */
         const bankNotesBox = h('div', { class: 'stack' });
+        const bankTitle = h('span');
         function renderBankNotes() {
           Kit.clear(bankNotesBox);
+          bankTitle.textContent = doc.type === 'invoice' ? '振込先と備考' : '備考';
           if (doc.type === 'invoice') {
             const bank = h('textarea', { rows: 2, placeholder: '例：〇〇銀行 △△支店 普通 1234567 カズノ ヒカル' });
             bank.value = doc.bank || '';
@@ -1537,7 +1544,7 @@
         async function afterExport(msg) {
           if (isNew || pending) await persist();
           if (doc.type !== 'receipt' && doc.status === 'draft') {
-            Kit.toast(msg + '。送ったら状態を送付済みに', { action: { label: '送付済みにする', onClick: () => { if (seq !== viewSeq) return; doc.status = 'sent'; renderStatus(); changed('status'); } } });
+            Kit.toast(msg + '。相手に送ったら、状態を送付済みにできます', { action: { label: '送付済みにする', onClick: () => { if (seq !== viewSeq) return; doc.status = 'sent'; renderStatus(); changed('status'); } } });
           } else Kit.toast(msg);
         }
         async function run(btn, fn) {
@@ -1572,7 +1579,7 @@
         }
         const sec = (title, extra, ...kids) => h('section', { class: 'inv-sec' }, h('h2', null, title, extra ? [h('span', { class: 'spacer' }), extra] : null), ...kids);
         const notices = [];
-        if (doc.sample) notices.push(hint('info', 'これはサンプルです。サンプルを片付けると消えます。自分の書類にするなら複製してください。', false, Kit.btn('複製する', async () => { await flush(); duplicate(st.docs.find((x) => x.id === doc.id) || doc); }, { sm: true, icon: 'copy' })));
+        if (doc.sample) notices.push(hint('info', 'これはサンプルです。サンプルを片付けると消えます。自分の書類にするなら複製してください。', false, Kit.btn('複製する', async () => { await flush(); duplicate(st.docs.find((x) => x.id === doc.id) || doc); }, { icon: 'copy' })));
         if (o.lead) notices.push(hint('info', '問い合わせ（' + (o.lead.name || '') + (o.lead.kind ? '・' + o.lead.kind : '') + '）から作りました。' + (+o.lead.value > 0 ? '見込み金額 ' + Kit.yen(o.lead.value) + ' を単価に入れています。見直してください。' : '')));
         const form = h('div', { class: 'inv-form' },
           notices,
@@ -1593,7 +1600,7 @@
               h('span', { class: 'small muted' }, '会社や学校に講師料・原稿料を請求して、源泉所得税を差し引くよう言われたときに使います。')),
             sumBox, rateChips, taxNotes),
           sec('発行者', issuerBtn, issuerBox),
-          sec(doc.type === 'invoice' ? '振込先と備考' : '備考', null, bankNotesBox),
+          sec(bankTitle, null, bankNotesBox),
           h('div', { class: 'row' }, saveMsg));
         const side = h('div', { class: 'inv-side' }, h('div', { class: 'inv-ptools' }, zoomBtn, h('span', { class: 'inv-pinfo' }, 'A4・1枚')), paper);
         const edRoot = h('div', { class: 'inv-ed', 'data-pane': pane });

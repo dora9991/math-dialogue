@@ -588,6 +588,8 @@ a:hover{text-decoration-thickness:2px}
 .hero-center .actions{justify-content:center}
 .hero-center .hero-media{max-width:960px;margin-inline:auto;width:100%}
 .hero-center .hero-media img{aspect-ratio:16/7}
+.hero-center .hero-media.is-art{max-width:600px}
+.hero-center .hero-media.is-art img{aspect-ratio:auto}
 .hero-deco{position:absolute;inset:0;pointer-events:none}
 .hero-deco::before,.hero-deco::after{content:"";position:absolute;border:1.5px solid var(--accent);border-radius:50%;opacity:.14}
 .hero-deco::before{width:420px;height:420px;right:-140px;top:-160px}
@@ -853,7 +855,7 @@ a:hover{text-decoration-thickness:2px}
       const alt = img && !img.art ? s.imageAlt || '' : '';
       let inner;
       if (layout === 'cover') inner = `${img ? `<div class="hero-bgimg">${imgTag(img, alt, { eager: true })}</div>` : '<div class="hero-deco" aria-hidden="true"></div>'}<div class="wrap hero-in">${text}</div>`;
-      else if (layout === 'center') inner = `${img ? '' : '<div class="hero-deco" aria-hidden="true"></div>'}<div class="wrap hero-in">${text}${img ? `<figure class="hero-media">${imgTag(img, alt, { eager: true })}</figure>` : ''}</div>`;
+      else if (layout === 'center') inner = `${img ? '' : '<div class="hero-deco" aria-hidden="true"></div>'}<div class="wrap hero-in">${text}${img ? `<figure class="hero-media${img.art ? ' is-art' : ''}">${imgTag(img, alt, { eager: true })}</figure>` : ''}</div>`;
       else inner = `${img ? '' : '<div class="hero-deco" aria-hidden="true"></div>'}<div class="wrap hero-in">${text}${img ? `<figure class="hero-media">${imgTag(img, alt, { eager: true })}</figure>` : ''}</div>`;
       return section(s, e, `hero hero-${layout}${img ? ' has-img' : ''}`, inner);
     },
@@ -995,9 +997,9 @@ a:hover{text-decoration-thickness:2px}
     function fit() {
       var hd = $('.hd');
       if (!hd) return;
-      var nav = $('.gnav', hd), inner = $('.hd-in', hd);
+      var nav = $('.gnav', hd), inner = $('.hd-in', hd), name = $('.brand-name', hd);
       hd.classList.remove('is-m');
-      var m = !!nav && (w.innerWidth < 900 || inner.scrollWidth > inner.clientWidth + 1);
+      var m = !!nav && (w.innerWidth < 900 || inner.scrollWidth > inner.clientWidth + 1 || (name && name.scrollWidth > name.clientWidth + 1));
       hd.classList.toggle('is-m', m);
       if (!m) setMenu(false);
     }
@@ -1323,11 +1325,29 @@ ${e.mode === 'edit' ? '<style id="mise-sel"></style>\n' : ''}${e.mode === 'expor
     return `<script type="application/json" id="mise-config" data-k="cfg">${jsonIn(cfg)}</script>\n<script data-k="js">${PAGE_JS}</script>`;
   }
 
+  // 中身がなくて、公開しても意味のないセクション（書き出しでは出さない。編集中は「追加してください」と出す）
+  function isEmpty(s, e) {
+    const some = (list, f) => arr(list).some((x) => x && f(x));
+    switch (s.type) {
+      case 'services': return !some(s.items, (x) => has(x.title) || has(x.body));
+      case 'pricing': return !some(s.plans, (x) => has(x.name) || has(x.price));
+      case 'flow': return !some(s.steps, (x) => has(x.title) || has(x.body));
+      case 'voices': return !some(s.items, (x) => has(x.text));
+      case 'faq': return !some(s.items, (x) => has(x.q));
+      case 'news': return !some(s.items, (x) => has(x.text));
+      case 'gallery': return !arr(s.images).some((g) => e.img(typeof g === 'string' ? g : g && g.src));
+      case 'about': return !has(s.heading) && !has(s.body) && !e.img(s.image);
+      case 'profile': return !has(s.heading) && !has(s.name) && !has(s.body) && !e.img(s.image);
+      case 'cta': return !has(s.heading) && !has(s.body) && !has(s.buttonLabel);
+      default: return false;
+    }
+  }
+
   // 完全な1枚のHTML。ctx = { profile, form, images: {id: dataUrl}, mode: 'export'|'preview'|'edit' }
   function html(site0, ctx) {
     const site = normalize(site0);
     const e = envFor(site, ctx || {});
-    const visible = site.sections.filter((s) => !s.hidden);
+    const visible = site.sections.filter((s) => !s.hidden && !(e.mode === 'export' && isEmpty(s, e)));
     for (const s of visible) e.ids.add(s.id);
     const contact = visible.find((s) => s.type === 'contact');
     e.contactId = contact ? contact.id : '';
