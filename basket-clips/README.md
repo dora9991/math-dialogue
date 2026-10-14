@@ -4,7 +4,7 @@
 切り出した場面は、その場で続けて再生したり、1本の動画（MP4）に書き出したりできます。
 
 「バスケ分析スタジオ」（個人スタッツ・場面別集計・アドバイスまで出す多機能版）の、**いちばんよく使う機能だけ**を取り出したシンプル版です。
-得点を見つけるしくみ（解析エンジン）は、バスケ分析スタジオと同じものを使っています。
+得点を見つけるしくみ（解析エンジン）は、バスケ分析スタジオのものをもとに、リングに当たってから入る得点を落とさないよう、ゴールの追跡などを少し直したものです（下の「確かめたこと」）。
 
 - インストール不要・通信なし。**動画はその端末の中だけで扱い、どこにも送りません**
 - 公開ページ：**https://dora9991.github.io/math-dialogue/basket-clips/**
@@ -90,7 +90,7 @@ basket-clips/
   css/app.css
   js/core.js        名前空間（BS）・時刻の書式など
   js/vision.js      ┐
-  js/auto.js        │ 解析エンジン（バスケ分析スタジオ 9331ba6 と同じ。ゴールの追跡・ボール・得点の判定）
+  js/auto.js        │ 解析エンジン（バスケ分析スタジオ 9331ba6 がもと。ゴールの追跡・ボール・得点の判定。追跡などを一部直した）
   js/auto-engine.js │ （Worker でも画面側でも同じコードが動く）
   js/mp4.js         ┘ MP4 / MOV の読み取り（こちらでは VP9・AV1 の MP4 も読めるように足した）
   js/clips.js       得点 → 入れた／入れられた・5秒の区間・ハーフタイムの提案（DOM なし）
@@ -103,6 +103,7 @@ basket-clips/
   tests/e2e.cjs     画面を通した確認（Playwright の Chromium）
   tests/rim-check.cjs   リングに当たってから入る／外れるシュートを、形ごとに数える（合成映像で。判定の調整用）
   tests/rim-replay.cjs  rim-check.cjs が保存したコマごとの記録を、シュートの判定にかけ直す（動画を読み直さずに試せる）
+  tests/node-run.cjs    動画の一部を ffmpeg で読み、解析エンジンを node でそのまま動かす（trace でコマごとのゴールの追跡を表示）
   tests/tools/make-video.cjs  テスト用の合成試合動画（VP9 の MP4）と正解を作る
   tests/tools/fixtures/       合成映像の描画（バスケ分析スタジオのサンプル試合。テストだけで使う）
                               rimplay.js：シュートの一部を、リングで弾んでから入る／外れる形にする（ゴールの見え方も本物に近づける）
@@ -112,7 +113,7 @@ basket-clips/
 
 ```bash
 node basket-clips/build.mjs              # 1ファイル版を作り直す（公開するのはこれ）
-node basket-clips/tests/unit.cjs         # 回帰テスト（39件。ffmpeg があれば MP4 の読み取りも）
+node basket-clips/tests/unit.cjs         # 回帰テスト（44件。ffmpeg があれば MP4 の読み取りも）
 node basket-clips/tests/e2e.cjs built    # 画面を通した確認（44件・約5分。初回は合成動画を作るので +3分）
 node basket-clips/tests/e2e.cjs dev      # 開発版で同じ確認
 node basket-clips/tests/server.cjs       # 開発用サーバー → http://127.0.0.1:5192/
@@ -126,6 +127,8 @@ node basket-clips/tests/rim-replay.cjs /tmp/rim800.log.json /tmp/rim800.mp4     
 - e2e は Playwright（`npm i -g playwright` など）と、その Chromium を使います。合成動画は `WORK`（既定は一時フォルダの `basket-clips-e2e/`）に置き、次から使い回します。
 - テストの Chromium は H.264 を扱えないため、合成動画は VP9 の MP4 にしています。ふつうの Chrome・Edge・Safari では、スマホの H.264 / HEVC の動画を同じように直接読みます。
 - 解析エンジン（`vision.js` `auto.js` `auto-engine.js` `mp4.js`）を直すときは、バスケ分析スタジオと同じ直しを入れると、両方がそろったままになります。
+  いまは `auto.js` に、バスケ分析スタジオ（9331ba6）にまだない直しが入っています：画面の外になる位置のゴールの捉え方（TH_ACQ_EDGE・TH_KEEP_EDGE・OUT_MAX）、
+  リングが隠れたコマを捨てない（OCCL_MAX・OCCL_NCC・設定の rimOcclusion）、ネットの下から現れたボールの条件（bornYMax・bornGap）。向こうにも同じ直しを入れると、そろいます。
 
 ## 公開
 
