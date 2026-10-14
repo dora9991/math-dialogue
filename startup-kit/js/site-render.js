@@ -1095,6 +1095,10 @@ a:hover{text-decoration-thickness:2px}
       var wrap = f.closest('.f-wrap'), box = wrap && $('.f-done', wrap);
       if (!box) return;
       var n = $('.f-note', box);
+      // 届いていないときは「送信しました」とチェックの印を出さない（注意書きだけにする）
+      var thanks = $('.f-done-b', box), mark = box.querySelector('svg');
+      if (thanks) thanks.hidden = !!x.warn;
+      if (mark) mark.style.display = x.warn ? 'none' : '';
       n.textContent = '';
       n.className = 'f-note' + (x.warn ? ' warn' : '');
       if (x.note) { var p = d.createElement('p'); p.textContent = x.note; n.appendChild(p); }
@@ -1165,7 +1169,7 @@ a:hover{text-decoration-thickness:2px}
       // 送信先がまだ決まっていないフォーム：内容が消えないよう、メールで送る道を出す
       done(f, {
         warn: true,
-        note: 'ただし、このフォームはまだ送信先につながっていないため、内容は届いていません。' + (C.email ? 'お手数ですが、下のボタンからメールでお送りください（入力した内容が入ります）。' : 'お手数ですが、別の方法でご連絡ください。'),
+        note: 'このフォームはまだ送信先につながっていないため、内容は届いていません。' + (C.email ? 'お手数ですが、下のボタンからメールでお送りください（入力した内容が入ります）。' : 'お手数ですが、別の方法でご連絡ください。'),
         mail: C.email ? mailto(C.email, data) : '',
         mailLabel: 'メールで送る',
       });
@@ -1450,9 +1454,11 @@ ${scriptsHtml(e)}
         }, 1500);
       });
       const onMsg = (e) => {
-        if (e.source !== frame.contentWindow) return;
         const m = e.data;
         if (!m || typeof m !== 'object') return;
+        // 試し送信は、同じ画面の中から送られたもの（動作確認など）も受け付ける。ほかの枠からは受けない
+        if (e.source === window && m.type === 'mise:inquiry') { if (o.onMessage) o.onMessage(m); return; }
+        if (e.source !== frame.contentWindow) return;
         if (m.type === 'mise:ready') {
           ready = true;
           if (pending != null) { post({ type: 'mise:update', html: pending }); pending = null; }

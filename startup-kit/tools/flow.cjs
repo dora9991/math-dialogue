@@ -34,7 +34,6 @@ const ok = (cond, msg) => { console.log((cond ? 'OK  ' : 'NG  ') + msg); if (!co
 
   // 2. ホームページの試し送信 → 受付箱
   const before = counts.leads;
-  await page.evaluate(() => window.postMessage({ type: 'mise:inquiry', data: { kind: 'ご相談・お問い合わせ', name: '通し 確認', email: 'flow@example.com', message: 'つながりの確認です', source: 'チラシ', page: 'test', at: new Date().toISOString() } }, '*'));
   await go('site');
   await page.evaluate(() => window.postMessage({ type: 'mise:inquiry', data: { kind: 'ご相談・お問い合わせ', name: '通し 確認', email: 'flow@example.com', message: 'つながりの確認です', source: 'チラシ', page: 'test', at: new Date().toISOString() } }, '*'));
   await wait(600);
@@ -65,7 +64,8 @@ const ok = (cond, msg) => { console.log((cond ? 'OK  ' : 'NG  ') + msg); if (!co
     await go(id);
     ok(errs.length === n, `サンプルを片付けたあと「${id}」がエラーなく開ける`);
   }
-  await page.screenshot({ path: path.join(OUT, 'flow-5-empty-dashboard.png') });
+  await go('dashboard');
+  await page.screenshot({ path: path.join(OUT, 'flow-5-empty-dashboard.png'), fullPage: true });
 
   // 5. バックアップ → すべて消す → 戻す
   const snap = await page.evaluate(async () => { await Kit.store.put('events', { title: 'バックアップ確認', date: Kit.rel(3), allDay: true, cat: 'work' }); await Kit.store.flush(); return Kit.store.exportAll(); });

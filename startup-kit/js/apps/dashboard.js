@@ -24,7 +24,7 @@
     .db-group { display: grid; gap: 8px; }
     .db-group + .db-group { margin-top: 16px; }
     .db-group-label { font-size: 12px; letter-spacing: .16em; color: var(--ink-3); font-weight: 700; }
-    .db-tools { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
+    .db-tools { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
     .db-tool { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; align-items: start; text-align: left; padding: 14px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); color: var(--ink); font: inherit; cursor: pointer; transition: border-color .12s, transform .06s; }
     .db-tool:hover { border-color: var(--gosu); }
     .db-tool:active { transform: translateY(1px); }
