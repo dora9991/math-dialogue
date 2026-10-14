@@ -24,6 +24,7 @@
 | 手元のパソコン・スマホ | `startup-kit-all-in-one.html` をダウンロードして、ダブルクリック（1ファイルで全部入り） | そのブラウザ（localStorage） |
 | フォルダごと | `index.html` をブラウザで開く（ビルドもサーバーも要らない） | そのブラウザ |
 | Claude の Artifact | `node tools/bundle.cjs --artifact` でできる `dist/artifact.html` を公開する | 持ち主のアカウント（端末をまたいで同じ内容） |
+| ウェブ（GitHub Pages） | https://dora9991.github.io/math-dialogue/startup-kit/ を開く（だれでも開ける） | 開いた人のブラウザ（ほかの人のデータは見えない） |
 
 Artifact で開いたときだけ、AI の提案ボタン（文章案・返信の下書き・投稿案など）が出る。手元で開いたときは出ない。
 
@@ -58,6 +59,16 @@ Artifact で開いたときだけ、AI の提案ボタン（文章案・返信�
 
 届いた問い合わせは、集客窓口の「まとめて取り込む」で CSV から受付箱に入れられる。
 
+## このツール自体をウェブに公開するには（GitHub Pages）
+
+```bash
+node tools/publish-pages.cjs        # まとめて（public/startup-kit/index.html）、gh-pages の startup-kit/index.html だけを差し替えて push
+node tools/publish-pages.cjs --dry  # push せずに、コミットするところまで
+```
+
+`npm run deploy`（vite build → gh-pages）は gh-pages を丸ごと入れかえるので、main にない公開物（バスケ得点クリップなど）が消える。このツールだけを更新するときは `publish-pages.cjs` を使う。
+`public/startup-kit/index.html` はリポジトリにも入れてあるので、main から `npm run deploy` したときにも一緒に出る。
+
 ## ホームページを公開するには
 
 エディターで「公開用HTMLを書き出す」→ できた `index.html` を、次のどれかに置く（どれも無料から使える）。
@@ -83,7 +94,8 @@ startup-kit/
 ├── js/start.js           … 起動
 ├── vendor/qrcode.js      … QRコード（MIT, Kazuhiko Arase。applied/vendor と同じもの）
 ├── gas/inquiry.gs        … 問い合わせを受け取る Google Apps Script
-├── tools/bundle.cjs      … 1つの HTML にまとめる（all-in-one と Artifact 用）
+├── tools/bundle.cjs      … 1つの HTML にまとめる（all-in-one・Artifact 用・GitHub Pages 用）
+├── tools/publish-pages.cjs … GitHub Pages（gh-pages）の startup-kit/ だけを差し替えて公開
 ├── tools/check.cjs       … 動作確認（Playwright で全ツールを開いて、エラー・はみ出しを調べ、画面を撮る）
 └── startup-kit-all-in-one.html … まとめたもの（tools/bundle.cjs で作る。手で直さない）
 ```
