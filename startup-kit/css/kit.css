@@ -228,6 +228,7 @@ p { margin: 0; }
 .mb-save-state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); flex: none; }
 .mb-save-state[data-mode="db"]::before { background: var(--ok); }
 .mb-save-state[data-mode="local"]::before { background: var(--warn); }
+.mb-save-state[data-mode="demo"]::before { background: var(--shu); }
 
 .mb-main { min-width: 0; }
 .mb-view {

@@ -430,7 +430,8 @@
   function queue(key, fn, delay = 350) {
     let j = jobs.get(key);
     if (!j) { j = { fn: null, timer: 0, running: null }; jobs.set(key, j); }
-    j.fn = fn;
+    const b = backend; // 積んだ時点の保存先に書く（デモ中の書き込みが本物に混ざらない）
+    j.fn = () => fn(b);
     clearTimeout(j.timer);
     j.timer = setTimeout(() => run(key), delay);
     saveState('saving');
@@ -503,14 +504,14 @@
       if (v && typeof v === 'object' && !Array.isArray(v)) delete v._sample;
       cache.docs.set(key, v);
       known.docs.add(key);
-      queue('d:' + key, () => backend.setDoc(key, v));
+      queue('d:' + key, (b) => b.setDoc(key, v));
       emit('doc:' + key);
       return clone(v);
     },
     async del(key) {
       await store.init();
       cache.docs.set(key, undefined);
-      queue('d:' + key, () => backend.delDoc(key));
+      queue('d:' + key, (b) => b.delDoc(key));
       emit('doc:' + key);
     },
     isSample(value) { return !!(value && value._sample); },
@@ -545,7 +546,7 @@
       const items = virtual.get(name);
       virtual.delete(name);
       const m = cache.colls.get(name) || new Map();
-      for (const it of items) { m.set(it.id, it); queue('c:' + name + ':' + it.id, () => backend.putItem(name, it), 100); }
+      for (const it of items) { m.set(it.id, it); queue('c:' + name + ':' + it.id, (b) => b.putItem(name, it), 100); }
       cache.colls.set(name, m);
       await touch(name);
     },
@@ -559,7 +560,7 @@
       it.updatedAt = now;
       cache.colls.get(name).set(it.id, it);
       if (!meta.touched[name]) await touch(name);
-      queue('c:' + name + ':' + it.id, () => backend.putItem(name, it), 200);
+      queue('c:' + name + ':' + it.id, (b) => b.putItem(name, it), 200);
       emit('coll:' + name);
       return clone(it);
     },
@@ -569,7 +570,7 @@
       await store._materialize(name);
       cache.colls.get(name).delete(id);
       if (!meta.touched[name]) await touch(name);
-      queue('c:' + name + ':' + id, () => backend.delItem(name, id), 100);
+      queue('c:' + name + ':' + id, (b) => b.delItem(name, id), 100);
       emit('coll:' + name);
     },
     async clear(name) {
@@ -579,7 +580,7 @@
       const ids = [...m.keys()];
       m.clear();
       await touch(name);
-      for (const id of ids) queue('c:' + name + ':' + id, () => backend.delItem(name, id), 100);
+      for (const id of ids) queue('c:' + name + ':' + id, (b) => b.delItem(name, id), 100);
       emit('coll:' + name);
     },
 
@@ -593,7 +594,7 @@
         for (const it of items) if (it.sample) await store.remove(name, it.id);
         emit('coll:' + name);
       }
-      queue('d:' + META, () => backend.setDoc(META, clone(meta)));
+      queue('d:' + META, (b) => b.setDoc(META, clone(meta)));
       for (const key of known.docs) emit('doc:' + key);
     },
     samplesShown() { return !meta.samplesOff; },
@@ -612,11 +613,11 @@
       for (const [key, v] of Object.entries(data.docs || {})) { if (key !== META) await store.set(key, v); }
       for (const [name, items] of Object.entries(data.colls || {})) {
         await store.clear(name);
-        for (const it of items || []) { const m = cache.colls.get(name); m.set(it.id, it); queue('c:' + name + ':' + it.id, () => backend.putItem(name, it), 100); }
+        for (const it of items || []) { const m = cache.colls.get(name); m.set(it.id, it); queue('c:' + name + ':' + it.id, (b) => b.putItem(name, it), 100); }
         emit('coll:' + name);
       }
       meta.samplesOff = true;
-      queue('d:' + META, () => backend.setDoc(META, clone(meta)));
+      queue('d:' + META, (b) => b.setDoc(META, clone(meta)));
       await store.flush();
     },
     async wipeAll() {
@@ -625,17 +626,58 @@
       for (const key of known.docs) if (key !== META) await store.del(key);
       meta = { samplesOff: false, touched: {} };
       virtual.clear();
-      queue('d:' + META, () => backend.setDoc(META, clone(meta)));
+      queue('d:' + META, (b) => b.setDoc(META, clone(meta)));
       await store.flush();
       for (const name of known.colls) emit('coll:' + name);
     },
     async flush() { await Promise.all([...jobs.keys()].map((k) => run(k))); await Promise.all([...jobs.values()].map((j) => j.running).filter(Boolean)); },
   });
 
+  // デモ用の試し箱。中では何を書いても、閉じれば消える（本物の保存先には触らない）
+  function memoryBackend() {
+    const mem = new Map();
+    return {
+      mode: 'demo',
+      async getDoc(key) { return clone(mem.get('d:' + key)); },
+      async setDoc(key, v) { mem.set('d:' + key, clone(v)); },
+      async delDoc(key) { mem.delete('d:' + key); },
+      async listColl(name) { return Object.values(clone(mem.get('c:' + name)) || {}); },
+      async putItem(name, item) { const o = mem.get('c:' + name) || {}; o[item.id] = clone(item); mem.set('c:' + name, o); },
+      async delItem(name, id) { const o = mem.get('c:' + name) || {}; delete o[id]; mem.set('c:' + name, o); },
+      async clearColl(name) { mem.delete('c:' + name); },
+      watch() {},
+    };
+  }
+  let saved = null;
+  store.demo = false;
+  store.sandbox = async (on) => {
+    await store.init();
+    if (on && !saved) {
+      await store.flush();
+      saved = { backend, mode: store.mode, meta, docs: cache.docs, colls: cache.colls, virtual: new Map(virtual) };
+      backend = memoryBackend();
+      store.mode = 'demo';
+      cache.docs = new Map(); cache.colls = new Map(); virtual.clear();
+      meta = { samplesOff: false, touched: {} };
+      store.demo = true;
+    } else if (!on && saved) {
+      await store.flush();
+      backend = saved.backend; store.mode = saved.mode; meta = saved.meta;
+      cache.docs = saved.docs; cache.colls = saved.colls;
+      virtual.clear(); for (const [k, v] of saved.virtual) virtual.set(k, v);
+      saved = null;
+      store.demo = false;
+    } else return;
+    saveState('saved');
+    saveWhere();
+    for (const key of known.docs) emit('doc:' + key);
+    for (const name of known.colls) emit('coll:' + name);
+  };
+
   async function touch(name) {
     if (meta.touched[name]) return;
     meta.touched[name] = true;
-    queue('d:' + META, () => backend.setDoc(META, clone(meta)));
+    queue('d:' + META, (b) => b.setDoc(META, clone(meta)));
   }
 
   async function chooseBackend() {
@@ -1121,7 +1163,7 @@
     store.declare('docs', def.docs);
     store.declare('colls', def.colls);
   };
-  Kit.apps = () => apps.slice().sort((a, b) => (a.order || 99) - (b.order || 99));
+  Kit.apps = () => apps.slice().sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
   Kit.appDef = (id) => appMap.get(id);
 
   let shell = null;
@@ -1129,14 +1171,21 @@
   let params = {};
   let mountSeq = 0;
 
-  Kit.go = (id, p) => {
+  // 画面が開いたことを知らせる（案内のツアーが使う）。Kit.go は開き終わるまで待てる
+  const mountListeners = new Set();
+  Kit.onMount = (fn) => { mountListeners.add(fn); return () => mountListeners.delete(fn); };
+  Kit.go = (id, p) => new Promise((resolve) => {
+    const target = appMap.has(id) ? id : null;
+    let timer = 0;
+    const off = Kit.onMount((mid) => { if (!target || mid === target) { off(); clearTimeout(timer); resolve(mid); } });
+    timer = setTimeout(() => { off(); resolve(Kit.current()); }, 8000);
     params = p || {};
     if (location.hash.slice(1) !== id) {
       try { location.hash = id; } catch (e) { mount(id); }
       // ハッシュが変わらない環境でも切り替える
       setTimeout(() => { if (!current || current.id !== id) mount(id); }, 60);
     } else mount(id);
-  };
+  });
 
   function buildShell() {
     const root = document.getElementById('kit') || document.body.appendChild(h('div', { id: 'kit' }));
@@ -1178,12 +1227,13 @@
   function saveState(s) {
     if (!shell) return;
     const el = shell.side.querySelector('.mb-save-state');
-    el.dataset.mode = store.mode === 'db' ? 'db' : 'local';
-    el.textContent = s === 'saving' ? '保存中…' : s === 'error' ? '保存できませんでした' : store.mode === 'db' ? 'アカウントに保存済み' : store.mode === 'memory' ? '保存できない環境です' : 'このブラウザに保存済み';
+    el.dataset.mode = store.mode === 'db' ? 'db' : store.mode === 'demo' ? 'demo' : 'local';
+    el.textContent = store.mode === 'demo' ? 'デモ中（保存しません）' : s === 'saving' ? '保存中…' : s === 'error' ? '保存できませんでした' : store.mode === 'db' ? 'アカウントに保存済み' : store.mode === 'memory' ? '保存できない環境です' : 'このブラウザに保存済み';
   }
   function saveWhere() {
     const el = shell.side.querySelector('.mb-save-where');
-    el.textContent = store.mode === 'db' ? 'ほかの端末で開いても同じ内容です。'
+    el.textContent = store.mode === 'demo' ? 'デモが終わると、元の内容に戻ります。'
+      : store.mode === 'db' ? 'ほかの端末で開いても同じ内容です。'
       : env.artifact ? '共有で開いているため、このブラウザだけに保存されます。'
         : store.mode === 'memory' ? 'ページを閉じると消えます。バックアップを書き出してください。'
           : 'ときどきダッシュボードからバックアップを。';
@@ -1212,9 +1262,17 @@
       console.error(e);
       if (seq === mountSeq) root.append(h('div', { class: 'empty' }, h('div', { class: 'empty-title' }, 'この画面を開けませんでした'), h('p', { class: 'small mono' }, String((e && e.message) || e))));
     }
-    if (seq === mountSeq) window.scrollTo(0, 0);
+    if (seq === mountSeq) {
+      window.scrollTo(0, 0);
+      for (const fn of [...mountListeners]) { try { fn(def.id); } catch (e) { console.error(e); } }
+    }
   }
   Kit.current = () => (current ? current.id : null);
+  Kit.shellEl = () => shell;
+  let startedResolve;
+  Kit.started = new Promise((r) => (startedResolve = r));
+  // ハッシュなしで開いたときの最初の画面。はじめての端末は「まずはここから」
+  Kit.firstApp = () => (appMap.has('start') && !Kit.pref.get('guide.seen', false) ? 'start' : 'dashboard');
   Kit.remount = () => { if (current) mount(current.id); };
 
   Kit.start = async () => {
@@ -1224,8 +1282,9 @@
     await store.init();
     saveState('saved');
     saveWhere();
-    const route = () => mount(location.hash.slice(1) || 'dashboard');
+    const route = () => mount(location.hash.slice(1) || Kit.firstApp());
     window.addEventListener('hashchange', route);
+    startedResolve(shell);
     route();
     const flush = () => { store.flush(); };
     window.addEventListener('pagehide', flush);

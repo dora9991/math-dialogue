@@ -6,6 +6,17 @@
 
 最初は、架空の教室「ひらめき数学舎」のサンプルで全部が動いている。ダッシュボードの「自分の事業で始める」で、自分の事業に切りかえる。
 
+## 迷わないための案内
+
+はじめて開くと「まずはここから」が出る（2回目からはダッシュボード）。
+
+| 案内 | どこにある | できること |
+|---|---|---|
+| まずはここから | メニューのいちばん上 | いまの段階（考え中／準備中／始めている）を選ぶと、最初の3歩が出る。はじめの5つ（プロフィール・ホームページ・送信先・公開・最初の予定）は、できたら自動で印がつく |
+| 3分デモ | まずはここから・使い方パネル | 「1件の問い合わせが売上になるまで」を、実際の画面を光らせながら8場面で見せる。デモ用の試し箱の中で動くので、何も保存されない（終わると元の内容に戻る） |
+| やりたいことを探す | メニューの上（スマホは右上の虫めがね）、キーの `/` | 「請求書」「チラシのQR」のように言葉で探すと、その画面へ行って押す場所を光らせる |
+| このページの使い方 | メニューの下（スマホは右上の i）、キーの `?` | そのツールでできること・まずはこの3つ・迷いやすいところ・画面をひとめぐり（ツアー）。Artifact では AI にも聞ける |
+
 ## 開き方
 
 | どこで | どうする | 保存先 |
@@ -65,6 +76,9 @@ startup-kit/
 ├── css/kit.css           … 見た目の土台（色はすべて変数。ダーク表示も）
 ├── js/kit.js             … 共通の土台（保存・画面の切り替え・部品・書き出し・AI・グラフ・QR）
 ├── js/site-render.js     … ホームページの描画（プレビュー・エディター・書き出しで同じものを使う）
+├── js/guide.js           … 案内の登録と検索（各ツールの使い方・やりたいこと）
+├── js/guide-ui.js        … 案内の画面（光らせるツアー・使い方パネル・やりたいこと検索・3分デモ）
+├── js/guide/help-*.js    … 各ツールの使い方とやりたいこと（中身）
 ├── js/apps/*.js          … ツール（1ファイル1ツール）
 ├── js/start.js           … 起動
 ├── vendor/qrcode.js      … QRコード（MIT, Kazuhiko Arase。applied/vendor と同じもの）
@@ -81,6 +95,7 @@ startup-kit/
 - サンプルは `Kit.store.sample(名前, 値)` で登録する。最初に書きかえた時点で保存される（開いただけでは書かない）。
 - 色は `css/kit.css` の変数だけを使う（ダーク表示がそろう）。`alert` `confirm` `prompt` は使わない（Artifact では動かない）→ `Kit.toast` `Kit.confirm` `Kit.ask`。
 - ファイルの保存は `Kit.download`。印刷ボタンには `local-only` を付ける（Artifact では印刷できない）。AI のボタンは `Kit.ai.button`（使えない画面では出ない）。
+- ツールの使い方は `js/guide/help-*.js` に `Guide.help(id, {lead, can, first, faq, tour, related})`、やりたいことは `Guide.tasks([...])`（形は `js/guide.js` の先頭）。光らせる場所は CSS セレクタで書き、`node tools/guide-verify.cjs` で PC・スマホとも見つかるか確かめる。
 - `gas/inquiry.gs` を直したら、`js/apps/inbox.js` の `GAS_SCRIPT`（画面に出す設定手順の中身）にも同じものを貼る。
 - 直したら `node tools/bundle.cjs` で all-in-one を作り直す。
 
@@ -91,6 +106,8 @@ cd startup-kit
 node tools/check.cjs                  # 全ツール × PC/スマホ × ライト/ダーク。エラーと横はみ出しを調べ、tools/_out/ に画面を保存
 node tools/check.cjs --app inbox --fresh   # 1ツールだけ、初めて開いた状態で
 node tools/flow.cjs                   # ツールどうしの受け渡し（問い合わせ→見積書・カレンダーなど）を通しで確認
+node tools/guide-verify.cjs           # 案内（ツアー・やりたいこと）の光らせる場所が、PC・スマホで見つかるか
+node tools/guide-tour.cjs             # 3分デモを最後まで動かし、デモのあと元のデータに戻るか・検索・使い方パネルを確認
 node tools/bundle.cjs                 # all-in-one を作り直す
 node tools/bundle.cjs --artifact      # Artifact 用（dist/artifact.html）
 ```

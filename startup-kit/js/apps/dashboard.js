@@ -40,6 +40,10 @@
     .db-flow-name { font-weight: 700; font-size: 14px; }
     .db-flow-tool { font-size: 12px; color: var(--ink-3); }
     .db-backup .btn-row { margin-top: 10px; }
+    .db-start { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 14px; margin-bottom: 16px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); font-size: 14px; }
+    .db-start-n { font-family: var(--font-display); font-weight: 800; color: var(--gosu); font-size: 18px; }
+    .db-start-t { flex: 1 1 240px; min-width: 0; color: var(--ink-2); }
+    .db-start-t b { color: var(--ink); }
     .db-welcome { display: grid; gap: 8px; }
   `);
 
@@ -114,6 +118,20 @@
             h('div', { class: 'btn-row' },
               Kit.btn('自分の事業で始める', startOwn, { sm: true, kind: 'primary', icon: 'store' }),
               Kit.btn('サンプルを片付ける', clearSamples, { sm: true, kind: 'ghost', icon: 'trash' }))));
+        }
+
+        /* ── はじめの5つ（まだ終わっていなければ、一行で知らせる） ── */
+        if (window.StartGuide) {
+          const items = await window.StartGuide.checklist();
+          if (!alive) return;
+          const n = items.filter((x) => x.done).length;
+          if (n < items.length) {
+            const next = items.find((x) => !x.done);
+            root.append(h('div', { class: 'db-start' },
+              h('span', { class: 'db-start-n num' }, n + ' / ' + items.length),
+              h('span', { class: 'db-start-t' }, h('b', null, 'はじめの5つ'), '　次は「' + next.title + '」'),
+              h('div', { class: 'btn-row' }, Kit.btn('やる', () => window.Guide.runTask(next.task), { sm: true, kind: 'primary', icon: 'right' }), Kit.btn('まずはここから', () => Kit.go('start'), { sm: true, kind: 'ghost' }))));
+          }
         }
 
         /* ── 今日やること ── */
