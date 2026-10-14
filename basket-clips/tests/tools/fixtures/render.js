@@ -248,43 +248,52 @@
     /* swish: 得点からの経過秒（そのゴールでネットが揺れている間だけ。それ以外は -1） */
     const rimHits = tr.rimHits || [];
     function rimHitAt(side, t) { let best = null; for (const hh of rimHits) { if (hh.side === side && hh.t <= t && t - hh.t <= 0.6) best = hh; } return best; }
-    function drawHoop(side, list, swish, amp) {
+    function drawHoop(side, list, swish, amp, vib) {
       if (amp == null) amp = 1;
       const d = side === 0 ? 1 : -1;
       const bx = side === 0 ? 0 : CT.L;
       const rimX = bx + d * CT.rimFromBaseline;
       const boardX = bx + d * CT.boardFromBaseline;
-      list.push({
-        y: 7.5, draw() {
-          // 支柱
-          const poleX = bx - d * 1.1;
-          line3([[poleX, 7.5, 0], [poleX, 7.5, 3.35]], '#3b4150', 7);
-          line3([[poleX, 7.5, 3.35], [boardX - d * 0.05, 7.5, 3.45]], '#3b4150', 5);
-          poly([[poleX - 0.5, 6.9, 0], [poleX + 0.5, 6.9, 0], [poleX + 0.5, 8.1, 0], [poleX - 0.5, 8.1, 0]], '#2a2f3a');
-          // ボード
-          poly([[boardX, 6.6, 2.9], [boardX, 8.4, 2.9], [boardX, 8.4, 3.95], [boardX, 6.6, 3.95]], 'rgba(235,242,255,0.55)', '#ffffff', 2);
-          poly([[boardX, 7.2, 3.05], [boardX, 7.8, 3.05], [boardX, 7.8, 3.5], [boardX, 7.2, 3.5]], null, '#e2553f', 2);
-          // ネット（得点の直後は、ふくらんで揺れる）
-          let e = 0, wob = 0;
-          if (swish >= 0) {
-            if (swish <= 0.6) { e = Math.sin(Math.PI * swish / 0.6); wob = e; }
-            else { wob = 0.35 * (1 - (swish - 0.6) / 0.3); e = wob * Math.sin((swish - 0.6) * 38); }
-            e *= amp; wob *= amp;
-          }
-          ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 1.2;
-          for (let i = 0; i < 12; i++) {
-            const a = i / 12 * Math.PI * 2;
-            const tw = wob ? 0.22 * wob * Math.sin(swish * 40 + i * 1.7) : 0;
-            const rm = 0.1775 + 0.085 * e, rb = 0.13 + 0.1 * e;
-            const p1 = proj(rimX + CT.rimR * Math.cos(a), 7.5 + CT.rimR * Math.sin(a), CT.rimH);
-            const pm = proj(rimX + rm * Math.cos(a + 0.15 + tw * 0.5), 7.5 + rm * Math.sin(a + 0.15 + tw * 0.5), CT.rimH - 0.21);
-            const p2 = proj(rimX + rb * Math.cos(a + 0.3 + tw), 7.5 + rb * Math.sin(a + 0.3 + tw), CT.rimH - 0.42 - 0.06 * e);
-            ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(pm[0], pm[1]); ctx.lineTo(p2[0], p2[1]); ctx.stroke();
-          }
-          // リング
-          poly(arcPts(rimX, 7.5, CT.rimR, 0, Math.PI * 2, 20, CT.rimH), null, '#ff6a1a', 3);
+      // ネット（得点の直後は、ふくらんで揺れる）
+      let e = 0, wob = 0;
+      if (swish >= 0) {
+        if (swish <= 0.6) { e = Math.sin(Math.PI * swish / 0.6); wob = e; }
+        else { wob = 0.35 * (1 - (swish - 0.6) / 0.3); e = wob * Math.sin((swish - 0.6) * 38); }
+        e *= amp; wob *= amp;
+      }
+      const rz = CT.rimH + (vib || 0);       // リングの高さ（テスト用：リングに当たった直後は細かく揺れる）
+      const strings = (half) => {
+        ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 1.2;
+        for (let i = 0; i < 12; i++) {
+          const a = i / 12 * Math.PI * 2;
+          if (half && (Math.sin(a) > 0.01 ? 'front' : 'back') !== half) continue;
+          const tw = wob ? 0.22 * wob * Math.sin(swish * 40 + i * 1.7) : 0;
+          const rm = 0.1775 + 0.085 * e, rb = 0.13 + 0.1 * e;
+          const p1 = proj(rimX + CT.rimR * Math.cos(a), 7.5 + CT.rimR * Math.sin(a), rz);
+          const pm = proj(rimX + rm * Math.cos(a + 0.15 + tw * 0.5), 7.5 + rm * Math.sin(a + 0.15 + tw * 0.5), rz - 0.21);
+          const p2 = proj(rimX + rb * Math.cos(a + 0.3 + tw), 7.5 + rb * Math.sin(a + 0.3 + tw), rz - 0.42 - 0.06 * e);
+          ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(pm[0], pm[1]); ctx.lineTo(p2[0], p2[1]); ctx.stroke();
         }
-      });
+      };
+      const back = () => {
+        // 支柱
+        const poleX = bx - d * 1.1;
+        line3([[poleX, 7.5, 0], [poleX, 7.5, 3.35]], '#3b4150', 7);
+        line3([[poleX, 7.5, 3.35], [boardX - d * 0.05, 7.5, 3.45]], '#3b4150', 5);
+        poly([[poleX - 0.5, 6.9, 0], [poleX + 0.5, 6.9, 0], [poleX + 0.5, 8.1, 0], [poleX - 0.5, 8.1, 0]], '#2a2f3a');
+        // ボード
+        poly([[boardX, 6.6, 2.9], [boardX, 8.4, 2.9], [boardX, 8.4, 3.95], [boardX, 6.6, 3.95]], 'rgba(235,242,255,0.55)', '#ffffff', 2);
+        poly([[boardX, 7.2, 3.05], [boardX, 7.8, 3.05], [boardX, 7.8, 3.5], [boardX, 7.2, 3.5]], null, '#e2553f', 2);
+      };
+      if (!tr.realHoop) {
+        // もとの描き方（ゴール全体を1つの物として、奥行き 7.5 m に描く）
+        list.push({ y: 7.5, draw() { back(); strings(null); poly(arcPts(rimX, 7.5, CT.rimR, 0, Math.PI * 2, 20, rz), null, '#ff6a1a', 3); } });
+        return;
+      }
+      // テスト用（本物に近い見え方）：奥の半分（ボード・奥のネットとリング）と、手前の半分（手前のネットとリング）に分けて描く。
+      // 輪の中を通るボールは、その間に描かれる（手前のリングとネットの陰になる）
+      list.push({ y: 7.5 - 0.3, draw() { back(); strings('back'); line3(arcPts(rimX, 7.5, CT.rimR, Math.PI, Math.PI * 2, 10, rz), '#ff6a1a', 3); } });
+      list.push({ y: 7.5 + 0.3, draw() { strings('front'); line3(arcPts(rimX, 7.5, CT.rimR, 0, Math.PI, 10, rz), '#ff6a1a', 3); } });
     }
 
     function drawPerson(o) {
@@ -421,7 +430,13 @@
       const sc = scoreAt(t);
       const scSide = sc ? (ballRaw(sc.ts).x < CT.L / 2 ? 0 : 1) : -1;
       // （テスト用に足したもの：rimplay.js がリングに当てたシュートでは、当たった直後にネットを少し揺らす）
-      const hk = (side) => { if (scSide === side) return [sc.tau, 1]; const hh = rimHitAt(side, t); return hh ? [t - hh.t, hh.amp] : [-1, 1]; };
+      const hk = (side) => {
+        const hh = rimHitAt(side, t);
+        // リングの揺れ（当たってから 0.35 秒、細かく減衰しながら上下に。最大 1.5 cm）
+        const vib = hh && tr.realHoop && t - hh.t < 0.35 ? 0.015 * Math.sin((t - hh.t) * 70) * Math.exp(-(t - hh.t) / 0.12) : 0;
+        if (scSide === side) return [sc.tau, 1, vib];
+        return hh ? [t - hh.t, hh.amp, vib] : [-1, 1, vib];
+      };
       drawHoop(0, list, ...hk(0));
       drawHoop(1, list, ...hk(1));
       // 審判（ボールを追う）

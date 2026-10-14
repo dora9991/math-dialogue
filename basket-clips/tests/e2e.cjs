@@ -173,6 +173,27 @@ const tabText = (page) => page.evaluate(() => [0, 1].map((i) => document.querySe
     await page.click(`.clip[data-id="${lastId}"] input[type="checkbox"]`);
     ok(await page.evaluate((id) => !BS.app.list().find((x) => x.id === id).on, lastId), 'チェックを外すと、その場面は入らない');
 
+    console.log('\n■ 入っていたかも？（外れと判定したシュートから、得点に直す）');
+    const mbs = await page.evaluate(() => BS.app.maybes().map((m) => ({ id: m.id, t: m.t, team: m.team })));
+    const mbTeam = mbs.length ? mbs[0].team : null;
+    ok(mbs.length > 0, '外れと判定したシュートが候補に並ぶ', mbs.length);
+    if (mbs.length) {
+      await page.click('#tab' + mbTeam);
+      await page.click('#maybes summary');
+      const shown = await page.$$eval('#maybes .mb', (els) => els.length);
+      ok(shown === mbs.filter((m) => m.team === mbTeam).length, 'そのチームが打った外れが、タブの下に並ぶ', shown);
+      const before = (await counts(page))[mbTeam];
+      await page.click(`[data-promote="${mbs[0].id}"]`);
+      const after = (await counts(page))[mbTeam];
+      ok(after === before + 1, '「入っていた」で得点の一覧に入る', [before, after]);
+      const pc = await page.evaluate((id) => BS.app.clipsFor(BS.app.S.tab).find((c) => c.id === id), mbs[0].id);
+      ok(pc && Math.abs(pc.t1 - pc.at - 2.5) < 0.01, '入っていたにした場面は、後ろを長めに（入るまで見える）', pc && [pc.at, pc.t1]);
+      ok(await page.$(`[data-unpromote="${mbs[0].id}"]`), '一覧に「↩」（外れに戻す）が出る');
+      await page.click(`[data-unpromote="${mbs[0].id}"]`);
+      ok((await counts(page))[mbTeam] === before, '「↩」で外れに戻る');
+      await page.click('#tab0');
+    }
+
     console.log('\n■ 動画にする（入れたところ）');
     const nOn = want[0] - 1;
     await page.click('#btnExport');

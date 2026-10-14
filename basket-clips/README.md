@@ -34,7 +34,8 @@
 | 自分と相手が全部逆になっている | 「⇄ 入れ替える」（解析のやり直しは不要） |
 | 1本だけチームが違う | その場面の「⇄ 入れられたへ／入れたへ」 |
 | 得点ではなかった（笛で取り消し など） | 左のチェックを外す（再生・書き出しに入らない） |
-| 見つからなかった得点がある | ボールがリングを通った瞬間で止めて「＋ 入れた」「＋ 入れられた」 |
+| リングに当たって弾んでから入った得点が見つからない | 一覧の下の「🤔 入っていたかも？」を開く。そのチームが打って「外れ」と判定したシュートが並ぶので、▶ で確かめて「入っていた」（間違えたら一覧の「↩」で戻せる） |
+| それでも見つからなかった得点がある | ボールがリングを通った瞬間で止めて「＋ 入れた」「＋ 入れられた」 |
 | ハーフタイムのあとが逆になっている | 後半の始まりを設定する（解析のあとに「シュートが1本もない長い時間」を見つけると、ハーフタイムの候補として教えてくれます） |
 
 ## どちらのチームの得点か、の決め方
@@ -86,8 +87,11 @@ basket-clips/
   js/app.js         画面（色・ゴールの指定・解析の実行・結果・続けて再生）
   tests/unit.cjs    回帰テスト（node だけで動く）
   tests/e2e.cjs     画面を通した確認（Playwright の Chromium）
+  tests/rim-check.cjs   リングに当たってから入る／外れるシュートを、形ごとに数える（合成映像で。判定の調整用）
+  tests/rim-replay.cjs  rim-check.cjs が保存したコマごとの記録を、シュートの判定にかけ直す（動画を読み直さずに試せる）
   tests/tools/make-video.cjs  テスト用の合成試合動画（VP9 の MP4）と正解を作る
   tests/tools/fixtures/       合成映像の描画（バスケ分析スタジオのサンプル試合。テストだけで使う）
+                              rimplay.js：シュートの一部を、リングで弾んでから入る／外れる形にする（ゴールの見え方も本物に近づける）
 ```
 
 ## 開発
@@ -98,6 +102,11 @@ node basket-clips/tests/unit.cjs         # 回帰テスト（39件。ffmpeg が�
 node basket-clips/tests/e2e.cjs built    # 画面を通した確認（44件・約5分。初回は合成動画を作るので +3分）
 node basket-clips/tests/e2e.cjs dev      # 開発版で同じ確認
 node basket-clips/tests/server.cjs       # 開発用サーバー → http://127.0.0.1:5192/
+
+# リングに当たるシュートの見分け（合成映像を作って → 形ごとに数える。800 秒の動画で、作るのに約6分・調べるのに約5分）
+node basket-clips/tests/tools/make-video.cjs /tmp/rim800.mp4 0-800 30 4 rim
+node basket-clips/tests/rim-check.cjs /tmp/rim800.mp4 dev /tmp/rim800.log.json      # OCCL=0 で、リングが隠れたコマを使わない（もとの動き）
+node basket-clips/tests/rim-replay.cjs /tmp/rim800.log.json /tmp/rim800.mp4          # 判定だけをかけ直す（数秒）
 ```
 
 - e2e は Playwright（`npm i -g playwright` など）と、その Chromium を使います。合成動画は `WORK`（既定は一時フォルダの `basket-clips-e2e/`）に置き、次から使い回します。

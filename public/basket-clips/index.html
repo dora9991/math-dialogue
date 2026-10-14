@@ -840,6 +840,10 @@ a.btn { text-decoration: none; }
     const TH_RIM_ACQ = 0.45;        // 捉えた瞬間、これ未満なら取り消す
     const TH_RIM_OK = 0.6;          // これ以上なら位置の微調整に使う
     const TH_RIM_LOW = 0.25, RIM_LOW_FRAMES = 15;   // これ未満が約1秒続いたら、別のものに張り付いているとみなして追跡をやめる
+    // （バスケ得点クリップで足したもの）リングが「隠れているだけ」とみなす条件：直前にリングを確かめられてから OCCL_MAX 秒以内で、
+    // バックボードの模様はよく合っている（OCCL_NCC 以上）。ボールがリングの上で弾む・転がる間は、オレンジのボールが輪に重なって
+    // 赤みの模様が崩れるため、そのコマを捨てると、ネットから出てくるボールを見逃す（背景の学び直しで数コマ何も見えなくなる）
+    const OCCL_MAX = 1.5, OCCL_NCC = 0.7;
     function redness(rgb, out) {
       const n = RV * RV, raw = new Float32Array(n);
       for (let i = 0, p = 0; i < n; i++, p += 3) raw[i] = rgb[p] / (rgb[p] + rgb[p + 1] + rgb[p + 2] + 1);
@@ -1027,7 +1031,11 @@ a.btn { text-decoration: none; }
     const NET_HIDE_MAX = 0.65;   // ボールがネットの中に隠れていられる最長の時間（秒）。リングの上で転がって入るときは 0.5 秒ほど見えなくなる
     function createShotDetector(id, opts) {
       // opts は検証・調整用（しきい値の上書き）。ふだんは省略
-      const P = Object.assign({ colorGate: 100, areaGate: 2.6, bornSpeedMin: BORN_SPEED_MIN, netSpeedMax: NET_SPEED_MAX, xinMax: 0.45, freeFallMin: 6.2 }, opts || {});
+      // bornYMax・bornGap はバスケ得点クリップで広げたもの（もとは 1.7・0.14）：リングの上で弾んでから入ったボールは、
+      // 揺れるネットや下の選手に重なって、ネットを出てすぐには見えないことがある（少し下で初めて見える・1コマ見えない）。
+      // ネットの手前を落ちただけのボールは、その高さでは速すぎる（リングの高さからの自由落下で 9 前後）ので、速さの上限で外れる。
+      // 2つ目の点は 2.7 より上でないといけないので、最初の点は 2.0 まで
+      const P = Object.assign({ colorGate: 100, areaGate: 2.6, bornSpeedMin: BORN_SPEED_MIN, netSpeedMax: NET_SPEED_MAX, xinMax: 0.45, freeFallMin: 6.2, bornYMax: 2.0, bornGap: 0.21 }, opts || {});
       let tracks = [];       // 動くもの（ボール候補）の軌跡
       const nets = [];       // ネットの動き {t,v}
       const seen = [];       // リングの口〜ネットの下に、ボール候補が見えた時刻
@@ -1082,11 +1090,11 @@ a.btn { text-decoration: none; }
           // 長く見えなかったときは、遅すぎないことも求める（外れた後、たまたま下に別の物が現れただけ、を成功にしない）
           if (p1.t - p0.t > 0.18 && netBusy(p0.t, p1.t) < 0.5) return null;
           if (p1.t - p0.t > 0.34 && speed < 1.5) return null;
-        } else if (!p0 && i === 0 && first.y >= 0.6 && first.y <= 1.7) {
+        } else if (!p0 && i === 0 && first.y >= 0.6 && first.y <= P.bornYMax) {
           // ネットの中から現れた（カメラが遅れて向いた・ネットに隠れていた）。
           // ネットの向こうを歩く人の頭などと区別するため、「続けて2コマ・落ちる速さが十分」を求める
           const q = pts[i + 1];
-          if (q.t - first.t > 0.14) return null;
+          if (q.t - first.t > P.bornGap) return null;
           speed = (q.y - first.y) / Math.max(0.03, q.t - first.t); tRef = first.t - 0.15; born = true;
           if (b.y < first.y + 0.25 || speed < P.bornSpeedMin) return null;
         } else return null;
@@ -1288,7 +1296,8 @@ a.btn { text-decoration: none; }
       const fixed = !!cfg.fixed;       // true: カメラが動かない（全景カメラ）。ゴールを追わず、指定した場所を見張る
       const trackers = cfg.hoops.map((m, i) => (fixed ? createFixedTracker(m, cfg.srcW, cfg.srcH) : createHoopTracker(m, cfg.srcW, cfg.srcH, i)));
       const rims = cfg.hoops.map(() => createRimChecker());
-      const rimState = cfg.hoops.map(() => ({ dx: 0, dy: 0, low: 0, score: null }));
+      const rimState = cfg.hoops.map(() => ({ dx: 0, dy: 0, low: 0, score: null, okT: null }));
+      const occlusion = cfg.rimOcclusion !== false;      // 検証用に false で、もとの動き（隠れたコマは使わない）
       const watchers = cfg.hoops.map((m) => createHoopWatcher(m.id));
       const detectors = cfg.hoops.map((m, i) => createShotDetector(i));
       const lastSeen = cfg.hoops.map(() => -1);
@@ -1314,13 +1323,21 @@ a.btn { text-decoration: none; }
         if (c.score == null) return s;                       // 画面の端などで確認できない：そのまま使う
         if (s.acquired && c.score < TH_RIM_ACQ) { tr.revert(); return tr.status(); }
         if (c.score < TH_RIM_LOW) {
+          // リングが一時的に隠れているだけ（ボールや手が輪に重なった）なら、直前のずれのまま、このコマも使う
+          if (occlusion && !s.acquired && rs.okT != null && f.t - rs.okT <= OCCL_MAX && (fixed || s.score >= OCCL_NCC)) {
+            rs.low++;
+            s.rim.cx += rs.dx / k; s.rim.cy += rs.dy / k;
+            s.rimScore = c.score; s.occluded = true;
+            s.inFrame = s.rim.cx > 0 && s.rim.cx < cfg.srcW && s.rim.cy > 0 && s.rim.cy < cfg.srcH;
+            return s;
+          }
           // リングが見当たらないコマは使わない（追跡そのものは続ける。約1秒続いたら追跡をやめる。固定カメラは追跡しないので、やめない：
           // やめると、そのコマだけ「見えている」扱いになってしまう）
           if (!fixed && ++rs.low >= RIM_LOW_FRAMES) { tr.drop(); rs.low = 0; return tr.status(); }
           s.tracked = false; s.rimScore = c.score;
           return s;
         }
-        rs.low = 0;
+        rs.low = 0; rs.okT = f.t;
         if (c.score >= TH_RIM_OK) { rs.dx += (c.dx - rs.dx) * 0.5; rs.dy += (c.dy - rs.dy) * 0.5; }
         s.rim.cx += rs.dx / k; s.rim.cy += rs.dy / k;
         s.rimScore = c.score;
@@ -3444,7 +3461,7 @@ a.btn { text-decoration: none; }
     let eng = null, res = null;
     try {
       // S.debug：検証用（コマごとのボール候補の記録を S.lastLog に残す。tests/rim-check.cjs が使う）
-      eng = st.eng = await openEngine({ srcW: media.width, srcH: media.height, fixed: !!st0.fixed, hoops: marks.map((m) => ({ id: m.id, box: m.box, rim: m.rim })), debug: !!S.debug },
+      eng = st.eng = await openEngine({ srcW: media.width, srcH: media.height, fixed: !!st0.fixed, hoops: marks.map((m) => ({ id: m.id, box: m.box, rim: m.rim })), debug: !!S.debug, rimOcclusion: S.rimOcclusion },
         (m) => { if (m.ev === 'progress') onLive(m.t, m.live, m.preview); else if (m.ev === 'info') st.info = m; });
       try {
         st.mode = 'decode';

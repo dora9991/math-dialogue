@@ -18,6 +18,8 @@
     back: [{ u: -0.21, v: 0, z: 3.17 }, { u: 0.12, v: 0, z: 3.16, h: 3.58, d: 0.42 }, { u: -0.04, v: 0, z: 3.11, h: 3.24, d: 0.18 }],
     // カメラ側のリングに当たり、リングの上を転がるように回ってから入る
     roll: [{ u: 0, v: 0.21, z: 3.17 }, { u: 0.2, v: 0.05, z: 3.17, h: 3.23, d: 0.24 }, { u: 0.05, v: -0.16, z: 3.15, h: 3.21, d: 0.24 }, { u: 0, v: 0, z: 3.1, h: 3.15, d: 0.12 }],
+    // 奥のリングに当たり、リングの上を1周近く回って（約1秒）から入る（ゴタゴタした得点。シュートの飛行を 0.4 秒縮めて時間を作る）
+    longroll: [{ u: -0.21, v: 0, z: 3.17 }, { u: -0.12, v: 0.18, z: 3.18, h: 3.27, d: 0.2 }, { u: 0.1, v: 0.19, z: 3.18, h: 3.25, d: 0.2 }, { u: 0.21, v: 0.02, z: 3.18, h: 3.26, d: 0.2 }, { u: 0.12, v: -0.17, z: 3.17, h: 3.24, d: 0.2 }, { u: -0.05, v: -0.12, z: 3.14, h: 3.2, d: 0.18 }, { u: 0, v: 0, z: 3.08, h: 3.14, d: 0.1 }],
     // ボードに当たってから、リングの上で弾んで入る
     board: [{ u: CT.boardFromBaseline - CT.rimFromBaseline + 0.13, v: 0.05, z: 3.36 }, { u: 0.16, v: 0, z: 3.16, h: 3.4, d: 0.3 }, { u: 0, v: 0, z: 3.1, h: 3.26, d: 0.2 }]
   };
@@ -37,6 +39,7 @@
     const tr = game.track;
     const segs = tr.ball;
     tr.rimHits = tr.rimHits || [];
+    tr.realHoop = opts.real !== false;      // ゴールを本物に近い見え方で描く（render.js：輪の中のボールは手前のリングとネットの陰に。リングが揺れる）
     const per = (t) => game.periods.filter((p) => t >= p.t0).length;
     const out = [];
     let nIn = 0, nOut = 0;
@@ -49,13 +52,20 @@
       // シュートの飛行（放った時刻に始まり、リングの真ん中で終わる air）
       const k = segs.findIndex((s) => s.k === 'air' && near(s.t0, e.t, 0.011) && near(s.b[0], rimX, 0.02) && near(s.b[1], 7.5, 0.02) && near(s.b[2], CT.rimH, 0.02));
       if (k < 0 || k + 2 >= segs.length) return;
-      const T = segs[k].t1;
+      let T = segs[k].t1;
       if (e.made) {
         if (R.next() >= (opts.makes != null ? opts.makes : 0.6)) return;
         const drop = segs[k + 1], land = segs[k + 2];
         if (drop.k !== 'air' || land.k !== 'free' || !near(drop.t0, T, 0.011)) return;
-        const kind = inKinds[nIn++ % inKinds.length];
+        const T0 = T;      // 得点（tr.scores）の元の時刻（飛行を縮めても、得点の表示はボールがネットに入る時刻に合わせ直す）
+        const kind = inKinds[nIn % inKinds.length];
         const path = IN_KINDS[kind];
+        // 時間が足りるか（弾む時間＋ネットを通る時間＋着地まで 0.15 秒）。足りなければ、シュートの飛行を縮めて作る（リングに早く届く。0.6 秒まで）
+        const need = path.slice(1).reduce((a, q) => a + q.d, 0) + (drop.t1 - drop.t0) + 0.15;
+        const steal = Math.max(0, need - (land.t1 - T));
+        if (steal > 0 && (steal > 0.6 || segs[k].t1 - segs[k].t0 - steal < 0.45)) return;     // 足りない：この形は次のシュートで
+        nIn++;
+        if (steal > 0) { segs[k].t1 = r2(T - steal); T = segs[k].t1; }
         const pts = path.map(P);
         const repl = [];
         let t = T;
@@ -67,13 +77,12 @@
         }
         const tIn = t;
         const dropEnd = tIn + (drop.t1 - drop.t0);
-        if (land.t1 - dropEnd < 0.12) return;
         segs[k].b = pts[0];
         repl.push({ k: 'air', a: pts[pts.length - 1], b: drop.b, h: pts[pts.length - 1][2], t0: r2(tIn), t1: r2(dropEnd) });
         repl.push(Object.assign({}, land, { t0: r2(dropEnd) }));
         segs.splice(k + 1, 2, ...repl);
         // 得点（ネットが揺れて、ボールがネットの中で減速する見た目）は、ボールがネットに入る時刻から
-        const sc = tr.scores.find((s) => near(s.t, T, 0.011));
+        const sc = tr.scores.find((s) => near(s.t, T0, 0.011));
         if (sc) sc.t = r2(tIn);
         hits.forEach((h) => tr.rimHits.push({ t: h, side, amp: 0.3 }));
         out.push({ t: e.t, made: true, kind, tIn: r2(tIn), hits, side });

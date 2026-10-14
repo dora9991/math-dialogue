@@ -55,7 +55,8 @@ async function analyse(file, mode, logOut) {
     page.on('pageerror', (e) => errors.push(String(e)));
     await page.goto(srv.url);
     await page.waitForFunction(() => window.BS && BS.app && document.querySelector('#stepVideo'));
-    await page.evaluate(() => { localStorage.clear(); BS.app.S.debug = true; });
+    // OCCL=0 で、リングが隠れたコマを使わない（もとの動き）。比べるとき用
+    await page.evaluate((occl) => { localStorage.clear(); BS.app.S.debug = true; if (occl === '0') BS.app.S.rimOcclusion = false; }, process.env.OCCL || '');
     await page.setInputFiles('#fileVideo', file);
     await page.waitForFunction(() => BS.app.S.media && BS.app.S.media.ready && BS.app.duration() > 5, null, { timeout: 30000 });
     const scr = (x, y) => page.evaluate(([x, y]) => BS.app.toScreen(x, y), [x, y]);
