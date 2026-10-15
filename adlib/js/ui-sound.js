@@ -44,7 +44,7 @@
       drums: { name: 'ドラム', events: col.drums },
     });
     U.download(fname('mid'), new Blob([bytes], { type: 'audio/midi' }));
-    U.toast('MIDI を書き出しました（実音。スウィングは時間のずれとして入っています）');
+    U.toast('MIDI を書き出しました（実音。スウィングは時間のずれとして入っています。16分音符のある拍だけは、再生と同じくずらしていません）');
   };
   App.exportXml = function () {
     if (!App.hasChords) { U.toast('先にコード譜を入力してください'); return; }
@@ -142,7 +142,7 @@
         h('button', { type: 'button', class: 'btn', onclick: () => App.exportText() }, '📄 コード譜（テキスト）')),
       h('ul', { class: 'muted small notes' },
         h('li', null, 'WAV・MIDI は「ソロ」の設定（あり／なし／毎回あたらしく）を引きつぎます。'),
-        h('li', null, 'MIDI は実音で、スウィングは時間のずれとして入ります。コード名はマーカーとして入ります。'),
+        h('li', null, 'MIDI は実音で、スウィングは時間のずれとして入ります（16分音符のある拍だけは、再生と同じく、ずらさずに等間隔）。コード名はマーカーとして入ります。'),
         h('li', null, 'MusicXML は、いま画面に出ているソロ（コード記号つき）を、MuseScore・Finale・Sibelius・Dorico などで開けます。'),
         h('li', null, '印刷は、ブラウザの印刷画面で「PDF に保存」を選べば PDF になります。'))));
 

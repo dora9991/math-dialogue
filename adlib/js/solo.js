@@ -177,13 +177,21 @@
     for (const ph of phrases) {
       if (!ph.match) { fillSingle(st, o, hs, ph.from, hs[ph.from].t0, hs[ph.from].t0 + hs[ph.from].dur); continue; }
       const m = ph.match, ctx = ctxOfMatch(m);
-      // 難しさが上がるほど、ii–V–I などのかたまりをコードごとに分けて、リズムの濃いリック（16分・3連・シンコペーション）も使う
-      if (m.n >= 2 && st.rand() < [0, 0.3, 0.5][Math.max(0, Math.min(2, (o.level | 0) - 1))]) {
-        for (let k = 0; k < m.n; k++) { const h = hs[m.at + k]; fillSingle(st, o, hs, m.at + k, h.t0, h.t0 + h.dur); }
-        continue;
-      }
       const slice = hs.slice(m.at, m.at + m.n), durs = slice.map(h => h.dur), chords = slice.map(h => h.chord);
       const cands = L.find(ctx, { durs, chords, lvlMax, bpb: o.bpb, anyTonic: !!m.pattern.anyTonic });
+      // 難しさが上がるほど、ii–V–I などのかたまりをコードごとに分けて、リズムの濃いリック（16分・3連・シンコペーション）も使う。
+      // かたまりのリックに、リズムの濃いものが少ない（ターンアラウンドなど）ときは、分ける確率を上げる。
+      // 抽選は、かたまりの位置だけで決まる独立の乱数で行う（キーや音域がちがっても、コーラスの組み立てが変わらないように）
+      if (m.n >= 2) {
+        const li = Math.max(0, Math.min(2, (o.level | 0) - 1));
+        const rs = cands.length ? cands.filter(l => rhythmOf(l).n > 0).length / cands.length : 0;
+        const base = [0, 0.3, 0.5][li], hi = [0, 0.8, 0.95][li];
+        const p = base + (hi - base) * Math.max(0, 1 - 2 * rs);
+        if (rng(((o.seed * 2654435761) >>> 0) ^ Math.imul(m.at + 1, 0x9e3779b1))() < p) {
+          for (let k = 0; k < m.n; k++) { const h = hs[m.at + k]; fillSingle(st, o, hs, m.at + k, h.t0, h.t0 + h.dur); }
+          continue;
+        }
+      }
       const scored = cands.map(l => scoreLick(l, st, o, { fit: L.fit(l, durs), chords }));
       const pick = pickWeighted(scored, rand, 6);
       const f = pick.fit, t0 = slice[0].t0;

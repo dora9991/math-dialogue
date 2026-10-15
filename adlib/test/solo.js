@@ -102,13 +102,14 @@ ok(bigLeaps / totalNotes < 0.01, '大きなとびが多すぎる');
   ok(avg > 58 && avg < 78, '平均の高さが偏っている：' + avg);
 }
 // リズムの変化：難しさが上がるほど、16分音符・3連符が出る。ふつう（2）でも、8分音符だけにならない
+//   （しきい値は、いまの実測の7〜8割。リックのリズム加点・かたまりの分解のどちらか一方を消しても、下回るようにしてある）
 {
-  const share = level => {
+  const share = (level, density = 1) => {
     let all = 0, s16 = 0, trip = 0, rhythmicLicks = 0, licks = 0;
     for (const text of Object.values(CHARTS)) {
       const b = build(text);
       for (let seed = 1; seed <= 12; seed++) {
-        const solo = S.generate(b.hs, b.an, { seed, level, density: 1, bpb: 4 });
+        const solo = S.generate(b.hs, b.an, { seed, level, density, bpb: 4 });
         solo.events.forEach(e => { const d = Math.round(e.dur * 12); all++; if (d === 3) s16++; else if (d === 4 || d === 8) trip++; });
         solo.decisions.forEach(d => { licks++; if (S.rhythmOf(L.byId[d.id]).n) rhythmicLicks++; });
       }
@@ -118,10 +119,14 @@ ok(bigLeaps / totalNotes < 0.01, '大きなとびが多すぎる');
   const a = share(1), b2 = share(2), c = share(3);
   if (verbose) console.log('リズム（16分・3連・リズムのあるリックの割合）', [a, b2, c].map(x => [x.s16, x.trip, x.rhythmic].map(v => v.toFixed(3)).join('/')).join('  '));
   ok(a.mix < 0.1, 'やさしい（1）は、8分音符が中心のまま：' + a.mix);
-  ok(b2.mix > 0.15, 'ふつう（2）で、16分・3連符がほとんど出ない：' + b2.mix);
-  ok(b2.rhythmic > 0.25, 'ふつう（2）で、リズムのあるリックが少ない：' + b2.rhythmic);
-  ok(c.s16 > 0.2, 'むずかしい（3）で、16分音符が少ない：' + c.s16);
+  ok(b2.mix > 0.36, 'ふつう（2）で、16分・3連符が少ない：' + b2.mix);
+  ok(b2.rhythmic > 0.55, 'ふつう（2）で、リズムのあるリックが少ない：' + b2.rhythmic);
+  ok(c.s16 > 0.38, 'むずかしい（3）で、16分音符が少ない：' + c.s16);
   ok(c.mix > b2.mix && b2.mix > a.mix, '難しさとリズムの濃さが、順になっていない');
+  // 音の多さ：まばらなほど16分は控えめ、多いほど出やすい
+  const d0 = share(2, 0), d2 = share(2, 2);
+  if (verbose) console.log('音の多さと16分（まばら／多い）', d0.s16.toFixed(3), d2.s16.toFixed(3));
+  ok(d2.s16 > d0.s16 + 0.03, '音の多さを上げても、16分音符が増えない：' + d0.s16 + ' → ' + d2.s16);
 }
 if (verbose) {
   const b = build(CHARTS['251']);

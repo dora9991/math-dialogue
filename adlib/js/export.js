@@ -1,5 +1,5 @@
 /* アドリブ・ラボ：書き出し（MIDI・MusicXML）。画面を持たない純粋な関数だけ。
-   ・MIDI：伴奏とソロを別トラックにした標準 MIDI ファイル（フォーマット1）。スウィングは時間をずらして書く
+   ・MIDI：伴奏とソロを別トラックにした標準 MIDI ファイル（フォーマット1）。スウィングは時間をずらして書く（16分音符のある拍だけは、再生と同じくずらさない）
    ・MusicXML：ソロの譜面（コード記号つき）。MuseScore・Finale・Sibelius・Dorico などで開ける */
 (function () {
   'use strict';
@@ -22,6 +22,8 @@
     }
     return out;
   }
+  // 16分音符のある拍の音には、straight = true をつける（スウィングさせない。player.js の markStraight と同じ約束なので、再生・WAV と同じ時間で書ける）
+  const markStraight = evs => (AL.Au && AL.Au.markStraight ? AL.Au.markStraight(evs) : evs);
   // plan（player.js の設計図）から、loops コーラスぶんを1本の時間にならべる
   function collect(plan, loops, opts) {
     opts = opts || {};
@@ -31,7 +33,7 @@
       (ch.comp || []).forEach(e => out.comp.push(Object.assign({}, e, { t: e.t + off })));
       (ch.bass || []).forEach(e => out.bass.push(Object.assign({}, e, { t: e.t + off })));
       (ch.drums || []).forEach(e => out.drums.push(Object.assign({}, e, { t: e.t + off })));
-      if (opts.solo !== false) mergeTies(ch.solo || []).forEach(e => out.solo.push(Object.assign({}, e, { t: e.t + off })));
+      if (opts.solo !== false) markStraight(mergeTies(ch.solo || [])).forEach(e => out.solo.push(Object.assign({}, e, { t: e.t + off })));
     }
     return out;
   }
@@ -87,8 +89,9 @@
       ev.push({ tick: 0, order: 1, bytes: [0xb0 | ch, 7, tr.volume == null ? 100 : tr.volume] });
       (tr.events || []).forEach(e => {
         if (e.midi < 0 || e.midi > 127) return;
-        const a = tick(e.t);
-        let b = tick(e.t + e.dur);
+        const at = e.straight ? (x => Math.round(x * PPQ)) : tick;   // ストレートの音は、時間をずらさない（拍の頭は同じ）
+        const a = at(e.t);
+        let b = at(e.t + e.dur);
         if (b <= a) b = a + 1;
         const vel = Math.max(1, Math.min(127, Math.round(e.vel || 80)));
         ev.push({ tick: a, order: 3, bytes: [0x90 | ch, e.midi, vel] });

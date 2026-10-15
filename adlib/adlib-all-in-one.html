@@ -3230,6 +3230,186 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   ]);
 })();
 
+/* ---- js/licks-z-rhythm.js ---- */
+/* リック辞典：リズムの濃いリック（16分音符・3連符・シンコペーション・付点・間）。
+   コード・スケールごとに10本。音は C の調で書いてある（書き方は licks.js の冒頭）。
+   定番の語法（ビバップ、ハードバップの3連符、ペンタトニックの4度、ゴスペル風ブルース、モード・ジャズの4度など）の型にもとづいて書いた、
+   このアプリのためのフレーズで、特定の演奏を書き写したものではない。
+   難しさ：Lv.1＝間・シンコペーション／Lv.2＝付点・3連符・16分のかざり／Lv.3＝16分音符のラン。
+   リックの番号（ id ）が変わらないよう、ほかの licks-*.js のあとに読みこむ（ファイル名で最後になるようにしてある）。 */
+(function () {
+  'use strict';
+  const L = (typeof window !== 'undefined' ? window : globalThis).AL.L;
+
+  /* ================= dom7：ドミナント7th（ミクソリディアン／ビバップ・ドミナント） ================= */
+  L.pack({ ctx: 'dom7', ref: 'C7', segs: [4], lvl: 1 }, [
+    ['16分のビバップ下降（5度から）', '@s G5 F5 E5 D5 C5 B4 Bb4 A4 G4 F4 E4 D4 C4:q', 'ビバップ・ドミナント・スケール（7th と ♭7 の両方を通る）を、16分音符で1オクターブ半おりる。拍の頭がコードの音にそろう。拍の頭は 5・1・5・1。', { tags: ['bebop', 'scale', 'sixteenth'], lvl: 3 }],
+    ['アルペジオで駆け上がって、スケールで降りる', '@s C4 E4 G4 Bb4 C5 E5 G5 E5 / @e D5 C5 Bb4 G4', '2拍は16分のアルペジオで一気に上がり、あとは8分で9th から降りてくる。メリハリのあるハードバップの形。拍の頭は 1・1・9・♭7。', { tags: ['arp', 'sixteenth'], lvl: 3 }],
+    ['3連符のアルペジオから降りる', 'E4:t G4:t Bb4:t C5:t E5:t C5:t / Bb4 A4 G4 E4', '前半は3連符で3度から上がって折り返し、後半は8分で降りる。3連符から8分へ、ノリが切りかわる。拍の頭は 3・1・♭7・5。', { tags: ['triplet', 'arp'], lvl: 2 }],
+    ['裏拍の4分音符（5度をのばす）', 'r:q E4:e G4:q Bb4:e C5:q', '4分休符のあと、8分で入り、裏拍の4分音符（5度）がタイのように次の拍をまたぐ。ジャズらしい引っかかり。拍の頭に音が来るのは 2拍目の 3、4拍目の 1。', { tags: ['rhythm', 'syncopation'], lvl: 1 }],
+    ['3度のターン（16分）から、分散で上がって降りる', 'E4:s F4:s Eb4:s E4:s G4:e Bb4:e / C5:s D5:s C5:s Bb4:s G4:q', '3度を上（F）と下（E♭）から小さく挟むターンで入り、分散で上がって、根音まわりの16分（C-D-C-B♭）から5度に着地。拍の頭は 3・5・1・5。', { tags: ['enclosure', 'sixteenth', 'bebop'], lvl: 2 }],
+    ['Gm ペンタの16分（5度-♭7-1-9-11）', '@s D5 C5 Bb4 G4 F4 G4 Bb4 C5 / D5 F5 D5 C5 Bb4 G4 F4 E4', '根音の上の Gm ペンタトニックを、9th から降りて上がり直し、最後は 4度（F）から3度（E）へ落ちる。現代的なドミナントの響き。拍の頭は 9・11・9・♭7。', { tags: ['pent', 'modern', 'sixteenth'], lvl: 3 }],
+    ['3連符の半音階アプローチ（3度から5度へ）', 'E4:t F4:t F#4:t G4:t Bb4:t C5:t / D5:t C5:t Bb4:t G4:t E4:t C4:t', 'E→F→F♯→G と半音で5度へ上がり、分散で駆け上がってから、3連符でなめらかに降りる。1小節ぜんぶ3連符。拍の頭は 3・5・9・5。', { tags: ['triplet', 'chromatic'], lvl: 2 }],
+    ['付点8分＋16分で駆け上がる（ビバップ）', 'G4:e. A4:s Bb4:e B4:e C5:e. D5:s C5:e Bb4:e', '「付点8分＋16分」のはずむリズムで、5度から根音へビバップ・スケールを上がる。拍の頭は 5・♭7・1・1。', { tags: ['bebop', 'rhythm'], lvl: 2 }],
+    ['問いかけと答え（間をはさむ）', 'E4 G4 Bb4:q r:e C5 A4 G4', '3-5-♭7 で問いかけ、8分休符のあと、裏拍から降りて答える。休符がフレーズを呼吸させる。拍の頭に音が来るのは 1拍目の 3、2拍目の ♭7、4拍目の 13。', { tags: ['rhythm'], lvl: 1 }],
+    ['半音階で駆け上がる16分', '@s C4 Db4 D4 Eb4 E4 F4 F#4 G4 / @e A4 Bb4 C5:q', '根音から5度まで16分の半音階で一気に上がり、A→♭7→根音とスケールで着地する。拍の頭は 1・3・13・1。', { tags: ['chromatic', 'sixteenth', 'bebop'], lvl: 3 }],
+  ]);
+
+  /* ================= dom7alt：オルタード・ドミナント（オルタード／ディミニッシュ／全音音階） ================= */
+  L.pack({ ctx: 'dom7alt', ref: 'C7alt', segs: [4], lvl: 1 }, [
+    ['オルタードの16分下降→♭9-3-♭13-1', '@s Eb5 Db5 C5 Bb4 Ab4 Gb4 E4 Eb4 @e Db4 E4 Ab4 C5', '前半は16分でオルタード・スケールを降り、後半は ♭9-3-♭13-1 の分散で上がって根音で止まる。拍の頭は ♯9・♭13・♭9・♭13。', { tags: ['alt', 'scale', 'sixteenth'], lvl: 3 }],
+    ['G♭7 の分散（裏コードのアルペジオ）16分', '@s E5 Db5 Bb4 Gb4 E4 Gb4 Bb4 Db5 E5 Gb5 E5 Db5 Bb4 Gb4 E4 Db4', 'C7alt の上で G♭7（裏コード）の分散を16分で、上から降りて、また上がる。♭5・♭7・♭9・3度がぜんぶオルタードの音になる。拍の頭は 3・3・3・♭7。', { tags: ['alt', 'arp', 'sixteenth'], lvl: 3 }],
+    ['E♭ マイナー・ペンタの16分（♯9-♭5-♭13-♭7-♭9）', '@s Eb5 Bb4 Ab4 Gb4 Eb4 Gb4 Ab4 Bb4 / Db5 Bb4 Ab4 Gb4 Ab4 Bb4 Db5 Eb5', '根音の短3度上にある E♭ マイナー・ペンタは、オルタードの音（♯9・♭5・♭13・♭7・♭9）だけでできている。高い♯9 から降りて、波のように上がる。拍の頭は ♯9・♯9・♭9・♭13。', { tags: ['pent', 'alt', 'modern', 'sixteenth'], lvl: 3 }],
+    ['A♭7 の分散（♭13-1-♯9-♭5）を3連符で', 'Ab4:t C5:t Eb5:t Gb5:t Eb5:t C5:t / Bb4 Ab4 E4:q', 'C7alt の上で、オルタードの音だけでできた A♭7 の分散を3連符で上がって折り返し、♭7→♭13 と降りて3度で止まる。拍の頭は ♭13・♭5・♭7・3。', { tags: ['triplet', 'alt', 'arp', 'upper'], lvl: 2 }],
+    ['オーギュメントの分散から全音で降りる', 'C4:t E4:t Ab4:t C5:q / Bb4:t Ab4:t Gb4:t E4:q', 'C オーギュメント（1-3-♭13）を3連符で上がって根音を1拍のばし、全音音階で ♭7-♭13-♭5 と降りて3度に着地する、7♯5 の浮遊感のフレーズ。拍の頭は 1・1・♭7・3。', { tags: ['triplet', 'alt', 'arp'], lvl: 2 }],
+    ['3度のターン（16分）から、オルタードで降りる', 'E4:s F4:s Eb4:s E4:s Gb4:e Ab4:e / Bb4:s Ab4:s Gb4:s E4:s Db4:q', '3度を上（F）と下（E♭）から挟むターンで入り、♭5-♭13 へ上がって、16分で降りて ♭9 に着地。拍の頭は 3・♭5・♭7・♭9。', { tags: ['enclosure', 'alt', 'sixteenth'], lvl: 2 }],
+    ['付点のリズムで上がるオルタード', 'Db4:e. Eb4:s E4:e Gb4:e / Ab4:e. Bb4:s C5:e Db5:e', '「付点8分＋16分」のはずむリズムで、♭9 からオルタード・スケールを1オクターブ上がる。拍の頭は ♭9・3・♭13・1。', { tags: ['alt', 'scale', 'rhythm'], lvl: 2 }],
+    ['裏拍の ♭9→3 シンコペーション', 'r:e Db4:e E4:e Ab4:q. Gb4:e E4:e', '8分休符のあと、裏拍の ♭9 から入って、2拍目の頭で3度へ上がり、裏拍の ♭13 を3拍目をまたいでのばす。短いのに、オルタードの色がすぐ出る。拍の頭に音が来るのは 2拍目の 3、4拍目の ♭5。', { tags: ['rhythm', 'syncopation', 'alt'], lvl: 2 }],
+    ['問いかけと答え（♯9→3 のコール）', 'Eb4:e E4:e Bb4:q r:e Ab4:e Gb4:e E4:e', '♯9→3 の半音で入って ♭7 まで上げて問いかけ、間をおいて、♭13-♭5-3 と降りて答える。拍の頭に音が来るのは 1拍目の ♯9、2拍目の ♭7、4拍目の ♭5。', { tags: ['rhythm', 'alt', 'chromatic'], lvl: 2 }],
+    ['コンディミ（半音-全音）を駆け上がって、止まる', 'Eb4:s E4:s Gb4:s G4:s A4:q / Bb4:s C5:s Db5:s Eb5:s E5:q', '半音-全音のディミニッシュ・スケールを16分で駆け上がっては4分音符で止まり、13th（A）と3度（E）に着地する、ドミナントの定番ライン。拍の頭は ♯9・13・♭7・3。', { tags: ['dim', 'alt', 'scale', 'sixteenth'], lvl: 3 }],
+  ]);
+
+  /* ================= dom7#11：リディアン♭7（7♯11） ================= */
+  L.pack({ ctx: 'dom7#11', ref: 'C7#11', segs: [4], lvl: 1 }, [
+    ['リディアン♭7 の16分下降（♯11 から）', '@s F#5 E5 D5 C5 Bb4 A4 G4 F#4 / E4 D4 C4 Bb3 C4:q', '♯11 から根音まで、リディアン♭7 を16分で1オクターブ半おりる。♭7 を通って、根音に戻る。拍の頭は ♯11・♭7・3・1。', { tags: ['lydian', 'scale', 'sixteenth'], lvl: 3 }],
+    ['D トライアド（9-♯11-13）の16分アルペジオ', '@s D5 A4 F#4 D4 F#4 A4 D5 F#5 / D5 A4 F#4 A4 D5 C5 A4 F#4', '2度の D トライアドを16分で、上から降りて上がり、また降りる。リディアン♭7 の決まり手。最後は根音（C）を通って ♯11 に止まる。拍の頭は 9・♯11・9・9。', { tags: ['lydian', 'upper', 'arp', 'sixteenth'], lvl: 3 }],
+    ['Am ペンタ（13-1-9-3-5）＋♯11 の16分', '@s G5 E5 D5 C5 A4 C5 D5 E5 / G5 E5 D5 C5 A4 G4 F#4 E4', 'A マイナー・ペンタは C6/9 の響き。高い5度から降りて上がり直し、最後に ♯11（F♯）をちらっと通って3度に降りる。拍の頭は 5・13・5・13。', { tags: ['pent', 'lydian', 'modern', 'sixteenth'], lvl: 3 }],
+    ['G m(maj7) の分散（5-♭7-9-♯11）から3連符で降りる', 'G4 Bb4 D5 F#5 / E5:t D5:t C5:t Bb4:q', '5度から G m(maj7) の分散で ♯11 まで上がり、3度から3連符で降りて ♭7 の4分音符で止まる（G のメロディック・マイナーは C のリディアン♭7 と同じ音）。拍の頭は 5・9・3・♭7。', { tags: ['lydian', 'upper', 'arp', 'triplet'], lvl: 2 }],
+    ['トライアド・ペア（C と D）の3連符：♭7 から降りる', 'C4:t E4:t G4:t D4:t F#4:t A4:t / Bb4:t A4:t F#4:t E4:t D4:t C4:t', 'C のトライアドと D のトライアドを続けて3連符で上がり、♭7 からリディアンの音で降りる。拍の頭は 1・9・♭7・3。', { tags: ['triplet', 'lydian', 'upper', 'arp'], lvl: 2 }],
+    ['♯11 のターン（16分）から5度へ', 'F#4:s G4:s A4:s G4:s E4:e G4:e / C5:s Bb4:s A4:s G4:s F#4:q', '♯11→5 の小さなターンで入り、分散で上がって、16分で降りて ♯11 で止まる。浮遊したまま終わる。拍の頭は ♯11・3・1・♯11。', { tags: ['lydian', 'sixteenth', 'rhythm'], lvl: 2 }],
+    ['付点のリズムでリディアン♭7 を上がって降りる', 'E4:e. F#4:s G4:e A4:e Bb4:e. A4:s G4:e F#4:e', '「付点8分＋16分」で、3度から ♭7 へ上がって、♯11 に降りる。拍の頭は 3・5・♭7・5。', { tags: ['lydian', 'rhythm', 'scale'], lvl: 2 }],
+    ['オフビートの4分音符（♭7-13-♯11）', 'r:e Bb4:q A4:q F#4:q G4:e', '4分音符がぜんぶ裏拍から始まる（♭7-13-♯11）。拍をずらしたまま降りて、最後に5度へ着地する。', { tags: ['rhythm', 'syncopation', 'lydian'], lvl: 2 }],
+    ['問いかけと答え（5度→♯11）', 'G4:e A4:e Bb4:q r:e C5:e A4:e F#4:e', '5度から ♭7 へ上がって問いかけ、間のあと、根音から13th・♯11 へ降りて答える。拍の頭に音が来るのは 1拍目の 5、2拍目の ♭7、4拍目の 13。', { tags: ['rhythm', 'lydian'], lvl: 1 }],
+    ['F♯m7♭5 の分散（♯11-13-根音-3度）を16分と休符で', 'E5:s C5:s A4:s F#4:s r:e A4:e C5:s E5:s F#5:s E5:s C5:e r:e', 'C7♯11 の上の F♯m7♭5 の分散を、16分の4音のかたまり2つと、休符をはさんだ裏拍の13th でつなぎ、根音で止まって息をつく。拍の頭に音が来るのは 1拍目の 3、3拍目の 1、4拍目の 1。', { tags: ['lydian', 'arp', 'upper', 'modern', 'sixteenth'], lvl: 3 }],
+  ]);
+
+  /* ================= dom7sus：7sus4（ミクソリディアン／ドリアン／ペンタ） ================= */
+  L.pack({ ctx: 'dom7sus', ref: 'C7sus4', segs: [4], lvl: 1 }, [
+    ['9th から16分で降りる（ミクソリディアン）', '@s D5 C5 Bb4 A4 G4 F4 E4 D4 / @e C4 D4 F4 G4', '9th から16分でミクソリディアンを1オクターブ降りて、根音から sus4 の分散（根音・9th・4度・5度）で上がる。拍の頭は 9・5・1・11。', { tags: ['scale', 'sixteenth'], lvl: 3 }],
+    ['B♭ トライアド（♭7-9-11）の16分', '@s Bb4 F5 D5 Bb4 F4 Bb4 D5 F5 / D5 Bb4 F4 D4 Bb3 D4 F4 Bb4', 'C7sus4 の上に B♭ メジャー・トライアドを重ねる、sus の定番。転回形を使って、跳ねるように16分で動く。拍の頭は ♭7・11・9・♭7。', { tags: ['upper', 'arp', 'sixteenth'], lvl: 3 }],
+    ['Dm ペンタ（9-11-5-13-1）の16分', '@s D4 F4 G4 A4 C5 A4 G4 F4 / D4 F4 G4 A4 C5 D5 C5 A4', 'D マイナー・ペンタを16分で往復する。9th から立てるので、sus4 の開いた響きになる。拍の頭は 9・1・9・1。', { tags: ['pent', 'modern', 'sixteenth'], lvl: 3 }],
+    ['4度の3音セルを上げていく（3対4のずれ）', '@s D4 G4 C5 E4 A4 D5 F4 Bb4 Eb5 G4 C5 F5 C5:q', '4度を2つ重ねた3音のかたまりを、1音ずつ上げながら16分でくり返す。拍と3音のずれが、浮遊感になる。拍の頭は 9・13・♯9・1。', { tags: ['quartal', 'modern', 'sixteenth'], lvl: 3 }],
+    ['C マイナー・ペンタを3連符で駆け上がって、♭3 をのばす', 'C4:t Eb4:t F4:t G4:t Bb4:t C5:t / Eb5:q Bb4 G4', 'C マイナー・ペンタを3連符で上がり、高い E♭（♯9）を1拍のばしてから ♭7→5度 と降りる、sus4 のブルースっぽい語り口。拍の頭は 1・5・♯9・♭7。', { tags: ['triplet', 'pent', 'blues'], lvl: 2 }],
+    ['4度（sus）の揺れ F-E-F-G から', 'F4:s E4:s F4:s G4:s Bb4:e C5:e / D5:s C5:s Bb4:s G4:s F4:q', '4度（F）と3度（E）をちらっと行き来してから、分散で上がり、16分で降りて4度で止まる。拍の頭は 11・♭7・9・11。', { tags: ['sixteenth', 'rhythm'], lvl: 2 }],
+    ['4度ずつ跳ぶリフ（F→B♭、G→C）', 'r:e F4:e Bb4:q. G4:e C5:q', '8分休符のあと、裏拍から4度の跳び（F→B♭、G→C）を2回くり返す、長い音と短い音が交互に来る sus らしいリフ。拍の頭に音が来るのは 2拍目の ♭7、4拍目の 1。', { tags: ['rhythm', 'syncopation', 'quartal'], lvl: 1 }],
+    ['3+3+2 のリズム（トレシージョ）', 'G4:q. C5:q. Bb4:q', '4拍を 3+3+2 に割る、ラテンやファンクの定番リズム。音は5度・根音・♭7 の3つだけ。拍の頭に音が来るのは 1拍目の 5、4拍目の ♭7。', { tags: ['rhythm', 'syncopation'], lvl: 1 }],
+    ['3音＋休符をずらしてくり返す', 'F4 G4 Bb4 r G4 Bb4 C5 r', '4度-5度-♭7 の3音に休符をつけて、1音ずらしてくり返す。間があるぶん、モチーフがはっきり聞こえる。拍の頭は 11・♭7・5・1。', { tags: ['rhythm'], lvl: 1 }],
+    ['G m と F のトライアド・ペア（3連符）', 'G4:t Bb4:t D5:t F5:q / C5:t A4:t F4:t G4:q', 'G m トライアドを3連符で上がって F（4度）を1拍のばし、F トライアドを降りて5度に着地する、sus4 定番のトライアド・ペア。拍の頭は 5・11・1・5。', { tags: ['triplet', 'upper', 'arp'], lvl: 2 }],
+  ]);
+
+  /* ================= blues7：ブルースのドミナント ================= */
+  L.pack({ ctx: 'blues7', ref: 'C7', segs: [4], lvl: 1 }, [
+    ['ブルース・スケールの16分下降→♭3→3→5→根音', '@s Eb5 C5 Bb4 Gb4 G4 F4 Eb4 C4 / @e Eb4 E4 G4 C5', '高い ♭3 から、ブルース・スケールを16分で降りて、♭3→3 で上げ直し、根音に着地する。拍の頭は ♯9・5・♯9・5。', { tags: ['blues', 'scale', 'sixteenth'], lvl: 3 }],
+    ['ゴスペルの3連符（3-5-6 の揺れ）', 'E4:t G4:t A4:t G4:t E4:t C4:t / E4:t G4:t A4:t C5:q', '3度-5度-6度を3連符でゆらして、根音へ降り、もう一度上がって根音で止まる。拍の頭は 3・5・3・1。', { tags: ['blues', 'triplet', 'pent'], lvl: 2 }],
+    ['メジャー・ブルースの16分ロール（C-D-E♭-E-G）', '@s C4 D4 Eb4 E4 G4 E4 Eb4 D4 C4 D4 Eb4 E4 G4 Bb4 A4 G4', 'メジャー・ブルース・スケール（♭3 と 3度の両方）を16分で転がす、ゴスペル風の語り。最後は 5度-♭7-6度-5度のひねりで止まる。拍の頭は 1・5・1・5。', { tags: ['blues', 'pent', 'sixteenth', 'chromatic'], lvl: 3 }],
+    ['♭3→3 のずり上げをくり返す（ゴスペル・スライド）', 'Eb4:s E4:s G4:e Eb4:s E4:s G4:e / Bb4:e C5:e G4:q', '♭3→3 と半音ですべるひとかたまりを、2回くり返してから上がる。くり返しが「うなり」になる。拍の頭は ♯9・♯9・♭7・5。', { tags: ['blues', 'chromatic', 'rhythm', 'sixteenth'], lvl: 2 }],
+    ['3連符のブルース・ペンタ（上がって、ひと息）', 'G4:t Bb4:t C5:t Eb5:t C5:t Bb4:t / G4:q Gb4:t F4:t Eb4:t', 'マイナー・ペンタを3連符で上がって降り、4分音符でひと息ついてから、♭5（G♭）を通る3連符で♭3 へ降りる。拍の頭は 5・♯9・5・♯11。', { tags: ['blues', 'triplet', 'pent'], lvl: 2 }],
+    ['ブルース・スケールを16分で駆け上がる', '@s C4 Eb4 E4 F4 F#4 G4 Bb4 C5 / @e Bb4 G4 E4 C4', '根音から、♭3・3度・♭5 を通るブルース・スケールを16分で駆け上がって、8分で降りて根音に戻る。拍の頭は 1・♯11・♭7・3。', { tags: ['blues', 'scale', 'sixteenth', 'chromatic'], lvl: 3 }],
+    ['付点のリズムのブルース・リフ', 'C4:e. Eb4:s E4:e G4:e / C5:e. Bb4:s G4:e Eb4:e', '「付点8分＋16分」ではずむ、♭3→3 のリフ。上がって根音、そして♭3 へ降りる。拍の頭は 1・3・1・5。', { tags: ['blues', 'rhythm'], lvl: 2 }],
+    ['裏拍から入るブルース・フック', 'r:e Eb4:e E4:e G4:q. Bb4:e G4:e', '8分休符のあと、裏拍の ♭3 から入って、2拍目の頭で 3度へ上がり、裏拍の5度を3拍目をまたいでのばす。ブルースの王道のノリ。拍の頭に音が来るのは 2拍目の 3、4拍目の ♭7。', { tags: ['blues', 'rhythm', 'syncopation'], lvl: 1 }],
+    ['叫びと答え（高い♭3 のくり返し）', 'Eb5:e. Eb5:s Eb5:e C5:e / r:e Bb4:e G4:e Eb4:e', '高い ♭3（E♭）を付点のリズムでくり返して叫び、根音へ降りて8分休符をはさんだあと、裏拍の ♭7 から 5度、♭3 と降りて答える。拍の頭に音が来るのは 1拍目の ♯9、2拍目の ♯9、4拍目の 5。', { tags: ['blues', 'rhythm', 'syncopation'], lvl: 1 }],
+    ['16分のバースト→間→ブルースの這い上がり', 'G4:s Bb4:s C5:s Eb5:s C5:e r:e / Eb4:s F4:s Gb4:s G4:s Bb4:q', 'G-B♭-C-E♭ を16分で一気に上がって C に戻り、8分休符のあと、E♭-F-G♭-G と半音まじりで這い上がって ♭7 をのばす。拍の頭は 5・1・♯9・♭7。', { tags: ['blues', 'pent', 'sixteenth'], lvl: 2 }],
+  ]);
+
+  /* ================= maj7：メジャー7th（イオニアン／リディアン／ビバップ・メジャー） ================= */
+  L.pack({ ctx: 'maj7', ref: 'Cmaj7', segs: [4], lvl: 1 }, [
+    ['16分のビバップ・メジャー下降（5度から）', '@s G5 F5 E5 D5 C5 B4 A4 Ab4 G4 F4 E4 D4 C4:q', 'ビバップ・メジャー（♭6 を足した8音）を、16分音符で1オクターブ半おりる。拍の頭がコードの音にそろう。拍の頭は 5・1・5・1。', { tags: ['bebop', 'scale', 'sixteenth'], lvl: 3 }],
+    ['Em7 の分散（3-5-7-9）を16分で上下して根音へ', '@s E4 G4 B4 D5 B4 G4 E4 G4 / B4 D5 E5 D5 B4 G4 E4 C4', 'Cmaj9 の響きになる Em7 の分散を、16分で上がって降りて、また上がって、最後は根音へ降りる。拍の頭は 3・7・7・7。', { tags: ['arp', 'upper', 'sixteenth'], lvl: 3 }],
+    ['メジャー・ペンタの16分（高い3度から）', '@s E5 D5 C5 A4 G4 A4 C5 D5 E5 G5 E5 D5 C5 A4 G4 E4', 'C-D-E-G-A のペンタトニックを16分で降りて、上がり直して、また降りる。明るくて、軽やか。拍の頭は 3・5・3・1。', { tags: ['pent', 'sixteenth'], lvl: 3 }],
+    ['3連符でアルペジオ（Cmaj7 から Em7 へ積む）', 'C4:t E4:t G4:t B4:t D5:t B4:t / G4:t E4:t C4:t E4:t G4:t B4:t', '前半は3連符で根音から9th へ上がって折り返し、後半は降りて、また7度へ上がる。拍の頭は 1・7・5・3。', { tags: ['triplet', 'arp'], lvl: 2 }],
+    ['3連符の半音階アプローチ（♭3→3→♯4→5）', 'r:t Eb4:t E4:t F#4:t G4:t A4:t B4:t C5:t B4:t A4:t G4:t E4:t', '3連符ひとつぶんの休みから入り、♭3→3 の半音で上がって、リディアン（♯4）を通り、3連符のまま降りる。拍の頭に音が来るのは 2拍目の ♯11、3拍目の 7、4拍目の 13。', { tags: ['triplet', 'chromatic', 'lydian'], lvl: 2 }],
+    ['3度のターン（16分）から、7度のうねりで5度に着地', 'E4:s F4:s Eb4:s E4:s G4:e A4:e / B4:s D5:s C5:s B4:s G4:q', '3度を上（F）と下（E♭）から小さく挟むターンで入り、6度まで上がって、7度-9th-根音-7度の小さなうねりで5度に着地。拍の頭は 3・5・7・5。', { tags: ['enclosure', 'sixteenth'], lvl: 2 }],
+    ['付点8分＋16分で跳ねる分散（5度-7度-9th から降りる）', 'G4:e. B4:s D5:e C5:e / B4:e. A4:s G4:e E4:e', '「付点8分＋16分」のはずみで 5度→7度と跳び、9th へ上がってから、根音・7度・6度・5度・3度と降りて止まる。拍の頭は 5・9・7・5。', { tags: ['arp', 'rhythm'], lvl: 2 }],
+    ['裏拍から入って、7度を3拍目をまたいでのばす', 'r:e E4:e G4:e B4:q. A4:e G4:e', '8分休符のあと、3度（裏拍）-5度（2拍目の頭）-7度（裏拍）と上がり、7度をのばしてから降りる。トニックのやわらかい引っかかり。拍の頭に音が来るのは 2拍目の 5、4拍目の 13。', { tags: ['rhythm', 'syncopation', 'guide'], lvl: 1 }],
+    ['3音をずらしてくり返す（間つき）', 'E4:e G4:e B4:e r:e G4:e B4:q D5:e', '3度-5度-7度に休符をつけて、1音ずらしてくり返す。2回目は7度を裏拍からのばして、リズムにも変化をつける。短いモチーフの反復で、間がフレーズを呼吸させる。拍の頭に音が来るのは 1拍目の 3、2拍目の 7、3拍目の 5。', { tags: ['rhythm', 'syncopation'], lvl: 1 }],
+    ['Gmaj7 の分散（5-7-9-♯11）の16分（高い♯11 から）', '@s F#5 D5 B4 G4 B4 D5 F#5 E5 / D5 B4 G4 F#4 G4 B4 D5 E5', 'Cmaj7 の上に Gmaj7 の分散を重ねる、リディアンの響き。♯11 から降りて、跳ねるように16分で動く。拍の頭は ♯11・7・9・5。', { tags: ['lydian', 'arp', 'upper', 'sixteenth', 'modern'], lvl: 3 }],
+  ]);
+
+  /* ================= maj7#11：リディアン（maj7♯11） ================= */
+  L.pack({ ctx: 'maj7#11', ref: 'Cmaj7#11', segs: [4], lvl: 1 }, [
+    ['リディアンの16分下降（♯11 から）', '@s F#5 E5 D5 C5 B4 A4 G4 F#4 / E4 D4 C4 B3 C4:q', '♯11 から根音まで、リディアンを16分で1オクターブ半おりる。7度を通って、根音に戻る。拍の頭は ♯11・7・3・1。', { tags: ['lydian', 'scale', 'sixteenth'], lvl: 3 }],
+    ['B マイナー・トライアド（7-9-♯11）の16分', '@s B3 D4 F#4 B4 D5 F#5 D5 B4 / F#4 D4 B3 D4 F#4 B4 D5 B4', 'Cmaj7♯11 は B マイナーの響き。上がって降りる、つめたく浮遊した16分のトライアド。拍の頭は 7・9・♯11・♯11。', { tags: ['lydian', 'upper', 'arp', 'sixteenth'], lvl: 3 }],
+    ['Em ペンタの16分（7-6-5-3-9）', '@s B4 A4 G4 E4 D4 E4 G4 A4 B4 D5 B4 A4 G4 E4 D4 E4', 'E マイナー・ペンタを16分で降りて、上がって、また降りる。F♯ を使わないので maj7 にも maj7♯11 にも合う、透明なペンタ。拍の頭は 7・9・7・5。', { tags: ['pent', 'modern', 'sixteenth'], lvl: 3 }],
+    ['トライアド・ペア（C と D）の3連符：7度から降りる', 'C4:t E4:t G4:t D4:t F#4:t A4:t / B4:t A4:t F#4:t E4:t D4:t C4:t', 'C のトライアドと D のトライアドを続けて3連符で上がり、7度から降りる。拍の頭は 1・9・7・3。', { tags: ['triplet', 'lydian', 'upper', 'arp'], lvl: 2 }],
+    ['♯11 のターン（16分）から、5度に着地', 'F#4:s G4:s A4:s G4:s B4:e D5:e / E5:s D5:s B4:s A4:s G4:q', '♯11→5 の小さなターンで入り、7度・9th へ上がって、16分で降りて5度に着地。拍の頭は ♯11・7・3・5。', { tags: ['lydian', 'sixteenth', 'enclosure'], lvl: 2 }],
+    ['付点のリズムでリディアンを上がる', 'E4:e. F#4:s G4:e A4:e B4:e. C5:s D5:e E5:e', '「付点8分＋16分」で、3度から3度のオクターブ上へ、リディアンを上がる。拍の頭は 3・5・7・9。', { tags: ['lydian', 'rhythm', 'scale'], lvl: 2 }],
+    ['裏拍から入る浮遊フック（♯11 をのばす）', 'r:e B4:e A4:e F#4:q. G4:e E4:e', '7度-6度-♯11 と降りる線のうち、♯11 を3拍目をまたいでのばす。5度・3度へ静かに着地。拍の頭に音が来るのは 2拍目の 13、4拍目の 5。', { tags: ['rhythm', 'syncopation', 'lydian'], lvl: 2 }],
+    ['問いかけと答え（5度から、裏拍の9thで答える）', 'G4:e A4:e B4:q r:e D5:e. B4:s F#4:e', '5度-6度-7度で問いかけ、7度をのばして8分休符をはさみ、裏拍の 9th から 7度、♯11 と降りて答える。拍の頭に音が来るのは 1拍目の 5、2拍目の 7。', { tags: ['lydian', 'rhythm', 'syncopation'], lvl: 2 }],
+    ['3連符の半音階アプローチ（E→F→F♯→G）', 'E4:t F4:t F#4:t G4:t B4:t D5:t / F#5:t D5:t B4:t G4:t E4:t C4:t', '3度から半音で5度へ上がり、分散で♯11 まで駆け上がって、3連符で降りる。拍の頭は 3・5・♯11・5。', { tags: ['triplet', 'chromatic', 'lydian'], lvl: 2 }],
+    ['3度のジグザグ（16分→8分）で駆け上がる', 'C4:s E4:s D4:s F#4:s E4:s G4:s F#4:s A4:s G4:e B4:e A4:e C5:e', '3度上がって2度戻る、をくり返して16分で駆け上がり、8分にゆるめて根音に着く（間の音が D7 の響きで、リディアンの色になる）。拍の頭は 1・3・5・13。', { tags: ['lydian', 'digital', 'sixteenth'], lvl: 3 }],
+  ]);
+
+  /* ================= min7：マイナー7th（ドリアン） ================= */
+  L.pack({ ctx: 'min7', ref: 'Cm7', segs: [4], lvl: 1 }, [
+    ['ドリアンの16分下降（11th から根音へ）', '@s F5 Eb5 D5 C5 Bb4 A4 G4 F4 Eb4 D4 C4 Bb3 C4:q', '11th から、ドリアン（6th の A を通る）を16分で1オクターブ半おりる。♭7 を通って根音に戻る。拍の頭は 11・♭7・♭3・1。', { tags: ['scale', 'sixteenth'], lvl: 3 }],
+    ['E♭ メジャー7th の分散（♭3-5-♭7-9）を16分で', '@s Bb4 G4 Eb4 G4 Bb4 D5 Eb5 D5 Bb4 G4 Eb4 D4 C4 Eb4 G4 Bb4', 'Cm9 の響きになる E♭maj7 の分散。♭7 から降りて上がり、♭3 の上で折り返して、根音を通ってまた上がる。拍の頭は ♭7・♭7・♭7・1。', { tags: ['arp', 'upper', 'sixteenth'], lvl: 3 }],
+    ['マイナー・ペンタを1音ずつずらす（4音のくり返し）', '@s C4 Eb4 F4 G4 Eb4 F4 G4 Bb4 / F4 G4 Bb4 C5 G4 Bb4 C5 Eb5', 'ペンタの4音のかたまりを、1音ずつ上へずらしてくり返す。練習でもよく使う、ペンタトニックの定番パターン。拍の頭は 1・♭3・11・5。', { tags: ['pent', 'digital', 'sixteenth'], lvl: 3 }],
+    ['3連符のアルペジオから、ドリアンで降りる', 'C4:t Eb4:t G4:t Bb4:t D5:t Bb4:t / G4:t F4:t Eb4:t D4:t C4:t Bb3:t', '前半は3連符で Cm9 の分散を上がって折り返し、後半は3連符のまま、ドリアンで根音を通って ♭7 まで降りる。拍の頭は 1・♭7・5・9。', { tags: ['triplet', 'arp', 'scale'], lvl: 2 }],
+    ['3連符で♭3 へ半音アプローチ（2-3-♭3）', 'D4:t E4:t Eb4:t G4:t Bb4:t C5:t / D5:t C5:t Bb4:t G4:t F4:t Eb4:t', '9th から E（3度）を経由して♭3 へ半音で入り、分散で上がって、3連符で降りる。ブルース寄りの色。拍の頭は 9・5・9・5。', { tags: ['triplet', 'chromatic', 'bebop'], lvl: 2 }],
+    ['♭3 のターン（16分）から、ドリアンで上がって降りる', 'Eb4:s F4:s D4:s Eb4:s G4:e Bb4:e / D5:s C5:s Bb4:s A4:s G4:q', '♭3 を上（F）と下（D）から小さく挟むターンで入り、♭7 まで上がって、9th から16分でドリアン（6度の A を通る）を降りて5度に着地。拍の頭は ♭3・5・9・5。', { tags: ['enclosure', 'sixteenth'], lvl: 2 }],
+    ['付点のリズム（ビバップ・ドリアン）', 'C4:e. D4:s Eb4:e E4:e G4:e. A4:s Bb4:e C5:e', '「付点8分＋16分」ではずむ、ビバップ・ドリアン（♭3 と 3度の両方）の上行。拍の頭は 1・♭3・5・♭7。', { tags: ['bebop', 'rhythm'], lvl: 2 }],
+    ['オフビートの4分音符で上がる（♭3-5-♭7）', 'r:e Eb4:q G4:q Bb4:q C5:e', '4分音符がぜんぶ裏拍から始まる（♭3-5-♭7）。拍をずらしたまま上がり、最後に根音へ。', { tags: ['rhythm', 'syncopation'], lvl: 1 }],
+    ['問いかけと答え（♭3-5-♭7 → 間 → 裏拍の 9th から根音へ）', 'Eb4:e G4:e Bb4:q r:e D5:q C5:e', '♭3-5-♭7 で問いかけ、8分休符のあと、裏拍の 9th を1拍のばして根音へ解決して答える。拍の頭に音が来るのは 1拍目の ♭3、2拍目の ♭7。', { tags: ['rhythm', 'syncopation'], lvl: 1 }],
+    ['4度のスパイラル（D-G-C-F）の16分', '@s D4 G4 C5 F5 Eb5 Bb4 F4 C4 / F4 Bb4 Eb5 D5 C5 Bb4 G4 Eb4', '4度を重ねて上がり、4度ずつ降りて、また上がる。モード・ジャズのピアノ（マッコイ・タイナーなど）でおなじみの、開いた響き。拍の頭は 9・♭3・11・1。', { tags: ['quartal', 'modern', 'pent', 'sixteenth'], lvl: 3 }],
+  ]);
+
+  /* ================= min6：マイナー6th（メロディックマイナー／ドリアン） ================= */
+  L.pack({ ctx: 'min6', ref: 'Cm6', segs: [4], lvl: 1 }, [
+    ['メロディックマイナーの16分上昇→8分で降りる', '@s C4 D4 Eb4 F4 G4 A4 B4 C5 / @e B4 A4 G4 Eb4', '根音から、6度と7度（A・B）を含むメロディックマイナーを16分で駆け上がり、8分で降りる。拍の頭は 1・5・7・5。', { tags: ['scale', 'sixteenth'], lvl: 3 }],
+    ['m6 の分散（1-♭3-5-6）を16分で', '@s C5 A4 G4 Eb4 C4 Eb4 G4 A4 / C5 Eb5 C5 A4 G4 Eb4 C4 Eb4', 'C マイナー6th の分散を、高い根音から降りて、上がって、また降りる。6度（A）が m6 の特徴。拍の頭は 1・1・1・5。', { tags: ['arp', 'sixteenth'], lvl: 3 }],
+    ['ビバップ風の16分下降（B→B♭→A）から根音へ', '@s D5 C5 B4 Bb4 A4 G4 F4 Eb4 / D4 Eb4 G4 A4 C5:q', '9th から C-B-B♭-A と半音をはさんで16分で降り、D-E♭-G-A と上がって、根音の4分音符に着地する。拍の頭は 9・6・9・1。', { tags: ['bebop', 'scale', 'sixteenth'], lvl: 3 }],
+    ['加速：3連符のアルペジオから16分で降りる（m6）', 'C4:t Eb4:t G4:t A4:t C5:t Eb5:t D5:s C5:s B4:s C5:s A4:s G4:s Eb4:s C4:s', '前半は3連符で m6 の分散を上がり、後半は16分に「加速」して、導音（B）のターンから降りる。拍の頭は 1・6・9・6。', { tags: ['triplet', 'sixteenth', 'arp', 'scale'], lvl: 3 }],
+    ['3連符で6度から上がる（6-1-♭3-5）', 'A3:t C4:t Eb4:t G4:t A4:t C5:t / Eb5:t C5:t A4:t G4:t Eb4:t C4:t', '低い6度から、3連符で m6 の分散を上がって降りる。拍の頭は 6・5・♭3・5。', { tags: ['triplet', 'arp'], lvl: 2 }],
+    ['♭6→6 の半音アプローチ（16分）', 'G4:e Ab4:s A4:s C5:e Eb5:e / D5:s C5:s B4:s C5:s G4:q', '5度から ♭6→6 と半音で登り、♭3 まで上がって、導音のターンで根音に戻る。m6 の特徴的な動き。拍の頭は 5・1・9・5。', { tags: ['chromatic', 'sixteenth'], lvl: 2 }],
+    ['付点のリズム（6度のフック）', 'G4:e. A4:s C5:e Eb5:e / D5:e. C5:s A4:e G4:e', '「付点8分＋16分」ではずむ、5度-6度-根音-♭3 の上行と、9th からの下行。拍の頭は 5・1・9・6。', { tags: ['rhythm'], lvl: 2 }],
+    ['裏拍から入る6度のフック', 'r:e A4:e C5:e Eb5:q. D5:e C5:e', '裏拍の6度から入り、根音-♭3 と上がって、♭3 を3拍目をまたいでのばす。マイナーの哀愁。拍の頭に音が来るのは 2拍目の 1、4拍目の 9。', { tags: ['rhythm', 'syncopation'], lvl: 1 }],
+    ['問いかけと答え（6度のゆらぎ）', 'Eb4 G4 A4 r C5:q D5 C5', '♭3-5-6 で問いかけ、間のあと、根音を4分音符でのばして、9th を経て根音に戻って答える。拍の頭は ♭3・6・1・9。', { tags: ['rhythm'], lvl: 1 }],
+    ['3音セルの16分シーケンス（Cm・Dm・E♭・F を上へ）', '@s C4 Eb4 G4 Eb4 D4 F4 A4 F4 Eb4 G4 Bb4 G4 F4 A4 C5 A4', '3和音の分散を、ドリアンの1音ずつ上へずらしてくり返す、16分のシーケンス。拍の頭は 1・9・♭3・11。', { tags: ['arp', 'scale', 'sixteenth'], lvl: 3 }],
+  ]);
+
+  /* ================= minmaj7：マイナー・メジャー7th（メロディックマイナー／ハーモニックマイナー） ================= */
+  L.pack({ ctx: 'minmaj7', ref: 'Cm(maj7)', segs: [4], lvl: 1 }, [
+    ['ハーモニックマイナーの16分下降（♭6→7 の増2度）', '@s C5 B4 Ab4 G4 F4 Eb4 D4 C4 / @e B3 C4 Eb4 G4', '根音から、♭6 と7th のあいだ（増2度）を通って16分で降り、導音から分散で上がり直す。拍の頭は 1・11・7・♭3。', { tags: ['scale', 'sixteenth'], lvl: 3 }],
+    ['m(maj7) の分散（1-♭3-5-7）を16分で', '@s B4 G4 Eb4 C4 Eb4 G4 B4 C5 / B4 G4 Eb4 G4 B4 D5 B4 C5', '導音（B）から降りて上がり、また降りて、最後は 9th を経て根音へ。16分でしなやかに往復する。拍の頭は 7・♭3・7・7。', { tags: ['arp', 'sixteenth'], lvl: 3 }],
+    ['増3和音（♭3-5-7）＋9th の16分', '@s Eb4 G4 B4 D5 B4 G4 Eb4 G4 / B4 D5 F5 D5 @e B4 G4', 'E♭-G-B の増3和音に 9th・11th を足した形で、16分で上下する。m(maj7) だけの、神秘的な響き。拍の頭は ♭3・7・7・7。', { tags: ['arp', 'upper', 'sixteenth'], lvl: 3 }],
+    ['3連符のアルペジオ（1-♭3-5-7）', 'C4:t Eb4:t G4:t B4:t G4:t Eb4:t / C4:t D4:t Eb4:t G4:t B4:t C5:t', '前半は3連符で分散を上がって降り、後半は根音から 9th・♭3・5度・7度・根音と駆け上がる。拍の頭は 1・7・1・5。', { tags: ['triplet', 'arp'], lvl: 2 }],
+    ['導音のターン（16分）から5度へ', 'B3:s C4:s D4:s C4:s Eb4:e G4:e / B4:s C5:s B4:s Ab4:s G4:q', '導音から根音へ、小さなターンで入り、分散で上がって、7度のターンから降りて5度に着地。拍の頭は 7・♭3・7・5。', { tags: ['sixteenth', 'enclosure'], lvl: 2 }],
+    ['付点のリズム（導音で光る）', 'Eb4:e. F4:s G4:e B4:e / C5:e. B4:s G4:e Eb4:e', '「付点8分＋16分」ではずむ。♭3 から 5度・7度・根音へ上がり、7度・5度・♭3 と降りてくる。拍の頭は ♭3・5・1・5。', { tags: ['rhythm'], lvl: 2 }],
+    ['裏拍から入る＋タイ（7度を引っぱる）', 'r:e G4:e Ab4:e B4:q. C5:e G4:e', '裏拍の5度から入り、♭6→7度（増2度）と上がって、7度を3拍目をまたいでのばし、根音に解決する。拍の頭に音が来るのは 2拍目の ♭6、4拍目の 1。', { tags: ['rhythm', 'syncopation'], lvl: 1 }],
+    ['問いかけと答え（♭3-5-7）', 'Eb4:e G4:e B4:q r:e C5:e B4:e G4:e', '♭3-5-7th で問いかけ、間をおいて、根音から降りて答える。拍の頭に音が来るのは 1拍目の ♭3、2拍目の 7、4拍目の 7。', { tags: ['rhythm'], lvl: 1 }],
+    ['マイナー・クリシェ（C-B-B♭-A）の16分', '@s C5 B4 Bb4 A4 G4 Eb4 G4 B4 / C5 B4 Bb4 A4 @e G4 Eb4', '根音から半音で降りるクリシェ（C→B→B♭→A）を、16分で2回。m(maj7)→m7→m6 と変わっていく定番の動き。拍の頭は 1・5・1・5。', { tags: ['chromatic', 'scale', 'sixteenth'], lvl: 3 }],
+    ['ハーモニックマイナーの3連符（増2度）', 'G4:t Ab4:t B4:t C5:t D5:t Eb5:t / D5:t C5:t B4:t Ab4:t G4:t Eb4:t', '5度から、♭6→7th の増2度を3連符で上がって、♭3 まで行き、そのまま降りる。拍の頭は 5・1・9・♭6。', { tags: ['triplet', 'scale'], lvl: 2 }],
+  ]);
+
+  /* ================= m7b5：ハーフディミニッシュ（ロクリアン♯2） ================= */
+  L.pack({ ctx: 'm7b5', ref: 'Cm7b5', segs: [4], lvl: 1 }, [
+    ['ロクリアン♯2 の16分下降（♭5 から）', '@s Gb5 F5 Eb5 D5 C5 Bb4 Ab4 Gb4 / F4 Eb4 D4 C4 Bb3:q', '♭5 から根音まで、ロクリアン♯2（9th が自然な音）を16分で1オクターブ半おりる。♭7 に着地する。拍の頭は ♭5・1・11・♭7。', { tags: ['scale', 'sixteenth'], lvl: 3 }],
+    ['m7♭5 の分散（1-♭3-♭5-♭7）を16分で', '@s Bb4 Gb4 Eb4 C4 Eb4 Gb4 Bb4 C5 / Bb4 Gb4 Eb4 Gb4 Bb4 C5 Eb5 Gb5', '♭7 から降りて、根音で折り返して上がり、また降りて、最後は ♭5 まで駆け上がる。拍の頭は ♭7・♭3・♭7・♭7。', { tags: ['arp', 'sixteenth'], lvl: 3 }],
+    ['F マイナー・ペンタ（11-♭13-♭7-1-♭3）の16分', '@s F4 Ab4 Bb4 C5 Eb5 C5 Bb4 Ab4 F4 Ab4 Bb4 C5 Eb5 F5 Eb5 C5', 'm7♭5 に合う定番のペンタ。16分で上がって降りて、また上がる。拍の頭は 11・♭3・11・♭3。', { tags: ['pent', 'modern', 'sixteenth'], lvl: 3 }],
+    ['3連符の分散（♭5 から）', 'Gb4:t Bb4:t C5:t Eb5:t C5:t Bb4:t / Gb4:t Eb4:t C4:t Eb4:t Gb4:t Bb4:t', '♭5 から3連符で上がって降りて、また上がる。拍の頭は ♭5・♭3・♭5・♭3。', { tags: ['triplet', 'arp'], lvl: 2 }],
+    ['♭5 のターン（16分）から、ロクリアン♯2 で降りる', 'Gb4:s Ab4:s F4:s Gb4:s Bb4:e C5:e / Eb5:s D5:s C5:s Bb4:s Gb4:q', '♭5 を上（A♭）と下（F）から小さく挟むターンで入り、根音まで上がって、16分で降りて ♭5 に戻る。拍の頭は ♭5・♭7・♭3・♭5。', { tags: ['enclosure', 'sixteenth'], lvl: 2 }],
+    ['付点のリズム（♭5 から ♭3 まで上がって降りる）', 'Gb4:e. Ab4:s Bb4:e C5:e / Eb5:e. D5:s C5:e Bb4:e', '「付点8分＋16分」ではずむ。♭5 から ♭6・♭7・根音 と上がり、♭3 に跳んでから 9th・根音・♭7 と降りる。16分が次の拍の頭（♭7・根音）へのつなぎになる。拍の頭は ♭5・♭7・♭3・1。', { tags: ['rhythm', 'scale'], lvl: 2 }],
+    ['裏拍の4分音符（♭5 をのばす）', 'r:q Eb4:e Gb4:q Bb4:e C5:q', '4分休符のあと、♭3 から入り、裏拍の4分音符（♭5）がタイのように次の拍をまたぐ。拍の頭に音が来るのは 2拍目の ♭3、4拍目の 1。', { tags: ['rhythm', 'syncopation'], lvl: 1 }],
+    ['問いかけと答え（♭3-♭5-♭7 → 間 → 降りる）', 'Eb4:e Gb4:e Bb4:q r:e C5:e Ab4:e Gb4:e', '♭3-♭5-♭7 で問いかけ、間をおいて、根音から ♭13 を通って ♭5 へ降りて答える。拍の頭に音が来るのは 1拍目の ♭3、2拍目の ♭7、4拍目の ♭6。', { tags: ['rhythm'], lvl: 1 }],
+    ['3連符の分散（9th をはさんで根音から）', 'C4:t D4:t Eb4:t Gb4:t Bb4:t C5:t / Bb4:t Gb4:t Eb4:t D4:t C4:t Bb3:t', '根音から 9th をはさんで ♭3・♭5・♭7 と3連符で上がり、同じ音を通って根音の下の ♭7 まで降りる。拍の頭は 1・♭5・♭7・9。', { tags: ['triplet', 'arp'], lvl: 2 }],
+    ['加速：3連符のアルペジオから16分で降りる（m7♭5）', 'C4:t Eb4:t Gb4:t Bb4:t C5:t Eb5:t / D5:s C5:s Bb4:s Gb4:s F4:s Eb4:s D4:s C4:s', '前半は3連符で分散を上がり、後半は16分に「加速」して、ロクリアン♯2 の音で降りる。拍の頭は 1・♭7・9・11。', { tags: ['triplet', 'sixteenth', 'arp'], lvl: 3 }],
+  ]);
+
+  /* ================= dim7：ディミニッシュ7th（全・半／半・全） ================= */
+  L.pack({ ctx: 'dim7', ref: 'Cdim7', segs: [4], lvl: 1 }, [
+    ['ディミニッシュの16分アルペジオ（降りて上がる波）', '@s A4 Gb4 Eb4 C4 Eb4 Gb4 A4 C5 / Eb5 C5 A4 Gb4 Eb4 Gb4 A4 C5', '短3度で積み重なる対称な4音を、降りて、上がって、降りて、また上がる16分。どの音から始めても同じ形になる。拍の頭は ♭♭7・♭3・♭3・♭3。', { tags: ['dim', 'arp', 'sixteenth'], lvl: 3 }],
+    ['全・半ディミニッシュの4音セルを短3度ずつ上げて、根音に着地', '@s C4 D4 Eb4 F4 Eb4 F4 Gb4 Ab4 Gb4 Ab4 A4 B4 C5:q', '4音のかたまり（C-D-E♭-F）を短3度ずつ上げながら16分で3回くり返し、導音 B から根音のオクターブ上の4分音符に着地する。拍の頭は 1・♭3・♭5・1。', { tags: ['dim', 'scale', 'sixteenth'], lvl: 3 }],
+    ['半・全ディミニッシュの16分下降→分散で上がる', '@s C5 Bb4 A4 G4 Gb4 E4 Eb4 Db4 @e C4 Eb4 Gb4 A4', '半音-全音のディミニッシュ・スケール（ドミナント寄りの色）を16分で降りて、根音から分散で上がる。拍の頭は 1・♭5・1・♭5。', { tags: ['dim', 'scale', 'sixteenth'], lvl: 3 }],
+    ['3連符の分散を3音ずつずらして降りる', 'Eb5:t C5:t A4:t C5:t A4:t Gb4:t / A4:t Gb4:t Eb4:t Gb4:t Eb4:t C4:t', 'dim7 の4音を下へ、3音ずつのかたまり（3連符）で1音ずつずらしながら降りる。4音の和音と3音のまとまりがずれて、ころがるように聞こえる。拍の頭は ♭3・1・♭♭7・♭5。', { tags: ['dim', 'triplet', 'arp'], lvl: 2 }],
+    ['3連符で半音アプローチ（B→C）', 'B3:t C4:t Eb4:t Gb4:t A4:t C5:t / Eb5:t C5:t A4:t Gb4:t Eb4:t C4:t', '導音（B）から根音へ半音で入り、dim7 の分散を3連符で上がって、降りる。拍の頭は 7・♭5・♭3・♭5。', { tags: ['dim', 'triplet', 'chromatic'], lvl: 2 }],
+    ['ディミニッシュのターン（16分）', 'Eb4:s F4:s D4:s Eb4:s Gb4:e A4:e / C5:s D5:s B4:s C5:s Eb5:q', '構成音（♭3・根音）を、となりの音で小さく挟むターンを2回。分散でつないで、♭3 のオクターブ上に着地。拍の頭は ♭3・♭5・1・♭3。', { tags: ['dim', 'enclosure', 'sixteenth'], lvl: 2 }],
+    ['付点のディミニッシュ・アルペジオ', 'Gb4:e. A4:s C5:e Eb5:e / C5:e. A4:s Gb4:e Eb4:e', '「付点8分＋16分」ではずむ、♭5 から始まる dim7 の分散の上がり下がり。拍の頭は ♭5・1・1・♭5。', { tags: ['dim', 'arp', 'rhythm'], lvl: 2 }],
+    ['オフビートの4分音符で降りる（♭♭7-♭5-♭3）', 'r:e A4:q Gb4:q Eb4:q C5:e', '4分音符がぜんぶ裏拍から始まる（♭♭7-♭5-♭3）。拍をずらしたまま降りて、最後に根音のオクターブ上へ跳ぶ。', { tags: ['dim', 'rhythm', 'syncopation'], lvl: 1 }],
+    ['問いかけと答え（dim7 を山なりに）', 'Eb4 Gb4 A4 r C5:q A4 Gb4', '♭3-♭5-♭♭7 と上がって問いかけ、間のあと、根音を4分音符でのばして、♭♭7-♭5 と降りて答える。拍の頭は ♭3・♭♭7・1・♭♭7。', { tags: ['dim', 'rhythm'], lvl: 1 }],
+    ['3+3+2 のリズム（付点8分・付点8分・8分）', 'Gb4:e. A4:e. C5:e / Eb5:e. C5:e. A4:e', '付点8分・付点8分・8分の「3+3+2」を2回くり返して、♭5 から dim7 を上がって折り返す。2・4拍目の頭は音がのびていて、拍をまたいではずむ。拍の頭に音が来るのは 1拍目の ♭5、3拍目の ♭3。', { tags: ['dim', 'rhythm', 'syncopation'], lvl: 2 }],
+  ]);
+})();
+
 /* ---- js/solo.js ---- */
 /* アドリブ・ラボ：ソロの自動作成（画面を持たない）。
    解析（analysis.js）が決めた「かたまり」ごとに、リック辞典（licks*.js）から合うリックを選び、
@@ -3281,6 +3461,17 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     return notes.length ? notes[lastIdx].midi : null;
   }
 
+  /* ---------------- リズムの種類 ---------------- */
+  // 16分音符（s）・3連符（t）・シンコペーション（y：付点、裏拍からのびる音、休符のあとの入り）を含むか。
+  // 8分音符と4分音符だけのリックは、n = 0（「ふつうの8分」）
+  function rhythmOf(l) {
+    if (l._rh) return l._rh;
+    const ev = l.events.filter(e => !e.rest);
+    const s = ev.some(e => e.d12 === 3), t = ev.some(e => e.d12 === 4 || e.d12 === 8);
+    const y = ev.some(e => e.d12 === 9 || (e.t12 % 12 === 6 && e.d12 >= 12)) || (l.events.length > 0 && !!l.events[0].rest && l.events[0].d12 <= 6);
+    return (l._rh = { s, t, y, n: (s ? 1 : 0) + (t ? 1 : 0) + (y ? 1 : 0), kind: (s ? 's' : '') + (t ? 't' : '') + (y ? 'y' : '') });
+  }
+
   /* ---------------- 選ぶ ---------------- */
   function pickWeighted(list, rand, k) {
     list = list.slice().sort((a, b) => a.cost - b.cost).slice(0, k || 4);
@@ -3303,6 +3494,17 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     if (st.usedName.has(l.name)) cost += 4;
     if (st.lastCtxLick && st.lastCtxLick.src === l.src) cost += 30;
     cost += Math.abs(l.lvl - o.level) * 0.7;
+    // リズムの濃いリック（16分・3連・シンコペーション）は、難しさが上がるほど選びやすく。8分だけが続くと、単調になるので選びにくく
+    {
+      const rh = rhythmOf(l), li = Math.max(0, Math.min(2, (o.level | 0) - 1)), dens = Math.min(2, Math.max(0, o.density | 0));
+      if (rh.n) {
+        cost -= [0.2, 1.8, 3.0][li] + (rh.n > 1 ? 0.3 : 0);
+        if (rh.s) cost += [0.7, 0, -0.7][dens];          // 音が少なめなら16分は控えめ、多めなら出やすく
+        if (st.lastRh && rh.kind === st.lastRh) cost += 1.2;   // 同じリズムの型が続かないように
+      } else {
+        cost += [0, 0.4, 1.0][li] * (st.plainRun >= 1 ? 1.8 : 1);
+      }
+    }
     if (o.tags && o.tags.length) cost += o.tags.some(t => l.tags.indexOf(t) >= 0) ? -2.5 : 0.8;
     if (o.avoidTags && o.avoidTags.some(t => l.tags.indexOf(t) >= 0)) cost += 6;
     if (extra.want != null) cost += Math.abs(fitInfo.len - extra.want) * 1.3;
@@ -3366,6 +3568,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       st.soundEnd = end;
     }
     st.used.add(lick.id); st.usedName.add(lick.name); st.lastCtxLick = lick;
+    { const rh = rhythmOf(lick); st.lastRh = rh.n ? rh.kind : ''; st.plainRun = rh.n ? 0 : (st.plainRun || 0) + 1; }
     st.decisions.push(d);
     return st.events.length - prevLen;
   }
@@ -3375,7 +3578,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   function generate(hs, an, opts) {
     const o = Object.assign({}, DEF, opts || {});
     const rand = rng(o.seed * 2654435761 >>> 0);
-    const st = { an, rand, prev: null, used: new Set(), usedName: new Set(), decisions: [], events: [], lastCtxLick: null, run: 0, soundEnd: -99 };
+    const st = { an, rand, prev: null, used: new Set(), usedName: new Set(), decisions: [], events: [], lastCtxLick: null, lastRh: '', plainRun: 0, run: 0, soundEnd: -99 };
     const lvlMax = Math.min(3, o.level + 1);
     // いま使えるパターンだけでフレーズを区切る
     const canUse = m => {
@@ -3389,6 +3592,19 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       const m = ph.match, ctx = ctxOfMatch(m);
       const slice = hs.slice(m.at, m.at + m.n), durs = slice.map(h => h.dur), chords = slice.map(h => h.chord);
       const cands = L.find(ctx, { durs, chords, lvlMax, bpb: o.bpb, anyTonic: !!m.pattern.anyTonic });
+      // 難しさが上がるほど、ii–V–I などのかたまりをコードごとに分けて、リズムの濃いリック（16分・3連・シンコペーション）も使う。
+      // かたまりのリックに、リズムの濃いものが少ない（ターンアラウンドなど）ときは、分ける確率を上げる。
+      // 抽選は、かたまりの位置だけで決まる独立の乱数で行う（キーや音域がちがっても、コーラスの組み立てが変わらないように）
+      if (m.n >= 2) {
+        const li = Math.max(0, Math.min(2, (o.level | 0) - 1));
+        const rs = cands.length ? cands.filter(l => rhythmOf(l).n > 0).length / cands.length : 0;
+        const base = [0, 0.3, 0.5][li], hi = [0, 0.8, 0.95][li];
+        const p = base + (hi - base) * Math.max(0, 1 - 2 * rs);
+        if (rng(((o.seed * 2654435761) >>> 0) ^ Math.imul(m.at + 1, 0x9e3779b1))() < p) {
+          for (let k = 0; k < m.n; k++) { const h = hs[m.at + k]; fillSingle(st, o, hs, m.at + k, h.t0, h.t0 + h.dur); }
+          continue;
+        }
+      }
       const scored = cands.map(l => scoreLick(l, st, o, { fit: L.fit(l, durs), chords }));
       const pick = pickWeighted(scored, rand, 6);
       const f = pick.fit, t0 = slice[0].t0;
@@ -3456,7 +3672,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     return swap(hs, an, solo, di, c[Math.floor(rand() * c.length)].id);
   }
 
-  Object.assign(S, { generate, realize, candidates, swap, reroll, rng, ctxOfMatch });
+  Object.assign(S, { generate, realize, candidates, swap, reroll, rng, ctxOfMatch, rhythmOf });
   if (typeof module !== 'undefined' && module.exports) module.exports = AL;
 })();
 
@@ -4280,6 +4496,15 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     return g < r ? fl + g / (2 * r) : fl + 0.5 + (g - r) / (2 * (1 - r));
   }
 
+  // 16分音符のある拍は、スウィングさせず、そのまま等間隔で鳴らす（16分のランが、不ぞろいに聞こえるため）。
+  // 拍のなかの 1/4・3/4 の位置から始まる音がある拍の音に、straight = true をつける
+  function markStraight(evs) {
+    const beats = new Set();
+    evs.forEach(e => { const f = e.t - Math.floor(e.t + 1e-6); if (Math.abs(f - 0.25) < 0.02 || Math.abs(f - 0.75) < 0.02) beats.add(Math.floor(e.t + 1e-6)); });
+    evs.forEach(e => { e.straight = beats.has(Math.floor(e.t + 1e-6)); });
+    return evs;
+  }
+
   // タイで結ばれた音をつなげる
   function mergeTies(evs) {
     const out = [];
@@ -4355,6 +4580,8 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     }
     // 音符の位置 u（タイムラインの拍）→ AudioContext の時刻
     timeOf(u, r) { return this.anchor.time + (swingMap(u, r) - this.anchor.sbeat) * this.spb; }
+    // スウィングさせない時刻（拍の頭は同じ。拍のなかを等間隔で）
+    timeOfStraight(u) { return this.anchor.time + (u - this.anchor.sbeat) * this.spb; }
     // いまの位置（拍）。count-in 中は負
     position() {
       if (!this.running) return null;
@@ -4386,7 +4613,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     soloEvents(k) {
       if (!this.soloCache[k]) {
         const c = this.chorusEvents(k);
-        this.soloCache[k] = c.solo ? mergeTies(c.solo) : [];
+        this.soloCache[k] = c.solo ? markStraight(mergeTies(c.solo)) : [];
       }
       return this.soloCache[k];
     }
@@ -4417,7 +4644,8 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
           for (const e of this.soloEvents(k)) {
             if (!inWin(e)) continue;
             const u = base + e.t;
-            playNote(E, 'solo', e, this.timeOf(u, r), this.timeOf(u + e.dur, r));
+            if (e.straight) playNote(E, 'solo', e, this.timeOfStraight(u), this.timeOfStraight(u + e.dur));
+            else playNote(E, 'solo', e, this.timeOf(u, r), this.timeOf(u + e.dur, r));
           }
         }
       }
@@ -4455,7 +4683,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     return new Blob([out], { type: 'audio/wav' });
   }
 
-  Object.assign(Au, { Player, swingMap, unswing, renderOffline, encodeWav, mergeTies });
+  Object.assign(Au, { Player, swingMap, unswing, renderOffline, encodeWav, mergeTies, markStraight });
   if (typeof module !== 'undefined' && module.exports) module.exports = AL;
 })();
 
@@ -4626,8 +4854,26 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     // 3連符の拍（1/3・2/3 の位置から始まる音がある拍）
     const tripBeats = new Set();
     seq.forEach(it => { if (isTripletPos(it.t) || (!it.rest && !isOn(it.dur, 0.25) && isOn(it.dur, 1 / 3))) tripBeats.add(Math.floor(it.t + 1e-4)); });
-    const items = [];
+    // 3連符の拍にかかる休符は、拍の境目で切る（3連符の休符として書くため。そうしないと 1/3 拍が 16分休符2つになってしまう）
+    const seq2 = [];
     for (const it of seq) {
+      if (!it.rest) { seq2.push(it); continue; }
+      const b0 = Math.floor(it.t + 1e-4), b1 = Math.floor(it.t + it.dur - 1e-4);
+      let touches = false;
+      for (let b = b0; b <= b1; b++) if (tripBeats.has(b)) touches = true;
+      if (!touches) { seq2.push(it); continue; }
+      let cur = it.t; const end = it.t + it.dur;
+      while (cur < end - EPS) {
+        const beat = Math.floor(cur + 1e-4);
+        let nb = beat + 1;
+        if (!tripBeats.has(beat)) while (nb < end - EPS && !tripBeats.has(nb)) nb++;   // 3連符でない拍がつづくあいだは、ひとまとめ
+        const cut = Math.min(end, nb);
+        seq2.push({ t: cur, dur: cut - cur, rest: true });
+        cur = cut;
+      }
+    }
+    const items = [];
+    for (const it of seq2) {
       const beat = Math.floor(it.t + 1e-4);
       if (tripBeats.has(beat) && isOn(it.t - beat, 1 / 3) && isOn(it.dur, 1 / 3) && it.t + it.dur <= beat + 1 + EPS) {
         items.push({ t: it.t, dur: it.dur, rest: it.rest, ev: it.ev, trip: beat, tiePrev: !it.rest && it.ev && it.ev.first === false && Math.abs(it.t) < EPS, tieNext: !it.rest && !!(it.ev && it.ev.tie) });
@@ -4771,7 +5017,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
 
   function render(score, opts) {
     opts = opts || {};
-    const ss = opts.ss || 8, W = opts.width || 760, bpb = score.bpb;
+    const ss = opts.ss || 8, W0 = opts.width || 760, bpb = score.bpb;
     const clefName = score.clef === 'bass' ? 'bass' : 'treble', clef = CLEFS[clefName];
     const keyAccs = T.keySigAccs(score.fifths);
     const marginL = 8, marginR = 8, headW = 1.18 * ss, stemW = 0.12 * ss;
@@ -4779,6 +5025,10 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     const leftOther = marginL + gw(clef.glyph, ss) + 1.3 * ss + keyW;
     const leftFirst = leftOther + 3.2 * ss;
     const bars = score.bars.map(b => layoutBar(b, bpb, ss, keyAccs, clefName));
+    // 16分音符のランなどで、1小節だけでも決めた幅に入らないときは、全段の幅をその小節に合わせて広げる
+    // （幅を固定したままだと、右端が切れる。広げた分は、まわりの overflow-x:auto で横にスクロールする）
+    const need = bars.reduce((m, b, i) => Math.max(m, (i === 0 ? leftFirst : leftOther) + b.minW + marginR), 0);
+    const W = Math.max(W0, Math.ceil(need));
     const perMax = opts.barsPerSystem || 4;
     const systems = [];
     for (let i = 0; i < bars.length;) {
@@ -5147,7 +5397,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
 
 /* ---- js/export.js ---- */
 /* アドリブ・ラボ：書き出し（MIDI・MusicXML）。画面を持たない純粋な関数だけ。
-   ・MIDI：伴奏とソロを別トラックにした標準 MIDI ファイル（フォーマット1）。スウィングは時間をずらして書く
+   ・MIDI：伴奏とソロを別トラックにした標準 MIDI ファイル（フォーマット1）。スウィングは時間をずらして書く（16分音符のある拍だけは、再生と同じくずらさない）
    ・MusicXML：ソロの譜面（コード記号つき）。MuseScore・Finale・Sibelius・Dorico などで開ける */
 (function () {
   'use strict';
@@ -5170,6 +5420,8 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     }
     return out;
   }
+  // 16分音符のある拍の音には、straight = true をつける（スウィングさせない。player.js の markStraight と同じ約束なので、再生・WAV と同じ時間で書ける）
+  const markStraight = evs => (AL.Au && AL.Au.markStraight ? AL.Au.markStraight(evs) : evs);
   // plan（player.js の設計図）から、loops コーラスぶんを1本の時間にならべる
   function collect(plan, loops, opts) {
     opts = opts || {};
@@ -5179,7 +5431,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       (ch.comp || []).forEach(e => out.comp.push(Object.assign({}, e, { t: e.t + off })));
       (ch.bass || []).forEach(e => out.bass.push(Object.assign({}, e, { t: e.t + off })));
       (ch.drums || []).forEach(e => out.drums.push(Object.assign({}, e, { t: e.t + off })));
-      if (opts.solo !== false) mergeTies(ch.solo || []).forEach(e => out.solo.push(Object.assign({}, e, { t: e.t + off })));
+      if (opts.solo !== false) markStraight(mergeTies(ch.solo || [])).forEach(e => out.solo.push(Object.assign({}, e, { t: e.t + off })));
     }
     return out;
   }
@@ -5235,8 +5487,9 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       ev.push({ tick: 0, order: 1, bytes: [0xb0 | ch, 7, tr.volume == null ? 100 : tr.volume] });
       (tr.events || []).forEach(e => {
         if (e.midi < 0 || e.midi > 127) return;
-        const a = tick(e.t);
-        let b = tick(e.t + e.dur);
+        const at = e.straight ? (x => Math.round(x * PPQ)) : tick;   // ストレートの音は、時間をずらさない（拍の頭は同じ）
+        const a = at(e.t);
+        let b = at(e.t + e.dur);
         if (b <= a) b = a + 1;
         const vel = Math.max(1, Math.min(127, Math.round(e.vel || 80)));
         ev.push({ tick: a, order: 3, bytes: [0x90 | ch, e.midi, vel] });
@@ -5525,6 +5778,15 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   };
 
   U.tonePlain = { t: 'トニック', sd: 'サブドミナント', d: 'ドミナント', x: 'そのほか' };
+
+  /* ---- リックの特徴タグ：データでは短い英語のキーで持ち、画面では日本語で出す（絞りこみ・検索はキーのまま） ---- */
+  U.tagJp = {
+    arp: 'アルペジオ', scale: 'スケール', alt: 'オルタード', rhythm: 'リズム', waltz: 'ワルツ', lydian: 'リディアン', dim: 'ディミニッシュ',
+    sixteenth: '16分音符', triplet: '3連符', syncopation: 'シンコペーション', pent: 'ペンタ', bebop: 'ビバップ', blues: 'ブルース',
+    upper: 'アッパー・ストラクチャー', chromatic: '半音階', modern: 'モダン', digital: 'デジタル・パターン', enclosure: 'エンクロージャー',
+    guide: 'ガイドトーン', quartal: '4度堆積'
+  };
+  U.tagName = t => U.tagJp[t] || t;
 })();
 
 /* ---- js/app.js ---- */
@@ -6024,7 +6286,8 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     if (shared && App._shareSwaps) {
       App._shareSwaps.forEach(sw => {
         const i = sw && sw[0], id = sw && sw[1], d = App.solo.decisions[i], lk = L.byId[id];
-        if (d && lk && lk.segs.length === L.byId[d.id].segs.length) App.solo = S.swap(App.hs, App.an, App.solo, i, id);
+        // いまの版で、その場所に置けるリックのときだけ差しかえる（古いリンクは、ソロの作り方が変わっているので、合わない場所に当たることがある）
+        if (d && lk && lk.segs.length === L.byId[d.id].segs.length && S.candidates(App.hs, App.an, App.solo, i).some(c => c.id === id)) App.solo = S.swap(App.hs, App.an, App.solo, i, id);
       });
       App._shareSwaps = null;
     }
@@ -6494,7 +6757,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       sg.list.forEach(l => {
         const pl = V.placeLickAt(App.solo, sg.d, l), isCur = l.id === sg.current;
         const tags = h('div', { class: 'tags' }, h('span', { class: 'chip lvl' + l.lvl }, 'Lv.' + l.lvl));
-        l.tags.slice(0, 4).forEach(t => tags.appendChild(h('span', { class: 'chip tag' }, t)));
+        l.tags.slice(0, 4).forEach(t => tags.appendChild(h('span', { class: 'chip tag' }, U.tagName(t))));
         const shown = App.lickText(l.name, l, App.hs[sg.d.i0].chord);
         cards.appendChild(h('div', { class: 'cand' + (isCur ? ' cur' : '') },
           h('div', { class: 'cand-h' },
@@ -6654,7 +6917,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       h('p', { class: 'muted' }, 'コードの役割（ii–V–I など）を読みとって、辞典のリックをつなげたソロを作ります。気に入らないフレーズは、下で1つずつ差しかえられます。'),
       h('div', { class: 'fields' },
         U.field('楽器', el.inst),
-        U.field('難しさ', el.level, 'むずかしいほど、ビバップ風・オルタード・16分音符が混ざります'),
+        U.field('難しさ', el.level, 'やさしい＝8分音符が中心／ふつう＝3連符・16分音符・シンコペーションが混ざる／むずかしい＝16分音符のランやオルタードが多い'),
         U.field('音の多さ', el.density, 'まばらなほど、間（休符）が多くなります'),
         U.field('譜面の書き方', el.concert, '実音＝鳴っている音のまま。移調譜＝その楽器の人が読む楽譜')),
       el.seed));
@@ -6826,7 +7089,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       h('h2', null, 'フレーズ ' + (di + 1) + ' / ' + n),
       h('div', { class: 'row gap' }, prevBtn, nextBtn, h('button', { type: 'button', class: 'btn sm ghost', onclick: () => App.select({ dec: null }) }, '閉じる'))));
     const tags = h('div', { class: 'tags' }, h('span', { class: 'chip lvl' + lick.lvl }, 'Lv.' + lick.lvl));
-    lick.tags.forEach(t => tags.appendChild(h('span', { class: 'chip tag' }, t)));
+    lick.tags.forEach(t => tags.appendChild(h('span', { class: 'chip tag' }, U.tagName(t))));
     const mini = h('div', { class: 'mini-score', html: miniNotation(pl, Math.min(620, (el.phrase.clientWidth || 600) - 40)) });
     const roles = (App.an.chords[d.i0].chips || []).map(c => h('span', { class: 'chip tone-' + (c.tone || 'x') }, c.label));
     box.appendChild(h('div', { class: 'phrase-main' },
@@ -6857,11 +7120,14 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   }
   const previewLick = (solo, di, lick) => previewLickAt(solo, solo.decisions[di], lick);
 
+  // 難しさが「ふつう」以上のときは、同じ難しさのなかで、リズムの濃いリック（16分・3連符・シンコペーション。種類が多いほど先）を先に出す
+  const richFirst = l => (st().level >= 2 ? -S.rhythmOf(l).n : 0);
+
   function renderCandidates(box, solo, di) {
     const d = solo.decisions[di];
     let list = S.candidates(App.hs, App.an, solo, di);
     const cur = L.byId[d.id];
-    list = list.slice().sort((a, b) => (a.id === d.id ? -1 : b.id === d.id ? 1 : 0) || Math.abs(a.lvl - st().level) - Math.abs(b.lvl - st().level) || a.name.localeCompare(b.name, 'ja'));
+    list = list.slice().sort((a, b) => (a.id === d.id ? -1 : b.id === d.id ? 1 : 0) || Math.abs(a.lvl - st().level) - Math.abs(b.lvl - st().level) || richFirst(a) - richFirst(b) || a.name.localeCompare(b.name, 'ja'));
     box.appendChild(h('h3', null, '差しかえ候補（' + list.length + '本）'));
     if (!list.length) { box.appendChild(h('p', { class: 'muted' }, 'このフレーズには、ほかの候補がありません。')); return; }
     const wrap = h('div', { class: 'cands' });
@@ -6870,7 +7136,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       const pl = placeLick(solo, di, l);
       const isCur = l.id === d.id;
       const tags = h('div', { class: 'tags' }, h('span', { class: 'chip lvl' + l.lvl }, 'Lv.' + l.lvl));
-      l.tags.slice(0, 4).forEach(t => tags.appendChild(h('span', { class: 'chip tag' }, t)));
+      l.tags.slice(0, 4).forEach(t => tags.appendChild(h('span', { class: 'chip tag' }, U.tagName(t))));
       const shown = App.lickText(l.name, l, App.hs[d.i0].chord);
       wrap.appendChild(h('div', { class: 'cand' + (isCur ? ' cur' : '') },
         h('div', { class: 'cand-h' },
@@ -6906,7 +7172,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     }
     const order = new Map(L.all.map((l, i) => [l.id, i]));
     const cur = di >= 0 ? solo.decisions[di].id : null;
-    list = list.slice().sort((a, b) => (a.id === cur ? -1 : b.id === cur ? 1 : 0) || Math.abs(a.lvl - st().level) - Math.abs(b.lvl - st().level) || order.get(a.id) - order.get(b.id));
+    list = list.slice().sort((a, b) => (a.id === cur ? -1 : b.id === cur ? 1 : 0) || Math.abs(a.lvl - st().level) - Math.abs(b.lvl - st().level) || richFirst(a) - richFirst(b) || order.get(a.id) - order.get(b.id));
     return { di, d, list: list.slice(0, n || 6), total: list.length, ctxJp, current: cur };
   };
   App.lickView = { placeLickAt, miniNotation, previewLickAt, degreeLine };
@@ -7053,7 +7319,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     if (D.level && l.lvl !== D.level) return false;
     if (D.tag && l.tags.indexOf(D.tag) < 0) return false;
     if (D.q) {
-      const hay = (l.name + ' ' + App.lickDesc(l) + ' ' + shownText(l) + ' ' + l.tags.join(' ') + ' ' + (L.CTX[l.ctx] ? L.CTX[l.ctx].jp : '')).toLowerCase();
+      const hay = (l.name + ' ' + App.lickDesc(l) + ' ' + shownText(l) + ' ' + l.tags.join(' ') + ' ' + l.tags.map(U.tagName).join(' ') + ' ' + (L.CTX[l.ctx] ? L.CTX[l.ctx].jp : '')).toLowerCase();
       if (!D.q.toLowerCase().split(/\s+/).every(w => hay.indexOf(w) >= 0)) return false;
     }
     return true;
@@ -7078,7 +7344,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     const tb = U.clear(el.tags);
     if (tags.length) {
       tb.appendChild(h('span', { class: 'muted small' }, '特徴で絞る：'));
-      tags.slice(0, 24).forEach(t => tb.appendChild(h('button', { type: 'button', class: 'chip btnchip', 'aria-pressed': String(D.tag === t), onclick: () => { D.tag = D.tag === t ? '' : t; D.limit = 24; renderList(); } }, t + ' ' + counts[t])));
+      tags.slice(0, 24).forEach(t => tb.appendChild(h('button', { type: 'button', class: 'chip btnchip', 'aria-pressed': String(D.tag === t), onclick: () => { D.tag = D.tag === t ? '' : t; D.limit = 24; renderList(); } }, U.tagName(t) + ' ' + counts[t])));
     }
     const list = base.filter(matches);
     const box = U.clear(el.list), more = U.clear(el.more);
@@ -7101,7 +7367,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   function card(l, K, width) {
     const pl = place(l, K);
     const tags = h('div', { class: 'tags' }, h('span', { class: 'chip lvl' + l.lvl }, 'Lv.' + l.lvl));
-    l.tags.forEach(t => tags.appendChild(h('button', { type: 'button', class: 'chip tag btnchip', 'aria-pressed': String(D.tag === t), title: 'この特徴で絞る', onclick: () => { D.tag = D.tag === t ? '' : t; D.limit = 24; renderList(); } }, t)));
+    l.tags.forEach(t => tags.appendChild(h('button', { type: 'button', class: 'chip tag btnchip', 'aria-pressed': String(D.tag === t), title: 'この特徴で絞る', onclick: () => { D.tag = D.tag === t ? '' : t; D.limit = 24; renderList(); } }, U.tagName(t))));
     const playing = App.playKind === 'preview' && App.previewId === 'dict:' + l.id;
     const shown = App.lickText(l.name, l, pl.chords[0]);
     return h('div', { class: 'lick', data: { id: l.id } },
@@ -7174,7 +7440,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       drums: { name: 'ドラム', events: col.drums },
     });
     U.download(fname('mid'), new Blob([bytes], { type: 'audio/midi' }));
-    U.toast('MIDI を書き出しました（実音。スウィングは時間のずれとして入っています）');
+    U.toast('MIDI を書き出しました（実音。スウィングは時間のずれとして入っています。16分音符のある拍だけは、再生と同じくずらしていません）');
   };
   App.exportXml = function () {
     if (!App.hasChords) { U.toast('先にコード譜を入力してください'); return; }
@@ -7272,7 +7538,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
         h('button', { type: 'button', class: 'btn', onclick: () => App.exportText() }, '📄 コード譜（テキスト）')),
       h('ul', { class: 'muted small notes' },
         h('li', null, 'WAV・MIDI は「ソロ」の設定（あり／なし／毎回あたらしく）を引きつぎます。'),
-        h('li', null, 'MIDI は実音で、スウィングは時間のずれとして入ります。コード名はマーカーとして入ります。'),
+        h('li', null, 'MIDI は実音で、スウィングは時間のずれとして入ります（16分音符のある拍だけは、再生と同じく、ずらさずに等間隔）。コード名はマーカーとして入ります。'),
         h('li', null, 'MusicXML は、いま画面に出ているソロ（コード記号つき）を、MuseScore・Finale・Sibelius・Dorico などで開けます。'),
         h('li', null, '印刷は、ブラウザの印刷画面で「PDF に保存」を選べば PDF になります。'))));
 

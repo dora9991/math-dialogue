@@ -7,6 +7,7 @@ const D = path.join(__dirname, '../js/');
 fs.readdirSync(D).filter(f => /^licks-.*\.js$/.test(f)).sort().forEach(f => require(D + f));
 ['solo', 'comping', 'glyphs', 'notation', 'presets', 'player', 'export'].forEach(f => require(D + f + '.js'));
 const { T, C, L, N, X } = AL;
+const { checkMusicXml } = require('./xmlcheck.js');
 let bad = 0, n = 0; const byOff = {};
 const fail = (m, ctx) => { bad++; const o = /位置([\d.]+)/.exec(ctx || ''); const k = o ? o[1] : '?'; byOff[k] = (byOff[k] || 0) + 1; if (bad <= 15) console.log('✗', m, ctx || ''); };
 const INST = { transpose: 0, clef: 'treble' };
@@ -33,11 +34,7 @@ for (const bpb of [4, 3]) {
         const out = N.render(score, { width: 700, ss: 8, barsPerSystem: 4 });
         if (!out.svg || /NaN|undefined|Infinity/.test(out.svg)) fail('SVG に NaN/undefined', ctx);
         const xml = X.buildMusicXml({ title: 't', tempo: 120, score, mode: 'major', inst: Object.assign({ id: 'piano', jp: 'x' }, INST), feel: 'x' });
-        xml.split('<measure ').slice(1).forEach((ms, k) => {
-          const body = ms.replace(/<harmony>[\s\S]*?<\/harmony>/g, '');
-          let sum = 0; (body.match(/<note>[\s\S]*?<\/note>/g) || []).forEach(nt => { sum += +/<duration>(\d+)<\/duration>/.exec(nt)[1]; });
-          if (sum !== bpb * 12) fail(`MusicXML ${k + 1}小節目の長さ ${sum}（${bpb * 12} のはず）`, ctx);
-        });
+        checkMusicXml(xml, bpb).forEach(m => fail('MusicXML ' + m, ctx));
         // 音の数：書いた音（タイでつながったものは1つ）と、楽譜の音の数が合う
         const tiesStart = (xml.match(/<tie type="start"\/>/g) || []).length, tiesStop = (xml.match(/<tie type="stop"\/>/g) || []).length;
         if (tiesStart !== tiesStop) fail(`タイの始まりと終わりの数が違う ${tiesStart}/${tiesStop}`, ctx);

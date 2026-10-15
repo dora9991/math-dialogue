@@ -92,6 +92,27 @@ for (const [name, style] of [['autumn', 'swing'], ['waltz', 'waltz'], ['bossa', 
   ok(on.tick === 320, 'スウィングの裏拍：' + on.tick);
   ok(off.tick === 480, 'スウィングの終わり：' + off.tick);
 }
+// 16分音符のある拍は、MIDI でもスウィングさせない（再生・WAV と同じ時間で書く）
+{
+  const pr = P.byId.autumn, b = build(pr.text, 'swing', 1), sw = 2 / 3;
+  let nStraight = 0, n16 = 0, wrong16 = 0, mism = 0;
+  for (const seed of [1, 2, 3, 4, 5]) {
+    const solo = S.generate(b.hs, b.an, { seed, level: 3, density: 2, bpb: b.bpb });
+    const plan = Object.assign({}, b.plan, { chorus: () => ({ comp: [], bass: [], drums: [], solo: solo.events }) });
+    const col = X.collect(plan, 1);
+    const midi = X.buildMidi({ tempo: 120, bpb: b.bpb, timeMap: beat => Au.swingMap(beat, sw), tracks: [{ name: 'ソロ', channel: 2, program: 0, events: col.solo }] });
+    const m = readMidi(midi);
+    const ons = m.tracks[1].filter(e => e.st === 0x90).map(e => e.tick).sort((x, y) => x - y);
+    const want = col.solo.map(e => (e.straight ? Math.round(e.t * 480) : Math.round(Au.swingMap(e.t, sw) * 480))).sort((x, y) => x - y);
+    if (JSON.stringify(ons) !== JSON.stringify(want)) mism++;
+    nStraight += col.solo.filter(e => e.straight).length;
+    // 1/4・3/4拍の位置から始まる音（16分の音）は、拍を4等分した位置（120 ティックの倍数）にいる
+    col.solo.forEach(e => { const f = e.t - Math.floor(e.t + 1e-6); if (Math.abs(f - 0.25) < 0.02 || Math.abs(f - 0.75) < 0.02) { n16++; if (!ons.includes(Math.round(e.t * 480))) wrong16++; } });
+  }
+  ok(nStraight > 0, 'MIDI：難しさ3のソロに、16分音符のある拍がない');
+  ok(n16 > 0 && wrong16 === 0, 'MIDI：16分の音が拍を4等分した位置にない ' + wrong16 + '/' + n16);
+  ok(mism === 0, 'MIDI：ストレートの音の時間が、再生と合わない（' + mism + '本）');
+}
 
 // 2) MusicXML
 for (const [name, style, inst] of [['autumn', 'swing', { id: 'altosax', jp: 'アルトサックス', transpose: 9, clef: 'treble' }], ['blues-jazz', 'swing', { id: 'trombone', jp: 'トロンボーン', transpose: 0, clef: 'bass' }], ['waltz', 'waltz', { id: 'guitar', jp: 'ギター', transpose: 12, clef: 'treble' }], ['rhythm', 'swing', { id: 'tenorsax', jp: 'テナーサックス', transpose: 14, clef: 'treble' }]]) {

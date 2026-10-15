@@ -281,11 +281,14 @@
   }
   const previewLick = (solo, di, lick) => previewLickAt(solo, solo.decisions[di], lick);
 
+  // 難しさが「ふつう」以上のときは、同じ難しさのなかで、リズムの濃いリック（16分・3連符・シンコペーション。種類が多いほど先）を先に出す
+  const richFirst = l => (st().level >= 2 ? -S.rhythmOf(l).n : 0);
+
   function renderCandidates(box, solo, di) {
     const d = solo.decisions[di];
     let list = S.candidates(App.hs, App.an, solo, di);
     const cur = L.byId[d.id];
-    list = list.slice().sort((a, b) => (a.id === d.id ? -1 : b.id === d.id ? 1 : 0) || Math.abs(a.lvl - st().level) - Math.abs(b.lvl - st().level) || a.name.localeCompare(b.name, 'ja'));
+    list = list.slice().sort((a, b) => (a.id === d.id ? -1 : b.id === d.id ? 1 : 0) || Math.abs(a.lvl - st().level) - Math.abs(b.lvl - st().level) || richFirst(a) - richFirst(b) || a.name.localeCompare(b.name, 'ja'));
     box.appendChild(h('h3', null, '差しかえ候補（' + list.length + '本）'));
     if (!list.length) { box.appendChild(h('p', { class: 'muted' }, 'このフレーズには、ほかの候補がありません。')); return; }
     const wrap = h('div', { class: 'cands' });
@@ -330,7 +333,7 @@
     }
     const order = new Map(L.all.map((l, i) => [l.id, i]));
     const cur = di >= 0 ? solo.decisions[di].id : null;
-    list = list.slice().sort((a, b) => (a.id === cur ? -1 : b.id === cur ? 1 : 0) || Math.abs(a.lvl - st().level) - Math.abs(b.lvl - st().level) || order.get(a.id) - order.get(b.id));
+    list = list.slice().sort((a, b) => (a.id === cur ? -1 : b.id === cur ? 1 : 0) || Math.abs(a.lvl - st().level) - Math.abs(b.lvl - st().level) || richFirst(a) - richFirst(b) || order.get(a.id) - order.get(b.id));
     return { di, d, list: list.slice(0, n || 6), total: list.length, ctxJp, current: cur };
   };
   App.lickView = { placeLickAt, miniNotation, previewLickAt, degreeLine };

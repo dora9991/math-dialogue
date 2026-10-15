@@ -6,6 +6,7 @@ const D = path.join(__dirname, '../js/');
 fs.readdirSync(D).filter(f => /^licks-.*\.js$/.test(f)).sort().forEach(f => require(D + f));
 ['solo', 'comping', 'glyphs', 'notation', 'presets', 'player', 'export'].forEach(f => require(D + f + '.js'));
 const { T, C, A, S, B, L, N, X, Au } = AL;
+const { checkMusicXml } = require('./xmlcheck.js');
 const COUNT = +process.argv[2] || 300, SEED = +process.argv[3] || 12345;
 let bad = 0, n = 0;
 const fail = (m, ctx) => { bad++; if (bad <= 12) console.log('✗', m, ctx ? '\n   ' + ctx.replace(/\n/g, ' / ') : ''); };
@@ -74,16 +75,16 @@ for (let i = 0; i < COUNT; i++) {
       const r = N.render(score, { width: w, ss: w < 400 ? 6 : 8, barsPerSystem: w < 400 ? 2 : 4 });
       if (!r.svg || /NaN|undefined|Infinity/.test(r.svg)) fail('SVG に NaN/undefined（幅' + w + '）', ctxStr);
       if (!(r.height > 50)) fail('SVG の高さが変', ctxStr);
+      // 密な小節でも、右端で切れない（決めた幅に入らないときは、SVG 自身が広がる）
+      const svgW = +/<svg[^>]* width="([\d.]+)"/.exec(r.svg)[1], maxX1 = Math.max.apply(null, r.layout.bars.map(b => b.x1));
+      if (svgW < w - 0.5) fail('SVG の幅が、頼んだ幅より狭い（幅' + w + '）', ctxStr);
+      if (maxX1 > svgW - 7.5) fail('SVG の右端で小節が切れる（幅' + w + '、小節の右端 ' + maxX1.toFixed(0) + ' ／ SVG ' + svgW + '）', ctxStr);
       // カーソル用の座標が全小節にある
       for (let b = 0; b < ch.chorusBars; b++) { const lb = r.layout.bars[b]; if (!lb || !isFinite(lb.timeToX(0)) || !isFinite(lb.timeToX(bpb - 0.1))) fail('layout.bars[' + b + '] が変', ctxStr); }
     }
-    // MusicXML：小節の長さ
+    // MusicXML：小節の長さ・音符の形・3連符のかたまり
     const xml = X.buildMusicXml({ title: 't', tempo: 120, score, mode: an.key.mode, inst: Object.assign({ id: 'piano', jp: 'x' }, inst), feel: 'x' });
-    xml.split('<measure ').slice(1).forEach((ms, k) => {
-      const body = ms.replace(/<harmony>[\s\S]*?<\/harmony>/g, '');
-      let sum = 0; (body.match(/<note>[\s\S]*?<\/note>/g) || []).forEach(nt => { sum += +/<duration>(\d+)<\/duration>/.exec(nt)[1]; });
-      if (sum !== bpb * 12) fail(`MusicXML ${k + 1}小節目の長さ ${sum}`, ctxStr);
-    });
+    checkMusicXml(xml, bpb).forEach(m => fail('MusicXML ' + m, ctxStr));
     // MIDI
     const plan = { bpb, chorusBeats: ch.chorusBeats, chorus: () => ({ comp: gen.comp, bass: gen.bass, drums: gen.drums, solo: solo.events }), tempo: () => 120, swing: () => 0.6 };
     const col = X.collect(plan, 2);

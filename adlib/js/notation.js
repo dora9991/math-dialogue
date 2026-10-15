@@ -271,7 +271,7 @@
 
   function render(score, opts) {
     opts = opts || {};
-    const ss = opts.ss || 8, W = opts.width || 760, bpb = score.bpb;
+    const ss = opts.ss || 8, W0 = opts.width || 760, bpb = score.bpb;
     const clefName = score.clef === 'bass' ? 'bass' : 'treble', clef = CLEFS[clefName];
     const keyAccs = T.keySigAccs(score.fifths);
     const marginL = 8, marginR = 8, headW = 1.18 * ss, stemW = 0.12 * ss;
@@ -279,6 +279,10 @@
     const leftOther = marginL + gw(clef.glyph, ss) + 1.3 * ss + keyW;
     const leftFirst = leftOther + 3.2 * ss;
     const bars = score.bars.map(b => layoutBar(b, bpb, ss, keyAccs, clefName));
+    // 16分音符のランなどで、1小節だけでも決めた幅に入らないときは、全段の幅をその小節に合わせて広げる
+    // （幅を固定したままだと、右端が切れる。広げた分は、まわりの overflow-x:auto で横にスクロールする）
+    const need = bars.reduce((m, b, i) => Math.max(m, (i === 0 ? leftFirst : leftOther) + b.minW + marginR), 0);
+    const W = Math.max(W0, Math.ceil(need));
     const perMax = opts.barsPerSystem || 4;
     const systems = [];
     for (let i = 0; i < bars.length;) {

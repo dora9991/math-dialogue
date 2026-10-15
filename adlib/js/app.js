@@ -494,7 +494,8 @@
     if (shared && App._shareSwaps) {
       App._shareSwaps.forEach(sw => {
         const i = sw && sw[0], id = sw && sw[1], d = App.solo.decisions[i], lk = L.byId[id];
-        if (d && lk && lk.segs.length === L.byId[d.id].segs.length) App.solo = S.swap(App.hs, App.an, App.solo, i, id);
+        // いまの版で、その場所に置けるリックのときだけ差しかえる（古いリンクは、ソロの作り方が変わっているので、合わない場所に当たることがある）
+        if (d && lk && lk.segs.length === L.byId[d.id].segs.length && S.candidates(App.hs, App.an, App.solo, i).some(c => c.id === id)) App.solo = S.swap(App.hs, App.an, App.solo, i, id);
       });
       App._shareSwaps = null;
     }
