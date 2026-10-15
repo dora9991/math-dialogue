@@ -113,4 +113,13 @@
   };
 
   U.tonePlain = { t: 'トニック', sd: 'サブドミナント', d: 'ドミナント', x: 'そのほか' };
+
+  /* ---- リックの特徴タグ：データでは短い英語のキーで持ち、画面では日本語で出す（絞りこみ・検索はキーのまま） ---- */
+  U.tagJp = {
+    arp: 'アルペジオ', scale: 'スケール', alt: 'オルタード', rhythm: 'リズム', waltz: 'ワルツ', lydian: 'リディアン', dim: 'ディミニッシュ',
+    sixteenth: '16分音符', triplet: '3連符', syncopation: 'シンコペーション', pent: 'ペンタ', bebop: 'ビバップ', blues: 'ブルース',
+    upper: 'アッパー・ストラクチャー', chromatic: '半音階', modern: 'モダン', digital: 'デジタル・パターン', enclosure: 'エンクロージャー',
+    guide: 'ガイドトーン', quartal: '4度堆積'
+  };
+  U.tagName = t => U.tagJp[t] || t;
 })();

@@ -108,8 +108,26 @@
     // 3連符の拍（1/3・2/3 の位置から始まる音がある拍）
     const tripBeats = new Set();
     seq.forEach(it => { if (isTripletPos(it.t) || (!it.rest && !isOn(it.dur, 0.25) && isOn(it.dur, 1 / 3))) tripBeats.add(Math.floor(it.t + 1e-4)); });
-    const items = [];
+    // 3連符の拍にかかる休符は、拍の境目で切る（3連符の休符として書くため。そうしないと 1/3 拍が 16分休符2つになってしまう）
+    const seq2 = [];
     for (const it of seq) {
+      if (!it.rest) { seq2.push(it); continue; }
+      const b0 = Math.floor(it.t + 1e-4), b1 = Math.floor(it.t + it.dur - 1e-4);
+      let touches = false;
+      for (let b = b0; b <= b1; b++) if (tripBeats.has(b)) touches = true;
+      if (!touches) { seq2.push(it); continue; }
+      let cur = it.t; const end = it.t + it.dur;
+      while (cur < end - EPS) {
+        const beat = Math.floor(cur + 1e-4);
+        let nb = beat + 1;
+        if (!tripBeats.has(beat)) while (nb < end - EPS && !tripBeats.has(nb)) nb++;   // 3連符でない拍がつづくあいだは、ひとまとめ
+        const cut = Math.min(end, nb);
+        seq2.push({ t: cur, dur: cut - cur, rest: true });
+        cur = cut;
+      }
+    }
+    const items = [];
+    for (const it of seq2) {
       const beat = Math.floor(it.t + 1e-4);
       if (tripBeats.has(beat) && isOn(it.t - beat, 1 / 3) && isOn(it.dur, 1 / 3) && it.t + it.dur <= beat + 1 + EPS) {
         items.push({ t: it.t, dur: it.dur, rest: it.rest, ev: it.ev, trip: beat, tiePrev: !it.rest && it.ev && it.ev.first === false && Math.abs(it.t) < EPS, tieNext: !it.rest && !!(it.ev && it.ev.tie) });

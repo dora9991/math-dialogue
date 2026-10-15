@@ -116,7 +116,7 @@
     if (D.level && l.lvl !== D.level) return false;
     if (D.tag && l.tags.indexOf(D.tag) < 0) return false;
     if (D.q) {
-      const hay = (l.name + ' ' + App.lickDesc(l) + ' ' + shownText(l) + ' ' + l.tags.join(' ') + ' ' + (L.CTX[l.ctx] ? L.CTX[l.ctx].jp : '')).toLowerCase();
+      const hay = (l.name + ' ' + App.lickDesc(l) + ' ' + shownText(l) + ' ' + l.tags.join(' ') + ' ' + l.tags.map(U.tagName).join(' ') + ' ' + (L.CTX[l.ctx] ? L.CTX[l.ctx].jp : '')).toLowerCase();
       if (!D.q.toLowerCase().split(/\s+/).every(w => hay.indexOf(w) >= 0)) return false;
     }
     return true;
@@ -141,7 +141,7 @@
     const tb = U.clear(el.tags);
     if (tags.length) {
       tb.appendChild(h('span', { class: 'muted small' }, '特徴で絞る：'));
-      tags.slice(0, 24).forEach(t => tb.appendChild(h('button', { type: 'button', class: 'chip btnchip', 'aria-pressed': String(D.tag === t), onclick: () => { D.tag = D.tag === t ? '' : t; D.limit = 24; renderList(); } }, t + ' ' + counts[t])));
+      tags.slice(0, 24).forEach(t => tb.appendChild(h('button', { type: 'button', class: 'chip btnchip', 'aria-pressed': String(D.tag === t), onclick: () => { D.tag = D.tag === t ? '' : t; D.limit = 24; renderList(); } }, U.tagName(t) + ' ' + counts[t])));
     }
     const list = base.filter(matches);
     const box = U.clear(el.list), more = U.clear(el.more);
@@ -164,7 +164,7 @@
   function card(l, K, width) {
     const pl = place(l, K);
     const tags = h('div', { class: 'tags' }, h('span', { class: 'chip lvl' + l.lvl }, 'Lv.' + l.lvl));
-    l.tags.forEach(t => tags.appendChild(h('button', { type: 'button', class: 'chip tag btnchip', 'aria-pressed': String(D.tag === t), title: 'この特徴で絞る', onclick: () => { D.tag = D.tag === t ? '' : t; D.limit = 24; renderList(); } }, t)));
+    l.tags.forEach(t => tags.appendChild(h('button', { type: 'button', class: 'chip tag btnchip', 'aria-pressed': String(D.tag === t), title: 'この特徴で絞る', onclick: () => { D.tag = D.tag === t ? '' : t; D.limit = 24; renderList(); } }, U.tagName(t))));
     const playing = App.playKind === 'preview' && App.previewId === 'dict:' + l.id;
     const shown = App.lickText(l.name, l, pl.chords[0]);
     return h('div', { class: 'lick', data: { id: l.id } },

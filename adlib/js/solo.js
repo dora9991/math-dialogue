@@ -48,6 +48,17 @@
     return notes.length ? notes[lastIdx].midi : null;
   }
 
+  /* ---------------- リズムの種類 ---------------- */
+  // 16分音符（s）・3連符（t）・シンコペーション（y：付点、裏拍からのびる音、休符のあとの入り）を含むか。
+  // 8分音符と4分音符だけのリックは、n = 0（「ふつうの8分」）
+  function rhythmOf(l) {
+    if (l._rh) return l._rh;
+    const ev = l.events.filter(e => !e.rest);
+    const s = ev.some(e => e.d12 === 3), t = ev.some(e => e.d12 === 4 || e.d12 === 8);
+    const y = ev.some(e => e.d12 === 9 || (e.t12 % 12 === 6 && e.d12 >= 12)) || (l.events.length > 0 && !!l.events[0].rest && l.events[0].d12 <= 6);
+    return (l._rh = { s, t, y, n: (s ? 1 : 0) + (t ? 1 : 0) + (y ? 1 : 0), kind: (s ? 's' : '') + (t ? 't' : '') + (y ? 'y' : '') });
+  }
+
   /* ---------------- 選ぶ ---------------- */
   function pickWeighted(list, rand, k) {
     list = list.slice().sort((a, b) => a.cost - b.cost).slice(0, k || 4);
@@ -70,6 +81,17 @@
     if (st.usedName.has(l.name)) cost += 4;
     if (st.lastCtxLick && st.lastCtxLick.src === l.src) cost += 30;
     cost += Math.abs(l.lvl - o.level) * 0.7;
+    // リズムの濃いリック（16分・3連・シンコペーション）は、難しさが上がるほど選びやすく。8分だけが続くと、単調になるので選びにくく
+    {
+      const rh = rhythmOf(l), li = Math.max(0, Math.min(2, (o.level | 0) - 1)), dens = Math.min(2, Math.max(0, o.density | 0));
+      if (rh.n) {
+        cost -= [0.2, 1.8, 3.0][li] + (rh.n > 1 ? 0.3 : 0);
+        if (rh.s) cost += [0.7, 0, -0.7][dens];          // 音が少なめなら16分は控えめ、多めなら出やすく
+        if (st.lastRh && rh.kind === st.lastRh) cost += 1.2;   // 同じリズムの型が続かないように
+      } else {
+        cost += [0, 0.4, 1.0][li] * (st.plainRun >= 1 ? 1.8 : 1);
+      }
+    }
     if (o.tags && o.tags.length) cost += o.tags.some(t => l.tags.indexOf(t) >= 0) ? -2.5 : 0.8;
     if (o.avoidTags && o.avoidTags.some(t => l.tags.indexOf(t) >= 0)) cost += 6;
     if (extra.want != null) cost += Math.abs(fitInfo.len - extra.want) * 1.3;
@@ -133,6 +155,7 @@
       st.soundEnd = end;
     }
     st.used.add(lick.id); st.usedName.add(lick.name); st.lastCtxLick = lick;
+    { const rh = rhythmOf(lick); st.lastRh = rh.n ? rh.kind : ''; st.plainRun = rh.n ? 0 : (st.plainRun || 0) + 1; }
     st.decisions.push(d);
     return st.events.length - prevLen;
   }
@@ -142,7 +165,7 @@
   function generate(hs, an, opts) {
     const o = Object.assign({}, DEF, opts || {});
     const rand = rng(o.seed * 2654435761 >>> 0);
-    const st = { an, rand, prev: null, used: new Set(), usedName: new Set(), decisions: [], events: [], lastCtxLick: null, run: 0, soundEnd: -99 };
+    const st = { an, rand, prev: null, used: new Set(), usedName: new Set(), decisions: [], events: [], lastCtxLick: null, lastRh: '', plainRun: 0, run: 0, soundEnd: -99 };
     const lvlMax = Math.min(3, o.level + 1);
     // いま使えるパターンだけでフレーズを区切る
     const canUse = m => {
@@ -154,6 +177,11 @@
     for (const ph of phrases) {
       if (!ph.match) { fillSingle(st, o, hs, ph.from, hs[ph.from].t0, hs[ph.from].t0 + hs[ph.from].dur); continue; }
       const m = ph.match, ctx = ctxOfMatch(m);
+      // 難しさが上がるほど、ii–V–I などのかたまりをコードごとに分けて、リズムの濃いリック（16分・3連・シンコペーション）も使う
+      if (m.n >= 2 && st.rand() < [0, 0.3, 0.5][Math.max(0, Math.min(2, (o.level | 0) - 1))]) {
+        for (let k = 0; k < m.n; k++) { const h = hs[m.at + k]; fillSingle(st, o, hs, m.at + k, h.t0, h.t0 + h.dur); }
+        continue;
+      }
       const slice = hs.slice(m.at, m.at + m.n), durs = slice.map(h => h.dur), chords = slice.map(h => h.chord);
       const cands = L.find(ctx, { durs, chords, lvlMax, bpb: o.bpb, anyTonic: !!m.pattern.anyTonic });
       const scored = cands.map(l => scoreLick(l, st, o, { fit: L.fit(l, durs), chords }));
@@ -223,6 +251,6 @@
     return swap(hs, an, solo, di, c[Math.floor(rand() * c.length)].id);
   }
 
-  Object.assign(S, { generate, realize, candidates, swap, reroll, rng, ctxOfMatch });
+  Object.assign(S, { generate, realize, candidates, swap, reroll, rng, ctxOfMatch, rhythmOf });
   if (typeof module !== 'undefined' && module.exports) module.exports = AL;
 })();

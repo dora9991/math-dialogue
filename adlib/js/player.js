@@ -26,6 +26,15 @@
     return g < r ? fl + g / (2 * r) : fl + 0.5 + (g - r) / (2 * (1 - r));
   }
 
+  // 16分音符のある拍は、スウィングさせず、そのまま等間隔で鳴らす（16分のランが、不ぞろいに聞こえるため）。
+  // 拍のなかの 1/4・3/4 の位置から始まる音がある拍の音に、straight = true をつける
+  function markStraight(evs) {
+    const beats = new Set();
+    evs.forEach(e => { const f = e.t - Math.floor(e.t + 1e-6); if (Math.abs(f - 0.25) < 0.02 || Math.abs(f - 0.75) < 0.02) beats.add(Math.floor(e.t + 1e-6)); });
+    evs.forEach(e => { e.straight = beats.has(Math.floor(e.t + 1e-6)); });
+    return evs;
+  }
+
   // タイで結ばれた音をつなげる
   function mergeTies(evs) {
     const out = [];
@@ -101,6 +110,8 @@
     }
     // 音符の位置 u（タイムラインの拍）→ AudioContext の時刻
     timeOf(u, r) { return this.anchor.time + (swingMap(u, r) - this.anchor.sbeat) * this.spb; }
+    // スウィングさせない時刻（拍の頭は同じ。拍のなかを等間隔で）
+    timeOfStraight(u) { return this.anchor.time + (u - this.anchor.sbeat) * this.spb; }
     // いまの位置（拍）。count-in 中は負
     position() {
       if (!this.running) return null;
@@ -132,7 +143,7 @@
     soloEvents(k) {
       if (!this.soloCache[k]) {
         const c = this.chorusEvents(k);
-        this.soloCache[k] = c.solo ? mergeTies(c.solo) : [];
+        this.soloCache[k] = c.solo ? markStraight(mergeTies(c.solo)) : [];
       }
       return this.soloCache[k];
     }
@@ -163,7 +174,8 @@
           for (const e of this.soloEvents(k)) {
             if (!inWin(e)) continue;
             const u = base + e.t;
-            playNote(E, 'solo', e, this.timeOf(u, r), this.timeOf(u + e.dur, r));
+            if (e.straight) playNote(E, 'solo', e, this.timeOfStraight(u), this.timeOfStraight(u + e.dur));
+            else playNote(E, 'solo', e, this.timeOf(u, r), this.timeOf(u + e.dur, r));
           }
         }
       }
@@ -201,6 +213,6 @@
     return new Blob([out], { type: 'audio/wav' });
   }
 
-  Object.assign(Au, { Player, swingMap, unswing, renderOffline, encodeWav, mergeTies });
+  Object.assign(Au, { Player, swingMap, unswing, renderOffline, encodeWav, mergeTies, markStraight });
   if (typeof module !== 'undefined' && module.exports) module.exports = AL;
 })();

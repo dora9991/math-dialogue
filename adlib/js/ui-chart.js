@@ -440,7 +440,7 @@
       sg.list.forEach(l => {
         const pl = V.placeLickAt(App.solo, sg.d, l), isCur = l.id === sg.current;
         const tags = h('div', { class: 'tags' }, h('span', { class: 'chip lvl' + l.lvl }, 'Lv.' + l.lvl));
-        l.tags.slice(0, 4).forEach(t => tags.appendChild(h('span', { class: 'chip tag' }, t)));
+        l.tags.slice(0, 4).forEach(t => tags.appendChild(h('span', { class: 'chip tag' }, U.tagName(t))));
         const shown = App.lickText(l.name, l, App.hs[sg.d.i0].chord);
         cards.appendChild(h('div', { class: 'cand' + (isCur ? ' cur' : '') },
           h('div', { class: 'cand-h' },
