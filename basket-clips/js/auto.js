@@ -822,7 +822,7 @@
         // ゴールはどちらも同じ形・同じ色なので、見失ったゴールを探し直すときに、もう片方のゴールを捉えてしまうことがある
         // （合成映像で、奥のゴールの追跡が手前のゴールに張り付き、その得点を逆のチームにした）。
         // 捉えたばかりの方を取り消す。どちらも続けて追っていたなら、合い方（板＋リングの色）の悪い方の追跡をやめる
-        if (!fixed && status.length === 2 && sameSpot(status[0], status[1])) {
+        if (!fixed && cfg.resolveSame !== false && status.length === 2 && sameSpot(status[0], status[1])) {
           const [a, b] = status;
           const loser = a.acquired !== b.acquired ? (a.acquired ? 0 : 1) : (a.score + (a.rimScore || 0) >= b.score + (b.rimScore || 0) ? 1 : 0);
           if (status[loser].acquired) trackers[loser].revert(); else trackers[loser].drop();
@@ -849,7 +849,7 @@
         // （バスケ得点クリップで足したもの）1 秒以内に、両方のゴールで「得点」が出たら、同じボールを2つのゴールで見たもの（片方は誤り）。
         // 試合で 1 秒以内に両方のゴールに得点が入ることはないので、確かさ（conf）の低いほうを外す
         // （合成映像：フロアのゴール裏から撮ると、奥のゴールはリング幅 13 画素ほどしかなく、手前のゴールの得点を奥でも数えた）
-        for (let i = 0; i < shots.length; i++) {
+        for (let i = 0; i < shots.length && cfg.dedupe !== false; i++) {
           const a = shots[i];
           if (!a.made || a.dup) continue;
           for (let j = i + 1; j < shots.length && shots[j].t - a.t <= 1.0; j++) {

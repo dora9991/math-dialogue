@@ -60,7 +60,11 @@ async function analyse(movie, goals) {
   const { run } = require('./node-run.cjs');
   const truth = JSON.parse(fs.readFileSync(movie + '.json', 'utf8'));
   const marks = goals.map((g, i) => ({ id: 'AB'[i], t: g.t, box: g.box, rim: g.rim }));
-  const { res } = await run(movie, 0, truth.duration, { marks });
+  // RESOLVE=0／DEDUPE=0：同じ場所を捉えた追跡の取り消し／両方のゴールの得点の重なりの取り除きをしない（比べるとき用）
+  const cfg = {};
+  if (process.env.RESOLVE === '0') cfg.resolveSame = false;
+  if (process.env.DEDUPE === '0') cfg.dedupe = false;
+  const { res } = await run(movie, 0, truth.duration, { marks, cfg });
   // 見つけたゴール i が、正解のどちらのゴールか（その時刻のリングの位置で）
   const sideOf = goals.map((g) => { const tr = truth.rimTrack.find((r) => Math.abs(r[0] - g.t) < 0.01); return tr ? [tr[1], tr[2]].findIndex((r) => r && Math.hypot(g.rim.cx - r[0], g.rim.cy - r[1]) <= 0.5 * r[2]) : -1; });
   const made = truth.shots.filter((s) => s.made && s.t <= truth.duration - 2.5);

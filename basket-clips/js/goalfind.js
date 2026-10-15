@@ -363,13 +363,18 @@
     groups.sort((p, q) => q.score - p.score);
     return groups;
   }
-  /* 代表を選び直す：枠が画面に収まり、リングが大きめに映っているもの（大きいほど、その後の追跡と判定が安定する） */
+  /* 代表（追跡の見本にするコマ）を選び直す：リングらしさが高く、枠が画面に収まり、画面の真ん中に近いもの。
+     広い画角では、画面の端のゴールは引き伸ばされてゆがんで見えるので、端のコマを見本にすると、ほかの位置に映ったときに合わない
+     （合成映像のゴール裏で、手前のゴールを映っていた時間の 4 割しか追えなかった）。大きく映っているほど少しだけ良い */
   function pickRep(g) {
     let best = null, bv = -1;
     for (const c of g.members) {
+      if (c.known) continue;
       const rw = 2 * c.a;
       const inside = c.cx - 1.6 * rw >= 0 && c.cx + 1.6 * rw <= c.fw && c.cy - 2.2 * rw >= 0 && c.cy + 0.3 * rw <= c.fh;
-      const v = c.score * (inside ? 1 : 0.6) * Math.min(1.3, 0.8 + rw / 120);
+      const dx = (c.cx - c.fw / 2) / (c.fw / 2), dy = (c.cy - c.fh / 2) / (c.fh / 2);
+      const center = 1 - 0.45 * Math.min(1, dx * dx + dy * dy);
+      const v = c.score * (inside ? 1 : 0.6) * center * Math.min(1.15, 0.85 + rw / 200);
       if (v > bv) { bv = v; best = c; }
     }
     return best || g.rep;
