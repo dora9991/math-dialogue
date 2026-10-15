@@ -73,12 +73,21 @@
         { title: '朝の会議', d0: t, d1: t, t0: '08:15', t1: '08:35', allDay: false, cal: '仕事', loc: '' },
         { title: '職員会議', d0: t, d1: t, t0: '15:30', t1: '17:00', allDay: false, cal: '仕事', loc: '会議室' },
         { title: 'いもほり遠足', d0: d(3), d1: d(3), t0: '', t1: '', allDay: true, cal: '家族', loc: '' },
-        { title: '健康診断', d0: d(9), d1: d(9), t0: '09:00', t1: '11:00', allDay: false, cal: '仕事', loc: '' }
+        { title: '健康診断', d0: d(9), d1: d(9), t0: '09:00', t1: '11:00', allDay: false, cal: '仕事', loc: '' },
+        { title: '授業研究会', d0: d(-2), d1: d(-2), t0: '14:00', t1: '16:00', allDay: false, cal: '仕事', loc: '' },
+        { title: '学年会', d0: d(1), d1: d(1), t0: '15:40', t1: '16:30', allDay: false, cal: '仕事', loc: '' },
+        { title: '部活', d0: d(2), d1: d(2), t0: '16:00', t1: '18:00', allDay: false, cal: '部活', loc: '' },
+        { title: '修学旅行', d0: d(5), d1: d(7), t0: '', t1: '', allDay: true, cal: '学校行事', loc: '' },
+        { title: '家族で買い物', d0: d(6), d1: d(6), t0: '10:00', t1: '12:00', allDay: false, cal: '家族', loc: '' },
+        { title: '保育園の参観', d0: d(12), d1: d(12), t0: '09:30', t1: '11:00', allDay: false, cal: '家族', loc: '' },
+        { title: '文化祭の準備', d0: d(14), d1: d(15), t0: '', t1: '', allDay: true, cal: '学校行事', loc: '' },
+        { title: '練習試合', d0: d(16), d1: d(16), t0: '09:00', t1: '15:00', allDay: false, cal: '部活', loc: '' }
       ],
       reminders: [
         { title: '図書館の本を返す', due: d(-1), dueTime: '', list: 'リマインダー', prio: 0, flag: false },
         { title: '教材の印刷', due: t, dueTime: '07:30', list: '仕事', prio: 2, flag: true },
-        { title: '遠足の申込書を出す', due: d(1), dueTime: '07:00', list: '家族', prio: 3, flag: false }
+        { title: '遠足の申込書を出す', due: d(1), dueTime: '07:00', list: '家族', prio: 3, flag: false },
+        { title: '牛乳を買う', due: d(4), dueTime: '', list: '家庭', prio: 0, flag: false }
       ]
     };
     return { rev: 0, today: t, demo: true, settings, memos, items, proposals, briefings, ios,

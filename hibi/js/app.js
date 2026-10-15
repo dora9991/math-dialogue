@@ -13,9 +13,14 @@
   const S = {
     st: null, demo: false, loading: false, lastFetch: 0, sync: 'idle', syncMsg: '',
     route: { name: 'today' }, edit: null, upload: null, sheetOpen: false, dirtyWhileSheet: false,
-    full: new Map(), thumbMiss: new Map(), feedUrl: '',
-    ui: Object.assign({ memoFilter: 'all', memoCat: '', memoQ: '', libStatus: 'all', libCat: '', libQ: '', snooze: {} }, HB.api.ui())
+    full: new Map(), thumbMiss: new Map(), feedUrl: '', backHash: '#/today', calWeeks: null,
+    ui: Object.assign({ memoFilter: 'all', memoCat: '', memoQ: '', libStatus: 'all', libCat: '', libQ: '', snooze: {}, calColors: {} }, HB.api.ui())
   };
+
+  /** カレンダー（リマインダーのリスト）の色の番号。設定で選んだ色（この端末）、なければ名前から */
+  const colorOf = name => { const c = S.ui.calColors && S.ui.calColors[name]; return Number.isInteger(c) && c >= 0 && c < 10 ? c : HB.colorIndex(name); };
+  /** '08:15' → '8:15' */
+  const hm = s => String(s || '').replace(/^0(\d)/, '$1');
 
   /* ───── 起動 ───── */
 
@@ -39,6 +44,9 @@
     document.addEventListener('submit', onSubmit);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(false); });
     window.addEventListener('online', () => refresh(true));
+    // 画面の高さが変わったら（回転・Safari のバーの出し入れ）、月のカレンダーの帯を並べなおす
+    let rz = null;
+    window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (S.route.name === 'cal') layoutMonth(); }, 120); });
     setupSwipe();
     registerSW();
     if (/demo/.test(location.search) && !HB.api.conn()) startDemo();
@@ -65,7 +73,14 @@
     if (['memos', 'library', 'settings', 'guide'].includes(name)) return { name };
     return { name: 'today' };
   }
-  function onRoute() { S.route = parseRoute(); closeSheet(true); render(); window.scrollTo(0, 0); }
+  function onRoute() {
+    const prev = S.route;
+    S.route = parseRoute();
+    // 設定から「もどる」で、来たところへ帰る
+    if (S.route.name === 'settings' && prev && !['settings', 'guide'].includes(prev.name)) S.backHash = hashOf(prev);
+    closeSheet(true); render(); window.scrollTo(0, 0);
+  }
+  const hashOf = r => (r.name === 'day' ? '#/day/' + r.ymd : r.name === 'cal' ? '#/cal/' + r.ym : '#/' + r.name);
   const go = hash => { if (location.hash === hash) onRoute(); else location.hash = hash; };
 
   /* ───── 描く ───── */
@@ -75,27 +90,29 @@
     document.body.dataset.view = r.name;
     $$('#tabs a').forEach(a => a.setAttribute('aria-current', a.dataset.tab === tabOf(r.name) ? 'page' : 'false'));
     if (!S.st) {
-      $('#top').innerHTML = '';
+      $('#top').innerHTML = ''; $('#top').hidden = true;
       $('#view').innerHTML = HB.api.conn() ? viewLoading() : viewWelcome();
-      $('#fab').hidden = true; $('#tabs').hidden = !HB.api.conn();
+      $('#bottom').hidden = true;
       return;
     }
-    $('#tabs').hidden = false;
-    $('#fab').hidden = ['settings', 'guide'].includes(r.name);
+    $('#top').hidden = false;
+    $('#bottom').hidden = ['settings', 'guide'].includes(r.name);
+    $('#iosSync').classList.toggle('unsynced', !(S.st.ios && S.st.ios.syncedAt));
     $('#top').innerHTML = topBar(r);
     let html = '';
     if (r.name === 'today') { html = viewDay(HB.today()); S.renderedToday = HB.today(); }
     else if (r.name === 'day') html = viewDay(r.ymd);
-    else if (r.name === 'cal') html = viewCal(r.ym);
+    else if (r.name === 'cal') html = viewCal(r.ym, banner());
     else if (r.name === 'memos') html = viewMemos();
     else if (r.name === 'library') html = viewLibrary();
     else if (r.name === 'settings') html = viewSettings();
     else if (r.name === 'guide') html = viewGuide();
-    $('#view').innerHTML = banner() + html;
+    $('#view').innerHTML = (r.name === 'cal' ? '' : banner()) + html;
+    if (r.name === 'cal') layoutMonth();
     loadThumbs($('#view'));
     if (r.name === 'guide' || r.name === 'settings') loadFeedUrl();
   }
-  const tabOf = n => (n === 'day' ? 'cal' : n === 'guide' ? 'settings' : n);
+  const tabOf = n => (n === 'day' ? 'today' : n);
 
   /** 裏側から新しいデータが来たとき：シートを開いているときは、閉じてから描く */
   function softRender() {
@@ -107,7 +124,7 @@
 
   function banner() {
     const out = [];
-    if (S.demo) out.push(`<div class="banner demo">おためし中です（サンプルのデータ。保存はされません） <button class="link" data-act="endDemo">おためしをやめる</button></div>`);
+    if (S.demo) out.push(`<div class="banner demo"><span>おためし中（サンプル・保存しません）</span><button class="link" data-act="endDemo">やめる</button></div>`);
     const q = HB.api.queue().length;
     if (q) out.push(`<div class="banner warn">未送信のメモが ${q} 件あります。つながったら送ります。</div>`);
     if (S.sync === 'offline') out.push(`<div class="banner warn">いまは裏側につながりません。前に受けとった内容を出しています。</div>`);
@@ -115,24 +132,29 @@
     return out.join('');
   }
 
+  /** 上のバー：左に設定（丸いボタン）、まんなかに日付・月、右に「今日へ」と「新しくする」 */
   function topBar(r) {
-    const sync = `<button class="iconbtn sync ${S.sync}" data-act="refresh" aria-label="新しくする" title="${esc(S.syncMsg || '新しくする')}">${icon('refresh')}</button>`;
+    const attention = S.sync === 'error' || (S.st.outboxErrors || []).length > 0;
+    const gear = `<button class="rbtn" data-act="go" data-hash="#/settings" aria-label="設定">${icon('gear', 22)}${attention ? '<i class="dot"></i>' : ''}</button>`;
+    const sync = `<button class="sync ${S.sync}" data-act="refresh" aria-label="新しくする" title="${esc(S.syncMsg || '新しくする')}">${icon('refresh', 21)}</button>`;
     if (r.name === 'today' || r.name === 'day') {
       const ymd = r.name === 'today' ? HB.today() : r.ymd;
-      return `<button class="iconbtn" data-act="goDay" data-ymd="${HB.addDays(ymd, -1)}" aria-label="前の日">${icon('left')}</button>
+      return `${gear}<div class="mid"><button class="iconbtn nav" data-act="goDay" data-ymd="${HB.addDays(ymd, -1)}" aria-label="前の日">${icon('left')}</button>
         <button class="title" data-act="goCal" data-ym="${ymd.slice(0, 7)}"><b>${HB.labelDay(ymd)}</b><small>${HB.relDay(ymd)}</small></button>
-        <button class="iconbtn" data-act="goDay" data-ymd="${HB.addDays(ymd, 1)}" aria-label="次の日">${icon('right')}</button>${sync}`;
+        <button class="iconbtn nav" data-act="goDay" data-ymd="${HB.addDays(ymd, 1)}" aria-label="次の日">${icon('right')}</button></div>
+        <div class="rpill"><button data-act="go" data-hash="#/today" aria-label="今日へ"${r.name === 'today' ? ' disabled' : ''}>${icon('today', 21)}</button>${sync}</div>`;
     }
     if (r.name === 'cal') {
-      const [y, m] = r.ym.split('-').map(Number);
-      return `<button class="iconbtn" data-act="goCal" data-ym="${HB.addMonths(r.ym, -1)}" aria-label="前の月">${icon('left')}</button>
-        <div class="title"><b>${y}年${m}月</b></div>
-        <button class="iconbtn" data-act="goCal" data-ym="${HB.addMonths(r.ym, 1)}" aria-label="次の月">${icon('right')}</button>
-        <button class="chip-btn" data-act="goCal" data-ym="${HB.today().slice(0, 7)}">今月</button>${sync}`;
+      const [y, m] = r.ym.split('-').map(Number), now = HB.today().slice(0, 7);
+      return `${gear}<div class="mid"><button class="iconbtn nav" data-act="goCal" data-ym="${HB.addMonths(r.ym, -1)}" aria-label="前の月">${icon('left')}</button>
+        <div class="title month"><span class="y">${y}年</span><b>${m}月</b></div>
+        <button class="iconbtn nav" data-act="goCal" data-ym="${HB.addMonths(r.ym, 1)}" aria-label="次の月">${icon('right')}</button></div>
+        <div class="rpill"><button data-act="goCal" data-ym="${now}" aria-label="今月へ"${r.ym === now ? ' disabled' : ''}>${icon('today', 21)}</button>${sync}</div>`;
     }
     const titles = { memos: 'メモ', library: '画像・資料', settings: '設定', guide: 'ショートカットのつくり方' };
-    const back = r.name === 'guide' ? `<button class="iconbtn" data-act="go" data-hash="#/settings" aria-label="もどる">${icon('left')}</button>` : '';
-    return `${back}<div class="title"><b>${titles[r.name]}</b></div>${r.name === 'guide' ? '' : sync}`;
+    const back = hash => `<button class="rbtn" data-act="go" data-hash="${hash}" aria-label="もどる">${icon('left', 22)}</button>`;
+    const left = r.name === 'settings' ? back(S.backHash || '#/today') : r.name === 'guide' ? back('#/settings') : gear;
+    return `${left}<div class="mid"><div class="title"><b>${titles[r.name]}</b></div></div>${r.name === 'guide' ? '<span></span>' : `<div class="rpill">${sync}</div>`}`;
   }
 
   function viewLoading() { return `<div class="empty-state"><div class="spinner"></div><p>読みこみ中…</p></div>`; }
@@ -157,40 +179,65 @@
 
   /* ── 今日・その日 ── */
 
+  const hitokoto = (label, text) => `<section class="hitokoto"><div class="label">${icon('sun', 18)} ${label}</div><p>${esc(text)}</p></section>`;
+  /** 見出しつきのまとまり（右に小さな操作を置ける） */
+  const sec = (ic, title, body, opt) => {
+    const o = opt || {};
+    return `<section class="sec ${o.cls || ''}"><h2 class="sec-h">${icon(ic)}<span>${title}</span>${o.badge || ''}${o.right ? `<span class="act">${o.right}</span>` : ''}</h2>${body}${o.foot ? `<p class="sec-foot">${o.foot}</p>` : ''}</section>`;
+  };
+
   function viewDay(ymd) {
     const st = S.st, v = HB.dayView(st, ymd);
     const parts = [];
-    if (v.isToday && v.briefing && v.briefing.summary) {
-      parts.push(`<section class="card hitokoto"><div class="label">${icon('sun')} けさのひとこと</div><p>${esc(v.briefing.summary)}</p></section>`);
-    }
-    const props = v.proposals.filter(p => S.ui.snooze[p.id] !== HB.today());
-    if (props.length) parts.push(`<section class="card props"><h2>${icon('ask')} 確認してほしいこと <span class="count">${props.length}</span></h2>${props.map(proposalCard).join('')}</section>`);
+    if (v.isToday && v.briefing && v.briefing.summary) parts.push(hitokoto('けさのひとこと', v.briefing.summary));
+    // まず一日の予定、つぎに Claude からの確認
     parts.push(scheduleCard(v));
-    parts.push(`<section class="card"><h2>${icon('memo')} この日のメモ</h2>${v.memos.map(memoCard).join('') || '<p class="muted small">この日のメモはまだありません。</p>'}
-      <form class="quick" data-form="quickMemo" data-ymd="${ymd}"><textarea rows="1" placeholder="この日のメモを書く…" aria-label="この日のメモ"></textarea><button class="primary" type="submit">追加</button></form></section>`);
-    parts.push(`<section class="card"><h2>${icon('photo')} この日の画像・資料</h2><div class="grid">${v.items.map(itemThumb).join('')}
-      <button class="thumb add" data-act="addMenu" data-ymd="${ymd}">${icon('plus')}<span>この日に入れる</span></button></div></section>`);
-    if (v.pinned.length) parts.push(`<section class="card"><h2>${icon('star')} 重要メモ（日付なし）</h2>${v.pinned.slice(0, 6).map(memoCard).join('')}
-      ${v.pinned.length > 6 ? `<button class="link" data-act="memoFilterGo" data-f="star">ほかに ${v.pinned.length - 6} 件</button>` : ''}</section>`);
+    const props = v.proposals.filter(p => S.ui.snooze[p.id] !== HB.today());
+    if (props.length) parts.push(sec('ask', '確認してほしいこと', props.map(proposalCard).join(''), { cls: 'props', badge: `<span class="count">${props.length}</span>` }));
+    parts.push(sec('memo', 'この日のメモ', `<div class="card">${v.memos.map(memoCard).join('') || '<p class="empty">この日のメモはまだありません。</p>'}
+      <form class="quick" data-form="quickMemo" data-ymd="${ymd}"><textarea rows="1" placeholder="この日のメモを書く…" aria-label="この日のメモ"></textarea><button class="primary" type="submit">追加</button></form></div>`));
+    parts.push(sec('photo', 'この日の画像・資料', `<div class="grid">${v.items.map(itemThumb).join('')}
+      <button class="thumb add" data-act="addMenu" data-ymd="${ymd}">${icon('plus', 26)}<span>この日に入れる</span></button></div>`));
+    if (v.pinned.length) parts.push(sec('star', '重要メモ（日付なし）', `<div class="card">${v.pinned.slice(0, 6).map(memoCard).join('')}
+      ${v.pinned.length > 6 ? `<button class="link more-link" data-act="memoFilterGo" data-f="star">ほかに ${v.pinned.length - 6} 件</button>` : ''}</div>`));
     parts.push(briefingCards(v));
     parts.push(footInfo(ymd));
     return `<div class="day">${parts.join('')}</div>`;
   }
 
+  /** 予定：時刻と、カレンダーの色のブロック（FirstSeed の週の表示のように）。その下にリマインダー */
   function scheduleCard(v) {
     const st = S.st, sc = st.settings.shortcuts || {};
-    const ev = v.events.map(e => `<li class="ev"><span class="time">${e.allDay ? '終日' : esc(e.t0) + (e.t1 ? `<small>${esc(e.t1)}</small>` : '')}</span>
-      <span class="ev-main"><b>${esc(e.title)}</b>${e.loc ? `<small>${esc(e.loc)}</small>` : ''}</span>${e.cal ? `<span class="cal-name">${esc(e.cal)}</span>` : ''}</li>`).join('');
-    const rem = v.reminders.map(r => `<li class="rem ${r.overdue ? 'overdue' : ''}"><a href="x-apple-reminderkit://" class="rem-a"><span class="circle"></span>
-      <span class="ev-main"><b>${r.flag ? '🚩 ' : ''}${esc(r.title)}</b><small>${r.overdue ? '期限切れ ' + HB.labelShort(r.due) : r.dueTime ? esc(r.dueTime) : ''}${r.list ? ' · ' + esc(r.list) : ''}</small></span>${r.prio >= 3 ? '<span class="prio">!!!</span>' : r.prio === 2 ? '<span class="prio">!!</span>' : ''}</a></li>`).join('');
+    const now = HB.hmOf(new Date());
+    const ev = v.events.map(e => {
+      const starts = e.d0 === v.ymd, ends = e.d1 === v.ymd;
+      let tm;
+      if (e.allDay) tm = '<b>終日</b>';
+      else if (!starts && !ends) tm = '<b>つづき</b>';
+      else if (!starts) tm = `<b>〜${esc(hm(e.t1))}</b>`;
+      else tm = `<b>${esc(hm(e.t0))}</b>${ends && e.t1 ? `<small>${esc(hm(e.t1))}</small>` : ''}`;
+      let state = '';
+      if (v.isToday && !e.allDay) {
+        if (ends && e.t1 && e.t1 <= now) state = ' past';
+        else if ((!starts || (e.t0 && e.t0 <= now)) && (!ends || (e.t1 && now < e.t1))) state = ' now';
+      }
+      const sub = [e.loc, e.cal].filter(Boolean).map(esc).join(' · ');
+      return `<li class="tl-row"><span class="tl-time">${tm}</span><span class="tl-ev p${colorOf(e.cal)}${state}"><b>${esc(e.title)}</b>${sub ? `<small>${sub}</small>` : ''}</span></li>`;
+    }).join('');
+    const rem = v.reminders.map(r => {
+      const sub = [r.overdue ? '期限切れ ' + HB.labelShort(r.due) : r.dueTime ? esc(hm(r.dueTime)) : '', r.list ? esc(r.list) : ''].filter(Boolean).join(' · ');
+      const prio = r.prio >= 3 ? '<span class="prio">!!!</span>' : r.prio === 2 ? '<span class="prio">!!</span>' : '';
+      return `<li class="rem ${r.overdue ? 'overdue' : ''}"><a href="x-apple-reminderkit://" class="rem-a"><span class="circle"></span>
+        <span class="rem-main"><b>${r.flag ? '🚩 ' : ''}${esc(r.title)}</b>${sub ? `<small>${sub}</small>` : ''}</span>${prio}</a></li>`;
+    }).join('');
     const synced = st.ios && st.ios.syncedAt;
-    const hint = synced ? '' : `<p class="muted small">iPhone の予定とリマインダーを出すには、ショートカット「${esc(sc.sync || 'ひびの手帳 同期')}」をつくります（<a href="#/guide">つくり方</a>）。</p>`;
-    return `<section class="card"><h2>${icon('cal')} 予定</h2>
-      ${ev ? `<ul class="list">${ev}</ul>` : synced ? '<p class="muted small">予定はありません。</p>' : ''}
-      ${rem ? `<h3>リマインダー</h3><ul class="list">${rem}</ul>` : ''}
-      ${hint}
-      <div class="card-foot"><span class="muted small">${synced ? 'iPhone から ' + esc(HB.labelWhen(synced)) : ''}</span>
-        <span><a class="chip-btn" href="${HB.calshowUrl(v.ymd)}">カレンダーApp</a> <button class="chip-btn" data-act="runSync">iPhoneと同期</button></span></div></section>`;
+    const hint = synced ? '' : `<p class="empty">iPhone の予定とリマインダーを出すには、ショートカット「${esc(sc.sync || 'ひびの手帳 同期')}」をつくります（<a href="#/guide">つくり方</a>）。</p>`;
+    const body = `<div class="card">${ev ? `<ul class="tl">${ev}</ul>` : synced ? '<p class="empty">予定はありません。</p>' : ''}
+      ${rem ? `<h3 class="sub-h">リマインダー</h3><ul class="rems">${rem}</ul>` : ''}${hint}</div>`;
+    return sec('cal', '予定', body, {
+      right: `<a class="chip-btn" href="${HB.calshowUrl(v.ymd)}">カレンダーApp</a>`,
+      foot: `${synced ? 'iPhone から ' + esc(HB.labelWhen(synced)) + '　' : ''}<button class="link" data-act="runSync">iPhone と同期</button>`
+    });
   }
 
   function briefingCards(v) {
@@ -198,21 +245,21 @@
     if (!b) {
       if (!v.isToday) return '';
       const last = S.st.lastRun && S.st.lastRun.at;
-      return `<section class="card"><h2>${icon('news')} けさのまとめ</h2><p class="muted small">今日のまとめは、まだ届いていません。毎朝 6 時ごろ、Claude がメール・AI・ニュースをまとめてここに出します。${last ? '（前回：' + esc(HB.labelWhen(last)) + '）' : ''}</p></section>`;
+      return sec('news', 'けさのまとめ', `<div class="card"><p class="empty">今日のまとめは、まだ届いていません。毎朝 6 時ごろ、Claude がメール・AI・ニュースをまとめてここに出します。${last ? '（前回：' + esc(HB.labelWhen(last)) + '）' : ''}</p></div>`);
     }
-    const when = b.runAt ? `<small class="muted">${esc(HB.labelWhen(b.runAt))} Claude</small>` : '';
+    const when = b.runAt ? `<small class="when">${esc(HB.labelWhen(b.runAt))}</small>` : '';
     const link = (u, inner) => (HB.safeUrl(u) ? `<a href="${esc(HB.safeUrl(u))}" target="_blank" rel="noopener">${inner}</a>` : inner);
     const out = [];
     if (b.gmail && b.gmail.length) {
-      out.push(`<section class="card"><h2>${icon('mail')} メール ${when}</h2><ul class="news">${b.gmail.map(m => `<li>
-        ${link(m.url, `<b>${esc(m.subject)}</b>`)}<div class="meta">${esc(m.from)}${m.action ? ` <span class="tag ${/返信|対応|提出|期限/.test(m.action) ? 'hot' : ''}">${esc(m.action)}</span>` : ''}${m.due ? ` <span class="tag due">${HB.labelShort(m.due)}まで</span>` : ''}</div>
-        ${m.summary ? `<p>${esc(m.summary)}</p>` : ''}</li>`).join('')}</ul></section>`);
+      out.push(sec('mail', 'メール', `<div class="card"><ul class="news">${b.gmail.map(m => `<li>
+        ${link(m.url, `<b>${esc(m.subject)}</b>`)}<div class="meta"><span>${esc(m.from)}</span>${m.action ? `<span class="tag ${/返信|対応|提出|期限/.test(m.action) ? 'hot' : ''}">${esc(m.action)}</span>` : ''}${m.due ? `<span class="tag due">${HB.labelShort(m.due)}まで</span>` : ''}</div>
+        ${m.summary ? `<p>${esc(m.summary)}</p>` : ''}</li>`).join('')}</ul></div>`, { badge: when }));
     }
-    const news = (title, ic, list) => (list && list.length ? `<section class="card"><h2>${icon(ic)} ${title} ${when}</h2><ul class="news">${list.map(n => `<li>
-      ${link(n.url, `<b>${esc(n.title)}</b>`)}${n.summary ? `<p>${esc(n.summary)}</p>` : ''}${n.source ? `<div class="meta">${esc(n.source)}</div>` : ''}</li>`).join('')}</ul></section>` : '');
+    const news = (title, ic, list) => (list && list.length ? sec(ic, title, `<div class="card"><ul class="news">${list.map(n => `<li>
+      ${link(n.url, `<b>${esc(n.title)}</b>`)}${n.summary ? `<p>${esc(n.summary)}</p>` : ''}${n.source ? `<div class="meta"><span>${esc(n.source)}</span></div>` : ''}</li>`).join('')}</ul></div>`, { badge: when }) : '');
     out.push(news('AI のうごき', 'ai', b.ai));
     out.push(news('ニュース', 'news', b.news));
-    if (!v.isToday && b.summary) out.unshift(`<section class="card hitokoto"><div class="label">${icon('sun')} この日のひとこと</div><p>${esc(b.summary)}</p></section>`);
+    if (!v.isToday && b.summary) out.unshift(hitokoto('この日のひとこと', b.summary));
     return out.join('');
   }
 
@@ -220,19 +267,22 @@
     const st = S.st, lr = st.lastRun;
     const bits = [];
     if (lr && lr.at) bits.push(`Claude の整理：${esc(HB.labelWhen(lr.at))}（資料 ${lr.files || 0}・メモ ${lr.memos || 0}・確認 ${lr.proposals || 0}）`);
-    return `<p class="foot muted small">${bits.join('<br>')}${bits.length ? '<br>' : ''}<a href="#/cal/${ymd.slice(0, 7)}">${icon('cal', 14)} カレンダーで見る</a></p>`;
+    return `<p class="foot">${bits.join('<br>')}${bits.length ? '<br>' : ''}<a href="#/cal/${ymd.slice(0, 7)}">${icon('cal', 15)} カレンダーで見る</a></p>`;
   }
+
+  const KIND = { category: ['tag', '分類'], date: ['cal', '日付'], reminder: ['bell', 'リマインダー'], event: ['cal', 'カレンダー'], reply: ['mail', '返信'], other: ['ask', '確認'] };
 
   function proposalCard(p) {
     const t = HB.proposalTarget(S.st, p);
+    const k = KIND[p.kind] || KIND.other;
     let target = '';
     if (t.kind === 'item' && t.item) target = `<button class="prop-target" data-act="openItem" data-id="${t.item.id}"><img data-thumb="${t.item.id}" alt=""><span>${esc(t.item.title || t.item.name)}</span></button>`;
-    else if (t.kind === 'memo' && t.memo) target = `<button class="prop-target memo" data-act="openMemo" data-id="${t.memo.id}"><span>${esc(HB.memoTitle(t.memo))}</span></button>`;
-    else if (t.kind === 'mail') target = `<div class="prop-target mail">${icon('mail', 16)} ${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.subject || 'メールを開く')}</a>` : esc(t.subject)}</div>`;
-    const opts = p.options.map((o, i) => `<button class="${i === 0 ? 'primary' : ''}" data-act="answer" data-id="${p.id}" data-opt="${i}">${o.ios ? icon(o.ios.type === 'event' ? 'cal' : 'bell', 15) + ' ' : ''}${esc(o.label)}</button>`).join('');
-    return `<div class="prop" data-pid="${p.id}"><p class="prop-q">${esc(p.question)}</p>${p.context ? `<p class="prop-ctx">${esc(p.context)}</p>` : ''}${target}
+    else if (t.kind === 'memo' && t.memo) target = `<button class="prop-target is-memo" data-act="openMemo" data-id="${t.memo.id}">${icon('memo', 18)}<span>${esc(HB.memoTitle(t.memo))}</span></button>`;
+    else if (t.kind === 'mail') target = `<div class="prop-target mail">${icon('mail', 18)} ${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.subject || 'メールを開く')}</a>` : `<span>${esc(t.subject)}</span>`}</div>`;
+    const opts = p.options.map((o, i) => `<button class="${i === 0 ? 'primary' : ''}" data-act="answer" data-id="${p.id}" data-opt="${i}">${o.ios ? icon(o.ios.type === 'event' ? 'cal' : 'bell', 17) + ' ' : ''}${esc(o.label)}</button>`).join('');
+    return `<div class="prop card" data-pid="${p.id}"><span class="prop-kind">${icon(k[0], 14)}${k[1]}</span><p class="prop-q">${esc(p.question)}</p>${p.context ? `<p class="prop-ctx">${esc(p.context)}</p>` : ''}${target}
       <div class="prop-opts">${opts}</div>
-      ${p.rule ? `<label class="remember"><input type="checkbox" data-remember="${p.id}"> 今後もこうする：${esc(p.rule)}</label>` : ''}
+      ${p.rule ? `<label class="remember"><input type="checkbox" data-remember="${p.id}"><span>今後もこうする：${esc(p.rule)}</span></label>` : ''}
       <div class="prop-foot"><button class="link" data-act="snooze" data-id="${p.id}">あとで</button><button class="link" data-act="dismiss" data-id="${p.id}">${p.kind === 'category' ? '自分で決める' : '却下'}</button></div></div>`;
   }
 
@@ -265,29 +315,67 @@
 
   /* ── カレンダー ── */
 
-  function viewCal(ym) {
-    const marks = HB.monthMarks(S.st, ym), t = HB.today();
-    const head = HB.WD.map((w, i) => `<div class="wd ${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}">${w}</div>`).join('');
-    const cells = HB.monthGrid(ym).map(w => w.map(c => {
-      const m = marks[c.ymd], wd = HB.weekday(c.ymd);
-      const dots = m ? `<span class="dots">${m.ev ? '<i class="d-ev"></i>' : ''}${m.memo ? '<i class="d-memo"></i>' : ''}${m.item ? '<i class="d-item"></i>' : ''}</span>` : '';
-      return `<button class="cell ${c.inMonth ? '' : 'out'} ${c.ymd === t ? 'today' : ''} ${wd === 0 ? 'sun' : wd === 6 ? 'sat' : ''}" data-act="goDay" data-ymd="${c.ymd}">
-        <span class="n">${Number(c.ymd.slice(8))}</span>${m && m.star ? `<span class="st">${icon('star', 10)}</span>` : ''}${dots}</button>`;
-    }).join('')).join('');
-    // この月の一覧（印のある日）
-    const days = Object.keys(marks).sort();
-    const agenda = days.map(d => {
-      const v = HB.dayView(S.st, d);
-      const rows = [].concat(
-        v.events.map(e => `<li><i class="d-ev"></i>${e.allDay ? '' : `<span class="muted">${esc(e.t0)}</span> `}${esc(e.title)}</li>`),
-        v.memos.map(m => `<li><i class="d-memo"></i>${m.important ? '★ ' : ''}${esc(HB.memoTitle(m))}</li>`),
-        v.items.map(i => `<li><i class="d-item"></i>${i.important ? '★ ' : ''}${esc(i.title || i.name)}${i.dateNotes && i.dateNotes[d] ? ` <span class="muted">（${esc(i.dateNotes[d])}）</span>` : ''}</li>`)
+  /** 月のカレンダー（FirstSeed のように）：月曜はじまり・週番号・土は青・日は赤。
+      予定・リマインダー・メモ・写真は、その日の色の帯で出す（帯は layoutMonth が、画面の高さに合わせて入れる） */
+  function viewCal(ym, bannerHtml) {
+    const t = HB.today(), weeks = HB.monthGrid(ym, 1);
+    S.calWeeks = weeks.map(w => w.map(c => c.ymd));
+    const head = ['月', '火', '水', '木', '金', '土', '日'].map((w, i) => `<span class="${i === 5 ? 'sat' : i === 6 ? 'sun' : ''}">${w}</span>`).join('');
+    const rows = weeks.map(w => `<div class="wk">${w.map((c, i) => {
+      const [, mm, dd] = c.ymd.split('-').map(Number);
+      const cls = [c.inMonth ? '' : 'out', c.ymd === t ? 'today' : '', i === 5 ? 'sat' : i === 6 ? 'sun' : '', dd === 1 ? 'm1' : ''].filter(Boolean).join(' ');
+      return `<button class="cell ${cls}" data-act="goDay" data-ymd="${c.ymd}" style="grid-column:${i + 1}" aria-label="${HB.labelDay(c.ymd)}">` +
+        `${i === 0 && dd !== 1 ? `<span class="wn">${HB.isoWeek(c.ymd)}</span>` : ''}<span class="n">${dd === 1 ? mm + '月1日' : dd}</span></button>`;
+    }).join('')}</div>`).join('');
+    return `<div class="calwrap">${bannerHtml || ''}<div class="mcal"><div class="mwd">${head}</div><div class="mweeks" style="--weeks:${weeks.length}">${rows}</div></div></div>${calAgenda(ym)}`;
+  }
+
+  /** 月のカレンダーに帯を入れる。1週の高さから、何段まで入るかを決める（入りきらない日は「+n」） */
+  function layoutMonth() {
+    const box = $('.mweeks'), all = S.calWeeks;
+    if (!box || !all || !S.st) return;
+    const wks = $$('.wk', box);
+    if (!wks.length) return;
+    const cs = getComputedStyle(wks[0]);
+    const dateH = parseFloat(cs.getPropertyValue('--date-h')) || 19, barH = parseFloat(cs.getPropertyValue('--bar-h')) || 15;
+    const lanes = Math.max(1, Math.floor((wks[0].clientHeight - dateH - 2) / (barH + 1)));
+    box.style.setProperty('--lanes', lanes);
+    const entries = HB.calEntries(S.st, all[0][0], all[all.length - 1][6]);
+    wks.forEach((wk, wi) => {
+      $$('.bar', wk).forEach(b => b.remove());
+      const days = all[wi], lay = HB.weekLayout(days, entries, lanes);
+      wk.insertAdjacentHTML('beforeend', lay.bars.map(b => barHtml(b, days)).join('') +
+        lay.more.map((n, c) => (n ? `<span class="bar more" style="grid-column:${c + 1};grid-row:${lanes + 1}">+${n}</span>` : '')).join(''));
+    });
+  }
+
+  function barHtml(b, days) {
+    const e = b.e, cls = ['bar', 'k-' + e.kind];
+    if (e.kind === 'ev' || e.kind === 'rem') cls.push('p' + colorOf(e.cal));
+    if (e.d0 < days[0]) cls.push('cont-l');
+    if (e.d1 > days[6]) cls.push('cont-r');
+    const pre = e.kind === 'rem' ? '☐' : e.kind === 'memo' ? '<i class="bi i-memo"></i>' : e.kind === 'item' ? `<i class="bi ${e.sub === 'photo' ? 'i-photo' : 'i-file'}"></i>` : '';
+    return `<span class="${cls.join(' ')}" style="grid-column:${b.c0 + 1} / span ${b.c1 - b.c0 + 1};grid-row:${b.lane + 2}" data-d0="${e.d0}" data-d1="${e.d1}">${pre}${e.important ? '★' : ''}${esc(e.title)}</span>`;
+  }
+
+  /** カレンダーの下：この月の、何かある日の一覧（帯では切れてしまう題名も読める） */
+  function calAgenda(ym) {
+    const st = S.st, t = HB.today();
+    const set = new Set(Object.keys(HB.monthMarks(st, ym)));
+    ((st.ios && st.ios.reminders) || []).forEach(r => { if (HB.isYmd(r.due) && r.due.slice(0, 7) === ym) set.add(r.due); });
+    const days = Array.from(set).sort();
+    if (!days.length) return '<p class="empty center">この月に、日付つきのものはまだありません。</p>';
+    const rows = days.map(d => {
+      const v = HB.dayView(st, d), wd = HB.weekday(d);
+      const li = [].concat(
+        v.events.map(e => `<li><i class="p${colorOf(e.cal)}"></i>${e.allDay ? '' : `<span class="tm">${esc(hm(e.t0))}</span>`}<span>${esc(e.title)}</span></li>`),
+        v.reminders.filter(r => !r.overdue).map(r => `<li><i class="p${colorOf(r.list)}"></i>${r.dueTime ? `<span class="tm">${esc(hm(r.dueTime))}</span>` : ''}<span>☐ ${esc(r.title)}</span></li>`),
+        v.memos.map(m => `<li><i class="k-memo"></i><span>${m.important ? '★ ' : ''}${esc(HB.memoTitle(m))}</span></li>`),
+        v.items.map(i => `<li><i class="k-item"></i><span>${i.important ? '★ ' : ''}${esc(i.title || i.name)}${i.dateNotes && i.dateNotes[d] ? `<span class="muted">（${esc(i.dateNotes[d])}）</span>` : ''}</span></li>`)
       ).slice(0, 8).join('');
-      return `<button class="ag-day ${d < t ? 'past' : ''}" data-act="goDay" data-ymd="${d}"><span class="ag-date">${HB.labelShort(d)}</span><ul>${rows}</ul></button>`;
+      return `<button class="ag-day${d < t ? ' past' : ''}${d === t ? ' today' : ''}" data-act="goDay" data-ymd="${d}"><span class="ag-date${wd === 6 ? ' sat' : wd === 0 ? ' sun' : ''}">${HB.labelShort(d)}</span><ul>${li}</ul></button>`;
     }).join('');
-    return `<div class="cal card"><div class="cal-grid">${head}${cells}</div>
-      <div class="legend muted small"><span><i class="d-ev"></i>予定</span><span><i class="d-memo"></i>メモ</span><span><i class="d-item"></i>画像・資料</span><span>${icon('star', 10)} 重要</span></div></div>
-      ${agenda ? `<section class="card agenda"><h2>この月</h2>${agenda}</section>` : '<p class="muted small center">この月に、日付つきのものはまだありません。</p>'}`;
+    return sec('list', 'この月の一覧', `<div class="card">${rows}</div>`, { cls: 'agenda' });
   }
 
   /* ── メモ ── */
@@ -301,9 +389,9 @@
     };
     const chips = [chip('all', 'すべて'), chip('star', '★ 重要'), chip('dated', '日付つき'), chip('uncat', '分類なし')]
       .concat(st.settings.categories.map(c => chip('cat', esc(c.name), c.name))).concat([chip('archived', 'しまったもの')]).join('');
-    return `<div class="toolbar"><input type="search" class="search" data-input="memoQ" placeholder="メモをさがす" value="${esc(u.memoQ)}" aria-label="メモをさがす"></div>
+    return `<div class="toolbar"><label class="searchbox">${icon('search', 18)}<input type="search" class="search" data-input="memoQ" placeholder="メモをさがす" value="${esc(u.memoQ)}" aria-label="メモをさがす"></label></div>
       <div class="fchips">${chips}</div>
-      <div class="list-wrap">${list.map(memoCard).join('') || '<p class="muted small center">メモはありません。右下の ＋ から書けます。</p>'}</div>`;
+      <div class="list-wrap">${list.map(memoCard).join('') || '<p class="empty center">メモはありません。右下の ＋ から書けます。</p>'}</div>`;
   }
 
   /* ── 画像・資料 ── */
@@ -319,11 +407,11 @@
     const chips = [chip('all', 'すべて'), chip('inbox', `受信箱 ${n('inbox')}`), chip('pending', `確認待ち ${n('pending')}`), chip('star', '★ 重要')]
       .concat(st.settings.categories.map(c => chip('cat', esc(c.name), c.name))).concat([chip('archived', 'しまったもの')]).join('');
     const drive = st.folders && st.folders.inbox ? `<a href="https://drive.google.com/drive/folders/${esc(st.folders.inbox)}" target="_blank" rel="noopener">ドライブの受信箱</a>` : '';
-    return `<div class="add-row"><button class="primary" data-act="pick" data-which="camera">${icon('camera', 18)} 撮る</button><button data-act="pick" data-which="photo">${icon('photo', 18)} 写真</button><button data-act="pick" data-which="file">${icon('file', 18)} PDF</button></div>
-      <p class="muted small">受信箱のものは、次の朝 Claude が読んで分類し、日付があればその日に出します。${drive}</p>
-      <div class="toolbar"><input type="search" class="search" data-input="libQ" placeholder="題名・中身でさがす" value="${esc(u.libQ)}" aria-label="資料をさがす"></div>
+    return `<div class="add-row"><button class="primary" data-act="pick" data-which="camera">${icon('camera', 24)}<span>撮る</span></button><button data-act="pick" data-which="photo">${icon('photo', 24)}<span>写真</span></button><button data-act="pick" data-which="file">${icon('file', 24)}<span>PDF</span></button></div>
+      <p class="note">受信箱のものは、次の朝 Claude が読んで分類し、日付があればその日に出します。${drive}</p>
+      <div class="toolbar"><label class="searchbox">${icon('search', 18)}<input type="search" class="search" data-input="libQ" placeholder="題名・中身でさがす" value="${esc(u.libQ)}" aria-label="資料をさがす"></label></div>
       <div class="fchips">${chips}</div>
-      <div class="grid lib">${list.map(itemThumb).join('') || '<p class="muted small center wide">ここにはまだありません。</p>'}</div>`;
+      <div class="grid lib">${list.map(itemThumb).join('') || '<p class="empty center wide">ここにはまだありません。</p>'}</div>`;
   }
 
   /* ── 設定 ── */
@@ -334,45 +422,53 @@
     const b = s.briefing || {};
     const cats = s.categories.map((x, i) => `<div class="cat-row" data-i="${i}"><span class="cat c${HB.catIndex(x.name, s.categories)}">&nbsp;</span>
       <input class="cName" value="${esc(x.name)}" aria-label="分類の名前"><input class="cHint" value="${esc(x.hint || '')}" placeholder="どんなものか（Claude へのヒント）" aria-label="ヒント">
-      <button class="iconbtn" data-act="catUp" data-i="${i}" aria-label="上へ">${icon('up', 16)}</button><button class="iconbtn" data-act="catDel" data-i="${i}" aria-label="消す">${icon('x', 16)}</button></div>`).join('');
-    const rules = s.rules.map((r, i) => `<li><span>${esc(r)}</span><button class="iconbtn" data-act="ruleDel" data-i="${i}" aria-label="消す">${icon('x', 16)}</button></li>`).join('');
+      <button class="iconbtn" data-act="catUp" data-i="${i}" aria-label="上へ">${icon('up', 18)}</button><button class="iconbtn" data-act="catDel" data-i="${i}" aria-label="消す">${icon('x', 18)}</button></div>`).join('');
+    const rules = s.rules.map((r, i) => `<li><span>${esc(r)}</span><button class="iconbtn" data-act="ruleDel" data-i="${i}" aria-label="消す">${icon('x', 18)}</button></li>`).join('');
     const lr = st.lastRun || {};
+    const group = (title, body, foot) => `<section class="sec"><h2 class="sec-h small">${title}</h2><div class="card pad">${body}</div>${foot ? `<p class="sec-foot">${foot}</p>` : ''}</section>`;
     return `<div class="settings">
-      <section class="card"><h2>裏側（Google ドライブ）</h2>
-        ${S.demo ? '<p class="muted small">おためし中です。</p>' : `<p class="small">URL：<code class="wrap">${esc(c.url || '')}</code></p><p class="small">合言葉：<code>${esc(String(c.token || '').slice(0, 6))}…</code></p>`}
+      ${group('裏側（Google ドライブ）', `${S.demo ? '<p>おためし中です。</p>' : `<p class="kv"><span>URL</span><code class="wrap">${esc(c.url || '')}</code></p><p class="kv"><span>合言葉</span><code>${esc(String(c.token || '').slice(0, 6))}…</code></p>`}
         <div class="btns"><button data-act="reconnect">つなぎなおす</button><button data-act="syncRun">いま取り込む</button>${st.folders && st.folders.root ? `<a class="btn" href="https://drive.google.com/drive/folders/${esc(st.folders.root)}" target="_blank" rel="noopener">ドライブのフォルダ</a>` : ''}</div>
-        <p class="muted small">Claude の整理：${lr.at ? esc(HB.labelWhen(lr.at)) + `（資料 ${lr.files || 0}・メモ ${lr.memos || 0}・確認 ${lr.proposals || 0}）` : 'まだ'}${st.exportedAt ? `　Claude へのデータ：${esc(HB.labelWhen(st.exportedAt))}` : ''}</p>
-        ${(st.outboxErrors || []).length ? `<p class="small err">読めなかった Claude の結果：${st.outboxErrors.map(e => esc(e.name)).join('、')}</p>` : ''}
-      </section>
-      <section class="card"><h2>iPhone 連携（ショートカット）</h2>
-        <p class="small">iPhone のカレンダー・リマインダーとは、ショートカットApp でつなぎます。<a href="#/guide">つくり方を見る</a></p>
-        <label class="small">同期のショートカットの名前<input id="sSync" value="${esc(sc.sync || '')}"></label>
-        <label class="small">受信箱へ送るショートカットの名前<input id="sSend" value="${esc(sc.send || '')}"></label>
-        <label class="small">iPhone に登録するショートカットの名前<input id="sAdd" value="${esc(sc.add || '')}"></label>
-        <div class="btns"><button data-act="saveShortcuts">名前を保存</button><button data-act="runSync">いま同期する</button></div>
-        <p class="muted small">iPhone から：${st.ios && st.ios.syncedAt ? esc(HB.labelWhen(st.ios.syncedAt)) + `（予定 ${st.ios.events.length}・リマインダー ${st.ios.reminders.length}）` : 'まだ'}</p>
-      </section>
-      <section class="card"><h2>カレンダー購読（おこのみで）</h2>
-        <p class="small">日付をつけたメモ・写真を、iPhone のカレンダーにも出せます（見るだけ）。</p>
-        <p class="small">${S.feedUrl ? `<button class="copy" data-copy="${esc(S.feedUrl)}">${esc(S.feedUrl)}</button>` : '<span class="muted">URL を読みこみ中…</span>'}</p>
-        <p class="muted small">コピー → 設定App →「カレンダー」→「カレンダーアカウント」→「アカウントを追加」→「その他」→「照会するカレンダーを追加」に貼る。</p>
-      </section>
-      <section class="card"><h2>分類</h2><p class="muted small">Claude はこの中から選びます。ヒントを書くと、分け方が上手になります。</p>
-        <div id="cats">${cats}</div>
-        <div class="btns"><button data-act="catAdd">分類を足す</button><button class="primary" data-act="saveCats">分類を保存</button></div></section>
-      <section class="card"><h2>Claude が覚えた決まり</h2><p class="muted small">「今後もこうする」を選ぶと、ここに入ります。自分で書き足しても OK。</p>
-        <ul class="rules">${rules || '<li class="muted small">まだありません</li>'}</ul>
-        <div class="inline"><input id="ruleNew" placeholder="例：保育園のおたよりは「家族・子ども」"><button data-act="ruleAdd">足す</button></div></section>
-      <section class="card"><h2>けさのまとめ</h2>
-        <label class="small">ニュースの話題（1行に1つ）<textarea id="bNews" rows="3">${esc((b.news || []).join('\n'))}</textarea></label>
-        <label class="small">AI の話題（1行に1つ）<textarea id="bAi" rows="2">${esc((b.ai || []).join('\n'))}</textarea></label>
-        <label class="small">メールのさがし方（Gmail の検索の書き方）<input id="bGmail" value="${esc(b.gmailQuery || '')}"></label>
-        <div class="inline small">件数　ニュース <input id="bMaxNews" type="number" min="0" max="10" value="${b.maxNews}"> AI <input id="bMaxAi" type="number" min="0" max="10" value="${b.maxAi}"> メール <input id="bMaxGmail" type="number" min="0" max="15" value="${b.maxGmail}"></div>
-        <div class="btns"><button class="primary" data-act="saveBriefing">保存</button></div></section>
-      <section class="card"><h2>この端末</h2>
-        <div class="btns"><button data-act="exportJson">全部を書き出す（JSON）</button><button data-act="clearCache">この端末の控えを消す</button><button data-act="disconnect">接続をはずす</button></div>
-        <p class="muted small">ひびの手帳 ${esc(st.version || '')}　データは自分の Google ドライブ（「ひびの手帳」フォルダ）にあります。</p></section>
+        ${(st.outboxErrors || []).length ? `<p class="err">読めなかった Claude の結果：${st.outboxErrors.map(e => esc(e.name)).join('、')}</p>` : ''}`,
+        `Claude の整理：${lr.at ? esc(HB.labelWhen(lr.at)) + `（資料 ${lr.files || 0}・メモ ${lr.memos || 0}・確認 ${lr.proposals || 0}）` : 'まだ'}${st.exportedAt ? `　Claude へのデータ：${esc(HB.labelWhen(st.exportedAt))}` : ''}`)}
+      ${group('iPhone 連携（ショートカット）', `<p>iPhone のカレンダー・リマインダーとは、ショートカットApp でつなぎます。<a href="#/guide">つくり方を見る</a></p>
+        <label>同期のショートカットの名前<input id="sSync" value="${esc(sc.sync || '')}"></label>
+        <label>受信箱へ送るショートカットの名前<input id="sSend" value="${esc(sc.send || '')}"></label>
+        <label>iPhone に登録するショートカットの名前<input id="sAdd" value="${esc(sc.add || '')}"></label>
+        <div class="btns"><button data-act="saveShortcuts">名前を保存</button><button data-act="runSync">いま同期する</button></div>`,
+        `iPhone から：${st.ios && st.ios.syncedAt ? esc(HB.labelWhen(st.ios.syncedAt)) + `（予定 ${st.ios.events.length}・リマインダー ${st.ios.reminders.length}）` : 'まだ'}`)}
+      ${calColorsGroup()}
+      ${group('カレンダー購読（おこのみで）', `<p>日付をつけたメモ・写真を、iPhone のカレンダーにも出せます（見るだけ）。</p>
+        <p>${S.feedUrl ? `<button class="copy" data-copy="${esc(S.feedUrl)}">${esc(S.feedUrl)}</button>` : '<span class="muted">URL を読みこみ中…</span>'}</p>`,
+        'コピー → 設定App →「カレンダー」→「カレンダーアカウント」→「アカウントを追加」→「その他」→「照会するカレンダーを追加」に貼る。')}
+      ${group('分類', `<div id="cats">${cats}</div>
+        <div class="btns"><button data-act="catAdd">分類を足す</button><button class="primary" data-act="saveCats">分類を保存</button></div>`, 'Claude はこの中から選びます。ヒントを書くと、分け方が上手になります。')}
+      ${group('Claude が覚えた決まり', `<ul class="rules">${rules || '<li class="muted">まだありません</li>'}</ul>
+        <div class="inline"><input id="ruleNew" placeholder="例：保育園のおたよりは「家族・子ども」"><button data-act="ruleAdd">足す</button></div>`, '「今後もこうする」を選ぶと、ここに入ります。自分で書き足しても OK。')}
+      ${group('けさのまとめ', `<label>ニュースの話題（1行に1つ）<textarea id="bNews" rows="3">${esc((b.news || []).join('\n'))}</textarea></label>
+        <label>AI の話題（1行に1つ）<textarea id="bAi" rows="2">${esc((b.ai || []).join('\n'))}</textarea></label>
+        <label>メールのさがし方（Gmail の検索の書き方）<input id="bGmail" value="${esc(b.gmailQuery || '')}"></label>
+        <div class="nums"><label>ニュース<input id="bMaxNews" type="number" min="0" max="10" value="${b.maxNews}"></label><label>AI<input id="bMaxAi" type="number" min="0" max="10" value="${b.maxAi}"></label><label>メール<input id="bMaxGmail" type="number" min="0" max="15" value="${b.maxGmail}"></label></div>
+        <div class="btns"><button class="primary" data-act="saveBriefing">保存</button></div>`)}
+      ${group('この端末', `<div class="btns"><button data-act="exportJson">全部を書き出す（JSON）</button><button data-act="clearCache">この端末の控えを消す</button><button data-act="disconnect">接続をはずす</button></div>`,
+        `ひびの手帳 ${esc(st.version || '')}　データは自分の Google ドライブ（「ひびの手帳」フォルダ）にあります。`)}
     </div>`;
+  }
+
+  /** カレンダーの色（この端末だけに覚える）：iPhone から届いたカレンダーとリマインダーのリストごとに */
+  function calColorsGroup() {
+    const ios = S.st.ios || {};
+    const kinds = new Map();
+    const add = (n, k) => { if (n) kinds.set(n, Array.from(new Set((kinds.get(n) || []).concat([k])))); };
+    (ios.events || []).forEach(e => add(e.cal, 'カレンダー'));
+    (ios.reminders || []).forEach(r => add(r.list, 'リマインダー'));
+    const rows = Array.from(kinds.keys()).sort().map(n => {
+      const cur = colorOf(n);
+      return `<div class="cc-row"><span class="cc-name"><i class="cc-dot p${cur}"></i><b>${esc(n)}</b><small>${kinds.get(n).join('・')}</small></span>
+        <div class="cc-pick">${Array.from({ length: 10 }, (_, i) => `<button class="cc p${i}${i === cur ? ' on' : ''}" data-act="calColor" data-name="${esc(n)}" data-c="${i}" aria-label="${esc(n)}：色${i + 1}" aria-pressed="${i === cur}"></button>`).join('')}</div></div>`;
+    }).join('');
+    return `<section class="sec"><h2 class="sec-h small">カレンダーの色（この端末）</h2><div class="card pad">${rows || '<p class="muted">iPhone と同期すると、カレンダーとリマインダーのリストがここに出ます。</p>'}</div>
+      <p class="sec-foot">月のカレンダーの帯と、今日の予定の色です。iPhone のカレンダーと同じ色にしておくと、見分けやすくなります。</p></section>`;
   }
 
   /* ── ショートカットのつくり方 ── */
@@ -428,13 +524,14 @@
   }
 
   function addMenu(ymd) {
-    const d = ymd && ymd !== HB.today() ? `<p class="muted small center">${HB.labelDay(ymd)} に入れます</p>` : '';
-    openSheet(`<div class="menu">${d}
-      <button data-act="newMemo" data-ymd="${ymd || ''}">${icon('memo')} メモを書く</button>
-      <button data-act="pick" data-which="camera" data-ymd="${ymd || ''}">${icon('camera')} 写真を撮る</button>
-      <button data-act="pick" data-which="photo" data-ymd="${ymd || ''}">${icon('photo')} 写真を選ぶ</button>
-      <button data-act="pick" data-which="file" data-ymd="${ymd || ''}">${icon('file')} PDF・ファイルを選ぶ</button>
-      <button class="ghost" data-act="closeSheet">やめる</button></div>`, 'small');
+    const y = ymd || '';
+    const d = ymd && ymd !== HB.today() ? `<p class="menu-note">${HB.labelDay(ymd)} に入れます</p>` : '';
+    openSheet(`<div class="menu">${d}<div class="menu-grid">
+      <button data-act="newMemo" data-ymd="${y}">${icon('memo', 30)}<span>メモを書く</span></button>
+      <button data-act="pick" data-which="camera" data-ymd="${y}">${icon('camera', 30)}<span>写真を撮る</span></button>
+      <button data-act="pick" data-which="photo" data-ymd="${y}">${icon('photo', 30)}<span>写真を選ぶ</span></button>
+      <button data-act="pick" data-which="file" data-ymd="${y}">${icon('file', 30)}<span>PDF・ファイル</span></button></div>
+      <button class="cancel" data-act="closeSheet">やめる</button></div>`, 'small');
   }
 
   /* ── メモの編集 ── */
@@ -452,29 +549,36 @@
   function memoEditor() {
     const r = S.edit.rec, s = S.st.settings;
     const opts = s.categories.map(c => `<option value="${esc(c.name)}" ${r.category === c.name ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
-    const note = r.categorySource === 'claude' ? '<small class="muted">Claude が分類しました。変えると「自分で決めた」になります。</small>' : r.needsDecision ? '<small class="muted">Claude が決めきれず、「確認してほしいこと」に出しています。</small>' : '';
-    return `<div class="sheet-head"><button class="link" data-act="closeSheet">閉じる</button><b>${S.edit.isNew ? '新しいメモ' : 'メモ'}</b><button class="primary" data-act="saveMemo">保存</button></div>
+    const note = r.categorySource === 'claude' ? 'Claude が分類しました。変えると「自分で決めた」になります。' : r.needsDecision ? 'Claude が決めきれず、「確認してほしいこと」に出しています。' : '';
+    return `${sheetHead(S.edit.isNew ? '新しいメモ' : 'メモ', 'saveMemo')}
       <div class="sheet-scroll">
-      <textarea id="mText" rows="7" placeholder="メモ（1行目が題名になります）">${esc(r.text)}</textarea>
-      <button class="toggle ${r.important ? 'on' : ''}" data-act="mStar">${icon('star', 18)} 重要メモ</button>
-      ${datesField('m', r.dates)}
-      <label class="field">分類<select id="mCat"><option value="">おまかせ（Claude が分類）</option>${opts}</select>${note}</label>
-      ${r.tags && r.tags.length ? `<p class="small">${r.tags.map(t => `<span class="tag">#${esc(t)}</span>`).join(' ')}</p>` : ''}
-      <div class="field"><span class="flabel">iPhone に登録</span><div class="btns"><button data-act="mToIos" data-type="reminder">${icon('bell', 16)} リマインダーに</button><button data-act="mToIos" data-type="event">${icon('cal', 16)} カレンダーに</button></div></div>
-      ${S.edit.isNew ? '' : `<div class="field btns danger"><button data-act="mArchive">${r.archived ? 'しまったのをもどす' : 'しまう'}</button><button data-act="mDelete">消す</button></div>`}
+      <textarea id="mText" class="big-text" rows="7" placeholder="メモ（1行目が題名になります）">${esc(r.text)}</textarea>
+      <div class="fgroup">
+        <button class="toggle frow ${r.important ? 'on' : ''}" data-act="mStar" aria-pressed="${!!r.important}">${icon('star', 20)}<span>重要メモ</span><span class="sw"></span></button>
+        ${datesField('m', r.dates)}
+        <label class="frow"><span class="fl">分類</span><select id="mCat"><option value="">おまかせ（Claude が分類）</option>${opts}</select></label>
+        ${note ? `<p class="frow-note">${note}</p>` : ''}
+        ${r.tags && r.tags.length ? `<p class="frow-note">${r.tags.map(t => `<span class="tag">#${esc(t)}</span>`).join(' ')}</p>` : ''}
+      </div>
+      <div class="fgroup"><div class="frow col"><span class="fl">iPhone に登録</span><div class="btns"><button data-act="mToIos" data-type="reminder">${icon('bell', 18)} リマインダーに</button><button data-act="mToIos" data-type="event">${icon('cal', 18)} カレンダーに</button></div></div></div>
+      ${S.edit.isNew ? '' : `<div class="fgroup danger"><div class="frow btns"><button data-act="mArchive">${r.archived ? 'しまったのをもどす' : 'しまう'}</button><button data-act="mDelete">消す</button></div></div>`}
       </div>`;
   }
 
+  /** シートの上：左に ×（閉じる）、まんなかに題名、右に ✓（保存。なければ空き） */
+  function sheetHead(title, saveAct, closeLabel) {
+    return `<div class="sheet-head"><button class="rbtn" data-act="closeSheet" aria-label="${closeLabel || '閉じる'}">${icon('x', 20)}</button><b>${title}</b>${saveAct ? `<button class="rbtn ok" data-act="${saveAct}" aria-label="保存">${icon('check', 22)}</button>` : '<span></span>'}</div>`;
+  }
+
+  const dchips = (prefix, dates) => (dates || []).map(d => `<span class="dchip">${HB.labelShort(d)}<button data-act="${prefix}DelDate" data-ymd="${d}" aria-label="${d} をはずす">${icon('x', 15)}</button></span>`).join('') || '<span class="muted">なし</span>';
   function datesField(prefix, dates) {
-    const chips = (dates || []).map(d => `<span class="dchip">${HB.labelShort(d)}<button data-act="${prefix}DelDate" data-ymd="${d}" aria-label="${d} をはずす">${icon('x', 14)}</button></span>`).join('');
-    return `<div class="field"><span class="flabel">日付（その日を開くと出ます）</span><div class="dchips" id="${prefix}Dates">${chips || '<span class="muted small">なし</span>'}</div>
+    return `<div class="frow col"><span class="fl">日付<small>その日を開くと出ます</small></span><div class="dchips" id="${prefix}Dates">${dchips(prefix, dates)}</div>
       <div class="date-add"><button data-act="${prefix}AddDate" data-v="today">今日</button><button data-act="${prefix}AddDate" data-v="tomorrow">明日</button>
       <input type="date" id="${prefix}DateIn" aria-label="日付を選ぶ"><button data-act="${prefix}AddDate" data-v="input">追加</button></div></div>`;
   }
   function refreshDates(prefix, dates) {
     const box = $('#' + prefix + 'Dates');
-    if (!box) return;
-    box.innerHTML = (dates || []).map(d => `<span class="dchip">${HB.labelShort(d)}<button data-act="${prefix}DelDate" data-ymd="${d}" aria-label="${d} をはずす">${icon('x', 14)}</button></span>`).join('') || '<span class="muted small">なし</span>';
+    if (box) box.innerHTML = dchips(prefix, dates);
   }
   function dateFromButton(el, prefix) {
     const v = el.dataset.v;
@@ -531,22 +635,24 @@
     const opts = s.categories.map(c => `<option value="${esc(c.name)}" ${r.category === c.name ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
     const drive = r.fileId && !S.demo ? `https://drive.google.com/file/d/${encodeURIComponent(r.fileId)}/view` : '';
     const status = { inbox: '受信箱（次の朝 Claude が整理）', pending: '確認待ち（分類を選んでください）', organized: '整理済み', archived: 'しまったもの' }[r.status] || '';
-    const sugg = r.status === 'pending' && r.suggestedCategory ? `<small class="muted">Claude の候補：${esc(r.suggestedCategory)}</small>` : r.categorySource === 'claude' ? '<small class="muted">Claude が分類しました</small>' : '';
+    const sugg = r.status === 'pending' && r.suggestedCategory ? `Claude の候補：${esc(r.suggestedCategory)}` : r.categorySource === 'claude' ? 'Claude が分類しました' : '';
     const notes = r.dateNotes ? Object.keys(r.dateNotes).sort().map(d => `<li>${HB.labelShort(d)}：${esc(r.dateNotes[d])}</li>`).join('') : '';
-    return `<div class="sheet-head"><button class="link" data-act="closeSheet">閉じる</button><b>${r.kind === 'pdf' ? 'PDF' : r.kind === 'photo' ? '写真' : 'ファイル'}</b><button class="primary" data-act="saveItem">保存</button></div>
+    return `${sheetHead(r.kind === 'pdf' ? 'PDF' : r.kind === 'photo' ? '写真' : 'ファイル', 'saveItem')}
       <div class="sheet-scroll">
       <div class="viewer ${r.kind}">${r.kind === 'photo' ? `<img id="vImg" data-thumb="${r.id}" alt="">` : `<img data-thumb="${r.id}" alt=""><div class="pdf-ic">${icon('file', 40)}</div>`}</div>
-      ${drive ? `<p class="center"><a class="btn" href="${drive}" target="_blank" rel="noopener">ドライブで開く</a></p>` : ''}
-      <p class="muted small center">${esc(status)}</p>
-      <label class="field">題名<input id="iTitle" value="${esc(r.title || '')}"></label>
-      ${r.summary ? `<div class="summary"><span class="flabel">Claude の要約</span><p>${esc(r.summary)}</p>${notes ? `<ul class="small">${notes}</ul>` : ''}</div>` : ''}
+      <p class="viewer-meta"><span class="tag">${esc(status)}</span>${drive ? `<a class="chip-btn" href="${drive}" target="_blank" rel="noopener">ドライブで開く</a>` : ''}</p>
+      <div class="fgroup"><label class="frow col"><span class="fl">題名</span><input id="iTitle" value="${esc(r.title || '')}"></label></div>
+      ${r.summary ? `<div class="summary"><span class="fl">Claude の要約</span><p>${esc(r.summary)}</p>${notes ? `<ul>${notes}</ul>` : ''}</div>` : ''}
       ${r.text || r.ocr ? `<details class="ocr"><summary>読みとった文字</summary><pre>${esc(r.text || r.ocr)}</pre></details>` : ''}
-      <button class="toggle ${r.important ? 'on' : ''}" data-act="iStar">${icon('star', 18)} 重要</button>
-      ${datesField('i', r.dates)}
-      ${r.suggestedDates && r.suggestedDates.length ? `<p class="small muted">Claude が見つけた日付：${r.suggestedDates.map(x => `<button class="chip-btn" data-act="iAddSugg" data-ymd="${x.date}">＋${HB.labelShort(x.date)}${x.reason ? ' ' + esc(x.reason) : ''}</button>`).join(' ')}</p>` : ''}
-      <label class="field">分類<select id="iCat"><option value="">おまかせ（Claude が分類）</option>${opts}</select>${sugg}</label>
-      <label class="field">メモ（Claude へのヒントにもなります）<textarea id="iNote" rows="2">${esc(r.note || '')}</textarea></label>
-      <div class="field btns danger"><button data-act="iArchive">${r.status === 'archived' ? 'しまったのをもどす' : 'しまう'}</button><button data-act="iDelete">消す（ドライブではゴミ箱へ）</button></div>
+      <div class="fgroup">
+        <button class="toggle frow ${r.important ? 'on' : ''}" data-act="iStar" aria-pressed="${!!r.important}">${icon('star', 20)}<span>重要</span><span class="sw"></span></button>
+        ${datesField('i', r.dates)}
+        ${r.suggestedDates && r.suggestedDates.length ? `<div class="frow col"><span class="fl">Claude が見つけた日付</span><div class="btns">${r.suggestedDates.map(x => `<button class="chip-btn" data-act="iAddSugg" data-ymd="${x.date}">＋${HB.labelShort(x.date)}${x.reason ? ' ' + esc(x.reason) : ''}</button>`).join('')}</div></div>` : ''}
+        <label class="frow"><span class="fl">分類</span><select id="iCat"><option value="">おまかせ（Claude が分類）</option>${opts}</select></label>
+        ${sugg ? `<p class="frow-note">${sugg}</p>` : ''}
+        <label class="frow col"><span class="fl">メモ<small>Claude へのヒントにもなります</small></span><textarea id="iNote" rows="2">${esc(r.note || '')}</textarea></label>
+      </div>
+      <div class="fgroup danger"><div class="frow btns"><button data-act="iArchive">${r.status === 'archived' ? 'しまったのをもどす' : 'しまう'}</button><button data-act="iDelete">消す（ドライブではゴミ箱へ）</button></div></div>
       </div>`;
   }
 
@@ -625,13 +731,15 @@
   function uploadSheet() {
     const u = S.upload, s = S.st.settings;
     const opts = s.categories.map(c => `<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('');
-    return `<div class="sheet-head"><button class="link" data-act="closeSheet">やめる</button><b>受信箱へ入れる</b><span></span></div>
+    return `${sheetHead('受信箱へ入れる', '', 'やめる')}
       <div class="sheet-scroll">
       <div class="up-prev" id="upPrev"></div>
-      ${datesField('u', u.dates)}
-      <p class="muted small">日付を選ばなくても、Claude が中身から日付を読みとって、その日に出します。</p>
-      <label class="field">メモ（任意。Claude へのヒントにもなります）<textarea id="uNote" rows="2" placeholder="例：長男の遠足のおたより"></textarea></label>
-      <label class="field">分類<select id="uCat"><option value="">おまかせ（次の朝 Claude が分類）</option>${opts}</select></label>
+      <div class="fgroup">
+        ${datesField('u', u.dates)}
+        <p class="frow-note">日付を選ばなくても、Claude が中身から日付を読みとって、その日に出します。</p>
+        <label class="frow col"><span class="fl">メモ<small>任意。Claude へのヒントにもなります</small></span><textarea id="uNote" rows="2" placeholder="例：長男の遠足のおたより"></textarea></label>
+        <label class="frow"><span class="fl">分類</span><select id="uCat"><option value="">おまかせ（次の朝 Claude が分類）</option>${opts}</select></label>
+      </div>
       <button class="primary big" id="uSend" data-act="uSend" disabled>準備中…</button>
       </div>`;
   }
@@ -686,9 +794,17 @@
   function askDue(x, then) {
     const t = HB.addDays(HB.today(), 1) + 'T08:00';
     S.askDue = { ios: x, then };
-    openSheet(`<div class="sheet-head"><button class="link" data-act="closeSheet">やめる</button><b>リマインダー</b><span></span></div>
-      <div class="sheet-scroll"><p><b>${esc(x.title)}</b></p><label class="field">いつ知らせる？<input type="datetime-local" id="rDue" value="${t}"></label>
+    openSheet(`${sheetHead('リマインダー', '', 'やめる')}
+      <div class="sheet-scroll"><div class="fgroup"><p class="frow"><b>${esc(x.title)}</b></p><label class="frow col"><span class="fl">いつ知らせる？</span><input type="datetime-local" id="rDue" value="${t}"></label></div>
       <button class="primary big" data-act="rGo">iPhone に登録</button></div>`, 'small');
+  }
+
+  function syncIntro(name) {
+    openSheet(`${sheetHead('iPhone と同期')}
+      <div class="sheet-scroll"><p>ショートカット「${esc(name)}」を動かして、iPhone のカレンダーの予定とリマインダーを、この手帳に取りこみます。</p>
+      <p class="muted">まだショートカットをつくっていなければ、先につくり方を見てください（一度だけ・20分くらい）。</p>
+      <button class="primary big" data-act="runSync" data-sure="1">動かす</button>
+      <button class="big" data-act="go" data-hash="#/guide">つくり方を見る</button></div>`, 'small');
   }
 
   /* ───── 確認してほしいこと ───── */
@@ -750,15 +866,15 @@
       softRender();
     } catch (e) {
       setSync(e.net ? 'offline' : 'error', e.message);
-      if (!S.st) { $('#view').innerHTML = `<div class="empty-state"><p>${esc(e.message)}</p><button class="primary" data-act="refresh">もう一度</button> <button data-act="reconnect">つなぎなおす</button></div>`; $('#tabs').hidden = false; }
+      if (!S.st) { $('#view').innerHTML = `<div class="empty-state"><p>${esc(e.message)}</p><div class="btns center"><button class="primary" data-act="refresh">もう一度</button><button data-act="reconnect">つなぎなおす</button></div></div>`; }
       else softRender();
     } finally { S.loading = false; }
   }
 
   function setSync(state, msg) {
     S.sync = state; S.syncMsg = msg || '';
-    const b = $('.sync');
-    if (b) { b.className = 'iconbtn sync ' + state; b.title = msg || '新しくする'; }
+    const b = $('#top .sync');
+    if (b) { b.className = 'sync ' + state; b.title = msg || '新しくする'; }
   }
 
   async function connect() {
@@ -869,7 +985,7 @@
       case 'refresh': if (S.demo) toast('おためし中です'); else refresh(true); break;
       case 'demo': startDemo(); onRoute(); break;
       case 'endDemo': endDemo(); break;
-      case 'reconnect': S.st = null; S.demo = false; $('#view').innerHTML = viewWelcome(); $('#top').innerHTML = ''; $('#fab').hidden = true; break;
+      case 'reconnect': S.st = null; S.demo = false; $('#view').innerHTML = viewWelcome(); $('#top').innerHTML = ''; $('#top').hidden = true; $('#bottom').hidden = true; break;
       case 'disconnect':
         if (!confirm('この端末の接続をはずします（データは Google ドライブに残ります）')) break;
         HB.api.clearConn(); HB.api.clearState(); await HB.api.thumbClear(); S.st = null; S.demo = false; render(); break;
@@ -880,7 +996,14 @@
         try { busy(true); const r = await HB.api.call('sync.run', {}, { timeout: 120000 }); S.st = r; HB.api.saveState(r); toast(`取り込みました（Claude の結果 ${r.result.applied}・見つけたファイル ${r.result.found}）`); softRender(); }
         catch (e) { toast(e.message, 'err'); } finally { busy(false); }
         break;
-      case 'runSync': runShortcut((st.settings.shortcuts || {}).sync || 'ひびの手帳 同期'); break;
+      case 'runSync': {
+        const name = (st.settings.shortcuts || {}).sync || 'ひびの手帳 同期';
+        // まだ一度も届いていないときは、ショートカットをつくったかを先に聞く
+        if (!(st.ios && st.ios.syncedAt) && !d.sure) { syncIntro(name); break; }
+        closeSheet(true);
+        runShortcut(name);
+        break;
+      }
       case 'addMenu': addMenu(d.ymd); break;
       case 'closeSheet': closeSheet(); break;
       case 'newMemo': closeSheet(true); openMemo(null, d.ymd || (S.route.name === 'day' ? S.route.ymd : '')); break;
@@ -893,7 +1016,7 @@
         break;
       }
       case 'saveMemo': saveMemo(); break;
-      case 'mStar': S.edit.rec.important = !S.edit.rec.important; el.classList.toggle('on', S.edit.rec.important); break;
+      case 'mStar': S.edit.rec.important = !S.edit.rec.important; el.classList.toggle('on', S.edit.rec.important); el.setAttribute('aria-pressed', S.edit.rec.important); break;
       case 'mAddDate': case 'iAddDate': case 'uAddDate': {
         const p = a[0], ymd = dateFromButton(el, p);
         if (!ymd) { toast('日付を選んでください'); break; }
@@ -937,7 +1060,7 @@
       }
       case 'openItem': openItem(d.id); break;
       case 'saveItem': saveItem(); break;
-      case 'iStar': S.edit.rec.important = !S.edit.rec.important; el.classList.toggle('on', S.edit.rec.important); break;
+      case 'iStar': S.edit.rec.important = !S.edit.rec.important; el.classList.toggle('on', S.edit.rec.important); el.setAttribute('aria-pressed', S.edit.rec.important); break;
       case 'iArchive': {
         if (blockDemo()) break;
         const r = S.edit.rec; closeSheet();
@@ -956,6 +1079,7 @@
       case 'answer': answer(d.id, Number(d.opt)); break;
       case 'dismiss': dismiss(d.id); break;
       case 'snooze': S.ui.snooze[d.id] = HB.today(); saveUi(); softRender(); toast('あしたまた出します'); break;
+      case 'calColor': S.ui.calColors = Object.assign({}, S.ui.calColors, { [d.name]: Number(d.c) }); saveUi(); softRender(); break;
       case 'memoFilter': S.ui.memoFilter = d.f; S.ui.memoCat = d.cat || ''; saveUi(); render(); break;
       case 'memoFilterGo': S.ui.memoFilter = d.f; S.ui.memoCat = ''; saveUi(); go('#/memos'); break;
       case 'libFilter': S.ui.libStatus = d.s; S.ui.libCat = d.cat || ''; saveUi(); render(); break;
@@ -1044,15 +1168,16 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   }
 
-  /* ───── 左右のスワイプで、前の日・次の日 ───── */
+  /* ───── 左右のスワイプで、前の日・次の日（カレンダーは前の月・次の月） ───── */
   function setupSwipe() {
     let x0 = 0, y0 = 0, t0 = 0;
     document.addEventListener('touchstart', e => { if (e.touches.length !== 1) return; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); }, { passive: true });
     document.addEventListener('touchend', e => {
-      if (S.sheetOpen || !['today', 'day'].includes(S.route.name)) return;
-      if (e.target.closest('input, textarea, select, .grid, .prop-opts')) return;
+      if (S.sheetOpen || !['today', 'day', 'cal'].includes(S.route.name)) return;
+      if (e.target.closest('input, textarea, select, .grid, .prop-opts, .fchips')) return;
       const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0;
       if (Date.now() - t0 > 600 || Math.abs(dx) < 70 || Math.abs(dy) > 45) return;
+      if (S.route.name === 'cal') { go('#/cal/' + HB.addMonths(S.route.ym, dx < 0 ? 1 : -1)); return; }
       const ymd = S.route.name === 'today' ? HB.today() : S.route.ymd;
       go('#/day/' + HB.addDays(ymd, dx < 0 ? 1 : -1));
     }, { passive: true });
@@ -1082,7 +1207,12 @@
     mail: '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7l8 6 8-6"/>', news: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/>',
     ai: '<rect x="5" y="7" width="14" height="11" rx="3"/><path d="M12 3.5V7M9 12h.01M15 12h.01M9.5 15.5h5"/>', sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
     ask: '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.4M12 16.8h.01"/>', bell: '<path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
-    book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M8 7.5h8M8 11h6"/>'
+    book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M8 7.5h8M8 11h6"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+    today: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/><rect x="11.5" y="13" width="4.5" height="4" rx=".8" fill="currentColor" stroke="none"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>', search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/>',
+    tag: '<path d="M3.5 12.3V4.5a1 1 0 0 1 1-1h7.8l8.2 8.2a1 1 0 0 1 0 1.4l-6.6 6.6a1 1 0 0 1-1.4 0z"/><circle cx="8" cy="8" r="1.4"/>',
+    list: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01" stroke-width="2.6"/>'
   };
   function icon(name, size) {
     const s = size || 20;
