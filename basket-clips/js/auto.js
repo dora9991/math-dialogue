@@ -27,8 +27,10 @@
     const clampN = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
     /* ---------- ゴール追跡 ---------- */
-    function createHoopTracker(mark, srcW, srcH, phase) {
+    function createHoopTracker(mark, srcW, srcH, phase, opts) {
       // mark: { id, box:{x,y,w,h}, rim:{cx,cy,w} }  … 元画像（srcW×srcH）の座標
+      // opts.fastScale: false で、倍率の追従をもとの動き（2コマに1回・1段ずつ）に。比べるとき用
+      const fastScale = !opts || opts.fastScale !== false;
       const k = srcW / AW;
       const AH = Math.round(srcH / k);
       const st = {
@@ -120,14 +122,25 @@
         if (st.tracked || st.lost < 6) {
           const cur = tryScales(gray, w, h, cx, cy, [st.scale], st.tracked ? 7 : 12, 1);
           let b = cur;
-          if (st.frame % 2 === 0) {
+          // （バスケ得点クリップで変えたもの）倍率の追従は毎コマ。もとは2コマに1回だったが、ゴールの近く（ゴール裏など）から1倍の広い画角で
+          // 撮ると、カメラを振るだけで、画面の端のゴールは大きく・真ん中では小さく見え、0.3 秒で 2 割も縮むことがある（追いつけずに見失った）
+          if (st.frame % 2 === 0 || fastScale) {
             // 倍率（ズーム）への追従：いまの倍率より 0.02 以上よく合うときだけ切り替える（行ったり来たりすると背景差分が荒れる）
             const ccx = cur.x + cur.T.tw / 2, ccy = cur.y + cur.T.th / 2;
             const up = st.scale * SC_STEP < 2.4 ? tryScales(gray, w, h, ccx, ccy, [st.scale * SC_STEP], 2, 1) : null;
             const dn = st.scale / SC_STEP > 0.45 ? tryScales(gray, w, h, ccx, ccy, [st.scale / SC_STEP], 2, 1) : null;
             const alt = up && (!dn || up.score >= dn.score) ? up : dn;
-            if (alt && alt.score > cur.score + 0.02) b = alt;
-            else if (up && dn && cur.score >= TH_KEEP) {
+            if (alt && alt.score > cur.score + 0.02) {
+              b = alt;
+              // 同じ向きにもう1段（速く縮む・広がるとき）
+              if (fastScale) {
+                const sc2 = alt === up ? alt.scale * SC_STEP : alt.scale / SC_STEP;
+                if (sc2 > 0.45 && sc2 < 2.4) {
+                  const alt2 = tryScales(gray, w, h, alt.x + alt.T.tw / 2, alt.y + alt.T.th / 2, [sc2], 2, 1);
+                  if (alt2.score > alt.score + 0.01) b = alt2;
+                }
+              }
+            } else if (up && dn && cur.score >= TH_KEEP) {
               // 倍率の端数：3つの倍率での合い具合から、山の頂上を放物線で求めてゆっくり寄せる
               const den = dn.score - 2 * cur.score + up.score;
               const d = den < -1e-5 ? clampN(0.5 * (dn.score - up.score) / den, -1, 1) : (up.score > cur.score ? 1 : dn.score > cur.score ? -1 : 0);
@@ -736,7 +749,7 @@
        フレームの作り方は環境ごとに違う（node: 全画面から切り出し／ブラウザ: 小さな canvas に描いて読む）ので、ここでは受け取るだけ。 */
     function createAnalyzer(cfg) {
       const fixed = !!cfg.fixed;       // true: カメラが動かない（全景カメラ）。ゴールを追わず、指定した場所を見張る
-      const trackers = cfg.hoops.map((m, i) => (fixed ? createFixedTracker(m, cfg.srcW, cfg.srcH) : createHoopTracker(m, cfg.srcW, cfg.srcH, i)));
+      const trackers = cfg.hoops.map((m, i) => (fixed ? createFixedTracker(m, cfg.srcW, cfg.srcH) : createHoopTracker(m, cfg.srcW, cfg.srcH, i, { fastScale: cfg.fastScale })));
       const rims = cfg.hoops.map(() => createRimChecker());
       const rimState = cfg.hoops.map(() => ({ dx: 0, dy: 0, low: 0, score: null, okT: null }));
       const occlusion = cfg.rimOcclusion !== false;      // 検証用に false で、もとの動き（隠れたコマは使わない）

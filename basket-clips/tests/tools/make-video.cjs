@@ -2,6 +2,8 @@
 //   node basket-clips/tests/tools/make-video.cjs <出力.mp4> [区間=0-150] [fps=30] [Mbps=4]
 //   区間は「元の試合の秒」。カンマで区切ると、つないだ1本の動画になる（例：0-120,805-925 ＝ 前半の頭と後半の頭）。
 //   最後に rim を付けると、シュートの一部を「リングに当たってから入る／外れる」形にする（fixtures/rimplay.js。正解の shots[].rim に形の名前）。
+//   その次にカメラの場所（behind：ゴールA の裏の2階から斜めに／behindLow：ゴールA の裏のフロアから。省略時は side＝コートの横から）。
+//   例：node make-video.cjs out.mp4 0-120 30 4 - behind（リングに当たるシュートなし・ゴール裏から）
 // 映像は「バスケ分析スタジオ」のサンプル試合（fixtures/。シード 204・ブルー vs レッド）を、ブラウザの WebCodecs で1コマずつ描いて作る。
 // 実時間の録画ではないので、コマ落ちがなく、毎回同じ動画になる。
 // VP9 にしているのは、テストに使う Chromium（Playwright 同梱）が H.264 を扱えないため（ふつうの Chrome・Safari では H.264 の動画も同じように読める）。
@@ -52,7 +54,7 @@ async function renderInPage(opts) {
   // リングに当たってから入る／外れるシュートを混ぜる（opts.rim：{ makes, misses } 変える割合）
   const rimPlay = opts.rim ? BS.rimPlay(game, opts.rim) : [];
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-  const rd = BS.Renderer(game, cv, {});
+  const rd = BS.Renderer(game, cv, { view: opts.view || 'side' });
   const chunks = []; let err = null;
   const enc = new VideoEncoder({ output: (c) => { const d = new Uint8Array(c.byteLength); c.copyTo(d); chunks.push({ d, key: c.type === 'key' }); }, error: (e) => { err = e; } });
   const cfg = { codec: 'vp09.00.31.08', width: W, height: H, bitrate: mbps * 1e6, framerate: fps, latencyMode: 'realtime' };
@@ -86,7 +88,14 @@ async function renderInPage(opts) {
     return { t: +(e.t - m.a + m.off).toFixed(2), src: e.t, team: e.team, made: !!e.made, type: e.type, side: ((e.team === 0) === (per(e.t) <= 2)) ? 1 : 0, half: per(e.t) <= 2 ? 1 : 2, rim: rp ? rp.kind : null };
   }).filter(Boolean);
   // ゴールの位置：カメラがそのゴール側の端まで寄っていて、ボールがゴールから離れているコマ（hoopMark と同じ条件。そのときの枠はどのコマでも同じ）
-  const marks = [0, 1].map((side) => {
+  // （side 以外のカメラ：カメラがいつも動くので、区間ごとに、よく映っているコマを探してそのコマの枠とリングを使う）
+  const marks = (opts.view || 'side') !== 'side' ? [0, 1].map((side) => {
+    for (const m of map) {
+      const g = rd.markGen(side, m.a + 1, m.b - 1.5);
+      if (g) return { side, t: +(m.off + g.t - m.a).toFixed(4), src: g.t, box: g.box, rim: g.rim };
+    }
+    return null;
+  }) : [0, 1].map((side) => {
     const hm = rd.hoopMark(side);
     const edge = side === 0 ? 9.2 : 28 - 9.2, rimX = side === 0 ? 1.575 : 28 - 1.575;
     for (const m of map) {
@@ -100,11 +109,17 @@ async function renderInPage(opts) {
     }
     return null;
   });
+  // ゴールが画面のどこに映っているか（0.5 秒ごと。リングの中心・幅。カメラの後ろ・画面の外なら null）：ゴールの自動検出の確かめ用
+  const rimTrack = [];
+  for (const m of map) for (let i = 0; i < m.n; i += Math.round(fps / 2)) {
+    const x = m.a + i / fps;
+    rimTrack.push([+(m.off + i / fps).toFixed(3)].concat([0, 1].map((side) => { const r = rd.rimAt(side, x); return r && r.cx > 0 && r.cx < W && r.cy > 0 && r.cy < H ? [Math.round(r.cx), Math.round(r.cy), +r.w.toFixed(1)] : null; })));
+  }
   window.__blob = window.__mux(chunks, W, H, fps);
-  return { frames: chunks.length, duration: off, bytes: window.__blob.size, sec: (performance.now() - t0) / 1000, segs: map, shots, marks, teams: game.teams.map((t) => ({ name: t.name, color: t.color })), toOutCheck: toOut(segs[0].a + 1) };
+  return { view: opts.view || 'side', frames: chunks.length, duration: off, bytes: window.__blob.size, sec: (performance.now() - t0) / 1000, segs: map, shots, marks, rimTrack, teams: game.teams.map((t) => ({ name: t.name, color: t.color })), toOutCheck: toOut(segs[0].a + 1) };
 }
 
-async function make(out, segSpec, fps, mbps, rim) {
+async function make(out, segSpec, fps, mbps, rim, view) {
   const segs = String(segSpec || '0-150').split(',').map((s) => { const [a, b] = s.split('-').map(Number); return { a, b }; });
   const srv = await start(0);
   const browser = await chromium.launch({ args: ['--disable-background-timer-throttling', '--disable-renderer-backgrounding'] });
@@ -113,7 +128,7 @@ async function make(out, segSpec, fps, mbps, rim) {
     await page.goto(srv.url + 'tests/tools/render.html');
     await page.waitForFunction(() => window.BS && BS.Renderer && BS.sim);
     await page.addScriptTag({ content: MUX + '\nwindow.__mux = mux;' });
-    const info = await page.evaluate(renderInPage, { segs, fps: fps || 30, W: 1280, H: 720, mbps: mbps || 4, rim: rim || null });
+    const info = await page.evaluate(renderInPage, { segs, fps: fps || 30, W: 1280, H: 720, mbps: mbps || 4, rim: rim || null, view: view || 'side' });
     if (info.error) throw new Error(info.error);
     // ページの中の動画を、ダウンロードとして受け取る
     const [dl] = await Promise.all([
@@ -130,6 +145,6 @@ module.exports = { make };
 if (require.main === module) {
   const out = path.resolve(process.argv[2] || 'game.mp4');
   // 6番目の引数に rim を渡すと、リングに当たるシュートを混ぜる（例：node make-video.cjs out.mp4 0-400 30 4 rim）
-  make(out, process.argv[3], Number(process.argv[4] || 30), Number(process.argv[5] || 4), process.argv[6] === 'rim' ? { makes: 0.7, misses: 0.6 } : null)
+  make(out, process.argv[3], Number(process.argv[4] || 30), Number(process.argv[5] || 4), process.argv[6] === 'rim' ? { makes: 0.7, misses: 0.6 } : null, process.argv[7] || 'side')
     .then((r) => console.log(JSON.stringify(r))).catch((e) => { console.error(e); process.exit(1); });
 }

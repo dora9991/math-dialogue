@@ -39,9 +39,11 @@ async function run(movie, t0, t1, opts) {
   opts = opts || {};
   const truth = JSON.parse(fs.readFileSync(movie + '.json', 'utf8'));
   const W = 1280, H = 720;
-  const BS = loadBS(['core.js', 'vision.js', 'auto.js']);
+  const BS = opts.BS || loadBS(['core.js', 'vision.js', 'auto.js']);      // opts.BS：中身を包んで記録したいとき（検証用）
   const V = BS.vision, A = BS.auto;
-  const marks = truth.marks.filter(Boolean);
+  let marks = opts.marks || truth.marks.filter(Boolean);      // opts.marks：ゴールの指定を差し替える（自動で見つけたものなど）
+  // opts.boxFromRim：板の枠を、リングから決めた枠にする（リングをなぞるだけの指定・自動で見つけたゴールと同じ）
+  if (opts.boxFromRim) { const G = loadBS(['core.js', 'vision.js', 'goalfind.js']).goalfind; marks = marks.map((m) => Object.assign({}, m, { box: G.boxFromRim(m.rim, W, H) })); }
   const an = A.createAnalyzer(Object.assign({ srcW: W, srcH: H, hoops: marks.map((m, i) => ({ id: 'AB'[i], box: m.box, rim: m.rim })) }, opts.cfg || {}));
   const bufs = {};
   const patcher = (data) => (cx, cy, size, outSize) => V.extractPatch(data, W, H, cx, cy, size, outSize, 'rgba', bufs[outSize] || (bufs[outSize] = new Uint8Array(outSize * outSize * 3)));
@@ -70,7 +72,11 @@ if (require.main === module) {
   const t0 = Number(process.argv[3] || 0), t1 = Number(process.argv[4] || 60);
   const tr = process.argv[5] === 'trace';
   const started = Date.now();
-  run(movie, t0, t1, { trace: tr }).then(({ res, trace, truth }) => {
+  // FASTSCALE=0：倍率の追従をもとの動き（2コマに1回・1段ずつ）に。比べるとき用
+  const cfg = {};
+  if (process.env.FASTSCALE === '0') cfg.fastScale = false;
+  // BOXFROMRIM=1：板の枠をリングから決める
+  run(movie, t0, t1, { trace: tr, cfg, boxFromRim: process.env.BOXFROMRIM === '1' }).then(({ res, trace, truth }) => {
     if (tr) trace.forEach((x) => console.log(x.t.toFixed(2) + '  ' + x.st.map((s, i) => `${'AB'[i]}:${s.tr ? '○' : '・'}${s.acq ? '取' : ''}${s.occ ? '隠' : ''} 板${s.sc} 輪${s.rs == null ? '-' : s.rs} @${s.rim.join(',')}`).join('   ')));
     const sh = truth.shots.filter((s) => s.t >= t0 && s.t <= t1 - 2.5);
     console.log(`\n${((Date.now() - started) / 1000).toFixed(0)} 秒。検出：` + res.shots.map((s) => `${s.t.toFixed(1)}${s.made ? '得点' : '外れ'}${'AB'[s.hoop]}`).join(' '));

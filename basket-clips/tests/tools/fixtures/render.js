@@ -1,7 +1,12 @@
 /* バスケ分析スタジオ — サンプル試合の「合成映像」描画
    シミュレーションの軌跡から、任意の時刻 t の1コマを Canvas に描く（純粋関数的なのでシーク自由）。
    カメラは観客席の高い位置から、ボールを追ってゆっくりパンする。
-   opts.wide: 全景カメラ（360°・広角）のつもりの映像。カメラは動かず、コート全体（両方のゴール）が映りっぱなしになる。 */
+   opts.wide: 全景カメラ（360°・広角）のつもりの映像。カメラは動かず、コート全体（両方のゴール）が映りっぱなしになる。
+   opts.view（バスケ得点クリップで足したもの）：カメラの場所。
+     'side'（省略時）… コートの横の観客席から（もとの映像。描き方は変えていない）
+     'behind'       … ゴールA の裏の2階ギャラリーの隅から、斜め下を見る（バックボードを後ろから見る。ボールを追ってパン・チルト・ズーム）
+     'behindLow'    … ゴールA の裏のフロアから（リングを下から見上げる）
+   side 以外では、ゴールは天井から吊るす形（ガラスのバックボード）、体育館の壁・2階ギャラリー・ステージも描く。 */
 (function (root) {
   'use strict';
   const BS = root.BS;
@@ -20,6 +25,8 @@
 
   function Renderer(game, canvas, opts) {
     const WIDE = !!(opts && opts.wide);
+    const VIEW = (opts && opts.view) || 'side';
+    const GEN = VIEW !== 'side';            // カメラを自由な位置・向き・ズームで置く（ゴール裏など）
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
     const tr = game.track;
@@ -74,15 +81,66 @@
       f = f.map((v) => v / fl);
       const r = [1, 0, 0];
       const u = [0, f[2], -f[1]];
-      cam = { C, f, r, u, x: camX };
+      cam = { C, f, r, u, x: camX, F };
     }
+    /* 自由な位置 C から T を見るカメラ（焦点距離 f＝画素。横に傾けない）。right = up×f、up = f×right（side のカメラもこの式と同じ値になる） */
+    function lookAt(C, T, focal) {
+      let f = [T[0] - C[0], T[1] - C[1], T[2] - C[2]];
+      const fl = Math.hypot(f[0], f[1], f[2]);
+      f = f.map((v) => v / fl);
+      let r = [-f[1], f[0], 0];
+      const rl = Math.hypot(r[0], r[1]) || 1;
+      r = [r[0] / rl, r[1] / rl, 0];
+      const u = [f[1] * r[2] - f[2] * r[1], f[2] * r[0] - f[0] * r[2], f[0] * r[1] - f[1] * r[0]];
+      cam = { C, f, r, u, x: T[0], F: focal, gen: true };
+    }
+    // ゴール裏のカメラ（ゴールA＝x が 0 の側の裏）。C: 撮る人の目の位置、F0: いちばん引いたときの焦点距離（画素）
+    const PRESET = {
+      behind: { C: [-4.5, 11.5, 6.0], F0: 0.72 * W, zoomAt: 9, zoomMax: 2.6 },
+      behindLow: { C: [-6.3, 10.5, 1.5], F0: 0.62 * W, zoomAt: 9, zoomMax: 2.4 }
+    }[VIEW] || null;
     function proj(x, y, z) {
       const dx = x - cam.C[0], dy = y - cam.C[1], dz = z - cam.C[2];
       const depth = dx * cam.f[0] + dy * cam.f[1] + dz * cam.f[2];
-      const px = dx;
-      const py = dy * cam.u[1] + dz * cam.u[2];
-      const d = Math.max(0.5, depth);
-      return [W / 2 + F * px / d, H / 2 - F * py / d, d];
+      if (!cam.gen) {
+        const px = dx;
+        const py = dy * cam.u[1] + dz * cam.u[2];
+        const d = Math.max(0.5, depth);
+        return [W / 2 + F * px / d, H / 2 - F * py / d, d];
+      }
+      const px = dx * cam.r[0] + dy * cam.r[1] + dz * cam.r[2];
+      const py = dx * cam.u[0] + dy * cam.u[1] + dz * cam.u[2];
+      const d = Math.max(0.05, depth);
+      return [W / 2 + cam.F * px / d, H / 2 - cam.F * py / d, d];
+    }
+    /* カメラからの奥行き（描く順番を決める。遠いものから描く） */
+    const depthOf = (x, y, z) => (x - cam.C[0]) * cam.f[0] + (y - cam.C[1]) * cam.f[1] + (z - cam.C[2]) * cam.f[2];
+    /* 描く順のキー（小さいものから描く）。side はもとのまま「奥行き方向の座標 y」 */
+    const keyOf = (x, y, z) => (GEN ? -depthOf(x, y, z || 0) : y);
+    const NEAR = 0.3;
+    /* カメラの後ろにはみ出した多角形・折れ線を切り落とす（side では起きないので、もとのまま） */
+    function clipPoly(pts, closed) {
+      const P = pts.map((p) => [p[0], p[1], p[2] || 0]);
+      const dep = P.map((p) => depthOf(p[0], p[1], p[2]));
+      if (dep.every((d) => d >= NEAR)) return [P];
+      if (dep.every((d) => d < NEAR)) return [];
+      const cut = (a, b, da, db) => { const k = (NEAR - da) / (db - da); return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]; };
+      if (closed) {
+        const out = [];
+        for (let i = 0; i < P.length; i++) {
+          const j = (i + 1) % P.length, a = P[i], b = P[j], da = dep[i], db = dep[j];
+          if (da >= NEAR) out.push(a);
+          if ((da >= NEAR) !== (db >= NEAR)) out.push(cut(a, b, da, db));
+        }
+        return out.length >= 3 ? [out] : [];
+      }
+      const parts = []; let cur = [];
+      for (let i = 0; i < P.length; i++) {
+        if (dep[i] >= NEAR) { if (!cur.length && i > 0 && dep[i - 1] < NEAR) cur.push(cut(P[i - 1], P[i], dep[i - 1], dep[i])); cur.push(P[i]); }
+        else if (cur.length) { cur.push(cut(P[i - 1], P[i], dep[i - 1], dep[i])); parts.push(cur); cur = []; }
+      }
+      if (cur.length) parts.push(cur);
+      return parts.filter((p) => p.length >= 2);
     }
 
     /* ---------- 選手・ボールの位置 ---------- */
@@ -170,9 +228,68 @@
       const i = bsearch(tr.slots, t, 't');
       return tr.slots[Math.max(0, i)].map;
     }
+    /* side 以外のカメラ：決まった場所から、ボールの少し前までの動きの平均（約 1.5 秒）を見る。遠いときはズームする（撮る人が寄せるのと同じ）。
+       手持ちなので、ゆっくり小さく揺れる */
+    function aimAt(t) {
+      let sx = 0, sy = 0;
+      for (let i = 0; i < 6; i++) { const b = ballAt(Math.max(0, t - i * 0.3)); sx += b.x; sy += b.y; }
+      return [sx / 6, sy / 6, 1.3];
+    }
+    function setCamGen(t) {
+      const P = PRESET, T = aimAt(t);
+      const dist = Math.hypot(T[0] - P.C[0], T[1] - P.C[1], T[2] - P.C[2]);
+      const focal = P.F0 * BS.clamp(dist / P.zoomAt, 1, P.zoomMax);
+      const j = 0.05 * dist / 10;
+      lookAt(P.C, [T[0] + j * Math.sin(t * 1.3), T[1] + j * Math.cos(t * 0.9), T[2] + j * Math.sin(t * 1.7 + 1)], focal);
+    }
+    /* side 以外のカメラで、ゴールの位置（人が指定するのと同じ：バックボードを囲む枠・リングの両端）を、t0〜t1 のよく映っているコマで返す。
+       よく映っている＝リングが画面の端から 12% 以上内側・幅 14 画素以上、ボールが 3.5 m 以上離れていて、リングの近く（1.6 m）に選手がいない */
+    function markGen(side, t0, t1) {
+      const d = side === 0 ? 1 : -1, bx = side === 0 ? 0 : CT.L;
+      const rimX = bx + d * CT.rimFromBaseline, boardX = bx + d * CT.boardFromBaseline;
+      for (let t = t0; t <= t1; t += 0.25) {
+        setCamGen(t);
+        const b = ballAt(t);
+        if (Math.hypot(b.x - rimX, b.y - 7.5, b.z - CT.rimH) < 3.5) continue;
+        let busy = false;
+        for (let k = 0; k < 10 && !busy; k++) { const q = slotPos(k, t); if (Math.hypot(q.x - rimX, q.y - 7.5) < 1.6) busy = true; }
+        if (busy) continue;
+        if (depthOf(rimX, 7.5, CT.rimH) < 2) continue;
+        let l = null, r = null;
+        for (let i = 0; i < 48; i++) {
+          const a = i / 48 * Math.PI * 2;
+          const q = proj(rimX + CT.rimR * Math.cos(a), 7.5 + CT.rimR * Math.sin(a), CT.rimH);
+          if (!l || q[0] < l[0]) l = q;
+          if (!r || q[0] > r[0]) r = q;
+        }
+        const rim = { cx: (l[0] + r[0]) / 2, cy: (l[1] + r[1]) / 2, w: Math.hypot(r[0] - l[0], r[1] - l[1]) };
+        if (rim.w < 14 || rim.cx < W * 0.12 || rim.cx > W * 0.88 || rim.cy < H * 0.12 || rim.cy > H * 0.88) continue;
+        const pts = [[boardX, 6.6, 2.87], [boardX, 8.4, 2.87], [boardX, 8.4, 3.95], [boardX, 6.6, 3.95]].map((p) => proj(p[0], p[1], p[2]));
+        const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+        const box = { x: Math.min.apply(null, xs) - 4, y: Math.min.apply(null, ys) - 4, w: Math.max.apply(null, xs) - Math.min.apply(null, xs) + 8, h: Math.max.apply(null, ys) - Math.min.apply(null, ys) + 8 };
+        if (box.x < 0 || box.y < 0 || box.x + box.w > W || box.y + box.h > H) continue;
+        return { t, box, rim };
+      }
+      return null;
+    }
+    /* その時刻に、ゴール side のリング（中心・幅）が画面のどこに映るか（正解との突き合わせ用） */
+    function rimAt(side, t) {
+      if (GEN) setCamGen(t); else setCam(WIDE ? CT.L / 2 : camX(t));
+      const d = side === 0 ? 1 : -1, rimX = (side === 0 ? 0 : CT.L) + d * CT.rimFromBaseline;
+      if (depthOf(rimX, 7.5, CT.rimH) < 1) return null;
+      let l = null, r = null;
+      for (let i = 0; i < 48; i++) {
+        const a = i / 48 * Math.PI * 2;
+        const q = proj(rimX + CT.rimR * Math.cos(a), 7.5 + CT.rimR * Math.sin(a), CT.rimH);
+        if (!l || q[0] < l[0]) l = q;
+        if (!r || q[0] > r[0]) r = q;
+      }
+      return { cx: (l[0] + r[0]) / 2, cy: (l[1] + r[1]) / 2, w: Math.hypot(r[0] - l[0], r[1] - l[1]) };
+    }
 
     /* ---------- 描画パーツ ---------- */
     function poly(pts, fill, stroke, lw) {
+      if (GEN) { const c = clipPoly(pts, true); if (!c.length) return; pts = c[0]; }
       ctx.beginPath();
       pts.forEach((p, i) => { const q = proj(p[0], p[1], p[2] || 0); if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); });
       ctx.closePath();
@@ -180,10 +297,16 @@
       if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 2; ctx.stroke(); }
     }
     function line3(pts, stroke, lw) {
+      if (GEN) { clipPoly(pts, false).forEach((part) => line3raw(part, stroke, lw)); return; }
+      line3raw(pts, stroke, lw);
+    }
+    function line3raw(pts, stroke, lw) {
       ctx.beginPath();
       pts.forEach((p, i) => { const q = proj(p[0], p[1], p[2] || 0); if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); });
       ctx.strokeStyle = stroke; ctx.lineWidth = lw || 2; ctx.stroke();
     }
+    /* 太さを持つ物（柱・リングの輪など）の、画面上の線の太さ：実際の太さ m（メートル）を、その奥行きで画素に */
+    const lwAt = (m, x, y, z) => Math.max(1, m * cam.F / Math.max(0.3, depthOf(x, y, z)));
     function arcPts(cx, cy, r, a0, a1, n, z) {
       const out = [];
       for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n; out.push([cx + r * Math.cos(a), cy + r * Math.sin(a), z || 0]); }
@@ -191,6 +314,7 @@
     }
 
     function drawEnvironment() {
+      if (GEN) { drawEnvGen(); drawCourt(); return; }
       // 壁・観客席（奥のサイドラインより向こう）
       const wl = proj(-12, -4.5, 0), wr = proj(CT.L + 12, -4.5, 0), wt = proj(cam.x, -4.5, 9.5);
       ctx.fillStyle = '#171a21';
@@ -210,6 +334,9 @@
       const g = ctx.createLinearGradient(0, floorY, 0, H);
       g.addColorStop(0, 'rgba(0,0,0,0.25)'); g.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = g; ctx.fillRect(0, floorY, W, H - floorY);
+      drawCourt();
+    }
+    function drawCourt() {
       // コート面
       poly([[0, 0], [CT.L, 0], [CT.L, CT.W], [0, CT.W]], '#d6a466');
       // 板目
@@ -245,10 +372,60 @@
       [[8.5, 12.5], [15.5, 19.5]].forEach(([a, b]) => poly([[a, -1.6], [b, -1.6], [b, -1.1], [a, -1.1]], '#3a3f4b'));
     }
 
+    /* ---------- 体育館（side 以外のカメラ用）：壁・天井・2階ギャラリーと観客・窓・ステージ・得点板 ---------- */
+    const GX0 = -7, GX1 = CT.L + 7, GY0 = -5.5, GY1 = CT.W + 5.5, GZ = 10, GAL = 4.3;
+    const fans = (function () {
+      const R = BS.rng(91), out = [];
+      const shirt = ['#c94f4f', '#3f6fd8', '#e0e0e0', '#2c2c2c', '#d9a441', '#5aa36b', '#8a5cc2', '#f07b3f', '#6b7a8f'];
+      // 横の2階ギャラリー（両側）と、ゴールB の裏のギャラリー
+      for (const yy of [GY0 + 0.8, GY1 - 0.8]) for (let x = GX0 + 2; x < GX1 - 2; x += 0.55 + R.next() * 0.5) if (!R.chance(0.25)) out.push([x, yy + R.range(-0.2, 0.2), R.pick(shirt), R.pick(['#f1c9a5', '#e0b48f', '#c99a74'])]);
+      for (let y = GY0 + 2; y < GY1 - 2; y += 0.6 + R.next() * 0.5) if (!R.chance(0.3)) out.push([GX1 - 0.8 + R.range(-0.2, 0.2), y, R.pick(shirt), R.pick(['#f1c9a5', '#e0b48f', '#c99a74'])]);
+      return out;
+    })();
+    function drawEnvGen() {
+      ctx.fillStyle = '#1d2129'; ctx.fillRect(0, 0, W, H);
+      // 天井と照明
+      poly([[GX0, GY0, GZ], [GX1, GY0, GZ], [GX1, GY1, GZ], [GX0, GY1, GZ]], '#2b2f37');
+      for (let x = 2; x < CT.L; x += 6.5) for (const y of [3, 12]) poly([[x, y, GZ - 0.05], [x + 1.2, y, GZ - 0.05], [x + 1.2, y + 0.6, GZ - 0.05], [x, y + 0.6, GZ - 0.05]], '#f4f1e2');
+      // 壁（下は腰板、上は明るい壁）と窓
+      const wall = (a, b, col) => poly([[a[0], a[1], 0], [b[0], b[1], 0], [b[0], b[1], GZ], [a[0], a[1], GZ]], col);
+      wall([GX0, GY0], [GX1, GY0], '#6f6a62'); wall([GX0, GY1], [GX1, GY1], '#6f6a62');
+      wall([GX1, GY0], [GX1, GY1], '#77716a'); wall([GX0, GY0], [GX0, GY1], '#77716a');
+      for (const [y, s] of [[GY0 + 0.02, 1], [GY1 - 0.02, -1]]) {
+        poly([[GX0, y, 0], [GX1, y, 0], [GX1, y, 1.2], [GX0, y, 1.2]], '#8a5a34');
+        for (let x = GX0 + 2; x < GX1 - 2; x += 4.2) poly([[x, y + s * 0.01, 6.6], [x + 2.6, y + s * 0.01, 6.6], [x + 2.6, y + s * 0.01, 8.8], [x, y + s * 0.01, 8.8]], '#bcd0e4');
+      }
+      // 得点板（壁の上の黒い板に赤い数字）
+      const sbY = GY0 + 0.03;
+      poly([[12, sbY, 6.4], [16, sbY, 6.4], [16, sbY, 7.9], [12, sbY, 7.9]], '#15171b');
+      for (const x0 of [12.4, 13.3, 14.4, 15.3]) poly([[x0, sbY + 0.01, 6.7], [x0 + 0.5, sbY + 0.01, 6.7], [x0 + 0.5, sbY + 0.01, 7.6], [x0, sbY + 0.01, 7.6]], '#d8322a');
+      // ステージ（ゴールB の裏。赤い幕）と床
+      const sx = GX1 - 0.03;
+      poly([[sx, 1.5, 1.0], [sx, CT.W - 1.5, 1.0], [sx, CT.W - 1.5, 6.2], [sx, 1.5, 6.2]], '#8f1d27');
+      poly([[GX0, GY0, 0], [GX1, GY0, 0], [GX1, GY1, 0], [GX0, GY1, 0]], '#a87545');
+      poly([[GX1 - 3.5, 1.0, 1.0], [GX1 - 3.5, CT.W - 1.0, 1.0], [GX1 - 3.5, CT.W - 1.0, 0], [GX1 - 3.5, 1.0, 0]], '#5a3a26');
+      poly([[GX1 - 3.5, 1.0, 1.0], [GX1, 1.0, 1.0], [GX1, CT.W - 1.0, 1.0], [GX1 - 3.5, CT.W - 1.0, 1.0]], '#7a5232');
+      // 2階ギャラリー（床の縁と手すり）と観客
+      const gal = (a, b) => {
+        poly([[a[0], a[1], GAL - 0.25], [b[0], b[1], GAL - 0.25], [b[0], b[1], GAL], [a[0], a[1], GAL]], '#4a4f5c');
+        line3([[a[0], a[1], GAL + 1.0], [b[0], b[1], GAL + 1.0]], '#9aa3b2', lwAt(0.05, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, GAL + 1));
+      };
+      gal([GX0, GY0 + 1.5], [GX1, GY0 + 1.5]); gal([GX0, GY1 - 1.5], [GX1, GY1 - 1.5]); gal([GX1 - 1.5, GY0], [GX1 - 1.5, GY1]); gal([GX0 + 1.5, GY0], [GX0 + 1.5, GY1]);
+      for (const f of fans) {
+        if (depthOf(f[0], f[1], GAL + 1.2) < NEAR) continue;
+        const b = proj(f[0], f[1], GAL + 1.0), hd = proj(f[0], f[1], GAL + 1.6);
+        const s = cam.F / b[2];
+        if (s < 1) continue;
+        ctx.fillStyle = f[2]; ctx.fillRect(b[0] - 0.2 * s, hd[1] + 0.1 * s, 0.4 * s, b[1] - hd[1]);
+        ctx.fillStyle = f[3]; ctx.beginPath(); ctx.arc(hd[0], hd[1], 0.11 * s, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
     /* swish: 得点からの経過秒（そのゴールでネットが揺れている間だけ。それ以外は -1） */
     const rimHits = tr.rimHits || [];
     function rimHitAt(side, t) { let best = null; for (const hh of rimHits) { if (hh.side === side && hh.t <= t && t - hh.t <= 0.6) best = hh; } return best; }
     function drawHoop(side, list, swish, amp, vib) {
+      if (GEN) { drawHoopGen(side, list, swish, amp, vib); return; }
       if (amp == null) amp = 1;
       const d = side === 0 ? 1 : -1;
       const bx = side === 0 ? 0 : CT.L;
@@ -295,10 +472,68 @@
       list.push({ y: 7.5 - 0.3, draw() { back(); strings('back'); line3(arcPts(rimX, 7.5, CT.rimR, Math.PI, Math.PI * 2, 10, rz), '#ff6a1a', 3); } });
       list.push({ y: 7.5 + 0.3, draw() { strings('front'); line3(arcPts(rimX, 7.5, CT.rimR, 0, Math.PI, 10, rz), '#ff6a1a', 3); } });
     }
+    /* side 以外のカメラ用のゴール：天井から吊るす形・ガラスのバックボード（白い枠と内側の四角）。
+       リングとネットは、カメラから見て奥の半分と手前の半分に分けて描く（輪の中を通るボールは、その間に描かれる）。
+       ボード・支柱も、それぞれの奥行きの順に描く（ゴールの裏から見ると、ボードはリングより手前＝ガラス越しにリングが見える） */
+    function drawHoopGen(side, list, swish, amp, vib) {
+      if (amp == null) amp = 1;
+      const d = side === 0 ? 1 : -1;
+      const bx = side === 0 ? 0 : CT.L;
+      const rimX = bx + d * CT.rimFromBaseline;
+      const boardX = bx + d * CT.boardFromBaseline;
+      let e = 0, wob = 0;
+      if (swish >= 0) {
+        if (swish <= 0.6) { e = Math.sin(Math.PI * swish / 0.6); wob = e; }
+        else { wob = 0.35 * (1 - (swish - 0.6) / 0.3); e = wob * Math.sin((swish - 0.6) * 38); }
+        e *= amp; wob *= amp;
+      }
+      const rz = CT.rimH + (vib || 0);
+      const dR = depthOf(rimX, 7.5, rz);
+      // カメラから見て、リングのどちら側が奥か（カメラ→リングの中心の向き）
+      const phi = Math.atan2(7.5 - cam.C[1], rimX - cam.C[0]);
+      const farSide = (a) => Math.cos(a - phi) > 0;
+      const strings = (far) => {
+        for (let i = 0; i < 12; i++) {
+          const a = i / 12 * Math.PI * 2;
+          if (farSide(a) !== far) continue;
+          const tw = wob ? 0.22 * wob * Math.sin(swish * 40 + i * 1.7) : 0;
+          const rm = 0.1775 + 0.085 * e, rb = 0.13 + 0.1 * e;
+          line3([[rimX + CT.rimR * Math.cos(a), 7.5 + CT.rimR * Math.sin(a), rz],
+            [rimX + rm * Math.cos(a + 0.15 + tw * 0.5), 7.5 + rm * Math.sin(a + 0.15 + tw * 0.5), rz - 0.21],
+            [rimX + rb * Math.cos(a + 0.3 + tw), 7.5 + rb * Math.sin(a + 0.3 + tw), rz - 0.42 - 0.06 * e]], 'rgba(255,255,255,0.85)', lwAt(0.012, rimX, 7.5, rz));
+        }
+      };
+      const rimArc = (far) => line3(arcPts(rimX, 7.5, CT.rimR, far ? phi - Math.PI / 2 : phi + Math.PI / 2, far ? phi + Math.PI / 2 : phi + Math.PI * 1.5, 12, rz), '#ff6a1a', lwAt(0.025, rimX, 7.5, rz));
+      list.push({ y: -(dR + 0.25), draw() { strings(true); rimArc(true); } });
+      list.push({ y: -(dR - 0.25), draw() { strings(false); rimArc(false); } });
+      // ガラスのボード（うっすら色が付く程度）。白い枠・内側の四角・下の縁のパッド
+      const lwB = lwAt(0.05, boardX, 7.5, 3.4);
+      list.push({
+        y: -depthOf(boardX, 7.5, 3.42), draw() {
+          poly([[boardX, 6.6, 2.9], [boardX, 8.4, 2.9], [boardX, 8.4, 3.95], [boardX, 6.6, 3.95]], 'rgba(225,238,255,0.16)', '#f2f2f2', lwB);
+          poly([[boardX, 7.205, 3.05], [boardX, 7.795, 3.05], [boardX, 7.795, 3.5], [boardX, 7.205, 3.5]], null, '#f2f2f2', lwB);
+          poly([[boardX, 6.6, 2.87], [boardX, 8.4, 2.87], [boardX, 8.4, 2.94], [boardX, 6.6, 2.94]], '#30343c');
+          // リングをボードに留める金具
+          line3([[boardX, 7.5, rz - 0.05], [rimX - d * CT.rimR, 7.5, rz]], '#d65a1c', lwAt(0.04, boardX, 7.5, rz));
+        }
+      });
+      // 天井から吊るす支柱（ボードの裏）
+      const sX = boardX - d * 0.3;
+      const lwS = lwAt(0.08, sX, 7.5, 5);
+      list.push({
+        y: -depthOf(sX, 7.5, 5.5), draw() {
+          for (const yy of [6.95, 8.05]) line3([[sX, yy, 2.95], [sX, yy, GZ]], '#4b505c', lwS);
+          line3([[sX, 6.95, 3.0], [sX, 8.05, 3.0]], '#4b505c', lwS);
+          line3([[sX, 6.95, 3.95], [sX, 8.05, 3.95]], '#4b505c', lwS);
+          for (const zz of [3.15, 3.8]) line3([[sX, 7.5, zz], [boardX, 7.5, zz]], '#4b505c', lwS);
+          line3([[sX, 7.5, 4.4], [sX - d * 2.6, 7.5, GZ]], '#4b505c', lwS);
+        }
+      });
+    }
 
     function drawPerson(o) {
       const foot = proj(o.x, o.y, 0);
-      const s = F / foot[2];
+      const s = cam.F / foot[2];
       const up = proj(o.x, o.y, o.z)[1] - foot[1];
       const fx = foot[0], fy = foot[1] + up;
       const h = (o.h || 1.8) * s;
@@ -422,7 +657,7 @@
     function draw(t) {
       t = BS.clamp(t, 0, game.duration);
       const panX = camX(t);                 // ボールを追う位置（全景カメラは動かないが、審判はこの位置を追う）
-      setCam(WIDE ? CT.L / 2 : panX);
+      if (GEN) setCamGen(t); else setCam(WIDE ? CT.L / 2 : panX);
       drawEnvironment();
       const map = slotMapAt(t);
       const ball = ballAt(t);
@@ -442,7 +677,7 @@
       // 審判（ボールを追う）
       const refX1 = BS.clamp(panX + 3.5, 2, CT.L - 2), refX2 = BS.clamp(panX - 5.5, 1.5, CT.L - 1.5);
       [[refX1, -0.55, 0], [refX2, -0.35, 1]].forEach(([x, y, k]) => {
-        list.push({ y, draw: () => drawPerson({ x: x + Math.sin(t * 0.8 + k) * 0.4, y, z: 0, h: 1.76, speed: 1.2, t, main: '#2a2a2a', trim: '#cccccc', text: '#fff', skin: SKINS[k], hair: HAIRS[0], shoe: '#111', no: '' }) });
+        list.push({ y: keyOf(x, y, 0), draw: () => drawPerson({ x: x + Math.sin(t * 0.8 + k) * 0.4, y, z: 0, h: 1.76, speed: 1.2, t, main: '#2a2a2a', trim: '#cccccc', text: '#fff', skin: SKINS[k], hair: HAIRS[0], shoe: '#111', no: '' }) });
       });
       for (let s = 0; s < 10; s++) {
         const pid = map[s];
@@ -455,7 +690,7 @@
         let bscr = null;
         if (ball.holder === s) { const q = proj(ball.x, ball.y, ball.z); bscr = [q[0], q[1]]; }
         list.push({
-          y: p.y, draw: () => drawPerson({
+          y: keyOf(p.x, p.y, 0), draw: () => drawPerson({
             x: p.x, y: p.y, z, h: 1.72 + (s % 5) * 0.045, speed: p.speed, t: t + s * 0.37,
             main: col.main, trim: col.trim, text: col.text, skin: SKINS[(s * 7 + info.no.length) % SKINS.length], hair: HAIRS[s % HAIRS.length], shoe: s < 5 ? '#f4f4f4' : '#1b1b1b',
             no: info.no, pose: ps ? ps.k : (holding ? null : null), ball: bscr
@@ -463,13 +698,13 @@
         });
       }
       list.push({
-        y: ball.y + 0.001, draw: () => {
+        y: GEN ? keyOf(ball.x, ball.y, ball.z) + 0.001 : ball.y + 0.001, draw: () => {
           const sh = proj(ball.x, ball.y, 0);
-          const s = F / sh[2];
+          const s = cam.F / sh[2];
           ctx.fillStyle = 'rgba(0,0,0,0.3)';
           ctx.beginPath(); ctx.ellipse(sh[0], sh[1], 0.14 * s, 0.05 * s, 0, 0, Math.PI * 2); ctx.fill();
           const q = proj(ball.x, ball.y, ball.z);
-          const r = Math.max(3, 0.125 * F / q[2]);
+          const r = Math.max(GEN ? 1.5 : 3, 0.125 * cam.F / q[2]);
           const g = ctx.createRadialGradient(q[0] - r * 0.3, q[1] - r * 0.3, r * 0.2, q[0], q[1], r);
           g.addColorStop(0, '#ffa04d'); g.addColorStop(1, '#c4520f');
           ctx.fillStyle = g;
@@ -520,7 +755,7 @@
       return { t, box, rim: { cx: (l[0] + r[0]) / 2, cy: (l[1] + r[1]) / 2, w: Math.hypot(r[0] - l[0], r[1] - l[1]) } };
     }
 
-    return { draw, canvas, ballAt, slotPos, camX, game, hoopMark };
+    return { draw, canvas, ballAt, slotPos, camX, game, hoopMark, markGen, rimAt, view: VIEW };
   }
 
   BS.Renderer = Renderer;
