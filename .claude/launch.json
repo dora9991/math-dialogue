@@ -96,6 +96,12 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8785", "--directory", "home"],
       "port": 8785
+    },
+    {
+      "name": "minibasket",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8786", "--directory", "minibasket"],
+      "port": 8786
     }
   ]
 }
