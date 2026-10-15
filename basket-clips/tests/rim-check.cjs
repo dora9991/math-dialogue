@@ -1,7 +1,7 @@
 // リングに当たってから入る／外れるシュートを、どれだけ正しく見分けられるかを確かめる（検証・調整用）
 //   node basket-clips/tests/rim-check.cjs <動画.mp4> [dev|built] [ログの保存先.json]
 //   動画は tests/tools/make-video.cjs で rim を付けて作ったもの（正解は 動画.mp4.json）。
-//   画面を通して（ファイル選択 → ゴールをドラッグで指定 → 探す）解析し、シュートの形（きれいに入った・リングで弾んで入った・弾んで外れた…）ごとに、
+//   画面を通して（ファイル選択 → ゴールのリングをなぞって指定 → 探す）解析し、シュートの形（きれいに入った・リングで弾んで入った・弾んで外れた…）ごとに、
 //   「得点と判定」「外れと判定」「見つからない」を数える。ログの保存先を渡すと、コマごとのボール候補の記録も保存する（tests/rim-replay.cjs で使う）。
 const fs = require('fs');
 const path = require('path');
@@ -56,7 +56,8 @@ async function analyse(file, mode, logOut) {
     await page.goto(srv.url);
     await page.waitForFunction(() => window.BS && BS.app && document.querySelector('#stepVideo'));
     // OCCL=0 で、リングが隠れたコマを使わない（もとの動き）。比べるとき用
-    await page.evaluate((occl) => { localStorage.clear(); BS.app.S.debug = true; if (occl === '0') BS.app.S.rimOcclusion = false; }, process.env.OCCL || '');
+    // FASTSCALE=0／1：倍率の追従をもとの動き／毎コマ1段に。BOXMODE=rim：追跡の枠をリングから決まった形で（模様で選ばない）。比べるとき用
+    await page.evaluate(([occl, fs, bm]) => { localStorage.clear(); BS.app.S.debug = true; BS.app.S.autoGoals = false; if (occl === '0') BS.app.S.rimOcclusion = false; if (fs === '0') BS.app.S.fastScale = false; else if (fs === '1') BS.app.S.fastScale = 1; if (bm) BS.app.S.boxMode = bm; }, [process.env.OCCL || '', process.env.FASTSCALE || '', process.env.BOXMODE || '']);
     await page.setInputFiles('#fileVideo', file);
     await page.waitForFunction(() => BS.app.S.media && BS.app.S.media.ready && BS.app.duration() > 5, null, { timeout: 30000 });
     const scr = (x, y) => page.evaluate(([x, y]) => BS.app.toScreen(x, y), [x, y]);
@@ -66,8 +67,8 @@ async function analyse(file, mode, logOut) {
       await page.evaluate((t) => BS.app.seek(t), m.t);
       await sleep(400);
       await page.click('#btnMark' + i);
-      await drag(await scr(m.box.x, m.box.y), await scr(m.box.x + m.box.w, m.box.y + m.box.h));
-      await drag(await scr(m.rim.cx - m.rim.w / 2, m.rim.cy), await scr(m.rim.cx + m.rim.w / 2, m.rim.cy));
+      // リングの左端から右端までなぞる（小さいと拡大されるので、拡大された映像でもう一度）
+      for (let k = 0; k < 2 && await page.evaluate(() => !!BS.app.S.marking); k++) await drag(await scr(m.rim.cx - m.rim.w / 2, m.rim.cy), await scr(m.rim.cx + m.rim.w / 2, m.rim.cy));
     }
     await page.click('.teambtn[data-hoop="0"][data-team="1"]');
     await page.click('#btnRun');

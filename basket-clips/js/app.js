@@ -23,7 +23,8 @@
     tab: 0, openSetup: false, openHow: null, openMaybe: false,
     reel: { active: false, list: [], i: -1, label: '', team: 0 },
     exporting: null, out: [null, null],
-    thumbs: {}, thumbJob: null, saveTimer: 0, debug: false, lastLog: null
+    thumbs: {}, thumbJob: null, saveTimer: 0, debug: false, lastLog: null,
+    finding: null, autoGoals: true       // finding：ゴールを自動で探している途中（findGoals）。autoGoals：動画を開いたら自動で探すか（テストで止める）
   };
 
   /* ---------- 小さな道具 ---------- */
@@ -60,6 +61,7 @@
     if (S.exporting) { BS.ui.toast('書き出し中です。終わってから開いてください', 'warn'); return; }
     stopReel(true);
     cancelMarking();
+    cancelFind();
     if (S.thumbJob) S.thumbJob.cancel = true;
     if (S.media) S.media.destroy();
     const m = BS.createVideoMedia(file);
@@ -74,7 +76,12 @@
     m.on('time', onTime);
     m.on('play', updatePlayBtn);
     m.on('pause', updatePlayBtn);
-    m.on('ready', () => { render(); drawTimeline(); drawOverlay(); if (S.st.result) makeThumbs(); });
+    m.on('ready', () => {
+      render(); drawTimeline(); drawOverlay();
+      if (S.st.result) makeThumbs();
+      // ゴールがまだなら、自動で探す（前に探した動画・自分で教えた動画では探さない。ゴールの絵だけ作る）
+      if (!S.st.hoops.some(Boolean) && !S.st.autoTried && S.autoGoals !== false) findGoals(); else makeHoopThumbs();
+    });
     m.on('error', () => BS.ui.toast('この動画は、このブラウザでは再生できないようです（MP4・MOV をお試しください）', 'err', 7000));
     m.on('notice', (t) => BS.ui.toast(t, 'warn', 6000));
     document.body.classList.add('has-video');
@@ -99,7 +106,6 @@
     const s = `${BS.fmtTime(t)} / ${BS.fmtTime(duration())}`;
     if (tt && s !== lastTimeText) { lastTimeText = s; tt.textContent = s; }
     reelTick(t);
-    if (S.marking) markingTimeCheck(t);
     drawTimeline();
     if (!S.running) drawOverlay();
   }
@@ -182,47 +188,29 @@
   }
 
   /* ③ ゴール */
-  const FIG = '<svg viewBox="0 0 330 122" role="img" aria-label="ゴールの指定のしかた：バックボードを囲み、次にリングの左端から右端までなぞる">' +
-    '<defs><clipPath id="figClip2"><rect x="0" y="0" width="155" height="96" rx="8"/></clipPath></defs>' +
-    '<g><rect x="0" y="0" width="155" height="96" rx="8" fill="#26334d"/>' +
-    '<rect x="42" y="18" width="72" height="44" rx="2" fill="#e5e7eb" stroke="#94a3b8"/><rect x="66" y="38" width="24" height="18" fill="none" stroke="#64748b" stroke-width="2"/>' +
-    '<ellipse cx="78" cy="65" rx="13" ry="3.5" fill="none" stroke="#f97316" stroke-width="3"/>' +
-    '<path d="M66 67 L70 84 M73 69 L74 84 M83 69 L82 84 M90 67 L86 84 M70 84 L86 84" stroke="#e5e7eb" stroke-width="1" fill="none"/>' +
-    '<rect x="35" y="11" width="86" height="57" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="6 4"/>' +
-    '<circle cx="35" cy="11" r="4" fill="#fbbf24"/><path d="M121 68 l-10 -1 l6 -8 z" fill="#fbbf24"/>' +
-    '<text x="77" y="114" text-anchor="middle" fill="currentColor" font-size="11.5">① 板（バックボード）を囲む</text></g>' +
-    '<path d="M159 48 l10 0 m-4 -4 l4 4 l-4 4" stroke="#94a3b8" stroke-width="2" fill="none"/>' +
-    '<g transform="translate(175,0)"><rect x="0" y="0" width="155" height="96" rx="8" fill="#26334d"/>' +
-    '<g clip-path="url(#figClip2)"><rect x="8" y="-40" width="139" height="72" rx="2" fill="#e5e7eb" stroke="#94a3b8"/><rect x="52" y="-6" width="52" height="34" fill="none" stroke="#64748b" stroke-width="3"/>' +
-    '<ellipse cx="78" cy="46" rx="38" ry="9" fill="none" stroke="#f97316" stroke-width="5"/>' +
-    '<path d="M42 50 L54 92 M58 54 L64 92 M78 55 L78 92 M98 54 L92 92 M114 50 L102 92 M50 72 L106 72" stroke="#e5e7eb" stroke-width="1.5" fill="none"/></g>' +
-    '<path d="M40 46 L116 46" stroke="#fde047" stroke-width="3"/><circle cx="40" cy="46" r="4.5" fill="#fde047"/><path d="M116 46 l-9 -5 l0 10 z" fill="#fde047"/>' +
-    '<text x="77" y="114" text-anchor="middle" fill="currentColor" font-size="11.5">② リングの左端 → 右端をなぞる</text></g></svg>';
   function stepGoals() {
     const st = S.st;
     const nMark = st.hoops.filter(Boolean).length;
-    const card = h('section', { class: 'card step', id: 'stepGoals' }, stepHead(3, 'ゴールを教える', '最初の1回だけ・ゴール1つにドラッグ2回', nMark >= 2));
-    if (!S.media) { card.append(h('p', { class: 'note' }, '動画を選ぶと、ここでゴールを教えられます。')); return card; }
-    const how = h('details', { class: 'howto' }, h('summary', null, 'やり方（絵で見る）'),
-      h('div', { class: 'howfig', html: FIG }),
-      h('ol', null,
-        h('li', null, '映像の下のバーを動かして、ゴールが', h('b', null, '大きく・はっきり'), '映っている場面で止める（板の前に人やボールが重なっていないコマ）'),
-        h('li', null, '「このゴールを指定する」を押して、', h('b', null, 'バックボード（板）全体'), 'をドラッグで囲む'),
-        h('li', null, '拡大されるので、', h('b', null, 'リング（輪）の左端から右端まで'), 'をドラッグでなぞる'),
-        h('li', null, 'もう1つのゴールも、映っている場面で同じように')));
-    how.open = S.openHow != null ? S.openHow : nMark < 2;
-    how.querySelector('summary').addEventListener('click', () => { S.openHow = !how.open; });
-    card.append(how);
+    const card = h('section', { class: 'card step', id: 'stepGoals' }, stepHead(3, 'ゴール', '自動で探します・合っているか見るだけ', nMark >= 2 && !S.finding));
+    if (!S.media) { card.append(h('p', { class: 'note' }, '動画を選ぶと、ゴールを自動で探します。')); return card; }
+    if (S.finding) {
+      const f = S.finding;
+      card.append(h('div', { class: 'finding' },
+        h('b', null, '🔍 ゴールを探しています… '), h('span', { class: 'note', id: 'findLabel' }, f.n ? `${f.i} / ${f.n}` : ''),
+        h('div', { class: 'progress' }, h('i', { id: 'findBar', style: { width: (f.n ? 100 * f.i / f.n : 0).toFixed(0) + '%' } })),
+        h('button', { class: 'btn small', id: 'btnFindStop', onclick: cancelFind }, 'やめて、自分で教える')));
+    }
     if (S.marking) {
       const mk = S.marking;
       card.append(h('div', { class: 'markcard' },
-        h('b', null, `${HOOP[mk.i]} を指定中：`),
-        mk.step === -1 ? ' まず、映像の上でゴールのあたりを1回クリック（そこを拡大します）。' : mk.step === 0 ? ' 映像の上で、バックボード（板）全体をドラッグで囲んでください。' : ' 次に、リング（輪）の左端から右端まで、ぴったりなぞってください。',
+        h('b', null, `${HOOP[mk.i]} を教える：`),
+        mk.step === 0 ? ' 映像を、このゴールがはっきり映っている場面で止めて、リング（輪）のあたりをタップ（クリック）してください。リングの左端から右端までなぞっても指定できます。' : ' 拡大しました。リング（輪）の左端から右端まで、ドラッグでなぞってください。',
         h('div', { class: 'row', style: { marginTop: '6px' } },
-          mk.step === 1 ? h('button', { class: 'btn small', onclick: () => { mk.step = 0; mk.box = null; mk.view = mk.pre || null; render(); drawOverlay(); } }, '囲み直す') : null,
+          mk.step === 1 ? h('button', { class: 'btn small', onclick: () => { mk.step = 0; mk.view = null; render(); drawOverlay(); } }, '拡大をやめる') : null,
           h('button', { class: 'btn small', onclick: cancelMarking }, 'やめる'),
           h('span', { class: 'note' }, 'Esc でもやめられます'))));
     }
+    const HOW = { auto: '自動で見つけました', tap: 'タップした所から見つけました', trace: 'なぞって指定しました' };
     [0, 1].forEach((i) => {
       const m = st.hoops[i];
       const att = h('div', { class: 'attack' }, h('span', { class: 'note' }, '動画のはじめに、このゴールを攻めているのは？'),
@@ -230,14 +218,30 @@
           class: 'btn small teambtn' + (st.hoopTeam[i] === tm ? ' on' : ''), dataset: { hoop: i, team: tm },
           onclick: () => { st.hoopTeam[i] = tm; st.hoopTeam[1 - i] = 1 - tm; save(); render(); drawTimeline(); }
         }, h('span', { class: 'chip', style: { background: teamColor(tm) } }), teamTag(tm)))));
+      const state = m ? `✓ ${HOW[m.how] || '指定ずみ'}（${BS.fmtTime(m.t)} のコマ）` : S.finding ? '探しています…' : st.autoTried ? '自動では見つかりませんでした' : 'まだです';
       card.append(h('div', { class: 'goal' + (m ? ' done' : '') },
-        h('div', { class: 'goal-h' }, h('b', { style: { color: HOOP_COL[i] } }, '■ '), h('b', null, HOOP[i]), h('span', { class: 'note' }, m ? `✓ 指定ずみ（${BS.fmtTime(m.t)} のコマ）` : '未指定')),
+        h('div', { class: 'goal-h' }, h('b', { style: { color: HOOP_COL[i] } }, '■ '), h('b', null, HOOP[i]), h('span', { class: 'note' }, state)),
+        m && S.thumbs['hoop' + i] ? h('div', { class: 'thumbrow' }, S.thumbs['hoop' + i], h('span', { class: 'note' }, '黄色の線が、リング（輪）にぴったり重なっていれば OK です。ずれていたら「ちがう・直す」')) : null,
         h('div', { class: 'row' },
-          h('button', { class: 'btn small ' + (m ? '' : 'primary'), id: 'btnMark' + i, disabled: !!S.running, onclick: () => startMarking(i) }, m ? '指定し直す' : 'このゴールを指定する'),
-          m ? h('button', { class: 'btn small', onclick: () => seek(m.t).then(() => { S.thumbs['hoop' + i] = hoopThumb(i); render(); }) }, '指定したコマへ') : null),
-        m && S.thumbs['hoop' + i] ? h('div', { class: 'thumbrow' }, S.thumbs['hoop' + i], h('span', { class: 'note' }, '枠＝バックボード、黄色の線＝リング。ずれていたら「指定し直す」')) : null,
+          h('button', { class: 'btn small ' + (m ? '' : 'primary'), id: 'btnMark' + i, disabled: !!S.running, onclick: () => startMarking(i) }, m ? 'ちがう・直す' : 'このゴールを教える'),
+          m ? h('button', { class: 'btn small', onclick: () => seek(m.t) }, 'このコマへ') : null),
         att));
     });
+    if (!S.finding && !S.running) {
+      card.append(h('div', { class: 'row' },
+        h('button', { class: 'btn small', id: 'btnFind', onclick: () => findGoals() }, '🔍 もう一度、自動で探す'),
+        h('span', { class: 'note' }, '自分で教えたゴールは、そのままです')));
+    }
+    const how = h('details', { class: 'howto' }, h('summary', null, '自動で見つからない・ずれているとき'),
+      h('ol', null,
+        h('li', null, 'そのゴールの「ちがう・直す」（まだのときは「このゴールを教える」）を押す'),
+        h('li', null, '映像の下のバーを動かして、そのゴールが', h('b', null, 'はっきり映っている場面'), 'で止める'),
+        h('li', null, h('b', null, 'リング（輪）のあたりをタップ'), '（クリック）する。リングを見つけると、黄色の線で示します'),
+        h('li', null, '見つからないときは拡大されるので、', h('b', null, 'リングの左端から右端まで'), 'をドラッグでなぞる')),
+      h('p', { class: 'note' }, 'ゴールの裏から撮った映像でも、同じように教えられます（ガラスのボード越しに見えるリングをタップ）。'));
+    how.open = S.openHow != null ? S.openHow : false;
+    how.querySelector('summary').addEventListener('click', () => { S.openHow = !how.open; });
+    card.append(how);
     // カメラの種類（三脚で固定してコート全体を撮った映像は、ゴールを追わずに見張る）
     card.append(h('label', { class: 'switch' },
       h('input', { type: 'checkbox', id: 'optFixed', checked: !!st.fixed, disabled: !!S.running, onchange: (e) => { st.fixed = e.target.checked; save(); render(); drawOverlay(); } }),
@@ -264,7 +268,7 @@
   function stepRun() {
     const nMark = S.st.hoops.filter(Boolean).length;
     const card = h('section', { class: 'card step', id: 'stepRun' }, stepHead(4, '得点シーンを探す', null, !!S.st.result && !stale()));
-    if (!S.media) { card.append(h('p', { class: 'note' }, '動画を選んで、ゴールを教えると、ここで探せます。')); return card; }
+    if (!S.media) { card.append(h('p', { class: 'note' }, '動画を選んで、ゴールを確かめると、ここで探せます。')); return card; }
     if (S.running) {
       card.append(h('b', null, '探しています… '), h('span', { id: 'runLabel', class: 'note' }, ''),
         h('div', { class: 'progress' }, h('i', { id: 'runBar' })),
@@ -274,8 +278,8 @@
       return card;
     }
     card.append(h('div', { class: 'row' },
-      h('button', { class: 'btn primary big', id: 'btnRun', disabled: !nMark, onclick: () => run() }, S.st.result ? '⚡ もう一度探す' : '⚡ 得点シーンを探す'),
-      h('span', { class: 'note' }, nMark ? `目安 ${BS.fmtTime(duration() / 3)}（パソコンの速さで変わります）${nMark === 1 ? '。ゴールが1つだけなので、もう片方のゴールの得点は見つかりません' : ''}` : '先に ③ でゴールを指定してください')));
+      h('button', { class: 'btn primary big', id: 'btnRun', disabled: !nMark || !!S.finding, onclick: () => run() }, S.st.result ? '⚡ もう一度探す' : '⚡ 得点シーンを探す'),
+      h('span', { class: 'note' }, nMark ? `目安 ${BS.fmtTime(duration() / 3)}（パソコンの速さで変わります）${nMark === 1 ? '。ゴールが1つだけなので、もう片方のゴールの得点は見つかりません' : ''}` : S.finding ? 'ゴールを探しています。終わるまでお待ちください' : '先に ③ でゴールを教えてください')));
     if (stale()) card.append(h('p', { class: 'note warn' }, '⚠ ゴールの指定を変えました。もう一度探すと、新しい指定で探し直します。'));
     return card;
   }
@@ -582,27 +586,120 @@
   }
 
   /* ---------- サムネイル（場面の小さな絵） ---------- */
-  function hoopThumb(i) {
+  /* ゴールの絵：指定したコマの、リングのまわりを拡大して、リングを黄色で描く。src：描く映像（省略時は画面の映像。いまのコマ） */
+  function hoopThumb(i, src) {
     const m = S.st.hoops[i];
     if (!m || !S.media) return null;
-    const W = S.media.width, H = S.media.height;
-    const pad = Math.max(m.box.w, m.box.h) * 0.3;
-    const x0 = Math.max(0, m.box.x - pad), y0 = Math.max(0, m.box.y - pad);
-    const x1 = Math.min(W, m.box.x + m.box.w + pad), y1 = Math.min(H, Math.max(m.box.y + m.box.h, m.rim.cy + m.rim.w * 0.9) + pad);
+    const W = S.media.width, H = S.media.height, rw = m.rim.w;
+    const x0 = Math.max(0, m.rim.cx - 2.2 * rw), x1 = Math.min(W, m.rim.cx + 2.2 * rw);
+    const y0 = Math.max(0, m.rim.cy - 1.6 * rw), y1 = Math.min(H, m.rim.cy + 1.3 * rw);
     const sw = x1 - x0, sh = y1 - y0;
     if (sw < 4 || sh < 4) return null;
-    const k = Math.min(190 / sw, 120 / sh);
+    const k = Math.min(220 / sw, 150 / sh);
     const cv = document.createElement('canvas');
     cv.width = Math.round(sw * k * 2); cv.height = Math.round(sh * k * 2);
     cv.style.width = Math.round(sw * k) + 'px'; cv.style.height = Math.round(sh * k) + 'px';
     cv.className = 'hoopthumb';
     const g = cv.getContext('2d');
-    try { g.drawImage(S.media.el, x0, y0, sw, sh, 0, 0, cv.width, cv.height); } catch (e) { return null; }
+    try { g.drawImage(src || S.media.el, x0, y0, sw, sh, 0, 0, cv.width, cv.height); } catch (e) { return null; }
     const q = cv.width / sw;
-    g.strokeStyle = HOOP_COL[i]; g.lineWidth = 3; g.strokeRect((m.box.x - x0) * q, (m.box.y - y0) * q, m.box.w * q, m.box.h * q);
-    g.strokeStyle = '#fde047'; g.lineWidth = 4; g.beginPath(); g.moveTo((m.rim.cx - m.rim.w / 2 - x0) * q, (m.rim.cy - y0) * q); g.lineTo((m.rim.cx + m.rim.w / 2 - x0) * q, (m.rim.cy - y0) * q); g.stroke();
+    const cx = (m.rim.cx - x0) * q, cy = (m.rim.cy - y0) * q, a = rw / 2 * q, b = (m.rim.b || rw * 0.14) * q;
+    // 黄色の楕円（見やすいよう、黒いふちどり）
+    [['rgba(0,0,0,0.65)', 6], ['#fde047', 3]].forEach(([col, lw]) => { g.strokeStyle = col; g.lineWidth = lw; g.beginPath(); g.ellipse(cx, cy, Math.max(2, a), Math.max(2, b), 0, 0, Math.PI * 2); g.stroke(); });
     return cv;
   }
+  /* 見えない別の <video>（指定したコマの絵・ゴールの自動検出に使う。再生中の映像を動かさない） */
+  function hiddenVideo() {
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.preload = 'auto';
+    v.style.cssText = 'position:fixed;left:-10px;top:-10px;width:2px;height:2px;opacity:0;pointer-events:none';
+    document.body.appendChild(v);
+    const once = (ev, ms) => new Promise((res) => { let done = false; const f = () => { if (done) return; done = true; v.removeEventListener(ev, f); res(); }; v.addEventListener(ev, f); setTimeout(f, ms); });
+    return { v, once, close() { v.removeAttribute('src'); v.load(); v.remove(); } };
+  }
+  /* ゴールの絵を、そのコマへ移って作る（開き直したとき・自動で見つけたとき） */
+  async function makeHoopThumbs() {
+    if (!S.media) return;
+    const media = S.media;
+    const todo = [0, 1].filter((i) => S.st.hoops[i] && !S.thumbs['hoop' + i]);
+    if (!todo.length) return;
+    const hv = hiddenVideo();
+    try {
+      hv.v.src = media.url;
+      await hv.once('loadeddata', 8000);
+      for (const i of todo) {
+        const m = S.st.hoops[i];
+        if (!m || S.media !== media) break;
+        hv.v.currentTime = m.t;
+        await hv.once('seeked', 4000);
+        const cv = hoopThumb(i, hv.v);
+        if (cv && S.st.hoops[i] === m) S.thumbs['hoop' + i] = cv;
+      }
+    } catch (e) { /* 絵がなくても使える */ }
+    hv.close();
+    if (S.media === media && !S.marking) render();
+  }
+
+  /* ---------- ゴールの自動検出（goalfind.js） ----------
+     動画全体から間をあけて取り出したコマ（12〜36 コマ）で、リング（オレンジの細い輪）とその下のネットを探し、
+     何コマにも同じ見た目で映っているもの2つを、ゴールA・B にする。自分で教えたゴールはそのまま、残りだけ入れ替える */
+  async function findGoals() {
+    if (!S.media || !S.media.ready || S.finding || S.running || S.exporting || !BS.goalfind) return;
+    const media = S.media, key = S.key, st = S.st;
+    cancelMarking();
+    const keepIdx = [0, 1].filter((i) => st.hoops[i] && st.hoops[i].how !== 'auto');
+    if (keepIdx.length >= 2) { BS.ui.toast('ゴールは2つとも、自分で教えたものを使っています', 'warn'); return; }
+    const job = S.finding = { cancel: false, i: 0, n: 0 };
+    render();
+    const hv = hiddenVideo();
+    let goals = [], ok = false;
+    try {
+      hv.v.src = media.url;
+      await hv.once('loadeddata', 8000);
+      const W = media.width, H = media.height, dur = duration();
+      const k = Math.max(1, W / 1280);
+      const cw = Math.round(W / k), ch = Math.round(H / k);
+      const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+      const g = cv.getContext('2d', { willReadFrequently: true });
+      const grab = async (t) => { hv.v.currentTime = t; await hv.once('seeked', 4000); g.drawImage(hv.v, 0, 0, cw, ch); return g.getImageData(0, 0, cw, ch).data; };
+      // 自分で教えたゴールの見た目（同じゴールを、もう1つのゴールとして選ばないため）
+      const known = [];
+      for (const i of keepIdx) { const m = st.hoops[i]; known.push(BS.goalfind.known(await grab(m.t), cw, ch, m.rim, k, m.t)); }
+      const n = job.n = BS.clamp(Math.round(dur / 6), 12, 36);
+      const all = [];
+      for (let j = 0; j < n && !job.cancel; j++) {
+        const t = Math.min(Math.max(0, dur - 0.5), (j + 0.5) * dur / n);
+        all.push(...BS.goalfind.scanFrame(await grab(t), cw, ch, t));
+        job.i = j + 1;
+        const bar = $('#findBar'), lab = $('#findLabel');
+        if (bar) bar.style.width = (100 * job.i / n).toFixed(0) + '%';
+        if (lab) lab.textContent = `${job.i} / ${n}`;
+        await yieldNow();
+      }
+      if (!job.cancel) {
+        goals = BS.goalfind.pickGoals(all, k, W, H, known);
+        // 追跡に使う枠は、そのコマの、リングのまわりで模様のはっきりした所に
+        for (const gm of goals) { await grab(gm.t); gm.box = boxAround(hv.v, gm.rim); }
+        ok = true;
+      }
+    } catch (e) { console.warn('[goals]', e); }
+    hv.close();
+    if (S.finding === job) S.finding = null;
+    if (!ok || job.cancel || S.key !== key || S.media !== media) { render(); return; }
+    st.autoTried = true;
+    const free = [0, 1].filter((i) => !keepIdx.includes(i));
+    free.forEach((i) => { st.hoops[i] = null; delete S.thumbs['hoop' + i]; });
+    goals.forEach((gm, j) => { const i = free[j]; if (i != null) st.hoops[i] = { id: i === 0 ? 'A' : 'B', t: +gm.t.toFixed(3), box: gm.box, rim: gm.rim, how: 'auto' }; });
+    save();
+    render(); drawOverlay();
+    makeHoopThumbs();
+    const nF = goals.length;
+    if (nF >= free.length) BS.ui.toast('ゴールを見つけました。③ の絵で、黄色の線がリングに重なっているか確かめてください', 'ok', 7000);
+    else if (nF) BS.ui.toast(`ゴールを ${nF} つ見つけました。もう1つは、③ の「このゴールを教える」で、リングをタップしてください`, 'warn', 8000);
+    else BS.ui.toast('ゴールを自動では見つけられませんでした。③ の「このゴールを教える」で、リングをタップしてください', 'warn', 8000);
+  }
+  function cancelFind() { if (S.finding) S.finding.cancel = true; }
+
   /* 得点の場面の絵は、見えない別の <video> でその時刻へ移って描く（再生中の映像を動かさない） */
   async function makeThumbs() {
     if (!S.media) return;
@@ -638,14 +735,17 @@
     v.removeAttribute('src'); v.load(); v.remove();
   }
 
-  /* ---------- ゴールの指定（映像の上でドラッグ） ---------- */
+  /* ---------- ゴールを教える（映像の上で、リングをタップ／なぞる） ----------
+     タップ：そのまわりからリングを探す（goalfind.js の fitAt）。見つからないときは拡大して、なぞってもらう。
+     なぞる：リングの左端から右端までのドラッグ。どちらも、追跡に使う枠はリングから決める（バックボードを囲む必要はない） */
   function setOverlayActive(on) { const cv = $('#overlay'); cv.style.pointerEvents = on ? 'auto' : 'none'; cv.style.cursor = on ? 'crosshair' : 'default'; }
   function startMarking(i) {
     if (!S.media || S.running || S.exporting) return;
+    if (S.finding) cancelFind();
     stopReel(true);
     pause();
     S.openSetup = true;
-    S.marking = { i, step: S.st.fixed ? -1 : 0, box: null, drag: null, pre: null, view: null, t: now() };      // 全景カメラ：ゴールが小さいので、まずクリックで拡大してから囲む（step -1）
+    S.marking = { i, step: 0, drag: null, view: null };
     setOverlayActive(true);
     render(); drawOverlay();
     const mc = document.querySelector('.markcard');
@@ -656,7 +756,7 @@
     S.marking = null; setOverlayActive(false);
     render(); drawOverlay();
   }
-  /* 映像の画素 ⇄ 画面上の位置。ふだんは映像全体（黒帯つき）、リングをなぞるときは拡大表示（mk.view の範囲を画面いっぱいに） */
+  /* 映像の画素 ⇄ 画面上の位置。ふだんは映像全体（黒帯つき）、拡大しているときは mk.view の範囲を画面いっぱいに */
   function mapping(r) {
     const W = S.media.width, H = S.media.height;
     const mk = S.marking;
@@ -675,23 +775,54 @@
     const m = mapping(r);
     return { x: r.left + m.ox + (x - m.vx) * m.s, y: r.top + m.oy + (y - m.vy) * m.s };
   }
-  /* リングは小さい（画面上で 20 画素ほどのこともある）ので、バックボードを囲んだら、その周りを拡大して見せる */
-  function zoomFor(box) {
-    const r = $('#overlay').getBoundingClientRect();
-    const W = S.media.width, H = S.media.height;
-    const base = Math.min(r.width / W, r.height / H);
-    const vw = Math.min(W, box.w / 0.42);                       // バックボードの幅が画面の約 4 割になるように
-    if (r.width / vw < base * 1.4) return null;                 // もともと大きく映っているなら拡大しない
-    const vh = vw * r.height / r.width;
-    return { x: box.x + box.w / 2 - vw / 2, y: box.y + box.h * 0.8 - vh / 2, w: vw, h: vh };
-  }
-  /* 全景カメラ：クリックした場所のまわりを、映像の横幅の 1/7 ほどの範囲で拡大して見せる（板が見切れないよう、クリックより少し上を中心に） */
+  /* 指定した所のまわりを、映像の横幅の 1/7 ほどの範囲で拡大して見せる（リングの上の板が見切れないよう、少し上を中心に） */
   function viewAround(pt) {
     const r = $('#overlay').getBoundingClientRect();
     const W = S.media.width, H = S.media.height;
     const vw = Math.min(W, Math.max(200, W / 7));
     const vh = Math.min(H, vw * r.height / r.width);
-    return { x: BS.clamp(pt.x - vw / 2, 0, Math.max(0, W - vw)), y: BS.clamp(pt.y - vh * 0.6, 0, Math.max(0, H - vh)), w: vw, h: vh };
+    return { x: BS.clamp(pt.x - vw / 2, 0, Math.max(0, W - vw)), y: BS.clamp(pt.y - vh * 0.55, 0, Math.max(0, H - vh)), w: vw, h: vh };
+  }
+  /* タップした所（映像の画素）のまわりのリング。大きな動画でも細かい画素のまま、まわりだけを切り出して調べる。見つからなければ null */
+  function fitAtTap(p) {
+    if (!BS.goalfind) return null;
+    const W = S.media.width, H = S.media.height;
+    const half = Math.min(Math.max(W, H) / 2, Math.max(160, W * 0.16));
+    const x0 = Math.max(0, Math.round(p.x - half)), y0 = Math.max(0, Math.round(p.y - half));
+    const x1 = Math.min(W, Math.round(p.x + half)), y1 = Math.min(H, Math.round(p.y + half));
+    const sw = x1 - x0, sh = y1 - y0;
+    if (sw < 32 || sh < 32) return null;
+    const k = Math.min(1, 900 / Math.max(sw, sh));
+    const cw = Math.round(sw * k), ch = Math.round(sh * k);
+    const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+    const g = cv.getContext('2d', { willReadFrequently: true });
+    try { g.drawImage(S.media.el, x0, y0, sw, sh, 0, 0, cw, ch); } catch (e) { return null; }
+    const c = BS.goalfind.fitAt(g.getImageData(0, 0, cw, ch).data, cw, ch, (p.x - x0) * k, (p.y - y0) * k, { radius: Math.max(80, 0.3 * Math.min(cw, ch)) });
+    if (!c) return null;
+    return { cx: x0 + c.cx / k, cy: y0 + c.cy / k, w: 2 * c.a / k, b: +(c.b / k).toFixed(1) };
+  }
+  /* 追跡に使う枠：src（canvas に描けるもの。いまのコマ）の、リングのまわりで縦と横の模様がはっきりした所（goalfind.boardBox） */
+  function boxAround(src, rim) {
+    const W = S.media.width, H = S.media.height;
+    const k = Math.max(1, W / 1280), cw = Math.round(W / k), ch = Math.round(H / k);
+    const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+    const g = cv.getContext('2d', { willReadFrequently: true });
+    try { g.drawImage(src, 0, 0, cw, ch); } catch (e) { return BS.goalfind.boxFromRim(rim, W, H); }
+    const gray = BS.vision.toGray(g.getImageData(0, 0, cw, ch).data, cw, ch, 'rgba');
+    const b = BS.goalfind.boardBox(gray, cw, ch, { cx: rim.cx / k, cy: rim.cy / k, w: rim.w / k });
+    return { x: b.x * k, y: b.y * k, w: b.w * k, h: b.h * k };
+  }
+  /* ゴール i を、いまのコマのリング rim（映像の画素）で指定する。how: 'tap' | 'trace' */
+  function setGoal(i, rim, how) {
+    const W = S.media.width, H = S.media.height;
+    S.st.hoops[i] = { id: i === 0 ? 'A' : 'B', t: Math.round(now() * 1000) / 1000, box: S.boxMode === 'rim' ? BS.goalfind.boxFromRim(rim, W, H) : boxAround(S.media.el, rim), rim, how };      // S.boxMode：比べるとき用
+    save();
+    S.marking = null; setOverlayActive(false);
+    S.thumbs['hoop' + i] = hoopThumb(i);
+    const both = S.st.hoops.filter(Boolean).length >= 2;
+    if (S.st.fixed ? rim.w < 14 : rim.w / W < 0.0125) BS.ui.toast(`${HOOP[i]} を指定しました。ただしリングが小さく映っています。もっと大きく映っている場面があれば、そこで指定し直すと見つけやすくなります`, 'warn', 8000);
+    else BS.ui.toast(`${HOOP[i]} を指定しました（黄色の線がリング）${both ? '。④ の「得点シーンを探す」を押してください' : '。もう1つのゴールも、映っている場面で同じように'}`, 'ok', 5000);
+    render(); drawOverlay();
   }
   function onDown(ev) { if (!S.marking) return; ev.preventDefault(); const p = toSrc(ev); S.marking.drag = { a: p, b: p }; $('#overlay').setPointerCapture(ev.pointerId); drawOverlay(); }
   function onMove(ev) { if (!S.marking || !S.marking.drag) return; S.marking.drag.b = toSrc(ev); drawOverlay(); }
@@ -701,36 +832,27 @@
     mk.drag.b = toSrc(ev);
     const { a, b } = mk.drag;
     mk.drag = null;
-    if (mk.step === -1) { mk.view = mk.pre = viewAround(b); mk.step = 0; render(); drawOverlay(); return; }
-    if (mk.step === 0) {
-      const box = { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y) };
-      const small = S.st.fixed ? 8 : 12;      // 全景カメラのゴールは小さい
-      if (box.w < small + 4 || box.h < small) { BS.ui.toast('小さすぎます。バックボード全体を囲んでください', 'err'); drawOverlay(); return; }
-      mk.box = box; mk.step = 1; mk.view = zoomFor(box); mk.t = now();
-    } else {
-      const w = Math.hypot(a.x - b.x, a.y - b.y);
-      if (w < 8) { BS.ui.toast('リングの左端から右端までドラッグしてください', 'err'); drawOverlay(); return; }
-      const rim = { cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, w };
-      S.st.hoops[mk.i] = { id: mk.i === 0 ? 'A' : 'B', t: Math.round(now() * 1000) / 1000, box: mk.box, rim };
-      save();
-      S.marking = null; setOverlayActive(false);
-      S.thumbs['hoop' + mk.i] = hoopThumb(mk.i);
-      const far = rim.cx < mk.box.x - mk.box.w * 0.5 || rim.cx > mk.box.x + mk.box.w * 1.5 || rim.cy < mk.box.y - mk.box.h * 0.5 || rim.cy > mk.box.y + mk.box.h * 2;
-      const both = S.st.hoops.filter(Boolean).length >= 2;
-      if (far) BS.ui.toast('リングの線が、囲んだバックボードから離れています。同じゴールのリングをなぞり直してください（「指定し直す」）', 'warn', 8000);
-      else if (S.st.fixed ? w < 14 : w / S.media.width < 0.0125) BS.ui.toast(`${HOOP[mk.i]} を指定しました。ただしリングが小さく映っています。もっと大きく映っている場面があれば、そこで指定し直すと見つけやすくなります`, 'warn', 8000);
-      else BS.ui.toast(`${HOOP[mk.i]} を指定しました${both ? '。④ の「得点シーンを探す」を押してください' : '。もう1つのゴールも、映っている場面で同じように指定します'}`, 'ok', 5000);
+    const mp = mapping($('#overlay').getBoundingClientRect());
+    if (Math.hypot(a.x - b.x, a.y - b.y) * mp.s < 8) {
+      // タップ：そのまわりからリングを探す
+      const rim = fitAtTap(b);
+      if (rim) { setGoal(mk.i, rim, 'tap'); return; }
+      if (!mk.view) { mk.view = viewAround(b); mk.step = 1; render(); }
+      BS.ui.toast('ここではリングを見つけられませんでした。リングの左端から右端まで、ドラッグでなぞってください', 'warn', 6000);
+      drawOverlay();
+      return;
     }
-    render(); drawOverlay();
-  }
-  /* 板を囲んだあとでコマが動いた：枠とリングが別のコマになってしまうので、囲むところからやり直す */
-  function markingTimeCheck(t) {
-    const mk = S.marking;
-    if (mk && mk.step === 1 && Math.abs(t - mk.t) > 0.02) {
-      mk.step = 0; mk.box = null; mk.view = mk.pre || null; mk.drag = null;
-      BS.ui.toast('コマが動いたので、バックボードを囲むところからやり直してください', 'warn', 4500);
-      render();
+    // なぞった：リングの左端から右端
+    const w = Math.hypot(a.x - b.x, a.y - b.y);
+    const rim = { cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, w };
+    // 小さく映っているリングを拡大せずになぞると、ずれやすい。拡大して、もう一度なぞってもらう
+    if (!mk.view && w * mp.s < 36) {
+      mk.view = viewAround({ x: rim.cx, y: rim.cy }); mk.step = 1;
+      BS.ui.toast('リングが小さいので拡大しました。もう一度、リングの左端から右端までなぞってください', 'warn', 5000);
+      render(); drawOverlay();
+      return;
     }
+    setGoal(mk.i, rim, 'trace');
   }
   function drawOverlay() {
     const cv = $('#overlay');
@@ -754,15 +876,13 @@
         g.fillStyle = '#000'; g.fillRect(0, 0, r.width, r.height);
         try { g.drawImage(S.media.el, mk.view.x, mk.view.y, mk.view.w, mk.view.h, 0, 0, r.width, r.height); } catch (e) { /* まだ描けるコマがない */ }
       } else { g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(0, 0, r.width, r.height); }
-      if (mk.box) rect(mk.box, HOOP_COL[mk.i], HOOP[mk.i]);
       if (mk.drag) {
         const { a, b } = mk.drag;
-        if (mk.step === 0) rect({ x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y) }, '#fbbf24');
-        else if (mk.step === 1) { g.strokeStyle = '#fbbf24'; g.lineWidth = 3; g.beginPath(); g.moveTo(X(a.x), Y(a.y)); g.lineTo(X(b.x), Y(b.y)); g.stroke(); }
+        g.strokeStyle = '#fbbf24'; g.lineWidth = 3; g.beginPath(); g.moveTo(X(a.x), Y(a.y)); g.lineTo(X(b.x), Y(b.y)); g.stroke();
       }
       g.fillStyle = 'rgba(0,0,0,0.66)'; g.fillRect(0, 0, r.width, 28);
       g.fillStyle = '#fde047'; g.font = 'bold 13.5px sans-serif';
-      g.fillText(mk.step === -1 ? `${HOOP[mk.i]}：ゴールのあたりを1回クリック（拡大します）` : mk.step === 0 ? `${HOOP[mk.i]}：バックボード（板）全体を、ドラッグで囲む` : `${HOOP[mk.i]}：${mk.view ? '🔍 拡大中　' : ''}リング（輪）の左端 → 右端 を、ぴったりドラッグ`, 10, 19);
+      g.fillText(mk.view ? `${HOOP[mk.i]}：🔍 拡大中　リング（輪）の左端 → 右端 を、ドラッグでなぞる` : `${HOOP[mk.i]}：リング（輪）のあたりをタップ（または、左端 → 右端 をなぞる）`, 10, 19);
       return;
     }
     if (S.live) {
@@ -779,7 +899,11 @@
     }
     // 指定ずみのゴール（指定したコマにいるとき、または全景カメラのときに表示。設定を開いているときだけ）
     const setupVisible = !S.st.result || S.openSetup;
-    if (setupVisible) S.st.hoops.forEach((m, i) => { if (m && (S.st.fixed || Math.abs(now() - m.t) < 0.2)) { rect(m.box, HOOP_COL[i], HOOP[i]); rimLine(m.rim, '#fde047'); } });
+    if (setupVisible) S.st.hoops.forEach((m, i) => {
+      if (!m || !(S.st.fixed || Math.abs(now() - m.t) < 0.2)) return;
+      g.strokeStyle = '#fde047'; g.lineWidth = 3; g.beginPath(); g.ellipse(X(m.rim.cx), Y(m.rim.cy), Math.max(2, m.rim.w / 2 * sc), Math.max(2, (m.rim.b || m.rim.w * 0.14) * sc), 0, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = HOOP_COL[i]; g.font = 'bold 12px sans-serif'; g.fillText(HOOP[i], X(m.rim.cx - m.rim.w / 2), Y(m.rim.cy) - Math.max(6, (m.rim.b || m.rim.w * 0.14) * sc) - 4);
+    });
   }
 
   /* ---------- 解析（できれば Worker で、だめなら画面側で同じコードを動かす） ---------- */
@@ -895,7 +1019,7 @@
   }
 
   async function run(opts) {
-    if (S.running || !S.media) return;
+    if (S.running || !S.media || S.finding) return;
     opts = opts || {};
     const st0 = S.st;
     const marks = st0.hoops.filter(Boolean);
@@ -926,7 +1050,7 @@
     let eng = null, res = null;
     try {
       // S.debug：検証用（コマごとのボール候補の記録を S.lastLog に残す。tests/rim-check.cjs が使う）
-      eng = st.eng = await openEngine({ srcW: media.width, srcH: media.height, fixed: !!st0.fixed, hoops: marks.map((m) => ({ id: m.id, box: m.box, rim: m.rim })), debug: !!S.debug, rimOcclusion: S.rimOcclusion },
+      eng = st.eng = await openEngine({ srcW: media.width, srcH: media.height, fixed: !!st0.fixed, hoops: marks.map((m) => ({ id: m.id, box: m.box, rim: m.rim })), debug: !!S.debug, rimOcclusion: S.rimOcclusion, fastScale: S.fastScale },
         (m) => { if (m.ev === 'progress') onLive(m.t, m.live, m.preview); else if (m.ev === 'info') st.info = m; });
       try {
         st.mode = 'decode';
@@ -1093,7 +1217,7 @@
     render(); drawTimeline();
   }
 
-  BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, list, clipsFor, maybes: () => C.maybes(S.st.result, setupOf(), S.st.edits, list()), promote, unpromote, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs };
+  BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, findGoals, cancelFind, list, clipsFor, maybes: () => C.maybes(S.st.result, setupOf(), S.st.edits, list()), promote, unpromote, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }

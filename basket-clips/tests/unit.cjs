@@ -127,6 +127,57 @@ ok(back && back.result.shots.length === 1 && back.edits.off.x && back.teams[0].n
 ok(S2.fresh().teams[0].colorName === '青', '次の動画でも、前回の色から始まる');
 ok(S2.load('nothing') === null, '保存していない動画は null');
 
+section('ゴールの自動検出（リング＋ネットを探す）');
+{
+  const BG = load(['core.js', 'vision.js', 'goalfind.js']);
+  const G = BG.goalfind;
+  /* 絵を描く小さな道具（RGBA）。体育館の床・壁、リングとネット、まぎらわしい物（ボール・赤いユニフォーム・オレンジの床の線・観客のオレンジの服） */
+  const W = 640, H = 360;
+  const img = new Uint8Array(W * H * 4);
+  const px = (x, y, c) => { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= W || y >= H) return; const p = (y * W + x) * 4; img[p] = c[0]; img[p + 1] = c[1]; img[p + 2] = c[2]; img[p + 3] = 255; };
+  const rect = (x0, y0, x1, y1, c) => { for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) px(x, y, c); };
+  const disk = (cx, cy, r, c) => { for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) if ((x - cx) ** 2 + (y - cy) ** 2 <= r * r) px(x, y, c); };
+  const line = (x0, y0, x1, y1, t, c) => { const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 2); for (let i = 0; i <= n; i++) { const x = x0 + (x1 - x0) * i / n, y = y0 + (y1 - y0) * i / n; for (let dy = -t / 2; dy <= t / 2; dy += 0.5) for (let dx = -t / 2; dx <= t / 2; dx += 0.5) px(x + dx, y + dy, c); } };
+  const ring = (cx, cy, a, b, t, c) => { for (let i = 0; i < 720; i++) { const q = i / 720 * Math.PI * 2; for (let d = -t / 2; d <= t / 2; d += 0.5) px(cx + (a + d) * Math.cos(q), cy + (b + d) * Math.sin(q), c); } };
+  rect(0, 0, W, 150, [40, 44, 54]);                 // 壁（暗い）
+  rect(0, 150, W, H, [168, 117, 69]);               // 木の床（オレンジがかった茶色）
+  rect(0, 40, W, 46, [154, 163, 178]);              // ギャラリーの手すり
+  for (let x = 20; x < W; x += 34) rect(x, 20, x + 9, 38, (x / 34) % 3 ? [70, 110, 200] : [240, 123, 63]);   // 観客（オレンジの服も）
+  // ゴール：白いボード・内側の四角、リング（オレンジの輪。横長）、白いネット
+  const R = { cx: 300, cy: 120, a: 18, b: 5 };
+  rect(R.cx - 40, R.cy - 52, R.cx + 40, R.cy + 6, [226, 232, 240]);
+  line(R.cx - 13, R.cy - 34, R.cx + 13, R.cy - 34, 2, [250, 250, 250]); line(R.cx - 13, R.cy - 4, R.cx + 13, R.cy - 4, 2, [250, 250, 250]);
+  line(R.cx - 13, R.cy - 34, R.cx - 13, R.cy - 4, 2, [250, 250, 250]); line(R.cx + 13, R.cy - 34, R.cx + 13, R.cy - 4, 2, [250, 250, 250]);
+  for (let i = 0; i < 9; i++) { const u = -1 + 2 * i / 8; line(R.cx + R.a * u, R.cy + 3, R.cx + R.a * 0.6 * u * 0.9 + 3, R.cy + 30, 1, [245, 245, 245]); }
+  ring(R.cx, R.cy, R.a, R.b, 2.5, [255, 106, 26]);
+  disk(470, 230, 9, [200, 90, 30]);                 // ボール（塗りつぶした丸）
+  rect(120, 190, 150, 240, [224, 65, 58]);          // 赤いユニフォーム
+  line(380, 300, 600, 300, 3, [235, 110, 40]);      // オレンジの床の線
+  const found = G.findRims(img, W, H);
+  const top = found[0];
+  ok(top && Math.hypot(top.cx - R.cx, top.cy - R.cy) <= 4 && Math.abs(2 * top.a - 2 * R.a) <= 0.2 * 2 * R.a, 'リング（オレンジの細い輪＋白いネット）を見つける', top && [Math.round(top.cx), Math.round(top.cy), +(2 * top.a).toFixed(1)]);
+  ok(found.every((c) => Math.hypot(c.cx - R.cx, c.cy - R.cy) <= 2 * R.a), 'ボール・赤いユニフォーム・オレンジの線・観客の服は、リングとみなさない', found.map((c) => [Math.round(c.cx), Math.round(c.cy)]));
+  const tap = G.fitAt(img, W, H, R.cx + 12, R.cy + 9);
+  ok(tap && Math.hypot(tap.cx - R.cx, tap.cy - R.cy) <= 4, 'リングのそばをタップすると、そのリングを見つける', tap && [Math.round(tap.cx), Math.round(tap.cy)]);
+  ok(!G.fitAt(img, W, H, 480, 300), 'リングのない所をタップしても、何も見つけない');
+  const bx = G.boxFromRim({ cx: 300, cy: 120, w: 36 }, W, H);
+  ok(bx.x <= 300 - 36 && bx.x + bx.w >= 300 + 36 && bx.y + bx.h > 120 && bx.y < 120 - 36, 'リングから決める追跡の枠は、リングの上（ボードのあたり）を広く含む', bx);
+  const gray = BG.vision.toGray(img, W, H, 'rgba');
+  const bb = G.boardBox(gray, W, H, { cx: 300, cy: 120, w: 36 });
+  ok(bb.x < 300 && bb.x + bb.w > 300 && bb.y < 120 && bb.y + bb.h >= 120, '模様で選ぶ枠も、リングの位置にかかる', bb);
+  // 何コマかの候補から、ゴールを2つ選ぶ（同じ見た目＝同じゴール）。自分で教えたゴールがあれば、もう1つだけ
+  const mk = (t, cx, cy, a, d) => ({ t, cx, cy, a, b: 4, score: 1.2, fw: W, fh: H, desc: d });
+  // 見た目（descriptor と同じく、平均 0・ばらつき 1 にそろえたもの）
+  const z = (f) => { const d = new Float32Array(24 * 24).map((v, i) => f(i)); const m = d.reduce((a, v) => a + v, 0) / d.length; const sd = Math.sqrt(d.reduce((a, v) => a + (v - m) * (v - m), 0) / d.length); return d.map((v) => (v - m) / sd); };
+  const dA = z((i) => Math.sin(i * 0.37)), dB = z((i) => Math.cos(i * 0.91 + 1));
+  const cands = [mk(1, 100, 100, 15, dA), mk(5, 140, 100, 15, dA), mk(9, 500, 110, 14, dB), mk(13, 480, 110, 14, dB), mk(17, 120, 100, 15, dA)];
+  const goals = G.pickGoals(cands, 1, W, H);
+  ok(goals.length === 2 && Math.abs(goals[0].rim.cx - goals[1].rim.cx) > 200, '何コマにも映る2つのゴールを、1つずつ選ぶ', goals.map((g) => [g.t, g.rim.cx, g.seen]));
+  const kn = Object.assign(mk(3, 110, 100, 15, dA), { known: true, score: 99 });
+  const g2 = G.pickGoals(cands, 1, W, H, [kn]);
+  ok(g2.length === 1 && g2[0].rim.cx > 400, '自分で教えたゴールがあれば、もう片方のゴールだけを選ぶ', g2.map((g) => [g.t, g.rim.cx]));
+}
+
 section('MP4 の読み取り（H.264・HEVC・VP9・AV1）');
 const BS3 = load(['core.js', 'mp4.js']);
 let ffmpeg = true;

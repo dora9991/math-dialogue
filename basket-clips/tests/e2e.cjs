@@ -19,9 +19,9 @@ let pass = 0, fail = 0;
 const ok = (c, name, extra) => { if (c) { pass++; console.log('  ok  ', name); } else { fail++; console.log('  FAIL', name, extra !== undefined ? JSON.stringify(extra) : ''); } };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function ensureVideo(name, segs, rim) {
+async function ensureVideo(name, segs, rim, view) {
   const file = path.join(WORK, name);
-  if (!fs.existsSync(file) || !fs.existsSync(file + '.json')) { console.log(`（合成動画を作っています：${name} ${segs}${rim ? '・リングに当たるシュート入り' : ''}）`); await make(file, segs, 30, 4, rim || null); }
+  if (!fs.existsSync(file) || !fs.existsSync(file + '.json')) { console.log(`（合成動画を作っています：${name} ${segs}${rim ? '・リングに当たるシュート入り' : ''}${view && view !== 'side' ? '・カメラ ' + view : ''}）`); await make(file, segs, 30, 4, rim || null, view || 'side'); }
   return { file, truth: JSON.parse(fs.readFileSync(file + '.json', 'utf8')) };
 }
 
@@ -51,8 +51,9 @@ async function openVideo(page, file) {
   await page.waitForFunction(() => BS.app.S.media && BS.app.S.media.ready && BS.app.duration() > 5, null, { timeout: 30000 });
   await sleep(300);
 }
-/* ゴールを指定する：そのコマへ移って、板を囲み、拡大されたリングをなぞる */
-async function markGoal(page, i, mark) {
+/* ゴールを教える：そのコマへ移って「このゴールを教える」→ how が 'tap' ならリングをタップ、'trace' ならリングの左端から右端までなぞる
+   （タップで見つからないとき・リングが小さいときは拡大されるので、拡大された映像でもう一度なぞる） */
+async function markGoal(page, i, mark, how) {
   await page.evaluate((t) => BS.app.seek(t), mark.t);
   await sleep(400);
   await page.click('#btnMark' + i);
@@ -64,10 +65,19 @@ async function markGoal(page, i, mark) {
     await sleep(150);
   };
   const scr = (x, y) => page.evaluate(([x, y]) => BS.app.toScreen(x, y), [x, y]);
-  const b = mark.box, r = mark.rim;
-  await drag(await scr(b.x, b.y), await scr(b.x + b.w, b.y + b.h));
-  await drag(await scr(r.cx - r.w / 2, r.cy), await scr(r.cx + r.w / 2, r.cy));
+  const r = mark.rim;
+  if (how === 'tap') {
+    const p = await scr(r.cx, r.cy);
+    await page.mouse.click(p.x, p.y);
+    await sleep(300);
+  }
+  for (let k = 0; k < 2 && await page.evaluate(() => !!BS.app.S.marking); k++) await drag(await scr(r.cx - r.w / 2, r.cy), await scr(r.cx + r.w / 2, r.cy));
   return page.evaluate((i) => BS.app.S.st.hoops[i], i);
+}
+/* 自動でゴールを探さずに開く（ゴールを手で教えるテスト用） */
+async function openVideoManual(page, file) {
+  await page.evaluate(() => { BS.app.S.autoGoals = false; });
+  await openVideo(page, file);
 }
 async function analyse(page, ms) {
   await page.click('#btnRun');
@@ -97,16 +107,21 @@ const tabText = (page) => page.evaluate(() => [0, 1].map((i) => document.querySe
     const teams = await page.evaluate(() => BS.app.S.st.teams.map((t) => t.colorName));
     ok(teams[0] === '青' && teams[1] === '赤', '自分＝青・相手＝赤', teams);
 
-    console.log('\n■ ゴールを教える（ドラッグ）');
-    for (const i of [0, 1]) {
-      const m = v1.truth.marks[i];
-      const got = await markGoal(page, i, m);
-      const d = got ? Math.max(Math.abs(got.box.x - m.box.x), Math.abs(got.box.y - m.box.y), Math.abs(got.rim.cx - m.rim.cx), Math.abs(got.rim.cy - m.rim.cy), Math.abs(got.rim.w - m.rim.w)) : 99;
-      ok(got && d < 3, `ゴール${'AB'[i]} をドラッグで指定できる（ずれ ${d.toFixed(2)} 画素）`);
-    }
-    // 動画のはじめ（前半）：ゴールA（左）を攻めるのは赤＝相手
-    await page.click('.teambtn[data-hoop="0"][data-team="1"]');
-    ok(JSON.stringify(await page.evaluate(() => BS.app.S.st.hoopTeam)) === '[1,0]', '「ゴールA を攻めているのは相手」で、ゴールB は自動で自分になる');
+    console.log('\n■ ゴールを自動で探す（動画を開くと始まる）');
+    await page.waitForFunction(() => !BS.app.S.finding && BS.app.S.st.autoTried, null, { timeout: 180000, polling: 300 });
+    const auto = await page.evaluate(() => BS.app.S.st.hoops.map((m) => m && { t: m.t, rim: m.rim, box: m.box, how: m.how }));
+    ok(auto.every((m) => m && m.how === 'auto'), 'ゴールを2つ、自動で見つけた', auto.map((m) => m && [m.t, Math.round(m.rim.cx), Math.round(m.rim.cy), Math.round(m.rim.w)]));
+    // 横から撮った映像では、左に映るのが正解のゴールA（左のゴール）。リングの高さ・幅は、カメラが横に振れても変わらない
+    const leftIdx = auto[0] && auto[1] && auto[0].rim.cx < auto[1].rim.cx ? 0 : 1;
+    const tm0 = v1.truth.marks[0].rim;
+    ok(auto.every((m) => m && Math.abs(m.rim.cy - tm0.cy) < 6 && Math.abs(m.rim.w - tm0.w) < 0.25 * tm0.w), '見つけたリングの位置（高さ）と大きさが正解と合う', auto.map((m) => m && [Math.round(m.rim.cy), Math.round(m.rim.w)]));
+    ok(auto[leftIdx] && auto[1 - leftIdx] && auto[leftIdx].rim.cx < 640 && auto[1 - leftIdx].rim.cx > 640, '左のゴールと右のゴールを1つずつ（同じゴールを2つにしない）');
+    await page.waitForFunction(() => BS.app.S.thumbs.hoop0 && BS.app.S.thumbs.hoop1, null, { timeout: 30000 }).catch(() => {});
+    ok(await page.$$eval('#stepGoals canvas.hoopthumb', (els) => els.length) === 2, '見つけたゴールの絵（リングに黄色の線）が2つ出る');
+    ok(!!await page.$('#btnFind'), '「もう一度、自動で探す」がある');
+    // 動画のはじめ（前半）：左のゴールを攻めるのは赤＝相手
+    await page.click(`.teambtn[data-hoop="${leftIdx}"][data-team="1"]`);
+    ok(JSON.stringify(await page.evaluate(() => BS.app.S.st.hoopTeam)) === (leftIdx === 0 ? '[1,0]' : '[0,1]'), '「このゴールを攻めているのは相手」で、もう片方は自動で自分になる');
 
     console.log('\n■ 得点シーンを探す');
     const r1 = await analyse(page);
@@ -236,10 +251,16 @@ const tabText = (page) => page.evaluate(() => [0, 1].map((i) => document.querySe
     const P2 = await openPage(browser, srv.url);
     const page2 = P2.page;
     await page2.evaluate(() => localStorage.clear());
-    await openVideo(page2, v2.file);
+    await openVideoManual(page2, v2.file);
     await page2.click('.sw[data-team="0"][data-color="青"]');
     await page2.click('.sw[data-team="1"][data-color="赤"]');
-    for (const i of [0, 1]) await markGoal(page2, i, v2.truth.marks[i]);
+    // ゴールを手で教える：ゴールA はリングをタップ、ゴールB はリングをなぞる
+    for (const [i, how] of [[0, 'tap'], [1, 'trace']]) {
+      const m = v2.truth.marks[i].rim;
+      const got = await markGoal(page2, i, v2.truth.marks[i], how);
+      const d = got ? Math.hypot(got.rim.cx - m.cx, got.rim.cy - m.cy) : 99;
+      ok(got && got.how === how && d < 0.3 * m.w && Math.abs(got.rim.w - m.w) < 0.25 * m.w, `ゴール${'AB'[i]} を${how === 'tap' ? 'リングのタップ' : 'リングをなぞって'}教えられる（中心のずれ ${d.toFixed(1)} 画素・幅 ${got ? got.rim.w.toFixed(1) : '-'} / ${m.w.toFixed(1)}）`, got && got.how);
+    }
     await page2.click('.teambtn[data-hoop="0"][data-team="1"]');
     // 後半の始まり（動画の 100 秒）：映像をそこで止めて「いまの位置から後半にする」
     await page2.evaluate(() => BS.app.seek(100.2));
@@ -271,8 +292,8 @@ const tabText = (page) => page.evaluate(() => [0, 1].map((i) => document.querySe
       const P3 = await openPage(browser, srv.url);
       const page3 = P3.page;
       await page3.evaluate(() => localStorage.clear());
-      await openVideo(page3, webm);
-      for (const i of [0, 1]) await markGoal(page3, i, v1.truth.marks[i]);
+      await openVideoManual(page3, webm);
+      for (const [i, how] of [[0, 'trace'], [1, 'tap']]) await markGoal(page3, i, v1.truth.marks[i], how);
       await page3.click('.teambtn[data-hoop="0"][data-team="1"]');
       const r3 = await analyse(page3, 180000);
       ok(r3.mode === 'playback', '互換モード（再生しながら）で探した', r3.mode);
@@ -289,8 +310,8 @@ const tabText = (page) => page.evaluate(() => [0, 1].map((i) => document.querySe
     const P4 = await openPage(browser, srv.url);
     const page4 = P4.page;
     await page4.evaluate(() => localStorage.clear());
-    await openVideo(page4, v4.file);
-    for (const i of [0, 1]) await markGoal(page4, i, v4.truth.marks[i]);
+    await openVideoManual(page4, v4.file);
+    for (const [i, how] of [[0, 'tap'], [1, 'trace']]) await markGoal(page4, i, v4.truth.marks[i], how);
     await page4.click('.teambtn[data-hoop="0"][data-team="1"]');
     const r4 = await analyse(page4);
     const cmp4 = compare(r4.items, v4.truth);
@@ -300,6 +321,37 @@ const tabText = (page) => page.evaluate(() => [0, 1].map((i) => document.querySe
     ok(cmp4.found === cmp4.rows.length && cmp4.teamOk === cmp4.found, `この区間の得点 ${cmp4.rows.length} 本をすべて見つけた`, { found: cmp4.found, teamOk: cmp4.teamOk });
     ok(P4.errors.length === 0, 'ページのエラーがない', P4.errors.slice(0, 3));
     await page4.close();
+
+    // ゴール裏の2階の隅から撮った映像（手前のゴールは、ガラスのボード越しに裏から見る。カメラはボールを追ってパン・チルト・ズーム）。
+    // ゴールは自動で見つけたまま、手で直さずに探す
+    console.log('\n■ ゴール裏の2階から撮った映像（ゴールは自動で見つけたまま）');
+    const v5 = await ensureVideo('behind150.mp4', '0-150', null, 'behind');
+    const P5 = await openPage(browser, srv.url);
+    const page5 = P5.page;
+    await page5.evaluate(() => localStorage.clear());
+    await openVideo(page5, v5.file);
+    await page5.waitForFunction(() => !BS.app.S.finding && BS.app.S.st.autoTried, null, { timeout: 180000, polling: 300 });
+    const auto5 = await page5.evaluate(() => BS.app.S.st.hoops.map((m) => m && { t: m.t, rim: m.rim }));
+    // 見つけたゴールが、正解のどちらのゴールか（そのコマの、正解のリングの位置で）
+    const sideOf = (m) => {
+      if (!m) return -1;
+      const tr = v5.truth.rimTrack.reduce((b, r) => (Math.abs(r[0] - m.t) < Math.abs(b[0] - m.t) ? r : b));
+      if (Math.abs(tr[0] - m.t) > 0.3) return -1;
+      return [tr[1], tr[2]].findIndex((r) => r && Math.hypot(m.rim.cx - r[0], m.rim.cy - r[1]) <= 0.5 * r[2] && m.rim.w >= 0.7 * r[2] && m.rim.w <= 1.4 * r[2]);
+    };
+    const sides5 = auto5.map(sideOf);
+    ok(sides5.includes(0) && sides5.includes(1), '手前（裏から見る）と奥のゴールを、どちらも自動で見つけた', auto5.map((m, i) => m && [m.t, Math.round(m.rim.cx), Math.round(m.rim.cy), Math.round(m.rim.w), sides5[i]]));
+    if (sides5.includes(0)) {
+      // 動画のはじめ（前半）：手前のゴール（ゴールA の側）を攻めるのは赤＝相手
+      await page5.click(`.teambtn[data-hoop="${sides5.indexOf(0)}"][data-team="1"]`);
+      const r5 = await analyse(page5);
+      const cmp5 = compare(r5.items, v5.truth);
+      cmp5.rows.forEach((r) => console.log(`     正解 ${r.s.t.toFixed(1)} ${r.s.side === 0 ? '手前' : '奥  '} ${r.s.team ? '赤' : '青'} → ${r.it ? `${r.it.t.toFixed(1)} ${r.it.team ? '入れられた' : '入れた'}` : '★見つからない'}`));
+      ok(cmp5.found >= cmp5.rows.length - 1 && cmp5.teamOk === cmp5.found, `得点 ${cmp5.rows.length} 本のうち ${cmp5.found} 本を、正しいチームで見つけた（1本までの見落としは許す）`, { found: cmp5.found, teamOk: cmp5.teamOk });
+      ok(cmp5.extra.length === 0, '正解にない得点がない', cmp5.extra.map((x) => x.t));
+    }
+    ok(P5.errors.length === 0, 'ページのエラーがない', P5.errors.slice(0, 3));
+    await page5.close();
   } catch (e) {
     fail++;
     console.log('  FAIL 途中で止まりました:', e && e.stack || e);

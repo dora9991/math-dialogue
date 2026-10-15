@@ -29,8 +29,9 @@
     /* ---------- ゴール追跡 ---------- */
     function createHoopTracker(mark, srcW, srcH, phase, opts) {
       // mark: { id, box:{x,y,w,h}, rim:{cx,cy,w} }  … 元画像（srcW×srcH）の座標
-      // opts.fastScale: false で、倍率の追従をもとの動き（2コマに1回・1段ずつ）に。比べるとき用
+      // opts.fastScale: 倍率の追従。false＝もとの動き（2コマに1回・1段ずつ）、1＝毎コマ・1段ずつ、true（省略時）＝毎コマ・速いときは2段まで。比べるとき用
       const fastScale = !opts || opts.fastScale !== false;
+      const twoSteps = !opts || (opts.fastScale !== false && opts.fastScale !== 1);
       const k = srcW / AW;
       const AH = Math.round(srcH / k);
       const st = {
@@ -133,7 +134,7 @@
             if (alt && alt.score > cur.score + 0.02) {
               b = alt;
               // 同じ向きにもう1段（速く縮む・広がるとき）
-              if (fastScale) {
+              if (twoSteps) {
                 const sc2 = alt === up ? alt.scale * SC_STEP : alt.scale / SC_STEP;
                 if (sc2 > 0.45 && sc2 < 2.4) {
                   const alt2 = tryScales(gray, w, h, alt.x + alt.T.tw / 2, alt.y + alt.T.th / 2, [sc2], 2, 1);
@@ -756,6 +757,8 @@
       const watchers = cfg.hoops.map((m) => createHoopWatcher(m.id));
       const detectors = cfg.hoops.map((m, i) => createShotDetector(i));
       const lastSeen = cfg.hoops.map(() => -1);
+      let conflicts = 0;       // 2つのゴールの追跡が同じ場所を捉えて、片方を取り消した回数（検証用）
+      const sameSpot = (p, q) => p.tracked && q.tracked && p.inFrame && q.inFrame && Math.hypot(p.rim.cx - q.rim.cx, p.rim.cy - q.rim.cy) < 0.8 * Math.max(p.rim.w, q.rim.w);
       const shots = [];
       const vis = [];          // どのゴールが映っていたか {t, on:[bool...]}（攻守の行き来の推定に使う）
       let prevQ = null, frames = 0;
@@ -814,6 +817,20 @@
           let s = fixed ? tr.update() : tr.update(f.gray.data, f.gray.w, f.gray.h, f.quarter, shift);
           if (s.tracked && s.inFrame) s = verifyRim(i, s, f);
           status.push(s);
+        });
+        // （バスケ得点クリップで足したもの）2つのゴールの追跡が、同じ場所（＝同じゴール）を捉えたら、片方だけにする。
+        // ゴールはどちらも同じ形・同じ色なので、見失ったゴールを探し直すときに、もう片方のゴールを捉えてしまうことがある
+        // （合成映像で、奥のゴールの追跡が手前のゴールに張り付き、その得点を逆のチームにした）。
+        // 捉えたばかりの方を取り消す。どちらも続けて追っていたなら、合い方（板＋リングの色）の悪い方の追跡をやめる
+        if (!fixed && status.length === 2 && sameSpot(status[0], status[1])) {
+          const [a, b] = status;
+          const loser = a.acquired !== b.acquired ? (a.acquired ? 0 : 1) : (a.score + (a.rimScore || 0) >= b.score + (b.rimScore || 0) ? 1 : 0);
+          if (status[loser].acquired) trackers[loser].revert(); else trackers[loser].drop();
+          status[loser] = trackers[loser].status();
+          conflicts++;
+        }
+        trackers.forEach((tr, i) => {
+          const s = status[i];
           if (!s.tracked || !s.inFrame) return;
           if (lastSeen[i] >= 0 && f.t - lastSeen[i] > 0.6) detectors[i].flush();
           lastSeen[i] = f.t;
@@ -829,6 +846,18 @@
       function finish() {
         detectors.forEach((d, i) => { d.flush(); for (const ev of d.take()) { ev.hoop = i; shots.push(ev); } });
         shots.sort((a, b) => a.t - b.t);
+        // （バスケ得点クリップで足したもの）1 秒以内に、両方のゴールで「得点」が出たら、同じボールを2つのゴールで見たもの（片方は誤り）。
+        // 試合で 1 秒以内に両方のゴールに得点が入ることはないので、確かさ（conf）の低いほうを外す
+        // （合成映像：フロアのゴール裏から撮ると、奥のゴールはリング幅 13 画素ほどしかなく、手前のゴールの得点を奥でも数えた）
+        for (let i = 0; i < shots.length; i++) {
+          const a = shots[i];
+          if (!a.made || a.dup) continue;
+          for (let j = i + 1; j < shots.length && shots[j].t - a.t <= 1.0; j++) {
+            const b = shots[j];
+            if (b.made && !b.dup && b.hoop !== a.hoop) (a.conf >= b.conf ? b : a).dup = true;
+          }
+        }
+        for (let i = shots.length - 1; i >= 0; i--) if (shots[i].dup) shots.splice(i, 1);
         // ゴールが映っていた区間（[開始, 終了, ビット：ゴール i が映っていれば 1<<i]）と、映っていたコマ数
         const spans = [], seen = cfg.hoops.map(() => 0);
         for (const v of vis) {
@@ -838,7 +867,7 @@
           if (last && last[2] === mask && v.t - last[1] <= 0.5) last[1] = v.t;
           else spans.push([v.t, v.t, mask]);
         }
-        return { shots, frames, spans, seen };
+        return { shots, frames, spans, seen, conflicts };
       }
       return { initHoop, process, finish, trackers, shots, vis };
     }
