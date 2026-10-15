@@ -20,6 +20,11 @@ eq(HB.addMonths('2026-12', 1), '2027-01', '月をまたぐ');
 const g = HB.monthGrid('2026-10');
 eq([g.length, g[0][0].ymd, g[0][4].ymd, g[g.length - 1][6].ymd], [5, '2026-09-27', '2026-10-01', '2026-10-31'], '2026年10月のカレンダー（日曜はじまり）');
 eq(HB.monthGrid('2026-02').length, 4, '2026年2月は4週');
+const gm = HB.monthGrid('2026-10', 1);
+eq([gm.length, gm[0][0].ymd, gm[0][3].ymd, gm[gm.length - 1][6].ymd], [5, '2026-09-28', '2026-10-01', '2026-11-01'], '2026年10月（月曜はじまり）');
+eq([HB.monthGrid('2026-11', 1).length, HB.monthGrid('2026-11', 1)[0][0].ymd], [6, '2026-10-26'], '2026年11月（1日が日曜なので6週）');
+eq([HB.isoWeek('2026-10-19'), HB.isoWeek('2026-11-09'), HB.isoWeek('2026-11-15')], [43, 46, 46], '週番号（FirstSeed と同じ）');
+eq([HB.isoWeek('2026-12-31'), HB.isoWeek('2027-01-03'), HB.isoWeek('2027-01-04')], [53, 53, 1], '年またぎの週番号');
 eq(HB.labelWhen('2026-10-15T05:52:00+09:00', '2026-10-15'), 'きょう 5:52', 'けさの時刻');
 eq(HB.labelWhen('2026-10-14T18:02:00+09:00', '2026-10-15'), 'きのう 18:02', 'きのう');
 
@@ -53,6 +58,25 @@ const mk = HB.monthMarks(st, '2026-10');
 eq(mk['2026-10-15'], { ev: 3, memo: 2, item: 1, star: true }, '印（その日）');
 eq(mk['2026-10-16'], { ev: 1, memo: 0, item: 0, star: false }, '何日かつづく予定');
 eq(mk['2026-10-30'], { ev: 0, memo: 0, item: 1, star: true }, '写真の別の日');
+
+console.log('■ 月のカレンダーの帯');
+const ce = HB.calEntries(st, '2026-10-12', '2026-10-18');
+eq(ce.map(e => e.kind + ':' + (e.title || e.id) + ':' + e.d0).sort(), ['ev:出張:2026-10-14', 'ev:会議:2026-10-15', 'ev:朝:2026-10-15', 'item:i1:2026-10-15', 'memo:A:2026-10-15', 'memo:B:2026-10-15',
+  'rem:今日:2026-10-15', 'rem:明日:2026-10-16'].sort(), 'その週の予定・リマインダー・メモ・資料（しまったもの・期日なしは出さない）');
+const days = Array.from({ length: 7 }, (_, i) => HB.addDays('2026-10-12', i));
+const lay = HB.weekLayout(days, ce, 10);
+const pos = t => { const b = lay.bars.find(x => x.e.title === t || x.e.id === t); return b ? [b.c0, b.c1, b.lane] : null; };
+eq(pos('出張'), [2, 4, 0], '何日もつづく予定は1本の帯（いちばん上）');
+eq([pos('B'), pos('i1'), pos('今日'), pos('朝'), pos('会議'), pos('A')], [[3, 3, 1], [3, 3, 2], [3, 3, 3], [3, 3, 4], [3, 3, 5], [3, 3, 6]],
+  'その日の中の順：重要メモ → 重要な資料 → 予定とリマインダーは時刻の順 → メモ');
+eq(pos('明日'), [4, 4, 1], '帯のない段に、つめて入れる');
+eq(lay.more, [0, 0, 0, 0, 0, 0, 0], '入りきるときは +n なし');
+const lay3 = HB.weekLayout(days, ce, 3);
+eq(lay3.bars.filter(b => b.c0 <= 3 && b.c1 >= 3).map(b => b.e.title), ['出張', 'B'], '3段のとき：15日は2段まで出して、3段目は +n');
+eq(lay3.more, [0, 0, 0, 5, 0, 0, 0], '+n の数（15日に、出せなかったのが5つ）');
+ok(lay3.bars.some(b => b.e.title === '明日' && b.lane === 1), 'あふれていない日（16日）は、そのまま出す');
+const span = HB.weekLayout(days, [{ kind: 'ev', title: '長い', d0: '2026-10-10', d1: '2026-10-25', allDay: true }, { kind: 'ev', title: '短い', d0: '2026-10-13', d1: '2026-10-13', allDay: true }], 1);
+eq([span.bars.length, span.more], [0, [1, 2, 1, 1, 1, 1, 1]], '1段しかないとき、週をこえる帯も +n に数える');
 
 console.log('■ 絞りこみ');
 eq(HB.filterMemos(st.memos, { filter: 'star' }).map(m => m.id), ['m2', 'm3'], '★');
