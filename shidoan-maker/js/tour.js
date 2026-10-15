@@ -17,14 +17,15 @@
 
   const visible = (el) => { if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 4 && r.height > 4 && r.right > 0 && r.left < window.innerWidth && getComputedStyle(el).visibility !== 'hidden'; };
 
-  SD.tour = () => {
-    if (SD.S.view !== 'edit') return;
+  SD.tour = (attempt = 0) => {
+    if (SD.S.view !== 'edit' || document.querySelector('.tour')) return;
     const steps = STEPS.map((st) => {
       let el = document.querySelector(st.sel);
       if (!visible(el) && st.alt) el = document.querySelector(st.alt);
       return visible(el) ? Object.assign({ el }, st) : null;
     }).filter(Boolean);
-    if (!steps.length) return;
+    // 画面がまだ描けていないときは、少し待ってからもう一度（6回まで）
+    if (steps.length < 3) { if (attempt < 6) setTimeout(() => SD.tour(attempt + 1), 500); return; }
     let i = 0;
     const hole = h('div', { class: 'tour-hole' });
     const tip = h('div', { class: 'tour-tip', role: 'dialog', 'aria-live': 'polite' });
