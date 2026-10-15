@@ -15,6 +15,7 @@ import Header from "../components/Header.jsx";
 import CharBubble, { voice } from "../components/CharBubble.jsx";
 import { BigWord } from "../components/Decorations.jsx";
 import MathText from "../components/MathText.jsx";
+import { useFitChoices } from "../components/useFitChoices.js";
 import QuestionText from "../components/QuestionText.jsx";
 import * as sfx from "../audio/sfx.js";
 import { genProblem, makeChoices } from "../engine/generator.js";
@@ -34,6 +35,7 @@ export default function SlowMode({ player, chapter, unit, level, anshin = false,
   // ★2 あんしんモードは最初の1問を必ず「かんたん」から出す
   const [q, setQ] = useState(() => genProblem(unit, anshin ? "easy" : level));
   const [choices, setChoices] = useState(() => (q ? choicesFor(q) : []));
+  const choicesRef = useFitChoices(choices); // 式が長いときに、列数・文字サイズ・折り返しを自動で決める
   const [streak, setStreak] = useState(0);
   const [total, setTotal] = useState(0);
   const [correct, setCorrect] = useState(0);
@@ -224,7 +226,7 @@ export default function SlowMode({ player, chapter, unit, level, anshin = false,
           {/* 選択肢の中央に◯が出るよう relative で包む */}
           <div style={{ position: "relative" }}>
             {showRing && <div className="correct-ring show" />}
-            <div className={"choices-grid" + (shakeAns ? " answer-shake" : "")}>
+            <div ref={choicesRef} className={"choices-grid" + (shakeAns ? " answer-shake" : "")}>
               {choices.map((c, i) => {
                 const isAns = ansEq(c, q);
                 const hidden = fifty.includes(i); // 50:50 で消した選択肢
@@ -239,7 +241,7 @@ export default function SlowMode({ player, chapter, unit, level, anshin = false,
                     disabled={locked || hidden}
                     style={hidden ? { opacity: 0.2, filter: "grayscale(1)", pointerEvents: "none" } : undefined}
                     onClick={() => answer(c, i)}
-                  ><MathText>{hidden ? "—" : c}</MathText></button>
+                  ><MathText breakable>{hidden ? "—" : c}</MathText></button>
                 );
               })}
             </div>

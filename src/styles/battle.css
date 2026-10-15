@@ -185,7 +185,7 @@
 .bt-q-panel { background: #0d1f0d; border: 2px solid #2d6e2d; border-radius: 5px; padding: 12px; }
 .bt-q-theme { color: #88aa88; font-size: 11px; }
 .bt-q-text { color: #ffffff; font-size: 19px; font-weight: 900; margin: 6px 0 12px; line-height: 1.35; word-break: break-all; font-family: 'M PLUS Rounded 1c', sans-serif; }
-.bt-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.bt-choices { display: grid; grid-template-columns: var(--cg-cols, 1fr 1fr); gap: 8px; }
 .bt-choice {
   font-family: 'M PLUS Rounded 1c', monospace; font-size: 19px; font-weight: 900;
   padding: 13px 8px; background: #11220f; border: 2px solid #2d6e2d; color: #cceebb;

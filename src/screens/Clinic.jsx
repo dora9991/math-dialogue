@@ -14,6 +14,7 @@
 import { useState, useEffect, useRef } from "react";
 import Header from "../components/Header.jsx";
 import MathText from "../components/MathText.jsx";
+import { useFitChoices } from "../components/useFitChoices.js";
 import * as sfx from "../audio/sfx.js";
 import { PROBLEM_BANK } from "../data/problemBank.js";
 import { makeChoices } from "../engine/generator.js";
@@ -82,6 +83,7 @@ export default function Clinic({ player, onComplete, onHome }) {
   const [queue, setQueue] = useState([]);       // これから出す問題
   const [cur, setCur] = useState(null);
   const [choices, setChoices] = useState([]);
+  const choicesRef = useFitChoices(choices); // 式が長いときに、列数・文字サイズ・折り返しを自動で決める
   const [selected, setSelected] = useState(null);
   const [locked, setLocked] = useState(false);
   const [attempts, setAttempts] = useState([]); // [{id, correct}] 集計エンジン用
@@ -318,7 +320,7 @@ export default function Clinic({ player, onComplete, onHome }) {
         <div className="qcard">
           <span className="q-pill">{SKILL.emoji} {SKILL.name}</span>
           <div className="q-text"><MathText>{cur.q}</MathText></div>
-          <div className={"choices-grid" + (locked && selected != null && !isCorrect(choices[selected], cur.answerNumeric) ? " answer-shake" : "")}>
+          <div ref={choicesRef} className={"choices-grid" + (locked && selected != null && !isCorrect(choices[selected], cur.answerNumeric) ? " answer-shake" : "")}>
             {choices.map((c, i) => {
               const isAns = isCorrect(c, cur.answerNumeric);
               let cls = "choice-btn";
@@ -327,7 +329,7 @@ export default function Clinic({ player, onComplete, onHome }) {
                 else if (isAns) cls += i === selected ? " correct" : " reveal";
               }
               return (
-                <button key={i} className={cls} data-sfx="none" disabled={locked} onClick={() => answer(c, i)}><MathText>{c}</MathText></button>
+                <button key={i} className={cls} data-sfx="none" disabled={locked} onClick={() => answer(c, i)}><MathText breakable>{c}</MathText></button>
               );
             })}
           </div>
