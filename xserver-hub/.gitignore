@@ -1,0 +1,11 @@
+# 秘密と、手元で作られるもの（このリポジトリは公開。秘密は絶対に入れない）
+/config/config.php
+/config/*.php
+!/config/config.example.php
+/config/deploy.env
+/var/
+*.hubbak
+*.csv
+*.log
+.env
+.env.*
