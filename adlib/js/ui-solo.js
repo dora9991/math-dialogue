@@ -250,7 +250,7 @@
       h('h2', null, 'フレーズ ' + (di + 1) + ' / ' + n),
       h('div', { class: 'row gap' }, prevBtn, nextBtn, h('button', { type: 'button', class: 'btn sm ghost', onclick: () => App.select({ dec: null }) }, '閉じる'))));
     const tags = h('div', { class: 'tags' }, h('span', { class: 'chip lvl' + lick.lvl }, 'Lv.' + lick.lvl));
-    lick.tags.forEach(t => tags.appendChild(h('span', { class: 'chip tag' }, t)));
+    lick.tags.forEach(t => tags.appendChild(h('span', { class: 'chip tag' }, U.tagName(t))));
     const mini = h('div', { class: 'mini-score', html: miniNotation(pl, Math.min(620, (el.phrase.clientWidth || 600) - 40)) });
     const roles = (App.an.chords[d.i0].chips || []).map(c => h('span', { class: 'chip tone-' + (c.tone || 'x') }, c.label));
     box.appendChild(h('div', { class: 'phrase-main' },
@@ -294,7 +294,7 @@
       const pl = placeLick(solo, di, l);
       const isCur = l.id === d.id;
       const tags = h('div', { class: 'tags' }, h('span', { class: 'chip lvl' + l.lvl }, 'Lv.' + l.lvl));
-      l.tags.slice(0, 4).forEach(t => tags.appendChild(h('span', { class: 'chip tag' }, t)));
+      l.tags.slice(0, 4).forEach(t => tags.appendChild(h('span', { class: 'chip tag' }, U.tagName(t))));
       const shown = App.lickText(l.name, l, App.hs[d.i0].chord);
       wrap.appendChild(h('div', { class: 'cand' + (isCur ? ' cur' : '') },
         h('div', { class: 'cand-h' },
