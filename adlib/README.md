@@ -21,7 +21,7 @@
 - いちばん簡単：公開先 **https://dora9991.github.io/math-dialogue/adlib/** をブラウザで開く（インストール不要）。
 - ファイルで持つなら：**`adlib-all-in-one.html`**（全部を1つにまとめたファイル）をダウンロードして、ダブルクリックでブラウザで開く。
 - フォルダごとあるとき：`index.html` をブラウザで開く（ビルドもサーバーも不要）。
-- サーバーで開くなら：`python3 -m http.server 8786 --directory adlib` → http://localhost:8786/
+- サーバーで開くなら：`python3 -m http.server 8788 --directory adlib` → http://localhost:8788/
 - スマホ・タブレットの幅に合わせた画面にしてある（iPhone の消音スイッチがオンでも鳴るよう設定してあるが、実機では未確認）。
 
 `adlib-all-in-one.html` は `node adlib/tools/bundle.cjs` で作りなおせる（`js/` や `css/` を直したら実行する。できたファイルは手で直さない）。
