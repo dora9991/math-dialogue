@@ -142,7 +142,7 @@
       let solo = S.generate(hs, an, App.soloOpts());
       App.solo.decisions.forEach((d, i) => {
         const e = solo.decisions[i];
-        if (e && e.id !== d.id && L.byId[d.id] && L.byId[d.id].segs.length === L.byId[e.id].segs.length) solo = S.swap(hs, an, solo, i, d.id);
+        if (e && e.id !== d.id && L.byId[d.id] && L.byId[d.id].segs.length === L.byId[e.id].segs.length && S.candidates(hs, an, solo, i).some(c => c.id === d.id)) solo = S.swap(hs, an, solo, i, d.id);
       });
       App._cyc[semis] = { slots, hs, an, solo, semis };
     }
