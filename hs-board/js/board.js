@@ -85,6 +85,7 @@
     String(text).replace(/-/g, '−').split(/([A-Za-z]+|[0-9.+−=√π°()\/<>≦≧±×÷|]+)/).forEach(run => {
       if (!run) return;
       const sp = svgEl('tspan', {}, t);
+      if (/^′/.test(run)) sp.setAttribute('dx', (sz * 0.12).toFixed(1));   // F′ の ′ が斜体の F にかさならないように
       if (/^[A-Za-z]+$/.test(run) && !o.plain) { sp.setAttribute('font-family', 'KaTeX_Math,"Times New Roman",Times,serif'); sp.setAttribute('font-style', 'italic'); sp.setAttribute('font-size', sz * 1.12); sp.setAttribute('font-weight', 400); }
       else if (/^[0-9.+−=√π°()\/<>≦≧±×÷|]+$/.test(run)) { sp.setAttribute('font-family', 'KaTeX_Main,"Times New Roman",Times,serif'); sp.setAttribute('font-size', sz * 1.1); sp.setAttribute('font-weight', 400); }
       sp.textContent = run;
@@ -106,7 +107,7 @@
     return out.filter(s => s.length > 1);
   }
   const pathOf = segs => segs.map(s => 'M' + s.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L')).join('');
-  /* 図の部品。p.k：axes／fn／line／area／seg／vec／poly／pt／label／arc／dot（小さい点）／numline（数直線）／range（不等式の解）／dim（長さの矢印）／circle／venn（ベン図）／right（直角の印）／angle（角の印）／bars（ヒストグラム）／box（箱ひげ図）／pts（散布図の点）。色 c は w/y/p/b/g/o/d。
+  /* 図の部品。p.k：axes／fn／line／area／seg／vec／poly／pt／label／arc／dot（小さい点）／numline（数直線）／range（不等式の解）／dim（長さの矢印）／circle／venn（ベン図）／right（直角の印）／angle（角の印）／bars（ヒストグラム）／box（箱ひげ図）／pts（散布図の点）／param（媒介変数の曲線）。色 c は w/y/p/b/g/o/d。
      返すのは、書く順の [{el, kind}]（kind：stroke＝線を引くように、fade＝ふわっと出す） */
   function drawPrim(f, p) {
     const g = svgEl('g', { 'data-id': p.id || null }, f.svg), out = [], c = col(p.c), wd = p.wd || 3;
@@ -141,7 +142,8 @@
         if (p.label) lab(f.X(p.lat[0]), f.Y(p.lat[1]), p.label, { anchor: p.la || 'start', size: p.size || 24 });
         break;
       }
-      case 'line': {   // y＝mx＋n（x＝c の縦線は {k:'line', x:c}）
+      case 'line': {   // y＝mx＋n（x＝c の縦線は {k:'line', x:c}、2点を通る直線は {k:'line', p1:[x,y], p2:[x,y]}）
+        if (p.p1 && p.p2) { if (Math.abs(p.p2[0] - p.p1[0]) < 1e-12) p = Object.assign({}, p, { x: p.p1[0] }); else { const m = (p.p2[1] - p.p1[1]) / (p.p2[0] - p.p1[0]); p = Object.assign({}, p, { m, n: p.p1[1] - m * p.p1[0] }); } }
         if (p.x != null) stroke(`M${f.X(p.x)} ${f.Y(f.y0)}L${f.X(p.x)} ${f.Y(f.y1)}`, { dash: p.dash });
         else { const a = p.a != null ? p.a : f.x0, b = p.b != null ? p.b : f.x1; stroke(pathOf(curvePts(f, x => p.m * x + p.n, a, b, 120)), { dash: p.dash, clip: true }); }   // 点を多めにとる（急な直線の両はしが図の外に出ても、見える所は描く）
         if (p.label) lab(f.X(p.lat[0]), f.Y(p.lat[1]), p.label, { anchor: p.la || 'start', size: p.size || 24 });
@@ -188,7 +190,7 @@
       case 'arc': {   // 中心 o、半径 r（x 方向の目もりで）または rp（画面の点）、角 a1→a2（度・反時計まわり）
         const [cx, cy] = P(p.o), rp = p.rp || p.r * (f.w / (f.x1 - f.x0)), n = 48, pts = [];
         for (let i = 0; i <= n; i++) { const t = (p.a1 + (p.a2 - p.a1) * i / n) * Math.PI / 180; pts.push([cx + rp * Math.cos(t), cy - rp * Math.sin(t)]); }
-        stroke(pathOf([pts]), { dash: p.dash, wd: p.wd || 2.5 });
+        stroke(pathOf([pts]), { dash: p.dash, wd: p.wd || 2.5, clip: p.clip });   // clip:true で図の枠で切る
         if (p.label) { const t = ((p.a1 + p.a2) / 2) * Math.PI / 180, rr = rp + (p.lr || 18); lab(cx + rr * Math.cos(t), cy - rr * Math.sin(t), p.label, { size: p.size || 22 }); }
         break;
       }
@@ -214,16 +216,19 @@
         if (p.label) lab((Lx + Rx) / 2 + (p.dx || 0), Y - h - 20, p.label, { size: p.size || 24 });
         break;
       }
-      case 'dim': {   // 2点の間の長さ（両はし矢印）。a・b は数学の座標、dy＝上下にずらす(px・上はマイナス)、label
-        const A = P(p.a), B = P(p.b), dy = p.dy == null ? -24 : p.dy, a = [A[0], A[1] + dy], b = [B[0], B[1] + dy];
+      case 'dim': {   // 2点の間の長さ（両はし矢印）。a・b は数学の座標、dy＝上下にずらす(px・上はマイナス)、off＝線分に垂直にずらす(px・＋は A→B の左側)、label
+        const A = P(p.a), B = P(p.b);
+        let ox = 0, oy = p.dy == null ? -24 : p.dy, lx = 0, ly = oy <= 0 ? -18 : 20;
+        if (p.off != null) { const dx = B[0] - A[0], dyy = B[1] - A[1], L = Math.hypot(dx, dyy) || 1, nx = dyy / L, ny = -dx / L; ox = nx * p.off; oy = ny * p.off; const sg = p.off >= 0 ? 1 : -1; lx = nx * 20 * sg; ly = ny * 20 * sg; }   // 斜め・縦の線分にも
+        const a = [A[0] + ox, A[1] + oy], b = [B[0] + ox, B[1] + oy];
         line(a, b, { wd: 2 }); out.push({ el: arrowHead(g, b, a, p.c, 11), kind: 'fade' }, { el: arrowHead(g, a, b, p.c, 11), kind: 'fade' });
-        if (p.label) lab((a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + (dy <= 0 ? -18 : 20), p.label, { size: p.size || 22 });
+        if (p.label) lab((a[0] + b[0]) / 2 + lx, (a[1] + b[1]) / 2 + ly, p.label, { size: p.size || 22 });
         break;
       }
       case 'circle': {   // 円（r は目もりの長さ、rp は画面の点）。fill で中をぬる、label と lat で名前
         const [cx, cy] = P(p.o), rx = p.rp || p.r * f.w / (f.x1 - f.x0), ry = p.rp || p.r * f.h / (f.y1 - f.y0);
         if (p.fill) out.push({ el: svgEl('ellipse', { cx, cy, rx, ry, fill: col(p.fill), 'fill-opacity': p.alpha || 0.25 }, g), kind: 'fade' });
-        out.push({ el: svgEl('ellipse', { cx, cy, rx, ry, fill: 'none', stroke: c, 'stroke-width': wd, 'stroke-dasharray': p.dash ? '9 9' : null }, g), kind: p.dash ? 'fade' : 'stroke' });
+        out.push({ el: svgEl('ellipse', { cx, cy, rx, ry, fill: 'none', stroke: c, 'stroke-width': wd, 'stroke-dasharray': p.dash ? '9 9' : null, 'clip-path': p.clip ? `url(#${f.cid})` : null }, g), kind: p.dash ? 'fade' : 'stroke' });   // clip:true で図の枠で切る
         if (p.label) lab(f.X(p.lat[0]), f.Y(p.lat[1]), p.label, { size: p.size || 26 });
         break;
       }
@@ -246,6 +251,18 @@
         out.push({ el: svgEl('ellipse', Object.assign({ fill: 'none', stroke: col(p.ca || 'b'), 'stroke-width': 3 }, a), g), kind: 'stroke' });
         lab(a.cx - a.rx * 0.74, a.cy - a.ry * 0.74 - 12, names[1], { c: p.ca || 'b', size: 26, anchor: 'end' });
         if (b) { out.push({ el: svgEl('ellipse', Object.assign({ fill: 'none', stroke: col(p.cb || 'p'), 'stroke-width': 3 }, b), g), kind: 'stroke' }); lab(b.cx + b.rx * 0.74, b.cy - b.ry * 0.74 - 12, names[2], { c: p.cb || 'p', size: 26, anchor: 'start' }); }
+        break;
+      }
+      case 'param': {   // 媒介変数で表された曲線（楕円・双曲線・サイクロイド・極方程式など）。x・y＝t の式（'3*cos(t)'）、a・b＝t の範囲、n＝点の数、label・lat
+        const FX = new Function('t', 'with (Math) { return (' + fixPow(p.x) + '); }'), FY = new Function('t', 'with (Math) { return (' + fixPow(p.y) + '); }');
+        const a = p.a != null ? p.a : 0, b = p.b != null ? p.b : 2 * Math.PI, n = p.n || 360, mx = (f.x1 - f.x0) * 0.1, my = (f.y1 - f.y0) * 0.1, segs = [[]];
+        for (let i = 0; i <= n; i++) {
+          const t = a + (b - a) * i / n, x = FX(t), y = FY(t);
+          if (!isFinite(x) || !isFinite(y) || x < f.x0 - mx || x > f.x1 + mx || y < f.y0 - my || y > f.y1 + my) { if (segs[segs.length - 1].length) segs.push([]); continue; }
+          segs[segs.length - 1].push([f.X(x), f.Y(y)]);
+        }
+        stroke(pathOf(segs.filter(q => q.length > 1)), { dash: p.dash, clip: true });
+        if (p.label) lab(f.X(p.lat[0]), f.Y(p.lat[1]), p.label, { anchor: p.la || 'start', size: p.size || 24 });
         break;
       }
       case 'right': {   // 直角の印。o＝直角の頂点、a・b＝2つの辺の上の点（数学の座標）、s＝大きさ(px)
