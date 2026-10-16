@@ -98,10 +98,28 @@
       "port": 8785
     },
     {
+      "name": "minibasket",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8786", "--directory", "minibasket"],
+      "port": 8786
+    },
+    {
+      "name": "hibi",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["hibi/tools/serve.cjs", "--port=8793"],
+      "port": 8793
+    },
+    {
+      "name": "adlib",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8788", "--directory", "adlib"],
+      "port": 8788
+    },
+    {
       "name": "basket-navi",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8793", "--directory", "basket-navi"],
-      "port": 8793
+      "runtimeArgs": ["-m", "http.server", "8794", "--directory", "basket-navi"],
+      "port": 8794
     }
   ]
 }

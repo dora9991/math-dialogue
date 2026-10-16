@@ -145,7 +145,7 @@ python3 tools/make_library.py list "バスケ動画一覧.xlsx" --videos "<動�
 | 配る用の HTML と、公開用のフォルダを作り直す（コードを直したら） | `node tools/bundle.cjs --all`（`basket-navi.html` と `../public/basket-navi/` ができる。**`library.js` は含めない**。どちらも git に入れる） |
 | アイコンを作り直す | `python3 tools/make_icons.py`（`assets/` に PNG ができる。Pillow が必要） |
 | 動作の検査（画面の画像も出す） | `NODE_PATH=$(npm root -g) node tools/check.cjs [画像の出力先]`（playwright と python3 が必要。ffmpeg があれば動画の再生も調べる） |
-| 開発中に見る | `python3 -m http.server 8793 --directory basket-navi`（Claude Code なら `basket-navi` プレビュー） |
+| 開発中に見る | `python3 -m http.server 8794 --directory basket-navi`（Claude Code なら `basket-navi` プレビュー） |
 
 ```
 basket-navi/
