@@ -7,44 +7,88 @@
 <title>高校数学 黒板解説</title>
 <style>
   :root { --chalk: #f4f3ea; --yel: #ffe27a; --pink: #ff9db2; --blue: #9ad8ff; --green: #9ff0b8; }
+  * { box-sizing: border-box; }
   html, body { margin: 0; background: #16352b; color: var(--chalk); font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; }
   body { min-height: 100vh; background: radial-gradient(ellipse at 25% 10%, #2d6150 0%, #234f3f 50%, #16352b 100%) fixed; }
-  main { max-width: 980px; margin: 0 auto; padding: 36px 16px 60px; }
-  h1 { margin: 0; font-size: 34px; letter-spacing: .03em; }
-  .lead { margin: 10px 0 26px; color: rgba(244,243,234,.78); line-height: 1.7; font-size: 16px; }
-  .list { display: grid; gap: 14px; }
-  a.card { display: block; text-decoration: none; color: inherit; background: rgba(0,0,0,.18); border: 2px solid rgba(255,255,255,.16); border-radius: 18px; padding: 16px 20px; transition: background .15s, border-color .15s; }
-  a.card:hover { background: rgba(0,0,0,.28); border-color: var(--yel); }
-  .top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-  .field { font-size: 14px; color: var(--blue); border: 2px solid var(--blue); border-radius: 14px; padding: 2px 10px; }
-  .lv { font-size: 14px; color: var(--yel); }
-  .st { margin-left: auto; font-size: 14px; color: rgba(244,243,234,.7); }
-  .st.done { color: var(--green); }
-  .ttl { font-size: 22px; font-weight: 700; margin: 8px 0 6px; }
-  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
-  .tags span { font-size: 13px; background: rgba(255,255,255,.08); border-radius: 10px; padding: 2px 9px; color: rgba(244,243,234,.85); }
+  main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 60px; }
+  h1 { margin: 0; font-size: 32px; letter-spacing: .03em; }
+  .lead { margin: 10px 0 14px; color: rgba(244,243,234,.8); line-height: 1.7; font-size: 15px; }
+  .mode { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 16px; font-size: 14px; }
+  .mode label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 2px solid rgba(255,255,255,.25); border-radius: 18px; cursor: pointer; }
+  .mode input { accent-color: #ffe27a; }
+  .mode label:has(input:checked) { border-color: var(--yel); color: var(--yel); }
+  .tabs { display: flex; gap: 10px; flex-wrap: wrap; position: sticky; top: 0; z-index: 5; padding: 10px 0; background: linear-gradient(#22493b 75%, rgba(34,73,59,0)); }
+  .tabs button { font: inherit; font-size: 17px; font-weight: 700; color: var(--chalk); background: rgba(0,0,0,.25); border: 2px solid rgba(255,255,255,.35); border-radius: 20px; padding: 6px 18px; cursor: pointer; }
+  .tabs button.on { background: var(--yel); color: #2a1b00; border-color: var(--yel); }
+  .tabs .n { font-size: 12px; font-weight: 500; margin-left: 6px; opacity: .8; }
+  h2 { font-size: 21px; color: var(--yel); margin: 24px 0 4px; display: flex; align-items: center; gap: 10px; }
+  h2::after { content: ""; flex: 1; border-top: 2px dashed rgba(244,243,234,.22); }
+  h3 { font-size: 15px; color: var(--blue); margin: 14px 0 8px; font-weight: 700; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+  a.card, div.card { display: block; text-decoration: none; color: inherit; background: rgba(0,0,0,.18); border: 2px solid rgba(255,255,255,.16); border-radius: 16px; padding: 12px 16px; position: relative; }
+  a.card:hover { background: rgba(0,0,0,.3); border-color: var(--yel); }
+  div.card { opacity: .45; border-style: dashed; }
+  .top { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(244,243,234,.75); }
+  .num { color: var(--blue); font-weight: 700; }
+  .st { margin-left: auto; }
+  .st.done { color: var(--green); } .st.go { color: var(--yel); }
+  .ttl { font-size: 18px; font-weight: 700; margin: 4px 0 6px; line-height: 1.4; }
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tags span { font-size: 12px; background: rgba(255,255,255,.08); border-radius: 9px; padding: 1px 8px; color: rgba(244,243,234,.85); }
   .foot { margin-top: 30px; font-size: 13px; color: rgba(244,243,234,.6); line-height: 1.7; }
+  @media (max-width: 520px) { h1 { font-size: 26px; } .grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 <main>
   <h1>高校数学 黒板解説</h1>
-  <p class="lead">入試レベルの問題を、黒板で1行ずつ解説します（声なし）。Enter・クリックで進み、途中の「発問」で自分で考えながら読めます。<br>いまは熊本大学の入試レベルを目安にした問題を 4 つ用意しています（問題はすべて自作）。</p>
-  <div class="list" id="list"></div>
-  <p class="foot">キー操作：Enter つぎへ／← もどる／1〜4 発問に答える／H ヒント／Q 問題文／A 自動送り<br>途中でやめても、次に開いたとき「つづきから」で再開できます（この端末に記録）。</p>
+  <p class="lead">黒板に1行ずつ書きながら解説します（声なし）。途中の「発問」で、自分で考えながら進めます。<br>数学Ⅰの授業（数と式・集合と命題・2次関数）と、入試レベル（熊本大学を目安にした自作問題）があります。</p>
+  <div class="mode" id="mode">開きかた：
+    <label><input type="radio" name="m" value=""> ふつう（Enter で進む）</label>
+    <label><input type="radio" name="m" value="auto"> 自動で進める（発問で止まる）</label>
+    <label><input type="radio" name="m" value="watch"> 🎬 動画モード（最後まで流れる）</label>
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <div id="list"></div>
+  <p class="foot">キー操作：Enter つぎへ／← もどる／1〜4 発問に答える／H ヒント／Q 問題文／A 自動／W 動画モード／P 一時停止／S 速さ／D 小数／R もう一度<br>途中でやめても、次に開いたとき「つづきから」で再開できます（この端末に記録）。</p>
 </main>
-<script src="js/lessons.js?v=202610160917"></script>
+<script src="js/lessons.js?v=202610162328"></script>
 <script>
   (function () {
     const get = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const set = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* 記録できなくてもよい */ } };
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    document.getElementById('list').innerHTML = (window.HB_LESSONS || []).map(l => {
+    const L = window.HB_LESSONS || [];
+    // 開きかた（ふつう／自動／動画）は、この端末がおぼえる
+    let mode = get('hb.openmode') || '';
+    document.querySelectorAll('#mode input').forEach(r => { r.checked = r.value === mode; r.addEventListener('change', () => { mode = r.value; set('hb.openmode', mode); render(); }); });
+    const courses = [...new Set(L.map(l => l.course || 'その他'))];
+    let cur = get('hb.course'); if (!courses.includes(cur)) cur = courses[0];
+    const tabs = document.getElementById('tabs');
+    function paintTabs() {
+      tabs.innerHTML = courses.map(c => { const all = L.filter(l => (l.course || 'その他') === c), ok = all.filter(l => l.ready !== false).length; return '<button type="button" data-c="' + esc(c) + '" class="' + (c === cur ? 'on' : '') + '">' + esc(c) + '<span class="n">' + ok + (ok < all.length ? ' / ' + all.length : '') + '本</span></button>'; }).join('');
+    }
+    tabs.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; cur = b.dataset.c; set('hb.course', cur); paintTabs(); render(); });
+    function card(l, no) {
       let best = null; try { best = JSON.parse(get('hb.best.' + l.id) || 'null'); } catch (e) { best = null; }
-      const pos = get('hb.pos.' + l.id);
-      const st = best ? '<span class="st done">✓ 最高 ' + best.right + ' / ' + best.total + '</span>' : pos ? '<span class="st">▶ とちゅう</span>' : '<span class="st">未</span>';
-      return '<a class="card" href="play.html?s=' + encodeURIComponent(l.id) + '"><div class="top"><span class="field">' + esc(l.field) + '</span><span class="lv">' + esc(l.level || '') + '　' + esc(l.time || '') + '</span>' + st + '</div>' +
-        '<div class="ttl">' + esc(l.title) + '</div><div class="tags">' + (l.tags || []).map(t => '<span>' + esc(t) + '</span>').join('') + '</div></a>';
-    }).join('');
+      let pos = null; try { pos = JSON.parse(get('hb.pos.' + l.id) || 'null'); } catch (e) { pos = null; }
+      const st = best ? '<span class="st done">✓ ' + best.right + ' / ' + best.total + '</span>' : get('hb.done.' + l.id) ? '<span class="st done">✓ 見た</span>' : pos ? '<span class="st go">▶ とちゅう</span>' : '';
+      const body = '<div class="top"><span class="num">' + esc(no) + '</span><span>' + esc(l.time || '') + '</span>' + st + '</div><div class="ttl">' + esc(l.title) + '</div><div class="tags">' + (l.tags || []).map(t => '<span>' + esc(t) + '</span>').join('') + '</div>';
+      if (l.ready === false) return '<div class="card" title="準備中">' + body + '</div>';
+      return '<a class="card" href="play.html?s=' + encodeURIComponent(l.id) + (mode ? '&' + mode + '=1' : '') + '">' + body + '</a>';
+    }
+    function render() {   // 章（h2）→ 節（h3）→ カード。番号は章ごとに 1-1, 1-2 …
+      const items = L.filter(l => (l.course || 'その他') === cur);
+      let html = '', ch, gr, n = 0, open = false;
+      items.forEach(l => {
+        if (l.chapter !== ch) { if (open) { html += '</div>'; open = false; } ch = l.chapter; gr = undefined; n = 0; html += '<h2>' + esc(ch || '') + '</h2>'; }
+        if ((l.group || '') !== gr) { if (open) html += '</div>'; gr = l.group || ''; if (gr) html += '<h3>' + esc(gr) + '</h3>'; html += '<div class="grid">'; open = true; }
+        n++; html += card(l, (l.course === '数学Ⅰ' ? String(ch || '').replace(/^第(\d)章.*/, '$1') + '-' : '') + n);
+      });
+      if (open) html += '</div>';
+      document.getElementById('list').innerHTML = html;
+    }
+    paintTabs(); render();
   })();
 </script>
 </body>
