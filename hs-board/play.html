@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>高校数学 黒板解説</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="css/board.css">
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <div id="board"><div id="cols"></div></div>
+  <header id="hd"><span class="field"></span><span class="ttl"></span><span class="part"></span><span id="score" class="prog"></span><span id="pg" class="prog"></span>
+    <button id="bProb" type="button" title="問題文をいつでも見られます（Q キー）">📄 問題（Q）</button>
+    <button id="bAuto" type="button" title="書き終わって少したつと、自動で次へ進みます。発問では止まります（A キー）">自動 OFF</button>
+    <a href="index.html" title="目次へもどります。途中の場所はおぼえています">☰ 目次</a></header>
+  <div id="bar"><i></i></div>
+  <div id="cap"><span class="lab">解説</span><div class="txt"></div><div class="opts"></div><span class="more">▼ Enter</span></div>
+  <div id="nav"><button id="bNext" type="button">つぎへ ▶</button><button id="bBack" type="button">◀ もどる</button></div>
+  <div id="result" class="ov hidden"></div>
+  <div id="probov" class="ov hidden"><div class="card"><div class="el prob"></div><div class="close"><button class="btn sub" type="button">閉じる（Esc）</button></div></div></div>
+  <div id="start" class="ov"><div class="card">
+    <div class="f"></div><div class="t"></div><div class="lv"></div>
+    <div class="row"><button id="bStart" class="btn" type="button">Enter で はじめる</button><button id="bResume" class="btn sub hidden" type="button">▶ つづきから</button></div>
+    <div class="n">声は出ません。Enter・クリック（タッチ）で 1 つずつ進みます。← でもどれます。<br>途中の「発問」は 1〜4 キーかクリックで答えます。「考えてみよう」は、ノートで解いてから答えを見ます。<br>Q で問題文、A で自動送り。　<a href="index.html" style="color:#9ad8ff">← 目次へ</a></div>
+  </div></div>
+</div></div>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="js/board.js"></script>
+</body>
+</html>
