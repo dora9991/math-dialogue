@@ -2,6 +2,7 @@
    ────────────────────────────────────────────────────────────────────
    ・データは Google ドライブの「ひびの手帳」フォルダに置く（_system/db.json）。写真・PDF もここ。
    ・スマホのアプリと、iPhone のショートカットから POST で呼ばれる（合言葉＝トークンが要る）。
+     アプリは、パスキー（Face ID・Touch ID）でもログインできる（passkey.login だけは合言葉なしで呼べて、署名を確かめてから合言葉を返す）。
    ・Claude の朝の整理とは、ドライブのファイルで受け渡しする（Claude からこのスクリプトは直接呼べないため）。
        アプリ → Claude ：_system の Google ドキュメント「claudeへ」（中身は JSON。このスクリプトが書きかえる）
        Claude → アプリ ：_system/claudeから/*.json（Claude が毎朝つくる。このスクリプトが取り込む）
@@ -11,11 +12,12 @@
      1. このファイルの中身を Apps Script のエディタに貼る → 関数「setup」を選んで ▷実行 → 許可する
      2. デプロイ → 新しいデプロイ → 種類「ウェブアプリ」・実行するユーザー「自分」・アクセスできるユーザー「全員」
      3. 関数「showSetupInfo」を実行 → ログに出た URL と合言葉を、アプリの「設定」に入れる
+     4. アプリで「パスキーを作る」→ ほかの iPhone・iPad・Mac は、Face ID・Touch ID でログインできる（URL と合言葉は要らない）
    くわしくは hibi/README.md。
    ──────────────────────────────────────────────────────────────────── */
 
 var HIBI = {
-  VERSION: '1.0.0',
+  VERSION: '1.1.0',
   TZ: 'Asia/Tokyo',
   ROOT: 'ひびの手帳',          // マイドライブ直下のフォルダ
   INBOX: '受信箱',             // ここに写真・PDF を入れる（Claude が毎朝読む）
@@ -52,6 +54,12 @@ function doGet(e) {
 
 function doPost(e) {
   var req = parseRequest_(e);
+  if (req.action === 'passkey.login') {
+    try { return json_(passkeyLogin_(req)); } catch (err) {
+      console.error(err && err.stack ? err.stack : err);
+      return json_({ ok: false, error: 'passkey_failed' });
+    }
+  }
   var token = prop_('TOKEN');
   if (!token || !req.token || req.token !== token) return json_({ ok: false, error: 'unauthorized' });
   var fn = ACTIONS_[req.action];
@@ -79,6 +87,9 @@ var ACTIONS_ = {
   'ios.sync': actIosSync_,
   'settings.save': actSettingsSave_,
   'sync.run': actSyncRun_,
+  'passkey.add': actPasskeyAdd_,
+  'passkey.list': function () { return { passkeys: passkeyList_() }; },
+  'passkey.remove': actPasskeyRemove_,
   'feed.info': function () { return { key: prop_('FEED_KEY') }; }
 };
 
@@ -127,6 +138,12 @@ function resetToken() {
   PropertiesService.getScriptProperties().setProperty('TOKEN', 'hb_' + uid_() + uid_() + uid_());
   PropertiesService.getScriptProperties().setProperty('FEED_KEY', 'fk_' + uid_() + uid_());
   showSetupInfo();
+}
+
+/** パスキーを全部使えなくする（端末をなくしたとき）。合言葉も変えるときは、続けて resetToken も実行する */
+function clearPasskeys() {
+  savePasskeys_([]);
+  console.log('パスキーを全部消しました。アプリでは、URL と合言葉でつないでから、作りなおせます。');
 }
 
 /** 1時間ごと：Claude の結果を取り込む・ドライブに直接入れたファイルを見つける・Claude へのデータを新しくする */
@@ -382,6 +399,220 @@ function actSyncRun_() {
   });
 }
 
+/* ───── パスキー（Face ID・Touch ID でログイン） ─────
+   ・作る：つながっている端末から（合言葉つき）。公開鍵だけを、スクリプトのプロパティ PASSKEYS にしまう。
+   ・ログイン：合言葉なしで呼べる。つなぎ元・顔や指紋で確かめた印・時刻・署名（ES256）を確かめてから、合言葉を返す。
+   ・どの裏側につなぐかは、アプリがパスキーの「ユーザー ID」に入れておく（新しい端末は、そこから URL を知る）。 */
+
+var PASSKEY_MAX_ = 10;
+var PASSKEY_SKEW_MS_ = 10 * 60 * 1000;   // 端末と Google の時計のずれは、ここまで許す
+
+function passkeys_() {
+  try { var a = JSON.parse(prop_('PASSKEYS') || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+}
+function savePasskeys_(list) {
+  var props = PropertiesService.getScriptProperties();
+  if (list.length) props.setProperty('PASSKEYS', JSON.stringify(list)); else props.deleteProperty('PASSKEYS');
+}
+/** 一覧を書きかえる（同時に来たログイン・追加で、消し合わないように鍵をかける） */
+function updatePasskeys_(fn) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try { var list = fn(passkeys_()); savePasskeys_(list); return list; } finally { lock.releaseLock(); }
+}
+/** アプリに見せるのは、名前と日付だけ */
+function passkeyList_() {
+  return passkeys_().map(function (p) { return { id: p.id, name: p.name, createdAt: p.createdAt, lastUsedAt: p.lastUsedAt || '' }; });
+}
+
+function actPasskeyAdd_(req) {
+  var id = String(req.id || ''), x = String(req.x || ''), y = String(req.y || '');
+  var rpId = String(req.rpId || '').toLowerCase(), origin = String(req.origin || '');
+  if (!/^[A-Za-z0-9_-]{16,1400}$/.test(id)) throw new Error('パスキーの ID が読めません');
+  if (!/^[A-Za-z0-9_-]{43}$/.test(x) || !/^[A-Za-z0-9_-]{43}$/.test(y)) throw new Error('パスキーの鍵の形が読めません（ES256 の鍵だけ使えます）');
+  if (!/^(https:\/\/[a-z0-9.-]+(:\d+)?|http:\/\/(localhost|127\.0\.0\.1)(:\d+)?)$/.test(origin)) throw new Error('アプリの URL（origin）が読めません');
+  var host = origin.replace(/^https?:\/\//, '').replace(/:\d+$/, '');
+  if (!/^[a-z0-9.-]{1,253}$/.test(rpId) || (host !== rpId && host.slice(-rpId.length - 1) !== '.' + rpId)) throw new Error('rpId と アプリの URL が合いません');
+  es256Ready_();
+  if (!p256OnCurve_(b64uBig_(x), b64uBig_(y))) throw new Error('パスキーの鍵が正しくありません');
+  var rec = { id: id, x: x, y: y, rpId: rpId, origin: origin, name: clip_(String(req.name || '').trim() || 'パスキー', 40), createdAt: nowIso_(), lastUsedAt: '' };
+  updatePasskeys_(function (list) { return list.filter(function (p) { return p.id !== id; }).concat([rec]).slice(-PASSKEY_MAX_); });
+  return { passkeys: passkeyList_() };
+}
+
+function actPasskeyRemove_(req) {
+  var removed = 0;
+  updatePasskeys_(function (list) { var left = list.filter(function (p) { return p.id !== req.id; }); removed = list.length - left.length; return left; });
+  return { passkeys: passkeyList_(), removed: removed };
+}
+
+/** 合言葉のかわりに、パスキーの署名で確かめる。だれでも呼べるので、確かめ終わるまで何も渡さない */
+function passkeyLogin_(req) {
+  var fail = function (code) { return { ok: false, error: code }; };
+  var p = null;
+  passkeys_().forEach(function (k) { if (k.id === req.id) p = k; });
+  if (!p) return fail('passkey_unknown');
+  try { es256Ready_(); } catch (e) { return fail('passkey_unsupported'); }
+  var cdj, ad, sig, cd, ch;
+  try {
+    cdj = b64uBytes_(req.clientDataJSON); ad = b64uBytes_(req.authenticatorData); sig = b64uBytes_(req.signature);
+    cd = JSON.parse(Utilities.newBlob(cdj).getDataAsString('UTF-8'));
+    ch = Utilities.newBlob(b64uBytes_(cd.challenge)).getDataAsString('UTF-8');
+  } catch (e) { return fail('passkey_failed'); }
+  if (!cd || cd.type !== 'webauthn.get' || cd.origin !== p.origin || cd.crossOrigin === true || ad.length < 37) return fail('passkey_failed');
+  // 合図（challenge）はアプリが作る「hb1.時刻.使い捨ての番号」。古いもの・一度使ったものは受けない
+  var m = /^hb1\.(\d{13})\.([0-9a-f]{32})$/.exec(ch);
+  if (!m) return fail('passkey_failed');
+  if (Math.abs(Date.now() - Number(m[1])) > PASSKEY_SKEW_MS_) return fail('passkey_stale');
+  var cache = null;
+  try { cache = CacheService.getScriptCache(); } catch (e) { cache = null; }
+  if (cache && cache.get('pk_' + m[2])) return fail('passkey_stale');
+  // このサイト（rpId）のパスキーか・押した印（UP）と、顔・指紋・パスコードで確かめた印（UV）があるか
+  var rp = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, p.rpId, Utilities.Charset.UTF_8);
+  for (var i = 0; i < 32; i++) if ((rp[i] & 0xff) !== (ad[i] & 0xff)) return fail('passkey_failed');
+  if ((ad[32] & 0x05) !== 0x05) return fail('passkey_failed');
+  var signed = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, ad.concat(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, cdj)));
+  if (!es256Verify_(p.x, p.y, signed, sig)) return fail('passkey_failed');
+  if (cache) { try { cache.put('pk_' + m[2], '1', 1800); } catch (e) { /* 使い捨ての印が残せなくても、時刻で古いものは止まる */ } }
+  try { updatePasskeys_(function (list) { list.forEach(function (k) { if (k.id === p.id) k.lastUsedAt = nowIso_(); }); return list; }); }
+  catch (e) { console.warn('パスキーの「最後に使った日」を書けなかった：' + e); }   // ログインは止めない
+  return { ok: true, data: { token: prop_('TOKEN'), name: p.name } };
+}
+
+/* ── 署名（ES256 = P-256 の ECDSA と SHA-256）を確かめる。Apps Script には確かめる関数がないので、BigInt で計算する ── */
+
+var P256_ = null, ES256_OK_ = false;
+function p256_() {
+  if (!P256_) {
+    var B = BigInt;
+    P256_ = {
+      p: B('0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff'),
+      n: B('0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551'),
+      b: B('0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b'),
+      gx: B('0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296'),
+      gy: B('0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5'),
+      k0: B(0), k1: B(1), k2: B(2), k3: B(3), k4: B(4), k8: B(8)
+    };
+  }
+  return P256_;
+}
+/** 使う前に一度、決まった答えのある署名で確かめる（BigInt がない・計算がおかしい裏側では、パスキーを使わせない） */
+function es256Ready_() {
+  if (ES256_OK_) return true;
+  if (typeof BigInt !== 'function') throw new Error('この Apps Script では BigInt が使えません（V8 の実行環境にしてください）');
+  var x = 'ywbmJP9le-Ib5wjqHpZ09yWLR2IFY_fBwz5Zuwz619g', y = 'yh73JEpbHMFc65lSiKviHvQn_78K3uhXovzW-lRKYx8';
+  var h = b64uBytes_('yjxFjK6ZPaYjRJBGtulP3Q2WKVgYtXN84Jd2Y9nqHfU');
+  var s = b64uBytes_('MEYCIQD5U73PJBitvswEM2ihNzQ8Zf2RqAx8kFzVjp9VO5GltgIhALSH-xSEAd-D8KYss3jefTGuMC-d-5rMU4sAsQdqfbh5');
+  var bad = h.slice(); bad[31] = bad[31] ^ 1;
+  if (!es256Verify_(x, y, h, s) || es256Verify_(x, y, bad, s)) throw new Error('署名の確かめ方が、この Apps Script では正しく動きません');
+  ES256_OK_ = true;
+  return true;
+}
+
+function es256Verify_(xB64, yB64, hash, der) {
+  var c = p256_();
+  var x = b64uBig_(xB64), y = b64uBig_(yB64);
+  if (!p256OnCurve_(x, y)) return false;
+  var rs = derSig_(der);
+  if (!rs) return false;
+  var r = rs[0], s = rs[1];
+  if (r <= c.k0 || r >= c.n || s <= c.k0 || s >= c.n) return false;
+  var w = p256Inv_(s, c.n);
+  if (w === null) return false;
+  var z = bytesBig_(hash);
+  var R = p256MulAdd_(z * w % c.n, r * w % c.n, [x, y, c.k1]);
+  if (!R) return false;
+  var zi = p256Inv_(R[2], c.p);
+  if (zi === null) return false;
+  return R[0] * (zi * zi % c.p) % c.p % c.n === r;
+}
+
+function p256Mod_(a, m) { var r = a % m; return r < P256_.k0 ? r + m : r; }
+function p256OnCurve_(x, y) {
+  var c = p256_(), p = c.p;
+  if (x < c.k0 || x >= p || y < c.k0 || y >= p) return false;
+  return p256Mod_(y * y % p - (x * x % p * x % p - c.k3 * x + c.b), p) === c.k0;
+}
+/** 点の2倍（ヤコビ座標・a = -3）。null は無限遠点 */
+function p256Dbl_(P) {
+  var c = P256_, p = c.p;
+  if (!P || P[1] === c.k0) return null;
+  var X = P[0], Y = P[1], Z = P[2];
+  var delta = Z * Z % p, gamma = Y * Y % p, beta = X * gamma % p;
+  var alpha = c.k3 * p256Mod_(X - delta, p) % p * ((X + delta) % p) % p;
+  var X3 = p256Mod_(alpha * alpha - c.k8 * beta, p);
+  var Z3 = p256Mod_((Y + Z) * (Y + Z) - gamma - delta, p);
+  var Y3 = p256Mod_(alpha * p256Mod_(c.k4 * beta - X3, p) - c.k8 * (gamma * gamma % p), p);
+  return [X3, Y3, Z3];
+}
+/** 点の足し算（ヤコビ座標） */
+function p256Add_(P, Q) {
+  if (!P) return Q;
+  if (!Q) return P;
+  var c = P256_, p = c.p;
+  var Z1Z1 = P[2] * P[2] % p, Z2Z2 = Q[2] * Q[2] % p;
+  var U1 = P[0] * Z2Z2 % p, U2 = Q[0] * Z1Z1 % p;
+  var S1 = P[1] * Q[2] % p * Z2Z2 % p, S2 = Q[1] * P[2] % p * Z1Z1 % p;
+  var H = p256Mod_(U2 - U1, p), R = p256Mod_(S2 - S1, p);
+  if (H === c.k0) return R === c.k0 ? p256Dbl_(P) : null;
+  var I = c.k4 * H % p * H % p, J = H * I % p, V = U1 * I % p;
+  R = c.k2 * R % p;
+  var X3 = p256Mod_(R * R - J - c.k2 * V, p);
+  var Y3 = p256Mod_(R * p256Mod_(V - X3, p) - c.k2 * (S1 * J % p), p);
+  var Z3 = p256Mod_(((P[2] + Q[2]) * (P[2] + Q[2]) - Z1Z1 - Z2Z2) % p * H, p);
+  return [X3, Y3, Z3];
+}
+/** u1・G + u2・Q を、ビットを上から一度だけたどって求める */
+function p256MulAdd_(u1, u2, Q) {
+  var c = P256_, G = [c.gx, c.gy, c.k1], GQ = p256Add_(G, Q);
+  var a = u1.toString(2), b = u2.toString(2), n = Math.max(a.length, b.length), R = null;
+  while (a.length < n) a = '0' + a;
+  while (b.length < n) b = '0' + b;
+  for (var i = 0; i < n; i++) {
+    R = p256Dbl_(R);
+    var ba = a.charAt(i) === '1', bb = b.charAt(i) === '1';
+    if (ba && bb) R = p256Add_(R, GQ); else if (ba) R = p256Add_(R, G); else if (bb) R = p256Add_(R, Q);
+  }
+  return R;
+}
+/** 逆数（拡張ユークリッド）。ないときは null */
+function p256Inv_(a, m) {
+  var c = p256_(), t = c.k0, nt = c.k1, r = m, nr = p256Mod_(a, m);
+  while (nr !== c.k0) {
+    var q = r / nr, tmp = t - q * nt;
+    t = nt; nt = tmp;
+    tmp = r - q * nr; r = nr; nr = tmp;
+  }
+  if (r !== c.k1) return null;
+  return t < c.k0 ? t + m : t;
+}
+/** DER の署名（SEQUENCE { INTEGER r, INTEGER s }）→ [r, s]。形がちがえば null */
+function derSig_(bytes) {
+  var b = [];
+  for (var k = 0; k < bytes.length; k++) b.push(bytes[k] & 0xff);
+  if (b.length < 8 || b.length > 72 || b[0] !== 0x30 || b[1] !== b.length - 2) return null;
+  var i = 2, out = [];
+  for (var j = 0; j < 2; j++) {
+    if (b[i++] !== 0x02) return null;
+    var len = b[i++];
+    if (!len || len > 33 || i + len > b.length) return null;
+    out.push(bytesBig_(b.slice(i, i + len)));
+    i += len;
+  }
+  return i === b.length ? out : null;
+}
+function bytesBig_(bytes) {
+  var hex = '';
+  for (var i = 0; i < bytes.length; i++) { var v = bytes[i] & 0xff; hex += (v < 16 ? '0' : '') + v.toString(16); }
+  return BigInt('0x' + (hex || '0'));
+}
+function b64uBytes_(s) {
+  s = String(s == null ? '' : s);
+  if (!/^[A-Za-z0-9_-]*$/.test(s) || s.length % 4 === 1) throw new Error('base64url が読めません');
+  return Utilities.base64DecodeWebSafe(s + '==='.slice((s.length + 3) % 4));
+}
+function b64uBig_(s) { return bytesBig_(b64uBytes_(s)); }
+
 /* ───── データ（db.json） ───── */
 
 function emptyDb_() {
@@ -502,7 +733,8 @@ function state_(db) {
     settings: db.settings, memos: db.memos, items: db.items,
     proposals: db.proposals.filter(function (p) { return p.status === 'open'; }),
     briefings: briefings, ios: db.ios, lastRun: db.lastRun, exportedAt: db.exportedAt || '', outboxErrors: (db.outboxErrors || []).slice(-5),
-    folders: { root: f.root.getId(), inbox: f.inbox.getId(), pending: f.pending.getId() }
+    folders: { root: f.root.getId(), inbox: f.inbox.getId(), pending: f.pending.getId() },
+    passkeys: passkeyList_()
   };
 }
 

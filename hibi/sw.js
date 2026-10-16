@@ -3,7 +3,7 @@
    ・データ（裏側の Apps Script への POST）は、ここでは一切さわらない
    公開のたびに tools/deploy.cjs が VERSION を書きかえる（それで古い控えが入れかわる）。 */
 const VERSION = 'hibi-dev';
-const SHELL = ['./', 'index.html', 'css/hibi.css', 'js/core.js', 'js/api.js', 'js/image.js', 'js/guide.js', 'js/sample.js', 'js/app.js',
+const SHELL = ['./', 'index.html', 'css/hibi.css', 'js/core.js', 'js/api.js', 'js/passkey.js', 'js/image.js', 'js/guide.js', 'js/sample.js', 'js/app.js',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

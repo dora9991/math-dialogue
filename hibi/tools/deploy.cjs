@@ -15,7 +15,7 @@ const { spawnSync } = require('child_process');
 const PROJECT = 'hibi-techo';
 const root = path.resolve(__dirname, '..');
 const dry = process.argv.includes('--dry');
-const FILES = ['index.html', 'manifest.webmanifest', 'sw.js', 'css/hibi.css', 'js/core.js', 'js/api.js', 'js/image.js', 'js/guide.js', 'js/sample.js', 'js/app.js',
+const FILES = ['index.html', 'manifest.webmanifest', 'sw.js', 'css/hibi.css', 'js/core.js', 'js/api.js', 'js/passkey.js', 'js/image.js', 'js/guide.js', 'js/sample.js', 'js/app.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png'];
 
 const out = fs.mkdtempSync(path.join(os.tmpdir(), 'hibi-deploy-'));

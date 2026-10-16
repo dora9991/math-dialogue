@@ -508,6 +508,28 @@ body[data-view="cal"] .banner { margin: 8px 10px; }
 .welcome .form input { margin-top: 5px; font-weight: 400; }
 .welcome .form .muted { font-size: 14px; }
 .form-err { color: var(--err); font-size: 15px; font-weight: 600; }
+/* パスキー（Face ID・Touch ID でログイン） */
+.welcome .pk-login { padding: 14px 16px 10px; margin: 20px 0 6px; text-align: left; }
+.welcome .pk-login button.big { margin: 0 0 10px; gap: 10px; min-height: 56px; font-size: 17.5px; font-weight: 800; }
+.welcome .pk-login .form-err { margin: 2px 0 8px; }
+.welcome .pk-login .form-err.soft { color: var(--ink2); }
+.welcome .pk-login .muted { margin: 0; line-height: 1.55; }
+.welcome .or { display: flex; align-items: center; gap: 10px; margin: 22px 2px 0; color: var(--ink3); font-size: 14px; font-weight: 700; }
+.welcome .or::before, .welcome .or::after { content: ""; flex: 1; height: .5px; background: var(--line2); }
+.welcome .or + .form { margin-top: 10px; }
+.pk-list { list-style: none; margin: 10px 0 2px; padding: 0; }
+.pk-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: .5px solid var(--line); }
+.pk-row:first-child { border-top: 0; }
+.pk-ic { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.pk-t { flex: 1; min-width: 0; }
+.pk-t b { display: block; font-size: 15.5px; }
+.pk-t small { display: block; font-size: 13px; color: var(--ink3); margin-top: 1px; }
+.pk-row button { flex: none; min-height: 36px; padding: 4px 12px; font-size: 14.5px; color: var(--err); }
+.pk-offer { padding: 4px 18px 16px; text-align: center; }
+.pk-offer .pk-hero { width: 64px; height: 64px; margin: 4px auto 10px; border-radius: 18px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.pk-offer h3 { font-size: 19px; font-weight: 800; margin: 0 0 8px; }
+.pk-offer p { font-size: 16px; line-height: 1.65; margin: 0 2px 14px; text-align: left; }
+.pk-offer .cancel { width: 100%; min-height: 50px; background: none; color: var(--accent); font-size: 16px; font-weight: 700; }
 .empty-state { text-align: center; padding: 60px 20px; }
 .spinner { width: 30px; height: 30px; border: 3px solid var(--line2); border-top-color: var(--accent); border-radius: 50%; animation: spin .9s linear infinite; margin: 0 auto; }
 
