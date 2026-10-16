@@ -78,10 +78,13 @@
     }
     const t = svgEl('text', { x: X, y: Y, fill: col(o.c), 'font-size': o.size || 26, 'text-anchor': o.anchor || 'middle', 'dominant-baseline': 'central',
       'font-family': '"Klee One","Hiragino Maru Gothic ProN",sans-serif', 'font-weight': 600 }, g);
-    String(text).split(/([A-Za-z]+)/).forEach((run, i) => {
+    // 英字＝数式の斜体、数字・記号（− √ π ° など）＝数式の立体（KaTeX の字体）、日本語＝黒板の字
+    const sz = o.size || 26;
+    String(text).replace(/-/g, '−').split(/([A-Za-z]+|[0-9.+−=√π°′()\/<>≦≧±×÷|]+)/).forEach(run => {
       if (!run) return;
       const sp = svgEl('tspan', {}, t);
-      if (i % 2 === 1 && !o.plain) { sp.setAttribute('font-family', '"Times New Roman",Times,serif'); sp.setAttribute('font-style', 'italic'); sp.setAttribute('font-size', (o.size || 26) * 1.12); sp.setAttribute('font-weight', 400); }
+      if (/^[A-Za-z]+$/.test(run) && !o.plain) { sp.setAttribute('font-family', 'KaTeX_Math,"Times New Roman",Times,serif'); sp.setAttribute('font-style', 'italic'); sp.setAttribute('font-size', sz * 1.12); sp.setAttribute('font-weight', 400); }
+      else if (/^[0-9.+−=√π°′()\/<>≦≧±×÷|]+$/.test(run)) { sp.setAttribute('font-family', 'KaTeX_Main,"Times New Roman",Times,serif'); sp.setAttribute('font-size', sz * 1.1); sp.setAttribute('font-weight', 400); }
       sp.textContent = run;
     });
     return t;
@@ -101,23 +104,33 @@
     return out.filter(s => s.length > 1);
   }
   const pathOf = segs => segs.map(s => 'M' + s.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L')).join('');
-  /* 図の部品。p.k：axes／fn／line／area／seg／vec／poly／pt／label／arc／dot（小さい点）／numline（数直線）／range（不等式の解）／dim（長さの矢印）／circle／venn（ベン図）。色 c は w/y/p/b/g/o/d。
+  /* 図の部品。p.k：axes／fn／line／area／seg／vec／poly／pt／label／arc／dot（小さい点）／numline（数直線）／range（不等式の解）／dim（長さの矢印）／circle／venn（ベン図）／right（直角の印）／angle（角の印）／bars（ヒストグラム）／box（箱ひげ図）／pts（散布図の点）。色 c は w/y/p/b/g/o/d。
      返すのは、書く順の [{el, kind}]（kind：stroke＝線を引くように、fade＝ふわっと出す） */
   function drawPrim(f, p) {
     const g = svgEl('g', { 'data-id': p.id || null }, f.svg), out = [], c = col(p.c), wd = p.wd || 3;
     const line = (A, B, o) => { o = o || {}; const e = svgEl('line', { x1: A[0], y1: A[1], x2: B[0], y2: B[1], stroke: o.c || c, 'stroke-width': o.wd || wd, 'stroke-linecap': 'round', 'stroke-dasharray': o.dash ? '9 9' : null }, g); out.push({ el: e, kind: o.kind || (o.dash ? 'fade' : 'stroke') }); return e; };
     const stroke = (d, o) => { o = o || {}; const e = svgEl('path', { d, fill: 'none', stroke: o.c || c, 'stroke-width': o.wd || wd, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-dasharray': o.dash ? '9 9' : null, 'clip-path': o.clip ? `url(#${f.cid})` : null }, g); out.push({ el: e, kind: o.dash ? 'fade' : 'stroke' }); return e; };
-    const lab = (X, Y, text, o) => { const e = label(g, X, Y, text, Object.assign({ c: p.c }, o)); out.push({ el: e, kind: (o && o.kind) || 'fade' }); return e; };
+    const lab = (X, Y, text, o) => { const e = label(g, X, Y, text, Object.assign({ c: p.c, plain: p.plain }, o)); out.push({ el: e, kind: (o && o.kind) || 'fade' }); return e; };
     const P = a => [f.X(a[0]), f.Y(a[1])];
     switch (p.k) {
-      case 'axes': {
-        const ox = f.X(0), oy = f.Y(0), cc = p.c || 'd';
-        line([f.X(f.x0), oy], [f.X(f.x1) - 4, oy], { c: col(cc), wd: 2.5, kind: 'axis' }); out.push({ el: arrowHead(g, [0, oy], [f.X(f.x1), oy], cc, 13), kind: 'fade' });
-        line([ox, f.Y(f.y0)], [ox, f.Y(f.y1) + 4], { c: col(cc), wd: 2.5, kind: 'axis' }); out.push({ el: arrowHead(g, [ox, f.h], [ox, f.Y(f.y1)], cc, 13), kind: 'fade' });
-        lab(f.X(f.x1) - 4, oy + 22, p.xl || 'x', { c: cc, size: 24, kind: 'quick' }); lab(ox + 18, f.Y(f.y1) + 8, p.yl || 'y', { c: cc, size: 24, kind: 'quick' });
-        if (p.o !== false) lab(ox - 16, oy + 18, 'O', { c: cc, size: 22, kind: 'quick' });
-        (p.tx || []).forEach(v => { const [x, s] = Array.isArray(v) ? v : [v, String(v)]; line([f.X(x), oy - 6], [f.X(x), oy + 6], { c: col(cc), wd: 2, kind: 'quick' }); lab(f.X(x), oy + 22, s, { c: cc, size: 21, kind: 'quick' }); });   // 目もりは、まとめてすぐ出す
-        (p.ty || []).forEach(v => { const [y, s] = Array.isArray(v) ? v : [v, String(v)]; line([ox - 6, f.Y(y)], [ox + 6, f.Y(y)], { c: col(cc), wd: 2, kind: 'quick' }); lab(ox - 12, f.Y(y), s, { c: cc, size: 21, anchor: 'end', kind: 'quick' }); });
+      case 'axes': {   // 座標軸。at＝軸が交わる点（ふつう [0,0]。データの図なら [150,0] など）、tx・ty＝目もり、grid:true でうすい方眼、xl・yl＝軸の名前
+        const [ax, ay] = p.at || [0, 0], ox = f.X(ax), oy = f.Y(ay), cc = p.c || 'd';
+        if (p.grid) {
+          (p.tx || []).forEach(v => { const x = Array.isArray(v) ? v[0] : v; line([f.X(x), f.Y(f.y0)], [f.X(x), f.Y(f.y1)], { c: 'rgba(244,243,234,.13)', wd: 1.5, kind: 'quick' }); });
+          (p.ty || []).forEach(v => { const y = Array.isArray(v) ? v[0] : v; line([f.X(f.x0), f.Y(y)], [f.X(f.x1), f.Y(y)], { c: 'rgba(244,243,234,.13)', wd: 1.5, kind: 'quick' }); });
+        }
+        const xl = p.xl == null ? 'x' : p.xl, yl = p.yl == null ? 'y' : p.yl;
+        if (p.xaxis !== false) {
+          line([f.X(f.x0), oy], [f.X(f.x1) - 4, oy], { c: col(cc), wd: 2.5, kind: 'axis' }); out.push({ el: arrowHead(g, [0, oy], [f.X(f.x1), oy], cc, 13), kind: 'fade' });
+          if (xl) { if (xl.length > 1) lab(f.X(f.x1) - 2, oy - 20, xl, { c: cc, size: 22, kind: 'quick', anchor: 'end', plain: true }); else lab(f.X(f.x1) - 4, oy + 22, xl, { c: cc, size: 24, kind: 'quick' }); }   // 2字以上の名前は、矢印の上に
+        }
+        if (p.yaxis !== false) {
+          line([ox, f.Y(f.y0)], [ox, f.Y(f.y1) + 4], { c: col(cc), wd: 2.5, kind: 'axis' }); out.push({ el: arrowHead(g, [ox, f.h], [ox, f.Y(f.y1)], cc, 13), kind: 'fade' });
+          if (yl) { if (yl.length > 1) lab(ox + 14, f.Y(f.y1) + 10, yl, { c: cc, size: 22, kind: 'quick', anchor: 'start', plain: true }); else lab(ox + 18, f.Y(f.y1) + 8, yl, { c: cc, size: 24, kind: 'quick' }); }   // 2字以上の名前は、矢印の右に
+        }
+        if (p.o !== false && ax === 0 && ay === 0) lab(ox - 16, oy + 18, 'O', { c: cc, size: 22, kind: 'quick' });
+        if (p.xaxis !== false) (p.tx || []).forEach(v => { const [x, s] = Array.isArray(v) ? v : [v, String(v)]; line([f.X(x), oy - 6], [f.X(x), oy + 6], { c: col(cc), wd: 2, kind: 'quick' }); lab(f.X(x), oy + 22, s, { c: cc, size: 21, kind: 'quick' }); });   // 目もりは、まとめてすぐ出す
+        if (p.yaxis !== false) (p.ty || []).forEach(v => { const [y, s] = Array.isArray(v) ? v : [v, String(v)]; line([ox - 6, f.Y(y)], [ox + 6, f.Y(y)], { c: col(cc), wd: 2, kind: 'quick' }); lab(ox - 12, f.Y(y), s, { c: cc, size: 21, anchor: 'end', kind: 'quick' }); });
         break;
       }
       case 'fn': {   // y＝f(x)。f は 'x**3-6*x**2+9*x' のような式
@@ -231,6 +244,50 @@
         out.push({ el: svgEl('ellipse', Object.assign({ fill: 'none', stroke: col(p.ca || 'b'), 'stroke-width': 3 }, a), g), kind: 'stroke' });
         lab(a.cx - a.rx * 0.74, a.cy - a.ry * 0.74 - 12, names[1], { c: p.ca || 'b', size: 26, anchor: 'end' });
         if (b) { out.push({ el: svgEl('ellipse', Object.assign({ fill: 'none', stroke: col(p.cb || 'p'), 'stroke-width': 3 }, b), g), kind: 'stroke' }); lab(b.cx + b.rx * 0.74, b.cy - b.ry * 0.74 - 12, names[2], { c: p.cb || 'p', size: 26, anchor: 'start' }); }
+        break;
+      }
+      case 'right': {   // 直角の印。o＝直角の頂点、a・b＝2つの辺の上の点（数学の座標）、s＝大きさ(px)
+        const O = P(p.o), A = P(p.a), B = P(p.b), s = p.s || 16, un = (Q) => { const dx = Q[0] - O[0], dy = Q[1] - O[1], L = Math.hypot(dx, dy) || 1; return [dx / L * s, dy / L * s]; };
+        const u = un(A), v = un(B);
+        stroke(`M${(O[0] + u[0]).toFixed(1)} ${(O[1] + u[1]).toFixed(1)}L${(O[0] + u[0] + v[0]).toFixed(1)} ${(O[1] + u[1] + v[1]).toFixed(1)}L${(O[0] + v[0]).toFixed(1)} ${(O[1] + v[1]).toFixed(1)}`, { wd: p.wd || 2 });
+        break;
+      }
+      case 'angle': {   // 角の印（弧）。o＝頂点、a・b＝2つの辺の上の点、rp＝半径(px)、label（θ・60° など）、lr＝ラベルの外へのずらし、n＝弧の本数(1〜2)
+        const O = P(p.o), A = P(p.a), B = P(p.b), rp = p.rp || 30, ang = Q => Math.atan2(-(Q[1] - O[1]), Q[0] - O[0]);
+        let t1 = ang(A), t2 = ang(B), d = t2 - t1; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;   // 小さいほう（180°以下）の角
+        for (let k = 0; k < (p.n || 1); k++) {
+          const r = rp + k * 6, pts = []; for (let i = 0; i <= 32; i++) { const t = t1 + d * i / 32; pts.push([O[0] + r * Math.cos(t), O[1] - r * Math.sin(t)]); }
+          stroke(pathOf([pts]), { wd: p.wd || 2.5 });
+        }
+        if (p.label) { const tm = t1 + d / 2, rr = rp + (p.lr || 20); lab(O[0] + rr * Math.cos(tm), O[1] - rr * Math.sin(tm), p.label, { size: p.size || 22 }); }
+        break;
+      }
+      case 'bars': {   // ヒストグラムの柱。bins＝[[階級の左はし, 右はし, 度数], …]（y が度数）。fill（色）・alpha
+        const fc = col(p.fill || p.c || 'b');
+        p.bins.forEach(([a, b, n]) => {
+          const x0 = f.X(a), x1 = f.X(b), y0 = f.Y(0), y1 = f.Y(n), d = `M${x0} ${y0}L${x0} ${y1}L${x1} ${y1}L${x1} ${y0}`;
+          out.push({ el: svgEl('path', { d: d + 'Z', fill: fc, 'fill-opacity': p.alpha || 0.3, stroke: 'none' }, g), kind: 'fade' });
+          stroke(d, { wd: p.wd || 2.5 });
+          if (p.labels) lab((x0 + x1) / 2, y1 - 14, String(n), { size: p.size || 20, c: p.lc || p.c, kind: 'quick' });
+        });
+        break;
+      }
+      case 'box': {   // 箱ひげ図（横向き）。v＝[最小値, 第1四分位数, 中央値, 第3四分位数, 最大値]、y＝中心の高さ、h＝箱の高さ（目もり）、mean＝平均値（＋印）、out＝外れ値（○）、label＝左に名前
+        const [mn, q1, md, q3, mx] = p.v, y = p.y || 0, h = p.h || 1, Yc = f.Y(y), Yt = f.Y(y + h / 2), Yb = f.Y(y - h / 2);
+        out.push({ el: svgEl('rect', { x: f.X(q1), y: Yt, width: f.X(q3) - f.X(q1), height: Yb - Yt, fill: col(p.fill || p.c || 'b'), 'fill-opacity': p.alpha || 0.22, stroke: 'none' }, g), kind: 'fade' });
+        line([f.X(mn), Yc], [f.X(q1), Yc]); line([f.X(q3), Yc], [f.X(mx), Yc]);
+        line([f.X(mn), Yt + (Yb - Yt) * 0.25], [f.X(mn), Yb - (Yb - Yt) * 0.25]); line([f.X(mx), Yt + (Yb - Yt) * 0.25], [f.X(mx), Yb - (Yb - Yt) * 0.25]);
+        stroke(`M${f.X(q1)} ${Yt}L${f.X(q3)} ${Yt}L${f.X(q3)} ${Yb}L${f.X(q1)} ${Yb}Z`);
+        line([f.X(md), Yt], [f.X(md), Yb], { c: col(p.mc || 'p'), wd: 3.5 });
+        if (p.mean != null) { const X = f.X(p.mean), r = 7; line([X - r, Yc], [X + r, Yc], { c: col('y'), wd: 3 }); line([X, Yc - r], [X, Yc + r], { c: col('y'), wd: 3 }); }
+        (p.out || []).forEach(v => out.push({ el: svgEl('circle', { cx: f.X(v), cy: Yc, r: 6, fill: '#21503f', stroke: c, 'stroke-width': 2.5 }, g), kind: 'fade' }));
+        if (p.label) lab(f.X(mn) - 14 + (p.ldx || 0), Yc, p.label, { size: p.size || 22, anchor: 'end' });
+        break;
+      }
+      case 'pts': {   // たくさんの点（散布図など）。list＝[[x,y], …]、r（半径 px）、c
+        const gg = svgEl('g', {}, g);
+        p.list.forEach(([x, y]) => svgEl('circle', { cx: f.X(x), cy: f.Y(y), r: p.r || 5, fill: c, 'fill-opacity': p.alpha || 0.9 }, gg));
+        out.push({ el: gg, kind: 'fade' });
         break;
       }
       default: console.warn('図の部品がわからない:', p.k);
