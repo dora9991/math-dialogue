@@ -547,11 +547,38 @@
       const on = u.memoFilter === f && (f !== 'cat' || u.memoCat === cat);
       return `<button class="fchip ${on ? 'on' : ''}" data-act="memoFilter" data-f="${f}" data-cat="${esc(cat || '')}">${label}</button>`;
     };
+    const nRem = ((st.ios && st.ios.reminders) || []).length;
     const chips = [chip('all', 'すべて'), chip('star', '★ 重要'), chip('dated', '日付つき'), chip('uncat', '分類なし')]
+      .concat(nRem ? [chip('rem', `iPhoneのリマインダー ${nRem}`)] : [])
       .concat(st.settings.categories.map(c => chip('cat', esc(c.name), c.name))).concat([chip('archived', 'しまったもの')]).join('');
+    const body = u.memoFilter === 'rem' ? reminderLists(u.memoQ)
+      : `<div class="list-wrap">${list.map(memoCard).join('') || '<p class="empty center">メモはありません。右下の ＋ から書けます。</p>'}</div>`;
     return `<div class="toolbar"><label class="searchbox">${icon('search', 18)}<input type="search" class="search" data-input="memoQ" placeholder="メモをさがす" value="${esc(u.memoQ)}" aria-label="メモをさがす"></label></div>
-      <div class="fchips">${chips}</div>
-      <div class="list-wrap">${list.map(memoCard).join('') || '<p class="empty center">メモはありません。右下の ＋ から書けます。</p>'}</div>`;
+      <div class="fchips">${chips}</div>${body}`;
+  }
+
+  /** iPhone のリマインダー（終わっていないもの全部）を、リストごとに。日付のないものも、ここで見られる */
+  function reminderLists(q) {
+    const st = S.st, n = s => String(s || '').toLowerCase().normalize('NFKC');
+    const words = n(q).split(/\s+/).filter(Boolean);
+    const groups = new Map();
+    ((st.ios && st.ios.reminders) || []).filter(r => words.every(w => n(r.title + ' ' + (r.list || '')).includes(w))).forEach(r => {
+      const k = r.list || 'リマインダー';
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(r);
+    });
+    if (!groups.size) return '<p class="empty center">リマインダーはありません。</p>';
+    const t = HB.today();
+    const row = r => {
+      const due = r.due ? HB.labelShort(r.due) + (r.dueTime ? ' ' + hm(r.dueTime) : '') : '';
+      const prio = r.prio >= 3 ? '<span class="prio">!!!</span>' : r.prio === 2 ? '<span class="prio">!!</span>' : '';
+      return `<li class="rem ${r.due && r.due < t ? 'overdue' : ''}"><a href="x-apple-reminderkit://" class="rem-a"><span class="circle"></span>
+        <span class="rem-main"><b>${r.flag ? '🚩 ' : ''}${esc(r.title)}</b>${due ? `<small>${r.due < t ? '期限切れ ' : ''}${esc(due)}</small>` : ''}</span>${prio}</a></li>`;
+    };
+    return Array.from(groups.keys()).sort().map(k => {
+      const rs = groups.get(k).slice().sort((a, b) => (a.due ? 0 : 1) - (b.due ? 0 : 1) || String(a.due).localeCompare(String(b.due)) || String(a.dueTime).localeCompare(String(b.dueTime)));
+      return `<section class="sec rem-list"><h2 class="sec-h small"><i class="cc-dot p${colorOf(k)}"></i><span>${esc(k)}</span><small class="when">${rs.length}</small></h2><div class="card"><ul class="rems">${rs.map(row).join('')}</ul></div></section>`;
+    }).join('');
   }
 
   /* ── 画像・資料 ── */
@@ -596,7 +623,7 @@
         <label>受信箱へ送るショートカットの名前<input id="sSend" value="${esc(sc.send || '')}"></label>
         <label>iPhone に登録するショートカットの名前<input id="sAdd" value="${esc(sc.add || '')}"></label>
         <div class="btns"><button data-act="saveShortcuts">名前を保存</button><button data-act="runSync">いま同期する</button></div>`,
-        `iPhone から：${st.ios && st.ios.syncedAt ? esc(HB.labelWhen(st.ios.syncedAt)) + `（予定 ${st.ios.events.length}・リマインダー ${st.ios.reminders.length}）` : 'まだ'}`)}
+        `iPhone から：${st.ios && st.ios.syncedAt ? esc(HB.labelWhen(st.ios.syncedAt)) + `（予定 ${st.ios.events.length}件${eventSpan(st.ios.events)}・リマインダー ${st.ios.reminders.length}件）` : 'まだ'}`)}
       ${calColorsGroup()}
       ${group('カレンダー購読（おこのみで）', `<p>日付をつけたメモ・写真を、iPhone のカレンダーにも出せます（見るだけ）。</p>
         <p>${S.feedUrl ? `<button class="copy" data-copy="${esc(S.feedUrl)}">${esc(S.feedUrl)}</button>` : '<span class="muted">URL を読みこみ中…</span>'}</p>`,
@@ -613,6 +640,15 @@
       ${group('この端末', `<div class="btns"><button data-act="exportJson">全部を書き出す（JSON）</button><button data-act="clearCache">この端末の控えを消す</button><button data-act="disconnect">接続をはずす</button></div>`,
         `ひびの手帳 ${esc(st.version || '')}　データは自分の Google ドライブ（「ひびの手帳」フォルダ）にあります。`)}
     </div>`;
+  }
+
+  /** 入っている予定の期間：' · 2025/10/16〜2027/10/15' */
+  function eventSpan(evs) {
+    if (!evs || !evs.length) return '';
+    let a = evs[0].d0, b = evs[0].d0;
+    evs.forEach(e => { if (e.d0 < a) a = e.d0; if (e.d0 > b) b = e.d0; });
+    const f = ymd => ymd.replace(/^(\d{4})-0?(\d+)-0?(\d+)$/, '$1/$2/$3');
+    return ` · ${f(a)}〜${f(b)}`;
   }
 
   /** カレンダーの色（この端末だけに覚える）：iPhone から届いたカレンダーとリマインダーのリストごとに */

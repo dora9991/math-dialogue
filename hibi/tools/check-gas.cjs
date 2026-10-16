@@ -182,7 +182,7 @@ section('iPhone の予定・リマインダー（ショートカットから）'
     events: [
       { title: '職員会議', start: today + 'T15:30:00+09:00', end: today + 'T17:00:00+09:00', allDay: 'いいえ', cal: '仕事', loc: '会議室\n2F' },
       { title: '遠足', start: tomorrow + 'T00:00:00+09:00', end: tomorrow + 'T23:59:59+09:00', allDay: 'はい', cal: '家族' },
-      { title: '出張', start: '2026-11-01T00:00:00+09:00', end: '2026-11-04T00:00:00+09:00', allDay: '1' },
+      { title: '出張', start: addDays(today, 20) + 'T00:00:00+09:00', end: addDays(today, 23) + 'T00:00:00+09:00', allDay: '1' },
       { title: '日付のない予定' }
     ],
     reminders: [
@@ -197,7 +197,7 @@ section('iPhone の予定・リマインダー（ショートカットから）'
   const ev = st.ios.events;
   eq(ev[0], { title: '職員会議', d0: today, d1: today, t0: '15:30', t1: '17:00', allDay: false, cal: '仕事', loc: '会議室 2F' }, '時刻つきの予定（場所の改行は空白に）');
   eq([ev[1].allDay, ev[1].d0, ev[1].d1, ev[1].t0], [true, tomorrow, tomorrow, ''], '終日の予定');
-  eq([ev[2].d0, ev[2].d1], ['2026-11-01', '2026-11-03'], '何日かつづく終日（翌日0時終わり）');
+  eq([ev[2].d0, ev[2].d1], [addDays(today, 20), addDays(today, 22)], '何日かつづく終日（翌日0時終わり）');
   eq([st.ios.reminders[0].due, st.ios.reminders[0].dueTime, st.ios.reminders[0].prio, st.ios.reminders[0].flag], [tomorrow, '07:00', 3, true], 'リマインダーの期日・優先度・フラグ');
   ok(st.ios.syncedAt, '同期した時刻');
   const ex = env.exportJson();
@@ -205,22 +205,49 @@ section('iPhone の予定・リマインダー（ショートカットから）'
   eq(ex.agenda.tomorrow.map(e => e.title + ' ' + e.time), ['遠足 終日'], 'claudeへ に明日の予定');
   eq(ex.agenda.reminders.map(x => x.title), ['申込書'], 'claudeへ に近いリマインダー');
   // ② 辞書を「テキスト」に入れて送った形（JSON を改行でつないだもの）
-  const asText = [{ title: 'A', start: '2026-12-01T10:00:00+09:00', end: '2026-12-01T11:00:00+09:00' }, { title: 'B', start: '2026-12-02T10:00:00+09:00' }]
+  const d45 = addDays(today, 45), d46 = addDays(today, 46), d47 = addDays(today, 47), d48 = addDays(today, 48);
+  const asText = [{ title: 'A', start: d45 + 'T10:00:00+09:00', end: d45 + 'T11:00:00+09:00' }, { title: 'B', start: d46 + 'T10:00:00+09:00' }]
     .map(o => JSON.stringify(o, null, 2)).join('\n');
   r = env.post('ios.sync', { events: asText });
   eq(r.data.events, 2, '整形された辞書を改行でつないだテキストも読める');
-  r = env.post('ios.sync', { events: '{"タイトル":"C","開始日":"2026年12月3日 9:00","終日":"いいえ"}' });
+  const [y47, m47, dd47] = d47.split('-').map(Number);
+  r = env.post('ios.sync', { events: `{"タイトル":"C","開始日":"${y47}年${m47}月${dd47}日 9:00","終日":"いいえ"}` });
   st = env.post('bootstrap').data;
-  eq([st.ios.events.length, st.ios.events[0].title, st.ios.events[0].d0, st.ios.events[0].t0], [1, 'C', '2026-12-03', '09:00'], '日本語のキー・日本語の日付');
+  eq([st.ios.events.length, st.ios.events[0].title, st.ios.events[0].d0, st.ios.events[0].t0], [1, 'C', d47, '09:00'], '日本語のキー・日本語の日付（同じ期間の予定は入れかわる）');
   eq(st.ios.reminders.length, 2, 'events だけ送ったときは、リマインダーは消さない');
   r = env.post('ios.sync', { events: 'title: X\nstart: 2026-12-05' });
   ok(!r.ok && /読めませんでした/.test(r.error), '読めない形は、いまのデータを消さずに知らせる');
   eq(env.post('bootstrap').data.ios.events.length, 1, '読めなかったときは、前の予定のまま');
-  r = env.post('ios.sync', { events: JSON.stringify([{ title: 'D', start: '2026/12/04 13:05' }]), reminders: '[]' });
+  r = env.post('ios.sync', { events: JSON.stringify([{ title: 'D', start: d48.replace(/-/g, '/') + ' 13:05' }]), reminders: '[]' });
   st = env.post('bootstrap').data;
   eq([st.ios.events[0].t0, st.ios.reminders.length], ['13:05', 0], 'JSON 文字列の配列・空のリマインダー');
-  // あとのテストのために、今日と明日の予定をもどしておく
-  env.post('ios.sync', { events: [{ title: '職員会議', start: today + 'T15:30:00+09:00', end: today + 'T17:00:00+09:00' }] });
+
+  // ③ 送られてきた期間の分だけ入れかえる（はじめに1年ぶんを入れて、毎朝は短い期間だけ同期する）
+  const every10 = [];
+  for (let n = -300; n <= 300; n += 10) every10.push({ title: 'P' + n, start: addDays(today, n) + 'T09:00:00+09:00', cal: '仕事' });
+  r = env.post('ios.sync', { events: every10, from: addDays(today, -300) + 'T00:00:00+09:00', to: addDays(today, 300) + 'T23:59:00+09:00' });
+  eq([r.data.events, r.data.total, r.data.from, r.data.to], [61, 61, addDays(today, -300), addDays(today, 300)], '長い期間をまとめて入れる（from・to）');
+  r = env.post('ios.sync', { events: [{ title: 'あたらしい', start: addDays(today, 5) + 'T10:00:00+09:00' }, { title: 'P10', start: addDays(today, 10) + 'T09:00:00+09:00' }] });
+  st = env.post('bootstrap').data;
+  const titles = st.ios.events.map(e => e.title);
+  ok(titles.includes('P-100') && titles.includes('P200') && titles.includes('P-300') && titles.includes('P300'), 'ふだんの同期（期間なし）でも、きのう〜60日後より前と後の予定は残る');
+  ok(!titles.includes('P20') && !titles.includes('P0') && titles.includes('あたらしい') && titles.includes('P10'), 'きのう〜60日後は、送られてきた予定に入れかわる（iPhone で消した予定は消える）');
+  eq(st.ios.events.length, 61 - 7 + 2, '入れかえたあとの数');
+  eq(st.ios.events.map(e => e.d0), st.ios.events.map(e => e.d0).slice().sort(), '日付の順にならぶ');
+  r = env.post('ios.sync', { events: '[]', from: addDays(today, 195), to: addDays(today, 215) });
+  st = env.post('bootstrap').data;
+  ok(!st.ios.events.some(e => e.title === 'P200' || e.title === 'P210') && st.ios.events.some(e => e.title === 'P220'), 'その期間に予定が1つもなければ、その期間だけ消える');
+  // 多すぎるとき：予定は 8000 件まで（古いほうから捨てる）・リマインダーは 3000 件まで
+  const many = [];
+  for (let n = 0; n < 8100; n++) many.push({ title: 'M' + n, start: addDays(today, -400 + Math.floor(n / 20)) + 'T' + String(8 + (n % 10)).padStart(2, '0') + ':00:00+09:00' });
+  const mr = Array.from({ length: 3100 }, (_, n) => ({ title: 'R' + n, due: '' }));
+  r = env.post('ios.sync', { events: many, reminders: mr, from: '2000-01-01', to: '2100-12-31' });
+  st = env.post('bootstrap').data;
+  eq([r.data.total, st.ios.events.length, st.ios.reminders.length], [8000, 8000, 3000], '予定は 8000 件・リマインダーは 3000 件まで');
+  ok(!st.ios.events.some(e => e.title === 'M0') && st.ios.events.some(e => e.title === 'M8099'), '多すぎるときは、いちばん古い予定から捨てる');
+  // あとのテストのために、今日の予定だけにもどしておく
+  env.post('ios.sync', { events: [{ title: '職員会議', start: today + 'T15:30:00+09:00', end: today + 'T17:00:00+09:00' }], reminders: '[]', from: '2000-01-01', to: '2100-12-31' });
+  eq(env.post('bootstrap').data.ios.events.length, 1, '期間をとても長くすると、ぜんぶ入れかえ');
 });
 
 section('Claude の結果を取り込む', () => {
