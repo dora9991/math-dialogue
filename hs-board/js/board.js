@@ -35,7 +35,9 @@
   function withDec(s) {   // \frac{3}{4}・\dfrac34 のような「数字だけの分数」の直後に、青い小さな小数をそえる
     return s.replace(/\\([dt]?)frac(?:\{(\d+)\}|(\d))(?:\{(\d+)\}|(\d))/g, (m, k, n1, n2, d1, d2, off, str) => {
       const n = +(n1 || n2), d = +(d1 || d2); if (!d || n % d === 0) return m;
-      return m + '\\textcolor{9ad8ff}{\\scriptstyle\\,(' + decimal(n, d) + ')}';   // 分数そのものの値（前の − は引き算のこともあるので、符号はつけない）
+      // 前のマイナスが「負の数」のとき（式のはじめ・＝や（のあと）だけ、小数にも − をつける。引き算の − ならつけない
+      const before = str.slice(0, off).replace(/\s+$/, ''), neg = /-$/.test(before) && /(^|[=(,{\[<>]|\\le|\\ge|\\leqq|\\geqq|\\pm)$/.test(before.slice(0, -1).replace(/\s+$/, ''));
+      return m + '\\textcolor{9ad8ff}{\\scriptstyle\\,(' + decimal(n, d).replace(/^(=|\\fallingdotseq )/, '$1' + (neg ? '-' : '')) + ')}';
     });
   }
   function tex(s, display) {
@@ -80,11 +82,11 @@
       'font-family': '"Klee One","Hiragino Maru Gothic ProN",sans-serif', 'font-weight': 600 }, g);
     // 英字＝数式の斜体、数字・記号（− √ π ° など）＝数式の立体（KaTeX の字体）、日本語＝黒板の字
     const sz = o.size || 26;
-    String(text).replace(/-/g, '−').split(/([A-Za-z]+|[0-9.+−=√π°′()\/<>≦≧±×÷|]+)/).forEach(run => {
+    String(text).replace(/-/g, '−').split(/([A-Za-z]+|[0-9.+−=√π°()\/<>≦≧±×÷|]+)/).forEach(run => {
       if (!run) return;
       const sp = svgEl('tspan', {}, t);
       if (/^[A-Za-z]+$/.test(run) && !o.plain) { sp.setAttribute('font-family', 'KaTeX_Math,"Times New Roman",Times,serif'); sp.setAttribute('font-style', 'italic'); sp.setAttribute('font-size', sz * 1.12); sp.setAttribute('font-weight', 400); }
-      else if (/^[0-9.+−=√π°′()\/<>≦≧±×÷|]+$/.test(run)) { sp.setAttribute('font-family', 'KaTeX_Main,"Times New Roman",Times,serif'); sp.setAttribute('font-size', sz * 1.1); sp.setAttribute('font-weight', 400); }
+      else if (/^[0-9.+−=√π°()\/<>≦≧±×÷|]+$/.test(run)) { sp.setAttribute('font-family', 'KaTeX_Main,"Times New Roman",Times,serif'); sp.setAttribute('font-size', sz * 1.1); sp.setAttribute('font-weight', 400); }
       sp.textContent = run;
     });
     return t;
