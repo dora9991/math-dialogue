@@ -15,21 +15,33 @@
 <div id="wrap"><div id="stage">
   <div id="board"><div id="cols"></div></div>
   <header id="hd"><span class="field"></span><span class="ttl"></span><span class="part"></span><span id="score" class="prog"></span><span id="pg" class="prog"></span>
-    <button id="bProb" type="button" title="問題文をいつでも見られます（Q キー）">📄 問題（Q）</button>
-    <button id="bAuto" type="button" title="書き終わって少したつと、自動で次へ進みます。発問では止まります（A キー）">自動 OFF</button>
-    <a href="index.html" title="目次へもどります。途中の場所はおぼえています">☰ 目次</a></header>
+    <div class="ctl">
+      <button id="bPause" type="button" title="その瞬間で止めます。もう一度おすか、黒板をタッチすると、そこからつづきます（P キー）">⏸ 停止</button>
+      <button id="bSpeed" type="button" title="書く速さと、自動で進むときの待ち時間を変えます：×1.0 → ×1.25 → ×1.5 → ×2.0 → ×0.75（S キー）">速さ ×1.0</button>
+      <button id="bAuto" type="button" title="読み終わるころに、自動で次へ進みます。発問では止まって答えを待ちます（A キー）。動画モード（W キー）では発問も自動で答えを出します">自動 OFF</button>
+      <button id="bDec" type="button" title="数字だけの分数の横に、小数も出します（D キー）">小数 OFF</button>
+      <button id="bAgain" type="button" title="このステップを、もういちど書きます（R キー）">↻ もう一度</button>
+      <button id="bProb" type="button" title="問題文をいつでも見られます（Q キー）">📄 問題</button>
+      <a id="bMenu" class="menuLink" href="index.html" title="目次へもどります。途中の場所はおぼえています">☰ 目次</a>
+    </div></header>
   <div id="bar"><i></i></div>
   <div id="cap"><span class="lab">解説</span><div class="txt"></div><div class="opts"></div><span class="more">▼ Enter</span></div>
   <div id="nav"><button id="bNext" type="button">つぎへ ▶</button><button id="bBack" type="button">◀ もどる</button></div>
+  <div id="pausemark"><b>⏸ 一時停止中</b><span>黒板をタッチするか、P キー・「▶ 再開」で、止めた所からつづきます</span></div>
   <div id="result" class="ov hidden"></div>
+  <div id="watchend" class="ov hidden"></div>
   <div id="probov" class="ov hidden"><div class="card"><div class="el prob"></div><div class="close"><button class="btn sub" type="button">閉じる（Esc）</button></div></div></div>
   <div id="start" class="ov"><div class="card">
     <div class="f"></div><div class="t"></div><div class="lv"></div>
     <div class="row"><button id="bStart" class="btn" type="button">Enter で はじめる</button><button id="bResume" class="btn sub hidden" type="button">▶ つづきから</button></div>
-    <div class="n">声は出ません。Enter・クリック（タッチ）で 1 つずつ進みます。← でもどれます。<br>途中の「発問」は 1〜4 キーかクリックで答えます。「考えてみよう」は、ノートで解いてから答えを見ます。<br>Q で問題文、A で自動送り。　<a href="index.html" style="color:#9ad8ff">← 目次へ</a></div>
+    <div class="row"><button id="bAutoStart" class="btn sub" type="button">▶ 自動で進める（A）</button><button id="bWatchStart" class="btn sub" type="button">🎬 動画モードで見る（W）</button></div>
+    <div class="n">声は出ません。Enter・クリック（タッチ）で 1 つずつ進みます。← でもどれます。<br>
+      <b>自動</b>：読み終わるころに次へ（発問では止まって答えを待ちます）。<b>動画モード</b>：発問も少し待ってから答えを出し、最後まで流れます。<br>
+      途中で ⏸ 一時停止（P）・速さ（S）・小数（D）・もう一度（R）が使えます。発問は 1〜4 キーかクリックで。<span class="menuLink">　<a href="index.html" style="color:#9ad8ff">← 目次へ</a></span></div>
   </div></div>
 </div></div>
 <script src="vendor/katex/katex.min.js"></script>
+<script src="js/lessons.js"></script>
 <script src="js/board.js"></script>
 </body>
 </html>

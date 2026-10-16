@@ -14,11 +14,12 @@ html, body { margin: 0; height: 100%; background: #0d1720; overflow: hidden; }
 /* 上の帯：分野・題名・いまの小問・進み具合・ボタン */
 #hd { position: absolute; left: 36px; right: 36px; top: 20px; height: 46px; display: flex; align-items: center; gap: 14px; z-index: 3; }
 #hd .field { font-size: 19px; border: 2px solid var(--blue); color: var(--blue); border-radius: 20px; padding: 3px 14px; white-space: nowrap; }
-#hd .ttl { font-size: 27px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-#hd .part { margin-left: auto; font-size: 21px; font-weight: 700; color: #2a1b00; background: var(--yel); border-radius: 20px; padding: 4px 18px; white-space: nowrap; }
+#hd .ttl { flex: 1 1 auto; font-size: 26px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#hd .part { flex: none; font-size: 21px; font-weight: 700; color: #2a1b00; background: var(--yel); border-radius: 20px; padding: 4px 18px; white-space: nowrap; }
 #hd .part:empty { display: none; }
 #hd .prog { font-size: 18px; color: var(--dim); white-space: nowrap; min-width: 64px; text-align: right; }
-#hd button, #hd a { font: inherit; font-size: 18px; color: var(--chalk); background: rgba(255,255,255,.07); border: 2px solid rgba(255,255,255,.28); border-radius: 12px; padding: 5px 12px; cursor: pointer; text-decoration: none; white-space: nowrap; }
+#hd .ctl { flex: none; display: flex; gap: 6px; margin-left: 4px; }
+#hd button, #hd a { font: inherit; font-size: 16px; color: var(--chalk); background: rgba(255,255,255,.07); border: 2px solid rgba(255,255,255,.28); border-radius: 11px; padding: 5px 9px; cursor: pointer; text-decoration: none; white-space: nowrap; }
 #hd button:hover, #hd a:hover { background: rgba(255,255,255,.14); }
 #hd button.on { border-color: var(--yel); color: var(--yel); }
 #bar { position: absolute; left: 36px; right: 36px; top: 72px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.10); z-index: 3; }
@@ -60,6 +61,7 @@ html, body { margin: 0; height: 100%; background: #0d1720; overflow: hidden; }
 .el.hl { box-shadow: 0 0 0 5px rgba(255,226,122,.38); border-radius: 12px; background: rgba(255,255,255,.05); }
 .el.dimmed { opacity: .38; }
 svg .hl { filter: drop-shadow(0 0 5px rgba(255,226,122,.95)); }
+svg .dimmed { opacity: .3; }   /* 図の部品も id をつければ、dim:['id'] でうすくできる */
 .el .katex { font-size: 1.04em; }
 .el .katex-display { margin: 0; text-align: left; }
 .el .katex-display > .katex { text-align: left; }
@@ -128,7 +130,24 @@ svg .hl { filter: drop-shadow(0 0 5px rgba(255,226,122,.95)); }
 #result .pts { font-size: 24px; line-height: 1.6; background: rgba(0,0,0,.16); border-radius: 16px; padding: 12px 22px; }
 #result .pts .chip { color: var(--yel); font-size: 18px; border: 2px solid currentColor; border-radius: 8px; padding: 1px 10px; font-weight: 700; }
 #result .pts ol { margin: 6px 0 0; padding-left: 1.4em; }
-#result .row { display: flex; gap: 14px; justify-content: flex-end; margin-top: 20px; }
+#result .row { display: flex; gap: 14px; justify-content: flex-end; align-items: center; margin-top: 20px; flex-wrap: wrap; }
 #result .qs { font-size: 20px; color: var(--dim); margin-top: 4px; }
 .nw { white-space: nowrap; }
+.el [style*="color:transparent"], .el [style*="color: transparent"] { text-shadow: none; }   /* \phantom が字の影でうっすら見えないように */
+/* 一時停止・動画モード・埋めこみ */
+#pausemark { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); z-index: 6; display: none; flex-direction: column; align-items: center; gap: 8px;
+             padding: 22px 40px; border-radius: 22px; background: rgba(6,16,12,.82); border: 3px solid var(--yel); pointer-events: none; }
+#pausemark b { font-size: 40px; color: var(--yel); } #pausemark span { font-size: 19px; color: var(--chalk); }
+html.paused #pausemark { display: flex; }
+html.watch #score { display: none; }
+html.embed .menuLink { display: none !important; }
+#watchend .card { width: 1160px; }
+#watchend h2 { margin: 0 0 6px; font-size: 40px; }
+#watchend .qs { font-size: 20px; color: var(--dim); margin-bottom: 14px; }
+#watchend .pts { font-size: 24px; line-height: 1.6; background: rgba(0,0,0,.16); border-radius: 16px; padding: 12px 22px; }
+#watchend .pts .chip { color: var(--yel); font-size: 18px; border: 2px solid currentColor; border-radius: 8px; padding: 1px 10px; font-weight: 700; }
+#watchend .pts ol { margin: 6px 0 0; padding-left: 1.4em; }
+#watchend .row { display: flex; gap: 14px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
+.btn small { display: block; font-size: 16px; font-weight: 500; opacity: .85; margin-top: 2px; max-width: 360px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#start .n b { color: var(--yel); }
 .hidden { display: none !important; }

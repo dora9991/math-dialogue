@@ -1,12 +1,16 @@
 // 台本の検査（音なし・ヘッドレス Chrome）：node hs-board/tools/check.mjs [ID…] [--shots DIR]
 //   1) 全ステップを組み立てて：数式の書きまちがい（KaTeX のエラー）・黒板からのはみ出し・字幕にかくれる所・字幕が高すぎる所 を調べる
-//   2) 通しテスト：Enter だけで最後（成績カード）まで行けるか（発問は 正解／まちがい の2通り）・← でもどれるか・ブラウザのエラー
+//      （小数の表示 D を入れた、いちばん横に長くなる形で測る）
+//   2) 通しテスト：Enter だけで最後（成績カード）まで行けるか（発問は 正解／まちがい の2通り）・← でもどれるか・動画モードで最後（おしまい）まで流れるか・ブラウザのエラー
 //   --shots DIR を付けると、各ステップの写真（答えたあとの形）を DIR/<ID>/NNN.jpg に保存し、DIR/<ID>.sheet.jpg に1枚にまとめる（python3 + PIL）
 import fs from 'node:fs'; import path from 'node:path'; import os from 'node:os'; import { spawn, execFileSync } from 'node:child_process'; import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url)), ROOT = path.dirname(HERE);
 const args = process.argv.slice(2), si = args.indexOf('--shots'), SHOTS = si >= 0 ? path.resolve(args[si + 1]) : null;
 let ids = args.filter((a, i) => !a.startsWith('--') && (si < 0 || i !== si + 1));
-if (!ids.length) { const src = fs.readFileSync(path.join(ROOT, 'js/lessons.js'), 'utf8'); ids = [...src.matchAll(/id: '([^']+)'/g)].map(m => m[1]); }
+if (!ids.length) {   // 指定なし：目次の一覧のうち、台本ファイルがあるもの全部
+  const w = {}; new Function('window', fs.readFileSync(path.join(ROOT, 'js/lessons.js'), 'utf8'))(w);
+  ids = w.HB_LESSONS.map(l => l.id).filter(id => fs.existsSync(path.join(ROOT, 'scenes', id + '.js')));
+}
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const prof = fs.mkdtempSync(path.join(process.env.TMPDIR || os.tmpdir(), 'hbc-')), port = 9300 + Math.floor(Math.random() * 400);
 const proc = spawn(CHROME, ['--headless=new', '--mute-audio', '--hide-scrollbars', '--no-first-run', '--allow-file-access-from-files', `--user-data-dir=${prof}`, `--remote-debugging-port=${port}`, '--window-size=1600,900', 'about:blank'], { stdio: 'ignore', detached: true });
@@ -22,7 +26,7 @@ await send('Page.enable'); await send('Runtime.enable'); await send('Emulation.s
 let bad = 0;
 for (const ID of ids) {
   logs.length = 0;
-  await send('Page.navigate', { url: 'file://' + path.join(ROOT, 'play.html') + '?s=' + ID + '&step=0&auto=0' }); await sleep(1800);
+  await send('Page.navigate', { url: 'file://' + path.join(ROOT, 'play.html') + '?s=' + ID + '&step=0&dec=1' }); await sleep(1800);
   await ev('document.fonts.ready.then(() => true)');
   const n = await ev('HB_T.steps().length');
   const warns = [];
@@ -71,10 +75,16 @@ for (const ID of ids) {
       res[mode] = { last: HB_T.si(), result: !document.querySelector('#result').classList.contains('hidden'), score: document.querySelector('#score').textContent };
     }
     HB_T.go(5); await sleep(50); key('ArrowLeft'); await sleep(30); key('ArrowLeft'); await sleep(30); res.back = HB_T.si();
+    // 動画モード：時計を早回しして、発問も自動で答えを出しながら「おしまい」まで流れるか
+    HB_T.setWatch(true); HB_T.go(0); let g2 = 0;
+    while (g2++ < 600 && document.querySelector('#watchend').classList.contains('hidden')) { HB_T.finish(); await sleep(8); HB_T.warp(15000); await sleep(8); }
+    res.watch = { end: !document.querySelector('#watchend').classList.contains('hidden'), si: HB_T.si(), loops: g2 };
+    HB_T.setWatch(false); HB_T.setAuto(false);
     return JSON.stringify(res); })()`));
   if (!run.ok.result || run.ok.last !== n - 1) warns.push(`  ✗ 通しテスト（正解）で最後まで行けない：${JSON.stringify(run.ok)}`);
   if (!run.ng.result) warns.push(`  ✗ 通しテスト（まちがい）で最後まで行けない：${JSON.stringify(run.ng)}`);
   if (run.back !== 3) warns.push(`  ✗ もどるが動かない（${run.back}）`);
+  if (!run.watch.end || run.watch.si !== n - 1) warns.push(`  ✗ 動画モードで最後まで流れない：${JSON.stringify(run.watch)}`);
   logs.filter(x => !/favicon|fonts\.g/.test(x)).forEach(x => warns.push('  ✗ ブラウザ: ' + String(x).slice(0, 200)));
   const errs = warns.filter(w => w.includes('✗')).length;
   console.log(`${ID}  ${n}ステップ  発問の正解だけ: ${run.ok.score}  ${errs ? '✗' : warns.length ? '⚠' : '✓'}`);
