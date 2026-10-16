@@ -631,7 +631,9 @@
   function restart() { answers = {}; rates = {}; revealed = {}; go(0); }
 
   /* ---------- 問題文・はじめの画面 ---------- */
-  function openProb() { if (!L.problem) return; $('#probov .el.prob').innerHTML = probHTML(); $('#probov').classList.remove('hidden'); $('#bProb').classList.add('on'); }
+  function openProb() { if (!L.problem) return; $('#probov .el.prob').innerHTML = probHTML(); $('#probov').classList.remove('hidden'); $('#bProb').classList.add('on'); $('#probov .card').scrollTop = 0; probMore(); }
+  function probMore() { const c = $('#probov .card'); $('#probov').classList.toggle('scroll', c.scrollHeight - c.scrollTop - c.clientHeight > 40); }   // 長い問題文：下につづきがあれば印を出す
+  function probScroll(dir) { const c = $('#probov .card'); c.scrollTop += dir * Math.round(c.clientHeight * 0.75); probMore(); }
   function closeProb() { $('#probov').classList.add('hidden'); $('#bProb').classList.remove('on'); }
   function begin(resume, mode) {   // mode：'auto'（自動で進める）／'watch'（動画モード）
     $('#start').classList.add('hidden');
@@ -666,6 +668,10 @@
         else if (k === 's' || k === 'S') cycleSpeed(); else if (k === 'd' || k === 'D') setDec(!DEC);
         return;
       }
+      if (!$('#probov').classList.contains('hidden')) {   // 問題文を開いているあいだ：↓・スペースで下へ、↑で上へ（Enter・Esc・Q で閉じる）
+        if (k === 'ArrowDown' || k === 'PageDown' || k === ' ') { e.preventDefault(); probScroll(1); return; }
+        if (k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); probScroll(-1); return; }
+      }
       if (k === 'Enter' || k === ' ' || k === 'ArrowRight' || k === 'PageDown') { e.preventDefault(); next(); }
       else if (k === 'ArrowLeft' || k === 'Backspace' || k === 'PageUp') { e.preventDefault(); back(); }
       else if (k === 'Escape') closeProb();
@@ -683,7 +689,7 @@
     on('#bNext', next); on('#bBack', back); on('#bAgain', replay);
     on('#bProb', () => { if ($('#probov').classList.contains('hidden')) openProb(); else closeProb(); });
     on('#bAuto', () => setAuto(!auto)); on('#bPause', () => setPause(!paused)); on('#bSpeed', cycleSpeed); on('#bDec', () => setDec(!DEC));
-    on('#probov', closeProb);
+    on('#probov', closeProb); $('#probov .card').addEventListener('scroll', probMore);
     on('#bStart', () => begin(false)); on('#bResume', () => begin(true)); on('#bAutoStart', () => begin(false, 'auto')); on('#bWatchStart', () => begin(false, 'watch'));
     $('#start').addEventListener('click', e => e.stopPropagation());
     $('#board').addEventListener('click', () => { if (paused) setPause(false); else next(); });   // 黒板をタッチ：一時停止中は「再開」、ふだんは つぎへ
