@@ -136,6 +136,7 @@ a.btn { text-decoration: none; }
 .howfig svg { width: 100%; height: auto; display: block; }
 .howto ol { margin: 6px 0; padding-left: 20px; font-size: 13px; }
 .markcard { border: 2px solid var(--warn); background: var(--warn-soft); border-radius: 10px; padding: 8px 10px; margin: 8px 0; font-size: 13px; }
+.finding { border: 1px dashed var(--accent); border-radius: 10px; padding: 8px 10px; margin: 8px 0; font-size: 13px; }
 .goal { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 8px 0; display: flex; flex-direction: column; gap: 8px; }
 .goal.done { border-color: rgba(22, 163, 74, 0.5); }
 .goal-h { display: flex; align-items: center; gap: 6px; }
@@ -575,6 +576,443 @@ a.btn { text-decoration: none; }
 
 </script>
 <script>
+/* js/goalfind.js */
+/* バスケ得点クリップ — ゴールの自動検出
+   動画から間をあけて取り出した数十コマの中から、ゴール（リング＋ネット）を探して、
+   人が指定するのと同じ「ゴールの指定」（バックボードのあたりの枠・リングの両端）を作る。
+   手がかりは、どの向きから撮っても変わらないものだけにしてある（ゴールの裏から撮っても使える）：
+   1) リング：オレンジ〜赤の、細い輪（横長の楕円）。中まで塗りつぶされた物（ボール・ユニフォーム・得点板の数字）や、
+      大きな面（ステージの幕）は、形で外れる
+   2) ネット：リングの真下に、白い網目（明るく色のない細い線が、まわりより多い）
+   3) 同じゴールは、何コマにも同じ見た目で映る。見た目（リングのまわりの模様）が似たものを1つにまとめ、
+      よく映るもの2つを「ゴール」とする
+   DOM に依存しない（node のテストからも同じコードを使う）。画像は RGBA（canvas の getImageData と同じ並び）。 */
+(function (root) {
+  'use strict';
+  const BS = root.BS;
+  const V = BS.vision;
+
+  const NS = 40;                                   // 楕円の上に取る点の数
+  const COS = [], SIN = [];
+  for (let i = 0; i < NS; i++) { COS.push(Math.cos(2 * Math.PI * i / NS)); SIN.push(Math.sin(2 * Math.PI * i / NS)); }
+  const W_MIN = 16;                                // 見つけるリングの幅（画素）の下限（これより小さいと、そもそも得点を見分けにくい）
+  const W_MAX_FR = 0.3;                            // 上限（画面の幅に対する割合）
+  const TH_FRAME = 0.8;                            // 1コマの中で「リングらしい」とする点数の下限
+  const DESC = 24;                                 // 見た目の比較に使う小さな画像（DESC×DESC）
+  const TH_SAME = 0.55;                            // 見た目の一致がこれ以上なら同じゴール
+
+  /* リングらしい色の画素を 1 にする。
+     オレンジの強さ o = r −（g+b）/2 が十分あり（塗装のリングは 150〜190。木の床・肌は 60〜80）、色相がオレンジ（赤すぎない：
+     ユニフォーム・ステージの幕・得点板の数字の赤は外す）で、しかも、まわり（15 画素四方）の平均より、はっきりオレンジが強い所だけ。
+     まわりより強いことを求めるのは、オレンジがかった木の床や、赤茶色の床の前にリングがあるとき、床ごと1つの塊にならないようにするため */
+  function rimColorMask(rgba, w, h, out) {
+    const n = w * h;
+    const o = new Float32Array(n);
+    for (let i = 0, p = 0; i < n; i++, p += 4) {
+      const r = rgba[p], g = rgba[p + 1], b = rgba[p + 2];
+      let v = r - (g + b) / 2;
+      if (v > 0 && r >= g && r >= b) {
+        const mn = g < b ? g : b, c = r - mn;
+        const hq = c > 0 ? (g - b) / c : 0;      // 0＝赤、1＝黄（色相 60°）
+        if (hq < 0.15 || hq > 0.62) v *= 0.3;
+      } else v = 0;
+      o[i] = v;
+    }
+    // 15×15 の平均（積分画像）
+    const R = 7, ii = new Float64Array((w + 1) * (h + 1));
+    for (let y = 0; y < h; y++) {
+      let row = 0;
+      for (let x = 0; x < w; x++) { row += o[y * w + x]; ii[(y + 1) * (w + 1) + x + 1] = ii[y * (w + 1) + x + 1] + row; }
+    }
+    const m = out || new Uint8Array(n);
+    for (let y = 0; y < h; y++) {
+      const y0 = y - R < 0 ? 0 : y - R, y1 = y + R + 1 > h ? h : y + R + 1;
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x, v = o[i];
+        if (v < 85) { m[i] = 0; continue; }
+        const x0 = x - R < 0 ? 0 : x - R, x1 = x + R + 1 > w ? w : x + R + 1;
+        const sum = ii[y1 * (w + 1) + x1] - ii[y0 * (w + 1) + x1] - ii[y1 * (w + 1) + x0] + ii[y0 * (w + 1) + x0];
+        m[i] = v - sum / ((x1 - x0) * (y1 - y0)) >= 25 ? 1 : 0;
+      }
+    }
+    return m;
+  }
+  /* 1画素ふくらませる（細い輪の切れ目をつなぐ。楕円の上の点の判定に少しゆとりを持たせる） */
+  function dilate(m, w, h, out) {
+    const o = out || new Uint8Array(w * h);
+    o.fill(0);
+    for (let y = 0; y < h; y++) {
+      const y0 = y > 0 ? y - 1 : 0, y1 = y < h - 1 ? y + 1 : h - 1;
+      for (let x = 0; x < w; x++) {
+        if (!m[y * w + x]) continue;
+        const x0 = x > 0 ? x - 1 : 0, x1 = x < w - 1 ? x + 1 : w - 1;
+        for (let yy = y0; yy <= y1; yy++) for (let xx = x0; xx <= x1; xx++) o[yy * w + xx] = 1;
+      }
+    }
+    return o;
+  }
+  /* 楕円（中心 cx,cy・横の半径 a・縦の半径 b）の上の点のうち、マスクが 1 の割合。画面の外の点が多いと 0 */
+  function onFrac(mask, w, h, cx, cy, a, b) {
+    let n = 0, on = 0;
+    for (let i = 0; i < NS; i++) {
+      const x = Math.round(cx + a * COS[i]), y = Math.round(cy + b * SIN[i]);
+      if (x < 0 || y < 0 || x >= w || y >= h) continue;
+      n++; on += mask[y * w + x];
+    }
+    return n >= NS * 0.6 ? on / n : 0;
+  }
+  /* 輪らしさ：楕円の上は細いリングの色（ゆとりあり）、内側と外側はリングの色でない */
+  function ringScore(O, D, w, h, cx, cy, a, b) {
+    const on = onFrac(D, w, h, cx, cy, a, b);
+    if (on < 0.4) return { score: on - 1, on, inside: 0, outside: 0 };
+    const out = onFrac(O, w, h, cx, cy, a * 1.3 + 2, b * 1.4 + 3);
+    // 内側：つぶれた楕円（縦の半径が小さい）では、内側の点がすぐ輪にかかるので、縦に余裕があるときだけ調べる
+    const inside = b >= 4 ? onFrac(O, w, h, cx, cy, Math.max(1, a * 0.55 - 1), Math.max(1, b * 0.5 - 1.5)) : 0;
+    return { score: on - 0.8 * inside - 0.8 * out, on, inside, outside: out };
+  }
+  const lum = (d, p) => (d[p] * 2 + d[p + 1] * 5 + d[p + 2]) >> 3;
+  /* ネットらしさ：楕円の下端から、リング幅の 0.8 倍の高さ（下ほど細い）に、白っぽい画素と、左右より明るい細い線が、
+     その左右の同じ高さ（リングの外側）より多いか */
+  function netScore(rgba, w, h, cx, cy, a, b) {
+    const y0 = Math.round(cy + b + 1), y1 = Math.round(cy + b + 1 + 1.6 * a);
+    let nIn = 0, whIn = 0, lnIn = 0, nOut = 0, whOut = 0, lnOut = 0;
+    const step = a > 30 ? 2 : 1;
+    for (let y = y0; y <= y1; y += step) {
+      if (y < 1 || y >= h - 1) continue;
+      const f = (y - y0) / Math.max(1, y1 - y0);
+      const half = a * (0.85 - 0.3 * f);
+      const xa = Math.max(1, Math.round(cx - 2.2 * a)), xb = Math.min(w - 2, Math.round(cx + 2.2 * a));
+      for (let x = xa; x <= xb; x += step) {
+        const dx = Math.abs(x - cx);
+        const inNet = dx <= half, side = dx >= a * 1.15;
+        if (!inNet && !side) continue;
+        const p = (y * w + x) * 4;
+        const r = rgba[p], g = rgba[p + 1], bb = rgba[p + 2];
+        const mx = r > g ? (r > bb ? r : bb) : (g > bb ? g : bb), mn = r < g ? (r < bb ? r : bb) : (g < bb ? g : bb);
+        const white = mn >= 150 && mx - mn <= 45 ? 1 : 0;
+        const c = lum(rgba, p), l = lum(rgba, p - 4), rr = lum(rgba, p + 4);
+        const line = c - (l + rr) / 2 >= 10 && mx - mn <= 60 ? 1 : 0;
+        if (inNet) { nIn++; whIn += white; lnIn += line; } else { nOut++; whOut += white; lnOut += line; }
+      }
+    }
+    if (nIn < 6 || nOut < 6) return 0;
+    return (whIn / nIn - whOut / nOut) + 1.5 * (lnIn / nIn - lnOut / nOut);
+  }
+
+  /* 4点を通る、傾いていない楕円（A x² + B y² + C x + D y = 1）。中心・半径に直して返す（作れないときは null） */
+  function ellipse4(px, py) {
+    // 数値を安定させるため、1点目を原点にずらしてから解く
+    const ox = px[0], oy = py[0];
+    const M = [];
+    for (let i = 0; i < 4; i++) { const x = px[i] - ox + 0.5, y = py[i] - oy + 0.5; M.push([x * x, y * y, x, y, 1]); }
+    for (let c = 0; c < 4; c++) {
+      let piv = c;
+      for (let r = c + 1; r < 4; r++) if (Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
+      if (Math.abs(M[piv][c]) < 1e-9) return null;
+      const t = M[c]; M[c] = M[piv]; M[piv] = t;
+      for (let r = 0; r < 4; r++) {
+        if (r === c) continue;
+        const f = M[r][c] / M[c][c];
+        for (let k = c; k < 5; k++) M[r][k] -= f * M[c][k];
+      }
+    }
+    const A = M[0][4] / M[0][0], B = M[1][4] / M[1][1], C = M[2][4] / M[2][2], D = M[3][4] / M[3][3];
+    if (!(A > 0 && B > 0)) return null;
+    const cx = -C / (2 * A), cy = -D / (2 * B);
+    const k = 1 + A * cx * cx + B * cy * cy;
+    if (k <= 0) return null;
+    return { cx: cx + ox - 0.5, cy: cy + oy - 0.5, a: Math.sqrt(k / A), b: Math.sqrt(k / B) };
+  }
+  /* 当てはめの良さ：輪らしさが同じくらいなら、大きい楕円を選ぶ（輪の一部が金具や人に隠れていると、見えている短い弧だけの
+     小さな楕円のほうが輪らしく見えてしまう。大きい楕円は、隠れていない弧のすべてを通るときだけ、点数が上がる） */
+  const fitKey = (ring, a) => ring * Math.pow(a, 0.5);
+  /* 小さな乱数（毎回同じ結果になるように、決まった種から） */
+  function lcg(seed) { let x = seed >>> 0 || 1; return () => { x = (Math.imul(x, 1664525) + 1013904223) >>> 0; return x / 4294967296; }; }
+
+  /* 1コマの中のリングの候補。rgba: w×h。opts.region: {x0,y0,x1,y1}（その範囲だけ探す・タップした所のまわりなど）。
+     戻り値: [{ cx, cy, a, b, ring, net, score }]（score の高い順）
+     リングの色の塊は、バックボードの赤い四角の線・金具・ボールなどとつながっていることがあるので、塊の外形ではなく、
+     塊の中の「横に長く続くリングの色の並び」（輪の手前の弧・奥の弧）から楕円を当てはめる */
+  function findRims(rgba, w, h, opts) {
+    opts = opts || {};
+    const O = rimColorMask(rgba, w, h);
+    const D = dilate(O, w, h);
+    const R = opts.region;      // 範囲の外へつながる物を、範囲で切って小さく見せないよう、成分は全体で作ってから範囲で選ぶ
+    const wMax = Math.max(W_MIN + 4, w * W_MAX_FR);
+    const out = [];
+    const cc = V.components(D, w, h, 8);
+    for (const bl of cc.blobs) {
+      const bw = bl.x1 - bl.x0 + 1;
+      if (bw < W_MIN || bw > wMax * 1.5 || bl.y1 - bl.y0 + 1 > wMax) continue;
+      if (R && (bl.x1 < R.x0 || bl.x0 > R.x1 || bl.y1 < R.y0 || bl.y0 > R.y1)) continue;
+      // 横の並び（1画素の切れ目は許す）。同じ位置・長さのものは1つに
+      const runs = [], seenRun = new Set();
+      for (let y = bl.y0; y <= bl.y1; y++) {
+        let x = bl.x0;
+        while (x <= bl.x1) {
+          while (x <= bl.x1 && !O[y * w + x]) x++;
+          if (x > bl.x1) break;
+          const xs = x;
+          let gap = 0;
+          while (x <= bl.x1 && (O[y * w + x] || (gap === 0 && x + 1 <= bl.x1 && O[y * w + x + 1]))) { if (!O[y * w + x]) gap = 1; else gap = 0; x++; }
+          const len = x - xs;
+          if (len >= Math.max(8, W_MIN * 0.5)) {
+            const key = (Math.round((xs + x - 1) / 4)) + ',' + Math.round(len / 3) + ',' + Math.round(y / 2);
+            if (!seenRun.has(key)) { seenRun.add(key); runs.push({ x0: xs, x1: x - 1, y }); }
+          }
+        }
+      }
+      let best = null;
+      for (const r of runs) {
+        const L = r.x1 - r.x0 + 1, cx = (r.x0 + r.x1) / 2;
+        // 並びは、楕円の上端・下端の弧（ほぼ横幅いっぱい）か、少し内側の弦
+        for (const fa of [1, 1.12, 1.3]) {
+          const a = Math.max(4, L * fa / 2 - 1);
+          if (2 * a < W_MIN - 2 || 2 * a > wMax) continue;
+          for (let b = 1; b <= 0.75 * a; b += b < 6 ? 0.75 : 1.5) {
+            for (const sgn of [1, -1]) for (let dy = -1; dy <= 1; dy++) {
+              const cy = r.y + sgn * b + dy;
+              const rs = ringScore(O, D, w, h, cx, cy, a, b);
+              if (!best || rs.score > best.ring) best = { cx, cy, a, b, ring: rs.score, on: rs.on };
+            }
+          }
+        }
+      }
+      // 良い当てはめを上から数個とっておき、最後にネットも見て選ぶ（輪らしさと大きさだけで選ぶと、ボードの線などを含んだ
+      // 大きすぎる楕円を選ぶことがある。本物のリングの真下には、ネットがはっきり見える）
+      const top = [];
+      const keep = (c) => {
+        if (top.some((u) => Math.abs(u.cx - c.cx) < 1.5 && Math.abs(u.cy - c.cy) < 1.5 && Math.abs(u.a - c.a) < 1.5)) return;
+        top.push(c); top.sort((p, q) => q.key - p.key); if (top.length > 6) top.pop();
+      };
+      if (best) { best.key = fitKey(best.ring, best.a); keep(best); }
+      // 輪の一部が隠れているときのため：まわりのリングの色の点から4点ずつ選んで楕円を作り、いちばん良いものを探す（RANSAC）
+      {
+        const m = Math.max(bw, 20);
+        const X0 = Math.max(0, bl.x0 - m), X1 = Math.min(w - 1, bl.x1 + m), Y0 = Math.max(0, bl.y0 - m), Y1 = Math.min(h - 1, bl.y1 + m);
+        const ptsX = [], ptsY = [];
+        for (let y = Y0; y <= Y1; y++) for (let x = X0; x <= X1; x++) if (O[y * w + x]) { ptsX.push(x); ptsY.push(y); }
+        const n = ptsX.length;
+        if (n >= 12 && n <= 20000) {
+          const rnd = lcg(bl.x0 * 7919 + bl.y0 * 104729 + n);
+          const qx = [0, 0, 0, 0], qy = [0, 0, 0, 0];
+          for (let it = 0; it < 500; it++) {
+            for (let j = 0; j < 4; j++) { const k = Math.floor(rnd() * n); qx[j] = ptsX[k]; qy[j] = ptsY[k]; }
+            const e = ellipse4(qx, qy);
+            if (!e || 2 * e.a < W_MIN || 2 * e.a > wMax || e.b > 0.75 * e.a || e.b < 1) continue;
+            const rs = ringScore(O, D, w, h, e.cx, e.cy, e.a, e.b);
+            if (rs.score < 0.45) continue;
+            const key = fitKey(rs.score, e.a);
+            keep({ cx: e.cx, cy: e.cy, a: e.a, b: e.b, ring: rs.score, on: rs.on, key });
+          }
+        }
+      }
+      if (!top.length) continue;
+      for (const c of top) { c.net = netScore(rgba, w, h, c.cx, c.cy, c.a, c.b); c.key2 = (c.ring + 1.5 * Math.max(0, Math.min(0.6, c.net))) * Math.sqrt(c.a); }
+      top.sort((p, q) => q.key2 - p.key2);
+      best = top[0];
+      if (best.ring < 0.45) continue;
+      // 仕上げ：中心・半径を少しずつ動かして、良くなる方へ
+      for (let pass = 0; pass < 2; pass++) {
+        for (const [dx, dy, da, db] of [[1, 0, 0, 0], [-1, 0, 0, 0], [0, 1, 0, 0], [0, -1, 0, 0], [0, 0, 1, 0], [0, 0, -1, 0], [0, 0, 0, 0.75], [0, 0, 0, -0.75], [0, 0, 2, 0], [0, 0, -2, 0]]) {
+          const c2 = { cx: best.cx + dx, cy: best.cy + dy, a: best.a + da, b: best.b + db };
+          if (c2.b < 1 || c2.b > 0.75 * c2.a || 2 * c2.a < W_MIN) continue;
+          const rs = ringScore(O, D, w, h, c2.cx, c2.cy, c2.a, c2.b);
+          const key = fitKey(rs.score, c2.a);
+          if (rs.score >= 0.45 && key > best.key) best = Object.assign(c2, { ring: rs.score, on: rs.on, key });
+        }
+      }
+      // 締め直し（タップしたときだけ。opts.tighten）：大きい楕円を好むぶん、輪の太さの外側に合わせて少し大きめになることがある。
+      // 同じ中心で、少し小さい楕円のほうがはっきり輪に合う（輪らしさが 0.02 以上高い）なら、そちらにする（隠れて見えない所があるだけなら、
+      // 小さくしても良くならない）。自動で探すときは使わない（大きさが変わると見た目の比較がずれて、同じゴールが2つに分かれることがあった）
+      const a0 = best.a, b0 = best.b;
+      for (let f = 0.97; opts.tighten && f >= 0.85; f -= 0.03) {
+        const a2 = a0 * f, b2 = b0 * f;
+        if (2 * a2 < W_MIN || b2 < 1) break;
+        const rs = ringScore(O, D, w, h, best.cx, best.cy, a2, b2);
+        if (rs.score >= best.ring + 0.02) { best.a = a2; best.b = b2; best.ring = rs.score; best.on = rs.on; }
+      }
+      best.net = netScore(rgba, w, h, best.cx, best.cy, best.a, best.b);
+      // ネット（白い網目）が見えないものは、リングとみなさない（ボールの縁・服・床の線などを外す）
+      if (best.net < 0.15) continue;
+      best.score = best.ring + 1.5 * Math.min(0.6, best.net);
+      out.push(best);
+    }
+    out.sort((p, q) => q.score - p.score);
+    // 同じリングを別の塊から2回見つけたもの（中心が近く、大きさも近い）は1つに
+    const uniq = [];
+    for (const c of out) if (!uniq.some((u) => Math.hypot(u.cx - c.cx, u.cy - c.cy) < 0.4 * Math.max(u.a, c.a) && Math.abs(u.a - c.a) < 0.3 * Math.max(u.a, c.a))) uniq.push(c);
+    return uniq;
+  }
+
+  /* 見た目の比較用の小さな画像：リングを中心に、横 ±1.6w・上 2.2w〜下 1.0w（w＝リング幅）を DESC×DESC のグレーに */
+  function descriptor(gray, w, h, c) {
+    const rw = 2 * c.a;
+    const x0 = c.cx - 1.6 * rw, y0 = c.cy - 2.2 * rw;
+    // 2倍の細かさで取り出してから 2×2 で平均（細かい模様のずれに強くする）
+    const d2 = V.sampleGray(gray, w, h, x0, y0, 3.2 * rw, 3.2 * rw, DESC * 2, DESC * 2);
+    const d = new Float32Array(DESC * DESC);
+    for (let y = 0; y < DESC; y++) for (let x = 0; x < DESC; x++) {
+      const q = 2 * y * DESC * 2 + 2 * x;
+      d[y * DESC + x] = (d2[q] + d2[q + 1] + d2[q + DESC * 2] + d2[q + DESC * 2 + 1]) / 4;
+    }
+    let s = 0, s2 = 0;
+    for (let i = 0; i < d.length; i++) { s += d[i]; s2 += d[i] * d[i]; }
+    const n = d.length, m = s / n, sd = Math.sqrt(Math.max(1e-6, s2 / n - m * m));
+    const z = new Float32Array(n);
+    for (let i = 0; i < n; i++) z[i] = (d[i] - m) / sd;
+    return z;
+  }
+  /* 見た目の一致：少しのずれ（上下左右 2 画素まで。リングの位置・大きさの当てはめは数画素ずれる）を許して、いちばん合うところ */
+  function descNcc(p, q) {
+    let best = -1;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+      let s = 0, n = 0;
+      for (let y = 0; y < DESC; y++) {
+        const yy = y + dy;
+        if (yy < 0 || yy >= DESC) continue;
+        for (let x = 0; x < DESC; x++) {
+          const xx = x + dx;
+          if (xx < 0 || xx >= DESC) continue;
+          s += p[y * DESC + x] * q[yy * DESC + xx]; n++;
+        }
+      }
+      if (n && s / n > best) best = s / n;
+    }
+    return best;
+  }
+
+  /* 1コマを調べて、候補（見た目の比較用の画像つき）を返す。t: 時刻（秒） */
+  function scanFrame(rgba, w, h, t, opts) {
+    const cands = findRims(rgba, w, h, opts).filter((c) => c.score >= ((opts && opts.th) || TH_FRAME)).slice(0, 4);
+    if (!cands.length) return [];
+    const gray = V.toGray(rgba, w, h, 'rgba');
+    return cands.map((c) => Object.assign(c, { t, desc: descriptor(gray, w, h, c), fw: w, fh: h }));
+  }
+
+  /* 候補から、ゴールの指定を作る（元の動画の画素に直す。k＝元の画素 / 調べた画像の画素）。
+     枠：リングを中心に、横 ±1.6w・上 2.2w〜下 0.3w（バックボードのあたり。選手が動くリングの下は入れない）。画面の内側に収める */
+  function markOf(c, k, srcW, srcH) {
+    const rim = { cx: c.cx * k, cy: c.cy * k, w: 2 * c.a * k, b: +(c.b * k).toFixed(1) };      // b（楕円の縦の半径）は絵に描くときだけ使う
+    return { t: c.t, box: boxFromRim(rim, srcW, srcH), rim, auto: true, score: +c.score.toFixed(2) };
+  }
+  /* リング（中心・幅）から、追跡に使う枠を決める：横 ±1.6w・上 2.2w〜下 0.3w（バックボードのあたり。選手が動くリングの下は入れない）。
+     リングをなぞるだけで指定したとき・自動で見つけたときに使う。画面の内側に収める */
+  function boxFromRim(rim, srcW, srcH) {
+    const rw = rim.w;
+    const x0 = Math.max(0, rim.cx - 1.6 * rw), x1 = Math.min(srcW, rim.cx + 1.6 * rw);
+    const y0 = Math.max(0, rim.cy - 2.2 * rw), y1 = Math.min(srcH, rim.cy + 0.3 * rw);
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  }
+
+  /* 追跡に使う枠を、リングのまわりで「縦と横の両方の模様がいちばんはっきりしている所」に決める（バックボードの枠・内側の四角など）。
+     リングから決まった形で枠を取ると、床と壁の境・ギャラリーの手すりのような横の線ばかりの所が入り、横にずれても大きさが変わっても
+     見分けにくい（合成映像で、追跡の倍率が少しずつ縮んで得点を落とした）。gray: w×h のグレー。rim と戻り値は、同じ画素の単位 */
+  function boardBox(gray, w, h, rim) {
+    const rw = rim.w;
+    let best = null;
+    for (const fx of [0, -0.6, 0.6, -1.1, 1.1]) for (const fw of [2.6, 3.4]) for (const fh of [2.0, 2.6]) {
+      const bw = fw * rw, bh = fh * rw;
+      let x0 = rim.cx + fx * rw - bw / 2, y0 = rim.cy + 0.3 * rw - bh, x1 = x0 + bw, y1 = rim.cy + 0.3 * rw;
+      // リングの横の範囲に少しでもかかること（枠がリングと一緒に動くように）
+      if (x0 > rim.cx + 0.3 * rw || x1 < rim.cx - 0.3 * rw) continue;
+      x0 = Math.max(1, x0); y0 = Math.max(1, y0); x1 = Math.min(w - 2, x1); y1 = Math.min(h - 2, y1);
+      if ((x1 - x0) * (y1 - y0) < 0.6 * bw * bh) continue;
+      const step = Math.max(1, Math.round(rw / 24));
+      let gx = 0, gy = 0, n = 0;
+      for (let y = Math.round(y0); y <= y1; y += step) {
+        for (let x = Math.round(x0); x <= x1; x += step) {
+          const i = y * w + x;
+          gx += Math.abs(gray[i + 1] - gray[i - 1]); gy += Math.abs(gray[i + w] - gray[i - w]); n++;
+        }
+      }
+      if (!n) continue;
+      const score = Math.min(gx, gy) / n;
+      if (!best || score > best.score) best = { x: x0, y: y0, w: x1 - x0, h: y1 - y0, score };
+    }
+    return best ? { x: best.x, y: best.y, w: best.w, h: best.h } : boxFromRim(rim, w, h);
+  }
+
+  /* たくさんのコマの候補を、見た目でまとめて、ゴールを最大2つ選ぶ。
+     同じコマの別の場所にある候補どうしは、同じゴールにしない。
+     戻り値: [{ rep: 代表の候補（いちばんリングらしいもの）, n: 映っていたコマ数, score }]（よく映っている順） */
+  function cluster(all) {
+    const cands = all.slice().sort((p, q) => q.score - p.score);
+    const groups = [];
+    for (const c of cands) {
+      let best = null, bs = TH_SAME;
+      for (const g of groups) {
+        if (g.frames.has(c.t)) continue;
+        const s = descNcc(c.desc, g.rep.desc);
+        if (s > bs) { bs = s; best = g; }
+      }
+      if (best) { best.n++; best.score += c.score; best.frames.add(c.t); best.members.push(c); }
+      else groups.push({ rep: c, n: 1, score: c.score, frames: new Set([c.t]), members: [c] });
+    }
+    groups.sort((p, q) => q.score - p.score);
+    return groups;
+  }
+  /* 代表（追跡の見本にするコマ）を選び直す：リングらしさが高く、枠が画面に収まり、画面の真ん中に近いもの。
+     広い画角では、画面の端のゴールは引き伸ばされてゆがんで見えるので、端のコマを見本にすると、ほかの位置に映ったときに合わない
+     （合成映像のゴール裏で、手前のゴールを映っていた時間の 4 割しか追えなかった）。大きく映っているほど少しだけ良い */
+  function pickRep(g) {
+    let best = null, bv = -1;
+    for (const c of g.members) {
+      if (c.known) continue;
+      const rw = 2 * c.a;
+      const inside = c.cx - 1.6 * rw >= 0 && c.cx + 1.6 * rw <= c.fw && c.cy - 2.2 * rw >= 0 && c.cy + 0.3 * rw <= c.fh;
+      const dx = (c.cx - c.fw / 2) / (c.fw / 2), dy = (c.cy - c.fh / 2) / (c.fh / 2);
+      const center = 1 - 0.45 * Math.min(1, dx * dx + dy * dy);
+      const v = c.score * (inside ? 1 : 0.6) * center * Math.min(1.15, 0.85 + rw / 200);
+      if (v > bv) { bv = v; best = c; }
+    }
+    return best || g.rep;
+  }
+  /* 手で指定したゴールの見た目（rim：元の動画の画素。k：元の画素 / 調べた画像の画素）。
+     自動で探し直すとき、同じゴールを「もう1つのゴール」として選ばないために使う */
+  function known(rgba, w, h, rim, k, t) {
+    const gray = V.toGray(rgba, w, h, 'rgba');
+    const c = { cx: rim.cx / k, cy: rim.cy / k, a: rim.w / k / 2, b: rim.w / k * 0.15, t, known: true, score: 99, fw: w, fh: h };
+    c.desc = descriptor(gray, w, h, c);
+    return c;
+  }
+  /* 全体：frames の候補（scanFrame の結果をつないだもの）から、ゴールの指定を最大2つ（手で指定したゴールがあれば、その分だけ少なく）。
+     k: 元の画素 / 調べた画像の画素。srcW,srcH: 元の動画の大きさ。knownList: 手で指定したゴール（known() の結果） */
+  function pickGoals(all, k, srcW, srcH, knownList) {
+    const kn = knownList || [];
+    const groups = cluster(kn.concat(all)).filter((g) => g.members.some((m) => m.known) || g.n >= 2 || g.score >= 1.6);
+    const taken = groups.filter((g) => g.members.some((m) => m.known));
+    const out = [];
+    for (const g of groups) {
+      if (out.length + kn.length >= 2) break;
+      if (taken.includes(g)) continue;
+      // 見た目で別のまとまりになっていても、同じゴールのことがある（ズームや向きで見え方が変わる）。
+      // 2 秒以内に、ほぼ同じ場所（リング幅の 2 倍以内）に見えていたら、同じゴールとみなして使わない
+      const same = taken.some((c) => c.members.some((p) => g.members.some((q) => Math.abs(p.t - q.t) <= 2 && p.t !== q.t && Math.hypot(p.cx - q.cx, p.cy - q.cy) <= 4 * Math.max(p.a, q.a))));
+      if (same) continue;
+      taken.push(g); out.push(g);
+    }
+    return out.map((g) => Object.assign(markOf(pickRep(g), k, srcW, srcH), { seen: g.n }));
+  }
+
+  /* タップした所（tx,ty：調べた画像の画素）のまわりのリング。いちばん近くの、リングらしいもの */
+  function fitAt(rgba, w, h, tx, ty, opts) {
+    const r = Math.max(80, (opts && opts.radius) || w * 0.12);
+    const cands = findRims(rgba, w, h, { region: { x0: tx - r, y0: ty - r, x1: tx + r, y1: ty + r }, tighten: true });
+    let best = null, bv = -Infinity;
+    for (const c of cands) {
+      const d = Math.hypot(c.cx - tx, c.cy - ty) / Math.max(10, 2 * c.a);
+      const v = c.score - 0.25 * d;
+      if (c.score >= 0.35 && d <= 3 && v > bv) { bv = v; best = c; }
+    }
+    return best;
+  }
+
+  BS.goalfind = { findRims, scanFrame, pickGoals, known, cluster, markOf, boxFromRim, boardBox, fitAt, rimColorMask, netScore, descriptor, descNcc, _ringScore: ringScore };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
 /* js/auto.js */
 /* バスケ分析スタジオ — 自動解析（映像からゴール・ボール・得点を検出）
    1) ゴール追跡：人が1回だけ指定したゴール（バックボード）を、テンプレート照合で毎コマ追う。
@@ -605,8 +1043,11 @@ a.btn { text-decoration: none; }
     const clampN = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
     /* ---------- ゴール追跡 ---------- */
-    function createHoopTracker(mark, srcW, srcH, phase) {
+    function createHoopTracker(mark, srcW, srcH, phase, opts) {
       // mark: { id, box:{x,y,w,h}, rim:{cx,cy,w} }  … 元画像（srcW×srcH）の座標
+      // opts.fastScale: 倍率の追従。false＝もとの動き（2コマに1回・1段ずつ）、1＝毎コマ・1段ずつ、true（省略時）＝毎コマ・速いときは2段まで。比べるとき用
+      const fastScale = !opts || opts.fastScale !== false;
+      const twoSteps = !opts || (opts.fastScale !== false && opts.fastScale !== 1);
       const k = srcW / AW;
       const AH = Math.round(srcH / k);
       const st = {
@@ -698,14 +1139,25 @@ a.btn { text-decoration: none; }
         if (st.tracked || st.lost < 6) {
           const cur = tryScales(gray, w, h, cx, cy, [st.scale], st.tracked ? 7 : 12, 1);
           let b = cur;
-          if (st.frame % 2 === 0) {
+          // （バスケ得点クリップで変えたもの）倍率の追従は毎コマ。もとは2コマに1回だったが、ゴールの近く（ゴール裏など）から1倍の広い画角で
+          // 撮ると、カメラを振るだけで、画面の端のゴールは大きく・真ん中では小さく見え、0.3 秒で 2 割も縮むことがある（追いつけずに見失った）
+          if (st.frame % 2 === 0 || fastScale) {
             // 倍率（ズーム）への追従：いまの倍率より 0.02 以上よく合うときだけ切り替える（行ったり来たりすると背景差分が荒れる）
             const ccx = cur.x + cur.T.tw / 2, ccy = cur.y + cur.T.th / 2;
             const up = st.scale * SC_STEP < 2.4 ? tryScales(gray, w, h, ccx, ccy, [st.scale * SC_STEP], 2, 1) : null;
             const dn = st.scale / SC_STEP > 0.45 ? tryScales(gray, w, h, ccx, ccy, [st.scale / SC_STEP], 2, 1) : null;
             const alt = up && (!dn || up.score >= dn.score) ? up : dn;
-            if (alt && alt.score > cur.score + 0.02) b = alt;
-            else if (up && dn && cur.score >= TH_KEEP) {
+            if (alt && alt.score > cur.score + 0.02) {
+              b = alt;
+              // 同じ向きにもう1段（速く縮む・広がるとき）
+              if (twoSteps) {
+                const sc2 = alt === up ? alt.scale * SC_STEP : alt.scale / SC_STEP;
+                if (sc2 > 0.45 && sc2 < 2.4) {
+                  const alt2 = tryScales(gray, w, h, alt.x + alt.T.tw / 2, alt.y + alt.T.th / 2, [sc2], 2, 1);
+                  if (alt2.score > alt.score + 0.01) b = alt2;
+                }
+              }
+            } else if (up && dn && cur.score >= TH_KEEP) {
               // 倍率の端数：3つの倍率での合い具合から、山の頂上を放物線で求めてゆっくり寄せる
               const den = dn.score - 2 * cur.score + up.score;
               const d = den < -1e-5 ? clampN(0.5 * (dn.score - up.score) / den, -1, 1) : (up.score > cur.score ? 1 : dn.score > cur.score ? -1 : 0);
@@ -1314,13 +1766,15 @@ a.btn { text-decoration: none; }
        フレームの作り方は環境ごとに違う（node: 全画面から切り出し／ブラウザ: 小さな canvas に描いて読む）ので、ここでは受け取るだけ。 */
     function createAnalyzer(cfg) {
       const fixed = !!cfg.fixed;       // true: カメラが動かない（全景カメラ）。ゴールを追わず、指定した場所を見張る
-      const trackers = cfg.hoops.map((m, i) => (fixed ? createFixedTracker(m, cfg.srcW, cfg.srcH) : createHoopTracker(m, cfg.srcW, cfg.srcH, i)));
+      const trackers = cfg.hoops.map((m, i) => (fixed ? createFixedTracker(m, cfg.srcW, cfg.srcH) : createHoopTracker(m, cfg.srcW, cfg.srcH, i, { fastScale: cfg.fastScale })));
       const rims = cfg.hoops.map(() => createRimChecker());
       const rimState = cfg.hoops.map(() => ({ dx: 0, dy: 0, low: 0, score: null, okT: null }));
       const occlusion = cfg.rimOcclusion !== false;      // 検証用に false で、もとの動き（隠れたコマは使わない）
       const watchers = cfg.hoops.map((m) => createHoopWatcher(m.id));
       const detectors = cfg.hoops.map((m, i) => createShotDetector(i));
       const lastSeen = cfg.hoops.map(() => -1);
+      let conflicts = 0;       // 2つのゴールの追跡が同じ場所を捉えて、片方を取り消した回数（検証用）
+      const sameSpot = (p, q) => p.tracked && q.tracked && p.inFrame && q.inFrame && Math.hypot(p.rim.cx - q.rim.cx, p.rim.cy - q.rim.cy) < 0.8 * Math.max(p.rim.w, q.rim.w);
       const shots = [];
       const vis = [];          // どのゴールが映っていたか {t, on:[bool...]}（攻守の行き来の推定に使う）
       let prevQ = null, frames = 0;
@@ -1379,6 +1833,20 @@ a.btn { text-decoration: none; }
           let s = fixed ? tr.update() : tr.update(f.gray.data, f.gray.w, f.gray.h, f.quarter, shift);
           if (s.tracked && s.inFrame) s = verifyRim(i, s, f);
           status.push(s);
+        });
+        // （バスケ得点クリップで足したもの）2つのゴールの追跡が、同じ場所（＝同じゴール）を捉えたら、片方だけにする。
+        // ゴールはどちらも同じ形・同じ色なので、見失ったゴールを探し直すときに、もう片方のゴールを捉えてしまうことがある
+        // （合成映像で、奥のゴールの追跡が手前のゴールに張り付き、その得点を逆のチームにした）。
+        // 捉えたばかりの方を取り消す。どちらも続けて追っていたなら、合い方（板＋リングの色）の悪い方の追跡をやめる
+        if (!fixed && cfg.resolveSame !== false && status.length === 2 && sameSpot(status[0], status[1])) {
+          const [a, b] = status;
+          const loser = a.acquired !== b.acquired ? (a.acquired ? 0 : 1) : (a.score + (a.rimScore || 0) >= b.score + (b.rimScore || 0) ? 1 : 0);
+          if (status[loser].acquired) trackers[loser].revert(); else trackers[loser].drop();
+          status[loser] = trackers[loser].status();
+          conflicts++;
+        }
+        trackers.forEach((tr, i) => {
+          const s = status[i];
           if (!s.tracked || !s.inFrame) return;
           if (lastSeen[i] >= 0 && f.t - lastSeen[i] > 0.6) detectors[i].flush();
           lastSeen[i] = f.t;
@@ -1394,6 +1862,18 @@ a.btn { text-decoration: none; }
       function finish() {
         detectors.forEach((d, i) => { d.flush(); for (const ev of d.take()) { ev.hoop = i; shots.push(ev); } });
         shots.sort((a, b) => a.t - b.t);
+        // （バスケ得点クリップで足したもの）1 秒以内に、両方のゴールで「得点」が出たら、同じボールを2つのゴールで見たもの（片方は誤り）。
+        // 試合で 1 秒以内に両方のゴールに得点が入ることはないので、確かさ（conf）の低いほうを外す
+        // （合成映像：フロアのゴール裏から撮ると、奥のゴールはリング幅 13 画素ほどしかなく、手前のゴールの得点を奥でも数えた）
+        for (let i = 0; i < shots.length && cfg.dedupe !== false; i++) {
+          const a = shots[i];
+          if (!a.made || a.dup) continue;
+          for (let j = i + 1; j < shots.length && shots[j].t - a.t <= 1.0; j++) {
+            const b = shots[j];
+            if (b.made && !b.dup && b.hoop !== a.hoop) (a.conf >= b.conf ? b : a).dup = true;
+          }
+        }
+        for (let i = shots.length - 1; i >= 0; i--) if (shots[i].dup) shots.splice(i, 1);
         // ゴールが映っていた区間（[開始, 終了, ビット：ゴール i が映っていれば 1<<i]）と、映っていたコマ数
         const spans = [], seen = cfg.hoops.map(() => 0);
         for (const v of vis) {
@@ -1403,7 +1883,7 @@ a.btn { text-decoration: none; }
           if (last && last[2] === mask && v.t - last[1] <= 0.5) last[1] = v.t;
           else spans.push([v.t, v.t, mask]);
         }
-        return { shots, frames, spans, seen };
+        return { shots, frames, spans, seen, conflicts };
       }
       return { initHoop, process, finish, trackers, shots, vis };
     }
@@ -2578,7 +3058,8 @@ a.btn { text-decoration: none; }
     tab: 0, openSetup: false, openHow: null, openMaybe: false,
     reel: { active: false, list: [], i: -1, label: '', team: 0 },
     exporting: null, out: [null, null],
-    thumbs: {}, thumbJob: null, saveTimer: 0, debug: false, lastLog: null
+    thumbs: {}, thumbJob: null, saveTimer: 0, debug: false, lastLog: null,
+    finding: null, autoGoals: true       // finding：ゴールを自動で探している途中（findGoals）。autoGoals：動画を開いたら自動で探すか（テストで止める）
   };
 
   /* ---------- 小さな道具 ---------- */
@@ -2615,6 +3096,7 @@ a.btn { text-decoration: none; }
     if (S.exporting) { BS.ui.toast('書き出し中です。終わってから開いてください', 'warn'); return; }
     stopReel(true);
     cancelMarking();
+    cancelFind();
     if (S.thumbJob) S.thumbJob.cancel = true;
     if (S.media) S.media.destroy();
     const m = BS.createVideoMedia(file);
@@ -2629,7 +3111,12 @@ a.btn { text-decoration: none; }
     m.on('time', onTime);
     m.on('play', updatePlayBtn);
     m.on('pause', updatePlayBtn);
-    m.on('ready', () => { render(); drawTimeline(); drawOverlay(); if (S.st.result) makeThumbs(); });
+    m.on('ready', () => {
+      render(); drawTimeline(); drawOverlay();
+      if (S.st.result) makeThumbs();
+      // ゴールがまだなら、自動で探す（前に探した動画・自分で教えた動画では探さない。ゴールの絵だけ作る）
+      if (!S.st.hoops.some(Boolean) && !S.st.autoTried && S.autoGoals !== false) findGoals(); else makeHoopThumbs();
+    });
     m.on('error', () => BS.ui.toast('この動画は、このブラウザでは再生できないようです（MP4・MOV をお試しください）', 'err', 7000));
     m.on('notice', (t) => BS.ui.toast(t, 'warn', 6000));
     document.body.classList.add('has-video');
@@ -2654,7 +3141,6 @@ a.btn { text-decoration: none; }
     const s = `${BS.fmtTime(t)} / ${BS.fmtTime(duration())}`;
     if (tt && s !== lastTimeText) { lastTimeText = s; tt.textContent = s; }
     reelTick(t);
-    if (S.marking) markingTimeCheck(t);
     drawTimeline();
     if (!S.running) drawOverlay();
   }
@@ -2737,47 +3223,29 @@ a.btn { text-decoration: none; }
   }
 
   /* ③ ゴール */
-  const FIG = '<svg viewBox="0 0 330 122" role="img" aria-label="ゴールの指定のしかた：バックボードを囲み、次にリングの左端から右端までなぞる">' +
-    '<defs><clipPath id="figClip2"><rect x="0" y="0" width="155" height="96" rx="8"/></clipPath></defs>' +
-    '<g><rect x="0" y="0" width="155" height="96" rx="8" fill="#26334d"/>' +
-    '<rect x="42" y="18" width="72" height="44" rx="2" fill="#e5e7eb" stroke="#94a3b8"/><rect x="66" y="38" width="24" height="18" fill="none" stroke="#64748b" stroke-width="2"/>' +
-    '<ellipse cx="78" cy="65" rx="13" ry="3.5" fill="none" stroke="#f97316" stroke-width="3"/>' +
-    '<path d="M66 67 L70 84 M73 69 L74 84 M83 69 L82 84 M90 67 L86 84 M70 84 L86 84" stroke="#e5e7eb" stroke-width="1" fill="none"/>' +
-    '<rect x="35" y="11" width="86" height="57" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="6 4"/>' +
-    '<circle cx="35" cy="11" r="4" fill="#fbbf24"/><path d="M121 68 l-10 -1 l6 -8 z" fill="#fbbf24"/>' +
-    '<text x="77" y="114" text-anchor="middle" fill="currentColor" font-size="11.5">① 板（バックボード）を囲む</text></g>' +
-    '<path d="M159 48 l10 0 m-4 -4 l4 4 l-4 4" stroke="#94a3b8" stroke-width="2" fill="none"/>' +
-    '<g transform="translate(175,0)"><rect x="0" y="0" width="155" height="96" rx="8" fill="#26334d"/>' +
-    '<g clip-path="url(#figClip2)"><rect x="8" y="-40" width="139" height="72" rx="2" fill="#e5e7eb" stroke="#94a3b8"/><rect x="52" y="-6" width="52" height="34" fill="none" stroke="#64748b" stroke-width="3"/>' +
-    '<ellipse cx="78" cy="46" rx="38" ry="9" fill="none" stroke="#f97316" stroke-width="5"/>' +
-    '<path d="M42 50 L54 92 M58 54 L64 92 M78 55 L78 92 M98 54 L92 92 M114 50 L102 92 M50 72 L106 72" stroke="#e5e7eb" stroke-width="1.5" fill="none"/></g>' +
-    '<path d="M40 46 L116 46" stroke="#fde047" stroke-width="3"/><circle cx="40" cy="46" r="4.5" fill="#fde047"/><path d="M116 46 l-9 -5 l0 10 z" fill="#fde047"/>' +
-    '<text x="77" y="114" text-anchor="middle" fill="currentColor" font-size="11.5">② リングの左端 → 右端をなぞる</text></g></svg>';
   function stepGoals() {
     const st = S.st;
     const nMark = st.hoops.filter(Boolean).length;
-    const card = h('section', { class: 'card step', id: 'stepGoals' }, stepHead(3, 'ゴールを教える', '最初の1回だけ・ゴール1つにドラッグ2回', nMark >= 2));
-    if (!S.media) { card.append(h('p', { class: 'note' }, '動画を選ぶと、ここでゴールを教えられます。')); return card; }
-    const how = h('details', { class: 'howto' }, h('summary', null, 'やり方（絵で見る）'),
-      h('div', { class: 'howfig', html: FIG }),
-      h('ol', null,
-        h('li', null, '映像の下のバーを動かして、ゴールが', h('b', null, '大きく・はっきり'), '映っている場面で止める（板の前に人やボールが重なっていないコマ）'),
-        h('li', null, '「このゴールを指定する」を押して、', h('b', null, 'バックボード（板）全体'), 'をドラッグで囲む'),
-        h('li', null, '拡大されるので、', h('b', null, 'リング（輪）の左端から右端まで'), 'をドラッグでなぞる'),
-        h('li', null, 'もう1つのゴールも、映っている場面で同じように')));
-    how.open = S.openHow != null ? S.openHow : nMark < 2;
-    how.querySelector('summary').addEventListener('click', () => { S.openHow = !how.open; });
-    card.append(how);
+    const card = h('section', { class: 'card step', id: 'stepGoals' }, stepHead(3, 'ゴール', '自動で探します・合っているか見るだけ', nMark >= 2 && !S.finding));
+    if (!S.media) { card.append(h('p', { class: 'note' }, '動画を選ぶと、ゴールを自動で探します。')); return card; }
+    if (S.finding) {
+      const f = S.finding;
+      card.append(h('div', { class: 'finding' },
+        h('b', null, '🔍 ゴールを探しています… '), h('span', { class: 'note', id: 'findLabel' }, f.n ? `${f.i} / ${f.n}` : ''),
+        h('div', { class: 'progress' }, h('i', { id: 'findBar', style: { width: (f.n ? 100 * f.i / f.n : 0).toFixed(0) + '%' } })),
+        h('button', { class: 'btn small', id: 'btnFindStop', onclick: cancelFind }, 'やめて、自分で教える')));
+    }
     if (S.marking) {
       const mk = S.marking;
       card.append(h('div', { class: 'markcard' },
-        h('b', null, `${HOOP[mk.i]} を指定中：`),
-        mk.step === -1 ? ' まず、映像の上でゴールのあたりを1回クリック（そこを拡大します）。' : mk.step === 0 ? ' 映像の上で、バックボード（板）全体をドラッグで囲んでください。' : ' 次に、リング（輪）の左端から右端まで、ぴったりなぞってください。',
+        h('b', null, `${HOOP[mk.i]} を教える：`),
+        mk.step === 0 ? ' 映像を、このゴールがはっきり映っている場面で止めて、リング（輪）のあたりをタップ（クリック）してください。リングの左端から右端までなぞっても指定できます。' : ' 拡大しました。リング（輪）の左端から右端まで、ドラッグでなぞってください。',
         h('div', { class: 'row', style: { marginTop: '6px' } },
-          mk.step === 1 ? h('button', { class: 'btn small', onclick: () => { mk.step = 0; mk.box = null; mk.view = mk.pre || null; render(); drawOverlay(); } }, '囲み直す') : null,
+          mk.step === 1 ? h('button', { class: 'btn small', onclick: () => { mk.step = 0; mk.view = null; render(); drawOverlay(); } }, '拡大をやめる') : null,
           h('button', { class: 'btn small', onclick: cancelMarking }, 'やめる'),
           h('span', { class: 'note' }, 'Esc でもやめられます'))));
     }
+    const HOW = { auto: '自動で見つけました', tap: 'タップした所から見つけました', trace: 'なぞって指定しました' };
     [0, 1].forEach((i) => {
       const m = st.hoops[i];
       const att = h('div', { class: 'attack' }, h('span', { class: 'note' }, '動画のはじめに、このゴールを攻めているのは？'),
@@ -2785,14 +3253,30 @@ a.btn { text-decoration: none; }
           class: 'btn small teambtn' + (st.hoopTeam[i] === tm ? ' on' : ''), dataset: { hoop: i, team: tm },
           onclick: () => { st.hoopTeam[i] = tm; st.hoopTeam[1 - i] = 1 - tm; save(); render(); drawTimeline(); }
         }, h('span', { class: 'chip', style: { background: teamColor(tm) } }), teamTag(tm)))));
+      const state = m ? `✓ ${HOW[m.how] || '指定ずみ'}（${BS.fmtTime(m.t)} のコマ）` : S.finding ? '探しています…' : st.autoTried ? '自動では見つかりませんでした' : 'まだです';
       card.append(h('div', { class: 'goal' + (m ? ' done' : '') },
-        h('div', { class: 'goal-h' }, h('b', { style: { color: HOOP_COL[i] } }, '■ '), h('b', null, HOOP[i]), h('span', { class: 'note' }, m ? `✓ 指定ずみ（${BS.fmtTime(m.t)} のコマ）` : '未指定')),
+        h('div', { class: 'goal-h' }, h('b', { style: { color: HOOP_COL[i] } }, '■ '), h('b', null, HOOP[i]), h('span', { class: 'note' }, state)),
+        m && S.thumbs['hoop' + i] ? h('div', { class: 'thumbrow' }, S.thumbs['hoop' + i], h('span', { class: 'note' }, '黄色の線が、リング（輪）にぴったり重なっていれば OK です。ずれていたら「ちがう・直す」')) : null,
         h('div', { class: 'row' },
-          h('button', { class: 'btn small ' + (m ? '' : 'primary'), id: 'btnMark' + i, disabled: !!S.running, onclick: () => startMarking(i) }, m ? '指定し直す' : 'このゴールを指定する'),
-          m ? h('button', { class: 'btn small', onclick: () => seek(m.t).then(() => { S.thumbs['hoop' + i] = hoopThumb(i); render(); }) }, '指定したコマへ') : null),
-        m && S.thumbs['hoop' + i] ? h('div', { class: 'thumbrow' }, S.thumbs['hoop' + i], h('span', { class: 'note' }, '枠＝バックボード、黄色の線＝リング。ずれていたら「指定し直す」')) : null,
+          h('button', { class: 'btn small ' + (m ? '' : 'primary'), id: 'btnMark' + i, disabled: !!S.running, onclick: () => startMarking(i) }, m ? 'ちがう・直す' : 'このゴールを教える'),
+          m ? h('button', { class: 'btn small', onclick: () => seek(m.t) }, 'このコマへ') : null),
         att));
     });
+    if (!S.finding && !S.running) {
+      card.append(h('div', { class: 'row' },
+        h('button', { class: 'btn small', id: 'btnFind', onclick: () => findGoals() }, '🔍 もう一度、自動で探す'),
+        h('span', { class: 'note' }, '自分で教えたゴールは、そのままです')));
+    }
+    const how = h('details', { class: 'howto' }, h('summary', null, '自動で見つからない・ずれているとき'),
+      h('ol', null,
+        h('li', null, 'そのゴールの「ちがう・直す」（まだのときは「このゴールを教える」）を押す'),
+        h('li', null, '映像の下のバーを動かして、そのゴールが', h('b', null, 'はっきり映っている場面'), 'で止める'),
+        h('li', null, h('b', null, 'リング（輪）のあたりをタップ'), '（クリック）する。リングを見つけると、黄色の線で示します'),
+        h('li', null, '見つからないときは拡大されるので、', h('b', null, 'リングの左端から右端まで'), 'をドラッグでなぞる')),
+      h('p', { class: 'note' }, 'ゴールの裏から撮った映像でも、同じように教えられます（ガラスのボード越しに見えるリングをタップ）。'));
+    how.open = S.openHow != null ? S.openHow : false;
+    how.querySelector('summary').addEventListener('click', () => { S.openHow = !how.open; });
+    card.append(how);
     // カメラの種類（三脚で固定してコート全体を撮った映像は、ゴールを追わずに見張る）
     card.append(h('label', { class: 'switch' },
       h('input', { type: 'checkbox', id: 'optFixed', checked: !!st.fixed, disabled: !!S.running, onchange: (e) => { st.fixed = e.target.checked; save(); render(); drawOverlay(); } }),
@@ -2819,7 +3303,7 @@ a.btn { text-decoration: none; }
   function stepRun() {
     const nMark = S.st.hoops.filter(Boolean).length;
     const card = h('section', { class: 'card step', id: 'stepRun' }, stepHead(4, '得点シーンを探す', null, !!S.st.result && !stale()));
-    if (!S.media) { card.append(h('p', { class: 'note' }, '動画を選んで、ゴールを教えると、ここで探せます。')); return card; }
+    if (!S.media) { card.append(h('p', { class: 'note' }, '動画を選んで、ゴールを確かめると、ここで探せます。')); return card; }
     if (S.running) {
       card.append(h('b', null, '探しています… '), h('span', { id: 'runLabel', class: 'note' }, ''),
         h('div', { class: 'progress' }, h('i', { id: 'runBar' })),
@@ -2829,8 +3313,8 @@ a.btn { text-decoration: none; }
       return card;
     }
     card.append(h('div', { class: 'row' },
-      h('button', { class: 'btn primary big', id: 'btnRun', disabled: !nMark, onclick: () => run() }, S.st.result ? '⚡ もう一度探す' : '⚡ 得点シーンを探す'),
-      h('span', { class: 'note' }, nMark ? `目安 ${BS.fmtTime(duration() / 3)}（パソコンの速さで変わります）${nMark === 1 ? '。ゴールが1つだけなので、もう片方のゴールの得点は見つかりません' : ''}` : '先に ③ でゴールを指定してください')));
+      h('button', { class: 'btn primary big', id: 'btnRun', disabled: !nMark || !!S.finding, onclick: () => run() }, S.st.result ? '⚡ もう一度探す' : '⚡ 得点シーンを探す'),
+      h('span', { class: 'note' }, nMark ? `目安 ${BS.fmtTime(duration() / 3)}（パソコンの速さで変わります）${nMark === 1 ? '。ゴールが1つだけなので、もう片方のゴールの得点は見つかりません' : ''}` : S.finding ? 'ゴールを探しています。終わるまでお待ちください' : '先に ③ でゴールを教えてください')));
     if (stale()) card.append(h('p', { class: 'note warn' }, '⚠ ゴールの指定を変えました。もう一度探すと、新しい指定で探し直します。'));
     return card;
   }
@@ -3137,27 +3621,120 @@ a.btn { text-decoration: none; }
   }
 
   /* ---------- サムネイル（場面の小さな絵） ---------- */
-  function hoopThumb(i) {
+  /* ゴールの絵：指定したコマの、リングのまわりを拡大して、リングを黄色で描く。src：描く映像（省略時は画面の映像。いまのコマ） */
+  function hoopThumb(i, src) {
     const m = S.st.hoops[i];
     if (!m || !S.media) return null;
-    const W = S.media.width, H = S.media.height;
-    const pad = Math.max(m.box.w, m.box.h) * 0.3;
-    const x0 = Math.max(0, m.box.x - pad), y0 = Math.max(0, m.box.y - pad);
-    const x1 = Math.min(W, m.box.x + m.box.w + pad), y1 = Math.min(H, Math.max(m.box.y + m.box.h, m.rim.cy + m.rim.w * 0.9) + pad);
+    const W = S.media.width, H = S.media.height, rw = m.rim.w;
+    const x0 = Math.max(0, m.rim.cx - 2.2 * rw), x1 = Math.min(W, m.rim.cx + 2.2 * rw);
+    const y0 = Math.max(0, m.rim.cy - 1.6 * rw), y1 = Math.min(H, m.rim.cy + 1.3 * rw);
     const sw = x1 - x0, sh = y1 - y0;
     if (sw < 4 || sh < 4) return null;
-    const k = Math.min(190 / sw, 120 / sh);
+    const k = Math.min(220 / sw, 150 / sh);
     const cv = document.createElement('canvas');
     cv.width = Math.round(sw * k * 2); cv.height = Math.round(sh * k * 2);
     cv.style.width = Math.round(sw * k) + 'px'; cv.style.height = Math.round(sh * k) + 'px';
     cv.className = 'hoopthumb';
     const g = cv.getContext('2d');
-    try { g.drawImage(S.media.el, x0, y0, sw, sh, 0, 0, cv.width, cv.height); } catch (e) { return null; }
+    try { g.drawImage(src || S.media.el, x0, y0, sw, sh, 0, 0, cv.width, cv.height); } catch (e) { return null; }
     const q = cv.width / sw;
-    g.strokeStyle = HOOP_COL[i]; g.lineWidth = 3; g.strokeRect((m.box.x - x0) * q, (m.box.y - y0) * q, m.box.w * q, m.box.h * q);
-    g.strokeStyle = '#fde047'; g.lineWidth = 4; g.beginPath(); g.moveTo((m.rim.cx - m.rim.w / 2 - x0) * q, (m.rim.cy - y0) * q); g.lineTo((m.rim.cx + m.rim.w / 2 - x0) * q, (m.rim.cy - y0) * q); g.stroke();
+    const cx = (m.rim.cx - x0) * q, cy = (m.rim.cy - y0) * q, a = rw / 2 * q, b = (m.rim.b || rw * 0.14) * q;
+    // 黄色の楕円（見やすいよう、黒いふちどり）
+    [['rgba(0,0,0,0.65)', 6], ['#fde047', 3]].forEach(([col, lw]) => { g.strokeStyle = col; g.lineWidth = lw; g.beginPath(); g.ellipse(cx, cy, Math.max(2, a), Math.max(2, b), 0, 0, Math.PI * 2); g.stroke(); });
     return cv;
   }
+  /* 見えない別の <video>（指定したコマの絵・ゴールの自動検出に使う。再生中の映像を動かさない） */
+  function hiddenVideo() {
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.preload = 'auto';
+    v.style.cssText = 'position:fixed;left:-10px;top:-10px;width:2px;height:2px;opacity:0;pointer-events:none';
+    document.body.appendChild(v);
+    const once = (ev, ms) => new Promise((res) => { let done = false; const f = () => { if (done) return; done = true; v.removeEventListener(ev, f); res(); }; v.addEventListener(ev, f); setTimeout(f, ms); });
+    return { v, once, close() { v.removeAttribute('src'); v.load(); v.remove(); } };
+  }
+  /* ゴールの絵を、そのコマへ移って作る（開き直したとき・自動で見つけたとき） */
+  async function makeHoopThumbs() {
+    if (!S.media) return;
+    const media = S.media;
+    const todo = [0, 1].filter((i) => S.st.hoops[i] && !S.thumbs['hoop' + i]);
+    if (!todo.length) return;
+    const hv = hiddenVideo();
+    try {
+      hv.v.src = media.url;
+      await hv.once('loadeddata', 8000);
+      for (const i of todo) {
+        const m = S.st.hoops[i];
+        if (!m || S.media !== media) break;
+        hv.v.currentTime = m.t;
+        await hv.once('seeked', 4000);
+        const cv = hoopThumb(i, hv.v);
+        if (cv && S.st.hoops[i] === m) S.thumbs['hoop' + i] = cv;
+      }
+    } catch (e) { /* 絵がなくても使える */ }
+    hv.close();
+    if (S.media === media && !S.marking) render();
+  }
+
+  /* ---------- ゴールの自動検出（goalfind.js） ----------
+     動画全体から間をあけて取り出したコマ（12〜36 コマ）で、リング（オレンジの細い輪）とその下のネットを探し、
+     何コマにも同じ見た目で映っているもの2つを、ゴールA・B にする。自分で教えたゴールはそのまま、残りだけ入れ替える */
+  async function findGoals() {
+    if (!S.media || !S.media.ready || S.finding || S.running || S.exporting || !BS.goalfind) return;
+    const media = S.media, key = S.key, st = S.st;
+    cancelMarking();
+    const keepIdx = [0, 1].filter((i) => st.hoops[i] && st.hoops[i].how !== 'auto');
+    if (keepIdx.length >= 2) { BS.ui.toast('ゴールは2つとも、自分で教えたものを使っています', 'warn'); return; }
+    const job = S.finding = { cancel: false, i: 0, n: 0 };
+    render();
+    const hv = hiddenVideo();
+    let goals = [], ok = false;
+    try {
+      hv.v.src = media.url;
+      await hv.once('loadeddata', 8000);
+      const W = media.width, H = media.height, dur = duration();
+      const k = Math.max(1, W / 1280);
+      const cw = Math.round(W / k), ch = Math.round(H / k);
+      const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+      const g = cv.getContext('2d', { willReadFrequently: true });
+      const grab = async (t) => { hv.v.currentTime = t; await hv.once('seeked', 4000); g.drawImage(hv.v, 0, 0, cw, ch); return g.getImageData(0, 0, cw, ch).data; };
+      // 自分で教えたゴールの見た目（同じゴールを、もう1つのゴールとして選ばないため）
+      const known = [];
+      for (const i of keepIdx) { const m = st.hoops[i]; known.push(BS.goalfind.known(await grab(m.t), cw, ch, m.rim, k, m.t)); }
+      const n = job.n = BS.clamp(Math.round(dur / 6), 12, 36);
+      const all = [];
+      for (let j = 0; j < n && !job.cancel; j++) {
+        const t = Math.min(Math.max(0, dur - 0.5), (j + 0.5) * dur / n);
+        all.push(...BS.goalfind.scanFrame(await grab(t), cw, ch, t));
+        job.i = j + 1;
+        const bar = $('#findBar'), lab = $('#findLabel');
+        if (bar) bar.style.width = (100 * job.i / n).toFixed(0) + '%';
+        if (lab) lab.textContent = `${job.i} / ${n}`;
+        await yieldNow();
+      }
+      if (!job.cancel) {
+        goals = BS.goalfind.pickGoals(all, k, W, H, known);
+        // 追跡に使う枠は、そのコマの、リングのまわりで模様のはっきりした所に
+        for (const gm of goals) { await grab(gm.t); gm.box = boxAround(hv.v, gm.rim); }
+        ok = true;
+      }
+    } catch (e) { console.warn('[goals]', e); }
+    hv.close();
+    if (S.finding === job) S.finding = null;
+    if (!ok || job.cancel || S.key !== key || S.media !== media) { render(); return; }
+    st.autoTried = true;
+    const free = [0, 1].filter((i) => !keepIdx.includes(i));
+    free.forEach((i) => { st.hoops[i] = null; delete S.thumbs['hoop' + i]; });
+    goals.forEach((gm, j) => { const i = free[j]; if (i != null) st.hoops[i] = { id: i === 0 ? 'A' : 'B', t: +gm.t.toFixed(3), box: gm.box, rim: gm.rim, how: 'auto' }; });
+    save();
+    render(); drawOverlay();
+    makeHoopThumbs();
+    const nF = goals.length;
+    if (nF >= free.length) BS.ui.toast('ゴールを見つけました。③ の絵で、黄色の線がリングに重なっているか確かめてください', 'ok', 7000);
+    else if (nF) BS.ui.toast(`ゴールを ${nF} つ見つけました。もう1つは、③ の「このゴールを教える」で、リングをタップしてください`, 'warn', 8000);
+    else BS.ui.toast('ゴールを自動では見つけられませんでした。③ の「このゴールを教える」で、リングをタップしてください', 'warn', 8000);
+  }
+  function cancelFind() { if (S.finding) S.finding.cancel = true; }
+
   /* 得点の場面の絵は、見えない別の <video> でその時刻へ移って描く（再生中の映像を動かさない） */
   async function makeThumbs() {
     if (!S.media) return;
@@ -3193,14 +3770,17 @@ a.btn { text-decoration: none; }
     v.removeAttribute('src'); v.load(); v.remove();
   }
 
-  /* ---------- ゴールの指定（映像の上でドラッグ） ---------- */
+  /* ---------- ゴールを教える（映像の上で、リングをタップ／なぞる） ----------
+     タップ：そのまわりからリングを探す（goalfind.js の fitAt）。見つからないときは拡大して、なぞってもらう。
+     なぞる：リングの左端から右端までのドラッグ。どちらも、追跡に使う枠はリングから決める（バックボードを囲む必要はない） */
   function setOverlayActive(on) { const cv = $('#overlay'); cv.style.pointerEvents = on ? 'auto' : 'none'; cv.style.cursor = on ? 'crosshair' : 'default'; }
   function startMarking(i) {
     if (!S.media || S.running || S.exporting) return;
+    if (S.finding) cancelFind();
     stopReel(true);
     pause();
     S.openSetup = true;
-    S.marking = { i, step: S.st.fixed ? -1 : 0, box: null, drag: null, pre: null, view: null, t: now() };      // 全景カメラ：ゴールが小さいので、まずクリックで拡大してから囲む（step -1）
+    S.marking = { i, step: 0, drag: null, view: null };
     setOverlayActive(true);
     render(); drawOverlay();
     const mc = document.querySelector('.markcard');
@@ -3211,7 +3791,7 @@ a.btn { text-decoration: none; }
     S.marking = null; setOverlayActive(false);
     render(); drawOverlay();
   }
-  /* 映像の画素 ⇄ 画面上の位置。ふだんは映像全体（黒帯つき）、リングをなぞるときは拡大表示（mk.view の範囲を画面いっぱいに） */
+  /* 映像の画素 ⇄ 画面上の位置。ふだんは映像全体（黒帯つき）、拡大しているときは mk.view の範囲を画面いっぱいに */
   function mapping(r) {
     const W = S.media.width, H = S.media.height;
     const mk = S.marking;
@@ -3230,23 +3810,54 @@ a.btn { text-decoration: none; }
     const m = mapping(r);
     return { x: r.left + m.ox + (x - m.vx) * m.s, y: r.top + m.oy + (y - m.vy) * m.s };
   }
-  /* リングは小さい（画面上で 20 画素ほどのこともある）ので、バックボードを囲んだら、その周りを拡大して見せる */
-  function zoomFor(box) {
-    const r = $('#overlay').getBoundingClientRect();
-    const W = S.media.width, H = S.media.height;
-    const base = Math.min(r.width / W, r.height / H);
-    const vw = Math.min(W, box.w / 0.42);                       // バックボードの幅が画面の約 4 割になるように
-    if (r.width / vw < base * 1.4) return null;                 // もともと大きく映っているなら拡大しない
-    const vh = vw * r.height / r.width;
-    return { x: box.x + box.w / 2 - vw / 2, y: box.y + box.h * 0.8 - vh / 2, w: vw, h: vh };
-  }
-  /* 全景カメラ：クリックした場所のまわりを、映像の横幅の 1/7 ほどの範囲で拡大して見せる（板が見切れないよう、クリックより少し上を中心に） */
+  /* 指定した所のまわりを、映像の横幅の 1/7 ほどの範囲で拡大して見せる（リングの上の板が見切れないよう、少し上を中心に） */
   function viewAround(pt) {
     const r = $('#overlay').getBoundingClientRect();
     const W = S.media.width, H = S.media.height;
     const vw = Math.min(W, Math.max(200, W / 7));
     const vh = Math.min(H, vw * r.height / r.width);
-    return { x: BS.clamp(pt.x - vw / 2, 0, Math.max(0, W - vw)), y: BS.clamp(pt.y - vh * 0.6, 0, Math.max(0, H - vh)), w: vw, h: vh };
+    return { x: BS.clamp(pt.x - vw / 2, 0, Math.max(0, W - vw)), y: BS.clamp(pt.y - vh * 0.55, 0, Math.max(0, H - vh)), w: vw, h: vh };
+  }
+  /* タップした所（映像の画素）のまわりのリング。大きな動画でも細かい画素のまま、まわりだけを切り出して調べる。見つからなければ null */
+  function fitAtTap(p) {
+    if (!BS.goalfind) return null;
+    const W = S.media.width, H = S.media.height;
+    const half = Math.min(Math.max(W, H) / 2, Math.max(160, W * 0.16));
+    const x0 = Math.max(0, Math.round(p.x - half)), y0 = Math.max(0, Math.round(p.y - half));
+    const x1 = Math.min(W, Math.round(p.x + half)), y1 = Math.min(H, Math.round(p.y + half));
+    const sw = x1 - x0, sh = y1 - y0;
+    if (sw < 32 || sh < 32) return null;
+    const k = Math.min(1, 900 / Math.max(sw, sh));
+    const cw = Math.round(sw * k), ch = Math.round(sh * k);
+    const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+    const g = cv.getContext('2d', { willReadFrequently: true });
+    try { g.drawImage(S.media.el, x0, y0, sw, sh, 0, 0, cw, ch); } catch (e) { return null; }
+    const c = BS.goalfind.fitAt(g.getImageData(0, 0, cw, ch).data, cw, ch, (p.x - x0) * k, (p.y - y0) * k, { radius: Math.max(80, 0.3 * Math.min(cw, ch)) });
+    if (!c) return null;
+    return { cx: x0 + c.cx / k, cy: y0 + c.cy / k, w: 2 * c.a / k, b: +(c.b / k).toFixed(1) };
+  }
+  /* 追跡に使う枠：src（canvas に描けるもの。いまのコマ）の、リングのまわりで縦と横の模様がはっきりした所（goalfind.boardBox） */
+  function boxAround(src, rim) {
+    const W = S.media.width, H = S.media.height;
+    const k = Math.max(1, W / 1280), cw = Math.round(W / k), ch = Math.round(H / k);
+    const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+    const g = cv.getContext('2d', { willReadFrequently: true });
+    try { g.drawImage(src, 0, 0, cw, ch); } catch (e) { return BS.goalfind.boxFromRim(rim, W, H); }
+    const gray = BS.vision.toGray(g.getImageData(0, 0, cw, ch).data, cw, ch, 'rgba');
+    const b = BS.goalfind.boardBox(gray, cw, ch, { cx: rim.cx / k, cy: rim.cy / k, w: rim.w / k });
+    return { x: b.x * k, y: b.y * k, w: b.w * k, h: b.h * k };
+  }
+  /* ゴール i を、いまのコマのリング rim（映像の画素）で指定する。how: 'tap' | 'trace' */
+  function setGoal(i, rim, how) {
+    const W = S.media.width, H = S.media.height;
+    S.st.hoops[i] = { id: i === 0 ? 'A' : 'B', t: Math.round(now() * 1000) / 1000, box: S.boxMode === 'rim' ? BS.goalfind.boxFromRim(rim, W, H) : boxAround(S.media.el, rim), rim, how };      // S.boxMode：比べるとき用
+    save();
+    S.marking = null; setOverlayActive(false);
+    S.thumbs['hoop' + i] = hoopThumb(i);
+    const both = S.st.hoops.filter(Boolean).length >= 2;
+    if (S.st.fixed ? rim.w < 14 : rim.w / W < 0.0125) BS.ui.toast(`${HOOP[i]} を指定しました。ただしリングが小さく映っています。もっと大きく映っている場面があれば、そこで指定し直すと見つけやすくなります`, 'warn', 8000);
+    else BS.ui.toast(`${HOOP[i]} を指定しました（黄色の線がリング）${both ? '。④ の「得点シーンを探す」を押してください' : '。もう1つのゴールも、映っている場面で同じように'}`, 'ok', 5000);
+    render(); drawOverlay();
   }
   function onDown(ev) { if (!S.marking) return; ev.preventDefault(); const p = toSrc(ev); S.marking.drag = { a: p, b: p }; $('#overlay').setPointerCapture(ev.pointerId); drawOverlay(); }
   function onMove(ev) { if (!S.marking || !S.marking.drag) return; S.marking.drag.b = toSrc(ev); drawOverlay(); }
@@ -3256,36 +3867,27 @@ a.btn { text-decoration: none; }
     mk.drag.b = toSrc(ev);
     const { a, b } = mk.drag;
     mk.drag = null;
-    if (mk.step === -1) { mk.view = mk.pre = viewAround(b); mk.step = 0; render(); drawOverlay(); return; }
-    if (mk.step === 0) {
-      const box = { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y) };
-      const small = S.st.fixed ? 8 : 12;      // 全景カメラのゴールは小さい
-      if (box.w < small + 4 || box.h < small) { BS.ui.toast('小さすぎます。バックボード全体を囲んでください', 'err'); drawOverlay(); return; }
-      mk.box = box; mk.step = 1; mk.view = zoomFor(box); mk.t = now();
-    } else {
-      const w = Math.hypot(a.x - b.x, a.y - b.y);
-      if (w < 8) { BS.ui.toast('リングの左端から右端までドラッグしてください', 'err'); drawOverlay(); return; }
-      const rim = { cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, w };
-      S.st.hoops[mk.i] = { id: mk.i === 0 ? 'A' : 'B', t: Math.round(now() * 1000) / 1000, box: mk.box, rim };
-      save();
-      S.marking = null; setOverlayActive(false);
-      S.thumbs['hoop' + mk.i] = hoopThumb(mk.i);
-      const far = rim.cx < mk.box.x - mk.box.w * 0.5 || rim.cx > mk.box.x + mk.box.w * 1.5 || rim.cy < mk.box.y - mk.box.h * 0.5 || rim.cy > mk.box.y + mk.box.h * 2;
-      const both = S.st.hoops.filter(Boolean).length >= 2;
-      if (far) BS.ui.toast('リングの線が、囲んだバックボードから離れています。同じゴールのリングをなぞり直してください（「指定し直す」）', 'warn', 8000);
-      else if (S.st.fixed ? w < 14 : w / S.media.width < 0.0125) BS.ui.toast(`${HOOP[mk.i]} を指定しました。ただしリングが小さく映っています。もっと大きく映っている場面があれば、そこで指定し直すと見つけやすくなります`, 'warn', 8000);
-      else BS.ui.toast(`${HOOP[mk.i]} を指定しました${both ? '。④ の「得点シーンを探す」を押してください' : '。もう1つのゴールも、映っている場面で同じように指定します'}`, 'ok', 5000);
+    const mp = mapping($('#overlay').getBoundingClientRect());
+    if (Math.hypot(a.x - b.x, a.y - b.y) * mp.s < 8) {
+      // タップ：そのまわりからリングを探す
+      const rim = fitAtTap(b);
+      if (rim) { setGoal(mk.i, rim, 'tap'); return; }
+      if (!mk.view) { mk.view = viewAround(b); mk.step = 1; render(); }
+      BS.ui.toast('ここではリングを見つけられませんでした。リングの左端から右端まで、ドラッグでなぞってください', 'warn', 6000);
+      drawOverlay();
+      return;
     }
-    render(); drawOverlay();
-  }
-  /* 板を囲んだあとでコマが動いた：枠とリングが別のコマになってしまうので、囲むところからやり直す */
-  function markingTimeCheck(t) {
-    const mk = S.marking;
-    if (mk && mk.step === 1 && Math.abs(t - mk.t) > 0.02) {
-      mk.step = 0; mk.box = null; mk.view = mk.pre || null; mk.drag = null;
-      BS.ui.toast('コマが動いたので、バックボードを囲むところからやり直してください', 'warn', 4500);
-      render();
+    // なぞった：リングの左端から右端
+    const w = Math.hypot(a.x - b.x, a.y - b.y);
+    const rim = { cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, w };
+    // 小さく映っているリングを拡大せずになぞると、ずれやすい。拡大して、もう一度なぞってもらう
+    if (!mk.view && w * mp.s < 36) {
+      mk.view = viewAround({ x: rim.cx, y: rim.cy }); mk.step = 1;
+      BS.ui.toast('リングが小さいので拡大しました。もう一度、リングの左端から右端までなぞってください', 'warn', 5000);
+      render(); drawOverlay();
+      return;
     }
+    setGoal(mk.i, rim, 'trace');
   }
   function drawOverlay() {
     const cv = $('#overlay');
@@ -3309,15 +3911,13 @@ a.btn { text-decoration: none; }
         g.fillStyle = '#000'; g.fillRect(0, 0, r.width, r.height);
         try { g.drawImage(S.media.el, mk.view.x, mk.view.y, mk.view.w, mk.view.h, 0, 0, r.width, r.height); } catch (e) { /* まだ描けるコマがない */ }
       } else { g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(0, 0, r.width, r.height); }
-      if (mk.box) rect(mk.box, HOOP_COL[mk.i], HOOP[mk.i]);
       if (mk.drag) {
         const { a, b } = mk.drag;
-        if (mk.step === 0) rect({ x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y) }, '#fbbf24');
-        else if (mk.step === 1) { g.strokeStyle = '#fbbf24'; g.lineWidth = 3; g.beginPath(); g.moveTo(X(a.x), Y(a.y)); g.lineTo(X(b.x), Y(b.y)); g.stroke(); }
+        g.strokeStyle = '#fbbf24'; g.lineWidth = 3; g.beginPath(); g.moveTo(X(a.x), Y(a.y)); g.lineTo(X(b.x), Y(b.y)); g.stroke();
       }
       g.fillStyle = 'rgba(0,0,0,0.66)'; g.fillRect(0, 0, r.width, 28);
       g.fillStyle = '#fde047'; g.font = 'bold 13.5px sans-serif';
-      g.fillText(mk.step === -1 ? `${HOOP[mk.i]}：ゴールのあたりを1回クリック（拡大します）` : mk.step === 0 ? `${HOOP[mk.i]}：バックボード（板）全体を、ドラッグで囲む` : `${HOOP[mk.i]}：${mk.view ? '🔍 拡大中　' : ''}リング（輪）の左端 → 右端 を、ぴったりドラッグ`, 10, 19);
+      g.fillText(mk.view ? `${HOOP[mk.i]}：🔍 拡大中　リング（輪）の左端 → 右端 を、ドラッグでなぞる` : `${HOOP[mk.i]}：リング（輪）のあたりをタップ（または、左端 → 右端 をなぞる）`, 10, 19);
       return;
     }
     if (S.live) {
@@ -3334,7 +3934,11 @@ a.btn { text-decoration: none; }
     }
     // 指定ずみのゴール（指定したコマにいるとき、または全景カメラのときに表示。設定を開いているときだけ）
     const setupVisible = !S.st.result || S.openSetup;
-    if (setupVisible) S.st.hoops.forEach((m, i) => { if (m && (S.st.fixed || Math.abs(now() - m.t) < 0.2)) { rect(m.box, HOOP_COL[i], HOOP[i]); rimLine(m.rim, '#fde047'); } });
+    if (setupVisible) S.st.hoops.forEach((m, i) => {
+      if (!m || !(S.st.fixed || Math.abs(now() - m.t) < 0.2)) return;
+      g.strokeStyle = '#fde047'; g.lineWidth = 3; g.beginPath(); g.ellipse(X(m.rim.cx), Y(m.rim.cy), Math.max(2, m.rim.w / 2 * sc), Math.max(2, (m.rim.b || m.rim.w * 0.14) * sc), 0, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = HOOP_COL[i]; g.font = 'bold 12px sans-serif'; g.fillText(HOOP[i], X(m.rim.cx - m.rim.w / 2), Y(m.rim.cy) - Math.max(6, (m.rim.b || m.rim.w * 0.14) * sc) - 4);
+    });
   }
 
   /* ---------- 解析（できれば Worker で、だめなら画面側で同じコードを動かす） ---------- */
@@ -3450,7 +4054,7 @@ a.btn { text-decoration: none; }
   }
 
   async function run(opts) {
-    if (S.running || !S.media) return;
+    if (S.running || !S.media || S.finding) return;
     opts = opts || {};
     const st0 = S.st;
     const marks = st0.hoops.filter(Boolean);
@@ -3481,7 +4085,8 @@ a.btn { text-decoration: none; }
     let eng = null, res = null;
     try {
       // S.debug：検証用（コマごとのボール候補の記録を S.lastLog に残す。tests/rim-check.cjs が使う）
-      eng = st.eng = await openEngine({ srcW: media.width, srcH: media.height, fixed: !!st0.fixed, hoops: marks.map((m) => ({ id: m.id, box: m.box, rim: m.rim })), debug: !!S.debug, rimOcclusion: S.rimOcclusion },
+      const cfgA = { srcW: media.width, srcH: media.height, fixed: !!st0.fixed, hoops: marks.map((m) => ({ id: m.id, box: m.box, rim: m.rim })), debug: !!S.debug, rimOcclusion: S.rimOcclusion, fastScale: S.fastScale };
+      eng = st.eng = await openEngine(cfgA,
         (m) => { if (m.ev === 'progress') onLive(m.t, m.live, m.preview); else if (m.ev === 'info') st.info = m; });
       try {
         st.mode = 'decode';
@@ -3492,6 +4097,9 @@ a.btn { text-decoration: none; }
         console.warn('[auto] ファイルを直接読めないので、再生しながら解析します：', err.message);
         BS.ui.toast('この動画形式は直接読めないので、再生しながら探します（動画と同じ長さの時間がかかります。このタブを表示したままにしてください）', 'warn', 9000);
         st.mode = 'playback';
+        // 再生しながら調べるときは、コマの間隔が不ぞろい（飛ぶ）ので、ゴールの大きさの追従は、もとの動き（2コマに1回・1段ずつ）にする
+        // （毎コマ・2段まで動かすと、飛んだコマの間に大きさがずれて、別の所に張り付くことがあった）
+        await eng.call('init', { cfg: Object.assign({}, cfgA, { fastScale: S.fastScale != null ? S.fastScale : false }) });
         res = await runVideoPlayback(eng, media, marks, st, onLive);
       }
       if (st.cancel) throw Object.assign(new Error('中止しました'), { code: 'cancelled' });
@@ -3648,7 +4256,7 @@ a.btn { text-decoration: none; }
     render(); drawTimeline();
   }
 
-  BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, list, clipsFor, maybes: () => C.maybes(S.st.result, setupOf(), S.st.edits, list()), promote, unpromote, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs };
+  BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, findGoals, cancelFind, list, clipsFor, maybes: () => C.maybes(S.st.result, setupOf(), S.st.edits, list()), promote, unpromote, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }
