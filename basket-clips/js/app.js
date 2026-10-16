@@ -1050,7 +1050,8 @@
     let eng = null, res = null;
     try {
       // S.debug：検証用（コマごとのボール候補の記録を S.lastLog に残す。tests/rim-check.cjs が使う）
-      eng = st.eng = await openEngine({ srcW: media.width, srcH: media.height, fixed: !!st0.fixed, hoops: marks.map((m) => ({ id: m.id, box: m.box, rim: m.rim })), debug: !!S.debug, rimOcclusion: S.rimOcclusion, fastScale: S.fastScale },
+      const cfgA = { srcW: media.width, srcH: media.height, fixed: !!st0.fixed, hoops: marks.map((m) => ({ id: m.id, box: m.box, rim: m.rim })), debug: !!S.debug, rimOcclusion: S.rimOcclusion, fastScale: S.fastScale };
+      eng = st.eng = await openEngine(cfgA,
         (m) => { if (m.ev === 'progress') onLive(m.t, m.live, m.preview); else if (m.ev === 'info') st.info = m; });
       try {
         st.mode = 'decode';
@@ -1061,6 +1062,9 @@
         console.warn('[auto] ファイルを直接読めないので、再生しながら解析します：', err.message);
         BS.ui.toast('この動画形式は直接読めないので、再生しながら探します（動画と同じ長さの時間がかかります。このタブを表示したままにしてください）', 'warn', 9000);
         st.mode = 'playback';
+        // 再生しながら調べるときは、コマの間隔が不ぞろい（飛ぶ）ので、ゴールの大きさの追従は、もとの動き（2コマに1回・1段ずつ）にする
+        // （毎コマ・2段まで動かすと、飛んだコマの間に大きさがずれて、別の所に張り付くことがあった）
+        await eng.call('init', { cfg: Object.assign({}, cfgA, { fastScale: S.fastScale != null ? S.fastScale : false }) });
         res = await runVideoPlayback(eng, media, marks, st, onLive);
       }
       if (st.cancel) throw Object.assign(new Error('中止しました'), { code: 'cancelled' });

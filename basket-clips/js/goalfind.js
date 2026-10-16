@@ -243,6 +243,16 @@
           if (rs.score >= 0.45 && key > best.key) best = Object.assign(c2, { ring: rs.score, on: rs.on, key });
         }
       }
+      // 締め直し（タップしたときだけ。opts.tighten）：大きい楕円を好むぶん、輪の太さの外側に合わせて少し大きめになることがある。
+      // 同じ中心で、少し小さい楕円のほうがはっきり輪に合う（輪らしさが 0.02 以上高い）なら、そちらにする（隠れて見えない所があるだけなら、
+      // 小さくしても良くならない）。自動で探すときは使わない（大きさが変わると見た目の比較がずれて、同じゴールが2つに分かれることがあった）
+      const a0 = best.a, b0 = best.b;
+      for (let f = 0.97; opts.tighten && f >= 0.85; f -= 0.03) {
+        const a2 = a0 * f, b2 = b0 * f;
+        if (2 * a2 < W_MIN || b2 < 1) break;
+        const rs = ringScore(O, D, w, h, best.cx, best.cy, a2, b2);
+        if (rs.score >= best.ring + 0.02) { best.a = a2; best.b = b2; best.ring = rs.score; best.on = rs.on; }
+      }
       best.net = netScore(rgba, w, h, best.cx, best.cy, best.a, best.b);
       // ネット（白い網目）が見えないものは、リングとみなさない（ボールの縁・服・床の線などを外す）
       if (best.net < 0.15) continue;
@@ -409,7 +419,7 @@
   /* タップした所（tx,ty：調べた画像の画素）のまわりのリング。いちばん近くの、リングらしいもの */
   function fitAt(rgba, w, h, tx, ty, opts) {
     const r = Math.max(80, (opts && opts.radius) || w * 0.12);
-    const cands = findRims(rgba, w, h, { region: { x0: tx - r, y0: ty - r, x1: tx + r, y1: ty + r } });
+    const cands = findRims(rgba, w, h, { region: { x0: tx - r, y0: ty - r, x1: tx + r, y1: ty + r }, tighten: true });
     let best = null, bv = -Infinity;
     for (const c of cands) {
       const d = Math.hypot(c.cx - tx, c.cy - ty) / Math.max(10, 2 * c.a);
