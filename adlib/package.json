@@ -1,0 +1,6 @@
+{
+  "name": "adlib",
+  "private": true,
+  "type": "commonjs",
+  "description": "アドリブ・ラボ（ビルド不要の独立アプリ）。ルートが type: module なので、この中だけ CommonJS に戻して node の検査から js/*.js を読めるようにしている。"
+}

@@ -108,6 +108,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["hibi/tools/serve.cjs", "--port=8793"],
       "port": 8793
+    },
+    {
+      "name": "adlib",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8788", "--directory", "adlib"],
+      "port": 8788
     }
   ]
 }
