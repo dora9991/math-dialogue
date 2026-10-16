@@ -1,0 +1,1072 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>板書型ワークシート</title>
+<style>
+/* ikkan：板書型ワークシート。紙面は実寸（mm）でつくり、画面では zoom で縮める。 */
+:root{
+  --wsfont:"UD デジタル 教科書体 N-R","UD Digi Kyokasho N-R","UD デジタル 教科書体 NK-R","YuKyokasho Yoko","游教科書体 横用","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+  --ui:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic UI","Meiryo",sans-serif;
+  --bg:#e7e5df;--panel:#fff;--ink:#1f2933;--ink2:#52606d;--ink3:#667382;--line:#d9d6cc;--btn-line:#c5cbd3;--acc:#1d5fbf;--acc-soft:#e8f0fc;
+  --ans:#c62020;--ans-soft:#fdecec;--ans-line:#eba8a8;--ans-ink:#a31616;--on-ans:#fff;
+  --paper-ans:#d62828;   /* 紙面の赤（白い紙の上なので、暗い画面でも変えない） */
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14181d;--panel:#1d2329;--ink:#e6e9ec;--ink2:#a9b3bd;--ink3:#8a96a2;--line:#2f3841;--btn-line:#3d4853;--acc:#7db2ff;--acc-soft:#1e2e45;
+    --ans:#ff8a8a;--ans-soft:#3a2224;--ans-line:#6b3a3d;--ans-ink:#ffb0b0;--on-ans:#2a1214;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14181d;--panel:#1d2329;--ink:#e6e9ec;--ink2:#a9b3bd;--ink3:#8a96a2;--line:#2f3841;--btn-line:#3d4853;--acc:#7db2ff;--acc-soft:#1e2e45;
+  --ans:#ff8a8a;--ans-soft:#3a2224;--ans-line:#6b3a3d;--ans-ink:#ffb0b0;--on-ans:#2a1214;color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit}
+
+/* ================= 紙面 ================= */
+.wsp{position:relative;flex:none;background:#fff;color:#1f2328;font-family:var(--wsfont);line-height:1.4;overflow:hidden;
+  box-shadow:0 1px 3px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.1);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.wsp-head{position:absolute;height:10mm;display:flex;align-items:flex-end;justify-content:space-between;gap:4mm;font-size:3.5mm;white-space:nowrap}
+.wsp-head .u{display:inline-block;border-bottom:.25mm solid #333;height:4.6mm;vertical-align:-1.1mm;margin:0 .7mm}
+.wsp-head .w1{width:7mm}.wsp-head .w2{width:9mm}.wsp-head .w6{width:46mm}
+.wh-mid{flex:1;text-align:center;font-size:3mm;color:#6b7280;overflow:hidden;text-overflow:ellipsis}
+.wsp-body{position:absolute}
+.wsp-rule{position:absolute;left:0;top:0;display:block;pointer-events:none;overflow:visible}
+.wsp-flow{position:relative;font-size:calc(var(--pitch) * .56);line-height:var(--pitch)}
+
+/* ---- ブロック（高さはいつも罫の幅の倍数） ---- */
+.wb{position:relative}
+.wb-t{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;overflow:hidden}
+.wb .tx{grid-column:2;position:relative;top:calc(var(--pitch) * .06);min-width:0;overflow-wrap:anywhere}
+.wb.box{padding:0 1.6mm;overflow:visible}
+.wb.box::after{content:"";position:absolute;left:0;right:0;top:.35mm;bottom:.35mm;border:.3mm solid #2d3748;border-radius:1.4mm;pointer-events:none}
+.wsp .tag{grid-column:1;box-sizing:border-box;display:inline-block;height:calc(var(--pitch) * .7);margin:calc(var(--pitch) * .15) 1.8mm 0 0;padding:0 1.5mm;
+  line-height:calc(var(--pitch) * .7);font-size:calc(var(--pitch) * .42);font-weight:700;border-radius:1mm;white-space:nowrap;letter-spacing:.04em}
+.wsp .t-meate{background:#2d3748;color:#fff}
+.wsp .t-kadai{border:.3mm solid #2d3748;line-height:calc(var(--pitch) * .7 - .6mm);background:#fff}
+/* 板書の写し：ふだんは罫線だけ。解答を表示すると、教師の板書が赤で出る */
+.wb-b{overflow:hidden}
+.wb-b .tx{display:none;grid-column:auto;top:calc(var(--pitch) * .06);padding-left:.8mm;color:var(--paper-ans)}
+.ans-on .wb-b .tx{display:block}
+
+/* 答え（赤）：問題の中の空欄の数字、図の中の空欄の数字、板書 */
+.wsp .ansx{display:none;color:var(--paper-ans)}
+.ans-on .wsp .ansx{display:inline}
+
+/* 文字の中の空欄・分数・累乗・文字式の字 */
+.wsp .bl{display:inline-block;height:1.1em;line-height:1.1em;border-bottom:.25mm solid #333;vertical-align:-.25em;text-align:center;margin:0 .15em;white-space:nowrap}
+.wsp .fr{display:inline-block;vertical-align:middle;font-size:.7em;line-height:1;text-align:center;margin:0 .14em}
+.wsp .fr>span{display:block;padding:0 .12em}
+.wsp .fr>span:first-child{border-bottom:.2mm solid currentColor;padding-bottom:.06em}
+.wsp .fr>span:last-child{padding-top:.04em}
+.wsp i.v{font-family:"Times New Roman",Times,serif;font-style:italic;font-size:1.1em;line-height:0;padding:0 .03em}
+.wsp sup{font-size:.62em;vertical-align:.5em;line-height:0}
+.wsp .sq{white-space:nowrap}
+.wsp .sq>span{display:inline-block;border-top:.2mm solid currentColor;line-height:1.02;padding:0 .08em 0 .03em;margin-left:-.07em}
+
+/* 図 */
+.wb-fig{display:flex;gap:4mm;align-items:stretch;background:#fff}
+.wb-fig::before{content:"";position:absolute;top:-.4mm;bottom:-.4mm;left:-3mm;right:-3mm;background:#fff}
+.wb-fig .fg{flex:none;position:relative}
+.fsvg{display:block;overflow:visible;fill:#222}
+.fsvg text{font-family:var(--wsfont)}
+.fsvg .sv,.fsvg .pl{font-family:"Times New Roman",Times,serif;font-style:italic}
+.fsvg .cap{font-weight:700}
+.fsvg .ansx{display:none;fill:var(--paper-ans)}
+.ans-on .fsvg .ansx{display:inline}
+.fsvg g.ansx{fill:var(--paper-ans)}
+
+/* 2段組 */
+.wb-cols{display:grid;column-gap:6mm;align-items:start}
+.wcol{min-width:0}
+
+/* ================= 画面（ワークシート以外） ================= */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+.top .brand{font-weight:700;font-size:15px;color:var(--ink);text-decoration:none;white-space:nowrap}
+.top .brand small{font-weight:600;font-size:11px;color:var(--ink3);margin-left:6px}
+.top .sp{flex:1}
+.top .ttl{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.top .ttl small{font-size:11px;color:var(--ink3);font-weight:700}
+.top .ttl b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--btn-line);background:var(--panel);border-radius:8px;padding:7px 13px;font-size:14px;cursor:pointer;white-space:nowrap;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:var(--acc);color:var(--acc)}
+.btn.main{background:var(--ans-soft);border-color:var(--ans-line);color:var(--ans-ink);font-weight:700}
+.btn.main[aria-pressed=true]{background:var(--ans);border-color:var(--ans);color:var(--on-ans)}
+.btn.main:hover{border-color:var(--ans);color:var(--ans-ink)}
+.btn.main[aria-pressed=true]:hover{color:var(--on-ans)}
+.btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.pages-wrap{padding:16px 16px 60px;overflow-x:auto}
+.pages{display:flex;flex-direction:column;align-items:center;gap:10mm;transform-origin:top center}
+.hint{max-width:210mm;margin:0 auto 12px;font-size:13px;color:var(--ink2);text-align:center}
+.hint b{color:var(--ans)}
+
+/* 一覧 */
+.home{max-width:860px;margin:0 auto;padding:26px 16px 60px}
+.home h1{font-size:22px;margin:0 0 6px}
+.home .lead{margin:0 0 20px;color:var(--ink2);font-size:14px;line-height:1.75}
+.home .lead b{color:var(--ans)}
+.unit{margin:22px 0 8px;display:flex;align-items:baseline;gap:10px}
+.unit h2{font-size:16px;margin:0}
+.unit span{font-size:12px;color:var(--ink3)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.card{display:block;text-decoration:none;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;transition:border-color .15s,box-shadow .15s}
+.card:hover{border-color:var(--acc);box-shadow:0 2px 10px rgba(29,95,191,.12)}
+.card small{display:block;font-size:11.5px;color:var(--ink3);font-weight:700;margin-bottom:2px}
+.card b{display:block;font-size:15.5px;line-height:1.45}
+.card p{margin:6px 0 0;font-size:12.5px;color:var(--ink2);line-height:1.6}
+.card .go{display:inline-block;margin-top:8px;font-size:12.5px;color:var(--acc);font-weight:700}
+.note{margin-top:28px;padding:14px 16px;background:var(--panel);border:1px dashed var(--btn-line);border-radius:10px;font-size:13px;color:var(--ink2);line-height:1.75}
+.note h3{margin:0 0 4px;font-size:13.5px;color:var(--ink)}
+
+@media (max-width:640px){
+  .top{padding:8px 16px}
+  .top .ttl b{max-width:60vw}
+  .btn{padding:7px 10px;font-size:13px}
+}
+
+/* ================= 印刷 ================= */
+@page{size:A4;margin:0}
+@media print{
+  html,body{background:#fff !important;height:auto !important}
+  .top,.hint,.home{display:none !important}
+  .pages-wrap{padding:0 !important;overflow:visible !important}
+  .pages{zoom:1 !important;display:block !important;gap:0 !important}
+  .wsp{box-shadow:none !important;margin:0 !important;break-after:page;page-break-after:always}
+  .wsp:last-child{break-after:auto;page-break-after:auto}
+}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ---- js/core.js ---- */
+/* ikkan：板書型ワークシートの紙面をつくる道具（画面を持たない。ブラウザでも node の検査でも読める）。
+   ワークシートの形：日付・名前 → めあて → 学習課題・例題（1〜3問）。問題の下は、図・グラフ以外は空欄（板書を写す）。
+   「解答を表示」で、空欄に教師が板書する内容と、問題文・図の中の空欄（数字）が赤で出る。
+   文字の中：{{答え}}＝空欄、[[1/2]]＝分数、x^2＝累乗、**太字**、\\m＝立体にしない文字、√{12}＝根号。
+   図のきまり（ws.css と同じ）：長さの字は '{{3}}cm' のように書くと、数字だけ空欄になる。 */
+(function () {
+  'use strict';
+  const IK = (window.IK = window.IK || {});
+  IK.units = IK.units || [];
+  IK.lessons = IK.lessons || {};
+  IK.order = IK.order || [];
+
+  /* ---------------- 小道具 ---------------- */
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const num = (v, d) => { const n = parseFloat(String(v == null ? '' : v).replace(/[−–]/g, '-')); return isFinite(n) ? n : d; };
+  const f2 = n => String(Math.round(n * 100) / 100);
+  // 字の幅のめやす（全角＝1、数字＝0.65 …）
+  const emOf = t => { let n = 0; for (const ch of String(t).replace(/\[\[|\]\]|\*\*|\^|\{\{|\}\}/g, '')) n += /[A-Z]/.test(ch) ? 0.75 : /[0-9]/.test(ch) ? 0.65 : /[\x20-\x7e]/.test(ch) ? 0.56 : 1; return n; };
+
+  /* ---------------- 文字の中 ---------------- */
+  // 1〜3文字の小文字（x, l, ax …）は数式らしく斜体に。cm・kg などの単位と、\ をつけた文字は立体のまま
+  const UNITS = new Set(['cm', 'mm', 'km', 'kg', 'mg', 'ml', 'dl', 'kl', 'ha', 'min', 'sec', 'cc']);
+  const VAR_RE = /(^|[^A-Za-z&#;\u0001])([a-z]{1,3})(?![A-Za-z])/g;
+  const italic = (t, open, close) => t.replace(VAR_RE, (m, pre, w) => (w.length > 1 && UNITS.has(w) ? m : pre + open + w + close));
+  const plain = t => italic(esc(String(t).replace(/\\([A-Za-z])/g, '\u0001$1')), '<i class="v">', '</i>').replace(/\n/g, '<br>').replace(/\u0001/g, '');
+  function inl(s) {
+    s = String(s == null ? '' : s);
+    const re = /\{\{([\s\S]*?)\}\}|\[\[([^\]\/]*)\/([^\]]*)\]\]|\*\*([\s\S]+?)\*\*|\^\{([^}]*)\}|\^([0-9]+|[A-Za-z])|√\{([^{}]*)\}/g;
+    let out = '', last = 0, m;
+    while ((m = re.exec(s))) {
+      out += plain(s.slice(last, m.index));
+      if (m[1] !== undefined) out += `<span class="bl" style="width:${Math.max(2.4, emOf(m[1]) + 1).toFixed(1)}em"><span class="ansx">${inl(m[1])}</span></span>`;
+      else if (m[2] !== undefined) out += `<span class="fr"><span>${inl(m[2])}</span><span>${inl(m[3])}</span></span>`;
+      else if (m[4] !== undefined) out += `<b>${inl(m[4])}</b>`;
+      else if (m[5] !== undefined) out += `<sup>${inl(m[5])}</sup>`;
+      else if (m[7] !== undefined) out += `<span class="sq">√<span>${inl(m[7])}</span></span>`;
+      else out += `<sup>${plain(m[6])}</sup>`;
+      last = re.lastIndex;
+    }
+    return out + plain(s.slice(last));
+  }
+
+  /* ---------------- 図（SVG・単位は mm） ---------------- */
+  const ln = (x1, y1, x2, y2, c, w, extra) => `<line x1="${f2(x1)}" y1="${f2(y1)}" x2="${f2(x2)}" y2="${f2(y2)}" stroke="${c}" stroke-width="${w}"${extra || ''}/>`;
+  const tx = (x, y, s, size, anchor, extra) => `<text x="${f2(x)}" y="${f2(y)}" font-size="${size}" text-anchor="${anchor || 'middle'}"${extra || ''}>${s}</text>`;
+  const svgMath = s => italic(esc(String(s).replace(/\\([A-Za-z])/g, '\u0001$1')), '<tspan class="sv">', '</tspan>').replace(/\u0001/g, '');
+  const plab = n => esc(String(n).replace(/_.*$/, '').replace(/'/g, '′'));
+  const pol = (cx, cy, r, deg) => [cx + r * Math.cos(deg * Math.PI / 180), cy - r * Math.sin(deg * Math.PI / 180)];   // 画面の座標（y が下向き）で、数学の向き（反時計まわり）の角度
+
+  // 図の中の字。{{3}}cm のように書くと、「3」のところが空欄（下線）になり、解答を表示すると赤で出る
+  function rich(x, y, s, size, anchor, extra) {
+    s = String(s == null ? '' : s);
+    if (!/\{\{/.test(s)) return tx(x, y, svgMath(s), size, anchor, extra);
+    const parts = s.split(/(\{\{[^}]*\}\})/).filter(p => p !== '');
+    const isBlank = p => /^\{\{/.test(p);
+    const wOf = p => (isBlank(p) ? Math.max(5.2, emOf(p.slice(2, -2)) * size * 0.62 + 3.2) : emOf(p.replace(/\\/g, '')) * size * 0.62);
+    const total = parts.reduce((a, p) => a + wOf(p), 0);
+    let cur = anchor === 'start' ? x : anchor === 'end' ? x - total : x - total / 2, out = '';
+    parts.forEach(p => {
+      const w = wOf(p);
+      if (isBlank(p)) {
+        out += ln(cur + 0.4, y + 0.9, cur + w - 0.4, y + 0.9, '#333', 0.25);
+        out += tx(cur + w / 2, y - 0.1, svgMath(p.slice(2, -2)), size, 'middle', ' class="ansx"');
+      } else out += tx(cur, y, svgMath(p), size, 'start');
+      cur += w;
+    });
+    return out;
+  }
+
+  /* ---- 立体の見取図（角柱・角錐・直方体・円柱・円錐・球）。f.dims は 'r 4cm\nl 10cm' のように、1行に1つ ---- */
+  function figSolid(f, W, H) {
+    const shape = f.shape || 'cube', K = 0.5, PH = 35 * Math.PI / 180, kc = K * Math.cos(PH), ks = K * Math.sin(PH);
+    const VIEW = [-kc, 1, -ks], P2 = p => [p[0] + kc * p[1], p[2] + ks * p[1]];
+    const a = Math.max(0.1, num(f.a, 4)), b = Math.max(0.1, num(f.b, a)), c = Math.max(0.1, num(f.c, a));
+    const n = Math.max(3, Math.min(10, Math.round(num(f.n, shape === 'pyramid' ? 4 : 3))));
+    const lt = String(f.labels || '').trim(), labels = !lt ? [] : /\s/.test(lt) ? lt.split(/\s+/) : Array.from(lt);
+    const segs = [], curves = [], extra = [];
+    let V2 = [], idx = {};
+    const dimLines = String(f.dims || '').split('\n').map(t => t.trim()).filter(Boolean).map(t => { const m = t.split(/[\s　]+/); return { key: m[0], text: m.slice(1).join(' ') }; });
+    const sub = (p, q) => [p[0] - q[0], p[1] - q[1], p[2] - q[2]], dot3 = (p, q) => p[0] * q[0] + p[1] * q[1] + p[2] * q[2];
+    if (['cube', 'cuboid', 'prism', 'pyramid'].includes(shape)) {
+      let V = [], F = [];
+      if (shape === 'cube' || shape === 'cuboid') {
+        const w = a, d = shape === 'cube' ? a : b, h = shape === 'cube' ? a : c;
+        V = [[0, 0, h], [w, 0, h], [w, d, h], [0, d, h], [0, 0, 0], [w, 0, 0], [w, d, 0], [0, d, 0]];
+        F = [[0, 1, 2, 3], [4, 5, 6, 7], [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]];
+      } else {
+        const R = a / (2 * Math.sin(Math.PI / n)), base = [];
+        for (let k = 0; k < n; k++) { const t = (-90 - 180 / n + k * 360 / n) * Math.PI / 180; base.push([R * Math.cos(t), R * Math.sin(t)]); }
+        if (shape === 'prism') {
+          V = [...base.map(p => [p[0], p[1], c]), ...base.map(p => [p[0], p[1], 0])];
+          F = [base.map((_, k) => k), base.map((_, k) => n + k)];
+          for (let k = 0; k < n; k++) F.push([k, (k + 1) % n, n + (k + 1) % n, n + k]);
+        } else {
+          V = [[0, 0, c], ...base.map(p => [p[0], p[1], 0])];
+          F = [base.map((_, k) => k + 1)];
+          for (let k = 0; k < n; k++) F.push([0, 1 + k, 1 + (k + 1) % n]);
+        }
+      }
+      const cen = V.reduce((s, p) => [s[0] + p[0] / V.length, s[1] + p[1] / V.length, s[2] + p[2] / V.length], [0, 0, 0]);
+      const vis = F.map(face => {
+        const Q = face.map(i => V[i]); let nx = 0, ny = 0, nz = 0;
+        Q.forEach((p, k) => { const q = Q[(k + 1) % Q.length]; nx += (p[1] - q[1]) * (p[2] + q[2]); ny += (p[2] - q[2]) * (p[0] + q[0]); nz += (p[0] - q[0]) * (p[1] + q[1]); });
+        const fc = Q.reduce((s, p) => [s[0] + p[0] / Q.length, s[1] + p[1] / Q.length, s[2] + p[2] / Q.length], [0, 0, 0]);
+        let nn = [nx, ny, nz]; if (dot3(nn, sub(fc, cen)) < 0) nn = nn.map(v => -v);
+        return dot3(nn, VIEW) < 0;
+      });
+      const E = new Map();
+      F.forEach((face, fi) => face.forEach((v, k) => { const w = face[(k + 1) % face.length], key = Math.min(v, w) + '-' + Math.max(v, w); if (!E.has(key)) E.set(key, { i: Math.min(v, w), j: Math.max(v, w), f: [] }); E.get(key).f.push(fi); }));
+      V2 = V.map(P2);
+      E.forEach(e => segs.push({ a: V2[e.i], b: V2[e.j], hidden: !e.f.some(fi => vis[fi]) }));
+      if (shape === 'pyramid' && labels.length > V2.length) V2.push(P2([0, 0, 0]));
+      labels.forEach((nm, k) => { if (k < V2.length) idx[nm] = k; });
+      if (shape === 'pyramid') { const h0 = P2([0, 0, 0]); dimLines.filter(d => d.key === 'h').forEach(d => { extra.push({ seg: [V2[0], h0], dash: true }); extra.push({ text: d.text, at: [(V2[0][0] + h0[0]) / 2, (V2[0][1] + h0[1]) / 2], dx: 1.2, anchor: 'start' }); }); }
+    } else {
+      // 円柱・円錐：底面・上面は、軸が水平な、ふつうの横長のだ円（斜めの投影はつかわない）。q＝だ円のつぶれぐあい（縦÷横）
+      const r = a, h = c, q = Math.min(0.5, Math.max(0.15, num(f.q, 0.3)));
+      const S = (t, z) => [r * Math.cos(t), z + q * r * Math.sin(t)];
+      const arc = (t0, t1, z, hidden) => { const pts = []; for (let k = 0; k <= 60; k++) pts.push(S(t0 + (t1 - t0) * k / 60, z)); curves.push({ pts, hidden }); };
+      if (shape === 'cylinder') {
+        arc(0, 2 * Math.PI, h, false);          // 上のだ円
+        arc(Math.PI, 2 * Math.PI, 0, false);    // 下のだ円の手前（実線）
+        arc(0, Math.PI, 0, true);               // 下のだ円の向こう（点線）
+        segs.push({ a: [-r, 0], b: [-r, h], hidden: false }, { a: [r, 0], b: [r, h], hidden: false });
+        V2 = [[0, h], [0, 0]];
+        dimLines.forEach(d => {
+          // 半径 r：上の面の中心から右はしまで。字は、右はしの外がわ
+          if (d.key === 'r') { extra.push({ seg: [[0, h], S(0, h)], thin: true }); extra.push({ text: d.text, at: S(0, h), dx: 1.8, anchor: 'start' }); }
+          if (d.key === 'h') extra.push({ text: d.text, at: [r, h / 2], dx: 1.6, anchor: 'start' });
+        });
+      } else if (shape === 'cone') {
+        const A2 = [0, h], t1 = Math.asin(Math.min(0.98, q * r / h));   // 頂点から底面のだ円にひいた接線の、接点の角
+        arc(Math.PI - t1, 2 * Math.PI + t1, 0, false);                  // 底面の手前（実線）
+        arc(t1, Math.PI - t1, 0, true);                                 // 底面の向こう（点線）
+        const PR = S(t1, 0), PL = S(Math.PI - t1, 0);
+        segs.push({ a: A2, b: PR, hidden: false }, { a: A2, b: PL, hidden: false });
+        V2 = [A2, [0, 0]];
+        dimLines.forEach(d => {
+          // 半径 r：底面の中心から右はしまでの点線。字は、点線をのばした先（底面の右はしの外がわ）に書く
+          if (d.key === 'r') { extra.push({ seg: [[0, 0], S(0, 0)], dash: true }); extra.push({ text: d.text, at: S(0, 0), dx: 1.8, anchor: 'start' }); }
+          if (d.key === 'h') { extra.push({ seg: [A2, [0, 0]], dash: true }); extra.push({ text: d.text, at: [0, h / 2], dx: 1.2, anchor: 'start' }); }
+          // 母線 l：右の母線の外がわ（f.lside が 'left' なら左の母線の外がわ）に書く
+          if (d.key === 'l') {
+            const left = f.lside === 'left', P = left ? PL : PR;
+            extra.push({ text: d.text, at: [(A2[0] + P[0]) / 2, (A2[1] + P[1]) / 2], dx: left ? -1.6 : 1.6, anchor: left ? 'end' : 'start' });
+          }
+        });
+      } else {   // 球・半球
+        const circ = (t0, t1, hidden) => { const pts = []; for (let k = 0; k <= 60; k++) { const t = t0 + (t1 - t0) * k / 60; pts.push([r * Math.cos(t), r * Math.sin(t)]); } curves.push({ pts, hidden }); };
+        const ell = (t0, t1, hidden) => { const pts = []; for (let k = 0; k <= 60; k++) { const t = t0 + (t1 - t0) * k / 60; pts.push([r * Math.cos(t), 0.28 * r * Math.sin(t)]); } curves.push({ pts, hidden }); };
+        if (shape === 'hemisphere') circ(0, Math.PI, false); else circ(0, 2 * Math.PI, false);
+        ell(Math.PI, 2 * Math.PI, false); ell(0, Math.PI, true);
+        V2 = [[0, 0]];
+        dimLines.forEach(d => { if (d.key === 'r') { extra.push({ seg: [[0, 0], [r, 0]], thin: true, dot0: true }); extra.push({ text: d.text, at: [r / 2, 0], dy: -1.4, anchor: 'middle' }); } });
+      }
+    }
+    // 縮尺をきめる
+    const all = [...segs.flatMap(s => [s.a, s.b]), ...curves.flatMap(cv => cv.pts), ...V2], real = all.slice();
+    const bx0 = Math.min(...all.map(p => p[0])), bx1 = Math.max(...all.map(p => p[0])), by0 = Math.min(...all.map(p => p[1])), by1 = Math.max(...all.map(p => p[1]));
+    const cap = f.caption ? 4.2 : 0, pad = num(f.pad, 6.5), ah = H - 2 * 6.5 - cap;
+    let padR = pad, aw, s, ox;
+    for (let k = 0; k < 3; k++) {   // 右はしに出る字が図からはみ出すときは、右の余白を広げる
+      aw = W - pad - padR; s = Math.min(aw / Math.max(bx1 - bx0, 1e-6), ah / Math.max(by1 - by0, 1e-6)); ox = pad + (aw - (bx1 - bx0) * s) / 2 - bx0 * s;
+      const over = Math.max(0, ...extra.filter(e => e.text && e.anchor === 'start').map(e => ox + e.at[0] * s + (e.dx || 0) + emOf(String(e.text).replace(/\\/g, '')) * 2.9 * 0.62 + 4 - W));
+      if (over < 0.05) break;
+      padR += over;
+    }
+    const oy = 6.5 + cap + (ah - (by1 - by0) * s) / 2 + by1 * s;
+    const X = p => ox + p[0] * s, Y = p => oy - p[1] * s;
+    const cx = X([(Math.min(...real.map(p => p[0])) + Math.max(...real.map(p => p[0]))) / 2, 0]), cy = Y([0, (Math.min(...real.map(p => p[1])) + Math.max(...real.map(p => p[1]))) / 2]);
+    const showHidden = f.hidden !== 'none';
+    let out = `<rect x="0" y="0" width="${f2(W)}" height="${f2(H)}" fill="#fff"/>`;
+    if (f.caption) out += tx(0.6, 3.5, svgMath(f.caption), 3, 'start', ' class="cap"');
+    const dash = ' stroke-dasharray="1.2 0.9"';
+    segs.forEach(sg => { if (sg.hidden && !showHidden) return; out += ln(X(sg.a), Y(sg.a), X(sg.b), Y(sg.b), '#222', sg.hidden ? 0.22 : 0.32, sg.hidden ? dash : ' stroke-linecap="round"'); });
+    curves.forEach(cv => { if (cv.hidden && !showHidden) return; out += `<polyline points="${cv.pts.map(p => f2(X(p)) + ',' + f2(Y(p))).join(' ')}" fill="none" stroke="#222" stroke-width="${cv.hidden ? 0.22 : 0.32}"${cv.hidden ? dash : ''}/>`; });
+    extra.forEach(e => {
+      if (e.seg) out += ln(X(e.seg[0]), Y(e.seg[0]), X(e.seg[1]), Y(e.seg[1]), '#222', 0.22, e.dash ? dash : '') + (e.dot0 ? `<circle cx="${f2(X(e.seg[0]))}" cy="${f2(Y(e.seg[0]))}" r="0.5" fill="#222"/>` : '');
+      if (e.text) out += rich(X(e.at) + (e.dx || 0), Y(e.at) + (e.dy || 0) + 1, e.text, 2.9, e.anchor || 'middle');
+    });
+    // 辺の長さ（AB 5cm）
+    dimLines.forEach(d => {
+      const m = /^(\S+?)(\S+?)$/.exec(d.key); if (!m || !(m[1] in idx) || !(m[2] in idx)) return;
+      const p = V2[idx[m[1]]], q = V2[idx[m[2]]], mx = (X(p) + X(q)) / 2, my = (Y(p) + Y(q)) / 2;
+      let nx = -(Y(q) - Y(p)), ny = X(q) - X(p); const L = Math.hypot(nx, ny) || 1; nx /= L; ny /= L;
+      if (nx * (mx - cx) + ny * (my - cy) < 0) { nx = -nx; ny = -ny; }
+      out += rich(mx + nx * 3, my + ny * 3 + 1, d.text, 2.9, Math.abs(nx) < 0.4 ? 'middle' : nx > 0 ? 'start' : 'end');
+    });
+    // 頂点の名前
+    Object.keys(idx).forEach(nm => {
+      const p = V2[idx[nm]], x = X(p), y = Y(p); let dx = x - cx, dy = y - cy; const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
+      out += tx(x + dx * 2.6, y + dy * 2.6 + 1.1, plab(nm), 3.1, Math.abs(dx) < 0.3 ? 'middle' : dx > 0 ? 'start' : 'end', ' class="pl"');
+    });
+    return out;
+  }
+
+  /* ---- 円錐の展開図（おうぎ形＋円）。f.R＝母線、f.r＝底面の半径（図の形をきめる数。字ではない）。
+          字：f.lR（母線の長さの字）、f.lr（半径の字）、f.ansAngle（中心角。解答のみ赤）、f.ansArc（弧の長さ。解答のみ赤） ---- */
+  function figConeNet(f, W, H) {
+    const R = num(f.R, 10), r = num(f.r, 4), th = Math.min(340, 360 * r / R), h2 = th / 2;
+    const arcPts = n => { const o = []; for (let k = 0; k <= n; k++) o.push(pol(0, 0, R, -90 - h2 + th * k / n)); return o; };
+    const A1 = pol(0, 0, R, -90 - h2), A2 = pol(0, 0, R, -90 + h2), C = [0, R + r];   // 画面の座標（y が下向き）：頂点が原点、円は弧の中心の下
+    const pts = [[0, 0], ...arcPts(60), [C[0] - r, C[1]], [C[0] + r, C[1]], [0, C[1] + r]];
+    const x0 = Math.min(...pts.map(p => p[0])), x1 = Math.max(...pts.map(p => p[0])), y0 = Math.min(...pts.map(p => p[1])), y1 = Math.max(...pts.map(p => p[1]));
+    const cap = f.caption ? 4.2 : 0, padL = num(f.padL, 3), padR = num(f.padR, 3), padT = 6.5 + cap, padB = 3;
+    const s = Math.min((W - padL - padR) / (x1 - x0), (H - padT - padB) / (y1 - y0));
+    const ox = padL + ((W - padL - padR) - (x1 - x0) * s) / 2 - x0 * s, oy = padT + ((H - padT - padB) - (y1 - y0) * s) / 2 - y0 * s;
+    const X = p => ox + p[0] * s, Y = p => oy + p[1] * s;
+    let out = `<rect x="0" y="0" width="${f2(W)}" height="${f2(H)}" fill="#fff"/>`;
+    if (f.caption) out += tx(0.6, 3.5, svgMath(f.caption), 3, 'start', ' class="cap"');
+    // おうぎ形
+    out += `<polygon points="${[[0, 0], ...arcPts(80)].map(p => f2(X(p)) + ',' + f2(Y(p))).join(' ')}" fill="none" stroke="#222" stroke-width="0.32" stroke-linejoin="round"/>`;
+    // 底面の円（弧の中点で接する）と、半径
+    out += `<circle cx="${f2(X(C))}" cy="${f2(Y(C))}" r="${f2(r * s)}" fill="none" stroke="#222" stroke-width="0.32"/>`;
+    out += ln(X(C), Y(C), X(C) + r * s, Y(C), '#222', 0.22, ' stroke-dasharray="1.2 0.9"') + `<circle cx="${f2(X(C))}" cy="${f2(Y(C))}" r="0.5" fill="#222"/>`;
+    if (f.lr) out += rich(X(C) + r * s / 2, Y(C) - 1.2, f.lr, 2.9, 'middle');
+    // 母線（左のふちの外がわ＝辺から上へはなして）
+    if (f.lR) {
+      const m = [A1[0] / 2, A1[1] / 2];
+      let nx = A1[1], ny = -A1[0]; if (ny > 0) { nx = -nx; ny = -ny; }   // 辺に垂直で、上向きの側
+      const L = Math.hypot(nx, ny) || 1;
+      out += rich(X(m) + nx / L * 3.4, Y(m) + ny / L * 3.4 + 1, f.lR, 2.9, 'middle');
+    }
+    // 解答：弧（赤い太線）と、その長さ、中心角
+    let ans = '';
+    if (f.ansArc) {
+      ans += `<polyline points="${arcPts(60).map(p => f2(X(p)) + ',' + f2(Y(p))).join(' ')}" fill="none" stroke="#d62828" stroke-width="0.8" stroke-linecap="round"/>`;
+      const q = [0, 0.74 * R];
+      ans += tx(X(q), Y(q) + 0.9, svgMath(f.ansArc), 2.9, 'middle');
+    }
+    if (f.ansAngle) {
+      const ra = 0.2 * R, ap = []; for (let k = 0; k <= 30; k++) ap.push(pol(0, 0, ra, -90 - h2 + th * k / 30));
+      ans += `<polyline points="${ap.map(p => f2(X(p)) + ',' + f2(Y(p))).join(' ')}" fill="none" stroke="#d62828" stroke-width="0.35"/>`;
+      ans += tx(X([0, 0.42 * R]), Y([0, 0.42 * R]) + 0.9, svgMath(f.ansAngle), 3, 'middle');
+    }
+    if (ans) out += `<g class="ansx">${ans}</g>`;
+    return out;
+  }
+
+  // 自由な図：f.svg に、SVG の中身（単位は mm）か、(W, H, h) => 文字列 を渡す。h は小道具（ln・tx・rich・f2・pol）
+  const figCustom = (f, W, H) => (typeof f.svg === 'function' ? f.svg(W, H, { ln, tx, rich, f2, pol, svgMath, ans: s => `<g class="ansx">${s}</g>` }) : String(f.svg || ''));
+
+  function figSVG(f, W, H) {
+    let inner = '';
+    try {
+      inner = f.kind === 'solid' ? figSolid(f, W, H) : f.kind === 'conenet' ? figConeNet(f, W, H) : f.kind === 'svg' ? figCustom(f, W, H) : '';
+    } catch (e) { inner = `<text x="2" y="6" font-size="3" fill="#d62828">図のエラー：${esc(e.message)}</text>`; }
+    return `<svg class="fsvg" viewBox="0 0 ${f2(W)} ${f2(H)}" width="${f2(W)}mm" height="${f2(H)}mm" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+  }
+
+  /* ---------------- ブロック ---------------- */
+  const PAPER = { A4: { w: 210, h: 297, mx: 12, top: 23, bottom: 9 }, B5: { w: 182, h: 257, mx: 11, top: 21, bottom: 8 } };
+  const COL_GAP = 6, FIG_GAP = 4;
+  const tag = (cls, label) => (label ? `<span class="tag ${cls}">${esc(label)}</span>` : '');
+  const rowsOf = b => Math.max(1, Math.round(num(b.rows, 1)));
+
+  function blockHTML(b, W, g) {
+    if (b.type === 'meate' || b.type === 'kadai') {
+      const label = b.type === 'meate' ? (b.label || 'めあて') : (b.label == null ? '学習課題' : b.label);
+      return `<div class="wb wb-t${b.type === 'kadai' ? ' box' : ''}" style="height:${rowsOf(b) * g.pitch}mm">${tag('t-' + b.type, label)}<div class="tx">${inl(b.text)}</div></div>`;
+    }
+    if (b.type === 'board') {   // 板書の写し：ふだんは罫線だけ。解答を表示すると、教師の板書が赤で出る
+      const an = b.answer ? `<div class="tx">${inl(b.answer)}</div>` : '';
+      return `<div class="wb wb-b" style="height:${rowsOf(b) * g.pitch}mm">${an}</div>`;
+    }
+    if (b.type === 'gap') return `<div class="wb wb-gap" style="height:${rowsOf(b) * g.pitch}mm"></div>`;
+    if (b.type === 'figure') {
+      const figs = b.figs || [], H = rowsOf(b) * g.pitch;
+      const ws = figs.map(f => Math.max(0.2, num(f.w, 1))), sum = ws.reduce((a, c) => a + c, 0), avail = W - FIG_GAP * (figs.length - 1);
+      return `<div class="wb wb-fig" style="height:${H}mm">${figs.map((f, i) => { const fw = avail * ws[i] / sum; return `<div class="fg" style="width:${f2(fw)}mm">${figSVG(f, fw, H)}</div>`; }).join('')}</div>`;
+    }
+    if (b.type === 'cols') {
+      const r = String(b.ratio || '1:1').split(':').map(x => Math.max(1, num(x, 1)));
+      const n = b.cols.length, sum = b.cols.reduce((a, c, i) => a + (r[i] || 1), 0);
+      const widths = b.cols.map((c, i) => (W - COL_GAP * (n - 1)) * (r[i] || 1) / sum);
+      return `<div class="wb wb-cols" style="grid-template-columns:${widths.map(w => f2(w) + 'mm').join(' ')}">${b.cols.map((c, i) => `<div class="wcol">${c.blocks.map(x => blockHTML(x, widths[i], g)).join('')}</div>`).join('')}</div>`;
+    }
+    return '';
+  }
+
+  // 罫線とドット（印刷でもくっきり出るよう、模様を使わず1本ずつ線で描く）
+  function ruleSVG(g, dots) {
+    const W = g.cw, H = g.rows * g.pitch, p = g.pitch, off = (W % p) / 2;
+    let s = '';
+    for (let i = 0; i <= g.rows; i++) {
+      const y = f2(i * p);
+      s += `<line x1="0" y1="${y}" x2="${f2(W)}" y2="${y}" stroke="#a3b6c8" stroke-width="${i === 0 ? 0.28 : 0.2}"/>`;
+      if (dots) s += `<line x1="${f2(off)}" y1="${y}" x2="${f2(W)}" y2="${y}" stroke="#58748e" stroke-width="0.6" stroke-linecap="round" stroke-dasharray="0 ${p}"/>`;
+    }
+    return `<svg class="wsp-rule" viewBox="0 0 ${f2(W)} ${f2(H)}" width="${f2(W)}mm" height="${f2(H)}mm" overflow="visible" aria-hidden="true">${s}</svg>`;
+  }
+
+  const geo = sheet => { const P = PAPER[sheet.paper] || PAPER.A4, pitch = sheet.pitch || 7; return { P, pitch, rows: Math.floor((P.h - P.top - P.bottom) / pitch + 1e-6), cw: P.w - 2 * P.mx }; };
+  // ブロックの高さ（行）。2段組は、高い列
+  const heightOf = b => (b.type === 'cols' ? Math.max(...b.cols.map(c => c.blocks.reduce((a, x) => a + heightOf(x), 0))) : rowsOf(b));
+  const splitPages = blocks => { const pages = [[]]; blocks.forEach(b => { if (b.type === 'break') pages.push([]); else pages[pages.length - 1].push(b); }); return pages; };
+
+  function pagesHTML(sheet) {
+    const g = geo(sheet), P = g.P, pages = splitPages(sheet.blocks), hd = sheet.head != null ? sheet.head : '';
+    return pages.map((bl, pi) => `<div class="wsp" style="width:${P.w}mm;height:${P.h}mm;--pitch:${g.pitch}mm">
+      <div class="wsp-head" style="left:${P.mx}mm;right:${P.mx}mm;top:${P.top - 12}mm">
+        <div class="wh-date"><span class="u w2"></span>月<span class="u w2"></span>日（<span class="u w1"></span>）</div>
+        <div class="wh-mid">${esc(hd)}${pages.length > 1 ? `　${pi + 1}／${pages.length}` : ''}</div>
+        <div class="wh-name"><span class="u w1"></span>年<span class="u w1"></span>組<span class="u w1"></span>号　氏名<span class="u w6"></span></div>
+      </div>
+      <div class="wsp-body" style="left:${P.mx}mm;top:${P.top}mm;width:${g.cw}mm;height:${g.rows * g.pitch}mm">
+        ${ruleSVG(g, sheet.dots !== false)}
+        <div class="wsp-flow">${bl.map(b => blockHTML(b, g.cw, g)).join('')}</div>
+      </div>
+    </div>`).join('');
+  }
+
+  /* ---------------- 授業の登録 ---------------- */
+  const O = (o, extra) => Object.assign(o, extra || {});
+  IK.unit = u => { IK.units.push(u); };
+  IK.add = (id, meta, blocks) => {
+    IK.lessons[id] = Object.assign({ id, paper: 'A4', pitch: 7, dots: true }, meta, { blocks });
+    if (IK.order.indexOf(id) < 0) IK.order.push(id);
+  };
+  // ワークシートを書くときの道具（data/ws_<単元>.js で使う）
+  IK.b = {
+    M: (text, o) => O({ type: 'meate', text, rows: 1 }, o),                                        // めあて
+    K: (label, text, rows, o) => O({ type: 'kadai', label, text, rows: rows || 2 }, o),            // 学習課題・例題（枠つき。字は最初から印刷する。数字の空欄は {{3}} と書く）
+    B: (rows, answer, o) => O({ type: 'board', rows: rows || 3, answer: answer || '' }, o),        // 板書の写し（空欄の罫）。answer は解答を表示したときだけ赤で出る。1行＝\n で区切る
+    G: rows => ({ type: 'gap', rows: rows || 1 }),                                                 // すき間
+    F: (rows, ...figs) => ({ type: 'figure', rows, figs }),                                        // 図（印刷する。横に並べられる）
+    C2: (left, right, ratio) => ({ type: 'cols', ratio: ratio || '3:2', cols: [{ blocks: left }, { blocks: right }] }),   // 2段組（左に問題と板書、右に図）
+    BR: () => ({ type: 'break' }),                                                                 // 改ページ
+    SO: o => O({ kind: 'solid' }, o),                                                              // 立体の見取図
+    NET: o => O({ kind: 'conenet' }, o),                                                           // 円錐の展開図
+    SVG: (svg, o) => O({ kind: 'svg', svg }, o)                                                    // 自由な図
+  };
+  IK.render = { pagesHTML, geo, heightOf, inl, emOf, blockHTML };
+})();
+
+/* ---- js/figs.js ---- */
+/* ikkan：ワークシートの図（数直線・座標平面・ヒストグラム・おうぎ形・てんびん・長方形）。
+   どれも「(W, H, h) => SVG の中身（単位 mm）」を返す。h は core.js の小道具。
+   解答を表示したときだけ出る赤いもの（矢印・グラフの線・強調）は、h.ans(…) でかこむ。
+   図の中の字に {{3}}cm と書くと、数字だけが空欄になる（core.js の rich）。
+   使い方（data/ws_*.js）： IK.b.NL({ … })、CO、HIST、SEC、BAL、RECT を、F(行数, 図…) の中に書く。 */
+(function () {
+  'use strict';
+  const IK = window.IK, B = IK.b;
+  const RED = '#d62828';
+  const f2 = n => String(Math.round(n * 100) / 100);
+  const mn = v => (v < 0 ? '−' : '') + Math.abs(Math.round(v * 1000) / 1000);   // 負の数は −（U+2212）
+  // 矢じり：先が (x, y)、進む向きが ang（画面の座標でのラジアン）
+  const head = (x, y, ang, c, s) => {
+    s = s || 1.7;
+    const a1 = ang + Math.PI * 0.85, a2 = ang - Math.PI * 0.85;
+    return `<polygon points="${f2(x)},${f2(y)} ${f2(x + s * Math.cos(a1))},${f2(y + s * Math.sin(a1))} ${f2(x + s * Math.cos(a2))},${f2(y + s * Math.sin(a2))}" fill="${c}"/>`;
+  };
+
+  /* ---- 数直線。{ min, max, arrows:[{ from, to, text }], marks:[{ at }] }
+          arrows（動きの矢印）と marks（答えの位置）は、解答を表示したときだけ赤で出る。矢印は上にえがき、2本目からは高くなる（7・13・19mm）。字は弧の内側 ---- */
+  const numline = o => (W, H, h) => {
+    const min = o.min != null ? o.min : -6, max = o.max != null ? o.max : 6, padL = 7, padR = 7;
+    const u = (W - padL - padR) / (max - min), X = v => padL + (v - min) * u, y0 = o.y != null ? o.y : H - 8;
+    let out = h.ln(X(min) - 2.5, y0, X(max) + 2.5, y0, '#222', 0.32) + head(X(max) + 3.6, y0, 0, '#222') + head(X(min) - 3.6, y0, Math.PI, '#222');
+    for (let v = min; v <= max + 1e-9; v += 1) {
+      out += h.ln(X(v), y0 - 1.3, X(v), y0 + 1.3, '#222', 0.28);
+      out += h.tx(X(v), y0 + 5.3, mn(v), 2.9, 'middle');
+    }
+    const an = [];
+    (o.arrows || []).forEach((a, i) => {
+      const x1 = X(a.from), x2 = X(a.to), mx = (x1 + x2) / 2, hh = a.h || 7 + 6 * i, cy = y0 - 2 * hh;
+      an.push(`<path d="M${f2(x1)},${f2(y0)} Q${f2(mx)},${f2(cy)} ${f2(x2)},${f2(y0)}" fill="none" stroke="${RED}" stroke-width="0.5"/>`);
+      an.push(head(x2, y0, Math.atan2(y0 - cy, x2 - mx), RED, 2));
+      if (a.text) an.push(h.tx(mx, y0 - hh + 3.7, a.text, 3, 'middle'));   // 字は弧の内側（頂点のすぐ下）。外がわにかく別の矢印とぶつからない
+    });
+    (o.marks || []).forEach(m => {   // 答えの位置：点と、目もりの数字をかこむ輪
+      an.push(`<circle cx="${f2(X(m.at))}" cy="${f2(y0)}" r="0.9" fill="${RED}"/>`);
+      an.push(`<ellipse cx="${f2(X(m.at))}" cy="${f2(y0 + 4.4)}" rx="${f2(m.at < 0 ? 4.2 : 3.3)}" ry="3.3" fill="none" stroke="${RED}" stroke-width="0.4"/>`);
+    });
+    return out + (an.length ? h.ans(an.join('')) : '');
+  };
+
+  /* ---- 座標平面。{ xmin, xmax, ymin, ymax, lines:[{ a, b, from, to, text, at:[x, y], anchor }], points:[{ x, y }] }
+          lines（y＝ax+b の線分）と points は、解答を表示したときだけ赤で出る ---- */
+  const coord = o => (W, H, h) => {
+    const x0 = o.xmin != null ? o.xmin : -4, x1 = o.xmax != null ? o.xmax : 4, y0 = o.ymin != null ? o.ymin : -4, y1 = o.ymax != null ? o.ymax : 4;
+    const padL = 6, padR = 7, padT = 7, padB = 6;
+    const u = Math.min((W - padL - padR) / (x1 - x0), (H - padT - padB) / (y1 - y0));
+    const ox = padL + (W - padL - padR - u * (x1 - x0)) / 2, oy = padT + (H - padT - padB - u * (y1 - y0)) / 2;
+    const X = x => ox + (x - x0) * u, Y = y => oy + (y1 - y) * u;
+    let out = '';
+    for (let x = x0; x <= x1; x++) out += h.ln(X(x), Y(y0), X(x), Y(y1), '#c9d1da', 0.15);
+    for (let y = y0; y <= y1; y++) out += h.ln(X(x0), Y(y), X(x1), Y(y), '#c9d1da', 0.15);
+    out += h.ln(X(x0) - 1, Y(0), X(x1) + 2.4, Y(0), '#222', 0.3) + head(X(x1) + 3.4, Y(0), 0, '#222', 1.6);
+    out += h.ln(X(0), Y(y0) + 1, X(0), Y(y1) - 2.4, '#222', 0.3) + head(X(0), Y(y1) - 3.4, -Math.PI / 2, '#222', 1.6);
+    const fs = Math.min(2.5, u * 0.6);
+    for (let x = x0; x <= x1; x++) if (x !== 0) out += h.tx(X(x), Y(0) + 3, mn(x), fs, 'middle');
+    for (let y = y0; y <= y1; y++) if (y !== 0) out += h.tx(X(0) - 1, Y(y) + fs * 0.35, mn(y), fs, 'end');
+    out += h.tx(X(0) - 1.3, Y(0) - 1.0, 'O', 2.6, 'end', ' class="pl"') + h.tx(X(x1) + 2.6, Y(0) + 4.6, 'x', 3, 'middle', ' class="pl"') + h.tx(X(0) - 2.4, Y(y1) - 2.4, 'y', 3, 'end', ' class="pl"');
+    const an = [];
+    (o.lines || []).forEach(l => {
+      const fr = l.from != null ? l.from : x0, to = l.to != null ? l.to : x1, b = l.b || 0;
+      an.push(h.ln(X(fr), Y(l.a * fr + b), X(to), Y(l.a * to + b), RED, 0.5, ' stroke-linecap="round"'));
+      if (l.text && l.at) an.push(h.rich(X(l.at[0]), Y(l.at[1]), l.text, 3, l.anchor || 'start'));
+    });
+    (o.points || []).forEach(p => an.push(`<circle cx="${f2(X(p.x))}" cy="${f2(Y(p.y))}" r="0.85" fill="${RED}"/>`));
+    return out + (an.length ? h.ans(an.join('')) : '');
+  };
+
+  /* ---- ヒストグラム。{ edges:[階級のさかい…], counts:[度数…], ymax, ystep, xname, yname, hl:[強調する階級の番号], show:true なら度数を棒の上に書く }
+          hl は、解答を表示したときだけ赤い枠で出る ---- */
+  const hist = o => (W, H, h) => {
+    const e = o.edges, c = o.counts, n = c.length, ymax = o.ymax, ys = o.ystep || 1;
+    const padL = 9, padR = 13, padT = 8, padB = 8;
+    const bw = (W - padL - padR) / n, yu = (H - padT - padB) / ymax, X = i => padL + i * bw, Y = v => H - padB - v * yu;
+    let out = '';
+    for (let v = ys; v <= ymax; v += ys) out += h.ln(X(0), Y(v), X(n), Y(v), '#d3d9e0', 0.15);
+    c.forEach((v, i) => { out += `<rect x="${f2(X(i))}" y="${f2(Y(v))}" width="${f2(bw)}" height="${f2(v * yu)}" fill="#eef1f5" stroke="#222" stroke-width="0.3"/>`; if (o.show) out += h.tx(X(i) + bw / 2, Y(v) - 1.2, String(v), 2.6, 'middle'); });
+    out += h.ln(X(0), Y(0), X(n) + 2, Y(0), '#222', 0.32) + h.ln(X(0), Y(0), X(0), Y(ymax) - 2, '#222', 0.32);
+    for (let v = 0; v <= ymax; v += ys) out += h.tx(X(0) - 1.6, Y(v) + 1, String(v), 2.6, 'end');
+    e.forEach((v, i) => { out += h.tx(X(i), Y(0) + 4.2, String(v), 2.6, 'middle'); });
+    if (o.yname) out += h.tx(X(0) - 1.6, Y(ymax) - 3.6, o.yname, 2.6, 'end');
+    if (o.xname) out += h.tx(X(n) + 4.6, Y(0) + 4.2, o.xname, 2.6, 'start');
+    const an = (o.hl || []).map(i => `<rect x="${f2(X(i))}" y="${f2(Y(c[i]))}" width="${f2(bw)}" height="${f2(c[i] * yu)}" fill="none" stroke="${RED}" stroke-width="0.7"/>`);
+    return out + (an.length ? h.ans(an.join('')) : '');
+  };
+
+  /* ---- おうぎ形。{ R, th（中心角）, start（はじめの半径の向き。度。0＝右）, lr（半径の字）, la（中心角の字）, larc（弧の字）} ---- */
+  const sector = o => (W, H, h) => {
+    const R = o.R, th = o.th, a0 = o.start || 0, rad = d => d * Math.PI / 180;
+    const arc = []; for (let k = 0; k <= 60; k++) arc.push([R * Math.cos(rad(a0 + th * k / 60)), R * Math.sin(rad(a0 + th * k / 60))]);
+    const pts = [[0, 0], ...arc], bx0 = Math.min(...pts.map(p => p[0])), bx1 = Math.max(...pts.map(p => p[0])), by0 = Math.min(...pts.map(p => p[1])), by1 = Math.max(...pts.map(p => p[1]));
+    const ml = 5, mr = o.larc ? 16 : 7, mt = 6, mb = o.lr ? 9 : 4;
+    const s = Math.min((W - ml - mr) / (bx1 - bx0), (H - mt - mb) / (by1 - by0));
+    const ox = ml + (W - ml - mr - (bx1 - bx0) * s) / 2 - bx0 * s, oy = mt + (H - mt - mb - (by1 - by0) * s) / 2 + by1 * s;
+    const X = x => ox + x * s, Y = y => oy - y * s;
+    let out = `<polygon points="${pts.map(p => f2(X(p[0])) + ',' + f2(Y(p[1]))).join(' ')}" fill="none" stroke="#222" stroke-width="0.32" stroke-linejoin="round"/>`;
+    const ar = 0.2 * R, ap = []; for (let k = 0; k <= 30; k++) ap.push([ar * Math.cos(rad(a0 + th * k / 30)), ar * Math.sin(rad(a0 + th * k / 30))]);
+    out += `<polyline points="${ap.map(p => f2(X(p[0])) + ',' + f2(Y(p[1]))).join(' ')}" fill="none" stroke="#222" stroke-width="0.25"/>`;
+    const bis = rad(a0 + th / 2);
+    if (o.lr) { const q = [R / 2 * Math.cos(rad(a0)), R / 2 * Math.sin(rad(a0))]; out += h.rich(X(q[0]), Y(q[1]) + 4.6, o.lr, 2.9, 'middle'); }
+    if (o.la) out += h.rich(X(0.46 * R * Math.cos(bis)), Y(0.46 * R * Math.sin(bis)) + 1, o.la, 2.9, 'middle');
+    if (o.larc) { const q = [(R + 2.8 / s) * Math.cos(bis), (R + 2.8 / s) * Math.sin(bis)]; out += h.rich(X(q[0]), Y(q[1]) + 1, o.larc, 2.9, Math.cos(bis) > 0.3 ? 'start' : Math.cos(bis) < -0.3 ? 'end' : 'middle'); }
+    return out;
+  };
+
+  /* ---- てんびん（つり合っている）。{ left:[おもり…], right:[おもり…] }。おもり：{ box:'x' }＝重さのわからない箱、{ w:'5g' }＝おもり ---- */
+  const balance = o => (W, H, h) => {
+    const items = side => side.map(it => (it.box != null ? { kind: 'box', w: 8, text: it.box } : { kind: 'w', w: 10, text: it.w }));
+    const L = items(o.left || []), R = items(o.right || []), tw = a => a.reduce((s, it) => s + it.w, 0) + Math.max(0, a.length - 1) * 1;
+    const hwOf = a => Math.max(11, (tw(a) / 2 + 1.2) / 0.62), hwL = hwOf(L), hwR = hwOf(R);   // 皿の幅：おもりの高さのところで、紐よりも内がわにおさまるように
+    const span = Math.min(W - hwL - hwR - 6, 60), cx = W / 2;   // 支点から、はりの左右のはしまで ＝ span / 2
+    const beamY = 9, D = Math.min(24, H * 0.5), panY = beamY + D, by = Math.min(H - 2, panY + 12);
+    let out = h.ln(cx - 9, by, cx + 9, by, '#222', 0.45) + h.ln(cx, beamY, cx, by, '#222', 0.7);   // 支点は細い柱（皿とかさならない）
+    out += h.ln(cx - span / 2, beamY, cx + span / 2, beamY, '#222', 0.55) + `<circle cx="${f2(cx)}" cy="${f2(beamY)}" r="0.9" fill="#222"/>`;
+    [[-1, L, hwL], [1, R, hwR]].forEach(([sg, a, hw]) => {
+      const px = cx + sg * span / 2;
+      out += h.ln(px, beamY, px - hw, panY, '#222', 0.25) + h.ln(px, beamY, px + hw, panY, '#222', 0.25) + h.ln(px - hw, panY, px + hw, panY, '#222', 0.7, ' stroke-linecap="round"');
+      let x = px - tw(a) / 2;
+      a.forEach(it => {
+        if (it.kind === 'box') out += `<rect x="${f2(x)}" y="${f2(panY - 0.4 - 8)}" width="8" height="8" fill="#fff" stroke="#222" stroke-width="0.35"/>` + h.rich(x + 4, panY - 0.4 - 2.6, it.text, 3.2, 'middle');
+        else out += `<rect x="${f2(x)}" y="${f2(panY - 0.4 - 6)}" width="10" height="6" rx="1" fill="#e9edf2" stroke="#222" stroke-width="0.3"/>` + h.rich(x + 5, panY - 0.4 - 1.8, it.text, 2.7, 'middle');
+        x += it.w + 1;
+      });
+    });
+    return out;
+  };
+
+  /* ---- 長方形。{ w, h（図の形をきめる数）, top（横の字）, side（縦の字）} ---- */
+  const rect = o => (W, H, h) => {
+    const w = o.w || 5, hh = o.h || 3, s = Math.min((W - 24) / w, (H - 16) / hh), rw = w * s, rh = hh * s, x0 = (W - rw) / 2, y0 = (H - rh) / 2;
+    let out = `<rect x="${f2(x0)}" y="${f2(y0)}" width="${f2(rw)}" height="${f2(rh)}" fill="none" stroke="#222" stroke-width="0.32"/>`;
+    const m = 2.2;   // 直角のしるし
+    [[x0, y0, 1, 1], [x0 + rw, y0, -1, 1], [x0, y0 + rh, 1, -1], [x0 + rw, y0 + rh, -1, -1]].forEach(([x, y, dx, dy]) => { out += `<polyline points="${f2(x + dx * m)},${f2(y)} ${f2(x + dx * m)},${f2(y + dy * m)} ${f2(x)},${f2(y + dy * m)}" fill="none" stroke="#222" stroke-width="0.22"/>`; });
+    if (o.top) out += h.rich(W / 2, y0 - 2.2, o.top, 2.9, 'middle');
+    if (o.side) out += h.rich(x0 - 3.6, H / 2 + 1, o.side, 2.9, 'end');
+    return out;
+  };
+
+  const reg = (name, f) => { B[name] = (o, fo) => B.SVG(f(o), fo); };
+  reg('NL', numline); reg('CO', coord); reg('HIST', hist); reg('SEC', sector); reg('BAL', balance); reg('RECT', rect);
+})();
+
+/* ---- data/lessons.js ---- */
+/* 単元の一覧（表示の順）。ワークシートは data/ws_<単元>.js に書き、index.html で読みこむ。 */
+(function () {
+  [['seifu', '正の数・負の数'], ['moji', '文字と式'], ['hotei', '方程式'], ['hirei', '比例と反比例'], ['heimen', '平面図形'], ['kukan', '空間図形'], ['data', 'データの活用']]
+    .forEach(([key, name]) => IK.unit({ key, grade: 1, name }));
+})();
+
+/* ---- data/ws_seifu.js ---- */
+/* 板書型ワークシート：中1 正の数・負の数。書き方は data/ws_kukan.js の先頭を見る。
+   検算：node tools/verify.cjs　／　見た目：node tools/check.cjs */
+(function () {
+  const { M, K, B, G, F, NL } = IK.b;
+
+  IK.add('seifu-kaho', {
+    unit: 'seifu', unitName: '正の数・負の数', no: '', title: '正の数・負の数の加法（符号がちがう 2 つの数）',
+    summary: '数直線の動きで、正の数と負の数の和の求め方を考える。学習課題＋例題2問。',
+    head: '正の数・負の数',
+    checks: [
+      'near(3 + (-5), -2)',                                                   // 学習課題：0 → +3 → −2
+      'near(7 - 4, 3) && near(7 + (-4), 3)',                                  // 例題1（1）
+      'near(9 - 5, 4) && near(-9 + 5, -4)',                                   // 例題1（2）
+      'near(6 + (-9), -3) && near(-3 + 2, -1) && near(6 - 9 + 2, -1)'         // 例題2：0 → +6 → −3 → −1
+    ]
+  }, [
+    M('数直線を使って、正の数と負の数の和を求めよう'),
+
+    // ---- 学習課題（数字もすべて印刷する） ----
+    K('学習課題', '数直線上で、0 の位置から右へ 3 進み、そこから左へ 5 進む。いまの位置を求めよう。\nまた、この動きを式 (+3)+(−5) で表して計算しよう。', 2),
+    F(4, NL({ min: -6, max: 6, arrows: [{ from: 0, to: 3, text: '+3' }, { from: 3, to: -2, text: '−5' }], marks: [{ at: -2 }] })),
+    B(6, '右へ 3 進む … +3　　左へ 5 進む … −5\n0 → +3 → −2　　いまの位置は −2\n(+3)+(−5)＝−2\n【きまり】符号がちがう 2 つの数の和は、\n　絶対値の大きいほうから小さいほうをひき、\n　絶対値の大きいほうの符号をつける'),
+
+    G(1),
+
+    // ---- 例題1（数字を空欄にする） ----
+    K('例題1', '次の計算をしよう。\n（1）(+{{7}})+(−{{4}})　　（2）(−{{9}})+(+{{5}})', 2),
+    B(6, '（1）絶対値は 7 と 4。大きいのは 7 だから、符号は +\n　　　7−4＝3　　(+7)+(−4)＝+3\n（2）絶対値は 9 と 5。大きいのは 9 だから、符号は −\n　　　9−5＝4　　(−9)+(+5)＝−4'),
+
+    G(1),
+
+    // ---- 例題2 ----
+    K('例題2', 'ゲームで、1回目は +{{6}} 点、2回目は −{{9}} 点、3回目は +{{2}} 点だった。3回の合計点を求めよう。', 2),
+    F(5, NL({ min: -5, max: 8, arrows: [{ from: 0, to: 6, text: '+6' }, { from: 6, to: -3, text: '−9' }, { from: -3, to: -1, text: '+2' }], marks: [{ at: -1 }] })),
+    B(5, '(+6)+(−9)+(+2)\n＝{(+6)+(−9)}+(+2)　　← 左から順に計算する\n＝(−3)+(+2)\n＝−1\n（答）−1 点')
+  ]);
+})();
+
+/* ---- data/ws_moji.js ---- */
+/* 板書型ワークシート：中1 文字と式。書き方は data/ws_kukan.js の先頭を見る。
+   検算：node tools/verify.cjs　／　見た目：node tools/check.cjs */
+(function () {
+  const { M, K, B, G, F, C2, RECT } = IK.b;
+
+  IK.add('moji-suryo', {
+    unit: 'moji', unitName: '文字と式', no: '', title: '文字を使った式（数量の表し方・式の値）',
+    summary: '長方形や代金を、文字を使った式で表し、数を代入して式の値を求める。学習課題＋例題2問。',
+    head: '文字と式',
+    checks: [
+      'near((5 + 3) * 2, 2 * (5 + 3)) && near(2 * (5 + 3), 16)',               // 例題2：周の長さ
+      'near(5 * 3, 15)',                                                       // 例題2：面積
+      'near(80 * 3 + 120 * 2, 480)'                                            // 例題1：a＝3、b＝2 のとき 480 円（式 80a+120b の確かめ）
+    ]
+  }, [
+    M('数量を、文字を使った式で表そう'),
+
+    // ---- 学習課題（数字もすべて印刷する） ----
+    C2([
+      K('学習課題', '縦が a cm、横が b cm の長方形がある。\n周の長さと面積を、a と b の式で表そう。', 2),
+      B(9, '周の長さ … 縦と横の和の 2 倍\n　(a+b)×2＝2(a+b)（cm）\n面積 … 縦×横\n　a×b＝ab（cm^2）\n【気づき】a や b にどんな数が入っても、\n　同じ式で周の長さと面積が求められる')
+    ], [
+      F(11, RECT({ w: 5, h: 3, top: 'b cm', side: 'a cm' }))
+    ], '3:2'),
+
+    G(1),
+
+    // ---- 例題1（数字を空欄にする） ----
+    K('例題1', '1個 {{80}} 円のパンを a 個と、1本 {{120}} 円の牛乳を b 本買った。代金の合計を、\na と b を使った式で表そう。', 2),
+    B(8, 'パンの代金 … 80×a＝80a（円）\n牛乳の代金 … 120×b＝120b（円）\n合計 … 80a+120b（円）\n（答）80a+120b（円）\n確かめ … a＝3、b＝2 のとき　80×3+120×2＝480（円）'),
+
+    G(1),
+
+    // ---- 例題2 ----
+    C2([
+      K('例題2', '学習課題の長方形で、a＝{{5}}、\nb＝{{3}} のとき、\n周の長さと面積を求めよう。', 3),
+      B(8, 'a に 5、b に 3 を代入する\n周の長さ … 2(a+b)＝2×(5+3)＝16（cm）\n面積 … ab＝5×3＝15（cm^2）\n式の中の文字に数を代入して求めた値を、\n　「式の値」という')
+    ], [
+      F(11, RECT({ w: 5, h: 3, top: '{{3}}cm', side: '{{5}}cm' }))
+    ], '3:2')
+  ]);
+})();
+
+/* ---- data/ws_hotei.js ---- */
+/* 板書型ワークシート：中1 方程式。書き方は data/ws_kukan.js の先頭を見る。
+   検算：node tools/verify.cjs　／　見た目：node tools/check.cjs */
+(function () {
+  const { M, K, B, G, F, C2, BAL } = IK.b;
+
+  IK.add('hotei-tousei', {
+    unit: 'hotei', unitName: '方程式', no: '', title: '等式の性質を使って方程式を解く',
+    summary: 'てんびんで等式の性質を考え、加減・乗除の方程式を解く。学習課題＋例題2問。',
+    head: '方程式',
+    checks: [
+      'near(12 - 5, 7) && near(7 + 5, 12)',                                    // 学習課題：x＋5＝12 → x＝7
+      'near(15 - 6, 9) && near(9 + 6, 15)',                                    // 例題1（1）
+      'near(9 + 4, 13) && near(13 - 4, 9)',                                    // 例題1（2）
+      'near(18 / 3, 6) && near(3 * 6, 18)',                                    // 例題2（1）
+      'near(5 * 4, 20) && near(20 / 4, 5)'                                     // 例題2（2）
+    ]
+  }, [
+    M('等式の性質を使って、方程式を解こう'),
+
+    // ---- 学習課題（数字もすべて印刷する） ----
+    C2([
+      K('学習課題', 'てんびんが、つり合っている。\n箱の重さ x \\g を求めるには、\nどうすればよいだろう。', 3),
+      B(8, 'つり合っているから　x+5＝12\n両辺から 5 をひいても、つり合う\n　x+5−5＝12−5\n　x＝7　　（答）7\\g\n【等式の性質】A＝B ならば A−C＝B−C\n確かめ … 7+5＝12')
+    ], [
+      F(11, BAL({ left: [{ box: 'x' }, { w: '5\\g' }], right: [{ w: '12\\g' }] }))
+    ], '1:1'),
+
+    G(1),
+
+    // ---- 例題1（数字を空欄にする） ----
+    K('例題1', '次の方程式を解こう。\n（1）x+{{6}}＝{{15}}　　（2）x−{{4}}＝{{9}}', 2),
+    B(9, '（1）両辺から 6 をひく\n　　　x+6−6＝15−6　　x＝9\n（2）両辺に 4 をたす\n　　　x−4+4＝9+4　　x＝13\n確かめ … 9+6＝15　　13−4＝9'),
+
+    G(1),
+
+    // ---- 例題2 ----
+    K('例題2', '次の方程式を解こう。\n（1）{{3}}x＝{{18}}　　（2）[[x/{{4}}]]＝{{5}}', 2),
+    B(9, '（1）両辺を 3 でわる\n　　　3x÷3＝18÷3　　x＝6\n（2）両辺に 4 をかける\n　　　[[x/4]]×4＝5×4　　x＝20\n確かめ … 3×6＝18　　20÷4＝5')
+  ]);
+})();
+
+/* ---- data/ws_hirei.js ---- */
+/* 板書型ワークシート：中1 比例と反比例。書き方は data/ws_kukan.js の先頭を見る。
+   検算：node tools/verify.cjs　／　見た目：node tools/check.cjs */
+(function () {
+  const { M, K, B, G, F, C2, CO } = IK.b;
+  const X5 = [-2, -1, 0, 1, 2];
+  // 座標平面（x：−3〜3、y：−6〜6）。線と点は、解答を表示したときだけ赤で出る
+  const plane = (a, from, to, text, at, anchor) => CO({ xmin: -3, xmax: 3, ymin: -6, ymax: 6, lines: [{ a, from, to, text, at, anchor }], points: X5.map(x => ({ x, y: a * x })) });
+
+  IK.add('hirei-graph', {
+    unit: 'hirei', unitName: '比例と反比例', no: '', title: '比例のグラフ',
+    summary: '表をつくり、点をとって、比例 y＝ax のグラフをかく。学習課題＋例題2問。',
+    head: '比例と反比例',
+    checks: [
+      'near(2 * -2, -4) && near(2 * -1, -2) && near(2 * 1, 2) && near(2 * 2, 4)',     // 学習課題 y＝2x
+      'near(3 * -2, -6) && near(3 * -1, -3) && near(3 * 1, 3) && near(3 * 2, 6)',     // 例題1 y＝3x
+      'near(-2 * -2, 4) && near(-2 * -1, 2) && near(-2 * 1, -2) && near(-2 * 2, -4)', // 例題2 y＝−2x
+      'near(2 * 2 - 2 * 1, 2) && near(3 * 2 - 3 * 1, 3) && near(-2 * 2 - (-2 * 1), -2)'   // x が 1 増えたときの y の変わり方＝比例定数
+    ]
+  }, [
+    M('比例 y＝ax のグラフのかき方を考えよう'),
+
+    // ---- 学習課題（数字もすべて印刷する） ----
+    C2([
+      K('学習課題', '比例 y＝2x のグラフをかこう。\nx の値が −2、−1、0、1、2 のとき、\ny の値を求めて、点を結ぼう。', 3),
+      B(8, 'x … −2、−1、0、1、2\ny … −4、−2、0、2、4\n点 (−2, −4)、(−1, −2)、(0, 0)、\n　　(1, 2)、(2, 4) をとる\n点を直線で結ぶ　→　原点を通る直線\nx が 1 増えると、y は 2 増える')
+    ], [
+      F(11, plane(2, -3, 3, 'y＝2x', [3.2, 5.7], 'start'))
+    ], '3:2'),
+
+    G(1),
+
+    // ---- 例題1（数字を空欄にする） ----
+    C2([
+      K('例題1', '比例 y＝{{3}}x のグラフをかこう。\nx の値が −2、−1、0、1、2 のとき、\ny の値を求めよう。', 3),
+      B(8, 'x … −2、−1、0、1、2\ny … −6、−3、0、3、6\n原点と点 (1, 3) を通る直線\nx が 1 増えると、y は 3 増える\ny＝3x のほうが y＝2x より、かたむきが急')
+    ], [
+      F(11, plane(3, -2, 2, 'y＝3x', [2.2, 5.7], 'start'))
+    ], '3:2'),
+
+    G(1),
+
+    // ---- 例題2 ----
+    C2([
+      K('例題2', '比例 y＝−{{2}}x のグラフをかこう。\nまた、x の値が 1 増えるとき、\ny はどう変わるかを答えよう。', 3),
+      B(8, 'x … −2、−1、0、1、2\ny … 4、2、0、−2、−4\n原点と点 (1, −2) を通る直線（右下がり）\n（答）x が 1 増えると、y は 2 減る\n比例定数が負 → 右下がりのグラフ')
+    ], [
+      F(11, plane(-2, -3, 3, 'y＝−2x', [-3.2, 5.7], 'end'))
+    ], '3:2')
+  ]);
+})();
+
+/* ---- data/ws_heimen.js ---- */
+/* 板書型ワークシート：中1 平面図形。書き方は data/ws_kukan.js の先頭を見る。
+   検算：node tools/verify.cjs　／　見た目：node tools/check.cjs */
+(function () {
+  const { M, K, B, G, F, C2, SEC } = IK.b;
+
+  IK.add('heimen-ougi', {
+    unit: 'heimen', unitName: '平面図形', no: '', title: 'おうぎ形の弧の長さと面積',
+    summary: '円との比で、おうぎ形の弧の長さと面積を求める。学習課題＋例題2問。',
+    head: '平面図形',
+    checks: [
+      'near(60 / 360, 1 / 6)',                                                          // 学習課題
+      'near(2 * PI * 6 / 6, 2 * PI) && near(PI * 6 ** 2 / 6, 6 * PI)',
+      'near(120 / 360, 1 / 3)',                                                         // 例題1
+      'near(2 * PI * 9 / 3, 6 * PI) && near(PI * 9 ** 2 / 3, 27 * PI)',
+      'near(2 * PI * 8, 16 * PI) && near(4 * PI / (16 * PI), 1 / 4)',                   // 例題2
+      'near(360 / 4, 90) && near(PI * 8 ** 2 / 4, 16 * PI)',
+      'near(2 * PI * 8 * (90 / 360), 4 * PI)'                                           // 例題2：中心角 90° で弧の長さが 4π になる
+    ]
+  }, [
+    M('おうぎ形の弧の長さと面積の求め方を考えよう'),
+
+    // ---- 学習課題（数字もすべて印刷する） ----
+    C2([
+      K('学習課題', '半径 6cm、中心角 60° のおうぎ形の、\n弧の長さと面積を求めよう。\n円と比べて考えよう。', 3),
+      B(8, 'おうぎ形は、円の [[60/360]]＝[[1/6]]\n弧の長さ … 円周 2π×6＝12π の [[1/6]]\n　　12π×[[1/6]]＝2π（cm）\n面積 … 円の面積 π×6^2＝36π の [[1/6]]\n　　36π×[[1/6]]＝6π（cm^2）\n【気づき】弧の長さも面積も、\n　円の [[中心角/360]] 倍になっている')
+    ], [
+      F(11, SEC({ R: 6, th: 60, lr: '6cm', la: '60°' }))
+    ], '3:2'),
+
+    G(1),
+
+    // ---- 例題1（数字を空欄にする） ----
+    C2([
+      K('例題1', '半径 {{9}}cm、中心角 {{120}}° のおうぎ形の、\n弧の長さと面積を求めよう。', 2),
+      B(9, '[[120/360]]＝[[1/3]]\n弧の長さ … 2π×9×[[1/3]]＝6π（cm）\n面積 … π×9^2×[[1/3]]＝27π（cm^2）\n（答）弧の長さ 6π cm、面積 27π cm^2')
+    ], [
+      F(11, SEC({ R: 9, th: 120, lr: '{{9}}cm', la: '{{120}}°' }))
+    ], '3:2'),
+
+    G(1),
+
+    // ---- 例題2 ----
+    C2([
+      K('例題2', '半径 {{8}}cm、\n弧の長さ {{4}}π cm のおうぎ形の、\n中心角と面積を求めよう。', 3),
+      B(8, '円周 … 2π×8＝16π\n弧の長さ 4π は、円周の [[4π/16π]]＝[[1/4]]\n中心角 … 360°×[[1/4]]＝90°\n面積 … π×8^2×[[1/4]]＝16π（cm^2）\n（答）中心角 90°、面積 16π cm^2')
+    ], [
+      F(11, SEC({ R: 8, th: 90, lr: '{{8}}cm', la: '？°', larc: '{{4}}π cm' }))
+    ], '3:2')
+  ]);
+})();
+
+/* ---- data/ws_kukan.js ---- */
+/* 板書型ワークシート：中1 空間図形。A4 1枚（罫7mm・37行）。
+   書き方：IK.add(ID, { 授業の情報 }, [ブロック…])
+     M(めあて)　K(ラベル, 問題文, 行数)　B(行数, 板書の内容)　F(行数, 図…)　C2([左…], [右…], 幅の比)
+   ・問題文と図は、最初から印刷する。1問目（学習課題）は、数字もすべて印刷する。
+   ・2問目以降は、数字のいくつかを {{3}} のように書いて空欄にする（問題文でも、図の長さの字でも同じ書き方）。
+     「解答を表示」で、空欄の数字が赤で出る。
+   ・B(…) は、板書を写すための空欄の罫。2つ目の引数が、解答を表示したときに赤で出る教師の板書（1行＝\n で区切る。1行が罫1行ぶん）。
+   検算：node tools/verify.cjs　／　見た目：node tools/check.cjs */
+(function () {
+  const { M, K, B, G, F, C2, SO, NET } = IK.b;
+
+  IK.add('kukan-enzui-hyomenseki', {
+    unit: 'kukan', unitName: '空間図形', no: '', title: '円錐の表面積',
+    summary: '展開図をもとに、円錐の表面積の求め方を考える。学習課題＋例題2問。',
+    head: '空間図形',
+    // 検算に使う式（node tools/verify.cjs が確かめる。PI＝π、near(a, b)＝ほぼ等しい）
+    checks: [
+      'near(360 * 4 / 10, 144)',                                    // 学習課題：中心角
+      'near(2 * PI * 4, 8 * PI) && near(2 * PI * 10, 20 * PI)',     // 弧の長さ＝底面の円周、半径10の円の周
+      'near(8 / 20, 2 / 5)',
+      'near(PI * 10 ** 2 * (2 / 5), 40 * PI)',                      // 側面積
+      'near(PI * 4 ** 2, 16 * PI) && near(40 * PI + 16 * PI, 56 * PI)',
+      'near(PI * 10 * 4, 40 * PI)',                                 // 気づき：側面積＝π×母線×半径
+      'near(PI * 7 * 3, 21 * PI) && near(PI * 3 ** 2, 9 * PI) && near(21 * PI + 9 * PI, 30 * PI)',   // 例題1
+      'near(PI * 3 ** 2, 9 * PI) && near(36 * PI - 9 * PI, 27 * PI) && near(27 / 3, 9)',              // 例題2
+      'near(PI * 9 * 3 + PI * 3 ** 2, 36 * PI)'                     // 例題2の確かめ
+    ]
+  }, [
+    M('円錐の表面積を求める方法を考えよう'),
+
+    // ---- 学習課題（数字もすべて印刷する） ----
+    C2([
+      K('学習課題', '底面の半径が 4cm、母線の長さが 10cm の円錐の表面積を求めよう。\n展開図をもとに考えよう。', 3),
+      B(6, '展開図 … 側面はおうぎ形、底面は円\n弧の長さ＝底面の円周＝2π×4＝8π\n半径10の円周 … 2π×10＝20π\nおうぎ形は、円の [[8π/20π]]＝[[2/5]]\n側面積 … π×10^2×[[2/5]]＝40π\n底面積 … π×4^2＝16π')
+    ], [
+      F(9,
+        SO({ shape: 'cone', a: 4, c: 9.165, dims: 'r 4cm\nl 10cm', w: 0.8 }),
+        NET({ R: 10, r: 4, lR: '10cm', lr: '4cm', ansAngle: '144°', ansArc: '弧 8π cm', w: 1.2 }))
+    ], '1:1'),
+    B(5, '表面積 … 40π+16π＝56π　　（答）56π cm^2\n【気づき】側面積 40π＝π×10×4\n　　　側面積＝π×（母線の長さ）×（底面の半径）'),
+
+    G(1),
+
+    // ---- 例題1（数字のいくつかを空欄にする） ----
+    C2([
+      K('例題1', '底面の半径が {{3}}cm、母線の長さが {{7}}cm の円錐の表面積を求めよう。', 2),
+      B(6, '側面積 … π×7×3＝21π\n底面積 … π×3^2＝9π\n表面積 … 21π+9π＝30π\n（答）30π cm^2')
+    ], [
+      F(8, SO({ shape: 'cone', a: 3, c: 6.325, dims: 'r {{3}}cm\nl {{7}}cm' }))
+    ], '3:2'),
+
+    G(1),
+
+    // ---- 例題2 ----
+    C2([
+      K('例題2', '表面積が {{36}}π cm^2、\n底面の半径が {{3}}cm の円錐がある。\n母線の長さを求めよう。', 3),
+      B(6, '底面積 … π×3^2＝9π\n側面積 … 36π−9π＝27π\n母線を l cm とすると、π×l×3＝27π\n3πl＝27π　　l＝9\n（答）9cm\n確かめ … 27π+9π＝36π')
+    ], [
+      F(9, SO({ shape: 'cone', a: 3, c: 8.485, dims: 'r {{3}}cm\nl ？cm' }))
+    ], '3:2'),
+    B(2, '')
+  ]);
+})();
+
+/* ---- data/ws_data.js ---- */
+/* 板書型ワークシート：中1 データの活用。書き方は data/ws_kukan.js の先頭を見る。
+   検算：node tools/verify.cjs　／　見た目：node tools/check.cjs */
+(function () {
+  const { M, K, B, G, F, C2, HIST } = IK.b;
+  // 50m 走の記録（30 人）と、テストの得点（20 人）。図の棒と、板書の数字は、ここから外れてはいけない（checks で確かめる）
+  const RUN = [3, 9, 11, 5, 2], TEST = [1, 3, 6, 7, 3];
+
+  IK.add('data-histogram', {
+    unit: 'data', unitName: 'データの活用', no: '', title: 'ヒストグラムの読み取り（階級・度数・相対度数）',
+    summary: 'ヒストグラムから、階級の幅・最頻値・度数・相対度数を読み取る。学習課題＋例題2問。',
+    head: 'データの活用',
+    checks: [
+      `near(${JSON.stringify(RUN)}.reduce((a, b) => a + b), 30) && near(3 + 9 + 11 + 5 + 2, 30)`,                  // 学習課題：度数の合計 30 人（板書の足し算とも合う）
+      `near(Math.max(...${JSON.stringify(RUN)}), 11) && ${JSON.stringify(RUN)}.indexOf(11) === 2 && near((8.0 + 9.0) / 2, 8.5)`,   // いちばん多いのは 8.0〜9.0 秒（図の 3 番目）、階級値 8.5
+      `near(${JSON.stringify(TEST)}.reduce((a, b) => a + b), 20)`,                                                // 例題：度数の合計 20 人
+      `near(${JSON.stringify(TEST)}[3], 7) && near(7 / 20, 0.35)`,                                                // 例題1：30 点以上 40 点未満
+      `near(${JSON.stringify(TEST)}[2] + ${JSON.stringify(TEST)}[3], 13) && near(13 / 20, 0.65)`                  // 例題2：20 点以上 40 点未満
+    ]
+  }, [
+    M('ヒストグラムから、データの特徴を読み取ろう'),
+
+    // ---- 学習課題（数字もすべて印刷する） ----
+    C2([
+      K('学習課題', '右のヒストグラムは、30 人の\n50\\m 走の記録である。\n階級の幅と、人数がいちばん多い\n階級を調べよう。', 4),
+      B(9, '階級の幅 … 1 秒\n度数がいちばん多い階級 …\n　8.0 秒以上 9.0 秒未満（11 人）\n最頻値 … その階級の階級値\n　　　[[8.0+9.0/2]]＝8.5（秒）\n度数の合計 … 3+9+11+5+2＝30（人）')
+    ], [
+      F(13, HIST({ edges: [6, 7, 8, 9, 10, 11], counts: RUN, ymax: 12, ystep: 1, xname: '(秒)', yname: '(人)', hl: [2] }))
+    ], '11:9'),
+
+    G(1),
+
+    // ---- 例題1・例題2（数字を空欄にする。ヒストグラムは 2 問で共通） ----
+    C2([
+      K('例題1', '右のヒストグラムは、20 人の\nテストの得点である。\n{{30}}点以上{{40}}点未満の階級の、\n度数と相対度数を求めよう。', 4),
+      B(6, '度数 … 7 人\n相対度数 … 度数÷度数の合計\n　　　　　7÷20＝0.35\n（答）度数 7 人、相対度数 0.35'),
+      G(1),
+      K('例題2', '{{20}}点以上{{40}}点未満の人は、\n何人で、全体の何 % か。', 2),
+      B(7, '20 点以上 30 点未満 … 6 人\n30 点以上 40 点未満 … 7 人\n6+7＝13（人）\n13÷20＝0.65　→　65 %\n（答）13 人、65 %')
+    ], [
+      F(13, HIST({ edges: [0, 10, 20, 30, 40, 50], counts: TEST, ymax: 8, ystep: 1, xname: '(点)', yname: '(人)' }))
+    ], '11:9')
+  ]);
+})();
+
+/* ---- js/app.js ---- */
+/* ikkan：画面。一覧 → ワークシート（解答の表示・かくす、印刷）。
+   場所：#/ ＝一覧、#/<授業のID> ＝ワークシート、#/<授業のID>/ans ＝解答を表示した状態で開く */
+(function () {
+  'use strict';
+  const IK = window.IK, R = IK.render;
+  const $app = document.getElementById('app');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const MM = 96 / 25.4;   // 1mm のピクセル数
+  let ans = false, fit = 'w', cur = null;
+
+  const setAns = on => {
+    ans = !!on;
+    document.body.classList.toggle('ans-on', ans);
+    const b = document.getElementById('ansBtn');
+    if (b) { b.setAttribute('aria-pressed', String(ans)); b.textContent = ans ? '解答をかくす' : '解答を表示'; }
+    const h = document.getElementById('hint');
+    if (h) h.innerHTML = ans ? '<b>解答を表示中</b>　赤い字が、教師が板書する内容と、空欄に入れる数字です。' : '空欄の罫は、授業で板書を写す場所です。数字の空欄は、先生が板書で伝えます。';
+  };
+
+  function zoom() {
+    const pages = document.querySelector('.pages');
+    if (!pages) return;
+    const wrap = pages.parentElement, top = document.querySelector('.top');
+    const g = R.geo(cur), pw = g.P.w * MM, ph = g.P.h * MM;
+    let z = Math.min(1.6, (wrap.clientWidth - 32) / pw);
+    if (fit === 'all') z = Math.min(z, (window.innerHeight - (top ? top.offsetHeight : 0) - 70) / ph);
+    pages.style.zoom = Math.max(0.3, z);
+  }
+
+  function home() {
+    cur = null;
+    document.title = '数学ワークシート（板書型）';
+    document.body.classList.remove('ans-on');
+    const units = IK.units.map(u => {
+      const ls = IK.order.map(id => IK.lessons[id]).filter(l => l.unit === u.key);
+      if (!ls.length) return '';
+      return `<div class="unit"><h2>${esc(u.name)}</h2><span>中${esc(u.grade)}</span></div>
+        <div class="cards">${ls.map(l => `<a class="card" href="#/${esc(l.id)}">${l.no ? `<small>${esc(l.no)}</small>` : ''}<b>${esc(l.title)}</b><p>${esc(l.summary || '')}</p><span class="go">ひらく →</span></a>`).join('')}</div>`;
+    }).join('');
+    $app.innerHTML = `<div class="home">
+      <h1>数学ワークシート（板書型）</h1>
+      <p class="lead">日付・名前 → めあて → 学習課題・例題（1〜3問）。問題の下は、図・グラフ以外は<b>空欄</b>にしてあり、板書を写して使います。
+        「解答を表示」を押すと、<b>教師が板書する内容</b>と、<b>空欄の数字</b>が赤で出ます。</p>
+      ${units || '<p>ワークシートがまだありません。</p>'}
+      <div class="note"><h3>ワークシートのつくり方</h3>
+        <code>data/ws_*.js</code> に、<code>IK.add(…)</code> で 1 授業ぶんを書き足します。くわしくは <code>README.md</code> を見てください。</div>
+    </div>`;
+  }
+
+  function show(id, withAns) {
+    const l = IK.lessons[id];
+    if (!l) { location.hash = '#/'; return; }
+    cur = l;
+    document.title = `${l.title}　数学ワークシート`;
+    $app.innerHTML = `<header class="top">
+        <a class="brand" href="#/" title="一覧へ">← 一覧</a>
+        <div class="ttl"><small>${esc([l.unitName, l.no].filter(Boolean).join('　'))}</small><b>${esc(l.title)}</b></div>
+        <span class="sp"></span>
+        <button type="button" class="btn main" id="ansBtn" aria-pressed="false">解答を表示</button>
+        <button type="button" class="btn" id="fitBtn" title="紙面の見せ方">全体を見る</button>
+        ${IK.noPrint ? '' : '<button type="button" class="btn" id="prtBtn">印刷</button>'}
+      </header>
+      <div class="pages-wrap"><p class="hint" id="hint"></p><div class="pages">${R.pagesHTML(l)}</div></div>`;
+    setAns(withAns);
+    document.getElementById('ansBtn').onclick = () => setAns(!ans);
+    document.getElementById('fitBtn').onclick = e => { fit = fit === 'w' ? 'all' : 'w'; e.target.textContent = fit === 'w' ? '全体を見る' : '幅に合わせる'; zoom(); };
+    const prt = document.getElementById('prtBtn'); if (prt) prt.onclick = () => window.print();
+    zoom();
+  }
+
+  function route(hash) {
+    const h = String(hash != null ? hash : location.hash).replace(/^#\/?/, '').split('/');
+    if (!h[0]) home(); else show(h[0], h[1] === 'ans');
+    window.scrollTo(0, 0);
+  }
+
+  // 一覧↔ワークシートの移動は、ページの中で処理する（埋めこみ表示では、アドレスの # が変えられないことがある）
+  document.addEventListener('click', e => {
+    const a = e.target.closest && e.target.closest('a[href^="#/"]');
+    if (!a) return;
+    e.preventDefault();
+    const h = a.getAttribute('href');
+    try { history.pushState(null, '', h); } catch (_) { /* 変えられなくてもよい */ }
+    route(h);
+  });
+  window.addEventListener('hashchange', () => route());
+  window.addEventListener('popstate', () => route());
+  window.addEventListener('resize', zoom);
+  document.addEventListener('keydown', e => {
+    if (!cur || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test((e.target || {}).tagName || '')) return;
+    if (e.key === 'a' || e.key === 'A') setAns(!ans);
+  });
+  route();
+})();
+
+</script>
+</body>
+</html>

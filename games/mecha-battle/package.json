@@ -1,0 +1,6 @@
+{
+  "name": "mecha-battle-src",
+  "private": true,
+  "type": "commonjs",
+  "description": "ルートが type:module のため、このフォルダ配下の .js は CommonJS として動かす"
+}

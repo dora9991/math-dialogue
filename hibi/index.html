@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#f7f7f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161618" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ひびの手帳">
+<title>ひびの手帳</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/hibi.css">
+</head>
+<body>
+<header id="top"></header>
+<main id="view"></main>
+<div id="bottom" hidden>
+  <button id="iosSync" class="rbtn" data-act="runSync" aria-label="iPhone の予定・リマインダーを取りこむ" title="iPhone と同期"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.4"/><path d="M14.7 10.4a2.9 2.9 0 0 0-5.2-.8M9.3 13.6a2.9 2.9 0 0 0 5.2.8"/><path d="M14.9 8.3v2.2h-2.2M9.1 15.7v-2.2h2.2"/></svg></button>
+  <nav id="tabs" aria-label="切りかえ">
+    <a href="#/today" data-tab="today">今日</a>
+    <a href="#/cal" data-tab="cal" aria-label="カレンダー（月）">月</a>
+    <a href="#/memos" data-tab="memos">メモ</a>
+    <a href="#/library" data-tab="library">資料</a>
+  </nav>
+  <button id="fab" data-act="addMenu" aria-label="メモ・写真を入れる"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div id="sheet" hidden></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<input type="file" id="pickCamera" class="vh" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true">
+<input type="file" id="pickPhoto" class="vh" accept="image/*" multiple tabindex="-1" aria-hidden="true">
+<input type="file" id="pickFile" class="vh" accept="application/pdf,.pdf,image/*,.heic" multiple tabindex="-1" aria-hidden="true">
+<script src="js/core.js"></script>
+<script src="js/api.js"></script>
+<script src="js/image.js"></script>
+<script src="js/guide.js"></script>
+<script src="js/sample.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
