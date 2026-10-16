@@ -38,6 +38,6 @@ if git diff --cached --quiet; then
 fi
 git diff --cached --stat | tail -3
 git commit -q -m "高校数学 黒板解説を /hs-board/ に公開（hs-board/ だけを入れかえ。ほかの公開物は変えない）" \
-  -m "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
+  -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 git push origin HEAD:gh-pages
 echo "公開しました: https://dora9991.github.io/math-dialogue/hs-board/ （反映まで1〜2分）"
