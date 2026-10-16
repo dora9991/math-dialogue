@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>高校数学 黒板解説</title>
+<style>
+  :root { --chalk: #f4f3ea; --yel: #ffe27a; --pink: #ff9db2; --blue: #9ad8ff; --green: #9ff0b8; }
+  html, body { margin: 0; background: #16352b; color: var(--chalk); font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; }
+  body { min-height: 100vh; background: radial-gradient(ellipse at 25% 10%, #2d6150 0%, #234f3f 50%, #16352b 100%) fixed; }
+  main { max-width: 980px; margin: 0 auto; padding: 36px 16px 60px; }
+  h1 { margin: 0; font-size: 34px; letter-spacing: .03em; }
+  .lead { margin: 10px 0 26px; color: rgba(244,243,234,.78); line-height: 1.7; font-size: 16px; }
+  .list { display: grid; gap: 14px; }
+  a.card { display: block; text-decoration: none; color: inherit; background: rgba(0,0,0,.18); border: 2px solid rgba(255,255,255,.16); border-radius: 18px; padding: 16px 20px; transition: background .15s, border-color .15s; }
+  a.card:hover { background: rgba(0,0,0,.28); border-color: var(--yel); }
+  .top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .field { font-size: 14px; color: var(--blue); border: 2px solid var(--blue); border-radius: 14px; padding: 2px 10px; }
+  .lv { font-size: 14px; color: var(--yel); }
+  .st { margin-left: auto; font-size: 14px; color: rgba(244,243,234,.7); }
+  .st.done { color: var(--green); }
+  .ttl { font-size: 22px; font-weight: 700; margin: 8px 0 6px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tags span { font-size: 13px; background: rgba(255,255,255,.08); border-radius: 10px; padding: 2px 9px; color: rgba(244,243,234,.85); }
+  .foot { margin-top: 30px; font-size: 13px; color: rgba(244,243,234,.6); line-height: 1.7; }
+</style>
+</head>
+<body>
+<main>
+  <h1>高校数学 黒板解説</h1>
+  <p class="lead">入試レベルの問題を、黒板で1行ずつ解説します（声なし）。Enter・クリックで進み、途中の「発問」で自分で考えながら読めます。<br>いまは熊本大学の入試レベルを目安にした問題を 4 つ用意しています（問題はすべて自作）。</p>
+  <div class="list" id="list"></div>
+  <p class="foot">キー操作：Enter つぎへ／← もどる／1〜4 発問に答える／H ヒント／Q 問題文／A 自動送り<br>途中でやめても、次に開いたとき「つづきから」で再開できます（この端末に記録）。</p>
+</main>
+<script src="js/lessons.js?v=202610160917"></script>
+<script>
+  (function () {
+    const get = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    document.getElementById('list').innerHTML = (window.HB_LESSONS || []).map(l => {
+      let best = null; try { best = JSON.parse(get('hb.best.' + l.id) || 'null'); } catch (e) { best = null; }
+      const pos = get('hb.pos.' + l.id);
+      const st = best ? '<span class="st done">✓ 最高 ' + best.right + ' / ' + best.total + '</span>' : pos ? '<span class="st">▶ とちゅう</span>' : '<span class="st">未</span>';
+      return '<a class="card" href="play.html?s=' + encodeURIComponent(l.id) + '"><div class="top"><span class="field">' + esc(l.field) + '</span><span class="lv">' + esc(l.level || '') + '　' + esc(l.time || '') + '</span>' + st + '</div>' +
+        '<div class="ttl">' + esc(l.title) + '</div><div class="tags">' + (l.tags || []).map(t => '<span>' + esc(t) + '</span>').join('') + '</div></a>';
+    }).join('');
+  })();
+</script>
+</body>
+</html>
