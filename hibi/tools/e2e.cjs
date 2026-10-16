@@ -158,6 +158,13 @@ const step = s => console.log('■ ' + s);
     const blocks = await page.$$eval('.tl-ev', els => els.map(e => e.className));
     ok(blocks.length === 2 && blocks.every(c => /\bp\d\b/.test(c)), '予定はカレンダーの色のブロック：' + blocks.join(' / '));
     ok(!(await page.evaluate(() => document.querySelector('#iosSync').classList.contains('unsynced'))), '同期したら印が消える');
+    await page.click('#tabs a[data-tab="memos"]');
+    await page.click('[data-act="memoFilter"][data-f="rem"]');
+    await page.waitForSelector('.rem-list');
+    const lists = await page.$$eval('.rem-list .sec-h span', els => els.map(e => e.textContent));
+    ok(JSON.stringify(lists) === JSON.stringify(['リマインダー', '仕事']) && (await page.locator('.rem-list .rem').count()) === 2, 'メモの画面で、iPhone のリマインダーをリストごとに：' + lists.join('・'));
+    await page.click('[data-act="memoFilter"][data-f="all"]');
+    await page.click('#tabs a[data-tab="today"]');
     ok(/期限切れ/.test(evText) && /教材の印刷/.test(evText), 'リマインダー（期限切れ・今日）');
 
     step('Claude の朝の結果が届く');

@@ -312,7 +312,12 @@ function actProposalDismiss_(req) {
   });
 }
 
-/** iPhone のショートカットから：カレンダーの予定とリマインダーの一覧を受け取る */
+var IOS_MAX_EVENTS = 8000, IOS_MAX_REMINDERS = 3000;
+
+/** iPhone のショートカットから：カレンダーの予定とリマインダーの一覧を受け取る。
+    予定は、送られてきた期間（from〜to）の分だけを入れかえ、ほかの日の予定は残す。だから、はじめに長い期間（たとえば1年前〜1年後）を
+    1回送っておけば、毎朝の短い同期（きのう〜60日後）のあとも、前後の月の予定はカレンダーに残る。
+    リマインダーは「終わっていないもの全部」が来るので、まるごと入れかえる */
 function actIosSync_(req) {
   var events = req.events != null ? parseList_(req.events).map(normEvent_).filter(Boolean) : null;
   var reminders = req.reminders != null ? parseList_(req.reminders).map(normReminder_).filter(Boolean) : null;
@@ -321,14 +326,34 @@ function actIosSync_(req) {
   if (reminders && !reminders.length && looksFilled_(req.reminders)) throw new Error('リマインダーの形が読めませんでした（ショートカットの「辞書」を確かめてください）');
   return withDb_(function (db) {
     db.ios = db.ios || { events: [], reminders: [] };
-    if (events) db.ios.events = events.slice(0, 800);
-    if (reminders) db.ios.reminders = reminders.slice(0, 500);
+    var range = null;
+    if (events) {
+      range = syncRange_(req, events);
+      var all = (db.ios.events || []).filter(function (e) { return e.d0 < range.from || e.d0 > range.to; }).concat(events);
+      all.sort(function (a, b) { var x = a.d0 + ' ' + (a.t0 || ''), y = b.d0 + ' ' + (b.t0 || ''); return x < y ? -1 : x > y ? 1 : 0; });
+      // 多すぎるときは、いちばん古い予定から捨てる
+      db.ios.events = all.length > IOS_MAX_EVENTS ? all.slice(all.length - IOS_MAX_EVENTS) : all;
+    }
+    if (reminders) db.ios.reminders = reminders.slice(0, IOS_MAX_REMINDERS);
     db.ios.syncedAt = nowIso_();
     touch_(db);
     writeExport_(db);
+    var md = function (ymd) { return Number(ymd.slice(5, 7)) + '/' + Number(ymd.slice(8)); };
     return { events: events ? events.length : null, reminders: reminders ? reminders.length : null, syncedAt: db.ios.syncedAt,
-      message: '予定 ' + (events ? events.length : '-') + '件・リマインダー ' + (reminders ? reminders.length : '-') + '件を同期しました' };
+      from: range ? range.from : null, to: range ? range.to : null, total: db.ios.events.length,
+      message: '予定 ' + (events ? events.length + '件（' + md(range.from) + '〜' + md(range.to) + '）' : '-') + '・リマインダー ' + (reminders ? reminders.length : '-') +
+        '件を同期しました（ひびの手帳の予定は、全部で ' + db.ios.events.length + '件）' };
   });
+}
+
+/** 入れかえる期間。ショートカットが from・to（「はじめ」「おわり」）を送ってきたら、その期間。
+    来ないとき（前のつくり方のショートカット）は、送られてきた予定の最初の日〜最後の日と、いつもの「きのう〜60日後」を合わせた期間 */
+function syncRange_(req, events) {
+  var f = parseDateLoose_(req.from), t = parseDateLoose_(req.to);
+  if (f && t && f.ymd <= t.ymd) return { from: f.ymd, to: t.ymd };
+  var from = addDays_(today_(), -1), to = addDays_(today_(), 60);
+  events.forEach(function (e) { if (e.d0 < from) from = e.d0; if (e.d0 > to) to = e.d0; });
+  return { from: from, to: to };
 }
 
 function actSettingsSave_(req) {
