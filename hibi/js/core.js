@@ -83,6 +83,36 @@
     return weeks;
   }
 
+  /* ───── 日本の祝日（いまの祝日法。春分・秋分は 2099 年まで使える近似式） ───── */
+
+  const HOLI = {};
+  /** その月の n 回目の月曜 */
+  function nthMonday(y, m, n) {
+    const first = `${y}-${p2(m)}-01`;
+    return `${y}-${p2(m)}-${p2(1 + (8 - weekday(first)) % 7 + (n - 1) * 7)}`;
+  }
+  /** その年の祝日：{ 'YYYY-MM-DD': '文化の日', … }（振替休日・国民の休日も入る） */
+  function holidaysOf(y) {
+    if (HOLI[y]) return HOLI[y];
+    const h = {};
+    const md = (s, name) => { h[`${y}-${s}`] = name; };
+    const eq = base => Math.floor(base + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4));
+    md('01-01', '元日'); h[nthMonday(y, 1, 2)] = '成人の日';
+    md('02-11', '建国記念の日'); md('02-23', '天皇誕生日'); md(`03-${p2(eq(20.8431))}`, '春分の日');
+    md('04-29', '昭和の日'); md('05-03', '憲法記念日'); md('05-04', 'みどりの日'); md('05-05', 'こどもの日');
+    h[nthMonday(y, 7, 3)] = '海の日'; md('08-11', '山の日');
+    h[nthMonday(y, 9, 3)] = '敬老の日'; md(`09-${p2(eq(23.2488))}`, '秋分の日'); h[nthMonday(y, 10, 2)] = 'スポーツの日';
+    md('11-03', '文化の日'); md('11-23', '勤労感謝の日');
+    const base = Object.keys(h).sort();
+    // 国民の休日：前の日と次の日が祝日にはさまれた日
+    base.forEach(d => { const n1 = addDays(d, 1); if (!h[n1] && h[addDays(d, 2)] && weekday(n1) !== 0) h[n1] = '国民の休日'; });
+    // 振替休日：祝日が日曜なら、そのあとの最初の祝日でない日
+    base.forEach(d => { if (weekday(d) !== 0) return; let n = addDays(d, 1); while (h[n]) n = addDays(n, 1); h[n] = '振替休日'; });
+    return (HOLI[y] = h);
+  }
+  /** 祝日の名前（祝日でなければ空） */
+  function holidayName(ymd) { return isYmd(ymd) ? holidaysOf(Number(ymd.slice(0, 4)))[ymd] || '' : ''; }
+
   /** ISO の週番号（月曜はじまり。その週の木曜がある年で数える） */
   function isoWeek(ymd) {
     const thu = addDays(ymd, 3 - (weekday(ymd) + 6) % 7);
@@ -352,7 +382,7 @@
   function withoutDate(dates, ymd) { return (dates || []).filter(d => d !== ymd); }
 
   return {
-    TZ, WD, isYmd, ymdOf, hmOf, today, addDays, diffDays, weekday, addMonths, labelDay, labelShort, relDay, labelWhen, monthGrid, isoWeek,
+    TZ, WD, isYmd, ymdOf, hmOf, today, addDays, diffDays, weekday, addMonths, labelDay, labelShort, relDay, labelWhen, monthGrid, isoWeek, holidayName, holidaysOf,
     eventsOn, remindersFor, undatedReminders, memosOn, pinnedMemos, itemsOn, briefingFor, dayView, monthMarks, calEntries, weekLayout,
     filterMemos, filterItems, memoTitle, memoBody, colorIndex, catIndex, shortcutUrl, memoToIos, iosForShortcut, calshowUrl,
     parseConnect, checkGasUrl, esc, safeUrl, uid, upsert, proposalTarget, withDate, withoutDate

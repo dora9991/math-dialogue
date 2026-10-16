@@ -46,8 +46,10 @@
     window.addEventListener('online', () => refresh(true));
     // 画面の高さが変わったら（回転・Safari のバーの出し入れ）、月のカレンダーの帯を並べなおす
     let rz = null;
-    window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (S.route.name === 'cal') layoutMonth(); }, 120); });
+    window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (S.route.name === 'cal') { const snap = calSnap(); layoutMonth(); if (!calRestore(snap)) calFill(); } }, 120); });
+    window.addEventListener('scroll', calOnScroll, { passive: true });
     setupSwipe();
+    setupSheetDrag();
     registerSW();
     if (/demo/.test(location.search) && !HB.api.conn()) startDemo();
     else if (/demo/.test(location.search)) history.replaceState(null, '', location.pathname + location.hash);
@@ -55,7 +57,12 @@
     onRoute();
     if (!S.demo && HB.api.conn()) refresh(true);
     // 0時をまたいだら「今日」を描きなおす
-    setInterval(() => { if (S.route.name === 'today' && !S.sheetOpen && S.renderedToday !== HB.today()) render(); }, 60000);
+    setInterval(() => {
+      if (S.route.name !== 'today' || S.sheetOpen) return;
+      if (S.renderedToday !== HB.today()) { render(); return; }
+      const u = $('.upnext'), html = upNext(HB.dayView(S.st, HB.today()));
+      if (u) u.outerHTML = html || ''; else if (html) { const h = $('.hero-head'); if (h) h.insertAdjacentHTML('afterend', html); }
+    }, 60000);
   }
 
   function registerSW() {
@@ -78,7 +85,14 @@
     S.route = parseRoute();
     // 設定から「もどる」で、来たところへ帰る
     if (S.route.name === 'settings' && prev && !['settings', 'guide'].includes(prev.name)) S.backHash = hashOf(prev);
-    closeSheet(true); render(); window.scrollTo(0, 0);
+    closeSheet(true); render();
+    if (S.route.name === 'cal') calScrollTo(S.route.ym); else window.scrollTo(0, 0);
+    // 日を移ったときは、その向きに少しすべらせる
+    const v = $('#view'), dayOf = x => (x.name === 'today' ? HB.today() : x.name === 'day' ? x.ymd : '');
+    if (prev && dayOf(prev) && dayOf(S.route) && dayOf(prev) !== dayOf(S.route)) {
+      v.classList.remove('slide-next', 'slide-prev'); void v.offsetWidth;
+      v.classList.add(dayOf(S.route) > dayOf(prev) ? 'slide-next' : 'slide-prev');
+    }
   }
   const hashOf = r => (r.name === 'day' ? '#/day/' + r.ymd : r.name === 'cal' ? '#/cal/' + r.ym : '#/' + r.name);
   const go = hash => { if (location.hash === hash) onRoute(); else location.hash = hash; };
@@ -87,7 +101,7 @@
 
   function render() {
     const r = S.route;
-    document.body.dataset.view = r.name;
+    document.body.dataset.view = S.st ? r.name : 'welcome';
     $$('#tabs a').forEach(a => a.setAttribute('aria-current', a.dataset.tab === tabOf(r.name) ? 'page' : 'false'));
     if (!S.st) {
       $('#top').innerHTML = ''; $('#top').hidden = true;
@@ -102,13 +116,14 @@
     let html = '';
     if (r.name === 'today') { html = viewDay(HB.today()); S.renderedToday = HB.today(); }
     else if (r.name === 'day') html = viewDay(r.ymd);
-    else if (r.name === 'cal') html = viewCal(r.ym, banner());
+    else if (r.name === 'cal') html = viewCal(r.ym);
     else if (r.name === 'memos') html = viewMemos();
     else if (r.name === 'library') html = viewLibrary();
     else if (r.name === 'settings') html = viewSettings();
     else if (r.name === 'guide') html = viewGuide();
-    $('#view').innerHTML = (r.name === 'cal' ? '' : banner()) + html;
+    $('#view').innerHTML = banner() + html;
     if (r.name === 'cal') layoutMonth();
+    else S.calGeom = null;
     loadThumbs($('#view'));
     if (r.name === 'guide' || r.name === 'settings') loadFeedUrl();
   }
@@ -117,6 +132,7 @@
   /** 裏側から新しいデータが来たとき：シートを開いているときは、閉じてから描く */
   function softRender() {
     if (S.sheetOpen) { S.dirtyWhileSheet = true; return; }
+    if (S.route.name === 'cal') { const snap = calSnap(); render(); if (!calRestore(snap)) calScrollTo(S.route.ym); return; }
     const y = window.scrollY;
     render();
     window.scrollTo(0, y);
@@ -132,29 +148,50 @@
     return out.join('');
   }
 
-  /** 上のバー：左に設定（丸いボタン）、まんなかに日付・月、右に「今日へ」と「新しくする」 */
+  /** 上のバー：左に設定（丸いボタン）、まんなかに年月、右に「今日へ」と「新しくする」。日の画面では、その下に1週間の帯 */
   function topBar(r) {
     const attention = S.sync === 'error' || (S.st.outboxErrors || []).length > 0;
     const gear = `<button class="rbtn" data-act="go" data-hash="#/settings" aria-label="設定">${icon('gear', 22)}${attention ? '<i class="dot"></i>' : ''}</button>`;
     const sync = `<button class="sync ${S.sync}" data-act="refresh" aria-label="新しくする" title="${esc(S.syncMsg || '新しくする')}">${icon('refresh', 21)}</button>`;
+    const bar = (l, m, rr) => `<div class="topbar">${l}<div class="mid">${m}</div>${rr}</div>`;
     if (r.name === 'today' || r.name === 'day') {
       const ymd = r.name === 'today' ? HB.today() : r.ymd;
-      return `${gear}<div class="mid"><button class="iconbtn nav" data-act="goDay" data-ymd="${HB.addDays(ymd, -1)}" aria-label="前の日">${icon('left')}</button>
-        <button class="title" data-act="goCal" data-ym="${ymd.slice(0, 7)}"><b>${HB.labelDay(ymd)}</b><small>${HB.relDay(ymd)}</small></button>
-        <button class="iconbtn nav" data-act="goDay" data-ymd="${HB.addDays(ymd, 1)}" aria-label="次の日">${icon('right')}</button></div>
-        <div class="rpill"><button data-act="go" data-hash="#/today" aria-label="今日へ"${r.name === 'today' ? ' disabled' : ''}>${icon('today', 21)}</button>${sync}</div>`;
+      return bar(gear, `<button class="title month" data-act="goCal" data-ym="${ymd.slice(0, 7)}" aria-label="月のカレンダーへ">${monthTitle(ymd.slice(0, 7))}</button>`,
+        `<div class="rpill"><button data-act="go" data-hash="#/today" aria-label="今日へ"${r.name === 'today' ? ' disabled' : ''}>${icon('today', 21)}</button>${sync}</div>`) + weekStrip(ymd);
     }
     if (r.name === 'cal') {
-      const [y, m] = r.ym.split('-').map(Number), now = HB.today().slice(0, 7);
-      return `${gear}<div class="mid"><button class="iconbtn nav" data-act="goCal" data-ym="${HB.addMonths(r.ym, -1)}" aria-label="前の月">${icon('left')}</button>
-        <div class="title month"><span class="y">${y}年</span><b>${m}月</b></div>
-        <button class="iconbtn nav" data-act="goCal" data-ym="${HB.addMonths(r.ym, 1)}" aria-label="次の月">${icon('right')}</button></div>
-        <div class="rpill"><button data-act="goCal" data-ym="${now}" aria-label="今月へ"${r.ym === now ? ' disabled' : ''}>${icon('today', 21)}</button>${sync}</div>`;
+      return bar(gear, `<button class="iconbtn nav" data-act="goCal" data-ym="${HB.addMonths(r.ym, -1)}" aria-label="前の月">${icon('left')}</button>
+        <div class="title month" id="calTitle">${monthTitle(r.ym)}</div>
+        <button class="iconbtn nav" data-act="goCal" data-ym="${HB.addMonths(r.ym, 1)}" aria-label="次の月">${icon('right')}</button>`,
+        `<div class="rpill"><button data-act="goCal" data-ym="${HB.today().slice(0, 7)}" aria-label="今月へ" id="calNow"${r.ym === HB.today().slice(0, 7) ? ' disabled' : ''}>${icon('today', 21)}</button>${sync}</div>`);
     }
     const titles = { memos: 'メモ', library: '画像・資料', settings: '設定', guide: 'ショートカットのつくり方' };
     const back = hash => `<button class="rbtn" data-act="go" data-hash="${hash}" aria-label="もどる">${icon('left', 22)}</button>`;
     const left = r.name === 'settings' ? back(S.backHash || '#/today') : r.name === 'guide' ? back('#/settings') : gear;
-    return `${left}<div class="mid"><div class="title"><b>${titles[r.name]}</b></div></div>${r.name === 'guide' ? '<span></span>' : `<div class="rpill">${sync}</div>`}`;
+    return bar(left, `<div class="title"><b>${titles[r.name]}</b></div>`, r.name === 'guide' ? '<span></span>' : `<div class="rpill">${sync}</div>`);
+  }
+  const monthTitle = ym => { const [y, m] = ym.split('-').map(Number); return `<span class="y">${y}年</span><b>${m}月</b>`; };
+
+  /** 1週間の帯（月〜日）：日付と、その日にあるものの色の点。押すとその日へ、端の ‹ › で前の週・次の週 */
+  function weekStrip(ymd) {
+    const t = HB.today();
+    const w0 = HB.addDays(ymd, -((HB.weekday(ymd) + 6) % 7));
+    const days = Array.from({ length: 7 }, (_, i) => HB.addDays(w0, i));
+    const entries = HB.calEntries(S.st, days[0], days[6]);
+    const cells = days.map((d, i) => {
+      const hol = HB.holidayName(d);
+      const dots = [];
+      entries.forEach(e => {
+        if (e.d0 > d || e.d1 < d || dots.length >= 3) return;
+        const c = e.kind === 'memo' ? 'k-memo' : e.kind === 'item' ? 'k-item' : 'p' + colorOf(e.cal);
+        if (!dots.includes(c)) dots.push(c);
+      });
+      const cls = ['wday', d === ymd ? 'sel' : '', d === t ? 'today' : '', i === 5 ? 'sat' : '', i === 6 || hol ? 'sun' : ''].filter(Boolean).join(' ');
+      return `<button class="${cls}" data-act="goDay" data-ymd="${d}" aria-label="${HB.labelDay(d)}${hol ? ' ' + hol : ''}"${d === ymd ? ' aria-current="date"' : ''}>` +
+        `<small>${'月火水木金土日'[i]}</small><b>${Number(d.slice(8))}</b><span class="wdots">${dots.map(c => `<i class="${c}"></i>`).join('')}</span></button>`;
+    }).join('');
+    return `<div class="wstrip"><button class="wnav" data-act="goDay" data-ymd="${HB.addDays(ymd, -7)}" aria-label="前の週">${icon('left', 18)}</button>${cells}` +
+      `<button class="wnav" data-act="goDay" data-ymd="${HB.addDays(ymd, 7)}" aria-label="次の週">${icon('right', 18)}</button></div>`;
   }
 
   function viewLoading() { return `<div class="empty-state"><div class="spinner"></div><p>読みこみ中…</p></div>`; }
@@ -179,25 +216,57 @@
 
   /* ── 今日・その日 ── */
 
-  const hitokoto = (label, text) => `<section class="hitokoto"><div class="label">${icon('sun', 18)} ${label}</div><p>${esc(text)}</p></section>`;
   /** 見出しつきのまとまり（右に小さな操作を置ける） */
   const sec = (ic, title, body, opt) => {
     const o = opt || {};
-    return `<section class="sec ${o.cls || ''}"><h2 class="sec-h">${icon(ic)}<span>${title}</span>${o.badge || ''}${o.right ? `<span class="act">${o.right}</span>` : ''}</h2>${body}${o.foot ? `<p class="sec-foot">${o.foot}</p>` : ''}</section>`;
+    return `<section class="sec ${o.cls || ''}"${o.id ? ` id="${o.id}"` : ''}><h2 class="sec-h">${icon(ic, 18)}<span>${title}</span>${o.badge || ''}${o.right ? `<span class="act">${o.right}</span>` : ''}</h2>${body}${o.foot ? `<p class="sec-foot">${o.foot}</p>` : ''}</section>`;
   };
+
+  const WDAY = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+  const toMin = s => { const m = /^(\d{1,2}):(\d{2})/.exec(s || ''); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
+  const dur = m => (m < 60 ? `${m}分` : `${Math.floor(m / 60)}時間${m % 60 ? (m % 60) + '分' : ''}`);
+
+  /** 日の画面のいちばん上：大きな日付・祝日・つぎの予定・ひとこと・件数（押すとそこへ） */
+  function hero(v, nProps) {
+    const [, m, d] = v.ymd.split('-').map(Number), wd = HB.weekday(v.ymd);
+    const hol = HB.holidayName(v.ymd);
+    const showHol = hol && !v.events.some(e => e.allDay && e.title.includes(hol));
+    const b = v.briefing;
+    const msg = b && b.summary ? `<div class="hero-msg"><span class="hm-l">${icon('sun', 15)}${v.isToday ? 'けさのひとこと' : 'この日のひとこと'}</span><p>${esc(b.summary)}</p></div>` : '';
+    const over = v.reminders.filter(r => r.overdue).length;
+    const chip = (id, label, n, cls) => (n ? `<button class="hchip ${cls || ''}" data-act="scrollTo" data-id="${id}">${label}<b>${n}</b></button>` : '');
+    const chips = [chip('sec-plan', '予定', v.events.length), chip('sec-plan', over ? `リマインダー（期限切れ ${over}）` : 'リマインダー', v.reminders.length, over ? 'warn' : ''),
+      chip('sec-props', '確認', nProps, 'ask'), chip('sec-memo', 'メモ', v.memos.length), chip('sec-items', '資料', v.items.length)].join('');
+    return `<section class="hero${v.isToday ? ' is-today' : ''}">
+      <div class="hero-head"><b class="hd-d${wd === 0 || hol ? ' sun' : wd === 6 ? ' sat' : ''}">${d}</b>
+        <div class="hd-side"><span class="hd-w">${WDAY[wd]}</span><span class="hd-m">${m}月${d}日 · ${HB.relDay(v.ymd)}</span></div>
+        ${showHol ? `<span class="hd-hol">${esc(hol)}</span>` : ''}</div>
+      ${upNext(v)}${msg}${chips ? `<div class="hero-chips">${chips}</div>` : ''}</section>`;
+  }
+
+  /** 今日だけ：いまの予定か、つぎの予定（あと何分） */
+  function upNext(v) {
+    if (!v || !v.isToday) return '';
+    const now = toMin(HB.hmOf(new Date()));
+    const timed = v.events.filter(e => !e.allDay && e.d0 === v.ymd && toMin(e.t0) != null);
+    const cur = timed.find(e => toMin(e.t0) <= now && e.d1 === v.ymd && toMin(e.t1) != null && now < toMin(e.t1));
+    const next = timed.find(e => toMin(e.t0) > now);
+    const e = cur || next;
+    if (!e) return '';
+    const label = cur ? `いま · ${hm(e.t1)}まで` : `つぎの予定 · あと${dur(toMin(e.t0) - now)}`;
+    return `<div class="upnext p${colorOf(e.cal)}"><span class="un-l">${label}</span><b>${esc(hm(e.t0))}　${esc(e.title)}</b>${e.loc || e.cal ? `<small>${[e.loc, e.cal].filter(Boolean).map(esc).join(' · ')}</small>` : ''}</div>`;
+  }
 
   function viewDay(ymd) {
     const st = S.st, v = HB.dayView(st, ymd);
-    const parts = [];
-    if (v.isToday && v.briefing && v.briefing.summary) parts.push(hitokoto('けさのひとこと', v.briefing.summary));
-    // まず一日の予定、つぎに Claude からの確認
-    parts.push(scheduleCard(v));
     const props = v.proposals.filter(p => S.ui.snooze[p.id] !== HB.today());
-    if (props.length) parts.push(sec('ask', '確認してほしいこと', props.map(proposalCard).join(''), { cls: 'props', badge: `<span class="count">${props.length}</span>` }));
+    // 大きな日付とまとめ → 一日の予定 → Claude からの確認 → メモ → 画像・資料 → …
+    const parts = [hero(v, props.length), scheduleCard(v)];
+    if (props.length) parts.push(sec('ask', '確認してほしいこと', props.map(proposalCard).join(''), { cls: 'props', id: 'sec-props', badge: `<span class="count">${props.length}</span>` }));
     parts.push(sec('memo', 'この日のメモ', `<div class="card">${v.memos.map(memoCard).join('') || '<p class="empty">この日のメモはまだありません。</p>'}
-      <form class="quick" data-form="quickMemo" data-ymd="${ymd}"><textarea rows="1" placeholder="この日のメモを書く…" aria-label="この日のメモ"></textarea><button class="primary" type="submit">追加</button></form></div>`));
+      <form class="quick" data-form="quickMemo" data-ymd="${ymd}"><textarea rows="1" placeholder="この日のメモを書く…" aria-label="この日のメモ"></textarea><button class="primary" type="submit">追加</button></form></div>`, { id: 'sec-memo' }));
     parts.push(sec('photo', 'この日の画像・資料', `<div class="grid">${v.items.map(itemThumb).join('')}
-      <button class="thumb add" data-act="addMenu" data-ymd="${ymd}">${icon('plus', 26)}<span>この日に入れる</span></button></div>`));
+      <button class="thumb add" data-act="addMenu" data-ymd="${ymd}">${icon('plus', 26)}<span>この日に入れる</span></button></div>`, { id: 'sec-items' }));
     if (v.pinned.length) parts.push(sec('star', '重要メモ（日付なし）', `<div class="card">${v.pinned.slice(0, 6).map(memoCard).join('')}
       ${v.pinned.length > 6 ? `<button class="link more-link" data-act="memoFilterGo" data-f="star">ほかに ${v.pinned.length - 6} 件</button>` : ''}</div>`));
     parts.push(briefingCards(v));
@@ -222,7 +291,7 @@
         else if ((!starts || (e.t0 && e.t0 <= now)) && (!ends || (e.t1 && now < e.t1))) state = ' now';
       }
       const sub = [e.loc, e.cal].filter(Boolean).map(esc).join(' · ');
-      return `<li class="tl-row"><span class="tl-time">${tm}</span><span class="tl-ev p${colorOf(e.cal)}${state}"><b>${esc(e.title)}</b>${sub ? `<small>${sub}</small>` : ''}</span></li>`;
+      return `<li class="tl-row${state}"><span class="tl-time">${tm}</span><span class="tl-ev p${colorOf(e.cal)}"><b>${esc(e.title)}</b>${sub ? `<small>${sub}</small>` : ''}</span></li>`;
     }).join('');
     const rem = v.reminders.map(r => {
       const sub = [r.overdue ? '期限切れ ' + HB.labelShort(r.due) : r.dueTime ? esc(hm(r.dueTime)) : '', r.list ? esc(r.list) : ''].filter(Boolean).join(' · ');
@@ -235,6 +304,7 @@
     const body = `<div class="card">${ev ? `<ul class="tl">${ev}</ul>` : synced ? '<p class="empty">予定はありません。</p>' : ''}
       ${rem ? `<h3 class="sub-h">リマインダー</h3><ul class="rems">${rem}</ul>` : ''}${hint}</div>`;
     return sec('cal', '予定', body, {
+      id: 'sec-plan',
       right: `<a class="chip-btn" href="${HB.calshowUrl(v.ymd)}">カレンダーApp</a>`,
       foot: `${synced ? 'iPhone から ' + esc(HB.labelWhen(synced)) + '　' : ''}<button class="link" data-act="runSync">iPhone と同期</button>`
     });
@@ -259,7 +329,6 @@
       ${link(n.url, `<b>${esc(n.title)}</b>`)}${n.summary ? `<p>${esc(n.summary)}</p>` : ''}${n.source ? `<div class="meta"><span>${esc(n.source)}</span></div>` : ''}</li>`).join('')}</ul></div>`, { badge: when }) : '');
     out.push(news('AI のうごき', 'ai', b.ai));
     out.push(news('ニュース', 'news', b.news));
-    if (!v.isToday && b.summary) out.unshift(hitokoto('この日のひとこと', b.summary));
     return out.join('');
   }
 
@@ -302,7 +371,8 @@
   function memoCard(m) {
     const body = HB.memoBody(m);
     const source = m.categorySource === 'claude' ? ' <small class="muted">Claude</small>' : '';
-    return `<div class="memo" data-act="openMemo" data-id="${m.id}">
+    const ci = HB.catIndex(m.category, S.st.settings.categories);
+    return `<div class="memo${ci >= 0 ? ' has-cat c' + ci : ''}" data-act="openMemo" data-id="${m.id}">
       <button class="star ${m.important ? 'on' : ''}" data-act="toggleStar" data-id="${m.id}" aria-label="重要">${icon('star', 18)}</button>
       <div class="memo-main"><b>${esc(HB.memoTitle(m))}</b>${body ? `<p>${esc(body)}</p>` : ''}
       <div class="memo-foot">${catChip(m.category)}${source}${m.needsDecision ? '<span class="tag">分類を確認中</span>' : ''}${datesLine(m.dates)}</div></div></div>`;
@@ -315,38 +385,65 @@
 
   /* ── カレンダー ── */
 
-  /** 月のカレンダー（FirstSeed のように）：月曜はじまり・週番号・土は青・日は赤。
-      予定・リマインダー・メモ・写真は、その日の色の帯で出す（帯は layoutMonth が、画面の高さに合わせて入れる） */
-  function viewCal(ym, bannerHtml) {
-    const t = HB.today(), weeks = HB.monthGrid(ym, 1);
-    S.calWeeks = weeks.map(w => w.map(c => c.ymd));
+  /** 月のカレンダー（FirstSeed のように）：週がたてにつづく。月曜はじまり・週番号・土は青・日と祝日は赤・月の境目に線。
+      予定・リマインダー・メモ・写真は、その日の色の帯で出す（帯は layoutMonth が、1週の高さに合わせて入れる）。
+      前後 CAL_BEFORE・CAL_AFTER か月を出しておき、端に近づいたら出しなおす */
+  const CAL_BEFORE = 6, CAL_AFTER = 12;
+  const lastDayOf = ym => HB.addDays(HB.addMonths(ym, 1) + '-01', -1);
+  function viewCal(ym) {
+    const t = HB.today();
+    const first = HB.addMonths(ym, -CAL_BEFORE) + '-01', last = lastDayOf(HB.addMonths(ym, CAL_AFTER));
+    const start = HB.addDays(first, -((HB.weekday(first) + 6) % 7)), end = HB.addDays(last, (7 - HB.weekday(last)) % 7);
+    const weeks = [];
+    for (let w = start; w <= end; w = HB.addDays(w, 7)) weeks.push(Array.from({ length: 7 }, (_, i) => HB.addDays(w, i)));
+    S.calWeeks = weeks;
     const head = ['月', '火', '水', '木', '金', '土', '日'].map((w, i) => `<span class="${i === 5 ? 'sat' : i === 6 ? 'sun' : ''}">${w}</span>`).join('');
-    const rows = weeks.map(w => `<div class="wk">${w.map((c, i) => {
-      const [, mm, dd] = c.ymd.split('-').map(Number);
-      const cls = [c.inMonth ? '' : 'out', c.ymd === t ? 'today' : '', i === 5 ? 'sat' : i === 6 ? 'sun' : '', dd === 1 ? 'm1' : ''].filter(Boolean).join(' ');
-      return `<button class="cell ${cls}" data-act="goDay" data-ymd="${c.ymd}" style="grid-column:${i + 1}" aria-label="${HB.labelDay(c.ymd)}">` +
-        `${i === 0 && dd !== 1 ? `<span class="wn">${HB.isoWeek(c.ymd)}</span>` : ''}<span class="n">${dd === 1 ? mm + '月1日' : dd}</span></button>`;
+    const rows = weeks.map(w => `<div class="wk">${w.map((d, i) => {
+      const [, mm, dd] = d.split('-').map(Number), hol = HB.holidayName(d), mo = d.slice(0, 7);
+      const cls = [d === t ? 'today' : '', i === 5 ? 'sat' : '', i === 6 || hol ? 'sun' : '', dd === 1 ? 'm1' : '',
+        HB.addDays(d, -7).slice(0, 7) !== mo ? 'mb-t' : '', i > 0 && HB.addDays(d, -1).slice(0, 7) !== mo ? 'mb-l' : ''].filter(Boolean).join(' ');
+      return `<button class="cell ${cls}" data-act="goDay" data-ymd="${d}" style="grid-column:${i + 1}" aria-label="${HB.labelDay(d)}${hol ? ' ' + hol : ''}">` +
+        `${i === 0 && dd !== 1 ? `<span class="wn">${HB.isoWeek(d)}</span>` : ''}<span class="n">${dd === 1 ? mm + '月1日' : dd}</span></button>`;
     }).join('')}</div>`).join('');
-    return `<div class="calwrap">${bannerHtml || ''}<div class="mcal"><div class="mwd">${head}</div><div class="mweeks" style="--weeks:${weeks.length}">${rows}</div></div></div>${calAgenda(ym)}`;
+    return `<div class="mcal" style="--wps:${calWps()}"><div class="mwd">${head}</div><div class="mweeks">${rows}</div></div><div class="mwm" aria-hidden="true"></div>`;
   }
+  /** 1画面に何週出すか（設定。この端末に覚える） */
+  const calWps = () => ([4, 5, 6].includes(S.ui.calWps) ? S.ui.calWps : 4);
 
-  /** 月のカレンダーに帯を入れる。1週の高さから、何段まで入るかを決める（入りきらない日は「+n」） */
+  /** 帯の用意。1週の高さから、何段まで入るかを決める（入りきらない日は「+n」）。
+      帯そのものは、見えている週とその前後だけに入れる（予定がとても多くても軽いように。calFill） */
   function layoutMonth() {
     const box = $('.mweeks'), all = S.calWeeks;
     if (!box || !all || !S.st) return;
-    const wks = $$('.wk', box);
-    if (!wks.length) return;
-    const cs = getComputedStyle(wks[0]);
-    const dateH = parseFloat(cs.getPropertyValue('--date-h')) || 19, barH = parseFloat(cs.getPropertyValue('--bar-h')) || 15;
-    const lanes = Math.max(1, Math.floor((wks[0].clientHeight - dateH - 2) / (barH + 1)));
+    const wk = $('.wk', box);
+    if (!wk) return;
+    const cs = getComputedStyle(wk);
+    const dateH = parseFloat(cs.getPropertyValue('--date-h')) || 20, barH = parseFloat(cs.getPropertyValue('--bar-h')) || 15;
+    const lanes = Math.max(1, Math.floor((wk.clientHeight - dateH - 3) / (barH + 1)));
     box.style.setProperty('--lanes', lanes);
-    const entries = HB.calEntries(S.st, all[0][0], all[all.length - 1][6]);
-    wks.forEach((wk, wi) => {
-      $$('.bar', wk).forEach(b => b.remove());
-      const days = all[wi], lay = HB.weekLayout(days, entries, lanes);
-      wk.insertAdjacentHTML('beforeend', lay.bars.map(b => barHtml(b, days)).join('') +
-        lay.more.map((n, c) => (n ? `<span class="bar more" style="grid-column:${c + 1};grid-row:${lanes + 1}">+${n}</span>` : '')).join(''));
+    // 予定などを、週ごとに分けておく
+    const buckets = all.map(() => []), w0 = all[0][0];
+    HB.calEntries(S.st, w0, all[all.length - 1][6]).forEach(e => {
+      const a = Math.max(0, Math.floor(HB.diffDays(w0, e.d0) / 7)), b = Math.min(all.length - 1, Math.floor(HB.diffDays(w0, e.d1) / 7));
+      for (let i = a; i <= b; i++) buckets[i].push(e);
     });
+    S.calFillState = { lanes, buckets, done: new Set() };
+    $$('.bar', box).forEach(x => x.remove());
+    calMeasure();
+  }
+  /** いま見えている週と、その前後 6 週に、帯を入れる（まだ入れていない週だけ） */
+  function calFill() {
+    const f = S.calFillState, g = S.calGeom, all = S.calWeeks;
+    if (!f || !g || !all) return;
+    const wks = $$('.mweeks .wk');
+    const from = Math.max(0, calIndexAt(g.sticky) - 6), to = Math.min(all.length - 1, calIndexAt(window.innerHeight) + 6);
+    for (let wi = from; wi <= to; wi++) {
+      if (f.done.has(wi) || !wks[wi]) continue;
+      f.done.add(wi);
+      const days = all[wi], lay = HB.weekLayout(days, f.buckets[wi], f.lanes);
+      wks[wi].insertAdjacentHTML('beforeend', lay.bars.map(x => barHtml(x, days)).join('') +
+        lay.more.map((n, c) => (n ? `<span class="bar more" style="grid-column:${c + 1};grid-row:${f.lanes + 1}">+${n}</span>` : '')).join(''));
+    }
   }
 
   function barHtml(b, days) {
@@ -358,24 +455,87 @@
     return `<span class="${cls.join(' ')}" style="grid-column:${b.c0 + 1} / span ${b.c1 - b.c0 + 1};grid-row:${b.lane + 2}" data-d0="${e.d0}" data-d1="${e.d1}">${pre}${e.important ? '★' : ''}${esc(e.title)}</span>`;
   }
 
-  /** カレンダーの下：この月の、何かある日の一覧（帯では切れてしまう題名も読める） */
-  function calAgenda(ym) {
-    const st = S.st, t = HB.today();
-    const set = new Set(Object.keys(HB.monthMarks(st, ym)));
-    ((st.ios && st.ios.reminders) || []).forEach(r => { if (HB.isYmd(r.due) && r.due.slice(0, 7) === ym) set.add(r.due); });
-    const days = Array.from(set).sort();
-    if (!days.length) return '<p class="empty center">この月に、日付つきのものはまだありません。</p>';
-    const rows = days.map(d => {
-      const v = HB.dayView(st, d), wd = HB.weekday(d);
-      const li = [].concat(
-        v.events.map(e => `<li><i class="p${colorOf(e.cal)}"></i>${e.allDay ? '' : `<span class="tm">${esc(hm(e.t0))}</span>`}<span>${esc(e.title)}</span></li>`),
-        v.reminders.filter(r => !r.overdue).map(r => `<li><i class="p${colorOf(r.list)}"></i>${r.dueTime ? `<span class="tm">${esc(hm(r.dueTime))}</span>` : ''}<span>☐ ${esc(r.title)}</span></li>`),
-        v.memos.map(m => `<li><i class="k-memo"></i><span>${m.important ? '★ ' : ''}${esc(HB.memoTitle(m))}</span></li>`),
-        v.items.map(i => `<li><i class="k-item"></i><span>${i.important ? '★ ' : ''}${esc(i.title || i.name)}${i.dateNotes && i.dateNotes[d] ? `<span class="muted">（${esc(i.dateNotes[d])}）</span>` : ''}</span></li>`)
-      ).slice(0, 8).join('');
-      return `<button class="ag-day${d < t ? ' past' : ''}${d === t ? ' today' : ''}" data-act="goDay" data-ymd="${d}"><span class="ag-date${wd === 6 ? ' sat' : wd === 0 ? ' sun' : ''}">${HB.labelShort(d)}</span><ul>${li}</ul></button>`;
-    }).join('');
-    return sec('list', 'この月の一覧', `<div class="card">${rows}</div>`, { cls: 'agenda' });
+  /* カレンダーのスクロール：いま見ている月を上の題名に出す・大きな「11月」・月へとぶ・出しなおしても同じ所に */
+  function calMeasure() {
+    const wk = $('.mweeks .wk'), head = $('.mwd');
+    if (!wk || !head) { S.calGeom = null; return; }
+    S.calGeom = { top: wk.getBoundingClientRect().top + window.scrollY, h: wk.getBoundingClientRect().height, sticky: parseFloat(getComputedStyle(head).top) + head.offsetHeight };
+  }
+  /** 画面のその高さ（上からの px）にある週の番号 */
+  function calIndexAt(viewY) {
+    const g = S.calGeom, n = S.calWeeks ? S.calWeeks.length : 0;
+    if (!g || !n) return 0;
+    return Math.max(0, Math.min(n - 1, Math.floor((window.scrollY + viewY - g.top) / g.h)));
+  }
+  /** その月を出す：木曜がその月に入る最初の週を、いちばん上に（上の題名と同じ決め方）。
+      今月で、今日の週が画面より下になるときは、今日の週が一番下に見えるところまで */
+  function calScrollTo(ym, smooth) {
+    const g = S.calGeom, weeks = S.calWeeks;
+    if (!g || !weeks) return false;
+    let i = weeks.findIndex(w => w[3].slice(0, 7) === ym);
+    if (i < 0) return false;
+    const now = HB.today();
+    if (ym === now.slice(0, 7)) {
+      const it = weeks.findIndex(w => w[0] <= now && now <= w[6]);
+      if (it >= 0 && it < i) i = it;
+      else if (it - i >= calWps()) i = it - calWps() + 1;
+    }
+    if (!smooth) S.calQuiet = Date.now() + 400;   // 開いたときの位置あわせでは、大きな「11月」を出さない
+    window.scrollTo({ top: Math.max(0, g.top + i * g.h - g.sticky), behavior: smooth ? 'smooth' : 'auto' });
+    calFill();
+    return true;
+  }
+  /** いま一番上にある週と、そのずれ（出しなおしたあと、同じ所にもどすため） */
+  function calSnap() {
+    const g = S.calGeom;
+    if (!g || !S.calWeeks) return null;
+    const i = calIndexAt(g.sticky);
+    return { ymd: S.calWeeks[i][0], off: window.scrollY + g.sticky - (g.top + i * g.h) };
+  }
+  function calRestore(snap) {
+    const g = S.calGeom;
+    if (!g || !snap) return false;
+    const i = S.calWeeks.findIndex(w => w[0] === snap.ymd);
+    if (i < 0) return false;
+    S.calQuiet = Date.now() + 400;
+    window.scrollTo(0, g.top + i * g.h - g.sticky + snap.off);
+    calFill();
+    return true;
+  }
+  let calWmTimer = null, calTick = false;
+  function calOnScroll() {
+    if (S.route.name !== 'cal' || !S.calGeom || calTick) return;
+    calTick = true;
+    requestAnimationFrame(() => {
+      calTick = false;
+      if (S.route.name !== 'cal' || !S.calGeom) return;
+      const g = S.calGeom, weeks = S.calWeeks;
+      calFill();
+      // 上の題名：一番上に半分以上見えている週の、木曜の月
+      const top = calIndexAt(g.sticky + g.h * 0.5), ym = weeks[top][3].slice(0, 7);
+      if (ym !== S.route.ym) {
+        S.route.ym = ym;
+        history.replaceState(null, '', '#/cal/' + ym);
+        const t = $('#calTitle'), nowBtn = $('#calNow');
+        if (t) t.innerHTML = monthTitle(ym);
+        if (nowBtn) nowBtn.disabled = ym === HB.today().slice(0, 7);
+        $$('#top [data-act="goCal"].nav').forEach((x, k) => { x.dataset.ym = HB.addMonths(ym, k ? 1 : -1); });
+      }
+      // 大きな「11月」：画面のまんなかの週の月
+      const mid = calIndexAt((g.sticky + window.innerHeight) / 2), wm = $('.mwm');
+      if (wm && Date.now() > (S.calQuiet || 0)) {
+        wm.textContent = Number(weeks[mid][3].slice(5, 7)) + '月';
+        wm.classList.add('show');
+        clearTimeout(calWmTimer);
+        calWmTimer = setTimeout(() => wm.classList.remove('show'), 650);
+      }
+      // 端に近づいたら、いまの月を中心に出しなおす
+      const screens = Math.ceil(window.innerHeight / g.h);
+      if (!S.calBusy && (top < 3 || top > weeks.length - screens - 3)) {
+        S.calBusy = true;
+        setTimeout(() => { const snap = calSnap(); render(); calRestore(snap); S.calBusy = false; }, 60);
+      }
+    });
   }
 
   /* ── メモ ── */
@@ -467,8 +627,10 @@
       return `<div class="cc-row"><span class="cc-name"><i class="cc-dot p${cur}"></i><b>${esc(n)}</b><small>${kinds.get(n).join('・')}</small></span>
         <div class="cc-pick">${Array.from({ length: 10 }, (_, i) => `<button class="cc p${i}${i === cur ? ' on' : ''}" data-act="calColor" data-name="${esc(n)}" data-c="${i}" aria-label="${esc(n)}：色${i + 1}" aria-pressed="${i === cur}"></button>`).join('')}</div></div>`;
     }).join('');
-    return `<section class="sec"><h2 class="sec-h small">カレンダーの色（この端末）</h2><div class="card pad">${rows || '<p class="muted">iPhone と同期すると、カレンダーとリマインダーのリストがここに出ます。</p>'}</div>
-      <p class="sec-foot">月のカレンダーの帯と、今日の予定の色です。iPhone のカレンダーと同じ色にしておくと、見分けやすくなります。</p></section>`;
+    const wps = calWps();
+    const seg = `<div class="seg-row"><span>月のカレンダー：1画面に</span><div class="segc" role="group" aria-label="1画面の週の数">${[4, 5, 6].map(n => `<button class="${n === wps ? 'on' : ''}" data-act="calWps" data-n="${n}" aria-pressed="${n === wps}">${n}週</button>`).join('')}</div></div>`;
+    return `<section class="sec"><h2 class="sec-h small">カレンダーの表示（この端末）</h2><div class="card pad">${seg}${rows || '<p class="muted">iPhone と同期すると、カレンダーとリマインダーのリストがここに出て、色を選べます。</p>'}</div>
+      <p class="sec-foot">色は、月のカレンダーの帯と、今日の予定の色です。iPhone のカレンダーと同じ色にしておくと、見分けやすくなります。</p></section>`;
   }
 
   /* ── ショートカットのつくり方 ── */
@@ -508,7 +670,7 @@
   function openSheet(html, cls) {
     const el = $('#sheet');
     el.className = 'sheet ' + (cls || '');
-    el.innerHTML = `<div class="sheet-back" data-act="closeSheet"></div><div class="sheet-body" role="dialog" aria-modal="true">${html}</div>`;
+    el.innerHTML = `<div class="sheet-back" data-act="closeSheet"></div><div class="sheet-body" role="dialog" aria-modal="true"><div class="sheet-grip" aria-hidden="true"></div>${html}</div>`;
     el.hidden = false;
     S.sheetOpen = true;
     document.body.classList.add('noscroll');
@@ -981,7 +1143,9 @@
     switch (a) {
       case 'go': go(d.hash); break;
       case 'goDay': go('#/day/' + d.ymd); break;
-      case 'goCal': go('#/cal/' + d.ym); break;
+      case 'goCal':
+        if (S.route.name === 'cal' && calScrollTo(d.ym, true)) break;
+        go('#/cal/' + d.ym); break;
       case 'refresh': if (S.demo) toast('おためし中です'); else refresh(true); break;
       case 'demo': startDemo(); onRoute(); break;
       case 'endDemo': endDemo(); break;
@@ -1080,10 +1244,11 @@
       case 'dismiss': dismiss(d.id); break;
       case 'snooze': S.ui.snooze[d.id] = HB.today(); saveUi(); softRender(); toast('あしたまた出します'); break;
       case 'calColor': S.ui.calColors = Object.assign({}, S.ui.calColors, { [d.name]: Number(d.c) }); saveUi(); softRender(); break;
+      case 'calWps': S.ui.calWps = Number(d.n); saveUi(); softRender(); break;
       case 'memoFilter': S.ui.memoFilter = d.f; S.ui.memoCat = d.cat || ''; saveUi(); render(); break;
       case 'memoFilterGo': S.ui.memoFilter = d.f; S.ui.memoCat = ''; saveUi(); go('#/memos'); break;
       case 'libFilter': S.ui.libStatus = d.s; S.ui.libCat = d.cat || ''; saveUi(); render(); break;
-      case 'scrollTo': { const t = document.getElementById(d.id); if (t) window.scrollTo({ top: t.getBoundingClientRect().top + window.scrollY - 64, behavior: 'smooth' }); break; }
+      case 'scrollTo': { const t = document.getElementById(d.id); if (t) window.scrollTo({ top: t.getBoundingClientRect().top + window.scrollY - $('#top').getBoundingClientRect().bottom - 10, behavior: 'smooth' }); break; }
       case 'saveShortcuts': saveSettings({ shortcuts: { sync: $('#sSync').value.trim(), send: $('#sSend').value.trim(), add: $('#sAdd').value.trim() } }, '名前を保存しました'); break;
       case 'catAdd': {
         const box = $('#cats'), i = box.children.length;
@@ -1168,18 +1333,40 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   }
 
-  /* ───── 左右のスワイプで、前の日・次の日（カレンダーは前の月・次の月） ───── */
+  /* ───── 左右のスワイプで、前の日・次の日（週の帯の上なら、前の週・次の週） ───── */
   function setupSwipe() {
     let x0 = 0, y0 = 0, t0 = 0;
     document.addEventListener('touchstart', e => { if (e.touches.length !== 1) return; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); }, { passive: true });
     document.addEventListener('touchend', e => {
-      if (S.sheetOpen || !['today', 'day', 'cal'].includes(S.route.name)) return;
+      if (S.sheetOpen || !['today', 'day'].includes(S.route.name)) return;
       if (e.target.closest('input, textarea, select, .grid, .prop-opts, .fchips')) return;
       const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0;
       if (Date.now() - t0 > 600 || Math.abs(dx) < 70 || Math.abs(dy) > 45) return;
-      if (S.route.name === 'cal') { go('#/cal/' + HB.addMonths(S.route.ym, dx < 0 ? 1 : -1)); return; }
       const ymd = S.route.name === 'today' ? HB.today() : S.route.ymd;
-      go('#/day/' + HB.addDays(ymd, dx < 0 ? 1 : -1));
+      // 週の帯の上でスワイプしたら1週間、ほかは1日
+      go('#/day/' + HB.addDays(ymd, (dx < 0 ? 1 : -1) * (e.target.closest('.wstrip') ? 7 : 1)));
+    }, { passive: true });
+  }
+
+  /** シートの上（つまみ・題名のところ）を下へスワイプすると閉じる */
+  function setupSheetDrag() {
+    let y0 = null, body = null;
+    document.addEventListener('touchstart', e => {
+      y0 = null; body = null;
+      const h = e.target.closest('.sheet-head, .sheet-grip, .menu-note');
+      if (!h || e.target.closest('button, input, select, textarea, a')) return;
+      body = h.closest('.sheet-body'); y0 = e.touches[0].clientY;
+    }, { passive: true });
+    document.addEventListener('touchmove', e => {
+      if (y0 == null || !body) return;
+      body.style.transform = `translateY(${Math.max(0, e.touches[0].clientY - y0)}px)`;
+    }, { passive: true });
+    document.addEventListener('touchend', e => {
+      if (y0 == null || !body) return;
+      const dy = e.changedTouches[0].clientY - y0;
+      body.style.transform = '';
+      y0 = null; body = null;
+      if (dy > 90) closeSheet();
     }, { passive: true });
   }
 
