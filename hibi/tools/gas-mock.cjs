@@ -1,7 +1,7 @@
 /* hibi/tools/gas-mock.cjs
    Google Apps Script の「にせもの」。Code.gs を Node の中で動かして確かめるために使う（本物の Google には一切つながない）。
-   ・ドライブ（フォルダ・ファイル・ゴミ箱・サムネイル）、Google ドキュメント、スクリプトのプロパティ、ロック、トリガー、
-     ContentService、Utilities（base64・日付の書式・UUID）を、必要なぶんだけメモリの上で再現する。
+   ・ドライブ（フォルダ・ファイル・ゴミ箱・サムネイル）、Google ドキュメント、スクリプトのプロパティ、キャッシュ、ロック、トリガー、
+     ContentService、Utilities（base64・SHA-256・日付の書式・UUID）を、必要なぶんだけメモリの上で再現する。
    ・使い方：const env = createGasEnv(); env.call('setup'); env.post('ping', {...})
    本物とのちがい：権限・割り当て（回数の上限）・ドライブの検索の細かい仕様・ネットワークの遅さは再現しない。 */
 'use strict';
@@ -133,6 +133,16 @@ function createGasEnv(opts = {}) {
     },
     base64Encode: bytes => toBuffer(bytes).toString('base64'),
     base64EncodeWebSafe: s => toBuffer(s).toString('base64').replace(/\+/g, '-').replace(/\//g, '_'),
+    base64DecodeWebSafe: s => {
+      const str = String(s);
+      if (/[^A-Za-z0-9_=-]/.test(str)) throw new Error('Could not decode string.');
+      return toSigned(Buffer.from(str, 'base64url'));
+    },
+    computeDigest: (alg, value) => {
+      if (alg !== 'SHA_256') throw new Error('mock: SHA_256 だけ');
+      return toSigned(crypto.createHash('sha256').update(toBuffer(value)).digest());
+    },
+    DigestAlgorithm: { SHA_256: 'SHA_256' },
     newBlob: (bytes, mime, name) => makeBlob(bytes, mime, name),
     getUuid: () => crypto.randomUUID(),
     formatDate,
@@ -153,6 +163,15 @@ function createGasEnv(opts = {}) {
       getProperty: k => (props.has(k) ? props.get(k) : null),
       setProperty: (k, v) => { props.set(k, String(v)); },
       deleteProperty: k => { props.delete(k); }
+    })
+  };
+  // キャッシュ（パスキーの使い捨ての番号に使う）。期限つき
+  const cache = new Map();
+  const CacheService = {
+    getScriptCache: () => ({
+      get: k => { const v = cache.get(k); if (!v || v.until < Date.now()) { cache.delete(k); return null; } return v.value; },
+      put: (k, v, sec) => { cache.set(k, { value: String(v), until: Date.now() + (sec || 600) * 1000 }); },
+      remove: k => { cache.delete(k); }
     })
   };
   let locked = false;
@@ -190,7 +209,7 @@ function createGasEnv(opts = {}) {
   const MimeType = { GOOGLE_DOCS, FOLDER };
 
   const context = vm.createContext({
-    DriveApp, DocumentApp, Utilities, ContentService, HtmlService, PropertiesService, LockService, ScriptApp, UrlFetchApp, MimeType,
+    DriveApp, DocumentApp, Utilities, ContentService, HtmlService, PropertiesService, CacheService, LockService, ScriptApp, UrlFetchApp, MimeType,
     console: { log: (...a) => logs.push(a.join(' ')), warn: (...a) => logs.push('[warn] ' + a.join(' ')), error: (...a) => logs.push('[error] ' + a.join(' ')) },
     Logger: { log: (...a) => logs.push(a.join(' ')) }
   });

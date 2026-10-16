@@ -431,5 +431,131 @@ section('毎日のバックアップ・壊れたデータ', () => {
   eq(env.post('ping').ok, true, 'もどせば動く');
 });
 
+/* ── パスキー：鍵は Node の crypto で作り、署名も Node でつくる（Apple・Chrome のパスキーと同じ形） ── */
+const nodeCrypto = require('crypto');
+const b64u = buf => Buffer.from(buf).toString('base64url');
+const signed = buf => Array.from(buf, b => (b > 127 ? b - 256 : b));
+function makePasskey(origin = 'https://hibi-techo.pages.dev', rpId = 'hibi-techo.pages.dev') {
+  const { privateKey, publicKey } = nodeCrypto.generateKeyPairSync('ec', { namedCurve: 'P-256' });
+  const jwk = publicKey.export({ format: 'jwk' });
+  return { id: b64u(nodeCrypto.randomBytes(20)), x: jwk.x, y: jwk.y, privateKey, origin, rpId };
+}
+function assertion(pk, o = {}) {
+  const ts = o.ts != null ? o.ts : Date.now();
+  const nonce = o.nonce || nodeCrypto.randomBytes(16).toString('hex');
+  const challenge = o.challenge || b64u(Buffer.from(`hb1.${ts}.${nonce}`));
+  const cd = Buffer.from(JSON.stringify(Object.assign({ type: 'webauthn.get', challenge, origin: pk.origin, crossOrigin: false }, o.cd || {})));
+  const rpHash = nodeCrypto.createHash('sha256').update(o.rpId || pk.rpId).digest();
+  const ad = Buffer.concat([rpHash, Buffer.from([o.flags != null ? o.flags : 0x1d]), Buffer.from([0, 0, 0, 0])]);   // UP・UV・BE・BS（Apple と同じ。回数は 0）
+  const sig = nodeCrypto.sign('sha256', Buffer.concat([ad, nodeCrypto.createHash('sha256').update(cd).digest()]), pk.privateKey);
+  return { id: o.id || pk.id, clientDataJSON: b64u(cd), authenticatorData: b64u(ad), signature: o.sig || b64u(sig) };
+}
+const addPk = (pk, name) => env.post('passkey.add', { id: pk.id, x: pk.x, y: pk.y, rpId: pk.rpId, origin: pk.origin, name: name || 'iPhone' });
+const login = a => env.post('passkey.login', a, '');
+
+section('パスキー：署名の確かめ方（ES256）を Node の crypto と見くらべる', () => {
+  ok(env.call('es256Ready_') === true, '決まった答えの署名で、自分を確かめる');
+  let agree = 0, rejectHash = 0, rejectKey = 0, rejectSig = 0;
+  const N = 60;
+  for (let i = 0; i < N; i++) {
+    const a = makePasskey(), b = makePasskey();
+    const msg = nodeCrypto.randomBytes(1 + (i * 37) % 300);
+    const hash = nodeCrypto.createHash('sha256').update(msg).digest();
+    const sig = nodeCrypto.sign('sha256', msg, a.privateKey);
+    if (env.context.es256Verify_(a.x, a.y, signed(hash), signed(sig))) agree++;
+    const h2 = Buffer.from(hash); h2[i % 32] ^= 1 << (i % 8);
+    if (!env.context.es256Verify_(a.x, a.y, signed(h2), signed(sig))) rejectHash++;
+    if (!env.context.es256Verify_(b.x, b.y, signed(hash), signed(sig))) rejectKey++;
+    const s2 = Buffer.from(sig); s2[s2.length - 1 - (i % 5)] ^= 1;
+    if (!env.context.es256Verify_(a.x, a.y, signed(hash), signed(s2))) rejectSig++;
+  }
+  eq(agree, N, '正しい署名は全部とおす');
+  eq(rejectHash, N, '中身が1ビットちがえば止める');
+  eq(rejectKey, N, 'ちがう鍵なら止める');
+  eq(rejectSig, N, '署名が1ビットちがえば止める');
+  // s を n - s にした署名（ECDSA ではこれも正しい）も、とおす
+  const c = makePasskey(), msg = Buffer.from('high s');
+  const der = nodeCrypto.sign('sha256', msg, c.privateKey);
+  const n = BigInt('0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551');
+  const rl = der[3], r = der.subarray(4, 4 + rl), s = BigInt('0x' + der.subarray(6 + rl).toString('hex'));
+  let sh = (n - s).toString(16); if (sh.length % 2) sh = '0' + sh;
+  let sb = Buffer.from(sh, 'hex'); if (sb[0] & 0x80) sb = Buffer.concat([Buffer.from([0]), sb]);
+  const der2 = Buffer.concat([Buffer.from([0x30, 4 + r.length + sb.length, 2, r.length]), r, Buffer.from([2, sb.length]), sb]);
+  ok(nodeCrypto.verify('sha256', msg, { key: nodeCrypto.createPublicKey({ key: { kty: 'EC', crv: 'P-256', x: c.x, y: c.y }, format: 'jwk' }), dsaEncoding: 'der' }, der2), '（Node でも正しい）');
+  ok(env.context.es256Verify_(c.x, c.y, signed(nodeCrypto.createHash('sha256').update(msg).digest()), signed(der2)), 'n - s の署名もとおす');
+  ok(!env.context.es256Verify_(c.x, c.y, signed(Buffer.alloc(32)), signed(Buffer.from([0x30, 6, 2, 1, 0, 2, 1, 1]))), 'r = 0 は止める');
+  ok(!env.context.es256Verify_(c.x, c.y, signed(Buffer.alloc(32)), signed(Buffer.from('not a der signature'))), 'DER でないものは止める');
+});
+
+let pkA, pkB;
+section('パスキー：作る（合言葉が要る）・形をたしかめる', () => {
+  pkA = makePasskey();
+  eq(env.post('passkey.add', { id: pkA.id, x: pkA.x, y: pkA.y, rpId: pkA.rpId, origin: pkA.origin }, 'wrong').error, 'unauthorized', '合言葉なしでは作れない');
+  const r = addPk(pkA, 'iPhone');
+  ok(r.ok, '作れる：' + r.error);
+  eq(r.data.passkeys.map(p => p.name), ['iPhone'], '名前');
+  ok(!('x' in r.data.passkeys[0]) && !('y' in r.data.passkeys[0]), 'アプリには鍵を返さない');
+  ok(/パスキーの鍵/.test(env.post('passkey.add', { id: pkA.id, x: 'abc', y: pkA.y, rpId: pkA.rpId, origin: pkA.origin }).error), '鍵の形がちがう');
+  const off = makePasskey();
+  ok(/正しくありません/.test(env.post('passkey.add', { id: off.id, x: off.x, y: pkA.y, rpId: off.rpId, origin: off.origin }).error), '曲線の上にない鍵は入れない');
+  ok(/合いません/.test(env.post('passkey.add', { id: off.id, x: off.x, y: off.y, rpId: 'example.com', origin: off.origin }).error), 'rpId とアプリの URL が合わない');
+  ok(/origin/.test(env.post('passkey.add', { id: off.id, x: off.x, y: off.y, rpId: 'evil.test', origin: 'http://evil.test' }).error), 'https でない（localhost のほか）は入れない');
+  ok(addPk(makePasskey('http://localhost:8810', 'localhost')).ok, '開発用の localhost は入れられる');
+  ok(addPk(makePasskey('https://abc.hibi-techo.pages.dev', 'hibi-techo.pages.dev')).ok, 'サブドメインから、上の rpId で作れる');
+  const st = env.post('bootstrap', {}).data;
+  eq(st.passkeys.length, 3, 'bootstrap にも一覧（名前と日付だけ）');
+  ok(!('x' in st.passkeys[0]), 'bootstrap にも鍵は出さない');
+  ok(!JSON.stringify(st).includes(pkA.x), 'どこにも鍵を出さない');
+});
+
+section('パスキー：ログイン（合言葉なしで呼べて、合言葉を返す）', () => {
+  const a = assertion(pkA);
+  const r = login(a);
+  ok(r.ok, 'ログインできる：' + r.error);
+  eq(r.data && r.data.token, env.props.get('TOKEN'), '合言葉が返る');
+  eq(r.data && r.data.name, 'iPhone', 'どのパスキーか');
+  ok(env.post('passkey.list').data.passkeys.find(p => p.id === pkA.id).lastUsedAt, '最後に使った日');
+  eq(login(a).error, 'passkey_stale', '同じものは二度使えない（使い捨て）');
+  eq(login(assertion(pkA, { ts: Date.now() - 11 * 60000 })).error, 'passkey_stale', '11分前のものは受けない');
+  eq(login(assertion(pkA, { ts: Date.now() + 11 * 60000 })).error, 'passkey_stale', '11分先のものも受けない');
+  ok(login(assertion(pkA, { ts: Date.now() - 4 * 60000 })).ok, '4分のずれは受ける');
+  eq(login(assertion(pkA, { cd: { origin: 'https://evil.example' } })).error, 'passkey_failed', 'ちがうサイトからは止める');
+  eq(login(assertion(pkA, { rpId: 'evil.example' })).error, 'passkey_failed', 'ちがう rpId は止める');
+  eq(login(assertion(pkA, { flags: 0x01 })).error, 'passkey_failed', '顔・指紋・パスコードで確かめていなければ止める');
+  eq(login(assertion(pkA, { cd: { type: 'webauthn.create' } })).error, 'passkey_failed', '作るときの署名は使えない');
+  eq(login(assertion(pkA, { cd: { crossOrigin: true } })).error, 'passkey_failed', 'ほかのサイトに埋めこまれたものは止める');
+  eq(login(assertion(pkA, { challenge: b64u(Buffer.from('hello')) })).error, 'passkey_failed', '合図の形がちがう');
+  const other = makePasskey();
+  eq(login(assertion(other, { id: pkA.id })).error, 'passkey_failed', 'ちがう鍵の署名は止める');
+  eq(login(Object.assign(assertion(pkA), { signature: '%%%' })).error, 'passkey_failed', '壊れた base64 は止める');
+  eq(login(assertion(other)).error, 'passkey_unknown', '登録していないパスキー');
+  eq(env.post('passkey.login', assertion(other), env.props.get('TOKEN')).error, 'passkey_unknown', '合言葉をつけても、パスキーの確かめは飛ばさない');
+  eq(login({}).error, 'passkey_unknown', '空');
+});
+
+section('パスキー：消す・10個まで・全部消す・BigInt がないとき', () => {
+  pkB = makePasskey();
+  ok(addPk(pkB, 'Mac').ok, 'もう1つ');
+  const r = env.post('passkey.remove', { id: pkA.id });
+  eq(r.data.removed, 1, '消せる');
+  eq(login(assertion(pkA)).error, 'passkey_unknown', '消したパスキーではログインできない');
+  ok(login(assertion(pkB)).ok, 'ほかのパスキーは使える');
+  const many = Array.from({ length: 12 }, () => makePasskey());
+  many.forEach((k, i) => addPk(k, 'k' + i));
+  const list = env.post('passkey.list').data.passkeys;
+  eq(list.length, 10, '10個まで');
+  eq(list[list.length - 1].name, 'k11', '新しいものを残す');
+  ok(login(assertion(many[11])).ok, '新しいものでログインできる');
+  require('vm').runInContext('ES256_OK_ = false; var __BI = BigInt; BigInt = undefined;', env.context);
+  eq(login(assertion(many[10])).error, 'passkey_unsupported', 'BigInt がなければ、使えないと返す');
+  ok(/BigInt/.test(env.post('passkey.add', { id: pkA.id, x: pkA.x, y: pkA.y, rpId: pkA.rpId, origin: pkA.origin }).error), '作るときも、使えないと返す');
+  require('vm').runInContext('BigInt = __BI;', env.context);
+  ok(login(assertion(many[10])).ok, 'もどせば使える');
+  env.call('clearPasskeys');
+  eq(env.post('passkey.list').data.passkeys, [], 'clearPasskeys で全部消える');
+  ok(!env.props.has('PASSKEYS'), 'プロパティも消える');
+  eq(login(assertion(many[11])).error, 'passkey_unknown', '全部消したらログインできない');
+});
+
 console.log(`\n${failures ? '✗' : '✓'} ${passed} 件 OK${failures ? `、${failures} 件 失敗` : ''}`);
 process.exit(failures ? 1 : 0);
