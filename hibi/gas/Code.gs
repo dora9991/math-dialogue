@@ -31,7 +31,7 @@ var HIBI = {
   BACKUP: 'バックアップ',
   DB: 'db.json',
   EXPORT: 'claudeへ',
-  APP_URL: ''                  // アプリを公開した URL（例 https://hibi-techo.pages.dev/）。入れると setup のログに「接続リンク」が出る
+  APP_URL: ''                  // アプリを公開した URL（例 https://hibi-techo-31y.pages.dev/）。入れると setup のログに「接続リンク」が出る
 };
 
 var MAX_UPLOAD_ = 45 * 1024 * 1024;

@@ -41,12 +41,13 @@
 ```bash
 node hibi/tools/deploy.cjs        # Cloudflare Pages（hibi-techo）に出す。ikkan と同じ。先に一度だけ npx wrangler login
 ```
-- 公開先は `https://hibi-techo.pages.dev/`（名前が使われていたら wrangler が別の URL を出す）。中身は画面だけで、データは入っていない（データは自分のドライブにだけある）
+- 公開先は **`https://hibi-techo-31y.pages.dev/`**（`hibi-techo.pages.dev` はほかの人の別のアプリ。名前が使われていたので、Cloudflare がうしろに `-31y` をつけた）。中身は画面だけで、データは入っていない（データは自分のドライブにだけある）
+- いつもこの URL を開く。公開のたびに出る、前に英数字がつく URL（`https://1a2b3c4d.hibi-techo-31y.pages.dev`）は試し用で、つなぎ先やパスキーが別あつかいになる
 - ほかの静的ホスティング（GitHub Pages など）でもよい。`hibi/` の画面のファイルをそのまま置けば動く
 - `gas/Code.gs` の `APP_URL` に公開した URL を入れておくと、`showSetupInfo` のログに「接続リンク」が出る（iPhone で開くだけでつながる）
 
 ### ③ iPhone で開く ― 1分
-1. Safari で公開した URL を開く →「共有」→「ホーム画面に追加」
+1. Safari で公開した URL（`https://hibi-techo-31y.pages.dev/`）を開く →「共有」→「ホーム画面に追加」
 2. ホーム画面から開いて、裏側の URL と合言葉を入れる（接続リンクがあれば、それを開くだけ）
 3. つながったら出てくる **「パスキーを作る」** を押す → Face ID。これで、iPad・Mac（同じ Apple ID）は、ログインの画面で「Face ID・Touch ID でログイン」を押して、指紋（Touch ID）だけでつながる
 - つなぐ前に「おためし（サンプルで見る）」で、画面の様子だけ見られる
@@ -81,7 +82,7 @@ Claude の「スケジュールしたタスク」**「ひびの手帳 朝の整�
 
 ## パスキー（Face ID・Touch ID でログイン）
 - **使うには**：裏側の `Code.gs` を新しくして（「デプロイを管理」→ 新バージョン）、アプリを公開しなおす。つながっている端末で、設定 →「ログイン（Face ID・Touch ID）」→「パスキーを作る」。iCloud キーチェーン（設定App →（自分の名前）→ iCloud →「パスワード」または「パスワードとキーチェーン」）がオンの iPhone で作るのがおすすめ
-- **ほかの端末では**：公開した URL（`https://hibi-techo.pages.dev/`）を開いて「Face ID・Touch ID でログイン」。iPhone は Face ID（だめならパスコード）、Mac・iPad は Touch ID。ホーム画面・Dock に置いたアプリは、それぞれ一度ずつログインする
+- **ほかの端末では**：公開した URL（`https://hibi-techo-31y.pages.dev/`）を開いて「Face ID・Touch ID でログイン」。iPhone は Face ID（だめならパスコード）、Mac・iPad は Touch ID。ホーム画面・Dock に置いたアプリは、それぞれ一度ずつログインする
 - **しくみ**：パスキーの秘密の鍵は端末（iCloud キーチェーン）から出ない。裏側には公開鍵だけをしまう（スクリプトのプロパティ `PASSKEYS`）。ログインのとき、端末が顔・指紋・パスコードで本人と確かめてから署名し、裏側が署名（ES256）・アプリの URL・時刻（10分以内・使い捨て）を確かめてから、合言葉を返す。新しい端末がどこにつなげばよいかは、パスキーの「ユーザー ID」に入れてある（裏側の URL をつめたもの。合言葉は入っていない）
 - **パスキーは公開した URL にひもづく**：アプリの URL が変わったら、作りなおす
 - **端末をなくしたら**：アプリの設定で、そのパスキーを「消す」（どの端末からでも）。全部まとめて消すなら、Apps Script で `clearPasskeys` を実行。合言葉も変えるなら、続けて `resetToken`（ショートカットの合言葉も入れなおす）。ほかの端末は「つなぎなおす」→「Face ID・Touch ID でログイン」で、新しい合言葉が入る
