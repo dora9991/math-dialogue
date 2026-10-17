@@ -134,7 +134,11 @@
     if (S.sheetOpen) { S.dirtyWhileSheet = true; return; }
     if (S.route.name === 'cal') { const snap = calSnap(); render(); if (!calRestore(snap)) calScrollTo(S.route.ym); return; }
     const y = window.scrollY;
+    // 書きかけの「この日のメモを書く」は、描きなおしても残す（うしろで新しいデータが届いたときに消えないように）
+    const qa = $('.quick textarea'), draft = qa ? qa.value : '', typing = !!qa && document.activeElement === qa;
     render();
+    const nq = draft && $('.quick textarea');
+    if (nq) { nq.value = draft; if (typing) nq.focus(); }
     window.scrollTo(0, y);
   }
 

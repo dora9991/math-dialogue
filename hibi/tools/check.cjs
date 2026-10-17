@@ -8,6 +8,7 @@ const run = (file, args = []) => spawnSync(process.execPath, [path.join(__dirnam
 let bad = 0;
 console.log('━━ 計算（js/core.js）'); bad += run('check-core.cjs') ? 1 : 0;
 console.log('━━ 裏側（gas/Code.gs）'); bad += run('check-gas.cjs') ? 1 : 0;
+console.log('━━ iPhone のショートカット（tools/make-shortcuts.cjs）'); bad += run('check-shortcuts.cjs') ? 1 : 0;
 console.log('━━ つくり方の md が最新か'); bad += run('make-guide.cjs', ['--check']) ? 1 : 0;
 if (!bad) console.log('ok');
 console.log(bad ? `\n✗ ${bad} つが失敗` : '\n✓ ぜんぶ OK');
