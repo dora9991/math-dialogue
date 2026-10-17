@@ -23,3 +23,25 @@ yarn-error.log*
 # エディタ設定
 .vscode/
 .idea/
+
+# バスケ指導ナビ：購入した動画に関わる私的データ（★このリポジトリは公開。絶対にgitに上げない）
+# 動画の一覧・要約・自分のメモを入れた library.js、動画ファイル、記録のバックアップ。
+basket-navi/data/library.js
+basket-navi/data/library.js.bak
+basket-navi/library.js
+basket-navi/library.js.bak
+basket-navi/private/
+basket-navi/basket-navi-backup*.json
+# 動画の拡張子は、大文字（.MOV など）も守る
+basket-navi/**/*.[mM][pP]4
+basket-navi/**/*.[mM]4[vV]
+basket-navi/**/*.[mM][oO][vV]
+basket-navi/**/*.[wW][eE][bB][mM]
+basket-navi/**/*.[mM][kK][vV]
+basket-navi/**/*.[aA][vV][iI]
+basket-navi/**/*.[wW][mM][vV]
+basket-navi/**/*.[mM][pP][gG]
+basket-navi/**/*.[mM][pP][eE][gG]
+basket-navi/**/*.[fF][lL][vV]
+basket-navi/**/*.[mM]2[tT][sS]
+basket-navi/tools/_out/
