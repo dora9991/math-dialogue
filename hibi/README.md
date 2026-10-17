@@ -55,6 +55,7 @@ node hibi/tools/deploy.cjs        # Cloudflare Pages（hibi-techo）に出す。
 
 ### ④ iPhone のショートカットをつくる ― 20〜30分（一度だけ）
 アプリの **設定（左上の歯車）→ iPhone連携 →「つくり方を見る」** に手順がある（URL・合言葉はタップでコピーできる）。同じものが [docs/shortcuts.md](docs/shortcuts.md)。
+- **Mac があれば、①は組み立てなくてよい**：`node hibi/tools/make-shortcuts.cjs` で「ひびの手帳 同期」と「ひびの手帳 全部入れる」をファイルから作り、macOS の `shortcuts sign` で署名して、ショートカットApp で開く。取りこむ画面で URL と合言葉を貼るだけ（ファイルの中には入れない）。iCloud で iPhone に届くので、iPhone で「全部入れる」を1回動かし、「同期」を毎朝のオートメーションにする
 
 | ショートカット | すること |
 |---|---|
@@ -113,6 +114,7 @@ Claude の「スケジュールしたタスク」**「ひびの手帳 朝の整�
 **確かめていないこと（この環境ではできない）**
 - 本物の Apps Script での実行（権限の画面・デプロイ・1時間ごとのトリガー・HEIC の変換・カレンダー購読）。初めて動かしたら、`showSetupInfo` のログと、アプリの設定画面の「Claude の整理」「iPhone から」の時刻を見てほしい
 - iPhone のショートカット（とくに、辞書を「テキスト」に入れたときの形と、日本語の画面の名前）。裏側は形がちがっても読めるようにしてあり、読めないときは「予定の形が読めませんでした」と返す
+- `tools/make-shortcuts.cjs` で作るショートカットを、本物の Mac・iPhone で取りこんで動かすこと。ファイルの形は、公開されている資料（ショートカットのファイル形式の資料・ScPL・Cherri）にあわせ、`tools/check-shortcuts.cjs` で中のつながりを確かめ、Cherri でも読みこめることを確かめた。予定の日付の条件（過去◯日以内・次の◯日以内）だけは資料で確かめきれていないので、取りこんだあと、1つめのアクションに条件が出ているかを見る
 - iPhone の Safari での表示・カメラ・ホーム画面のアプリとしての動き
 - 本物の Face ID・Touch ID（iCloud キーチェーン）でのパスキー。WebAuthn という決まった手順どおりに作ってあり、Chromium の WebAuthn では通した
 - 本物の Apps Script で BigInt が使えること（V8。使えないときは、パスキーを作る時点で「BigInt が使えません」と出て、作れない）
@@ -128,7 +130,8 @@ hibi/
 ├─ gas/  Code.gs（裏側。Apps Script に貼る）  appsscript.json
 ├─ claude/daily-task.md（Claude の朝の整理の手順）
 ├─ docs/shortcuts.md（ショートカットのつくり方。js/guide.js からつくる）
-└─ tools/  check.cjs（テストをまとめて）  check-core.cjs  check-gas.cjs  gas-mock.cjs  e2e.cjs  serve.cjs  deploy.cjs  make-guide.cjs  make-icons.cjs  fixtures/（テスト用の架空の画像・PDF）
+└─ tools/  check.cjs（テストをまとめて）  check-core.cjs  check-gas.cjs  check-shortcuts.cjs  gas-mock.cjs  e2e.cjs  serve.cjs  deploy.cjs  make-guide.cjs  make-icons.cjs
+          make-shortcuts.cjs（iPhone のショートカットをファイルで作る・Mac で）  fixtures/（テスト用の架空の画像・PDF）
 ```
 
 ## 開発

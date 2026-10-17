@@ -95,6 +95,11 @@ const step = s => console.log('■ ' + s);
     await page.waitForSelector(`#top .wday.sel[data-ymd="${T}"]`);
 
     step('今日のメモ（すぐ書く）');
+    // 書いている途中で、うしろの更新が描きなおしても、書きかけは消えない
+    await page.fill('.quick textarea', '書きかけのメモ');
+    await page.click('#top [aria-label="新しくする"]');
+    await page.waitForFunction(() => document.querySelector('#top .sync') && /\bok\b/.test(document.querySelector('#top .sync').className));
+    ok((await page.inputValue('.quick textarea')) === '書きかけのメモ', '描きなおしても、書きかけのメモは残る');
     await page.fill('.quick textarea', '牛乳・パン・軍手');
     await page.click('.quick button[type="submit"]');
     await waitToast(/追加/);
@@ -295,6 +300,7 @@ const step = s => console.log('■ ' + s);
 
     step('電波がないときのメモ');
     await page.click('#tabs a[data-tab="today"]');
+    await page.waitForFunction(() => document.body.dataset.view === 'today');   // 画面が切りかわってから書く（前の画面の入力欄に書かない）
     ok((await page.$$eval('.tl-ev', els => els.map(e => e.className))).every(c => /\bp3\b/.test(c)), '選んだ色が今日の予定にも出る');
     await ctx.setOffline(true);
     await page.fill('.quick textarea', '電波なしで書いたメモ');
