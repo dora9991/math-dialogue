@@ -79,8 +79,8 @@
             { k: 'axes', tx: [1, 2, 3, 4, 5, 6], ty: [[1, '1'], [0.5, '1/2']] },
             { k: 'fn', f: '1/x', a: 0.7, b: 6.4, c: 'y', label: 'y=1/x', lat: [0.95, 1.3] }] }] },
       { ask: { type: 'choice', q: '$k\\ge2$ のとき、$\\dfrac1k$ より **大きい** と言える積分は？',
-        opts: ['$\\displaystyle\\int_{k}^{k+1}\\frac{dx}{x}$', '$\\displaystyle\\int_{k-1}^{k}\\frac{dx}{x}$', '$\\displaystyle\\int_{0}^{k}\\frac{dx}{x}$', '$\\displaystyle\\int_{k}^{2k}\\frac{dx}{x}$'], ok: 1,
-        why: { 0: '$k\\le x\\le k+1$ では $\\frac1x\\le\\frac1k$。こちらは $\\frac1k$ より小さくなります。', 2: '$x=0$ の近くで $\\frac1x$ は限りなく大きく、この積分は定まりません。', 3: '$\\int_k^{2k}\\frac{dx}{x}=\\log2$ で、$k$ によりません。和をとると比べにくくなります。' },
+        opts: ['$\\displaystyle\\int_{k}^{k+1}\\frac{dx}{x}$', '$\\displaystyle\\int_{k-1}^{k}\\frac{dx}{x}$', '$\\displaystyle\\int_{0}^{k}\\frac{dx}{x}$', '$\\displaystyle\\int_{k+1}^{k+2}\\frac{dx}{x}$'], ok: 1,
+        why: { 0: '$k\\le x\\le k+1$ では $\\frac1x\\le\\frac1k$。こちらは $\\frac1k$ より小さくなります。', 2: '$x=0$ の近くで $\\frac1x$ は限りなく大きく、この積分は定まりません。', 3: '$k+1\\le x\\le k+2$ では $\\frac1x\\le\\frac1{k+1}<\\frac1k$。こちらも $\\frac1k$ より小さくなります。' },
         good: '$k-1\\le x\\le k$ では $\\frac1x\\ge\\frac1k$（等号は $x=k$ だけ）。長方形は曲線の下におさまります。',
         add: [{ t: 'm', tex: '\\frac1k<\\int_{k-1}^{k}\\frac{dx}{x}\\quad(k\\ge2)' }],
         draw: [{ fig: 'f3', items: [2, 3, 4, 5, 6].map(k => ({ k: 'poly', pts: [[k - 1, 0], [k - 1, 1 / k], [k, 1 / k], [k, 0]], close: true, fill: 'b', alpha: 0.3, c: 'b', wd: 2 }))

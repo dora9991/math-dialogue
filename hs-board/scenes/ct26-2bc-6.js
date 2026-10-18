@@ -99,7 +99,7 @@
         why: { 1: 'それは △OAC（直線 AC の O 側）の条件です。', 2: '辺 OB は $s=2t$。$s=t$ や $s+t=2$ は別の直線です。', 3: '$s\\le2t$ は OB の C 側。△OAB は A 側の $s\\ge2t$ です。' },
         good: 'A$(1,\\,0)$ で確かめると、$t=0\\ge0$、$s=1\\ge0$、$s-t=1\\le1$。すべて満たします。',
         draw: [{ fig: 'f3', items: [{ k: 'poly', pts: [O, A, B], close: true, fill: 'p', alpha: 0.45, c: 'p' }] }] } },
-      { ask: { type: 'think', q: '(2) の P（$k\\ge0$）は、いつも △OAB の内部にあることを、(3) の条件で確かめよう。',
+      { ask: { type: 'think', q: '(2) の P（$k\\ge0$）は、いつも △OAB の周および内部にあることを、(3) の条件で確かめよう。',
         hint: '(iv) の式から $s=\\dfrac{1+2k}{k+2},\\ t=\\dfrac{k}{k+2}$。$s-2t$ と $s-t$ を計算。',
         ans: '$s-2t=\\dfrac{1}{k+2}>0$、$s-t=\\dfrac{k+1}{k+2}<1$、$t\\ge0$。よって P は △OAB の周および内部にある。',
         after: '線分 MB は △OAB の中線（から B をのぞいた部分）なので、図とも合っています。' } },
