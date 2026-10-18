@@ -17,7 +17,7 @@
    ──────────────────────────────────────────────────────────────────── */
 
 var HIBI = {
-  VERSION: '1.1.0',
+  VERSION: '1.1.1',
   TZ: 'Asia/Tokyo',
   ROOT: 'ひびの手帳',          // マイドライブ直下のフォルダ
   INBOX: '受信箱',             // ここに写真・PDF を入れる（Claude が毎朝読む）
@@ -334,6 +334,8 @@ var IOS_MAX_EVENTS = 8000, IOS_MAX_REMINDERS = 3000;
 /** iPhone のショートカットから：カレンダーの予定とリマインダーの一覧を受け取る。
     予定は、送られてきた期間（from〜to）の分だけを入れかえ、ほかの日の予定は残す。だから、はじめに長い期間（たとえば1年前〜1年後）を
     1回送っておけば、毎朝の短い同期（きのう〜60日後）のあとも、前後の月の予定はカレンダーに残る。
+    ただし、期間のはしの日（「きのうの 5:30 から」のように時刻で区切られた日）は、一部しか送られてこないので、消さずに足すだけにする
+    （0:00 始まりの終日の予定が、とくに抜けやすい）。
     リマインダーは「終わっていないもの全部」が来るので、まるごと入れかえる */
 function actIosSync_(req) {
   var events = req.events != null ? parseList_(req.events).map(normEvent_).filter(Boolean) : null;
@@ -346,7 +348,14 @@ function actIosSync_(req) {
     var range = null;
     if (events) {
       range = syncRange_(req, events);
-      var all = (db.ios.events || []).filter(function (e) { return e.d0 < range.from || e.d0 > range.to; }).concat(events);
+      var key = function (e) { return [e.d0, e.t0, e.title, e.cal].join('\u0001'); };
+      var sent = {};
+      events.forEach(function (e) { sent[key(e)] = 1; });
+      var edge = function (d) { return (range.partFrom && d === range.from) || (range.partTo && d === range.to); };
+      // 期間の外は残す。はしの日は、送られてこなかった予定を残す（送られてきた予定は、新しいほうにする）
+      var all = (db.ios.events || []).filter(function (e) {
+        return e.d0 < range.from || e.d0 > range.to || (edge(e.d0) && !sent[key(e)]);
+      }).concat(events);
       all.sort(function (a, b) { var x = a.d0 + ' ' + (a.t0 || ''), y = b.d0 + ' ' + (b.t0 || ''); return x < y ? -1 : x > y ? 1 : 0; });
       // 多すぎるときは、いちばん古い予定から捨てる
       db.ios.events = all.length > IOS_MAX_EVENTS ? all.slice(all.length - IOS_MAX_EVENTS) : all;
@@ -364,13 +373,15 @@ function actIosSync_(req) {
 }
 
 /** 入れかえる期間。ショートカットが from・to（「はじめ」「おわり」）を送ってきたら、その期間。
-    来ないとき（前のつくり方のショートカット）は、送られてきた予定の最初の日〜最後の日と、いつもの「きのう〜60日後」を合わせた期間 */
+    来ないとき（ファイルから作ったショートカット・前のつくり方のもの）は、送られてきた予定の最初の日〜最後の日と、いつもの「きのう〜60日後」を合わせた期間。
+    partFrom・partTo：はしの日が、一部しか送られていないかもしれない（消さずに足すだけにする）。
+    from・to が日付だけ、または 0:00〜23:59 なら、まるごと送られている。期間が来ないときは、どこで区切ったかわからないので、はしの日は足すだけ */
 function syncRange_(req, events) {
   var f = parseDateLoose_(req.from), t = parseDateLoose_(req.to);
-  if (f && t && f.ymd <= t.ymd) return { from: f.ymd, to: t.ymd };
+  if (f && t && f.ymd <= t.ymd) return { from: f.ymd, to: t.ymd, partFrom: !!f.hm && f.hm > '00:00', partTo: !!t.hm && t.hm < '23:59' };
   var from = addDays_(today_(), -1), to = addDays_(today_(), 60);
   events.forEach(function (e) { if (e.d0 < from) from = e.d0; if (e.d0 > to) to = e.d0; });
-  return { from: from, to: to };
+  return { from: from, to: to, partFrom: true, partTo: true };
 }
 
 function actSettingsSave_(req) {

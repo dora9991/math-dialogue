@@ -231,12 +231,46 @@ section('iPhone の予定・リマインダー（ショートカットから）'
   st = env.post('bootstrap').data;
   const titles = st.ios.events.map(e => e.title);
   ok(titles.includes('P-100') && titles.includes('P200') && titles.includes('P-300') && titles.includes('P300'), 'ふだんの同期（期間なし）でも、きのう〜60日後より前と後の予定は残る');
-  ok(!titles.includes('P20') && !titles.includes('P0') && titles.includes('あたらしい') && titles.includes('P10'), 'きのう〜60日後は、送られてきた予定に入れかわる（iPhone で消した予定は消える）');
-  eq(st.ios.events.length, 61 - 7 + 2, '入れかえたあとの数');
+  ok(!titles.includes('P20') && !titles.includes('P0') && !titles.includes('P50') && titles.includes('あたらしい') && titles.includes('P10'), 'きのう〜60日後は、送られてきた予定に入れかわる（iPhone で消した予定は消える）');
+  ok(titles.includes('P60'), '60日後（はしの日）は、送られてこなくても消さない');
+  eq(st.ios.events.length, 61 - 6 + 2, '入れかえたあとの数（P0〜P50 が消えて、2つ増える）');
   eq(st.ios.events.map(e => e.d0), st.ios.events.map(e => e.d0).slice().sort(), '日付の順にならぶ');
   r = env.post('ios.sync', { events: '[]', from: addDays(today, 195), to: addDays(today, 215) });
   st = env.post('bootstrap').data;
   ok(!st.ios.events.some(e => e.title === 'P200' || e.title === 'P210') && st.ios.events.some(e => e.title === 'P220'), 'その期間に予定が1つもなければ、その期間だけ消える');
+
+  // ④ はしの日：時刻で区切られた日は、一部しか送られてこない（朝5:30に「過去2日以内」なら、2日前は5:30より後だけ）。
+  //    その日の予定は、送られてこなくても消さない（終日の予定は 0:00 始まりなので、とくに抜けやすい）
+  const D = n => addDays(today, n);
+  const allDay = (title, n) => ({ title, start: D(n) + 'T00:00:00+09:00', end: D(n + 1) + 'T00:00:00+09:00', allDay: 'はい', cal: '学校' });
+  const at = (title, n, hm) => ({ title, start: D(n) + 'T' + hm + ':00+09:00', end: D(n) + 'T' + hm + ':00+09:00', allDay: 'いいえ', cal: '学校' });
+  const base = [allDay('運動会', -2), at('朝練', -2, '05:00'), at('打ち合わせ', -2, '16:00'), allDay('きのうの終日', -1), at('きのうの会議', -1, '10:00'),
+    at('消した予定', 3, '10:00'), allDay('60日後の終日', 60), at('60日後の会議', 60, '10:00')];
+  const reset = () => env.post('ios.sync', { events: base, from: '2000-01-01', to: '2100-12-31' });
+  const count = title => env.post('bootstrap').data.ios.events.filter(e => e.title === title).length;
+  const counts = names => names.map(count);
+  // 生成したショートカット（期間を送らない。開始日が 過去2日以内・次の60日以内）を、朝5:30に動かしたとき
+  reset();
+  r = env.post('ios.sync', { events: [at('打ち合わせ', -2, '16:00'), allDay('きのうの終日', -1), at('きのうの会議', -1, '10:00'), at('あたらしい', 1, '09:00'), allDay('60日後の終日', 60)] });
+  ok(r.ok, '期間なしの同期：' + r.error);
+  eq(counts(['運動会', '朝練', '打ち合わせ']), [1, 1, 1], '期間なし：2日前（はしの日）の終日・早朝の予定は残り、送られた予定は2つにならない');
+  eq(counts(['きのうの終日', 'きのうの会議', 'あたらしい', '消した予定']), [1, 1, 1, 0], '期間なし：あいだの日は入れかわる（iPhone で消した予定は消える）');
+  eq(counts(['60日後の終日', '60日後の会議']), [1, 1], '期間なし：60日後（はしの日）の、まだ送られていない時刻の予定は残る');
+  // 手で作ったショートカット（はじめ・おわり＝いまの時刻の、1日前・60日後）を、朝5:30に動かしたとき
+  reset();
+  r = env.post('ios.sync', { events: [at('きのうの会議', -1, '10:00'), at('あたらしい', 1, '09:00'), allDay('60日後の終日', 60)],
+    from: D(-1) + 'T05:30:00+09:00', to: D(60) + 'T05:30:00+09:00' });
+  eq([r.data.from, r.data.to], [D(-1), D(60)], 'はじめ・おわりの日');
+  eq(counts(['きのうの終日', 'きのうの会議', '運動会', '朝練', '打ち合わせ']), [1, 1, 1, 1, 1], '5:30 区切り：きのう（はしの日）の終日の予定は残る。期間の前の日も残る');
+  eq(counts(['あたらしい', '消した予定', '60日後の終日', '60日後の会議']), [1, 0, 1, 1], '5:30 区切り：あいだは入れかわり、60日後は残る');
+  // 一日まるごとの区切り（0:00〜23:59、日付だけ）なら、はしの日も入れかえる
+  reset();
+  env.post('ios.sync', { events: [], from: D(-1) + 'T00:00:00+09:00', to: D(60) + 'T23:59:00+09:00' });
+  eq(counts(['きのうの終日', 'きのうの会議', '60日後の終日', '60日後の会議', '打ち合わせ']), [0, 0, 0, 0, 1], '0:00〜23:59 の区切りなら、はしの日も入れかわる');
+  reset();
+  env.post('ios.sync', { events: [], from: D(-1), to: D(60) });
+  eq(counts(['きのうの終日', '60日後の会議', '運動会']), [0, 0, 1], '日付だけの区切りでも、はしの日まで入れかわる');
+
   // 多すぎるとき：予定は 8000 件まで（古いほうから捨てる）・リマインダーは 3000 件まで
   const many = [];
   for (let n = 0; n < 8100; n++) many.push({ title: 'M' + n, start: addDays(today, -400 + Math.floor(n / 20)) + 'T' + String(8 + (n % 10)).padStart(2, '0') + ':00:00+09:00' });
