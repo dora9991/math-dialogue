@@ -120,6 +120,12 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8788", "--directory", "adlib"],
       "port": 8788
+    },
+    {
+      "name": "basket-navi",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8794", "--directory", "basket-navi"],
+      "port": 8794
     }
   ]
 }
