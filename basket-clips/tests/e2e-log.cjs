@@ -206,6 +206,23 @@ const anchors = (page) => page.evaluate(() => BS.app.S.st.sync && BS.app.S.st.sy
     ok(a && a[0].t === 0 && Math.abs(a[0].v - 12) < 0.8, `照らし合わせて合わせた：記録 0:00 ＝ 動画 ${a && a[0].v}`, a);
     await page.evaluate(() => { BS.app.S.st.result = null; BS.app.render(); });
 
+    console.log('\n■ チームなしの記録（記録の画面の下の「パスミス」「★」）');
+    {
+      const gf = JSON.parse(JSON.stringify(game));
+      gf.id = 'gFree';
+      gf.events.push({ id: 'e90', t: 55, type: 'pass', team: null, no: null }, { id: 'e91', t: 58, type: 'mark', team: null, no: null });
+      await page.evaluate((g) => { BS.app.loadLog(JSON.stringify(g), 'free.json'); BS.app.syncAt(BS.app.S.st.log.events.find((e) => e.type === 'period' && e.t === 0).id, 12, 'reset'); }, gf);
+      await sleep(200);
+      cl = await clipsOf(page);
+      const free = cl.filter((c) => c.t === 55 || c.t === 58);
+      ok(free.length === 2 && free[0].label === 'パスミス' && free[1].label === '★ あとで見る', 'チームなしのパスミス・★ も場面になる（呼び名にチーム名を付けない）', free);
+      await page.click('.fchip[data-fteam="0"]');
+      ok((await clipsOf(page)).some((c) => c.t === 55), '「相手だけ」にしても、チームなしの場面は残る');
+      await page.click('.fchip[data-fteam="0"]');
+      const color = await page.evaluate(() => getComputedStyle(document.querySelector('#logList .clip[data-id="e90"]')).getPropertyValue('--team').trim());
+      ok(color === '#9aa3af', '一覧の色は、チームの色でなく灰色', color);
+    }
+
     console.log('\n■ 記録を外す');
     await page.click('#btnLogRemove');
     ok(await page.evaluate(() => !BS.app.S.st.log) && await page.$('#stepGoals') && !(await page.$('#logCard')), 'ふつうの画面（ゴール・解析）に戻る');

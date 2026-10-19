@@ -1,5 +1,5 @@
 // 回帰テスト（node basket-tap/tests/unit.cjs）
-// 画面を持たない部分（背番号の読み取り・タップの順番・時刻・ピリオド・得点・集計・CSV・書き出しと読み込み）を確かめる。
+// 画面を持たない部分（背番号の読み取り・記録・時刻・ピリオド・得点・集計・CSV・書き出しと読み込み・画面の並べ方）を確かめる。
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -26,7 +26,7 @@ eq(BT.formatNumbers(['4', '5', '6', '7', '9', '10', '00', '23']), '00, 4-7, 9, 1
 eq(BT.normNo('０７'), '7', '前の 0 を取る');
 eq([BT.normNo('00'), BT.normNo('100'), BT.normNo('x')], ['00', null, null], '00 はそのまま・3桁や文字は null');
 
-section('試合とタップ（番号 → プレー／プレー → 番号／プレーだけ）');
+section('試合と記録（選手の行のボタン・画面の下のボタン）');
 const T0 = Date.UTC(2026, 9, 19, 6, 30, 0);
 const g = BT.newGame({ now: T0, tz: 540, teams: [{ name: '致遠館', players: BT.parseNumbers('4-8').map((no) => ({ no, name: no === '7' ? 'たけし' : '' })) }, { name: '城南', color: '#2f6fed' }] });
 ok(g.format === 'basket-tap' && g.version === 1 && g.date === '2026-10-19', '新しい試合の形（日付は日本時間）');
@@ -34,37 +34,33 @@ eq(BT.elapsed(g, T0 + 5000), 0, 'スタート前は 0 秒');
 g.startedAt = T0;
 BT.addEvent(g, { t: 0, type: 'period', period: 1 });
 eq(BT.elapsed(g, T0 + 125432), 125.4, 'スタートからの秒（0.1 秒まで）');
-const tp = BT.tapper(g);
-let r = tp.number(0, '7', T0 + 9000);
-eq(r.kind, 'select', '番号を押すと「選んだ」');
-r = tp.action(0, 'fg2', 10, T0 + 10000);
-ok(r.ev.no === '7' && r.ev.team === 0 && r.ev.t === 10 && !r.waiting, '番号 → プレー：押した瞬間（10 秒）に #7 の 2P成功');
-ok(tp.sel[0] === null, '記録したら、選んだ番号は外れる');
-r = tp.action(1, 'fg3', 20, T0 + 20000);
-ok(r.ev.no === null && r.waiting, 'プレー → ：番号なしで記録して、番号を待つ');
-r = tp.number(1, '5', T0 + 23000);
-ok(r.kind === 'assign' && r.ev.no === '5' && r.ev.t === 20, '7 秒以内に番号を押すと、その記録の番号になる（時刻はプレーを押した瞬間のまま）');
-r = tp.action(0, 'reb', 30, T0 + 30000);
-r = tp.number(0, '4', T0 + 30000 + BT.WAIT * 1000 + 1);
-ok(r.kind === 'select' && BT.findEvent(g, 'e4').no === null, `${BT.WAIT} 秒を過ぎた番号は、次のプレーの「選んだ番号」になる（記録は番号なしのまま）`);
-ok(tp.expire(T0 + 30000 + BT.WAIT * 1000 + 1 + BT.SEL * 1000 + 1) && tp.sel[0] === null, `選んだ番号は ${BT.SEL} 秒で外れる`);
-tp.action(0, 'pass', 40, T0 + 40000);
-tp.action(0, 'fg2x', 41, T0 + 41000);
-r = tp.number(0, '8', T0 + 42000);
-ok(r.kind === 'assign' && r.ev.type === 'fg2x' && BT.findEvent(g, 'e5').no === null, '続けてプレーを押したら、番号はいちばん新しい記録に付く');
-tp.number(0, '6', T0 + 50000);
-r = tp.number(0, '6', T0 + 50500);
-ok(r.kind === 'deselect' && tp.sel[0] === null, '選んだ番号をもう一度押すと外れる');
-tp.action(1, 'reb', 42, T0 + 42000);
-tp.clearWait(1);
-ok(tp.wait[1] === null, '「番号なし」で待つのをやめる');
+eq(BT.ROW_TYPES, ['fg2', 'fg3', 'ft', 'reb'], '選手の行のボタン：2P・3P・FT（成功）とリバウンド');
+eq(BT.GLOBAL_TYPES, ['pass', 'mark'], '画面の下のボタン：パスミス・★ あとで見る');
+let ev = BT.addEvent(g, { t: 10, type: 'fg2', team: 0, no: '7' });
+ok(ev.id === 'e2' && ev.team === 0 && ev.no === '7' && ev.t === 10, '「7」の行の「2P」：10 秒に #7 の 2P成功（1回で記録）');
+ev = BT.addEvent(g, { t: 20, type: 'fg3', team: 1, no: '5' });
+ok(ev.team === 1 && ev.no === '5', '相手 #5 の 3P成功');
+ev = BT.addEvent(g, { t: 30, type: 'reb', team: 0, no: null });
+ok(ev.team === 0 && ev.no === null, '「？」の行：番号なしのリバウンド（チームの記録）');
+ev = BT.addEvent(g, { t: 40, type: 'pass', team: null, no: null });
+ok(ev.team === null && ev.no === null, '画面の下の「パスミス」：チームなし・番号なし（時刻だけ）');
+ev = BT.addEvent(g, { t: 41, type: 'mark', team: null, no: '7' });
+ok(ev.team === null && ev.no === null, '★ もチームなし（チームがなければ、番号も付けない）');
+ev = BT.addEvent(g, { t: 42, type: 'fg2', team: null, no: '8' });
+ok(ev.team === 0 && ev.no === '8', '得点のプレーは、チームなしにできない（自分のチームにする）');
+BT.removeEvent(g, ev.id);
+const tl = BT.tally(g);
+ok(tl['0:7:fg2'] === 1 && tl['1:5:fg3'] === 1 && tl['0::reb'] === 1 && tl['-::pass'] === 1 && tl['*:pass'] === 1 && tl['*:mark'] === 1 && !tl['0:8:fg2'], 'ボタンの右上の回数（チーム:番号:種類）', tl);
+eq(BT.editTypes('fg2'), ['fg2', 'fg3', 'ft', 'reb', 'pass', 'mark'], '一覧で直すときに選べる種類（画面のボタンと同じ）');
+eq(BT.editTypes('fg2x').slice(-1), ['fg2x'], '前の版の種類（2P失敗など）の記録は、その種類も選べる');
 
 section('ピリオド・得点・集計');
 BT.addEvent(g, { t: 600, type: 'period', period: 2 });
 BT.addEvent(g, { t: 610, type: 'ft', team: 1, no: '5' });
-BT.addEvent(g, { t: 611, type: 'ftx', team: 1, no: '5' });
+BT.addEvent(g, { t: 611, type: 'ftx', team: 1, no: '5' });       // 前の版で記録した「FT失敗」も数える
 BT.addEvent(g, { t: 612, type: 'reb', team: 1, no: '9' });       // 同じチームの外れの直後 → オフェンスリバウンド
 BT.addEvent(g, { t: 640, type: 'fg3', team: 0, no: '99' });      // 名簿にない番号
+BT.addEvent(g, { t: 650, type: 'pass', team: 0, no: '7' });      // 一覧で、チーム・番号を付けたパスミス
 eq(BT.periodAt(g, 599.9), 1, '600 秒より前は 1Q');
 eq(BT.periodAt(g, 600), 2, '600 秒から 2Q');
 eq(BT.score(g), [5, 4], '得点：自分 2+3・相手 3+1');
@@ -73,7 +69,11 @@ const st = BT.stats(g);
 const s7 = st[0].rows.find((x) => x.no === '7').s;
 ok(s7.pts === 2 && s7.fg2m === 1 && s7.fg2a === 1, '#7：2点（2P 1/1）');
 ok(st[0].rows.some((x) => x.no === '99' && x.extra), '名簿にない番号も集計に出る');
-ok(st[0].unknown.reb === 1 && st[0].unknown.pass === 1, '番号なしのリバウンド・パスミスは「番号なし」に');
+ok(st[0].unknown.reb === 1 && st[0].unknown.pass === 0, '番号なしのリバウンドは「番号なし」に');
+ok(st[0].rows.find((x) => x.no === '7').s.pass === 1 && st[0].total.pass === 1 && st[1].total.pass === 0, 'チームを付けたパスミスは、その選手に');
+ok(BT.hasMisses(g) && !BT.hasMisses({ events: [{ type: 'fg2' }, { type: 'reb' }] }), '外れたシュートの記録があるか（前の版の記録だけ。いまの画面は成功だけ）');
+const free = BT.teamlessStats(g);
+ok(free.pass === 1 && free.mark === 1 && free.pts === 0, 'チームなし（画面の下のボタン）：パスミス 1・★ 1', free);
 const s5 = st[1].rows.find((x) => x.no === '5');
 ok(s5 && s5.s.pts === 4 && s5.s.ftm === 1 && s5.s.fta === 2 && s5.s.fg3m === 1, '相手 #5：3P 1/1・FT 1/2 で 4 点');
 ok(st[1].rows.find((x) => x.no === '9').s.oreb === 1, '同じチームの外れの直後のリバウンドは、オフェンスリバウンド');
@@ -94,10 +94,14 @@ ok(/UTC\+09:00/.test(ex.startedAtText) && ex.startedAtText.startsWith('2026-10-1
 const csv = BT.eventsCSV(g).split('\r\n');
 ok(csv[0].startsWith('No,時刻,スタートからの秒,ピリオド,チーム,背番号,名前,プレー,得点,致遠館の得点,城南の得点'), 'CSV：見出し');
 ok(csv.some((l) => l === '1,0:10,10,1Q,致遠館,7,たけし,2P成功,2,2,0'), 'CSV：#7 の 2P成功（その時点の得点つき）', csv.slice(0, 4));
+ok(csv.some((l) => l === '4,0:40,40,1Q,,,,パスミス,,2,3'), 'CSV：チームなしのパスミスは、チーム・背番号が空', csv.slice(0, 7));
 const box = BT.boxCSV(g).split('\r\n');
 ok(box[0].startsWith('チーム,背番号,名前,得点,2P成功,2P試投') && box.some((l) => l.startsWith('城南,合計,,4,')), '集計の CSV：見出しと合計');
+ok(box.some((l) => l.startsWith('チームなし,,,0,') && l.endsWith(',1,0,0,1')), '集計の CSV：チームなしの行（パスミス・★）', box.slice(-3));
+eq([BT.eventText(g, BT.findEvent(g, 'e5'), true), BT.eventText(g, BT.findEvent(g, 'e2'), true)], ['パスミス', '致遠館 #7 たけし 2P成功'], '呼び名：チームなしは「パスミス」だけ');
 const g2 = BT.importData(JSON.stringify(ex));
 ok(g2.events.length === g.events.length && g2.startedAt === g.startedAt && BT.score(g2).join() === '5,4', '書き出した JSON を読み込むと、同じ記録・得点');
+ok(BT.findEvent(g2, 'e5').team === null && BT.findEvent(g2, 'e6').team === null, '読み込んでも、チームなしの記録はチームなしのまま');
 ok(g2.events.every((e) => /^e\d+$/.test(e.id)) && new Set(g2.events.map((e) => e.id)).size === g2.events.length, '読み込んだ記録の id は重ならない');
 const g3 = BT.importData({ format: 'basket-tap', teams: [{ name: 'A', color: 'red', players: [{ no: '７' }, { no: 'x' }] }], events: [{ id: 'e2', t: 1, type: 'fg2', team: 0, no: 7 }, { t: 2, type: 'reb', team: 1 }, { id: 'e2', t: 3, type: 'pass', team: 0 }, { t: -1, type: 'fg2' }, { t: 4, type: 'zzz' }] });
 ok(g3.events.length === 3 && new Set(g3.events.map((e) => e.id)).size === 3, '壊れた記録・知らない種類は飛ばし、id のかぶりは付け直す', g3.events.map((e) => e.id));
@@ -107,10 +111,19 @@ try { BT.importData({ format: 'other' }); } catch (e) { threw = e.message; }
 ok(threw && /バスケ タップ記録/.test(threw), 'ほかのアプリのファイルは、分かる言葉で断る', threw);
 eq(BT.fileBase(g), 'バスケ記録_2026-10-19_1530_致遠館vs城南', 'ファイル名');
 
-section('ボタンの並び');
-eq(BT.actionRows(BT.PRESETS.std.ids), [['fg2', 'fg3', 'ft'], ['fg2x', 'fg3x', 'ftx'], ['reb', 'pass', 'mark']], '「ふつう」：成功の段・失敗の段・そのほか');
-eq(BT.actionRows(['mark', 'fg2', 'reb', 'fg2x']), [['fg2'], ['fg2x'], ['reb', 'mark']], '選んだ順ではなく、決まった並び');
-eq(BT.presetOf(BT.PRESETS.score.ids.slice().reverse()), 'score', '組み合わせの名前');
+section('記録の画面の並べ方（BT.planLayout）');
+// W×H：2つのチームを並べる場所（上と下の帯を除く）。n：チームごとの行の数（背番号＋「？」）。チームの帯の高さ 22
+const plan = (W, H, n) => BT.planLayout(W, H, n, 22);
+let pl = plan(390, 556, [16, 16]);
+ok(pl.arr === 'side' && pl.teams.every((t) => t.c === 1 && t.r === 16 && t.bw >= 30 && t.rowH >= BT.LAYOUT.rmin), 'ふつうのスマホ（縦）・15 人ずつ：左右に並べて、上から 1 列（縦にすべらせずに全員が入る）', pl.teams);
+pl = plan(390, 556, [13, 1]);
+ok(pl.arr === 'stack' && pl.teams[0].c === 1 && pl.teams[0].bw > 60, '相手の背番号なし：自分のチームを画面の幅いっぱいに（相手は下に1行）', pl);
+pl = plan(1180, 688, [16, 16]);
+ok(pl.arr === 'side' && pl.teams.every((t) => t.c === 1 && t.rowH >= 36), 'iPad（横）：左右に並べて 1 列ずつ', pl.teams);
+pl = plan(750, 244, [16, 16]);
+ok(pl.arr === 'side' && pl.teams.every((t) => t.c === 2 && t.bw >= BT.LAYOUT.minBw) && pl.scroll, 'スマホの横向き：チームの中を 2 列に（高さが足りない分は、縦にすべらせる）', pl.teams);
+pl = plan(320, 372, [16, 16]);
+ok(pl.teams.every((t) => t.bw >= BT.LAYOUT.minBw), 'とても小さい画面でも、ボタンの幅は狭くしすぎない（縦にすべらせる）', pl);
 eq([BT.inkOn('#f4f4f4'), BT.inkOn('#1f2f6e'), BT.inkOn('#f2c230')], ['#111111', '#ffffff', '#111111'], 'チームの色の上の文字の色（読みやすいほう）');
 eq(BT.fmtTime(3725.46, true), '1:02:05.5', '時刻の書式（1時間以上・0.1 秒）');
 

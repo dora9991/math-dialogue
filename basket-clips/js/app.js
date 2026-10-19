@@ -37,7 +37,7 @@
   const now = () => (S.media ? S.media.time : 0);
   const teamName = (i) => { const t = S.st.teams[i] || {}; return (t.name || '').trim() || t.colorName || (i ? '相手' : '自分'); };
   const teamTag = (i) => `${teamName(i)}（${i ? '相手' : '自分'}）`;
-  const teamColor = (i) => (S.st.teams[i] && S.st.teams[i].color) || (i ? '#2f6fed' : '#f4f4f4');
+  const teamColor = (i) => (i == null ? '#9aa3af' : (S.st.teams[i] && S.st.teams[i].color) || (i ? '#2f6fed' : '#f4f4f4'));      // null：チームなし（タップ記録のパスミス・★）
   const setupOf = () => ({ hoopTeam: S.st.hoopTeam, halfT: S.st.halfT });
   const list = () => C.items(S.st.result, setupOf(), S.st.edits);
   const clipsFor = (team) => C.clipsOf(list(), team, S.st.win, duration());
@@ -1731,10 +1731,10 @@
       g.strokeStyle = 'rgba(255,255,255,0.45)'; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(x, 0); g.lineTo(x, Hh); g.stroke(); g.setLineDash([]);
       g.fillStyle = '#cbd5e1'; g.font = 'bold 10px sans-serif'; g.fillText('後半', Math.min(x + 3, w - 26), 10);
     }
-    // 記録の場面（記録を読み込んで、時刻を合わせたとき。上の段：自分、下の段：相手）
+    // 記録の場面（記録を読み込んで、時刻を合わせたとき。上の段：自分、下の段：相手、まん中：チームなし）
     if (S.st.log && synced()) {
       logClips().forEach((c) => {
-        const x = X(c.at), y = c.team ? 28 : 12;
+        const x = X(c.at), y = c.team == null ? 20 : c.team ? 28 : 12;
         g.globalAlpha = c.on ? 1 : 0.3;
         g.fillStyle = teamColor(c.team); g.beginPath(); g.arc(x, y, 4, 0, Math.PI * 2); g.fill();
         g.strokeStyle = 'rgba(255,255,255,0.8)'; g.lineWidth = 1; g.stroke();

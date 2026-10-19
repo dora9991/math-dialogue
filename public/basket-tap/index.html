@@ -30,7 +30,11 @@
   --warn: #b45309;
   --warn-soft: rgba(245, 158, 11, 0.16);
   --bad: #dc2626;
-  /* プレーのボタンの色 */
+  /* プレーのボタンの色（2P 緑・3P 紫・FT 茶・リバ 青。となりどうしで見分けやすく） */
+  --k-fg2: #15803d;
+  --k-fg3: #7c3aed;
+  --k-ft: #b45309;
+  --k-rb: #1d4ed8;
   --k-made: #15803d;
   --k-reb: #1d4ed8;
   --k-good: #0f766e;
@@ -52,6 +56,7 @@
     --bg: #0a0e15; --panel: #131a26; --panel2: #1b2433; --line: #283447; --line2: #3a4860; --text: #eef2f8; --muted: #95a3ba;
     --accent: #4f8cff; --accent-soft: rgba(79, 140, 255, 0.18); --good: #22c55e; --warn: #fbbf24; --warn-soft: rgba(251, 191, 36, 0.16); --bad: #f87171;
     --k-made: #16a34a; --k-reb: #2563eb; --k-good: #0d9488; --k-bad: #ea580c; --k-foul: #ca8a04; --k-mark: #facc15;
+    --k-fg2: #16a34a; --k-fg3: #8b5cf6; --k-ft: #c26a0e; --k-rb: #2563eb;
     --k-miss-bg: #1b2433; --k-miss-line: #64748b; --k-miss-ink: #eef2f8; --k-miss-x: #f87171;
     color-scheme: dark;
   }
@@ -60,6 +65,7 @@
   --bg: #0a0e15; --panel: #131a26; --panel2: #1b2433; --line: #283447; --line2: #3a4860; --text: #eef2f8; --muted: #95a3ba;
   --accent: #4f8cff; --accent-soft: rgba(79, 140, 255, 0.18); --good: #22c55e; --warn: #fbbf24; --warn-soft: rgba(251, 191, 36, 0.16); --bad: #f87171;
   --k-made: #16a34a; --k-reb: #2563eb; --k-good: #0d9488; --k-bad: #ea580c; --k-foul: #ca8a04; --k-mark: #facc15;
+  --k-fg2: #16a34a; --k-fg3: #8b5cf6; --k-ft: #c26a0e; --k-rb: #2563eb;
   --k-miss-bg: #1b2433; --k-miss-line: #64748b; --k-miss-ink: #eef2f8; --k-miss-x: #f87171;
   color-scheme: dark;
 }
@@ -182,80 +188,49 @@ body[data-view="live"] { overflow: hidden; }
 .menubtn span { font-size: 24px; font-weight: 800; }
 .menubtn small { font-size: 10px; color: var(--muted); margin-top: 2px; }
 
-/* 2つのチーム：縦に重ねる（横長の画面では左右に並べる） */
+/* 2つのチーム：左右に並べる（lay-side）か、上下に重ねる（lay-stack）。どちらにするかは js の BT.planLayout が決める
+   （すきま・ふちの数字は、core.js の BT.LAYOUT と合わせる） */
 .stagewrap { position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; }
-.panels { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 0 8px; }
-.team { flex: var(--rows, 3) 1 auto; min-height: 0; min-width: 0; display: flex; flex-direction: column; background: var(--panel); border: 3px solid var(--tc); border-radius: var(--radius); overflow: hidden; box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.35); }
-@media (orientation: landscape) and (min-width: 600px) {
-  .panels { flex-direction: row; }
-  .team { flex: 1 1 0; min-width: 0; }
-}
-.thead { position: relative; display: flex; align-items: center; gap: 8px; background: var(--tc); color: var(--tink); padding: 3px 10px; min-height: 34px; flex: none; border-bottom: 1px solid rgba(128, 128, 128, 0.45); }
-.tname { font-size: clamp(14px, 2.6vmin, 19px); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.tsc { font-size: clamp(16px, 3vmin, 22px); font-weight: 900; font-variant-numeric: tabular-nums; opacity: 0.85; }
-.ask { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; align-self: stretch; margin: -3px -10px -3px 0; padding: 0 6px 0 10px; background: var(--ask); color: #1a1200; font-weight: 800; font-size: clamp(13px, 2.4vmin, 17px); border-left: 1px solid rgba(0, 0, 0, 0.25); }
-.team.asking .tsc { display: none; }
-.asktxt { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.askx { flex: none; border: 1px solid rgba(0, 0, 0, 0.35); background: rgba(255, 255, 255, 0.6); border-radius: 8px; padding: 2px 10px; min-height: 28px; font-weight: 700; font-size: 13px; color: #1a1200; }
-.askbar { position: absolute; left: 0; bottom: -1px; height: 4px; width: 100%; background: var(--ask); transform-origin: left; z-index: 1; }
-@keyframes shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.panels { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: row; gap: 6px; padding: 0 4px; }
+.lay-stack .panels { flex-direction: column; }
+.team { flex: 1 1 0; min-height: 0; min-width: 0; display: flex; flex-direction: column; background: var(--panel); border: 2px solid var(--tc); border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.35); }
+.lay-stack .team { flex: var(--r, 1) 1 var(--base, 40px); }
+/* チームの帯：名前・得点・「＋番号」 */
+.thead { display: flex; align-items: center; gap: 6px; background: var(--tc); color: var(--tink); padding: 0 3px 0 8px; height: 22px; flex: none; border-bottom: 1px solid rgba(128, 128, 128, 0.45); }
+.thead .tname { flex: 1; min-width: 0; font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; }
+.tsc { font-size: 15px; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; }
+.tadd { flex: none; height: 18px; border: 1px solid currentColor; background: transparent; color: inherit; border-radius: 6px; font-size: 11px; font-weight: 700; padding: 0 6px; line-height: 1; opacity: 0.8; }
+/* 選手の行：列の中は上から背番号の小さい順（grid-auto-flow: column）。行の高さは 28〜76px（入りきらなければ縦にすべらせる） */
+.roster { flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-template-columns: repeat(var(--c, 1), minmax(0, 1fr)); grid-template-rows: repeat(var(--r, 1), minmax(28px, 76px));
+  gap: 3px 8px; padding: 4px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; align-content: start; }
+.team.scroll .roster { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), rgba(0, 0, 0, 0.35)); mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), rgba(0, 0, 0, 0.35)); }
+.prow { display: grid; grid-template-columns: var(--nw, 36px) repeat(4, minmax(0, 1fr)); gap: 3px; min-height: 0; min-width: 0; }
+.pno { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; overflow: hidden; border-radius: 8px; background: var(--tc); color: var(--tink); border: 1px solid rgba(128, 128, 128, 0.55); }
+.pno b { font-size: var(--nf, 20px); font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -0.02em; }
+.pno small { display: none; font-size: 10px; line-height: 1.15; max-width: 100%; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.85; }
+.team.roomy .pno small { display: block; }
+.prow.unk .pno { background: var(--panel2); color: var(--muted); border: 1px dashed var(--line2); }
+.prow.teamonly .pno b { font-size: 12px; letter-spacing: 0; }
+.pb { position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; padding: 0 2px; border: 0; border-radius: 8px; color: #fff; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.22); transition: transform 0.06s, filter 0.06s; }
+.pb b { font-size: var(--bf, 16px); font-weight: 900; line-height: 1; white-space: nowrap; overflow: hidden; letter-spacing: -0.01em; }
+.pb:active { transform: scale(0.94); filter: brightness(1.18); box-shadow: none; }
+.pb.k-fg2 { background: var(--k-fg2); }
+.pb.k-fg3 { background: var(--k-fg3); }
+.pb.k-ft { background: var(--k-ft); }
+.pb.k-reb { background: var(--k-rb); }
+/* 回数（ボタンの右上） */
+.cnt { position: absolute; top: 2px; right: 2px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px; background: rgba(0, 0, 0, 0.42); color: #fff; font-style: normal; font-size: 10.5px; font-weight: 800; line-height: 15px; text-align: center; font-variant-numeric: tabular-nums; pointer-events: none; }
+.prow.unk:not(.teamonly) .pb { opacity: 0.88; }
+/* 幅の狭いボタン：回数は文字の下に（右上だと文字に重なるため） */
+.team.narrowb .pb { flex-direction: column; gap: 1px; }
+.team.narrowb .pb .cnt { position: static; height: 12px; min-width: 14px; padding: 0 3px; border-radius: 6px; font-size: 9.5px; line-height: 12px; }
 
-/* 背番号 */
-.nos { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(44px, 9vmin, 64px), 1fr)); gap: 5px; padding: 6px; flex: none; min-width: 0; }
-.no { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: clamp(42px, 7vmin, 60px); border: 2px solid var(--line2); border-radius: 10px; background: var(--panel2); padding: 0 2px; overflow: hidden; }
-.no b { font-size: clamp(19px, 4vmin, 30px); font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.05; }
-.no small { font-size: 10.5px; color: var(--muted); line-height: 1.1; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.no.add { border-style: dashed; color: var(--muted); font-size: 22px; font-weight: 700; }
-.no:active { transform: scale(0.95); }
-.no.sel { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); box-shadow: 0 0 0 3px var(--accent-soft); }
-.no.sel small { color: rgba(255, 255, 255, 0.85); }
-.no.sel::after { content: ''; position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: rgba(255, 255, 255, 0.75); transform-origin: left; animation: shrink 12s linear forwards; }
-.team.asking .no:not(.add) { animation: askpulse 0.9s ease-in-out infinite; border-color: var(--ask); }
-@keyframes askpulse { 50% { box-shadow: 0 0 0 3px var(--ask); } }
-
-/* プレー */
-.acts { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); grid-auto-rows: minmax(var(--acth, 48px), 1fr); gap: 6px; padding: 0 6px 6px; }
-
-/* 背番号の並べ方（layoutLive が、画面の大きさで選ぶ） */
-/* strip：番号を横1列に（入りきらない分は横にすべらせる） */
-.lay-strip .nos { display: flex; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scroll-padding: 0 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-.lay-strip .nos::-webkit-scrollbar, .lay-strip2 .nos::-webkit-scrollbar { display: none; }
-.lay-strip .no { flex: 0 0 auto; width: clamp(44px, 12.5vmin, 58px); scroll-snap-align: start; }
-/* strip2：番号を2段で横に（左から順に並べ、入りきらない分は横にすべらせる） */
-.lay-strip2 .nos { grid-template-columns: repeat(var(--nocols, 8), var(--now, 50px)); overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scroll-padding: 0 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-.lay-strip2 .no { scroll-snap-align: start; }
-.lay-strip .nos.more, .lay-strip2 .nos.more { -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); }
-/* 高さの低い画面（横向きのスマホ）：上と下の帯を薄く */
-.short .lbar { padding: 4px 8px; }
-.short .clock, .short .startbtn, .short .period, .short .sc, .short .menubtn { height: 44px; }
-.short .tval { font-size: 30px; }
-.short .sc { font-size: 28px; }
-.short .menubtn small { display: none; }
-.short .thead { min-height: 30px; }
-.short .lastbar { min-height: 44px; padding-top: 4px; padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
-.short .lastev, .short .btn.undo { min-height: 38px; padding-top: 3px; padding-bottom: 3px; }
-.lay-col .act b { white-space: normal; word-break: break-all; }
-.lay-col .act.long b { font-size: 13px; line-height: 1.15; }
-/* col：番号をプレーのボタンの左に（横長の画面で、高さが足りないとき） */
-.lay-col .team { display: grid; grid-template-columns: minmax(0, calc(var(--nocols, 3) * 48px + 10px)) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-.lay-col .thead { grid-column: 1 / -1; }
-.lay-col .nos { grid-template-columns: repeat(var(--nocols, 3), minmax(0, 1fr)); grid-auto-rows: 44px; align-content: start; overflow-y: auto; padding-right: 0; min-height: 0; }
-.lay-col .no { min-height: 0; }
-.lay-col .acts { padding-top: 6px; }
-.act { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-radius: 12px; border: 0; color: #fff; padding: 2px 4px; min-width: 0; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.22); transition: transform 0.06s, filter 0.06s; }
-.act.rs { grid-column-start: 1; }
-.act b { font-size: clamp(17px, 3.6vmin, 30px); font-weight: 900; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.act.long b { font-size: clamp(14px, 2.9vmin, 26px); letter-spacing: -0.02em; }
-.act small { font-size: clamp(11px, 2vmin, 15px); font-weight: 700; opacity: 0.95; line-height: 1.1; white-space: nowrap; }
-.act:active { transform: scale(0.96); filter: brightness(1.15); box-shadow: none; }
 .k-made { background: var(--k-made); }
 .k-reb { background: var(--k-reb); }
 .k-good { background: var(--k-good); }
 .k-bad { background: var(--k-bad); }
 .k-foul { background: var(--k-foul); }
 .k-mark { background: var(--k-mark); color: var(--k-mark-ink); }
-.act.k-miss { background: var(--k-miss-bg); color: var(--k-miss-ink); border: 2px solid var(--k-miss-line); box-shadow: none; }
-.act.k-miss small { color: var(--k-miss-x); }
 /* 押せたしるし（光る輪） */
 .hit { animation: hit 0.32s ease-out; }
 @keyframes hit { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.95), 0 0 0 0 var(--accent); filter: brightness(1.35); } 100% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0), 0 0 0 14px rgba(37, 99, 235, 0); filter: none; } }
@@ -272,20 +247,67 @@ body[data-view="live"] { overflow: hidden; }
 .endscore { display: flex; align-items: center; gap: 12px; font-size: 16px; }
 .endscore b { font-size: 34px; font-variant-numeric: tabular-nums; }
 
-/* 下の帯：いちばん新しい記録・取り消す */
-.lastbar { flex: none; display: flex; align-items: center; gap: 10px; padding: 6px 10px calc(6px + env(safe-area-inset-bottom)); min-height: 52px; }
-.lastev { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-left: 8px solid var(--tc, var(--line2)); border-radius: 12px; padding: 6px 10px; min-height: 44px; overflow: hidden; }
-.lastev .chip { display: none; }
-.lastev.msg { border-left-color: #64748b; font-weight: 700; }
+/* 画面の下：パスミス・★（いつでも押せる）・いま記録したもの・取り消す */
+.gbar { flex: none; display: flex; align-items: stretch; gap: 6px; padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); height: calc(60px + env(safe-area-inset-bottom)); }
+.gb { position: relative; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 76px; padding: 0 10px; border: 0; border-radius: 12px; color: #fff; line-height: 1.1; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.22); transition: transform 0.06s, filter 0.06s, opacity 0.2s; }
+.gb b { font-size: 17px; font-weight: 900; white-space: nowrap; }
+.gb small { font-size: 11px; font-weight: 800; white-space: nowrap; }
+.gb.k-mark b { font-size: 19px; line-height: 1; }
+.gb:active { transform: scale(0.95); filter: brightness(1.15); box-shadow: none; }
+.gb .cnt { top: 3px; right: 3px; }
+.gbar.off .gb { opacity: 0.45; }
+.lastbar { flex: 1; min-width: 0; display: flex; align-items: stretch; gap: 6px; }
+.lastev { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 1px; background: var(--panel); border: 1px solid var(--line); border-left: 6px solid var(--tc, var(--line2)); border-radius: 10px; padding: 3px 8px; overflow: hidden; line-height: 1.25; }
+.lastev .l1 { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.lastev .lt { font-variant-numeric: tabular-nums; font-size: 15px; flex: none; }
+.lastev .ll { font-weight: 800; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.lastev .lw { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lastev .mt { font-size: 12.5px; font-weight: 700; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.lastev.hint { border-left-color: var(--line2); }
+.lastev.hint .mt { color: var(--muted); font-weight: 400; }
+.lastev.msg { border-left-color: #64748b; }
 .lastev.msg.ok { border-left-color: #22c55e; }
 .lastev.msg.warn { border-left-color: #f59e0b; }
 .lastev.msg.err { border-left-color: #ef4444; }
-.lastev.msg .ll { white-space: normal; line-height: 1.3; font-size: 14px; }
-.lastev .lt { font-variant-numeric: tabular-nums; font-size: 16px; }
-.lastev .lw { font-weight: 700; white-space: nowrap; }
-.lastev .ll { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.lastbar .hint { color: var(--muted); font-size: 13px; padding: 0 4px; }
-.btn.undo { min-height: 44px; font-weight: 800; flex: none; }
+.btn.undo { flex: none; flex-direction: column; gap: 0; min-height: 0; padding: 0 10px; font-weight: 800; line-height: 1.1; }
+.btn.undo b { font-size: 20px; line-height: 1; }
+.btn.undo small { font-size: 10.5px; }
+.btn.undo.act { font-size: 13px; padding: 0 8px; white-space: nowrap; }
+/* タブレット：下のボタンを大きく */
+@media (min-width: 700px) and (min-height: 600px) {
+  .gbar { height: calc(70px + env(safe-area-inset-bottom)); gap: 8px; padding-left: 8px; padding-right: 8px; }
+  .gb { min-width: 150px; padding: 0 18px; }
+  .gb b { font-size: 22px; }
+  .gb.k-mark b { font-size: 24px; }
+  .gb small { font-size: 13px; }
+  .lastev .lt { font-size: 18px; }
+  .lastev .ll { font-size: 17px; }
+  .lastev .lw, .lastev .mt { font-size: 14px; }
+  .btn.undo { padding: 0 16px; }
+  .thead { height: 26px; }
+  .thead .tname { font-size: 15px; }
+  .tsc { font-size: 17px; }
+}
+/* 幅の狭いスマホ：下の帯を詰める */
+@media (max-width: 400px) {
+  .gbar { gap: 4px; padding-left: 4px; padding-right: 4px; }
+  .gb { min-width: 0; padding: 0 8px; }
+  .gb b { font-size: 15px; }
+  .btn.undo { padding: 0 7px; }
+  .lastev { padding: 3px 6px; border-left-width: 5px; }
+  .lastev .lt { font-size: 13.5px; }
+  .lastev .ll { font-size: 13px; }
+  .lastev .lw, .lastev .mt { font-size: 11.5px; }
+}
+/* 高さの低い画面（横向きのスマホ）：上と下の帯を薄く */
+.short .lbar { padding: 3px 8px; }
+.short .clock, .short .startbtn, .short .period, .short .sc, .short .menubtn { height: 40px; }
+.short .tval { font-size: 28px; }
+.short .sc { font-size: 26px; }
+.short .menubtn small { display: none; }
+.short .gbar { height: calc(50px + env(safe-area-inset-bottom)); padding-top: 4px; padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
+.short .gb small { display: none; }
+.short .gb.k-mark b::after { content: ' あとで見る'; font-size: 13px; }
 
 /* ---------- 下から出る小窓 ---------- */
 .sheet { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-end; justify-content: center; }
@@ -376,7 +398,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
 
 .recdot.inline { display: inline-block; }
 @media (prefers-reduced-motion: reduce) {
-  .recdot, .team.asking .no:not(.add), .hit { animation: none !important; }
+  .recdot, .hit { animation: none !important; }
 }
 
 </style>
@@ -401,8 +423,10 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
      events: [ { id, t, type, team, no } ]  … 追加した順
        t   : スタートからの秒（0.1 秒まで）。ストップウォッチと同じで、止まらずに進む
        type: 下の TYPES の id。'period' はピリオドの始まり（period: 番号。team・no はなし）
-       team: 0 = 自分・1 = 相手 / no: 背番号（文字列。'0' と '00' は別）| null（だれか分からない）
+       team: 0 = 自分・1 = 相手・null = チームなし（画面の下の「パスミス」「★ あとで見る」。だれのかは決めない）
+       no  : 背番号（文字列。'0' と '00' は別）| null（だれか分からない・チームなし）
    }
+   得点のプレー（2P・3P・FT）には、かならずチームが付く。
    ピリオドは、イベントには持たせず「その時刻より前の、いちばん新しい 'period'」で決める（periodAt）。
    ピリオドを進め忘れても、あとで 'period' の時刻を直すだけで、全部の記録のピリオドが正しくなる。 */
 (function (root) {
@@ -426,44 +450,40 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
   };
 
   /* ---------- プレーの種類 ----------
-     key：ボタンの大きな文字 / sub：小さな文字 / label：記録の一覧・書き出しでの呼び名
-     kind：ボタンの色分け（made 成功・miss 失敗・reb リバウンド・good よいプレー・bad ミス・foul・mark） */
+     label：記録の一覧・書き出しでの呼び名 / short：狭い所での呼び名（なければ label） / btn：記録の画面のボタンの文字
+     kind：色分け（made 成功・miss 失敗・reb リバウンド・good よいプレー・bad ミス・foul・mark）
+     記録の画面にボタンがあるのは、選手ごとの ROW_TYPES と、画面の下の GLOBAL_TYPES だけ。
+     ほかの種類（失敗・アシストなど）は、前の版で記録したファイルを開くため・一覧で直すために残している */
   BT.TYPES = [
-    { id: 'fg2', key: '2P', sub: '○ 成功', label: '2P成功', pts: 2, made: true, shot: 'fg2', kind: 'made', row: 'made' },
-    { id: 'fg3', key: '3P', sub: '○ 成功', label: '3P成功', pts: 3, made: true, shot: 'fg3', kind: 'made', row: 'made' },
-    { id: 'ft', key: 'FT', sub: '○ 成功', label: 'フリースロー成功', pts: 1, made: true, shot: 'ft', kind: 'made', row: 'made' },
-    { id: 'fg2x', key: '2P', sub: '× 失敗', label: '2P失敗', pts: 0, made: false, shot: 'fg2', kind: 'miss', row: 'miss' },
-    { id: 'fg3x', key: '3P', sub: '× 失敗', label: '3P失敗', pts: 0, made: false, shot: 'fg3', kind: 'miss', row: 'miss' },
-    { id: 'ftx', key: 'FT', sub: '× 失敗', label: 'フリースロー失敗', pts: 0, made: false, shot: 'ft', kind: 'miss', row: 'miss' },
-    { id: 'reb', key: 'リバウンド', sub: '', label: 'リバウンド', pts: 0, kind: 'reb', row: 'other' },
-    { id: 'ast', key: 'アシスト', sub: '', label: 'アシスト', pts: 0, kind: 'good', row: 'other' },
-    { id: 'stl', key: 'スティール', sub: '', label: 'スティール', pts: 0, kind: 'good', row: 'other' },
-    { id: 'blk', key: 'ブロック', sub: '', label: 'ブロック', pts: 0, kind: 'good', row: 'other' },
-    { id: 'pass', key: 'パスミス', sub: '', label: 'パスミス', pts: 0, kind: 'bad', row: 'other' },
-    { id: 'tov', key: 'ミス', sub: 'その他', label: 'ミス（その他）', pts: 0, kind: 'bad', row: 'other' },
-    { id: 'foul', key: 'ファウル', sub: '', label: 'ファウル', pts: 0, kind: 'foul', row: 'other' },
-    { id: 'mark', key: '★', sub: 'あとで見る', label: '★ あとで見る', pts: 0, kind: 'mark', row: 'other' }
+    { id: 'fg2', btn: '2P', label: '2P成功', pts: 2, made: true, shot: 'fg2', kind: 'made' },
+    { id: 'fg3', btn: '3P', label: '3P成功', pts: 3, made: true, shot: 'fg3', kind: 'made' },
+    { id: 'ft', btn: 'FT', short: 'FT成功', label: 'フリースロー成功', pts: 1, made: true, shot: 'ft', kind: 'made' },
+    { id: 'fg2x', label: '2P失敗', pts: 0, made: false, shot: 'fg2', kind: 'miss' },
+    { id: 'fg3x', label: '3P失敗', pts: 0, made: false, shot: 'fg3', kind: 'miss' },
+    { id: 'ftx', short: 'FT失敗', label: 'フリースロー失敗', pts: 0, made: false, shot: 'ft', kind: 'miss' },
+    { id: 'reb', btn: 'リバ', label: 'リバウンド', pts: 0, kind: 'reb' },
+    { id: 'ast', label: 'アシスト', pts: 0, kind: 'good' },
+    { id: 'stl', label: 'スティール', pts: 0, kind: 'good' },
+    { id: 'blk', label: 'ブロック', pts: 0, kind: 'good' },
+    { id: 'pass', btn: 'パスミス', label: 'パスミス', pts: 0, kind: 'bad' },
+    { id: 'tov', label: 'ミス（その他）', pts: 0, kind: 'bad' },
+    { id: 'foul', label: 'ファウル', pts: 0, kind: 'foul' },
+    { id: 'mark', btn: '★ あとで見る', label: '★ あとで見る', pts: 0, kind: 'mark' }
   ];
   BT.TYPE = {};
   BT.TYPES.forEach((d) => { BT.TYPE[d.id] = d; });
-  BT.TYPE.period = { id: 'period', key: '', sub: '', label: 'ピリオド開始', pts: 0, kind: 'period', row: null };
+  BT.TYPE.period = { id: 'period', label: 'ピリオド開始', pts: 0, kind: 'period' };
 
-  /* ボタンの組み合わせ（設定で、チームごとに選べる。自由に選ぶこともできる） */
-  BT.PRESETS = {
-    std: { name: 'ふつう', ids: ['fg2', 'fg3', 'ft', 'fg2x', 'fg3x', 'ftx', 'reb', 'pass', 'mark'] },
-    full: { name: 'くわしく', ids: ['fg2', 'fg3', 'ft', 'fg2x', 'fg3x', 'ftx', 'reb', 'ast', 'stl', 'blk', 'pass', 'tov', 'foul', 'mark'] },
-    score: { name: '得点だけ', ids: ['fg2', 'fg3', 'ft', 'mark'] }
-  };
-  /* ids をボタンの並び（成功の段・失敗の段・そのほか）に分ける。並びは TYPES の順 */
-  BT.actionRows = function (ids) {
-    const on = new Set(ids || []);
-    const rows = { made: [], miss: [], other: [] };
-    BT.TYPES.forEach((d) => { if (on.has(d.id)) rows[d.row].push(d.id); });
-    return [rows.made, rows.miss, rows.other].filter((r) => r.length);
-  };
-  BT.presetOf = function (ids) {
-    const key = (ids || []).slice().sort().join(',');
-    return Object.keys(BT.PRESETS).find((k) => BT.PRESETS[k].ids.slice().sort().join(',') === key) || null;
+  /* 記録の画面のボタン
+       ROW_TYPES   ：選手（背番号）の行ごとに並ぶボタン。押せば、その選手のプレーとして1回で記録する
+       GLOBAL_TYPES：画面の下に1つずつ。チーム・選手は決めずに、時刻だけを残す */
+  BT.ROW_TYPES = ['fg2', 'fg3', 'ft', 'reb'];
+  BT.GLOBAL_TYPES = ['pass', 'mark'];
+  /* 一覧で直すときに選べる種類（いまの画面のボタン＋その記録の種類） */
+  BT.editTypes = function (cur) {
+    const ids = BT.ROW_TYPES.concat(BT.GLOBAL_TYPES);
+    if (cur && BT.TYPE[cur] && !ids.includes(cur)) ids.push(cur);
+    return ids;
   };
 
   /* ユニフォームの色（よくある色） */
@@ -595,12 +615,17 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
   BT.currentPeriod = (game, now) => BT.periodAt(game, BT.elapsed(game, now));
   BT.periodLabel = (p) => (p <= 4 ? p + 'Q' : 'OT' + (p - 4));
 
-  /* イベントを足す（時刻 t は呼び出し側が決める）。戻り値：足したイベント */
+  /* イベントを足す（時刻 t は呼び出し側が決める）。戻り値：足したイベント
+     team が 0・1 でなければ「チームなし」（null）。ただし得点のプレーは、チームなしにできないので 0（自分）にする */
   BT.addEvent = function (game, ev) {
     game.seq = (game.seq || 0) + 1;
     const e = { id: 'e' + game.seq, t: Math.round((ev.t || 0) * 10) / 10, type: ev.type };
     if (ev.type === 'period') e.period = ev.period;
-    else { e.team = ev.team === 1 ? 1 : 0; e.no = ev.no != null ? String(ev.no) : null; }
+    else {
+      const d = BT.TYPE[ev.type];
+      e.team = ev.team === 0 || ev.team === 1 ? ev.team : d && d.pts ? 0 : null;
+      e.no = e.team != null && ev.no != null ? String(ev.no) : null;
+    }
     game.events.push(e);
     return e;
   };
@@ -611,54 +636,54 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     return game.events.splice(i, 1)[0];
   };
 
-  /* ---------- 「だれが」と「何を」のタップ ----------
-     どちらの順でも記録できる：
-       ・番号 → プレー：番号を選んでおいて、プレーを押した瞬間に記録（選んだ番号はそこで外れる）
-       ・プレー → 番号：プレーを押した瞬間に記録（番号なし）。そのあと WAIT 秒以内に番号を押すと、その記録の番号になる
-       ・プレーだけ  ：番号なしで記録（チームの記録になる。あとで一覧から番号を付けられる）
-     記録の時刻は、いつも「プレーを押した瞬間」。選んだ番号は SEL 秒たつと外れる（選んだまま忘れて、別の人の記録に付かないように） */
-  BT.WAIT = 7;
-  BT.SEL = 12;
-  BT.tapper = function (game) {
-    const T = {
-      sel: [null, null], selAt: [0, 0],          // 選んでいる番号（チームごと）と、選んだ時刻（ミリ秒）
-      wait: [null, null], waitAt: [0, 0],        // 番号を待っている記録の id と、その記録の時刻（ミリ秒）
-      game,
-      expire(now) {
-        let changed = false;
-        [0, 1].forEach((tm) => {
-          if (T.sel[tm] != null && now - T.selAt[tm] > BT.SEL * 1000) { T.sel[tm] = null; changed = true; }
-          if (T.wait[tm] != null && (now - T.waitAt[tm] > BT.WAIT * 1000 || !BT.findEvent(T.game, T.wait[tm]))) { T.wait[tm] = null; changed = true; }
-        });
-        return changed;
-      },
-      /* 番号を押した。戻り値 { kind: 'assign'（待っていた記録に付けた）| 'select' | 'deselect', ev } */
-      number(team, no, now) {
-        T.expire(now);
-        const wid = T.wait[team];
-        if (wid != null) {
-          const ev = BT.findEvent(T.game, wid);
-          T.wait[team] = null;
-          if (ev) { ev.no = String(no); T.sel[team] = null; return { kind: 'assign', ev }; }
+  /* ---------- 記録の画面の並べ方 ----------
+     選手1人＝1行（背番号＋「2P」「3P」「FT」「リバ」）。画面の大きさと人数から、
+       arr：2チームを左右に並べる（side）か、上下に重ねる（stack）か
+       c  ：チームの中を何列にするか（列の中は、上から背番号の小さい順）
+     を決める。ボタンの「幅」と「高さ」の小さいほうが、いちばん大きくなるもの（同じくらいなら、列が少なく、左右に並べるもの）。
+     相手の背番号を入れないとき（相手は1行だけ）は、自分のチームを画面の幅いっぱいに使えるよう、上下に重ねることが多い。
+     ボタンの幅が MIN_BW より狭くなる並べ方は選ばない（高さが足りないときは、行を縦にすべらせる）。
+     数字は css/app.css の記録の画面と合わせている（すきま・ふち） */
+  BT.LAYOUT = { pad: 4, gap: 6, border: 2, rpad: 4, rgap: 3, cgap: 8, bgap: 3, rmin: 28, rmax: 76, minBw: 27 };
+  BT.planLayout = function (W, H, n, headH) {
+    const K = BT.LAYOUT;
+    const fixed = 2 * K.border + headH + 2 * K.rpad;         // チームの枠の中で、行でない高さ（帯・ふち・すきま）
+    const cand = [];
+    ['side', 'stack'].forEach((arr) => {
+      for (let c0 = 1; c0 <= 3; c0++) {
+        for (let c1 = 1; c1 <= 3; c1++) {
+          const c = [c0, c1];
+          if (c0 > n[0] || c1 > n[1]) continue;
+          const r = [Math.ceil(n[0] / c0), Math.ceil(n[1] / c1)];
+          let teamW, rowH;
+          if (arr === 'side') {
+            teamW = (W - 2 * K.pad - K.gap) / 2;
+            rowH = r.map((ri) => (H - fixed - (ri - 1) * K.rgap) / ri);
+          } else {
+            teamW = W - 2 * K.pad;
+            const one = (H - K.gap - 2 * fixed - (r[0] - 1 + r[1] - 1) * K.rgap) / (r[0] + r[1]);
+            rowH = [one, one];
+          }
+          const teams = [0, 1].map((i) => {
+            const cellW = (teamW - 2 * K.border - 2 * K.rpad - (c[i] - 1) * K.cgap) / c[i];
+            const nw = Math.round(BT.clamp(cellW * 0.2, 32, 64));
+            const bw = (cellW - nw - 4 * K.bgap) / 4;
+            return { c: c[i], r: r[i], cellW, nw, bw, rowH: Math.min(rowH[i], K.rmax), base: fixed + (r[i] - 1) * K.rgap };
+          });
+          // ボタンの押しやすさ：幅と高さの小さいほう（大きいほうが広いぶんも、少しだけ足す）
+          const ease = (x) => Math.min(x.bw, x.rowH) + 0.15 * Math.min(Math.abs(x.bw - x.rowH), 30);
+          const size = Math.min(...teams.map(ease));
+          const wide = Math.min(...teams.map((x) => x.bw));
+          // 列を増やすのは、ボタンが十分に大きくなるときだけ（押しやすい大きさなら、1列のほうが見やすい）
+          const colCost = (size >= 34 ? 5 : 1) * (c0 - 1 + c1 - 1);
+          const score = Math.min(size, 44) + 0.1 * Math.max(0, Math.min(size, 64) - 44) - colCost - (arr === 'stack' ? 1.5 : 0);
+          cand.push({ arr, teams, size, wide, score, scroll: teams.some((x) => x.rowH < K.rmin) });
         }
-        if (T.sel[team] === String(no)) { T.sel[team] = null; return { kind: 'deselect' }; }
-        T.sel[team] = String(no); T.selAt[team] = now;
-        return { kind: 'select' };
-      },
-      /* プレーを押した。t：スタートからの秒。戻り値 { kind: 'record', ev, waiting（番号を待つか） } */
-      action(team, type, t, now) {
-        T.expire(now);
-        const no = T.sel[team];
-        const ev = BT.addEvent(T.game, { t, type, team, no });
-        T.sel[team] = null;
-        if (no == null) { T.wait[team] = ev.id; T.waitAt[team] = now; } else T.wait[team] = null;
-        return { kind: 'record', ev, waiting: no == null };
-      },
-      clearWait(team) { T.wait[team] = null; },
-      clearSel(team) { T.sel[team] = null; },
-      reset() { T.sel = [null, null]; T.wait = [null, null]; }
-    };
-    return T;
+      }
+    });
+    const okW = cand.filter((x) => x.wide >= K.minBw);
+    const pool = okW.length ? okW : [cand.slice().sort((a, b) => b.wide - a.wide)[0]];
+    return pool.sort((a, b) => b.score - a.score)[0];
   };
 
   /* ---------- 集計 ---------- */
@@ -666,9 +691,20 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     const s = [0, 0];
     (game.events || []).forEach((e) => {
       const d = BT.TYPE[e.type];
-      if (d && d.pts && (until == null || e.t <= until)) s[e.team] += d.pts;
+      if (d && d.pts && e.team != null && (until == null || e.t <= until)) s[e.team] += d.pts;
     });
     return s;
+  };
+  /* ボタンに出す数：「チーム:背番号:種類」→ 回数（チームなしは「-」、番号なしは空）。「*:種類」は、その種類の全部の数 */
+  BT.tally = function (game) {
+    const m = {};
+    (game.events || []).forEach((e) => {
+      if (e.type === 'period') return;
+      const k = (e.team == null ? '-' : e.team) + ':' + (e.no == null ? '' : e.no) + ':' + e.type;
+      m[k] = (m[k] || 0) + 1;
+      m['*:' + e.type] = (m['*:' + e.type] || 0) + 1;
+    });
+    return m;
   };
   /* ピリオドごとの得点 [{ period, label, pts: [自分, 相手] }]（記録のあるピリオドと、始めたピリオド） */
   BT.periodScores = function (game) {
@@ -678,7 +714,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
       if (e.type === 'period') { get(e.period); return; }
       const d = BT.TYPE[e.type];
       const row = get(BT.periodAt(game, e.t));
-      if (d && d.pts) row.pts[e.team] += d.pts;
+      if (d && d.pts && e.team != null) row.pts[e.team] += d.pts;
     });
     if (!map.size) get(1);
     return Array.from(map.values()).sort((a, b) => a.period - b.period);
@@ -724,6 +760,13 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
       return { team: tm, rows, unknown, total };
     });
   };
+  /* チームなしの記録（画面の下の「パスミス」「★」）の集計 */
+  BT.teamlessStats = function (game) {
+    const oreb = BT.offensiveRebounds(game);
+    const s = zero();
+    (game.events || []).forEach((e) => { if (e.type !== 'period' && e.team == null) add(s, e, oreb); });
+    return s;
+  };
   function add(s, e, oreb) {
     const d = BT.TYPE[e.type];
     if (!d) return;
@@ -735,10 +778,13 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     else if (s[e.type] != null) s[e.type]++;
   }
   BT.pct = (m, a) => (a ? Math.round(100 * m / a) + '%' : '—');
+  /* 外れたシュート（前の版の「失敗」のボタン）の記録があるか。なければ、成功率は出さない（入れた本数だけ） */
+  BT.hasMisses = (game) => (game.events || []).some((e) => { const d = BT.TYPE[e.type]; return d && d.shot && !d.made; });
   BT.isEmpty = (s) => STAT_KEYS.every((k) => !s[k]);
 
   /* ---------- 名前 ---------- */
-  BT.teamName = (game, tm) => { const t = game.teams[tm] || {}; return (t.name || '').trim() || (tm ? '相手' : '自分'); };
+  /* チームの呼び名（名前がなければ「自分」「相手」。チームなし（null）は空） */
+  BT.teamName = (game, tm) => { if (tm !== 0 && tm !== 1) return ''; const t = game.teams[tm] || {}; return (t.name || '').trim() || (tm ? '相手' : '自分'); };
   BT.playerName = function (game, tm, no) {
     const p = ((game.teams[tm] || {}).players || []).find((x) => x.no === no);
     return p ? p.name : '';
@@ -747,7 +793,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
   BT.eventText = function (game, e, withTeam) {
     if (e.type === 'period') return `${BT.periodLabel(e.period)} 開始`;
     const d = BT.TYPE[e.type] || { label: e.type };
-    const who = e.no != null ? `#${e.no}${BT.playerName(game, e.team, e.no) ? ' ' + BT.playerName(game, e.team, e.no) : ''}` : '';
+    const who = e.team != null && e.no != null ? `#${e.no}${BT.playerName(game, e.team, e.no) ? ' ' + BT.playerName(game, e.team, e.no) : ''}` : '';
     return [withTeam ? BT.teamName(game, e.team) : '', who, d.label].filter(Boolean).join(' ');
   };
 
@@ -785,7 +831,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     BT.sorted(game).forEach((e) => {
       if (e.type === 'period') { rows.push(['', BT.fmtTime(e.t), e.t, BT.periodLabel(e.period), '', '', '', `${BT.periodLabel(e.period)} 開始`, '', s[0], s[1]]); return; }
       const d = BT.TYPE[e.type] || { label: e.type, pts: 0 };
-      s[e.team] += d.pts || 0;
+      if (e.team != null) s[e.team] += d.pts || 0;
       rows.push([++n, BT.fmtTime(e.t), e.t, BT.periodLabel(BT.periodAt(game, e.t)), BT.teamName(game, e.team), e.no != null ? e.no : '', e.no != null ? BT.playerName(game, e.team, e.no) : '', d.label, d.pts || '', s[0], s[1]]);
     });
     return csv(rows);
@@ -801,6 +847,8 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
       if (!BT.isEmpty(st.unknown)) rows.push([name, '番号なし', '', ...keys.map((k) => st.unknown[k])]);
       rows.push([name, '合計', '', ...keys.map((k) => st.total[k])]);
     });
+    const free = BT.teamlessStats(game);
+    if (!BT.isEmpty(free)) rows.push(['チームなし', '', '', ...keys.map((k) => free[k])]);
     return csv(rows);
   };
 
@@ -853,7 +901,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
 /* バスケ タップ記録 — 保存（このブラウザの中だけ。どこにも送らない）
    ・試合：1つ記録するたびに、すぐ保存する（途中で画面を閉じても、開き直せば続きから）
    ・チーム：名前・色・名簿を覚えておき、次の試合で選べる（自分のチームは毎回同じことが多いので）
-   ・設定：ボタンの組み合わせ・音・画面の明るさ
+   ・設定：名前の表示・「？」の行・音・画面の明るさ
    キーは「btap:」で始まる。バスケ得点クリップ（同じサイトの別のページ）からも、この試合を読み込める。 */
 (function (root) {
   'use strict';
@@ -915,10 +963,10 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
   function myTeam() { return teams().find((t) => t.mine) || null; }
 
   /* ---------- 設定 ---------- */
+  /* names：選手の名前も出す / unknown：「？」（だれか分からないとき）の行を出す / sound：タップ音 / theme：画面の色 */
   function prefs() {
-    const p = Object.assign({ actions: [BT.PRESETS.std.ids.slice(), BT.PRESETS.std.ids.slice()], sound: false, theme: 'auto', names: true }, readJSON(K.prefs) || {});
-    if (!Array.isArray(p.actions) || p.actions.length !== 2) p.actions = [BT.PRESETS.std.ids.slice(), BT.PRESETS.std.ids.slice()];
-    p.actions = p.actions.map((ids) => (Array.isArray(ids) ? ids.filter((id) => BT.TYPE[id] && id !== 'period') : BT.PRESETS.std.ids.slice()));
+    const p = Object.assign({ sound: false, theme: 'auto', names: true, unknown: true }, readJSON(K.prefs) || {});
+    delete p.actions;        // 前の版の「ボタンの組み合わせ」（いまは、選手ごとのボタンに決まっている）
     return p;
   }
   function savePrefs(p) { return writeJSON(K.prefs, p); }
@@ -1129,7 +1177,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
 
   const S = {
     view: 'home',
-    game: null, tap: null,
+    game: null,
     prefs: BT.store.prefs(),
     draft: null,            // 新しい試合の準備中のチーム { teams, title }
     setupFor: 'new',        // 'new'（新しい試合）| 'edit'（記録中の試合のチームを直す）
@@ -1182,7 +1230,6 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
   }
   function openGame(game) {
     S.game = game;
-    S.tap = BT.tapper(game);
     S.redo = [];
     BT.store.setCurrent(game.id);
     go('live');
@@ -1215,7 +1262,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
           h('ol', null,
             h('li', null, h('b', null, 'チームと背番号を選ぶ'), h('span', null, '「4〜15」ボタンでまとめて。自分のチームは次から自動で入ります')),
             h('li', null, h('b', null, 'ティップオフで ▶ スタート'), h('span', null, '左上の時計が動き出します')),
-            h('li', null, h('b', null, 'プレーをタップ'), h('span', null, '「7」→「2P 成功」でも、「2P 成功」→「7」でも。押した瞬間の時刻で残ります')))),
+            h('li', null, h('b', null, '選手の行のボタンを1回タップ'), h('span', null, '「7」の行の「2P」を押すだけ。パスミス・★ は画面の下でいつでも。押した瞬間の時刻で残ります')))),
         h('section', { class: 'card tools' },
           h('h2', null, '動画から場面を切り出す'),
           h('p', null, '記録した試合のファイル（書き出す → 記録のファイル）を「バスケ得点クリップ」で試合の動画と一緒に開くと、記録した場面（シュート・リバウンド・パスミスなど）を動画から切り出して、続けて見たり、1本の動画にしたりできます。'),
@@ -1386,13 +1433,23 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     return card;
   }
 
-  /* ========== 記録の画面 ========== */
+  /* ========== 記録の画面 ==========
+     選手（背番号）ごとに1行。行の「2P」「3P」「FT」「リバ」を押せば、その選手のプレーとして1回で記録する（時刻は押した瞬間）。
+     「パスミス」「★ あとで見る」は画面の下に1つずつ。チーム・選手は決めずに、いつでも押せる。
+     画面は、いちど作ったら作り直さず、数字（得点・回数）だけを書き換える
+     （押している間にボタンが入れ替わると、Safari ではタップにならないため） */
+  /* そのチームの行：背番号の小さい順＋「？」（だれか分からないとき。背番号がないチームは、この1行だけ） */
+  function rowsOf(tm) {
+    const rows = S.game.teams[tm].players.map((p) => ({ no: p.no, name: p.name }));
+    if (S.prefs.unknown !== false || !rows.length) rows.push({ no: null, name: '' });
+    return rows;
+  }
   function buildLive() {
     const g = S.game;
     document.body.dataset.view = 'live';
     const V = $('#view');
     V.innerHTML = '';
-    const L = S.L = { panels: [], waitShown: [null, null] };
+    const L = S.L = { panels: [], btns: [], gb: {} };
     L.clock = h('button', { class: 'clock', id: 'clock', title: 'スタートからの時間', onclick: openMenu }, h('span', { class: 'recdot' }), h('span', { class: 'tval', id: 'tval' }, '0:00'));
     L.start = h('button', { class: 'startbtn', id: 'btnStart', onclick: start }, '▶ スタート');
     L.period = h('button', { class: 'period', id: 'btnPeriod', 'aria-label': 'ピリオド', onclick: openPeriod }, '1Q');
@@ -1403,83 +1460,81 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     const P = L.panelsEl = h('main', { class: 'panels' }, [0, 1].map(buildPanel));
     P.addEventListener('click', onPanelClick);
     L.cover = h('div', { class: 'cover', id: 'cover', hidden: true });
-    L.last = h('footer', { class: 'lastbar', id: 'lastbar' });
-    L.root = h('div', { class: 'live' }, bar, h('div', { class: 'stagewrap' }, P, L.cover), L.last);
+    // 画面の下：パスミス・★（チーム・選手は決めない）と、いま記録したもの・取り消す
+    const gbtn = (type, id, label, sub) => {
+      const cnt = h('i', { class: 'cnt', hidden: true });
+      const el = h('button', { class: 'gb k-' + BT.TYPE[type].kind, id, dataset: { gtype: type }, 'aria-label': `${BT.TYPE[type].label}（チーム・選手は決めない）`, onclick: (e) => record(null, null, type, e.currentTarget) },
+        h('b', null, label), sub ? h('small', null, sub) : null, cnt);
+      L.gb[type] = { el, cnt };
+      return el;
+    };
+    L.last = h('div', { class: 'lastbar', id: 'lastbar' });
+    L.gbar = h('footer', { class: 'gbar' }, gbtn('pass', 'btnPass', 'パスミス'), gbtn('mark', 'btnMark', '★', 'あとで見る'), L.last);
+    L.root = h('div', { class: 'live' }, bar, h('div', { class: 'stagewrap' }, P, L.cover), L.gbar);
     V.append(L.root);
     updateLive();
     layoutLive();
   }
+  function buildPanel(tm) {
+    const g = S.game, t = g.teams[tm];
+    const tsc = h('span', { class: 'tsc' }, '0');
+    const head = h('div', { class: 'thead' }, h('b', { class: 'tname' }, BT.teamName(g, tm)), tsc,
+      h('button', { class: 'tadd', dataset: { add: '1' }, title: '名簿にない背番号を足す', 'aria-label': `${BT.teamName(g, tm)} の背番号を足す` }, '＋番号'));
+    const roster = h('div', { class: 'roster', role: 'group', 'aria-label': `${BT.teamName(g, tm)} の選手` });
+    const sec = h('section', { class: 'team', id: 'panel' + tm, dataset: { team: tm }, style: { '--tc': t.color, '--tink': BT.inkOn(t.color) } }, head, roster);
+    S.L.panels[tm] = { sec, head, tsc, roster, n: 0 };
+    fillRoster(tm);
+    return sec;
+  }
+  /* 選手の行を並べる（名簿が変わったときにも呼ぶ） */
+  function fillRoster(tm) {
+    const L = S.L, P = L.panels[tm], g = S.game;
+    P.roster.innerHTML = '';
+    L.btns = L.btns.filter((b) => b.team !== tm);
+    const rows = rowsOf(tm);
+    const teamOnly = rows.length === 1 && rows[0].no == null;
+    P.n = rows.length;
+    rows.forEach((r) => {
+      const no = r.no == null ? '' : r.no;
+      const who = r.no != null ? `${r.no}番${r.name ? ' ' + r.name : ''}` : teamOnly ? 'チーム' : 'だれか（番号なし）';
+      const row = h('div', { class: 'prow' + (r.no == null ? ' unk' : '') + (teamOnly ? ' teamonly' : ''), dataset: { no } },
+        h('div', { class: 'pno' }, h('b', null, r.no != null ? r.no : teamOnly ? 'チーム' : '？'),
+          r.no != null ? (S.prefs.names && r.name ? h('small', null, r.name) : null) : teamOnly ? null : h('small', null, 'だれか')));
+      BT.ROW_TYPES.forEach((type) => {
+        const d = BT.TYPE[type];
+        const cnt = h('i', { class: 'cnt', hidden: true });
+        const el = h('button', { class: 'pb k-' + type, dataset: { type, no }, 'aria-label': `${BT.teamName(g, tm)} ${who} ${d.label}` }, h('b', null, d.btn), cnt);
+        row.append(el);
+        L.btns.push({ team: tm, key: tm + ':' + no + ':' + type, el, cnt });
+      });
+      P.roster.append(row);
+    });
+  }
 
-  /* 画面の大きさに合わせて、背番号の並べ方を選ぶ（ボタンが小さくなりすぎない、いちばんゆったりした並べ方）
-       wrap  ：番号を上に（折り返して何段でも）。いちばん見やすい
-       col   ：番号をプレーのボタンの左に（横長で、高さが足りないとき）
-       strip ：番号を上に横1列（はみ出す分は横にすべらせる。縦長で、高さが足りないとき）
-     実際に並べてみて、プレーのボタンがはみ出さないものを選ぶ */
+  /* 画面の大きさに合わせて並べ方を決める（BT.planLayout：2チームを左右か上下か・チームの中を何列にするか）。
+     行の高さは css の minmax（足りないときは、行を縦にすべらせる） */
   function layoutLive() {
     const L = S.L;
     if (!L || !L.root || !L.root.isConnected) return;
     const live = L.root, P = L.panelsEl;
     live.classList.toggle('short', root.innerHeight < 430);
-    const land = P.clientWidth > P.clientHeight * 1.1 && P.clientWidth >= 560;
-    const modes = land
-      ? [['wrap', 52], ['strip2', 50], ['wrap', 44], ['strip2', 44], ['strip', 44], ['col', 44], ['strip', 36], ['col', 36], ['strip', 30]]
-      : [['wrap', 52], ['strip2', 50], ['wrap', 44], ['strip2', 44], ['strip', 46], ['strip', 40], ['strip', 34]];
-    live.classList.toggle('land', land);
-    for (const [mode, acth] of modes) {
-      live.classList.remove('lay-wrap', 'lay-col', 'lay-strip', 'lay-strip2');
-      live.classList.add('lay-' + mode);
-      live.style.setProperty('--acth', acth + 'px');
-      if (mode === 'strip2') {
-        // 2段で横にすべらせる（左から 4 5 6 … と並ぶように、1段の数を決める）。1段に入りきるなら1段
-        L.panels.forEach((pn, tm) => {
-          const n = S.game.teams[tm].players.length + 1;
-          const avail = pn.nos.clientWidth - 12, GAP = 5;
-          const per = Math.max(1, Math.floor((avail + GAP) / (44 + GAP)));
-          const cols = n > per ? Math.ceil(n / 2) : per;
-          const w = BT.clamp(Math.floor((avail - (cols - 1) * GAP) / cols), 44, 60);
-          pn.sec.style.setProperty('--nocols', cols);
-          pn.sec.style.setProperty('--now', w + 'px');
-        });
-      }
-      if (mode === 'col') {
-        // 左の列の幅：番号が縦に入りきる列の数（2〜4列）
-        L.panels.forEach((pn, tm) => {
-          const n = S.game.teams[tm].players.length + 1;
-          const noH = 44, avail = Math.max(noH, pn.sec.clientHeight - pn.head.offsetHeight - 12);
-          const perCol = Math.max(1, Math.floor((avail + 5) / (noH + 5)));
-          pn.sec.style.setProperty('--nocols', BT.clamp(Math.ceil(n / perCol), 2, 3));
-        });
-      }
-      const over = L.panels.some((pn) => pn.acts.scrollHeight > pn.acts.clientHeight + 2 || pn.sec.scrollHeight > pn.sec.clientHeight + 2);
-      if (!over) break;
-    }
-    L.panels.forEach((pn) => pn.nos.classList.toggle('more', pn.nos.scrollWidth > pn.nos.clientWidth + 2));
-  }
-  function buildPanel(tm) {
-    const g = S.game, t = g.teams[tm];
-    const rows = BT.actionRows(S.prefs.actions[tm]);
-    const cols = Math.max(3, ...rows.slice(0, 2).map((r) => r.length));
-    const askTxt = h('span', { class: 'asktxt' });
-    const askBar = h('i', { class: 'askbar' });
-    const ask = h('div', { class: 'ask', hidden: true }, askTxt, h('button', { class: 'askx', dataset: { cancel: '1' }, 'aria-label': '番号を付けない' }, '番号なし'));
-    const tsc = h('span', { class: 'tsc' }, '0');
-    const head = h('div', { class: 'thead' }, h('b', { class: 'tname' }, BT.teamName(g, tm)), tsc, ask, askBar);
-    const nos = h('div', { class: 'nos' }, t.players.map((p) => noBtn(tm, p)), h('button', { class: 'no add', dataset: { add: '1' }, 'aria-label': '番号を足す' }, '＋'));
-    const acts = h('div', { class: 'acts', style: { '--cols': cols } });
-    rows.forEach((r) => r.forEach((id, k) => acts.append(actBtn(tm, id, k === 0))));
-    const nRows = rows.reduce((s, r) => s + Math.ceil(r.length / cols), 0);
-    const sec = h('section', { class: 'team', id: 'panel' + tm, dataset: { team: tm }, style: { '--tc': t.color, '--tink': BT.inkOn(t.color), '--rows': nRows } }, head, nos, acts);
-    S.L.panels[tm] = { sec, head, ask, askTxt, askBar, tsc, nos, acts };
-    return sec;
-  }
-  function noBtn(tm, p) {
-    return h('button', { class: 'no', dataset: { no: p.no }, 'aria-label': `${BT.teamName(S.game, tm)} ${p.no}番${p.name ? ' ' + p.name : ''}` },
-      h('b', null, p.no), S.prefs.names && p.name ? h('small', null, p.name) : null);
-  }
-  function actBtn(tm, id, rowStart) {
-    const d = BT.TYPE[id];
-    return h('button', { class: `act k-${d.kind}${rowStart ? ' rs' : ''}${d.key.length >= 4 ? ' long' : ''}`, dataset: { type: id }, 'aria-label': `${BT.teamName(S.game, tm)} ${d.label}` },
-      h('b', null, d.key), d.sub ? h('small', null, d.sub) : null);
+    const plan = BT.planLayout(P.clientWidth, P.clientHeight, [L.panels[0].n, L.panels[1].n], L.panels[0].head.offsetHeight || 22);
+    live.classList.toggle('lay-side', plan.arr === 'side');
+    live.classList.toggle('lay-stack', plan.arr === 'stack');
+    L.plan = plan;
+    plan.teams.forEach((T, tm) => {
+      const sec = L.panels[tm].sec;
+      const unit = Math.max(BT.LAYOUT.rmin, Math.min(T.bw, T.rowH));
+      sec.style.setProperty('--c', T.c);
+      sec.style.setProperty('--r', T.r);
+      sec.style.setProperty('--nw', T.nw + 'px');
+      sec.style.setProperty('--base', Math.ceil(T.base) + 'px');
+      sec.style.setProperty('--bf', Math.round(BT.clamp(unit * 0.44, 13, 24)) + 'px');
+      sec.style.setProperty('--nf', Math.round(BT.clamp(Math.min(Math.max(T.rowH, BT.LAYOUT.rmin) * 0.56, T.nw * 0.5), 14, 30)) + 'px');
+      sec.classList.toggle('roomy', T.rowH >= 40 && T.nw >= 46);      // 名前を出す余裕（高さと、背番号の欄の幅）
+      sec.classList.toggle('narrowb', T.bw < 48);
+      sec.classList.toggle('scroll', T.rowH < BT.LAYOUT.rmin);
+    });
   }
 
   function onPanelClick(e) {
@@ -1488,38 +1543,35 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     const sec = b.closest('.team');
     if (!sec) return;
     const tm = Number(sec.dataset.team);
-    if (b.dataset.type) onAction(tm, b.dataset.type, b);
+    if (b.dataset.type) record(tm, b.dataset.no === '' ? null : b.dataset.no, b.dataset.type, b);
     else if (b.dataset.add) openKeypad(tm);
-    else if (b.dataset.cancel) { S.tap.clearWait(tm); updateLive(); }
-    else if (b.dataset.no != null) onNumber(tm, b.dataset.no, b);
   }
   function canRecord() {
     if (!S.game.startedAt) { say('先に「▶ スタート」を押してください', 'warn'); return false; }
-    if (S.game.endedAt) { say('試合は終わっています。続けるときは「続きを記録する」', 'warn'); return false; }
+    if (S.game.endedAt) { say('試合は終わっています', 'warn'); return false; }
     return true;
   }
-  function onAction(tm, type, btn) {
+  /* 1回で記録する：tm＝チーム（null はチームなし）・no＝背番号（null は番号なし）。時刻は押した瞬間 */
+  function record(tm, no, type, btn) {
     if (!canRecord()) return;
     const t0 = now();
-    const key = tm + ':' + type;
+    const key = tm + ':' + no + ':' + type;
     if (S.lastTap.key === key && t0 - S.lastTap.at < 450) return;        // 二度押し（同じボタンを 0.45 秒以内）は1回に
     S.lastTap = { key, at: t0 };
-    const r = S.tap.action(tm, type, elapsed(), t0);
+    BT.addEvent(S.game, { t: elapsed(), type, team: tm, no });
     S.redo = [];
     save();
     flash(btn);
     feel(BT.TYPE[type].kind);
     updateLive(BT.TYPE[type].pts ? tm : null);
   }
-  function onNumber(tm, no, btn) {
-    if (!canRecord()) return;
-    const r = S.tap.number(tm, no, now());
-    if (r.kind === 'assign') { save(); feel('no'); }
-    flash(btn);
-    updateLive();
-  }
 
   /* 表示を書き換える（bump：得点が動いたチーム） */
+  function setCnt(el, n) {
+    const s = n ? String(n) : '';
+    if (el.textContent !== s) el.textContent = s;
+    el.hidden = !n;
+  }
   function updateLive(bump) {
     const g = S.game, L = S.L;
     if (!L) return;
@@ -1532,25 +1584,15 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     const sc = BT.score(g);
     L.score[0].parentNode.classList.toggle('big3', Math.max(sc[0], sc[1]) >= 100);
     [0, 1].forEach((tm) => {
-      const P = L.panels[tm];
       L.score[tm].textContent = sc[tm];
-      P.tsc.textContent = sc[tm];
-      if (bump === tm) { flash(L.score[tm]); flash(P.tsc); }
-      const sel = S.tap.sel[tm], wait = S.tap.wait[tm];
-      $$('.no[data-no]', P.nos).forEach((b) => b.classList.toggle('sel', b.dataset.no === sel));
-      P.sec.classList.toggle('asking', wait != null);
-      P.ask.hidden = wait == null;
-      P.askBar.hidden = wait == null;
-      if (wait != null && L.waitShown[tm] !== wait) {
-        const ev = BT.findEvent(g, wait);
-        P.askTxt.textContent = `だれの「${ev ? BT.TYPE[ev.type].label : ''}」？`;
-        const left = Math.max(0.2, BT.WAIT - (now() - S.tap.waitAt[tm]) / 1000);
-        P.askBar.style.animation = 'none';
-        void P.askBar.offsetWidth;
-        P.askBar.style.animation = `shrink ${left}s linear forwards`;
-      }
-      L.waitShown[tm] = wait;
+      L.panels[tm].tsc.textContent = sc[tm];
+      if (bump === tm) { flash(L.score[tm]); flash(L.panels[tm].tsc); }
     });
+    // ボタンの右上の数（その選手が、そのプレーを何回したか）
+    const tl = BT.tally(g);
+    L.btns.forEach((b) => setCnt(b.cnt, tl[b.key] || 0));
+    BT.GLOBAL_TYPES.forEach((type) => setCnt(L.gb[type].cnt, tl['*:' + type] || 0));
+    L.gbar.classList.toggle('off', !started || ended);
     // スタートの前・試合が終わったあとは、パネルの上に大きなボタンを出す
     L.cover.innerHTML = '';
     if (!started) {
@@ -1581,10 +1623,9 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
   function tick() {
     if (S.view !== 'live' || !S.game || !S.L) return;
     tickClock();
-    if (S.tap.expire(now())) updateLive();
   }
 
-  /* 記録の画面のお知らせ：パネルのボタンを隠さないよう、画面の下の帯に出す（ほかの画面・小窓の上では、ふつうのお知らせ） */
+  /* 記録の画面のお知らせ：ボタンを隠さないよう、画面の下（いま記録したものの所）に出す（ほかの画面・小窓の上では、ふつうのお知らせ） */
   function say(text, kind, ms, action) {
     if (S.view !== 'live' || !S.L || BT.ui.sheetOpen()) return BT.ui.toast(text, kind, ms, action);
     clearTimeout(S.msgTimer);
@@ -1595,41 +1636,41 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
   }
 
   /* 画面の下：いちばん新しい記録と「取り消す」 */
+  const undoBtn = () => h('button', { class: 'btn undo', id: 'btnUndo', 'aria-label': 'いちばん新しい記録を取り消す', onclick: undo }, h('b', null, '↶'), h('small', null, '取り消す'));
   function renderLast() {
     const g = S.game, el = S.L.last;
     el.innerHTML = '';
     if (S.msg) {
       const m = S.msg;
-      el.append(h('div', { class: 'lastev msg ' + m.kind, role: 'status', 'aria-live': 'polite' }, h('span', { class: 'll' }, m.text)),
-        m.action ? h('button', { class: 'btn undo', id: 'btnMsgAct', onclick: () => { S.msg = null; clearTimeout(S.msgTimer); m.action.onClick(); if (S.L) renderLast(); } }, m.action.label)
-          : (g.events.length ? h('button', { class: 'btn undo', id: 'btnUndo', onclick: undo }, '↶ 取り消す') : null));
+      el.append(h('div', { class: 'lastev msg ' + m.kind, role: 'status', 'aria-live': 'polite' }, h('span', { class: 'mt' }, m.text)),
+        m.action ? h('button', { class: 'btn undo act', id: 'btnMsgAct', onclick: () => { S.msg = null; clearTimeout(S.msgTimer); m.action.onClick(); if (S.L) renderLast(); } }, m.action.label)
+          : (g.events.length > 1 ? undoBtn() : null));
       return;
     }
-    if (!g.startedAt) { el.append(h('span', { class: 'hint' }, '左上の「▶ スタート」でも始められます')); return; }
+    if (!g.startedAt) { el.append(h('div', { class: 'lastev hint' }, h('span', { class: 'mt' }, 'スタートを押すと、記録できます'))); return; }
     const ev = g.events[g.events.length - 1];
-    if (!ev) { el.append(h('span', { class: 'hint' }, 'まだ記録はありません')); return; }
-    const waiting = ev.type !== 'period' && S.tap.wait[ev.team] === ev.id;
+    if (!ev) return;
     const d = BT.TYPE[ev.type];
+    const per = ev.type === 'period';
+    const nm = !per && ev.no != null ? BT.playerName(g, ev.team, ev.no) : '';
+    const who = per ? '' : ev.team == null ? 'チームなし' : `${BT.teamName(g, ev.team)} ${ev.no != null ? '#' + ev.no + (nm ? ' ' + nm : '') : '番号なし'}`;
     el.append(
-      h('div', { class: 'lastev', role: 'status', 'aria-live': 'polite', style: { '--tc': ev.type === 'period' ? 'var(--line2)' : teamColor(ev.team) } },
-        ev.type === 'period' ? h('i', { class: 'chip neutral' }) : h('i', { class: 'chip', style: { background: teamColor(ev.team) } }),
-        h('b', { class: 'lt' }, BT.fmtTime(ev.t)),
-        h('span', { class: 'lw' }, ev.type === 'period' ? `${BT.periodLabel(ev.period)} 開始` : `${BT.teamName(g, ev.team)} ${ev.no != null ? '#' + ev.no : waiting ? '番号は？' : '番号なし'}`),
-        ev.type === 'period' ? null : h('span', { class: 'll' }, d.label + (d.pts ? ` +${d.pts}` : ''))),
-      h('button', { class: 'btn undo', id: 'btnUndo', onclick: undo }, '↶ 取り消す'));
+      h('div', { class: 'lastev', role: 'status', 'aria-live': 'polite', style: { '--tc': per || ev.team == null ? 'var(--line2)' : teamColor(ev.team) } },
+        h('div', { class: 'l1' }, h('b', { class: 'lt' }, BT.fmtTime(ev.t)), h('span', { class: 'll' }, per ? `${BT.periodLabel(ev.period)} 開始` : (d.short || d.label) + (d.pts ? ` +${d.pts}` : ''))),
+        per ? null : h('div', { class: 'lw' }, who)),
+      g.events.length > 1 ? undoBtn() : null);
   }
   function undo() {
     const g = S.game;
     const ev = g.events[g.events.length - 1];
     if (!ev) return;
-    if (g.events.length === 1 && ev.type === 'period') { say('スタートは取り消せません（メニューの「スタートを取り消す」）', 'warn', 4000); return; }
+    if (g.events.length === 1 && ev.type === 'period') { say('スタートは「≡ メニュー」から取り消せます', 'warn', 4000); return; }
     g.events.pop();
     S.redo.push(ev);
-    S.tap.expire(now());
     save();
     feel('undo');
     updateLive();
-    say(`取り消しました：${BT.fmtTime(ev.t)} ${BT.eventText(g, ev, true)}`, 'warn', 4500, { label: '↷ やり直す', onClick: redo });
+    say(`取り消し：${BT.eventText(g, ev, ev.no == null)}`, 'warn', 4500, { label: '↷ やり直す', onClick: redo });
   }
   function redo() {
     const ev = S.redo.pop();
@@ -1654,7 +1695,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     feel('made');
     BT.store.persist();
     BT.ui.keepAwake(true).then((ok) => {
-      if (!ok && !S.warnedWake) { S.warnedWake = true; say('この端末は画面の自動ロックを止められません（設定で長めに）', 'warn', 6000); }
+      if (!ok && !S.warnedWake) { S.warnedWake = true; say('自動ロックを止められません（設定で長めに）', 'warn', 6000); }
     });
     guard();
     updateLive();
@@ -1662,7 +1703,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
   function cancelStart() {
     const g = S.game;
     g.startedAt = null; g.endedAt = null; g.events = []; g.seq = 0;
-    S.tap.reset(); S.redo = [];
+    S.redo = [];
     BT.ui.keepAwake(false);
     save();
     updateLive();
@@ -1671,7 +1712,6 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
   function endGame() {
     const g = S.game;
     g.endedAt = now();
-    S.tap.reset();
     BT.ui.keepAwake(false);
     save();
     updateLive();
@@ -1683,7 +1723,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     BT.ui.keepAwake(true);
     guard();
     updateLive();
-    say('続きを記録できます（時計はスタートから進み続けています）', 'ok', 4000);
+    say('続きを記録できます（時計は進んだまま）', 'ok', 4000);
   }
 
   /* 記録の途中で「戻る」（スワイプ・戻るボタン）で、うっかりページを離れないように */
@@ -1697,7 +1737,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     if (BT.ui.sheetOpen()) { BT.ui.closeSheet(); guard(); return; }
     if (S.view === 'live' && S.game && S.game.startedAt && !S.game.endedAt) {
       guard();
-      say('記録中です。やめるときは「≡ メニュー」→「試合を終える」', 'warn', 4000);
+      say('記録中です（終えるときは ≡ メニューから）', 'warn', 4000);
       return;
     }
     if (S.view === 'setup' && S.setupFor === 'edit' && S.game) { go('live'); if (S.game.startedAt && !S.game.endedAt) guard(); return; }
@@ -1730,7 +1770,6 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
   /* ---------- 番号を足す（記録の途中で、名簿にない番号が出たとき） ---------- */
   function openKeypad(tm) {
     const g = S.game;
-    const waitId = S.tap.wait[tm];      // 番号を待っていた記録（開いている間に時間切れになっても、それに付ける）
     let val = '';
     const disp = h('div', { class: 'kdisp', id: 'kdisp' }, '　');
     const show = () => { disp.textContent = val ? '#' + val : '番号を入れる'; disp.classList.toggle('empty', !val); };
@@ -1743,32 +1782,27 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     };
     const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', '⌫'];
     const s = BT.ui.sheet({
-      title: `${BT.teamName(g, tm)} の番号を足す`, cls: 'keypad',
+      title: `${BT.teamName(g, tm)} の背番号を足す`, cls: 'keypad',
       body: h('div', null, disp, h('div', { class: 'keys' }, keys.map((k) => h('button', { class: 'key', dataset: { key: k }, onclick: () => press(k) }, k))),
-        waitId ? h('p', { class: 'note' }, `足した番号は「${BT.eventText(g, BT.findEvent(g, waitId) || { type: 'mark' })}」の記録にも付けます。`) : null),
+        h('p', { class: 'note' }, '足した番号の行が、番号の順のところに入ります。')),
       foot: [h('button', { class: 'btn', onclick: () => s.close() }, 'やめる'), h('button', { class: 'btn primary', id: 'btnKeyOk', onclick: () => {
         const no = BT.normNo(val);
         if (no == null) { BT.ui.toast('0〜99 の番号を入れてください', 'warn'); return; }
         const t = g.teams[tm];
-        if (!t.players.some((p) => p.no === no)) t.players = BT.cleanPlayers(t.players.concat([{ no, name: '' }]));
-        const ev = waitId ? BT.findEvent(g, waitId) : null;
-        if (ev && ev.no == null) ev.no = no;
-        S.tap.clearWait(tm);
+        const had = t.players.some((p) => p.no === no);
+        if (!had) t.players = BT.cleanPlayers(t.players.concat([{ no, name: '' }]));
         save();
         s.close();
-        rebuildNumbers(tm);
-        updateLive();
-        say(ev ? `#${no} を足して、記録に付けました` : `#${no} を足しました`, 'ok');
+        rebuildRoster(tm);
+        say(had ? `#${no} はもう並んでいます` : `#${no} を足しました`, had ? 'warn' : 'ok');
       } }, '足す')]
     });
     show();
   }
-  function rebuildNumbers(tm) {
-    const P = S.L && S.L.panels[tm];
-    if (!P) return;
-    P.nos.innerHTML = '';
-    S.game.teams[tm].players.forEach((p) => P.nos.append(noBtn(tm, p)));
-    P.nos.append(h('button', { class: 'no add', dataset: { add: '1' }, 'aria-label': '番号を足す' }, '＋'));
+  function rebuildRoster(tm) {
+    if (!S.L || !S.L.panels[tm]) return;
+    fillRoster(tm);
+    updateLive();
     layoutLive();
   }
 
@@ -1783,7 +1817,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
         item('📋', '記録の一覧', '番号・プレー・時刻を直す、消す', openLog),
         item('📊', '集計', '選手ごとの得点・リバウンド・パスミスなど', openStats),
         item('👥', 'チーム・背番号を直す', '名前・色・背番号', () => { S.setupFor = 'edit'; go('setup'); }),
-        item('🎛', 'ボタン・設定', 'ボタンの組み合わせ・名前の表示・音・画面の色', openSettings),
+        item('🎛', '設定', '名前の表示・「？」の行・音・画面の色', openSettings),
         item('💾', '書き出す', '動画の切り出し用のファイル・CSV', () => openExport(g)),
         g.startedAt && !g.endedAt ? item('⏹', '試合を終える', '時計を止めて、集計を見る', () => BT.ui.confirm('試合を終えますか？', '時計が止まります。まちがえて終えたときは「続きを記録する」で戻せます。', '終える', endGame)) : null,
         g.endedAt ? item('▶', '続きを記録する', 'まちがえて終えたとき', reopen) : null,
@@ -1795,26 +1829,30 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
   }
 
   /* ---------- 記録の一覧・直す ---------- */
+  /* filter：null＝すべて・0／1＝そのチーム・'none'＝チームなし（画面の下のパスミス・★） */
   function openLog(filter) {
     const g = S.game;
-    const f = filter === 0 || filter === 1 ? filter : null;
-    const evs = BT.sorted(g).reverse().filter((e) => f == null || e.type === 'period' || e.team === f);
+    const f = filter === 0 || filter === 1 || filter === 'none' ? filter : null;
+    const evs = BT.sorted(g).reverse().filter((e) => f == null || e.type === 'period' || (f === 'none' ? e.team == null : e.team === f));
+    const anyFree = g.events.some((e) => e.type !== 'period' && e.team == null);
     const row = (e) => {
       const d = BT.TYPE[e.type];
       return h('button', { class: 'lrow' + (e.type === 'period' ? ' per' : ''), dataset: { id: e.id }, onclick: () => openEdit(e.id) },
         h('b', { class: 'lt' }, BT.fmtTime(e.t)),
         e.type === 'period' ? h('span', { class: 'lp' }, `── ${BT.periodLabel(e.period)} 開始 ──`) : [
-          h('i', { class: 'chip', style: { background: teamColor(e.team) } }),
+          e.team == null ? h('i', { class: 'chip neutral' }) : h('i', { class: 'chip', style: { background: teamColor(e.team) } }),
           h('span', { class: 'lno' }, e.no != null ? '#' + e.no : '—'),
           h('span', { class: 'llabel k-' + d.kind }, d.label + (d.pts ? ` +${d.pts}` : '')),
-          h('small', { class: 'lname' }, e.no != null ? BT.playerName(g, e.team, e.no) : '番号なし')
+          h('small', { class: 'lname' }, e.team == null ? 'チームなし' : e.no != null ? BT.playerName(g, e.team, e.no) : '番号なし')
         ]);
     };
+    const tabs = [[null, 'すべて'], [0, BT.teamName(g, 0)], [1, BT.teamName(g, 1)]];
+    if (anyFree || f === 'none') tabs.push(['none', 'チームなし']);
     const s = BT.ui.sheet({
       title: `記録の一覧（${g.events.filter((e) => e.type !== 'period').length}件）`, wide: true,
       body: h('div', null,
         h('div', { class: 'row tabsrow' },
-          [[null, 'すべて'], [0, BT.teamName(g, 0)], [1, BT.teamName(g, 1)]].map(([v, lab]) => h('button', { class: 'btn small' + (f === v ? ' on' : ''), onclick: () => openLog(v) }, lab))),
+          tabs.map(([v, lab]) => h('button', { class: 'btn small' + (f === v ? ' on' : ''), onclick: () => openLog(v) }, lab))),
         h('p', { class: 'note' }, 'タップすると、番号・プレー・時刻を直したり、消したりできます。新しい記録が上です。'),
         evs.length ? h('div', { class: 'loglist' }, evs.map(row)) : h('p', { class: 'note' }, 'まだ記録はありません。'))
     });
@@ -1831,21 +1869,29 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     if (e.type === 'period') {
       body.append(h('div', { class: 'field' }, h('span', null, 'ピリオド'), h('div', { class: 'row' }, [1, 2, 3, 4, 5, 6].map((p) => h('button', { class: 'btn small' + (e.period === p ? ' on' : ''), onclick: () => { e.period = p; changed(); } }, BT.periodLabel(p))))));
     } else {
-      body.append(h('div', { class: 'field' }, h('span', null, 'チーム'), h('div', { class: 'row' }, [0, 1].map((tm) => h('button', { class: 'btn' + (e.team === tm ? ' on' : ''), onclick: () => { if (e.team !== tm) { e.team = tm; e.no = null; changed(); } } }, h('i', { class: 'chip', style: { background: teamColor(tm) } }), BT.teamName(g, tm))))));
-      const players = g.teams[e.team].players.map((p) => p.no);
-      if (e.no != null && !players.includes(e.no)) players.push(e.no);
-      body.append(h('div', { class: 'field' }, h('span', null, '背番号'), h('div', { class: 'row nopick' },
-        h('button', { class: 'btn small' + (e.no == null ? ' on' : ''), onclick: () => { e.no = null; changed(); } }, '番号なし'),
-        BT.sortNos(players).map((no) => h('button', { class: 'btn small nobtn' + (e.no === no ? ' on' : ''), onclick: () => { e.no = no; changed(); } }, '#' + no)))));
+      // チーム（得点のプレーは、チームなしにできない）
+      const pts = !!(BT.TYPE[e.type] && BT.TYPE[e.type].pts);
+      const teamBtn = (tm, label) => h('button', { class: 'btn' + (e.team === tm ? ' on' : ''), dataset: { eteam: tm == null ? 'none' : String(tm) }, onclick: () => { if (e.team !== tm) { e.team = tm; e.no = null; changed(); } } },
+        tm == null ? h('i', { class: 'chip neutral' }) : h('i', { class: 'chip', style: { background: teamColor(tm) } }), label);
+      body.append(h('div', { class: 'field' }, h('span', null, 'チーム'), h('div', { class: 'row' },
+        teamBtn(0, BT.teamName(g, 0)), teamBtn(1, BT.teamName(g, 1)), pts && e.team != null ? null : teamBtn(null, 'チームなし'))));
+      if (e.team != null) {
+        const players = g.teams[e.team].players.map((p) => p.no);
+        if (e.no != null && !players.includes(e.no)) players.push(e.no);
+        body.append(h('div', { class: 'field' }, h('span', null, '背番号'), h('div', { class: 'row nopick' },
+          h('button', { class: 'btn small' + (e.no == null ? ' on' : ''), onclick: () => { e.no = null; changed(); } }, '番号なし'),
+          BT.sortNos(players).map((no) => h('button', { class: 'btn small nobtn' + (e.no === no ? ' on' : ''), onclick: () => { e.no = no; changed(); } }, '#' + no)))));
+      }
       body.append(h('div', { class: 'field' }, h('span', null, 'プレー'), h('div', { class: 'row typepick' },
-        BT.TYPES.map((d) => h('button', { class: 'btn small k-' + d.kind + (e.type === d.id ? ' on' : ''), onclick: () => { e.type = d.id; changed(); } }, d.label)))));
+        BT.editTypes(e.type).map((id) => { const d = BT.TYPE[id]; return h('button', { class: 'btn small k-' + d.kind + (e.type === id ? ' on' : ''), dataset: { etype: id }, onclick: () => { e.type = id; if (d.pts && e.team == null) e.team = 0; changed(); } }, d.label); }))));
+      if (e.team == null) body.append(h('p', { class: 'note' }, '「チームなし」は、画面の下のボタン（パスミス・★）で記録したものです。チーム・背番号を付けることもできます。'));
     }
     BT.ui.sheet({
       title: e.type === 'period' ? 'ピリオドの始まりを直す' : '記録を直す', body,
       foot: [
         h('button', { class: 'btn danger', id: 'btnDelEv', onclick: () => {
           if (g.events.length === 1 && e.type === 'period') { BT.ui.toast('スタートの記録は消せません', 'warn'); return; }
-          BT.removeEvent(g, id); S.tap.expire(now()); save(); if (S.L) updateLive(); openLog(); BT.ui.toast('消しました', 'ok');
+          BT.removeEvent(g, id); save(); if (S.L) updateLive(); openLog(); BT.ui.toast('消しました', 'ok');
         } }, '🗑 消す'),
         h('button', { class: 'btn', onclick: () => openLog() }, '← 一覧へ'),
         h('button', { class: 'btn primary', onclick: () => BT.ui.closeSheet() }, 'とじる')]
@@ -1857,8 +1903,9 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     ['pts', '得点'], ['fg2', '2P'], ['fg3', '3P'], ['ft', 'FT'], ['reb', 'リバウンド'], ['ast', 'アシスト'], ['stl', 'スティール'], ['blk', 'ブロック'],
     ['pass', 'パスミス'], ['tov', 'ミス'], ['foul', 'ファウル'], ['mark', '★']
   ];
-  function cell(s, key) {
-    if (key === 'fg2' || key === 'fg3' || key === 'ft') { const m = s[key + 'm'], a = s[key + 'a']; return a ? `${m}/${a}` : ''; }
+  /* withA：「成功/打った数」で出す（外れの記録があるときだけ。ないときは入れた本数） */
+  function cell(s, key, withA) {
+    if (key === 'fg2' || key === 'fg3' || key === 'ft') { const m = s[key + 'm'], a = s[key + 'a']; return !a ? '' : withA ? `${m}/${a}` : String(m); }
     if (key === 'reb') return s.reb ? (s.oreb ? `${s.reb}（${s.oreb}）` : String(s.reb)) : '';
     return s[key] ? String(s[key]) : '';
   }
@@ -1870,6 +1917,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     const g = S.game;
     const st = BT.stats(g);
     const per = BT.periodScores(g);
+    const withA = BT.hasMisses(g);
     const cols = COLS.filter(([k]) => k === 'pts' || hasCol(st, k));
     const table = (x) => {
       const rows = x.rows.filter((r) => !BT.isEmpty(r.s));
@@ -1877,13 +1925,15 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
       return h('div', { class: 'boxwrap' }, h('table', { class: 'box' },
         h('thead', null, h('tr', null, h('th', null, '#'), h('th', { class: 'nm' }, '名前'), cols.map(([, lab]) => h('th', null, lab)))),
         h('tbody', null,
-          rows.map((r) => h('tr', null, h('td', { class: 'no' }, r.no), h('td', { class: 'nm' }, r.name || ''), cols.map(([k]) => h('td', null, cell(r.s, k))))),
-          !BT.isEmpty(x.unknown) ? h('tr', { class: 'unk' }, h('td', { class: 'no' }, '—'), h('td', { class: 'nm' }, '番号なし'), cols.map(([k]) => h('td', null, cell(x.unknown, k)))) : null,
-          h('tr', { class: 'tot' }, h('td', { class: 'no' }), h('td', { class: 'nm' }, '合計'), cols.map(([k]) => h('td', null, cell(x.total, k)))))),
+          rows.map((r) => h('tr', null, h('td', { class: 'no' }, r.no), h('td', { class: 'nm' }, r.name || ''), cols.map(([k]) => h('td', null, cell(r.s, k, withA))))),
+          !BT.isEmpty(x.unknown) ? h('tr', { class: 'unk' }, h('td', { class: 'no' }, '—'), h('td', { class: 'nm' }, '番号なし'), cols.map(([k]) => h('td', null, cell(x.unknown, k, withA)))) : null,
+          h('tr', { class: 'tot' }, h('td', { class: 'no' }), h('td', { class: 'nm' }, '合計'), cols.map(([k]) => h('td', null, cell(x.total, k, withA)))))),
         idle.length ? h('p', { class: 'note' }, `記録なし：${idle.map((r) => '#' + r.no).join(' ')}`) : null);
     };
     const t = st.map((x) => x.total);
     const fg = (s) => BT.pct(s.fg2m + s.fg3m, s.fg2a + s.fg3a);
+    const free = BT.teamlessStats(g);
+    const freeText = BT.TYPES.filter((d) => free[d.id] > 0 && !d.shot && d.id !== 'reb').map((d) => `${d.label} ${free[d.id]}`).concat(free.reb ? [`リバウンド ${free.reb}`] : []).join('・');
     BT.ui.sheet({
       title: '集計', wide: true,
       body: h('div', { class: 'stats' },
@@ -1891,9 +1941,10 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
           h('thead', null, h('tr', null, h('th', null, ''), per.map((p) => h('th', null, p.label)), h('th', null, '計'))),
           h('tbody', null, [0, 1].map((tm) => h('tr', null, h('th', null, h('i', { class: 'chip', style: { background: teamColor(tm) } }), BT.teamName(g, tm)), per.map((p) => h('td', null, String(p.pts[tm]))), h('td', { class: 'sum' }, String(BT.score(g)[tm]))))))),
         [0, 1].map((tm) => h('section', { class: 'teamstat' },
-          h('h3', null, h('i', { class: 'chip', style: { background: teamColor(tm) } }), BT.teamName(g, tm), h('small', null, ` 得点 ${t[tm].pts}・シュート成功率 ${fg(t[tm])}${t[tm].fta ? '・FT ' + BT.pct(t[tm].ftm, t[tm].fta) : ''}`)),
+          h('h3', null, h('i', { class: 'chip', style: { background: teamColor(tm) } }), BT.teamName(g, tm), h('small', null, ` 得点 ${t[tm].pts}` + (withA ? `・シュート成功率 ${fg(t[tm])}${t[tm].fta ? '・FT ' + BT.pct(t[tm].ftm, t[tm].fta) : ''}` : ''))),
           table(st[tm]))),
-        h('p', { class: 'note' }, '2P・3P・FT は「成功/打った数」。リバウンドの（ ）は、うちオフェンスリバウンド（同じチームが外したシュートの、10 秒以内のリバウンド）。「番号なし」は、番号を付けずに記録したプレーです（一覧から番号を付けられます）。')),
+        freeText ? h('section', { class: 'teamstat free' }, h('h3', null, h('i', { class: 'chip neutral' }), 'チームなし', h('small', null, '（画面の下のボタン）')), h('p', { class: 'freeline' }, freeText)) : null,
+        h('p', { class: 'note' }, (withA ? '2P・3P・FT は「成功/打った数」。リバウンドの（ ）は、うちオフェンスリバウンド（同じチームが外したシュートの、10 秒以内のリバウンド）。' : '2P・3P・FT は、入れた本数です。') + '「番号なし」は「？」の行で記録したプレー、「チームなし」は画面の下のボタン（パスミス・★）で記録したものです（どちらも一覧から番号を付けられます）。')),
       foot: [h('button', { class: 'btn', onclick: () => openExport(g) }, '💾 書き出す'), h('button', { class: 'btn primary', onclick: () => BT.ui.closeSheet() }, 'とじる')]
     });
   }
@@ -1928,27 +1979,18 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
   function openSettings() {
     const p = S.prefs;
     const body = h('div', { class: 'settings' });
-    [0, 1].forEach((tm) => {
-      const ids = new Set(p.actions[tm]);
-      const preset = BT.presetOf(p.actions[tm]);
-      body.append(h('section', { class: 'field' },
-        h('span', null, `${S.game ? BT.teamName(S.game, tm) : (tm ? '相手' : '自分')} のボタン`),
-        h('div', { class: 'row' }, Object.keys(BT.PRESETS).map((k) => h('button', { class: 'btn small' + (preset === k ? ' on' : ''), dataset: { preset: k + tm }, onclick: () => { p.actions[tm] = BT.PRESETS[k].ids.slice(); savePrefs(); refresh(); } }, BT.PRESETS[k].name))),
-        h('div', { class: 'checks' }, BT.TYPES.map((d) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: ids.has(d.id), onchange: (e) => {
-          const set = new Set(p.actions[tm]);
-          if (e.target.checked) set.add(d.id); else set.delete(d.id);
-          if (!set.size) { BT.ui.toast('ボタンを1つ以上残してください', 'warn'); e.target.checked = true; return; }
-          p.actions[tm] = BT.TYPES.map((x) => x.id).filter((id) => set.has(id)); savePrefs(); refresh();
-        } }), d.label)))));
-    });
-    body.append(h('section', { class: 'field' }, h('span', null, '表示・音'),
-      h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!p.names, onchange: (e) => { p.names = e.target.checked; savePrefs(); refresh(); } }), '番号のボタンに選手の名前も出す'),
-      h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!p.sound, onchange: (e) => { p.sound = e.target.checked; savePrefs(); if (p.sound) BT.ui.beep(880, 60); } }), '押したときに音を出す（「ピッ」）')));
+    const chk = (key, label, after) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', dataset: { pref: key }, checked: p[key] !== false, onchange: (e) => { p[key] = e.target.checked; savePrefs(); if (after) after(); } }), label);
+    body.append(h('section', { class: 'field' }, h('span', null, '記録の画面'),
+      chk('names', '背番号の下に、選手の名前も出す（行の高さに余裕があるとき）', refresh),
+      chk('unknown', '「？」の行を出す（だれか分からないときに、チームだけで記録する）', refresh),
+      h('p', { class: 'note' }, '背番号を入れていないチームは、「？」の行だけ（チームとして記録）になります。')));
+    body.append(h('section', { class: 'field' }, h('span', null, '音'),
+      chk('sound', '押したときに音を出す（「ピッ」）', () => { if (p.sound) BT.ui.beep(880, 60); })));
     body.append(h('section', { class: 'field' }, h('span', null, '画面の色'),
       h('div', { class: 'row' }, [['auto', '端末に合わせる'], ['light', '明るい'], ['dark', '暗い']].map(([v, lab]) => h('button', { class: 'btn small' + (p.theme === v ? ' on' : ''), onclick: () => { p.theme = v; savePrefs(); applyTheme(); openSettings(); } }, lab)))));
     body.append(h('p', { class: 'note' }, BT.ui.wakeSupported() ? (BT.ui.awake() ? '💡 記録の途中は、画面が自動で消えないようにしています。' : '💡 記録を始めると、画面が自動で消えないようにします。') : '💡 この端末では、画面が自動で消えるのを止められません。端末の「自動ロック」を長めにしてください。'));
-    const refresh = () => { if (S.L) buildLive(); openSettings(); };
-    BT.ui.sheet({ title: 'ボタン・設定', body, wide: true });
+    function refresh() { if (S.L) buildLive(); }
+    BT.ui.sheet({ title: '設定', body });
   }
 
   /* ---------- 使い方 ---------- */
@@ -1959,16 +2001,19 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
         h('ol', null,
           h('li', null, h('b', null, '試合の準備'), '：チーム名・ユニフォームの色・背番号を選ぶ（「4〜15」ボタンでまとめて。自分のチームは次から自動で入ります）'),
           h('li', null, h('b', null, 'ティップオフの瞬間に「▶ スタート」'), '：左上の時計が動き出します'),
-          h('li', null, h('b', null, 'プレーが起きたらタップ'), '：押した瞬間の時刻で記録されます')),
-        h('h4', null, '記録のしかた（どれでもOK）'),
+          h('li', null, h('b', null, 'プレーが起きたら、その選手の行のボタンを1回タップ'), '：押した瞬間の時刻で記録されます')),
+        h('h4', null, '記録の画面'),
         h('ul', null,
-          h('li', null, h('b', null, '番号 → プレー'), '：「7」→「2P 成功」。番号を先に選んでおくと、プレーを押した瞬間に記録'),
-          h('li', null, h('b', null, 'プレー → 番号'), '：「2P 成功」→（7 秒以内に）「7」。先に時刻を残して、だれかはあとから'),
-          h('li', null, h('b', null, 'プレーだけ'), '：番号が分からなければ、押さなくても大丈夫（チームの記録になります。あとで一覧から番号を付けられます）')),
+          h('li', null, h('b', null, '選手ごとの行'), '：背番号の小さい順に、上から並びます。行の「2P」「3P」「FT」（どれも成功）と「リバ」（リバウンド）を押すと、その選手の記録になります'),
+          h('li', null, h('b', null, '「？」の行'), '：だれか分からないとき。チームの記録になります（あとで一覧から番号を付けられます）'),
+          h('li', null, h('b', null, '画面の下の「パスミス」「★ あとで見る」'), '：だれのかは決めずに、時刻だけを残します。いつでも押せます'),
+          h('li', null, 'ボタンの右上の小さな数は、その選手がそのプレーをした回数です'),
+          h('li', null, '人数が多くて画面に入りきらないときは、行を上下にすべらせて探します（スマホは縦向き、または「ホーム画面に追加」すると広く使えます）')),
         h('h4', null, 'まちがえたとき'),
         h('ul', null,
           h('li', null, '画面の下の「↶ 取り消す」で、いちばん新しい記録を取り消し（「やり直す」で戻せます）'),
-          h('li', null, '「≡ メニュー」→「記録の一覧」で、どの記録でも、番号・プレー・時刻を直したり消したりできます')),
+          h('li', null, '「≡ メニュー」→「記録の一覧」で、どの記録でも、チーム・番号・プレー・時刻を直したり消したりできます'),
+          h('li', null, '名簿にない背番号は、チームの帯の「＋番号」で足せます')),
         h('h4', null, 'ピリオド'),
         h('p', null, '時計の右の「1Q」を押して、次のピリオドが始まる瞬間に「2Q を始める」。時計は止まらずに進みます（試合の時計ではなく、スタートからの時間です。動画と同じように進むので、あとで動画と合わせられます）。'),
         h('h4', null, '動画から場面を切り出す'),
@@ -1989,7 +2034,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     // iPhone で :active（押している間の見た目）を効かせる
     document.addEventListener('touchstart', () => {}, { passive: true });
     // 長押しのメニュー・ダブルタップの拡大を出さない（記録の画面）
-    document.addEventListener('contextmenu', (e) => { if (S.view === 'live' && e.target.closest && e.target.closest('.panels, .lbar')) e.preventDefault(); });
+    document.addEventListener('contextmenu', (e) => { if (S.view === 'live' && e.target.closest && e.target.closest('.panels, .lbar, .gbar')) e.preventDefault(); });
     document.addEventListener('dblclick', (e) => { if (S.view === 'live') e.preventDefault(); }, { passive: false });
     root.addEventListener('popstate', onPop);
     root.addEventListener('beforeunload', (e) => { if (S.view === 'live' && S.game && S.game.startedAt && !S.game.endedAt) { e.preventDefault(); e.returnValue = ''; } });

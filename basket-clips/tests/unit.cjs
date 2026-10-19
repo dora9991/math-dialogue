@@ -273,6 +273,26 @@ section('「バスケ タップ記録」の記録（読み込み・時刻あわ�
   try { TL.parse('{ broken'); } catch (e) { err = e.message; }
   ok(err && /JSON/.test(err), '壊れたファイルも断る');
 
+  // チームなしの記録（記録の画面の下の「パスミス」「★ あとで見る」。だれのかは決めずに時刻だけ）
+  {
+    const gf = BT.newGame({ now: T0, tz: 540, teams: [{ name: '致遠館', players: BT.parseNumbers('4-8').map((no) => ({ no })) }, { name: '城南' }] });
+    gf.startedAt = T0;
+    BT.addEvent(gf, { t: 0, type: 'period', period: 1 });
+    [[5, 'fg2', 0, '7'], [10, 'pass', null, null], [15, 'mark', null, null], [20, 'fg3', 1, null], [25, 'pass', 0, '7']].forEach(([t, type, team, no]) => BT.addEvent(gf, { t, type, team, no }));
+    const lf = TL.parse(JSON.stringify(BT.exportData(gf)));
+    const pf = lf.events.find((e) => e.t === 10), mf = lf.events.find((e) => e.t === 15);
+    ok(pf.team === null && pf.no === null && mf.team === null, 'チームなしの記録（パスミス・★）は、チームなしのまま読み込む');
+    ok(TL.eventLabel(lf, pf, true) === 'パスミス' && TL.eventLabel(lf, lf.events.find((e) => e.t === 25), true) === '致遠館 #7 パスミス', '呼び名：チームなしは「パスミス」だけ（チーム名を付けない）');
+    ok(TL.score(lf).join() === '2,3', 'チームなしの記録があっても、得点は変わらない');
+    const A0 = TL.setAnchor([], 0, 0, true);
+    const only1 = TL.clips(lf, A0, { teams: [false, true] }, null, 100).clips;
+    ok(only1.map((c) => c.type).join() === 'pass,mark,fg3', '「相手だけ」でも、チームなしの記録は外さない（だれのか決めていないため）', only1.map((c) => c.type));
+    const cf = TL.counts(lf, {});
+    ok(cf.grp.pass === 2 && cf.grp.mark === 1 && cf.players['0:7'] === 2 && Object.keys(cf.players).length === 1, '絞り込みの数：チームなしは選手に入れない', cf);
+    const old = TL.parse({ format: 'basket-tap', teams: [], events: [{ t: 1, type: 'fg2', team: null, no: '7' }, { t: 2, type: 'reb', team: 1, no: '4' }] });
+    ok(old.events[0].team === 0 && old.events[1].team === 1, 'チームのない得点は、自分のチームの得点にする（得点はチームなしにできない）');
+  }
+
   // 時刻あわせ
   ok(TL.toVideo(10, []) === null, '合わせる前は、動画の時刻は決まらない');
   let A = TL.setAnchor([], 0, 12, true);

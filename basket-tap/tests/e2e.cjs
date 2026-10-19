@@ -48,19 +48,31 @@ async function barOverlap(page) {
     return bad;
   });
 }
-/* ボタンが画面の中に収まっているか（はみ出し・重なりがない） */
+/* ボタンが画面の中に収まっているか（はみ出し・重なりがない・小さすぎない）。
+   行が縦にすべるチーム（人数が多くて入りきらないとき）は、横に収まっているかだけを見る */
 async function allVisible(page) {
   return page.evaluate(() => {
     const W = innerWidth, H = innerHeight;
     const bad = [];
-    document.querySelectorAll('.act').forEach((b) => {
+    document.querySelectorAll('.pb').forEach((b) => {
       const r = b.getBoundingClientRect();
       const team = b.closest('.team').getBoundingClientRect();
-      if (r.width < 40 || r.height < 30 || r.left < -1 || r.right > W + 1 || r.top < -1 || r.bottom > H + 1 || r.bottom > team.bottom + 1 || r.right > team.right + 1) bad.push([b.dataset.type, Math.round(r.width), Math.round(r.height), Math.round(r.bottom), Math.round(team.bottom)]);
+      const ro = b.closest('.roster');
+      const scrolls = ro.scrollHeight > ro.clientHeight + 1;
+      if (r.width < 27 || r.height < 27 || r.left < team.left - 1 || r.right > team.right + 1 || r.right > W + 1) bad.push(['幅', b.closest('.team').id, b.dataset.no, b.dataset.type, Math.round(r.width), Math.round(r.height)]);
+      if (!scrolls && (r.bottom > team.bottom + 1 || r.bottom > H + 1)) bad.push(['下', b.closest('.team').id, b.dataset.no, b.dataset.type, Math.round(r.bottom), Math.round(team.bottom)]);
+    });
+    document.querySelectorAll('.gb, #btnUndo').forEach((b) => {
+      const r = b.getBoundingClientRect();
+      if (r.width < 40 || r.height < 36 || r.left < -1 || r.right > W + 1 || r.bottom > H + 1) bad.push(['下の帯', b.id, Math.round(r.width), Math.round(r.height), Math.round(r.bottom)]);
     });
     return bad;
   });
 }
+/* 行が縦にすべるか（チームごと） */
+const scrolls = (page) => page.evaluate(() => Array.from(document.querySelectorAll('.roster')).map((r) => r.scrollHeight > r.clientHeight + 1));
+/* 選手の行のボタン */
+const pb = (tm, no, type) => `#panel${tm} .prow[data-no="${no == null ? '' : no}"] .pb[data-type="${type}"]`;
 
 (async () => {
   const root = MODE === 'built' ? path.join(__dirname, '..', '..', 'public', 'basket-tap') : path.join(__dirname, '..');
@@ -99,45 +111,56 @@ async function allVisible(page) {
     ok((await allVisible(page)).length === 0, 'プレーのボタンが全部、画面に収まる', await allVisible(page));
     ok((await barOverlap(page)).length === 0, '上の帯（スタート・ピリオド・得点・メニュー）が重ならない', await barOverlap(page));
     await shot(page, 'phone-prestart');
-    { const bb = await page.locator('#panel0 .act[data-type="fg2"]').boundingBox(); await page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2); }
-    ok(plays(await game(page)).length === 0, 'スタート前にプレーの所を押しても記録しない（大きなスタートの札の下）');
+    // （まん中の札のボタンに当たらないよう、いちばん上の行を押す）
+    { const bb = await page.locator(pb(0, '4', 'fg2')).boundingBox(); await page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2); }
+    await tap(page, '#btnMark');
+    ok(plays(await game(page)).length === 0, 'スタート前は記録しない（選手の行は大きなスタートの札の下・★ を押すと「先にスタート」）');
+    ok((await page.textContent('#lastbar')).includes('スタート'), '「先に『▶ スタート』を押してください」');
 
-    console.log('\n■ スタート → 記録（どちらの順でも）');
+    console.log('\n■ スタート → 選手の行のボタンを1回押して記録');
     await tap(page, '#btnStartBig');
     g = await game(page);
     ok(g.startedAt === T0.getTime() && g.events.length === 1 && g.events[0].type === 'period', 'スタートの時刻と「1Q 開始」');
+    ok(await page.$$eval('#panel0 .prow', (els) => els.map((e) => e.dataset.no).join(',')) === '4,5,6,7,8,9,10,11,12,13,14,23,', '自分：背番号の小さい順に上から並び、最後に「？」の行', await page.$$eval('#panel0 .prow', (els) => els.map((e) => e.dataset.no).join(',')));
+    ok(await page.$$eval('#panel0 .prow[data-no="7"] .pb', (els) => els.map((e) => e.dataset.type + ':' + e.textContent.trim()).join(',')) === 'fg2:2P,fg3:3P,ft:FT,reb:リバ', '1行に「2P」「3P」「FT」「リバ」（失敗のボタンはない）');
+    ok(!(await page.$('.pb[data-type="fg2x"], .pb[data-type="pass"]')), '選手の行に、失敗・パスミスのボタンはない');
     await page.clock.runFor(10000);
     ok((await page.textContent('#tval')).trim() === '0:10', '左上の時計が進む（0:10）');
-    await tap(page, '#panel0 .no[data-no="7"]');
-    ok(await page.$('#panel0 .no[data-no="7"].sel'), '番号を押すと、選んだ印');
-    await tap(page, '#panel0 .act[data-type="fg2"]');
+    await tap(page, pb(0, '7', 'fg2'));
     g = await game(page);
     let e = plays(g)[0];
-    ok(e && e.team === 0 && e.no === '7' && e.type === 'fg2' && e.t === 10, '番号 → プレー：0:10 に #7 の 2P成功', e);
+    ok(e && e.team === 0 && e.no === '7' && e.type === 'fg2' && e.t === 10, '「7」の行の「2P」を1回押す：0:10 に #7 の 2P成功', e);
     ok((await page.textContent('#score0')).trim() === '2', '得点が増える（2）');
-    ok((await page.textContent('#lastbar')).includes('#7') && (await page.textContent('#lastbar')).includes('2P成功'), '画面の下に、いま記録したものが出る');
+    ok((await page.textContent('#lastbar')).includes('#7') && (await page.textContent('#lastbar')).includes('2P成功'), '画面の下に、いま記録したもの（#7 たけし 2P成功）');
+    ok((await page.textContent(pb(0, '7', 'fg2') + ' .cnt')).trim() === '1', 'ボタンに回数「1」');
     await page.clock.runFor(10000);
-    await tap(page, '#panel1 .act[data-type="fg3"]');
-    ok(await page.isVisible('#panel1 .ask') && (await page.textContent('#panel1 .asktxt')).includes('3P成功'), 'プレーを先に押すと「だれの『3P成功』？」');
-    await page.clock.runFor(3000);
-    await tap(page, '#panel1 .no[data-no="00"]');
+    await tap(page, pb(1, '00', 'fg3'));
     g = await game(page);
     e = plays(g)[1];
-    ok(e.team === 1 && e.no === '00' && e.type === 'fg3' && e.t === 20, 'プレー → 番号：3 秒後に「00」を押しても、時刻はプレーを押した 0:20', e);
-    ok(!(await page.isVisible('#panel1 .ask')), '番号が付いたら「だれの？」は消える');
+    ok(e.team === 1 && e.no === '00' && e.type === 'fg3' && e.t === 20, '相手「00」の行の「3P」：0:20 に #00 の 3P成功（0 と 00 は別）', e);
     await page.clock.runFor(5000);
-    await tap(page, '#panel0 .act[data-type="reb"]');
-    await page.clock.runFor(8000);
-    ok(!(await page.isVisible('#panel0 .ask')), '7 秒たつと「だれの？」は消える');
+    await tap(page, pb(0, null, 'reb'));
     g = await game(page);
-    ok(plays(g)[2].type === 'reb' && plays(g)[2].no === null && plays(g)[2].t === 28, 'プレーだけ：番号なしのリバウンド（0:28）', plays(g)[2]);
-    await tap(page, '#panel0 .act[data-type="pass"]');
-    await tap(page, '#panel0 .askx');
-    ok(!(await page.isVisible('#panel0 .ask')), '「番号なし」で、すぐに待つのをやめる');
-    await tap(page, '#panel0 .act[data-type="fg2x"]');
-    await tap(page, '#panel0 .act[data-type="fg2x"]');
+    ok(plays(g)[2].type === 'reb' && plays(g)[2].team === 0 && plays(g)[2].no === null && plays(g)[2].t === 25, '「？」の行の「リバ」：番号なしのリバウンド（0:25）', plays(g)[2]);
+
+    console.log('\n■ パスミス・★ あとで見る（画面の下・チームも選手も決めない）');
+    await page.clock.runFor(2000);
+    await tap(page, '#btnPass');
+    await page.clock.runFor(1500);
+    await tap(page, '#btnMark');
     g = await game(page);
-    ok(plays(g).filter((x) => x.type === 'fg2x').length === 1, '同じボタンの二度押し（0.45 秒以内）は1回');
+    ok(plays(g)[3].type === 'pass' && plays(g)[3].team === null && plays(g)[3].no === null && plays(g)[3].t === 27, '「パスミス」：0:27 にチームなしのパスミス', plays(g)[3]);
+    ok(plays(g)[4].type === 'mark' && plays(g)[4].team === null && plays(g)[4].t === 28.5, '「★ あとで見る」：0:28.5 にチームなし', plays(g)[4]);
+    ok((await page.textContent('#btnPass .cnt')).trim() === '1' && (await page.textContent('#lastbar')).includes('チームなし'), 'パスミスの回数・画面の下に「チームなし」');
+    ok((await page.textContent('#score0')).trim() === '2' && (await page.textContent('#score1')).trim() === '3', '得点は変わらない');
+    await tap(page, pb(0, '9', 'ft'));
+    await tap(page, pb(0, '9', 'ft'));
+    g = await game(page);
+    ok(plays(g).filter((x) => x.type === 'ft').length === 1, '同じボタンの二度押し（0.45 秒以内）は1回');
+    await page.clock.runFor(1000);
+    await tap(page, pb(0, '9', 'ft'));
+    g = await game(page);
+    ok(plays(g).filter((x) => x.type === 'ft' && x.no === '9').length === 2 && (await page.textContent(pb(0, '9', 'ft') + ' .cnt')).trim() === '2', '1 秒あけて押せば、もう1本（フリースロー 2 本目）・回数「2」');
     ok((await allVisible(page)).length === 0, '記録中も、ボタンが全部収まる', await allVisible(page));
     ok((await barOverlap(page)).length === 0, '記録中も、上の帯が重ならない', await barOverlap(page));
     await shot(page, 'phone-live');
@@ -146,23 +169,24 @@ async function allVisible(page) {
     const before = plays(await game(page)).length;
     await tap(page, '#btnUndo');
     ok(plays(await game(page)).length === before - 1, '「↶ 取り消す」でいちばん新しい記録を取り消す');
+    ok((await page.textContent(pb(0, '9', 'ft') + ' .cnt')).trim() === '1', 'ボタンの回数も戻る（2 → 1）');
     ok(await page.isVisible('#btnMsgAct') && (await page.textContent('#btnMsgAct')).includes('やり直す'), '画面の下に「やり直す」');
     await tap(page, '#btnMsgAct');
     ok(plays(await game(page)).length === before, '「やり直す」で戻る');
 
     console.log('\n■ 名簿にない番号を、その場で足す');
-    await page.clock.runFor(2000);
-    await tap(page, '#panel1 .act[data-type="fg2"]');
-    await tap(page, '#panel1 .no.add');
+    await tap(page, '#panel1 .tadd');
     await page.waitForSelector('.keypad');
     await tap(page, '.key[data-key="2"]');
     await tap(page, '.key[data-key="3"]');
-    await page.clock.runFor(9000);          // 打っている間に 7 秒を過ぎても、その記録に付く
     await tap(page, '#btnKeyOk');
     g = await game(page);
-    e = plays(g)[plays(g).length - 1];
-    ok(g.teams[1].players.some((p) => p.no === '23') && e.no === '23' && e.type === 'fg2', '「＋」で #23 を足して、待っていた記録に付ける', e);
-    ok(await page.$('#panel1 .no[data-no="23"]'), '足した番号のボタンが出る');
+    ok(g.teams[1].players.some((p) => p.no === '23'), '「＋番号」で相手に #23 を足す');
+    ok(await page.$$eval('#panel1 .prow', (els) => els.map((e) => e.dataset.no).join(',')) === '00,4,5,6,7,8,9,23,', '足した番号の行が、番号の順のところに入る');
+    await page.clock.runFor(2000);
+    await tap(page, pb(1, '23', 'fg2'));
+    e = plays(await game(page)).slice(-1)[0];
+    ok(e.team === 1 && e.no === '23' && e.type === 'fg2', '足した行のボタンで、すぐに記録できる', e);
 
     console.log('\n■ ピリオド');
     const cur = await page.evaluate(() => BT.elapsed(BT.app.S.game, Date.now()));
@@ -174,9 +198,8 @@ async function allVisible(page) {
     ok(per2 && Math.abs(per2.t - 600) < 1, '「2Q を始める」で、その時刻（10:00）に 2Q 開始', per2);
     ok((await page.textContent('#btnPeriod')).trim() === '2Q', '時計の横が「2Q」');
     await page.clock.runFor(4000);
-    await tap(page, '#panel0 .no[data-no="10"]');
-    await tap(page, '#panel0 .act[data-type="fg3"]');
-    ok((await page.textContent('#score0')).trim() === '5' && (await page.textContent('#score1')).trim() === '5', '得点 5 − 5');
+    await tap(page, pb(0, '10', 'fg3'));
+    ok((await page.textContent('#score0')).trim() === '7' && (await page.textContent('#score1')).trim() === '5', '得点 7 − 5（2P・FT 2 本・3P と、3P・2P）');
 
     console.log('\n■ 記録の一覧で直す');
     await tap(page, '#btnMenu');
@@ -184,6 +207,7 @@ async function allVisible(page) {
     await page.waitForSelector('.loglist');
     ok((await page.$$('.lrow')).length === plays(await game(page)).length + 2, '一覧に、記録とピリオドの始まりが並ぶ');
     await shot(page, 'phone-log');
+    ok(await page.$('.tabsrow .btn:has-text("チームなし")'), '「チームなし」のタブ（パスミス・★）');
     const rebId = plays(await game(page)).find((x) => x.type === 'reb').id;
     await page.click(`.lrow[data-id="${rebId}"]`);
     await page.waitForSelector('.edit');
@@ -191,10 +215,19 @@ async function allVisible(page) {
     await page.click('.edit .btn:has-text("+1秒")');
     g = await game(page);
     e = g.events.find((x) => x.id === rebId);
-    ok(e.no === '5' && e.t === 29, '番号なしのリバウンドに #5 を付け、時刻を +1 秒', e);
-    await shot(page, 'phone-edit');
+    ok(e.no === '5' && e.t === 26, '番号なしのリバウンドに #5 を付け、時刻を +1 秒', e);
+    ok(await page.$$eval('.typepick .btn', (els) => els.map((b) => b.dataset.etype).join(',')) === 'fg2,fg3,ft,reb,pass,mark', '直せるプレーは、画面のボタンと同じ種類');
     await page.click('#btnDelEv');
     ok(!(await game(page)).events.some((x) => x.id === rebId), '記録を消す');
+    const passId = plays(await game(page)).find((x) => x.type === 'pass').id;
+    await page.click(`.lrow[data-id="${passId}"]`);
+    await page.waitForSelector('.edit');
+    ok(await page.$('[data-eteam="none"].on') && !(await page.$('.nopick')), 'チームなしのパスミス：「チームなし」が選ばれ、背番号の欄はない');
+    await page.click('[data-eteam="0"]');
+    await page.click('.nopick .btn:has-text("#8")');
+    e = (await game(page)).events.find((x) => x.id === passId);
+    ok(e.team === 0 && e.no === '8', 'あとから、チーム（自分）と #8 を付けられる', e);
+    await shot(page, 'phone-edit');
     await page.click('.sheet-card header .x');
 
     console.log('\n■ 集計');
@@ -202,7 +235,10 @@ async function allVisible(page) {
     await page.click('.mitem:has-text("集計")');
     await page.waitForSelector('.stats');
     const statText = await page.textContent('.stats');
-    ok(/たけし/.test(statText) && /1\/1/.test(statText), '集計に #7 たけし（2P 1/1）');
+    const row7 = await page.$$eval('.teamstat', (secs) => { const tr = Array.from(secs[0].querySelectorAll('tbody tr')).find((r) => r.querySelector('td.no') && r.querySelector('td.no').textContent === '7'); return tr ? Array.from(tr.children).map((td) => td.textContent) : null; });
+    ok(row7 && row7[1] === 'たけし' && row7[2] === '2' && row7[3] === '1', '集計に #7 たけし（得点 2・2P 1 本）', row7);
+    ok(!/1\/1/.test(statText) && !/成功率/.test(statText), '失敗のボタンがないので「成功/打った数」「成功率」は出さない（入れた本数だけ）');
+    ok(/チームなし/.test(statText) && /★ あとで見る 1/.test(statText), '集計に「チームなし：★ あとで見る 1」');
     ok(await page.$$eval('.per tbody tr', (rows) => rows.map((r) => r.textContent.replace(/\s+/g, '')).join('|')).then((t) => t.includes('致遠館') && t.includes('5')), 'ピリオドごとの得点の表');
     await shot(page, 'phone-stats');
     await page.click('.sheet-card header .x');
@@ -215,6 +251,7 @@ async function allVisible(page) {
     const ex = JSON.parse(jsonText);
     ok(/^バスケ記録_2026-10-19_1530_致遠館vs相手\.json$/.test(dl.suggestedFilename()), 'ファイル名：バスケ記録_日付_時刻_チーム', dl.suggestedFilename());
     ok(ex.format === 'basket-tap' && ex.startedAt === T0.getTime() && ex.events.filter((x) => x.type !== 'period').length === plays(await game(page)).length && ex.types.pass.label === 'パスミス', 'JSON：形・スタートの時刻・記録・呼び名');
+    ok(ex.events.find((x) => x.type === 'mark').team === null, 'JSON：チームなしの記録は team: null');
     [dl] = await Promise.all([page.waitForEvent('download'), page.click('#btnExpCsv')]);
     const csvText = fs.readFileSync(await dl.path(), 'utf8');
     ok(csvText.charCodeAt(0) === 0xfeff && csvText.includes('致遠館,7,たけし,2P成功'), 'CSV：Excel 用の BOM と、#7 たけし 2P成功');
@@ -226,7 +263,7 @@ async function allVisible(page) {
     const n0 = plays(await game(page)).length;
     await page.reload();
     await page.waitForSelector('.live');
-    ok(plays(await game(page)).length === n0 && (await page.textContent('#score0')).trim() === '5', '記録・得点がそのまま');
+    ok(plays(await game(page)).length === n0 && (await page.textContent('#score0')).trim() === '7' && (await page.textContent(pb(0, '9', 'ft') + ' .cnt')).trim() === '2', '記録・得点・ボタンの回数がそのまま');
     await page.clock.runFor(1000);
     ok((await page.textContent('#tval')).trim().startsWith('10:'), '時計はスタートから進み続けている', await page.textContent('#tval'));
 
@@ -239,11 +276,22 @@ async function allVisible(page) {
     await page.waitForSelector('.stats');
     await page.click('.sheet-card header .x');
     ok(await page.isVisible('#cover') && (await page.textContent('#cover')).includes('試合終了'), '「試合終了」と得点');
-    { const bb = await page.locator('#panel0 .act[data-type="fg2"]').boundingBox(); await page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2); }
-    ok(plays(await game(page)).length === n0, '終えたあとは記録しない');
+    { const bb = await page.locator(pb(0, '4', 'fg2')).boundingBox(); await page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2); }
+    await tap(page, '#btnPass');
+    ok(plays(await game(page)).length === n0, '終えたあとは記録しない（選手の行・パスミスとも）');
     await page.click('#cover .btn.small');
     ok(!(await game(page)).endedAt && !(await page.isVisible('#cover')), '「続きを記録する」で戻せる');
     ok(errors.length === 0, 'ページのエラーがない', errors.slice(0, 3));
+
+    console.log('\n■ 設定（「？」の行・名前）');
+    await tap(page, '#btnMenu');
+    await page.click('.mitem:has-text("設定")');
+    await page.click('input[data-pref="unknown"]');
+    ok(!(await page.$('#panel0 .prow.unk')) && await page.$$eval('#panel0 .prow', (els) => els.length) === 12, '「？」の行を出さない（背番号の行だけ）');
+    await page.click('input[data-pref="unknown"]');
+    ok(await page.$('#panel0 .prow.unk') && await page.$('#panel1 .prow.unk'), 'もう一度チェックすると「？」の行が戻る');
+    await page.click('.sheet-card header .x');
+    ok(errors.length === 0, 'ページのエラーがない（設定のあと）', errors.slice(0, 3));
 
     console.log('\n■ 試合の一覧・次の試合（自分のチームは自動で入る）');
     await tap(page, '#btnMenu');
@@ -256,8 +304,9 @@ async function allVisible(page) {
     await ctx.close();
 
     // いろいろな画面の大きさで、ボタンが収まるか
-    console.log('\n■ 画面の大きさ（背番号 15 人ずつでも、プレーのボタンが全部収まる）');
-    for (const vp of [{ width: 375, height: 553, n: 'iPhone SE（Safari）' }, { width: 430, height: 800, n: '大きいスマホ' }, { width: 750, height: 340, n: 'スマホ横向き' }, { width: 667, height: 320, n: 'SE 横向き' }, { width: 820, height: 1100, n: 'iPad 縦' }, { width: 1180, height: 820, n: 'iPad 横' }]) {
+    console.log('\n■ 画面の大きさ（背番号 15 人ずつ・「？」の行つき）');
+    // scroll：行を縦にすべらせてよいか（高さの足りない画面だけ。ふつうのスマホ・iPad は全員が1画面に入る）
+    for (const vp of [{ width: 390, height: 664, n: 'ふつうのスマホ（Safari）' }, { width: 375, height: 553, n: 'iPhone SE（Safari）', scroll: true }, { width: 430, height: 800, n: '大きいスマホ' }, { width: 750, height: 340, n: 'スマホ横向き', scroll: true }, { width: 667, height: 320, n: 'SE 横向き', scroll: true }, { width: 820, height: 1100, n: 'iPad 縦' }, { width: 1180, height: 820, n: 'iPad 横' }]) {
       const P = await openPage(browser, srv.url, { width: vp.width, height: vp.height });
       await P.page.evaluate(() => {
         const g2 = BT.newGame({ teams: [{ name: 'A', players: BT.parseNumbers('4-18').map((no) => ({ no })) }, { name: 'B', players: BT.parseNumbers('4-18').map((no) => ({ no })) }] });
@@ -269,8 +318,17 @@ async function allVisible(page) {
       const bo = await barOverlap(P.page);
       ok(bo.length === 0 && /^1:02:0\d$/.test((await P.page.textContent('#tval')).trim()), `${vp.n}：1時間を超えた時計・3けたの得点でも、上の帯が重ならない`, { bo, t: await P.page.textContent('#tval') });
       const bad = await allVisible(P.page);
-      const lay = await P.page.evaluate(() => document.querySelector('.live').className);
-      ok(bad.length === 0, `${vp.n}（${vp.width}×${vp.height}）：${lay.replace('live ', '')}`, bad);
+      const info = await P.page.evaluate(() => { const b = document.querySelector('.pb').getBoundingClientRect(); return { lay: document.querySelector('.live').className.replace('live ', ''), c: BT.app.S.L.plan.teams.map((t) => t.c).join('・'), w: Math.round(b.width), h: Math.round(b.height) }; });
+      const sc = await scrolls(P.page);
+      ok(bad.length === 0, `${vp.n}（${vp.width}×${vp.height}）：${info.lay}・${info.c} 列・ボタン ${info.w}×${info.h}`, bad);
+      ok(vp.scroll || !sc.some(Boolean), `${vp.n}：${vp.scroll ? '入りきらない分は、行を縦にすべらせる' : '全員が1画面に入る（すべらせない）'}`, sc);
+      if (vp.scroll && sc.some(Boolean)) {
+        // すべらせて、いちばん下の「？」の行も押せる
+        await P.page.evaluate(() => document.querySelectorAll('.roster').forEach((r) => { r.scrollTop = r.scrollHeight; }));
+        const n0 = (await game(P.page)).events.length;
+        await P.page.tap(pb(1, null, 'reb'));
+        ok((await game(P.page)).events.length === n0 + 1, `${vp.n}：すべらせた先の「？」の行も押せる`);
+      }
       await shot(P.page, `size-${vp.width}x${vp.height}`);
       ok(P.errors.length === 0, `${vp.n}：ページのエラーがない`, P.errors.slice(0, 2));
       await P.ctx.close();

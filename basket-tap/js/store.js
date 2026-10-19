@@ -1,7 +1,7 @@
 /* バスケ タップ記録 — 保存（このブラウザの中だけ。どこにも送らない）
    ・試合：1つ記録するたびに、すぐ保存する（途中で画面を閉じても、開き直せば続きから）
    ・チーム：名前・色・名簿を覚えておき、次の試合で選べる（自分のチームは毎回同じことが多いので）
-   ・設定：ボタンの組み合わせ・音・画面の明るさ
+   ・設定：名前の表示・「？」の行・音・画面の明るさ
    キーは「btap:」で始まる。バスケ得点クリップ（同じサイトの別のページ）からも、この試合を読み込める。 */
 (function (root) {
   'use strict';
@@ -63,10 +63,10 @@
   function myTeam() { return teams().find((t) => t.mine) || null; }
 
   /* ---------- 設定 ---------- */
+  /* names：選手の名前も出す / unknown：「？」（だれか分からないとき）の行を出す / sound：タップ音 / theme：画面の色 */
   function prefs() {
-    const p = Object.assign({ actions: [BT.PRESETS.std.ids.slice(), BT.PRESETS.std.ids.slice()], sound: false, theme: 'auto', names: true }, readJSON(K.prefs) || {});
-    if (!Array.isArray(p.actions) || p.actions.length !== 2) p.actions = [BT.PRESETS.std.ids.slice(), BT.PRESETS.std.ids.slice()];
-    p.actions = p.actions.map((ids) => (Array.isArray(ids) ? ids.filter((id) => BT.TYPE[id] && id !== 'period') : BT.PRESETS.std.ids.slice()));
+    const p = Object.assign({ sound: false, theme: 'auto', names: true, unknown: true }, readJSON(K.prefs) || {});
+    delete p.actions;        // 前の版の「ボタンの組み合わせ」（いまは、選手ごとのボタンに決まっている）
     return p;
   }
   function savePrefs(p) { return writeJSON(K.prefs, p); }

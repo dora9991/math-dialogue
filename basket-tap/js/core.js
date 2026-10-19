@@ -11,8 +11,10 @@
      events: [ { id, t, type, team, no } ]  … 追加した順
        t   : スタートからの秒（0.1 秒まで）。ストップウォッチと同じで、止まらずに進む
        type: 下の TYPES の id。'period' はピリオドの始まり（period: 番号。team・no はなし）
-       team: 0 = 自分・1 = 相手 / no: 背番号（文字列。'0' と '00' は別）| null（だれか分からない）
+       team: 0 = 自分・1 = 相手・null = チームなし（画面の下の「パスミス」「★ あとで見る」。だれのかは決めない）
+       no  : 背番号（文字列。'0' と '00' は別）| null（だれか分からない・チームなし）
    }
+   得点のプレー（2P・3P・FT）には、かならずチームが付く。
    ピリオドは、イベントには持たせず「その時刻より前の、いちばん新しい 'period'」で決める（periodAt）。
    ピリオドを進め忘れても、あとで 'period' の時刻を直すだけで、全部の記録のピリオドが正しくなる。 */
 (function (root) {
@@ -36,44 +38,40 @@
   };
 
   /* ---------- プレーの種類 ----------
-     key：ボタンの大きな文字 / sub：小さな文字 / label：記録の一覧・書き出しでの呼び名
-     kind：ボタンの色分け（made 成功・miss 失敗・reb リバウンド・good よいプレー・bad ミス・foul・mark） */
+     label：記録の一覧・書き出しでの呼び名 / short：狭い所での呼び名（なければ label） / btn：記録の画面のボタンの文字
+     kind：色分け（made 成功・miss 失敗・reb リバウンド・good よいプレー・bad ミス・foul・mark）
+     記録の画面にボタンがあるのは、選手ごとの ROW_TYPES と、画面の下の GLOBAL_TYPES だけ。
+     ほかの種類（失敗・アシストなど）は、前の版で記録したファイルを開くため・一覧で直すために残している */
   BT.TYPES = [
-    { id: 'fg2', key: '2P', sub: '○ 成功', label: '2P成功', pts: 2, made: true, shot: 'fg2', kind: 'made', row: 'made' },
-    { id: 'fg3', key: '3P', sub: '○ 成功', label: '3P成功', pts: 3, made: true, shot: 'fg3', kind: 'made', row: 'made' },
-    { id: 'ft', key: 'FT', sub: '○ 成功', label: 'フリースロー成功', pts: 1, made: true, shot: 'ft', kind: 'made', row: 'made' },
-    { id: 'fg2x', key: '2P', sub: '× 失敗', label: '2P失敗', pts: 0, made: false, shot: 'fg2', kind: 'miss', row: 'miss' },
-    { id: 'fg3x', key: '3P', sub: '× 失敗', label: '3P失敗', pts: 0, made: false, shot: 'fg3', kind: 'miss', row: 'miss' },
-    { id: 'ftx', key: 'FT', sub: '× 失敗', label: 'フリースロー失敗', pts: 0, made: false, shot: 'ft', kind: 'miss', row: 'miss' },
-    { id: 'reb', key: 'リバウンド', sub: '', label: 'リバウンド', pts: 0, kind: 'reb', row: 'other' },
-    { id: 'ast', key: 'アシスト', sub: '', label: 'アシスト', pts: 0, kind: 'good', row: 'other' },
-    { id: 'stl', key: 'スティール', sub: '', label: 'スティール', pts: 0, kind: 'good', row: 'other' },
-    { id: 'blk', key: 'ブロック', sub: '', label: 'ブロック', pts: 0, kind: 'good', row: 'other' },
-    { id: 'pass', key: 'パスミス', sub: '', label: 'パスミス', pts: 0, kind: 'bad', row: 'other' },
-    { id: 'tov', key: 'ミス', sub: 'その他', label: 'ミス（その他）', pts: 0, kind: 'bad', row: 'other' },
-    { id: 'foul', key: 'ファウル', sub: '', label: 'ファウル', pts: 0, kind: 'foul', row: 'other' },
-    { id: 'mark', key: '★', sub: 'あとで見る', label: '★ あとで見る', pts: 0, kind: 'mark', row: 'other' }
+    { id: 'fg2', btn: '2P', label: '2P成功', pts: 2, made: true, shot: 'fg2', kind: 'made' },
+    { id: 'fg3', btn: '3P', label: '3P成功', pts: 3, made: true, shot: 'fg3', kind: 'made' },
+    { id: 'ft', btn: 'FT', short: 'FT成功', label: 'フリースロー成功', pts: 1, made: true, shot: 'ft', kind: 'made' },
+    { id: 'fg2x', label: '2P失敗', pts: 0, made: false, shot: 'fg2', kind: 'miss' },
+    { id: 'fg3x', label: '3P失敗', pts: 0, made: false, shot: 'fg3', kind: 'miss' },
+    { id: 'ftx', short: 'FT失敗', label: 'フリースロー失敗', pts: 0, made: false, shot: 'ft', kind: 'miss' },
+    { id: 'reb', btn: 'リバ', label: 'リバウンド', pts: 0, kind: 'reb' },
+    { id: 'ast', label: 'アシスト', pts: 0, kind: 'good' },
+    { id: 'stl', label: 'スティール', pts: 0, kind: 'good' },
+    { id: 'blk', label: 'ブロック', pts: 0, kind: 'good' },
+    { id: 'pass', btn: 'パスミス', label: 'パスミス', pts: 0, kind: 'bad' },
+    { id: 'tov', label: 'ミス（その他）', pts: 0, kind: 'bad' },
+    { id: 'foul', label: 'ファウル', pts: 0, kind: 'foul' },
+    { id: 'mark', btn: '★ あとで見る', label: '★ あとで見る', pts: 0, kind: 'mark' }
   ];
   BT.TYPE = {};
   BT.TYPES.forEach((d) => { BT.TYPE[d.id] = d; });
-  BT.TYPE.period = { id: 'period', key: '', sub: '', label: 'ピリオド開始', pts: 0, kind: 'period', row: null };
+  BT.TYPE.period = { id: 'period', label: 'ピリオド開始', pts: 0, kind: 'period' };
 
-  /* ボタンの組み合わせ（設定で、チームごとに選べる。自由に選ぶこともできる） */
-  BT.PRESETS = {
-    std: { name: 'ふつう', ids: ['fg2', 'fg3', 'ft', 'fg2x', 'fg3x', 'ftx', 'reb', 'pass', 'mark'] },
-    full: { name: 'くわしく', ids: ['fg2', 'fg3', 'ft', 'fg2x', 'fg3x', 'ftx', 'reb', 'ast', 'stl', 'blk', 'pass', 'tov', 'foul', 'mark'] },
-    score: { name: '得点だけ', ids: ['fg2', 'fg3', 'ft', 'mark'] }
-  };
-  /* ids をボタンの並び（成功の段・失敗の段・そのほか）に分ける。並びは TYPES の順 */
-  BT.actionRows = function (ids) {
-    const on = new Set(ids || []);
-    const rows = { made: [], miss: [], other: [] };
-    BT.TYPES.forEach((d) => { if (on.has(d.id)) rows[d.row].push(d.id); });
-    return [rows.made, rows.miss, rows.other].filter((r) => r.length);
-  };
-  BT.presetOf = function (ids) {
-    const key = (ids || []).slice().sort().join(',');
-    return Object.keys(BT.PRESETS).find((k) => BT.PRESETS[k].ids.slice().sort().join(',') === key) || null;
+  /* 記録の画面のボタン
+       ROW_TYPES   ：選手（背番号）の行ごとに並ぶボタン。押せば、その選手のプレーとして1回で記録する
+       GLOBAL_TYPES：画面の下に1つずつ。チーム・選手は決めずに、時刻だけを残す */
+  BT.ROW_TYPES = ['fg2', 'fg3', 'ft', 'reb'];
+  BT.GLOBAL_TYPES = ['pass', 'mark'];
+  /* 一覧で直すときに選べる種類（いまの画面のボタン＋その記録の種類） */
+  BT.editTypes = function (cur) {
+    const ids = BT.ROW_TYPES.concat(BT.GLOBAL_TYPES);
+    if (cur && BT.TYPE[cur] && !ids.includes(cur)) ids.push(cur);
+    return ids;
   };
 
   /* ユニフォームの色（よくある色） */
@@ -205,12 +203,17 @@
   BT.currentPeriod = (game, now) => BT.periodAt(game, BT.elapsed(game, now));
   BT.periodLabel = (p) => (p <= 4 ? p + 'Q' : 'OT' + (p - 4));
 
-  /* イベントを足す（時刻 t は呼び出し側が決める）。戻り値：足したイベント */
+  /* イベントを足す（時刻 t は呼び出し側が決める）。戻り値：足したイベント
+     team が 0・1 でなければ「チームなし」（null）。ただし得点のプレーは、チームなしにできないので 0（自分）にする */
   BT.addEvent = function (game, ev) {
     game.seq = (game.seq || 0) + 1;
     const e = { id: 'e' + game.seq, t: Math.round((ev.t || 0) * 10) / 10, type: ev.type };
     if (ev.type === 'period') e.period = ev.period;
-    else { e.team = ev.team === 1 ? 1 : 0; e.no = ev.no != null ? String(ev.no) : null; }
+    else {
+      const d = BT.TYPE[ev.type];
+      e.team = ev.team === 0 || ev.team === 1 ? ev.team : d && d.pts ? 0 : null;
+      e.no = e.team != null && ev.no != null ? String(ev.no) : null;
+    }
     game.events.push(e);
     return e;
   };
@@ -221,54 +224,54 @@
     return game.events.splice(i, 1)[0];
   };
 
-  /* ---------- 「だれが」と「何を」のタップ ----------
-     どちらの順でも記録できる：
-       ・番号 → プレー：番号を選んでおいて、プレーを押した瞬間に記録（選んだ番号はそこで外れる）
-       ・プレー → 番号：プレーを押した瞬間に記録（番号なし）。そのあと WAIT 秒以内に番号を押すと、その記録の番号になる
-       ・プレーだけ  ：番号なしで記録（チームの記録になる。あとで一覧から番号を付けられる）
-     記録の時刻は、いつも「プレーを押した瞬間」。選んだ番号は SEL 秒たつと外れる（選んだまま忘れて、別の人の記録に付かないように） */
-  BT.WAIT = 7;
-  BT.SEL = 12;
-  BT.tapper = function (game) {
-    const T = {
-      sel: [null, null], selAt: [0, 0],          // 選んでいる番号（チームごと）と、選んだ時刻（ミリ秒）
-      wait: [null, null], waitAt: [0, 0],        // 番号を待っている記録の id と、その記録の時刻（ミリ秒）
-      game,
-      expire(now) {
-        let changed = false;
-        [0, 1].forEach((tm) => {
-          if (T.sel[tm] != null && now - T.selAt[tm] > BT.SEL * 1000) { T.sel[tm] = null; changed = true; }
-          if (T.wait[tm] != null && (now - T.waitAt[tm] > BT.WAIT * 1000 || !BT.findEvent(T.game, T.wait[tm]))) { T.wait[tm] = null; changed = true; }
-        });
-        return changed;
-      },
-      /* 番号を押した。戻り値 { kind: 'assign'（待っていた記録に付けた）| 'select' | 'deselect', ev } */
-      number(team, no, now) {
-        T.expire(now);
-        const wid = T.wait[team];
-        if (wid != null) {
-          const ev = BT.findEvent(T.game, wid);
-          T.wait[team] = null;
-          if (ev) { ev.no = String(no); T.sel[team] = null; return { kind: 'assign', ev }; }
+  /* ---------- 記録の画面の並べ方 ----------
+     選手1人＝1行（背番号＋「2P」「3P」「FT」「リバ」）。画面の大きさと人数から、
+       arr：2チームを左右に並べる（side）か、上下に重ねる（stack）か
+       c  ：チームの中を何列にするか（列の中は、上から背番号の小さい順）
+     を決める。ボタンの「幅」と「高さ」の小さいほうが、いちばん大きくなるもの（同じくらいなら、列が少なく、左右に並べるもの）。
+     相手の背番号を入れないとき（相手は1行だけ）は、自分のチームを画面の幅いっぱいに使えるよう、上下に重ねることが多い。
+     ボタンの幅が MIN_BW より狭くなる並べ方は選ばない（高さが足りないときは、行を縦にすべらせる）。
+     数字は css/app.css の記録の画面と合わせている（すきま・ふち） */
+  BT.LAYOUT = { pad: 4, gap: 6, border: 2, rpad: 4, rgap: 3, cgap: 8, bgap: 3, rmin: 28, rmax: 76, minBw: 27 };
+  BT.planLayout = function (W, H, n, headH) {
+    const K = BT.LAYOUT;
+    const fixed = 2 * K.border + headH + 2 * K.rpad;         // チームの枠の中で、行でない高さ（帯・ふち・すきま）
+    const cand = [];
+    ['side', 'stack'].forEach((arr) => {
+      for (let c0 = 1; c0 <= 3; c0++) {
+        for (let c1 = 1; c1 <= 3; c1++) {
+          const c = [c0, c1];
+          if (c0 > n[0] || c1 > n[1]) continue;
+          const r = [Math.ceil(n[0] / c0), Math.ceil(n[1] / c1)];
+          let teamW, rowH;
+          if (arr === 'side') {
+            teamW = (W - 2 * K.pad - K.gap) / 2;
+            rowH = r.map((ri) => (H - fixed - (ri - 1) * K.rgap) / ri);
+          } else {
+            teamW = W - 2 * K.pad;
+            const one = (H - K.gap - 2 * fixed - (r[0] - 1 + r[1] - 1) * K.rgap) / (r[0] + r[1]);
+            rowH = [one, one];
+          }
+          const teams = [0, 1].map((i) => {
+            const cellW = (teamW - 2 * K.border - 2 * K.rpad - (c[i] - 1) * K.cgap) / c[i];
+            const nw = Math.round(BT.clamp(cellW * 0.2, 32, 64));
+            const bw = (cellW - nw - 4 * K.bgap) / 4;
+            return { c: c[i], r: r[i], cellW, nw, bw, rowH: Math.min(rowH[i], K.rmax), base: fixed + (r[i] - 1) * K.rgap };
+          });
+          // ボタンの押しやすさ：幅と高さの小さいほう（大きいほうが広いぶんも、少しだけ足す）
+          const ease = (x) => Math.min(x.bw, x.rowH) + 0.15 * Math.min(Math.abs(x.bw - x.rowH), 30);
+          const size = Math.min(...teams.map(ease));
+          const wide = Math.min(...teams.map((x) => x.bw));
+          // 列を増やすのは、ボタンが十分に大きくなるときだけ（押しやすい大きさなら、1列のほうが見やすい）
+          const colCost = (size >= 34 ? 5 : 1) * (c0 - 1 + c1 - 1);
+          const score = Math.min(size, 44) + 0.1 * Math.max(0, Math.min(size, 64) - 44) - colCost - (arr === 'stack' ? 1.5 : 0);
+          cand.push({ arr, teams, size, wide, score, scroll: teams.some((x) => x.rowH < K.rmin) });
         }
-        if (T.sel[team] === String(no)) { T.sel[team] = null; return { kind: 'deselect' }; }
-        T.sel[team] = String(no); T.selAt[team] = now;
-        return { kind: 'select' };
-      },
-      /* プレーを押した。t：スタートからの秒。戻り値 { kind: 'record', ev, waiting（番号を待つか） } */
-      action(team, type, t, now) {
-        T.expire(now);
-        const no = T.sel[team];
-        const ev = BT.addEvent(T.game, { t, type, team, no });
-        T.sel[team] = null;
-        if (no == null) { T.wait[team] = ev.id; T.waitAt[team] = now; } else T.wait[team] = null;
-        return { kind: 'record', ev, waiting: no == null };
-      },
-      clearWait(team) { T.wait[team] = null; },
-      clearSel(team) { T.sel[team] = null; },
-      reset() { T.sel = [null, null]; T.wait = [null, null]; }
-    };
-    return T;
+      }
+    });
+    const okW = cand.filter((x) => x.wide >= K.minBw);
+    const pool = okW.length ? okW : [cand.slice().sort((a, b) => b.wide - a.wide)[0]];
+    return pool.sort((a, b) => b.score - a.score)[0];
   };
 
   /* ---------- 集計 ---------- */
@@ -276,9 +279,20 @@
     const s = [0, 0];
     (game.events || []).forEach((e) => {
       const d = BT.TYPE[e.type];
-      if (d && d.pts && (until == null || e.t <= until)) s[e.team] += d.pts;
+      if (d && d.pts && e.team != null && (until == null || e.t <= until)) s[e.team] += d.pts;
     });
     return s;
+  };
+  /* ボタンに出す数：「チーム:背番号:種類」→ 回数（チームなしは「-」、番号なしは空）。「*:種類」は、その種類の全部の数 */
+  BT.tally = function (game) {
+    const m = {};
+    (game.events || []).forEach((e) => {
+      if (e.type === 'period') return;
+      const k = (e.team == null ? '-' : e.team) + ':' + (e.no == null ? '' : e.no) + ':' + e.type;
+      m[k] = (m[k] || 0) + 1;
+      m['*:' + e.type] = (m['*:' + e.type] || 0) + 1;
+    });
+    return m;
   };
   /* ピリオドごとの得点 [{ period, label, pts: [自分, 相手] }]（記録のあるピリオドと、始めたピリオド） */
   BT.periodScores = function (game) {
@@ -288,7 +302,7 @@
       if (e.type === 'period') { get(e.period); return; }
       const d = BT.TYPE[e.type];
       const row = get(BT.periodAt(game, e.t));
-      if (d && d.pts) row.pts[e.team] += d.pts;
+      if (d && d.pts && e.team != null) row.pts[e.team] += d.pts;
     });
     if (!map.size) get(1);
     return Array.from(map.values()).sort((a, b) => a.period - b.period);
@@ -334,6 +348,13 @@
       return { team: tm, rows, unknown, total };
     });
   };
+  /* チームなしの記録（画面の下の「パスミス」「★」）の集計 */
+  BT.teamlessStats = function (game) {
+    const oreb = BT.offensiveRebounds(game);
+    const s = zero();
+    (game.events || []).forEach((e) => { if (e.type !== 'period' && e.team == null) add(s, e, oreb); });
+    return s;
+  };
   function add(s, e, oreb) {
     const d = BT.TYPE[e.type];
     if (!d) return;
@@ -345,10 +366,13 @@
     else if (s[e.type] != null) s[e.type]++;
   }
   BT.pct = (m, a) => (a ? Math.round(100 * m / a) + '%' : '—');
+  /* 外れたシュート（前の版の「失敗」のボタン）の記録があるか。なければ、成功率は出さない（入れた本数だけ） */
+  BT.hasMisses = (game) => (game.events || []).some((e) => { const d = BT.TYPE[e.type]; return d && d.shot && !d.made; });
   BT.isEmpty = (s) => STAT_KEYS.every((k) => !s[k]);
 
   /* ---------- 名前 ---------- */
-  BT.teamName = (game, tm) => { const t = game.teams[tm] || {}; return (t.name || '').trim() || (tm ? '相手' : '自分'); };
+  /* チームの呼び名（名前がなければ「自分」「相手」。チームなし（null）は空） */
+  BT.teamName = (game, tm) => { if (tm !== 0 && tm !== 1) return ''; const t = game.teams[tm] || {}; return (t.name || '').trim() || (tm ? '相手' : '自分'); };
   BT.playerName = function (game, tm, no) {
     const p = ((game.teams[tm] || {}).players || []).find((x) => x.no === no);
     return p ? p.name : '';
@@ -357,7 +381,7 @@
   BT.eventText = function (game, e, withTeam) {
     if (e.type === 'period') return `${BT.periodLabel(e.period)} 開始`;
     const d = BT.TYPE[e.type] || { label: e.type };
-    const who = e.no != null ? `#${e.no}${BT.playerName(game, e.team, e.no) ? ' ' + BT.playerName(game, e.team, e.no) : ''}` : '';
+    const who = e.team != null && e.no != null ? `#${e.no}${BT.playerName(game, e.team, e.no) ? ' ' + BT.playerName(game, e.team, e.no) : ''}` : '';
     return [withTeam ? BT.teamName(game, e.team) : '', who, d.label].filter(Boolean).join(' ');
   };
 
@@ -395,7 +419,7 @@
     BT.sorted(game).forEach((e) => {
       if (e.type === 'period') { rows.push(['', BT.fmtTime(e.t), e.t, BT.periodLabel(e.period), '', '', '', `${BT.periodLabel(e.period)} 開始`, '', s[0], s[1]]); return; }
       const d = BT.TYPE[e.type] || { label: e.type, pts: 0 };
-      s[e.team] += d.pts || 0;
+      if (e.team != null) s[e.team] += d.pts || 0;
       rows.push([++n, BT.fmtTime(e.t), e.t, BT.periodLabel(BT.periodAt(game, e.t)), BT.teamName(game, e.team), e.no != null ? e.no : '', e.no != null ? BT.playerName(game, e.team, e.no) : '', d.label, d.pts || '', s[0], s[1]]);
     });
     return csv(rows);
@@ -411,6 +435,8 @@
       if (!BT.isEmpty(st.unknown)) rows.push([name, '番号なし', '', ...keys.map((k) => st.unknown[k])]);
       rows.push([name, '合計', '', ...keys.map((k) => st.total[k])]);
     });
+    const free = BT.teamlessStats(game);
+    if (!BT.isEmpty(free)) rows.push(['チームなし', '', '', ...keys.map((k) => free[k])]);
     return csv(rows);
   };
 
