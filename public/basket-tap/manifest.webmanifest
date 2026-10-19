@@ -1,0 +1,17 @@
+{
+  "name": "バスケ タップ記録",
+  "short_name": "タップ記録",
+  "description": "バスケの試合を見ながら、シュート・リバウンド・パスミスなどをタップで記録。あとで動画から場面を切り出せる",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0e15",
+  "theme_color": "#0a0e15",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
