@@ -3,7 +3,8 @@
 
    記録のファイル（format: 'basket-tap'）：
      startedAt（スタートを押した時刻・エポックミリ秒）、teams（自分・相手の名前・色・名簿）、
-     events: [{ id, t（スタートからの秒）, type（fg2・reb・pass など／'period' はピリオドの始まり）, team（0 自分・1 相手）, no（背番号）}]
+     events: [{ id, t（スタートからの秒）, type（fg2・reb・pass など／'period' はピリオドの始まり）, team（0 自分・1 相手・null チームなし）, no（背番号）}]
+     チームなし：記録の画面の下の「パスミス」「★ あとで見る」（だれのかは決めずに、時刻だけ）。チームの絞り込みでは外さない。
    くわしくは basket-tap/js/core.js の先頭。
 
    時刻あわせ（sync）：記録の時刻 t と、動画の時刻 v の対応を「合わせた点」anchors: [{ t, v }] で持つ。
@@ -68,7 +69,9 @@
       if (e.type === 'period') { events.push({ id, t: +e.t, type: 'period', period: Math.max(1, Math.round(e.period || 1)) }); return; }
       const d = TYPES[e.type];
       const label = names[e.type] && typeof names[e.type].label === 'string' ? names[e.type].label.slice(0, 20) : d.label;
-      events.push({ id, t: Math.round(e.t * 10) / 10, type: e.type, team: e.team === 1 ? 1 : 0, no: e.no != null ? normNo(e.no) : null, period: isFinite(e.period) ? e.period : periodAt(e.t), label, grp: d.grp, pts: d.pts });
+      // チームは 0・1。それ以外はチームなし（null）。ただし得点はチームなしにできないので 0（前の版の記録は、いつも 0・1）
+      const team = e.team === 0 || e.team === 1 ? e.team : d.pts ? 0 : null;
+      events.push({ id, t: Math.round(e.t * 10) / 10, type: e.type, team, no: team != null && e.no != null ? normNo(e.no) : null, period: isFinite(e.period) ? e.period : periodAt(e.t), label, grp: d.grp, pts: d.pts });
     });
     // id がかぶっていたら付け直す
     const seen = new Set();
@@ -83,17 +86,17 @@
   }
 
   const plays = (log) => ((log && log.events) || []).filter((e) => e.type !== 'period');
-  const teamName = (log, tm) => ((log.teams[tm] && log.teams[tm].name) || (tm ? '相手' : '自分'));
+  const teamName = (log, tm) => (tm !== 0 && tm !== 1 ? '' : (log.teams[tm] && log.teams[tm].name) || (tm ? '相手' : '自分'));
   const playerName = (log, tm, no) => { const p = ((log.teams[tm] || {}).players || []).find((x) => x.no === no); return p ? p.name : ''; };
   /* 「#7 たけし 2P成功」 */
   function eventLabel(log, e, withTeam) {
     if (e.type === 'period') return `${periodLabel(e.period)} 開始`;
     const nm = e.no != null ? playerName(log, e.team, e.no) : '';
-    return [withTeam ? teamName(log, e.team) : '', e.no != null ? '#' + e.no + (nm ? ' ' + nm : '') : '', e.label].filter(Boolean).join(' ');
+    return [withTeam && e.team != null ? teamName(log, e.team) : '', e.no != null ? '#' + e.no + (nm ? ' ' + nm : '') : '', e.label].filter(Boolean).join(' ');
   }
   function score(log, until) {
     const s = [0, 0];
-    plays(log).forEach((e) => { if (until == null || e.t <= until) s[e.team] += e.pts || 0; });
+    plays(log).forEach((e) => { if (e.team != null && (until == null || e.t <= until)) s[e.team] += e.pts || 0; });
     return s;
   }
 
@@ -127,7 +130,7 @@
   }
 
   /* ---------- 場面（クリップ） ----------
-     filter: { teams: [自分を出すか, 相手を出すか], groups: { score: true, … }（なし＝全部）, players: ['0:7', …]（空＝全員） }
+     filter: { teams: [自分を出すか, 相手を出すか]（チームなしの記録には効かない）, groups: { score: true, … }（なし＝全部）, players: ['0:7', …]（空＝全員） }
      win: { lead, lag } / duration：動画の長さ / off：{ id: true }（外した場面）
      戻り値 { clips: [{ id, t, at, team, no, type, label, period, t0, t1, on, n, total }], outside: 動画の外の数 } */
   function clips(log, anchors, filter, win, duration, off) {
@@ -139,7 +142,7 @@
     const end = duration > 0 ? duration : Infinity;
     const ps = new Set(f.players || []);
     plays(log).forEach((e) => {
-      if (f.teams && f.teams[e.team] === false) return;
+      if (f.teams && e.team != null && f.teams[e.team] === false) return;
       if (f.groups && Object.keys(f.groups).length && !f.groups[e.grp]) return;
       if (ps.size && !(e.no != null && ps.has(e.team + ':' + e.no))) return;
       const at = toVideo(e.t, anchors);
@@ -174,9 +177,9 @@
     const f = filter || {};
     const grp = {}, players = {};
     plays(log).forEach((e) => {
-      if (f.teams && f.teams[e.team] === false) return;
+      if (f.teams && e.team != null && f.teams[e.team] === false) return;
       grp[e.grp] = (grp[e.grp] || 0) + 1;
-      if (e.no != null) { const k = e.team + ':' + e.no; players[k] = (players[k] || 0) + 1; }
+      if (e.team != null && e.no != null) { const k = e.team + ':' + e.no; players[k] = (players[k] || 0) + 1; }
     });
     return { grp, players };
   }

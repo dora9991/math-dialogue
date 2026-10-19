@@ -10,7 +10,7 @@
 
   const S = {
     view: 'home',
-    game: null, tap: null,
+    game: null,
     prefs: BT.store.prefs(),
     draft: null,            // 新しい試合の準備中のチーム { teams, title }
     setupFor: 'new',        // 'new'（新しい試合）| 'edit'（記録中の試合のチームを直す）
@@ -63,7 +63,6 @@
   }
   function openGame(game) {
     S.game = game;
-    S.tap = BT.tapper(game);
     S.redo = [];
     BT.store.setCurrent(game.id);
     go('live');
@@ -96,7 +95,7 @@
           h('ol', null,
             h('li', null, h('b', null, 'チームと背番号を選ぶ'), h('span', null, '「4〜15」ボタンでまとめて。自分のチームは次から自動で入ります')),
             h('li', null, h('b', null, 'ティップオフで ▶ スタート'), h('span', null, '左上の時計が動き出します')),
-            h('li', null, h('b', null, 'プレーをタップ'), h('span', null, '「7」→「2P 成功」でも、「2P 成功」→「7」でも。押した瞬間の時刻で残ります')))),
+            h('li', null, h('b', null, '選手の行のボタンを1回タップ'), h('span', null, '「7」の行の「2P」を押すだけ。パスミス・★ は画面の下でいつでも。押した瞬間の時刻で残ります')))),
         h('section', { class: 'card tools' },
           h('h2', null, '動画から場面を切り出す'),
           h('p', null, '記録した試合のファイル（書き出す → 記録のファイル）を「バスケ得点クリップ」で試合の動画と一緒に開くと、記録した場面（シュート・リバウンド・パスミスなど）を動画から切り出して、続けて見たり、1本の動画にしたりできます。'),
@@ -267,13 +266,23 @@
     return card;
   }
 
-  /* ========== 記録の画面 ========== */
+  /* ========== 記録の画面 ==========
+     選手（背番号）ごとに1行。行の「2P」「3P」「FT」「リバ」を押せば、その選手のプレーとして1回で記録する（時刻は押した瞬間）。
+     「パスミス」「★ あとで見る」は画面の下に1つずつ。チーム・選手は決めずに、いつでも押せる。
+     画面は、いちど作ったら作り直さず、数字（得点・回数）だけを書き換える
+     （押している間にボタンが入れ替わると、Safari ではタップにならないため） */
+  /* そのチームの行：背番号の小さい順＋「？」（だれか分からないとき。背番号がないチームは、この1行だけ） */
+  function rowsOf(tm) {
+    const rows = S.game.teams[tm].players.map((p) => ({ no: p.no, name: p.name }));
+    if (S.prefs.unknown !== false || !rows.length) rows.push({ no: null, name: '' });
+    return rows;
+  }
   function buildLive() {
     const g = S.game;
     document.body.dataset.view = 'live';
     const V = $('#view');
     V.innerHTML = '';
-    const L = S.L = { panels: [], waitShown: [null, null] };
+    const L = S.L = { panels: [], btns: [], gb: {} };
     L.clock = h('button', { class: 'clock', id: 'clock', title: 'スタートからの時間', onclick: openMenu }, h('span', { class: 'recdot' }), h('span', { class: 'tval', id: 'tval' }, '0:00'));
     L.start = h('button', { class: 'startbtn', id: 'btnStart', onclick: start }, '▶ スタート');
     L.period = h('button', { class: 'period', id: 'btnPeriod', 'aria-label': 'ピリオド', onclick: openPeriod }, '1Q');
@@ -284,83 +293,81 @@
     const P = L.panelsEl = h('main', { class: 'panels' }, [0, 1].map(buildPanel));
     P.addEventListener('click', onPanelClick);
     L.cover = h('div', { class: 'cover', id: 'cover', hidden: true });
-    L.last = h('footer', { class: 'lastbar', id: 'lastbar' });
-    L.root = h('div', { class: 'live' }, bar, h('div', { class: 'stagewrap' }, P, L.cover), L.last);
+    // 画面の下：パスミス・★（チーム・選手は決めない）と、いま記録したもの・取り消す
+    const gbtn = (type, id, label, sub) => {
+      const cnt = h('i', { class: 'cnt', hidden: true });
+      const el = h('button', { class: 'gb k-' + BT.TYPE[type].kind, id, dataset: { gtype: type }, 'aria-label': `${BT.TYPE[type].label}（チーム・選手は決めない）`, onclick: (e) => record(null, null, type, e.currentTarget) },
+        h('b', null, label), sub ? h('small', null, sub) : null, cnt);
+      L.gb[type] = { el, cnt };
+      return el;
+    };
+    L.last = h('div', { class: 'lastbar', id: 'lastbar' });
+    L.gbar = h('footer', { class: 'gbar' }, gbtn('pass', 'btnPass', 'パスミス'), gbtn('mark', 'btnMark', '★', 'あとで見る'), L.last);
+    L.root = h('div', { class: 'live' }, bar, h('div', { class: 'stagewrap' }, P, L.cover), L.gbar);
     V.append(L.root);
     updateLive();
     layoutLive();
   }
+  function buildPanel(tm) {
+    const g = S.game, t = g.teams[tm];
+    const tsc = h('span', { class: 'tsc' }, '0');
+    const head = h('div', { class: 'thead' }, h('b', { class: 'tname' }, BT.teamName(g, tm)), tsc,
+      h('button', { class: 'tadd', dataset: { add: '1' }, title: '名簿にない背番号を足す', 'aria-label': `${BT.teamName(g, tm)} の背番号を足す` }, '＋番号'));
+    const roster = h('div', { class: 'roster', role: 'group', 'aria-label': `${BT.teamName(g, tm)} の選手` });
+    const sec = h('section', { class: 'team', id: 'panel' + tm, dataset: { team: tm }, style: { '--tc': t.color, '--tink': BT.inkOn(t.color) } }, head, roster);
+    S.L.panels[tm] = { sec, head, tsc, roster, n: 0 };
+    fillRoster(tm);
+    return sec;
+  }
+  /* 選手の行を並べる（名簿が変わったときにも呼ぶ） */
+  function fillRoster(tm) {
+    const L = S.L, P = L.panels[tm], g = S.game;
+    P.roster.innerHTML = '';
+    L.btns = L.btns.filter((b) => b.team !== tm);
+    const rows = rowsOf(tm);
+    const teamOnly = rows.length === 1 && rows[0].no == null;
+    P.n = rows.length;
+    rows.forEach((r) => {
+      const no = r.no == null ? '' : r.no;
+      const who = r.no != null ? `${r.no}番${r.name ? ' ' + r.name : ''}` : teamOnly ? 'チーム' : 'だれか（番号なし）';
+      const row = h('div', { class: 'prow' + (r.no == null ? ' unk' : '') + (teamOnly ? ' teamonly' : ''), dataset: { no } },
+        h('div', { class: 'pno' }, h('b', null, r.no != null ? r.no : teamOnly ? 'チーム' : '？'),
+          r.no != null ? (S.prefs.names && r.name ? h('small', null, r.name) : null) : teamOnly ? null : h('small', null, 'だれか')));
+      BT.ROW_TYPES.forEach((type) => {
+        const d = BT.TYPE[type];
+        const cnt = h('i', { class: 'cnt', hidden: true });
+        const el = h('button', { class: 'pb k-' + type, dataset: { type, no }, 'aria-label': `${BT.teamName(g, tm)} ${who} ${d.label}` }, h('b', null, d.btn), cnt);
+        row.append(el);
+        L.btns.push({ team: tm, key: tm + ':' + no + ':' + type, el, cnt });
+      });
+      P.roster.append(row);
+    });
+  }
 
-  /* 画面の大きさに合わせて、背番号の並べ方を選ぶ（ボタンが小さくなりすぎない、いちばんゆったりした並べ方）
-       wrap  ：番号を上に（折り返して何段でも）。いちばん見やすい
-       col   ：番号をプレーのボタンの左に（横長で、高さが足りないとき）
-       strip ：番号を上に横1列（はみ出す分は横にすべらせる。縦長で、高さが足りないとき）
-     実際に並べてみて、プレーのボタンがはみ出さないものを選ぶ */
+  /* 画面の大きさに合わせて並べ方を決める（BT.planLayout：2チームを左右か上下か・チームの中を何列にするか）。
+     行の高さは css の minmax（足りないときは、行を縦にすべらせる） */
   function layoutLive() {
     const L = S.L;
     if (!L || !L.root || !L.root.isConnected) return;
     const live = L.root, P = L.panelsEl;
     live.classList.toggle('short', root.innerHeight < 430);
-    const land = P.clientWidth > P.clientHeight * 1.1 && P.clientWidth >= 560;
-    const modes = land
-      ? [['wrap', 52], ['strip2', 50], ['wrap', 44], ['strip2', 44], ['strip', 44], ['col', 44], ['strip', 36], ['col', 36], ['strip', 30]]
-      : [['wrap', 52], ['strip2', 50], ['wrap', 44], ['strip2', 44], ['strip', 46], ['strip', 40], ['strip', 34]];
-    live.classList.toggle('land', land);
-    for (const [mode, acth] of modes) {
-      live.classList.remove('lay-wrap', 'lay-col', 'lay-strip', 'lay-strip2');
-      live.classList.add('lay-' + mode);
-      live.style.setProperty('--acth', acth + 'px');
-      if (mode === 'strip2') {
-        // 2段で横にすべらせる（左から 4 5 6 … と並ぶように、1段の数を決める）。1段に入りきるなら1段
-        L.panels.forEach((pn, tm) => {
-          const n = S.game.teams[tm].players.length + 1;
-          const avail = pn.nos.clientWidth - 12, GAP = 5;
-          const per = Math.max(1, Math.floor((avail + GAP) / (44 + GAP)));
-          const cols = n > per ? Math.ceil(n / 2) : per;
-          const w = BT.clamp(Math.floor((avail - (cols - 1) * GAP) / cols), 44, 60);
-          pn.sec.style.setProperty('--nocols', cols);
-          pn.sec.style.setProperty('--now', w + 'px');
-        });
-      }
-      if (mode === 'col') {
-        // 左の列の幅：番号が縦に入りきる列の数（2〜4列）
-        L.panels.forEach((pn, tm) => {
-          const n = S.game.teams[tm].players.length + 1;
-          const noH = 44, avail = Math.max(noH, pn.sec.clientHeight - pn.head.offsetHeight - 12);
-          const perCol = Math.max(1, Math.floor((avail + 5) / (noH + 5)));
-          pn.sec.style.setProperty('--nocols', BT.clamp(Math.ceil(n / perCol), 2, 3));
-        });
-      }
-      const over = L.panels.some((pn) => pn.acts.scrollHeight > pn.acts.clientHeight + 2 || pn.sec.scrollHeight > pn.sec.clientHeight + 2);
-      if (!over) break;
-    }
-    L.panels.forEach((pn) => pn.nos.classList.toggle('more', pn.nos.scrollWidth > pn.nos.clientWidth + 2));
-  }
-  function buildPanel(tm) {
-    const g = S.game, t = g.teams[tm];
-    const rows = BT.actionRows(S.prefs.actions[tm]);
-    const cols = Math.max(3, ...rows.slice(0, 2).map((r) => r.length));
-    const askTxt = h('span', { class: 'asktxt' });
-    const askBar = h('i', { class: 'askbar' });
-    const ask = h('div', { class: 'ask', hidden: true }, askTxt, h('button', { class: 'askx', dataset: { cancel: '1' }, 'aria-label': '番号を付けない' }, '番号なし'));
-    const tsc = h('span', { class: 'tsc' }, '0');
-    const head = h('div', { class: 'thead' }, h('b', { class: 'tname' }, BT.teamName(g, tm)), tsc, ask, askBar);
-    const nos = h('div', { class: 'nos' }, t.players.map((p) => noBtn(tm, p)), h('button', { class: 'no add', dataset: { add: '1' }, 'aria-label': '番号を足す' }, '＋'));
-    const acts = h('div', { class: 'acts', style: { '--cols': cols } });
-    rows.forEach((r) => r.forEach((id, k) => acts.append(actBtn(tm, id, k === 0))));
-    const nRows = rows.reduce((s, r) => s + Math.ceil(r.length / cols), 0);
-    const sec = h('section', { class: 'team', id: 'panel' + tm, dataset: { team: tm }, style: { '--tc': t.color, '--tink': BT.inkOn(t.color), '--rows': nRows } }, head, nos, acts);
-    S.L.panels[tm] = { sec, head, ask, askTxt, askBar, tsc, nos, acts };
-    return sec;
-  }
-  function noBtn(tm, p) {
-    return h('button', { class: 'no', dataset: { no: p.no }, 'aria-label': `${BT.teamName(S.game, tm)} ${p.no}番${p.name ? ' ' + p.name : ''}` },
-      h('b', null, p.no), S.prefs.names && p.name ? h('small', null, p.name) : null);
-  }
-  function actBtn(tm, id, rowStart) {
-    const d = BT.TYPE[id];
-    return h('button', { class: `act k-${d.kind}${rowStart ? ' rs' : ''}${d.key.length >= 4 ? ' long' : ''}`, dataset: { type: id }, 'aria-label': `${BT.teamName(S.game, tm)} ${d.label}` },
-      h('b', null, d.key), d.sub ? h('small', null, d.sub) : null);
+    const plan = BT.planLayout(P.clientWidth, P.clientHeight, [L.panels[0].n, L.panels[1].n], L.panels[0].head.offsetHeight || 22);
+    live.classList.toggle('lay-side', plan.arr === 'side');
+    live.classList.toggle('lay-stack', plan.arr === 'stack');
+    L.plan = plan;
+    plan.teams.forEach((T, tm) => {
+      const sec = L.panels[tm].sec;
+      const unit = Math.max(BT.LAYOUT.rmin, Math.min(T.bw, T.rowH));
+      sec.style.setProperty('--c', T.c);
+      sec.style.setProperty('--r', T.r);
+      sec.style.setProperty('--nw', T.nw + 'px');
+      sec.style.setProperty('--base', Math.ceil(T.base) + 'px');
+      sec.style.setProperty('--bf', Math.round(BT.clamp(unit * 0.44, 13, 24)) + 'px');
+      sec.style.setProperty('--nf', Math.round(BT.clamp(Math.min(Math.max(T.rowH, BT.LAYOUT.rmin) * 0.56, T.nw * 0.5), 14, 30)) + 'px');
+      sec.classList.toggle('roomy', T.rowH >= 40 && T.nw >= 46);      // 名前を出す余裕（高さと、背番号の欄の幅）
+      sec.classList.toggle('narrowb', T.bw < 48);
+      sec.classList.toggle('scroll', T.rowH < BT.LAYOUT.rmin);
+    });
   }
 
   function onPanelClick(e) {
@@ -369,38 +376,35 @@
     const sec = b.closest('.team');
     if (!sec) return;
     const tm = Number(sec.dataset.team);
-    if (b.dataset.type) onAction(tm, b.dataset.type, b);
+    if (b.dataset.type) record(tm, b.dataset.no === '' ? null : b.dataset.no, b.dataset.type, b);
     else if (b.dataset.add) openKeypad(tm);
-    else if (b.dataset.cancel) { S.tap.clearWait(tm); updateLive(); }
-    else if (b.dataset.no != null) onNumber(tm, b.dataset.no, b);
   }
   function canRecord() {
     if (!S.game.startedAt) { say('先に「▶ スタート」を押してください', 'warn'); return false; }
-    if (S.game.endedAt) { say('試合は終わっています。続けるときは「続きを記録する」', 'warn'); return false; }
+    if (S.game.endedAt) { say('試合は終わっています', 'warn'); return false; }
     return true;
   }
-  function onAction(tm, type, btn) {
+  /* 1回で記録する：tm＝チーム（null はチームなし）・no＝背番号（null は番号なし）。時刻は押した瞬間 */
+  function record(tm, no, type, btn) {
     if (!canRecord()) return;
     const t0 = now();
-    const key = tm + ':' + type;
+    const key = tm + ':' + no + ':' + type;
     if (S.lastTap.key === key && t0 - S.lastTap.at < 450) return;        // 二度押し（同じボタンを 0.45 秒以内）は1回に
     S.lastTap = { key, at: t0 };
-    const r = S.tap.action(tm, type, elapsed(), t0);
+    BT.addEvent(S.game, { t: elapsed(), type, team: tm, no });
     S.redo = [];
     save();
     flash(btn);
     feel(BT.TYPE[type].kind);
     updateLive(BT.TYPE[type].pts ? tm : null);
   }
-  function onNumber(tm, no, btn) {
-    if (!canRecord()) return;
-    const r = S.tap.number(tm, no, now());
-    if (r.kind === 'assign') { save(); feel('no'); }
-    flash(btn);
-    updateLive();
-  }
 
   /* 表示を書き換える（bump：得点が動いたチーム） */
+  function setCnt(el, n) {
+    const s = n ? String(n) : '';
+    if (el.textContent !== s) el.textContent = s;
+    el.hidden = !n;
+  }
   function updateLive(bump) {
     const g = S.game, L = S.L;
     if (!L) return;
@@ -413,25 +417,15 @@
     const sc = BT.score(g);
     L.score[0].parentNode.classList.toggle('big3', Math.max(sc[0], sc[1]) >= 100);
     [0, 1].forEach((tm) => {
-      const P = L.panels[tm];
       L.score[tm].textContent = sc[tm];
-      P.tsc.textContent = sc[tm];
-      if (bump === tm) { flash(L.score[tm]); flash(P.tsc); }
-      const sel = S.tap.sel[tm], wait = S.tap.wait[tm];
-      $$('.no[data-no]', P.nos).forEach((b) => b.classList.toggle('sel', b.dataset.no === sel));
-      P.sec.classList.toggle('asking', wait != null);
-      P.ask.hidden = wait == null;
-      P.askBar.hidden = wait == null;
-      if (wait != null && L.waitShown[tm] !== wait) {
-        const ev = BT.findEvent(g, wait);
-        P.askTxt.textContent = `だれの「${ev ? BT.TYPE[ev.type].label : ''}」？`;
-        const left = Math.max(0.2, BT.WAIT - (now() - S.tap.waitAt[tm]) / 1000);
-        P.askBar.style.animation = 'none';
-        void P.askBar.offsetWidth;
-        P.askBar.style.animation = `shrink ${left}s linear forwards`;
-      }
-      L.waitShown[tm] = wait;
+      L.panels[tm].tsc.textContent = sc[tm];
+      if (bump === tm) { flash(L.score[tm]); flash(L.panels[tm].tsc); }
     });
+    // ボタンの右上の数（その選手が、そのプレーを何回したか）
+    const tl = BT.tally(g);
+    L.btns.forEach((b) => setCnt(b.cnt, tl[b.key] || 0));
+    BT.GLOBAL_TYPES.forEach((type) => setCnt(L.gb[type].cnt, tl['*:' + type] || 0));
+    L.gbar.classList.toggle('off', !started || ended);
     // スタートの前・試合が終わったあとは、パネルの上に大きなボタンを出す
     L.cover.innerHTML = '';
     if (!started) {
@@ -462,10 +456,9 @@
   function tick() {
     if (S.view !== 'live' || !S.game || !S.L) return;
     tickClock();
-    if (S.tap.expire(now())) updateLive();
   }
 
-  /* 記録の画面のお知らせ：パネルのボタンを隠さないよう、画面の下の帯に出す（ほかの画面・小窓の上では、ふつうのお知らせ） */
+  /* 記録の画面のお知らせ：ボタンを隠さないよう、画面の下（いま記録したものの所）に出す（ほかの画面・小窓の上では、ふつうのお知らせ） */
   function say(text, kind, ms, action) {
     if (S.view !== 'live' || !S.L || BT.ui.sheetOpen()) return BT.ui.toast(text, kind, ms, action);
     clearTimeout(S.msgTimer);
@@ -476,41 +469,41 @@
   }
 
   /* 画面の下：いちばん新しい記録と「取り消す」 */
+  const undoBtn = () => h('button', { class: 'btn undo', id: 'btnUndo', 'aria-label': 'いちばん新しい記録を取り消す', onclick: undo }, h('b', null, '↶'), h('small', null, '取り消す'));
   function renderLast() {
     const g = S.game, el = S.L.last;
     el.innerHTML = '';
     if (S.msg) {
       const m = S.msg;
-      el.append(h('div', { class: 'lastev msg ' + m.kind, role: 'status', 'aria-live': 'polite' }, h('span', { class: 'll' }, m.text)),
-        m.action ? h('button', { class: 'btn undo', id: 'btnMsgAct', onclick: () => { S.msg = null; clearTimeout(S.msgTimer); m.action.onClick(); if (S.L) renderLast(); } }, m.action.label)
-          : (g.events.length ? h('button', { class: 'btn undo', id: 'btnUndo', onclick: undo }, '↶ 取り消す') : null));
+      el.append(h('div', { class: 'lastev msg ' + m.kind, role: 'status', 'aria-live': 'polite' }, h('span', { class: 'mt' }, m.text)),
+        m.action ? h('button', { class: 'btn undo act', id: 'btnMsgAct', onclick: () => { S.msg = null; clearTimeout(S.msgTimer); m.action.onClick(); if (S.L) renderLast(); } }, m.action.label)
+          : (g.events.length > 1 ? undoBtn() : null));
       return;
     }
-    if (!g.startedAt) { el.append(h('span', { class: 'hint' }, '左上の「▶ スタート」でも始められます')); return; }
+    if (!g.startedAt) { el.append(h('div', { class: 'lastev hint' }, h('span', { class: 'mt' }, 'スタートを押すと、記録できます'))); return; }
     const ev = g.events[g.events.length - 1];
-    if (!ev) { el.append(h('span', { class: 'hint' }, 'まだ記録はありません')); return; }
-    const waiting = ev.type !== 'period' && S.tap.wait[ev.team] === ev.id;
+    if (!ev) return;
     const d = BT.TYPE[ev.type];
+    const per = ev.type === 'period';
+    const nm = !per && ev.no != null ? BT.playerName(g, ev.team, ev.no) : '';
+    const who = per ? '' : ev.team == null ? 'チームなし' : `${BT.teamName(g, ev.team)} ${ev.no != null ? '#' + ev.no + (nm ? ' ' + nm : '') : '番号なし'}`;
     el.append(
-      h('div', { class: 'lastev', role: 'status', 'aria-live': 'polite', style: { '--tc': ev.type === 'period' ? 'var(--line2)' : teamColor(ev.team) } },
-        ev.type === 'period' ? h('i', { class: 'chip neutral' }) : h('i', { class: 'chip', style: { background: teamColor(ev.team) } }),
-        h('b', { class: 'lt' }, BT.fmtTime(ev.t)),
-        h('span', { class: 'lw' }, ev.type === 'period' ? `${BT.periodLabel(ev.period)} 開始` : `${BT.teamName(g, ev.team)} ${ev.no != null ? '#' + ev.no : waiting ? '番号は？' : '番号なし'}`),
-        ev.type === 'period' ? null : h('span', { class: 'll' }, d.label + (d.pts ? ` +${d.pts}` : ''))),
-      h('button', { class: 'btn undo', id: 'btnUndo', onclick: undo }, '↶ 取り消す'));
+      h('div', { class: 'lastev', role: 'status', 'aria-live': 'polite', style: { '--tc': per || ev.team == null ? 'var(--line2)' : teamColor(ev.team) } },
+        h('div', { class: 'l1' }, h('b', { class: 'lt' }, BT.fmtTime(ev.t)), h('span', { class: 'll' }, per ? `${BT.periodLabel(ev.period)} 開始` : (d.short || d.label) + (d.pts ? ` +${d.pts}` : ''))),
+        per ? null : h('div', { class: 'lw' }, who)),
+      g.events.length > 1 ? undoBtn() : null);
   }
   function undo() {
     const g = S.game;
     const ev = g.events[g.events.length - 1];
     if (!ev) return;
-    if (g.events.length === 1 && ev.type === 'period') { say('スタートは取り消せません（メニューの「スタートを取り消す」）', 'warn', 4000); return; }
+    if (g.events.length === 1 && ev.type === 'period') { say('スタートは「≡ メニュー」から取り消せます', 'warn', 4000); return; }
     g.events.pop();
     S.redo.push(ev);
-    S.tap.expire(now());
     save();
     feel('undo');
     updateLive();
-    say(`取り消しました：${BT.fmtTime(ev.t)} ${BT.eventText(g, ev, true)}`, 'warn', 4500, { label: '↷ やり直す', onClick: redo });
+    say(`取り消し：${BT.eventText(g, ev, ev.no == null)}`, 'warn', 4500, { label: '↷ やり直す', onClick: redo });
   }
   function redo() {
     const ev = S.redo.pop();
@@ -535,7 +528,7 @@
     feel('made');
     BT.store.persist();
     BT.ui.keepAwake(true).then((ok) => {
-      if (!ok && !S.warnedWake) { S.warnedWake = true; say('この端末は画面の自動ロックを止められません（設定で長めに）', 'warn', 6000); }
+      if (!ok && !S.warnedWake) { S.warnedWake = true; say('自動ロックを止められません（設定で長めに）', 'warn', 6000); }
     });
     guard();
     updateLive();
@@ -543,7 +536,7 @@
   function cancelStart() {
     const g = S.game;
     g.startedAt = null; g.endedAt = null; g.events = []; g.seq = 0;
-    S.tap.reset(); S.redo = [];
+    S.redo = [];
     BT.ui.keepAwake(false);
     save();
     updateLive();
@@ -552,7 +545,6 @@
   function endGame() {
     const g = S.game;
     g.endedAt = now();
-    S.tap.reset();
     BT.ui.keepAwake(false);
     save();
     updateLive();
@@ -564,7 +556,7 @@
     BT.ui.keepAwake(true);
     guard();
     updateLive();
-    say('続きを記録できます（時計はスタートから進み続けています）', 'ok', 4000);
+    say('続きを記録できます（時計は進んだまま）', 'ok', 4000);
   }
 
   /* 記録の途中で「戻る」（スワイプ・戻るボタン）で、うっかりページを離れないように */
@@ -578,7 +570,7 @@
     if (BT.ui.sheetOpen()) { BT.ui.closeSheet(); guard(); return; }
     if (S.view === 'live' && S.game && S.game.startedAt && !S.game.endedAt) {
       guard();
-      say('記録中です。やめるときは「≡ メニュー」→「試合を終える」', 'warn', 4000);
+      say('記録中です（終えるときは ≡ メニューから）', 'warn', 4000);
       return;
     }
     if (S.view === 'setup' && S.setupFor === 'edit' && S.game) { go('live'); if (S.game.startedAt && !S.game.endedAt) guard(); return; }
@@ -611,7 +603,6 @@
   /* ---------- 番号を足す（記録の途中で、名簿にない番号が出たとき） ---------- */
   function openKeypad(tm) {
     const g = S.game;
-    const waitId = S.tap.wait[tm];      // 番号を待っていた記録（開いている間に時間切れになっても、それに付ける）
     let val = '';
     const disp = h('div', { class: 'kdisp', id: 'kdisp' }, '　');
     const show = () => { disp.textContent = val ? '#' + val : '番号を入れる'; disp.classList.toggle('empty', !val); };
@@ -624,32 +615,27 @@
     };
     const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', '⌫'];
     const s = BT.ui.sheet({
-      title: `${BT.teamName(g, tm)} の番号を足す`, cls: 'keypad',
+      title: `${BT.teamName(g, tm)} の背番号を足す`, cls: 'keypad',
       body: h('div', null, disp, h('div', { class: 'keys' }, keys.map((k) => h('button', { class: 'key', dataset: { key: k }, onclick: () => press(k) }, k))),
-        waitId ? h('p', { class: 'note' }, `足した番号は「${BT.eventText(g, BT.findEvent(g, waitId) || { type: 'mark' })}」の記録にも付けます。`) : null),
+        h('p', { class: 'note' }, '足した番号の行が、番号の順のところに入ります。')),
       foot: [h('button', { class: 'btn', onclick: () => s.close() }, 'やめる'), h('button', { class: 'btn primary', id: 'btnKeyOk', onclick: () => {
         const no = BT.normNo(val);
         if (no == null) { BT.ui.toast('0〜99 の番号を入れてください', 'warn'); return; }
         const t = g.teams[tm];
-        if (!t.players.some((p) => p.no === no)) t.players = BT.cleanPlayers(t.players.concat([{ no, name: '' }]));
-        const ev = waitId ? BT.findEvent(g, waitId) : null;
-        if (ev && ev.no == null) ev.no = no;
-        S.tap.clearWait(tm);
+        const had = t.players.some((p) => p.no === no);
+        if (!had) t.players = BT.cleanPlayers(t.players.concat([{ no, name: '' }]));
         save();
         s.close();
-        rebuildNumbers(tm);
-        updateLive();
-        say(ev ? `#${no} を足して、記録に付けました` : `#${no} を足しました`, 'ok');
+        rebuildRoster(tm);
+        say(had ? `#${no} はもう並んでいます` : `#${no} を足しました`, had ? 'warn' : 'ok');
       } }, '足す')]
     });
     show();
   }
-  function rebuildNumbers(tm) {
-    const P = S.L && S.L.panels[tm];
-    if (!P) return;
-    P.nos.innerHTML = '';
-    S.game.teams[tm].players.forEach((p) => P.nos.append(noBtn(tm, p)));
-    P.nos.append(h('button', { class: 'no add', dataset: { add: '1' }, 'aria-label': '番号を足す' }, '＋'));
+  function rebuildRoster(tm) {
+    if (!S.L || !S.L.panels[tm]) return;
+    fillRoster(tm);
+    updateLive();
     layoutLive();
   }
 
@@ -664,7 +650,7 @@
         item('📋', '記録の一覧', '番号・プレー・時刻を直す、消す', openLog),
         item('📊', '集計', '選手ごとの得点・リバウンド・パスミスなど', openStats),
         item('👥', 'チーム・背番号を直す', '名前・色・背番号', () => { S.setupFor = 'edit'; go('setup'); }),
-        item('🎛', 'ボタン・設定', 'ボタンの組み合わせ・名前の表示・音・画面の色', openSettings),
+        item('🎛', '設定', '名前の表示・「？」の行・音・画面の色', openSettings),
         item('💾', '書き出す', '動画の切り出し用のファイル・CSV', () => openExport(g)),
         g.startedAt && !g.endedAt ? item('⏹', '試合を終える', '時計を止めて、集計を見る', () => BT.ui.confirm('試合を終えますか？', '時計が止まります。まちがえて終えたときは「続きを記録する」で戻せます。', '終える', endGame)) : null,
         g.endedAt ? item('▶', '続きを記録する', 'まちがえて終えたとき', reopen) : null,
@@ -676,26 +662,30 @@
   }
 
   /* ---------- 記録の一覧・直す ---------- */
+  /* filter：null＝すべて・0／1＝そのチーム・'none'＝チームなし（画面の下のパスミス・★） */
   function openLog(filter) {
     const g = S.game;
-    const f = filter === 0 || filter === 1 ? filter : null;
-    const evs = BT.sorted(g).reverse().filter((e) => f == null || e.type === 'period' || e.team === f);
+    const f = filter === 0 || filter === 1 || filter === 'none' ? filter : null;
+    const evs = BT.sorted(g).reverse().filter((e) => f == null || e.type === 'period' || (f === 'none' ? e.team == null : e.team === f));
+    const anyFree = g.events.some((e) => e.type !== 'period' && e.team == null);
     const row = (e) => {
       const d = BT.TYPE[e.type];
       return h('button', { class: 'lrow' + (e.type === 'period' ? ' per' : ''), dataset: { id: e.id }, onclick: () => openEdit(e.id) },
         h('b', { class: 'lt' }, BT.fmtTime(e.t)),
         e.type === 'period' ? h('span', { class: 'lp' }, `── ${BT.periodLabel(e.period)} 開始 ──`) : [
-          h('i', { class: 'chip', style: { background: teamColor(e.team) } }),
+          e.team == null ? h('i', { class: 'chip neutral' }) : h('i', { class: 'chip', style: { background: teamColor(e.team) } }),
           h('span', { class: 'lno' }, e.no != null ? '#' + e.no : '—'),
           h('span', { class: 'llabel k-' + d.kind }, d.label + (d.pts ? ` +${d.pts}` : '')),
-          h('small', { class: 'lname' }, e.no != null ? BT.playerName(g, e.team, e.no) : '番号なし')
+          h('small', { class: 'lname' }, e.team == null ? 'チームなし' : e.no != null ? BT.playerName(g, e.team, e.no) : '番号なし')
         ]);
     };
+    const tabs = [[null, 'すべて'], [0, BT.teamName(g, 0)], [1, BT.teamName(g, 1)]];
+    if (anyFree || f === 'none') tabs.push(['none', 'チームなし']);
     const s = BT.ui.sheet({
       title: `記録の一覧（${g.events.filter((e) => e.type !== 'period').length}件）`, wide: true,
       body: h('div', null,
         h('div', { class: 'row tabsrow' },
-          [[null, 'すべて'], [0, BT.teamName(g, 0)], [1, BT.teamName(g, 1)]].map(([v, lab]) => h('button', { class: 'btn small' + (f === v ? ' on' : ''), onclick: () => openLog(v) }, lab))),
+          tabs.map(([v, lab]) => h('button', { class: 'btn small' + (f === v ? ' on' : ''), onclick: () => openLog(v) }, lab))),
         h('p', { class: 'note' }, 'タップすると、番号・プレー・時刻を直したり、消したりできます。新しい記録が上です。'),
         evs.length ? h('div', { class: 'loglist' }, evs.map(row)) : h('p', { class: 'note' }, 'まだ記録はありません。'))
     });
@@ -712,21 +702,29 @@
     if (e.type === 'period') {
       body.append(h('div', { class: 'field' }, h('span', null, 'ピリオド'), h('div', { class: 'row' }, [1, 2, 3, 4, 5, 6].map((p) => h('button', { class: 'btn small' + (e.period === p ? ' on' : ''), onclick: () => { e.period = p; changed(); } }, BT.periodLabel(p))))));
     } else {
-      body.append(h('div', { class: 'field' }, h('span', null, 'チーム'), h('div', { class: 'row' }, [0, 1].map((tm) => h('button', { class: 'btn' + (e.team === tm ? ' on' : ''), onclick: () => { if (e.team !== tm) { e.team = tm; e.no = null; changed(); } } }, h('i', { class: 'chip', style: { background: teamColor(tm) } }), BT.teamName(g, tm))))));
-      const players = g.teams[e.team].players.map((p) => p.no);
-      if (e.no != null && !players.includes(e.no)) players.push(e.no);
-      body.append(h('div', { class: 'field' }, h('span', null, '背番号'), h('div', { class: 'row nopick' },
-        h('button', { class: 'btn small' + (e.no == null ? ' on' : ''), onclick: () => { e.no = null; changed(); } }, '番号なし'),
-        BT.sortNos(players).map((no) => h('button', { class: 'btn small nobtn' + (e.no === no ? ' on' : ''), onclick: () => { e.no = no; changed(); } }, '#' + no)))));
+      // チーム（得点のプレーは、チームなしにできない）
+      const pts = !!(BT.TYPE[e.type] && BT.TYPE[e.type].pts);
+      const teamBtn = (tm, label) => h('button', { class: 'btn' + (e.team === tm ? ' on' : ''), dataset: { eteam: tm == null ? 'none' : String(tm) }, onclick: () => { if (e.team !== tm) { e.team = tm; e.no = null; changed(); } } },
+        tm == null ? h('i', { class: 'chip neutral' }) : h('i', { class: 'chip', style: { background: teamColor(tm) } }), label);
+      body.append(h('div', { class: 'field' }, h('span', null, 'チーム'), h('div', { class: 'row' },
+        teamBtn(0, BT.teamName(g, 0)), teamBtn(1, BT.teamName(g, 1)), pts && e.team != null ? null : teamBtn(null, 'チームなし'))));
+      if (e.team != null) {
+        const players = g.teams[e.team].players.map((p) => p.no);
+        if (e.no != null && !players.includes(e.no)) players.push(e.no);
+        body.append(h('div', { class: 'field' }, h('span', null, '背番号'), h('div', { class: 'row nopick' },
+          h('button', { class: 'btn small' + (e.no == null ? ' on' : ''), onclick: () => { e.no = null; changed(); } }, '番号なし'),
+          BT.sortNos(players).map((no) => h('button', { class: 'btn small nobtn' + (e.no === no ? ' on' : ''), onclick: () => { e.no = no; changed(); } }, '#' + no)))));
+      }
       body.append(h('div', { class: 'field' }, h('span', null, 'プレー'), h('div', { class: 'row typepick' },
-        BT.TYPES.map((d) => h('button', { class: 'btn small k-' + d.kind + (e.type === d.id ? ' on' : ''), onclick: () => { e.type = d.id; changed(); } }, d.label)))));
+        BT.editTypes(e.type).map((id) => { const d = BT.TYPE[id]; return h('button', { class: 'btn small k-' + d.kind + (e.type === id ? ' on' : ''), dataset: { etype: id }, onclick: () => { e.type = id; if (d.pts && e.team == null) e.team = 0; changed(); } }, d.label); }))));
+      if (e.team == null) body.append(h('p', { class: 'note' }, '「チームなし」は、画面の下のボタン（パスミス・★）で記録したものです。チーム・背番号を付けることもできます。'));
     }
     BT.ui.sheet({
       title: e.type === 'period' ? 'ピリオドの始まりを直す' : '記録を直す', body,
       foot: [
         h('button', { class: 'btn danger', id: 'btnDelEv', onclick: () => {
           if (g.events.length === 1 && e.type === 'period') { BT.ui.toast('スタートの記録は消せません', 'warn'); return; }
-          BT.removeEvent(g, id); S.tap.expire(now()); save(); if (S.L) updateLive(); openLog(); BT.ui.toast('消しました', 'ok');
+          BT.removeEvent(g, id); save(); if (S.L) updateLive(); openLog(); BT.ui.toast('消しました', 'ok');
         } }, '🗑 消す'),
         h('button', { class: 'btn', onclick: () => openLog() }, '← 一覧へ'),
         h('button', { class: 'btn primary', onclick: () => BT.ui.closeSheet() }, 'とじる')]
@@ -738,8 +736,9 @@
     ['pts', '得点'], ['fg2', '2P'], ['fg3', '3P'], ['ft', 'FT'], ['reb', 'リバウンド'], ['ast', 'アシスト'], ['stl', 'スティール'], ['blk', 'ブロック'],
     ['pass', 'パスミス'], ['tov', 'ミス'], ['foul', 'ファウル'], ['mark', '★']
   ];
-  function cell(s, key) {
-    if (key === 'fg2' || key === 'fg3' || key === 'ft') { const m = s[key + 'm'], a = s[key + 'a']; return a ? `${m}/${a}` : ''; }
+  /* withA：「成功/打った数」で出す（外れの記録があるときだけ。ないときは入れた本数） */
+  function cell(s, key, withA) {
+    if (key === 'fg2' || key === 'fg3' || key === 'ft') { const m = s[key + 'm'], a = s[key + 'a']; return !a ? '' : withA ? `${m}/${a}` : String(m); }
     if (key === 'reb') return s.reb ? (s.oreb ? `${s.reb}（${s.oreb}）` : String(s.reb)) : '';
     return s[key] ? String(s[key]) : '';
   }
@@ -751,6 +750,7 @@
     const g = S.game;
     const st = BT.stats(g);
     const per = BT.periodScores(g);
+    const withA = BT.hasMisses(g);
     const cols = COLS.filter(([k]) => k === 'pts' || hasCol(st, k));
     const table = (x) => {
       const rows = x.rows.filter((r) => !BT.isEmpty(r.s));
@@ -758,13 +758,15 @@
       return h('div', { class: 'boxwrap' }, h('table', { class: 'box' },
         h('thead', null, h('tr', null, h('th', null, '#'), h('th', { class: 'nm' }, '名前'), cols.map(([, lab]) => h('th', null, lab)))),
         h('tbody', null,
-          rows.map((r) => h('tr', null, h('td', { class: 'no' }, r.no), h('td', { class: 'nm' }, r.name || ''), cols.map(([k]) => h('td', null, cell(r.s, k))))),
-          !BT.isEmpty(x.unknown) ? h('tr', { class: 'unk' }, h('td', { class: 'no' }, '—'), h('td', { class: 'nm' }, '番号なし'), cols.map(([k]) => h('td', null, cell(x.unknown, k)))) : null,
-          h('tr', { class: 'tot' }, h('td', { class: 'no' }), h('td', { class: 'nm' }, '合計'), cols.map(([k]) => h('td', null, cell(x.total, k)))))),
+          rows.map((r) => h('tr', null, h('td', { class: 'no' }, r.no), h('td', { class: 'nm' }, r.name || ''), cols.map(([k]) => h('td', null, cell(r.s, k, withA))))),
+          !BT.isEmpty(x.unknown) ? h('tr', { class: 'unk' }, h('td', { class: 'no' }, '—'), h('td', { class: 'nm' }, '番号なし'), cols.map(([k]) => h('td', null, cell(x.unknown, k, withA)))) : null,
+          h('tr', { class: 'tot' }, h('td', { class: 'no' }), h('td', { class: 'nm' }, '合計'), cols.map(([k]) => h('td', null, cell(x.total, k, withA)))))),
         idle.length ? h('p', { class: 'note' }, `記録なし：${idle.map((r) => '#' + r.no).join(' ')}`) : null);
     };
     const t = st.map((x) => x.total);
     const fg = (s) => BT.pct(s.fg2m + s.fg3m, s.fg2a + s.fg3a);
+    const free = BT.teamlessStats(g);
+    const freeText = BT.TYPES.filter((d) => free[d.id] > 0 && !d.shot && d.id !== 'reb').map((d) => `${d.label} ${free[d.id]}`).concat(free.reb ? [`リバウンド ${free.reb}`] : []).join('・');
     BT.ui.sheet({
       title: '集計', wide: true,
       body: h('div', { class: 'stats' },
@@ -772,9 +774,10 @@
           h('thead', null, h('tr', null, h('th', null, ''), per.map((p) => h('th', null, p.label)), h('th', null, '計'))),
           h('tbody', null, [0, 1].map((tm) => h('tr', null, h('th', null, h('i', { class: 'chip', style: { background: teamColor(tm) } }), BT.teamName(g, tm)), per.map((p) => h('td', null, String(p.pts[tm]))), h('td', { class: 'sum' }, String(BT.score(g)[tm]))))))),
         [0, 1].map((tm) => h('section', { class: 'teamstat' },
-          h('h3', null, h('i', { class: 'chip', style: { background: teamColor(tm) } }), BT.teamName(g, tm), h('small', null, ` 得点 ${t[tm].pts}・シュート成功率 ${fg(t[tm])}${t[tm].fta ? '・FT ' + BT.pct(t[tm].ftm, t[tm].fta) : ''}`)),
+          h('h3', null, h('i', { class: 'chip', style: { background: teamColor(tm) } }), BT.teamName(g, tm), h('small', null, ` 得点 ${t[tm].pts}` + (withA ? `・シュート成功率 ${fg(t[tm])}${t[tm].fta ? '・FT ' + BT.pct(t[tm].ftm, t[tm].fta) : ''}` : ''))),
           table(st[tm]))),
-        h('p', { class: 'note' }, '2P・3P・FT は「成功/打った数」。リバウンドの（ ）は、うちオフェンスリバウンド（同じチームが外したシュートの、10 秒以内のリバウンド）。「番号なし」は、番号を付けずに記録したプレーです（一覧から番号を付けられます）。')),
+        freeText ? h('section', { class: 'teamstat free' }, h('h3', null, h('i', { class: 'chip neutral' }), 'チームなし', h('small', null, '（画面の下のボタン）')), h('p', { class: 'freeline' }, freeText)) : null,
+        h('p', { class: 'note' }, (withA ? '2P・3P・FT は「成功/打った数」。リバウンドの（ ）は、うちオフェンスリバウンド（同じチームが外したシュートの、10 秒以内のリバウンド）。' : '2P・3P・FT は、入れた本数です。') + '「番号なし」は「？」の行で記録したプレー、「チームなし」は画面の下のボタン（パスミス・★）で記録したものです（どちらも一覧から番号を付けられます）。')),
       foot: [h('button', { class: 'btn', onclick: () => openExport(g) }, '💾 書き出す'), h('button', { class: 'btn primary', onclick: () => BT.ui.closeSheet() }, 'とじる')]
     });
   }
@@ -809,27 +812,18 @@
   function openSettings() {
     const p = S.prefs;
     const body = h('div', { class: 'settings' });
-    [0, 1].forEach((tm) => {
-      const ids = new Set(p.actions[tm]);
-      const preset = BT.presetOf(p.actions[tm]);
-      body.append(h('section', { class: 'field' },
-        h('span', null, `${S.game ? BT.teamName(S.game, tm) : (tm ? '相手' : '自分')} のボタン`),
-        h('div', { class: 'row' }, Object.keys(BT.PRESETS).map((k) => h('button', { class: 'btn small' + (preset === k ? ' on' : ''), dataset: { preset: k + tm }, onclick: () => { p.actions[tm] = BT.PRESETS[k].ids.slice(); savePrefs(); refresh(); } }, BT.PRESETS[k].name))),
-        h('div', { class: 'checks' }, BT.TYPES.map((d) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: ids.has(d.id), onchange: (e) => {
-          const set = new Set(p.actions[tm]);
-          if (e.target.checked) set.add(d.id); else set.delete(d.id);
-          if (!set.size) { BT.ui.toast('ボタンを1つ以上残してください', 'warn'); e.target.checked = true; return; }
-          p.actions[tm] = BT.TYPES.map((x) => x.id).filter((id) => set.has(id)); savePrefs(); refresh();
-        } }), d.label)))));
-    });
-    body.append(h('section', { class: 'field' }, h('span', null, '表示・音'),
-      h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!p.names, onchange: (e) => { p.names = e.target.checked; savePrefs(); refresh(); } }), '番号のボタンに選手の名前も出す'),
-      h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!p.sound, onchange: (e) => { p.sound = e.target.checked; savePrefs(); if (p.sound) BT.ui.beep(880, 60); } }), '押したときに音を出す（「ピッ」）')));
+    const chk = (key, label, after) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', dataset: { pref: key }, checked: p[key] !== false, onchange: (e) => { p[key] = e.target.checked; savePrefs(); if (after) after(); } }), label);
+    body.append(h('section', { class: 'field' }, h('span', null, '記録の画面'),
+      chk('names', '背番号の下に、選手の名前も出す（行の高さに余裕があるとき）', refresh),
+      chk('unknown', '「？」の行を出す（だれか分からないときに、チームだけで記録する）', refresh),
+      h('p', { class: 'note' }, '背番号を入れていないチームは、「？」の行だけ（チームとして記録）になります。')));
+    body.append(h('section', { class: 'field' }, h('span', null, '音'),
+      chk('sound', '押したときに音を出す（「ピッ」）', () => { if (p.sound) BT.ui.beep(880, 60); })));
     body.append(h('section', { class: 'field' }, h('span', null, '画面の色'),
       h('div', { class: 'row' }, [['auto', '端末に合わせる'], ['light', '明るい'], ['dark', '暗い']].map(([v, lab]) => h('button', { class: 'btn small' + (p.theme === v ? ' on' : ''), onclick: () => { p.theme = v; savePrefs(); applyTheme(); openSettings(); } }, lab)))));
     body.append(h('p', { class: 'note' }, BT.ui.wakeSupported() ? (BT.ui.awake() ? '💡 記録の途中は、画面が自動で消えないようにしています。' : '💡 記録を始めると、画面が自動で消えないようにします。') : '💡 この端末では、画面が自動で消えるのを止められません。端末の「自動ロック」を長めにしてください。'));
-    const refresh = () => { if (S.L) buildLive(); openSettings(); };
-    BT.ui.sheet({ title: 'ボタン・設定', body, wide: true });
+    function refresh() { if (S.L) buildLive(); }
+    BT.ui.sheet({ title: '設定', body });
   }
 
   /* ---------- 使い方 ---------- */
@@ -840,16 +834,19 @@
         h('ol', null,
           h('li', null, h('b', null, '試合の準備'), '：チーム名・ユニフォームの色・背番号を選ぶ（「4〜15」ボタンでまとめて。自分のチームは次から自動で入ります）'),
           h('li', null, h('b', null, 'ティップオフの瞬間に「▶ スタート」'), '：左上の時計が動き出します'),
-          h('li', null, h('b', null, 'プレーが起きたらタップ'), '：押した瞬間の時刻で記録されます')),
-        h('h4', null, '記録のしかた（どれでもOK）'),
+          h('li', null, h('b', null, 'プレーが起きたら、その選手の行のボタンを1回タップ'), '：押した瞬間の時刻で記録されます')),
+        h('h4', null, '記録の画面'),
         h('ul', null,
-          h('li', null, h('b', null, '番号 → プレー'), '：「7」→「2P 成功」。番号を先に選んでおくと、プレーを押した瞬間に記録'),
-          h('li', null, h('b', null, 'プレー → 番号'), '：「2P 成功」→（7 秒以内に）「7」。先に時刻を残して、だれかはあとから'),
-          h('li', null, h('b', null, 'プレーだけ'), '：番号が分からなければ、押さなくても大丈夫（チームの記録になります。あとで一覧から番号を付けられます）')),
+          h('li', null, h('b', null, '選手ごとの行'), '：背番号の小さい順に、上から並びます。行の「2P」「3P」「FT」（どれも成功）と「リバ」（リバウンド）を押すと、その選手の記録になります'),
+          h('li', null, h('b', null, '「？」の行'), '：だれか分からないとき。チームの記録になります（あとで一覧から番号を付けられます）'),
+          h('li', null, h('b', null, '画面の下の「パスミス」「★ あとで見る」'), '：だれのかは決めずに、時刻だけを残します。いつでも押せます'),
+          h('li', null, 'ボタンの右上の小さな数は、その選手がそのプレーをした回数です'),
+          h('li', null, '人数が多くて画面に入りきらないときは、行を上下にすべらせて探します（スマホは縦向き、または「ホーム画面に追加」すると広く使えます）')),
         h('h4', null, 'まちがえたとき'),
         h('ul', null,
           h('li', null, '画面の下の「↶ 取り消す」で、いちばん新しい記録を取り消し（「やり直す」で戻せます）'),
-          h('li', null, '「≡ メニュー」→「記録の一覧」で、どの記録でも、番号・プレー・時刻を直したり消したりできます')),
+          h('li', null, '「≡ メニュー」→「記録の一覧」で、どの記録でも、チーム・番号・プレー・時刻を直したり消したりできます'),
+          h('li', null, '名簿にない背番号は、チームの帯の「＋番号」で足せます')),
         h('h4', null, 'ピリオド'),
         h('p', null, '時計の右の「1Q」を押して、次のピリオドが始まる瞬間に「2Q を始める」。時計は止まらずに進みます（試合の時計ではなく、スタートからの時間です。動画と同じように進むので、あとで動画と合わせられます）。'),
         h('h4', null, '動画から場面を切り出す'),
@@ -870,7 +867,7 @@
     // iPhone で :active（押している間の見た目）を効かせる
     document.addEventListener('touchstart', () => {}, { passive: true });
     // 長押しのメニュー・ダブルタップの拡大を出さない（記録の画面）
-    document.addEventListener('contextmenu', (e) => { if (S.view === 'live' && e.target.closest && e.target.closest('.panels, .lbar')) e.preventDefault(); });
+    document.addEventListener('contextmenu', (e) => { if (S.view === 'live' && e.target.closest && e.target.closest('.panels, .lbar, .gbar')) e.preventDefault(); });
     document.addEventListener('dblclick', (e) => { if (S.view === 'live') e.preventDefault(); }, { passive: false });
     root.addEventListener('popstate', onPop);
     root.addEventListener('beforeunload', (e) => { if (S.view === 'live' && S.game && S.game.startedAt && !S.game.endedAt) { e.preventDefault(); e.returnValue = ''; } });

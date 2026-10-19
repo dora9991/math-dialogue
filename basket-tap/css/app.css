@@ -14,7 +14,11 @@
   --warn: #b45309;
   --warn-soft: rgba(245, 158, 11, 0.16);
   --bad: #dc2626;
-  /* プレーのボタンの色 */
+  /* プレーのボタンの色（2P 緑・3P 紫・FT 茶・リバ 青。となりどうしで見分けやすく） */
+  --k-fg2: #15803d;
+  --k-fg3: #7c3aed;
+  --k-ft: #b45309;
+  --k-rb: #1d4ed8;
   --k-made: #15803d;
   --k-reb: #1d4ed8;
   --k-good: #0f766e;
@@ -36,6 +40,7 @@
     --bg: #0a0e15; --panel: #131a26; --panel2: #1b2433; --line: #283447; --line2: #3a4860; --text: #eef2f8; --muted: #95a3ba;
     --accent: #4f8cff; --accent-soft: rgba(79, 140, 255, 0.18); --good: #22c55e; --warn: #fbbf24; --warn-soft: rgba(251, 191, 36, 0.16); --bad: #f87171;
     --k-made: #16a34a; --k-reb: #2563eb; --k-good: #0d9488; --k-bad: #ea580c; --k-foul: #ca8a04; --k-mark: #facc15;
+    --k-fg2: #16a34a; --k-fg3: #8b5cf6; --k-ft: #c26a0e; --k-rb: #2563eb;
     --k-miss-bg: #1b2433; --k-miss-line: #64748b; --k-miss-ink: #eef2f8; --k-miss-x: #f87171;
     color-scheme: dark;
   }
@@ -44,6 +49,7 @@
   --bg: #0a0e15; --panel: #131a26; --panel2: #1b2433; --line: #283447; --line2: #3a4860; --text: #eef2f8; --muted: #95a3ba;
   --accent: #4f8cff; --accent-soft: rgba(79, 140, 255, 0.18); --good: #22c55e; --warn: #fbbf24; --warn-soft: rgba(251, 191, 36, 0.16); --bad: #f87171;
   --k-made: #16a34a; --k-reb: #2563eb; --k-good: #0d9488; --k-bad: #ea580c; --k-foul: #ca8a04; --k-mark: #facc15;
+  --k-fg2: #16a34a; --k-fg3: #8b5cf6; --k-ft: #c26a0e; --k-rb: #2563eb;
   --k-miss-bg: #1b2433; --k-miss-line: #64748b; --k-miss-ink: #eef2f8; --k-miss-x: #f87171;
   color-scheme: dark;
 }
@@ -166,80 +172,49 @@ body[data-view="live"] { overflow: hidden; }
 .menubtn span { font-size: 24px; font-weight: 800; }
 .menubtn small { font-size: 10px; color: var(--muted); margin-top: 2px; }
 
-/* 2つのチーム：縦に重ねる（横長の画面では左右に並べる） */
+/* 2つのチーム：左右に並べる（lay-side）か、上下に重ねる（lay-stack）。どちらにするかは js の BT.planLayout が決める
+   （すきま・ふちの数字は、core.js の BT.LAYOUT と合わせる） */
 .stagewrap { position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; }
-.panels { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 0 8px; }
-.team { flex: var(--rows, 3) 1 auto; min-height: 0; min-width: 0; display: flex; flex-direction: column; background: var(--panel); border: 3px solid var(--tc); border-radius: var(--radius); overflow: hidden; box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.35); }
-@media (orientation: landscape) and (min-width: 600px) {
-  .panels { flex-direction: row; }
-  .team { flex: 1 1 0; min-width: 0; }
-}
-.thead { position: relative; display: flex; align-items: center; gap: 8px; background: var(--tc); color: var(--tink); padding: 3px 10px; min-height: 34px; flex: none; border-bottom: 1px solid rgba(128, 128, 128, 0.45); }
-.tname { font-size: clamp(14px, 2.6vmin, 19px); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.tsc { font-size: clamp(16px, 3vmin, 22px); font-weight: 900; font-variant-numeric: tabular-nums; opacity: 0.85; }
-.ask { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; align-self: stretch; margin: -3px -10px -3px 0; padding: 0 6px 0 10px; background: var(--ask); color: #1a1200; font-weight: 800; font-size: clamp(13px, 2.4vmin, 17px); border-left: 1px solid rgba(0, 0, 0, 0.25); }
-.team.asking .tsc { display: none; }
-.asktxt { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.askx { flex: none; border: 1px solid rgba(0, 0, 0, 0.35); background: rgba(255, 255, 255, 0.6); border-radius: 8px; padding: 2px 10px; min-height: 28px; font-weight: 700; font-size: 13px; color: #1a1200; }
-.askbar { position: absolute; left: 0; bottom: -1px; height: 4px; width: 100%; background: var(--ask); transform-origin: left; z-index: 1; }
-@keyframes shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.panels { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: row; gap: 6px; padding: 0 4px; }
+.lay-stack .panels { flex-direction: column; }
+.team { flex: 1 1 0; min-height: 0; min-width: 0; display: flex; flex-direction: column; background: var(--panel); border: 2px solid var(--tc); border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.35); }
+.lay-stack .team { flex: var(--r, 1) 1 var(--base, 40px); }
+/* チームの帯：名前・得点・「＋番号」 */
+.thead { display: flex; align-items: center; gap: 6px; background: var(--tc); color: var(--tink); padding: 0 3px 0 8px; height: 22px; flex: none; border-bottom: 1px solid rgba(128, 128, 128, 0.45); }
+.thead .tname { flex: 1; min-width: 0; font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; }
+.tsc { font-size: 15px; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; }
+.tadd { flex: none; height: 18px; border: 1px solid currentColor; background: transparent; color: inherit; border-radius: 6px; font-size: 11px; font-weight: 700; padding: 0 6px; line-height: 1; opacity: 0.8; }
+/* 選手の行：列の中は上から背番号の小さい順（grid-auto-flow: column）。行の高さは 28〜76px（入りきらなければ縦にすべらせる） */
+.roster { flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-template-columns: repeat(var(--c, 1), minmax(0, 1fr)); grid-template-rows: repeat(var(--r, 1), minmax(28px, 76px));
+  gap: 3px 8px; padding: 4px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; align-content: start; }
+.team.scroll .roster { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), rgba(0, 0, 0, 0.35)); mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), rgba(0, 0, 0, 0.35)); }
+.prow { display: grid; grid-template-columns: var(--nw, 36px) repeat(4, minmax(0, 1fr)); gap: 3px; min-height: 0; min-width: 0; }
+.pno { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; overflow: hidden; border-radius: 8px; background: var(--tc); color: var(--tink); border: 1px solid rgba(128, 128, 128, 0.55); }
+.pno b { font-size: var(--nf, 20px); font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -0.02em; }
+.pno small { display: none; font-size: 10px; line-height: 1.15; max-width: 100%; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.85; }
+.team.roomy .pno small { display: block; }
+.prow.unk .pno { background: var(--panel2); color: var(--muted); border: 1px dashed var(--line2); }
+.prow.teamonly .pno b { font-size: 12px; letter-spacing: 0; }
+.pb { position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; padding: 0 2px; border: 0; border-radius: 8px; color: #fff; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.22); transition: transform 0.06s, filter 0.06s; }
+.pb b { font-size: var(--bf, 16px); font-weight: 900; line-height: 1; white-space: nowrap; overflow: hidden; letter-spacing: -0.01em; }
+.pb:active { transform: scale(0.94); filter: brightness(1.18); box-shadow: none; }
+.pb.k-fg2 { background: var(--k-fg2); }
+.pb.k-fg3 { background: var(--k-fg3); }
+.pb.k-ft { background: var(--k-ft); }
+.pb.k-reb { background: var(--k-rb); }
+/* 回数（ボタンの右上） */
+.cnt { position: absolute; top: 2px; right: 2px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px; background: rgba(0, 0, 0, 0.42); color: #fff; font-style: normal; font-size: 10.5px; font-weight: 800; line-height: 15px; text-align: center; font-variant-numeric: tabular-nums; pointer-events: none; }
+.prow.unk:not(.teamonly) .pb { opacity: 0.88; }
+/* 幅の狭いボタン：回数は文字の下に（右上だと文字に重なるため） */
+.team.narrowb .pb { flex-direction: column; gap: 1px; }
+.team.narrowb .pb .cnt { position: static; height: 12px; min-width: 14px; padding: 0 3px; border-radius: 6px; font-size: 9.5px; line-height: 12px; }
 
-/* 背番号 */
-.nos { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(44px, 9vmin, 64px), 1fr)); gap: 5px; padding: 6px; flex: none; min-width: 0; }
-.no { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: clamp(42px, 7vmin, 60px); border: 2px solid var(--line2); border-radius: 10px; background: var(--panel2); padding: 0 2px; overflow: hidden; }
-.no b { font-size: clamp(19px, 4vmin, 30px); font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.05; }
-.no small { font-size: 10.5px; color: var(--muted); line-height: 1.1; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.no.add { border-style: dashed; color: var(--muted); font-size: 22px; font-weight: 700; }
-.no:active { transform: scale(0.95); }
-.no.sel { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); box-shadow: 0 0 0 3px var(--accent-soft); }
-.no.sel small { color: rgba(255, 255, 255, 0.85); }
-.no.sel::after { content: ''; position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: rgba(255, 255, 255, 0.75); transform-origin: left; animation: shrink 12s linear forwards; }
-.team.asking .no:not(.add) { animation: askpulse 0.9s ease-in-out infinite; border-color: var(--ask); }
-@keyframes askpulse { 50% { box-shadow: 0 0 0 3px var(--ask); } }
-
-/* プレー */
-.acts { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); grid-auto-rows: minmax(var(--acth, 48px), 1fr); gap: 6px; padding: 0 6px 6px; }
-
-/* 背番号の並べ方（layoutLive が、画面の大きさで選ぶ） */
-/* strip：番号を横1列に（入りきらない分は横にすべらせる） */
-.lay-strip .nos { display: flex; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scroll-padding: 0 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-.lay-strip .nos::-webkit-scrollbar, .lay-strip2 .nos::-webkit-scrollbar { display: none; }
-.lay-strip .no { flex: 0 0 auto; width: clamp(44px, 12.5vmin, 58px); scroll-snap-align: start; }
-/* strip2：番号を2段で横に（左から順に並べ、入りきらない分は横にすべらせる） */
-.lay-strip2 .nos { grid-template-columns: repeat(var(--nocols, 8), var(--now, 50px)); overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scroll-padding: 0 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-.lay-strip2 .no { scroll-snap-align: start; }
-.lay-strip .nos.more, .lay-strip2 .nos.more { -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); }
-/* 高さの低い画面（横向きのスマホ）：上と下の帯を薄く */
-.short .lbar { padding: 4px 8px; }
-.short .clock, .short .startbtn, .short .period, .short .sc, .short .menubtn { height: 44px; }
-.short .tval { font-size: 30px; }
-.short .sc { font-size: 28px; }
-.short .menubtn small { display: none; }
-.short .thead { min-height: 30px; }
-.short .lastbar { min-height: 44px; padding-top: 4px; padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
-.short .lastev, .short .btn.undo { min-height: 38px; padding-top: 3px; padding-bottom: 3px; }
-.lay-col .act b { white-space: normal; word-break: break-all; }
-.lay-col .act.long b { font-size: 13px; line-height: 1.15; }
-/* col：番号をプレーのボタンの左に（横長の画面で、高さが足りないとき） */
-.lay-col .team { display: grid; grid-template-columns: minmax(0, calc(var(--nocols, 3) * 48px + 10px)) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-.lay-col .thead { grid-column: 1 / -1; }
-.lay-col .nos { grid-template-columns: repeat(var(--nocols, 3), minmax(0, 1fr)); grid-auto-rows: 44px; align-content: start; overflow-y: auto; padding-right: 0; min-height: 0; }
-.lay-col .no { min-height: 0; }
-.lay-col .acts { padding-top: 6px; }
-.act { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-radius: 12px; border: 0; color: #fff; padding: 2px 4px; min-width: 0; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.22); transition: transform 0.06s, filter 0.06s; }
-.act.rs { grid-column-start: 1; }
-.act b { font-size: clamp(17px, 3.6vmin, 30px); font-weight: 900; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.act.long b { font-size: clamp(14px, 2.9vmin, 26px); letter-spacing: -0.02em; }
-.act small { font-size: clamp(11px, 2vmin, 15px); font-weight: 700; opacity: 0.95; line-height: 1.1; white-space: nowrap; }
-.act:active { transform: scale(0.96); filter: brightness(1.15); box-shadow: none; }
 .k-made { background: var(--k-made); }
 .k-reb { background: var(--k-reb); }
 .k-good { background: var(--k-good); }
 .k-bad { background: var(--k-bad); }
 .k-foul { background: var(--k-foul); }
 .k-mark { background: var(--k-mark); color: var(--k-mark-ink); }
-.act.k-miss { background: var(--k-miss-bg); color: var(--k-miss-ink); border: 2px solid var(--k-miss-line); box-shadow: none; }
-.act.k-miss small { color: var(--k-miss-x); }
 /* 押せたしるし（光る輪） */
 .hit { animation: hit 0.32s ease-out; }
 @keyframes hit { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.95), 0 0 0 0 var(--accent); filter: brightness(1.35); } 100% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0), 0 0 0 14px rgba(37, 99, 235, 0); filter: none; } }
@@ -256,20 +231,67 @@ body[data-view="live"] { overflow: hidden; }
 .endscore { display: flex; align-items: center; gap: 12px; font-size: 16px; }
 .endscore b { font-size: 34px; font-variant-numeric: tabular-nums; }
 
-/* 下の帯：いちばん新しい記録・取り消す */
-.lastbar { flex: none; display: flex; align-items: center; gap: 10px; padding: 6px 10px calc(6px + env(safe-area-inset-bottom)); min-height: 52px; }
-.lastev { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-left: 8px solid var(--tc, var(--line2)); border-radius: 12px; padding: 6px 10px; min-height: 44px; overflow: hidden; }
-.lastev .chip { display: none; }
-.lastev.msg { border-left-color: #64748b; font-weight: 700; }
+/* 画面の下：パスミス・★（いつでも押せる）・いま記録したもの・取り消す */
+.gbar { flex: none; display: flex; align-items: stretch; gap: 6px; padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); height: calc(60px + env(safe-area-inset-bottom)); }
+.gb { position: relative; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 76px; padding: 0 10px; border: 0; border-radius: 12px; color: #fff; line-height: 1.1; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.22); transition: transform 0.06s, filter 0.06s, opacity 0.2s; }
+.gb b { font-size: 17px; font-weight: 900; white-space: nowrap; }
+.gb small { font-size: 11px; font-weight: 800; white-space: nowrap; }
+.gb.k-mark b { font-size: 19px; line-height: 1; }
+.gb:active { transform: scale(0.95); filter: brightness(1.15); box-shadow: none; }
+.gb .cnt { top: 3px; right: 3px; }
+.gbar.off .gb { opacity: 0.45; }
+.lastbar { flex: 1; min-width: 0; display: flex; align-items: stretch; gap: 6px; }
+.lastev { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 1px; background: var(--panel); border: 1px solid var(--line); border-left: 6px solid var(--tc, var(--line2)); border-radius: 10px; padding: 3px 8px; overflow: hidden; line-height: 1.25; }
+.lastev .l1 { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.lastev .lt { font-variant-numeric: tabular-nums; font-size: 15px; flex: none; }
+.lastev .ll { font-weight: 800; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.lastev .lw { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lastev .mt { font-size: 12.5px; font-weight: 700; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.lastev.hint { border-left-color: var(--line2); }
+.lastev.hint .mt { color: var(--muted); font-weight: 400; }
+.lastev.msg { border-left-color: #64748b; }
 .lastev.msg.ok { border-left-color: #22c55e; }
 .lastev.msg.warn { border-left-color: #f59e0b; }
 .lastev.msg.err { border-left-color: #ef4444; }
-.lastev.msg .ll { white-space: normal; line-height: 1.3; font-size: 14px; }
-.lastev .lt { font-variant-numeric: tabular-nums; font-size: 16px; }
-.lastev .lw { font-weight: 700; white-space: nowrap; }
-.lastev .ll { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.lastbar .hint { color: var(--muted); font-size: 13px; padding: 0 4px; }
-.btn.undo { min-height: 44px; font-weight: 800; flex: none; }
+.btn.undo { flex: none; flex-direction: column; gap: 0; min-height: 0; padding: 0 10px; font-weight: 800; line-height: 1.1; }
+.btn.undo b { font-size: 20px; line-height: 1; }
+.btn.undo small { font-size: 10.5px; }
+.btn.undo.act { font-size: 13px; padding: 0 8px; white-space: nowrap; }
+/* タブレット：下のボタンを大きく */
+@media (min-width: 700px) and (min-height: 600px) {
+  .gbar { height: calc(70px + env(safe-area-inset-bottom)); gap: 8px; padding-left: 8px; padding-right: 8px; }
+  .gb { min-width: 150px; padding: 0 18px; }
+  .gb b { font-size: 22px; }
+  .gb.k-mark b { font-size: 24px; }
+  .gb small { font-size: 13px; }
+  .lastev .lt { font-size: 18px; }
+  .lastev .ll { font-size: 17px; }
+  .lastev .lw, .lastev .mt { font-size: 14px; }
+  .btn.undo { padding: 0 16px; }
+  .thead { height: 26px; }
+  .thead .tname { font-size: 15px; }
+  .tsc { font-size: 17px; }
+}
+/* 幅の狭いスマホ：下の帯を詰める */
+@media (max-width: 400px) {
+  .gbar { gap: 4px; padding-left: 4px; padding-right: 4px; }
+  .gb { min-width: 0; padding: 0 8px; }
+  .gb b { font-size: 15px; }
+  .btn.undo { padding: 0 7px; }
+  .lastev { padding: 3px 6px; border-left-width: 5px; }
+  .lastev .lt { font-size: 13.5px; }
+  .lastev .ll { font-size: 13px; }
+  .lastev .lw, .lastev .mt { font-size: 11.5px; }
+}
+/* 高さの低い画面（横向きのスマホ）：上と下の帯を薄く */
+.short .lbar { padding: 3px 8px; }
+.short .clock, .short .startbtn, .short .period, .short .sc, .short .menubtn { height: 40px; }
+.short .tval { font-size: 28px; }
+.short .sc { font-size: 26px; }
+.short .menubtn small { display: none; }
+.short .gbar { height: calc(50px + env(safe-area-inset-bottom)); padding-top: 4px; padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
+.short .gb small { display: none; }
+.short .gb.k-mark b::after { content: ' あとで見る'; font-size: 13px; }
 
 /* ---------- 下から出る小窓 ---------- */
 .sheet { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-end; justify-content: center; }
@@ -360,5 +382,5 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
 
 .recdot.inline { display: inline-block; }
 @media (prefers-reduced-motion: reduce) {
-  .recdot, .team.asking .no:not(.add), .hit { animation: none !important; }
+  .recdot, .hit { animation: none !important; }
 }
