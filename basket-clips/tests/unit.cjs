@@ -33,16 +33,16 @@ ok(C.baseTeam({ hoop: 0, t: 150 }, { hoopTeam: [1, 0], halfT: null }) === 1, '�
 
 section('得点の一覧（手直しを含む）');
 const result = { shots: [
-  { t: 10.0, hoop: 1, made: true, sure: true },
-  { t: 20.0, hoop: 0, made: false, sure: true },        // 外れ（一覧に入らない）
-  { t: 30.0, hoop: 0, made: true, sure: false },        // 要確認
-  { t: 120.0, hoop: 1, made: true, sure: true },        // 後半
-  { t: 133.0, hoop: 0, made: true, sure: true }
+  { t: 10.0, hoop: 1, made: true, sure: true, tier: 'made' },
+  { t: 20.0, hoop: 0, made: false, sure: true, tier: 'miss' },        // 外れ（一覧に入らない）
+  { t: 30.0, hoop: 0, made: true, sure: true, tier: 'made' },
+  { t: 120.0, hoop: 1, made: true, sure: true, tier: 'made' },        // 後半
+  { t: 133.0, hoop: 0, made: true, sure: true, tier: 'made' }
 ] };
 let items = C.items(result, setup, C.emptyEdits());
-ok(items.length === 4, '成功だけが一覧に入る', items.length);
+ok(items.length === 4, '「入った」だけが一覧に入る', items.length);
 ok(items.map((it) => it.team).join('') === '0110', 'チーム：前半B=自分・前半A=相手・後半B=相手・後半A=自分', items.map((it) => it.team));
-ok(items[1].unsure === true && items[0].unsure === false, '「要確認」の印');
+ok(C.autoTier({ made: true, sure: false }) === 'maybe' && C.autoTier({ made: true }) === 'made' && C.autoTier({ made: false }) === 'miss', '3段の判定がない古い結果：要確認の成功は「たぶん入った」、外れは「外れ」とみなす');
 ok(items.map((it) => it.half).join('') === '1122', '前半・後半の印');
 const id30 = C.shotId(result.shots[2]);
 const edits = { fix: { [id30]: 0 }, off: { [C.shotId(result.shots[0])]: true }, added: [{ id: 'm1', t: 60, team: 1 }] };
@@ -55,27 +55,89 @@ const swapped = C.items(result, { hoopTeam: [0, 1], halfT: 100 }, edits);
 ok(swapped.find((it) => it.id === id30).team === 0 && swapped.find((it) => it.id === 'm1').team === 1, '「⇄ 入れ替える」でも、手で決めたものはそのまま');
 ok(swapped.find((it) => it.t === 120).team === 0, '「⇄ 入れ替える」で、自動の分は入れ替わる');
 
-section('「入っていたかも？」（外れと判定したシュート）と「入っていた」');
+section('3段の判定（入った・たぶん入った・外れ）と、人が決める');
 const r3 = { shots: [
-  { t: 10.0, hoop: 1, made: true },
-  { t: 11.5, hoop: 1, made: false },      // 得点の直後（同じゴール・2.5 秒以内）→ 候補に出さない
-  { t: 40.0, hoop: 1, made: false },      // 自分が打った外れ（ゴールB は自分が攻める）
-  { t: 55.0, hoop: 0, made: false }       // 相手が打った外れ
+  { t: 10.0, hoop: 1, made: true, tier: 'made' },
+  { t: 11.5, hoop: 1, made: false, tier: 'miss' },                    // 得点の直後（同じゴール・2.5 秒以内）→ 同じシュート。どこにも出さない
+  { t: 40.0, hoop: 1, made: false, tier: 'maybe', why: 'bounce' },    // 自分が打った（ゴールB は自分が攻める）。リングに来たあとネットが揺れた
+  { t: 55.0, hoop: 0, made: false, tier: 'miss' },                    // 相手が打った外れ
+  { t: 70.0, hoop: 0, made: false, tier: 'maybe', why: 'net' },       // ボールは見えないが、ネットが大きく揺れた
+  { t: 85.0, hoop: 1, made: true, tier: 'maybe', why: 'faint' }       // ボールは通ったが、ネットの揺れが小さい
 ] };
 const set3 = { hoopTeam: [1, 0], halfT: null };
+const id3 = (i) => C.shotId(r3.shots[i]);
 let mb = C.maybes(r3, set3, C.emptyEdits());
-ok(mb.length === 2 && mb[0].t === 40 && mb[0].team === 0 && mb[1].team === 1, '外れの候補：打ったチームに分かれ、得点の直後のものは出ない', mb.map((m) => [m.t, m.team]));
+ok(mb.map((m) => [m.t, m.team, m.why].join(':')).join(' ') === '40:0:bounce 70:1:net 85:0:faint', '「たぶん入った」：打ったチームに分かれ、理由つき', mb.map((m) => [m.t, m.team, m.why]));
+ok(C.misses(r3, set3, C.emptyEdits()).map((m) => m.t).join(',') === '55', '「外れ」：得点の直後のもの（同じシュート）は出さない');
+ok(C.items(r3, set3, C.emptyEdits()).map((it) => it.t).join(',') === '10', '得点の一覧は「入った」だけ（たぶん入った・外れは入らない）');
 const e3 = C.emptyEdits();
-e3.promote[C.shotId(r3.shots[2])] = true;
+e3.judge[id3(2)] = 'made';
+e3.judge[id3(5)] = 'miss';
 const it3 = C.items(r3, set3, e3);
 const pr = it3.find((it) => it.t === 40);
-ok(pr && pr.promoted && pr.team === 0 && pr.auto, '「入っていた」にした外れは、得点の一覧に入る（ゴールでチームが決まる）');
-ok(C.maybes(r3, set3, e3).every((m) => m.t !== 40), '「入っていた」にしたものは候補から消える');
+ok(pr && pr.promoted && pr.team === 0 && pr.auto, '「入った」にしたものは、得点の一覧に入る（ゴールでチームが決まる・確かめた印）');
+ok(C.maybes(r3, set3, e3).map((m) => m.t).join(',') === '70', '決めたものは「たぶん入った」から消える');
+ok(C.misses(r3, set3, e3).map((m) => m.t).join(',') === '55,85', '「外れ」にしたものは、外れに入る');
 const pc = C.clipsOf(it3, 0, { lead: 4, lag: 1 }, 100).find((c) => c.at === 40);
-ok(pc && pc.t1 === 40 + 1 + C.PROMOTE_TAIL, '「入っていた」の場面は、後ろを長めにする（弾んでから入るまで見える）', pc && pc.t1);
-const r4 = { shots: [{ t: 40.6, hoop: 1, made: true }] };
-const e4 = C.carryEdits(r3, r4, e3);
-ok(e4.promote[C.shotId(r4.shots[0])], '解析をやり直しても「入っていた」の印は同じシュートへ引き継ぐ', e4.promote);
+ok(pc && pc.t1 === 40 + 1 + C.PROMOTE_TAIL, '確かめて入れた場面は、後ろを長めにする（弾んでから入るまで見える）', pc && pc.t1);
+const eOld = C.emptyEdits();
+eOld.promote[id3(3)] = true;
+ok(C.items(r3, set3, eOld).some((it) => it.t === 55 && it.promoted), '前の版の「入っていた」（promote）も、入ったとして扱う');
+const r4 = { shots: [{ t: 40.6, hoop: 1, made: false, tier: 'maybe' }, { t: 85.3, hoop: 1, made: true, tier: 'maybe' }] };
+const e4 = C.carryEdits(r3, r4, Object.assign(e3, { rec: { [id3(2)]: { type: '3', no: '7' } } }));
+ok(e4.judge[C.shotId(r4.shots[0])] === 'made' && e4.judge[C.shotId(r4.shots[1])] === 'miss', '解析をやり直しても、人が決めた「入った」「外れ」は同じシュートへ引き継ぐ', e4.judge);
+ok(e4.rec[C.shotId(r4.shots[0])] && e4.rec[C.shotId(r4.shots[0])].no === '7', '記録（2点・3点・番号）も引き継ぐ', e4.rec);
+
+section('📋 記録（シュート・リバウンド・2点/3点/FT）と集計');
+{
+  const E = C.emptyEdits();
+  E.judge[id3(2)] = 'made';
+  E.judge[id3(5)] = 'miss';
+  E.added.push({ id: 'm1', t: 60, team: 1 }, { id: 'm2', t: 90, team: 0, res: 'miss' });
+  const rows0 = C.record(r3, set3, E);
+  ok(rows0.map((r) => `${r.t}:${r.res}:${r.team}`).join(' ') === '10:made:0 40:made:0 55:miss:1 60:made:1 70:maybe:1 85:miss:0 90:miss:0', 'ゴールに来たシュートを時刻順に全部（入った・外れ・確認待ち・手で足したもの）', rows0.map((r) => [r.t, r.res, r.team]));
+  ok(rows0.find((r) => r.t === 70).res === 'maybe' && rows0.find((r) => r.t === 85).res === 'miss' && rows0.find((r) => r.t === 90).res === 'miss', '結果：確認待ち・人が決めた外れ・手で足した外れ');
+  E.rec = {
+    [id3(0)]: { type: '3', no: '7' },                               // 自分 #7 の 3点（成功）
+    [id3(2)]: { type: '2', no: '7' },                               // 自分 #7 の 2点（確かめて入った）
+    [id3(3)]: { type: '2', no: '5', reb: 0, rno: '4' },             // 相手 #5 の 2点の外れ → 自分 #4 がリバウンド（ディフェンス）
+    [id3(5)]: { type: 'ft', no: '9', reb: 0, rno: '9' }             // 自分 #9 のフリースローの外れ → 自分 #9 がリバウンド（オフェンス）
+  };
+  const st = C.stats(C.record(r3, set3, E));
+  const T0 = st.teams[0], T1 = st.teams[1];
+  ok(T0.pts === 5 && T0.shots['3'].join('/') === '1/1' && T0.shots['2'].join('/') === '1/1' && T0.shots.ft.join('/') === '0/1' && T0.shots['?'].join('/') === '0/1', '自分：得点 5（3点 1/1・2点 1/1・FT 0/1・種類なし 0/1）', T0);
+  ok(T0.oreb === 1 && T0.dreb === 1, '自分：リバウンド（オフェンス 1・ディフェンス 1）', [T0.oreb, T0.dreb]);
+  ok(T1.pts === 2 && T1.guess === 1 && T1.shots['2'].join('/') === '0/1' && T1.pending === 1, '相手：種類なしの成功は 2 点として数え、確認待ちは数えない', T1);
+  const p0 = st.players[0];
+  ok(p0.map((p) => p.no).join(',') === '4,7,9' && p0.find((p) => p.no === '7').pts === 5 && p0.find((p) => p.no === '4').dreb === 1 && p0.find((p) => p.no === '9').oreb === 1, '番号ごと：得点・リバウンド', p0);
+  const csv = C.recordCSV(C.record(r3, set3, E), ['致遠館', '相手校'], (t) => BS.fmtTime(t));
+  const lines = csv.trim().split(/\r\n/);
+  ok(lines.length === 8 && lines[0].startsWith('時刻,前後半,ゴール,チーム,結果,種類,打った人'), 'CSV：見出し＋シュートごとに1行', lines.length);
+  ok(lines.some((l) => l.includes('相手校,外れ,2点,5,致遠館,4,ディフェンス')) && lines.some((l) => l.includes('致遠館,入った,3点,7')), 'CSV：結果・種類・番号・リバウンド（オフェンス／ディフェンス）', lines);
+}
+
+section('ネットの揺れから3段に分ける（auto.js の classify）');
+{
+  const BA = load(['core.js', 'vision.js', 'auto.js']);
+  const A = BA.auto;
+  // 15 コマ/秒のネットの動きの記録 [t, netFg, netOnly, sideFg, fg, cx, cy, w, aboveFg]。ふだんは 0.02
+  const ser = [];
+  const at = (t) => ser.find((r) => Math.abs(r[0] - t) < 0.034);
+  for (let k = 0; k < 15 * 120; k++) { const t = k / 15; ser.push([t, 0.02, 0.02, 0.0, 0.03, 300, 200, 30, 0]); }
+  const bump = (t0, vals) => vals.forEach((v, i) => { const r = at(t0 + i / 15); r[1] = r[2] = v; });
+  bump(10, [0.3, 0.5, 0.55, 0.5, 0.45, 0.4, 0.3, 0.2, 0.15, 0.1, 0.05]);         // 入った：急に大きく揺れて、すぐ収まる
+  bump(30, [0.2, 0.25, 0.2, 0.1]);                                             // 弱い揺れ（リングで弾んだ外れ）
+  bump(90, [0.35, 0.5, 0.5, 0.45, 0.4, 0.35, 0.3, 0.2, 0.15, 0.1]);             // シュートは見えないが、入ったような揺れ
+  for (let i = 0; i < 40; i++) { const r = at(50 + i / 15); r[5] = 300 + i * 18; r[2] = r[1] = Math.min(0.45, 0.02 + i * 0.02); }   // カメラを振ったあと、ゆっくり上がって下がらない
+  const shots = [{ t: 10.3, hoop: 0, made: true, sure: true }, { t: 29.8, hoop: 0, made: false }, { t: 70, hoop: 0, made: true, sure: true }];
+  A.classify(shots, [ser]);
+  const by = (t) => shots.find((s) => Math.abs(s.t - t) < 0.5);
+  ok(by(10.3).tier === 'made', 'ボールがリングを通り、ネットも大きく揺れた → 入った');
+  ok(by(29.8).tier === 'miss', 'リングに来て、ネットの揺れが弱い → 外れ');
+  ok(by(70).tier === 'maybe' && by(70).why === 'faint', 'ボールは通ったが、ネットが揺れていない → たぶん入った（確かめる）');
+  ok(by(90) && by(90).tier === 'maybe' && by(90).why === 'net' && !by(90).made, 'シュートは見えないが、ネットが大きく揺れた → たぶん入った（シュートとして足す）');
+  ok(!shots.some((s) => s.t > 49 && s.t < 54), 'カメラを振ったあとの、ゆっくり上がって下がらない動きは使わない', shots.map((s) => [s.t, s.tier]));
+}
 
 section('クリップ（5秒）と、続けて再生の区間');
 const cl = C.clipsOf(C.items(result, setup, C.emptyEdits()), 0, null, 140);

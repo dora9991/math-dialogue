@@ -64,11 +64,11 @@
 ## 動画から場面を切り出す（バスケ得点クリップ）
 
 1. 「書き出す」→「**記録のファイル（JSON）**」で保存（同じ端末・同じブラウザなら、ファイルにしなくても読み込めます）
-2. **バスケ得点クリップ**（https://dora9991.github.io/math-dialogue/basket-clips/ ）で、試合の動画を開いて「📋 記録を読み込む」
+2. **バスケ得点クリップ**（https://dora9991.github.io/math-dialogue/basket-clips/ ）で、試合の動画を開いて「📲 タップ記録を読み込む」
 3. **時刻を合わせる**：動画の撮影時刻から自動で合わせる目安が出ます（iPhone など）。手で合わせるときは、記録の1つ（ふつうは「スタート」）を選んで、動画の同じ場面（ジャンプボールの瞬間）で止めてボタンを押すだけ
 4. **場面を選ぶ**：チーム・プレー（得点・シュート失敗・リバウンド・パスミス・★…）・選手で絞り込み、▶ で1場面ずつ、「▶ 続けて再生」でまとめて、「🎬 動画にする」で1本の動画に
 
-くわしくは `basket-clips/README.md` の「記録（バスケ タップ記録）から切り出す」。
+くわしくは `basket-clips/README.md` の「📲 タップ記録（バスケ タップ記録）から切り出す」。
 
 ## 記録のデータの形
 
@@ -111,6 +111,7 @@ basket-tap/
   js/app.js         画面（試合の一覧・準備・記録・一覧・集計・書き出す・設定）
   tests/unit.cjs    回帰テスト（node だけで動く）
   tests/e2e.cjs     画面を通した確認（Playwright の Chromium・スマホの大きさ・時計を進めて確かめる）
+  tools/deploy-ghpages.sh  公開（gh-pages の basket-tap/ と basket-clips/index.html だけを入れかえる）
 ```
 
 ## 開発
@@ -122,6 +123,7 @@ node basket-tap/tests/e2e.cjs built       # 画面を通した確認（71件・�
 SHOTS=/tmp/shots node basket-tap/tests/e2e.cjs dev   # 画面の写真も撮る（見た目の確認用）
 node basket-tap/tests/server.cjs          # 開発用サーバー → http://127.0.0.1:5193/
 python3 basket-tap/tools/make_icons.py    # アイコンを作り直す（Pillow が必要）
+bash basket-tap/tools/deploy-ghpages.sh   # 公開（gh-pages の basket-tap/ と basket-clips/index.html だけを入れかえる。ほかの公開物は変えない）
 ```
 
 e2e は Playwright（`npm i -g playwright` など）と、その Chromium を使います。

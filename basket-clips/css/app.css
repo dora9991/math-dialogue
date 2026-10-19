@@ -147,7 +147,9 @@ a.btn { text-decoration: none; }
 
 /* ---------- 結果 ---------- */
 .results { display: flex; flex-direction: column; gap: 10px; }
-.tabs2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tabs2 { display: grid; grid-template-columns: 1fr 1fr 0.85fr; gap: 8px; }
+.tab2 .pend { display: block; font-style: normal; font-size: 11px; font-weight: 700; color: var(--warn); white-space: nowrap; }
+.rectab::before { background: var(--muted); }
 .tab2 { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; align-items: center; gap: 2px 8px; text-align: left; background: var(--panel2); border: 2px solid var(--line); border-radius: 12px; padding: 10px 12px; position: relative; overflow: hidden; }
 .tab2::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--team); border-right: 1px solid rgba(128, 128, 128, 0.4); }
 .tab2 .big { font-size: 16px; font-weight: 800; padding-left: 4px; }
@@ -161,6 +163,8 @@ a.btn { text-decoration: none; }
   .tab2 .big { font-size: 15px; }
   .tab2 .cnt { grid-row: auto; padding-left: 4px; }
   .tab2 .cnt b { font-size: 24px; }
+  .tabs2 { grid-template-columns: 1fr 1fr; }
+  .rectab { grid-column: 1 / -1; }
   .winrow input { width: 52px; }
 }
 .winrow { font-size: 13px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
@@ -185,12 +189,35 @@ a.btn { text-decoration: none; }
   .clip .thumb { width: 88px; height: 50px; }
   .clip .cops { grid-column: 1 / -1; justify-content: flex-start; }
 }
-.maybes { border: 1px dashed var(--line2); border-radius: 10px; padding: 8px 12px; }
-.maybes summary { cursor: pointer; font-size: 13px; font-weight: 700; }
-.maybes p { margin: 6px 0; }
-.mblist { display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow-y: auto; }
-.mb { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 8px; background: var(--panel2); }
+.maybes { border: 1px dashed var(--warn); background: var(--warn-soft); border-radius: 10px; padding: 8px 12px; font-size: 13px; }
+.maybes p { margin: 4px 0 6px; }
+.mblist { display: flex; flex-direction: column; gap: 4px; max-height: 340px; overflow-y: auto; }
+.mb { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 8px; background: var(--panel); flex-wrap: wrap; }
 .mb b { font-variant-numeric: tabular-nums; }
+.mb.playing, .rec.playing { outline: 2px solid var(--accent); background: var(--accent-soft); }
+
+/* 📋 記録 */
+.reclist { display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow-y: auto; padding-right: 2px; }
+.rec { display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; border: 1px solid var(--line); border-left: 5px solid var(--team, var(--line2)); border-radius: 10px; background: var(--panel); font-size: 13px; }
+.rec .r1, .rec .r2 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.rec .ix { font-weight: 800; color: var(--muted); min-width: 18px; text-align: right; }
+.rec .t { font-variant-numeric: tabular-nums; }
+.rec.res-maybe { border-color: var(--warn); background: var(--warn-soft); }
+.rec .tm { display: inline-flex; align-items: center; gap: 4px; background: var(--panel2); border: 1px solid var(--line2); border-radius: 99px; padding: 1px 8px; font-size: 12px; }
+.seg { display: inline-flex; border: 1px solid var(--line2); border-radius: 8px; overflow: hidden; }
+.seg .sb { background: var(--panel2); border: 0; border-right: 1px solid var(--line2); padding: 3px 9px; font-size: 12.5px; line-height: 1.3; }
+.seg .sb:last-child { border-right: 0; }
+.seg .sb.on { background: var(--accent); color: #fff; font-weight: 700; }
+.seg.res .sb.on[data-v="miss"] { background: var(--muted); }
+.rec.res-maybe .seg.res .sb { background: var(--panel); }
+.rec .no { width: 3.6em; padding: 3px 6px; border: 1px solid var(--line2); border-radius: 7px; background: var(--panel); color: var(--text); font-size: 13px; }
+.rec .reb { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; color: var(--muted); font-size: 12.5px; }
+.recsum { border-top: 1px solid var(--line); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.sumtbl { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.sumtbl th, .sumtbl td { border-bottom: 1px solid var(--line); padding: 4px 6px; text-align: left; white-space: nowrap; }
+.sumtbl td small { color: var(--muted); margin-left: 4px; white-space: normal; }
+.recsum { overflow-x: auto; }
+.players summary { cursor: pointer; font-weight: 700; margin: 4px 0; }
 .acts { margin-top: 2px; }
 .exportbox { border: 1px dashed var(--line2); border-radius: 10px; padding: 8px 12px; }
 .exportbox .outvideo { width: 100%; max-height: 260px; background: #000; border-radius: 8px; margin: 6px 0; display: block; }
@@ -241,6 +268,7 @@ a.btn { text-decoration: none; }
 .lg { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; text-align: left; background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 8px 12px; width: 100%; }
 .lg b { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .lgvs { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.actions .wide { margin-left: -6px; }       /* ボタンの中のすき間（gap）を、言葉の途中では空けない */
 .brand > div { min-width: 0; }
 .brand b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 560px) {
