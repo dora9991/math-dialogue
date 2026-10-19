@@ -4,18 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>バスケ得点クリップ</title>
-<meta name="description" content="バスケの試合動画から、点を入れた場面・入れられた場面を5秒ずつ切り出して、続けて見たり1本の動画にしたりするブラウザアプリ（動画はどこにも送りません）">
+<meta name="description" content="バスケの試合動画から、点を入れた場面・入れられた場面を5秒ずつ切り出して、続けて見たり1本の動画にしたりするブラウザアプリ。「バスケ タップ記録」の記録から、選手ごと・プレーごとの場面も切り出せます（動画はどこにも送りません）">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 <div id="app">
   <header class="topbar">
-    <div class="brand"><span class="logo" aria-hidden="true">🏀</span><div><b>バスケ得点クリップ</b><small>点を入れた・入れられた場面を5秒ずつ</small></div></div>
+    <div class="brand"><span class="logo" aria-hidden="true">🏀</span><div><b>バスケ得点クリップ</b><small>得点の場面を5秒ずつ・タップ記録の場面も</small></div></div>
     <div class="actions">
-      <button id="btnOpen" class="btn primary">🎬 動画を選ぶ</button>
+      <button id="btnOpen" class="btn primary">🎬 動画<span class="wide">を選ぶ</span></button>
+      <button id="btnLog" class="btn" title="「バスケ タップ記録」の記録を読み込む">📋 記録<span class="wide">を読み込む</span></button>
       <button id="btnHelp" class="btn icon" title="使い方" aria-label="使い方">❓</button>
     </div>
     <input type="file" id="fileVideo" accept="video/*,.mp4,.mov,.m4v,.webm" hidden>
+    <input type="file" id="fileLog" accept=".json,application/json" hidden>
   </header>
 
   <main class="main">
@@ -60,6 +62,7 @@
 <script src="js/mp4.js"></script>
 <script src="js/auto-engine.js"></script>
 <script src="js/clips.js"></script>
+<script src="js/taplog.js"></script>
 <script src="js/store.js"></script>
 <script src="js/media.js"></script>
 <script src="js/export.js"></script>

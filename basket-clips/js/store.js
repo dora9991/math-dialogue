@@ -1,5 +1,6 @@
 /* バスケ得点クリップ — 保存（このブラウザの中だけ。動画そのものは保存しない）
-   動画ごとに「チームの色・ゴールの指定・解析の結果・手直し」を覚えておき、同じ動画を開き直すと続きから使える。
+   動画ごとに「チームの色・ゴールの指定・解析の結果・手直し」と「読み込んだ記録（バスケ タップ記録）・時刻あわせ・絞り込み」を覚えておき、
+   同じ動画を開き直すと続きから使える。
    動画の見分けは「ファイル名・大きさ・更新日時」。 */
 (function (root) {
   'use strict';
@@ -23,16 +24,19 @@
   function prefs() {
     return Object.assign({
       teams: [{ color: '#f4f4f4', colorName: '白', name: '' }, { color: '#2f6fed', colorName: '青', name: '' }],
-      win: { lead: BS.clips.WIN.lead, lag: BS.clips.WIN.lag }, captions: true
+      win: { lead: BS.clips.WIN.lead, lag: BS.clips.WIN.lag }, captions: true,
+      logWin: BS.taplog ? { lead: BS.taplog.WIN.lead, lag: BS.taplog.WIN.lag } : { lead: 6, lag: 2 }
     }, readJSON(PREFS) || {});
   }
-  function savePrefs(st) { writeJSON(PREFS, { teams: st.teams, win: st.win, captions: st.captions }); }
+  function savePrefs(st) { writeJSON(PREFS, { teams: st.teams, win: st.win, captions: st.captions, logWin: st.logWin }); }
 
   function fresh() {
     const p = prefs();
     return {
       v: 1, teams: JSON.parse(JSON.stringify(p.teams)), hoops: [null, null], hoopTeam: [0, 1], fixed: false,
-      halfT: null, halfNo: null, result: null, edits: BS.clips.emptyEdits(), win: Object.assign({}, p.win), captions: p.captions !== false
+      halfT: null, halfNo: null, result: null, edits: BS.clips.emptyEdits(), win: Object.assign({}, p.win), captions: p.captions !== false,
+      // 記録（バスケ タップ記録）：log＝読み込んだ記録、sync＝時刻あわせ { anchors: [{ t, v }], how }、logView＝絞り込み、logWin＝1場面の長さ、logOff＝外した場面
+      log: null, sync: null, logView: { teams: [true, true], groups: {}, players: [] }, logWin: Object.assign({}, p.logWin), logOff: {}
     };
   }
 
@@ -43,6 +47,9 @@
     const base = fresh();
     const out = Object.assign(base, st);
     out.edits = Object.assign(BS.clips.emptyEdits(), st.edits || {});
+    out.logWin = Object.assign({}, base.logWin, st.logWin || {});
+    out.logView = Object.assign({ teams: [true, true], groups: {}, players: [] }, st.logView || {});
+    out.logOff = st.logOff || {};
     return out;
   }
 

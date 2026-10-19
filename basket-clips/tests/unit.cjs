@@ -1,5 +1,6 @@
 // 回帰テスト（node basket-clips/tests/unit.cjs）
-// DOM を使わない部分（入れた／入れられたの振り分け・クリップ・ハーフタイムの提案・手直しの引き継ぎ・保存・MP4 の読み取り）を確かめる。
+// DOM を使わない部分（入れた／入れられたの振り分け・クリップ・ハーフタイムの提案・手直しの引き継ぎ・保存・MP4 の読み取り、
+// 「バスケ タップ記録」の記録の読み込み・時刻あわせ・場面・撮影時刻）を確かめる。
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -178,12 +179,122 @@ section('ゴールの自動検出（リング＋ネットを探す）');
   ok(g2.length === 1 && g2[0].rim.cx > 400, '自分で教えたゴールがあれば、もう片方のゴールだけを選ぶ', g2.map((g) => [g.t, g.rim.cx]));
 }
 
+const pending = [];
+section('「バスケ タップ記録」の記録（読み込み・時刻あわせ・場面）');
+{
+  // 記録アプリ（basket-tap/js/core.js）で作って書き出したものを、そのまま読み込めるか（2つのアプリの約束ごと）
+  const tctx = { console, Math, Date, JSON };
+  tctx.globalThis = tctx;
+  vm.createContext(tctx);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', '..', 'basket-tap', 'js', 'core.js'), 'utf8'), tctx, { filename: 'basket-tap/core.js' });
+  const BT = tctx.BT;
+  const T0 = Date.UTC(2026, 9, 19, 6, 30, 0);
+  const game = BT.newGame({ now: T0, tz: 540, teams: [{ name: '致遠館', players: BT.parseNumbers('4-15').map((no) => ({ no, name: no === '7' ? 'たけし' : '' })) }, { name: '城南', color: '#2f6fed', players: BT.parseNumbers('4-9').map((no) => ({ no })) }] });
+  game.startedAt = T0 + 12000;
+  BT.addEvent(game, { t: 0, type: 'period', period: 1 });
+  [[5, 'fg2', 0, '7'], [20, 'fg2x', 0, '5'], [21.5, 'reb', 1, '9'], [33, 'fg3', 1, '4'], [47, 'pass', 0, '7'], [61, 'fg2', 0, '10'], [78, 'reb', 0, null], [90, 'ft', 1, null], [100, 'mark', 0, '7'], [130, 'fg2', 1, '6']]
+    .forEach(([t, type, team, no]) => BT.addEvent(game, { t, type, team, no }));
+  BT.addEvent(game, { t: 70, type: 'period', period: 2 });
+  const BSL = load(['core.js', 'clips.js', 'mp4.js', 'taplog.js'], { escape, decodeURIComponent });
+  const TL = BSL.taplog;
+  const log = TL.parse(JSON.stringify(BT.exportData(game)), 'game.json');
+  ok(log.teams[0].name === '致遠館' && log.teams[1].color === '#2f6fed' && log.startedAt === T0 + 12000, '記録アプリが書き出した JSON を読み込める（チーム・色・スタートの時刻）');
+  ok(TL.plays(log).length === 10 && log.events.every((e, i) => i === 0 || log.events[i - 1].t <= e.t), 'プレー 10 件・時刻の順');
+  ok(log.events.find((e) => e.t === 78).period === 2 && log.events.find((e) => e.t === 61).period === 1, 'ピリオド（70 秒から 2Q）');
+  ok(TL.eventLabel(log, log.events.find((e) => e.t === 5)) === '#7 たけし 2P成功' && TL.eventLabel(log, log.events.find((e) => e.t === 78), true) === '致遠館 リバウンド', '呼び名：「#7 たけし 2P成功」「致遠館 リバウンド」');
+  const stored = TL.parse(JSON.parse(JSON.stringify(game)));      // 記録アプリがブラウザに保存している形（書き出す前）でも読める
+  ok(TL.plays(stored).length === 10 && stored.events.find((e) => e.t === 78).period === 2, 'ブラウザに保存された形（同じ端末から読み込むとき）も読める');
+  let err = null;
+  try { TL.parse({ format: 'basket-tap', teams: [], events: [{ t: 0, type: 'period', period: 1 }] }); } catch (e) { err = e.message; }
+  ok(err && /プレーの記録がありません/.test(err), 'プレーのない記録は、分かる言葉で断る', err);
+  err = null;
+  try { TL.parse('{ broken'); } catch (e) { err = e.message; }
+  ok(err && /JSON/.test(err), '壊れたファイルも断る');
+
+  // 時刻あわせ
+  ok(TL.toVideo(10, []) === null, '合わせる前は、動画の時刻は決まらない');
+  let A = TL.setAnchor([], 0, 12, true);
+  ok(TL.toVideo(5, A) === 17 && TL.toVideo(100, A) === 112, '1か所（記録 0:00 ＝ 動画 0:12）で合わせると、全部 12 秒ずれる');
+  A = TL.shift(A, -0.5);
+  ok(TL.toVideo(5, A) === 16.5, '全部を 0.5 秒前へ');
+  const A2 = TL.setAnchor(A, 80, 70, true);           // 撮影を途中で止めた：記録 80 秒 ＝ 動画 70 秒
+  ok(TL.toVideo(78, A2) === 89.5 && TL.toVideo(90, A2) === 80, '合わせる点を足すと、その点より後ろの記録は、その点のずれ');
+  const A3 = TL.setAnchor(A2, 95, 86, false);          // 95 秒の記録に効いている点（80 秒の点）だけ直す
+  ok(A3.length === 2 && TL.toVideo(95, A3) === 86 && TL.toVideo(5, A3) === 16.5, '「⌖」：その記録に効いている点だけを直す（ほかの点はそのまま）', A3);
+
+  // 場面と絞り込み
+  const S12 = TL.setAnchor([], 0, 12, true);
+  let r = TL.clips(log, S12, {}, { lead: 6, lag: 2 }, 120, {});
+  ok(r.clips.length === 9 && r.outside === 1, '動画（120 秒）の中の場面 9・外 1（記録 130 秒 → 動画 142 秒）', { n: r.clips.length, out: r.outside });
+  const c0 = r.clips[0];
+  ok(c0.at === 17 && c0.t0 === 11 && c0.t1 === 19 && c0.label === '#7 たけし 2P成功' && c0.n === 1 && c0.total === 9, '1場面：タップの前 6 秒・後 2 秒（動画 0:11〜0:19）', c0);
+  r = TL.clips(log, S12, { groups: { score: true } }, null, 120);
+  ok(r.clips.map((c) => c.t).join() === '5,33,61,90', '「得点」だけ', r.clips.map((c) => c.t));
+  r = TL.clips(log, S12, { players: ['0:7'] }, null, 120);
+  ok(r.clips.map((c) => c.type).join() === 'fg2,pass,mark', '「#7（自分）」だけ：2P成功・パスミス・★');
+  r = TL.clips(log, S12, { teams: [false, true] }, null, 120);
+  ok(r.clips.every((c) => c.team === 1) && r.clips.length === 3, '相手のチームだけ');
+  r = TL.clips(log, S12, {}, null, 120, { [log.events.find((e) => e.t === 47).id]: true });
+  ok(r.clips.find((c) => c.t === 47).on === false, '外した場面は on=false');
+  const cnt = TL.counts(log, {});
+  ok(cnt.grp.score === 5 && cnt.grp.reb === 2 && cnt.players['0:7'] === 3 && cnt.players['1:4'] === 1, '絞り込みの数（まとまり・選手）', cnt);
+  // 重なる場面は、続けて再生で1つにつながる（taplog.reel）
+  const all = TL.clips(log, S12, {}, { lead: 6, lag: 2 }, 120).clips;
+  const merged = TL.reel(all);
+  const mr = merged.find((x) => x.ids.length === 2);
+  ok(mr && mr.t0 === 26 && mr.t1 === 35.5 && merged.length === all.length - 1, '近い場面（2P失敗 → 1.5 秒後のリバウンド）は、1つの場面（0:26〜0:35.5）につながる', mr);
+  const chain = TL.reel([0, 5, 10, 15, 20, 25].map((t, i) => ({ id: 'c' + i, t0: t, t1: t + 8, on: true })), 24);
+  ok(chain.length === 2 && chain[0].t1 - chain[0].t0 <= 24 && chain[1].t0 === chain[0].t1, '続けてつなぐのは 24 秒まで（そのあとは、重なった分を削って次の場面に）', chain.map((x) => [x.t0, x.t1]));
+  ok(TL.reel([{ id: 'a', t0: 0, t1: 8, on: true }, { id: 'b', t0: 2, t1: 9, on: false }]).length === 1, '外した場面は入れない');
+
+  // 自動で探した得点と照らし合わせる（人のタップは 0.3〜2 秒遅れる。見落とし・まちがいもある）
+  const made = TL.plays(log).filter((e) => TL.TYPES[e.type].made).map((e) => e.t);       // 5, 33, 61, 90, 130
+  const shotsV = [5 + 12 - 1.2, 33 + 12 - 0.4, 61 + 12 - 1.9, 90 + 12 - 0.8, 55, 151];    // 130 の得点は見落とし・55 と 151 は誤り
+  const m = TL.matchShots(log, shotsV);
+  ok(m && m.matched === 4 && Math.abs(m.offset - (12 - 1)) <= 1, `照らし合わせ：記録の得点 ${made.length} 本のうち 4 本が重なる・ずれ ${m && m.offset} 秒（タップの遅れぶん、12 秒より少し小さい）`, m);
+  ok(TL.matchShots(log, [3, 50]) === null, '数が少なすぎると、照らし合わせない');
+
+  // 撮影時刻から合わせる
+  const fc = TL.fromCreation(log, T0, 120);
+  ok(fc && fc.anchors[0].t === 0 && fc.anchors[0].v === 12 && fc.inside === 9, '撮影の始まり 15:30:00・記録のスタート 15:30:12 → 記録 0:00 ＝ 動画 0:12');
+  ok(TL.fromCreation(log, T0 - 3600000, 120) === null, '1時間ずれた（別の試合の）動画では合わせない');
+  ok(TL.parseISO('2026-10-19T15:30:00+0900') === T0 && TL.parseISO('2026-10-19T06:30:00Z') === T0 && TL.parseISO('2026-10-19T15:30:00.500+09:00') === T0 + 500, '撮影時刻の書式（+0900・Z・+09:00）');
+  // 同じ端末の記録の一覧（localStorage）
+  const mem = { 'btap:games': JSON.stringify([{ id: 'g1', n: 3, startedAt: 2 }, { id: 'g0', n: 0 }, { id: 'g2', n: 5, startedAt: 9 }]), 'btap:game:g2': JSON.stringify(game) };
+  const fake = { getItem: (k) => (k in mem ? mem[k] : null) };
+  ok(TL.localGames(fake).map((g) => g.id).join() === 'g2,g1' && TL.localGame('g2', fake).id === game.id, '同じ端末で記録した試合の一覧（記録のないものは出さない）');
+
+  // 撮影時刻を、動画のファイル（MP4 / MOV）から読む
+  let ff = true;
+  try { execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' }); } catch (e) { ff = false; }
+  if (!ff) console.log('  （ffmpeg がないので、撮影時刻の読み取りは省きます）');
+  else {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bclip-meta-'));
+    const mk = (name, extra) => { const f = path.join(dir, name); execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc=size=160x90:rate=30', '-t', '3', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', ...extra, f], { stdio: 'ignore' }); return fs.readFileSync(f); };
+    const files = [
+      ['mvhd.mp4', ['-metadata', 'creation_time=2026-10-19T06:31:03Z'], T0 + 60000, 'mvhd', '作成時刻（mvhd・撮影を終えた時刻）から動画の長さ 3 秒を引く'],
+      ['apple.mov', ['-movflags', 'use_metadata_tags', '-metadata', 'com.apple.quicktime.creationdate=2026-10-19T15:30:00+0900', '-metadata', 'creation_time=2026-10-19T06:31:03Z'], T0, 'apple', 'iPhone の撮影開始時刻（com.apple.quicktime.creationdate）があれば、そちらを使う'],
+      ['none.mp4', [], null, null, '撮影時刻がない動画は、目安なし']
+    ];
+    try {
+      for (const [name, extra, want, how, label] of files) {
+        const buf = mk(name, extra);
+        const reader = { size: buf.length, read: async (a, b) => new Uint8Array(buf.buffer, buf.byteOffset + a, Math.min(b, buf.length) - a) };
+        pending.push(BSL.mp4.readMoov(reader).then((moov) => {
+          const ct = TL.creationTime(moov);
+          ok(want == null ? ct === null : (ct && ct.start === want && ct.how === how), label, ct);
+        }));
+      }
+    } catch (e) { console.log('  （撮影時刻のテスト用の動画を作れないので省きます）', e.message); }
+    Promise.all(pending).then(() => fs.rmSync(dir, { recursive: true, force: true }));
+  }
+}
+
 section('MP4 の読み取り（H.264・HEVC・VP9・AV1）');
 const BS3 = load(['core.js', 'mp4.js']);
 let ffmpeg = true;
 try { execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' }); } catch (e) { ffmpeg = false; }
 if (!ffmpeg) console.log('  （ffmpeg がないので省きます）');
-const pending = [];
 if (ffmpeg) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bclip-mp4-'));
   const kinds = [['h264', ['-c:v', 'libx264', '-pix_fmt', 'yuv420p'], /^avc1\.64/], ['hevc', ['-c:v', 'libx265', '-tag:v', 'hvc1', '-pix_fmt', 'yuv420p', '-x265-params', 'log-level=error'], /^hvc1\./],
