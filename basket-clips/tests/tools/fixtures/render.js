@@ -6,7 +6,9 @@
      'side'（省略時）… コートの横の観客席から（もとの映像。描き方は変えていない）
      'behind'       … ゴールA の裏の2階ギャラリーの隅から、斜め下を見る（バックボードを後ろから見る。ボールを追ってパン・チルト・ズーム）
      'behindLow'    … ゴールA の裏のフロアから（リングを下から見上げる）
-   side 以外では、ゴールは天井から吊るす形（ガラスのバックボード）、体育館の壁・2階ギャラリー・ステージも描く。 */
+   side 以外では、ゴールは天井から吊るす形（ガラスのバックボード）、体育館の壁・2階ギャラリー・ステージも描く。
+   opts.blur（バスケ得点クリップで足したもの）：ボールの動きぶれ。シャッターが開いている時間（秒。例 1/30）。
+     暗い体育館をスマホで撮ると、シャッターが遅くなり、速く動くボールが薄く伸びて写る。そのつもりの映像を作る（0 か省略で、ぶれなし） */
 (function (root) {
   'use strict';
   const BS = root.BS;
@@ -27,6 +29,7 @@
     const WIDE = !!(opts && opts.wide);
     const VIEW = (opts && opts.view) || 'side';
     const GEN = VIEW !== 'side';            // カメラを自由な位置・向き・ズームで置く（ゴール裏など）
+    const BLUR = (opts && opts.blur) || 0;  // ボールの動きぶれ（シャッターが開いている秒数）
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
     const tr = game.track;
@@ -703,6 +706,23 @@
           const s = cam.F / sh[2];
           ctx.fillStyle = 'rgba(0,0,0,0.3)';
           ctx.beginPath(); ctx.ellipse(sh[0], sh[1], 0.14 * s, 0.05 * s, 0, 0, Math.PI * 2); ctx.fill();
+          if (BLUR > 0) {
+            // 動きぶれ：シャッターが開いている間（t−BLUR〜t）のボールを、薄く重ねて描く（止まっていれば濃く、速いほど薄く長く写る）
+            const N = 12;
+            ctx.save();
+            ctx.globalAlpha = 1.6 / N;
+            for (let k = 0; k < N; k++) {
+              const b = k === N - 1 ? ball : ballAt(Math.max(0, t - BLUR * (1 - k / (N - 1))));
+              const q = proj(b.x, b.y, b.z);
+              const r = Math.max(GEN ? 1.5 : 3, 0.125 * cam.F / q[2]);
+              const g = ctx.createRadialGradient(q[0] - r * 0.3, q[1] - r * 0.3, r * 0.2, q[0], q[1], r);
+              g.addColorStop(0, '#ffa04d'); g.addColorStop(1, '#c4520f');
+              ctx.fillStyle = g;
+              ctx.beginPath(); ctx.arc(q[0], q[1], r, 0, Math.PI * 2); ctx.fill();
+            }
+            ctx.restore();
+            return;
+          }
           const q = proj(ball.x, ball.y, ball.z);
           const r = Math.max(GEN ? 1.5 : 3, 0.125 * cam.F / q[2]);
           const g = ctx.createRadialGradient(q[0] - r * 0.3, q[1] - r * 0.3, r * 0.2, q[0], q[1], r);
