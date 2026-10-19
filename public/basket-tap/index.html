@@ -1146,7 +1146,11 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
   const elapsed = () => BT.elapsed(S.game, now());
   function save() {
     if (!S.game) return;
-    if (!BT.store.saveGame(S.game)) BT.ui.toast('保存できませんでした（このブラウザの保存の空きが足りません）。「書き出す」でファイルに残してください', 'err', 7000);
+    // 保存できないとき（プライベートブラウズ・空きがない）は、記録のたびに出さず、1回だけ知らせる
+    if (!BT.store.saveGame(S.game) && !S.saveWarned) {
+      S.saveWarned = true;
+      BT.ui.toast('このブラウザに保存できません（プライベートブラウズ・空きが足りない など）。記録は続けられますが、終わったら必ず「書き出す」でファイルに残してください', 'err', 9000);
+    }
   }
   function applyTheme() {
     const t = S.prefs.theme;
