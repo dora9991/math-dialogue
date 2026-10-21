@@ -6,7 +6,7 @@
   const RUN = [3, 9, 11, 5, 2], TEST = [1, 3, 6, 7, 3];
 
   IK.add('data-histogram', {
-    unit: 'data', unitName: 'データの活用', no: '', title: 'ヒストグラムの読み取り（階級・度数・相対度数）',
+    unit: 'data', unitName: 'データの活用', no: '試作（旧形式）', title: 'ヒストグラムの読み取り（階級・度数・相対度数）',
     summary: 'ヒストグラムから、階級の幅・最頻値・度数・相対度数を読み取る。学習課題＋例題2問。',
     head: 'データの活用',
     checks: [

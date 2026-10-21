@@ -4,7 +4,7 @@
   const { M, K, B, G, F, NL } = IK.b;
 
   IK.add('seifu-kaho', {
-    unit: 'seifu', unitName: '正の数・負の数', no: '', title: '正の数・負の数の加法（符号がちがう 2 つの数）',
+    unit: 'seifu', unitName: '正の数・負の数', no: '試作（旧形式）', title: '正の数・負の数の加法（符号がちがう 2 つの数）',
     summary: '数直線の動きで、正の数と負の数の和の求め方を考える。学習課題＋例題2問。',
     head: '正の数・負の数',
     checks: [

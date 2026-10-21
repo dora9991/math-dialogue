@@ -170,7 +170,7 @@
     const cx = X([(Math.min(...real.map(p => p[0])) + Math.max(...real.map(p => p[0]))) / 2, 0]), cy = Y([0, (Math.min(...real.map(p => p[1])) + Math.max(...real.map(p => p[1]))) / 2]);
     const showHidden = f.hidden !== 'none';
     let out = `<rect x="0" y="0" width="${f2(W)}" height="${f2(H)}" fill="#fff"/>`;
-    if (f.caption) out += tx(0.6, 3.5, svgMath(f.caption), 3, 'start', ' class="cap"');
+    if (f.caption) out += tx(W / 2, 3.5, svgMath(f.caption), 3, 'middle', ' class="cap"');   // 見出し（ア・イ …）は図の中央
     const dash = ' stroke-dasharray="1.2 0.9"';
     segs.forEach(sg => { if (sg.hidden && !showHidden) return; out += ln(X(sg.a), Y(sg.a), X(sg.b), Y(sg.b), '#222', sg.hidden ? 0.22 : 0.32, sg.hidden ? dash : ' stroke-linecap="round"'); });
     curves.forEach(cv => { if (cv.hidden && !showHidden) return; out += `<polyline points="${cv.pts.map(p => f2(X(p)) + ',' + f2(Y(p))).join(' ')}" fill="none" stroke="#222" stroke-width="${cv.hidden ? 0.22 : 0.32}"${cv.hidden ? dash : ''}/>`; });
@@ -255,9 +255,18 @@
   const rowsOf = b => Math.max(1, Math.round(num(b.rows, 1)));
 
   function blockHTML(b, W, g) {
-    if (b.type === 'meate' || b.type === 'kadai') {
-      const label = b.type === 'meate' ? (b.label || 'めあて') : (b.label == null ? '学習課題' : b.label);
-      return `<div class="wb wb-t${b.type === 'kadai' ? ' box' : ''}" style="height:${rowsOf(b) * g.pitch}mm">${tag('t-' + b.type, label)}<div class="tx">${inl(b.text)}</div></div>`;
+    if (b.type === 'meate' || b.type === 'kadai' || b.type === 'words' || b.type === 'manabi') {
+      const dflt = { meate: 'めあて', kadai: '学習課題', words: 'ことば', manabi: '学び合い' }[b.type];
+      const label = b.type === 'meate' ? (b.label || dflt) : (b.label == null ? dflt : b.label);
+      return `<div class="wb wb-t${b.type === 'meate' ? '' : ' box ' + b.type}" style="height:${rowsOf(b) * g.pitch}mm">${tag('t-' + b.type, label)}<div class="tx">${inl(b.text)}</div></div>`;
+    }
+    if (b.type === 'text') {   // 小問の文（ラベルは（1）など。なくてもよい）
+      return `<div class="wb wb-t" style="height:${rowsOf(b) * g.pitch}mm">${b.label ? tag('t-text', b.label) : ''}<div class="tx">${inl(b.text)}</div></div>`;
+    }
+    if (b.type === 'table') {   // 表：1行＝罫1行。セルの {{ }} は空欄（解答を表示すると赤で出る）
+      const rs = b.data, ncol = Math.max(b.head ? b.head.length : 0, ...rs.map(r => r[1].length)), hw = num(b.hw, 24), tw = W * Math.min(100, Math.max(20, num(b.width, 100))) / 100;
+      const hd = b.head ? `<tr class="hd"><th>${inl(b.corner || '')}</th>${b.head.map(c => `<th>${inl(c)}</th>`).join('')}</tr>` : '';
+      return `<div class="wb wb-tab" style="height:${rowsOf(b) * g.pitch}mm"><table class="wt" style="width:${f2(tw)}mm"><colgroup><col style="width:${f2(hw)}mm">${'<col>'.repeat(ncol)}</colgroup>${hd}${rs.map(r => `<tr><th>${inl(r[0])}</th>${Array.from({ length: ncol }, (_, i) => `<td>${r[1][i] == null ? '' : inl(r[1][i])}</td>`).join('')}</tr>`).join('')}</table></div>`;
     }
     if (b.type === 'board') {   // 板書の写し：ふだんは罫線だけ。解答を表示すると、教師の板書が赤で出る
       const an = b.answer ? `<div class="tx">${inl(b.answer)}</div>` : '';
@@ -317,6 +326,17 @@
     IK.lessons[id] = Object.assign({ id, paper: 'A4', pitch: 7, dots: true }, meta, { blocks });
     if (IK.order.indexOf(id) < 0) IK.order.push(id);
   };
+  IK.drills = IK.drills || {};   // 演習プリント（授業のIDごと）
+  IK.plans = IK.plans || {};     // 授業計画（授業のIDごと）
+  /* 1 授業ぶん（授業計画・ワークシート・演習プリント）を登録する。data/lesson_<単元>_<番号>.js で使う。
+     IK.lesson(ID, { unit, unitName, no, title, summary, head, checks, plan: {…}, ws: [ブロック…], dr: [ブロック…] }) */
+  IK.lesson = (id, def) => {
+    const { plan, ws, dr } = def, meta = Object.assign({}, def);
+    delete meta.plan; delete meta.ws; delete meta.dr;
+    IK.add(id, meta, ws || []);
+    if (dr) IK.drills[id] = { id, paper: 'A4', pitch: 7, dots: true, head: (meta.head ? meta.head + '・' : '') + '演習', blocks: dr };
+    if (plan) IK.plans[id] = Object.assign({ id }, plan);
+  };
   // ワークシートを書くときの道具（data/ws_<単元>.js で使う）
   IK.b = {
     M: (text, o) => O({ type: 'meate', text, rows: 1 }, o),                                        // めあて
@@ -326,6 +346,11 @@
     F: (rows, ...figs) => ({ type: 'figure', rows, figs }),                                        // 図（印刷する。横に並べられる）
     C2: (left, right, ratio) => ({ type: 'cols', ratio: ratio || '3:2', cols: [{ blocks: left }, { blocks: right }] }),   // 2段組（左に問題と板書、右に図）
     BR: () => ({ type: 'break' }),                                                                 // 改ページ
+    T: (label, text, rows, o) => O({ type: 'text', label, text, rows: rows || 1 }, o),               // 小問の文（ラベルは（1）など）
+    HD: (label, text, o) => O({ type: 'meate', label, text, rows: 1 }, o),                          // 見出し（演習・基礎・標準 など）
+    WD: (text, rows, o) => O({ type: 'words', text, rows: rows || 3 }, o),                          // ことば（重要語句。{{ }} で穴埋め）
+    MA: (text, rows, o) => O({ type: 'manabi', text, rows: rows || 2 }, o),                         // 学び合いの発問（演習プリントなど）
+    TB: (corner, head, data, o) => O({ type: 'table', corner, head, data, rows: data.length + (head ? 1 : 0) }, o),   // 表：rows＝[[行の見出し, [セル…]], …]
     SO: o => O({ kind: 'solid' }, o),                                                              // 立体の見取図
     NET: o => O({ kind: 'conenet' }, o),                                                           // 円錐の展開図
     SVG: (svg, o) => O({ kind: 'svg', svg }, o)                                                    // 自由な図

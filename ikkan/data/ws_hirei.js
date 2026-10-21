@@ -7,7 +7,7 @@
   const plane = (a, from, to, text, at, anchor) => CO({ xmin: -3, xmax: 3, ymin: -6, ymax: 6, lines: [{ a, from, to, text, at, anchor }], points: X5.map(x => ({ x, y: a * x })) });
 
   IK.add('hirei-graph', {
-    unit: 'hirei', unitName: '比例と反比例', no: '', title: '比例のグラフ',
+    unit: 'hirei', unitName: '比例と反比例', no: '試作（旧形式）', title: '比例のグラフ',
     summary: '表をつくり、点をとって、比例 y＝ax のグラフをかく。学習課題＋例題2問。',
     head: '比例と反比例',
     checks: [
