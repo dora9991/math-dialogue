@@ -4,7 +4,7 @@
   const { M, K, B, G, F, C2, BAL } = IK.b;
 
   IK.add('hotei-tousei', {
-    unit: 'hotei', unitName: '方程式', no: '', title: '等式の性質を使って方程式を解く',
+    unit: 'hotei', unitName: '方程式', no: '試作（旧形式）', title: '等式の性質を使って方程式を解く',
     summary: 'てんびんで等式の性質を考え、加減・乗除の方程式を解く。学習課題＋例題2問。',
     head: '方程式',
     checks: [

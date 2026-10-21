@@ -4,7 +4,7 @@
   const { M, K, B, G, F, C2, SEC } = IK.b;
 
   IK.add('heimen-ougi', {
-    unit: 'heimen', unitName: '平面図形', no: '', title: 'おうぎ形の弧の長さと面積',
+    unit: 'heimen', unitName: '平面図形', no: '試作（旧形式）', title: 'おうぎ形の弧の長さと面積',
     summary: '円との比で、おうぎ形の弧の長さと面積を求める。学習課題＋例題2問。',
     head: '平面図形',
     checks: [
