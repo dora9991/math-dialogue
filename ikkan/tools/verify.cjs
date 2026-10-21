@@ -11,7 +11,7 @@
    ⑥ 考えようの解答（教卓の解答）に、考えようの答えが載っていないか（ワークシートの考えようの下の B に、答えを書いていない）
    演習プリント・小テストについて（印刷の3点セット）：
    ⑦ 演習プリントは A4 表裏の 2ページ。表＝基礎・標準、裏＝応用・入試レベル
-   ⑧ 小テストは A4 1ページ。最後の問題は「チャレンジ」の 1問だけ。点数（○点）の合計が、得点らんの満点と同じ */
+   ⑧ 小テストは A4 1ページ・10点満点。チャレンジの前の問題の点数（○点）の合計が 10。最後の「チャレンジ」は 1問だけで、別枠（正解なら、ほかがまちがっていても満点） */
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -21,7 +21,7 @@ const ctx = { console };
 ctx.window = ctx;
 vm.createContext(ctx);
 const dataDir = fs.readdirSync(path.join(root, 'data'));
-const files = ['js/core.js', 'js/figs.js', 'js/plan.js', 'data/lessons.js',
+const files = ['js/core.js', 'js/figs.js', 'js/figs3d.js', 'js/plan.js', 'data/lessons.js',
   ...dataDir.filter(f => /^ws_.*\.js$/.test(f)).sort().map(f => 'data/' + f),
   ...dataDir.filter(f => /^lesson_.*\.js$/.test(f)).sort().map(f => 'data/' + f)];
 for (const f of files) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
@@ -64,25 +64,27 @@ function checkDrill(id, dr) {
   else console.log(`  演習プリント：表＝${f.join('・')}／裏＝${r.join('・')}`);
 }
 
-// ⑧ 小テスト
+// ⑧ 小テスト：10点満点（チャレンジの前の問題）＋ チャレンジ 1問は別枠（正解なら、ほかがまちがっていても満点）
 function checkQuiz(id, qz) {
-  total += 4;
+  total += 5;
   const flat = []; eachBlock(qz.blocks, b => flat.push(b));
   if (flat.some(b => b.type === 'break')) bad(id, '小テストが 2ページ以上ある（A4 1ページにする）');
   const at = flat.findIndex(b => b.type === 'meate' && b.label === 'チャレンジ');
-  const qs = flat.filter(b => b.type === 'text' && b.label);
   if (at < 0) { bad(id, '小テストに「チャレンジ」の見出しがない（最後の 1問は入試レベル）'); return; }
-  const after = flat.slice(at + 1).filter(b => b.type === 'text' && b.label);
+  const qs = flat.slice(0, at).filter(b => b.type === 'text' && b.label), after = flat.slice(at + 1).filter(b => b.type === 'text' && b.label);
   if (after.length !== 1) bad(id, `小テストのチャレンジは 1問だけにする（いま ${after.length} 問）`);
-  else if (flat.slice(at + 1).some(b => b.type === 'text' && b.label && b !== after[0])) bad(id, 'チャレンジのあとに、ほかの問題がある');
-  else console.log(`  小テスト：${qs.length}問（最後の 1問がチャレンジ）`);
-  const pts = qs.map(q => { const m = String(q.text).match(/（(\d+)点）/); return m ? +m[1] : NaN; });
+  else console.log(`  小テスト：${qs.length}問＋チャレンジ 1問（別枠）`);
   const head = flat.find(b => b.type === 'meate' && b.label === '小テスト'), full = head && String(head.text).match(/／\s*(\d+)点/);
-  if (pts.some(isNaN)) bad(id, '小テストの問題に、点数（○点）が書いていない問題がある');
+  const pts = qs.map(q => { const m = String(q.text).match(/（(\d+)点）/); return m ? +m[1] : NaN; });
+  if (pts.some(isNaN)) bad(id, 'チャレンジの前の問題に、点数（○点）が書いていない問題がある');
   else if (!full) bad(id, '小テストの見出しに、得点らん（／○点）がない');
-  else if (pts.reduce((a, c) => a + c, 0) !== +full[1]) bad(id, `小テストの点数の合計 ${pts.reduce((a, c) => a + c, 0)} が、満点 ${full[1]} とちがう`);
-  else console.log(`  小テスト：点数の合計 ${full[1]} 点`);
-  if (!qs.length || qs.some(q => !flat.slice(flat.indexOf(q) + 1).some(b => b.type === 'board'))) bad(id, '小テストの問題に、解答（B）がない');
+  else if (+full[1] !== 10) bad(id, `小テストは 10点満点にする（いま ${full[1]}点）`);
+  else if (pts.reduce((a, c) => a + c, 0) !== 10) bad(id, `チャレンジの前の問題の点数の合計 ${pts.reduce((a, c) => a + c, 0)} が、満点 10 とちがう`);
+  else console.log('  小テスト：チャレンジの前の問題の点数の合計 10点（満点）');
+  const ch = flat[at], chQ = after[0];
+  if (!/別枠/.test(ch.text) || !/正解/.test(ch.text) || !/10点/.test(ch.text)) bad(id, 'チャレンジの見出しに、「別枠」「正解なら…10点」の説明がない');
+  if (chQ && /（\d+点）/.test(chQ.text)) bad(id, 'チャレンジの問題に、点数（○点）を書かない（別枠で、正解なら満点）');
+  if (!qs.length || [...qs, ...after].some(q => !flat.slice(flat.indexOf(q) + 1).some(b => b.type === 'board'))) bad(id, '小テストの問題に、解答（B）がない');
 }
 
 // ④ 空欄のきまり（ワークシート）
