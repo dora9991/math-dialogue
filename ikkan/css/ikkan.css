@@ -52,6 +52,8 @@ button{font:inherit;color:inherit}
 
 /* 文字の中の空欄・分数・累乗・文字式の字 */
 .wsp .bl{display:inline-block;height:1.1em;line-height:1.1em;border-bottom:.25mm solid #333;vertical-align:-.25em;text-align:center;margin:0 .15em;white-space:nowrap}
+.wsp .bl:has(.fr){position:relative;border-bottom:0}   /* 分数をふくむ空欄は、下線を分母の下に引く（行の高さは変えない） */
+.wsp .bl:has(.fr)::after{content:'';position:absolute;left:0;right:0;bottom:-.5em;border-bottom:.25mm solid #333}
 .wsp .fr{display:inline-block;vertical-align:middle;font-size:.7em;line-height:1;text-align:center;margin:0 .14em}
 .wsp .fr>span{display:block;padding:0 .12em}
 .wsp .fr>span:first-child{border-bottom:.2mm solid currentColor;padding-bottom:.06em}

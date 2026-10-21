@@ -10,7 +10,7 @@
   const { M, K, B, G, F, C2, BR, T, HD, WD, MA, TB, SO, SVG } = IK.b;
 
   /* 投影図：上＝立面図、下＝平面図、そのあいだに基線。立体は、底面を下にして置く。
-     形（up・dn）： { k:'rect', w, h }（長方形）｜{ k:'tri', w, h }（二等辺三角形。先が上）｜{ k:'circ', d, dot }（円。dot＝中心の点）｜{ k:'sqx', w }（対角線のある正方形）
+     形（up・dn）： { k:'rect', w, h, dash }（長方形。dash＝真ん中に、見えない辺の点線）｜{ k:'tri', w, h }（二等辺三角形。先が上）｜{ k:'circ', d, dot }（円。dot＝中心の点）｜{ k:'sqx', w }（対角線のある正方形）
      cap：図の見出し（ア・イ …） */
   const toei = (up, dn, cap, fo) => SVG((W, H, h) => {
     const capH = cap ? 4.6 : 0, gap = 0.8, bw = 2.4, uh = up.h || up.d || up.w, dh = dn.h || dn.d || dn.w;
@@ -19,7 +19,7 @@
     const P = pts => `<polygon points="${pts.map(p => h.f2(p[0]) + ',' + h.f2(p[1])).join(' ')}" fill="none" stroke="#222" stroke-width="0.34" stroke-linejoin="round"/>`;
     const draw = (sh, y0) => {
       const w = (sh.w || sh.d) * u, hh = (sh.h || sh.d || sh.w) * u, x0 = cx - w / 2;
-      if (sh.k === 'rect') return P([[x0, y0], [x0 + w, y0], [x0 + w, y0 + hh], [x0, y0 + hh]]);
+      if (sh.k === 'rect') return P([[x0, y0], [x0 + w, y0], [x0 + w, y0 + hh], [x0, y0 + hh]]) + (sh.dash ? h.ln(cx, y0, cx, y0 + hh, '#555', 0.22, ' stroke-dasharray="1.2 0.9"') : '');
       if (sh.k === 'tri') return P([[cx, y0], [x0 + w, y0 + hh], [x0, y0 + hh]]);
       if (sh.k === 'circ') return `<circle cx="${h.f2(cx)}" cy="${h.f2(y0 + w / 2)}" r="${h.f2(w / 2)}" fill="none" stroke="#222" stroke-width="0.34"/>` + (sh.dot ? `<circle cx="${h.f2(cx)}" cy="${h.f2(y0 + w / 2)}" r="0.55" fill="#222"/>` : '');
       if (sh.k === 'sqx') return P([[x0, y0], [x0 + w, y0], [x0 + w, y0 + w], [x0, y0 + w]]) + h.ln(x0, y0, x0 + w, y0 + w, '#222', 0.25) + h.ln(x0 + w, y0, x0, y0 + w, '#222', 0.25);
@@ -37,7 +37,7 @@
   const SH = {
     cyl: [{ k: 'rect', w: 2, h: 3 }, { k: 'circ', d: 2 }],
     cone: [{ k: 'tri', w: 2, h: 3 }, { k: 'circ', d: 2, dot: true }],
-    tprism: [{ k: 'rect', w: 2.4, h: 3 }, { k: 'tri', w: 2.4, h: 2.08 }],
+    tprism: [{ k: 'rect', w: 2.4, h: 3, dash: true }, { k: 'tri', w: 2.4, h: 2.08 }],
     pyr: [{ k: 'tri', w: 2.4, h: 3 }, { k: 'sqx', w: 2.4 }],
     ball: [{ k: 'circ', d: 2 }, { k: 'circ', d: 2 }]
   };
@@ -131,7 +131,7 @@
       K('例題', '4つの立体の見え方などを調べて、表を完成させよう。（底面を下にして置く）', 1),
       TB('立体', ['円柱', '円錐', '正四角錐', '球'], [
         ['立面図', ['長方形', '{{二等辺三角形}}', '{{二等辺三角形}}', '{{円}}']],
-        ['平面図', ['円', '{{円}}', '{{正方形}}', '{{円}}']],
+        ['平面図', ['円', '{{円}}', '{{正方形（対角線入り）}}', '{{円}}']],
         ['展開図', ['長方形1・円2', '{{おうぎ形1・円1}}', '{{三角形4・正方形1}}', '{{かけない}}']],
         ['回転体か', ['○', '{{○}}', '{{×}}', '{{○}}']]
       ], { hw: 24 }),
