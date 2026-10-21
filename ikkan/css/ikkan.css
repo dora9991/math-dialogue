@@ -25,7 +25,7 @@ button{font:inherit;color:inherit}
   box-shadow:0 1px 3px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.1);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .wsp-head{position:absolute;height:10mm;display:flex;align-items:flex-end;justify-content:space-between;gap:4mm;font-size:3.5mm;white-space:nowrap}
 .wsp-head .u{display:inline-block;border-bottom:.25mm solid #333;height:4.6mm;vertical-align:-1.1mm;margin:0 .7mm}
-.wsp-head .w1{width:7mm}.wsp-head .w2{width:9mm}.wsp-head .w6{width:46mm}
+.wsp-head .w1{width:7mm}.wsp-head .w2{width:9mm}.wsp-head .w6{width:38mm}
 .wh-mid{flex:1;text-align:center;font-size:3mm;color:#6b7280;overflow:hidden;text-overflow:ellipsis}
 .wsp-body{position:absolute}
 .wsp-rule{position:absolute;left:0;top:0;display:block;pointer-events:none;overflow:visible}
