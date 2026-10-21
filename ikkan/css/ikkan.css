@@ -188,11 +188,15 @@ button{font:inherit;color:inherit}
 .pl-prep{position:absolute;left:0;right:0;bottom:0;padding-top:1.2mm;border-top:.22mm solid #8b96a3;font-size:2.8mm}
 .pl-prep span{display:inline-block;margin-right:3mm}
 
+.set-cap{width:210mm;max-width:100%;font-size:14px;font-weight:700;color:var(--ink);margin:6px 0 -4mm}
+.set-cap small{font-size:12px;font-weight:400;color:var(--ink3)}
+.btn.main2{background:var(--acc-soft);border-color:var(--acc);color:var(--acc);font-weight:700}
+
 /* ================= 印刷 ================= */
 @page{size:A4;margin:0}
 @media print{
   html,body{background:#fff !important;height:auto !important}
-  .top,.hint,.home{display:none !important}
+  .top,.hint,.home,.set-cap{display:none !important}
   .pages-wrap{padding:0 !important;overflow:visible !important}
   .pages{zoom:1 !important;display:block !important;gap:0 !important}
   .wsp{box-shadow:none !important;margin:0 !important;break-after:page;page-break-after:always}

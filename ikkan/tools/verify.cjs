@@ -8,7 +8,10 @@
       （考えようは、最初から全部印刷する。「ことば」の空欄は、重要語句の穴埋めなので数えない）
    授業計画がある授業について：
    ⑤ 時間割の分の合計が 50 か。解説・発問が 10〜15 分か。演習が 20 分以上か
-   ⑥ 考えようの解答（教卓の解答）に、考えようの答えが載っていないか（ワークシートの考えようの下の B に、答えを書いていない） */
+   ⑥ 考えようの解答（教卓の解答）に、考えようの答えが載っていないか（ワークシートの考えようの下の B に、答えを書いていない）
+   演習プリント・小テストについて（印刷の3点セット）：
+   ⑦ 演習プリントは A4 表裏の 2ページ。表＝基礎・標準、裏＝応用・入試レベル
+   ⑧ 小テストは A4 1ページ。最後の問題は「チャレンジ」の 1問だけ。点数（○点）の合計が、得点らんの満点と同じ */
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -46,6 +49,40 @@ function checkSheet(id, name, sheet) {
     const n = String(b.answer).split('\n').length;
     if (n > b.rows) bad(id, `${name} 板書が ${n} 行で、枠（${b.rows}行）に入らない：「${String(b.answer).slice(0, 14)}…」`);
   });
+}
+
+// ⑦ 演習プリントの表と裏
+function checkDrill(id, dr) {
+  const pages = [[]];
+  dr.blocks.forEach(b => { if (b.type === 'break') pages.push([]); else pages[pages.length - 1].push(b); });
+  const labels = bl => bl.filter(b => b.type === 'meate' && b.label).map(b => b.label);
+  total += 3;
+  if (pages.length !== 2) { bad(id, `演習プリントが ${pages.length} ページ（A4 の表裏 2ページにする）`); return; }
+  const f = labels(pages[0]), r = labels(pages[1]);
+  if (!(f.includes('基礎') && f.includes('標準')) || f.includes('応用') || f.includes('入試レベル')) bad(id, `演習プリントの表は「基礎・標準」にする（いまの見出し：${f.join('・')}）`);
+  else if (!(r.includes('応用') && r.includes('入試レベル')) || r.includes('基礎') || r.includes('標準')) bad(id, `演習プリントの裏は「応用・入試レベル」にする（いまの見出し：${r.join('・')}）`);
+  else console.log(`  演習プリント：表＝${f.join('・')}／裏＝${r.join('・')}`);
+}
+
+// ⑧ 小テスト
+function checkQuiz(id, qz) {
+  total += 4;
+  const flat = []; eachBlock(qz.blocks, b => flat.push(b));
+  if (flat.some(b => b.type === 'break')) bad(id, '小テストが 2ページ以上ある（A4 1ページにする）');
+  const at = flat.findIndex(b => b.type === 'meate' && b.label === 'チャレンジ');
+  const qs = flat.filter(b => b.type === 'text' && b.label);
+  if (at < 0) { bad(id, '小テストに「チャレンジ」の見出しがない（最後の 1問は入試レベル）'); return; }
+  const after = flat.slice(at + 1).filter(b => b.type === 'text' && b.label);
+  if (after.length !== 1) bad(id, `小テストのチャレンジは 1問だけにする（いま ${after.length} 問）`);
+  else if (flat.slice(at + 1).some(b => b.type === 'text' && b.label && b !== after[0])) bad(id, 'チャレンジのあとに、ほかの問題がある');
+  else console.log(`  小テスト：${qs.length}問（最後の 1問がチャレンジ）`);
+  const pts = qs.map(q => { const m = String(q.text).match(/（(\d+)点）/); return m ? +m[1] : NaN; });
+  const head = flat.find(b => b.type === 'meate' && b.label === '小テスト'), full = head && String(head.text).match(/／\s*(\d+)点/);
+  if (pts.some(isNaN)) bad(id, '小テストの問題に、点数（○点）が書いていない問題がある');
+  else if (!full) bad(id, '小テストの見出しに、得点らん（／○点）がない');
+  else if (pts.reduce((a, c) => a + c, 0) !== +full[1]) bad(id, `小テストの点数の合計 ${pts.reduce((a, c) => a + c, 0)} が、満点 ${full[1]} とちがう`);
+  else console.log(`  小テスト：点数の合計 ${full[1]} 点`);
+  if (!qs.length || qs.some(q => !flat.slice(flat.indexOf(q) + 1).some(b => b.type === 'board'))) bad(id, '小テストの問題に、解答（B）がない');
 }
 
 // ④ 空欄のきまり（ワークシート）
@@ -104,7 +141,8 @@ for (const id of IK.order) {
   if (!(l.checks || []).length) console.log('  （検算の式がありません）');
   checkSheet(id, 'ワークシート', l);
   checkBlanks(id, l);
-  if (IK.drills[id]) checkSheet(id, '演習プリント', IK.drills[id]);
+  if (IK.drills[id]) { checkSheet(id, '演習プリント', IK.drills[id]); checkDrill(id, IK.drills[id]); }
+  if (IK.quizzes[id]) { checkSheet(id, '小テスト', IK.quizzes[id]); checkQuiz(id, IK.quizzes[id]); }
   if (IK.plans[id]) checkPlan(id, IK.plans[id]);
 }
 console.log(ng ? `\n✗ ${ng} 件の指摘（確かめた項目 ${total}）` : `\n○ 指摘 0（確かめた項目 ${total}）`);

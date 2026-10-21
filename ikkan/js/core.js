@@ -328,12 +328,15 @@
   };
   IK.drills = IK.drills || {};   // 演習プリント（授業のIDごと）
   IK.plans = IK.plans || {};     // 授業計画（授業のIDごと）
-  /* 1 授業ぶん（授業計画・ワークシート・演習プリント）を登録する。data/lesson_<単元>_<番号>.js で使う。
-     IK.lesson(ID, { unit, unitName, no, title, summary, head, checks, plan: {…}, ws: [ブロック…], dr: [ブロック…] }) */
+  IK.quizzes = IK.quizzes || {}; // 小テスト（授業のIDごと）
+  /* 1 授業ぶん（授業計画・ワークシート・演習プリント・小テスト）を登録する。data/lesson_<単元>_<番号>.js で使う。
+     IK.lesson(ID, { unit, unitName, no, title, summary, head, checks, plan: {…}, ws: [ブロック…], dr: [ブロック…], qz: [ブロック…] })
+     印刷の3点セット：ワークシート（A4 表裏）・演習プリント（A4 表裏：表＝基礎・標準／裏＝応用・入試レベル）・小テスト（A4 片面・5分） */
   IK.lesson = (id, def) => {
-    const { plan, ws, dr } = def, meta = Object.assign({}, def);
-    delete meta.plan; delete meta.ws; delete meta.dr;
+    const { plan, ws, dr, qz } = def, meta = Object.assign({}, def);
+    delete meta.plan; delete meta.ws; delete meta.dr; delete meta.qz;
     IK.add(id, meta, ws || []);
+    if (qz) IK.quizzes[id] = { id, paper: 'A4', pitch: 7, dots: true, head: (meta.head ? meta.head + '・' : '') + '小テスト', blocks: qz };
     if (dr) IK.drills[id] = { id, paper: 'A4', pitch: 7, dots: true, head: (meta.head ? meta.head + '・' : '') + '演習', blocks: dr };
     if (plan) IK.plans[id] = Object.assign({ id }, plan);
   };
