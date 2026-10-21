@@ -13,6 +13,7 @@ import Header from "../components/Header.jsx";
 import Stars from "../components/Stars.jsx";
 import { BigWord } from "../components/Decorations.jsx";
 import MathText from "../components/MathText.jsx";
+import { useFitChoices } from "../components/useFitChoices.js";
 import QuestionText from "../components/QuestionText.jsx";
 import MonsterSprite from "../components/MonsterSprite.jsx";
 import HeroImg from "../components/HeroImg.jsx";
@@ -86,6 +87,7 @@ export default function TimeAttack({ player, chapter, unit, level, onComplete, o
   const [timeLeft, setTimeLeft] = useState(quizTime);
   const [q, setQ] = useState(() => genGood([]));
   const [choices, setChoices] = useState(() => []);
+  const choicesRef = useFitChoices(choices); // 式が長いときに、列数・文字サイズ・折り返しを自動で決める
   const [correct, setCorrect] = useState(0);
   const [wrong, setWrong] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -454,7 +456,7 @@ export default function TimeAttack({ player, chapter, unit, level, onComplete, o
         <div className="qcard">
           <span className="q-pill">{unit.name}</span>
           <div className="q-text"><QuestionText text={q.q} furigana={!!player.furigana} readAloud={false} /></div>
-          <div className={"choices-grid" + (shakeAns ? " answer-shake" : "")}>
+          <div ref={choicesRef} className={"choices-grid" + (shakeAns ? " answer-shake" : "")}>
             {choices.map((c, i) => {
               const isAns = ansEq(c, q);
               let cls = "choice-btn";
@@ -463,7 +465,7 @@ export default function TimeAttack({ player, chapter, unit, level, onComplete, o
                 else if (isAns) cls += i === selected ? " correct" : " reveal";
               }
               return (
-                <button key={i} className={cls} data-sfx="none" disabled={locked} onClick={() => answer(c, i)}><MathText>{c}</MathText></button>
+                <button key={i} className={cls} data-sfx="none" disabled={locked} onClick={() => answer(c, i)}><MathText breakable>{c}</MathText></button>
               );
             })}
           </div>

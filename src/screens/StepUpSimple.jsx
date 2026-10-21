@@ -10,6 +10,7 @@ import Header from "../components/Header.jsx";
 import CharBubble, { voice } from "../components/CharBubble.jsx";
 import DrawPad from "../components/DrawPad.jsx";
 import MathText from "../components/MathText.jsx";
+import { useFitChoices } from "../components/useFitChoices.js";
 import QuestionText from "../components/QuestionText.jsx";
 import * as sfx from "../audio/sfx.js";
 import { genProblem, makeChoices } from "../engine/generator.js";
@@ -34,6 +35,7 @@ export default function StepUpSimple({ player, units = [], title = "ステップ
 
   const [cur, setCur] = useState(null);     // { unit, level, problem }
   const [choices, setChoices] = useState([]);
+  const choicesRef = useFitChoices(choices); // 式が長いときに、列数・文字サイズ・折り返しを自動で決める
   const [selected, setSelected] = useState(null);
   const [fb, setFb] = useState(null);       // { ok, ans }
   const [seen, setSeen] = useState(0);
@@ -222,7 +224,7 @@ export default function StepUpSimple({ player, units = [], title = "ステップ
           <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 0.5, marginBottom: 16 }}><QuestionText text={problem.q} furigana={!!player.furigana} readAloud={!!player.readAloud} /></div>
           <div style={{ position: "relative" }}>
             {showRing && <div className="correct-ring show" />}
-            <div className={"choices-grid" + (shakeAns ? " answer-shake" : "")}>
+            <div ref={choicesRef} className={"choices-grid" + (shakeAns ? " answer-shake" : "")}>
               {choices.map((c, i) => {
                 const isAns = ansEq(c, problem);
                 let cls = "choice-btn";
@@ -231,7 +233,7 @@ export default function StepUpSimple({ player, units = [], title = "ステップ
                   else if (isAns) cls += i === selected ? " correct" : " reveal";
                 }
                 return (
-                  <button key={i} className={cls} data-sfx="none" disabled={!!fb} onClick={() => answer(c, i)}><MathText>{c}</MathText></button>
+                  <button key={i} className={cls} data-sfx="none" disabled={!!fb} onClick={() => answer(c, i)}><MathText breakable>{c}</MathText></button>
                 );
               })}
             </div>

@@ -53,7 +53,7 @@ export const chapter = {
         ],
         standard: [
           p("d2s1", (r) => { const total = 50, f = r(5, 20); return { q: `総度数${total}で、ある階級の度数が${f}。相対度数は？（小数2桁）`, ans: r2(f / total), h1: "度数÷総度数", h2: `${f}÷${total}=${r2(f / total)}` }; }),
-          p("d2s2", (r) => { const total = r(20, 50), rel = r(1, 4) * 0.1; return { q: `総度数${total}で相対度数が${rel}の階級の度数は？`, ans: Math.round(rel * total), h1: "相対度数×総度数", h2: `${rel}×${total}=${Math.round(rel * total)}` }; }),
+          p("d2s2", (r) => { const total = r(2, 5) * 10, k = r(1, 4), rel = k / 10; return { q: `総度数${total}で相対度数が${rel}の階級の度数は？`, ans: (k * total) / 10, h1: "相対度数×総度数", h2: `${rel}×${total}=${(k * total) / 10}` }; }),
           p("d2s3", (r) => { const f1 = r(3, 8), f2 = r(4, 9), f3 = r(2, 6); return { q: `度数が下の階級から ${f1},${f2},${f3} のとき、2番目の階級までの累積度数は？`, ans: f1 + f2, h1: "下から順に足す", h2: `${f1}+${f2}=${f1 + f2}` }; }),
           p("d2s4", (r) => { const total = 50, f = r(10, 20); return { q: `総度数${total}人で度数${f}人の階級の割合は何％？`, ans: f * 2, h1: "度数÷総度数×100", h2: `${f}÷${total}×100=${f * 2}%` }; }),
         ],

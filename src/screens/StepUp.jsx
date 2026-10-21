@@ -17,6 +17,7 @@ import Header from "../components/Header.jsx";
 import CharBubble, { voice } from "../components/CharBubble.jsx";
 import DrawPad from "../components/DrawPad.jsx";
 import MathText from "../components/MathText.jsx";
+import { useFitChoices } from "../components/useFitChoices.js";
 import * as sfx from "../audio/sfx.js";
 import { buildTemplate, makeChoices } from "../engine/generator.js";
 import { pickNext } from "../engine/selector.js";
@@ -39,6 +40,7 @@ export default function StepUp({ player, chapter, onAttempt, onHome, targetSkill
 
   const [cur, setCur] = useState(null);      // { entry, problem }
   const [choices, setChoices] = useState([]); // 4択
+  const choicesRef = useFitChoices(choices); // 式が長いときに、列数・文字サイズ・折り返しを自動で決める
   const [selected, setSelected] = useState(null); // 選んだ選択肢のindex
   const [locked, setLocked] = useState(false);
   const [fb, setFb] = useState(null);        // { ok, ans, h1, skill, mOld, mNew }
@@ -325,7 +327,7 @@ export default function StepUp({ player, chapter, onAttempt, onHome, targetSkill
           {/* 4択（正解時は中央に光る◯／不正解は横揺れ：タイムアタックと同じ） */}
           <div style={{ position: "relative" }}>
             {showRing && <div className="correct-ring show" />}
-            <div className={"choices-grid" + (shakeAns ? " answer-shake" : "")}>
+            <div ref={choicesRef} className={"choices-grid" + (shakeAns ? " answer-shake" : "")}>
               {choices.map((c, i) => {
                 const isAns = isCorrect(c, problem.ans);
                 let cls = "choice-btn";
@@ -341,7 +343,7 @@ export default function StepUp({ player, chapter, onAttempt, onHome, targetSkill
                     disabled={!!fb}
                     onClick={() => answer(c, i)}
                   >
-                    <MathText>{c}</MathText>
+                    <MathText breakable>{c}</MathText>
                   </button>
                 );
               })}
