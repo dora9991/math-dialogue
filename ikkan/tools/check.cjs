@@ -2,6 +2,7 @@
 /* 見た目の検査：全授業の、ワークシート・演習プリント（生徒用／解答つき）と授業計画を開き、はみ出しを調べて、紙面の画像（PNG）を書き出す。
    使い方：  NODE_PATH=$(npm root -g) node tools/check.cjs [画像の出力先フォルダ] [授業のID …]
    3点セットのタブ（#/ID/set）は、ページ数（ワークシート＋演習プリント＋小テスト）と、印刷（PDF）のページ数も調べる
+   単元まとめ印刷（#/print/<単元>）も、ページ数（両面印刷の白紙をふくむ）と、印刷（PDF）のページ数を調べる（授業のIDを指定したときは、しない）
    必要なもの：playwright（npm i -g playwright。Chromium は PLAYWRIGHT_BROWSERS_PATH にあればそれを使う）
    調べること：①ブロックの行数に文字がおさまっているか　②1ページの行数をこえていないか　③字が横にはみ出していないか
               ④授業計画が A4 1枚におさまっているか（下の「準備・教卓」と重ならないか） */
@@ -97,6 +98,31 @@ const { chromium } = require('playwright');
     if (pdfPages !== want) msgs.push(`印刷（PDF）のページ数が ${pdfPages}（${want} ページのはず）`);
     if (msgs.length) { bad += msgs.length; console.log(`✗ ${L.id}（3点セット）`); msgs.forEach(m => console.log('   ' + m)); }
     else console.log(`○ ${L.id}（3点セット）　${got}ページ・印刷 ${pdfPages}ページ（両面なら ${Math.ceil(want / 2)}枚＋）`);
+  }
+  // 単元まとめ印刷：ページ数（両面印刷の白紙をふくむ）と、印刷（PDF）のページ数
+  if (!only.length) {
+    const units = await page.evaluate(() => IK.units.map(u => {
+      const ids = IK.order.filter(id => IK.lessons[id].unit === u.key && (IK.plans[id] || IK.drills[id] || IK.quizzes[id]));
+      const docs = ids.flatMap(id => [IK.lessons[id], IK.drills[id], IK.quizzes[id]].filter(Boolean)).map(sh => sh.blocks.filter(b => b.type === 'break').length + 1);
+      return { key: u.key, n: ids.length, pages: docs.reduce((a, c) => a + c, 0), blanks: docs.filter((n, i) => n % 2 === 1 && i < docs.length - 1).length };
+    }).filter(u => u.n));
+    for (const u of units) {
+      await page.goto(url + '#/print/' + u.key);
+      await page.reload();
+      await page.waitForSelector('.pbar');
+      const got = await page.locator('.wsp').count(), blank = await page.locator('.wsp-blank').count();
+      const pdf = await page.pdf({ preferCSSPageSize: true, printBackground: true });
+      const pdfPages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+      const want = u.pages + u.blanks, msgs = [];
+      if (got !== want) msgs.push(`ページ数が ${got}（${want} ページのはず）`);
+      if (blank !== u.blanks) msgs.push(`白紙が ${blank} ページ（${u.blanks} ページのはず）`);
+      if (pdfPages !== want) msgs.push(`印刷（PDF）のページ数が ${pdfPages}（${want} ページのはず）`);
+      await page.setViewportSize({ width: 390, height: 800 });
+      if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) msgs.push('スマホの幅で、横にはみ出している');
+      await page.setViewportSize({ width: 1000, height: 1300 });
+      if (msgs.length) { bad += msgs.length; console.log(`✗ ${u.key}（単元まとめ印刷）`); msgs.forEach(m => console.log('   ' + m)); }
+      else console.log(`○ ${u.key}（単元まとめ印刷）　${u.n}時間・${got}ページ（白紙 ${blank}）・印刷 ${pdfPages}ページ`);
+    }
   }
   if (errors.length) { bad += errors.length; console.log('ブラウザのエラー：'); errors.forEach(e => console.log('   ' + e)); }
   await browser.close();
