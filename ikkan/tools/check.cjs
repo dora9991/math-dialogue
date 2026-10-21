@@ -45,6 +45,8 @@ const { chromium } = require('playwright');
             if (last && prep && last.getBoundingClientRect().bottom > prep.getBoundingClientRect().top - 2) issues.push('授業計画：下の「準備・教卓」と、内容が重なっている');
             return;
           }
+          const mid = sp.querySelector('.wh-mid');
+          if (mid && mid.scrollWidth > mid.clientWidth + 1) issues.push(`ページ${pi + 1}：上の題（${mid.textContent}）が、はみ出して「…」になる`);
           const body = sp.querySelector('.wsp-body'), flow = sp.querySelector('.wsp-flow');
           const rows = Math.round(body.getBoundingClientRect().height / pitchPx), used = Math.round(flow.getBoundingClientRect().height / pitchPx * 100) / 100;
           if (used > rows + 0.01) issues.push(`ページ${pi + 1}：${used}行を使っている（上限 ${rows}行）`);
