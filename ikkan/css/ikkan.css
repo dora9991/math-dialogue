@@ -193,12 +193,21 @@ button{font:inherit;color:inherit}
 .set-cap{width:210mm;max-width:100%;font-size:14px;font-weight:700;color:var(--ink);margin:6px 0 -4mm}
 .set-cap small{font-size:12px;font-weight:400;color:var(--ink3)}
 .btn.main2{background:var(--acc-soft);border-color:var(--acc);color:var(--acc);font-weight:700}
+.btn.btnp{margin-left:auto;font-size:13px;padding:5px 11px}
+.pbar{max-width:210mm;margin:0 auto 14px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:14px;line-height:1.9}
+.pbar-row{display:flex;flex-wrap:wrap;gap:2px 16px;align-items:center}
+.pbar label{white-space:nowrap;cursor:pointer}
+.pbar select{max-width:100%;font-size:14px;padding:3px 6px;border:1px solid var(--btn-line);border-radius:6px;background:var(--panel);color:var(--ink)}
+.psum{margin:6px 0 0;color:var(--ink2);font-size:13px;line-height:1.7}
+.wsp-blank{display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(135deg,#f3f4f6,#f3f4f6 8px,#fff 8px,#fff 16px);color:#8b95a1;font-size:3.5mm}
 
 /* ================= 印刷 ================= */
 @page{size:A4;margin:0}
 @media print{
   html,body{background:#fff !important;height:auto !important}
-  .top,.hint,.home,.set-cap{display:none !important}
+  .top,.hint,.home,.set-cap,.pbar{display:none !important}
+  .wsp-blank{background:none !important}
+  .wsp-blank span{display:none}
   .pages-wrap{padding:0 !important;overflow:visible !important}
   .pages{zoom:1 !important;display:block !important;gap:0 !important}
   .wsp{box-shadow:none !important;margin:0 !important;break-after:page;page-break-after:always}
