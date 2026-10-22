@@ -151,7 +151,7 @@
         if (shape === 'hemisphere') circ(0, Math.PI, false); else circ(0, 2 * Math.PI, false);
         ell(Math.PI, 2 * Math.PI, false); ell(0, Math.PI, true);
         V2 = [[0, 0]];
-        dimLines.forEach(d => { if (d.key === 'r') { extra.push({ seg: [[0, 0], [r, 0]], thin: true, dot0: true }); extra.push({ text: d.text, at: [r / 2, 0], dy: -1.4, anchor: 'middle' }); } });
+        dimLines.forEach(d => { if (d.key === 'r') { extra.push({ seg: [[0, 0], [r, 0]], thin: true, dot0: true }); extra.push({ text: d.text, at: [r, 0], dx: 1.8, dy: 0, anchor: 'start' }); } });   // 字は、半径の右はしの外がわ（赤道の点線や、空欄の下線と、かさならないように）
       }
     }
     // 縮尺をきめる
@@ -213,13 +213,14 @@
     // 底面の円（弧の中点で接する）と、半径
     out += `<circle cx="${f2(X(C))}" cy="${f2(Y(C))}" r="${f2(r * s)}" fill="none" stroke="#222" stroke-width="0.32"/>`;
     out += ln(X(C), Y(C), X(C) + r * s, Y(C), '#222', 0.22, ' stroke-dasharray="1.2 0.9"') + `<circle cx="${f2(X(C))}" cy="${f2(Y(C))}" r="0.5" fill="#222"/>`;
-    if (f.lr) out += rich(X(C) + r * s / 2, Y(C) - 1.2, f.lr, 2.9, 'middle');
+    if (f.lr) out += rich(X(C) + r * s / 2, Y(C) - 2.3, f.lr, 2.9, 'middle');
     // 母線（左のふちの外がわ＝辺から上へはなして）
     if (f.lR) {
       const m = [A1[0] / 2, A1[1] / 2];
       let nx = A1[1], ny = -A1[0]; if (ny > 0) { nx = -nx; ny = -ny; }   // 辺に垂直で、上向きの側
       const L = Math.hypot(nx, ny) || 1;
-      out += rich(X(m) + nx / L * 3.4, Y(m) + ny / L * 3.4 + 1, f.lR, 2.9, 'middle');
+      const hw = (emOf(String(f.lR).replace(/\{\{|\}\}|\\/g, '')) * 2.9 * 0.62 + 4) / 2, off = 2.2 + hw * Math.abs(nx / L) + 1.5 * Math.abs(ny / L);   // 字の幅しだいで、辺からはなす
+      out += rich(X(m) + nx / L * off, Y(m) + ny / L * off + 1, f.lR, 2.9, 'middle');
     }
     // 解答：弧（赤い太線）と、その長さ、中心角
     let ans = '';
