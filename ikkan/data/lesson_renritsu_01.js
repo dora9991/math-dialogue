@@ -70,7 +70,7 @@
   const T_W1 = '表の y … ' + YS.join('、') + '\n得点 … ' + SC.join('、') + '\nx+y＝8 にあてはまる組は、たくさんある。\n得点が 25点になるのは、x＝5、y＝3 の組だけ。（近い的 5回、遠い的 3回）';
   const T_D7 = '① 枚数　x+y＝10　　代金　50x+80y＝620\n② x＝5、y＝5 のとき 250+400＝650（円）　　x＝6、y＝4 のとき 300+320＝620（円）　←　合う\n　 x＝6、y＝4　（50円切手 6枚、80円切手 4枚）';
   const T_D8 = '3×2−4b＝10　　6−4b＝10　　−4b＝4　　b＝−1';
-  const T_D9 = '① イ　（上の式 2+2×1＝4　○　　下の式 3×2−1＝5　○）\n② x＝2、y＝−1 を、2つの式に代入する。\n　 上の式　2a+(−1)＝3　　2a＝4　　a＝2\n　 下の式　2−b×(−1)＝5　　2+b＝5　　b＝3';
+  const T_D9 = '① イ　（上の式 2+2×1＝4　○　　下の式 3×2−1＝5　○）\n② x＝2、y＝−1 を、2つの式に代入する。\n　 上の式　2a+(−1)＝3　　2a＝4　　a＝2\n　 下の式　2−b×(−1)＝5　　2+b＝5　　b＝3　→ a＝2、b＝3';
   const T_Q4 = 'a×1+3×2＝10　　a+6＝10　　a＝4';
   const ANS = bs => { const o = []; const w = a => a.forEach(b => { if (b.type === 'board' && b.answer) o.push(b.answer); if (b.type === 'cols') b.cols.forEach(c => w(c.blocks)); }); w(bs); return o; };
   const blank = n => Array.from({ length: n }, () => '');
