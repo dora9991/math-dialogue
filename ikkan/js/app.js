@@ -43,8 +43,10 @@
      印刷するもの・授業のはんい・解答つき・両面印刷を選べる。両面印刷にすると、1ページだけの資料（小テストなど）のうしろに白紙を入れて、
      次の資料が、かならず紙の表から始まるようにする。 */
   const unitLessons = key => IK.order.map(id => IK.lessons[id]).filter(l => l.unit === key && (IK.plans[l.id] || IK.drills[l.id] || IK.quizzes[l.id]));
-  const PO = { unit: null, ws: true, dr: true, qz: true, plan: false, duplex: true, from: 0, to: 0 };   // 印刷の選び方（この画面を開いているあいだ、覚えておく）
-  const BLANK = '<div class="wsp wsp-blank" style="width:210mm;height:297mm"><span>（白紙：両面印刷で、つぎの資料を紙の表から始めるため）</span></div>';
+  const PO = { unit: null, ws: true, dr: true, qz: true, plan: false, duplex: true, mark: true, from: 0, to: 0 };   // 印刷の選び方（この画面を開いているあいだ、覚えておく）
+  // 白紙のページ。プリンターや複合機は、まっ白なページを「白紙スキップ」でとばすことがある（とばされると、つぎの資料が小テストのうらに出る）。
+  // そこで、紙の下に小さな「白紙」の字（.bl-mk）を印刷して、白紙と見なされないようにする（PO.mark）。画面には出ない。
+  const blankHTML = () => `<div class="wsp wsp-blank" style="width:210mm;height:297mm"><span>（白紙：両面印刷で、つぎの資料を紙の表から始めるため）</span>${PO.mark ? '<i class="bl-mk">白紙　（両面印刷で、つぎの資料を表から始めるためのページです）</i>' : ''}</div>`;
 
   function printParts(key) {
     const ls = unitLessons(key), a = Math.max(0, Math.min(PO.from, ls.length - 1)), b = Math.max(a, Math.min(PO.to, ls.length - 1)), parts = [];
@@ -64,7 +66,7 @@
     parts.forEach((p, i) => {
       html += `<div class="set-cap">${esc(p.cap)}　<small>A4 ${p.n}ページ</small></div>${p.html}`;
       pages += p.n;
-      if (PO.duplex && p.n % 2 === 1 && i < parts.length - 1) { html += BLANK; pages += 1; }
+      if (PO.duplex && p.n % 2 === 1 && i < parts.length - 1) { html += blankHTML(); pages += 1; }
     });
     return { html, pages, docs: parts.length };
   }
@@ -90,7 +92,8 @@
           <div class="pbar-row"><b>印刷するもの</b>${kinds.map(([k, n]) => `<label><input type="checkbox" data-k="${k}"${PO[k] ? ' checked' : ''}> ${esc(n)}</label>`).join('')}</div>
           <div class="pbar-row"><b>授業</b><select id="pFrom">${ls.map((_, i) => opt(i)).join('')}</select> から <select id="pTo">${ls.map((_, i) => opt(i)).join('')}</select> まで</div>
           <div class="pbar-row"><label><input type="checkbox" id="pAns"> 解答つき（教卓用。生徒に配るときは、はずす）</label>
-            <label><input type="checkbox" data-k="duplex"${PO.duplex ? ' checked' : ''}> 両面印刷にする（小テストなど 1ページの資料のうしろに、白紙を入れる。片面で印刷するときは、はずす）</label></div>
+            <label><input type="checkbox" data-k="duplex"${PO.duplex ? ' checked' : ''}> 両面印刷にする（小テストなど 1ページの資料のうしろに、白紙を入れる。片面で印刷するときは、はずす）</label>
+            <label><input type="checkbox" data-k="mark"${PO.mark ? ' checked' : ''}> 白紙には、小さな「白紙」の字を印刷する（プリンターが白紙をとばして、枚数がずれるときに）</label></div>
           <p class="psum" id="pSum"></p>
         </div>
         <div class="pages" id="pPages"></div>
