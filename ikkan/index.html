@@ -207,7 +207,9 @@ button{font:inherit;color:inherit}
 .pbar label{white-space:nowrap;cursor:pointer}
 .pbar select{max-width:100%;font-size:14px;padding:3px 6px;border:1px solid var(--btn-line);border-radius:6px;background:var(--panel);color:var(--ink)}
 .psum{margin:6px 0 0;color:var(--ink2);font-size:13px;line-height:1.7}
-.wsp-blank{display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(135deg,#f3f4f6,#f3f4f6 8px,#fff 8px,#fff 16px);color:#8b95a1;font-size:3.5mm}
+.wsp-blank{position:relative;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(135deg,#f3f4f6,#f3f4f6 8px,#fff 8px,#fff 16px);color:#8b95a1;font-size:3.5mm}
+
+.wsp-blank .bl-mk{display:none}
 
 /* ================= 印刷 ================= */
 @page{size:A4;margin:0}
@@ -216,6 +218,8 @@ button{font:inherit;color:inherit}
   .top,.hint,.home,.set-cap,.pbar{display:none !important}
   .wsp-blank{background:none !important}
   .wsp-blank span{display:none}
+  /* 白紙の下はしに、うすい字を1行（プリンターの「白紙スキップ」で、とばされないようにする） */
+  .wsp-blank .bl-mk{display:block;position:absolute;left:0;right:0;bottom:12mm;text-align:center;font-style:normal;font-size:3.4mm;line-height:1.6;color:#555;border-top:.3mm solid #999;margin:0 40mm;padding-top:2mm}
   .pages-wrap{padding:0 !important;overflow:visible !important}
   .pages{zoom:1 !important;display:block !important;gap:0 !important}
   .wsp{box-shadow:none !important;margin:0 !important;break-after:page;page-break-after:always}
@@ -7366,8 +7370,10 @@ button{font:inherit;color:inherit}
      印刷するもの・授業のはんい・解答つき・両面印刷を選べる。両面印刷にすると、1ページだけの資料（小テストなど）のうしろに白紙を入れて、
      次の資料が、かならず紙の表から始まるようにする。 */
   const unitLessons = key => IK.order.map(id => IK.lessons[id]).filter(l => l.unit === key && (IK.plans[l.id] || IK.drills[l.id] || IK.quizzes[l.id]));
-  const PO = { unit: null, ws: true, dr: true, qz: true, plan: false, duplex: true, from: 0, to: 0 };   // 印刷の選び方（この画面を開いているあいだ、覚えておく）
-  const BLANK = '<div class="wsp wsp-blank" style="width:210mm;height:297mm"><span>（白紙：両面印刷で、つぎの資料を紙の表から始めるため）</span></div>';
+  const PO = { unit: null, ws: true, dr: true, qz: true, plan: false, duplex: true, mark: true, from: 0, to: 0 };   // 印刷の選び方（この画面を開いているあいだ、覚えておく）
+  // 白紙のページ。プリンターや複合機は、まっ白なページを「白紙スキップ」でとばすことがある（とばされると、つぎの資料が小テストのうらに出る）。
+  // そこで、紙の下に小さな「白紙」の字（.bl-mk）を印刷して、白紙と見なされないようにする（PO.mark）。画面には出ない。
+  const blankHTML = () => `<div class="wsp wsp-blank" style="width:210mm;height:297mm"><span>（白紙：両面印刷で、つぎの資料を紙の表から始めるため）</span>${PO.mark ? '<i class="bl-mk">白紙　（両面印刷で、つぎの資料を表から始めるためのページです）</i>' : ''}</div>`;
 
   function printParts(key) {
     const ls = unitLessons(key), a = Math.max(0, Math.min(PO.from, ls.length - 1)), b = Math.max(a, Math.min(PO.to, ls.length - 1)), parts = [];
@@ -7387,7 +7393,7 @@ button{font:inherit;color:inherit}
     parts.forEach((p, i) => {
       html += `<div class="set-cap">${esc(p.cap)}　<small>A4 ${p.n}ページ</small></div>${p.html}`;
       pages += p.n;
-      if (PO.duplex && p.n % 2 === 1 && i < parts.length - 1) { html += BLANK; pages += 1; }
+      if (PO.duplex && p.n % 2 === 1 && i < parts.length - 1) { html += blankHTML(); pages += 1; }
     });
     return { html, pages, docs: parts.length };
   }
@@ -7413,7 +7419,8 @@ button{font:inherit;color:inherit}
           <div class="pbar-row"><b>印刷するもの</b>${kinds.map(([k, n]) => `<label><input type="checkbox" data-k="${k}"${PO[k] ? ' checked' : ''}> ${esc(n)}</label>`).join('')}</div>
           <div class="pbar-row"><b>授業</b><select id="pFrom">${ls.map((_, i) => opt(i)).join('')}</select> から <select id="pTo">${ls.map((_, i) => opt(i)).join('')}</select> まで</div>
           <div class="pbar-row"><label><input type="checkbox" id="pAns"> 解答つき（教卓用。生徒に配るときは、はずす）</label>
-            <label><input type="checkbox" data-k="duplex"${PO.duplex ? ' checked' : ''}> 両面印刷にする（小テストなど 1ページの資料のうしろに、白紙を入れる。片面で印刷するときは、はずす）</label></div>
+            <label><input type="checkbox" data-k="duplex"${PO.duplex ? ' checked' : ''}> 両面印刷にする（小テストなど 1ページの資料のうしろに、白紙を入れる。片面で印刷するときは、はずす）</label>
+            <label><input type="checkbox" data-k="mark"${PO.mark ? ' checked' : ''}> 白紙には、小さな「白紙」の字を印刷する（プリンターが白紙をとばして、枚数がずれるときに）</label></div>
           <p class="psum" id="pSum"></p>
         </div>
         <div class="pages" id="pPages"></div>
