@@ -61,6 +61,10 @@ button{font:inherit;color:inherit}
 .wsp i.v{font-family:"Times New Roman",Times,serif;font-style:italic;font-size:1.1em;line-height:0;padding:0 .03em}
 .wsp sup{font-size:.62em;vertical-align:.5em;line-height:0}
 .wsp .sq{white-space:nowrap}
+.sys{display:inline-block;vertical-align:top;position:relative;padding-left:.95em;margin:0 .25em;white-space:nowrap}   /* 連立方程式。式の1行が、罫の1行ぶん。左に大きな { */
+.sys .sysr{display:block}
+.sys .sysb{position:absolute;left:0;top:.12em;width:.6em;height:calc(100% - .24em)}
+.sys .sysb path{fill:none;stroke:currentColor;stroke-width:1.1;vector-effect:non-scaling-stroke}
 .wsp .sq>span{display:inline-block;border-top:.2mm solid currentColor;line-height:1.02;padding:0 .08em 0 .03em;margin-left:-.07em}
 
 /* 図 */
