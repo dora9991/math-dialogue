@@ -159,6 +159,21 @@ const { chromium } = require('playwright');
       if (got !== want) msgs.push(`ページ数が ${got}（${want} ページのはず）`);
       if (blank !== u.blanks) msgs.push(`白紙が ${blank} ページ（${u.blanks} ページのはず）`);
       if (pdfPages !== want) msgs.push(`印刷（PDF）のページ数が ${pdfPages}（${want} ページのはず）`);
+      // 白紙には、印刷で見える目印がある（プリンターの「白紙スキップ」でとばされない）。画面には出ない。チェックをはずすと出ない
+      if (u.blanks) {
+        const mk = async () => page.evaluate(() => [...document.querySelectorAll('.wsp-blank')].map(b => { const m = b.querySelector('.bl-mk'); if (!m) return null; const r = m.getBoundingClientRect(), p = b.getBoundingClientRect(); return { shown: getComputedStyle(m).display !== 'none', text: m.textContent.trim(), inside: r.left >= p.left && r.right <= p.right && r.bottom <= p.bottom && r.top >= p.top }; }));
+        const scr = await mk();
+        if (scr.some(x => !x || x.shown)) msgs.push('白紙の目印が、画面に出ている（印刷でだけ出るはず）');
+        await page.emulateMedia({ media: 'print' });
+        const prt = await mk();
+        if (prt.length !== u.blanks || prt.some(x => !x || !x.shown || !x.text.includes('白紙') || !x.inside)) msgs.push('白紙に、印刷で見える目印が出ていない（または紙からはみ出している）');
+        await page.emulateMedia({ media: null });
+        await page.locator('.pbar input[data-k="mark"]').uncheck();
+        if ((await page.locator('.wsp-blank .bl-mk').count()) !== 0) msgs.push('目印のチェックをはずしても、白紙に目印が残っている');
+        await page.locator('.pbar input[data-k="mark"]').check();
+        if ((await page.locator('.wsp-blank .bl-mk').count()) !== u.blanks) msgs.push('目印のチェックを入れても、白紙に目印が戻らない');
+        if (u === units[0]) { await page.emulateMedia({ media: 'print' }); await page.locator('.wsp-blank').first().screenshot({ path: path.join(outDir, 'print_blank.png') }); await page.emulateMedia({ media: null }); }
+      }
       await page.setViewportSize({ width: 390, height: 800 });
       if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) msgs.push('スマホの幅で、横にはみ出している');
       await page.setViewportSize({ width: 1000, height: 1300 });

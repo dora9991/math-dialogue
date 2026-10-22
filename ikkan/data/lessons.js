@@ -2,4 +2,7 @@
 (function () {
   [['seifu', '正の数・負の数'], ['moji', '文字と式'], ['hotei', '方程式'], ['hirei', '比例と反比例'], ['heimen', '平面図形'], ['kukan', '空間図形'], ['data', 'データの活用']]
     .forEach(([key, name]) => IK.unit({ key, grade: 1, name }));
+  // 中2（第1章から、つくった授業のある単元だけ）
+  [['shiki', '式の計算'], ['renritsu', '連立方程式']]
+    .forEach(([key, name]) => IK.unit({ key, grade: 2, name }));
 })();

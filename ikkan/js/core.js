@@ -1,7 +1,7 @@
 /* ikkan：板書型ワークシートの紙面をつくる道具（画面を持たない。ブラウザでも node の検査でも読める）。
    ワークシートの形：日付・名前 → めあて → 学習課題・例題（1〜3問）。問題の下は、図・グラフ以外は空欄（板書を写す）。
    「解答を表示」で、空欄に教師が板書する内容と、問題文・図の中の空欄（数字）が赤で出る。
-   文字の中：{{答え}}＝空欄、[[1/2]]＝分数、x^2＝累乗、**太字**、\\m＝立体にしない文字、√{12}＝根号。
+   文字の中：{{答え}}＝空欄、[[1/2]]＝分数、x^2＝累乗、**太字**、\\m＝立体にしない文字、√{12}＝根号、⟦x+y=5 ; x−y=1⟧＝連立方程式（; で行を分け、左に { をつける。1行が、罫の1行ぶん）。
    図のきまり（ws.css と同じ）：長さの字は '{{3}}cm' のように書くと、数字だけ空欄になる。 */
 (function () {
   'use strict';
@@ -25,7 +25,7 @@
   const plain = t => italic(esc(String(t).replace(/\\([A-Za-z])/g, '\u0001$1')), '<i class="v">', '</i>').replace(/\n/g, '<br>').replace(/\u0001/g, '');
   function inl(s) {
     s = String(s == null ? '' : s);
-    const re = /\{\{([\s\S]*?)\}\}|\[\[([^\]\/]*)\/([^\]]*)\]\]|\*\*([\s\S]+?)\*\*|\^\{([^}]*)\}|\^([0-9]+|[A-Za-z])|√\{([^{}]*)\}/g;
+    const re = /\{\{([\s\S]*?)\}\}|\[\[([^\]\/]*)\/([^\]]*)\]\]|\*\*([\s\S]+?)\*\*|\^\{([^}]*)\}|\^([0-9]+|[A-Za-z])|√\{([^{}]*)\}|⟦([\s\S]*?)⟧/g;
     let out = '', last = 0, m;
     while ((m = re.exec(s))) {
       out += plain(s.slice(last, m.index));
@@ -34,6 +34,7 @@
       else if (m[4] !== undefined) out += `<b>${inl(m[4])}</b>`;
       else if (m[5] !== undefined) out += `<sup>${inl(m[5])}</sup>`;
       else if (m[7] !== undefined) out += `<span class="sq">√<span>${inl(m[7])}</span></span>`;
+      else if (m[8] !== undefined) out += `<span class="sys"><svg class="sysb" viewBox="0 0 10 40" preserveAspectRatio="none" aria-hidden="true"><path d="M9 1C5 1 5 3 5 7L5 15C5 18 3 20 1 20C3 20 5 22 5 25L5 33C5 37 5 39 9 39"/></svg>${m[8].split(';').map(r => `<span class="sysr">${inl(r.trim())}</span>`).join('')}</span>`;   // 連立方程式：⟦x+y=5 ; x−y=1⟧（; で行を分ける。左に大きな { がつく）
       else out += `<sup>${plain(m[6])}</sup>`;
       last = re.lastIndex;
     }
