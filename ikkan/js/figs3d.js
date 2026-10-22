@@ -100,7 +100,8 @@
     (o.pts || []).forEach(p => { const q = proj(p.at); out += `<circle cx="${f2(X(q))}" cy="${f2(Y(q))}" r="0.6" fill="#222"/>`; if (p.t) out += h.tx(X(q) + 1.4, Y(q) - 1.4, h.svgMath(p.t), 3, 'start'); });
     lt.forEach((nm, i) => {   // 字は、その頂点に集まる辺と辺のあいだの、いちばん広いすき間の向きに置く
       if (i >= V.length) return;
-      const angs = edges.filter(e => e.i === i || e.j === i).map(e => { const q = e.i === i ? e.j : e.i; return Math.atan2(S[q][1] - S[i][1], S[q][0] - S[i][0]); }).sort((a, b) => a - b);
+      const extraE = [...(o.edges || []), ...(o.ansEdges || [])].map(it => (typeof it.e === 'string' ? [at(it.e[0]), at(it.e[1])] : it.e)).filter(ij => ij[0] >= 0 && ij[1] >= 0).map(ij => ({ i: Math.min(ij[0], ij[1]), j: Math.max(ij[0], ij[1]) }));
+      const angs = [...edges, ...extraE].filter(e => e.i === i || e.j === i).map(e => { const q = e.i === i ? e.j : e.i; return Math.atan2(S[q][1] - S[i][1], S[q][0] - S[i][0]); }).sort((a, b) => a - b);
       let best = 0, bd = 0;
       if (angs.length < 2) { const dx = X(S[i]) - cx, dy = Y(S[i]) - cy; best = Math.atan2(-dy, dx); }
       else angs.forEach((a, m) => { const nx = m + 1 < angs.length ? angs[m + 1] : angs[0] + 2 * Math.PI, gap = nx - a; if (gap > bd) { bd = gap; best = a + gap / 2; } });

@@ -22,7 +22,7 @@ const { chromium } = require('playwright');
   page.on('pageerror', e => errors.push(String(e)));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   await page.goto(url + '#/');
-  const lessons = await page.evaluate(() => IK.order.map(id => ({ id, plan: !!IK.plans[id], dr: !!IK.drills[id], qz: !!IK.quizzes[id] })));
+  const lessons = await page.evaluate(() => IK.order.map(id => ({ id, plan: !!IK.plans[id], dr: !!IK.drills[id], qz: !!IK.quizzes[id], trial: /試作/.test(IK.lessons[id].no || '') })));
   let bad = 0;
 
   for (const L of lessons.filter(l => !only.length || only.includes(l.id))) {
@@ -35,7 +35,7 @@ const { chromium } = require('playwright');
       await page.reload();
       await page.waitForSelector('.wsp');
       await page.evaluate(() => { document.querySelector('.pages').style.zoom = 1; });
-      const res = await page.evaluate(() => {
+      const res = await page.evaluate(trial => {
         const issues = [], first = document.querySelector('.wsp');
         const pitchPx = parseFloat(first.style.getPropertyValue('--pitch') || '7') * 96 / 25.4;
         document.querySelectorAll('.wsp').forEach((sp, pi) => {
@@ -63,6 +63,48 @@ const { chromium } = require('playwright');
             if (tb.height > box.height + 1) issues.push(`ページ${pi + 1} 表${k + 1}が枠より高い（${Math.round(tb.height)}px ＞ ${Math.round(box.height)}px）`);
             t.querySelectorAll('td,th').forEach(c => { if (c.scrollWidth > c.clientWidth + 1) issues.push(`ページ${pi + 1} 表${k + 1}のセルが横にはみ出し「${c.textContent.slice(0, 10)}」`); });
           });
+          // 図が、ほかの図や、ほかのブロックと重なっていないか。図の中の字どうしが重なっていないか
+          const inter = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+          const figsAll = [...sp.querySelectorAll('.fsvg')], blocksAll = [...sp.querySelectorAll('.wb')];
+          figsAll.forEach((f, i) => {
+            if (trial) return;   // 旧形式の試作（座標の目もりなど）は、しらべない
+            const rf = f.getBoundingClientRect();
+            figsAll.forEach((g, j) => { if (j > i && inter(rf, g.getBoundingClientRect()) > 16) issues.push(`ページ${pi + 1} 図${i + 1}と図${j + 1}が重なっている`); });
+            blocksAll.forEach(b => {
+              if (b.contains(f) || f.contains(b) || b.querySelector('.fsvg')) return;
+              const rb = b.getBoundingClientRect(), a = inter(rf, rb);
+              if (a > 16 && !b.querySelector('.tx') && !b.querySelector('table')) return;   // 中身のない枠は、ふくめない
+              if (a > 16) issues.push(`ページ${pi + 1} 図${i + 1}が、ほかのブロック「${(b.textContent || '').trim().slice(0, 14)}」と重なっている（${Math.round(a)}px²）`);
+            });
+            const shapes = [...f.querySelectorAll('line,polyline,polygon,path,circle,ellipse')].filter(e => e.getClientRects().length && !e.closest('defs'));
+            let out = 0; shapes.forEach(e => { const q = e.getBoundingClientRect(); if (q.left < rf.left - 3 || q.right > rf.right + 3 || q.top < rf.top - 3 || q.bottom > rf.bottom + 3) out++; });
+            if (out) issues.push(`ページ${pi + 1} 図${i + 1}の線が、図の枠の外に ${out}本 出ている（となりの図や字と重なるおそれ）`);
+            // 図の中の字が、線（辺・だ円・曲線など）の上にのっていないか（字の高さのまん中あたりを、線が横切っているものだけ）
+            const txs = [...f.querySelectorAll('text')].filter(t => t.getClientRects().length && !t.closest('.cap') && (t.textContent || '').trim());
+            const geos = [...f.querySelectorAll('line,polyline,polygon,path,circle,ellipse')].filter(e => e.getClientRects().length && e.getTotalLength && !e.closest('defs'));
+            const hitTexts = new Set();
+            const whites = [...f.querySelectorAll('rect[fill="#fff"]')].map(e => e.getBoundingClientRect()).filter(q => q.width < rf.width * 0.5 && q.height < rf.height * 0.3);   // 字の白い地
+            geos.forEach(g => {
+              const L = g.getTotalLength(), m = g.getScreenCTM(); if (!m || !L) return;
+              const pts = []; const step = Math.max(L / 400, 0.2);
+              for (let d = 0; d <= L; d += step) { const q = g.getPointAtLength(d); pts.push([m.a * q.x + m.c * q.y + m.e, m.b * q.x + m.d * q.y + m.f]); }
+              txs.forEach(t => {
+                if (t.contains(g)) return;
+                if (t.getAttribute('stroke') === '#fff') return;   // 白いふちの字は、線にかさねてよい
+                if (whites.some(w => w.left <= (t.getBoundingClientRect().left + t.getBoundingClientRect().right) / 2 && w.right >= (t.getBoundingClientRect().left + t.getBoundingClientRect().right) / 2 && w.top <= (t.getBoundingClientRect().top + t.getBoundingClientRect().bottom) / 2 && w.bottom >= (t.getBoundingClientRect().top + t.getBoundingClientRect().bottom) / 2)) return;   // 白い地の上の字は、線にかさねてよい
+                const r = t.getBoundingClientRect(), h = r.height, x0 = r.left + r.width * 0.12, x1 = r.right - r.width * 0.12, y0 = r.top + h * 0.25, y1 = r.bottom - h * 0.25;
+                if (x1 <= x0 || y1 <= y0) return;
+                const n = pts.filter(q => q[0] >= x0 && q[0] <= x1 && q[1] >= y0 && q[1] <= y1).length;
+                if (n >= 2) hitTexts.add(t.textContent.trim());
+              });
+            });
+            hitTexts.forEach(tt => issues.push(`ページ${pi + 1} 図${i + 1}の字「${tt}」が、線とかさなっている`));
+            const ts = [...f.querySelectorAll('text')].filter(t => t.getClientRects().length);
+            for (let x = 0; x < ts.length; x++) for (let y = x + 1; y < ts.length; y++) {
+              const ra = ts[x].getBoundingClientRect(), rb2 = ts[y].getBoundingClientRect(), ov = inter(ra, rb2), mn = Math.min(ra.width * ra.height, rb2.width * rb2.height);
+              if (mn > 0 && ov / mn > 0.25) issues.push(`ページ${pi + 1} 図${i + 1}の字どうしが重なっている：「${ts[x].textContent}」と「${ts[y].textContent}」`);
+            }
+          });
           sp.querySelectorAll('.fsvg').forEach((sv, k) => {   // 図：SVG の中の字が図の枠の外に出ていないか
             const r = sv.getBoundingClientRect();
             sv.querySelectorAll('text').forEach(t => {
@@ -73,7 +115,7 @@ const { chromium } = require('playwright');
           });
         });
         return { issues };
-      });
+      }, L.trial);
       const mode = tab === 'plan' ? '授業計画' : (ans ? '解答つき' : '生徒用'), tag = tab === 'plan' ? 'plan' : (ans ? 'ans' : 'student');
       const n = await page.locator('.wsp').count();
       for (let i = 0; i < n; i++) await page.locator('.wsp').nth(i).screenshot({ path: path.join(outDir, `${L.id}_${tab}_${tag}_p${i + 1}.png`) });
