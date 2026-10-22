@@ -38,6 +38,12 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(30);
   };
   const h1 = () => page.evaluate(() => (document.querySelector('h1') || {}).textContent || '');
+  // 押したあと、見出しが変わるまで待つ（画面の切りかえは # の変化のあとに起きるため）
+  const clickWait = async (sel) => {
+    const prev = await h1();
+    await page.click(sel);
+    await page.waitForFunction((p) => ((document.querySelector('h1') || {}).textContent || '') !== p, prev, { timeout: 2000 }).catch(() => {});
+  };
   const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
   await page.goto(url + '#top');
@@ -81,17 +87,15 @@ const { chromium } = require('playwright');
 
   // ③ 押して進む
   const first = data.scenes.find((s) => s.id === 'ijime') || data.scenes[0];
-  await page.click(`a.card[href="#${first.id}"]`);
+  await clickWait(`a.card[href="#${first.id}"]`);
   if ((await h1()) !== first.nodes[0].title) fail('ホームのカードを押しても、はじめの分かれ道が開かない');
   const before = await h1();
-  await page.click('.opts a.opt:not(.jump)');
-  await page.waitForTimeout(30);
+  await clickWait('.opts a.opt:not(.jump)');
   const after = await h1();
   if (after === before) fail('選択肢を押しても、次の分かれ道へ進まない');
   const crumbs = await page.evaluate(() => document.querySelectorAll('.crumbs a').length);
   if (crumbs < 1) fail('道すじ（パンくず）が出ない');
-  await page.click('a.back');
-  await page.waitForTimeout(30);
+  await clickWait('a.back');
   if ((await h1()) !== before) fail('「前の分かれ道に戻る」で戻れない');
   // ほかの場面へ
   const jumpFrom = await page.evaluate(() => {
@@ -103,12 +107,10 @@ const { chromium } = require('playwright');
   });
   if (jumpFrom) {
     await goHash(jumpFrom.hash);
-    await page.click('.opts a.opt.jump');
-    await page.waitForTimeout(30);
+    await clickWait('.opts a.opt.jump');
     if (!(await page.$('a.from'))) fail('ほかの場面へ移ったとき「もどる」が出ない');
     else {
-      await page.click('a.from');
-      await page.waitForTimeout(30);
+      await clickWait('a.from');
       if ((await h1()) !== jumpFrom.title) fail('「もどる」で、元の分かれ道に戻れない');
     }
   }
@@ -119,11 +121,14 @@ const { chromium } = require('playwright');
   const hits = await page.evaluate(() => document.querySelectorAll('#results a').length);
   if (!hits) fail('検索「保護者」で結果が出ない');
   else {
+    // 結果の見出しは「場面 › 分かれ道」（場面だけのときは、その場面のはじめの分かれ道が開く）か「基本 › ページ」
     const want = await page.evaluate(() => document.querySelector('#results a .r-path').textContent);
-    await page.click('#results a');
-    await page.waitForTimeout(30);
+    await clickWait('#results a');
     const got = await h1();
-    if (!want.endsWith(got) && !want.includes(got)) fail(`検索の結果を押しても、その分かれ道が開かない（${want} → ${got}）`);
+    const where = await page.evaluate(() => ((document.querySelector('.node-head .eyebrow') || {}).textContent || ''));
+    const [head, tail] = want.split(' › ');
+    const ok = tail ? got === tail : where.startsWith(head);
+    if (!ok) fail(`検索の結果を押しても、その分かれ道が開かない（${want} → ${got}）`);
   }
   await goHash('#top');
   const keep = await page.evaluate(() => document.getElementById('q').value);
