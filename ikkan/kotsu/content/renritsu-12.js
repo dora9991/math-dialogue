@@ -22,10 +22,11 @@ const prices = (r) => {
   if (b < 30) b = a + 30;
   return [a, b];
 };
+const mul = (k) => (k === 1 ? "" : `×${k}`);   // ①×1 とは書かない
 /** x＋y＝n、a x＋b y＝k を解く手順（2行） */
 const buySteps = (a, b, n, k, [x, y]) => [
   `$x+y=${n}$ …①　$${a}x+${b}y=${k}$ …②`,
-  `②−①×${a}　$${b - a}y=${k - a * n}$　$y=${qtex(y)}$　①より　$x=${qtex(x)}$`,
+  `②−①${mul(a)}　$${coefVar(b - a, "y")}=${k - a * n}$　$y=${qtex(y)}$　①より　$x=${qtex(x)}$`,
 ];
 
 /** 式が 1つ（a x＋b y＝k）で、どちらも 1以上の整数の組が 2〜5通りある場面 */
@@ -58,6 +59,7 @@ export const UNITS = [
         t("12d01", (r) => {
           const [A, B, c] = pick(r, SHOP), [a, b] = prices(r);
           const x0 = r(2, 8), y0 = r(2, 8), n = x0 + y0, k = a * x0 + b * y0, noun = NOUN[c];
+          if (x0 === y0) return { skip: true };
           const ok = `1${c} ${a}円の${A}と、1${c} ${b}円の${B}を、合わせて ${n}${c}買うと、${k}円だった。`;
           const bad = [
             `1${c} ${b}円の${A}と、1${c} ${a}円の${B}を、合わせて ${n}${c}買うと、${k}円だった。`,
@@ -103,7 +105,8 @@ export const UNITS = [
             R5: ["x=y", `${A}と${B}の${noun}は、同じである`],
           };
           const say = (key) => `${A}と${B}は、合わせて ${n}${c}で、${REL[key][1]}。`;
-          const wrongs = shuffle(r, ["R1", "R2", "R3", "R4", "R5"].filter((k) => k !== kind)).slice(0, 3).map(say);
+          const holds = { R1: x0 === m * y0, R2: y0 === m * x0, R3: x0 === y0 + d, R4: x0 === y0 - d, R5: x0 === y0 };   // 解の値で、たまたま成り立つ言い方は、誤答に入れない
+          const wrongs = shuffle(r, ["R1", "R2", "R3", "R4", "R5"].filter((k) => k !== kind && !holds[k])).slice(0, 3).map(say);
           return {
             q: `連立方程式 $${casesTex([`x+y=${n}`, REL[kind][0]])}$ に合う問題はどれか。（$x$ は${A}の${noun}、$y$ は${B}の${noun}）`,
             ans: say(kind),
@@ -200,15 +203,15 @@ export const UNITS = [
             ans: ask === "x" ? x0 : y0,
             hint: "分数のある式は、分母の最小公倍数を両辺にかけて、分母をはらってから解こう。",
             steps: [
-              `下の式の両辺に ${L} をかける　$${L / v1}x+${L / v2}y=${L * T}$ …③`,
-              `③−①×${L / v2}　$${L / v1 - L / v2}x=${L * T - (L / v2) * D}$　$x=${x0}$`,
+              `下の式の両辺に ${L} をかける　$${coefVar(L / v1, "x")}${signedVar(L / v2, "y")}=${L * T}$ …③`,
+              `③−①${mul(L / v2)}　$${coefVar(L / v1 - L / v2, "x")}=${L * T - (L / v2) * D}$　$x=${x0}$`,
               `①より　$y=${D}-${x0}=${y0}$`,
             ],
           };
         }),
         // 12d05b 「道のり・速さ・時間」の問題を解く
         t("12d05b", (r) => {
-          const v1 = pick(r, [3, 4, 5, 6]), v2 = pick(r, [12, 15, 20, 30, 40, 60]), t1 = r(1, 4), t2 = r(1, 3);
+          const v1 = pick(r, [3, 4, 5, 6]), v2 = pick(r, [12, 15, 20, 30, 40]), t1 = r(1, 4), t2 = r(1, 3);
           const x0 = v1 * t1, y0 = v2 * t2, D = x0 + y0, T = t1 + t2, L = lcm(v1, v2), abAsk = r(0, 1) === 1;
           const [P, Q2, R] = pick(r, [["A町", "B町", "C町"], ["家", "駅", "学校"], ["P地点", "Q地点", "R地点"]]);
           const sol = solve2([1, 1, D], [L / v1, L / v2, L * T]);
@@ -220,7 +223,7 @@ export const UNITS = [
             hint: `${P}から${Q2}までを $x$ km、${Q2}から${R}までを $y$ km として、道のりの式と、時間（道のり÷速さ）の式をつくろう。`,
             steps: [
               `$x+y=${D}$ …①　$\\frac{x}{${v1}}+\\frac{y}{${v2}}=${T}$ …②`,
-              `②の両辺に ${L} をかける　$${L / v1}x+${L / v2}y=${L * T}$ …③　　③−①×${L / v2}　$${L / v1 - L / v2}x=${L * T - (L / v2) * D}$　$x=${x0}$、$y=${y0}$`,
+              `②の両辺に ${L} をかける　$${coefVar(L / v1, "x")}${signedVar(L / v2, "y")}=${L * T}$ …③　　③−①${mul(L / v2)}　$${coefVar(L / v1 - L / v2, "x")}=${L * T - (L / v2) * D}$　$x=${x0}$、$y=${y0}$`,
               `${P}から${Q2}まで ${x0} km、${Q2}から${R}まで ${y0} km。`,
             ],
           };
@@ -343,7 +346,7 @@ export const UNITS = [
               ans: ok,
               choices: choices4(r, ok, bad),
               hint: "2つ目の式の「−」は、何と何の差か。$x$ の係数、$y$ の係数の意味と、右辺の符号が、増えたことか減ったことかを見よう。",
-              steps: [`$x+y=${N}$ は、先週の合計が ${N}${c}ということ。`, `$${round(p / 100, 2)}x$ は${P}の増えた${noun}、$${round(q / 100, 2)}y$ は${Q2}の減った${noun}。その差（増えた−減った）が ${C}${c}、つまり全体で ${Math.abs(C)}${c} ${dir(C)}。`, "この2つがそろった問題を選ぶ。"],
+              steps: [`$x+y=${N}$ は、先週の合計が ${N}${c}ということ。`, `$${round(p / 100, 2)}x$ は${P}の増えた${noun}、$${round(q / 100, 2)}y$ は${Q2}の減った${noun}。その差（増えた−減った）が ${C < 0 ? "−" : ""}${Math.abs(C)}${c}、つまり全体で ${Math.abs(C)}${c} ${dir(C)}。`, "この2つがそろった問題を選ぶ。"],
             };
           }
           return { skip: true };
@@ -358,11 +361,11 @@ export const UNITS = [
             const N = nA + nB, W = w1 * nA + w2 * nB, sol = solve2([1, 1, N], [w1, w2, W]), askA = r(0, 1) === 1;
             same(sol[0], Q(nA), "12d08a x");
             return {
-              q: `ある工場で、製品 A と製品 B を、合わせて ${N}個つくった。A は 1個 ${w1}kg、B は 1個 ${w2}kg で、全部の重さは ${W}kg だった。製品 ${askA ? "A" : "B"}は、何個つくったか。`,
+              q: `ある工場で、製品 A と製品 B を、合わせて ${N}個つくった。A は 1個 ${w1}kg、B は 1個 ${w2}kg で、全部の重さは ${W}kg だった。製品 ${askA ? "A" : "B"} は、何個つくったか。`,
               ans: askA ? nA : nB,
               unit: "個",
               hint: "A を $x$ 個、B を $y$ 個として、「個数の合計」と「重さの合計」で式を2つつくろう。",
-              steps: [`$x+y=${N}$ …①　$${w1}x+${w2}y=${W}$ …②`, `②−①×${w1}　$${w2 - w1}y=${W - w1 * N}$　$y=${nB}$　①より　$x=${nA}$`, `A は ${nA}個、B は ${nB}個。`],
+              steps: [`$x+y=${N}$ …①　$${w1}x+${w2}y=${W}$ …②`, `②−①${mul(w1)}　$${coefVar(w2 - w1, "y")}=${W - w1 * N}$　$y=${nB}$　①より　$x=${nA}$`, `A は ${nA}個、B は ${nB}個。`],
             };
           }
           return { skip: true };
