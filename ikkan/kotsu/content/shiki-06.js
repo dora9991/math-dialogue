@@ -255,10 +255,11 @@ const subQ = (r) => {
 };
 
 // ── 数をかけたかっこの加減：分配法則（06d04・06q02c・06d15a） ───────────────
-const distQ = (r, k2lo) => {
+const distQ = (r, k2lo, hard = false) => {
   const [u, v] = pick(r, PAIRS);
   const g = retry(() => {
-    const k1 = r(2, 5), k2 = r(k2lo, 5), p1 = r(1, 4), p2 = nz(r, -4, 4), q1 = nz(r, -4, 4), q2 = nz(r, -4, 4);
+    // hard：はじめのかっこの前の数が負（−3(2x−5y)−4(x−3y) など）で、符号のまちがいが起きやすい
+    const k1 = hard ? -r(2, 5) : r(2, 5), k2 = r(k2lo, 5), p1 = hard ? nz(r, -5, 5) : r(1, 4), p2 = nz(r, -5, 5), q1 = nz(r, -5, 5), q2 = nz(r, -5, 5);
     return k1 * p1 - k2 * q1 !== 0 && k1 * p2 - k2 * q2 !== 0 ? { k1, k2, p1, p2, q1, q2 } : null;
   });
   const { k1, k2, p1, p2, q1, q2 } = g;
@@ -302,12 +303,13 @@ const divNumQ = (r) => {
 };
 
 // ── 分数の式の加減（06d06・06d15b） ──────────────────────────────
-const PQ = [[2, 3], [3, 2], [3, 4], [4, 3], [2, 5], [5, 2], [3, 5], [5, 3], [4, 5], [5, 4], [2, 4], [4, 2], [3, 6], [6, 3], [4, 6], [6, 4]];
+const PQ_EASY = [[2, 3], [3, 2], [3, 4], [4, 3], [2, 5], [5, 2], [2, 4], [4, 2]];
+const PQ_HARD = [[3, 5], [5, 3], [4, 5], [5, 4], [4, 6], [6, 4], [3, 6], [6, 3], [2, 5], [5, 2]];
 const fracSumQ = (r, op) => {
   const [u, v] = pick(r, PAIRS);
   const sg = op === "+" ? 1 : -1;
   const g = retry(() => {
-    const [p, q] = pick(r, PQ), a1 = r(1, 3), b1 = nz(r, -3, 3), a2 = r(1, 3), b2 = nz(r, -3, 3), L = lcm(p, q);
+    const [p, q] = pick(r, op === "+" ? PQ_EASY : PQ_HARD), a1 = r(1, 3), b1 = nz(r, -3, 3), a2 = r(1, 3), b2 = nz(r, -3, 3), L = lcm(p, q);
     const k1 = L / p, k2 = L / q;
     if (gcd(gcd(a1, b1), p) !== 1 || gcd(gcd(a2, b2), q) !== 1) return null;   // 分子が分母で約分できる分数は使わない
     return k1 * a1 + sg * k2 * a2 !== 0 && k1 * b1 + sg * k2 * b2 !== 0 ? { p, q, a1, b1, a2, b2, L, k1, k2 } : null;
@@ -622,6 +624,14 @@ export const UNITS = [
         t("06d06", (r) => fracSumQ(r, "+")),
         // 06q01 小テスト（1）多項式の次数（xy³−y²+x）
         t("06q01", (r) => degQ(r, 3, 4)),
+        // 06q02a 小テスト（2）① 4a+5b−a−2b
+        t("06q02a", (r) => likeQ(r)),
+        // 06q02b 小テスト（2）② (3x−y)−(x−4y)
+        t("06q02b", (r) => subQ(r)),
+        // 06q02c 小テスト（2）③ 5(a−b)−(3a−4b)
+        t("06q02c", (r) => distQ(r, 1)),
+        // 06q02d 小テスト（2）④ (−24a+16b)÷(−8)
+        t("06q02d", (r) => divNumQ(r)),
       ],
       // ───────── 2 標準 ─────────
       2: [
@@ -664,14 +674,6 @@ export const UNITS = [
         }),
         // 06d12 式の値（a＝−3、b＝2 のとき 3(a+2b)−2(2a−b)）
         t("06d12", (r) => bracketValQ(r, (u, v) => ({ [u]: -r(1, 5), [v]: r(1, 5) }))),
-        // 06q02a 小テスト（2）① 4a+5b−a−2b
-        t("06q02a", (r) => likeQ(r)),
-        // 06q02b 小テスト（2）② (3x−y)−(x−4y)
-        t("06q02b", (r) => subQ(r)),
-        // 06q02c 小テスト（2）③ 5(a−b)−(3a−4b)
-        t("06q02c", (r) => distQ(r, 1)),
-        // 06q02d 小テスト（2）④ (−24a+16b)÷(−8)
-        t("06q02d", (r) => divNumQ(r)),
         // 06q03a 小テスト（3）① (−6y)²
         t("06q03a", (r) => powQ(r, true)),
         // 06q03b 小テスト（3）② 32ab÷(−8b)
@@ -707,7 +709,7 @@ export const UNITS = [
       // ───────── 4 入試レベル ─────────
       4: [
         // 06d15a 入試（1）5(x−2y)−2(3x−4y)
-        t("06d15a", (r) => distQ(r, 2)),
+        t("06d15a", (r) => distQ(r, 2, true)),
         // 06d15b 入試（2）(3a+b)/5−(a−2b)/2
         t("06d15b", (r) => fracSumQ(r, "-")),
         // 06d15c 入試（3）(−5x)²×2y÷(−10xy)

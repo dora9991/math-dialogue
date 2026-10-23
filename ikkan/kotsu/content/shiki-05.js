@@ -238,6 +238,23 @@ export const UNITS = [
             steps: ["かっこをはずして、整理する。 " + $(`${ex} = ${ptex(g.E)}`), "文字に数を代入する（負の数にはかっこをつける）。 " + $(`${ptex(g.E)} = ${substTex(g.E, vals)} = ${valTex(res)}`)],
           };
         }),
+        // 05q01a 小テスト（1）① 14a×3b÷7a
+        t("05q01a", (r) => {
+          const [u, v] = pick(r, PAIRS);
+          const items = retry(() => {
+            const c3 = r(2, 9), c1 = c3 * r(2, 3), c2 = r(2, 9);
+            return c1 <= 30 ? [it(null, c1, { [u]: 1 }), it("*", c2, { [v]: 1 }), it("/", c3, { [u]: 1 })] : null;
+          });
+          if (!items) return { skip: true };
+          return chainQ(r, items, "かける式は分子、わる式は分母に書いて、約分しよう。");
+        }),
+        // 05q01b 小テスト（1）② 20xy²÷(−5y)÷2x
+        t("05q01b", (r) => {
+          const [u, v] = pick(r, PAIRS);
+          const c2 = r(2, 6), c3 = r(2, 4), k = r(1, 3);
+          const items = [it(null, c2 * c3 * k, { [u]: 1, [v]: 2 }), it("/", -c2, { [v]: 1 }), it("/", c3, { [u]: 1 })];
+          return chainQ(r, items, "−の数が奇数個か偶数個かで、答えの符号を先に決めよう。");
+        }),
       ],
       // ───────── 2 標準 ─────────
       2: [
@@ -316,23 +333,6 @@ export const UNITS = [
             steps: ["（高さ）＝（面積）×2÷（底辺）", $(`${ptex(S)} \\times 2 \\div ${ptex(B)} = ${ptex(H)}`), `${$(`${ptex(H)} = ${substTex(H, vals)} = ${valTex(res)}`)}（cm）`],
           };
         }),
-        // 05q01a 小テスト（1）① 14a×3b÷7a
-        t("05q01a", (r) => {
-          const [u, v] = pick(r, PAIRS);
-          const items = retry(() => {
-            const c3 = r(2, 9), c1 = c3 * r(2, 3), c2 = r(2, 9);
-            return c1 <= 30 ? [it(null, c1, { [u]: 1 }), it("*", c2, { [v]: 1 }), it("/", c3, { [u]: 1 })] : null;
-          });
-          if (!items) return { skip: true };
-          return chainQ(r, items, "かける式は分子、わる式は分母に書いて、約分しよう。");
-        }),
-        // 05q01b 小テスト（1）② 20xy²÷(−5y)÷2x
-        t("05q01b", (r) => {
-          const [u, v] = pick(r, PAIRS);
-          const c2 = r(2, 6), c3 = r(2, 4), k = r(1, 3);
-          const items = [it(null, c2 * c3 * k, { [u]: 1, [v]: 2 }), it("/", -c2, { [v]: 1 }), it("/", c3, { [u]: 1 })];
-          return chainQ(r, items, "−の数が奇数個か偶数個かで、答えの符号を先に決めよう。");
-        }),
         // 05q02 小テスト（2）a＝−1、b＝4 のとき 4(a−b)−3(a−2b)
         t("05q02", (r) => {
           const [u, v] = pick(r, PAIRS);
@@ -403,7 +403,7 @@ export const UNITS = [
           const wrong = pdivMono(m0, pmul(m1, m2));   // ÷(2a×3b) としてしまう
           const rt = ptex(right);
           return {
-            q: `次のうち、${$(chainTex(items))} を正しく計算した結果は、どれか。`,
+            q: `次のうち、${$(chainTex(items))} を正しく計算した結果は、どれか。（÷のあとの項は、全体でわる）`,
             ans: $(rt),
             choices: (() => { const w = chainWrongs(items, right); return pick4(r, rt, right, w.main.map(asCand), w.low.map(asCand), [asCand(wrong)]); })(),
             hint: "乗法と除法が混じった式は、どの順に計算するのだったかな。",
