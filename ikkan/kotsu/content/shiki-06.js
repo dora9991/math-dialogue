@@ -516,7 +516,7 @@ const err14b = (r) => {
 // 06d14c 2a×3a＝6a
 const err14c = (r) => {
   const u = pick(r, ["a", "b", "x", "y"]);
-  const c1 = r(2, 9), c2 = r(2, 9);
+  const [c1, c2] = retry(() => { const a = r(2, 9), b = r(2, 9); return a + b !== a * b ? [a, b] : null; });   // 2×2 だけは、係数をたしても 4 で、まちがいの理由が2通りに読めるので除く
   const bad = term(c1 * c2, { [u]: 1 }), good = term(c1 * c2, { [u]: 2 });
   const line = `${ptex(term(c1, { [u]: 1 }))} \\times ${ptex(term(c2, { [u]: 1 }))}=${ptex(bad)}`;
   const right = `${$(`${u} \\times ${u}`)} は ${$(`${u}^{2}`)} になるのに、${$(u)} のままにしている。`;
@@ -550,7 +550,7 @@ const abQ = (r, who) => {
     q: `2つの式 ${$("A")}、${$("B")} があり、${$(`A+B=${ptex(S)}`)}、${$(`A-B=${ptex(D)}`)} である。${$(who)} を表す式は、どれか。`,
     ans: $(rt),
     choices: pick4(r, rt, X, cands.map(asCand), perturbs(X).map(asCand)),
-    hint: who === "A" ? "2つの式を辺々たすと、B が消える。" : "2つの式を辺々ひくと、A が消える。",
+    hint: who === "A" ? `${$("A+B")} と ${$("A-B")} の2つの式を、たすと、B はどうなるかな。` : `${$("A+B")} から ${$("A-B")} をひくと、A はどうなるかな。`,
     steps: who === "A"
       ? ["2つの式をたすと、B が消える。 " + $(`(A+B)+(A-B) = 2A = (${ptex(S)})+(${ptex(D)}) = ${ptex(sum2)}`), $(`A = ${rt}`)]
       : ["2つの式をひくと、A が消える。 " + $(`(A+B)-(A-B) = 2B = (${ptex(S)})-(${ptex(D)}) = ${ptex(dif2)}`), $(`B = ${rt}`)],

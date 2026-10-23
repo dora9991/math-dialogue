@@ -447,7 +447,7 @@ export const UNITS = [
             return {
               q: `次の計算をしよう。 $${ptex(A)}\\div (${ptex(B)})\\times ${ptex(C)}$`,
               ans, choices,
-              hint: "乗除の混じった計算は、左から順に、わる数は逆数にしてかけるか、1つの分数にして約分しよう。÷ の後ろの × は、わる数に入らない。",
+              hint: "乗除の混じった計算は、左から順に、わる数は逆数にしてかけるか、1つの分数にして約分しよう。÷ の後ろにある × の数は、分母と分子のどちらに入るかな。",
               steps: [`分数の形にする。$${ptex(A)}\\div (${ptex(B)})\\times ${ptex(C)}=\\frac{${ptex(A)}\\times ${ptex(C)}}{${ptex(B)}}=\\frac{${ptex(pmul(A, C))}}{${ptex(B)}}$`, `約分して、$${ptex(correct)}$。`],
             };
           }
