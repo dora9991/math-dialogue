@@ -8,7 +8,7 @@
 // ============================================================
 import { t, pick, choices4, shuffle, round, gcd } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
-import { sum, classes, relFreq, roundHalf } from "../stats.js";
+import { sum, classes, relFreq } from "../stats.js";
 
 const unit = unitFor("data");
 
@@ -79,7 +79,7 @@ export const UNITS = [
         t("04q03", (r) => freqCalc(r)),
         // 04q04 相対度数をすべての階級でたすと
         t("04q04", (r) => {
-          const n = pick(r, [20, 25, 30, 40, 50, 60, 100]);
+          const n = pick(r, [20, 24, 25, 30, 32, 36, 40, 45, 48, 50, 60, 64, 80, 100, 120, 150, 200]);
           return {
             q: `度数の合計が ${n}の度数分布表がある。すべての階級の相対度数をたすと、いくつになるか。`,
             ans: 1,
@@ -340,6 +340,10 @@ function tbl7(r, ask) {
 
 // ── 04d08・04q05：相対度数の差と度数の差から、度数の合計・度数 ─────────
 function diffQ(r, ask, Ns) {
+  for (let i = 0; i < 40; i++) { const p = diffTry(r, ask, Ns); if (!p.skip) return p; }
+  return { skip: true };
+}
+function diffTry(r, ask, Ns) {
   const N = pick(r, Ns), u = kUnit(N);
   const lo = Math.ceil(8 / u), hi = Math.floor(45 / u);
   const m1 = r(lo, hi - 1), m2 = r(m1 + 1, Math.min(hi, m1 + 8));

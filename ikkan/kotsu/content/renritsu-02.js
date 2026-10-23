@@ -46,9 +46,9 @@ const substEq = (e, ki, val, vars = ["x", "y"]) => {
   const second = ki === 0 ? signedVar(oc, ov) : smulNum(kc, val);
   return { sub: `${first}${second}=${e[2]}`, rest: oc === 1 ? null : `${coefVar(oc, ov)}=${rhs}`, other: rhs / oc };
 };
-/** 消す文字と、①②に何をかけるか（かける数が小さくなる文字を選ぶ。同じなら pref 番目の文字） */
-const plan = (e1, e2, pref = 0) => {
-  const cs = [0, 1].filter((k) => e1[k] && e2[k]).map((k) => {
+/** 消す文字と、①②に何をかけるか（かける数が小さくなる文字を選ぶ。同じなら pref 番目の文字。force を渡すと、その文字を消す） */
+const plan = (e1, e2, pref = 0, force = null) => {
+  const cs = [0, 1].filter((k) => e1[k] && e2[k] && (force === null || k === force)).map((k) => {
     const p = Math.abs(e1[k]), q = Math.abs(e2[k]), L = lcm(p, q);
     return { k, m1: L / p, m2: L / q, cost: L / p + L / q };
   });
@@ -56,8 +56,8 @@ const plan = (e1, e2, pref = 0) => {
   return cs[0] || null;
 };
 /** 加減法で解く解説（かける数が1なら、そのまま）。lines＝[かけ算の行（あれば）, 消去の行, 代入の行]、sol＝解 [x, y] */
-const elimSteps = (e1, e2, pref = 0, vars = ["x", "y"]) => {
-  const pl = plan(e1, e2, pref);
+const elimSteps = (e1, e2, pref = 0, vars = ["x", "y"], force = null) => {
+  const pl = plan(e1, e2, pref, force);
   if (!pl) return null;
   const { k, m1, m2 } = pl, w = 1 - k;
   const E1 = e1.map((v) => v * m1), E2 = e2.map((v) => v * m2);
@@ -131,6 +131,7 @@ const SHOPS = [
 /** 2つの買い物（片方の個数が同じ）。x＝A の値段、y＝B の値段。e1・e2 が連立方程式 */
 const shopSys = (r) => {
   const sh = pick(r, SHOPS), pa = pick(r, sh.pa), pb = pick(r, sh.pb);
+  if (pa === pb) return null;
   const m = r(1, 4), c1 = r(1, 5), c2 = r(1, 5);
   if (c1 >= c2) return null;
   const shareA = r(0, 1) === 1;

@@ -27,8 +27,8 @@ const DICE = { obj: "1つのさいころ", up: "偶数の目が出た" };
 const CUP = { obj: "紙コップ", up: "口が上になった" };
 
 /** 回数 n のうち、起こった回数 c の相対度数を聞く */
-const mkRel = (objs, ns, lo, hi) => (r) => {
-  const o = pick(r, objs), n = pick(r, ns), c = Math.round((n * r(lo, hi)) / 100) + r(-1, 1);
+const mkRel = (objs, ns, lo, hi, tight = false) => (r) => {
+  const o = pick(r, objs), n = pick(r, ns), pr = tight && n >= 500 ? r(48, 52) : r(lo, hi), c = Math.round((n * pr) / 100) + r(-1, 1);
   const rel = relFreq(c, n, 2);
   if (rel == null || c < 1 || c >= n) return { skip: true };
   return {
@@ -140,7 +140,7 @@ export const UNITS = [
       // ───────── 2 標準 ─────────
       2: [
         // 08d03a ① さいころの偶数の目の表：相対度数
-        t("08d03a", mkRel([DICE], [50, 100, 500, 1000], 40, 60)),
+        t("08d03a", mkRel([DICE], [50, 100, 500, 1000], 40, 60, true)),
         // 08d03b ② 偶数の目の出やすさは、およそいくつといえるか
         t("08d03b", (r) => {
           const o = pick(r, [DICE, DICE, CUP, ...OBJ]), p = o === DICE ? 0.5 : r(30, 65) / 100, S = settle(r, [50, 100, 500, 1000], p, 2); if (!S) return { skip: true };
@@ -156,7 +156,11 @@ export const UNITS = [
         // 08d04 実験をするとき、投げる高さや投げ方を、毎回そろえるのはなぜか
         t("08d04", (r) => {
           const obj = pick(r, ["ペットボトルのキャップ", "画びょう", "紙コップ", "ボタン", "1つのさいころ"]);
-          const ans = "条件が変わると、起こりやすさも変わるかもしれないので、同じ条件でくり返して、正しく調べるため";
+          const ans = pick(r, [
+            "条件が変わると、起こりやすさも変わるかもしれないので、同じ条件でくり返して、正しく調べるため",
+            "条件がちがうと、結果のちがいが、起こりやすさのちがいによるものか、わからなくなるため",
+            "投げ方がそろっていないと、実験の結果を、そのまま比べることができないため",
+          ]);
           const wrongs = shuffle(r, [
             "必ず同じ結果になるようにするため",
             "投げる回数を、少なくできるようにするため",
@@ -184,7 +188,7 @@ export const UNITS = [
           }
           if (rel == null) return { skip: true };
           return {
-            q: `Cさんは ${nC}回投げて ${cC}回、Dさんは ${nD}回投げて ${cD}回、${o.obj}の${o.up}。2人の結果を合わせた、はじめからの合計の相対度数は？（小数第3位を四捨五入して、小数第2位まで）`,
+            q: `${o.obj}を投げて、Cさんは ${nC}回のうち ${cC}回、Dさんは ${nD}回のうち ${cD}回、${o.up}。2人の結果を合わせた、はじめからの合計の相対度数は？（小数第3位を四捨五入して、小数第2位まで）`,
             ans: rel,
             hint: "2人の結果を合わせるとき、相対度数どうしをたしてもよいかな。起こった回数と投げた回数を、それぞれ合わせよう。",
             steps: [`(${cC} + ${cD}) ÷ (${nC} + ${nD}) ＝ ${c} ÷ ${n} ${exact(c, n) ? "＝" : "≒"} ${f2(rel)}`, `（${f2(cC / nC)} と ${f2(cD / nD)} の平均ではない。回数どうしを合わせてから、わる。）`],
@@ -193,7 +197,11 @@ export const UNITS = [
         // 08q04 5回投げて4回口が上 → 0.8 という考えの問題点
         t("08q04", (r) => {
           const o = pick(r, OBJ), n = pick(r, [5, 5, 10]), c = n === 5 ? r(1, 4) : r(2, 8), rel = c / n;
-          const ans = "投げた回数が少ないので、相対度数が大きくばらつく。もっと多くの回数をくり返して、調べる必要がある";
+          const ans = pick(r, [
+            "投げた回数が少ないので、相対度数が大きくばらつく。もっと多くの回数をくり返して、調べる必要がある",
+            "回数が少ないと、もう一度やったら大きくちがう値になるかもしれない。多数回くり返して、調べる必要がある",
+            "少ない回数の結果だけでは、落ち着いた値かどうかわからない。回数をふやして、調べ直す必要がある",
+          ]);
           const wrongs = shuffle(r, [
             `${c} ÷ ${n} の計算が、まちがっている`,
             `相対度数は、${n}回では求められない`,
@@ -287,23 +295,23 @@ function seg(r, which) {
   const o = pick(r, OBJ), n1 = pick(r, [50, 100, 200]), N = pick(r, [400, 500, 800, 1000]);
   const C = Math.round((N * r(35, 65)) / 100), R = C / N;
   if (Math.abs(round(R, 3) - R) > 1e-9) return { skip: true };
-  const c1 = Math.round((n1 * r(35, 70)) / 100), c2 = C - c1, m = N - n1, rel = relFreq(c2, m, 2);
+  const c1 = Math.max(1, Math.round(n1 * R) + r(-4, 4)), c2 = C - c1, m = N - n1, rel = relFreq(c2, m, 2);
   if (c2 < 1 || c2 >= m || rel == null) return { skip: true };
-  const base = `あるキャップを投げる実験で、${n1}回までの${o.up}のは ${c1}回、${N}回までの相対度数は、ちょうど ${R} であった。`;
+  const base = `${o.obj}を投げる実験で、${n1}回までの${o.up}のは ${c1}回、${N}回までの相対度数は、ちょうど ${round(R, 3)} であった。`;
   if (which === "a") {
     return {
       q: `${base}${n1 + 1}回目から ${N}回目までの ${m}回で、${o.up}のは何回か。`,
       ans: c2,
       unit: "回",
       hint: "相対度数 × 投げた回数 ＝ 起こった回数。全体で起こった回数から、はじめの分をひこう。",
-      steps: [`${N}回までに起こった回数は ${N} × ${R} ＝ ${C}（回）`, `${n1 + 1}回目〜${N}回目では ${C} − ${c1} ＝ ${c2}（回）`],
+      steps: [`${N}回までに起こった回数は ${N} × ${round(R, 3)} ＝ ${C}（回）`, `${n1 + 1}回目〜${N}回目では ${C} − ${c1} ＝ ${c2}（回）`],
     };
   }
   return {
     q: `${base}${n1 + 1}回目から ${N}回目までの ${m}回だけの相対度数は？（小数第3位を四捨五入して、小数第2位まで）`,
     ans: rel,
     hint: "まず、あとの回数だけで、起こった回数を求める。相対度数は、（起こった回数）÷（投げた回数）。",
-    steps: [`${N}回までに起こった回数は ${N} × ${R} ＝ ${C}（回）`, `${n1 + 1}回目〜${N}回目では ${C} − ${c1} ＝ ${c2}（回）`, `${c2} ÷ ${m} ${exact(c2, m) ? "＝" : "≒"} ${f2(rel)}`],
+    steps: [`${N}回までに起こった回数は ${N} × ${round(R, 3)} ＝ ${C}（回）`, `${n1 + 1}回目〜${N}回目では ${C} − ${c1} ＝ ${c2}（回）`, `${c2} ÷ ${m} ${exact(c2, m) ? "＝" : "≒"} ${f2(rel)}`],
   };
 }
 
@@ -312,9 +320,9 @@ function two(r, which) {
   const o = pick(r, OBJ), nA = pick(r, [40, 50, 60, 80]), N = pick(r, [150, 200, 250, 300, 400]);
   const C = Math.round((N * r(35, 70)) / 100), R = C / N;
   if (Math.abs(round(R, 2) - R) > 1e-9) return { skip: true };
-  const cA = Math.round((nA * r(35, 70)) / 100), nB = N - nA, cB = C - cA, rel = relFreq(cB, nB, 2);
+  const cA = Math.max(1, Math.round(nA * R) + r(-5, 5)), nB = N - nA, cB = C - cA, rel = relFreq(cB, nB, 2);
   if (cB < 1 || cB >= nB || rel == null) return { skip: true };
-  const base = `Aさんが ${nA}回投げて、${o.up}のは ${cA}回であった。続けてBさんも投げて、2人合わせて ${N}回になった。2人合わせた${o.up}相対度数は、ちょうど ${f2(R)} であった。`;
+  const base = `${o.obj}を投げる実験で、Aさんが ${nA}回投げて、${o.up}のは ${cA}回であった。続けてBさんも投げて、2人合わせて ${N}回になった。2人合わせた相対度数は、ちょうど ${f2(R)} であった。`;
   if (which === "a") {
     return {
       q: `${base}Bさんが投げたうち、${o.up}のは何回か。`,
