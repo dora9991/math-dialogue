@@ -4,8 +4,10 @@
 (function () {
   'use strict';
   const IK = (window.IK = window.IK || {});
-  // 訂正レベルは M（約 15% まで欠けても読める）。バージョンは文字数に合わせて自動
-  const make = text => { const q = qrcode(0, 'M'); q.addData(String(text), 'Byte'); q.make(); return q; };
+  // 訂正レベルは M（約 15% まで欠けても読める）。バージョンは文字数に合わせて自動。
+  // M だと、1つの辺が 33 モジュール（バージョン 4）をこえるとき（授業のIDが長い単元）は、L（約 7%）にして、14mm 角でも読みやすい大きさ（33 以内）をたもつ
+  const build = (text, lv) => { const q = qrcode(0, lv); q.addData(String(text), 'Byte'); q.make(); return q; };
+  const make = text => { const m = build(text, 'M'); if (m.getModuleCount() <= 33) return m; const l = build(text, 'L'); return l.getModuleCount() < m.getModuleCount() ? l : m; };
   function svg(text, mm, cls) {
     const q = make(text), n = q.getModuleCount();
     let d = '';

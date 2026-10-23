@@ -1,12 +1,13 @@
 // ============================================================
-// verify.mjs — ikkan の空間図形の問題を、コツコツくんの問題テンプレートに移したもの（kotsu/content/）の検査
+// verify.mjs — ikkan の問題（空間図形・データの活用・式の計算・連立方程式）を、コツコツくんの問題テンプレートに移したもの（kotsu/content/）の検査
 //
 //   node ikkan/kotsu/verify.mjs                       … 全部を検査
+//   node ikkan/kotsu/verify.mjs --unit data           … 1つの単元（kukan・data・shiki・renritsu）だけ
 //   node ikkan/kotsu/verify.mjs ikkan/kotsu/content/kukan-03.js    … そのファイルだけ
 //   RUNS=1000 node ikkan/kotsu/verify.mjs             … 1つのテンプレートを生成する回数（既定 300）
 //
 // コツコツくん（src/solo）の scripts/solo-verify.mjs と同じ検査に、次を足してある：
-//   ① 問題IDのきまり：テンプレート id は「<授業の番号 2けた><d|q|w|x><番号 2けた><a〜z（あれば）>」（例 03d04、03q02b）
+//   ① 問題IDのきまり：テンプレート id は「<授業の番号 2けた><d|q|w|x><番号 2けた><a〜z（あれば）>」（例 03d04、03q02b）。content/<単元>-<授業の番号>.js（例 data-03.js）
 //        d＝演習プリント、q＝小テスト、w＝ワークシートの学習課題・例題（K ブロックの順）、x＝ikkan にない補い問題
 //   ② ikkan の問題（演習プリント・小テストの（1）（2）…）が、1問のこらず、「移した」か「移さなかった理由つき（SKIPPED）」のどちらかになっているか
 //   ③ 移したテンプレートの、元の問題が、ikkan に実在するか
@@ -18,6 +19,7 @@ import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { UNITS_CFG } from "./unit-kit.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const IKKAN = path.resolve(HERE, "..");
@@ -128,11 +130,15 @@ const ID_RE = /^(\d{2})([dqwx])(\d{2})([a-z]?)$/;
 const KIND = { d: "dr", q: "qz" };
 const external = (id) => /^(E[1-6]|J[1-3]|H[1-3])-/.test(id);   // コツコツくんの既存の単元（ここでは中身を持たない）
 
+const unitOfFile = (file) => path.basename(file).replace(/-\d+\.js$/, "");
 function checkUnit(u, file, IK) {
   const W = `${path.basename(file)} ${u.id || "(id なし)"}`;
+  const cfg = UNITS_CFG[unitOfFile(file)];
+  if (!cfg) { err(W, `ファイル名は「<単元>-<番号>.js」（単元は ${Object.keys(UNITS_CFG).join("・")}）`); return; }
   if (!u.id || typeof u.id !== "string") err(W, "id がない");
-  if (u.grade !== "J1") err(W, `grade が不正: ${u.grade}（中1 の J1）`);
-  if (u.area !== "geo") err(W, `area が不正: ${u.area}（geo）`);
+  else if (u.id !== `${cfg.grade}-${cfg.prefix}${(path.basename(file).match(/-(\d+)\.js$/) || [])[1]}`) err(W, `id が ${cfg.grade}-${cfg.prefix}＋授業の番号 でない: ${u.id}`);
+  if (u.grade !== cfg.grade) err(W, `grade が不正: ${u.grade}（${cfg.grade}）`);
+  if (u.area !== cfg.area) err(W, `area が不正: ${u.area}（${cfg.area}）`);
   if (!u.name) err(W, "name がない");
   if (!u.desc) warn(W, "desc がない");
   if (!Array.isArray(u.prereqs)) err(W, "prereqs が配列でない");
@@ -142,7 +148,7 @@ function checkUnit(u, file, IK) {
   for (const L of [1, 2, 3]) if (!Array.isArray(lv[L]) || lv[L].length === 0) err(W, `レベル${L} のテンプレートがない`);
   const lessonNo = u.ikkan && u.ikkan.lesson ? u.ikkan.lesson : null;
   if (!lessonNo || !IK.lessons[lessonNo]) err(W, `ikkan.lesson（${lessonNo}）が、ikkan の授業にない`);
-  const num = lessonNo ? lessonNo.replace(/^kukan-/, "") : "";
+  const num = lessonNo ? lessonNo.replace(/^[a-z]+-/, "") : "";
   for (const L of Object.keys(lv)) {
     if (!["1", "2", "3", "4"].includes(String(L))) err(W, `levels のキーは 1〜4: ${L}`);
     const ids = new Set();
@@ -175,18 +181,18 @@ function checkUnit(u, file, IK) {
 }
 
 // ② ③ ikkan の問題との対応
-function checkCoverage(units, skippedByFile, IK) {
-  const cat = IK.rec.catalog("kukan");
+function checkCoverage(units, skippedByFile, IK, unitKeys) {
+  const cat = unitKeys.flatMap((k) => IK.rec.catalog(k));
   const have = new Set(cat.map((c) => c.id));
   const done = new Map();   // ikkan の問題ID → 移したテンプレート
   const ws = {};            // 授業ごとの K ブロックの数
   for (const u of units) {
-    const no = u.ikkan && u.ikkan.lesson ? u.ikkan.lesson.replace(/^kukan-/, "") : "";
+    const ukey = u.ikkan && u.ikkan.lesson ? u.ikkan.lesson.replace(/-\d+$/, "") : "";
     for (const L of Object.keys(u.levels || {})) {
       for (const tpl of u.levels[L]) {
         const m = ID_RE.exec(tpl.id || "");
         if (!m || m[2] === "x") continue;
-        const lesson = `kukan-${m[1]}`;
+        const lesson = `${ukey}-${m[1]}`;
         if (m[2] === "w") {
           if (!ws[lesson]) { const fl = []; const walk = (bl) => bl.forEach((b) => { if (b.type === "cols") b.cols.forEach((c) => walk(c.blocks)); else fl.push(b); }); walk(IK.lessons[lesson].blocks); ws[lesson] = fl.filter((b) => b.type === "kadai").length; }
           if (+m[3] < 1 || +m[3] > ws[lesson]) err(`${u.id} ${tpl.id}`, `ワークシートに ${m[3]} 番目の学習課題・例題がない（全 ${ws[lesson]}）`);
@@ -214,9 +220,12 @@ function checkCoverage(units, skippedByFile, IK) {
   return { total: cat.filter((c) => lessonsDone.has(c.lesson)).length, moved: [...done.keys()].length, skipped: skipped.size };
 }
 
-const args = process.argv.slice(2).map((a) => path.resolve(a));
+const argv = process.argv.slice(2);
+const ui = argv.indexOf("--unit");
+const onlyUnit = ui >= 0 ? argv[ui + 1] : null;
+const args = argv.filter((a, i) => !a.startsWith("--") && !(ui >= 0 && i === ui + 1)).map((a) => path.resolve(a));
 const allFiles = fs.existsSync(CONTENT) ? fs.readdirSync(CONTENT).filter((f) => f.endsWith(".js")).sort().map((f) => path.join(CONTENT, f)) : [];
-const targetFiles = args.length ? args : allFiles;
+const targetFiles = args.length ? args : onlyUnit ? allFiles.filter((f) => unitOfFile(f) === onlyUnit) : allFiles;
 const IK = loadIkkan();
 
 const all = [], skippedByFile = {};
@@ -238,7 +247,8 @@ for (const u of all) {
 }
 for (const u of targets) for (const p of u.prereqs || []) if (!ids.has(p) && !external(p)) err(u.id, `前提単元 ${p} が見つからない`);
 
-const cov = checkCoverage(targets, Object.fromEntries(Object.entries(skippedByFile).filter(([f]) => targetFiles.includes(f))), IK);
+const unitKeys = [...new Set(targets.map((u) => unitOfFile(u.__file)))];
+const cov = checkCoverage(targets, Object.fromEntries(Object.entries(skippedByFile).filter(([f]) => targetFiles.includes(f))), IK, unitKeys);
 const nTpl = targets.reduce((s, u) => s + Object.values(u.levels || {}).reduce((a, l) => a + (l?.length || 0), 0), 0);
 console.log(`検査: ${targets.length} 単元 / ${nTpl} テンプレート × ${RUNS} 回生成${katex ? "" : "（katex がないので、数式の検査は省略）"}`);
 console.log(`ikkan の問題 ${cov.total} 問：移した ${cov.moved} 問／移さなかった ${cov.skipped} 問（理由つき）`);
