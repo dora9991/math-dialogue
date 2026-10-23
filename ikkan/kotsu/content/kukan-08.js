@@ -87,13 +87,13 @@ const FT_BS = [FT.base("円"), FT.base("三角形"), FT.base("四角形"), FT.si
 const TT = theme(NAMES_T, FT_NET, FT_BS, FT_NET);
 
 /** 「ヒント1とヒント2の両方にあてはまる立体は？」（4択）。ヒント1だけでは決まらず、ヒント2を足すと決まる */
-const quizFinal = (th) => (r) => {
+const quizFinal = (th, note = "") => (r) => {
   const p = pick(r, th.pairs);
   const only1 = p.A.filter((x) => x !== p.ans), only2 = p.B.filter((x) => x !== p.ans);
   const rest = th.names.filter((x) => !p.A.includes(x) && !p.B.includes(x));
   const choices = choices4(r, p.ans, [...shuffle(r, only1), ...shuffle(r, only2), ...shuffle(r, rest)]);
   return {
-    q: `ヒント1 … ${p.a.text}　ヒント2 … ${p.b.text}　ヒント1とヒント2の、両方にあてはまる立体は？`,
+    q: `ヒント1 … ${p.a.text}　ヒント2 … ${p.b.text}　ヒント1とヒント2の、両方にあてはまる立体は？${note}`,
     ans: p.ans,
     choices,
     hint: "ヒント1であてはまる立体を、先に全部あげよう。そのあと、ヒント2であてはまる立体にしぼる。",
@@ -105,10 +105,10 @@ const quizFinal = (th) => (r) => {
   };
 };
 /** 「ヒント1だけであてはまる立体は、何こか」（数）。「全部あげる」の数え方 */
-const quizCount = (th) => (r) => {
+const quizCount = (th, note = "") => (r) => {
   const p = pick(r, th.singles);
   return {
-    q: `${names(th.names)}の ${th.names.length}つの立体がある。ヒント1 … ${p.a.text}　ヒント1だけであてはまる立体は、何こあるか。`,
+    q: `${names(th.names)}の ${th.names.length}つの立体がある。ヒント1 … ${p.a.text}　ヒント1だけであてはまる立体は、何こあるか。${note}`,
     ans: p.A.length,
     unit: "つ",
     hint: "ヒント1を、立体1つずつにあてはめて、あてはまるものを数えよう。",
@@ -196,8 +196,8 @@ export const UNITS = [
       // ───────── 1 基礎 ─────────
       1: [
         // 08d01 ヒント1 … 平面図は円　ヒント2 … 立面図は二等辺三角形（投影図のヒント）
-        t("08d01a", quizCount(TP)),
-        t("08d01b", quizFinal(TP)),
+        t("08d01a", quizCount(TP, "（底面を下にして置く）")),
+        t("08d01b", quizFinal(TP, "（底面を下にして置く）")),
         // 08d02 ヒント1 … 面は 5つ　ヒント2 … 側面は、すべて三角形（面・辺・頂点の数のヒント）
         t("08d02a", quizCount(TN)),
         t("08d02b", quizFinal(TN)),

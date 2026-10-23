@@ -7,7 +7,7 @@
 // ============================================================
 import { t, pick, choices4, shuffle, sample } from "../kit.js";
 import { unit } from "../kukan-kit.js";
-import { cuboid, rtPrism, prism, pyramid, lineRel, intro, edgeLabel, listEdges, same, prismName, pyramidName, NGON } from "../solids.js";
+import { cuboid, rtPrism, prism, pyramid, lineRel, intro, edgeLabel, listEdges, same, prismName, pyramidName } from "../solids.js";
 
 const CUBE = cuboid(3, 3, 3);   // 位置関係は、長さによらないので、辺の長さは問題文に出さない
 const BOX = cuboid(4, 3, 2);
@@ -40,7 +40,7 @@ function kindOf(S, a, b) {
   const x = lineRel(S, a, b);
   return x.rel === "parallel" ? "parallel" : x.rel === "intersect" ? (x.perp ? "perpX" : "intersect") : x.perp ? "perpSkew" : "skew";
 }
-const WORD = { parallel: "平行", perpX: "垂直に交わる", intersect: "交わる（垂直ではない）", perpSkew: "ねじれの位置", skew: "ねじれの位置" };
+const WORD = { parallel: "平行", perpX: "垂直に交わる", intersect: "交わるが垂直ではない", perpSkew: "ねじれの位置", skew: "ねじれの位置" };
 const isSkew = (k) => k === "perpSkew" || k === "skew";
 
 /** グループごとにシャッフルして、1つずつ順にとって並べる（ありがちな誤答を、いろいろな種類から出す） */
@@ -116,7 +116,7 @@ const STM = [
   { short: "ねじれの位置・ねじれの位置 ⇒ ねじれの位置", text: "ℓ と m がねじれの位置にあり、m と n がねじれの位置にあるならば、ℓ と n もねじれの位置にある。", prem: (a, b) => a.rel === "skew" && b.rel === "skew", bad: (c) => c.rel !== "skew" },
   { short: "平行・交わる ⇒ 交わる", text: "ℓ と m が平行で、m と n が交わるならば、ℓ と n は交わる。", prem: (a, b) => a.rel === "parallel" && b.rel === "intersect", bad: (c) => c.rel !== "intersect" },
 ];
-const kindWord = (a, b) => WORD[kindOf(CUBE, a, b)].replace("（垂直ではない）", "");
+const kindWord = (a, b) => WORD[kindOf(CUBE, a, b)].replace("交わるが垂直ではない", "交わる");
 STM.forEach((s) => {
   if (s.ok) return;
   s.examples = [];
@@ -234,7 +234,7 @@ export const UNITS = [
             ans: sk.length,
             unit: "本",
             hint: "対角線 " + d + " の両はしを通る辺は、対角線と交わる。それらと、平行な辺を消して、のこりを数えよう。",
-            steps: [`対角線 ${d} と交わる辺は、${listEdges(cross)}（${cross.length}本）。`, `平行な辺は${par.length ? listEdges(par) : "ない"}。`, `ねじれの位置にある辺は、${listEdges(sk)}の ${sk.length}本。`],
+            steps: [`対角線 ${d} と交わる辺は、${listEdges(cross)}（${cross.length}本）。`, `平行な辺は${par.length ? listEdges(par) : "ない"}。`, `ねじれの位置にある辺は、${listEdges(sk)}（${sk.length}本）。`],
           };
         }),
         // 03d08b 同じ問題を、4択で
@@ -337,7 +337,7 @@ export const UNITS = [
             ans: both.length,
             unit: "本",
             hint: "辺ごとに、ねじれの位置にある辺を全部書き出して、どちらにも入っている辺をさがそう。",
-            steps: [`辺 ${eLab(e1)} とねじれの位置 … ${listEdges(s1)}`, `辺 ${eLab(e2)} とねじれの位置 … ${listEdges(s2)}`, `どちらにもあてはまる辺 … ${listEdges(both)}の ${both.length}本。`],
+            steps: [`辺 ${eLab(e1)} とねじれの位置 … ${listEdges(s1)}`, `辺 ${eLab(e2)} とねじれの位置 … ${listEdges(s2)}`, `どちらにもあてはまる辺 … ${listEdges(both)}（${both.length}本）。`],
           };
         }),
         // 03q05b 同じ問題を、4択で（あてはまる辺が1本になる組だけ）
@@ -350,7 +350,8 @@ export const UNITS = [
           const ws = mix(r, [only1, none]).slice(0, 3);
           if (ws.length < 3) return { skip: true };
           const ans = eName(both[0]);
-          const rel = (x) => `${eLab(e1)}と${isSkew(kindOf(S, e1, x)) ? "ねじれ" : WORD[kindOf(S, e1, x)].replace("（垂直ではない）", "")}、${eLab(e2)}と${isSkew(kindOf(S, e2, x)) ? "ねじれ" : WORD[kindOf(S, e2, x)].replace("（垂直ではない）", "")}`;
+          const w = (e, x) => WORD[kindOf(S, e, x)];
+          const rel = (x) => `辺 ${eLab(e1)} とは${w(e1, x)}、辺 ${eLab(e2)} とは${w(e2, x)}`;
           return {
             q: `${introOf(S)}で、辺 ${eLab(e1)} ともねじれの位置にあり、辺 ${eLab(e2)} ともねじれの位置にある辺は、次のうちどれか。`,
             ans,
