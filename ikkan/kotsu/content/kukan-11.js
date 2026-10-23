@@ -5,22 +5,17 @@
 //   答えは、すべて式で計算している（手で書きこんでいない）。π が出る答えは、「□π cm³。□は？」の □（整数か約分した分数）。
 //   直方体・立方体の頂点を使う問題は、solids.js の立体の座標から、体積を計算している。
 // ============================================================
-import { t, pick, choices4, fracAns, fracTex, reduce, round } from "../kit.js";
+import { t, pick, choices4, fracAns, fracTex, round } from "../kit.js";
 import { unit } from "../kukan-kit.js";
 import { cuboid, intro, prismName, pyramidName } from "../solids.js";
 
-/** π の係数 n/d の TeX：36\pi、\frac{32}{3}\pi */
-const piTex = (n, d = 1) => {
-  const [a, b] = reduce(n, d);
-  return b === 1 ? (a === 1 ? "\\pi" : `${a}\\pi`) : `\\frac{${a}}{${b}}\\pi`;
-};
 /** 条件に合う値が出るまで gen() をくり返す（見つからなければ null → skip） */
 const find = (gen, ok, tries = 400) => {
   for (let i = 0; i < tries; i++) { const v = gen(); if (ok(v)) return v; }
   return null;
 };
-/** 直角をはさむ2辺と斜辺（三平方の定理の、整数の組。必ず、どちらかの辺が 3 の倍数） */
-const TRI = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [9, 12, 15], [8, 15, 17]];
+/** 円錐の [底面の半径, 高さ, 母線]（三平方の定理の、整数の組。半径か高さが 3 の倍数。答えが大きくなりすぎない組） */
+const CONES = [[3, 4, 5], [4, 3, 5], [6, 8, 10], [8, 6, 10], [5, 12, 13]];
 
 // ── 立体の座標から、三角錐の体積を計算する（4つの頂点の名前を渡す） ──
 const tetraVol = (S, [p, q, s, u]) => {
@@ -84,7 +79,7 @@ const cornerCut = (r, askCut) => {
   if (!v3) return { skip: true };
   const [a, b, c] = v3, S = cuboid(a, b, c), v = pick(r, [..."ABCDEFGH"]);
   const nb = neighbors(S, v), cutV = tetraVol(S, [v, ...nb]), rest = round(a * b * c - cutV);
-  const [l0, l1, l2] = nb.map((x) => edgeLen(S, v, x)), name = `${v}-${nb.join("")}`;
+  const [l0, l1, l2] = nb.map((x) => edgeLen(S, v, x)), name = `${v}−${nb.join("")}`;
   const steps = [
     `頂点 ${v} に集まる 3本の辺は、たがいに垂直。△${v}${nb[0]}${nb[1]} を底面（直角三角形）、${v}${nb[2]} を高さと見る。`,
     `三角錐 ${name} の体積 $\\frac{1}{3}\\times(\\frac{1}{2}\\times ${l0}\\times ${l1})\\times ${l2} = ${cutV}$（cm³）`,
@@ -95,15 +90,15 @@ const cornerCut = (r, askCut) => {
     ans: askCut ? cutV : rest,
     unit: "cm³",
     hint: askCut
-      ? `頂点 ${v} に集まる 3本の辺は、たがいに垂直。2本で底面（直角三角形）をつくり、のこり 1本を高さと見よう。`
-      : "（もとの直方体の体積）−（切り取った三角錐の体積）。三角錐は、角に集まる辺で、底面と高さが決まる。",
+      ? `三角錐の体積は $\\frac{1}{3}\\times$（底面積）$\\times$（高さ）。直方体の頂点 ${v} に集まる 3本の辺は、たがいにどんな関係かな。`
+      : "残りの立体の体積は、（もとの直方体の体積）−（切り取った三角錐の体積）。三角錐の体積の公式は、何だったかな。",
     steps,
   };
 };
 
 // ── 直角三角形を、辺を軸に回転（dr.11） ──
 const rotate = (r) => {
-  const v = find(() => [r(3, 12), r(3, 12)], ([p, q]) => p !== q && (p * q) % 3 === 0);
+  const v = find(() => [r(3, 10), r(3, 10)], ([p, q]) => p !== q && (p * q) % 3 === 0);
   if (!v) return null;
   const [p, q] = v, vAB = (p * q * q) / 3, vBC = (p * p * q) / 3;   // AB を軸＝半径 q・高さ p ／ BC を軸＝半径 p・高さ q
   return { p, q, vAB, vBC };
@@ -175,7 +170,7 @@ export const UNITS = [
           return {
             q: `底面の直径が ${2 * a}cm、高さが ${h}cm の円錐の体積は □π cm³。□は？`,
             ans: c,
-            hint: "公式に入れるのは、直径ではなく、半径。",
+            hint: "円錐の体積の公式 $\\frac{1}{3}\\pi r^2 h$ の $r$ は、直径かな、半径かな。",
             steps: [`半径は ${2 * a}÷2 = ${a}（cm）`, `$V = \\frac{1}{3}\\times\\pi\\times ${a}^2\\times ${h} = ${c}\\pi$（cm³）`],
           };
         }),
@@ -194,7 +189,7 @@ export const UNITS = [
         }),
         // 11d06 母線の長さも書いてある円錐（使う長さを見分ける）
         t("11d06", (r) => {
-          const [x, y, l] = pick(r, TRI), [a, h] = r(0, 1) ? [x, y] : [y, x], c = (a * a * h) / 3;
+          const [a, h, l] = pick(r, CONES), c = (a * a * h) / 3;
           return {
             q: `底面の半径が ${a}cm、高さが ${h}cm、母線の長さが ${l}cm の円錐の体積は □π cm³。□は？`,
             ans: c,
@@ -222,7 +217,7 @@ export const UNITS = [
             q: `底面の半径 ${R}cm、深さ ${H}cm の円錐の容器いっぱいの水を、底面の半径 ${rad}cm の円柱の容器にうつす。円柱の容器の、水の深さは何 cm になるか。`,
             ans: h,
             unit: "cm",
-            hint: "水の体積は、うつしても変わらない。先に、円錐の容器の水の体積を求めよう。",
+            hint: "水を円錐の容器から円柱の容器にうつしても、変わらないものは何かな。",
             steps: [
               `水の体積 $\\frac{1}{3}\\times\\pi\\times ${R}^2\\times ${H} = ${Vc}\\pi$（cm³）`,
               `円柱の水の深さを $h$ cm とすると　$\\pi\\times ${rad}^2\\times h = ${Vc}\\pi$`,
@@ -242,7 +237,7 @@ export const UNITS = [
             q: `${intro(S).replace("直方体", `1辺 ${a}cm の立方体`)}。4つの頂点 ${tet.join("、")} を結んでできる三角錐 ${tet.join("")} の体積は？`,
             ans,
             unit: "cm³",
-            hint: "立方体から、角の三角錐をいくつか取りのぞいた、残りの立体と考えよう。",
+            hint: `立方体の中に、三角錐 ${tet.join("")} をおいたとき、そのまわりに、どんな立体がのこるか考えよう。`,
             steps: [
               `立方体から、${rest.join("・")} の角の三角錐 4つを取りのぞく。`,
               `1つ分 $\\frac{1}{3}\\times(\\frac{1}{2}\\times ${a}\\times ${a})\\times ${a} = ${one}$`,
@@ -261,11 +256,11 @@ export const UNITS = [
             q: `AB＝${p}cm、BC＝${q}cm、∠B＝90° の直角三角形 ABC を、辺 AB、辺 BC を軸として、それぞれ1回転させる。できる 2つの立体の体積をくらべて、正しいものはどれか。`,
             ans,
             choices: choices4(r, ans, [fmt(small, vol(big)), fmt(big, vol(small)), fmt(small, vol(small))]),
-            hint: "AB を軸にするとき、半径になるのは BC。BC を軸にするとき、半径になるのは AB。それぞれ体積を求めて比べよう。",
+            hint: "三角形を、軸にした辺のまわりに回転させる様子を思いうかべよう。円錐の体積の公式に出てくる長さは、何と何だったかな。",
             steps: [
               `AB を軸 … 半径 ${q}cm、高さ ${p}cm の円錐　$\\frac{1}{3}\\times\\pi\\times ${q}^2\\times ${p} = ${vAB}\\pi$`,
               `BC を軸 … 半径 ${p}cm、高さ ${q}cm の円錐　$\\frac{1}{3}\\times\\pi\\times ${p}^2\\times ${q} = ${vBC}\\pi$`,
-              `${big} を軸にしたほうが大きい。`,
+              `${big} を軸にしたほうが大きく、その体積は ${vol(big)}π cm³。`,
             ],
           };
         }),
@@ -277,7 +272,7 @@ export const UNITS = [
           return {
             q: `AB＝${p}cm、BC＝${q}cm、∠B＝90° の直角三角形 ABC を、辺 AB、辺 BC を軸として、それぞれ1回転させる。できる 2つの立体の体積のちがい（大きいほう−小さいほう）は □π cm³。□は？`,
             ans,
-            hint: "それぞれの軸で、半径と高さがどうなるかを考えて、円錐の体積を 2つ求めよう。",
+            hint: "三角形を、軸にした辺のまわりに回転させる様子を思いうかべよう。円錐の体積の公式に出てくる長さは、何と何だったかな。",
             steps: [
               `AB を軸 … 半径 ${q}cm、高さ ${p}cm　$\\frac{1}{3}\\times\\pi\\times ${q}^2\\times ${p} = ${vAB}\\pi$`,
               `BC を軸 … 半径 ${p}cm、高さ ${q}cm　$\\frac{1}{3}\\times\\pi\\times ${p}^2\\times ${q} = ${vBC}\\pi$`,
@@ -287,7 +282,7 @@ export const UNITS = [
         }),
         // 11q05 円錐の容器に、頂点を下にして水を入れたとき、水の体積は容器の何分のいくつか
         t("11q05", (r) => {
-          const [n, d] = pick(r, [[1, 2], [1, 3], [2, 3], [1, 4], [3, 4]]), s = r(2, 4), m = r(2, 6);
+          const n = 1, d = 2, s = r(2, 5), m = r(3, 8);   // 深さが半分のところまで水を入れる（元の問題と同じ型。答えは 1/8）
           const R = d * s, H = d * m, h = n * m, Rw = n * s;   // 水面の円の半径 Rw : R ＝ 水の深さ h : H ＝ n : d
           const ans = fracAns(Rw * Rw * h, R * R * H);
           return {

@@ -20,7 +20,7 @@ const by3 = (r, lo, hi) => 3 * r(lo, hi);
 const sphereAsk = (rad, which, diam) => {
   const given = diam ? `直径 ${2 * rad}cm` : `半径 ${rad}cm`;
   const pre = diam ? [`半径は ${2 * rad}÷2 = ${rad}（cm）`] : [];
-  const hd = diam ? "公式に入れるのは、直径ではなく、半径。" : "";
+  const hd = diam ? "球の公式の $r$ は、直径かな、半径かな。" : "";
   if (which === "S") {
     return {
       q: `${given} の球の表面積は □π cm²。□は？`,
@@ -67,11 +67,11 @@ export const UNITS = [
         // 12d01a 半径がわかる球の表面積
         t("12d01a", (r) => sphereAsk(r(2, 9), "S", false)),
         // 12d01b 半径が 3 の倍数の球の体積（整数）
-        t("12d01b", (r) => sphereAsk(by3(r, 1, 3), "V", false)),
+        t("12d01b", (r) => sphereAsk(by3(r, 1, 5), "V", false)),
         // 12d01c 半径が 3 の倍数でない球の体積（分数：256/3 など）
         t("12d01c", (r) => sphereAsk(pick(r, [2, 4, 5, 7, 8]), "V", false)),
         // 12d02 半径の大きい球の表面積・体積
-        t("12d02", (r) => sphereAsk(pick(r, [10, 12, 15, 20]), pick(r, ["S", "V"]), false)),
+        t("12d02", (r) => sphereAsk(r(6, 12), pick(r, ["S", "V"]), false)),
         // 12d03 直径がわかる球の表面積・体積（先に半径を求める）
         t("12d03", (r) => {
           const which = pick(r, ["S", "V"]);
@@ -92,7 +92,7 @@ export const UNITS = [
           return {
             q: `半径 ${rad}cm の半球の表面積（平らな面もふくむ）は □π cm²。□は？`,
             ans: 3 * rad * rad,
-            hint: "半球の表面は、曲面（球の表面積の半分）と、平らな面（円）の 2つ。",
+            hint: "半球の表面を、ひとつずつ数えよう。曲面のほかに、どんな面があるかな。",
             steps: [
               `曲面 $4\\pi\\times ${rad}^2\\times\\frac{1}{2} = ${2 * rad * rad}\\pi$`,
               `平らな面 $\\pi\\times ${rad}^2 = ${rad * rad}\\pi$`,
@@ -116,7 +116,7 @@ export const UNITS = [
           return {
             q: `半径 ${rad}cm の球が、ちょうど入る円柱がある（球は、円柱の上下の底面と側面にふれる）。円柱と球の間のすきまの体積は □π cm³。□は？`,
             ans: fracAns(2 * rad ** 3, 3),
-            hint: "（円柱の体積）−（球の体積）。円柱は、底面の半径が球の半径、高さが球の直径。",
+            hint: "（円柱の体積）−（球の体積）。ちょうど入る円柱の、底面の半径と高さは、球の何にあたるかな。",
             steps: [
               `円柱 $\\pi\\times ${rad}^2\\times ${2 * rad} = ${2 * rad ** 3}\\pi$`,
               `球 $\\frac{4}{3}\\pi\\times ${rad}^3 = ${piTex(4 * rad ** 3, 3)}$`,
@@ -133,14 +133,14 @@ export const UNITS = [
             hint: "円柱の体積と、球の体積を、それぞれ求めて比べよう。",
             steps: [
               `円柱 $\\pi\\times ${rad}^2\\times ${2 * rad} = ${2 * rad ** 3}\\pi$、球 $\\frac{4}{3}\\pi\\times ${rad}^3 = ${piTex(4 * rad ** 3, 3)}$`,
-              `$${piTex(4 * rad ** 3, 3)}\\div ${2 * rad ** 3}\\pi = \\frac{2}{3}$`,
+              `$${piTex(4 * rad ** 3, 3)}\\div(${2 * rad ** 3}\\pi) = \\frac{2}{3}$`,
             ],
           };
         }),
         // 12q02 半径 2cm の球の体積（小テスト）
         t("12q02", (r) => sphereAsk(r(2, 6), "V", false)),
         // 12q04 半径 3cm の半球の体積（小テスト）
-        t("12q04", (r) => hemiVol(by3(r, 1, 3))),
+        t("12q04", (r) => hemiVol(by3(r, 1, 4))),
       ],
       // ───────── 3 応用 ─────────
       3: [
@@ -209,20 +209,22 @@ export const UNITS = [
       ],
       // ───────── 4 入試レベル ─────────
       4: [
-        // 12d10a 円柱ア・円錐イ・球ウの体積
+        // 12d10a 円柱ア・円錐イ・球ウのうち、2つを比べて何倍か（体積を求めて、くらべる）
         t("12d10a", (r) => {
-          const rad = r(2, 6), w = pick(r, ["ア", "イ", "ウ"]);
-          const V = { ア: [2 * rad ** 3, 1], イ: [2 * rad ** 3, 3], ウ: [4 * rad ** 3, 3] };
+          const rad = r(2, 6), [x, y] = shuffle(r, ["ア", "イ", "ウ"]).slice(0, 2);
+          const V = { ア: [2 * rad ** 3, 1], イ: [2 * rad ** 3, 3], ウ: [4 * rad ** 3, 3] };   // 体積 ＝ (n/d) π
           const how = {
-            ア: `$\\pi\\times ${rad}^2\\times ${2 * rad}`,
-            イ: `$\\frac{1}{3}\\times\\pi\\times ${rad}^2\\times ${2 * rad}`,
-            ウ: `$\\frac{4}{3}\\pi\\times ${rad}^3`,
+            ア: `ア $\\pi\\times ${rad}^2\\times ${2 * rad}`,
+            イ: `イ $\\frac{1}{3}\\times\\pi\\times ${rad}^2\\times ${2 * rad}`,
+            ウ: `ウ $\\frac{4}{3}\\pi\\times ${rad}^3`,
           };
+          const ans = fracAns(V[x][0] * V[y][1], V[x][1] * V[y][0]);
           return {
-            q: `半径 ${rad}cm の円柱ア（高さ ${2 * rad}cm）、アと同じ底面・同じ高さの円錐イ、半径 ${rad}cm の球ウがある。${w}の体積は □π cm³。□は？`,
-            ans: fracAns(...V[w]),
-            hint: w === "ア" ? "円柱の体積は、底面積×高さ。" : w === "イ" ? "円錐の体積は、同じ底面・高さの円柱の $\\frac{1}{3}$。" : "球の体積は $\\frac{4}{3}\\pi r^3$。",
-            steps: [`${w} … ${how[w]} = ${piTex(...V[w])}$（cm³）`],
+            q: `半径 ${rad}cm の円柱ア（高さ ${2 * rad}cm）、アと同じ底面・同じ高さの円錐イ、半径 ${rad}cm の球ウがある。${x}の体積は、${y}の体積の何倍か。`,
+            ans,
+            unit: "倍",
+            hint: "円柱・円錐・球の体積の公式を思い出して、2つの体積を、それぞれ □π の形で求めよう。",
+            steps: [`${how[x]} = ${piTex(...V[x])}$、${how[y]} = ${piTex(...V[y])}$`, `$${piTex(...V[x])}\\div(${piTex(...V[y])}) = ${fracTex(V[x][0] * V[y][1], V[x][1] * V[y][0])}$（倍）`],
           };
         }),
         // 12d10b ア・イ・ウの体積の比（4択）
@@ -239,8 +241,7 @@ export const UNITS = [
             hint: "ア・イ・ウの体積を、それぞれ □π の形で求めて、比べよう。",
             steps: [
               `ア $\\pi\\times ${rad}^2\\times ${2 * rad} = ${2 * rad ** 3}\\pi$、イ $${piTex(2 * rad ** 3, 3)}$、ウ $${piTex(4 * rad ** 3, 3)}$`,
-              "ア：イ：ウ ＝ 3：1：2（もっとも簡単な整数の比）",
-              `${order.join("：")} ＝ ${ans}`,
+              `ア：イ：ウ ＝ 3：1：2（もっとも簡単な整数の比）だから、${order.join("：")} ＝ ${ans}`,
             ],
           };
         }),
@@ -251,7 +252,7 @@ export const UNITS = [
             q: `底面の半径が ${R}cm の円柱の形の水そうに、水が入っている。この中に、半径 ${rad}cm の鉄の球を完全にしずめると、水面は何 cm 上がるか。ただし、水はあふれないものとする。`,
             ans,
             unit: "cm",
-            hint: "水面が上がった分の体積は、しずめた球の体積と等しい。",
+            hint: "球をしずめると、水面が上がる。上がった分の水の体積は、何と等しいかな。",
             steps: [
               `球の体積 $\\frac{4}{3}\\pi\\times ${rad}^3 = ${piTex(V, 3)}$（cm³）`,
               `上がる高さを $x$ cm として　$\\pi\\times ${R}^2\\times x = ${piTex(V, 3)}$`,
