@@ -161,7 +161,7 @@ export const UNITS = [
             { o: "あるコインを投げて、表が出た", lo: 35, hi: 65 }, { o: "あるゲームをして、勝った", lo: 20, hi: 60 },
           ]);
           const ns = pick(r, [[100, 500, 2000, 6000], [50, 200, 1000, 5000], [100, 400, 1500, 4000], [200, 800, 3000, 6000]]), pr = r(C.lo, C.hi) / 100;
-          const dev = [6, 10, 20, 30], cs = ns.map((n, i) => Math.round(n * pr) + r(-dev[i], dev[i]));
+          const dev = [6, 10, 20, 30], cs = ns.map((n, i) => Math.max(1, Math.min(n - 1, Math.round(n * pr) + r(-dev[i], dev[i]))));
           const j = r(0, 3), ans = relFreq(cs[j], ns[j], 2);
           if (ans == null) return { skip: true };
           return {
