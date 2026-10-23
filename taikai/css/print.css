@@ -1,0 +1,21 @@
+/* 印刷の画面（#/print/…）。1枚＝ .sheet（A4 縦）。.sheet.land は横 */
+.is-print { background: #d9dce3; }
+.print-bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 16px; background: var(--panel); border-bottom: 1px solid var(--line); box-shadow: var(--shadow); }
+.print-root { padding: 24px 12px 60px; display: grid; justify-items: center; gap: 20px; color: #111; }
+.sheet { position: relative; width: 210mm; min-height: 297mm; padding: 14mm 14mm; background: #fff; color: #111; box-shadow: 0 4px 24px rgba(0, 0, 0, .18); overflow: hidden; font-size: 10.5pt; line-height: 1.7; }
+.sheet.land { width: 297mm; min-height: 210mm; }
+.sheet.a5 { width: 148mm; min-height: 210mm; padding: 12mm 11mm; font-size: 9.5pt; }
+.sheet h1, .sheet h2, .sheet h3 { color: #0f1d44; }
+.sheet .muted { color: #555; }
+@media (max-width: 860px) {
+  .print-root { justify-items: start; overflow-x: auto; }
+}
+@media print {
+  @page { size: A4; margin: 0; }
+  html, body { background: #fff !important; }
+  .print-bar, .toasts, .sample-ribbon { display: none !important; }
+  .print-root { padding: 0; display: block; }
+  .sheet { box-shadow: none; margin: 0; page-break-after: always; break-after: page; }
+  .sheet:last-child { page-break-after: auto; break-after: auto; }
+  .is-print .only-screen { display: none !important; }
+}

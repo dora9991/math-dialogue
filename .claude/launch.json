@@ -132,6 +132,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["basket-tap/tests/server.cjs", "5193"],
       "port": 5193
+    },
+    {
+      "name": "taikai",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8794", "--directory", "taikai"],
+      "port": 8794
     }
   ]
 }
