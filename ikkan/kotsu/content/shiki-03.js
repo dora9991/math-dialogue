@@ -255,46 +255,47 @@ const fracMistakeBuild = (r, what) => {
   };
 };
 
-// ── ある式 A, B の計算（dr.5）──────────────────────────
+// ── 式 A, B を代入する計算（dr.5）──────────────────────────
 const abBuild = (r, mode) => {
-  const L2 = pick(r, LET2), [u, v] = L2, sh = SH2(L2);
-  let A, B, form, X, Y, Xn, Yn, c, d, e, res, expr, subst, mid;
+  const L2 = pick(r, LET2), sh = SH2(L2);
+  let A, B, X, Y, Xn, Yn, form, c, d, e, res;
   for (let i = 0; i < 100; i++) {
     A = P(lin2(r, sh, -4, 4)); B = P(lin2(r, sh, -4, 4));
     [Xn, Yn] = r(0, 1) ? ["A", "B"] : ["B", "A"];
     X = Xn === "A" ? A : B; Y = Xn === "A" ? B : A;
     form = r(0, 2) === 0 ? 2 : 1;
-    c = r(2, 4); d = r(1, 2); e = pick(r, [-3, -2, -1, 2, 3]);
-    const f1d = pick(r, [-4, -3, -2, 2, 3]);
-    if (form === 1) { res = padd(pscale(X, c), pscale(Y, f1d)); expr = `${c}${Xn}${f1d < 0 ? "-" : "+"}${Math.abs(f1d)}${Yn}`; subst = `${c}(${ptex(X)})${f1d < 0 ? "-" : "+"}${Math.abs(f1d)}(${ptex(Y)})`; mid = raw([...tms(pscale(X, c)), ...tms(pscale(Y, f1d))]); c = c; d = f1d; }
-    else {
-      const inner = padd(pscale(X, d), pscale(Y, e));
-      res = psub(pscale(X, c), inner);
-      expr = `${c}${Xn}-(${d === 1 ? "" : d}${Xn}${e < 0 ? "-" : "+"}${Math.abs(e) === 1 ? "" : Math.abs(e)}${Yn})`;
-      subst = `${c}(${ptex(X)})-(${d === 1 ? "" : d}(${ptex(X)})${e < 0 ? "-" : "+"}${Math.abs(e) === 1 ? "" : Math.abs(e)}(${ptex(Y)}))`;
-      mid = `${c}(${ptex(X)})-(${ptex(inner)})`;
-    }
-    if (Object.keys(res).length === 2 && Object.keys(A).length === 2 && Object.keys(B).length === 2) break;
+    c = r(2, 4);
+    if (form === 1) { d = pick(r, [-4, -3, -2, 2, 3]); res = padd(pscale(X, c), pscale(Y, d)); }                            // cX + dY
+    else { d = r(1, 2); e = pick(r, [-3, -2, -1, 2, 3]); res = psub(pscale(X, c), padd(pscale(X, d), pscale(Y, e))); }    // cX − (dX + eY)
+    if (Object.keys(res).length === 2) break;
   }
-  const steps = form === 1
-    ? [`$A$、$B$ に式を代入して、${$(`${expr}=${subst}`)}。`, $(`${subst}=${mid}=${ptex(res)}`)]
-    : [`$A$、$B$ に式を代入する。内側のかっこの中から先に計算する。`, $(`${expr}=${subst}`), $(`${subst}=${mid}=${ptex(res)}`)].slice(0, 3);
-  const stepsFixed = form === 1
-    ? steps
-    : [`$A$、$B$ を代入して、${$(`${expr}=${subst}`)}。`, `内側のかっこを先に計算して、${$(`${subst}=${mid}`)}。`, $(`${mid}=${raw([...tms(pscale(X, c)), ...tms(pneg(padd(pscale(X, d), pscale(Y, e))))])}=${ptex(res)}`)];
+  const Xt = ptex(X), Yt = ptex(Y), sg = (k) => (k < 0 ? "-" : "+"), ab = (k) => Math.abs(k);
+  let expr, subst, steps, wrongs;
+  if (form === 1) {
+    expr = `${c}${Xn}${sg(d)}${ab(d)}${Yn}`;
+    subst = `${c}(${Xt})${sg(d)}${ab(d)}(${Yt})`;
+    const mid = raw([...tms(pscale(X, c)), ...tms(pscale(Y, d))]);
+    steps = [`$A$、$B$ を代入して、${$(`${expr}=${subst}`)}。`, $(`${subst}=${mid}=${ptex(res)}`)];
+    const yt = tms(pscale(Y, d)), lastKey = Object.keys(res).sort().pop();
+    wrongs = [padd(pscale(X, c), pscale(Y, -d)), P([...tms(pscale(X, c)), yt[0], ...tms(Y).slice(1)]), flipTerm(res, lastKey), pneg(res)];
+  } else {
+    const eTx = ab(e) === 1 ? `(${Yt})` : `${ab(e)}(${Yt})`, dTx = d === 1 ? `(${Xt})` : `${d}(${Xt})`;
+    const inner = padd(pscale(X, d), pscale(Y, e));
+    expr = `${c}${Xn}-(${d === 1 ? "" : d}${Xn}${sg(e)}${ab(e) === 1 ? "" : ab(e)}${Yn})`;
+    subst = `${c}(${Xt})-(${dTx}${sg(e)}${eTx})`;
+    const mid = `${c}(${Xt})-(${ptex(inner)})`;
+    steps = [`$A$、$B$ を代入して、${$(`${expr}=${subst}`)}。`, `内側のかっこを先に計算して、${$(`${subst}=${mid}`)}。`, $(`${mid}=${raw([...tms(pscale(X, c)), ...tms(pneg(inner))])}=${ptex(res)}`)];
+    wrongs = [padd(psub(pscale(X, c), pscale(X, d)), pscale(Y, e)), padd(pscale(X, c + d), pscale(Y, e)), psub(pscale(X, c), pscale(X, d)), pneg(res)];
+  }
   const hint = "$A$、$B$ にそれぞれの式を代入して、分配法則でかっこをはずそう。ひく式のかっこでは、全部の項の符号が変わる。";
   const head = `$A=${ptex(A)}$、$B=${ptex(B)}$ のとき、${$(expr)} を計算する。`;
   if (mode === "num") {
     const k = pickKey(r, res);
-    return { q: `${head}答えの ${askText(k)}は？`, ans: ansQ(coefOf(res, k)), hint, steps: stepsFixed };
+    return { q: `${head}答えの ${askText(k)}は？`, ans: ansQ(coefOf(res, k)), hint, steps };
   }
-  const wrongs = form === 1
-    ? [padd(pscale(X, c), pscale(Y, -f1dOf(d))), P([...tms(pscale(X, c)), ...tms(Y)]), P([...tms(pscale(X, c))]), pneg(res)]
-    : [padd(psub(pscale(X, c), pscale(X, d)), pscale(Y, e)), padd(pscale(X, c + d), pscale(Y, e)), psub(pscale(X, c), pscale(X, d)), pneg(res)];
   const { ans, choices } = polyChoices(r, res, wrongs);
-  return { q: `${head}答えはどれか。`, ans, choices, hint, steps: stepsFixed };
+  return { q: `${head}答えはどれか。`, ans, choices, hint, steps };
 };
-const f1dOf = (d) => d;
 
 // ── 台形の面積（dr.7）────────────────────────────────────
 const trapBuild = (r, mode) => {
