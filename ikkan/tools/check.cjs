@@ -3,12 +3,25 @@
    使い方：  NODE_PATH=$(npm root -g) node tools/check.cjs [画像の出力先フォルダ] [授業のID …]
    3点セットのタブ（#/ID/set）は、ページ数（ワークシート＋演習プリント＋小テスト）と、印刷（PDF）のページ数も調べる
    単元まとめ印刷（#/print/<単元>）も、ページ数（両面印刷の白紙をふくむ）と、印刷（PDF）のページ数を調べる（授業のIDを指定したときは、しない）
+   記録ページ（IK.qrUnits の単元）：演習プリント・小テスト・学習予定表の QR が、紙面のなかにおさまり、題や名前らんと重ならないか。
+              jsqr と pngjs（npm i jsqr pngjs）があれば、QR を実際に読みとって、行き先も確かめる。
+              学習予定表（#/print/<単元>/sched）は、表裏 2 ページ・印刷 2 ページか。記録ページ（#/r/…）が、スマホの幅で、はみ出さずに開くか。
    必要なもの：playwright（npm i -g playwright。Chromium は PLAYWRIGHT_BROWSERS_PATH にあればそれを使う）
    調べること：①ブロックの行数に文字がおさまっているか　②1ページの行数をこえていないか　③字が横にはみ出していないか
               ④授業計画が A4 1枚におさまっているか（下の「準備・教卓」と重ならないか） */
 const path = require('path');
 const fs = require('fs');
 const { chromium } = require('playwright');
+let jsQR = null, PNG = null;
+try { jsQR = require('jsqr'); PNG = require('pngjs').PNG; } catch (e) { /* QR の読みとりは、省略する */ }
+// 要素のまわりに、4mm の白をつけて画像にし、QR を読みとる（読めなければ null）
+async function readQr(page, loc) {
+  await loc.scrollIntoViewIfNeeded();
+  const b = await loc.boundingBox(), pad = 4 * 96 / 25.4;
+  const png = PNG.sync.read(await page.screenshot({ clip: { x: Math.max(0, b.x - pad), y: Math.max(0, b.y - pad), width: b.width + 2 * pad, height: b.height + 2 * pad } }));
+  const r = jsQR(new Uint8ClampedArray(png.data), png.width, png.height);
+  return r ? r.data : null;
+}
 
 (async () => {
   const root = path.resolve(__dirname, '..');
@@ -22,7 +35,7 @@ const { chromium } = require('playwright');
   page.on('pageerror', e => errors.push(String(e)));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   await page.goto(url + '#/');
-  const lessons = await page.evaluate(() => IK.order.map(id => ({ id, plan: !!IK.plans[id], dr: !!IK.drills[id], qz: !!IK.quizzes[id], trial: /試作/.test(IK.lessons[id].no || '') })));
+  const lessons = await page.evaluate(() => IK.order.map(id => ({ id, plan: !!IK.plans[id], dr: !!IK.drills[id], qz: !!IK.quizzes[id], trial: /試作/.test(IK.lessons[id].no || ''), qr: IK.qrUnits.indexOf(IK.lessons[id].unit) >= 0 })));
   let bad = 0;
 
   for (const L of lessons.filter(l => !only.length || only.includes(l.id))) {
@@ -35,7 +48,7 @@ const { chromium } = require('playwright');
       await page.reload();
       await page.waitForSelector('.wsp');
       await page.evaluate(() => { document.querySelector('.pages').style.zoom = 1; });
-      const res = await page.evaluate(trial => {
+      const res = await page.evaluate(([trial, expectQr]) => {
         const issues = [], first = document.querySelector('.wsp');
         const pitchPx = parseFloat(first.style.getPropertyValue('--pitch') || '7') * 96 / 25.4;
         document.querySelectorAll('.wsp').forEach((sp, pi) => {
@@ -48,6 +61,18 @@ const { chromium } = require('playwright');
           }
           const mid = sp.querySelector('.wh-mid');
           if (mid && mid.scrollWidth > mid.clientWidth + 1) issues.push(`ページ${pi + 1}：上の題（${mid.textContent}）が、はみ出して「…」になる`);
+          if (expectQr) {   // 記録ページの QR：紙の中にあり、題・名前らん・罫線と重ならない（まわりに 1.5mm 以上の白）
+            const mm = 96 / 25.4, qe = sp.querySelector('.wsp-qr'), sr = sp.getBoundingClientRect();
+            if (!qe) issues.push(`ページ${pi + 1}：QR がない`);
+            else {
+              const q = qe.getBoundingClientRect(), nm = sp.querySelector('.wh-name').getBoundingClientRect(), cap = sp.querySelector('.wsp-qrcap').getBoundingClientRect(), bt = sp.querySelector('.wsp-body').getBoundingClientRect();
+              if (q.top - sr.top < 5 * mm || sr.right - q.right < 8 * mm) issues.push(`ページ${pi + 1}：QR が紙のふちに近すぎる（プリンターで切れるおそれ）`);
+              if (q.left - nm.right < 1.5 * mm) issues.push(`ページ${pi + 1}：QR と名前らんが近すぎる`);
+              if (bt.top - q.bottom < 1.5 * mm) issues.push(`ページ${pi + 1}：QR と、いちばん上の罫線が近すぎる`);
+              if (cap.right > q.left || cap.bottom > nm.top + 1) issues.push(`ページ${pi + 1}：QR の説明の字が、ほかと重なっている`);
+              const svg = qe.querySelector('svg'); if (!svg || svg.getBoundingClientRect().width < 13.5 * mm) issues.push(`ページ${pi + 1}：QR が小さい（14mm 角にする）`);
+            }
+          }
           const body = sp.querySelector('.wsp-body'), flow = sp.querySelector('.wsp-flow');
           const rows = Math.round(body.getBoundingClientRect().height / pitchPx), used = Math.round(flow.getBoundingClientRect().height / pitchPx * 100) / 100;
           if (used > rows + 0.01) issues.push(`ページ${pi + 1}：${used}行を使っている（上限 ${rows}行）`);
@@ -115,10 +140,17 @@ const { chromium } = require('playwright');
           });
         });
         return { issues };
-      }, L.trial);
+      }, [L.trial, L.qr && (tab === 'dr' || tab === 'qz')]);
       const mode = tab === 'plan' ? '授業計画' : (ans ? '解答つき' : '生徒用'), tag = tab === 'plan' ? 'plan' : (ans ? 'ans' : 'student');
       const n = await page.locator('.wsp').count();
       for (let i = 0; i < n; i++) await page.locator('.wsp').nth(i).screenshot({ path: path.join(outDir, `${L.id}_${tab}_${tag}_p${i + 1}.png`) });
+      if (L.qr && (tab === 'dr' || tab === 'qz') && !ans && jsQR) {   // QR を読みとって、行き先を確かめる
+        const want = await page.evaluate(([id, t]) => IK.qrBase + '#/' + (t === 'dr' ? IK.drills[id] : IK.quizzes[id]).qr, [L.id, tab]);
+        for (let i = 0; i < n; i++) {
+          const got = await readQr(page, page.locator('.wsp-qr').nth(i));
+          if (got !== want) { bad++; console.log(`✗ ${L.id}（${tab}）ページ${i + 1}の QR を読みとれない／行き先がちがう（読みとり：${got}）`); }
+        }
+      }
       const name = `${L.id}（${tab === 'dr' ? '演習プリント・' : tab === 'qz' ? '小テスト・' : tab === 'plan' ? '' : 'ワークシート・'}${mode}）`;
       if (res.issues.length) { bad += res.issues.length; console.log(`✗ ${name}`); res.issues.forEach(s => console.log('   ' + s)); }
       else console.log(`○ ${name}　${n}ページ・指摘 0`);
@@ -140,6 +172,68 @@ const { chromium } = require('playwright');
     if (pdfPages !== want) msgs.push(`印刷（PDF）のページ数が ${pdfPages}（${want} ページのはず）`);
     if (msgs.length) { bad += msgs.length; console.log(`✗ ${L.id}（3点セット）`); msgs.forEach(m => console.log('   ' + m)); }
     else console.log(`○ ${L.id}（3点セット）　${got}ページ・印刷 ${pdfPages}ページ（両面なら ${Math.ceil(want / 2)}枚＋）`);
+  }
+  // 学習予定表（#/print/<単元>/sched）：表裏 2 ページ、はみ出しなし、QR（単元の記録ページ）
+  if (!only.length) {
+    if (!jsQR) console.log('（jsqr・pngjs がないので、QR の読みとりは省略しました）');
+    for (const key of await page.evaluate(() => IK.qrUnits.filter(k => IK.plansheet(k)))) {
+      await page.goto(url + '#/print/' + key + '/sched');
+      await page.reload();
+      await page.waitForSelector('.wsp');
+      await page.evaluate(() => { document.querySelector('.pages').style.zoom = 1; });
+      const msgs = [];
+      const n = await page.locator('.wsp').count();
+      const pdf = await page.pdf({ preferCSSPageSize: true, printBackground: true });
+      const pdfPages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+      if (n !== 2) msgs.push(`学習予定表が ${n} ページ（A4 表裏の 2 ページにする）`);
+      if (pdfPages !== n) msgs.push(`印刷（PDF）のページ数が ${pdfPages}（${n} ページのはず）`);
+      const r = await page.evaluate(() => {
+        const o = [], pitch = 7 * 96 / 25.4;
+        document.querySelectorAll('.wsp').forEach((sp, pi) => {
+          const body = sp.querySelector('.wsp-body'), flow = sp.querySelector('.wsp-flow'), rows = Math.round(body.getBoundingClientRect().height / pitch), used = Math.round(flow.getBoundingClientRect().height / pitch * 100) / 100;
+          if (used > rows + 0.01) o.push(`ページ${pi + 1}：${used}行（上限 ${rows}行）`);
+          const mid = sp.querySelector('.wh-mid'); if (mid.scrollWidth > mid.clientWidth + 1) o.push(`ページ${pi + 1}：上の題がはみ出す`);
+          sp.querySelectorAll('.ps-r').forEach(e => { if (e.scrollWidth > e.clientWidth + 1) o.push(`ページ${pi + 1}：横にはみ出す行「${e.textContent.trim().slice(0, 16)}」`); });
+          sp.querySelectorAll('.ps-ttl').forEach(e => { if (e.scrollWidth > e.clientWidth + 1) o.push(`ページ${pi + 1}：授業の題が長すぎて「…」になる「${e.textContent.slice(0, 16)}」`); });
+          if (!sp.querySelector('.wsp-qr')) o.push(`ページ${pi + 1}：QR がない`);
+        });
+        return o;
+      });
+      msgs.push(...r);
+      if (jsQR) {
+        const want = await page.evaluate(k => IK.qrBase + '#/r/' + k, key);
+        for (let i = 0; i < n; i++) { const got = await readQr(page, page.locator('.wsp-qr').nth(i)); if (got !== want) msgs.push(`ページ${i + 1}の QR を読みとれない／行き先がちがう（読みとり：${got}）`); }
+      }
+      for (let i = 0; i < n; i++) await page.locator('.wsp').nth(i).screenshot({ path: path.join(outDir, `plansheet_${key}_p${i + 1}.png`) });
+      if (msgs.length) { bad += msgs.length; console.log(`✗ ${key}（学習予定表）`); msgs.forEach(m => console.log('   ' + m)); }
+      else console.log(`○ ${key}（学習予定表）　${n}ページ・印刷 ${pdfPages}ページ${jsQR ? '・QR 読みとり OK' : ''}`);
+    }
+  }
+  // 記録ページ（#/r/<授業のID>/<dr|qz>、#/r/<単元>）：スマホの幅で、はみ出さずに開くか。問題の数。問題文に答えが出ていないか
+  for (const L of lessons.filter(l => (!only.length || only.includes(l.id)) && l.qr && (l.dr || l.qz))) {
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const kind of [L.dr && 'dr', L.qz && 'qz'].filter(Boolean)) {
+      await page.goto(url + '#/r/' + L.id + '/' + kind);
+      await page.reload();
+      await page.waitForSelector('.rc-it');
+      const want = await page.evaluate(([id, k]) => IK.rec.items(id, k).length, [L.id, kind]);
+      const r = await page.evaluate(() => ({
+        n: document.querySelectorAll('.rc-it').length,
+        wide: document.documentElement.scrollWidth > innerWidth + 1,
+        leak: [...document.querySelectorAll('.rc-q .ansx')].filter(e => e.textContent.trim()).length,
+        shownAns: [...document.querySelectorAll('.rc-ans')].filter(e => e.getClientRects().length).length,
+        empty: [...document.querySelectorAll('.rc-ans')].filter(e => !e.textContent.replace('答え', '').trim()).length
+      }));
+      const msgs = [];
+      if (r.n !== want) msgs.push(`問題が ${r.n} 問（${want} 問のはず）`);
+      if (r.wide) msgs.push('スマホの幅で、横にはみ出している');
+      if (r.leak) msgs.push(`問題文に、答えの空欄の中身が ${r.leak} か所出ている`);
+      if (r.shownAns) msgs.push('開いたときから、答えが出ている');
+      if (r.empty) msgs.push(`答えの欄が空の問題が ${r.empty} 問ある`);
+      if (msgs.length) { bad += msgs.length; console.log(`✗ ${L.id}（記録ページ・${kind}）`); msgs.forEach(m => console.log('   ' + m)); }
+      else console.log(`○ ${L.id}（記録ページ・${kind}）　${r.n}問`);
+    }
+    await page.setViewportSize({ width: 1000, height: 1300 });
   }
   // 単元まとめ印刷：ページ数（両面印刷の白紙をふくむ）と、印刷（PDF）のページ数
   if (!only.length) {

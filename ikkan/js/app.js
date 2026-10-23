@@ -1,7 +1,8 @@
 /* ikkan：画面。一覧 → 授業（授業計画／ワークシート／演習プリント／小テスト／3点セット）。解答の表示・かくす、印刷。
    場所：#/ ＝一覧、#/<授業のID> ＝ワークシート、#/<授業のID>/plan・/ws・/dr・/qz・/set ＝授業計画・ワークシート・演習プリント・小テスト・3点セット（印刷用）、
          最後に /ans をつけると、解答を表示した状態で開く（例：#/kukan-01/dr/ans）、
-         #/print/<単元のキー> ＝ 単元の授業を、まとめて印刷する画面（例：#/print/kukan） */
+         #/print/<単元のキー> ＝ 単元の授業を、まとめて印刷する画面（例：#/print/kukan）。最後に /sched をつけると、学習予定表だけを選んだ状態で開く、
+         #/r/<単元のキー>、#/r/<授業のID>/<dr|qz>、#/rsum ＝ 記録ページ（生徒）・単元の記録の一覧（生徒）・記録の集計（先生）。js/recui.js */
 (function () {
   'use strict';
   const IK = window.IK, R = IK.render;
@@ -43,13 +44,15 @@
      印刷するもの・授業のはんい・解答つき・両面印刷を選べる。両面印刷にすると、1ページだけの資料（小テストなど）のうしろに白紙を入れて、
      次の資料が、かならず紙の表から始まるようにする。 */
   const unitLessons = key => IK.order.map(id => IK.lessons[id]).filter(l => l.unit === key && (IK.plans[l.id] || IK.drills[l.id] || IK.quizzes[l.id]));
-  const PO = { unit: null, ws: true, dr: true, qz: true, plan: false, duplex: true, mark: true, from: 0, to: 0 };   // 印刷の選び方（この画面を開いているあいだ、覚えておく）
+  const PO = { unit: null, ws: true, dr: true, qz: true, plan: false, sched: false, duplex: true, mark: true, from: 0, to: 0 };   // 印刷の選び方（この画面を開いているあいだ、覚えておく）
   // 白紙のページ。プリンターや複合機は、まっ白なページを「白紙スキップ」でとばすことがある（とばされると、つぎの資料が小テストのうらに出る）。
   // そこで、紙の下に小さな「白紙」の字（.bl-mk）を印刷して、白紙と見なされないようにする（PO.mark）。画面には出ない。
   const blankHTML = () => `<div class="wsp wsp-blank" style="width:210mm;height:297mm"><span>（白紙：両面印刷で、つぎの資料を紙の表から始めるため）</span>${PO.mark ? '<i class="bl-mk">白紙　（両面印刷で、つぎの資料を表から始めるためのページです）</i>' : ''}</div>`;
 
   function printParts(key) {
     const ls = unitLessons(key), a = Math.max(0, Math.min(PO.from, ls.length - 1)), b = Math.max(a, Math.min(PO.to, ls.length - 1)), parts = [];
+    const ps = PO.sched && IK.plansheet ? IK.plansheet(key) : null;   // 学習予定表（単元のはじめに配る。A4 表裏）
+    if (ps) parts.push({ cap: `${(IK.units.find(x => x.key === key) || {}).name || ''}　学習予定表`, n: nPages(ps), html: R.pagesHTML(ps) });
     ls.slice(a, b + 1).forEach(l => {
       const name = [l.unitName, l.no].filter(Boolean).join('　');
       if (PO.plan && IK.plans[l.id]) parts.push({ cap: `${name}　授業計画`, n: 1, html: R.planHTML(IK.plans[l.id], l) });
@@ -71,15 +74,16 @@
     return { html, pages, docs: parts.length };
   }
 
-  function showPrint(key, askAns) {
+  function showPrint(key, askAns, preset) {
     const u = IK.units.find(x => x.key === key), ls = unitLessons(key);
     if (!u || !ls.length) { location.hash = '#/'; return; }
     if (PO.unit !== key) Object.assign(PO, { unit: key, from: 0, to: ls.length - 1 });
+    if (preset === 'sched' && IK.plansheet && IK.plansheet(key)) Object.assign(PO, { sched: true, ws: false, dr: false, qz: false, plan: false });
     PO.to = Math.min(PO.to, ls.length - 1);
     curTab = 'print'; cur = { paper: 'A4' };
     document.title = `${u.name}　まとめて印刷`;
     const opt = i => `<option value="${i}">${esc([ls[i].no, ls[i].title].filter(Boolean).join('　'))}</option>`;
-    const kinds = [['ws', 'ワークシート'], ['dr', '演習プリント'], ['qz', '小テスト'], ['plan', '授業計画']].filter(([k]) => ls.some(l => (k === 'ws' ? IK.lessons[l.id] : k === 'dr' ? IK.drills[l.id] : k === 'qz' ? IK.quizzes[l.id] : IK.plans[l.id])));
+    const kinds = [['sched', '学習予定表（単元のはじめに配る）'], ['ws', 'ワークシート'], ['dr', '演習プリント'], ['qz', '小テスト'], ['plan', '授業計画']].filter(([k]) => (k === 'sched' ? IK.plansheet && IK.plansheet(key) : ls.some(l => (k === 'ws' ? IK.lessons[l.id] : k === 'dr' ? IK.drills[l.id] : k === 'qz' ? IK.quizzes[l.id] : IK.plans[l.id]))));
     $app.innerHTML = `<header class="top">
         <a class="brand" href="#/" title="一覧へ">← 一覧</a>
         <div class="ttl"><small>${esc(u.name)}</small><b>授業を、まとめて印刷</b></div>
@@ -123,7 +127,8 @@
       const ls = IK.order.map(id => IK.lessons[id]).filter(l => l.unit === u.key);
       if (!ls.length) return '';
       const np = unitLessons(u.key).length;
-      return `<div class="unit"><h2>${esc(u.name)}</h2><span>中${esc(u.grade)}</span>${np ? `<a class="btn btnp" href="#/print/${esc(u.key)}">この単元を、まとめて印刷（${np}時間）</a>` : ''}</div>
+      const rc = IK.qrUnits.indexOf(u.key) >= 0 && IK.plansheet && IK.plansheet(u.key);   // 学習予定表・記録ページのある単元
+      return `<div class="unit"><h2>${esc(u.name)}</h2><span>中${esc(u.grade)}</span>${np ? `<span class="ubtns"><a class="btn btnp" href="#/print/${esc(u.key)}">この単元を、まとめて印刷（${np}時間）</a>${rc ? `<a class="btn btnp" href="#/print/${esc(u.key)}/sched">学習予定表を印刷</a><a class="btn btnp" href="#/r/${esc(u.key)}">生徒の記録ページ</a>` : ''}</span>` : ''}</div>
         <div class="cards">${ls.map(l => `<a class="card" href="#/${esc(l.id)}">${l.no ? `<small>${esc(l.no)}</small>` : ''}<b>${esc(l.title)}</b><p>${esc(l.summary || '')}</p>
           <span class="chips">${tabsOf(l.id).map(([, n]) => `<i>${esc(n)}</i>`).join('')}</span><span class="go">ひらく →</span></a>`).join('')}</div>`;
     }).join('');
@@ -132,6 +137,7 @@
       <p class="lead">日付・名前 → めあて → 学習課題・例題。問題の下は、図・グラフ以外は<b>空欄</b>にしてあり、書き込んで使います。
         「解答を表示」を押すと、<b>教師の板書</b>と<b>空欄の答え</b>が赤で出ます。<b>授業計画</b>・<b>演習プリント</b>・<b>小テスト</b>がある授業は、上のタブで切りかえます。<b>3点セット（印刷）</b>のタブでは、ワークシート・演習プリント・小テストを続けて印刷できます。単元の見出しの<b>「この単元を、まとめて印刷」</b>では、単元の授業を、続けて印刷できます。</p>
       ${units || '<p>ワークシートがまだありません。</p>'}
+      ${IK.qrUnits.some(k => IK.rec && IK.rec.lessons(k).length) ? '<p class="lead">演習プリント・小テストの右上の <b>QR</b> から、生徒が丸つけと記録をする「記録ページ」に行けます。生徒が送ってきた結果コードは、<a href="#/rsum"><b>記録の集計（先生用）</b></a> でまとめて見られます。</p>' : ''}
       <div class="note"><h3>ワークシートのつくり方</h3>
         <code>data/lesson_*.js</code>（授業計画・ワークシート・演習プリント）か、<code>data/ws_*.js</code>（ワークシートだけ）に書き足します。くわしくは <code>README.md</code> を見てください。</div>
     </div>`;
@@ -154,6 +160,7 @@
         <div class="ttl"><small>${esc([l.unitName, l.no].filter(Boolean).join('　'))}</small><b>${esc(l.title)}</b></div>
         ${seg}
         <span class="sp"></span>
+        ${(tab === 'dr' || tab === 'qz') && cur && cur.qr ? `<a class="btn" href="#/${esc(cur.qr)}" title="QR の行き先（生徒が丸つけ・記録をするページ）">記録ページ</a>` : ''}
         ${tab === 'plan' ? '' : '<button type="button" class="btn main" id="ansBtn" aria-pressed="false">解答を表示</button>'}
         <button type="button" class="btn" id="fitBtn" title="紙面の見せ方">全体を見る</button>
         ${IK.noPrint ? '' : `<button type="button" class="btn${tab === 'set' ? ' main2' : ''}" id="prtBtn">${tab === 'set' ? '3点セットを印刷' : '印刷'}</button>`}
@@ -169,7 +176,9 @@
   function route(hash) {
     const h = String(hash != null ? hash : location.hash).replace(/^#\/?/, '').split('/');
     if (!h[0]) home();
-    else if (h[0] === 'print') showPrint(h[1], h.includes('ans'));
+    else if (h[0] === 'print') showPrint(h[1], h.includes('ans'), h[2] === 'sched' ? 'sched' : '');
+    else if (h[0] === 'rsum') { cur = null; document.body.classList.remove('ans-on'); IK.recui.sum($app); }
+    else if (h[0] === 'r' && IK.recui && (h[2] ? IK.recui.record($app, h[1], h[2]) : IK.recui.unit($app, h[1]))) { cur = null; document.body.classList.remove('ans-on'); }
     else show(h[0], ['plan', 'ws', 'dr', 'qz', 'set'].includes(h[1]) ? h[1] : 'ws', h.includes('ans') ? true : undefined);
     window.scrollTo(0, 0);
   }

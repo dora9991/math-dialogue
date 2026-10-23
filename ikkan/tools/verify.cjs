@@ -11,7 +11,11 @@
    ⑥ 考えようの解答（教卓の解答）に、考えようの答えが載っていないか（ワークシートの考えようの下の B に、答えを書いていない）
    演習プリント・小テストについて（印刷の3点セット）：
    ⑦ 演習プリントは A4 表裏の 2ページ。表＝基礎・標準、裏＝応用・入試レベル
-   ⑧ 小テストは A4 1ページ・10点満点。チャレンジの前の問題の点数（○点）の合計が 10。最後の「チャレンジ」は 1問だけで、別枠（正解なら、ほかがまちがっていても満点） */
+   ⑧ 小テストは A4 1ページ・10点満点。チャレンジの前の問題の点数（○点）の合計が 10。最後の「チャレンジ」は 1問だけで、別枠（正解なら、ほかがまちがっていても満点） 
+   記録ページ（IK.qrUnits の単元）について：
+⑨ 演習プリント・小テストに QR があり、読みとりやすい大きさ（33 モジュール＝バージョン 4 まで）か。問題の番号・問題IDがかぶらないか。
+   答えのない問題（作図など）は、ひろって知らせる。学習予定表が A4 表裏 2 ページ以内におさまるか
+*/
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -21,7 +25,7 @@ const ctx = { console };
 ctx.window = ctx;
 vm.createContext(ctx);
 const dataDir = fs.readdirSync(path.join(root, 'data'));
-const files = ['js/core.js', 'js/figs.js', 'js/figs3d.js', 'js/plan.js', 'data/lessons.js',
+const files = ['js/vendor/qrcode.js', 'js/core.js', 'js/qr.js', 'js/figs.js', 'js/figs3d.js', 'js/plan.js', 'js/rec.js', 'js/plansheet.js', 'data/lessons.js',
   ...dataDir.filter(f => /^ws_.*\.js$/.test(f)).sort().map(f => 'data/' + f),
   ...dataDir.filter(f => /^lesson_.*\.js$/.test(f)).sort().map(f => 'data/' + f)];
 for (const f of files) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
@@ -131,6 +135,25 @@ function checkPlan(id, p) {
   if (!th.q || !(th.views || []).length || !(th.hints || []).length || !th.direction) bad(id, '考えようの設計（問い・見方・ヒント・方向性）がそろっていない');
 }
 
+// ⑨ 記録ページ：QR・問題の取り出し・問題ID
+const seen = {};
+function checkRec(id) {
+  ['dr', 'qz'].forEach(k => {
+    const sh = k === 'dr' ? IK.drills[id] : IK.quizzes[id], nm = k === 'dr' ? '演習プリント' : '小テスト';
+    if (!sh) return;
+    total += 4;
+    if (sh.qr !== `r/${id}/${k}`) { bad(id, `${nm}の QR の行き先が ${sh.qr || '（なし）'}（r/${id}/${k} にする）`); return; }
+    const size = IK.qr.size(IK.qrBase + '#/' + sh.qr);
+    if (size > 33) bad(id, `${nm}の QR が大きすぎる（${size} モジュール。印刷で読みにくくなる。33 まで）`);
+    const items = IK.rec.items(id, k), nos = items.map(i => i.no);
+    if (!items.length) { bad(id, `${nm}から、問題（（1）（2）…）を取り出せない`); return; }
+    if (nos.length !== new Set(nos).size) bad(id, `${nm}の問題の番号がかぶっている：${nos.join('、')}`);
+    const noAns = items.filter(i => !i.ans).map(i => i.label);
+    console.log(`  記録ページ（${nm}）：${items.length}問・QR ${size}モジュール${noAns.length ? `・答えのない問題 ${noAns.join('')}（作図など）` : ''}`);
+    items.forEach(i => { seen[i.id] = (seen[i.id] || 0) + 1; });
+  });
+}
+
 for (const id of IK.order) {
   const l = IK.lessons[id];
   console.log(`${id}　${l.title}`);
@@ -146,6 +169,18 @@ for (const id of IK.order) {
   if (IK.drills[id]) { checkSheet(id, '演習プリント', IK.drills[id]); checkDrill(id, IK.drills[id]); }
   if (IK.quizzes[id]) { checkSheet(id, '小テスト', IK.quizzes[id]); checkQuiz(id, IK.quizzes[id]); }
   if (IK.plans[id]) checkPlan(id, IK.plans[id]);
+  if (IK.qrUnits.indexOf(l.unit) >= 0 && (IK.drills[id] || IK.quizzes[id])) checkRec(id);
 }
+// ⑨ 問題IDが全体でかぶらないか、学習予定表が表裏 2 ページ以内か
+total++;
+const dup = Object.keys(seen).filter(k => seen[k] > 1);
+if (dup.length) bad('記録', `問題IDがかぶっている：${dup.slice(0, 5).join('、')}`); else console.log(`\n記録ページ：問題ID ${Object.keys(seen).length} 件（かぶりなし）`);
+IK.qrUnits.forEach(u => {
+  const ps = IK.plansheet(u);
+  if (!ps) return;
+  total++;
+  const n = ps.blocks.filter(b => b.type === 'break').length + 1;
+  if (n > 2) bad('学習予定表', `${u}：${n} ページ（A4 表裏の 2 ページにする）`); else console.log(`学習予定表（${u}）：${n} ページ`);
+});
 console.log(ng ? `\n✗ ${ng} 件の指摘（確かめた項目 ${total}）` : `\n○ 指摘 0（確かめた項目 ${total}）`);
 process.exit(ng ? 1 : 0);

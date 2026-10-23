@@ -28,6 +28,11 @@ button{font:inherit;color:inherit}
 .wsp-head .w1{width:7mm}.wsp-head .w2{width:9mm}.wsp-head .w6{width:38mm}
 .wh-mid{flex:1;text-align:center;font-size:3mm;color:#6b7280;overflow:hidden;text-overflow:ellipsis}
 .wsp-body{position:absolute}
+/* 記録ページの QR（右上）。まわりの白（クワイエットゾーン）をあけるので、題と名前らんは、その分だけ左に寄せる */
+.wsp-qr{position:absolute;background:#fff;line-height:0}
+.wsp-qr svg{display:block;width:100%;height:100%}
+.wsp-qrcap{position:absolute;font-size:2.4mm;line-height:1.2;color:#6b7280;white-space:nowrap;text-align:right}
+.wsp-head.has-qr .w6{width:26mm}
 .wsp-rule{position:absolute;left:0;top:0;display:block;pointer-events:none;overflow:visible}
 .wsp-flow{position:relative;font-size:calc(var(--pitch) * .56);line-height:var(--pitch)}
 
@@ -51,21 +56,32 @@ button{font:inherit;color:inherit}
 .ans-on .wsp .ansx{display:inline}
 
 /* 文字の中の空欄・分数・累乗・文字式の字 */
-.wsp .bl{display:inline-block;height:1.1em;line-height:1.1em;border-bottom:.25mm solid #333;vertical-align:-.25em;text-align:center;margin:0 .15em;white-space:nowrap}
-.wsp .bl:has(.fr){position:relative;border-bottom:0}   /* 分数をふくむ空欄は、下線を分母の下に引く（行の高さは変えない） */
-.wsp .bl:has(.fr)::after{content:'';position:absolute;left:0;right:0;bottom:-.5em;border-bottom:.25mm solid #333}
-.wsp .fr{display:inline-block;vertical-align:middle;font-size:.7em;line-height:1;text-align:center;margin:0 .14em}
-.wsp .fr>span{display:block;padding:0 .12em}
-.wsp .fr>span:first-child{border-bottom:.2mm solid currentColor;padding-bottom:.06em}
-.wsp .fr>span:last-child{padding-top:.04em}
-.wsp i.v{font-family:"Times New Roman",Times,serif;font-style:italic;font-size:1.1em;line-height:0;padding:0 .03em}
-.wsp sup{font-size:.62em;vertical-align:.5em;line-height:0}
-.wsp .sq{white-space:nowrap}
+.wsp .bl,
+.rc .bl{display:inline-block;height:1.1em;line-height:1.1em;border-bottom:.25mm solid #333;vertical-align:-.25em;text-align:center;margin:0 .15em;white-space:nowrap}
+.wsp .bl:has(.fr),
+.rc .bl:has(.fr){position:relative;border-bottom:0}   /* 分数をふくむ空欄は、下線を分母の下に引く（行の高さは変えない） */
+.wsp .bl:has(.fr)::after,
+.rc .bl:has(.fr)::after{content:'';position:absolute;left:0;right:0;bottom:-.5em;border-bottom:.25mm solid #333}
+.wsp .fr,
+.rc .fr{display:inline-block;vertical-align:middle;font-size:.7em;line-height:1;text-align:center;margin:0 .14em}
+.wsp .fr>span,
+.rc .fr>span{display:block;padding:0 .12em}
+.wsp .fr>span:first-child,
+.rc .fr>span:first-child{border-bottom:.2mm solid currentColor;padding-bottom:.06em}
+.wsp .fr>span:last-child,
+.rc .fr>span:last-child{padding-top:.04em}
+.wsp i.v,
+.rc i.v{font-family:"Times New Roman",Times,serif;font-style:italic;font-size:1.1em;line-height:0;padding:0 .03em}
+.wsp sup,
+.rc sup{font-size:.62em;vertical-align:.5em;line-height:0}
+.wsp .sq,
+.rc .sq{white-space:nowrap}
 .sys{display:inline-block;vertical-align:top;position:relative;padding-left:.95em;margin:0 .25em;white-space:nowrap}   /* 連立方程式。式の1行が、罫の1行ぶん。左に大きな { */
 .sys .sysr{display:block}
 .sys .sysb{position:absolute;left:0;top:.12em;width:.6em;height:calc(100% - .24em)}
 .sys .sysb path{fill:none;stroke:currentColor;stroke-width:1.1;vector-effect:non-scaling-stroke}
-.wsp .sq>span{display:inline-block;border-top:.2mm solid currentColor;line-height:1.02;padding:0 .08em 0 .03em;margin-left:-.07em}
+.wsp .sq>span,
+.rc .sq>span{display:inline-block;border-top:.2mm solid currentColor;line-height:1.02;padding:0 .08em 0 .03em;margin-left:-.07em}
 
 /* 図 */
 .wb-fig{display:flex;gap:4mm;align-items:stretch;background:#fff}
@@ -133,8 +149,12 @@ button{font:inherit;color:inherit}
 .home .lead{margin:0 0 20px;color:var(--ink2);font-size:14px;line-height:1.75}
 .home .lead b{color:var(--ans)}
 .unit{margin:22px 0 8px;display:flex;align-items:baseline;gap:10px}
-.unit h2{font-size:16px;margin:0}
-.unit span{font-size:12px;color:var(--ink3)}
+.unit h2{font-size:16px;margin:0;white-space:nowrap}
+.unit{flex-wrap:wrap}
+.ubtns{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
+.ubtns .btn.btnp{margin-left:0}
+@media (max-width:640px){.ubtns{margin-left:0;flex-basis:100%}}
+.unit>span:not(.ubtns){font-size:12px;color:var(--ink3)}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
 .card{display:block;text-decoration:none;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;transition:border-color .15s,box-shadow .15s}
 .card:hover{border-color:var(--acc);box-shadow:0 2px 10px rgba(29,95,191,.12)}
@@ -207,11 +227,134 @@ button{font:inherit;color:inherit}
 
 .wsp-blank .bl-mk{display:none}
 
+/* ================= 学習予定表（HTML をそのまま置く枠 .wb-raw） ================= */
+.wb-raw{overflow:hidden}
+.ps-r{display:flex;align-items:center;gap:1.6mm;height:var(--pitch);font-size:3.1mm;line-height:1;white-space:nowrap;overflow:hidden;padding-top:.6mm}
+.ps-r u{display:inline-block;border-bottom:.25mm solid #333;height:3.8mm;vertical-align:-.6mm}
+.ps-r .ps-bx{display:inline-block;width:3.1mm;height:3.1mm;border:.3mm solid #333;border-radius:.4mm;margin-right:.8mm;vertical-align:-.4mm}
+.ps-lesson .r1{background:rgba(45,55,72,.08);border-radius:1mm 1mm 0 0;padding-left:1mm;padding-right:1mm}
+.ps-lesson .ps-no{flex:none;font-weight:700;font-size:3.1mm}
+.ps-lesson .ps-ttl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:3.15mm}
+.ps-lesson .ps-dt{flex:none;font-size:2.9mm}
+.ps-lb{flex:none;min-width:15.5mm;font-weight:700;font-size:2.9mm;color:#2d3748}
+.ps-ck{flex:none;margin-right:1.4mm}
+.ps-sc{flex:none;margin-left:auto}
+.ps-ev{flex:none;margin-right:2.6mm}
+.ps-hint{color:#6b7280;font-size:2.6mm}
+.ps-top .ps-h,.ps-end .ps-h{font-size:3.2mm;color:#1d4a99}
+.ps-top .ps-lb{min-width:24mm}
+.ps-end .r1{background:rgba(29,74,153,.09);border-radius:1mm 1mm 0 0;padding-left:1mm}
+.ps-goal{font-size:3mm}
+.ps-goal .ps-n{flex:none;font-weight:700}
+.ps-end .ps-h2{font-size:3.6mm}
+.ps-lb2{font-weight:700;font-size:2.9mm;color:#1d4a99}
+
+/* ================= 記録ページ（生徒がスマホ・タブレットで開く） ================= */
+.rc{--ok:#1e7a4a;--mid:#b7791f;--ng:#c62020;--ok-s:#e3f4ea;--mid-s:#fdf3dc;--ng-s:#fdecec;min-height:100vh;background:var(--bg);color:var(--ink);font-family:var(--ui)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rc{--ok:#6fd19a;--mid:#f0c060;--ng:#ff8a8a;--ok-s:#1b3326;--mid-s:#3a3118;--ng-s:#3a2224}}
+:root[data-theme="dark"] .rc{--ok:#6fd19a;--mid:#f0c060;--ng:#ff8a8a;--ok-s:#1b3326;--mid-s:#3a3118;--ng-s:#3a2224}
+.rc [hidden]{display:none !important}
+.rc-top{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+.rc-back{font-size:14px;color:var(--acc);text-decoration:none;white-space:nowrap;font-weight:700}
+.rc-ttl{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.rc-ttl small{font-size:11.5px;color:var(--ink3);font-weight:700}
+.rc-ttl b{font-size:16px}
+.rc-main{max-width:640px;margin:0 auto;padding:14px 16px 60px}
+.rc-lead{margin:0 0 12px;font-size:15px;font-weight:700;line-height:1.55}
+.rc-lead small{font-weight:400;font-size:13px;color:var(--ink2)}
+.rc-who{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:0 0 10px;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:14px}
+.rc-who input{width:5.2em;font-size:16px;padding:6px 8px;border:1.5px solid var(--btn-line);border-radius:8px;background:var(--panel);color:var(--ink)}
+.rc-who small{color:var(--ink3);font-size:12px}
+.rc-sum{position:sticky;top:0;z-index:9;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;margin:0 0 12px;padding:8px 12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:15px;font-weight:700}
+.rc-sum .s-o{color:var(--ok)}.rc-sum .s-t{color:var(--mid)}.rc-sum .s-x{color:var(--ng)}.rc-sum .s-n{color:var(--ink3)}
+.rc-sum .s-pt{margin-left:auto;font-size:14px}.rc-sum .s-pt b{font-size:18px}.rc-sum small{font-weight:400;color:var(--ink3);font-size:11.5px;margin-left:4px}
+.rc-lock{margin:0 0 12px;padding:10px 12px;background:var(--mid-s);border:1px solid var(--mid);border-radius:12px;font-size:14px;line-height:1.6}
+.rc-open{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
+.rc-open input{width:6em;font-size:18px;padding:6px 8px;border:1.5px solid var(--btn-line);border-radius:8px;background:var(--panel);color:var(--ink);letter-spacing:.1em}
+.rc-ng{color:var(--ng);font-weight:700;font-size:13px}
+.rc-ok{color:var(--ok);font-weight:700;font-size:13px;margin-left:8px}
+.rc-items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.rc-it{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.rc-it.is-marked{border-left:5px solid var(--btn-line)}
+.rc-it:has(.m-o[aria-pressed=true]){border-left-color:var(--ok)}
+.rc-it:has(.m-t[aria-pressed=true]){border-left-color:var(--mid)}
+.rc-it:has(.m-x[aria-pressed=true]){border-left-color:var(--ng)}
+.rc-it.is-ch{border-style:dashed}
+.rc-h{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:16px}
+.rc-lv{font-size:11.5px;font-weight:700;padding:1px 9px;border-radius:999px;background:var(--acc-soft);color:var(--acc)}
+.rc-lv.lv-n2{background:#e4f4ea;color:#1e7a4a}.rc-lv.lv-n3{background:#fdf3dc;color:#8a5a00}.rc-lv.lv-n4{background:#fde8e8;color:#a31616}.rc-lv.lv-ch{background:#f0e8fb;color:#5b2ea6}
+.rc-pt{margin-left:auto;font-size:12px;color:var(--ink3)}
+.rc-pt+.rc-pt{margin-left:0}
+.rc-q{font-size:16px;line-height:1.85;margin-bottom:8px;overflow-wrap:anywhere}
+.rc-a{display:block;width:100%;font:inherit;font-size:16px;padding:8px 10px;border:1.5px solid var(--btn-line);border-radius:10px;background:var(--panel);color:var(--ink);resize:vertical;min-height:2.6em}
+.rc-ans{margin-top:8px;padding:8px 12px;background:var(--ans-soft);border:1px solid var(--ans-line);border-radius:10px;color:var(--ans-ink);font-size:16px;line-height:1.8;overflow-wrap:anywhere}
+.rc-ans>b{display:block;font-size:12px;margin-bottom:2px}
+.rc-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.rc-m{flex:1 1 0;min-width:84px;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;border:2px solid var(--btn-line);background:var(--panel);border-radius:12px;font-size:12px;cursor:pointer;color:var(--ink2)}
+.rc-m b{font-size:20px;line-height:1.1}
+.rc-m.m-o{border-color:var(--ok);color:var(--ok)}.rc-m.m-t{border-color:var(--mid);color:var(--mid)}.rc-m.m-x{border-color:var(--ng);color:var(--ng)}
+.rc-m.m-o[aria-pressed=true]{background:var(--ok);color:#fff}.rc-m.m-t[aria-pressed=true]{background:var(--mid);color:#fff}.rc-m.m-x[aria-pressed=true]{background:var(--ng);color:#fff}
+.rc-show,.rc-go,.rc-cp{min-height:48px;padding:0 16px;border:1px solid var(--acc);background:var(--acc-soft);color:var(--acc);border-radius:12px;font-size:14px;font-weight:700;cursor:pointer}
+.rc-show{flex:1 1 100%;min-height:42px}
+.rc-m:focus-visible,.rc-show:focus-visible,.rc-go:focus-visible,.rc-cp:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.rc-reflect,.rc-send{margin-top:18px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;font-size:14px;line-height:1.7}
+.rc-reflect label{display:block;margin-bottom:6px}
+.rc-reflect textarea,#rcCode{display:block;width:100%;font:inherit;font-size:15px;padding:8px 10px;border:1.5px solid var(--btn-line);border-radius:10px;background:var(--panel);color:var(--ink)}
+#rcCode{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;word-break:break-all;margin:8px 0}
+.rc-chk{display:block;margin:6px 0 8px}
+.rc a{color:var(--acc)}
+.rc-note{margin:8px 0 0;font-size:12.5px;color:var(--ink2);line-height:1.7}
+.rc-ls{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.rc-ls li{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
+.rc-l small{display:block;font-size:11.5px;color:var(--ink3);font-weight:700}
+.rc-l b{font-size:15px;line-height:1.5}
+.rc-lks{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.rc-lk{flex:1 1 140px;display:flex;flex-direction:column;gap:2px;padding:8px 12px;border:1px solid var(--btn-line);border-radius:10px;text-decoration:none;color:var(--ink);min-height:48px}
+.rc-lk b{font-size:14px;color:var(--acc)}.rc-lk span{font-size:12.5px;color:var(--ink3)}
+.rc-lk.is-on{border-color:var(--ok);background:var(--ok-s)}.rc-lk.is-on span{color:var(--ok);font-weight:700}
+
+/* ================= 記録の集計（先生用） ================= */
+.rs{max-width:860px;margin:0 auto;padding:16px 16px 60px}
+.rs-box{margin:0 0 16px;padding:14px 16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:14px;line-height:1.75}
+.rs-box h2{font-size:15.5px;margin:0 0 6px}
+.rs-box h2 small{margin-left:8px;font-weight:400;color:var(--ink3);font-size:12.5px}
+.rs-kind{display:inline-block;font-size:12px;padding:0 8px;border-radius:999px;background:var(--acc-soft);color:var(--acc)}
+.rs-box p{margin:0 0 8px;color:var(--ink2)}
+.rs-box textarea{display:block;width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;padding:8px 10px;border:1px solid var(--btn-line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.rs-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.rs-btns .btn:disabled{opacity:.45;cursor:default}
+.rs-msg{margin:8px 0 0 !important;font-size:13px}
+.rs-q{border-top:1px solid var(--line)}
+.rs-q summary{display:grid;grid-template-columns:5.2em minmax(0,1fr) 110px 4.6em;gap:8px;align-items:center;padding:6px 2px;cursor:pointer;font-size:13.5px}
+.rs-no{font-weight:700}.rs-no i{display:block;font-style:normal;font-weight:400;font-size:11px;color:var(--ink3)}
+.rs-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2)}
+.rs-bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line)}
+.rs-bar i{display:block;height:100%}.b-o{background:var(--ok,#1e7a4a)}.b-t{background:#d9a21b}.b-x{background:#c62020}
+.rs-pct{text-align:right;font-weight:700}
+.rs-q.is-weak .rs-pct,.rs-q.is-weak .rs-no{color:var(--ans)}
+.rs-q.is-weak{background:var(--ans-soft)}
+.rs-det{padding:2px 8px 8px 8px;font-size:13px}
+.rs-det ul{margin:4px 0 0;padding-left:1.4em}
+.rs-ans{color:var(--ans-ink)}
+.rs-none{color:var(--ink3)}
+.rs-stu{margin-top:10px;font-size:13px}
+.rs-stu summary{cursor:pointer;font-weight:700}
+.rs-stu table{border-collapse:collapse;margin-top:8px;font-size:12.5px}
+.rs-stu th,.rs-stu td{border:1px solid var(--line);padding:2px 7px;text-align:center}
+.rs-stu td.m-o{color:#1e7a4a;font-weight:700}.rs-stu td.m-t{color:#b7791f;font-weight:700}.rs-stu td.m-x{color:#c62020;font-weight:700}.rs-stu td.m-n{color:var(--ink3)}
+.rs-refl{margin:8px 0 0;padding-left:1.2em;color:var(--ink2)}
+.rs-codes{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:4px}
+.rs-codes span{white-space:nowrap}.rs-codes small{color:var(--ink3)}.rs-codes b{font-size:16px;letter-spacing:.08em}
+@media (max-width:640px){
+  .rs-q summary{grid-template-columns:4.6em minmax(0,1fr) 3.9em}
+  .rs-bar{display:none}
+}
+
 /* ================= 印刷 ================= */
 @page{size:A4;margin:0}
 @media print{
   html,body{background:#fff !important;height:auto !important}
-  .top,.hint,.home,.set-cap,.pbar{display:none !important}
+  .top,.hint,.home,.set-cap,.pbar,.rc,.rs{display:none !important}
   .wsp-blank{background:none !important}
   .wsp-blank span{display:none}
   /* 白紙の下はしに、うすい字を1行（プリンターの「白紙スキップ」で、とばされないようにする） */
