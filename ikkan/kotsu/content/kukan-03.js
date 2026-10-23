@@ -14,6 +14,7 @@ const BOX = cuboid(4, 3, 2);
 const RT = rtPrism(3, 4, 5);
 const PR3 = prism(3);
 const PY4 = pyramid(4);
+const PY3 = pyramid(3);
 
 const REGPOLY = { 3: "正三角形", 4: "正方形", 5: "正五角形", 6: "正六角形" };
 /** 立体の紹介文（頂点の名前の約束）。立方体は「立方体」、角柱・角錐は漢数字の名前で */
@@ -42,6 +43,8 @@ function kindOf(S, a, b) {
 }
 const WORD = { parallel: "平行", perpX: "垂直に交わる", intersect: "交わるが垂直ではない", perpSkew: "ねじれの位置", skew: "ねじれの位置" };
 const isSkew = (k) => k === "perpSkew" || k === "skew";
+/** 角錐は、高さが問題文にないので、「垂直ではない」とまでは言えない（交わる、とだけ言う） */
+const wordOf = (S, k) => (S.kind === "pyramid" && (k === "intersect" || k === "perpX") ? "交わる" : WORD[k]);
 
 /** グループごとにシャッフルして、1つずつ順にとって並べる（ありがちな誤答を、いろいろな種類から出す） */
 function mix(r, groups) {
@@ -62,6 +65,11 @@ const REL = {
     kinds: ["perpX"], phrase: "と垂直に交わる辺",
     trap: [["perpSkew", "skew"], ["parallel"], ["intersect"]],
     hint: "1つの頂点で交わって、そこが直角になっている辺をさがそう。交わらない辺は、ちがう。",
+  },
+  cross: {
+    kinds: ["perpX", "intersect"], phrase: "と交わる辺",
+    trap: [["perpSkew", "skew"], ["parallel"]],
+    hint: "辺のはしの点を通る辺は、その点で交わる。はしを通らない辺は、交わるかどうか、のばして確かめよう。",
   },
   skew: {
     kinds: ["perpSkew", "skew"], phrase: "とねじれの位置にある辺",
@@ -86,7 +94,7 @@ function edgeChoiceQ(r, S, rel, { cube = false, pool = S.E } = {}) {
     hint: R.hint,
     steps: [
       `辺 ${eLab(e)} ${R.phrase}は、${listEdges(ok)}。`,
-      `ほかの選択肢は、${wrongs.map((x) => `${eName(x)}（${WORD[kindOf(S, e, x)]}）`).join("、")}。`,
+      `ほかの選択肢は、${wrongs.map((x) => `${eName(x)}（${wordOf(S, kindOf(S, e, x))}）`).join("、")}。`,
       `答えは「${ans}」。`,
     ],
   };
@@ -166,7 +174,7 @@ export const UNITS = [
           };
         }),
         // 03q02 辺 EH と平行な辺（→ 何本か）
-        t("03q02", (r) => { const S = pick(r, [BOX, CUBE]); return edgeCountQ(r, S, "parallel", { cube: S === CUBE }); }),
+        t("03q02", (r) => { const S = pick(r, [BOX, CUBE, RT, PR3]); return edgeCountQ(r, S, "parallel", { cube: S === CUBE }); }),
       ],
       // ───────── 2 標準 ─────────
       2: [
@@ -175,9 +183,9 @@ export const UNITS = [
         // 03d04b 同じ問題を、何本かで
         t("03d04b", (r) => edgeCountQ(r, PR3, "skew")),
         // 03d05a 四角錐 O−ABCD で、辺 OA とねじれの位置にある辺（4択）
-        t("03d05a", (r) => edgeChoiceQ(r, PY4, "skew")),
+        t("03d05a", (r) => edgeChoiceQ(r, pick(r, [PY4, PY4, PY3]), "skew")),
         // 03d05b 同じ問題を、何本かで
-        t("03d05b", (r) => edgeCountQ(r, PY4, "skew")),
+        t("03d05b", (r) => edgeCountQ(r, pick(r, [PY4, PY3]), pick(r, ["skew", "cross"]))),
         // 03d06 2つの辺の組のうち、ねじれの位置にあるもの（「すべて」→ 1つ選ぶ。ねじれの位置にないものを選ぶ形もある）
         t("03d06", (r) => {
           const S = pick(r, [CUBE, BOX]), neg = r(0, 1) === 1, E = S.E;
@@ -198,12 +206,12 @@ export const UNITS = [
         }),
         // 03q03 辺 EH と垂直に交わる辺（→ 何本か。立体もいろいろ）
         t("03q03", (r) => {
-          const S = pick(r, [BOX, BOX, RT, PR3]);
+          const S = pick(r, [BOX, RT, PR3]);
           return edgeCountQ(r, S, "perp", { cube: false });
         }),
         // 03q04 辺 EH とねじれの位置にある辺（→ 何本か）
         t("03q04", (r) => {
-          const S = pick(r, [BOX, BOX, RT, PR3]);
+          const S = pick(r, [BOX, RT, PR3]);
           return edgeCountQ(r, S, "skew", { cube: false });
         }),
       ],
@@ -221,20 +229,23 @@ export const UNITS = [
             ans: T.text,
             choices: choices4(r, T.text, Fs.map((s) => s.text)),
             hint: "成り立たない例（反例）が1つでも見つかれば、その文は「いつも成り立つ」とはいえない。直方体の辺でためそう。",
-            steps: [`直方体 ABCD−EFGH の辺で確かめる。${T.why}`, ...Fs.map(exLine)],
+            steps: [`${introOf(CUBE, true)}の辺で確かめる。${T.why}`, ...Fs.map(exLine)],
           };
         }),
-        // 03d08a 立方体の面 EFGH の対角線 FH とねじれの位置にある辺は、全部で何本か
+        // 03d08a 立方体の面 EFGH の対角線 FH とねじれの位置にある辺は、全部で何本か（三角柱の側面の対角線、「交わる辺」もきく）
         t("03d08a", (r) => {
-          const S = CUBE, f = pick(r, S.F), d = pick(r, [f[0] + f[2], f[1] + f[3]]);
+          const S = pick(r, [CUBE, CUBE, RT, PR3]), f = pick(r, S.F.filter((x) => x.length === 4)), d = pick(r, [f[0] + f[2], f[1] + f[3]]);
+          const rel = pick(r, ["skew", "cross"]), R = REL[rel];
           const by = (...ks) => S.E.filter((x) => ks.includes(kindOf(S, d, x)));
-          const cross = by("perpX", "intersect"), par = by("parallel"), sk = by("perpSkew", "skew");
+          const cross = by("perpX", "intersect"), par = by("parallel"), sk = by("perpSkew", "skew"), ok = rel === "skew" ? sk : cross;
           return {
-            q: `${introOf(S, true)}で、面 ${f} の対角線 ${d} とねじれの位置にある辺は、全部で何本あるか。`,
-            ans: sk.length,
+            q: `${introOf(S, S === CUBE)}で、面 ${f} の対角線 ${d} ${R.phrase}は、全部で何本あるか。`,
+            ans: ok.length,
             unit: "本",
             hint: "対角線 " + d + " の両はしを通る辺は、対角線と交わる。それらと、平行な辺を消して、のこりを数えよう。",
-            steps: [`対角線 ${d} と交わる辺は、${listEdges(cross)}（${cross.length}本）。`, `平行な辺は${par.length ? listEdges(par) : "ない"}。`, `ねじれの位置にある辺は、${listEdges(sk)}（${sk.length}本）。`],
+            steps: rel === "skew"
+              ? [`対角線 ${d} と交わる辺は、${listEdges(cross)}（${cross.length}本）。`, `平行な辺は${par.length ? listEdges(par) : "ない"}。`, `のこりの、ねじれの位置にある辺は、${listEdges(sk)}（${sk.length}本）。`]
+              : [`対角線 ${d} の両はし（${d[0]}、${d[1]}）を通る辺が、対角線と交わる。`, `${listEdges(cross)}（${cross.length}本）。`],
           };
         }),
         // 03d08b 同じ問題を、4択で
@@ -301,7 +312,7 @@ export const UNITS = [
         }),
         // 03d10 辺から2本を選ぶとき、ねじれの位置にある2本の選び方（立方体・三角柱・正四角錐）
         t("03d10", (r) => {
-          const S = pick(r, [CUBE, CUBE, PR3, PY4]);
+          const S = pick(r, [CUBE, PR3, PY4, PY3]);
           const per = S.E.map((e) => S.E.filter((x) => !same(x, e) && isSkew(kindOf(S, e, x))).length);   // 辺ごとの、ねじれの位置にある辺の数
           const total = per.reduce((a, b) => a + b, 0);
           if (total % 2) return { skip: true };
@@ -314,8 +325,8 @@ export const UNITS = [
             unit: "通り",
             hint: "1本の辺について、ねじれの位置にある辺の数を数えて、全部の辺について合計する。同じ組を、2回ずつ数えていることに注意。",
             steps: [
-              gl.length === 1 ? `どの辺も、ねじれの位置にある辺は ${gl[0]}本。` : `ねじれの位置にある辺の数は、${gl.map((c) => `${c}本の辺が ${groups[c]}本`).join("、")}。`,
-              `のべ ${gl.map((c) => `${groups[c]}×${c}`).join(" + ")} = ${total}（組）`,
+              gl.length === 1 ? `どの辺も、ねじれの位置にある辺は ${gl[0]}本。` : `ねじれの位置にある相手の数で分けると、${gl.map((c) => `相手が ${c}本の辺が ${groups[c]}本`).join("、")}。`,
+              `あわせて ${gl.map((c) => `${groups[c]}×${c}`).join(" + ")} = ${total}（組）`,
               `同じ組を 2回ずつ数えているので　${total}÷2 = ${ans}（通り）`,
             ],
           };

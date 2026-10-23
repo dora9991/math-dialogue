@@ -3,12 +3,12 @@
 //   ikkan の演習プリント（kukan-04.dr.1〜10）・小テスト（kukan-04.qz.1〜5）を、コツコツくんのテンプレートにしたもの。
 //   テンプレート id＝「04」＋ d（演習）／q（小テスト）＋ ikkan の問題の番号（＋ a, b…）。例：04d05c ＝ kukan-04.dr.5 の3つ目、04q04a ＝ kukan-04.qz.4 の1つ目
 //   辺と面・面と面の関係、点と面のきょりは、solids.js の立体（直方体・立方体・三角柱・正四角錐）から計算する（手で書かない）。
-//   問題文の頭には、立体の紹介文（頂点の名前の約束）を入れる。「すべて答えよう」は、「何本か（何つか）」の数の問いか、「1つ選ぶ」4択に直した。
+//   問題文の頭には、立体の紹介文（頂点の名前の約束）を入れる。「すべて答えよう」は、「何本か（いくつか）」の数の問いか、「1つ選ぶ」4択に直した。
 // ============================================================
 import { t, pick, choices4, shuffle, sample } from "../kit.js";
 import { unit } from "../kukan-kit.js";
 import {
-  cuboid, rtPrism, pyramid, lineRel, lineFaceRel, faceFaceRel, edgesToFace, facesWhere, distPointFace, distFaceFace,
+  cuboid, rtPrism, prism, pyramid, lineRel, lineFaceRel, faceFaceRel, edgesToFace, facesWhere, distPointFace, distFaceFace,
   intro, edgeLabel, listEdges, same, prismName, pyramidName,
 } from "../solids.js";
 
@@ -16,6 +16,7 @@ const CUBE = cuboid(3, 3, 3);   // 位置関係は、長さによらないので
 const BOX = cuboid(4, 3, 2);
 const RT = rtPrism(3, 4, 5);
 const PY4 = pyramid(4);
+const PR3 = prism(3);
 
 const REGPOLY = { 3: "正三角形", 4: "正方形", 5: "正五角形", 6: "正六角形" };
 /** 立体の紹介文（頂点の名前の約束）。立方体は「立方体」、角柱・角錐は漢数字の名前で */
@@ -55,7 +56,7 @@ const RELF = {
   },
   perp: {
     phrase: "と垂直な辺", trap: [["on"], ["parallel"], ["cross"]],
-    hint: "面と垂直な辺は、面と1点で交わって、その点で、面の上の辺と直角になっている辺。",
+    hint: "面と垂直な辺は、面と1点で交わって、その点を通る、面の上のどの辺とも直角になっている辺。",
   },
 };
 
@@ -160,16 +161,17 @@ export const UNITS = [
             steps: [`${fName(f)} と平行な面は、${listFaces(par)}。`, `ほかの選択肢は、${fName(f)} と垂直な面（${ws.map(fName).join("、")}）。`, `答えは「${ans}」。`],
           };
         }),
-        // 04d03b 面 BFGC と垂直な面は、何つあるか
+        // 04d03b 面 BFGC と垂直な面は、いくつあるか（直方体・直角三角形が底の三角柱・正三角柱）
         t("04d03b", (r) => {
-          const S = pick(r, [CUBE, BOX]), f = pick(r, S.F);
+          const S = pick(r, [BOX, CUBE, RT, PR3]), f = pick(r, S.F);
           const perp = facesWhere(S, f, "perp"), par = facesWhere(S, f, "parallel");
+          if (!perp.length) return { skip: true };
           return {
-            q: `${introOf(S, S === CUBE)}で、${fName(f)} と垂直な面は、全部で何つあるか。`,
+            q: `${introOf(S, S === CUBE)}で、${fName(f)} と垂直な面は、全部でいくつあるか。`,
             ans: perp.length,
-            unit: "つ",
-            hint: "6つの面のうち、その面自身と、向かい合う平行な面を除くと、のこりはどんな関係かな？",
-            steps: [`${fName(f)} と平行な面は ${listFaces(par)}。`, `垂直な面は、${listFaces(perp)}（${perp.length}つ）。`],
+            unit: "個",
+            hint: `${fName(f)} 以外の面を、1つずつ、平行か、垂直か、そのどちらでもないか、調べよう。`,
+            steps: [`${fName(f)} と平行な面は${par.length ? `、${listFaces(par)}` : "ない"}。`, `垂直な面は、${listFaces(perp)}（${perp.length}個）。`],
           };
         }),
         // 04q01 直線と平面の位置関係を3つ（→ 正しい組を選ぶ4択）
@@ -186,12 +188,12 @@ export const UNITS = [
         }),
         // 04q02 面 DCGH と垂直な辺（→ 何本か）
         t("04q02", (r) => {
-          const S = pick(r, [BOX, BOX, CUBE, RT]);
+          const S = pick(r, [BOX, CUBE, RT, PR3]);
           return edgeFaceCountQ(r, S, "perp", { cube: S === CUBE });
         }),
         // 04q03 面 DCGH と平行な辺（→ 何本か）
         t("04q03", (r) => {
-          const S = pick(r, [BOX, BOX, CUBE, RT]);
+          const S = pick(r, [BOX, CUBE, RT, PR3]);
           return edgeFaceCountQ(r, S, "parallel", { cube: S === CUBE });
         }),
       ],
@@ -225,15 +227,24 @@ export const UNITS = [
         }),
         // 04d05a 底面が ∠B＝90° の三角柱で、面と垂直な辺（4択）
         t("04d05a", (r) => edgeFaceChoiceQ(r, RT, "perp", { faces: RT.F.filter((f) => edgesToFace(RT, f, "perp").length > 0) })),
-        // 04d05b 面 ABED と垂直な面は、何つあるか
+        // 04d05b 面 ABED と垂直な面は、いくつあるか
         t("04d05b", (r) => {
-          const f = pick(r, RT.F), perp = facesWhere(RT, f, "perp"), others = RT.F.filter((g) => g !== f && !perp.includes(g));
+          const f = pick(r, RT.F), perp = facesWhere(RT, f, "perp"), par = facesWhere(RT, f, "parallel");
+          const cross = RT.F.filter((g) => g !== f && !perp.includes(g) && !par.includes(g));
+          const cornerOf = (g) => [...f].filter((v) => g.includes(v)).find((v) => "ABC".includes(v));   // 2つの側面が交わる辺の、底面の頂点
+          const dotAt = (v) => { const o = RT.V[v], others = [...RT.F[0]].filter((x) => x !== v).map((x) => RT.V[x].map((c, i) => c - o[i])); return others[0].reduce((sum, c, i) => sum + c * others[1][i], 0); };
+          if (cross.some((g) => dotAt(cornerOf(g)) === 0)) return { skip: true };
           return {
-            q: `${introOf(RT)}で、${fName(f)} と垂直な面は、全部で何つあるか。`,
+            q: `${introOf(RT)}で、${fName(f)} と垂直な面は、全部でいくつあるか。`,
             ans: perp.length,
-            unit: "つ",
-            hint: "底面は、側面と垂直。側面どうしが垂直かどうかは、底面の角を見よう。",
-            steps: [`${fName(f)} と垂直な面は、${listFaces(perp)}。`, `${others.length ? `${listFaces(others)}は、垂直ではない。` : ""}垂直な面は、全部で ${perp.length}つ。`].filter((s) => s),
+            unit: "個",
+            hint: "底面は、側面と垂直。側面どうしが垂直かどうかは、底面の角が直角かどうかで決まる。",
+            steps: [
+              `${fName(f)} と垂直な面は、${listFaces(perp)}。`,
+              ...par.map((g) => `${fName(g)} は、${fName(f)} と平行（垂直ではない）。`),
+              ...cross.map((g) => `${fName(g)} は、${fName(f)} と ${eName([...f].filter((v) => g.includes(v)).join(""))} で交わるが、底面の ∠${cornerOf(g)} が直角ではないので、垂直ではない。`),
+              `垂直な面は、全部で ${perp.length}個。`,
+            ],
           };
         }),
         // 04d05c 辺 CF と平行な面（4択）
@@ -252,17 +263,17 @@ export const UNITS = [
             steps: [`${eName(e)} と平行な面は、${fName(par[0])}。`, `ほかの選択肢は、${wrongs.map((f) => `${fName(f)}（${WORDF[lineFaceRel(RT, e, f)]}）`).join("、")}。`, `答えは「${ans}」。`],
           };
         }),
-        // 04d06a 辺 CG をふくみ、面 ABCD と垂直な面は、何つあるか
+        // 04d06a 辺 CG をふくみ、面 ABCD と垂直な面は、いくつあるか
         t("04d06a", (r) => {
           const S = pick(r, [CUBE, BOX]), e = pick(r, S.E), g = pick(r, S.F);
           const ok = S.F.filter((f) => has(f, e) && faceFaceRel(S, f, g) === "perp"), con = S.F.filter((f) => has(f, e));
           if (!ok.length) return { skip: true };
           return {
-            q: `${introOf(S, S === CUBE)}で、${eName(e)} をふくむ面のうち、${fName(g)} と垂直な面は、全部で何つあるか。`,
+            q: `${introOf(S, S === CUBE)}で、${eName(e)} をふくむ面のうち、${fName(g)} と垂直な面は、全部でいくつあるか。`,
             ans: ok.length,
-            unit: "つ",
+            unit: "個",
             hint: "辺をふくむ面は2つ。その2つの面が、それぞれ " + fName(g) + " と、平行か垂直か、調べよう。",
-            steps: [`${eName(e)} をふくむ面は、${listFaces(con)}。`, con.map((f) => `${fName(f)} と ${fName(g)} … ${f === g ? "同じ面" : faceFaceRel(S, f, g) === "perp" ? "垂直" : "平行"}`).join("、") + "。", `垂直な面は ${ok.length}つ。`],
+            steps: [`${eName(e)} をふくむ面は、${listFaces(con)}。`, con.map((f) => `${fName(f)} と ${fName(g)} … ${f === g ? "同じ面" : faceFaceRel(S, f, g) === "perp" ? "垂直" : "平行"}`).join("、") + "。", `垂直な面は ${ok.length}個。`],
           };
         }),
         // 04d06b 同じ問題を、4択で（あてはまる面が1つになる組だけ）
@@ -320,7 +331,7 @@ export const UNITS = [
               ans: T.text,
               choices: choices4(r, T.text, fs.map((s) => s.text)),
               hint: "成り立たない例（反例）が1つでも見つかれば、その文は「いつも成り立つ」とはいえない。直方体の辺と面でためそう。",
-              steps: [T.why, ...fs.map((s) => `「${s.text.replace(/。$/, "")}」は成り立たない … ${s.ex(r)}`)],
+              steps: [`${introOf(BOX)}の辺と面で確かめる。${T.why}`, ...fs.map((s) => `「${s.text.replace(/。$/, "")}」は成り立たない … ${s.ex(r)}`)],
             };
           }
           const F = pick(r, Fs), ts = sample(r, Ts, 3);   // いつも成り立つとはいえないものを選ぶ（成り立たない文1つ＋正しい文3つ）
@@ -329,7 +340,7 @@ export const UNITS = [
             ans: F.text,
             choices: choices4(r, F.text, ts.map((s) => s.text)),
             hint: "成り立たない例（反例）が見つかる文を、さがそう。直方体の辺と面でためそう。",
-            steps: [`「${F.text}」は成り立たない … ${F.ex(r)}`, "ほかの 3つは、いつも成り立つ。（同じ平面や直線に垂直、または平行なものは、同じ向きになる）"],
+            steps: [`${introOf(BOX)}の辺と面で確かめる。「${F.text.replace(/。$/, "")}」は成り立たない … ${F.ex(r)}`, "ほかの 3つは、いつも成り立つ。（同じ平面や直線に垂直、または平行なものは、同じ向きになる）"],
           };
         }),
         // 04d08 正四角錐 O−ABCD で、OH が高さといえるのは、OH と底面がどんな関係にあるからか（頂点から底面にひいた垂線が高さ）
@@ -367,26 +378,26 @@ export const UNITS = [
       ],
       // ───────── 4 入試レベル ─────────
       4: [
-        // 04d09 机の上に立てた、開いたノート：ℓ が机の面に垂直といえる理由
+        // 04d09 机の上に立てた、開いたノート：ℓ が机の面に垂直と言い切るのに、じゅうぶんな理由
         t("04d09", (r) => {
-          const ans = "机の面の上の、O で交わる 2直線 m、n の、どちらとも垂直だから。";
+          const ans = "m と n は、机の面の上の、O で交わる 2直線で、ℓ は、そのどちらとも垂直だから。";
           const ws = sample(r, [
-            "机の面の上の 1本の直線 m と垂直だから。",
-            "ℓ が、机の面と点 O で交わっているから。",
-            "ℓ が、表紙の面の上にあるから。",
-            "m と n が、垂直に交わっているから。",
+            "ℓ は、机の面の上の 1本の直線 m と垂直だから。",
+            "ℓ は、机の面と点 O で交わっているから。",
+            "ℓ は、表紙の面の上にあるから。",
+            "ℓ は、ノートの表紙（長方形）の1辺だから。",
           ], 3);
           return {
-            q: "机の上に、ノートを開いて立てる。とじ目の直線 ℓ は、机の面と点 O で交わっている。表紙の下のふち m、n は、どちらも机の面の上にあって O を通り、ℓ と m、ℓ と n は、どちらも垂直である。ℓ が机の面に垂直であるといえる理由として、正しいものはどれか。",
+            q: "机の上に、ノートを開いて立てる。とじ目の直線 ℓ は、机の面と点 O で交わっている。表紙の下のふち m、n は、どちらも机の面の上にあって O を通り、ℓ と m、ℓ と n は、どちらも垂直である。ℓ が机の面に垂直だと言い切るために、じゅうぶんな理由はどれか。（どの選択肢も、事実としては正しい）",
             ans,
             choices: choices4(r, ans, ws),
-            hint: "直線が平面に垂直といえるのは、平面の上のどんな直線に垂直なときか。本数と、交わり方に目をつけよう。",
-            steps: ["ℓ が平面に垂直といえるのは、平面の上の、交わる 2直線に垂直なとき。", "m、n は、机の面の上で O を通る（交わる）2直線で、ℓ は、そのどちらとも垂直。", "1本だけに垂直、1点で交わっているだけ、表紙の上にあるだけでは、ℓ はまだたおれるので、垂直とはいえない。"],
+            hint: "平面に垂直と言い切るには、平面の上の、何本の、どんな直線に垂直であればよいか。本数と、交わり方に目をつけよう。",
+            steps: ["ℓ が平面に垂直だと言い切れるのは、平面の上の、交わる 2直線に垂直なとき。", "m、n は、机の面の上で O を通る（交わる）2直線で、ℓ は、そのどちらとも垂直。だから、ℓ は机の面に垂直。", "「1本だけに垂直」「1点で交わっているだけ」「表紙の上にある」「表紙の1辺」は、事実でも、ℓ がまだたおれるので、言い切るには、じゅうぶんでない。"],
           };
         }),
         // 04d10 辺と面が平行になる組は、全部で何組か
         t("04d10", (r) => {
-          const S = pick(r, [BOX, BOX, RT, PY4]);
+          const S = pick(r, [BOX, PR3, RT, PY4]);
           const per = S.E.map((e) => S.F.filter((f) => lineFaceRel(S, e, f) === "parallel").length);   // 辺ごとの、平行な面の数
           const total = per.reduce((a, b) => a + b, 0);
           const groups = {}; per.forEach((c) => { groups[c] = (groups[c] || 0) + 1; });
@@ -402,30 +413,49 @@ export const UNITS = [
             ],
           };
         }),
-        // 04q05 辺 AE が面 ABCD に垂直であるといえる理由（「交わる」ことば）
+        // 04q05 辺 AE が面 ABCD に垂直と言い切る理由（形A：じゅうぶんな理由を選ぶ）／ 垂直といえるかの判断（形B：交わる2直線か、平行な2直線か、1本か）
         t("04q05", (r) => {
           const S = pick(r, [BOX, CUBE]), f = pick(r, S.F);
           const e = pick(r, edgesToFace(S, f, "perp"));
           const P = [...e].find((v) => f.includes(v));
           const ps = S.E.filter((x) => has(f, x) && x.includes(P));   // 面 f 上で P を通る2本の辺
-          const opp = S.E.find((x) => has(f, x) && !x.includes(P) && lineRel(S, x, ps[0]).rel === "parallel");   // ps[0] と平行な、面 f 上の辺
           const [p1, p2] = ps;
-          const ans = `${eName(e)} が、${fName(f)} 上の、${P} で交わる 2直線 ${eLab(p1)}、${eLab(p2)} と垂直だから。`;
-          const ws = [
-            `${eName(e)} が、${fName(f)} 上の 1本の直線 ${eLab(p1)} と垂直だから。`,
-            `${eName(e)} が、${fName(f)} 上の、平行な 2直線 ${eLab(p1)}、${eLab(opp)} と垂直だから。`,
-            `${eName(e)} が、${fName(f)} と点 ${P} で交わっているから。`,
-          ];
+          const opp = S.E.find((x) => has(f, x) && !x.includes(P) && lineRel(S, x, p1).rel === "parallel");   // p1 と平行な、面 f 上の辺
+          const wrapUp = "1本だけ、平行な 2本だけ、1点で交わっているだけでは、辺がたおれるので、言い切るには、じゅうぶんでない。";
+          if (r(0, 1) === 0) {   // 形A
+            const ans = `${eName(e)} は、${fName(f)} 上の、${P} で交わる 2直線 ${eLab(p1)}、${eLab(p2)} と垂直だから。`;
+            const ws = [
+              `${eName(e)} は、${fName(f)} 上の 1本の直線 ${eLab(p1)} と垂直だから。`,
+              `${eName(e)} は、${fName(f)} 上の、平行な 2直線 ${eLab(p1)}、${eLab(opp)} と垂直だから。`,
+              `${eName(e)} は、${fName(f)} と点 ${P} で交わっているから。`,
+            ];
+            return {
+              q: `${introOf(S, S === CUBE)}で、${eName(e)} が ${fName(f)} に垂直だと言い切るために、じゅうぶんな理由はどれか。（どの選択肢も、事実としては正しい）`,
+              ans,
+              choices: choices4(r, ans, ws),
+              hint: "平面に垂直と言い切るには、平面の上の、何本の、どんな直線に垂直であればよいか。本数と、交わり方に目をつけよう。",
+              steps: [
+                `${eName(e)} は、${fName(f)} 上の ${eLab(p1)}、${eLab(p2)} と、${P} で垂直に交わっている。`,
+                `${eLab(p1)} と ${eLab(p2)} は、点 ${P} で交わる 2直線。交わる 2直線に垂直だから、${eName(e)} は ${fName(f)} に垂直。`,
+                wrapUp,
+              ],
+            };
+          }
+          // 形B：「このことだけから」、垂直といえるか
+          const KIND = {
+            cross2: [`${fName(f)} 上の、${P} で交わる 2直線 ${eLab(p1)}、${eLab(p2)} と垂直である`, true, `${eLab(p1)} と ${eLab(p2)} は、点 ${P} で交わる 2直線。交わる 2直線に垂直だから、垂直といえる。`],
+            par2: [`${fName(f)} 上の、平行な 2直線 ${eLab(p1)}、${eLab(opp)} と垂直である`, false, `${eLab(p1)} と ${eLab(opp)} は平行な 2直線。平行な 2本に垂直なだけでは、辺がたおれるので、垂直とは言い切れない。`],
+            one: [`${fName(f)} 上の 1本の直線 ${eLab(p1)} と垂直である`, false, `${fName(f)} 上の 1本に垂直なだけでは、辺がたおれるので、垂直とは言い切れない。`],
+          };
+          const key = pick(r, ["cross2", "cross2", "par2", "one"]), [premise, yes, why] = KIND[key];
+          const YES = "垂直である", NO = "垂直かどうかは、これだけでは言い切れない";
+          const ans = yes ? YES : NO;
           return {
-            q: `${introOf(S, S === CUBE)}で、${eName(e)} が ${fName(f)} に垂直であるといえる理由として、正しいものはどれか。`,
+            q: `${introOf(S, S === CUBE)}で、${eName(e)} は ${fName(f)} と点 ${P} で交わっていて、${premise}。このことだけから、${eName(e)} と ${fName(f)} の位置関係について、いえることはどれか。`,
             ans,
-            choices: choices4(r, ans, ws),
-            hint: "直線が平面に垂直といえるのは、平面の上のどんな直線に垂直なときか。本数と、交わり方に目をつけよう。",
-            steps: [
-              `${eName(e)} は、${fName(f)} 上の ${eLab(p1)}、${eLab(p2)} と、${P} で垂直に交わっている。`,
-              `${eLab(p1)} と ${eLab(p2)} は、点 ${P} で交わる 2直線。交わる 2直線に垂直だから、${eName(e)} は ${fName(f)} に垂直。`,
-              "1本だけ、平行な 2本だけ、1点で交わっているだけでは、辺がたおれるので、垂直とはいえない。",
-            ],
+            choices: choices4(r, ans, [YES, NO, "平行である", `${fName(f)} の上にある`].filter((x) => x !== ans)),
+            hint: "平面に垂直と言い切るには、平面の上の、何本の、どんな直線に垂直であればよいか。本数と、交わり方に目をつけよう。",
+            steps: [`${eName(e)} は、${premise}。`, why, `${eName(e)} は ${fName(f)} と点 ${P} で交わっているので、平行でも、面の上にあるのでもない。`, `答えは「${ans}」。`],
           };
         }),
       ],
