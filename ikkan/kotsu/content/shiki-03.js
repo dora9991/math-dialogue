@@ -120,7 +120,7 @@ const mulBuild = (r, mode, o) => {
   } else {
     steps = ["それぞれ分配法則でかっこをはずして、同類項をまとめる。かっこの前が − のときは、かっこの中の全部の項の符号が変わる。", $(`${expr}=${raw(ex.flat())}=${ptex(res)}`)];
   }
-  const hint = "かっこの外の数を、かっこの中の全部の項にかけよう（分配法則 $m(a+b)=ma+mb$）。負の数をかけるときの符号に注意。";
+  const hint = "かっこの外の数は、かっこの中のどの項にかけるのだったかな（分配法則 $m(a+b)=ma+mb$）。符号にも気をつけよう。";
   if (mode === "num") {
     const e = pickKey(r, res);
     return { q: `${$(expr)} を計算する。答えの ${askText(e)}は？`, ans: ansQ(coefOf(res, e)), hint, steps };
@@ -149,7 +149,7 @@ const divBuild = (r, mode, o) => {
   const expr = `(${raw(ts)})\\div ${ds}`;
   const mid = joinTex(ts.map((tt) => `${T1(tt)}\\div ${ds}`));
   const steps = ["かっこの中の全部の項を、その数でわる（$\\div d$ は $\\times\\frac{1}{d}$ と考えてもよい）。", $(`${expr}=${mid}=${ptex(res)}`)];
-  const hint = "かっこの中の全部の項を、わる数でわろう。負の数でわるときの符号に注意。";
+  const hint = "かっこの中のどの項を、わる数でわるのだったかな。負の数でわるときの符号にも気をつけよう。";
   if (mode === "num") {
     const e = pickKey(r, res);
     return { q: `${$(expr)} を計算する。答えの ${askText(e)}は？`, ans: ansQ(coefOf(res, e)), hint, steps };
@@ -207,7 +207,7 @@ const fracSumBuild = (r, mode, o) => {
     ok = !pisz(c.num) && (mode !== "num" || (gcdAll([...Object.values(c.num).map((q) => Math.abs(q[0])), c.L]) === 1));
   }
   const steps = [op === "-" ? "分母をそろえて（通分して）、1つの分数にまとめる。ひく分数の分子には、かっこをつけて、全部の項の符号を変える。" : "分母をそろえて（通分して）、1つの分数にまとめる。分子にかける数は、分子全体にかけるので、かっこをつける。", $(c.chain1), $(c.chain2)];
-  const hint = op === "-" ? "分母の最小公倍数に通分して、分子を1つにまとめよう。ひく分数の分子には、かっこをつけて符号を変えよう。" : "分母の最小公倍数に通分して、分子を1つにまとめよう。分子には、かっこをつけて、通分の数をかけよう。";
+  const hint = op === "-" ? "分母の最小公倍数に通分して、分子を1つにまとめよう。ひく分数の分子は、かっこをつけて、どう計算するのだったかな。" : "分母の最小公倍数に通分して、分子を1つにまとめよう。通分の数は、分子のどこにかけるのだったかな。";
   if (mode === "num") {
     const e = pickKey(r, c.num);
     return { q: `${$(c.expr)} を計算して、分母が ${c.L} の 1つの分数にまとめる。分子の ${askText(e)}は？`, ans: ansQ(coefOf(c.num, e)), hint, steps };
@@ -243,7 +243,7 @@ const fracMistakeBuild = (r, what) => {
       q: `次の計算には、まちがいがある。${$(line)} 最初にまちがえているところを説明した文として、正しいものはどれか。`,
       ans,
       choices: choices4(r, ans, wrongs),
-      hint: "ひく分数の分子は、かっこをつけて計算する。−( ) をはずすとき、全部の項がどうなるか確かめよう。",
+      hint: "ひく分数の分子は、かっこをつけて、どう計算するのだったかな。−( ) をはずすと、各項の符号はどうなるか確かめよう。",
       steps,
     };
   }
@@ -251,7 +251,7 @@ const fracMistakeBuild = (r, what) => {
   return {
     q: `次の計算には、まちがいがある。${$(line)} 正しく計算して、分母が ${d2} の 1つの分数にまとめたとき、分子の ${askText(e)}は？`,
     ans: ansQ(coefOf(right, e)),
-    hint: "ひく分数の分子には、かっこをつけて、全部の項の符号を変えて計算し直そう。",
+    hint: "ひく分数の分子は、かっこをつけて、どう計算するのだったかな。考え直して、計算し直そう。",
     steps,
   };
 };
@@ -289,7 +289,7 @@ const abBuild = (r, mode) => {
     steps = [`$A$、$B$ を代入して、${$(`${expr}=${subst}`)}。`, `内側のかっこを先に計算して、${$(`${subst}=${mid}`)}。`, $(`${mid}=${raw([...tms(pscale(X, c)), ...tms(pneg(inner))])}=${ptex(res)}`)];
     wrongs = [padd(psub(pscale(X, c), pscale(X, d)), pscale(Y, e)), padd(pscale(X, c + d), pscale(Y, e)), psub(pscale(X, c), pscale(X, d)), pneg(res)];
   }
-  const hint = `$A$、$B$ にそれぞれの式を代入して、分配法則でかっこをはずそう。${form === 2 ? "ひく式のかっこでは、全部の項の符号が変わる。" : "かける数の符号に注意しよう。"}`;
+  const hint = `$A$、$B$ にそれぞれの式を代入して、分配法則でかっこをはずそう。${form === 2 ? "−( ) をはずすと、各項の符号はどうなるかな。" : "かける数の符号にも気をつけよう。"}`;
   const head = `$A=${ptex(A)}$、$B=${ptex(B)}$ のとき、${$(expr)} を計算する。`;
   if (mode === "num") {
     const k = pickKey(r, res);
@@ -362,7 +362,7 @@ const unknownFracBuild = (r, mode) => {
   const Bf = `\\frac{${raw(NB)}}{${dB}}`, Cf = `\\frac{${raw(NC)}}{${dC}}`;
   const head = minus ? `ある式から ${$(Bf)} をひくと、${$(Cf)} になった。` : `ある式に ${$(Bf)} をたすと、${$(Cf)} になった。`;
   const steps = [minus ? `ある式は、${$(Cf)} に ${$(Bf)} をたしたもの。` : `ある式は、${$(Cf)} から ${$(Bf)} をひいたもの。`, $(c.chain1), $(c.chain2)];
-  const hint = minus ? "「ある式 − ○ ＝ △」から、ある式を求める式を考えよう。通分のとき、ひく分数の分子にはかっこをつける。" : "「ある式 ＋ ○ ＝ △」から、ある式を求める式を考えよう。通分のとき、ひく分数の分子にはかっこをつける。";
+  const hint = minus ? "「ある式 − ○ ＝ △」から、ある式を求める式を考えよう。通分のとき、ひく分数の分子は、かっこをつけて、どう計算するのだったかな。" : "「ある式 ＋ ○ ＝ △」から、ある式を求める式を考えよう。通分のとき、ひく分数の分子は、かっこをつけて、どう計算するのだったかな。";
   if (mode === "num") {
     const e = pickKey(r, c.num);
     return { q: `${head}ある式を、分母が ${c.L} の 1つの分数にまとめて表す。分子の ${askText(e)}は？`, ans: ansQ(coefOf(c.num, e)), hint, steps };

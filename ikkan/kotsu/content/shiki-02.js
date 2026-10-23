@@ -131,7 +131,7 @@ const addSubBuild = (r, op, mode, shapeKey, lo, hi, hint0) => {
   const steps = op === "+"
     ? ["かっこをはずして、同類項をまとめる。", $(`${ex}=${raw(mid)}=${ptex(res)}`)]
     : ["ひく式の各項の符号を変えて、かっこをはずす。", $(`${ex}=${raw(mid)}=${ptex(res)}`)];
-  const hint = hint0 || (op === "+" ? "かっこをはずして、同類項をまとめよう。たし算では、かっこの中の符号は変わらない。" : "ひく式のかっこをはずすとき、かっこの中の全部の項の符号を変えよう。");
+  const hint = hint0 || (op === "+" ? "かっこをはずして、同類項をまとめよう。たし算では、かっこの中の符号は変わらない。" : "ひく式のかっこをはずすと、かっこの中の各項の符号は、どうなるかな。");
   if (mode === "num") return numAsk(r, res, `${$(ex)} を計算する。`, hint, steps, "答えの");
   const { ans, choices } = polyChoices(r, res, op === "+" ? likeWrongs(A.concat(B)) : subWrongs(A, B));
   return { q: `${$(ex)} を計算すると？`, ans, choices, hint, steps };
@@ -152,7 +152,7 @@ const verticalBuild = (r, what) => {
     return {
       q: `${$(ex)} を、縦に書いて計算する。ひく式の符号を変えた式 ${$(`-(${raw(B)})`)} の、${askText(e)}は？`,
       ans: ansQ(coefOf(P(flipped), e)),
-      hint: "ひく式の、すべての項の符号を変える。",
+      hint: "−( ) をはずすと、かっこの中の各項の符号は、どうなるかな。",
       steps,
     };
   }
@@ -221,7 +221,7 @@ const mistakeBuild = (r, what) => {
       q: `次の計算には、まちがいがある。${$(line)} 最初にまちがえているところを説明した文として、正しいものはどれか。`,
       ans,
       choices: choices4(r, ans, wrongs),
-      hint: "−( ) をはずすとき、かっこの中の全部の項がどうなるか、1つ1つ確かめよう。",
+      hint: "−( ) をはずすと、かっこの中の各項の符号は、どうなるのだったかな。1つ1つ確かめよう。",
       steps,
     };
   }
@@ -229,7 +229,7 @@ const mistakeBuild = (r, what) => {
   return {
     q: `次の計算には、まちがいがある。${$(line)} 正しく計算したとき、${ansAsk(e)}`,
     ans: ansQ(coefOf(right, e)),
-    hint: "−( ) をはずすとき、かっこの中の全部の項の符号を変えて、計算し直そう。",
+    hint: "−( ) をはずすと、かっこの中の各項の符号は、どうなるのだったかな。考え直して、計算し直そう。",
     steps,
   };
 };

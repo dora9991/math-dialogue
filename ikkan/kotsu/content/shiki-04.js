@@ -61,9 +61,9 @@ const polyChoices = (r, right, wrongs) => {
 };
 
 /** 答えの単項式 res について、「□ に入る数（係数）」を聞く問い。lead：式と＝のあとの □ より前、tail：文字の部分は res から */
-const boxQ = (expr, res, hint, steps) => {
+const boxQ = (expr, res, hint, steps, note = "") => {
   const [c, e] = parts(res);
-  return { q: `${$(`${expr}=\\square ${lettersTex(e)}`)} の □ にあてはまる数は？`, ans: ansQ(c), hint, steps };
+  return { q: `${$(`${expr}=\\square ${lettersTex(e)}`)} の □ にあてはまる数は？${note}`, ans: ansQ(c), hint, steps };
 };
 /** 単項式の積の途中式：(-4)\times 3\times a\times b */
 const mulMid = (ms) => [...ms.map(([c]) => (Array.isArray(c) ? (c[1] === 1 ? kf(c[0]) : fracTex(c[0], c[1])) : kf(c))), ...ms.flatMap(([, e]) => letterList(e))].join("\\times ");
@@ -118,8 +118,8 @@ const divBuild = (r, mode, o) => {
   const sg = cq < 0 ? "-" : "";
   const frac = `${sg}\\frac{${mTex(absC(cq * cd), dd[1])}}{${mTex(absC(cd), ed)}}`;
   const steps = ["分数の形にして、係数どうし、同じ文字どうしを約分する（逆数をかけてもよい）。", $(`${expr}=${frac}=${ptex(res)}`)];
-  const hint = "わる式を分母にした分数にして、約分しよう。÷ のあとの式は、全体が分母になる。";
-  if (mode === "num") return boxQ(expr, res, hint, steps);
+  const hint = "わる式を分母にした分数にすると、約分できる係数と文字は、どれだろう。";
+  if (mode === "num") return boxQ(expr, res, hint, steps, "（÷ のあとの式は、全体でわる）");
   const [rc, re] = parts(res);
   const wrongs = [
     Mq([rc, dd[1]]),                                              // 約分で文字を消し忘れる
@@ -128,7 +128,7 @@ const divBuild = (r, mode, o) => {
     Mq([dd[0] - cd, re]),                                         // 係数を、ひき算にしてしまう
   ];
   const { ans, choices } = polyChoices(r, res, wrongs);
-  return { q: `${$(expr)} を計算すると？`, ans, choices, hint, steps };
+  return { q: `${$(expr)} を計算すると？（÷ のあとの式は、全体でわる）`, ans, choices, hint, steps };
 };
 
 // ── 分数の係数の乗法（dr.4）───────────────────────────────
@@ -169,7 +169,7 @@ const fdivBuild = (r, mode, o) => {
   const sg = cq < 0 ? "-" : "";
   const mid2 = `${sg}\\frac{${mTex(absC(dd[0]), dd[1])}\\times ${q}}{${mTex(p, ed)}}`;
   const steps = ["わる式の逆数をかける（分母と分子を入れかえる。文字も入れかえる）。", $(`${expr}=${fT(dd)}\\times ${sgd < 0 ? `\\left(${recip}\\right)` : recip}=${mid2}=${ptex(res)}`)];
-  const hint = "分数の係数でわるときは、わる式の逆数（分母と分子を入れかえた式）をかけよう。文字も逆数に入る。";
+  const hint = "わる式の逆数（分母と分子を入れかえた式）は、どんな式になるかな。文字も入れかえるよ。";
   if (mode === "num") return boxQ(expr, res, hint, steps);
   const wrongs = [
     Mq([qmul(Q(dd[0]), Q(sgd * p, q)), re]),                      // わる式の逆数にしないで、そのままかけてしまう
@@ -237,7 +237,8 @@ const blankBuild = (r, mode, form) => {
     hint = "「(わられる式)÷□＝(商)」から、□ を求める計算を考えよう。";
   }
   const ans0 = Mq(X);
-  if (mode === "num") return { q: `${$(expr)} のとき、□ にあてはまる単項式の係数は？`, ans: ansQ(parts(ans0)[0]), hint, steps };
+  const note = form === "d1" ? "（÷ のあとの式は、全体でわる）" : "";
+  if (mode === "num") return { q: `${$(expr)} のとき、□ にあてはまる単項式の係数は？${note}`, ans: ansQ(parts(ans0)[0]), hint, steps };
   const [xc, xe] = [X[0], X[1]];
   const wrongs = form === "x"
     ? [pmul(Mq(A), Mq(C)), pdivMono(Mq(A), Mq(C)), pneg(ans0), Mq([xc, C[1]])]
@@ -245,7 +246,7 @@ const blankBuild = (r, mode, form) => {
       ? [pdivMono(Mq(C), Mq(A)), Mq(C), pdivMono(Mq(A), Mq(C)), pneg(ans0)]
       : [pmul(Mq(A), Mq(C)), pdivMono(Mq(C), Mq(A)), Mq(A), pneg(ans0)];
   const { ans, choices } = polyChoices(r, ans0, wrongs);
-  return { q: `${$(expr)} のとき、□ にあてはまる式はどれか。`, ans, choices, hint, steps };
+  return { q: `${$(expr)} のとき、□ にあてはまる式はどれか。${note}`, ans, choices, hint, steps };
 };
 
 // ── まちがいの理由を選ぶ（dr.8）─────────────────────────────
@@ -268,10 +269,10 @@ const reasonBuild = (r, kind) => {
   // 除法：a^m ÷ a で、指数が減らない
   const m = r(2, 3), cd = r(2, 6), cq = r(2, 5), cc = cd * cq;
   const um = (n) => (n === 1 ? u : `${u}^{${n}}`), wrongRes = `${cq}${um(m)}`;
-  const q = `次の計算は、まちがっている。${$(`${cc}${um(m)}\\div ${cd}${u}=${wrongRes}`)} まちがいを正しく説明している文はどれか。`;
+  const q = `次の計算は、まちがっている。${$(`${cc}${um(m)}\\div ${cd}${u}=${wrongRes}`)}（÷ のあとの式は、全体でわる） まちがいを正しく説明している文はどれか。`;
   const ans = `${$(`\\frac{${cc}${um(m)}}{${cd}${u}}`)} を約分して、${$(`${um(m)}\\div ${u}=${um(m - 1)}`)} となるので、答えは ${$(`${cq}${um(m - 1)}`)}。`;
   const wrongs = [`${$(`${cc}\\div ${cd}=${cq}`)} で、文字はそのまま残るので、${$(wrongRes)}。`, `${$(`${um(m)}\\div ${u}`)} は指数をたして ${$(um(m + 1))} になるので、${$(`${cq}${um(m + 1)}`)}。`, `${$(`${um(m)}\\div ${u}=1`)} となるので、答えは ${$(String(cq))}。`];
-  return { q, ans, choices: choices4(r, ans, wrongs), hint: "÷ は、わる式を分母にした分数にして約分する。同じ文字は、1つずつ約分される。", steps: [`${$(`${cc}${um(m)}\\div ${cd}${u}=\\frac{${cc}${um(m)}}{${cd}${u}}=${cq}${um(m - 1)}`)}`, "約分すると、文字は指数が 1 へる。"] };
+  return { q, ans, choices: choices4(r, ans, wrongs), hint: "わる式を分母にした分数にすると、同じ文字は、いくつ約分できるかな。", steps: [`${$(`${cc}${um(m)}\\div ${cd}${u}=\\frac{${cc}${um(m)}}{${cd}${u}}=${cq}${um(m - 1)}`)}`, "約分すると、文字は指数が 1 へる。"] };
 };
 
 // ── 辺を何倍かにしたとき（dr.9）──────────────────────────────
