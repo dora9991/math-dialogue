@@ -117,14 +117,12 @@ const explain = (L, R, v, ord, map) => {
   const e = (p) => ftex(p, ord, map), dvn = (map && map[v]) || v, out = [];
   const moved = !(peq(lhsV, L) && peq(rhs, R));
   const ck = Object.keys(C), numC = ck.length === 1 && ck[0] === "";
+  if (isUnit1(C)) return [`$${dvn}$ 以外の項を右辺へ移項する（符号がかわる）。$${dvn}=${e(sol)}$`];
   if (moved) out.push(`$${dvn}$ をふくむ項を左辺に、ほかの項を右辺に移項して、$${e(lhsV)}=${e(rhs)}$。`);
-  if (!isUnit1(C)) {
-    if (numC) {
-      const a = C[""];
-      out.push(a[1] === 1 ? `両辺を ${a[0]} でわって、$${dvn}=${e(sol)}$。` : a[0] === 1 ? `両辺に ${a[1]} をかけて、$${dvn}=${e(sol)}$。` : `両辺に $\\frac{${a[1]}}{${a[0]}}$ をかけて、$${dvn}=${e(sol)}$。`);
-    } else out.push(`両辺を $${dsp(pt(C, ord), map)}$ でわって、$${dvn}=${e(sol)}$。`);
-  } else if (moved) { /* 移項だけで解けた */ } else out.push(`$${dvn}=${e(sol)}$。`);
-  out.push(`答え　$${dvn}=${e(sol)}$`);
+  if (numC) {
+    const a = C[""];
+    out.push(a[1] === 1 ? `両辺を ${a[0]} でわって、$${dvn}=${e(sol)}$。` : a[0] === 1 ? `両辺に ${a[1]} をかけて、$${dvn}=${e(sol)}$。` : `両辺に $\\frac{${a[1]}}{${a[0]}}$ をかけて、$${dvn}=${e(sol)}$。`);
+  } else out.push(`両辺を $${dsp(pt(C, ord), map)}$ でわって、$${dvn}=${e(sol)}$。`);
   return out;
 };
 /** 「等式を v について解くと？」の4択をつくる（q を除く） */
@@ -151,7 +149,7 @@ const checkFam = (F, v) => {
 const famChoices = (r, F, v) => {
   checkFam(F, v);
   const ans = tx(F.ans[v]);
-  return { ans, choices: choices4(r, ans, F.wrongs[v].map(([s]) => tx(s))) };
+  return { ans, choices: choices4(r, ans, shuffle(r, F.wrongs[v]).slice(0, 3).map(([s]) => tx(s))) };
 };
 
 export const UNITS = [
@@ -192,9 +190,9 @@ export const UNITS = [
             const [u, w] = pick(r, [["x", "y"], ["a", "b"], ["m", "n"], ["s", "t"], ["x", "z"]]);
             L = poly([r(2, 9), { [u]: 1 }]); R = V1(w); v = u;
           } else if (kind === "B") {
-            // l＝ℓ、p＝π、d＝直径（内部の小文字）
+            // 内部の文字 l＝ℓ、p＝π、q＝r または d（直径）
             const [tgt, k] = pick(r, [["r", 2], ["d", 1]]);
-            L = V1("l"); R = poly([k, { p: 1, [tgt]: 1 }]); v = tgt; o = { map: { l: "\\ell ", p: "\\pi " } };
+            L = V1("l"); R = poly([k, { p: 1, q: 1 }]); v = "q"; o = { map: { l: "\\ell ", p: "\\pi ", q: tgt } };
           } else {
             const [u, w] = pick(r, [["x", "y"], ["a", "b"], ["m", "n"], ["s", "t"]]);
             L = poly([[1, r(2, 9)], { [u]: 1 }]); R = V1(w); v = u;
@@ -421,15 +419,18 @@ export const UNITS = [
           // 確かめ：y＝1 のとき x＝g で、両辺が等しい
           if (qval(qsub(qdiv(peval(N1, { x: Q(g), y: Q(1) }), Q(p)), qdiv(peval(N2, { x: Q(g), y: Q(1) }), Q(q)))) !== 0) throw new Error("解が合わない");
           const mulP = (m, N) => (m === 1 ? ptex(N) : `${m}(${ptex(N)})`);
+          const A = pscale(N1, mp), B = pscale(N2, mq), D = psub(A, B);
+          let X = D.x1, Y = D.y1;
+          if (X[0] < 0) { X = qneg(X); Y = qneg(Y); }
           return {
             q: `等式 $\\frac{${ptex(N1)}}{${p}}=\\frac{${ptex(N2)}}{${q}}$ を、$x$ について解くと、$x=\\square y$ となる。□は？`,
             ans: g,
             hint: "両辺に、分母の最小公倍数をかけて、分母をはらおう。そのあと、$x$ をふくむ項を左辺に集める。",
             steps: [
               `両辺に、${p} と ${q} の最小公倍数 ${lcmv} をかけて、$${mulP(mp, N1)}=${mulP(mq, N2)}$。`,
-              `かっこをはずして、$${ptex(pscale(N1, mp))}=${ptex(pscale(N2, mq))}$。`,
-              `$x$ をふくむ項を左辺に、$y$ をふくむ項を右辺に移項して、$${ptex(pscale(psub(pscale(N1, mp), pscale(N2, mq)), 1))}$ の形を整理すると $x=${g}y$。`,
-              `したがって、□ は ${g}。`,
+              `かっこをはずして、$${ptex(A)}=${ptex(B)}$。`,
+              `$x$ の項を左辺に、$y$ の項を右辺に移項して、$${ptex(poly([X, { x: 1 }]))}=${ptex(poly([qneg(Y), { y: 1 }]))}$。`,
+              `両辺を ${X[0]} でわって、$x=${g}y$。したがって、□ は ${g}。`,
             ],
           };
         }),
@@ -453,7 +454,7 @@ export const UNITS = [
             ans: h, unit: "cm",
             hint: "等式を解いた式に、$S$ と $r$ の値を代入しよう。（別の道：先に値を代入してから解いてもよい）",
             steps: [
-              `${F.hName}を、等式を解いた式で表すと、$${F.vName}=${ftex(solve(F.L, F.R, F.v).sol, ["p", "q", "x"], F.map)}$。`,
+              `等式を $${F.vName}$ について解くと、$${F.vName}=${ftex(solve(F.L, F.R, F.v).sol, ["p", "q", "x"], F.map)}$。`,
               `$S=${K}\\pi$、$r=${rad}$ を代入して、$${F.vName}=\\frac{${K}\\pi}{${F.den(rad)}\\pi}-${rad}=${K / F.den(rad)}-${rad}=${h}$（cm）`,
             ],
           };
@@ -490,7 +491,7 @@ const FORMULA = [
 
 // ── 身近な関係（10q04a）：lhs＝a×b ──────────────────────────
 const RELS = [
-  { stmt: "道のりを $s$、速さを $v$、時間を $t$ とすると、", lhs: "s", a: "v", b: "t", targets: ["t", "v"], map: undefined },
+  { stmt: "道のりを $s$、速さを $v$、時間を $t$ とすると、", lhs: "s", a: "v", b: "w", targets: ["w", "v"], map: { w: "t" } },
   { stmt: "代金を $y$、1個の値段を $a$、個数を $x$ とすると、", lhs: "y", a: "a", b: "x", targets: ["x", "a"], map: undefined },
   { stmt: "長方形の面積を $S$、縦を $a$、横を $b$ とすると、", lhs: "s", a: "a", b: "b", targets: ["a", "b"], map: { s: "S" } },
   { stmt: "底面積 $S$、高さ $h$ の柱の体積を $V$ とすると、", lhs: "v", a: "g", b: "h", targets: ["g", "h"], map: { v: "V", g: "S" } },
@@ -502,12 +503,12 @@ const SURF = [
   {
     stmt: "底面の半径 $r$、高さ $h$ の円柱の表面積 $S$ は、",
     L: V1("s"), R: poly([2, { p: 1, q: 2 }], [2, { p: 1, q: 1, x: 1 }]), v: "x", map: { s: "S", p: "\\pi ", q: "r", x: "h" },
-    hName: "高さ $h$ ", vName: "h", coef: (rad, h) => 2 * rad * (rad + h), den: (rad) => 2 * rad, hintCoef: "$2\\pi r$",
+    hName: "高さ $h$", vName: "h", coef: (rad, h) => 2 * rad * (rad + h), den: (rad) => 2 * rad, hintCoef: "$2\\pi r$",
   },
   {
     stmt: "底面の半径 $r$、母線の長さ $\\ell$ の円錐の表面積 $S$ は、",
     L: V1("s"), R: poly([1, { p: 1, q: 2 }], [1, { p: 1, q: 1, x: 1 }]), v: "x", map: { s: "S", p: "\\pi ", q: "r", x: "\\ell " },
-    hName: "母線の長さ $\\ell$ ", vName: "\\ell", coef: (rad, h) => rad * (rad + h), den: (rad) => rad, hintCoef: "$\\pi r$",
+    hName: "母線の長さ $\\ell$", vName: "\\ell", coef: (rad, h) => rad * (rad + h), den: (rad) => rad, hintCoef: "$\\pi r$",
   },
 ];
 
@@ -571,7 +572,6 @@ const famTrap = (v, o) => {
       b: ["両辺を入れかえ、両辺に 2 をかけて、$(a+b)h=2S$。", "両辺を $h$ でわって、$a+b=\\frac{2S}{h}$。", "$a$ を移項して、$b=\\frac{2S}{h}-a$。"],
     },
   };
-  F.wrongs[v] = shuffle0(F.wrongs[v]).slice(0, 3);
   return F;
 };
 /** 長方形の周 ℓ＝2(a+b)（a・b どちらかについて） */
@@ -592,8 +592,5 @@ const famMean = (v, o) => ({
   wrongs: { [v]: [[`${v}=2m+${o}`, (x) => 2 * x.m + x[o]], [`${v}=\\frac{m-${o}}{2}`, (x) => (x.m - x[o]) / 2], [`${v}=m-2${o}`, (x) => x.m - 2 * x[o]], [`${v}=\\frac{m}{2}-${o}`, (x) => x.m / 2 - x[o]]] },
   steps: { [v]: ["両辺を入れかえ、両辺に 2 をかけて、$a+b=2m$。", `$${o}$ を移項して、$${v}=2m-${o}$。`] },
 });
-/** 配列の先頭3つだけを使う前の並べかえ（乱数を使わない固定の入れかえはしない：そのまま返す） */
-const shuffle0 = (a) => a;
-
 // 移さなかった問題（なし）
 export const SKIPPED = [];   // 第10時は、演習プリント 8問・小テスト 5問のすべてを移した（解いた式は4択か、式から出る数に直した）
