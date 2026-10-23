@@ -149,8 +149,12 @@ button{font:inherit;color:inherit}
 .home .lead{margin:0 0 20px;color:var(--ink2);font-size:14px;line-height:1.75}
 .home .lead b{color:var(--ans)}
 .unit{margin:22px 0 8px;display:flex;align-items:baseline;gap:10px}
-.unit h2{font-size:16px;margin:0}
-.unit span{font-size:12px;color:var(--ink3)}
+.unit h2{font-size:16px;margin:0;white-space:nowrap}
+.unit{flex-wrap:wrap}
+.ubtns{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
+.ubtns .btn.btnp{margin-left:0}
+@media (max-width:640px){.ubtns{margin-left:0;flex-basis:100%}}
+.unit>span:not(.ubtns){font-size:12px;color:var(--ink3)}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
 .card{display:block;text-decoration:none;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;transition:border-color .15s,box-shadow .15s}
 .card:hover{border-color:var(--acc);box-shadow:0 2px 10px rgba(29,95,191,.12)}

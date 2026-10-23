@@ -18,8 +18,9 @@
   const STOP = new Set(['meate', 'manabi', 'words', 'break', 'kadai']);
 
   // 演習プリント（dr）・小テスト（qz）の「（1）」「（2）」…の問題を、順に取り出す。答えは、そのすぐ下の板書（B）から
+  const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);   // 結果コードは生徒が作るので、__proto__ などの名前をはじく
   rec.items = (id, kind) => {
-    const sh = kind === 'dr' ? IK.drills[id] : kind === 'qz' ? IK.quizzes[id] : null;
+    const reg = kind === 'dr' ? IK.drills : kind === 'qz' ? IK.quizzes : null, sh = reg && own(reg, id) ? reg[id] : null;
     if (!sh) return [];
     const fl = flat(sh.blocks, []), out = [];
     let level = '';
@@ -98,10 +99,11 @@
       const m = /^IKR1\.([A-Za-z0-9_-]+)$/.exec(String(code).trim());
       if (!m) return null;
       const o = JSON.parse(b64d(m[1]));
-      if (o.v !== 1 || !o.l || !rec.KINDS[o.k]) return null;
-      const marks = {};
+      if (!o || o.v !== 1 || typeof o.l !== 'string' || !own(rec.KINDS, o.k) || !own(IK.lessons, o.l) || !rec.items(o.l, o.k).length) return null;
+      const marks = {}, ans = {};
       String(o.m || '').replace(/(\d+)([otx])/g, (_, no, ch) => { marks[+no] = ch; return ''; });
-      return { l: o.l, k: o.k, g: o.g || '', n: o.n || '', t: (o.t || 0) * 60000, marks, ans: o.a || {}, refl: o.r || '', code: String(code).trim() };
+      if (o.a && typeof o.a === 'object') Object.keys(o.a).forEach(no => { if (/^\d+$/.test(no)) ans[no] = clip(String(o.a[no]), 80); });
+      return { l: o.l, k: o.k, g: clip(o.g, 6), n: clip(o.n, 3), t: (+o.t || 0) * 60000, marks, ans, refl: clip(o.r, 100), code: String(code).trim() };
     } catch (e) { return null; }
   };
   // 貼りつけた文章の中から、結果コードをすべて探す。読めたものと、読めなかった数を返す。
