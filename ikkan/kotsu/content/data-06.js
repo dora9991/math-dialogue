@@ -8,7 +8,7 @@
 // ============================================================
 import { t, pick, choices4, shuffle, round } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
-import { sum, mean, median, modes, range, classes, cumulative, medianClass, meanFromFreq, roundHalf, isTie, pct, clsLabel, freqSentence, listData } from "../stats.js";
+import { sum, mean, median, modes, range, classes, cumulative, medianClass, roundHalf, isTie, pct, clsLabel, freqSentence, listData } from "../stats.js";
 
 const unit = unitFor("data");
 
