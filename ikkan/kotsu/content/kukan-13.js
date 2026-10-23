@@ -8,22 +8,15 @@
 import { t, pick, choices4, fracAns, fracTex, reduce } from "../kit.js";
 import { unit } from "../kukan-kit.js";
 
-/** π の係数 n/d の TeX：36\pi、\frac{32}{3}\pi */
-const piTex = (n, d = 1) => {
-  const [a, b] = reduce(n, d);
-  return b === 1 ? (a === 1 ? "\\pi" : `${a}\\pi`) : `\\frac{${a}}{${b}}\\pi`;
-};
 /** 条件に合う値が出るまで gen() をくり返す（見つからなければ null → skip） */
 const find = (gen, ok, tries = 400) => {
   for (let i = 0; i < tries; i++) { const v = gen(); if (ok(v)) return v; }
   return null;
 };
-/** 直角をはさむ2辺と斜辺（三平方の定理の、整数の組。必ず、どちらかの辺が 3 の倍数） */
-const TRI = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [9, 12, 15], [8, 15, 17]];
-/** 組み合わせる円錐用（大きすぎない組） */
-const TRI_S = [[3, 4, 5], [6, 8, 10], [5, 12, 13]];
-/** 直角三角形の2辺を、どちらを半径・高さにするか入れかえた組 [半径, 高さ, 母線] */
-const coneOf = (r, tri) => { const [x, y, l] = pick(r, tri); return r(0, 1) ? [x, y, l] : [y, x, l]; };
+/** 円錐の [底面の半径, 高さ, 母線]（三平方の定理の、整数の組。半径か高さが 3 の倍数。答えが大きくなりすぎない組） */
+const CONES = [[3, 4, 5], [4, 3, 5], [6, 8, 10], [8, 6, 10], [5, 12, 13]];
+/** 円柱の上にのせる円錐用（半径が大きすぎない組） */
+const CONES_S = [[3, 4, 5], [4, 3, 5], [6, 8, 10], [5, 12, 13]];
 /** 円錐の側面積（π の係数）を、おうぎ形の式で説明する行 */
 const slantStep = (a, l) => `側面積 $\\pi\\times ${l}^2\\times\\frac{2\\pi\\times ${a}}{2\\pi\\times ${l}} = ${a * l}\\pi$`;
 
@@ -51,7 +44,7 @@ const cylVol = (a, h) => ({
 // ── 容器くらべ（dr.9）：円柱の容器と円錐の容器を、A・B にふりわける ──
 const containers = (r) => {
   const v = find(
-    () => [r(3, 8), r(4, 12), r(3, 9), r(4, 15)],
+    () => [r(3, 7), r(4, 10), r(3, 8), r(4, 12)],
     ([r1, h1, r2, h2]) => (r2 * r2 * h2) % 3 === 0 && Math.abs(r1 * r1 * h1 - (r2 * r2 * h2) / 3) >= 4,
   );
   if (!v) return null;
@@ -66,8 +59,8 @@ const containers = (r) => {
 
 // ── 直角三角形を、辺を軸に回転（dr.10） ──
 const rotation = (r) => {
-  const [x, y, l] = pick(r, TRI), [p, q] = r(0, 1) ? [x, y] : [y, x], ax = r(0, 1) ? "AB" : "BC";
-  const [rad, h] = ax === "AB" ? [q, p] : [p, q];   // AB を軸＝半径 BC・高さ AB ／ BC を軸＝半径 AB・高さ BC
+  const [rad, h, l] = pick(r, CONES), ax = r(0, 1) ? "AB" : "BC";   // AB を軸＝半径 BC・高さ AB ／ BC を軸＝半径 AB・高さ BC
+  const [p, q] = ax === "AB" ? [h, rad] : [rad, h];   // AB＝p、BC＝q
   return {
     text: `AB＝${p}cm、BC＝${q}cm、CA＝${l}cm、∠B＝90° の直角三角形 ABC を、辺 ${ax} を軸として1回転させる。`,
     ax, rad, h, l,
@@ -161,21 +154,21 @@ export const UNITS = [
       2: [
         // 13d04 母線がわかる円錐の表面積・体積（使う長さを見分ける）
         t("13d04", (r) => {
-          const [a, h, l] = coneOf(r, TRI), side = `底面の半径 ${a}cm、高さ ${h}cm、母線の長さ ${l}cm の円錐`;
+          const [a, h, l] = pick(r, CONES), side = `底面の半径 ${a}cm、高さ ${h}cm、母線の長さ ${l}cm の円錐`;
           if (r(0, 1)) {
             return {
               q: `${side}の表面積は □π cm²。□は？`,
               ans: a * l + a * a,
-              hint: "表面積は、側面積＋底面積。側面積に使うのは、高さではなく、母線。",
-              steps: [slantStep(a, l), `底面積 $\\pi\\times ${a}^2 = ${a * a}\\pi$`, `表面積 $${a * l}\\pi + ${a * a}\\pi = ${a * l + a * a}\\pi$（cm²）`],
+              hint: "表面積は、側面積＋底面積。円錐の側面は、おうぎ形。おうぎ形の半径になるのは、どの長さかな。母線は、頂点から底面の円周までの、ななめの線。",
+              steps: [slantStep(a, l) + `（母線 ${l}cm を使う）`, `底面積 $\\pi\\times ${a}^2 = ${a * a}\\pi$`, `表面積 $${a * l}\\pi + ${a * a}\\pi = ${a * l + a * a}\\pi$（cm²）`],
             };
           }
           const c = (a * a * h) / 3;
           return {
             q: `${side}の体積は □π cm³。□は？`,
             ans: c,
-            hint: "体積に使うのは、半径と高さ。母線は使わない。",
-            steps: [`体積に使うのは、半径 ${a}cm と高さ ${h}cm`, `$V = \\frac{1}{3}\\times\\pi\\times ${a}^2\\times ${h} = ${c}\\pi$（cm³）`],
+            hint: "円錐の体積の公式 $\\frac{1}{3}\\pi r^2 h$ に出てくる長さは、何と何だったかな。母線は、頂点から底面の円周までの、ななめの線。",
+            steps: [`体積に使うのは、半径 ${a}cm と高さ ${h}cm（母線 ${l}cm は使わない）`, `$V = \\frac{1}{3}\\times\\pi\\times ${a}^2\\times ${h} = ${c}\\pi$（cm³）`],
           };
         }),
         // 13d05 半球の体積・表面積
@@ -207,7 +200,7 @@ export const UNITS = [
               q: `${head}表面積は？`,
               ans: side + base,
               unit: "cm²",
-              hint: "表面積は、側面積＋底面積。側面は、合同な二等辺三角形 4つ。その高さは、問題に書いてある。",
+              hint: "表面積は、側面積＋底面積。側面は、合同な二等辺三角形が集まった形。三角形の面積は、底辺×高さ÷2。",
               steps: [`側面積 $\\frac{1}{2}\\times ${a}\\times ${s}\\times 4 = ${side}$`, `底面積 $${a}\\times ${a} = ${base}$`, `表面積 $${side} + ${base} = ${side + base}$（cm²）`],
             };
           }
@@ -216,18 +209,18 @@ export const UNITS = [
             q: `${head}体積は？`,
             ans: V,
             unit: "cm³",
-            hint: "体積に使うのは、底面積と高さ。側面の三角形の高さは、使わない。",
-            steps: [`底面積 $${a}\\times ${a} = ${base}$`, `$V = \\frac{1}{3}\\times ${base}\\times ${h} = ${V}$（cm³）`],
+            hint: "錐体の体積は、何と何から求めたかな。",
+            steps: [`体積に使うのは、底面積と高さ（側面の三角形の高さ ${s}cm は使わない）`, `底面積 $${a}\\times ${a} = ${base}$`, `$V = \\frac{1}{3}\\times ${base}\\times ${h} = ${V}$（cm³）`],
           };
         }),
         // 13q04 母線がわかる円錐の表面積（小テスト）
         t("13q04", (r) => {
-          const [a, h, l] = coneOf(r, TRI);
+          const [a, h, l] = pick(r, CONES);
           return {
             q: `底面の半径が ${a}cm、高さが ${h}cm、母線の長さが ${l}cm の円錐の表面積は □π cm²。□は？`,
             ans: a * l + a * a,
-            hint: "表面積は、側面積＋底面積。側面積に使うのは、高さではなく、母線。",
-            steps: [slantStep(a, l), `底面積 $\\pi\\times ${a}^2 = ${a * a}\\pi$`, `表面積 $${a * l}\\pi + ${a * a}\\pi = ${a * l + a * a}\\pi$（cm²）`],
+            hint: "表面積は、側面積＋底面積。円錐の側面は、おうぎ形。おうぎ形の半径になるのは、どの長さかな。母線は、頂点から底面の円周までの、ななめの線。",
+            steps: [slantStep(a, l) + `（母線 ${l}cm を使う）`, `底面積 $\\pi\\times ${a}^2 = ${a * a}\\pi$`, `表面積 $${a * l}\\pi + ${a * a}\\pi = ${a * l + a * a}\\pi$（cm²）`],
           };
         }),
       ],
@@ -235,22 +228,22 @@ export const UNITS = [
       3: [
         // 13d07a 円柱の上に円錐をのせた立体：体積
         t("13d07a", (r) => {
-          const [a, h, l] = coneOf(r, TRI_S), H = r(3, 12), cyl = a * a * H, cone = (a * a * h) / 3;
+          const [a, h, l] = pick(r, CONES_S), H = r(3, 8), cyl = a * a * H, cone = (a * a * h) / 3;
           return {
             q: `底面の半径 ${a}cm、高さ ${H}cm の円柱の上に、底面の半径 ${a}cm、高さ ${h}cm、母線の長さ ${l}cm の円錐をのせた立体がある。この立体の体積は □π cm³。□は？`,
             ans: cyl + cone,
-            hint: "（円柱の体積）＋（円錐の体積）。円錐の体積に使うのは、高さ。",
-            steps: [`円柱 $\\pi\\times ${a}^2\\times ${H} = ${cyl}\\pi$`, `円錐 $\\frac{1}{3}\\times\\pi\\times ${a}^2\\times ${h} = ${cone}\\pi$`, `体積 $${cyl}\\pi + ${cone}\\pi = ${cyl + cone}\\pi$（cm³）`],
+            hint: "（円柱の体積）＋（円錐の体積）。円錐の体積の公式に出てくる長さは、何と何だったかな。",
+            steps: [`円柱 $\\pi\\times ${a}^2\\times ${H} = ${cyl}\\pi$`, `円錐（母線 ${l}cm は使わない） $\\frac{1}{3}\\times\\pi\\times ${a}^2\\times ${h} = ${cone}\\pi$`, `体積 $${cyl}\\pi + ${cone}\\pi = ${cyl + cone}\\pi$（cm³）`],
           };
         }),
         // 13d07b 円柱の上に円錐をのせた立体：表面積
         t("13d07b", (r) => {
-          const [a, h, l] = coneOf(r, TRI_S), H = r(3, 12), base = a * a, cylSide = 2 * a * H, coneSide = a * l, S = base + cylSide + coneSide;
+          const [a, h, l] = pick(r, CONES_S), H = r(3, 8), base = a * a, cylSide = 2 * a * H, coneSide = a * l, S = base + cylSide + coneSide;
           return {
             q: `底面の半径 ${a}cm、高さ ${H}cm の円柱の上に、底面の半径 ${a}cm、高さ ${h}cm、母線の長さ ${l}cm の円錐をのせた立体がある。この立体の表面積は □π cm²。□は？`,
             ans: S,
-            hint: "はり合わせた面（円柱の上の底面）は、表面にならない。円錐の側面積に使うのは、母線。",
-            steps: [`円柱の下の底面 $${base}\\pi$、円柱の側面 $2\\pi\\times ${a}\\times ${H} = ${cylSide}\\pi$`, slantStep(a, l).replace("側面積", "円錐の側面"), `表面積 $${base}\\pi + ${cylSide}\\pi + ${coneSide}\\pi = ${S}\\pi$（cm²）`],
+            hint: "この立体の表面になるのは、どの面とどの面かな。はり合わせた面は、表面にならない。母線は、頂点から底面の円周までの、ななめの線。",
+            steps: [`円柱の下の底面 $${base}\\pi$、円柱の側面 $2\\pi\\times ${a}\\times ${H} = ${cylSide}\\pi$`, slantStep(a, l).replace("側面積", "円錐の側面") + `（母線 ${l}cm を使う）`, `表面積 $${base}\\pi + ${cylSide}\\pi + ${coneSide}\\pi = ${S}\\pi$（cm²）`],
           };
         }),
         // 13w02a 円柱の上に半球をのせた立体：体積（ワークシートの例題）
@@ -319,7 +312,7 @@ export const UNITS = [
             q: `${w.text}できる立体は、次のうちどれか。`,
             ans,
             choices: choices4(r, ans, [`底面の半径 ${w.h}cm、高さ ${w.rad}cm の円錐`, `底面の半径 ${w.rad}cm、高さ ${w.h}cm の円柱`, `底面の半径 ${w.rad}cm、高さ ${w.l}cm の円錐`]),
-            hint: "軸にした辺は、回転の中心。もう一方の辺が、回って円（底面）をつくる。",
+            hint: `三角形を、辺 ${w.ax} を軸に回転させる様子を思いうかべよう。回って円をつくるのは、どの辺かな。`,
             steps: [w.how, `底面の半径 ${w.rad}cm、高さ ${w.h}cm の円錐。`],
           };
         }),
@@ -329,7 +322,7 @@ export const UNITS = [
           return {
             q: `${w.text}できる立体の体積は □π cm³。□は？`,
             ans: c,
-            hint: "軸にした辺が高さ、もう一方の辺が底面の半径。",
+            hint: `三角形を、辺 ${w.ax} を軸に回転させる様子を思いうかべよう。円錐の体積の公式に出てくる長さは、何と何だったかな。`,
             steps: [w.how, `$V = \\frac{1}{3}\\times\\pi\\times ${w.rad}^2\\times ${w.h} = ${c}\\pi$（cm³）`],
           };
         }),
@@ -339,7 +332,7 @@ export const UNITS = [
           return {
             q: `${w.text}できる立体の表面積は □π cm²。□は？`,
             ans: S,
-            hint: "軸にした辺が高さ、もう一方の辺が底面の半径、斜めの辺が母線。側面積に使うのは、母線。",
+            hint: `三角形を、辺 ${w.ax} を軸に回転させる様子を思いうかべよう。円錐の表面積は、側面積＋底面積。おうぎ形の半径になるのは、どの長さかな。`,
             steps: [w.how, slantStep(w.rad, w.l), `底面積 $\\pi\\times ${w.rad}^2 = ${w.rad * w.rad}\\pi$　表面積 $${w.rad * w.l}\\pi + ${w.rad * w.rad}\\pi = ${S}\\pi$（cm²）`],
           };
         }),
@@ -350,7 +343,7 @@ export const UNITS = [
             q: `底面の半径が ${R}cm の円柱の形の水そうに、深さ ${d}cm まで水が入っている。この中に、底面の半径 ${a}cm、高さ ${h}cm の円錐の形のおもりを、底を下にして完全にしずめると、水面は何 cm 上がるか。ただし、水はあふれないものとする。`,
             ans,
             unit: "cm",
-            hint: "水面が上がった分の体積は、しずめたおもりの体積と等しい。",
+            hint: "おもりをしずめると、水面が上がる。上がった分の水の体積は、何と等しいかな。",
             steps: [
               `円錐の体積 $\\frac{1}{3}\\times\\pi\\times ${a}^2\\times ${h} = ${V}\\pi$（cm³）`,
               `上がる高さを $x$ cm として　$\\pi\\times ${R}^2\\times x = ${V}\\pi$`,
