@@ -38,7 +38,7 @@ const arcTex = (th) => {
 
 // ── 立方体の展開図 ───────────────────────────────────────
 const KANA = "アイウエオカ";
-/** 立方体の展開図 11種（[列, 行]）。折りたたむと6つの面がちがう面になるものだけ（最初の6つは、横に4面ならび、上と下に1面ずつつく型） */
+/** 立方体の展開図 11種（[列, 行]）。折りたたむと6つの面がちがう面になるものだけ（最初の6つは、一列に4面ならび、そのわきに1面ずつ、反対がわにも1面つく型。向きは、回して横・縦どちらにもなる） */
 const NETS11 = [
   [[0, 0], [0, 1], [1, 1], [2, 1], [3, 1], [0, 2]],
   [[1, 0], [0, 1], [1, 1], [2, 1], [3, 1], [0, 2]],
@@ -75,13 +75,17 @@ function labelNet(r, cells) {
   for (let q = 0; q < order.length; q++) for (const j of nbrs(order[q])) if (!order.includes(j)) order.push(j);
   return order.map((i, k) => [cells[i][0], cells[i][1], KANA[k]]);
 }
-/** 展開図 net（[列, 行, 字]）。ikkan の図と同じ形を4回に1回、あとは11種からランダム（向きもランダム）。only141＝横に4面ならぶ型だけ */
+/** 展開図 net（[列, 行, 字]）。ikkan の図と同じ形を4回に1回、あとは11種からランダム（向きもランダム）。only141＝一列に4面ならぶ型（向きは、横・縦どちらもある）だけ */
 function pickNet(r, only141) {
   if (r(0, 3) === 0) return pick(r, IK_NETS);
   return labelNet(r, symm(pick(r, only141 ? NETS11.slice(0, 6) : NETS11), r(0, 7)));
 }
-/** 字（ア〜カ）→ その面と向かい合う字。サイコロをア（マス）の上から、となりのマスへころがして、各マスに接する面を調べる */
-function opposites(net) {
+/** 面アを底にして展開図を立ち上げたとき、各面が立方体のどこにくるか（ROLE の順は、サイコロの［底, 上, まえ, うしろ, 左, 右］） */
+const ROLE = ["底", "上", "まえ", "うしろ", "左", "右"];
+const ROLE_OPP = { 底: "上", 上: "底", まえ: "うしろ", うしろ: "まえ", 左: "右", 右: "左" };
+/** サイコロをア（マス）の上から、となりのマスへころがして、各マスに接する面を調べる（ikkan の lesson_kukan_07.js の検算と同じ）。
+ *  opp＝字→向かい合う字、role＝字→面アを底にしたときの場所（底・上・まえ・うしろ・左・右） */
+function foldInfo(net) {
   const roll = (f, d) => { const [b, t2, fr, bk, l, rt] = f; return d === "R" ? [rt, l, fr, bk, b, t2] : d === "L" ? [l, rt, fr, bk, t2, b] : d === "U" ? [bk, fr, b, t2, l, rt] : [fr, bk, t2, b, l, rt]; };
   const at = (x, y) => net.findIndex((p) => p[0] === x && p[1] === y);
   const root = net.findIndex((p) => p[2] === "ア");
@@ -90,11 +94,14 @@ function opposites(net) {
     const i = q.shift();
     for (const [d, dx, dy] of DIRS) { const j = at(net[i][0] + dx, net[i][1] + dy); if (j >= 0 && !(j in st)) { st[j] = roll(st[i], d); q.push(j); } }
   }
-  const face = (i) => st[i][0], opp = {};
-  net.forEach((c, i) => net.forEach((d, j) => { if ((face(i) ^ 1) === face(j)) opp[c[2]] = d[2]; }));
+  const face = (i) => st[i][0], opp = {}, role = {};
+  net.forEach((c, i) => { role[c[2]] = ROLE[face(i)]; net.forEach((d, j) => { if ((face(i) ^ 1) === face(j)) opp[c[2]] = d[2]; }); });
   if (Object.keys(st).length !== 6 || Object.keys(opp).length !== 6) throw new Error("立方体の展開図になっていない");
-  return opp;
+  return { opp, role };
 }
+/** 解説：面アを底にして立ち上げたときの、ほかの5面の場所（例：イ＝右、ウ＝上、…） */
+const roleList = (role) => KANA.split("").filter((l) => l !== "ア").map((l) => `${l}＝${role[l]}`).join("、");
+
 /** 展開図の文章での言い方：イはアの右、オはイの上…（アから順に、となり合う面の位置） */
 function describeNet(net) {
   const at = (x, y) => net.findIndex((p) => p[0] === x && p[1] === y);
@@ -114,16 +121,24 @@ function skipOne(net, a, b) {
   return net.some((c) => c[0] === pa[0] + dx / 2 && c[1] === pa[1] + dy / 2);
 }
 
+/** 解説（平行な面）：面アを底にして立ち上げたときの場所 → 向かい合う場所 → 答え（展開図で一直線のときは、その見方もそえる） */
+function foldSteps(net, tg, o, role, last) {
+  const st = [`面アを底にして、展開図のまわりの面を折り上げると、${roleList(role)}。`, "立方体で向かい合うのは、底と上、右と左、まえとうしろ。"];
+  st.push(role[tg] === "底" ? `面アは底。向かい合う上の面が、面${o}。` : `面${tg}は${role[tg]}。向かい合う${ROLE_OPP[role[tg]]}の面${o}が、平行な面。`);
+  st.push(skipOne(net, tg, o) ? `（展開図でも、面${tg}と面${o}は、間に1面をはさんで一直線にならんでいる。）${last}` : last);
+  return st;
+}
+
 export const UNITS = [
   unit("07", {
     name: "展開図（円柱・円錐の側面）",
-    desc: "円柱の側面の縦・横、円錐の側面のおうぎ形の中心角・弧・面積・母線・半径",
+    desc: "円柱・角柱の側面の縦・横、円錐の側面のおうぎ形の中心角・弧・面積・母線・半径、立方体の展開図（向かい合う面・垂直な面）",
     prereqs: ["J1-kk06", "J1-z3", "J1-k3"],
     points: [
-      "立体を切り開いて、平面上に広げた図を展開図という。",
-      "円柱の側面の展開図は長方形。縦は円柱の高さ、横は底面の円周 $2\\pi r$ に等しい。",
-      "円錐の側面の展開図はおうぎ形。半径は母線の長さ、弧の長さは底面の円周に等しい。",
-      "中心角は、母線を $\\ell$、底面の半径を $r$ とすると、$360^\\circ \\times \\frac{r}{\\ell}$ で求められる。",
+      "立体を切り開いて、平面上に広げた図を展開図という。円柱・角柱の側面は長方形で、縦は高さ、横は底面のまわりの長さ（円柱は円周 $2\\pi r$）に等しい。",
+      "円錐の側面はおうぎ形。半径は母線の長さ、弧の長さは底面の円周に等しい。中心角は、母線を $\\ell$、底面の半径を $r$ とすると、$360^\\circ \\times \\frac{r}{\\ell}$ で求められる。",
+      "立方体の展開図で、間に1面をはさんで一直線にならぶ2つの面は、向かい合う（平行）。",
+      "向かい合う面以外の4つの面は、その面に垂直。",
     ],
     levels: {
       // ───────── 1 基礎 ─────────
@@ -142,7 +157,7 @@ export const UNITS = [
         }),
         // 07d02 円錐の側面のおうぎ形の中心角（母線が底面の半径の k 倍）
         t("07d02", (r) => {
-          const { rad, l, th } = pairOf(r, (p) => p.mult && p.rad <= 5);
+          const { rad, l, th } = pairOf(r, (p) => p.mult && p.rad <= 5 && p.l <= 20);
           return {
             q: `底面の半径が ${rad}cm、母線の長さが ${l}cm の円錐の、側面のおうぎ形の中心角は？`,
             ans: th,
@@ -215,7 +230,7 @@ export const UNITS = [
         }),
         // 07d05a 立方体の展開図で、ある面と平行な面（①面アと平行な面 ②面オと平行な面）
         t("07d05a", (r) => {
-          const net = pickNet(r, false), opp = opposites(net);
+          const net = pickNet(r, false), { opp, role } = foldInfo(net);
           const labels = net.map((c) => c[2]).sort();
           const tg = pick(r, labels), o = opp[tg];
           const ans = `面${o}`;
@@ -225,12 +240,12 @@ export const UNITS = [
             ans,
             choices: choices4(r, ans, wrongs),
             hint: "展開図を折りたたんで立方体にしたとき、向かい合う面は、展開図の上では、どんな位置にあるかな。",
-            steps: ["展開図を折りたたんで、立方体にして考える。", skipOne(net, tg, o) ? `展開図で、面${tg}と面${o}は、間に1つの面をはさんで、一直線にならんでいる。このような2面は、向かい合う。` : `面${tg}のまわりの面を、順に折り上げていくと、面${tg}と向かい合う面は、面${o}になる。`, `面${tg}と平行な面は、面${o}。`],
+            steps: foldSteps(net, tg, o, role, `面${tg}と平行な面は、面${o}。`),
           };
         }),
         // 07d05b 同じ展開図で、ある面と垂直な面（③面イと垂直な面）：すべての組を選ぶ
         t("07d05b", (r) => {
-          const net = pickNet(r, false), opp = opposites(net);
+          const net = pickNet(r, false), { opp, role } = foldInfo(net);
           const labels = net.map((c) => c[2]).sort();
           const tg = pick(r, labels), o = opp[tg];
           const perp = labels.filter((l) => l !== tg && l !== o);
@@ -242,12 +257,12 @@ export const UNITS = [
             ans,
             choices: choices4(r, ans, wrongs),
             hint: "立方体の面は、1つの面にとって、向かい合う面と、そのまわりの面にわかれる。向かい合う面とは、平行。",
-            steps: [`面${tg}と平行な（向かい合う）面は、面${o}。`, `面${tg}と面${o}以外の4つの面が、面${tg}と垂直。`, `垂直な面は ${ans}。`],
+            steps: [`面アを底にして、展開図のまわりの面を折り上げると、${roleList(role)}。`, `面${tg}は${role[tg]}。向かい合う${ROLE_OPP[role[tg]]}の面${o}が、平行な面。`, `面${tg}と面${o}以外の4つの面が、面${tg}と垂直。垂直な面は ${ans}。`],
           };
         }),
-        // 07q04 立方体の展開図（横に4面ならぶ型）で、面アと平行な面
+        // 07q04 立方体の展開図（一列に4面ならぶ型。向きは横・縦どちらもある）で、面アと平行な面
         t("07q04", (r) => {
-          const net = pickNet(r, true), opp = opposites(net);
+          const net = pickNet(r, true), { opp, role } = foldInfo(net);
           const labels = net.map((c) => c[2]).sort(), o = opp["ア"];
           const ans = `面${o}`;
           const wrongs = shuffle(r, labels.filter((l) => l !== "ア" && l !== o)).map((l) => `面${l}`);
@@ -256,7 +271,7 @@ export const UNITS = [
             ans,
             choices: choices4(r, ans, wrongs),
             hint: "展開図を折りたたんで立方体にしたとき、向かい合う面は、展開図の上では、どんな位置にあるかな。",
-            steps: ["展開図を折りたたんで、立方体にして考える。", skipOne(net, "ア", o) ? `展開図で、面アと面${o}は、間に1つの面をはさんで、一直線にならんでいる。このような2面は、向かい合う。` : `面アのまわりの面を、順に折り上げていくと、面アと向かい合う面は、面${o}になる。`, `面アと平行な面は、面${o}。`],
+            steps: foldSteps(net, "ア", o, role, `面アと平行な面は、面${o}。`),
           };
         }),
       ],
@@ -274,7 +289,7 @@ export const UNITS = [
         }),
         // 07d07 側面のおうぎ形が半円：母線は底面の半径の何倍か
         t("07d07", (r) => {
-          const th = pick(r, [180, 180, 120, 90, 72, 60, 45, 40, 36, 30]), k = 360 / th;
+          const th = pick(r, [180, 180, 120, 90, 72, 60]), k = 360 / th;
           return {
             q: `円錐の側面の展開図が、中心角 ${th}° のおうぎ形${th === 180 ? "（半円）" : ""}になった。母線の長さは、底面の半径の何倍か。`,
             ans: k,
