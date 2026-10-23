@@ -53,6 +53,7 @@ for (const id of ids) {
   const b = await chromium.launch();
   const page = await (await b.newContext({ viewport: { width: 1000, height: 1300 }, deviceScaleFactor: 6 })).newPage();
   await page.goto('file://' + path.join(root, 'index.html'));
+  await page.addStyleTag({ content: 'header.top,.pbar{display:none !important}' });   // 上に貼りつく見出し（タブ・ボタン）が、図に写りこまないように
   let nFig = 0;
   for (const id of ids) {
     await page.evaluate((h) => { location.hash = h; }, '#/' + id + '/ws');

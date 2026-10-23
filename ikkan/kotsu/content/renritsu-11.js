@@ -12,7 +12,8 @@ import { solve2, casesTex, linTex, Q, qadd, qsub, qmul, qval, qisint, qtex, qeq 
 const unit = unitFor("renritsu");
 
 // ── 小さな道具 ──────────────────────────────────────────
-const pn = (n) => (n < 0 ? `(${n})` : `${n}`);                         // 負の数にかっこ
+const pn = (n) => (n < 0 ? `(${n})` : `${n}`);                         // 負の数にかっこ（TeX の中）
+const pt = (n) => (n < 0 ? `(−${-n})` : `${n}`);                       // 負の数にかっこ（ふつうの文字）
 const ansQ = (q) => fracAns(q[0], q[1]);                              // 入力式の答え（整数か、約分した分数）
 const same = (a, b, msg) => { if (!qeq(a, b)) throw new Error(`計算の食いちがい: ${msg}`); };
 
@@ -104,7 +105,7 @@ const rules = ["人数・個数・冊数は、整数で、負の数にならな�
 /** ジョギング：歩く時速 v1、走る時速 v2、全部で T 時間。道のり D で、時間 x、y が cat（okint・okfrac・neg）になる */
 function jogNums(r, cat) {
   for (let i = 0; i < 50; i++) {
-    const v1 = pick(r, [4, 5, 6, 8]), v2 = pick(r, [10, 12, 15]), T = pick(r, [2, 3]);
+    const [v1, v2] = pick(r, [[6, 10], [5, 10], [4, 8], [6, 12], [8, 12], [4, 10], [5, 9]]), T = pick(r, [2, 3]);
     const list = [];
     for (let D = v1 * T - 6; D <= v2 * T + 6; D++) {
       if (D <= 0) continue;
@@ -128,7 +129,7 @@ function targetNums(r, cat) {
     const list = [];
     for (let m = 4; m <= 22; m++) {
       const sol = solve2([1, 1, m], [p, q, S]);
-      if (kindCount(sol) === cat && qval(sol[0]) !== 0 && qval(sol[1]) !== 0) list.push({ m, sol });
+      if (kindCount(sol) === cat && qval(sol[0]) !== 0 && qval(sol[1]) !== 0 && (cat !== "neg" || Math.min(qval(sol[0]), qval(sol[1])) >= -3)) list.push({ m, sol });
     }
     if (list.length) { const c = pick(r, list); return { p, q, S, m: c.m, sol: c.sol }; }
   }
@@ -137,7 +138,7 @@ function targetNums(r, cat) {
 
 // ── 割合（x＋y＝N、p％ 増・q％ 減） ─────────────────────────
 const dec2 = (p) => String(round(p / 100, 2));
-const PCT = [[5, 10], [10, 5], [5, 20], [20, 10], [10, 20], [15, 10], [10, 15], [25, 10], [5, 15], [20, 5]];
+const PCT = [[5, 10], [10, 5], [5, 20], [20, 10], [10, 20], [15, 10], [10, 15], [5, 10], [10, 5], [20, 10], [10, 20], [15, 15], [25, 5], [5, 25], [20, 5]];
 const PLACE = [["水族館", "入館者"], ["動物園", "入園者"], ["遊園地", "入園者"], ["美術館", "入館者"], ["科学館", "入館者"]];
 /** 先週 N 人、大人 p％ 増・子ども q％ 減、全体の増減 C 人。解が cat になる C をつくる */
 function pctNums(r, cat) {
@@ -157,7 +158,7 @@ function pctNums(r, cat) {
     for (const C of cands) {
       if (C === 0 || !Number.isInteger(C)) continue;
       const sol = solve2([1, 1, N], [p, -q, 100 * C]);
-      if (sol && kindCount(sol) === cat) {
+      if (sol && kindCount(sol) === cat && (cat !== "frac" || (sol[0][1] <= 5 && sol[1][1] <= 5))) {
         same(sol[0], Q(q * N + 100 * C, p + q), "割合の x");
         return { p, q, N, C, sol };
       }
@@ -165,7 +166,7 @@ function pctNums(r, cat) {
   }
   return null;
 }
-const pctSteps = (b, who) => [
+const pctSteps = (b) => [
   `先週の大人を $x$ 人、子どもを $y$ 人とすると　$x+y=${b.N}$ …①　$${dec2(b.p)}x-${dec2(b.q)}y=${b.C}$ …②`,
   `②×100　$${b.p}x-${b.q}y=${100 * b.C}$ …③　　①×${b.q}＋③　$${b.p + b.q}x=${b.q * b.N + 100 * b.C}$　$x=${qtex(b.sol[0])}$　①より　$y=${qtex(b.sol[1])}$`,
 ];
@@ -309,7 +310,7 @@ export const UNITS = [
           return {
             q: `ある${place}の先週の${person}は、大人と子どもを合わせて ${b.N}人だった。今週は、先週とくらべて、大人が ${b.p}％ 増え、子どもが ${b.q}％ 減って、全体で ${Math.abs(b.C)}人 ${b.C > 0 ? "増えた" : "減った"}。先週の大人を $x$ 人、子どもを $y$ 人として連立方程式をつくって解いた。$${v}$ の値は？（整数でないときは、約分した分数で答えよう）`,
             ans: ansQ(q),
-            hint: "「増えた人数−減った人数」の式は、両辺を 100 倍して、係数を整数にしてから解こう。",
+            hint: "「増えた人数−減った人数」の式は、両辺を何倍かして、係数を整数にしてから解こう。",
             steps: [...pctSteps(b), `$${v}=${qtex(q)}$`],
           };
         }),
@@ -321,7 +322,7 @@ export const UNITS = [
           return {
             q: `${buyText(A, B, c, b)}代金が ${b.k}円になった。${A}を $x$ ${c}、${B}を $y$ ${c}として連立方程式をつくって解くと、$${v}$ の値は？（約分した分数で答えよう）`,
             ans: ansQ(q),
-            hint: "「合わせた枚数」と「代金」で式を2つつくって解こう。値が整数にならなくても、そのまま分数で答える。",
+            hint: `「合わせた${NOUN[c]}」と「代金」で式を2つつくって解こう。値が整数にならなくても、そのまま分数で答える。`,
             steps: [...buySteps(b), `$${v}=${qtex(q)}$（${NOUN[c]}が整数でないので、問題の答えにはならない）`],
           };
         }),
@@ -360,7 +361,7 @@ export const UNITS = [
           const cat = pick(r, ["okint", "okfrac", "okfrac", "neg", "neg"]);
           const j = jogNums(r, cat) || jogNums(r, "okfrac");
           if (!j) return { skip: true };
-          const c = kindCount([Q(1), Q(1)]) && (qval(j.sol[0]) > 0 && qval(j.sol[1]) > 0 ? "ok" : "neg");
+          const c = qval(j.sol[0]) > 0 && qval(j.sol[1]) > 0 ? "ok" : "neg";
           const ch = judgeAns(r, c, "時間");
           return {
             q: `${jogText(j)}道のりが ${j.D} km のとき、歩いた時間を $x$ 時間、走った時間を $y$ 時間として連立方程式をつくって解くと、その解は問題の答えになるか。理由も含めて、正しいものを選ぼう。`,
@@ -442,7 +443,7 @@ export const UNITS = [
             ans: m.a,
             hint: "解は、2つの式の両方を成り立たせる。$a$ だけが入っている式に、解を代入しよう。",
             steps: [
-              `${abEq1(m).includes("a") ? "上の式" : ""}に $x=${m.x0}$、$y=${m.y0}$ を代入する。`,
+              `上の式に $x=${m.x0}$、$y=${m.y0}$ を代入する。`,
               `$a\\times${pn(m.x0)}+${pn(m.s1)}\\times${pn(m.y0)}=${m.c1}$　より　$${coefVar(m.x0, "a")}=${m.c1 - m.s1 * m.y0}$`,
               `$a=${m.a}$`,
             ],
@@ -472,37 +473,37 @@ export const UNITS = [
             hint: "解を2つの式に代入すると、$a$、$b$ についての連立方程式ができる。",
             steps: [
               `$x=${p}$、$y=${q}$ を代入して　$${coefVar(p, "a")}${signedVar(q, "b")}=${c1}$ …①　$${coefVar(-q, "a")}${signedVar(p, "b")}=${c2}$ …②`,
-              `①×${pn(p)}−②×${pn(q)}（$b$ を消す）　$${p * p + q * q}a=${p * c1 - q * c2}$　$a=${a}$`,
+              `①×${pt(p)}−②×${pt(q)}（$b$ を消す）　$${p * p + q * q}a=${p * c1 - q * c2}$　$a=${a}$`,
               `①に代入して　$b=${b}$`,
             ],
           };
         }),
         // 11d07a ⟦x+y＝12 ; 2x+5y＝k⟧ の解が自然数になる k は何通りか
         t("11d07a", (r) => {
-          const N = r(7, 15), a = r(2, 4), b = r(a + 1, 9);
+          const N = r(7, 15), a = r(2, 4), b = r(a + 2, 9);
           return {
             q: `連立方程式 $${casesTex([`x+y=${N}`, `${a}x+${b}y=k`])}$ の解 $x$、$y$ が、どちらも自然数になるような $k$ の値は、全部で何通りあるか。`,
             ans: N - 1,
             unit: "通り",
             hint: "$y$ を $k$ の式で表し、$x$ も自然数になる条件を考えよう。$y$ が決まると $k$ も決まる。",
             steps: [
-              `②−①×${a}　$${b - a}y=k-${a * N}$　$y=\\frac{k-${a * N}}{${b - a}}$　$x=${N}-y$`,
+              `②−①×${a}　$${coefVar(b - a, "y")}=k-${a * N}$　$y=\\frac{k-${a * N}}{${b - a}}$　$x=${N}-y$`,
               `$y$ が 1〜${N - 1} の整数のとき、$x$、$y$ は自然数になる。`,
-              `$k=${a * N}+${b - a}y$ だから、$y$ 1つにつき $k$ が 1つ決まる。`,
+              `$k=${a * N}${signedVar(b - a, "y")}$ だから、$y$ 1つにつき $k$ が 1つ決まる。`,
               `全部で ${N - 1}通り。`,
             ],
           };
         }),
         // 11d07b そのうち、いちばん小さい k（大きい k）
         t("11d07b", (r) => {
-          const N = r(7, 15), a = r(2, 4), b = r(a + 1, 9), big = r(0, 1) === 1;
+          const N = r(7, 15), a = r(2, 4), b = r(a + 2, 9), big = r(0, 1) === 1;
           const yy = big ? N - 1 : 1, ans = a * N + (b - a) * yy;
           return {
             q: `連立方程式 $${casesTex([`x+y=${N}`, `${a}x+${b}y=k`])}$ の解 $x$、$y$ が、どちらも自然数になるような $k$ のうち、いちばん${big ? "大きい" : "小さい"}値は？`,
             ans,
             hint: "$k$ を $y$ の式で表そう。$y$ がとれる範囲のはしを調べる。",
             steps: [
-              `②−①×${a}　$${b - a}y=k-${a * N}$　より　$k=${a * N}+${b - a}y$`,
+              `②−①×${a}　$${coefVar(b - a, "y")}=k-${a * N}$　より　$k=${a * N}${signedVar(b - a, "y")}$`,
               `$x=${N}-y$ も自然数だから、$y$ は 1〜${N - 1} の整数。`,
               `$y=${yy}$ のとき、$k=${a * N}+${b - a}\\times${yy}=${ans}$（いちばん${big ? "大きい" : "小さい"}）`,
             ],

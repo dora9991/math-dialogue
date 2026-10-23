@@ -374,7 +374,7 @@ export const UNITS = [
             ans: ts.length,
             unit: "個",
             hint: "ひき算も、負の数をたすと見なす。+ や − でつながれた 1つ1つが項。",
-            steps: [`${$(`${raw(ts)}=${plusForm(ts)}`)} と見る。`, `項は ${ts.map(T1).map($).join("、")} の ${ts.length}個。`],
+            steps: [`${$(`${raw(ts)}=${plusForm(ts)}`)} と見る。`, `項は ${ts.map(T1).map($).join("、")} の ${ts.length}つ。`],
           };
         }),
         // 01d03a 単項式を選ぶ
@@ -456,15 +456,16 @@ export const UNITS = [
       4: [
         // 01d08a 2次式を選ぶ
         t("01d08a", (r) => {
-          const L = pick(r, LET2), mk = (N, k) => ptex(P(randTerms(r, L, N, k)));
-          const right = mk(2, pick(r, [2, 3])), ans = $(right);
+          const L = pick(r, LET2), mk = (N, k) => P(randTerms(r, L, N, k));
+          const right = mk(2, pick(r, [2, 3])), ans = $(ptex(right));
           const wrongs = [mk(1, 3), mk(3, 2), mk(pick(r, [1, 3, 4]), pick(r, [2, 3]))];
+          const others = wrongs.map((p) => `${$(ptex(p))} が ${pdeg(p)}次式`).join("、");
           return {
             q: "次のうち、2次式はどれか。",
             ans,
-            choices: choices4(r, ans, wrongs.map($), () => $(mk(pick(r, [1, 3, 4]), 2))),
+            choices: choices4(r, ans, wrongs.map((p) => $(ptex(p))), () => $(ptex(mk(pick(r, [1, 3, 4]), 2)))),
             hint: "項の数ではなく、各項の次数を調べて、いちばん大きいものを見つけよう。",
-            steps: ["各項の次数を調べ、いちばん大きいものがその式の次数。", `${ans} は、いちばん大きい次数が 2 だから 2次式。ほかは 1次式・3次式・4次式のどれか。`],
+            steps: ["各項の次数のうち、いちばん大きいものが、その式の次数。", `${ans} は、いちばん大きい次数が 2 だから 2次式。ほかは、${others}。`],
           };
         }),
         // 01d08b 次数から、指数の文字の値を求める
