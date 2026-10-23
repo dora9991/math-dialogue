@@ -275,6 +275,34 @@ async function readQr(page, loc) {
       else console.log(`○ ${u.key}（単元まとめ印刷）　${u.n}時間・${got}ページ（白紙 ${blank}）・印刷 ${pdfPages}ページ`);
     }
   }
+  // スライド（#/<授業のID>/slide）：タブから開け、枚数どおりに並び、画像がすべて読め、印刷で 1枚＝1ページになるか
+  const slideInfos = await page.evaluate(() => IK.order.filter(id => IK.slides && IK.slides[id]).map(id => ({ id, ...IK.slides[id] })));
+  for (const info of slideInfos.filter(i => !only.length || only.includes(i.id))) {
+    const id = info.id, msgs = [];
+    await page.goto(url + '#/' + id + '/slide');
+    await page.reload();
+    await page.waitForSelector('.slidebox iframe');
+    const tabs = await page.locator('.seg a').allTextContents();
+    if (!tabs.includes('スライド')) msgs.push('「スライド」のタブがない');
+    const fr = page.frames().find(f => f.url().endsWith('/' + info.file));
+    if (!fr) msgs.push('スライドのページが、枠の中に開かない');
+    else {
+      await fr.waitForSelector('#deck>section');
+      await page.waitForTimeout(150);
+      const r = await fr.evaluate(() => ({ n: document.querySelectorAll('#deck>section').length, bad: [...document.images].filter(i => !i.complete || !i.naturalWidth).map(i => i.getAttribute('src')) }));
+      if (r.n !== info.n) msgs.push(`スライドが ${r.n} 枚（${info.n} 枚のはず）`);
+      if (r.bad.length) msgs.push(`読めない画像：${r.bad.join('、')}`);
+    }
+    const box = await page.locator('.slidebox').boundingBox();
+    if (!box || box.width < 600 || box.x < 0 || box.x + box.width > 1001) msgs.push('スライドの枠が、画面におさまらない');
+    await page.goto('file://' + path.join(root, info.file));
+    await page.waitForSelector('#deck>section');
+    const pdf = await page.pdf({ preferCSSPageSize: true, printBackground: true });
+    const pdfPages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+    if (pdfPages !== info.n) msgs.push(`印刷（PDF）が ${pdfPages} ページ（${info.n} ページのはず）`);
+    if (msgs.length) { bad += msgs.length; console.log(`✗ ${id}（スライド）`); msgs.forEach(m => console.log('   ' + m)); }
+    else console.log(`○ ${id}（スライド）　${info.n}枚・印刷 ${pdfPages}ページ`);
+  }
   if (errors.length) { bad += errors.length; console.log('ブラウザのエラー：'); errors.forEach(e => console.log('   ' + e)); }
   await browser.close();
   console.log(`画像：${outDir}`);
