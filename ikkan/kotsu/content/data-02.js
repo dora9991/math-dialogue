@@ -6,7 +6,7 @@
 //   ヒストグラムをかく問題（dr.1）は、「長方形の高さ・幅・個数」を聞く。説明を求める問い（dr.4②・dr.6②・qz.4）は、正しい説明を選ぶ 4択にした。
 //   度数折れ線の両はしの点・長方形の上の辺の中点は、階級値（階級のまん中）から計算で出す。
 // ============================================================
-import { t, pick, choices4, round } from "../kit.js";
+import { t, pick, choices4, round, shuffle } from "../kit.js";
 import { unitFor, fixed } from "../unit-kit.js";
 import { sum, classes, cumulative } from "../stats.js";
 
@@ -18,7 +18,7 @@ const CTX = [
   { name: "上体起こしの記録", u: "回", los: [10, 15, 20], ws: [5], d: 0 },
   { name: "通学時間", u: "分", los: [0], ws: [5, 10], d: 0 },
   { name: "50m走の記録", u: "秒", los: [7, 7.5, 8], ws: [0.5], d: 1 },
-  { name: "テストの得点", u: "点", los: [0, 40], ws: [10], d: 0 },
+  { name: "テストの得点", u: "点", los: [0, 40], ws: [10], d: 0, max: 100 },
   { name: "ボール投げの記録", u: "m", los: [10, 15, 20], ws: [5], d: 0 },
   { name: "身長", u: "cm", los: [140, 145, 150], ws: [5], d: 0 },
 ];
@@ -33,8 +33,10 @@ const hsent = (cls, f, u, d) => cls.map((c, i) => `${lb(c, u, d)}が ${f[i]}人`
 /** 場面 c（なければ選ぶ）で、階級を k 個つくる */
 const setup = (r, k = null, c = null) => {
   c = c || pick(r, CTX);
-  const w = pick(r, c.ws), lo = pick(r, c.los);
+  const w = pick(r, c.ws);
   k = k || r(5, 6);
+  let lo = pick(r, c.los);
+  if (c.max && lo + w * k > c.max) lo = Math.min(...c.los);   // 階級の上のはしが満点（100点）をこえないようにする
   return { c, u: c.u, d: c.d, w, k, lo, cls: classes(lo, w, k) };
 };
 /** まん中が多い山の形で、k 個の階級に n 人を分ける */
@@ -46,26 +48,37 @@ const bell = (r, k, n) => {
 const uniqMax = (f) => f.filter((x) => x === Math.max(...f)).length === 1;
 /** たし算の式：1つだけなら「5（人）」、いくつかなら「2+3 ＝ 5（人）」 */
 const tot = (a) => (a.length > 1 ? `${a.join("+")} ＝ ${sum(a)}（人）` : `${a[0]}（人）`);
-const near = (j, k) => [j - 1, j + 1, j - 2, j + 2].filter((i) => i >= 0 && i < k);
+/** 階級の位置が近い順に、正解（j）以外の階級の番号：j−1、j+1、j−2、j+2、…（誤答がいつも k−1 個そろう） */
+const near = (j, k) => Array.from({ length: k }, (_, i) => i).filter((i) => i !== j).sort((a, b) => Math.abs(a - j) - Math.abs(b - j) || a - b);
 
 // ── 分布のかたち ─────────────────────────────────────
 const SHAPE = {
   sym: "山がまん中にあり、左右のすそが同じくらい",
   rt: "山が左に寄り、右にすそが長くのびている",
   lt: "山が右に寄り、左にすそが長くのびている",
-  two: "山が 2つあり、その間がへこんでいる",
+  two: "山が2つあり、その間がへこんでいる",
 };
 /** 山がひとつの度数のならび（sym＝まん中が山で左右対称、rt＝左に山で右にすそが長い、lt＝右に山で左にすそが長い） */
-function shapeFreq(r, kind) {
+function shapeFreq(r, kind, kFix = null) {
   if (kind === "sym") {
-    const k = pick(r, [5, 7]), mid = (k - 1) / 2, step = r(1, 2), top = step * mid + r(2, 4);
+    const k = kFix || pick(r, [5, 7]), mid = (k - 1) / 2, step = r(1, 2), top = step * mid + r(2, 4);
     return Array.from({ length: k }, (_, i) => top - step * Math.abs(i - mid));
   }
-  const k = r(5, 6), p = r(0, 1), peak = r(8, 12), f = Array(k).fill(0);
+  const k = kFix || r(5, 6), p = r(0, 1), peak = r(8, 12), f = Array(k).fill(0);
   f[p] = peak;
   if (p === 1) f[0] = r(2, 4);
   for (let i = p + 1; i < k; i++) f[i] = Math.max(1, f[i - 1] - r(1, 3));
   return kind === "rt" ? f : f.reverse();
+}
+
+/** 長方形の高さの比（もっとも高い比が 1 つだけのもの） */
+const RATIOS = [[1, 3, 5, 3], [1, 2, 4, 3], [2, 3, 5, 2], [1, 4, 5, 2], [2, 5, 4, 1], [1, 3, 4, 2, 1], [1, 2, 5, 3, 1], [1, 3, 6, 4], [2, 4, 7, 3], [3, 6, 4, 2], [1, 5, 8, 3], [2, 3, 6, 4, 1], [1, 4, 7, 5, 3], [2, 3, 4, 1]];
+/** ヒストグラムの山の階級を 2 つ（ア・イ）読む問題の、データ（ア・イは山の形がちがう） */
+function twoHists(r) {
+  const [ka, kb] = shuffle(r, ["sym", "rt", "lt"]).slice(0, 2);
+  const fa = shapeFreq(r, ka, 5), fb = shapeFreq(r, kb, 5), s = setup(r, 5);
+  const sent = `ア、イは、2つのクラスの${s.c.name}（${s.u}）を表すヒストグラムである。アの長方形の高さは、${hsent(s.cls, fa, s.u, s.d)}。イの長方形の高さは、${hsent(s.cls, fb, s.u, s.d)}である。`;
+  return { ka, kb, fa, fb, s, sent };
 }
 
 export const UNITS = [
@@ -75,7 +88,7 @@ export const UNITS = [
     prereqs: ["J1-dk01", "E6-data"],
     points: [
       "度数分布表を長方形で表したグラフが、ヒストグラム。横軸は階級、縦軸は度数で、長方形の高さが度数を表す。",
-      "長方形の上の辺の中点を順に結んだ折れ線が、度数折れ線。両はしは、度数が 0 の階級があると考えて、そのまん中の点から横軸まで結ぶ。",
+      "長方形の上の辺の中点を順に結んだ折れ線が、度数折れ線。両はしは、度数が 0の階級があると考えて、そのまん中の点から横軸まで結ぶ。",
       "分布のようすは、山の位置（いちばん高い所）と、すそ（山の左右へのびるようす）で読み取る。",
       "長方形の面積の和は、（階級の幅）×（度数の合計）。度数折れ線と横軸で囲まれた部分の面積も、これと等しい。",
     ],
@@ -119,13 +132,13 @@ export const UNITS = [
           const s = setup(r), left = r(0, 1) === 0 && s.cls[0].lo - s.w / 2 >= 0;   // 左はしの点が負の値になる組は、右はしを聞く
           const cx = (left ? s.cls[0].lo : s.cls[s.k - 1].hi) + (left ? -1 : 1) * (s.w / 2);
           return {
-            q: `${s.c.name}（${s.u}）のヒストグラムは、階級の幅が ${fmt(s.w, s.d)}${s.u} で、${fmt(s.cls[0].lo, s.d)}${s.u}以上から ${fmt(s.cls[s.k - 1].hi, s.d)}${s.u}未満までの ${s.k}つの階級でできている。このヒストグラムに度数折れ線をかくとき、折れ線の${left ? "左" : "右"}はしの点は、横軸の何${s.u}のところにとるか。`,
+            q: `${s.c.name}（${s.u}）のヒストグラムは、階級の幅が${fmt(s.w, s.d)}${s.u}で、${fmt(s.cls[0].lo, s.d)}${s.u}以上から ${fmt(s.cls[s.k - 1].hi, s.d)}${s.u}未満までの ${s.k}つの階級でできている。このヒストグラムに度数折れ線をかくとき、折れ線の${left ? "左" : "右"}はしの点は、横軸の何${s.u}のところにとるか。`,
             ans: round(cx, 6),
             unit: s.u,
             hint: "度数折れ線の両はしの点は、どの階級のまん中にとるのだったかな。",
             steps: left
-              ? [`左の外に、度数 0 の階級「${fmt(s.cls[0].lo - s.w, s.d)}${s.u}以上${fmt(s.cls[0].lo, s.d)}${s.u}未満」があると考える。`, `そのまん中は (${fmt(s.cls[0].lo - s.w, s.d)}+${fmt(s.cls[0].lo, s.d)})÷2 ＝ ${show(cx)}`]
-              : [`右の外に、度数 0 の階級「${fmt(s.cls[s.k - 1].hi, s.d)}${s.u}以上${fmt(s.cls[s.k - 1].hi + s.w, s.d)}${s.u}未満」があると考える。`, `そのまん中は (${fmt(s.cls[s.k - 1].hi, s.d)}+${fmt(s.cls[s.k - 1].hi + s.w, s.d)})÷2 ＝ ${show(cx)}`],
+              ? [`左の外に、度数 0の階級「${fmt(s.cls[0].lo - s.w, s.d)}${s.u}以上${fmt(s.cls[0].lo, s.d)}${s.u}未満」があると考える。`, `そのまん中は (${fmt(s.cls[0].lo - s.w, s.d)}+${fmt(s.cls[0].lo, s.d)})÷2 ＝ ${show(cx)}`]
+              : [`右の外に、度数 0の階級「${fmt(s.cls[s.k - 1].hi, s.d)}${s.u}以上${fmt(s.cls[s.k - 1].hi + s.w, s.d)}${s.u}未満」があると考える。`, `そのまん中は (${fmt(s.cls[s.k - 1].hi, s.d)}+${fmt(s.cls[s.k - 1].hi + s.w, s.d)})÷2 ＝ ${show(cx)}`],
           };
         }),
         // 02d02b 長方形の上の辺の中点は、横軸のどこか
@@ -137,7 +150,7 @@ export const UNITS = [
             ans: mid,
             unit: s.u,
             hint: "長方形の上の辺の中点は、その階級の、横軸のまん中の真上にある。",
-            steps: [`階級のまん中は (${fmt(c.lo, s.d)}+${fmt(c.hi, s.d)})÷2 ＝ ${mid}`, `中点は、横軸の ${mid}${s.u} のところ。`],
+            steps: [`階級のまん中は (${fmt(c.lo, s.d)}+${fmt(c.hi, s.d)})÷2 ＝ ${mid}`, `中点は、横軸の ${mid}${s.u}のところ。`],
           };
         }),
         // 02q01 度数がもっとも多い階級
@@ -195,7 +208,7 @@ export const UNITS = [
             q: `${n}人の${s.c.name}（${s.u}）のヒストグラムがある。長方形の高さは、${hsent(s.cls, f, s.u, s.d)}である。${s.c.name}の${fromSmall ? "小さい" : "大きい"}ほうから数えて ${k}番目の人は、どの階級にいるか。`,
             ans,
             choices: choices4(r, ans, near(j, s.k).map((i) => lb(s.cls[i], s.u, s.d))),
-            hint: `${fromSmall ? "小さい" : "大きい"}ほうの長方形から、高さ（度数）を順にたしていこう。たした人数が ${k} に届くのは、どの階級かな。`,
+            hint: `${fromSmall ? "小さい" : "大きい"}ほうの長方形から、高さ（度数）を順にたしていこう。たした人数が ${k}に届くのは、どの階級かな。`,
             steps: [`度数を${fromSmall ? "小さい" : "大きい"}ほうから順にたす：${cu2.join("、")}（人）。`, `${k}番目は、たした人数がはじめて ${k} 以上になる「${ans}」。`],
           };
         }),
@@ -209,8 +222,8 @@ export const UNITS = [
             unit: s.u,
             hint: "度数折れ線の両はしの点は、どの階級のまん中にとるのだったかな。",
             steps: left
-              ? [`左の外に、度数 0 の階級「${fmt(s.cls[0].lo - s.w, s.d)}${s.u}以上${fmt(s.cls[0].lo, s.d)}${s.u}未満」があると考える。`, `そのまん中は ${cx}${s.u} のところ。`]
-              : [`右の外に、度数 0 の階級「${fmt(s.cls[4].hi, s.d)}${s.u}以上${fmt(s.cls[4].hi + s.w, s.d)}${s.u}未満」があると考える。`, `そのまん中は ${cx}${s.u} のところ。`],
+              ? [`左の外に、度数 0の階級「${fmt(s.cls[0].lo - s.w, s.d)}${s.u}以上${fmt(s.cls[0].lo, s.d)}${s.u}未満」があると考える。`, `そのまん中は ${cx}${s.u}のところ。`]
+              : [`右の外に、度数 0の階級「${fmt(s.cls[4].hi, s.d)}${s.u}以上${fmt(s.cls[4].hi + s.w, s.d)}${s.u}未満」があると考える。`, `そのまん中は ${cx}${s.u}のところ。`],
           };
         }),
         // 02q04 分布のようす（山の位置とすそののび方）
@@ -228,56 +241,61 @@ export const UNITS = [
       ],
       // ───────── 3 応用 ─────────
       3: [
-        // 02d04a 山はどの階級にあるか
+        // 02d04a ア・イ 2つのヒストグラムの山は、それぞれどの階級にあるか
         t("02d04a", (r) => {
-          const kind = pick(r, ["sym", "rt", "lt"]), f = shapeFreq(r, kind), n = sum(f), s = setup(r, f.length);
-          const j = f.indexOf(Math.max(...f)), ans = lb(s.cls[j], s.u, s.d);
+          const { fa, fb, s, sent } = twoHists(r);
+          const ja = fa.indexOf(Math.max(...fa)), jb = fb.indexOf(Math.max(...fb));
+          const L = (i) => lb(s.cls[i], s.u, s.d), pair = (x, y) => `ア：${L(x)}、イ：${L(y)}`;
+          const ans = pair(ja, jb), nb = (j) => near(j, 5)[0];
           return {
-            q: `${n}人の${s.c.name}（${s.u}）のヒストグラムがある。長方形の高さは、${hsent(s.cls, f, s.u, s.d)}である。このヒストグラムの山は、どの階級にあるか。`,
+            q: `${sent}ア、イの山は、それぞれどの階級にあるか。次のうち、正しい組はどれか。`,
             ans,
-            choices: choices4(r, ans, near(j, s.k).map((i) => lb(s.cls[i], s.u, s.d))),
-            hint: "山は、いちばん高い長方形のところ。",
-            steps: [`長方形の高さは ${f.join("、")}（人）。`, `いちばん高いのは ${f[j]}人の「${ans}」。ここが山。`],
+            choices: choices4(r, ans, [pair(jb, ja), pair(ja, nb(jb)), pair(nb(ja), jb)]),
+            hint: "山は、いちばん高い長方形のところ。アとイを、1つずつ見ていこう。",
+            steps: [`アの長方形の高さは ${fa.join("、")}（人）。いちばん高いのは「${L(ja)}」。`, `イの長方形の高さは ${fb.join("、")}（人）。いちばん高いのは「${L(jb)}」。`, `答えは「${ans}」。`],
           };
         }),
-        // 02d04b 分布のようす
+        // 02d04b ア・イ 2つのヒストグラムの、分布のようすのちがい
         t("02d04b", (r) => {
-          const kind = pick(r, ["sym", "rt", "lt"]), f = shapeFreq(r, kind), n = sum(f), s = setup(r, f.length, CTX[3]), ans = SHAPE[kind];
+          const { ka, kb, fa, fb, sent } = twoHists(r);
+          const third = ["sym", "rt", "lt"].find((x) => x !== ka && x !== kb);
+          const pair = (x, y) => `ア：${SHAPE[x]}。イ：${SHAPE[y]}。`, ans = pair(ka, kb);
+          const why = (k) => (k === "sym" ? "山がまん中にあり、左右とも同じようにへっていく" : k === "rt" ? "山が左に寄り、右へ長くへっていく（右にすそが長い）" : "山が右に寄り、左へ長くへっていく（左にすそが長い）");
           return {
-            q: `${n}人のテストの得点（点）のヒストグラムがある。長方形の高さは、${hsent(s.cls, f, "点", 0)}である。山の位置とすそののび方から、この分布のようすを表しているのは、どれか。`,
+            q: `${sent}山の位置とすそののび方から、ア、イの分布のようすを説明したものとして、正しいものはどれか。`,
             ans,
-            choices: choices4(r, ans, Object.keys(SHAPE).filter((x) => x !== kind).map((x) => SHAPE[x])),
-            hint: "山の位置と、山から左右へ、どのようにへっていくかを見くらべよう。",
-            steps: [`長方形の高さは ${f.join("、")}（人）。`, kind === "sym" ? "山は階級のまん中にあり、左右とも同じようにへっていく。" : kind === "rt" ? "山は左に寄っていて、右へ長くへっていく（右にすそが長い）。" : "山は右に寄っていて、左へ長くへっていく（左にすそが長い）。", `答えは「${ans}」。`],
+            choices: choices4(r, ans, [pair(kb, ka), pair(ka, third), pair(third, kb)]),
+            hint: "アとイを、1つずつ見よう。山は、左・まん中・右のどこかな。山の左右で、すそののび方はどうちがうかな。",
+            steps: [`アの長方形の高さは ${fa.join("、")}（人）。${why(ka)}。`, `イの長方形の高さは ${fb.join("、")}（人）。${why(kb)}。`, `正しいのは、${ans}`],
           };
         }),
         // 02d05a 高さの比から、もっとも高い長方形の度数
         t("02d05a", (r) => {
-          const ratio = pick(r, [[1, 3, 5, 3], [1, 2, 4, 3], [2, 3, 5, 2], [1, 4, 5, 2], [2, 5, 4, 1], [1, 3, 4, 2, 1], [1, 2, 5, 3, 1]]);
-          const m = r(2, 5), f = ratio.map((x) => x * m), n = sum(f), S = sum(ratio);
+          const ratio = pick(r, RATIOS), S = sum(ratio);
+          const m = r(2, Math.min(6, Math.floor(60 / S))), f = ratio.map((x) => x * m), n = sum(f);
           const s = setup(r, ratio.length, CTX[3]);
           const top = Math.max(...f);
           return {
-            q: `${n}人のテストの得点（点）を、${s.cls.map((c) => lb(c, "点", 0)).join("、")}の ${ratio.length}つの階級に分けて、ヒストグラムをかいたら、長方形の高さの比が ${ratio.join("：")} になった。もっとも高い長方形の階級の度数は？`,
+            q: `${n}人のテストの得点（点）を、${s.cls.map((c) => lb(c, "点", 0)).join("、")}の${ratio.length}つの階級に分けて、ヒストグラムをかいたら、長方形の高さの比が${ratio.join("：")}になった。もっとも高い長方形の階級の度数は？`,
             ans: top,
             unit: "人",
-            hint: "長方形の高さは、度数に比例する。比の和で、全体の人数をわって、比の 1 にあたる人数を求めよう。",
-            steps: [`比の和は ${ratio.join("+")} ＝ ${S}。比の 1 にあたる人数は ${n}÷${S} ＝ ${m}（人）。`, `度数は ${f.join("、")}（人）。もっとも高いのは ${Math.max(...ratio)}×${m} ＝ ${top}（人）。`],
+            hint: "長方形の高さは、度数に比例する。比の和で、全体の人数をわって、比の 1にあたる人数を求めよう。",
+            steps: [`比の和は ${ratio.join("+")} ＝ ${S}。比の 1にあたる人数は ${n}÷${S} ＝ ${m}（人）。`, `度数は ${f.join("、")}（人）。もっとも高いのは ${Math.max(...ratio)}×${m} ＝ ${top}（人）。`],
           };
         }),
         // 02d05b 高さの比から、低いほうから k 番目の人の階級
         t("02d05b", (r) => {
-          const ratio = pick(r, [[1, 3, 5, 3], [1, 2, 4, 3], [2, 3, 5, 2], [1, 4, 5, 2], [2, 5, 4, 1], [1, 3, 4, 2, 1], [1, 2, 5, 3, 1]]);
-          const m = r(2, 5), f = ratio.map((x) => x * m), n = sum(f), S = sum(ratio);
+          const ratio = pick(r, RATIOS), S = sum(ratio);
+          const m = r(2, Math.min(6, Math.floor(60 / S))), f = ratio.map((x) => x * m), n = sum(f);
           const s = setup(r, ratio.length, CTX[3]);
           const cu = cumulative(f), idx = r(0, ratio.length - 2), k = cu[idx] + (r(0, 1) ? 0 : 1);
           const j = cu.findIndex((c) => c >= k), ans = lb(s.cls[j], "点", 0);
           return {
-            q: `${n}人のテストの得点（点）を、${s.cls.map((c) => lb(c, "点", 0)).join("、")}の ${ratio.length}つの階級に分けて、ヒストグラムをかいたら、長方形の高さの比が ${ratio.join("：")} になった。得点の低いほうから数えて ${k}番目の人は、どの階級にいるか。`,
+            q: `${n}人のテストの得点（点）を、${s.cls.map((c) => lb(c, "点", 0)).join("、")}の${ratio.length}つの階級に分けて、ヒストグラムをかいたら、長方形の高さの比が${ratio.join("：")}になった。得点の低いほうから数えて ${k}番目の人は、どの階級にいるか。`,
             ans,
             choices: choices4(r, ans, near(j, s.k).map((i) => lb(s.cls[i], "点", 0))),
             hint: "まず、それぞれの階級の度数を求めよう。次に、低いほうの階級から順にたしていく。",
-            steps: [`比の和 ${ratio.join("+")} ＝ ${S}。比の 1 にあたる人数は ${n}÷${S} ＝ ${m}（人）。度数は ${f.join("、")}（人）。`, `低いほうから順にたす：${cu.join("、")}（人）。`, `${k}番目は、たした人数がはじめて ${k} 以上になる「${ans}」。`],
+            steps: [`比の和 ${ratio.join("+")} ＝ ${S}。比の 1にあたる人数は ${n}÷${S} ＝ ${m}（人）。度数は ${f.join("、")}（人）。`, `低いほうから順にたす：${cu.join("、")}（人）。`, `${k}番目は、たした人数がはじめて ${k} 以上になる「${ans}」。`],
           };
         }),
       ],
@@ -287,7 +305,7 @@ export const UNITS = [
         t("02d06a", (r) => {
           const s = setup(r, r(6, 8), CTX[1]), n = r(20, 40), f = bell(r, s.k, n);
           return {
-            q: `${n}人の通学時間（分）のヒストグラムがある。階級の幅は ${s.w}分 で、長方形の高さは、${hsent(s.cls, f, "分", 0)}である。長方形の面積の和を求めよう。（面積は「分×人」と考える）`,
+            q: `${n}人の通学時間（分）のヒストグラムがある。階級の幅は${s.w}分で、長方形の高さは、${hsent(s.cls, f, "分", 0)}である。長方形の面積の和を求めよう。（面積は「分×人」と考える）`,
             ans: s.w * n,
             hint: "長方形1つの面積は、（横の長さ）×（高さ）。横の長さは、どの長方形も同じ。",
             steps: [`長方形の面積は、（階級の幅 ${s.w}）×（度数）。`, `面積の和 ＝ ${s.w}×(${f.join("+")}) ＝ ${s.w}×${n} ＝ ${s.w * n}`],
@@ -295,14 +313,14 @@ export const UNITS = [
         }),
         // 02d06b 度数折れ線と横軸で囲まれた面積が、長方形の面積の和と等しいわけ
         fixed("02d06b", (r) => {
-          const ans = "となり合う長方形の境目で、折れ線からはみ出す三角形と、へこむ三角形ができる。この 2つは合同で面積が等しいので、打ち消し合うから";
+          const ans = "境目で、折れ線からはみ出す三角形とへこむ三角形が合同になり、面積が打ち消し合うから";
           return {
             q: "ヒストグラムに度数折れ線をかいた。度数折れ線と横軸で囲まれた部分の面積は、ヒストグラムの長方形の面積の和と等しい。そのわけとして、正しいものはどれか。",
             ans,
             choices: choices4(r, ans, [
-              "度数折れ線は、長方形の上の辺の左はしの点を結んだものなので、長方形の上の辺とぴったり重なるから",
-              "度数折れ線の点の数が、長方形の数とまったく同じだから",
-              "度数折れ線は、どの長方形の上の辺とも重なっているから",
+              "度数折れ線は、長方形の上の辺の左はしの点を結んだもので、上の辺と重なるから",
+              "度数折れ線の点の数が、長方形の数とまったく同じで、面積が同じになるから",
+              "度数折れ線は、どの長方形の上の辺とも重なっていて、はみ出す部分がないから",
             ]),
             hint: "度数折れ線は、長方形の上の辺の「どこ」を結んでいるかな。となり合う長方形の境目で、折れ線と長方形はどうなっているかな。",
             steps: ["度数折れ線は、長方形の上の辺の中点を結んでいる。", "境目の線のところで、折れ線からはみ出す三角形と、へこむ三角形ができる。この 2つは合同で、面積が等しい。両はしも同じ。", "だから、はみ出す分とへこむ分が打ち消し合い、面積の和は変わらない。"],
@@ -312,7 +330,7 @@ export const UNITS = [
         t("02q05", (r) => {
           const s = setup(r, 5, CTX[0]), n = r(18, 30), f = bell(r, 5, n);
           return {
-            q: `${n}人の上体起こしの記録（回）のヒストグラムがある。階級の幅は ${s.w}回 で、長方形の高さは、${hsent(s.cls, f, "回", 0)}である。このヒストグラムに度数折れ線をかいたとき、度数折れ線と横軸で囲まれた部分の面積は、いくつか。（面積は「回×人」と考える）`,
+            q: `${n}人の上体起こしの記録（回）のヒストグラムがある。階級の幅は${s.w}回で、長方形の高さは、${hsent(s.cls, f, "回", 0)}である。このヒストグラムに度数折れ線をかいたとき、度数折れ線と横軸で囲まれた部分の面積は、いくつか。（面積は「回×人」と考える）`,
             ans: s.w * n,
             hint: "度数折れ線と横軸で囲まれた部分の面積は、長方形の面積の和と、どんな関係があったかな。",
             steps: [`長方形の面積の和は ${s.w}×(${f.join("+")}) ＝ ${s.w}×${n} ＝ ${s.w * n}`, `度数折れ線と横軸で囲まれた部分の面積は、長方形の面積の和と等しい。答えは ${s.w * n}。`],

@@ -9,7 +9,7 @@
 // ============================================================
 import { t, pick, choices4, shuffle, round } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
-import { sum, mean, median, range, classes, medianClass, clsLabel, freqSentence, listData } from "../stats.js";
+import { sum, mean, median, range, classes, medianClass, clsLabel, freqSentence, listData, roundHalf } from "../stats.js";
 
 const unit = unitFor("data");
 const f2 = (x) => x.toFixed(2);
@@ -30,8 +30,10 @@ function pairData(r, n, m, wa, wb, lo) {
   return r(0, 1) ? [B, A] : [A, B];
 }
 const NAMES = ["Aさん", "Bさん"];
-/** 「Aさん」「Bさん」「平均値が同じなので、どちらを選んでも同じ」の3択（正解は person 番号） */
-const who3 = (r, person) => choices4(r, NAMES[person], [NAMES[1 - person], "平均値が同じなので、どちらを選んでも同じ"]);
+/** 「Aさん」「Bさん」「平均値が同じなので、…」の3択（正解は person 番号。third は、問いに合わせた3つ目の文） */
+const who3 = (r, person, third) => choices4(r, NAMES[person], [NAMES[1 - person], third]);
+/** 割合 c÷n を、小数第2位まで（割りきれれば「＝」、割りきれなければ四捨五入して「≒」） */
+const frac = (c, n) => `${c} ÷ ${n} ${Number.isInteger(round((100 * c) / n, 6)) ? "＝" : "≒"} ${f2(roundHalf(c / n, 2))}`;
 
 /** 平均値か範囲を、Aさん・Bさんのどちらかについて聞く */
 function meanRange(r, pd, u, listIntro) {
@@ -56,7 +58,7 @@ function chooseBy(r, pd, kind, T) {
 
 // 07d03：人数の少ない組（n0 人のうち c0 人）と、多い組（n1 人のうち c1 人）。人数は多いほうが c1 > c0 だが、割合は小さい（% がちょうどの値）
 const PAIRS_D03 = [];
-for (const n0 of [20, 25, 30, 40]) for (const n1 of [40, 50, 60, 80]) {
+for (const n0 of [25, 30, 35]) for (const n1 of [30, 35, 40, 45]) {
   if (n0 >= n1) continue;
   for (let c0 = Math.ceil(n0 * 0.2); c0 <= Math.floor(n0 * 0.8); c0++) for (let c1 = Math.ceil(n1 * 0.2); c1 <= Math.floor(n1 * 0.8); c1++) {
     if ((100 * c0) % n0 === 0 && (100 * c1) % n1 === 0 && c1 > c0 && c1 / n1 < c0 / n0) PAIRS_D03.push([n0, c0, n1, c1]);
@@ -87,9 +89,9 @@ export const UNITS = [
           const T = r(m - 3, m + 4), res = chooseBy(r, pd, "以上", T); if (!res) return { skip: true };
           const { person, c, n } = res;
           return {
-            q: `AさんとBさんが、シュートゲームを 10回ずつした。入った得点は、次のとおりである。${NAMES[0]} … ${listData(pd[0])}　${NAMES[1]} … ${listData(pd[1])}　${T}点以上とれば勝てる。割合を使って考えると、どちらを選ぶのがよいか。`,
+            q: `AさんとBさんが、シュートゲームを 10回ずつした。入った得点は、次のとおりである。${NAMES[0]} … ${listData(pd[0])}　${NAMES[1]} … ${listData(pd[1])}　2人の平均値は、どちらも ${m}点である。${T}点以上とれば勝てる。割合を使って考えると、どちらを選ぶのがよいか。`,
             ans: NAMES[person],
-            choices: who3(r, person),
+            choices: who3(r, person, "平均値が同じなので、どちらを選んでも同じ"),
             hint: "勝てるのは、何回のうち何回か。それぞれの割合をくらべよう。",
             steps: [`${T}点以上の割合　${NAMES[0]} ${c[0]} ÷ ${n} ＝ ${f2(c[0] / n)}　　${NAMES[1]} ${c[1]} ÷ ${n} ＝ ${f2(c[1] / n)}`, `割合が大きい ${NAMES[person]} を選ぶ。（平均値は同じでも、割合はちがう。）`],
           };
@@ -100,9 +102,9 @@ export const UNITS = [
           const T = r(m - 4, m + 3), res = chooseBy(r, pd, "未満", T); if (!res) return { skip: true };
           const { person, c, n } = res;
           return {
-            q: `AさんとBさんが、シュートゲームを 10回ずつした。入った得点は、次のとおりである。${NAMES[0]} … ${listData(pd[0])}　${NAMES[1]} … ${listData(pd[1])}　${T}点未満だと負ける。割合を使って考えると、負けにくいのは、どちらか。`,
+            q: `AさんとBさんが、シュートゲームを 10回ずつした。入った得点は、次のとおりである。${NAMES[0]} … ${listData(pd[0])}　${NAMES[1]} … ${listData(pd[1])}　2人の平均値は、どちらも ${m}点である。${T}点未満だと負ける。割合を使って考えると、負けにくいのは、どちらか。`,
             ans: NAMES[person],
-            choices: who3(r, person),
+            choices: who3(r, person, "平均値が同じなので、負けにくさも同じ"),
             hint: "負けるのは、何回のうち何回か。それぞれの割合をくらべて、小さいほうを選ぼう。",
             steps: [`${T}点未満の割合　${NAMES[0]} ${c[0]} ÷ ${n} ＝ ${f2(c[0] / n)}　　${NAMES[1]} ${c[1]} ÷ ${n} ＝ ${f2(c[1] / n)}`, `負ける割合が小さい ${NAMES[person]} を選ぶ。`],
           };
@@ -115,12 +117,13 @@ export const UNITS = [
         // 07q02 毎回、同じくらいの点がとれるのはどちらか
         t("07q02", (r) => {
           const pd = pairData(r, 4, 5 * r(10, 15), 4, 22, 0); if (!pd) return { skip: true };
+          if (Math.max(range(pd[0]), range(pd[1])) < 3 * Math.min(range(pd[0]), range(pd[1]))) return { skip: true };
           const person = range(pd[0]) < range(pd[1]) ? 0 : 1;
           return {
-            q: `AさんとBさんの、テスト 4回の得点である。${NAMES[0]} … ${listData(pd[0])}　${NAMES[1]} … ${listData(pd[1])}　毎回、同じくらいの点がとれるのは、どちらのほうか。`,
+            q: `AさんとBさんの、テスト 4回の得点である。${NAMES[0]} … ${listData(pd[0])}　${NAMES[1]} … ${listData(pd[1])}　2人の平均点は、どちらも ${mean(pd[0])}点である。毎回、同じくらいの点がとれるのは、どちらのほうか。`,
             ans: NAMES[person],
-            choices: who3(r, person),
-            hint: "平均値は同じ。点数のちらばりぐあいは、何を見るとわかるかな。",
+            choices: who3(r, person, "平均点が同じなので、どちらも同じくらいの点がとれる"),
+            hint: "平均点が同じとき、点数のちらばりぐあいは、何を見るとわかるかな。",
             steps: [`範囲　${NAMES[0]} ${pd[0][3]} − ${pd[0][0]} ＝ ${range(pd[0])}（点）　　${NAMES[1]} ${pd[1][3]} − ${pd[1][0]} ＝ ${range(pd[1])}（点）`, `範囲が小さい ${NAMES[person]} のほうが、得点が安定している。`],
           };
         }),
@@ -134,22 +137,22 @@ export const UNITS = [
             { what: "1日の家庭学習の時間が", th: [30, 45, 60], u: "分" },
             { what: "握力が", th: [25, 30, 35], u: "kg" },
           ]);
-          const th = pick(r, ctx.th), names = pick(r, [["A組", "B組"], ["1組", "2組"], ["東中学校", "西中学校"]]);
+          const th = pick(r, ctx.th), names = pick(r, [["A組", "B組"], ["1組", "2組"], ["3組", "4組"]]);
           const [n0, c0, n1, c1] = pick(r, PAIRS_D03), ns = [n0, n1], cs = [c0, c1], ps = cs.map((c, i) => (100 * c) / ns[i]);
           const order = r(0, 1) ? [0, 1] : [1, 0];   // 問題文で先に書くほう
           const x = `${th}${ctx.u}以上`;
           const text = order.map((i) => `${names[i]} ${ns[i]}人のうち ${cs[i]}人`).join("、");
           const ans = `${x}の割合は、${names[0]}が ${ps[0]}%、${names[1]}が ${ps[1]}% なので、${names[0]}のほうが大きい`;
           const wrongs = [
-            `${x}の人数が${names[1]}のほうが多いので、割合も${names[1]}のほうが大きい`,
+            `${x}の人数は、${names[0]}が ${cs[0]}人、${names[1]}が ${cs[1]}人 なので、${names[1]}のほうが割合も大きい`,
             `${x}の割合は、${names[0]}が ${ps[1]}%、${names[1]}が ${ps[0]}% なので、${names[1]}のほうが大きい`,
-            "人数がちがうので、どちらの割合が大きいかは決められない",
+            `${x}の割合は、${names[0]}が ${ps[0]}%、${names[1]}が ${ps[1]}% だが、人数の多い${names[1]}のほうが大きいといえる`,
           ];
           return {
             q: `${ctx.what} ${x}の人は、${text}だった。次のうち、正しいものはどれか。`,
             ans,
             choices: choices4(r, ans, wrongs),
-            hint: "人数がちがうとき、人数そのものでくらべてよいかな。割合は、（その人数）÷（全体の人数）。",
+            hint: "人数がちがうとき、人数をそのままくらべてよいかな。どんな数でくらべればよいか、考えよう。",
             steps: [`${names[0]}　${cs[0]} ÷ ${ns[0]} ＝ ${f2(ps[0] / 100)}　　${names[1]}　${cs[1]} ÷ ${ns[1]} ＝ ${f2(ps[1] / 100)}`, `人数は${names[1]}のほうが多いが、割合は${names[0]}のほうが大きい。`, "人数がちがうときは、人数ではなく、割合でくらべる。"],
           };
         }),
@@ -174,10 +177,10 @@ export const UNITS = [
           const T = 5 * r(Math.ceil((m - 20) / 5), Math.floor((m + 20) / 5)), res = chooseBy(r, pd, "以上", T); if (!res) return { skip: true };
           const { person, c, n } = res;
           return {
-            q: `AさんとBさんの、テスト 4回の得点である。${NAMES[0]} … ${listData(pd[0])}　${NAMES[1]} … ${listData(pd[1])}　「${T}点以上をとれば、代表になれる」（1回だけの試験）。代表になれる見こみが大きいのは、どちらか。`,
+            q: `AさんとBさんの、テスト 4回の得点である。${NAMES[0]} … ${listData(pd[0])}　${NAMES[1]} … ${listData(pd[1])}　2人の平均点は、どちらも ${m}点である。「${T}点以上をとれば、代表になれる」（1回だけの試験）。代表になれる見こみが大きいのは、どちらか。`,
             ans: NAMES[person],
-            choices: who3(r, person),
-            hint: `平均値は同じ。「${T}点以上」は、4回のうち何回あるかを、くらべよう。`,
+            choices: who3(r, person, "平均点が同じなので、代表になれる見こみも同じ"),
+            hint: `1回だけの試験で「${T}点以上」をとる見こみの大きさは、4回の得点を使って、どう表せるかな。`,
             steps: [`${T}点以上の回数　${NAMES[0]} ${c[0]}回　${NAMES[1]} ${c[1]}回（4回のうち）`, `${T}点以上をとる割合が大きい ${NAMES[person]} のほうが、見こみが大きい。`],
           };
         }),
@@ -239,11 +242,11 @@ export const UNITS = [
         // 07d06b 求人広告の「平均 600万円」は、社員のようすをよく表しているか
         t("07d06b", (r) => {
           const w = wage(r); if (!w) return { skip: true };
-          const hi = w.a[4], ans = `いえない。5人のうち 4人は平均値より少なく、${hi}万円という大きい値に引っぱられて、平均値が大きくなっているから`;
+          const hi = w.a[4], ans = `いえない。5人のうち 4人は平均値より少なく、${hi}万円という大きい値に引っぱられているから`;
           const wrongs = [
-            "いえる。平均値は、全員の年収を合計して人数でわった値なので、社員のようすをいちばんよく表すから",
-            `いえる。5人のうち 4人が、平均値の ${w.mean}万円より多くもらっているから`,
-            "いえない。平均値は、いつも中央値より小さくなるから",
+            "いえる。平均値は全員の年収をならした値なので、社員のようすをいちばんよく表すから",
+            `いえる。平均値の ${w.mean}万円と中央値の ${w.med}万円は、ほとんど差がなく、同じようなものだから`,
+            "いえない。平均値は、いつも中央値より小さくなるので、社員のようすを表せないから",
           ];
           return {
             q: `求人広告に、「社員 5人の平均年収は ${w.mean}万円です」と書いてある。5人の年収は、${w.a.join("、")}（万円）である。この「平均 ${w.mean}万円」は、社員のようすをよく表しているといえるか。正しい説明を選ぼう。`,
@@ -258,12 +261,12 @@ export const UNITS = [
       4: [
         // 07d07 A組とB組のヒストグラム：ア〜エのうち正しいもの
         t("07d07", (r) => {
-          const k = 5, cls = classes(0, 20, k), nA = pick(r, [20, 25, 30, 35, 40]), nB = pick(r, [30, 35, 40, 45, 50]);
+          const k = 5, cls = classes(0, 20, k), nA = pick(r, [25, 30, 35, 40, 45]), nB = pick(r, [25, 30, 35, 40, 45]);
           if (nA === nB) return { skip: true };
           const fa = genFreq(r, nA, k), fb = genFreq(r, nB, k); if (!fa || !fb) return { skip: true };
           const j = r(2, 3), th = cls[j].lo, ca = sum(fa.slice(j)), cb = sum(fb.slice(j));
           const mca = medianClass(fa), mcb = medianClass(fb);
-          if (ca === cb || ca / nA === cb / nB || mca == null || mcb == null || mca < 0 || mcb < 0) return { skip: true };
+          if (ca === cb || Math.abs(ca / nA - cb / nB) < 0.05 || mca == null || mcb == null || mca < 0 || mcb < 0) return { skip: true };
           const G = ["A組", "B組"], more = ca > cb ? 0 : 1, larger = ca / nA > cb / nB ? 0 : 1;
           const L = (i) => clsLabel(cls[i], "点");
           const other = (i) => pick(r, [0, 1, 2, 3, 4].filter((x) => x !== i));
@@ -280,7 +283,7 @@ export const UNITS = [
             ans: stm[truth],
             choices: shuffle(r, stm),
             hint: "人数がちがうので、「人数」と「割合」は別のこと。中央値は、小さいほうから数えて、まん中にくる値で、累積度数を使って階級をさがす。",
-            steps: [`${th}点以上の人数は、A組 ${fa.slice(j).join(" + ")} ＝ ${ca}人、B組 ${fb.slice(j).join(" + ")} ＝ ${cb}人。割合は、A組 ${ca} ÷ ${nA} ≒ ${f2(ca / nA)}、B組 ${cb} ÷ ${nB} ≒ ${f2(cb / nB)}。`, `中央値は、A組が ${L(mca)}の階級、B組が ${L(mcb)}の階級。`, `人数が多いのは ${G[more]}、割合が大きいのは ${G[larger]}。正しいのは「${stm[truth]}」。`],
+            steps: [`${th}点以上の人数は、A組 ${fa.slice(j).join(" + ")} ＝ ${ca}人、B組 ${fb.slice(j).join(" + ")} ＝ ${cb}人。`, `割合は、A組 ${frac(ca, nA)}、B組 ${frac(cb, nB)}。`, `中央値は、A組が ${L(mca)}の階級、B組が ${L(mcb)}の階級。`, `人数が多いのは ${G[more]}、割合が大きいのは ${G[larger]}。正しいのは「${stm[truth]}」。`],
           };
         }),
         // 07q05 （チャレンジ）平均点 60点で、50点から70点の人が1人もいない5人の得点（例を選ぶ）
@@ -339,7 +342,7 @@ function genFreq(r, n, k) {
 function wage(r) {
   const base = Array.from({ length: 4 }, () => 50 * r(5, 10)).sort((x, y) => x - y), hi = 50 * r(24, 50);
   const a = [...base, hi], m = sum(a) / 5;
-  if (!Number.isInteger(m) || base[3] >= m || m - median(a) < 100) return null;
+  if (!Number.isInteger(m) || base[3] >= m || m - median(a) < 150) return null;
   return { a, mean: m, med: median(a) };
 }
 

@@ -225,7 +225,7 @@ const fracMistakeBuild = (r, what) => {
     const wrongTs = [...N1.map(([c, e]) => [k1 * c, e]), negT(N2[0]), N2[1]];            // 2つ目の項の符号を変えていない
     W = P(wrongTs);
     right = P([...N1.map(([c, e]) => [k1 * c, e]), ...N2.map(negT)]);
-    ok = !pisz(W) && !pisz(right) && !peq(W, right) && !peq(P(N1), P(N2)) && (what !== "num" || gcdAll([...Object.values(right).map((q) => Math.abs(q[0])), d2]) === 1);
+    ok = !pisz(W) && !pisz(right) && !peq(W, right) && !peq(P(N1), P(N2)) && !!right[keyOf(N2[1][1])] && (what !== "num" || gcdAll([...Object.values(right).map((q) => Math.abs(q[0])), d2]) === 1);
   }
   const wrongTs = [...N1.map(([c, e]) => [k1 * c, e]), negT(N2[0]), N2[1]];
   const A = `\\frac{${raw(N1)}}{${d1}}-\\frac{${raw(N2)}}{${d2}}`;

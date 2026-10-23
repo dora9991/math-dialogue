@@ -92,11 +92,11 @@ const wrongGroups = (rhs, C, sol) => {
   const flip = (k) => { const q = { ...rhs }; q[k] = qneg(q[k]); return q; };
   const one = isUnit1(C), constC = Object.keys(C).length === 1 && C[""] !== undefined;
   const G = [];
-  G.push(ks.filter((k) => k !== "").map((k) => dv(flip(k))));                                                          // 移項で、文字の項の符号をかえ忘れた
+  if (ks.length > 1) G.push(ks.filter((k) => k !== "").map((k) => dv(flip(k))));                                       // 移項で、文字の項の符号をかえ忘れた
   if (!one && ks.length > 1) G.push(ks.map((k) => { const o = { [k]: rhs[k] }; return padd(dv(o), psub(rhs, o)); }));    // 一部の項だけをわった
   if (rhs[""]) G.push([dv(flip(""))]);                                                                                 // 定数項の符号をかえた
   if (!one) G.push([rhs]);                                                                                             // わらなかった
-  G.push([pneg(sol)]);                                                                                                 // 全体の符号が逆
+  if (ks.length > 1) G.push([pneg(sol)]);                                                                              // 全体の符号が逆
   if (!one) G.push([pmul(rhs, C)]);                                                                                    // わるところを、かけてしまった
   if (!one && ks.length === 1) G.push([pdivMono(C, rhs)]);                                                             // 逆数にしてしまった
   if (constC && !one) { const c = C[""], n0 = c[1] > 1 ? c[1] : Math.abs(c[0]); G.push([psub(rhs, poly([n0, {}])), padd(rhs, poly([n0, {}]))]); }   // わるかわりに、ひいた・たした
@@ -107,7 +107,8 @@ const wrongGroups = (rhs, C, sol) => {
 const take3 = (r, groups, ok) => {
   const out = [];
   const add = (w) => { if (out.length < 3 && ok(w) && !out.some((o) => peq(o, w))) out.push(w); };
-  for (const g of groups) { const c = shuffle(r, g).filter(ok); if (c.length) add(c[0]); }
+  const order = groups.length ? [groups[0], ...shuffle(r, groups.slice(1))] : [];   // 先頭（符号まちがい）は必ず、あとは順不同
+  for (const g of order) { const c = shuffle(r, g).filter(ok); if (c.length) add(c[0]); }
   for (const g of groups) for (const w of g) add(w);
   return out;
 };
@@ -410,9 +411,10 @@ export const UNITS = [
             p = pick(r, [2, 3, 4, 5, 6]); q = pick(r, [2, 3, 4, 5, 6]);
             a = rnz(r, -4, 4); b = rnz(r, -4, 4); c2 = pick(r, [1, 1, 2]);
             const den = q - p * c2, num = p * b - q * a;
-            if (den === 0 || num === 0) continue;
+            if (den === 0 || num === 0 || p === q) continue;
+            if (gcd(gcd(c2, Math.abs(b)), q) > 1) continue;   // 右辺の分数が約分できる形は避ける（左辺は x の係数が 1 なので約分できない）
             const z = Q(num, den);
-            if (z[1] === 1 && Math.abs(z[0]) <= 12) { g = z[0]; break; }
+            if (z[1] === 1 && Math.abs(z[0]) <= 12 && Math.abs(z[0]) !== 1) { g = z[0]; break; }
           }
           if (g === undefined) return { skip: true };
           const lcmv = lcm(p, q), mp = lcmv / p, mq = lcmv / q;
@@ -431,9 +433,9 @@ export const UNITS = [
               `両辺に、${p} と ${q} の最小公倍数 ${lcmv} をかけて、$${mulP(mp, N1)}=${mulP(mq, N2)}$。`,
               `かっこをはずして、$${ptex(A)}=${ptex(B)}$。`,
               X[0] === 1
-                ? `$x$ の項を左辺に、$y$ の項を右辺に移項して、$x=${g}y$。`
-                : `$x$ の項を左辺に、$y$ の項を右辺に移項して、$${ptex(poly([X, { x: 1 }]))}=${ptex(poly([qneg(Y), { y: 1 }]))}$。両辺を ${X[0]} でわって、$x=${g}y$。`,
-              `したがって、□ は ${g}。`,
+                ? `$x$ の項を左辺に、$y$ の項を右辺に移項して、$x=${ptex(poly([g, { y: 1 }]))}$。`
+                : `$x$ の項を左辺に、$y$ の項を右辺に移項して、$${ptex(poly([X, { x: 1 }]))}=${ptex(poly([qneg(Y), { y: 1 }]))}$。両辺を ${X[0]} でわって、$x=${ptex(poly([g, { y: 1 }]))}$。`,
+              `したがって、□ は ${g < 0 ? `−${-g}` : g}。`,
             ],
           };
         }),

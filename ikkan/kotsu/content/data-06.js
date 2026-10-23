@@ -33,6 +33,7 @@ const DC = [
   { topic: "1日の読書時間", u: "分", lo: 5, hi: 45 },
 ];
 const fmt = (x) => String(round(x, 2));
+const neg = (v) => (v < 0 ? `−${-v}` : String(v));   // 負の数は「−」で書く
 
 // ── 度数分布表 ──────────────────────────────────────────
 const FT = [
@@ -40,7 +41,7 @@ const FT = [
   { who: "人", lead: (n) => `${n}人の、通学時間（分）を`, u: "分", lo: 0, w: 10 },
   { who: "人", lead: (n) => `${n}人の、数学のテストの得点（点）を`, u: "点", lo: 30, w: 10 },
   { who: "人", lead: (n) => `${n}人の、1日の家庭学習の時間（分）を`, u: "分", lo: 0, w: 20 },
-  { who: "人", lead: (n) => `${n}人の、ソフトボール投げの記録（m）を`, u: "m", lo: 10, w: 10 },
+  { who: "人", lead: (n) => `${n}人の、身長（cm）を`, u: "cm", lo: 140, w: 10, ks: [5] },
 ];
 /** 合計 n を k 個の階級に分ける（山が1つ。どの階級も 1 以上）。うまくいかなければ null */
 function genFreq(r, n, k) {
@@ -56,7 +57,7 @@ function genFreq(r, n, k) {
   return null;
 }
 function tbl(r, ns, kk = [5, 5, 6]) {
-  const ctx = pick(r, FT), n = pick(r, ns), k = pick(r, kk);
+  const ctx = pick(r, FT), n = pick(r, ns), k = pick(r, ctx.ks || kk);
   const f = genFreq(r, n, k);
   if (!f) return null;
   return { ctx, n, k, f, cls: classes(ctx.lo, ctx.w, k) };
@@ -159,7 +160,7 @@ export const UNITS = [
             q: `データを使って判断するときの順に、ア〜エをならべると、どうなるか。${list}`,
             ans,
             choices: choices4(r, ans, wrongs),
-            hint: "まず何をはっきりさせて、最後に何をするか。「整理」と「結論」は、どちらが先かな。",
+            hint: "データを使って判断するときの、いちばん最初にすることと、いちばん最後にすることは、何だろう。",
             steps: ["データを使って判断する順は、問題をはっきりさせる → 計画を立てる → データを整理する → 結論を出す。", `${list}　だから、${ans}。`],
           };
         }),
@@ -299,11 +300,11 @@ export const UNITS = [
             q: `ある学級${n}人の、${ctx.lead(n).replace(/^\d+人の、/, "")}度数分布表にまとめたが、一部が読めない。度数は、${freqSentence(cls, show, ctx.u, "人")}であった。階級値を使って求めた平均値は ${mn.toFixed(1)}${ctx.u}である。${w} にあてはまる数は？`,
             ans,
             unit: "人",
-            hint: "ア と イ の人数の合計は、全体の人数からわかる。もう1つの式は、階級値 × 度数 の合計 ＝ 平均値 × 度数の合計 からつくれる。",
+            hint: "問題文に書いてある人数と平均値は、ア と イ を決めるのに、どう使えるかな。階級値を使った平均値は、どんな計算で求めるのだったかな。",
             steps: [
-              `ア + イ ＝ ${n} − (${known.join(" + ")}) ＝ ${S}`,
-              `階級値 × 度数の合計は ${mn.toFixed(1)} × ${n} ＝ ${tot}。わかっている階級の分は ${kSum} だから、ア・イ の分は ${rest}。`,
-              `ア を x 人とすると、イ は (${S} − x) 人。 ${mA}x + ${mB}(${S} − x) ＝ ${rest}`,
+              `ア + イ ＝ ${n} − (${known.join(" + ")}) ＝ ${S}。わかっている階級の（階級値 × 度数）の合計は ${kSum}。`,
+              `階級値 × 度数の合計は ${mn.toFixed(1)} × ${n} ＝ ${tot} だから、ア・イ の分は ${tot} − ${kSum} ＝ ${rest}。`,
+              `ア を x 人とすると、イ は (${S} − x) 人。 ${mA}x + ${mB}(${S} − x) ＝ ${rest}　→　${mA}x + ${mB * S} − ${mB}x ＝ ${rest}　→　${neg(mA - mB)}x ＝ ${neg(rest - mB * S)}`,
               `x ＝ ${f[ia]}　だから　ア ＝ ${f[ia]}、イ ＝ ${S} − ${f[ia]} ＝ ${f[ib]}。${w} は ${ans}。`,
             ],
           };
@@ -333,7 +334,7 @@ export const UNITS = [
           return {
             q: `5個のデータ　${x1}、${x2}、ア、${x4}、イ　（小さい順）がある。平均値は ${tot / 5}、範囲は ${rg} である。${w === "中央値" ? "中央値は？" : `${w} にあてはまる数は？`}`,
             ans,
-            hint: w === "イ" ? "範囲 ＝ 最大値 − 最小値。小さい順にならんでいるから、最大値と最小値はどれかな。" : "範囲から イ が決まる。平均値 × 個数 ＝ 合計 から、ア がわかる。中央値は小さい順のまん中。",
+            hint: w === "イ" ? "範囲は、最大値と最小値の、何にあたるかな。小さい順にならんでいることに目をつけよう。" : "小さい順にならんでいるデータで、わかる数から順に決めていこう。範囲と平均値は、それぞれ、何を決めるのに使えるかな。",
             steps: [`範囲　イ − ${x1} ＝ ${rg}　より　イ ＝ ${x5}`, `合計　${tot / 5} × 5 ＝ ${tot}　より　ア ＝ ${tot} − (${x1} + ${x2} + ${x4} + ${x5}) ＝ ${x3}`, w === "中央値" ? `小さい順に　${x1}、${x2}、${x3}、${x4}、${x5}　だから、中央値は 3番目の ${x3}。` : `${w} は ${ans}。`],
           };
         }),
@@ -351,17 +352,21 @@ function unknown(r, which) {
     if (last >= 3 && last <= 28 && ![...head, last].includes(x)) known = [...head, last].sort((p, q) => p - q);
   }
   if (!known) return { skip: true };
-  const all = [...known, x].sort((p, q) => p - q), i = all.indexOf(x);
-  const shown = all.map((v, j) => (j === i ? "ア" : v)).join("、");
-  const md = median(all);
+  const all = [...known, x].sort((p, q) => p - q);
+  // ア を書く場所は、小さい順の場所とは、かぎらない（元の問題のように、ならびかえが要る）
+  const pos = r(0, n - 1), arr = [...known];
+  arr.splice(pos, 0, "ア");
+  const shown = arr.join("、"), vals = arr.map((v) => (v === "ア" ? x : v));
+  const md = median(all), seen = n % 2 ? vals[(n - 1) / 2] : (vals[n / 2 - 1] + vals[n / 2]) / 2;   // 書いてある順のまん中を読んだだけの値
   const s1 = `合計は ${m} × ${n} ＝ ${n * m}`, s2 = `${known.join(" + ")} ＝ ${sum(known)} だから　ア ＝ ${n * m} − ${sum(known)} ＝ ${x}`;
   if (which === "a") {
-    return { q: `${n}個のデータ　${shown}　の平均値が ${m} のとき、ア にあてはまる数は？`, ans: x, hint: "平均値 × 個数 ＝ データの合計。わかっているデータの合計をひけば、ア がわかる。", steps: [s1, s2] };
+    return { q: `${n}個のデータ　${shown}　の平均値が ${m} のとき、ア にあてはまる数は？`, ans: x, hint: "平均値と個数から、データ全部の合計がわかる。わからない ア は、どうすれば求められるかな。", steps: [s1, s2] };
   }
+  if (Math.abs(seen - md) < 1e-9) return { skip: true };
   return {
     q: `${n}個のデータ　${shown}　の平均値が ${m} のとき、このデータの中央値は？`,
     ans: round(md, 2),
-    hint: "まず、平均値からデータの合計を求めて、ア を決めよう。そのあと、小さい順にならべる。",
+    hint: "中央値は、データ全部がわかって、大きさの順にならべないと求められない。ア は、どうすればわかるかな。",
     steps: [s1, s2, n % 2 ? `小さい順に　${all.join("、")}　だから、中央値は ${(n + 1) / 2}番目の ${fmt(md)}。` : `小さい順に　${all.join("、")}　だから、中央値は ${n / 2}番目と ${n / 2 + 1}番目の平均で ${fmt(md)}。`],
   };
 }

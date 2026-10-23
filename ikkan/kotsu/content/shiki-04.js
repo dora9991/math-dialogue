@@ -59,7 +59,7 @@ const polyChoices = (r, right, wrongs) => {
   return { ans: $(rt), choices: choices4(r, $(rt), ws, fill) };
 };
 
-/** 答えの単項式 res について、「□ に入る数（係数）」を聞く問い。lead：式と＝のあとの □ より前、tail：文字の部分は res から */
+/** 「expr ＝ □（文字の部分）」の □ にあてはまる数（答えの単項式 res の係数）を聞く問い。文字の部分は res から出して、問題文で見せる */
 const boxQ = (expr, res, hint, steps, note = "") => {
   const [c, e] = parts(res);
   return { q: `${$(`${expr}=\\square ${lettersTex(e)}`)} の □ にあてはまる数は？${note}`, ans: ansQ(c), hint, steps };
@@ -72,8 +72,7 @@ const mulBuild = (r, mode, o) => {
   const [u, v] = pick(r, LET2), kind = pick(r, o.kinds), c = () => pick(r, [1, -1]) * r(2, o.cmax);
   let m1, m2;
   if (kind === "diff") { m1 = [c(), { [u]: 1 }]; m2 = [c(), { [v]: 1 }]; if (r(0, 1)) [m1, m2] = [m2, m1]; }
-  else if (kind === "same") { m1 = [c(), { [u]: r(1, 2) }]; m2 = [c(), { [u]: r(1, 2) }]; }
-  else { m1 = [c(), { [u]: 1, [v]: 1 }]; m2 = [c(), { [pick(r, [u, v])]: 1 }]; if (r(0, 1)) [m1, m2] = [m2, m1]; }    // mixed
+  else { m1 = [c(), { [u]: r(1, 2) }]; m2 = [c(), { [u]: r(1, 2) }]; }      // same：同じ文字どうし
   const res = pmul(Mq(m1), Mq(m2)), [rc, re] = parts(res);
   const expr = `${fT(m1)}\\times ${fT(m2)}`;
   const steps = ["係数どうし、文字どうしをかける。", $(`${expr}=${mulMid([m1, m2])}=${ptex(res)}`)];
@@ -111,7 +110,7 @@ const divBuild = (r, mode, o) => {
   let eq, ed;
   for (let i = 0; i < 50; i++) { eq = pick(r, EQ); ed = pick(r, ED); if (Object.keys(eq).every((x) => !(x in ed)) || r(0, 2) === 0) break; }
   const cq = pick(r, [1, -1]) * r(2, o.cmax), cd = (o.negDiv && r(0, 1) ? -1 : 1) * r(2, o.cmax);
-  const quo = [cq, eq], dv = [cd, ed], dd = [cq * cd, addE(eq, ed)];
+  const dv = [cd, ed], dd = [cq * cd, addE(eq, ed)];
   const res = pdivMono(Mq(dd), Mq(dv));
   const expr = `${fT(dd)}\\div ${fT(dv)}`;
   const sg = cq < 0 ? "-" : "";
@@ -213,7 +212,7 @@ const sideOfRect = (r, mode) => {
 // ── □ にあてはまる式（dr.7）────────────────────────────────
 const blankBuild = (r, mode, form) => {
   const [u, v] = pick(r, LET2), c = (big) => pick(r, [1, -1]) * r(2, big || 6), cp = (big) => r(2, big || 6);
-  let A, X, C, expr, how, steps, hint;
+  let A, X, C, expr, steps, hint;
   if (form === "x") {           // A × □ = C
     A = [cp(), pick(r, [{ [u]: 1 }, { [u]: 1, [v]: 1 }, { [v]: 1 }])]; X = [c(), pick(r, [{ [v]: 1 }, { [u]: 1, [v]: 1 }, { [u]: 1 }])];
     C = parts(pmul(Mq(A), Mq(X))); C = [C[0], C[1]];
@@ -238,7 +237,7 @@ const blankBuild = (r, mode, form) => {
   const ans0 = Mq(X);
   const note = form === "d1" ? "（÷ のあとの式は、全体でわる）" : "";
   if (mode === "num") return { q: `${$(expr)} のとき、□ にあてはまる単項式の係数は？${note}`, ans: ansQ(parts(ans0)[0]), hint, steps };
-  const [xc, xe] = [X[0], X[1]];
+  const xc = X[0];
   const wrongs = form === "x"
     ? [pmul(Mq(A), Mq(C)), pdivMono(Mq(A), Mq(C)), pneg(ans0), Mq([xc, C[1]])]
     : form === "d1"

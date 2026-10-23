@@ -316,7 +316,9 @@ const unkBuild = (r) => {
   const first = joinTex(["ax^{2}", c(p, "x"), String(q)]);
   const second = joinTex([c(rr, "x^{2}"), `${s < 0 ? "-" : ""}bx`, String(w)]);
   const ex = `(${first})${plus ? "+" : "-"}(${second})`;
-  const ask = pick(r, ["a", "b", "a+b"]), ansV = ask === "a" ? a : ask === "b" ? b : a + b;
+  let ask = pick(r, ["a", "b", "a+b"]);
+  if (ask === "a+b" && a + b === 0) ask = "a";
+  const ansV = ask === "a" ? a : ask === "b" ? b : a + b;
   const x2 = `a${plus === (rr < 0) ? "-" : "+"}${Math.abs(rr)}`;      // x^2 の係数：たす a+rr、ひく a−rr
   const x1 = `${p}${m * s > 0 ? "+" : "-"}b`;                            // x の係数：p ± b
   return {
