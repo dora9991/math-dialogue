@@ -15,6 +15,7 @@
 | 手元のパソコン・タブレット | `taikai-all-in-one.html` をダウンロードして、ダブルクリック（1ファイルで全部入り。ネットにつながっていなくても動く。字体だけはネットから読む） |
 | フォルダごと | `index.html` をブラウザで開く（ビルドもサーバーも要らない） |
 | 手元のサーバーで | `python3 -m http.server 8794 --directory taikai` → http://localhost:8794/ （カメラでQRを読むときは、こちらか https で開く） |
+| ウェブ（GitHub Pages） | https://dora9991.github.io/math-dialogue/taikai/ （だれでも開ける。データは開いた人のブラウザの中だけで、ほかの人の申込・受付は見えない） |
 
 - 公開サイト：`#/`（ホーム）
 - 管理画面：`#/admin`（サンプルの暗証番号は **1234**）
@@ -121,6 +122,7 @@ taikai/
 ├── vendor/jsQR.js          … QRコードを読む（Apache-2.0, cozmo/jsQR 1.4.0。vendor/jsQR.LICENSE.txt）
 ├── tools/check.cjs         … 検査（全画面を開いて、エラー・はみ出しを調べ、画面を撮る）
 ├── tools/bundle.cjs        … 1ファイル版を作る
+├── tools/publish-pages.cjs … GitHub Pages（gh-pages）の taikai/ だけを差し替えて公開（ほかの公開物は変えない）
 └── taikai-all-in-one.html  … 1ファイル版（tools/bundle.cjs で作る。手で直さない）
 ```
 
@@ -141,6 +143,7 @@ NODE_PATH=$(npm root -g) node tools/check.cjs                        # 全画面
 NODE_PATH=$(npm root -g) node tools/check.cjs --dark --no-shots      # 暗い表示で
 NODE_PATH=$(npm root -g) node tools/check.cjs taikai-all-in-one.html # 1ファイル版を
 node tools/bundle.cjs                                                # 1ファイル版を作り直す
+node tools/publish-pages.cjs                                         # 作り直して GitHub Pages に公開（--dry で push しない）
 python3 tools/make-sample-pdfs.py                                    # サンプルの PDF を作り直す（reportlab と IPAゴシック）
 ```
 
