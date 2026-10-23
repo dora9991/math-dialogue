@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>空間図形　第13時　表面積と体積を、たしかに求められるようになろう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:2px solid #b9c1cc;padding:6px 14px}
+#deck th{background:rgba(120,140,170,.18)}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="k13-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第13時　表面積と体積を、たしかに求められるようになろう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">第12時「球の表面積と体積を求めよう」の言葉。<br>1人1問ずつ出題して、言葉の意味を、自分の言葉で言う。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">球</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">半径</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">表面積</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">体積</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">半球</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">側面積</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">空間図形　第13時　表面積と体積を、たしかに求められるようになろう</p>
+<aside>【導入 3分】前時（第12時　球の表面積と体積）の重要語句を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト（前時分。7分＝5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="k13-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第13時　表面積と体積を、たしかに求められるようになろう</p>
+</div>
+<h2 style="font-size:60px;font-weight:700;line-height:1.3;color:#1E3A5F">表面積と体積を、手順をたしかめて、まちがえずに求めよう</h2>
+<div style="display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:32px 48px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px;flex:1">
+<p style="font-size:52px;font-weight:500;line-height:1.45">底面の半径が 6cm、高さが 8cm、<br>母線の長さが 10cm の円錐の、<br>表面積と体積を求めよう。</p>
+<p style="font-size:52px;font-weight:700;line-height:1.45;color:#1E3A5F">どの長さを、どの式に使うだろう。</p>
+</div>
+<img src="img/kukan-13_f1_q.png" alt="円錐の図。高さ 8cm、母線 10cm、底面の半径 6cm" style="width:374px;height:400px;object-fit:contain">
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">空間図形　第13時　表面積と体積を、たしかに求められるようになろう</p>
+<aside>【解説 4分・学習課題】めあてを書く。円錐（半径 6cm・高さ 8cm・母線 10cm）の表面積と体積を、個人で求めさせ、使った長さをペアで言い合う。発問：表面積と体積で、使う長さはちがう？／高さと母線は、どちらの式に使う？　想定される反応：表面積は半径と母線、体積は半径と高さを使う。留意：図に、半径・高さ・母線を書き込ませる。</aside>
+</section>
+<section id="k13-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第13時　表面積と体積を、たしかに求められるようになろう</p>
+</div>
+<p style="font-size:44px;line-height:1.5;color:#6B7480">円錐（半径 6cm・高さ 8cm・母線 10cm）の、表面積と体積を求めよう。</p>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:32px">
+<div style="display:flex;flex-direction:column;gap:18px;flex:1;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:32px 48px">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px">
+<div style="width:190px">
+<p style="font-size:48px;font-weight:700;line-height:1.45;color:#C0392B">表面積</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:0px">
+<p style="font-size:48px;line-height:1.45;color:#C0392B">側面積 π×10²×12π⁄20π＝60π</p>
+<p style="font-size:48px;line-height:1.45;color:#C0392B">底面積 π×6²＝36π</p>
+<p style="font-size:48px;line-height:1.45;color:#C0392B">60π+36π＝<b>96π（cm²）</b></p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px">
+<div style="width:190px">
+<p style="font-size:48px;font-weight:700;line-height:1.45;color:#C0392B">体積</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:0px">
+<p style="font-size:48px;line-height:1.45;color:#C0392B">1⁄3×π×6²×8＝<b>96π（cm³）</b></p>
+</div>
+</div>
+<div style="border-top:2px solid #E3E6EA;display:flex;flex-direction:column;gap:4px;padding:14px 0px 0px 0px">
+<p style="font-size:50px;font-weight:700;line-height:1.4;color:#C0392B">表面積は、半径と母線を使う</p>
+<p style="font-size:50px;font-weight:700;line-height:1.4;color:#C0392B">体積は、半径と高さを使う</p>
+</div>
+</div>
+<div style="background:#FFFFFF;border:3px solid #E3E6EA;border-radius:16px;padding:16px">
+<img src="img/kukan-13_f1_q.png" alt="円錐の図。高さ 8cm、母線 10cm、底面の半径 6cm" style="width:336px;height:360px;object-fit:contain">
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">空間図形　第13時　表面積と体積を、たしかに求められるようになろう</p>
+<aside>【解説 4分・学習課題のまとめ】ペアで言い合った「使った長さ」をいくつか聞いて、板書にまとめる。表面積は半径と母線、体積は半径と高さを使う、をまとめとする。赤い字は、先生の板書。図に、半径・高さ・母線を書き込ませる。</aside>
+</section>
+<section id="k13-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第13時　表面積と体積を、たしかに求められるようになろう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 44px">
+<p style="font-size:44px;line-height:1.55">① 表面積　柱体＝側面積＋底面積×<u>　　</u>　　錐体＝側面積＋底面積×<u>　　</u></p>
+<p style="font-size:44px;line-height:1.55">② 体積　柱体 V＝<u>　　　</u>　　錐体 V＝<u>　　　　</u>　　球 V＝<u>　　　　　</u></p>
+<p style="font-size:44px;line-height:1.55">③ 球の表面積 S＝<u>　　　　</u>　　直径がわかるときは、先に<u>　　　</u>を求める</p>
+<p style="font-size:44px;line-height:1.55">④ 円錐　体積に使うのは<u>　　　</u>、側面積に使うのは<u>　　　</u></p>
+<p style="font-size:44px;line-height:1.55">⑤ 式を書く前に、<u>　　</u>か、<u>　　</u>か、<u>　　</u>かを確かめる</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">空間図形　第13時　表面積と体積を、たしかに求められるようになろう</p>
+<aside>【解説 3分・ことば】柱・錐・球の式を、空欄に書く。空欄は、先生が言ってから書かせる。「式を書く前に、柱か錐か球かを確かめる」まで言い切る。発問：式を書く前に、ほかに確かめることは？　想定される反応：空欄に書き込む。留意：半径か直径か・高さか母線かは、考えようで見つけさせる。</aside>
+</section>
+<section id="k13-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第13時　表面積と体積を、たしかに求められるようになろう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 44px">
+<p style="font-size:44px;line-height:1.55">① 表面積　柱体＝側面積＋底面積×<span style="color:#C0392B"><b>2</b></span>　　錐体＝側面積＋底面積×<span style="color:#C0392B"><b>1</b></span></p>
+<p style="font-size:44px;line-height:1.55">② 体積　柱体 V＝<span style="color:#C0392B"><b>S<i>h</i></b></span>　　錐体 V＝<span style="color:#C0392B"><b>1⁄3S<i>h</i></b></span>　　球 V＝<span style="color:#C0392B"><b>4⁄3π<i>r</i>³</b></span></p>
+<p style="font-size:44px;line-height:1.55">③ 球の表面積 S＝<span style="color:#C0392B"><b>4π<i>r</i>²</b></span>　　直径がわかるときは、先に<span style="color:#C0392B"><b>半径</b></span>を求める</p>
+<p style="font-size:44px;line-height:1.55">④ 円錐　体積に使うのは<span style="color:#C0392B"><b>高さ</b></span>、側面積に使うのは<span style="color:#C0392B"><b>母線</b></span></p>
+<p style="font-size:44px;line-height:1.55">⑤ 式を書く前に、<span style="color:#C0392B"><b>柱</b></span>か、<span style="color:#C0392B"><b>錐</b></span>か、<span style="color:#C0392B"><b>球</b></span>かを確かめる</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">空間図形　第13時　表面積と体積を、たしかに求められるようになろう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。「式を書く前に、柱か錐か球かを確かめる」まで言い切る。</aside>
+</section>
+<section id="k13-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第13時　表面積と体積を、たしかに求められるようになろう</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px;flex:1">
+<p style="font-size:48px;font-weight:500;line-height:1.5">底面の半径が <u>　　</u>cm、高さが <u>　　</u>cm の<br>円柱の上に、半径 <u>　　</u>cm の半球を<br>のせた立体の、体積と表面積を求めよう。</p>
+</div>
+<div style="background:#FFFFFF;border:3px solid #E3E6EA;border-radius:16px;padding:16px">
+<img src="img/kukan-13_f2_q.png" alt="円柱の上に半球をのせた立体の図。長さの数は空欄" style="width:412px;height:440px;object-fit:contain">
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">空間図形　第13時　表面積と体積を、たしかに求められるようになろう</p>
+<aside>【解説 5分・例題】円柱の上に半球をのせた立体の、体積と表面積を求める。はり合わせた面は、ふくめない。発問：外から見える面は、どれとどれ？　想定される反応：半球の曲面・円柱の側面・円柱の下の底面を、指でなぞる。留意：体積は、2つの立体の和。</aside>
+</section>
+<section id="k13-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第13時　表面積と体積を、たしかに求められるようになろう</p>
+</div>
+<p style="font-size:40px;line-height:1.5;color:#6B7480">円柱の上に半球をのせた立体の、体積と表面積</p>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:32px">
+<div style="display:flex;flex-direction:column;gap:14px;flex:1;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:28px 44px">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px">
+<div style="width:190px">
+<p style="font-size:44px;font-weight:700;line-height:1.4;color:#C0392B">体積</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:0px">
+<p style="font-size:44px;line-height:1.4;color:#C0392B">円柱 π×3²×5＝45π</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">半球 4⁄3π×3³×1⁄2＝18π</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">45π+18π＝<b>63π（cm³）</b></p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px">
+<div style="width:190px">
+<p style="font-size:44px;font-weight:700;line-height:1.4;color:#C0392B">表面積</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:0px">
+<p style="font-size:44px;line-height:1.4;color:#C0392B">底面 π×3²＝9π</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">側面 2π×3×5＝30π</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">半球の曲面 4π×3²×1⁄2＝18π</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">9π+30π+18π＝<b>57π（cm²）</b></p>
+</div>
+</div>
+<div style="border-top:2px solid #E3E6EA;padding:12px 0px 0px 0px">
+<p style="font-size:44px;font-weight:700;line-height:1.4;color:#C0392B">はり合わせた面は、ふくめない</p>
+</div>
+</div>
+<div style="background:#FFFFFF;border:3px solid #E3E6EA;border-radius:16px;padding:16px">
+<img src="img/kukan-13_f2_a.png" alt="円柱の上に半球をのせた立体の図。半径 3cm、円柱の高さ 5cm" style="width:336px;height:360px;object-fit:contain">
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">空間図形　第13時　表面積と体積を、たしかに求められるようになろう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。体積は、2つの立体の和。表面積は、外から見える面だけを、指でなぞって数える。はり合わせた面は、ふくめない。</aside>
+</section>
+<section id="k13-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第13時　表面積と体積を、たしかに求められるようになろう</p>
+</div>
+<h2 style="font-size:50px;font-weight:700;line-height:1.35;color:#1F2A37">ア〜オは、よくあるまちがいをした答えである。<br>どこがまちがいか見つけて、正しく直そう。</h2>
+<div style="display:flex;flex-direction:column;gap:0px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;border-bottom:2px solid #F0C9A0;padding:6px 8px">
+<p style="font-size:44px;font-weight:700;line-height:1.3;color:#D9730D">ア</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px;flex:1">
+<p style="font-size:44px;line-height:1.3">円錐（底面の半径 3cm、高さ 4cm）の体積　</p>
+<p style="font-size:44px;font-weight:700;line-height:1.3">π×3²×4＝36π（cm³）</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;border-bottom:2px solid #F0C9A0;padding:6px 8px">
+<p style="font-size:44px;font-weight:700;line-height:1.3;color:#D9730D">イ</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px;flex:1">
+<p style="font-size:44px;line-height:1.3">円柱（底面の半径 2cm、高さ 5cm）の表面積　</p>
+<p style="font-size:44px;font-weight:700;line-height:1.3">2π×2×5+π×2²＝24π（cm²）</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;border-bottom:2px solid #F0C9A0;padding:6px 8px">
+<p style="font-size:44px;font-weight:700;line-height:1.3;color:#D9730D">ウ</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px;flex:1">
+<p style="font-size:44px;line-height:1.3">球（直径 6cm）の体積　</p>
+<p style="font-size:44px;font-weight:700;line-height:1.3">4⁄3π×6³＝288π（cm³）</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;border-bottom:2px solid #F0C9A0;padding:6px 8px">
+<p style="font-size:44px;font-weight:700;line-height:1.3;color:#D9730D">エ</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px;flex:1">
+<p style="font-size:44px;line-height:1.3">円錐（底面の半径 3cm、高さ 4cm、母線 5cm）の側面積　</p>
+<p style="font-size:44px;font-weight:700;line-height:1.3">π×4²×6π⁄8π＝12π（cm²）</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;border-bottom:2px solid #F0C9A0;padding:6px 8px">
+<p style="font-size:44px;font-weight:700;line-height:1.3;color:#D9730D">オ</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px;flex:1">
+<p style="font-size:44px;line-height:1.3">半球（半径 3cm）の表面積　</p>
+<p style="font-size:44px;font-weight:700;line-height:1.3">4π×3²×1⁄2＝18π（cm²）</p>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;background:#FFFFFF;border:3px solid #D9730D;border-radius:16px;padding:10px 28px">
+<p style="font-size:44px;font-weight:700;line-height:1.3;color:#D9730D">コツ</p>
+<p style="font-size:44px;line-height:1.35;flex:1">自分がまちがえやすいところと、「こうすればまちがえない」<br>というコツを、友達に教えるつもりで書こう。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">空間図形　第13時　表面積と体積を、たしかに求められるようになろう</p>
+<aside>【演習 23分・考えよう】進め方（演習① 2分）：ゴールは、「考えよう」（ワークシート裏）で見つけたコツを、友達に説明できること。立ち歩きOK、解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「コツを言える」ようになる、と伝える。基礎（演習② 5分・個人）→ 解いたら教卓の解答で答え合わせ → 終わった人から考えようへ。考えよう＋標準（演習③ 14分・教え合い）：立ち歩きで、ア〜オのまちがいを見つけて直し、コツを友達に教え、友達のコツを聞く。先生は回って、短く全体に戻す。想定される動き：まちがいを見つける → 直す → コツを言葉にする → 教え合う。判断：まちがいが見えない→ヒント1／長さが読めない→ヒント2／コツが書けない→ヒント3／残り5分→指名でコツを発表。答えは言わない。ヒントを出す順：1）はじめに「柱か錐か球か」「表面積か体積か」を言ってみる。2）図に、半径・高さ・母線を書き込む。直径ではないか？　3）同じまちがいを、友達もしていないか、聞いてみる。方向性（演習④ 2分・最後に一言）：「自分で見つけたコツを、次の問題で使って確かめよう。コツの言い方は、人によってちがっていい。」</aside>
+</section>
+<section id="k13-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第13時　表面積と体積を、たしかに求められるようになろう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">表面積と体積を、手順をたしかめて、まちがえずに求めよう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">表面積</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">体積</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">側面積</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">高さ</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">母線</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">半径</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">空間図形　第13時　表面積と体積を、たしかに求められるようになろう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。ワークシートと演習プリントを回収（未完成でも出す）。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>
