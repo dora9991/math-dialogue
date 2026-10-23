@@ -9,7 +9,7 @@ import { unit } from "../kukan-kit.js";
 import { prism, pyramid, counts, prismName, pyramidName, hedronName, NGON } from "../solids.js";
 
 const WHAT = { F: "面", E: "辺", V: "頂点" };
-const UNIT = { F: "つ", E: "本", V: "個" };
+const UNIT = { F: "個", E: "本", V: "個" };
 const NAME = { F: "面の数", E: "辺の数", V: "頂点の数" };
 
 /** n角柱・n角錐の、面・辺・頂点の数（立体から数える） */
@@ -39,7 +39,7 @@ export const UNITS = [
             return {
               q: `${nameOf}の、側面の形は？`,
               ans,
-              choices: choices4(r, ans, ["長方形", "三角形", "曲面", "台形"].filter((x) => x !== ans)),
+              choices: choices4(r, ans, (solid[0] === "柱" ? ["三角形", "台形", "曲面", "円"] : solid[0] === "錐" ? ["長方形", "台形", "曲面", "円"] : ["三角形", "台形", "五角形", "四角形"]).filter((x) => x !== ans)),   // 円柱・円錐の側面（曲面）の誤答に「長方形」は入れない。角柱の誤答に「平行四辺形」「台形」は入れない（長方形は平行四辺形・台形のなかまと数える見方があるため、正解の長方形と区別がつく三角形・円・曲面を先に）
               hint: solid[0] === "柱" ? "角柱の側面は、上下の底面をつなぐ面。" : solid[0] === "錐" ? "角錐の側面は、頂点に集まる面。" : "円柱・円錐の側面は、平らではない。",
               steps: [solid[0] === "柱" ? "角柱の側面は、すべて長方形。" : solid[0] === "錐" ? "角錐の側面は、すべて三角形。" : "円柱・円錐の側面は、曲面。", `${nameOf}の側面は「${ans}」。`],
             };
@@ -57,7 +57,7 @@ export const UNITS = [
           return {
             q: `${nameOf}の、底面の形は？`,
             ans,
-            choices: choices4(r, ans, [NGON[n + 1], NGON[n - 1 < 3 ? n + 2 : n - 1], "長方形", "円"]),
+            choices: choices4(r, ans, [NGON[n + 1], NGON[n - 1 < 3 ? n + 2 : n - 1], n === 4 ? "六角形" : "長方形", "円"]),   // 底面が四角形のとき、「長方形」は誤答にしない（底面が長方形の四角柱もあるので）
             hint: `${nameOf}の名前に、底面の形が入っている。`,
             steps: [`${nameOf}の底面は、${NGON[n]}。`],
           };
@@ -242,7 +242,7 @@ export const UNITS = [
           const w = pick(r, ["F", "E", "V"]);
           const v = { F: 14, E: 36, V: 24 };
           return {
-            q: `立方体の 8つの角を、すべて切り落とした立体の、${NAME[w]}は？（切り口は、となりの切り口と重ならない）`,
+            q: `立方体の 8つの角を、それぞれの角に集まる 3本の辺を 3等分する点を通る平面で、すべて切り落とした立体の、${NAME[w]}は？`,
             ans: v[w],
             unit: UNIT[w],
             hint: "もとの面・辺と、切り口でふえた面・辺に分けて数えよう。",

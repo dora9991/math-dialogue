@@ -31,7 +31,7 @@ export function cuboid(a = 3, b = 3, c = 3) {
   const V = { A: [0, 0, 0], B: [a, 0, 0], C: [a, b, 0], D: [0, b, 0], E: [0, 0, c], F: [a, 0, c], G: [a, b, c], H: [0, b, c] };
   const E = ["AB", "BC", "CD", "DA", "EF", "FG", "GH", "HE", "AE", "BF", "CG", "DH"];
   const F = ["ABCD", "EFGH", "ABFE", "BCGF", "DCGH", "ADHE"];
-  return make("cuboid", "直方体 ABCD-EFGH", V, E, F);
+  return make("cuboid", "直方体 ABCD−EFGH", V, E, F);
 }
 
 /** 正 n 角柱：下の底面 A,B,C,…（n個）、上の底面はその次の n 個の文字。n=3 なら ABC-DEF、n=4 なら ABCD-EFGH */
@@ -50,7 +50,9 @@ export function prism(n, side = 2, h = 3) {
     E.push(bot[i] + bot[j], top[i] + top[j], bot[i] + top[i]);
     F.push(bot[i] + bot[j] + top[j] + top[i]);
   }
-  return make("prism", `${n}角柱 ${bot.join("")}-${top.join("")}`, V, E, F);
+  const mk = make("prism", `正${prismName(n)} ${bot.join("")}−${top.join("")}`, V, E, F);
+  mk.n = n; mk.bot = bot.join(""); mk.top = top.join("");
+  return mk;
 }
 
 /** 底面が ∠B＝90° の直角三角形（AB＝p、BC＝q）で、高さ h の三角柱 ABC-DEF（D・E・F は A・B・C の真上） */
@@ -59,7 +61,7 @@ export function rtPrism(p = 3, q = 4, h = 5) {
   // 注：AB が x 軸、BC が y 軸。∠B＝90°
   const E = ["AB", "BC", "CA", "DE", "EF", "FD", "AD", "BE", "CF"];
   const F = ["ABC", "DEF", "ABED", "BCFE", "CADF"];
-  return make("rtPrism", "三角柱 ABC-DEF（∠B＝90°）", V, E, F);
+  return make("rtPrism", "三角柱 ABC−DEF（∠B＝90°）", V, E, F);
 }
 
 /** 正 n 角錐 O-ABC…（底面は A,B,C,…、頂点 O） */
@@ -77,7 +79,9 @@ export function pyramid(n = 4, side = 2, h = 3) {
     E.push(base[i] + base[j], "O" + base[i]);
     F.push("O" + base[i] + base[j]);
   }
-  return make("pyramid", `${n}角錐 O-${base.join("")}`, V, E, F);
+  const mk = make("pyramid", `正${pyramidName(n)} O−${base.join("")}`, V, E, F);
+  mk.n = n; mk.base = base.join("");
+  return mk;
 }
 
 // ── 辺と辺 ─────────────────────────────────────────────
@@ -173,7 +177,8 @@ export const same = (a, b) => sortKey(a) === sortKey(b);
 export function intro(S) {
   if (S.kind === "cuboid") return "直方体 ABCD−EFGH（面 ABCD が下の面、面 EFGH が上の面。A・B・C・D の真上が、それぞれ E・F・G・H）";
   if (S.kind === "rtPrism") return "三角柱 ABC−DEF（底面 ABC は ∠B＝90° の直角三角形。D・E・F は、A・B・C の真上）";
-  if (S.kind === "pyramid") return `${S.name}（底面 ${S.F[0]}、頂点 O）`;
+  if (S.kind === "pyramid") return `${S.name}（底面 ${S.base} は${S.n === 4 ? "正方形" : "正" + NGON[S.n]}、頂点 O は底面の中心の真上）`;
+  if (S.kind === "prism") return `${S.name}（底面 ${S.bot} は${S.n === 4 ? "正方形" : "正" + NGON[S.n]}。${S.top} は、${S.bot} の真上）`;
   return S.name;
 }
 
