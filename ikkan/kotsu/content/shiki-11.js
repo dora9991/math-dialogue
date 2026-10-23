@@ -406,10 +406,10 @@ export const UNITS = [
             ];
             const { ans, choices } = choicePoly(r, correct, shuffle(r, cands));
             return {
-              q: `次の計算をしよう。 $${ptex(A)}\\times ${ptex(B)}\\div ${ptex(C)}$`,
+              q: `次の計算をしよう。 $${ptex(A)}\\times ${ptex(B)}\\div (${ptex(C)})$`,
               ans, choices,
               hint: "乗除の混じった計算は、すべてを1つの分数にして、係数と文字を約分しよう。",
-              steps: [`分数の形にする。$${ptex(A)}\\times ${ptex(B)}\\div ${ptex(C)}=\\frac{${ptex(A)}\\times ${ptex(B)}}{${ptex(C)}}=\\frac{${ptex(pmul(A, B))}}{${ptex(C)}}$`, `約分して、$${ptex(correct)}$。`],
+              steps: [`分数の形にする。$${ptex(A)}\\times ${ptex(B)}\\div (${ptex(C)})=\\frac{${ptex(A)}\\times ${ptex(B)}}{${ptex(C)}}=\\frac{${ptex(pmul(A, B))}}{${ptex(C)}}$`, `約分して、$${ptex(correct)}$。`],
             };
           }
           return { skip: true };
@@ -608,6 +608,20 @@ export const UNITS = [
             steps: [`いちばん上の数を $n$ とすると、${k}つの数の和は $${k}n+${c}$。`, `$${k}n+${c}=${S}$ より $n=${n}$。`, `${nm}は $${lin(1, o)}$ だから、${n + o}。`],
           };
         }),
+        // 11d10c 縦に並んだ数の和を「○×（整数）」の形にする（いつでも偶数・3の倍数・5の倍数になる説明）
+        t("11d10c", (r) => {
+          const k = pick(r, [3, 4, 4, 5]), c = (7 * k * (k - 1)) / 2;
+          const K = k === 4 ? 2 : k, inner = poly([k / K, { n: 1 }], [c / K, {}]);
+          const start = r(1, 31 - 7 * (k - 1));
+          const ex = Array.from({ length: k }, (_, i) => start + 7 * i).join("、");
+          const claim = k === 4 ? "いつでも偶数" : `いつでも ${K} の倍数`;
+          return {
+            q: `カレンダーで、縦に並んだ${k}つの数（例：${ex}）の和は、${claim}になる。いちばん上の数を $n$（整数）として、この和を $${K}\\times$（整数）の形に表すと、$${K}(${ptex(poly([k / K, { n: 1 }], [0, {}]))}+\\square)$ となる。□は？`,
+            ans: c / K,
+            hint: `縦に並んだ${k}つの数の和を、$n$ の式で表そう。その式を、${K}でくくれるかな。`,
+            steps: [`${k}つの数は ${Array.from({ length: k }, (_, i) => `$${lin(1, 7 * i)}$`).join("、")}。和は $${k}n+${c}$。`, `$${k}n+${c}=${K}(${ptex(inner)})$ と変形できる。`, `したがって、□ は ${c / K}。`],
+          };
+        }),
         // 11d11 x−2y＝3 のとき 4x−8y+7 の値
         t("11d11", (r) => {
           const [u, w] = pick(r, [["x", "y"], ["a", "b"]]);
@@ -617,7 +631,7 @@ export const UNITS = [
           return {
             q: `$${ptex(given)}=${s}$ のとき、$${ptex(E)}$ の値は？`,
             ans: m * s + c,
-            hint: `求める式をよく見よう。$${ptex(given)}$ をひとまとまりとして使えないかな。（$${u}$ について解いて代入してもよい）`,
+            hint: `求める式を、条件の式の左辺と同じ形のかたまりを使って、書きかえられないかな。（$${u}$ について解いて代入してもよい）`,
             steps: [`$${ptex(E)}=${m}(${ptex(given)})${c < 0 ? "-" : "+"}${Math.abs(c)}$ と変形できる。`, `$${ptex(given)}=${s}$ を代入して、$${m}\\times ${par(s)}${c < 0 ? "-" : "+"}${Math.abs(c)}=${m * s}${c < 0 ? "-" : "+"}${Math.abs(c)}=${m * s + c}$`],
           };
         }),
