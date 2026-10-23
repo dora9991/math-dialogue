@@ -6,7 +6,7 @@
 //   「項をすべて答える」「ア〜カに分ける」「説明の正誤」は入力欄で打てないので、「正しいものを選ぶ」4択に直した。
 //   「式で表す」は4択（誤答は、かけ算にしてしまう・係数を入れかえる など）。次数・何次式かは数で聞く。
 // ============================================================
-import { t, pick, choices4, shuffle, fracAns, fracTex, gcd, rnz } from "../kit.js";
+import { t, pick, choices4, shuffle, fracAns, fracTex, rnz } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
 import { Q, term, poly, padd, peval, pdeg, peq, pisz, ptex } from "../algebra.js";
 

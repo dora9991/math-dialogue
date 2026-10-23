@@ -7,7 +7,7 @@
 //   (b) 答えの式の係数（数）を聞く問い、の2つの型にした。分数の形の式の数の問いは、分母が通分した値のまま約分されない組だけを使う。
 //   「まちがいを説明する」(dr.6) は「最初にまちがえているところ」を選ぶ4択と、正しく計算した答えの係数を聞く問いにした。
 // ============================================================
-import { t, pick, choices4, shuffle, fracAns, fracTex, rnz, gcd, lcm } from "../kit.js";
+import { t, pick, choices4, fracAns, fracTex, rnz, gcd, lcm } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
 import { Q, qmul, term, poly, padd, psub, pneg, pscale, pisz, peq, ptex } from "../algebra.js";
 

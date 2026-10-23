@@ -7,9 +7,9 @@
 //   (b) 4択（誤答は「係数をたしてしまう」「約分で文字を消し忘れる」「(−3a)² の符号」など、正解と式として同じにならないもの）の2つの型にした。
 //   「まちがいを説明する」(dr.8) は、正しい理由を選ぶ4択にした。
 // ============================================================
-import { t, pick, choices4, shuffle, fracAns, fracTex, rnz, gcd } from "../kit.js";
+import { t, pick, choices4, fracAns, fracTex, gcd } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
-import { Q, qmul, term, padd, pneg, pmul, pdivMono, peval, pisz, peq, ptex } from "../algebra.js";
+import { Q, qmul, term, padd, pneg, pmul, pdivMono, pisz, peq, ptex } from "../algebra.js";
 
 const unit = unitFor("shiki");
 
@@ -36,7 +36,6 @@ const fT = (m) => {
 const ansQ = (q) => fracAns(q[0], q[1]);
 const LET2 = [["x", "y"], ["a", "b"], ["m", "n"], ["p", "q"], ["s", "t"]];
 const addE = (a, b) => { const e = { ...a }; for (const v in b) e[v] = (e[v] || 0) + b[v]; return e; };
-const scaleE = (a, n) => Object.fromEntries(Object.entries(a).map(([v, k]) => [v, k * n]));
 const allInt = (p) => Object.values(p).every((c) => c[1] === 1);
 /** 係数の符号 */
 const sgn = (c) => (c < 0 ? -1 : 1);

@@ -255,7 +255,7 @@ export const UNITS = [
             ans,
             unit: "%",
             hint: "まず、その人数を求めよう。割合は、何を何でわって求めるかな。",
-            steps: [`${x}${s.u}未満の人は ${tot(f.slice(0, j))}`, divPct(cnt, n), `小数第1位を四捨五入して ${ans}%`],
+            steps: [`${x}${s.u}未満の人は ${tot(f.slice(0, j))}`, divPct(cnt, n), ...(Math.abs(cnt / n * 100 - ans) < 1e-9 ? [] : [`小数第1位を四捨五入して ${ans}%`])],
           };
         }),
         // 01q02 データを度数分布表に整理 → 1 つの階級の度数（12人の読書時間）
@@ -297,7 +297,7 @@ export const UNITS = [
             ans,
             unit: "%",
             hint: "まず、その人数を数えよう。割合は、何を何でわって求めるかな。",
-            steps: [`${x}${s.u}以上のデータは${data.filter((v) => v >= x).sort((a, b) => a - b).join("、")}の${cnt}個。`, divPct(cnt, n), `小数第1位を四捨五入して ${ans}%`],
+            steps: [`${x}${s.u}以上のデータは${data.filter((v) => v >= x).sort((a, b) => a - b).join("、")}の${cnt}個。`, divPct(cnt, n), ...(Math.abs(cnt / n * 100 - ans) < 1e-9 ? [] : [`小数第1位を四捨五入して ${ans}%`])],
           };
         }),
       ],
