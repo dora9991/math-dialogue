@@ -304,7 +304,7 @@ export const UNITS = [
         // 07d07 2組の連立方程式の解が同じとき、a、b
         t("07d07", (r) => {
           for (let n = 0; n < 5000; n++) {
-            const sol = solPick(r, 1, 7), a = r(1, 5), b = r(1, 5);
+            const sol = solPick(r, 1, 8), a = r(1, 7), b = r(1, 7);
             if (a === b) continue;
             const f1 = [pick(r, [1, 2, 3]), pick(r, [-3, -2, -1, 1, 2]), 0], f2 = [pick(r, [1, 2, 3]), pick(r, [-2, -1, 1, 2, 3]), 0];
             f1[2] = f1[0] * sol[0] + f1[1] * sol[1]; f2[2] = f2[0] * sol[0] + f2[1] * sol[1];

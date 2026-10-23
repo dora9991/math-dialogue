@@ -37,10 +37,11 @@ const gcdAll = (a) => a.reduce((g, x) => gcd(g, x), 0);
 const flipTerm = (p, k) => ({ ...p, [k]: [-p[k][0], p[k][1]] });
 
 /** 式の4択：正解 right、ありがちな誤答 wrongs（多項式）。正解と式として同じもの（peq）は、はずす */
+const allInt = (p) => Object.values(p).every((c) => c[1] === 1);
 const polyChoices = (r, right, wrongs) => {
   const rt = ptex(right), seen = new Set([rt]), ws = [];
   for (const w of wrongs) {
-    if (!w || pisz(w) || peq(w, right)) continue;
+    if (!w || pisz(w) || peq(w, right) || (allInt(right) && !allInt(w))) continue;    // 答えが整数係数なら、誤答も整数係数にそろえる
     const s = ptex(w);
     if (seen.has(s)) continue;
     seen.add(s); ws.push($(s));
@@ -103,7 +104,7 @@ const mulBuild = (r, mode, o) => {
       let kq, m = 1;
       if (o.frac) { const [p, q] = pick(r, FRK); kq = Q((back || j === 0 ? 1 : pick(r, [1, -1])) * (back ? 1 : pick(r, [1, -1])) * p, q); m = q; }
       else { let k; do { k = r(o.k[0], o.k[1]); } while (j === 0 ? Math.abs(k) < 2 : k === 0); kq = Q(k); }
-      return { kq, ts: sh.map((e) => [rnz(r, -o.c, o.c) * m, e]) };
+      return { kq, ts: sh.map((e, jj) => [(jj === 0 && r(0, 9) < 7 ? r(1, o.c) : rnz(r, -o.c, o.c)) * m, e]) };
     });
     ex = parts.map(({ kq, ts }) => ts.map(([c, e]) => [qmul(kq, Q(c)), e]));
     res = P(ex.flat());
@@ -200,13 +201,13 @@ const fracSumBuild = (r, mode, o) => {
   for (let i = 0; i < 200 && !ok; i++) {
     [d1, d2] = pick(r, o.dens); op = pick(r, o.ops);
     const intfrac = o.intfrac && r(0, 3) === 0;
-    if (intfrac) { d1 = 1; N1 = [[pick(r, [1, 1, 2, -1]), sh[0]]]; } else N1 = lin2(r, sh, -cr, cr);
-    N2 = lin2(r, sh, -cr, cr);
+    if (intfrac) { d1 = 1; N1 = [[pick(r, [1, 1, 2, -1]), sh[0]]]; } else N1 = [[r(1, cr), sh[0]], [rnz(r, -cr, cr), sh[1]]];
+    N2 = [[r(1, cr), sh[0]], [rnz(r, -cr, cr), sh[1]]];
     c = fracCalc(N1, d1, N2, d2, op);
     ok = !pisz(c.num) && (mode !== "num" || (gcdAll([...Object.values(c.num).map((q) => Math.abs(q[0])), c.L]) === 1));
   }
-  const steps = ["分母をそろえて（通分して）、1つの分数にまとめる。ひく分数の分子には、かっこをつける。", $(c.chain1), $(c.chain2)];
-  const hint = "分母の最小公倍数に通分して、分子を1つにまとめよう。ひく分数の分子には、かっこをつけて符号を変えよう。";
+  const steps = [op === "-" ? "分母をそろえて（通分して）、1つの分数にまとめる。ひく分数の分子には、かっこをつけて、全部の項の符号を変える。" : "分母をそろえて（通分して）、1つの分数にまとめる。分子にかける数は、分子全体にかけるので、かっこをつける。", $(c.chain1), $(c.chain2)];
+  const hint = op === "-" ? "分母の最小公倍数に通分して、分子を1つにまとめよう。ひく分数の分子には、かっこをつけて符号を変えよう。" : "分母の最小公倍数に通分して、分子を1つにまとめよう。分子には、かっこをつけて、通分の数をかけよう。";
   if (mode === "num") {
     const e = pickKey(r, c.num);
     return { q: `${$(c.expr)} を計算して、分母が ${c.L} の 1つの分数にまとめる。分子の ${askText(e)}は？`, ans: ansQ(coefOf(c.num, e)), hint, steps };
@@ -220,7 +221,7 @@ const fracMistakeBuild = (r, what) => {
   const L2 = pick(r, LET2), sh = SH2(L2);
   let [d1, d2] = pick(r, [[2, 4], [2, 6], [3, 6], [2, 8]]), N1, N2, k1, W, right, ok = false;
   for (let i = 0; i < 200 && !ok; i++) {
-    N1 = lin2(r, sh, -5, 5); N2 = lin2(r, sh, -5, 5); k1 = d2 / d1;
+    N1 = [[r(1, 5), sh[0]], [rnz(r, -5, 5), sh[1]]]; N2 = [[r(1, 5), sh[0]], [rnz(r, -5, 5), sh[1]]]; k1 = d2 / d1;
     const wrongTs = [...N1.map(([c, e]) => [k1 * c, e]), negT(N2[0]), N2[1]];            // 2つ目の項の符号を変えていない
     W = P(wrongTs);
     right = P([...N1.map(([c, e]) => [k1 * c, e]), ...N2.map(negT)]);
@@ -246,7 +247,7 @@ const fracMistakeBuild = (r, what) => {
       steps,
     };
   }
-  const e = pickKey(r, right);
+  const e = N2[1][1];    // まちがえた項の文字（この文字の係数は、まちがいで変わる）
   return {
     q: `次の計算には、まちがいがある。${$(line)} 正しく計算して、分母が ${d2} の 1つの分数にまとめたとき、分子の ${askText(e)}は？`,
     ans: ansQ(coefOf(right, e)),
@@ -265,8 +266,9 @@ const abBuild = (r, mode) => {
     X = Xn === "A" ? A : B; Y = Xn === "A" ? B : A;
     form = r(0, 2) === 0 ? 2 : 1;
     c = r(2, 4);
+    if (peq(A, B)) continue;
     if (form === 1) { d = pick(r, [-4, -3, -2, 2, 3]); res = padd(pscale(X, c), pscale(Y, d)); }                            // cX + dY
-    else { d = r(1, 2); e = pick(r, [-3, -2, -1, 2, 3]); res = psub(pscale(X, c), padd(pscale(X, d), pscale(Y, e))); }    // cX − (dX + eY)
+    else { d = r(1, 2); e = pick(r, [-3, -2, -1, 2, 3]); if (c === d) continue; res = psub(pscale(X, c), padd(pscale(X, d), pscale(Y, e))); }    // cX − (dX + eY)
     if (Object.keys(res).length === 2) break;
   }
   const Xt = ptex(X), Yt = ptex(Y), sg = (k) => (k < 0 ? "-" : "+"), ab = (k) => Math.abs(k);

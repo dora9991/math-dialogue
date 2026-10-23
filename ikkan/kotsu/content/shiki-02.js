@@ -35,10 +35,11 @@ const sgnStr = (c) => (c < 0 ? `-${-c}` : `+${c}`);
 const tms = (p) => Object.entries(p).map(([k, c]) => [c, expsOf(k)]);
 
 /** 式の4択：正解 right、ありがちな誤答 wrongs（多項式）。正解と式として同じもの（peq）は、はずす */
+const allInt = (p) => Object.values(p).every((c) => c[1] === 1);
 const polyChoices = (r, right, wrongs) => {
   const rt = ptex(right), seen = new Set([rt]), ws = [];
   for (const w of wrongs) {
-    if (!w || pisz(w) || peq(w, right)) continue;
+    if (!w || pisz(w) || peq(w, right) || (allInt(right) && !allInt(w))) continue;    // 答えが整数係数なら、誤答も整数係数にそろえる
     const s = ptex(w);
     if (seen.has(s)) continue;
     seen.add(s); ws.push($(s));
@@ -224,7 +225,7 @@ const mistakeBuild = (r, what) => {
       steps,
     };
   }
-  const e = pick(r, sh);
+  const e = B[tt][1];    // まちがえた項の文字（この文字の係数は、まちがいで変わる）
   return {
     q: `次の計算には、まちがいがある。${$(line)} 正しく計算したとき、${ansAsk(e)}`,
     ans: ansQ(coefOf(right, e)),
