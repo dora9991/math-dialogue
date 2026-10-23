@@ -96,6 +96,23 @@ function edgeFaceCountQ(r, S, rel, { cube = false, faces = S.F } = {}) {
   };
 }
 
+/** 三角柱の面 f について、「平行でも垂直でもない面」ごとの説明（2つの側面が垂直かどうかは、底面の角が直角かどうかで決まる） */
+function crossReasons(S, f) {
+  const base = S.F[0];
+  const rightAt = (v) => {   // 底面の頂点 v で、底面の 2辺が直角か
+    const o = S.V[v], [a, b] = [...base].filter((x) => x !== v).map((x) => S.V[x].map((c, i) => c - o[i]));
+    return Math.abs(a.reduce((sum, c, i) => sum + c * b[i], 0)) < 1e-9;
+  };
+  const cross = S.F.filter((g) => g !== f && faceFaceRel(S, f, g) === "cross");
+  const out = [];
+  for (const g of cross) {
+    const sh = [...f].filter((v) => g.includes(v)), v = sh.find((x) => base.includes(x));
+    if (rightAt(v)) return null;   // 直角なら cross にならないはず（検算）
+    out.push(`${fName(g)} は、${fName(f)} と ${eName(sh.join(""))} で交わるが、底面の ∠${v} が直角ではないので、垂直ではない。`);
+  }
+  return out;
+}
+
 /** 辺の長さ（座標から） */
 const elen = (S, e) => Math.round(Math.hypot(...S.V[e[1]].map((x, i) => x - S.V[e[0]][i])) * 1e6) / 1e6;
 /** 直方体 AB＝a、AD＝b、AE＝c（たがいにちがう長さ） */
@@ -166,12 +183,20 @@ export const UNITS = [
           const S = pick(r, [BOX, CUBE, RT, PR3]), f = pick(r, S.F);
           const perp = facesWhere(S, f, "perp"), par = facesWhere(S, f, "parallel");
           if (!perp.length) return { skip: true };
+          const prismS = S.kind === "prism" || S.kind === "rtPrism";
+          const why = prismS ? crossReasons(S, f) : [];
+          if (why === null) return { skip: true };
+          const isBase = prismS && (f === S.F[0] || f === S.F[1]);
           return {
             q: `${introOf(S, S === CUBE)}で、${fName(f)} と垂直な面は、全部でいくつあるか。`,
             ans: perp.length,
             unit: "個",
-            hint: `${fName(f)} 以外の面を、1つずつ、平行か、垂直か、そのどちらでもないか、調べよう。`,
-            steps: [`${fName(f)} と平行な面は${par.length ? `、${listFaces(par)}` : "ない"}。`, `垂直な面は、${listFaces(perp)}（${perp.length}個）。`],
+            hint: `${fName(f)} 以外の面を、1つずつ、平行か、垂直か、そのどちらでもないか、調べよう。${prismS && !isBase ? "側面どうしが垂直かどうかは、底面の角を見る。" : ""}`,
+            steps: [
+              `${fName(f)} と平行な面は${par.length ? `、${listFaces(par)}` : "ない"}。`,
+              `垂直な面は、${listFaces(perp)}（${perp.length}個）。${prismS ? (isBase ? "側面は、底面に垂直に立っているので、すべて垂直。" : "底面は、側面に垂直。") : ""}`,
+              ...why,
+            ],
           };
         }),
         // 04q01 直線と平面の位置関係を3つ（→ 正しい組を選ぶ4択）
@@ -182,7 +207,7 @@ export const UNITS = [
             q: "空間にある直線と平面の位置関係は、3つに分けられる。その3つの組として、正しいものはどれか。",
             ans,
             choices: choices4(r, ans, ws),
-            hint: "直線が平面の上にのっているか、1点で突きささるか、どこまでのばしても交わらないか、で分ける。",
+            hint: "直線と平面が、共通にもつ点は、いくつあるだろう？　場合に分けて、考えてみよう。",
             steps: ["直線が平面の上にある／平面と1点で交わる／平面と交わらない（平行）の3つ。", "「ねじれの位置」は、直線どうしの関係。「垂直」は、1点で交わるときの特別な場合。"],
           };
         }),
@@ -230,10 +255,8 @@ export const UNITS = [
         // 04d05b 面 ABED と垂直な面は、いくつあるか
         t("04d05b", (r) => {
           const f = pick(r, RT.F), perp = facesWhere(RT, f, "perp"), par = facesWhere(RT, f, "parallel");
-          const cross = RT.F.filter((g) => g !== f && !perp.includes(g) && !par.includes(g));
-          const cornerOf = (g) => [...f].filter((v) => g.includes(v)).find((v) => "ABC".includes(v));   // 2つの側面が交わる辺の、底面の頂点
-          const dotAt = (v) => { const o = RT.V[v], others = [...RT.F[0]].filter((x) => x !== v).map((x) => RT.V[x].map((c, i) => c - o[i])); return others[0].reduce((sum, c, i) => sum + c * others[1][i], 0); };
-          if (cross.some((g) => dotAt(cornerOf(g)) === 0)) return { skip: true };
+          const why = crossReasons(RT, f);
+          if (why === null) return { skip: true };
           return {
             q: `${introOf(RT)}で、${fName(f)} と垂直な面は、全部でいくつあるか。`,
             ans: perp.length,
@@ -242,7 +265,7 @@ export const UNITS = [
             steps: [
               `${fName(f)} と垂直な面は、${listFaces(perp)}。`,
               ...par.map((g) => `${fName(g)} は、${fName(f)} と平行（垂直ではない）。`),
-              ...cross.map((g) => `${fName(g)} は、${fName(f)} と ${eName([...f].filter((v) => g.includes(v)).join(""))} で交わるが、底面の ∠${cornerOf(g)} が直角ではないので、垂直ではない。`),
+              ...why,
               `垂直な面は、全部で ${perp.length}個。`,
             ],
           };
@@ -349,12 +372,14 @@ export const UNITS = [
           const cen = (vs) => [0, 1, 2].map((i) => vs.reduce((s, v) => s + S.V[v][i], 0) / vs.length);
           const S2 = { ...S, V: { ...S.V, H: cen([...base]), M: cen(["A", "B"]) } };   // 底面の中心 H と、辺 AB の中点 M をくわえる
           const where = n === 4 ? "底面の対角線の交点を H" : "底面の正三角形の中心を H";
+          const lat = [...base].map((v) => `O${v}`).join("＝");
+          const introPyr = `正${pyramidName(n)} O−${base}（底面 ${base} は${REGPOLY[n]}。${lat} で、長さがすべて等しい）`;   // 「真上」とは書かない
           if (r(0, 1) === 0) {   // 形A：OH が高さといえる理由
             const rel = lineFaceRel(S2, "OH", base);
             const MAP = { perp: "垂直である", parallel: "平行である", on: `面 ${base} の上にある`, cross: "垂直ではなく、斜めに交わっている" };
             const ans = MAP[rel];
             return {
-              q: `${introOf(S)}で、${where} とする。OH が、この角錐の高さといえるのは、OH と底面 ${base} が、どんな関係にあるからか。`,
+              q: `${introPyr}で、${where} とする。OH が、この角錐の高さといえるのは、OH と底面 ${base} が、どんな関係にあるからか。`,
               ans,
               choices: choices4(r, ans, Object.values(MAP).filter((x) => x !== ans)),
               hint: "角錐の高さは、頂点と底面とのきょり。点と面のきょりは、何の長さだったかな？",
@@ -368,7 +393,7 @@ export const UNITS = [
           if (ok.length !== 1) return { skip: true };
           const ans = ok[0][1], ws = SEG.filter(([d]) => rel(d) !== "perp");
           return {
-            q: `${introOf(S)}で、${where}、辺 AB の中点を M とする。この角錐の高さ（頂点から底面にひいた垂線の長さ）を表す線分は、次のうちどれか。`,
+            q: `${introPyr}で、${where}、辺 AB の中点を M とする。この角錐の高さ（頂点から底面にひいた垂線の長さ）を表す線分は、次のうちどれか。`,
             ans,
             choices: choices4(r, ans, ws.map((x) => x[1])),
             hint: "高さは、頂点から底面にひいた垂線。底面に垂直になっている線分をさがそう。",

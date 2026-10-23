@@ -107,10 +107,10 @@ const NAMES_P = ["円柱", "円錐", "球", "三角柱", "正四角錐"];
 const FP = [FT.plan("円"), FT.plan("三角形"), FT.plan("正方形（対角線入り）"), FT.elev("長方形"), FT.elev("二等辺三角形"), FT.elev("円"), FT.rot(), FT.poly(),
   FT.net("長方形"), FT.net("おうぎ形"), FT.net("三角形"), FT.net("円")];
 const TP = theme(NAMES_P, FP, FP);
-// N：面・頂点・辺の数と、側面・底面の形（角柱・角錐）
+// N：面の数と、側面・底面の形（角柱・角錐）
 const NAMES_N = [3, 4, 5, 6].flatMap((n) => [prismName(n), pyramidName(n)]);
 const UN = NAMES_N.map((n) => SOL[n]);
-const FN = [...vals(UN, "F").map(FT.face), ...vals(UN, "V").map(FT.vert), ...vals(UN, "E").map(FT.edge), FT.side("長方形"), FT.side("三角形"), ...[3, 4, 5, 6].map((n) => FT.base(NGON[n]))];
+const FN = [...vals(UN, "F").map(FT.face), FT.side("長方形"), FT.side("三角形"), ...[3, 4, 5, 6].map((n) => FT.base(NGON[n]))];   // 基礎なので、頂点・辺の数（数えるのが大変）は使わない
 const TN = theme(NAMES_N, FN, FN);
 // T：展開図と、底面・側面（四角錐は「底面が四角形」としか決まっていないので、展開図の長方形は「場合による」）
 const NAMES_T = ["円柱", "円錐", "三角柱", "四角柱", "五角柱", "三角錐", "四角錐", "五角錐"];
@@ -132,7 +132,7 @@ const quizFinal = (th, note = "") => (r) => {
     choices,
     hint: "ヒント1であてはまる立体を、先に全部あげよう。そのあと、ヒント2であてはまる立体にしぼる。",
     steps: [
-      `ヒント1（${strip(p.a.text)}）だけでは … ${fmt(p.A, p.a)}（${p.A.length}つ）で、1つに決まらない。`,
+      `ヒント1（${strip(p.a.text)}）だけでは … ${fmt(p.A, p.a)}の ${p.A.length}つで、1つに決まらない。`,
       `ヒント2（${strip(p.b.text)}）にあてはまるのは … ${fmt(p.B, p.b)}。`,
       `ヒント2を足して、どちらにもあてはまるのは … ${p.ans}。`,
     ],
@@ -206,7 +206,7 @@ const viewQuiz = (use) => (r) => {
   const sameP = U.filter((s) => s !== T && fp.lv(s) >= 1).map((s) => s.name);
   const rest = U.filter((s) => s !== T && !sameE.includes(s.name) && !sameP.includes(s.name)).map((s) => s.name);
   return {
-    q: (e === p ? `立面図も平面図も${e}になる立体は？` : `立面図が${e}で、平面図が${p}になる立体は？`) + (T.name === "球" ? "" : "（底面を下にして置く）"),
+    q: (e === p ? `立面図も平面図も${e}になる立体は？` : `立面図が${e}で、平面図が${p}になる立体は？`) + (T.name === "球" ? "" : "（柱や錐は、底面を下にして置く）"),
     ans: T.name,
     choices: choices4(r, T.name, [...shuffle(r, sameE), ...shuffle(r, sameP), ...shuffle(r, rest)]),
     hint: "立面図は正面から、平面図は真上から見た図。片方の図だけで決まらないときは、もう片方の図で、しぼろう。",
@@ -234,8 +234,8 @@ export const UNITS = [
       // ───────── 1 基礎 ─────────
       1: [
         // 08d01 ヒント1 … 平面図は円　ヒント2 … 立面図は二等辺三角形（投影図のヒント）
-        t("08d01a", quizCount(TP, "（底面を下にして置く）")),
-        t("08d01b", quizFinal(TP, "底面を下にして置く")),
+        t("08d01a", quizCount(TP, "（柱や錐は、底面を下にして置く）")),
+        t("08d01b", quizFinal(TP, "柱や錐は、底面を下にして置く")),
         // 08d02 ヒント1 … 面は 5つ　ヒント2 … 側面は、すべて三角形（面・辺・頂点の数のヒント）
         t("08d02a", quizCount(TN)),
         t("08d02b", quizFinal(TN)),
@@ -259,7 +259,7 @@ export const UNITS = [
           const ok = U.filter((s) => f.lv(s) === 2).map((s) => s.name), ng = U.filter((s) => f.lv(s) === 0).map((s) => s.name);
           const ans = pick(r, ok);
           return {
-            q: `立面図が${shape}になる立体は、次のうちどれか。（底面を下にして置く）`,
+            q: `立面図が${shape}になる立体は、次のうちどれか。（柱や錐は、底面を下にして置く）`,
             ans,
             choices: choices4(r, ans, shuffle(r, ng)),
             hint: "立面図は、正面から見た図。立体を1つずつ、正面から見て、形を思いうかべよう。",
@@ -346,8 +346,9 @@ export const UNITS = [
         // 08q04 「回転体である」に、もう1つヒントを足して、円柱に決める → 足すヒントを選ぶ4択
         t("08q04", (r) => {
           const U = NAMES_P.map((n) => SOL[n]);
-          const FQ = [FT.plan("円"), FT.plan("三角形"), FT.plan("正方形（対角線入り）"), FT.elev("長方形"), FT.elev("二等辺三角形"), FT.elev("円"),
+          const FQ0 = [FT.plan("円"), FT.plan("三角形"), FT.plan("正方形（対角線入り）"), FT.elev("長方形"), FT.elev("二等辺三角形"), FT.elev("円"),
             FT.net("長方形"), FT.net("おうぎ形"), FT.net("三角形"), FT.net("円"), FT.base("円"), FT.base("三角形"), FT.side("曲面"), FT.side("長方形"), FT.side("三角形")];
+          const FQ = FQ0.filter((f) => U.every((s) => f.lv(s) !== 1));   // 「場合による」立体がある言い方（展開図の長方形：正四角錐の正方形）は、正解にも誤答にも使わない
           const B = pick(r, [FT.rot(), FT.poly()]), SB = possOf(U, B);
           const T = pick(r, SB);
           const after = (f) => SB.filter((n) => f.lv(SOL[n]) >= 1);   // 足したあとに、ありうる立体
@@ -358,7 +359,7 @@ export const UNITS = [
           const ch = choices4(r, ans.text, wrongs.map((f) => f.text));
           const shown = ch.filter((x) => x !== ans.text).map((x) => FQ.find((f) => f.text === x));
           return {
-            q: `「${strip(B.text)}」というヒントに、もう1つヒントを足して、${T}に決めたい。足すヒントとして、よいものはどれか。（立体は、${names(NAMES_P)}の中から考える）`,
+            q: `「${strip(B.text)}」というヒントに、もう1つヒントを足して、${T}に決めたい。足すヒントとして、よいものはどれか。（立体は、${names(NAMES_P)}の中から考える。柱や錐は、底面を下にして置く）`,
             ans: ans.text,
             choices: ch,
             hint: "足したあとに、あてはまる立体が 1つだけ残るヒントをさがそう。",
@@ -387,34 +388,39 @@ export const UNITS = [
             }
             return out;
           };
-          const targets = U.filter((T) => tri(T).some((x) => x.n1 >= 2 && x.n123 === 1));
+          const clean = (f) => U.every((s) => f.lv(s) !== 1);   // 「場合による」立体がまじらないヒント
+          const isGood = (x) => x.n1 >= 2 && x.n123 === 1 && clean(x.hs[0]);   // 正解の組：ヒント1が決まらない理由に、「場合による」立体をつかわない
+          const targets = U.filter((T) => tri(T).some(isGood));
           const T = pick(r, targets);
           const all = tri(T);
-          const good = all.filter((x) => x.n1 >= 2 && x.n123 === 1), single = all.filter((x) => x.n1 === 1), open = all.filter((x) => x.n1 >= 2 && x.n123 >= 2);
+          const good = all.filter(isGood), single = all.filter((x) => x.n1 === 1);
+          const open = all.filter((x) => x.n1 >= 2 && x.n123 >= 2 && U.filter((s) => x.hs.every((h) => h.lv(s) === 2)).length >= 2);   // 3つとも「かならず」あてはまる立体が 2つ以上
           const text = (hs) => `ヒント1 … ${hs[0].text}　ヒント2 … ${hs[1].text}　ヒント3 … ${hs[2].text}`;
           const key = (hs) => hs.map((h) => h.text).sort().join("|");
           const g = pick(r, good), used = new Set([key(g.hs)]);
-          const wrongs = [];
-          const tryAdd = (hs) => { if (hs && !used.has(key(hs)) && wrongs.length < 3) { used.add(key(hs)); wrongs.push(text(hs)); } };
-          tryAdd(shuffle(r, single).map((x) => x.hs).find((hs) => !used.has(key(hs))));
-          tryAdd(shuffle(r, open).map((x) => x.hs).find((hs) => !used.has(key(hs))));
+          const wrongs = [];   // { text, kind }
+          const tryAdd = (hs, kind) => { if (hs && !used.has(key(hs)) && wrongs.length < 3) { used.add(key(hs)); wrongs.push({ text: text(hs), kind }); } };
+          tryAdd(shuffle(r, single).map((x) => x.hs).find((hs) => !used.has(key(hs))), "single");
+          tryAdd(shuffle(r, open).map((x) => x.hs).find((hs) => !used.has(key(hs))), "open");
           const falseF = F5.filter((f) => f.lv(T) === 0);   // 答えに「あてはまらない」とはっきり言えるヒントだけ（場合による、は使わない）
           for (let i = 0; i < 80 && wrongs.length < 3; i++) {   // 1つだけ、答えにあてはまらないヒントがまざった組
             const pos = r(0, 2), hs = [...pick(r, good).hs], f = pick(r, falseF);
             if (hs.some((h, j) => j !== pos && h.g === f.g)) continue;
             hs[pos] = f;
-            tryAdd(hs);
+            tryAdd(hs, "false");
           }
           const ans = text(g.hs);
+          const LAB = { false: "答えにあてはまらないヒントがある", single: "ヒント1だけで決まってしまう", open: "3つそろっても決まらない" };
+          const kinds = ["false", "single", "open"].filter((k) => wrongs.some((w) => w.kind === k));
           return {
             q: `${names(nm5)}のうち、どれか 1つを当てるクイズをつくる。答えを「${T.name}」にしたい。ヒントの組として、正しいものはどれか。（3つとも答えにあてはまり、ヒント1だけでは決まらず、3つそろうと 1つに決まる組）`,
             ans,
-            choices: choices4(r, ans, wrongs),
+            choices: choices4(r, ans, wrongs.map((w) => w.text)),
             hint: "ヒントを1つずつ足して、あてはまる立体が、どうへっていくか、たどってみよう。",
             steps: [
               `ヒント1（${strip(g.hs[0].text)}）だけで、あてはまるのは … ${fmt(g.S1, g.hs[0])}。1つには決まらない。`,
               `ヒント2・3を足すと、${T.name}だけに決まる。3つとも、${T.name}にあてはまっている。`,
-              "ほかの組は、「答えにあてはまらないヒントがある」「ヒント1だけで決まってしまう」「3つそろっても決まらない」のどれか。",
+              kinds.length === 1 ? `ほかの組は、どれも「${LAB[kinds[0]]}」。` : `ほかの組は、${kinds.map((k) => `「${LAB[k]}」`).join("か")}のどれか。`,
             ],
           };
         }),
@@ -469,7 +475,7 @@ export const UNITS = [
           const e = T.elev[0], p = T.plan[0];
           const others = ["円柱", "円錐", "球", "三角柱", "正四角錐", "立方体"].filter((x) => x !== T.name);
           return {
-            q: (e === p ? `立面図も平面図も${e}で、面は ${tsu(T.F)}ある立体の名前は？` : `立面図が${e}で、平面図が${p}で、面は ${tsu(T.F)}ある立体の名前は？`) + "（底面を下にして置く）",
+            q: (e === p ? `立面図も平面図も${e}で、面は ${tsu(T.F)}ある立体の名前は？` : `立面図が${e}で、平面図が${p}で、面は ${tsu(T.F)}ある立体の名前は？`) + "（柱や錐は、底面を下にして置く）",
             ans: T.name,
             choices: choices4(r, T.name, shuffle(r, others)),
             hint: "立面図と平面図の両方にあてはまる立体を考えて、面の数で確かめよう。",
