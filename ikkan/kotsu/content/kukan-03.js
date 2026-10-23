@@ -111,10 +111,10 @@ const lr = (a, b) => lineRel(CUBE, a, b);
 const STM = [
   { ok: true, text: "ℓ と m が平行で、m と n が平行ならば、ℓ と n は平行である。", why: "平行な直線は、どれも同じ向きだから、ℓ と n も同じ向きで、平行になる。" },
   { ok: true, text: "ℓ と m が平行で、m と n が交わるならば、ℓ と n は平行ではない。", why: "もし ℓ と n が平行なら、m も n と平行になってしまい、m と n が交わることと合わない。" },
-  { short: "垂直に交わる・垂直に交わる ⇒ 平行", text: "ℓ と m が垂直に交わり、m と n が垂直に交わるならば、ℓ と n は平行である。", prem: (a, b) => a.rel === "intersect" && a.perp && b.rel === "intersect" && b.perp, bad: (c) => c.rel !== "parallel" },
-  { short: "交わる・交わる ⇒ 交わる", text: "ℓ と m が交わり、m と n が交わるならば、ℓ と n は交わる。", prem: (a, b) => a.rel === "intersect" && b.rel === "intersect", bad: (c) => c.rel !== "intersect" },
-  { short: "ねじれの位置・ねじれの位置 ⇒ ねじれの位置", text: "ℓ と m がねじれの位置にあり、m と n がねじれの位置にあるならば、ℓ と n もねじれの位置にある。", prem: (a, b) => a.rel === "skew" && b.rel === "skew", bad: (c) => c.rel !== "skew" },
-  { short: "平行・交わる ⇒ 交わる", text: "ℓ と m が平行で、m と n が交わるならば、ℓ と n は交わる。", prem: (a, b) => a.rel === "parallel" && b.rel === "intersect", bad: (c) => c.rel !== "intersect" },
+  { short: "垂直に交わる・垂直に交わる ⇒ 平行", neg: "平行ではない", text: "ℓ と m が垂直に交わり、m と n が垂直に交わるならば、ℓ と n は平行である。", prem: (a, b) => a.rel === "intersect" && a.perp && b.rel === "intersect" && b.perp, bad: (c) => c.rel !== "parallel" },
+  { short: "交わる・交わる ⇒ 交わる", neg: "交わらない", text: "ℓ と m が交わり、m と n が交わるならば、ℓ と n は交わる。", prem: (a, b) => a.rel === "intersect" && b.rel === "intersect", bad: (c) => c.rel !== "intersect" },
+  { short: "ねじれの位置・ねじれの位置 ⇒ ねじれの位置", neg: "ねじれの位置ではない", text: "ℓ と m がねじれの位置にあり、m と n がねじれの位置にあるならば、ℓ と n もねじれの位置にある。", prem: (a, b) => a.rel === "skew" && b.rel === "skew", bad: (c) => c.rel !== "skew" },
+  { short: "平行・交わる ⇒ 交わる", neg: "交わらない", text: "ℓ と m が平行で、m と n が交わるならば、ℓ と n は交わる。", prem: (a, b) => a.rel === "parallel" && b.rel === "intersect", bad: (c) => c.rel !== "intersect" },
 ];
 const kindWord = (a, b) => WORD[kindOf(CUBE, a, b)].replace("交わるが垂直ではない", "交わる");
 STM.forEach((s) => {
@@ -214,7 +214,7 @@ export const UNITS = [
           const T = pick(r, STM.filter((s) => s.ok)), Fs = sample(r, STM.filter((s) => !s.ok), 3);
           const exLine = (s) => {
             const [a, b, c] = pick(r, s.examples);
-            return `「${s.short}」は成り立たない … 例：${pairName(a, b)}（${kindWord(a, b)}）、${pairName(b, c)}（${kindWord(b, c)}）のとき、${pairName(a, c)} は「${kindWord(a, c)}」。`;
+            return `「${s.short}」は成り立たない … 例：ℓ＝${eName(a)}、m＝${eName(b)}、n＝${eName(c)} とすると、ℓ と m は「${kindWord(a, b)}」、m と n は「${kindWord(b, c)}」だが、ℓ と n は「${kindWord(a, c)}」で、${s.neg}。`;
           };
           return {
             q: "空間にある 3つの直線 ℓ、m、n（どれも別々の直線）について、次のうち、いつも成り立つものはどれか。",

@@ -31,7 +31,7 @@ REG.forEach((p) => {
 const [TETRA, HEXA, OCTA, DODECA, ICOSA] = REG;
 
 /** ほかの正多面体の名前（正解をのぞく）をシャッフルして、先に trap を置く */
-const otherNames = (r, ans, trap = []) => [...trap.map((x) => x.name), ...shuffle(r, REG.map((x) => x.name))].filter((x) => x !== ans);
+const otherNames = (r, ans, trap = []) => [...new Set([...trap.map((x) => x.name), ...shuffle(r, REG.map((x) => x.name))])].filter((x) => x !== ans);
 
 /** 辺・頂点を求める式（steps 用） */
 const calcLine = (p, w) =>
@@ -279,7 +279,7 @@ export const UNITS = [
           const same = REG.filter((x) => x.n === d.n && x !== d).map((x) => x.name);   // 面の形が同じ正多面体は、まぎらわしい
           const ws = [...same, ...shuffle(r, REG.map((x) => x.name))].filter((x) => x !== ans);
           return {
-            q: `${p.name}の ${p.F}個の面の中心を、となり合う面どうしで結ぶと、立体ができる。この立体は、どの面も合同な${SHAPE[d.n]}で、どの頂点にも同じ数の面が集まっている。何という立体か。`,
+            q: `${p.name}の ${p.F}個の面の中心を、となり合う面どうしで結ぶと、立体ができる。この立体は、どの面も合同な${d.n === 3 ? SHAPE[3] : "正多角形"}で、どの頂点にも同じ数の面が集まっている。何という立体か。`,
             ans,
             choices: choices4(r, ans, ws),
             hint: "新しい立体の頂点は、もとの面の中心。面は、もとの頂点1つにつき、1つできる。",

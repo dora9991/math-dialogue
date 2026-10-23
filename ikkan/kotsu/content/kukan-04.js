@@ -8,7 +8,7 @@
 import { t, pick, choices4, shuffle, sample } from "../kit.js";
 import { unit } from "../kukan-kit.js";
 import {
-  cuboid, rtPrism, prism, pyramid, lineRel, lineFaceRel, faceFaceRel, edgesToFace, facesWhere, distPointFace, distFaceFace,
+  cuboid, rtPrism, pyramid, lineRel, lineFaceRel, faceFaceRel, edgesToFace, facesWhere, distPointFace, distFaceFace,
   intro, edgeLabel, listEdges, same, prismName, pyramidName,
 } from "../solids.js";
 
@@ -102,8 +102,6 @@ const dims = (r) => sample(r, [2, 3, 4, 5, 6, 7, 8, 9], 3);
 const givenEdge = (S, e) => ["AB", "AD", "AE"].find((g) => same(g, e) || lineRel(S, g, e).rel === "parallel");   // e と同じ長さで、問題文に書いてある辺
 
 // ── いつも成り立つか（04d07）：直方体から、成り立たない例（反例）を計算でさがす ──
-const lnW = (rel) => (rel === "intersect" ? "交わる" : "ねじれの位置にある");
-const shareOf = (a, b) => [...a].find((v) => b.includes(v));
 /** 反例の材料を、直方体 BOX から集める */
 const EX = { linePar: [], planePar: [], linePerp: [], planePerp: [] };
 for (const g of BOX.F) {
@@ -124,10 +122,10 @@ const STM = [
   { ok: true, text: "1つの直線に垂直な 2つの平面は、平行である。", why: "直線に垂直な平面は、どれも同じ向きだから、平行になる。（例：辺 AE は 面 ABCD とも 面 EFGH とも垂直で、この 2つの面は平行）" },
   { ok: true, text: "1つの平面に垂直な 2つの直線は、平行である。", why: "平面に垂直な直線は、どれも同じ向きだから、平行になる。（例：辺 AE と辺 BF は、どちらも 面 ABCD に垂直で、平行）" },
   { ok: true, text: "1つの平面に平行な 2つの平面は、平行である。", why: "平面に平行な平面は、どれも同じ向きだから、たがいに平行になる。" },
-  { ok: false, text: "1つの平面に平行な 2つの直線は、平行である。", ex: (r) => { const [g, a, b] = pick(r, EX.linePar); const k = lineRel(BOX, a, b); return `${eName(a)} と ${eName(b)} は、どちらも ${fName(g)} と平行だが、${k.rel === "intersect" ? `${k.share} で交わる` : "ねじれの位置にある"}。`; } },
-  { ok: false, text: "1つの直線に平行な 2つの平面は、平行である。", ex: (r) => { const [l, f1, f2] = pick(r, EX.planePar); return `${eName(l)} は、${fName(f1)} とも ${fName(f2)} とも平行だが、この 2つの面は ${commonEdge(f1, f2)} で交わる。`; } },
-  { ok: false, text: "1つの直線に垂直な 2つの直線は、平行である。", ex: (r) => { const [l, a, b] = pick(r, EX.linePerp); const k = lineRel(BOX, a, b); return `${eName(a)} と ${eName(b)} は、どちらも ${eName(l)} と垂直に交わるが、${k.rel === "intersect" ? `${k.share} で交わる` : "ねじれの位置にある"}。`; } },
-  { ok: false, text: "1つの平面に垂直な 2つの平面は、平行である。", ex: (r) => { const [g, f1, f2] = pick(r, EX.planePerp); return `${fName(f1)} と ${fName(f2)} は、どちらも ${fName(g)} と垂直だが、この 2つの面は ${commonEdge(f1, f2)} で交わる。`; } },
+  { ok: false, text: "1つの平面に平行な 2つの直線は、平行である。", ex: (r) => { const [g, a, b] = pick(r, EX.linePar); const k = lineRel(BOX, a, b); return `${eName(a)} と ${eName(b)} は、どちらも ${fName(g)} と平行だが、この 2本は${k.rel === "intersect" ? ` ${k.share} で交わっていて` : "ねじれの位置にあって"}、平行ではない。`; } },
+  { ok: false, text: "1つの直線に平行な 2つの平面は、平行である。", ex: (r) => { const [l, f1, f2] = pick(r, EX.planePar); return `${eName(l)} は、${fName(f1)} とも ${fName(f2)} とも平行だが、この 2つの面は ${commonEdge(f1, f2)} で交わっていて、平行ではない。`; } },
+  { ok: false, text: "1つの直線に垂直な 2つの直線は、平行である。", ex: (r) => { const [l, a, b] = pick(r, EX.linePerp); const k = lineRel(BOX, a, b); return `${eName(a)} と ${eName(b)} は、どちらも ${eName(l)} と垂直に交わるが、この 2本は${k.rel === "intersect" ? ` ${k.share} で交わっていて` : "ねじれの位置にあって"}、平行ではない。`; } },
+  { ok: false, text: "1つの平面に垂直な 2つの平面は、平行である。", ex: (r) => { const [g, f1, f2] = pick(r, EX.planePerp); return `${fName(f1)} と ${fName(f2)} は、どちらも ${fName(g)} と垂直だが、この 2つの面は ${commonEdge(f1, f2)} で交わっていて、平行ではない。`; } },
 ];
 
 export const UNITS = [
