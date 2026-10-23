@@ -8,7 +8,7 @@
 //   解く問題は、x か y の一方の値を聞く（どちらを聞くかは毎回ランダム）。方法を選ぶ問題で、答えがあいまいにならないよう、
 //   「代入法が向く式」は y＝…（x＝…）の式があって係数がそろわない式、「加減法が向く式」はどの係数も 1 でなく、ある文字の係数が同じ（反対）の式、とはっきり決めてつくる。
 // ============================================================
-import { t, pick, choices4, shuffle, lcm, coefVar } from "../kit.js";
+import { t, pick, choices4, shuffle, gcd, lcm, coefVar } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
 import { linTex, casesTex, solve2 } from "../algebra.js";
 
@@ -37,6 +37,8 @@ const askXY = (r, sol) => { const k = r(0, 1); return { w: XY[k], v: sol[k] }; }
 /** かっこつきの項  pc(-2,"x+1") → -2(x+1)、pc(1,"x+1") → (x+1) */
 const pc = (c, inner) => (c < 0 ? "-" : "") + (Math.abs(c) === 1 ? "" : Math.abs(c)) + `(${inner})`;
 const lab = (i) => (i === 0 ? "①" : "②");
+const gcd3 = (a, b, c) => gcd(gcd(a, b), c);
+const fm = (n) => String(n).replace("-", "−");
 
 /** 整数の係数の式 e1, e2（文字は nm）を、加減法で解く解説（2行） */
 const solveLines = (e1, e2, nm = XY) => {
@@ -77,17 +79,17 @@ const subLines = (G) => {
 };
 
 // ── 連立方程式のつくりかた（どれも、解 sol を先に決める）────────────────────
-/** 代入法が向く式  v＝m・u＋k  と  px+qy＝c
+/** 代入法が向く式  v＝m・u＋k  と  px+qy＝c（p は正、c は正。ふつうは解が正の数）
  *  strict：加減法の手間が少なくならない形（書きなおした式で、x の係数も y の係数も、同じでも反対でもない） */
 const genSub = (r, o = {}) => {
-  for (let n = 0; n < 8000; n++) {
+  for (let n = 0; n < 20000; n++) {
     const v = pick(r, o.vars || XY), u = v === "x" ? "y" : "x";
     const m = pick(r, o.m || [1, 2, 3, 4, -1, -2, -3]), k = pick(r, o.k || NZ(-9, 9));
-    const u0 = r(o.lo || 1, o.hi || 9), v0 = m * u0 + k;
-    if (v0 === 0 || v0 === u0 || Math.abs(v0) > (o.vmax || 25) || (o.pos && v0 < 1)) continue;
+    const u0 = (o.neg && r(1, 100) <= o.neg ? -1 : 1) * r(o.lo || 1, o.hi || 9), v0 = m * u0 + k;
+    if (v0 === 0 || v0 === u0 || Math.abs(v0) > (o.vmax || 25) || (!o.neg && v0 < 1)) continue;
     const sol = v === "y" ? [u0, v0] : [v0, u0];
-    const p = pick(r, o.p || NZ(-5, 5)), q = pick(r, o.q || NZ(-5, 5)), c = p * sol[0] + q * sol[1];
-    if (Math.abs(c) > 150) continue;
+    const p = pick(r, o.p || R(1, 5)), q = pick(r, o.q || NZ(-5, 5)), c = p * sol[0] + q * sol[1];
+    if (Math.abs(c) > 150 || c === 0 || (!o.neg && c < 1) || gcd3(p, q, c) !== 1) continue;
     if (o.strict) {
       if (v === "y" ? (Math.abs(p) === Math.abs(m) || Math.abs(q) === 1) : (Math.abs(p) === 1 || Math.abs(q) === Math.abs(m))) continue;
     }
@@ -96,34 +98,37 @@ const genSub = (r, o = {}) => {
     const s = solve2(subE, other);
     if (s[0][0] !== sol[0] || s[1][0] !== sol[1]) throw new Error("genSub の解が合わない");
     const t1 = `${v}=${J(coefVar(m, u), String(k))}`, t2 = eqT(other);
-    return { kind: "sub", e: r(1, 10) <= 7 ? [subE, other] : [other, subE], tex: null, t1, t2, sol, sub: { v, u, m, k }, other, subE, first: null };
+    return { kind: "sub", e: r(1, 10) <= 7 ? [subE, other] : [other, subE], tex: null, t1, t2, sol, sub: { v, u, m, k }, other, subE };
   }
   throw new Error("genSub が作れない");
 };
-/** 加減法が向く式  ある文字の係数が同じ（反対）。strict：どの係数も 1 でない */
+/** 加減法が向く式  ある文字の係数が同じ（反対）。x の係数は正。strict：どの係数も 1 でない */
 const genAdd = (r, o = {}) => {
   const lo = o.strict ? 2 : 1;
-  for (let n = 0; n < 8000; n++) {
-    const col = r(0, 1), u = r(lo, o.umax || 6), same = r(0, 1) === 1;
-    const v1 = sg(r) * r(lo, o.vmax || 7), v2 = sg(r) * r(lo, o.vmax || 7);
+  for (let n = 0; n < 20000; n++) {
+    const same = r(0, 1) === 1, col = same ? r(0, 1) : 1;      // 反対の符号にするのは y の係数だけ（x の係数はいつも正）
+    const u = r(lo, o.umax || 6);
+    const v1 = col === 0 ? sg(r) * r(lo, o.vmax || 7) : r(lo, o.vmax || 7), v2 = col === 0 ? sg(r) * r(lo, o.vmax || 7) : r(lo, o.vmax || 7);
     if (Math.abs(v1) === Math.abs(v2)) continue;
     const sol = solPick(r, o.lo || 1, o.hi || 9, o.neg || 0);
-    const e1 = col === 0 ? [u, v1, 0] : [v1, u, 0], e2 = col === 0 ? [same ? u : -u, v2, 0] : [v2, same ? u : -u, 0];
+    const e1 = col === 0 ? [u, v1, 0] : [v1, u, 0], e2 = col === 0 ? [u, v2, 0] : [v2, same ? u : -u, 0];
     e1[2] = e1[0] * sol[0] + e1[1] * sol[1]; e2[2] = e2[0] * sol[0] + e2[1] * sol[1];
-    if (Math.abs(e1[2]) > 150 || Math.abs(e2[2]) > 150 || !uniq(e1, e2)) continue;
+    if (!o.neg && (e1[2] < 1 || e2[2] < 1)) continue;
+    if (Math.abs(e1[2]) > 150 || Math.abs(e2[2]) > 150 || !uniq(e1, e2) || gcd3(...e1) !== 1 || gcd3(...e2) !== 1) continue;
     return { kind: "add", e: [e1, e2], tex: [eqT(e1), eqT(e2)], sol, col, same, wv: XY[col], ov: XY[1 - col] };
   }
   throw new Error("genAdd が作れない");
 };
-/** どちらの文字も、片方の式だけを何倍かしてもそろわない式（両方の式を何倍かする） */
+/** どちらの文字も、片方の式だけを何倍かしてもそろわない式（両方の式を何倍かする）。x の係数は正 */
 const genMult = (r, o = {}) => {
-  for (let n = 0; n < 20000; n++) {
-    const a1 = sg(r) * r(2, o.cmax || 9), a2 = sg(r) * r(2, o.cmax || 9), b1 = sg(r) * r(2, o.cmax || 9), b2 = sg(r) * r(2, o.cmax || 9);
+  for (let n = 0; n < 40000; n++) {
+    const a1 = r(2, o.cmax || 9), a2 = r(2, o.cmax || 9), b1 = sg(r) * r(2, o.cmax || 9), b2 = sg(r) * r(2, o.cmax || 9);
     const bad = (p, q) => Math.abs(p) === Math.abs(q) || Math.abs(p) % Math.abs(q) === 0 || Math.abs(q) % Math.abs(p) === 0;
     if (bad(a1, a2) || bad(b1, b2)) continue;
     const sol = solPick(r, 1, o.hi || 9, o.neg || 0);
     const e1 = [a1, b1, a1 * sol[0] + b1 * sol[1]], e2 = [a2, b2, a2 * sol[0] + b2 * sol[1]];
-    if (Math.abs(e1[2]) > 200 || Math.abs(e2[2]) > 200 || !uniq(e1, e2)) continue;
+    if (!o.neg && (e1[2] < 1 || e2[2] < 1)) continue;
+    if (Math.abs(e1[2]) > 200 || Math.abs(e2[2]) > 200 || !uniq(e1, e2) || gcd3(...e1) !== 1 || gcd3(...e2) !== 1) continue;
     return { kind: "mult", e: [e1, e2], tex: [eqT(e1), eqT(e2)], sol };
   }
   throw new Error("genMult が作れない");
@@ -131,9 +136,10 @@ const genMult = (r, o = {}) => {
 /** x＋by＝c と ax−y＝d（x の係数が 1、y の係数が −1 の式）：どちらの方法でも同じくらい */
 const genPM1 = (r, o = {}) => {
   for (let n = 0; n < 5000; n++) {
-    const b = pick(r, o.b || [2, 3, 4, 5, -2, -3]), a = pick(r, o.a || [2, 3, 4, 5]);
+    const b = pick(r, o.b || [2, 3, 4, 5]), a = pick(r, o.a || [2, 3, 4, 5]);
     const sol = solPick(r, 1, o.hi || 9, o.neg || 0);
     const e1 = [1, b, sol[0] + b * sol[1]], e2 = [a, -1, a * sol[0] - sol[1]];
+    if (!o.neg && (e1[2] < 1 || e2[2] < 1)) continue;
     if (Math.abs(e1[2]) > 100 || !uniq(e1, e2)) continue;
     return { kind: "pm1", e: [e1, e2], tex: [eqT(e1), eqT(e2)], sol, sub: { v: "x", u: "y", m: -b, k: e1[2] }, other: e2 };
   }
@@ -177,7 +183,7 @@ export const UNITS = [
       // ───────── 1 基礎 ─────────
       1: [
         // 07d01a 代入法で解く（y＝x+5、3x+y＝21）
-        t("07d01a", (r) => solveQ(r, SUB(r, { m: [1, 2, 3, -1], k: [1, 2, 3, 4, 5, -1, -2, -3], pos: true, q: [1, 1, 2, -1, 3], p: [1, 2, 3, 4], lo: 1, hi: 8 }), "代入法で", "「$y=\\cdots$」の式を、もう一方の式の $y$ に代入しよう。かっこをつけるのを忘れずに。")),
+        t("07d01a", (r) => solveQ(r, SUB(r, { m: [1, 2, 3, -1], k: [1, 2, 3, 4, 5, -1, -2, -3], pos: true, q: [1, 1, 2, -1, 3], p: [1, 2, 3, 4], lo: 1, hi: 8 }), "代入法で", "「$x=\\cdots$」や「$y=\\cdots$」の形の式を、もう一方の式の同じ文字に代入しよう。かっこをつけるのを忘れずに。")),
         // 07d01b 加減法で解く（2x+5y＝19、2x−3y＝11）
         t("07d01b", (r) => solveQ(r, genAdd(r, { umax: 5, vmax: 6 }), "加減法で", "係数がそろっている文字を、たすかひくかして消去しよう。")),
         // 07d02 同じ連立方程式を、加減法と代入法の2通りで解く（x+2y＝16、3x−y＝13）
@@ -208,27 +214,27 @@ export const UNITS = [
             const texts = [good, ...bads].map(inl);
             if (new Set(texts).size < 4) continue;
             const ans = inl(good);
-            const why = (G) => (G.kind === "sub" ? `${TX(G.t1)} のように ${G.sub.v}＝… の式があるので、そのまま代入できる` : `${G.wv} の係数が${G.same ? "同じ" : "反対"}なので、${G.same ? "ひく" : "たす"}だけで ${G.wv} が消える`);
+            const why = (G) => (G.kind === "sub" ? `${TX(G.t1)} のように ${G.sub.v}＝… の式があり、そのまま代入できる` : `${G.wv} の係数が${G.same ? "同じ" : "反対"}で、${G.same ? "ひく" : "たす"}だけで ${G.wv} が消える`);
             return {
               q: `次の連立方程式のうち、${wantSub ? "加減法よりも代入法" : "代入法よりも加減法"}のほうが、少ない手間で解けるものはどれか。`,
               ans,
               choices: choices4(r, ans, bads.map(inl)),
-              hint: "式の形をよく見よう。$y=\\cdots$ や $x=\\cdots$ の形の式はある？ 係数がそろっている文字はある？",
-              steps: [`${ans} は、${why(good)}ので、${wantSub ? "代入法" : "加減法"}が楽。`, `ほかの 3つは、${wantSub ? "係数がそろった文字があり、たす（ひく）だけで消去できる" : "y＝… の形の式があり、そのまま代入できる"}ので、${wantSub ? "加減法" : "代入法"}のほうが楽。`],
+              hint: "加減法と代入法は、それぞれ、どんな形の式のときに手間が少なくなったか、思い出そう。",
+              steps: [`${ans} は、${why(good)}。だから、${wantSub ? "代入法" : "加減法"}が楽。`, `ほかの 3つは、${wantSub ? "係数がそろった文字があり、たす（ひく）だけで消去できる" : "y＝… や x＝… の形の式があり、そのまま代入できる"}ので、${wantSub ? "加減法" : "代入法"}のほうが楽。`],
             };
           }
           throw new Error("07d03 が作れない");
         }),
         // 07x03a 演習（3）①③ 解きくらべ（代入法が向く式：y＝2x−4、x＝2y−5）
-        t("07x03a", (r) => solveQ(r, SUB(r, { strict: true, hi: 8 }), "", "$y=\\cdots$（$x=\\cdots$）の式があるときは、そのまま代入すると楽。")),
+        t("07x03a", (r) => solveQ(r, SUB(r, { strict: true, hi: 8 }), "", "式の形をよく見よう。そのまま代入できる式はあるかな？")),
         // 07x03b 演習（3）② 解きくらべ（加減法が向く式：3x+4y＝28、5x−4y＝36）
-        t("07x03b", (r) => solveQ(r, genAdd(r, { strict: true, umax: 6, vmax: 6 }), "", "係数が同じ（または反対）の文字を、ひく（たす）だけで消去できるよ。")),
+        t("07x03b", (r) => solveQ(r, genAdd(r, { strict: true, umax: 6, vmax: 6 }), "", "式の形をよく見よう。係数が同じ（または反対）の文字はあるかな？ たす（ひく）だけで消せるのは、どちらの文字？")),
         // 07x03c 演習（3）④ 解きくらべ（どちらの文字も、両方の式を何倍かする：3x+4y＝29、2x−3y＝8）
-        t("07x03c", (r) => solveQ(r, genMult(r, { cmax: 6 }), "", "係数がそろっていない。両方の式を何倍かして、1つの文字の係数の絶対値をそろえよう。")),
+        t("07x03c", (r) => solveQ(r, genMult(r, { cmax: 6 }), "", "消したい文字の係数の絶対値を、どうすればそろえられるかな？ 片方の式を何倍かするだけで、そろうだろうか。")),
         // 07q01 向いている方法で解く（代入法が向く式）
-        t("07q01", (r) => solveQ(r, SUB(r, { strict: true, hi: 9, k: NZ(-9, 9) }), "向いている方法で", "式の形を見て、手間が少ない方法を選ぼう。$y=\\cdots$ の式があるね。")),
+        t("07q01", (r) => solveQ(r, SUB(r, { strict: true, hi: 9, k: NZ(-9, 9) }), "向いている方法で", "式の形を見て、手間が少ない方法を選ぼう。そのまま代入できる式はあるかな？")),
         // 07q02 向いている方法で解く（加減法が向く式）
-        t("07q02", (r) => solveQ(r, genAdd(r, { strict: true, umax: 6, vmax: 7 }), "向いている方法で", "式の形を見て、手間が少ない方法を選ぼう。同じ係数の文字はないかな？")),
+        t("07q02", (r) => solveQ(r, genAdd(r, { strict: true, umax: 6, vmax: 7 }), "向いている方法で", "式の形を見て、手間が少ない方法を選ぼう。係数が同じ（反対）の文字はないかな？")),
         // 07q03 向いている方法と理由を選ぶ
         t("07q03", (r) => {
           const G = r(0, 1) ? SUB(r, { strict: true, hi: 8 }) : genAdd(r, { strict: true });
@@ -246,7 +252,7 @@ export const UNITS = [
             q: `連立方程式 ${cases2(G.tex[0], G.tex[1])} を解く。加減法と代入法のどちらが向いているか。理由として正しいものを選ぼう。`,
             ans,
             choices: choices4(r, ans, wrongs.filter((x) => x !== ans)),
-            hint: "式の形をよく見よう。$y=\\cdots$ や $x=\\cdots$ の形の式はある？ 係数が同じ（反対）の文字はある？",
+            hint: "加減法と代入法は、それぞれ、どんな形の式のときに手間が少なくなったか、思い出そう。",
             steps: G.kind === "sub"
               ? [`${TX(G.t1)} のように ${G.sub.v}＝… の形の式がある。`, `x の係数も y の係数も、同じでも反対でもないので、加減法ではそろえる手間がかかる。`, `だから、「${ans}」`]
               : [`${G.wv} の係数は ${G.e[0][G.col]} と ${G.e[1][G.col]} で、${G.same ? "同じ" : "反対の符号"}。${G.ov} の係数はそろっていない。`, `${G.same ? "ひく" : "たす"}だけで ${G.wv} が消える。${"x＝… や y＝… の形の式はないので、代入するには式を直す手間がかかる。"}`, `だから、「${ans}」`],
@@ -271,7 +277,7 @@ export const UNITS = [
               q: `次の ①〜③ の連立方程式のうち、加減法よりも代入法のほうが少ない手間で解けるものは、いくつあるか。\n①　${inl(gs[0])}\n②　${inl(gs[1])}\n③　${inl(gs[2])}`.replace(/\n/g, "　"),
               ans: k,
               unit: "つ",
-              hint: "式の形を見分けよう。$y=\\cdots$ や $x=\\cdots$ の形の式がある組は？ 係数がそろっている組は？",
+              hint: "加減法と代入法は、それぞれ、どんな形の式のときに手間が少なくなったか、思い出して、1組ずつ見分けよう。",
               steps: [`①　${mark(gs[0])}が楽。`, `②　${mark(gs[1])}が楽。`, `③　${mark(gs[2])}が楽。`, `代入法が楽なのは ${k} つ。`],
             };
           }
@@ -292,9 +298,9 @@ export const UNITS = [
       // ───────── 4 入試レベル ─────────
       4: [
         // 07d06a x＝4y−9 の代入法（入試）
-        t("07d06a", (r) => solveQ(r, SUB(r, { vars: ["x", "y"], m: [3, 4, 5, -2, -3], k: NZ(-12, 12), p: [1, 2, 3, 4, 5, -2, -3], q: [-5, -4, -3, -2, 2, 3, 4, 5], hi: 9, vmax: 40, strict: true }), "", "「$x=\\cdots$（$y=\\cdots$）」の式を、もう一方の式に代入しよう。かっこをはずすときの符号に注意。")),
+        t("07d06a", (r) => solveQ(r, SUB(r, { vars: ["x", "y"], m: [3, 4, 5, -2, -3], k: NZ(-12, 12), p: [1, 2, 3, 4, 5], q: [-5, -4, -3, -2, 2, 3, 4, 5], hi: 9, vmax: 40, strict: true }), "", "「$x=\\cdots$（$y=\\cdots$）」の式を、もう一方の式に代入しよう。かっこをはずすときの符号に注意。")),
         // 07d06b 両方の式を何倍かする加減法（7x−4y＝36、3x+5y＝49）
-        t("07d06b", (r) => solveQ(r, genMult(r, { cmax: 9 }), "", "どちらの文字も、片方の式を何倍かするだけではそろわない。両方の式を何倍かして、1つの文字の係数の絶対値をそろえよう。")),
+        t("07d06b", (r) => solveQ(r, genMult(r, { cmax: 9 }), "", "消す文字を決めて、その文字の係数の絶対値をそろえよう。片方の式を何倍かするだけで、そろうかな？")),
         // 07d07 2組の連立方程式の解が同じとき、a、b
         t("07d07", (r) => {
           for (let n = 0; n < 5000; n++) {
@@ -302,7 +308,7 @@ export const UNITS = [
             if (a === b) continue;
             const f1 = [pick(r, [1, 2, 3]), pick(r, [-3, -2, -1, 1, 2]), 0], f2 = [pick(r, [1, 2, 3]), pick(r, [-2, -1, 1, 2, 3]), 0];
             f1[2] = f1[0] * sol[0] + f1[1] * sol[1]; f2[2] = f2[0] * sol[0] + f2[1] * sol[1];
-            if (!uniq(f1, f2)) continue;
+            if (f1[2] < 1 || f2[2] < 1 || !uniq(f1, f2) || gcd3(...f1) !== 1 || gcd3(...f2) !== 1) continue;
             const c2 = a * sol[0] - b * sol[1], c4 = b * sol[0] + a * sol[1];
             if (!uniq(f1, [a, -b, c2]) || !uniq(f2, [b, a, c4])) continue;     // どちらの組も、解が1つに決まる
             const rows = [[sol[0], -sol[1], c2], [sol[1], sol[0], c4]];
@@ -324,31 +330,33 @@ export const UNITS = [
           throw new Error("07d07 が作れない");
         }),
         // 07q05 チャレンジ 7x−5y＝2、4x+3y＝48
-        t("07q05", (r) => solveQ(r, genMult(r, { cmax: 9, hi: 9, neg: 10 }), "", "どちらの文字も、片方の式を何倍かするだけではそろわない。両方の式を何倍かして、1つの文字を消去しよう。")),
+        t("07q05", (r) => solveQ(r, genMult(r, { cmax: 9, hi: 9, neg: 10 }), "", "消す文字を決めて、その文字の係数の絶対値をそろえよう。片方の式を何倍かするだけで、そろうかな？")),
       ],
     },
   }),
 ];
 
-/** 07d05：加減法で、何倍かする回数が少なくてすむ消去のしかた（楽な方の文字の係数は、一方が他方の整数倍） */
+/** 07d05：加減法で、何倍かする回数が少なくてすむ消去のしかた（楽な方の文字の係数は、一方が他方の整数倍）。x の係数は正 */
 function genProc(r) {
-  for (let n = 0; n < 8000; n++) {
-    const col = r(0, 1), f = r(2, 4), km = r(2, 3), same = r(0, 1) === 1, bigAt = r(0, 1), s1 = sg(r);
+  for (let n = 0; n < 20000; n++) {
+    const col = r(0, 1), f = r(2, 4), km = r(2, 3), bigAt = r(0, 1);
+    const same = col === 0 ? true : r(0, 1) === 1, s1 = col === 0 ? 1 : sg(r);
     const ab = bigAt === 0 ? [km * f, f] : [f, km * f];
     const easy = [ab[0] * s1, ab[1] * (same ? s1 : -s1)];
-    const h1 = sg(r) * r(2, 7), h2 = sg(r) * r(2, 7);
+    const hs = col === 0 ? sg(r) : 1;                      // もう一方の列（x の係数のときは正、y の係数のときは符号は自由）
+    const h1 = hs * r(2, 7), h2 = (col === 0 ? sg(r) : 1) * r(2, 7);
     const dv = (p, q) => Math.abs(p) % Math.abs(q) === 0 || Math.abs(q) % Math.abs(p) === 0;
     if (dv(h1, h2)) continue;
     const sol = solPick(r, 1, 9);
     const e1 = col === 0 ? [easy[0], h1, 0] : [h1, easy[0], 0], e2 = col === 0 ? [easy[1], h2, 0] : [h2, easy[1], 0];
     e1[2] = e1[0] * sol[0] + e1[1] * sol[1]; e2[2] = e2[0] * sol[0] + e2[1] * sol[1];
-    if (Math.abs(e1[2]) > 100 || Math.abs(e2[2]) > 100 || !uniq(e1, e2)) continue;
+    if (e1[2] < 1 || e2[2] < 1 || e1[2] > 100 || e2[2] > 100 || !uniq(e1, e2) || gcd3(...e1) !== 1 || gcd3(...e2) !== 1) continue;
     const E = [e1, e2], small = ab[0] < ab[1] ? 0 : 1, big = 1 - small, nm = XY;
     const op = same ? "ひく" : "たす", opx = same ? "たす" : "ひく";
     const L = lcm(Math.abs(h1), Math.abs(h2)), m1 = L / Math.abs(h1), m2 = L / Math.abs(h2), opH = (h1 > 0) === (h2 > 0) ? "ひく" : "たす";
     const optA = (c, i, m, j, o) => `${nm[c]} を消去する（${lab(i)}を ${m} 倍して、${lab(j)}と${o}）`;
     const optB = (c, ma, mb, o) => `${nm[c]} を消去する（①を ${ma} 倍、②を ${mb} 倍して、${o}）`;
-    // 本当に消えるか（正解と、「楽でない正解」W1 は消える。W2〜W4 は消えない）
+    // 本当に消えるか（正解と、「楽でない正解」W1 は消える。ほかは消えない）
     const resid = (c, i, m, j, o) => m * E[i][c] + (o === "たす" ? 1 : -1) * E[j][c];
     const ans = optA(col, small, km, big, op);
     if (resid(col, small, km, big, op) !== 0) throw new Error("07d05 の正解が消えない");
@@ -364,8 +372,8 @@ function genProc(r) {
     return {
       tex: [eqT(e1), eqT(e2)], ans, wrongs,
       steps: [
-        `${ev} の係数は ${e1[col]} と ${e2[col]}。${lab(small)}を ${km} 倍すれば、絶対値がそろう。${ev} を消去するのは、式を倍にするのが 1 つですむ。`,
-        `${hv} の係数は ${e1[1 - col]} と ${e2[1 - col]} で、片方の式を何倍かしてもそろわない。${hv} を消去するには、①、② の両方を倍にしなければならない。`,
+        `${ev} の係数は ${fm(e1[col])} と ${fm(e2[col])}。${lab(small)}を ${km} 倍すれば、絶対値がそろう。${ev} を消去するのは、式を倍にするのが 1 つですむ。`,
+        `${hv} の係数は ${fm(e1[1 - col])} と ${fm(e2[1 - col])} で、片方の式を何倍かしてもそろわない。${hv} を消去するには、①、② の両方を倍にしなければならない。`,
         `だから、「${ans}」。`,
       ],
     };

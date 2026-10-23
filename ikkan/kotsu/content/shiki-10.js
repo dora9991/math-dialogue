@@ -132,8 +132,9 @@ const solveChoices = (r, L, R, v, o = {}) => {
   const dvn = (map && map[v]) || v, form = (p) => tx(`${dvn}=${ftex(p, ord, map)}`);
   const ans = form(info.sol);
   const ws = take3(r, wrongGroups(info.rhs, info.C, info.sol), (w) => !peq(w, info.sol));
-  return { ans, choices: choices4(r, ans, ws.map(form)), steps: explain(L, R, v, ord, map), eq: eqTex(L, R, ord, map), dvn };
+  return { ans, choices: choices4(r, ans, ws.map(form)), steps: explain(L, R, v, ord, map), eq: eqTex(L, R, ord, map), dvn, hint: isUnit1(info.C) ? HINT_MOVE : HINT_SOLVE };
 };
+const HINT_MOVE = "解く文字をふくむ項だけを左辺に残す。ほかの項は、移項するとき符号がどうなる？";
 const HINT_SOLVE = "解く文字をふくむ項だけを左辺に残す。ほかの項は、移項するとき符号がどうなる？ 文字にかかる数は、両辺をどうすればよい？";
 
 // ── 数値で確かめる4択（式が分数の形などで、多項式の道具では扱いにくいもの）──────
@@ -178,7 +179,7 @@ export const UNITS = [
           return {
             q: `等式 $${s.eq}$ を、$${u}$ について解くと？`,
             ans: s.ans, choices: s.choices,
-            hint: HINT_SOLVE,
+            hint: s.hint,
             steps: s.steps,
           };
         }),
@@ -216,7 +217,7 @@ export const UNITS = [
           return {
             q: `等式 $${s.eq}$ を、$${v}$ について解くと？`,
             ans: s.ans, choices: s.choices,
-            hint: HINT_SOLVE,
+            hint: s.hint,
             steps: s.steps,
           };
         }),
@@ -235,7 +236,7 @@ export const UNITS = [
           return {
             q: `等式 $${s.eq}$ を、$${v}$ について解くと？`,
             ans: s.ans, choices: s.choices,
-            hint: HINT_SOLVE,
+            hint: s.hint,
             steps: s.steps,
           };
         }),
@@ -263,7 +264,7 @@ export const UNITS = [
             q: `${n}回のテストの得点を ${names.map((x) => `$${x}$`).join("点、")}点、平均点を $m$ 点とすると、$${s.eq}$ と表される。この等式を、$${v}$ について解くと？`,
             ans: s.ans, choices: s.choices,
             hint: "分数の形の等式は、両辺に分母の数をかけて、分母をはらってから、移項しよう。",
-            steps: s.steps,
+            steps: [`両辺に ${n} をかけて、分母をはらう。$${n}m=${names.join("+")}$`, `$${v}$ 以外の項を移項する（符号がかわる）。$${v}=${ftex(solve(L, R, v).sol, ["m", ...names])}$`],
           };
         }),
         // 10q02 3x＋2y＝12 を y について解く
@@ -274,7 +275,7 @@ export const UNITS = [
           return {
             q: `等式 $${s.eq}$ を、$${w}$ について解くと？`,
             ans: s.ans, choices: s.choices,
-            hint: HINT_SOLVE,
+            hint: s.hint,
             steps: s.steps,
           };
         }),
@@ -347,7 +348,7 @@ export const UNITS = [
           return {
             q: `${S.stmt} これを表す等式 $${s.eq}$ を、$b$ について解くと？`,
             ans: s.ans, choices: s.choices,
-            hint: HINT_SOLVE,
+            hint: s.hint,
             steps: s.steps,
           };
         }),
@@ -429,8 +430,10 @@ export const UNITS = [
             steps: [
               `両辺に、${p} と ${q} の最小公倍数 ${lcmv} をかけて、$${mulP(mp, N1)}=${mulP(mq, N2)}$。`,
               `かっこをはずして、$${ptex(A)}=${ptex(B)}$。`,
-              `$x$ の項を左辺に、$y$ の項を右辺に移項して、$${ptex(poly([X, { x: 1 }]))}=${ptex(poly([qneg(Y), { y: 1 }]))}$。`,
-              `両辺を ${X[0]} でわって、$x=${g}y$。したがって、□ は ${g}。`,
+              X[0] === 1
+                ? `$x$ の項を左辺に、$y$ の項を右辺に移項して、$x=${g}y$。`
+                : `$x$ の項を左辺に、$y$ の項を右辺に移項して、$${ptex(poly([X, { x: 1 }]))}=${ptex(poly([qneg(Y), { y: 1 }]))}$。両辺を ${X[0]} でわって、$x=${g}y$。`,
+              `したがって、□ は ${g}。`,
             ],
           };
         }),
@@ -470,7 +473,7 @@ export const UNITS = [
             steps: [
               `$S=${F.S}$ を $h$ について解くと、$h=\\frac{S}{${F.Sden}}$。`,
               `$V=${F.V}$ の $h$ に代入して、$V=${F.Vlead}\\times\\frac{S}{${F.Sden}}$。`,
-              `約分して、$V=${qtex(Q(F.vc, F.sc))}S${F.fac}$。だから、□ は ${ans}。`,
+              `約分して、$V=${qtex(Q(F.vc, F.sc))}S${F.fac}$。だから、□ は $${qtex(Q(F.vc, F.sc))}$。`,
             ],
           };
         }),

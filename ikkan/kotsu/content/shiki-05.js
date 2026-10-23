@@ -70,9 +70,12 @@ const pick4 = (r, rtex, rval, cands, low = [], must = []) => {
     seen.add(c.tex);
     ws.push($(c.tex));
   };
+  const isBig = (c) => c.val && Object.values(c.val).some((q) => Math.abs(q[0]) > 100 || q[1] > 100);   // 数が大きすぎるものは、あとまわし
+  const isZero = (c) => c.val && Object.keys(c.val).length === 0;
+  const okc = cands.filter((c) => !isZero(c) && !isBig(c));
   must.forEach(add);
-  shuffle(r, cands).forEach(add);
-  if (ws.length < 3) shuffle(r, low).forEach(add);
+  shuffle(r, okc).forEach(add);
+  if (ws.length < 3) shuffle(r, [...low, ...cands.filter(isBig)].filter((c) => !isZero(c))).forEach(add);
   if (ws.length < 3) throw new Error(`誤答が足りない（${rtex}）`);
   return choices4(r, $(rtex), ws);
 };

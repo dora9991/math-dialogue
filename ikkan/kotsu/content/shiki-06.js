@@ -71,9 +71,12 @@ const pick4 = (r, rtex, rval, cands, low = [], must = []) => {
     seen.add(c.tex);
     ws.push($(c.tex));
   };
+  const isBig = (c) => c.val && Object.values(c.val).some((q) => Math.abs(q[0]) > 100 || q[1] > 100);   // 数が大きすぎるものは、あとまわし
+  const isZero = (c) => c.val && Object.keys(c.val).length === 0;
+  const okc = cands.filter((c) => !isZero(c) && !isBig(c));
   must.forEach(add);
-  shuffle(r, cands).forEach(add);
-  if (ws.length < 3) shuffle(r, low).forEach(add);
+  shuffle(r, okc).forEach(add);
+  if (ws.length < 3) shuffle(r, [...low, ...cands.filter(isBig)].filter((c) => !isZero(c))).forEach(add);
   if (ws.length < 3) throw new Error(`誤答が足りない（${rtex}）`);
   return choices4(r, $(rtex), ws);
 };
@@ -187,8 +190,9 @@ const fracForm = (E) => {
 };
 /** 式 E の 1項の係数を ±1 した式（誤答が足りないときの補い） */
 const perturbs = (E) => Object.keys(E).flatMap((k) => { const e = expsOfKey(k); return [padd(E, term(1, e)), padd(E, term(-1, e))]; });
-/** 文字のまとまり（letters）：[u, v] の 2文字 */
 const nz = (r, a, b) => rnz(r, a, b);
+/** 負の数にはかっこをつける */
+const brk = (n) => (n < 0 ? `(${n})` : String(n));
 
 // ── 多項式の次数（06d01・06q01） ───────────────────────────────
 const degQ = (r, nTerms, maxDeg) => {
@@ -212,7 +216,7 @@ const degQ = (r, nTerms, maxDeg) => {
     q: `次の多項式は、何次式か。${$(seqTex(ts))}`,
     ans: d,
     unit: "次式",
-    hint: "多項式の次数は、各項の次数のうち、どれを選んだものか思い出そう。",
+    hint: "各項の次数をくらべよう。多項式の次数は、そのうちのどれになるのだったかな。",
     steps: ["各項の次数を調べる。 " + ts.map(([c, e], i) => `${$(ptex(term(c, e)))} は ${ds[i]}次`).join("、"), `いちばん大きい次数は ${d} だから、${d}次式。`],
   };
 };
@@ -233,7 +237,7 @@ const likeQ = (r) => {
     { right: cu, alts: [g.pu[0] - g.pu[1], Math.abs(g.pu[0]) + Math.abs(g.pu[1]), -cu] },
     { right: cv, alts: [g.pv[0] - g.pv[1], Math.abs(g.pv[0]) + Math.abs(g.pv[1]), -cv] },
   ], build);
-  const mix = cu + cv !== 0 ? [poly([cu + cv, { [u]: 1, [v]: 1 }]), poly([cu + cv, { [u]: 1 }])] : [];   // ちがう文字の項まで、まとめてしまう
+  const mix = cu + cv !== 0 ? [poly([cu + cv, { [u]: 1, [v]: 1 }])] : [];   // ちがう文字の項まで、まとめてしまう
   const rt = ptex(E);
   return {
     q: `次の計算をしたときの答えは、どれか。${$(seqTex(ts))}`,
@@ -298,7 +302,7 @@ const divNumQ = (r) => {
   const [u, v] = pick(r, PAIRS);
   const g = retry(() => {
     const d = pick(r, [2, 3, 4, 5, 6, 8, 9, -2, -3, -4, -6, -8]), x = nz(r, -7, 7), y = nz(r, -7, 7);
-    return { d, x, y };
+    return d < 0 || x < 0 || y < 0 ? { d, x, y } : null;   // 符号のまちがいが、ありうる組だけ
   });
   const { d, x, y } = g, p1 = d * x, p2 = d * y;
   const P = poly([p1, { [u]: 1 }], [p2, { [v]: 1 }]), E = poly([x, { [u]: 1 }], [y, { [v]: 1 }]);
@@ -323,6 +327,7 @@ const fracSumQ = (r, op) => {
   const g = retry(() => {
     const [p, q] = pick(r, PQ), a1 = r(1, 3), b1 = nz(r, -3, 3), a2 = r(1, 3), b2 = nz(r, -3, 3), L = lcm(p, q);
     const k1 = L / p, k2 = L / q;
+    if (gcd(gcd(a1, b1), p) !== 1 || gcd(gcd(a2, b2), q) !== 1) return null;   // 分子が分母で約分できる分数は使わない
     return k1 * a1 + sg * k2 * a2 !== 0 && k1 * b1 + sg * k2 * b2 !== 0 ? { p, q, a1, b1, a2, b2, L, k1, k2 } : null;
   });
   const { p, q, a1, b1, a2, b2, L, k1, k2 } = g;
@@ -378,7 +383,7 @@ const monoProdQ = (r) => {
     ans: $(rt),
     choices: pick4(r, rt, E, wrongs.map(asCand), perturbs(E).map(asCand)),
     hint: "係数どうし、文字どうしをかけよう。同じ文字のかけ算は、指数がどうなるかな。",
-    steps: ["係数どうし、文字どうしをかける。 " + $(`${ptexp(A)} \\times ${ptexp(B)} = (${c1}) \\times ${c2 < 0 ? `(${c2})` : c2} \\times ${L1} \\times ${L2}`), $(`= ${rt}`)],
+    steps: ["係数どうし、文字どうしをかける。 " + $(`${ptexp(A)} \\times ${ptexp(B)} = ${brk(c1)} \\times ${brk(c2)} \\times ${L1} \\times ${L2}`), $(`= ${rt}`)],
   };
 };
 
@@ -450,18 +455,19 @@ const magicQ = (r) => {
   const arr = `\\begin{array}{|c|c|c|}\\hline ${[0, 1, 2].map((i) => [0, 1, 2].map((j) => cell(3 * i + j)).join(" & ")).join(" \\\\ \\hline ")} \\\\ \\hline\\end{array}`;
   const ac = ptex(ansP);
   const sum = (ks) => ks.map((k) => ptex(grid[k])).join("+");
-  const steps = [`ななめ（左上から右下）の和が、すべての列の和になる。 ${$(`${sum([0, 4, 8])} = ${ptex(S)}`)}`];
-  const via = { 3: [[4, 5]], 7: [[6, 8]], 2: [[4, 6]], 1: [[4, 6], [0, 2]] }[idx];
+  const steps = [`左上から右下へのななめの和が、どの列の和でもある。 ${$(`${sum([0, 4, 8])} = ${ptex(S)}`)}`];
+  const via = { 3: [[4, 5], "中の段"], 7: [[6, 8], "下の段"], 2: [[4, 6], "右上から左下へのななめ"] }[idx];
   if (idx === 1) {
-    steps.push(`右上のマス（ななめ） ${$(`${ptex(S)} - (${sum([4, 6])}) = ${ptex(grid[2])}`)}`);
-    steps.push(`上の段： ${$(`${ptex(S)} - (${sum([0, 2])}) = ${ac}`)}`);
+    steps.push(`まず、右上のマスを、右上から左下へのななめで求める。 ${$(`${ptex(S)} - (${sum([4, 6])}) = ${ptex(grid[2])}`)}`);
+    steps.push(`上の段から、 ${$(`${ptex(S)} - (${sum([0, 2])}) = ${ac}`)}`);
   } else {
-    steps.push(`${$(`${ptex(S)} - (${sum(via[0])}) = ${ac}`)}`);
+    steps.push(`${via[1]}から、 ${$(`${ptex(S)} - (${sum(via[0])}) = ${ac}`)}`);
   }
   // ありがちなまちがい：となりあう2マスのかわりに、ちがう2マスの式をひく
   const wrongs = [];
   for (let i = 0; i < KNOWN.length; i++) for (let j = i + 1; j < KNOWN.length; j++) wrongs.push(psub(S, padd(grid[KNOWN[i]], grid[KNOWN[j]])));
-  const near = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1]].map(([da, db]) => poly([(Object.values(ansP).length && (ansP[`${u}1`] ? ansP[`${u}1`][0] : 0)) + da, { [u]: 1 }], [(ansP[`${v}1`] ? ansP[`${v}1`][0] : 0) + db, { [v]: 1 }]));
+  const cu = ansP[`${u}1`] ? ansP[`${u}1`][0] : 0, cv = ansP[`${v}1`] ? ansP[`${v}1`][0] : 0;
+  const near = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [cv - cu, cu - cv]].map(([da, db]) => poly([cu + da, { [u]: 1 }], [cv + db, { [v]: 1 }]));
   const nonNegP = (p) => Object.values(p).every((c) => c[0] > 0) && pterms(p) >= 1;
   return {
     q: `3×3のマスに、縦・横・ななめに並んだ3つの式の和が、どれも等しくなるように式を入れる。□ のマスにも式が入る。？ のマスに入る式は、どれか。${$(arr)}`,
@@ -478,7 +484,6 @@ const reasonQ = (r, line, right, wrongs) => ({
   ans: right,
   choices: choices4(r, right, wrongs),
 });
-const brk = (v) => (v < 0 ? `(${v})` : String(v));
 const ER = (c, l) => $(ptex(term(c, { [l]: 1 })));   // 「5b」「-5b」のような 1つの項の TeX（$ つき）
 
 // 06d14a (3a+2b)−(4a−5b)＝3a+2b−4a−5b＝−a−3b
@@ -585,7 +590,7 @@ const coneQ = (r, numeric) => {
   const V = `${Vc[0] === 1 && Vc[1] === 1 ? "" : qtex(Vc)}\\pi ${u}^{2}${v}`;
   const steps = [
     "円錐の体積 ＝ 底面積 × 高さ ÷ 3 より、 " + $(`\\frac{1}{3} \\times \\pi \\times (${rad})^{2} \\times ${hei} = ${V}`),
-    "円柱の高さを " + $("h") + " cm とすると、 " + $(`\\pi \\times (${rad2})^{2} \\times h = ${V}`),
+    "円柱の高さを " + $("h") + " cm とすると、 " + $(`\\pi \\times ${s === 1 ? `${u}^{2}` : `(${rad2})^{2}`} \\times h = ${V}`),
   ];
   if (numeric) {
     const a = r(1, 4), b = r(1, 5);
@@ -648,7 +653,7 @@ export const UNITS = [
           const items = retry(() => {
             const p = pick(r, [2, 3, 5, 7]), q = pick(r, [2, 3, 4, 5]), c1 = r(4, 30);
             const res = qdiv(qmul([c1, 1], [q, 1]), [-p, 1]);
-            return res[1] === 1 && Math.abs(res[0]) <= 30 ? [it(null, c1, { [u]: 1, [v]: 1 }), it("/", [-p, q], { [u]: 1 })] : null;
+            return gcd(p, q) === 1 && res[1] === 1 && Math.abs(res[0]) <= 30 ? [it(null, c1, { [u]: 1, [v]: 1 }), it("/", [-p, q], { [u]: 1 })] : null;
           });
           if (!items) return { skip: true };
           return chainQ(r, items, "分数でわるときは、わる式の逆数をかけると考えよう。");

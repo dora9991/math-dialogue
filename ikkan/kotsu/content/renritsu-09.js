@@ -40,12 +40,12 @@ const hoursTex = (min) => fracTex(min, 60);
 //  [歩く速さ, 走る速さ]：最小公倍数が大きくならない組
 const WR = [[40, 120], [50, 150], [60, 180], [60, 120], [80, 240], [90, 180], [40, 100], [50, 100], [60, 150], [80, 200]];
 const PLACES = ["図書館", "駅", "学校", "公園", "体育館", "市民会館"];
-/** 合計の道のりが 1000〜4000 m になる場面。{ place, v1, v2, t1, t2, x, y, D, T } */
+/** 合計の道のりが 1000〜4000 m になる場面（歩いた道のり≠走った道のり、歩いた時間≠走った時間）。{ place, v1, v2, t1, t2, x, y, D, T } */
 function walkRunScene(r) {
   for (let i = 0; i < 50; i++) {
     const [v1, v2] = pick(r, WR), t1 = r(5, 20), t2 = r(3, 12);
     const x = v1 * t1, y = v2 * t2, D = x + y;
-    if (D < 1000 || D > 4000) continue;
+    if (D < 1000 || D > 4000 || x === y || t1 === t2) continue;   // 道のりが等しい・時間が等しいと、速さを入れちがえた式も成り立ってしまう
     return { place: pick(r, PLACES), v1, v2, t1, t2, x, y, D, T: t1 + t2 };
   }
   return null;

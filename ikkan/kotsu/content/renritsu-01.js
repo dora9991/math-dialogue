@@ -218,7 +218,7 @@ export const UNITS = [
             q: `2元1次方程式 ${E(e)} で、$x=${x0}$ のとき、$y$ の値は？`,
             ans: sb.other,
             hint: "$x$ の値を方程式に入れると、$y$ だけの方程式になる。",
-            steps: [`$x=${x0}$ を代入すると　$${sb.sub}$`, `$${a * x0}+y=${c}$　より　$y=${sb.other}$`],
+            steps: [`$x=${x0}$ を代入すると　$${sb.sub}$`, `${a === 1 ? "" : `$${a * x0}+y=${c}$　`}$y=${sb.other}$`],
           };
         })),
         // 01q02 x−y=4 の解でないものはどれか（4択）
@@ -259,7 +259,8 @@ export const UNITS = [
           const cands = [];
           for (let i = 0; i < 6; i++) { const u = mk(co()), w = bad(co()); cands.push(r(0, 1) ? [u, w] : [w, u]); }
           const show = ([u, w]) => SYS(u, w);
-          const wrongs = cands.filter(([u, w]) => !(sat(u, x0, y0) && sat(w, x0, y0)));
+          const wrongs = cands.filter(([u, w]) => !(sat(u, x0, y0) && sat(w, x0, y0)) && u[0] * w[1] - u[1] * w[0] !== 0);   // 解がない（平行な）組は、まぎらわしいので出さない
+          if (wrongs.length < 3) return null;
           const ex = wrongs[0], f = sat(ex[0], x0, y0) ? ex[1] : ex[0];
           return {
             q: `$x=${x0}$、$y=${y0}$ が解である連立方程式はどれか。`,
@@ -279,13 +280,13 @@ export const UNITS = [
           const sols = rows.filter((o) => o.ok).map((o) => [o.rem / a, o.y]);
           if (sols.length < 2 || sols.length > 5) return null;
           const count = r(0, 1) === 0;
-          const listing = rows.map((o) => `$y=${o.y}$ のとき ${o.ok ? `$x=${o.rem / a}$` : "$x$ は整数にならない"}`).join("、");
+          const listing = rows.filter((o) => o.ok).map((o) => `$y=${o.y}$ のとき $x=${o.rem / a}$`).join("、");
           return {
             q: count ? `$x$、$y$ がどちらも自然数のとき、2元1次方程式 ${E(e)} の解は、全部で何組あるか。` : `$x$、$y$ がどちらも自然数のとき、2元1次方程式 ${E(e)} の解のうち、$x$ の値がいちばん大きいものの、$x$ の値は？`,
             ans: count ? sols.length : sols[0][0],
             unit: count ? "組" : undefined,
             hint: "$y$ に 1、2、3、… を入れて、$x$ が自然数（1以上の整数）になるかを調べよう。",
-            steps: [`$y=1, 2, 3, \\cdots$ を順に入れて、$x$ が自然数になるものをさがす。`, `${listing}。`, `解は ${sols.map(([x, y]) => `$(x,\\ y)=(${x},\\ ${y})$`).join("、")} の ${sols.length} 組。`],
+            steps: [`$y=1, 2, 3, \\cdots$ を順に入れて、$x$ が自然数になるものをさがす。`, `$y=1, 2, \\cdots, ${rows.length}$ のうち、$x$ が自然数になるのは　${listing}。`, `解は ${sols.map(([x, y]) => `$(x,\\ y)=(${x},\\ ${y})$`).join("、")} の ${sols.length} 組。`],
           };
         })),
         // 01q03 x+y=7, 3x−y=1 の解を、ア〜ウから
@@ -301,7 +302,7 @@ export const UNITS = [
             q: `$x=${x0}$、$y=${y0}$ が、2元1次方程式 $ax${signedVar(p, "y")}=${c}$ の解であるとき、$a$ の値は？`,
             ans: a,
             hint: "解は、方程式に代入すると成り立つ。$x$、$y$ の値を入れて、$a$ についての方程式にしよう。",
-            steps: [`解だから、$x=${x0}$、$y=${y0}$ を代入すると　$${x0 === 1 ? "" : x0}a${smulNum(p, y0)}=${c}$`, `${sb.rest ? `$${sb.rest}$　` : ""}$a=${a}$`],
+            steps: [`解だから、$x=${x0}$、$y=${y0}$ を代入すると　$${x0 === 1 ? "" : x0}a${smulNum(p, y0)}=${c}$`, `$${coefVar(x0, "a")}${signed(p * y0)}=${c}$　${sb.rest ? `$${sb.rest}$　` : ""}$a=${a}$`],
           };
         })),
       ],
