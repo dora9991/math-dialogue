@@ -265,6 +265,8 @@ a.btn { text-decoration: none; }
 .logclip .ct b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .logdlg { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .lglist { display: flex; flex-direction: column; gap: 6px; width: 100%; max-height: 340px; overflow-y: auto; }
+.lgrow { display: flex; flex-direction: column; gap: 4px; }
+.lgvids { display: flex; flex-wrap: wrap; gap: 6px; padding-left: 12px; }
 .lg { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; text-align: left; background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 8px 12px; width: 100%; }
 .lg b { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .lgvs { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }

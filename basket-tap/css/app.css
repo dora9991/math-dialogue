@@ -172,6 +172,42 @@ body[data-view="live"] { overflow: hidden; }
 .menubtn span { font-size: 24px; font-weight: 800; }
 .menubtn small { font-size: 10px; color: var(--muted); margin-top: 2px; }
 
+/* 撮影中：上の帯の小さな映像（押すと撮影の画面）。録画中は赤いふちと点 */
+.cambtn { position: relative; flex: none; height: clamp(46px, 7.4vmin, 64px); aspect-ratio: var(--ar, 1.7778); max-width: 120px; padding: 0; border: 2px solid var(--line2); border-radius: 10px; background: #000; overflow: hidden; }
+.camthumb { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.cambtn .camdot { position: absolute; top: 4px; left: 4px; width: 9px; height: 9px; border-radius: 50%; background: #9aa3af; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.45); }
+.cambtn.rec { border-color: var(--bad); box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.35); }
+.cambtn.rec .camdot { background: #ef4444; animation: rec 1.6s ease-in-out infinite; }
+.short .cambtn { height: 40px; }
+/* 幅の狭いスマホで撮影中：上の帯を詰めて、カメラの映像の場所を空ける */
+@media (max-width: 430px) {
+  .cambtn { max-width: 34px; }
+  .lbar:has(.cambtn:not([hidden])) { gap: 4px; padding-left: 4px; padding-right: 4px; }
+  .lbar:has(.cambtn:not([hidden])) .menubtn { min-width: 38px; padding: 0 4px; }
+  .lbar:has(.cambtn:not([hidden])) .menubtn small { display: none; }
+  .lbar:has(.cambtn:not([hidden])) .clock { min-width: 0; padding: 0 7px; gap: 5px; }
+  .lbar:has(.cambtn:not([hidden])) .clock .recdot { width: 8px; height: 8px; }
+  .lbar:has(.cambtn:not([hidden])) .period { min-width: 36px; padding: 0 4px; }
+  .lbar:has(.cambtn:not([hidden])) .score { gap: 3px; }
+}
+/* 撮影の画面 */
+.camsheet .campv { display: block; width: 100%; max-height: 52vh; max-height: 52dvh; background: #000; border-radius: 12px; object-fit: contain; }
+.camstat { margin-top: 10px; font-weight: 800; font-size: 16px; font-variant-numeric: tabular-nums; }
+.camstat.rec { color: var(--bad); }
+.camacts { margin: 10px 0 4px; }
+.btn.recbtn { background: #dc2626; border-color: #dc2626; color: #fff; font-weight: 800; }
+.camnotes { margin: 10px 0 0; padding-left: 18px; }
+.camnotes li { margin: 3px 0; }
+/* スタート前の札の中の撮影 */
+.covercam { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 13.5px; font-weight: 700; }
+.covercam.rec span { color: var(--bad); }
+/* 撮影した動画の一覧 */
+.vlist { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.vitem { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: space-between; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; text-align: left; }
+.vitem .vt { display: flex; flex-direction: column; min-width: 0; }
+.vitem .vt small { color: var(--muted); font-size: 12px; }
+.vhead { margin: 10px 0 2px; font-size: 14px; }
+
 /* 2つのチーム：左右に並べる（lay-side）か、上下に重ねる（lay-stack）。どちらにするかは js の BT.planLayout が決める
    （すきま・ふちの数字は、core.js の BT.LAYOUT と合わせる） */
 .stagewrap { position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; }

@@ -102,6 +102,16 @@ eq([BT.eventText(g, BT.findEvent(g, 'e5'), true), BT.eventText(g, BT.findEvent(g
 const g2 = BT.importData(JSON.stringify(ex));
 ok(g2.events.length === g.events.length && g2.startedAt === g.startedAt && BT.score(g2).join() === '5,4', '書き出した JSON を読み込むと、同じ記録・得点');
 ok(BT.findEvent(g2, 'e5').team === null && BT.findEvent(g2, 'e6').team === null, '読み込んでも、チームなしの記録はチームなしのまま');
+{
+  // 撮影しながら記録した動画の情報（中身はブラウザの中。記録には、ファイル名・録画を始めた時刻・長さ）
+  const gv = JSON.parse(JSON.stringify(g));
+  gv.videos = [{ vid: 'va', n: 1, startedAt: T0 - 2150, endedAt: T0 + 600000, duration: 602.15, name: 'x_動画1.mp4', mime: 'video/mp4', w: 1280, h: 720, bytes: 123, status: 'done' }, { vid: 'vb', n: 2, startedAt: T0 + 700000, gone: true }];
+  ok(BT.summary(gv).videos === 1, '試合の一覧の「📹 動画 n本」は、この端末にある動画だけ');
+  const exv = BT.exportData(gv);
+  ok(exv.videos.length === 2 && exv.videos[0].startedAt === T0 - 2150 && exv.videos[0].name === 'x_動画1.mp4', '書き出す JSON に、動画の情報が入る');
+  const gi = BT.importData(JSON.stringify(Object.assign(exv, { videos: exv.videos.concat([{ vid: 'bad' }, null]) })));
+  ok(gi.videos.length === 2 && gi.videos.every((v) => v.gone) && gi.videos[0].duration === 602.15, '読み込んだ記録の動画は「この端末にはない」として残す（形の合わないものは捨てる）', gi.videos);
+}
 ok(g2.events.every((e) => /^e\d+$/.test(e.id)) && new Set(g2.events.map((e) => e.id)).size === g2.events.length, '読み込んだ記録の id は重ならない');
 const g3 = BT.importData({ format: 'basket-tap', teams: [{ name: 'A', color: 'red', players: [{ no: '７' }, { no: 'x' }] }], events: [{ id: 'e2', t: 1, type: 'fg2', team: 0, no: 7 }, { t: 2, type: 'reb', team: 1 }, { id: 'e2', t: 3, type: 'pass', team: 0 }, { t: -1, type: 'fg2' }, { t: 4, type: 'zzz' }] });
 ok(g3.events.length === 3 && new Set(g3.events.map((e) => e.id)).size === 3, '壊れた記録・知らない種類は飛ばし、id のかぶりは付け直す', g3.events.map((e) => e.id));

@@ -293,6 +293,22 @@ section('「バスケ タップ記録」の記録（読み込み・時刻あわ�
     ok(old.events[0].team === 0 && old.events[1].team === 1, 'チームのない得点は、自分のチームの得点にする（得点はチームなしにできない）');
   }
 
+  // 撮影しながら記録した動画（記録の videos）：録画を始めた時刻から、ぴったり合わせる
+  {
+    const gv = JSON.parse(JSON.stringify(game));
+    gv.videos = [{ vid: 'va', n: 1, startedAt: game.startedAt - 2150, duration: 600, name: 'バスケ記録_2026-10-19_1530_致遠館vs城南_動画1.mp4' },
+      { vid: 'vb', n: 2, startedAt: game.startedAt + 6530, duration: 300.4, name: 'バスケ記録_2026-10-19_1530_致遠館vs城南_動画2.mp4' }];
+    const lv = TL.parse(JSON.stringify(BT.exportData(gv)));
+    ok(lv.videos.length === 2 && lv.videos[1].startedAt === game.startedAt + 6530, '記録の videos（動画のファイル名・録画を始めた時刻・長さ）を読み込む');
+    const a1 = TL.videoAnchors(lv, lv.videos[0]);
+    ok(a1 && a1[0].t === 0 && a1[0].v === 2.15 && TL.toVideo(5, a1) === 7.15, '動画1（スタートの 2.15 秒前から録画）：記録の 0:00 ＝ 動画の 2.15 秒', a1);
+    const a2 = TL.videoAnchors(lv, lv.videos[1]);
+    ok(a2 && a2[0].t === 6.5 && Math.abs(TL.toVideo(20, a2) - 13.47) < 1e-9, '動画2（スタートの 6.53 秒後から）：記録の 20 秒 ＝ 動画の 13.47 秒', a2);
+    ok(TL.matchVideo(lv, 'バスケ記録_2026-10-19_1530_致遠館vs城南_動画2.mp4', 0) === lv.videos[1], '開いた動画を、ファイル名で見つける');
+    ok(TL.matchVideo(lv, 'IMG_0123.MOV', 600.8) === lv.videos[0], 'ファイル名が変わっていても、長さ（ほぼ同じ・1本だけ）で見つける');
+    ok(TL.matchVideo(lv, 'IMG_0123.MOV', 450) === null && TL.matchVideo(log, 'x.mp4', 600) === null, '長さも名前も合わなければ、見つけない（videos のない記録も）');
+  }
+
   // 時刻あわせ
   ok(TL.toVideo(10, []) === null, '合わせる前は、動画の時刻は決まらない');
   let A = TL.setAnchor([], 0, 12, true);

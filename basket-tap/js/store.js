@@ -63,9 +63,10 @@
   function myTeam() { return teams().find((t) => t.mine) || null; }
 
   /* ---------- 設定 ---------- */
-  /* names：選手の名前も出す / unknown：「？」（だれか分からないとき）の行を出す / sound：タップ音 / theme：画面の色 */
+  /* names：選手の名前も出す / unknown：「？」（だれか分からないとき）の行を出す / sound：タップ音 / theme：画面の色
+     camQuality：撮影の画質（'720' | '1080'）/ camAudio：録画に音も入れる */
   function prefs() {
-    const p = Object.assign({ sound: false, theme: 'auto', names: true, unknown: true }, readJSON(K.prefs) || {});
+    const p = Object.assign({ sound: false, theme: 'auto', names: true, unknown: true, camQuality: '720', camAudio: true }, readJSON(K.prefs) || {});
     delete p.actions;        // 前の版の「ボタンの組み合わせ」（いまは、選手ごとのボタンに決まっている）
     return p;
   }
