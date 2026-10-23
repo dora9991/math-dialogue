@@ -62,11 +62,27 @@
     root.scrollTo(0, 0);
   }
   function openGame(game) {
+    if (S.game && S.game.id !== game.id && camOn()) camClose();
     S.game = game;
     S.redo = [];
     BT.store.setCurrent(game.id);
     go('live');
     if (game.startedAt && !game.endedAt) { BT.ui.keepAwake(true); guard(); }
+    // 前回、録画の途中で閉じた動画があれば、そろっている所までで仕上げる
+    if (!camRec() && (game.videos || []).some((v) => v.status === 'recording') && BT.vstore.supported()) {
+      BT.camera.recover(game.id).then(async (list) => {
+        list.forEach(upsertVideo);
+        // 記録には「録画中」のまま残っているが、この端末ではもう仕上がっている動画（別の画面で止めた）・もうない動画
+        for (const v of game.videos || []) {
+          if (v.status !== 'recording' || list.some((x) => x.vid === v.vid)) continue;
+          const m = await BT.vstore.getVideo(v.vid).catch(() => null);
+          if (m && m.status === 'done') upsertVideo(m); else { v.status = 'done'; v.gone = true; }
+        }
+        save();
+        if (list.some((v) => !v.gone)) say('前回の録画を、閉じる前までの分で保存しました', 'ok', 5000);
+        if (S.L) updateLive();
+      }).catch(() => {});
+    }
   }
 
   /* ========== 試合の一覧 ========== */
@@ -113,9 +129,9 @@
   }
   function gameRow(g) {
     return h('div', { class: 'grow', dataset: { id: g.id } },
-      h('button', { class: 'gopen', onclick: () => resume(g.id) }, gameLine(g), h('small', { class: 'note' }, `${g.n}件の記録${g.endedAt ? '' : g.startedAt ? '・記録中' : ''}`)),
+      h('button', { class: 'gopen', onclick: () => resume(g.id) }, gameLine(g), h('small', { class: 'note' }, `${g.n}件の記録${g.videos ? `・📹 動画${g.videos}本` : ''}${g.endedAt ? '' : g.startedAt ? '・記録中' : ''}`)),
       h('button', { class: 'btn small', title: '書き出す', onclick: () => { const game = BT.store.loadGame(g.id); if (game) openExport(game); } }, '書き出す'),
-      h('button', { class: 'btn small danger', title: '消す', onclick: () => BT.ui.confirm('この試合を消しますか？', `${g.date} ${g.names[0]} ${g.score[0]} − ${g.score[1]} ${g.names[1]}（${g.n}件の記録）。消すと元に戻せません。書き出したファイルは残ります。`, '消す', () => { BT.store.deleteGame(g.id); renderHome(); BT.ui.toast('消しました', 'ok'); }, true) }, '消す'));
+      h('button', { class: 'btn small danger', title: '消す', onclick: () => BT.ui.confirm('この試合を消しますか？', `${g.date} ${g.names[0]} ${g.score[0]} − ${g.score[1]} ${g.names[1]}（${g.n}件の記録${g.videos ? `・撮影した動画${g.videos}本` : ''}）。消すと元に戻せません。書き出したファイル・保存した動画は残ります。`, '消す', () => { BT.store.deleteGame(g.id); if (BT.vstore.supported()) BT.vstore.removeGame(g.id).catch(() => {}); renderHome(); BT.ui.toast('消しました', 'ok'); }, true) }, '消す'));
   }
   function resume(id) {
     const g = BT.store.loadGame(id);
@@ -287,8 +303,12 @@
     L.start = h('button', { class: 'startbtn', id: 'btnStart', onclick: start }, '▶ スタート');
     L.period = h('button', { class: 'period', id: 'btnPeriod', 'aria-label': 'ピリオド', onclick: openPeriod }, '1Q');
     L.score = [0, 1].map((tm) => h('span', { class: 'sc', id: 'score' + tm, style: { '--tc': g.teams[tm].color, '--tink': BT.inkOn(g.teams[tm].color) } }, '0'));
+    // 撮影中は、カメラの小さな映像（押すと撮影の画面）
+    L.camThumb = h('video', { class: 'camthumb', muted: true, playsinline: true, autoplay: true });
+    L.camBtn = h('button', { class: 'cambtn', id: 'btnCam', hidden: true, 'aria-label': '撮影の画面を開く', onclick: openCamera }, L.camThumb, h('i', { class: 'camdot' }));
     const bar = h('header', { class: 'lbar' }, L.clock, L.start, L.period,
       h('div', { class: 'score', 'aria-label': '得点' }, L.score[0], h('span', { class: 'dash' }, '−'), L.score[1]),
+      L.camBtn,
       h('button', { class: 'menubtn', id: 'btnMenu', 'aria-label': 'メニュー', onclick: openMenu }, h('span', null, '≡'), h('small', null, 'メニュー')));
     const P = L.panelsEl = h('main', { class: 'panels' }, [0, 1].map(buildPanel));
     P.addEventListener('click', onPanelClick);
@@ -307,6 +327,7 @@
     V.append(L.root);
     updateLive();
     layoutLive();
+    updateCamUI();
   }
   function buildPanel(tm) {
     const g = S.game, t = g.teams[tm];
@@ -433,6 +454,7 @@
         h('button', { class: 'startbig', id: 'btnStartBig', onclick: start }, '▶ スタート'),
         h('p', null, h('b', null, 'ティップオフ（試合開始のジャンプボール）の瞬間'), 'に押してください。'),
         h('p', { class: 'note' }, '時計が動き出し、そこからの時間でプレーを記録します。あとで動画と合わせるときの目印にもなります。'),
+        coverCam(),
         h('button', { class: 'btn small', onclick: openPeriod }, `${BT.periodLabel(g.startPeriod || 1)} から始める（変える）`)));
     } else if (ended) {
       L.cover.append(h('div', { class: 'cover-card' },
@@ -441,6 +463,7 @@
         h('div', { class: 'row center' },
           h('button', { class: 'btn primary', onclick: openStats }, '📊 集計を見る'),
           h('button', { class: 'btn primary', onclick: () => openExport(g) }, '💾 書き出す')),
+        videoItems(g),
         h('button', { class: 'btn small', onclick: reopen }, '続きを記録する（まちがえて終えたとき）')));
     }
     L.cover.hidden = started && !ended;
@@ -454,6 +477,7 @@
     if (force || s !== lastClock) { lastClock = s; const el = $('#tval'); el.textContent = s; el.classList.toggle('long', s.length > 5); }
   }
   function tick() {
+    if (camRec() && S.camSheet) S.camSheet.draw(true);
     if (S.view !== 'live' || !S.game || !S.L) return;
     tickClock();
   }
@@ -475,9 +499,10 @@
     el.innerHTML = '';
     if (S.msg) {
       const m = S.msg;
-      el.append(h('div', { class: 'lastev msg ' + m.kind, role: 'status', 'aria-live': 'polite' }, h('span', { class: 'mt' }, m.text)),
+      // （DOM の append は null を「null」という文字にするので、ないものは渡さない）
+      el.append(...[h('div', { class: 'lastev msg ' + m.kind, role: 'status', 'aria-live': 'polite' }, h('span', { class: 'mt' }, m.text)),
         m.action ? h('button', { class: 'btn undo act', id: 'btnMsgAct', onclick: () => { S.msg = null; clearTimeout(S.msgTimer); m.action.onClick(); if (S.L) renderLast(); } }, m.action.label)
-          : (g.events.length > 1 ? undoBtn() : null));
+          : (g.events.length > 1 ? undoBtn() : null)].filter(Boolean));
       return;
     }
     if (!g.startedAt) { el.append(h('div', { class: 'lastev hint' }, h('span', { class: 'mt' }, 'スタートを押すと、記録できます'))); return; }
@@ -487,11 +512,11 @@
     const per = ev.type === 'period';
     const nm = !per && ev.no != null ? BT.playerName(g, ev.team, ev.no) : '';
     const who = per ? '' : ev.team == null ? 'チームなし' : `${BT.teamName(g, ev.team)} ${ev.no != null ? '#' + ev.no + (nm ? ' ' + nm : '') : '番号なし'}`;
-    el.append(
+    el.append(...[
       h('div', { class: 'lastev', role: 'status', 'aria-live': 'polite', style: { '--tc': per || ev.team == null ? 'var(--line2)' : teamColor(ev.team) } },
         h('div', { class: 'l1' }, h('b', { class: 'lt' }, BT.fmtTime(ev.t)), h('span', { class: 'll' }, per ? `${BT.periodLabel(ev.period)} 開始` : (d.short || d.label) + (d.pts ? ` +${d.pts}` : ''))),
         per ? null : h('div', { class: 'lw' }, who)),
-      g.events.length > 1 ? undoBtn() : null);
+      g.events.length > 1 ? undoBtn() : null].filter(Boolean));
   }
   function undo() {
     const g = S.game;
@@ -532,6 +557,8 @@
     });
     guard();
     updateLive();
+    // 撮影の準備ができていて、まだ録画していなければ、録画も始める
+    if (camOn() && !camRec()) camStart().then(() => { if (camRec()) say('録画も始めました', 'ok', 2500); });
   }
   function cancelStart() {
     const g = S.game;
@@ -542,11 +569,14 @@
     updateLive();
     say('スタートを取り消しました', 'ok');
   }
-  function endGame() {
+  async function endGame() {
     const g = S.game;
     g.endedAt = now();
-    BT.ui.keepAwake(false);
     save();
+    updateLive();
+    // 撮影していたら、録画を止めて仕上げ、カメラを閉じる
+    if (camOn()) { say('動画を仕上げています…', '', 15000); await camClose(); say(videoCount(g) ? '動画を保存しました' : '試合を終えました', 'ok', 3000); }
+    BT.ui.keepAwake(false);
     updateLive();
     openStats();
   }
@@ -639,6 +669,203 @@
     layoutLive();
   }
 
+  /* ========== 撮影しながら記録する（この端末のカメラ） ==========
+     カメラの録画（camera.js）を、記録の画面から動かす。録画を始めた時刻を記録と同じ時計で持つので、
+     あとで「バスケ得点クリップ」で開くと、時刻あわせなしで場面を切り出せる。 */
+  const camOn = () => !!(S.cam && S.cam.state !== 'off');
+  const camRec = () => !!(S.cam && S.cam.rec);
+  const mb = (n) => (n >= 1e9 ? (n / 1e9).toFixed(2) + 'GB' : Math.max(0, Math.round((n || 0) / 1e6)) + 'MB');
+  const clockOf = (ms) => (ms ? BT.hmsAt(ms, S.game ? S.game.tz : BT.localTz()).slice(0, 5) : '');
+  const videoCount = (g) => (g.videos || []).filter((v) => !v.gone).length;
+  function camEnsure() {
+    if (S.cam) return S.cam;
+    const C = S.cam = BT.camera.create();
+    C.on('state', () => { updateCamUI(); if (S.L) updateLive(); });
+    C.on('start', (seg) => upsertVideo(seg));
+    C.on('done', (v) => { upsertVideo(v); if (S.L) updateLive(); });
+    C.on('progress', () => updateCamUI(true));
+    // 保存できない（空きが足りない など）・録画のエラー：録画を止めて、そこまでを仕上げる（このあとの分は保存できないため）
+    C.on('error', (e) => {
+      if (S.camErrAt && Date.now() - S.camErrAt < 3000) return;
+      S.camErrAt = Date.now();
+      const msg = '録画を止めました：保存できませんでした' + (e && e.message ? '（' + e.message + '）' : '') + '。空きを増やしてから、もう一度「● 録画」';
+      if (camRec()) camStop(true).then(() => say(msg, 'err', 10000)); else say(msg, 'err', 10000);
+    });
+    C.on('notice', (t) => say(t, 'warn', 5000));
+    C.on('trackended', () => onCamLost());
+    return C;
+  }
+  /* 試合の記録に、動画の情報（ファイル名・録画を始めた時刻・長さ）を入れる（書き出す JSON にも入る。中身は入れない） */
+  function upsertVideo(v) {
+    const g = S.game;
+    if (!g || v.gameId !== g.id) return;
+    g.videos = g.videos || [];
+    const o = { vid: v.vid, n: v.n, startedAt: v.startedAt, endedAt: v.endedAt, duration: v.duration, bytes: v.bytes, mime: v.plan ? 'video/mp4' : v.mime, name: v.name, w: v.w, h: v.h, status: v.status };
+    if (v.gone) o.gone = true;
+    const i = g.videos.findIndex((x) => x.vid === v.vid);
+    if (i >= 0) Object.assign(g.videos[i], o); else g.videos.push(o);
+    save();
+  }
+  async function camOpen() {
+    if (!BT.camera.supported()) { BT.ui.toast('この端末・ブラウザでは撮影できません（カメラか録画に対応していません）', 'err', 7000); return false; }
+    if (!BT.vstore.supported()) { BT.ui.toast('このブラウザには動画を保存できません（プライベートブラウズ など）', 'err', 7000); return false; }
+    const C = camEnsure();
+    try { await C.open({ quality: S.prefs.camQuality || '720', audio: S.prefs.camAudio !== false }); } catch (e) {
+      const denied = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError');
+      BT.ui.toast(denied ? 'カメラの使用が許可されていません。端末の設定（iPhone は 設定 → Safari → カメラ）で、許可してください' : 'カメラを開けませんでした' + (e && e.message ? '（' + e.message + '）' : ''), 'err', 9000);
+      return false;
+    }
+    updateCamUI();
+    return true;
+  }
+  async function camStart() {
+    const g = S.game;
+    if (!g || S.camBusy || camRec()) return;
+    S.camBusy = true;
+    try {
+      if (!S.cam || !S.cam.live()) { if (!(await camOpen())) return; }
+      await S.cam.start({ gameId: g.id, n: (g.videos || []).length + 1, base: BT.fileBase(g) });
+      BT.store.persist();
+      BT.ui.keepAwake(true);
+      guard();
+    } catch (e) { BT.ui.toast('録画を始められませんでした' + (e && e.message ? '：' + e.message : ''), 'err', 7000); } finally { S.camBusy = false; updateCamUI(); if (S.L) updateLive(); }
+  }
+  async function camStop(quiet) {
+    if (!camRec()) return null;
+    S.camBusy = true;
+    updateCamUI();
+    if (!quiet) say('動画を仕上げています…', '', 15000);
+    try {
+      const v = await S.cam.stop();
+      if (v && v.empty) say('録画が短すぎて、動画にできませんでした', 'warn', 4000);
+      else if (!quiet && v) say(`動画${v.n}を保存しました（${BT.fmtTime(v.duration || 0)}・${mb(v.bytes)}）`, 'ok', 4000);
+      return v;
+    } finally { S.camBusy = false; updateCamUI(); if (S.L) updateLive(); }
+  }
+  async function camClose() {
+    if (!S.cam) return;
+    await camStop(true);
+    await S.cam.close();
+    updateCamUI();
+  }
+  /* 画面を離れていた（ほかのアプリ・画面を消した）あと：その間は録画が止まっていることがあるので、新しい動画として続ける */
+  async function camSplit() {
+    if (!camRec() || S.camBusy) return;
+    await camStop(true);
+    await camStart();
+    if (camRec()) say('画面を離れていた間は、録画が止まっていたかもしれないので、ここから新しい動画として録画しています', 'warn', 7000);
+  }
+  async function onCamLost() {
+    if (camRec()) await camStop(true);
+    if (S.cam) await S.cam.close();
+    say('カメラが止まりました（ほかのアプリが使った など）。≡ メニューの「撮影」から再開できます', 'warn', 8000);
+  }
+  /* 上の帯の小さな映像・撮影の画面の表示を書き換える（progress：数字だけ） */
+  function updateCamUI(progress) {
+    const L = S.L;
+    if (L && L.camBtn) {
+      const on = camOn() && S.cam.stream;
+      L.camBtn.hidden = !on;
+      L.camBtn.classList.toggle('rec', camRec());
+      if (on && L.camThumb.srcObject !== S.cam.stream) { L.camThumb.srcObject = S.cam.stream; L.camThumb.muted = true; const p = L.camThumb.play(); if (p && p.catch) p.catch(() => {}); }
+      if (!on && L.camThumb.srcObject) L.camThumb.srcObject = null;
+      if (on) { const st = S.cam.settings(); if (st.width && st.height) L.camBtn.style.setProperty('--ar', String(st.width / st.height)); }
+    }
+    if (S.camSheet) S.camSheet.draw(progress);
+  }
+  async function storageText() {
+    const e = await BT.vstore.estimate();
+    if (!e || !e.quota) return '';
+    const free = Math.max(0, e.quota - e.usage);
+    const q = BT.camera.QUALITY[S.prefs.camQuality || '720'];
+    const hours = free / 1e9 / q.perHour;
+    return `空き ${mb(free)}（${q.label.replace(/（.*/, '')} で約 ${hours >= 10 ? Math.floor(hours) : hours.toFixed(1)} 時間）${hours < 1.2 ? '・⚠ 1試合ぶん入らないかもしれません' : ''}`;
+  }
+  /* 撮影の画面（大きな映像・録画を始める／止める・空き容量） */
+  async function openCamera() {
+    if (!camOn() && !(await camOpen())) return;
+    const C = S.cam;
+    const big = h('video', { class: 'campv', muted: true, playsinline: true, autoplay: true });
+    big.muted = true; big.playsInline = true; big.srcObject = C.stream;
+    { const p = big.play(); if (p && p.catch) p.catch(() => {}); }
+    const stat = h('div', { class: 'camstat', id: 'camStat', role: 'status' });
+    const info = h('div', { class: 'note', id: 'camInfo' });
+    const store = h('div', { class: 'note', id: 'camStore' });
+    const acts = h('div', { class: 'row camacts' });
+    let lastKey = '';
+    const draw = (progress) => {
+      if (!S.cam) return;
+      const rec = camRec(), busy = !!S.camBusy || S.cam.state === 'finishing';
+      const seg = S.cam.seg;
+      stat.className = 'camstat' + (rec ? ' rec' : '');
+      stat.textContent = busy && !rec ? '動画を仕上げています…' : rec ? `● 録画中 ${BT.fmtTime(S.cam.elapsed())}・${mb(seg ? seg.bytes : 0)}（動画${seg ? seg.n : ''}）` : S.cam.state === 'off' ? 'カメラは切れています' : 'カメラの準備ができています（まだ録画していません）';
+      const st = S.cam.settings();
+      info.textContent = `${st.width || '?'}×${st.height || '?'}・${S.cam.opts && S.cam.opts.audio ? '音あり' : '音なし'}${st.width && st.height && st.width < st.height ? '・⚠ 縦向きで撮っています。コート全体を撮るなら、端末を横向きにしてから録画を始めてください' : ''}`;
+      if (progress) return;
+      const key = [rec, busy, S.cam.state, !!S.game.startedAt].join();
+      if (key === lastKey) return;
+      lastKey = key;
+      acts.innerHTML = '';
+      if (rec) acts.append(h('button', { class: 'btn danger-fill', id: 'btnCamStop', disabled: busy, onclick: () => camStop() }, '■ 録画を止める'));
+      else if (S.cam.state !== 'off') acts.append(h('button', { class: 'btn recbtn', id: 'btnCamRec', disabled: busy, onclick: () => camStart() }, '● 録画を始める'),
+        h('button', { class: 'btn', id: 'btnCamOff', disabled: busy, onclick: () => { camClose().then(() => BT.ui.closeSheet()); } }, 'カメラを切る'));
+    };
+    S.camSheet = { draw };
+    BT.ui.sheet({
+      title: '📹 撮影しながら記録', cls: 'camsheet',
+      body: h('div', null, big, stat, info, acts, store,
+        h('ul', { class: 'camnotes note' },
+          h('li', null, S.game.startedAt ? '録画を止めて、また始めると、別の動画になります（どれも、記録と時刻が合っています）' : '試合の「▶ スタート」を押すと、録画も自動で始まります（ウォーミングアップから撮るなら、先に「● 録画を始める」）'),
+          h('li', null, '「試合を終える」で、録画も止まります。動画はこの端末（このブラウザ）に保存され、終わったあと「🎬 場面を切り出す」で、そのまま「バスケ得点クリップ」で開けます'),
+          h('li', null, 'ほかのアプリに切りかえたり、画面を消したりすると、録画は止まります（戻ると、新しい動画として続けます）'),
+          h('li', null, '電池をたくさん使います。電源につないでおくと安心です'))),
+      onClose: () => { big.srcObject = null; S.camSheet = null; }
+    });
+    draw();
+    storageText().then((t) => { store.textContent = t; });
+  }
+  /* スタート前の札の中：撮影の準備 */
+  function coverCam() {
+    if (!BT.camera.supported()) return null;
+    if (!camOn()) return h('button', { class: 'btn small', id: 'btnCamOn', onclick: openCamera }, '📹 撮影しながら記録する（この端末のカメラ）');
+    return h('div', { class: 'covercam' + (camRec() ? ' rec' : '') },
+      h('span', null, camRec() ? '● 録画中（スタートを押すと、記録も始まります）' : '📹 カメラの準備OK。スタートを押すと、録画も始まります'),
+      h('button', { class: 'btn small', onclick: openCamera }, '撮影の画面'));
+  }
+  /* 撮影した動画の一覧（試合のあと・書き出す） */
+  function videoItems(g) {
+    const vs = (g.videos || []).filter((v) => !v.gone);
+    if (!vs.length) return null;
+    return h('div', { class: 'vlist' }, vs.map((v) => h('div', { class: 'vitem', dataset: { vid: v.vid } },
+      h('div', { class: 'vt' }, h('b', null, `📹 動画${v.n}`), h('small', null, `${clockOf(v.startedAt)}から・${BT.fmtTime(v.duration || 0)}・${mb(v.bytes)}${v.status === 'recording' ? '・録画中' : ''}`)),
+      h('div', { class: 'row vacts' },
+        h('button', { class: 'btn small primary', dataset: { clip: v.vid }, disabled: v.status === 'recording', onclick: () => toClips(g, v) }, '🎬 場面を切り出す'),
+        h('button', { class: 'btn small', dataset: { savevid: v.vid }, disabled: v.status === 'recording', onclick: () => saveVideo(v) }, '⬇ 保存'),
+        h('button', { class: 'btn small danger', title: 'この端末から消す', 'aria-label': `動画${v.n}をこの端末から消す`, disabled: v.status === 'recording', onclick: () => deleteVideo(g, v) }, '🗑')))));
+  }
+  function toClips(g, v) {
+    save();
+    root.location.href = `${CLIPS_URL}?tapgame=${encodeURIComponent(g.id)}&tapvideo=${encodeURIComponent(v.vid)}`;
+  }
+  async function saveVideo(v) {
+    BT.ui.toast('動画を用意しています…', '', 3000);
+    let f = null;
+    try { f = await BT.vstore.file(v.vid); } catch (e) { f = null; }
+    if (!f) { BT.ui.toast('この動画は、この端末にはもうありません', 'err', 5000); return; }
+    const r = await BT.ui.shareOrDownload(f.name || v.name, f, true);
+    if (r === 'downloaded') BT.ui.toast(`保存しました：${f.name || v.name}`, 'ok', 5000);
+    else if (r === 'shared') BT.ui.toast('送りました（「ビデオを保存」で写真に入ります）', 'ok', 4000);
+  }
+  function deleteVideo(g, v) {
+    BT.ui.confirm(`動画${v.n}をこの端末から消しますか？`, `${BT.fmtTime(v.duration || 0)}・${mb(v.bytes)}。消すと元に戻せません（保存した動画・記録は残ります）。`, '消す', async () => {
+      try { await BT.vstore.remove(v.vid); } catch (e) { /* もうない */ }
+      v.gone = true;
+      save();
+      if (S.L) updateLive();
+      BT.ui.toast('消しました', 'ok');
+    }, true);
+  }
+
   /* ---------- メニュー ---------- */
   function openMenu() {
     const g = S.game;
@@ -649,6 +876,7 @@
       body: h('div', { class: 'menu' },
         item('📋', '記録の一覧', '番号・プレー・時刻を直す、消す', openLog),
         item('📊', '集計', '選手ごとの得点・リバウンド・パスミスなど', openStats),
+        item('📹', camRec() ? '撮影（録画中）' : '撮影しながら記録', camRec() ? '録画を止める・画質・空き容量' : 'この端末のカメラで録画（時刻は自動で合う）', openCamera),
         item('👥', 'チーム・背番号を直す', '名前・色・背番号', () => { S.setupFor = 'edit'; go('setup'); }),
         item('🎛', '設定', '名前の表示・「？」の行・音・画面の色', openSettings),
         item('💾', '書き出す', '動画の切り出し用のファイル・CSV', () => openExport(g)),
@@ -656,7 +884,7 @@
         g.endedAt ? item('▶', '続きを記録する', 'まちがえて終えたとき', reopen) : null,
         g.startedAt && !plays ? item('↺', 'スタートを取り消す', 'まちがえて押したとき（記録がまだないときだけ）', () => BT.ui.confirm('スタートを取り消しますか？', '時計が 0:00 に戻ります。', '取り消す', cancelStart)) : null,
         item('❓', '使い方', null, help),
-        item('🏠', '試合の一覧へ', g.startedAt && !g.endedAt ? '記録は保存されています。あとで続きから記録できます' : null, () => go('home'))),
+        item('🏠', '試合の一覧へ', camRec() ? '録画を止めて、試合の一覧へ（記録は保存されています）' : g.startedAt && !g.endedAt ? '記録は保存されています。あとで続きから記録できます' : null, () => (camOn() ? camClose().then(() => go('home')) : go('home')))),
       onClose: null
     });
   }
@@ -804,6 +1032,9 @@
         h('button', { class: 'xitem', id: 'btnExpBox', onclick: () => go2('box') }, h('b', null, '📊 選手ごとの集計（CSV）'), h('small', null, '得点・シュート（成功/打った数）・リバウンド・パスミスなど')),
         h('p', { class: 'note' }, share ? 'スマホでは「共有」が開きます（AirDrop・「ファイル」に保存・LINE など）。' : 'ダウンロードのフォルダに保存します。'),
         h('p', { class: 'note' }, '同じ端末・同じブラウザの「バスケ得点クリップ」なら、ファイルにしなくても「📲 タップ記録を読み込む」→「この端末で記録した試合」から直接読み込めます。'),
+        videoCount(g) ? h('h4', { class: 'vhead' }, '📹 撮影した動画（MP4）') : null,
+        videoItems(g),
+        videoCount(g) ? h('p', { class: 'note' }, '動画を保存したら、記録のファイルと一緒に「バスケ得点クリップ」で開くと、ほかの端末（パソコンなど）でも、時刻あわせなしで場面を切り出せます。') : null,
         h('a', { class: 'btn', href: CLIPS_URL, target: '_blank', rel: 'noopener' }, '🎬 バスケ得点クリップを開く'))
     });
   }
@@ -819,6 +1050,12 @@
       h('p', { class: 'note' }, '背番号を入れていないチームは、「？」の行だけ（チームとして記録）になります。')));
     body.append(h('section', { class: 'field' }, h('span', null, '音'),
       chk('sound', '押したときに音を出す（「ピッ」）', () => { if (p.sound) BT.ui.beep(880, 60); })));
+    if (BT.camera.supported()) {
+      body.append(h('section', { class: 'field' }, h('span', null, '撮影（この端末のカメラ）'),
+        h('div', { class: 'row' }, Object.keys(BT.camera.QUALITY).map((k) => h('button', { class: 'btn small' + ((p.camQuality || '720') === k ? ' on' : ''), dataset: { camq: k }, onclick: () => { p.camQuality = k; savePrefs(); openSettings(); } }, BT.camera.QUALITY[k].label))),
+        chk('camAudio', '録画に音も入れる（笛・声援）'),
+        h('p', { class: 'note' }, `1時間あたり、720p で約 ${BT.camera.QUALITY['720'].perHour}GB・1080p で約 ${BT.camera.QUALITY['1080'].perHour}GB。次にカメラを開いたときから変わります。`)));
+    }
     body.append(h('section', { class: 'field' }, h('span', null, '画面の色'),
       h('div', { class: 'row' }, [['auto', '端末に合わせる'], ['light', '明るい'], ['dark', '暗い']].map(([v, lab]) => h('button', { class: 'btn small' + (p.theme === v ? ' on' : ''), onclick: () => { p.theme = v; savePrefs(); applyTheme(); openSettings(); } }, lab)))));
     body.append(h('p', { class: 'note' }, BT.ui.wakeSupported() ? (BT.ui.awake() ? '💡 記録の途中は、画面が自動で消えないようにしています。' : '💡 記録を始めると、画面が自動で消えないようにします。') : '💡 この端末では、画面が自動で消えるのを止められません。端末の「自動ロック」を長めにしてください。'));
@@ -847,6 +1084,8 @@
           h('li', null, '画面の下の「↶ 取り消す」で、いちばん新しい記録を取り消し（「やり直す」で戻せます）'),
           h('li', null, '「≡ メニュー」→「記録の一覧」で、どの記録でも、チーム・番号・プレー・時刻を直したり消したりできます'),
           h('li', null, '名簿にない背番号は、チームの帯の「＋番号」で足せます')),
+        h('h4', null, '撮影しながら記録する（この端末のカメラ）'),
+        h('p', null, '「📹 撮影しながら記録する」（スタート前の札・≡ メニュー）で、録画しながら同じ画面で記録できます。端末は横向きに。「▶ スタート」で録画も始まり、「試合を終える」で止まります。録画を始めた時刻が分かっているので、試合のあと「🎬 場面を切り出す」で、時刻あわせなしで場面を切り出せます。動画はこの端末の中に保存されます（「⬇ 保存」で写真・ファイルへ）。'),
         h('h4', null, 'ピリオド'),
         h('p', null, '時計の右の「1Q」を押して、次のピリオドが始まる瞬間に「2Q を始める」。時計は止まらずに進みます（試合の時計ではなく、スタートからの時間です。動画と同じように進むので、あとで動画と合わせられます）。'),
         h('h4', null, '動画から場面を切り出す'),
@@ -870,14 +1109,19 @@
     document.addEventListener('contextmenu', (e) => { if (S.view === 'live' && e.target.closest && e.target.closest('.panels, .lbar, .gbar')) e.preventDefault(); });
     document.addEventListener('dblclick', (e) => { if (S.view === 'live') e.preventDefault(); }, { passive: false });
     root.addEventListener('popstate', onPop);
-    root.addEventListener('beforeunload', (e) => { if (S.view === 'live' && S.game && S.game.startedAt && !S.game.endedAt) { e.preventDefault(); e.returnValue = ''; } });
+    root.addEventListener('beforeunload', (e) => { if (camRec() || (S.view === 'live' && S.game && S.game.startedAt && !S.game.endedAt)) { e.preventDefault(); e.returnValue = ''; } });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && BT.ui.sheetOpen()) BT.ui.closeSheet(); });
     setInterval(tick, 200);
     let rq = 0;
     const relayout = () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(layoutLive); };
     root.addEventListener('resize', relayout);
     root.addEventListener('orientationchange', () => setTimeout(relayout, 250));
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { if (camRec()) S.camHiddenAt = Date.now(); return; }
+      tick();
+      // 画面を離れていたあいだは、録画が止まっていることがある（iPhone など）→ 新しい動画として続ける
+      if (S.camHiddenAt) { const away = Date.now() - S.camHiddenAt; S.camHiddenAt = 0; if (away > 1500) camSplit(); }
+    });
     // オフラインでも開けるように（https で公開しているときだけ。手元のテストでは使わない）
     if (root.location && location.protocol === 'https:' && navigator.serviceWorker) navigator.serviceWorker.register('sw.js').catch(() => {});
     // 記録中の試合があれば、そのまま続きから
@@ -887,7 +1131,7 @@
     else go('home');
   }
 
-  BT.app = { S, init, start, undo, redo, openMenu, openLog, openEdit, openStats, openExport, openSettings, openPeriod, openKeypad, endGame, reopen, newGame, go, resume };
+  BT.app = { S, init, start, undo, redo, openMenu, openLog, openEdit, openStats, openExport, openSettings, openPeriod, openKeypad, endGame, reopen, newGame, go, resume, openCamera, camStart, camStop, camClose, camSplit };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }

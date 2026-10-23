@@ -273,6 +273,8 @@ a.btn { text-decoration: none; }
 .logclip .ct b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .logdlg { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .lglist { display: flex; flex-direction: column; gap: 6px; width: 100%; max-height: 340px; overflow-y: auto; }
+.lgrow { display: flex; flex-direction: column; gap: 4px; }
+.lgvids { display: flex; flex-wrap: wrap; gap: 6px; padding-left: 12px; }
 .lg { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; text-align: left; background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 8px 12px; width: 100%; }
 .lg b { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .lgvs { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }
@@ -2861,6 +2863,8 @@ a.btn { text-decoration: none; }
      startedAt（スタートを押した時刻・エポックミリ秒）、teams（自分・相手の名前・色・名簿）、
      events: [{ id, t（スタートからの秒）, type（fg2・reb・pass など／'period' はピリオドの始まり）, team（0 自分・1 相手・null チームなし）, no（背番号）}]
      チームなし：記録の画面の下の「パスミス」「★ あとで見る」（だれのかは決めずに、時刻だけ）。チームの絞り込みでは外さない。
+     videos: [{ vid, n, startedAt（録画を始めた時刻・エポックミリ秒）, duration, name }]：その端末のカメラで撮影しながら記録した動画（なくてよい）。
+       記録と同じ時計なので、その動画なら時刻あわせがいらない（videoAnchors）。
    くわしくは basket-tap/js/core.js の先頭。
 
    時刻あわせ（sync）：記録の時刻 t と、動画の時刻 v の対応を「合わせた点」anchors: [{ t, v }] で持つ。
@@ -2934,10 +2938,12 @@ a.btn { text-decoration: none; }
     events.forEach((e, i) => { if (seen.has(e.id)) e.id = 'x' + i + '_' + e.id; seen.add(e.id); });
     events.sort((a, b) => a.t - b.t);
     if (!events.some((e) => e.type !== 'period')) throw new Error('この記録には、プレーの記録がありません');
+    const videos = (Array.isArray(obj.videos) ? obj.videos : []).filter((v) => v && isFinite(v.startedAt) && v.startedAt > 0).slice(0, 50)
+      .map((v, i) => ({ vid: String(v.vid || 'v' + i).slice(0, 40), n: isFinite(v.n) ? Math.round(v.n) : i + 1, startedAt: +v.startedAt, duration: isFinite(v.duration) ? +v.duration : null, name: String(v.name || '').slice(0, 120), gone: !!v.gone }));
     return {
       format: 'basket-tap', id: String(obj.id || '').slice(0, 40), title: String(obj.title || '').slice(0, 40), date: /^\d{4}-\d{2}-\d{2}$/.test(obj.date || '') ? obj.date : '',
       startedAt: isFinite(obj.startedAt) && obj.startedAt > 0 ? +obj.startedAt : null, tz: isFinite(obj.tz) ? +obj.tz : 540,
-      teams, events, file: fileName ? String(fileName).slice(0, 80) : '', loadedAt: Date.now()
+      teams, events, videos, file: fileName ? String(fileName).slice(0, 80) : '', loadedAt: Date.now()
     };
   }
 
@@ -3156,6 +3162,28 @@ a.btn { text-decoration: none; }
     return { anchors: [{ t: 0, v: Math.round(v0 * 10) / 10 }], inside, total: plays(log).length };
   }
 
+  /* ---------- 撮影しながら記録した動画（時刻あわせがいらない） ---------- */
+  /* その動画での合わせた点：記録の t 秒 ＝ 動画の t ＋（記録のスタート − 録画の始まり）秒 */
+  function videoAnchors(log, video) {
+    if (!log || !log.startedAt || !video || !isFinite(video.startedAt)) return null;
+    const off = (log.startedAt - video.startedAt) / 1000;
+    const t = Math.max(0, Math.round(-off * 10) / 10);
+    return [{ t, v: Math.round((t + off) * 100) / 100 }];
+  }
+  /* 開いた動画が、記録の videos のどれか：ファイル名が同じ、または長さがほぼ同じ（1つだけ）。なければ null */
+  function matchVideo(log, name, duration) {
+    const vs = (log && log.videos) || [];
+    if (!vs.length) return null;
+    const norm = (s) => String(s || '').normalize('NFC').toLowerCase().replace(/\.(mp4|mov|m4v|webm)$/, '');
+    const byName = name ? vs.filter((v) => v.name && norm(v.name) === norm(name)) : [];
+    if (byName.length === 1) return byName[0];
+    if (duration > 0) {
+      const byDur = vs.filter((v) => v.duration > 0 && Math.abs(v.duration - duration) <= Math.max(1.5, v.duration * 0.005));
+      if (byDur.length === 1) return byDur[0];
+    }
+    return null;
+  }
+
   /* 同じブラウザの「バスケ タップ記録」が保存した試合の一覧（同じサイトなら読める） */
   function localGames(storage) {
     const ls = storage || (function () { try { return root.localStorage; } catch (e) { return null; } })();
@@ -3171,7 +3199,77 @@ a.btn { text-decoration: none; }
     try { return JSON.parse(ls.getItem('btap:game:' + id) || 'null'); } catch (e) { return null; }
   }
 
-  BS.taplog = { TYPES, GROUPS, WIN, periodLabel, parse, plays, teamName, playerName, eventLabel, score, cleanAnchors, toVideo, shift, setAnchor, clips, reel, counts, matchShots, creationTime, parseISO, fromCreation, localGames, localGame };
+  BS.taplog = { TYPES, GROUPS, WIN, periodLabel, parse, plays, teamName, playerName, eventLabel, score, cleanAnchors, toVideo, shift, setAnchor, clips, reel, counts, matchShots, creationTime, parseISO, fromCreation, videoAnchors, matchVideo, localGames, localGame };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/tapvideo.js */
+/* バスケ得点クリップ — 「バスケ タップ記録」で撮影しながら記録した動画を、この端末（このブラウザ）から読む
+   タップ記録は、撮影した動画を IndexedDB 'btap-media' に保存している（同じサイトなので、ここからも読める）。
+   データの形は basket-tap/js/vstore.js の先頭（ここは読むだけ。書きかえない）：
+     videos：{ vid, gameId, n, startedAt, endedAt, mime, plan（{ header, ranges } | null）, duration, name, … }
+     chunks：{ vid, i, blob }（i の順につなぐと、録画した動画そのもの）
+   plan があれば、録画した細切れの MP4 を、ふつうの MP4 に組み直して渡す（中身は写さず、範囲を並べるだけ）。 */
+(function (root) {
+  'use strict';
+  const BS = root.BS = root.BS || {};
+  const DB = 'btap-media';
+
+  /* DB を開く（まだないときは作らない：作ってしまうと、タップ記録の側で入れ物が作れなくなるため） */
+  function open() {
+    return new Promise((resolve) => {
+      let req;
+      try { req = root.indexedDB.open(DB); } catch (e) { resolve(null); return; }
+      let fresh = false;
+      req.onupgradeneeded = () => { fresh = true; try { req.transaction.abort(); } catch (e) { /* 無視 */ } };
+      req.onsuccess = () => { const db = req.result; if (fresh || !db.objectStoreNames.contains('videos') || !db.objectStoreNames.contains('chunks')) { db.close(); resolve(null); return; } resolve(db); };
+      req.onerror = () => resolve(null);
+      req.onblocked = () => resolve(null);
+    });
+  }
+  function get(db, store, fn) {
+    return new Promise((resolve) => {
+      try {
+        const t = db.transaction(store, 'readonly');
+        const r = fn(t.objectStore(store));
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => resolve(null);
+      } catch (e) { resolve(null); }
+    });
+  }
+  /* その試合の動画の一覧（古い順） */
+  async function videos(gameId) {
+    const db = await open();
+    if (!db) return [];
+    const list = await get(db, 'videos', (s) => s.index('gameId').getAll(gameId));
+    db.close();
+    return (list || []).filter((v) => v.status === 'done').sort((a, b) => a.startedAt - b.startedAt);
+  }
+  async function meta(vid) {
+    const db = await open();
+    if (!db) return null;
+    const v = await get(db, 'videos', (s) => s.get(vid));
+    db.close();
+    return v || null;
+  }
+  /* 再生できる動画のファイル（File）。なければ null */
+  async function file(vid) {
+    const db = await open();
+    if (!db) return null;
+    const v = await get(db, 'videos', (s) => s.get(vid));
+    const list = v ? await get(db, 'chunks', (s) => s.getAll(IDBKeyRange.bound([vid, 0], [vid, Infinity]))) : null;
+    db.close();
+    if (!v || !list || !list.length) return null;
+    const blob = new Blob(list.sort((a, b) => a.i - b.i).map((c) => c.blob), { type: v.mime || 'video/mp4' });
+    const out = v.plan && v.plan.header && v.plan.ranges
+      ? new Blob([v.plan.header].concat(v.plan.ranges.map(([s, e]) => blob.slice(s, e))), { type: 'video/mp4' })
+      : blob;
+    const type = v.plan ? 'video/mp4' : (v.mime || 'video/mp4').split(';')[0];
+    try { return new File([out], v.name || 'video.mp4', { type, lastModified: v.startedAt || Date.now() }); } catch (e) { out.name = v.name; return out; }
+  }
+
+  BS.tapvideo = { open, videos, meta, file, DB };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -3721,12 +3819,13 @@ a.btn { text-decoration: none; }
       // ゴールがまだなら、自動で探す（前に探した動画・自分で教えた動画では探さない。ゴールの絵だけ作る）
       // 記録を読み込んでいるときは探さない（記録から場面を切り出すなら、ゴールは使わない。必要なら「得点を自動で探す」から）
       if (!S.st.hoops.some(Boolean) && !S.st.autoTried && S.autoGoals !== false && !S.st.log) findGoals(); else makeHoopThumbs();
+      if (S.st.log && !synced()) autoCameraSync();
       if (S.st.log && synced()) makeLogThumbs();
     });
     m.on('error', () => BS.ui.toast('この動画は、このブラウザでは再生できないようです（MP4・MOV をお試しください）', 'err', 7000));
     m.on('notice', (t) => BS.ui.toast(t, 'warn', 6000));
     document.body.classList.add('has-video');
-    if (attached) BS.ui.toast('読み込んだタップ記録を、この動画に付けました。③ で時刻を合わせます', 'ok', 5000);
+    if (attached && !S.quietAttach) BS.ui.toast('読み込んだタップ記録を、この動画に付けました。③ で時刻を合わせます', 'ok', 5000);
     else if (saved && saved.log) BS.ui.toast('前に読み込んだタップ記録と、時刻あわせを開きました（同じ動画です）', 'ok', 4000);
     else if (saved && saved.result) BS.ui.toast('前に解析した結果を開きました（同じ動画です）', 'ok', 4000);
     render(); drawTimeline(); updatePlayBtn();
@@ -4449,6 +4548,7 @@ a.btn { text-decoration: none; }
     if (S.finding && !S.st.hoops.some(Boolean)) cancelFind();
     setLog(log);
     save(); render(); drawTimeline();
+    if (S.media.ready && autoCameraSync()) return log;
     BS.ui.toast(`タップ記録（${TL.plays(log).length}件）を読み込みました。${metaSuggestion() ? '③ で、撮影時刻から時刻を合わせられます' : '③ で、記録と動画の時刻を合わせてください'}`, 'ok', 6000);
     return log;
   }
@@ -4470,10 +4570,17 @@ a.btn { text-decoration: none; }
         h('button', { class: 'btn primary', id: 'btnLogFile', onclick: () => { BS.ui.closeModal(); pickLogFile(); } }, '📂 記録のファイル（.json）を選ぶ'),
         h('p', { class: 'note' }, '「バスケ タップ記録」の「書き出す」→「記録のファイル」で保存したファイルです。'),
         h('h4', null, 'この端末（このブラウザ）で記録した試合'),
-        h('div', { class: 'lglist' }, games.slice(0, 20).map((g) => h('button', { class: 'lg', dataset: { game: g.id }, onclick: () => { const raw = TL.localGame(g.id); if (raw) loadLog(raw, ''); else BS.ui.toast('この試合の記録が見つかりませんでした', 'err'); } },
-          h('b', null, when(g)),
-          h('span', { class: 'lgvs' }, h('i', { class: 'chip', style: { background: (g.colors || [])[0] || '#888' } }), ` ${(g.names || [])[0] || '自分'} ${g.score ? g.score[0] + ' − ' + g.score[1] : ''} ${(g.names || [])[1] || '相手'} `, h('i', { class: 'chip', style: { background: (g.colors || [])[1] || '#888' } })),
-          h('small', { class: 'note' }, `${g.n}件の記録`))))),
+        h('div', { class: 'lglist' }, games.slice(0, 20).map((g) => {
+          const raw = g.videos ? TL.localGame(g.id) : null;
+          const vids = raw && Array.isArray(raw.videos) ? raw.videos.filter((v) => !v.gone && v.status !== 'recording') : [];
+          return h('div', { class: 'lgrow' },
+            h('button', { class: 'lg', dataset: { game: g.id }, onclick: () => { const r = TL.localGame(g.id); if (r) loadLog(r, ''); else BS.ui.toast('この試合の記録が見つかりませんでした', 'err'); } },
+              h('b', null, when(g)),
+              h('span', { class: 'lgvs' }, h('i', { class: 'chip', style: { background: (g.colors || [])[0] || '#888' } }), ` ${(g.names || [])[0] || '自分'} ${g.score ? g.score[0] + ' − ' + g.score[1] : ''} ${(g.names || [])[1] || '相手'} `, h('i', { class: 'chip', style: { background: (g.colors || [])[1] || '#888' } })),
+              h('small', { class: 'note' }, `${g.n}件の記録${vids.length ? `・📹 撮影した動画 ${vids.length}本` : ''}`)),
+            vids.length ? h('div', { class: 'lgvids' }, vids.map((v) => h('button', { class: 'btn small primary', dataset: { tapvideo: v.vid }, onclick: () => openTapVideo(g.id, v.vid) },
+              `📹 動画${v.n}（${BS.fmtTime(v.duration || 0)}）を記録と一緒に開く`))) : null);
+        }))),
       buttons: [{ label: 'とじる' }]
     });
   }
@@ -4518,6 +4625,39 @@ a.btn { text-decoration: none; }
     S.st.sync = { anchors: [{ t: 0, v: r.offset }], how: 'shots', at: Date.now() };
     S.syncEdit = false;
     afterSync(`自動で探した得点と照らし合わせて合わせました（記録の得点 ${r.nLog}本のうち ${r.matched}本が重なりました）`);
+  }
+  /* 撮影しながら記録した動画（タップ記録の videos）：録画を始めた時刻が分かっているので、ぴったり合わせる */
+  function cameraSync(video, quiet) {
+    const anchors = TL.videoAnchors(S.st.log, video);
+    if (!anchors) return false;
+    S.st.sync = { anchors, how: 'camera', at: Date.now(), vid: video.vid };
+    S.syncEdit = false;
+    afterSync(quiet ? null : `📹 撮影しながら記録した動画（動画${video.n}）なので、時刻は自動で合わせました（記録の 0:00 ＝ 動画の ${BS.fmtTime(anchors[0].v - anchors[0].t, true)}）`);
+    return true;
+  }
+  /* 開いた動画が、記録の videos のどれかなら（ファイル名・長さで）、合わせる。合わせたら true */
+  function autoCameraSync() {
+    if (!S.st.log || !S.media || synced()) return false;
+    const f = S.media.file;
+    const v = TL.matchVideo(S.st.log, f && f.name, duration());
+    return v ? cameraSync(v) : false;
+  }
+  /* タップ記録で撮影した動画を、この端末から、記録と一緒に開く（時刻あわせなし） */
+  async function openTapVideo(gameId, vid) {
+    const raw = TL.localGame(gameId);
+    if (!raw) { BS.ui.toast('この試合の記録が、この端末に見つかりませんでした', 'err', 6000); return false; }
+    let log;
+    try { log = TL.parse(raw, ''); } catch (e) { BS.ui.toast('タップ記録を読み込めませんでした：' + e.message, 'err', 7000); return false; }
+    BS.ui.toast('撮影した動画を開いています…', '', 3000);
+    const f = await BS.tapvideo.file(vid);
+    if (!f) { BS.ui.toast('この動画が、この端末（このブラウザ）に見つかりませんでした。保存した動画のファイルを「🎬 動画を選ぶ」で開いてください（時刻は自動で合わせます）', 'err', 9000); return false; }
+    BS.ui.closeModal();
+    const v = log.videos.find((x) => x.vid === vid) || await BS.tapvideo.meta(vid);
+    S.pendingLog = log;
+    S.quietAttach = true;
+    try { openFile(f); } finally { S.quietAttach = false; }
+    if (v && S.st.log) cameraSync(v);
+    return true;
   }
   /* 記録 eventId の瞬間を、動画の v 秒（省略時はいまの位置）にする。
      mode：'reset'（合わせ直す）｜'add'（合わせる点を足す。撮影を途中で止めた動画）｜'fix'（その記録に効いている点だけ直す） */
@@ -4571,7 +4711,7 @@ a.btn { text-decoration: none; }
     const card = h('section', { class: 'card step synccard', id: 'syncCard' }, stepHead(3, '記録と動画の時刻を合わせる', null, done));
     if (done) {
       const A = TL.cleanAnchors(S.st.sync.anchors);
-      const how = { manual: '手で合わせました', meta: '撮影時刻から（目安）', shots: '自動で探した得点から' }[S.st.sync.how] || '';
+      const how = { manual: '手で合わせました', meta: '撮影時刻から（目安）', shots: '自動で探した得点から', camera: '📹 撮影しながら記録した動画なので、自動でぴったり' }[S.st.sync.how] || '';
       card.append(
         h('p', { class: 'syncok', id: 'syncOk' }, `✓ 記録の ${BS.fmtTime(A[0].t)} ＝ 動画の ${BS.fmtTime(A[0].v, true)}`, h('span', { class: 'note' }, `（${how}${A.length > 1 ? `・ほかに ${A.length - 1} か所で合わせています` : ''}）`)),
         h('div', { class: 'row' }, h('span', { class: 'note' }, '全部の場面をずらす：'),
@@ -5489,10 +5629,18 @@ a.btn { text-decoration: none; }
     root.addEventListener('pagehide', flush);
     document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
     render(); drawTimeline();
+    // 「バスケ タップ記録」の「🎬 場面を切り出す」から来たとき：撮影した動画と記録を開く（?tapgame=…&tapvideo=…）
+    try {
+      const q = new URLSearchParams(root.location.search);
+      if (q.get('tapgame') && q.get('tapvideo')) {
+        openTapVideo(q.get('tapgame'), q.get('tapvideo'));
+        if (root.history && history.replaceState) history.replaceState(null, '', root.location.pathname);
+      }
+    } catch (e) { /* 古いブラウザ */ }
   }
 
   BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, findGoals, cancelFind, list, clipsFor, maybes: () => C.maybes(S.st.result, setupOf(), S.st.edits, list()), record: recRows, promote, unpromote, judge, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs,
-    loadLog, setLog, removeLog, logClips, syncAt, nudge, playLogReel, doLogExport, syncFromMeta, syncFromShots };
+    loadLog, setLog, removeLog, logClips, syncAt, nudge, playLogReel, doLogExport, syncFromMeta, syncFromShots, openTapVideo, cameraSync };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }

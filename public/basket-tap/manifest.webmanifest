@@ -4,7 +4,7 @@
   "description": "バスケの試合を見ながら、シュート・リバウンド・パスミスなどをタップで記録。あとで動画から場面を切り出せる",
   "lang": "ja",
   "start_url": "./",
-  "scope": "./",
+  "scope": "../",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#0a0e15",

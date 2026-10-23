@@ -116,6 +116,7 @@ const pb = (tm, no, type) => `#panel${tm} .prow[data-no="${no == null ? '' : no}
     await tap(page, '#btnMark');
     ok(plays(await game(page)).length === 0, 'スタート前は記録しない（選手の行は大きなスタートの札の下・★ を押すと「先にスタート」）');
     ok((await page.textContent('#lastbar')).includes('スタート'), '「先に『▶ スタート』を押してください」');
+    ok(!/null|undefined/.test(await page.textContent('#lastbar')), '下の帯に「null」などの文字が出ない');
 
     console.log('\n■ スタート → 選手の行のボタンを1回押して記録');
     await tap(page, '#btnStartBig');

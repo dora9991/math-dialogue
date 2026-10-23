@@ -9,6 +9,9 @@
      tz: 記録した端末の時差（分。日本は 540）,
      teams: [ 自分, 相手 ]  … { name, color, colorName, players: [{ no: '7', name: '' }] }
      events: [ { id, t, type, team, no } ]  … 追加した順
+     videos: [ { vid, n, startedAt, endedAt, duration, name, mime, w, h, bytes } ]（この端末のカメラで撮影しながら記録したとき。なくてよい）
+       startedAt：録画を始めた時刻（エポックミリ秒。記録の startedAt と同じ時計）→ 記録の t 秒 ＝ 動画の t ＋（startedAt(記録) − startedAt(動画)）/1000 秒
+       動画の中身は、この端末のブラウザ（IndexedDB 'btap-media'。vstore.js）にだけある。書き出す JSON には、ファイル名・時刻・長さだけが入る
        t   : スタートからの秒（0.1 秒まで）。ストップウォッチと同じで、止まらずに進む
        type: 下の TYPES の id。'period' はピリオドの始まり（period: 番号。team・no はなし）
        team: 0 = 自分・1 = 相手・null = チームなし（画面の下の「パスミス」「★ あとで見る」。だれのかは決めない）
@@ -451,6 +454,8 @@
     g.date = /^\d{4}-\d{2}-\d{2}$/.test(obj.date || '') ? obj.date : g.date;
     g.startedAt = isFinite(obj.startedAt) && obj.startedAt > 0 ? obj.startedAt : null;
     g.endedAt = isFinite(obj.endedAt) && obj.endedAt > 0 ? obj.endedAt : null;
+    const vids = BT.cleanVideos(obj.videos);
+    if (vids.length) g.videos = vids;
     // 記録の id は、そのまま使えるもの（e＋数・重ならない）は残し、そうでないものに新しい番号を付ける
     const okId = (id) => typeof id === 'string' && /^e\d{1,7}$/.test(id);
     g.seq = obj.events.reduce((m, e) => Math.max(m, e && okId(e.id) ? Number(e.id.slice(1)) : 0), 0);
@@ -479,6 +484,15 @@
 
   /* 試合の一覧に出す短い情報 */
   BT.summary = function (game) {
-    return { id: game.id, title: game.title || '', date: game.date, startedAt: game.startedAt, endedAt: game.endedAt, names: [BT.teamName(game, 0), BT.teamName(game, 1)], colors: [game.teams[0].color, game.teams[1].color], score: BT.score(game), n: (game.events || []).filter((e) => e.type !== 'period').length, at: Date.now() };
+    return { id: game.id, title: game.title || '', date: game.date, startedAt: game.startedAt, endedAt: game.endedAt, names: [BT.teamName(game, 0), BT.teamName(game, 1)], colors: [game.teams[0].color, game.teams[1].color], score: BT.score(game), n: (game.events || []).filter((e) => e.type !== 'period').length, videos: (game.videos || []).filter((v) => !v.gone).length, at: Date.now() };
+  };
+  /* 動画の情報をそろえる（読み込んだファイル用。形の合わないものは捨てる） */
+  BT.cleanVideos = function (list) {
+    return (Array.isArray(list) ? list : []).filter((v) => v && isFinite(v.startedAt) && v.startedAt > 0).slice(0, 50).map((v, i) => ({
+      vid: String(v.vid || 'v' + i).slice(0, 40), n: isFinite(v.n) ? Math.round(v.n) : i + 1, startedAt: +v.startedAt,
+      endedAt: isFinite(v.endedAt) ? +v.endedAt : null, duration: isFinite(v.duration) ? +v.duration : null,
+      name: String(v.name || '').slice(0, 120), mime: String(v.mime || '').slice(0, 60), w: +v.w || null, h: +v.h || null, bytes: +v.bytes || null,
+      status: 'done', gone: true        // 読み込んだ記録の動画は、この端末にはない（ファイル名・時刻だけ）
+    }));
   };
 })(typeof window !== 'undefined' ? window : globalThis);
