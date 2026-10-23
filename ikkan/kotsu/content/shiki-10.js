@@ -362,7 +362,7 @@ export const UNITS = [
             hint: "等式を $b$ について解いた式をつくってから、$a$ と $c$ の値を代入しよう。",
             steps: [
               `$${S.eqs}$ を $b$ について解くと、$b=${ftex(info.sol)}$。`,
-              `$a=${S.av}$、$c=${S.cv}$ を代入して、$b=\\frac{${S.m}-${S.p}\\times${S.av}-${S.cv}}{${S.q}}=\\frac{${S.m - S.p * S.av - S.cv}}{${S.q}}=${S.bv}$（円）`,
+              `$a=${S.av}$、$c=${S.cv}$ を代入して、$b=\\frac{${S.m}-${S.p}\\times ${S.av}-${S.cv}}{${S.q}}=\\frac{${S.m - S.p * S.av - S.cv}}{${S.q}}=${S.bv}$（円）`,
             ],
           };
         }),
@@ -390,14 +390,14 @@ export const UNITS = [
               q: `台形の面積 $S$ は、上底 $a$、下底 $b$、高さ $h$ のとき、$S=\\frac{1}{2}(a+b)h$ と表される。$S=${S}$、$a=${a}$、$b=${b}$ のとき、$h$ の値は？（長さは cm、面積は cm²）`,
               ans: h, unit: "cm",
               hint: "等式を $h$ について解いた式をつくってから、$S$、$a$、$b$ の値を代入しよう。",
-              steps: ["$S=\\frac{1}{2}(a+b)h$ を $h$ について解くと、$h=\\frac{2S}{a+b}$。", `$S=${S}$、$a=${a}$、$b=${b}$ を代入して、$h=\\frac{2\\times${S}}{${a}+${b}}=\\frac{${2 * S}}{${a + b}}=${h}$（cm）`],
+              steps: ["$S=\\frac{1}{2}(a+b)h$ を $h$ について解くと、$h=\\frac{2S}{a+b}$。", `$S=${S}$、$a=${a}$、$b=${b}$ を代入して、$h=\\frac{2\\times ${S}}{${a}+${b}}=\\frac{${2 * S}}{${a + b}}=${h}$（cm）`],
             };
           }
           return {
             q: `台形の面積 $S$ は、上底 $a$、下底 $b$、高さ $h$ のとき、$S=\\frac{1}{2}(a+b)h$ と表される。$S=${S}$、$b=${b}$、$h=${h}$ のとき、$a$ の値は？（長さは cm、面積は cm²）`,
             ans: a, unit: "cm",
             hint: "等式を $a$ について解いた式をつくってから、$S$、$b$、$h$ の値を代入しよう。",
-            steps: ["$S=\\frac{1}{2}(a+b)h$ を $a$ について解くと、$a=\\frac{2S}{h}-b$。", `$S=${S}$、$b=${b}$、$h=${h}$ を代入して、$a=\\frac{2\\times${S}}{${h}}-${b}=${(2 * S) / h}-${b}=${a}$（cm）`],
+            steps: ["$S=\\frac{1}{2}(a+b)h$ を $a$ について解くと、$a=\\frac{2S}{h}-b$。", `$S=${S}$、$b=${b}$、$h=${h}$ を代入して、$a=\\frac{2\\times ${S}}{${h}}-${b}=${(2 * S) / h}-${b}=${a}$（cm）`],
           };
         }),
       ],
@@ -472,7 +472,7 @@ export const UNITS = [
             hint: `まず、$S$ の式を $h$ について解こう。それを、$V$ の式の $h$ に代入して、約分する。`,
             steps: [
               `$S=${F.S}$ を $h$ について解くと、$h=\\frac{S}{${F.Sden}}$。`,
-              `$V=${F.V}$ の $h$ に代入して、$V=${F.Vlead}\\times\\frac{S}{${F.Sden}}$。`,
+              `$V=${F.V}$ の $h$ に代入して、$V=${F.Vlead}\\times \\frac{S}{${F.Sden}}$。`,
               `約分して、$V=${qtex(Q(F.vc, F.sc))}S${F.fac}$。だから、□ は $${qtex(Q(F.vc, F.sc))}$。`,
             ],
           };

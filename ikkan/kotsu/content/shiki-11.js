@@ -100,7 +100,7 @@ const valueSteps = (V) => {
   let s1 = "", s2 = "";
   parts.forEach(([c, val], i) => {
     const neg = c[0] < 0, ac = [Math.abs(c[0]), c[1]];
-    const body = qeq(ac, Q(1)) ? qparen(val) : `${qtex(ac)}\\times${qparen(val)}`;
+    const body = qeq(ac, Q(1)) ? qparen(val) : `${qtex(ac)}\\times ${qparen(val)}`;
     s1 += (i === 0 ? (neg ? "-" : "") : neg ? "-" : "+") + body;
     const prod = qmul(c, val);
     s2 += i === 0 ? qtex(prod) : prod[0] < 0 ? `-${qtex(qneg(prod))}` : `+${qtex(prod)}`;
@@ -252,7 +252,7 @@ export const UNITS = [
             q: `次の計算をしよう。 $${k}(${ptex(P)})$`,
             ans, choices,
             hint: "かっこの外の数は、かっこの中の全部の項にかける。負の数をかけると、符号はどうなる？",
-            steps: [`かっこの中の、すべての項に ${k} をかける。`, `$${k}(${ptex(P)})=(${k})\\times${ptexp(t1)}+(${k})\\times${ptexp(t2)}=${ptex(correct)}$`],
+            steps: [`かっこの中の、すべての項に ${k} をかける。`, `$${k}(${ptex(P)})=(${k})\\times ${ptexp(t1)}+(${k})\\times ${ptexp(t2)}=${ptex(correct)}$`],
           };
         }),
         // 11d03b (18x−24y)÷(−6)
@@ -271,10 +271,10 @@ export const UNITS = [
           const { ans, choices } = choicePoly(r, correct, shuffle(r, cands));
           const rec = d < 0 ? `-\\frac{1}{${-d}}` : `\\frac{1}{${d}}`;
           return {
-            q: `次の計算をしよう。 $(${ptex(P)})\\div${d < 0 ? `(${d})` : d}$`,
+            q: `次の計算をしよう。 $(${ptex(P)})\\div ${d < 0 ? `(${d})` : d}$`,
             ans, choices,
             hint: "わり算は、わる数の逆数をかけるか、分数の形にして、かっこの中の全部の項をわる。",
-            steps: [`${d} でわるのは、逆数 $${rec}$ をかけるのと同じ。`, `$(${ptex(P)})\\times\\left(${rec}\\right)=${ptex(correct)}$`],
+            steps: [`${d} でわるのは、逆数 $${rec}$ をかけるのと同じ。`, `$(${ptex(P)})\\times \\left(${rec}\\right)=${ptex(correct)}$`],
           };
         }),
         // 11d03c 分数の形の加減
@@ -365,7 +365,7 @@ export const UNITS = [
             q: `次の計算をしよう。 $(${ptex(base)})^{2}$`,
             ans, choices,
             hint: "$(\\ )^2$ は、かっこの中をそのまま2回かけること。係数にも、文字にも、2乗がかかる。",
-            steps: [`$(${ptex(base)})^{2}=(${ptex(base)})\\times(${ptex(base)})$`, `係数は ${par(c)}×${par(c)}＝${c * c}、文字は ${ptex(term(1, e))} を2回かけて ${ptex(term(1, e2))}。`, `答え　$${ptex(correct)}$`],
+            steps: [`$(${ptex(base)})^{2}=(${ptex(base)})\\times (${ptex(base)})$`, `係数は ${par(c)}×${par(c)}＝${c * c}、文字は ${ptex(term(1, e))} を2回かけて ${ptex(term(1, e2))}。`, `答え　$${ptex(correct)}$`],
           };
         }),
         // 11d04c・11q02b 14xy²÷(−7/2 y)
@@ -401,10 +401,10 @@ export const UNITS = [
             ];
             const { ans, choices } = choicePoly(r, correct, shuffle(r, cands));
             return {
-              q: `次の計算をしよう。 $${ptex(A)}\\times${ptex(B)}\\div${ptex(C)}$`,
+              q: `次の計算をしよう。 $${ptex(A)}\\times ${ptex(B)}\\div ${ptex(C)}$`,
               ans, choices,
               hint: "乗除の混じった計算は、すべてを1つの分数にして、係数と文字を約分しよう。",
-              steps: [`分数の形にする。$${ptex(A)}\\times${ptex(B)}\\div${ptex(C)}=\\frac{${ptex(A)}\\times${ptex(B)}}{${ptex(C)}}=\\frac{${ptex(pmul(A, B))}}{${ptex(C)}}$`, `約分して、$${ptex(correct)}$。`],
+              steps: [`分数の形にする。$${ptex(A)}\\times ${ptex(B)}\\div ${ptex(C)}=\\frac{${ptex(A)}\\times ${ptex(B)}}{${ptex(C)}}=\\frac{${ptex(pmul(A, B))}}{${ptex(C)}}$`, `約分して、$${ptex(correct)}$。`],
             };
           }
           return { skip: true };
@@ -439,10 +439,10 @@ export const UNITS = [
             ];
             const { ans, choices } = choicePoly(r, correct, shuffle(r, cands));
             return {
-              q: `次の計算をしよう。 $${ptex(A)}\\div(${ptex(B)})\\times${ptex(C)}$`,
+              q: `次の計算をしよう。 $${ptex(A)}\\div (${ptex(B)})\\times ${ptex(C)}$`,
               ans, choices,
               hint: "乗除の混じった計算は、左から順に、わる数は逆数にしてかけるか、1つの分数にして約分しよう。÷ の後ろの × は、わる数に入らない。",
-              steps: [`分数の形にする。$${ptex(A)}\\div(${ptex(B)})\\times${ptex(C)}=\\frac{${ptex(A)}\\times${ptex(C)}}{${ptex(B)}}=\\frac{${ptex(pmul(A, C))}}{${ptex(B)}}$`, `約分して、$${ptex(correct)}$。`],
+              steps: [`分数の形にする。$${ptex(A)}\\div (${ptex(B)})\\times ${ptex(C)}=\\frac{${ptex(A)}\\times ${ptex(C)}}{${ptex(B)}}=\\frac{${ptex(pmul(A, C))}}{${ptex(B)}}$`, `約分して、$${ptex(correct)}$。`],
             };
           }
           return { skip: true };
@@ -495,7 +495,7 @@ export const UNITS = [
             q: `等式 $${E.eq}$ で、$x=${E.xv}$ のとき、$y$ の値は？`,
             ans: E.yv,
             hint: "$y$ について解いた式をつくって、$x$ の値を入れよう。（先に $x$ の値を入れて、$y$ の方程式として解いてもよい）",
-            steps: [`$y$ について解くと、$y=${ftex(E.sol)}$。`, `$x=${E.xv}$ を代入して、$y=\\frac{${E.alpha}\\times${E.xv}-${E.gamma}}{${E.beta}}=\\frac{${E.alpha * E.xv - E.gamma}}{${E.beta}}=${E.yv}$`],
+            steps: [`$y$ について解くと、$y=${ftex(E.sol)}$。`, `$x=${E.xv}$ を代入して、$y=\\frac{${E.alpha}\\times ${E.xv}-${E.gamma}}{${E.beta}}=\\frac{${E.alpha * E.xv - E.gamma}}{${E.beta}}=${E.yv}$`],
           };
         }),
       ],
@@ -522,7 +522,7 @@ export const UNITS = [
             q: `$n$ を整数とする。${F.name}の和は、$${ptex(S)}=${K}(${ptex(Qp)})$ と変形できる。このことから、いつも言えることはどれか。`,
             ans,
             choices: choices4(r, ans, sample(r, divK, 3).map((m) => `${m} の倍数になる`)),
-            hint: "式を $\\square\\times$（整数）の形に変形すると、□ の倍数であることが言える。かっこの中は、整数になるかな。",
+            hint: "式を $\\square\\times $（整数）の形に変形すると、□ の倍数であることが言える。かっこの中は、整数になるかな。",
             steps: [`$n$ が整数なら、$${ptex(Qp)}$ も整数。`, `和は ${K}×（整数）の形だから、${K} の倍数になる。`],
           };
         }),
@@ -548,7 +548,7 @@ export const UNITS = [
             q: `$n$ を整数とする。奇数 $2n+1$ を ${k}倍して ${c} を${up ? "加え" : "ひい"}た数は、$${lin(body, m)}=${form}$ と変形できる。このことから、いつも言えることはどれか。`,
             ans,
             choices: choices4(r, ans, [even ? "いつも奇数になる" : "いつも偶数になる", "偶数にも奇数にもなる", "いつも 4 の倍数になる"]),
-            hint: "$2\\times$（整数）の形は偶数、$2\\times$（整数）$+1$ の形は奇数。かっこの中は整数になるかな。",
+            hint: "$2\\times $（整数）の形は偶数、$2\\times $（整数）$+1$ の形は奇数。かっこの中は整数になるかな。",
             steps: [`$n$ が整数なら、$${ptex(poly([k, { n: 1 }], [half, {}]))}$ も整数。`, even ? "2×（整数）の形だから、いつも偶数になる。" : "2×（整数）に 1 をたした形だから、いつも奇数になる。"],
           };
         }),
@@ -569,10 +569,10 @@ export const UNITS = [
         t("11d09b", (r) => {
           const { a, rad, k } = pick(r, SECTOR_NUM);
           return {
-            q: `おうぎ形の弧の長さ $\\ell$ は、半径 $r$、中心角 $a^\\circ$ のとき、$\\ell=2\\pi r\\times\\frac{a}{360}$ と表される。$r=${rad}$、$\\ell=${k}\\pi$ のとき、$a$ の値は？（$r$、$\\ell$ の単位は cm）`,
+            q: `おうぎ形の弧の長さ $\\ell$ は、半径 $r$、中心角 $a^\\circ$ のとき、$\\ell=2\\pi r\\times \\frac{a}{360}$ と表される。$r=${rad}$、$\\ell=${k}\\pi$ のとき、$a$ の値は？（$r$、$\\ell$ の単位は cm）`,
             ans: a, unit: "度",
             hint: "$a$ について解いた式をつくって、$r$ と $\\ell$ の値を代入しよう。$\\pi$ は約分される。",
-            steps: ["$\\ell=2\\pi r\\times\\frac{a}{360}$ を $a$ について解くと、$a=\\frac{180\\ell}{\\pi r}$。", `$r=${rad}$、$\\ell=${k}\\pi$ を代入して、$a=\\frac{180\\times${k}\\pi}{\\pi\\times${rad}}=\\frac{${180 * k}}{${rad}}=${a}$（度）`],
+            steps: ["$\\ell=2\\pi r\\times \\frac{a}{360}$ を $a$ について解くと、$a=\\frac{180\\ell}{\\pi r}$。", `$r=${rad}$、$\\ell=${k}\\pi$ を代入して、$a=\\frac{180\\times ${k}\\pi}{\\pi\\times ${rad}}=\\frac{${180 * k}}{${rad}}=${a}$（度）`],
           };
         }),
       ],
@@ -612,7 +612,7 @@ export const UNITS = [
             q: `$${ptex(given)}=${s}$ のとき、$${ptex(E)}$ の値は？`,
             ans: m * s + c,
             hint: `求める式をよく見よう。$${ptex(given)}$ をひとまとまりとして使えないかな。（$${u}$ について解いて代入してもよい）`,
-            steps: [`$${ptex(E)}=${m}(${ptex(given)})${c < 0 ? "-" : "+"}${Math.abs(c)}$ と変形できる。`, `$${ptex(given)}=${s}$ を代入して、$${m}\\times${par(s)}${c < 0 ? "-" : "+"}${Math.abs(c)}=${m * s}${c < 0 ? "-" : "+"}${Math.abs(c)}=${m * s + c}$`],
+            steps: [`$${ptex(E)}=${m}(${ptex(given)})${c < 0 ? "-" : "+"}${Math.abs(c)}$ と変形できる。`, `$${ptex(given)}=${s}$ を代入して、$${m}\\times ${par(s)}${c < 0 ? "-" : "+"}${Math.abs(c)}=${m * s}${c < 0 ? "-" : "+"}${Math.abs(c)}=${m * s + c}$`],
           };
         }),
         // 11q05a 数当て：いつも同じ数になる
@@ -693,7 +693,7 @@ function mulProblem(r) {
   const { ans, choices } = choicePoly(r, correct, shuffle(r, cands));
   const sh = shared[0];
   return {
-    q: `次の計算をしよう。 $${ptex(A)}\\times${ptexp(B)}$`,
+    q: `次の計算をしよう。 $${ptex(A)}\\times ${ptexp(B)}$`,
     ans, choices,
     hint: "係数どうし、文字どうしをかける。同じ文字をかけると、指数はどうなる？",
     steps: [`係数は ${par(c1)}×${par(c2)}＝${c1 * c2}。`, `文字は、$${sh}$ が ${eA[sh]}個と ${eB[sh]}個で ${eA[sh] + eB[sh]}個（$${sh}^{${eA[sh] + eB[sh]}}$）。ほかの文字もそのまま書く。`, `答え　$${ptex(correct)}$`],
@@ -723,10 +723,10 @@ function divProblem(r) {
   const { ans, choices } = choicePoly(r, R, shuffle(r, cands));
   const recip = pdivMono(poly([1, {}]), Dm);
   return {
-    q: `次の計算をしよう。 $${ptex(A)}\\div\\left(${ptex(Dm)}\\right)$`,
+    q: `次の計算をしよう。 $${ptex(A)}\\div \\left(${ptex(Dm)}\\right)$`,
     ans, choices,
     hint: "分数でわるときは、わる式の逆数をかける。わる式が文字をふくむときは、その逆数も分数の形になる。",
-    steps: [`わる式 $${ptex(Dm)}$ の逆数は $${ptex(recip)}$。`, `$${ptex(A)}\\times\\left(${ptex(recip)}\\right)=${ptex(R)}$`],
+    steps: [`わる式 $${ptex(Dm)}$ の逆数は $${ptex(recip)}$。`, `$${ptex(A)}\\times \\left(${ptex(recip)}\\right)=${ptex(R)}$`],
   };
 }
 
@@ -779,21 +779,21 @@ const oddPick = (r) => {
 // ── おうぎ形の公式（11d09）─────────────────────────────────
 const SECTOR = [
   {
-    name: "弧の長さ→a", stmt: "おうぎ形の弧の長さ $\\ell$ は、半径 $r$、中心角 $a^\\circ$ のとき、", eq: "\\ell=2\\pi r\\times\\frac{a}{360}", v: "a", vars: ["l", "r", "a"],
+    name: "弧の長さ→a", stmt: "おうぎ形の弧の長さ $\\ell$ は、半径 $r$、中心角 $a^\\circ$ のとき、", eq: "\\ell=2\\pi r\\times \\frac{a}{360}", v: "a", vars: ["l", "r", "a"],
     resid: (x) => x.l - 2 * Math.PI * x.r * (x.a / 360), f: (x) => (360 * x.l) / (2 * Math.PI * x.r),
     ans: "a=\\frac{180\\ell}{\\pi r}",
     wrongs: [["a=\\frac{\\ell}{720\\pi r}", (x) => x.l / (720 * Math.PI * x.r)], ["a=\\frac{720\\pi r}{\\ell}", (x) => (720 * Math.PI * x.r) / x.l], ["a=\\frac{360\\ell}{\\pi r}", (x) => (360 * x.l) / (Math.PI * x.r)], ["a=\\frac{180\\pi r}{\\ell}", (x) => (180 * Math.PI * x.r) / x.l]],
     steps: ["両辺に 360 をかけて、$360\\ell=2\\pi ra$。", "両辺を $2\\pi r$ でわって、$a=\\frac{360\\ell}{2\\pi r}=\\frac{180\\ell}{\\pi r}$。"],
   },
   {
-    name: "弧の長さ→r", stmt: "おうぎ形の弧の長さ $\\ell$ は、半径 $r$、中心角 $a^\\circ$ のとき、", eq: "\\ell=2\\pi r\\times\\frac{a}{360}", v: "r", vars: ["l", "r", "a"],
+    name: "弧の長さ→r", stmt: "おうぎ形の弧の長さ $\\ell$ は、半径 $r$、中心角 $a^\\circ$ のとき、", eq: "\\ell=2\\pi r\\times \\frac{a}{360}", v: "r", vars: ["l", "r", "a"],
     resid: (x) => x.l - 2 * Math.PI * x.r * (x.a / 360), f: (x) => (360 * x.l) / (2 * Math.PI * x.a),
     ans: "r=\\frac{180\\ell}{\\pi a}",
     wrongs: [["r=\\frac{360\\ell}{\\pi a}", (x) => (360 * x.l) / (Math.PI * x.a)], ["r=\\frac{\\ell}{720\\pi a}", (x) => x.l / (720 * Math.PI * x.a)], ["r=\\frac{180\\pi a}{\\ell}", (x) => (180 * Math.PI * x.a) / x.l], ["r=\\frac{180\\ell}{a}", (x) => (180 * x.l) / x.a]],
     steps: ["両辺に 360 をかけて、$360\\ell=2\\pi ra$。", "両辺を $2\\pi a$ でわって、$r=\\frac{360\\ell}{2\\pi a}=\\frac{180\\ell}{\\pi a}$。"],
   },
   {
-    name: "面積→a", stmt: "おうぎ形の面積 $S$ は、半径 $r$、中心角 $a^\\circ$ のとき、", eq: "S=\\pi r^{2}\\times\\frac{a}{360}", v: "a", vars: ["S", "r", "a"],
+    name: "面積→a", stmt: "おうぎ形の面積 $S$ は、半径 $r$、中心角 $a^\\circ$ のとき、", eq: "S=\\pi r^{2}\\times \\frac{a}{360}", v: "a", vars: ["S", "r", "a"],
     resid: (x) => x.S - Math.PI * x.r * x.r * (x.a / 360), f: (x) => (360 * x.S) / (Math.PI * x.r * x.r),
     ans: "a=\\frac{360S}{\\pi r^{2}}",
     wrongs: [["a=\\frac{S}{360\\pi r^{2}}", (x) => x.S / (360 * Math.PI * x.r * x.r)], ["a=\\frac{360S}{\\pi r}", (x) => (360 * x.S) / (Math.PI * x.r)], ["a=\\frac{360\\pi r^{2}}{S}", (x) => (360 * Math.PI * x.r * x.r) / x.S], ["a=\\frac{180S}{\\pi r^{2}}", (x) => (180 * x.S) / (Math.PI * x.r * x.r)]],
@@ -810,7 +810,7 @@ const digit = (r) => {
   const k = r(3, 9), m = r(2, 5), tt = r(1, k - 1), j = m * tt;
   return {
     k, m, j,
-    steps: [`思いうかべた整数を $n$ とする。①〜③ は $${m}(n+${k})-${j}=${m}n+${m * k - j}$。`, `④ は $(${m}n+${m * k - j})\\div${m}=n+${(m * k - j) / m}$。`, `⑤ は $(n+${(m * k - j) / m})-n=${(m * k - j) / m}$。$n$ が消えて、いつも ${(m * k - j) / m}。`],
+    steps: [`思いうかべた整数を $n$ とする。①〜③ は $${m}(n+${k})-${j}=${m}n+${m * k - j}$。`, `④ は $(${m}n+${m * k - j})\\div ${m}=n+${(m * k - j) / m}$。`, `⑤ は $(n+${(m * k - j) / m})-n=${(m * k - j) / m}$。$n$ が消えて、いつも ${(m * k - j) / m}。`],
   };
 };
 
