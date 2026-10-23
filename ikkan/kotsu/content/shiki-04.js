@@ -24,7 +24,10 @@ const expsOf = (key) => { const e = {}; for (const m of key.matchAll(/([a-z])(-?
 const parts = (p) => { const k = Object.keys(p)[0]; return [p[k], expsOf(k)]; };
 const letterList = (e) => Object.keys(e).sort().flatMap((v) => Array(e[v]).fill(v));
 const lettersTex = (e) => ptex(term(1, e));                 // 文字の部分だけの TeX（x^{2}y など）
+/** 係数の絶対値 c と文字 e の積の TeX（係数 1 は省く。文字がなければ数） */
+const mTex = (c, e) => (Object.keys(e).length ? `${c === 1 ? "" : c}${lettersTex(e)}` : String(c));
 const kf = (c) => (c < 0 ? `(${c})` : String(c));
+const par = (s) => (s[0] === "-" ? `(${s})` : s);
 /** かけ算・わり算の式の中での単項式の書き方：負の項や分数の係数がマイナスなら、かっこをつける */
 const fT = (m) => {
   const s = T1(m);
@@ -69,7 +72,7 @@ const mulMid = (ms) => [...ms.map(([c]) => (Array.isArray(c) ? (c[1] === 1 ? kf(
 const mulBuild = (r, mode, o) => {
   const [u, v] = pick(r, LET2), kind = pick(r, o.kinds), c = () => pick(r, [1, -1]) * r(2, o.cmax);
   let m1, m2;
-  if (kind === "diff") { m1 = [c(), { [u]: 1 }]; m2 = [c(), { [v]: r(1, o.emax || 1) }]; if (r(0, 1)) [m1, m2] = [m2, m1]; }
+  if (kind === "diff") { m1 = [c(), { [u]: 1 }]; m2 = [c(), { [v]: 1 }]; if (r(0, 1)) [m1, m2] = [m2, m1]; }
   else if (kind === "same") { m1 = [c(), { [u]: r(1, 2) }]; m2 = [c(), { [u]: r(1, 2) }]; }
   else { m1 = [c(), { [u]: 1, [v]: 1 }]; m2 = [c(), { [pick(r, [u, v])]: 1 }]; if (r(0, 1)) [m1, m2] = [m2, m1]; }    // mixed
   const res = pmul(Mq(m1), Mq(m2)), [rc, re] = parts(res);
@@ -77,33 +80,29 @@ const mulBuild = (r, mode, o) => {
   const steps = ["係数どうし、文字どうしをかける。", $(`${expr}=${mulMid([m1, m2])}=${ptex(res)}`)];
   const hint = "係数どうしをかけて、文字どうしをかけよう。同じ文字のかけ算は、$x\\times x=x^2$ のように指数で表す。";
   if (mode === "num") return boxQ(expr, res, hint, steps);
-  const sa = padd(Mq([m1[0] + m2[0], re])), flip = pneg(res), noAdd = Mq([rc, Object.fromEntries(Object.entries(re).map(([k, n]) => [k, Math.max(m1[1][k] || 0, m2[1][k] || 0)]))]);
-  const dbl = Mq([rc, Object.fromEntries(Object.entries(re).map(([k, n]) => [k, 1]))]);
-  const { ans, choices } = polyChoices(r, res, [sa, noAdd, flip, dbl]);
+  const sum = Mq([m1[0] + m2[0], re]);                                                                                       // 係数をたしてしまう
+  const noAdd = Mq([rc, Object.fromEntries(Object.keys(re).map((k) => [k, Math.max(m1[1][k] || 0, m2[1][k] || 0)]))]);    // 同じ文字の指数をたさない
+  const { ans, choices } = polyChoices(r, res, [sum, noAdd, pneg(res), Mq([m1[0] * m2[0] - (m1[0] + m2[0]), re])]);
   return { q: `${$(expr)} を計算すると？`, ans, choices, hint, steps };
 };
 
 // ── 累乗（dr.2・qz.1）─────────────────────────────────────
 const powBuild = (r, mode, o) => {
-  const [u, v] = pick(r, LET2), form = pick(r, o.forms), n = o.n || 2, k = r(2, o.cmax);
-  const e = r(0, 4) === 0 && o.two ? { [u]: 1, [v]: 1 } : { [u]: 1 };
-  const base = [form === "neg" ? -k : k, e], s = T1(base);
-  let res = Mq([1, {}]);
-  for (let i = 0; i < n; i++) res = pmul(res, Mq(base));
+  const [u] = pick(r, LET2), form = pick(r, o.forms), n = 2, k = r(2, o.cmax);
+  const base = [form === "neg" ? -k : k, { [u]: 1 }], s = T1(base);
+  let res = pmul(Mq(base), Mq(base));
   if (form === "outer") res = pneg(res);
   const expr = form === "outer" ? `-(${s})^{${n}}` : `(${s})^{${n}}`;
-  const prod = Array(n).fill(par(s)).join("\\times ");
   const steps = form === "outer"
-    ? ["累乗が先。−(…)² は、(…)² の符号を変えたもの。", $(`${expr}=-(${Array(n).fill(s).join("\\times ")})=${ptex(res)}`)]
-    : ["$(−ka)^2$ は、$(−ka)$ を 2回かけること。係数も文字も、n 乗する。".replace("$(−ka)^2$", `${$(`(${s})^{${n}}`)}`).replace("$(−ka)$", $(par(s))).replace("係数も文字も、n 乗する", "係数も文字も同じ回数かける"), $(`${expr}=${prod}=${ptex(res)}`)];
+    ? ["累乗が先。−(…)² は、(…)² の符号を変えたもの。", $(`${expr}=-(${s}\\times ${s})=${ptex(res)}`)]
+    : ["累乗は、かっこの中をその回数かけること。係数も文字も、同じ回数かける。", $(`${expr}=${par(s)}\\times ${par(s)}=${ptex(res)}`)];
   const hint = "累乗は、同じものを何回かかけること。かっこの中の係数も文字も、同じ回数かける。";
   if (mode === "num") return boxQ(expr, res, hint, steps);
-  const [rc, re] = parts(res), sg = sgn(rc[0]);
-  const wrongs = [Mq([sg * k, re]), Mq([sg * k * n, re]), Mq([rc, Object.fromEntries(Object.entries(re).map(([x]) => [x, 1]))]), pneg(res)];
+  const [rc] = parts(res), sg = sgn(rc[0]);
+  const wrongs = [Mq([sg * k, { [u]: 2 }]), Mq([sg * k * n, { [u]: 2 }]), Mq([rc, { [u]: 1 }]), pneg(res)];
   const { ans, choices } = polyChoices(r, res, wrongs);
   return { q: `${$(expr)} を計算すると？`, ans, choices, hint, steps };
 };
-const par = (s) => (s[0] === "-" ? `(${s})` : s);
 
 // ── 除法（dr.3・qz.2）─────────────────────────────────────
 /** わられる式 ÷ わる式。商 q とわる式 d を決めて、わられる式 ＝ q × d にする */
@@ -116,8 +115,8 @@ const divBuild = (r, mode, o) => {
   const quo = [cq, eq], dv = [cd, ed], dd = [cq * cd, addE(eq, ed)];
   const res = pdivMono(Mq(dd), Mq(dv));
   const expr = `${fT(dd)}\\div ${fT(dv)}`;
-  const sg = sgn(cq) * sgn(cd) < 0 ? "-" : "";
-  const frac = `${sg}\\frac{${absC(cq * cd)}${lettersTex(dd[1])}}{${absC(cd)}${lettersTex(ed)}}`;
+  const sg = cq < 0 ? "-" : "";
+  const frac = `${sg}\\frac{${mTex(absC(cq * cd), dd[1])}}{${mTex(absC(cd), ed)}}`;
   const steps = ["分数の形にして、係数どうし、同じ文字どうしを約分する（逆数をかけてもよい）。", $(`${expr}=${frac}=${ptex(res)}`)];
   const hint = "わる式を分母にした分数にして、約分しよう。÷ のあとの式は、全体が分母になる。";
   if (mode === "num") return boxQ(expr, res, hint, steps);
@@ -141,20 +140,19 @@ const fracCoef = (r) => {
 };
 const fmulBuild = (r, mode, o) => {
   const [u, v] = pick(r, LET2), [p, q] = fracCoef(r);
-  let m = r(1, o.mmax) * q * pick(r, [1, -1]);
-  const same = r(0, 2) === 0, fneg = o.fneg && r(0, 3) === 0;
-  const f1 = [[(fneg ? -1 : 1) * p, q], { [u]: 1 }], f2 = [m, { [same ? u : v]: same ? r(1, 2) : 1 }];
-  if (Math.abs(p * (m / q)) < 2) m = m * 2, f2[0] = m;
+  let mm = r(1, o.mmax);
+  if (p * mm < 2) mm += 1;
+  const sf = o.fneg && r(0, 3) === 0 ? -1 : 1, m = mm * q * pick(r, [1, -1]), same = r(0, 2) === 0;
+  const f1 = [[sf * p, q], { [u]: 1 }], f2 = [m, { [same ? u : v]: same ? r(1, 2) : 1 }];
   const [a, b] = r(0, 3) === 0 ? [f2, f1] : [f1, f2];
-  const res = pmul(Mq(f1), Mq(f2)), [rc] = parts(res);
+  const res = pmul(Mq(f1), Mq(f2)), [rc, re] = parts(res);
   const expr = `${fT(a)}\\times ${fT(b)}`;
   const coefs = [a, b].map(([c]) => (Array.isArray(c) ? (c[0] < 0 ? `\\left(${fracTex(c[0], c[1])}\\right)` : fracTex(c[0], c[1])) : kf(c)));
   const mid = [...coefs, ...[a, b].flatMap(([, e]) => letterList(e))].join("\\times ");
-  const steps = ["係数どうし、文字どうしをかける。分数の係数は、約分してから計算してもよい。", $(`${expr}=${mid}=${ptex(res)}`)];
+  const steps = ["係数どうし、文字どうしをかける。分数の係数は、約分しながら計算するとよい。", $(`${expr}=${mid}=${ptex(res)}`)];
   const hint = "分数の係数と整数の係数を、約分しながらかけよう。文字どうしもかける。";
   if (mode === "num") return boxQ(expr, res, hint, steps);
-  const [rcq, re] = parts(res);
-  const wrongs = [Mq([qmul(Q(f1[0][0], f1[0][1]), Q(1, f2[0])), re]), Mq([Q(f1[0][1] * f2[0], f1[0][0]), re]), Mq([Q(f1[0][0] + f2[0], f1[0][1]), re]), pneg(res)];
+  const wrongs = [Mq([Q(sf * q * m, p), re]), Mq([Q(sf * p + m * q, q), re]), pneg(res), Mq([sf * p * m, re])];      // 分数を逆にしてかける／係数をたす／符号／分母を忘れる
   const { ans, choices } = polyChoices(r, res, wrongs);
   return { q: `${$(expr)} を計算すると？`, ans, choices, hint, steps };
 };
@@ -162,24 +160,22 @@ const fmulBuild = (r, mode, o) => {
 // ── 分数の係数でわる除法（dr.5・qz.3）───────────────────────
 const fdivBuild = (r, mode, o) => {
   const [u, v] = pick(r, LET2), [p, q] = fracCoef(r);
-  const sgd = o.negDiv && r(0, 1) ? -1 : 1, cq = pick(r, [1, -1]) * r(1, o.mmax) * q;       // 商の係数（q の倍数）
-  const eq = pick(r, [{ [v]: 1 }, { [u]: 1 }, { [v]: 1 }]), ed = pick(r, [{ [u]: 1 }, { [u]: 1, [v]: 1 }, { [u]: 1 }]);
-  const dv = [[sgd * p, q], ed], quo = [Math.abs(cq) === q && 1 === 0 ? cq : cq, eq];
-  const dd = [cq * p * sgd / q, addE(eq, ed)];       // わられる式の係数：商 × わる式の係数
-  const res = pdivMono(Mq(dd), Mq(dv));
+  const sgd = o.negDiv && r(0, 1) ? -1 : 1, cq = pick(r, [1, -1]) * r(1, o.mmax) * q;       // 商の係数（q の倍数にして、わられる式の係数を整数にする）
+  const eq = pick(r, [{ [v]: 1 }, { [u]: 1 }]), ed = pick(r, [{ [u]: 1 }, { [u]: 1, [v]: 1 }, { [u]: 1 }]);
+  const dv = [[sgd * p, q], ed], dd = [(cq * sgd * p) / q, addE(eq, ed)];
+  const res = pdivMono(Mq(dd), Mq(dv)), [rc, re] = parts(res);
   const expr = `${fT(dd)}\\div ${fT(dv)}`;
-  const recip = `${sgd < 0 ? "-" : ""}\\frac{${q}}{${p}${lettersTex(ed)}}`;
-  const sg = sgn(cq) * sgd < 0 ? "-" : "";
-  const mid2 = `${sg}\\frac{${absC(dd[0])}${lettersTex(dd[1])}\\times ${q}}{${p}${lettersTex(ed)}}`;
-  const steps = ["わる式の逆数をかける（分数の形にして約分してもよい）。", $(`${expr}=${fT(dd)}\\times ${sgd < 0 ? `\\left(${recip}\\right)` : recip}=${mid2}=${ptex(res)}`)];
+  const recip = `${sgd < 0 ? "-" : ""}\\frac{${q}}{${mTex(p, ed)}}`;
+  const sg = cq < 0 ? "-" : "";
+  const mid2 = `${sg}\\frac{${mTex(absC(dd[0]), dd[1])}\\times ${q}}{${mTex(p, ed)}}`;
+  const steps = ["わる式の逆数をかける（分母と分子を入れかえる。文字も入れかえる）。", $(`${expr}=${fT(dd)}\\times ${sgd < 0 ? `\\left(${recip}\\right)` : recip}=${mid2}=${ptex(res)}`)];
   const hint = "分数の係数でわるときは、わる式の逆数（分母と分子を入れかえた式）をかけよう。文字も逆数に入る。";
   if (mode === "num") return boxQ(expr, res, hint, steps);
-  const [rc, re] = parts(res);
   const wrongs = [
-    Mq([qmul(Q(dd[0]), Q(p * sgd, q)), re]),                       // わる式をそのままかけてしまう（逆数にしない）
+    Mq([qmul(Q(dd[0]), Q(sgd * p, q)), re]),                      // わる式の逆数にしないで、そのままかけてしまう
     pneg(res),
-    Mq([rc, dd[1]]),                                                // 文字を消し忘れる
-    Mq([qmul(Q(dd[0]), Q(q, p * sgd)), addE(re, ed)]),              // 文字を逆数にしないで、指数をたす
+    Mq([rc, dd[1]]),                                              // 文字を消し忘れる
+    Mq([qmul(Q(dd[0]), Q(q, sgd * p)), addE(re, ed)]),            // 文字を逆数にしないで、指数をたす
   ];
   const { ans, choices } = polyChoices(r, res, wrongs);
   return { q: `${$(expr)} を計算すると？`, ans, choices, hint, steps };
@@ -189,15 +185,14 @@ const fdivBuild = (r, mode, o) => {
 const boxHeight = (r, mode) => {
   const [u, v] = pick(r, LET2);
   const s1 = [r(2, 5), { [u]: 1 }], s2 = [r(2, 5), { [v]: 1 }];
-  let h;
-  for (;;) { h = [r(2, 6), pick(r, [{ [u]: 1 }, { [v]: 1 }, { [u]: 1, [v]: 1 }, { [u]: 2 }, { [v]: 2 }])]; if (Object.keys(h[1]).length) break; }
+  const h = [r(2, 6), pick(r, [{ [u]: 1 }, { [v]: 1 }, { [u]: 1, [v]: 1 }, { [u]: 2 }, { [v]: 2 }])];
   const base = pmul(Mq(s1), Mq(s2)), vol = pmul(base, Mq(h)), res = pdivMono(vol, base);
-  const [hc, he] = parts(res);
-  const head = `底面が、縦 ${$(`${T1(s1)}`)} cm・横 ${$(`${T1(s2)}`)} cm の長方形で、体積が ${$(ptex(vol))} cm³ の直方体がある。この直方体の高さを式で表すと、`;
+  const [hc, he] = parts(res), [vc, ve] = parts(vol);
+  const head = `底面が、縦 ${$(T1(s1))} cm・横 ${$(T1(s2))} cm の長方形で、体積が ${$(ptex(vol))} cm³ の直方体がある。この直方体の高さを式で表すと、`;
   const steps = [`底面積は ${$(`${T1(s1)}\\times ${T1(s2)}=${ptex(base)}`)}（cm²）`, `高さは、体積を底面積でわる。${$(`${ptex(vol)}\\div ${ptex(base)}=\\frac{${ptex(vol)}}{${ptex(base)}}=${ptex(res)}`)}（cm）`];
   const hint = "直方体の体積は、(底面積)×(高さ)。まず、底面積を式で表そう。";
-  if (mode === "num") return { q: `${head}$\\square ${lettersTex(he)}$ cm。□ にあてはまる数は？`, ans: ansQ(hc), hint, steps };
-  const wrongs = [pdivMono(vol, Mq(s1)), pdivMono(vol, Mq(s2)), Mq([Q(vol[Object.keys(vol)[0]][0] * 1, s1[0] + s2[0]), he]), Mq([hc, parts(vol)[1]])];
+  if (mode === "num") return { q: `${head}${$(`\\square ${lettersTex(he)}`)} cm。□ にあてはまる数は？`, ans: ansQ(hc), hint, steps };
+  const wrongs = [pdivMono(vol, Mq(s1)), pdivMono(vol, Mq(s2)), Mq([Q(vc[0], s1[0] + s2[0]), he]), Mq([hc, ve])];     // 底面の一辺しかわらない／係数を和でわる／文字を約分し忘れる
   const { ans, choices } = polyChoices(r, res, wrongs);
   return { q: `${head}どれか。`, ans, choices, hint, steps };
 };
@@ -206,12 +201,12 @@ const sideOfRect = (r, mode) => {
   const side = [r(2, 6), pick(r, [{ [v]: 1 }, { [u]: 1 }])];
   let other;
   for (;;) { other = [r(2, 7), pick(r, [{ [u]: 1 }, { [v]: 1 }, { [u]: 1, [v]: 1 }])]; if (keyOf(other[1]) !== keyOf(side[1])) break; }
-  const area = pmul(Mq(side), Mq(other)), res = pdivMono(area, Mq(side)), [oc, oe] = parts(res);
+  const area = pmul(Mq(side), Mq(other)), res = pdivMono(area, Mq(side)), [oc, oe] = parts(res), [ac, ae] = parts(area);
   const head = `面積が ${$(ptex(area))} cm²、縦が ${$(T1(side))} cm の長方形の、横の長さを式で表すと、`;
-  const steps = ["横の長さ ＝ 面積 ÷ 縦", $(`${ptex(area)}\\div ${T1(side)}=\\frac{${ptex(area)}}{${T1(side)}}=${ptex(res)}`) + "（cm）"];
+  const steps = ["横の長さ ＝ 面積 ÷ 縦", `${$(`${ptex(area)}\\div ${T1(side)}=\\frac{${ptex(area)}}{${T1(side)}}=${ptex(res)}`)}（cm）`];
   const hint = "長方形の面積は、(縦)×(横)。横を求めるには、面積を縦でわる。";
-  if (mode === "num") return { q: `${head}$\\square ${lettersTex(oe)}$ cm。□ にあてはまる数は？`, ans: ansQ(oc), hint, steps };
-  const wrongs = [Mq([oc, parts(area)[1]]), Mq([Q(side[0] * ((other[0]) || 1), 1), oe]), pneg(res), Mq([Q(parts(area)[0][0] - side[0], 1), oe])];
+  if (mode === "num") return { q: `${head}${$(`\\square ${lettersTex(oe)}`)} cm。□ にあてはまる数は？`, ans: ansQ(oc), hint, steps };
+  const wrongs = [Mq([oc, ae]), Mq([ac[0] - side[0], oe]), Mq([oc, addE(oe, side[1])]), Mq([Q(ac[0], 1), oe])];       // 文字を約分し忘れる／係数をひく／文字をたす／係数をわらない
   const { ans, choices } = polyChoices(r, res, wrongs);
   return { q: `${head}どれか。`, ans, choices, hint, steps };
 };
@@ -225,21 +220,21 @@ const blankBuild = (r, mode, form) => {
     C = parts(pmul(Mq(A), Mq(X))); C = [C[0], C[1]];
     expr = `${T1(A)}\\times\\square=${T1(C)}`;
     const sg = sgn(C[0][0]) < 0 ? "-" : "";
-    steps = ["□ ＝ (積) ÷ (かけた式)", $(`\\square=${fT(C)}\\div ${T1(A)}=${sg}\\frac{${absC(C[0][0])}${lettersTex(C[1])}}{${A[0]}${lettersTex(A[1])}}=${T1(X)}`)];
-    hint = "かけ算の式 $(\\text{かけられる式})\\times\\square=(\\text{積})$ から、□ を求める計算を考えよう。";
+    steps = ["□ ＝ (積) ÷ (かけた式)", $(`\\square=${fT(C)}\\div ${T1(A)}=${sg}\\frac{${mTex(absC(C[0][0]), C[1])}}{${mTex(A[0], A[1])}}=${T1(X)}`)];
+    hint = "「(かけられる式)×□＝(積)」から、□ を求める計算を考えよう。";
   } else if (form === "d1") {   // □ ÷ A = C
     A = [cp(), pick(r, [{ [u]: 1 }, { [v]: 1 }])]; C = [c(), pick(r, [{ [u]: 1, [v]: 1 }, { [v]: 1 }, { [u]: 1 }])];
     X = parts(pmul(Mq(C), Mq(A))); X = [X[0], X[1]];
     expr = `\\square\\div ${T1(A)}=${T1(C)}`;
     steps = ["□ ＝ (商) × (わる式)", $(`\\square=${fT(C)}\\times ${T1(A)}=${T1(X)}`)];
-    hint = "わり算の式 $\\square\\div(\\text{わる式})=(\\text{商})$ から、□ を求める計算を考えよう。";
+    hint = "「□÷(わる式)＝(商)」から、□ を求める計算を考えよう。";
   } else {                      // A ÷ □ = C
     C = [c(), pick(r, [{ [u]: 1 }, { [v]: 1 }, { [u]: 1, [v]: 1 }])]; X = [c(), pick(r, [{ [u]: 1, [v]: 1 }, { [v]: 1 }, { [u]: 1 }])];
     A = parts(pmul(Mq(C), Mq(X))); A = [A[0], A[1]];
     expr = `${T1(A)}\\div\\square=${T1(C)}`;
     const sg = sgn(A[0][0]) * sgn(C[0]) < 0 ? "-" : "";
-    steps = ["□ ＝ (わられる式) ÷ (商)", $(`\\square=${fT(A)}\\div ${fT(C)}=${sg}\\frac{${absC(A[0][0])}${lettersTex(A[1])}}{${absC(C[0])}${lettersTex(C[1])}}=${T1(X)}`)];
-    hint = "わり算の式 $(\\text{わられる式})\\div\\square=(\\text{商})$ から、□ を求める計算を考えよう。";
+    steps = ["□ ＝ (わられる式) ÷ (商)", $(`\\square=${fT(A)}\\div ${fT(C)}=${sg}\\frac{${mTex(absC(A[0][0]), A[1])}}{${mTex(absC(C[0]), C[1])}}=${T1(X)}`)];
+    hint = "「(わられる式)÷□＝(商)」から、□ を求める計算を考えよう。";
   }
   const ans0 = Mq(X);
   if (mode === "num") return { q: `${$(expr)} のとき、□ にあてはまる単項式の係数は？`, ans: ansQ(parts(ans0)[0]), hint, steps };
@@ -283,14 +278,11 @@ const reasonBuild = (r, kind) => {
 const growBuild = (r, kind) => {
   if (kind === "cube") {
     const k = r(2, 6), which = pick(r, ["S", "V"]);
-    const f = which === "S" ? term(6, { a: 2 }) : term(1, { a: 3 });
-    const big = which === "S" ? term(6 * k * k, { a: 2 }) : term(k ** 3, { a: 3 });
     const ratio = which === "S" ? k * k : k ** 3;
     const name = which === "S" ? "表面積" : "体積";
     const steps = which === "S"
       ? [`表面積は ${$("6a^{2}")}。1辺を ${k}倍すると ${$(`6\\times(${k}a)^{2}=${6 * k * k}a^{2}`)}。`, `${$(`${6 * k * k}a^{2}\\div 6a^{2}=${ratio}`)}（倍）`]
       : [`体積は ${$("a^{3}")}。1辺を ${k}倍すると ${$(`(${k}a)^{3}=${k ** 3}a^{3}`)}。`, `${$(`${k ** 3}a^{3}\\div a^{3}=${ratio}`)}（倍）`];
-    void f; void big;
     return { q: `1辺が ${$("a")} cm の立方体がある。1辺を ${k}倍にすると、${name}は、もとの何倍になるか。`, ans: ratio, unit: "倍", hint: `${name}を、$a$ を使った式で表して、1辺が ${k}倍になった立体の${name}と、くらべよう。`, steps };
   }
   if (kind === "box") {
@@ -324,34 +316,32 @@ const growBuild = (r, kind) => {
 
 // ── かけるところを、わってしまった（dr.10・qz.5）─────────────────
 const undoMonoBuild = (r, mode, o) => {
-  const [u, v] = pick(r, LET2), modeX = o.onlyX || r(0, 1) === 0;       // modeX：かけるところを、まちがえてわった
-  const Bm = [(o.bneg && r(0, 1) ? -1 : 1) * r(2, o.cmax), o.bexps ? pick(r, o.bexps(u, v)) : { [u]: 1, [v]: 1 }];
-  const Wm = [pick(r, [1, -1]) * r(2, o.cmax), pick(r, [{ [u]: 1 }, { [v]: 1 }, { [u]: 1, [v]: 1 }, { [u]: 2 }])];
-  const B = Mq(Bm), B2 = pmul(B, B);
-  let Wp, right, A, head, steps;
-  const bt = fT(Bm), bt0 = T1(Bm);
-  if (modeX) {        // ある単項式 A ÷ B ＝ W（まちがい）。A × B が正しい答え
-    Wp = Mq(Wm); A = pmul(Wp, B); right = pmul(A, B);
-    head = `ある単項式に ${$(bt0)} をかけるところを、まちがえて ${$(bt0)} でわったので、答えが ${$(T1(Wm))} になった。`;
-    steps = [`ある単項式を ${$("A")} とすると、${$(`A\\div ${bt}=${T1(Wm)}`)} より、${$(`A=${fT(Wm)}\\times ${bt}=${ptex(A)}`)}。`, `正しい答えは、${$(`A\\times ${bt}=${fT(parts(A))}\\times ${bt}=${ptex(right)}`)}。`];
-  } else {            // ある単項式 A × B ＝ W（まちがい）。A ÷ B が正しい答え
-    Wp = Mq(Wm); right = pmul(Wp, Mq([1, {}])); const Rm = Wm;       // W = R × B²（W を B² の倍数にする）
-    const R = pdivMono(Mq([Wm[0] * Bm[0] * Bm[0], addE(Wm[1], addE(Bm[1], Bm[1]))]), B2);
-    const Wbig = pmul(R, B2);
-    right = R; A = pmul(R, B);
-    head = `ある単項式を ${$(bt0)} でわるところを、まちがえて ${$(bt0)} をかけたので、答えが ${$(ptex(Wbig))} になった。`;
-    steps = [`ある単項式を ${$("A")} とすると、${$(`A\\times ${bt}=${ptex(Wbig)}`)} より、${$(`A=${ptex(Wbig)}\\div ${bt}=${ptex(A)}`)}。`, `正しい答えは、${$(`A\\div ${bt}=${fT(parts(A))}\\div ${bt}=${ptex(right)}`)}。`];
-    void Rm;
+  const [u, v] = pick(r, LET2), modeX = o.onlyX || r(0, 1) === 0;       // modeX：かけるところを、まちがえてわった／でなければ、わるところを、まちがえてかけた
+  const Bm = [(o.bneg && r(0, 1) ? -1 : 1) * r(2, o.cmax), pick(r, o.bexps ? o.bexps(u, v) : [{ [u]: 1, [v]: 1 }, { [u]: 1 }, { [v]: 1 }])];
+  const Rm = [pick(r, [1, -1]) * r(2, o.cmax), pick(r, [{ [u]: 1 }, { [v]: 1 }, { [u]: 1, [v]: 1 }, { [u]: 2 }])];
+  const B = Mq(Bm), bt = fT(Bm), bt0 = T1(Bm);
+  let W, A, right, head, steps;
+  if (modeX) {        // まちがえた答え W ＝ A ÷ B。 A ＝ W × B。正しい答え ＝ A × B
+    W = Mq(Rm); A = pmul(W, B); right = pmul(A, B);
+    head = `ある単項式に ${$(bt0)} をかけるところを、まちがえて ${$(bt0)} でわったので、答えが ${$(ptex(W))} になった。`;
+    steps = [`ある単項式を ${$("A")} とすると、${$(`A\\div ${bt}=${ptex(W)}`)} より、${$(`A=${fT(parts(W))}\\times ${bt}=${ptex(A)}`)}。`, `正しい答えは、${$(`A\\times ${bt}=${fT(parts(A))}\\times ${bt}=${ptex(right)}`)}。`];
+  } else {            // まちがえた答え W ＝ A × B。 A ＝ W ÷ B。正しい答え ＝ A ÷ B（R × B² ＝ W になるように R を決める）
+    right = Mq(Rm); A = pmul(right, B); W = pmul(A, B);
+    head = `ある単項式を ${$(bt0)} でわるところを、まちがえて ${$(bt0)} をかけたので、答えが ${$(ptex(W))} になった。`;
+    steps = [`ある単項式を ${$("A")} とすると、${$(`A\\times ${bt}=${ptex(W)}`)} より、${$(`A=${fT(parts(W))}\\div ${bt}=${ptex(A)}`)}。`, `正しい答えは、${$(`A\\div ${bt}=${fT(parts(A))}\\div ${bt}=${ptex(right)}`)}。`];
   }
   const hint = "まちがえた計算を式で表して、ある単項式 $A$ を先に求めよう。";
+  const [rc, re] = parts(right);
   if (mode === "num") {
-    const askDeg = r(0, 1) === 1, [rc, re] = parts(right);
-    return askDeg ? { q: `${head}正しい答えの次数は？`, ans: Object.values(re).reduce((a, b) => a + b, 0), hint, steps } : { q: `${head}正しい答えの係数は？`, ans: ansQ(rc), hint, steps };
+    return r(0, 1) === 1
+      ? { q: `${head}正しい答えの次数は？`, ans: degOf(re), hint, steps }
+      : { q: `${head}正しい答えの係数は？`, ans: ansQ(rc), hint, steps };
   }
-  const wrongs = modeX ? [A, Wp, pneg(right), pdivMono(A, B)] : [A, pmul(right, B), pneg(right), pmul(A, B)];
+  const wrongs = [A, W, pneg(right), Mq([rc, parts(A)[1]])];
   const { ans, choices } = polyChoices(r, right, wrongs);
   return { q: `${head}正しい答えはどれか。`, ans, choices, hint, steps };
 };
+const degOf = (e) => Object.values(e).reduce((a, b) => a + b, 0);
 
 export const UNITS = [
   unit("04", {

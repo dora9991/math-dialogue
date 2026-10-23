@@ -10,7 +10,7 @@
 // ============================================================
 import { t, pick, choices4, shuffle, fracAns, rnz, sgn, gcd, lcm } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
-import { qmul, qdiv, qtex, qisint, term, poly, padd, pmul, pscale, psub, pdivMono, peval, peq, pneg, pdeg, pterms, ptex, ptexp } from "../algebra.js";
+import { qmul, qdiv, qtex, term, poly, padd, pmul, pscale, psub, pdivMono, peval, peq, pneg, pdeg, pterms, ptex, ptexp } from "../algebra.js";
 
 const unit = unitFor("shiki");
 
@@ -148,24 +148,6 @@ const substTex = (p, vals) => sortedKeys(p).map((k, i) => {
   return (i === 0 ? (neg ? "-" : "") : neg ? "-" : "+") + [...cs, ...fs].join(" \\times ");
 }).join("");
 const valsSay = (u, v, vals) => `${$(`${u}=${valTex(vals[u])}`)}、${$(`${v}=${valTex(vals[v])}`)}`;
-
-const INTS = [-6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6];
-const FRACS = [[1, 2], [-1, 2], [1, 3], [-1, 3], [1, 4], [-1, 4], [1, 5], [-1, 5], [2, 3], [-2, 3]];
-
-/** 式の値（数値入力）。items のつながりを簡単にしてから代入する。vals は { 文字: 数 } */
-const chainValueQ = (items, vals, u, v, hint) => {
-  const simp = run(items);
-  const res = peval(simp, vals);
-  return {
-    q: `${valsSay(u, v, vals)} のとき、${$(chainTex(items))} の値を求めよう。（÷のあとの項は、全体でわる）`,
-    ans: qAns(res),
-    hint,
-    steps: [
-      "先に式を簡単にする。 " + $(`${chainTex(items)} = ${ptex(simp)}`),
-      "文字に数を代入する（負の数にはかっこをつける）。 " + $(`${ptex(simp)} = ${substTex(simp, vals)} = ${valTex(res)}`),
-    ],
-  };
-};
 
 // ── 第6時だけの道具 ──────────────────────────────────────────
 /** 項を、書いた順にならべた TeX：seqTex([[5,{a:1}],[3,{b:1}],[-2,{a:1}]]) → 5a+3b-2a */

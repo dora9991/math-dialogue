@@ -586,7 +586,7 @@ export const UNITS = [
       4: [
         // 11d10a カレンダーで縦に並んだ k個の数の和：kn＋□
         t("11d10a", (r) => {
-          const k = pick(r, [3, 4, 4, 5, 6]), c = (7 * k * (k - 1)) / 2;
+          const k = pick(r, [3, 4, 4, 5]), c = (7 * k * (k - 1)) / 2;
           const start = r(1, 31 - 7 * (k - 1));
           const ex = Array.from({ length: k }, (_, i) => start + 7 * i).join("、");
           return {
