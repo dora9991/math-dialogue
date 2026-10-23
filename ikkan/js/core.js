@@ -275,6 +275,7 @@
       return `<div class="wb wb-b" style="height:${rowsOf(b) * g.pitch}mm">${an}</div>`;
     }
     if (b.type === 'gap') return `<div class="wb wb-gap" style="height:${rowsOf(b) * g.pitch}mm"></div>`;
+    if (b.type === 'raw') return `<div class="wb wb-raw${b.cls ? ' ' + b.cls : ''}" style="height:${rowsOf(b) * g.pitch}mm">${b.html}</div>`;   // 学習予定表など、HTML をそのまま置く枠（高さは罫の行数）
     if (b.type === 'figure') {
       const figs = b.figs || [], H = rowsOf(b) * g.pitch;
       const ws = figs.map(f => Math.max(0.2, num(f.w, 1))), sum = ws.reduce((a, c) => a + c, 0), avail = W - FIG_GAP * (figs.length - 1);
@@ -306,10 +307,18 @@
   const heightOf = b => (b.type === 'cols' ? Math.max(...b.cols.map(c => c.blocks.reduce((a, x) => a + heightOf(x), 0))) : rowsOf(b));
   const splitPages = blocks => { const pages = [[]]; blocks.forEach(b => { if (b.type === 'break') pages.push([]); else pages[pages.length - 1].push(b); }); return pages; };
 
+  // 記録ページの QR コード（演習プリント・小テスト・学習予定表の右上）。sheet.qr に '#/' のあとの場所（例：r/kukan-03/dr）を書く
+  const QR_MM = 14, QR_TOP = 6.5;
+  IK.qrBase = IK.qrBase || 'https://dora9991.github.io/math-dialogue/ikkan/';
+  IK.qrUnits = IK.qrUnits || ['kukan'];   // 記録ページ（コツコツくんにつなぐ）を使う単元
+
   function pagesHTML(sheet) {
     const g = geo(sheet), P = g.P, pages = splitPages(sheet.blocks), hd = sheet.head != null ? sheet.head : '';
+    const qr = sheet.qr && IK.qr ? IK.qr.svg(IK.qrBase + '#/' + sheet.qr, QR_MM) : '';
+    const qrR = P.mx + (qr ? QR_MM + 2 : 0);
     return pages.map((bl, pi) => `<div class="wsp" style="width:${P.w}mm;height:${P.h}mm;--pitch:${g.pitch}mm">
-      <div class="wsp-head" style="left:${P.mx}mm;right:${P.mx}mm;top:${P.top - 12}mm">
+      ${qr ? `<div class="wsp-qr" style="right:${P.mx}mm;top:${QR_TOP}mm;width:${QR_MM}mm;height:${QR_MM}mm">${qr}</div><div class="wsp-qrcap" style="right:${qrR}mm;top:${P.top - 10.6}mm">${esc(sheet.qrCap || '← 読みとって、丸つけ・記録')}</div>` : ''}
+      <div class="wsp-head${qr ? ' has-qr' : ''}" style="left:${P.mx}mm;right:${qrR}mm;top:${P.top - 12}mm">
         <div class="wh-date"><span class="u w2"></span>月<span class="u w2"></span>日（<span class="u w1"></span>）</div>
         <div class="wh-mid">${esc(hd)}${pages.length > 1 ? `　${pi + 1}／${pages.length}` : ''}</div>
         <div class="wh-name"><span class="u w1"></span>年<span class="u w1"></span>組<span class="u w1"></span>号　氏名<span class="u w6"></span></div>
@@ -338,8 +347,9 @@
     const { plan, ws, dr, qz } = def, meta = Object.assign({}, def);
     delete meta.plan; delete meta.ws; delete meta.dr; delete meta.qz;
     IK.add(id, meta, ws || []);
-    if (qz) IK.quizzes[id] = { id, paper: 'A4', pitch: 7, dots: true, head: (meta.head ? meta.head + '・' : '') + '小テスト', blocks: qz };
-    if (dr) IK.drills[id] = { id, paper: 'A4', pitch: 7, dots: true, head: (meta.head ? meta.head + '・' : '') + '演習', blocks: dr };
+    const rec = k => (IK.qrUnits.indexOf(meta.unit) >= 0 ? { qr: `r/${id}/${k}` } : {});   // 記録ページの QR（IK.qrUnits の単元だけ）
+    if (qz) IK.quizzes[id] = Object.assign({ id, paper: 'A4', pitch: 7, dots: true, head: (meta.head ? meta.head + '・' : '') + '小テスト', blocks: qz }, rec('qz'));
+    if (dr) IK.drills[id] = Object.assign({ id, paper: 'A4', pitch: 7, dots: true, head: (meta.head ? meta.head + '・' : '') + '演習', blocks: dr }, rec('dr'));
     if (plan) IK.plans[id] = Object.assign({ id }, plan);
   };
   // ワークシートを書くときの道具（data/ws_<単元>.js で使う）
