@@ -373,7 +373,7 @@ export const UNITS = [
           const S2 = { ...S, V: { ...S.V, H: cen([...base]), M: cen(["A", "B"]) } };   // 底面の中心 H と、辺 AB の中点 M をくわえる
           const where = n === 4 ? "底面の対角線の交点を H" : "底面の正三角形の中心を H";
           const lat = [...base].map((v) => `O${v}`).join("＝");
-          const introPyr = `正${pyramidName(n)} O−${base}（底面 ${base} は${REGPOLY[n]}。${lat} で、長さがすべて等しい）`;   // 「真上」とは書かない
+          const introPyr = `正${pyramidName(n)} O−${base}（底面 ${base} は${REGPOLY[n]}で、${lat}）`;   // 「真上」とは書かない
           if (r(0, 1) === 0) {   // 形A：OH が高さといえる理由
             const rel = lineFaceRel(S2, "OH", base);
             const MAP = { perp: "垂直である", parallel: "平行である", on: `面 ${base} の上にある`, cross: "垂直ではなく、斜めに交わっている" };
@@ -438,20 +438,18 @@ export const UNITS = [
             ],
           };
         }),
-        // 04q05 辺 AE が面 ABCD に垂直と言い切る理由（形A：じゅうぶんな理由を選ぶ）／ 垂直といえるかの判断（形B：交わる2直線か、平行な2直線か、1本か）
+        // 04q05 辺 AE が面 ABCD に垂直と言い切る理由（形A：じゅうぶんな理由を選ぶ）／ 垂直といえるかの判断（形B：空間の直線 ℓ と平面 P で、垂直の言い切り方）
         t("04q05", (r) => {
-          const S = pick(r, [BOX, CUBE]), f = pick(r, S.F);
-          const e = pick(r, edgesToFace(S, f, "perp"));
-          const P = [...e].find((v) => f.includes(v));
-          const ps = S.E.filter((x) => has(f, x) && x.includes(P));   // 面 f 上で P を通る2本の辺
-          const [p1, p2] = ps;
-          const opp = S.E.find((x) => has(f, x) && !x.includes(P) && lineRel(S, x, p1).rel === "parallel");   // p1 と平行な、面 f 上の辺
-          const wrapUp = "1本だけ、平行な 2本だけ、1点で交わっているだけでは、辺がたおれるので、言い切るには、じゅうぶんでない。";
-          if (r(0, 1) === 0) {   // 形A
+          if (r(0, 2) > 0) {   // 形A（立体で）
+            const S = pick(r, [BOX, CUBE]), f = pick(r, S.F);
+            const e = pick(r, edgesToFace(S, f, "perp"));
+            const P = [...e].find((v) => f.includes(v));
+            const [p1, p2] = S.E.filter((x) => has(f, x) && x.includes(P));   // 面 f 上で P を通る2本の辺
+            const g = S.F.find((x) => x !== f && has(x, e) && faceFaceRel(S, x, f) === "perp");   // 辺 e をふくみ、面 f と垂直な面
             const ans = `${eName(e)} は、${fName(f)} 上の、${P} で交わる 2直線 ${eLab(p1)}、${eLab(p2)} と垂直だから。`;
             const ws = [
               `${eName(e)} は、${fName(f)} 上の 1本の直線 ${eLab(p1)} と垂直だから。`,
-              `${eName(e)} は、${fName(f)} 上の、平行な 2直線 ${eLab(p1)}、${eLab(opp)} と垂直だから。`,
+              `${eName(e)} は、${fName(f)} と垂直な ${fName(g)} の上にあるから。`,
               `${eName(e)} は、${fName(f)} と点 ${P} で交わっているから。`,
             ];
             return {
@@ -462,25 +460,25 @@ export const UNITS = [
               steps: [
                 `${eName(e)} は、${fName(f)} 上の ${eLab(p1)}、${eLab(p2)} と、${P} で垂直に交わっている。`,
                 `${eLab(p1)} と ${eLab(p2)} は、点 ${P} で交わる 2直線。交わる 2直線に垂直だから、${eName(e)} は ${fName(f)} に垂直。`,
-                wrapUp,
+                "1本だけに垂直、面に垂直な面の上にあるだけ、1点で交わっているだけでは、辺がたおれるので、言い切るには、じゅうぶんでない。",
               ],
             };
           }
-          // 形B：「このことだけから」、垂直といえるか
+          // 形B：立体を使わず、空間の直線 ℓ と平面 P で
           const KIND = {
-            cross2: [`${fName(f)} 上の、${P} で交わる 2直線 ${eLab(p1)}、${eLab(p2)} と垂直である`, true, `${eLab(p1)} と ${eLab(p2)} は、点 ${P} で交わる 2直線。交わる 2直線に垂直だから、垂直といえる。`],
-            par2: [`${fName(f)} 上の、平行な 2直線 ${eLab(p1)}、${eLab(opp)} と垂直である`, false, `${eLab(p1)} と ${eLab(opp)} は平行な 2直線。平行な 2本に垂直なだけでは、辺がたおれるので、垂直とは言い切れない。`],
-            one: [`${fName(f)} 上の 1本の直線 ${eLab(p1)} と垂直である`, false, `${fName(f)} 上の 1本に垂直なだけでは、辺がたおれるので、垂直とは言い切れない。`],
+            one: ["O を通る P 上の、1本の直線 m と垂直である", false, "P 上の 1本の直線に垂直なだけでは、ℓ がたおれるので、ℓ ⊥ P とは言い切れない。"],
+            two: ["O を通る P 上の、別々の 2本の直線 m、n と垂直である", true, "O を通る別々の 2本の直線 m、n は、O で交わる 2直線。交わる 2直線に垂直だから、ℓ ⊥ P と言い切れる。"],
+            three: ["O を通る P 上の、別々の 3本の直線 m、n、k と垂直である", true, "3本のうち、どの 2本も O で交わる。交わる 2直線に垂直だから、ℓ ⊥ P と言い切れる。"],
+            all: ["O を通る P 上の、すべての直線と垂直である", true, "ℓ ⊥ P の、もともとの意味（定義）にあたる。"],
           };
-          const key = pick(r, ["cross2", "cross2", "par2", "one"]), [premise, yes, why] = KIND[key];
-          const YES = "垂直である", NO = "垂直かどうかは、これだけでは言い切れない";
-          const ans = yes ? YES : NO;
+          const key = pick(r, ["one", "one", "two", "two", "three", "all"]), [premise, yes, why] = KIND[key];
+          const YES = "垂直である", NO = "垂直かどうかは、これだけでは言い切れない", ans = yes ? YES : NO;
           return {
-            q: `${introOf(S, S === CUBE)}で、${eName(e)} は ${fName(f)} と点 ${P} で交わっていて、${premise}。このことだけから、${eName(e)} と ${fName(f)} の位置関係について、いえることはどれか。`,
+            q: `空間に、直線 ℓ と平面 P があり、ℓ は P と点 O で交わっている。ℓ は、${premise}。このことだけから、ℓ と P の関係について、いえることはどれか。`,
             ans,
-            choices: choices4(r, ans, [YES, NO, "平行である", `${fName(f)} の上にある`].filter((x) => x !== ans)),
+            choices: choices4(r, ans, [YES, NO, "平行である", "P の上にある"].filter((x) => x !== ans)),
             hint: "平面に垂直と言い切るには、平面の上の、何本の、どんな直線に垂直であればよいか。本数と、交わり方に目をつけよう。",
-            steps: [`${eName(e)} は、${premise}。`, why, `${eName(e)} は ${fName(f)} と点 ${P} で交わっているので、平行でも、面の上にあるのでもない。`, `答えは「${ans}」。`],
+            steps: [`ℓ は、${premise}。`, why, "ℓ は P と点 O で交わっているので、平行でも、P の上にあるのでもない。", `答えは「${ans}」。`],
           };
         }),
       ],

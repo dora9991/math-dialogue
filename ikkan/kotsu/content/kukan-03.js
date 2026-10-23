@@ -32,6 +32,7 @@ function introOf(S, cube = false) {
 }
 
 const eLab = edgeLabel;
+const has = (f, e) => [...e].every((v) => f.includes(v));   // 辺 e が、面 f にふくまれるか（両はしが f の頂点）
 const eName = (e) => `辺 ${eLab(e)}`;
 const uniqLab = (a, b) => [eLab(a), eLab(b)].sort();
 const pairName = (a, b) => { const [x, y] = uniqLab(a, b); return `辺 ${x} と 辺 ${y}`; };
@@ -100,6 +101,33 @@ function edgeChoiceQ(r, S, rel, { cube = false, pool = S.E } = {}) {
   };
 }
 
+/** 「面 f の辺のうち、辺 e と rel の関係の辺」を、4択で答える問題（辺の関係と、面の辺かどうか、の2つを考える） */
+function edgeInFaceQ(r, S, rel) {
+  const R = REL[rel], cands = [];
+  for (const e of S.E) for (const f of S.F) {   // 辺の関係と面の辺かどうか、両方のまちがいが出る (e, f) の組だけ
+    const rest = S.E.filter((x) => !same(x, e)), okAll = rest.filter((x) => R.kinds.includes(kindOf(S, e, x)));
+    const g1 = rest.filter((x) => has(f, x) && !okAll.includes(x)), g2 = okAll.filter((x) => !has(f, x)), g3 = rest.filter((x) => !has(f, x) && !okAll.includes(x));
+    if (okAll.some((x) => has(f, x)) && g1.length && g2.length && g1.length + g2.length + g3.length >= 3) cands.push([e, f, rest, okAll, g1, g2, g3]);
+  }
+  if (!cands.length) return { skip: true };
+  const [e, f, , okAll, g1, g2, g3] = pick(r, cands), okIn = okAll.filter((x) => has(f, x));
+  const wrongs = mix(r, [g1, g2, g3]).slice(0, 3);
+  const ans = eName(pick(r, okIn));
+  const note = (x) => `関係は「${wordOf(S, kindOf(S, e, x))}」、面 ${f} の辺${has(f, x) ? "" : "ではない"}`;
+  return {
+    q: `${introOf(S)}で、面 ${f} の辺のうち、辺 ${eLab(e)} ${R.phrase}は、次のうちどれか。`,
+    ans,
+    choices: choices4(r, ans, wrongs.map(eName)),
+    hint: `まず、辺 ${eLab(e)} ${R.phrase}を調べよう。その中から、面 ${f} の辺をさがす。`,
+    steps: [
+      `辺 ${eLab(e)} ${R.phrase}は、${listEdges(okAll)}。`,
+      `そのうち、面 ${f} の辺は、${listEdges(okIn)}。`,
+      `ほかの選択肢：${wrongs.map((x) => `${eName(x)}（${note(x)}）`).join("、")}。`,
+      `答えは「${ans}」。`,
+    ],
+  };
+}
+
 /** 辺 e と rel の関係の辺は、全部で何本か（数の問い） */
 function edgeCountQ(r, S, rel, { cube = false, pool = S.E } = {}) {
   const R = REL[rel], e = pick(r, pool);
@@ -149,7 +177,7 @@ export const UNITS = [
     points: [
       "空間にある2つの直線の位置関係は、交わる・平行・ねじれの位置の3つ。平行でなく、交わらない2直線を、ねじれの位置にあるという。",
       "交わる2直線と平行な2直線は、同じ平面上にある。ねじれの位置にある2直線は、同じ平面上にない。",
-      "ねじれの位置の辺は、まわりの辺から、「交わる辺」と「平行な辺」を消して、のこりを見つける。見取図の上で交わって見えても、空間では交わらないことがある。",
+      "ねじれの位置の辺は、まわりの辺から、「交わる辺」と「平行な辺」を消して、のこりを見つける。近くにある辺どうしでも、頭の中でのばしてみて、本当に交わるかを確かめる（空間では、交わらないことがある）。",
       "直方体の1本の辺には、平行な辺が3本、垂直に交わる辺が4本、ねじれの位置にある辺が4本ある。",
     ],
     levels: {
@@ -169,7 +197,7 @@ export const UNITS = [
             q: "空間にある2つの直線の位置関係は、3つに分けられる。その3つの組として、正しいものはどれか。",
             ans,
             choices: choices4(r, ans, ws),
-            hint: "同じ平面上にある2直線は、交わるか平行。同じ平面上にないとき、何というか。",
+            hint: "2つの直線が、同じ平面の上にあるときと、ないときに分けて、考えてみよう。",
             steps: ["2直線が同じ平面上にあれば、「交わる」か「平行」。同じ平面上になければ、「ねじれの位置」。", "「垂直」は、交わる2直線の角が直角のときの呼び名で、位置関係を分ける3つには入らない。"],
           };
         }),
@@ -242,7 +270,7 @@ export const UNITS = [
             q: `${introOf(S, S === CUBE)}で、面 ${f} の対角線 ${d} ${R.phrase}は、全部で何本あるか。`,
             ans: ok.length,
             unit: "本",
-            hint: "対角線 " + d + " の両はしを通る辺は、対角線と交わる。それらと、平行な辺を消して、のこりを数えよう。",
+            hint: rel === "skew" ? "対角線 " + d + " の両はしを通る辺は、対角線と交わる。それらと、平行な辺を消して、のこりを数えよう。" : "対角線 " + d + " の両はし（" + d[0] + "、" + d[1] + "）を通る辺を、数えよう。",
             steps: rel === "skew"
               ? [`対角線 ${d} と交わる辺は、${listEdges(cross)}（${cross.length}本）。`, `平行な辺は${par.length ? listEdges(par) : "ない"}。`, `のこりの、ねじれの位置にある辺は、${listEdges(sk)}（${sk.length}本）。`]
               : [`対角線 ${d} の両はし（${d[0]}、${d[1]}）を通る辺が、対角線と交わる。`, `${listEdges(cross)}（${cross.length}本）。`],
@@ -331,12 +359,12 @@ export const UNITS = [
             ],
           };
         }),
-        // 03d11a 底面が ∠B＝90° の直角三角形の三角柱で、辺と平行な辺
-        t("03d11a", (r) => edgeChoiceQ(r, RT, "parallel")),
-        // 03d11b 辺とねじれの位置にある辺
-        t("03d11b", (r) => edgeChoiceQ(r, RT, "skew")),
-        // 03d11c 辺と垂直に交わる辺（斜辺は、交わるが垂直ではない）
-        t("03d11c", (r) => edgeChoiceQ(r, RT, "perp")),
+        // 03d11a 底面が ∠B＝90° の直角三角形の三角柱で、「ある面の辺のうち」辺と平行な辺
+        t("03d11a", (r) => edgeInFaceQ(r, RT, "parallel")),
+        // 03d11b 「ある面の辺のうち」辺とねじれの位置にある辺
+        t("03d11b", (r) => edgeInFaceQ(r, RT, "skew")),
+        // 03d11c 「ある面の辺のうち」辺と垂直に交わる辺（斜辺は、交わるが垂直ではない）
+        t("03d11c", (r) => edgeInFaceQ(r, RT, "perp")),
         // 03q05a 辺 AB ともねじれの位置にあり、辺 EH ともねじれの位置にある辺は、何本か
         t("03q05a", (r) => {
           const S = BOX, e1 = pick(r, S.E), e2 = pick(r, S.E.filter((x) => !same(x, e1)));
