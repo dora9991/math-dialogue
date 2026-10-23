@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>連立方程式　第12時　連立方程式に合う問題をつくって、解き合おう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:2px solid #b9c1cc;padding:6px 14px}
+#deck th{background:rgba(120,140,170,.18)}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="r12-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第12時　連立方程式に合う問題をつくって、解き合おう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">第11時の重要語句から、1人1問ずつ、言葉を選んで出題する。<br>聞かれた人は、その言葉の意味を、自分の言葉で言う。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">解と問題の答え</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">整数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">場面にもどして確かめる</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">連立方程式　第12時　連立方程式に合う問題をつくって、解き合おう</p>
+<aside>【導入 3分】前時（第11時）の重要語句（解と問題の答え・整数・場面にもどして確かめる）を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト 7分（前時分。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="r12-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第12時　連立方程式に合う問題をつくって、解き合おう</p>
+</div>
+<h2 style="font-size:60px;font-weight:700;line-height:1.3;color:#1E3A5F">連立方程式に合う問題をつくって、解き合おう</h2>
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:16px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:26px 48px 30px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+<p style="font-size:50px;font-weight:500;line-height:1.4">次の連立方程式で解くことができる問題を、つくろう。</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:16px">
+<p style="font-size:150px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="font-size:60px;line-height:1.3"><i>x</i>+<i>y</i>＝11</p>
+<p style="font-size:60px;line-height:1.3">70<i>x</i>+100<i>y</i>＝920</p>
+</div>
+</div>
+</div>
+<p style="font-size:38px;line-height:1.5;color:#1F2A37">【自分の問題】<i>x</i>、<i>y</i> が何を表すかを決めて、場面と問題文を書こう。<br>【ペアの問題】自分とちがう場面を書こう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第12時　連立方程式に合う問題をつくって、解き合おう</p>
+<aside>【解説 4分・学習課題】めあてを書く。式 x+y＝11、70x+100y＝920 に合う問題を、個人でつくり、ペアで交換する。発問：x、y は、何の数量にしただろう。／70 と 100 は、何を表すだろう。　想定される反応：場面を決めて、x、y を何にするかを決める。画用紙と色紙、70g と 100g のおもりなど。　留意：場面がちがっても、式は同じになることを見せる（2〜3人の案を板書）。</aside>
+</section>
+<section id="r12-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第12時　連立方程式に合う問題をつくって、解き合おう</p>
+</div>
+<p style="font-size:40px;line-height:1.5;color:#6B7480"><i>x</i>+<i>y</i>＝11、70<i>x</i>+100<i>y</i>＝920 に合う問題を、つくろう。</p>
+<div style="display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:30px 48px">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:16px">
+<p style="font-size:44px;font-weight:700;line-height:1.4;color:#C0392B">（例）</p>
+<div style="display:flex;flex-direction:column;gap:2px">
+<p style="font-size:44px;line-height:1.4;color:#C0392B">1枚 70円の画用紙と、1枚 100円の色紙を、<br>合わせて 11枚買ったら、代金は 920円だった。<br>それぞれ何枚買っただろう。</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B"><i>x</i> … 画用紙の枚数、<i>y</i> … 色紙の枚数　（解 <i>x</i>＝6、<i>y</i>＝5）</p>
+</div>
+</div>
+<hr style="width:1560px;border-top:2px solid #E3E6EA">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:16px">
+<p style="font-size:44px;font-weight:700;line-height:1.4;color:#C0392B">（例）</p>
+<div style="display:flex;flex-direction:column;gap:2px">
+<p style="font-size:44px;line-height:1.4;color:#C0392B">70g のおもりと 100g のおもりを、合わせて 11個はかったら、<br>920g だった。</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B"><i>x</i> … 70g のおもりの個数、<i>y</i> … 100g のおもりの個数</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第12時　連立方程式に合う問題をつくって、解き合おう</p>
+<aside>【解説 4分・学習課題のまとめ】ペアの問題を聞いて、2〜3人の案を板書する。場面がちがっても、式は同じになることを見せる。画用紙と色紙、70g と 100g のおもり、など。赤い字は、先生の板書の例。</aside>
+</section>
+<section id="r12-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第12時　連立方程式に合う問題をつくって、解き合おう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<p style="font-size:40px;font-weight:700;color:#2563C9">問題をつくる手順</p>
+<p style="font-size:52px;line-height:1.5">① <u>　　　　</u>を決めて、<i>x</i>、<i>y</i> が表す<u>　　　　</u>を決める。</p>
+<p style="font-size:52px;line-height:1.5">② <i>x</i>、<i>y</i> の<u>　　　　</u>（値）を決める。</p>
+<p style="font-size:52px;line-height:1.5">③ 数量の<u>　　　　</u>を式にして、式の数を計算する。</p>
+<p style="font-size:52px;line-height:1.5">④ 問題文に書いて、友達に解いてもらう。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第12時　連立方程式に合う問題をつくって、解き合おう</p>
+<aside>【解説 3分・ことば】問題づくりの手順を押さえる。空欄は、先生が言ってから書かせる。発問：問題をつくるとき、何から決めるだろう。　想定される反応：空欄に書き込む。　留意：手順だけを言い切る。「よい問題」の条件は、まだ言わない。</aside>
+</section>
+<section id="r12-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第12時　連立方程式に合う問題をつくって、解き合おう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<p style="font-size:40px;font-weight:700;color:#2563C9">問題をつくる手順</p>
+<p style="font-size:52px;line-height:1.5">① <span style="color:#C0392B"><b>場面</b></span>を決めて、<i>x</i>、<i>y</i> が表す<span style="color:#C0392B"><b>数量</b></span>を決める。</p>
+<p style="font-size:52px;line-height:1.5">② <i>x</i>、<i>y</i> の<span style="color:#C0392B"><b>答え</b></span>（値）を決める。</p>
+<p style="font-size:52px;line-height:1.5">③ 数量の<span style="color:#C0392B"><b>関係</b></span>を式にして、式の数を計算する。</p>
+<p style="font-size:52px;line-height:1.5">④ 問題文に書いて、友達に解いてもらう。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第12時　連立方程式に合う問題をつくって、解き合おう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。手順だけを言い切る。「よい問題」の条件は、まだ言わない。</aside>
+</section>
+<section id="r12-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第12時　連立方程式に合う問題をつくって、解き合おう</p>
+</div>
+<p style="font-size:48px;font-weight:500;line-height:1.5">答えを <i>x</i>＝<u>　　　　</u>、<i>y</i>＝<u>　　　　</u> と決めて、入場料の問題をつくろう。<br>大人1人の入場料を <i>x</i>円、子ども1人の入場料を <i>y</i>円とする。</p>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:40px;color:#1F2A37">
+<tr><th style="width:28%;text-align:center">　</th><th style="width:36%;text-align:center">式①</th><th style="width:36%;text-align:center">式②</th></tr>
+<tr><td style="text-align:center"><b>人数（大人、子ども）</b></td><td style="text-align:center">2人、<u>　　</u>人</td><td style="text-align:center"><u>　　</u>人、3人</td></tr>
+<tr><td style="text-align:center"><b>式の左辺</b></td><td style="text-align:center">2<i>x</i>+<i>y</i></td><td style="text-align:center"><u>　　　　　　</u></td></tr>
+<tr><td style="text-align:center"><b>右辺（代金の計算）</b></td><td style="text-align:center">2×600+400＝<u>　　　</u></td><td style="text-align:center"><u>　　　</u>+3×400＝<u>　　　</u></td></tr>
+</table>
+<p style="font-size:40px;line-height:1.5;color:#6B7480">【問題文】表の数を使って、問題を書こう。　　【式と解】</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第12時　連立方程式に合う問題をつくって、解き合おう</p>
+<aside>【解説 5分・例題】答えを x＝600、y＝400 と決めて、入場料の問題をつくる。表の数を計算する。そのあと、表の数を使って問題文を書き、式と解を書く。発問：大人2人と子ども1人の代金は、いくらになる？／式は、どう書く？　想定される反応：2×600+400＝1600 のように計算し、問題文と式を書く。　留意：数字は、先生が言ってから書かせる。</aside>
+</section>
+<section id="r12-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第12時　連立方程式に合う問題をつくって、解き合おう</p>
+</div>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:28%;text-align:center">　</th><th style="width:36%;text-align:center">式①</th><th style="width:36%;text-align:center">式②</th></tr>
+<tr><td style="text-align:center"><b>人数（大人、子ども）</b></td><td style="text-align:center">2人、<span style="color:#C0392B"><b>1</b></span>人</td><td style="text-align:center"><span style="color:#C0392B"><b>1</b></span>人、3人</td></tr>
+<tr><td style="text-align:center"><b>式の左辺</b></td><td style="text-align:center">2<i>x</i>+<i>y</i></td><td style="text-align:center"><span style="color:#C0392B"><b><i>x</i>+3<i>y</i></b></span></td></tr>
+<tr><td style="text-align:center"><b>右辺（代金の計算）</b></td><td style="text-align:center">2×600+400＝<span style="color:#C0392B"><b>1600</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>600</b></span>+3×400＝<span style="color:#C0392B"><b>1800</b></span></td></tr>
+</table>
+<div style="display:flex;flex-direction:row;align-items:stretch;gap:24px">
+<div style="display:flex;flex-direction:column;gap:8px;flex:1;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:16px 36px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">問題文</p>
+<p style="font-size:42px;line-height:1.4;color:#C0392B">ある施設の入場料は、大人2人と子ども1人で 1600円、<br>大人1人と子ども3人で 1800円である。<br>大人1人、子ども1人の入場料を、それぞれ求めよう。</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:16px 36px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">式と解</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+<p style="font-size:130px;font-weight:400;line-height:1;color:#C0392B">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:16px">
+<p style="font-size:46px;line-height:1.3;color:#C0392B">2<i>x</i>+<i>y</i>＝1600</p>
+<p style="font-size:30px;color:#6B7480">①</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:16px">
+<p style="font-size:46px;line-height:1.3;color:#C0392B"><i>x</i>+3<i>y</i>＝1800</p>
+<p style="font-size:30px;color:#6B7480">②</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p style="font-size:46px;font-weight:700;line-height:1.4;color:#C0392B">はじめに決めた <i>x</i>＝600、<i>y</i>＝400 が、この式の解になる。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第12時　連立方程式に合う問題をつくって、解き合おう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。表の数 → 問題文 → 式と解の順。はじめに決めた x＝600、y＝400 が、この式の解になることを確かめる。数字は、先生が言ってから書かせる。</aside>
+</section>
+<section id="r12-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第12時　連立方程式に合う問題をつくって、解き合おう</p>
+</div>
+<h2 style="font-size:52px;font-weight:700;line-height:1.3;color:#1F2A37">友達の問題を解いて、「よい問題だ」と思ったのは、<br>どんな問題だろう。理由も書こう。</h2>
+<p style="font-size:38px;line-height:1.5;color:#1F2A37"><span style="color:#D9730D"><b>①</b></span> 型に書く　<span style="color:#D9730D"><b>②</b></span> 問題文を書く　<span style="color:#D9730D"><b>③</b></span> 友達の問題を解く　<span style="color:#D9730D"><b>④</b></span> よいところ・直すところを書く</p>
+<div style="display:flex;flex-direction:column;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:8px 28px">
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:26%;text-align:center">つくる型</th><th style="width:41%;text-align:center">手本</th><th style="width:33%;text-align:center">自分の問題</th></tr>
+<tr><td style="text-align:center"><b>場面</b></td><td style="text-align:center">買い物（代金・枚数）</td><td style="text-align:center"><u>　　　　　</u></td></tr>
+<tr><td style="text-align:center"><b><i>x</i>、<i>y</i> が表す数量</b></td><td style="text-align:center"><i>x</i>＝シールの枚数、<i>y</i>＝カードの枚数</td><td style="text-align:center"><u>　　　　　</u></td></tr>
+<tr><td style="text-align:center"><b>解（決めた答え）</b></td><td style="text-align:center"><i>x</i>＝6、<i>y</i>＝3</td><td style="text-align:center"><u>　　　　　</u></td></tr>
+<tr><td style="text-align:center"><b>関係と式①</b></td><td style="text-align:center">合わせて 9枚　→　<i>x</i>+<i>y</i>＝9</td><td style="text-align:center"><u>　　　　　</u></td></tr>
+<tr><td style="text-align:center"><b>関係と式②</b></td><td style="text-align:center">代金 690円　→　50<i>x</i>+130<i>y</i>＝690</td><td style="text-align:center"><u>　　　　　</u></td></tr>
+</table>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第12時　連立方程式に合う問題をつくって、解き合おう</p>
+<aside>【演習 23分・考えよう】進め方（演習① 2分）：ゴールは、友達と問題を解き合い、「よい問題」を説明できること。立ち歩きOK、解答は教卓（考えようの答えはない）。「つくって終わり」でなく、「解き合って、直す」ことが目標と伝える。基礎（個人 5分）：解いたら、教卓の解答で答え合わせ。早く終わったら、問題づくりへ（標準は、そのあとで任意）。問題づくり・解き合い（14分）：自分の問題をつくる（5分）→ 友達と交換して解く（6分）→ 伝え合う（3分）。手本の問題：1枚 50円のシールと、1枚 130円のカードを、合わせて 9枚買ったら、代金は 690円だった。シールとカードを、それぞれ何枚買っただろう。ワークシートの手順：①手本のように、つくる型に書いて、自分の問題をつくる。②自分の問題文を書く。③友達の問題を解く（友達の名前・式・解）。④友達の問題の「よいところ」と「直すとよいところ」を書く。また、「よい問題だ」と思った問題と、そのわけも書く。先生は回って気づきを拾い、必要なら短く全体に戻す。標準（3）（4）は、早く終わった人だけ（任意）。問い：友達の問題を解いて、「よい問題だ」と思ったのは、どんな問題だろう。理由も書こう。ヒントを出す順：1）解きやすかった問題と、こまった問題を、見くらべる。2）こまったところで、「式はいくつ立つか」を見る。3）解を問題文にもどして、場面に合うか確かめる。判断：式が1つだけ→ヒント1／場面に合わない数→ヒント2／解けない→ヒント3。残り4分→指名。答えは言わない。方向性（演習④ 最後に一言 2分）：「自分でつくると、しくみが見えてくる。つくった問題も、自分で確かめてみよう。」</aside>
+</section>
+<section id="r12-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第12時　連立方程式に合う問題をつくって、解き合おう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">連立方程式に合う問題をつくって、解き合おう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">場面</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">数量</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">等しい関係</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">解</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">連立方程式　第12時　連立方程式に合う問題をつくって、解き合おう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。ワークシートと演習プリントを回収（未完成でも出す）。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

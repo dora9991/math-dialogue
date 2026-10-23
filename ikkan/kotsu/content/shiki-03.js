@@ -225,7 +225,7 @@ const fracMistakeBuild = (r, what) => {
     const wrongTs = [...N1.map(([c, e]) => [k1 * c, e]), negT(N2[0]), N2[1]];            // 2つ目の項の符号を変えていない
     W = P(wrongTs);
     right = P([...N1.map(([c, e]) => [k1 * c, e]), ...N2.map(negT)]);
-    ok = !pisz(W) && !pisz(right) && !peq(W, right) && (what !== "num" || gcdAll([...Object.values(right).map((q) => Math.abs(q[0])), d2]) === 1);
+    ok = !pisz(W) && !pisz(right) && !peq(W, right) && !peq(P(N1), P(N2)) && (what !== "num" || gcdAll([...Object.values(right).map((q) => Math.abs(q[0])), d2]) === 1);
   }
   const wrongTs = [...N1.map(([c, e]) => [k1 * c, e]), negT(N2[0]), N2[1]];
   const A = `\\frac{${raw(N1)}}{${d1}}-\\frac{${raw(N2)}}{${d2}}`;
@@ -266,7 +266,7 @@ const abBuild = (r, mode) => {
     X = Xn === "A" ? A : B; Y = Xn === "A" ? B : A;
     form = r(0, 2) === 0 ? 2 : 1;
     c = r(2, 4);
-    if (peq(A, B)) continue;
+    if (peq(A, B) || peq(A, pneg(B))) continue;
     if (form === 1) { d = pick(r, [-4, -3, -2, 2, 3]); res = padd(pscale(X, c), pscale(Y, d)); }                            // cX + dY
     else { d = r(1, 2); e = pick(r, [-3, -2, -1, 2, 3]); if (c === d) continue; res = psub(pscale(X, c), padd(pscale(X, d), pscale(Y, e))); }    // cX − (dX + eY)
     if (Object.keys(res).length === 2) break;
@@ -289,7 +289,7 @@ const abBuild = (r, mode) => {
     steps = [`$A$、$B$ を代入して、${$(`${expr}=${subst}`)}。`, `内側のかっこを先に計算して、${$(`${subst}=${mid}`)}。`, $(`${mid}=${raw([...tms(pscale(X, c)), ...tms(pneg(inner))])}=${ptex(res)}`)];
     wrongs = [padd(psub(pscale(X, c), pscale(X, d)), pscale(Y, e)), padd(pscale(X, c + d), pscale(Y, e)), psub(pscale(X, c), pscale(X, d)), pneg(res)];
   }
-  const hint = "$A$、$B$ にそれぞれの式を代入して、分配法則でかっこをはずそう。ひく式のかっこでは、全部の項の符号が変わる。";
+  const hint = `$A$、$B$ にそれぞれの式を代入して、分配法則でかっこをはずそう。${form === 2 ? "ひく式のかっこでは、全部の項の符号が変わる。" : "かける数の符号に注意しよう。"}`;
   const head = `$A=${ptex(A)}$、$B=${ptex(B)}$ のとき、${$(expr)} を計算する。`;
   if (mode === "num") {
     const k = pickKey(r, res);

@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>式の計算　第1時　式を、項の数と次数で見分けよう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:2px solid #b9c1cc;padding:6px 14px}
+#deck th{background:rgba(120,140,170,.18)}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="s01-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第1時　式を、項の数と次数で見分けよう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">1年の「文字と式」のことばを、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">1人1つずつ、ことばを出題して、その意味を自分のことばで言う。<br>例を1つ言えるとよい。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">項</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">係数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">同類項</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">1次式</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">式の計算　第1時　式を、項の数と次数で見分けよう</p>
+<aside>【導入 3分】1年「文字と式」の重要語句（項・係数・同類項・1次式）を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト（7分。第1時は、1年の復習など。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="s01-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第1時　式を、項の数と次数で見分けよう</p>
+</div>
+<h2 style="font-size:60px;font-weight:700;line-height:1.3;color:#1E3A5F">式を、項の数と次数で見分けよう</h2>
+<div style="display:flex;flex-direction:column;gap:24px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:32px 48px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+<p style="font-size:46px;font-weight:500;line-height:1.4">次のア〜クの式を、自分で観点を決めて、仲間分けしよう。</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:20px">
+<div style="flex:1;background:#F7F5F0;border:3px solid #C9D3E0;border-radius:14px;padding:12px 24px"><p style="font-size:50px;line-height:1.4"><span style="color:#1E3A5F"><b>ア</b></span>　3<i>a</i></p></div>
+<div style="flex:1;background:#F7F5F0;border:3px solid #C9D3E0;border-radius:14px;padding:12px 24px"><p style="font-size:50px;line-height:1.4"><span style="color:#1E3A5F"><b>イ</b></span>　<i>x</i>+5</p></div>
+<div style="flex:1;background:#F7F5F0;border:3px solid #C9D3E0;border-radius:14px;padding:12px 24px"><p style="font-size:50px;line-height:1.4"><span style="color:#1E3A5F"><b>ウ</b></span>　−7<i>xy</i></p></div>
+<div style="flex:1;background:#F7F5F0;border:3px solid #C9D3E0;border-radius:14px;padding:12px 24px"><p style="font-size:50px;line-height:1.4"><span style="color:#1E3A5F"><b>エ</b></span>　<i>a</i>²−2<i>a</i>+1</p></div>
+</div>
+<div style="display:flex;flex-direction:row;gap:20px">
+<div style="flex:1;display:flex;flex-direction:row;align-items:center;gap:6px;background:#F7F5F0;border:3px solid #C9D3E0;border-radius:14px;padding:12px 24px"><p style="font-size:50px;line-height:1.4"><span style="color:#1E3A5F"><b>オ</b></span>　</p><div style="display:flex;flex-direction:column;padding:0px 4px"><p style="font-size:40px;line-height:1.1;text-align:center">1</p><div style="border-top:3px solid #1F2A37"><p style="font-size:40px;line-height:1.1;text-align:center">2</p></div></div><p style="font-size:50px;line-height:1.4"><i>x</i></p></div>
+<div style="flex:1;background:#F7F5F0;border:3px solid #C9D3E0;border-radius:14px;padding:12px 24px"><p style="font-size:50px;line-height:1.4"><span style="color:#1E3A5F"><b>カ</b></span>　8</p></div>
+<div style="flex:1;background:#F7F5F0;border:3px solid #C9D3E0;border-radius:14px;padding:12px 24px"><p style="font-size:50px;line-height:1.4"><span style="color:#1E3A5F"><b>キ</b></span>　2<i>x</i>²<i>y</i></p></div>
+<div style="flex:1;background:#F7F5F0;border:3px solid #C9D3E0;border-radius:14px;padding:12px 24px"><p style="font-size:50px;line-height:1.4"><span style="color:#1E3A5F"><b>ク</b></span>　3<i>x</i>−<i>y</i>+2</p></div>
+</div>
+</div>
+<p style="font-size:40px;line-height:1.5;color:#1F2A37">【自分の仲間分け】観点（どこに目をつけたか）と、分け方を書こう。<br>【ペアの分け方】自分とちがう観点を書こう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第1時　式を、項の数と次数で見分けよう</p>
+<aside>【解説 4分・学習課題】めあてを書く。ア〜クの式を、個人で仲間分けし、ペアで交換する。発問：どこに目をつけると、仲間に分けられるだろう。／ペアの観点は、自分と同じ？ちがう？　想定される反応：+ や − でつながっているか／文字の種類／文字の数、などの観点で分ける。留意：観点は1つに決まらないことを伝える。「+ − でつながっているか」を取り上げ、次につなぐ。</aside>
+</section>
+<section id="s01-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第1時　式を、項の数と次数で見分けよう</p>
+</div>
+<p style="font-size:44px;line-height:1.5;color:#6B7480">ア〜クの式を、自分で観点を決めて、仲間分けしよう。</p>
+<div style="display:flex;flex-direction:column;gap:22px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:36px 56px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">（例）観点と、分け方</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:46px;line-height:1.4;color:#C0392B"><b>+ や − でつながっているか</b></p>
+<p style="font-size:46px;line-height:1.4;color:#C0392B">ア・ウ・オ・カ・キ ／ イ・エ・ク</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:46px;line-height:1.4;color:#C0392B"><b>文字の種類</b></p>
+<p style="font-size:46px;line-height:1.4;color:#C0392B">1種類 ア・イ・エ・オ ／ 2種類 ウ・キ・ク ／ なし カ</p>
+</div>
+<hr style="width:1560px;border-top:2px solid #E3E6EA">
+<p style="font-size:54px;font-weight:700;line-height:1.4;color:#C0392B">観点を決めると、仲間に分けられる</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第1時　式を、項の数と次数で見分けよう</p>
+<aside>【解説 4分・学習課題のまとめ】いくつかのペアの観点を聞いて、板書にまとめる。観点は1つに決まらないことを伝える。「+ − でつながっているか」を取り上げ、次のことば（単項式・多項式）につなぐ。赤い字は、先生の板書の例。</aside>
+</section>
+<section id="s01-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第1時　式を、項の数と次数で見分けよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:32px 56px">
+<p style="font-size:44px;line-height:1.4"><u>　　　　　</u> … 数や文字の乗法だけでできている式。　3<i>a</i>、−7<i>xy</i> など</p>
+<p style="font-size:44px;line-height:1.4">　　8 のような数だけの式も、単項式。</p>
+<p style="font-size:44px;line-height:1.4"><u>　　　　　</u> … 単項式の和の形で表された式。　<i>x</i>+5、<i>a</i>²−2<i>a</i>+1 など</p>
+<p style="font-size:44px;line-height:1.4"><u>　　　</u> … 多項式の、1つ1つの単項式。　<i>x</i>+5 の項は、<i>x</i> と 5</p>
+<p style="font-size:44px;line-height:1.4"><u>　　　　</u> … 文字をふくむ項の、数の部分。　−7<i>xy</i> → −7、1⁄2<i>x</i> → 1⁄2</p>
+<p style="font-size:44px;line-height:1.4"><u>　　　　</u> … 単項式では、かけ合わされている文字の個数。</p>
+<p style="font-size:44px;line-height:1.4">　　3<i>x</i>²<i>y</i>＝3×<i>x</i>×<i>x</i>×<i>y</i>　→　次数 3</p>
+<p style="font-size:44px;line-height:1.4">　　多項式では、各項の次数のうち、もっとも大きいもの。</p>
+<p style="font-size:44px;line-height:1.4">　　次数が 1 の式を 1次式、次数が 2 の式を <u>　　　　　</u> という。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第1時　式を、項の数と次数で見分けよう</p>
+<aside>【解説 3分・ことば】出た観点から、単項式・多項式・項を押さえる。係数は1年のことば。次数は「かけ合わされている文字の個数」。空欄は、先生が言ってから書かせる。発問：x+5 の項は、何と何だろう。／3x²y は、文字が何個かけ合わされている？　想定される反応：空欄に書き込む。留意：8 のような数だけの式も、単項式。重要語句は、先生が言い切る。</aside>
+</section>
+<section id="s01-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第1時　式を、項の数と次数で見分けよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:32px 56px">
+<p style="font-size:44px;line-height:1.4"><span style="color:#C0392B"><b>単項式</b></span> … 数や文字の乗法だけでできている式。　3<i>a</i>、−7<i>xy</i> など</p>
+<p style="font-size:44px;line-height:1.4">　　8 のような数だけの式も、単項式。</p>
+<p style="font-size:44px;line-height:1.4"><span style="color:#C0392B"><b>多項式</b></span> … 単項式の和の形で表された式。　<i>x</i>+5、<i>a</i>²−2<i>a</i>+1 など</p>
+<p style="font-size:44px;line-height:1.4"><span style="color:#C0392B"><b>項</b></span> … 多項式の、1つ1つの単項式。　<i>x</i>+5 の項は、<i>x</i> と 5</p>
+<p style="font-size:44px;line-height:1.4"><span style="color:#C0392B"><b>係数</b></span> … 文字をふくむ項の、数の部分。　−7<i>xy</i> → −7、1⁄2<i>x</i> → 1⁄2</p>
+<p style="font-size:44px;line-height:1.4"><span style="color:#C0392B"><b>次数</b></span> … 単項式では、かけ合わされている文字の個数。</p>
+<p style="font-size:44px;line-height:1.4">　　3<i>x</i>²<i>y</i>＝3×<i>x</i>×<i>x</i>×<i>y</i>　→　次数 3</p>
+<p style="font-size:44px;line-height:1.4">　　多項式では、各項の次数のうち、もっとも大きいもの。</p>
+<p style="font-size:44px;line-height:1.4">　　次数が 1 の式を 1次式、次数が 2 の式を <span style="color:#C0392B"><b>2次式</b></span> という。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第1時　式を、項の数と次数で見分けよう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。単項式・多項式は、「+ − でつながっているか」の観点につなげる。次数は、かけ算の形に書いて、文字の個数を数える。8 のような数だけの式も、単項式。</aside>
+</section>
+<section id="s01-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第1時　式を、項の数と次数で見分けよう</p>
+</div>
+<p style="font-size:52px;font-weight:500;line-height:1.5">多項式 3<i>x</i>²−<u>　　</u><i>xy</i>+<i>y</i>−<u>　　</u> の、項ごとの係数と次数を調べて、<br>何次式か答えよう。</p>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:44px;color:#1F2A37">
+<tr><th style="width:20%;text-align:center">項</th><th style="width:20%;text-align:center">3<i>x</i>²</th><th style="width:20%;text-align:center">−<u>　　</u><i>xy</i></th><th style="width:20%;text-align:center"><i>y</i></th><th style="width:20%;text-align:center">−<u>　　</u></th></tr>
+<tr><td style="text-align:center"><b>係数</b></td><td style="text-align:center">3</td><td style="text-align:center"><u>　　</u>&#8203;</td><td style="text-align:center"><u>　　</u>&#8203;</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center"><b>次数</b></td><td style="text-align:center">2</td><td style="text-align:center"><u>　　</u>&#8203;</td><td style="text-align:center"><u>　　</u>&#8203;</td><td style="text-align:center">—</td></tr>
+</table>
+<p style="font-size:40px;line-height:1.5;color:#6B7480">【次数の数え方】文字を、かけ算の形に書いて、個数を数えよう。<br>【答え】何次式か　<u>　　　　</u></p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第1時　式を、項の数と次数で見分けよう</p>
+<aside>【解説 5分・例題】3x²−5xy+y−4 の項・係数・次数を表にまとめ、何次式かを答える。発問：−5xy の次数は、どう数える？／項の次数が 2、2、1 のとき、多項式は何次式？　想定される反応：かけ算の形に書き直して数える。いちばん大きい次数が、多項式の次数。留意：−4 のような数だけの項は、次数を考えない。</aside>
+</section>
+<section id="s01-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第1時　式を、項の数と次数で見分けよう</p>
+</div>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:44px;color:#1F2A37">
+<tr><th style="width:20%;text-align:center">項</th><th style="width:20%;text-align:center">3<i>x</i>²</th><th style="width:20%;text-align:center">−<span style="color:#C0392B"><b>5</b></span><i>xy</i></th><th style="width:20%;text-align:center"><i>y</i></th><th style="width:20%;text-align:center">−<span style="color:#C0392B"><b>4</b></span></th></tr>
+<tr><td style="text-align:center"><b>係数</b></td><td style="text-align:center">3</td><td style="text-align:center"><span style="color:#C0392B"><b>−5</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>1</b></span></td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center"><b>次数</b></td><td style="text-align:center">2</td><td style="text-align:center"><span style="color:#C0392B"><b>2</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>1</b></span></td><td style="text-align:center">—</td></tr>
+</table>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:24px 48px">
+<p style="font-size:44px;line-height:1.4;color:#C0392B">3<i>x</i>²＝3×<i>x</i>×<i>x</i>　→　文字 2個　→　次数 2</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">−5<i>xy</i>＝−5×<i>x</i>×<i>y</i>　→　文字 2個　→　次数 2</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B"><i>y</i>　→　文字 1個　→　次数 1</p>
+<p style="font-size:48px;line-height:1.4;color:#C0392B"><b>いちばん大きい次数は 2　→　2次式</b></p>
+<p style="font-size:40px;line-height:1.4;color:#C0392B">（−4 のような数だけの項は、次数を考えない）</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第1時　式を、項の数と次数で見分けよう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。次数は、文字をかけ算の形に書いて、個数を数える。多項式の次数は、各項の次数のうち、いちばん大きいもの。−4 のような数だけの項は、次数を考えない。</aside>
+</section>
+<section id="s01-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:26px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第1時　式を、項の数と次数で見分けよう</p>
+</div>
+<h2 style="font-size:48px;font-weight:700;line-height:1.4;color:#1F2A37">1年では、2<i>x</i>+3 のような式を 1次式とよんだ。<br><i>xy</i>+1 は、1次式だろうか。次数の決め方にもどって、説明しよう。</h2>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:28px">
+<div style="display:flex;flex-direction:column;gap:16px;flex:1">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:14px 28px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">①</p>
+<p style="font-size:44px;line-height:1.4">4つの式について、<br>表を完成させよう。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:14px 28px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">②</p>
+<p style="font-size:44px;line-height:1.4">気づいたこと</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:14px 28px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">③</p>
+<p style="font-size:44px;line-height:1.4"><i>xy</i>+1 は、1次式だろうか。<br>次数の決め方を使って、<br>理由も書こう。</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:18px;width:800px">
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:34%;text-align:center">式</th><th style="width:16.5%;text-align:center">2<i>x</i>+3</th><th style="width:16.5%;text-align:center"><i>xy</i>+1</th><th style="width:16.5%;text-align:center"><i>x</i>²+<i>x</i></th><th style="width:16.5%;text-align:center"><i>x</i>+<i>y</i></th></tr>
+<tr><td style="text-align:center"><b>文字をふくむ<br>項の次数</b></td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td></tr>
+<tr><td style="text-align:center"><b>何次式か</b></td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td></tr>
+</table>
+<div style="display:flex;flex-direction:column;gap:6px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:14px 24px">
+<p style="font-size:34px;font-weight:700;color:#D9730D">発展（解き終わった人は）</p>
+<p style="font-size:34px;line-height:1.4"><i>x</i> と <i>y</i> のどちらか、または両方を使った、<br>係数が 1 の単項式で、次数が 4 のものを、<br>すべてあげよう。<br>次数が 5 のものは、いくつあるだろう。</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第1時　式を、項の数と次数で見分けよう</p>
+<aside>【演習 23分・考えよう】進め方：基礎（個人、5分）→ 終わった人から考えようへ。立ち歩きOK。解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「説明できるようになる」と伝える。標準は、考えようと合わせて学び合い（14分）。ヒントを出す順：1）4つの式を、項ごとに次数を調べて、表にまとめる。2）「何次式か」を、文字の種類の数や、項の数と見くらべる。3）xy を、かけ算の形（x×y）に書き直して、文字の個数を数える。判断：数え方でつまずく人が多い→共有1〜2分／気づきが出ない→ヒント1／説明が止まる→ヒント2・3／残り5分→指名で説明。答えは言わない。方向性（最後に一言）：「次の時間からは、文字が2種類の式も、項や次数に目をつけて計算していくよ。」</aside>
+</section>
+<section id="s01-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第1時　式を、項の数と次数で見分けよう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">式を、項の数と次数で見分けよう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">単項式</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">多項式</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">項</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">係数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">次数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">1次式・2次式</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">式の計算　第1時　式を、項の数と次数で見分けよう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。ワークシートと演習プリントを回収。今日の小テストは、次時のはじめ用。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

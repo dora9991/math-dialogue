@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>データの活用　第1時　ばらばらのデータを整理して、傾向を読み取ろう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:2px solid #b9c1cc;padding:6px 14px}
+#deck th{background:rgba(120,140,170,.18)}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="d01-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">知っているデータの使い方を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">1人1つずつ、小学校で習ったデータの調べ方や、<br>身のまわりでデータが使われている場面を言う。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">平均</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">表</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">棒グラフ</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">折れ線グラフ</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">円グラフ</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">アンケート</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">データの活用　第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+<aside>【導入 3分】新しい単元の最初の時間なので、小学校で習ったデータの調べ方（平均やグラフなど）や、身のまわりでデータが使われている場面を、ペアで1人1つずつ言い合う。静かに、時間を切って。緊張感をつくる。（計画では、前の単元（空間図形）の重要語句を、ペアで1人1問ずつ出題し合う。その形でするときは、この枚は使わず、重要語句を口頭で出題する。言葉の意味を、自分の言葉で言わせる。）このあと、小テスト 7分（前時分。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="d01-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+</div>
+<h2 style="font-size:56px;font-weight:700;line-height:1.3;color:#1E3A5F">データを階級に分けて整理し、傾向を読み取ろう</h2>
+<div style="display:flex;flex-direction:column;gap:10px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:20px 48px">
+<div style="display:flex;flex-direction:row">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+</div>
+<p style="font-size:46px;font-weight:500;line-height:1.4">1年A組30人の、家から学校までの通学時間（分）を調べた。<br>「A組では、何分くらいの人が多いか」を、わかりやすく伝えるには、<br>データをどう整理すればよいだろう。</p>
+</div>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:19%;text-align:center">1〜10人目</th><th style="width:8.1%;text-align:center">12</th><th style="width:8.1%;text-align:center">25</th><th style="width:8.1%;text-align:center">8</th><th style="width:8.1%;text-align:center">15</th><th style="width:8.1%;text-align:center">31</th><th style="width:8.1%;text-align:center">18</th><th style="width:8.1%;text-align:center">6</th><th style="width:8.1%;text-align:center">22</th><th style="width:8.1%;text-align:center">15</th><th style="width:8.1%;text-align:center">10</th></tr>
+<tr><td style="text-align:center"><b>11〜20人目</b></td><td style="text-align:center">17</td><td style="text-align:center">28</td><td style="text-align:center">13</td><td style="text-align:center">20</td><td style="text-align:center">4</td><td style="text-align:center">16</td><td style="text-align:center">24</td><td style="text-align:center">9</td><td style="text-align:center">38</td><td style="text-align:center">15</td></tr>
+<tr><td style="text-align:center"><b>21〜30人目</b></td><td style="text-align:center">19</td><td style="text-align:center">11</td><td style="text-align:center">27</td><td style="text-align:center">21</td><td style="text-align:center">14</td><td style="text-align:center">18</td><td style="text-align:center">34</td><td style="text-align:center">7</td><td style="text-align:center">12</td><td style="text-align:center">23</td></tr>
+</table>
+<p style="font-size:40px;line-height:1.5;color:#1F2A37">自分の整理のしかたを書こう。ペアの人の、自分とちがう方法も書こう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+<aside>【解説 4分・学習課題】めあてを書く。通学時間30人のデータで、「何分くらいの人が多いか」の伝え方を、個人→ペアで考える。発問：どう整理すれば、傾向が見えてくるだろう。　想定される反応：小さい順に並べる／区間に分けて数える、など。　留意：整理のしかたは1つに決まらない。</aside>
+</section>
+<section id="d01-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+</div>
+<p style="font-size:44px;line-height:1.5;color:#6B7480">「A組では、何分くらいの人が多いか」を、わかりやすく伝えるには、<br>データをどう整理すればよいだろう。</p>
+<div style="display:flex;flex-direction:column;gap:28px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:40px 56px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">（例）整理のしかた</p>
+<p style="font-size:50px;line-height:1.5;color:#C0392B"><b>小さい順に並べかえる。</b></p>
+<p style="font-size:50px;line-height:1.5;color:#C0392B"><b>5分ごとに区切って、それぞれの人数を数える。</b></p>
+<div style="border-top:2px solid #E3E6EA;width:1560px"></div>
+<p style="font-size:54px;font-weight:700;line-height:1.4;color:#C0392B">このままでは、傾向がつかみにくい。整理のしかたがいる</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+<aside>【解説 4分・学習課題のまとめ】いくつかのペアの整理のしかたを聞いて、板書にまとめる。整理のしかたは1つに決まらないことを伝える。このままでは傾向がつかみにくい、整理のしかたがいる、をまとめとし、次の「ことば」につなぐ。赤い字は、先生の板書の例。</aside>
+</section>
+<section id="d01-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:44px 56px">
+<p style="font-size:46px;line-height:1.6">データを整理するために区切った区間を<u>　　　　</u>という。</p>
+<p style="font-size:46px;line-height:1.6">区間の幅を<u>　　　　　　</u>、<br>各階級に入るデータの個数を<u>　　　　</u>という。</p>
+<p style="font-size:46px;line-height:1.6">階級ごとに度数をまとめた表を<u>　　　　　　　</u>という。</p>
+<p style="font-size:46px;line-height:1.6">「5〜10」の階級は、5<u>　　　　</u>10<u>　　　　</u>を表す。<br>5はふくみ、10はふくまない。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+<aside>【解説 3分・ことば】区間に分けて数える考えから、階級・階級の幅・度数・度数分布表、以上・未満を押さえる。空欄は、先生が言ってから書かせる。発問：「10分」の人は、5〜10と10〜15の、どちらの階級だろう。　想定される反応：空欄に書き込む。　留意：重要語句は、先生が言い切る。</aside>
+</section>
+<section id="d01-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:44px 56px">
+<p style="font-size:46px;line-height:1.6">データを整理するために区切った区間を<span style="color:#C0392B"><b>階級</b></span>という。</p>
+<p style="font-size:46px;line-height:1.6">区間の幅を<span style="color:#C0392B"><b>階級の幅</b></span>、<br>各階級に入るデータの個数を<span style="color:#C0392B"><b>度数</b></span>という。</p>
+<p style="font-size:46px;line-height:1.6">階級ごとに度数をまとめた表を<span style="color:#C0392B"><b>度数分布表</b></span>という。</p>
+<p style="font-size:46px;line-height:1.6">「5〜10」の階級は、5<span style="color:#C0392B"><b>以上</b></span>10<span style="color:#C0392B"><b>未満</b></span>を表す。<br>5はふくみ、10はふくまない。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。「10分」の人は、10分以上15分未満の階級に入る（以上は、その数をふくむ）ことを確かめる。</aside>
+</section>
+<section id="d01-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+</div>
+<p style="font-size:50px;font-weight:500;line-height:1.4">階級の幅を<u>　　</u>分にして、上のデータを度数分布表に整理しよう。</p>
+<p style="font-size:40px;line-height:1.5;color:#6B7480">（表の「5〜10」は、5分以上10分未満を表す。）</p>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:17%;text-align:center">階級（分）</th><th style="width:9.2%;text-align:center">0〜5</th><th style="width:9.2%;text-align:center">5〜10</th><th style="width:9.2%;text-align:center">10〜15</th><th style="width:9.2%;text-align:center">15〜20</th><th style="width:9.2%;text-align:center">20〜25</th><th style="width:9.2%;text-align:center">25〜30</th><th style="width:9.2%;text-align:center">30〜35</th><th style="width:9.2%;text-align:center">35〜40</th><th style="width:9.2%;text-align:center">計</th></tr>
+<tr><td style="text-align:center"><b>度数（人）</b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td></tr>
+</table>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:44px;line-height:1.5">【読み取り】① 度数がもっとも多い階級は？</p>
+<p style="font-size:44px;line-height:1.5">　　　　　　② 20分以上の人は何人？</p>
+</div>
+<p style="font-size:36px;line-height:1.5;color:#6B7480">30人のデータは、ワークシートの表を見て数えよう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+<aside>【解説 5分・例題】階級の幅5分で、度数分布表を完成させる。合計が30になるか確かめ、20分以上の人数も読み取らせる。発問：数え落としを防ぐには、どうしたらいいだろう。　想定される反応：データに線を引きながら、正の字で数える。</aside>
+</section>
+<section id="d01-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+</div>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:17%;text-align:center">階級（分）</th><th style="width:9.2%;text-align:center">0〜5</th><th style="width:9.2%;text-align:center">5〜10</th><th style="width:9.2%;text-align:center">10〜15</th><th style="width:9.2%;text-align:center">15〜20</th><th style="width:9.2%;text-align:center">20〜25</th><th style="width:9.2%;text-align:center">25〜30</th><th style="width:9.2%;text-align:center">30〜35</th><th style="width:9.2%;text-align:center">35〜40</th><th style="width:9.2%;text-align:center">計</th></tr>
+<tr><td style="text-align:center"><b>度数（人）</b></td><td style="text-align:center"><span style="color:#C0392B"><b>1</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>4</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>6</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>8</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>5</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>3</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>2</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>1</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>30</b></span></td></tr>
+</table>
+<div style="display:flex;flex-direction:column;gap:14px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:28px 48px">
+<p style="font-size:44px;line-height:1.5;color:#C0392B"><b>① 15分以上20分未満の階級（8人）</b></p>
+<p style="font-size:44px;line-height:1.5;color:#C0392B"><b>② 5＋3＋2＋1＝11（人）</b></p>
+<div style="border-top:2px solid #E3E6EA;width:1560px"></div>
+<p style="font-size:34px;font-weight:700;color:#6B7480">数え方</p>
+<p style="font-size:44px;line-height:1.5;color:#C0392B">データに線を引きながら、正の字で数える。</p>
+<p style="font-size:44px;line-height:1.5;color:#C0392B">「10分」は、10分以上15分未満の階級に入る。<br>合計が 30 になるか、確かめる。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。数え方：データに線を引きながら、正の字で数える。合計が 30 になるか確かめる。「10分」は、10分以上15分未満の階級に入る。</aside>
+</section>
+<section id="d01-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+</div>
+<h2 style="font-size:50px;font-weight:700;line-height:1.35;color:#1F2A37">階級の幅を10分にして、度数分布表をつくり直そう。<br>幅が5分のときとくらべて、わかりやすくなったことと、<br>わかりにくくなったことは何だろう。</h2>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:28px">
+<div style="display:flex;flex-direction:column;gap:14px;width:980px">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:12px 28px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">①</p>
+<p style="font-size:44px;line-height:1.4">階級の幅を10分にして、<br>度数分布表をつくろう。</p>
+</div>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:24%;text-align:center">階級（分）</th><th style="width:17%;text-align:center">0〜10</th><th style="width:17%;text-align:center">10〜20</th><th style="width:17%;text-align:center">20〜30</th><th style="width:17%;text-align:center">30〜40</th><th style="width:8%;text-align:center">計</th></tr>
+<tr><td style="text-align:center"><b>度数（人）</b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　</u></td></tr>
+</table>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;flex:1">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:12px 28px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">②</p>
+<p style="font-size:44px;line-height:1.4">幅が5分のときより、<br>わかりやすくなったこと</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:12px 28px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">③</p>
+<p style="font-size:44px;line-height:1.4">幅が5分のときより、<br>わかりにくくなったこと</p>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:14px 24px">
+<p style="font-size:28px;font-weight:700;color:#D9730D">発展（解き終わった人は）</p>
+<p style="font-size:28px;line-height:1.45">階級の幅を 1分や 40分にしたら、表はどうなるだろう。ちょうどよい幅を決めるには、何に気をつければよいか、考えよう。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+<aside>【演習 23分・考えよう】進め方：基礎（個人）→ 終わった人から考えようへ。立ち歩きOK。解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「説明できるようになる」と伝える。ヒントを出す順：1）0〜10、10〜20、… と区切り直して、人数を数える。2）5分の表と10分の表を並べて、見くらべる。3）幅を1分や40分にしたら、表はどうなるか、想像する。判断：数え方でつまずく→共有1〜2分／気づきが出ない→ヒント1／止まる→ヒント2・3／残り5分→指名で説明。答えは言わない。方向性（最後に一言）：「ほかのデータでも、幅を変えて自分で確かめてみよう。次の時間は、この表をグラフに表すよ。」　発展は、演習まで解き終わった人向け。</aside>
+</section>
+<section id="d01-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">データを階級に分けて整理し、傾向を読み取ろう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">階級</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">階級の幅</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">度数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">度数分布表</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">以上</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">未満</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">データの活用　第1時　ばらばらのデータを整理して、傾向を読み取ろう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで言い合う。ワークシートと演習プリントを回収（未完成でも出す）。裏の発展は、解き終わった人向け。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

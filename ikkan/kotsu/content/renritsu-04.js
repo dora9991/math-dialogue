@@ -127,7 +127,7 @@ const subSteps = (S) => {
   const comb = ptex(padd(pscale(exprPoly(m, n, ov), kS), term(kO, { [ov]: 1 })), [ov]);
   const aov = ptex(term(al, { [ov]: 1 }), [ov]);
   const pcs = [];
-  if (expd !== comb) pcs.push(`${expd}=${c}`);
+  if (expd !== comb && `${expd}=${c}` !== subTex(B, sVar, m, n, ov)) pcs.push(`${expd}=${c}`);
   pcs.push(`${comb}=${c}`);
   if (!qiszero(be)) pcs.push(`${aov}=${qtex(rhs)}`);
   if (!qeq(al, Q(1))) pcs.push(`${ov}=${ov0}`);
@@ -140,7 +140,7 @@ const subSteps = (S) => {
   return { lines, sol, ov0, sv0 };
 };
 /** 代入法で解ける連立方程式。① が「sv＝m×ov＋n」（rearr のときは、sv の係数が 1 の標準形 [a,b,c]）、② が ax+by=c。
- *  o：sv＝代入される文字の候補、m＝[分子,分母] の候補、n＝定数項の候補、v＝もう一方の文字の値の範囲、kS・kO＝② の sv・ov の係数の候補、rearr＝① を標準形で出す */
+ *  o：sv＝代入される文字の候補、m＝[分子,分母] の候補、n＝定数項の候補、v＝もう一方の文字の値の範囲、kS・kO＝② の sv・ov の係数の候補、rearr＝① を標準形で出す、ok＝(m, n, kS, kO) の組み合わせの条件 */
 const subSys = (r, o) => {
   const sVar = pick(r, o.sv || ["x", "y"]), ov = sVar === "x" ? "y" : "x";
   const m = Q(...pick(r, o.m)), n = pick(r, o.n), q = m[1];
@@ -149,6 +149,7 @@ const subSys = (r, o) => {
   const sv0 = m[0] * (ov0 / q) + n;
   if (!ov0 || !sv0) return null;
   const kS = pick(r, o.kS), kO = pick(r, o.kO);
+  if (o.ok && !o.ok(m, n, kS, kO)) return null;
   const [x0, y0] = sVar === "x" ? [sv0, ov0] : [ov0, sv0];
   const B = sVar === "x" ? [kS, kO] : [kO, kS];
   B.push(B[0] * x0 + B[1] * y0);
@@ -164,15 +165,17 @@ const subSys = (r, o) => {
   S.st = st;
   return S;
 };
+/** 04d05a・04d05b：代入する式の先頭が負にならない（かっこをつけないと、「×−」の形になって読みにくいため） */
+const D5 = { m: [[2, 1], [3, 1], [4, 1]], n: [1, 2, 3, 4, -1, -2, -3, -4], v: [1, 4], kS: [-2, -3, -4, 2, 3, 4], kO: [1, 2, 3, 4, 5, -1, -2] };
 const LAB = "（上の式が①、下の式が②）";
 const SUBHINT = (S) => (S.std ? "まず、① を $x=\\cdots$ か $y=\\cdots$ の形に直そう。そのあと、② に代入する。" : `$${S.sv}=\\cdots$ の形の式を、もう一方の式の $${S.sv}$ に代入して、文字を1つ消そう。`);
 /** 「連立方程式を解いたとき、x（または y）の値は？」 */
-const solveQ = (id, o, hintFn) => t(id, gen((r) => {
+const solveQ = (id, o, hintFn, viaSub = false) => t(id, gen((r) => {
   const S = subSys(r, o);
   if (!S) return null;
-  const ask = r(0, 1);
+  const ask = viaSub ? idx(S.ov) : r(0, 1);
   return {
-    q: `連立方程式 ${S.tex}${LAB}を、代入法で解いたとき、$${XY[ask]}$ の値は？`,
+    q: viaSub ? `連立方程式 ${S.tex}${LAB}で、② に ① を代入して $${S.ov}$ の値を求めると？` : `連立方程式 ${S.tex}${LAB}を、代入法で解いたとき、$${XY[ask]}$ の値は？`,
     ans: S.sol[ask],
     hint: hintFn ? hintFn(S) : SUBHINT(S),
     steps: fit([...S.st.lines, ANS(...S.sol)]),
@@ -193,9 +196,12 @@ export const UNITS = [
       // ───────── 1 基礎 ─────────
       1: [
         // 04x01（ikkan の dr.1〜2）y＝x+3, x+y＝11 ／ x＝3y, 2x+y＝14
-        solveQ("04x01", { m: [[1, 1], [1, 1], [2, 1], [3, 1]], n: [0, 1, 2, 3, 4, -1, -2, -3], v: [1, 5], kS: [1, 1, 2], kO: [1, 1, -1, 2] }),
+        solveQ("04x01", { m: [[1, 1], [1, 1], [2, 1], [3, 1]], n: [0, 1, 2, 3, 4, -1, -2, -3], v: [1, 5], kS: [1, 1, 2], kO: [1, 1, -1, 2], ok: (m, n, kS) => kS === 1 || (n === 0 && m[0] > 0) }),
         // 04q01 y＝x+2, 3x+y＝14
         solveQ("04q01", { m: [[1, 1], [1, 1], [2, 1]], n: [1, 2, 3, 4, 5, -1, -2], v: [1, 6], kS: [1], kO: [2, 3, 4, 5, -1, -2] }),
+      ],
+      // ───────── 2 標準 ─────────
+      2: [
         // 04q04a ② に ① を代入した式を選ぶ（4択）
         t("04q04a", gen((r) => {
           const S = subSys(r, { m: [[2, 1], [3, 1], [1, 1], [-1, 1], [-2, 1]], n: [1, 2, 3, 4, 5, -1, -2, -3], v: [1, 5], kS: [-1, -2, -3, 2, 3], kO: [2, 3, 4, 5, 1, -2] });
@@ -207,7 +213,7 @@ export const UNITS = [
             `$${subTex(B, sVar, m, -n, ov)}$`,                                       // 定数項の符号をまちがえた
             `$${subTex(B, ov, m, n, ov)}$`,                                          // ほかの文字に代入した
             `$${subTex([-B[0], -B[1], B[2]].map((v, i) => (i === idx(sVar) ? v : B[i])), sVar, m, n, ov)}$`,   // 係数の符号をまちがえた
-          ].filter((s) => s !== ok);
+          ].filter((s) => s !== ok && !/--|\+-|times -/.test(s));
           const ex = EXPR(m, n, ov);
           return {
             q: `連立方程式 ${S.tex}${LAB}で、② に ① を代入した式として正しいものは、どれか。`,
@@ -217,9 +223,8 @@ export const UNITS = [
             steps: [`② の $${sVar}$ に、① の右辺 $${ex}$ を、かっこをつけて代入する。`, `${ok}`],
           };
         })),
-      ],
-      // ───────── 2 標準 ─────────
-      2: [
+        // 04q04b ② に ① を代入して、x（または y）の値を求める
+        solveQ("04q04b", { m: [[2, 1], [3, 1], [1, 1], [-1, 1], [-2, 1]], n: [1, 2, 3, 4, 5, -1, -2, -3], v: [1, 5], kS: [-1, -2, -3, 2, 3], kO: [2, 3, 4, 5, 1, -2], rearr: false }, null, true),
         // 04x02（ikkan の dr.3〜4）y＝2x+1, 4x−3y＝−5 ／ x＝5−y, 2x−y＝−2
         solveQ("04x02", { m: [[2, 1], [3, 1], [-1, 1], [-2, 1], [1, 1]], n: [1, 2, 3, 4, 5, -1, -2, -3, -4], v: [1, 5], kS: [-3, -2, -1, 2, 3, 4], kO: [1, 2, 3, 4, 5, -1, -2] }),
         // 04q02 x＝3y+1, 2x−5y＝4
@@ -246,7 +251,7 @@ export const UNITS = [
             q: `連立方程式 $${casesTex([`${sVar}=${E1}`, `${sVar}=${E2}`])}$${LAB}を、代入法で解いたとき、$${XY[ask]}$ の値は？`,
             ans: [x0, y0][ask],
             hint: `どちらの式も $${sVar}=\\cdots$ の形。② の $${sVar}$ に、① の右辺を代入しよう。`,
-            steps: [`② の $${sVar}$ に ① を代入：$${E1}=${E2}$`, `整理して　$${sub}=${n2 - n1}$　$${ov}=${ov0}$`, `① に $${ov}=${ov0}$ を代入：$${sVar}=${exprNum(Q(m1), n1, ov0)}=${sv0}$`, ANS(x0, y0)],
+            steps: [`② の $${sVar}$ に ① を代入：$${E1}=${E2}$`, `整理して　$${sub}=${n2 - n1}$${al === 1 ? "" : `　$${ov}=${ov0}$`}`, `① に $${ov}=${ov0}$ を代入：$${sVar}=${exprNum(Q(m1), n1, ov0)}=${sv0}$`, ANS(x0, y0)],
           };
         })),
       ],
@@ -254,24 +259,24 @@ export const UNITS = [
       3: [
         // 04d05a A さんの「2x−3×4x−3＝−1」のまちがいは？（4択）
         t("04d05a", gen((r) => {
-          const S = subSys(r, { m: [[2, 1], [3, 1], [4, 1], [-2, 1], [-3, 1]], n: [1, 2, 3, 4, -1, -2, -3, -4], v: [1, 4], kS: [-2, -3, -4, 2, 3, 4], kO: [1, 2, 3, 4, 5, -1, -2] });
+          const S = subSys(r, D5);
           if (!S) return null;
           const { sv: sVar, ov, m, n, B } = S, ex = EXPR(m, n, ov), kS = B[idx(sVar)];
           const wrong = subTex(B, sVar, m, n, ov, true), good = subTex(B, sVar, m, n, ov);
           const mono = ptex(term(m, { [ov]: 1 }), [ov]);
           const ok = `かっこをつけずに代入したので、$${kS}$ が $${ex}$ の全体にかかっていない。`;
-          const wr = [`代入する文字をまちがえて、$${ov}$ に $${ex}$ を代入してしまった。`, `① の式 $${sVar}=${ex}$ を、写しまちがえた。`, "② の式を ① に代入するべきなのに、① の式を ② に代入してしまった。"];
+          const wr = [`代入する文字をまちがえて、$${ov}$ に $${ex}$ を代入してしまった。`, `① の式 $${sVar}=${ex}$ を、写しまちがえた。`, `① の式の右辺と左辺を、入れかえて代入してしまった。`];
           return {
             q: `連立方程式 ${S.tex}${LAB}の ② に ① を代入して、A さんは「$${wrong}$」と書いた。A さんの式のまちがいはどれか。`,
             ans: ok,
             choices: choices4(r, ok, wr),
-            hint: `${kS < 0 ? `$${kS}$` : `$${kS}$`} が、代入した式のどこにかかるのかを考えて、A さんの式と、自分で代入した式をくらべよう。`,
+            hint: `$${kS}$ が、代入した式のどこにかかるのかを考えて、A さんの式と、自分で代入した式をくらべよう。`,
             steps: [`正しくは、かっこをつけて　$${good}$`, `かっこをつけないと、$${kS}$ が $${mono}$ にしかかからず、$${n}$ にかからない。`],
           };
         })),
         // 04d05b 正しく解く
         t("04d05b", gen((r) => {
-          const S = subSys(r, { m: [[2, 1], [3, 1], [4, 1], [-2, 1], [-3, 1]], n: [1, 2, 3, 4, -1, -2, -3, -4], v: [1, 4], kS: [-2, -3, -4, 2, 3, 4], kO: [1, 2, 3, 4, 5, -1, -2] });
+          const S = subSys(r, D5);
           if (!S) return null;
           const { sv: sVar, ov, m, n, B } = S, kS = B[idx(sVar)], ask = r(0, 1);
           return {
@@ -317,13 +322,13 @@ export const UNITS = [
             q: `連立方程式 $${casesTex([`${blk}=${c1}`, `${k}(${blk})${signedVar(s, z)}=${c2}`])}$${LAB}を解いたとき、$${XY[ask]}$ の値は？`,
             ans: sol[ask],
             hint: "② の中に、① の左辺と同じ形の式がある。ひとまとまりと見て、おきかえられないかな。",
-            steps: [`$${blk}$ は ① より $${c1}$ と同じ。② の $${blk}$ に $${c1}$ を代入：$${k}\\times${c1}${signedVar(s, z)}=${c2}$`, `$${k * c1}${signedVar(s, z)}=${c2}$　$${coefVar(s, z)}=${c2 - k * c1}$　$${z}=${z0}$`, `① に $${z}=${z0}$ を代入：$${sb.sub}$　${sb.rest ? `$${sb.rest}$　` : ""}$${z === "x" ? "y" : "x"}=${sb.other}$`, ANS(x0, y0)],
+            steps: [`$${blk}$ は ① より $${c1}$ と同じ。② の $${blk}$ に $${c1}$ を代入：$${k}\\times${c1 < 0 ? `(${c1})` : c1}${signedVar(s, z)}=${c2}$`, `$${k * c1}${signedVar(s, z)}=${c2}$${s === 1 ? "" : `　$${coefVar(s, z)}=${c2 - k * c1}$`}　$${z}=${z0}$`, `① に $${z}=${z0}$ を代入：$${sb.sub}$　${sb.rest ? `$${sb.rest}$　` : ""}$${z === "x" ? "y" : "x"}=${sb.other}$`, ANS(x0, y0)],
           };
         })),
         // 04d08 y＝(1/2)x+1, 3x−4y＝−2（分数をふくむ式を代入）
-        solveQ("04d08", { m: [[1, 2], [1, 3], [3, 2], [2, 3], [-1, 2]], n: [1, 2, 3, -1, -2, -3, 4], v: [1, 4], neg: 20, kS: [-2, -3, -4, -6, 2, 3], kO: [2, 3, 4, 5, 1, -2, -3] }, (S) => `$${S.sv}=\\cdots$ の式の右辺に分数がある。② に代入するときは、かっこをつけて、$${S.sv}$ の係数をかけよう。`),
+        solveQ("04d08", { m: [[1, 2], [1, 3], [3, 2], [2, 3], [-1, 2]], n: [1, 2, 3, -1, -2, -3, 4], v: [1, 4], neg: 20, kS: [-2, -3, -4, -6, 2, 3, 4, 6], kO: [2, 3, 4, 5, 1, -2, -3], ok: (m, n, kS) => (kS * m[0]) % m[1] === 0 }, (S) => `$${S.sv}=\\cdots$ の式の右辺に分数がある。② に代入するときは、かっこをつけて、$${S.sv}$ の係数をかけよう。`),
         // 04q05 チャレンジ x＝(1/3)y+2, 3x−4y＝−12
-        solveQ("04q05", { m: [[1, 3], [1, 4], [2, 3], [1, 2], [-1, 3]], n: [1, 2, 3, 4, -1, -2, -3], v: [1, 4], neg: 20, kS: [3, 4, 6, -2, -3, -4], kO: [-4, -3, -2, 2, 3, 4, 5], sv: ["x", "y"] }, (S) => `$${S.sv}=\\cdots$ の式の右辺に分数がある。② に代入するときは、かっこをつけて、$${S.sv}$ の係数をかけよう。`),
+        solveQ("04q05", { m: [[1, 3], [1, 4], [2, 3], [1, 2], [-1, 3]], n: [1, 2, 3, 4, -1, -2, -3], v: [1, 4], neg: 20, kS: [3, 4, 6, -2, -3, -4, 2, 6], kO: [-4, -3, -2, 2, 3, 4, 5], sv: ["x", "y"], ok: (m, n, kS) => (kS * m[0]) % m[1] === 0 }, (S) => `$${S.sv}=\\cdots$ の式の右辺に分数がある。② に代入するときは、かっこをつけて、$${S.sv}$ の係数をかけよう。`),
       ],
     },
   }),

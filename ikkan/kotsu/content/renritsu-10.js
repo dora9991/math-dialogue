@@ -46,7 +46,7 @@ const MIX = [
   { A: "運動部", B: "文化部", u: "人", p0: "昨年度", p1: "今年度", lead: (T) => `ある中学校の昨年度の部員は、運動部と文化部を合わせて ${T}人だった。`, same: "今年度の部員の人数は、運動部と文化部で同じになった" },
   { A: "大人", B: "子ども", u: "人", p0: "先月", p1: "今月", lead: (T) => `ある市民プールの先月の利用者は、大人と子どもを合わせて ${T}人だった。`, same: "今月の利用者の人数は、大人と子どもで同じになった" },
   { A: "牛乳", B: "お茶", u: "本", p0: "先月", p1: "今月", lead: (T) => `あるスーパーで、先月は、牛乳とお茶を合わせて ${T}本売った。`, same: "今月売れた本数は、牛乳とお茶で同じになった" },
-  { A: "商品 P", B: "商品 Q", u: "個", p0: "先週", p1: "今週", lead: (T) => `ある店で、先週、商品 P と商品 Q を合わせて ${T}個売った。`, same: "今週売れた個数は、商品 P と商品 Q で同じになった" },
+  { A: "商品P", B: "商品Q", u: "個", p0: "先週", p1: "今週", lead: (T) => `ある店で、先週、商品Pと商品Qを合わせて ${T}個売った。`, same: "今週売れた個数は、商品Pと商品Qで同じになった" },
 ];
 const PCTS = [5, 10, 15, 20, 25, 30, 40];
 
@@ -93,7 +93,7 @@ const PCT_KIND = {
   down: { us: ["個", "人", "本", "冊"], num: (p) => 100 - p, ask: (v, p, u) => `$${v}$ ${u}の ${p}%減の${NOUN[u]}は、何${u}か。`, why: (p) => `${p}%減ったあとは、もとの量の ${100 - p}% になる。`, hint: "「p%減る」と、もとの量の何%になるかな。" },
 };
 function pctProblem(r, kinds, ps) {
-  const kind = pick(r, kinds), K = PCT_KIND[kind], p = pick(r, ps), v = pick(r, ["x", "y"]), u = pick(r, K.us);
+  const kind = pick(r, kinds), K = PCT_KIND[kind], p = pick(r, kind === "of" ? ps : ps.filter((n) => n <= 40)), v = pick(r, ["x", "y"]), u = pick(r, K.us);
   const num = K.num(p);
   const ok = tx(`${pc(num)}${v}`);
   // ありがちな誤答：ほかの割合をつかう・100でわるのを忘れる
@@ -106,6 +106,35 @@ function pctProblem(r, kinds, ps) {
     hint: K.hint,
     steps: [K.why(p), `$${v}\\times ${pc(num)}=${pc(num)}${v}$（${u}）`],
   };
+}
+
+// ── 10d05 の数字：昨年度の x 人・y 人。第1群が s1％、第2群が s2％（符号つき、逆の符号）変わり、全体では q％ 変わる（整数、|q| ≤ 9、q≠0）──
+//   増減の人数 x·|s1|/100、y·|s2|/100 が整数
+const TOTAL = [];
+for (const T of [200, 300, 400, 500, 600, 800, 1000, 1200]) for (let x = 50; x < T; x += 50) {
+  const y = T - x;
+  for (let pA = 1; pA <= 10; pA++) for (let pB = 1; pB <= 10; pB++) {
+    if (pA === pB || (x * pA) % 100 !== 0 || (y * pB) % 100 !== 0) continue;
+    for (const dir of [1, -1]) {
+      const s1 = -dir * pA, s2 = dir * pB, num = s1 * x + s2 * y;
+      if (num % T !== 0) continue;
+      const q = num / T;
+      if (q !== 0 && Math.abs(q) <= 9 && x !== y) TOTAL.push({ T, x, y, s1, s2, q });
+    }
+  }
+}
+
+// ── 10d06 の数字：先月の x・y。第1群が s1％、第2群が s2％（逆の符号）変わって、今月の量が等しい：(100+s1)x ＝ (100+s2)y ──
+//   a x ＝ b y（a・b は互いに素）。x : y ＝ b : a
+const EQUAL = [];
+for (const pA of [5, 10, 15, 20, 25, 30]) for (const pB of [5, 10, 15, 20, 25, 30]) for (const dir of [1, -1]) {
+  const s1 = -dir * pA, s2 = dir * pB, g = gcd(100 + s1, 100 + s2), a = (100 + s1) / g, b = (100 + s2) / g;
+  for (let k = 1; k <= 60; k++) {
+    const x = k * b, y = k * a, T = x + y;
+    if (T < 200 || T > 900 || x === y) continue;
+    if ((x * pA) % 100 !== 0 || (y * pB) % 100 !== 0) continue;
+    EQUAL.push({ s1, s2, x, y, T, a, b });
+  }
 }
 
 export const UNITS = [
@@ -136,7 +165,7 @@ export const UNITS = [
             q: `${m.lead(T)}${changeText(m, sA, sB, net)}${m.p0}の${ask}は何${m.u}だったか。${m.p0}の${m.A}を $x$ ${m.u}、${m.B}を $y$ ${m.u}として、連立方程式で求めよう。`,
             ans: askA ? x : y,
             unit: m.u,
-            hint: "増えた量（＋）と減った量（−）を、$x$、$y$ と割合で表して、合わせた増減の式をつくろう。もう1つの式は、先月の合計。",
+            hint: "増えた量と減った量は、それぞれ $x$、$y$ と割合で、どう表せるかな。合わせた増減は？",
             steps: [
               ...mixSteps({ nameA: m.A, nameB: m.B, u: m.u, p0: m.p0, T, x, y, sA, sB, net }),
               `確かめ　$${x}+${y}=${T}$、増減は ${sg(dx)}${m.u}と ${sg(dy)}${m.u}で、合わせて ${sg(net)}${m.u}。${m.p0}の${m.A}は ${x}${m.u}、${m.B}は ${y}${m.u}。`,
@@ -229,7 +258,7 @@ export const UNITS = [
           return {
             q: `連立方程式 ${sys2(`x+y=${T}`, incdecTex(sA, sB, net))} を解いたとき、$${v}$ の値は？`,
             ans: askX ? x : y,
-            hint: "②の分数を、全体に同じ数（10 や 100 など）をかけて、整数にしてから、加減法で解こう。",
+            hint: "②の分数を、全体に同じ数（分母をなくせる数）をかけて、整数にしてから、加減法で解こう。",
             steps: [
               `$x+y=${T}$ …①　　$${incdecTex(sA, sB, net)}$ …②`,
               st[1],
@@ -280,7 +309,7 @@ export const UNITS = [
               `${m.p0}の合計が ${T}${m.u}だから　$x+y=${T}$ …①`,
               `②の右辺 ${Math.abs(net)} は「増減した量」。だから左辺も、増えた分 $${pc(pA)}x$ から減った分 $${pc(pB)}y$ をひいた「増減の量」にする。`,
               `$${incdecTex(sA, sB, net)}$ …②`,
-              `「${m.p1}の${m.u}数」$${pc(100 + pA)}x+${pc(100 - pB)}y$ を左辺に使うと、右辺は ${T + net} でなければならない。右辺が ${net} のものは、まちがい。`,
+              `「${m.p1}の${m.u}数」$${pc(100 + pA)}x+${pc(100 - pB)}y$ を左辺に使うと、右辺は ${T + net} でなければならない。右辺が ${net < 0 ? "−" : ""}${Math.abs(net)} のものは、まちがい。`,
             ],
           };
         }),
@@ -296,7 +325,7 @@ export const UNITS = [
             q: `${m.lead(T)}${changeText(m, sA, sB, net)}${m.p1}の${ask}は何${m.u}か。${m.p0}の${m.A}を $x$ ${m.u}、${m.B}を $y$ ${m.u}として、連立方程式で求めよう。`,
             ans,
             unit: m.u,
-            hint: `まず、${m.p0}の個数（$x$、$y$）を求めよう。${m.p1}の個数は、${m.p0}の個数に、増減の割合を反映させて求める。`,
+            hint: `まず、${m.p0}の量（$x$、$y$）を求めよう。${m.p1}の量は、${m.p0}の量に、増減の割合を使って求める。`,
             steps: [
               ...mixSteps({ nameA: m.A, nameB: m.B, u: m.u, p0: m.p0, T, x, y, sA, sB, net }),
               `${m.p0}の${ask}は ${v0}${m.u}。${m.p1}は $${v0}\\times ${pc(100 + s1)}=${ans}$（${m.u}）。`,
@@ -369,7 +398,7 @@ export const UNITS = [
             hint: `${S.B}の代金は、定価から ${c}円ひいた金額。${S.A}の代金は、定価の何%かな。`,
             steps: [
               `${S.A}の定価を $x$ 円、${S.B}の定価を $y$ 円とする。　$x+y=${T}$ …①　　$${pc(100 - p)}x+(y-${c})=${M}$ …②`,
-              `② を整理　$${pc(100 - p)}x+y=${M + c}$ …③　　③×${b === 1 ? 1 : (100 / g)}　$${linTex(a, b, R)}$ …④`,
+              `② を整理　$${pc(100 - p)}x+y=${M + c}$ …③　　③×${b}　$${linTex(a, b, R)}$ …④`,
               `④−${times("①", a)}　${solved(b - a, R - a * T, "y", y)}　① に代入　$x=${T}-${y}=${x}$`,
               `確かめ　$${x}\\times ${pc(100 - p)}+(${y}-${c})=${(x * (100 - p)) / 100}+${y - c}=${M}$。${S.A} ${x}円、${S.B} ${y}円。`,
             ],
@@ -379,35 +408,6 @@ export const UNITS = [
     },
   }),
 ];
-
-// ── 10d05 の数字：昨年度の x 人・y 人。第1群が s1％、第2群が s2％（符号つき、逆の符号）変わり、全体では q％ 変わる（整数、|q| ≤ 9、q≠0）──
-//   増減の人数 x·|s1|/100、y·|s2|/100 が整数
-const TOTAL = [];
-for (const T of [200, 300, 400, 500, 600, 800, 1000, 1200]) for (let x = 50; x < T; x += 50) {
-  const y = T - x;
-  for (let pA = 1; pA <= 10; pA++) for (let pB = 1; pB <= 10; pB++) {
-    if (pA === pB || (x * pA) % 100 !== 0 || (y * pB) % 100 !== 0) continue;
-    for (const dir of [1, -1]) {
-      const s1 = -dir * pA, s2 = dir * pB, num = s1 * x + s2 * y;
-      if (num % T !== 0) continue;
-      const q = num / T;
-      if (q !== 0 && Math.abs(q) <= 9 && x !== y) TOTAL.push({ T, x, y, s1, s2, q });
-    }
-  }
-}
-
-// ── 10d06 の数字：先月の x・y。第1群が s1％、第2群が s2％（逆の符号）変わって、今月の量が等しい：(100+s1)x ＝ (100+s2)y ──
-//   a x ＝ b y（a・b は互いに素）。x : y ＝ b : a
-const EQUAL = [];
-for (const pA of [5, 10, 15, 20, 25, 30]) for (const pB of [5, 10, 15, 20, 25, 30]) for (const dir of [1, -1]) {
-  const s1 = -dir * pA, s2 = dir * pB, g = gcd(100 + s1, 100 + s2), a = (100 + s1) / g, b = (100 + s2) / g;
-  for (let k = 1; k <= 60; k++) {
-    const x = k * b, y = k * a, T = x + y;
-    if (T < 200 || T > 900 || x === y) continue;
-    if ((x * pA) % 100 !== 0 || (y * pB) % 100 !== 0) continue;
-    EQUAL.push({ s1, s2, x, y, T, a, b });
-  }
-}
 
 // 移さなかった問題（記述・説明・図が必要など、コツコツくんの入力形式で答えられないもの）
 export const SKIPPED = [];   // 第10時は、演習プリント 6問・小テスト 5問のすべてを移した（式を選ぶ問いは4択、解く問いは数で聞く。「わけを説明」は、まちがっている式を選ぶ4択に直した）
