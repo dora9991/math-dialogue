@@ -67,12 +67,12 @@ const STALL = [
   { place: "ある店で", a: "コーヒー", ca: "杯", b: "紅茶", cb: "杯", pa: [250, 300, 350, 400], pb: [150, 200, 450] },
   { place: "ある店で", a: "ハンバーガー", ca: "個", b: "ポテト", cb: "袋", pa: [250, 300, 350, 400], pb: [150, 200, 450] },
 ];
-/** 品A を x 個、品B を y 個（x ≠ y、値段は ちがう）買った場面。条件に合わなければ null */
+/** 品A を x 個、品B を y 個（x ≠ y、値段は ちがう）買った場面。条件に合わなければ null。tc＝合わせた数の数え方（数え方が同じならそれ、ちがえば「品」） */
 function stallScene(r) {
   const s = pick(r, STALL), pa = pick(r, s.pa), pb = pick(r, s.pb);
   const x = r(2, 9), y = r(2, 9);
   if (x === y || pa === pb) return null;
-  return { ...s, pa, pb, x, y, n: x + y, M: pa * x + pb * y };
+  return { ...s, pa, pb, x, y, n: x + y, M: pa * x + pb * y, tc: s.ca === s.cb ? s.ca : "品" };
 }
 
 // ── 08d06 の数字：a 個ずつ配ると e1（＋あまる／−たりない）、b 個ずつ配ると e2。 y ＝ a x + e1 ＝ b x + e2 ─────────
@@ -166,12 +166,12 @@ export const UNITS = [
           const ok = label([x, y]), wr = pairs.slice(0, 3);
           const cost = ([u, v]) => s.pa * u + s.pb * v;
           return {
-            q: `${s.place}、1${s.ca} ${s.pa}円の${s.a}と、1${s.cb} ${s.pb}円の${s.b}を、合わせて ${s.n}つ買ったら、代金は ${s.M}円だった。次のうち、この問題の答えとして正しいものはどれか。（解を、もとの式に代入して確かめよう）`,
+            q: `${s.place}、1${s.ca} ${s.pa}円の${s.a}と、1${s.cb} ${s.pb}円の${s.b}を、合わせて ${s.n}${s.tc}買ったら、代金は ${s.M}円だった。次のうち、この問題の答えとして正しいものはどれか。（解を、もとの式に代入して確かめよう）`,
             ans: ok,
             choices: choices4(r, ok, wr.map(label)),
             hint: "個数の合計と、代金の合計の、両方があう組を選ぼう。",
             steps: [
-              `どの組も、合わせて ${s.n}つ。代金を計算して、${s.M}円になる組を探す。`,
+              `どの組も、合わせて ${s.n}${s.tc}。代金を計算して、${s.M}円になる組を探す。`,
               `${ok}　→　$${s.pa}\\times ${x}+${s.pb}\\times ${y}=${s.M}$ で、あう。`,
               `ほかの組の代金は、${wr.map((w) => `${cost(w)}円`).join("、")}で、${s.M}円にならない。`,
               `答えは「${ok}」。`,
@@ -219,12 +219,12 @@ export const UNITS = [
             sys2(`x+y=${s.n}`, linTex(s.pa, -s.pb, s.M)),    // 代金の式が差
           ]);
           return {
-            q: `${s.place}、1${s.ca} ${s.pa}円の${s.a}と、1${s.cb} ${s.pb}円の${s.b}を、合わせて ${s.n}つ買ったら、代金は ${s.M}円だった。${s.a}を $x$ ${s.ca}、${s.b}を $y$ ${s.cb}とするとき、この場面を表す連立方程式は、どれか。`,
+            q: `${s.place}、1${s.ca} ${s.pa}円の${s.a}と、1${s.cb} ${s.pb}円の${s.b}を、合わせて ${s.n}${s.tc}買ったら、代金は ${s.M}円だった。${s.a}を $x$ ${s.ca}、${s.b}を $y$ ${s.cb}とするとき、この場面を表す連立方程式は、どれか。`,
             ans: ok,
             choices: choices4(r, ok, wrongs),
             hint: "個数の合計の式と、代金の合計の式の、2つをつくろう。",
             steps: [
-              `合わせて ${s.n}つだから　$x+y=${s.n}$ …①`,
+              `合わせて ${s.n}${s.tc}だから　$x+y=${s.n}$ …①`,
               `代金は、${s.a}が $${s.pa}x$ 円、${s.b}が $${s.pb}y$ 円で、合計 ${s.M}円だから　$${linTex(s.pa, s.pb, s.M)}$ …②`,
               `連立方程式は　${ok}`,
             ],

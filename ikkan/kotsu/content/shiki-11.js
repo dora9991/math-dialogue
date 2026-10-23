@@ -39,15 +39,15 @@ const pt = (p, order) => {
   return ptK(p, ks);
 };
 /** 分数の係数は、共通の分母の分数にして書く（(5x-10)/2 の形）。pt を使う */
-const ftex = (p) => {
-  const ks = Object.keys(p);
+const ftex = (p, pos = false) => {
+  const f = pos ? pt : ptex, ks = Object.keys(p);
   if (!ks.length) return "0";
   let L = 1;
   for (const k of ks) L = lcm(L, p[k][1]);
-  if (L === 1) return pt(p);
+  if (L === 1) return f(p);
   const num = pscale(p, L);
-  if (ks.length === 1) { const neg = num[ks[0]][0] < 0; return `${neg ? "-" : ""}\\frac{${pt(neg ? pneg(num) : num)}}{${L}}`; }
-  return `\\frac{${pt(num)}}{${L}}`;
+  if (ks.length === 1) { const neg = num[ks[0]][0] < 0; return `${neg ? "-" : ""}\\frac{${f(neg ? pneg(num) : num)}}{${L}}`; }
+  return `\\frac{${f(num)}}{${L}}`;
 };
 /** a の TeX に b の TeX をつないだもの（b がマイナスで始まらなければ + を入れる） */
 const catTex = (a, b) => { const s2 = ptex(b); return ptex(a) + (s2[0] === "-" ? "" : "+") + s2; };
@@ -56,6 +56,9 @@ const joinTex = (list) => list.map((p, i) => { const s = ptex(p); return i === 0
 /** 数のかっこ：負の数や分数は \left( \right) で囲む */
 const qparen = (q) => (q[0] < 0 ? `\\left(${qtex(q)}\\right)` : qtex(q));
 const par = (x) => (x < 0 ? `(${x})` : String(x));
+/** 文章用（TeX の外）：負の数は − で書く */
+const ms = (x) => (x < 0 ? `−${-x}` : String(x));
+const tp = (x) => (x < 0 ? `(−${-x})` : String(x));
 /** a n + b */
 const lin = (a, b) => ptex(poly([a, { n: 1 }], [b, {}]));
 /** 単項式 coef·(文字^指数) の係数を取り出すための、キー */
@@ -228,7 +231,7 @@ export const UNITS = [
           return {
             q: `次の計算をしよう。 $${joinTex(shuffle(r, items))}$`,
             ans, choices,
-            hint: "文字の部分が同じ項（同類項）を見つけて、係数どうしを計算しよう。$x^2$ と $x$ は同類項かな。",
+            hint: `文字の部分が同じ項（同類項）を見つけて、係数どうしを計算しよう。$${v}^2$ と $${v}$ は同類項かな。`,
             steps: [`同類項どうしをまとめる。$${v}^{2}$ の項どうし、$${v}$ の項どうし${withConst ? "、数どうし" : ""}。`, `$(${sumTex(c1, c3)})${v}^{2}+(${sumTex(c2, c4)})${v}${withConst ? `+(${sumTex(c5, c6)})` : ""}=${ptex(correct)}$`],
           };
         }),
@@ -252,7 +255,7 @@ export const UNITS = [
             q: `次の計算をしよう。 $${k}(${ptex(P)})$`,
             ans, choices,
             hint: "かっこの外の数は、かっこの中の全部の項にかける。負の数をかけると、符号はどうなる？",
-            steps: [`かっこの中の、すべての項に ${k} をかける。`, `$${k}(${ptex(P)})=(${k})\\times ${ptexp(t1)}+(${k})\\times ${ptexp(t2)}=${ptex(correct)}$`],
+            steps: [`かっこの中の、すべての項に ${ms(k)} をかける。`, `$${k}(${ptex(P)})=${par(k)}\\times ${ptexp(t1)}+${par(k)}\\times ${ptexp(t2)}=${ptex(correct)}$`],
           };
         }),
         // 11d03b (18x−24y)÷(−6)
@@ -274,7 +277,7 @@ export const UNITS = [
             q: `次の計算をしよう。 $(${ptex(P)})\\div ${d < 0 ? `(${d})` : d}$`,
             ans, choices,
             hint: "わり算は、わる数の逆数をかけるか、分数の形にして、かっこの中の全部の項をわる。",
-            steps: [`${d} でわるのは、逆数 $${rec}$ をかけるのと同じ。`, `$(${ptex(P)})\\times \\left(${rec}\\right)=${ptex(correct)}$`],
+            steps: [`${ms(d)} でわるのは、逆数 $${rec}$ をかけるのと同じ。`, `$(${ptex(P)})\\times \\left(${rec}\\right)=${ptex(correct)}$`],
           };
         }),
         // 11d03c 分数の形の加減
@@ -288,7 +291,8 @@ export const UNITS = [
             N1 = poly([rnz(r, -5, 5), { [u]: 1 }], [rnz(r, -5, 5), { [w]: 1 }]);
             N2 = poly([rnz(r, -5, 5), { [u]: 1 }], [rnz(r, -5, 5), { [w]: 1 }]);
             correct = comb(pscale(N1, [1, d1]), pscale(N2, [1, d2]), s2);
-            if (Object.keys(correct).length === 2 && !peq(N1, N2)) break;
+            const red = (N, d) => gcd(gcd(Math.abs(N[`${u}1`][0]), Math.abs(N[`${w}1`][0])), d) > 1;
+            if (Object.keys(correct).length === 2 && !peq(N1, N2) && !red(N1, d1) && !red(N2, d2)) break;
           }
           const L = lcm(d1, d2), m1 = L / d1, m2 = L / d2;
           const n1 = pscale(N1, m1), n2 = pscale(N2, m2);
@@ -365,7 +369,7 @@ export const UNITS = [
             q: `次の計算をしよう。 $(${ptex(base)})^{2}$`,
             ans, choices,
             hint: "$(\\ )^2$ は、かっこの中をそのまま2回かけること。係数にも、文字にも、2乗がかかる。",
-            steps: [`$(${ptex(base)})^{2}=(${ptex(base)})\\times (${ptex(base)})$`, `係数は ${par(c)}×${par(c)}＝${c * c}、文字は ${ptex(term(1, e))} を2回かけて ${ptex(term(1, e2))}。`, `答え　$${ptex(correct)}$`],
+            steps: [`$(${ptex(base)})^{2}=(${ptex(base)})\\times (${ptex(base)})$`, `係数は ${tp(c)}×${tp(c)}＝${c * c}、文字は $${ptex(term(1, e))}$ を2回かけて $${ptex(term(1, e2))}$。`, `答え　$${ptex(correct)}$`],
           };
         }),
         // 11d04c・11q02b 14xy²÷(−7/2 y)
@@ -389,6 +393,7 @@ export const UNITS = [
             const hasL = (e) => Object.values(e).some((n) => n > 0);
             if (!hasL(Ae) || !hasL(Be)) continue;
             const A = M(ac, Ae), B = M(bc, Be), C = M(cc, Ce), R = M(rc, Re);
+            if (peq(B, C) || peq(A, C)) continue;
             const correct = pdivMono(pmul(A, B), C);
             if (!peq(correct, R)) throw new Error("積と商が合わない");
             const Cl = Object.keys(Ce).filter((v) => Ce[v] > 0);
@@ -427,6 +432,7 @@ export const UNITS = [
             const Ae = { [u]: Pe[u] - Ce[u], [w]: Pe[w] - Ce[w] };
             if (!Ae[u] && !Ae[w]) continue;
             const A = M(ac, Ae), B = M(-bc, Be), C = M(cc, Ce), R = M(-rc, Re);
+            if (peq(A, pneg(B)) || peq(C, pneg(B)) || peq(A, C)) continue;
             const correct = pmul(pdivMono(A, B), C);
             if (!peq(correct, R)) throw new Error("積と商が合わない");
             const lv = Object.keys(Ae).filter((v) => Ae[v] > 0 || Re[v] > 0);
@@ -480,12 +486,12 @@ export const UNITS = [
           const cands = [
             E.wrong1, E.wrong2, E.wrong3, E.wrong4,
           ];
-          const { ans, choices } = choicePoly(r, correct, shuffle(r, cands), (p) => `y=${ftex(p)}`);
+          const { ans, choices } = choicePoly(r, correct, shuffle(r, cands), (p) => `y=${ftex(p, true)}`);
           return {
             q: `等式 $${E.eq}$ を、$y$ について解くと？`,
             ans, choices,
             hint: "$y$ をふくむ項を左辺に残し、ほかの項を移項する。$y$ にかかっている数で、両辺の全部をわるとき、符号はどうなる？",
-            steps: [`$y$ をふくむ項を左辺に残して移項すると、$${E.step1}$。`, `両辺を $-${E.beta}$ でわって、$y=\\frac{${E.gamma}-${E.alpha}x}{-${E.beta}}=${ftex(correct)}$。`],
+            steps: [`$y$ をふくむ項を左辺に残して移項すると、$${E.step1}$。`, `両辺を $-${E.beta}$ でわって、$y=\\frac{${E.gamma}-${E.alpha}x}{-${E.beta}}=${ftex(correct, true)}$。`],
           };
         }),
         // 11q04b 5x−2y＝10 で x＝4 のときの y の値
@@ -495,7 +501,7 @@ export const UNITS = [
             q: `等式 $${E.eq}$ で、$x=${E.xv}$ のとき、$y$ の値は？`,
             ans: E.yv,
             hint: "$y$ について解いた式をつくって、$x$ の値を入れよう。（先に $x$ の値を入れて、$y$ の方程式として解いてもよい）",
-            steps: [`$y$ について解くと、$y=${ftex(E.sol)}$。`, `$x=${E.xv}$ を代入して、$y=\\frac{${E.alpha}\\times ${E.xv}-${E.gamma}}{${E.beta}}=\\frac{${E.alpha * E.xv - E.gamma}}{${E.beta}}=${E.yv}$`],
+            steps: [`$y$ について解くと、$y=\\frac{${E.alpha}x-${E.gamma}}{${E.beta}}$。`, `$x=${E.xv}$ を代入して、$y=\\frac{${E.alpha}\\times ${E.xv}-${E.gamma}}{${E.beta}}=\\frac{${E.alpha * E.xv - E.gamma}}{${E.beta}}=${E.yv}$`],
           };
         }),
       ],
@@ -569,10 +575,10 @@ export const UNITS = [
         t("11d09b", (r) => {
           const { a, rad, k } = pick(r, SECTOR_NUM);
           return {
-            q: `おうぎ形の弧の長さ $\\ell$ は、半径 $r$、中心角 $a^\\circ$ のとき、$\\ell=2\\pi r\\times \\frac{a}{360}$ と表される。$r=${rad}$、$\\ell=${k}\\pi$ のとき、$a$ の値は？（$r$、$\\ell$ の単位は cm）`,
+            q: `おうぎ形の弧の長さ $\\ell$ は、半径 $r$、中心角 $a^\\circ$ のとき、$\\ell=2\\pi r\\times \\frac{a}{360}$ と表される。$r=${rad}$、$\\ell=${kp(k)}$ のとき、$a$ の値は？（$r$、$\\ell$ の単位は cm）`,
             ans: a, unit: "度",
             hint: "$a$ について解いた式をつくって、$r$ と $\\ell$ の値を代入しよう。$\\pi$ は約分される。",
-            steps: ["$\\ell=2\\pi r\\times \\frac{a}{360}$ を $a$ について解くと、$a=\\frac{180\\ell}{\\pi r}$。", `$r=${rad}$、$\\ell=${k}\\pi$ を代入して、$a=\\frac{180\\times ${k}\\pi}{\\pi\\times ${rad}}=\\frac{${180 * k}}{${rad}}=${a}$（度）`],
+            steps: ["$\\ell=2\\pi r\\times \\frac{a}{360}$ を $a$ について解くと、$a=\\frac{180\\ell}{\\pi r}$。", `$r=${rad}$、$\\ell=${kp(k)}$ を代入して、$a=\\frac{180\\times ${kp(k)}}{\\pi\\times ${rad}}=\\frac{${180 * k}}{${rad}}=${a}$（度）`],
           };
         }),
       ],
@@ -696,7 +702,7 @@ function mulProblem(r) {
     q: `次の計算をしよう。 $${ptex(A)}\\times ${ptexp(B)}$`,
     ans, choices,
     hint: "係数どうし、文字どうしをかける。同じ文字をかけると、指数はどうなる？",
-    steps: [`係数は ${par(c1)}×${par(c2)}＝${c1 * c2}。`, `文字は、$${sh}$ が ${eA[sh]}個と ${eB[sh]}個で ${eA[sh] + eB[sh]}個（$${sh}^{${eA[sh] + eB[sh]}}$）。ほかの文字もそのまま書く。`, `答え　$${ptex(correct)}$`],
+    steps: [`係数は ${tp(c1)}×${tp(c2)}＝${ms(c1 * c2)}。`, `文字は、$${sh}$ が ${eA[sh]}個と ${eB[sh]}個で ${eA[sh] + eB[sh]}個（$${sh}^{${eA[sh] + eB[sh]}}$）。ほかの文字もそのまま書く。`, `答え　$${ptex(correct)}$`],
   };
 }
 
@@ -801,8 +807,9 @@ const SECTOR = [
   },
 ];
 /** 弧の長さ ℓ＝k π（cm）になる、半径 r・中心角 a の組（k＝r·a÷180 が整数） */
+const kp = (k) => (k === 1 ? "\\pi" : `${k}\\pi`);
 const SECTOR_NUM = [];
-for (const a of [30, 40, 45, 60, 72, 90, 120, 135, 144, 150, 180, 200, 240, 270, 300]) for (let rad = 2; rad <= 12; rad++) if ((rad * a) % 180 === 0 && (rad * a) / 180 <= 30) SECTOR_NUM.push({ a, rad, k: (rad * a) / 180 });
+for (const a of [30, 40, 45, 60, 72, 90, 120, 135, 144, 150, 180, 200, 240]) for (let rad = 2; rad <= 12; rad++) if ((rad * a) % 180 === 0 && (rad * a) / 180 <= 30) SECTOR_NUM.push({ a, rad, k: (rad * a) / 180 });
 
 // ── 数当て（11q05）────────────────────────────────────────
 /** ① k を加える ② m倍 ③ j をひく ④ m でわる ⑤ n をひく → いつも k − j/m */

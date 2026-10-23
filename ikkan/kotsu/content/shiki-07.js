@@ -48,7 +48,7 @@ const moreLessQ = (r, which) => {
     q: `n を整数とする。n より ${k} ${plus ? "大きい" : "小さい"}整数を、n を使って表すと、どれか。`,
     ans: $(right),
     choices: mk4(r, right, plus ? [`n-${k}`, `${k}n`, `${k}-n`, `\\frac{n}{${k}}`] : [`n+${k}`, `${k}n`, `${k}-n`, `\\frac{n}{${k}}`]),
-    hint: "「大きい」は たし算、「小さい」は ひき算で表す。n を基準に考えよう。",
+    hint: `n より ${plus ? "大きい" : "小さい"}数は、n にどんな計算をした数かな。`,
     steps: [`n より ${k} ${plus ? "大きい" : "小さい"}数は、n ${plus ? "に" : "から"} ${k} を${plus ? "たした" : "ひいた"}数。`, `$${right}$ と表される。`],
   };
 };
@@ -59,7 +59,7 @@ const multipleQ = (r) => {
     q: `n を整数とする。${k}の倍数を、n を使って表すと、どれか。`,
     ans: $(right),
     choices: mk4(r, right, [`n+${k}`, `${k}n+1`, `n-${k}`, `\\frac{n}{${k}}`]),   // k(n+1) などは、やはり k の倍数になるので、誤答に入れない
-    hint: "k の倍数は、k に整数をかけた数。整数の部分を n とおこう。",
+    hint: `${k}の倍数は、${k} に どんな数をかけた数かな。`,
     steps: [`${k}の倍数は、${k} に整数をかけた数。`, `整数を n とすると、$${right}$ と表される。`],
   };
 };
@@ -70,7 +70,7 @@ const nextPrevQ = (r) => {
     q: `n を整数とする。n の${next ? "次" : "前"}の整数を、n を使って表すと、どれか。`,
     ans: $(right),
     choices: mk4(r, right, next ? ["n-1", "2n", "n^{2}", "n+2"] : ["n+1", "2n", "\\frac{n}{2}", "n-2"]),
-    hint: "となり合う整数は、1ちがう。次は たす、前は ひく。",
+    hint: `n の${next ? "次" : "前"}の整数は、n といくつちがうかな。`,
     steps: [`n の${next ? "次" : "前"}の整数は、n に 1 を${next ? "たした" : "ひいた"}数。`, `$${right}$ と表される。`],
   };
 };
@@ -81,7 +81,7 @@ const nextTimesQ = (r) => {
     q: `n を整数とする。n の${next ? "次" : "前"}の整数の ${k}倍を、n を使って表すと、どれか。`,
     ans: $(right),
     choices: mk4(r, right, next ? [`${k}n+1`, `${k}n`, `${k}(n-1)`, `n+${k}`] : [`${k}n-1`, `${k}n`, `${k}(n+1)`, `n-${k}`]),
-    hint: "まず、n の次（前）の整数を n で表して、その数を k 倍しよう。",
+    hint: `n の${next ? "次" : "前"}の整数は、n でどう表すかな。それを何倍するのかな。`,
     steps: [`n の${next ? "次" : "前"}の整数は $${next ? "n+1" : "n-1"}$。`, `その ${k}倍は、かっこをつけて $${right}$。`],
   };
 };
@@ -94,7 +94,7 @@ const remainderQ = (r) => {
     q: `n を整数とする。${k}でわると ${rem} 余る整数を、n を使って表すと、どれか。`,
     ans: $(right),
     choices: mk4(r, right, [...shuffle(r, others).slice(0, 2), `n+${rem}`, `${rem}n+${k}`]),
-    hint: "わり算の関係「わられる数＝わる数×商＋余り」を使おう。",
+    hint: `わり算の関係「わられる数＝わる数×商＋余り」を思い出そう。商を n とおく。`,
     steps: [`${k}でわると ${rem} 余る数は、（${k}×商）＋${rem}。`, `商を n とすると、$${right}$ と表される。`],
   };
 };
@@ -103,7 +103,8 @@ const listQ = (r) => {
   const k = pick(r, [3, 4, 5]);
   const roles = k % 2 ? ["大きい", "小さい", "まん中の"] : ["大きい", "小さい"];
   const role = pick(r, roles);
-  const sets = { 大きい: seq(k, -(k - 1), 1), 小さい: seq(k, 0, 1), まん中の: seq(k, -(k - 1) / 2, 1) };
+  const sets = { 大きい: seq(k, -(k - 1), 1), 小さい: seq(k, 0, 1) };
+  if (k % 2) sets["まん中の"] = seq(k, -(k - 1) / 2, 1);
   const right = offList(sets[role]);
   const wrongs = [];
   for (const lo of [-(k), -(k - 1) + 1, -1, 1, -(k - 1) + 2, -(k - 1) + 3]) wrongs.push(offList(seq(k, lo, 1)));
