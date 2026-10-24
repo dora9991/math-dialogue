@@ -68,8 +68,10 @@ const pickKey = (r, p) => expsOf(pick(r, Object.keys(p)));
 /** 数の問い：式 p の、項 e の係数 */
 const numAsk = (r, p, lead, hint, steps, pre = "") => {
   const e = pickKey(r, p), tx = askText(e);
-  return { q: `${lead}${pre}${pre && tx.startsWith("$") ? " " : ""}${tx}は？`, ans: ansQ(coefOf(p, e)), hint, steps };
+  return { q: `${lead}${pre}${pre && tx.startsWith("$") ? " " : ""}${tx}は？`, ans: ansQ(coefOf(p, e)), hint, steps: [...steps, finalLine(e, coefOf(p, e))] };
 };
+/** 解説の最後の一文：「○ の係数は ○。」（答えが 1 や −1 のときも、数字が出る） */
+const finalLine = (e, q) => `${askText(e)}は ${$(fracTex(q[0], q[1]))}。`;
 
 // ── 同類項をまとめる（dr.1・qz.1）──────────────────────────
 /** 同類項が 2組ある 4つの項（shapes は2つ）。どちらの組も、まとめると 0 にならない */
@@ -150,17 +152,17 @@ const verticalBuild = (r, what) => {
   const steps = [`ひく式の各項の符号を変える。${$(`-(${raw(B)})=${raw(flipped)}`)}`, "縦にそろえて、同じ文字の項（数の項）を上から順にたす。", `答えは ${$(`${ex}=${ptex(res)}`)}。`];
   if (what === "flip") {
     return {
-      q: `${$(ex)} を、縦に書いて計算する。ひく式の符号を変えた式 ${$(`-(${raw(B)})`)} の、${askText(e)}は？`,
+      q: `${$(ex)} を、縦に書いて計算する。ひく式 ${$(`(${raw(B)})`)} の各項の符号を変えた式の、${askText(e)}は？`,
       ans: ansQ(coefOf(P(flipped), e)),
       hint: "−( ) をはずすと、かっこの中の各項の符号は、どうなるかな。",
-      steps,
+      steps: [steps[0], finalLine(e, coefOf(P(flipped), e)), steps[1], steps[2]].slice(0, 4),
     };
   }
   return {
     q: `${$(ex)} を、縦に書いて計算する。${ansAsk(e)}`,
     ans: ansQ(coefOf(res, e)),
     hint: "ひく式の符号を変えた式を、もとの式の下に書いて、同じ文字の項を縦にたそう。",
-    steps,
+    steps: [...steps, finalLine(e, coefOf(res, e))],
   };
 };
 
@@ -184,7 +186,7 @@ const fracBuild = (r, mode) => {
     const rest = [fu(c[0], c[1]) + "+" + (c2[0] < 0 ? par(fu(c2[0], c2[1])) : fu(c2[0], c2[1])), fu(a1, L2) + "+" + (a2 < 0 ? par(fu(a2, L2)) : fu(a2, L2)), fu(a1 + a2, L2), fracTex(s[0], s[1])];
     return rest.filter((x, i) => i === 0 || x !== rest[i - 1]).join("=");
   };
-  const steps = [`かっこをはずして、同類項の係数どうしを、通分してたす。`, `${$(grp(cs[0], cs[2]))}（${$(u)} の係数）`, `${$(grp(cs[1], cs[3]))}（${$(v)} の係数）`, `${$(`${ex}=${raw(A.concat(B))}=${ptex(res)}`)}`];
+  const steps = [`${$(grp(cs[0], cs[2]))}（${$(u)} の係数）`, `${$(grp(cs[1], cs[3]))}（${$(v)} の係数）`, `${$(`${ex}=${raw(A.concat(B))}=${ptex(res)}`)}`];
   const hint = "同類項の係数どうしを、分母をそろえて（通分して）たそう。";
   if (mode === "num") return numAsk(r, res, `${$(ex)} を計算する。`, hint, steps, "答えの");
   // 4択の誤答：分子どうし・分母どうしをたす／ひき算にする／符号
@@ -221,7 +223,7 @@ const mistakeBuild = (r, what) => {
       q: `次の計算には、まちがいがある。${$(line)} 最初にまちがえているところを説明した文として、正しいものはどれか。`,
       ans,
       choices: choices4(r, ans, wrongs),
-      hint: "−( ) をはずすと、かっこの中の各項の符号は、どうなるのだったかな。1つ1つ確かめよう。",
+      hint: "式を 1行ずつ見くらべて、どこから正しくなくなるか確かめよう。",
       steps,
     };
   }
@@ -229,22 +231,31 @@ const mistakeBuild = (r, what) => {
   return {
     q: `次の計算には、まちがいがある。${$(line)} 正しく計算したとき、${ansAsk(e)}`,
     ans: ansQ(coefOf(right, e)),
-    hint: "−( ) をはずすと、かっこの中の各項の符号は、どうなるのだったかな。考え直して、計算し直そう。",
-    steps,
+    hint: "式を 1行ずつ見くらべて、どこから正しくなくなるか確かめてから、計算し直そう。",
+    steps: [...steps, finalLine(e, coefOf(right, e))],
   };
 };
 
 // ── 三角形の周の長さ（dr.8）──────────────────────────────
 const sideOf = (r, L, neg) => { const p = r(1, 5); return [[p, { [L[0]]: 1 }], [neg ? -r(1, p) : r(1, 6), { [L[1]]: 1 }]]; };
+/** 3辺 S（[[p,u],[q,v]] の組）が、文字にどんな正の数を入れても三角形になるか。neg：u＞v の約束があるとき（v÷u が 0 と 1 の間） */
+const triOK = (S, neg) => {
+  const pq = S.map((s) => [s[0][0], s[1][0]]);
+  if (neg ? !pq.every(([p, q]) => p > 0 && p + q >= 0) : !pq.every(([p, q]) => p > 0 && q > 0)) return false;
+  return [0, 1, 2].every((i) => {
+    const [j, k] = [0, 1, 2].filter((x) => x !== i), A = pq[j][0] + pq[k][0] - pq[i][0], B = pq[j][1] + pq[k][1] - pq[i][1];
+    return neg ? A >= 0 && A + B >= 0 && (A > 0 || A + B > 0) : A >= 0 && B >= 0 && A + B > 0;
+  });
+};
 const perimBuild = (r, mode) => {
   const L = pick(r, LET2), [u, v] = L;
   if (mode === "perim") {
     let S, res, hasNeg;
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 300; i++) {
       const negIdx = r(0, 2), useNeg = r(0, 1) === 1;
       S = [0, 1, 2].map((j) => sideOf(r, L, useNeg && j === negIdx)); hasNeg = useNeg;
       res = P(S.flat());
-      if (Object.keys(res).length === 2) break;
+      if (Object.keys(res).length === 2 && triOK(S, hasNeg)) break;
     }
     const sides = S.map((s) => `${$(`(${raw(s)})`)} cm`).join("、"), e = pick(r, [{ [u]: 1 }, { [v]: 1 }]);
     const ex = S.map((s) => `(${raw(s)})`).join("+");
@@ -252,11 +263,15 @@ const perimBuild = (r, mode) => {
       q: `3辺の長さが ${sides} の三角形の、周の長さを簡単な式で表す${hasNeg ? `（ただし ${$(`${u}>${v}`)} とする）` : ""}。答えの ${$(ptex(term(1, e)))} の係数は？`,
       ans: ansQ(coefOf(res, e)),
       hint: "周の長さは、3辺の長さの和。かっこをはずして、同類項をまとめよう。",
-      steps: ["周の長さは、3辺の長さの和。", `${$(`${ex}=${raw(S.flat())}=${ptex(res)}`)}（cm）`],
+      steps: ["周の長さは、3辺の長さの和。", `${$(`${ex}=${raw(S.flat())}=${ptex(res)}`)}（cm）`, finalLine(e, coefOf(res, e))],
     };
   }
   // 周の長さと2辺から、残りの辺
-  const S = [0, 1, 2].map(() => [[r(1, 6), { [u]: 1 }], [r(1, 6), { [v]: 1 }]]);
+  let S;
+  for (let i = 0; i < 300; i++) {
+    S = [0, 1, 2].map(() => [[r(1, 6), { [u]: 1 }], [r(1, 6), { [v]: 1 }]]);
+    if (triOK(S, false)) break;
+  }
   const total = P(S.flat()), rest = P(S[2]), Lt = ptex(total);
   const sub = `(${Lt})-(${raw(S[0])})-(${raw(S[1])})`, mid = joinTex([Lt, ...S[0].map(negT).map(T1), ...S[1].map(negT).map(T1)]);
   const head = `周の長さが ${$(`(${Lt})`)} cm の三角形がある。2辺の長さが ${$(`(${raw(S[0])})`)} cm と ${$(`(${raw(S[1])})`)} cm のとき、残りの辺の長さを簡単な式で表す。`;
@@ -264,7 +279,7 @@ const perimBuild = (r, mode) => {
   const hint = "3辺の長さの和が、周の長さ。残りの辺は、どう求められるかな。";
   if (mode === "restNum") {
     const e = pick(r, [{ [u]: 1 }, { [v]: 1 }]);
-    return { q: `${head}答えの ${$(ptex(term(1, e)))} の係数は？`, ans: ansQ(coefOf(rest, e)), hint, steps };
+    return { q: `${head}答えの ${$(ptex(term(1, e)))} の係数は？`, ans: ansQ(coefOf(rest, e)), hint, steps: [...steps, finalLine(e, coefOf(rest, e))] };
   }
   const wrongs = [
     P([...tms(total), ...S[0].map(negT), ...S[1]]),          // 2つめの辺の符号を変えない
@@ -293,12 +308,12 @@ const undoBuild = (r, mode) => {
     : `ある式に ${$(Yt)} をたすところを、まちがえてひいてしまったので、答えが ${$(Wt)} になった。`;
   const negY = Y.map(negT).map(T1), posY = Y.map(T1);
   const steps = add
-    ? [`ある式は、答えの ${$(Wt)} から ${$(Yt)} をひいたもの。`, $(`(${Wt})-${yp}=${joinTex([Wt, ...negY])}=${Xt}`), `正しい答えは、ある式から ${$(Yt)} をひいたもの。`, $(`(${Xt})-${yp}=${joinTex([Xt, ...negY])}=${ptex(right)}`)]
-    : [`ある式は、答えの ${$(Wt)} に ${$(Yt)} をたしたもの。`, $(`(${Wt})+${yp}=${joinTex([Wt, ...posY])}=${Xt}`), `正しい答えは、ある式に ${$(Yt)} をたしたもの。`, $(`(${Xt})+${yp}=${joinTex([Xt, ...posY])}=${ptex(right)}`)];
+    ? [`ある式は、答えの ${$(Wt)} から ${$(Yt)} をひいたもの。${$(`(${Wt})-${yp}=${joinTex([Wt, ...negY])}=${Xt}`)}`, `正しい答えは、ある式から ${$(Yt)} をひいたもの。${$(`(${Xt})-${yp}=${joinTex([Xt, ...negY])}=${ptex(right)}`)}`]
+    : [`ある式は、答えの ${$(Wt)} に ${$(Yt)} をたしたもの。${$(`(${Wt})+${yp}=${joinTex([Wt, ...posY])}=${Xt}`)}`, `正しい答えは、ある式に ${$(Yt)} をたしたもの。${$(`(${Xt})+${yp}=${joinTex([Xt, ...posY])}=${ptex(right)}`)}`];
   const hint = "まちがえた計算を式で表して、まず「ある式」を求めよう。";
   if (mode === "num") {
     const e = pickKey(r, right);
-    return { q: `${head}${ansAsk(e, "正しい答えの")}`, ans: ansQ(coefOf(right, e)), hint, steps };
+    return { q: `${head}${ansAsk(e, "正しい答えの")}`, ans: ansQ(coefOf(right, e)), hint, steps: [...steps, finalLine(e, coefOf(right, e))] };
   }
   const wrongs = [Xp, Wp, add ? padd(Wp, P(Y)) : psub(Wp, P(Y)), pneg(right), add ? padd(Xp, P(Y)) : psub(Xp, P(Y))];
   const { ans, choices } = polyChoices(r, right, wrongs);
@@ -354,7 +369,7 @@ const abBuild = (r) => {
     q: `$A=${ptex(A)}$、$B=${ptex(B)}$ のとき、${$(expr)} を計算する。${ansAsk(e)}`,
     ans: ansQ(coefOf(res, e)),
     hint: "$A$、$B$ に式を代入したら、内側のかっこの中から計算しよう。かっこの前の − に注意。",
-    steps: [`$A$、$B$ を代入して ${$(`${expr}=${s1}`)}。`, `内側のかっこを先に計算して ${$(`${s1}=${s2}`)}。`, `${$(`${s2}=${s3}=${ptex(res)}`)}。`],
+    steps: [`$A$、$B$ を代入して ${$(`${expr}=${s1}`)}。`, `内側のかっこを先に計算して ${$(`${s1}=${s2}`)}。`, `${$(`${s2}=${s3}=${ptex(res)}`)}。`, finalLine(e, coefOf(res, e))],
   };
 };
 
