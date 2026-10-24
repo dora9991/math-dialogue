@@ -91,9 +91,9 @@ for (const v1 of [60, 70, 80, 90, 100]) for (const v2 of [150, 180, 200, 210, 24
 
 // ── 09d05：池のまわり（1周 L m）。A さん（速さ x）・B さん（速さ y）。反対向き t1分後に出会い、同じ向き t2分後に追いつく ──
 const POND = [];
-for (let y = 50; y <= 100; y += 5) for (let x = y + 10; x <= 110; x += 5) for (const t1 of [3, 4, 5, 6, 8, 10]) {
+for (let y = 50; y <= 100; y += 5) for (let x = y + 10; x <= 110; x += 5) for (const t1 of [3, 4, 5, 6, 8, 10, 12, 15]) {
   const L = (x + y) * t1;
-  if (L % 100 !== 0 || L < 300 || L > 2400 || L % (x - y) !== 0) continue;
+  if (L % 50 !== 0 || L < 300 || L > 2400 || L % (x - y) !== 0) continue;
   const t2 = L / (x - y);
   if (t2 >= 8 && t2 <= 60 && t2 > t1) POND.push({ x, y, t1, t2, L });
 }
@@ -134,7 +134,7 @@ export const UNITS = [
       1: [
         // 09d01a 道のり ＝ 速さ × 時間（文字を使った式）
         t("09d01a", (r) => {
-          const m = pick(r, MOVE), v = pick(r, m.vs), c = pick(r, ["x", "y"]);
+          const m = pick(r, MOVE), v = pick(r, m.vs), c = pick(r, ["x", "y", "a", "b"]);
           const ok = tx(`${v}${c}`);
           const wrongs = [tx(`\\frac{${c}}{${v}}`), tx(`\\frac{${v}}{${c}}`), tx(`${c}+${v}`)];
           return {
@@ -147,7 +147,7 @@ export const UNITS = [
         }),
         // 09d01b 時間 ＝ 道のり ÷ 速さ（文字を使った式）
         t("09d01b", (r) => {
-          const m = pick(r, MOVE), v = pick(r, m.vs), c = pick(r, ["x", "y"]);
+          const m = pick(r, MOVE), v = pick(r, m.vs), c = pick(r, ["x", "y", "a", "b"]);
           const ok = tx(`\\frac{${c}}{${v}}`);
           const wrongs = [tx(`${v}${c}`), tx(`\\frac{${v}}{${c}}`), tx(`${c}-${v}`)];
           return {
@@ -347,17 +347,18 @@ export const UNITS = [
           const c = pick(r, POND), { x, y, t1, t2, L } = c, s = x + y, d = x - y;
           const sol = solveInt([1, 1, s], [1, -1, d]);
           if (!sol || sol[0] !== x || sol[1] !== y) return { skip: true };
-          const askA = r(0, 1) === 0;
+          const [N1, N2] = pick(r, [["A さん", "B さん"], ["兄", "弟"], ["姉", "妹"], ["太郎さん", "花子さん"]]);   // N1 のほうが速い
+          const askA = r(0, 1) === 0, ask = askA ? N1 : N2;
           return {
-            q: `1周 ${L} m の池のまわりを、A さんと B さんが、同じ地点から同時に出発して歩く。反対向きに歩くと ${t1}分後にはじめて出会い、同じ向きに歩くと ${t2}分後に A さんが B さんにはじめて追いつく。${askA ? "A" : "B"} さんの速さは、分速何 m か。A さんの速さを分速 $x$ m、B さんの速さを分速 $y$ m として、求めよう。`,
+            q: `1周 ${L} m の池のまわりを、${N1}と${N2}が、同じ地点から同時に出発して歩く。反対向きに歩くと ${t1}分後にはじめて出会い、同じ向きに歩くと ${t2}分後に${N1}が${N2}にはじめて追いつく。${ask}の速さは、分速何 m か。${N1}の速さを分速 $x$ m、${N2}の速さを分速 $y$ m として、求めよう。`,
             ans: askA ? x : y,
             unit: "m/分",
             hint: "反対向きに歩いて出会うとき、2人の歩いた道のりの合計は、何と等しいかな。同じ向きで追いつくときは、2人の道のりの差は？",
             steps: [
-              `A さんを分速 $x$ m、B さんを分速 $y$ m とする。`,
+              `${N1}の速さを分速 $x$ m、${N2}の速さを分速 $y$ m とする。`,
               `反対向き　$${t1}x+${t1}y=${L}$ より　$x+y=${s}$ …①　　同じ向き　$${t2}x-${t2}y=${L}$ より　$x-y=${d}$ …②`,
               `①+②　$2x=${s + d}$　$x=${x}$　① に代入　$y=${y}$`,
-              `A さんは分速 ${x} m、B さんは分速 ${y} m。確かめ　$${t1}\\times ${s}=${L}$、$${t2}\\times ${d}=${L}$`,
+              `${N1}は分速 ${x} m、${N2}は分速 ${y} m。確かめ　$${t1}\\times ${s}=${L}$、$${t2}\\times ${d}=${L}$`,
             ],
           };
         }),

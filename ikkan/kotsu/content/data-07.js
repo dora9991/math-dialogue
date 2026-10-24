@@ -9,7 +9,7 @@
 // ============================================================
 import { t, pick, choices4, shuffle, round } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
-import { sum, mean, median, range, classes, medianClass, clsLabel, freqSentence, listData, roundHalf } from "../stats.js";
+import { sum, mean, median, range, classes, medianClass, clsLabel, freqSentence, listData, roundHalf, isTie } from "../stats.js";
 
 const unit = unitFor("data");
 const f2 = (x) => x.toFixed(2);
@@ -171,7 +171,7 @@ export const UNITS = [
             q: `${names[0]}と${names[1]}の、夏の 30日間の最高気温（℃）を度数分布表にまとめたところ、${names[0]}は、${freqSentence(cls, fa, "℃", "日")}。${names[1]}は、${freqSentence(cls, fb, "℃", "日")}であった。最高気温が ${th}℃以上の日は、${names[big]}は${names[1 - big]}より、何日多いか。`,
             ans: Math.abs(ta - tb),
             unit: "日",
-            hint: "同じ 30日で、それぞれ「以上」の日数を求めて、くらべよう。「以上」は、その階級から上を全部足す。",
+            hint: "「以上」の日数は、度数分布表のどの階級から上のことかな。2つの市の日数は、そのままくらべてよいかな。",
             steps: [`${names[0]}の ${th}℃以上は ${fa.slice(j).join(" + ")} ＝ ${ta}（日）`, `${names[1]}の ${th}℃以上は ${fb.slice(j).join(" + ")} ＝ ${tb}（日）`, `${names[big]}のほうが ${Math.abs(ta - tb)} 日多い。（日数は同じ 30日だから、そのまま比べられる。）`],
           };
         }),
@@ -190,7 +190,7 @@ export const UNITS = [
         }),
         // 07q04 グラフの縦軸が 0 から始まらないとき、読む人が気をつけること
         t("07q04", (r) => {
-          const what = pick(r, ["月ごとの売り上げ", "2つのクラスの平均点", "駅の乗降客数", "図書室の貸し出し冊数"]);
+          const what = pick(r, ["月ごとの売り上げ", "2つのクラスの平均点", "駅の乗降客数", "図書室の貸し出し冊数", "月ごとのごみの量", "クラス別の欠席者の数", "年ごとの入学者数", "店ごとのパンの売れた個数"]);
           const ans = pick(r, [
             "縦軸の目もりを読んで、実際の数でくらべる",
             "棒の高さの比ではなく、目もりが表す実際の数でくらべる",
@@ -204,7 +204,10 @@ export const UNITS = [
             "棒の高さが低いほうが、数量が多いと考える",
           ]).slice(0, 3);
           return {
-            q: `${what}を表す棒グラフの縦軸が、0 から始まっていない。このようなグラフを読むときに気をつけることとして、正しいものはどれか。`,
+            q: pick(r, [
+              `${what}を表す棒グラフの縦軸が、0 から始まっていない。このようなグラフを読むときに気をつけることとして、正しいものはどれか。`,
+              `縦軸が 0 から始まっていない、${what}の棒グラフを見て、「棒の高さの差が大きい」と感じた。このグラフを読むときの注意として、正しいものはどれか。`,
+            ]),
             ans,
             choices: choices4(r, ans, wrongs),
             hint: "縦軸が 0 から始まらないと、棒の高さの差が、実際の差とくらべてどう見えるかな。",
@@ -228,7 +231,7 @@ export const UNITS = [
           return {
             q: `${ctx.what}は、${ctx.m1}が ${a}${ctx.u}、${ctx.m2}が ${b}${ctx.u}であった。これを、縦軸が ${s}${ctx.u}から始まる棒グラフに表すと、${ctx.m2}の棒の高さは、${ctx.m1}の棒の高さの ${k}倍に見える。実際には、${ctx.m2}は${ctx.m1}の何倍か。`,
             ans: round(ratio, 3),
-            hint: "グラフの棒の高さではなく、実際の数どうしで、わり算をする。",
+            hint: "グラフの棒の高さと、実際の数は、同じ比になっているかな。実際に何倍かを知るには、どの数を使えばよいかな。",
             steps: [`棒の高さは、縦軸の ${s} からの高さ。${a} − ${s} ＝ ${d}、${b} − ${s} ＝ ${b - s} だから、${k}倍に見える。`, `実際の倍率は ${b} ÷ ${a} ＝ ${round(ratio, 3)}（倍）`],
           };
         }),
@@ -270,7 +273,7 @@ export const UNITS = [
           const fa = genFreq(r, nA, k), fb = genFreq(r, nB, k); if (!fa || !fb) return { skip: true };
           const j = r(2, 3), th = cls[j].lo, ca = sum(fa.slice(j)), cb = sum(fb.slice(j));
           const mca = medianClass(fa), mcb = medianClass(fb);
-          if (ca === cb || Math.abs(ca / nA - cb / nB) < 0.05 || mca == null || mcb == null || mca < 0 || mcb < 0) return { skip: true };
+          if (ca === cb || Math.abs(ca / nA - cb / nB) < 0.05 || isTie(ca / nA, 2) || isTie(cb / nB, 2) || mca == null || mcb == null || mca < 0 || mcb < 0) return { skip: true };
           const G = ["A組", "B組"], more = ca > cb ? 0 : 1, larger = ca / nA > cb / nB ? 0 : 1;
           const L = (i) => clsLabel(cls[i], "点");
           const other = (i) => pick(r, [0, 1, 2, 3, 4].filter((x) => x !== i));
