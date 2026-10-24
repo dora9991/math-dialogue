@@ -13,6 +13,7 @@ const unit = unitFor("renritsu");
 
 // ── 小さな道具 ──────────────────────────────────────────
 const pn = (n) => (n < 0 ? `(${n})` : `${n}`);                         // 負の数にかっこ（TeX の中）
+const mulT = (k) => (k === 1 ? "" : `×${pt(k)}`);                   // ①×1 とは書かない
 const pt = (n) => (n < 0 ? `(−${-n})` : `${n}`);                       // 負の数にかっこ（ふつうの文字）
 const ansQ = (q) => fracAns(q[0], q[1]);                              // 入力式の答え（整数か、約分した分数）
 const same = (a, b, msg) => { if (!qeq(a, b)) throw new Error(`計算の食いちがい: ${msg}`); };
@@ -74,7 +75,7 @@ const buyText = (A, B, c, b) => `1${c} ${b.a1}円の${A}と、1${c} ${b.a2}円�
 
 // ── 「問題の答えとして合っているか」の言い方（ア〜エ） ───────────
 const CNT = [["大人の人数", "人"], ["子どもの人数", "人"], ["みかんの個数", "個"], ["先月の貸し出し冊数", "冊"], ["参加者の人数", "人"], ["あめの個数", "個"], ["色紙の枚数", "枚"], ["配った本の冊数", "冊"]];
-const MEA = [["歩いた道のり", "km"], ["走った時間", "時間"], ["食塩水の重さ", "g"], ["使ったひもの長さ", "m"], ["のこりの水の量", "L"]];
+const MEA = [["歩いた道のり", "km"], ["走った時間", "時間"], ["食塩水の重さ", "g"], ["使ったひもの長さ", "m"], ["のこりの水の量", "L"], ["かかった時間", "分"], ["切ったテープの長さ", "cm"]];
 const decPos = (r) => { let v; do v = r(1, 59); while (v % 10 === 0); return String(round(v / 10, 1)); };   // 小数第1位まである、整数でない正の数
 const fracPos = (r, lo, hi) => {
   for (let i = 0; i < 50; i++) {
@@ -90,7 +91,8 @@ function stmt(r, ty, md, [label, un]) {
   if (ty === "c") val = md === "ok" ? String(r(2, 40)) : md === "frac" ? (r(0, 1) ? String(round(r(1, 19) + 0.5, 1)) : fracPos(r, 1, 12)) : `-${r(1, 60)}`;
   else val = md === "ok" ? (r(0, 1) ? decPos(r) : fracPos(r, 1, 8)) : `-${r(0, 2) === 0 ? r(1, 9) : r(0, 1) ? decPos(r) : fracPos(r, 1, 6)}`;
   const why = md === "ok" ? "○" : md === "frac" ? "×（整数でない）" : "×（負の数）";
-  return { tex: `${label} $${v}=${val}$ ${un}`, ok: md === "ok", why };
+  const reason = md === "frac" ? "整数でないから" : "負の数だから";
+  return { tex: `${label} $${v}=${val}$ ${un}`, ok: md === "ok", why, reason };
 }
 /** 言い方を並べる：specs＝[[ty, md], …] に、重ならない名前をわりふる */
 function deal(r, specs) {
@@ -98,7 +100,7 @@ function deal(r, specs) {
   let ci = 0, mi = 0;
   return specs.map(([ty, md]) => stmt(r, ty, md, ty === "c" ? cnt[ci++] : mea[mi++]));
 }
-const MARK = ["ア", "イ", "ウ", "エ"];
+const MARK = ["ア", "イ", "ウ", "エ", "オ", "カ"];
 const rules = ["人数・個数・冊数は、整数で、負の数にならない。", "道のり・時間・重さ・長さは、小数や分数でもよいが、負の数にはならない。"];
 
 // ── 時間と速さ（x＋y＝T、v1 x＋v2 y＝D） ───────────────────
@@ -122,7 +124,7 @@ function jogNums(r, cat) {
 const jogText = (j) => `ゆうさんは、ジョギングコースを、はじめは時速 ${j.v1} km で歩き、あとは時速 ${j.v2} km で走って、全部で ${j.T}時間かかった。`;
 
 // ── 的当て（x＋y＝m、p x＋q y＝S） ─────────────────────────
-const PQ = [[3, 5], [2, 5], [3, 7], [4, 6], [5, 8]];
+const PQ = [[3, 5], [2, 5], [3, 7], [4, 6], [5, 8], [2, 3], [3, 4], [4, 7]];
 function targetNums(r, cat) {
   for (let i = 0; i < 80; i++) {
     const [p, q] = pick(r, PQ), S = r(24, 60);
@@ -271,19 +273,19 @@ export const UNITS = [
             steps: [...buySteps(b), `$${v}=${qtex(q)}$`],
           };
         }),
-        // 11d02b ア〜エのうち、問題の答えとして合っているものの数
+        // 11d02b ア〜カのうち、問題の答えとして合っているものの数
         t("11d02b", (r) => {
-          const k = r(1, 3);
+          const k = r(1, 5);
           const specs = shuffle(r, [
             ...Array.from({ length: k }, () => [pick(r, ["c", "m"]), "ok"]),
-            ...Array.from({ length: 4 - k }, () => pick(r, [["c", "frac"], ["c", "neg"], ["m", "neg"]])),
+            ...Array.from({ length: 6 - k }, () => pick(r, [["c", "frac"], ["c", "neg"], ["m", "neg"]])),
           ]);
           const st = deal(r, specs);
           return {
-            q: `次のア〜エは、連立方程式を解いて求めた値である。問題の答えとして合っているものは、いくつあるか。　${st.map((s, i) => `${MARK[i]} ${s.tex}`).join("　")}`,
+            q: `次のア〜カは、連立方程式を解いて求めた値である。問題の答えとして合っているものは、いくつあるか。　${st.map((s, i) => `${MARK[i]} ${s.tex}`).join("　")}`,
             ans: k,
             unit: "つ",
-            hint: "ア〜エの1つ1つについて、その数量が整数でなければならないか、負の数になってよいかを考えよう。",
+            hint: "ア〜カの1つ1つについて、その数量が整数でなければならないか、負の数になってよいかを考えよう。",
             steps: [...rules, st.map((s, i) => `${MARK[i]} ${s.why}`).join("　"), `合っているものは ${k}つ。`],
           };
         }),
@@ -333,7 +335,7 @@ export const UNITS = [
           if (!b) return { skip: true };
           const noun = NOUN[c], j = judgeAns(r, cat, noun);
           return {
-            q: `${buyText(A, B, c, b)}代金が ${b.k}円のとき、同じように連立方程式をつくって解くと、その解は問題の答えになるか。理由も含めて、正しいものを選ぼう。（${A}を $x$ ${c}、${B}を $y$ ${c}とする）`,
+            q: `${buyText(A, B, c, b)}代金が ${b.k}円だったとして、${A}を $x$ ${c}、${B}を $y$ ${c}として連立方程式をつくって解く。その解は問題の答えになるか。理由も含めて、正しいものを選ぼう。`,
             ans: j.ans,
             choices: j.choices,
             hint: `解を求めたら、${noun}として合っているか確かめよう。${noun}は、整数か？　負の数でないか？`,
@@ -350,7 +352,7 @@ export const UNITS = [
             ans: wrong.tex,
             choices: choices4(r, wrong.tex, st.filter((s) => s.ok).map((s) => s.tex)),
             hint: "それぞれの数量は、整数でなければならないか？　負の数になってもよいか？",
-            steps: [...rules, `合っていないのは「${wrong.tex}」。（${wrong.why.slice(2, -1)}から）`],
+            steps: [...rules, `合っていないのは「${wrong.tex}」。（${wrong.reason}）`],
           };
         }),
       ],
@@ -413,10 +415,11 @@ export const UNITS = [
         }),
         // 11d05b 的当て：得点が決まっているとき、あてた回数の組は何通りか
         t("11d05b", (r) => {
-          for (let i = 0; i < 60; i++) {
-            const [p, q] = pick(r, PQ), S = r(24, 60), pairs = [];
+          const target = r(2, 7);   // 組の数がかたよらないように、先に決める
+          for (let i = 0; i < 400; i++) {
+            const [p, q] = pick(r, PQ), S = r(20, 100), pairs = [];
             for (let y = 1; q * y < S; y++) { const rest = S - q * y; if (rest % p === 0) pairs.push([rest / p, y]); }
-            if (pairs.length < 2 || pairs.length > 5) continue;
+            if (pairs.length !== target) continue;
             return {
               q: `的当てで、${p}点の的と ${q}点の的がある。どちらの的にも 1回以上あてて、得点は ${S}点だった。${p}点の的にあてた回数と、${q}点の的にあてた回数の組は、何通り考えられるか。`,
               ans: pairs.length,
@@ -473,8 +476,8 @@ export const UNITS = [
             hint: "解を2つの式に代入すると、$a$、$b$ についての連立方程式ができる。",
             steps: [
               `$x=${p}$、$y=${q}$ を代入して　$${coefVar(p, "a")}${signedVar(q, "b")}=${c1}$ …①　$${coefVar(-q, "a")}${signedVar(p, "b")}=${c2}$ …②`,
-              `①×${pt(p)}−②×${pt(q)}（$b$ を消す）　$${p * p + q * q}a=${p * c1 - q * c2}$　$a=${a}$`,
-              `①に代入して　$b=${b}$`,
+              `①${mulT(p)}−②${mulT(q)}（$b$ を消す）　$${p * p + q * q}a=${p * c1 - q * c2}$　$a=${a}$`,
+              `①に $a=${a}$ を代入して　$${p === 1 ? a : p === -1 ? -a : `${p}\\times${pn(a)}`}${signedVar(q, "b")}=${c1}$　$${coefVar(q, "b")}=${c1 - p * a}$${q === 1 ? "" : `　$b=${b}$`}`,
             ],
           };
         }),

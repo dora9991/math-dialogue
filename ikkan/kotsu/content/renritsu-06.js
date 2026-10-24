@@ -1,8 +1,9 @@
 // ============================================================
 // renritsu-06.js — 連立方程式 第6時「A＝B＝C の形の方程式を解こう」
 //   ikkan の演習プリント（renritsu-06.dr.1〜8）・小テスト（renritsu-06.qz.1〜5）を、コツコツくんのテンプレートにしたもの。
-//   テンプレート id＝「06」＋ d（演習）／q（小テスト）／x（演習プリント（1）（3）（4）の2題ずつの組。ikkan の問題一覧には番号がないので、x にした）＋ 番号（＋ a, b…）
-//     06x01 … 演習（1）　06d02 … dr.2　06x03・06x04 … 演習（3）（4）　06d05〜08 … dr.5〜8　06q01〜05 … qz.1〜5
+//   テンプレート id＝「06」＋ d（演習）／q（小テスト）＋ ikkan の問題の番号（＋ a, b…）
+//     06d01 … dr.1　06d02 … dr.2　06d03・06d04 … dr.3・dr.4　06d05〜08 … dr.5〜8　06q01〜05 … qz.1〜5
+//   （演習の（1）（3）（4）は、「1つ目・2つ目」の2題の組。1つのテンプレートで両方の型が出るようにしてある。dr.4 は、A＝B の文字が消える形（3x+y＝4x+y−2＝5x）も出す）
 //   A＝B＝C の方程式は、解 (x, y) を先に決めて、3つの式 A・B・C がすべて同じ値 K になるように数を決めてつくる。
 //   画面の式 A＝B、B＝C（または A＝C、B＝C）から整数の係数の式を取り出して solve2 で解き直し、解と合うことを確かめてから出す。
 //   「連立方程式の組に直そう」（dr.2・qz.3）は式を答える問題なので、正しい組を選ぶ4択（qz.3 は「正しくない組」を選ぶ4択）にした。
@@ -38,6 +39,17 @@ const solveLines = (e1, e2, nm = XY) => {
   const s = solve2(e1, e2);
   if (!s || s[0][1] !== 1 || s[1][1] !== 1) throw new Error(`解が整数でない ${JSON.stringify([e1, e2])}`);
   const sol = [s[0][0], s[1][0]];
+  // 片方の式が 1 つの文字だけの式（-x=-2 など）のとき：その式から 1 つの文字が決まる
+  const z = [e1, e2].findIndex((e) => e[0] === 0 || e[1] === 0);
+  if (z >= 0) {
+    const e = [e1, e2][z], o = [e1, e2][1 - z], k = e[0] === 0 ? 1 : 0, w = 1 - k;
+    if (e[2] % e[k] !== 0 || e[2] / e[k] !== sol[k]) throw new Error(`1文字の式が合わない ${JSON.stringify([e1, e2])}`);
+    const fin = `よって、${TX(`${nm[0]}=${sol[0]}`)}、${TX(`${nm[1]}=${sol[1]}`)}。`;
+    return [
+      `${TX(eqT(e, nm))} より ${TX(`${nm[k]}=${sol[k]}`)}。`,
+      o[k] === 0 ? `${TX(eqT(o, nm))} より ${TX(`${nm[w]}=${sol[w]}`)}。${fin}` : `${TX(eqT(o, nm))} に ${TX(`${nm[k]}=${sol[k]}`)} を代入して ${TX(`${nm[w]}=${sol[w]}`)}。${fin}`,
+    ];
+  }
   const plans = [0, 1].map((k) => {
     const p1 = e1[k], p2 = e2[k];
     if (p1 === 0 || p2 === 0) return null;
@@ -51,7 +63,7 @@ const solveLines = (e1, e2, nm = XY) => {
   const kk = E1[w] + sg * E2[w], n = E1[2] + sg * E2[2];
   if (kk === 0 || n % kk !== 0 || n / kk !== sol[w]) throw new Error(`消去が合わない ${JSON.stringify([e1, e2])}`);
   const mul = (e, E, m) => (m > 1 ? `${TX(eqT(e, nm))} を ${m} 倍して ${TX(eqT(E, nm))}、` : "");
-  const l1 = `${nm[k]} を消去する。${mul(e1, E1, P.m1)}${mul(e2, E2, P.m2)}${TX(eqT(E1, nm))} と ${TX(eqT(E2, nm))} を${P.same ? "ひく" : "たす"}と ${kk === 1 ? "" : `${TX(`${coefVar(kk, nm[w])}=${n}`)} より `}${TX(`${nm[w]}=${sol[w]}`)}。`;
+  const l1 = `${TX(nm[k])} を消去する。${mul(e1, E1, P.m1)}${mul(e2, E2, P.m2)}${TX(eqT(E1, nm))} と ${TX(eqT(E2, nm))} を${P.same ? "ひく" : "たす"}と ${kk === 1 ? "" : `${TX(`${coefVar(kk, nm[w])}=${n}`)} より `}${TX(`${nm[w]}=${sol[w]}`)}。`;
   const pe = Math.abs(e1[k]) <= Math.abs(e2[k]) ? e1 : e2;
   const l2 = `${TX(eqT(pe, nm))} に ${TX(`${nm[w]}=${sol[w]}`)} を代入して ${TX(`${nm[k]}=${sol[k]}`)}。よって、${TX(`${nm[0]}=${sol[0]}`)}、${TX(`${nm[1]}=${sol[1]}`)}。`;
   return [l1, l2];
@@ -75,7 +87,7 @@ const cand = (spc, sol, K) => {
   return out;
 };
 /** A＝B＝C をつくる。sp.C が "const" なら C は数 K。解 sol で A・B・C はすべて K */
-const tripleGen = (r, solFn, sp) => {
+const tripleGen = (r, solFn, sp, zero = false) => {
   let sol = solFn();
   for (let n = 0; n < 6000; n++) {
     if (n % 8 === 7) sol = solFn();
@@ -92,7 +104,9 @@ const tripleGen = (r, solFn, sp) => {
     // 組：C が数なら (A＝C, B＝C)、そうでなければ (A＝B, B＝C)
     const cst = sp.C === "const";
     const eA = cst ? slotEq(A, C) : slotEq(A, B), eB = slotEq(B, C);
-    if (!eA[0] || !eA[1] || !eB[0] || !eB[1]) continue;
+    // 係数 0（1つの文字が消える式）は、zero のときだけ、ちょうど 1 つの式に出す
+    const zc = (e) => (e[0] === 0 ? 1 : 0) + (e[1] === 0 ? 1 : 0);
+    if (zc(eA) > 1 || zc(eB) > 1 || zc(eA) + zc(eB) !== (zero ? 1 : 0)) continue;
     if (!uniq(eA, eB)) continue;
     const s = solve2(eA, eB);
     if (s[0][0] !== sol[0] || s[1][0] !== sol[1]) throw new Error("tripleGen の解が合わない");
@@ -179,7 +193,7 @@ export const UNITS = [
     levels: {
       // ───────── 1 基礎 ─────────
       1: [
-        // 06x01 演習（1）2x+y＝x+6y＝11（右の数に等しい）
+        // 06d01 演習（1）2x+y＝x+6y＝11（右の数に等しい）
         t("06d01", (r) => {
           return tripleQ(r, tripleGen(r, () => solPick(r, 1, 9, 10), SP.x01), "3つの式が等しい。右の数に等しい 2 つの等式をつくって、連立方程式に直そう。");
         }),
@@ -198,13 +212,14 @@ export const UNITS = [
       ],
       // ───────── 2 標準 ─────────
       2: [
-        // 06x03 演習（3）2x−y−1＝x+2＝3y−1（3つとも式）
+        // 06d03 演習（3）2x−y−1＝x+2＝3y−1（3つとも式）
         t("06d03", (r) => {
-          return tripleQ(r, tripleGen(r, () => solPick(r, 1, 9, 20), SP.x03), "3つとも式のときは、「A＝B」と「B＝C」の 2 つの等式をつくって、整理しよう。");
+          return tripleQ(r, tripleGen(r, () => solPick(r, 1, 9, 20), SP.x03), "3つとも式のときは、「$A=B$」と「$B=C$」のように 2 つの等式をつくって、整理しよう。");
         }),
-        // 06x04 演習（4）3x+y＝4x+y−2＝5x
+        // 06d04 演習（4）3x+y＝4x+y−2＝5x
         t("06d04", (r) => {
-          return tripleQ(r, tripleGen(r, () => solPick(r, 1, 9, 20), SP.x04), "「A＝B」と「B＝C」の 2 つの等式をつくって、$ax+by=c$ の形に整理してから解こう。");
+          // 半分は、A＝B の文字が 1 つ消える形（3x+y＝4x+y−2＝5x）
+          return tripleQ(r, tripleGen(r, () => solPick(r, 1, 9, 20), SP.x04, r(0, 1) === 1), "「$A=B$」と「$B=C$」のように 2 つの等式をつくって、$ax+by=c$ の形に整理してから解こう。");
         }),
         // 06q01 x+2y＝3x+y＝15
         t("06q01", (r) => {
@@ -266,7 +281,7 @@ export const UNITS = [
       4: [
         // 06d07 2x−y＝x+y−2＝3x−4y+5
         t("06d07", (r) => {
-          return tripleQ(r, tripleGen(r, () => solPick(r, 1, 9, 30), SP.d07), "「A＝B」と「B＝C」の 2 つの等式をつくって、整理してから解こう。");
+          return tripleQ(r, tripleGen(r, () => solPick(r, 1, 9, 30), SP.d07), "「$A=B$」と「$B=C$」のように 2 つの等式をつくって、整理してから解こう。");
         }),
         // 06d08 (x+y)/3＝(x−y)/2＝2（分子が式の分数）
         t("06d08", (r) => {
