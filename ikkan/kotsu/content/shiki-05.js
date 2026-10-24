@@ -422,7 +422,7 @@ export const UNITS = [
           const wrong = pdivMono(m0, pmul(m1, m2));   // ÷(2a×3b) としてしまう
           const rt = ptex(right);
           return {
-            q: `次のうち、${$(chainTex(items))} を正しく計算した結果は、どれか。`,
+            q: `次のうち、${$(chainTex(items))} を正しく計算した結果は、どれか。${DIV_NOTE}`,
             ans: $(rt),
             choices: (() => { const w = chainWrongs(items, right); return pick4(r, rt, right, w.main.map(asCand), w.low.map(asCand), [asCand(wrong)]); })(),
             hint: "乗法と除法が混じった式は、どの順に計算するのだったかな。",

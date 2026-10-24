@@ -614,6 +614,7 @@ const err14c = (r) => {
     wrongs = [`指数の 2 は、かっこの中の文字 ${$(u)} だけにつく。`, `${$(`-${c1}`)} を 2乗すると ${$(String(-2 * c1))} になる。`, `${$(`${u}^{2}`)} の部分の指数が、まちがっている。`];
     calc = `(${ptex(term(-c1, { [u]: 1 }))})^{2} = (${ptex(term(-c1, { [u]: 1 }))}) \\times (${ptex(term(-c1, { [u]: 1 }))}) = ${ptex(good)}`;
   } else if (mode === "sqletter") {
+    if (c1 === 2) return err14c(r);   // 2 を 2乗すると 2×2 ＝ 4 で、誤答の「c を 2乗すると 2c」が事実になってしまう
     good = term(c1 * c1, { [u]: 2 });
     line = `(${ptex(term(c1, { [u]: 1 }))})^{2}=${ptex(term(c1, { [u]: 2 }))}`;
     right = `係数 ${$(String(c1))} も 2乗しなければならないのに、${$(u)} だけ 2乗している。`;
