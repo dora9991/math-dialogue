@@ -167,7 +167,11 @@ export const UNITS = [
             ans: $(right.tex),
             choices: mkForm4(r, right, wrongs),
             hint: `かっこをはずして、${u} の項、${v} の項、数の項をまとめ、共通の数 2 でくくり出そう。`,
-            steps: [`$${wrap(u, a0)}${plus ? "+" : "-"}${wrap(v, b0)} = 2${u}${plus ? "+" : "-"}2${v}${sg(c)}$`, `$= ${right.tex}$`, `$${u}${plus ? "+" : "-"}${v}${sg(e)}$ は整数だから、$${right.tex}$ は偶数。${word}と${word}の${opWord}は、偶数。`],
+            steps: (() => {
+              const lhs = `${wrap(u, a0)}${plus ? "+" : "-"}${wrap(v, b0)}`, expanded = `2${u}${plus ? "+" : "-"}2${v}${sg(c)}`;
+              const read = `$${u}${plus ? "+" : "-"}${v}${sg(e)}$ は整数だから、$${right.tex}$ は偶数。${word}と${word}の${opWord}は、偶数。`;
+              return lhs === expanded ? [`$${lhs} = ${right.tex}$`, read] : [`$${lhs} = ${expanded}$`, `$= ${right.tex}$`, read];
+            })(),
           };
         }),
         // 08d04 十の位の数が一の位の数より大きい2けたの自然数から、入れかえた数をひいた差は 9の倍数
@@ -295,7 +299,7 @@ export const UNITS = [
           if (!As.length) return { skip: true };
           const ans = ask === "count" ? As.length : ask === "max" ? Math.max(...As) : Math.min(...As);
           const pairs = As.map((A) => `(${Math.floor(A / 10)}, ${A % 10})`).join("、");
-          const last = ask === "count" ? `A は ${As.join("、")} の ${As.length}個。全部で ${ans}個。` : ask === "max" ? `A は ${As.join("、")}。いちばん大きいものは ${ans}。` : `A は ${As.join("、")}。いちばん小さいものは ${ans}。`;
+          const last = ask === "count" ? `A は ${As.join("、")}。全部で ${ans}個。` : ask === "max" ? `A は ${As.join("、")}。いちばん大きいものは ${ans}。` : `A は ${As.join("、")}。いちばん小さいものは ${ans}。`;
           return {
             q: `一の位が 0 でない2けたの自然数 $A$ と、$A$ の十の位の数と一の位の数を入れかえた数 $B$ がある。$A+B=${S}$ となる $A$ を、すべて考える。${ask === "count" ? "このような $A$ は、全部で何個あるか。" : ask === "max" ? "このような $A$ のうち、いちばん大きいものは？" : "このような $A$ のうち、いちばん小さいものは？"}`,
             ans,
@@ -356,13 +360,18 @@ export const UNITS = [
           // (10−k)a = (k−1)b を、共通の数でわって、a と b の関係にする
           const g = (() => { let x = 10 - k, y = k - 1; while (y) [x, y] = [y, x % y]; return x; })(), pa = (10 - k) / g, qb = (k - 1) / g;
           const rel = qb === 1 ? `b = ${pa === 1 ? "" : pa}a` : pa === 1 ? `a = ${qb}b` : `${pa}a = ${qb}b`;
-          const last = ask === "one" ? `求める数は ${ans}。` : ask === "max" ? `あてはまる数は ${As.join("、")}。いちばん大きい数は ${ans}。` : ask === "sum" ? `和は $${As.join("+")} = ${ans}$。` : `あてはまる数は ${As.join("、")} の ${ans}個。`;
+          const last = ask === "one" ? "" : ask === "max" ? `あてはまる数は ${As.join("、")}。いちばん大きい数は ${ans}。` : ask === "sum" ? `和は $${As.join("+")} = ${ans}$。` : `全部で ${ans}個。`;
           return {
             q: ask === "one" ? `${head}求めよう。（あてはまる数は 1つだけある）` : `${head}すべて考える。${ask === "max" ? "そのうち、いちばん大きい数は？" : ask === "sum" ? "それらの数の和は？" : "そのような数は、全部で何個あるか。"}`,
             ans,
             unit: ask === "count" ? "個" : "",
             hint: "十の位の数を a、一の位の数を b として、条件を a、b の式で表そう。a と b の関係が決まる。",
-            steps: [`十の位の数を $a$、一の位の数を $b$ とすると、$10a+b = ${k}(a+b)$。`, `整理すると $${10 - k === 1 ? "" : 10 - k}a = ${k - 1 === 1 ? "" : k - 1}b$。共通の数でわって、$${rel}$。`, `$a$ は 1〜9、$b$ は 0〜9 の整数だから、あてはまる数は ${As.join("、")}。`, last],
+            steps: (() => {
+              const unreduced = `${10 - k === 1 ? "" : 10 - k}a = ${k - 1 === 1 ? "" : k - 1}b`;
+              const s2 = `整理すると $${unreduced}$${rel !== unreduced ? (g > 1 ? `。両辺を ${g} でわって、$${rel}$` : `、つまり $${rel}$`) : ""}。`;
+              const s3 = ask === "one" ? `$a$ は 1〜9、$b$ は 0〜9 の整数だから、あてはまる数は ${ans} だけ。求める数は ${ans}。` : `$a$ は 1〜9、$b$ は 0〜9 の整数だから、あてはまる数は ${As.join("、")}。`;
+              return [`十の位の数を $a$、一の位の数を $b$ とすると、$10a+b = ${k}(a+b)$。`, s2, s3, ...(last ? [last] : [])];
+            })(),
           };
         }),
       ],

@@ -176,12 +176,12 @@ export const UNITS = [
         t("10q01", (r) => pctProblem(r, ["off", "up", "down"], [5, 10, 15, 20, 25, 30, 35, 40, 45])),
         // 10q04 今月収穫したトマトは何個か（先月の個数と増減の割合から）
         t("10q04", (r) => {
-          const m = pick(r, MIX), p = pick(r, [5, 10, 15, 20, 25, 30, 40]), up = r(0, 1) === 0;
+          const m = pick(r, MIX), nm = pick(r, [m.A, m.B]), p = pick(r, [5, 10, 15, 20, 25, 30, 40]), up = r(0, 1) === 0;
           const cand = [];
           for (let N = 40; N <= 400; N += 10) if ((N * p) % 100 === 0) cand.push(N);
           const N = pick(r, cand), num = up ? 100 + p : 100 - p, ans = (N * num) / 100;
           return {
-            q: `${m.p0}の${m.A}は ${N}${m.u}だった。${m.p1}は、${m.p0}とくらべて ${p}% ${up ? "増えた" : "減った"}。${m.p1}の${m.A}は何${m.u}か。`,
+            q: `${m.solo(N, nm)}${m.p1}は、${m.p0}とくらべて ${p}% ${up ? "増えた" : "減った"}。${m.ask1(nm)}`,
             ans,
             unit: m.u,
             hint: `${p}%${up ? "増える" : "減る"}と、${m.p0}の量の何%になるかな。`,
@@ -212,7 +212,7 @@ export const UNITS = [
             q: `${S.A}と${S.B}を買う。定価の合計は ${T}円だが、${S.A}は定価の ${pA}%引き、${S.B}は定価の ${pB}%引きになっていたので、代金の合計は ${M}円だった。${ask}の定価は何円か。${S.A}の定価を $x$ 円、${S.B}の定価を $y$ 円として、連立方程式で求めよう。`,
             ans: askA ? x : y,
             unit: "円",
-            hint: "定価の合計の式と、実際に払った代金の式をつくろう。「p%引き」の代金は、定価の何%かな。",
+            hint: `定価の合計の式と、実際に払った代金の式をつくろう。${pA}%引きの代金は、定価の何%かな。`,
             steps: [
               `${S.A}の定価を $x$ 円、${S.B}の定価を $y$ 円とする。　$x+y=${T}$ …①　　$${pc(100 - pA)}x+${pc(100 - pB)}y=${M}$ …②`,
               `②×${k}　$${linTex(a, b, k * M)}$ …③`,
@@ -237,7 +237,7 @@ export const UNITS = [
             q: `${m.lead(T)}${changeText(m, sA, sB, net)}${m.p0}の${m.A}を $x$ ${m.u}、${m.B}を $y$ ${m.u}とするとき、この場面を表す連立方程式は、どれか。`,
             ans: ok,
             choices: choices4(r, ok, wrongs),
-            hint: "先月の合計の式と、増えた量から減った量をひいた（全体の増減の）式の、2つをつくろう。",
+            hint: "先月の合計のほかに、全体の増減についての式がいる。増えた分と減った分から、全体の増減はどう表せるかな。",
             steps: [
               `先月の合計が ${T}${m.u}だから　$x+y=${T}$ …①`,
               `${m.A}が ${pA}% 増えた分は $${pc(pA)}x$、${m.B}が ${pB}% 減った分は $${pc(pB)}y$。`,
@@ -267,49 +267,61 @@ export const UNITS = [
             ],
           };
         }),
-        // 10w03 考えよう：先月のおにぎりの個数を変えたときの、全体の増減
+        // 10w03 考えよう：先月のおにぎりの個数を変えたときの、今月の全体の個数
         t("10w03", (r) => {
           const T = pick(r, [200, 300, 400, 500, 600]), p = pick(r, [10, 20, 30]);
           const xs = [];
           for (let v = 50; v < T; v += 50) xs.push(v);
-          const x = pick(r, xs), y = T - x, dx = (x * p) / 100, dy = (y * p) / 100, ans = dx - dy;
+          const x = pick(r, xs), y = T - x, x1 = (x * (100 + p)) / 100, y1 = (y * (100 - p)) / 100, ans = x1 + y1;
+          const cmp = ans > T ? `先月より ${ans - T}個増えた。` : ans < T ? `先月より ${T - ans}個減った。` : "先月と変わらない。";
           return {
-            q: `ある店で、先月、おにぎりとサンドイッチを合わせて ${T}個売った。今月は、おにぎりが ${p}% 増え、サンドイッチが ${p}% 減った。先月のおにぎりが ${x}個だったとき、今月の全体の個数は、先月とくらべて何個増えたか。（減ったときは、負の数で答えよう）`,
+            q: `ある店で、先月、おにぎりとサンドイッチを合わせて ${T}個売った。今月は、おにぎりが ${p}% 増え、サンドイッチが ${p}% 減った。先月のおにぎりが ${x}個だったとき、今月売れたおにぎりとサンドイッチは、合わせて何個か。`,
             ans,
             unit: "個",
-            hint: "先月のサンドイッチは何個かな。おにぎりの増えた個数と、サンドイッチの減った個数を、別々に求めよう。",
+            hint: "先月のサンドイッチは何個かな。今月のおにぎりとサンドイッチは、それぞれ先月の何%になったかな。",
             steps: [
               `先月のサンドイッチは $${T}-${x}=${y}$（個）。`,
-              `おにぎりは $${x}\\times ${pc(p)}=${dx}$（個）増え、サンドイッチは $${y}\\times ${pc(p)}=${dy}$（個）減る。`,
-              `全体の増減は　$${dx}-${dy}=${ans}$（個）`,
+              `今月のおにぎりは $${x}\\times ${pc(100 + p)}=${x1}$（個）、サンドイッチは $${y}\\times ${pc(100 - p)}=${y1}$（個）。`,
+              `合わせて $${x1}+${y1}=${ans}$（個）。${cmp}`,
             ],
           };
         }),
       ],
       // ───────── 3 応用 ─────────
       3: [
-        // 10d04a A さん・B さんの式：場面を正しく表している連立方程式はどれか（4択）
+        // 10d04a A さん・B さんの式：どちらの式が場面を正しく表しているか（4択）
         t("10d04a", (r) => {
           const s = mixScene(r, true);
           if (!s) return { skip: true };
-          const { m, T, sA, sB, net } = s, pA = sA, pB = -sB;
-          const ok = sys2(`x+y=${T}`, incdecTex(sA, sB, net));
-          const wrongs = shuffle(r, [
-            sys2(`x+y=${T}`, `${pc(100 + pA)}x+${pc(100 - pB)}y=${net}`),    // 「今週の個数」の式に、増えた個数をイコールにした（B さんの式）
-            sys2(`x+y=${T}`, `${pc(pA)}x+${pc(pB)}y=${net}`),                // 減った量の符号がちがう
-            sys2(`x+y=${T}`, `${pc(pB)}x-${pc(pA)}y=${net}`),                // 割合を入れちがえる
-            sys2(`x+y=${net}`, `${pc(pA)}x-${pc(pB)}y=${T}`),                // 右辺を入れちがえる
-          ]);
+          const { m, T, sA, sB, net } = s, pA = sA, pB = -sB, after = T + net;
+          // 式の種類：good＝場面を正しく表している。why＝解説の一言
+          const KIND = {
+            inc: { good: true, e: [`x+y=${T}`, incdecTex(sA, sB, net)], why: "「増えた分 − 減った分 ＝ 全体の増減」の形になっていて、正しい。" },
+            aft: { good: true, e: [`x+y=${T}`, `${pc(100 + pA)}x+${pc(100 - pB)}y=${after}`], why: `「${m.p1}の量 ＝ ${m.p0}の合計 ＋ 増減 ＝ ${after}」の形になっていて、正しい。` },
+            mix: { good: false, e: [`x+y=${T}`, `${pc(100 + pA)}x+${pc(100 - pB)}y=${net}`], why: `左辺は「${m.p1}の量」なのに、右辺の ${Math.abs(net)} は「増減した量」で、そろっていない。` },
+            sgn: { good: false, e: [`x+y=${T}`, `${pc(pA)}x+${pc(pB)}y=${net}`], why: `${m.B}は減るのに、減った分をたしてしまっている。` },
+            swp: { good: false, e: [`x+y=${T}`, `${pc(pB)}x-${pc(pA)}y=${net}`], why: `割合が入れちがっている（${m.A}が ${pA}% 増え、${m.B}が ${pB}% 減る）。` },
+            rhs: { good: false, e: [`x+y=${net}`, `${pc(pA)}x-${pc(pB)}y=${T}`], why: `右辺が入れちがっている（${m.p0}の合計は ${T}${m.u}）。` },
+          };
+          const GOOD = ["inc", "aft"], BAD = ["mix", "sgn", "swp", "rhs"];
+          const out = pick(r, ["A", "B", "both", "none"]);
+          let kA, kB;
+          if (out === "A") { kA = pick(r, GOOD); kB = pick(r, BAD); }
+          else if (out === "B") { kB = pick(r, GOOD); kA = pick(r, BAD); }
+          else if (out === "both") { kA = pick(r, GOOD); kB = GOOD.find((g) => g !== kA); }
+          else { [kA, kB] = shuffle(r, BAD).slice(0, 2); }
+          const LABEL = { A: "A さんだけ", B: "B さんだけ", both: "2人とも正しい", none: "2人ともまちがい" };
+          const ok = LABEL[out];
           return {
-            q: `${m.lead(T)}${changeText(m, sA, sB, net)}${m.p0}の${m.A}を $x$ ${m.u}、${m.B}を $y$ ${m.u}とする。この場面を正しく表している連立方程式は、どれか。`,
+            q: `${m.lead(T)}${changeText(m, sA, sB, net)}${m.p0}の${m.A}を $x$ ${m.u}、${m.B}を $y$ ${m.u}として、A さんと B さんが連立方程式をつくった。A さん ${sys2(...KIND[kA].e)}　B さん ${sys2(...KIND[kB].e)}　場面を正しく表しているのは、だれの式か。`,
             ans: ok,
-            choices: choices4(r, ok, wrongs),
-            hint: "②の式の左辺と右辺が、どちらも「増えた・減った量」か、どちらも「あとの量」になっているかな。",
+            choices: choices4(r, ok, Object.values(LABEL).filter((l) => l !== ok)),
+            hint: `それぞれの②は、左辺と右辺が同じ種類の量（どちらも増減、またはどちらも${m.p1}の量）になっているかな。①の右辺や、割合・符号もたしかめよう。`,
             steps: [
-              `${m.p0}の合計が ${T}${m.u}だから　$x+y=${T}$ …①`,
-              `②の右辺 ${Math.abs(net)} は「増減した量」。だから左辺も、増えた分 $${pc(pA)}x$ から減った分 $${pc(pB)}y$ をひいた「増減の量」にする。`,
-              `$${incdecTex(sA, sB, net)}$ …②`,
-              `「${m.p1}の${m.u}数」$${pc(100 + pA)}x+${pc(100 - pB)}y$ を左辺に使うと、右辺は ${T + net} でなければならない。右辺が ${net < 0 ? "−" : ""}${Math.abs(net)} のものは、まちがい。`,
+              `A さんの式：${KIND[kA].why}`,
+              `B さんの式：${KIND[kB].why}`,
+              `${m.p0}の合計は ${T}${m.u}、増減は ${sg(net)}${m.u}だから、${m.p1}の合計は ${after}${m.u}。`,
+              `したがって、正しいのは「${ok}」。`,
             ],
           };
         }),

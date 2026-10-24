@@ -58,7 +58,7 @@ const solveLines = (e1, e2, nm = XY) => {
   const kk = E1[w] + sgn * E2[w], n = E1[2] + sgn * E2[2];
   if (kk === 0 || n % kk !== 0 || n / kk !== sol[w]) throw new Error(`消去が合わない ${JSON.stringify([e1, e2])}`);
   const mul = (e, E, m) => (m > 1 ? `${TX(eqT(e, nm))} を ${m} 倍して ${TX(eqT(E, nm))}、` : "");
-  const l1 = `${nm[k]} を消去する。${mul(e1, E1, P.m1)}${mul(e2, E2, P.m2)}${TX(eqT(E1, nm))} と ${TX(eqT(E2, nm))} を${P.same ? "ひく" : "たす"}と ${kk === 1 ? "" : `${TX(`${coefVar(kk, nm[w])}=${n}`)} より `}${TX(`${nm[w]}=${sol[w]}`)}。`;
+  const l1 = `${TX(nm[k])} を消去する。${mul(e1, E1, P.m1)}${mul(e2, E2, P.m2)}${TX(eqT(E1, nm))} と ${TX(eqT(E2, nm))} を${P.same ? "ひく" : "たす"}と ${kk === 1 ? "" : `${TX(`${coefVar(kk, nm[w])}=${n}`)} より `}${TX(`${nm[w]}=${sol[w]}`)}。`;
   const pe = Math.abs(e1[k]) <= Math.abs(e2[k]) ? e1 : e2;
   const l2 = `${TX(eqT(pe, nm))} に ${TX(`${nm[w]}=${sol[w]}`)} を代入して ${TX(`${nm[k]}=${sol[k]}`)}。よって、${TX(`${nm[0]}=${sol[0]}`)}、${TX(`${nm[1]}=${sol[1]}`)}。`;
   return [l1, l2];
@@ -73,7 +73,7 @@ const subLines = (G) => {
   const u0 = G.sol[u === "x" ? 0 : 1], v0 = G.sol[v === "x" ? 0 : 1];
   if (K === 0 || N % K !== 0 || N / K !== u0) throw new Error(`代入の解説が合わない ${JSON.stringify(G)}`);
   return [
-    `${TX(`${v}=${expr}`)} を、もう一方の式 ${TX(eqT(G.other))} の ${TX(v)} に代入すると ${TX(`${sub}=${c}`)}。整理して ${TX(`${coefVar(K, u)}=${N}`)} より ${TX(`${u}=${u0}`)}。`,
+    `${TX(`${v}=${expr}`)} を、もう一方の式 ${TX(eqT(G.other))} の ${TX(v)} に代入すると ${TX(`${sub}=${c}`)}。整理して ${K === 1 ? TX(`${u}=${u0}`) : `${TX(`${coefVar(K, u)}=${N}`)} より ${TX(`${u}=${u0}`)}`}。`,
     `${TX(`${v}=${expr}`)} に ${TX(`${u}=${u0}`)} を代入して ${TX(`${v}=${v0}`)}。よって、${TX(`x=${G.sol[0]}`)}、${TX(`y=${G.sol[1]}`)}。`,
   ];
 };
@@ -90,6 +90,7 @@ const genSub = (r, o = {}) => {
     const sol = v === "y" ? [u0, v0] : [v0, u0];
     const p = pick(r, o.p || R(1, 5)), q = pick(r, o.q || NZ(-5, 5)), c = p * sol[0] + q * sol[1];
     if (Math.abs(c) > 150 || c === 0 || (!o.neg && c < 1) || gcd3(p, q, c) !== 1) continue;
+    if (o.no1 && (Math.abs(p) === 1 || Math.abs(q) === 1)) continue;     // もう一方の式に、係数が 1 の文字がない（x＝… に直せる、と迷わない）
     if (o.strict) {
       if (v === "y" ? (Math.abs(p) === Math.abs(m) || Math.abs(q) === 1) : (Math.abs(p) === 1 || Math.abs(q) === Math.abs(m))) continue;
     }
@@ -178,6 +179,7 @@ export const UNITS = [
       "加減法は、2つの式をたしたりひいたりして、1つの文字を消去する方法。代入法は、一方の式を他方の式に代入して、1つの文字を消去する方法。どちらで解いても、解は同じになる。",
       "解き方は、解くまでの行数（手間）やまちがえにくさでくらべる。式の形をよく見て、手間の少ない方法を選ぼう。",
       "$y=\\cdots$ や $x=\\cdots$ の形の式があるときは、そのまま代入できるので代入法が楽。ある文字の係数が同じ（または反対）のときは、ひく（たす）だけで消えるので加減法が楽。",
+      "加減法では、片方の式を整数倍すれば係数の絶対値がそろう文字を消去すると、倍にする式が 1 つですむ。どちらの文字もそろわないときは、両方の式を何倍かして、係数の絶対値をそろえる。",
     ],
     levels: {
       // ───────── 1 基礎 ─────────
@@ -209,18 +211,18 @@ export const UNITS = [
         t("07d03", (r) => {
           const wantSub = r(0, 1) === 1;
           for (let n = 0; n < 200; n++) {
-            const good = wantSub ? SUB(r, { strict: true, hi: 8 }) : genAdd(r, { strict: true });
-            const bads = [0, 1, 2].map(() => (wantSub ? genAdd(r, { strict: true }) : SUB(r, { strict: true, hi: 8 })));
+            const good = wantSub ? SUB(r, { strict: true, no1: true, hi: 8 }) : genAdd(r, { strict: true });
+            const bads = [0, 1, 2].map(() => (wantSub ? genAdd(r, { strict: true }) : SUB(r, { strict: true, no1: true, hi: 8 })));
             const texts = [good, ...bads].map(inl);
             if (new Set(texts).size < 4) continue;
             const ans = inl(good);
-            const why = (G) => (G.kind === "sub" ? `${TX(G.t1)} のように ${G.sub.v}＝… の式があり、そのまま代入できる` : `${G.wv} の係数が${G.same ? "同じ" : "反対"}で、${G.same ? "ひく" : "たす"}だけで ${G.wv} が消える`);
+            const why = (G) => (G.kind === "sub" ? `${TX(G.t1)} のように ${TX(`${G.sub.v}=\\cdots`)} の式があり、そのまま代入できる` : `${TX(G.wv)} の係数が${G.same ? "同じ" : "反対"}で、${G.same ? "ひく" : "たす"}だけで ${TX(G.wv)} が消える`);
             return {
               q: `次の連立方程式のうち、${wantSub ? "加減法よりも代入法" : "代入法よりも加減法"}のほうが、少ない手間で解けるものはどれか。`,
               ans,
               choices: choices4(r, ans, bads.map(inl)),
               hint: "加減法と代入法は、それぞれ、どんな形の式のときに手間が少なくなったか、思い出そう。",
-              steps: [`${ans} は、${why(good)}。だから、${wantSub ? "代入法" : "加減法"}が楽。`, `ほかの 3つは、${wantSub ? "係数がそろった文字があり、たす（ひく）だけで消去できる" : "y＝… や x＝… の形の式があり、そのまま代入できる"}ので、${wantSub ? "加減法" : "代入法"}のほうが楽。`],
+              steps: [`${ans} は、${why(good)}。だから、${wantSub ? "代入法" : "加減法"}が楽。`, `ほかの 3つは、${wantSub ? "係数がそろった文字があり、たす（ひく）だけで消去できる" : `${TX("y=\\cdots")} や ${TX("x=\\cdots")} の形の式があり、そのまま代入できる`}ので、${wantSub ? "加減法" : "代入法"}のほうが楽。`],
             };
           }
           throw new Error("07d03 が作れない");
@@ -237,8 +239,8 @@ export const UNITS = [
         t("07q02", (r) => solveQ(r, genAdd(r, { strict: true, umax: 6, vmax: 7 }), "向いている方法で", "式の形を見て、手間が少ない方法を選ぼう。係数が同じ（反対）の文字はないかな？")),
         // 07q03 向いている方法と理由を選ぶ
         t("07q03", (r) => {
-          const G = r(0, 1) ? SUB(r, { strict: true, hi: 8 }) : genAdd(r, { strict: true });
-          const same = (w) => `加減法。${w} の係数が同じなので、ひくだけで ${w} が消えるから。`, opp = (w) => `加減法。${w} の係数の符号が反対なので、たすだけで ${w} が消えるから。`, sub = (w) => `代入法。${w}＝… の式を、そのまま代入できるから。`;
+          const G = r(0, 1) ? SUB(r, { strict: true, no1: true, hi: 8 }) : genAdd(r, { strict: true });
+          const same = (w) => `加減法。${TX(w)} の係数が同じなので、ひくだけで ${TX(w)} が消えるから。`, opp = (w) => `加減法。${TX(w)} の係数の符号が反対なので、たすだけで ${TX(w)} が消えるから。`, sub = (w) => `代入法。${TX(`${w}=\\cdots`)} の式を、そのまま代入できるから。`;
           let ans, wrongs;
           if (G.kind === "sub") {
             const { v, u } = G.sub;
@@ -254,8 +256,8 @@ export const UNITS = [
             choices: choices4(r, ans, wrongs.filter((x) => x !== ans)),
             hint: "加減法と代入法は、それぞれ、どんな形の式のときに手間が少なくなったか、思い出そう。",
             steps: G.kind === "sub"
-              ? [`${TX(G.t1)} のように ${G.sub.v}＝… の形の式がある。`, `x の係数も y の係数も、同じでも反対でもないので、加減法ではそろえる手間がかかる。`, `だから、「${ans}」`]
-              : [`${G.wv} の係数は ${fm(G.e[0][G.col])} と ${fm(G.e[1][G.col])} で、${G.same ? "同じ" : "反対の符号"}。${G.ov} の係数はそろっていない。`, `${G.same ? "ひく" : "たす"}だけで ${G.wv} が消える。${"x＝… や y＝… の形の式はないので、代入するには式を直す手間がかかる。"}`, `だから、「${ans}」`],
+              ? [`${TX(G.t1)} のように ${TX(`${G.sub.v}=\\cdots`)} の形の式がある。`, `${TX("x")} の係数も ${TX("y")} の係数も、同じでも反対でもないので、加減法ではそろえる手間がかかる。`, `だから、「${ans}」`]
+              : [`${TX(G.wv)} の係数は ${fm(G.e[0][G.col])} と ${fm(G.e[1][G.col])} で、${G.same ? "同じ" : "反対の符号"}。${TX(G.ov)} の係数はそろっていない。`, `${G.same ? "ひく" : "たす"}だけで ${TX(G.wv)} が消える。${TX("x=\\cdots")} や ${TX("y=\\cdots")} の形の式はないので、代入するには式を直す手間がかかる。`, `だから、「${ans}」`],
           };
         }),
       ],
@@ -270,9 +272,9 @@ export const UNITS = [
         t("07d04b", (r) => {
           const k = pick(r, [0, 1, 1, 1, 2, 2, 2, 3]);
           for (let n = 0; n < 100; n++) {
-            const gs = shuffle(r, [...Array(k).fill(0).map(() => SUB(r, { strict: true, hi: 9 })), ...Array(3 - k).fill(0).map(() => genAdd(r, { strict: true }))]);
+            const gs = shuffle(r, [...Array(k).fill(0).map(() => SUB(r, { strict: true, no1: true, hi: 9 })), ...Array(3 - k).fill(0).map(() => genAdd(r, { strict: true }))]);
             if (new Set(gs.map(inl)).size < 3) continue;
-            const mark = (G) => (G.kind === "sub" ? `代入法（${TX(G.t1)} の形の式がある）` : `加減法（${G.wv} の係数が${G.same ? "同じ" : "反対"}）`);
+            const mark = (G) => (G.kind === "sub" ? `代入法（${TX(G.t1)} の形の式がある）` : `加減法（${TX(G.wv)} の係数が${G.same ? "同じ" : "反対"}）`);
             return {
               q: `次の ①〜③ の連立方程式のうち、加減法よりも代入法のほうが少ない手間で解けるものは、いくつあるか。\n①　${inl(gs[0])}\n②　${inl(gs[1])}\n③　${inl(gs[2])}`.replace(/\n/g, "　"),
               ans: k,
@@ -354,8 +356,8 @@ function genProc(r) {
     const E = [e1, e2], small = ab[0] < ab[1] ? 0 : 1, big = 1 - small, nm = XY;
     const op = same ? "ひく" : "たす", opx = same ? "たす" : "ひく";
     const L = lcm(Math.abs(h1), Math.abs(h2)), m1 = L / Math.abs(h1), m2 = L / Math.abs(h2), opH = (h1 > 0) === (h2 > 0) ? "ひく" : "たす";
-    const optA = (c, i, m, j, o) => `${nm[c]} を消去する（${lab(i)}を ${m} 倍して、${lab(j)}と${o}）`;
-    const optB = (c, ma, mb, o) => `${nm[c]} を消去する（①を ${ma} 倍、②を ${mb} 倍して、${o}）`;
+    const optA = (c, i, m, j, o) => `${TX(nm[c])} を消去する（${lab(i)}を ${m} 倍して、${lab(j)}と${o}）`;
+    const optB = (c, ma, mb, o) => `${TX(nm[c])} を消去する（①を ${ma} 倍、②を ${mb} 倍して、${o}）`;
     // 本当に消えるか（正解と、「楽でない正解」W1 は消える。ほかは消えない）
     const resid = (c, i, m, j, o) => m * E[i][c] + (o === "たす" ? 1 : -1) * E[j][c];
     const ans = optA(col, small, km, big, op);
@@ -368,7 +370,7 @@ function genProc(r) {
     ].filter((x) => x[1] !== 0).map((x) => x[0]);
     if (pool.length < 2) continue;
     const wrongs = [W1, ...shuffle(r, pool).slice(0, 2)];
-    const hv = nm[1 - col], ev = nm[col];
+    const hv = TX(nm[1 - col]), ev = TX(nm[col]);
     return {
       tex: [eqT(e1), eqT(e2)], ans, wrongs,
       steps: [
