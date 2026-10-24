@@ -12,22 +12,24 @@ import { sum, classes, freqs, cumulative, pct, clsLabel, freqSentence, listData 
 const unit = unitFor("data");
 
 // ── 場面 ─────────────────────────────────────────────
-/** name＝「20人の＿＿」に入る言葉、u＝単位、los＝階級のはじめの候補、ws＝階級の幅の候補 */
+/** name＝「20人の＿＿」に入る言葉、u＝単位、los＝階級のはじめの候補、ws＝階級の幅の候補、max＝階級の上のはしの上限 */
 const CTX = [
-  { name: "ボール投げの記録", u: "m", los: [10, 15, 20], ws: [5] },
-  { name: "通学時間", u: "分", los: [0], ws: [5, 10] },
-  { name: "1週間の読書時間", u: "時間", los: [0], ws: [2, 5] },
-  { name: "テストの得点", u: "点", los: [0, 40], ws: [10] },
+  { name: "ボール投げの記録", u: "m", los: [10, 15, 20], ws: [5], max: 50 },
+  { name: "通学時間", u: "分", los: [0], ws: [5, 10], max: 60 },
+  { name: "1週間の読書時間", u: "時間", los: [0], ws: [2, 5], max: 20 },
+  { name: "テストの得点", u: "点", los: [0, 40], ws: [10], max: 100 },
   { name: "1分間の腕立て伏せの回数", u: "回", los: [0, 5], ws: [5] },
   { name: "1日のゲーム時間", u: "分", los: [0], ws: [20, 30] },
-  { name: "握力", u: "kg", los: [10, 15, 20], ws: [5] },
+  { name: "握力", u: "kg", los: [10, 15, 20], ws: [5], max: 50 },
 ];
 
 /** 場面 c（なければ選ぶ）で、階級を k 個（lo から幅 w）つくる */
 const setup = (r, k = null, c = null) => {
   c = c || pick(r, CTX);
-  const w = pick(r, c.ws), lo = pick(r, c.los);
   k = k || r(5, 6);
+  let w = pick(r, c.ws), lo = pick(r, c.los);
+  if (c.max && lo + w * k > c.max) lo = Math.min(...c.los);   // 階級の上のはしが、場面にあう上限（満点など）をこえないようにする
+  if (c.max && lo + w * k > c.max) w = Math.min(...c.ws);
   return { c, u: c.u, w, k, lo, cls: classes(lo, w, k) };
 };
 /** 階級のはんいの中に、山の形（まん中が多い）で n 個のデータをつくる */
@@ -51,34 +53,43 @@ const nearIdx = (j, k) => Array.from({ length: k }, (_, i) => i).filter((i) => i
 const nearOrder = (f, j) => f.map((v, i) => i).filter((i) => i !== j).sort((a, b) => Math.abs(f[a] - f[j]) - Math.abs(f[b] - f[j]) || a - b);
 
 // ── 度数が見えない 2 つの階級（ア・イ）の問題 ───────────────
-/** 度数分布表で、ア・イ の 2 つの階級の度数が見えない。ratio 倍の関係から、ア・イを求める。
- *  mul＝"イ"：イ＝ratio×ア　／　mul＝"ア"：ア＝ratio×イ */
-function pairQ(r, { k, ratios, mul, nameCtx }) {
+/** 度数分布表で、ア・イ の 2 つの階級の度数が見えない。倍率の関係から、ア・イを求める。
+ *  mul＝"イ"：イ＝ratio×ア　／　mul＝"ア"：ア＝ratio×イ。offs があれば「ratio倍より e人多い（少ない）」の形（入試レベル） */
+function pairQ(r, { k, ratios, mul, nameCtx, offs = null }) {
   const s = setup(r, k, nameCtx);
   const ratio = pick(r, ratios), m = r(2, 8);
+  const e = offs ? pick(r, offs) * (r(0, 1) ? 1 : -1) : 0;   // e＞0：多い、e＜0：少ない
   const idx = shuffle(r, Array.from({ length: k }, (_, i) => i));
   const pa = idx[0], pi = idx[1];
   const known = Array.from({ length: k }, () => r(2, 9));
-  const a = mul === "イ" ? m : ratio * m, b = mul === "イ" ? ratio * m : m;   // a＝アの度数、b＝イの度数
+  const base = mul === "イ" ? "ア" : "イ", mult = mul === "イ" ? "イ" : "ア";
+  const bv = m, mv = ratio * m + e;   // base の度数、mult の度数
+  const a = mul === "イ" ? bv : mv, b = mul === "イ" ? mv : bv;   // a＝アの度数、b＝イの度数
   const f = known.slice();
   f[pa] = a; f[pi] = b;
   const n = sum(f);
   const kn = f.filter((_, i) => i !== pa && i !== pi);
-  const knSum = sum(kn);
-  const rest = n - knSum;
+  const rest = n - sum(kn);
   const sent = s.cls.map((c, i) => `${lab(c, s.u)}が ${i === pa ? "ア" : i === pi ? "イ" : f[i]}人`).join("、");
   const ask = pick(r, ["ア", "イ"]);
-  const rel = mul === "イ" ? `イの度数は、アの度数の${ratio}倍` : `アの度数は、イの度数の${ratio}倍`;
-  const base = mul === "イ" ? "ア" : "イ", mult = mul === "イ" ? "イ" : "ア";
+  if (mv < 2) return { skip: true };
+  const eTxt = e === 0 ? "である" : e > 0 ? `より${e}人多い` : `より${-e}人少ない`;
+  const rel = `${mult}の度数は、${base}の度数の${ratio}倍${eTxt}`;
+  const expr = e === 0 ? `${ratio}×${base}` : e > 0 ? `${ratio}×${base}+${e}` : `${ratio}×${base}−${-e}`;
+  const lines = e === 0
+    ? [`${mult} ＝ ${ratio}×${base} だから　${base}+${ratio}×${base} ＝ ${rest}　${ratio + 1}×${base} ＝ ${rest}`]
+    : [`${mult} ＝ ${expr} だから　${base}+(${expr}) ＝ ${rest}　${ratio + 1}×${base} ＝ ${rest - e}`];
   return {
-    q: `${n}人の${s.c.name}（${s.u}）の度数分布表は、${sent}である。${rel}である。${ask}の度数は？`,
+    q: `${n}人の${s.c.name}（${s.u}）の度数分布表は、${sent}である。${rel}。${ask}の度数は？`,
     ans: ask === "ア" ? a : b,
     unit: "人",
-    hint: "アとイの度数の和は、全体の人数から、わかっている階級の度数をひいて求めよう。",
+    hint: e === 0
+      ? "アとイの度数の和は、全体の人数とわかっている度数から、わかるかな。アとイの関係を、式で表せるかな。"
+      : "アとイの度数の和は、全体の人数とわかっている度数から、わかるかな。「何倍より何人多い（少ない）」を、式で表すと、どうなるかな。",
     steps: [
       `ア+イ ＝ ${n}−(${kn.join("+")}) ＝ ${rest}（人）`,
-      `${mult} ＝ ${ratio}×${base} だから　${base}+${ratio}×${base} ＝ ${rest}　${ratio + 1}×${base} ＝ ${rest}`,
-      `${base} ＝ ${m}、${mult} ＝ ${ratio * m}。${ask}の度数は${ask === "ア" ? a : b}（人）。`,
+      ...lines,
+      `${base} ＝ ${bv}、${mult} ＝ ${mv}。${ask}の度数は${ask === "ア" ? a : b}（人）。`,
     ],
   };
 }
@@ -88,7 +99,7 @@ const TERMS = [
   ["階級", "データを整理するために区切った区間を、何というか。", "データを整理するために区切った区間を「階級」という。"],
   ["階級", "「0分以上10分未満」「10分以上20分未満」のような、ひとつひとつの区間を、何というか。", "データを整理するために区切った、ひとつひとつの区間を「階級」という。"],
   ["階級の幅", "データを整理するために区切った区間の、幅（たとえば「10分以上20分未満」の 10分）を、何というか。", "区間の幅を「階級の幅」という（「10分以上20分未満」なら 10分）。"],
-  ["階級の幅", "データを「0点以上5点未満」「5点以上10点未満」…のように区切るとき、5点にあたるものを、何というか。", "区間の幅を「階級の幅」という（「5点以上10点未満」なら 5点）。"],
+  ["階級の幅", "データを「0点以上5点未満」「5点以上10点未満」…のように区切るとき、区間の幅（5点）にあたるものを、何というか。", "区間の幅を「階級の幅」という（「5点以上10点未満」なら 5点）。"],
   ["度数", "各階級に入るデータの個数を、何というか。", "各階級に入るデータの個数を「度数」という。"],
   ["度数", "「15分以上20分未満の階級に 8人」というときの、8人にあたるものを、何というか。", "各階級に入るデータの個数（人数）を「度数」という。"],
   ["度数分布表", "階級ごとに度数をまとめた表を、何というか。", "階級ごとに度数をまとめた表を「度数分布表」という。"],
@@ -118,7 +129,7 @@ export const UNITS = [
             q: `${n}人の${s.c.name}（${s.u}）を調べたら、次のとおりだった。［${listData(data)}］　階級の幅を${s.w}${s.u}にして、${s.cls[0].lo}${s.u}以上から順に区切り、度数分布表に整理する。「${lab(s.cls[j], s.u)}」の階級の度数は？`,
             ans,
             unit: "人",
-            hint: "データに印をつけながら、その階級に入る数を数えよう。階級のさかいの値は、「以上」の階級に入る。",
+            hint: "数え落としを防ぐには、データにどんな印をつけながら数えたらいいかな。ちょうどさかいの値のデータは、どちらの階級に入るかな。",
             steps: [`「${lab(s.cls[j], s.u)}」に入るデータを、1つずつ拾う。`, `${inCls.join("、")}の${ans}個。度数は${ans}（人）。`],
           };
         }),
@@ -147,7 +158,7 @@ export const UNITS = [
             q: `${n}人の${s.c.name}（${s.u}）の度数分布表は、${freqSentence(s.cls, f, s.u)}である。度数がもっとも${most ? "多い" : "少ない"}階級は、次のうちどれか。`,
             ans,
             choices: choices4(r, ans, wrongs),
-            hint: "度数は、その階級に入る人数のこと。表の人数をくらべよう。",
+            hint: `表の中で、人数がいちばん${most ? "多い" : "少ない"}のは、どの階級かな。`,
             steps: [`度数は、${f.map((v, i) => `${v}`).join("、")}（人）。`, `${most ? "もっとも多い" : "もっとも少ない"}のは ${target}人の「${ans}」。`],
           };
         }),
@@ -162,10 +173,10 @@ export const UNITS = [
             q: `${s.c.name}（${s.u}）を、${s.cls[0].lo}${s.u}以上から、幅${s.w}${s.u}で区切って階級に分ける。${s.c.name}が ${x}${s.u}の人は、どの階級に入るか。`,
             ans,
             choices: choices4(r, ans, wrongs),
-            hint: "「以上」は、その数をふくむ。「未満」は、その数をふくまない。",
+            hint: "この数は、どの階級の「以上」と「未満」の間にあるかな。ちょうどさかいの数のときは、どちらの階級に入るかな。",
             steps: edge
               ? [`${x}${s.u}は、「${x}${s.u}未満」の階級にはふくまれない。`, `${x}${s.u}以上の階級に入る。答えは「${ans}」。`]
-              : [`${x}${s.u}は、${s.cls[j].lo}${s.u}以上 ${s.cls[j].hi}${s.u}未満の間にある。`, `答えは「${ans}」。`],
+              : [`${x}${s.u}は、${s.cls[j].lo}${s.u}以上${s.cls[j].hi}${s.u}未満の間にある。`, `答えは「${ans}」。`],
           };
         }),
         // 01q01 用語（階級・階級の幅・度数・度数分布表）
@@ -192,7 +203,7 @@ export const UNITS = [
             q: `${n}人の${s.c.name}（${s.u}）の度数分布表は、${freqSentence(s.cls, f, s.u)}である。${x}${s.u}以上の人は何人か。`,
             ans: cnt,
             unit: "人",
-            hint: "問題文の「以上」にふくまれる階級は、どれとどれかな。（そのさかいの値は、「以上」の階級に入る。）",
+            hint: "「以上」にふくまれる階級を、すべて探そう。それは、いくつあるかな。（さかいの値は、ふくまれるかな。）",
             steps: [`${x}${s.u}以上の階級は、${s.cls.slice(j).map((c) => `「${lab(c, s.u)}」`).join("・")}。`, tot(f.slice(j))],
           };
         }),
@@ -268,7 +279,7 @@ export const UNITS = [
             q: `${n}人の${s.c.name}（${s.u}）を調べたら、次のとおりだった。［${listData(data)}］　幅${s.w}${s.u}で、${s.cls[0].lo}${s.u}以上から 3つの階級に分けて度数分布表に整理する。「${lab(s.cls[j], s.u)}」の階級の度数は？`,
             ans,
             unit: "人",
-            hint: "データに印をつけながら、その階級に入る数を数えよう。ちょうどさかいの値は、「以上」の階級に入る。",
+            hint: "数え落としを防ぐには、データにどんな印をつけながら数えたらいいかな。ちょうどさかいの値のデータは、どちらの階級に入るかな。",
             steps: [`「${lab(s.cls[j], s.u)}」に入るデータは${inCls.join("、")}。`, `度数は ${ans}（人）。（3つの階級の度数は ${f.join("、")}、合計 ${n}）`],
           };
         }),
@@ -282,7 +293,7 @@ export const UNITS = [
             q: `${n}人の${s.c.name}（${s.u}）を調べたら、次のとおりだった。［${listData(data)}］　幅${s.w}${s.u}で、${s.cls[0].lo}${s.u}以上から 4つの階級に分けて度数分布表に整理すると、度数がもっとも多い階級はどれか。`,
             ans,
             choices: choices4(r, ans, wrongs),
-            hint: "それぞれの階級に入る数を数えて、くらべよう。",
+            hint: "4つの階級に、それぞれ何人入るかな。いちばん多いのはどれかな。",
             steps: [`度数は ${s.cls.map((c, i) => `「${lab(c, s.u)}」${f[i]}人`).join("、")}。`, `もっとも多いのは「${ans}」。`],
           };
         }),
@@ -309,7 +320,7 @@ export const UNITS = [
           const w = pick(r, [5, 10, 20, 25].filter((x) => mx % x === 0 && mx / x >= 3 && mx / x <= 10));
           const k = mx / w;
           return {
-            q: `${mx}点満点のテストの得点を、階級の幅${w}点で、「0点以上${w}点未満」から「${mx - w}点以上${mx}点未満」までの ${k}つの階級に分けた。満点の ${mx}点の人は、どの階級にも入らない。階級を 1つふやして、満点の人も入るようにする。ふやす階級を「□点以上○点未満」とする（幅は同じ）。○にあてはまる数は？`,
+            q: `${mx}点満点のテストの得点を、階級の幅${w}点で、「0点以上${w}点未満」から「${mx - w}点以上${mx}点未満」まで、全部で${k}個の階級に分けた。満点の ${mx}点の人は、どの階級にも入らない。階級を 1つふやして、満点の人も入るようにする。ふやす階級を「□点以上○点未満」とする（幅は同じ）。○にあてはまる数は？`,
             ans: mx + w,
             unit: "点",
             hint: "「未満」には、その数がふくまれない。満点の人が入るのは、何点以上の階級かな。階級の幅は、これまでと同じにそろえる。",
@@ -349,7 +360,7 @@ export const UNITS = [
         }),
         // 01d08 A さんは、速い（小さい）ほうから何番目から何番目の間か
         t("01d08", (r) => {
-          const k = 5, n = r(36, 48), lo10 = pick(r, [65, 70, 75, 80]);
+          const k = 5, n = r(36, 48), lo10 = pick(r, [70, 75, 80]);
           // 階級を 0.5 秒きざみ（10倍した整数で持つ）
           const cls = Array.from({ length: k }, (_, i) => ({ lo: lo10 + 5 * i, hi: lo10 + 5 * (i + 1) }));
           const f = freqs(Array.from({ length: n }, () => lo10 + Math.floor((r(0, 24) + r(0, 24)) / 2)), cls);
@@ -364,7 +375,7 @@ export const UNITS = [
             q: `${n}人の50m走の記録の度数分布表は、${sent}である。Aさんの記録は${L(x10)}秒だった。Aさんは、速いほうから数えて、□番目から△番目の間にいる。${askFrom ? "□" : "△"}にあてはまる数は？`,
             ans: askFrom ? from : to,
             unit: "番目",
-            hint: "Aさんが入る階級の、1つ前の階級までに、何人いるか。その階級にいる人は、順位をはっきり決められない。",
+            hint: "Aさんが入る階級にいる人たちの順位は、はっきり決められるかな。その階級より速い人は、何人いるかな。",
             steps: [
               `${L(x10)}秒は、「${L(cls[j].lo)}秒以上${L(cls[j].hi)}秒未満」の階級。`,
               `${L(cls[j].lo)}秒未満は ${tot(f.slice(0, j))}。だから、${from}番目から。`,
@@ -373,8 +384,8 @@ export const UNITS = [
             ],
           };
         }),
-        // 01q05 アの度数はイの度数の 2 倍（チャレンジ）
-        t("01q05", (r) => pairQ(r, { k: 4, ratios: [2, 3], mul: "ア", nameCtx: CTX[5] })),
+        // 01q05 アの度数はイの度数の 2 倍より 3 人多い（チャレンジ。01d06 より一段むずかしい形）
+        t("01q05", (r) => pairQ(r, { k: 4, ratios: [2, 3], mul: "ア", nameCtx: CTX[5], offs: [1, 2, 3, 4] })),
       ],
     },
   }),

@@ -52,7 +52,8 @@ function genFreq(r, n, k, pk) {
     const f = w.map((x) => Math.max(1, Math.round((n * x) / tot)));
     const i = f.indexOf(Math.max(...f));
     f[i] += n - sum(f);
-    if (f.every((x) => x >= 1) && f[i] === Math.max(...f)) return f;
+    const mxv = Math.max(...f), tops = f.map((x, j) => (x === mxv ? j : -1)).filter((j) => j >= 0);
+    if (f.every((x) => x >= 1) && f[i] === mxv && (!pk || tops.every((j) => j >= pk[0] && j <= pk[1]))) return f;
   }
   return null;
 }
@@ -241,7 +242,7 @@ export const UNITS = [
           const wrongs = [
             "それぞれのクラスの人数を調べて、人数の多いほうのクラスを選ぶ",
             "それぞれのクラスで、いちばんよかった1人の記録だけをくらべる",
-            "それぞれのクラスの記録の範囲だけを求めて、くらべる",
+            "それぞれのクラスの記録の範囲だけを求めて、範囲の大きいほうを選ぶ",
           ];
           return {
             q: pick(r, [
@@ -277,6 +278,7 @@ export const UNITS = [
             `${g0}と${g1}の度数分布表をつくって、度数（人数）をそのままくらべる`,
             `${g0}と${g1}から、1人ずつえらんで、その2人の値だけをくらべる`,
             `${g0}と${g1}のデータを、1つにまぜて、平均値を求める`,
+            `${g0}と${g1}の人数がちがうので、人数の多いほうのデータだけで、くらべる`,
           ]).slice(0, 3);
           return {
             q: `「${s.g[0]}は、${s.g[1]}より、${s.topic}が${s.dir}」といえるかどうかを調べたい。${s.g[0]} ${n1}人、${s.g[1]} ${n2}人の、${s.topic}のデータがある。このデータを整理してくらべる方法として、適切なものはどれか。`,

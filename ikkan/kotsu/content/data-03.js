@@ -21,7 +21,7 @@ const KIND = { mean: "平均値", median: "中央値", mode: "最頻値", range:
 const VCTX = [
   { name: "1分間の腕立て伏せの回数", u: "回", lo: 5, hi: 25 },
   { name: "テストの得点", u: "点", lo: 40, hi: 95 },
-  { name: "1週間の読書時間", u: "時間", lo: 1, hi: 15 },
+  { name: "1週間の読書時間", u: "時間", lo: 1, hi: 12 },
   { name: "ボール投げの記録", u: "m", lo: 10, hi: 40 },
   { name: "握力", u: "kg", lo: 15, hi: 40 },
   { name: "ゲームの得点", u: "点", lo: 2, hi: 20 },
@@ -74,19 +74,25 @@ function statQ(r, kind, { n, lo, hi, ctx = null, sortedShow = false }) {
 
 // ── 度数分布表・ヒストグラム ─────────────────────────────
 const FCTX = [
-  { name: "通学時間", u: "分", los: [0], ws: [5, 10] },
-  { name: "ボール投げの記録", u: "m", los: [10, 15, 20], ws: [5] },
-  { name: "上体起こしの記録", u: "回", los: [10, 15, 20], ws: [5] },
-  { name: "身長", u: "cm", los: [140, 145, 150], ws: [5] },
-  { name: "テストの得点", u: "点", los: [0, 40], ws: [10], max: 100 },
+  { name: "通学時間", u: "分", los: [0], ws: [5, 10], max: 60, pk: [10, 35] },
+  { name: "ボール投げの記録", u: "m", los: [10, 15, 20], ws: [5], max: 50, pk: [22, 42] },
+  { name: "上体起こしの記録", u: "回", los: [10, 15, 20], ws: [5], max: 50, pk: [20, 40] },
+  { name: "身長", u: "cm", los: [140, 145, 150], ws: [5], max: 180, pk: [150, 170] },
+  { name: "テストの得点", u: "点", los: [0, 40], ws: [10], max: 100, pk: [35, 85] },
 ];
 /** 度数分布表の場面 c（なければ選ぶ）で、階級を k 個つくる（テストの得点は、階級の上のはしが 100 をこえないようにする） */
 const fsetup = (r, k, c = null) => {
   c = c || pick(r, FCTX);
-  const w = pick(r, c.ws);
-  let lo = pick(r, c.los);
-  if (c.max && lo + w * k > c.max) lo = Math.min(...c.los);
+  let w = pick(r, c.ws), lo = pick(r, c.los);
+  if (c.max && lo + w * k > c.max) lo = Math.min(...c.los);   // 階級の上のはしが、場面にあう上限（満点・身長など）をこえないようにする
+  if (c.max && lo + w * k > c.max) w = Math.min(...c.ws);
   return { c, u: c.u, w, lo, k, cls: classes(lo, w, k) };
+};
+/** 山の位置（階級の番号）：階級値が場面の「ふつうの範囲」pk の中にある階級から選ぶ（k が 5 以上なら、両はしの階級は山にしない） */
+const pickPeak = (r, cls, pk) => {
+  const k = cls.length, all = Array.from({ length: k }, (_, i) => i).filter((i) => k < 5 || (i > 0 && i < k - 1));
+  const ok = pk ? all.filter((i) => cls[i].mid >= pk[0] && cls[i].mid <= pk[1]) : all;
+  return pick(r, ok.length ? ok : all);
 };
 const lb = (c, u, d = 0) => `${d ? Number(c.lo).toFixed(d) : c.lo}${u}以上${d ? Number(c.hi).toFixed(d) : c.hi}${u}未満`;
 const fs = (cls, f, u, d = 0) => cls.map((c, i) => `${lb(c, u, d)}が ${f[i]}人`).join("、");
@@ -176,7 +182,7 @@ export const UNITS = [
         // 03q04 平均値から合計
         t("03q04", (r) => {
           const n = r(4, 12);
-          const [name, u, lo, hi] = pick(r, [["テストの得点", "点", 50, 90], ["1週間の読書時間", "時間", 2, 15], ["ボール投げの記録", "m", 15, 35], ["1分間の腕立て伏せの回数", "回", 8, 25], ["通学時間", "分", 8, 40], ["握力", "kg", 18, 36]]);
+          const [name, u, lo, hi] = pick(r, [["テストの得点", "点", 50, 90], ["1週間の読書時間", "時間", 2, 8], ["ボール投げの記録", "m", 15, 35], ["1分間の腕立て伏せの回数", "回", 8, 25], ["通学時間", "分", 8, 40], ["握力", "kg", 18, 36]]);
           const m = r(lo, hi);
           return {
             q: `${n}人の${name}（${u}）の平均値が${m}${u}のとき、${n}人の合計はいくつか。`,
@@ -191,7 +197,7 @@ export const UNITS = [
       2: [
         // 03d03a ヒストグラムから最頻値
         t("03d03a", (r) => {
-          const k = r(6, 8), { c, cls } = fsetup(r, k), n = pick(r, [24, 28, 30, 32, 36, 40]), f = peaked(r, k, n, r(1, k - 2));
+          const k = r(6, 8), { c, cls } = fsetup(r, k), n = pick(r, [24, 28, 30, 32, 36, 40]), f = peaked(r, k, n, pickPeak(r, cls, c.pk));
           if (!uniqMax(f)) return { skip: true };
           const j = f.indexOf(Math.max(...f)), mid = cls[j].mid;
           return {
@@ -204,7 +210,7 @@ export const UNITS = [
         }),
         // 03d03b ヒストグラムから平均値（小数第2位を四捨五入）
         t("03d03b", (r) => {
-          const k = r(6, 8), { c, cls } = fsetup(r, k), n = pick(r, [24, 28, 30, 32, 36, 40]), f = peaked(r, k, n, r(1, k - 2));
+          const k = r(6, 8), { c, cls } = fsetup(r, k), n = pick(r, [24, 28, 30, 32, 36, 40]), f = peaked(r, k, n, pickPeak(r, cls, c.pk));
           const M = meanFromFreq(cls, f);
           if (isTie(M, 1)) return { skip: true };
           return {
@@ -224,7 +230,7 @@ export const UNITS = [
             q: `${n}回のテストの得点の平均値は ${m}点だった。${n + 1}回目のテストで ${s}点をとると、${n + 1}回の平均値は何点になるか。`,
             ans,
             unit: "点",
-            hint: "平均値から、合計を求めよう。合計がわかれば、平均値が求められる。",
+            hint: "平均値と回数から、これまでの合計はわかるかな。新しい得点をふくめた合計と回数から、新しい平均値は求められるかな。",
             steps: [`${n}回の合計 ${n}×${m} ＝ ${n * m}　${n + 1}回の合計 ${n * m}+${s} ＝ ${n * m + s}`, `平均値 ${n * m + s}÷${n + 1} ＝ ${ans}（点）`],
           };
         }),
@@ -243,7 +249,7 @@ export const UNITS = [
         }),
         // 03q03a 度数分布表の最頻値
         t("03q03a", (r) => {
-          const { c, cls } = fsetup(r, 4), f = peaked(r, 4, 20, r(0, 3));
+          const { c, cls } = fsetup(r, 4), f = peaked(r, 4, 20, pickPeak(r, cls, c.pk));
           if (!uniqMax(f)) return { skip: true };
           const j = f.indexOf(Math.max(...f));
           return {
@@ -258,7 +264,7 @@ export const UNITS = [
         t("03q03b", (r) => {
           const { c, cls } = fsetup(r, 4);
           let f = null, M = 0;
-          for (let i = 0; i < 60 && !f; i++) { const g = peaked(r, 4, 20, r(0, 3)); M = meanFromFreq(cls, g); if (!isTie(M, 0)) f = g; }   // ちょうど 5の境目の組は使わない
+          for (let i = 0; i < 60 && !f; i++) { const g = peaked(r, 4, 20, pickPeak(r, cls, c.pk)); M = meanFromFreq(cls, g); if (!isTie(M, 0)) f = g; }   // ちょうど 5の境目の組は使わない
           if (!f) return { skip: true };
           return {
             q: `20人の${c.name}（${c.u}）の度数分布表は、${fs(cls, f, c.u)}である。平均値を、小数第1位を四捨五入して、整数で求めよう。`,
@@ -266,6 +272,18 @@ export const UNITS = [
             unit: c.u,
             hint: "度数分布表から平均値を求めるとき、それぞれの階級の人を、みな何の値とみなすのだったかな。",
             steps: meanSteps(cls, f, c.u, 0),
+          };
+        }),
+        // 03d07a 度数分布表の最頻値（50m走）
+        t("03d07a", (r) => {
+          const T = freqT(r), j = T.f.indexOf(Math.max(...T.f));
+          if (!uniqMax(T.f)) return { skip: true };
+          return {
+            q: `${T.q}最頻値を求めよう。`,
+            ans: round(T.cls[j].mid, 6),
+            unit: "秒",
+            hint: "度数分布表での最頻値は、どの階級の、どの値で表すのだったかな。",
+            steps: [`度数がもっとも多いのは、${T.f[j]}人の「${lb(T.cls[j], "秒", 1)}」。`, `最頻値は、その階級値 (${T.cls[j].lo.toFixed(1)}+${T.cls[j].hi.toFixed(1)})÷2 ＝ ${show(T.cls[j].mid)}（秒）`],
           };
         }),
       ],
@@ -286,18 +304,6 @@ export const UNITS = [
         t("03d06a", (r) => xQ(r, "x")),
         // 03d06b 中央値から x を求めて、平均値を求める
         t("03d06b", (r) => xQ(r, "mean")),
-        // 03d07a 度数分布表の最頻値（50m走）
-        t("03d07a", (r) => {
-          const T = freqT(r), j = T.f.indexOf(Math.max(...T.f));
-          if (!uniqMax(T.f)) return { skip: true };
-          return {
-            q: `${T.q}最頻値を求めよう。`,
-            ans: round(T.cls[j].mid, 6),
-            unit: "秒",
-            hint: "度数分布表での最頻値は、どの階級の、どの値で表すのだったかな。",
-            steps: [`度数がもっとも多いのは、${T.f[j]}人の「${lb(T.cls[j], "秒", 1)}」。`, `最頻値は、その階級値 (${T.cls[j].lo.toFixed(1)}+${T.cls[j].hi.toFixed(1)})÷2 ＝ ${show(T.cls[j].mid)}（秒）`],
-          };
-        }),
       ],
       // ───────── 4 入試レベル ─────────
       4: [
@@ -311,7 +317,7 @@ export const UNITS = [
             q: `${T.q}中央値がふくまれる階級は、次のうちどれか。`,
             ans,
             choices: choices4(r, ans, near(j, T.cls.length).map((i) => lb(T.cls[i], "秒", 1))),
-            hint: "中央値は、小さい順に並べたときの、まん中の人。まん中の人は、何番目（と何番目）かな。度数を順にたしていこう。",
+            hint: "中央値は、小さい順に並べたときの、まん中の人の記録。まん中の人は、何番目（と何番目）かな。その人は、人数をたしていくと、どの階級に入るかな。",
             steps: [`${n}人だから、中央値は ${nums}の人の記録。`, `度数を小さいほうから順にたす：${cu.join("、")}（人）。`, `${nums}は、たした人数がはじめてそこに届く「${ans}」の階級にいる。`],
           };
         }),
@@ -335,7 +341,7 @@ export const UNITS = [
             q: `${n}人のグループの、テストの平均値は ${m}点だった。新しく 1人が入ると、${n + 1}人の平均値が ${m2}点になった。新しく入った人の得点を求めよう。`,
             ans: s,
             unit: "点",
-            hint: "平均値から、合計を求めよう。入る前と入った後の合計のちがいが、新しく入った人の得点。",
+            hint: "平均値と人数から、入る前の合計と、入った後の合計は、わかるかな。入る前と入った後で、合計はどれだけちがうかな。",
             steps: [`${n}人の合計 ${n}×${m} ＝ ${n * m}　${n + 1}人の合計 ${n + 1}×${m2} ＝ ${(n + 1) * m2}`, `新しく入った人 ${(n + 1) * m2}−${n * m} ＝ ${s}（点）`],
           };
         }),
@@ -350,7 +356,8 @@ export const UNITS = [
 
 // ── 50m走の度数分布表（dr.7）：階級の幅 0.5 秒、5 つの階級 ───────────
 function freqT(r) {
-  const k = pick(r, [5, 5, 6]), lo = pick(r, [6.5, 7, 7.5, 8]), cls = classes(lo, 0.5, k), n = pick(r, [36, 40, 40, 44, 45, 50]), f = peaked(r, k, n, r(1, k - 2));
+  const lo = pick(r, [7, 7.5, 8]), k = lo + 0.5 * 6 > 10.5 ? 5 : pick(r, [5, 5, 6]), cls = classes(lo, 0.5, k), n = pick(r, [36, 40, 40, 44, 45, 50]);
+  const f = peaked(r, k, n, pickPeak(r, cls, [8, 9.5]));   // 50m走の山は 8.0〜9.5 秒あたり
   return { cls, f, n, q: `${n}人の50m走の記録の度数分布表は、${fs(cls, f, "秒", 1)}である。` };
 }
 
@@ -400,7 +407,7 @@ function avgX(r, ask) {
   return {
     q: `${head}x を求めて、5つのデータの中央値も求めよう。中央値は？`,
     ans: med,
-    hint: "まず、平均値から合計を求めて、x を出す。そのあと、データを小さい順に並べる。",
+    hint: "平均値から、x はわかるかな。x がわかったら、5つのデータを小さい順に並べると、まん中の値はどれかな。",
     steps: [`合計 ＝ ${m}×5 ＝ ${5 * m}　${K}+x ＝ ${5 * m}　x ＝ ${x}`, `小さい順に並べる：${list(all)}`, `5個だから、まん中は 3番目の ${med}。`],
   };
 }
