@@ -97,7 +97,7 @@ const wrongGroups = (rhs, C, sol) => {
   if (rhs[""]) G.push([dv(flip(""))]);                                                                                 // 定数項の符号をかえた
   if (!one) G.push([rhs]);                                                                                             // わらなかった
   if (ks.length > 1) G.push([pneg(sol)]);                                                                              // 全体の符号が逆
-  if (!one) G.push([pmul(rhs, C)]);                                                                                    // わるところを、かけてしまった
+  if (!one && (ks.length === 1 || Object.keys(C).length === 1 && C[""] !== undefined)) G.push([pmul(rhs, C)]);          // わるところを、かけてしまった（式が長くなりすぎるときは入れない）
   if (!one && ks.length === 1) G.push([pdivMono(C, rhs)]);                                                             // 逆数にしてしまった
   if (constC && !one) { const c = C[""], n0 = c[1] > 1 ? c[1] : Math.abs(c[0]); G.push([psub(rhs, poly([n0, {}])), padd(rhs, poly([n0, {}]))]); }   // わるかわりに、ひいた・たした
   else if (!one) G.push([psub(rhs, C)]);
