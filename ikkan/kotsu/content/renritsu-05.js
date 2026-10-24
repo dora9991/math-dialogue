@@ -1,9 +1,9 @@
 // ============================================================
 // renritsu-05.js — 連立方程式 第5時「かっこや小数・分数のある連立方程式を解こう」
 //   ikkan の演習プリント（renritsu-05.dr.1〜8）・小テスト（renritsu-05.qz.1〜5）を、コツコツくんのテンプレートにしたもの。
-//   テンプレート id＝「05」＋ d（演習）／q（小テスト）／x（演習プリント（1）〜（4）の2題ずつの組。ikkan の問題一覧には番号がないので、x にした）＋ 番号（＋ 型ごとに a, b…）
-//     05x01 … 演習（1）かっこ　05x02a・b … 演習（1）（2）小数・分数　05x03a・b … 演習（3）　05x04a・b … 演習（4）
-//     05d05 … dr.5　05d06〜08 … dr.6〜8　05q01〜05 … qz.1〜5
+//   テンプレート id＝「05」＋ d（演習）／q（小テスト）＋ ikkan の問題の番号（＋ 型ごとに a, b…）
+//     05d01 … dr.1（かっこ）　05d02a・b … dr.2（小数・分数）　05d03a・b … dr.3　05d04a・b … dr.4　05d05a・b … dr.5　05d06〜08 … dr.6〜8　05q01〜05 … qz.1〜5
+//   （演習の（1）〜（4）は、「1つ目・2つ目」の2題の組。1つのテンプレートで、両方の型が出るようにするか、型ごとに a, b に分けた）
 //   連立方程式は、解 (x, y) を先に決めて式をつくり、画面の式から整数の係数の式 ax+by=c を取り出して solve2 で解き直して、解と合うことを確かめてから出す。
 //   「解を求めよ」は入力欄で打てる数にするため、x か y の一方の値を聞く（どちらを聞くかは毎回ランダム）。
 //   dr.5 は「まちがいを説明して正しく解く」ので、(a) まちがいを選ぶ4択　(b) 正しく解いたときの x か y の値、の2つにした。
@@ -69,7 +69,7 @@ const solveLines = (e1, e2) => {
   const kk = E1[w] + sg * E2[w], n = E1[2] + sg * E2[2];
   if (kk === 0 || n % kk !== 0 || n / kk !== sol[w]) throw new Error(`消去が合わない ${JSON.stringify([e1, e2])}`);
   const mul = (e, E, m) => (m > 1 ? `${TX(eqT(e))} を ${m} 倍して ${TX(eqT(E))}、` : "");
-  const l1 = `${nm[k]} を消去する。${mul(e1, E1, P.m1)}${mul(e2, E2, P.m2)}${TX(eqT(E1))} と ${TX(eqT(E2))} を${P.same ? "ひく" : "たす"}と ${kk === 1 ? "" : `${TX(`${coefVar(kk, nm[w])}=${n}`)} より `}${TX(`${nm[w]}=${sol[w]}`)}。`;
+  const l1 = `${TX(nm[k])} を消去する。${mul(e1, E1, P.m1)}${mul(e2, E2, P.m2)}${TX(eqT(E1))} と ${TX(eqT(E2))} を${P.same ? "ひく" : "たす"}と ${kk === 1 ? "" : `${TX(`${coefVar(kk, nm[w])}=${n}`)} より `}${TX(`${nm[w]}=${sol[w]}`)}。`;
   const pe = Math.abs(e1[k]) <= Math.abs(e2[k]) ? e1 : e2;
   const l2 = `${TX(eqT(pe))} に ${TX(`${nm[w]}=${sol[w]}`)} を代入して ${TX(`${nm[k]}=${sol[k]}`)}。よって、${TX(`x=${sol[0]}`)}、${TX(`y=${sol[1]}`)}。`;
   return [l1, l2];
@@ -193,7 +193,7 @@ export const UNITS = [
         t("05d01", (r) => {
           const sol = solPick(r, 1, 9);
           for (let n = 0; n < 200; n++) {
-            const A = parenConst(r, sol, { mm: [2, 3], cu: [1, -1] }), B = plainOf(r, sol, PLAIN.slice(0, 6));
+            const A = parenConst(r, sol, { mm: [2, 3, -2, -3], cu: [1, -1] }), B = plainOf(r, sol, PLAIN.slice(0, 6));
             if (!uniq(A.e, B.e)) continue;
             return solveQ(r, A, B, sol, "かっこの前の数を、かっこの中のすべての項にかけてはずそう。そのあと、$ax+by=c$ の形に整理しよう。");
           }
@@ -442,7 +442,7 @@ export const UNITS = [
               q: `連立方程式 ${cases2(t1, t2)} を解いたとき、${TX(w)} の値は？`,
               ans: v,
               hint: "下の式は、両辺に何をかけると整数の係数になるかな？ 上の式は、そのまま代入できる形。",
-              steps: [`下の式の両辺に 10 をかけて ${TX(eqT(e2))}。`, `上の式を代入して ${TX(sub)}、かっこをはずして整理すると ${TX(`${coefVar(K, "x")}=${N}`)} より ${TX(`x=${x0}`)}。`, `${TX(`y=${dec(c1)}\\times ${par(x0)}${k < 0 ? "-" : "+"}${Math.abs(k)}=${y0}`)}。よって、${TX(`x=${x0}`)}、${TX(`y=${y0}`)}。`],
+              steps: [`下の式の両辺に 10 をかけて ${TX(eqT(e2))}。`, `上の式を代入して ${TX(sub)}、かっこをはずして整理すると ${K === 1 ? TX(`x=${x0}`) : `${TX(`${coefVar(K, "x")}=${N}`)} より ${TX(`x=${x0}`)}`}。`, `${TX(`y=${dec(c1)}\\times ${par(x0)}${k < 0 ? "-" : "+"}${Math.abs(k)}=${y0}`)}。よって、${TX(`x=${x0}`)}、${TX(`y=${y0}`)}。`],
             };
           }
           throw new Error("05d08 が作れない");

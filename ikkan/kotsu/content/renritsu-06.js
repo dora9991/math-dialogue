@@ -46,6 +46,9 @@ const solveLines = (e1, e2, nm = XY) => {
     const e = [e1, e2][z], o = [e1, e2][1 - z], k = e[0] === 0 ? 1 : 0, w = 1 - k;
     if (e[2] % e[k] !== 0 || e[2] / e[k] !== sol[k]) throw new Error(`1文字の式が合わない ${JSON.stringify([e1, e2])}`);
     const fin = `よって、${TX(`${nm[0]}=${sol[0]}`)}、${TX(`${nm[1]}=${sol[1]}`)}。`;
+    if (e[k] === 1) {      // x=-6 のように、そのまま値がわかる式
+      return [o[k] === 0 ? `${TX(eqT(o, nm))} より ${TX(`${nm[w]}=${sol[w]}`)}。${fin}` : `${TX(eqT(e, nm))} だから、これを ${TX(eqT(o, nm))} に代入して ${TX(`${nm[w]}=${sol[w]}`)}。${fin}`];
+    }
     return [
       `${TX(eqT(e, nm))} より ${TX(`${nm[k]}=${sol[k]}`)}。`,
       o[k] === 0 ? `${TX(eqT(o, nm))} より ${TX(`${nm[w]}=${sol[w]}`)}。${fin}` : `${TX(eqT(o, nm))} に ${TX(`${nm[k]}=${sol[k]}`)} を代入して ${TX(`${nm[w]}=${sol[w]}`)}。${fin}`,

@@ -112,6 +112,10 @@ function buy(r, cat, nLo, nHi, diffs) {
 }
 const buyEq = (b) => [[1, 1, b.n], [b.a1, b.a2, b.k]];
 
+/** 自転車の分速と歩く分速の組：分母の最小公倍数が 600 以下になるものだけ（原作は 250 と 100） */
+const SPEEDS = [];
+for (const v1 of [150, 200, 250, 300]) for (const v2 of [50, 60, 80, 100]) if (v1 > v2 && lcm(v1, v2) <= 600) SPEEDS.push([v1, v2]);
+
 export const UNITS = [
   unit("13", {
     name: "連立方程式のまとめ",
@@ -201,7 +205,7 @@ export const UNITS = [
           if (!s) return { skip: true };
           const askA = r(0, 1) === 1;
           return {
-            q: `連立方程式 $${casesTex([subEq1(s), subEq2(s)])}$ の上の式を下の式に代入して整理すると、$Ay=B$ の形になった（両辺をわる前の形）。${askA ? "$A$" : "$B$"} の値は？`,
+            q: `連立方程式 $${casesTex([subEq1(s), subEq2(s)])}$ の上の式を下の式に代入して整理すると、$Ay=B$ の形になった（$y$ の項を左辺、数の項を右辺に集めた、両辺をわる前の形）。${askA ? "$A$" : "$B$"} の値は？`,
             ans: askA ? s.A : s.B,
             hint: "上の式の右辺を、下の式の $x$ に代入する。かっこをはずして、$y$ の項を左辺に、数の項を右辺に集めよう。",
             steps: [
@@ -282,7 +286,7 @@ export const UNITS = [
             q: `連立方程式 $${casesTex([eqTex(s.e1), eqTex(s.e2)])}$ を解いて、$${ask}$ の値を求めよう。`,
             ans: ask === "x" ? s.x0 : s.y0,
             hint: `$${s.ev}$ の係数を見くらべて、たすかひくかを決めよう。`,
-            steps: [...addSub(s.e1, s.e2, [s.x0, s.y0], s.ev), `$x=${s.x0}$、$y=${s.y0}$`],
+            steps: [`上の式を①、下の式を②とする。$${eqTex(s.e1)}$ …①　$${eqTex(s.e2)}$ …②`, ...addSub(s.e1, s.e2, [s.x0, s.y0], s.ev), `$x=${s.x0}$、$y=${s.y0}$`],
           };
         }),
         // 13q02 ⟦y＝2x−3 ; 4x−3y＝1⟧ を解く
@@ -320,8 +324,9 @@ export const UNITS = [
         // 13d07 自転車と徒歩の道のり
         t("13d07", (r) => {
           const [from, to] = pick(r, [["家", "体育館"], ["学校", "図書館"], ["駅", "公園"]]);
-          const v1 = pick(r, [150, 200, 250, 300]), v2 = pick(r, [50, 60, 70, 80, 100]), t1 = r(5, 20), t2 = r(3, 12);
+          const [v1, v2] = pick(r, SPEEDS), t1 = r(5, 16), t2 = r(3, 10);
           const x0 = v1 * t1, y0 = v2 * t2, D = x0 + y0, T = t1 + t2, L = lcm(v1, v2), askX = r(0, 1) === 1;
+          if (L * T > 10000) return { skip: true };   // ②の両辺にかけたあとの数が大きくなりすぎる組は使わない
           const e1 = [1, 1, D], e3 = [L / v1, L / v2, L * T];
           checkSol(solve2(e1, e3), x0, y0, "13d07");
           return {
@@ -377,17 +382,21 @@ export const UNITS = [
           }
           return { skip: true };
         }),
-        // 13d09a 代金を変えたとき、解が負の数になる
+        // 13d09a 代金を変えたとき、解が問題に合っているか（解と判断の組を選ぶ）
         t("13d09a", (r) => {
           const [A, B, c] = pick(r, SHOP13), b = buy(r, "neg", 10, 16, [30, 40, 50]);
           if (!b) return { skip: true };
-          const askA = r(0, 1) === 1, [e1, e2] = buyEq(b);
+          const [e1, e2] = buyEq(b), noun = NOUN[c];
           checkSol(solve2(e1, e2), b.x, b.y, "13d09a");
+          const fmt = (x, y, ok) => `$x=${x},\\ y=${y}$ であり、問題の答え${ok ? "になる" : "にならない"}。`;
+          const t0 = Math.abs(Math.min(b.x, b.y)), fixedSign = b.x < 0 ? [t0, b.n - t0] : [b.n - t0, t0];   // 負の数の符号をまちがえた組
+          const ans = fmt(b.x, b.y, false);
           return {
-            q: `1${c} ${b.a1}円の${A}と、1${c} ${b.a2}円の${B}を、合わせて ${b.n}${c}買ったら、代金は ${b.k}円だった。${A}を $x$ ${c}、${B}を $y$ ${c}として連立方程式をつくって解くと、$${askA ? "x" : "y"}$ の値は？`,
-            ans: askA ? b.x : b.y,
-            hint: `「合わせた${NOUN[c]}」と「代金」で式を2つつくって解こう。値が負の数になっても、そのまま答える。`,
-            steps: [`$x+y=${b.n}$ …①　$${b.a1}x+${b.a2}y=${b.k}$ …②`, ...addSub(e1, e2, [b.x, b.y], "y"), `$x=${b.x}$、$y=${b.y}$ で、${NOUN[c]}が負の数になるから、問題の答えにはならない。`],
+            q: `1${c} ${b.a1}円の${A}と、1${c} ${b.a2}円の${B}を、合わせて ${b.n}${c}買ったら、代金は ${b.k}円だった。${A}を $x$ ${c}、${B}を $y$ ${c}として連立方程式をつくって解いた。解と、その解が問題の答えになるかについて、正しいものはどれか。`,
+            ans,
+            choices: choices4(r, ans, [fmt(b.x, b.y, true), fmt(fixedSign[0], fixedSign[1], true), fmt(b.y, b.x, false)]),
+            hint: `「合わせた${noun}」と「代金」で式を2つつくって解こう。解を求めたら、場面にもどって、${noun}として合うか確かめよう。`,
+            steps: [`$x+y=${b.n}$ …①　$${b.a1}x+${b.a2}y=${b.k}$ …②`, ...addSub(e1, e2, [b.x, b.y], "y"), `$x=${b.x}$、$y=${b.y}$ で、${noun}が負の数になるから、問題の答えにならない。`],
           };
         }),
         // 13d09b x＝4、y＝3 が答えになる文章題を選ぶ
