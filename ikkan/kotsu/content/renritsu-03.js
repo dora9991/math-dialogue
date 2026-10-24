@@ -129,7 +129,7 @@ const mult2Sys = (r, o) => {
   if (!pl || pl.m1 < 2 || pl.m2 < 2) return null;
   return { e1, e2, sol: s, k, m1: pl.m1, m2: pl.m2 };
 };
-const HINT = "消したい文字の係数を、同じ数（または符号だけがちがう数）にしたい。式の両辺に同じ数をかけて、そろえよう。右辺にもかけるのをわすれずに。";
+const HINT = "そのままでは、たしてもひいても文字が消えない。式の両辺に同じ数をかけて、ある文字の係数をそろえられないかな。右辺にもかけたかな。";
 /** 「連立方程式を解いたとき、x（または y）の値は？」。gen＝連立方程式をつくる関数 */
 const solveQ = (id, mk, o) => t(id, gen((r) => {
   const S = mk(r, o);
@@ -157,7 +157,9 @@ const shopSys = (r) => {
   if (pa === pb) return null;
   const c = [[r(1, 5), r(1, 5)], [r(1, 5), r(1, 5)]];
   if (c[0][0] === c[1][0] || c[0][1] === c[1][1]) return null;
+  if (c[0][0] === c[1][1] && c[0][1] === c[1][0]) return null;                 // 個数が (a, b) と (b, a) の組は出さない
   const e1 = [c[0][0], c[0][1], c[0][0] * pa + c[0][1] * pb], e2 = [c[1][0], c[1][1], c[1][0] * pa + c[1][1] * pb];
+  if (e1[2] === e2[2]) return null;                                            // 2つの代金が同じ組は出さない
   const s = solveI(e1, e2);
   if (!s || s[0] !== pa || s[1] !== pb) return null;
   const text = (cc, e) => `${sh.A}${cc[0]}${sh.uA}と${sh.B}${cc[1]}${sh.uB}の代金は${e[2]}円`;
@@ -165,6 +167,28 @@ const shopSys = (r) => {
 };
 const shopLine = (S) => `${S.sh.A}1${S.sh.uA}を $x$ 円、${S.sh.B}1${S.sh.uB}を $y$ 円とすると　$${linTex(...S.e1)}$ …①　$${linTex(...S.e2)}$ …②`;
 const sat = (e, x, y) => e[0] * x + e[1] * y === e[2];
+/** 買い物の連立方程式の、まちがいの選択肢（解のない組・同じ組・正解になる組は除く）。S＝shopSys の結果 */
+const wrongShop = (S) => {
+  const a = S.e1, b = S.e2, swap = (e) => [e[1], e[0], e[2]];
+  const cands = [
+    [swap(a), swap(b)],                                     // A と B の個数を入れかえた
+    [[a[0], a[1], b[2]], [b[0], b[1], a[2]]],               // 代金を入れかえた
+    [a, swap(b)], [swap(a), b],                             // 片方の式だけ、個数を入れかえた
+    [a, [b[0], b[1], a[2] + b[2]]],                         // 代金を合計してしまった
+    [[a[0], a[1], a[2] + b[2]], b],
+    [a, [b[0], b[1], a[2]]],
+  ];
+  const key = (u, v) => [linTex(...u), linTex(...v)].sort().join("|");
+  const seen = new Set([key(a, b)]), out = [];
+  for (const [u, v] of cands) {
+    if (sat(u, S.pa, S.pb) && sat(v, S.pa, S.pb)) continue;
+    if (u[0] * v[1] - u[1] * v[0] === 0) continue;         // 解のない（平行な）組は出さない
+    const k = key(u, v);
+    if (seen.has(k)) continue;
+    seen.add(k); out.push([u, v]);
+  }
+  return out;
+};
 
 export const UNITS = [
   unit("03", {
@@ -201,7 +225,7 @@ export const UNITS = [
             q: `${S.text}${nm}1${u}の値段は何円か。`,
             ans: S.sol[ask],
             unit: "円",
-            hint: "1個（1本）の値段を $x$、$y$ として、2つの買い物を式にしよう。そのままでは文字が消えないので、何倍かしよう。",
+            hint: "1個（1本）の値段を $x$、$y$ として、2つの買い物を式にしよう。そのあと、文字を1つ消すには、どうすればよいかな。",
             steps: fit([shopLine(S), ...st.lines, `${S.sh.A}は ${S.pa}円、${S.sh.B}は ${S.pb}円。`]),
           };
         })),
@@ -210,12 +234,8 @@ export const UNITS = [
           const S = shopSys(r);
           if (!S) return null;
           const ok = [S.e1, S.e2];
-          const cand = [
-            [[S.e1[1], S.e1[0], S.e1[2]], [S.e2[1], S.e2[0], S.e2[2]]],            // A と B の個数を入れかえた
-            [[S.e1[0], S.e1[1], S.e2[2]], [S.e2[0], S.e2[1], S.e1[2]]],            // 代金を入れかえた
-            [S.e1, [S.e2[1], S.e2[0], S.e2[2]]],                                    // 片方の式だけ、個数を入れかえた
-            [S.e1, [S.e2[0], S.e2[1], S.e1[2] + S.e2[2]]],                          // 代金を合計してしまった
-          ].filter(([u, v]) => !(sat(u, S.pa, S.pb) && sat(v, S.pa, S.pb)));
+          const cand = wrongShop(S);
+          if (cand.length < 3) return null;
           const show = ([u, v]) => SYS(u, v);
           return {
             q: `${S.text}${S.sh.A}1${S.sh.uA}を $x$ 円、${S.sh.B}1${S.sh.uB}を $y$ 円として連立方程式をつくる。正しいものはどれか。`,
@@ -270,13 +290,13 @@ export const UNITS = [
           if (!S) return null;
           const sx = elimSteps(S.e1, S.e2, 0, XY, 0), sy = elimSteps(S.e1, S.e2, 1, XY, 1);
           if (!sx || !sy || sx.sol[0] !== S.sol[0] || sx.sol[1] !== S.sol[1] || sy.sol[0] !== S.sol[0] || sy.sol[1] !== S.sol[1]) return null;
-          const ask = r(0, 1);
           const head = (st) => st.lines.slice(0, -1).join("　");
+          const sum = S.sol[0] + S.sol[1];
           return {
-            q: `連立方程式 ${SYS(S.e1, S.e2)} は、$x$ を消去して解いても、$y$ を消去して解いても、同じ解になる。この連立方程式を解いたとき、$${XY[ask]}$ の値は？`,
-            ans: S.sol[ask],
+            q: `連立方程式 ${SYS(S.e1, S.e2)} を、$x$ を消去する方法と、$y$ を消去する方法の、両方で解く。求めた $x$ の値と $y$ の値の和は？`,
+            ans: sum,
             hint: HINT,
-            steps: [`${INTRO}$x$ を消去する方法　${head(sx)}`, `$y$ を消去する方法　${head(sy)}`, ANS(...S.sol)],
+            steps: [`${INTRO}$x$ を消去する方法　${head(sx)}`, `$y$ を消去する方法　${head(sy)}`, ANS(...S.sol), `和は　$${S.sol[0]}+${par(S.sol[1])}=${sum}$`],
           };
         })),
         // 03d05b y を消去するには、①、②を何倍するか（4択）
@@ -293,7 +313,7 @@ export const UNITS = [
             q: `連立方程式 ${SYS(S.e1, S.e2)}（上の式が①、下の式が②）で、$${XY[k]}$ を消去するために、①、②をそれぞれ何倍すればよいか。ただし、かける数は、いちばん小さくする。`,
             ans: ok,
             choices: choices4(r, ok, wrongs),
-            hint: `$${XY[k]}$ の係数の絶対値を、2つの数の最小公倍数にそろえたい。①、②の $${XY[k]}$ の係数を見よう。`,
+            hint: `①、②の $${XY[k]}$ の係数の絶対値を、同じ数にするには、それぞれ何倍すればよいかな。`,
             steps: [`$${XY[k]}$ の係数は、①が $${S.e1[k]}$、②が $${S.e2[k]}$。絶対値の最小公倍数は $${lcm(Math.abs(S.e1[k]), Math.abs(S.e2[k]))}$。`, `①を ${pl.m1} 倍、②を ${pl.m2} 倍すると、$${XY[k]}$ の係数の絶対値が ${lcm(Math.abs(S.e1[k]), Math.abs(S.e2[k]))} でそろう。`],
           };
         })),

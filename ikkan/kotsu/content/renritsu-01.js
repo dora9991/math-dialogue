@@ -191,7 +191,7 @@ export const UNITS = [
         t("01d02b", gen((r) => {
           const e0 = [pick(r, [1, 2, 3]), pick(r, [1, 1, 2, -1, -2])];
           const base = [r(-2, 5), r(-2, 5)], e = [...e0, e0[0] * base[0] + e0[1] * base[1]];
-          const ss = solsOf(e, 6), k = pick(r, [1, 2, 2, 3]);
+          const ss = solsOf(e, 6), k = pick(r, [0, 1, 1, 2, 2, 3, 3, 4]);
           if (ss.length < k) return null;
           const good = shuffle(r, ss).slice(0, k);
           const wr = [];
@@ -204,7 +204,7 @@ export const UNITS = [
             ans: k,
             unit: "個",
             hint: "ア〜エを1つずつ方程式に代入して、成り立つかどうかを調べよう。",
-            steps: [all.slice(0, 2).map((it, i) => row(it, i)).join("　"), all.slice(2).map((it, i) => row(it, i + 2)).join("　"), `${E(e)} が成り立つ（${e[2]} になる）のは ${all.map((it, i) => (it.ok ? KANA[i] : null)).filter(Boolean).join("、")} の ${k} 個。`],
+            steps: [all.slice(0, 2).map((it, i) => row(it, i)).join("　"), all.slice(2).map((it, i) => row(it, i + 2)).join("　"), k === 0 ? `どれも ${e[2]} にならないので、解になっているものは 0 個。` : `${E(e)} が成り立つ（${e[2]} になる）のは ${all.map((it, i) => (it.ok ? KANA[i] : null)).filter(Boolean).join("、")} の ${k} 個。`],
           };
         })),
         // 01d03 2x+y=8, x−y=1 の解を、ア〜ウから
@@ -242,11 +242,13 @@ export const UNITS = [
       ],
       // ───────── 2 標準 ─────────
       2: [
+        // 01d09a x+2y=4, 3x−y=5 の解を、ア〜エから
+        sysPick("01d09a", { a1: [1, 2], b1: [2, 3, -2], a2: [2, 3, 4], b2: [-1, -2, 1], x: [-2, 5], y: [-3, 4] }),
         // 01d04 x=2, y=−1 が解である連立方程式を選ぶ（4択）
         t("01d04", gen((r) => {
           const x0 = r(-3, 5), y0 = r(-3, 5);
           if (!x0 || !y0) return null;
-          const co = () => [pick(r, [1, 2, 3, -1]), pick(r, [1, -1, 2, 3, -2])];
+          const co = () => { for (let i = 0; i < 30; i++) { const c = [pick(r, [1, 2, 3, -1]), pick(r, [1, -1, 2, 3, -2])]; if (!(c[0] < 0 && c[1] < 0)) return c; } return [1, 1]; };   // 「−x−2y」のように両方負の式は出さない
           const mk = ([a, b], d = 0) => [a, b, a * x0 + b * y0 + d];
           const e1 = mk(co()), e2 = mk(co());
           const s = solveI(e1, e2);
@@ -257,9 +259,14 @@ export const UNITS = [
             return [a, b, c];
           };
           const cands = [];
-          for (let i = 0; i < 6; i++) { const u = mk(co()), w = bad(co()); cands.push(r(0, 1) ? [u, w] : [w, u]); }
+          for (let i = 0; i < 10; i++) { const u = mk(co()), w = bad(co()); cands.push(r(0, 1) ? [u, w] : [w, u]); }
           const show = ([u, w]) => SYS(u, w);
-          const wrongs = cands.filter(([u, w]) => !(sat(u, x0, y0) && sat(w, x0, y0)) && u[0] * w[1] - u[1] * w[0] !== 0);   // 解がない（平行な）組は、まぎらわしいので出さない
+          const seen = new Set([show([e1, e2])]), wrongs = [];
+          for (const c of cands) {        // 解がない（平行な）組・同じ見た目の組は出さない
+            if (sat(c[0], x0, y0) && sat(c[1], x0, y0)) continue;
+            if (c[0][0] * c[1][1] - c[0][1] * c[1][0] === 0 || seen.has(show(c))) continue;
+            seen.add(show(c)); wrongs.push(c);
+          }
           if (wrongs.length < 3) return null;
           const ex = wrongs[0], f = sat(ex[0], x0, y0) ? ex[1] : ex[0];
           return {
@@ -286,7 +293,7 @@ export const UNITS = [
             ans: count ? sols.length : sols[0][0],
             unit: count ? "組" : undefined,
             hint: "$y$ に 1、2、3、… を入れて、$x$ が自然数（1以上の整数）になるかを調べよう。",
-            steps: [`$y=1, 2, 3, \\cdots$ を順に入れて、$x$ が自然数になるものをさがす。`, `$y=1, 2, \\cdots, ${rows.length}$ のうち、$x$ が自然数になるのは　${listing}。`, `解は ${sols.map(([x, y]) => `$(x,\\ y)=(${x},\\ ${y})$`).join("、")} の ${sols.length} 組。`],
+            steps: [`$y=1, 2, 3, \\cdots$ を順に入れて、$x$ が自然数になるものをさがす。`, `$y$ が 1 から ${rows.length} までの整数のうち、$x$ が自然数になるのは　${listing}。`, `解は ${sols.map(([x, y]) => `$(x,\\ y)=(${x},\\ ${y})$`).join("、")} の ${sols.length} 組。`],
           };
         })),
         // 01q03 x+y=7, 3x−y=1 の解を、ア〜ウから
@@ -320,7 +327,7 @@ export const UNITS = [
           if (same.length !== 1 || same[0] !== x0) return null;
           const askX = r(0, 1) === 0;
           return {
-            q: `連立方程式 ${SYS(e1, e2)} について、$x=1, 2, 3, 4, 5$ のときの $y$ の値を、2つの方程式それぞれで求めて表にした。2つの方程式で $y$ の値が等しくなるときの、${askX ? "$x$" : "$y$"} の値は？`,
+            q: `連立方程式 ${SYS(e1, e2)} について、$x=1, 2, 3, 4, 5$ のときの $y$ の値を、2つの方程式それぞれで求めて、表にして調べる。2つの方程式で $y$ の値が等しくなるときの、${askX ? "$x$" : "$y$"} の値は？`,
             ans: askX ? x0 : y0,
             hint: "$x$ に 1〜5 を入れて、それぞれの式から $y$ を求めよう。2つの式で同じ $y$ になる行をさがす。",
             steps: [`${E(e1)} の $y$（$x=1, 2, 3, 4, 5$ の順）：${ya.join("、")}`, `${E(e2)} の $y$：${yb.join("、")}`, `$y$ が等しいのは $x=${x0}$ のとき（$y=${y0}$）。`],
@@ -377,8 +384,6 @@ export const UNITS = [
       ],
       // ───────── 4 入試レベル ─────────
       4: [
-        // 01d09a x+2y=4, 3x−y=5 の解を、ア〜エから
-        sysPick("01d09a", { a1: [1, 2], b1: [2, 3, -2], a2: [2, 3, 4], b2: [-1, -2, 1], x: [-2, 5], y: [-3, 4] }),
         // 01d09b x=2, y=−1 が ax+y=3, x−by=5 の解であるとき a, b
         t("01d09b", gen((r) => {
           const x0 = r(1, 4), y0 = sv(r, 1, 3, 50), a = sv(r, 1, 4, 20), b = r(1, 5), p = pick(r, [1, 1, 2, -1, 3]), q = pick(r, [1, 1, 2, 3]), sB = pick(r, [1, -1]);
@@ -398,6 +403,7 @@ export const UNITS = [
         t("01d10", gen((r) => {
           const x0 = r(1, 5), y0 = sv(r, 1, 4, 60);
           const e1 = [pick(r, [1, 1, 2]), pick(r, [1, 1, 2, -1])], e2 = [pick(r, [1, 2, 3, -1]), pick(r, [1, -1, 2, 3, -2])];
+          if (e2[0] < 0 && e2[1] < 0) return null;                                  // 両方負の式は出さない
           e1.push(e1[0] * x0 + e1[1] * y0);
           const ok = [...e2, e2[0] * x0 + e2[1] * y0];
           const s = solveI(e1, ok);

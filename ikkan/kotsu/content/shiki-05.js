@@ -5,7 +5,7 @@
 //   式そのものは入力欄で打てないので、(a) 式の値・数で聞く（数値入力）、(b) 計算の答えの式を選ぶ（4択）の2通りで移した。
 //   答えは、すべて algebra.js で計算して出す（手で書かない）。4択の誤答は、ありがちなまちがい
 //   （÷ の後ろの文字をかけてしまう／わらない・係数をかけてしまう・符号・文字の数のまちがい）を計算で出し、正解と式として同じものは入れない。
-//   「÷ のあとの 8x のような項は、全体でわる」は、問題文に書く。
+//   「÷4xy のように、×をはぶいてつづく部分は、まとめてわる」は、問題文に書く（言い方は DIV_NOTE にそろえる）。
 // ============================================================
 import { t, pick, choices4, shuffle, fracAns, rnz, sgn, gcd } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
@@ -15,7 +15,10 @@ const unit = unitFor("shiki");
 
 // ── 小さな道具 ────────────────────────────────────────────
 const $ = (s) => `$${s}$`;
-const PAIRS = [["x", "y"], ["a", "b"]];
+const PAIRS = [["x", "y"], ["x", "y"], ["a", "b"], ["a", "b"], ["m", "n"], ["p", "q"], ["s", "t"]];   // 文字の組（x、y と a、b を多めに）
+/** ÷ のあとの読み方の注意書き（連鎖の計算の問題文に、そろえて入れる） */
+const DIV_NOTE = "（÷のあとの 4xy のように、×をはぶいてつづく部分は、まとめてわる）";
+const INTS5 = [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5];
 /** 条件に合うものが見つかるまで、くり返す（見つからなければ null） */
 const retry = (f, n = 500) => { for (let i = 0; i < n; i++) { const x = f(); if (x) return x; } return null; };
 /** 入力式の答え：整数は数、分数は約分した文字列 */
@@ -30,7 +33,13 @@ const nonneg = (p) => !Object.keys(p).some((k) => k.includes("-"));
 const sqv = (x) => (x.sq ? pmul(x.m, x.m) : x.m);
 const run = (items) => items.slice(1).reduce((acc, x) => (x.op === "/" ? pdivMono(acc, sqv(x)) : pmul(acc, sqv(x))), sqv(items[0]));
 const itemTex = (x, i) => (x.ph ? "\\square" : x.sq ? `(${ptex(x.m)})^{2}` : i === 0 ? ptex(x.m) : ptexp(x.m));
-const chainTex = (items) => items.map((x, i) => (i === 0 ? "" : x.op === "/" ? " \\div " : " \\times ") + itemTex(x, i)).join("");
+/** つながりの TeX。par＝true のときは、÷ のあとの項に、かっこをつける（問題文に注意書きがないとき用） */
+const chainTex = (items, par = false) => items.map((x, i) => {
+  if (i === 0) return itemTex(x, i);
+  let s = itemTex(x, i);
+  if (par && x.op === "/" && !x.ph && !s.startsWith("(")) s = `(${s})`;
+  return (x.op === "/" ? " \\div " : " \\times ") + s;
+}).join("");
 const absTex = (m) => ptex(coefOf(m)[0] < 0 ? pneg(m) : m);
 const lettersIn = (items) => [...new Set(items.flatMap((x) => Object.keys(x.m).join("").match(/[a-z]/g) || []))].sort();
 
@@ -82,7 +91,7 @@ const pick4 = (r, rtex, rval, cands, low = [], must = []) => {
 const asCand = (p) => ({ tex: ptex(p), val: p });
 
 /** 計算の解説（1〜4行） */
-const chainSteps = (items, right) => {
+const chainSteps = (items, right, par = false) => {
   const steps = [];
   const sqs = items.filter((x) => x.sq);
   if (sqs.length) steps.push("累乗を先に計算する。 " + $(sqs.map((x) => `(${ptex(x.m)})^{2}=${ptex(sqv(x))}`).join(",\\ ")));
@@ -92,7 +101,7 @@ const chainSteps = (items, right) => {
     if (negs) steps.push(`負の数が ${negs} 個（${negs % 2 ? "奇数" : "偶数"}個）だから、答えの符号は ${negs % 2 ? "−" : "+"}。`);
     const num = items.filter((x, i) => i === 0 || x.op !== "/").map((x) => absTex(sqv(x))).join(" \\times ");
     const den = items.filter((x, i) => i > 0 && x.op === "/").map((x) => absTex(sqv(x))).join(" \\times ");
-    steps.push("1つの分数の形にまとめて、約分する。 " + $(`${chainTex(items)} = ${negs % 2 ? "-" : ""}\\frac{${num}}{${den}} = ${ptex(right)}`));
+    steps.push("1つの分数の形にまとめて、約分する。 " + $(`${chainTex(items, par)} = ${negs % 2 ? "-" : ""}\\frac{${num}}{${den}} = ${ptex(right)}`));
   } else {
     let acc = sqv(items[0]);
     items.slice(1).forEach((x) => {
@@ -111,7 +120,7 @@ const chainSteps = (items, right) => {
 };
 
 /** 「計算の答えを選ぶ」4択 */
-const chainQ = (r, items, hint, head = "次の計算をしたときの答えは、どれか。（÷のあとの項は、全体でわる）") => {
+const chainQ = (r, items, hint, head = `次の計算をしたときの答えは、どれか。${DIV_NOTE}`, par = false) => {
   const right = run(items);
   if (!nonneg(right) || Object.keys(right).length === 0) return { skip: true };
   const rt = ptex(right);
@@ -120,7 +129,7 @@ const chainQ = (r, items, hint, head = "次の計算をしたときの答えは�
     ans: $(rt),
     choices: (() => { const w = chainWrongs(items, right); return pick4(r, rt, right, w.main.map(asCand), w.low.map(asCand)); })(),
     hint,
-    steps: chainSteps(items, right),
+    steps: chainSteps(items, right, par),
   };
 };
 
@@ -156,7 +165,7 @@ const chainValueQ = (items, vals, u, v, hint) => {
   const simp = run(items);
   const res = peval(simp, vals);
   return {
-    q: `${valsSay(u, v, vals)} のとき、${$(chainTex(items))} の値を求めよう。（÷のあとの項は、全体でわる）`,
+    q: `${valsSay(u, v, vals)} のとき、${$(chainTex(items))} の値を求めよう。${DIV_NOTE}`,
     ans: qAns(res),
     hint,
     steps: [
@@ -175,6 +184,7 @@ export const UNITS = [
       "乗法と除法が混じった式は、1つの分数の形にまとめて約分する。かける式は分子に、わる式は分母に書く。$\\div 6xy$ は、$6xy$ 全体でわる。",
       "累乗があれば先に計算する。答えの符号は先に決める（$-$ の数が奇数個なら $-$、偶数個なら $+$）。",
       "式の値は、式を簡単にしてから、文字に数を代入すると計算が楽。負の数は、かっこをつけて代入する。",
+      "三角形の高さは、（面積）×2÷（底辺）。□ をふくむ式は、かけ算とわり算の関係を使って、両辺に同じ数をかけたり、同じ数でわったりして、□ を求める。",
     ],
     levels: {
       // ───────── 1 基礎 ─────────
@@ -222,13 +232,15 @@ export const UNITS = [
         t("05d03", (r) => {
           const [u, v] = pick(r, PAIRS);
           const g = retry(() => {
-            const a = r(2, 6), c = r(2, 5), b = rnz(r, -3, 3), d = rnz(r, -3, 3), p = pick(r, [1, 1, 2, 3]);
+            const a = r(2, 5), c = r(2, 4), b = rnz(r, -3, 3), d = rnz(r, -3, 3), p = pick(r, [1, 1, 2, 3]);
             const P1 = poly([1, { [u]: 1 }], [b, { [v]: 1 }]), P2 = poly([p, { [u]: 1 }], [d, { [v]: 1 }]);
             const E = psub(pscale(P1, a), pscale(P2, c));
             return pterms(E) === 2 ? { a, c, P1, P2, E } : null;
           });
           if (!g) return { skip: true };
-          const vals = { [u]: pick(r, INTS), [v]: pick(r, INTS) };
+          // 基礎：答えは 0 でなく、絶対値 50 以下
+          const vals = retry(() => { const o = { [u]: pick(r, INTS5), [v]: pick(r, INTS5) }; const x = peval(g.E, o)[0]; return x !== 0 && Math.abs(x) <= 50 ? o : null; });
+          if (!vals) return { skip: true };
           const ex = `${g.a}(${ptex(g.P1)})-${g.c}(${ptex(g.P2)})`;
           const res = peval(g.E, vals);
           return {
@@ -251,8 +263,12 @@ export const UNITS = [
         // 05q01b 小テスト（1）② 20xy²÷(−5y)÷2x
         t("05q01b", (r) => {
           const [u, v] = pick(r, PAIRS);
-          const c2 = r(2, 6), c3 = r(2, 4), k = r(1, 3);
-          const items = [it(null, c2 * c3 * k, { [u]: 1, [v]: 2 }), it("/", -c2, { [v]: 1 }), it("/", c3, { [u]: 1 })];
+          const items = retry(() => {
+            const i = r(1, 2), j = r(1, 2), k = r(1, 6), c2 = r(2, 6), c3 = r(2, 6), s2 = sgn(r), s3 = sgn(r);
+            if (s2 > 0 && s3 > 0) return null;   // −の数がある（20xy²÷(−5y)÷2x）
+            return c2 * c3 * k <= 72 ? [it(null, c2 * c3 * k, { [u]: i, [v]: j + 1 }), it("/", s2 * c2, { [v]: 1 }), it("/", s3 * c3, { [u]: 1 })] : null;
+          });
+          if (!items) return { skip: true };
           return chainQ(r, items, "−の数が奇数個か偶数個かで、答えの符号を先に決めよう。");
         }),
       ],
@@ -314,7 +330,7 @@ export const UNITS = [
             ans: $(rt),
             choices: pick4(r, rt, H, cands),
             hint: "三角形の面積を求める公式を、高さを求める式に直そう。",
-            steps: ["（三角形の面積）＝（底辺）×（高さ）÷2 だから、（高さ）＝（面積）×2÷（底辺）。", $(`${ptex(S)} \\times 2 \\div ${ptex(B)} = \\frac{${ptex(P2)}}{${ptex(B)}} = ${rt}`)],
+            steps: ["（三角形の面積）＝（底辺）×（高さ）÷2 だから、（高さ）＝（面積）×2÷（底辺）。", $(`${ptex(S)} \\times 2 \\div (${ptex(B)}) = \\frac{${ptex(P2)}}{${ptex(B)}} = ${rt}`)],
           };
         }),
         // 05d06b 三角形の高さ（数値）：a＝2、b＝3 のとき何 cm か
@@ -330,7 +346,7 @@ export const UNITS = [
             ans: qAns(res),
             unit: "cm",
             hint: "三角形の面積の公式から、高さを求める式をつくろう。",
-            steps: ["（高さ）＝（面積）×2÷（底辺）", $(`${ptex(S)} \\times 2 \\div ${ptex(B)} = ${ptex(H)}`), `${$(`${ptex(H)} = ${substTex(H, vals)} = ${valTex(res)}`)}（cm）`],
+            steps: ["（高さ）＝（面積）×2÷（底辺）", $(`${ptex(S)} \\times 2 \\div (${ptex(B)}) = ${ptex(H)}`), `${$(`${ptex(H)} = ${substTex(H, vals)} = ${valTex(res)}`)}（cm）`],
           };
         }),
         // 05q02 小テスト（2）a＝−1、b＝4 のとき 4(a−b)−3(a−2b)
@@ -343,7 +359,8 @@ export const UNITS = [
             return pterms(E) === 2 && b !== d ? { a, c, P1, P2, E } : null;
           });
           if (!g) return { skip: true };
-          const vals = { [u]: -r(1, 5), [v]: r(1, 6) };
+          const vals = retry(() => { const o = { [u]: -r(1, 5), [v]: r(1, 6) }; const x = peval(g.E, o)[0]; return x !== 0 && Math.abs(x) <= 80 ? o : null; });
+          if (!vals) return { skip: true };
           const ex = `${g.a}(${ptex(g.P1)})-${g.c}(${ptex(g.P2)})`;
           const res = peval(g.E, vals);
           return {
@@ -392,39 +409,50 @@ export const UNITS = [
         t("05d08a", (r) => {
           const [u, v] = pick(r, PAIRS);
           const g = retry(() => {
-            const c2 = r(2, 5), c3 = r(2, 5), k = r(1, 3);
-            return { c1: c2 * c3 * k, c2, c3 };
+            const c2 = r(2, 6), c3 = r(2, 6), k = r(1, 4), e = r(1, 2);
+            return c2 * c3 * k <= 60 ? { c1: c2 * c3 * k, c2, c3, e } : null;
           });
-          const { c1, c2, c3 } = g;
-          const m0 = term(c1, { [u]: 1, [v]: 1 }), m1 = term(c2, { [u]: 1 }), m2 = term(c3, { [v]: 1 });
+          const { c1, c2, c3, e } = g;
+          const m0 = term(c1, { [u]: e, [v]: 1 }), m1 = term(c2, { [u]: 1 }), m2 = term(c3, { [v]: 1 });
           const items = [{ op: null, m: m0 }, { op: "/", m: m1 }, { op: "*", m: m2 }];
           const right = run(items);
           const mid = pdivMono(m0, m1);
           const wrong = pdivMono(m0, pmul(m1, m2));   // ÷(2a×3b) としてしまう
           const rt = ptex(right);
           return {
-            q: `次のうち、${$(chainTex(items))} を正しく計算した結果は、どれか。（÷のあとの項は、全体でわる）`,
+            q: `次のうち、${$(chainTex(items))} を正しく計算した結果は、どれか。`,
             ans: $(rt),
             choices: (() => { const w = chainWrongs(items, right); return pick4(r, rt, right, w.main.map(asCand), w.low.map(asCand), [asCand(wrong)]); })(),
             hint: "乗法と除法が混じった式は、どの順に計算するのだったかな。",
             steps: [
-              "左から順に計算する。 " + $(`${chainTex(items)} = ${ptex(mid)} \\times ${ptexp(m2)} = ${rt}`),
+              "左から順に計算する。 " + $(`${chainTex(items, true)} = ${ptex(mid)} \\times ${ptexp(m2)} = ${rt}`),
               `${$(`${ptex(m0)} \\div (${ptex(m1)} \\times ${ptex(m2)}) = ${ptex(wrong)}`)} は、×${ptex(m2)} まで ÷ の中に入れてしまったまちがい。`,
             ],
           };
         }),
-        // 05d08b まちがい探し②を、数値に：x＝−2 のとき 3x²（負の数はかっこをつけて代入する）
+        // 05d08b まちがい探し②を、数値に：x＝−2 のとき 3x²（負の数はかっこをつけて代入する）。−3x²、3x³、3x²y（x、y が負）もまぜる
         t("05d08b", (r) => {
-          const u = pick(r, ["x", "a", "y", "b"]);
-          const form = r(1, 3), k = r(2, 7), x = -r(2, form === 3 ? 4 : 6);
-          const p = form === 1 ? term(k, { [u]: 2 }) : form === 2 ? term(-k, { [u]: 2 }) : term(k, { [u]: 3 });
-          const res = peval(p, { [u]: x });
-          const e = form === 3 ? 3 : 2;
+          const [u, v] = pick(r, PAIRS), form = pick(r, [1, 2, 3, 3, 4, 4, 4]);
+          const g = retry(() => {
+            const k = r(2, 6), x = -r(2, form === 3 ? 4 : 5), y = -r(2, 4);
+            const p = form === 1 ? term(k, { [u]: 2 }) : form === 2 ? term(-k, { [u]: 2 }) : form === 3 ? term(k, { [u]: 3 }) : term(k, { [u]: 2, [v]: 1 });
+            const vals = form === 4 ? { [u]: x, [v]: y } : { [u]: x };
+            const res = peval(p, vals);
+            return Math.abs(res[0]) <= 150 ? { p, vals, res, k } : null;
+          });
+          if (!g) return { skip: true };
+          const { p, vals, res } = g;
+          // 数どうしの計算の式：（係数）×（文字の値）…
+          const k0 = coefOf(p);
+          const e = Object.fromEntries([...Object.keys(p)[0].matchAll(/([a-z])(\d+)/g)].map((m) => [m[1], +m[2]]));
+          const facs = Object.keys(e).sort().map((l) => vals[l] ** e[l]);
+          const wrapN = (n) => (n < 0 ? `(${n})` : String(n));
+          const calc = [String(k0[0]), ...facs.map(wrapN)].join(" \\times ");
           return {
-            q: `${$(`${u}=${x}`)} のとき、${$(ptex(p))} の値を求めよう。`,
+            q: `${form === 4 ? valsSay(u, v, vals) : $(`${u}=${vals[u]}`)} のとき、${$(ptex(p))} の値を求めよう。`,
             ans: qAns(res),
             hint: "負の数を代入するときは、どうするのだったかな。",
-            steps: ["負の数を代入するときは、かっこをつける。 " + $(`${ptex(p)} = ${substTex(p, { [u]: x })}`), $(`= ${form === 2 ? -k : k} \\times ${x ** e < 0 ? `(${x ** e})` : x ** e} = ${valTex(res)}`)],
+            steps: ["負の数を代入するときは、かっこをつける。 " + $(`${ptex(p)} = ${substTex(p, vals)}`), $(`= ${calc} = ${valTex(res)}`)],
           };
         }),
       ],
@@ -456,20 +484,21 @@ export const UNITS = [
           const { X, items, R } = g;
           const m = items.map((x) => x.m);
           let steps;
+          const pr = (p) => `(${ptex(p)})`;
           if (form === 1) {
             const P = pmul(m[0], m[2]);
-            steps = [`かけ算を先にまとめる。 ${$(`${ptex(m[0])} \\times ${ptex(m[2])} = ${ptex(P)}`)}`, `${$(`${ptex(P)} \\div \\square = ${ptex(R)}`)} だから、 ${$(`\\square = ${ptex(P)} \\div ${ptexp(R)} = ${ptex(X)}`)}`];
+            steps = [`かけ算を先にまとめる。 ${$(`${ptex(m[0])} \\times ${ptex(m[2])} = ${ptex(P)}`)}`, `${$(`${ptex(P)} \\div \\square = ${ptex(R)}`)} だから、 ${$(`\\square = ${ptex(P)} \\div ${pr(R)} = ${ptex(X)}`)}`];
           } else if (form === 2) {
             const P = pmul(R, m[2]);
-            steps = [`÷${ptex(m[2])} をはらう。 ${$(`${ptex(m[0])} \\times \\square = ${ptex(R)} \\times ${ptex(m[2])} = ${ptex(P)}`)}`, $(`\\square = ${ptex(P)} \\div ${ptex(m[0])} = ${ptex(X)}`)];
+            steps = [`両辺に $${ptex(m[2])}$ をかける。 ${$(`${ptex(m[0])} \\times \\square = ${ptex(R)} \\times ${pr(m[2])} = ${ptex(P)}`)}`, `両辺を $${ptex(m[0])}$ でわって、 ${$(`\\square = ${ptex(P)} \\div ${pr(m[0])} = ${ptex(X)}`)}`];
           } else {
             const P = pdivMono(R, m[2]);
-            steps = [`×${ptex(m[2])} をはらう。 ${$(`\\square \\div ${ptex(m[1])} = ${ptex(R)} \\div ${ptex(m[2])} = ${ptex(P)}`)}`, $(`\\square = ${ptex(P)} \\times ${ptex(m[1])} = ${ptex(X)}`)];
+            steps = [`両辺を $${ptex(m[2])}$ でわる。 ${$(`\\square \\div ${pr(m[1])} = ${ptex(R)} \\div ${pr(m[2])} = ${ptex(P)}`)}`, `両辺に $${ptex(m[1])}$ をかけて、 ${$(`\\square = ${ptex(P)} \\times ${pr(m[1])} = ${ptex(X)}`)}`];
           }
           const ls = lettersIn(items);
           const cands = [pneg(X), ...ls.flatMap((l) => [pmul(X, term(1, { [l]: 1 })), pdivMono(X, term(1, { [l]: 1 }))]), pscale(X, 2), pscale(X, [1, 2]), pscale(pneg(X), 2)].filter(nonneg).map(asCand);
           return {
-            q: `次の □ にあてはまる式は、どれか。${$(`${chainTex(items)} = ${ptex(R)}`)}`,
+            q: `次の □ にあてはまる式は、どれか。${DIV_NOTE}${$(`${chainTex(items)} = ${ptex(R)}`)}`,
             ans: $(ptex(X)),
             choices: pick4(r, ptex(X), X, cands),
             hint: "かけ算とわり算の関係を使って、□ を求める式をつくろう。",
@@ -481,9 +510,9 @@ export const UNITS = [
           const g = abcGen(r);
           if (!g) return { skip: true };
           const { items, defs } = g;
-          const out = chainQ(r, items, "A、B、C を式に直して、1つの分数にまとめよう。");
+          const out = chainQ(r, items, "A、B、C を式に直して、1つの分数にまとめよう。", undefined, true);
           if (out.skip) return out;
-          return { ...out, q: `${defs} のとき、${$("A \\times B \\div C")} を計算した答えは、どれか。`, steps: ["A、B、C を代入する。 " + $(`A \\times B \\div C = ${chainTex(items)}`), ...out.steps] };
+          return { ...out, q: `${defs} のとき、${$("A \\times B \\div C")} を計算した答えは、どれか。`, steps: ["A、B、C を代入する。 " + $(`A \\times B \\div C = ${chainTex(items, true)}`), ...out.steps] };
         }),
         // 05d10b A×B÷C の値（数値）：a＝−1、b＝2 のとき
         t("05d10b", (r) => {
@@ -498,7 +527,7 @@ export const UNITS = [
             q: `${defs} のとき、${$("A \\times B \\div C")} の値を、${valsSay(u, v, vals)} として求めよう。`,
             ans: qAns(res),
             hint: "先に A×B÷C を簡単にしてから、代入しよう。",
-            steps: ["A、B、C を代入して簡単にする。 " + $(`${chainTex(items)} = ${ptex(simp)}`), "文字に数を代入する。 " + $(`${ptex(simp)} = ${substTex(simp, vals)} = ${valTex(res)}`)],
+            steps: ["A、B、C を代入して簡単にする。 " + $(`${chainTex(items, true)} = ${ptex(simp)}`), "文字に数を代入する。 " + $(`${ptex(simp)} = ${substTex(simp, vals)} = ${valTex(res)}`)],
           };
         }),
         // 05q04 小テスト チャレンジ：x＝−3、y＝1/3 のとき (−4xy)²÷(−8y)×x

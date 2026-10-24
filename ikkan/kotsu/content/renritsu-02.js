@@ -105,7 +105,7 @@ const addSubSys = (r, o) => {
   if (!pl || pl.m1 !== 1 || pl.m2 !== 1) return null;
   return { e1, e2, sol: s, k };
 };
-const HINT = "消したい文字の係数が、同じ数か、符号だけがちがう数になっている文字を見つけよう。2つの式をたしたり、ひいたりして、その文字を消そう。";
+const HINT = "$x$ の係数と $y$ の係数を、2つの式でくらべてみよう。2つの式をたしたり、ひいたりして、文字が1つ消えるのはどんなときかな。";
 /** 「連立方程式を解いたとき、x（または y）の値は？」 */
 const solveQ = (id, o) => t(id, gen((r) => {
   const S = addSubSys(r, o);
@@ -144,6 +144,28 @@ const shopSys = (r) => {
 };
 const shopLine = (S) => `${S.sh.A}1${S.sh.uA}を $x$ 円、${S.sh.B}1${S.sh.uB}を $y$ 円とすると　$${linTex(...S.e1)}$ …①　$${linTex(...S.e2)}$ …②`;
 const sat = (e, x, y) => e[0] * x + e[1] * y === e[2];
+/** 買い物の連立方程式の、まちがいの選択肢（解のない組・同じ組・正解になる組は除く）。S＝shopSys の結果 */
+const wrongShop = (S) => {
+  const a = S.e1, b = S.e2, swap = (e) => [e[1], e[0], e[2]];
+  const cands = [
+    [swap(a), swap(b)],                                     // A と B の個数を入れかえた
+    [[a[0], a[1], b[2]], [b[0], b[1], a[2]]],               // 代金を入れかえた
+    [a, swap(b)], [swap(a), b],                             // 片方の式だけ、個数を入れかえた
+    [a, [b[0], b[1], a[2] + b[2]]],                         // 代金を合計してしまった
+    [[a[0], a[1], a[2] + b[2]], b],
+    [a, [b[0], b[1], a[2]]],
+  ];
+  const key = (u, v) => [linTex(...u), linTex(...v)].sort().join("|");
+  const seen = new Set([key(a, b)]), out = [];
+  for (const [u, v] of cands) {
+    if (sat(u, S.pa, S.pb) && sat(v, S.pa, S.pb)) continue;
+    if (u[0] * v[1] - u[1] * v[0] === 0) continue;         // 解のない（平行な）組は出さない
+    const k = key(u, v);
+    if (seen.has(k)) continue;
+    seen.add(k); out.push([u, v]);
+  }
+  return out;
+};
 
 // ── まちがいさがし（①−② の計算）──
 const mistakeSys = (r) => {
@@ -202,7 +224,7 @@ export const UNITS = [
             q: `${S.text}${nm}1${u}の${S.sh.one}は何円か。`,
             ans: S.sol[ask],
             unit: "円",
-            hint: "2つの買い物をくらべて、同じ数だけ買っているほうの値段を、式のひき算で消そう。",
+            hint: "1個（1本）の値段を $x$、$y$ として、2つの買い物を式にしよう。そのあと、式をたしたりひいたりして、文字を1つ消せないかな。",
             steps: fit([shopLine(S), ...st.lines, `${S.sh.A}は ${S.pa}円、${S.sh.B}は ${S.pb}円。`]),
           };
         })),
@@ -211,12 +233,8 @@ export const UNITS = [
           const S = shopSys(r);
           if (!S) return null;
           const ok = [S.e1, S.e2];
-          const cand = [
-            [[S.e1[1], S.e1[0], S.e1[2]], [S.e2[1], S.e2[0], S.e2[2]]],            // A と B の個数を入れかえた
-            [[S.e1[0], S.e1[1], S.e2[2]], [S.e2[0], S.e2[1], S.e1[2]]],            // 代金を入れかえた
-            [S.e1, [S.e2[1], S.e2[0], S.e2[2]]],                                    // 片方の式だけ、個数を入れかえた
-            [S.e1, [S.e2[0], S.e2[1], S.e1[2] + S.e2[2]]],                          // 代金を合計してしまった
-          ].filter(([u, v]) => !(sat(u, S.pa, S.pb) && sat(v, S.pa, S.pb)));
+          const cand = wrongShop(S);
+          if (cand.length < 3) return null;
           const show = ([u, v]) => SYS(u, v);
           return {
             q: `${S.text}${S.sh.A}1${S.sh.uA}を $x$ 円、${S.sh.B}1${S.sh.uB}を $y$ 円として連立方程式をつくる。正しいものはどれか。`,

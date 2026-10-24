@@ -8,7 +8,7 @@
 // ============================================================
 import { t, pick, choices4, shuffle, rnz, coefVar, signedVar, signed, lcm } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
-import { Q, qadd, qsub, qmul, qdiv, qeq, qisint, qiszero, qtex, poly, ptex, pscale, padd, term, linTex, casesTex, solve2 } from "../algebra.js";
+import { Q, qadd, qsub, qmul, qdiv, qeq, qisint, qiszero, qtex, poly, ptex, pscale, padd, term, peq, linTex, casesTex, solve2 } from "../algebra.js";
 const unit = unitFor("renritsu");
 
 // ── このファイルの小道具（式の組をつくる・解く・解説をつくる）。答えは、すべて solve2 などの計算で出す ──
@@ -144,6 +144,7 @@ const subSteps = (S) => {
 const subSys = (r, o) => {
   const sVar = pick(r, o.sv || ["x", "y"]), ov = sVar === "x" ? "y" : "x";
   const m = Q(...pick(r, o.m)), n = pick(r, o.n), q = m[1];
+  if (qeq(m, Q(1)) && n === 0) return null;                                    // ① が「y＝x」「x＝y」の形になる組は出さない
   if (o.rearr && (m[1] !== 1 || (sVar === "y" && m[0] > 0))) return null;      // 標準形 −m x＋y＝n の x の係数が正になるように
   const ov0 = q * sv(r, o.v[0], o.v[1], o.neg || 0);
   const sv0 = m[0] * (ov0 / q) + n;
@@ -152,6 +153,7 @@ const subSys = (r, o) => {
   if (o.ok && !o.ok(m, n, kS, kO)) return null;
   const [x0, y0] = sVar === "x" ? [sv0, ov0] : [ov0, sv0];
   const B = sVar === "x" ? [kS, kO] : [kO, kS];
+  if (B[0] < 0 && B[1] < 0) return null;                                       // 「−2x−y」のように両方負の式は出さない
   B.push(B[0] * x0 + B[1] * y0);
   const A = sVar === "y" ? [-m[0], q, q * n] : [q, -m[0], q * n];         // ① を整数の係数の式に直したもの
   const s = solveI(A, B);
@@ -206,22 +208,25 @@ export const UNITS = [
       2: [
         // 04q04a ② に ① を代入した式を選ぶ（4択）
         t("04q04a", gen((r) => {
-          const S = subSys(r, { m: [[2, 1], [3, 1], [1, 1], [-1, 1], [-2, 1]], n: [1, 2, 3, 4, 5, -1, -2, -3], v: [1, 5], kS: [-1, -2, -3, 2, 3], kO: [2, 3, 4, 5, 1, -2] });
+          const S = subSys(r, { m: [[2, 1], [3, 1], [1, 1], [-1, 1], [-2, 1]], n: [1, 2, 3, 4, 5, -1, -2, -3], v: [1, 5], kS: [-2, -3, 2, 3], kO: [2, 3, 4, 5, 1, -2] });
           if (!S) return null;
-          const { sv: sVar, ov, m, n, B } = S;
+          const { sv: sVar, ov, m, n, B } = S, kS = B[idx(sVar)], kO = B[idx(ov)];
           const ok = `$${subTex(B, sVar, m, n, ov)}$`;
-          const w = [
-            `$${subTex(B, sVar, m, n, ov, true)}$`,                                  // かっこをつけない
-            `$${subTex(B, sVar, m, -n, ov)}$`,                                       // 定数項の符号をまちがえた
-            `$${subTex(B, ov, m, n, ov)}$`,                                          // ほかの文字に代入した
-            `$${subTex([-B[0], -B[1], B[2]].map((v, i) => (i === idx(sVar) ? v : B[i])), sVar, m, n, ov)}$`,   // 係数の符号をまちがえた
-          ].filter((s) => s !== ok && !/--|\+-|times -/.test(s));
+          const okP = padd(pscale(exprPoly(m, n, ov), kS), term(kO, { [ov]: 1 }));      // 正解の左辺（ov だけの式）
+          // [式, 左辺の多項式]：正解と同じ式になる誤答は、選択肢に入れない
+          const wr = [
+            [`$${subTex(B, sVar, m, n, ov, true)}$`, padd(padd(term(qmul(Q(kS), m), { [ov]: 1 }), term(n)), term(kO, { [ov]: 1 }))],   // かっこをつけない
+            [`$${subTex(B, sVar, m, -n, ov)}$`, padd(pscale(exprPoly(m, -n, ov), kS), term(kO, { [ov]: 1 }))],                      // 定数項の符号をまちがえた
+            [`$${subTex([B[0], B[1], B[2]].map((v, i) => (i === idx(sVar) ? -v : v)), sVar, m, n, ov)}$`, padd(pscale(exprPoly(m, n, ov), -kS), term(kO, { [ov]: 1 }))],   // 係数の符号をまちがえた
+            [`$${subTex(B, ov, m, n, ov)}$`, null],                                                                                  // ほかの文字に代入した（sv が残る）
+          ].filter(([tx, pl]) => tx !== ok && !/--|\+-|times -/.test(tx) && (pl === null || !peq(pl, okP)));
+          if (wr.length < 3) return null;
           const ex = EXPR(m, n, ov);
           return {
             q: `連立方程式 ${S.tex}${LAB}で、② に ① を代入した式として正しいものは、どれか。`,
             ans: ok,
-            choices: choices4(r, ok, w),
-            hint: `② の $${sVar}$ を、① の右辺におきかえる。代入する式は、ひとまとまり。`,
+            choices: choices4(r, ok, wr.map((w) => w[0])),
+            hint: `② の $${sVar}$ のところに、① の右辺を入れたら、式はどう書けるかな。`,
             steps: [`② の $${sVar}$ に、① の右辺 $${ex}$ を、かっこをつけて代入する。`, `${ok}`],
           };
         })),
@@ -238,7 +243,7 @@ export const UNITS = [
           const sVar = r(0, 1) ? "x" : "y", ov = sVar === "x" ? "y" : "x";
           const m1 = pick(r, [1, 2, 3, 4, -1, -2, -3]), m2 = pick(r, [1, 2, 3, -1, -2, -3]), n1 = pick(r, [-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6]), n2 = pick(r, [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, -2, -4]);
           const al = m1 - m2;
-          if (!al || (n2 - n1) % al !== 0 || m1 === m2) return null;
+          if (!al || (n2 - n1) % al !== 0 || m1 === m2 || (m1 === 1 && n1 === 0)) return null;
           const ov0 = (n2 - n1) / al, sv0 = m1 * ov0 + n1;
           if (!ov0 || !sv0 || sv0 !== m2 * ov0 + n2 || Math.abs(ov0) > 8 || Math.abs(sv0) > 30) return null;
           const [x0, y0] = sVar === "x" ? [sv0, ov0] : [ov0, sv0];
@@ -270,7 +275,7 @@ export const UNITS = [
             q: `連立方程式 ${S.tex}${LAB}の ② に ① を代入して、A さんは「$${wrong}$」と書いた。A さんの式のまちがいはどれか。`,
             ans: ok,
             choices: choices4(r, ok, wr),
-            hint: `$${kS}$ が、代入した式のどこにかかるのかを考えて、A さんの式と、自分で代入した式をくらべよう。`,
+            hint: "A さんの式と、自分で代入した式を、項ごとにくらべよう。",
             steps: [`正しくは、かっこをつけて　$${good}$`, `かっこをつけないと、$${kS}$ が $${mono}$ にしかかからず、$${n}$ にかからない。`],
           };
         })),
@@ -282,7 +287,7 @@ export const UNITS = [
           return {
             q: `連立方程式 ${S.tex}${LAB}の ② に ① を代入して、A さんは「$${subTex(B, sVar, m, n, ov, true)}$」と書いたが、まちがっていた。この連立方程式を、正しく解いたとき、$${XY[ask]}$ の値は？`,
             ans: S.sol[ask],
-            hint: `代入する式にかっこをつけて、$${sVar}$ の係数を、式全体にかけよう。`,
+            hint: `A さんの式では、$${sVar}$ の係数が、式のどこにかかっているかな。代入しなおして解こう。`,
             steps: fit([...S.st.lines, ANS(...S.sol)]),
           };
         })),
@@ -290,16 +295,16 @@ export const UNITS = [
         t("04d06", gen((r) => {
           const S = subSys(r, { m: [[2, 1], [3, 1], [4, 1], [-1, 1], [-2, 1], [1, 1]], n: [-1, -2, -3, 1, 2, 3, 4], v: [1, 5], kS: [1, 1, -1], kO: [2, 3, 4, 5, 1, -2, -3] });
           if (!S) return null;
-          const { sv: sVar, ov, m, n, B } = S, ask = r(0, 1);
+          const { sv: sVar, ov, m, n, B } = S;
           const A3 = sVar === "y" ? [-m[0], 1, n] : [1, -m[0], n], ki = idx(sVar), oi = idx(ov);
           const sub = B[ki] === 1;                                                      // 同じ係数ならひく、反対なら たす
           const Aco = sub ? B[oi] - A3[oi] : B[oi] + A3[oi], C = sub ? B[2] - A3[2] : B[2] + A3[2];
           if (!Aco || C % Aco !== 0 || C / Aco !== S.st.ov0) return null;
           return {
-            q: `連立方程式 ${S.tex}${LAB}を、代入法と加減法の両方で解いて、答えを比べる。どちらの方法でも同じ解になるとき、$${XY[ask]}$ の値は？`,
-            ans: S.sol[ask],
-            hint: "代入法では ② に ① を代入し、加減法では ① を変形して、$x$ か $y$ の係数をそろえる。",
-            steps: fit([`代入法　${S.st.lines[0]}`, ...S.st.lines.slice(1), `加減法　① を変形して　$${linTex(...A3)}$ …③　$${sVar}$ を消去するため、②${sub ? "−" : "+"}③　$${coefVar(Aco, ov)}=${C}$　$${ov}=${S.st.ov0}$`, `${ANS(...S.sol)}どちらの方法でも、同じ解になる。`]),
+            q: `連立方程式 ${S.tex}${LAB}を、代入法と加減法の両方で解く。どちらの方法でも、解は同じになる。この解の $x$ の値と $y$ の値の和は？`,
+            ans: S.sol[0] + S.sol[1],
+            hint: "代入法では、② に ① を代入するね。加減法では、① を変形して、係数をそろえられないかな。",
+            steps: fit([`代入法　${S.st.lines[0]}`, ...S.st.lines.slice(1), `加減法　① を変形して　$${linTex(...A3)}$ …③　$${sVar}$ を消去するため、②${sub ? "−" : "+"}③　$${coefVar(Aco, ov)}=${C}$　$${ov}=${S.st.ov0}$`, `${ANS(...S.sol)}　和は　$${S.sol[0]}+${par(S.sol[1])}=${S.sol[0] + S.sol[1]}$`]),
           };
         })),
       ],
@@ -321,7 +326,7 @@ export const UNITS = [
           return {
             q: `連立方程式 $${casesTex([`${blk}=${c1}`, `${k}(${blk})${signedVar(s, z)}=${c2}`])}$${LAB}を解いたとき、$${XY[ask]}$ の値は？`,
             ans: sol[ask],
-            hint: "② の中に、① の左辺と同じ形の式がある。ひとまとまりと見て、おきかえられないかな。",
+            hint: "② と ① を見くらべて、同じ形の部分はないかな。",
             steps: [`$${blk}$ は ① より $${c1}$ と同じ。② の $${blk}$ に $${c1}$ を代入：$${k}\\times${c1 < 0 ? `(${c1})` : c1}${signedVar(s, z)}=${c2}$`, `$${k * c1}${signedVar(s, z)}=${c2}$${s === 1 ? "" : `　$${coefVar(s, z)}=${c2 - k * c1}$`}　$${z}=${z0}$`, `① に $${z}=${z0}$ を代入：$${sb.sub}$　${sb.rest ? `$${sb.rest}$　` : ""}$${z === "x" ? "y" : "x"}=${sb.other}$`, ANS(x0, y0)],
           };
         })),
