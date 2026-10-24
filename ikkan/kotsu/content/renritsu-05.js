@@ -189,7 +189,7 @@ export const UNITS = [
     levels: {
       // ───────── 1 基礎 ─────────
       1: [
-        // 05x01 演習（1）かっこのある連立方程式（2(x+1)−y=13、x−2(y−1)=4）
+        // 05d01 演習（1）かっこのある連立方程式（2(x+1)−y=13、x−2(y−1)=4）
         t("05d01", (r) => {
           const sol = solPick(r, 1, 9);
           for (let n = 0; n < 200; n++) {
@@ -199,7 +199,7 @@ export const UNITS = [
           }
           throw new Error("作れない");
         }),
-        // 05x02a 演習（2）小数のある連立方程式（0.1x+0.4y=1.5）
+        // 05d02a 演習（2）小数のある連立方程式（0.1x+0.4y=1.5）
         t("05d02a", (r) => {
           const sol = solPick(r, 1, 9);
           for (let n = 0; n < 200; n++) {
@@ -209,7 +209,7 @@ export const UNITS = [
           }
           throw new Error("作れない");
         }),
-        // 05x02b 演習（2）分数のある連立方程式（x/3+y/2=3）
+        // 05d02b 演習（2）分数のある連立方程式（x/3+y/2=3）
         t("05d02b", (r) => {
           for (let n = 0; n < 200; n++) {
             const A = fracEqSol(r, { den: [2, 3, 4, 5, 6] }), B = plainOf(r, A.sol, PLAIN.slice(0, 2));
@@ -274,7 +274,7 @@ export const UNITS = [
       ],
       // ───────── 2 標準 ─────────
       2: [
-        // 05x03a 演習（3）かっこの中に同じ文字がある（3x−2(x−y)=9）
+        // 05d03a 演習（3）かっこの中に同じ文字がある（3x−2(x−y)=9）
         t("05d03a", (r) => {
           const sol = solPick(r, 1, 9, 20);
           for (let n = 0; n < 200; n++) {
@@ -284,7 +284,7 @@ export const UNITS = [
           }
           throw new Error("作れない");
         }),
-        // 05x03b 演習（3）かっこと小数（3x+2(y−1)=22、0.3x−0.1y=1.5）
+        // 05d03b 演習（3）かっこと小数（3x+2(y−1)=22、0.3x−0.1y=1.5）
         t("05d03b", (r) => {
           const sol = solPick(r, 1, 9);
           for (let n = 0; n < 200; n++) {
@@ -294,7 +294,7 @@ export const UNITS = [
           }
           throw new Error("作れない");
         }),
-        // 05x04a 演習（4）両辺に文字がある式（2(x+2)=y+1）
+        // 05d04a 演習（4）両辺に文字がある式（2(x+2)=y+1）
         t("05d04a", (r) => {
           const sol = solPick(r, 1, 9, 20);
           for (let n = 0; n < 200; n++) {
@@ -304,7 +304,7 @@ export const UNITS = [
           }
           throw new Error("作れない");
         }),
-        // 05x04b 演習（4）分数と小数（x/2−y/3=−1、0.3x+0.2y=1.8）
+        // 05d04b 演習（4）分数と小数（x/2−y/3=−1、0.3x+0.2y=1.8）
         t("05d04b", (r) => {
           for (let n = 0; n < 200; n++) {
             const A = fracEqSol(r, { den: [2, 3, 4, 5, 6], num: [1, 1, 2], neg: 15 });
