@@ -83,23 +83,37 @@ const SHAPES = {
   col5: { d: "縦に並んだ5つの数（まん中の数と、その上・下それぞれ2つずつの数）", cells: [[-2, 0], [-1, 0], [0, 0], [1, 0], [2, 0]] },
   tb6: { d: "3×3 の形に囲んだ9つの数のうち、上の段と下の段の6つの数", cells: GRID3.filter(([a]) => a) },
   lr6: { d: "3×3 の形に囲んだ9つの数のうち、左の列と右の列の6つの数", cells: GRID3.filter(([, b]) => b) },
+  // まん中の数をはさんで対にならない形（和は kn＋数）
+  top3: { d: "3×3 の形に囲んだ9つの数のうち、上の段の3つの数", cells: GRID3.filter(([a]) => a === -1) },
+  bot3: { d: "3×3 の形に囲んだ9つの数のうち、下の段の3つの数", cells: GRID3.filter(([a]) => a === 1) },
+  lcol3: { d: "3×3 の形に囲んだ9つの数のうち、左の列の3つの数", cells: GRID3.filter(([, b]) => b === -1) },
+  rcol3: { d: "3×3 の形に囲んだ9つの数のうち、右の列の3つの数", cells: GRID3.filter(([, b]) => b === 1) },
+  t2rows: { d: "3×3 の形に囲んだ9つの数のうち、上の段と中の段の6つの数", cells: GRID3.filter(([a]) => a <= 0) },
+  b2rows: { d: "3×3 の形に囲んだ9つの数のうち、中の段と下の段の6つの数", cells: GRID3.filter(([a]) => a >= 0) },
+  l2cols: { d: "3×3 の形に囲んだ9つの数のうち、左の列と中の列の6つの数", cells: GRID3.filter(([, b]) => b <= 0) },
+  r2cols: { d: "3×3 の形に囲んだ9つの数のうち、中の列と右の列の6つの数", cells: GRID3.filter(([, b]) => b >= 0) },
 };
 const shapeOffs = (s) => s.cells.map(([a, b]) => off(a, b));
 const shapeK = (s) => s.cells.length;
-/** どの形も、まん中の数をはさんで対になっているので、足すと $kn$ になる */
+const shapeC0 = (s) => shapeOffs(s).reduce((x, y) => x + y, 0);
+const tp = (x) => (x < 0 ? `(−${-x})` : String(x));
+const ms = (x) => (x < 0 ? `−${-x}` : String(x));
+/** 和は kn＋（数の部分の和）。まん中の数をはさんで対になる形なら、数の部分は 0 */
 const shapeSteps = (s) => [
   `まん中の数を $n$ とすると、囲んだ数は ${shapeOffs(s).map((o) => tx(nx(o))).join("、")}。`,
-  `たす数とひく数が同じ大きさで打ち消し合うので、和は $${shapeK(s)}n$。`,
+  shapeC0(s) === 0
+    ? `たす数とひく数が同じ大きさで打ち消し合うので、和は $${shapeK(s)}n$。`
+    : `$n$ が ${shapeK(s)}個で $${shapeK(s)}n$。数の部分は ${shapeOffs(s).map(tp).join("+")}＝${ms(shapeC0(s))}。和は $${lin(shapeK(s), shapeC0(s))}$。`,
 ];
 
-/** 「形の数の和を n で表す」4択：誤答は、1つの数の符号をまちがえたもの・個数のかぞえまちがい */
+/** 「形の数の和を n で表す」4択：誤答は、1つの数の符号をまちがえたもの・数の部分を忘れたもの・個数のかぞえまちがい */
 const shapeChoices = (r, s) => {
-  const k = shapeK(s), offs = shapeOffs(s);
-  const ans = tx(lin(k, 0));
+  const k = shapeK(s), offs = shapeOffs(s), c0 = shapeC0(s);
+  const ans = tx(lin(k, c0));
   const nz = shuffle(r, offs.filter((o) => o !== 0));
   const hasC = offs.includes(0);
-  const w = [lin(k, -2 * nz[0]), lin(k, -2 * nz[1]), lin(hasC ? k - 1 : k + 1, 0), lin(k, -2 * (nz[2] ?? nz[0]))].map(tx);
-  return { ans, choices: choices4(r, ans, w, (i) => tx(lin(k, [3, -3, 5][i % 3]))) };
+  const w = [lin(k, c0 - 2 * nz[0]), lin(k, c0 - 2 * nz[1]), ...(c0 !== 0 ? [lin(k, 0)] : []), lin(hasC ? k - 1 : k + 1, c0), lin(k, c0 - 2 * (nz[2] ?? nz[0]))].map(tx);
+  return { ans, choices: choices4(r, ans, w, (i) => tx(lin(k, c0 + [3, -3, 5][i % 3]))) };
 };
 
 // ── 4つの数の正方形（左上の数 n）─────────────────────────────
@@ -232,12 +246,12 @@ export const UNITS = [
       3: [
         // 09d05a 3×3 などの数の和を、まん中の数 n で表す
         t("09d05a", (r) => {
-          const s = SHAPES[pick(r, ["all9", "all9", "ring8", "x5", "plus5", "row3", "col3"])];
+          const s = SHAPES[pick(r, ["all9", "ring8", "x5", "plus5", "row3", "col3", "top3", "bot3", "lcol3", "rcol3"])];
           const { ans, choices } = shapeChoices(r, s);
           return {
             q: `${CAL}${s.d}の和を、まん中の数 $n$（整数）を使って表すと？`,
             ans, choices,
-            hint: "囲んだ数を、それぞれ $n$ を使って表そう。$n$ にたす数とひく数の和は、どうなるかな。",
+            hint: "囲んだ数を、それぞれ $n$ を使って表そう。$n$ にたす数とひく数（数の部分）をたすと、どうなるかな。",
             steps: shapeSteps(s),
           };
         }),
@@ -295,12 +309,12 @@ export const UNITS = [
         }),
         // 09d08a 3×3 の四すみなどの4つの数の和を n で表す
         t("09d08a", (r) => {
-          const s = SHAPES[pick(r, ["corner4", "edge4", "row5", "col5", "tb6", "lr6"])];
+          const s = SHAPES[pick(r, ["corner4", "edge4", "row5", "col5", "tb6", "lr6", "t2rows", "b2rows", "l2cols", "r2cols"])];
           const { ans, choices } = shapeChoices(r, s);
           return {
             q: `${CAL}${s.d}の和を、まん中の数 $n$（整数）を使って表すと？`,
             ans, choices,
-            hint: "4つの数を、それぞれ $n$ を使って表そう。たす数とひく数を、見くらべよう。",
+            hint: "囲んだ数を、それぞれ $n$ を使って表そう。$n$ にたす数とひく数（数の部分）をたすと、どうなるかな。",
             steps: shapeSteps(s),
           };
         }),
