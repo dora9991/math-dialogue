@@ -249,7 +249,9 @@ export const UNITS = [
           const s = SHAPES[pick(r, ["all9", "ring8", "x5", "plus5", "row3", "col3", "top3", "bot3", "lcol3", "rcol3"])];
           const { ans, choices } = shapeChoices(r, s);
           return {
-            q: `${CAL}${s.d}の和を、まん中の数 $n$（整数）を使って表すと？`,
+            q: /^(上の段|下の段|左の列|右の列)/.test(s.d.replace("3×3 の形に囲んだ9つの数のうち、", ""))   // 上・下の段、左・右の列の 3つは、「まん中の数」の読みがわかれるので、3×3 のまん中を先に決める
+              ? `${CAL}3×3 の形に囲んだ9つの数について、まん中の数を $n$（整数）とする。そのうち、${s.d.replace("3×3 の形に囲んだ9つの数のうち、", "")}の和を、$n$ を使って表すと？`
+              : `${CAL}${s.d}の和を、まん中の数 $n$（整数）を使って表すと？`,
             ans, choices,
             hint: "囲んだ数を、それぞれ $n$ を使って表そう。$n$ にたす数とひく数（数の部分）をたすと、どうなるかな。",
             steps: shapeSteps(s),
