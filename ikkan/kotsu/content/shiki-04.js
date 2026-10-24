@@ -351,7 +351,8 @@ const growBuild = (r, kind) => {
 const undoMonoBuild = (r, mode, o) => {
   const [u, v] = pick(r, LET2), modeX = o.onlyX || r(0, 1) === 0;       // modeX：かけるところを、まちがえてわった／でなければ、わるところを、まちがえてかけた
   const Bm = [(o.bneg && r(0, 1) ? -1 : 1) * r(2, o.bmax), pick(r, o.bexps ? o.bexps(u, v) : [{ [u]: 1, [v]: 1 }, { [u]: 1 }, { [v]: 1 }])];
-  const Rm = [pick(r, [1, -1]) * r(2, o.cmax), pick(r, [{ [u]: 1 }, { [v]: 1 }, { [u]: 1, [v]: 1 }, { [u]: 2 }])];
+  let Rm;
+  do { Rm = [pick(r, [1, -1]) * r(2, o.cmax), pick(r, [{ [u]: 1 }, { [v]: 1 }, { [u]: 1, [v]: 1 }, { [u]: 2 }])]; } while (keyOf(Rm[1]) === keyOf(Bm[1]));       // かける（わる）式と、同じ文字の組にならないようにする
   const B = Mq(Bm), bt = fT(Bm), bt0 = T1(Bm);
   let W, A, right, head, steps;
   if (modeX) {        // まちがえた答え W ＝ A ÷ B。 A ＝ W × B。正しい答え ＝ A × B
