@@ -234,8 +234,8 @@ export const UNITS = [
           const ans = pick(r, ["それぞれのクラスの平均値や中央値を求めて、くらべる", "それぞれのクラスの度数分布表やヒストグラムをつくって、くらべる"]);
           const wrongs = [
             "それぞれのクラスの人数を調べて、人数の多いほうのクラスを選ぶ",
-            "それぞれのクラスで、いちばんよかった1人の記録だけをくらべて決める",
-            "それぞれのクラスの記録の範囲だけを求めて、範囲をくらべて決める",
+            "それぞれのクラスで、いちばんよかった1人の記録だけをくらべる",
+            "それぞれのクラスの記録の範囲だけを求めて、くらべる",
           ];
           return {
             q: `2つのクラスの、${s.rec}をくらべて、${s.goal}を決めたい。調べる方法として、適切なものはどれか。`,
@@ -284,7 +284,7 @@ export const UNITS = [
       4: [
         // 06d07 度数分布表の一部が読めない。階級値を使って求めた平均値から、ア・イ
         t("06d07", (r) => {
-          const ctx = pick(r, FT.filter((c) => c.who === "人")), n = pick(r, [20, 25, 30, 40, 50]), k = 5;
+          const ctx = pick(r, FT.filter((c) => c.who === "人")), n = pick(r, [20, 25, 30, 35, 40]), k = 5;
           const f = genFreq(r, n, k);
           if (!f) return { skip: true };
           const cls = classes(ctx.lo, ctx.w, k), tot = sum(cls.map((c, i) => c.mid * f[i])), mn = tot / n;
