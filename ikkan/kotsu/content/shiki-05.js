@@ -425,8 +425,8 @@ export const UNITS = [
             choices: (() => { const w = chainWrongs(items, right); return pick4(r, rt, right, w.main.map(asCand), w.low.map(asCand), [asCand(wrong)]); })(),
             hint: "乗法と除法が混じった式は、どの順に計算するのだったかな。",
             steps: [
-              "左から順に計算する。 " + $(`${chainTex(items, true)} = ${ptex(mid)} \\times ${ptexp(m2)} = ${rt}`),
-              `${$(`${ptex(m0)} \\div (${ptex(m1)} \\times ${ptex(m2)}) = ${ptex(wrong)}`)} は、×${ptex(m2)} まで ÷ の中に入れてしまったまちがい。`,
+              `${$(`${ptex(m0)} \\div (${ptex(m1)} \\times ${ptex(m2)}) = ${ptex(wrong)}`)} のように、×${ptex(m2)} まで ÷ の中に入れるのは、まちがい。`,
+              "乗法と除法は、左から順に計算する。 " + $(`${chainTex(items, true)} = ${ptex(mid)} \\times ${ptexp(m2)} = ${rt}`),
             ],
           };
         }),

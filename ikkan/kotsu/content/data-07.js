@@ -138,22 +138,26 @@ export const UNITS = [
             { what: "握力が", th: [25, 30, 35], u: "kg" },
           ]);
           const th = pick(r, ctx.th), names = pick(r, [["A組", "B組"], ["1組", "2組"], ["3組", "4組"]]);
-          const [n0, c0, n1, c1] = pick(r, PAIRS_D03), ns = [n0, n1], cs = [c0, c1], ps = cs.map((c, i) => (100 * c) / ns[i]);
+          const [n0, c0, n1, c1] = pick(r, PAIRS_D03), sIdx = r(0, 1);   // 人数の少ない組は names[sIdx]
+          const sm = names[sIdx], bg = names[1 - sIdx];
+          const nsBy = sIdx === 0 ? [n0, n1] : [n1, n0], csBy = sIdx === 0 ? [c0, c1] : [c1, c0];
+          const pS = (100 * c0) / n0, pB = (100 * c1) / n1;   // 少人数の組・多人数の組の割合（%）
+          const listP = (a, b) => `${names[0]}が ${sIdx === 0 ? a : b}%、${names[1]}が ${sIdx === 0 ? b : a}%`;
           const order = r(0, 1) ? [0, 1] : [1, 0];   // 問題文で先に書くほう
           const x = `${th}${ctx.u}以上`;
-          const text = order.map((i) => `${names[i]} ${ns[i]}人のうち ${cs[i]}人`).join("、");
-          const ans = `${x}の割合は、${names[0]}が ${ps[0]}%、${names[1]}が ${ps[1]}% なので、${names[0]}のほうが大きい`;
+          const text = order.map((i) => `${names[i]} ${nsBy[i]}人のうち ${csBy[i]}人`).join("、");
+          const ans = `${x}の割合は、${listP(pS, pB)} なので、${sm}のほうが大きい`;
           const wrongs = [
-            `${x}の人数は、${names[0]}が ${cs[0]}人、${names[1]}が ${cs[1]}人 なので、${names[1]}のほうが割合も大きい`,
-            `${x}の割合は、${names[0]}が ${ps[1]}%、${names[1]}が ${ps[0]}% なので、${names[1]}のほうが大きい`,
-            `${x}の割合は、${names[0]}が ${ps[0]}%、${names[1]}が ${ps[1]}% だが、人数の多い${names[1]}のほうが大きいといえる`,
+            `${x}の割合は、${listP(pS, pB)} なので、${bg}のほうが大きい`,
+            `${x}の人数は、${names[0]}が ${csBy[0]}人、${names[1]}が ${csBy[1]}人 なので、${bg}のほうが割合も大きい`,
+            `${x}の割合は、${listP(pS + 5, pB - 5)} なので、${sm}のほうが大きい`,
           ];
           return {
             q: `${ctx.what} ${x}の人は、${text}だった。次のうち、正しいものはどれか。`,
             ans,
             choices: choices4(r, ans, wrongs),
             hint: "人数がちがうとき、人数をそのままくらべてよいかな。どんな数でくらべればよいか、考えよう。",
-            steps: [`${names[0]}　${cs[0]} ÷ ${ns[0]} ＝ ${f2(ps[0] / 100)}　　${names[1]}　${cs[1]} ÷ ${ns[1]} ＝ ${f2(ps[1] / 100)}`, `人数は${names[1]}のほうが多いが、割合は${names[0]}のほうが大きい。`, "人数がちがうときは、人数ではなく、割合でくらべる。"],
+            steps: [`${names[0]}　${csBy[0]} ÷ ${nsBy[0]} ＝ ${f2((sIdx === 0 ? pS : pB) / 100)}　　${names[1]}　${csBy[1]} ÷ ${nsBy[1]} ＝ ${f2((sIdx === 0 ? pB : pS) / 100)}`, `人数は${bg}のほうが多いが、割合は${sm}のほうが大きい。`, `${x}の割合は、${listP(pS, pB)} なので、${sm}のほうが大きい。人数がちがうときは、人数ではなく、割合でくらべる。`],
           };
         }),
         // 07d04 A市とB市の30日間の最高気温：34℃以上の日数のちがい
