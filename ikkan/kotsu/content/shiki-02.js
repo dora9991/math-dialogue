@@ -155,7 +155,7 @@ const verticalBuild = (r, what) => {
       q: `${$(ex)} を、縦に書いて計算する。ひく式 ${$(`(${raw(B)})`)} の各項の符号を変えた式の、${askText(e)}は？`,
       ans: ansQ(coefOf(P(flipped), e)),
       hint: "−( ) をはずすと、かっこの中の各項の符号は、どうなるかな。",
-      steps: [steps[0], finalLine(e, coefOf(P(flipped), e)), steps[1], steps[2]].slice(0, 4),
+      steps: [steps[0], finalLine(e, coefOf(P(flipped), e))],
     };
   }
   return {

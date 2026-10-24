@@ -308,7 +308,7 @@ const FIGS = [
 const figTex = (c, pi, v, n) => `${c[1] === 1 ? (c[0] === 1 ? "" : String(c[0])) : fracTex(c[0], c[1])}${pi ? "\\pi " : ""}${v}${n === 1 ? "" : `^{${n}}`}`;
 const growBuild = (r, kind) => {
   if (kind === "fig") {
-    const f = pick(r, FIGS), qd = pick(r, f.qs), k = r(2, 9), ratio = k ** qd.n;
+    const f = pick(r, FIGS), qd = pick(r, f.qs.filter((x) => x.n >= 2)), k = r(2, 9), ratio = k ** qd.n;       // 比が k 倍そのままになる量（周の長さなど）は、入試レベルにしない
     const base = figTex(qd.c, qd.pi, f.v, qd.n);
     const cNew = qmul(Q(qd.c[0], qd.c[1]), Q(ratio)), scaledVal = figTex(cNew, qd.pi, f.v, qd.n);
     const coef = qd.c[1] === 1 ? (qd.c[0] === 1 ? "" : `${qd.c[0]}`) : fracTex(qd.c[0], qd.c[1]);
@@ -330,7 +330,7 @@ const growBuild = (r, kind) => {
         ? `底辺 ${$("a")} cm、高さ ${$("h")} cm の三角形がある。底辺を ${p}倍、高さを ${q}倍にすると、面積は、もとの何倍になるか。`
         : `縦 ${$("a")} cm、横 ${$("b")} cm、高さ ${$("c")} cm の直方体がある。縦を ${p}倍、横を ${q}倍、高さを ${s}倍にすると、体積は、もとの何倍になるか。`;
     const steps = which === "rect"
-      ? [`もとの面積は ${$("ab")}。新しい面積は ${$(`${p}a\\times ${q}b=${p * q}ab`)}。`, `${$(`${p * q}ab\\div ab=${ratio}`)}（倍）`]
+      ? [`もとの面積は ${$("ab")}。新しい面積は ${$(`${p}a\\times ${q}b=${p * q}ab`)}。`, `${$(`${p * q}ab\\div ${dp("ab")}=${ratio}`)}（倍）`]
       : which === "tri"
         ? [`もとの面積は ${$("\\frac{ah}{2}")}。新しい面積は ${$(`\\frac{1}{2}\\times ${p}a\\times ${q}h=\\frac{${p * q}ah}{2}`)}。`, `${$(`\\frac{${p * q}ah}{2}\\div\\frac{ah}{2}=${ratio}`)}（倍）`]
         : [`もとの体積は ${$("abc")}。新しい体積は ${$(`${p}a\\times ${q}b\\times ${s}c=${p * q * s}abc`)}。`, `${$(`${p * q * s}abc\\div ${dp("abc")}=${ratio}`)}（倍）`];
