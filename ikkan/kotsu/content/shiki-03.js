@@ -92,6 +92,8 @@ const kFull = (kq) => (kq[1] === 1 ? String(kq[0]) : fracTex(kq[0], kq[1]));
 /** 答えの式 p の、項 e の係数を聞く */
 const askText = (e) => `${$(ptex(term(1, e)))} の係数`;
 const pickKey = (r, p) => expsOf(pick(r, Object.keys(p)));
+/** 解説の最後の一文：「○ の係数は ○。」（答えが 1 や −1 のときも、数字が出る） */
+const finalLine = (e, q, pre = "") => `${pre}${askText(e)}は ${$(fracTex(q[0], q[1]))}。`;
 
 // ── 数×多項式（dr.1・dr.2・qz.1・qz.3・dr.4・dr.8）───────────────────
 const FRK = [[1, 2], [1, 3], [1, 4], [2, 3], [3, 4], [3, 2], [5, 2], [4, 3]];
@@ -123,7 +125,7 @@ const mulBuild = (r, mode, o) => {
   const hint = "かっこの外の数は、かっこの中のどの項にかけるのだったかな（分配法則 $m(a+b)=ma+mb$）。符号にも気をつけよう。";
   if (mode === "num") {
     const e = pickKey(r, res);
-    return { q: `${$(expr)} を計算する。答えの ${askText(e)}は？`, ans: ansQ(coefOf(res, e)), hint, steps };
+    return { q: `${$(expr)} を計算する。答えの ${askText(e)}は？`, ans: ansQ(coefOf(res, e)), hint, steps: [...steps, finalLine(e, coefOf(res, e))] };
   }
   const lastSlip = P(ex.flatMap((ts, i) => (i === ex.length - 1 ? ts.map((tt, j) => (j === ts.length - 1 ? negT(tt) : tt)) : ts)));
   const firstOnly = parts.map((pt, pi) => P(ex.flatMap((ts, i) => (i === pi ? [ts[0], ...pt.ts.slice(1)] : ts))));
@@ -152,7 +154,7 @@ const divBuild = (r, mode, o) => {
   const hint = "かっこの中のどの項を、わる数でわるのだったかな。負の数でわるときの符号にも気をつけよう。";
   if (mode === "num") {
     const e = pickKey(r, res);
-    return { q: `${$(expr)} を計算する。答えの ${askText(e)}は？`, ans: ansQ(coefOf(res, e)), hint, steps };
+    return { q: `${$(expr)} を計算する。答えの ${askText(e)}は？`, ans: ansQ(coefOf(res, e)), hint, steps: [...steps, finalLine(e, coefOf(res, e))] };
   }
   const firstOnly = P([Qs[0], ts[1]]);
   const lastSlip = P([Qs[0], negT(Qs[1])]);
@@ -194,7 +196,6 @@ const fracWrongs = (N1, d1, N2, d2, op) => {
   ];
 };
 const DEN_BASIC = [[2, 3], [3, 2], [3, 4], [4, 3], [3, 6], [6, 3], [2, 4], [4, 2], [2, 6], [6, 2], [4, 6], [6, 4]];
-const DEN_HARD = [[6, 4], [4, 6], [3, 8], [8, 3], [6, 9], [4, 10], [10, 4]];
 const fracSumBuild = (r, mode, o) => {
   const L2 = pick(r, LET2), sh = SH2(L2), cr = o.c || 5;
   let d1, d2, op, N1, N2, c, ok = false;
@@ -210,7 +211,7 @@ const fracSumBuild = (r, mode, o) => {
   const hint = op === "-" ? "分母の最小公倍数に通分して、分子を1つにまとめよう。ひく分数の分子は、かっこをつけて、どう計算するのだったかな。" : "分母の最小公倍数に通分して、分子を1つにまとめよう。通分の数は、分子のどこにかけるのだったかな。";
   if (mode === "num") {
     const e = pickKey(r, c.num);
-    return { q: `${$(c.expr)} を計算して、分母が ${c.L} の 1つの分数にまとめる。分子の ${askText(e)}は？`, ans: ansQ(coefOf(c.num, e)), hint, steps };
+    return { q: `${$(c.expr)} を計算して、分母が ${c.L} の 1つの分数にまとめる。分子の ${askText(e)}は？`, ans: ansQ(coefOf(c.num, e)), hint, steps: [...steps, finalLine(e, coefOf(c.num, e), "分子の ")] };
   }
   const { ans, choices } = fracChoices(r, { num: c.num, den: c.L }, fracWrongs(N1, d1, N2, d2, op));
   return { q: `${$(c.expr)} を計算すると？`, ans, choices, hint, steps };
@@ -243,7 +244,7 @@ const fracMistakeBuild = (r, what) => {
       q: `次の計算には、まちがいがある。${$(line)} 最初にまちがえているところを説明した文として、正しいものはどれか。`,
       ans,
       choices: choices4(r, ans, wrongs),
-      hint: "ひく分数の分子は、かっこをつけて、どう計算するのだったかな。−( ) をはずすと、各項の符号はどうなるか確かめよう。",
+      hint: "式を 1行ずつ見くらべて、どこから正しくなくなるか確かめよう。",
       steps,
     };
   }
@@ -251,8 +252,8 @@ const fracMistakeBuild = (r, what) => {
   return {
     q: `次の計算には、まちがいがある。${$(line)} 正しく計算して、分母が ${d2} の 1つの分数にまとめたとき、分子の ${askText(e)}は？`,
     ans: ansQ(coefOf(right, e)),
-    hint: "ひく分数の分子は、かっこをつけて、どう計算するのだったかな。考え直して、計算し直そう。",
-    steps,
+    hint: "式を 1行ずつ見くらべて、どこから正しくなくなるか確かめてから、計算し直そう。",
+    steps: [...steps, finalLine(e, coefOf(right, e), "分子の ")],
   };
 };
 
@@ -293,7 +294,7 @@ const abBuild = (r, mode) => {
   const head = `$A=${ptex(A)}$、$B=${ptex(B)}$ のとき、${$(expr)} を計算する。`;
   if (mode === "num") {
     const k = pickKey(r, res);
-    return { q: `${head}答えの ${askText(k)}は？`, ans: ansQ(coefOf(res, k)), hint, steps };
+    return { q: `${head}答えの ${askText(k)}は？`, ans: ansQ(coefOf(res, k)), hint, steps: [...steps, finalLine(k, coefOf(res, k))] };
   }
   const { ans, choices } = polyChoices(r, res, wrongs);
   return { q: `${head}答えはどれか。`, ans, choices, hint, steps };
@@ -311,11 +312,12 @@ const trapBuild = (r, mode) => {
   area = pscale(sum, [h, 2]);
   const expr = `上底が ${$(`(${raw(top)})`)} cm、下底が ${$(`(${raw(bot)})`)} cm、高さが ${h} cm の台形の面積（cm²）を簡単な式で表す。`;
   const kq = Q(h, 2);
-  const steps = ["台形の面積は、(上底＋下底)×高さ÷2。", $(`\\frac{1}{2}\\times((${raw(top)})+(${raw(bot)}))\\times ${h}=\\frac{1}{2}\\times(${ptex(sum)})\\times ${h}=${kStr(kq)}(${ptex(sum)})=${ptex(area)}`) + "（cm²）"];
+  const stages = [`\\frac{1}{2}\\times((${raw(top)})+(${raw(bot)}))\\times ${h}`, `\\frac{1}{2}\\times(${ptex(sum)})\\times ${h}`, kStr(kq) === "" ? null : `${kStr(kq)}(${ptex(sum)})`, ptex(area)].filter((x) => x);
+  const steps = ["台形の面積は、(上底＋下底)×高さ÷2。", $(stages.join("=")) + "（cm²）"];
   const hint = "台形の面積の公式を思い出そう。かっこの中を先にまとめてから、数をかけよう。";
   if (mode === "num") {
     const e = pickKey(r, area);
-    return { q: `${expr}答えの ${askText(e)}は？`, ans: ansQ(coefOf(area, e)), hint, steps };
+    return { q: `${expr}答えの ${askText(e)}は？`, ans: ansQ(coefOf(area, e)), hint, steps: [...steps, finalLine(e, coefOf(area, e))] };
   }
   const ts = tms(area);
   const wrongs = [pscale(area, 2), P([ts[0], ...tms(sum).filter(([, e]) => keyOf(e) !== keyOf(ts[0][1]))]), P(ts.map((tt, i) => (i === ts.length - 1 ? negT(tt) : tt))), pscale(sum, [1, 2])];
@@ -342,7 +344,7 @@ const kTimesBuild = (r, mode) => {
   const hint = "ある式 $A$ を使って、条件を式に表そう。$A$ のかたまりを、先に求めよう。";
   if (mode === "num") {
     const e = pickKey(r, A);
-    return { q: `${head}$A$ の ${askText(e)}は？`, ans: ansQ(coefOf(A, e)), hint, steps };
+    return { q: `${head}$A$ の ${askText(e)}は？`, ans: ansQ(coefOf(A, e)), hint, steps: [...steps, finalLine(e, coefOf(A, e), "$A$ の ")] };
   }
   const wrongs = [kA, minus ? pscale(psub(C, B), [1, k]) : pscale(padd(C, B), [1, k]), pscale(C, [1, k]), pneg(A)];
   const { ans, choices } = polyChoices(r, A, wrongs);
@@ -365,12 +367,99 @@ const unknownFracBuild = (r, mode) => {
   const hint = minus ? "「ある式 − ○ ＝ △」から、ある式を求める式を考えよう。通分のとき、ひく分数の分子は、かっこをつけて、どう計算するのだったかな。" : "「ある式 ＋ ○ ＝ △」から、ある式を求める式を考えよう。通分のとき、ひく分数の分子は、かっこをつけて、どう計算するのだったかな。";
   if (mode === "num") {
     const e = pickKey(r, c.num);
-    return { q: `${head}ある式を、分母が ${c.L} の 1つの分数にまとめて表す。分子の ${askText(e)}は？`, ans: ansQ(coefOf(c.num, e)), hint, steps };
+    return { q: `${head}ある式を、分母が ${c.L} の 1つの分数にまとめて表す。分子の ${askText(e)}は？`, ans: ansQ(coefOf(c.num, e)), hint, steps: [...steps, finalLine(e, coefOf(c.num, e), "分子の ")] };
   }
   const ws = fracWrongs(NC, dC, NB, dB, minus ? "+" : "-");
   const rev = fracCalc(NC, dC, NB, dB, minus ? "-" : "+");              // たす・ひくを逆にしてしまう
   const { ans, choices } = fracChoices(r, { num: c.num, den: c.L }, [{ num: rev.num, den: rev.L }, ...ws]);
   return { q: `${head}ある式はどれか。`, ans, choices, hint, steps };
+};
+
+
+// ── 入試レベル：かっこが2重の式／分数の形の式が3つ／分数をかける計算がまざった式（dr.8）─────────────────
+const nestedBuild = (r) => {
+  const L2 = pick(r, LET2), sh = SH2(L2);
+  let P1, P2, P3, k1, k2, k3, sA, sB, inner, res;
+  for (let i = 0; i < 200; i++) {
+    P1 = [[r(1, 5), sh[0]], [rnz(r, -5, 5), sh[1]]]; P2 = lin2(r, sh, -5, 5); P3 = lin2(r, sh, -5, 5);
+    k1 = r(2, 4); k2 = r(2, 3); k3 = r(1, 3); sA = pick(r, [1, -1]); sB = pick(r, [1, -1]);
+    inner = P([...P2, ...P3.map(([c, e]) => [sB * k3 * c, e])]);
+    res = P([...P1.map(([c, e]) => [k1 * c, e]), ...tms(inner).map(([c, e]) => [qmul(Q(sA * k2), c), e])]);
+    if (Object.keys(inner).length === 2 && Object.keys(res).length === 2) break;
+  }
+  const part1 = `${k1}(${raw(P1)})`, sgA = sA < 0 ? "-" : "+", sgB = sB < 0 ? "-" : "+";
+  const expr = joinTex([part1, `${sA < 0 ? "-" : ""}${k2}\\{${raw(P2)}${sgB}${k3 === 1 ? "" : k3}(${raw(P3)})\\}`]);
+  const s1 = `${part1}${sgA}${k2}\\{${raw([...P2, ...P3.map(([c, e]) => [sB * k3 * c, e])])}\\}`;
+  const s2 = `${part1}${sgA}${k2}(${ptex(inner)})`;
+  const s3 = raw([...P1.map(([c, e]) => [k1 * c, e]), ...tms(inner).map(([c, e]) => [qmul(Q(sA * k2), c), e])]);
+  const steps = ["かっこが 2重のときは、内側のかっこの中から先に計算する。", $(`${expr}=${s1}=${s2}`), $(`${s2}=${s3}=${ptex(res)}`)];
+  const hint = "内側のかっこ（ふつうのかっこ）の中から、順にはずして整理しよう。{ } の前の数は、{ } の中を整理してからかけるよ。";
+  const base = P1.map(([c, e]) => [k1 * c, e]);
+  const wrongs = [
+    P([...base, ...tms(inner).map(([c, e]) => [qmul(Q(-sA * k2), c), e])]),                                         // { } の前の符号をまちがえる
+    P([...base, ...tms(P([...P2, ...P3.map(([c, e]) => [-sB * k3 * c, e])])).map(([c, e]) => [qmul(Q(sA * k2), c), e])]),    // 内側のかっこの符号をまちがえる
+    P([...base, ...(() => { const ti = tms(inner).map(([c, e]) => [qmul(Q(sA * k2), c), e]); return [ti[0], ...tms(inner).slice(1)]; })()]),    // { } の中の最初の項にしかかけない
+    pneg(res),
+  ];
+  const { ans, choices } = polyChoices(r, res, wrongs);
+  return { q: `${$(expr)} を計算すると？`, ans, choices, hint, steps };
+};
+
+/** 分数の形の式が n 個の加減の途中式と答え。items：[{ N：分子の項の配列, d：分母, s：+1 か −1 }] */
+const fracCalcN = (items) => {
+  const L = items.reduce((a, it) => lcm(a, it.d), 1);
+  const sc = (it) => it.N.map(([c, e]) => [it.s * (L / it.d) * c, e]);
+  const allTs = items.flatMap(sc), num = P(allTs), red = frRed(num, L);
+  const expr = joinTex(items.map((it, i) => (i === 0 || it.s > 0 ? "" : "-") + `\\frac{${raw(it.N)}}{${it.d}}`));
+  const parts = items.map((it, i) => {
+    const k = L / it.d;
+    if (it.N.length === 1) return raw(sc(it));
+    return `${i === 0 ? "" : it.s < 0 ? "-" : ""}${k === 1 && i === 0 ? raw(it.N) : `${k === 1 ? "" : k}(${raw(it.N)})`}`;
+  });
+  const stageC = `\\frac{${joinTex(parts)}}{${L}}`;
+  const dedup = (a) => a.filter((x, i) => x && (i === 0 || x !== a[i - 1]));
+  return { L, num, red, expr, chain1: dedup([expr, stageC]).join("="), chain2: dedup([stageC, `\\frac{${raw(allTs)}}{${L}}`, frTexOf({ num, den: L }), frTexOf(red)]).join("=") };
+};
+const frac3Build = (r) => {
+  const L2 = pick(r, LET2), sh = SH2(L2);
+  let items, c;
+  for (let i = 0; i < 200; i++) {
+    const [d1, d2, d3] = pick(r, [[2, 3, 6], [2, 3, 4], [3, 4, 6], [2, 4, 3], [3, 6, 4], [4, 3, 2], [6, 3, 2], [2, 6, 3], [4, 6, 3]]);
+    const N1 = [[r(1, 5), sh[0]], [rnz(r, -5, 5), sh[1]]], N2 = [[r(1, 5), sh[0]], [rnz(r, -5, 5), sh[1]]];
+    const N3 = r(0, 1) ? [[r(1, 5), sh[r(0, 1)]]] : [[r(1, 5), sh[0]], [rnz(r, -5, 5), sh[1]]];
+    items = [{ N: N1, d: d1, s: 1 }, { N: N2, d: d2, s: pick(r, [1, -1]) }, { N: N3, d: d3, s: pick(r, [1, -1]) }];
+    c = fracCalcN(items);
+    if (!pisz(c.num) && c.L <= 12) break;
+  }
+  const steps = ["分母の最小公倍数に通分して、1つの分数にまとめる。ひく分数の分子には、かっこをつけて、全部の項の符号を変える。", $(c.chain1), $(c.chain2)];
+  const hint = "3つの分母の最小公倍数に通分しよう。ひく分数の分子は、かっこをつけて、どう計算するのだったかな。";
+  const sc = (it, k = it.s) => it.N.map(([cc, e]) => [k * cc, e]);
+  const wrongs = [
+    { num: P(items.flatMap((it) => sc(it))), den: c.L },                                                             // 分子にかけ忘れる
+    { num: P(items.flatMap((it) => it.N.map(([cc, e], j) => [(it.s < 0 && j > 0 ? 1 : it.s) * (c.L / it.d) * cc, e]))), den: c.L },    // ひく分数の、最初の項以外の符号を変えない
+    { num: P(items.flatMap((it) => sc(it))), den: items.reduce((a, it) => a + it.d, 0) },                            // 分母どうし・分子どうしをたす
+    { num: pneg(c.num), den: c.L },
+  ];
+  const { ans, choices } = fracChoices(r, { num: c.num, den: c.L }, wrongs);
+  return { q: `${$(c.expr)} を計算すると？`, ans, choices, hint, steps };
+};
+
+const mixedFracBuild = (r) => {
+  const L2 = pick(r, LET2), sh = SH2(L2);
+  let d1, p, q, op, N1, P2, N2p, c, ok = false;
+  for (let i = 0; i < 300 && !ok; i++) {
+    d1 = pick(r, [2, 3, 4, 6]); [p, q] = pick(r, [[1, 2], [1, 3], [1, 4], [3, 2], [2, 3], [3, 4], [5, 3], [5, 4]]); op = pick(r, ["+", "-"]);
+    N1 = [[r(1, 5), sh[0]], [rnz(r, -5, 5), sh[1]]]; P2 = [[r(1, 5), sh[0]], [rnz(r, -5, 5), sh[1]]];
+    N2p = P2.map(([cc, e]) => [p * cc, e]);
+    if (d1 === q) continue;
+    c = fracCalc(N1, d1, N2p, q, op);
+    ok = !pisz(c.num) && gcdAll([...Object.values(c.num).map((x) => Math.abs(x[0])), c.L]) === 1;
+  }
+  const expr0 = joinTex([`\\frac{${raw(N1)}}{${d1}}`, `${op === "-" ? "-" : ""}\\frac{${p}}{${q}}(${raw(P2)})`]);
+  const steps = [`分数をかける計算を、先に1つの分数にする。${$(`\\frac{${p}}{${q}}(${raw(P2)})=\\frac{${raw(N2p)}}{${q}}`)}`, $(c.chain1), $(c.chain2)];
+  const hint = "分数をかける項を、まず分子が1つの式の分数にしよう。そのあと、通分して分子を1つにまとめよう。";
+  const e = pickKey(r, c.num);
+  return { q: `${$(expr0)} を計算して、分母が ${c.L} の 1つの分数にまとめる。分子の ${askText(e)}は？`, ans: ansQ(coefOf(c.num, e)), hint, steps: [...steps, finalLine(e, coefOf(c.num, e), "分子の ")] };
 };
 
 export const UNITS = [
@@ -447,12 +536,12 @@ export const UNITS = [
       ],
       // ───────── 4 入試レベル ─────────
       4: [
-        // 03d08a 数×多項式の加減（入試・係数）
-        t("03d08a", (r) => mulBuild(r, "num", { n: 2, frac: false, k: [-5, 5], c: 7 })),
-        // 03d08b 分数の形の式の加減（入試・4択）
-        t("03d08b", (r) => fracSumBuild(r, "choice", { dens: DEN_HARD.concat(DEN_BASIC), ops: ["-", "+"], intfrac: false, c: 7 })),
-        // 03d08c 分数×多項式の加減（入試・係数）
-        t("03d08c", (r) => mulBuild(r, "num", { n: 2, frac: true, c: 6 })),
+        // 03d08a かっこが2重の式（入試・4択）
+        t("03d08a", (r) => nestedBuild(r)),
+        // 03d08b 分数の形の式が3つの加減（入試・4択）
+        t("03d08b", (r) => frac3Build(r)),
+        // 03d08c 分数をかける計算と、分数の形の式がまざった加減（入試・分子の係数）
+        t("03d08c", (r) => mixedFracBuild(r)),
         // 03d09a ある式 A を k 倍して…（係数）
         t("03d09a", (r) => kTimesBuild(r, "num")),
         // 03d09b ある式 A を k 倍して…（4択）

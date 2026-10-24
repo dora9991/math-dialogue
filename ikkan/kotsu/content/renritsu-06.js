@@ -180,6 +180,7 @@ const abGen = (r, o) => {
     if (K === 0 || Math.abs(K) > 40 || (K - q * x0) % y0 !== 0) continue;
     const b = (K - q * x0) / y0;
     if (!o.b.includes(b) || b === 0) continue;
+    if (x0 === y0 || a === b) continue;   // x と y（a と b）を取りちがえても当たってしまうのを避ける
     if (a * b === p * q) continue;     // a、b を入れると 2 つの式が同じ式（何倍かの式）になって、組が 1 つに決まらない
     return { x0, y0, a, b, p, q, K };
   }
@@ -250,7 +251,7 @@ export const UNITS = [
         }),
         // 06q04 解を代入して a、b を求める（ax+2y＝x+by＝8、解は x＝2、y＝1）
         t("06q04", (r) => {
-          const g = abGen(r, { x0: R(1, 4), y0: R(1, 3), a: R(1, 5), p: R(1, 3), q: [1, 2, 3], b: R(1, 7) });
+          const g = abGen(r, { x0: R(1, 5), y0: R(1, 4), a: R(1, 5), p: R(1, 3), q: [1, 2, 3], b: R(1, 7) });
           return abQ(r, g);
         }),
       ],
