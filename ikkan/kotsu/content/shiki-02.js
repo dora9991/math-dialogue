@@ -357,7 +357,7 @@ const abBuild = (r) => {
     [Xn, Yn] = r(0, 1) ? ["A", "B"] : ["B", "A"];
     X = Xn === "A" ? A : B; Y = Xn === "A" ? B : A;
     inner = psub(pscale(Y, d), X); res = psub(pscale(X, c), inner);
-    if (!pisz(res)) break;
+    if (!pisz(res) && !pisz(inner) && !peq(A, B) && !peq(A, pneg(B))) break;   // A＝B・A＝−B・内側が 0 のときは、「−(0)」や「同じ式の等号」が出るので除く
   }
   const expr = `${c === 1 ? "" : "2"}${Xn}-(${d === 1 ? "" : "2"}${Yn}-${Xn})`;
   const Xt = ptex(X), Yt = ptex(Y);
