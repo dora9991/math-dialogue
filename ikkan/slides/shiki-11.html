@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>式の計算　第11時　「式の計算」で学んだことを、整理して確かめよう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:2px solid #b9c1cc;padding:6px 14px}
+#deck th{background:rgba(120,140,170,.18)}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="s11-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">1人1問ずつ、ことばの意味を、自分のことばで言う。<br>第10時で学んだことばを、思い出そう。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">等式の変形</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">〜について解く</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">等式の性質</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">移項</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">式の計算　第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+<aside>【導入 3分】前時の重要語句（等式の変形・解く・等式の性質・移項）を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト（前時分。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="s11-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+</div>
+<h2 style="font-size:60px;font-weight:700;line-height:1.3;color:#1E3A5F">「式の計算」で学んだことを、整理して確かめよう</h2>
+<div style="display:flex;flex-direction:column;gap:18px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:30px 48px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+<p style="font-size:50px;font-weight:500;line-height:1.4">次の多項式 <i>P</i> について、調べよう。</p>
+</div>
+<p style="font-size:64px;font-weight:700;line-height:1.3;color:#1E3A5F"><i>P</i>＝2<i>x</i>²<i>y</i>−3<i>xy</i>+5<i>y</i>−4</p>
+<div style="display:flex;flex-direction:row;align-items:stretch;gap:24px">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;background:#F7F5F0;border-radius:14px;padding:14px 24px;flex:1">
+<p style="font-size:48px;font-weight:700;line-height:1.4;color:#1E3A5F">ア</p>
+<p style="font-size:48px;line-height:1.4">項を、すべて書こう。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;background:#F7F5F0;border-radius:14px;padding:14px 24px;flex:1">
+<p style="font-size:48px;font-weight:700;line-height:1.4;color:#1E3A5F">イ</p>
+<p style="font-size:48px;line-height:1.4">何次式か答えよう。</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;background:#F7F5F0;border-radius:14px;padding:14px 24px">
+<p style="font-size:48px;font-weight:700;line-height:1.4;color:#1E3A5F">ウ</p>
+<p style="font-size:48px;line-height:1.4"><i>x</i>＝−2、<i>y</i>＝1 のときの、<i>P</i> の値を求めよう。</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+<aside>【解説 4分・学習課題】めあてを書く。多項式 P の、項・次数・式の値を調べさせる。発問：P の項は、いくつあるだろう。符号は？／x に負の数を代入するとき、気をつけることは？　想定される反応：項は 4つ。3次式。値は 15。留意：−4 のような数だけの項は、次数を考えない（第1時）。</aside>
+</section>
+<section id="s11-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+</div>
+<p style="font-size:48px;line-height:1.4;color:#6B7480"><i>P</i>＝2<i>x</i>²<i>y</i>−3<i>xy</i>+5<i>y</i>−4</p>
+<div style="display:flex;flex-direction:column;gap:14px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:20px 48px">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:24px">
+<p style="font-size:46px;font-weight:700;line-height:1.4;color:#6B7480">ア</p>
+<div style="display:flex;flex-direction:column;gap:4px;flex:1">
+<p style="font-size:46px;line-height:1.4;color:#C0392B">2<i>x</i>²<i>y</i>、−3<i>xy</i>、5<i>y</i>、−4</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:24px;border-top:2px solid #E3E6EA;padding-top:14px">
+<p style="font-size:46px;font-weight:700;line-height:1.4;color:#6B7480">イ</p>
+<div style="display:flex;flex-direction:column;gap:4px;flex:1">
+<p style="font-size:46px;line-height:1.4;color:#C0392B">文字をふくむ項の次数は 3、2、1。</p>
+<p style="font-size:46px;line-height:1.4;color:#C0392B">いちばん大きい 3 が <i>P</i> の次数　→　<b>3次式</b></p>
+<p style="font-size:46px;line-height:1.4;color:#C0392B">（−4 のような数だけの項は、次数を考えない）</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:24px;border-top:2px solid #E3E6EA;padding-top:14px">
+<p style="font-size:46px;font-weight:700;line-height:1.4;color:#6B7480">ウ</p>
+<div style="display:flex;flex-direction:column;gap:4px;flex:1">
+<p style="font-size:46px;line-height:1.4;color:#C0392B"><i>x</i>＝−2、<i>y</i>＝1 を代入する</p>
+<p style="font-size:46px;line-height:1.4;color:#C0392B">2×(−2)²×1−3×(−2)×1+5×1−4</p>
+<p style="font-size:46px;line-height:1.4;color:#C0392B"><b>＝8+6+5−4＝15</b></p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+<aside>【解説 4分・学習課題のまとめ】赤い字は、先生の板書。項は符号ごと書く。次数は、文字をふくむ項のうち、いちばん大きいもの（−4 のような数だけの項は、次数を考えない）。負の数を代入するときは、かっこをつける。</aside>
+</section>
+<section id="s11-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:22px 32px">
+<p style="font-size:44px;line-height:1.35">① 乗法だけでできた式を<u>　　　　</u>、単項式の和の形の式を<u>　　　　</u>という。<br>　 多項式の、1つ1つの単項式を<u>　　　</u>という。</p>
+<p style="font-size:44px;line-height:1.35">② 単項式の<u>　　　</u>は、かけ合わされている文字の個数。<br>　 多項式の次数は、次数がもっとも<u>　　　　</u>項の次数。</p>
+<p style="font-size:44px;line-height:1.35">③ 文字の部分が同じ項を<u>　　　　</u>といい、1つにまとめられる。</p>
+<p style="font-size:44px;line-height:1.35">④ 式の文字に数を代入して求めた値を、式の<u>　　　</u>という。</p>
+<p style="font-size:44px;line-height:1.35">⑤ 等式を、目的に合わせて別の形に直すことを<u>　　　　　　</u>という。<br>　 <i>x</i>＝… の形に変形することを、<i>x</i> について<u>　　　</u>という。</p>
+<p style="font-size:44px;line-height:1.35">⑥ <u>　　　　　　　　　</u>は、きまりを見つける → 文字で<u>　　　</u><br>　 → 式を<u>　　　</u>する → 式を<u>　　　</u>、の順に書く。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+<aside>【解説 3分・ことば】単元の重要語句を、空欄で整理する。空欄は、先生が言ってから書かせる。発問：この単元で使ったことばを、順に言えるかな。　想定される反応：空欄に書き込む。留意：重要語句は、先生が言い切る。</aside>
+</section>
+<section id="s11-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:22px 32px">
+<p style="font-size:44px;line-height:1.35">① 乗法だけでできた式を<span style="color:#C0392B"><b>単項式</b></span>、単項式の和の形の式を<span style="color:#C0392B"><b>多項式</b></span>という。<br>　 多項式の、1つ1つの単項式を<span style="color:#C0392B"><b>項</b></span>という。</p>
+<p style="font-size:44px;line-height:1.35">② 単項式の<span style="color:#C0392B"><b>次数</b></span>は、かけ合わされている文字の個数。<br>　 多項式の次数は、次数がもっとも<span style="color:#C0392B"><b>大きい</b></span>項の次数。</p>
+<p style="font-size:44px;line-height:1.35">③ 文字の部分が同じ項を<span style="color:#C0392B"><b>同類項</b></span>といい、1つにまとめられる。</p>
+<p style="font-size:44px;line-height:1.35">④ 式の文字に数を代入して求めた値を、式の<span style="color:#C0392B"><b>値</b></span>という。</p>
+<p style="font-size:44px;line-height:1.35">⑤ 等式を、目的に合わせて別の形に直すことを<span style="color:#C0392B"><b>等式の変形</b></span>という。<br>　 <i>x</i>＝… の形に変形することを、<i>x</i> について<span style="color:#C0392B"><b>解く</b></span>という。</p>
+<p style="font-size:44px;line-height:1.35">⑥ <span style="color:#C0392B"><b>文字式による説明</b></span>は、きまりを見つける → 文字で<span style="color:#C0392B"><b>おく</b></span><br>　 → 式を<span style="color:#C0392B"><b>変形</b></span>する → 式を<span style="color:#C0392B"><b>読む</b></span>、の順に書く。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。単元の流れ（単項式・多項式 → 次数・同類項 → 式の値 → 等式の変形 → 文字式による説明）を、順にたどる。</aside>
+</section>
+<section id="s11-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+</div>
+<p style="font-size:50px;font-weight:500;line-height:1.5">「式の計算」で学んだことを、順に使って、計算しよう。</p>
+<div style="display:flex;flex-direction:column;gap:14px;background:#FFFFFF;border:3px solid #1B7F5C;border-radius:20px;padding:36px 56px">
+<p style="font-size:56px;font-weight:500;line-height:1.4"><i>x</i>＝<u>　　</u>、<i>y</i>＝<u>　　　</u> のとき、</p>
+<p style="font-size:68px;font-weight:700;line-height:1.3">3(<i>x</i>−<u>　　</u><i>y</i>)−2(<u>　　</u><i>x</i>−5<i>y</i>)</p>
+<p style="font-size:56px;font-weight:500;line-height:1.4">の値を求めよう。</p>
+</div>
+<p style="font-size:40px;line-height:1.5;color:#6B7480">空欄の数は、先生が言ってから書こう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+<aside>【解説 5分・例題】かっこをはずす → 同類項をまとめる → 代入、の順に、式の値を求める。数字は、先生が言ってから書かせる。発問：式を簡単にしてから代入すると、何がよいだろう。　想定される反応：−x−2y。−2。負の数は、かっこをつけて代入。</aside>
+</section>
+<section id="s11-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:26px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+</div>
+<p style="font-size:46px;line-height:1.5;color:#6B7480"><i>x</i>＝<span style="color:#C0392B"><b>6</b></span>、<i>y</i>＝<span style="color:#C0392B"><b>−2</b></span> のとき、3(<i>x</i>−<span style="color:#C0392B"><b>4</b></span><i>y</i>)−2(<span style="color:#C0392B"><b>2</b></span><i>x</i>−5<i>y</i>) の値を求めよう。</p>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:28px 48px">
+<p style="font-size:52px;line-height:1.35;color:#C0392B">3(<i>x</i>−4<i>y</i>)−2(2<i>x</i>−5<i>y</i>)</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:32px">
+<div style="width:640px">
+<p style="font-size:52px;line-height:1.35;color:#C0392B">＝3<i>x</i>−12<i>y</i>−4<i>x</i>+10<i>y</i></p>
+</div>
+<p style="font-size:40px;line-height:1.35;color:#C0392B">（かっこをはずす）</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:32px">
+<div style="width:640px">
+<p style="font-size:52px;line-height:1.35;color:#C0392B">＝−<i>x</i>−2<i>y</i></p>
+</div>
+<p style="font-size:40px;line-height:1.35;color:#C0392B">（同類項をまとめる）</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:32px">
+<div style="width:640px">
+<p style="font-size:52px;line-height:1.35;color:#C0392B">＝−6−2×(−2)</p>
+</div>
+<p style="font-size:40px;line-height:1.35;color:#C0392B">（<i>x</i>＝6、<i>y</i>＝−2 を代入）</p>
+</div>
+<p style="font-size:52px;line-height:1.35;color:#C0392B"><b>＝−6+4＝−2</b></p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。かっこをはずす → 同類項をまとめる → 代入、の順。式を簡単にしてから代入すると、計算が楽になる。負の数は、かっこをつけて代入する。</aside>
+</section>
+<section id="s11-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+</div>
+<h2 style="font-size:44px;font-weight:700;line-height:1.3;color:#1F2A37">ア〜エは、ある生徒の計算や説明である。計算や説明が「正しい」か<br>「正しくない」かを選び、わけを説明しよう。正しくないものは、直そう。</h2>
+<div style="display:flex;flex-direction:column;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:4px 28px">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;padding:6px 0px">
+<p style="font-size:44px;font-weight:700;line-height:1.25;color:#D9730D">ア</p>
+<div style="flex:1">
+<p style="font-size:44px;line-height:1.25">(<i>x</i>−4<i>y</i>)−2(3<i>x</i>−<i>y</i>) を、<i>x</i>−4<i>y</i>−6<i>x</i>−2<i>y</i>＝−5<i>x</i>−6<i>y</i> と計算した。</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;padding:6px 0px;border-top:2px solid #F0C9A0">
+<p style="font-size:44px;font-weight:700;line-height:1.25;color:#D9730D">イ</p>
+<div style="flex:1">
+<p style="font-size:44px;line-height:1.25"><i>x</i>＝−2、<i>y</i>＝3 のとき、6<i>xy</i>²÷(−3<i>y</i>) の値は、−2<i>xy</i> と簡単にして、<br>−2×(−2)×3＝12 とした。</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;padding:6px 0px;border-top:2px solid #F0C9A0">
+<p style="font-size:44px;font-weight:700;line-height:1.25;color:#D9730D">ウ</p>
+<div style="flex:1">
+<p style="font-size:44px;line-height:1.25">「連続する3つの整数の和は、いつでも3の倍数になる」ことを、次のように説明した。7+8+9＝24、13+14+15＝42、30+31+32＝93 で、どれも3の倍数になる。だから、いつでも3の倍数になる。</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;padding:6px 0px;border-top:2px solid #F0C9A0">
+<p style="font-size:44px;font-weight:700;line-height:1.25;color:#D9730D">エ</p>
+<div style="flex:1">
+<p style="font-size:44px;line-height:1.25"><i>y</i>＝(<i>x</i>+3)⁄2 を <i>x</i> について解いて、<i>x</i>＝2<i>y</i>+3 とした。</p>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px">
+<p style="font-size:44px;font-weight:700;line-height:1.3;color:#D9730D">①</p>
+<div style="flex:1">
+<p style="font-size:44px;line-height:1.3">ア〜エを読んで、「式の計算」で、まちがえないために大切にしたいことを、まとめよう。</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+<aside>【演習 23分・考えよう】進め方：活動の提示（2分）→ 基礎（個人、5分。解いたら教卓の解答で答え合わせ。まちがえた型は、同じ型でやり直す）→ 終わった人から考えようへ（学び合い 14分。立ち歩きOK）→ 方向性（2分）。解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「説明できるようになる」と伝える。流れ：選ぶ → わけを言う → 共通点をまとめる。ヒントを出す順：1）ア〜エを、自分で計算し直して、書いてある答えとくらべる。2）数を入れて確かめる。説明は「いつでも」いえているか見る。3）ア〜エに共通することを、「〜のとき、〜に気をつける」の形で、1文にまとめる。判断：止まる→ヒント1／わけが言えない→ヒント2／まとまらない→ヒント3／残り5分→指名。答えは言わない。方向性（最後に一言）：「自分でまとめた『気をつけること』は、これからの計算でも使えるよ。次の単元でも、確かめながら進めよう。」</aside>
+</section>
+<section id="s11-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">「式の計算」で学んだことを、整理して確かめよう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">単項式・多項式</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">項・次数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">同類項</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">式の値</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">等式の変形</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">文字式による説明</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">式の計算　第11時　「式の計算」で学んだことを、整理して確かめよう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。ワークシートと演習プリントを回収（未完成でも出す）。単元の最後の時間。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>空間図形　第2時　正多面体をつくって、頂点・辺・面の数を調べよう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:2px solid #b9c1cc;padding:6px 14px}
+#deck th{background:rgba(120,140,170,.18)}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="k02-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">第1時の重要語句から、1人1問ずつ、言葉を選んで出題する。<br>聞かれた人は、その言葉の意味を、自分の言葉で言う。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">底面</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">側面</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">角柱</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">円柱</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">角錐</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">円錐</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">多面体</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">空間図形　第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+<aside>【導入 3分】前時（第1時）の重要語句を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト 7分（前時分。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="k02-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+</div>
+<h2 style="font-size:60px;font-weight:700;line-height:1.3;color:#1E3A5F">正多面体をつくって、頂点・辺・面の数を調べよう</h2>
+<div style="display:flex;flex-direction:column;gap:24px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:32px 48px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+<p style="font-size:50px;font-weight:500;line-height:1.4">ア〜オの立体にあって、カにない特徴を見つけよう。</p>
+</div>
+<div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center">
+<img src="img/kukan-02_f1_q.png" alt="アの立体" style="width:240px;height:302px;object-fit:contain">
+<img src="img/kukan-02_f2_q.png" alt="イの立体" style="width:240px;height:302px;object-fit:contain">
+<img src="img/kukan-02_f3_q.png" alt="ウの立体" style="width:240px;height:302px;object-fit:contain">
+<img src="img/kukan-02_f4_q.png" alt="エの立体" style="width:240px;height:302px;object-fit:contain">
+<img src="img/kukan-02_f5_q.png" alt="オの立体" style="width:240px;height:302px;object-fit:contain">
+<img src="img/kukan-02_f6_q.png" alt="カの立体" style="width:240px;height:302px;object-fit:contain">
+</div>
+</div>
+<p style="font-size:40px;line-height:1.5;color:#1F2A37">【見つけた特徴】ア〜オに共通する特徴を書こう。【カがちがうところ】も書こう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">空間図形　第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+<aside>【解説 4分・学習課題】めあてを書く。ア〜カ（模型）を見せる。個人で考え、ペアで交換する。発問：ア〜オにあって、カにない特徴は、何だろう。　想定される反応：面の形がそろっている／頂点に集まる面の数がそろっている、などに気づく。留意：模型を回して、さわらせる。</aside>
+</section>
+<section id="k02-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+</div>
+<p style="font-size:44px;line-height:1.5;color:#6B7480">ア〜オの立体にあって、カにない特徴を見つけよう。</p>
+<div style="display:flex;flex-direction:column;gap:24px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:36px 56px">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:28px">
+<div style="min-width:340px">
+<p style="font-size:34px;font-weight:700;line-height:2;color:#6B7480">見つけた特徴（例）</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="font-size:48px;line-height:1.4;color:#C0392B"><b>どの面も、同じ形で同じ大きさ（合同な正多角形）</b></p>
+<p style="font-size:48px;line-height:1.4;color:#C0392B"><b>どの頂点にも、同じ数の面が集まっている</b></p>
+<p style="font-size:48px;line-height:1.4;color:#C0392B"><b>へこみがない</b></p>
+</div>
+</div>
+<hr style="width:1546px;border-top:2px solid #E3E6EA">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:28px">
+<div style="min-width:340px">
+<p style="font-size:34px;font-weight:700;line-height:2;color:#6B7480">カがちがうところ</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="font-size:48px;line-height:1.4;color:#C0392B"><b>カ … 面の形がちがう（正方形と正三角形）。</b></p>
+<p style="font-size:48px;line-height:1.4;color:#C0392B"><b>頂点に集まる面の数も、そろっていない。</b></p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">空間図形　第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+<aside>【解説 4分・学習課題のまとめ】いくつかのペアの特徴を聞いて、板書にまとめる。面の形、頂点に集まる面の数、へこみの有無に目をつけさせる。赤い字は、先生の板書の例。このあと、ことばで「正多面体」を押さえる。</aside>
+</section>
+<section id="k02-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:48px 64px">
+<p style="font-size:52px;line-height:1.6">どの面も合同な<u>　　　　　　</u>で、</p>
+<p style="font-size:52px;line-height:1.6">どの頂点にも<u>　　　　</u>の面が集まる、</p>
+<p style="font-size:52px;line-height:1.6">へこみのない多面体を、<u>　　　　　　</u>という。</p>
+<p style="font-size:52px;line-height:1.6">正多面体は、全部で<u>　　　</u>種類しかない。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">空間図形　第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+<aside>【解説 3分・ことば】出された特徴から、正多面体を押さえる。5種類だけと伝え、理由は考えようで、と予告する。空欄は、先生が言ってから書かせる。発問：へこみのある多面体は、正多面体といえるだろうか。　想定される反応：空欄に書き込む。留意：定義は、先生が言い切る。</aside>
+</section>
+<section id="k02-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:48px 64px">
+<p style="font-size:52px;line-height:1.6">どの面も合同な<span style="color:#C0392B"><b>正多角形</b></span>で、</p>
+<p style="font-size:52px;line-height:1.6">どの頂点にも<span style="color:#C0392B"><b>同じ数</b></span>の面が集まる、</p>
+<p style="font-size:52px;line-height:1.6">へこみのない多面体を、<span style="color:#C0392B"><b>正多面体</b></span>という。</p>
+<p style="font-size:52px;line-height:1.6">正多面体は、全部で<span style="color:#C0392B"><b>5</b></span>種類しかない。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">空間図形　第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。正多面体は5種類しかない。その理由は、今日の考えようで調べる、と予告する。</aside>
+</section>
+<section id="k02-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+</div>
+<p style="font-size:46px;font-weight:500;line-height:1.4">5つの正多面体について、表を完成させよう。</p>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:30%;text-align:center">正多面体</th><th style="width:14%;text-align:center">正四面体</th><th style="width:14%;text-align:center">正六面体</th><th style="width:14%;text-align:center">正八面体</th><th style="width:14%;text-align:center">正十二面体</th><th style="width:14%;text-align:center">正二十面体</th></tr>
+<tr><td style="text-align:center"><b>面の形</b></td><td style="text-align:center">正三角形</td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center"><u>　　　</u></td></tr>
+<tr><td style="text-align:center"><b>面の数</b></td><td style="text-align:center">4</td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center"><u>　　　</u></td></tr>
+<tr><td style="text-align:center"><b>1つの頂点に集まる面の数</b></td><td style="text-align:center">3</td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td></tr>
+<tr><td style="text-align:center"><b>辺の数</b></td><td style="text-align:center">6</td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center"><u>　　　</u></td></tr>
+<tr><td style="text-align:center"><b>頂点の数</b></td><td style="text-align:center">4</td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center"><u>　　　</u></td></tr>
+</table>
+<p style="font-size:40px;line-height:1.5;color:#6B7480">【数えにくいとき】正十二面体の、辺の数と頂点の数を、数えずに求めよう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">空間図形　第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+<aside>【解説 5分・例題】5つの正多面体を表にまとめる。正十二面体の辺と頂点は、計算で求めて見本にする。発問：辺を数えずに求めるには、どうしたらいいだろう。なぜ、2 でわるのだろう。　想定される反応：「1本の辺は 2つの面に共通」「1つの頂点に 3つの面が集まる」を使う。</aside>
+</section>
+<section id="k02-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+</div>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:30%;text-align:center">正多面体</th><th style="width:14%;text-align:center">正四面体</th><th style="width:14%;text-align:center">正六面体</th><th style="width:14%;text-align:center">正八面体</th><th style="width:14%;text-align:center">正十二面体</th><th style="width:14%;text-align:center">正二十面体</th></tr>
+<tr><td style="text-align:center"><b>面の形</b></td><td style="text-align:center">正三角形</td><td style="text-align:center"><span style="color:#C0392B"><b>正方形</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>正三角形</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>正五角形</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>正三角形</b></span></td></tr>
+<tr><td style="text-align:center"><b>面の数</b></td><td style="text-align:center">4</td><td style="text-align:center"><span style="color:#C0392B"><b>6</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>8</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>12</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>20</b></span></td></tr>
+<tr><td style="text-align:center"><b>1つの頂点に集まる面の数</b></td><td style="text-align:center">3</td><td style="text-align:center"><span style="color:#C0392B"><b>3</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>4</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>3</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>5</b></span></td></tr>
+<tr><td style="text-align:center"><b>辺の数</b></td><td style="text-align:center">6</td><td style="text-align:center"><span style="color:#C0392B"><b>12</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>12</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>30</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>30</b></span></td></tr>
+<tr><td style="text-align:center"><b>頂点の数</b></td><td style="text-align:center">4</td><td style="text-align:center"><span style="color:#C0392B"><b>8</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>6</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>20</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>12</b></span></td></tr>
+</table>
+<div style="display:flex;flex-direction:column;gap:0px;border-left:8px solid #C0392B;padding:0px 0px 0px 32px">
+<p style="font-size:44px;line-height:1.2;color:#C0392B"><b>辺 … 面は正五角形が 12。辺は、のべ 5×12＝60（本）</b></p>
+<p style="font-size:44px;line-height:1.2;color:#C0392B"><b>1本の辺は 2つの面に共通だから　60÷2＝30（本）</b></p>
+<p style="font-size:44px;line-height:1.2;color:#C0392B"><b>頂点 … のべ 5×12＝60（個）</b></p>
+<p style="font-size:44px;line-height:1.2;color:#C0392B"><b>1つの頂点に 3つの面が集まるから　60÷3＝20（個）</b></p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">空間図形　第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。正十二面体の辺と頂点は、数えずに、計算で求める。辺は、のべの数を 2 でわる（1本の辺は 2つの面に共通）。頂点は、のべの数を 3 でわる（1つの頂点に 3つの面が集まる）。</aside>
+</section>
+<section id="k02-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+</div>
+<h2 style="font-size:52px;font-weight:700;line-height:1.35;color:#1F2A37">1つの頂点に、正三角形を6つ集めて、正多面体をつくることは<br>できるだろうか。正六角形を3つ集めるのは、どうだろう。</h2>
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:16px 36px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">①</p>
+<p style="font-size:44px;line-height:1.4">カードを、1つの頂点に集めて、立体になるか調べよう。（正三角形）</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:16px 36px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">②</p>
+<p style="font-size:44px;line-height:1.4">ほかの形のカードでも、調べよう。（正方形・正五角形・正六角形）</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:16px 36px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">③</p>
+<p style="font-size:44px;line-height:1.4">立体になるときと、ならないときは、何がちがうだろう。<br>気づいたことを書こう。</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;justify-content:space-between;gap:28px">
+<div style="flex:1">
+<p style="font-size:34px;line-height:1.5;color:#6B7480">立ち歩いて、教え合おう。<br>ゴールは、考えようを、全員が説明できること。</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px;width:800px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:12px 28px">
+<p style="font-size:30px;font-weight:700;line-height:1.4;color:#D9730D">発展　演習まで解き終わった人は、考えてみよう！</p>
+<p style="font-size:32px;line-height:1.4">正多面体が 5種類しかないのは、なぜだろう。</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">空間図形　第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+<aside>【演習 23分・考えよう】進め方：今日は、カードで「つくって確かめる」。基礎（個人）→ 終わった人から、カードを取りにいき、考えようへ。立ち歩きOK。解答は教卓（考えようの答えはない）。班でカードを頂点に集めて、つくって確かめる。標準は個人。「できた人が教える」ではなく「説明できるようになる」と伝える。ヒントを出す順：1）カードを、1つの頂点に 3つ、4つ…と集めて、どんな形になるか見る。2）できないときは、平らになるのか、重なるのかを見る。3）1つの角（正三角形 60°・正方形 90°・正五角形 108°・正六角形 120°）から、集まる角の和を計算する。判断：つくり方で止まる→模型／気づかない→ヒント1／理由が止まる→ヒント2・3／残り5分→指名。答えは言わない。方向性（最後に一言）：「つくれるかどうかは、頂点に集まる角に目をつけると、説明できそう。5種類しかない理由も、ここから考えられるよ。」</aside>
+</section>
+<section id="k02-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">正多面体をつくって、頂点・辺・面の数を調べよう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">正多面体</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">正多角形</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">正四面体</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">正六面体</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">正八面体</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">正十二面体</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">正二十面体</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">空間図形　第2時　正多面体をつくって、頂点・辺・面の数を調べよう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで言い合う。ワークシートと演習プリントを回収（未完成でも出す）。裏の発展は、解き終わった人向け。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

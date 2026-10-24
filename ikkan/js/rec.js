@@ -27,7 +27,7 @@
     fl.forEach((b, i) => {
       if (b.type === 'meate' && b.label) { level = b.label === '演習' ? '' : b.label; return; }
       if (b.type !== 'text') return;
-      const m = /^（(\d+)）$/.exec(b.label || '');
+      const m = /^（(\d+)）([①-⑩])?$/.exec(b.label || '');
       if (!m) return;
       const ans = [];
       for (let j = i + 1; j < fl.length; j++) {
@@ -36,12 +36,21 @@
         if (x.type === 'board' && x.answer) ans.push(x.answer);
       }
       const pt = /（(\d+)点）/.exec(b.text);
+      const text = String(b.text).replace(/\s*（\d+点）/, '');
+      // 「（1）①」「（1）②」のように、2つ（以上）が並んだ問題は、「（1）」の 1 つの問題にまとめる（自己採点は、組ごとに 1 つ）
+      const sub = m[2] ? `${'①②③④⑤⑥⑦⑧⑨⑩'.indexOf(m[2]) + 1}つ目　` : '';   // 式の ①② と、まぎらわしくないように
+      const prev = m[2] && out.find(o => o.no === +m[1]);
+      if (prev) {
+        prev.text += '\n' + sub + text;
+        if (ans.length) prev.ans += (prev.ans ? '\n' : '') + sub + ans.join('\n');
+        return;
+      }
       out.push({
-        id: `${id}.${kind}.${m[1]}`, no: +m[1], label: b.label, kind, level,
+        id: `${id}.${kind}.${m[1]}`, no: +m[1], label: m[2] ? `（${m[1]}）` : b.label, kind, level,
         challenge: level === 'チャレンジ',
         pts: pt ? +pt[1] : null,
-        text: String(b.text).replace(/\s*（\d+点）/, ''),
-        ans: ans.join('\n')
+        text: sub + text,
+        ans: sub && ans.length ? sub + ans.join('\n') : ans.join('\n')
       });
     });
     return out;

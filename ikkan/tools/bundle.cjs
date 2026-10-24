@@ -16,10 +16,10 @@ const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 const css = [...html.matchAll(/<link rel="stylesheet" href="([^"]+)">/g)].map(m => read(m[1])).join('\n');
 const js = [...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map(m => `/* ---- ${m[1]} ---- */\n${read(m[1])}`).join('\n').replace(/<\/script/gi, '<\\/script');
 const title = '板書型ワークシート';
-const pre = artifact ? 'window.IK = { noPrint: true };\n' : '';
+const pre = artifact ? 'window.IK = { noPrint: true, single: true };\n' : 'window.IK = { single: true };\n';
 
 const body = artifact
   ? `<title>${title}</title>\n<style>\n${css}\n</style>\n<div id="app"></div>\n<script>\n${pre}${js}\n</script>\n`
-  : `<!doctype html>\n<html lang="ja">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<meta name="robots" content="noindex,nofollow">\n<title>${title}</title>\n<style>\n${css}\n</style>\n</head>\n<body>\n<div id="app"></div>\n<script>\n${js}\n</script>\n</body>\n</html>\n`;
+  : `<!doctype html>\n<html lang="ja">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<meta name="robots" content="noindex,nofollow">\n<title>${title}</title>\n<style>\n${css}\n</style>\n</head>\n<body>\n<div id="app"></div>\n<script>\n${pre}${js}\n</script>\n</body>\n</html>\n`;
 fs.writeFileSync(out, body);
 console.log(`書き出した：${out}（${Math.round(Buffer.byteLength(body) / 1024)} KB）`);

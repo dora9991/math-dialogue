@@ -41,6 +41,7 @@ button{font:inherit;color:inherit}
 .wsp-qr svg{display:block;width:100%;height:100%}
 .wsp-qrcap{position:absolute;font-size:2.4mm;line-height:1.2;color:#6b7280;white-space:nowrap;text-align:right}
 .wsp-head.has-qr .w6{width:26mm}
+.wsp-head.has-qr .wh-mid{white-space:normal;line-height:1.15;font-size:2.8mm;display:flex;align-items:flex-end;justify-content:center;text-overflow:clip}
 .wsp-rule{position:absolute;left:0;top:0;display:block;pointer-events:none;overflow:visible}
 .wsp-flow{position:relative;font-size:calc(var(--pitch) * .56);line-height:var(--pitch)}
 
@@ -179,6 +180,10 @@ button{font:inherit;color:inherit}
   .btn{padding:7px 10px;font-size:13px}
 }
 
+
+/* ================= スライド（授業ごとの slides/<ID>.html を枠に出す） ================= */
+.slidebox{max-width:1100px;margin:0 auto;aspect-ratio:1920/1124;background:#0f1722;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+.slidebox iframe{display:block;width:100%;height:100%;border:0}
 
 /* ================= 授業計画（A4 1枚） ================= */
 .plan-page{overflow:hidden}
@@ -378,6 +383,7 @@ button{font:inherit;color:inherit}
 <body>
 <div id="app"></div>
 <script>
+window.IK = { single: true };
 /* ---- js/vendor/qrcode.js ---- */
 /* qrcode-generator 2.0.4（Kazuhiko Arase、MIT ライセンス）をそのまま置いたもの。QR コードの図をつくるのに使う。直さない。 */
 //---------------------------------------------------------------------
@@ -2991,7 +2997,7 @@ var qrcode = function() {
   // 記録ページの QR コード（演習プリント・小テスト・学習予定表の右上）。sheet.qr に '#/' のあとの場所（例：r/kukan-03/dr）を書く
   const QR_MM = 14, QR_TOP = 6.5;
   IK.qrBase = IK.qrBase || 'https://dora9991.github.io/math-dialogue/ikkan/';
-  IK.qrUnits = IK.qrUnits || ['kukan'];   // 記録ページ（コツコツくんにつなぐ）を使う単元
+  IK.qrUnits = IK.qrUnits || ['kukan', 'data', 'shiki', 'renritsu'];   // 記録ページ（コツコツくんにつなぐ）を使う単元
 
   function pagesHTML(sheet) {
     const g = geo(sheet), P = g.P, pages = splitPages(sheet.blocks), hd = sheet.head != null ? sheet.head : '';
@@ -3061,8 +3067,10 @@ var qrcode = function() {
 (function () {
   'use strict';
   const IK = (window.IK = window.IK || {});
-  // 訂正レベルは M（約 15% まで欠けても読める）。バージョンは文字数に合わせて自動
-  const make = text => { const q = qrcode(0, 'M'); q.addData(String(text), 'Byte'); q.make(); return q; };
+  // 訂正レベルは M（約 15% まで欠けても読める）。バージョンは文字数に合わせて自動。
+  // M だと、1つの辺が 33 モジュール（バージョン 4）をこえるとき（授業のIDが長い単元）は、L（約 7%）にして、14mm 角でも読みやすい大きさ（33 以内）をたもつ
+  const build = (text, lv) => { const q = qrcode(0, lv); q.addData(String(text), 'Byte'); q.make(); return q; };
+  const make = text => { const m = build(text, 'M'); if (m.getModuleCount() <= 33) return m; const l = build(text, 'L'); return l.getModuleCount() < m.getModuleCount() ? l : m; };
   function svg(text, mm, cls) {
     const q = make(text), n = q.getModuleCount();
     let d = '';
@@ -3438,7 +3446,7 @@ var qrcode = function() {
     fl.forEach((b, i) => {
       if (b.type === 'meate' && b.label) { level = b.label === '演習' ? '' : b.label; return; }
       if (b.type !== 'text') return;
-      const m = /^（(\d+)）$/.exec(b.label || '');
+      const m = /^（(\d+)）([①-⑩])?$/.exec(b.label || '');
       if (!m) return;
       const ans = [];
       for (let j = i + 1; j < fl.length; j++) {
@@ -3447,12 +3455,21 @@ var qrcode = function() {
         if (x.type === 'board' && x.answer) ans.push(x.answer);
       }
       const pt = /（(\d+)点）/.exec(b.text);
+      const text = String(b.text).replace(/\s*（\d+点）/, '');
+      // 「（1）①」「（1）②」のように、2つ（以上）が並んだ問題は、「（1）」の 1 つの問題にまとめる（自己採点は、組ごとに 1 つ）
+      const sub = m[2] ? `${'①②③④⑤⑥⑦⑧⑨⑩'.indexOf(m[2]) + 1}つ目　` : '';   // 式の ①② と、まぎらわしくないように
+      const prev = m[2] && out.find(o => o.no === +m[1]);
+      if (prev) {
+        prev.text += '\n' + sub + text;
+        if (ans.length) prev.ans += (prev.ans ? '\n' : '') + sub + ans.join('\n');
+        return;
+      }
       out.push({
-        id: `${id}.${kind}.${m[1]}`, no: +m[1], label: b.label, kind, level,
+        id: `${id}.${kind}.${m[1]}`, no: +m[1], label: m[2] ? `（${m[1]}）` : b.label, kind, level,
         challenge: level === 'チャレンジ',
         pts: pt ? +pt[1] : null,
-        text: String(b.text).replace(/\s*（\d+点）/, ''),
-        ans: ans.join('\n')
+        text: sub + text,
+        ans: sub && ans.length ? sub + ans.join('\n') : ans.join('\n')
       });
     });
     return out;
@@ -3894,6 +3911,21 @@ var qrcode = function() {
     '立体の特徴や、空間における直線・平面の位置関係がわかり、表面積と体積を求めることができる',
     '立体を、展開図・投影図・面の動きなど、いろいろな見方でとらえて説明する',
     '立体を平面の図に表して考えるよさに気づき、身のまわりの立体に使おうとする'
+  ];
+  IK.unitGoals.data = [
+    '度数分布表・ヒストグラム・代表値・相対度数の意味がわかり、データを整理して読み取ることができる',
+    'データの分布の傾向を読み取り、根拠をあげて判断し、批判的に考えて説明する',
+    '多数回の試行の結果をもとに、起こりやすさを確率でとらえ、判断に生かそうとする'
+  ];
+  IK.unitGoals.shiki = [
+    '単項式・多項式の加法・減法、単項式の乗法・除法ができる',
+    '数の性質が「いつでも成り立つ」ことを、文字式を使って筋道立てて説明する',
+    '文字式で説明できるよさに気づき、自分で見つけたきまりを式で確かめようとする'
+  ];
+  IK.unitGoals.renritsu = [
+    '連立方程式とその解の意味がわかり、加減法・代入法で解くことができる',
+    '「文字を1つ消せば、1年の方程式になる」という考えで解き方をつくり、方法を選んで説明する',
+    '2つの数量がわからない問題を連立方程式で解決し、解が問題に合うかを確かめる'
   ];
 })();
 
@@ -15621,6 +15653,64 @@ var qrcode = function() {
   ]);
 })();
 
+/* ---- data/slides.js ---- */
+/* 授業スライドの一覧（tools/build-slides.cjs が書く。手で直さない）。授業のID → { n: 枚数, file: ページ } */
+(function () {
+  window.IK = window.IK || {};
+  IK.slides = {
+  "data-01": { "n": 9, "file": "slides/data-01.html" },
+  "data-02": { "n": 9, "file": "slides/data-02.html" },
+  "data-03": { "n": 9, "file": "slides/data-03.html" },
+  "data-04": { "n": 9, "file": "slides/data-04.html" },
+  "data-05": { "n": 9, "file": "slides/data-05.html" },
+  "data-06": { "n": 9, "file": "slides/data-06.html" },
+  "data-07": { "n": 9, "file": "slides/data-07.html" },
+  "data-08": { "n": 9, "file": "slides/data-08.html" },
+  "data-09": { "n": 9, "file": "slides/data-09.html" },
+  "data-10": { "n": 9, "file": "slides/data-10.html" },
+  "data-11": { "n": 9, "file": "slides/data-11.html" },
+  "kukan-01": { "n": 9, "file": "slides/kukan-01.html" },
+  "kukan-02": { "n": 9, "file": "slides/kukan-02.html" },
+  "kukan-03": { "n": 9, "file": "slides/kukan-03.html" },
+  "kukan-04": { "n": 9, "file": "slides/kukan-04.html" },
+  "kukan-05": { "n": 9, "file": "slides/kukan-05.html" },
+  "kukan-06": { "n": 9, "file": "slides/kukan-06.html" },
+  "kukan-07": { "n": 9, "file": "slides/kukan-07.html" },
+  "kukan-08": { "n": 9, "file": "slides/kukan-08.html" },
+  "kukan-09": { "n": 9, "file": "slides/kukan-09.html" },
+  "kukan-10": { "n": 9, "file": "slides/kukan-10.html" },
+  "kukan-11": { "n": 9, "file": "slides/kukan-11.html" },
+  "kukan-12": { "n": 9, "file": "slides/kukan-12.html" },
+  "kukan-13": { "n": 9, "file": "slides/kukan-13.html" },
+  "kukan-14": { "n": 9, "file": "slides/kukan-14.html" },
+  "kukan-15": { "n": 9, "file": "slides/kukan-15.html" },
+  "renritsu-01": { "n": 9, "file": "slides/renritsu-01.html" },
+  "renritsu-02": { "n": 9, "file": "slides/renritsu-02.html" },
+  "renritsu-03": { "n": 9, "file": "slides/renritsu-03.html" },
+  "renritsu-04": { "n": 9, "file": "slides/renritsu-04.html" },
+  "renritsu-05": { "n": 9, "file": "slides/renritsu-05.html" },
+  "renritsu-06": { "n": 9, "file": "slides/renritsu-06.html" },
+  "renritsu-07": { "n": 9, "file": "slides/renritsu-07.html" },
+  "renritsu-08": { "n": 9, "file": "slides/renritsu-08.html" },
+  "renritsu-09": { "n": 9, "file": "slides/renritsu-09.html" },
+  "renritsu-10": { "n": 9, "file": "slides/renritsu-10.html" },
+  "renritsu-11": { "n": 9, "file": "slides/renritsu-11.html" },
+  "renritsu-12": { "n": 9, "file": "slides/renritsu-12.html" },
+  "renritsu-13": { "n": 9, "file": "slides/renritsu-13.html" },
+  "shiki-01": { "n": 9, "file": "slides/shiki-01.html" },
+  "shiki-02": { "n": 9, "file": "slides/shiki-02.html" },
+  "shiki-03": { "n": 9, "file": "slides/shiki-03.html" },
+  "shiki-04": { "n": 9, "file": "slides/shiki-04.html" },
+  "shiki-05": { "n": 11, "file": "slides/shiki-05.html" },
+  "shiki-06": { "n": 11, "file": "slides/shiki-06.html" },
+  "shiki-07": { "n": 11, "file": "slides/shiki-07.html" },
+  "shiki-08": { "n": 11, "file": "slides/shiki-08.html" },
+  "shiki-09": { "n": 9, "file": "slides/shiki-09.html" },
+  "shiki-10": { "n": 9, "file": "slides/shiki-10.html" },
+  "shiki-11": { "n": 9, "file": "slides/shiki-11.html" }
+};
+})();
+
 /* ---- js/app.js ---- */
 /* ikkan：画面。一覧 → 授業（授業計画／ワークシート／演習プリント／小テスト／3点セット）。解答の表示・かくす、印刷。
    場所：#/ ＝一覧、#/<授業のID> ＝ワークシート、#/<授業のID>/plan・/ws・/dr・/qz・/set ＝授業計画・ワークシート・演習プリント・小テスト・3点セット（印刷用）、
@@ -15633,10 +15723,10 @@ var qrcode = function() {
   const $app = document.getElementById('app');
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const MM = 96 / 25.4;   // 1mm のピクセル数
-  const TABS = [['plan', '授業計画'], ['ws', 'ワークシート'], ['dr', '演習プリント'], ['qz', '小テスト'], ['set', '3点セット（印刷）']];
+  const TABS = [['plan', '授業計画'], ['slide', 'スライド'], ['ws', 'ワークシート'], ['dr', '演習プリント'], ['qz', '小テスト'], ['set', '3点セット（印刷）']];
   let ans = false, fit = 'w', cur = null, curTab = 'ws';
 
-  const tabsOf = id => TABS.filter(([k]) => (k === 'plan' ? IK.plans[id] : k === 'dr' ? IK.drills[id] : k === 'qz' ? IK.quizzes[id] : k === 'set' ? (IK.drills[id] || IK.quizzes[id]) : IK.lessons[id]));
+  const tabsOf = id => TABS.filter(([k]) => (k === 'plan' ? IK.plans[id] : k === 'slide' ? (IK.slides && IK.slides[id]) : k === 'dr' ? IK.drills[id] : k === 'qz' ? IK.quizzes[id] : k === 'set' ? (IK.drills[id] || IK.quizzes[id]) : IK.lessons[id]));
   const sheetOf = (id, tab) => (tab === 'dr' ? IK.drills[id] : tab === 'qz' ? IK.quizzes[id] : IK.lessons[id]);
   // 3点セット：印刷する順（ワークシート → 演習プリント → 小テスト）
   const partsOf = id => [['ワークシート', IK.lessons[id]], ['演習プリント', IK.drills[id]], ['小テスト', IK.quizzes[id]]].filter(p => p[1]);
@@ -15767,14 +15857,33 @@ var qrcode = function() {
     </div>`;
   }
 
+  // スライド：授業ごとのページ（slides/<授業のID>.html）を、枠の中に出す。1つにまとめたファイル（IK.single）では、公開サイトのページを開く
+  function showSlide(id, l, tabs) {
+    const info = IK.slides[id], url = (IK.single ? IK.qrBase : '') + info.file;
+    const seg = `<nav class="seg" aria-label="資料の切りかえ">${tabs.map(([k, n]) => `<a href="#/${esc(id)}/${k}"${k === 'slide' ? ' aria-current="page"' : ''}>${esc(n)}</a>`).join('')}</nav>`;
+    $app.innerHTML = `<header class="top">
+        <a class="brand" href="#/" title="一覧へ">← 一覧</a>
+        <div class="ttl"><small>${esc([l.unitName, l.no].filter(Boolean).join('　'))}</small><b>${esc(l.title)}</b></div>
+        ${seg}
+        <span class="sp"></span>
+        <a class="btn main2" href="${esc(url)}" target="_blank" rel="noopener">スライドだけを開く（全画面・印刷）</a>
+      </header>
+      <div class="pages-wrap">
+        <p class="hint">授業のスライドです（${info.n}枚）。矢印キー・タップで進みます。<b>N</b> で先生のメモ、<b>F</b> で全画面。生徒に見せるときは、メモを出さずに。</p>
+        ${IK.noPrint ? `<p class="hint"><a href="${esc(url)}" target="_blank" rel="noopener">スライドをひらく</a></p>` : `<div class="slidebox"><iframe src="${esc(url)}" title="${esc(l.title)}　スライド" allowfullscreen loading="lazy"></iframe></div>`}
+      </div>`;
+    setAns(false);
+  }
+
   function show(id, tab, askAns) {
     const l = IK.lessons[id];
     if (!l) { location.hash = '#/'; return; }
     const tabs = tabsOf(id);
     if (!tabs.some(([k]) => k === tab)) tab = 'ws';
     curTab = tab;
-    cur = tab === 'plan' ? { paper: 'A4' } : sheetOf(id, tab);
+    cur = tab === 'plan' || tab === 'slide' ? { paper: 'A4' } : sheetOf(id, tab);
     document.title = `${l.title}　数学ワークシート`;
+    if (tab === 'slide') { showSlide(id, l, tabs); return; }
     const pages = tab === 'plan' ? R.planHTML(IK.plans[id], l)
       : tab === 'set' ? partsOf(id).map(([n, sh], i) => `<div class="set-cap">${'①②③'[i]} ${esc(n)}　<small>A4 ${nPages(sh) > 1 ? `${nPages(sh)}ページ（表裏）` : '1ページ（片面）'}</small></div>${R.pagesHTML(sh)}`).join('')
       : R.pagesHTML(cur);
@@ -15803,7 +15912,7 @@ var qrcode = function() {
     else if (h[0] === 'print') showPrint(h[1], h.includes('ans'), h[2] === 'sched' ? 'sched' : '');
     else if (h[0] === 'rsum') { cur = null; document.body.classList.remove('ans-on'); IK.recui.sum($app); }
     else if (h[0] === 'r' && IK.recui && (h[2] ? IK.recui.record($app, h[1], h[2]) : IK.recui.unit($app, h[1]))) { cur = null; document.body.classList.remove('ans-on'); }
-    else show(h[0], ['plan', 'ws', 'dr', 'qz', 'set'].includes(h[1]) ? h[1] : 'ws', h.includes('ans') ? true : undefined);
+    else show(h[0], ['plan', 'slide', 'ws', 'dr', 'qz', 'set'].includes(h[1]) ? h[1] : 'ws', h.includes('ans') ? true : undefined);
     window.scrollTo(0, 0);
   }
 
