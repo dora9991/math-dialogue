@@ -56,6 +56,7 @@
   function go(view) {
     S.view = view;
     BT.ui.closeSheet(true);
+    if (view !== 'live') delete document.documentElement.dataset.rot;
     if (view === 'home') renderHome();
     else if (view === 'setup') renderSetup();
     else if (view === 'live') buildLive();
@@ -306,6 +307,7 @@
     // 撮影中は、カメラの小さな映像（押すと撮影の画面）
     L.camThumb = h('video', { class: 'camthumb', muted: true, playsinline: true, autoplay: true });
     L.camBtn = h('button', { class: 'cambtn', id: 'btnCam', hidden: true, 'aria-label': '撮影の画面を開く', onclick: openCamera }, L.camThumb, h('i', { class: 'camdot' }));
+    L.camThumb.addEventListener('resize', onCamResize);
     const bar = h('header', { class: 'lbar' }, L.clock, L.start, L.period,
       h('div', { class: 'score', 'aria-label': '得点' }, L.score[0], h('span', { class: 'dash' }, '−'), L.score[1]),
       L.camBtn,
@@ -371,7 +373,7 @@
     const L = S.L;
     if (!L || !L.root || !L.root.isConnected) return;
     const live = L.root, P = L.panelsEl;
-    live.classList.toggle('short', root.innerHeight < 430);
+    live.classList.toggle('short', (live.clientHeight || root.innerHeight) < 430);
     const plan = BT.planLayout(P.clientWidth, P.clientHeight, [L.panels[0].n, L.panels[1].n], L.panels[0].head.offsetHeight || 22);
     live.classList.toggle('lay-side', plan.arr === 'side');
     live.classList.toggle('lay-stack', plan.arr === 'stack');
@@ -431,6 +433,7 @@
     if (!L) return;
     const started = !!g.startedAt, ended = !!g.endedAt;
     L.start.hidden = started;
+    { const lab = camOn() && !camRec() ? '● 録画＋スタート' : '▶ スタート'; if (L.start.textContent !== lab) L.start.textContent = lab; L.start.classList.toggle('rec', camOn() && !camRec()); }
     L.clock.hidden = !started;
     L.clock.classList.toggle('ended', ended);
     tickClock(true);
@@ -450,10 +453,12 @@
     // スタートの前・試合が終わったあとは、パネルの上に大きなボタンを出す
     L.cover.innerHTML = '';
     if (!started) {
+      const cam = camOn(), recNow = camRec();
       L.cover.append(h('div', { class: 'cover-card' },
-        h('button', { class: 'startbig', id: 'btnStartBig', onclick: start }, '▶ スタート'),
+        h('button', { class: 'startbig' + (cam && !recNow ? ' recstart' : ''), id: 'btnStartBig', onclick: start },
+          cam ? (recNow ? '▶ 記録をスタート' : [h('span', { class: 'rdot' }), '録画と記録をスタート']) : '▶ スタート'),
         h('p', null, h('b', null, 'ティップオフ（試合開始のジャンプボール）の瞬間'), 'に押してください。'),
-        h('p', { class: 'note' }, '時計が動き出し、そこからの時間でプレーを記録します。あとで動画と合わせるときの目印にもなります。'),
+        h('p', { class: 'note' }, cam ? (recNow ? '録画中です。押すと、記録の時計が動き出します（録画は続けたまま）。' : '押した瞬間に、録画と記録の時計が同時に始まります。') : '時計が動き出し、そこからの時間でプレーを記録します。あとで動画と合わせるときの目印にもなります。'),
         coverCam(),
         h('button', { class: 'btn small', onclick: openPeriod }, `${BT.periodLabel(g.startPeriod || 1)} から始める（変える）`)));
     } else if (ended) {
@@ -575,7 +580,11 @@
     save();
     updateLive();
     // 撮影していたら、録画を止めて仕上げ、カメラを閉じる
-    if (camOn()) { say('動画を仕上げています…', '', 15000); await camClose(); say(videoCount(g) ? '動画を保存しました' : '試合を終えました', 'ok', 3000); }
+    if (camOn()) {
+      say('動画を仕上げています…', '', 15000);
+      const v = await camClose();
+      if (!(v && v.rotateLost)) say(videoCount(g) ? '動画を保存しました' : '試合を終えました', 'ok', 3000);      // （向きを書けなかった知らせは消さない）
+    }
     BT.ui.keepAwake(false);
     updateLive();
     openStats();
@@ -724,7 +733,9 @@
     S.camBusy = true;
     try {
       if (!S.cam || !S.cam.live()) { if (!(await camOpen())) return; }
-      await S.cam.start({ gameId: g.id, n: (g.videos || []).length + 1, base: BT.fileBase(g) });
+      const [w, h] = rawDims();
+      S.camRawLand = w && h ? w >= h : null;          // 録画を始めたときの映像の向き（途中で向きが変わったら、別の動画にする）
+      await S.cam.start({ gameId: g.id, n: (g.videos || []).length + 1, base: BT.fileBase(g), rotate: effRot() });
       BT.store.persist();
       BT.ui.keepAwake(true);
       guard();
@@ -738,22 +749,31 @@
     try {
       const v = await S.cam.stop();
       if (v && v.empty) say('録画が短すぎて、動画にできませんでした', 'warn', 4000);
+      else if (v && v.rotateLost) say(`動画${v.n}を保存しました。ただし、このブラウザでは動画に向きを書けなかったので、横倒しのまま再生されます`, 'warn', 9000);
       else if (!quiet && v) say(`動画${v.n}を保存しました（${BT.fmtTime(v.duration || 0)}・${mb(v.bytes)}）`, 'ok', 4000);
       return v;
     } finally { S.camBusy = false; updateCamUI(); if (S.L) updateLive(); }
   }
   async function camClose() {
-    if (!S.cam) return;
-    await camStop(true);
+    if (!S.cam) return null;
+    const v = await camStop(true);
     await S.cam.close();
     updateCamUI();
+    return v;
   }
   /* 画面を離れていた（ほかのアプリ・画面を消した）あと：その間は録画が止まっていることがあるので、新しい動画として続ける */
-  async function camSplit() {
+  async function camSplit(msg) {
     if (!camRec() || S.camBusy) return;
     await camStop(true);
     await camStart();
-    if (camRec()) say('画面を離れていた間は、録画が止まっていたかもしれないので、ここから新しい動画として録画しています', 'warn', 7000);
+    if (camRec()) say(msg || '画面を離れていた間は、録画が止まっていたかもしれないので、ここから新しい動画として録画しています', 'warn', 7000);
+  }
+  /* 映像の大きさ（向き）が変わった：iPhone などを回した。録画中なら、ここから別の動画にする（1本の動画の中で向きが変わらないように） */
+  function onCamResize() {
+    updateCamUI();
+    if (!camRec() || S.camBusy || S.camRawLand == null) return;
+    const [w, h] = rawDims();
+    if (w && h && (w >= h) !== S.camRawLand) camSplit('映像の向きが変わったので、ここから新しい動画として録画しています');
   }
   async function onCamLost() {
     if (camRec()) await camStop(true);
@@ -761,15 +781,77 @@
     say('カメラが止まりました（ほかのアプリが使った など）。≡ メニューの「撮影」から再開できます', 'warn', 8000);
   }
   /* 上の帯の小さな映像・撮影の画面の表示を書き換える（progress：数字だけ） */
+  /* ---------- 撮る向き ----------
+     ・ふつうは、端末を横に向ければ、画面も映像も横になる（画面の向きのロックを外しているとき）
+     ・画面の向きのロックをしたまま横に倒すと、画面は縦のまま・映像は横倒しで届く。そのときは「アプリごと横向き」：
+       アプリの画面を CSS で 90° 回し（uiRot）、録画には「回して映す」向きを書く（fmp4 の行列。中身は回さない）
+     ・それでも映像の向きが合わないとき（端末による違い）は「↻ 映像を回す」で直す（見えている小さな映像が、録れる動画の向き） */
+  const rotActive = () => ['90', '270'].includes(document.documentElement.dataset.rot || '');
+  /* 録画に書く向き（時計回りの角度） */
+  function effRot() {
+    if (rotActive()) return S.prefs.camRotF != null ? S.prefs.camRotF : S.prefs.uiRot === 90 ? 270 : 90;
+    return S.prefs.camRot || 0;
+  }
+  /* カメラから届く映像の大きさ（回す前） */
+  function rawDims() {
+    const v = S.L && S.L.camThumb;
+    if (v && v.videoWidth && v.videoHeight) return [v.videoWidth, v.videoHeight];
+    const st = S.cam ? S.cam.settings() : {};
+    return [st.width || 0, st.height || 0];
+  }
+  /* 録れる動画の向きが、選んだ向き（横・縦）と合っているか */
+  function orientOK() {
+    const [w0, h0] = rawDims();
+    if (!w0 || !h0) return true;
+    const [w, h] = effRot() % 180 ? [h0, w0] : [w0, h0];
+    return S.prefs.camOrient === 'port' ? h >= w : w >= h;
+  }
+  /* アプリごと横向き：記録の画面で、撮影中、端末が縦（画面の向きのロック）のときだけ */
+  function applyRot() {
+    const de = document.documentElement;
+    const want = S.view === 'live' && camOn() && S.prefs.uiRot && root.innerHeight > root.innerWidth ? S.prefs.uiRot : 0;
+    const before = de.dataset.rot || '';
+    if (want) { de.dataset.rot = String(want); de.style.setProperty('--rvw', root.innerWidth + 'px'); de.style.setProperty('--rvh', root.innerHeight + 'px'); } else delete de.dataset.rot;
+    if ((de.dataset.rot || '') !== before && S.L) layoutLive();      // 画面の縦横が入れかわったので、並べ直す
+  }
+  function setUiRot(r) {
+    if (camRec()) { say('録画を止めると変えられます', 'warn'); return; }
+    S.prefs.uiRot = r; S.prefs.camRotF = null; savePrefs();
+    applyRot(); layoutLive(); updateCamUI(); if (S.L) updateLive();
+  }
+  function turnVideo() {
+    if (camRec()) { say('録画を止めると変えられます', 'warn'); return; }
+    const next = (effRot() + 90) % 360;
+    if (rotActive()) S.prefs.camRotF = next; else S.prefs.camRot = next;
+    savePrefs(); updateCamUI(); if (S.L) updateLive();
+  }
+  /* 小さな映像・大きな映像を、録れる動画の向きに回して、入れ物いっぱいに映す */
+  function fitPreview(box, video, rot, cover) {
+    if (!box || !video) return;
+    const bw = box.clientWidth, bh = box.clientHeight;
+    if (!bw || !bh) return;
+    const side = rot % 180 !== 0;
+    video.style.width = (side ? bh : bw) + 'px';
+    video.style.height = (side ? bw : bh) + 'px';
+    video.style.objectFit = cover ? 'cover' : 'contain';
+    video.style.transform = `translate(-50%, -50%) rotate(${rot}deg)`;
+  }
   function updateCamUI(progress) {
     const L = S.L;
+    applyRot();
     if (L && L.camBtn) {
       const on = camOn() && S.cam.stream;
       L.camBtn.hidden = !on;
       L.camBtn.classList.toggle('rec', camRec());
+      L.camBtn.classList.toggle('warn', !!on && !orientOK());
       if (on && L.camThumb.srcObject !== S.cam.stream) { L.camThumb.srcObject = S.cam.stream; L.camThumb.muted = true; const p = L.camThumb.play(); if (p && p.catch) p.catch(() => {}); }
       if (!on && L.camThumb.srcObject) L.camThumb.srcObject = null;
-      if (on) { const st = S.cam.settings(); if (st.width && st.height) L.camBtn.style.setProperty('--ar', String(st.width / st.height)); }
+      if (on) {
+        const [w, h] = rawDims();
+        const rot = camRec() && S.cam.seg ? S.cam.seg.rotate : effRot();
+        if (w && h) L.camBtn.style.setProperty('--ar', String(rot % 180 ? h / w : w / h));
+        fitPreview(L.camBtn, L.camThumb, rot, true);
+      }
     }
     if (S.camSheet) S.camSheet.draw(progress);
   }
@@ -781,56 +863,115 @@
     const hours = free / 1e9 / q.perHour;
     return `空き ${mb(free)}（${q.label.replace(/（.*/, '')} で約 ${hours >= 10 ? Math.floor(hours) : hours.toFixed(1)} 時間）${hours < 1.2 ? '・⚠ 1試合ぶん入らないかもしれません' : ''}`;
   }
-  /* 撮影の画面（大きな映像・録画を始める／止める・空き容量） */
+  /* 撮影の画面（大きな映像・撮る向き・録画と記録を同時にスタート・録画を始める／止める・空き容量） */
   async function openCamera() {
     if (!camOn() && !(await camOpen())) return;
     const C = S.cam;
     const big = h('video', { class: 'campv', muted: true, playsinline: true, autoplay: true });
     big.muted = true; big.playsInline = true; big.srcObject = C.stream;
     { const p = big.play(); if (p && p.catch) p.catch(() => {}); }
+    const pvbox = h('div', { class: 'campvw' }, big);
     const stat = h('div', { class: 'camstat', id: 'camStat', role: 'status' });
     const info = h('div', { class: 'note', id: 'camInfo' });
+    const orient = h('div', { class: 'camorient', id: 'camOrient' });
     const store = h('div', { class: 'note', id: 'camStore' });
-    const acts = h('div', { class: 'row camacts' });
+    const acts = h('div', { class: 'camacts' });
     let lastKey = '';
+    /* 大きな映像の入れ物：録れる動画の縦横の比で、画面に収まる大きさ */
+    const fitBig = () => {
+      const [w0, h0] = rawDims();
+      const rot = camRec() && S.cam.seg ? S.cam.seg.rotate : effRot();
+      const ar = w0 && h0 ? (rot % 180 ? h0 / w0 : w0 / h0) : 16 / 9;
+      const appH = (S.L && S.L.root && S.L.root.clientHeight) || root.innerHeight;
+      const maxW = pvbox.parentNode ? pvbox.parentNode.clientWidth : 600, maxH = Math.max(140, appH * 0.42);
+      let bw = maxW, bh = bw / ar;
+      if (bh > maxH) { bh = maxH; bw = bh * ar; }
+      pvbox.style.width = Math.round(bw) + 'px'; pvbox.style.height = Math.round(bh) + 'px';
+      fitPreview(pvbox, big, rot, false);
+    };
     const draw = (progress) => {
       if (!S.cam) return;
       const rec = camRec(), busy = !!S.camBusy || S.cam.state === 'finishing';
-      const seg = S.cam.seg;
+      const seg = S.cam.seg, started = !!S.game.startedAt, ended = !!S.game.endedAt;
       stat.className = 'camstat' + (rec ? ' rec' : '');
       stat.textContent = busy && !rec ? '動画を仕上げています…' : rec ? `● 録画中 ${BT.fmtTime(S.cam.elapsed())}・${mb(seg ? seg.bytes : 0)}（動画${seg ? seg.n : ''}）` : S.cam.state === 'off' ? 'カメラは切れています' : 'カメラの準備ができています（まだ録画していません）';
-      const st = S.cam.settings();
-      info.textContent = `${st.width || '?'}×${st.height || '?'}・${S.cam.opts && S.cam.opts.audio ? '音あり' : '音なし'}${st.width && st.height && st.width < st.height ? '・⚠ 縦向きで撮っています。コート全体を撮るなら、端末を横向きにしてから録画を始めてください' : ''}`;
+      const [w0, h0] = rawDims();
+      const rot = rec && seg ? seg.rotate : effRot();
+      const [w, hh] = rot % 180 ? [h0, w0] : [w0, h0];
+      info.textContent = `${w || '?'}×${hh || '?'}（${w >= hh ? '横向き' : '縦向き'}）・${S.cam.opts && S.cam.opts.audio ? '音あり' : '音なし'}`;
+      fitBig();
       if (progress) return;
-      const key = [rec, busy, S.cam.state, !!S.game.startedAt].join();
+      const ok = orientOK(), land = S.prefs.camOrient !== 'port';
+      const key = [rec, busy, S.cam.state, started, ended, ok, land, rotActive(), S.prefs.uiRot, rot].join();
       if (key === lastKey) return;
       lastKey = key;
+      // 撮る向き
+      orient.innerHTML = '';
+      orient.append(h('div', { class: 'row' }, h('b', null, '撮る向き'),
+        [['land', '横向き（コート全体）'], ['port', '縦向き']].map(([v, lab]) => h('button', { class: 'btn small' + ((S.prefs.camOrient || 'land') === v ? ' on' : ''), dataset: { orient: v }, disabled: rec,
+          onclick: () => { S.prefs.camOrient = v; if (v === 'port') S.prefs.uiRot = 0; savePrefs(); applyRot(); layoutLive(); updateCamUI(); if (S.L) updateLive(); } }, lab))));
+      if (rotActive()) {
+        orient.append(h('div', { class: 'orientbox ok' },
+          h('p', null, `📱 アプリごと横向きにしています（スマホの上側を${S.prefs.uiRot === 90 ? '左' : '右'}に向けて使う）。画面の文字がさかさまなら、反対向きを選んでください。`),
+          h('div', { class: 'row' },
+            h('button', { class: 'btn small', id: 'btnRotFlip', disabled: rec, onclick: () => setUiRot(S.prefs.uiRot === 90 ? 270 : 90) }, '上下を入れかえる'),
+            h('button', { class: 'btn small', id: 'btnRotOff', disabled: rec, onclick: () => setUiRot(0) }, '元に戻す（縦の画面）'))));
+      } else if (!ok) {
+        orient.append(h('div', { class: 'orientbox warn', id: 'orientWarn' },
+          h('p', null, h('b', null, land ? '⚠ いまは縦向きの映像です。スマホを横向きにしてください。' : '⚠ いまは横向きの映像です。端末を縦向きにしてください。')),
+          land ? [
+            h('p', { class: 'note' }, '横にしても画面が回らないとき（画面の向きのロック中）は、アプリごと横向きにできます：'),
+            h('div', { class: 'row' },
+              h('button', { class: 'btn', id: 'btnRot90', disabled: rec, onclick: () => setUiRot(90) }, '⟲ 上側を左にして使う'),
+              h('button', { class: 'btn', id: 'btnRot270', disabled: rec, onclick: () => setUiRot(270) }, '⟳ 上側を右にして使う'))
+          ] : null));
+      }
+      orient.append(h('div', { class: 'row turnrow' },
+        h('span', { class: 'note' }, '上の映像の向きが、録れる動画の向きです。横倒し・さかさまのときは'),
+        h('button', { class: 'btn small', id: 'btnTurn', disabled: rec, onclick: turnVideo }, '↻ 映像を回す')));
+      // 回して映す向きは、MP4 の目次に書く。WebM（Firefox など）には書けないので、先に知らせる
+      if (rot && /webm/.test(rec && seg ? seg.mime : BT.camera.pickMime(!!(S.cam.opts && S.cam.opts.audio)))) {
+        orient.append(h('p', { class: 'orientbox warn', id: 'rotWebm' }, '⚠ このブラウザの録画（WebM）には向きを書けないので、動画は横倒しのまま保存されます。画面の向きのロックを外して端末を横にするか、Safari・Chrome で開いてください。'));
+      }
+      if (rec) orient.append(h('p', { class: 'note' }, '向きは、録画を止めると変えられます。'));
+      // ボタン
       acts.innerHTML = '';
-      if (rec) acts.append(h('button', { class: 'btn danger-fill', id: 'btnCamStop', disabled: busy, onclick: () => camStop() }, '■ 録画を止める'));
-      else if (S.cam.state !== 'off') acts.append(h('button', { class: 'btn recbtn', id: 'btnCamRec', disabled: busy, onclick: () => camStart() }, '● 録画を始める'),
-        h('button', { class: 'btn', id: 'btnCamOff', disabled: busy, onclick: () => { camClose().then(() => BT.ui.closeSheet()); } }, 'カメラを切る'));
+      if (rec) {
+        if (!started) acts.append(h('button', { class: 'btn startboth', id: 'btnCamBoth', onclick: () => { BT.ui.closeSheet(); start(); } }, '▶ 記録もスタート（ティップオフで押す）'));
+        acts.append(h('button', { class: 'btn danger-fill', id: 'btnCamStop', disabled: busy, onclick: () => camStop() }, '■ 録画を止める'));
+      } else if (S.cam.state !== 'off') {
+        if (!started) {
+          acts.append(h('button', { class: 'btn startboth rec', id: 'btnCamBoth', disabled: busy, onclick: () => { BT.ui.closeSheet(); start(); } }, h('span', { class: 'rdot' }), '録画と記録を同時にスタート'),
+            h('p', { class: 'note bothnote' }, 'ティップオフ（試合開始のジャンプボール）の瞬間に押すと、録画と記録の時計が同時に始まります。'));
+        }
+        acts.append(h('div', { class: 'row' },
+          h('button', { class: 'btn' + (started ? ' recbtn' : ''), id: 'btnCamRec', disabled: busy || ended, onclick: () => camStart() }, started ? '● 録画を始める' : '● 録画だけ先に始める（ウォーミングアップから撮る）'),
+          h('button', { class: 'btn', id: 'btnCamOff', disabled: busy, onclick: () => { camClose().then(() => BT.ui.closeSheet()); } }, 'カメラを切る')));
+      }
     };
     S.camSheet = { draw };
+    big.addEventListener('resize', () => draw());
     BT.ui.sheet({
       title: '📹 撮影しながら記録', cls: 'camsheet',
-      body: h('div', null, big, stat, info, acts, store,
+      body: h('div', null, pvbox, stat, info, orient, acts, store,
         h('ul', { class: 'camnotes note' },
-          h('li', null, S.game.startedAt ? '録画を止めて、また始めると、別の動画になります（どれも、記録と時刻が合っています）' : '試合の「▶ スタート」を押すと、録画も自動で始まります（ウォーミングアップから撮るなら、先に「● 録画を始める」）'),
           h('li', null, '「試合を終える」で、録画も止まります。動画はこの端末（このブラウザ）に保存され、終わったあと「🎬 場面を切り出す」で、そのまま「バスケ得点クリップ」で開けます'),
+          h('li', null, '録画を止めて、また始めると、別の動画になります（どれも、記録と時刻が合っています）'),
           h('li', null, 'ほかのアプリに切りかえたり、画面を消したりすると、録画は止まります（戻ると、新しい動画として続けます）'),
           h('li', null, '電池をたくさん使います。電源につないでおくと安心です'))),
       onClose: () => { big.srcObject = null; S.camSheet = null; }
     });
     draw();
+    requestAnimationFrame(() => draw());
     storageText().then((t) => { store.textContent = t; });
   }
-  /* スタート前の札の中：撮影の準備 */
+  /* スタート前の札の中：撮影 */
   function coverCam() {
     if (!BT.camera.supported()) return null;
-    if (!camOn()) return h('button', { class: 'btn small', id: 'btnCamOn', onclick: openCamera }, '📹 撮影しながら記録する（この端末のカメラ）');
-    return h('div', { class: 'covercam' + (camRec() ? ' rec' : '') },
-      h('span', null, camRec() ? '● 録画中（スタートを押すと、記録も始まります）' : '📹 カメラの準備OK。スタートを押すと、録画も始まります'),
-      h('button', { class: 'btn small', onclick: openCamera }, '撮影の画面'));
+    if (!camOn()) return h('button', { class: 'btn camon', id: 'btnCamOn', onclick: openCamera }, '📹 撮影しながら記録する（この端末のカメラ）');
+    return h('div', { class: 'covercam' + (camRec() ? ' rec' : '') + (orientOK() ? '' : ' warn') },
+      h('span', null, !orientOK() ? '⚠ 縦向きの映像です（撮影の画面で向きを設定）' : camRec() ? `● 録画中 ${BT.fmtTime(S.cam.elapsed())}` : '📹 カメラの準備OK'),
+      h('button', { class: 'btn small', id: 'btnCamSheet', onclick: openCamera }, '撮影の画面'));
   }
   /* 撮影した動画の一覧（試合のあと・書き出す） */
   function videoItems(g) {
@@ -1085,7 +1226,11 @@
           h('li', null, '「≡ メニュー」→「記録の一覧」で、どの記録でも、チーム・番号・プレー・時刻を直したり消したりできます'),
           h('li', null, '名簿にない背番号は、チームの帯の「＋番号」で足せます')),
         h('h4', null, '撮影しながら記録する（この端末のカメラ）'),
-        h('p', null, '「📹 撮影しながら記録する」（スタート前の札・≡ メニュー）で、録画しながら同じ画面で記録できます。端末は横向きに。「▶ スタート」で録画も始まり、「試合を終える」で止まります。録画を始めた時刻が分かっているので、試合のあと「🎬 場面を切り出す」で、時刻あわせなしで場面を切り出せます。動画はこの端末の中に保存されます（「⬇ 保存」で写真・ファイルへ）。'),
+        h('p', null, '「📹 撮影しながら記録する」（スタート前の札・≡ メニュー）で、録画しながら同じ画面で記録できます。ティップオフの瞬間に、赤い「● 録画と記録をスタート」を押すと、録画と記録が同時に始まります（ウォーミングアップから撮るときは、撮影の画面の「● 録画だけ先に始める」）。「試合を終える」で録画も止まります。録画を始めた時刻が分かっているので、試合のあと「🎬 場面を切り出す」で、時刻あわせなしで場面を切り出せます。動画はこの端末の中に保存されます（「⬇ 保存」で写真・ファイルへ）。'),
+        h('ul', null,
+          h('li', null, h('b', null, '撮る向き'), '：撮影の画面で「横向き（コート全体）」か「縦向き」を選びます。横向きなら、端末を横にしてください'),
+          h('li', null, h('b', null, '画面の向きのロックをしたまま'), '横に置くときは、撮影の画面の「⟲ 上側を左にして使う」「⟳ 上側を右にして使う」で、アプリごと横向きになり、横向きの動画が録れます'),
+          h('li', null, '撮影の画面の映像の向きが、録れる動画の向きです。横倒し・さかさまのときは「↻ 映像を回す」で直せます')),
         h('h4', null, 'ピリオド'),
         h('p', null, '時計の右の「1Q」を押して、次のピリオドが始まる瞬間に「2Q を始める」。時計は止まらずに進みます（試合の時計ではなく、スタートからの時間です。動画と同じように進むので、あとで動画と合わせられます）。'),
         h('h4', null, '動画から場面を切り出す'),
@@ -1113,7 +1258,7 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && BT.ui.sheetOpen()) BT.ui.closeSheet(); });
     setInterval(tick, 200);
     let rq = 0;
-    const relayout = () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(layoutLive); };
+    const relayout = () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(() => { applyRot(); layoutLive(); updateCamUI(); }); };
     root.addEventListener('resize', relayout);
     root.addEventListener('orientationchange', () => setTimeout(relayout, 250));
     document.addEventListener('visibilitychange', () => {
@@ -1131,7 +1276,7 @@
     else go('home');
   }
 
-  BT.app = { S, init, start, undo, redo, openMenu, openLog, openEdit, openStats, openExport, openSettings, openPeriod, openKeypad, endGame, reopen, newGame, go, resume, openCamera, camStart, camStop, camClose, camSplit };
+  BT.app = { S, init, start, undo, redo, openMenu, openLog, openEdit, openStats, openExport, openSettings, openPeriod, openKeypad, endGame, reopen, newGame, go, resume, openCamera, camStart, camStop, camClose, camSplit, setUiRot, turnVideo, effRot, orientOK };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }

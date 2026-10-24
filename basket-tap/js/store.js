@@ -64,9 +64,10 @@
 
   /* ---------- 設定 ---------- */
   /* names：選手の名前も出す / unknown：「？」（だれか分からないとき）の行を出す / sound：タップ音 / theme：画面の色
-     camQuality：撮影の画質（'720' | '1080'）/ camAudio：録画に音も入れる */
+     camQuality：撮影の画質（'720' | '1080'）/ camAudio：録画に音も入れる / camOrient：撮る向き（'land' 横 | 'port' 縦）
+     uiRot：アプリごと横向きにする（90・270。画面の向きのロックをしたまま、横に倒して使う）/ camRot・camRotF：映像の向きの手直し（ふつう・アプリごと横向きのとき） */
   function prefs() {
-    const p = Object.assign({ sound: false, theme: 'auto', names: true, unknown: true, camQuality: '720', camAudio: true }, readJSON(K.prefs) || {});
+    const p = Object.assign({ sound: false, theme: 'auto', names: true, unknown: true, camQuality: '720', camAudio: true, camOrient: 'land', uiRot: 0, camRot: 0, camRotF: null }, readJSON(K.prefs) || {});
     delete p.actions;        // 前の版の「ボタンの組み合わせ」（いまは、選手ごとのボタンに決まっている）
     return p;
   }
