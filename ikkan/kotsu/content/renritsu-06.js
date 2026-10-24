@@ -21,6 +21,7 @@ const J = (...ps) => ps.filter((p) => p !== "" && p != null).reduce((s, p, i) =>
 const XY = ["x", "y"];
 const eqT = (e, nm = XY) => linTex(e[0], e[1], e[2], nm);
 const cases2 = (a, b) => TX(casesTex([a, b]));
+const fm = (n) => String(n).replace("-", "−");
 const frac = (n, d) => `\\frac{${n}}{${d}}`;
 const R = (lo, hi) => Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
 const NZ = (lo, hi) => R(lo, hi).filter((v) => v !== 0);
@@ -151,6 +152,8 @@ const pairSets = (r, A, B, K) => {
   const rev = (p) => (r(0, 1) ? p : [p[1], p[0]]);
   const good = [[AC, BC], [AB, BC], [AB, AC]].map(rev);
   const ds = shuffle(r, [1, 2, 3, 4, 5, -1, -2, -3]);
+  const key = (p) => [...p].sort().join("|");              // 組は、式の順序によらず、集合として比べる
+  const goodKeys = new Set(good.map(key)), seen = new Set();
   const bad = shuffle(r, [
     [AC, `${B}=0`],
     [AB, `${A}=${K + ds[0]}`],
@@ -158,7 +161,7 @@ const pairSets = (r, A, B, K) => {
     [`${A}=${K + ds[2]}`, BC],
     [AB, `${B}=${K + ds[3]}`],
     [AC, `${B}=${-K}`],
-  ].map(rev));
+  ].map(rev)).filter((p) => { const k = key(p); if (goodKeys.has(k) || seen.has(k)) return false; seen.add(k); return true; });
   return { good, bad };
 };
 const pairTex = (p) => TX(casesTex(p));
@@ -174,6 +177,7 @@ const abGen = (r, o) => {
     if (K === 0 || Math.abs(K) > 40 || (K - q * x0) % y0 !== 0) continue;
     const b = (K - q * x0) / y0;
     if (!o.b.includes(b) || b === 0) continue;
+    if (a * b === p * q) continue;     // a、b を入れると 2 つの式が同じ式（何倍かの式）になって、組が 1 つに決まらない
     return { x0, y0, a, b, p, q, K };
   }
   throw new Error("abGen が作れない");
@@ -205,8 +209,8 @@ export const UNITS = [
             q: `方程式 ${TX(T.tex)} を、連立方程式の組に直したものは、次のうちどれか。（解かなくてよい）`,
             ans,
             choices: choices4(r, ans, bad.map(pairTex)),
-            hint: "3つの式がすべて等しいということ。そのうちの 2 つの等式を組にする。右辺の数が変わっていないか、見くらべよう。",
-            steps: [`${TX(T.At)}、${TX(T.Bt)}、${TX(String(T.K))} の 3つがすべて等しい。`, `その中の 2 つの等式を組にして、${ans}。`, `ほかの組は、右辺の数が ${T.K} とちがう（もとの式と等しくなっていない）ので、正しくない。`],
+            hint: "3つの式がすべて等しいとき、その中の 2 つを等号でむすんだ等式を 2 つつくって、組にする。どの式とどの式をむすんだ等式が、つくれるかな？",
+            steps: [`${TX(T.At)}、${TX(T.Bt)}、${TX(String(T.K))} の 3つがすべて等しい。`, `その中の 2 つの等式を組にして、${ans}。`, `ほかの組は、右辺の数が ${fm(T.K)} とちがう（もとの式と等しくなっていない）ので、正しくない。`],
           };
         }),
       ],
@@ -237,8 +241,8 @@ export const UNITS = [
             q: `方程式 ${TX(T.tex)} を、連立方程式の組に直した。次のうち、正しくない組はどれか。`,
             ans,
             choices: choices4(r, ans, shuffle(r, good).map(pairTex)),
-            hint: "3つの式がすべて等しいということ。そのうちの 2 つを等号でむすんだ組が正しい。右辺の数が変わっていないものはどれ？",
-            steps: [`${TX(T.At)}、${TX(T.Bt)}、${TX(String(T.K))} の 3つがすべて等しい。`, `正しい組は、この 3つのうちの 2 つの等式。たとえば ${pairTex(good[0])}。`, `${ans} は、右辺の数がもとの ${T.K} とちがう式をふくむので、正しくない。`],
+            hint: "組にできる等式は、3つの式のうちの、どれとどれをむすんだものだろう？ それぞれの組を、もとの方程式とくらべてみよう。",
+            steps: [`${TX(T.At)}、${TX(T.Bt)}、${TX(String(T.K))} の 3つがすべて等しい。`, `正しい組は、この 3つのうちの 2 つの等式。たとえば ${pairTex(good[0])}。`, `${ans} は、右辺の数がもとの ${fm(T.K)} とちがう式をふくむので、正しくない。`],
           };
         }),
         // 06q04 解を代入して a、b を求める（ax+2y＝x+by＝8、解は x＝2、y＝1）
@@ -324,7 +328,7 @@ export const UNITS = [
               q: `方程式 ${TX(`${Atx}=${Btx}=a`)} の解が ${TX(`x=${x0}`)} のとき、${TX(w)} の値は？`,
               ans: v,
               hint: "まず、$a$ をふくまない 2 つの式を等号でむすんで、$y$ を求めよう。$a$ は、それがわかってから。",
-              steps: [`${TX(`${Atx}=${Btx}`)} を整理して ${TX(eqT(e))}。`, `${TX(`x=${x0}`)} を代入すると ${TX(J(String((p - rr) * x0), coefVar(q - s, "y")) + "=0")} より ${TX(`y=${y0}`)}。`, `${TX(`a=${Atx}`)} に代入して ${TX(`a=${J(String(p * x0), String(q * y0))}=${a}`)}。`],
+              steps: [`${TX(`${Atx}=${Btx}`)} を整理して ${TX(eqT(e))}。`, `${TX(`x=${x0}`)} を代入すると ${TX(J(String((p - rr) * x0), coefVar(q - s, "y")) + "=0")} より ${TX(`y=${y0}`)}。`, `${TX(`a=${Atx}`)} に代入して ${TX(`a=${J(String(p * x0), String(q * y0))}=${a}`)}。`, `よって、${TX(`y=${y0}`)}、${TX(`a=${a}`)}。`],
             };
           }
           throw new Error("06q05 が作れない");
