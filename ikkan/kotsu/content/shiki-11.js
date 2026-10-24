@@ -15,6 +15,8 @@ import { unitFor } from "../unit-kit.js";
 import { Q, qadd, qsub, qmul, qdiv, qneg, qiszero, qeq, qtex, qisint, term, poly, padd, psub, pneg, pscale, pmul, pdivMono, peval, pdeg, pterms, peq, ptex, ptexp } from "../algebra.js";
 const unit = unitFor("shiki");
 const tx = (s) => `$${s}$`;
+/** 問題文のはじめにそえる、カレンダーの約束（図のかわり） */
+const CAL = "日〜土の7列のふつうのカレンダーで、";
 
 // ── 式の表示 ───────────────────────────────────────────────
 const expsOf = (key) => { const e = {}; for (const m of key.matchAll(/([a-z])(-?\d+)/g)) e[m[1]] = +m[2]; return e; };
@@ -142,7 +144,7 @@ const buildMul = (r) => {
 const checkFam = (F) => {
   const vals = {};
   F.vars.forEach((x, i) => { vals[x] = [3.7, 2.3, 5.9, 4.3, 6.1][i % 5]; });
-  vals[F.v] = F.f(vals);
+  vals[F.vk ?? F.v] = F.f(vals);
   if (Math.abs(F.resid(vals)) > 1e-9) throw new Error(`${F.name}：解が合わない`);
   for (const [, g] of F.wrongs) if (Math.abs(g(vals) - F.f(vals)) < 1e-6) throw new Error(`${F.name}：誤答が正解と同じ値`);
 };
@@ -175,7 +177,7 @@ export const UNITS = [
           const line = keys.map((k) => (k === "" ? `$${ptK(P, [k])}$ は数だけの項（次数は考えない）` : `$${ptK(P, [k])}$ は ${degOf(expsOf(k))}次`)).join("、");
           return ask === "deg"
             ? {
-              q: `多項式 $${expr}$ は、何次式か。□ 次式の □ は？`,
+              q: `多項式 $${expr}$ は、□次式である。□に入る数は？`,
               ans: deg,
               hint: "それぞれの項の次数（かけ合わされている文字の個数）を調べて、いちばん大きいものを見つけよう。数だけの項は？",
               steps: [`各項の次数を調べる。${line}。`, `いちばん大きい次数は ${deg} だから、${deg}次式。`],
@@ -516,7 +518,7 @@ export const UNITS = [
             q: `$n$ を整数とする。${F.name}のうち、いちばん小さい数を $${ptex(F.terms[0])}$ とすると、${F.terms.length}つの数の和は $${ptex(poly([S["n1"][0], { n: 1 }]))}+\\square$ と表される。□は？`,
             ans: S[""][0],
             hint: `${F.terms.length}つの数を、それぞれ $n$ を使って表してから、たそう。`,
-            steps: [`${F.terms.length}つの数は ${F.terms.map((p) => `$${ptex(p)}$`).join("、")}。`, `和は $${F.terms.map(wr).join("+")}=${ptex(S)}$。`],
+            steps: [`${F.terms.length}つの数は ${F.terms.map((p) => `$${ptex(p)}$`).join("、")}。`, `和は $${F.terms.map(wr).join("+")}=${ptex(S)}$。`, `したがって、□ は ${S[""][0]}。`],
           };
         }),
         // 11d07b 和を変形した式から言えること（K の倍数）
@@ -533,30 +535,25 @@ export const UNITS = [
             steps: [`$n$ が整数なら、$${ptex(Qp)}$ も整数。`, `和は ${K}×（整数）の形だから、${K} の倍数になる。`],
           };
         }),
-        // 11d08a 奇数を3倍して1を加えた数：6n＋□
+        // 11d08a 奇数を3倍して1を加えた数：6n＋□（偶数を k倍して c を加えた数も）
         t("11d08a", (r) => {
-          const { k, c, up } = oddPick(r);
-          const body = 2 * k, m = k + (up ? c : -c);
+          const P = parityCase(r, false);
           return {
-            q: `$n$ を整数とすると、奇数は $2n+1$ と表される。奇数を ${k}倍して ${c} を${up ? "加え" : "ひい"}た数は、$${body}n+\\square$ と表される。□は？`,
-            ans: m,
-            hint: "奇数を $2n+1$ とおいて、式にしてから、かっこをはずそう。",
-            steps: [`式にすると $${k}(2n+1)${up ? "+" : "-"}${c}$。`, `かっこをはずして $${body}n+${k}${up ? "+" : "-"}${c}=${lin(body, m)}$。`, `□ は ${m}。`],
+            q: `$n$ を整数とすると、${P.intro}。${P.sentence}は、$${P.body}n+\\square$ と表される。□は？`,
+            ans: P.m,
+            hint: `${P.base}とおいて、式にしてから、かっこをはずそう。`,
+            steps: [`式にすると $${P.expr}$。`, P.step2, `したがって、□ は ${P.m}。`],
           };
         }),
-        // 11d08b 変形した式から言えること（偶数・奇数）
+        // 11d08b 変形した式から言えること（偶数・奇数・○の倍数）
         t("11d08b", (r) => {
-          const { k, c, up } = oddPick(r);
-          const body = 2 * k, m = k + (up ? c : -c), even = m % 2 === 0;
-          const half = even ? m / 2 : (m - 1) / 2;
-          const form = even ? `2(${ptex(poly([k, { n: 1 }], [half, {}]))})` : `2(${ptex(poly([k, { n: 1 }], [half, {}]))})+1`;
-          const ans = even ? "いつも偶数になる" : "いつも奇数になる";
+          const P = parityCase(r, true);
           return {
-            q: `$n$ を整数とする。奇数 $2n+1$ を ${k}倍して ${c} を${up ? "加え" : "ひい"}た数は、$${lin(body, m)}=${form}$ と変形できる。このことから、いつも言えることはどれか。`,
-            ans,
-            choices: choices4(r, ans, [even ? "いつも奇数になる" : "いつも偶数になる", "偶数にも奇数にもなる", "いつも 4 の倍数になる"]),
-            hint: "$2\\times $（整数）の形は偶数、$2\\times $（整数）$+1$ の形は奇数。かっこの中は整数になるかな。",
-            steps: [`$n$ が整数なら、$${ptex(poly([k, { n: 1 }], [half, {}]))}$ も整数。`, even ? "2×（整数）の形だから、いつも偶数になる。" : "2×（整数）に 1 をたした形だから、いつも奇数になる。"],
+            q: `$n$ を整数とする。${P.sentence2}は、$${lin(P.body, P.m)}=${P.form}$ と変形できる。このことから、いつも言えることはどれか。`,
+            ans: P.label,
+            choices: choices4(r, P.label, P.wrongLabels),
+            hint: P.hint,
+            steps: [`$n$ が整数なら、$${ptex(P.inner)}$ も整数。`, P.readStep],
           };
         }),
         // 11d09a おうぎ形の弧の長さ ℓ＝2πr×a/360 を a について解く
@@ -568,7 +565,7 @@ export const UNITS = [
             q: `${F.stmt}$${F.eq}$ と表される。この等式を、$${F.v}$ について解くと？`,
             ans,
             choices: choices4(r, ans, shuffle(r, F.wrongs).slice(0, 3).map(([s]) => tx(s))),
-            hint: "まず、両辺に 360 をかけて分母をはらおう。そのあと、解く文字にかかっているものの全部で、両辺をわる。",
+            hint: F.hint,
             steps: F.steps,
           };
         }),
@@ -585,42 +582,37 @@ export const UNITS = [
       ],
       // ───────── 4 入試レベル ─────────
       4: [
-        // 11d10a カレンダーで縦に並んだ k個の数の和：kn＋□
+        // 11d10a カレンダーで縦（横）に並んだ k個の数の和：kn＋□
         t("11d10a", (r) => {
-          const k = pick(r, [3, 4, 4, 5]), c = (7 * k * (k - 1)) / 2;
-          const start = r(1, 31 - 7 * (k - 1));
-          const ex = Array.from({ length: k }, (_, i) => start + 7 * i).join("、");
+          const D = lineCase(r);
           return {
-            q: `カレンダーで、縦に並んだ${k}つの数（例：${ex}）のうち、いちばん上の数を $n$（整数）とする。${k}つの数の和は $${k}n+\\square$ と表される。□は？`,
-            ans: c,
-            hint: `縦に並んだ数は、1段下がるごとに 7 ずつ大きくなる。${k}つの数を $n$ の式で表して、たそう。`,
-            steps: [`${k}つの数は ${Array.from({ length: k }, (_, i) => `$${lin(1, 7 * i)}$`).join("、")}。`, `和は $${k}n+(${Array.from({ length: k }, (_, i) => 7 * i).join("+")})=${k}n+${c}$。`],
+            q: `${CAL}${D.noun}（例：${D.ex}）のうち、${D.first}を $n$（整数）とする。${D.k}つの数の和は $${D.k}n+\\square$ と表される。□は？`,
+            ans: D.c,
+            hint: `${D.stepText}${D.k}つの数を $n$ の式で表して、たそう。`,
+            steps: [`${D.k}つの数は ${D.exprs}。`, `和は $${D.k}n+(${D.offs.join("+")})=${D.k}n+${D.c}$。`, `したがって、□ は ${D.c}。`],
           };
         }),
-        // 11d10b 縦に並んだ数の和が S のとき、ある位置の数
+        // 11d10b 縦（横）に並んだ数の和が S のとき、ある位置の数
         t("11d10b", (r) => {
-          const k = pick(r, [3, 4, 4, 5]), c = (7 * k * (k - 1)) / 2;
-          const n = r(1, Math.min(14, 31 - 7 * (k - 1))), S = k * n + c;
-          const [nm, o] = pick(r, [["いちばん上の数", 0], ["いちばん下の数", 7 * (k - 1)], ["上から2番目の数", 7]]);
+          const D = lineCase(r), S = D.k * D.n + D.c;
+          const [nm, o] = pick(r, [[D.first, 0], [D.last, D.step * (D.k - 1)], [D.second, D.step]]);
           return {
-            q: `カレンダーで、縦に並んだ${k}つの数の和が ${S} のとき、${nm}は？`,
-            ans: n + o,
-            hint: "いちばん上の数を $n$ とおいて、和を $n$ の式で表し、等式にしよう。",
-            steps: [`いちばん上の数を $n$ とすると、${k}つの数の和は $${k}n+${c}$。`, `$${k}n+${c}=${S}$ より $n=${n}$。`, `${nm}は $${lin(1, o)}$ だから、${n + o}。`],
+            q: `${CAL}${D.noun2}の和が ${S} のとき、${nm}は？`,
+            ans: D.n + o,
+            hint: `${D.first}を $n$ とおいて、和を $n$ の式で表し、等式にしよう。`,
+            steps: [`${D.first}を $n$ とすると、${D.k}つの数の和は $${D.k}n+${D.c}$。`, `$${D.k}n+${D.c}=${S}$ より $n=${D.n}$。`, `${nm}は $${lin(1, o)}$ だから、${D.n + o}。`],
           };
         }),
-        // 11d10c 縦に並んだ数の和を「○×（整数）」の形にする（いつでも偶数・3の倍数・5の倍数になる説明）
+        // 11d10c 縦（横）に並んだ数の和を「○×（整数）」の形にする（いつでも偶数・3の倍数・5の倍数になる説明）
         t("11d10c", (r) => {
-          const k = pick(r, [3, 4, 4, 5]), c = (7 * k * (k - 1)) / 2;
-          const K = k === 4 ? 2 : k, inner = poly([k / K, { n: 1 }], [c / K, {}]);
-          const start = r(1, 31 - 7 * (k - 1));
-          const ex = Array.from({ length: k }, (_, i) => start + 7 * i).join("、");
-          const claim = k === 4 ? "いつでも偶数" : `いつでも ${K} の倍数`;
+          const D = lineCase(r);
+          const K = D.k === 4 ? 2 : D.k, inner = poly([D.k / K, { n: 1 }], [D.c / K, {}]);
+          const claim = D.k === 4 ? "いつでも偶数" : `いつでも ${K} の倍数`;
           return {
-            q: `カレンダーで、縦に並んだ${k}つの数（例：${ex}）の和は、${claim}になる。いちばん上の数を $n$（整数）として、この和を $${K}\\times$（整数）の形に表すと、$${K}(${ptex(poly([k / K, { n: 1 }], [0, {}]))}+\\square)$ となる。□は？`,
-            ans: c / K,
-            hint: `縦に並んだ${k}つの数の和を、$n$ の式で表そう。その式を、${K}でくくれるかな。`,
-            steps: [`${k}つの数は ${Array.from({ length: k }, (_, i) => `$${lin(1, 7 * i)}$`).join("、")}。和は $${k}n+${c}$。`, `$${k}n+${c}=${K}(${ptex(inner)})$ と変形できる。`, `したがって、□ は ${c / K}。`],
+            q: `${CAL}${D.noun}（例：${D.ex}）の和は、${claim}になる。${D.first}を $n$（整数）として、この和を $${K}\\times $（整数）の形に表すと、$${K}(${ptex(poly([D.k / K, { n: 1 }], [0, {}]))}+\\square)$ となる。□は？`,
+            ans: D.c / K,
+            hint: `${D.k}つの数の和を、$n$ の式で表そう。その式を、${K}でくくれるかな。`,
+            steps: [`${D.k}つの数は ${D.exprs}。和は $${D.k}n+${D.c}$。`, `$${D.k}n+${D.c}=${K}(${ptex(inner)})$ と変形できる。`, `したがって、□ は ${D.c / K}。`],
           };
         }),
         // 11d11 x−2y＝3 のとき 4x−8y+7 の値
@@ -790,14 +782,67 @@ mkSeq("連続する4つの整数", [L1(1, 0), L1(1, 1), L1(1, 2), L1(1, 3)]);
 mkSeq("連続する6つの整数", [L1(1, 0), L1(1, 1), L1(1, 2), L1(1, 3), L1(1, 4), L1(1, 5)]);
 mkSeq("連続する4つの奇数", [L1(2, 1), L1(2, 3), L1(2, 5), L1(2, 7)]);
 
-// ── 奇数を k倍して c を加える・ひく（11d08）────────────────────
-const oddPick = (r) => {
-  for (let i = 0; i < 100; i++) {
-    const k = pick(r, [3, 3, 5, 7]), c = pick(r, [1, 1, 2, 3, 4, 5]), up = r(0, 3) > 0;
-    const m = k + (up ? c : -c);
-    if (m > 0) return { k, c, up };
+// ── 偶数・奇数・倍数の読み取り（11d08）──────────────────────────
+/** 奇数を k倍して c を加える（ひく）／偶数を k倍して c を加える／整数を k倍して k·t を加える。 forRead：言えること（4択）のために「倍数」の型もふくめる */
+const parityCase = (r, forRead) => {
+  const kind = forRead ? pick(r, ["odd", "odd", "even", "mult"]) : pick(r, ["odd", "odd", "even"]);
+  if (kind === "mult") {
+    const k = pick(r, [3, 5, 7]), tt = r(1, 5), inner = poly([1, { n: 1 }], [tt, {}]);
+    return {
+      body: k, m: k * tt, inner,
+      sentence2: `整数 $n$ を ${k}倍して ${k * tt} を加えた数`, form: `${k}(${ptex(inner)})`,
+      label: `いつも ${k} の倍数になる`, wrongLabels: ["いつも偶数になる", "いつも奇数になる", `いつも ${2 * k} の倍数になる`],
+      hint: "式を $\\square\\times $（整数）の形に変形すると、どんな数の倍数と言えるかな。かっこの中は整数になるかな。",
+      readStep: `${k}×（整数）の形だから、いつも ${k} の倍数になる。`,
+    };
   }
-  return { k: 3, c: 1, up: true };
+  if (kind === "even") {
+    const k = pick(r, [3, 5, 7]), c = r(1, 7), m = c, even = m % 2 === 0, half = even ? m / 2 : (m - 1) / 2;
+    const inner = poly([k, { n: 1 }], [half, {}]);
+    return {
+      intro: "偶数は $2n$ と表される", base: "偶数を $2n$", body: 2 * k, m,
+      sentence: `偶数を ${k}倍して ${c} を加えた数`, sentence2: `偶数 $2n$ を ${k}倍して ${c} を加えた数`,
+      expr: `${k}\\times 2n+${c}`, step2: `$${k}\\times 2n=${2 * k}n$ だから、$${lin(2 * k, m)}$。`, inner,
+      form: even ? `2(${ptex(inner)})` : `2(${ptex(inner)})+1`,
+      label: even ? "いつも偶数になる" : "いつも奇数になる", wrongLabels: [even ? "いつも奇数になる" : "いつも偶数になる", "偶数にも奇数にもなる", "いつも 4 の倍数になる"],
+      hint: "$2\\times $（整数）の形は偶数、$2\\times $（整数）$+1$ の形は奇数。かっこの中は整数になるかな。",
+      readStep: even ? "2×（整数）の形だから、いつも偶数になる。" : "2×（整数）に 1 をたした形だから、いつも奇数になる。",
+    };
+  }
+  let k, c, up, m;
+  for (let i = 0; i < 100; i++) {
+    k = pick(r, [3, 3, 5, 7]); c = pick(r, [1, 1, 2, 3, 4, 5]); up = r(0, 3) > 0; m = k + (up ? c : -c);
+    if (m > 0) break;
+  }
+  if (!(m > 0)) { k = 3; c = 1; up = true; m = 4; }
+  const even = m % 2 === 0, half = even ? m / 2 : (m - 1) / 2, inner = poly([k, { n: 1 }], [half, {}]);
+  return {
+    intro: "奇数は $2n+1$ と表される", base: "奇数を $2n+1$", body: 2 * k, m,
+    sentence: `奇数を ${k}倍して ${c} を${up ? "加え" : "ひい"}た数`, sentence2: `奇数 $2n+1$ を ${k}倍して ${c} を${up ? "加え" : "ひい"}た数`,
+    expr: `${k}(2n+1)${up ? "+" : "-"}${c}`, step2: `かっこをはずして $${2 * k}n+${k}${up ? "+" : "-"}${c}=${lin(2 * k, m)}$。`, inner,
+    form: even ? `2(${ptex(inner)})` : `2(${ptex(inner)})+1`,
+    label: even ? "いつも偶数になる" : "いつも奇数になる", wrongLabels: [even ? "いつも奇数になる" : "いつも偶数になる", "偶数にも奇数にもなる", "いつも 4 の倍数になる"],
+    hint: "$2\\times $（整数）の形は偶数、$2\\times $（整数）$+1$ の形は奇数。かっこの中は整数になるかな。",
+    readStep: even ? "2×（整数）の形だから、いつも偶数になる。" : "2×（整数）に 1 をたした形だから、いつも奇数になる。",
+  };
+};
+
+// ── カレンダーで縦（横）に並んだ k個の数（11d10）────────────────────
+const lineCase = (r) => {
+  const vertical = r(0, 1) === 0, k = pick(r, [3, 4, 4, 5]), step = vertical ? 7 : 1;
+  const c = (step * k * (k - 1)) / 2, offs = Array.from({ length: k }, (_, i) => step * i);
+  const startOf = () => (vertical ? r(1, 31 - 7 * (k - 1)) : 7 * r(0, 3) + r(0, 7 - k) + 1);
+  const start = startOf();
+  const n = vertical ? r(1, Math.min(14, 31 - 7 * (k - 1))) : 7 * r(0, 3) + r(0, 7 - k) + 1;
+  const names = vertical ? ["いちばん上の数", "いちばん下の数", "上から2番目の数"] : ["いちばん左の数", "いちばん右の数", "左から2番目の数"];
+  return {
+    vertical, k, step, c, offs, n,
+    noun: `${vertical ? "縦" : "横"}に並んだ${k}つの数`, noun2: `${vertical ? "縦" : "横"}に並んだ${k}つの数`,
+    ex: offs.map((o) => start + o).join("、"),
+    first: names[0], last: names[1], second: names[2],
+    stepText: vertical ? "縦に並んだ数は、1段下がるごとに 7 ずつ大きくなる。" : "横に並んだ数は、右へ1つ進むごとに 1 ずつ大きくなる。",
+    exprs: offs.map((o) => `$${lin(1, o)}$`).join("、"),
+  };
 };
 
 // ── おうぎ形の公式（11d09）─────────────────────────────────
@@ -807,6 +852,7 @@ const SECTOR = [
     resid: (x) => x.l - 2 * Math.PI * x.r * (x.a / 360), f: (x) => (360 * x.l) / (2 * Math.PI * x.r),
     ans: "a=\\frac{180\\ell}{\\pi r}",
     wrongs: [["a=\\frac{\\ell}{720\\pi r}", (x) => x.l / (720 * Math.PI * x.r)], ["a=\\frac{720\\pi r}{\\ell}", (x) => (720 * Math.PI * x.r) / x.l], ["a=\\frac{360\\ell}{\\pi r}", (x) => (360 * x.l) / (Math.PI * x.r)], ["a=\\frac{180\\pi r}{\\ell}", (x) => (180 * Math.PI * x.r) / x.l]],
+    hint: "分母がある式は、両辺に何をかけると、分母がなくなるかな。そのあと、$a$ にかかっているものは、全部で何かな。",
     steps: ["両辺に 360 をかけて、$360\\ell=2\\pi ra$。", "両辺を $2\\pi r$ でわって、$a=\\frac{360\\ell}{2\\pi r}=\\frac{180\\ell}{\\pi r}$。"],
   },
   {
@@ -814,6 +860,7 @@ const SECTOR = [
     resid: (x) => x.l - 2 * Math.PI * x.r * (x.a / 360), f: (x) => (360 * x.l) / (2 * Math.PI * x.a),
     ans: "r=\\frac{180\\ell}{\\pi a}",
     wrongs: [["r=\\frac{360\\ell}{\\pi a}", (x) => (360 * x.l) / (Math.PI * x.a)], ["r=\\frac{\\ell}{720\\pi a}", (x) => x.l / (720 * Math.PI * x.a)], ["r=\\frac{180\\pi a}{\\ell}", (x) => (180 * Math.PI * x.a) / x.l], ["r=\\frac{180\\ell}{a}", (x) => (180 * x.l) / x.a]],
+    hint: "分母がある式は、両辺に何をかけると、分母がなくなるかな。そのあと、$r$ にかかっているものは、全部で何かな。",
     steps: ["両辺に 360 をかけて、$360\\ell=2\\pi ra$。", "両辺を $2\\pi a$ でわって、$r=\\frac{360\\ell}{2\\pi a}=\\frac{180\\ell}{\\pi a}$。"],
   },
   {
@@ -821,7 +868,24 @@ const SECTOR = [
     resid: (x) => x.S - Math.PI * x.r * x.r * (x.a / 360), f: (x) => (360 * x.S) / (Math.PI * x.r * x.r),
     ans: "a=\\frac{360S}{\\pi r^{2}}",
     wrongs: [["a=\\frac{S}{360\\pi r^{2}}", (x) => x.S / (360 * Math.PI * x.r * x.r)], ["a=\\frac{360S}{\\pi r}", (x) => (360 * x.S) / (Math.PI * x.r)], ["a=\\frac{360\\pi r^{2}}{S}", (x) => (360 * Math.PI * x.r * x.r) / x.S], ["a=\\frac{180S}{\\pi r^{2}}", (x) => (180 * x.S) / (Math.PI * x.r * x.r)]],
+    hint: "分母がある式は、両辺に何をかけると、分母がなくなるかな。そのあと、$a$ にかかっているものは、全部で何かな。",
     steps: ["両辺に 360 をかけて、$360S=\\pi r^{2}a$。", "両辺を $\\pi r^{2}$ でわって、$a=\\frac{360S}{\\pi r^{2}}$。"],
+  },
+  {
+    name: "面積→ℓ", stmt: "おうぎ形の面積 $S$ は、弧の長さ $\\ell$、半径 $r$ のとき、", eq: "S=\\frac{1}{2}\\ell r", v: "\\ell", vk: "l", vars: ["S", "l", "r"],
+    resid: (x) => x.S - 0.5 * x.l * x.r, f: (x) => (2 * x.S) / x.r,
+    ans: "\\ell=\\frac{2S}{r}",
+    wrongs: [["\\ell=\\frac{S}{2r}", (x) => x.S / (2 * x.r)], ["\\ell=2Sr", (x) => 2 * x.S * x.r], ["\\ell=\\frac{r}{2S}", (x) => x.r / (2 * x.S)], ["\\ell=\\frac{2S}{r}+r", (x) => (2 * x.S) / x.r + x.r]],
+    hint: "分母がある式は、両辺に何をかけると、分母がなくなるかな。そのあと、$\\ell$ にかかっているものは、全部で何かな。",
+    steps: ["両辺に 2 をかけて、$2S=\\ell r$。", "両辺を $r$ でわって、$\\ell=\\frac{2S}{r}$。"],
+  },
+  {
+    name: "面積→r", stmt: "おうぎ形の面積 $S$ は、弧の長さ $\\ell$、半径 $r$ のとき、", eq: "S=\\frac{1}{2}\\ell r", v: "r", vars: ["S", "l", "r"],
+    resid: (x) => x.S - 0.5 * x.l * x.r, f: (x) => (2 * x.S) / x.l,
+    ans: "r=\\frac{2S}{\\ell}",
+    wrongs: [["r=\\frac{S}{2\\ell}", (x) => x.S / (2 * x.l)], ["r=2S\\ell", (x) => 2 * x.S * x.l], ["r=\\frac{\\ell}{2S}", (x) => x.l / (2 * x.S)], ["r=\\frac{2S}{\\ell}-\\ell", (x) => (2 * x.S) / x.l - x.l]],
+    hint: "分母がある式は、両辺に何をかけると、分母がなくなるかな。そのあと、$r$ にかかっているものは、全部で何かな。",
+    steps: ["両辺に 2 をかけて、$2S=\\ell r$。", "両辺を $\\ell$ でわって、$r=\\frac{2S}{\\ell}$。"],
   },
 ];
 /** 弧の長さ ℓ＝k π（cm）になる、半径 r・中心角 a の組（k＝r·a÷180 が整数） */
