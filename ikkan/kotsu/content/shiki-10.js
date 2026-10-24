@@ -123,7 +123,14 @@ const explain = (L, R, v, ord, map) => {
   if (numC) {
     const a = C[""];
     out.push(a[1] === 1 ? `両辺を ${a[0]} でわって、$${dvn}=${e(sol)}$。` : a[0] === 1 ? `両辺に ${a[1]} をかけて、$${dvn}=${e(sol)}$。` : `両辺に $\\frac{${a[1]}}{${a[0]}}$ をかけて、$${dvn}=${e(sol)}$。`);
-  } else out.push(`両辺を $${dsp(pt(C, ord), map)}$ でわって、$${dvn}=${e(sol)}$。`);
+  } else {
+    const cq = C[ck[0]];
+    if (cq[1] > 1) {   // 係数が分数：先に両辺に分母をかけて、分母をはらう
+      const d = cq[1], Cd = pscale(C, d);
+      out.push(`両辺に ${d} をかけて、$${dsp(pt(pmul(Cd, V1(v)), ord), map)}=${e(pscale(rhs, d))}$。`);
+      out.push(`両辺を $${dsp(pt(Cd, ord), map)}$ でわって、$${dvn}=${e(sol)}$。`);
+    } else out.push(`両辺を $${dsp(pt(C, ord), map)}$ でわって、$${dvn}=${e(sol)}$。`);
+  }
   return out;
 };
 /** 「等式を v について解くと？」の4択をつくる（q を除く） */
@@ -250,7 +257,7 @@ export const UNITS = [
           return {
             q: `${F.stmt}$${s.eq}$ と表される。この等式を、$${s.dvn}$ について解くと？`,
             ans: s.ans, choices: s.choices,
-            hint: "公式の文字のうち、解く文字以外は、数と同じように考える。解く文字にかかっているものを、両辺で消そう。",
+            hint: "公式の文字のうち、解く文字以外は、数と同じように考える。解く文字にかかっているものは何かな。分母があるときは、どうすればなくなる？",
             steps: s.steps,
           };
         }),
@@ -264,7 +271,7 @@ export const UNITS = [
           return {
             q: `${n}回のテストの得点を ${names.map((x) => `$${x}$`).join("点、")}点、平均点を $m$ 点とすると、$${s.eq}$ と表される。この等式を、$${v}$ について解くと？`,
             ans: s.ans, choices: s.choices,
-            hint: "分数の形の等式は、両辺に分母の数をかけて、分母をはらってから、移項しよう。",
+            hint: "分母がある式は、両辺に何をかけると、分母がなくなるかな。そのあと、解く文字以外の項は、移項するとき符号がどうなる？",
             steps: [`両辺に ${n} をかけて、分母をはらう。$${n}m=${names.join("+")}$`, `$${v}$ 以外の項を移項する（符号がかわる）。$${v}=${ftex(solve(L, R, v).sol, ["m", ...names])}$`],
           };
         }),
@@ -280,16 +287,17 @@ export const UNITS = [
             steps: s.steps,
           };
         }),
-        // 10q03 長方形の周の長さ ℓ＝2(a+b) を b について解く
+        // 10q03 長方形の周の長さ ℓ＝2(a+b) を b について解く（平均 m＝(a+b)/2 も）
         t("10q03", (r) => {
           const kind = pick(r, ["P", "P", "M"]);
-          const v = pick(r, ["a", "b"]), o = v === "a" ? "b" : "a";
+          const [A, B] = pick(r, [["a", "b"], ["a", "b"], ["x", "y"]]);
+          const v = pick(r, [A, B]), o = v === A ? B : A;
           const F = kind === "P" ? famPerim(v, o) : famMean(v, o);
           const { ans, choices } = famChoices(r, F, v);
           return {
             q: `${F.stmt}$${F.eq}$ と表される。この等式を、$${v}$ について解くと？`,
             ans, choices,
-            hint: kind === "P" ? "まず、かっこの前の数で両辺をわって、かっこの中の形にしよう。そのあと、移項する。" : "分数の形の等式は、両辺に分母の数をかけて、分母をはらってから、移項しよう。",
+            hint: F.hint,
             steps: F.steps[v],
           };
         }),
@@ -335,7 +343,7 @@ export const UNITS = [
           const form = (l2, r2) => tx(`${ftex(l2)}=${ftex(r2)}`);
           const ans = form(L, R);
           return {
-            q: `${S.stmt} $a$、$b$、$c$ の関係を表す等式は、次のうちどれか。`,
+            q: `${S.stmt}$a$、$b$、$c$ の関係を表す等式は、次のうちどれか。`,
             ans,
             choices: choices4(r, ans, shuffle(r, bad).slice(0, 3).map(([l2, r2]) => form(l2, r2))),
             hint: "それぞれの代金は、（1個の値段）×（個数）。代金の合計と、おつりと、出したお金の関係は？",
@@ -347,7 +355,7 @@ export const UNITS = [
           const S = shop(r);
           const s = solveChoices(r, S.L, S.R, "b");
           return {
-            q: `${S.stmt} これを表す等式 $${s.eq}$ を、$b$ について解くと？`,
+            q: `${S.stmt}これを表す等式 $${s.eq}$ を、$b$ について解くと？`,
             ans: s.ans, choices: s.choices,
             hint: s.hint,
             steps: s.steps,
@@ -358,7 +366,7 @@ export const UNITS = [
           const S = shop(r, true);
           const info = solve(S.L, S.R, "b");
           return {
-            q: `${S.stmt} $a=${S.av}$、$c=${S.cv}$ のとき、$b$ の値は？`,
+            q: `${S.stmt}$a=${S.av}$、$c=${S.cv}$ のとき、$b$ の値は？`,
             ans: S.bv, unit: "円",
             hint: "等式を $b$ について解いた式をつくってから、$a$ と $c$ の値を代入しよう。",
             steps: [
@@ -367,23 +375,22 @@ export const UNITS = [
             ],
           };
         }),
-        // 10d06a 台形 S＝1/2(a+b)h を h について解く
+        // 10d06a 台形 S＝1/2(a+b)h を h について解く（直方体の表面積・華氏と摂氏も）
         t("10d06a", (r) => {
-          const v = pick(r, ["h", "h", "a", "b"]);
-          const o = v === "a" ? "b" : "a";
-          const F = famTrap(v, o);
+          const [kind, v] = pick(r, [["trap", "h"], ["trap", "h"], ["trap", "a"], ["trap", "b"], ["box", "a"], ["box", "b"], ["box", "c"], ["temp", "C"]]);
+          const F = kind === "trap" ? famTrap(v) : kind === "box" ? famBox(v) : famTemp();
           const { ans, choices } = famChoices(r, F, v);
           return {
-            q: `台形の面積 $S$ は、上底 $a$、下底 $b$、高さ $h$ のとき、$S=\\frac{1}{2}(a+b)h$ と表される。この等式を、$${v}$ について解くと？`,
+            q: `${F.stmt}$${F.eq}$ と表される。この等式を、$${v}$ について解くと？`,
             ans, choices,
-            hint: "まず、両辺に 2 をかけて分母をはらう。そのあと、$(a+b)$ をひとまとまりと見て、解く文字だけを左辺に残そう。",
+            hint: F.hint[v],
             steps: F.steps[v],
           };
         }),
         // 10d06b S＝30、a＝4、b＝6 のときの h
         t("10d06b", (r) => {
           let a, b, h, S;
-          do { a = r(2, 9); b = r(2, 9); h = r(2, 10); } while (((a + b) * h) % 2 !== 0);
+          do { a = r(2, 8); b = r(a + 1, 9); h = r(2, 10); } while (((a + b) * h) % 2 !== 0);
           S = ((a + b) * h) / 2;
           const v = pick(r, ["h", "h", "a"]);
           if (v === "h") {
@@ -439,28 +446,28 @@ export const UNITS = [
             ],
           };
         }),
-        // 10d08a S＝2πr²+2πrh を h について解く（円柱・円錐の表面積）
+        // 10d08a S＝2πr²+2πrh を h について解く（円柱・円錐・角柱・角錐の表面積）
         t("10d08a", (r) => {
           const F = pick(r, SURF);
           const s = solveChoices(r, F.L, F.R, F.v, { ord: ["p", "q", "x"], map: F.map });
           return {
             q: `${F.stmt}$${s.eq}$ と表される。この等式を、$${s.dvn}$ について解くと？`,
             ans: s.ans, choices: s.choices,
-            hint: `解く文字をふくむ項だけを左辺に残し、ほかの項を右辺に移す。そのあと、解く文字にかかっている ${F.hintCoef} で、両辺の全部をわろう。`,
+            hint: "解く文字にかかっているものは何かな。解く文字をふくむ項を左辺に残して移項したあと、右辺には項がいくつある？",
             steps: s.steps,
           };
         }),
         // 10d08b S＝80π、r＝4 のときの h
         t("10d08b", (r) => {
-          const F = pick(r, SURF), rad = r(2, 6), h = r(1, 10);
-          const K = F.coef(rad, h);
+          const F = pick(r, SURF), rad = pick(r, F.rads), x = F.xOf(r, rad);
+          const K = F.K(rad, x);
           return {
-            q: `${F.stmt}$${eqTex(F.L, F.R, ["p", "q", "x"], F.map)}$ と表される。表面積が ${K}π cm²、$r=${rad}$ cm のとき、${F.hName}は何cmか。`,
-            ans: h, unit: "cm",
-            hint: "等式を解いた式に、$S$ と $r$ の値を代入しよう。（別の道：先に値を代入してから解いてもよい）",
+            q: `${F.stmt}$${eqTex(F.L, F.R, ["p", "q", "x"], F.map)}$ と表される。表面積が ${K}${F.pi ? "π" : ""} cm²、$${F.radName}=${rad}$ cm のとき、${F.hName}は何cmか。`,
+            ans: x, unit: "cm",
+            hint: `等式を解いた式に、$S$ と $${F.radName}$ の値を代入しよう。（別の道：先に値を代入してから解いてもよい）`,
             steps: [
               `等式を $${F.vName}$ について解くと、$${F.vName}=${ftex(solve(F.L, F.R, F.v).sol, ["p", "q", "x"], F.map)}$。`,
-              `$S=${K}\\pi$、$r=${rad}$ を代入して、$${F.vName}=\\frac{${K}\\pi}{${F.den(rad)}\\pi}-${rad}=${K / F.den(rad)}-${rad}=${h}$（cm）`,
+              `$S=${K}${F.pi ? "\\pi" : ""}$、$${F.radName}=${rad}$ を代入して、$${F.vName}=${F.calc(rad, K)}=${x}$（cm）`,
             ],
           };
         }),
@@ -502,18 +509,28 @@ const RELS = [
   { stmt: "底面積 $S$、高さ $h$ の柱の体積を $V$ とすると、", lhs: "v", a: "g", b: "h", targets: ["g", "h"], map: { v: "V", g: "S" } },
 ];
 
-// ── 円柱・円錐の表面積（10d08）──────────────────────────────
-//   p＝π、q＝r、x＝h（円柱）または ℓ（円錐）、s＝S
+// ── 円柱・円錐・角柱・角錐の表面積（10d08）──────────────────────
+//   p＝π、q＝r（または底面の1辺 a）、x＝h（高さ）または ℓ（母線・斜高）、s＝S。xOf：求める長さの出し方（円錐の母線は半径より長く）
 const SURF = [
   {
-    stmt: "底面の半径 $r$、高さ $h$ の円柱の表面積 $S$ は、",
+    stmt: "底面の半径 $r$、高さ $h$ の円柱の表面積 $S$ は、", pi: true, radName: "r", rads: [2, 3, 4, 5, 6],
     L: V1("s"), R: poly([2, { p: 1, q: 2 }], [2, { p: 1, q: 1, x: 1 }]), v: "x", map: { s: "S", p: "\\pi ", q: "r", x: "h" },
-    hName: "高さ $h$", vName: "h", coef: (rad, h) => 2 * rad * (rad + h), den: (rad) => 2 * rad, hintCoef: "$2\\pi r$",
+    hName: "高さ $h$", vName: "h", xOf: (r) => r(1, 10), K: (rad, x) => 2 * rad * (rad + x), calc: (rad, K) => `\\frac{${K}\\pi}{${2 * rad}\\pi}-${rad}=${K / (2 * rad)}-${rad}`,
   },
   {
-    stmt: "底面の半径 $r$、母線の長さ $\\ell$ の円錐の表面積 $S$ は、",
+    stmt: "底面の半径 $r$、母線の長さ $\\ell$ の円錐の表面積 $S$ は、", pi: true, radName: "r", rads: [2, 3, 4, 5, 6],
     L: V1("s"), R: poly([1, { p: 1, q: 2 }], [1, { p: 1, q: 1, x: 1 }]), v: "x", map: { s: "S", p: "\\pi ", q: "r", x: "\\ell " },
-    hName: "母線の長さ $\\ell$", vName: "\\ell", coef: (rad, h) => rad * (rad + h), den: (rad) => rad, hintCoef: "$\\pi r$",
+    hName: "母線の長さ $\\ell$", vName: "\\ell", xOf: (r, rad) => rad + r(1, 8), K: (rad, x) => rad * (rad + x), calc: (rad, K) => `\\frac{${K}\\pi}{${rad}\\pi}-${rad}=${K / rad}-${rad}`,
+  },
+  {
+    stmt: "底面が1辺 $a$ の正方形で、高さが $h$ の四角柱の表面積 $S$ は、", pi: false, radName: "a", rads: [2, 4, 6],
+    L: V1("s"), R: poly([2, { q: 2 }], [4, { q: 1, x: 1 }]), v: "x", map: { s: "S", q: "a", x: "h" },
+    hName: "高さ $h$", vName: "h", xOf: (r) => r(1, 10), K: (rad, x) => 2 * rad * rad + 4 * rad * x, calc: (rad, K) => `\\frac{${K}}{${4 * rad}}-\\frac{${rad}}{2}=${K / (4 * rad)}-${rad / 2}`,
+  },
+  {
+    stmt: "底面が1辺 $a$ の正方形で、側面の三角形の高さ（斜高）が $\\ell$ の正四角錐の表面積 $S$ は、", pi: false, radName: "a", rads: [2, 4, 6],
+    L: V1("s"), R: poly([1, { q: 2 }], [2, { q: 1, x: 1 }]), v: "x", map: { s: "S", q: "a", x: "\\ell " },
+    hName: "斜高 $\\ell$", vName: "\\ell", xOf: (r, rad) => rad / 2 + r(1, 8), K: (rad, x) => rad * rad + 2 * rad * x, calc: (rad, K) => `\\frac{${K}}{${2 * rad}}-\\frac{${rad}}{2}=${K / (2 * rad)}-${rad / 2}`,
   },
 ];
 
@@ -562,44 +579,84 @@ const sameEq = (L1, R1, L2, R2) => {
   return peq(pscale(D1, qdiv(D2[k], D1[k])), D2);
 };
 
-// ── 数値で確かめる公式の4択（台形・周の長さ・平均）────────────────
+// ── 数値で確かめる公式の4択（台形・直方体の表面積・華氏と摂氏・周の長さ・平均）────────────
 /** 台形 S＝1/2(a+b)h を v（h・a・b）について解く */
-const famTrap = (v, o) => {
-  const F = {
-    name: "台形", vars: ["S", "a", "b", "h"],
-    resid: (x) => x.S - 0.5 * (x.a + x.b) * x.h,
-    f: { h: (x) => (2 * x.S) / (x.a + x.b), a: (x) => (2 * x.S) / x.h - x.b, b: (x) => (2 * x.S) / x.h - x.a },
-    ans: { h: "h=\\frac{2S}{a+b}", a: "a=\\frac{2S}{h}-b", b: "b=\\frac{2S}{h}-a" },
+const famTrap = (v) => ({
+  name: "台形", stmt: "台形の面積 $S$ は、上底 $a$、下底 $b$、高さ $h$ のとき、", eq: "S=\\frac{1}{2}(a+b)h", vars: ["S", "a", "b", "h"],
+  resid: (x) => x.S - 0.5 * (x.a + x.b) * x.h,
+  f: { h: (x) => (2 * x.S) / (x.a + x.b), a: (x) => (2 * x.S) / x.h - x.b, b: (x) => (2 * x.S) / x.h - x.a },
+  ans: { h: "h=\\frac{2S}{a+b}", a: "a=\\frac{2S}{h}-b", b: "b=\\frac{2S}{h}-a" },
+  wrongs: {
+    h: [["h=\\frac{2S}{a}+b", (x) => (2 * x.S) / x.a + x.b], ["h=\\frac{S}{2(a+b)}", (x) => x.S / (2 * (x.a + x.b))], ["h=2S(a+b)", (x) => 2 * x.S * (x.a + x.b)], ["h=\\frac{2S-a}{b}", (x) => (2 * x.S - x.a) / x.b]],
+    a: [["a=\\frac{2S}{h}+b", (x) => (2 * x.S) / x.h + x.b], ["a=\\frac{S}{2h}-b", (x) => x.S / (2 * x.h) - x.b], ["a=\\frac{2S-b}{h}", (x) => (2 * x.S - x.b) / x.h], ["a=\\frac{2S}{h-b}", (x) => (2 * x.S) / (x.h - x.b)]],
+    b: [["b=\\frac{2S}{h}+a", (x) => (2 * x.S) / x.h + x.a], ["b=\\frac{S}{2h}-a", (x) => x.S / (2 * x.h) - x.a], ["b=\\frac{2S-a}{h}", (x) => (2 * x.S - x.a) / x.h], ["b=\\frac{2S}{h-a}", (x) => (2 * x.S) / (x.h - x.a)]],
+  },
+  hint: {
+    h: "分母がある式は、両辺に何をかけると、分母がなくなるかな。そのあと、$(a+b)$ をひとまとまりと見たとき、$h$ にかかっているものは？",
+    a: "分母がある式は、両辺に何をかけると、分母がなくなるかな。そのあと、$a$ を求めるには、$(a+b)$ を作っているものに注目して、何をすればよい？",
+    b: "分母がある式は、両辺に何をかけると、分母がなくなるかな。そのあと、$b$ を求めるには、$(a+b)$ を作っているものに注目して、何をすればよい？",
+  },
+  steps: {
+    h: ["両辺を入れかえ、両辺に 2 をかけて、$(a+b)h=2S$。", "両辺を $a+b$ でわって、$h=\\frac{2S}{a+b}$。"],
+    a: ["両辺を入れかえ、両辺に 2 をかけて、$(a+b)h=2S$。", "両辺を $h$ でわって、$a+b=\\frac{2S}{h}$。", "$b$ を移項して、$a=\\frac{2S}{h}-b$。"],
+    b: ["両辺を入れかえ、両辺に 2 をかけて、$(a+b)h=2S$。", "両辺を $h$ でわって、$a+b=\\frac{2S}{h}$。", "$a$ を移項して、$b=\\frac{2S}{h}-a$。"],
+  },
+});
+/** 直方体の表面積 S＝2(ab+bc+ca) を v（a・b・c）について解く */
+const famBox = (v) => {
+  const [p, q] = ["a", "b", "c"].filter((x) => x !== v);
+  return {
+    name: "直方体", stmt: "直方体の表面積 $S$ は、縦 $a$、横 $b$、高さ $c$ のとき、", eq: "S=2(ab+bc+ca)", vars: ["S", "a", "b", "c"],
+    resid: (x) => x.S - 2 * (x.a * x.b + x.b * x.c + x.c * x.a),
+    f: { [v]: (x) => (x.S - 2 * x[p] * x[q]) / (2 * (x[p] + x[q])) },
+    ans: { [v]: `${v}=\\frac{S-2${p}${q}}{2(${p}+${q})}` },
     wrongs: {
-      h: [["h=\\frac{2S}{a}+b", (x) => (2 * x.S) / x.a + x.b], ["h=\\frac{S}{2(a+b)}", (x) => x.S / (2 * (x.a + x.b))], ["h=2S(a+b)", (x) => 2 * x.S * (x.a + x.b)], ["h=\\frac{2S-a}{b}", (x) => (2 * x.S - x.a) / x.b]],
-      a: [["a=\\frac{2S}{h}+b", (x) => (2 * x.S) / x.h + x.b], ["a=\\frac{S}{2h}-b", (x) => x.S / (2 * x.h) - x.b], ["a=\\frac{2S-b}{h}", (x) => (2 * x.S - x.b) / x.h], ["a=\\frac{2S}{h-b}", (x) => (2 * x.S) / (x.h - x.b)]],
-      b: [["b=\\frac{2S}{h}+a", (x) => (2 * x.S) / x.h + x.a], ["b=\\frac{S}{2h}-a", (x) => x.S / (2 * x.h) - x.a], ["b=\\frac{2S-a}{h}", (x) => (2 * x.S - x.a) / x.h], ["b=\\frac{2S}{h-a}", (x) => (2 * x.S) / (x.h - x.a)]],
+      [v]: [
+        [`${v}=\\frac{S}{2(${p}+${q})}-${p}${q}`, (x) => x.S / (2 * (x[p] + x[q])) - x[p] * x[q]],
+        [`${v}=\\frac{S-2${p}${q}}{2${p}+${q}}`, (x) => (x.S - 2 * x[p] * x[q]) / (2 * x[p] + x[q])],
+        [`${v}=\\frac{S-${p}${q}}{2(${p}+${q})}`, (x) => (x.S - x[p] * x[q]) / (2 * (x[p] + x[q]))],
+        [`${v}=\\frac{S-2${p}${q}}{${p}+${q}}`, (x) => (x.S - 2 * x[p] * x[q]) / (x[p] + x[q])],
+      ],
     },
-    steps: {
-      h: ["両辺を入れかえ、両辺に 2 をかけて、$(a+b)h=2S$。", "両辺を $a+b$ でわって、$h=\\frac{2S}{a+b}$。"],
-      a: ["両辺を入れかえ、両辺に 2 をかけて、$(a+b)h=2S$。", "両辺を $h$ でわって、$a+b=\\frac{2S}{h}$。", "$b$ を移項して、$a=\\frac{2S}{h}-b$。"],
-      b: ["両辺を入れかえ、両辺に 2 をかけて、$(a+b)h=2S$。", "両辺を $h$ でわって、$a+b=\\frac{2S}{h}$。", "$a$ を移項して、$b=\\frac{2S}{h}-a$。"],
-    },
+    hint: { [v]: `$${v}$ をふくむ項は、どれとどれかな。それらを $${v}$ でくくると、かっこの中はどうなる？` },
+    steps: { [v]: [`$${v}$ をふくむ項を $${v}$ でくくる。$2${p}${q}+2${v}(${p}+${q})=S$`, `$2${p}${q}$ を移項して、$2${v}(${p}+${q})=S-2${p}${q}$。`, `両辺を $2(${p}+${q})$ でわって、$${v}=\\frac{S-2${p}${q}}{2(${p}+${q})}$。`] },
   };
-  return F;
 };
-/** 長方形の周 ℓ＝2(a+b)（a・b どちらかについて） */
-const famPerim = (v, o) => ({
-  name: "周", stmt: "長方形の周の長さを $\\ell$、縦を $a$、横を $b$ とすると、", eq: "\\ell=2(a+b)", vars: ["l", "a", "b"],
-  resid: (x) => x.l - 2 * (x.a + x.b),
-  f: { [v]: (x) => x.l / 2 - x[o] },
-  ans: { [v]: `${v}=\\frac{\\ell}{2}-${o}` },
-  wrongs: { [v]: [[`${v}=\\ell-2${o}`, (x) => x.l - 2 * x[o]], [`${v}=\\frac{\\ell}{2}+${o}`, (x) => x.l / 2 + x[o]], [`${v}=\\frac{\\ell-${o}}{2}`, (x) => (x.l - x[o]) / 2], [`${v}=\\frac{\\ell}{2}-2${o}`, (x) => x.l / 2 - 2 * x[o]]] },
-  steps: { [v]: ["両辺を入れかえ、両辺を 2 でわって、$a+b=\\frac{\\ell}{2}$。", `$${o}$ を移項して、$${v}=\\frac{\\ell}{2}-${o}$。`] },
+/** 華氏 F＝9/5·C＋32 を C について解く */
+const famTemp = () => ({
+  name: "温度", stmt: "華氏 $F$ 度と摂氏 $C$ 度の間には、", eq: "F=\\frac{9}{5}C+32", vars: ["F", "C"],
+  resid: (x) => x.F - (9 / 5) * x.C - 32,
+  f: { C: (x) => (5 * (x.F - 32)) / 9 },
+  ans: { C: "C=\\frac{5(F-32)}{9}" },
+  wrongs: { C: [["C=\\frac{5F-32}{9}", (x) => (5 * x.F - 32) / 9], ["C=\\frac{5F}{9}-32", (x) => (5 * x.F) / 9 - 32], ["C=\\frac{9(F-32)}{5}", (x) => (9 * (x.F - 32)) / 5], ["C=\\frac{5(F+32)}{9}", (x) => (5 * (x.F + 32)) / 9]] },
+  hint: { C: "まず、$C$ をふくまない項を移項すると、どうなる？ そのあと、$C$ にかかっている分数を、両辺にどんな数をかければ消せるかな。" },
+  steps: { C: ["両辺を入れかえ、32 を移項して、$\\frac{9}{5}C=F-32$。", "両辺に $\\frac{5}{9}$ をかけて、$C=\\frac{5(F-32)}{9}$。"] },
 });
-/** 平均 m＝(a+b)/2（a・b どちらかについて） */
-const famMean = (v, o) => ({
-  name: "平均", stmt: "2回のテストの得点を $a$ 点、$b$ 点、平均点を $m$ 点とすると、", eq: "m=\\frac{a+b}{2}", vars: ["m", "a", "b"],
-  resid: (x) => x.m - (x.a + x.b) / 2,
-  f: { [v]: (x) => 2 * x.m - x[o] },
-  ans: { [v]: `${v}=2m-${o}` },
-  wrongs: { [v]: [[`${v}=2m+${o}`, (x) => 2 * x.m + x[o]], [`${v}=\\frac{m-${o}}{2}`, (x) => (x.m - x[o]) / 2], [`${v}=m-2${o}`, (x) => x.m - 2 * x[o]], [`${v}=\\frac{m}{2}-${o}`, (x) => x.m / 2 - x[o]]] },
-  steps: { [v]: ["両辺を入れかえ、両辺に 2 をかけて、$a+b=2m$。", `$${o}$ を移項して、$${v}=2m-${o}$。`] },
-});
+/** 長方形の周 ℓ＝2(p1+p2)（v・o は p1・p2 のどちらか） */
+const famPerim = (v, o) => {
+  const [p1, p2] = [v, o].sort();
+  return {
+    name: "周", stmt: `長方形の周の長さを $\\ell$、縦を $${p1}$、横を $${p2}$ とすると、`, eq: `\\ell=2(${p1}+${p2})`, vars: ["l", v, o],
+    resid: (x) => x.l - 2 * (x[p1] + x[p2]),
+    f: { [v]: (x) => x.l / 2 - x[o] },
+    ans: { [v]: `${v}=\\frac{\\ell}{2}-${o}` },
+    wrongs: { [v]: [[`${v}=\\ell-2${o}`, (x) => x.l - 2 * x[o]], [`${v}=\\frac{\\ell}{2}+${o}`, (x) => x.l / 2 + x[o]], [`${v}=\\frac{\\ell-${o}}{2}`, (x) => (x.l - x[o]) / 2], [`${v}=\\frac{\\ell}{2}-2${o}`, (x) => x.l / 2 - 2 * x[o]]] },
+    hint: `$${p1}+${p2}$ をひとまとまりと見ると、その前についている数は？ 両辺をどうすると、$${p1}+${p2}$ だけが残るかな。`,
+    steps: { [v]: [`両辺を入れかえ、両辺を 2 でわって、$${p1}+${p2}=\\frac{\\ell}{2}$。`, `$${o}$ を移項して、$${v}=\\frac{\\ell}{2}-${o}$。`] },
+  };
+};
+/** 平均 m＝(p1+p2)/2 */
+const famMean = (v, o) => {
+  const [p1, p2] = [v, o].sort();
+  return {
+    name: "平均", stmt: `2回のテストの得点を $${p1}$ 点、$${p2}$ 点、平均点を $m$ 点とすると、`, eq: `m=\\frac{${p1}+${p2}}{2}`, vars: ["m", v, o],
+    resid: (x) => x.m - (x[p1] + x[p2]) / 2,
+    f: { [v]: (x) => 2 * x.m - x[o] },
+    ans: { [v]: `${v}=2m-${o}` },
+    wrongs: { [v]: [[`${v}=2m+${o}`, (x) => 2 * x.m + x[o]], [`${v}=\\frac{m-${o}}{2}`, (x) => (x.m - x[o]) / 2], [`${v}=m-2${o}`, (x) => x.m - 2 * x[o]], [`${v}=\\frac{m}{2}-${o}`, (x) => x.m / 2 - x[o]]] },
+    hint: "分母がある式は、両辺に何をかけると、分母がなくなるかな。そのあと、解く文字以外の項は、移項するとき符号がどうなる？",
+    steps: { [v]: [`両辺を入れかえ、両辺に 2 をかけて、$${p1}+${p2}=2m$。`, `$${o}$ を移項して、$${v}=2m-${o}$。`] },
+  };
+};
 // 移さなかった問題（なし）
 export const SKIPPED = [];   // 第10時は、演習プリント 8問・小テスト 5問のすべてを移した（解いた式は4択か、式から出る数に直した）

@@ -275,6 +275,7 @@ const subQ = (r, three = false) => {
     if (s2 > 0 && s3 > 0) return null;
     const c = Array.from({ length: 6 }, () => nz(r, -5, 5));
     if (c[0] < 0) c[0] = -c[0];
+    if ((c[2] === c[0] && c[3] === c[1]) || (c[4] === c[0] && c[5] === c[1]) || (c[2] === c[4] && c[3] === c[5])) return null;   // 同じかっこが2つ並ぶ式は使わない
     const cu = c[0] + s2 * c[2] + s3 * c[4], cv = c[1] + s2 * c[3] + s3 * c[5];
     return cu !== 0 && cv !== 0 && Math.abs(cu) <= 12 && Math.abs(cv) <= 12 ? { s2, s3, c, cu, cv } : null;
   });
@@ -564,7 +565,7 @@ const err14b = (r) => {
     const d = r(2, 6), a1 = nz(r, -6, 6), a2 = nz(r, -6, 6), D = mode === "negsign" ? -d : d;
     const P1 = D * a1, P2 = D * a2;
     const b1 = mode === "first" ? P1 : a1, b2 = mode === "second" ? P2 : mode === "negsign" ? -a2 : mode === "minus" ? P2 - d : a2;
-    return (b1 !== a1 || b2 !== a2) && Math.abs(P1) <= 60 && Math.abs(P2) <= 60 && b2 !== 0 && b1 !== 0 ? { D, d, a1, a2, P1, P2, b1, b2 } : null;
+    return (b1 !== a1 || b2 !== a2) && P1 + P2 !== 0 && Math.abs(P1) <= 60 && Math.abs(P2) <= 60 && b2 !== 0 && b1 !== 0 ? { D, d, a1, a2, P1, P2, b1, b2 } : null;
   });
   const { D, d, a1, a2, P1, P2, b1, b2 } = g;
   const P = poly([P1, U], [P2, V]), bad = poly([b1, U], [b2, V]), good = poly([a1, U], [a2, V]);

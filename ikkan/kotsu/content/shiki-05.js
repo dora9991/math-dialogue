@@ -378,7 +378,9 @@ export const UNITS = [
             return (c1 * c1) % c2 === 0 ? [it(null, -c1, { [u]: 1 }, true), it("*", 1, { [v]: 1 }), it("/", -c2, { [u]: 1 })] : null;
           });
           if (!items) return { skip: true };
-          const vals = { [u]: -r(1, 6), [v]: pick(r, [-4, -3, -2, -1, 1, 2, 3, 4, 5]) };
+          const simp = run(items);
+          const vals = retry(() => { const o = { [u]: -r(1, 6), [v]: pick(r, [-4, -3, -2, -1, 1, 2, 3, 4, 5]) }; return Math.abs(peval(simp, o)[0]) <= 120 ? o : null; });
+          if (!vals) return { skip: true };
           return chainValueQ(items, vals, u, v, "累乗を先に計算し、式を簡単にしてから代入しよう。");
         }),
       ],

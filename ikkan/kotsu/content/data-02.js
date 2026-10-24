@@ -13,12 +13,12 @@ import { sum, classes, cumulative } from "../stats.js";
 const unit = unitFor("data");
 
 // ── 場面 ─────────────────────────────────────────────
-/** name＝「＿＿のヒストグラム」に入る言葉、u＝単位、los＝階級のはじめの候補、ws＝階級の幅の候補、d＝目盛りの小数の桁数 */
+/** name＝「＿＿のヒストグラム」に入る言葉、u＝単位、los＝階級のはじめの候補、ws＝階級の幅の候補、d＝目盛りの小数の桁数、max＝階級の上のはしの上限、full＝満点（度数折れ線の点もこえない） */
 const CTX = [
   { name: "上体起こしの記録", u: "回", los: [10, 15, 20], ws: [5], d: 0, max: 50 },
   { name: "通学時間", u: "分", los: [0], ws: [5, 10], d: 0, max: 60 },
   { name: "50m走の記録", u: "秒", los: [7, 7.5, 8], ws: [0.5], d: 1, max: 10.5 },
-  { name: "テストの得点", u: "点", los: [0, 40], ws: [10], d: 0, max: 100 },
+  { name: "テストの得点", u: "点", los: [0, 40], ws: [10], d: 0, max: 100, full: 100 },
   { name: "ボール投げの記録", u: "m", los: [10, 15, 20], ws: [5], d: 0, max: 50 },
   { name: "身長", u: "cm", los: [140, 145, 150], ws: [5], d: 0, max: 180 },
 ];
@@ -129,7 +129,7 @@ export const UNITS = [
         }),
         // 02d02a 度数折れ線の両はしの点
         t("02d02a", (r) => {
-          const s = setup(r), leftOK = s.cls[0].lo - s.w / 2 >= 0, rightOK = !s.c.max || s.cls[s.k - 1].hi + s.w / 2 <= s.c.max;
+          const s = setup(r), leftOK = s.cls[0].lo - s.w / 2 >= 0, rightOK = !s.c.full || s.cls[s.k - 1].hi + s.w / 2 <= s.c.full;
           const left = !rightOK || (r(0, 1) === 0 && leftOK);   // 左はしの点が負の値になる組、右はしの点が満点（100点）をこえる組は、使わない側を聞かない
           const cx = (left ? s.cls[0].lo : s.cls[s.k - 1].hi) + (left ? -1 : 1) * (s.w / 2);
           return {
@@ -215,7 +215,7 @@ export const UNITS = [
         }),
         // 02q03 度数折れ線の両はしの点（小テスト）
         t("02q03", (r) => {
-          const s = setup(r, 5), n = r(18, 30), f = bell(r, 5, n), leftOK = s.cls[0].lo - s.w / 2 >= 0, rightOK = !s.c.max || s.cls[4].hi + s.w / 2 <= s.c.max;
+          const s = setup(r, 5), n = r(18, 30), f = bell(r, 5, n), leftOK = s.cls[0].lo - s.w / 2 >= 0, rightOK = !s.c.full || s.cls[4].hi + s.w / 2 <= s.c.full;
           const left = !rightOK || (r(0, 1) === 0 && leftOK);
           const cx = round((left ? s.cls[0].lo : s.cls[4].hi) + (left ? -1 : 1) * (s.w / 2), 6);
           return {

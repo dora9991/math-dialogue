@@ -52,7 +52,7 @@ function statQ(r, kind, { n, lo, hi, ctx = null, sortedShow = false }) {
     steps = [`合計 ＝ ${shown.join("+")} ＝ ${sum(d)}`, `平均値 ＝ ${sum(d)}÷${n} ＝ ${ans}`];
   } else if (kind === "median") {
     ans = median(d);
-    hint = n % 2 ? "データを小さい順に並べよう。まん中の値は、何番目かな。" : "データを小さい順に並べよう。個数が偶数のとき、中央値は、どの値を使って求めるのだったかな。";
+    hint = n % 2 ? "データを小さい順に並べると、まん中の値は、何番目かな。" : "個数が偶数のとき、中央値は、どの値を使って求めるのだったかな。小さい順に並べると、それは何番目と何番目かな。";
     steps = [`小さい順に並べる：${list(s)}`, n % 2 ? `${n}個だから、まん中は ${(n + 1) / 2}番目の ${ans}。` : `${n}個だから、まん中は ${n / 2}番目の ${s[n / 2 - 1]}と ${n / 2 + 1}番目の ${s[n / 2]}。(${s[n / 2 - 1]}+${s[n / 2]})÷2 ＝ ${show(ans)}`];
   } else if (kind === "mode") {
     ans = modes(d)[0];
@@ -188,7 +188,7 @@ export const UNITS = [
             q: `${n}人の${name}（${u}）の平均値が${m}${u}のとき、${n}人の合計はいくつか。`,
             ans: n * m,
             unit: u,
-            hint: "平均値は、合計を個数でわった値。合計は、どう求められるかな。",
+            hint: "平均値は、合計と個数からどう求めたかな。合計を求めるには、その式をどう変えたらいいかな。",
             steps: [`平均値 ＝ 合計 ÷ 個数 だから、合計 ＝ 平均値 × 個数`, `合計 ＝ ${m}×${n} ＝ ${n * m}（${u}）`],
           };
         }),
@@ -197,8 +197,8 @@ export const UNITS = [
       2: [
         // 03d03a ヒストグラムから最頻値
         t("03d03a", (r) => {
-          const k = r(6, 8), { c, cls } = fsetup(r, k), n = pick(r, [24, 28, 30, 32, 36, 40]), f = peaked(r, k, n, pickPeak(r, cls, c.pk));
-          if (!uniqMax(f)) return { skip: true };
+          const k = r(6, 8), { c, cls } = fsetup(r, k), n = pick(r, [24, 28, 30, 32, 36, 40]), pk = pickPeak(r, cls, c.pk), f = peaked(r, k, n, pk);
+          if (!uniqMax(f) || f.indexOf(Math.max(...f)) !== pk) return { skip: true };   // ねらった山の階級が、そのまま最頻値の階級になる組だけ
           const j = f.indexOf(Math.max(...f)), mid = cls[j].mid;
           return {
             q: `${n}人の${c.name}（${c.u}）のヒストグラムがある。長方形の高さは、${fs(cls, f, c.u)}である。最頻値を求めよう。`,
@@ -243,14 +243,14 @@ export const UNITS = [
           return {
             q: `${n}人のデータ［${list(d)}］の中央値を求めよう。`,
             ans: round(ans),
-            hint: "データを小さい順に並べよう。個数が偶数のとき、中央値は、どの値を使って求めるのだったかな。",
+            hint: "個数が偶数のとき、中央値は、どの値を使って求めるのだったかな。小さい順に並べると、それは何番目と何番目かな。",
             steps: [`小さい順に並べる：${list(s)}`, `まん中の 2つは ${s[n / 2 - 1]}と ${s[n / 2]}。中央値 ＝ (${s[n / 2 - 1]}+${s[n / 2]})÷2 ＝ ${show(ans)}`],
           };
         }),
         // 03q03a 度数分布表の最頻値
         t("03q03a", (r) => {
-          const { c, cls } = fsetup(r, 4), f = peaked(r, 4, 20, pickPeak(r, cls, c.pk));
-          if (!uniqMax(f)) return { skip: true };
+          const { c, cls } = fsetup(r, 4), pk = pickPeak(r, cls, c.pk), f = peaked(r, 4, 20, pk);
+          if (!uniqMax(f) || f.indexOf(Math.max(...f)) !== pk) return { skip: true };
           const j = f.indexOf(Math.max(...f));
           return {
             q: `20人の${c.name}（${c.u}）の度数分布表は、${fs(cls, f, c.u)}である。最頻値を求めよう。`,
@@ -384,7 +384,7 @@ function xQ(r, ask) {
   return {
     q: `${head}x を求めて、6つのデータの平均値も求めよう。平均値は？`,
     ans: S / 6,
-    hint: "まず、中央値から x を求めよう。データが 6個（偶数）のとき、中央値はどう求めたかな。x がわかったら、平均値を求める。",
+    hint: "中央値から、x はわかるかな。データが 6個（偶数）のとき、中央値はどう求めたかな。x がわかれば、平均値は求められるかな。",
     steps: [`中央値は 3番目の ${v3}と 4番目の x の平均だから　(${v3}+x)÷2 ＝ ${m}　x ＝ ${x}`, `平均値 ＝ (${full.join("+")})÷6 ＝ ${S}÷6 ＝ ${S / 6}`],
   };
 }
