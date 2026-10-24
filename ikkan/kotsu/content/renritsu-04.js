@@ -111,6 +111,8 @@ const exprNum = (m, n, val) => {
   const mv = qeq(m, Q(1)) ? `${val}` : qeq(m, Q(-1)) ? `-${val < 0 ? `(${val})` : val}` : `${qtex(m)}\\times${val < 0 ? `(${val})` : val}`;
   return `${mv}${n > 0 ? `+${n}` : n < 0 ? `-${-n}` : ""}`;
 };
+/** 代入して求めた式「sv＝…＝値」（途中の式が値と同じ書き方になるときは、途中を省く） */
+const backTex = (sVar, m, n, ov0, sv0) => { const e = exprNum(m, n, ov0); return e === String(sv0) ? `${sVar}=${sv0}` : `${sVar}=${e}=${sv0}`; };
 /** 代入法で解く解説。S＝{ sv, ov, m, n, B, std（①を x＝…の形に直す前の式 [a,b,c]、なければ null） }。lines と sol を返す */
 const subSteps = (S) => {
   const { m, n, B } = S, sVar = S.sv, ov = S.ov;
@@ -135,7 +137,7 @@ const subSteps = (S) => {
   if (S.std) lines.push(`① を $${sVar}=\\cdots$ の形に直すと　$${sVar}=${EXPR(m, n, ov)}$ …③`);
   lines.push(`② に ${lab} を代入：$${subTex(B, sVar, m, n, ov)}$`);
   lines.push(`整理して　${pcs.map((p) => `$${p}$`).join("　")}`);
-  lines.push(`${lab}に $${ov}=${ov0}$ を代入：$${sVar}=${exprNum(m, n, ov0)}=${sv0}$`);
+  lines.push(`${lab}に $${ov}=${ov0}$ を代入：$${backTex(sVar, m, n, ov0, sv0)}$`);
   const sol = []; sol[idx(ov)] = ov0; sol[idx(sVar)] = sv0;
   return { lines, sol, ov0, sv0 };
 };
@@ -256,7 +258,7 @@ export const UNITS = [
             q: `連立方程式 $${casesTex([`${sVar}=${E1}`, `${sVar}=${E2}`])}$${LAB}を、代入法で解いたとき、$${XY[ask]}$ の値は？`,
             ans: [x0, y0][ask],
             hint: `どちらの式も $${sVar}=\\cdots$ の形。② の $${sVar}$ に、① の右辺を代入しよう。`,
-            steps: [`② の $${sVar}$ に ① を代入：$${E1}=${E2}$`, `整理して　$${sub}=${n2 - n1}$${al === 1 ? "" : `　$${ov}=${ov0}$`}`, `① に $${ov}=${ov0}$ を代入：$${sVar}=${exprNum(Q(m1), n1, ov0)}=${sv0}$`, ANS(x0, y0)],
+            steps: [`② の $${sVar}$ に ① を代入：$${E1}=${E2}$`, `整理して　$${sub}=${n2 - n1}$${al === 1 ? "" : `　$${ov}=${ov0}$`}`, `① に $${ov}=${ov0}$ を代入：$${backTex(sVar, Q(m1), n1, ov0, sv0)}$`, ANS(x0, y0)],
           };
         })),
       ],

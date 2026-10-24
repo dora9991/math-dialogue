@@ -268,12 +268,18 @@ export const UNITS = [
       4: [
         // 07d07 A組とB組のヒストグラム：ア〜エのうち正しいもの
         t("07d07", (r) => {
-          const k = 5, cls = classes(0, 20, k), nA = pick(r, [25, 30, 35, 40, 45]), nB = pick(r, [25, 30, 35, 40, 45]);
-          if (nA === nB) return { skip: true };
-          const fa = genFreq(r, nA, k), fb = genFreq(r, nB, k); if (!fa || !fb) return { skip: true };
-          const j = r(2, 3), th = cls[j].lo, ca = sum(fa.slice(j)), cb = sum(fb.slice(j));
-          const mca = medianClass(fa), mcb = medianClass(fb);
-          if (ca === cb || Math.abs(ca / nA - cb / nB) < 0.05 || isTie(ca / nA, 2) || isTie(cb / nB, 2) || mca == null || mcb == null || mca < 0 || mcb < 0) return { skip: true };
+          const k = 5, cls = classes(0, 20, k);
+          let nA, nB, fa, fb, j, th, ca, cb, mca, mcb;
+          for (let tr = 0; tr < 40; tr++) {
+            nA = pick(r, [25, 30, 35, 40, 45]); nB = pick(r, [25, 30, 35, 40, 45]);
+            if (nA === nB) continue;
+            fa = genFreq(r, nA, k); fb = genFreq(r, nB, k); if (!fa || !fb) continue;
+            j = r(2, 3); th = cls[j].lo; ca = sum(fa.slice(j)); cb = sum(fb.slice(j));
+            mca = medianClass(fa); mcb = medianClass(fb);
+            if (ca === cb || Math.abs(ca / nA - cb / nB) < 0.05 || isTie(ca / nA, 2) || isTie(cb / nB, 2) || mca == null || mcb == null || mca < 0 || mcb < 0) continue;
+            break;
+          }
+          if (mca == null || mcb == null || ca === cb || Math.abs(ca / nA - cb / nB) < 0.05 || isTie(ca / nA, 2) || isTie(cb / nB, 2)) return { skip: true };
           const G = ["A組", "B組"], more = ca > cb ? 0 : 1, larger = ca / nA > cb / nB ? 0 : 1;
           const L = (i) => clsLabel(cls[i], "点");
           const other = (i) => pick(r, [0, 1, 2, 3, 4].filter((x) => x !== i));

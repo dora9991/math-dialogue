@@ -6,7 +6,7 @@
 //   度数分布表は、問題文の中で「20個以上30個未満が 3日、…」と文章で言う（freqSentence）。
 //   記述（方法を書く・わけを書く）の問題は、「適切な方法・調べ方を選ぶ」4択に直した（06d05・06q03）。
 // ============================================================
-import { t, pick, choices4, shuffle, round } from "../kit.js";
+import { t, pick, choices4, shuffle, sample, round } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
 import { sum, mean, median, modes, range, classes, cumulative, medianClass, roundHalf, isTie, pct, clsLabel, freqSentence, listData } from "../stats.js";
 
@@ -41,12 +41,12 @@ const FT = [
   { who: "人", lead: (n) => `${n}人の、通学時間（分）を`, u: "分", lo: 0, w: 10 },
   { who: "人", lead: (n) => `${n}人の、数学のテストの得点（点）を`, u: "点", lo: 30, w: 10 },
   { who: "人", lead: (n) => `${n}人の、1日の家庭学習の時間（分）を`, u: "分", lo: 0, w: 20 },
-  { who: "人", lead: (n) => `${n}人の、身長（cm）を`, u: "cm", lo: 140, w: 10, ks: [5] },
+  { who: "人", lead: (n) => `${n}人の、身長（cm）を`, u: "cm", lo: 130, w: 10, ks: [5], peaks: [2, 3] },   // 130〜180cm。山は 150〜170cm
 ];
 /** 合計 n を k 個の階級に分ける（山が1つ。どの階級も 1 以上）。うまくいかなければ null */
-function genFreq(r, n, k) {
+function genFreq(r, n, k, pk) {
   for (let tr = 0; tr < 60; tr++) {
-    const p = r(1, k - 2);
+    const p = pk ? r(pk[0], pk[1]) : r(1, k - 2);
     const w = Array.from({ length: k }, (_, i) => (Math.pow(1.7, -Math.abs(i - p)) * (70 + r(0, 60))) / 100);
     const tot = sum(w);
     const f = w.map((x) => Math.max(1, Math.round((n * x) / tot)));
@@ -58,7 +58,7 @@ function genFreq(r, n, k) {
 }
 function tbl(r, ns, kk = [5, 5, 6]) {
   const ctx = pick(r, FT), n = pick(r, ns), k = pick(r, ctx.ks || kk);
-  const f = genFreq(r, n, k);
+  const f = genFreq(r, n, k, ctx.peaks);
   if (!f) return null;
   return { ctx, n, k, f, cls: classes(ctx.lo, ctx.w, k) };
 }
@@ -111,10 +111,6 @@ const medClass = (ns) => (r) => {
 };
 
 // ── 方法を選ぶ（記述 → 4択） ─────────────────────────────
-const GOOD_COMPARE = [
-  "それぞれの平均値や中央値を求めて、くらべる",
-  "それぞれをヒストグラムに表して、形をくらべる",
-];
 
 export const UNITS = [
   unit("06", {
@@ -155,7 +151,9 @@ export const UNITS = [
           const list = [0, 1, 2, 3].map((p) => `${K[p]} ${S[perm.indexOf(p)]}`).join("　");
           const orderOf = (steps) => steps.map((s) => K[perm[s]]).join(" → ");
           const ans = orderOf([0, 1, 2, 3]);
-          const wrongs = [orderOf([0, 2, 1, 3]), orderOf([1, 0, 2, 3]), orderOf([0, 1, 3, 2]), orderOf([3, 2, 1, 0])];
+          // となり合う入れかえ 1つ ＋ 逆順・2回の入れかえなど 2つ
+          const adj = [[0, 2, 1, 3], [1, 0, 2, 3], [0, 1, 3, 2]], far = [[3, 2, 1, 0], [1, 0, 3, 2], [2, 3, 0, 1], [3, 0, 1, 2], [1, 2, 3, 0], [0, 3, 2, 1], [2, 1, 3, 0]];
+          const wrongs = [pick(r, adj), ...sample(r, far, 2)].map(orderOf);
           return {
             q: `データを使って判断するときの順に、ア〜エをならべると、どうなるか。${list}`,
             ans,
@@ -227,18 +225,29 @@ export const UNITS = [
         t("06q03", (r) => {
           const s = pick(r, [
             { rec: "100m走の記録", goal: "どちらのクラスが速いか" },
+            { rec: "50m走の記録", goal: "どちらのクラスが速いか" },
             { rec: "ボール投げの記録", goal: "どちらのクラスが遠くまで投げられるか" },
+            { rec: "ハンドボール投げの記録", goal: "どちらのクラスが遠くまで投げられるか" },
             { rec: "反復横とびの記録", goal: "どちらのクラスが多くとべるか" },
+            { rec: "立ち幅とびの記録", goal: "どちらのクラスがよくとべるか" },
             { rec: "握力の記録", goal: "どちらのクラスが力が強いか" },
+            { rec: "上体起こしの回数", goal: "どちらのクラスが多くできるか" },
           ]);
-          const ans = pick(r, ["それぞれのクラスの平均値や中央値を求めて、くらべる", "それぞれのクラスの度数分布表やヒストグラムをつくって、くらべる"]);
+          const ans = pick(r, [
+            "それぞれのクラスの平均値や中央値を求めて、くらべる",
+            "それぞれのクラスの度数分布表やヒストグラムをつくって、くらべる",
+            "それぞれのクラスの記録を、小さい順にならべて、まん中の値をくらべる",
+          ]);
           const wrongs = [
             "それぞれのクラスの人数を調べて、人数の多いほうのクラスを選ぶ",
             "それぞれのクラスで、いちばんよかった1人の記録だけをくらべる",
             "それぞれのクラスの記録の範囲だけを求めて、くらべる",
           ];
           return {
-            q: `2つのクラスの、${s.rec}をくらべて、${s.goal}を決めたい。調べる方法として、適切なものはどれか。`,
+            q: pick(r, [
+              `2つのクラスの、${s.rec}をくらべて、${s.goal}を決めたい。調べる方法として、適切なものはどれか。`,
+              `2つのクラスの${s.rec}から、${s.goal}を調べたい。どのような方法でくらべるのが適切か。`,
+            ]),
             ans,
             choices: choices4(r, ans, wrongs),
             hint: "2つのクラスの記録全体のようすを、くらべられる数やグラフにするには、どうすればよいかな。",
@@ -257,15 +266,17 @@ export const UNITS = [
             { g: ["A市の中学生", "B市の中学生"], topic: "1日の家庭学習の時間", dir: "長い" },
           ]);
           const n1 = pick(r, [60, 75, 80, 90, 120, 150]), n2 = pick(r, [50, 65, 70, 85, 100, 110]);
+          const [g0, g1] = s.g;
           const ans = pick(r, [
-            ...GOOD_COMPARE,
-            "人数がちがうので、度数分布表の度数ではなく、相対度数でくらべる",
+            `${g0}と${g1}の平均値や中央値を、それぞれ求めて、くらべる`,
+            `${g0}と${g1}のヒストグラムを、それぞれつくって、形をくらべる`,
+            `${g0}と${g1}の人数がちがうので、相対度数にして、くらべる`,
           ]);
           const wrongs = shuffle(r, [
-            `${s.g[0]}と${s.g[1]}の、人数だけをくらべる`,
-            "度数分布表の度数（人数）を、そのままくらべる",
-            `${s.g[0]}のいちばん大きい値と、${s.g[1]}のいちばん小さい値だけをくらべる`,
-            `${s.g[0]}と${s.g[1]}のデータを、1つにまぜてから平均値を求める`,
+            `${g0}と${g1}の人数を、それぞれ数えて、人数だけをくらべる`,
+            `${g0}と${g1}の度数分布表をつくって、度数（人数）をそのままくらべる`,
+            `${g0}と${g1}から、1人ずつえらんで、その2人の値だけをくらべる`,
+            `${g0}と${g1}のデータを、1つにまぜて、平均値を求める`,
           ]).slice(0, 3);
           return {
             q: `「${s.g[0]}は、${s.g[1]}より、${s.topic}が${s.dir}」といえるかどうかを調べたい。${s.g[0]} ${n1}人、${s.g[1]} ${n2}人の、${s.topic}のデータがある。このデータを整理してくらべる方法として、適切なものはどれか。`,
@@ -285,7 +296,7 @@ export const UNITS = [
         // 06d07 度数分布表の一部が読めない。階級値を使って求めた平均値から、ア・イ
         t("06d07", (r) => {
           const ctx = pick(r, FT.filter((c) => c.who === "人")), n = pick(r, [20, 25, 30, 35, 40]), k = 5;
-          const f = genFreq(r, n, k);
+          const f = genFreq(r, n, k, ctx.peaks);
           if (!f) return { skip: true };
           const cls = classes(ctx.lo, ctx.w, k), tot = sum(cls.map((c, i) => c.mid * f[i])), mn = tot / n;
           if (!Number.isInteger(round(mn * 10, 6))) return { skip: true };

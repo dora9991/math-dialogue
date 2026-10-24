@@ -261,11 +261,12 @@ export const UNITS = [
           const cands = [];
           for (let i = 0; i < 10; i++) { const u = mk(co()), w = bad(co()); cands.push(r(0, 1) ? [u, w] : [w, u]); }
           const show = ([u, w]) => SYS(u, w);
-          const seen = new Set([show([e1, e2])]), wrongs = [];
-          for (const c of cands) {        // 解がない（平行な）組・同じ見た目の組は出さない
+          const key = ([u, w]) => [linTex(...u), linTex(...w)].sort().join("|");       // 式の順がちがうだけの組は、同じ連立とみなす
+          const seen = new Set([key([e1, e2])]), wrongs = [];
+          for (const c of cands) {        // 解がない（平行な）組・同じ連立は出さない
             if (sat(c[0], x0, y0) && sat(c[1], x0, y0)) continue;
-            if (c[0][0] * c[1][1] - c[0][1] * c[1][0] === 0 || seen.has(show(c))) continue;
-            seen.add(show(c)); wrongs.push(c);
+            if (c[0][0] * c[1][1] - c[0][1] * c[1][0] === 0 || seen.has(key(c))) continue;
+            seen.add(key(c)); wrongs.push(c);
           }
           if (wrongs.length < 3) return null;
           const ex = wrongs[0], f = sat(ex[0], x0, y0) ? ex[1] : ex[0];
