@@ -83,6 +83,22 @@
     return b;
   }
   const timescaleOf = (dv, box) => { const v1 = dv.getUint8(box.body) === 1; return u32(dv, box.body + 4 + (v1 ? 16 : 8)); };
+  /* tkhd の写し b（Uint8Array）に、映す向き（時計回りの角度 90・180・270）の行列を書く。
+     中身（コマ）はそのままで、再生するときに回して映す（ffmpeg の display_rotation と同じ書き方。x・y はずらさない） */
+  const MATRIX = {
+    0: [0x10000, 0, 0, 0, 0x10000, 0, 0, 0, 0x40000000],
+    90: [0, 0x10000, 0, -0x10000, 0, 0, 0, 0, 0x40000000],
+    180: [-0x10000, 0, 0, 0, -0x10000, 0, 0, 0, 0x40000000],
+    270: [0, -0x10000, 0, 0x10000, 0, 0, 0, 0, 0x40000000]
+  };
+  function withMatrix(b, rotate) {
+    const m = MATRIX[rotate];
+    if (!m) return b;
+    const d = new DataView(b.buffer, b.byteOffset, b.byteLength);
+    const off = 8 + (b[8] === 1 ? 52 : 40);       // 箱の頭 8 ＋（版・フラグ・時刻・track_ID・reserved・長さ・reserved・layer・alternate_group・volume・reserved）
+    m.forEach((v, i) => d.setInt32(off + i * 4, v));
+    return b;
+  }
 
   /* trak の中から、組み立てに使うものを取り出す */
   function readTrak(dv, trak) {
@@ -101,8 +117,10 @@
   /* 細切れの MP4 を、ふつうの MP4 にする。
      戻り値 { flat, header（Uint8Array：ftyp＋moov＋mdat の頭）, ranges（元の Blob の [始め, 終わり) の並び。この順につなぐと mdat の中身）,
              duration（秒）, tracks: [{ handler, samples, duration }], truncated（最後が切れていた）}
-     flat: false … もともと、ふつうの MP4（または組み立てられない形）。そのまま使う */
-  async function flatten(blob) {
+     flat: false … もともと、ふつうの MP4（または組み立てられない形）。そのまま使う
+     opts.rotate：映像を時計回りに何度回して映すか（0・90・180・270。画面の向きのロックをしたまま、横に置いて撮ったとき） */
+  async function flatten(blob, opts) {
+    const rotate = (((opts && opts.rotate) || 0) % 360 + 360) % 360;
     const top = await scan(blob);
     const ftypBox = top.find((b) => b.type === 'ftyp' && b.complete);
     const moovTop = top.find((b) => b.type === 'moov' && b.complete);
@@ -219,7 +237,8 @@
         used.forEach((T) => {
           const B = T.box;
           w.box('trak', () => {
-            w.bytes(withDuration(mdv, B.tkhd, 'tkhd', T.movieDur));
+            const tk = withDuration(mdv, B.tkhd, 'tkhd', T.movieDur);
+            w.bytes(T.handler === 'vide' && rotate ? withMatrix(tk, rotate) : tk);
             if (B.edts) w.bytes(copy(mdv, B.edts));
             else if (T.lead > 0) {
               // 最初のサンプルまでの空き（映像と音の始まりのずれを保つ）。B フレームがあるときは、いちばん早く映るサンプルの時刻（minCT）から映す
@@ -279,7 +298,7 @@
     w.bytes(moovBytes);
     if (big) { w.u32(1); w.str('mdat'); w.u64(payload + 16); } else { w.u32(payload + 8); w.str('mdat'); }
     return {
-      flat: true, header: w.out(), ranges, truncated,
+      flat: true, header: w.out(), ranges, truncated, rotate,
       duration: movieDur / movieTs,
       tracks: used.map((T) => ({ handler: T.handler, samples: T.sizes.length, duration: T.mediaDur / T.ts + T.lead / movieTs }))
     };

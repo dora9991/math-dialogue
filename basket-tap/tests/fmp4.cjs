@@ -91,6 +91,31 @@ function same(a, b) {
     ok(Math.abs(+vst.start_time - +vst0.start_time) < 0.01 && +vst.start_time > 0.5 && fe.length > 0 && fe.join('\n') === fef.join('\n') && Math.abs(plan.duration - 7.5) < 0.1,
       `映像の最初のコマは元と同じ ${(+vst.start_time).toFixed(3)} 秒（0.5 秒の空き＋B フレームのずれ。編集リスト）・コマの時刻と中身も同じ（${fe.length} コマ）`, { start: vst.start_time, orig: vst0.start_time, dur: plan.duration });
 
+    console.log('\n■ 映す向きを書く（画面の向きのロックのまま横に置いて録ったとき）');
+    // 中身はそのまま・目次（tkhd の行列）にだけ「時計回りに何度回して映すか」を書く。
+    // ffmpeg で、向きを当てて読んだ最初のコマが、元のコマを同じだけ回したものと同じかを確かめる
+    const first = (f, vf, noAuto) => execFileSync('ffmpeg', ['-v', 'error'].concat(noAuto ? ['-noautorotate'] : [], ['-i', f], vf ? ['-vf', vf] : [], ['-frames:v', '1', '-f', 'framemd5', '-'])).toString().split('\n').filter((l) => l && l[0] !== '#').map((l) => l.split(/,\s*/).pop())[0];
+    const dims = (f) => { const s = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height:stream_side_data=rotation', '-of', 'json', f]).toString()).streams[0]; return { w: s.width, h: s.height, rotation: ((s.side_data_list || [])[0] || {}).rotation }; };
+    for (const [deg, vf] of [[90, 'transpose=clock'], [270, 'transpose=cclock'], [180, 'hflip,vflip']]) {
+      const rf = path.join(W, `rot${deg}.mp4`);
+      const blob = new Blob([fs.readFileSync(a)]);
+      const p = await F.flatten(blob, { rotate: deg });
+      fs.writeFileSync(rf, Buffer.from(await F.compose(blob, p).arrayBuffer()));
+      const want = first(a, vf), got = first(rf), raw = first(rf, null, true), ds = dims(rf);
+      ok(p.flat && p.rotate === deg && got === want && raw === first(a) && ds.w === 320 && ds.h === 180,
+        `${deg}° 回して映す：向きを当てて読むと、元を ${deg}° 回したコマと同じ・中身（回す前）は元のまま（ffprobe の rotation ${ds.rotation}）`, { got, want, raw, ds });
+    }
+    {
+      const blob = new Blob([fs.readFileSync(b)]);
+      const p = await F.flatten(blob, { rotate: 90 });
+      const rf = path.join(W, 'rot90_vp9.mp4');
+      fs.writeFileSync(rf, Buffer.from(await F.compose(blob, p).arrayBuffer()));
+      ok(first(rf) === first(b, 'transpose=clock'), 'VP9＋Opus（Chrome の録画）でも、90° 回して映せる');
+      const p0 = await F.flatten(blob, { rotate: 0 });
+      const pd = await F.flatten(blob);
+      ok(Buffer.from(p0.header).equals(Buffer.from(pd.header)) && dims(path.join(W, 'vp9_flat.mp4')).rotation === undefined, '向きなし（0°）は、行列を書きかえない（目次が、向きを渡さないときと同じ）');
+    }
+
     console.log('\n■ もともと、ふつうの MP4');
     const n = path.join(W, 'normal.mp4');
     ff(['-f', 'lavfi', '-i', 'testsrc2=size=160x90:rate=10', '-t', '2', '-c:v', 'libx264', n]);

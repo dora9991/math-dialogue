@@ -55,7 +55,7 @@
       setState(s) { C.state = s; emit('state', s); },
       settings() { const t = C.stream && C.stream.getVideoTracks()[0]; return t && t.getSettings ? t.getSettings() : {}; },
       live() { return !!(C.stream && C.stream.getVideoTracks().some((t) => t.readyState === 'live')); },
-      /* 録画を始める。meta: { gameId, n, base（ファイル名のもと） }。戻り値：動画の情報（vstore の videos の形） */
+      /* 録画を始める。meta: { gameId, n, base（ファイル名のもと）, rotate（映す向き：時計回りの角度） }。戻り値：動画の情報（vstore の videos の形） */
       async start(meta) {
         if (C.rec) return C.seg;
         if (!C.live()) await C.open(C.opts);
@@ -67,8 +67,11 @@
         try { rec = new MediaRecorder(C.stream, ro); } catch (e) { delete ro.videoKeyFrameIntervalDuration; rec = new MediaRecorder(C.stream, ro); }
         const s = C.stream.getVideoTracks()[0].getSettings ? C.stream.getVideoTracks()[0].getSettings() : {};
         const vid = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+        const rotate = [90, 180, 270].includes(meta.rotate) ? meta.rotate : 0;
+        const rw = s.width || q.w, rh = s.height || q.h;
         const seg = C.seg = {
-          vid, gameId: meta.gameId, n: meta.n || 1, startedAt: null, endedAt: null, mime: rec.mimeType || mime || 'video/webm', ext: '', w: s.width || q.w, h: s.height || q.h,
+          vid, gameId: meta.gameId, n: meta.n || 1, startedAt: null, endedAt: null, mime: rec.mimeType || mime || 'video/webm', ext: '',
+          w: rotate % 180 ? rh : rw, h: rotate % 180 ? rw : rh, rotate,            // w・h は映すときの大きさ（回したあと）
           bytes: 0, chunks: 0, status: 'recording', plan: null, duration: null, name: ''
         };
         seg.ext = extOf(seg.mime);
@@ -89,12 +92,12 @@
         C.rec = rec;
         C.flush = () => chain;
         C.stopped = stopped;
-        seg.startCall = Date.now();
-        rec.start(SLICE);
-        await Promise.race([started, new Promise((r) => setTimeout(r, 1500))]);
         // 録画を始めた時刻は「start() を呼ぶ直前」。録画が始まった知らせ（start）は、実際の始まりより 0.05〜0.1 秒おそい
         // （Chromium で、映像に映した時刻と比べて確かめた。直前の時刻なら、ずれは 0.03 秒以内）
+        seg.startCall = Date.now();
         seg.startedAt = seg.startCall;
+        rec.start(SLICE);
+        await Promise.race([started, new Promise((r) => setTimeout(r, 1500))]);
         await BT.vstore.putVideo(Object.assign({}, seg));
         C.setState('recording');
         emit('start', seg);
@@ -138,7 +141,7 @@
       v.bytes = blob.size;
       if (v.ext === 'mp4' && blob.size && BT.fmp4) {
         let plan = null;
-        try { plan = await BT.fmp4.flatten(blob); } catch (e) { plan = null; }
+        try { plan = await BT.fmp4.flatten(blob, { rotate: v.rotate || 0 }); } catch (e) { plan = null; }
         if (plan && plan.flat) { v.plan = { header: plan.header, ranges: plan.ranges, duration: plan.duration, truncated: plan.truncated }; v.duration = plan.duration; } else {
           // 中身（映像のデータ）が1つもない：始めてすぐ閉じた・止めた
           const top = await BT.fmp4.scan(blob).catch(() => []);
@@ -152,6 +155,11 @@
     if (!v.duration) v.duration = Math.max(0, (v.endedAt - v.startedAt) / 1000);
     v.status = 'done';
     if (v.empty) { await BT.vstore.remove(v.vid); v.gone = true; return v; }       // 何も録れていない動画は残さない
+    if (v.rotate && !v.plan) {           // 向きを書けなかった（WebM・組み直せない形）：回さずに保存される。大きさも回す前のものに
+      v.rotateLost = true;
+      if (v.rotate % 180) [v.w, v.h] = [v.h, v.w];
+      v.rotate = 0;
+    }
     await BT.vstore.putVideo(v);
     return v;
   }

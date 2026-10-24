@@ -190,17 +190,51 @@ body[data-view="live"] { overflow: hidden; }
   .lbar:has(.cambtn:not([hidden])) .period { min-width: 36px; padding: 0 4px; }
   .lbar:has(.cambtn:not([hidden])) .score { gap: 3px; }
 }
-/* 撮影の画面 */
-.camsheet .campv { display: block; width: 100%; max-height: 52vh; max-height: 52dvh; background: #000; border-radius: 12px; object-fit: contain; }
+/* 撮影の画面：大きな映像（録れる動画の向きに回して映す。大きさは js の fitPreview） */
+.cambtn .camthumb { position: absolute; left: 50%; top: 50%; width: 100%; height: 100%; }
+.cambtn.warn { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.45); }
+.campvw { position: relative; margin: 0 auto; width: 100%; height: 200px; background: #000; border-radius: 12px; overflow: hidden; }
+.campvw .campv { position: absolute; left: 50%; top: 50%; display: block; background: #000; }
+.camorient { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.camorient .row b { font-size: 14px; }
+.orientbox { border-radius: 10px; padding: 8px 10px; border: 1px solid var(--line); background: var(--panel2); }
+.orientbox p { margin: 0 0 6px; }
+.orientbox.warn { border-color: #f59e0b; background: var(--warn-soft); }
+.orientbox.ok { border-color: var(--accent); background: var(--accent-soft); }
+.turnrow { gap: 6px; }
+/* 録画と記録を同時にスタート */
+.camacts { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 4px; }
+.btn.startboth { width: 100%; min-height: 58px; font-size: 19px; font-weight: 900; border-radius: 14px; background: var(--good); border-color: var(--good); color: #fff; }
+.btn.startboth.rec { background: #dc2626; border-color: #dc2626; }
+.bothnote { margin: 0; }
+.rdot { display: inline-block; width: 0.62em; height: 0.62em; border-radius: 50%; background: #fff; margin-right: 0.35em; vertical-align: 0.05em; box-shadow: 0 0 0 0.12em rgba(255, 255, 255, 0.35); }
+.startbig.recstart { background: #dc2626; font-size: 28px; }
+.startbtn.rec { background: #dc2626; font-size: clamp(15px, 3vmin, 22px); }
+.btn.camon { font-weight: 700; border-color: var(--accent); color: var(--accent); }
 .camstat { margin-top: 10px; font-weight: 800; font-size: 16px; font-variant-numeric: tabular-nums; }
 .camstat.rec { color: var(--bad); }
 .camacts { margin: 10px 0 4px; }
 .btn.recbtn { background: #dc2626; border-color: #dc2626; color: #fff; font-weight: 800; }
 .camnotes { margin: 10px 0 0; padding-left: 18px; }
 .camnotes li { margin: 3px 0; }
+/* アプリごと横向き（画面の向きのロックをしたまま、横に倒して使う）：記録の画面だけ、body を 90° 回す。
+   --rvw・--rvh は端末の画面の幅・高さ（js の applyRot）。回した body の中では、fixed の部品も body が基準になる */
+html[data-rot="90"] body[data-view="live"], html[data-rot="270"] body[data-view="live"] { position: fixed; top: 0; left: 0; width: var(--rvh, 100vh); height: var(--rvw, 100vw); overflow: hidden; transform-origin: 0 0; }
+html[data-rot="90"] body[data-view="live"] { transform: translateX(var(--rvw, 100vw)) rotate(90deg); }
+html[data-rot="270"] body[data-view="live"] { transform: translateY(var(--rvh, 100vh)) rotate(-90deg); }
+/* 切り欠き・ホームバーの余白も、回した向きに合わせる（上下左右の入れかえ） */
+html[data-rot="90"] .live { padding: env(safe-area-inset-right) env(safe-area-inset-bottom) 0 env(safe-area-inset-top); }
+html[data-rot="270"] .live { padding: env(safe-area-inset-left) env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
+html[data-rot="90"] .gbar { height: calc(60px + env(safe-area-inset-left)); padding-bottom: calc(6px + env(safe-area-inset-left)); }
+html[data-rot="270"] .gbar { height: calc(60px + env(safe-area-inset-right)); padding-bottom: calc(6px + env(safe-area-inset-right)); }
+html[data-rot="90"] .short .gbar { height: calc(50px + env(safe-area-inset-left)); padding-bottom: calc(4px + env(safe-area-inset-left)); }
+html[data-rot="270"] .short .gbar { height: calc(50px + env(safe-area-inset-right)); padding-bottom: calc(4px + env(safe-area-inset-right)); }
+html[data-rot] .sheet-card { max-height: calc(var(--rvw, 100vw) * 0.92); }
+
 /* スタート前の札の中の撮影 */
 .covercam { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 13.5px; font-weight: 700; }
 .covercam.rec span { color: var(--bad); }
+.covercam.warn { border-color: #f59e0b; background: var(--warn-soft); }
 /* 撮影した動画の一覧 */
 .vlist { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .vitem { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: space-between; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; text-align: left; }
