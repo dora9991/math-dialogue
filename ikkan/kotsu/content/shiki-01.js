@@ -176,7 +176,7 @@ const termsQ = (r, ts) => {
 // ── 何次式か ─────────────────────────────────────────────
 const degQ = (r, ts) => {
   const p = P(ts), N = pdeg(p);
-  const each = ts.map(([c, e]) => (degE(e) === 0 ? `${$(T1([c, e]))} は数だけの項` : `${$(T1([c, e]))} が ${degE(e)}`)).join("、");
+  const each = ts.map(([c, e]) => (degE(e) === 0 ? `${$(T1([c, e]))} は数だけの項（次数 0）` : `${$(T1([c, e]))} が ${degE(e)}`)).join("、");
   return {
     q: `多項式 ${$(raw(ts))} は、□次式。□は？`,
     ans: N,
@@ -263,6 +263,21 @@ const CTX_DEG = [
     text: "縦 $a$ cm、横 $b$ cm の長方形の面積（cm²）",
     p: P([[1, { a: 1, b: 1 }]]),
     st: ["長方形の面積は、縦×横。", "$a\\times b=ab$（cm²）"],
+  }),
+  () => ({
+    text: "1辺が $x$ cm の正方形の面積（cm²）",
+    p: P([[1, { x: 2 }]]),
+    st: ["正方形の面積は、1辺×1辺。", "$x\\times x=x^{2}$（cm²）"],
+  }),
+  () => ({
+    text: "縦 $a$ cm、横 $b$ cm、高さ $h$ cm の直方体の表面積（cm²）",
+    p: P([[2, { a: 1, b: 1 }], [2, { a: 1, h: 1 }], [2, { b: 1, h: 1 }]]),
+    st: ["向かい合う 2つの面が同じ形で、3組ある。", "$ab\\times 2+ah\\times 2+bh\\times 2=2ab+2ah+2bh$（cm²）"],
+  }),
+  () => ({
+    text: "底面が、底辺 $a$ cm・高さ $b$ cm の三角形で、柱の高さが $h$ cm の三角柱の体積（cm³）",
+    p: P([[[1, 2], { a: 1, b: 1, h: 1 }]]),
+    st: ["三角柱の体積は、(底面積)×(高さ)。底面積は 底辺×高さ÷2。", "$\\frac{ab}{2}\\times h=\\frac{abh}{2}$（cm³）"],
   }),
 ];
 
@@ -372,7 +387,7 @@ export const UNITS = [
           return {
             q: `多項式 ${$(raw(ts))} の、項の数は？`,
             ans: ts.length,
-            unit: "個",
+            unit: "つ",
             hint: "ひき算も、負の数をたすと見なす。+ や − でつながれた 1つ1つが項。",
             steps: [`${$(`${raw(ts)}=${plusForm(ts)}`)} と見る。`, `項は ${ts.map(T1).map($).join("、")} の ${ts.length}つ。`],
           };
@@ -394,7 +409,7 @@ export const UNITS = [
       2: [
         // 01d04 何次式か
         t("01d04", (r) => {
-          const N = pick(r, [1, 2, 3, 4]), k = pick(r, [2, 3, 3]);
+          const N = pick(r, [1, 2, 3, 4, 5]), k = pick(r, [2, 3, 3]);
           return degQ(r, randTerms(r, pick(r, LET2), N, k));
         }),
         // 01d05a 数量を式で表す（4択）
@@ -410,7 +425,9 @@ export const UNITS = [
         }),
         // 01d05b 数量を表す式の次数
         t("01d05b", (r) => {
-          const c = pick(r, [...CTX, ...CTX_DEG])(r), N = pdeg(c.p);
+          const all = [...CTX, ...CTX_DEG].map((f) => f(r)), groups = {};
+          all.forEach((cc) => { (groups[pdeg(cc.p)] = groups[pdeg(cc.p)] || []).push(cc); });
+          const c = pick(r, groups[pick(r, Object.keys(groups))]), N = pdeg(c.p);       // 次数 1・2・3 が、同じくらい出るようにする
           return {
             q: `${c.text}を、文字を使った式で表したとき、その式の次数は？`,
             ans: N,
@@ -419,7 +436,7 @@ export const UNITS = [
           };
         }),
         // 01q04 何次式か（小テスト）
-        t("01q04", (r) => degQ(r, byDeg(randTerms(r, pick(r, LET2), pick(r, [1, 2, 2, 3]), pick(r, [2, 3]))))),
+        t("01q04", (r) => degQ(r, byDeg(randTerms(r, pick(r, LET2), pick(r, [1, 2, 3, 4]), pick(r, [2, 3]))))),
       ],
       // ───────── 3 応用 ─────────
       3: [
@@ -500,8 +517,8 @@ export const UNITS = [
           return {
             q: `単項式 ${$(`${c}x^{a}y^{b}`)} の次数は ${N} で、$x$ の指数 $a$ は、$y$ の指数 $b$ より ${d} 大きい。$${ask}$ の値は？（$a$、$b$ は自然数）`,
             ans: ask === "a" ? a : b,
-            hint: "次数と、指数の差の 2つの条件から、a と b の関係式を 2つつくろう。",
-            steps: [`次数が ${N} だから、$a+b=${N}$。`, `$a$ は $b$ より ${d} 大きいから、$a=b+${d}$。これを代入して $(b+${d})+b=${N}$、$2b=${N - d}$ より $b=${b}$。`, `$a=${b}+${d}=${a}$。`],
+            hint: "次数と、指数の差の 2つの条件から、$a$ と $b$ の関係式を 2つつくろう。",
+            steps: [`次数が ${N} だから、$a+b=${N}$。`, `$a$ は $b$ より ${d} 大きいから、$a=b+${d}$。これを代入して $(b+${d})+b=${N}$、$2b=${N - d}$ より $b=${b}$。`, ask === "a" ? `$a=${b}+${d}=${a}$。求める値は $a=${a}$。` : `求める値は $b=${b}$。`],
           };
         }),
       ],
