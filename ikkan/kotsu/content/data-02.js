@@ -129,7 +129,8 @@ export const UNITS = [
         }),
         // 02d02a 度数折れ線の両はしの点
         t("02d02a", (r) => {
-          const s = setup(r), left = r(0, 1) === 0 && s.cls[0].lo - s.w / 2 >= 0;   // 左はしの点が負の値になる組は、右はしを聞く
+          const s = setup(r), leftOK = s.cls[0].lo - s.w / 2 >= 0, rightOK = !s.c.max || s.cls[s.k - 1].hi + s.w / 2 <= s.c.max;
+          const left = !rightOK || (r(0, 1) === 0 && leftOK);   // 左はしの点が負の値になる組、右はしの点が満点（100点）をこえる組は、使わない側を聞かない
           const cx = (left ? s.cls[0].lo : s.cls[s.k - 1].hi) + (left ? -1 : 1) * (s.w / 2);
           return {
             q: `${s.c.name}（${s.u}）のヒストグラムは、階級の幅が${fmt(s.w, s.d)}${s.u}で、${fmt(s.cls[0].lo, s.d)}${s.u}以上から ${fmt(s.cls[s.k - 1].hi, s.d)}${s.u}未満までの ${s.k}つの階級でできている。このヒストグラムに度数折れ線をかくとき、折れ線の${left ? "左" : "右"}はしの点は、横軸の何${s.u}のところにとるか。`,
@@ -214,7 +215,8 @@ export const UNITS = [
         }),
         // 02q03 度数折れ線の両はしの点（小テスト）
         t("02q03", (r) => {
-          const s = setup(r, 5), n = r(18, 30), f = bell(r, 5, n), left = r(0, 1) === 0 && s.cls[0].lo - s.w / 2 >= 0;
+          const s = setup(r, 5), n = r(18, 30), f = bell(r, 5, n), leftOK = s.cls[0].lo - s.w / 2 >= 0, rightOK = !s.c.max || s.cls[4].hi + s.w / 2 <= s.c.max;
+          const left = !rightOK || (r(0, 1) === 0 && leftOK);
           const cx = round((left ? s.cls[0].lo : s.cls[4].hi) + (left ? -1 : 1) * (s.w / 2), 6);
           return {
             q: `${n}人の${s.c.name}（${s.u}）のヒストグラムがある。長方形の高さは、${hsent(s.cls, f, s.u, s.d)}である。度数折れ線をかくとき、折れ線の${left ? "左" : "右"}はしの点は、横軸の何${s.u}のところにとればよいか。`,
@@ -279,8 +281,8 @@ export const UNITS = [
             q: `${n}人のテストの得点（点）を、${s.cls.map((c) => lb(c, "点", 0)).join("、")}の${ratio.length}つの階級に分けて、ヒストグラムをかいたら、長方形の高さの比が${ratio.join("：")}になった。もっとも高い長方形の階級の度数は？`,
             ans: top,
             unit: "人",
-            hint: "長方形の高さは、度数に比例する。比の和で、全体の人数をわって、比の 1にあたる人数を求めよう。",
-            steps: [`比の和は ${ratio.join("+")} ＝ ${S}。比の 1にあたる人数は ${n}÷${S} ＝ ${m}（人）。`, `度数は ${f.join("、")}（人）。もっとも高いのは ${Math.max(...ratio)}×${m} ＝ ${top}（人）。`],
+            hint: "長方形の高さは、度数に比例する。比の和で、全体の人数をわって、比の1にあたる人数を求めよう。",
+            steps: [`比の和は ${ratio.join("+")} ＝ ${S}。比の1にあたる人数は ${n}÷${S} ＝ ${m}（人）。`, `度数は ${f.join("、")}（人）。もっとも高いのは ${Math.max(...ratio)}×${m} ＝ ${top}（人）。`],
           };
         }),
         // 02d05b 高さの比から、低いほうから k 番目の人の階級
@@ -295,7 +297,7 @@ export const UNITS = [
             ans,
             choices: choices4(r, ans, near(j, s.k).map((i) => lb(s.cls[i], "点", 0))),
             hint: "まず、それぞれの階級の度数を求めよう。次に、低いほうの階級から順にたしていく。",
-            steps: [`比の和 ${ratio.join("+")} ＝ ${S}。比の 1にあたる人数は ${n}÷${S} ＝ ${m}（人）。度数は ${f.join("、")}（人）。`, `低いほうから順にたす：${cu.join("、")}（人）。`, `${k}番目は、たした人数がはじめて ${k} 以上になる「${ans}」。`],
+            steps: [`比の和 ${ratio.join("+")} ＝ ${S}。比の1にあたる人数は ${n}÷${S} ＝ ${m}（人）。度数は ${f.join("、")}（人）。`, `低いほうから順にたす：${cu.join("、")}（人）。`, `${k}番目は、たした人数がはじめて ${k} 以上になる「${ans}」。`],
           };
         }),
       ],
