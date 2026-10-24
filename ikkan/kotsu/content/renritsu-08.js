@@ -91,12 +91,12 @@ for (let a = 4; a <= 9; a++) for (let dd = 1; dd <= 3; dd++) {
 }
 const DIST_CLASSIC = DIST.filter((d) => d.classic), DIST_SAME = DIST.filter((d) => !d.classic);
 
-// ── 08q05 の数字：入れかえた数 ＝ k×(もとの数) ＋ d（d≠0、|d| ≤ 30）になる、十の位 x・一の位 y ─────────
+// ── 08q05 の数字：入れかえた数 ＝ k×(もとの数) ＋ d（d≠0、|d| ≤ 40）になる、十の位 x・一の位 y ─────────
 const CHALLENGE = [];
-for (const k of [2, 3]) for (let x = 1; x <= 9; x++) for (let y = 1; y <= 9; y++) {
+for (const k of [2, 3, 4, 5]) for (let x = 1; x <= 9; x++) for (let y = 1; y <= 9; y++) {
   if (x === y) continue;
   const d = (10 * y + x) - k * (10 * x + y);
-  if (d !== 0 && Math.abs(d) <= 30) CHALLENGE.push({ x, y, k, d });
+  if (d !== 0 && Math.abs(d) <= 40) CHALLENGE.push({ x, y, k, d });
 }
 
 export const UNITS = [
@@ -185,8 +185,11 @@ export const UNITS = [
             { a: "ノート", ca: "冊", b: "ペン", cb: "本" },
             { a: "りんご", ca: "個", b: "みかん", cb: "個" },
             { a: "クッキー", ca: "枚", b: "ゼリー", cb: "個" },
+            { a: "ケーキ", ca: "個", b: "コーヒー", cb: "杯" },
+            { a: "おにぎり", ca: "個", b: "お茶", cb: "本" },
+            { a: "鉛筆", ca: "本", b: "消しゴム", cb: "個" },
           ]);
-          const a = r(2, 6), b = r(2, 6);
+          const a = r(2, 9), b = r(2, 9);
           if (a === b) return { skip: true };
           const right = poly([a, { x: 1 }], [b, { y: 1 }]);
           const wrongPolys = shuffle(r, [
@@ -291,15 +294,18 @@ export const UNITS = [
           const S = x + y, k = y - x, D = 9 * Math.abs(k), bigger = k > 0, orig = 10 * x + y;
           const sol = solveInt([1, 1, S], [-1, 1, k]);
           if (!sol || sol[0] !== x || sol[1] !== y) return { skip: true };
+          const what = pick(r, ["orig", "orig", "orig", "tens", "ones"]);
+          const sumText = pick(r, ["各位の数の和", "十の位の数と一の位の数の和"]);
+          const askText = { orig: "もとの自然数は、いくつか。", tens: "もとの自然数の、十の位の数は、いくつか。", ones: "もとの自然数の、一の位の数は、いくつか。" }[what];
           return {
-            q: `2けたの自然数があり、各位の数の和は ${S} である。十の位の数と一の位の数を入れかえた数は、もとの数より ${D} ${bigger ? "大きい" : "小さい"}。もとの自然数は、いくつか。`,
-            ans: orig,
+            q: `2けたの自然数があり、${sumText}は ${S} である。十の位の数と一の位の数を入れかえた数は、もとの数より ${D} ${bigger ? "大きい" : "小さい"}。${askText}`,
+            ans: { orig, tens: x, ones: y }[what],
             hint: "2けたの自然数は、（十の位の数）×10＋（一の位の数）。入れかえた数は、どう表せるかな。",
             steps: [
               `十の位の数を $x$、一の位の数を $y$ とする。　$x+y=${S}$ …①　　$10y+x=10x+y${bigger ? "+" : "-"}${D}$ …②`,
               `② を整理　$${linTex(-1, 1, k)}$ …③`,
               `①+③　$2y=${S + k}$　$y=${y}$　① に代入　$x=${x}$`,
-              `確かめ　$${x}+${y}=${S}$、入れかえた数は ${10 * y + x}。もとの自然数は ${orig}。`,
+              `確かめ　$${x}+${y}=${S}$、入れかえた数は ${10 * y + x}。十の位の数は ${x}、一の位の数は ${y}で、もとの自然数は ${orig}。`,
             ],
           };
         }),
@@ -357,31 +363,54 @@ export const UNITS = [
             ],
           };
         }),
-        // 08w03 考えよう：解が小数になったとき、問題の答えにしてよいか（4択）
+        // 08w03 考えよう：連立方程式の解は、そのまま問題の答えにしてよいか（4択）。解が小数・負の数・問題に合う、の3通り
         t("08w03", (r) => {
-          const s = pick(r, BUY.slice(0, 2));
-          const p = pick(r, [40, 50, 60, 70]), q = p + 50, n = r(10, 20);
-          const k = r(2, n - 3), fi = r(1, 4);
-          const M = p * n + 50 * k + 10 * fi;
-          const sol = solve2([1, 1, n], [p, q, M]);
-          if (!sol) return { skip: true };
-          const xs = round(qval(sol[0]), 1), ys = round(qval(sol[1]), 1);
-          if (Number.isInteger(xs) || Number.isInteger(ys) || xs <= 0 || ys <= 0) return { skip: true };
-          const ok = `$x$、$y$ は${s.c}数だから、整数でなければならない。小数の解は、問題の答えにできない`;
-          const wrongs = shuffle(r, [
-            `${s.a}${xs}${s.c}、${s.b}${ys}${s.c}を、そのまま答えにしてよい`,
-            `四捨五入して、${s.a}${Math.round(xs)}${s.c}、${s.b}${Math.round(ys)}${s.c}を答えにすればよい`,
-            "解は、もとの式に代入して成り立つから、いつでも問題の答えになる",
-          ]);
+          const kind = pick(r, ["dec", "dec", "neg", "ok", "ok"]);
+          const s = pick(r, BUY), c = s.c, a = s.a, b = s.b;
+          let p, q, n, M, X, Y;                       // X, Y は表示する解（文字列）、ok1 は正しい選択肢、wr は誤答の候補
+          let ok1, wr, why;
+          if (kind === "dec") {
+            p = pick(r, [40, 50, 60, 70]); q = p + 50; n = r(10, 20);
+            const k = r(2, n - 3), fi = r(1, 4);
+            M = p * n + 50 * k + 10 * fi;
+            const sol = solve2([1, 1, n], [p, q, M]);
+            if (!sol) return { skip: true };
+            const xs = round(qval(sol[0]), 1), ys = round(qval(sol[1]), 1);
+            if (Number.isInteger(xs) || Number.isInteger(ys) || xs <= 0 || ys <= 0) return { skip: true };
+            X = String(xs); Y = String(ys);
+            ok1 = pick(r, [`$x$、$y$ は${c}数だから、整数でなければならない。小数の解は、問題の答えにできない`, `${c}数は整数のはずなので、小数の $x$、$y$ は、この問題の答えにならない`]);
+            wr = [`${a}${xs}${c}、${b}${ys}${c}を、そのまま答えにしてよい`, `四捨五入して、${a}${Math.round(xs)}${c}、${b}${Math.round(ys)}${c}を答えにすればよい`, "解は、もとの式に代入して成り立つから、いつでも問題の答えになる"];
+            why = [`${xs}、${ys} は整数ではないので、答えにできない（このような買い方はない）。四捨五入した組は、代金が ${M}円にならない。`, `$x$、$y$ は${c}数なので、整数でなければならない。`];
+          } else if (kind === "neg") {
+            p = pick(r, s.pa); q = pick(r, s.pb); n = r(8, 16);
+            const k = r(1, 3);
+            M = q * n + (q - p) * k;
+            const sol = solveInt([1, 1, n], [p, q, M]);
+            if (!sol || sol[0] !== -k || sol[1] !== n + k) return { skip: true };
+            X = String(-k); Y = String(n + k);
+            ok1 = pick(r, [`${c}数が負の数になることはないので、この解は問題の答えにできない`, `$x$ が負の数だから、${a}の${c}数として、ありえない。答えにできない`]);
+            wr = [`式が成り立つのだから、負の数のままで答えにしてよい`, `符号をとって、${a}${k}${c}、${b}${n + k}${c}を答えにすればよい`, `${a}を買わなかったことにして、${b}だけ${n}${c}を答えにすればよい`];
+            why = [`$x=${-k}$ は負の数で、${c}数としてありえないので、答えにできない。`, `符号をとった組や、${b}だけの組は、合わせて ${n}${c}と代金 ${M}円の、両方は満たさない。`];
+          } else {
+            p = pick(r, s.pa); q = pick(r, s.pb);
+            const x = r(3, 12), y = r(3, 12);
+            if (x === y) return { skip: true };
+            n = x + y; M = p * x + q * y;
+            const sol = solveInt([1, 1, n], [p, q, M]);
+            if (!sol || sol[0] !== x || sol[1] !== y) return { skip: true };
+            X = String(x); Y = String(y);
+            ok1 = pick(r, [`$x$、$y$ はどちらも整数で、${c}数として合っている。もとの式にも合うので、答えにしてよい`, `${a}${x}${c}、${b}${y}${c}は、合わせて ${n}${c}で、代金も ${M}円になる。そのまま答えにしてよい`]);
+            wr = [`合わせて ${n}${c}にならないので、答えにできない`, `代金が ${M}円にならないので、答えにできない`, "解が2組以上あるので、1つに決められない", "整数の解は、問題の答えにならない"];
+            why = [`$x=${x}$、$y=${y}$ はどちらも整数で、${c}数として合っている。`, `確かめ　$${x}+${y}=${n}$、$${p}\\times ${x}+${q}\\times ${y}=${M}$ で、条件に合う。答えにしてよい。`];
+          }
           return {
-            q: `1${s.c} ${p}円の${s.a}と、1${s.c} ${q}円の${s.b}を、合わせて ${n}${s.c}買ったら、代金は ${M}円だった。${s.a}を $x$ ${s.c}、${s.b}を $y$ ${s.c}として連立方程式をつくって解くと、$x=${xs}$、$y=${ys}$ になった。この結果について、正しいものはどれか。`,
-            ans: ok,
-            choices: choices4(r, ok, wrongs),
-            hint: "$x$、$y$ は、何を表す文字だったかな。その数として、ありえる数かどうかを考えよう。",
+            q: `1${c} ${p}円の${a}と、1${c} ${q}円の${b}を、合わせて ${n}${c}買ったら、代金は ${M}円だった。${a}を $x$ ${c}、${b}を $y$ ${c}として連立方程式をつくって解くと、$x=${X}$、$y=${Y}$ になった。この結果について、正しいものはどれか。`,
+            ans: ok1,
+            choices: choices4(r, ok1, shuffle(r, wr)),
+            hint: "$x$、$y$ は、何を表す文字だったかな。その数として、ありえる数かどうか、問題の条件に合うかを考えよう。",
             steps: [
-              "連立方程式の解は、式に代入すると成り立つ。でも、それだけでは、問題の答えになるとは限らない。",
-              `$x$、$y$ は${s.c}数なので、整数でなければならない。`,
-              `${xs}、${ys} は整数ではないので、答えにできない（このような買い方はない）。四捨五入した組は、代金が ${M}円にならない。`,
+              "連立方程式の解は、式に代入すると成り立つ。でも、それだけでは、問題の答えになるとは限らない。場面にもどして確かめる。",
+              ...why,
             ],
           };
         }),
@@ -443,7 +472,7 @@ export const UNITS = [
             q: `${S.a}${a1}${S.ca}と${S.b}${b1}${S.cb}で ${c1}円。${S.a}${a2}${S.ca}の代金は、${S.b}${b2}${S.cb}の代金より ${Math.abs(d)}円${d > 0 ? "高い" : "安い"}。${ask}1${askC}の値段は何円か。${S.a}1${S.ca}を $x$ 円、${S.b}1${S.cb}を $y$ 円として、連立方程式で求めよう。`,
             ans,
             unit: "円",
-            hint: `「${S.a}${a2}${S.ca}の代金が、${S.b}${b2}${S.cb}の代金より ${d > 0 ? "高い" : "安い"}」を、$x$、$y$ を使った式で、どう表すかな。`,
+            hint: `「${S.a}${a2}${S.ca}の代金は、${S.b}${b2}${S.cb}の代金より ${Math.abs(d)}円${d > 0 ? "高い" : "安い"}」を、$x$、$y$ を使った式で、どう表すかな。`,
             steps: [
               `${S.a}1${S.ca}を $x$ 円、${S.b}1${S.cb}を $y$ 円とする。　$${linTex(a1, b1, c1)}$ …①　　$${linTex(a2, -b2, d)}$ …②`,
               `${times("①", m1)}+${times("②", m2)}　${solved(D, R, "x", p)}`,
@@ -459,15 +488,21 @@ export const UNITS = [
           const ca = 1 - 10 * k, cb = 10 - k;               // ③：ca x + cb y = d
           const sol = solveInt([1, 1, S], [ca, cb, d]);
           if (!sol || sol[0] !== x || sol[1] !== y) return { skip: true };
+          const what = pick(r, ["orig", "orig", "orig", "tens", "ones"]);
+          const sumText = pick(r, ["各位の数の和", "十の位の数と一の位の数の和"]);
+          const rel = r(0, 1) === 0
+            ? `十の位の数と一の位の数を入れかえた数は、もとの数の ${k}倍より ${Math.abs(d)} ${d > 0 ? "大きい" : "小さい"}`
+            : `もとの数の ${k}倍は、十の位の数と一の位の数を入れかえた数より ${Math.abs(d)} ${d > 0 ? "小さい" : "大きい"}`;
+          const askText = { orig: "もとの自然数は、いくつか。", tens: "もとの自然数の、十の位の数は、いくつか。", ones: "もとの自然数の、一の位の数は、いくつか。" }[what];
           return {
-            q: `2けたの自然数があり、各位の数の和は ${S} である。十の位の数と一の位の数を入れかえた数は、もとの数の ${k}倍より ${Math.abs(d)} ${d > 0 ? "大きい" : "小さい"}。もとの自然数は、いくつか。`,
-            ans: orig,
+            q: `2けたの自然数があり、${sumText}は ${S} である。${rel}。${askText}`,
+            ans: { orig, tens: x, ones: y }[what],
             hint: "十の位の数を $x$、一の位の数を $y$ とすると、もとの数は $10x+y$。入れかえた数は？　かっこを使って式をつくろう。",
             steps: [
               `十の位の数を $x$、一の位の数を $y$ とする。　$x+y=${S}$ …①　　$10y+x=${k}(10x+y)${d > 0 ? "+" : "-"}${Math.abs(d)}$ …②`,
               `② を整理　$${linTex(ca, cb, d)}$ …③`,
               `①×${cb}−③　${solved(cb - ca, cb * S - d, "x", x)}　① に代入　$y=${y}$`,
-              `確かめ　${orig} → ${swapped}、$${k}\\times ${orig}${d > 0 ? "+" : "-"}${Math.abs(d)}=${swapped}$。もとの自然数は ${orig}。`,
+              `確かめ　${orig} → ${swapped}、$${k}\\times ${orig}${d > 0 ? "+" : "-"}${Math.abs(d)}=${swapped}$。十の位の数は ${x}、一の位の数は ${y}で、もとの自然数は ${orig}。`,
             ],
           };
         }),
