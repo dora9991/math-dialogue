@@ -306,7 +306,7 @@ export const UNITS = [
             q: `連立方程式 ${S.tex}${LAB}を、代入法と加減法の両方で解く。どちらの方法でも、解は同じになる。この解の $x$ の値と $y$ の値の和は？`,
             ans: S.sol[0] + S.sol[1],
             hint: "代入法では、② に ① を代入するね。加減法では、① を変形して、係数をそろえられないかな。",
-            steps: fit([`代入法　${S.st.lines[0]}`, ...S.st.lines.slice(1), `加減法　① を変形して　$${linTex(...A3)}$ …③　$${sVar}$ を消去するため、②${sub ? "−" : "+"}③　$${coefVar(Aco, ov)}=${C}$　$${ov}=${S.st.ov0}$`, `${ANS(...S.sol)}　和は　$${S.sol[0]}+${par(S.sol[1])}=${S.sol[0] + S.sol[1]}$`]),
+            steps: fit([`代入法　${S.st.lines[0]}`, ...S.st.lines.slice(1), `加減法　① を変形して　$${linTex(...A3)}$ …③　$${sVar}$ を消去するため、②${sub ? "−" : "+"}③　$${coefVar(Aco, ov)}=${C}$${coefVar(Aco, ov) === ov ? "" : `　$${ov}=${S.st.ov0}$`}`, `${ANS(...S.sol)}　和は　$${S.sol[0]}+${par(S.sol[1])}=${S.sol[0] + S.sol[1]}$`]),
           };
         })),
       ],
