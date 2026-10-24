@@ -210,7 +210,7 @@ export const UNITS = [
           return {
             q: `等式 $${s.eq}$ を、$${s.dvn}$ について解くと？`,
             ans: s.ans, choices: s.choices,
-            hint: "解く文字にかかっている数や文字で、両辺をわる（かけて分母をはらう）。ほかの文字は、数と同じように考える。",
+            hint: "解く文字にかかっている数や文字は何かな。それを両辺からなくすには、どうすればよい？ ほかの文字は、数と同じように考える。",
             steps: s.steps,
           };
         }),
@@ -435,7 +435,7 @@ export const UNITS = [
           return {
             q: `等式 $\\frac{${ptex(N1)}}{${p}}=\\frac{${ptex(N2)}}{${q}}$ を、$x$ について解くと、$x=\\square y$ となる。□は？`,
             ans: g,
-            hint: "両辺に、分母の最小公倍数をかけて、分母をはらおう。そのあと、$x$ をふくむ項を左辺に集める。",
+            hint: "分母をはらうには、両辺に何をかければよいかな。そのあと、$x$ をふくむ項は、どちらの辺に集める？",
             steps: [
               `両辺に、${p} と ${q} の最小公倍数 ${lcmv} をかけて、$${mulP(mp, N1)}=${mulP(mq, N2)}$。`,
               `かっこをはずして、$${ptex(A)}=${ptex(B)}$。`,
@@ -498,6 +498,7 @@ const FORMULA = [
   { stmt: "平行四辺形の面積を $S$、底辺を $a$、高さを $h$ とすると、", L: V1("s"), R: pmul(V1("a"), V1("h")), targets: ["a", "h"], map: { s: "S" } },
   { stmt: "角錐の体積を $V$、底面積を $S$、高さを $h$ とすると、", L: V1("v"), R: pscale(pmul(V1("g"), V1("h")), [1, 3]), targets: ["h", "g"], map: { v: "V", g: "S" } },
   { stmt: "直方体の体積を $V$、縦を $a$、横を $b$、高さを $c$ とすると、", L: V1("v"), R: pmul(pmul(V1("a"), V1("b")), V1("c")), targets: ["a", "c"], map: { v: "V" } },
+  { stmt: "底面の半径 $r$、高さ $h$ の円柱の側面積を $S$ とすると、", L: V1("s"), R: poly([2, { p: 1, q: 1, x: 1 }]), targets: ["q", "x"], map: { s: "S", p: "\\pi ", q: "r", x: "h" }, ord: ["p", "q", "x"] },
   { stmt: "底面の半径 $r$、高さ $h$ の円柱の体積を $V$ とすると、", L: V1("v"), R: pmul(pmul(V1("p"), pmul(V1("q"), V1("q"))), V1("x")), targets: ["x"], map: { v: "V", p: "\\pi ", q: "r", x: "h" }, ord: ["p", "q", "x"] },
 ];
 
@@ -531,6 +532,11 @@ const SURF = [
     stmt: "底面が1辺 $a$ の正方形で、側面の三角形の高さ（斜高）が $\\ell$ の正四角錐の表面積 $S$ は、", pi: false, radName: "a", rads: [2, 4, 6],
     L: V1("s"), R: poly([1, { q: 2 }], [2, { q: 1, x: 1 }]), v: "x", map: { s: "S", q: "a", x: "\\ell " },
     hName: "斜高 $\\ell$", vName: "\\ell", xOf: (r, rad) => rad / 2 + r(1, 8), K: (rad, x) => rad * rad + 2 * rad * x, calc: (rad, K) => `\\frac{${K}}{${2 * rad}}-\\frac{${rad}}{2}=${K / (2 * rad)}-${rad / 2}`,
+  },
+  {
+    stmt: "底面が縦 $a$・横 $2a$ の長方形で、高さが $h$ の四角柱の表面積 $S$ は、", pi: false, radName: "a", rads: [3, 6],
+    L: V1("s"), R: poly([4, { q: 2 }], [6, { q: 1, x: 1 }]), v: "x", map: { s: "S", q: "a", x: "h" },
+    hName: "高さ $h$", vName: "h", xOf: (r) => r(1, 10), K: (rad, x) => 4 * rad * rad + 6 * rad * x, calc: (rad, K) => `\\frac{${K}}{${6 * rad}}-\\frac{${2 * rad}}{3}=${K / (6 * rad)}-${(2 * rad) / 3}`,
   },
 ];
 

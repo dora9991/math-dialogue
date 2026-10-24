@@ -411,7 +411,7 @@ export const UNITS = [
             return {
               q: `次の計算をしよう。 $${ptex(A)}\\times ${ptex(B)}\\div (${ptex(C)})$`,
               ans, choices,
-              hint: "乗除の混じった計算は、すべてを1つの分数にして、係数と文字を約分しよう。",
+              hint: "乗除の混じった計算は、1つの分数の形に書けるかな。分子と分母で、約分できる数や文字は？",
               steps: [`分数の形にする。$${ptex(A)}\\times ${ptex(B)}\\div (${ptex(C)})=\\frac{${ptex(A)}\\times ${ptex(B)}}{${ptex(C)}}=\\frac{${ptex(pmul(A, B))}}{${ptex(C)}}$`, `約分して、$${ptex(correct)}$。`],
             };
           }
@@ -886,6 +886,22 @@ const SECTOR = [
     wrongs: [["r=\\frac{S}{2\\ell}", (x) => x.S / (2 * x.l)], ["r=2S\\ell", (x) => 2 * x.S * x.l], ["r=\\frac{\\ell}{2S}", (x) => x.l / (2 * x.S)], ["r=\\frac{2S}{\\ell}-\\ell", (x) => (2 * x.S) / x.l - x.l]],
     hint: "分母がある式は、両辺に何をかけると、分母がなくなるかな。そのあと、$r$ にかかっているものは、全部で何かな。",
     steps: ["両辺に 2 をかけて、$2S=\\ell r$。", "両辺を $\\ell$ でわって、$r=\\frac{2S}{\\ell}$。"],
+  },
+  {
+    name: "円錐の側面積→ℓ", stmt: "円錐の側面積 $S$ は、底面の半径 $r$、母線の長さ $\\ell$ のとき、", eq: "S=\\pi r\\ell", v: "\\ell", vk: "l", vars: ["S", "r", "l"],
+    resid: (x) => x.S - Math.PI * x.r * x.l, f: (x) => x.S / (Math.PI * x.r),
+    ans: "\\ell=\\frac{S}{\\pi r}",
+    wrongs: [["\\ell=\\pi rS", (x) => Math.PI * x.r * x.S], ["\\ell=\\frac{\\pi r}{S}", (x) => (Math.PI * x.r) / x.S], ["\\ell=\\frac{S}{\\pi}-r", (x) => x.S / Math.PI - x.r], ["\\ell=\\frac{S}{r}", (x) => x.S / x.r]],
+    hint: "$\\ell$ にかかっているものは、全部で何かな。それで両辺をわると、どうなる？",
+    steps: ["両辺を入れかえて、$\\pi r\\ell=S$。", "両辺を $\\pi r$ でわって、$\\ell=\\frac{S}{\\pi r}$。"],
+  },
+  {
+    name: "円錐の側面積→r", stmt: "円錐の側面積 $S$ は、底面の半径 $r$、母線の長さ $\\ell$ のとき、", eq: "S=\\pi r\\ell", v: "r", vars: ["S", "r", "l"],
+    resid: (x) => x.S - Math.PI * x.r * x.l, f: (x) => x.S / (Math.PI * x.l),
+    ans: "r=\\frac{S}{\\pi\\ell}",
+    wrongs: [["r=\\pi\\ell S", (x) => Math.PI * x.l * x.S], ["r=\\frac{\\pi\\ell}{S}", (x) => (Math.PI * x.l) / x.S], ["r=\\frac{S}{\\pi}-\\ell", (x) => x.S / Math.PI - x.l], ["r=\\frac{S}{\\ell}", (x) => x.S / x.l]],
+    hint: "$r$ にかかっているものは、全部で何かな。それで両辺をわると、どうなる？",
+    steps: ["両辺を入れかえて、$\\pi\\ell r=S$。", "両辺を $\\pi\\ell$ でわって、$r=\\frac{S}{\\pi\\ell}$。"],
   },
 ];
 /** 弧の長さ ℓ＝k π（cm）になる、半径 r・中心角 a の組（k＝r·a÷180 が整数） */
