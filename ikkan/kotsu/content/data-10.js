@@ -42,7 +42,7 @@ const NS = [100, 100, 100, 100, 50, 80, 200];
 const tail = (f, i) => sumOf(f.slice(i));
 const head = (f, i) => sumOf(f.slice(0, i));
 /** 度数の足し算の式：(8+4)÷100 ＝ 0.12 */
-const calc = (list, N, ans) => `${list.length > 1 ? `(${list.join("+")})` : list[0]}÷${N} ＝ ${ans}`;
+const calc = (list, N, ans) => `${list.length > 1 ? `(${list.join("+")})` : list.length ? list[0] : 0}÷${N} ＝ ${ans}`;
 /** 度数を足した式：「2+2 ＝ 4」。1つだけのときは「9」 */
 const addList = (list) => (list.length > 1 ? `${list.join("+")} ＝ ${sumOf(list)}` : String(list[0]));
 
@@ -184,7 +184,7 @@ export const UNITS = [
           const [nx, kx, ny, ky] = pick(r, cands), a = r(0, 1) ? ["A", "B"] : ["B", "A"];   // X＝割合が高い人、Y＝低い人
           const X = `${a[0]} さん`, Y = `${a[1]} さん`;
           const line = [`${X}は ${nx}${C.u}中 ${kx}${C.u}`, `${Y}は ${ny}${C.u}中 ${ky}${C.u}`], ordered = r(0, 1) ? [line[1], line[0]] : line;
-          const ans = big ? `相対度数の差が大きく、本数も多いので、${X}のほうが入りやすいと考えてよい。` : "相対度数の差が小さく、本数もちがうので、はっきりした差とはいえない。";
+          const ans = big ? `相対度数の差が大きく、本数も多いので、${X}のほうが入りやすいと考えてよい。` : "相対度数の差が小さいので、はっきりした差とはいえない。";
           const wrongs = big
             ? [`相対度数が低い ${Y}のほうが、入りやすいといえる。`, "本数がちがうので、入った割合ではくらべられない。", "相対度数の差が大きくても、入りやすさにちがいがあるとはいえない。"]
             : [`相対度数が高いので、${X}のほうが入りやすいと、はっきりいえる。`, "入った本数が多い人のほうが、入りやすいといえる。", "相対度数に差があれば、その差がどんなに小さくても、はっきりした差がある。"];
@@ -193,8 +193,8 @@ export const UNITS = [
             q: `${C.f}の練習で、${ordered[0]}、${ordered[1]}、入った。入った割合（相対度数）は、${X}のほうが高い。このことから、「${X}のほうが入りやすい」と、はっきりいえるか。正しい説明を選ぼう。`,
             ans,
             choices: choices4(r, ans, wrongs),
-            hint: "相対度数の差はどのくらいかな。それに、打った本数はどうだろう。",
-            steps: [`${X} … ${kx}÷${nx} ＝ ${f2(kx / nx)}　${Y} … ${ky}÷${ny} ＝ ${f2(ky / ny)}`, big ? `${X}のほうが高く、差は ${dd} と大きい。` : `${X}のほうが高いが、差は ${dd} と小さい。`, big ? `どちらも本数が多いので、${X}のほうが入りやすいと考えてよい。` : "本数もちがうので、はっきりした差とはいえない。"],
+            hint: "相対度数の差はどのくらいかな。打った本数も見てみよう。",
+            steps: [`${X} … ${kx}÷${nx} ＝ ${f2(kx / nx)}　${Y} … ${ky}÷${ny} ＝ ${f2(ky / ny)}`, big ? `${X}のほうが高く、差は ${dd} と大きい。` : `${X}のほうが高いが、差は ${dd} と小さい。`, big ? `どちらも本数が多いので、${X}のほうが入りやすいと考えてよい。` : "差が小さいので、はっきりした差とはいえない。"],
           };
         }),
         // 10d03a (3)① 60個・70個・80個つくったとき、売り切れる確率
@@ -208,21 +208,27 @@ export const UNITS = [
             steps: [`${q}個つくって売り切れる ＝ ${q}個以上売れる。`, `${q}個以上は、${clsLabel(cls[j], "個")}の階級から上のすべて。`, calc(f.slice(j), N, ans)],
           };
         }),
-        // 10d03b (3)② 売り切れる確率を ○ 以下にしたい。3つの個数のうち、いちばん少ない個数はどれか
+        // 10d03b (3)② 売り切れる確率を ○ 以下にしたい。4つの個数のうち、いちばん少ない個数はどれか
         t("10d03b", (r) => {
           const P = pick(r, ["お弁当", "サンドイッチ", "パン", "おにぎり"]), N = pick(r, [80, 100, 100, 50, 200]), lo = pick(r, [40, 50, 60]), k = pick(r, [4, 5]);
           const cls = classes(lo, 10, k), f = counts(r, N, k, "mound");
-          const js = sample(r, Array.from({ length: k - 1 }, (_, i) => i + 1), 3).sort((a, b) => a - b), qs = js.map((j) => lo + j * 10), tl = js.map((j) => tail(f, j) / N);
-          const a = r(0, 2), cand = [];   // a＝答えの番号（基準以下になる、いちばん少ない個数）
-          for (let pp = 5; pp <= 95; pp += 5) { const tt = pp / 100; if (tt > tl[a] + 1e-9 && (a === 0 || tt < tl[a - 1] - 1e-9)) cand.push(tt); }
-          if (!cand.length) return { skip: true };
-          const tg = pick(r, cand), lab = (x) => `${x}個`, ans = lab(qs[a]);
+          // 選択肢は、階級のさかいの個数（最後のさかいは、いちばん上の階級の上のはし）から4つ。小さいほうの選択肢も、正解になりうる
+          const js = sample(r, Array.from({ length: k }, (_, i) => i + 1), 4).sort((a, b) => a - b), qs = js.map((j) => lo + j * 10), tl = js.map((j) => tail(f, j) / N);
+          const cands = js.map((_, a) => {   // a＝答えの番号（基準以下になる、いちばん少ない個数）
+            const c = [];
+            for (let pp = 5; pp <= 95; pp += 5) { const tt = pp / 100; if (tt > tl[a] + 1e-9 && (a === 0 || tt < tl[a - 1] - 1e-9)) c.push(tt); }
+            return c;
+          });
+          const valid = [0, 1, 2, 3].filter((a) => cands[a].length);
+          if (!valid.length) return { skip: true };
+          const a = pick(r, valid), tg = pick(r, cands[a]), lab = (x) => `${x}個`, ans = lab(qs[a]);
+          const line = (i) => `${qs[i]}個 … ${calc(f.slice(js[i]), N, round(tl[i]))}`;
           return {
             q: `ある店で、${P}を毎日つくる。過去 ${N}日の「1日に売れた個数」は、${freqSentence(cls, f, "個", "日")}であった。相対度数を確率とみなす。売り切れる（つくった個数以上売れる）確率を ${tg} 以下にしたい。次の中で、その条件に合う、いちばん少ない個数はどれか。`,
             ans,
-            choices: choices4(r, ans, [lab(lo), ...qs.map(lab).filter((x) => x !== ans)]),
+            choices: choices4(r, ans, qs.map(lab).filter((x) => x !== ans)),
             hint: "それぞれの個数で、売り切れる確率（その個数以上売れる確率）を求めて、基準とくらべよう。",
-            steps: [...qs.map((x, i) => `${x}個 … ${calc(f.slice(js[i]), N, round(tl[i]))}`), `${tg} 以下になる、いちばん少ない個数は ${qs[a]}個。`],
+            steps: [`${line(0)}　${line(1)}`, `${line(2)}　${line(3)}`, `${tg} 以下になる、いちばん少ない個数は ${qs[a]}個。`],
           };
         }),
         // 10q04 降水確率 40% の意味として正しいものを選ぶ
@@ -296,7 +302,7 @@ export const UNITS = [
           const C = pick(r, [
             { s: (p) => `ある駅で、電車のおくれが 4分未満である確率が ${p} と求められた。`, ok: "おくれが 4分未満になる", d: "日", base: "明日は", also: "おくれが 4分以上になる日もある。", w1: "明日はかならずそうなる。", w3: "毎日おくれが 4分未満になる。" },
             { s: (p) => `あるバス停で、バスが時刻表どおりに着く確率が ${p} と求められた。`, ok: "時刻表どおりに着く", d: "日", base: "明日は", also: "時刻表どおりに着かない日もある。", w1: "明日はかならず時刻表どおりに着く。", w3: "毎日きちんと着く。" },
-            { s: (p) => `あるくじで、当たる確率が ${p} と求められた。`, ok: "当たりが出る", d: "回", base: "明日、くじを引くと", also: "当たりが出ない回もある。", w1: "明日はかならず当たる。", w3: "毎回当たる。" },
+            { s: (p) => `あるくじで、当たる確率が ${p} と求められた。`, ok: "当たりが出る", d: "回", base: "明日、くじを引くと、", also: "当たりが出ない回もある。", w1: "明日はかならず当たる。", w3: "毎回当たる。" },
           ]);
           const pp = pick(r, [75, 80, 84, 85, 88, 90, 92, 95]), p = pp / 100, ng = 100 - pp;
           const ans = `100${C.d}のうち、およそ ${pp}${C.d}は${C.ok}見こみ。${C.also}`;
