@@ -103,7 +103,7 @@ const eqR = (r, p) => ({
     line(p.pS, p.FR),                  // もう一方の店の 1あたりの料金を使う
   ], [line(p.pR * 2, p.FR), line(p.pR, p.FR * 2), line(p.pS + p.pR, p.FR)]),
   hint: `料金は、「${p.c.fee}」と「${p.c.u}数ぶんの料金」の和。$x$ ${p.c.u}ぶんの料金は、$x$ を使って、どう表せる？`,
-  steps: [`（料金）＝（1${p.c.u}の料金）×（${p.c.u}数）＋（${p.c.fee}）。`, `${p.nR}は ${TX(`y=${p.pR}\\times x+${p.FR}`)}、つまり ${TX(ltex(p.lR))}。`],
+  steps: [`（料金）＝（1${p.c.u}の料金）×（${p.c.u}数）＋（${p.c.fee}）。`, `${p.nR}は、1${p.c.u}が ${p.pR}円で、${p.c.fee}が ${p.FR}円だから、${TX(ltex(p.lR))}。`],
 });
 /** 同じ料金になる量 */
 const crossQ = (r, p) => ({
@@ -125,7 +125,7 @@ const cheaperQ = (r, p, k) => {
     q: `${p.lead}${p.c.ask(k)}とき、安いのはどちらか。また、そのときの料金はいくらか。「安いほう、その料金」の組として正しいものは、次のうちどれか。`,
     ans: right,
     choices: choices4(r, right, wrongs),
-    hint: `${p.nS}と${p.nR}の式に、$x=${k}$ をそれぞれ入れると、料金はいくらになる？ 低いのはどちら？`,
+    hint: `${p.nS}、${p.nR}の式に、$x=${k}$ を入れると、それぞれの料金はいくらになる？ 低いのはどちら？`,
     steps: [
       `${p.nS}は ${TX(`y=${p.pS}\\times ${k}=${pS}`)}（円）。`,
       `${p.nR}は ${TX(`y=${p.pR}\\times ${k}+${p.FR}=${pR}`)}（円）。`,
@@ -135,7 +135,7 @@ const cheaperQ = (r, p, k) => {
 };
 /** R のほうが安くなる最小の量（同じ料金のときは、安いとはいわない） */
 const minRQ = (r, p) => ({
-  q: `${p.lead}${p.nR}のほうが${p.nS}より安くなるのは、何${p.c.u}以上のときか。（$x$ は整数。同じ料金のときは、「安い」にふくめない。）`,
+  q: `${p.lead}${p.nR}のほうが、${p.nS}より安くなるのは、何${p.c.u}以上のときか。（$x$ は整数。同じ料金のときは、「安い」にふくめない。）`,
   ans: p.xeq + 1, unit: `${p.c.u}以上`,
   hint: "2つの店の料金が同じになるのは、何のときかな？ そのすぐあと、どちらが安くなる？",
   steps: [
@@ -146,7 +146,7 @@ const minRQ = (r, p) => ({
 });
 /** S のほうが安い最大の量 */
 const maxSQ = (r, p) => ({
-  q: `${p.lead}${p.nS}のほうが${p.nR}より安いのは、何${p.c.u}以下のときか。（$x$ は整数。同じ料金のときは、「安い」にふくめない。）`,
+  q: `${p.lead}${p.nS}のほうが、${p.nR}より安いのは、何${p.c.u}以下のときか。（$x$ は整数。同じ料金のときは、「安い」にふくめない。）`,
   ans: p.xeq - 1, unit: `${p.c.u}以下`,
   hint: "2つの店の料金が同じになるのは、何のときかな？ そのすぐ前、どちらが安い？",
   steps: [
@@ -170,13 +170,13 @@ function tankCase(r) {
   for (let i = 0; i < 400; i++) {
     const rP = pick(r, [2, 3, 4, 5]), rQ = pick(r, [2, 3, 4, 5, 6]), Q0 = pick(r, [0, 0, 0, 10, 20]), xeq = r(4, 12);
     const P0 = (rP + rQ) * xeq + Q0;
-    if (P0 > 150 || P0 < 30 || P0 % rP !== 0 || rP === rQ) continue;
+    if (P0 > 150 || P0 < 30 || P0 % rP !== 0 || P0 / rP > 25 || rP === rQ) continue;
     const lP = line(-rP, P0), lQ = line(rQ, Q0), m = meet(lP, lQ);
     if (!m || !qeq(m[0], Q(xeq))) throw new Error("水そうの交点が合わない");
     const empty = P0 / rP;
     return {
       rP, rQ, Q0, P0, xeq, lP, lQ, empty, yEq: yAt(lP, xeq)[0], qAtEmpty: yAt(lQ, empty)[0],
-      text: `水そう P には水が ${P0}L 入っていて、毎分 ${rP}L ずつぬく。水そう Q は${Q0 === 0 ? "空" : `水が ${Q0}L 入っていて`}、毎分 ${rQ}L ずつ入れる。同時にはじめてから $x$ 分後の、水の量を $y$ L とする。`,
+      text: `水そう P には水が ${P0}L 入っていて、毎分 ${rP}L ずつぬく。水そう Q は${Q0 === 0 ? "空で" : `水が ${Q0}L 入っていて`}、毎分 ${rQ}L ずつ入れる。同時にはじめてから $x$ 分後の、水の量を $y$ L とする。`,
     };
   }
   throw new Error("tankCase が作れない");
@@ -296,9 +296,9 @@ export const UNITS = [
           return {
             q: `${c.text}水そう P の水の量 $y$ L を、$x$ の式で表すと、次のうちどれか。`,
             ans: TX(ltex(c.lP)),
-            choices: lineChoices(r, c.lP, [line(c.rP, c.P0), line(c.P0, -c.rP), line(-c.P0, c.rP), line(c.P0 - c.rP, 0), line(-c.rP, c.Q0 === 0 ? -c.P0 : c.P0 + c.Q0)], [line(-c.rP, c.P0 + 10), line(-c.rP - 1, c.P0)]),
+            choices: lineChoices(r, c.lP, [line(c.rP, c.P0), line(c.P0, -c.rP), line(-c.P0, c.rP), line(-c.rQ, c.P0), line(-c.rP, c.Q0 === 0 ? -c.P0 : c.P0 + c.Q0)], [line(-c.rP, c.P0 + 10), line(-c.rP - 1, c.P0)]),
             hint: "水がぬけていくと、水の量は、ふえる？ へる？ 1分間に何 L かわる？ はじめの量は？",
-            steps: [`はじめに ${c.P0}L あり、毎分 ${c.rP}L ずつへる。`, `${TX(`y=-${c.rP}x+${c.P0}`)}、つまり ${TX(ltex(c.lP))}。`],
+            steps: [`P は、はじめに ${c.P0}L あり、毎分 ${c.rP}L ずつへっていく。`, `$x$ 分後には ${c.rP}x（L）へるので、${TX(ltex(c.lP))}。`],
           };
         }),
         // 15d04b 2つの水そう：水の量が等しくなるのは何分後か（何 L のときか）

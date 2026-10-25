@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* スライドをつくるための「元の資料」を、授業ごとに書き出す。
-   使い方：  NODE_PATH=$(npm root -g) node tools/slide-src.cjs <単元のキー（kukan・data・shiki・renritsu・ichiji）> <JSON の出力先フォルダ>
+   使い方：  NODE_PATH=$(npm root -g) node tools/slide-src.cjs <単元のキー（kukan・data・shiki・renritsu・ichiji）> <JSON の出力先フォルダ> [--label-scale=1.5]
    書き出すもの：
      <出力先>/<授業のID>.json … ワークシートの表面・裏（問題・答え・表・図の場所）と、授業計画（50分の流れ・発問・重要語句・考えよう）
      slides/img/<授業のID>_f<N>_q.png・_a.png … ワークシートの図を、1つずつ PNG にしたもの（問題用＝空欄のまま、答え用＝赤い答え）。JSON の figs の q・a が、この場所（img/…png）
@@ -11,7 +11,9 @@ const vm = require('vm');
 const { chromium } = require('playwright');
 
 const root = path.resolve(__dirname, '..');
-const [unit, outDir] = process.argv.slice(2);
+const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+const [unit, outDir] = args;
+const scaleArg = process.argv.find((a) => a.startsWith('--label-scale=')), LABEL = scaleArg ? parseFloat(scaleArg.split('=')[1]) : 1;   // 図の字（目もりの数字・点の名前など）を、スクリーンで読めるように、何倍にするか
 if (!unit || !outDir) { console.log('使い方：node tools/slide-src.cjs <単元のキー> <出力先フォルダ>'); process.exit(1); }
 fs.mkdirSync(outDir, { recursive: true });
 const imgDir = path.join(root, 'slides', 'img');
@@ -59,6 +61,7 @@ for (const id of ids) {
     await page.evaluate((h) => { location.hash = h; }, '#/' + id + '/ws');
     await page.waitForTimeout(300);
     await page.evaluate(() => { document.body.classList.remove('ans-on'); document.querySelector('.pages').style.zoom = 1; });
+    if (LABEL !== 1) await page.evaluate((k) => document.querySelectorAll('.wsp .wb-fig svg text').forEach((t) => { const fs = parseFloat(t.getAttribute('font-size')); if (fs) t.setAttribute('font-size', String(fs * k)); }), LABEL);
     const sel = '.wsp .wb-fig svg', n = await page.locator(sel).count();
     const infos = [];
     for (let i = 0; i < n; i++) {

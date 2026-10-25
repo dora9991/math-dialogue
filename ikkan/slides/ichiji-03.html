@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>一次関数　第3時　x が増えると、y はどんな割合で変わるだろう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:2px solid #b9c1cc;padding:6px 14px}
+#deck th{background:rgba(120,140,170,.18)}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="i03-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第3時　<i>x</i> が増えると、<i>y</i> はどんな割合で変わるだろう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">第2時の重要語句から、1人1問ずつ、言葉を選んで出題する。<br>聞かれた人は、その言葉の意味を、自分の言葉で言う。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px"><i>x</i> の係数 <i>a</i></p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">定数項 <i>b</i></p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">代入</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">一次関数　第3時　x が増えると、y はどんな割合で変わるだろう</p>
+<aside>【導入 3分】前時（第2時）の重要語句（x の係数・定数項・代入）を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト 7分（前時分＝第2時。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="i03-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第3時　<i>x</i> が増えると、<i>y</i> はどんな割合で変わるだろう</p>
+</div>
+<h2 style="font-size:56px;font-weight:700;line-height:1.3;color:#1E3A5F"><i>x</i> が増えると、<i>y</i> はどんな割合で変わるだろう</h2>
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:20px 36px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+<p style="font-size:44px;font-weight:500;line-height:1.45">2つの一次関数　① <i>y</i>＝3<i>x</i>+2、② <i>y</i>＝−2<i>x</i>+5　について、<br>下の表を完成させよう。<br><i>x</i> の値が 1 増えるとき、また 3 増えるとき、<i>y</i> の値は、<br>それぞれどれだけ増えるだろうか。きまりを見つけよう。</p>
+</div>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:42px;color:#1F2A37">
+<tr><th style="width:24%;text-align:center"><i>x</i></th><th style="width:12.6%;text-align:center">−2</th><th style="width:12.6%;text-align:center">−1</th><th style="width:12.6%;text-align:center">0</th><th style="width:12.6%;text-align:center">1</th><th style="width:12.6%;text-align:center">2</th><th style="width:12.6%;text-align:center">3</th></tr>
+<tr><td style="text-align:center"><b>① <i>y</i>＝3<i>x</i>+2</b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td></tr>
+<tr><td style="text-align:center"><b>② <i>y</i>＝−2<i>x</i>+5</b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td></tr>
+</table>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第3時　x が増えると、y はどんな割合で変わるだろう</p>
+<aside>【解説 4分・学習課題】めあてを書く。① ② の表をうめ、y の増え方を調べる。個人→ペア。発問：x が 1 増えると、y は？ 3 増えると？／x の増え方と y の増え方に、どんな関係がある？　想定される反応：① 3 増える・9 増える。② 2 減る・6 減る。3倍、−2倍。　留意：「増加量」「割合」のことばは、ここでは出さない。</aside>
+</section>
+<section id="i03-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第3時　<i>x</i> が増えると、<i>y</i> はどんな割合で変わるだろう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:18px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:28px 48px">
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:40px;color:#1F2A37">
+<tr><th style="width:24%;text-align:center"><i>x</i></th><th style="width:12.6%;text-align:center">−2</th><th style="width:12.6%;text-align:center">−1</th><th style="width:12.6%;text-align:center">0</th><th style="width:12.6%;text-align:center">1</th><th style="width:12.6%;text-align:center">2</th><th style="width:12.6%;text-align:center">3</th></tr>
+<tr><td style="text-align:center"><b>① <i>y</i>＝3<i>x</i>+2</b></td><td style="text-align:center"><span style="color:#C0392B"><b>−4</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>−1</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>2</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>5</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>8</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>11</b></span></td></tr>
+<tr><td style="text-align:center"><b>② <i>y</i>＝−2<i>x</i>+5</b></td><td style="text-align:center"><span style="color:#C0392B"><b>9</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>7</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>5</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>3</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>1</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>−1</b></span></td></tr>
+</table>
+<p style="font-size:42px;line-height:1.45;color:#C0392B"><i>x</i> が 1 増えるとき　① <i>y</i> は <b>3 増える</b>　② <i>y</i> は <b>2 減る</b>（−2 増える）</p>
+<p style="font-size:42px;line-height:1.45;color:#C0392B"><i>x</i> が 3 増えるとき　① <i>y</i> は <b>9 増える</b>　② <i>y</i> は <b>6 減る</b>（−6 増える）</p>
+<p style="font-size:34px;line-height:1.4;color:#C0392B">（例　<i>x</i> が −2 から 1 まで　① <i>y</i> は −4 から 5 で 9 増える　② <i>y</i> は 9 から 3 で 6 減る）</p>
+<div style="border-top:2px solid #E3E6EA;padding:14px 0px 0px 0px;display:flex;flex-direction:column;gap:4px">
+<p style="font-size:42px;line-height:1.45;color:#C0392B"><i>y</i> の増える量は、<i>x</i> の増える量の　① <b>3倍</b>　② <b>−2倍</b></p>
+<p style="font-size:42px;line-height:1.45;color:#C0392B">どちらも、<b><i>x</i> の係数と同じ数</b>になっている。</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第3時　x が増えると、y はどんな割合で変わるだろう</p>
+<aside>【解説 4分・学習課題のまとめ】いくつかのペアの考えを聞いて、板書にまとめる。赤い字は、先生の板書。表は ① −4、−1、2、5、8、11　② 9、7、5、3、1、−1。x が 1 増えるとき ① 3 増える ② 2 減る（−2 増える）。x が 3 増えるとき ① 9 増える ② 6 減る（−6 増える）。y の増える量は、x の増える量の ① 3倍 ② −2倍で、x の係数と同じ数。「増加量」「割合」のことばは、次の「ことば」で出す。</aside>
+</section>
+<section id="i03-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第3時　<i>x</i> が増えると、<i>y</i> はどんな割合で変わるだろう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:36px 56px">
+<div style="display:flex;flex-direction:column;gap:2px">
+<p style="font-size:46px;line-height:1.5"><i>x</i> の値が増加した量を <i>x</i> の<u>　　　　　</u>、<br><i>y</i> の値が増加した量を <i>y</i> の<u>　　　　　</u>という。</p>
+<p style="font-size:40px;line-height:1.5;color:#1F2A37">　（減少するときは、増加量は負の数で表す。）</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="font-size:46px;line-height:1.5"><i>x</i> の増加量に対する <i>y</i> の増加量の割合を<u>　　　　　　　</u>という。</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:14px;padding:0px 0px 0px 44px">
+<p style="font-size:44px;line-height:1.3">変化の割合＝</p>
+<div style="display:flex;flex-direction:column;padding:0px 6px"><p style="font-size:44px;line-height:1.2;text-align:center"><i>y</i> の増加量</p><div style="border-top:3px solid #1F2A37"><p style="font-size:44px;line-height:1.2;text-align:center"><i>x</i> の増加量</p></div></div>
+</div>
+</div>
+<p style="font-size:46px;line-height:1.5">一次関数 <i>y</i>＝<i>ax</i>+<i>b</i> の変化の割合は、いつも<u>　　　　</u>で、<u>　　</u> に等しい。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第3時　x が増えると、y はどんな割合で変わるだろう</p>
+<aside>【解説 3分・ことば】増加量・変化の割合を押さえる。減るときは負の数と、② で確かめる。発問：② で「2 減る」を、増加量で言うと？　想定される反応：空欄に書き込む。−2 増える。　留意：重要語句は、先生が言い切る。</aside>
+</section>
+<section id="i03-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第3時　<i>x</i> が増えると、<i>y</i> はどんな割合で変わるだろう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:36px 56px">
+<div style="display:flex;flex-direction:column;gap:2px">
+<p style="font-size:46px;line-height:1.5"><i>x</i> の値が増加した量を <i>x</i> の<span style="color:#C0392B"><b>増加量</b></span>、<br><i>y</i> の値が増加した量を <i>y</i> の<span style="color:#C0392B"><b>増加量</b></span>という。</p>
+<p style="font-size:40px;line-height:1.5;color:#1F2A37">　（減少するときは、増加量は負の数で表す。）</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="font-size:46px;line-height:1.5"><i>x</i> の増加量に対する <i>y</i> の増加量の割合を<span style="color:#C0392B"><b>変化の割合</b></span>という。</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:14px;padding:0px 0px 0px 44px">
+<p style="font-size:44px;line-height:1.3">変化の割合＝</p>
+<div style="display:flex;flex-direction:column;padding:0px 6px"><p style="font-size:44px;line-height:1.2;text-align:center"><i>y</i> の増加量</p><div style="border-top:3px solid #1F2A37"><p style="font-size:44px;line-height:1.2;text-align:center"><i>x</i> の増加量</p></div></div>
+</div>
+</div>
+<p style="font-size:46px;line-height:1.5">一次関数 <i>y</i>＝<i>ax</i>+<i>b</i> の変化の割合は、いつも<span style="color:#C0392B"><b>一定</b></span>で、<span style="color:#C0392B"><b><i>a</i></b></span> に等しい。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第3時　x が増えると、y はどんな割合で変わるだろう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え（増加量・増加量・変化の割合・一定・a）。先生が言い切ってから、書かせる。② の y の増加量は −2（減るときは負の数）。</aside>
+</section>
+<section id="i03-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第3時　<i>x</i> が増えると、<i>y</i> はどんな割合で変わるだろう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px;background:#FFFFFF;border:3px solid #1B7F5C;border-radius:16px;padding:28px 44px">
+<p style="font-size:50px;font-weight:700;color:#1B7F5C">（1）</p>
+<p style="font-size:50px;line-height:1.5">一次関数 <i>y</i>＝<u>　　</u><i>x</i>−<u>　　</u> で、<br><i>x</i> の値が 1 から <u>　　</u> まで増加するとき、<br>変化の割合を求めよう。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px;background:#FFFFFF;border:3px solid #1B7F5C;border-radius:16px;padding:28px 44px">
+<p style="font-size:50px;font-weight:700;color:#1B7F5C">（2）</p>
+<p style="font-size:50px;line-height:1.5">一次関数 <i>y</i>＝−<u>　　</u><i>x</i>+<u>　　</u> で、<br><i>x</i> の値が <u>　　</u> 増加するとき、<br><i>y</i> の増加量を求めよう。</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第3時　x が増えると、y はどんな割合で変わるだろう</p>
+<aside>【解説 5分・例題】（1）定義から変化の割合を求める。（2）変化の割合から、y の増加量を求める。発問：x の増加量は？ y の増加量は？／変化の割合が −5 のとき、x が 3 増えると？　想定される反応：（1）12÷3＝4。（2）−5×3＝−15。　留意：「x が 1 から 4 まで」と、はじめと終わりを言わせてから計算する。数字（4、3、4、5、2、3）は、先生が言ってから書かせる。</aside>
+</section>
+<section id="i03-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第3時　<i>x</i> が増えると、<i>y</i> はどんな割合で変わるだろう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:32px 56px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">（1）<i>y</i>＝4<i>x</i>−3、<i>x</i> が 1 から 4 まで</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px;padding:0px 0px 0px 24px">
+<div style="width:340px"><p style="font-size:46px;line-height:1.4;color:#C0392B"><i>x</i> の増加量</p></div>
+<p style="font-size:46px;line-height:1.4;color:#C0392B">4−1＝3</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px;padding:0px 0px 0px 24px">
+<div style="width:340px"><p style="font-size:46px;line-height:1.4;color:#C0392B"><i>y</i> の増加量</p></div>
+<p style="font-size:46px;line-height:1.4;color:#C0392B">(4×4−3)−(4×1−3)＝13−1＝12</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px;padding:0px 0px 0px 24px">
+<div style="width:340px"><p style="font-size:46px;line-height:1.4;color:#C0392B">変化の割合</p></div>
+<p style="font-size:46px;line-height:1.4;color:#C0392B">12⁄3＝<b>4</b>　（<i>x</i> の係数と同じ）</p>
+</div>
+<div style="border-top:2px solid #E3E6EA;padding:14px 0px 0px 0px;display:flex;flex-direction:column;gap:6px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">（2）<i>y</i>＝−5<i>x</i>+2、<i>x</i> が 3 増加</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px;padding:0px 0px 0px 24px">
+<div style="width:340px"><p style="font-size:46px;line-height:1.4;color:#C0392B">変化の割合</p></div>
+<p style="font-size:46px;line-height:1.4;color:#C0392B">−5 だから</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px;padding:0px 0px 0px 24px">
+<div style="width:340px"><p style="font-size:46px;line-height:1.4;color:#C0392B"><i>y</i> の増加量</p></div>
+<p style="font-size:46px;line-height:1.4;color:#C0392B">−5×3＝<b>−15</b></p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第3時　x が増えると、y はどんな割合で変わるだろう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。（1）x の増加量 4−1＝3。y の増加量 (4×4−3)−(4×1−3)＝13−1＝12。変化の割合 12/3＝4（x の係数と同じ）。（2）変化の割合が −5 だから、y の増加量＝−5×3＝−15。数字は、先生が言ってから書かせる。</aside>
+</section>
+<section id="i03-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第3時　<i>x</i> が増えると、<i>y</i> はどんな割合で変わるだろう</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:28px">
+<div style="display:flex;flex-direction:column;gap:16px;width:760px">
+<p style="font-size:42px;line-height:1.45">一次関数 <i>y</i>＝<i>ax</i>+<i>b</i> で、<i>x</i> の値が <i>p</i> から <i>q</i> まで増加するとき（<i>p</i>＜<i>q</i>）、変化の割合は、どんな <i>p</i>、<i>q</i> でも、<i>a</i> になる。</p>
+<div style="background:#FFFFFF;border:3px solid #D9730D;border-radius:16px;padding:14px 28px">
+<p style="font-size:40px;font-weight:700;line-height:1.45">どうして、いつも <i>a</i> になるのだろう。<br>式を使って、説明しよう。</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:14px 28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">②</p>
+<p style="font-size:40px;line-height:1.4">気づいたこと</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">③</p>
+<p style="font-size:40px;line-height:1.4">変化の割合が、いつも <i>a</i> になる<br>わけを、<i>p</i>、<i>q</i>、<i>a</i>、<i>b</i> を使って、<br>説明しよう。</p>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;flex:1">
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:14px 28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">①</p>
+<p style="font-size:40px;line-height:1.4">一次関数 <i>y</i>＝2<i>x</i>−3 で、<br><i>x</i> の値が次のように増加するとき、<br>変化の割合を調べよう。</p>
+</div>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:28%;text-align:center"><i>x</i> の増加</th><th style="width:24%;text-align:center">−2 から 1</th><th style="width:24%;text-align:center">0 から 4</th><th style="width:24%;text-align:center">1 から 5</th></tr>
+<tr><td style="text-align:center"><b><i>x</i> の増加量</b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td></tr>
+<tr><td style="text-align:center"><b><i>y</i> の増加量</b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td></tr>
+<tr><td style="text-align:center"><b>変化の割合</b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td></tr>
+</table>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:14px;padding:8px 20px">
+<p style="font-size:24px;line-height:1.4;color:#1F2A37"><span style="color:#D9730D"><b>発展</b></span>　演習まで解き終わった人は、考えてみよう！　反比例 <i>y</i>＝12⁄<i>x</i> で、<i>x</i> の値が 1 から 2 まで増加するときと、2 から 4 まで増加するときの、変化の割合を求めよう。一次関数とくらべて、どんなことがいえるだろう。</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第3時　x が増えると、y はどんな割合で変わるだろう</p>
+<aside>【演習 23分・考えよう】進め方（演習① 2分）：ゴールは、「考えよう」（ワークシート裏）を全員が説明できること。立ち歩きOK、解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「説明できるようになる」と伝える。基礎（演習② 5分・個人）→ 解いたら教卓の解答で答え合わせ → 終わった人から考えようへ。考えよう＋標準（演習③ 14分・学び合い）：立ち歩きで、教え合い・説明し合い。先生は回って、気づきの言葉を拾い、必要なら判断して短く全体に戻す。問い：一次関数 y＝ax+b で、x の値が p から q まで増加するとき、変化の割合は、どんな p、q でも a になる。なぜだろう。式で説明しよう。ヒントを出す順：1）まず数で、いろいろな範囲の増加量を求める。2）x＝p のときの y と、x＝q のときの y を、式で書く。3）y の増加量を、a、p、q で表して、x の増加量でわる。判断：計算でつまずく→共有／気づきが出ない→ヒント1／止まる→ヒント2・3／残り5分→指名。答えは言わない。方向性（演習④ 2分・最後に一言）：「変化の割合は、これから学ぶグラフとも、関係がありそうだね。次の時間は、グラフをかいて、調べてみよう。」</aside>
+</section>
+<section id="i03-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第3時　<i>x</i> が増えると、<i>y</i> はどんな割合で変わるだろう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35"><i>x</i> が増えると、<i>y</i> はどんな割合で変わるだろう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">増加量</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">変化の割合</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">一次関数　第3時　x が増えると、y はどんな割合で変わるだろう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。ワークシートと演習プリントを回収（未完成でも出す）。裏の発展は、解き終わった人向け。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>
