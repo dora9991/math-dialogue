@@ -317,6 +317,18 @@
     for (const id of ['i-shoot-miss', 'i-drb-stolen', 'i-def-beat', 'i-layup-miss', 'i-pass-steal', 'i-nerve', 'i-reb-lose', 'i-home']) if (!pick.includes(id)) pick.push(id);
     return items(pick).slice(0, 6);
   }
+  // ひとこと（せかさない・ほめる）
+  function heroMsg(s) {
+    const drills = S.acts.filter((a) => a.type === 'drill');
+    if (!drills.length) return 'まずは「きょうのメニュー」を 1つ やってみよう！';
+    const today = G.day(Date.now());
+    const last = drills[drills.length - 1];
+    const daysAgo = Math.round((new Date(today).getTime() - new Date(G.day(last.at)).getTime()) / 86400000);
+    if (daysAgo === 0) return s.streak >= 3 ? `${s.streak}日れんぞく！ きょうも がんばったね。休むのも 練習のうち。` : 'きょうも がんばったね！ ゆっくり休むのも 練習のうち。';
+    if (s.streak >= 2) return `${s.streak}日れんぞく中！ きょうも ちょっとだけ やってみよう。`;
+    if (daysAgo === 1) { const m = drills.filter((a) => G.day(a.at) === G.day(last.at)).reduce((t, a) => t + (a.min || 0), 0); return `きのうは ${m}分 練習したね。きょうは 10分から どう？`; }
+    return 'ひさしぶり！ 10分だけでも だいじょうぶ。';
+  }
   // 今週（月〜日）の練習した日
   function weekHTML(s) {
     const now = new Date();
@@ -341,7 +353,8 @@
       <section class="hero">
         <div class="hero-top">
           <div class="hero-who"><p class="hero-hi">${hi}${name ? '、' + name : '！'}</p>
-            <p class="hero-rank"><span class="lvl">Lv.<b class="num">${s.level}</b></span><span class="rank">${esc(s.rank)}</span></p></div>
+            <p class="hero-rank"><span class="lvl">Lv.<b class="num">${s.level}</b></span><span class="rank">${esc(s.rank)}</span></p>
+            <p class="hero-msg">${esc(heroMsg(s))}</p></div>
           <a class="streak${s.streak ? ' on' : ''}" href="#log">${ic('fire')}<b class="num">${s.streak}</b><small>日れんぞく</small></a>
         </div>
         <div class="xpbar" role="progressbar" aria-valuemin="0" aria-valuemax="${s.prog.span}" aria-valuenow="${s.prog.cur}"><i style="width:${Math.round(s.prog.ratio * 100)}%"></i></div>

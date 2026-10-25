@@ -186,6 +186,72 @@ const { chromium } = require('playwright');
   if (data.aids.length) { await go(page, 'aid/' + data.aids[0]); await shot(page, 'k-aid-detail', true); }
   if (data.tapes.length) { await go(page, 'tape/' + data.tapes[0]); await shot(page, 'k-tape', true); }
   await go(page, 'check'); await shot(page, 'k-check');
+  // こまかい操作
+  // テーピング：つぎ・まえ
+  if (data.tapes.length) {
+    await go(page, 'tape/' + data.tapes[0]);
+    await page.click('.tape-nav [data-tapestep="1"]');
+    await page.waitForTimeout(80);
+    if (!/^2 \//.test(await page.$eval('.step-n', (e) => e.textContent.trim()))) fail('テーピング：「つぎ」で 2 へ進まない');
+    await page.click('.tape-nav [data-tapestep="0"]');
+    await page.waitForTimeout(80);
+    if (!/^1 \//.test(await page.$eval('.step-n', (e) => e.textContent.trim()))) fail('テーピング：「まえ」で 1 にもどらない');
+  }
+  // ケガをさがす
+  await go(page, 'aid');
+  await page.fill('[data-form="aid"] input', '足首をひねった');
+  await page.press('[data-form="aid"] input', 'Enter');
+  await page.waitForTimeout(80);
+  if (!(await page.$$('#aid-res .row-card')).length) fail('ケガ：「足首をひねった」で見つからない');
+  // カレンダーの前の月
+  await go(page, 'log');
+  const m1 = await page.$eval('.cal-h b', (e) => e.textContent);
+  await page.click('[data-cal="-1"]');
+  await page.waitForTimeout(80);
+  if ((await page.$eval('.cal-h b', (e) => e.textContent)) === m1) fail('きろく：前の月へ行けない');
+  await page.click('[data-cal="1"]');
+  // ずかん：種類とわざ
+  await go(page, 'lib');
+  await page.fill('#lib-q', '');
+  await page.dispatchEvent('#lib-q', 'input');
+  await page.click('[data-libkind="drill"]');
+  await page.click('[data-libskill="shoot"]');
+  await page.waitForTimeout(80);
+  const libShoot = await page.$$eval('#lib-list .row-card', (r) => r.length);
+  if (libShoot < 5) fail('ずかん：練習メニュー × シュート が少ない ' + libShoot);
+  // そうだん：問いのボタン
+  await go(page, 'chat');
+  await page.click('[data-act="chat-clear"]');
+  await page.click('[data-say="シュートが入らない"]');
+  await page.waitForTimeout(100);
+  const askBtn = await page.$('.msg.bot [data-ask]');
+  if (!askBtn) fail('そうだん：問いのボタンが出ない');
+  else { await askBtn.click(); await page.waitForTimeout(100); if ((await page.$$('.msg.me')).length < 2) fail('そうだん：問いのボタンで次の答えが出ない'); }
+  // プラン：入れかえ・足す
+  await go(page, 'plan');
+  const first = await page.evaluate(() => BCAPP.PL.data.blocks[1].items[0].id);
+  await page.click('[data-pl="swap"][data-b="skill"][data-i="0"]');
+  await page.waitForTimeout(80);
+  if ((await page.evaluate(() => BCAPP.PL.data.blocks[1].items[0].id)) === first) fail('プラン：入れかえできない');
+  await page.click('[data-pl="add"][data-b="skill"]');
+  await page.waitForTimeout(80);
+  const nBefore = await page.evaluate(() => BCAPP.PL.data.blocks[1].items.length);
+  const pick = await page.$('.pl-pick [data-pl="pick"]');
+  if (!pick) fail('プラン：足すメニューの候補が出ない');
+  else { await pick.click(); await page.waitForTimeout(80); if ((await page.evaluate(() => BCAPP.PL.data.blocks[1].items.length)) !== nBefore + 1) fail('プラン：メニューを足せない'); }
+  // せってい：画面の色・書き出し
+  await go(page, 'settings');
+  await page.click('[data-theme="dark"]');
+  if ((await page.evaluate(() => document.documentElement.dataset.theme)) !== 'dark') fail('せってい：くらい表示にならない');
+  await shot(page, 'k-settings-dark');
+  await page.click('[data-theme=""]');
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 3000 }).catch(() => null), page.click('[data-act="export"]')]);
+  if (!dl) fail('せってい：書き出せない');
+  else {
+    const p2 = await dl.path();
+    const j = JSON.parse(fs.readFileSync(p2, 'utf8'));
+    if (j.app !== 'basket-grow' || !j.data['bc.me'] || !j.data['bc.acts']) fail('せってい：書き出したファイルの中身');
+  }
   flushErrors(page, 'やってみる');
 
   // ④ 暗い表示・パソコン

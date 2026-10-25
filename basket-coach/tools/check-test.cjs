@@ -168,37 +168,63 @@ async function genTeam(page) {
   const dir = path.join(MEDIA, '_f-team');
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir);
-  // 人の絵（切りぬき・ユニフォームの色）を作る
+  // 人の絵（切りぬき・ユニフォームの色）を作る。切りぬきは、まわりのふちから「背景の色に近い所」を広げて、のこりを人にする
+  // （この検査の環境では MediaPipe の切りぬき（segmentation）が動かないので、自分で）。骨格から遠い所は のぞく。
   await page.evaluate(async ([T, GT_SRC]) => {
     const { FilesetResolver, PoseLandmarker } = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/vision_bundle.mjs');
     const fs = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/wasm');
-    const pl = await PoseLandmarker.createFromOptions(fs, { baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task', delegate: 'CPU' }, runningMode: 'IMAGE', numPoses: 1, outputSegmentationMasks: true });
+    const pl = await PoseLandmarker.createFromOptions(fs, { baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task', delegate: 'CPU' }, runningMode: 'IMAGE', numPoses: 1 });
     const im = new Image(); im.src = '/__mp/img/male_full_height_hands.jpg'; await im.decode();
-    const r = pl.detect(im);
     const W = im.naturalWidth, H = im.naturalHeight;
-    const mask = r.segmentationMasks[0].getAsFloat32Array();
-    const lm = r.landmarks[0].map((p) => [p.x * W, p.y * H]);
+    const lm = pl.detect(im).landmarks[0].map((q) => [q.x * W, q.y * H]);
+    pl.close();
     const base = document.createElement('canvas'); base.width = W; base.height = H;
     const g = base.getContext('2d'); g.drawImage(im, 0, 0);
-    const src = g.getImageData(0, 0, W, H);
-    // 胴（両肩・両腰の四角）の中の暗い服を、チームの色に
+    const d = g.getImageData(0, 0, W, H).data;
+    const medc = (idx) => { const r = [], g2 = [], b2 = []; for (const i of idx) { r.push(d[i * 4]); g2.push(d[i * 4 + 1]); b2.push(d[i * 4 + 2]); } const m = (a) => a.sort((u, v) => u - v)[a.length >> 1]; return [m(r), m(g2), m(b2)]; };
+    const xs = [...Array(W).keys()], ys = [...Array(H).keys()];
+    const refs = [medc(xs), medc(xs.map((x) => (H - 1) * W + x)), medc(ys.map((y) => y * W)), medc(ys.map((y) => y * W + W - 1))];
+    const nearBG = (i) => refs.some((c) => Math.hypot(d[i * 4] - c[0], d[i * 4 + 1] - c[1], d[i * 4 + 2] - c[2]) < 60);
+    const dist = (a, b) => Math.hypot(d[a * 4] - d[b * 4], d[a * 4 + 1] - d[b * 4 + 1], d[a * 4 + 2] - d[b * 4 + 2]);
+    const bg = new Uint8Array(W * H), q = [];
+    for (const x of xs) q.push(x, (H - 1) * W + x);
+    for (const y of ys) q.push(y * W, y * W + W - 1);
+    for (const i of q) bg[i] = 1;
+    for (let h = 0; h < q.length; h++) {
+      const i = q[h], x = i % W, y = (i / W) | 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        const j = ny * W + nx;
+        if (!bg[j] && dist(i, j) < 14 && nearBG(j)) { bg[j] = 1; q.push(j); }
+      }
+    }
+    // 骨格の線から遠い所（床の線・かべの影）は人ではない
+    const SEG = [[0, 11], [0, 12], [11, 12], [11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24], [23, 25], [25, 27], [24, 26], [26, 28], [27, 31], [28, 32], [27, 29], [28, 30]];
+    const R = H * 0.075;
+    const segD = (x, y, a, b) => { const vx = b[0] - a[0], vy = b[1] - a[1]; const t = Math.max(0, Math.min(1, ((x - a[0]) * vx + (y - a[1]) * vy) / (vx * vx + vy * vy || 1))); return Math.hypot(x - a[0] - vx * t, y - a[1] - vy * t); };
     const poly = [lm[11], lm[12], lm[24], lm[23]];
     const cx = poly.reduce((s, p) => s + p[0], 0) / 4, cy = poly.reduce((s, p) => s + p[1], 0) / 4;
     const big = poly.map(([x, y]) => [cx + (x - cx) * 1.25, cy + (y - cy) * 1.12]);
     const inside = (x, y) => { let c = false; for (let i = 0, j = 3; i < 4; j = i++) { const [xi, yi] = big[i], [xj, yj] = big[j]; if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c; } return c; };
+    const fg = new Uint8Array(W * H);
     let x0 = W, y0 = H, x1 = 0, y1 = 0;
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (mask[y * W + x] > 0.5) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+    for (let i = 0; i < W * H; i++) {
+      if (bg[i]) continue;
+      const x = i % W, y = (i / W) | 0;
+      if (!SEG.some(([a, b]) => segD(x, y, lm[a], lm[b]) < (a === 0 ? R * 1.3 : R))) continue;
+      fg[i] = 1; x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+    }
     const make = (col) => {
       const out = new ImageData(W, H);
       for (let i = 0; i < W * H; i++) {
-        const a = mask[i], x = i % W, y = (i / W) | 0;
-        let rr = src.data[i * 4], gg = src.data[i * 4 + 1], bb = src.data[i * 4 + 2];
-        const lum = 0.3 * rr + 0.59 * gg + 0.11 * bb;
-        if (col && a > 0.5 && lum < 120 && inside(x, y)) { const k = 0.55 + (lum / 120) * 0.9; rr = Math.min(255, col[0] * k); gg = Math.min(255, col[1] * k); bb = Math.min(255, col[2] * k); }
-        out.data[i * 4] = rr; out.data[i * 4 + 1] = gg; out.data[i * 4 + 2] = bb; out.data[i * 4 + 3] = Math.round(Math.min(1, Math.max(0, (a - 0.3) / 0.4)) * 255);
+        let rr = d[i * 4], gg = d[i * 4 + 1], bb = d[i * 4 + 2];
+        const x = i % W, y = (i / W) | 0, lum = 0.3 * rr + 0.59 * gg + 0.11 * bb;
+        if (fg[i] && lum < 120 && inside(x, y)) { const k = 0.55 + (lum / 120) * 0.9; rr = Math.min(255, col[0] * k); gg = Math.min(255, col[1] * k); bb = Math.min(255, col[2] * k); }
+        out.data[i * 4] = rr; out.data[i * 4 + 1] = gg; out.data[i * 4 + 2] = bb; out.data[i * 4 + 3] = fg[i] ? 255 : 0;
       }
-      const c = document.createElement('canvas'); c.width = x1 - x0 + 1; c.height = y1 - y0 + 1;
       const t = document.createElement('canvas'); t.width = W; t.height = H; t.getContext('2d').putImageData(out, 0, 0);
+      const c = document.createElement('canvas'); c.width = x1 - x0 + 1; c.height = y1 - y0 + 1;
       c.getContext('2d').drawImage(t, -x0, -y0);
       return c;
     };
@@ -290,6 +316,7 @@ async function selfFlow(page, mode, file, opt = {}) {
     return { ok: R.res.ok, msg: R.res.msg, view: R.res.view, score: R.score, notes: R.res.notes || [], metrics: (R.res.metrics || []).map((m) => [m.key, m.status, m.value]), seen: R.tracked.filter(Boolean).length, n: R.tracked.length, W: R.W, hipX: hipX[hipX.length >> 1] };
   });
   r.secs = secs;
+  if (process.env.DUMP) console.log(await page.evaluate(() => { const R = BC.check._state().result; const F = R.res.series || []; return F.map((f, i) => f ? [i, R.times[i].toFixed(2), 'hip', f.hipH.toFixed(2), 'wr', f.wrist.r.toFixed(2), f.wrist.l.toFixed(2), 'head', f.headH.toFixed(2), 'sh', f.shH.toFixed(2), 'el', Math.round(f.elbowR), Math.round(f.elbowL), 'kn', Math.round(f.kneeL), Math.round(f.kneeR)].join(' ') : i + ' -').join('\n') + '\nkeys ' + JSON.stringify(R.res.keys) + ' hand ' + R.res.hand; }));
   console.log(`  ${file}: ${r.ok ? r.metrics.map((m) => `${m[0]}=${m[2]}(${m[1]})`).join(' ') : '× ' + r.msg}  ［人 ${r.seen}/${r.n}コマ・${secs.toFixed(1)}秒］`);
   return r;
 }

@@ -353,6 +353,7 @@ details.adult > .sec { margin-top: 14px; }
 .hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .hero-hi { font-family: var(--font-round); font-weight: 800; font-size: 1.1rem; }
 .hero-rank { display: flex; align-items: baseline; gap: 10px; margin-top: 2px; }
+.hero-msg { margin-top: 6px; font-size: var(--fs-s); font-weight: 700; line-height: 1.5; opacity: 0.95; word-break: keep-all; overflow-wrap: anywhere; }
 .lvl { font-family: var(--font-round); font-weight: 800; font-size: 1.15rem; }
 .lvl b { font-size: 2.6rem; line-height: 1; }
 .rank { font-family: var(--font-round); font-weight: 800; background: rgba(255, 255, 255, 0.2); border-radius: 999px; padding: 0 12px; }

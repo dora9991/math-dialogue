@@ -346,8 +346,15 @@
       const S = setIdx.length ? argBy(setIdx, F, (f) => arm(f, hand).e, (a, b) => a < b) : -1;
       // しずむ：はなす前 1.5 秒の、腰がいちばん低いところ
       const D = argBy(range(n, R - s(1.5), (S >= 0 ? S : R) - 1), F, (f) => f.hipH, (a, b) => a < b);
-      // 腰がいちばん高い（ジャンプのてっぺん）
+      // 腰がいちばん高い（ジャンプのてっぺん）。てっぺんは平らなことが多いので、いちばん高い所から 0.02 以内の コマの まん中の時刻
       const P = argBy(range(n, R - s(0.5), R + s(0.5)), F, (f) => f.hipH, (a, b) => a > b);
+      let topT = null;
+      if (P >= 0) {
+        const near = range(n, R - s(0.5), R + s(0.5)).filter((i) => F[i] && F[i].hipH >= F[P].hipH - 0.02);
+        topT = near.reduce((t, i) => t + F[i].t, 0) / near.length;
+      }
+      // まわりの3コマの まん中の値（AI の点のぶれに強く）
+      const med3 = (i, fn) => median(range(n, i - 1, i + 1).filter((j) => F[j]).map((j) => fn(j)));
       // はじめの立った高さ（しずむ前）
       const startH = pct(range(n, 0, Math.max(2, (D >= 0 ? D : R) - 1)).map((i) => F[i] && F[i].hipH), 0.75) || (D >= 0 ? F[D].hipH : F[R].hipH);
       // 着地：てっぺんのあと、足首が床にもどる（とばないシュートは、腰がもとの高さにもどる）
@@ -362,7 +369,7 @@
       const mets = [];
       if (D >= 0) {
         if (view === 'side') {
-          const k = kneeOf(F[D]);
+          const k = med3(D, (j) => kneeOf(F[j]));
           const st = k >= 95 && k <= 145 ? 'good' : k < 95 || k <= 155 ? 'ok' : 'bad';
           mets.push(M('dip', 'ひざの曲げ（しずむとき）', Math.round(k) + '°', st,
             st === 'good' ? 'ひざをしっかり曲げて、足の力を使えています。' : k < 95 ? '深く曲げすぎかもしれません。深すぎると、打つまでがおそくなります。' : 'ひざの曲げが浅めです。腕だけで打っているかも。ひざを曲げて、のばす力で打ちましょう。',
@@ -376,14 +383,14 @@
         }
       }
       if (S >= 0 && view === 'side') {
-        const e = E(S);
-        const st = e >= 65 && e <= 115 ? 'good' : e < 65 || e <= 135 ? 'ok' : 'bad';
+        const e = med3(S, E);
+        const st = e >= 55 && e <= 115 ? 'good' : e < 55 || e <= 135 ? 'ok' : 'bad';
         mets.push(M('set', 'セットのひじ（L字）', Math.round(e) + '°', st,
-          st === 'good' ? 'ひじが L字（90°くらい）で、きれいに構えられています。' : e < 65 ? 'ひじを曲げすぎかも。ボールを頭のうしろに引きすぎないように。' : 'ひじがのびぎみです。L字に曲げて、ボールをおでこの前に。',
+          st === 'good' ? 'ひじが L字（90°くらい）で、きれいに構えられています。' : e < 55 ? 'ひじを曲げすぎかも。ボールを頭のうしろに引きすぎないように。' : 'ひじがのびぎみです。L字に曲げて、ボールをおでこの前に。',
           { at: S, links: ['v-shoot-hold', 'd-formshoot', 'd-lyingshoot'] }));
       }
       {
-        const e = E(R);
+        const e = med3(R, E);
         const st = hv(e, 150, 135);
         mets.push(M('release', 'はなすときの腕', Math.round(e) + '°', st,
           st === 'good' ? '腕をまっすぐのばしきって、はなせています。' : '腕がのびきる前にはなしています。リングに向かって、腕をのばしきりましょう。',
@@ -407,8 +414,9 @@
           { at: Ld, links: ['v-shoot-base', 'd-formshoot'], note: '脚の長さを 100% としたときの、ずれ' }));
       }
       if (P >= 0 && D >= 0 && F[P].hipH - startH > 0.05) {
-        const dt = (R - P) / fps;
-        const st = Math.abs(dt) <= 0.12 ? 'good' : dt > 0.12 ? 'bad' : 'ok';
+        // てっぺんの少し前〜すぐあと（-0.2〜+0.1秒）なら よい。0.2秒より あとは「落ちながら」
+        const dt = F[R].t - topT;
+        const st = dt >= -0.2 && dt <= 0.1 ? 'good' : dt > 0.2 ? 'bad' : 'ok';
         mets.push(M('timing', 'はなすタイミング', dt >= 0 ? `てっぺんの ${dt.toFixed(2)}秒あと` : `てっぺんの ${(-dt).toFixed(2)}秒まえ`, st,
           st === 'good' ? 'ジャンプのいちばん高いところで、はなせています。' : dt > 0 ? '落ちながらはなしています。もう少し早く、てっぺんではなしましょう。' : '上がりながらはなしています（近い距離なら OK）。遠いときは、てっぺんで。',
           { at: R, links: ['v-shoot-rhythm'] }));

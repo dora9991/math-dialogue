@@ -53,6 +53,18 @@
     motion: null, fps: 4, secs: 60, tip: '試合や 3対3・5対5 の練習を、高い所から 10秒〜1分',
   };
   const TEAM_THUMB = { o: [[-6.3, 1.2], [6.3, 1.2], [-4.6, 6.4], [4.6, 6.4], [0, 8.9]], x: [[-4.9, 2.1], [4.9, 2.1], [-3, 5.2], [3, 5.2], [0, 7.4]] };
+  // 絵の範囲：人（とボール）が大きく見えるように、まわりを少しだけ（横:たて ＝ aspect）
+  function figBox(id, aspect) {
+    const clip = BC.motions[id];
+    const fr = BC.motionFrame(clip, clip.still != null ? clip.still : 0.3);
+    const s = fr.sk[0];
+    const pts = [s.head, s.hip, s.r.hand, s.l.hand, s.r.knee, s.l.knee, ...s.r.foot, ...s.l.foot, ...fr.balls];
+    let x0 = Math.min(...pts.map((p) => p[0])) - 0.3, x1 = Math.max(...pts.map((p) => p[0])) + 0.3;
+    let y0 = -0.08, y1 = Math.max(...pts.map((p) => p[1])) + 0.32;
+    const w = x1 - x0, h = y1 - y0;
+    if (w / h < aspect) { const d = (h * aspect - w) / 2; x0 -= d; x1 += d; } else y1 += w / aspect - h;
+    return [x0, x1, y0, y1];
+  }
   // ホームなどの入口ボタン用の絵（SVG の文字列）
   for (const m of Object.values(MODES)) {
     Object.defineProperty(m, 'icon', {
@@ -60,7 +72,7 @@
       get() {
         if (m.id === 'team') return BC.courtThumb ? BC.courtThumb(TEAM_THUMB) : '';
         const id = m.motion || 'stance';
-        return BC.motions && BC.motions[id] ? BC.motionSVG(id, null, { cls: 'ck-fig' }) : '';
+        return BC.motions && BC.motions[id] ? BC.motionSVG(id, null, { cls: 'ck-fig', box: figBox(id, 1.6) }) : '';
       },
     });
   }
@@ -170,7 +182,7 @@
         const h = HOW[m.id];
         return `<button type="button" class="ck-mode${m.id === 'team' ? ' ck-mode-team' : ''}" data-ck="mode" data-mode="${m.id}">
           <span class="ck-mode-fig">${m.icon}</span>
-          <span class="ck-mode-txt"><b>${esc(m.name)}</b><small>${h.badges.map((x) => esc(x[1])).join('・')}</small></span>
+          <span class="ck-mode-txt"><b>${esc(m.name)}</b><small>${h.badges.slice(0, 2).map((x) => esc(x[1])).join('・')}</small></span>
         </button>`;
       };
       return `
@@ -314,7 +326,8 @@
   /* ---------- 作業用のキャンバス（長い辺 640px） ---------- */
   function work() {
     const v = S.video;
-    const k = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight));
+    // チームは遠くの人も見つけたいので大きめ（左右2つに分けて、AI に見せる）
+    const k = Math.min(1, (MODES[S.mode].kind === 'team' ? 960 : 640) / Math.max(v.videoWidth, v.videoHeight));
     if (!S.work) S.work = document.createElement('canvas');
     S.work.width = Math.round(v.videoWidth * k);
     S.work.height = Math.round(v.videoHeight * k);
@@ -392,7 +405,7 @@
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.drawImage(S.snap || S.work, 0, 0, W, H);
     (S.cands || []).forEach((lm, i) => {
-      drawSkeleton(g, lm, 1, 1, { lw: 3, color: css('--me') });
+      drawSkeleton(g, lm, 1, 1, { lw: 3 });
       const b = BA.boxOf(lm);
       g.lineWidth = 3; g.strokeStyle = '#fff'; g.setLineDash([8, 6]);
       g.strokeRect(b[0] - 8, b[1] - 8, b[2] - b[0] + 16, b[3] - b[1] + 16);
@@ -456,7 +469,7 @@
         g.strokeStyle = q.team === 0 ? css('--ck-off') : q.team === 1 ? css('--ck-def') : 'rgba(255,255,255,0.7)';
         g.strokeRect(q.box.x, q.box.y, q.box.w, q.box.h);
       }
-    } else for (const lm of people || []) drawSkeleton(g, lm, 1, 1, { lw: 3, color: css('--me') });
+    } else for (const lm of people || []) drawSkeleton(g, lm, 1, 1, { lw: 3 });
   }
 
   async function runSelf() {
@@ -630,14 +643,14 @@
   }
   function metricCard(mt, opt = {}) {
     const st = ST[mt.status] || ST.na;
-    const links = (mt.links || []).map((id) => (BC.get ? BC.get(id) : null) ? [id, BC.get(id)] : null).filter(Boolean).slice(0, 3);
+    const links = (mt.links || []).map((id) => (BC.get ? BC.get(id) : null) ? [id, BC.get(id)] : null).filter(Boolean).slice(0, opt.main ? 3 : 2);
     return `<article class="ck-met ck-${mt.status}${opt.main ? ' ck-met-main' : ''}">
       <header class="ck-met-h"><span class="ck-st" aria-label="${st.t}">${st.m}</span><span class="ck-met-l">${esc(mt.label)}</span><b class="ck-met-v">${esc(mt.value)}</b></header>
       <p class="ck-met-msg">${esc(mt.msg)}</p>
       ${mt.note ? `<p class="ck-met-note">${esc(mt.note)}</p>` : ''}
       <div class="ck-met-act">
-        ${opt.seek && mt.at != null && mt.at >= 0 ? `<button type="button" class="chip" data-ck="seekAt" data-i="${mt.at}">${IC.eye}<span>この場面を 見る</span></button>` : ''}
-        ${links.map(([id, it]) => `<button type="button" class="chip ck-link" data-ck="open" data-id="${esc(id)}">${esc(it.name || it.title)}</button>`).join('')}
+        ${opt.seek && mt.at != null && mt.at >= 0 ? `<button type="button" class="chip ck-seek" data-ck="seekAt" data-i="${mt.at}">${IC.eye}<span>見る</span></button>` : ''}
+        ${links.length ? `<span class="ck-met-lk">練習</span>${links.map(([id, it]) => `<button type="button" class="chip ck-link" data-ck="open" data-id="${esc(id)}">${esc(it.name || it.title)}</button>`).join('')}` : ''}
       </div>
     </article>`;
   }
@@ -809,12 +822,13 @@
     const hand = R.res.hand || 'r';
     const kneeAvg = (f) => (f.kneeL + f.kneeR) / 2;
     const defs = [{ key: 'hip', title: '腰の高さ', unit: '%', get: (f) => f.hipH * 100 }];
+    const DEG = [0, 90, 180]; // ひざ・ひじ：0°〜180°（90° が L字、180° が まっすぐ）
     const mode = R.mode;
-    if (mode === 'shoot') { if (view === 'side') defs.push({ key: 'knee', title: 'ひざの角度', unit: '°', get: kneeAvg }); defs.push({ key: 'elbow', title: 'ひじの角度（シュートする手）', unit: '°', get: (f) => (hand === 'r' ? f.elbowR : f.elbowL) }); }
+    if (mode === 'shoot') { if (view === 'side') defs.push({ key: 'knee', title: 'ひざの角度', unit: '°', fixed: DEG, get: kneeAvg }); defs.push({ key: 'elbow', title: 'ひじの角度（シュートする手）', unit: '°', fixed: DEG, get: (f) => (hand === 'r' ? f.elbowR : f.elbowL) }); }
     else if (mode === 'dribble') defs.push({ key: 'wrist', title: 'ドリブルする手の高さ', unit: '%', get: (f) => f.wrist[hand] * 100 });
     else if (mode === 'defense') defs.push({ key: 'head', title: '頭の高さ', unit: '%', get: (f) => f.headH * 100 });
-    else if (mode === 'landing') defs.push(view === 'side' ? { key: 'knee', title: 'ひざの角度', unit: '°', get: kneeAvg } : { key: 'fppa', title: 'ひざが内に入る角度', unit: '°', get: (f) => Math.max(f.fppaL, f.fppaR) });
-    else { if (view === 'side') defs.push({ key: 'knee', title: 'ひざの角度', unit: '°', get: kneeAvg }); defs.push({ key: 'head', title: '頭の高さ', unit: '%', get: (f) => f.headH * 100 }); }
+    else if (mode === 'landing') defs.push(view === 'side' ? { key: 'knee', title: 'ひざの角度', unit: '°', fixed: DEG, get: kneeAvg } : { key: 'fppa', title: 'ひざが内に入る角度', unit: '°', get: (f) => Math.max(f.fppaL, f.fppaR) });
+    else { if (view === 'side') defs.push({ key: 'knee', title: 'ひざの角度', unit: '°', fixed: DEG, get: kneeAvg }); defs.push({ key: 'head', title: '頭の高さ', unit: '%', get: (f) => f.headH * 100 }); }
     return defs.map((d) => Object.assign(d, { pts: F.map((f, i) => (f ? [T[i], d.get(f)] : null)).filter((p) => p && isFinite(p[1])) }));
   }
   function niceTicks(lo, hi, n = 3) {
@@ -828,14 +842,14 @@
   }
   // 1本の折れ線（または2本：series = [{ name, cls, pts }]）。x は秒。marks：[{ t, label }]
   function lineSVG(width, series, opt) {
-    const H = opt.h || 120, L = 40, Rm = opt.endLabels ? 46 : 12, T = 18, B = 22;
+    const H = (opt.h || 120) + ((opt.marks || []).length ? 12 : 0), L = 40, Rm = opt.endLabels ? 46 : 12, T = (opt.marks || []).length ? 30 : 12, B = 22;
     const all = series.flatMap((s) => s.pts);
     if (!all.length) return '';
     const x0 = opt.x0, x1 = Math.max(opt.x1, x0 + 0.1);
     let lo = Math.min(...all.map((p) => p[1])), hi = Math.max(...all.map((p) => p[1]));
     if (opt.min != null) lo = Math.min(lo, opt.min);
     if (hi - lo < (opt.minSpan || 10)) { const c = (hi + lo) / 2; lo = c - (opt.minSpan || 10) / 2; hi = c + (opt.minSpan || 10) / 2; }
-    const ticks = niceTicks(lo, hi, 3);
+    const ticks = opt.fixed || niceTicks(lo, hi, 3);
     lo = ticks[0]; hi = ticks[ticks.length - 1];
     const X = (t) => L + ((t - x0) / (x1 - x0)) * (width - L - Rm), Y = (v) => T + (1 - (v - lo) / (hi - lo || 1)) * (H - T - B);
     const f1 = (n) => Math.round(n * 10) / 10;
@@ -843,7 +857,15 @@
     for (const tk of ticks) s += `<line class="ck-grid" x1="${L}" x2="${width - Rm}" y1="${f1(Y(tk))}" y2="${f1(Y(tk))}"/><text class="ck-tick" x="${L - 6}" y="${f1(Y(tk))}" text-anchor="end" dominant-baseline="central">${tk}${opt.unit || ''}</text>`;
     const xt = niceTicks(x0, x1, 4).filter((v) => v >= x0 - 1e-6 && v <= x1 + 1e-6);
     for (const v of xt) s += `<text class="ck-tick" x="${f1(X(v))}" y="${H - 6}" text-anchor="middle">${v}秒</text>`;
-    for (const mk of opt.marks || []) s += `<line class="ck-mark" x1="${f1(X(mk.t))}" x2="${f1(X(mk.t))}" y1="${T - 4}" y2="${H - B}"/><text class="ck-mark-t" x="${f1(X(mk.t))}" y="${T - 7}" text-anchor="middle">${esc(mk.label)}</text>`;
+    // 場面の名前：近くて重なるときは、2段に
+    const ends = [-Infinity, -Infinity];
+    for (const mk of (opt.marks || []).slice().sort((a, b) => a.t - b.t)) {
+      const x = X(mk.t), w = mk.label.length * 11 + 6;
+      const row = x - w / 2 > ends[0] + 2 ? 0 : 1;
+      ends[row] = x + w / 2;
+      const ty = row ? T - 5 : T - 18;
+      s += `<line class="ck-mark" x1="${f1(x)}" x2="${f1(x)}" y1="${ty + 3}" y2="${H - B}"/><text class="ck-mark-t" x="${f1(x)}" y="${ty}" text-anchor="middle">${esc(mk.label)}</text>`;
+    }
     for (const se of series) {
       // とぎれた所（見失ったコマ）は線を切る
       let d = '', prevT = null;
@@ -867,7 +889,7 @@
     S.charts = [];
     defs.forEach((d) => {
       const fig = box.querySelector(`[data-key="${d.key}"]`);
-      const ch = lineSVG(width, [{ name: d.title, pts: d.pts }], { x0, x1, unit: d.unit, marks, label: d.title, minSpan: d.unit === '°' ? 30 : 10 });
+      const ch = lineSVG(width, [{ name: d.title, pts: d.pts.map((p) => (d.fixed ? [p[0], clamp(p[1], 0, 180)] : p)) }], { x0, x1, unit: d.unit, marks, label: d.title, minSpan: d.unit === '°' ? 30 : 10, fixed: d.fixed });
       if (!ch) { fig.remove(); return; }
       fig.querySelector('.ck-svg').innerHTML = ch.svg;
       const svgEl = fig.querySelector('svg'), tip = fig.querySelector('.ck-tip');
@@ -1069,21 +1091,46 @@
     await BA.seek(S.video, S.from);
     grab();
     S.snap = cloneCanvas(S.work);
-    const r = det.detectForVideo(S.work, BA.tick(500));
-    S.people0 = peopleOf(r, false);
+    S.people0 = peopleOf(detectPeople(det), false);
     if (!S.colors) S.colors = [];
     paint();
   }
+  // 人を見つける。横長の動画は、左右に重なりのある2つに分けて AI に見せる（遠くの小さな人も見つかりやすい）
+  function detectPeople(det) {
+    const W = S.work.width, H = S.work.height;
+    const tiles = W > H * 1.2 ? [[0, 0, Math.round(W * 0.56), H], [Math.round(W * 0.44), 0, W - Math.round(W * 0.44), H]] : [[0, 0, W, H]];
+    let out = [];
+    for (const [tx, ty, tw, th] of tiles) {
+      let src = S.work;
+      if (tiles.length > 1) {
+        if (!S.tile) S.tile = document.createElement('canvas');
+        S.tile.width = tw; S.tile.height = th;
+        S.tile.getContext('2d').drawImage(S.work, tx, ty, tw, th, 0, 0, tw, th);
+        src = S.tile;
+      }
+      const r = det.detectForVideo(src, BA.tick(20));
+      for (const d of r.detections || []) {
+        const c = d.categories && d.categories[0];
+        if (!c) continue;
+        const b = d.boundingBox;
+        out.push({ x: b.originX + tx, y: b.originY + ty, w: b.width, h: b.height, score: c.score });
+      }
+    }
+    // 重なった箱は、点数の高い方だけ（2つに分けた所の重なり）
+    out.sort((a, b) => b.score - a.score);
+    const iou = (a, b) => { const x = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)), y = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)); const i = x * y; return i / (a.w * a.h + b.w * b.h - i || 1); };
+    const keep = [];
+    for (const b of out) if (!keep.some((k) => iou(k, b) > 0.45)) keep.push(b);
+    return keep;
+  }
   // 見つけた人 → { box, foot（画面）, x, y（コート m）, color }。コートの外の人は のぞく
-  function peopleOf(r, classify) {
+  function peopleOf(boxes, classify) {
     const out = [];
     const minH = S.work.height * 0.025;
-    for (const d of r.detections || []) {
-      const c = d.categories && d.categories[0];
-      if (!c || c.score < 0.35) continue;
-      const b = d.boundingBox;
-      if (b.height < minH) continue;
-      const box = { x: b.originX, y: b.originY, w: b.width, h: b.height };
+    for (const b of boxes) {
+      if (b.score < 0.3 || b.h < minH) continue;
+      const box = { x: b.x, y: b.y, w: b.w, h: b.h };
+      const c = { score: b.score };
       const foot = [box.x + box.w / 2, box.y + box.h];
       const q = BA.applyH(S.H, foot);
       if (!isFinite(q[0]) || Math.abs(q[0]) > 8.5 || q[1] < -1 || q[1] > 15) continue;
@@ -1200,8 +1247,7 @@
         onFrame: (t, i) => {
           grab();
           if (i === midI || !S.teamMini) S.teamMini = miniCopy(S.work);
-          const r = det.detectForVideo(S.work, BA.tick(1000 / fps));
-          const people = peopleOf(r, true);
+          const people = peopleOf(detectPeople(det), true);
           frames.push({ t, people });
           S.prog.i = frames.length;
           paintProg(people, true);
