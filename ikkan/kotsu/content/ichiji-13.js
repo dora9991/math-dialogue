@@ -104,8 +104,9 @@ const elimSteps = (e1, e2) => {
 /** 加減法で直接解ける連立方程式の組（解は整数） */
 const sysCase = (r) => tryGen(() => {
   const x0 = r(1, 6), y0 = r(1, 6) * pick(r, [1, 1, -1]);
-  const co = [1, 2, 3, -1, -2, -3];
+  const co = [1, 2, 3];                                   // x の係数は正（x+y=6、2x+y=5 のような形）
   const e1 = [pick(r, co), pick(r, [1, -1, 2, -2]), 0], e2 = [pick(r, co), pick(r, [1, -1, 2, -2]), 0];
+  if (gcd(e1[0], e1[1]) !== 1 || gcd(e2[0], e2[1]) !== 1) return null;
   e1[2] = e1[0] * x0 + e1[1] * y0; e2[2] = e2[0] * x0 + e2[1] * y0;
   const s = solve2(e1, e2);
   if (!s || !qisint(s[0]) || !qisint(s[1]) || s[0][0] !== x0 || s[1][0] !== y0) return null;
@@ -154,7 +155,7 @@ export const UNITS = [
         }),
         // 13d02a 2直線の交点：x か y
         t("13d02a", (r) => {
-          const c = intPair(r);
+          const c = intPair(r, { as: [1, 2, 3, -1, -2, -3], bmax: 9 });
           const w = pick(r, WHICH);
           return {
             q: `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点の ${TX(w)} 座標は？`,
@@ -165,7 +166,7 @@ export const UNITS = [
         }),
         // 13d02b 2直線の交点の座標（4択）
         t("13d02b", (r) => {
-          const c = intPair(r);
+          const c = intPair(r, { as: [1, 2, 3, -1, -2, -3], bmax: 9 });
           return {
             q: `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点の座標は、次のうちどれか。`,
             ans: PT([c.x0, c.y0]),
@@ -214,7 +215,8 @@ export const UNITS = [
         t("13d03b", (r) => {
           const c = tryGen(() => {
             const x0 = r(-3, 5), y0 = r(-3, 5);
-            const a1 = NZ(r, 4), b1 = pick(r, [1, -1]), a2 = NZ(r, 3), b2 = pick(r, [1, -1, 2, -2, 3, -3]);
+            const a1 = r(1, 4), b1 = pick(r, [1, -1]), a2 = r(1, 3), b2 = pick(r, [1, -1, 2, -2, 3, -3]);
+            if (x0 === 0 || y0 === 0 || gcd(a2, b2) !== 1) return null;
             const e1 = [a1, b1, a1 * x0 + b1 * y0], e2 = [a2, b2, a2 * x0 + b2 * y0];
             const m1 = -a1 / b1, n1 = e1[2] / b1, kx = a2 + b2 * m1;
             if (kx === 0 || e1[2] === 0 || e2[2] === 0 || Math.abs(kx) === 0) return null;
@@ -230,7 +232,7 @@ export const UNITS = [
           return {
             q: `2直線 ${TX(linTex(...c.e1))}、${TX(linTex(...c.e2))} の交点の座標を $(p, q)$ とする。${TX(w)} の値は？`,
             ans: w === "p" ? c.x0 : c.y0,
-            hint: "2つの式を連立方程式として解けば、交点の座標が求まる。$y=\\cdots$ の形になっている式を、もう一方に代入できないかな？",
+            hint: "交点の座標は、2つの式をどちらもみたす。この 2つの式を、連立方程式と考えると、どう解ける？ $y=\\cdots$ の形になっている式は、使えないかな？",
             steps: [
               `${TX(linTex(...c.e1))} を $y$ について解くと、${L2(Lg1)}。`,
               `これを ${TX(linTex(...c.e2))} に代入して、${TX(sub)}。${solveX(Q(c.kx), Q(c.rest), Q(c.x0))}。`,
@@ -251,7 +253,7 @@ export const UNITS = [
           return {
             q: `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点の ${TX(w)} 座標は？（約分した分数か、整数で答えよう。）`,
             ans: coordAns(m, w),
-            hint: "右辺を等しいとおいて $x$ を求める。割り切れないときは、分数のままにして、約分できるかな？",
+            hint: "$x$ がわり切れないときは、どう表せばいい？ 分数になったら、約分できるかな？",
             steps: meetSteps(c.L1, c.L2),
           };
         }),
@@ -260,9 +262,9 @@ export const UNITS = [
           const c = intPair(r, { as: [1, 2, 3, -1, -2, -3], x0r: [-3, 5], bmax: 10 });
           const w = pick(r, WHICH);
           return {
-            q: `次の 2直線の交点の座標を、計算で求めよう。2直線 ${L2(c.L1)}、${L2(c.L2)} の交点の ${TX(w)} 座標は？`,
+            q: `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点の ${TX(w)} 座標を、計算で求めよう。`,
             ans: w === "x" ? c.x0 : c.y0,
-            hint: "2つの式の右辺を等しいとおくと、$x$ についての方程式になる。",
+            hint: "交点では、2つの式の $y$ は同じ値。$y$ を消して、$x$ だけの方程式にするには、どうする？",
             steps: meetSteps(c.L1, c.L2),
           };
         }),
@@ -279,7 +281,7 @@ export const UNITS = [
           return {
             q: `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点の ${TX(w)} 座標を求めよう。（約分した分数か、整数で答えよう。）`,
             ans: coordAns(m, w),
-            hint: "右辺を等しいとおいて、$x$ を求めよう。わり切れないときは、分数のままで答えてよい。",
+            hint: "2つの式の $y$ が等しいことから、$x$ を求めよう。わり切れないときは、どう答える？",
             steps: meetSteps(c.L1, c.L2),
           };
         }),
@@ -322,7 +324,7 @@ export const UNITS = [
           return {
             q: `3つの直線 ${L2(c.L1)}、${L2(c.L2)}、${TX(third)} が、1点で交わっている。$a$ の値は？`,
             ans: c.a,
-            hint: "3本の直線が 1点で交わるとき、その点は 3本すべての上にある。まず、式がわかっている 2本の交点を求めよう。",
+            hint: "3本の直線が 1点で交わるとき、その点は 3本すべての上にある。式がわかっている 2本からは、どんな点が求まる？",
             steps: [
               meetOne(c.L1, c.L2),
               `${TX(third)} も点 ${PT([c.x0, c.y0])} を通るので、${TX(`${c.y0}=${coefX(Q(c.x0), "a")}${c.cc < 0 ? "-" : "+"}${Math.abs(c.cc)}`)}。`,
@@ -340,7 +342,7 @@ export const UNITS = [
           return {
             q: `${d06Text(c)}点 P の $y$ 座標は？`,
             ans: c.py,
-            hint: "P は、ℓ と m の両方の上にある。2つの式から、$x$ 座標を先に求めよう。",
+            hint: "P は、ℓ と m の両方の上にある点。2つの式の $y$ が等しくなるのは、どんなとき？",
             steps: meetSteps(c.L1, c.L2),
           };
         }),
@@ -383,8 +385,8 @@ export const UNITS = [
             q: `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点を P とする。点 P を通り、$${par}$ 軸に平行な直線の式は、次のうちどれか。`,
             ans: good,
             choices: choices4(r, good, wrongs),
-            hint: `まず、P の座標を求めよう。$${par}$ 軸に平行な直線は、どの座標がいつも同じ？`,
-            steps: [...meetSteps(c.L1, c.L2), `$${par}$ 軸に平行な直線は、${par === "x" ? "$y$" : "$x$"} 座標がいつも同じ。P の${par === "x" ? "$y$" : "$x$"}座標は ${TX(String(par === "x" ? c.y0 : c.x0))} なので、${good}。`].slice(0, 4),
+            hint: `点 P の座標は、どうすればわかる？ $${par}$ 軸に平行な直線は、どの座標がいつも同じ？`,
+            steps: [...meetSteps(c.L1, c.L2), `$${par}$ 軸に平行な直線は、${par === "x" ? "$y$" : "$x$"} 座標がいつも同じ。P の ${par === "x" ? "$y$" : "$x$"} 座標は ${TX(String(par === "x" ? c.y0 : c.x0))} なので、${good}。`].slice(0, 4),
           };
         }),
         // 13d07b 交点 P を通る軸に平行な直線の式の値
@@ -396,7 +398,7 @@ export const UNITS = [
               ? `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点を P とする。点 P を通り、$x$ 軸に平行な直線の式は $y=k$ になる。$k$ の値は？`
               : `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点を P とする。点 P を通り、$y$ 軸に平行な直線の式は $x=h$ になる。$h$ の値は？`,
             ans: par === "x" ? c.y0 : c.x0,
-            hint: par === "x" ? "まず P の座標を求めよう。$x$ 軸に平行な直線は、どの座標がいつも同じ？" : "まず P の座標を求めよう。$y$ 軸に平行な直線は、どの座標がいつも同じ？",
+            hint: par === "x" ? "点 P の座標は、どうすればわかる？ $x$ 軸に平行な直線は、どの座標がいつも同じ？" : "点 P の座標は、どうすればわかる？ $y$ 軸に平行な直線は、どの座標がいつも同じ？",
             steps: [...meetSteps(c.L1, c.L2), par === "x" ? `$x$ 軸に平行な直線は、P の $y$ 座標 ${TX(String(c.y0))} を通るので ${TX(`y=${c.y0}`)}。` : `$y$ 軸に平行な直線は、P の $x$ 座標 ${TX(String(c.x0))} を通るので ${TX(`x=${c.x0}`)}。`],
           };
         }),
@@ -406,7 +408,7 @@ export const UNITS = [
           return {
             q: `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点を通り、傾きが ${TX(String(c.s))} の直線の式を $y=${c.s === 1 ? "" : c.s === -1 ? "-" : c.s}x+b$ とする。$b$ の値は？`,
             ans: c.b,
-            hint: "まず、2直線の交点の座標を求めよう。その点を通ることを、$y=sx+b$ にどう使う？",
+            hint: "直線が通る点は、どうすればわかる？ その点を通ることを、$y=sx+b$ にどう使う？",
             steps: q04Steps(c),
           };
         }),
@@ -427,7 +429,7 @@ export const UNITS = [
             q: `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点を通り、傾きが ${TX(String(c.s))} の直線の式は、次のうちどれか。`,
             ans: TX(ltex(L)),
             choices: choices4(r, TX(ltex(L)), wrongs, (i) => TX(ltex(line(c.s, c.b + i + 1)))),
-            hint: "まず、2直線の交点の座標を求めよう。傾きがわかっていて、1点を通る直線の式は、どう求める？",
+            hint: "直線が通る点は、どうすればわかる？ 傾きがわかっていて、1点を通る直線の式は、どう求める？",
             steps: q04Steps(c),
           };
         }),
@@ -453,20 +455,20 @@ function pts2(r, L) {
 function fitLine(name, pts, L) {
   const [p1, p2] = pts, dy = qsub(Q(p2[1]), Q(p1[1])), dx = qsub(Q(p2[0]), Q(p1[0]));
   const sl = `(${qt(p2[1])}-${P(Q(p1[1]))})\\div(${qt(p2[0])}-${P(Q(p1[0]))})=${P(dy)}\\div ${P(dx)}=${qt(L.a)}`;
-  return `${name} は、傾きが ${TX(sl)}。点 ${PT(p1)} を通るので、${TX(`${qt(p1[1])}=${aTimes(L.a, Q(p1[0]))}+b`)} より ${TX(`b=${qt(L.b)}`)}。${name} の式は ${L2(L)}。`;
+  return `${name} の傾きは ${TX(sl)}。点 ${PT(p1)} を代入して ${TX(`${qt(p1[1])}=${aTimes(L.a, Q(p1[0]))}+b`)}、${TX(`b=${qt(L.b)}`)}。${name} は ${L2(L)}。`;
 }
 
 // ── dr.6：ℓ：y＝a1 x＋b1、m：y＝a2 x＋b2。A＝ℓ と x 軸、B＝m と x 軸、P＝ℓ と m の交点（P の y 座標は 0 でない）──────
 function d06Case(r) {
   return tryGen(() => {
-    const py = NZ(r, 12), px = r(-5, 5);
-    const divs = [1, 2, 3, 4, 6, 12].filter((d) => py % d === 0);
+    const py = r(1, 8) * pick(r, [1, 1, 1, -1]), px = r(-4, 4);   // P は x 軸の上にあることが多い
+    const divs = [1, 2, 3, 4, 6].filter((d) => py % d === 0);
     const a1 = pick(r, divs) * pick(r, [1, -1]), a2 = pick(r, divs) * pick(r, [1, -1]);
     if (a1 === a2) return null;
     const b1 = py - a1 * px, b2 = py - a2 * px;
-    if (b1 === 0 || b2 === 0 || Math.abs(b1) > 16 || Math.abs(b2) > 16) return null;
+    if (b1 === 0 || b2 === 0 || Math.abs(b1) > 12 || Math.abs(b2) > 12) return null;
     const L1 = line(a1, b1), L2_ = line(a2, b2), xA = xIntercept(L1)[0], xB = xIntercept(L2_)[0];
-    if (!qisint(xA) || !qisint(xB) || xA[0] === xB[0]) return null;
+    if (!qisint(xA) || !qisint(xB) || xA[0] === xB[0] || px === 0 || Math.abs(xA[0] - xB[0]) * Math.abs(py) < 8) return null;
     const m = meet(L1, L2_);
     if (!qeq(m[0], Q(px)) || !qeq(m[1], Q(py))) throw new Error("交点が合わない");
     return { L1, L2: L2_, px, py, xA: xA[0], xB: xB[0] };

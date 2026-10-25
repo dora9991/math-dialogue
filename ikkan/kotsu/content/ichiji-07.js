@@ -8,8 +8,8 @@
 // ============================================================
 import { t, pick, choices4, shuffle, rnz, gcd, sgn, round } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
-import { Q, qadd, qmul, qdiv, qneg, qeq, qval, qisint } from "../algebra.js";
-import { line, yAt, triArea, onLine, parallel, ltex, ptex2, qt, num } from "../linear.js";
+import { Q, qadd, qmul, qdiv, qneg, qeq } from "../algebra.js";
+import { line, yAt, onLine, parallel, ltex, ptex2, qt, num } from "../linear.js";
 
 const unit = unitFor("ichiji");
 
@@ -82,7 +82,7 @@ const eqFromPoints = (r, slopes, B, ks) => {
   return {
     q: `${PT(pts[0])} と ${PT(pts[1])} を通る直線の式は、次のうちどれか。`,
     ans, choices,
-    hint: "x 座標が 0 の点の y 座標が、切片。傾きは、x が増えたときの y の増え方から考えよう。",
+    hint: "x 座標が 0 の点の y 座標は、式のどの数にあたるかな？ x が増えたとき y がどれだけ変わるかは、式のどの数に表れる？",
     steps: [`点 ${PT(P0)} は x 座標が 0 だから、切片は ${N(b)}。`, `x が ${k * qq} 増えると y が ${Math.abs(k * pp)} ${s > 0 ? "増える" : "減る"}。傾きは、${$(slopeCalc(k * s * pp, k * qq, a))}。`, `式は ${$(ltex(L))}。`],
   };
 };
@@ -139,7 +139,7 @@ export const UNITS = [
             return {
               q: `${PT(P1)} と ${PT(P2)} を通る直線の式は、次のうちどれか。`,
               ans, choices,
-              hint: "まず 2 点の座標から傾きを求めよう。そのあと、通る点の座標を式に入れると、切片が求められるよ。",
+              hint: "傾きは、2 点の座標のどこから求められるかな？ 傾きがわかったら、通る点の座標を式に入れると、何が求められる？",
               steps: [`傾きは（y の増加量）÷（x の増加量）で ${$(slopeCalc(dy, dx, a))}。`, `${$(`y=${qt(a)}x+b`)} に点 ${PT(P1)} の座標を入れて ${$(`${qt(P1[1])}=${qt(a)}\\times ${par(P1[0])}+b`)}、${$(`b=${qt(b)}`)}。`, `式は ${$(ltex(L))}。`],
             };
           }
@@ -158,7 +158,7 @@ export const UNITS = [
             return {
               q: `${PT(P1)} と ${PT(P2)} を通る直線の${askB ? "切片" : "傾き"}は？`,
               ans: num(askB ? b : a),
-              hint: askB ? "傾きを求めてから、通る点の座標を式に入れると、切片が求められるよ。" : "傾きは、（y の増加量）÷（x の増加量）で求められるよ。",
+              hint: askB ? "傾きは、2 点の座標からどう求められるかな？ 傾きがわかったら、通る点の座標を式に入れると、切片は求められる？" : "傾きは、x の増加量と y の増加量から、どう求められたかな？",
               steps: askB
                 ? [`傾きは ${$(slopeCalc(dy, dx, a))}。`, `${$(`y=${qt(a)}x+b`)} に点 ${PT(P1)} の座標を入れて ${$(`${qt(P1[1])}=${qt(a)}\\times ${par(P1[0])}+b`)}、${$(`b=${qt(b)}`)}。`, `切片は ${N(b)}。`]
                 : [`x の増加量は ${$(`${qt(P2[0])}-${par(P1[0])}=${dx}`)}、y の増加量は ${$(`${qt(P2[1])}-${par(P1[1])}=${dy}`)}。`, `傾きは ${$(slopeCalc(dy, dx, a))}。`],
@@ -239,7 +239,7 @@ export const UNITS = [
               q: `直線 ℓ は、2 点 ${PT(P1)}、${PT(P2)} を通る。ℓ の式を ${$("y=ax+b")} と表すとき、a、b の符号の組み合わせとして正しいものはどれか。`,
               ans: right,
               choices: shuffle(r, SIGNS.map(([x, y]) => signText(x, y))),
-              hint: "傾き a の符号は、グラフが右上がりか右下がりかで決まるよ。切片 b は、x が 0 のときの y の値だね。",
+              hint: "傾き a の符号と、グラフの向き（右上がり・右下がり）には、どんな関係があったかな？ 切片 b は、x がいくつのときの y の値だった？",
               steps: [`傾きは ${$(slopeCalc(dy, dx, a))}。${s > 0 ? "正の数" : "負の数"}だから、${$(`a${s > 0 ? ">" : "<"}0`)}。`, `${$(`y=${qt(a)}x+b`)} に点 ${PT(P1)} の座標を入れて ${$(`${qt(P1[1])}=${qt(a)}\\times ${par(P1[0])}+b`)}、${$(`b=${qt(b)}`)}。`, `${$(`b${b > 0 ? ">" : "<"}0`)}。答えは ${right}。`],
             };
           }
@@ -260,7 +260,7 @@ export const UNITS = [
             return {
               q: `直線 ℓ は、2 点 ${PT(P1)}、${PT(P2)} を通る。ℓ 上で、x が ${N(X)} のときの y の値は？`,
               ans: num(yAt(L, X)),
-              hint: "2 点の座標から傾きを求め、通る点の座標を式に入れて切片を求めると、ℓ の式がわかるよ。",
+              hint: "ℓ の式を決めるには、まず何を求めればいいかな？ 2 点の座標から、傾きと切片はどう求められる？",
               steps: [`傾きは ${$(slopeCalc(dy, dx, a))}。`, `${$(`y=${qt(a)}x+b`)} に点 ${PT(P1)} の座標を入れて ${$(`${qt(P1[1])}=${qt(a)}\\times ${par(P1[0])}+b`)}、${$(`b=${qt(b)}`)}。ℓ は ${$(ltex(L))}。`, `${$(`x=${X}`)} を入れて、${$(calcTex(L, X))}。`],
             };
           }
@@ -278,7 +278,7 @@ export const UNITS = [
               q: `直線 m は、2 点 ${PT(P1)}、${PT(P2)} を通る。m と x 軸、y 軸で囲まれた三角形の面積は何 cm² か。（座標の 1 目もりを 1cm とする）`,
               ans: ar,
               unit: "cm²",
-              hint: "まず m の式を求めよう。そのあと、x 軸との交点（y が 0 の点）を求めると、三角形の底辺と高さがわかるよ。",
+              hint: "x 軸との交点は、y 座標がいくつの点かな？ 三角形の底辺と高さは、どの点の座標からわかる？",
               steps: [`切片は ${N(yi)}。傾きは ${$(slopeCalc(P2[1] - yi, P2[0], a))}。m は ${$(ltex(L))}。`, `${$("y=0")} のとき ${$(`0${ltex(L).slice(1)}`)} より ${$(`x=${xi}`)}。x 軸との交点は ${PT([xi, 0])}。`, `底辺 ${Math.abs(xi)}、高さ ${Math.abs(yi)} だから、面積は ${$(`${Math.abs(xi)}\\times ${Math.abs(yi)}\\div 2=${ar}`)}（cm²）。`],
             };
           }

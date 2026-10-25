@@ -7,9 +7,9 @@
 //   「a の値をすべて求めよう」（dr.8）は、a が 2 つあるので「大きいほう（小さいほう）の a の値は？」にして、場合分けは残した。
 //   変域・最大値・最小値・a は、linear.js（直線 y＝ax+b を計算で扱う）から出す。
 // ============================================================
-import { t, pick, choices4, shuffle, rnz, gcd, sgn } from "../kit.js";
+import { t, pick, choices4, rnz, gcd, sgn } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
-import { Q, qadd, qsub, qmul, qdiv, qneg, qeq, qval } from "../algebra.js";
+import { Q, qadd, qmul, qneg, qeq, qval } from "../algebra.js";
 import { line, yAt, xAt, ltex, qt, num } from "../linear.js";
 
 const unit = unitFor("ichiji");
@@ -92,7 +92,7 @@ const maxMinQ = (r, d, ask) => {
   return {
     q: `一次関数 ${$(ltex(L))} で、x の変域が ${$(xr(lo, hi))} のとき、y の${askTxt[ask]}値は？`,
     ans: num(v),
-    hint: "x の変域の両はしの値を式に入れて、y の値を求めてみよう。どちらが大きいかな？",
+    hint: "x の変域の両はしの点では、y はそれぞれいくつになるかな？ どちらが大きいかな？",
     steps: [`${dirTxt}`, `${$(`x=${lo}`)} のとき ${$(calcTex(L, lo))}、${$(`x=${hi}`)} のとき ${$(calcTex(L, hi))}。`, `y の変域は ${$(rangeTex(bd))}。${askTxt[ask]}値は、${$(`x=${atX}`)} のときの ${N(v)}。`],
   };
 };
@@ -105,7 +105,7 @@ const rangeQ = (r, d, loOpen = false, hiOpen = false) => {
   return {
     q: `一次関数 ${$(ltex(L))} で、x の変域が ${$(xr(lo, hi, loOpen, hiOpen))} のとき、y の変域はどれか。`,
     ans, choices,
-    hint: loOpen || hiOpen ? "グラフの両はしの点は、ふくまれるかな？ x の端がふくまれないとき、それに対応する y の端はどうなる？" : "x の変域の両はしの値を式に入れて、y の値を求めよう。不等号の左に書くのは、大きいほうの数かな、小さいほうの数かな？",
+    hint: loOpen || hiOpen ? "グラフの両はしの点は、ふくまれるかな？ x の端がふくまれないとき、それに対応する y の端はどうなる？" : "x の変域の両はしの点では、y はそれぞれいくつになるかな？ 不等号の左に書くのは、大きいほうの数かな、小さいほうの数かな？",
     steps: [`${$(`x=${lo}`)} のとき ${$(calcTex(L, lo))}、${$(`x=${hi}`)} のとき ${$(calcTex(L, hi))}。`, `${flip}${openTxt}`, `y の変域は ${ans}。`],
   };
 };
@@ -163,7 +163,7 @@ export const UNITS = [
             q: `${c.intro}${c.gone}のは、${c.start}から何${c.unit}後か。`,
             ans: c.T,
             unit: `${c.unit}後`,
-            hint: `${c.start}から x ${c.unit}後の量 y を、x の式で表そう。y が 0 になるのは、x がいくつのとき？`,
+            hint: `${c.start}から x ${c.unit}後の量 y は、x の式でどう表せるかな？ y が 0 になるのは、x がいくつのとき？`,
             steps: [`x ${c.unit}後の${c.what}は、${$(`y=${-c.k}x+${c.H}`)}。`, `${$("y=0")} のとき ${$(`0=${-c.k}x+${c.H}`)} より ${$(`${c.k}x=${c.H}`)}、${$(`x=${c.T}`)}。`, `${c.T}${c.unit}後。`],
           };
         }),
@@ -174,7 +174,7 @@ export const UNITS = [
             q: `${c.intro}x の変域と y の変域の組として、正しいものはどれか。（${c.until}を考える）`,
             ans: say(c.T, c.H),
             choices: choices4(r, say(c.T, c.H), [say(c.H, c.H), say(c.H, c.T), say(c.T, c.T)]),
-            hint: `x は、${c.start}からの時間。最初のときと、${c.gone}ときの、x と y を考えよう。`,
+            hint: `x は、${c.start}からの時間。最初のときと、${c.gone}ときの、x と y は、それぞれいくつかな？`,
             steps: [`x ${c.unit}後の${c.what}は、${$(`y=${-c.k}x+${c.H}`)}。`, `最初は ${$(`x=0`)} で ${$(`y=${c.H}`)}。なくなるのは ${$(`y=0`)} のときで、${$(`x=${c.T}`)}。`, `x の変域は ${$(`0${LE}x${LE}${c.T}`)}、y の変域は ${$(`0${LE}y${LE}${c.H}`)}。`],
           };
         }),
@@ -190,7 +190,7 @@ export const UNITS = [
               q: `一次関数 ${$(eqn)}（${$(neg ? "a<0" : "a>0")}）で、x の変域が ${$(xr(lo, hi))} のとき、y の変域は ${$(rangeTex(bd))} である。a の値は？`,
               ans: a,
               hint: "a の正負から、グラフが右上がりか右下がりかがわかるよ。x の端のうち、y が最小（最大）になるのはどちらかな？",
-              steps: [neg ? `${$("a<0")} だから右下がり。x が大きいほど y は小さいので、${$(`x=${lo}`)} のとき y は最大の ${N(known.y)}。` : `${$("a>0")} だから右上がり。x が大きいほど y も大きいので、${$(`x=${lo}`)} のとき y は最小の ${N(known.y)}。`, `${$(`x=${lo}`)}、${$(`y=${qt(known.y)}`)} を代入して ${$(`${qt(known.y)}=a\\times ${par(lo)}${b < 0 ? "-" : "+"}${Math.abs(b)}`)}、${$(`a=${a}`)}。`, `確かめ　${$(`x=${hi}`)} のとき ${$(`y=${a}\\times ${par(hi)}${b < 0 ? "-" : "+"}${Math.abs(b)}=${qt(other.y)}`)}　○`],
+              steps: [neg ? `${$("a<0")} だから右下がり。x が大きいほど y は小さいので、${$(`x=${lo}`)} のとき y は最大の ${N(known.y)}。` : `${$("a>0")} だから右上がり。x が大きいほど y も大きいので、${$(`x=${lo}`)} のとき y は最小の ${N(known.y)}。`, `${$(`x=${lo}`)}、${$(`y=${qt(known.y)}`)} を代入して ${$(`${qt(known.y)}=a\\times ${par(lo)}${b < 0 ? "-" : "+"}${Math.abs(b)}`)}、${$(`a=${a}`)}。`, `確かめ　${$(`x=${hi}`)} のとき ${$(calcTex(L, hi))}　○`],
             };
           }
           return { skip: true };
@@ -208,7 +208,7 @@ export const UNITS = [
           return {
             q: `一次関数 ${$(ltex(L))} で、y の変域が ${$(rangeTex(bd))} のとき、x の${askTxt[ask]}値は？`,
             ans,
-            hint: "y が両はしの値になるときの x を、それぞれ求めよう。傾きが正か負かで、y が大きいほうに対応する x はどちらかが決まるよ。",
+            hint: "y が両はしの値になるときの x は、それぞれいくつかな？ 傾きが正か負かで、y が大きいほうに対応する x はどちらになる？",
             steps: [`${$(`y=${qt(bd.max)}`)} のとき ${$(`x=${xAtMax}`)}、${$(`y=${qt(bd.min)}`)} のとき ${$(`x=${xAtMin}`)}。`, a[0] > 0 ? "右上がりだから、y が大きいほど x も大きい。" : "右下がりだから、y が大きいほど x は小さい。", `x の変域は ${$(xr(lo, hi))}。${askTxt[ask]}値は ${N(ans)}。`],
           };
         }),
@@ -219,7 +219,7 @@ export const UNITS = [
           return {
             q: `一次関数 ${$(`y=ax${b < 0 ? "-" : "+"}${Math.abs(b)}`)} で、x の変域が ${$(xr(lo, hi))} のとき、y の最大値と最小値の差が ${D} になった。a の値は 2 つある。${big ? "大きい" : "小さい"}ほうの a の値は？`,
             ans: big ? m : -m,
-            hint: "a が正の場合と負の場合で、最大になる x の端がちがうよ。それぞれの場合に、（最大値）−（最小値）を a の式で表そう。",
+            hint: "a が正の場合と負の場合で、最大になる x の端はどうちがうかな？ それぞれの場合の（最大値）−（最小値）を、a の式で表すと？",
             steps: [`${$("a>0")} のとき、${$(`x=${hi}`)} で最大、${$(`x=${lo}`)} で最小。差は ${$(`(${lin(hi)})-(${lin(lo)})=${ca(d)}`)}。${$(`${ca(d)}=${D}`)} より ${$(`a=${m}`)}。`, `${$("a<0")} のとき、${$(`x=${lo}`)} で最大、${$(`x=${hi}`)} で最小。差は ${$(`(${lin(lo)})-(${lin(hi)})=${ca(-d)}`)}。${$(`${ca(-d)}=${D}`)} より ${$(`a=${-m}`)}。`, `a の値は ${N(m)} と ${N(-m)}。${big ? "大きい" : "小さい"}ほうは ${N(big ? m : -m)}。`],
           };
         }),

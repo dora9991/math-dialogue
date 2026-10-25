@@ -227,10 +227,10 @@ export const UNITS = [
             const c = a * r(-3, 3) + b * r(-3, 3);
             const on = latticePts(a, b, c, [-6, 6], 8);
             if (on.length < 3 || c === 0) return null;
-            const k = pick(r, [1, 2, 3]);
+            const k = pick(r, [1, 1, 2, 2, 3, 3, 0, ...(on.length >= 4 ? [4] : [])]);
             const good = shuffle(r, on).slice(0, k);
             const bad = [];
-            for (let i = 0; i < 200 && bad.length < 4 - k; i++) {
+            for (let i = 0; i < 300 && bad.length < 4 - k; i++) {
               const p = [r(-6, 6), r(-8, 8)];
               if (a * p[0] + b * p[1] !== c && ![...good, ...bad].some((q) => q.join() === p.join())) bad.push(p);
             }
@@ -285,7 +285,7 @@ export const UNITS = [
         // 11q03a 小テスト（3）x 軸との交点（x 座標）
         t("11q03a", (r) => {
           const [a, b, c] = tryGen(r, () => {
-            const a = pick(r, [2, 3, 4, 5]), b = pick(r, [2, 3, 4, 5]), k = r(1, 6);
+            const a = r(2, 7), b = r(2, 7), k = r(1, 8);
             return gcd(a, b) !== 1 ? null : [a, b, a * k];
           });
           return {
@@ -298,7 +298,7 @@ export const UNITS = [
         // 11q03b 小テスト（3）y 軸との交点（y 座標）
         t("11q03b", (r) => {
           const [a, b, c] = tryGen(r, () => {
-            const a = pick(r, [2, 3, 4, 5]), b = pick(r, [2, 3, 4, 5]), k = r(1, 6);
+            const a = r(2, 7), b = r(2, 7), k = r(1, 8);
             return gcd(a, b) !== 1 ? null : [a, b, b * k];
           });
           return {
@@ -331,7 +331,7 @@ export const UNITS = [
           return {
             q: `方程式 ${d05Eq(c5)} のグラフが、点 ${PT([p, q])} を通る。このグラフの${ask}は？（約分した分数か、整数で答えよう。）`,
             ans: num(ask === "傾き" ? L.a : L.b),
-            hint: `まず、文字の値を求めよう。そのあと、$y$ について解くと、${ask}がわかるかな？`,
+            hint: `グラフが通る点の座標は、方程式にあてはまる。文字の値がわかったら、${ask}はどうやって出せる？`,
             steps: d05Steps(c5, true).concat([`${ask}は ${TX(qt(ask === "傾き" ? L.a : L.b))}。`]),
           };
         }),
@@ -416,17 +416,17 @@ export const UNITS = [
             steps: d08Steps(c8),
           };
         }),
-        // 11d08b y 座標がいちばん大きい点の x 座標
+        // 11d08b そのような点の x 座標の和
         t("11d08b", (r) => {
           const c8 = d08Case(r);
           if (!c8) return { skip: true };
           const { a, b, c, sols } = c8;
-          const best = sols.reduce((m, s) => (s[1] > m[1] ? s : m));
+          const sum = sols.reduce((m, [x]) => m + x, 0);
           return {
-            q: `方程式 ${EQ(a, b, c)} のグラフ上の点で、$x$ 座標、$y$ 座標が、どちらも自然数である点のうち、$y$ 座標がいちばん大きい点の $x$ 座標は？`,
-            ans: best[0],
+            q: `方程式 ${EQ(a, b, c)} のグラフ上の点で、$x$ 座標、$y$ 座標が、どちらも自然数である点を、すべて考える。それらの点の $x$ 座標を、すべてたすと？`,
+            ans: sum,
             hint: "$x$ も $y$ も 1 以上の整数の点を、まず見つけよう。$y$ に 1、2、3、… と入れていくと、$x$ はどうなる？",
-            steps: d08Steps(c8, `$y$ 座標がいちばん大きいのは ${PT(best)}。$x$ 座標は ${best[0]}。`),
+            steps: d08Steps(c8, `$x$ 座標は ${sols.map(([x]) => x).join("、")} なので、和は ${TX(sols.map(([x]) => x).join("+") + "=" + sum)}。`),
           };
         }),
         // 11q04a 小テスト（チャレンジ）方程式 ax+by＝c が 2点を通る：a の値
@@ -460,12 +460,12 @@ export const UNITS = [
 //   傾き m（整数）・切片 n（整数）の直線から、方程式 ax+by＝c（a は正で、b でわり切れる）をつくり、直線上の点を 1 つ選ぶ。
 function d05Case(r) {
   for (let n = 0; n < 300; n++) {
-    const a = pick(r, [2, 3, 4, 6]);
-    const divs = [2, 3, 4, 6].filter((d) => a % d === 0);
+    const a = pick(r, [2, 3, 4, 5, 6, 8, 9]);
+    const divs = [2, 3, 4, 5, 6, 8, 9].filter((d) => a % d === 0);
     const b = pick(r, divs) * pick(r, [1, 1, -1]);
     const m = -a / b, nn = NZ(r, 6), c = nn * b;
     const p = r(-4, 5), q = m * p + nn;
-    if (p === 0 || q === 0 || Math.abs(q) > 12 || Math.abs(c) > 30) continue;
+    if (p === 0 || q === 0 || Math.abs(q) > 12 || Math.abs(c) > 40) continue;
     return { unk: pick(r, ["a", "a", "b"]), a, b, c, p, q };
   }
   return null;
@@ -493,11 +493,11 @@ function d05Steps(c5, more) {
 // ── dr.8：ax+by＝c（a、b、c は正）で、x、y がともに自然数の解 ─────────────────
 function d08Case(r) {
   for (let n = 0; n < 200; n++) {
-    const a = pick(r, [1, 2, 3]), b = pick(r, [1, 2, 3, 4, 5]), c = r(8, 24);
+    const a = pick(r, [1, 2, 3]), b = pick(r, [1, 2, 3, 4, 5]), c = r(8, 28);
     if (gcd(a, b) !== 1) continue;
     const sols = [];
     for (let y = 1; b * y < c; y++) { const rem = c - b * y; if (rem % a === 0) sols.push([rem / a, y]); }
-    if (sols.length >= 2 && sols.length <= 6) return { a, b, c, sols };
+    if (sols.length >= 2 && sols.length <= 7) return { a, b, c, sols };
   }
   return null;
 }
