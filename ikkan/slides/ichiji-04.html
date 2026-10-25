@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>一次関数　第4時　一次関数のグラフは、比例のグラフとどうちがうだろう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:2px solid #b9c1cc;padding:6px 14px}
+#deck th{background:rgba(120,140,170,.18)}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="i04-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">第3時までの重要語句から、1人1問ずつ、言葉を選んで出題する。<br>聞かれた人は、その言葉の意味を、自分の言葉で言う。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">一次関数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">変化の割合</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">増加量</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">一次関数　第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+<aside>【導入 3分】前時までの重要語句（一次関数・変化の割合・増加量）を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト 7分（前時分。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="i04-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+</div>
+<h2 style="font-size:56px;font-weight:700;line-height:1.3;color:#1E3A5F">一次関数のグラフは、比例のグラフとどうちがうだろう</h2>
+<div style="display:flex;flex-direction:row;align-items:center;gap:32px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:20px 32px">
+<div style="display:flex;flex-direction:column;gap:14px;flex:1">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+</div>
+<p style="font-size:44px;font-weight:500;line-height:1.45">比例 <i>y</i>＝2<i>x</i> と、一次関数 <i>y</i>＝2<i>x</i>+4 について、表を完成させて、<i>y</i>＝2<i>x</i>+4 のグラフを右の座標平面にかこう。<br>（<i>y</i>＝2<i>x</i> のグラフは、かいてある。）<br>2つのグラフをくらべて、気づいたことを書こう。</p>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:23%;text-align:center"><i>x</i></th><th style="width:11%;text-align:center">−3</th><th style="width:11%;text-align:center">−2</th><th style="width:11%;text-align:center">−1</th><th style="width:11%;text-align:center">0</th><th style="width:11%;text-align:center">1</th><th style="width:11%;text-align:center">2</th><th style="width:11%;text-align:center">3</th></tr>
+<tr><td style="text-align:center"><b><i>y</i>＝2<i>x</i></b></td><td style="text-align:center">−6</td><td style="text-align:center">−4</td><td style="text-align:center">−2</td><td style="text-align:center">0</td><td style="text-align:center">2</td><td style="text-align:center">4</td><td style="text-align:center">6</td></tr>
+<tr><td style="text-align:center"><b><i>y</i>＝2<i>x</i>+4</b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td></tr>
+</table>
+</div>
+<img src="img/ichiji-04_f1_q.png" alt="y＝2x のグラフがかいてある座標平面" style="width:395px;height:500px;object-fit:contain">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+<aside>【解説 4分・学習課題】めあてを書く。y＝2x+4 の表をうめ、グラフをかく。y＝2x（かいてある）とくらべて、気づいたことを書く。個人→ペア。発問：y＝2x+4 のグラフは、直線になるだろうか。／同じ x の値のとき、y の値は、2x と 2x+4 でどれだけちがうだろう。　想定される反応：2x+4 は 2x より 4 大きい。点は直線にならぶ。y＝2x を上へ 4 動かした形。　留意：点をとる前に、直線になるかを予想させる。</aside>
+</section>
+<section id="i04-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:32px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:24px 32px">
+<div style="display:flex;flex-direction:column;gap:16px;flex:1">
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:23%;text-align:center"><i>x</i></th><th style="width:11%;text-align:center">−3</th><th style="width:11%;text-align:center">−2</th><th style="width:11%;text-align:center">−1</th><th style="width:11%;text-align:center">0</th><th style="width:11%;text-align:center">1</th><th style="width:11%;text-align:center">2</th><th style="width:11%;text-align:center">3</th></tr>
+<tr><td style="text-align:center"><b><i>y</i>＝2<i>x</i></b></td><td style="text-align:center">−6</td><td style="text-align:center">−4</td><td style="text-align:center">−2</td><td style="text-align:center">0</td><td style="text-align:center">2</td><td style="text-align:center">4</td><td style="text-align:center">6</td></tr>
+<tr><td style="text-align:center"><b><i>y</i>＝2<i>x</i>+4</b></td><td style="text-align:center"><span style="color:#C0392B"><b>−2</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>0</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>2</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>4</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>6</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>8</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>10</b></span></td></tr>
+</table>
+<p style="font-size:34px;font-weight:700;color:#6B7480">気づいたこと</p>
+<p style="font-size:44px;line-height:1.45;color:#C0392B">どれも、<i>y</i>＝2<i>x</i> の値より <b>4 大きい</b>。</p>
+<p style="font-size:44px;line-height:1.45;color:#C0392B">点は直線にならぶ。<i>y</i>＝2<i>x</i> のグラフと<b>平行</b>。</p>
+<p style="font-size:44px;line-height:1.45;color:#C0392B"><i>y</i>＝2<i>x</i> のグラフを、<b>上へ 4 だけ動かした形</b>。</p>
+<p style="font-size:44px;line-height:1.45;color:#C0392B"><i>y</i> 軸と <b>(0, 4)</b> で交わる。</p>
+</div>
+<img src="img/ichiji-04_f1_a.png" alt="y＝2x と y＝2x+4 のグラフ" style="width:395px;height:500px;object-fit:contain">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+<aside>【解説 4分・学習課題のまとめ】いくつかのペアの考えを聞いて、板書にまとめる。赤い字は、先生の板書。表の y＝2x+4 は −2、0、2、4、6、8、10。どれも y＝2x の値より 4 大きい。点は直線にならぶ。y＝2x のグラフと平行。y＝2x のグラフを、上へ 4 だけ動かした形。y 軸と (0, 4) で交わる。</aside>
+</section>
+<section id="i04-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:22px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<div style="display:flex;flex-direction:column;gap:2px">
+<p style="font-size:46px;line-height:1.55"><i>y</i>＝<i>ax</i>+<i>b</i> のグラフは、比例 <i>y</i>＝<i>ax</i> のグラフを、<br><i>y</i> 軸の正の方向に <u>　　</u> だけ<u>　　　　　　</u>した直線である。</p>
+<p style="font-size:40px;line-height:1.5;color:#1F2A37">　（<i>b</i> が負の数のときは、下へ動かす。）</p>
+</div>
+<p style="font-size:46px;line-height:1.55">グラフが <i>y</i> 軸と交わる点は (0, <i>b</i>)。<br>この <i>b</i> を、グラフの<u>　　　　</u>という。</p>
+<p style="font-size:46px;line-height:1.55">　例　<i>y</i>＝2<i>x</i>+4 の切片は <u>　　</u>、<i>y</i>＝2<i>x</i> の切片は <u>　　</u>。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+<aside>【解説 3分・ことば】平行移動・切片を押さえる。空欄は、先生が言ってから書かせる。発問：式の「+4」は、グラフのどこに現れているだろう。　想定される反応：空欄に書き込む。　留意：重要語句は、先生が言い切る。b が負の数のときは、下へ動かす。</aside>
+</section>
+<section id="i04-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:22px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<div style="display:flex;flex-direction:column;gap:2px">
+<p style="font-size:46px;line-height:1.55"><i>y</i>＝<i>ax</i>+<i>b</i> のグラフは、比例 <i>y</i>＝<i>ax</i> のグラフを、<br><i>y</i> 軸の正の方向に <span style="color:#C0392B"><b><i>b</i></b></span> だけ<span style="color:#C0392B"><b>平行移動</b></span>した直線である。</p>
+<p style="font-size:40px;line-height:1.5;color:#1F2A37">　（<i>b</i> が負の数のときは、下へ動かす。）</p>
+</div>
+<p style="font-size:46px;line-height:1.55">グラフが <i>y</i> 軸と交わる点は (0, <i>b</i>)。<br>この <i>b</i> を、グラフの<span style="color:#C0392B"><b>切片</b></span>という。</p>
+<p style="font-size:46px;line-height:1.55">　例　<i>y</i>＝2<i>x</i>+4 の切片は <span style="color:#C0392B"><b>4</b></span>、<i>y</i>＝2<i>x</i> の切片は <span style="color:#C0392B"><b>0</b></span>。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え（b・平行移動・切片・4・0）。先生が言い切ってから、書かせる。b が負の数のときは、下へ動かす。</aside>
+</section>
+<section id="i04-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px;flex:1">
+<p style="font-size:54px;font-weight:500;line-height:1.5">一次関数 <i>y</i>＝−<i>x</i>−<u>　　</u> のグラフを、</p>
+<p style="font-size:54px;font-weight:500;line-height:1.5"><i>y</i>＝−<i>x</i> のグラフ（かいてある）を使って、</p>
+<p style="font-size:54px;font-weight:500;line-height:1.5">右の座標平面にかこう。</p>
+<p style="font-size:54px;font-weight:500;line-height:1.5">また、切片を答えよう。</p>
+</div>
+<img src="img/ichiji-04_f2_q.png" alt="y＝−x のグラフがかいてある座標平面" style="width:513px;height:500px;object-fit:contain">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+<aside>【解説 5分・例題】y＝−x−2 を、y＝−x のグラフを使ってかく。切片が負の数のときの動かし方を確かめる。発問：切片が −2 のとき、y＝−x のグラフを、どちらへいくつ動かすだろう。　想定される反応：下へ 2 動かす。(0, −2) を通る。　留意：数字（2）は、先生が言ってから書かせる。</aside>
+</section>
+<section id="i04-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:40px">
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:32px 40px;flex:1">
+<p style="font-size:46px;line-height:1.5;color:#C0392B">切片が −2 だから、</p>
+<p style="font-size:46px;line-height:1.5;color:#C0392B"><i>y</i>＝−<i>x</i> のグラフを、</p>
+<p style="font-size:46px;line-height:1.5;color:#C0392B"><b>下へ 2 だけ平行移動</b>した直線。</p>
+<p style="font-size:46px;line-height:1.5;color:#C0392B">点 <b>(0, −2)</b> を通る。</p>
+<p style="font-size:46px;line-height:1.5;color:#C0392B"><i>y</i>＝−<i>x</i> のグラフと平行。</p>
+<div style="border-top:2px solid #E3E6EA;padding:14px 0px 0px 0px">
+<p style="font-size:54px;line-height:1.4;color:#C0392B"><b>切片 −2</b></p>
+</div>
+</div>
+<img src="img/ichiji-04_f2_a.png" alt="y＝−x と y＝−x−2 のグラフ" style="width:513px;height:500px;object-fit:contain">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。切片が −2 だから、y＝−x のグラフを、下へ 2 だけ平行移動した直線。点 (0, −2) を通る。y＝−x のグラフと平行。切片 −2。数字は、先生が言ってから書かせる。</aside>
+</section>
+<section id="i04-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+</div>
+<h2 style="font-size:50px;font-weight:700;line-height:1.35;color:#1F2A37">点 A(10, 24) は、一次関数 <i>y</i>＝2<i>x</i>+4 のグラフの上にあるだろうか。</h2>
+<p style="font-size:40px;line-height:1.5;color:#1F2A37">座標平面には、かききれない。図をかかずに、確かめる方法を考えよう。</p>
+<div style="display:flex;flex-direction:column;gap:14px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:18px 36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">①</p>
+<p style="font-size:44px;line-height:1.4">点 A(10, 24) が、<i>y</i>＝2<i>x</i>+4 のグラフの上にあるか、確かめよう。<br>（式・表・ことば・図など、自分の考えで）</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">②</p>
+<p style="font-size:44px;line-height:1.4">点 B(−4, −6) は、<i>y</i>＝2<i>x</i>+4 のグラフの上にあるだろうか。<br>①の方法で確かめよう。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">③</p>
+<p style="font-size:44px;line-height:1.4">気づいたこと。点がグラフの上にあるかどうかは、<br>どのように見分けられるだろう。</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:14px;padding:8px 20px">
+<p style="font-size:26px;line-height:1.4;color:#1F2A37"><span style="color:#D9730D"><b>発展</b></span>　演習まで解き終わった人は、考えてみよう！　<i>y</i>＝2<i>x</i> のグラフを上へ 4 動かすかわりに、左右（<i>x</i> 軸の方向）に動かして、<i>y</i>＝2<i>x</i>+4 のグラフにぴったり重ねることはできるだろうか。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+<aside>【演習 23分・考えよう】進め方（演習① 2分）：ゴールは、「考えよう」（ワークシート裏）を全員が説明できること。立ち歩きOK、解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「説明できるようになる」と伝える。基礎（演習② 5分・個人）→ 解いたら教卓の解答で答え合わせ → 終わった人から考えようへ。考えよう＋標準（演習③ 14分・学び合い）：立ち歩きで、教え合い・説明し合い。先生は回って、気づきの言葉を拾い、必要なら判断して短く全体に戻す。問い：点 A(10, 24) は、一次関数 y＝2x+4 のグラフの上にあるだろうか。座標平面にはかききれない。図をかかずに、確かめる方法を考えよう。ヒントを出す順：1）グラフの上にある点の座標を、表から3つ見つけて、x と y の関係を見る。2）x＝10 のときの y の値を、表や式から求めてみる。3）求めた y の値と、点 A の y 座標をくらべる。判断：図をかこうとして止まる→ヒント1／気づきが出ない→ヒント2／説明が止まる→ヒント3／残り5分→指名で説明。答えは言わない。方向性（演習④ 2分・最後に一言）：「点がグラフの上にあるかどうか、ほかの点でも、自分で確かめてみよう。次の時間は、グラフのかたむきぐあいを、数で表すよ。」</aside>
+</section>
+<section id="i04-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">一次関数のグラフは、比例のグラフとどうちがうだろう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">平行移動</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">切片</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">一次関数のグラフ</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">一次関数　第4時　一次関数のグラフは、比例のグラフとどうちがうだろう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。ワークシートと演習プリントを回収（未完成でも出す）。裏の発展は、解き終わった人向け。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

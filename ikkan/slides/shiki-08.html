@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>式の計算　第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:2px solid #b9c1cc;padding:6px 14px}
+#deck th{background:rgba(120,140,170,.18)}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="s08-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">第7時の重要語句から、1人1問ずつ、言葉を選んで出題する。<br>聞かれた人は、その言葉の意味を、自分の言葉で言う。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">整数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">倍数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">文字でおく</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">式を変形する</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">式を読む</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">式の計算　第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+<aside>【導入 3分】前時（第7時）の重要語句（整数・倍数・文字でおく・式を変形する・式を読む）を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト 7分（前時分。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="s08-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+</div>
+<h2 style="font-size:60px;font-weight:700;line-height:1.3;color:#1E3A5F">偶数・奇数や2けたの自然数の性質を、<br>文字を使って説明しよう</h2>
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:20px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:32px 48px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+<p style="font-size:48px;font-weight:500;line-height:1.45">連続する2つの奇数の和を、いくつか計算して、きまりを見つけよう。<br>そのきまりを、文字を使って説明しよう。<br>（奇数は、2×整数+1 と考える。）</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:40px;line-height:1.5;color:#1F2A37">【きまりを見つける】連続する2つの奇数を自分で決めて、和を計算しよう。</p>
+<p style="font-size:40px;line-height:1.5;color:#1F2A37">【説明】文字でおく → 式を変形する → 式を読む の順に書こう。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+<aside>【解説 4分・学習課題】めあてを書く。連続する2つの奇数の和を調べて予想し、文字での説明を、板書で写す。発問：連続する2つの奇数の和に、きまりはありそう？／奇数を、文字で表すと？　次の奇数は？　想定される反応：4の倍数になりそう。奇数は 2×整数+1 だから 2n+1。次の奇数は 2n+3。留意：「奇数は 2×整数+1」と、言葉で言わせてから式にする。</aside>
+</section>
+<section id="s08-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:32px 56px">
+<p style="font-size:34px;font-weight:700;line-height:1.4;color:#6B7480">【きまりを見つける】</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:46px;line-height:1.4;color:#C0392B"><b>1+3＝4　　3+5＝8　　5+7＝12　　11+13＝24</b></p>
+<p style="font-size:46px;line-height:1.4;color:#C0392B"><b>和は、4の倍数になりそう。</b></p>
+</div>
+<div style="border-top:2px solid #E3E6EA"></div>
+<p style="font-size:34px;font-weight:700;line-height:1.4;color:#6B7480">【説明】</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:44px;line-height:1.4;color:#C0392B"><b><i>n</i> を整数とすると、奇数は 2<i>n</i>+1、その次の奇数は 2<i>n</i>+3 と表される。</b></p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B"><b>和は　(2<i>n</i>+1)+(2<i>n</i>+3)＝4<i>n</i>+4＝4(<i>n</i>+1)</b></p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B"><b><i>n</i>+1 は整数だから、4(<i>n</i>+1) は4の倍数である。</b></p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B"><b>したがって、連続する2つの奇数の和は、4の倍数になる。</b></p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+<aside>【解説 4分・学習課題のまとめ】いくつかのペアの例を聞いて、きまり（4の倍数になりそう）を板書にまとめる。説明は、先生が板書して、ワークシートに写させる。「文字でおく → 式を変形する → 式を読む」の順を、指でたどらせる。赤い字は、先生の板書の例。</aside>
+</section>
+<section id="s08-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:24px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:46px;line-height:1.5"><i>n</i> を整数とすると</p>
+<p style="font-size:46px;line-height:1.5">　偶数 … <u>　　　</u>　　奇数 … <u>　　　　　</u>　　3の倍数 … 3<i>n</i></p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:46px;line-height:1.5">十の位の数が <i>a</i>、一の位の数が <i>b</i> の2けたの自然数 … <u>　　　　　　</u></p>
+<p style="font-size:46px;line-height:1.5">　（例）37＝10×3+7</p>
+</div>
+<p style="font-size:46px;line-height:1.5">説明の進め方 …<br>　きまりを見つける → 文字で<u>　　　</u> → 式を<u>　　　</u>する → 式を<u>　　　</u></p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+<aside>【解説 3分・ことば】偶数 2n・奇数 2n+1・2けたの数 10a+b。空欄は、先生が言ってから書かせる。発問：十の位が 3、一の位が 7 の数は、3×□+7。□ は？　想定される反応：3×10+7。10a+b。留意：重要語句は、先生が言い切る。</aside>
+</section>
+<section id="s08-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:24px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:46px;line-height:1.5"><i>n</i> を整数とすると</p>
+<p style="font-size:46px;line-height:1.5">　偶数 … <span style="color:#C0392B"><b>2<i>n</i></b></span>　　奇数 … <span style="color:#C0392B"><b>2<i>n</i>+1</b></span>　　3の倍数 … 3<i>n</i></p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:46px;line-height:1.5">十の位の数が <i>a</i>、一の位の数が <i>b</i> の2けたの自然数 … <span style="color:#C0392B"><b>10<i>a</i>+<i>b</i></b></span></p>
+<p style="font-size:46px;line-height:1.5">　（例）37＝10×3+7</p>
+</div>
+<p style="font-size:46px;line-height:1.5">説明の進め方 …<br>　きまりを見つける → 文字で<span style="color:#C0392B"><b>おく</b></span> → 式を<span style="color:#C0392B"><b>変形</b></span>する → 式を<span style="color:#C0392B"><b>読む</b></span></p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。（例）37＝10×3+7 の「10×3+7」の形から、10a+b を確かめる。重要語句は、先生が言い切る。</aside>
+</section>
+<section id="s08-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+</div>
+<p style="font-size:44px;font-weight:500;line-height:1.45">2けたの自然数と、その数の十の位の数と一の位の数を入れかえた数の和は、<br><u>　　　</u>の倍数になる。このことを、文字を使って説明しよう。</p>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:3px solid #1B7F5C;border-radius:20px;padding:28px 48px">
+<p style="font-size:44px;line-height:1.4"><span style="color:#1B7F5C"><b>【きまりを見つける】</b></span><br>　35+53＝<u>　　　</u>＝11×<u>　　</u>　　27+72＝<u>　　　</u>＝11×<u>　　</u></p>
+<p style="font-size:44px;line-height:1.4"><span style="color:#1B7F5C"><b>【文字でおく】</b></span>もとの数の十の位の数を <u>　　</u>、一の位の数を <u>　　</u> とすると、<br>　もとの数は <u>　　　　　　</u>、入れかえた数は <u>　　　　　　</u> と表される。</p>
+<p style="font-size:44px;line-height:1.4"><span style="color:#1B7F5C"><b>【式を変形する】</b></span>和は　(10<i>a</i>+<i>b</i>)+(10<i>b</i>+<i>a</i>)＝<u>　　　　　　</u>＝<u>　　　　　　　</u></p>
+<p style="font-size:44px;line-height:1.4"><span style="color:#1B7F5C"><b>【式を読む】</b></span><u>　　　　</u> は<u>　　　</u>だから、11(<i>a</i>+<i>b</i>) は<u>　　　</u>の倍数である。<br>　したがって、和は、11の倍数になる。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+<aside>【解説 5分・例題】35+53 などで予想し、説明の空欄をうめる。（第7時より空欄が多い）発問：入れかえた数は、どんな式になる？／11a+11b を、「11の倍数」と読める形にするには？　想定される反応：10b+a。11(a+b)。a+b は整数だから、11の倍数。留意：1行ずつ、先生が言ってから書かせる。（確かめは、次の枚。）</aside>
+</section>
+<section id="s08-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+</div>
+<p style="font-size:44px;line-height:1.5;color:#6B7480">2けたの自然数と、入れかえた数の和は、<span style="color:#C0392B"><b>11</b></span>の倍数になる。</p>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:28px 48px">
+<p style="font-size:44px;line-height:1.4"><span style="color:#6B7480"><b>【きまりを見つける】</b></span><br>　35+53＝<span style="color:#C0392B"><b>88</b></span>＝11×<span style="color:#C0392B"><b>8</b></span>　　27+72＝<span style="color:#C0392B"><b>99</b></span>＝11×<span style="color:#C0392B"><b>9</b></span></p>
+<p style="font-size:44px;line-height:1.4"><span style="color:#6B7480"><b>【文字でおく】</b></span>もとの数の十の位の数を <span style="color:#C0392B"><b><i>a</i></b></span>、一の位の数を <span style="color:#C0392B"><b><i>b</i></b></span> とすると、<br>　もとの数は <span style="color:#C0392B"><b>10<i>a</i>+<i>b</i></b></span>、入れかえた数は <span style="color:#C0392B"><b>10<i>b</i>+<i>a</i></b></span> と表される。</p>
+<p style="font-size:44px;line-height:1.4"><span style="color:#6B7480"><b>【式を変形する】</b></span>和は　(10<i>a</i>+<i>b</i>)+(10<i>b</i>+<i>a</i>)＝<span style="color:#C0392B"><b>11<i>a</i>+11<i>b</i></b></span>＝<span style="color:#C0392B"><b>11(<i>a</i>+<i>b</i>)</b></span></p>
+<p style="font-size:44px;line-height:1.4"><span style="color:#6B7480"><b>【式を読む】</b></span><span style="color:#C0392B"><b><i>a</i>+<i>b</i></b></span> は<span style="color:#C0392B"><b>整数</b></span>だから、11(<i>a</i>+<i>b</i>) は<span style="color:#C0392B"><b>11</b></span>の倍数である。<br>　したがって、和は、11の倍数になる。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の答え（空欄の答え）。入れかえた数は 10b+a。和は 11a+11b＝11(a+b)。「a+b は整数だから、11(a+b) は11の倍数」と、言わせて書かせる。</aside>
+</section>
+<section id="s08-ex2-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:3px solid #1B7F5C;border-radius:20px;padding:40px 56px">
+<p style="font-size:40px;font-weight:700;line-height:1.5;color:#6B7480">【確かめ】</p>
+<p style="font-size:54px;font-weight:500;line-height:1.5">ほかの2けたの自然数でも、確かめよう。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+<aside>【解説 5分・例題の確かめ】説明した「和は11の倍数になる」が、ほかの2けたの自然数でも成り立つかを、数で確かめる。入れかえた数を、35→53 のように、数で書き出してから、和を求める。</aside>
+</section>
+<section id="s08-ex2-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+</div>
+<p style="font-size:44px;line-height:1.5;color:#6B7480">【確かめ】ほかの2けたの自然数でも、確かめよう。</p>
+<div style="display:flex;flex-direction:column;gap:14px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:40px 56px">
+<p style="font-size:52px;line-height:1.5;color:#C0392B"><b>48+84＝132＝11×12　　19+91＝110＝11×10</b></p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+<aside>【解説 5分・例題の確かめ（解答）】赤い字は、先生の板書の例。ほかの数でも、和は11の倍数になる。生徒が自分で選んだ数でも確かめさせる。</aside>
+</section>
+<section id="s08-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+</div>
+<p style="font-size:44px;font-weight:500;line-height:1.35;color:#1F2A37">A さんは、「偶数と奇数の和は奇数になる」ことを、次のように説明した。</p>
+<div style="display:flex;flex-direction:column;gap:2px;border-left:8px solid #D9730D;padding:0px 0px 0px 28px">
+<p style="font-size:44px;line-height:1.35">　<i>n</i> を整数とすると、偶数は 2<i>n</i>、奇数は 2<i>n</i>+1 と表される。</p>
+<p style="font-size:44px;line-height:1.35">　和は　2<i>n</i>+(2<i>n</i>+1)＝4<i>n</i>+1＝2×(2<i>n</i>)+1</p>
+<p style="font-size:44px;line-height:1.35">　2<i>n</i> は整数だから、2×(2<i>n</i>)+1 は奇数である。</p>
+</div>
+<h2 style="font-size:46px;font-weight:700;line-height:1.35;color:#1F2A37">この説明は、どんな偶数と奇数の和でも、いえているだろうか。</h2>
+<div style="display:flex;flex-direction:row;align-items:flex-start;justify-content:space-between;gap:28px">
+<div style="display:flex;flex-direction:column;gap:10px;flex:1">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:16px">
+<p style="font-size:44px;font-weight:700;line-height:1.35;color:#D9730D">①</p>
+<p style="font-size:44px;line-height:1.35"><i>n</i> に整数を入れて、A さんが表した偶数と奇数の組を、いくつか調べよう。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:16px">
+<p style="font-size:44px;font-weight:700;line-height:1.35;color:#D9730D">②</p>
+<p style="font-size:44px;line-height:1.35">気づいたこと</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:16px">
+<p style="font-size:44px;font-weight:700;line-height:1.35;color:#D9730D">③</p>
+<p style="font-size:44px;line-height:1.35">どんな偶数と奇数の和でも、<br>奇数になることがいえる説明を、書こう。</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;width:700px">
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:30%;text-align:center"><i>n</i></th><th style="width:14%;text-align:center">1</th><th style="width:14%;text-align:center">2</th><th style="width:14%;text-align:center">3</th><th style="width:14%;text-align:center">4</th><th style="width:14%;text-align:center">5</th></tr>
+<tr><td style="text-align:center"><b>偶数 2<i>n</i></b></td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td></tr>
+<tr><td style="text-align:center"><b>奇数 2<i>n</i>+1</b></td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td></tr>
+</table>
+<div style="display:flex;flex-direction:column;gap:4px;background:#FFFFFF;border:2px solid #F0C9A0;border-radius:14px;padding:12px 20px">
+<p style="font-size:28px;line-height:1.45;color:#1F2A37"><span style="color:#D9730D"><b>発展</b></span>　3けたの自然数と、百の位の数と<br>一の位の数を入れかえた数の差には、<br>どんなきまりがあるだろう。</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+<aside>【演習 23分・考えよう】進め方：基礎（個人）→ 終わった人から考えようへ。立ち歩きOK。解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「説明できるようになる」と伝える。ヒントを出す順：1）n に 1、2、3 … を入れて、2n と 2n+1 の組を、表にまとめる。 2）「4 と 11」の組は、この表に出てくるか、調べる。 3）関係のない2つの数を表すには、文字をどうすればよいか、考える。 判断：表が書けない→共有／気づかない→ヒント1／止まる→ヒント2・3／残り5分→指名。答えは言わない。方向性（最後に一言）：「文字をどうおくかが、説明のかなめ。次の時間は、カレンダーの数で、自分できまりを見つけて、説明するよ。」</aside>
+</section>
+<section id="s08-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">偶数・奇数や2けたの自然数の性質を、<br>文字を使って説明しよう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">偶数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">奇数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">連続する2つの奇数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">十の位・一の位</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">文字でおく</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">式を変形する</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">式を読む</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">式の計算　第8時　偶数・奇数や2けたの自然数の性質を、文字で説明しよう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで言い合う。ワークシートと演習プリントを回収（未完成でも出す）。裏の発展は、解き終わった人向け。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

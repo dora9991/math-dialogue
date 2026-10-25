@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>データの活用　第10時　確率を根拠にして、判断しよう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:2px solid #b9c1cc;padding:6px 14px}
+#deck th{background:rgba(120,140,170,.18)}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="d10-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第10時　確率を根拠にして、判断しよう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">第9時の重要語句を、1人1問ずつ出題し合う。<br>言葉の意味を、自分の言葉で言おう。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">確率</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">多数回の実験</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">起こりやすさ</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">予想</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">およそ</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">データの活用　第10時　確率を根拠にして、判断しよう</p>
+<aside>【導入 3分】前時（第9時）の重要語句（確率・多数回の実験・予想 など）を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト 7分（前時分。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="d10-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第10時　確率を根拠にして、判断しよう</p>
+</div>
+<h2 style="font-size:60px;font-weight:700;line-height:1.3;color:#1E3A5F">確率を根拠にして、判断しよう</h2>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:16px 44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+<p style="font-size:44px;font-weight:500;line-height:1.35">学校の売店では、人気のおにぎりを、毎朝、まとめて仕入れる。<br>過去 100日の「1日に売れた個数」は、下の表のとおりである。</p>
+</div>
+<p style="font-size:44px;font-weight:500;line-height:1.35">売れ残りも、売り切れ（仕入れた個数以上売れること）も、<br>できるだけ少なくしたい。明日は、何個仕入れるとよいだろう。<br>相対度数を確率とみなして、判断しよう。</p>
+</div>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:40px;color:#1F2A37">
+<tr><th style="width:22%;text-align:center">売れた個数（個）</th><th style="width:13%;text-align:center">40〜50</th><th style="width:13%;text-align:center">50〜60</th><th style="width:13%;text-align:center">60〜70</th><th style="width:13%;text-align:center">70〜80</th><th style="width:13%;text-align:center">80〜90</th><th style="width:13%;text-align:center">計</th></tr>
+<tr><td style="text-align:center"><b>日数（日）</b></td><td style="text-align:center">8</td><td style="text-align:center">22</td><td style="text-align:center">40</td><td style="text-align:center">24</td><td style="text-align:center">6</td><td style="text-align:center">100</td></tr>
+<tr><td style="text-align:center"><b>相対度数</b></td><td style="text-align:center">0.08</td><td style="text-align:center">0.22</td><td style="text-align:center">0.40</td><td style="text-align:center">0.24</td><td style="text-align:center">0.06</td><td style="text-align:center">1.00</td></tr>
+</table>
+<p style="font-size:36px;line-height:1.4;color:#6B7480">（40〜50 は、40個以上 50個未満。個数は、階級のさかいの値から選ぶ。）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第10時　確率を根拠にして、判断しよう</p>
+<aside>【解説 4分・学習課題】めあてを書く。おにぎりの表から、仕入れる個数を、確率で判断させる。表の「40〜50」は、40個以上 50個未満。個数は、階級のさかいの値から選ぶ。発問：70個仕入れたら、売り切れる確率は？／売れ残りと売り切れ、どちらをさけたい？　想定される反応：70個以上＝0.24＋0.06。目的で、答えが分かれる。留意：答えは1つに決まらない。目的を言わせる。ワークシートの【自分の判断】に、何個仕入れるかと、確率を使った理由を書かせる。（文は、ワークシートより短くしてある）</aside>
+</section>
+<section id="d10-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第10時　確率を根拠にして、判断しよう</p>
+</div>
+<p style="font-size:44px;line-height:1.5;color:#6B7480">明日は、何個仕入れるとよいだろう。相対度数を確率とみなして、判断しよう。</p>
+<div style="display:flex;flex-direction:column;gap:24px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:36px 56px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">（例）判断と、理由</p>
+<p style="font-size:46px;line-height:1.5;color:#C0392B"><b>70個</b>。70個以上売れる確率は 0.24＋0.06＝0.30、<br>60個未満しか売れない確率は 0.08＋0.22＝0.30。<br>売り切れも、10個より多い売れ残りも、同じくらいだから。</p>
+<hr style="width:1500px;border-top:2px solid #E3E6EA">
+<p style="font-size:46px;line-height:1.5;color:#C0392B"><b>80個</b>。80個以上売れる確率は 0.06 で、売り切れが、ほとんどないから。</p>
+</div>
+<p style="font-size:40px;line-height:1.5;color:#6B7480">何を大事にするか（目的）で、判断は変わってよい。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第10時　確率を根拠にして、判断しよう</p>
+<aside>【解説 4分・学習課題のまとめ】いくつかの判断と理由を聞いて、板書にまとめる。答えは1つに決まらない。何を大事にするか（目的）で、判断は変わってよい。確率を、理由（根拠）に使えていればよい。赤い字は、先生の板書の例。</aside>
+</section>
+<section id="d10-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第10時　確率を根拠にして、判断しよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:24px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<p style="font-size:46px;line-height:1.6">① 相対度数を、その階級になる<u>　　　　　</u>とみなして、判断に使う。</p>
+<p style="font-size:46px;line-height:1.6">② 「ある値以上」になる確率は、<br>　　その階級から上の階級の相対度数を<u>　　　　　</u>求める。</p>
+<p style="font-size:46px;line-height:1.6">③ 「ある値未満」になる確率は、<u>　　　　　　　　</u>で求められる。</p>
+<p style="font-size:46px;line-height:1.6">④ 確率は、判断の<u>　　　　</u>になる。<br>　　目的（何を大事にするか）で、判断は変わってよい。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第10時　確率を根拠にして、判断しよう</p>
+<aside>【解説 3分・ことば】「以上」「未満」の確率と、根拠を押さえる。空欄は、先生が言ってから書かせる。発問：「ある値以上」の確率は、どの階級をたす？　想定される反応：空欄に書き込む。留意：重要語句は、先生が言い切る。</aside>
+</section>
+<section id="d10-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第10時　確率を根拠にして、判断しよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:24px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<p style="font-size:46px;line-height:1.6">① 相対度数を、その階級になる<span style="color:#C0392B"><b>確率</b></span>とみなして、判断に使う。</p>
+<p style="font-size:46px;line-height:1.6">② 「ある値以上」になる確率は、<br>　　その階級から上の階級の相対度数を<span style="color:#C0392B"><b>たして</b></span>求める。</p>
+<p style="font-size:46px;line-height:1.6">③ 「ある値未満」になる確率は、<span style="color:#C0392B"><b>累積相対度数</b></span>で求められる。</p>
+<p style="font-size:46px;line-height:1.6">④ 確率は、判断の<span style="color:#C0392B"><b>根拠</b></span>になる。<br>　　目的（何を大事にするか）で、判断は変わってよい。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第10時　確率を根拠にして、判断しよう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。「70個以上」は、70〜80 の階級と 80〜90 の階級を、たす。確率は、判断の根拠になる。目的で判断が変わってよい、を確認する。</aside>
+</section>
+<section id="d10-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第10時　確率を根拠にして、判断しよう</p>
+</div>
+<p style="font-size:50px;font-weight:500;line-height:1.5">天気予報で、「降水確率 30%」と発表された。<br>次のア〜ウのうち、正しい説明はどれだろう。</p>
+<div style="display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:3px solid #1B7F5C;border-radius:20px;padding:32px 56px">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:24px">
+<p style="font-size:46px;font-weight:700;line-height:1.5;color:#1B7F5C">ア</p>
+<p style="font-size:46px;line-height:1.5">1日のうち、30% の時間は、雨が降る。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:24px">
+<p style="font-size:46px;font-weight:700;line-height:1.5;color:#1B7F5C">イ</p>
+<p style="font-size:46px;line-height:1.5">その地域の 30% の場所で、雨が降る。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:24px">
+<p style="font-size:46px;font-weight:700;line-height:1.5;color:#1B7F5C">ウ</p>
+<p style="font-size:46px;line-height:1.5">同じような気象の状態が <u>　　　　</u>回あったとすると、<br>そのうち、およそ <u>　　　</u>回は雨が降る。</p>
+</div>
+</div>
+<p style="font-size:40px;line-height:1.5;color:#6B7480">【自分の判断】降水確率 30% の日に、かさを持っていくか。理由も書こう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第10時　確率を根拠にして、判断しよう</p>
+<aside>【解説 5分・例題】降水確率 30% の意味を、3つの説明から選び、かさの判断を書く。空欄の数字は、先生が言ってから書かせる。発問：「30%」は、時間の割合？　場所の割合？／同じ 30% でも、判断は人によってちがう？　想定される反応：前時の確率の意味にもどって考える。留意：判断は、目的しだいで変わってよい。</aside>
+</section>
+<section id="d10-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第10時　確率を根拠にして、判断しよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:32px 56px">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:24px">
+<p style="font-size:60px;font-weight:700;line-height:1.2;color:#C0392B">ウ</p>
+<p style="font-size:44px;line-height:1.5;color:#6B7480">同じような気象の状態が <span style="color:#C0392B"><b>100</b></span>回あったとすると、<br>そのうち、およそ <span style="color:#C0392B"><b>30</b></span>回は雨が降る。</p>
+</div>
+<p style="font-size:46px;line-height:1.5;color:#C0392B"><b>確率は、同じ条件で多数回くり返したとき、<br>どのくらいの割合で起こるかを表している。（30%＝確率 0.30）</b></p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:24px 56px">
+<p style="font-size:36px;font-weight:700;line-height:1.4;color:#6B7480">【自分の判断】降水確率 30% の日に、かさを持っていくか。</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B"><b>（例）持っていく。ぬれるとこまる荷物があるから。</b></p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B"><b>（例）持っていかない。降らないことのほうが多いから。</b></p>
+<p style="font-size:36px;line-height:1.4;color:#C0392B">（どちらでも、理由が書けていれば○）</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第10時　確率を根拠にして、判断しよう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。正しい説明は、ウ。確率は、同じ条件で多数回くり返したときの割合。かさの判断は、目的しだいで変わってよい。どちらでも、理由が書けていればよい。</aside>
+</section>
+<section id="d10-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第10時　確率を根拠にして、判断しよう</p>
+</div>
+<h2 style="font-size:44px;font-weight:700;line-height:1.35;color:#1F2A37">売店のおにぎり。明日は、雨の予報である。<br>過去 100日の相対度数を、そのまま使って、仕入れる個数を決めてよいだろうか。</h2>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:40px;color:#1F2A37">
+<tr><th style="width:22%;text-align:center">売れた個数（個）</th><th style="width:13%;text-align:center">40〜50</th><th style="width:13%;text-align:center">50〜60</th><th style="width:13%;text-align:center">60〜70</th><th style="width:13%;text-align:center">70〜80</th><th style="width:13%;text-align:center">80〜90</th><th style="width:13%;text-align:center">計</th></tr>
+<tr><td style="text-align:center"><b>晴れの日（日）</b></td><td style="text-align:center">2</td><td style="text-align:center">10</td><td style="text-align:center">28</td><td style="text-align:center">24</td><td style="text-align:center">6</td><td style="text-align:center">70</td></tr>
+<tr><td style="text-align:center"><b>雨の日（日）</b></td><td style="text-align:center">6</td><td style="text-align:center">12</td><td style="text-align:center">12</td><td style="text-align:center">0</td><td style="text-align:center">0</td><td style="text-align:center">30</td></tr>
+<tr><td style="text-align:center"><b>全部（日）</b></td><td style="text-align:center">8</td><td style="text-align:center">22</td><td style="text-align:center">40</td><td style="text-align:center">24</td><td style="text-align:center">6</td><td style="text-align:center">100</td></tr>
+</table>
+<div style="display:flex;flex-direction:column;gap:10px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:16px 36px">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px">
+<p style="font-size:44px;font-weight:700;line-height:1.35;color:#D9730D">①</p>
+<p style="font-size:44px;line-height:1.35">雨の日だけで、70個以上売れる割合を求め、全部の 0.30 とくらべよう。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px">
+<p style="font-size:44px;font-weight:700;line-height:1.35;color:#D9730D">②</p>
+<p style="font-size:44px;line-height:1.35">過去のデータを使って判断するとき、気をつけることは何だろう。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px">
+<p style="font-size:44px;font-weight:700;line-height:1.35;color:#D9730D">③</p>
+<p style="font-size:44px;line-height:1.35">明日は雨の予報。何個仕入れるか、確率を根拠にして、理由を書こう。</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第10時　確率を根拠にして、判断しよう</p>
+<aside>【演習 23分・考えよう】進め方（2分）：ゴールは、考えようを、全員が説明できること。立ち歩きOK、解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「説明できるようになる」と伝える。基礎（個人 5分）：解いたら、教卓の解答で答え合わせ。早く終わったら、考えようへ。考えよう＋標準（学び合い 14分）：立ち歩きで、判断と理由を交換し、データの使い方を話し合う。問い：明日は、雨の予報である。過去 100日の相対度数を、そのまま使って、仕入れる個数を決めてよいだろうか。データを使って判断するとき、気をつけることは何だろう。ヒントを出す順：1）晴れの日と雨の日で、よく売れる階級をくらべる。2）雨の日だけで、70個以上売れる割合（相対度数）を求める。3）「同じような条件か」という見方で、もとのデータを見直す。判断：表を見ずに止まる→ヒント1／雨の日の確率が出ない→ヒント2／まとめられない→ヒント3／残り5分→指名。答えは言わない。方向性（最後に一言、2分）：「確率を使って判断するときの気をつけることは、単元のまとめでも考えるよ。」（文は、ワークシートより短くしてある）</aside>
+</section>
+<section id="d10-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第10時　確率を根拠にして、判断しよう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">確率を根拠にして、判断しよう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">確率</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">根拠</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">予想・判断</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">「以上」「未満」の確率</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">データの活用　第10時　確率を根拠にして、判断しよう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。口で言う。ワークシートと演習プリントを回収（未完成でも出す）。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>データの活用　第11時　「データの活用」で学んだことを、整理して確かめよう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:2px solid #b9c1cc;padding:6px 14px}
+#deck th{background:rgba(120,140,170,.18)}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="d11-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">第10時の重要語句を、1人1問ずつ出題し合う。<br>言葉の意味を、自分の言葉で言おう。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">確率</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">根拠</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">予想・判断</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">「以上」「未満」の確率</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">データの活用　第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+<aside>【導入 3分】前時（第10時）の重要語句（確率・根拠・予想・判断）を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト 7分（前時分。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="d11-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+</div>
+<h2 style="font-size:56px;font-weight:700;line-height:1.3;color:#1E3A5F">「データの活用」で学んだことを、整理して確かめよう</h2>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:18px 44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+<p style="font-size:44px;font-weight:500;line-height:1.35">30人の、1日の家庭学習の時間（分）を整理した表である。<br>次のことを調べよう。</p>
+</div>
+<p style="font-size:44px;font-weight:500;line-height:1.35">ア 最頻値　　イ 60分未満の人の割合　　ウ 中央値がふくまれる階級</p>
+</div>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:24%;text-align:center">階級（分）</th><th style="width:12.6%;text-align:center">0〜30</th><th style="width:12.6%;text-align:center">30〜60</th><th style="width:12.6%;text-align:center">60〜90</th><th style="width:12.6%;text-align:center">90〜120</th><th style="width:12.6%;text-align:center">120〜150</th><th style="width:12.6%;text-align:center">計</th></tr>
+<tr><td style="text-align:center"><b>度数（人）</b></td><td style="text-align:center">3</td><td style="text-align:center">6</td><td style="text-align:center">12</td><td style="text-align:center">7</td><td style="text-align:center">2</td><td style="text-align:center">30</td></tr>
+<tr><td style="text-align:center"><b>累積度数（人）</b></td><td style="text-align:center">3</td><td style="text-align:center">9</td><td style="text-align:center">21</td><td style="text-align:center">28</td><td style="text-align:center">30</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center"><b>相対度数</b></td><td style="text-align:center">0.10</td><td style="text-align:center">0.20</td><td style="text-align:center">0.40</td><td style="text-align:center">0.23</td><td style="text-align:center">0.07</td><td style="text-align:center">1.00</td></tr>
+<tr><td style="text-align:center"><b>累積相対度数</b></td><td style="text-align:center">0.10</td><td style="text-align:center">0.30</td><td style="text-align:center">0.70</td><td style="text-align:center">0.93</td><td style="text-align:center">1.00</td><td style="text-align:center">—</td></tr>
+</table>
+<p style="font-size:36px;line-height:1.4;color:#6B7480">（0〜30 は、0分以上 30分未満。相対度数は、小数第3位を四捨五入して、小数第2位まで。）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+<aside>【解説 4分・学習課題】めあてを書く。度数分布表から、最頻値・割合・中央値の階級を調べさせる。（相対度数は、小数第3位を四捨五入して、小数第2位まで。表の「0〜30」は、0分以上 30分未満。）発問：最頻値は、度数？　階級値？／中央値は、何番目と何番目の平均？　想定される反応：75分。0.30。60分以上90分未満の階級。留意：表の読み取りで、つまずきをつかむ。</aside>
+</section>
+<section id="d11-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+</div>
+<p style="font-size:44px;line-height:1.5;color:#6B7480">ア 最頻値　　イ 60分未満の人の割合　　ウ 中央値がふくまれる階級</p>
+<div style="display:flex;flex-direction:column;gap:24px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:40px 56px">
+<p style="font-size:46px;line-height:1.5;color:#C0392B"><b>ア 度数がいちばん多い階級は 60分以上90分未満。<br>　　最頻値は、その階級値 75分</b></p>
+<hr style="width:1500px;border-top:2px solid #E3E6EA">
+<p style="font-size:46px;line-height:1.5;color:#C0392B"><b>イ 累積相対度数より 0.30　→　30%</b></p>
+<hr style="width:1500px;border-top:2px solid #E3E6EA">
+<p style="font-size:46px;line-height:1.5;color:#C0392B"><b>ウ 30人だから、15番目と16番目の平均。<br>　　累積度数 3、9、21 より、どちらも 60分以上90分未満</b></p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+<aside>【解説 4分・学習課題のまとめ】ア〜ウを、数人に聞いて、板書にまとめる。最頻値は、度数ではなく、いちばん度数が多い階級の階級値。割合は、累積相対度数から読む。中央値は、30人なので、15番目と16番目の平均。累積度数で、その2人がどの階級にいるかをさがす。赤い字は、先生の板書。</aside>
+</section>
+<section id="d11-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:18px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:32px 56px">
+<p style="font-size:44px;line-height:1.5">① 度数分布表をグラフにしたものを、<u>　　　　　　　　</u>という。<br>　　その柱の上の辺の中点を結んだ折れ線を、<u>　　　　　　　</u>という。</p>
+<p style="font-size:44px;line-height:1.5">② 代表値 … 平均値・<u>　　　　　</u>・<u>　　　　　</u><br>　　度数分布表の最頻値 … 度数が最も多い階級の<u>　　　　　</u></p>
+<p style="font-size:44px;line-height:1.5">③ ちらばり … <u>　　　　</u>＝最大値−最小値</p>
+<p style="font-size:44px;line-height:1.5">④ <u>　　　　　　</u>＝度数÷度数の合計<br>　　最初の階級から順にたした相対度数 … <u>　　　　　　　　</u></p>
+<p style="font-size:44px;line-height:1.5">⑤ 多数回の実験で、相対度数が近づく値を、<u>　　　　</u>として用いる。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+<aside>【解説 3分・ことば】単元の重要語句を、空欄で整理する。空欄は、先生が言ってから書かせる。発問：この単元で使った道具を、順に言えるかな。　想定される反応：空欄に書き込む。留意：重要語句は、先生が言い切る。</aside>
+</section>
+<section id="d11-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:18px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:32px 56px">
+<p style="font-size:44px;line-height:1.5">① 度数分布表をグラフにしたものを、<span style="color:#C0392B"><b>ヒストグラム</b></span>という。<br>　　その柱の上の辺の中点を結んだ折れ線を、<span style="color:#C0392B"><b>度数折れ線</b></span>という。</p>
+<p style="font-size:44px;line-height:1.5">② 代表値 … 平均値・<span style="color:#C0392B"><b>中央値</b></span>・<span style="color:#C0392B"><b>最頻値</b></span><br>　　度数分布表の最頻値 … 度数が最も多い階級の<span style="color:#C0392B"><b>階級値</b></span></p>
+<p style="font-size:44px;line-height:1.5">③ ちらばり … <span style="color:#C0392B"><b>範囲</b></span>＝最大値−最小値</p>
+<p style="font-size:44px;line-height:1.5">④ <span style="color:#C0392B"><b>相対度数</b></span>＝度数÷度数の合計<br>　　最初の階級から順にたした相対度数 … <span style="color:#C0392B"><b>累積相対度数</b></span></p>
+<p style="font-size:44px;line-height:1.5">⑤ 多数回の実験で、相対度数が近づく値を、<span style="color:#C0392B"><b>確率</b></span>として用いる。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。ヒストグラム・度数折れ線、代表値、範囲、相対度数・累積相対度数、確率の順に、この単元で使った道具をふり返る。</aside>
+</section>
+<section id="d11-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+</div>
+<p style="font-size:52px;font-weight:500;line-height:1.5">8人の、ソフトボール投げの記録（m）である。</p>
+<div style="display:flex;flex-direction:row;align-items:center;justify-content:center;background:#FFFFFF;border:3px solid #1B7F5C;border-radius:20px;padding:36px 48px">
+<p style="font-size:52px;font-weight:500;line-height:1.5">14　　17　　<u>　　　</u>　　20　　22　　<u>　　　</u>　　28　　<u>　　　</u></p>
+</div>
+<p style="font-size:52px;font-weight:500;line-height:1.5">① 平均値　　② 中央値　　③ 最頻値　　④ 範囲</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+<aside>【解説 5分・例題】8人の記録の、平均値・中央値・最頻値・範囲を求める。空欄の数字は、先生が言ってから書かせる。発問：8個のとき、中央値は何番目？／平均値と中央値は、同じ？　想定される反応：4番目と5番目の平均。平均値 23、中央値 21。留意：個数が偶数のときの中央値を、確かめる。</aside>
+</section>
+<section id="d11-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#6B7480">ソフトボール投げの記録（m）<br>14　　17　　<span style="color:#C0392B"><b>17</b></span>　　20　　22　　<span style="color:#C0392B"><b>25</b></span>　　28　　<span style="color:#C0392B"><b>41</b></span></p>
+<div style="display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:36px 56px">
+<p style="font-size:46px;line-height:1.5;color:#C0392B"><b>① (14+17+17+20+22+25+28+41)÷8＝184÷8＝23（m）</b></p>
+<p style="font-size:46px;line-height:1.5;color:#C0392B"><b>② 8個のデータ。4番目と5番目の平均<br>　　(20+22)÷2＝21（m）</b></p>
+<p style="font-size:46px;line-height:1.5;color:#C0392B"><b>③ 17m（2回出る）</b></p>
+<p style="font-size:46px;line-height:1.5;color:#C0392B"><b>④ 41−14＝27（m）</b></p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。個数が偶数（8個）のときの中央値は、4番目と5番目の平均。平均値と中央値は、同じとは限らない。最頻値は、2回出る値。範囲は、最大値−最小値。</aside>
+</section>
+<section id="d11-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+</div>
+<h2 style="font-size:46px;font-weight:700;line-height:1.3;color:#1F2A37">次のア〜エの説明は、「本当にそういえる」だろうか。<br>「いえる」か「いえない」かを選び、わけを説明しよう。</h2>
+<div style="display:flex;flex-direction:column;gap:10px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:14px 36px">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px">
+<p style="font-size:44px;font-weight:700;line-height:1.3;color:#D9730D">ア</p>
+<p style="font-size:44px;line-height:1.3">A班の平均点は 62点、B班の平均点は 58点だった。<br>だから、A班の人は、全員、B班の人より点数が高い。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px">
+<p style="font-size:44px;font-weight:700;line-height:1.3;color:#D9730D">イ</p>
+<p style="font-size:44px;line-height:1.3">部活に入っている人は、A組（25人）が 15人、B組（40人）が 22人<br>だった。だから、B組のほうが、部活に入っている人の割合が高い。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px">
+<p style="font-size:44px;font-weight:700;line-height:1.3;color:#D9730D">ウ</p>
+<p style="font-size:44px;line-height:1.3">当たる確率が 0.3 のくじを、10回引く。だから、かならず 3回当たる。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px">
+<p style="font-size:44px;font-weight:700;line-height:1.3;color:#D9730D">エ</p>
+<p style="font-size:44px;line-height:1.3">キャップを 1000回投げたら、<br>上向きの相対度数が 0.61 の近くで落ち着いていた。<br>だから、上向きになる確率は、およそ 0.61 と考えてよい。</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px">
+<p style="font-size:44px;font-weight:700;line-height:1.3;color:#D9730D">①</p>
+<p style="font-size:44px;line-height:1.3">データをもとに判断・説明するとき、大切にしたいことを、まとめよう。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">データの活用　第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+<aside>【演習 23分・考えよう】進め方（2分）：ゴールは、考えようを、全員が説明できること。立ち歩きOK、解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「説明できるようになる」と伝える。基礎（個人 5分）：解いたら、教卓の解答で答え合わせ。まちがえた型は、同じ型でやり直す。早く終わったら、考えようへ。考えよう＋標準（学び合い 14分）：立ち歩きで、ア〜エの「いえる・いえない」とわけを説明し合う。問い：ア〜エの説明は、「本当にそういえる」だろうか。「いえる」か「いえない」かを選び、わけを説明しよう。そして、データをもとに判断したり説明したりするとき、大切にしたいことをまとめよう。ヒントを出す順：1）ア〜エの中の、言葉（平均点・人数・確率）に線を引く。2）いえない説明は、どんな数や言葉があれば、いえるようになるか、考える。3）ア〜エに共通する確かめ方を、1つの文にまとめる。判断：選べず止まる→ヒント1／わけが言えない→ヒント2／まとめられない→ヒント3／残り5分→指名。答えは言わない。方向性（最後に一言、2分）：「この単元の道具は、これからの学習や、身のまわりのニュースでも出てくるよ。使いながら、確かめていこう。」</aside>
+</section>
+<section id="d11-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:56px;font-weight:700;line-height:1.35">「データの活用」で学んだことを、整理して確かめよう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">階級・度数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">ヒストグラム</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">代表値（平均値・中央値・最頻値）</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">範囲</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">相対度数・累積相対度数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">確率</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">データの活用　第11時　「データの活用」で学んだことを、整理して確かめよう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。口で言う。ワークシートと演習プリントを回収（未完成でも出す）。単元のまとめの時間。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>
