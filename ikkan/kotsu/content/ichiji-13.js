@@ -26,7 +26,12 @@ const NZ = (r, m) => rnz(r, -m, m);
 const INT_A = [1, 2, 3, 4, -1, -2, -3, -4];
 const FRAC_A = [[1, 2], [-1, 2], [1, 3], [-1, 3], [2, 3], [-2, 3], [3, 2], [-3, 2]];
 /** a×x の書き方（a＝±1 は省く） */
-const aTimes = (a, x) => (qeq(a, Q(1)) ? P(x) : qeq(a, Q(-1)) ? `-${P(x)}` : `${P(a)}\\times ${P(x)}`);
+const aTimes = (a, x) => {
+  if (qiszero(x)) return "0";                                      // x＝0 なら 0
+  if (qeq(a, Q(1))) return qt(x);                                  // a＝1：x の値をそのまま（かっこなし）
+  if (qeq(a, Q(-1))) return qt(qneg(x));                           // a＝−1：−x の値
+  return `${P(a)}\\times ${P(x)}`;
+};
 /** 直線 L の x に値を入れた式：2×3+1（y の値は別に） */
 const substY = (L, x) => {
   const b = L.b, bs = qiszero(b) ? "" : `${b[0] < 0 ? "-" : "+"}${qt([Math.abs(b[0]), b[1]])}`;
@@ -90,13 +95,13 @@ const elimSteps = (e1, e2) => {
   if (Math.abs(b1) === Math.abs(b2) && b1 !== 0) {
     const add = b1 === -b2, kx = add ? a1 + a2 : a1 - a2, n = add ? c1 + c2 : c1 - c2;
     if (kx === 0) return null;
-    lines.push(`① と ② の辺々を${add ? "たす" : "ひく"}と、$y$ が消えて ${solveX(Q(kx), Q(n), Q(x0))}。`);
-    lines.push(`① に ${TX(`x=${x0}`)} を代入して、${TX(`${aTimes(Q(a1), Q(x0))}${b1 === 1 ? "+y" : b1 === -1 ? "-y" : `${b1 < 0 ? "-" : "+"}${Math.abs(b1)}y`}=${c1}`)}、${TX(`y=${y0}`)}。`);
+    lines.push(`上の式と下の式の辺々を${add ? "たす" : "ひく"}と、$y$ が消えて ${solveX(Q(kx), Q(n), Q(x0))}。`);
+    lines.push(`上の式に ${TX(`x=${x0}`)} を代入して、${TX(`${aTimes(Q(a1), Q(x0))}${b1 === 1 ? "+y" : b1 === -1 ? "-y" : `${b1 < 0 ? "-" : "+"}${Math.abs(b1)}y`}=${c1}`)}、${TX(`y=${y0}`)}。`);
   } else if (Math.abs(a1) === Math.abs(a2) && a1 !== 0) {
     const add = a1 === -a2, ky = add ? b1 + b2 : b1 - b2, n = add ? c1 + c2 : c1 - c2;
     if (ky === 0) return null;
-    lines.push(`① と ② の辺々を${add ? "たす" : "ひく"}と、$x$ が消えて ${ky === 1 ? TX(`y=${n}`) : `${TX(`${coefX(Q(ky), "y")}=${n}`)}、${TX(`y=${y0}`)}`}。`);
-    lines.push(`① に ${TX(`y=${y0}`)} を代入して、${TX(`${coefX(Q(a1), "x")}${b1 < 0 ? "-" : "+"}${Math.abs(b1) === 1 ? "" : Math.abs(b1) + "\\times "}${P(Q(y0))}=${c1}`)}、${TX(`x=${x0}`)}。`);
+    lines.push(`上の式と下の式の辺々を${add ? "たす" : "ひく"}と、$x$ が消えて ${ky === 1 ? TX(`y=${n}`) : `${TX(`${coefX(Q(ky), "y")}=${n}`)}、${TX(`y=${y0}`)}`}。`);
+    lines.push(`上の式に ${TX(`y=${y0}`)} を代入して、${TX(`${coefX(Q(a1), "x")}${b1 < 0 ? "-" : "+"}${Math.abs(b1) === 1 ? "" : Math.abs(b1) + "\\times "}${P(Q(y0))}=${c1}`)}、${TX(`x=${x0}`)}。`);
   } else return null;
   lines.push(`解は ${TX(`x=${x0}`)}、${TX(`y=${y0}`)}。2つのグラフの交点は ${PT([x0, y0])}。`);
   return lines;
@@ -332,9 +337,6 @@ export const UNITS = [
             ],
           };
         }),
-      ],
-      // ───────── 4 入試レベル ─────────
-      4: [
         // 13d06a ℓ と m の交点 P の y 座標
         t("13d06a", (r) => {
           const c = d06Case(r);
@@ -346,6 +348,23 @@ export const UNITS = [
             steps: meetSteps(c.L1, c.L2),
           };
         }),
+        // 13d07a 交点 P を通る軸に平行な直線の式（4択）
+        t("13d07a", (r) => {
+          const c = d07Case(r);
+          const par = pick(r, ["x", "y"]);
+          const good = par === "x" ? TX(`y=${c.y0}`) : TX(`x=${c.x0}`);
+          const wrongs = par === "x" ? [TX(`x=${c.x0}`), TX(`y=${c.x0}`), TX(`x=${c.y0}`)] : [TX(`y=${c.y0}`), TX(`x=${c.y0}`), TX(`y=${c.x0}`)];
+          return {
+            q: `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点を P とする。点 P を通り、$${par}$ 軸に平行な直線の式は、次のうちどれか。`,
+            ans: good,
+            choices: choices4(r, good, wrongs),
+            hint: `点 P の座標は、どうすればわかる？ $${par}$ 軸に平行な直線は、どの座標がいつも同じ？`,
+            steps: [...meetSteps(c.L1, c.L2), `$${par}$ 軸に平行な直線は、${par === "x" ? "$y$" : "$x$"} 座標がいつも同じ。P の ${par === "x" ? "$y$" : "$x$"} 座標は ${TX(String(par === "x" ? c.y0 : c.x0))} なので、${good}。`].slice(0, 4),
+          };
+        }),
+      ],
+      // ───────── 4 入試レベル ─────────
+      4: [
         // 13d06b 線分 AB の長さ
         t("13d06b", (r) => {
           const c = d06Case(r);
@@ -371,35 +390,24 @@ export const UNITS = [
             steps: [
               meetOne(c.L1, c.L2),
               ...d06Axes(c),
-              `AB ${TX(`=${AB}`)}、P の $y$ 座標の絶対値が高さ ${Math.abs(c.py)} なので、${TX(`\\frac{1}{2}\\times ${AB}\\times ${Math.abs(c.py)}=${qt(area)}`)}（cm²）`,
+              `底辺 AB の長さは ${AB}、高さ（P の $y$ 座標の絶対値）は ${Math.abs(c.py)} なので、${TX(`\\frac{1}{2}\\times ${AB}\\times ${Math.abs(c.py)}=${qt(area)}`)}（cm²）`,
             ],
           };
         }),
-        // 13d07a 交点 P を通る軸に平行な直線の式（4択）
-        t("13d07a", (r) => {
-          const c = d07Case(r);
-          const par = pick(r, ["x", "y"]);
-          const good = par === "x" ? TX(`y=${c.y0}`) : TX(`x=${c.x0}`);
-          const wrongs = par === "x" ? [TX(`x=${c.x0}`), TX(`y=${c.x0}`), TX(`x=${c.y0}`)] : [TX(`y=${c.y0}`), TX(`x=${c.y0}`), TX(`y=${c.x0}`)];
-          return {
-            q: `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点を P とする。点 P を通り、$${par}$ 軸に平行な直線の式は、次のうちどれか。`,
-            ans: good,
-            choices: choices4(r, good, wrongs),
-            hint: `点 P の座標は、どうすればわかる？ $${par}$ 軸に平行な直線は、どの座標がいつも同じ？`,
-            steps: [...meetSteps(c.L1, c.L2), `$${par}$ 軸に平行な直線は、${par === "x" ? "$y$" : "$x$"} 座標がいつも同じ。P の ${par === "x" ? "$y$" : "$x$"} 座標は ${TX(String(par === "x" ? c.y0 : c.x0))} なので、${good}。`].slice(0, 4),
-          };
-        }),
-        // 13d07b 交点 P を通る軸に平行な直線の式の値
+        // 13d07b 交点 P を通る、x 軸に平行な直線と y 軸に平行な直線と、x 軸・y 軸で囲まれた長方形の面積
         t("13d07b", (r) => {
           const c = d07Case(r);
-          const par = pick(r, ["x", "y"]);
+          const area = Math.abs(c.x0 * c.y0);
           return {
-            q: par === "x"
-              ? `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点を P とする。点 P を通り、$x$ 軸に平行な直線の式は $y=k$ になる。$k$ の値は？`
-              : `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点を P とする。点 P を通り、$y$ 軸に平行な直線の式は $x=h$ になる。$h$ の値は？`,
-            ans: par === "x" ? c.y0 : c.x0,
-            hint: par === "x" ? "点 P の座標は、どうすればわかる？ $x$ 軸に平行な直線は、どの座標がいつも同じ？" : "点 P の座標は、どうすればわかる？ $y$ 軸に平行な直線は、どの座標がいつも同じ？",
-            steps: [...meetSteps(c.L1, c.L2), par === "x" ? `$x$ 軸に平行な直線は、P の $y$ 座標 ${TX(String(c.y0))} を通るので ${TX(`y=${c.y0}`)}。` : `$y$ 軸に平行な直線は、P の $x$ 座標 ${TX(String(c.x0))} を通るので ${TX(`x=${c.x0}`)}。`],
+            q: `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点を P とする。点 P を通り $x$ 軸に平行な直線と、点 P を通り $y$ 軸に平行な直線をひく。この 2本の直線と、$x$ 軸、$y$ 軸で囲まれた長方形の面積は？（座標の 1 目もりを 1cm とする。）`,
+            ans: area,
+            unit: "cm²",
+            hint: "点 P の座標は、どうすればわかる？ 長方形の横と縦は、P の座標のどの値で決まる？",
+            steps: [
+              ...meetSteps(c.L1, c.L2).slice(0, 2),
+              `${TX(ltex(c.L1))} に ${TX(`x=${c.x0}`)} を代入して ${TX(`y=${substY(c.L1, Q(c.x0))}=${c.y0}`)}。P は ${PT([c.x0, c.y0])}。`,
+              `P を通る平行線は ${TX(`y=${c.y0}`)} と ${TX(`x=${c.x0}`)}。横 ${Math.abs(c.x0)}、縦 ${Math.abs(c.y0)} の長方形なので、${TX(`${Math.abs(c.x0)}\\times ${Math.abs(c.y0)}=${area}`)}（cm²）`,
+            ],
           };
         }),
         // 13q04a 小テスト（チャレンジ）交点を通り、傾きが s の直線の切片
@@ -409,7 +417,7 @@ export const UNITS = [
             q: `2直線 ${L2(c.L1)}、${L2(c.L2)} の交点を通り、傾きが ${TX(String(c.s))} の直線の式を $y=${c.s === 1 ? "" : c.s === -1 ? "-" : c.s}x+b$ とする。$b$ の値は？`,
             ans: c.b,
             hint: "直線が通る点は、どうすればわかる？ その点を通ることを、$y=sx+b$ にどう使う？",
-            steps: q04Steps(c),
+            steps: q04Steps(c).slice(0, 2),
           };
         }),
         // 13q04b 小テスト（チャレンジ）交点を通り、傾きが s の直線の式（4択）
@@ -487,7 +495,7 @@ function d06Axes(c) {
 // ── dr.7：交点 P を通る軸に平行な直線 ─────────────────────────────
 function d07Case(r) {
   const c = intPair(r, { x0r: [-4, 6], bmax: 10 });
-  return c.x0 === c.y0 ? d07Case(r) : c;
+  return c.x0 === c.y0 || c.y0 === 0 ? d07Case(r) : c;   // 交点の y 座標が 0 だと、x 軸に平行な直線が x 軸そのものになるのではずす
 }
 
 // ── qz.4：2 直線の交点 (x0, y0) を通り、傾きが s の直線 y＝sx＋b ─────────────

@@ -321,16 +321,16 @@ export const UNITS = [
 function ctx(r) {
   const kind = r(0, 2);
   if (kind === 0) {
-    const k = pick(r, [2, 3, 4, 5]), init = r(10, 25), t0 = r(3, 8), t1 = r(8, 18), y0 = init + k * t0, yg = init + k * t1;
+    const k = pick(r, [2, 3, 4, 5]), init = r(10, 25), t0 = r(3, 8), t1 = t0 + r(2, 10), y0 = init + k * t0, yg = init + k * t1;   // t1＞t0（目標の値が、与えた値と同じにならない）
     if (yg > 95) return ctx(r);
     return { k, init, t0, t1, y0, yg, uVal: "℃", uTime: "分後", rateWord: `水温は 1 分間に ${k}℃`, intro: `水を熱すると、水温が 1 分間に ${k}℃ ずつ上がる。熱しはじめて ${t0} 分後の水温は ${y0}℃ だった。熱しはじめて x 分後の水温を y℃ とする。`, askInit: "熱しはじめたときの水温は、何℃か。", askTime: `水温が ${yg}℃ になるのは、熱しはじめて何分後か。` };
   }
   if (kind === 1) {
-    const k = pick(r, [3, 4, 5, 6, 8]), init = pick(r, [10, 15, 20, 30, 40]), t0 = r(3, 8), t1 = r(8, 18), y0 = init + k * t0, yg = init + k * t1;
+    const k = pick(r, [3, 4, 5, 6, 8]), init = pick(r, [10, 15, 20, 30, 40]), t0 = r(3, 8), t1 = t0 + r(2, 10), y0 = init + k * t0, yg = init + k * t1;
     return { k, init, t0, t1, y0, yg, uVal: "L", uTime: "分後", rateWord: `水の量は 1 分間に ${k}L`, intro: `水が入っている水そうに、水を入れる。水の量は 1 分間に ${k}L ずつふえ、水を入れはじめて ${t0} 分後の水の量は ${y0}L だった。水を入れはじめて x 分後の水の量を y L とする。`, askInit: "水を入れはじめたときの水の量は、何 L か。", askTime: `水の量が ${yg}L になるのは、水を入れはじめて何分後か。` };
   }
-  const k = pick(r, [300, 500, 600, 800]), init = pick(r, [1000, 1500, 2000, 2500]), t0 = r(3, 8), t1 = r(8, 15), y0 = init + k * t0, yg = init + k * t1;
-  return { k, init, t0, t1, y0, yg, uVal: "円", uTime: "か月後", rateWord: `貯金は 1 か月に ${k}円`, intro: `毎月 ${k}円ずつ貯金する。貯金しはじめて ${t0} か月後の貯金は ${y0}円だった。貯金しはじめて x か月後の貯金を y 円とする。`, askInit: "貯金しはじめたときの貯金は、何円か。", askTime: `貯金が ${yg}円になるのは、貯金しはじめて何か月後か。` };
+  const k = pick(r, [300, 500, 600, 800]), init = pick(r, [1000, 1500, 2000, 2500]), t0 = r(3, 8), t1 = t0 + r(2, 8), y0 = init + k * t0, yg = init + k * t1;
+  return { k, init, t0, t1, y0, yg, uVal: "円", uTime: "か月後", rateWord: `貯金箱の中は 1 か月に ${k}円`, intro: `貯金箱に、毎月 ${k}円ずつお金を入れていく。入れはじめて ${t0} か月後に、貯金箱の中は ${y0}円になった。入れはじめて x か月後の貯金箱の中のお金を y 円とする。`, askInit: "入れはじめる前から、貯金箱には何円入っていたか。", askTime: `貯金箱の中が ${yg}円になるのは、入れはじめて何か月後か。` };
 }
 
 // 移さなかった問題：なし。「式を求めよう」は、式を選ぶ4択か、切片・傾き・x のときの y・y のときの x の数に直して、すべて移した。

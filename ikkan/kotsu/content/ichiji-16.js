@@ -152,7 +152,7 @@ export const UNITS = [
             ans: askT ? c.T : ansOf(c.ymax), unit: askT ? "秒後" : "cm²",
             hint: askT ? "BC の長さを、P が動く速さでわると、何がわかる？" : "$y$ が最大になるのは、P がどこに来たとき？ そのとき、$x$ はいくつ？",
             steps: askT
-              ? [`BC＝${c.q}cm を毎秒 ${c.v}cm で動くので、${TX(`${c.q}\\div ${c.v}=${c.T}`)}（秒後）。`, `0≦x≦${c.T} の間、P は辺 BC 上にある。`]
+              ? [`BC＝${c.q}cm を毎秒 ${c.v}cm で動くので、${TX(`${c.q}\\div ${c.v}=${c.T}`)}（秒後）。`, `$0\\leqq x\\leqq ${c.T}$ の間、P は辺 BC 上にある。`]
               : [`C に着くのは ${TX(`${c.q}\\div ${c.v}=${c.T}`)}（秒後）。`, `$y$ は $x$ とともにふえるので、最大は $x=${c.T}$ のとき。${TX(`y=${HALF}\\times ${c.p}\\times ${c.q}=${dt(c.ymax)}`)}（cm²）。`],
           };
         }),
@@ -164,7 +164,7 @@ export const UNITS = [
             ans: TX(ltex(L)),
             choices: lineChoices(r, L, [line(s, 0), line(Q(1, 2), 0), line(s * s / 2, 0), line(Q(-s, 2), s * s / 2), line(Q(s, 2), s)], [bump(Q(s, 2))]),
             hint: "P が辺 AB 上にあるとき、三角形 APD の底辺と高さは、それぞれ、どの辺（どの長さ）？",
-            steps: [`AP＝$x$ cm。三角形 APD は、底辺 AD＝${s}cm、高さ AP＝$x$ cm。`, `${TX(`y=${HALF}\\times ${s}\\times x=${cxq(Q(s, 2))}`)}（0≦x≦${s}）。`],
+            steps: [`AP＝$x$ cm。三角形 APD は、底辺 AD＝${s}cm、高さ AP＝$x$ cm。`, `${TX(`y=${HALF}\\times ${s}\\times x=${cxq(Q(s, 2))}`)}（$0\\leqq x\\leqq ${s}$）。`],
           };
         }),
         // 16d02b 正方形：P が辺 BC 上のとき、y の値
@@ -174,7 +174,7 @@ export const UNITS = [
             q: `1辺 ${s}cm の正方形 ABCD。点 P は、A から辺 AB、BC の上を C まで、毎秒 1cm で動く。A を出発して $x$ 秒後の、三角形 APD の面積を $y$ cm² とする。A を出発して ${x}秒後、P は辺 BC 上にある。このときの、三角形 APD の面積は何 cm² か。`,
             ans: y, unit: "cm²",
             hint: "P が辺 BC 上を動くとき、三角形 APD の底辺 AD と高さは、変わる？ 変わらない？",
-            steps: [`P が辺 BC 上にあるとき、底辺 AD＝${s}cm、高さは AB＝${s}cm で、変わらない。`, `${TX(`y=${HALF}\\times ${s}\\times ${s}=${y}`)}（cm²）。（${s}≦x≦${2 * s}）`],
+            steps: [`P が辺 BC 上にあるとき、底辺 AD＝${s}cm、高さは AB＝${s}cm で、変わらない。`, `${TX(`y=${HALF}\\times ${s}\\times ${s}=${y}`)}（cm²）。（$${s}\\leqq x\\leqq ${2 * s}$）`],
           };
         }),
         // 16d02c 正方形：y＝20 になるのは何秒後か
@@ -184,7 +184,7 @@ export const UNITS = [
             q: `1辺 ${s}cm の正方形 ABCD。点 P は、A から辺 AB、BC の上を C まで、毎秒 1cm で動く。A を出発して $x$ 秒後の、三角形 APD の面積を $y$ cm² とする。三角形 APD の面積が ${k}cm² になるのは、A を出発して何秒後か。`,
             ans: x0, unit: "秒後",
             hint: "三角形 APD の面積が、どちらの辺の上のときの値になるか、考えよう。その辺の上での式に、面積の値を入れると？",
-            steps: [`P が辺 AB 上のとき ${TX(`y=${cxq(Q(s, 2))}`)}（0≦x≦${s}）。辺 BC 上のときは、いつも ${s * s / 2}cm²。`, `${k}＜${s * s / 2} だから、P は辺 AB 上。${TX(`${cxq(Q(s, 2))}=${k}`)} より ${TX(`x=${x0}`)}。`],
+            steps: [`P が辺 AB 上のとき ${TX(`y=${cxq(Q(s, 2))}`)}（$0\\leqq x\\leqq ${s}$）。辺 BC 上のときは、いつも ${s * s / 2}cm²。`, `${k}＜${s * s / 2} だから、P は辺 AB 上。${TX(`${cxq(Q(s, 2))}=${k}`)} より ${TX(`x=${x0}`)}。`],
           };
         }),
         // 16q01 小テスト（1）P が辺 BC 上にあるとき、y を x の式で（4択）
@@ -203,10 +203,11 @@ export const UNITS = [
         // 16q02 小テスト（2）（1）のとき、x の変域（C に着くのは何秒後か）
         t("16q02", (r) => {
           const p = r(4, 10), q = r(5, 12);
+          if (p === q) return { skip: true };
           return {
             q: `${rectOf(p, q)}がある。点 P は、B を出発して、毎秒 1cm の速さで、辺 BC、CD の上を D まで動く。P が B を出発して $x$ 秒後の、三角形 ABP の面積を $y$ cm² とする。P が辺 BC 上にある間の $x$ の変域は、$0\\leqq x\\leqq a$ である。$a$ の値は？`,
             ans: q, unit: "",
-            hint: "P が辺 BC 上にあるのは、B を出発してから、C に着くまで。C に着くのは、何秒後かな？",
+            hint: "辺 BC 上にいるのは、P がどこからどこまで動く間かな？",
             steps: [`BC＝${q}cm を毎秒 1cm で動くので、C に着くのは ${TX(`${q}\\div 1=${q}`)}（秒後）。`, `P が辺 BC 上にあるのは ${TX(`0\\leqq x\\leqq ${q}`)} の間。よって ${TX(`a=${q}`)}。`],
           };
         }),
@@ -217,7 +218,7 @@ export const UNITS = [
         t("16d03a", (r) => {
           const { p, q } = rectABC(r), { ab } = apcLines(p, q);
           return {
-            q: `${rectOf(p, q)}で、点 P は、A から辺 AB、BC の上を C まで、毎秒 1cm で動く。A を出発して $x$ 秒後の、三角形 APC の面積を $y$ cm² とする。P が辺 AB 上にある（0≦x≦${p}）とき、$y$ を $x$ の式で表すと、次のうちどれか。`,
+            q: `${rectOf(p, q)}で、点 P は、A から辺 AB、BC の上を C まで、毎秒 1cm で動く。A を出発して $x$ 秒後の、三角形 APC の面積を $y$ cm² とする。P が辺 AB 上にある（$0\\leqq x\\leqq ${p}$）とき、$y$ を $x$ の式で表すと、次のうちどれか。`,
             ans: TX(ltex(ab)),
             choices: lineChoices(r, ab, [line(Q(p, 2), 0), line(q, 0), line(Q(p * q, 2), 0), line(Q(q, 2), q), line(Q(-q, 2), Q(p * q, 2))], [bump(Q(q, 2))]),
             hint: "P が辺 AB 上にあるとき、三角形 APC の底辺を AP とすると、高さは、どの辺の長さ？",
@@ -228,7 +229,7 @@ export const UNITS = [
         t("16d03b", (r) => {
           const { p, q } = rectABC(r), { bc } = apcLines(p, q);
           return {
-            q: `${rectOf(p, q)}で、点 P は、A から辺 AB、BC の上を C まで、毎秒 1cm で動く。A を出発して $x$ 秒後の、三角形 APC の面積を $y$ cm² とする。P が辺 BC 上にある（${p}≦x≦${p + q}）とき、$y$ を $x$ の式で表すと、次のうちどれか。`,
+            q: `${rectOf(p, q)}で、点 P は、A から辺 AB、BC の上を C まで、毎秒 1cm で動く。A を出発して $x$ 秒後の、三角形 APC の面積を $y$ cm² とする。P が辺 BC 上にある（$${p}\\leqq x\\leqq ${p + q}$）とき、$y$ を $x$ の式で表すと、次のうちどれか。`,
             ans: TX(ltex(bc)),
             choices: lineChoices(r, bc, [
               line(Q(p, 2), Q(-p * p, 2)),           // BP を底辺にしてしまう（BP＝x−AB、三角形 ABP の面積）
@@ -247,7 +248,7 @@ export const UNITS = [
             const x1 = r(2, p - 1), k = qmul(Q(q, 2), Q(x1));
             if (!isFin(k)) continue;
             const x2 = xAt(bc, k);
-            if (!isFin(x2) || qval(x2) <= p || qval(x2) >= p + q) continue;
+            if (x2[1] > 2 || qval(x2) <= p || qval(x2) >= p + q) continue;
             if (!qeq(yAt(ab, x1), k) || !qeq(yAt(bc, x2), k)) throw new Error("16d03c の x が合わない");
             const early = r(0, 1) === 0, xs = early ? Q(x1) : x2;
             return {
@@ -255,9 +256,9 @@ export const UNITS = [
               ans: ansOf(xs), unit: "秒後",
               hint: "P が辺 AB 上のときと、辺 BC 上のときで、式がちがう。それぞれの式に、面積の値を入れてみよう。",
               steps: [
-                `辺 AB 上（0≦x≦${p}）は ${TX(ltex(ab))}、辺 BC 上（${p}≦x≦${p + q}）は ${TX(ltex(bc))}。`,
-                `辺 AB 上：${TX(`${rhs(ab)}=${dt(k)}`)} より ${TX(`x=${x1}`)}（0≦x≦${p} に合う）。`,
-                `辺 BC 上：${TX(`${rhs(bc)}=${dt(k)}`)} より ${TX(`x=${dt(x2)}`)}（${p}≦x≦${p + q} に合う）。`,
+                `辺 AB 上（$0\\leqq x\\leqq ${p}$）は ${TX(ltex(ab))}、辺 BC 上（$${p}\\leqq x\\leqq ${p + q}$）は ${TX(ltex(bc))}。`,
+                `辺 AB 上：${TX(`${rhs(ab)}=${dt(k)}`)} より ${TX(`x=${x1}`)}（$0\\leqq x\\leqq ${p}$ に合う）。`,
+                `辺 BC 上：${TX(`${rhs(bc)}=${dt(k)}`)} より ${TX(`x=${dt(x2)}`)}（$${p}\\leqq x\\leqq ${p + q}$ に合う）。`,
                 early ? `1回目（早いほう）は ${x1}秒後。` : `2回目（遅いほう）は ${dt(x2)}秒後。`,
               ],
             };
@@ -267,18 +268,20 @@ export const UNITS = [
         // 16q03 小テスト（3）三角形 ABP の面積が 6cm² になるのは何秒後か
         t("16q03", (r) => {
           const p = r(4, 10), q = r(5, 10), x0 = r(2, q - 1);
+          if (p === q) return { skip: true };
           return {
             q: `${rectOf(p, q)}がある。点 P は、B を出発して、毎秒 1cm の速さで、辺 BC、CD の上を D まで動く。P が B を出発して $x$ 秒後の、三角形 ABP の面積を $y$ cm² とする。三角形 ABP の面積が ${dt(Q(p * x0, 2))}cm² になるのは、P が B を出発して何秒後か。`,
             ans: x0, unit: "秒後",
             hint: "面積が、P が辺 BC 上にあるときの式で表せるか、考えよう。その式に、面積の値を入れると？",
-            steps: [`P が辺 BC 上のとき ${TX(`y=${cxq(Q(p, 2))}`)}（0≦x≦${q}）。辺 CD 上のときは、いつも ${dt(Q(p * q, 2))}cm²。`, `${dt(Q(p * x0, 2))}＜${dt(Q(p * q, 2))} だから、P は辺 BC 上。${TX(`${cxq(Q(p, 2))}=${dt(Q(p * x0, 2))}`)} より ${TX(`x=${x0}`)}（0≦x≦${q} に合う）。`],
+            steps: [`P が辺 BC 上のとき ${TX(`y=${cxq(Q(p, 2))}`)}（$0\\leqq x\\leqq ${q}$）。辺 CD 上のときは、いつも ${dt(Q(p * q, 2))}cm²。`, `${dt(Q(p * x0, 2))}＜${dt(Q(p * q, 2))} だから、P は辺 BC 上。${TX(`${cxq(Q(p, 2))}=${dt(Q(p * x0, 2))}`)} より ${TX(`x=${x0}`)}（$0\\leqq x\\leqq ${q}$ に合う）。`],
           };
         }),
         // 16q04 小テスト（4）P が辺 CD 上にあるとき、y の値
         t("16q04", (r) => {
           const p = r(4, 10), q = r(5, 10), x = r(q + 1, p + q - 1), y = Q(p * q, 2);
+          if (p === q) return { skip: true };
           return {
-            q: `${rectOf(p, q)}がある。点 P は、B を出発して、毎秒 1cm の速さで、辺 BC、CD の上を D まで動く。P が B を出発して $x$ 秒後の、三角形 ABP の面積を $y$ cm² とする。P が B を出発して ${x}秒後、P は辺 CD 上（${q}≦x≦${p + q}）にある。このときの、三角形 ABP の面積は何 cm² か。`,
+            q: `${rectOf(p, q)}がある。点 P は、B を出発して、毎秒 1cm の速さで、辺 BC、CD の上を D まで動く。P が B を出発して $x$ 秒後の、三角形 ABP の面積を $y$ cm² とする。P が B を出発して ${x}秒後、P は辺 CD 上（$${q}\\leqq x\\leqq ${p + q}$）にある。このときの、三角形 ABP の面積は何 cm² か。`,
             ans: ansOf(y), unit: "cm²",
             hint: "P が辺 CD 上を動くとき、三角形 ABP の底辺 AB と高さは、変わる？ 変わらない？",
             steps: [`P が辺 CD 上にあるとき、底辺 AB＝${p}cm、高さは BC＝${q}cm で、変わらない。`, `${TX(`y=${HALF}\\times ${p}\\times ${q}=${dt(y)}`)}（cm²）。`],
@@ -316,7 +319,7 @@ export const UNITS = [
             steps: [
               `${TX(yT)}、${TX(zT)}。`,
               `${k === 1 ? TX(`y=z`) : TX(`y=${k}z`)} より ${TX(`${rhs(c.yL)}=${k === 1 ? "" : k}${k === 1 ? rhs(c.zL) : `(${rhs(c.zL)})`}`)}。`,
-              `整理して ${TX(`${cxq(Q((1 + k) * p * v, 2))}=${dt(Q(k * p * q, 2))}`)} より ${TX(`x=${dt(c.x)}`)}。（0≦x≦${dt(Q(q, v))} に合う）`,
+              `整理して ${TX(`${cxq(Q((1 + k) * p * v, 2))}=${dt(Q(k * p * q, 2))}`)} より ${TX(`x=${dt(c.x)}`)}。（$0\\leqq x\\leqq ${dt(Q(q, v))}$ に合う）`,
             ],
           };
         }),
@@ -343,7 +346,7 @@ export const UNITS = [
           return {
             q: `${rectOf(p, q)}で、点 P は、A から辺 AB、BC の上を C まで、毎秒 1cm で動く。A を出発して $x$ 秒後の、三角形 APC の面積を $y$ cm² とする。A を出発して ${x}秒後、P は辺 BC 上にある。このときの、三角形 APC の面積は何 cm² か。`,
             ans: ansOf(y), unit: "cm²",
-            hint: "P が辺 BC 上にあるとき、三角形 APC の底辺は PC。PC の長さは、全体の道のり（AB＋BC）から、P が進んだ道のりをひくと、いくつ？",
+            hint: "P が辺 BC 上にあるとき、三角形 APC の底辺は、どの線分？ その長さは、出発してからの時間と、AB、BC の長さから、どう求められる？",
             steps: [`P が辺 BC 上のとき PC＝${p + q}−${x}＝${p + q - x}（cm）。高さは AB＝${p}cm。`, `${TX(`y=${HALF}\\times ${p + q - x}\\times ${p}=${dt(y)}`)}（cm²）。`],
           };
         }),
@@ -366,7 +369,7 @@ export const UNITS = [
         t("16d06b", (r) => {
           const c = peakCase(r), p1 = [c.p, c.h], p2 = [c.p + c.q, 0];
           return {
-            q: `長方形 ABCD の辺上を、点 P が、A から B を通って C まで、毎秒 1cm で動く。A を出発して $x$ 秒後の、三角形 APC の面積を $y$ cm² とする。$x$ と $y$ の関係を表すグラフは、3点 ${TX("(0, 0)")}、${TX(`(${c.p}, ${dt(c.h)})`)}、${TX(`(${c.p + c.q}, 0)`)} を、順に線分で結んだ折れ線である。${c.p}≦x≦${c.p + c.q} のときの、$y$ を $x$ の式で表すと、次のうちどれか。`,
+            q: `長方形 ABCD の辺上を、点 P が、A から B を通って C まで、毎秒 1cm で動く。A を出発して $x$ 秒後の、三角形 APC の面積を $y$ cm² とする。$x$ と $y$ の関係を表すグラフは、3点 ${TX("(0, 0)")}、${TX(`(${c.p}, ${dt(c.h)})`)}、${TX(`(${c.p + c.q}, 0)`)} を、順に線分で結んだ折れ線である。$${c.p}\\leqq x\\leqq ${c.p + c.q}$ のときの、$y$ を $x$ の式で表すと、次のうちどれか。`,
             ans: TX(ltex(c.L2)),
             choices: throughChoices(r, c.L2, p1, p2),
             hint: "この範囲のグラフは、どの2点を通る線分？ その2点から、傾きと切片を出せるかな？",
@@ -379,15 +382,15 @@ export const UNITS = [
             const c = peakCase(r), x1 = r(1, c.p - 1), k = qmul(Q(c.q, 2), Q(x1));
             if (!isFin(k) || qval(k) >= qval(c.h)) continue;
             const x2 = xAt(c.L2, k);
-            if (!isFin(x2) || qval(x2) <= c.p || qval(x2) >= c.p + c.q) continue;
+            if (x2[1] > 2 || qval(x2) <= c.p || qval(x2) >= c.p + c.q) continue;
             const early = r(0, 1) === 0, xs = early ? Q(x1) : x2;
             return {
               q: `長方形 ABCD の辺上を、点 P が、A から B を通って C まで、毎秒 1cm で動く。A を出発して $x$ 秒後の、三角形 APC の面積を $y$ cm² とする。$x$ と $y$ の関係を表すグラフは、3点 ${TX("(0, 0)")}、${TX(`(${c.p}, ${dt(c.h)})`)}、${TX(`(${c.p + c.q}, 0)`)} を、順に線分で結んだ折れ線である。三角形 APC の面積が ${dt(k)}cm² になるのは、A を出発してから、2回ある。${early ? "1回目（早いほう）" : "2回目（遅いほう）"}は、何秒後か。`,
               ans: ansOf(xs), unit: "秒後",
               hint: "グラフは、折れ線。$0\\leqq x\\leqq" + c.p + "$ のときと、それ以降とで、式がちがう。それぞれの式に、面積の値を入れてみよう。",
               steps: [
-                `0≦x≦${c.p} のとき ${TX(ltex(c.L1))}、${c.p}≦x≦${c.p + c.q} のとき ${TX(ltex(c.L2))}。（2点の座標から求めた）`,
-                `${early ? `${TX(`${rhs(c.L1)}=${dt(k)}`)} より ${TX(`x=${x1}`)}（0≦x≦${c.p} に合う）。` : `${TX(`${rhs(c.L2)}=${dt(k)}`)} より ${TX(`x=${dt(x2)}`)}（${c.p}≦x≦${c.p + c.q} に合う）。`}`,
+                `$0\\leqq x\\leqq ${c.p}$ のとき ${TX(ltex(c.L1))}、$${c.p}\\leqq x\\leqq ${c.p + c.q}$ のとき ${TX(ltex(c.L2))}。（2点の座標から求めた）`,
+                `${early ? `${TX(`${rhs(c.L1)}=${dt(k)}`)} より ${TX(`x=${x1}`)}（$0\\leqq x\\leqq ${c.p}$ に合う）。` : `${TX(`${rhs(c.L2)}=${dt(k)}`)} より ${TX(`x=${dt(x2)}`)}（$${c.p}\\leqq x\\leqq ${c.p + c.q}$ に合う）。`}`,
                 early ? `1回目（早いほう）は ${x1}秒後。` : `2回目（遅いほう）は ${dt(x2)}秒後。`,
               ],
             };
@@ -398,6 +401,7 @@ export const UNITS = [
         t("16q05", (r) => {
           for (let n = 0; n < 200; n++) {
             const p = r(4, 10), q = r(5, 10), x = r(q + 1, p + q - 1);
+            if (p === q) continue;
             const k = Q(q * (p + q - x), 2);
             if (!isFin(k) || qval(k) >= (p * q) / 2) continue;
             const L = line(Q(-q, 2), Q(q * (p + q), 2));
@@ -407,9 +411,9 @@ export const UNITS = [
               ans: x, unit: "秒後",
               hint: "P が辺 BC 上のときと、辺 CD 上のときで、三角形 APD の底辺や高さは、それぞれ、どうなる？",
               steps: [
-                `P が辺 BC 上（0≦x≦${q}）のとき、底辺 AD＝${q}cm、高さ AB＝${p}cm で、いつも ${TX(`${HALF}\\times ${q}\\times ${p}=${dt(Q(p * q, 2))}`)}（cm²）。${dt(k)} にはならない。`,
-                `P が辺 CD 上（${q}≦x≦${p + q}）のとき、PD＝${p + q}−$x$（cm）。${TX(`y=${HALF}\\times ${q}\\times (${p + q}-x)`)}。`,
-                `${TX(`${HALF}\\times ${q}\\times (${p + q}-x)=${dt(k)}`)} より ${TX(`${p + q}-x=${p + q - x}`)}、${TX(`x=${x}`)}（${q}≦x≦${p + q} に合う）。`,
+                `P が辺 BC 上（$0\\leqq x\\leqq ${q}$）のとき、底辺 AD＝${q}cm、高さ AB＝${p}cm で、いつも ${TX(`${HALF}\\times ${q}\\times ${p}=${dt(Q(p * q, 2))}`)}（cm²）。${dt(k)} にはならない。`,
+                `P が辺 CD 上（$${q}\\leqq x\\leqq ${p + q}$）のとき、PD＝${p + q}−$x$（cm）。${TX(`y=${HALF}\\times ${q}\\times (${p + q}-x)`)}。`,
+                `${TX(`${HALF}\\times ${q}\\times (${p + q}-x)=${dt(k)}`)} より ${TX(`${p + q}-x=${p + q - x}`)}、${TX(`x=${x}`)}（$${q}\\leqq x\\leqq ${p + q}$ に合う）。`,
               ],
             };
           }

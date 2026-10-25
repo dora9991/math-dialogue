@@ -7,7 +7,7 @@
 //   「a の値をすべて求めよう」（dr.8）は、a が 2 つあるので「大きいほう（小さいほう）の a の値は？」にして、場合分けは残した。
 //   変域・最大値・最小値・a は、linear.js（直線 y＝ax+b を計算で扱う）から出す。
 // ============================================================
-import { t, pick, choices4, rnz, gcd, sgn } from "../kit.js";
+import { t, pick, choices4, shuffle, rnz, gcd, sgn } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
 import { Q, qadd, qmul, qneg, qeq, qval } from "../algebra.js";
 import { line, yAt, xAt, ltex, qt, num } from "../linear.js";
@@ -64,12 +64,17 @@ const rangeChoices = (r, L, lo, hi, bd) => {
   const mk = (min, max) => ({ min, max, minOpen: false, maxOpen: false });
   const sorted = (u, v) => (qval(u) <= qval(v) ? [u, v] : [v, u]);
   const viaLine = (l) => { const [u, v] = sorted(yAt(l, lo), yAt(l, hi)); return mk(u, v); };
+  const unsorted = a[0] < 0 ? mk(yAt(L, lo), yAt(L, hi)) : null;          // 右下がりなのに、小さい数を左に書かない（右下がりのときは、3 回に 2 回は入れる）
   const cand = [
-    a[0] < 0 ? mk(yAt(L, lo), yAt(L, hi)) : null,                         // 右下がりなのに、小さい数を左に書かない
+    ...(unsorted && r(0, 2) > 0 ? [unsorted] : []),
+    ...shuffle(r, [
     mk(Q(lo), Q(hi)),                                                     // x の変域をそのまま書く
     (() => { const [u, v] = sorted(qmul(a, Q(lo)), qmul(a, Q(hi))); return mk(u, v); })(),   // 切片をたし忘れる
     viaLine(line(a, qneg(b))),                                            // 切片の符号まちがい
     viaLine(line(qneg(a), b)),                                            // 傾きの符号まちがい
+    viaLine(line(qneg(a), qneg(b))),                                      // 傾きも切片も符号まちがい
+    ...(unsorted ? [unsorted] : []),
+    ]),
   ].filter(Boolean);
   const right = $(rangeTex(bd)), seen = new Set([right]), ws = [];
   for (const c of cand) { const s = $(rangeTex({ ...c, minOpen: bd.minOpen, maxOpen: bd.maxOpen })); if (!seen.has(s)) { seen.add(s); ws.push(s); } }
@@ -145,6 +150,8 @@ export const UNITS = [
             steps: [`両はしの点は、${$(`x=${lo}`)} のとき ${$(calcTex(L, lo))}、${$(`x=${hi}`)} のとき ${$(calcTex(L, hi))}。`, a[0] > 0 ? "右上がりだから、右はしの点が高く、左はしの点が低い。" : "右下がりだから、左はしの点が高く、右はしの点が低い。", `y 座標が${askTxt[ask]}になる点の x 座標は ${N(atX)}。`],
           };
         }),
+        // 08d07a 演習（7）① 分数の傾きで、x の変域から y の最大値・最小値（ikkan では入試レベルだが、08d02 に分数の傾きが加わっただけなので、標準に置く）
+        t("08d07a", (r) => maxMinQ(r, mkDom(r, r(0, 3) === 0 ? 1 : -1, true, 7, true), pick(r, ["max", "min"]))),
         // 08d04 演習（4）端をふくまない：y の変域
         t("08d04", (r) => { const d = mkDom(r, 0, false), open = r(0, 1) === 1; return rangeQ(r, d, !open, open); }),
         // 08q02 小テスト（2）y＝−x+8（2≦x≦6）：右下がり
@@ -190,7 +197,7 @@ export const UNITS = [
               q: `一次関数 ${$(eqn)}（${$(neg ? "a<0" : "a>0")}）で、x の変域が ${$(xr(lo, hi))} のとき、y の変域は ${$(rangeTex(bd))} である。a の値は？`,
               ans: a,
               hint: "a の正負から、グラフが右上がりか右下がりかがわかるよ。x の端のうち、y が最小（最大）になるのはどちらかな？",
-              steps: [neg ? `${$("a<0")} だから右下がり。x が大きいほど y は小さいので、${$(`x=${lo}`)} のとき y は最大の ${N(known.y)}。` : `${$("a>0")} だから右上がり。x が大きいほど y も大きいので、${$(`x=${lo}`)} のとき y は最小の ${N(known.y)}。`, `${$(`x=${lo}`)}、${$(`y=${qt(known.y)}`)} を代入して ${$(`${qt(known.y)}=a\\times ${par(lo)}${b < 0 ? "-" : "+"}${Math.abs(b)}`)}、${$(`a=${a}`)}。`, `確かめ　${$(`x=${hi}`)} のとき ${$(calcTex(L, hi))}　○`],
+              steps: [neg ? `${$("a<0")} だから右下がり。x が大きいほど y は小さいので、${$(`x=${lo}`)} のとき y は最大の ${N(known.y)}。` : `${$("a>0")} だから右上がり。x が大きいほど y も大きいので、${$(`x=${lo}`)} のとき y は最小の ${N(known.y)}。`, `${$(`x=${lo}`)}、${$(`y=${qt(known.y)}`)} を代入して ${$(`${qt(known.y)}=a\\times ${par(lo)}${b < 0 ? "-" : "+"}${Math.abs(b)}`)}、${$(`a=${a}`)}。`, `確かめ　${$(`x=${hi}`)} のとき ${$(calcTex(L, hi))}　○　答えは ${$(`a=${a}`)}。`],
             };
           }
           return { skip: true };
@@ -198,8 +205,6 @@ export const UNITS = [
       ],
       // ───────── 4 入試レベル ─────────
       4: [
-        // 08d07a 演習（7）① x の変域 −4≦x≦8 のとき、y の変域（最大値・最小値）
-        t("08d07a", (r) => maxMinQ(r, mkDom(r, r(0, 3) === 0 ? 1 : -1, true, 7, true), pick(r, ["max", "min"]))),
         // 08d07b 演習（7）② y の変域から、x の変域（最大値・最小値）
         t("08d07b", (r) => {
           const d = mkDom(r, r(0, 3) === 0 ? 1 : -1, true, 7, true), { L, lo, hi, a } = d, bd = bounds(L, lo, hi), ask = pick(r, ["max", "min"]);
@@ -214,13 +219,15 @@ export const UNITS = [
         }),
         // 08d08 演習（8）y＝ax+2 で x の変域が −2≦x≦3、y の最大値と最小値の差が 10。a の値をすべて求める
         t("08d08", (r) => {
-          const lo = r(-4, -1), hi = r(1, 4), d = hi - lo, m = r(1, 5), D = d * m, b = rnz(r, -5, 5), big = r(0, 1) === 1;
+          const lo = r(-4, -1), hi = r(1, 4), d = hi - lo, m = r(1, 5), D = d * m, b = rnz(r, -5, 5);
           const ca = (c) => (c === 1 ? "a" : c === -1 ? "-a" : `${c}a`), lin = (c) => `${ca(c)}${b < 0 ? "-" : "+"}${Math.abs(b)}`;
+          const both = (k) => `${$(`a=${-k}`)} または ${$(`a=${k}`)}`, right = both(m), m2 = pick(r, [m + 1, m + 2, 2 * m].filter((x) => x !== m));
           return {
-            q: `一次関数 ${$(`y=ax${b < 0 ? "-" : "+"}${Math.abs(b)}`)} で、x の変域が ${$(xr(lo, hi))} のとき、y の最大値と最小値の差が ${D} になった。a の値は 2 つある。${big ? "大きい" : "小さい"}ほうの a の値は？`,
-            ans: big ? m : -m,
+            q: `一次関数 ${$(`y=ax${b < 0 ? "-" : "+"}${Math.abs(b)}`)} で、x の変域が ${$(xr(lo, hi))} のとき、y の最大値と最小値の差が ${D} になった。a の値をすべて求めたものとして、正しいものはどれか。`,
+            ans: right,
+            choices: shuffle(r, [right, $(`a=${m}`), $(`a=${-m}`), both(m2)]),
             hint: "a が正の場合と負の場合で、最大になる x の端はどうちがうかな？ それぞれの場合の（最大値）−（最小値）を、a の式で表すと？",
-            steps: [`${$("a>0")} のとき、${$(`x=${hi}`)} で最大、${$(`x=${lo}`)} で最小。差は ${$(`(${lin(hi)})-(${lin(lo)})=${ca(d)}`)}。${$(`${ca(d)}=${D}`)} より ${$(`a=${m}`)}。`, `${$("a<0")} のとき、${$(`x=${lo}`)} で最大、${$(`x=${hi}`)} で最小。差は ${$(`(${lin(lo)})-(${lin(hi)})=${ca(-d)}`)}。${$(`${ca(-d)}=${D}`)} より ${$(`a=${-m}`)}。`, `a の値は ${N(m)} と ${N(-m)}。${big ? "大きい" : "小さい"}ほうは ${N(big ? m : -m)}。`],
+            steps: [`${$("a>0")} のとき、${$(`x=${hi}`)} で最大、${$(`x=${lo}`)} で最小。差は ${$(`(${lin(hi)})-(${lin(lo)})=${ca(d)}`)}。${$(`${ca(d)}=${D}`)} より ${$(`a=${m}`)}。`, `${$("a<0")} のとき、${$(`x=${lo}`)} で最大、${$(`x=${hi}`)} で最小。差は ${$(`(${lin(lo)})-(${lin(hi)})=${ca(-d)}`)}。${$(`${ca(-d)}=${D}`)} より ${$(`a=${-m}`)}。`, `a の値は ${N(-m)} と ${N(m)} の両方。正しいのは「${right}」。`],
           };
         }),
         // 08q05 小テスト チャレンジ：y＝ax+3 で、x の変域 −2≦x≦4、y の変域 −5≦y≦7。a を求める

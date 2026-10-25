@@ -69,6 +69,21 @@ const pointWrongs = (a, b, P1) => [
   line(recip(a), P1[1]),        // 取りちがえた上に、y 座標をそのまま切片にした
 ];
 
+/**
+ * 通る 2 点から式を選ぶ4択：傾き（正しいもの／まちがい）×切片（正しいもの／まちがい）の 4 通りをならべる。
+ *   どの選択肢も、他の選択肢と共通する部分の数が同じになる（共通部分を見ただけでは、正解が当たらない）。
+ *   傾きのまちがい＝符号まちがい・x と y の増加量の取りちがえ　切片のまちがい＝符号まちがい・点の y 座標をそのまま切片にした・傾きを切片にした
+ */
+const gridChoices = (r, L, P1, bad) => {
+  const a = L.a, b = L.b;
+  const ss = shuffle(r, [qneg(a), recip(a), qneg(recip(a))]).filter((x) => !qeq(x, a));
+  const ts = shuffle(r, [qneg(b), Z(P1[1]), a]).filter((x) => !qeq(x, b));
+  const cells = [line(a, ts[0]), line(ss[0], b), line(ss[0], ts[0])];
+  if (cells.some(bad)) return eqChoices(r, L, pointWrongs(a, b, P1), bad);
+  const ans = $(ltex(L));
+  return { ans, choices: shuffle(r, [ans, ...cells.map((l) => $(ltex(l)))]) };
+};
+
 /** 傾き ±p/q の直線のうち、切片が整数のもの。ps/qs＝傾きの分子・分母の候補 */
 const stepLine = (r, ps, qs, B) => {
   const [p, q] = fr(r, ps, qs), s = sgn(r), b = rnz(r, -B, B);
@@ -81,7 +96,7 @@ const slopeCalc = (dy, dx, a) => `${dy < 0 ? `(${dy})` : dy}\\div ${dx < 0 ? `($
 const eqFromPoints = (r, slopes, B, ks) => {
   const [pp, qq] = pick(r, slopes), s = sgn(r), b = rnz(r, -B, B), a = Q(s * pp, qq), L = line(a, b), k = pick(r, ks);
   const P0 = [0, b], P1 = [k * qq, b + k * s * pp], pts = r(0, 1) ? [P0, P1] : [P1, P0];
-  const { ans, choices } = eqChoices(r, L, pointWrongs(a, b, P1), (l) => both(l, P0, P1));
+  const { ans, choices } = gridChoices(r, L, P1, (l) => both(l, P0, P1));
   return {
     q: `${PT(pts[0])} と ${PT(pts[1])} を通る直線の式は、次のうちどれか。`,
     ans, choices,
@@ -137,7 +152,7 @@ export const UNITS = [
             const [k1, k2] = shuffle(r, [-2, -1, 1, 2, 3]).slice(0, 2);
             if (Math.abs(k1 * q) > 10 || Math.abs(k2 * q) > 10) continue;
             const P1 = [k1 * q, yAt(L, k1 * q)[0]], P2 = [k2 * q, yAt(L, k2 * q)[0]];
-            const { ans, choices } = eqChoices(r, L, pointWrongs(a, b, P1), (l) => both(l, P1, P2));
+            const { ans, choices } = gridChoices(r, L, P1, (l) => both(l, P1, P2));
             const dx = P2[0] - P1[0], dy = P2[1] - P1[1];
             return {
               q: `${PT(P1)} と ${PT(P2)} を通る直線の式は、次のうちどれか。`,

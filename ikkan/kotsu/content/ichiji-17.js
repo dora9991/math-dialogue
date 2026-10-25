@@ -513,7 +513,7 @@ export const UNITS = [
             const c = peakCase(r), x1 = r(1, c.p - 1), k = qmul(Q(c.q, 2), Q(x1));
             if (!isFin(k) || qval(k) >= qval(c.h)) continue;
             const x2 = xAt(c.L2, k);
-            if (!isFin(x2) || qval(x2) <= c.p || qval(x2) >= c.p + c.q) continue;
+            if (x2[1] > 2 || qval(x2) <= c.p || qval(x2) >= c.p + c.q) continue;
             const ask = pick(r, ["early", "late", "sum"]), xs = ask === "early" ? Q(x1) : ask === "late" ? x2 : qadd(Q(x1), x2);
             const askT = ask === "early" ? "1回目（早いほう）は、何秒後か。" : ask === "late" ? "2回目（遅いほう）は、何秒後か。" : "その 2回の時刻（秒後）を合わせた合計は、何秒か。";
             return {
@@ -521,7 +521,7 @@ export const UNITS = [
               ans: ansOf(xs), unit: ask === "sum" ? "秒" : "秒後",
               hint: `グラフは折れ線。${TX(`0\\leqq x\\leqq ${c.p}`)} のときと、それ以降とで、式がちがう。それぞれの式に、面積の値を入れてみよう。`,
               steps: [
-                `0≦x≦${c.p} のとき ${TX(ltex(c.L1))}、${c.p}≦x≦${c.p + c.q} のとき ${TX(ltex(c.L2))}。（2点の座標から求めた）`,
+                `$0\\leqq x\\leqq ${c.p}$ のとき ${TX(ltex(c.L1))}、$${c.p}\\leqq x\\leqq ${c.p + c.q}$ のとき ${TX(ltex(c.L2))}。（2点の座標から求めた）`,
                 `${TX(`${rhs(c.L1)}=${dt(k)}`)} より ${TX(`x=${x1}`)}。${TX(`${rhs(c.L2)}=${dt(k)}`)} より ${TX(`x=${dt(x2)}`)}。どちらも変域に合う。`,
                 ask === "early" ? `1回目（早いほう）は ${x1}秒後。` : ask === "late" ? `2回目（遅いほう）は ${dt(x2)}秒後。` : `合計は ${TX(`${x1}+${dt(x2)}=${dt(qadd(Q(x1), x2))}`)}（秒）。`,
               ],

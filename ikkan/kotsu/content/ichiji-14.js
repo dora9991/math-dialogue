@@ -327,7 +327,7 @@ export const UNITS = [
             q: `${sc.intro}ある実験から、${TX(ltexD(l))} という式が得られた。この式の ${TX(num)} が表しているものは、次のうちどれか。`,
             ans: right,
             choices: choices4(r, right, [m.rate, m.inv, m.init, m.one].filter((x) => x !== right)),
-            hint: ask === "a" ? "$x$ が 1 ふえると、$y$ は、いくつふえる？ 式の中の、どの数が、それを表している？" : "$x=0$ を式に入れると、$y$ はいくつになる？ 式の中の、どの数が出てくる？",
+            hint: "式を $y=ax+b$ と見たとき、$a$ と $b$ は、それぞれ何を表す？ 聞かれている数は、そのどちらにあたる？",
             steps: ask === "a"
               ? [`${TX("y=ax+b")} の ${TX("a")} は傾きで、${TX("x")} が 1 ふえたときの ${TX("y")} のふえ方を表す。`, `${TX(num)} は、${right}。`]
               : [`${TX("y=ax+b")} の ${TX("b")} は切片で、${TX("x=0")} のときの ${TX("y")} の値を表す。`, `${TX(num)} は、${right}。`],
@@ -375,14 +375,15 @@ export const UNITS = [
           const c = capCase(r, pick(r, ["water", "tank"]));
           const y0 = yAt(c.l, c.x0), y0w = qmul(c.l.a, Q(c.x0));   // 誤答用：切片 b をたし忘れた値
           if (qeq(y0w, y0) || y0w[0] === c.cap) return { skip: true };
-          const right = `${dt(y0)}${c.yu}と計算できるが、${c.reason}ので、この予測は正しくない。`;
+          const yus = c.yu === "cm" ? "cm " : c.yu;   // cm の後ろは、ことばとの間をあける
+          const right = `${dt(y0)}${yus}と計算できるが、${c.reason}ので、この予測は正しくない。`;
           const wrongs = [
             `式に ${TX(`x=${c.x0}`)} を代入して求めた値なので、そのまま信じてよく、この予測は正しい。`,
-            `式に ${TX(`x=${c.x0}`)} を代入すると ${dt(y0w)}${c.yu}になり、A さんの値とちがうので、この予測は正しくない。`,
+            `式に ${TX(`x=${c.x0}`)} を代入すると ${dt(y0w)}${yus}になり、A さんの値とちがうので、この予測は正しくない。`,
             "一次関数のグラフは直線で、どこまでも続くので、$x$ がどんなに大きくても式のとおりになり、この予測は正しい。",
           ];
           return {
-            q: `${c.setup}A さんは、この式を使って、「${c.x0}分後の${c.name}は ${dt(y0)}${c.yu}になる」と予測した。この予測について、正しい説明は、次のうちどれか。`,
+            q: `${c.setup}A さんは、この式を使って、「${c.x0}分後の${c.name}は ${dt(y0)}${yus}になる」と予測した。この予測について、正しい説明は、次のうちどれか。`,
             ans: right,
             choices: choices4(r, right, wrongs),
             hint: "式に代入した値は、現実の場面で、起こりうる値かな？ 場面の条件ともくらべてみよう。",
@@ -397,7 +398,7 @@ export const UNITS = [
             q: `${f.sc.intro}$x$ と $y$ の値の組 $(x, y)$ を調べると、${rows(f)} となった。1つだけ、ほかの点から大きくはずれている測定がある。それは、おもりを何個つるしたときの測定か。`,
             ans: xo, unit: "個",
             hint: "おもりが 1個ふえるごとの、$y$ のふえ方を、順にくらべてみよう。1つだけ、ようすのちがうところはない？",
-            steps: [`おもりが 1個ふえるごとの $y$ のふえ方は、順に ${ds.join("、")}。`, `ほかは約 ${dt(f.a)} ずつふえているのに、${xo}個のところだけ、${xo === 1 ? "次の点との" : "前後との"}ふえ方が大きくちがう。よって、${xo}個のとき。`],
+            steps: [`おもりが 1個ふえるごとの $y$ のふえ方は、順に ${ds.join("、")}。`, `ほかは約 ${dt(f.a)} ずつふえているのに、${xo}個のところだけ、${xo === 1 ? "次の点との" : xo === f.xs.length ? "前の点との" : "前後との"}ふえ方が大きくちがう。よって、${xo}個のとき。`],
           };
         }),
         // 14d06b ばね：はずれた測定をのぞいて、10個のときの長さを予測
@@ -462,7 +463,7 @@ export const UNITS = [
           const f = fit(r, "tank"), H = pick(r, [35, 40, 45, 50, 55, 60]);
           const xl = xAt(f.l, H);
           if (!xl || qval(xl) < 11 || qval(xl) > 24) return { skip: true };
-          const over = r(0, 2) > 0, X2 = over ? Math.floor(qval(xl)) + r(2, 5) : r(9, Math.floor(qval(xl)) - 1);
+          const over = r(0, 1) === 0, X2 = over ? Math.floor(qval(xl)) + r(2, 5) : r(9, Math.floor(qval(xl)) - 1);
           const v = yAt(f.l, X2), shown = qval(v) > H ? Q(H) : v;
           return {
             q: `${lead(f)}一次関数とみなして、${which(f)}を通る直線で表す。この水そうの深さは ${H}cm で、いっぱいになったあとは、水があふれて、水の深さは ${H}cm のまま変わらない。水を入れはじめて ${X2}分後の水の深さは、およそ何 cm と予測できるか。`,
