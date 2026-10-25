@@ -15,12 +15,13 @@
   const box = '<span class="ps-bx"></span>';
   const row = (cls, html) => `<div class="ps-r ${cls}">${html}</div>`;
 
-  const lessonBlock = l => ({
-    type: 'raw', rows: 4, cls: 'ps-lesson',
+  // compact：授業が多い単元（A4 表裏 2 ページに、4行ずつでは入らないとき）は、ふり返りの行に「ひとこと」を入れて、3行にする
+  const lessonBlock = (l, compact) => ({
+    type: 'raw', rows: compact ? 3 : 4, cls: 'ps-lesson',
     html: row('r1', `<span class="ps-no">${esc(l.no || '')}</span><b class="ps-ttl">${esc(l.title)}</b><span class="ps-dt">予定 ${U(6)}／${U(6)}　実施 ${U(6)}／${U(6)}</span>`)
       + row('r2', `<span class="ps-lb">できたら✔</span>${['ワーク', '基礎', '標準', '応用', '入試', '考えよう'].map(t => `<span class="ps-ck">${box}${t}</span>`).join('')}<span class="ps-sc">小テスト ${U(7)}／10点</span>`)
-      + row('r3', `<span class="ps-lb">ふり返り</span><span class="ps-ev">◎ よくわかった</span><span class="ps-ev">○ だいたいわかった</span><span class="ps-ev">△ まだあやしい</span><span class="ps-hint">（あてはまるものを ○でかこむ）</span>`)
-      + row('r4', `<span class="ps-lb">ひとこと</span><span class="ps-hint">つまずいたこと・次にやること</span>`)
+      + row('r3', `<span class="ps-lb">ふり返り</span><span class="ps-ev">◎ よくわかった</span><span class="ps-ev">○ だいたいわかった</span><span class="ps-ev">△ まだあやしい</span><span class="ps-hint">${compact ? 'ひとこと：' : '（あてはまるものを ○でかこむ）'}</span>`)
+      + (compact ? '' : row('r4', `<span class="ps-lb">ひとこと</span><span class="ps-hint">つまずいたこと・次にやること</span>`))
   });
 
   const headBlock = (u, goals) => {
@@ -51,7 +52,8 @@
     let used = 0;
     const put = b => { if (used + b.rows > rows) { sheet.blocks.push({ type: 'break' }); used = 0; } sheet.blocks.push(b); used += b.rows; };
     put(headBlock(u, IK.unitGoals[key] || []));
-    ls.forEach(l => put(lessonBlock(l)));
+    const compact = ls.length > 15;   // 4行×15時 ＋ 上 5行 ＋ 下 9行 ＝ 74行（2ページ）。16時以上は、3行にする
+    ls.forEach(l => put(lessonBlock(l, compact)));
     put(endBlock());
     return sheet;
   };
