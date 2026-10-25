@@ -2,7 +2,7 @@
 
 ikkan（授業準備ツール）の演習プリント・小テストの問題を、**コツコツくんの問題データと同じ形**（毎回数字が変わるテンプレート）にして置いたものです。
 
-## いまの数（4単元・全50授業）
+## いまの数（5単元・全67授業）
 
 | 単元（キー） | 学年・章 | 授業 | テンプレート | ikkan の問題 | 移した | 移さなかった |
 |---|---|---|---|---|---|---|
@@ -10,9 +10,10 @@ ikkan（授業準備ツール）の演習プリント・小テストの問題を
 | データの活用（`data`） | 中1 | 11 | 208 | 136 | 136 | 0 |
 | 式の計算（`shiki`） | 中2 第1章 | 11 | 281 | 160 | 160 | 0 |
 | 連立方程式（`renritsu`） | 中2 第2章 | 13 | 209 | 159 | 159 | 0 |
-| 合計 | | 50 | **1011** | 680 | 679 | 1 |
+| 一次関数（`ichiji`） | 中2 第3章 | 17 | 349 | 211 | 211 | 0 |
+| 合計 | | 67 | **1360** | 891 | 890 | 1 |
 
-- 1授業＝1単元（id は `J1-kk01`〜`15`・`J1-dk01`〜`11`・`J2-sk01`〜`11`・`J2-rk01`〜`13`）。
+- 1授業＝1単元（id は `J1-kk01`〜`15`・`J1-dk01`〜`11`・`J2-sk01`〜`11`・`J2-rk01`〜`13`・`J2-ik01`〜`17`）。
 - 作ったあと、作った人とは別の人が、問題文の数字だけから答えを解き直して確かめ（1回目・2回目。数万〜数十万問ぶん）、見つかった問題（正解が2つに読める選択肢、ヒントが答えを言っている、問題文が図表に頼っている、数字が現実的でない、など）を直してある。直したあとも、検査（`verify.mjs`）は、エラー 0。
 - 見本（テンプレートごとに2問、答え・ヒント・解説つき）：`node ikkan/kotsu/preview.mjs 出力先.html [--unit=data,shiki]`。
 
@@ -27,13 +28,14 @@ ikkan（授業準備ツール）の演習プリント・小テストの問題を
 
 | ファイル | 内容 |
 |---|---|
-| `content/<単元のキー>-NN.js`（`kukan`・`data`・`shiki`・`renritsu`） | 1授業＝1単元。レベル 1〜4＝基礎・標準・応用・入試レベル（ikkan の演習プリントの見出しと同じ）。`SKIPPED` に、移さなかった問題と理由 |
+| `content/<単元のキー>-NN.js`（`kukan`・`data`・`shiki`・`renritsu`・`ichiji`） | 1授業＝1単元。レベル 1〜4＝基礎・標準・応用・入試レベル（ikkan の演習プリントの見出しと同じ）。`SKIPPED` に、移さなかった問題と理由 |
 | `index.js` | 全部をまとめて `UNITS`・`SKIPPED`、単元ごとの `BY_UNIT` を出す |
 | `kit.js` | コツコツくんの `src/solo/content/kit.js` の写し（`t`・`pick`・`choices4`・`numChoices`・`fracAns` など） |
-| `unit-kit.js` | `unitFor("kukan"｜"data"｜"shiki"｜"renritsu")`（単元の枠。id・学年・領域）と `fixed()`（いつも同じ問題） |
+| `unit-kit.js` | `unitFor("kukan"｜"data"｜"shiki"｜"renritsu"｜"ichiji")`（単元の枠。id・学年・領域）と `fixed()`（いつも同じ問題） |
 | `kukan-kit.js` | 空間図形用の呼び名（`unit-kit.js` を使う） |
 | `solids.js` | 空間図形：立体（直方体・三角柱・正n角柱・正n角錐）を座標で持ち、辺・面の位置関係・きょり・面辺頂点の数を**計算で**出す |
 | `stats.js` | データの活用：平均値・中央値・最頻値・範囲・度数分布・相対度数・累積度数・四捨五入（ちょうど 5 の境目を見つける）。度数分布表を文章にする |
+| `linear.js` | 一次関数：直線 y＝ax+b（傾き・切片）、2点を通る直線、変化の割合、変域、交点、x 軸との交点、三角形の面積を**計算で**出す（`ltex`・`ptex2` が TeX にする） |
 | `algebra.js` | 式の計算・連立方程式：有理数・多項式（文字は何種類でも）・連立方程式を**計算で**出す（`ptex` が TeX にする） |
 | `verify.mjs` | 検査：コツコツくんの `solo-verify.mjs` と同じ書式の検査＋ ikkan の問題の対応（もれなし）・テンプレート id・ヒントに答えが出ていないか・選択肢の重複・バリエーションの数 |
 | `sample.mjs` | テンプレートから問題を何問かつくって表示する（目で確かめる） |
@@ -41,7 +43,7 @@ ikkan（授業準備ツール）の演習プリント・小テストの問題を
 
 ```bash
 NODE_PATH=<katex があるフォルダ> node ikkan/kotsu/verify.mjs                          # 全部を検査（katex がなければ、数式の検査は省略）
-node ikkan/kotsu/verify.mjs --unit data                                              # 単元（kukan・data・shiki・renritsu）だけ
+node ikkan/kotsu/verify.mjs --unit data                                              # 単元（kukan・data・shiki・renritsu・ichiji）だけ
 node ikkan/kotsu/verify.mjs ikkan/kotsu/content/kukan-03.js                          # そのファイルだけ
 node ikkan/kotsu/sample.mjs ikkan/kotsu/content/shiki-03.js 3 [テンプレートid]        # 見本を 3問ずつ
 node ikkan/kotsu/preview.mjs [出力先.html] [1テンプレートの見本の数] [--unit=…]       # 見本の HTML
