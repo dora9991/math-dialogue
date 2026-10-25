@@ -89,8 +89,8 @@ html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Not
 #deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
 #deck ul,#deck ol{padding-left:1.2em}
 #deck table{border-collapse:collapse}
-#deck th,#deck td{border:2px solid #b9c1cc;padding:6px 14px}
-#deck th{background:rgba(120,140,170,.18)}
+#deck th,#deck td{border:3px solid #2b3647;padding:6px 14px}   /* 表の罫線は、色ではなく、はっきりした濃い線（プロジェクターでも見える） */
+#deck th{background:#eceff4}
 #deck aside{display:none}
 #bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
 #bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
