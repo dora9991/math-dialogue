@@ -710,6 +710,24 @@ var BC;
   };
   const stripParen = (s) => String(s).replace(/[（(][^）)]*[）)]/g, '');
   const isAscii = (s) => /^[a-z0-9]+$/.test(s);
+  // 形の名前（'2-3ゾーン'・'1-2-1-1プレス'・'1-4 High'）から、「形」と「言葉」を分けて取り出す。
+  // 「ゾーンディフェンス 2-3」のように順番がちがっても、形と言葉の両方があれば当てる（「第23回」などには当てない）
+  function shapesOf(it) {
+    const label = it.kind_ === 'issue' ? it.title : it.name;
+    const out = [], seen = new Set();
+    for (const a of [label, ...(it.alias || [])]) {
+      const m = String(a).normalize('NFKC').match(/^(\d(?:\s*[-–‐−－]\s*\d)+)\s*(.+)$/);
+      if (!m) continue;
+      const nums = m[1].split(/\s*[-–‐−－]\s*/);
+      const word = BC.norm(m[2]);
+      const key = nums.join('-') + '|' + word;
+      if (word.length < 2 || seen.has(key)) continue;
+      seen.add(key);
+      out.push({ re: new RegExp('(^|[^0-9])' + nums.join('\\s*[-–‐−－ー・]\\s*') + '([^0-9]|$)'), word, len: BC.norm(a).length, key });
+    }
+    return out;
+  }
+  const hasShape = (text, raw, sh) => text.includes(sh.word) && sh.re.test(raw);
 
   // 探すための言葉の一覧をつくる（データが変わったら作り直す）
   function index() {
@@ -729,7 +747,7 @@ var BC;
         if ((n.length >= 2 || /^[\u4e00-\u9fff]$/.test(n)) && !strong.has(n)) weak.add(n);
       });
       const byLen = (a, b) => b.length - a.length;
-      items.push({ it, strong: [...strong].sort(byLen), weak: [...weak].sort(byLen), grams: bigrams([...strong].join('|')) });
+      items.push({ it, strong: [...strong].sort(byLen), weak: [...weak].sort(byLen), shapes: shapesOf(it), grams: bigrams([...strong].join('|')) });
     }
     const skills = BC.skills.map((s) => ({ s, words: [s.name, ...(s.words || [])].map(BC.norm).filter((w) => w.length >= 2) }));
     BC._index = { items, skills };
@@ -743,6 +761,14 @@ var BC;
       // 前後が英数字でないこと。記号を消す前（raw）と後（text。「2-3」→「23」）の両方で見る
       const re = new RegExp('(^|[^a-z0-9])' + t + '([^a-z0-9]|$)');
       return re.test(raw) || re.test(text);
+    }
+    // 数字で始まる・終わる言葉（'23ぞーん'）は、となりが数字でないときだけ（「2023ゾーン練習」の 23 には当てない）
+    if (/^\d|\d$/.test(t)) {
+      for (let i = text.indexOf(t); i >= 0; i = text.indexOf(t, i + 1)) {
+        const before = text[i - 1] || '', after = text[i + t.length] || '';
+        if (!(/^\d/.test(t) && /\d/.test(before)) && !(/\d$/.test(t) && /\d/.test(after))) return true;
+      }
+      return false;
     }
     return text.includes(t);
   }
@@ -763,6 +789,7 @@ var BC;
         if (st && st.length >= 4 && text.includes(st)) { s += 3 + st.length * 1.1; hits.push(st); }
       }
     }
+    if (!hits.length) for (const sh of e.shapes) if (hasShape(text, raw, sh)) { s += 4 + sh.len * 1.3; hits.push(sh.key); named.push(sh.word); break; }
     for (const w of e.weak) {
       if (inside(w)) continue;
       if (hasTerm(text, raw, w)) { s += Math.min(w.length, 6) * 1.0 + 0.5; hits.push(w); }
@@ -1065,6 +1092,7 @@ var BC;
       const label = it.kind_ === 'issue' ? it.title : it.name;
       const set = new Set([label, stripParen(label), ...(it.alias || [])].map(BC.norm).filter((t) => t.length >= (isAscii(t) ? 3 : 3)));
       for (const t of set) terms.push({ t, id: it.id });
+      for (const sh of shapesOf(it)) terms.push({ t: '#' + sh.key, id: it.id, sh });
     }
     const skills = BC.skills.map((s) => ({ id: s.id, words: [s.name, ...(s.words || [])].map(BC.norm).filter((w) => w.length >= 2) }));
     BC._vindex = { terms, skills };
@@ -1076,7 +1104,9 @@ var BC;
     const raw = base.normalize('NFKC').toLowerCase();
     const text = BC.norm(base);
     const found = [];
-    for (const { t, id } of vi.terms) if (hasTerm(text, raw, t)) found.push({ id, term: t, score: t.length });
+    for (const { t, id, sh } of vi.terms) {
+      if (sh ? hasShape(text, raw, sh) : hasTerm(text, raw, t)) found.push({ id, term: sh ? sh.word + sh.key : t, score: sh ? sh.len : t.length });
+    }
     // 長い言葉に含まれる短い言葉（「ピックアンドロール」の中の「ロール」など）は外す
     const keep = found.filter((f) => !found.some((g) => g !== f && g.term.length > f.term.length && g.term.includes(f.term)));
     const best = {};
@@ -10939,7 +10969,7 @@ BC.tactic([
   {
     id: 't-pnrd',
     name: 'ピック＆ロールの守り方',
-    alias: ['ピックアンドロールの守り方', 'ピック＆ロールディフェンス', 'Pick and Roll Defense', 'PnR Defense', 'PnRディフェンス', 'ボールスクリーンの守り方'],
+    alias: ['ピックアンドロールの守り方', 'ピックアンドロールの守り', 'ピック＆ロールの守り', 'PnRの守り方', 'ピック＆ロールディフェンス', 'Pick and Roll Defense', 'PnR Defense', 'PnRディフェンス', 'ボールスクリーンの守り方'],
     words: ['ピック＆ロールを守れない', 'ボールスクリーン', 'スクリーンの守り', 'スクリーンをかけられる', 'ロールされる', '守り方の種類', 'どれを使う', 'ヘッジ', 'ドロップ', 'スイッチ', 'アイス', 'ブリッツ'],
     cat: 'defense',
     kind: '守り方の比較',
