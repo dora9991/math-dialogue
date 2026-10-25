@@ -41,7 +41,7 @@ const files = {
     'd-speed-dribble': 'オールコート・スピードドリブル', 'd-tennisball': 'テニスボール・ドリブル', 'd-1v2-dribble': '1対2のプレッシャー突破',
     // パス
     'd-partner-pass': '対面パス（チェスト・バウンド・オーバーヘッド）', 'd-3man-weave': '3メン（スリーメン）', 'd-starpass': 'スターパス', 'd-keepaway': 'キープアウェイ（鳥かご）',
-    'd-2ball-pass': '2ボールパス', 'd-pivot-pass': 'ピボット＆パス（ディフェンスつき）', 'd-meet': 'ミート＆キャッチ',
+    'd-2ball-pass': '2ボールパス', 'd-pivot-pass': 'ピボット＆パス（ディフェンスつき）', 'd-meet': 'ミート＆キャッチ', 'd-wallpass': 'かべパス（ひとりでパス・キャッチ）',
     // フットワーク
     'd-jumpstop': 'ジャンプストップ＆ピボット', 'd-triple': 'トリプルスレット（ジャブステップ）',
     // 1対1の攻め

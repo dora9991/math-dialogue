@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /* 見た目と動きの検査：ブラウザ（Chromium）で開いて、
-   ①データの検査（BC.validate）にまちがいがないか
-   ②すべての項目（困りごと・視点・練習・戦術）のシートを開き、見出しが出るか・作戦図が描けるか・スマホの幅（390px）で横にはみ出さないか
-   ③チャット：例の文を送って答えが出るか、ask の選択肢・練習プラン（時間の合計）・図鑑の検索
-   ④動画：フォルダを選ぶ（動画のフォルダを渡したとき）→ 自動の紐付け → チャットの答えに動画が出るか → 再生のシート
-   ⑤画像（会話・シート・図鑑・動画。スマホ・パソコン・暗い表示）を tools/_out/ に書き出す
-   使い方：  NODE_PATH=$(npm root -g) node tools/look.cjs [開くHTML] [--videos=動画のフォルダ] [--no-shots]
+   ①データの検査（BC.validate・BC.validateMotions・BC.validateAid）にまちがいがないか
+   ②はじめての人の画面 → ホーム。すべてのページ（技能・なやみ・見るポイント・練習・戦術・ケガ・テーピング）を開き、
+     見出しが出るか・スマホの幅（390px）で横にはみ出さないか・エラーが出ないか
+   ③やってみる：「やった！」→ 経験値、きょうのメニュー → タイマー → おわり → 記録とバッジ、なやみを書いてさがす、そうだん（チャット）、プラン、ずかん
+   ④画像（スマホ・パソコン・暗い表示）を tools/_out/ に書き出す
+   使い方：  NODE_PATH=$(npm root -g) node tools/look.cjs [開くHTML] [--no-shots] [--quick]（--quick：ページの全数検査をはぶく）
    まちがい（✗）が1つでもあれば、終了コード 1。 */
 const path = require('path');
 const fs = require('fs');
@@ -15,8 +15,8 @@ const { chromium } = require('playwright');
   const root = path.resolve(__dirname, '..');
   const args = process.argv.slice(2);
   const file = path.resolve(args.find((a) => !a.startsWith('--')) || path.join(root, 'index.html'));
-  const vdir = (args.find((a) => a.startsWith('--videos=')) || '').slice(9);
   const shots = !args.includes('--no-shots');
+  const quick = args.includes('--quick');
   const url = 'file://' + file;
   const outDir = path.join(root, 'tools', '_out');
   if (shots) fs.mkdirSync(outDir, { recursive: true });
@@ -24,259 +24,261 @@ const { chromium } = require('playwright');
   const browser = await chromium.launch();
   let bad = 0;
   const fail = (m) => { bad++; console.log('✗ ' + m); };
-  const isFont = (u) => /fonts\.(googleapis|gstatic)\.com/.test(u);
-  // playwright でフォルダを渡すと、日本語の名前の動画は blob で読めない（playwright の制約。ふつうのブラウザでは読める）ので数えない
-  const isPwBlob = (t) => /^blob:|ERR_BLOB_REFERENCED_FILE_UNAVAILABLE/.test(t);
+  const isExternal = (u) => /fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr\.net|storage\.googleapis\.com/.test(u);
   async function newPage(opt = {}) {
-    const ctx = await browser.newContext({ viewport: opt.viewport || { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: opt.dark ? 'dark' : 'light' });
-    // テストでは、フォルダは <input webkitdirectory> で選ぶ（showDirectoryPicker はテストから操作できない）
-    await ctx.addInitScript(() => { try { delete window.showDirectoryPicker; window.showDirectoryPicker = undefined; } catch (e) { /* なし */ } });
+    const ctx = await browser.newContext({ viewport: opt.viewport || { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: opt.dark ? 'dark' : 'light', reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     page.errors = [];
     page.on('pageerror', (e) => page.errors.push('ページのエラー：' + e.message));
-    page.on('console', (m) => { if (m.type() === 'error' && !isFont(m.text()) && !isPwBlob(m.text())) page.errors.push('コンソール：' + m.text()); });
-    page.on('requestfailed', (r) => { if (!isFont(r.url()) && !isPwBlob(r.url())) page.errors.push('読みこめない：' + r.url()); });
+    page.on('console', (m) => { if (m.type() === 'error' && !isExternal(m.text())) page.errors.push('コンソール：' + m.text()); });
+    page.on('requestfailed', (r) => { if (!isExternal(r.url())) page.errors.push('読みこめない：' + r.url()); });
     return page;
   }
   const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-  const shot = async (page, name) => { if (shots) await page.screenshot({ path: path.join(outDir, name + '.png') }); };
-  const lastBot = (page) => page.evaluate(() => { const m = [...document.querySelectorAll('.msg-bot')].pop(); return m ? m.innerText : ''; });
-  async function say(page, text) {
-    await page.fill('#say', text);
-    await page.click('.send');
-    await page.waitForTimeout(120);
-  }
+  const shot = async (page, name, full) => { if (shots) await page.screenshot({ path: path.join(outDir, name + '.png'), fullPage: !!full }); };
+  const go = async (page, hash) => { await page.evaluate((h) => { location.hash = h; }, hash); await page.waitForTimeout(60); };
+  const flushErrors = (page, where) => { for (const e of page.errors.splice(0)) fail(`${where}：${e}`); };
 
   const page = await newPage();
   await page.goto(url);
-  await page.waitForSelector('.hello');
   await page.evaluate(() => localStorage.clear());
-  await page.reload();
+  await page.goto(url + '#home');
   await page.waitForSelector('.hello');
+
+  // ① データ
   const data = await page.evaluate(() => ({
     ids: BC.all().map((it) => it.id),
-    diagrams: BC.all().filter((it) => it.diagram).map((it) => it.id),
+    skills: BC.skills.map((s) => s.id),
     errors: BC.validate().errors,
+    motion: BC.validateMotions ? BC.validateMotions().errors : ['BC.validateMotions がない'],
+    aid: BC.validateAid ? BC.validateAid().errors : ['BC.validateAid がない'],
+    aids: (BC.aids || []).map((a) => a.id),
+    tapes: (BC.tapes || []).map((t) => t.id),
     counts: Object.fromEntries(Object.entries(BC.lists).map(([k, v]) => [k, v.length])),
+    motions: Object.keys(BC.motions).length,
+    linked: Object.keys(BC.MOTION_OF).length,
   }));
+  console.log(`データ：${JSON.stringify(data.counts)}・動き ${data.motions}（つながり ${data.linked}）・ケガ ${data.aids.length}・テーピング ${data.tapes.length}`);
   for (const e of data.errors) fail('データ：' + e);
-  console.log('項目：' + JSON.stringify(data.counts) + `・作戦図 ${data.diagrams.length}`);
-  await shot(page, 'chat-hello');
+  for (const e of data.motion) fail('動き：' + e);
+  for (const e of data.aid) fail('ケガ：' + e);
 
-  // ② すべての項目のシート
-  let opened = 0;
-  for (const id of data.ids) {
-    await page.evaluate((x) => { location.hash = x; }, id);
-    await page.waitForSelector('.sheet .d-title', { timeout: 3000 }).catch(() => {});
-    const r = await page.evaluate(() => {
-      const t = document.querySelector('.sheet .d-title');
-      const body = document.querySelector('.sheet-body');
-      const cv = document.querySelector('.sheet [data-court]');
-      return { title: t ? t.textContent : '', wide: body ? body.scrollWidth - body.clientWidth : 0, court: cv ? cv.querySelectorAll('.cv-p').length : -1 };
-    });
-    if (!r.title) fail(`${id}：シートが開かない`);
-    if (r.wide > 1) fail(`${id}：シートが横にはみ出す（${r.wide}px）`);
-    if (data.diagrams.includes(id) && r.court !== 10) fail(`${id}：作戦図が描けない`);
-    if ((await overflow(page)) > 0) fail(`${id}：ページが横にはみ出す`);
-    opened++;
+  // ② はじめての人
+  await shot(page, 'k-hello');
+  if (await overflow(page) > 0) fail('はじめての人：横にはみ出す');
+  await page.fill('#hello-name', 'けんた');
+  await page.click('[data-hello="grade"][data-v="e56"]');
+  await page.click('[data-hello="goals"][data-v="dribble"]');
+  await page.click('[data-hello="goals"][data-v="shoot"]');
+  await page.click('[data-hello="place"][data-v="hoop"]');
+  await page.click('[data-act="hello-done"]');
+  await page.waitForSelector('.hero');
+  const me = await page.evaluate(() => JSON.parse(localStorage.getItem('bc.me')));
+  if (!me || me.name !== 'けんた' || me.level !== 1 || me.goals.join() !== 'dribble,shoot' || me.place !== 'hoop') fail('はじめての人：プロフィールが保存されない ' + JSON.stringify(me));
+  const menu = await page.evaluate(() => BCAPP.todayMenu());
+  if (!menu.items.length) fail('ホーム：きょうのメニューが空');
+  if (Math.abs(menu.min - 15) > 2) fail('ホーム：きょうのメニューの時間 ' + menu.min);
+  console.log(`きょうのメニュー：${menu.skill}・${menu.min}分・${menu.items.length}つ`);
+  await shot(page, 'k-home');
+  await shot(page, 'k-home-full', true);
+  flushErrors(page, 'ホーム');
+
+  // ページを全部ひらく
+  const pages = ['practice', 'check', 'log', 'more', 'plan', 'chat', 'lib', 'settings', 'about', 'aid', ...data.skills.map((s) => 's/' + s), ...data.aids.map((a) => 'aid/' + a), ...data.tapes.map((t) => 'tape/' + t)];
+  const all = quick ? pages.concat(data.ids.filter((_, i) => i % 15 === 0)) : pages.concat(data.ids);
+  let n = 0;
+  for (const h of all) {
+    await go(page, h);
+    const r = await page.evaluate(() => ({ h: (document.querySelector('main .page-h, main .hero, main .ck-h, main h1, main h2') || {}).textContent || '', anim: document.querySelectorAll('main [data-anim]').length, svg: document.querySelectorAll('main [data-anim] svg, main [data-court] svg, main .tape-fig svg').length }));
+    if (!r.h.trim()) fail(`${h}：見出しがない`);
+    if (r.anim && !r.svg) fail(`${h}：アニメーションが描けない`);
+    const ov = await overflow(page);
+    if (ov > 0) fail(`${h}：横に ${ov}px はみ出す`);
+    flushErrors(page, h);
+    n++;
   }
-  console.log(`シートを開いた：${opened}`);
-  // 作戦図の場面を進める
-  const withFrames = await page.evaluate(() => BC.all().filter((it) => it.diagram && it.diagram.frames && it.diagram.frames.length > 1).map((it) => it.id));
-  if (withFrames.length) {
-    await page.evaluate((x) => { location.hash = x; }, withFrames[0]);
-    await page.waitForSelector('.sheet [data-cv="next"]');
-    const before = await page.textContent('.sheet .cv-count');
-    await page.click('.sheet [data-cv="next"]');
-    const after = await page.textContent('.sheet .cv-count');
-    if (before === after) fail('作戦図の ▶ で場面が進まない');
-    await page.waitForTimeout(700);
-    await shot(page, 'sheet-tactic');
-  }
-  const someDrill = data.ids.find((id) => id === 'd-mikan') || data.ids.find((id) => id.startsWith('d-'));
-  if (someDrill) { await page.evaluate((x) => { location.hash = x; }, someDrill); await page.waitForSelector('.sheet .d-title'); await shot(page, 'sheet-drill'); }
-  await page.evaluate(() => { location.hash = 'chat'; });
+  console.log(`ページ：${n} 開いた`);
+
+  // ③ やってみる
+  await go(page, 'd-pound');
+  await shot(page, 'k-drill');
+  await shot(page, 'k-drill-full', true);
+  await page.click('[data-act="drill-done"]');
+  await page.waitForSelector('.modal .rate');
+  await shot(page, 'k-rate');
+  await page.click('.modal [data-rmin="10"]');
+  await page.click('.modal [data-rate="3"]');
+  await page.waitForTimeout(200);
+  let acts = await page.evaluate(() => JSON.parse(localStorage.getItem('bc.acts') || '[]'));
+  if (acts.length !== 1 || acts[0].id !== 'd-pound' || acts[0].min !== 10 || acts[0].rate !== 3 || !(acts[0].xp > 0)) fail('やった！：記録がおかしい ' + JSON.stringify(acts));
+  const toast = await page.evaluate(() => (document.querySelector('.toast') || {}).textContent || '');
+  if (!/XP/.test(toast)) fail('やった！：経験値のお知らせが出ない');
+  await page.waitForTimeout(1100);
+  if (await page.$('.modal .celebrate')) { await shot(page, 'k-celebrate'); await page.click('.modal button[data-act="modal-close"]'); }
+  else fail('やった！：はじめてのバッジ（はじめの一歩）のお祝いが出ない');
+
+  // きょうのメニュー → タイマー
+  await go(page, 'home');
+  await page.click('[data-act="menu-start"]');
+  await page.waitForSelector('.run .run-clock');
+  await page.waitForTimeout(300);
+  await shot(page, 'k-run');
+  for (let i = 0; i < menu.items.length; i++) await page.click('[data-run="next"]');
+  await page.waitForSelector('.run .rate');
+  await shot(page, 'k-run-done');
+  await page.fill('#run-note', '左手が前よりできた');
+  await page.click('.run [data-rate="2"]');
+  await page.waitForTimeout(300);
+  acts = await page.evaluate(() => JSON.parse(localStorage.getItem('bc.acts') || '[]'));
+  if (!acts.some((a) => a.type === 'menu')) fail('きょうのメニュー：おわっても記録されない');
+  if (acts.filter((a) => a.type === 'drill').length !== 1 + menu.items.length) fail('きょうのメニュー：メニューの数だけ記録されない');
+  await page.waitForTimeout(1100);
+  if (await page.$('.modal')) await page.click('.modal button[data-act="modal-close"]');
+  const home2 = await page.evaluate(() => ({ done: !!document.querySelector('.today.done'), streak: (document.querySelector('.streak b') || {}).textContent }));
+  if (!home2.done || home2.streak !== '1') fail('ホーム：クリアの表示・れんぞくの日数 ' + JSON.stringify(home2));
+  await shot(page, 'k-home-after');
+  // 見るポイントのチェック
+  await go(page, 'v-drb-low');
+  const nchk = await page.$$eval('.chk', (b) => b.length);
+  for (let i = 0; i < nchk; i++) await page.click(`.chk[data-i="${i}"]`);
+  acts = await page.evaluate(() => JSON.parse(localStorage.getItem('bc.acts') || '[]'));
+  if (!acts.some((a) => a.type === 'view' && a.id === 'v-drb-low')) fail('見るポイント：ぜんぶチェックしても記録されない');
+  await page.waitForTimeout(1200);
+  if (await page.$('.modal')) await page.click('.modal button[data-act="modal-close"]');
+  await shot(page, 'k-view');
+  // なやみを書く
+  await go(page, 'home');
+  await page.fill('.ask-form input', 'シュートが入らない');
+  await page.press('.ask-form input', 'Enter');
+  await page.waitForTimeout(150);
+  if ((await page.evaluate(() => location.hash)) !== '#i-shoot-miss') fail('なやみを書く：シュートが入らない → ' + (await page.evaluate(() => location.hash)));
+  await shot(page, 'k-issue');
+  await shot(page, 'k-issue-full', true);
+  await page.click('.back-btn');
   await page.waitForTimeout(100);
-
-  // ③ チャット
-  const talk = [
-    ['シュートが入らない', 'i-shoot-miss'],
-    ['ドリブルしてるとすぐボールを取られる', 'i-drb-stolen'],
-    ['ディフェンスですぐ抜かれる', 'i-def-beat'],
-    ['ゾーンをされると攻め方がわからない', 'i-vs-zone'],
-    ['リバウンドが全然取れない', 'i-reb-lose'],
-    ['試合で緊張してしまう', 'i-nerve'],
-  ];
-  for (const [text, want] of talk) {
-    const got = await page.evaluate((t) => { const a = BC.answer(t); return a.type === 'issue' ? a.issue.id : a.type + ':' + ((a.item && a.item.id) || (a.skill && a.skill.id) || ''); }, text);
-    if (data.ids.includes(want) && got !== want) fail(`チャット「${text}」→ ${got}（${want} のはず）`);
-  }
-  if (data.ids.includes('i-shoot-miss')) {
-    await say(page, 'シュートが入らない');
-    const txt = await lastBot(page);
-    if (!txt.includes('シュートが入らない')) fail('チャット：「シュートが入らない」の答えが出ない');
-    await shot(page, 'chat-issue');
-    const ask = await page.$('.msg-bot:last-child .ask [data-ask]');
-    if (ask) {
-      await ask.click();
-      await page.waitForTimeout(120);
-      const t2 = await lastBot(page);
-      if (!t2.includes('困りごと')) fail('チャット：ask の選択肢で次の困りごとが出ない');
-    }
-    const planBtn = await page.$('.msg-bot:last-child [data-plan]');
-    if (planBtn) {
-      await planBtn.click();
-      await page.waitForSelector('.msg-bot:last-child .plan');
-      const total = await page.evaluate(() => [...document.querySelectorAll('.msg-bot:last-child .plan-row small')].reduce((t, s) => t + parseInt(s.textContent, 10), 0));
-      if (total !== 60) fail(`練習プランの合計が 60 分でない（${total}）`);
-      await page.click('.msg-bot:last-child [data-planmin="90"]');
-      const t90 = await page.evaluate(() => [...document.querySelectorAll('.msg-bot:last-child .plan-row small')].reduce((t, s) => t + parseInt(s.textContent, 10), 0));
-      if (t90 !== 90) fail(`練習プランを90分にしても合計が 90 分でない（${t90}）`);
-      await shot(page, 'chat-plan');
-    }
-  }
-  await say(page, 'ひとりで30分の練習メニューを作って');
-  if (!(await page.$('.msg-bot:last-child .plan'))) fail('チャット：「ひとりで30分の練習メニューを作って」で練習プランが出ない');
-  else {
-    const solo = await page.evaluate(() => [...document.querySelectorAll('.msg-bot:last-child .plan-row')].map((r) => BC.get(r.dataset.open)).filter((d) => d && d.n > 1).map((d) => d.id));
-    if (solo.length) fail('ひとりのプランに、ひとりでできない練習：' + solo.join('、'));
-  }
-  await say(page, 'あいうえお');
-  if (!(await lastBot(page)).includes('読み取れません')) fail('チャット：わからない文のときの答えが出ない');
-  if ((await overflow(page)) > 0) fail('チャット：横にはみ出す');
-
-  // 図鑑
-  await page.evaluate(() => { location.hash = 'library'; });
-  await page.waitForSelector('#lib-q');
-  await shot(page, 'library');
-  await page.fill('#lib-q', 'ボックスアウト');
-  await page.waitForTimeout(100);
-  const libN = await page.$$eval('#lib-list .card', (x) => x.length);
-  if (!libN) fail('図鑑：「ボックスアウト」で何も出ない');
-  for (const k of ['view', 'drill', 'tactic']) {
-    await page.click(`[data-libkind="${k}"]`);
-    if (!(await page.$$eval('#lib-list .card', (x) => x.length))) fail(`図鑑：${k} の一覧が空`);
-  }
-  if ((await overflow(page)) > 0) fail('図鑑：横にはみ出す');
-  await shot(page, 'library-tactic');
-
-  // 練習プラン（プランの画面）
-  await page.evaluate(() => { location.hash = 'plan'; });
-  await page.waitForSelector('[data-pl="make"]');
-  await page.fill('#pl-q', 'シュート');
-  await page.waitForTimeout(80);
-  const addTheme = await page.$('#pl-sug [data-plthadd]');
-  if (addTheme) await addTheme.click(); else fail('プラン：テーマの候補が出ない');
-  await page.click('[data-plc="minutes"][data-v="90"]');
+  if ((await page.evaluate(() => location.hash)) !== '#home') fail('もどる：ホームにもどらない');
+  // そうだん
+  await go(page, 'chat');
+  await page.fill('[data-form="chat"] textarea', 'ドリブルを取られる');
+  await page.press('[data-form="chat"] textarea', 'Enter');
+  await page.waitForTimeout(200);
+  const bot = await page.evaluate(() => { const m = [...document.querySelectorAll('.msg.bot')].pop(); return m ? m.innerText : ''; });
+  if (!/ドリブル/.test(bot)) fail('そうだん：答えが出ない');
+  await shot(page, 'k-chat');
+  // プラン
+  await go(page, 'plan');
   await page.click('[data-pl="make"]');
-  await page.waitForSelector('.pl-row');
-  const total = () => page.evaluate(() => BCAPP.PL.data.blocks.reduce((t, b) => t + b.items.reduce((u, x) => u + x.min, 0), 0));
-  if ((await total()) !== 90) fail(`プラン：合計が 90 分でない（${await total()}）`);
-  const before = await page.evaluate(() => BCAPP.PL.data.blocks[0].items[0].id);
-  await page.click('.pl-row [data-pl="swap"]');
-  const after = await page.evaluate(() => BCAPP.PL.data.blocks[0].items[0].id);
-  if (before === after) fail('プラン：↻ で入れかわらない');
-  await page.click('.pl-row [data-pl="plus"]');
-  if ((await total()) !== 91) fail('プラン：＋ で時間がふえない');
-  await page.click('[data-pl="save"]');
-  if (!(await page.$('.pl-saved'))) fail('プラン：保存したプランが出ない');
-  if ((await overflow(page)) > 0) fail('プラン：横にはみ出す');
-  await shot(page, 'plan');
-  await page.click('[data-pl="run"]');
-  await page.waitForSelector('.run #run-clock');
-  const clock = await page.textContent('#run-clock');
-  if (!/^\d+:\d\d$/.test(clock)) fail('タイマー：時間が出ない（' + clock + '）');
-  await page.waitForTimeout(1300);
-  const clock2 = await page.textContent('#run-clock');
-  if (clock2 === clock) fail('タイマー：時間が進まない');
-  await shot(page, 'run');
-  await page.click('[data-run="next"]');
-  if ((await page.evaluate(() => BCAPP.getRun().i)) !== 1) fail('タイマー：「次」で進まない');
-  await page.click('[data-run="end"]');
-  if (await page.$('.run')) fail('タイマー：終われない');
-  // チャットのプランから、プランの画面へ
-  await page.evaluate(() => { location.hash = 'chat'; });
-  await say(page, '45分の練習メニューを作って');
-  const edit = await page.$('.msg-bot:last-child [data-pledit]');
-  if (!edit) fail('チャット：プランの画面へのボタンがない');
+  await page.waitForTimeout(150);
+  const total = await page.evaluate(() => BCAPP.PL.data && BCAPP.PL.data.blocks.reduce((t, b) => t + b.items.reduce((u, x) => u + x.min, 0), 0));
+  if (total !== 60) fail('プラン：合計が 60分にならない ' + total);
+  await shot(page, 'k-plan');
+  // ずかん
+  await go(page, 'lib');
+  await page.fill('#lib-q', 'ピボット');
+  await page.waitForTimeout(100);
+  const libN = await page.$$eval('#lib-list .row-card', (r) => r.length);
+  if (!libN) fail('ずかん：ピボット が見つからない');
+  await shot(page, 'k-lib');
+  // きろく・ケガ・れんしゅう
+  for (const [h, name] of [['log', 'k-log'], ['practice', 'k-practice'], ['s/shoot', 'k-skill'], ['aid', 'k-aid'], ['more', 'k-more'], ['settings', 'k-settings']]) { await go(page, h); await shot(page, name); }
+  await go(page, 'log'); await shot(page, 'k-log-full', true);
+  await go(page, 'practice'); await shot(page, 'k-practice-full', true);
+  if (data.aids.length) { await go(page, 'aid/' + data.aids[0]); await shot(page, 'k-aid-detail', true); }
+  if (data.tapes.length) { await go(page, 'tape/' + data.tapes[0]); await shot(page, 'k-tape', true); }
+  await go(page, 'check'); await shot(page, 'k-check');
+  // こまかい操作
+  // テーピング：つぎ・まえ
+  if (data.tapes.length) {
+    await go(page, 'tape/' + data.tapes[0]);
+    await page.click('.tape-nav [data-tapestep="1"]');
+    await page.waitForTimeout(80);
+    if (!/^2 \//.test(await page.$eval('.step-n', (e) => e.textContent.trim()))) fail('テーピング：「つぎ」で 2 へ進まない');
+    await page.click('.tape-nav [data-tapestep="0"]');
+    await page.waitForTimeout(80);
+    if (!/^1 \//.test(await page.$eval('.step-n', (e) => e.textContent.trim()))) fail('テーピング：「まえ」で 1 にもどらない');
+  }
+  // ケガをさがす
+  await go(page, 'aid');
+  await page.fill('[data-form="aid"] input', '足首をひねった');
+  await page.press('[data-form="aid"] input', 'Enter');
+  await page.waitForTimeout(80);
+  if (!(await page.$$('#aid-res .row-card')).length) fail('ケガ：「足首をひねった」で見つからない');
+  // カレンダーの前の月
+  await go(page, 'log');
+  const m1 = await page.$eval('.cal-h b', (e) => e.textContent);
+  await page.click('[data-cal="-1"]');
+  await page.waitForTimeout(80);
+  if ((await page.$eval('.cal-h b', (e) => e.textContent)) === m1) fail('きろく：前の月へ行けない');
+  await page.click('[data-cal="1"]');
+  // ずかん：種類とわざ
+  await go(page, 'lib');
+  await page.fill('#lib-q', '');
+  await page.dispatchEvent('#lib-q', 'input');
+  await page.click('[data-libkind="drill"]');
+  await page.click('[data-libskill="shoot"]');
+  await page.waitForTimeout(80);
+  const libShoot = await page.$$eval('#lib-list .row-card', (r) => r.length);
+  if (libShoot < 5) fail('ずかん：練習メニュー × シュート が少ない ' + libShoot);
+  // そうだん：問いのボタン
+  await go(page, 'chat');
+  await page.click('[data-act="chat-clear"]');
+  await page.click('[data-say="シュートが入らない"]');
+  await page.waitForTimeout(100);
+  const askBtn = await page.$('.msg.bot [data-ask]');
+  if (!askBtn) fail('そうだん：問いのボタンが出ない');
+  else { await askBtn.click(); await page.waitForTimeout(100); if ((await page.$$('.msg.me')).length < 2) fail('そうだん：問いのボタンで次の答えが出ない'); }
+  // プラン：入れかえ・足す
+  await go(page, 'plan');
+  const first = await page.evaluate(() => BCAPP.PL.data.blocks[1].items[0].id);
+  await page.click('[data-pl="swap"][data-b="skill"][data-i="0"]');
+  await page.waitForTimeout(80);
+  if ((await page.evaluate(() => BCAPP.PL.data.blocks[1].items[0].id)) === first) fail('プラン：入れかえできない');
+  await page.click('[data-pl="add"][data-b="skill"]');
+  await page.waitForTimeout(80);
+  const nBefore = await page.evaluate(() => BCAPP.PL.data.blocks[1].items.length);
+  const pick = await page.$('.pl-pick [data-pl="pick"]');
+  if (!pick) fail('プラン：足すメニューの候補が出ない');
+  else { await pick.click(); await page.waitForTimeout(80); if ((await page.evaluate(() => BCAPP.PL.data.blocks[1].items.length)) !== nBefore + 1) fail('プラン：メニューを足せない'); }
+  // せってい：画面の色・書き出し
+  await go(page, 'settings');
+  await page.click('[data-theme="dark"]');
+  if ((await page.evaluate(() => document.documentElement.dataset.theme)) !== 'dark') fail('せってい：くらい表示にならない');
+  await shot(page, 'k-settings-dark');
+  await page.click('[data-theme=""]');
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 3000 }).catch(() => null), page.click('[data-act="export"]')]);
+  if (!dl) fail('せってい：書き出せない');
   else {
-    await edit.click();
-    await page.waitForSelector('.pl-row');
-    if ((await total()) !== 45) fail('チャットのプランを、プランの画面で開けない');
+    const p2 = await dl.path();
+    const j = JSON.parse(fs.readFileSync(p2, 'utf8'));
+    if (j.app !== 'basket-grow' || !j.data['bc.me'] || !j.data['bc.acts']) fail('せってい：書き出したファイルの中身');
   }
+  flushErrors(page, 'やってみる');
 
-  // 棒人間のアニメーション
-  await page.evaluate(() => { location.hash = 'd-pound'; });
-  await page.waitForSelector('.sheet .mo-stage svg');
-  const head = () => page.evaluate(() => { const c = document.querySelector('.sheet .mo-head'); return c ? c.getAttribute('cy') + ',' + document.querySelector('.sheet .mo-ball').getAttribute('transform') : ''; });
-  const h1 = await head();
-  await page.waitForTimeout(260);
-  const h2 = await head();
-  if (!h1 || h1 === h2) fail('アニメーション：動かない');
-  const motions = await page.evaluate(() => Object.keys(BC.motions).length + '・つながっている項目 ' + Object.keys(BC.MOTION_OF).filter((id) => BC.get(id)).length);
-  console.log('アニメーション：' + motions);
-  const badIds = await page.evaluate(() => Object.keys(BC.MOTION_OF).filter((id) => !BC.get(id) || !BC.motions[BC.MOTION_OF[id]]));
-  if (badIds.length) fail('アニメーション：ない項目・動き ' + badIds.join('、'));
-  await shot(page, 'sheet-anim');
-  await page.evaluate(() => { location.hash = 'chat'; });
-
-  // ④ 動画
-  await page.evaluate(() => { location.hash = 'videos'; });
-  await page.waitForSelector('[data-act="pick-folder"]');
-  if (vdir) {
-    const [fc] = await Promise.all([page.waitForEvent('filechooser'), page.click('[data-act="pick-folder"]')]);
-    await fc.setFiles(path.resolve(vdir));
-    await page.waitForSelector('.vrow', { timeout: 5000 }).catch(() => {});
-    const n = await page.$$eval('.vrow', (x) => x.length);
-    if (!n) fail('動画：フォルダを選んでも一覧が出ない');
-    const linked = await page.evaluate(() => BCV.count());
-    console.log(`動画：${linked.files} 本・紐付けあり ${linked.linked} 本`);
-    await page.waitForTimeout(1500);
-    await shot(page, 'videos');
-    await page.click('.vrow [data-play]');
-    await page.waitForSelector('.sheet video, .sheet .btn-go');
-    await page.fill('#link-q', 'マイカン');
-    await page.waitForTimeout(100);
-    const addBtn = await page.$('#link-res [data-link]');
-    if (addBtn) {
-      await addBtn.click();
-      await page.waitForTimeout(150);
-      const tags = await page.$$eval('.sheet [data-unlink]', (x) => x.length);
-      if (!tags) fail('動画：紐付けを足せない');
-    }
-    await shot(page, 'video-sheet');
-    await page.click('.sheet [data-act="close"]');
-    await page.evaluate(() => { location.hash = 'chat'; });
-    await say(page, 'シュートが入らない');
-    await page.waitForTimeout(800);
-    const vids = await page.$$eval('.msg-bot:last-child .vid', (x) => x.length);
-    if (!vids) fail('動画：チャットの答えに動画が出ない');
-    await shot(page, 'chat-issue-videos');
+  // ④ 暗い表示・パソコン
+  const state = await page.evaluate(() => Object.fromEntries(['bc.me', 'bc.acts', 'bc.vchk'].map((k) => [k, localStorage.getItem(k)])));
+  const dark = await newPage({ dark: true });
+  await dark.goto(url);
+  await dark.evaluate((s) => { for (const [k, v] of Object.entries(s)) if (v) localStorage.setItem(k, v); }, state);
+  await dark.reload();
+  for (const [h, name] of [['home', 'k-dark-home'], ['d-pound', 'k-dark-drill'], ['log', 'k-dark-log'], ['s/dribble', 'k-dark-skill']]) {
+    await dark.evaluate((x) => { location.hash = x; }, h);
+    await dark.waitForTimeout(150);
+    await shot(dark, name);
   }
-  for (const e of page.errors) fail(e);
-
-  // ⑤ パソコン・暗い表示
-  if (shots) {
-    const pc = await newPage({ viewport: { width: 1280, height: 860 } });
-    await pc.goto(url);
-    await pc.waitForSelector('.hello');
-    await pc.evaluate(() => localStorage.clear());
-    await pc.reload();
-    await pc.waitForSelector('.hello');
-    if (data.ids.includes('i-vs-zone')) { await say(pc, 'ゾーンを攻略できない'); }
-    const t = data.ids.find((id) => id === 't-pnr') || data.diagrams[0];
-    if (t) { await pc.evaluate((x) => { location.hash = x; }, t); await pc.waitForSelector('.sheet .d-title'); await pc.waitForTimeout(400); }
-    await shot(pc, 'pc');
-    for (const e of pc.errors) fail('パソコン：' + e);
-    const dk = await newPage({ dark: true });
-    await dk.goto(url);
-    await dk.waitForSelector('.hello');
-    if (data.ids.includes('i-def-beat')) await say(dk, 'ディフェンスで抜かれる');
-    await shot(dk, 'dark-chat');
-    if (t) { await dk.evaluate((x) => { location.hash = x; }, t); await dk.waitForSelector('.sheet .d-title'); await dk.waitForTimeout(400); await shot(dk, 'dark-tactic'); }
-    for (const e of dk.errors) fail('暗い表示：' + e);
+  flushErrors(dark, '暗い表示');
+  const wide = await newPage({ viewport: { width: 1280, height: 860 } });
+  await wide.goto(url);
+  await wide.evaluate((s) => { for (const [k, v] of Object.entries(s)) if (v) localStorage.setItem(k, v); }, state);
+  await wide.reload();
+  for (const [h, name] of [['home', 'k-pc-home'], ['s/shoot', 'k-pc-skill']]) {
+    await wide.evaluate((x) => { location.hash = x; }, h);
+    await wide.waitForTimeout(150);
+    await shot(wide, name);
+    if (await overflow(wide) > 0) fail(`パソコン ${h}：横にはみ出す`);
   }
+  flushErrors(wide, 'パソコン');
+
   await browser.close();
-  console.log(bad ? `\nまちがい ${bad}` : '\nまちがいなし');
-  if (bad) process.exitCode = 1;
+  console.log(bad ? `\n✗ まちがい ${bad}` : '\n✓ ぜんぶ よし');
+  process.exit(bad ? 1 : 0);
 })();

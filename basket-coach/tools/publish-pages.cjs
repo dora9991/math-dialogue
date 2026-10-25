@@ -7,7 +7,7 @@
    ※ npm run deploy（vite build → gh-pages）は gh-pages を丸ごと入れかえるので、main にない公開物が消える。
      このツールだけを更新するときは、こちらを使う。
    ※ 公開すると、URL を知っている人はだれでも開ける（検索に出ないよう noindex は入っている）。
-     動画・会話・紐付けは、開いた人の端末の中だけに残る（公開されるのはアプリとデータだけ）。 */
+     記録・動画チェックの結果・会話は、開いた人の端末の中だけに残る（公開されるのはアプリとデータだけ。動画はどこにも送らない）。 */
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -31,7 +31,7 @@ try {
   fs.copyFileSync(built, path.join(wt, 'basket-coach', 'index.html'));
   git(['add', 'basket-coach/index.html'], wt);
   if (!git(['status', '--porcelain'], wt)) { console.log('公開中のものと同じなので、何もしませんでした'); process.exit(0); }
-  git(['commit', '-q', '-m', `バスケ育成チャットを /basket-coach/ に公開（basket-coach/index.html だけを足す・差し替える。ほかの公開物は変えない）\n\n元のファイルは ${branch}（${src}）の basket-coach/basket-coach-all-in-one.html（node basket-coach/tools/bundle.cjs で作った1ファイル版）。`], wt);
+  git(['commit', '-q', '-m', `バスケ・グロウ（バスケ育成アプリ）を /basket-coach/ に公開（basket-coach/index.html だけを足す・差し替える。ほかの公開物は変えない）\n\n元のファイルは ${branch}（${src}）の basket-coach/basket-coach-all-in-one.html（node basket-coach/tools/bundle.cjs で作った1ファイル版）。`], wt);
   console.log('gh-pages にコミットしました：' + git(['log', '-1', '--format=%h %s'], wt));
   if (dry) console.log('--dry なので push はしていません');
   else { git(['push', 'origin', 'HEAD:gh-pages'], wt); console.log('公開しました：https://dora9991.github.io/math-dialogue/basket-coach/（反映まで1〜2分）'); }

@@ -3,8 +3,8 @@
 
    ■ 共通
      id      種類ごとの頭文字＋半角の英小文字・数字・-（戦術 t- ／練習メニュー d- ／改善の視点 v- ／困りごと i-）
-     alias   別名・英語名・表記ゆれ（名前で探す・動画のファイル名と照らす。そのものを指す言葉だけ。例：'マイカン'、'Mikan Drill'）
-     words   チャットの文に出てきそうな言葉（探すときだけ使う。動画とは照らさない。例：'ゴール下'、'連続'）
+     alias   別名・英語名・表記ゆれ（名前で探す。そのものを指す言葉だけ。例：'マイカン'、'Mikan Drill'）
+     words   チャットの文に出てきそうな言葉（探すときだけ使う。例：'ゴール下'、'連続'）
      level   1＝はじめて・ミニバス／2＝中学・高校の部活／3＝上級（高校の上位・大学・社会人）
      skills  関係する技能の id（data/skills.js）。1つ目が主
      文の書き方：summary・empathy・tip は です・ます。how・steps・points・checks などの箇条は、常体の短い文か体言止め。
@@ -326,7 +326,6 @@
     if (has(/(コーチ|指導|教え|保護者|監督|顧問|子ども|子供|こども|息子|娘|うちの子|選手たち)/)) c.who = 'coach';
     // 「組み方がわからない」「立て方」のような、やり方を聞く文はプランにしない（困りごと「練習メニューの組み方」へ）
     c.wantsPlan = has(/(メニュー|プラン|計画|練習内容).{0,6}((作|組|考|立|決)(?![みりえてめ]?方)|ください|ほしい|欲しい|教えて)|(組んで|くんで|作って|つくって|考えて|立てて).{0,4}$/);
-    c.wantsVideo = has(/(動画|映像|ビデオ|見たい|みたい)/);
     return c;
   };
 
@@ -598,42 +597,6 @@
       }
     }
     return lines.join('\n');
-  };
-
-  /* ---------- 動画のファイル名と、項目を照らす ----------
-     path：フォルダからの道すじ（例：'シュート/フォームの基本.mp4'）
-     返す：{ items: [{ id, score, term }], skills: [技能 id] }  */
-  BC.videoIndex = function () {
-    if (BC._vindex) return BC._vindex;
-    const terms = [];
-    for (const it of BC.all()) {
-      const label = it.kind_ === 'issue' ? it.title : it.name;
-      const set = new Set([label, stripParen(label), ...(it.alias || [])].map(BC.norm).filter((t) => t.length >= (isAscii(t) ? 3 : 3)));
-      for (const t of set) terms.push({ t, id: it.id });
-      for (const sh of shapesOf(it)) terms.push({ t: '#' + sh.key, id: it.id, sh });
-    }
-    const skills = BC.skills.map((s) => ({ id: s.id, words: [s.name, ...(s.words || [])].map(BC.norm).filter((w) => w.length >= 2) }));
-    BC._vindex = { terms, skills };
-    return BC._vindex;
-  };
-  BC.tagVideo = function (path) {
-    const vi = BC.videoIndex();
-    const base = String(path || '').replace(/\.[a-z0-9]{2,5}$/i, '');
-    const raw = base.normalize('NFKC').toLowerCase();
-    const text = BC.norm(base);
-    const found = [];
-    for (const { t, id, sh } of vi.terms) {
-      if (sh ? hasShape(text, raw, sh) : hasTerm(text, raw, t)) found.push({ id, term: sh ? sh.word + sh.key : t, score: sh ? sh.len : t.length });
-    }
-    // 長い言葉に含まれる短い言葉（「ピックアンドロール」の中の「ロール」など）は外す
-    const keep = found.filter((f) => !found.some((g) => g !== f && g.term.length > f.term.length && g.term.includes(f.term)));
-    const best = {};
-    for (const f of keep) if (!best[f.id] || best[f.id].score < f.score) best[f.id] = f;
-    const items = Object.values(best).sort((a, b) => b.score - a.score);
-    const skills = [];
-    for (const s of vi.skills) if (s.words.some((w) => text.includes(w))) skills.push(s.id);
-    for (const f of items) for (const s of (BC.get(f.id) || {}).skills || []) if (!skills.includes(s)) skills.push(s);
-    return { items, skills };
   };
 
   /* ---------- 検査（tools/check.cjs から使う） ----------

@@ -47,6 +47,8 @@ const load = (rel) => {
   }
 };
 load('js/core.js');
+// 動き（BC.motion）・ケガ（BC.aid）の登録のしくみを先に（data/motions-*.js・data/aid.js が使う）
+for (const f of ['js/motion.js', 'js/aid.js', 'js/grow.js']) if (fs.existsSync(path.join(root, f))) load(f);
 for (const f of files) load(f);
 
 const BC = ctx.BC;
@@ -63,11 +65,14 @@ if (reg) {
     if (want && it.file_ && want !== it.file_) errors.push(`${it.id}：${want} に書く id（いま ${it.file_}）`);
   }
 }
+// 動き・ケガのデータ
+if (BC.validateMotions) { const m = BC.validateMotions(); for (const e of m.errors) errors.push('動き：' + e); }
+if (BC.validateAid && (BC.aids || []).length) { const a = BC.validateAid(); for (const e of a.errors) errors.push('ケガ：' + e); for (const w of a.warns) shown.push('ケガ：' + w); }
 for (const e of errors) console.log('✗ ' + e);
 if (!quiet) for (const w of shown) console.log('△ ' + w);
 
 const L = BC.lists;
-console.log(`\n困りごと ${L.issue.length}・改善の視点 ${L.view.length}・練習メニュー ${L.drill.length}・戦術 ${L.tactic.length}：まちがい ${errors.length}・注意 ${shown.length}${picked.length && pending ? `（ほかのファイルの、まだ書かれていない id への参照 ${pending} は数えていない）` : ''}`);
+console.log(`\n困りごと ${L.issue.length}・改善の視点 ${L.view.length}・練習メニュー ${L.drill.length}・戦術 ${L.tactic.length}・動き ${Object.keys(BC.motions || {}).length}・ケガ ${(BC.aids || []).length}・テーピング ${(BC.tapes || []).length}：まちがい ${errors.length}・注意 ${shown.length}${picked.length && pending ? `（ほかのファイルの、まだ書かれていない id への参照 ${pending} は数えていない）` : ''}`);
 const byFile = {};
 for (const it of BC.all()) byFile[it.file_] = (byFile[it.file_] || 0) + 1;
 for (const [f, n] of Object.entries(byFile)) {
