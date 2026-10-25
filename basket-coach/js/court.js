@@ -159,8 +159,9 @@
       cur = (i + frames.length) % frames.length;
       const fr = frames[cur];
       for (let k = 0; k < 5; k++) { place(nodes['o' + (k + 1)], fr.o[k]); place(nodes['x' + (k + 1)], fr.x[k]); }
-      const bp = fr.ball && fr.o[fr.ball - 1];
-      if (bp) { ball.style.opacity = '1'; ball.style.transform = `translate(${f(bp[0] + 0.38)}px, ${f(bp[1] - 0.38)}px)`; } else ball.style.opacity = '0';
+      const bp = fr.ballAt;
+      const held = typeof fr.ball === 'number';
+      if (bp) { ball.style.opacity = '1'; ball.style.transform = held ? `translate(${f(bp[0] + 0.38)}px, ${f(bp[1] - 0.38)}px)` : `translate(${f(bp[0])}px, ${f(bp[1])}px)`; } else ball.style.opacity = '0';
       movesG.innerHTML = movesSVG(fr, id);
       conesG.innerHTML = (fr.cones || []).map((p) => `<path class="cv-cone" d="M${f(p[0])} ${f(p[1] - 0.32)} L${f(p[0] + 0.28)} ${f(p[1] + 0.22)} L${f(p[0] - 0.28)} ${f(p[1] + 0.22)} Z"/>`).join('');
       note.textContent = fr.note || '';

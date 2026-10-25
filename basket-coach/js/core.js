@@ -42,7 +42,7 @@
      words    文に出てきそうな言葉（例：'シュート'、'入らない'、'はいらない'、'外れる'）
      who      'player'（選手の悩み）| 'coach'（指導者・保護者の悩み）| 'both'（初期値）
      empathy  はじめのひとこと（受け止める1文）　summary 考え方（1〜2文）
-     ask      絞りこむ問い（なくてもよい）{ q: '問い', options: [{ label: '答え', to: '困りごとの id' }] }
+     ask      絞りこむ問い（なくてもよい）{ q: '問い', options: [{ label: '答え', to: '困りごとの id' }] }（to は戦術・練習・視点の id でもよい）
      causes   考えられる原因 [{ text: '原因', check: '確かめ方', views: ['v-…'] }]
      views 改善の視点 id（大事な順）　drills 練習メニュー id（おすすめ順に3〜6）　tactics 関連する戦術 id
      tip ひとこと（覚えておきたいこと）　next 次に見るとよい困りごと id
@@ -51,10 +51,11 @@
      court    'half'（初期値。ハーフコート、ゴールが上）| 'full'（オールコート。上のゴールを攻める）
      o        攻めの位置（1番から順に）。場所の名前（下の BC.spots）か [x, y]（m。x は −7.5〜7.5、左がマイナス。y はエンドラインから。ハーフラインが 14、full の反対のエンドラインが 28）
      x        守りの位置（なくてもよい）
-     ball     ボールを持つ攻めの番号（1から）
+     ball     ボールを持つ攻めの番号（1から）。だれも持っていないときは、場所の名前か [x, y]（床のボール）
      moves    動き [{ t, from, to, via }]
                 t：'pass'（パス・点線）| 'cut'（走る・実線）| 'dribble'（ドリブル・波線）| 'screen'（スクリーン・先に横棒）| 'handoff'（手渡し）| 'move'（そのほかの移動）
                 from・to：'o1'〜'o5'（その場面の攻めの人）・'x1'〜'x5'（守り）・場所の名前・[x, y]。via は曲がる点（なくてもよい）
+                守りの動き（赤い線）は from が 'x1'〜'x5' のとき。座標から始まる守りの動きは def: true
      cones    コーンなどの目印の位置（なくてもよい。場所の名前か [x, y]）
      note     その場面の説明（1文）
      場面（frames）で o・x・ball・cones を書かなければ、前の場面と同じ。 */
@@ -164,9 +165,10 @@
       };
       const moves = (f.moves || []).map((mv) => ({
         t: mv.t, from: at(mv.from), to: at(mv.to), via: mv.via ? at(mv.via) : null,
-        def: typeof mv.from === 'string' && /^x/.test(mv.from),
+        def: mv.def === true || (typeof mv.from === 'string' && /^x/.test(mv.from)),
       }));
-      return { court: dg.court || 'half', o: o.slice(), x: x.slice(), ball, moves, cones: cones.slice(), note: f.note || '' };
+      const ballAt = typeof ball === 'number' ? (ball ? o[ball - 1] || null : null) : BC.pos(ball);
+      return { court: dg.court || 'half', o: o.slice(), x: x.slice(), ball, ballAt, moves, cones: cones.slice(), note: f.note || '' };
     });
   };
   BC.pos = function (p) {
@@ -210,7 +212,8 @@
       const weak = new Set();
       (it.words || []).forEach((w) => {
         const n = BC.norm(w);
-        if (n.length >= 2 && !strong.has(n)) weak.add(n);
+        // 1字は、漢字（肘・膝・奥など）だけ使う
+        if ((n.length >= 2 || /^[\u4e00-\u9fff]$/.test(n)) && !strong.has(n)) weak.add(n);
       });
       items.push({ it, strong: [...strong], weak: [...weak], grams: bigrams([...strong].join('|')) });
     }
@@ -237,6 +240,10 @@
     const hits = [];
     for (const t of e.strong) {
       if (hasTerm(text, raw, t)) { s += 4 + t.length * 1.3; hits.push(t); }
+      else {
+        const st = stem(t);
+        if (st && st.length >= 4 && text.includes(st)) { s += 3 + st.length * 1.1; hits.push(st); }
+      }
     }
     for (const w of e.weak) {
       if (hasTerm(text, raw, w)) { s += Math.min(w.length, 6) * 1.0 + 0.5; hits.push(w); }
@@ -258,30 +265,35 @@
 
   /* ---------- 文から、話している人の条件を読む ---------- */
   BC.context = function (input) {
+    // BC.norm はカタカナをひらがなにするので、ここで使う正規表現の言葉もひらがなにそろえる
     const t = BC.norm(input);
+    const kana = (re) => new RegExp(re.source.replace(/[\u30a1-\u30f6]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60)), re.flags);
+    const has = (re) => kana(re).test(t);
     const c = {};
     const min = t.match(/(\d{1,3})分/);
     const hr = t.match(/(\d(?:\.\d)?)時間/);
+    const half = t.match(/(\d)時間半/);
     if (min) c.minutes = Math.min(240, +min[1]);
+    else if (half) c.minutes = +half[1] * 60 + 30;
     else if (hr) c.minutes = Math.round(+hr[1] * 60);
-    else if (/1時間半/.test(t)) c.minutes = 90;
     // 人数は、練習の話のときだけ読む（「1人で攻めてしまう」「2人に囲まれる」は人数ではない）
-    const practice = /(練習|れんしゅう|メニュー|ドリル|トレーニング|できる|やれる|自主|プラン)/.test(t);
-    if (/(自主練|じしゅれん|家で|いえで|自宅|ひとり練|個人練)/.test(t)) c.n = 1;
-    else if (practice && /(ひとりで|一人で|1人で|ひとりでも|一人でも)/.test(t)) c.n = 1;
-    else if (practice && /(2人で|ふたりで|二人で|親子|おやこ)/.test(t)) c.n = 2;
+    const practice = has(/(練習|れんしゅう|メニュー|ドリル|トレーニング|できる|やれる|自主|プラン)/);
+    if (has(/(自主練|じしゅれん|家で|いえで|自宅|ひとり練|個人練)/)) c.n = 1;
+    else if (practice && has(/(ひとりで|一人で|1人で|ひとりでも|一人でも)/)) c.n = 1;
+    else if (practice && has(/(2人で|ふたりで|二人で|親子|おやこ)/)) c.n = 2;
     else if (practice) {
       const p = t.match(/(\d{1,2})人(で|しか|だけ|います|いる|の|くらい|ぐらい|程度)/) || t.match(/(?:部員|選手|人数)[がはも]?(\d{1,2})人/);
       if (p) c.n = +p[1];
-      else if (/(チームで|チーム練習|部員|全員|みんなで)/.test(t)) c.n = 8;
+      else if (has(/(チームで|チーム練習|部員|全員|みんなで)/)) c.n = 8;
     }
-    if (/(家で|いえで|自宅|部屋|室内で|ゴールがない|ゴールなし)/.test(t)) c.place = 'any';
-    if (/(ミニバス|小学|低学年|高学年|初心者|はじめて|初めて|始めたばかり|はじめたばかり|未経験|幼稚園|キッズ|u12|u10)/.test(t)) c.level = 1;
-    else if (/(中学|高校|部活|u15|u18)/.test(t)) c.level = 2;
-    else if (/(上級|大学|社会人|プロ|強豪|全国)/.test(t)) c.level = 3;
-    if (/(コーチ|指導|教え|保護者|監督|顧問|子ども|子供|こども|息子|娘|うちの子|選手たち)/.test(t)) c.who = 'coach';
-    c.wantsPlan = /(メニュー|プラン|計画|練習内容).{0,6}(作|組|考|立|決|ください|ほしい|欲しい|教えて)|(組んで|組み立て|くんで|作って|つくって).{0,4}$|練習プラン|練習計画/.test(t);
-    c.wantsVideo = /(動画|映像|ビデオ|見たい|みたい)/.test(t);
+    if (has(/(家で|いえで|自宅|部屋|室内で|ゴールがない|ゴールなし)/)) c.place = 'any';
+    if (has(/(ミニバス|小学|低学年|高学年|初心者|はじめて|初めて|始めたばかり|はじめたばかり|未経験|幼稚園|キッズ|u12|u10)/)) c.level = 1;
+    else if (has(/(中学|高校|部活|u15|u18)/)) c.level = 2;
+    else if (has(/(上級|大学|社会人|プロ|強豪|全国)/)) c.level = 3;
+    if (has(/(コーチ|指導|教え|保護者|監督|顧問|子ども|子供|こども|息子|娘|うちの子|選手たち)/)) c.who = 'coach';
+    // 「組み方がわからない」「立て方」のような、やり方を聞く文はプランにしない（困りごと「練習メニューの組み方」へ）
+    c.wantsPlan = has(/(メニュー|プラン|計画|練習内容).{0,6}((作|組|考|立|決)(?![みりえてめ]?方)|ください|ほしい|欲しい|教えて)|(組んで|くんで|作って|つくって|考えて|立てて).{0,4}$/);
+    c.wantsVideo = has(/(動画|映像|ビデオ|見たい|みたい)/);
     return c;
   };
 
@@ -333,7 +345,7 @@
     const topIssue = issues[0];
     const topOther = others[0];
     const skills = BC.skillsIn(input);
-    const minIssue = 6;
+    const minIssue = 5.5;
 
     if (ctx.wantsPlan) {
       let focus = [];
@@ -344,7 +356,10 @@
     }
     // 名前そのもの（「マイカンドリル」「2-3ゾーン」）を言ったときは、その項目
     const strongOther = topOther && topOther.hits.some((h) => topOther.item.kind_ !== 'issue' && isStrong(topOther.item, h));
-    if (topOther && strongOther && (!topIssue || topOther.score > topIssue.score * 1.05)) {
+    // 困っている言い方（「やられた」「できない」「苦手」）なら、名前が同じ戦術より困りごとを先に
+    const complain = /(ない|なかった|られ|苦手|困|悩|負け|弱い|下手|へた)/.test(BC.norm(input));
+    const lean = complain && topIssue && topIssue.score >= 5 ? 2 : 1.05;
+    if (topOther && strongOther && (!topIssue || topOther.score > topIssue.score * lean)) {
       const rel = BC.issuesFor(topOther.item.id).slice(0, 4);
       return { type: 'item', item: topOther.item, alts: others.slice(1, 4).filter((h) => h.score >= topOther.score * 0.6).map((h) => h.item), related: rel, ctx };
     }
@@ -411,7 +426,8 @@
   BC.plan = function (opt = {}) {
     const minutes = Math.max(15, Math.min(240, opt.minutes || 60));
     const n = opt.n || null, level = opt.level || null, place = opt.place || null;
-    const focusIssues = (opt.focus || []).map(BC.get).filter(Boolean);
+    // 指導・練習の組み方の困りごと（「練習メニューの組み方がわからない」など）は、テーマにしない（基本をひととおり）
+    const focusIssues = (opt.focus || []).map(BC.get).filter((i) => i && i.skill !== 'coach');
     let skills = opt.skills && opt.skills.length ? opt.skills.slice() : [];
     for (const i of focusIssues) if (i.skill && !skills.includes(i.skill)) skills.unshift(i.skill);
     const general = !skills.length;
@@ -441,7 +457,7 @@
     const focusDrills = [];
     for (const i of focusIssues) for (const d of BC.drillsFor(i).ok.concat(BC.drillsFor(i).rest)) if (!focusDrills.includes(d)) focusDrills.push(d);
     // その技能の練習を、技能ごとに順番に（1つの技能にかたよらないように）
-    const bySkill = skills.map((s) => BC.lists.drill.filter((d) => (d.skills || [])[0] === s).concat(BC.lists.drill.filter((d) => (d.skills || [])[0] !== s && (d.skills || []).includes(s))));
+    const bySkill = skills.map((s) => BC.lists.drill.filter((d) => (d.skills || [])[0] === s).concat(BC.lists.drill.filter((d) => (d.skills || [])[0] !== s && (d.skills || []).includes(s))).filter(fit));
     const skillDrills = [];
     for (let i = 0; bySkill.some((l) => l[i]); i++) for (const l of bySkill) if (l[i] && !skillDrills.includes(l[i])) skillDrills.push(l[i]);
     const solo = n === 1;
@@ -473,7 +489,10 @@
       left = more.left;
     }
     // しめくくり：時間があればフリースロー（疲れたときのシュート）、最後にストレッチ
-    const coolCands = [minutes >= 60 && budget.cooldown + left >= 10 ? BC.get('d-ft') : null, BC.get('d-cooldown'), ...BC.lists.drill.filter((d) => d.phase === 'cooldown')];
+    // 困りごとのしめくくり練習（振り返りノートなど）を先に。動画の振り返り（d-film）は、テーマのときだけ（コートの練習の最後には入れない）
+    const coolCands = [minutes >= 60 && budget.cooldown + left >= 10 ? BC.get('d-ft') : null, BC.get('d-cooldown'),
+      ...focusDrills.filter((d) => d.phase === 'cooldown'),
+      ...BC.lists.drill.filter((d) => d.phase === 'cooldown' && d.id !== 'd-film' && d.place !== 'any' || d.id === 'd-huddle')];
     const c = pick(coolCands, budget.cooldown + left, (p) => p === 'cooldown' || p === 'skill');
     // ストレッチは最後に
     c.items.sort((a, b) => (a.drill.phase === 'cooldown') - (b.drill.phase === 'cooldown'));
@@ -566,7 +585,7 @@
         if (typeof s !== 'string' || !s.trim()) errors.push(`${it.id}.${field}[${i}]：文字でない・空`);
         else {
           bold(it, field, s);
-          if ((field === 'words' || field === 'alias') && BC.norm(s).length < 2) warns.push(`${it.id}.${field}：「${s}」は短すぎて探すときに使われない（2字以上に）`);
+          if ((field === 'words' || field === 'alias') && BC.norm(s).length < 2 && !(field === 'words' && /^[\u4e00-\u9fff]$/.test(BC.norm(s)))) warns.push(`${it.id}.${field}：「${s}」は短すぎて探すときに使われない（2字以上に）`);
         }
       });
     };
@@ -634,7 +653,13 @@
         }
         if (it.ask) {
           if (typeof it.ask.q !== 'string' || !Array.isArray(it.ask.options)) errors.push(`${it.id}.ask：{ q, options: [{ label, to }] } の形`);
-          else refCheck(it, 'ask.to', 'issue', it.ask.options.map((o) => o.to));
+          else for (const o of it.ask.options) {
+            // 行き先は、ふつうは困りごと。戦術・練習・視点もよい（例：ゾーンの形 → その戦術）
+            const k = BC.kindOf(o.to);
+            if (typeof o.label !== 'string') errors.push(`${it.id}.ask：label がない`);
+            if (!k) errors.push(`${it.id}.ask.to：id でない（${o.to}）`);
+            else refCheck(it, 'ask.to', k, [o.to]);
+          }
         }
         refCheck(it, 'views', 'view', it.views); refCheck(it, 'drills', 'drill', it.drills); refCheck(it, 'tactics', 'tactic', it.tactics); refCheck(it, 'next', 'issue', it.next);
       }
@@ -667,7 +692,8 @@
     });
     const frames = BC.frames(dg);
     frames.forEach((f, fi) => {
-      if (f.ball && !f.o[f.ball - 1]) errors.push(`${it.id}.diagram：ball の番号に攻めの人がいない（場面${fi + 1}）`);
+      if (typeof f.ball === 'number' && f.ball && !f.o[f.ball - 1]) errors.push(`${it.id}.diagram：ball の番号に攻めの人がいない（場面${fi + 1}）`);
+      if (f.ball != null && typeof f.ball !== 'number' && !BC.pos(f.ball)) errors.push(`${it.id}.diagram：ball の場所がわからない（場面${fi + 1}）`);
       for (const m of f.moves) if (!m.from || !m.to) errors.push(`${it.id}.diagram：動きの o1〜o5・x1〜x5 に人がいない（場面${fi + 1}）`);
     });
   }

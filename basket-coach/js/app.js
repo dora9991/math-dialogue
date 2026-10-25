@@ -677,7 +677,8 @@
       const it = get(d.ask);
       if (!it) return;
       closeSheet();
-      push(d.label || it.title, { type: 'issue', id: it.id, alts: [], ctx: {} });
+      if (it.kind_ === 'issue') push(d.label || it.title, { type: 'issue', id: it.id, alts: [], ctx: {} });
+      else push(d.label || labelOf(it), { type: 'item', id: it.id, alts: [], related: BC.issuesFor(it.id).slice(0, 4).map((x) => x.id), ctx: {} });
       return;
     }
     if (d.say) { closeSheet(); send(d.say); return; }
