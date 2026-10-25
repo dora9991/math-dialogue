@@ -9,9 +9,9 @@
 // ============================================================
 import { t, pick, choices4, shuffle, sample, rnz, gcd } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
-import { Q, qadd, qiszero } from "../algebra.js";
+import { Q, qadd, qiszero, qeq, qmul, qdiv } from "../algebra.js";
 import { term, padd, psub, pmul, pdeg, ptex } from "../algebra.js";
-import { line, yAt, xAt, ltex, qt, num } from "../linear.js";
+import { line, onLine, yAt, xAt, ltex, qt, num } from "../linear.js";
 
 const unit = unitFor("ichiji");
 
@@ -35,20 +35,24 @@ const solveTex = (l, y0) => {
   return out;
 };
 const solveLine = (l, y0) => solveTex(l, y0).map($).join("、");
-/** 直線の4択。正解 right、ありがちな誤答 wrongs（直線） */
-const lineChoices = (r, right, wrongs) => {
-  const ans = L(right), seen = new Set([ltex(right)]), ws = [];
-  for (const w of wrongs) {
-    if (!w || qiszero(w.a)) continue;
-    const s = ltex(w);
-    if (seen.has(s)) continue;
-    seen.add(s); ws.push($(s));
+/** 式の4択を、(正しい傾き, 正しい切片)・(正しい傾き, 誤った切片)・(誤った傾き, 正しい切片)・(誤った傾き, 誤った切片) の 2×2 にそろえる。
+ *  どの選択肢も、ほかの選択肢と共通する部分の数が同じになるので、共通部分を見ただけでは正解が当たらない。
+ *  S＝誤った傾きの候補、T＝誤った切片の候補（ありがちな誤り。数）。pts＝問題の条件の点（誤答がそのすべてを通ってしまうものは使わない） */
+const gridCells = (r, right, S, T, pts) => {
+  const a = right.a, b = right.b, qv = (x) => (Array.isArray(x) ? Q(x[0], x[1]) : Q(x));
+  const pool = (xs, bad) => { const out = []; for (const x of xs.map(qv)) if (!bad(x) && !out.some((y) => qeq(x, y))) out.push(x); return out; };
+  const sl = [...pool(shuffle(r, S), (x) => qeq(x, a) || qiszero(x)), ...pool(shuffle(r, [qadd(a, Q(1)), qadd(a, Q(-1)), qmul(a, Q(2)), qdiv(a, Q(2))]), (x) => qeq(x, a) || qiszero(x))];
+  const ts = [...pool(shuffle(r, T), (x) => qeq(x, b)), ...pool(shuffle(r, [qadd(b, Q(1)), qadd(b, Q(-1)), qadd(b, Q(2)), qmul(b, Q(2))]), (x) => qeq(x, b))];
+  const ok = (l) => !(pts && pts.every((p) => onLine(l, p)));
+  for (const s of sl) for (const t of ts) {
+    const cells = [line(a, t), line(s, b), line(s, t)];
+    if (cells.every(ok)) return cells;
   }
-  const fill = (i) => {
-    const d = [1, -1, 2, -2, 3, -3][i % 6], w = i % 12 < 6 ? line(qadd(right.a, Q(d)), right.b) : line(right.a, qadd(right.b, Q(d)));
-    return qiszero(w.a) || seen.has(ltex(w)) ? null : $(ltex(w));
-  };
-  return { ans, choices: choices4(r, ans, ws, fill) };
+  throw new Error("4択がつくれない");
+};
+const gridChoices = (r, right, S, T, pts, name = "y") => {
+  const cells = gridCells(r, right, S, T, pts), sh = (l) => $(ltex(l).replace(/^y/, name)), ans = sh(right);
+  return { ans, choices: shuffle(r, [ans, ...cells.map(sh)]) };
 };
 /** 0 以外の整数 a、b */
 const nz = (r, m) => rnz(r, -m, m);
@@ -243,7 +247,7 @@ export const UNITS = [
         // 02d04a 演習（4）① 入園料 → 式（4択）
         t("02d04a", (r) => {
           const c = FEE[pick(r, Object.keys(FEE))](r), right = line(c.a, c.b), cnt = c.xU === "ゲーム" ? "ゲーム数" : "回数";
-          const { ans, choices } = lineChoices(r, right, [line(c.b, c.a), line(c.a, -c.b), line(c.a + c.b, 0), line(-c.a, c.b)]);
+          const { ans, choices } = gridChoices(r, right, [c.b, c.a + c.b, -c.a], [c.a, -c.b, 0], [[0, c.b], [1, c.a + c.b]]);
           return {
             q: `${c.setup}。$y$ を $x$ の式で表すと？`,
             ans,
@@ -266,7 +270,7 @@ export const UNITS = [
         // 02q03a 小テスト（3）① 持っている金額がへる場面 → 式（4択）
         t("02q03a", (r) => {
           const c = DEC[pick(r, Object.keys(DEC))](r), right = line(-c.a, c.b);
-          const { ans, choices } = lineChoices(r, right, [line(c.a, c.b), line(-c.b, c.a), line(c.b, -c.a), line(-c.a, -c.b)]);
+          const { ans, choices } = gridChoices(r, right, [c.a, -c.b, c.b], [-c.b, c.a, -c.a], [[0, c.b], [1, c.b - c.a]]);
           return {
             q: `${c.setup}。$y$ を $x$ の式で表すと？`,
             ans,

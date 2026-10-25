@@ -8,7 +8,7 @@
 // ============================================================
 import { t, pick, choices4, shuffle, rnz, gcd } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
-import { Q, qadd, qiszero } from "../algebra.js";
+import { Q, qadd, qiszero, qeq, qmul, qdiv } from "../algebra.js";
 import { line, lineThrough, yAt, xAt, onLine, ltex, ptex2, qt, num } from "../linear.js";
 
 const unit = unitFor("ichiji");
@@ -21,20 +21,24 @@ const nz = (r, m) => rnz(r, -m, m);
 const N = (v) => `$${v}$`;
 const par = (x) => { const v = Array.isArray(x) ? x : [x, 1]; return v[0] < 0 ? `(${qt(v)})` : qt(v); };
 const absq = (x) => (x[0] < 0 ? [-x[0], x[1]] : x);
-const lineChoices = (r, right, wrongs, pts) => {
-  const ans = L(right), seen = new Set([ltex(right)]), ws = [];
-  const bad = (w) => !w || qiszero(w.a) || (pts && pts.every((p) => onLine(w, p)));      // 条件の点をすべて通る直線は、誤答にしない
-  for (const w of wrongs) {
-    if (bad(w)) continue;
-    const s = ltex(w);
-    if (seen.has(s)) continue;
-    seen.add(s); ws.push($(s));
+/** 式の4択を、(正しい傾き, 正しい切片)・(正しい傾き, 誤った切片)・(誤った傾き, 正しい切片)・(誤った傾き, 誤った切片) の 2×2 にそろえる。
+ *  どの選択肢も、ほかの選択肢と共通する部分の数が同じになるので、共通部分を見ただけでは正解が当たらない。
+ *  S＝誤った傾きの候補、T＝誤った切片の候補（ありがちな誤り。数）。pts＝問題の条件の点（誤答がそのすべてを通ってしまうものは使わない） */
+const gridCells = (r, right, S, T, pts) => {
+  const a = right.a, b = right.b, qv = (x) => (Array.isArray(x) ? Q(x[0], x[1]) : Q(x));
+  const pool = (xs, bad) => { const out = []; for (const x of xs.map(qv)) if (!bad(x) && !out.some((y) => qeq(x, y))) out.push(x); return out; };
+  const sl = [...pool(shuffle(r, S), (x) => qeq(x, a) || qiszero(x)), ...pool(shuffle(r, [qadd(a, Q(1)), qadd(a, Q(-1)), qmul(a, Q(2)), qdiv(a, Q(2))]), (x) => qeq(x, a) || qiszero(x))];
+  const ts = [...pool(shuffle(r, T), (x) => qeq(x, b)), ...pool(shuffle(r, [qadd(b, Q(1)), qadd(b, Q(-1)), qadd(b, Q(2)), qmul(b, Q(2))]), (x) => qeq(x, b))];
+  const ok = (l) => !(pts && pts.every((p) => onLine(l, p)));
+  for (const s of sl) for (const t of ts) {
+    const cells = [line(a, t), line(s, b), line(s, t)];
+    if (cells.every(ok)) return cells;
   }
-  const fill = (i) => {
-    const d = [1, -1, 2, -2, 3, -3][i % 6], w = i % 12 < 6 ? line(qadd(right.a, Q(d)), right.b) : line(right.a, qadd(right.b, Q(d)));
-    return bad(w) || seen.has(ltex(w)) ? null : $(ltex(w));
-  };
-  return { ans, choices: choices4(r, ans, ws, fill) };
+  throw new Error("4択がつくれない");
+};
+const gridChoices = (r, right, S, T, pts, name = "y") => {
+  const cells = gridCells(r, right, S, T, pts), sh = (l) => $(ltex(l).replace(/^y/, name)), ans = sh(right);
+  return { ans, choices: shuffle(r, [ans, ...cells.map(sh)]) };
 };
 /** 分母 n と互いに素な、0 でない整数 m（絶対値 mx 以下） */
 const coprimeTo = (r, n, mx) => { let m = nz(r, mx); while (gcd(m, n) !== 1) m = nz(r, mx); return m; };

@@ -6,10 +6,10 @@
 //   「式を表す」（ろうそくの式 y＝−3/5x+24）は、ありがちな誤答（符号まちがい・割合の逆数）をならべた4択にした。
 //   dr.6 の表（x と y の対応）は、「x＝0 のとき y＝7、x＝2 のとき y＝13」のように対応を文で言い、残りの x のときの y を聞く問題にした。
 // ============================================================
-import { t, pick, choices4, rnz, gcd } from "../kit.js";
+import { t, pick, choices4, shuffle, rnz, gcd } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
-import { Q, qadd, qiszero } from "../algebra.js";
-import { line, yAt, xAt, rate, dy, ltex, qt, num } from "../linear.js";
+import { Q, qadd, qiszero, qeq, qmul, qdiv } from "../algebra.js";
+import { line, onLine, yAt, xAt, rate, dy, ltex, qt, num } from "../linear.js";
 
 const unit = unitFor("ichiji");
 
@@ -34,19 +34,24 @@ const solveTex = (l, y0) => {
   return out;
 };
 const solveLine = (l, y0) => solveTex(l, y0).map($).join("、");
-const lineChoices = (r, right, wrongs) => {
-  const ans = L(right), seen = new Set([ltex(right)]), ws = [];
-  for (const w of wrongs) {
-    if (!w || qiszero(w.a)) continue;
-    const s = ltex(w);
-    if (seen.has(s)) continue;
-    seen.add(s); ws.push($(s));
+/** 式の4択を、(正しい傾き, 正しい切片)・(正しい傾き, 誤った切片)・(誤った傾き, 正しい切片)・(誤った傾き, 誤った切片) の 2×2 にそろえる。
+ *  どの選択肢も、ほかの選択肢と共通する部分の数が同じになるので、共通部分を見ただけでは正解が当たらない。
+ *  S＝誤った傾きの候補、T＝誤った切片の候補（ありがちな誤り。数）。pts＝問題の条件の点（誤答がそのすべてを通ってしまうものは使わない） */
+const gridCells = (r, right, S, T, pts) => {
+  const a = right.a, b = right.b, qv = (x) => (Array.isArray(x) ? Q(x[0], x[1]) : Q(x));
+  const pool = (xs, bad) => { const out = []; for (const x of xs.map(qv)) if (!bad(x) && !out.some((y) => qeq(x, y))) out.push(x); return out; };
+  const sl = [...pool(shuffle(r, S), (x) => qeq(x, a) || qiszero(x)), ...pool(shuffle(r, [qadd(a, Q(1)), qadd(a, Q(-1)), qmul(a, Q(2)), qdiv(a, Q(2))]), (x) => qeq(x, a) || qiszero(x))];
+  const ts = [...pool(shuffle(r, T), (x) => qeq(x, b)), ...pool(shuffle(r, [qadd(b, Q(1)), qadd(b, Q(-1)), qadd(b, Q(2)), qmul(b, Q(2))]), (x) => qeq(x, b))];
+  const ok = (l) => !(pts && pts.every((p) => onLine(l, p)));
+  for (const s of sl) for (const t of ts) {
+    const cells = [line(a, t), line(s, b), line(s, t)];
+    if (cells.every(ok)) return cells;
   }
-  const fill = (i) => {
-    const d = [1, -1, 2, -2, 3, -3][i % 6], w = i % 12 < 6 ? line(qadd(right.a, Q(d)), right.b) : line(right.a, qadd(right.b, Q(d)));
-    return qiszero(w.a) || seen.has(ltex(w)) ? null : $(ltex(w));
-  };
-  return { ans, choices: choices4(r, ans, ws, fill) };
+  throw new Error("4択がつくれない");
+};
+const gridChoices = (r, right, S, T, pts, name = "y") => {
+  const cells = gridCells(r, right, S, T, pts), sh = (l) => $(ltex(l).replace(/^y/, name)), ans = sh(right);
+  return { ans, choices: shuffle(r, [ans, ...cells.map(sh)]) };
 };
 /** 約分した分数 m/n（m、n は整数。n は正）の TeX：-\frac{2}{5}。整数なら整数 */
 const fr = (m, n) => qt(Q(m, n));
@@ -238,7 +243,7 @@ export const UNITS = [
         // 03d05b 演習（5）② 減っていく場面 → 式（4択）
         t("03d05b", (r) => {
           const c = burn(r), a = Q(-c.q, c.p), right = line(a, c.L0);
-          const { ans, choices } = lineChoices(r, right, [line(Q(c.q, c.p), c.L0), line(Q(-c.p, c.q), c.L0), line(Q(-c.q, c.p), -c.L0), line(c.L0, a)]);
+          const { ans, choices } = gridChoices(r, right, [Q(c.q, c.p), Q(-c.p, c.q), Q(c.p, c.q), c.L0], [-c.L0, a, 0], [[0, c.L0], [c.p, c.L0 - c.q]]);
           return {
             q: `${c.setup}。$y$ を $x$ の式で表すと？`,
             ans,

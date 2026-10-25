@@ -8,7 +8,7 @@
 // ============================================================
 import { t, pick, choices4, shuffle, rnz, gcd } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
-import { Q, qadd, qiszero, qeq } from "../algebra.js";
+import { Q, qadd, qiszero, qeq, qmul, qdiv } from "../algebra.js";
 import { line, yAt, xAt, onLine, ltex, ptex2, qt, num } from "../linear.js";
 
 const unit = unitFor("ichiji");
@@ -34,19 +34,24 @@ const solveTex = (l, y0) => {
   return out;
 };
 const solveLine = (l, y0) => solveTex(l, y0).map($).join("、");
-const lineChoices = (r, right, wrongs) => {
-  const ans = L(right), seen = new Set([ltex(right)]), ws = [];
-  for (const w of wrongs) {
-    if (!w || qiszero(w.a)) continue;
-    const s = ltex(w);
-    if (seen.has(s)) continue;
-    seen.add(s); ws.push($(s));
+/** 式の4択を、(正しい傾き, 正しい切片)・(正しい傾き, 誤った切片)・(誤った傾き, 正しい切片)・(誤った傾き, 誤った切片) の 2×2 にそろえる。
+ *  どの選択肢も、ほかの選択肢と共通する部分の数が同じになるので、共通部分を見ただけでは正解が当たらない。
+ *  S＝誤った傾きの候補、T＝誤った切片の候補（ありがちな誤り。数）。pts＝問題の条件の点（誤答がそのすべてを通ってしまうものは使わない） */
+const gridCells = (r, right, S, T, pts) => {
+  const a = right.a, b = right.b, qv = (x) => (Array.isArray(x) ? Q(x[0], x[1]) : Q(x));
+  const pool = (xs, bad) => { const out = []; for (const x of xs.map(qv)) if (!bad(x) && !out.some((y) => qeq(x, y))) out.push(x); return out; };
+  const sl = [...pool(shuffle(r, S), (x) => qeq(x, a) || qiszero(x)), ...pool(shuffle(r, [qadd(a, Q(1)), qadd(a, Q(-1)), qmul(a, Q(2)), qdiv(a, Q(2))]), (x) => qeq(x, a) || qiszero(x))];
+  const ts = [...pool(shuffle(r, T), (x) => qeq(x, b)), ...pool(shuffle(r, [qadd(b, Q(1)), qadd(b, Q(-1)), qadd(b, Q(2)), qmul(b, Q(2))]), (x) => qeq(x, b))];
+  const ok = (l) => !(pts && pts.every((p) => onLine(l, p)));
+  for (const s of sl) for (const t of ts) {
+    const cells = [line(a, t), line(s, b), line(s, t)];
+    if (cells.every(ok)) return cells;
   }
-  const fill = (i) => {
-    const d = [1, -1, 2, -2, 3, -3][i % 6], w = i % 12 < 6 ? line(qadd(right.a, Q(d)), right.b) : line(right.a, qadd(right.b, Q(d)));
-    return qiszero(w.a) || seen.has(ltex(w)) ? null : $(ltex(w));
-  };
-  return { ans, choices: choices4(r, ans, ws, fill) };
+  throw new Error("4択がつくれない");
+};
+const gridChoices = (r, right, S, T, pts, name = "y") => {
+  const cells = gridCells(r, right, S, T, pts), sh = (l) => $(ltex(l).replace(/^y/, name)), ans = sh(right);
+  return { ans, choices: shuffle(r, [ans, ...cells.map(sh)]) };
 };
 /** 分母 n と互いに素な、0 でない整数 m（絶対値 mx 以下） */
 const coprimeTo = (r, n, mx) => { let m = nz(r, mx); while (gcd(m, n) !== 1) m = nz(r, mx); return m; };
@@ -268,7 +273,7 @@ export const UNITS = [
         // 04d07a 演習（7）y＝3x+1 を y 軸の負の方向に 4 動かした直線の式（4択）
         t("04d07a", (r) => {
           const a = nz(r, 5), b = nz(r, 6), d = r(1, 7) * pick(r, [1, -1]), l = line(a, b), right = line(a, b + d);
-          const { ans, choices } = lineChoices(r, right, [line(a, b - d), line(a, d), line(a + d, b), line(a, b - a * d)]);
+          const { ans, choices } = gridChoices(r, right, [a + d, -a, a - d], [b - d, d, b - a * d, b], [[0, b + d], [1, a + b + d]]);
           return {
             q: `一次関数 ${L(l)} のグラフを、${upTxt(d)}平行移動した直線の式は？`,
             ans,
@@ -293,7 +298,7 @@ export const UNITS = [
         // 04d08a 演習（8）① 比例 y＝−x を平行移動した直線 ℓ が y 軸と (0, 3) で交わる → ℓ の式（4択）
         t("04d08a", (r) => {
           const a = Q(pick(r, [-3, -2, -1, 1, 2, 3, 1, -1]), pick(r, [1, 1, 1, 2])), k = nz(r, 6), right = line(a, k);
-          const { ans, choices } = lineChoices(r, right, [line(a, -k), line(qadd([0, 1], [-a[0], a[1]]), k), line(k, a), line(a, 0)]);
+          const { ans, choices } = gridChoices(r, right, [[-a[0], a[1]], k, [a[1], a[0]]], [-k, a, 0], [[0, k], [a[1], k + a[0]]]);
           return {
             q: `直線 ℓ は、比例 $y=${axt(a)}$ のグラフを平行移動したものである。ℓ は $y$ 軸と点 ${$(ptex2([0, k]))} で交わる。ℓ の式は？`,
             ans,

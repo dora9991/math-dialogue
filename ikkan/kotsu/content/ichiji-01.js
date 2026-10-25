@@ -10,8 +10,8 @@
 // ============================================================
 import { t, pick, choices4, shuffle, sample, rnz } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
-import { Q, qadd, qiszero } from "../algebra.js";
-import { line, yAt, xAt, meet, ltex, qt, num } from "../linear.js";
+import { Q, qadd, qiszero, qeq, qmul, qdiv } from "../algebra.js";
+import { line, onLine, yAt, xAt, meet, ltex, qt, num } from "../linear.js";
 
 const unit = unitFor("ichiji");
 
@@ -36,21 +36,24 @@ const solveTex = (l, y0) => {
 };
 const solveLine = (l, y0) => solveTex(l, y0).map($).join("、");
 
-/** 直線の4択。正解 right、ありがちな誤答 wrongs（直線）。name は y の文字（z にもできる） */
-const lineChoices = (r, right, wrongs, name = "y") => {
-  const sh = (l) => $(ltex(l).replace(/^y/, name));
-  const ans = sh(right), seen = new Set([ltex(right)]), ws = [];
-  for (const w of wrongs) {
-    if (!w || qiszero(w.a)) continue;
-    const s = ltex(w);
-    if (seen.has(s)) continue;
-    seen.add(s); ws.push(sh(w));
+/** 式の4択を、(正しい傾き, 正しい切片)・(正しい傾き, 誤った切片)・(誤った傾き, 正しい切片)・(誤った傾き, 誤った切片) の 2×2 にそろえる。
+ *  どの選択肢も、ほかの選択肢と共通する部分の数が同じになるので、共通部分を見ただけでは正解が当たらない。
+ *  S＝誤った傾きの候補、T＝誤った切片の候補（ありがちな誤り。数）。pts＝問題の条件の点（誤答がそのすべてを通ってしまうものは使わない） */
+const gridCells = (r, right, S, T, pts) => {
+  const a = right.a, b = right.b, qv = (x) => (Array.isArray(x) ? Q(x[0], x[1]) : Q(x));
+  const pool = (xs, bad) => { const out = []; for (const x of xs.map(qv)) if (!bad(x) && !out.some((y) => qeq(x, y))) out.push(x); return out; };
+  const sl = [...pool(shuffle(r, S), (x) => qeq(x, a) || qiszero(x)), ...pool(shuffle(r, [qadd(a, Q(1)), qadd(a, Q(-1)), qmul(a, Q(2)), qdiv(a, Q(2))]), (x) => qeq(x, a) || qiszero(x))];
+  const ts = [...pool(shuffle(r, T), (x) => qeq(x, b)), ...pool(shuffle(r, [qadd(b, Q(1)), qadd(b, Q(-1)), qadd(b, Q(2)), qmul(b, Q(2))]), (x) => qeq(x, b))];
+  const ok = (l) => !(pts && pts.every((p) => onLine(l, p)));
+  for (const s of sl) for (const t of ts) {
+    const cells = [line(a, t), line(s, b), line(s, t)];
+    if (cells.every(ok)) return cells;
   }
-  const fill = (i) => {
-    const d = [1, -1, 2, -2, 3, -3][i % 6], w = i % 12 < 6 ? line(qadd(right.a, Q(d)), right.b) : line(right.a, qadd(right.b, Q(d)));
-    return qiszero(w.a) || seen.has(ltex(w)) ? null : sh(w);
-  };
-  return { ans, choices: choices4(r, ans, ws, fill) };
+  throw new Error("4択がつくれない");
+};
+const gridChoices = (r, right, S, T, pts, name = "y") => {
+  const cells = gridCells(r, right, S, T, pts), sh = (l) => $(ltex(l).replace(/^y/, name)), ans = sh(right);
+  return { ans, choices: shuffle(r, [ans, ...cells.map(sh)]) };
 };
 
 // ── 「はじめの量 b から、1 ふえるごとに a ふえる」場面 ─────────────────────
@@ -68,7 +71,8 @@ const GROW = {
 };
 const grow = (r, keys) => GROW[pick(r, keys)](r);
 /** はじめ b、1ふえるごとに a の場面の「式を選ぶ」ありがちな誤答（切片と傾きの入れかえ・符号・たし算の混同） */
-const growWrongs = (a, b) => [line(b, a), line(a, -b), line(a + b, 0), line(-a, b)];
+/** はじめ b、1ふえるごとに a の場面の「式を選ぶ」ありがちな誤答（傾きと切片の入れかえ・合計・符号・はじめの量を忘れる）：[誤った傾き, 誤った切片, 条件の点] */
+const growWrongs = (a, b) => [[b, a + b, -a], [a, -b, 0], [[0, b], [1, a + b]]];
 const growHint = "はじめの量（$x$ が 0 のとき）と、$x$ が 1 ふえるごとにふえる量は、式のどの部分になるかな？";
 
 // ── 場面を式に表す・一次関数かどうか（01d02）──────────────────────────
@@ -167,7 +171,7 @@ export const UNITS = [
         // 01d01a 演習（1）台の上に本を積む → y を x の式で表す（4択）
         t("01d01a", (r) => {
           const c = grow(r, ["book", "tank", "spring", "temp", "shop"]), right = line(c.a, c.b);
-          const { ans, choices } = lineChoices(r, right, growWrongs(c.a, c.b));
+          const { ans, choices } = gridChoices(r, right, ...growWrongs(c.a, c.b));
           return {
             q: `${c.setup}。$y$ を $x$ の式で表すと？`,
             ans,
@@ -215,7 +219,7 @@ export const UNITS = [
         // 01q01 小テスト（1）貯金箱 → y を x の式で表す（4択）
         t("01q01", (r) => {
           const c = grow(r, ["bank", "walk", "shop", "tank"]), right = line(c.a, c.b);
-          const { ans, choices } = lineChoices(r, right, growWrongs(c.a, c.b));
+          const { ans, choices } = gridChoices(r, right, ...growWrongs(c.a, c.b));
           return {
             q: `${c.setup}。$y$ を $x$ の式で表すと？`,
             ans,
@@ -242,7 +246,7 @@ export const UNITS = [
         // 01d03a 演習（3）① おつり → 式（4択）
         t("01d03a", (r) => {
           const a = pick(r, [50, 60, 80, 90, 100, 120, 150]), P = pick(r, [500, 600, 800, 1000, 1500]), it = pick(r, FOOD), right = line(-a, P);
-          const { ans, choices } = lineChoices(r, right, [line(a, -P), line(a, P), line(-P, a), line(-a, -P)]);
+          const { ans, choices } = gridChoices(r, right, [a, -P, P], [-P, a, 0], [[0, P], [1, P - a]]);
           return {
             q: `${P} 円を持って、1個 ${a} 円の${it}を $x$ 個買ったときの、おつりを $y$ 円とする。$y$ を $x$ の式で表すと？`,
             ans,
@@ -254,7 +258,7 @@ export const UNITS = [
         // 01d03b 演習（3）② 周の長さが一定の長方形 → 式（4択）
         t("01d03b", (r) => {
           const s = r(5, 24), right = line(-1, s), v = r(0, 3), [X, Y] = v % 2 === 0 ? ["縦", "横"] : ["横", "縦"];
-          const { ans, choices } = lineChoices(r, right, [line(-1, 2 * s), line(-2, 2 * s), line(1, s), line(-1, -s)]);
+          const { ans, choices } = gridChoices(r, right, [1, -2, 2], [2 * s, -s, -2 * s], [[0, s], [s, 0]]);
           return {
             q: `${v < 2 ? `周の長さが ${2 * s} cm の長方形の、${X}の長さを $x$ cm、${Y}の長さを $y$ cm とする` : `長さ ${2 * s} cm のひもを、余らないように折り曲げて、長方形をつくる。${X}の長さを $x$ cm、${Y}の長さを $y$ cm とする`}。$y$ を $x$ の式で表すと？`,
             ans,
@@ -326,7 +330,7 @@ export const UNITS = [
         // 01d05a 演習（5）① マッチ棒 → 式（4択）
         t("01d05a", (r) => {
           const m = matches(r), right = line(m.a, m.b);
-          const { ans, choices } = lineChoices(r, right, [line(m.c1, 0), line(m.a, 0), line(m.c1, m.b), line(m.a, m.c1)]);
+          const { ans, choices } = gridChoices(r, right, [m.c1, m.a + 1, m.a - 1], [0, m.c1, m.a], [[1, m.c1], [2, 2 * m.a + m.b], [3, 3 * m.a + m.b]]);
           return {
             q: `${m.q}$y$ を $x$ の式で表すと？`,
             ans,
@@ -418,7 +422,7 @@ export const UNITS = [
         t("01d08a", (r) => {
           const c = catchUp(r, { a1s: [200, 300, 400, 500], ds: [100, 200, 300], b2s: [500, 800, 1000, 1500], xr: [4, 15] }), [P1, P2] = pick(r, [["兄", "弟"], ["姉", "妹"]]);
           const first = r(0, 1) === 0, right = first ? c.l1 : c.l2, name = first ? "y" : "z";
-          const { ans, choices } = lineChoices(r, right, first ? [line(c.b1, c.a1), line(c.a1, -c.b1), line(c.a2, c.b1), line(c.a1, c.b2)] : [line(c.b2, c.a2), line(c.a2, -c.b2), line(c.a1, c.b2), line(c.a2, c.b1)], name);
+          const { ans, choices } = gridChoices(r, right, first ? [c.b1, c.a2, -c.a1] : [c.b2, c.a1, -c.a2], first ? [c.a1, c.b2, -c.b1] : [c.a2, c.b1, -c.b2], first ? [[0, c.b1], [1, c.a1 + c.b1]] : [[0, c.b2], [1, c.a2 + c.b2]], name);
           const who = first ? P1 : P2, a = first ? c.a1 : c.a2, b = first ? c.b1 : c.b2;
           return {
             q: `${P1}は ${c.b1} 円、${P2}は ${c.b2} 円の貯金がある。今月から、${P1}は毎月 ${c.a1} 円、${P2}は毎月 ${c.a2} 円ずつ貯金する。$x$ か月後の貯金を、${P1}は $y$ 円、${P2}は $z$ 円とする。${who}の貯金 $${name}$ を $x$ の式で表すと？`,
