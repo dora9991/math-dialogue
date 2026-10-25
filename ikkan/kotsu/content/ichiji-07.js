@@ -45,9 +45,9 @@ const recip = (a) => qdiv(Q(1), a);
  * 式の4択：正解 right（直線）、ありがちな誤答 wrongs（直線の配列。先のものを優先）。
  * bad(l) が true の直線（＝問題の条件をみたしてしまうもの）は、誤答に入れない。
  */
-const eqChoices = (r, right, wrongs, bad, fillLine = null) => {
+const eqChoices = (r, right, wrongs, bad, fillLine = null, keep = 0) => {
   const seen = new Set([ltex(right)]), ws = [];
-  for (const w of shuffle(r, wrongs)) {   // 誤答の候補は、毎回ランダムな順にならべて、先の 3 つを使う
+  for (const w of [...wrongs.slice(0, keep), ...shuffle(r, wrongs.slice(keep))]) {   // 先頭の keep 個（ねらいの誤答）は必ず使い、残りは毎回ランダムな順にならべる
     if (!w || bad(w)) continue;
     const s = ltex(w);
     if (seen.has(s)) continue;
@@ -189,7 +189,8 @@ export const UNITS = [
           const a = pick(r, SLOPES), b = rnz(r, -6, 6), L = line(a, b);
           const b2 = pick(r, [-6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6].filter((x) => x !== b)), right = line(a, b2);
           const a2 = pick(r, SLOPES.filter((x) => !qeq(x, a) && !qeq(x, qneg(a))));
-          const { ans, choices } = eqChoices(r, right, [line(qneg(a), b), line(recip(a), b), line(a2, b2), line(b, a), line(qneg(a), b2), line(recip(a), b2)], (l) => parallel(l, L), (d) => line(qadd(a, Q(d)), b2));
+          const trap = pick(r, [line(qneg(a), b), line(recip(a), b), line(a2, b)].filter((l) => !parallel(l, L)));   // 切片だけ同じ（もとの式と同じ切片）のグラフを、必ず 1 つ入れる
+          const { ans, choices } = eqChoices(r, right, [trap, line(qneg(a), b), line(recip(a), b), line(a2, b2), line(b, a), line(qneg(a), b2), line(recip(a), b2)], (l) => parallel(l, L), (d) => line(qadd(a, Q(d)), b2), 1);
           return {
             q: `一次関数 ${$(ltex(L))} のグラフと平行なグラフの式は、次のうちどれか。`,
             ans, choices,
@@ -201,7 +202,8 @@ export const UNITS = [
         t("07q03b", (r) => {
           const a = pick(r, SLOPES), b = rnz(r, -6, 6), L = line(a, b);
           const a2 = pick(r, SLOPES.filter((x) => !qeq(x, a))), b2 = pick(r, [-6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6].filter((x) => x !== b)), right = line(a2, b);
-          const { ans, choices } = eqChoices(r, right, [line(a, b2), line(a2, qneg(b)), line(b, a), line(a2, b2), line(qneg(a), b2), line(a, qneg(b))], (l) => qeq(l.b, L.b));
+          const trap = pick(r, [line(a, b2), line(a, qneg(b))]);   // 傾きだけ同じ（平行）なグラフを、必ず 1 つ入れる
+          const { ans, choices } = eqChoices(r, right, [trap, line(a2, qneg(b)), line(b, a), line(a2, b2), line(qneg(a), b2), line(a, b2)], (l) => qeq(l.b, L.b), null, 1);
           return {
             q: `一次関数 ${$(ltex(L))} のグラフと、y 軸上の同じ点で交わるグラフの式は、次のうちどれか。`,
             ans, choices,
