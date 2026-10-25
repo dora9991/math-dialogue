@@ -260,7 +260,7 @@ html[data-rot] .sheet-card { max-height: calc(var(--rvw, 100vw) * 0.92); }
 .roster { flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-template-columns: repeat(var(--c, 1), minmax(0, 1fr)); grid-template-rows: repeat(var(--r, 1), minmax(28px, 76px));
   gap: 3px 8px; padding: 4px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; align-content: start; }
 .team.scroll .roster { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), rgba(0, 0, 0, 0.35)); mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), rgba(0, 0, 0, 0.35)); }
-.prow { display: grid; grid-template-columns: var(--nw, 36px) repeat(4, minmax(0, 1fr)); gap: 3px; min-height: 0; min-width: 0; }
+.prow { display: grid; grid-template-columns: var(--nw, 36px) var(--cols, repeat(4, minmax(0, 1fr))); gap: 3px; min-height: 0; min-width: 0; }
 .pno { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; overflow: hidden; border-radius: 8px; background: var(--tc); color: var(--tink); border: 1px solid rgba(128, 128, 128, 0.55); }
 .pno b { font-size: var(--nf, 20px); font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -0.02em; }
 .pno small { display: none; font-size: 10px; line-height: 1.15; max-width: 100%; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.85; }
@@ -274,6 +274,20 @@ html[data-rot] .sheet-card { max-height: calc(var(--rvw, 100vw) * 0.92); }
 .pb.k-fg3 { background: var(--k-fg3); }
 .pb.k-ft { background: var(--k-ft); }
 .pb.k-reb { background: var(--k-rb); }
+/* 設定で足すボタン：シュートの失敗「×」（そのシュートの色のふち。成功のとなり）・ファウル */
+.pb.miss { background: var(--k-miss-bg); color: var(--sc); box-shadow: inset 0 0 0 2px var(--sc), 0 2px 0 rgba(0, 0, 0, 0.12); }
+.pb.miss b { font-size: calc(var(--bf, 16px) * 1.2); }
+.pb.miss .cnt { background: var(--sc); }
+.pb.k-fg2x { --sc: var(--k-fg2); }
+.pb.k-fg3x { --sc: var(--k-fg3); }
+.pb.k-ftx { --sc: var(--k-ft); }
+.pb.k-foul { background: var(--k-foul); }
+.pb .bl { font-size: var(--ff, var(--bf, 16px)); letter-spacing: -0.03em; }
+.pb .bs { display: none; }
+.team.shortlab .pb .bl { display: none; }
+.team.shortlab .pb .bs { display: inline; }
+.pb .cnt.f4 { background: #fbbf24; color: #1f1300; }
+.pb .cnt.f5 { background: #dc2626; color: #fff; box-shadow: 0 0 0 2px #fff; }
 /* 回数（ボタンの右上） */
 .cnt { position: absolute; top: 2px; right: 2px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px; background: rgba(0, 0, 0, 0.42); color: #fff; font-style: normal; font-size: 10.5px; font-weight: 800; line-height: 15px; text-align: center; font-variant-numeric: tabular-nums; pointer-events: none; }
 .prow.unk:not(.teamonly) .pb { opacity: 0.88; }
@@ -482,6 +496,8 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
 .box tr.tot td { font-weight: 800; border-top: 2px solid var(--line2); }
 .box tr.unk td { color: var(--muted); }
 .per tbody th { text-align: left; font-weight: 700; }
+.per.fouls { margin-top: 6px; }
+.per.fouls td.bonus { color: var(--bad); font-weight: 900; }
 .per td.sum { font-weight: 900; }
 
 .export { display: flex; flex-direction: column; gap: 8px; }

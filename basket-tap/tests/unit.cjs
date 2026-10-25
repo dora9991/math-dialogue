@@ -134,6 +134,37 @@ pl = plan(750, 244, [16, 16]);
 ok(pl.arr === 'side' && pl.teams.every((t) => t.c === 2 && t.bw >= BT.LAYOUT.minBw) && pl.scroll, 'スマホの横向き：チームの中を 2 列に（高さが足りない分は、縦にすべらせる）', pl.teams);
 pl = plan(320, 372, [16, 16]);
 ok(pl.teams.every((t) => t.bw >= BT.LAYOUT.minBw), 'とても小さい画面でも、ボタンの幅は狭くしすぎない（縦にすべらせる）', pl);
+section('選手のボタンを足す（設定：シュートの失敗・ファウル）');
+eq(BT.rowTypes(), ['fg2', 'fg3', 'ft', 'reb'], 'ふだんは 2P・3P・FT・リバ（いまのまま）');
+eq(BT.rowTypes({ miss: true }), ['fg2', 'fg2x', 'fg3', 'fg3x', 'ft', 'ftx', 'reb'], '失敗：それぞれの成功のとなりに「×」');
+eq(BT.rowTypes({ foul: true }), ['fg2', 'fg3', 'ft', 'reb', 'foul'], 'ファウル：リバのあと');
+eq(BT.rowTypes({ miss: true, foul: true }).length, 8, '両方で 8 つ');
+let rs = BT.rowSpec(BT.rowTypes({ miss: true, foul: true }));
+ok(rs.k === 8 && Math.abs(rs.units - 7.25) < 1e-9 && rs.minW === 0.75 && rs.weights[1] === 0.75 && rs.weights[7] === 1, '行の幅の割合：「×」は 0.75・ほかは 1', rs);
+ok(['fg2x', 'fg3x', 'ftx'].every((t) => BT.TYPE[t].btn === '×') && BT.TYPE.foul.btn === 'ファウル' && BT.TYPE.foul.btnShort === 'F', 'ボタンの文字：「×」・「ファウル」（狭いときは F）');
+const p4 = BT.planLayout(1180, 688, [16, 16], 22), p8 = BT.planLayout(1180, 688, [16, 16], 22, rs);
+ok(JSON.stringify(BT.planLayout(1180, 688, [16, 16], 22, BT.rowSpec())) === JSON.stringify(p4), 'ふだんのボタン（4つ）では、並べ方は前と同じ');
+ok(p8.teams.every((t) => t.bwMin >= BT.LAYOUT.minBw && t.bw > t.bwMin) && p8.teams[0].bw < p4.teams[0].bw, `iPad 横・ボタン 8 つ：1つずつは細く（2P ${p8.teams[0].bw.toFixed(0)}px・× ${p8.teams[0].bwMin.toFixed(0)}px）、いちばん細いボタンも狭くしすぎない`, p8.teams);
+const ps8 = BT.planLayout(390, 556, [16, 16], 22, rs);
+ok(ps8.teams.every((t) => t.bwMin >= BT.LAYOUT.minBw || ps8.scroll) && ps8.arr === 'stack', 'スマホ縦・ボタン 8 つ：上下に重ねて幅を使う（足りない分は縦にすべらせる）', ps8);
+eq(BT.editTypes('fg2', BT.rowTypes({ miss: true, foul: true })).slice(0, 8), ['fg2', 'fg2x', 'fg3', 'fg3x', 'ft', 'ftx', 'reb', 'foul'], '一覧で直すときも、いまのボタンから選べる');
+{
+  const gf = BT.newGame({ teams: [{ name: 'A', players: [{ no: '4' }] }, { name: 'B' }] });
+  gf.startedAt = Date.now() - 1000 * 1000;
+  BT.addEvent(gf, { t: 10, type: 'foul', team: 0, no: '4' });
+  BT.addEvent(gf, { t: 20, type: 'foul', team: 1, no: null });
+  BT.addEvent(gf, { t: 30, type: 'foul', team: 0, no: '4' });
+  BT.addEvent(gf, { t: 600, type: 'period', period: 2 });
+  BT.addEvent(gf, { t: 610, type: 'foul', team: 0, no: '4' });
+  BT.addEvent(gf, { t: 620, type: 'fg2x', team: 0, no: '4' });
+  BT.addEvent(gf, { t: 630, type: 'fg2', team: 0, no: '4' });
+  const pf = BT.periodFouls(gf);
+  ok(JSON.stringify(pf.get(1)) === '[2,1]' && JSON.stringify(pf.get(2)) === '[1,0]', 'ピリオドごとのチームファウル（1Q 2・1／2Q 1・0）', Array.from(pf.entries()));
+  const st = BT.stats(gf)[0].rows.find((r) => r.no === '4').s;
+  ok(st.foul === 3 && st.fg2a === 2 && st.fg2m === 1 && BT.hasMisses(gf) && BT.pct(st.fg2m, st.fg2a) === '50%', '選手の集計：ファウル 3・2P 1/2（50%）', st);
+  ok(BT.periodFouls(BT.newGame({ teams: [{ name: 'A' }, { name: 'B' }] })).size === 0, 'ファウルがなければ、チームファウルは出さない');
+}
+
 section('1つのチームだけの並べ方（BT.planTeam。ワイプ「特大」）');
 // W×H：チームの枠の外側の大きさ。n：行の数
 let pt = BT.planTeam(600, 744, 13, 22);

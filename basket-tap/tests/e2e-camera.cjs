@@ -493,6 +493,21 @@ async function measure(page, vid, times) {
       await shot(page, 'wipe-ipad-x-noopp');
       await page.evaluate(() => { BT.app.setWipe('m'); return BT.app.camClose(); });
       await page.waitForFunction(() => BT.app.S.cam.state === 'off');
+      // 選手のボタンを 8 つ（失敗・ファウル）にしても、中・特大のワイプとボタンが重ならない
+      await page.evaluate(() => { Object.assign(BT.app.S.prefs, { btnMiss: true, btnFoul: true }); const g11 = BT.newGame({ teams: [{ name: '致遠館', players: BT.parseNumbers('4-15').map((no) => ({ no })) }, { name: '城南', players: BT.parseNumbers('4-15').map((no) => ({ no })) }] }); BT.store.saveGame(g11); BT.app.resume(g11.id); BT.app.start(); });
+      await page.evaluate(() => BT.app.camStart());
+      await page.waitForFunction(() => BT.app.S.cam && BT.app.S.cam.rec && !document.querySelector('#wipe').hidden, null, { timeout: 8000 });
+      await sleep(300);
+      const w8m = await wipeState(page);
+      await page.evaluate(() => BT.app.setWipe('x'));
+      await sleep(300);
+      const w8x = await wipeState(page);
+      const n8 = await page.$$eval('#panel0 .prow:first-child .pb', (els) => els.length);
+      ok(n8 === 8 && w8m.on && w8x.oppInWipe && [w8m, w8x].every((x) => x.hit.length === 0 && x.out.length === 0) && !w8m.scroll && !w8x.ownScroll,
+        `ボタン 8 つ（失敗・ファウル）：中 ${w8m.w}×${w8m.h}・特大 ${w8x.w}×${w8x.h}。どちらもボタンと重ならず、自分のチームの行はすべらない`, { w8m, w8x, n8 });
+      await shot(page, 'wipe-ipad-x-8btn');
+      await page.evaluate(() => { Object.assign(BT.app.S.prefs, { btnMiss: false, btnFoul: false }); BT.app.setWipe('m'); return BT.app.camClose(); });
+      await page.waitForFunction(() => BT.app.S.cam.state === 'off');
 
       const cases = [
         { n: 'スマホ横（2チームとも名簿）', vp: [844, 390], opp: true, check: (m, l) => m.on && m.dock === 'dk-side' && m.w >= 150 && !m.scroll && l.w > m.w + 80 },

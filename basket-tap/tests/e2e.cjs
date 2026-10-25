@@ -238,7 +238,7 @@ const pb = (tm, no, type) => `#panel${tm} .prow[data-no="${no == null ? '' : no}
     const statText = await page.textContent('.stats');
     const row7 = await page.$$eval('.teamstat', (secs) => { const tr = Array.from(secs[0].querySelectorAll('tbody tr')).find((r) => r.querySelector('td.no') && r.querySelector('td.no').textContent === '7'); return tr ? Array.from(tr.children).map((td) => td.textContent) : null; });
     ok(row7 && row7[1] === 'たけし' && row7[2] === '2' && row7[3] === '1', '集計に #7 たけし（得点 2・2P 1 本）', row7);
-    ok(!/1\/1/.test(statText) && !/成功率/.test(statText), '失敗のボタンがないので「成功/打った数」「成功率」は出さない（入れた本数だけ）');
+    ok(!/1\/1/.test(statText) && !/成功率 \d|\d%/.test(statText), '失敗のボタンがないので「成功/打った数」「成功率」は出さない（入れた本数だけ）', statText.slice(0, 200));
     ok(/チームなし/.test(statText) && /★ あとで見る 1/.test(statText), '集計に「チームなし：★ あとで見る 1」');
     ok(await page.$$eval('.per tbody tr', (rows) => rows.map((r) => r.textContent.replace(/\s+/g, '')).join('|')).then((t) => t.includes('致遠館') && t.includes('5')), 'ピリオドごとの得点の表');
     await shot(page, 'phone-stats');
@@ -294,6 +294,43 @@ const pb = (tm, no, type) => `#panel${tm} .prow[data-no="${no == null ? '' : no}
     await page.click('.sheet-card header .x');
     ok(errors.length === 0, 'ページのエラーがない（設定のあと）', errors.slice(0, 3));
 
+    console.log('\n■ 設定：選手のボタンを足す（シュートの失敗・ファウル。ふだんは出さない）');
+    const rowBtns = () => page.$$eval('#panel0 .prow[data-no="7"] .pb', (els) => els.map((x) => x.dataset.type).join(','));
+    ok((await rowBtns()) === 'fg2,fg3,ft,reb', 'ふだんは 2P・3P・FT・リバ（いまのまま）');
+    await tap(page, '#btnMenu');
+    await page.click('.mitem:has-text("設定")');
+    ok(await page.$('#setButtons') && !(await page.isChecked('input[data-pref="btnMiss"]')) && !(await page.isChecked('input[data-pref="btnFoul"]')), '設定に「選手のボタン」（失敗・ファウルは、はじめは出さない）');
+    await page.click('input[data-pref="btnMiss"]');
+    await page.click('input[data-pref="btnFoul"]');
+    await page.click('.sheet-card header .x');
+    ok((await rowBtns()) === 'fg2,fg2x,fg3,fg3x,ft,ftx,reb,foul' && (await page.textContent(pb(0, '7', 'fg2x'))).trim() === '×', '選ぶと、2P・3P・FT のとなりに「×」、リバのあとに「ファウル」');
+    ok((await allVisible(page)).length === 0, 'ボタンが 8 つでも、画面からはみ出さない・小さすぎない（27px 以上）', await allVisible(page));
+    await shot(page, 'phone-extra-buttons');
+    const nx = plays(await game(page)).length;
+    await page.clock.runFor(5000);                 // （「続きを記録できます」のお知らせが消えるまで）
+    for (const t of ['fg2x', 'fg3x', 'ftx']) { await tap(page, pb(0, '7', t)); await page.clock.runFor(600); }
+    g = await game(page);
+    ok(plays(g).slice(nx).map((x) => `${x.team}:${x.no}:${x.type}`).join(',') === '0:7:fg2x,0:7:fg3x,0:7:ftx' && (await page.textContent('#lastbar')).includes('FT失敗'), '「×」で #7 の 2P失敗・3P失敗・FT失敗（下の帯に「FT失敗」）', { got: plays(g).slice(nx).map((x) => `${x.team}:${x.no}:${x.type}`), last: await page.textContent('#lastbar') });
+    for (let i = 0; i < 5; i++) { await tap(page, pb(0, '7', 'foul')); await page.clock.runFor(600); }
+    const fcnt = async () => page.$eval(pb(0, '7', 'foul') + ' .cnt', (x) => x.textContent + ' ' + x.className);
+    ok((await fcnt()) === '5 cnt f5', '「ファウル」5回：回数「5」が赤（5つ目）', await fcnt());
+    await tap(page, '#btnUndo');
+    ok((await fcnt()) === '4 cnt f4', '1つ取り消すと「4」が黄（4つ目）', await fcnt());
+    await tap(page, '#btnMenu');
+    await page.click('.mitem:has-text("集計")');
+    await page.waitForSelector('.stats');
+    const st2 = await page.textContent('.stats');
+    ok(/シュート成功率/.test(st2) && /\d+\/\d+/.test(st2) && await page.$('#teamFouls') && (await page.textContent('#teamFouls')).includes('4'), '失敗を記録すると、集計に「成功/打った数」・シュート成功率・チームファウル（ピリオドごと）');
+    await shot(page, 'phone-extra-stats');
+    await page.click('.sheet-card header .x');
+    await tap(page, '#btnMenu');
+    await page.click('.mitem:has-text("設定")');
+    await page.click('input[data-pref="btnMiss"]');
+    await page.click('input[data-pref="btnFoul"]');
+    await page.click('.sheet-card header .x');
+    ok((await rowBtns()) === 'fg2,fg3,ft,reb' && plays(await game(page)).filter((x) => /x$|foul/.test(x.type)).length === 7, '設定を戻すと 4 つのボタンに（記録した失敗・ファウルは残る）');
+    ok(errors.length === 0, 'ページのエラーがない（選手のボタンを足したあと）', errors.slice(0, 3));
+
     console.log('\n■ 試合の一覧・次の試合（自分のチームは自動で入る）');
     await tap(page, '#btnMenu');
     await page.click('.mitem:has-text("試合の一覧へ")');
@@ -332,6 +369,22 @@ const pb = (tm, no, type) => `#panel${tm} .prow[data-no="${no == null ? '' : no}
       }
       await shot(P.page, `size-${vp.width}x${vp.height}`);
       ok(P.errors.length === 0, `${vp.n}：ページのエラーがない`, P.errors.slice(0, 2));
+      await P.ctx.close();
+    }
+    console.log('\n■ 画面の大きさ（選手のボタン 8 つ：失敗・ファウルも。背番号 15 人ずつ）');
+    for (const vp of [{ width: 390, height: 664, n: 'ふつうのスマホ' }, { width: 750, height: 340, n: 'スマホ横向き' }, { width: 820, height: 1100, n: 'iPad 縦' }, { width: 1180, height: 820, n: 'iPad 横' }]) {
+      const P = await openPage(browser, srv.url, { width: vp.width, height: vp.height });
+      await P.page.evaluate(() => {
+        Object.assign(BT.app.S.prefs, { btnMiss: true, btnFoul: true });
+        const g2 = BT.newGame({ teams: [{ name: 'A', players: BT.parseNumbers('4-18').map((no) => ({ no })) }, { name: 'B', players: BT.parseNumbers('4-18').map((no) => ({ no })) }] });
+        BT.store.saveGame(g2); BT.app.resume(g2.id); BT.app.start();
+      });
+      await P.page.waitForSelector('.live');
+      const bad = await allVisible(P.page);
+      const info = await P.page.evaluate(() => { const sz = (t) => { const b = document.querySelector(`#panel0 .pb[data-type="${t}"]`).getBoundingClientRect(); return Math.round(b.width) + '×' + Math.round(b.height); }; return { n: document.querySelectorAll('#panel0 .prow')[0].querySelectorAll('.pb').length, made: sz('fg2'), miss: sz('fg2x'), foul: sz('foul') }; });
+      const sc = await scrolls(P.page);
+      ok(info.n === 8 && bad.length === 0, `${vp.n}（${vp.width}×${vp.height}）：2P ${info.made}・× ${info.miss}・ファウル ${info.foul}${sc.some(Boolean) ? '（入りきらない分は縦にすべらせる）' : '（全員が1画面に入る）'}`, { info, bad: bad.slice(0, 3) });
+      ok(P.errors.length === 0, `${vp.n}：ページのエラーがない（ボタン 8 つ）`, P.errors.slice(0, 2));
       await P.ctx.close();
     }
   } catch (err) {
