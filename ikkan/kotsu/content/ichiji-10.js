@@ -25,7 +25,13 @@ const rhs = (L, v = "x") => ltex(L).slice(2).replace(/x/g, v);
 /** 係数つきの項（1 は省く）  coefX(3,"a") → 3a、coefX(-1,"a") → -a */
 const coefX = (c, v) => ltex(line(c, 0)).slice(2).replace(/x/g, v);
 /** 「a×x」の書き方（a＝±1 は省く） */
-const aX = (a, x) => (qeq(a, Q(1)) ? P(x) : qeq(a, Q(-1)) ? `-${P(x)}` : `${P(a)}\\times ${P(x)}`);
+const aX = (a, x) => {
+  const X = Array.isArray(x) ? x : Q(x);
+  if (qeq(X, Q(0))) return "0";                                      // x＝0 なら 0
+  if (qeq(a, Q(1))) return qt(X);                                   // a＝1：x の値をそのまま（かっこなし）
+  if (qeq(a, Q(-1))) return qt(qneg(X));                            // a＝−1：−x の値（x＝0 なら 0）
+  return `${P(a)}\\times ${P(X)}`;
+};
 
 const INT_A = [1, 2, 3, 4, -1, -2, -3, -4];
 const FRAC_A = [[1, 2], [-1, 2], [1, 3], [-1, 3], [2, 3], [-2, 3], [3, 2], [-3, 2], [3, 4], [-3, 4], [1, 4], [-1, 4]];
@@ -412,9 +418,6 @@ export const UNITS = [
             ],
           };
         }),
-      ],
-      // ───────── 4 入試レベル ─────────
-      4: [
         // 10d08a 直線 ℓ が 2点 A、B を通り、x 軸と P、y 軸と Q で交わる：ℓ の式（4択）
         t("10d08a", (r) => {
           const c = d08Case(r);
@@ -427,6 +430,9 @@ export const UNITS = [
             steps: lineSteps(c.L, c.A, c.B),
           };
         }),
+      ],
+      // ───────── 4 入試レベル ─────────
+      4: [
         // 10d08b P の x 座標
         t("10d08b", (r) => {
           const c = d08Case(r);
@@ -440,7 +446,7 @@ export const UNITS = [
         }),
         // 10d08c 三角形 OPQ の面積
         t("10d08c", (r) => {
-          const c = d08Case(r);
+          const c = d08Case(r, true);
           if (!c) return { skip: true };
           const area = qmul(Q(1, 2), Q(Math.abs(c.p) * Math.abs(c.q)));
           return {
@@ -473,7 +479,7 @@ export const UNITS = [
             q: `${rangeText(c)}$a$ が${c.sgn > 0 ? "正" : "負"}の数のとき、この一次関数の式は、次のうちどれか。`,
             ans: TX(ltex(c.L)),
             choices: choices4(r, TX(ltex(c.L)), wrongs, (i) => TX(ltex(line(qadd(c.L.a, Q(c.sgn * (i + 1))), c.L.b)))),
-            hint: `$a$ が${c.sgn > 0 ? "正" : "負"}のとき、$x$ が増えると $y$ はどうなる？ $x$ の最小の値のとき、$y$ は最小になる？ 最大になる？`,
+            hint: `傾きの正負は、グラフの向きとどう結びついている？ その向きから、条件の 2つの端は、どんな 2点の座標になる？`,
             steps: rangeSteps(c),
           };
         }),
@@ -485,8 +491,8 @@ export const UNITS = [
           return {
             q: `${rangeText(c)}$a$ が${c.sgn > 0 ? "正" : "負"}の数のとき、$${ask}$ の値は？`,
             ans: num(ask === "a" ? c.L.a : c.L.b),
-            hint: `$a$ が${c.sgn > 0 ? "正" : "負"}のとき、$x$ が小さいほうの端の点で、$y$ は小さい値になる？ 大きい値になる？ 通る2点が決まるかな？`,
-            steps: rangeSteps(c),
+            hint: `傾きの正負は、グラフの向きとどう結びついている？ その向きから、通る 2点の座標は決まる？`,
+            steps: [...rangeSteps(c), `よって ${TX(`${ask}=${qt(ask === "a" ? c.L.a : c.L.b)}`)}。`],
           };
         }),
         // 10q05 小テスト（5）チャレンジ：2点を通る直線 ℓ が x 軸と交わる点の x 座標
@@ -509,10 +515,11 @@ export const UNITS = [
 ];
 
 // ── dr.8 の図形：直線 ℓ が x 軸と P(p, 0)、y 軸と Q(0, q) で交わり、軸上でない格子点 A、B を通る ─────────
-function d08Case(r) {
-  for (let n = 0; n < 80; n++) {
+function d08Case(r, evenArea = false) {
+  for (let n = 0; n < 160; n++) {
     const p = rnz(r, -8, 8), q = rnz(r, -8, 8);
     if (Math.abs(p) < 2 || Math.abs(q) < 2) continue;
+    if (evenArea && (Math.abs(p) * Math.abs(q)) % 2 !== 0) continue;   // 面積が整数になる組だけ
     const L = lineThrough([p, 0], [0, q]);
     const pts = pickPts(r, L, { xr: [-8, 8], gap: 8, minGap: 2, yMax: 12, noAxis: true });
     if (!pts || pts.some(([x, y]) => x === p || y === q)) continue;

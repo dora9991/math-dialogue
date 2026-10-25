@@ -59,7 +59,7 @@ export const UNITS = [
       "$y=k$ のグラフは、点 $(0, k)$ を通り、$x$ 軸に平行な直線。直線上の点は、$y$ 座標がどれも $k$。",
       "$x=h$ のグラフは、点 $(h, 0)$ を通り、$y$ 軸に平行な直線。直線上の点は、$x$ 座標がどれも $h$。",
       "$2y+4=0$ や $3x-12=0$ のように、文字が 1 つだけの方程式も、$y=k$ や $x=h$ の形に直すと、グラフがかける。",
-      "2点の $y$ 座標が等しければ $x$ 軸に平行、$x$ 座標が等しければ $y$ 軸に平行な直線を通る。",
+      "2点の $y$ 座標が等しければ、その2点を通る直線は $x$ 軸に平行（$y=k$）。$x$ 座標が等しければ、$y$ 軸に平行（$x=h$）で、$x=h$ は $y=ax+b$ の形では表せない（$x$ を決めても $y$ が 1つに決まらない）。",
     ],
     levels: {
       // ───────── 1 基礎 ─────────
@@ -100,7 +100,7 @@ export const UNITS = [
         }),
         // 12d01c グラフ上にある点（4択）
         t("12d01c", (r) => {
-          const v = pick(r, ["x", "y"]), val = NZ(r, 6), m = tryGen(() => { const m = NZ(r, 7); return m === val ? null : m; });
+          const v = pick(r, ["x", "y"]), val = NZ(r, 6), m = tryGen(() => { const m = NZ(r, 7); return Math.abs(m) === Math.abs(val) ? null : m; });   // 誤答どうしが重ならないように m＝±val をはずす
           const on = (p) => (v === "y" ? p[1] === val : p[0] === val);
           const good = v === "y" ? [m, val] : [val, m];
           const cand = v === "y" ? [[val, m], [m, -val], [-val, m], [-m, -val]] : [[m, val], [-val, m], [m, -val], [-m, -val]];
@@ -109,7 +109,7 @@ export const UNITS = [
           return {
             q: `方程式 ${HV(v, val)} のグラフ上にある点は、次のうちどれか。`,
             ans: PT(good),
-            choices: choices4(r, PT(good), wrongs),
+            choices: choices4(r, PT(good), wrongs, (i) => PT(v === "y" ? [m + i + 1, val + i + 1] : [val + i + 1, m + i + 1])),   // 足りなければ、グラフ上にない点で補う（必ず4択）
             hint: `グラフ上の点は、${HV(v, val)} をみたす。座標の${v === "y" ? "$y$" : "$x$"}の値に注目しよう。`,
             steps: [`${HV(v, val)} のグラフ上の点は、${v === "y" ? "$y$" : "$x$"} 座標がいつも ${V(val)}。`, `${PT(good)} は ${v === "y" ? "$y$" : "$x$"} 座標が ${V(val)} なので、グラフ上にある。`],
           };
@@ -243,6 +243,25 @@ export const UNITS = [
       ],
       // ───────── 3 応用 ─────────
       3: [
+        // 12x01 （補い問題）授業の「考えよう」：x＝h は、y＝ax+b の形では表せない（x を決めても y が 1つに決まらない）
+        t("12x01", (r) => {
+          const h = NZ(r, 6);
+          const lines = [], seen = new Set();
+          for (let n = 0; n < 60 && lines.length < 3; n++) {
+            const kind = lines.length < 2 ? "ab" : pick(r, ["ab", "a", "k"]);
+            const L = kind === "ab" ? line(pick(r, [1, 2, 3, -1, -2, -3]), NZ(r, 6)) : kind === "a" ? line(pick(r, [2, 3, -1, -2, -3]), 0) : line(0, NZ(r, 6));
+            const s = ltex(L);
+            if (!seen.has(s)) { seen.add(s); lines.push(TX(s)); }
+          }
+          const good = HV("x", h);
+          return {
+            q: "次の 4つの直線のうち、$x$ の値を決めても、$y$ の値が 1つに決まらないものは、どれか。",
+            ans: good,
+            choices: choices4(r, good, lines),
+            hint: "$x$ に好きな値を入れたとき、$y$ の値は、それぞれの式でいくつに決まる？",
+            steps: [`${good} のグラフは $y$ 軸に平行な直線。直線上の点は $x$ 座標がいつも ${V(h)} で、$y$ 座標はどんな値でもよい（1つに決まらない）。`, "ほかの 3つは、$x$ の値を決めると、$y$ の値が 1つに決まる。$x=h$ は $y=ax+b$ の形では表せない。"],
+          };
+        }),
         // 12d05 長方形の面積から、a の値
         t("12d05", (r) => {
           const c5 = d05Case(r);

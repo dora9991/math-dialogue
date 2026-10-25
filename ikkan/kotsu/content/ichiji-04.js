@@ -70,16 +70,24 @@ const interceptAsk = (e) => ({
 
 // ── 点がグラフの上にあるか（04d04・04q03）──────────────────────────
 /** 直線 l の上にない点を、ありがちな誤り（符号・切片・座標の入れかえ・1ずれ）でつくる。ちょうど l の上にあるものは除く */
-const offPoint = (r, l, x) => {
+const offPoint = (r, l, x, seen) => {
   const a = l.a[0], b = l.b[0], yv = a * x + b;      // a、b は整数の直線のみ
   const cands = [[x, -a * x + b], [x, a * x - b], [x, yv + 1], [x, yv - 1], [x, yv + 2], [x, yv - 2], [yv, x]];
-  const ok = cands.filter((p) => !onLine(l, p) && Math.abs(p[0]) <= 15 && Math.abs(p[1]) <= 15);
-  return ok.length ? pick(r, ok) : [x, yv + 1];
+  const ok = cands.filter((p) => !onLine(l, p) && Math.abs(p[0]) <= 15 && Math.abs(p[1]) <= 15 && !seen.has(p.join(",")));      // ほかの点と重ならない
+  return ok.length ? pick(r, ok) : null;
 };
-/** 4つの点。on の個数だけ、直線の上にある */
+/** 4つの点（どれも別の点）。on の個数だけ、直線の上にある */
 const fourPoints = (r, l, on) => {
-  const xs = shuffle(r, [-3, -2, -1, 0, 1, 2, 3]).slice(0, 4), kinds = shuffle(r, [0, 1, 2, 3]).map((i) => i < on);
-  return xs.map((x, i) => { const p = kinds[i] ? [x, yAt(l, x)[0]] : offPoint(r, l, x); return { p, on: onLine(l, p) }; });
+  for (let n = 0; n < 100; n++) {
+    const xs = shuffle(r, [-3, -2, -1, 0, 1, 2, 3]).slice(0, 4), kinds = shuffle(r, [0, 1, 2, 3]).map((i) => i < on), seen = new Set(), out = [];
+    for (let i = 0; i < 4; i++) {
+      const p = kinds[i] ? [xs[i], yAt(l, xs[i])[0]] : offPoint(r, l, xs[i], seen);
+      if (!p || seen.has(p.join(","))) break;
+      seen.add(p.join(",")); out.push({ p, on: onLine(l, p) });
+    }
+    if (out.length === 4) return out;
+  }
+  throw new Error("fourPoints が作れない");
 };
 
 export const UNITS = [
@@ -109,7 +117,7 @@ export const UNITS = [
         t("04d01b", (r) => {
           const a = nz(r, 4), b = nz(r, 6), x = r(-3, 3), l = line(a, b);
           return {
-            q: `$x=${x}$ のとき、${L(l)} の $y$ の値は、$y=${axt(a)}$ の $y$ の値より、いくつ大きいか。（小さいときは、負の数で答えよう。）`,
+            q: `$x=${x}$ のとき、${L(l)} の $y$ の値から、$y=${axt(a)}$ の $y$ の値をひいた数は？`,
             ans: b,
             hint: "同じ $x$ の値を、2つの式にそれぞれ代入すると、$y$ の値はどうちがうかな？",
             steps: [`$y=${axt(a)}$ では ${$(`y=${subTex(line(a, 0), x)}`)}、${L(l)} では ${$(`y=${subTex(l, x)}`)}。`, `その差は ${$(`${yAt(l, x)[0]}-${par(a * x)}=${b}`)}。（$x$ が変わっても、差はいつも $b$。）`],
@@ -185,7 +193,7 @@ export const UNITS = [
         }),
         // 04q02 小テスト（2）y＝3x のグラフをどう動かすと y＝3x−4 のグラフになるか（4択）
         t("04q02", (r) => {
-          const a = nz(r, 5), b = nz(r, 8), target = line(a, b), dirTxt = (s, ax) => `${ax === "y" ? "$y$" : "$x$"} 軸の${s > 0 ? "正" : "負"}の方向に`;
+          const a = pick(r, [-5, -4, -3, -2, 2, 3, 4, 5]), b = nz(r, 8), target = line(a, b), dirTxt = (s, ax) => `${ax === "y" ? "$y$" : "$x$"} 軸の${s > 0 ? "正" : "負"}の方向に`;
           const res = (ax, s, amt) => (ax === "y" ? line(a, s * amt) : line(a, -s * a * amt));      // y＝ax から動かしたあとの直線
           const txt = (ax, s, amt) => `${dirTxt(s, ax)} ${amt} だけ平行移動する`;
           const m = Math.abs(b), s0 = b < 0 ? -1 : 1, ans = txt("y", s0, m);
@@ -194,7 +202,7 @@ export const UNITS = [
           return {
             q: `$y=${axt(a)}$ のグラフを、どのように動かすと、${L(target)} のグラフになるか。`,
             ans,
-            choices: choices4(r, ans, cands.map(([ax, s, amt]) => txt(ax, s, amt))),
+            choices: choices4(r, ans, cands.map(([ax, s, amt]) => txt(ax, s, amt)), (i) => txt("y", i % 2 ? 1 : -1, m + 1 + Math.floor(i / 2))),
             hint: "2つの式をくらべて、何が変わっているかな？ その数は、グラフのどこに表れるかな？",
             steps: [`${$(`y=${axt(a)}`)} と ${L(target)} をくらべると、切片が 0 から ${$(String(b))} に変わっている。`, `切片は $y$ 軸との交点の $y$ 座標だから、${ans}。`],
           };
@@ -311,7 +319,7 @@ export const UNITS = [
           while (b2 === b1) b2 = nz(r, 6);
           const l1 = line(a, b1), l2 = line(a, b2), len = Math.abs(b2 - b1);
           return {
-            q: `${L(l1)} のグラフの上に点 A、${L(l2)} のグラフの上に点 B があり、A と B の $x$ 座標は等しい。座標の 1 を 1 の長さとするとき、線分 AB の長さは？`,
+            q: `${L(l1)} のグラフの上に点 A、${L(l2)} のグラフの上に点 B があり、A と B の $x$ 座標は等しい。座標軸の 1 目もりを 1 とするとき、線分 AB の長さは？`,
             ans: len,
             hint: "$x$ 座標が同じ2点の $y$ 座標を、$x$ を使って表すと、その差はどうなるかな？",
             steps: [`2点の $x$ 座標を $t$ とすると、A の $y$ 座標は ${$(ltex(l1).slice(2).replace(/x/g, "t"))}、B の $y$ 座標は ${$(ltex(l2).slice(2).replace(/x/g, "t"))}。`, `$y$ 座標の差は、定数項の差で、${$(`${Math.max(b1, b2)}-${par(Math.min(b1, b2))}=${len}`)}。だから、AB の長さは ${len}。`],

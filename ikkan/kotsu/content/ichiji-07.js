@@ -45,15 +45,15 @@ const recip = (a) => qdiv(Q(1), a);
  * 式の4択：正解 right（直線）、ありがちな誤答 wrongs（直線の配列。先のものを優先）。
  * bad(l) が true の直線（＝問題の条件をみたしてしまうもの）は、誤答に入れない。
  */
-const eqChoices = (r, right, wrongs, bad) => {
+const eqChoices = (r, right, wrongs, bad, fillLine = null) => {
   const seen = new Set([ltex(right)]), ws = [];
-  for (const w of wrongs) {
+  for (const w of shuffle(r, wrongs)) {   // 誤答の候補は、毎回ランダムな順にならべて、先の 3 つを使う
     if (!w || bad(w)) continue;
     const s = ltex(w);
     if (seen.has(s)) continue;
     seen.add(s); ws.push($(s));
   }
-  const fill = (i) => { const d = [1, -1, 2, -2, 3, -3][i % 6], l2 = line(right.a, qadd(right.b, Q(d))); return bad(l2) ? null : $(ltex(l2)); };
+  const fill = (i) => { const d = [1, -1, 2, -2, 3, -3][i % 6], l2 = fillLine ? fillLine(d) : line(right.a, qadd(right.b, Q(d))); return bad(l2) ? null : $(ltex(l2)); };
   return { ans: $(ltex(right)), choices: choices4(r, $(ltex(right)), ws, fill) };
 };
 
@@ -64,6 +64,9 @@ const pointWrongs = (a, b, P1) => [
   line(b, a),                   // 傾きと切片のいれかえ
   line(a, qneg(b)),             // 切片の符号まちがい
   line(a, P1[1]),               // 点の y 座標を、そのまま切片にした
+  line(qneg(a), qneg(b)),       // 傾きも切片も符号まちがい
+  line(qneg(recip(a)), b),      // 取りちがえた上に、符号もまちがえた
+  line(recip(a), P1[1]),        // 取りちがえた上に、y 座標をそのまま切片にした
 ];
 
 /** 傾き ±p/q の直線のうち、切片が整数のもの。ps/qs＝傾きの分子・分母の候補 */
@@ -115,7 +118,7 @@ export const UNITS = [
           return {
             q: `一次関数 ${$(ltex(L))} のグラフについて、正しいものはどれか。`,
             ans: right,
-            choices: choices4(r, right, [`${opp}で、切片は ${N(b)}`, `${dir}で、切片は ${N(-b)}`, `${dir}で、切片は ${N(A)}`, `${opp}で、切片は ${N(-b)}`]),
+            choices: shuffle(r, [right, `${opp}で、切片は ${N(b)}`, `${dir}で、切片は ${N(-b)}`, `${opp}で、切片は ${N(-b)}`]),
             hint: "グラフの向きは傾きの符号で、y 軸との交点は切片で決まるよ。式の中で、どの数が傾きで、どの数が切片かな？",
             steps: [`傾きは ${N(a)}。${s > 0 ? "正の数" : "負の数"}だから、${dir}。`, `切片は ${N(b)}。`, `正しいのは「${right}」。`],
           };
@@ -171,7 +174,7 @@ export const UNITS = [
           const a = pick(r, SLOPES), b = rnz(r, -6, 6), L = line(a, b);
           const b2 = pick(r, [-6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6].filter((x) => x !== b)), right = line(a, b2);
           const a2 = pick(r, SLOPES.filter((x) => !qeq(x, a) && !qeq(x, qneg(a))));
-          const { ans, choices } = eqChoices(r, right, [line(qneg(a), b), line(recip(a), b), line(a2, b2), line(b, a)], (l) => parallel(l, L));
+          const { ans, choices } = eqChoices(r, right, [line(qneg(a), b), line(recip(a), b), line(a2, b2), line(b, a), line(qneg(a), b2), line(recip(a), b2)], (l) => parallel(l, L), (d) => line(qadd(a, Q(d)), b2));
           return {
             q: `一次関数 ${$(ltex(L))} のグラフと平行なグラフの式は、次のうちどれか。`,
             ans, choices,
@@ -183,7 +186,7 @@ export const UNITS = [
         t("07q03b", (r) => {
           const a = pick(r, SLOPES), b = rnz(r, -6, 6), L = line(a, b);
           const a2 = pick(r, SLOPES.filter((x) => !qeq(x, a))), b2 = pick(r, [-6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6].filter((x) => x !== b)), right = line(a2, b);
-          const { ans, choices } = eqChoices(r, right, [line(a, b2), line(a2, qneg(b)), line(b, a), line(a2, b2)], (l) => qeq(l.b, L.b));
+          const { ans, choices } = eqChoices(r, right, [line(a, b2), line(a2, qneg(b)), line(b, a), line(a2, b2), line(qneg(a), b2), line(a, qneg(b))], (l) => qeq(l.b, L.b));
           return {
             q: `一次関数 ${$(ltex(L))} のグラフと、y 軸上の同じ点で交わるグラフの式は、次のうちどれか。`,
             ans, choices,

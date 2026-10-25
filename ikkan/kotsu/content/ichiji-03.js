@@ -53,7 +53,7 @@ const fr = (m, n) => qt(Q(m, n));
 /** 負の数もある数を、文の中で TeX にする */
 const N = (v) => `$${v}$`;
 /** 増加量の割り算の TeX：\\frac{-8}{3}=-\\frac{8}{3}（約分しても変わらないときは、等号をつけない） */
-const divTex = (n, d) => { const base = `\\frac{${n}}{${d}}`, red = qt(Q(n, d)); return base === red ? base : `${base}=${red}`; };
+const divTex = (n, d) => { if (d === 1) return qt(Q(n, 1)); const base = `\\frac{${n}}{${d}}`, red = qt(Q(n, d)); return base === red ? base : `${base}=${red}`; };
 /** 「y が d 増加（減少）する」の言い方 */
 const upDown = (d) => (d < 0 ? `${-d} 減少する` : `${d} 増加する`);
 
@@ -85,9 +85,9 @@ const rateAsk = (e) => ({
 // ── 減っていく場面（ろうそく・水そう・ストーブ）──────────────────────
 /** p 単位に q ずつへる（q＜p）。はじめの量 L0＝q×t なので、なくなるまでの時間 t×p は整数 */
 const BURN = {
-  candle: (r) => { const p = r(3, 7), q = r(1, p - 1), t0 = Math.ceil(12 / q) + r(0, 3), L0 = q * t0; return { p, q, L0, T: t0 * p, yU: "cm", xU: "時間後", setup: `長さ ${L0} cm のろうそくに火をつけると、${p}時間に ${q} cm の割合で短くなる。火をつけてから $x$ 時間後のろうそくの長さを $y$ cm とする`, what: "ろうそくが燃えつきる", whenQ: "ろうそくが燃えつきるのは、火をつけてから何時間後か" }; },
-  tank: (r) => { const p = r(3, 8), q = r(2, p - 1), t0 = Math.ceil(24 / q) + r(0, 5), L0 = q * t0; return { p, q, L0, T: t0 * p, yU: "L", xU: "分後", setup: `水が ${L0} L 入っている水そうの底の栓をぬくと、${p}分間に ${q} L の割合で水がへる。栓をぬいてから $x$ 分後の水そうの水の量を $y$ L とする`, what: "水そうの水がなくなる", whenQ: "水そうの水がなくなるのは、栓をぬいてから何分後か" }; },
-  stove: (r) => { const p = r(3, 6), q = r(1, 2), t0 = r(4, 9), L0 = q * t0; return { p, q, L0, T: t0 * p, yU: "L", xU: "時間後", setup: `灯油が ${L0} L 入ったストーブを使うと、${p}時間に ${q} L の割合で灯油がへる。使いはじめてから $x$ 時間後の灯油の量を $y$ L とする`, what: "灯油がなくなる", whenQ: "灯油がなくなるのは、使いはじめてから何時間後か" }; },
+  candle: (r) => { let p, q, t0, L0; do { p = r(3, 6); q = r(1, Math.min(3, p - 1)); t0 = r(Math.ceil(8 / q), Math.floor(20 / q)); L0 = q * t0; } while (t0 * p > 40); return { p, q, L0, T: t0 * p, yU: "cm", xU: "時間後", setup: `長さ ${L0} cm のろうそくに火をつけると、${p}時間に ${q} cm の割合で短くなる。火をつけてから $x$ 時間後のろうそくの長さを $y$ cm とする`, what: "ろうそくが燃えつきる", whenQ: "ろうそくが燃えつきるのは、火をつけてから何時間後か" }; },
+  tank: (r) => { let p, q, t0, L0; do { p = r(3, 8); q = r(2, p - 1); t0 = Math.ceil(20 / q) + r(0, 6); L0 = q * t0; } while (t0 * p > 60 || L0 > 60); return { p, q, L0, T: t0 * p, yU: "L", xU: "分後", setup: `水が ${L0} L 入っている水そうの底の栓をぬくと、${p}分間に ${q} L の割合で水がへる。栓をぬいてから $x$ 分後の水そうの水の量を $y$ L とする`, what: "水そうの水がなくなる", whenQ: "水そうの水がなくなるのは、栓をぬいてから何分後か" }; },
+  stove: (r) => { let p, q, t0, L0; do { p = r(3, 6); q = r(1, 2); t0 = r(4, 9); L0 = q * t0; } while (t0 * p > 40); return { p, q, L0, T: t0 * p, yU: "L", xU: "時間後", setup: `灯油が ${L0} L 入ったストーブを使うと、${p}時間に ${q} L の割合で灯油がへる。使いはじめてから $x$ 時間後の灯油の量を $y$ L とする`, what: "灯油がなくなる", whenQ: "灯油がなくなるのは、使いはじめてから何時間後か" }; },
 };
 const burn = (r) => BURN[pick(r, Object.keys(BURN))](r);
 
@@ -276,7 +276,7 @@ export const UNITS = [
       4: [
         // 03d07a 演習（7）① a の値
         t("03d07a", (r) => {
-          const s = spec(r), pre = specText(s);
+          const s = spec(r), pre = specText(s, false);
           return {
             q: `${pre}$a$ の値は？`,
             ans: num(s.a),
@@ -296,8 +296,10 @@ export const UNITS = [
         }),
         // 03d07c 演習（7）③ ほかの範囲の y の増加量
         t("03d07c", (r) => {
-          const s = spec(r), pre = specText(s), d = s.d;
-          const x3 = d * r(-4, 0), x4 = x3 + d * r(2, 4), v = dy(s.l, x3, x4)[0];
+          const s = spec(r), pre = specText(s, false), d = s.d;
+          let w = s.dx;
+          while (w === s.dx) w = d * r(2, 5);      // 聞く範囲の幅が、条件の幅と同じにならないようにする
+          const x3 = d * r(-4, 0), x4 = x3 + w, v = dy(s.l, x3, x4)[0];
           return {
             q: `${pre}$x$ の値が ${N(x3)} から ${N(x4)} まで増加するときの、$y$ の増加量は？`,
             ans: v,
@@ -336,8 +338,8 @@ export const UNITS = [
 ];
 
 /** 03d07 の問題文（a、b を求める一次関数の条件） */
-function specText(s) {
-  return `一次関数 $y=ax+b$ は、$x$ の値が ${N(s.x1)} から ${N(s.x2)} まで増加すると、$y$ の値が ${upDown(s.dyv)}。また、$x=${s.xp}$ のとき $y=${s.yp}$ である。`;
+function specText(s, withPoint = true) {
+  return `一次関数 $y=ax+b$ は、$x$ の値が ${N(s.x1)} から ${N(s.x2)} まで増加すると、$y$ の値が ${upDown(s.dyv)}。${withPoint ? `また、$x=${s.xp}$ のとき $y=${s.yp}$ である。` : ""}`;
 }
 
 // 移さなかった問題はない（dr.6 の表は、対応する x、y の値を文で言って、残りの x のときの y を聞く問題にした）

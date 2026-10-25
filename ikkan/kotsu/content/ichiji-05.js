@@ -39,7 +39,7 @@ const lineChoices = (r, right, wrongs, pts) => {
 /** 分母 n と互いに素な、0 でない整数 m（絶対値 mx 以下） */
 const coprimeTo = (r, n, mx) => { let m = nz(r, mx); while (gcd(m, n) !== 1) m = nz(r, mx); return m; };
 /** 約分した分数の割り算の TeX：\frac{-8}{3}=-\frac{8}{3}（約分しても変わらないときは、等号をつけない） */
-const divTex = (n, d) => { const base = `\\frac{${n}}{${d}}`, red = qt(Q(n, d)); return base === red ? base : `${base}=${red}`; };
+const divTex = (n, d) => { if (d === 1) return qt(Q(n, 1)); const base = `\\frac{${n}}{${d}}`, red = qt(Q(n, d)); return base === red ? base : `${base}=${red}`; };
 const dirOf = (a) => (a[0] > 0 ? "右上がり" : "右下がり");
 /** 傾き a（Q）の、ふつうの数：整数か、分母 2〜4 の分数 */
 const slopeOf = (r, withFrac, sign = 0) => {
@@ -122,7 +122,7 @@ export const UNITS = [
         }),
         // 05d02a 演習（2）傾きと右へ進む量 → y の増加量（符号つき）
         t("05d02a", (r) => {
-          const a = slopeOf(r, true), n = a[1] * r(1, 4), rise = [a[0] * (n / a[1]), 1];
+          const a = slopeOf(r, true), n = a[1] * (a[1] === 1 ? r(2, 4) : r(1, 4)), rise = [a[0] * (n / a[1]), 1];
           return {
             q: `傾きが ${N(qt(a))} のグラフは、右へ ${n} 進むと、$y$ の値はいくつ増えるか。（減るときは、負の数で答えよう。）`,
             ans: num(rise),
@@ -132,7 +132,7 @@ export const UNITS = [
         }),
         // 05d02b 演習（2）傾きと右へ進む量 → 上へ／下へ いくつ進むか（4択）
         t("05d02b", (r) => {
-          const a = slopeOf(r, true), n = a[1] * r(1, 4), rise = Q(a[0] * (n / a[1])), sg = rise[0] > 0 ? 1 : -1;
+          const a = slopeOf(r, true), n = a[1] * (a[1] === 1 ? r(2, 4) : r(1, 4)), rise = Q(a[0] * (n / a[1])), sg = rise[0] > 0 ? 1 : -1;
           const txt = (v) => `${v[0] > 0 ? "上" : "下"}へ ${N(qt(absq(v)))} 進む`, mv = (s, m) => [s * m[0], m[1]];
           const ans = txt(rise), recip = Q(n * a[1], a[0]);
           const cands = [mv(-sg, absq(rise)), mv(sg, absq(a)), mv(sg, [n, 1]), mv(-sg, [n, 1]), recip].map(txt).filter((s) => s !== ans);
@@ -334,7 +334,9 @@ export const UNITS = [
         // 05q05 小テスト チャレンジ：y＝ax+3 で、x が 2 増加すると y が 5 減少 → x が −4 から 2 まで増加するときの y の増加量
         t("05q05", (r) => {
           const n = pick(r, [2, 3, 4]), dx = n * r(1, 2), m = coprimeTo(r, n, 6) * (dx / n), a = Q(m, dx), b = nz(r, 6);
-          const x1 = n * r(-3, -1), x2 = x1 + n * r(2, 4), v = a[0] * ((x2 - x1) / a[1]);
+          let k2 = 2;
+          do { k2 = r(2, 4); } while (n * k2 === dx);      // 聞く範囲の幅が、条件の幅と同じにならないようにする
+          const x1 = n * r(-3, -1), x2 = x1 + n * k2, v = a[0] * ((x2 - x1) / a[1]);
           return {
             q: `一次関数 ${$(`y=ax${b < 0 ? "-" : "+"}${Math.abs(b)}`)} で、$x$ の値が ${dx} 増加すると、$y$ の値は ${Math.abs(m)} ${m < 0 ? "減少" : "増加"}する。この一次関数で、$x$ の値が ${N(x1)} から ${N(x2)} まで増加するとき、$y$ の増加量は？`,
             ans: v,

@@ -32,14 +32,15 @@ const solveVar = (k, v, n) => {
   return k === 1 ? TX(`${v}=${qt(val)}`) : `${TX(`${coefX(k, v)}=${n}`)}、${TX(`${v}=${qt(val)}`)}`;
 };
 /** ax+by に x、y の値を入れた式（かけ算で）。2×3−3×0 のように、方程式の書き方にそろえる */
+const firstTerm = (a, x) => (x === 0 ? "0" : a === 1 ? String(x) : a === -1 ? String(-x) : `${P(a)}\\times ${P(x)}`);   // 先頭の項（a＝±1 は x の値をそのまま・−x の値、x＝0 は 0）
 const lhsNum = (a, b, x, y) => {
-  const first = a === 1 ? P(x) : a === -1 ? `-${P(x)}` : `${P(a)}\\times ${P(x)}`;
+  const first = firstTerm(a, x);
   const second = b === 1 ? `+${P(y)}` : b === -1 ? `-${P(y)}` : `${b < 0 ? "-" : "+"}${Math.abs(b)}\\times ${P(y)}`;
   return first + second;
 };
 /** x に値 k を入れて、y は文字のままの左辺：2×3−y */
 const lhsX = (a, b, k) => {
-  const first = a === 1 ? P(k) : a === -1 ? `-${P(k)}` : `${P(a)}\\times ${P(k)}`;
+  const first = firstTerm(a, k);
   return first + (b === 1 ? "+y" : b === -1 ? "-y" : `${b < 0 ? "-" : "+"}${Math.abs(b)}y`);
 };
 /** y に値 k を入れて、x は文字のままの左辺：2x−3×(−1) */
@@ -358,9 +359,6 @@ export const UNITS = [
             ],
           };
         }),
-      ],
-      // ───────── 4 入試レベル ─────────
-      4: [
         // 11d07a y について解く（分数の傾き。4択）
         t("11d07a", (r) => {
           const [a, b, c] = tryGen(r, () => {
@@ -403,6 +401,9 @@ export const UNITS = [
             steps: [`${EQ(a, b, c)} に ${TX(`x=${k}`)} を代入して、${TX(`${lhsX(a, b, k)}=${c}`)}。`, `${solveVar(b, "y", c - a * k)}。`],
           };
         }),
+      ],
+      // ───────── 4 入試レベル ─────────
+      4: [
         // 11d08a 方程式のグラフ上で、x 座標、y 座標がともに自然数の点の個数
         t("11d08a", (r) => {
           const c8 = d08Case(r);
@@ -437,7 +438,7 @@ export const UNITS = [
             q: `方程式 ${q04Eq(c4)} のグラフが、2点 ${PT([c4.p, 0])}、${PT([0, c4.q])} を通る。$a$ の値は？`,
             ans: c4.a,
             hint: "グラフが通る点の座標は、方程式にあてはまる。軸上の点の座標を代入すると、$a$、$b$ のどちらかだけの方程式になるかな？",
-            steps: q04Steps(c4),
+            steps: q04Steps(c4, "a"),
           };
         }),
         // 11q04b 小テスト（チャレンジ）b の値
@@ -448,7 +449,7 @@ export const UNITS = [
             q: `方程式 ${q04Eq(c4)} のグラフが、2点 ${PT([c4.p, 0])}、${PT([0, c4.q])} を通る。$b$ の値は？`,
             ans: c4.b,
             hint: "グラフが通る点の座標は、方程式にあてはまる。軸上の点の座標を代入すると、$a$、$b$ のどちらかだけの方程式になるかな？",
-            steps: q04Steps(c4),
+            steps: q04Steps(c4, "b"),
           };
         }),
       ],
@@ -525,12 +526,11 @@ function q04Case(r) {
   return null;
 }
 function q04Eq(c4) { return TX(`ax+by=${c4.c}`); }
-function q04Steps(c4) {
+function q04Steps(c4, ask) {
   const { c, p, q, a, b } = c4;
-  return [
-    `点 ${PT([c4.p, 0])} を代入して ${TX(`${coefX(p, "a")}=${c}`)}、${TX(`a=${a}`)}。`,
-    `点 ${PT([0, c4.q])} を代入して ${TX(`${coefX(q, "b")}=${c}`)}、${TX(`b=${b}`)}。`,
-  ];
+  return ask === "a"
+    ? [`点 ${PT([p, 0])} を代入して、${TX(`${coefX(p, "a")}+b\\times 0=${c}`)}。`, `${TX(`${coefX(p, "a")}=${c}`)}、${TX(`a=${a}`)}。`]
+    : [`点 ${PT([0, q])} を代入して、${TX(`a\\times 0+${coefX(q, "b")}=${c}`)}。`, `${TX(`${coefX(q, "b")}=${c}`)}、${TX(`b=${b}`)}。`];
 }
 
 // 移さなかった問題はなし（グラフをかく問題は、切片・x 軸との交点・ある x での y を聞く形にした）

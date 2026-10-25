@@ -57,16 +57,21 @@ const fracLine = (r, qs, ms, ks) => {
 /** 直線 L 上の、x 座標が [lo, hi] の整数で、y 座標も整数の点 */
 const latt = (L, lo, hi) => { const o = []; for (let x = lo; x <= hi; x++) { const y = yAt(L, x); if (qisint(y)) o.push([x, y[0]]); } return o; };
 
+/** 2 点の組の4択を、必ず4つにするための補い（正解の 2 点のどちらか、または両方を y 方向にずらした組。直線上にないものだけ） */
+const pairFill = (L, P0, P1) => (i) => {
+  const d = [1, -1, 2, -2, 3, -3][i % 6], pr = i % 2 ? [[P0[0], P0[1] + d], [P1[0], P1[1] + d]] : [P0, [P1[0], P1[1] + d]];
+  return both(L, pr[0], pr[1]) ? null : PAIR(pr[0], pr[1]);
+};
 /** 「切片の点と、右へ 1 進んだ点」の 2 点の組を選ぶ4択（整数の傾き） */
 const twoPointsQ = (r, A, B) => {
   const a = pick(r, A), b = rnz(r, -B, B), L = line(a, b);
   const P0 = [0, b], P1 = [1, a + b];
-  const wrongs = shuffle(r, [[[0, b], [1, b - a]], [[0, b], [a, b + 1]], [[0, a], [1, a + b]], [[0, -b], [1, a - b]], [[b, 0], [a + b, 1]]]);
+  const wrongs = shuffle(r, [[[0, b], [1, b - a]], [[0, b], [a, b + 1]], [[0, a], [1, a + b]], [[0, -b], [1, a - b]], [[b, 0], [a + b, 1]], [[0, b], [1, b]], [[0, b], [-1, a + b]], [[0, b + 1], [1, a + b - 1]], [[0, -b], [1, -a - b]]]);
   const bad = wrongs.filter(([p, q]) => !both(L, p, q));
   return {
     q: `${$(ltex(L))} のグラフをかく。グラフが通る 2 点の組はどれか。`,
     ans: PAIR(P0, P1),
-    choices: choices4(r, PAIR(P0, P1), bad.map(([p, q]) => PAIR(p, q))),
+    choices: choices4(r, PAIR(P0, P1), bad.map(([p, q]) => PAIR(p, q)), pairFill(L, P0, P1)),
     hint: "切片の点は、x 座標が 0 の点。そこから右へ 1 進むと、y 座標はどう変わるかな？",
     steps: [`切片が ${N(b)} だから、点 ${PT(P0)} を通る。`, `傾きが ${N(a)} だから、右へ 1 進むと${UD(a)}へ ${Math.abs(a)} 進む。点 ${PT(P1)} を通る。`, `通る 2 点の組は ${PAIR(P0, P1)}。`],
   };
@@ -157,11 +162,11 @@ export const UNITS = [
         // 06d03a 演習（3）分数の傾き：通る 2 点の組
         t("06d03a", (r) => {
           const { p, q, s, b, L, a, P0, P1 } = stepLine(r, [1, 2, 3], [2, 3, 4], 4);
-          const wrongs = [[P0, [p, b + s * q]], [P0, [q, b - s * p]], [P0, [p, b - s * q]], [[0, -b], [q, s * p - b]]].filter(([x, y]) => !both(L, x, y));
+          const wrongs = shuffle(r, [[P0, [p, b + s * q]], [P0, [q, b - s * p]], [P0, [p, b - s * q]], [[0, -b], [q, s * p - b]], [P0, [q, b]], [P0, [-q, b + s * p]], [[0, b + 1], [q, b + s * p - 1]]]).filter(([x, y]) => !both(L, x, y));
           return {
             q: `${$(ltex(L))} のグラフをかく。グラフが通る 2 点の組はどれか。`,
             ans: PAIR(P0, P1),
-            choices: choices4(r, PAIR(P0, P1), wrongs.map(([x, y]) => PAIR(x, y))),
+            choices: choices4(r, PAIR(P0, P1), wrongs.map(([x, y]) => PAIR(x, y)), pairFill(L, P0, P1)),
             hint: "傾きが分数のとき、右へ進む量と上（下）へ進む量は、それぞれ分母と分子のどちらにあたるかな？",
             steps: [`傾き ${$(qt(a))} は、右へ ${q} 進むと、${UD(s)}へ ${p} 進むことを表す。`, `切片の点 ${PT(P0)} から、右へ ${q}、${UD(s)}へ ${p} 進んだ点は ${PT(P1)}。`, `通る 2 点の組は ${PAIR(P0, P1)}。`],
           };
@@ -190,13 +195,17 @@ export const UNITS = [
         t("06q03", (r) => {
           const { L } = fracLine(r, [2, 3], [1, -1, 2, -2], [-5, -3, -1, 1, 3, 5]);
           const pts = shuffle(r, latt(L, -5, 5)), correct = pts.slice(0, 2).sort((u, v) => u[0] - v[0]);
-          const [A, B] = correct, d = pick(r, [1, -1]);
-          const cand = shuffle(r, [[A, [B[0], B[1] + d]], [[A[0], A[1] - d], B], [A, [B[0] + 1, B[1]]], [[A[0] - 1, A[1]], B], [[A[0], A[1] + d], [B[0], B[1] - d]]]);
-          const wrongs = cand.filter(([u, v]) => !both(L, u, v) && u[0] !== v[0]);
+          const nearOf = (P) => shuffle(r, [[P[0], P[1] + 1], [P[0], P[1] - 1], [P[0] + 1, P[1]], [P[0] - 1, P[1]]]).find((Q2) => !onLine(L, Q2));
+          const cand = [];
+          for (let k = 0; k < 8; k++) {
+            const [U, V] = shuffle(r, pts).slice(0, 2), kind = r(0, 2);
+            cand.push(kind === 0 ? [U, nearOf(V)] : kind === 1 ? [nearOf(U), nearOf(V)] : [nearOf(U), V]);
+          }
+          const wrongs = cand.map(([u, v]) => [u, v].sort((m, n) => m[0] - n[0] || m[1] - n[1])).filter(([u, v]) => !both(L, u, v) && u[0] !== v[0]);
           return {
             q: `${$(ltex(L))} のグラフが通る、x 座標も y 座標も整数の点を 2 つ答えたい。2 点とも、グラフが通る点になっている組はどれか。`,
             ans: PAIR(correct[0], correct[1]),
-            choices: choices4(r, PAIR(correct[0], correct[1]), wrongs.map(([u, v]) => PAIR(u, v))),
+            choices: choices4(r, PAIR(correct[0], correct[1]), wrongs.map(([u, v]) => PAIR(u, v)), pairFill(L, correct[0], correct[1])),
             hint: "点の x 座標を式に入れて、y 座標と合うか確かめよう。切片が整数でないので、x が整数でも y は整数にならないことがあるよ。",
             steps: [`${PT(correct[0])}：${$(calcTex(L, correct[0][0]))} で、y 座標と合う。`, `${PT(correct[1])}：${$(calcTex(L, correct[1][0]))} で、y 座標と合う。`, `2 点とも通るのは ${PAIR(correct[0], correct[1])}。ほかの組は、1 点が通らない。`],
           };
@@ -222,11 +231,13 @@ export const UNITS = [
           const { q, L } = fracLine(r, [2, 3, 4], [1, -1, 2, -2, 3, -3], [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5]);
           const dec = q === 2 && r(0, 1) === 1, eq = dec ? ltexDec(L) : ltex(L);
           const [x0, y0] = pick(r, latt(L, -5, 5));
-          const pool = shuffle(r, [[x0, y0 + 1], [x0, y0 - 1], [x0 + 1, y0], [x0 - 1, y0], [y0, x0], [x0 + 2, y0]]).filter((P) => !onLine(L, P));
+          const pool = [[y0, x0]];
+          for (const [x, y] of latt(L, -6, 6)) pool.push([x, y + 1], [x, y - 1], [x + 1, y], [x - 1, y]);
+          const wrongPts = shuffle(r, pool).filter((P) => !onLine(L, P) && Math.abs(P[0]) <= 7 && Math.abs(P[1]) <= 9);
           return {
             q: `${$(eq)} のグラフが通る点はどれか。`,
             ans: PT([x0, y0]),
-            choices: choices4(r, PT([x0, y0]), pool.map(PT)),
+            choices: choices4(r, PT([x0, y0]), wrongPts.map(PT), (i) => { const P = [x0 + (i % 2 ? 2 : -2), y0 + [1, -1, 2, -2][i % 4]]; return onLine(L, P) ? null : PT(P); }),
             hint: "それぞれの点の x 座標を式に入れると、y はいくつになるかな？ y 座標と合う点はどれだろう？",
             steps: [`点の x 座標を式に入れて、y 座標と合うかを確かめる。`, `${PT([x0, y0])}：${$(calcTex(L, x0, dec))} で、y 座標と合う。`, `ほかの点は、x 座標を式に入れても、y 座標と合わない。`],
           };
@@ -253,7 +264,7 @@ export const UNITS = [
             const { p, q, s, b, L, a, P0, P1 } = stepLine(r, [1, 2, 3, 4], [2, 3, 4, 5], 5);
             if (p === q) continue;
             const PA = [p, b + s * q];
-            const wrongs = [PA, [q, b - s * p], [p, b - s * q]].filter((P) => !onLine(L, P));
+            const wrongs = [PA, ...shuffle(r, [[q, b - s * p], [p, b - s * q], [q, b], [p, b], [q, b + 2 * s * p], [-q, b + s * p]])].filter((P) => !onLine(L, P));
             if (wrongs.length < 3) continue;
             return {
               q: `A さんは、${$(ltex(L))} のグラフを、切片の点 ${PT(P0)} から、右へ ${p}、${UD(s)}へ ${q} 進んだ点 ${PT(PA)} をとってかこうとした。切片の点から傾きにしたがって進んだ、正しい点はどれか。`,
@@ -275,7 +286,7 @@ export const UNITS = [
               q: `A さんは、${$(ltex(L))} のグラフを、切片の点 ${PT(P0)} から、右へ ${p}、${UD(s)}へ ${q} 進んだ点 ${PT(PA)} をとり、この 2 点を通る直線をひいた。A さんがひいた直線の傾きは？`,
               ans: num(mine),
               hint: "傾きは、何÷何で求められたかな？ A さんは、右へいくつ、上（下）へいくつ進んだ？",
-              steps: [`2 点 ${PT(P0)}、${PT(PA)} で、x の増加量は ${p}、y の増加量は ${N(s * q)}。`, `傾きは、（y の増加量）÷（x の増加量）で ${$(`${s * q < 0 ? `(${s * q})` : s * q}\\div ${p}=${qt(mine)}`)}。`, `もとの傾き ${$(qt(a))} とは、ちがう（右へ進む量と上（下）へ進む量が、逆になっている）。`],
+              steps: [`2 点 ${PT(P0)}、${PT(PA)} で、x の増加量は ${p}、y の増加量は ${N(s * q)}。`, `もとの傾き ${$(qt(a))} とはちがう（右へ進む量と上（下）へ進む量が、逆になっている）。`, `A さんがひいた直線の傾きは、（y の増加量）÷（x の増加量）で ${$(`${s * q < 0 ? `(${s * q})` : s * q}\\div ${p}=${qt(mine)}`)}。`],
             };
           }
           return { skip: true };
