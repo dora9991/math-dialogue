@@ -1,8 +1,8 @@
 // ============================================================
 // preview.mjs — 移した問題を、1枚の HTML で見られるようにする（確かめ用。スマホでも読める）
-//   node ikkan/kotsu/preview.mjs [出力先=ikkan/kotsu/preview.html] [1テンプレートの見本の数=2] [--artifact] [--unit=kukan,data,shiki,renritsu]
+//   node ikkan/kotsu/preview.mjs [出力先=ikkan/kotsu/preview.html] [1テンプレートの見本の数=2] [--artifact] [--unit=kukan,data,shiki,renritsu,ichiji]
 //   --artifact … 埋めこみ表示（Claude の Artifact）用に、<html>・<head>・<body> のない形で書き出す
-//   --unit     … 見本にする単元（空間図形 kukan・データの活用 data・式の計算 shiki・連立方程式 renritsu。省略すると、全部）
+//   --unit     … 見本にする単元（空間図形 kukan・データの活用 data・式の計算 shiki・連立方程式 renritsu・一次関数 ichiji。省略すると、全部）
 //   単元ごとに、テンプレートの見本（問題・選択肢・答え・ヒント・解説）と、もとの ikkan の問題、移さなかった問題（理由つき）を並べる。
 //   数式（$...$）は MathML で出すので、katex（npm の katex）が必要（なければ、$ のまま出す）。ネットにつながなくても読める。
 //   見本は、実行のたびに乱数でつくりかえる。
@@ -16,7 +16,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const IKKAN = path.resolve(HERE, "..");
 const ARGS = process.argv.slice(2), ART = ARGS.includes("--artifact"), POS = ARGS.filter((a) => !a.startsWith("--"));
-const UNIT_NAMES = { kukan: "空間図形", data: "データの活用", shiki: "式の計算", renritsu: "連立方程式" };
+const UNIT_NAMES = { kukan: "空間図形", data: "データの活用", shiki: "式の計算", renritsu: "連立方程式", ichiji: "一次関数" };
 const UNIT_ARG = ARGS.find((a) => a.startsWith("--unit="));
 const KEYS = UNIT_ARG ? UNIT_ARG.slice(7).split(",").filter(Boolean) : Object.keys(UNIT_NAMES);
 const TITLE = KEYS.map((k) => UNIT_NAMES[k] || k).join("・");
