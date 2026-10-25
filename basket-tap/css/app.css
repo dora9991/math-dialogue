@@ -389,18 +389,30 @@ html[data-rot] .sheet-card { max-height: calc(var(--rvw, 100vw) * 0.92); }
 .wipebox.tiny .wipesz { width: 28px; height: 28px; font-size: 17px; }
 .wipebox.tiny .wipetag { left: 4px; bottom: 4px; padding: 2px 6px; font-size: 11.5px; }
 /* 横長の画面：下の帯を、映像の下の列に（いま記録したもの・その下にパスミスと★）。高さは決まった数（js が残りの高さを測る） */
-html .live.dk-side .gbar { height: auto; flex-wrap: wrap; align-content: flex-end; gap: 6px; padding-top: 0; padding-left: 0; padding-right: 6px; }
-html .live.dk-side .lastbar { order: -1; flex: 1 1 100%; height: 50px; }
-html .live.dk-side .gb { flex: 1 1 0; min-width: 0; height: 56px; padding: 0 6px; }
+html .live.dk-side:not(.dk-x) .gbar { height: auto; flex-wrap: wrap; align-content: flex-end; gap: 6px; padding-top: 0; padding-left: 0; padding-right: 6px; }
+html .live.dk-side:not(.dk-x) .lastbar { order: -1; flex: 1 1 100%; height: 50px; }
+html .live.dk-side:not(.dk-x) .gb { flex: 1 1 0; min-width: 0; height: 56px; padding: 0 6px; }
 @media (min-width: 700px) and (min-height: 600px) {
-  html .live.dk-side .lastbar { height: 62px; }
-  html .live.dk-side .gb { height: 70px; }
+  .live.dk-side.dk-x .gb { min-width: 104px; padding: 0 12px; }       /* 特大：下の帯は自分のチームの下（幅が狭い）。いま記録したものの場所を残す */
+  html .live.dk-side:not(.dk-x) .lastbar { height: 62px; }
+  html .live.dk-side:not(.dk-x) .gb { height: 70px; }
 }
-html .live.dk-side.short .lastbar { height: 44px; }
-html .live.dk-side.short .gb { height: 46px; }
+html .live.dk-side.short:not(.dk-x) .lastbar { height: 44px; }
+html .live.dk-side.short:not(.dk-x) .gb { height: 46px; }
 /* （列が狭いので、★ の「あとで見る」は ★ の下に小さく） */
-html .live.dk-side .gb.k-mark b::after { content: none; }
-html .live.dk-side .gb small { display: block; }
+html .live.dk-side:not(.dk-x) .gb.k-mark b::after { content: none; }
+html .live.dk-side:not(.dk-x) .gb small { display: block; }
+/* 特大：相手チームの枠を小さくして、映像の下に置く（自分のチームは残りの広さに。js の layoutWipe・placeOpp）。
+   横長の画面：右の列（上の帯の下から画面の下まで）。下の帯（パスミス・★）は自分のチームの下 */
+.live.dk-side.dk-x { grid-template-areas: "bar bar" "stage wipe" "gbar wipe"; }
+.live.dk-x .wipe { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px; }
+.live.dk-x .wipe > .wipebox { align-self: center; }
+.live.dk-x .wipe > .team { flex: 1 1 0; min-width: 0; min-height: 0; }
+.live.dk-top.dk-x .wipe > .team { flex: none; }                   /* 縦長の画面：高さは js が決める */
+.live.dk-side.dk-x .wipe > .team.oppone { flex: 0 1 auto; }        /* 相手チームが1行だけ：その高さ（残りが少なければ縮める）。下は空けておく */
+.live.dk-side.dk-x .wipe { padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+html[data-rot="90"] .live.dk-side.dk-x .wipe { padding-bottom: calc(6px + env(safe-area-inset-left)); }
+html[data-rot="270"] .live.dk-side.dk-x .wipe { padding-bottom: calc(6px + env(safe-area-inset-right)); }
 /* 撮影の画面：ワイプの大きさ */
 .wiperow { gap: 6px; margin-top: 8px; align-items: center; }
 .wiperow b { font-size: 14px; }

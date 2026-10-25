@@ -277,6 +277,32 @@
     return pool.sort((a, b) => b.score - a.score)[0];
   };
 
+  /* 1つのチームだけを、W×H の枠（チームの枠の外側の大きさ）に並べるときの列の数。
+     ワイプ「特大」で、相手チームを映像の下に小さく置くとき・自分のチームだけを残りに並べるときに使う。
+     考え方は planLayout と同じ（ボタンの幅と高さの小さいほうが大きいもの。列を増やすのは、ボタンが十分に大きくなるときだけ）。
+     maxC：列の数の上限（相手チームは 4 まで） */
+  BT.planTeam = function (W, H, n, headH, maxC) {
+    const K = BT.LAYOUT;
+    const fixed = 2 * K.border + headH + 2 * K.rpad;
+    const rows = Math.max(1, n || 0);
+    const cand = [];
+    for (let c = 1; c <= Math.min(maxC || 3, rows); c++) {
+      const r = Math.ceil(rows / c);
+      const cellW = (W - 2 * K.border - 2 * K.rpad - (c - 1) * K.cgap) / c;
+      const nw = Math.round(BT.clamp(cellW * 0.2, 32, 64));
+      const bw = (cellW - nw - 4 * K.bgap) / 4;
+      const rowH = Math.min((H - fixed - (r - 1) * K.rgap) / r, K.rmax);
+      const size = Math.min(bw, rowH) + 0.15 * Math.min(Math.abs(bw - rowH), 30);
+      const colCost = (size >= 34 ? 5 : 1) * (c - 1);
+      const score = Math.min(size, 44) + 0.1 * Math.max(0, Math.min(size, 64) - 44) - colCost;
+      cand.push({ c, r, cellW, nw, bw, rowH, base: fixed + (r - 1) * K.rgap, size, score, scroll: rowH < K.rmin });
+    }
+    const okW = cand.filter((x) => x.bw >= K.minBw);
+    const pool = okW.length ? okW : [cand.slice().sort((a, b) => b.bw - a.bw)[0]];
+    const still = pool.filter((x) => !x.scroll);               // 縦にすべらない並べ方があれば、そちらを（列が増えても）
+    return (still.length ? still : pool).sort((a, b) => b.score - a.score)[0];
+  };
+
   /* ---------- 集計 ---------- */
   BT.score = function (game, until) {
     const s = [0, 0];
