@@ -944,7 +944,7 @@ BC.issue([
       { text: '音や場所が気になって、できることが少ない', check: 'ボールを床につかない練習（8の字・ボディサークル・寝ころびシュート）を使っているか', views: ['v-shoot-release', 'v-drb-eyes'] },
     ],
     views: ['v-shoot-release', 'v-shoot-hold', 'v-drb-low', 'v-body-power', 'v-mind-motivation'],
-    drills: ['d-handling', 'd-lyingshoot', 'd-core', 'd-tennisball', 'd-pound', 'd-film'],
+    drills: ['d-handling', 'd-lyingshoot', 'd-core', 'd-tennisball', 'd-pound', 'd-film', 'd-wallpass'],
     tactics: [],
     tip: 'チャットに「**家でひとりで20分の練習メニューを作って**」のように書くと、ゴールのいらない、ひとりでできる練習でプランを組みます。家の中では、まわりの物と人に気をつけて。',
     next: ['i-drb-lookdown', 'i-shoot-form', 'i-motivation'],

@@ -246,7 +246,7 @@
     root.querySelectorAll('[data-anim]').forEach((el) => {
       if (el.dataset.done) return;
       el.dataset.done = 1;
-      BC.anim(el, el.dataset.anim, { points: el.dataset.points !== '0', compact: el.dataset.compact === '1', autoplay: el.dataset.auto !== '0', at: +(el.dataset.at || 0) });
+      BC.anim(el, el.dataset.anim, { points: el.dataset.points !== '0', compact: el.dataset.compact === '1', autoplay: el.dataset.auto !== '0', at: el.dataset.at ? +el.dataset.at : undefined });
     });
     root.querySelectorAll('[data-court]').forEach((el) => { const it = get(el.dataset.court); if (it && it.diagram && !el.dataset.done) { el.dataset.done = 1; BC.court(el, it.diagram, { label: labelOf(it) }); } });
     root.querySelectorAll('[data-tape]').forEach((el) => {

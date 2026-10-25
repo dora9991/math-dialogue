@@ -380,7 +380,9 @@
     const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     const phases = clip.phases || [];
     const mistakes = clip.mistakes || [];
-    const S = { t: opt.at || 0, playing: !reduce && opt.autoplay !== false, speed: 1, mode: '', angles: false, trail: false, visible: true, last: 0, raf: 0 };
+    const still = reduce || opt.autoplay === false;
+    // 止めて見せるときは、いちばん形が分かる時刻（still）から。動かすときは 0 から
+    const S = { t: opt.at != null ? opt.at : still && clip.still != null ? clip.still : 0, playing: !still, speed: 1, mode: '', angles: false, trail: false, visible: true, last: 0, raf: 0 };
     el.classList.add('mo');
     el.innerHTML = `
       <div class="mo-stage"><svg viewBox="${x0} ${-y1} ${x1 - x0} ${y1 - y0}" role="img" aria-label="${clip.name}の動き">

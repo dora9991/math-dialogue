@@ -119,7 +119,7 @@
     const dayN = Math.floor(new Date(now).setHours(0, 0, 0, 0) / 86400000);
     const order = pool.map((_, i) => pool[(dayN + seed + i) % pool.length]).concat(G.SOLO_SKILLS);
     const by = (s, phases) => BC.lists.drill.filter((d) => (d.skills || [])[0] === s && phases.includes(d.phase) && fit(d));
-    let skill = order.find((s) => by(s, ['skill', 'warmup']).length >= 2) || order.find((s) => by(s, ['skill', 'warmup']).length) || 'dribble';
+    let skill = order.find((s) => by(s, ['skill', 'warmup']).length) || 'dribble';
     const note = goals.length && !goals.includes(skill) ? `「${goals.map((g) => BC.skillMap[g].name).join('・')}」は、${n === 1 ? 'ひとりでできる' : '条件に合う'}練習が少ないので、きょうは「${BC.skillMap[skill].name}」にしました。` : '';
     const used = new Set();
     const items = [];

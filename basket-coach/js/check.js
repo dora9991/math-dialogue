@@ -98,7 +98,7 @@
     if (S.video) { try { S.video.pause(); S.video.removeAttribute('src'); S.video.load(); } catch (e) { /* なし */ } }
     if (S.url) URL.revokeObjectURL(S.url);
   }
-  function go(step) { S.step = step; S.err = ''; paint(); if (S.root) { const top = S.root.getBoundingClientRect().top; if (top < 0) window.scrollTo({ top: window.scrollY + top - 70 }); } }
+  function go(step, err) { S.step = step; S.err = err || ''; paint(); if (S.root) { const top = S.root.getBoundingClientRect().top; if (top < 0) window.scrollTo({ top: window.scrollY + top - 70 }); } }
 
   CK.render = function (el, ctx, opt = {}) {
     CTX = ctx || CTX;
@@ -229,7 +229,7 @@
     v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
     S.video = v; S.dur = 0; S.result = null; S.team = null; S.pickHip = null; S.calib = null; S.H = null; S.colors = [];
     S.primed = false; S.cands = null; S.people0 = null; S.snap = null; S.work = null; S.rate = 1; S.mini = null;
-    const fail = () => { S.err = 'この動画は、このブラウザでは 開けませんでした。スマホの カメラで とりなおすか、MP4 の動画を えらんでください。'; S.video = null; go('how'); };
+    const fail = () => { if (S.video !== v) return; S.video = null; go('how', 'この動画は、このブラウザでは 開けませんでした。スマホの カメラで とりなおすか、MP4 の動画を えらんでください。'); };
     v.addEventListener('error', fail, { once: true });
     const ready = () => {
       if (!v.videoWidth || !isFinite(v.duration) || !v.duration) return fail();
@@ -465,7 +465,7 @@
     S.prog = { i: 0, n: Math.max(1, Math.floor((S.to - S.from) * fps)) + 1 };
     go('run');
     let pose;
-    try { pose = await BA.load('pose'); } catch (e) { S.err = aiFail(e); return go('range'); }
+    try { pose = await BA.load('pose'); } catch (e) { return go('range', aiFail(e)); }
     const ac = new AbortController();
     S.abort = ac;
     const poses = [], times = [];
@@ -488,8 +488,7 @@
       S.abort = null;
       if (ac.signal.aborted) { toast('やめました'); return go('range'); }
       console.warn(e);
-      S.err = 'とちゅうで うまく しらべられませんでした。もう一度 ためしてください。';
-      return go('range');
+      return go('range', 'とちゅうで うまく しらべられませんでした。もう一度 ためしてください。');
     }
     S.abort = null;
     const first = poses.findIndex((p) => p.length);
@@ -1189,7 +1188,7 @@
     S.prog = { i: 0, n: Math.max(1, Math.floor((S.to - S.from) * fps)) + 1 };
     go('run');
     let det;
-    try { det = await BA.load('person'); } catch (e) { S.err = aiFail(e); return go('color'); }
+    try { det = await BA.load('person'); } catch (e) { return go('color', aiFail(e)); }
     const ac = new AbortController();
     S.abort = ac;
     const frames = [];
@@ -1212,8 +1211,7 @@
       S.abort = null;
       if (ac.signal.aborted) { toast('やめました'); return go('color'); }
       console.warn(e);
-      S.err = 'とちゅうで うまく しらべられませんでした。もう一度 ためしてください。';
-      return go('color');
+      return go('color', 'とちゅうで うまく しらべられませんでした。もう一度 ためしてください。');
     }
     S.abort = null;
     BA.courtTrack(frames);
