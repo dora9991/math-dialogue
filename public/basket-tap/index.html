@@ -2798,7 +2798,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     updateCamUI();
     if (next === 's' && S.L && !S.camSheet) say('ワイプを小さくしました（上の帯の映像を押すと、撮影の画面で大きくできます）', 'ok', 4000);
   }
-  /* ワイプの左上：録画中なら、録画の時間 */
+  /* ワイプの左下：録画中なら、録画の時間 */
   function wipeTag() {
     const t = S.L.wipeTag, rec = camRec();
     const s = rec ? `● 録画 ${BT.fmtTime(S.cam.elapsed())}` : S.camBusy || S.cam.state === 'finishing' ? '仕上げ中…' : '録画していません';
