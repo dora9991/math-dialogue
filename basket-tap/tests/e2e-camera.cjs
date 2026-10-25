@@ -106,7 +106,7 @@ async function measure(page, vid, times) {
     await page.waitForSelector('.camsheet .campv');
     await page.waitForFunction(() => { const v = document.querySelector('.campv'); return v && v.readyState >= 2 && v.videoWidth > 0; }, null, { timeout: 5000 });
     ok(await page.isVisible('#btnCamRec') && (await page.textContent('#camStat')).includes('準備'), '撮影の画面：カメラの大きな映像・「● 録画を始める」');
-    ok(await page.evaluate(() => !document.querySelector('#btnCam').hidden), '上の帯に、カメラの小さな映像');
+    ok(await page.evaluate(() => !document.querySelector('#wipe').hidden && document.querySelector('#btnCam').hidden), '記録の画面に、カメラの映像（ワイプ。はじめは「中」）');
     await shot(page, 'cam-sheet-ready');
 
     console.log('\n■ 録画 → スタート → 記録');
@@ -114,7 +114,7 @@ async function measure(page, vid, times) {
     await page.waitForFunction(() => BT.app.S.cam && BT.app.S.cam.rec, null, { timeout: 5000 });
     await sleep(1200);
     ok((await page.textContent('#camStat')).includes('録画中'), '「● 録画中」と録画の時間');
-    ok(await page.evaluate(() => document.querySelector('#btnCam').classList.contains('rec')), '上の帯の映像が赤いふち（録画中）');
+    ok(await page.evaluate(() => document.querySelector('#wipeBox').classList.contains('rec') && document.querySelector('#wipeTag').textContent.includes('録画')), 'ワイプが赤いふち・「● 録画」と時間（録画中）');
     await shot(page, 'cam-sheet-rec');
     await page.click('.sheet-card header .x');
     await sleep(800);
@@ -361,14 +361,14 @@ async function measure(page, vid, times) {
       await c5.close();
     }
 
-    console.log('\n■ スマホの大きさでも、上の帯（時計・得点・カメラの映像・メニュー）が重ならない');
+    console.log('\n■ スマホの大きさでも、上の帯（時計・得点・カメラの小さな映像・メニュー）が重ならない（ワイプ「小」）');
     for (const vp of [{ width: 390, height: 664, n: 'ふつうのスマホ' }, { width: 375, height: 553, n: 'iPhone SE' }, { width: 750, height: 340, n: 'スマホ横向き' }]) {
       const c3 = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, permissions: ['camera', 'microphone'], locale: 'ja-JP' });
       await c3.addInitScript(fakeCamera);
       const p3 = await c3.newPage();
       await p3.goto(srv.url + 'basket-tap/');
       await p3.waitForFunction(() => window.BT && BT.app);
-      await p3.evaluate(() => { const g3 = BT.newGame({ teams: [{ name: '致遠館', players: BT.parseNumbers('4-18').map((no) => ({ no })) }, { name: '城南', players: BT.parseNumbers('4-18').map((no) => ({ no })) }] }); BT.store.saveGame(g3); BT.app.resume(g3.id); BT.app.start(); });
+      await p3.evaluate(() => { BT.app.S.prefs.camWipe = 's'; const g3 = BT.newGame({ teams: [{ name: '致遠館', players: BT.parseNumbers('4-18').map((no) => ({ no })) }, { name: '城南', players: BT.parseNumbers('4-18').map((no) => ({ no })) }] }); BT.store.saveGame(g3); BT.app.resume(g3.id); BT.app.start(); });
       await p3.evaluate(() => BT.app.camStart());
       await p3.waitForFunction(() => BT.app.S.cam && BT.app.S.cam.rec && !document.querySelector('#btnCam').hidden);
       const bad = await p3.evaluate(() => {
@@ -386,6 +386,105 @@ async function measure(page, vid, times) {
       await shot(p3, `cam-${vp.width}x${vp.height}`);
       await p3.evaluate(() => BT.app.camClose());
       await c3.close();
+    }
+
+    console.log('\n■ ワイプ（記録の画面のカメラの映像）の大きさ：中・大・小。ボタンに重ならない');
+    {
+      /* ワイプと、選手のボタン・下の帯・上の帯が重ならないか／ボタンの行がすべっているか／下の帯がワイプの下の列にあるか */
+      const wipeState = (pg) => pg.evaluate(() => {
+        const L = BT.app.S.L, live = L.root;
+        const on = !L.wipe.hidden;
+        const wr = L.wipeBox.getBoundingClientRect(), gr = L.gbar.getBoundingClientRect();
+        const hit = [], out = [];
+        document.querySelectorAll('.pb, .gb, .lastbar, .lbar > *:not([hidden])').forEach((b) => {
+          const r = b.getBoundingClientRect();
+          if (!r.width) return;
+          if (on && r.left < wr.right - 1 && r.right > wr.left + 1 && r.top < wr.bottom - 1 && r.bottom > wr.top + 1) hit.push(b.className);
+          const ro = b.closest('.roster');
+          if ((r.right > innerWidth + 1 || r.bottom > innerHeight + 1 || r.left < -1 || r.top < -1) && !(ro && ro.scrollHeight > ro.clientHeight + 1)) out.push(b.className);
+        });
+        return { on, thumb: !L.camBtn.hidden, dock: ['dk-side', 'dk-col', 'dk-top'].filter((k) => live.classList.contains(k)).join(''), w: L.wipeBox.offsetWidth, h: L.wipeBox.offsetHeight,
+          hit: hit.slice(0, 3), out: out.slice(0, 3), scroll: [...document.querySelectorAll('.team')].some((t) => t.classList.contains('scroll')),
+          gbarRight: on && gr.left >= wr.left - 8, size: BT.app.S.prefs.camWipe, fb: !!L.wipeFallback };
+      });
+      await page.evaluate(() => { BT.app.camClose(); const g8 = BT.newGame({ teams: [{ name: '致遠館', players: BT.parseNumbers('4-15').map((no) => ({ no })) }, { name: '城南', players: BT.parseNumbers('4-15').map((no) => ({ no })) }] }); BT.store.saveGame(g8); BT.app.resume(g8.id); });
+      await page.evaluate(() => BT.app.camStart());
+      await page.waitForFunction(() => BT.app.S.cam && BT.app.S.cam.rec && !document.querySelector('#wipe').hidden, null, { timeout: 8000 });
+      await page.evaluate(() => BT.app.start());
+      await sleep(1300);
+      let w = await wipeState(page);
+      ok(w.on && !w.thumb && w.dock === 'dk-side' && w.w >= 380 && w.hit.length === 0 && w.out.length === 0 && !w.scroll && w.gbarRight,
+        `iPad 横（1180×820）・中：右側に ${w.w}×${w.h} のワイプ・上の帯の小さな映像は隠す・ボタンと重ならず、行もすべらない・パスミスと★はワイプの下`, w);
+      ok((await page.textContent('#wipeTag')).match(/● 録画 0:0\d/), `ワイプに「${await page.textContent('#wipeTag')}」（録画の時間）`);
+      await shot(page, 'wipe-ipad-m');
+      await page.click('#panel0 .prow[data-no="9"] .pb[data-type="fg3"]');
+      await page.click('#btnMark');
+      ok((await page.evaluate(() => BT.app.S.game.events.filter((e) => (e.type === 'fg3' && e.no === '9') || e.type === 'mark').length)) === 2, 'ワイプを出したまま、選手のボタン・★で記録できる');
+      const wm = w.w;
+      await page.click('#btnWipeBig');
+      await sleep(300);
+      w = await wipeState(page);
+      ok(w.size === 'l' && w.w > wm + 60 && w.hit.length === 0 && w.out.length === 0 && await page.evaluate(() => document.querySelector('#btnWipeBig').disabled),
+        `「＋」で大：${w.w}×${w.h}・ボタンと重ならない・「＋」はもう押せない`, w);
+      await shot(page, 'wipe-ipad-l');
+      await page.click('#btnWipeSmall');
+      await page.click('#btnWipeSmall');
+      await sleep(300);
+      w = await wipeState(page);
+      ok(w.size === 's' && !w.on && w.thumb && !w.dock && (await page.evaluate(() => BT.store.prefs().camWipe)) === 's', '「－」2回で小：上の帯の小さな映像に戻る（設定にも残る）', w);
+      await page.click('#btnCam');
+      await page.waitForSelector('#camWipe [data-wipe="m"]');
+      ok((await page.textContent('#camWipe')).includes('ワイプの大きさ') && await page.$('#camWipe [data-wipe="s"].on'), '撮影の画面に「ワイプの大きさ　小・中・大」（いまは小）');
+      await page.click('#camWipe [data-wipe="m"]');
+      await page.waitForSelector('#camWipe [data-wipe="m"].on');
+      await page.click('.sheet-card header .x');
+      await sleep(300);
+      w = await wipeState(page);
+      ok(w.size === 'm' && w.on && w.w === wm, '撮影の画面で「中」を選ぶと、ワイプが戻る', w);
+      await page.click('#btnWipe');
+      await page.waitForSelector('.camsheet .campv');
+      ok(await page.evaluate(() => BT.ui.sheetOpen()), 'ワイプを押すと、撮影の画面が開く');
+      await page.click('.sheet-card header .x');
+      await page.evaluate(() => BT.app.camClose());
+      await page.waitForFunction(() => BT.app.S.cam.state === 'off');
+      w = await wipeState(page);
+      ok(!w.on && !w.dock && !w.thumb, 'カメラを切ると、ワイプも消えて、ボタンが元の広さに戻る', w);
+
+      const cases = [
+        { n: 'スマホ横（2チームとも名簿）', vp: [844, 390], opp: true, check: (m, l) => m.on && m.dock === 'dk-side' && m.w >= 150 && !m.scroll && l.w > m.w + 80 },
+        { n: 'スマホ横（自分のチームだけ名簿）', vp: [844, 390], opp: false, check: (m, l) => m.on && m.w >= 220 && !m.scroll && l.w > m.w + 60 && !l.scroll },
+        { n: 'スマホ縦', vp: [390, 664], opp: true, check: (m, l) => m.on && m.dock === 'dk-top' && m.w >= 150 && !m.scroll && l.w > m.w },
+        { n: '小さなスマホ横（2チームとも名簿）', vp: [667, 375], opp: true, check: (m, l) => !m.on && m.thumb && m.fb && !m.scroll && l.on && l.w >= 250 },
+        { n: '画面の向きのロックのまま横（アプリごと横向き）', vp: [390, 664], opp: false, rot: 90, check: (m, l) => m.on && m.dock === 'dk-side' && !m.scroll && l.on },
+      ];
+      for (const c of cases) {
+        const cc = await browser.newContext({ viewport: { width: c.vp[0], height: c.vp[1] }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, permissions: ['camera', 'microphone'], locale: 'ja-JP' });
+        await cc.addInitScript(fakeCamera);
+        if (c.rot) await cc.addInitScript(() => { window.__camPortrait = 'ccw'; });
+        const pc = await cc.newPage();
+        const ec = [];
+        pc.on('pageerror', (e) => ec.push(String(e)));
+        await pc.goto(srv.url + 'basket-tap/');
+        await pc.waitForFunction(() => window.BT && BT.app);
+        await pc.evaluate(([opp, rot]) => { const g9 = BT.newGame({ teams: [{ name: '致遠館', players: BT.parseNumbers('4-15').map((no) => ({ no })) }, { name: '城南', players: opp ? BT.parseNumbers('4-15').map((no) => ({ no })) : [] }] }); BT.store.saveGame(g9); BT.app.resume(g9.id); if (rot) BT.app.S.prefs.uiRot = rot; BT.app.start(); }, [c.opp, c.rot || 0]);
+        await pc.evaluate(() => BT.app.camStart());
+        await pc.waitForFunction(() => BT.app.S.cam && BT.app.S.cam.rec);
+        await sleep(700);
+        const m = await wipeState(pc);
+        await pc.evaluate(() => BT.app.setWipe('l'));
+        await sleep(300);
+        const l = await wipeState(pc);
+        if (c.vp[0] === 844 && c.opp) await shot(pc, 'wipe-phone-l');
+        await pc.evaluate(() => BT.app.setWipe('m'));
+        await sleep(300);
+        if (c.vp[0] === 844 && c.opp) await shot(pc, 'wipe-phone-m');
+        let note = '';
+        if (c.check === cases[3].check) { await pc.evaluate(() => BT.app.openCamera()); await pc.waitForSelector('#camWipe'); note = await pc.textContent('#camWipe'); }
+        const good = c.check(m, l) && [m, l].every((x) => x.hit.length === 0 && x.out.length === 0) && (!note || note.includes('入りきらない')) && ec.length === 0;
+        ok(good, `${c.n}（${c.vp.join('×')}）：中 ${m.on ? m.w + '×' + m.h : '上の帯（ボタンを優先）'}${m.scroll ? '・行がすべる' : ''} ／ 大 ${l.w}×${l.h}${l.scroll ? '・行がすべる' : ''}・ボタンと重ならない`, { m, l, note: note.slice(0, 80), ec });
+        await pc.evaluate(() => BT.app.camClose());
+        await cc.close();
+      }
     }
 
     console.log('\n■ 保存できなくなったら（空きが足りない など）、録画を止めて、そこまでを仕上げる');

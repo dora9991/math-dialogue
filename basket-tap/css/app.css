@@ -138,12 +138,14 @@ a { color: var(--accent); }
 
 /* ---------- 記録の画面 ---------- */
 body[data-view="live"] { overflow: hidden; }
-.live { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--bg); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation;
+/* 上の帯（bar）・2つのチーム（stage）・下の帯（gbar）。撮影中の大きなワイプ（wipe）は、dk-side・dk-col・dk-top で場所を足す（js の layoutWipe） */
+.live { position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "bar" "stage" "gbar";
+  background: var(--bg); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left); }
 .live button { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
 /* 上の帯：時計・ピリオド・得点・メニュー */
-.lbar { display: flex; align-items: center; gap: 6px; padding: 6px 8px; flex: none; }
+.lbar { grid-area: bar; display: flex; align-items: center; gap: 6px; padding: 6px 8px; flex: none; min-width: 0; }
 .clock { display: inline-flex; align-items: center; gap: 7px; background: var(--panel); border: 2px solid var(--line); border-radius: 12px; padding: 0 10px; height: clamp(46px, 7.4vmin, 64px); min-width: clamp(104px, 21vmin, 170px); flex: none; }
 .tval { font-size: clamp(30px, 6.2vmin, 50px); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; line-height: 1; }
 .tval.long { font-size: clamp(22px, 4.6vmin, 40px); }
@@ -244,7 +246,7 @@ html[data-rot] .sheet-card { max-height: calc(var(--rvw, 100vw) * 0.92); }
 
 /* 2つのチーム：左右に並べる（lay-side）か、上下に重ねる（lay-stack）。どちらにするかは js の BT.planLayout が決める
    （すきま・ふちの数字は、core.js の BT.LAYOUT と合わせる） */
-.stagewrap { position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; }
+.stagewrap { grid-area: stage; position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; }
 .panels { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: row; gap: 6px; padding: 0 4px; }
 .lay-stack .panels { flex-direction: column; }
 .team { flex: 1 1 0; min-height: 0; min-width: 0; display: flex; flex-direction: column; background: var(--panel); border: 2px solid var(--tc); border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.35); }
@@ -302,7 +304,7 @@ html[data-rot] .sheet-card { max-height: calc(var(--rvw, 100vw) * 0.92); }
 .endscore b { font-size: 34px; font-variant-numeric: tabular-nums; }
 
 /* 画面の下：パスミス・★（いつでも押せる）・いま記録したもの・取り消す */
-.gbar { flex: none; display: flex; align-items: stretch; gap: 6px; padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); height: calc(60px + env(safe-area-inset-bottom)); }
+.gbar { grid-area: gbar; flex: none; display: flex; align-items: stretch; gap: 6px; padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); height: calc(60px + env(safe-area-inset-bottom)); min-width: 0; }
 .gb { position: relative; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 76px; padding: 0 10px; border: 0; border-radius: 12px; color: #fff; line-height: 1.1; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.22); transition: transform 0.06s, filter 0.06s, opacity 0.2s; }
 .gb b { font-size: 17px; font-weight: 900; white-space: nowrap; }
 .gb small { font-size: 11px; font-weight: 800; white-space: nowrap; }
@@ -362,6 +364,47 @@ html[data-rot] .sheet-card { max-height: calc(var(--rvw, 100vw) * 0.92); }
 .short .gbar { height: calc(50px + env(safe-area-inset-bottom)); padding-top: 4px; padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
 .short .gb small { display: none; }
 .short .gb.k-mark b::after { content: ' あとで見る'; font-size: 13px; }
+
+/* ---------- 撮影中の大きなワイプ（中・大） ----------
+   横長の画面（dk-side）：右側の列に映像。下の帯（パスミス・★・いま記録したもの）も、その下へ
+   縦長の画面：上の帯の下（dk-top）か、縦長の動画なら右側の列（dk-col）。映像の大きさは js の layoutWipe */
+/* （右側の列の幅は min-content＝ワイプの幅。auto だと、下の帯の文の長さまで広がってしまう） */
+.live.dk-side { grid-template-columns: minmax(0, 1fr) min-content; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "bar bar" "stage wipe" "stage gbar"; }
+.live.dk-col { grid-template-columns: minmax(0, 1fr) min-content; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "bar bar" "stage wipe" "gbar gbar"; }
+.live.dk-top { grid-template-rows: auto auto minmax(0, 1fr) auto; grid-template-areas: "bar" "wipe" "stage" "gbar"; }
+.wipe { grid-area: wipe; display: flex; align-items: flex-start; justify-content: center; min-width: 0; min-height: 0; padding: 0 6px 6px 0; }
+.dk-top .wipe { padding: 0 4px 6px; }
+.wipebox { position: relative; flex: none; background: #000; border: 2px solid var(--line2); border-radius: 12px; overflow: hidden; }
+.wipebox.rec { border-color: var(--bad); box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.35); }
+.wipebox.warn { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.45); }
+.wipeopen { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; display: block; }
+.wipev { position: absolute; left: 50%; top: 50%; display: block; pointer-events: none; }
+.wipetag { position: absolute; left: 6px; bottom: 6px; max-width: calc(100% - 12px); padding: 3px 8px; border-radius: 999px; background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 12.5px; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; pointer-events: none; }
+.wipetag.rec { background: rgba(220, 38, 38, 0.88); }
+.wipectl { position: absolute; right: 6px; top: 6px; display: flex; gap: 6px; }
+.wipesz { width: 36px; height: 36px; padding: 0; border: 1px solid rgba(255, 255, 255, 0.65); border-radius: 50%; background: rgba(0, 0, 0, 0.5); color: #fff; font-size: 21px; font-weight: 900; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+.wipesz:active { background: rgba(0, 0, 0, 0.75); }
+.wipesz:disabled { opacity: 0.3; }
+.wipebox.tiny .wipectl { right: 4px; top: 4px; gap: 4px; }
+.wipebox.tiny .wipesz { width: 28px; height: 28px; font-size: 17px; }
+.wipebox.tiny .wipetag { left: 4px; bottom: 4px; padding: 2px 6px; font-size: 11.5px; }
+/* 横長の画面：下の帯を、映像の下の列に（いま記録したもの・その下にパスミスと★）。高さは決まった数（js が残りの高さを測る） */
+html .live.dk-side .gbar { height: auto; flex-wrap: wrap; align-content: flex-end; gap: 6px; padding-top: 0; padding-left: 0; padding-right: 6px; }
+html .live.dk-side .lastbar { order: -1; flex: 1 1 100%; height: 50px; }
+html .live.dk-side .gb { flex: 1 1 0; min-width: 0; height: 56px; padding: 0 6px; }
+@media (min-width: 700px) and (min-height: 600px) {
+  html .live.dk-side .lastbar { height: 62px; }
+  html .live.dk-side .gb { height: 70px; }
+}
+html .live.dk-side.short .lastbar { height: 44px; }
+html .live.dk-side.short .gb { height: 46px; }
+/* （列が狭いので、★ の「あとで見る」は ★ の下に小さく） */
+html .live.dk-side .gb.k-mark b::after { content: none; }
+html .live.dk-side .gb small { display: block; }
+/* 撮影の画面：ワイプの大きさ */
+.wiperow { gap: 6px; margin-top: 8px; align-items: center; }
+.wiperow b { font-size: 14px; }
+.wiperow .note { flex-basis: 100%; margin: 0; }
 
 /* ---------- 下から出る小窓 ---------- */
 .sheet { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-end; justify-content: center; }

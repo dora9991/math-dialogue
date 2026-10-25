@@ -308,10 +308,20 @@
     L.camThumb = h('video', { class: 'camthumb', muted: true, playsinline: true, autoplay: true });
     L.camBtn = h('button', { class: 'cambtn', id: 'btnCam', hidden: true, 'aria-label': '撮影の画面を開く', onclick: openCamera }, L.camThumb, h('i', { class: 'camdot' }));
     L.camThumb.addEventListener('resize', onCamResize);
-    const bar = h('header', { class: 'lbar' }, L.clock, L.start, L.period,
+    const bar = L.bar = h('header', { class: 'lbar' }, L.clock, L.start, L.period,
       h('div', { class: 'score', 'aria-label': '得点' }, L.score[0], h('span', { class: 'dash' }, '−'), L.score[1]),
       L.camBtn,
       h('button', { class: 'menubtn', id: 'btnMenu', 'aria-label': 'メニュー', onclick: openMenu }, h('span', null, '≡'), h('small', null, 'メニュー')));
+    // 撮影中の大きなワイプ（中・大）。ボタンに重ならないよう、横長の画面なら右側・縦長なら上に置く（置き場所と大きさは layoutWipe）
+    L.wipeVid = h('video', { class: 'wipev', muted: true, playsinline: true, autoplay: true });
+    L.wipeVid.muted = true; L.wipeVid.playsInline = true;
+    L.wipeTag = h('span', { class: 'wipetag', id: 'wipeTag' });
+    L.wipeSmall = h('button', { class: 'wipesz', id: 'btnWipeSmall', 'aria-label': 'ワイプを小さくする', onclick: () => setWipe(-1) }, '－');
+    L.wipeBig = h('button', { class: 'wipesz', id: 'btnWipeBig', 'aria-label': 'ワイプを大きくする', onclick: () => setWipe(1) }, '＋');
+    L.wipeBox = h('div', { class: 'wipebox', id: 'wipeBox' },
+      h('button', { class: 'wipeopen', id: 'btnWipe', 'aria-label': '撮影の画面を開く', onclick: openCamera }, L.wipeVid),
+      L.wipeTag, h('div', { class: 'wipectl' }, L.wipeSmall, L.wipeBig));
+    L.wipe = h('aside', { class: 'wipe', id: 'wipe', hidden: true, 'aria-label': 'カメラの映像' }, L.wipeBox);
     const P = L.panelsEl = h('main', { class: 'panels' }, [0, 1].map(buildPanel));
     P.addEventListener('click', onPanelClick);
     L.cover = h('div', { class: 'cover', id: 'cover', hidden: true });
@@ -325,7 +335,7 @@
     };
     L.last = h('div', { class: 'lastbar', id: 'lastbar' });
     L.gbar = h('footer', { class: 'gbar' }, gbtn('pass', 'btnPass', 'パスミス'), gbtn('mark', 'btnMark', '★', 'あとで見る'), L.last);
-    L.root = h('div', { class: 'live' }, bar, h('div', { class: 'stagewrap' }, P, L.cover), L.gbar);
+    L.root = h('div', { class: 'live' }, bar, L.wipe, h('div', { class: 'stagewrap' }, P, L.cover), L.gbar);
     V.append(L.root);
     updateLive();
     layoutLive();
@@ -374,6 +384,7 @@
     if (!L || !L.root || !L.root.isConnected) return;
     const live = L.root, P = L.panelsEl;
     live.classList.toggle('short', (live.clientHeight || root.innerHeight) < 430);
+    layoutWipe();
     const plan = BT.planLayout(P.clientWidth, P.clientHeight, [L.panels[0].n, L.panels[1].n], L.panels[0].head.offsetHeight || 22);
     live.classList.toggle('lay-side', plan.arr === 'side');
     live.classList.toggle('lay-stack', plan.arr === 'stack');
@@ -485,6 +496,7 @@
     if (camRec() && S.camSheet) S.camSheet.draw(true);
     if (S.view !== 'live' || !S.game || !S.L) return;
     tickClock();
+    if (camRec() && !S.L.wipe.hidden) wipeTag();
   }
 
   /* 記録の画面のお知らせ：ボタンを隠さないよう、画面の下（いま記録したものの所）に出す（ほかの画面・小窓の上では、ふつうのお知らせ） */
@@ -836,22 +848,112 @@
     video.style.objectFit = cover ? 'cover' : 'contain';
     video.style.transform = `translate(-50%, -50%) rotate(${rot}deg)`;
   }
+  /* ---------- 大きなワイプ（中・大） ----------
+     記録の画面に、カメラの映像を大きく映す。選手のボタンに重ならないよう、映像の場所を先に取り、
+     ボタンは残りの広さで並べ直す（planLayout。ボタンは少し小さくなる）。
+       横長の画面（iPad・スマホの横向き）：右側の列。下の帯（パスミス・★・いま記録したもの）も映像の下へ移し、ボタンの行に高さを回す
+       縦長の画面：上の帯の下（縦長の動画なら右側の列）
+     映像の面積は、記録の画面の 中 約 10%・大 約 20%（横は画面の 45% まで・縦は残りの高さに収まるまで）。
+     中は、選手のボタンの行が縦にすべるようになるなら、すべらない大きさまで小さくする（大は、すべっても大きく）。小は、上の帯の中の小さな映像 */
+  const WIPES = ['s', 'm', 'l'];
+  const WIPE_AREA = { m: 0.1, l: 0.2 };
+  const wipeSize = () => (S.view === 'live' && camOn() && S.cam.stream && WIPE_AREA[S.prefs.camWipe] ? S.prefs.camWipe : null);
+  const shownRot = () => (camRec() && S.cam.seg ? S.cam.seg.rotate : effRot());        // 映す向き（録画中は、その動画の向き）
+  /* 録れる動画の、横÷縦 */
+  function wipeAr() {
+    const [w0, h0] = rawDims();
+    return w0 && h0 ? (shownRot() % 180 ? h0 / w0 : w0 / h0) : 16 / 9;
+  }
+  const wipeKey = () => { const sz = wipeSize(); return sz ? sz + ':' + wipeAr().toFixed(3) : ''; };
+  function layoutWipe() {
+    const L = S.L, live = L.root, sz = wipeSize();
+    L.wipeKey = wipeKey();
+    L.wipeOn = false; L.wipeFallback = false;
+    const off = () => { ['side', 'col', 'top'].forEach((m) => live.classList.remove('dk-' + m)); L.wipe.hidden = true; };
+    off();
+    if (!sz) return;
+    const ar = wipeAr();
+    const lc = getComputedStyle(live);
+    const W = live.clientWidth - parseFloat(lc.paddingLeft) - parseFloat(lc.paddingRight);
+    const H = live.clientHeight - parseFloat(lc.paddingTop) - parseFloat(lc.paddingBottom);
+    const barH = L.bar.offsetHeight, gH0 = L.gbar.offsetHeight;          // ワイプがないときの、上の帯・下の帯の高さ
+    const mode = W >= H ? 'side' : ar < 1 ? 'col' : 'top';
+    live.classList.add('dk-' + mode);
+    L.wipe.hidden = false;
+    const gH = L.gbar.offsetHeight;                                      // 横長の画面では、下の帯はワイプの下の列に移る（高さが変わる）
+    const wc = getComputedStyle(L.wipe);
+    const padX = parseFloat(wc.paddingLeft) + parseFloat(wc.paddingRight), padY = parseFloat(wc.paddingTop) + parseFloat(wc.paddingBottom);
+    const rest = H - barH - gH - padY;
+    const maxW = (mode === 'top' ? W : W * 0.45) - padX;
+    const maxH = mode === 'top' ? Math.min(rest * 0.4, rest - 120) : rest;
+    const MINW = 120;
+    let vw = Math.max(MINW, Math.min(Math.sqrt(WIPE_AREA[sz] * W * H * ar), maxW, Math.max(60, maxH) * ar));
+    if (sz === 'm') {
+      // 中：選手のボタンの行が縦にすべるようにならない（もともとすべるときは、ボタンが小さくなりすぎない）大きさまで。
+      // ボタンの並べ方は、残りの広さで planLayout を試して決める
+      const n = [L.panels[0].n, L.panels[1].n], headH = L.panels[0].head.offsetHeight || 22;
+      const planFor = (w) => BT.planLayout(mode === 'top' ? W : W - w - padX, mode === 'side' ? H - barH : H - barH - gH - (mode === 'top' ? w / ar + padY : 0), n, headH);
+      const base = BT.planLayout(W, H - barH - gH0, n, headH);
+      const fits = (w) => { const p = planFor(w); return (base.scroll || !p.scroll) && p.size >= Math.min(base.size, 28); };
+      if (!fits(vw)) {
+        // いちばん小さくしても入らない（小さなスマホに、2チームとも大勢）：上の帯の小さな映像のまま（撮影の画面で、わけを知らせる）
+        if (!fits(MINW)) { off(); L.wipeFallback = true; return; }
+        let lo = MINW, hi = vw;
+        for (let i = 0; i < 10; i++) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
+        vw = lo;
+      }
+    }
+    L.wipeOn = true;
+    L.wipeBox.classList.toggle('tiny', vw < 220);          // 小さめのワイプ：「－」「＋」も小さく
+    L.wipeBox.style.width = Math.floor(vw) + 'px';
+    L.wipeBox.style.height = Math.floor(vw / ar) + 'px';
+    fitPreview(L.wipeBox, L.wipeVid, shownRot(), true);
+  }
+  /* ワイプの大きさを変える（v：'s' | 'm' | 'l'、または ＋1・−1） */
+  function setWipe(v) {
+    const cur = Math.max(0, WIPES.indexOf(S.prefs.camWipe));
+    const next = typeof v === 'number' ? WIPES[BT.clamp(cur + v, 0, WIPES.length - 1)] : v;
+    if (!WIPES.includes(next) || next === S.prefs.camWipe) return;
+    S.prefs.camWipe = next;
+    savePrefs();
+    layoutLive();
+    updateCamUI();
+    if (next === 's' && S.L && !S.camSheet) say('ワイプを小さくしました（上の帯の映像を押すと、撮影の画面で大きくできます）', 'ok', 4000);
+  }
+  /* ワイプの左下：録画中なら、録画の時間 */
+  function wipeTag() {
+    const t = S.L.wipeTag, rec = camRec();
+    const s = rec ? `● 録画 ${BT.fmtTime(S.cam.elapsed())}` : S.camBusy || S.cam.state === 'finishing' ? '仕上げ中…' : '録画していません';
+    if (t.textContent !== s) t.textContent = s;
+    t.classList.toggle('rec', rec);
+  }
   function updateCamUI(progress) {
     const L = S.L;
     applyRot();
     if (L && L.camBtn) {
-      const on = camOn() && S.cam.stream;
-      L.camBtn.hidden = !on;
+      const on = !!(camOn() && S.cam.stream);
+      if (wipeKey() !== L.wipeKey) layoutLive();        // ワイプが出た・消えた・大きさや縦横が変わった：置き場所とボタンの並べ方をやり直す
+      const big = !!(on && L.wipeOn);
+      L.camBtn.hidden = !on || big;
       L.camBtn.classList.toggle('rec', camRec());
-      L.camBtn.classList.toggle('warn', !!on && !orientOK());
+      L.camBtn.classList.toggle('warn', on && !orientOK());
+      // 上の帯の小さな映像は、隠れていても映像をつないでおく（映像の大きさで、カメラの向きが変わったことが分かるため）
       if (on && L.camThumb.srcObject !== S.cam.stream) { L.camThumb.srcObject = S.cam.stream; L.camThumb.muted = true; const p = L.camThumb.play(); if (p && p.catch) p.catch(() => {}); }
       if (!on && L.camThumb.srcObject) L.camThumb.srcObject = null;
-      if (on) {
+      if (on && !big) {
         const [w, h] = rawDims();
-        const rot = camRec() && S.cam.seg ? S.cam.seg.rotate : effRot();
+        const rot = shownRot();
         if (w && h) L.camBtn.style.setProperty('--ar', String(rot % 180 ? h / w : w / h));
         fitPreview(L.camBtn, L.camThumb, rot, true);
       }
+      if (big) {
+        if (L.wipeVid.srcObject !== S.cam.stream) { L.wipeVid.srcObject = S.cam.stream; L.wipeVid.muted = true; const p = L.wipeVid.play(); if (p && p.catch) p.catch(() => {}); }
+        L.wipeBox.classList.toggle('rec', camRec());
+        L.wipeBox.classList.toggle('warn', !orientOK());
+        L.wipeBig.disabled = S.prefs.camWipe === 'l';
+        wipeTag();
+        fitPreview(L.wipeBox, L.wipeVid, shownRot(), true);
+      } else if (L.wipeVid.srcObject) L.wipeVid.srcObject = null;
     }
     if (S.camSheet) S.camSheet.draw(progress);
   }
@@ -874,6 +976,7 @@
     const stat = h('div', { class: 'camstat', id: 'camStat', role: 'status' });
     const info = h('div', { class: 'note', id: 'camInfo' });
     const orient = h('div', { class: 'camorient', id: 'camOrient' });
+    const wipeRow = h('div', { class: 'row wiperow', id: 'camWipe' });
     const store = h('div', { class: 'note', id: 'camStore' });
     const acts = h('div', { class: 'camacts' });
     let lastKey = '';
@@ -902,9 +1005,17 @@
       fitBig();
       if (progress) return;
       const ok = orientOK(), land = S.prefs.camOrient !== 'port';
-      const key = [rec, busy, S.cam.state, started, ended, ok, land, rotActive(), S.prefs.uiRot, rot].join();
+      const fb = !!(S.L && S.L.wipeFallback);
+      const key = [rec, busy, S.cam.state, started, ended, ok, land, rotActive(), S.prefs.uiRot, rot, S.prefs.camWipe, fb].join();
       if (key === lastKey) return;
       lastKey = key;
+      // 記録の画面のワイプ（カメラの映像）の大きさ
+      wipeRow.innerHTML = '';
+      wipeRow.append(h('b', null, 'ワイプの大きさ'),
+        ...[['s', '小'], ['m', '中'], ['l', '大']].map(([v, lab]) => h('button', { class: 'btn small' + ((S.prefs.camWipe || 'm') === v ? ' on' : ''), dataset: { wipe: v }, 'aria-pressed': String((S.prefs.camWipe || 'm') === v), onclick: () => setWipe(v) }, lab)),
+        h('span', { class: 'note' }, fb
+          ? 'この画面の大きさと人数では、中にすると選手のボタンが入りきらないので、上の帯に小さく映しています。大にすると大きく映せます（行を縦にすべらせて選びます）'
+          : '記録の画面に映す映像。中・大は、選手のボタンに重ならない所に出します（中はボタンの行がすべらない大きさまで・大はもっと大きく）'));
       // 撮る向き
       orient.innerHTML = '';
       orient.append(h('div', { class: 'row' }, h('b', null, '撮る向き'),
@@ -953,7 +1064,7 @@
     big.addEventListener('resize', () => draw());
     BT.ui.sheet({
       title: '📹 撮影しながら記録', cls: 'camsheet',
-      body: h('div', null, pvbox, stat, info, orient, acts, store,
+      body: h('div', null, pvbox, stat, info, wipeRow, orient, acts, store,
         h('ul', { class: 'camnotes note' },
           h('li', null, '「試合を終える」で、録画も止まります。動画はこの端末（このブラウザ）に保存され、終わったあと「🎬 場面を切り出す」で、そのまま「バスケ得点クリップ」で開けます'),
           h('li', null, '録画を止めて、また始めると、別の動画になります（どれも、記録と時刻が合っています）'),
@@ -1230,7 +1341,8 @@
         h('ul', null,
           h('li', null, h('b', null, '撮る向き'), '：撮影の画面で「横向き（コート全体）」か「縦向き」を選びます。横向きなら、端末を横にしてください'),
           h('li', null, h('b', null, '画面の向きのロックをしたまま'), '横に置くときは、撮影の画面の「⟲ 上側を左にして使う」「⟳ 上側を右にして使う」で、アプリごと横向きになり、横向きの動画が録れます'),
-          h('li', null, '撮影の画面の映像の向きが、録れる動画の向きです。横倒し・さかさまのときは「↻ 映像を回す」で直せます')),
+          h('li', null, '撮影の画面の映像の向きが、録れる動画の向きです。横倒し・さかさまのときは「↻ 映像を回す」で直せます'),
+          h('li', null, h('b', null, 'ワイプ（記録の画面のカメラの映像）'), '：映像の右上の「＋」「－」か、撮影の画面の「ワイプの大きさ」で、小・中・大。中・大は、選手のボタンに重ならない所（横長の画面なら右側）に出し、ボタンは残りの広さに並べ直します。中は、ボタンの行が縦にすべらない大きさまで。大は、もっと大きく（人数が多いと、行を縦にすべらせて選びます）。映像を押すと撮影の画面')),
         h('h4', null, 'ピリオド'),
         h('p', null, '時計の右の「1Q」を押して、次のピリオドが始まる瞬間に「2Q を始める」。時計は止まらずに進みます（試合の時計ではなく、スタートからの時間です。動画と同じように進むので、あとで動画と合わせられます）。'),
         h('h4', null, '動画から場面を切り出す'),
@@ -1276,7 +1388,7 @@
     else go('home');
   }
 
-  BT.app = { S, init, start, undo, redo, openMenu, openLog, openEdit, openStats, openExport, openSettings, openPeriod, openKeypad, endGame, reopen, newGame, go, resume, openCamera, camStart, camStop, camClose, camSplit, setUiRot, turnVideo, effRot, orientOK };
+  BT.app = { S, init, start, undo, redo, openMenu, openLog, openEdit, openStats, openExport, openSettings, openPeriod, openKeypad, endGame, reopen, newGame, go, resume, openCamera, camStart, camStop, camClose, camSplit, setUiRot, turnVideo, effRot, orientOK, setWipe };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }
