@@ -323,7 +323,6 @@
       L.wipeTag, h('div', { class: 'wipectl' }, L.wipeSmall, L.wipeBig));
     L.wipe = h('aside', { class: 'wipe', id: 'wipe', hidden: true, 'aria-label': 'カメラの映像' }, L.wipeBox);
     const P = L.panelsEl = h('main', { class: 'panels' }, [0, 1].map(buildPanel));
-    P.addEventListener('click', onPanelClick);
     L.cover = h('div', { class: 'cover', id: 'cover', hidden: true });
     // 画面の下：パスミス・★（チーム・選手は決めない）と、いま記録したもの・取り消す
     const gbtn = (type, id, label, sub) => {
@@ -336,6 +335,7 @@
     L.last = h('div', { class: 'lastbar', id: 'lastbar' });
     L.gbar = h('footer', { class: 'gbar' }, gbtn('pass', 'btnPass', 'パスミス'), gbtn('mark', 'btnMark', '★', 'あとで見る'), L.last);
     L.root = h('div', { class: 'live' }, bar, L.wipe, h('div', { class: 'stagewrap' }, P, L.cover), L.gbar);
+    L.root.addEventListener('click', onPanelClick);        // 選手のボタン（相手チームの枠は、ワイプ「特大」で映像の下に移るので、記録の画面全体で受ける）
     V.append(L.root);
     updateLive();
     layoutLive();
@@ -385,8 +385,15 @@
     const live = L.root, P = L.panelsEl;
     live.classList.toggle('short', (live.clientHeight || root.innerHeight) < 430);
     layoutWipe();
-    const plan = BT.planLayout(P.clientWidth, P.clientHeight, [L.panels[0].n, L.panels[1].n], L.panels[0].head.offsetHeight || 22);
-    live.classList.toggle('lay-side', plan.arr === 'side');
+    const n = [L.panels[0].n, L.panels[1].n], headH = L.panels[0].head.offsetHeight || 22;
+    let plan;
+    if (L.oppMoved) {
+      // ワイプ「特大」：自分のチームは残りの広さに・相手チームは映像の下の枠に、それぞれ並べる
+      const os = L.panels[1].sec;
+      const teams = [BT.planTeam(P.clientWidth - 2 * BT.LAYOUT.pad, P.clientHeight, n[0], headH, 3), BT.planTeam(os.offsetWidth, os.offsetHeight, n[1], headH, 4)];
+      plan = { arr: 'x', teams, scroll: teams.some((t) => t.scroll) };
+    } else plan = BT.planLayout(P.clientWidth, P.clientHeight, n, headH);
+    live.classList.toggle('lay-side', plan.arr !== 'stack');
     live.classList.toggle('lay-stack', plan.arr === 'stack');
     L.plan = plan;
     plan.teams.forEach((T, tm) => {
@@ -854,10 +861,18 @@
        横長の画面（iPad・スマホの横向き）：右側の列。下の帯（パスミス・★・いま記録したもの）も映像の下へ移し、ボタンの行に高さを回す
        縦長の画面：上の帯の下（縦長の動画なら右側の列）
      映像の面積は、記録の画面の 中 約 10%・大 約 20%（横は画面の 45% まで・縦は残りの高さに収まるまで）。
-     中は、選手のボタンの行が縦にすべるようになるなら、すべらない大きさまで小さくする（大は、すべっても大きく）。小は、上の帯の中の小さな映像 */
-  const WIPES = ['s', 'm', 'l'];
+     中は、選手のボタンの行が縦にすべるようになるなら、すべらない大きさまで小さくする（大は、すべっても大きく）。小は、上の帯の中の小さな映像。
+     特大は、相手チームの枠を小さくして映像の下に置き、その列（帯）いっぱいに映像を映す。自分のチームは残りの広さに */
+  const WIPES = ['s', 'm', 'l', 'x'];
   const WIPE_AREA = { m: 0.1, l: 0.2 };
-  const wipeSize = () => (S.view === 'live' && camOn() && S.cam.stream && WIPE_AREA[S.prefs.camWipe] ? S.prefs.camWipe : null);
+  const wipeSize = () => (S.view === 'live' && camOn() && S.cam.stream && ['m', 'l', 'x'].includes(S.prefs.camWipe) ? S.prefs.camWipe : null);
+  /* 相手チームの枠を、ワイプの中（特大）か、ふつうの場所（2チームの並び）に置く */
+  function placeOpp(inWipe) {
+    const L = S.L, sec = L.panels[1].sec;
+    L.oppMoved = inWipe;
+    if (!inWipe) { sec.style.height = ''; sec.classList.remove('oppone'); }
+    if (sec.parentNode !== (inWipe ? L.wipe : L.panelsEl)) (inWipe ? L.wipe : L.panelsEl).append(sec);
+  }
   const shownRot = () => (camRec() && S.cam.seg ? S.cam.seg.rotate : effRot());        // 映す向き（録画中は、その動画の向き）
   /* 録れる動画の、横÷縦 */
   function wipeAr() {
@@ -869,44 +884,83 @@
     const L = S.L, live = L.root, sz = wipeSize();
     L.wipeKey = wipeKey();
     L.wipeOn = false; L.wipeFallback = false;
-    const off = () => { ['side', 'col', 'top'].forEach((m) => live.classList.remove('dk-' + m)); L.wipe.hidden = true; };
+    const off = () => { ['side', 'col', 'top', 'x'].forEach((m) => live.classList.remove('dk-' + m)); L.wipe.hidden = true; };
     off();
+    if (sz !== 'x') placeOpp(false);
     if (!sz) return;
+    const K = BT.LAYOUT;
     const ar = wipeAr();
     const lc = getComputedStyle(live);
     const W = live.clientWidth - parseFloat(lc.paddingLeft) - parseFloat(lc.paddingRight);
     const H = live.clientHeight - parseFloat(lc.paddingTop) - parseFloat(lc.paddingBottom);
     const barH = L.bar.offsetHeight, gH0 = L.gbar.offsetHeight;          // ワイプがないときの、上の帯・下の帯の高さ
-    const mode = W >= H ? 'side' : ar < 1 ? 'col' : 'top';
+    const x = sz === 'x';
+    const mode = W >= H ? 'side' : !x && ar < 1 ? 'col' : 'top';
     live.classList.add('dk-' + mode);
+    if (x) { live.classList.add('dk-x'); placeOpp(true); }
+    if (x) L.panels[1].sec.classList.toggle('oppone', L.panels[1].n <= 1);     // 相手チームが1行だけ（名簿なし）
     L.wipe.hidden = false;
     const gH = L.gbar.offsetHeight;                                      // 横長の画面では、下の帯はワイプの下の列に移る（高さが変わる）
     const wc = getComputedStyle(L.wipe);
     const padX = parseFloat(wc.paddingLeft) + parseFloat(wc.paddingRight), padY = parseFloat(wc.paddingTop) + parseFloat(wc.paddingBottom);
+    const gap = parseFloat(wc.columnGap || wc.gap) || 0;                 // 特大：映像と相手チームの枠のすきま
+    const n = [L.panels[0].n, L.panels[1].n], headH = L.panels[0].head.offsetHeight || 22;
     const rest = H - barH - gH - padY;
-    const maxW = (mode === 'top' ? W : W * 0.45) - padX;
-    const maxH = mode === 'top' ? Math.min(rest * 0.4, rest - 120) : rest;
     const MINW = 120;
-    let vw = Math.max(MINW, Math.min(Math.sqrt(WIPE_AREA[sz] * W * H * ar), maxW, Math.max(60, maxH) * ar));
-    if (sz === 'm') {
-      // 中：選手のボタンの行が縦にすべるようにならない（もともとすべるときは、ボタンが小さくなりすぎない）大きさまで。
-      // ボタンの並べ方は、残りの広さで planLayout を試して決める
-      const n = [L.panels[0].n, L.panels[1].n], headH = L.panels[0].head.offsetHeight || 22;
-      const planFor = (w) => BT.planLayout(mode === 'top' ? W : W - w - padX, mode === 'side' ? H - barH : H - barH - gH - (mode === 'top' ? w / ar + padY : 0), n, headH);
-      const base = BT.planLayout(W, H - barH - gH0, n, headH);
-      const fits = (w) => { const p = planFor(w); return (base.scroll || !p.scroll) && p.size >= Math.min(base.size, 28); };
-      if (!fits(vw)) {
-        // いちばん小さくしても入らない（小さなスマホに、2チームとも大勢）：上の帯の小さな映像のまま（撮影の画面で、わけを知らせる）
-        if (!fits(MINW)) { off(); L.wipeFallback = true; return; }
-        let lo = MINW, hi = vw;
-        for (let i = 0; i < 10; i++) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
-        vw = lo;
+    let vw;
+    if (x) {
+      // 特大：映像と、その下に相手チームの枠（小さく。名簿なしなら1行・名簿ありでも2行は見せて、あとは縦にすべらせる）。
+      // 横長の画面は右の列（上の帯の下から画面の下まで。下の帯は自分のチームの下）、縦長の画面は上の帯の下の帯
+      const oppH = 2 * K.border + headH + 2 * K.rpad + (n[1] <= 1 ? 32 : 2 * 32 + K.rgap);
+      let fits;
+      if (mode === 'side') {
+        // 列の幅は画面の 55% まで（相手チームが1行だけなら 62% まで。相手の枠に空きを作らず、映像を大きく）
+        vw = Math.min(W * (n[1] <= 1 ? 0.62 : 0.55) - padX, Math.max(60, H - barH - padY - gap - oppH) * ar);
+        fits = (w) => !BT.planTeam(W - w - padX - 2 * K.pad, H - barH - gH, n[0], headH, 3).scroll;
+      } else {
+        vw = Math.min(W - padX, Math.max(60, rest * 0.4) * ar);
+        fits = (w) => !BT.planTeam(W - 2 * K.pad, rest - w / ar - gap - oppH, n[0], headH, 3).scroll;
+      }
+      vw = Math.max(MINW, vw);
+      // 自分のチームの行が縦にすべるようになるなら、すべらない大きさまで映像を小さく（もともとすべるなら、そのまま）
+      if (!fits(vw) && fits(MINW)) {
+        let a = MINW, b = vw;
+        for (let i = 0; i < 10; i++) { const mid = (a + b) / 2; if (fits(mid)) a = mid; else b = mid; }
+        vw = a;
+      }
+      L.oppH = oppH;
+      if (mode === 'top') {
+        // 縦長の画面：残りの高さに余裕があれば、相手チームの行を多めに見せる（残りの 30% まで。自分のチームの行がすべらない範囲で）
+        const free = rest - vw / ar - gap;
+        for (let hh = Math.max(oppH, free * 0.3); hh > oppH; hh -= 8) {
+          if (!BT.planTeam(W - 2 * K.pad, free - hh, n[0], headH, 3).scroll) { L.oppH = hh; break; }
+        }
+      }
+    } else {
+      const maxW = (mode === 'top' ? W : W * 0.45) - padX;
+      const maxH = mode === 'top' ? Math.min(rest * 0.4, rest - 120) : rest;
+      vw = Math.max(MINW, Math.min(Math.sqrt(WIPE_AREA[sz] * W * H * ar), maxW, Math.max(60, maxH) * ar));
+      if (sz === 'm') {
+        // 中：選手のボタンの行が縦にすべるようにならない（もともとすべるときは、ボタンが小さくなりすぎない）大きさまで。
+        // ボタンの並べ方は、残りの広さで planLayout を試して決める
+        const planFor = (w) => BT.planLayout(mode === 'top' ? W : W - w - padX, mode === 'side' ? H - barH : H - barH - gH - (mode === 'top' ? w / ar + padY : 0), n, headH);
+        const base = BT.planLayout(W, H - barH - gH0, n, headH);
+        const fits = (w) => { const p = planFor(w); return (base.scroll || !p.scroll) && p.size >= Math.min(base.size, 28); };
+        if (!fits(vw)) {
+          // いちばん小さくしても入らない（小さなスマホに、2チームとも大勢）：上の帯の小さな映像のまま（撮影の画面で、わけを知らせる）
+          if (!fits(MINW)) { off(); L.wipeFallback = true; return; }
+          let lo = MINW, hi = vw;
+          for (let i = 0; i < 10; i++) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
+          vw = lo;
+        }
       }
     }
     L.wipeOn = true;
     L.wipeBox.classList.toggle('tiny', vw < 220);          // 小さめのワイプ：「－」「＋」も小さく
     L.wipeBox.style.width = Math.floor(vw) + 'px';
     L.wipeBox.style.height = Math.floor(vw / ar) + 'px';
+    // 縦長の画面の特大：相手チームの枠の高さを決めておく（中身の行の数で、帯が伸びないように）
+    L.panels[1].sec.style.height = x && mode === 'top' ? Math.round(L.oppH) + 'px' : '';
     fitPreview(L.wipeBox, L.wipeVid, shownRot(), true);
   }
   /* ワイプの大きさを変える（v：'s' | 'm' | 'l'、または ＋1・−1） */
@@ -919,6 +973,7 @@
     layoutLive();
     updateCamUI();
     if (next === 's' && S.L && !S.camSheet) say('ワイプを小さくしました（上の帯の映像を押すと、撮影の画面で大きくできます）', 'ok', 4000);
+    if (next === 'x' && S.L && !S.camSheet) say('特大：相手チームの欄を小さくして、映像の下に移しました', 'ok', 4500);
   }
   /* ワイプの左下：録画中なら、録画の時間 */
   function wipeTag() {
@@ -950,7 +1005,7 @@
         if (L.wipeVid.srcObject !== S.cam.stream) { L.wipeVid.srcObject = S.cam.stream; L.wipeVid.muted = true; const p = L.wipeVid.play(); if (p && p.catch) p.catch(() => {}); }
         L.wipeBox.classList.toggle('rec', camRec());
         L.wipeBox.classList.toggle('warn', !orientOK());
-        L.wipeBig.disabled = S.prefs.camWipe === 'l';
+        L.wipeBig.disabled = S.prefs.camWipe === 'x';
         wipeTag();
         fitPreview(L.wipeBox, L.wipeVid, shownRot(), true);
       } else if (L.wipeVid.srcObject) L.wipeVid.srcObject = null;
@@ -1012,10 +1067,10 @@
       // 記録の画面のワイプ（カメラの映像）の大きさ
       wipeRow.innerHTML = '';
       wipeRow.append(h('b', null, 'ワイプの大きさ'),
-        ...[['s', '小'], ['m', '中'], ['l', '大']].map(([v, lab]) => h('button', { class: 'btn small' + ((S.prefs.camWipe || 'm') === v ? ' on' : ''), dataset: { wipe: v }, 'aria-pressed': String((S.prefs.camWipe || 'm') === v), onclick: () => setWipe(v) }, lab)),
+        ...[['s', '小'], ['m', '中'], ['l', '大'], ['x', '特大']].map(([v, lab]) => h('button', { class: 'btn small' + ((S.prefs.camWipe || 'm') === v ? ' on' : ''), dataset: { wipe: v }, 'aria-pressed': String((S.prefs.camWipe || 'm') === v), onclick: () => setWipe(v) }, lab)),
         h('span', { class: 'note' }, fb
           ? 'この画面の大きさと人数では、中にすると選手のボタンが入りきらないので、上の帯に小さく映しています。大にすると大きく映せます（行を縦にすべらせて選びます）'
-          : '記録の画面に映す映像。中・大は、選手のボタンに重ならない所に出します（中はボタンの行がすべらない大きさまで・大はもっと大きく）'));
+          : '記録の画面に映す映像。中・大は、選手のボタンに重ならない所に出します（中はボタンの行がすべらない大きさまで・大はもっと大きく）。特大は、相手チームの欄を小さくして映像の下に移し、その分、映像を大きく映します（自分のチームのボタンは広いまま）'));
       // 撮る向き
       orient.innerHTML = '';
       orient.append(h('div', { class: 'row' }, h('b', null, '撮る向き'),
@@ -1342,7 +1397,8 @@
           h('li', null, h('b', null, '撮る向き'), '：撮影の画面で「横向き（コート全体）」か「縦向き」を選びます。横向きなら、端末を横にしてください'),
           h('li', null, h('b', null, '画面の向きのロックをしたまま'), '横に置くときは、撮影の画面の「⟲ 上側を左にして使う」「⟳ 上側を右にして使う」で、アプリごと横向きになり、横向きの動画が録れます'),
           h('li', null, '撮影の画面の映像の向きが、録れる動画の向きです。横倒し・さかさまのときは「↻ 映像を回す」で直せます'),
-          h('li', null, h('b', null, 'ワイプ（記録の画面のカメラの映像）'), '：映像の右上の「＋」「－」か、撮影の画面の「ワイプの大きさ」で、小・中・大。中・大は、選手のボタンに重ならない所（横長の画面なら右側）に出し、ボタンは残りの広さに並べ直します。中は、ボタンの行が縦にすべらない大きさまで。大は、もっと大きく（人数が多いと、行を縦にすべらせて選びます）。映像を押すと撮影の画面')),
+          h('li', null, h('b', null, 'ワイプ（記録の画面のカメラの映像）'), '：映像の右上の「＋」「－」か、撮影の画面の「ワイプの大きさ」で、小・中・大・特大。中・大は、選手のボタンに重ならない所（横長の画面なら右側）に出し、ボタンは残りの広さに並べ直します。中は、ボタンの行が縦にすべらない大きさまで。大は、もっと大きく（人数が多いと、行を縦にすべらせて選びます）。映像を押すと撮影の画面'),
+          h('li', null, h('b', null, '特大'), '：相手チームの欄を小さくして映像の下に移し、その分、映像をいちばん大きく映します。自分のチームのボタンは広いまま（パスミス・★はその下）。相手の人数が多いと、相手の行は縦にすべらせて選びます')),
         h('h4', null, 'ピリオド'),
         h('p', null, '時計の右の「1Q」を押して、次のピリオドが始まる瞬間に「2Q を始める」。時計は止まらずに進みます（試合の時計ではなく、スタートからの時間です。動画と同じように進むので、あとで動画と合わせられます）。'),
         h('h4', null, '動画から場面を切り出す'),

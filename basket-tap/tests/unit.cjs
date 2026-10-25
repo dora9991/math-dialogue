@@ -134,6 +134,20 @@ pl = plan(750, 244, [16, 16]);
 ok(pl.arr === 'side' && pl.teams.every((t) => t.c === 2 && t.bw >= BT.LAYOUT.minBw) && pl.scroll, 'スマホの横向き：チームの中を 2 列に（高さが足りない分は、縦にすべらせる）', pl.teams);
 pl = plan(320, 372, [16, 16]);
 ok(pl.teams.every((t) => t.bw >= BT.LAYOUT.minBw), 'とても小さい画面でも、ボタンの幅は狭くしすぎない（縦にすべらせる）', pl);
+section('1つのチームだけの並べ方（BT.planTeam。ワイプ「特大」）');
+// W×H：チームの枠の外側の大きさ。n：行の数
+let pt = BT.planTeam(600, 744, 13, 22);
+ok(pt.c === 1 && pt.r === 13 && !pt.scroll && pt.rowH >= 44 && pt.bw >= 100, 'iPad 横の左側（600×744）・12 人＋？：1 列・すべらない・大きなボタン', pt);
+pt = BT.planTeam(560, 300, 13, 22, 4);
+ok(pt.c >= 2 && !pt.scroll && pt.bw >= BT.LAYOUT.minBw, '映像の下の相手チーム（560×300）・12 人＋？：列を増やして入れる（すべらない）', pt);
+pt = BT.planTeam(643, 230, 13, 22, 4);
+ok(pt.c === 3 && !pt.scroll && pt.rowH >= 30, 'すべらずに入る並べ方があれば、列が多くてもそちら（643×230：3 列・すべらない）', pt);
+pt = BT.planTeam(560, 80, 1, 22, 4);
+ok(pt.c === 1 && pt.r === 1 && !pt.scroll, '相手の背番号なし（チームの1行だけ）：1 行', pt);
+pt = BT.planTeam(380, 70, 13, 22, 4);
+ok(pt.scroll && pt.bw >= BT.LAYOUT.minBw, '入りきらないとき：ボタンの幅は狭くしすぎず、縦にすべらせる', pt);
+pt = BT.planTeam(250, 400, 13, 22, 4);
+ok(pt.bw >= BT.LAYOUT.minBw && pt.c === 1, '幅が狭いときは、列を増やさない（ボタンの幅を保つ）', pt);
 eq([BT.inkOn('#f4f4f4'), BT.inkOn('#1f2f6e'), BT.inkOn('#f2c230')], ['#111111', '#ffffff', '#111111'], 'チームの色の上の文字の色（読みやすいほう）');
 eq(BT.fmtTime(3725.46, true), '1:02:05.5', '時刻の書式（1時間以上・0.1 秒）');
 

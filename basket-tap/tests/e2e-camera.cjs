@@ -388,7 +388,7 @@ async function measure(page, vid, times) {
       await c3.close();
     }
 
-    console.log('\n■ ワイプ（記録の画面のカメラの映像）の大きさ：中・大・小。ボタンに重ならない');
+    console.log('\n■ ワイプ（記録の画面のカメラの映像）の大きさ：中・大・特大・小。ボタンに重ならない');
     {
       /* ワイプと、選手のボタン・下の帯・上の帯が重ならないか／ボタンの行がすべっているか／下の帯がワイプの下の列にあるか */
       const wipeState = (pg) => pg.evaluate(() => {
@@ -403,9 +403,12 @@ async function measure(page, vid, times) {
           const ro = b.closest('.roster');
           if ((r.right > innerWidth + 1 || r.bottom > innerHeight + 1 || r.left < -1 || r.top < -1) && !(ro && ro.scrollHeight > ro.clientHeight + 1)) out.push(b.className);
         });
-        return { on, thumb: !L.camBtn.hidden, dock: ['dk-side', 'dk-col', 'dk-top'].filter((k) => live.classList.contains(k)).join(''), w: L.wipeBox.offsetWidth, h: L.wipeBox.offsetHeight,
+        const own = document.querySelector('#panel0 .pb').getBoundingClientRect(), os = document.querySelector('#panel1');
+        return { on, thumb: !L.camBtn.hidden, dock: ['dk-side', 'dk-col', 'dk-top', 'dk-x'].filter((k) => live.classList.contains(k)).join(' '), w: L.wipeBox.offsetWidth, h: L.wipeBox.offsetHeight,
           hit: hit.slice(0, 3), out: out.slice(0, 3), scroll: [...document.querySelectorAll('.team')].some((t) => t.classList.contains('scroll')),
-          gbarRight: on && gr.left >= wr.left - 8, size: BT.app.S.prefs.camWipe, fb: !!L.wipeFallback };
+          ownScroll: document.querySelector('#panel0').classList.contains('scroll'), oppScroll: os.classList.contains('scroll'), oppInWipe: !!os.closest('#wipe'),
+          ownBtn: [Math.round(Math.max(own.width, own.height) === own.width ? own.width : own.width), Math.round(own.height)],
+          gbarRight: on && gr.left >= wr.left - 8, gbarLeft: gr.right <= wr.left + 1, size: BT.app.S.prefs.camWipe, fb: !!L.wipeFallback };
       });
       await page.evaluate(() => { BT.app.camClose(); const g8 = BT.newGame({ teams: [{ name: '致遠館', players: BT.parseNumbers('4-15').map((no) => ({ no })) }, { name: '城南', players: BT.parseNumbers('4-15').map((no) => ({ no })) }] }); BT.store.saveGame(g8); BT.app.resume(g8.id); });
       await page.evaluate(() => BT.app.camStart());
@@ -424,8 +427,8 @@ async function measure(page, vid, times) {
       await page.click('#btnWipeBig');
       await sleep(300);
       w = await wipeState(page);
-      ok(w.size === 'l' && w.w > wm + 60 && w.hit.length === 0 && w.out.length === 0 && await page.evaluate(() => document.querySelector('#btnWipeBig').disabled),
-        `「＋」で大：${w.w}×${w.h}・ボタンと重ならない・「＋」はもう押せない`, w);
+      ok(w.size === 'l' && w.w > wm + 60 && w.hit.length === 0 && w.out.length === 0 && await page.evaluate(() => !document.querySelector('#btnWipeBig').disabled),
+        `「＋」で大：${w.w}×${w.h}・ボタンと重ならない（「＋」はまだ押せる：次は特大）`, w);
       await shot(page, 'wipe-ipad-l');
       await page.click('#btnWipeSmall');
       await page.click('#btnWipeSmall');
@@ -449,6 +452,47 @@ async function measure(page, vid, times) {
       await page.waitForFunction(() => BT.app.S.cam.state === 'off');
       w = await wipeState(page);
       ok(!w.on && !w.dock && !w.thumb, 'カメラを切ると、ワイプも消えて、ボタンが元の広さに戻る', w);
+
+      // 特大：相手チームの欄を小さくして、映像の下へ。自分のチームは広いまま
+      await page.evaluate(() => BT.app.camStart());
+      await page.waitForFunction(() => BT.app.S.cam && BT.app.S.cam.rec && !document.querySelector('#wipe').hidden, null, { timeout: 8000 });
+      await page.evaluate(() => BT.app.setWipe('l'));
+      await sleep(300);
+      const wl = await wipeState(page);
+      await page.click('#btnWipeBig');
+      await sleep(400);
+      w = await wipeState(page);
+      ok(w.size === 'x' && w.dock.includes('dk-x') && w.oppInWipe && w.w >= 600 && w.w > wl.w && w.hit.length === 0 && w.out.length === 0 && !w.ownScroll && !w.oppScroll && w.ownBtn[0] >= 90 && w.gbarLeft,
+        `iPad 横・「＋」で特大：映像 ${w.w}×${w.h}（大は ${wl.w}×${wl.h}）・相手チームは映像の下（行もすべらない）・自分のボタン ${w.ownBtn.join('×')}・パスミスと★は自分のチームの下・重ならない`, w);
+      ok(await page.evaluate(() => document.querySelector('#btnWipeBig').disabled) && (await page.textContent('#lastbar')).includes('特大'), '特大がいちばん大きい（「＋」は押せない）・「特大：相手チームの欄を小さくして…」');
+      await shot(page, 'wipe-ipad-x');
+      await page.click('#panel1 .prow[data-no="7"] .pb[data-type="fg2"]');
+      await page.click('#panel0 .prow[data-no="11"] .pb[data-type="reb"]');
+      ok((await page.evaluate(() => BT.app.S.game.events.filter((e) => (e.type === 'fg2' && e.team === 1 && e.no === '7') || (e.type === 'reb' && e.team === 0 && e.no === '11')).length)) === 2, '映像の下に移した相手チームのボタンも、自分のチームのボタンも記録できる');
+      await page.click('#btnWipeSmall');
+      await sleep(300);
+      w = await wipeState(page);
+      ok(w.size === 'l' && !w.oppInWipe && !w.dock.includes('dk-x') && w.hit.length === 0, '「－」で大に戻すと、相手チームの欄も元の場所（2チームの並び）に戻る', w);
+      await page.click('#btnWipe');
+      await page.waitForSelector('#camWipe [data-wipe="x"]');
+      ok((await page.textContent('#camWipe')).includes('特大'), '撮影の画面の「ワイプの大きさ」に「特大」');
+      await page.click('#camWipe [data-wipe="x"]');
+      await page.waitForSelector('#camWipe [data-wipe="x"].on');
+      await page.click('.sheet-card header .x');
+      await page.evaluate(() => BT.app.camClose());
+      await page.waitForFunction(() => BT.app.S.cam.state === 'off');
+      w = await wipeState(page);
+      ok(!w.on && !w.oppInWipe && !w.dock, 'カメラを切ると、相手チームの欄も元の場所に戻る', w);
+      // 相手の名簿なし（チームの1行だけ）：映像をもっと大きく
+      await page.evaluate(() => { const g10 = BT.newGame({ teams: [{ name: '致遠館', players: BT.parseNumbers('4-15').map((no) => ({ no })) }, { name: '城南' }] }); BT.store.saveGame(g10); BT.app.resume(g10.id); BT.app.start(); });
+      await page.evaluate(() => BT.app.camStart());
+      await page.waitForFunction(() => BT.app.S.cam && BT.app.S.cam.rec && !document.querySelector('#wipe').hidden, null, { timeout: 8000 });
+      await sleep(300);
+      w = await wipeState(page);
+      ok(w.size === 'x' && w.oppInWipe && w.w >= 700 && !w.ownScroll && w.hit.length === 0 && w.out.length === 0, `相手の名簿なし・特大：映像 ${w.w}×${w.h}・相手は「チーム」の1行・自分のチームはすべらない`, w);
+      await shot(page, 'wipe-ipad-x-noopp');
+      await page.evaluate(() => { BT.app.setWipe('m'); return BT.app.camClose(); });
+      await page.waitForFunction(() => BT.app.S.cam.state === 'off');
 
       const cases = [
         { n: 'スマホ横（2チームとも名簿）', vp: [844, 390], opp: true, check: (m, l) => m.on && m.dock === 'dk-side' && m.w >= 150 && !m.scroll && l.w > m.w + 80 },
@@ -474,14 +518,19 @@ async function measure(page, vid, times) {
         await pc.evaluate(() => BT.app.setWipe('l'));
         await sleep(300);
         const l = await wipeState(pc);
+        await pc.evaluate(() => BT.app.setWipe('x'));
+        await sleep(300);
+        const xx = await wipeState(pc);
+        if (c.vp[0] === 844 && c.opp) await shot(pc, 'wipe-phone-x');
         if (c.vp[0] === 844 && c.opp) await shot(pc, 'wipe-phone-l');
         await pc.evaluate(() => BT.app.setWipe('m'));
         await sleep(300);
         if (c.vp[0] === 844 && c.opp) await shot(pc, 'wipe-phone-m');
         let note = '';
         if (c.check === cases[3].check) { await pc.evaluate(() => BT.app.openCamera()); await pc.waitForSelector('#camWipe'); note = await pc.textContent('#camWipe'); }
-        const good = c.check(m, l) && [m, l].every((x) => x.hit.length === 0 && x.out.length === 0) && (!note || note.includes('入りきらない')) && ec.length === 0;
-        ok(good, `${c.n}（${c.vp.join('×')}）：中 ${m.on ? m.w + '×' + m.h : '上の帯（ボタンを優先）'}${m.scroll ? '・行がすべる' : ''} ／ 大 ${l.w}×${l.h}${l.scroll ? '・行がすべる' : ''}・ボタンと重ならない`, { m, l, note: note.slice(0, 80), ec });
+        const xGood = xx.on && xx.oppInWipe && xx.dock.includes('dk-x') && (c.vp[0] < c.vp[1] || xx.w >= l.w - 1) && (!xx.ownScroll || l.ownScroll);
+        const good = c.check(m, l) && xGood && [m, l, xx].every((x) => x.hit.length === 0 && x.out.length === 0) && (!note || note.includes('入りきらない')) && ec.length === 0;
+        ok(good, `${c.n}（${c.vp.join('×')}）：中 ${m.on ? m.w + '×' + m.h : '上の帯（ボタンを優先）'}${m.scroll ? '・行がすべる' : ''} ／ 大 ${l.w}×${l.h}${l.scroll ? '・行がすべる' : ''} ／ 特大 ${xx.w}×${xx.h}${xx.ownScroll ? '・自分の行がすべる' : ''}${xx.oppScroll ? '・相手の行はすべらせる' : ''}・ボタンと重ならない`, { m, l, xx, note: note.slice(0, 80), ec });
         await pc.evaluate(() => BT.app.camClose());
         await cc.close();
       }
