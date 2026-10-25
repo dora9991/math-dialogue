@@ -7,12 +7,14 @@
 - 困りごと **79**・改善の視点 **87**・練習メニュー **107**・戦術 **53**（作戦図つき）。すべて id でつながっている
 - **手元の動画フォルダとつなぐ**と、フォルダ名・ファイル名から、困りごと・視点・練習・戦術に**自動で紐付け**、チャットの答えに出る。手で直すこともできる
 - インストール不要・ビルド不要。**動画も会話も、その端末の中だけで扱い、どこにも送らない**
+- 公開ページ：**https://dora9991.github.io/math-dialogue/basket-coach/** （更新は `node tools/publish-pages.cjs`。gh-pages の `basket-coach/index.html` だけを差し替え、ほかの公開物には触らない）
 - 作りはじめ：2026-10-24
 
 ## 開き方
 
 | どこで | どうする |
 |---|---|
+| 公開ページ | https://dora9991.github.io/math-dialogue/basket-coach/ を開く（スマホは「共有」→「ホーム画面に追加」） |
 | 手元のパソコン（おすすめ） | `basket-coach-all-in-one.html` をダウンロードして、ダブルクリック（1ファイルで全部入り。インターネットにつながっていなくても動く。字の形だけ、つながっているときにきれいになる） |
 | フォルダごと | `index.html` をブラウザで開く |
 | Claude の Artifact | `node tools/bundle.cjs --artifact` でできる `dist/artifact.html` を公開する（動画の再生は、Artifact の中ではできないことがある） |
@@ -87,6 +89,7 @@ node tools/talk.cjs                        # チャット：困りごとの言�
 NODE_PATH=$(npm root -g) node tools/look.cjs [HTML] [--videos=動画のフォルダ]
                                            # ブラウザ：全項目のシート・作戦図・スマホの幅・チャット・練習プラン・図鑑・動画の紐付け・画像（tools/_out/）
 node tools/bundle.cjs                      # 1ファイル版（basket-coach-all-in-one.html）を作り直す
+node tools/publish-pages.cjs               # 1ファイル版を作り直して、GitHub Pages の /basket-coach/ に公開（--dry で push しない）
 ```
 
 `look.cjs` は playwright を使う。playwright でフォルダを渡すとき、いちばん上のフォルダの名前が日本語だと渡せない（playwright の制約）。中のフォルダ・ファイルの名前は日本語でよい。
