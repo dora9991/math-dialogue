@@ -96,7 +96,7 @@
   const planeTask = COX({
     xmin: -1, xmax: 5, ymin: -1, ymax: 8,
     given: { points: [{ x: 1, y: 3, text: 'A(1, 3)', at: [1.3, 2.2], anchor: 'start' }, { x: 3, y: 7, text: 'B(3, 7)', at: [3.3, 6.6], anchor: 'start' }] },
-    lines: [{ a: 2, b: 1, text: 'y＝2x+1', at: [0.1, 6.9], anchor: 'start' }]
+    lines: [{ a: 2, b: 1, text: 'y＝2x+1', at: [0.4, 7.0], anchor: 'start' }]
   });
   const planeThink = COX({
     xmin: -4, xmax: 6, ymin: -5, ymax: 6,

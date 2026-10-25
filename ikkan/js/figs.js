@@ -56,8 +56,9 @@
     out += h.ln(X(x0) - 1, Y(0), X(x1) + 2.4, Y(0), '#222', 0.3) + head(X(x1) + 3.4, Y(0), 0, '#222', 1.6);
     out += h.ln(X(0), Y(y0) + 1, X(0), Y(y1) - 2.4, '#222', 0.3) + head(X(0), Y(y1) - 3.4, -Math.PI / 2, '#222', 1.6);
     const fs = Math.min(2.5, u * 0.6), ls = o.labelStep || 1;
-    for (let x = x0; x <= x1; x++) if (x !== 0 && x % ls === 0) out += h.tx(X(x), Y(0) + 3, mn(x), fs, 'middle');
-    for (let y = y0; y <= y1; y++) if (y !== 0 && y % ls === 0) out += h.tx(X(0) - 1, Y(y) + fs * 0.35, mn(y), fs, 'end');
+    const halo = ' stroke="#fff" stroke-width="0.7" stroke-linejoin="round" paint-order="stroke"';   // 目もりの数字が、方眼の線や直線にかさなっても読めるように、白いふちをつける
+    for (let x = x0; x <= x1; x++) if (x !== 0 && x % ls === 0) out += h.tx(X(x), Y(0) + 3, mn(x), fs, 'middle', halo);
+    for (let y = y0; y <= y1; y++) if (y !== 0 && y % ls === 0) out += h.tx(X(0) - 1, Y(y) + fs * 0.35, mn(y), fs, 'end', halo);
     out += h.tx(X(0) - 1.3, Y(0) - 1.0, 'O', 2.6, 'end', ' class="pl"') + h.tx(X(x1) + 2.6, Y(0) + 4.6, 'x', 3, 'middle', ' class="pl"') + h.tx(X(0) - 2.4, Y(y1) - 2.4, 'y', 3, 'end', ' class="pl"');
     // 線（y＝ax+b）を、枠（ymin〜ymax）の中だけに切って描く。col：色、sw：太さ、dash：点線
     const lineSvg = (l, col, sw) => {
