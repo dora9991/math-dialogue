@@ -160,6 +160,66 @@ const { chromium } = require('playwright');
   if ((await overflow(page)) > 0) fail('図鑑：横にはみ出す');
   await shot(page, 'library-tactic');
 
+  // 練習プラン（プランの画面）
+  await page.evaluate(() => { location.hash = 'plan'; });
+  await page.waitForSelector('[data-pl="make"]');
+  await page.fill('#pl-q', 'シュート');
+  await page.waitForTimeout(80);
+  const addTheme = await page.$('#pl-sug [data-plthadd]');
+  if (addTheme) await addTheme.click(); else fail('プラン：テーマの候補が出ない');
+  await page.click('[data-plc="minutes"][data-v="90"]');
+  await page.click('[data-pl="make"]');
+  await page.waitForSelector('.pl-row');
+  const total = () => page.evaluate(() => BCAPP.PL.data.blocks.reduce((t, b) => t + b.items.reduce((u, x) => u + x.min, 0), 0));
+  if ((await total()) !== 90) fail(`プラン：合計が 90 分でない（${await total()}）`);
+  const before = await page.evaluate(() => BCAPP.PL.data.blocks[0].items[0].id);
+  await page.click('.pl-row [data-pl="swap"]');
+  const after = await page.evaluate(() => BCAPP.PL.data.blocks[0].items[0].id);
+  if (before === after) fail('プラン：↻ で入れかわらない');
+  await page.click('.pl-row [data-pl="plus"]');
+  if ((await total()) !== 91) fail('プラン：＋ で時間がふえない');
+  await page.click('[data-pl="save"]');
+  if (!(await page.$('.pl-saved'))) fail('プラン：保存したプランが出ない');
+  if ((await overflow(page)) > 0) fail('プラン：横にはみ出す');
+  await shot(page, 'plan');
+  await page.click('[data-pl="run"]');
+  await page.waitForSelector('.run #run-clock');
+  const clock = await page.textContent('#run-clock');
+  if (!/^\d+:\d\d$/.test(clock)) fail('タイマー：時間が出ない（' + clock + '）');
+  await page.waitForTimeout(1300);
+  const clock2 = await page.textContent('#run-clock');
+  if (clock2 === clock) fail('タイマー：時間が進まない');
+  await shot(page, 'run');
+  await page.click('[data-run="next"]');
+  if ((await page.evaluate(() => BCAPP.getRun().i)) !== 1) fail('タイマー：「次」で進まない');
+  await page.click('[data-run="end"]');
+  if (await page.$('.run')) fail('タイマー：終われない');
+  // チャットのプランから、プランの画面へ
+  await page.evaluate(() => { location.hash = 'chat'; });
+  await say(page, '45分の練習メニューを作って');
+  const edit = await page.$('.msg-bot:last-child [data-pledit]');
+  if (!edit) fail('チャット：プランの画面へのボタンがない');
+  else {
+    await edit.click();
+    await page.waitForSelector('.pl-row');
+    if ((await total()) !== 45) fail('チャットのプランを、プランの画面で開けない');
+  }
+
+  // 棒人間のアニメーション
+  await page.evaluate(() => { location.hash = 'd-pound'; });
+  await page.waitForSelector('.sheet .mo-stage svg');
+  const head = () => page.evaluate(() => { const c = document.querySelector('.sheet .mo-head'); return c ? c.getAttribute('cy') + ',' + document.querySelector('.sheet .mo-ball').getAttribute('transform') : ''; });
+  const h1 = await head();
+  await page.waitForTimeout(260);
+  const h2 = await head();
+  if (!h1 || h1 === h2) fail('アニメーション：動かない');
+  const motions = await page.evaluate(() => Object.keys(BC.motions).length + '・つながっている項目 ' + Object.keys(BC.MOTION_OF).filter((id) => BC.get(id)).length);
+  console.log('アニメーション：' + motions);
+  const badIds = await page.evaluate(() => Object.keys(BC.MOTION_OF).filter((id) => !BC.get(id) || !BC.motions[BC.MOTION_OF[id]]));
+  if (badIds.length) fail('アニメーション：ない項目・動き ' + badIds.join('、'));
+  await shot(page, 'sheet-anim');
+  await page.evaluate(() => { location.hash = 'chat'; });
+
   // ④ 動画
   await page.evaluate(() => { location.hash = 'videos'; });
   await page.waitForSelector('[data-act="pick-folder"]');

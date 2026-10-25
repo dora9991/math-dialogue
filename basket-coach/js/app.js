@@ -33,6 +33,7 @@
     chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>',
     book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z"/></svg>',
     film: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg>',
+    plan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM8.5 11h7M8.5 15h4.5"/></svg>',
     close: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
     star: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>',
     starOn: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>',
@@ -54,7 +55,7 @@
   function drillCard(d) {
     return `<button type="button" class="card k-drill" data-open="${d.id}">
       <span class="card-h"><span class="k-dot"></span><span>${esc(d.name)}</span>${S.favs.has(d.id) ? '<span class="star">★</span>' : ''}</span>
-      <span class="meta">${people(d)}<span class="num">${d.minutes}分</span><span>${esc(BC.PLACES[d.place] || '')}</span>${lv(d.level)}</span>
+      <span class="meta">${people(d)}<span class="num">${d.minutes}分</span><span>${esc(BC.PLACES[d.place] || '')}</span>${lv(d.level)}${BC.motionFor && BC.motionFor(d.id) ? '<span class="badge">動きあり</span>' : ''}</span>
       <span class="card-sub">${md(d.aim)}</span></button>`;
   }
   function viewCard(v) {
@@ -249,7 +250,7 @@
       </div>
       ${blocks || '<p class="lead-sub">条件に合う練習が見つかりませんでした。人数やレベルの条件をゆるめてみてください。</p>'}
       <p class="lead-sub">メニューを押すと、手順とポイントが見られます。${focus.length ? '' : '困りごとを書いてから「この内容で練習プランを作る」を押すと、それに合わせて組みます。'}</p>
-      <div class="chips"><button type="button" class="chip chip-soft" data-copyplan="${idx}">テキストでコピー（LINE などに貼れる）</button></div>
+      <div class="chips"><button type="button" class="chip chip-go" data-pledit="${idx}">プランの画面で直す・保存・タイマー</button><button type="button" class="chip chip-soft" data-copyplan="${idx}">テキストでコピー（LINE などに貼れる）</button></div>
     </div>`;
   }
 
@@ -439,6 +440,7 @@
         <p class="d-summary">${md(it.aim)}</p>
         <dl class="facts">${facts.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join('')}</dl>
         ${(it.equip || []).length ? `<p class="lead-sub">用具：${esc(it.equip.join('、'))}</p>` : ''}
+        ${BC.motionFor(it.id) ? sec('動き（棒人間）', '<div data-anim></div>') : ''}
         ${it.diagram ? '<div data-court></div>' : ''}
         ${sec('準備・並び方', it.setup ? `<p style="margin:0">${md(it.setup)}</p>` : '')}
         ${sec('進め方', ol(it.steps))}
@@ -454,6 +456,7 @@
       return `${head}
         ${it.cue ? `<p class="cue-big">「${esc(it.cue)}」</p>` : ''}
         <p class="d-summary">${md(it.summary)}</p>
+        ${BC.motionFor(it.id) ? sec('動き（棒人間）', '<div data-anim></div>') : ''}
         ${sec('見るポイント', ul(it.checks, 'check'))}
         ${it.good ? `<div class="box good"><h4>うまくいっているとき</h4><p style="margin:0;font-size:var(--fs-s)">${md(it.good)}</p></div>` : ''}
         ${sec('よくある崩れと直し方', ngRows(it.ng))}
@@ -493,6 +496,8 @@
     const cv = sh.querySelector('[data-court]');
     const it = S.sheet && BC.get(S.sheet);
     if (cv && it && it.diagram) BC.court(cv, it.diagram, { label: labelOf(it) });
+    const an = sh.querySelector('[data-anim]');
+    if (an && it && BC.motionFor(it.id)) BC.anim(an, BC.motionFor(it.id));
     fillThumbs(sh);
     sh.querySelector('.sheet-body').scrollTop = 0;
     setTimeout(() => { const b = sh.querySelector('[data-act="close"]'); if (b && !matchMedia('(min-width: 900px)').matches) b.focus({ preventScroll: true }); }, 0);
@@ -512,6 +517,7 @@
     const was = S.sheet;
     S.sheet = null;
     closeSheetDom();
+    document.querySelectorAll('.run.run-hide').forEach((r) => r.classList.remove('run-hide'));
     if (was && location.hash.slice(1) === was) {
       try { history.replaceState(null, '', '#' + S.tab); } catch (e) { location.hash = S.tab; }
     }
@@ -584,6 +590,328 @@
       <div class="btns"><button type="button" class="btn" data-act="clear">会話をはじめからにする</button></div></div>`, '<span class="kind">条件</span>');
   }
 
+  /* ---------- 画面：練習プラン ----------
+     PL：いま作っているプラン（条件とデータ）。plans：保存したプラン。どちらもこの端末（localStorage）に残す。 */
+  const PL = Object.assign({ minutes: 60, n: null, level: null, place: null, focus: [], skills: [], data: null, name: '' }, store.get('bc.pl', {}));
+  let plans = store.get('bc.plans', []);
+  const savePL = () => store.set('bc.pl', PL);
+  const savePlans = () => store.set('bc.plans', plans);
+  const plSeen = {};
+  let plPick = null, plDel = null;
+  const fmt = (m) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
+  const plTotal = (data) => data.blocks.reduce((t, b) => t + b.items.reduce((u, x) => u + x.min, 0), 0);
+  const plTheme = (data) => (data.focus || []).map(get).filter(Boolean).map((i) => i.title).concat((data.skills || []).map(skillName).filter(Boolean)).join('・') || '基本をひととおり';
+  const plName = (data) => { const d = new Date(); return `${d.getMonth() + 1}/${d.getDate()} ${plTheme(data)} ${plTotal(data)}分`; };
+  function plMake() {
+    const p = BC.plan({ minutes: PL.minutes, n: PL.n, level: PL.level, place: PL.place, focus: PL.focus, skills: PL.skills });
+    PL.data = BC.planData(p, PL);
+    PL.data.focus = PL.focus.slice();
+    PL.data.skills = PL.skills.slice();
+    PL.data.place = PL.place;
+    PL.name = '';
+    plPick = null;
+    savePL();
+  }
+  function plCondHTML() {
+    const seg = (key, opts) => `<div class="seg" role="group">${opts.map(([v, l]) => `<button type="button" data-plc="${key}" data-v="${v}" aria-pressed="${String(PL[key] == null ? '' : PL[key]) === String(v)}">${l}</button>`).join('')}</div>`;
+    const themes = PL.focus.map(get).filter(Boolean).map((i) => `<span class="chip chip-soft"><span class="k-dot k-issue"></span>${esc(i.title)}<button type="button" class="chip-x" data-plthdel="${i.id}" aria-label="${esc(i.title)}を外す">×</button></span>`)
+      .concat(PL.skills.map((sid) => `<span class="chip chip-soft">${esc(skillName(sid))}<button type="button" class="chip-x" data-plthdel="s:${sid}" aria-label="外す">×</button></span>`)).join('');
+    return `<section class="panel">
+      <div class="cond-row"><span>テーマ（困りごと・技能）</span><div class="chips">${themes || '<span class="small">なし（基本をひととおり入れます）</span>'}</div>
+        <div class="search">${I.search}<input id="pl-q" type="search" placeholder="テーマを足す（例：シュート、ゾーン、緊張）" autocomplete="off"></div>
+        <div id="pl-sug" class="chips">${plSugHTML('')}</div></div>
+      <div class="cond-row"><span>時間</span>${seg('minutes', [[30, '30分'], [45, '45分'], [60, '60分'], [90, '90分'], [120, '120分']])}</div>
+      <div class="cond-row"><span>人数</span>${seg('n', [[1, 'ひとり'], [3, '2〜4人'], [8, '5人以上'], ['', '決めない']])}</div>
+      <div class="cond-row"><span>レベル</span>${seg('level', [[1, 'はじめて・ミニバス'], [2, '中学・高校'], [3, '上級'], ['', '決めない']])}</div>
+      <div class="cond-row"><span>場所</span>${seg('place', [['', '体育館'], ['hoop', 'ゴール1つ'], ['any', '家（ゴールなし）']])}</div>
+      <div class="btns"><button type="button" class="btn btn-go" data-pl="make">${PL.data ? 'この条件で作り直す' : 'プランを作る'}</button></div>
+    </section>`;
+  }
+  function plSugHTML(q) {
+    let list = [];
+    if (q.trim()) {
+      const sk = BC.skills.filter((x) => BC.norm(x.name + (x.words || []).join(' ')).includes(BC.norm(q)) || BC.skillsIn(q).includes(x));
+      list = sk.filter((x) => !PL.skills.includes(x.id)).slice(0, 3).map((x) => `<button type="button" class="chip" data-plthadd="s:${x.id}">＋ ${esc(x.name)}（テーマ）</button>`);
+      list = list.concat(BC.search(q, { kinds: ['issue'] }).filter((h) => !PL.focus.includes(h.item.id)).slice(0, 6).map((h) => `<button type="button" class="chip" data-plthadd="${h.item.id}"><span class="k-dot k-issue"></span>＋ ${esc(h.item.title)}</button>`));
+    } else {
+      list = ['i-shoot-miss', 'i-drb-stolen', 'i-def-beat', 'i-reb-lose', 'i-fb-none', 'i-pass-steal'].filter((id) => get(id) && !PL.focus.includes(id)).map((id) => `<button type="button" class="chip" data-plthadd="${id}"><span class="k-dot k-issue"></span>＋ ${esc(get(id).title)}</button>`);
+    }
+    return list.join('') || '<span class="small">見つかりません</span>';
+  }
+  function plPickerHTML(key) {
+    const q = (document.getElementById('pl-pq') || {}).value || '';
+    const n = BC.norm(q);
+    const list = BC.planAlternatives(PL.data, key, null).filter((d) => !n || BC.norm(d.name + (d.alias || []).join('') + (d.words || []).join('')).includes(n)).slice(0, 12);
+    return `<div class="pl-pick"><div class="search">${I.search}<input id="pl-pq" type="search" placeholder="練習メニューを探す" value="${esc(q)}" autocomplete="off" data-b="${key}"></div>
+      <div class="rows">${list.map((d) => `<button type="button" class="card" data-pl="pick" data-b="${key}" data-id="${d.id}"><span class="card-h"><span class="k-dot k-drill"></span><span>${esc(d.name)}</span><span class="star">＋ 足す</span></span><span class="meta">${people(d)}<span class="num">${d.minutes}分</span>${lv(d.level)}</span></button>`).join('') || '<p class="small">条件に合う練習が見つかりません。</p>'}</div></div>`;
+  }
+  function plPlanHTML() {
+    const data = PL.data;
+    if (!data) return `<section class="panel"><p class="lead-sub">テーマと条件を選んで「プランを作る」を押すと、ウォームアップからしめくくりまで組みます。チャットで作ったプランも、ここで直せます。</p></section>`;
+    const total = plTotal(data);
+    let t = 0;
+    const blocks = data.blocks.map((b) => {
+      const sum = b.items.reduce((u, x) => u + x.min, 0);
+      const rows = b.items.map((x, i) => {
+        const d = get(x.id);
+        if (!d) return '';
+        const start = t;
+        t += x.min;
+        const at = `data-b="${b.key}" data-i="${i}"`;
+        return `<div class="pl-row">
+          <button type="button" class="pl-main" data-open="${d.id}"><span class="plan-time"><span class="num">${fmt(start)}</span></span>
+            <span class="pl-text"><span class="plan-name">${esc(d.name)}${BC.motionFor(d.id) ? ' <span class="badge">動き</span>' : ''}</span><span class="plan-pt">${md((d.points || [])[0] || d.aim)}</span></span></button>
+          <div class="pl-ctl">
+            <button type="button" class="ib" data-pl="minus" ${at} aria-label="1分へらす">−</button><span class="num pl-min">${x.min}分</span><button type="button" class="ib" data-pl="plus" ${at} aria-label="1分ふやす">＋</button>
+            <span class="pl-sp"></span>
+            <button type="button" class="ib" data-pl="swap" ${at} aria-label="ほかのメニューに入れかえる" title="入れかえる">↻</button>
+            <button type="button" class="ib" data-pl="up" ${at} aria-label="上へ">↑</button><button type="button" class="ib" data-pl="down" ${at} aria-label="下へ">↓</button>
+            <button type="button" class="ib" data-pl="del" ${at} aria-label="外す">×</button>
+          </div></div>`;
+      }).join('');
+      return `<div class="plan-block"><div class="plan-block-h"><span>${esc(b.name)}</span><span class="num">${sum}分</span></div>${rows}
+        <button type="button" class="more-btn" data-pl="add" data-b="${b.key}">${plPick === b.key ? '閉じる' : '＋ メニューを足す'}</button>${plPick === b.key ? plPickerHTML(b.key) : ''}</div>`;
+    }).join('');
+    const cond = condText({ n: data.n, level: data.level }) + (data.place === 'any' ? '・家' : data.place === 'hoop' ? '・ゴール1つ' : '');
+    return `<section class="panel plan">
+      <div class="plan-head"><span class="plan-total">${total}<small>分</small></span><span class="lead-sub">テーマ：${esc(plTheme(data))}${cond ? '　条件：' + esc(cond) : ''}${total !== data.minutes ? `　（予定 ${data.minutes}分）` : ''}</span></div>
+      <div class="btns"><button type="button" class="btn btn-go" data-pl="run">▶ 練習をはじめる（タイマー）</button></div>
+      ${blocks}
+      <p class="small">↻ で同じ種類のほかのメニューに入れかえ、− ＋ で時間を変えられます。メニューを押すと、手順と動きが見られます。</p>
+      <label class="field">名前<input id="pl-name" type="text" value="${esc(PL.name || plName(data))}"></label>
+      <div class="btns"><button type="button" class="btn" data-pl="save">保存する</button><button type="button" class="btn" data-pl="copy">テキストでコピー</button></div>
+    </section>`;
+  }
+  function plSavedHTML() {
+    if (!plans.length) return '';
+    return `<section class="panel"><h2 class="panel-h">保存したプラン</h2><div class="rows">${plans.map((p) => `<div class="card pl-saved">
+      <span class="card-h"><span>${esc(p.name)}</span></span>
+      <span class="meta"><span class="num">${plTotal(p.data)}分</span><span>${esc(plTheme(p.data))}</span><span>${esc(new Date(p.saved).toLocaleDateString('ja-JP'))}</span></span>
+      <span class="btns"><button type="button" class="btn" data-pl="open" data-id="${p.id}">開く</button><button type="button" class="btn" data-pl="run-saved" data-id="${p.id}">▶ はじめる</button><button type="button" class="btn" data-pl="rm" data-id="${p.id}">${plDel === p.id ? 'もう一度押すと消えます' : '消す'}</button></span></div>`).join('')}</div></section>`;
+  }
+  function renderPlan() {
+    const main = document.getElementById('main');
+    main.className = 'no-composer';
+    main.innerHTML = `<h1 class="page-h">練習プラン</h1>
+      <p class="page-lead">テーマと条件を選ぶと、ウォームアップ → 技術 → 対人・ゲーム → しめくくり の順に組みます。入れかえ・時間の調整・保存ができ、タイマーで練習を進められます。</p>
+      <div style="display:flex;flex-direction:column;gap:12px"><div id="pl-cond">${plCondHTML()}</div><div id="pl-plan">${plPlanHTML()}</div><div id="pl-saved">${plSavedHTML()}</div></div>`;
+  }
+  function plRefresh(part) {
+    if (S.tab !== 'plan') return;
+    if (!part || part === 'cond') { const e = document.getElementById('pl-cond'); if (e) e.innerHTML = plCondHTML(); }
+    if (!part || part === 'plan') { const e = document.getElementById('pl-plan'); if (e) e.innerHTML = plPlanHTML(); }
+    if (!part || part === 'saved') { const e = document.getElementById('pl-saved'); if (e) e.innerHTML = plSavedHTML(); }
+  }
+  function plFind(key, i) { const b = PL.data.blocks.find((x) => x.key === key); return b ? { b, x: b.items[+i] } : {}; }
+
+  // タイマー（練習中の画面）
+  let RUN = null;
+  function beep() {
+    try {
+      const ac = RUN && RUN.ac;
+      if (!ac) return;
+      [0, 0.22].forEach((d) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.frequency.value = 880; o.connect(g); g.connect(ac.destination);
+        g.gain.setValueAtTime(0.0001, ac.currentTime + d); g.gain.exponentialRampToValueAtTime(0.3, ac.currentTime + d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + d + 0.18);
+        o.start(ac.currentTime + d); o.stop(ac.currentTime + d + 0.2);
+      });
+    } catch (e) { /* 音が出なくても進む */ }
+    try { if (navigator.vibrate) navigator.vibrate([150, 80, 150]); } catch (e) { /* なし */ }
+  }
+  function runStart(data) {
+    const items = data.blocks.flatMap((b) => b.items.map((x) => ({ id: x.id, min: x.min, block: b.name }))).filter((x) => get(x.id));
+    if (!items.length) return;
+    runEnd();
+    RUN = { items, i: 0, left: items[0].min * 60, paused: false, last: Date.now(), done: false };
+    try { RUN.ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { /* なし */ }
+    try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then((w) => { if (RUN) RUN.wake = w; else w.release(); }).catch(() => {}); } catch (e) { /* 画面が消えないようにできなくても進む */ }
+    runRender(true);
+    RUN.timer = setInterval(runTick, 250);
+  }
+  function runGo(i) {
+    if (!RUN) return;
+    RUN.i = Math.max(0, Math.min(RUN.items.length - 1, i));
+    RUN.left = RUN.items[RUN.i].min * 60;
+    RUN.done = false;
+    RUN.last = Date.now();
+    runRender(true);
+  }
+  function runTick() {
+    if (!RUN) return;
+    const now = Date.now();
+    if (!RUN.paused && !RUN.done) RUN.left -= (now - RUN.last) / 1000;
+    RUN.last = now;
+    if (!RUN.done && RUN.left <= 0) {
+      beep();
+      if (RUN.i < RUN.items.length - 1) runGo(RUN.i + 1);
+      else { RUN.done = true; runRender(true); }
+      return;
+    }
+    runRender(false);
+  }
+  function runRender(full) {
+    if (!RUN) return;
+    let el = document.querySelector('.run');
+    if (!el) { el = document.createElement('div'); el.className = 'run'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', '練習のタイマー'); document.body.appendChild(el); full = true; }
+    const x = RUN.items[RUN.i], d = get(x.id), next = RUN.items[RUN.i + 1];
+    const total = RUN.items.reduce((t, y) => t + y.min, 0);
+    if (full) {
+      el.innerHTML = RUN.done ? `<div class="run-top"><span>練習プラン</span><button type="button" class="icon-btn" data-run="end" aria-label="閉じる">${I.close}</button></div>
+        <div class="run-body run-done"><p class="run-name">おつかれさまでした</p><p class="lead-sub">${RUN.items.length}メニュー・${total}分。最後に、今日できたことを1つずつ話してみましょう。</p>
+        <div class="btns"><button type="button" class="btn" data-run="restart">はじめからもう一度</button><button type="button" class="btn btn-go" data-run="end">閉じる</button></div></div>`
+        : `<div class="run-top"><span>${esc(x.block)}・${RUN.i + 1} / ${RUN.items.length}</span><button type="button" class="icon-btn" data-run="end" aria-label="タイマーを終わる">${I.close}</button></div>
+        <div class="run-body">
+          <button type="button" class="run-name" data-run="open">${esc(d.name)}</button>
+          <div class="run-clock num" id="run-clock"></div>
+          <div class="run-bar"><i id="run-prog"></i></div>
+          ${BC.motionFor(d.id) ? '<div class="run-anim" data-anim></div>' : ''}
+          <ul class="run-pts">${(d.points || []).slice(0, 3).map((p) => `<li>${md(p)}</li>`).join('')}</ul>
+          <p class="run-next">${next ? `次：${esc(get(next.id).name)}（${next.min}分）` : '次：おわり'}</p>
+        </div>
+        <div class="run-ctl"><button type="button" class="btn" data-run="prev">◀ 前</button><button type="button" class="btn btn-go" data-run="pause" id="run-pause"></button><button type="button" class="btn" data-run="next">次 ▶</button></div>`;
+      const a = el.querySelector('[data-anim]');
+      if (a) BC.anim(a, BC.motionFor(d.id), { points: false });
+    }
+    if (RUN.done) return;
+    const left = Math.max(0, Math.ceil(RUN.left));
+    const c = document.getElementById('run-clock');
+    if (c) c.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+    const pr = document.getElementById('run-prog');
+    if (pr) pr.style.width = `${(100 * (1 - RUN.left / (x.min * 60))).toFixed(1)}%`;
+    const pb = document.getElementById('run-pause');
+    if (pb) pb.textContent = RUN.paused ? '▶ 再開' : '⏸ 一時停止';
+  }
+  function runEnd() {
+    if (!RUN) return;
+    clearInterval(RUN.timer);
+    try { if (RUN.wake) RUN.wake.release(); } catch (e) { /* なし */ }
+    try { if (RUN.ac) RUN.ac.close(); } catch (e) { /* なし */ }
+    RUN = null;
+    document.querySelectorAll('.run').forEach((e) => e.remove());
+  }
+
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-pl],[data-plc],[data-plthadd],[data-plthdel],[data-run],[data-pledit]');
+    if (!t) return;
+    const d = t.dataset;
+    if (d.pledit != null) {
+      const m = S.log[+d.pledit];
+      if (!m || !m.bot) return;
+      const ctx = Object.assign({}, S.profile, m.bot.ctx || {});
+      const p = planOf(m.bot);
+      Object.assign(PL, { minutes: m.bot.minutes, n: ctx.n || null, level: ctx.level || null, place: ctx.place || null, focus: (m.bot.focus || []).slice(), skills: (m.bot.skills || []).slice(), name: '' });
+      PL.data = BC.planData(p, PL);
+      PL.data.focus = PL.focus.slice(); PL.data.skills = PL.skills.slice(); PL.data.place = PL.place;
+      savePL();
+      location.hash = 'plan';
+      return;
+    }
+    if (d.plc) {
+      PL[d.plc] = d.v === '' ? null : isNaN(+d.v) ? d.v : +d.v;
+      savePL();
+      plRefresh('cond');
+      return;
+    }
+    if (d.plthadd) {
+      if (d.plthadd.startsWith('s:')) { const sid = d.plthadd.slice(2); if (!PL.skills.includes(sid)) PL.skills.push(sid); }
+      else if (!PL.focus.includes(d.plthadd)) PL.focus.push(d.plthadd);
+      savePL();
+      plRefresh('cond');
+      const q = document.getElementById('pl-q'); if (q) q.focus();
+      return;
+    }
+    if (d.plthdel) {
+      if (d.plthdel.startsWith('s:')) PL.skills = PL.skills.filter((x) => x !== d.plthdel.slice(2));
+      else PL.focus = PL.focus.filter((x) => x !== d.plthdel);
+      savePL();
+      plRefresh('cond');
+      return;
+    }
+    if (d.run) {
+      if (!RUN && d.run !== 'end') return;
+      if (d.run === 'end') runEnd();
+      else if (d.run === 'pause') { RUN.paused = !RUN.paused; runRender(false); }
+      else if (d.run === 'next') { if (RUN.i < RUN.items.length - 1) runGo(RUN.i + 1); else { RUN.done = true; runRender(true); } }
+      else if (d.run === 'prev') runGo(RUN.i - 1);
+      else if (d.run === 'restart') runGo(0);
+      else if (d.run === 'open') { RUN.paused = true; const id = RUN.items[RUN.i].id; runRender(false); document.querySelector('.run').classList.add('run-hide'); showItem(id); }
+      return;
+    }
+    const act = d.pl;
+    if (act === 'make') { plMake(); plRefresh(); const e2 = document.getElementById('pl-plan'); if (e2) e2.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (!PL.data && !['open', 'rm', 'run-saved'].includes(act)) return;
+    if (['minus', 'plus', 'swap', 'up', 'down', 'del'].includes(act)) {
+      const { b, x } = plFind(d.b, d.i);
+      if (!b || !x) return;
+      const i = +d.i;
+      if (act === 'minus') x.min = Math.max(1, x.min - 1);
+      if (act === 'plus') x.min = Math.min(60, x.min + 1);
+      if (act === 'up' && i > 0) [b.items[i - 1], b.items[i]] = [b.items[i], b.items[i - 1]];
+      if (act === 'down' && i < b.items.length - 1) [b.items[i + 1], b.items[i]] = [b.items[i], b.items[i + 1]];
+      if (act === 'del') b.items.splice(i, 1);
+      if (act === 'swap') {
+        const slot = d.b + ':' + i;
+        const seen = (plSeen[slot] = plSeen[slot] || new Set([x.id]));
+        let alts = BC.planAlternatives(PL.data, d.b, x.id).filter((a) => !seen.has(a.id));
+        if (!alts.length) { seen.clear(); seen.add(x.id); alts = BC.planAlternatives(PL.data, d.b, x.id); }
+        if (!alts.length) { toast('入れかえられる練習が見つかりません（条件をゆるめてみてください）'); return; }
+        seen.add(alts[0].id);
+        x.id = alts[0].id;
+        x.min = Math.max(3, Math.min(x.min, alts[0].minutes * 2));
+        toast('「' + alts[0].name + '」に入れかえました');
+      }
+      savePL();
+      plRefresh('plan');
+      return;
+    }
+    if (act === 'add') { plPick = plPick === d.b ? null : d.b; plRefresh('plan'); const q = document.getElementById('pl-pq'); if (q) q.focus(); return; }
+    if (act === 'pick') {
+      const b = PL.data.blocks.find((x) => x.key === d.b), dr = get(d.id);
+      if (b && dr) { b.items.push({ id: dr.id, min: dr.minutes || 8 }); savePL(); toast('「' + dr.name + '」を足しました'); }
+      plRefresh('plan');
+      return;
+    }
+    if (act === 'run') { runStart(PL.data); return; }
+    if (act === 'copy') { const name = (document.getElementById('pl-name') || {}).value || plName(PL.data); copy(name + '\n' + BC.planText(BC.planFromData(PL.data)).replace(/^【練習プラン \d+分】/, `【練習プラン ${plTotal(PL.data)}分】`), '練習プランをコピーしました'); return; }
+    if (act === 'save') {
+      const name = ((document.getElementById('pl-name') || {}).value || '').trim() || plName(PL.data);
+      PL.name = name;
+      plans.unshift({ id: 'p' + Date.now().toString(36), name, saved: Date.now(), data: JSON.parse(JSON.stringify(PL.data)) });
+      plans = plans.slice(0, 50);
+      savePlans(); savePL();
+      toast('「' + name + '」を保存しました');
+      plRefresh('saved');
+      return;
+    }
+    if (act === 'open' || act === 'run-saved') {
+      const p = plans.find((x) => x.id === d.id);
+      if (!p) return;
+      PL.data = JSON.parse(JSON.stringify(p.data));
+      Object.assign(PL, { minutes: p.data.minutes, n: p.data.n, level: p.data.level, place: p.data.place, focus: (p.data.focus || []).slice(), skills: (p.data.skills || []).slice(), name: p.name });
+      savePL();
+      if (act === 'run-saved') { runStart(PL.data); plRefresh(); return; }
+      plRefresh();
+      const e2 = document.getElementById('pl-plan'); if (e2) e2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (act === 'rm') {
+      if (plDel !== d.id) { plDel = d.id; plRefresh('saved'); return; }
+      plans = plans.filter((x) => x.id !== d.id);
+      plDel = null;
+      savePlans();
+      toast('消しました');
+      plRefresh('saved');
+    }
+  });
+  document.addEventListener('input', (e) => {
+    if (e.target.id === 'pl-q') { const s2 = document.getElementById('pl-sug'); if (s2) s2.innerHTML = plSugHTML(e.target.value); }
+    else if (e.target.id === 'pl-pq') {
+      const pick = e.target.closest('.pl-pick');
+      if (pick) { const rows = pick.querySelector('.rows'); const tmp = document.createElement('div'); tmp.innerHTML = plPickerHTML(e.target.dataset.b); rows.innerHTML = tmp.querySelector('.rows').innerHTML; }
+    }
+  });
+
   /* ---------- 枠と、タブの切りかえ ---------- */
   function shell() {
     app.innerHTML = `
@@ -600,12 +928,13 @@
       </div></form>
       <nav class="tab" aria-label="画面"><div class="tab-in">${tabs(true)}</div></nav>`;
   }
-  const tabs = (icons) => [['chat', 'チャット', I.chat], ['library', '図鑑', I.book], ['videos', '動画', I.film]].map(([k, l, ic]) => `<a href="#${k}" data-tab="${k}">${icons ? ic : ''}${l}</a>`).join('');
+  const tabs = (icons) => [['chat', 'チャット', I.chat], ['plan', 'プラン', I.plan], ['library', '図鑑', I.book], ['videos', '動画', I.film]].map(([k, l, ic]) => `<a href="#${k}" data-tab="${k}">${icons ? ic : ''}${l}</a>`).join('');
   function setTab(tab) {
     S.tab = tab;
     document.querySelectorAll('[data-tab]').forEach((a) => (a.dataset.tab === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
     document.getElementById('composer').hidden = tab !== 'chat';
     if (tab === 'chat') renderChat();
+    else if (tab === 'plan') renderPlan();
     else if (tab === 'library') renderLibrary();
     else renderVideos();
   }
@@ -615,7 +944,7 @@
   }
   function route() {
     const h = decodeURIComponent(location.hash.slice(1));
-    if (['chat', 'library', 'videos'].includes(h)) {
+    if (['chat', 'plan', 'library', 'videos'].includes(h)) {
       if (S.sheet || S.video) { S.sheet = null; S.video = null; closeSheetDom(); }
       if (h !== S.tab || !document.getElementById('main').innerHTML) { setTab(h); window.scrollTo(0, h === 'chat' && S.log.length > 1 ? document.body.scrollHeight : 0); }
       return;
@@ -629,6 +958,7 @@
   }
   function rerender() {
     if (S.tab === 'chat') renderChat();
+    else if (S.tab === 'plan') renderPlan();
     else if (S.tab === 'library') renderLibrary();
     else renderVideos();
   }
@@ -807,5 +1137,5 @@
   route();
   if (!location.hash && S.log.length > 1) requestAnimationFrame(() => window.scrollTo(0, document.body.scrollHeight));
   // 検査用（tools/look.cjs）
-  window.BCAPP = { S, send, showItem, setTab, rerender };
+  window.BCAPP = { S, send, showItem, setTab, rerender, PL, runStart, runEnd, getRun: () => RUN };
 })();

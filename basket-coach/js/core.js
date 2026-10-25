@@ -443,8 +443,39 @@
     if (!d || d.kind_ !== 'drill') return false;
     if (opt.n && d.n > opt.n) return false;
     if (opt.level && d.level > opt.level + (opt.strict ? 0 : 1)) return false;
-    if (opt.place === 'any' && d.place !== 'any') return false;
+    if (opt.place === 'any' && d.place !== 'any') return false;          // 家（ゴールなし）
+    if (opt.place === 'hoop' && d.place === 'full') return false;        // ゴール1つ（ハーフコートまで）
     return true;
+  };
+
+  /* ---------- 練習プランを直す（プランの画面から使う） ----------
+     データの形：{ minutes, n, level, place, focus: [困りごと id], skills: [技能 id], blocks: [{ key, name, items: [{ id, min }] }] } */
+  BC.planData = function (plan, cond = {}) {
+    return {
+      minutes: plan.minutes, n: plan.n || cond.n || null, level: plan.level || cond.level || null, place: cond.place || plan.place || null,
+      focus: (plan.focus || []).slice(), skills: (plan.skills || []).slice(),
+      blocks: plan.blocks.map((b) => ({ key: b.key, name: b.name, items: b.items.map((x) => ({ id: x.drill.id, min: x.min })) })),
+    };
+  };
+  BC.planFromData = function (data) {
+    const blocks = data.blocks.map((b) => ({ key: b.key, name: b.name, items: b.items.map((x) => ({ drill: BC.get(x.id), min: x.min })).filter((x) => x.drill) }));
+    const minutes = blocks.reduce((t, b) => t + b.items.reduce((u, x) => u + x.min, 0), 0);
+    return { minutes, n: data.n, level: data.level, focus: data.focus || [], skills: data.skills || [], blocks };
+  };
+  // その場所に入れかえられる練習（同じ種類・条件に合う・まだ使っていない）。テーマに近い順
+  BC.planAlternatives = function (data, key, curId) {
+    const used = new Set(data.blocks.flatMap((b) => b.items.map((x) => x.id)));
+    const phaseOk = { warmup: ['warmup'], skill: ['skill', 'warmup'], game: ['game'], cooldown: ['cooldown', 'skill'] }[key] || ['skill'];
+    const cur = BC.get(curId);
+    const skills = new Set([...(data.skills || []), ...(data.focus || []).map((id) => (BC.get(id) || {}).skill).filter(Boolean), ...((cur && cur.skills) || [])]);
+    const focusDrills = new Set((data.focus || []).flatMap((id) => { const i = BC.get(id); return i ? BC.drillsFor(i).ok.concat(BC.drillsFor(i).rest).map((d) => d.id) : []; }));
+    const opt = { n: data.n, level: data.level, place: data.place, strict: true };
+    const score = (d) => (focusDrills.has(d.id) ? 3 : 0) + ((d.skills || [])[0] && skills.has(d.skills[0]) ? 2 : 0) + ((d.skills || []).some((x) => skills.has(x)) ? 1 : 0);
+    return BC.lists.drill
+      .filter((d) => d.id !== curId && !used.has(d.id) && phaseOk.includes(d.phase) && BC.fits(d, opt))
+      .map((d) => ({ d, s: score(d) }))
+      .sort((a, b) => b.s - a.s)
+      .map((x) => x.d);
   };
   // 困りごとのおすすめ練習を、条件に合うものから順に
   BC.drillsFor = function (issue, opt = {}) {
