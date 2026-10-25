@@ -23,6 +23,7 @@
 .ck-lead { margin: 0; color: var(--ink-2); }
 .ck-note { margin: 0; color: var(--ink-2); font-size: var(--fs-s); }
 .ck-note-s { font-size: var(--fs-xs); color: var(--ink-3); }
+.ck-center { text-align: center; }
 .ck-cap { margin: 4px 0 0; text-align: center; font-size: var(--fs-xs); color: var(--ink-3); font-weight: 700; }
 .ck-date { margin: -8px 0 0; color: var(--ink-3); font-size: var(--fs-s); }
 .ck-err { margin: 0; padding: 12px 14px; border-radius: var(--r-s); background: var(--warn-soft); color: var(--ink); border-left: 5px solid var(--warn); font-size: var(--fs-s); }
@@ -61,6 +62,8 @@
 .ck-mode-team { flex-direction: row; align-items: center; min-height: 96px; gap: 12px; }
 .ck-mode-team .ck-mode-fig { width: 38%; flex: none; height: auto; aspect-ratio: 1; background: var(--floor-out); }
 .ck-mode-team .ck-mode-txt b { font-size: var(--fs-l); }
+.ck-mode-wide { grid-column: 1 / -1; flex-direction: row; align-items: center; min-height: 96px; gap: 12px; }
+.ck-mode-wide .ck-mode-fig { width: 38%; flex: none; height: 84px; }
 
 /* とり方 */
 .ck-how { display: grid; grid-template-columns: 1fr; gap: 14px; align-items: start; }

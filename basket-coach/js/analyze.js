@@ -194,11 +194,47 @@
   const hipCenter = (lm) => mid(lm[K.lHip], lm[K.rHip]);
   BA.hipCenter = hipCenter;
 
-  // 3コマのなめらかにする（点ごとに、となりとの平均。いないコマはそのまま）
+  // 左右の取りちがえを直す：AI がコマによって 左右の点を入れかえることがある。前のコマと くらべて、
+  // 入れかえた方が ずっと近ければ（0.7倍より近い）、その組（肩・ひじ・手首・腰・ひざ・足首・かかと・つま先・目・耳）を入れかえる
+  const PAIRS = [[2, 5], [7, 8], [11, 12], [13, 14], [15, 16], [23, 24], [25, 26], [27, 28], [29, 30], [31, 32]];
+  BA.fixSwaps = function (series) {
+    let prev = null;
+    return series.map((lm) => {
+      if (!lm) return null;
+      if (!prev) { prev = lm; return lm; }
+      const out = lm.slice();
+      for (const [a, b] of PAIRS) {
+        const keep = dist(out[a], prev[a]) + dist(out[b], prev[b]);
+        const swap = dist(out[a], prev[b]) + dist(out[b], prev[a]);
+        if (swap < keep * 0.7) { const t = out[a]; out[a] = out[b]; out[b] = t; }
+      }
+      prev = out;
+      return out;
+    });
+  };
+
+  // なめらかにする：① 顔と胴の点が 1コマだけ 大きく飛んだら（AI の見まちがい。例：ボールを頭とまちがえる）、前後の平均にもどす
+  //               ② 3コマの平均（小さなぶれを ならす）。いないコマは そのまま
+  // （手首・足首は 速く動くのが ふつうなので ①はしない）
+  const STEADY = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 23, 24];
   BA.smooth = function (series) {
-    return series.map((lm, i) => {
+    const hs = series.filter(Boolean).map((lm) => { const b = boxOf(lm); return b[3] - b[1]; });
+    const T = 0.15 * (median(hs) || 0);
+    const fixed = series.map((lm, i) => {
       if (!lm) return null;
       const a = series[i - 1], b = series[i + 1];
+      if (!a || !b || !T) return lm;
+      let out = null;
+      for (const k of STEADY) {
+        const mx = (a[k][0] + b[k][0]) / 2, my = (a[k][1] + b[k][1]) / 2;
+        const d = Math.hypot(lm[k][0] - mx, lm[k][1] - my), nb = Math.hypot(a[k][0] - b[k][0], a[k][1] - b[k][1]);
+        if (d > T && d > 2.5 * nb) { if (!out) out = lm.slice(); out[k] = [mx, my, lm[k][2]]; }
+      }
+      return out || lm;
+    });
+    return fixed.map((lm, i) => {
+      if (!lm) return null;
+      const a = fixed[i - 1], b = fixed[i + 1];
       return lm.map((p, k) => {
         let x = p[0], y = p[1], n = 1;
         if (a) { x += a[k][0]; y += a[k][1]; n++; }
@@ -213,6 +249,31 @@
      返す：{ legLen, torso, floor, view（'side'|'front'。肩幅から推測）, frames: [{ t, hipH, shH, headH, ankH: {l, r}, kneeL, kneeR,
              elbowL, elbowR, lean, wrist: {l, r}, pitch（下を向く角度の目安）, face, front, stanceW（足の幅 ÷ 肩幅）, ankOrder,
              fppaL, fppaR（前から：ひざが内に入る角度。内が＋）, hipX, ankX }] } */
+  // 頭の位置：鼻・目・耳のうち 見えている点の平均（鼻だけより ぶれにくい）
+  function headPt(lm) {
+    let x = 0, y = 0, n = 0;
+    for (const k of [K.nose, K.lEye, K.rEye, K.lEar, K.rEar]) { const p = lm[k]; if (p && p[2] > 0.5) { x += p[0]; y += p[1]; n++; } }
+    return n ? [x / n, y / n] : lm[K.nose];
+  }
+  // 上下の ゆれ：1秒の なめらかな動き（近づく・はなれる など）を引いてから、ばらつき（10〜90% の幅 ÷ 2.56 ≒ 標準偏差）
+  function wobble(xs, win) {
+    const out = [];
+    for (let i = 0; i < xs.length; i++) {
+      if (xs[i] == null) continue;
+      let sum = 0, n = 0;
+      for (let j = Math.max(0, i - win); j <= Math.min(xs.length - 1, i + win); j++) if (xs[j] != null) { sum += xs[j]; n++; }
+      out.push(xs[i] - sum / n);
+    }
+    return out.length < 4 ? 0 : (pct(out, 0.9) - pct(out, 0.1)) / 2.56;
+  }
+  BA.wobble = wobble;
+  // 画面の左の脚・右の脚（腰・ひざ・足首を、それぞれ x の小さい順に くみあわせる。前からの動画で 左右の取りちがえに強い）
+  BA.legs = function (lm) {
+    if (!lm) return [];
+    const sx = (a, b) => (a[0] <= b[0] ? [a, b] : [b, a]);
+    const h = sx(lm[K.lHip], lm[K.rHip]), k = sx(lm[K.lKn], lm[K.rKn]), a = sx(lm[K.lAn], lm[K.rAn]);
+    return [0, 1].map((i) => ({ hip: h[i], knee: k[i], ank: a[i] }));
+  };
   BA.features = function (series, times) {
     const legs = [], torsos = [];
     for (const lm of series) {
@@ -254,8 +315,10 @@
       }
       const shW = Math.max(shRaw, legLen * 0.15);
       // 前から：ひざの角度のずれ（FPPA）。ひざが、腰と足首を結ぶ線より内側なら＋
-      const fppa = (s) => {
-        const h = lm[K[s + 'Hip']], k = lm[K[s + 'Kn']], a = lm[K[s + 'An']];
+      // AI は左右を取りちがえることがあるので、画面の左の脚・右の脚（腰・ひざ・足首を x の順に）で はかる
+      const legs2 = BA.legs(lm);
+      const fppa = (i) => {
+        const { hip: h, knee: k, ank: a } = legs2[i];
         const dy = a[1] - h[1] || 1e-6;
         const xl = h[0] + (a[0] - h[0]) * ((k[1] - h[1]) / dy);
         const inward = Math.sign(hip[0] - h[0]) || 1;
@@ -264,7 +327,7 @@
       };
       return {
         t: times ? times[i] : i,
-        hipH: up(hip), shH: up(sh), headH: up(nose), ankH: { l: up(lm[K.lAn]), r: up(lm[K.rAn]) },
+        hipH: up(hip), shH: up(sh), headH: up(headPt(lm)), ankH: { l: up(lm[K.lAn]), r: up(lm[K.rAn]) },
         kneeL: ang3(lm[K.lHip], lm[K.lKn], lm[K.lAn]), kneeR: ang3(lm[K.rHip], lm[K.rKn], lm[K.rAn]),
         elbowL: ang3(lm[K.lSh], lm[K.lEl], lm[K.lWr]), elbowR: ang3(lm[K.rSh], lm[K.rEl], lm[K.rWr]),
         lean: (Math.atan2(sh[0] - hip[0], hip[1] - sh[1]) * 180) / Math.PI,
@@ -272,9 +335,9 @@
         pitch, face, front,
         stanceW: Math.abs(lm[K.lAn][0] - lm[K.rAn][0]) / shW,
         ankOrder: Math.sign(lm[K.lAn][0] - lm[K.rAn][0]),
-        fppaL: fppa('l'), fppaR: fppa('r'),
+        fppaL: fppa(0), fppaR: fppa(1), // 画面の左の脚・右の脚
         hipX: hip[0] / legLen, ankX: ank[0] / legLen,
-        vis: Math.min(lm[K.lAn][2], lm[K.rAn][2]),
+        vis: Math.max(lm[K.lAn][2], lm[K.rAn][2]), // 横からは 遠い方の足首が かくれるので、見えている方
         size: (boxOf(lm)[3] - boxOf(lm)[1]),
       };
     });
@@ -308,7 +371,7 @@
     const times = opt.times || series.map((_, i) => i / fps);
     const seen = series.filter(Boolean).length;
     if (seen < Math.max(6, series.length * 0.3)) return { ok: false, msg: '人の体を、あまり見つけられませんでした。体ぜんぶ（頭から足まで）が映るように、明るい所でとってみてください。' };
-    const sm = BA.smooth(series);
+    const sm = BA.smooth(BA.fixSwaps(series));
     const FT = BA.features(sm, times);
     const F = FT.frames;
     const n = F.length;
@@ -456,7 +519,7 @@
           { links: ['v-drb-eyes', 'd-headup', 'd-tennisball'] }));
       }
       {
-        const bob = std(F.map((f) => f && f.headH));
+        const bob = wobble(F.map((f) => f && f.headH), s(0.5));
         const st = lv(bob, 0.02, 0.035);
         mets.push(M('head', '頭の高さ', st === 'good' ? '変わらない' : st === 'ok' ? '少し上下' : '上下に動く', st,
           st === 'good' ? '頭の高さが変わらず、安定しています。' : '頭が上下に動いています。ひざで高さを保つと、次の動きにすぐ移れます。',
@@ -505,7 +568,7 @@
           { links: ['v-def-feet', 'd-zigzag-d'] }));
       }
       {
-        const bob = std(F.map((f) => f && f.headH));
+        const bob = wobble(F.map((f) => f && f.headH), s(0.5));
         const st = lv(bob, 0.02, 0.035);
         mets.push(M('head', '頭の高さ（上下にはねない）', st === 'good' ? '変わらない' : st === 'ok' ? '少し上下' : '上下に動く', st,
           st === 'good' ? '頭の高さが変わらず、低いまま動けています。' : '動くたびに頭が上下しています。ひざを曲げたまま、すべるように動きましょう。',
@@ -555,7 +618,7 @@
         if (vi >= 0) {
           const v = Math.max(F[vi].fppaL, F[vi].fppaR);
           const st = lv(v, 10, 18);
-          mets.push(M('knee-in', 'ひざが内に入らないか', st === 'good' ? '入っていない' : `内へ ${Math.round(v)}°`, st,
+          mets.push(M('knee-in', 'ひざが内に入らないか', st === 'good' ? '入っていない' : v >= 40 ? '大きく 内へ' : `内へ ${Math.round(v)}°`, st,
             st === 'good' ? 'ひざとつま先が同じ向きで、着地できています。' : '着地のとき、ひざが内側に入っています（ケガをしやすい形）。ひざをつま先と同じ向きに。',
             { at: vi, links: ['v-body-injury', 'd-landing'] }));
         }

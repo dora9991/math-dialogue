@@ -113,6 +113,10 @@ console.log('■ ドリブル（横から）');
   const tempo = metric(good, 'tempo');
   ok(tempo && Math.abs(parseFloat(tempo.value) - 1 / 0.6) < 0.3, 'ドリブル：回数/秒 ≈ 1.67（' + (tempo && tempo.value) + '）');
   ok(good.keys.length >= 5, 'ドリブル：つくたびの場面 ' + good.keys.length);
+  // AI が 1コマだけ ボールを頭と見まちがえても（顔の点が床の近くへ飛ぶ）、頭の高さは ◎ のまま
+  const f2 = film('pound', { secs: 5 });
+  const glitch = f2.series.map((lm, i) => { if (i !== 20 && i !== 41) return lm; const c = lm.slice(); for (let k = 0; k <= 10; k++) c[k] = [lm[16][0] + 10, lm[16][1] + 40, 1]; return c; });
+  ok(st(BA.analyzeSelf(glitch, { mode: 'dribble', fps: f2.fps }), 'head') === 'good', 'ドリブル：顔の点の 1コマの見まちがいに強い');
 }
 
 /* ---------- 3. ディフェンス ---------- */
@@ -200,6 +204,9 @@ function frontLanding({ inward = 0, drop = 0.26, tilt = 0, fps = 15 } = {}) {
   ok(st(stiff, 'flex') === 'bad', '着地（前）：しずまない → △');
   ok(st(kin, 'knee-in') === 'bad', '着地（前）：ひざが内に入る → △（' + (metric(kin, 'knee-in') || {}).value + '）');
   ok(st(tilt, 'sym') !== 'good', '着地（前）：横にかたむく → ◎ にならない');
+  // AI が とちゅうのコマで 腰の左右を取りちがえても、ひざの判定は変わらない
+  const swapHips = (o) => { const f = frontLanding(o); f.series = f.series.map((lm, i) => { if (i % 3) return lm; const c = lm.slice(); [c[23], c[24]] = [c[24], c[23]]; return c; }); return BA.analyzeSelf(f.series, { mode: 'landing', fps: f.fps }); };
+  ok(st(swapHips({}), 'knee-in') === 'good' && st(swapHips({ inward: 0.07 }), 'knee-in') === 'bad', '着地（前）：腰の左右の取りちがえに強い');
 }
 
 /* ---------- 6. 見えないとき・追いかけ ---------- */

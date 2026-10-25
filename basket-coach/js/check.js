@@ -106,6 +106,7 @@
   function cleanup() {
     if (!S) return;
     if (S.abort) S.abort.abort();
+    if (S.lock) { try { S.lock.release(); } catch (e) { /* なし */ } S.lock = null; }
     stopLoop();
     if (S.video) { try { S.video.pause(); S.video.removeAttribute('src'); S.video.load(); } catch (e) { /* なし */ } }
     if (S.url) URL.revokeObjectURL(S.url);
@@ -182,7 +183,7 @@
       const recs = records().slice(0, 3);
       const card = (m) => {
         const h = HOW[m.id];
-        return `<button type="button" class="ck-mode${m.id === 'team' ? ' ck-mode-team' : ''}" data-ck="mode" data-mode="${m.id}">
+        return `<button type="button" class="ck-mode${m.id === 'team' ? ' ck-mode-team' : m.id === 'free' ? ' ck-mode-wide' : ''}" data-ck="mode" data-mode="${m.id}">
           <span class="ck-mode-fig">${m.icon}</span>
           <span class="ck-mode-txt"><b>${esc(m.name)}</b><small>${h.badges.slice(0, 2).map((x) => esc(x[1])).join('・')}</small></span>
         </button>`;
@@ -246,6 +247,7 @@
     const fail = () => { if (S.video !== v) return; S.video = null; go('how', 'この動画は、このブラウザでは 開けませんでした。スマホの カメラで とりなおすか、MP4 の動画を えらんでください。'); };
     v.addEventListener('error', fail, { once: true });
     const ready = () => {
+      if (S.video !== v) return;
       if (!v.videoWidth || !isFinite(v.duration) || !v.duration) return fail();
       S.dur = v.duration;
       const max = MODES[S.mode].secs;
@@ -323,6 +325,14 @@
     if (S.primed) return;
     S.primed = true;
     try { const p = v.play(); if (p && p.then) await p; v.pause(); } catch (e) { /* なし */ }
+  }
+
+  // しらべている間、画面が消えないように（できる端末だけ）
+  async function wake(on) {
+    try {
+      if (on && navigator.wakeLock && !S.lock) S.lock = await navigator.wakeLock.request('screen');
+      if (!on && S.lock) { await S.lock.release(); S.lock = null; }
+    } catch (e) { /* なし */ }
   }
 
   /* ---------- 作業用のキャンバス（長い辺 640px） ---------- */
@@ -429,9 +439,22 @@
     grab();
     S.snap = cloneCanvas(S.work);
     const r = pose.detectForVideo(S.work, BA.tick(500));
-    S.cands = r.landmarks.map((lm) => BA.toPx(lm, S.work.width, S.work.height));
+    S.cands = dedupPoses(r.landmarks.map((lm) => BA.toPx(lm, S.work.width, S.work.height)));
     if (S.cands.length === 1) { S.pickHip = BA.hipCenter(S.cands[0]); return runSelf(); }
     paint();
+  }
+  // 同じ人を2回見つけたとき（箱が大きく重なる）は、1人に
+  function dedupPoses(ps) {
+    const box = (lm) => { const b = BA.boxOf(lm.filter((p) => p[2] > 0.3)); return { x: b[0], y: b[1], w: b[2] - b[0], h: b[3] - b[1] }; };
+    const iou = (a, b) => { const x = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)), y = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)); const i = x * y; return i / (a.w * a.h + b.w * b.h - i || 1); };
+    // 体の点が少ししか見えない・小さすぎるものは、人ではない（AI の見まちがい）
+    const seen = (lm) => [0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28].filter((k) => lm[k] && lm[k][2] > 0.5).length;
+    let list = ps.filter((lm) => seen(lm) >= 8).map((lm) => ({ lm, b: box(lm) })).sort((p, q) => q.b.w * q.b.h - p.b.w * p.b.h);
+    const maxH = Math.max(0, ...list.map((p) => p.b.h));
+    list = list.filter((p) => p.b.h >= maxH * 0.35);
+    const keep = [];
+    for (const p of list) if (!keep.some((k) => iou(k.b, p.b) > 0.5)) keep.push(p);
+    return keep.sort((p, q) => p.b.x - q.b.x).map((p) => p.lm); // 左から順に番号
   }
   function cloneCanvas(src) { const c = document.createElement('canvas'); c.width = src.width; c.height = src.height; c.getContext('2d').drawImage(src, 0, 0); return c; }
   // 小さな絵（きろくの絵用。幅 168px）
@@ -450,6 +473,7 @@
         <div class="ck-stage" style="aspect-ratio:${S.work.width}/${S.work.height}"><canvas class="ck-livec"></canvas></div>
         <div class="ck-bar ck-bar-big"><i style="width:${p.n ? Math.round((p.i / p.n) * 100) : 0}%"></i></div>
         <p class="ck-prog" aria-live="polite">コマ <b class="num">${p.i}</b> / <span class="num">${p.n}</span></p>
+        <p class="ck-note ck-note-s ck-center">おわるまで、画面を とじないでね。</p>
         <button type="button" class="btn big" data-ck="stop">やめる</button>`;
     },
   };
@@ -485,6 +509,7 @@
     try { pose = await BA.load('pose'); } catch (e) { return go('range', aiFail(e)); }
     const ac = new AbortController();
     S.abort = ac;
+    wake(true);
     const poses = [], times = [];
     const W = S.work.width, H = S.work.height;
     S.mini = [];
@@ -503,17 +528,20 @@
       });
     } catch (e) {
       S.abort = null;
+      wake(false);
       if (ac.signal.aborted) { toast('やめました'); return go('range'); }
       console.warn(e);
       return go('range', 'とちゅうで うまく しらべられませんでした。もう一度 ためしてください。');
     }
     S.abort = null;
+    wake(false);
     const first = poses.findIndex((p) => p.length);
     const pick = first >= 0 && S.pickHip ? BA.nearest(poses[first], S.pickHip) : null;
     const tracked = BA.track(poses, pick >= 0 ? pick : null);
     const res = BA.analyzeSelf(tracked, { mode: S.mode, fps, times });
     const score = res.ok ? BA.score(res.metrics || []) : null;
-    S.result = { res, tracked, smooth: BA.smooth(tracked), times, fps, score, mode: S.mode, W, H, saved: false };
+    S.result = { res, tracked, smooth: BA.smooth(BA.fixSwaps(tracked)), times, fps, score, mode: S.mode, W, H, saved: false };
+    S.showBones = true;
     if (res.ok) saveSelf();
     go('result');
   }
@@ -624,10 +652,11 @@
         const hip = [(lm[K.lHip][0] + lm[K.rHip][0]) / 2, (lm[K.lHip][1] + lm[K.rHip][1]) / 2];
         label(g, `腰 ${Math.round(f.hipH * 100)}%`, hip[0] * sx, hip[1] * sy - 4, { ink: '#14532d' });
         if (R.mode === 'landing') {
-          for (const s of ['l', 'r']) {
-            const v = s === 'l' ? f.fppaL : f.fppaR;
-            if (v > 5) label(g, `内へ ${Math.round(v)}°`, lm[K[s + 'Kn']][0] * sx + (s === 'l' ? 40 : -40), lm[K[s + 'Kn']][1] * sy, { ink: '#7f1d1d' });
-          }
+          // 画面の左の脚・右の脚（analyze.js の fppaL・fppaR と同じ くみあわせ）
+          BA.legs(lm).forEach((leg, i) => {
+            const v = i === 0 ? f.fppaL : f.fppaR;
+            if (v > 5) label(g, `内へ ${Math.round(v)}°`, leg.knee[0] * sx + (i === 0 ? -44 : 44), leg.knee[1] * sy, { ink: '#7f1d1d' });
+          });
         }
       }
     }
@@ -1268,6 +1297,7 @@
     try { det = await BA.load('person'); } catch (e) { return go('color', aiFail(e)); }
     const ac = new AbortController();
     S.abort = ac;
+    wake(true);
     const frames = [];
     const midI = Math.floor(S.prog.n / 2);
     S.teamMini = null;
@@ -1285,11 +1315,13 @@
       });
     } catch (e) {
       S.abort = null;
+      wake(false);
       if (ac.signal.aborted) { toast('やめました'); return go('color'); }
       console.warn(e);
       return go('color', 'とちゅうで うまく しらべられませんでした。もう一度 ためしてください。');
     }
     S.abort = null;
+    wake(false);
     BA.courtTrack(frames);
     const tm = BA.teamAnalyze(frames, { teams: 2 });
     const off = BA.teamFindings(tm.teams[0], 'offense'), def = BA.teamFindings(tm.teams[1], 'defense');

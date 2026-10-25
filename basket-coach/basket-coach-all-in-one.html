@@ -177,7 +177,7 @@ h1, h2, h3 { text-wrap: balance; }
 
 /* ---------- わく ---------- */
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--sheet); }
-.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: color-mix(in srgb, var(--sheet) 94%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--sheet); background: color-mix(in srgb, var(--sheet) 94%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
 .top-in {
   max-width: 64rem; margin: 0 auto; height: var(--head-h);
   display: flex; align-items: center; gap: 12px;
@@ -252,8 +252,8 @@ main {
   box-shadow: 0 3px 0 var(--line-2); transition: transform 0.08s, box-shadow 0.08s;
 }
 .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line-2); }
-.btn.primary { background: var(--ball); border-color: var(--ball); color: #fff; box-shadow: 0 4px 0 color-mix(in srgb, var(--ball) 62%, #000); }
-.btn.primary:active { box-shadow: 0 1px 0 color-mix(in srgb, var(--ball) 62%, #000); }
+.btn.primary { background: var(--ball); border-color: var(--ball); color: #fff; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3); box-shadow: 0 4px 0 color-mix(in srgb, var(--ball) 62%, #000); }
+.btn.primary:active { box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3); box-shadow: 0 1px 0 color-mix(in srgb, var(--ball) 62%, #000); }
 .btn.big { flex: 1 1 100%; min-height: 58px; font-size: 1.15rem; }
 .btn.danger { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, var(--line-2)); }
 .btn:disabled { opacity: 0.45; pointer-events: none; }
@@ -304,6 +304,7 @@ main {
 .pill { display: inline-flex; align-items: center; gap: 4px; background: var(--sheet-2); border: 1px solid var(--line); border-radius: 999px; padding: 1px 10px; font-size: var(--fs-xs); font-weight: 700; color: var(--ink-2); white-space: nowrap; line-height: 1.8; }
 .pill .ic { width: 1.15em; height: 1.15em; }
 .pill.solo { background: var(--ok-soft); border-color: transparent; color: var(--ok); }
+.pill.alias { white-space: normal; line-height: 1.5; padding-block: 3px; max-width: 100%; }
 .stars { display: inline-flex; gap: 1px; font-size: 0.95em; line-height: 1; letter-spacing: 0; }
 .stars i { font-style: normal; color: var(--line-2); }
 .stars i.on { color: var(--gold); }
@@ -336,7 +337,7 @@ details.adult > .sec { margin-top: 14px; }
 .rc-sub { font-size: var(--fs-s); color: var(--ink-2); line-height: 1.5; }
 .rc-meta { display: flex; flex-wrap: wrap; gap: 4px; }
 .rc-go { color: var(--ink-3); width: 22px; height: 22px; }
-.thumb { width: 60px; height: 60px; border-radius: 14px; overflow: hidden; background: linear-gradient(to bottom, var(--sheet-2) 74%, color-mix(in srgb, var(--floor) 55%, var(--sheet)) 74%); display: grid; place-items: center; flex: none; }
+.thumb { width: 60px; height: 60px; border-radius: 14px; overflow: hidden; background: var(--sheet-2); background: linear-gradient(to bottom, var(--sheet-2) 74%, color-mix(in srgb, var(--floor) 55%, var(--sheet)) 74%); display: grid; place-items: center; flex: none; }
 .thumb svg { width: 100%; height: 100%; }
 .art-ic { background: var(--ball-soft); color: var(--ball); }
 .art-ic .ic { width: 30px; height: 30px; }
@@ -362,6 +363,7 @@ details.adult > .sec { margin-top: 14px; }
 .hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .hero-hi { font-family: var(--font-round); font-weight: 800; font-size: 1.1rem; }
 .hero-rank { display: flex; align-items: baseline; gap: 10px; margin-top: 2px; }
+.hero-msg { margin-top: 6px; font-size: var(--fs-s); font-weight: 700; line-height: 1.5; opacity: 0.95; word-break: keep-all; overflow-wrap: anywhere; }
 .lvl { font-family: var(--font-round); font-weight: 800; font-size: 1.15rem; }
 .lvl b { font-size: 2.6rem; line-height: 1; }
 .rank { font-family: var(--font-round); font-weight: 800; background: rgba(255, 255, 255, 0.2); border-radius: 999px; padding: 0 12px; }
@@ -421,7 +423,7 @@ details.adult > .sec { margin-top: 14px; }
 @media (min-width: 560px) { .skill-grid { grid-template-columns: repeat(3, 1fr); } }
 .skill-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; background: var(--sheet); border: 1.5px solid var(--line); border-radius: 20px; padding: 10px 8px 12px; text-decoration: none; color: var(--ink); text-align: center; }
 .skill-tile.goal { border-color: var(--ball-line); box-shadow: inset 0 0 0 1px var(--ball-line); }
-.skill-tile .art { position: relative; width: 100%; aspect-ratio: 1.25; border-radius: 14px; overflow: hidden; background: linear-gradient(to bottom, var(--sheet-2) 76%, color-mix(in srgb, var(--floor) 55%, var(--sheet)) 76%); display: grid; place-items: center; }
+.skill-tile .art { position: relative; width: 100%; aspect-ratio: 1.25; border-radius: 14px; overflow: hidden; background: var(--sheet-2); background: linear-gradient(to bottom, var(--sheet-2) 76%, color-mix(in srgb, var(--floor) 55%, var(--sheet)) 76%); display: grid; place-items: center; }
 .skill-tile .art svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .skill-tile .art.art-ic { background: var(--ball-soft); }
 .skill-tile .art.art-ic .ic { width: 42px; height: 42px; }
@@ -460,7 +462,7 @@ details.adult > .sec { margin-top: 14px; }
 .box .list { font-size: var(--fs-s); }
 .duo .box { min-width: 0; }
 @media (max-width: 420px) { .duo:has(.box) { grid-template-columns: 1fr; } }
-.do-bar { position: sticky; bottom: calc(var(--tab-h) + 12px + env(safe-area-inset-bottom, 0px)); z-index: 5; display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; background: color-mix(in srgb, var(--board) 88%, transparent); backdrop-filter: blur(6px); padding: 8px; margin: 0 -8px; border-radius: 22px; }
+.do-bar { position: sticky; bottom: calc(var(--tab-h) + 12px + env(safe-area-inset-bottom, 0px)); z-index: 5; display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; background: var(--board); background: color-mix(in srgb, var(--board) 88%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); padding: 8px; margin: 0 -8px; border-radius: 22px; }
 .do-bar .btn.big { flex: none; min-height: 54px; font-size: 1.02rem; padding-inline: 10px; }
 .note { padding: 10px 14px; background: var(--warn-soft); border-radius: 14px; font-size: var(--fs-s); }
 .tip { display: flex; gap: 10px; align-items: flex-start; background: var(--warn-soft); border-radius: 16px; padding: 12px 14px; font-weight: 700; }
@@ -496,8 +498,8 @@ details.adult > .sec { margin-top: 14px; }
 .cal-c { aspect-ratio: 1; border-radius: 10px; display: grid; place-items: center; font-size: 0.85rem; color: var(--ink-3); background: var(--sheet-2); }
 .cal-c.empty { background: none; }
 .cal-c.on { color: #fff; font-weight: 700; }
-.cal-c.l1 { background: color-mix(in srgb, var(--ball) 55%, var(--sheet)); }
-.cal-c.l2 { background: color-mix(in srgb, var(--ball) 80%, var(--sheet)); }
+.cal-c.l1 { background: var(--ball-line); background: color-mix(in srgb, var(--ball) 55%, var(--sheet)); }
+.cal-c.l2 { background: var(--ball); background: color-mix(in srgb, var(--ball) 80%, var(--sheet)); }
 .cal-c.l3 { background: var(--ball); }
 .cal-c.today { box-shadow: inset 0 0 0 2px var(--ink); }
 .skill-bars { display: flex; flex-direction: column; gap: 8px; }
@@ -568,7 +570,7 @@ body.onboarding main { padding-bottom: 48px; }
 .bot-card { background: var(--sheet); border-radius: 6px 20px 20px 20px; padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow); min-width: 0; }
 .bot-title { font-family: var(--font-round); font-weight: 800; font-size: var(--fs-l); }
 .bot-sub { font-family: var(--font-round); font-weight: 800; display: flex; align-items: center; gap: 6px; color: var(--ink-2); }
-.composer { position: sticky; bottom: calc(var(--tab-h) + 10px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 8px; align-items: flex-end; background: color-mix(in srgb, var(--board) 90%, transparent); backdrop-filter: blur(6px); padding: 8px; margin: 0 -8px; border-radius: 22px; }
+.composer { position: sticky; bottom: calc(var(--tab-h) + 10px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 8px; align-items: flex-end; background: var(--board); background: color-mix(in srgb, var(--board) 90%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); padding: 8px; margin: 0 -8px; border-radius: 22px; }
 .composer textarea { flex: 1; resize: none; max-height: 160px; line-height: 1.5; }
 .composer .btn { min-width: 52px; padding: 8px; }
 
@@ -670,8 +672,8 @@ body.onboarding main { padding-bottom: 48px; }
 .fg-skin2 { stroke: var(--skin-far); }
 .fg-sock { stroke: #f3f1ec; }
 .fg-shoe { stroke: var(--shoe); }
-.fg-shorts { stroke: color-mix(in srgb, var(--c) 72%, #000); }
-.fg-shortsf { fill: color-mix(in srgb, var(--c) 62%, #000); stroke: var(--fig-ol); stroke-width: 0.022; stroke-linejoin: round; }
+.fg-shorts { stroke: var(--c); stroke: color-mix(in srgb, var(--c) 72%, #000); }
+.fg-shortsf { fill: var(--c); fill: color-mix(in srgb, var(--c) 62%, #000); stroke: var(--fig-ol); stroke-width: 0.022; stroke-linejoin: round; }
 .fg-sleeve { stroke: var(--c); }
 .fg-jersey { fill: var(--c); stroke: var(--fig-ol); stroke-width: 0.024; stroke-linejoin: round; }
 .fg-hand { fill: var(--skin); stroke: var(--fig-ol); stroke-width: 0.02; }
@@ -784,6 +786,7 @@ body.onboarding main { padding-bottom: 48px; }
 .ck-lead { margin: 0; color: var(--ink-2); }
 .ck-note { margin: 0; color: var(--ink-2); font-size: var(--fs-s); }
 .ck-note-s { font-size: var(--fs-xs); color: var(--ink-3); }
+.ck-center { text-align: center; }
 .ck-cap { margin: 4px 0 0; text-align: center; font-size: var(--fs-xs); color: var(--ink-3); font-weight: 700; }
 .ck-date { margin: -8px 0 0; color: var(--ink-3); font-size: var(--fs-s); }
 .ck-err { margin: 0; padding: 12px 14px; border-radius: var(--r-s); background: var(--warn-soft); color: var(--ink); border-left: 5px solid var(--warn); font-size: var(--fs-s); }
@@ -822,15 +825,28 @@ body.onboarding main { padding-bottom: 48px; }
 .ck-mode-team { flex-direction: row; align-items: center; min-height: 96px; gap: 12px; }
 .ck-mode-team .ck-mode-fig { width: 38%; flex: none; height: auto; aspect-ratio: 1; background: var(--floor-out); }
 .ck-mode-team .ck-mode-txt b { font-size: var(--fs-l); }
+.ck-mode-wide { grid-column: 1 / -1; flex-direction: row; align-items: center; min-height: 96px; gap: 12px; }
+.ck-mode-wide .ck-mode-fig { width: 38%; flex: none; height: 84px; }
 
 /* とり方 */
 .ck-how { display: grid; grid-template-columns: 1fr; gap: 14px; align-items: start; }
 @media (min-width: 560px) { .ck-how { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); } }
-.ck-how-fig .mo-stage svg { max-height: 36vh; }
+.ck-how-fig .mo-stage svg { max-height: 28vh; }
 .ck-how-fig .mo-ctl { justify-content: center; }
 .ck-teamfig { border-radius: var(--r); overflow: hidden; background: var(--floor-out); max-width: 320px; margin: 0 auto; }
 .ck-teamfig svg { display: block; width: 100%; height: auto; }
 .ck-teamfig.ck-free { background: var(--sheet-2); max-width: 220px; }
+.ck-persp { max-width: 360px; background: var(--line); }
+.ck-pc-wall { fill: var(--line-2); }
+.ck-pc-ground { fill: color-mix(in srgb, var(--floor) 70%, var(--ink) 18%); }
+.ck-pc-court { fill: var(--floor); }
+.ck-pc-paint { fill: var(--floor-paint); }
+.ck-pc-line { fill: none; stroke: #fff; stroke-width: 1.1; opacity: 0.9; }
+.ck-pc-board { fill: #fff; stroke: var(--ink-3); stroke-width: 0.8; }
+.ck-pc-rim { fill: none; stroke: var(--ball); stroke-width: 1.2; }
+.ck-pc-o { fill: var(--ck-off); }
+.ck-pc-x { fill: var(--ck-def); }
+.ck-pc-o circle, .ck-pc-x circle { fill: var(--skin); }
 .ck-how-txt { display: flex; flex-direction: column; gap: 10px; }
 .ck-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
 .ck-badges span { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px 5px 8px; border-radius: 999px; background: var(--ball-soft); border: 1px solid var(--ball-line); font-weight: 700; font-size: var(--fs-s); }
@@ -857,7 +873,10 @@ body.onboarding main { padding-bottom: 48px; }
 .ck-range-sum { margin: 0; }
 .ck-range-sum b { font-size: 1.6rem; color: var(--ball); }
 .ck-range-sum small { color: var(--ink-3); font-size: var(--fs-xs); display: block; }
-.ck-rangebox summary { min-height: 44px; display: flex; align-items: center; font-weight: 700; color: var(--ink-2); cursor: pointer; }
+.ck-rangebox summary { min-height: 44px; display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--ink-2); cursor: pointer; list-style: none; }
+.ck-rangebox summary::-webkit-details-marker { display: none; }
+.ck-rangebox summary::before { content: "▸"; color: var(--ball); font-size: 1.1em; transition: transform 0.15s; }
+.ck-rangebox[open] summary::before { transform: rotate(90deg); }
 .ck-rangebox[open] summary { margin-bottom: 4px; }
 .ck-sl { display: flex; flex-direction: column; gap: 0; font-size: var(--fs-s); }
 .ck-sl b { font-size: 1.15rem; }
@@ -922,9 +941,11 @@ body.onboarding main { padding-bottom: 48px; }
 .ck-met-v { font-size: var(--fs-l); white-space: nowrap; margin-left: auto; }
 .ck-met-msg { margin: 0; line-height: 1.65; }
 .ck-met-note { margin: -4px 0 0; color: var(--ink-3); font-size: var(--fs-xs); }
-.ck-met-act { display: flex; flex-wrap: wrap; gap: 6px; }
+.ck-met-act { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .ck-met-act:empty { display: none; }
-.ck-met-act .chip { min-height: 40px; display: inline-flex; align-items: center; gap: 5px; }
+.ck-met-act .chip { min-height: 40px; display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; font-size: 0.86rem; line-height: 1.3; text-align: left; }
+.ck-met-lk { font-size: var(--fs-xs); color: var(--ink-3); font-weight: 700; margin-left: 2px; }
+.ck-seek { background: var(--sheet-2); }
 .ck-link::before { content: "▶"; font-size: 0.7em; color: var(--ball); }
 
 /* グラフ（1つのグラフに1つの量） */
@@ -2273,7 +2294,7 @@ BC.issue([
       { text: '受け手の動きとタイミングが合わない', check: '受け手がミートした瞬間に、ボールが届いているか', views: ['v-pass-timing'] },
     ],
     views: ['v-pass-target', 'v-pass-timing', 'v-pass-choice'],
-    drills: ['d-partner-pass', 'd-starpass', 'd-2ball-pass', 'd-3man-weave', 'd-handling'],
+    drills: ['d-partner-pass', 'd-starpass', 'd-2ball-pass', 'd-3man-weave', 'd-handling', 'd-wallpass'],
     tactics: [],
     tip: 'パスは「相手の胸へ、1歩ふみ出して」。受け手が手で出した的をねらいます。',
     next: ['i-catch', 'i-pass-steal'],
@@ -2295,7 +2316,7 @@ BC.issue([
       { text: '出し手のパスが強すぎる・ずれている', check: '特定の人からのパスだけ落としていないか', views: ['v-pass-target'] },
     ],
     views: ['v-pass-catch', 'v-foot-stop', 'v-pass-target'],
-    drills: ['d-meet', 'd-partner-pass', 'd-handling', 'd-tennisball', 'd-2ball-pass'],
+    drills: ['d-meet', 'd-partner-pass', 'd-handling', 'd-tennisball', 'd-2ball-pass', 'd-wallpass'],
     tactics: [],
     tip: 'ボールが来る前に「手は胸の前、指は開いて」。キャッチまで目はボールです。',
     next: ['i-pass-bad', 'i-travel'],
@@ -3576,7 +3597,7 @@ BC.issue([
       { text: '音や場所が気になって、できることが少ない', check: 'ボールを床につかない練習（8の字・ボディサークル・寝ころびシュート）を使っているか', views: ['v-shoot-release', 'v-drb-eyes'] },
     ],
     views: ['v-shoot-release', 'v-shoot-hold', 'v-drb-low', 'v-body-power', 'v-mind-motivation'],
-    drills: ['d-handling', 'd-lyingshoot', 'd-core', 'd-tennisball', 'd-pound', 'd-film'],
+    drills: ['d-handling', 'd-lyingshoot', 'd-core', 'd-tennisball', 'd-pound', 'd-film', 'd-wallpass'],
     tactics: [],
     tip: 'チャットに「**家でひとりで20分の練習メニューを作って**」のように書くと、ゴールのいらない、ひとりでできる練習でプランを組みます。家の中では、まわりの物と人に気をつけて。',
     next: ['i-drb-lookdown', 'i-shoot-form', 'i-motivation'],
@@ -7135,6 +7156,37 @@ BC.drill([
     easier: ['距離を2〜3mにする', 'チェストパスだけを10本続ける'],
     harder: ['2人で横にサイドステップしながらパス', 'パスの前にフェイクを1回入れる', '30秒で何本続けられるか数える'],
     views: ['v-pass-target', 'v-pass-choice', 'v-pass-catch'],
+    tactics: [],
+  },
+  {
+    id: 'd-wallpass',
+    name: 'かべパス（ひとりでパス・キャッチ）',
+    alias: ['かべパス', '壁パス', 'ウォールパス', 'Wall Pass', 'ひとりパス'],
+    words: ['ひとりでパス', '1人でパス', '壁', 'かべ', 'パスの練習', 'キャッチの練習', 'キャッチミス', 'パスがそれる', 'パスが弱い', '家でパス', '自主練'],
+    skills: ['pass'],
+    level: 1, n: 1, minutes: 5, phase: 'skill', intensity: 1,
+    equip: ['ボール 1個', 'じょうぶな壁（ガラス・窓・家のかべは使わない）'],
+    place: 'any',
+    aim: 'ひとりでも、かべを相手にして、まっすぐ強いパスと、両手でしっかり取るキャッチをくり返します。',
+    setup: 'コンクリートや体育館のかべから 2〜3m はなれて立つ。かべに テープなどで胸の高さの「的」をつくる。窓・ガラス・家のかべ・人の家のかべは使わない。',
+    steps: [
+      'チェストパス：的に向かって両手で押し出し、もどってきたボールを両手で取る。20本',
+      'バウンドパス：かべの手前の床に弾ませて、的の下に当てる。10本',
+      '片手のプッシュパス：右手10本・左手10本',
+      'できたら、30秒で何回つづけられるか数える',
+    ],
+    points: [
+      '**的をねらう**（毎回同じ所に当たれば、まっすぐ出せている）',
+      'キャッチは、両手を胸の前に出して「的」をつくり、ボールを迎えて手の中で止める',
+      '1歩前へ踏みこみ、足の力で押す（腕だけで投げない）',
+    ],
+    ng: [
+      ['ボールが山なりで、かべの高い所に当たる', '親指を下に向けて手首を返し、まっすぐ押す'],
+      ['キャッチで ボールを はじく', '指を開いて、ボールが来る前に手を出し、ひじを少し曲げて受け止める'],
+    ],
+    easier: ['距離を1.5mにして、10本ずつ', '片手パスは、まずききての手だけ'],
+    harder: ['かべから4mはなれる', '片足立ちでチェストパス', 'パスのあと、その場で1回まわってからキャッチ'],
+    views: ['v-pass-target', 'v-pass-catch'],
     tactics: [],
   },
   {
@@ -12976,7 +13028,9 @@ BC && (BC.currentFile = "js/motion.js");
     const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     const phases = clip.phases || [];
     const mistakes = clip.mistakes || [];
-    const S = { t: opt.at || 0, playing: !reduce && opt.autoplay !== false, speed: 1, mode: '', angles: false, trail: false, visible: true, last: 0, raf: 0 };
+    const still = reduce || opt.autoplay === false;
+    // 止めて見せるときは、いちばん形が分かる時刻（still）から。動かすときは 0 から
+    const S = { t: opt.at != null ? opt.at : still && clip.still != null ? clip.still : 0, playing: !still, speed: 1, mode: '', angles: false, trail: false, visible: true, last: 0, raf: 0 };
     el.classList.add('mo');
     el.innerHTML = `
       <div class="mo-stage"><svg viewBox="${x0} ${-y1} ${x1 - x0} ${y1 - y0}" role="img" aria-label="${clip.name}の動き">
@@ -13325,7 +13379,7 @@ BC && (BC.currentFile = "data/motions-base.js");
       balls: [{ keys: [
         { at: 0, h: 'both', o: [0.06, 0] }, { at: 0.36, h: 'both', o: [0.06, 0] },
         { at: 0.46, h: 'r', o: [0.03, 0.13] }, { at: 0.58, h: 'r', o: [0.03, 0.13] },
-        { at: 0.68, p: [R + 0.52, 3.45], arc: 0.25 }, { at: 0.76, p: [R + 0.15, 3.12] }, { at: 0.84, p: [R + 0.15, 2.6] },
+        { at: 0.68, p: [R + 0.41, 3.45], arc: 0.25 }, { at: 0.76, p: [R + 0.15, 3.12] }, { at: 0.84, p: [R + 0.15, 2.6] },
         { at: 0.96, p: [R + 0.05, 0.12] }, { at: 1, p: [R + 0.05, 0.12] },
       ] }],
       points: ['右手で打つときは「右・左」で踏み切り（左足でジャンプ）', '右ひざを高く上げて、上へ跳ぶ（前へ流れない）', 'ボードの四角の上の角をねらう'],
@@ -13485,6 +13539,7 @@ BC && (BC.currentFile = "data/motions-base.js");
 
 
   BC.motionLink({
+    'd-wallpass': 'chestpass',
     // ドリブル
     'd-pound': 'pound', 'd-headup': 'pound', 'd-protect': 'pound', 'd-tennisball': 'pound', 'd-handling': 'pound',
     'd-2ball': 'twoball', 'd-zigzag': 'crossover', 'd-moves': 'crossover', 'd-1v2-dribble': 'crossover',
@@ -13519,18 +13574,12 @@ BC && (BC.currentFile = "data/motions-base.js");
 
 /* ---- data/motions-ball.js ---- */
 BC && (BC.currentFile = "data/motions-ball.js");
-/* 動きのデータ（ボールを使う技術）。書き方は js/motion.js の先頭。
-   シュート（フリースロー・キャッチ＆シュート・プルアップ・寝ころびシュート）、ドリブル（レッグスルー・インサイドアウト・ヘジテーション）、
-   フィニッシュ（パワーレイアップ・ユーロステップ・フローター・マイカン）、パス（バウンド・オーバーヘッド）、
-   ボールを持たない動き（Vカット）、リバウンド（ティップ）、ポスト（ドロップステップ）。 */
+/* 動きのデータ（ボールを使う技術・16）。書き方は js/motion.js の先頭。
+   シュート（フリースロー・キャッチ＆シュート・1ドリブル・プルアップ・寝ころびシュート）、ドリブル（レッグスルー・ヘジテーション）、
+   フィニッシュ（ユーロステップ・パワーレイアップ・フローター・マイカンドリル）、パス（バウンド・オーバーヘッド）、
+   ボールを持たない動き（Vカット・バックドアカット）、リバウンド（ティップドリル）、ポスト（ドロップステップ）。
+   リングに向かうシュートは、横から見て右にゴール。ボードに当てるときは、ボールがリングの手前のふちにかからない高さで通す。 */
 (function () {
-  const RIM = 3.05;
-  // 姿勢をずらす（x を dx だけ）
-  const shift = (p, dx) => {
-    const q = Object.assign({}, p);
-    for (const f of ['hip', 'rf', 'lf', 'rh', 'lh']) if (q[f]) q[f] = [q[f][0] + dx, q[f][1]];
-    return q;
-  };
   const at = (t, p, more) => Object.assign({ at: t }, p, more || {});
   /* 向きを変える：横から見た人（view: 'side'）は face を途中で変えられないので、右向き・左向きの2人を用意して、
      使わない方を画面の外（PARK）に置き、体が横を向く瞬間（lean 0・ボールは体の前の中央）に入れかえる。
@@ -13611,10 +13660,14 @@ BC && (BC.currentFile = "data/motions-ball.js");
           { at: 0.12, hip: [3.06, 0.82], lean: 12, rf: [2.88, 0.05], rh: [2.82, 1.12], lh: [2.86, 1.14] },
           { at: 0.17, hip: [3.0, 0.8], lean: 16, rf: [2.82, 0], rh: [2.6, 1.08], lh: [2.64, 1.1] },
           { at: 0.26, hip: [3.08, 0.84], lean: 8, rh: [2.84, 1.2], lh: [2.88, 1.22] },
-          { at: 0.5, hip: [3.4, 0.86], lean: 4, nod: -20, rf: [3.32, 0], lf: [3.5, 0], rh: [3.3, 1.72], lh: [3.36, 1.75] },
-          { at: 0.76, hip: [3.48, 0.86], rh: [3.42, 1.8], lh: [3.48, 1.82] },
-          { at: 0.86, hip: [3.3, 0.84], lean: 10, nod: -6, rf: [3.18, 0], lf: [3.42, 0], rh: [3.0, 1.12], lh: [3.04, 1.14] },
-          { at: 1, hip: [3.15, 0.84], rf: [3.05, 0], lf: [3.28, 0], rh: [2.86, 1.12], lh: [2.9, 1.14] },
+          { at: 0.32, hip: [3.14, 0.85], lf: [3.4, 0.08] },
+          { at: 0.37, hip: [3.22, 0.85], lf: [3.5, 0] },
+          { at: 0.42, hip: [3.3, 0.86], rf: [3.08, 0.1] },
+          { at: 0.47, hip: [3.4, 0.86], rf: [3.32, 0] },
+          { at: 0.52, lean: 4, nod: -20, rh: [3.3, 1.72], lh: [3.36, 1.75] },
+          { at: 0.76, hip: [3.44, 0.86], rh: [3.42, 1.8], lh: [3.48, 1.82] },
+          { at: 0.88, hip: [3.4, 0.84], lean: 10, nod: -6, rh: [3.14, 1.12], lh: [3.18, 1.14] },
+          { at: 1 },
         ] },
       ],
       balls: [{ keys: [
@@ -13622,7 +13675,7 @@ BC && (BC.currentFile = "data/motions-ball.js");
         { at: 0.32, a: 0, h: 'both', o: [0.08, 0] },
         { at: 0.4, h: 'r', o: [0.02, 0.13] }, { at: 0.46, h: 'r', o: [0.04, 0.13] },
         { at: 0.64, p: [H, 3.18], arc: 0.95 }, { at: 0.68, p: [H, 2.62] },
-        { at: 0.76, a: 1, h: 'both', o: [-0.04, 0.08] }, { at: 0.86, a: 1, h: 'both', o: [-0.08, 0] }, { at: 1, a: 1, h: 'both', o: [-0.08, 0] },
+        { at: 0.76, a: 1, h: 'both', o: [-0.04, 0.08] }, { at: 0.88, a: 1, h: 'both', o: [-0.08, 0] }, { at: 1, a: 1, h: 'both', o: [-0.08, 0] },
       ] }],
       points: ['ボールが来る前に、ひざを曲げて両手を胸の前に（ハンズ）', 'うけたら胸の高さから下げずに、1つの動きで打つ', '足は「1・2」でふみこみ、リングに向けてそろえる'],
     });
@@ -13808,6 +13861,7 @@ BC && (BC.currentFile = "data/motions-ball.js");
       actors: [
         { keys: [
           Object.assign(run.keys[0], { nod: -10 }), ...run.keys.slice(1),
+          { at: 0.26, hip: [-0.57, 0.84], lean: 16, lf: [-0.66, 0.16] },
           { at: 0.28, hip: [-0.38, 0.8], lean: 14, nod: -12, lf: [-0.2, 0], rf: [-0.62, 0.1], rh: [0.0, 1.1], lh: [-0.08, 1.12] },
           { at: 0.34, hip: [-0.18, 1.08], lean: 6, nod: -18, rf: [-0.08, 0.42], lf: [-0.28, 0.08], rh: [0.0, 1.95], lh: [-0.1, 1.78] },
           { at: 0.4, hip: [-0.1, 1.24], lean: 2, nod: -20, rf: [0.0, 0.48], lf: [-0.22, 0.22], rh: [0.18, 2.3], lh: [-0.04, 1.86] },
@@ -13829,12 +13883,13 @@ BC && (BC.currentFile = "data/motions-ball.js");
       balls: [{ keys: [
         { at: 0, h: 'r', o: [0.04, -0.12] }, { at: 0.02, h: 'r', o: [0.04, -0.12] }, { at: 0.1, p: [-0.95, 0.12] },
         { at: 0.18, h: 'r', o: [0.04, -0.12] }, { at: 0.24, h: 'both', o: [0.06, 0] },
-        { at: 0.34, h: 'r', o: [0.03, 0.13] }, { at: 0.4, h: 'r', o: [0.05, 0.13] },
+        { at: 0.28, h: 'both', o: [0.06, 0] }, { at: 0.325, h: 'both', o: [0.06, 0.14] }, { at: 0.34, h: 'r', o: [0.03, 0.13] }, { at: 0.4, h: 'r', o: [0.05, 0.13] },
         { at: 0.7, p: [H, 3.2], arc: 1.5 }, { at: 0.74, p: [H, 2.62] }, { at: 0.84, p: [H - 0.1, 0.12] }, { at: 1, p: [H - 0.25, 0.12] },
       ] }],
       points: ['ふみ切りは前ではなく上へ（守りにぶつからない）', 'ボールを指先にのせ、額より上から手首でそっと押し出す', '守りの手がとどかない高さから、リングの上へ落とす'],
     });
   })();
+
   /* ---------- バウンドパス（2人） ---------- */
   BC.motion({ id: 'bouncepass',
     name: 'バウンドパス', view: 'side', box: [-0.8, 3.6, -0.05, 2.0], dur: 1.8, fade: true,
@@ -13847,6 +13902,7 @@ BC && (BC.currentFile = "data/motions-ball.js");
         { at: 0.2, hip: [0.12, 0.79], lean: 16, rf: [0.45, 0.06], rh: [0.36, 1.08], lh: [0.3, 1.1] },
         { at: 0.3, hip: [0.22, 0.74], lean: 22, rf: [0.52, 0], rh: [0.84, 0.84], lh: [0.8, 0.86] },
         { at: 0.6 },
+        { at: 0.74, hip: [0.1, 0.8], lean: 16, rf: [0.32, 0.08], rh: [0.56, 1.0], lh: [0.5, 1.02] },
         { at: 0.88, hip: [0, 0.82], lean: 12, rf: [0.12, 0], rh: [0.32, 1.12], lh: [0.26, 1.14] },
         { at: 1 },
       ] },
@@ -13877,6 +13933,7 @@ BC && (BC.currentFile = "data/motions-ball.js");
         { at: 0.2, hip: [0.06, 0.82], lean: 2, rf: [0.34, 0.06], rh: [0.06, 1.8], lh: [0.0, 1.82] },
         { at: 0.3, hip: [0.2, 0.8], lean: 16, rf: [0.5, 0], rh: [0.88, 1.62], lh: [0.84, 1.64] },
         { at: 0.6 },
+        { at: 0.74, hip: [0.1, 0.82], lean: 10, rf: [0.3, 0.08], rh: [0.5, 1.7], lh: [0.44, 1.72] },
         { at: 0.88, hip: [0, 0.84], lean: 6, rf: [0.12, 0], rh: [0.1, 1.76], lh: [0.04, 1.78] },
         { at: 1 },
       ] },
@@ -13949,6 +14006,7 @@ BC && (BC.currentFile = "data/motions-ball.js");
         { at: 0.75, hip: [0.17, 0.84], lean: 8, lf: [0.25, 0.04], rf: [0.15, 0], lh: [0.37, 2.12], rh: [0.27, 2.04] },
         { at: 0.87, hip: [0.15, 0.9], lean: 4, nod: -32, lf: [0.22, 0], rh: [0.29, 2.22], lh: [0.35, 2.2] },
         { at: 0.94, hip: [0.12, 0.84], lean: 8, nod: -24, rh: [0.33, 1.68], lh: [0.27, 1.7] },
+        { at: 0.97, hip: [0.11, 0.83], lf: [0.11, 0.07] },
         at(1, S),
       ] }],
       balls: [{ keys: [
@@ -13988,6 +14046,7 @@ BC && (BC.currentFile = "data/motions-ball.js");
       points: ['肘を肩の真上に（肘は90度くらい）', '人差し指と中指で押し出して、たて回転をかける', '顔の真上にまっすぐもどってくれば、まっすぐ打てている'],
     });
   })();
+
   /* ---------- Vカット（守り・パスの人つき。ゴールは右の方） ----------
      actors：0 自分（右向き：中へ入る・ゴールを向く）、1 自分（左向き：外へ出てうける）、2 守り、3 パスの人 */
   (function () {
@@ -14001,7 +14060,7 @@ BC && (BC.currentFile = "data/motions-ball.js");
     const face = turned(catchB);
     const tri = { hip: [-1.0, 0.76], lean: 22, nod: -18, rf: [-0.88, 0], lf: [-1.2, 0], rh: [-0.7, 0.86], lh: [-0.78, 0.92] };
     const xStart = { hip: [0.62, 0.8], lean: 14, nod: -10, rf: [0.5, 0], lf: [0.74, 0], rh: [0.36, 1.0], lh: [0.42, 1.08] };
-    const chase = BC.mo.steps(0.47, 0.66, { r: 0.84, l: 1.06 }, [['r', 0.45], ['l', 0.15]], { h: 0.82, lean: 16, ahead: -0.08, lift: 0.12,
+    const chase = BC.mo.steps(0.47, 0.66, { r: 0.84, l: 1.0 }, [['r', 0.45], ['l', 0.15]], { h: 0.82, lean: 16, ahead: -0.08, lift: 0.12,
       arms: (f) => ({ rh: [(f.r + f.l) / 2 - 0.3, 1.1], lh: [(f.r + f.l) / 2 - 0.2, 1.0] }) });
     BC.motion({ id: 'vcut',
       name: 'Vカット', view: 'side', box: [-3.95, 1.25, -0.05, 2.25], dur: 3.6, fade: true,
@@ -14025,8 +14084,12 @@ BC && (BC.currentFile = "data/motions-ball.js");
         { role: 'x', face: -1, keys: [
           at(0, xStart),
           { at: 0.1 },
-          { at: 0.34, hip: [0.95, 0.8], rf: [0.84, 0], lf: [1.06, 0], rh: [0.7, 1.0], lh: [0.76, 1.08] },
+          { at: 0.17, hip: [0.68, 0.8], lf: [0.86, 0.07] },
+          { at: 0.22, hip: [0.74, 0.8], lf: [1.0, 0] },
+          { at: 0.28, hip: [0.84, 0.8], rf: [0.68, 0.07] },
+          { at: 0.34, hip: [0.92, 0.8], rf: [0.84, 0], rh: [0.7, 1.0], lh: [0.76, 1.08] },
           ...chase.keys,
+          { at: 0.71, hip: [0.2, 0.78], lean: 14, rf: [0.16, 0.1], rh: [0.0, 1.5] },
           { at: 0.76, hip: [0.02, 0.74], lean: 12, nod: -12, rf: [-0.1, 0], lf: [0.14, 0], rh: [-0.24, 1.9], lh: [-0.16, 1.02] },
           { at: 1 },
         ] },
@@ -14035,6 +14098,7 @@ BC && (BC.currentFile = "data/motions-ball.js");
           { at: 0.4 },
           { at: 0.45, hip: [-3.32, 0.82], lean: 12, rf: [-3.1, 0.05] },
           { at: 0.5, hip: [-3.25, 0.8], lean: 16, rf: [-3.05, 0], rh: [-2.8, 1.08], lh: [-2.84, 1.1] },
+          { at: 0.6, hip: [-3.3, 0.82], lean: 12, rf: [-3.15, 0.06] },
           { at: 0.7, hip: [-3.35, 0.84], lean: 10, rf: [-3.24, 0], rh: [-3.1, 1.12], lh: [-3.16, 1.14] },
           { at: 1 },
         ] },
@@ -14056,7 +14120,7 @@ BC && (BC.currentFile = "data/motions-ball.js");
     const B = { hip: [-0.15, 0.76], lean: 12, nod: -6, rf: [-0.26, 0], lf: [0.0, 0], rh: [-0.37, 1.16], lh: [-0.33, 1.18] };
     const swing = { hip: [0.3, 0.7], lean: 0, nod: 0, rf: [-0.26, 0], lf: [0.82, 0], rh: [0.28, 1.12], lh: [0.32, 1.12] };
     const land = { hip: [0.76, 0.66], lean: 22, nod: -20, rf: [0.9, 0], lf: [0.66, 0], rh: [1.02, 1.12], lh: [0.96, 1.14] };
-    const xSeal = { hip: [0.36, 0.82], lean: 0, nod: 0, rf: [0.28, 0], lf: [0.48, 0], rh: [0.34, 1.0], lh: [0.4, 1.0] };
+    const xSeal = { hip: [0.4, 0.82], lean: 0, nod: 0, rf: [0.3, 0], lf: [0.5, 0], rh: [0.38, 1.0], lh: [0.44, 1.0] };
     BC.motion({ id: 'dropstep',
       name: 'ポストのドロップステップ', view: 'side', box: [-1.0, 2.45, -0.05, 4.2], dur: 3.4, fade: true, hoop: H,
       phases: [{ at: 0, label: '背中で守りを感じる' }, { at: 0.14, label: '足をゴールの方へ引く' }, { at: 0.3, label: '強く1回つく' }, { at: 0.43, label: '両足で止まる' }, { at: 0.52, label: '両足でとぶ' }, { at: 0.62, label: 'ボードへ' }],
@@ -14075,7 +14139,7 @@ BC && (BC.currentFile = "data/motions-ball.js");
         { role: 'x', face: -1, keys: [
           { at: 0, hip: [0.55, 0.78], lean: 14, nod: -8, rf: [0.45, 0], lf: [0.67, 0], rh: [0.02, 1.14], lh: [0.14, 1.3] },
           { at: 0.16 },
-          { at: 0.3, hip: [0.4, 0.8], lean: 6, rf: [0.3, 0], lf: [0.52, 0], rh: [0.26, 1.0], lh: [0.32, 1.1] },
+          { at: 0.3, hip: [0.47, 0.8], lean: 6, rf: [0.38, 0], lf: [0.59, 0], rh: [0.3, 1.0], lh: [0.36, 1.1] },
           at(0.38, xSeal), park(0.38), park(1),
         ] },
         { role: 'x', keys: [
@@ -14112,13 +14176,14 @@ BC && (BC.currentFile = "data/motions-ball.js");
       points: ['うける前に、守りがどちらにいるか背中で感じる', '守りがいない側の足を、ゴールの方へ大きく引いて回る', 'ボールはあごの下でひじを張って持ち、両足でとんでボードへ'],
     });
   })();
+
   /* ---------- バックドアカット（守り・パスの人つき。ゴールは右の方） ----------
      actors：0 自分（右向き：ゴールへ走ってうける）、1 自分（左向き：上へ出てもらうふり）、2 守り、3 パスの人 */
   (function () {
     const B = { hip: [0.05, 0.84], lean: 8, nod: -4, rf: [-0.05, 0], lf: [0.15, 0], rh: [-0.15, 1.05], lh: [-0.07, 1.0] };
     const up = BC.mo.steps(0.06, 0.28, { r: -0.05, l: 0.15 }, [['l', -0.27], ['r', -0.5]], { h: 0.82, lean: 12, ahead: -0.08, lift: 0.08,
       arms: (f) => ({ rh: [(f.r + f.l) / 2 - 0.55, 1.15], lh: [(f.r + f.l) / 2 - 0.3, 1.0] }) });
-    const plant = { hip: [-0.42, 0.72], lean: 0, nod: -2, rf: [-0.62, 0], lf: [-0.25, 0], rh: [-0.38, 1.0], lh: [-0.44, 1.0] };
+    const plant = { hip: [-0.4, 0.72], lean: 0, nod: -2, rf: [-0.56, 0], lf: [-0.25, 0], rh: [-0.36, 1.0], lh: [-0.42, 1.0] };
     const A0 = turned(plant);
     const cut = BC.mo.steps(0.34, 0.6, { r: A0.rf[0], l: A0.lf[0] }, [['l', 0.1], ['r', 0.6], ['l', 1.08]], { h: 0.8, lean: 22, ahead: 0.12, lift: 0.16,
       arms: (f, i) => ({ rh: [(f.r + f.l) / 2 + 0.4, 0.98 - (i % 1 ? 0.06 : 0)], lh: [(f.r + f.l) / 2 + 0.1, 1.04] }) });
@@ -14141,7 +14206,10 @@ BC && (BC.currentFile = "data/motions-ball.js");
         { role: 'x', keys: [
           at(0, xStart),
           { at: 0.08 },
-          { at: 0.3, hip: [-1.22, 0.8], lean: 14, rf: [-1.1, 0], lf: [-1.36, 0], rh: [-0.98, 1.15], lh: [-1.06, 1.25] },
+          { at: 0.14, hip: [-1.04, 0.8], lf: [-1.22, 0.07] },
+          { at: 0.19, hip: [-1.1, 0.8], lf: [-1.36, 0] },
+          { at: 0.25, hip: [-1.17, 0.8], rf: [-0.98, 0.07] },
+          { at: 0.3, hip: [-1.22, 0.8], lean: 14, rf: [-1.1, 0], rh: [-0.98, 1.15], lh: [-1.06, 1.25] },
           { at: 0.42 },
           { at: 0.5, hip: [-1.06, 0.82], lean: 18, rf: [-0.9, 0.06], lf: [-1.32, 0], rh: [-0.84, 1.05], lh: [-1.04, 1.0] },
           { at: 0.62, hip: [-0.62, 0.82], lean: 20, rf: [-0.5, 0], lf: [-0.85, 0.1], rh: [-0.38, 1.0], lh: [-0.62, 1.05] },
@@ -14153,6 +14221,7 @@ BC && (BC.currentFile = "data/motions-ball.js");
           { at: 0.36 },
           { at: 0.42, hip: [-2.92, 0.8], lean: 14, rf: [-2.7, 0.05] },
           { at: 0.47, hip: [-2.84, 0.76], lean: 22, rf: [-2.62, 0], rh: [-2.32, 0.86], lh: [-2.36, 0.88] },
+          { at: 0.58, hip: [-2.9, 0.8], lean: 16, rf: [-2.72, 0.06] },
           { at: 0.7, hip: [-2.95, 0.84], lean: 10, rf: [-2.82, 0], rh: [-2.7, 1.12], lh: [-2.76, 1.14] },
           { at: 1 },
         ] },
@@ -14164,6 +14233,7 @@ BC && (BC.currentFile = "data/motions-ball.js");
       points: ['合図は守りの足：守りの前の足がパスコースに出たら行く', 'カットの前にパサーと目を合わせる（合図を決めておく）', 'パスは守りの手の下を通すバウンドパスで、走る先へ'],
     });
   })();
+
   // 練習メニュー → 動き（基本の14でつないだものより合うものは、ここで上書き）
   BC.motionLink({
     // シュート
@@ -14809,7 +14879,7 @@ BC && (BC.currentFile = "js/grow.js");
     const dayN = Math.floor(new Date(now).setHours(0, 0, 0, 0) / 86400000);
     const order = pool.map((_, i) => pool[(dayN + seed + i) % pool.length]).concat(G.SOLO_SKILLS);
     const by = (s, phases) => BC.lists.drill.filter((d) => (d.skills || [])[0] === s && phases.includes(d.phase) && fit(d));
-    let skill = order.find((s) => by(s, ['skill', 'warmup']).length >= 2) || order.find((s) => by(s, ['skill', 'warmup']).length) || 'dribble';
+    let skill = order.find((s) => by(s, ['skill', 'warmup']).length) || 'dribble';
     const note = goals.length && !goals.includes(skill) ? `「${goals.map((g) => BC.skillMap[g].name).join('・')}」は、${n === 1 ? 'ひとりでできる' : '条件に合う'}練習が少ないので、きょうは「${BC.skillMap[skill].name}」にしました。` : '';
     const used = new Set();
     const items = [];
@@ -16462,11 +16532,47 @@ BC && (BC.currentFile = "js/analyze.js");
   const hipCenter = (lm) => mid(lm[K.lHip], lm[K.rHip]);
   BA.hipCenter = hipCenter;
 
-  // 3コマのなめらかにする（点ごとに、となりとの平均。いないコマはそのまま）
+  // 左右の取りちがえを直す：AI がコマによって 左右の点を入れかえることがある。前のコマと くらべて、
+  // 入れかえた方が ずっと近ければ（0.7倍より近い）、その組（肩・ひじ・手首・腰・ひざ・足首・かかと・つま先・目・耳）を入れかえる
+  const PAIRS = [[2, 5], [7, 8], [11, 12], [13, 14], [15, 16], [23, 24], [25, 26], [27, 28], [29, 30], [31, 32]];
+  BA.fixSwaps = function (series) {
+    let prev = null;
+    return series.map((lm) => {
+      if (!lm) return null;
+      if (!prev) { prev = lm; return lm; }
+      const out = lm.slice();
+      for (const [a, b] of PAIRS) {
+        const keep = dist(out[a], prev[a]) + dist(out[b], prev[b]);
+        const swap = dist(out[a], prev[b]) + dist(out[b], prev[a]);
+        if (swap < keep * 0.7) { const t = out[a]; out[a] = out[b]; out[b] = t; }
+      }
+      prev = out;
+      return out;
+    });
+  };
+
+  // なめらかにする：① 顔と胴の点が 1コマだけ 大きく飛んだら（AI の見まちがい。例：ボールを頭とまちがえる）、前後の平均にもどす
+  //               ② 3コマの平均（小さなぶれを ならす）。いないコマは そのまま
+  // （手首・足首は 速く動くのが ふつうなので ①はしない）
+  const STEADY = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 23, 24];
   BA.smooth = function (series) {
-    return series.map((lm, i) => {
+    const hs = series.filter(Boolean).map((lm) => { const b = boxOf(lm); return b[3] - b[1]; });
+    const T = 0.15 * (median(hs) || 0);
+    const fixed = series.map((lm, i) => {
       if (!lm) return null;
       const a = series[i - 1], b = series[i + 1];
+      if (!a || !b || !T) return lm;
+      let out = null;
+      for (const k of STEADY) {
+        const mx = (a[k][0] + b[k][0]) / 2, my = (a[k][1] + b[k][1]) / 2;
+        const d = Math.hypot(lm[k][0] - mx, lm[k][1] - my), nb = Math.hypot(a[k][0] - b[k][0], a[k][1] - b[k][1]);
+        if (d > T && d > 2.5 * nb) { if (!out) out = lm.slice(); out[k] = [mx, my, lm[k][2]]; }
+      }
+      return out || lm;
+    });
+    return fixed.map((lm, i) => {
+      if (!lm) return null;
+      const a = fixed[i - 1], b = fixed[i + 1];
       return lm.map((p, k) => {
         let x = p[0], y = p[1], n = 1;
         if (a) { x += a[k][0]; y += a[k][1]; n++; }
@@ -16481,6 +16587,31 @@ BC && (BC.currentFile = "js/analyze.js");
      返す：{ legLen, torso, floor, view（'side'|'front'。肩幅から推測）, frames: [{ t, hipH, shH, headH, ankH: {l, r}, kneeL, kneeR,
              elbowL, elbowR, lean, wrist: {l, r}, pitch（下を向く角度の目安）, face, front, stanceW（足の幅 ÷ 肩幅）, ankOrder,
              fppaL, fppaR（前から：ひざが内に入る角度。内が＋）, hipX, ankX }] } */
+  // 頭の位置：鼻・目・耳のうち 見えている点の平均（鼻だけより ぶれにくい）
+  function headPt(lm) {
+    let x = 0, y = 0, n = 0;
+    for (const k of [K.nose, K.lEye, K.rEye, K.lEar, K.rEar]) { const p = lm[k]; if (p && p[2] > 0.5) { x += p[0]; y += p[1]; n++; } }
+    return n ? [x / n, y / n] : lm[K.nose];
+  }
+  // 上下の ゆれ：1秒の なめらかな動き（近づく・はなれる など）を引いてから、ばらつき（10〜90% の幅 ÷ 2.56 ≒ 標準偏差）
+  function wobble(xs, win) {
+    const out = [];
+    for (let i = 0; i < xs.length; i++) {
+      if (xs[i] == null) continue;
+      let sum = 0, n = 0;
+      for (let j = Math.max(0, i - win); j <= Math.min(xs.length - 1, i + win); j++) if (xs[j] != null) { sum += xs[j]; n++; }
+      out.push(xs[i] - sum / n);
+    }
+    return out.length < 4 ? 0 : (pct(out, 0.9) - pct(out, 0.1)) / 2.56;
+  }
+  BA.wobble = wobble;
+  // 画面の左の脚・右の脚（腰・ひざ・足首を、それぞれ x の小さい順に くみあわせる。前からの動画で 左右の取りちがえに強い）
+  BA.legs = function (lm) {
+    if (!lm) return [];
+    const sx = (a, b) => (a[0] <= b[0] ? [a, b] : [b, a]);
+    const h = sx(lm[K.lHip], lm[K.rHip]), k = sx(lm[K.lKn], lm[K.rKn]), a = sx(lm[K.lAn], lm[K.rAn]);
+    return [0, 1].map((i) => ({ hip: h[i], knee: k[i], ank: a[i] }));
+  };
   BA.features = function (series, times) {
     const legs = [], torsos = [];
     for (const lm of series) {
@@ -16522,8 +16653,10 @@ BC && (BC.currentFile = "js/analyze.js");
       }
       const shW = Math.max(shRaw, legLen * 0.15);
       // 前から：ひざの角度のずれ（FPPA）。ひざが、腰と足首を結ぶ線より内側なら＋
-      const fppa = (s) => {
-        const h = lm[K[s + 'Hip']], k = lm[K[s + 'Kn']], a = lm[K[s + 'An']];
+      // AI は左右を取りちがえることがあるので、画面の左の脚・右の脚（腰・ひざ・足首を x の順に）で はかる
+      const legs2 = BA.legs(lm);
+      const fppa = (i) => {
+        const { hip: h, knee: k, ank: a } = legs2[i];
         const dy = a[1] - h[1] || 1e-6;
         const xl = h[0] + (a[0] - h[0]) * ((k[1] - h[1]) / dy);
         const inward = Math.sign(hip[0] - h[0]) || 1;
@@ -16532,7 +16665,7 @@ BC && (BC.currentFile = "js/analyze.js");
       };
       return {
         t: times ? times[i] : i,
-        hipH: up(hip), shH: up(sh), headH: up(nose), ankH: { l: up(lm[K.lAn]), r: up(lm[K.rAn]) },
+        hipH: up(hip), shH: up(sh), headH: up(headPt(lm)), ankH: { l: up(lm[K.lAn]), r: up(lm[K.rAn]) },
         kneeL: ang3(lm[K.lHip], lm[K.lKn], lm[K.lAn]), kneeR: ang3(lm[K.rHip], lm[K.rKn], lm[K.rAn]),
         elbowL: ang3(lm[K.lSh], lm[K.lEl], lm[K.lWr]), elbowR: ang3(lm[K.rSh], lm[K.rEl], lm[K.rWr]),
         lean: (Math.atan2(sh[0] - hip[0], hip[1] - sh[1]) * 180) / Math.PI,
@@ -16540,9 +16673,9 @@ BC && (BC.currentFile = "js/analyze.js");
         pitch, face, front,
         stanceW: Math.abs(lm[K.lAn][0] - lm[K.rAn][0]) / shW,
         ankOrder: Math.sign(lm[K.lAn][0] - lm[K.rAn][0]),
-        fppaL: fppa('l'), fppaR: fppa('r'),
+        fppaL: fppa(0), fppaR: fppa(1), // 画面の左の脚・右の脚
         hipX: hip[0] / legLen, ankX: ank[0] / legLen,
-        vis: Math.min(lm[K.lAn][2], lm[K.rAn][2]),
+        vis: Math.max(lm[K.lAn][2], lm[K.rAn][2]), // 横からは 遠い方の足首が かくれるので、見えている方
         size: (boxOf(lm)[3] - boxOf(lm)[1]),
       };
     });
@@ -16576,7 +16709,7 @@ BC && (BC.currentFile = "js/analyze.js");
     const times = opt.times || series.map((_, i) => i / fps);
     const seen = series.filter(Boolean).length;
     if (seen < Math.max(6, series.length * 0.3)) return { ok: false, msg: '人の体を、あまり見つけられませんでした。体ぜんぶ（頭から足まで）が映るように、明るい所でとってみてください。' };
-    const sm = BA.smooth(series);
+    const sm = BA.smooth(BA.fixSwaps(series));
     const FT = BA.features(sm, times);
     const F = FT.frames;
     const n = F.length;
@@ -16614,8 +16747,15 @@ BC && (BC.currentFile = "js/analyze.js");
       const S = setIdx.length ? argBy(setIdx, F, (f) => arm(f, hand).e, (a, b) => a < b) : -1;
       // しずむ：はなす前 1.5 秒の、腰がいちばん低いところ
       const D = argBy(range(n, R - s(1.5), (S >= 0 ? S : R) - 1), F, (f) => f.hipH, (a, b) => a < b);
-      // 腰がいちばん高い（ジャンプのてっぺん）
+      // 腰がいちばん高い（ジャンプのてっぺん）。てっぺんは平らなことが多いので、いちばん高い所から 0.02 以内の コマの まん中の時刻
       const P = argBy(range(n, R - s(0.5), R + s(0.5)), F, (f) => f.hipH, (a, b) => a > b);
+      let topT = null;
+      if (P >= 0) {
+        const near = range(n, R - s(0.5), R + s(0.5)).filter((i) => F[i] && F[i].hipH >= F[P].hipH - 0.02);
+        topT = near.reduce((t, i) => t + F[i].t, 0) / near.length;
+      }
+      // まわりの3コマの まん中の値（AI の点のぶれに強く）
+      const med3 = (i, fn) => median(range(n, i - 1, i + 1).filter((j) => F[j]).map((j) => fn(j)));
       // はじめの立った高さ（しずむ前）
       const startH = pct(range(n, 0, Math.max(2, (D >= 0 ? D : R) - 1)).map((i) => F[i] && F[i].hipH), 0.75) || (D >= 0 ? F[D].hipH : F[R].hipH);
       // 着地：てっぺんのあと、足首が床にもどる（とばないシュートは、腰がもとの高さにもどる）
@@ -16630,7 +16770,7 @@ BC && (BC.currentFile = "js/analyze.js");
       const mets = [];
       if (D >= 0) {
         if (view === 'side') {
-          const k = kneeOf(F[D]);
+          const k = med3(D, (j) => kneeOf(F[j]));
           const st = k >= 95 && k <= 145 ? 'good' : k < 95 || k <= 155 ? 'ok' : 'bad';
           mets.push(M('dip', 'ひざの曲げ（しずむとき）', Math.round(k) + '°', st,
             st === 'good' ? 'ひざをしっかり曲げて、足の力を使えています。' : k < 95 ? '深く曲げすぎかもしれません。深すぎると、打つまでがおそくなります。' : 'ひざの曲げが浅めです。腕だけで打っているかも。ひざを曲げて、のばす力で打ちましょう。',
@@ -16644,14 +16784,14 @@ BC && (BC.currentFile = "js/analyze.js");
         }
       }
       if (S >= 0 && view === 'side') {
-        const e = E(S);
-        const st = e >= 65 && e <= 115 ? 'good' : e < 65 || e <= 135 ? 'ok' : 'bad';
+        const e = med3(S, E);
+        const st = e >= 55 && e <= 115 ? 'good' : e < 55 || e <= 135 ? 'ok' : 'bad';
         mets.push(M('set', 'セットのひじ（L字）', Math.round(e) + '°', st,
-          st === 'good' ? 'ひじが L字（90°くらい）で、きれいに構えられています。' : e < 65 ? 'ひじを曲げすぎかも。ボールを頭のうしろに引きすぎないように。' : 'ひじがのびぎみです。L字に曲げて、ボールをおでこの前に。',
+          st === 'good' ? 'ひじが L字（90°くらい）で、きれいに構えられています。' : e < 55 ? 'ひじを曲げすぎかも。ボールを頭のうしろに引きすぎないように。' : 'ひじがのびぎみです。L字に曲げて、ボールをおでこの前に。',
           { at: S, links: ['v-shoot-hold', 'd-formshoot', 'd-lyingshoot'] }));
       }
       {
-        const e = E(R);
+        const e = med3(R, E);
         const st = hv(e, 150, 135);
         mets.push(M('release', 'はなすときの腕', Math.round(e) + '°', st,
           st === 'good' ? '腕をまっすぐのばしきって、はなせています。' : '腕がのびきる前にはなしています。リングに向かって、腕をのばしきりましょう。',
@@ -16675,8 +16815,9 @@ BC && (BC.currentFile = "js/analyze.js");
           { at: Ld, links: ['v-shoot-base', 'd-formshoot'], note: '脚の長さを 100% としたときの、ずれ' }));
       }
       if (P >= 0 && D >= 0 && F[P].hipH - startH > 0.05) {
-        const dt = (R - P) / fps;
-        const st = Math.abs(dt) <= 0.12 ? 'good' : dt > 0.12 ? 'bad' : 'ok';
+        // てっぺんの少し前〜すぐあと（-0.2〜+0.1秒）なら よい。0.2秒より あとは「落ちながら」
+        const dt = F[R].t - topT;
+        const st = dt >= -0.2 && dt <= 0.1 ? 'good' : dt > 0.2 ? 'bad' : 'ok';
         mets.push(M('timing', 'はなすタイミング', dt >= 0 ? `てっぺんの ${dt.toFixed(2)}秒あと` : `てっぺんの ${(-dt).toFixed(2)}秒まえ`, st,
           st === 'good' ? 'ジャンプのいちばん高いところで、はなせています。' : dt > 0 ? '落ちながらはなしています。もう少し早く、てっぺんではなしましょう。' : '上がりながらはなしています（近い距離なら OK）。遠いときは、てっぺんで。',
           { at: R, links: ['v-shoot-rhythm'] }));
@@ -16716,7 +16857,7 @@ BC && (BC.currentFile = "js/analyze.js");
           { links: ['v-drb-eyes', 'd-headup', 'd-tennisball'] }));
       }
       {
-        const bob = std(F.map((f) => f && f.headH));
+        const bob = wobble(F.map((f) => f && f.headH), s(0.5));
         const st = lv(bob, 0.02, 0.035);
         mets.push(M('head', '頭の高さ', st === 'good' ? '変わらない' : st === 'ok' ? '少し上下' : '上下に動く', st,
           st === 'good' ? '頭の高さが変わらず、安定しています。' : '頭が上下に動いています。ひざで高さを保つと、次の動きにすぐ移れます。',
@@ -16765,7 +16906,7 @@ BC && (BC.currentFile = "js/analyze.js");
           { links: ['v-def-feet', 'd-zigzag-d'] }));
       }
       {
-        const bob = std(F.map((f) => f && f.headH));
+        const bob = wobble(F.map((f) => f && f.headH), s(0.5));
         const st = lv(bob, 0.02, 0.035);
         mets.push(M('head', '頭の高さ（上下にはねない）', st === 'good' ? '変わらない' : st === 'ok' ? '少し上下' : '上下に動く', st,
           st === 'good' ? '頭の高さが変わらず、低いまま動けています。' : '動くたびに頭が上下しています。ひざを曲げたまま、すべるように動きましょう。',
@@ -16815,7 +16956,7 @@ BC && (BC.currentFile = "js/analyze.js");
         if (vi >= 0) {
           const v = Math.max(F[vi].fppaL, F[vi].fppaR);
           const st = lv(v, 10, 18);
-          mets.push(M('knee-in', 'ひざが内に入らないか', st === 'good' ? '入っていない' : `内へ ${Math.round(v)}°`, st,
+          mets.push(M('knee-in', 'ひざが内に入らないか', st === 'good' ? '入っていない' : v >= 40 ? '大きく 内へ' : `内へ ${Math.round(v)}°`, st,
             st === 'good' ? 'ひざとつま先が同じ向きで、着地できています。' : '着地のとき、ひざが内側に入っています（ケガをしやすい形）。ひざをつま先と同じ向きに。',
             { at: vi, links: ['v-body-injury', 'd-landing'] }));
         }
@@ -17086,6 +17227,18 @@ BC && (BC.currentFile = "js/check.js");
     motion: null, fps: 4, secs: 60, tip: '試合や 3対3・5対5 の練習を、高い所から 10秒〜1分',
   };
   const TEAM_THUMB = { o: [[-6.3, 1.2], [6.3, 1.2], [-4.6, 6.4], [4.6, 6.4], [0, 8.9]], x: [[-4.9, 2.1], [4.9, 2.1], [-3, 5.2], [3, 5.2], [0, 7.4]] };
+  // 絵の範囲：人（とボール）が大きく見えるように、まわりを少しだけ（横:たて ＝ aspect）
+  function figBox(id, aspect) {
+    const clip = BC.motions[id];
+    const fr = BC.motionFrame(clip, clip.still != null ? clip.still : 0.3);
+    const s = fr.sk[0];
+    const pts = [s.head, s.hip, s.r.hand, s.l.hand, s.r.knee, s.l.knee, ...s.r.foot, ...s.l.foot, ...fr.balls];
+    let x0 = Math.min(...pts.map((p) => p[0])) - 0.3, x1 = Math.max(...pts.map((p) => p[0])) + 0.3;
+    let y0 = -0.08, y1 = Math.max(...pts.map((p) => p[1])) + 0.32;
+    const w = x1 - x0, h = y1 - y0;
+    if (w / h < aspect) { const d = (h * aspect - w) / 2; x0 -= d; x1 += d; } else y1 += w / aspect - h;
+    return [x0, x1, y0, y1];
+  }
   // ホームなどの入口ボタン用の絵（SVG の文字列）
   for (const m of Object.values(MODES)) {
     Object.defineProperty(m, 'icon', {
@@ -17093,7 +17246,7 @@ BC && (BC.currentFile = "js/check.js");
       get() {
         if (m.id === 'team') return BC.courtThumb ? BC.courtThumb(TEAM_THUMB) : '';
         const id = m.motion || 'stance';
-        return BC.motions && BC.motions[id] ? BC.motionSVG(id, null, { cls: 'ck-fig' }) : '';
+        return BC.motions && BC.motions[id] ? BC.motionSVG(id, null, { cls: 'ck-fig', box: figBox(id, 1.6) }) : '';
       },
     });
   }
@@ -17127,11 +17280,12 @@ BC && (BC.currentFile = "js/check.js");
   function cleanup() {
     if (!S) return;
     if (S.abort) S.abort.abort();
+    if (S.lock) { try { S.lock.release(); } catch (e) { /* なし */ } S.lock = null; }
     stopLoop();
     if (S.video) { try { S.video.pause(); S.video.removeAttribute('src'); S.video.load(); } catch (e) { /* なし */ } }
     if (S.url) URL.revokeObjectURL(S.url);
   }
-  function go(step) { S.step = step; S.err = ''; paint(); if (S.root) { const top = S.root.getBoundingClientRect().top; if (top < 0) window.scrollTo({ top: window.scrollY + top - 70 }); } }
+  function go(step, err) { S.step = step; S.err = err || ''; paint(); if (S.root) { const top = S.root.getBoundingClientRect().top; if (top < 0) window.scrollTo({ top: window.scrollY + top - 70 }); } }
 
   CK.render = function (el, ctx, opt = {}) {
     CTX = ctx || CTX;
@@ -17173,8 +17327,8 @@ BC && (BC.currentFile = "js/check.js");
     });
   }
   const ACTIONS = {
-    home: () => { fresh(null); S.root = currentRoot(); paint(); },
-    mode: (b) => { const r = currentRoot(); fresh(b.dataset.mode); S.root = r; paint(); },
+    home: () => { const r = currentRoot(); fresh(null); S.root = r; setHash('#check'); paint(); },
+    mode: (b) => { const r = currentRoot(); fresh(b.dataset.mode); S.root = r; setHash('#check/' + b.dataset.mode); paint(); },
     how: () => go('how'),
     range: () => { S.video && S.video.pause(); go('range'); },
     preview: () => previewRange(),
@@ -17194,6 +17348,8 @@ BC && (BC.currentFile = "js/check.js");
     teamGo: () => runTeam(),
   };
   const currentRoot = () => S && S.root;
+  // アドレスの # を、画面に合わせて書きかえる（hashchange は起こさない）
+  const setHash = (h) => { try { if (/^#check/.test(location.hash) && location.hash !== h) history.replaceState(history.state, '', h); } catch (e) { /* なし */ } };
 
   /* ---------- 入口 ---------- */
   SCREENS.home = {
@@ -17201,9 +17357,9 @@ BC && (BC.currentFile = "js/check.js");
       const recs = records().slice(0, 3);
       const card = (m) => {
         const h = HOW[m.id];
-        return `<button type="button" class="ck-mode${m.id === 'team' ? ' ck-mode-team' : ''}" data-ck="mode" data-mode="${m.id}">
+        return `<button type="button" class="ck-mode${m.id === 'team' ? ' ck-mode-team' : m.id === 'free' ? ' ck-mode-wide' : ''}" data-ck="mode" data-mode="${m.id}">
           <span class="ck-mode-fig">${m.icon}</span>
-          <span class="ck-mode-txt"><b>${esc(m.name)}</b><small>${h.badges.map((x) => esc(x[1])).join('・')}</small></span>
+          <span class="ck-mode-txt"><b>${esc(m.name)}</b><small>${h.badges.slice(0, 2).map((x) => esc(x[1])).join('・')}</small></span>
         </button>`;
       };
       return `
@@ -17229,7 +17385,7 @@ BC && (BC.currentFile = "js/check.js");
         ${backBtn('home', 'ほかの チェック')}
         <h1 class="ck-title">${esc(m.name)}を チェック</h1>
         <div class="ck-how">
-          <div class="ck-how-fig">${model ? '<div class="ck-model"></div><p class="ck-cap">見本（正しい形）</p>' : m.id === 'team' ? `<div class="ck-teamfig">${m.icon}</div><p class="ck-cap">高い所から、コートの半分を とる</p>` : `<div class="ck-teamfig ck-free">${m.icon}</div>`}</div>
+          <div class="ck-how-fig">${model ? '<div class="ck-model"></div><p class="ck-cap">見本（正しい形）</p>' : m.id === 'team' ? `<div class="ck-teamfig ck-persp">${perspectiveCourt()}</div><p class="ck-cap">こんなふうに 映るように（ゴールが おくに 見える）</p>` : `<div class="ck-teamfig ck-free">${m.icon}</div>`}</div>
           <div class="ck-how-txt">
             <h2 class="sec-h">とり方</h2>
             <p class="ck-badges">${h.badges.map(([ic, t]) => `<span>${ic}${esc(t)}</span>`).join('')}</p>
@@ -17262,9 +17418,10 @@ BC && (BC.currentFile = "js/check.js");
     v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
     S.video = v; S.dur = 0; S.result = null; S.team = null; S.pickHip = null; S.calib = null; S.H = null; S.colors = [];
     S.primed = false; S.cands = null; S.people0 = null; S.snap = null; S.work = null; S.rate = 1; S.mini = null;
-    const fail = () => { S.err = 'この動画は、このブラウザでは 開けませんでした。スマホの カメラで とりなおすか、MP4 の動画を えらんでください。'; S.video = null; go('how'); };
+    const fail = () => { if (S.video !== v) return; S.video = null; go('how', 'この動画は、このブラウザでは 開けませんでした。スマホの カメラで とりなおすか、MP4 の動画を えらんでください。'); };
     v.addEventListener('error', fail, { once: true });
     const ready = () => {
+      if (S.video !== v) return;
       if (!v.videoWidth || !isFinite(v.duration) || !v.duration) return fail();
       S.dur = v.duration;
       const max = MODES[S.mode].secs;
@@ -17344,10 +17501,19 @@ BC && (BC.currentFile = "js/check.js");
     try { const p = v.play(); if (p && p.then) await p; v.pause(); } catch (e) { /* なし */ }
   }
 
+  // しらべている間、画面が消えないように（できる端末だけ）
+  async function wake(on) {
+    try {
+      if (on && navigator.wakeLock && !S.lock) S.lock = await navigator.wakeLock.request('screen');
+      if (!on && S.lock) { await S.lock.release(); S.lock = null; }
+    } catch (e) { /* なし */ }
+  }
+
   /* ---------- 作業用のキャンバス（長い辺 640px） ---------- */
   function work() {
     const v = S.video;
-    const k = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight));
+    // チームは遠くの人も見つけたいので大きめ（左右2つに分けて、AI に見せる）
+    const k = Math.min(1, (MODES[S.mode].kind === 'team' ? 960 : 640) / Math.max(v.videoWidth, v.videoHeight));
     if (!S.work) S.work = document.createElement('canvas');
     S.work.width = Math.round(v.videoWidth * k);
     S.work.height = Math.round(v.videoHeight * k);
@@ -17424,13 +17590,14 @@ BC && (BC.currentFile = "js/check.js");
     const g = c.getContext('2d');
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.drawImage(S.snap || S.work, 0, 0, W, H);
+    const k = uiK(c, W);
     (S.cands || []).forEach((lm, i) => {
-      drawSkeleton(g, lm, 1, 1, { lw: 3, color: css('--me') });
+      drawSkeleton(g, lm, 1, 1, { lw: 3 * k });
       const b = BA.boxOf(lm);
-      g.lineWidth = 3; g.strokeStyle = '#fff'; g.setLineDash([8, 6]);
-      g.strokeRect(b[0] - 8, b[1] - 8, b[2] - b[0] + 16, b[3] - b[1] + 16);
+      g.lineWidth = 3 * k; g.strokeStyle = '#fff'; g.setLineDash([8 * k, 6 * k]);
+      g.strokeRect(b[0] - 8 * k, b[1] - 8 * k, b[2] - b[0] + 16 * k, b[3] - b[1] + 16 * k);
       g.setLineDash([]);
-      label(g, String(i + 1), (b[0] + b[2]) / 2, b[1] - 22, { big: true });
+      label(g, String(i + 1), (b[0] + b[2]) / 2, b[1] - 24 * k, { big: true, k });
     });
   }
 
@@ -17446,9 +17613,22 @@ BC && (BC.currentFile = "js/check.js");
     grab();
     S.snap = cloneCanvas(S.work);
     const r = pose.detectForVideo(S.work, BA.tick(500));
-    S.cands = r.landmarks.map((lm) => BA.toPx(lm, S.work.width, S.work.height));
+    S.cands = dedupPoses(r.landmarks.map((lm) => BA.toPx(lm, S.work.width, S.work.height)));
     if (S.cands.length === 1) { S.pickHip = BA.hipCenter(S.cands[0]); return runSelf(); }
     paint();
+  }
+  // 同じ人を2回見つけたとき（箱が大きく重なる）は、1人に
+  function dedupPoses(ps) {
+    const box = (lm) => { const b = BA.boxOf(lm.filter((p) => p[2] > 0.3)); return { x: b[0], y: b[1], w: b[2] - b[0], h: b[3] - b[1] }; };
+    const iou = (a, b) => { const x = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)), y = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)); const i = x * y; return i / (a.w * a.h + b.w * b.h - i || 1); };
+    // 体の点が少ししか見えない・小さすぎるものは、人ではない（AI の見まちがい）
+    const seen = (lm) => [0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28].filter((k) => lm[k] && lm[k][2] > 0.5).length;
+    let list = ps.filter((lm) => seen(lm) >= 8).map((lm) => ({ lm, b: box(lm) })).sort((p, q) => q.b.w * q.b.h - p.b.w * p.b.h);
+    const maxH = Math.max(0, ...list.map((p) => p.b.h));
+    list = list.filter((p) => p.b.h >= maxH * 0.35);
+    const keep = [];
+    for (const p of list) if (!keep.some((k) => iou(k.b, p.b) > 0.5)) keep.push(p);
+    return keep.sort((p, q) => p.b.x - q.b.x).map((p) => p.lm); // 左から順に番号
   }
   function cloneCanvas(src) { const c = document.createElement('canvas'); c.width = src.width; c.height = src.height; c.getContext('2d').drawImage(src, 0, 0); return c; }
   // 小さな絵（きろくの絵用。幅 168px）
@@ -17467,6 +17647,7 @@ BC && (BC.currentFile = "js/check.js");
         <div class="ck-stage" style="aspect-ratio:${S.work.width}/${S.work.height}"><canvas class="ck-livec"></canvas></div>
         <div class="ck-bar ck-bar-big"><i style="width:${p.n ? Math.round((p.i / p.n) * 100) : 0}%"></i></div>
         <p class="ck-prog" aria-live="polite">コマ <b class="num">${p.i}</b> / <span class="num">${p.n}</span></p>
+        <p class="ck-note ck-note-s ck-center">おわるまで、画面を とじないでね。</p>
         <button type="button" class="btn big" data-ck="stop">やめる</button>`;
     },
   };
@@ -17483,13 +17664,14 @@ BC && (BC.currentFile = "js/check.js");
     if (c.width !== W) { c.width = W; c.height = H; }
     const g = c.getContext('2d');
     g.drawImage(S.work, 0, 0);
+    const k = uiK(c, W);
     if (teamMode) {
       for (const q of people || []) {
-        g.lineWidth = 3;
+        g.lineWidth = 3 * k;
         g.strokeStyle = q.team === 0 ? css('--ck-off') : q.team === 1 ? css('--ck-def') : 'rgba(255,255,255,0.7)';
         g.strokeRect(q.box.x, q.box.y, q.box.w, q.box.h);
       }
-    } else for (const lm of people || []) drawSkeleton(g, lm, 1, 1, { lw: 3, color: css('--me') });
+    } else for (const lm of people || []) drawSkeleton(g, lm, 1, 1, { lw: 3 * k });
   }
 
   async function runSelf() {
@@ -17498,9 +17680,10 @@ BC && (BC.currentFile = "js/check.js");
     S.prog = { i: 0, n: Math.max(1, Math.floor((S.to - S.from) * fps)) + 1 };
     go('run');
     let pose;
-    try { pose = await BA.load('pose'); } catch (e) { S.err = aiFail(e); return go('range'); }
+    try { pose = await BA.load('pose'); } catch (e) { return go('range', aiFail(e)); }
     const ac = new AbortController();
     S.abort = ac;
+    wake(true);
     const poses = [], times = [];
     const W = S.work.width, H = S.work.height;
     S.mini = [];
@@ -17519,18 +17702,20 @@ BC && (BC.currentFile = "js/check.js");
       });
     } catch (e) {
       S.abort = null;
+      wake(false);
       if (ac.signal.aborted) { toast('やめました'); return go('range'); }
       console.warn(e);
-      S.err = 'とちゅうで うまく しらべられませんでした。もう一度 ためしてください。';
-      return go('range');
+      return go('range', 'とちゅうで うまく しらべられませんでした。もう一度 ためしてください。');
     }
     S.abort = null;
+    wake(false);
     const first = poses.findIndex((p) => p.length);
     const pick = first >= 0 && S.pickHip ? BA.nearest(poses[first], S.pickHip) : null;
     const tracked = BA.track(poses, pick >= 0 ? pick : null);
     const res = BA.analyzeSelf(tracked, { mode: S.mode, fps, times });
     const score = res.ok ? BA.score(res.metrics || []) : null;
-    S.result = { res, tracked, smooth: BA.smooth(tracked), times, fps, score, mode: S.mode, W, H, saved: false };
+    S.result = { res, tracked, smooth: BA.smooth(BA.fixSwaps(tracked)), times, fps, score, mode: S.mode, W, H, saved: false };
+    S.showBones = true;
     if (res.ok) saveSelf();
     go('result');
   }
@@ -17561,19 +17746,23 @@ BC && (BC.currentFile = "js/check.js");
       g.lineWidth = 1.5; g.strokeStyle = 'rgba(0,0,0,0.6)'; g.stroke();
     }
   }
+  // 文字のラベル。k：キャンバスの1画素が 画面の何 px か の逆数（大きなキャンバスでも、画面で同じ大きさに）
   function label(g, text, x, y, opt = {}) {
-    const fs = opt.big ? 22 : opt.fs || 15;
+    const k = opt.k || 1;
+    const fs = (opt.big ? 22 : opt.fs || 15) * k;
     g.font = `700 ${fs}px ${css('--font-body') || 'sans-serif'}`;
-    const w = g.measureText(text).width + 14, h = fs + 10;
+    const w = g.measureText(text).width + 14 * k, h = fs + 10 * k;
     const bx = clamp(x - w / 2, 2, g.canvas.width / (g.getTransform().a || 1) - w - 2), by = clamp(y - h / 2, 2, g.canvas.height / (g.getTransform().d || 1) - h - 2);
     g.fillStyle = opt.bg || 'rgba(255,255,255,0.94)';
     g.strokeStyle = opt.edge || 'rgba(0,0,0,0.25)';
-    g.lineWidth = 1;
+    g.lineWidth = k;
     roundRect(g, bx, by, w, h, h / 2); g.fill(); g.stroke();
     g.fillStyle = opt.ink || '#1f2328';
     g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(text, bx + w / 2, by + h / 2 + 1);
   }
+  // キャンバス c（論理の幅 W）が、画面で何 px に見えているか → 大きさをそろえる倍率
+  const uiK = (c, W) => { const w = c.getBoundingClientRect().width || 360; return W / w; };
   function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
   // 角度のしるし（ひざ・ひじ）
   function angleMark(g, a, b, c, sx, sy, text, col) {
@@ -17637,10 +17826,11 @@ BC && (BC.currentFile = "js/check.js");
         const hip = [(lm[K.lHip][0] + lm[K.rHip][0]) / 2, (lm[K.lHip][1] + lm[K.rHip][1]) / 2];
         label(g, `腰 ${Math.round(f.hipH * 100)}%`, hip[0] * sx, hip[1] * sy - 4, { ink: '#14532d' });
         if (R.mode === 'landing') {
-          for (const s of ['l', 'r']) {
-            const v = s === 'l' ? f.fppaL : f.fppaR;
-            if (v > 5) label(g, `内へ ${Math.round(v)}°`, lm[K[s + 'Kn']][0] * sx + (s === 'l' ? 40 : -40), lm[K[s + 'Kn']][1] * sy, { ink: '#7f1d1d' });
-          }
+          // 画面の左の脚・右の脚（analyze.js の fppaL・fppaR と同じ くみあわせ）
+          BA.legs(lm).forEach((leg, i) => {
+            const v = i === 0 ? f.fppaL : f.fppaR;
+            if (v > 5) label(g, `内へ ${Math.round(v)}°`, leg.knee[0] * sx + (i === 0 ? -44 : 44), leg.knee[1] * sy, { ink: '#7f1d1d' });
+          });
         }
       }
     }
@@ -17664,14 +17854,14 @@ BC && (BC.currentFile = "js/check.js");
   }
   function metricCard(mt, opt = {}) {
     const st = ST[mt.status] || ST.na;
-    const links = (mt.links || []).map((id) => (BC.get ? BC.get(id) : null) ? [id, BC.get(id)] : null).filter(Boolean).slice(0, 3);
+    const links = (mt.links || []).map((id) => (BC.get ? BC.get(id) : null) ? [id, BC.get(id)] : null).filter(Boolean).slice(0, opt.main ? 3 : 2);
     return `<article class="ck-met ck-${mt.status}${opt.main ? ' ck-met-main' : ''}">
       <header class="ck-met-h"><span class="ck-st" aria-label="${st.t}">${st.m}</span><span class="ck-met-l">${esc(mt.label)}</span><b class="ck-met-v">${esc(mt.value)}</b></header>
       <p class="ck-met-msg">${esc(mt.msg)}</p>
       ${mt.note ? `<p class="ck-met-note">${esc(mt.note)}</p>` : ''}
       <div class="ck-met-act">
-        ${opt.seek && mt.at != null && mt.at >= 0 ? `<button type="button" class="chip" data-ck="seekAt" data-i="${mt.at}">${IC.eye}<span>この場面を 見る</span></button>` : ''}
-        ${links.map(([id, it]) => `<button type="button" class="chip ck-link" data-ck="open" data-id="${esc(id)}">${esc(it.name || it.title)}</button>`).join('')}
+        ${opt.seek && mt.at != null && mt.at >= 0 ? `<button type="button" class="chip ck-seek" data-ck="seekAt" data-i="${mt.at}">${IC.eye}<span>見る</span></button>` : ''}
+        ${links.length ? `<span class="ck-met-lk">練習</span>${links.map(([id, it]) => `<button type="button" class="chip ck-link" data-ck="open" data-id="${esc(id)}">${esc(it.name || it.title)}</button>`).join('')}` : ''}
       </div>
     </article>`;
   }
@@ -17843,12 +18033,13 @@ BC && (BC.currentFile = "js/check.js");
     const hand = R.res.hand || 'r';
     const kneeAvg = (f) => (f.kneeL + f.kneeR) / 2;
     const defs = [{ key: 'hip', title: '腰の高さ', unit: '%', get: (f) => f.hipH * 100 }];
+    const DEG = [0, 90, 180]; // ひざ・ひじ：0°〜180°（90° が L字、180° が まっすぐ）
     const mode = R.mode;
-    if (mode === 'shoot') { if (view === 'side') defs.push({ key: 'knee', title: 'ひざの角度', unit: '°', get: kneeAvg }); defs.push({ key: 'elbow', title: 'ひじの角度（シュートする手）', unit: '°', get: (f) => (hand === 'r' ? f.elbowR : f.elbowL) }); }
+    if (mode === 'shoot') { if (view === 'side') defs.push({ key: 'knee', title: 'ひざの角度', unit: '°', fixed: DEG, get: kneeAvg }); defs.push({ key: 'elbow', title: 'ひじの角度（シュートする手）', unit: '°', fixed: DEG, get: (f) => (hand === 'r' ? f.elbowR : f.elbowL) }); }
     else if (mode === 'dribble') defs.push({ key: 'wrist', title: 'ドリブルする手の高さ', unit: '%', get: (f) => f.wrist[hand] * 100 });
     else if (mode === 'defense') defs.push({ key: 'head', title: '頭の高さ', unit: '%', get: (f) => f.headH * 100 });
-    else if (mode === 'landing') defs.push(view === 'side' ? { key: 'knee', title: 'ひざの角度', unit: '°', get: kneeAvg } : { key: 'fppa', title: 'ひざが内に入る角度', unit: '°', get: (f) => Math.max(f.fppaL, f.fppaR) });
-    else { if (view === 'side') defs.push({ key: 'knee', title: 'ひざの角度', unit: '°', get: kneeAvg }); defs.push({ key: 'head', title: '頭の高さ', unit: '%', get: (f) => f.headH * 100 }); }
+    else if (mode === 'landing') defs.push(view === 'side' ? { key: 'knee', title: 'ひざの角度', unit: '°', fixed: DEG, get: kneeAvg } : { key: 'fppa', title: 'ひざが内に入る角度', unit: '°', get: (f) => Math.max(f.fppaL, f.fppaR) });
+    else { if (view === 'side') defs.push({ key: 'knee', title: 'ひざの角度', unit: '°', fixed: DEG, get: kneeAvg }); defs.push({ key: 'head', title: '頭の高さ', unit: '%', get: (f) => f.headH * 100 }); }
     return defs.map((d) => Object.assign(d, { pts: F.map((f, i) => (f ? [T[i], d.get(f)] : null)).filter((p) => p && isFinite(p[1])) }));
   }
   function niceTicks(lo, hi, n = 3) {
@@ -17862,14 +18053,14 @@ BC && (BC.currentFile = "js/check.js");
   }
   // 1本の折れ線（または2本：series = [{ name, cls, pts }]）。x は秒。marks：[{ t, label }]
   function lineSVG(width, series, opt) {
-    const H = opt.h || 120, L = 40, Rm = opt.endLabels ? 46 : 12, T = 18, B = 22;
+    const H = (opt.h || 120) + ((opt.marks || []).length ? 12 : 0), L = 40, Rm = opt.endLabels ? 46 : 12, T = (opt.marks || []).length ? 30 : 12, B = 22;
     const all = series.flatMap((s) => s.pts);
     if (!all.length) return '';
     const x0 = opt.x0, x1 = Math.max(opt.x1, x0 + 0.1);
     let lo = Math.min(...all.map((p) => p[1])), hi = Math.max(...all.map((p) => p[1]));
     if (opt.min != null) lo = Math.min(lo, opt.min);
     if (hi - lo < (opt.minSpan || 10)) { const c = (hi + lo) / 2; lo = c - (opt.minSpan || 10) / 2; hi = c + (opt.minSpan || 10) / 2; }
-    const ticks = niceTicks(lo, hi, 3);
+    const ticks = opt.fixed || niceTicks(lo, hi, 3);
     lo = ticks[0]; hi = ticks[ticks.length - 1];
     const X = (t) => L + ((t - x0) / (x1 - x0)) * (width - L - Rm), Y = (v) => T + (1 - (v - lo) / (hi - lo || 1)) * (H - T - B);
     const f1 = (n) => Math.round(n * 10) / 10;
@@ -17877,7 +18068,15 @@ BC && (BC.currentFile = "js/check.js");
     for (const tk of ticks) s += `<line class="ck-grid" x1="${L}" x2="${width - Rm}" y1="${f1(Y(tk))}" y2="${f1(Y(tk))}"/><text class="ck-tick" x="${L - 6}" y="${f1(Y(tk))}" text-anchor="end" dominant-baseline="central">${tk}${opt.unit || ''}</text>`;
     const xt = niceTicks(x0, x1, 4).filter((v) => v >= x0 - 1e-6 && v <= x1 + 1e-6);
     for (const v of xt) s += `<text class="ck-tick" x="${f1(X(v))}" y="${H - 6}" text-anchor="middle">${v}秒</text>`;
-    for (const mk of opt.marks || []) s += `<line class="ck-mark" x1="${f1(X(mk.t))}" x2="${f1(X(mk.t))}" y1="${T - 4}" y2="${H - B}"/><text class="ck-mark-t" x="${f1(X(mk.t))}" y="${T - 7}" text-anchor="middle">${esc(mk.label)}</text>`;
+    // 場面の名前：近くて重なるときは、2段に
+    const ends = [-Infinity, -Infinity];
+    for (const mk of (opt.marks || []).slice().sort((a, b) => a.t - b.t)) {
+      const x = X(mk.t), w = mk.label.length * 11 + 6;
+      const row = x - w / 2 > ends[0] + 2 ? 0 : 1;
+      ends[row] = x + w / 2;
+      const ty = row ? T - 5 : T - 18;
+      s += `<line class="ck-mark" x1="${f1(x)}" x2="${f1(x)}" y1="${ty + 3}" y2="${H - B}"/><text class="ck-mark-t" x="${f1(x)}" y="${ty}" text-anchor="middle">${esc(mk.label)}</text>`;
+    }
     for (const se of series) {
       // とぎれた所（見失ったコマ）は線を切る
       let d = '', prevT = null;
@@ -17901,7 +18100,7 @@ BC && (BC.currentFile = "js/check.js");
     S.charts = [];
     defs.forEach((d) => {
       const fig = box.querySelector(`[data-key="${d.key}"]`);
-      const ch = lineSVG(width, [{ name: d.title, pts: d.pts }], { x0, x1, unit: d.unit, marks, label: d.title, minSpan: d.unit === '°' ? 30 : 10 });
+      const ch = lineSVG(width, [{ name: d.title, pts: d.pts.map((p) => (d.fixed ? [p[0], clamp(p[1], 0, 180)] : p)) }], { x0, x1, unit: d.unit, marks, label: d.title, minSpan: d.unit === '°' ? 30 : 10, fixed: d.fixed });
       if (!ch) { fig.remove(); return; }
       fig.querySelector('.ck-svg').innerHTML = ch.svg;
       const svgEl = fig.querySelector('svg'), tip = fig.querySelector('.ck-tip');
@@ -18004,6 +18203,25 @@ BC && (BC.currentFile = "js/check.js");
     L.push([[-6.6, 0], ...arc(0, 1.575, 6.75, a0, a1, 40), [6.6, 0]]);
     return L;
   }
+  // とり方の絵：高い所から見たコート（こう映ると よい）
+  function perspectiveCourt() {
+    const Hc = BA.homography([[-7.5, 0], [7.5, 0], [7.5, 14], [-7.5, 14]], [[78, 46], [242, 46], [312, 172], [8, 172]]);
+    const P = (p) => BA.applyH(Hc, p).map((v) => Math.round(v * 10) / 10);
+    const path = (pts, close) => 'M' + pts.map(P).map((q) => q.join(' ')).join(' L') + (close ? ' Z' : '');
+    const lines = courtLines().map((l) => `<path class="ck-pc-line" d="${path(l)}"/>`).join('');
+    const ppl = (TEAM_THUMB.o.map((p) => [p, 'o']).concat(TEAM_THUMB.x.map((p) => [p, 'x']))).map(([p, t]) => {
+      const f = P(p), f2 = P([p[0] + 0.5, p[1]]);
+      const h = Math.hypot(f2[0] - f[0], f2[1] - f[1]) * 3.5;
+      return { f, h, t };
+    }).sort((a, b) => a.f[1] - b.f[1]).map(({ f, h, t }) => `<g class="ck-pc-${t}"><rect x="${f[0] - h * 0.17}" y="${f[1] - h * 0.78}" width="${h * 0.34}" height="${h * 0.62}" rx="${h * 0.12}"/><circle cx="${f[0]}" cy="${f[1] - h * 0.9}" r="${h * 0.13}"/></g>`).join('');
+    const rim = P([0, 1.575]);
+    return `<svg viewBox="0 0 320 180" role="img" aria-label="高い所から見たコートの絵">
+      <rect class="ck-pc-wall" width="320" height="180"/><rect class="ck-pc-ground" y="34" width="320" height="146"/>
+      <path class="ck-pc-court" d="${path([[-7.5, 0], [7.5, 0], [7.5, 14], [-7.5, 14]], true)}"/>
+      <path class="ck-pc-paint" d="${path([[-2.45, 0], [2.45, 0], [2.45, 5.8], [-2.45, 5.8]], true)}"/>${lines}
+      <rect class="ck-pc-board" x="${rim[0] - 9}" y="${rim[1] - 22}" width="18" height="11"/><ellipse class="ck-pc-rim" cx="${rim[0]}" cy="${rim[1] - 9}" rx="4" ry="1.4"/>${ppl}</svg>`;
+  }
+
   SCREENS.calib = {
     html() {
       const cal = S.calib;
@@ -18069,9 +18287,10 @@ BC && (BC.currentFile = "js/check.js");
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.drawImage(S.snap, 0, 0, W, H);
     const cal = S.calib;
+    const k = uiK(c, W);
     if (S.H && cal.pts.length === 4) {
       const Hi = BA.invertH(S.H);
-      g.lineWidth = 2.5; g.strokeStyle = css('--ok'); g.shadowColor = 'rgba(0,0,0,0.6)'; g.shadowBlur = 3;
+      g.lineWidth = 2.5 * k; g.strokeStyle = css('--ok'); g.shadowColor = 'rgba(0,0,0,0.6)'; g.shadowBlur = 3 * k;
       for (const l of courtLines()) {
         g.beginPath();
         let on = false;
@@ -18087,9 +18306,9 @@ BC && (BC.currentFile = "js/check.js");
       g.shadowBlur = 0;
     }
     cal.pts.forEach((p, i) => {
-      g.beginPath(); g.arc(p[0], p[1], 7, 0, Math.PI * 2);
-      g.fillStyle = css('--ball'); g.fill(); g.lineWidth = 2; g.strokeStyle = '#fff'; g.stroke();
-      label(g, String(i + 1), p[0] + 16, p[1] - 16, {});
+      g.beginPath(); g.arc(p[0], p[1], 6 * k, 0, Math.PI * 2);
+      g.fillStyle = css('--ball'); g.fill(); g.lineWidth = 2 * k; g.strokeStyle = '#fff'; g.stroke();
+      label(g, String(i + 1), p[0] + 16 * k, p[1] - 18 * k, { k });
     });
   }
 
@@ -18103,21 +18322,47 @@ BC && (BC.currentFile = "js/check.js");
     await BA.seek(S.video, S.from);
     grab();
     S.snap = cloneCanvas(S.work);
-    const r = det.detectForVideo(S.work, BA.tick(500));
-    S.people0 = peopleOf(r, false);
+    S.people0 = peopleOf(detectPeople(det), false);
     if (!S.colors) S.colors = [];
     paint();
   }
+  // 人を見つける。横長の動画は、左右に重なりのある2つに分けて AI に見せる（遠くの小さな人も見つかりやすい）
+  function detectPeople(det) {
+    const W = S.work.width, H = S.work.height;
+    const tiles = W > H * 1.2 ? [[0, 0, Math.round(W * 0.56), H], [Math.round(W * 0.44), 0, W - Math.round(W * 0.44), H]] : [[0, 0, W, H]];
+    let out = [];
+    for (const [tx, ty, tw, th] of tiles) {
+      let src = S.work;
+      if (tiles.length > 1) {
+        if (!S.tile) S.tile = document.createElement('canvas');
+        S.tile.width = tw; S.tile.height = th;
+        S.tile.getContext('2d').drawImage(S.work, tx, ty, tw, th, 0, 0, tw, th);
+        src = S.tile;
+      }
+      const r = det.detectForVideo(src, BA.tick(20));
+      for (const d of r.detections || []) {
+        const c = d.categories && d.categories[0];
+        if (!c) continue;
+        const b = d.boundingBox;
+        out.push({ x: b.originX + tx, y: b.originY + ty, w: b.width, h: b.height, score: c.score });
+      }
+    }
+    // 重なった箱は、点数の高い方だけ（2つに分けた所の重なり）
+    out.sort((a, b) => b.score - a.score);
+    // 重なりの割合（合わせた広さに対して）と、小さい方の箱が どれだけ入っているか（2つに分けた さかいめで切れた箱）
+    const ov = (a, b) => { const x = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)), y = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)); const i = x * y; return [i / (a.w * a.h + b.w * b.h - i || 1), i / (Math.min(a.w * a.h, b.w * b.h) || 1)]; };
+    const keep = [];
+    for (const b of out) if (!keep.some((k) => { const [u, c] = ov(k, b); return u > 0.45 || c > 0.7; })) keep.push(b);
+    return keep;
+  }
   // 見つけた人 → { box, foot（画面）, x, y（コート m）, color }。コートの外の人は のぞく
-  function peopleOf(r, classify) {
+  function peopleOf(boxes, classify) {
     const out = [];
     const minH = S.work.height * 0.025;
-    for (const d of r.detections || []) {
-      const c = d.categories && d.categories[0];
-      if (!c || c.score < 0.35) continue;
-      const b = d.boundingBox;
-      if (b.height < minH) continue;
-      const box = { x: b.originX, y: b.originY, w: b.width, h: b.height };
+    for (const b of boxes) {
+      if (b.score < 0.3 || b.h < minH) continue;
+      const box = { x: b.x, y: b.y, w: b.w, h: b.h };
+      const c = { score: b.score };
       const foot = [box.x + box.w / 2, box.y + box.h];
       const q = BA.applyH(S.H, foot);
       if (!isFinite(q[0]) || Math.abs(q[0]) > 8.5 || q[1] < -1 || q[1] > 15) continue;
@@ -18200,9 +18445,10 @@ BC && (BC.currentFile = "js/check.js");
     const g = c.getContext('2d');
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.drawImage(S.snap, 0, 0, W, H);
+    const k = uiK(c, W);
     for (const p of S.people0 || []) {
       const t = S.colors.length === 2 && p.color ? BA.classify(p.color, S.colors, 55) : -1;
-      g.lineWidth = 3;
+      g.lineWidth = 3 * k;
       g.strokeStyle = t === 0 ? css('--ck-off') : t === 1 ? css('--ck-def') : 'rgba(255,255,255,0.9)';
       g.strokeRect(p.box.x, p.box.y, p.box.w, p.box.h);
     }
@@ -18222,9 +18468,10 @@ BC && (BC.currentFile = "js/check.js");
     S.prog = { i: 0, n: Math.max(1, Math.floor((S.to - S.from) * fps)) + 1 };
     go('run');
     let det;
-    try { det = await BA.load('person'); } catch (e) { S.err = aiFail(e); return go('color'); }
+    try { det = await BA.load('person'); } catch (e) { return go('color', aiFail(e)); }
     const ac = new AbortController();
     S.abort = ac;
+    wake(true);
     const frames = [];
     const midI = Math.floor(S.prog.n / 2);
     S.teamMini = null;
@@ -18234,8 +18481,7 @@ BC && (BC.currentFile = "js/check.js");
         onFrame: (t, i) => {
           grab();
           if (i === midI || !S.teamMini) S.teamMini = miniCopy(S.work);
-          const r = det.detectForVideo(S.work, BA.tick(1000 / fps));
-          const people = peopleOf(r, true);
+          const people = peopleOf(detectPeople(det), true);
           frames.push({ t, people });
           S.prog.i = frames.length;
           paintProg(people, true);
@@ -18243,12 +18489,13 @@ BC && (BC.currentFile = "js/check.js");
       });
     } catch (e) {
       S.abort = null;
+      wake(false);
       if (ac.signal.aborted) { toast('やめました'); return go('color'); }
       console.warn(e);
-      S.err = 'とちゅうで うまく しらべられませんでした。もう一度 ためしてください。';
-      return go('color');
+      return go('color', 'とちゅうで うまく しらべられませんでした。もう一度 ためしてください。');
     }
     S.abort = null;
+    wake(false);
     BA.courtTrack(frames);
     const tm = BA.teamAnalyze(frames, { teams: 2 });
     const off = BA.teamFindings(tm.teams[0], 'offense'), def = BA.teamFindings(tm.teams[1], 'defense');
@@ -18459,6 +18706,7 @@ BC && (BC.currentFile = "js/check.js");
 
   // 検査用（tools/check-test.cjs）
   CK._state = () => S;
+  CK._reset = () => { const r = S && S.root; fresh(null); S.root = r; };
 })();
 
 /* ---- js/app.js ---- */
@@ -18711,7 +18959,7 @@ BC && (BC.currentFile = "js/app.js");
     root.querySelectorAll('[data-anim]').forEach((el) => {
       if (el.dataset.done) return;
       el.dataset.done = 1;
-      BC.anim(el, el.dataset.anim, { points: el.dataset.points !== '0', compact: el.dataset.compact === '1', autoplay: el.dataset.auto !== '0', at: +(el.dataset.at || 0) });
+      BC.anim(el, el.dataset.anim, { points: el.dataset.points !== '0', compact: el.dataset.compact === '1', autoplay: el.dataset.auto !== '0', at: el.dataset.at ? +el.dataset.at : undefined });
     });
     root.querySelectorAll('[data-court]').forEach((el) => { const it = get(el.dataset.court); if (it && it.diagram && !el.dataset.done) { el.dataset.done = 1; BC.court(el, it.diagram, { label: labelOf(it) }); } });
     root.querySelectorAll('[data-tape]').forEach((el) => {
@@ -18782,6 +19030,18 @@ BC && (BC.currentFile = "js/app.js");
     for (const id of ['i-shoot-miss', 'i-drb-stolen', 'i-def-beat', 'i-layup-miss', 'i-pass-steal', 'i-nerve', 'i-reb-lose', 'i-home']) if (!pick.includes(id)) pick.push(id);
     return items(pick).slice(0, 6);
   }
+  // ひとこと（せかさない・ほめる）
+  function heroMsg(s) {
+    const drills = S.acts.filter((a) => a.type === 'drill');
+    if (!drills.length) return 'まずは「きょうのメニュー」を 1つ やってみよう！';
+    const today = G.day(Date.now());
+    const last = drills[drills.length - 1];
+    const daysAgo = Math.round((new Date(today).getTime() - new Date(G.day(last.at)).getTime()) / 86400000);
+    if (daysAgo === 0) return s.streak >= 3 ? `${s.streak}日れんぞく！ きょうも がんばったね。休むのも 練習のうち。` : 'きょうも がんばったね！ ゆっくり休むのも 練習のうち。';
+    if (s.streak >= 2) return `${s.streak}日れんぞく中！ きょうも ちょっとだけ やってみよう。`;
+    if (daysAgo === 1) { const m = drills.filter((a) => G.day(a.at) === G.day(last.at)).reduce((t, a) => t + (a.min || 0), 0); return `きのうは ${m}分 練習したね。きょうは 10分から どう？`; }
+    return 'ひさしぶり！ 10分だけでも だいじょうぶ。';
+  }
   // 今週（月〜日）の練習した日
   function weekHTML(s) {
     const now = new Date();
@@ -18806,7 +19066,8 @@ BC && (BC.currentFile = "js/app.js");
       <section class="hero">
         <div class="hero-top">
           <div class="hero-who"><p class="hero-hi">${hi}${name ? '、' + name : '！'}</p>
-            <p class="hero-rank"><span class="lvl">Lv.<b class="num">${s.level}</b></span><span class="rank">${esc(s.rank)}</span></p></div>
+            <p class="hero-rank"><span class="lvl">Lv.<b class="num">${s.level}</b></span><span class="rank">${esc(s.rank)}</span></p>
+            <p class="hero-msg">${esc(heroMsg(s))}</p></div>
           <a class="streak${s.streak ? ' on' : ''}" href="#log">${ic('fire')}<b class="num">${s.streak}</b><small>日れんぞく</small></a>
         </div>
         <div class="xpbar" role="progressbar" aria-valuemin="0" aria-valuemax="${s.prog.span}" aria-valuenow="${s.prog.cur}"><i style="width:${Math.round(s.prog.ratio * 100)}%"></i></div>
@@ -18970,7 +19231,7 @@ BC && (BC.currentFile = "js/app.js");
     show(`<div class="page-bar">${back()}${favBtn(t.id)}</div>
       <p class="eyebrow">${ic('grid')}戦術・${esc(BC.TCATS[t.cat] || '')}・${esc(t.kind || '')}</p>
       <h1 class="page-h">${esc(t.name)}</h1>
-      <div class="pills"><span class="pill lvp">${stars(t.level)}</span>${(t.alias || []).length ? `<span class="pill">別名：${esc(t.alias.slice(0, 3).join('、'))}</span>` : ''}</div>
+      <div class="pills"><span class="pill lvp">${stars(t.level)}</span>${(t.alias || []).length ? `<span class="pill alias">別名：${esc(t.alias.slice(0, 3).join('、'))}</span>` : ''}</div>
       <p class="aim">${md(t.summary)}</p>
       ${t.diagram ? `<div data-court="${t.id}"></div>` : ''}
       ${sec('動き方', ol(t.how))}
@@ -19323,7 +19584,8 @@ BC && (BC.currentFile = "js/app.js");
       <span class="btns"><button type="button" class="btn" data-pl="open" data-id="${p.id}">ひらく</button><button type="button" class="btn primary" data-pl="run-saved" data-id="${p.id}">${ic('play')}はじめる</button><button type="button" class="btn" data-pl="rm" data-id="${p.id}">${plDel === p.id ? 'もう一度押すと消えます' : '消す'}</button></span></div>`).join('')}</div></section>`;
   }
   function renderPlan() {
-    if (PL.n == null && S.me) { PL.n = prof().n || null; PL.level = prof().level || null; }
+    // はじめて開いたときだけ、プロフィールの人数・レベルを入れておく（あとで「決めない」にしてもよい）
+    if (!PL.init && S.me) { PL.init = true; PL.n = prof().n || null; PL.level = prof().level || null; savePL(); }
     show(`${back()}<h1 class="page-h">練習プランを つくる</h1>
       <p class="page-lead">じゅんび運動 → わざの練習 → 対人・ゲーム → しめくくり の順に組みます。入れかえ・時間の調整・ほぞんができて、タイマーで進められます。</p>
       <div class="stack"><div id="pl-cond">${plCondHTML()}</div><div id="pl-plan">${plPlanHTML()}</div><div id="pl-saved">${plSavedHTML()}</div></div>`, 'practice', 'page-plan');
@@ -19531,6 +19793,7 @@ BC && (BC.currentFile = "js/app.js");
       S.hash = h;
     }
     S.page = h.split('/')[0];
+    if (S.page !== 'hello' && S.page !== 'settings') draft = null; // 保存しなかった入力は捨てる
     document.body.classList.toggle('onboarding', h === 'hello');
     if (h === 'home') renderHome();
     else if (h === 'practice') renderPractice();

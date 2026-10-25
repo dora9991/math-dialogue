@@ -6,7 +6,8 @@
    ・動画：アニメーションの人（BC.motionSVG。シュート・ドリブル・着地・スライド・2人）と、写真の人を ななめのコートに置いたチームの動画を作る
      （tools/_out/check-media/。--regen で作りなおす）。
    ・画面の写真：tools/_out/check-*.png（幅 390px。ライト・ダーク）
-   ・終了コード：まちがいがあれば 1 */
+   ・終了コード：まちがいがあれば 1
+   ・調べる用：DUMP=1（シュートの1コマずつの数）・DUMPLM=1（脚の点）・DUMPHEAD=1（頭の高さ）を つけると、結果のあとに出す */
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -291,6 +292,7 @@ async function selfFlow(page, mode, file, opt = {}) {
   if (opt.pickAt) {
     await page.waitForSelector(`${STEP('person')} .ck-tapzone canvas`, { timeout: 120000 });
     if (opt.shotPick) await page.screenshot({ path: path.join(OUT, opt.shotPick), fullPage: true });
+    if (opt.people) ok((await page.$eval('.ck-note', (e) => e.textContent)).includes(opt.people + '人'), `人をえらぶ：${opt.people}人と 出る（同じ人を2回 数えない）`);
     const box = await (await page.$('.ck-tapzone canvas')).boundingBox();
     await page.mouse.click(box.x + box.width * opt.pickAt[0], box.y + box.height * opt.pickAt[1]);
   }
@@ -316,6 +318,8 @@ async function selfFlow(page, mode, file, opt = {}) {
     return { ok: R.res.ok, msg: R.res.msg, view: R.res.view, score: R.score, notes: R.res.notes || [], metrics: (R.res.metrics || []).map((m) => [m.key, m.status, m.value]), seen: R.tracked.filter(Boolean).length, n: R.tracked.length, W: R.W, hipX: hipX[hipX.length >> 1] };
   });
   r.secs = secs;
+  if (process.env.DUMPHEAD) console.log(await page.evaluate(() => { const R = BC.check._state().result; const F = R.res.series || []; return F.map((f, i) => f ? [i, R.times[i].toFixed(2), 'head', f.headH.toFixed(3), 'hip', f.hipH.toFixed(3), 'nose', Math.round(R.tracked[i][0][1]), 'ears', Math.round(R.tracked[i][7][1]), Math.round(R.tracked[i][8][1]), 'vis', R.tracked[i][7][2].toFixed(2), R.tracked[i][8][2].toFixed(2), R.tracked[i][2][2].toFixed(2), R.tracked[i][5][2].toFixed(2)].join(' ') : i + ' -').join('\n') + '\nwobble ' + BC.analyze.wobble(F.map((f) => f && f.headH), 8).toFixed(4); }));
+  if (process.env.DUMPLM) console.log(await page.evaluate(() => { const R = BC.check._state().result; const F = R.res.series || []; return R.tracked.map((lm, i) => lm ? [i, R.times[i].toFixed(2), 'hipX', Math.round(lm[23][0]), Math.round(lm[24][0]), 'kn', Math.round(lm[25][0]), Math.round(lm[26][0]), 'an', Math.round(lm[27][0]), Math.round(lm[28][0]), 'y h/k/a', Math.round(lm[23][1]), Math.round(lm[25][1]), Math.round(lm[27][1]), 'fppa', F[i] ? Math.round(F[i].fppaL) + '/' + Math.round(F[i].fppaR) : '-', 'vis', lm[25][2].toFixed(2), lm[26][2].toFixed(2)].join(' ') : i + ' -').join('\n'); }));
   if (process.env.DUMP) console.log(await page.evaluate(() => { const R = BC.check._state().result; const F = R.res.series || []; return F.map((f, i) => f ? [i, R.times[i].toFixed(2), 'hip', f.hipH.toFixed(2), 'wr', f.wrist.r.toFixed(2), f.wrist.l.toFixed(2), 'head', f.headH.toFixed(2), 'sh', f.shH.toFixed(2), 'el', Math.round(f.elbowR), Math.round(f.elbowL), 'kn', Math.round(f.kneeL), Math.round(f.kneeR)].join(' ') : i + ' -').join('\n') + '\nkeys ' + JSON.stringify(R.res.keys) + ' hand ' + R.res.hand; }));
   console.log(`  ${file}: ${r.ok ? r.metrics.map((m) => `${m[0]}=${m[2]}(${m[1]})`).join(' ') : '× ' + r.msg}  ［人 ${r.seen}/${r.n}コマ・${secs.toFixed(1)}秒］`);
   return r;
@@ -434,7 +438,7 @@ const stOf = (r, k) => ((r.metrics || []).find((m) => m[0] === k) || [])[1];
 
   if (want('two')) {
     console.log('■ 2人のうち、右の人をえらぶ');
-    const r = await selfFlow(page, 'dribble', 'two.webm', { pickAt: [0.74, 0.62], shotPick: 'check-person.png' });
+    const r = await selfFlow(page, 'dribble', 'two.webm', { pickAt: [0.74, 0.62], shotPick: 'check-person.png', people: 2 });
     ok(r.ok && r.hipX > r.W * 0.55, `2人：えらんだ右の人を しらべた（腰の位置 ${Math.round(r.hipX)} / ${r.W}）`);
   }
 
