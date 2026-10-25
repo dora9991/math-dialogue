@@ -154,12 +154,14 @@ a { color: var(--accent); }
 
 /* ---------- 記録の画面 ---------- */
 body[data-view="live"] { overflow: hidden; }
-.live { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--bg); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation;
+/* 上の帯（bar）・2つのチーム（stage）・下の帯（gbar）。撮影中の大きなワイプ（wipe）は、dk-side・dk-col・dk-top で場所を足す（js の layoutWipe） */
+.live { position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "bar" "stage" "gbar";
+  background: var(--bg); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left); }
 .live button { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
 /* 上の帯：時計・ピリオド・得点・メニュー */
-.lbar { display: flex; align-items: center; gap: 6px; padding: 6px 8px; flex: none; }
+.lbar { grid-area: bar; display: flex; align-items: center; gap: 6px; padding: 6px 8px; flex: none; min-width: 0; }
 .clock { display: inline-flex; align-items: center; gap: 7px; background: var(--panel); border: 2px solid var(--line); border-radius: 12px; padding: 0 10px; height: clamp(46px, 7.4vmin, 64px); min-width: clamp(104px, 21vmin, 170px); flex: none; }
 .tval { font-size: clamp(30px, 6.2vmin, 50px); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; line-height: 1; }
 .tval.long { font-size: clamp(22px, 4.6vmin, 40px); }
@@ -206,17 +208,51 @@ body[data-view="live"] { overflow: hidden; }
   .lbar:has(.cambtn:not([hidden])) .period { min-width: 36px; padding: 0 4px; }
   .lbar:has(.cambtn:not([hidden])) .score { gap: 3px; }
 }
-/* 撮影の画面 */
-.camsheet .campv { display: block; width: 100%; max-height: 52vh; max-height: 52dvh; background: #000; border-radius: 12px; object-fit: contain; }
+/* 撮影の画面：大きな映像（録れる動画の向きに回して映す。大きさは js の fitPreview） */
+.cambtn .camthumb { position: absolute; left: 50%; top: 50%; width: 100%; height: 100%; }
+.cambtn.warn { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.45); }
+.campvw { position: relative; margin: 0 auto; width: 100%; height: 200px; background: #000; border-radius: 12px; overflow: hidden; }
+.campvw .campv { position: absolute; left: 50%; top: 50%; display: block; background: #000; }
+.camorient { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.camorient .row b { font-size: 14px; }
+.orientbox { border-radius: 10px; padding: 8px 10px; border: 1px solid var(--line); background: var(--panel2); }
+.orientbox p { margin: 0 0 6px; }
+.orientbox.warn { border-color: #f59e0b; background: var(--warn-soft); }
+.orientbox.ok { border-color: var(--accent); background: var(--accent-soft); }
+.turnrow { gap: 6px; }
+/* 録画と記録を同時にスタート */
+.camacts { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 4px; }
+.btn.startboth { width: 100%; min-height: 58px; font-size: 19px; font-weight: 900; border-radius: 14px; background: var(--good); border-color: var(--good); color: #fff; }
+.btn.startboth.rec { background: #dc2626; border-color: #dc2626; }
+.bothnote { margin: 0; }
+.rdot { display: inline-block; width: 0.62em; height: 0.62em; border-radius: 50%; background: #fff; margin-right: 0.35em; vertical-align: 0.05em; box-shadow: 0 0 0 0.12em rgba(255, 255, 255, 0.35); }
+.startbig.recstart { background: #dc2626; font-size: 28px; }
+.startbtn.rec { background: #dc2626; font-size: clamp(15px, 3vmin, 22px); }
+.btn.camon { font-weight: 700; border-color: var(--accent); color: var(--accent); }
 .camstat { margin-top: 10px; font-weight: 800; font-size: 16px; font-variant-numeric: tabular-nums; }
 .camstat.rec { color: var(--bad); }
 .camacts { margin: 10px 0 4px; }
 .btn.recbtn { background: #dc2626; border-color: #dc2626; color: #fff; font-weight: 800; }
 .camnotes { margin: 10px 0 0; padding-left: 18px; }
 .camnotes li { margin: 3px 0; }
+/* アプリごと横向き（画面の向きのロックをしたまま、横に倒して使う）：記録の画面だけ、body を 90° 回す。
+   --rvw・--rvh は端末の画面の幅・高さ（js の applyRot）。回した body の中では、fixed の部品も body が基準になる */
+html[data-rot="90"] body[data-view="live"], html[data-rot="270"] body[data-view="live"] { position: fixed; top: 0; left: 0; width: var(--rvh, 100vh); height: var(--rvw, 100vw); overflow: hidden; transform-origin: 0 0; }
+html[data-rot="90"] body[data-view="live"] { transform: translateX(var(--rvw, 100vw)) rotate(90deg); }
+html[data-rot="270"] body[data-view="live"] { transform: translateY(var(--rvh, 100vh)) rotate(-90deg); }
+/* 切り欠き・ホームバーの余白も、回した向きに合わせる（上下左右の入れかえ） */
+html[data-rot="90"] .live { padding: env(safe-area-inset-right) env(safe-area-inset-bottom) 0 env(safe-area-inset-top); }
+html[data-rot="270"] .live { padding: env(safe-area-inset-left) env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
+html[data-rot="90"] .gbar { height: calc(60px + env(safe-area-inset-left)); padding-bottom: calc(6px + env(safe-area-inset-left)); }
+html[data-rot="270"] .gbar { height: calc(60px + env(safe-area-inset-right)); padding-bottom: calc(6px + env(safe-area-inset-right)); }
+html[data-rot="90"] .short .gbar { height: calc(50px + env(safe-area-inset-left)); padding-bottom: calc(4px + env(safe-area-inset-left)); }
+html[data-rot="270"] .short .gbar { height: calc(50px + env(safe-area-inset-right)); padding-bottom: calc(4px + env(safe-area-inset-right)); }
+html[data-rot] .sheet-card { max-height: calc(var(--rvw, 100vw) * 0.92); }
+
 /* スタート前の札の中の撮影 */
 .covercam { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 13.5px; font-weight: 700; }
 .covercam.rec span { color: var(--bad); }
+.covercam.warn { border-color: #f59e0b; background: var(--warn-soft); }
 /* 撮影した動画の一覧 */
 .vlist { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .vitem { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: space-between; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; text-align: left; }
@@ -226,7 +262,7 @@ body[data-view="live"] { overflow: hidden; }
 
 /* 2つのチーム：左右に並べる（lay-side）か、上下に重ねる（lay-stack）。どちらにするかは js の BT.planLayout が決める
    （すきま・ふちの数字は、core.js の BT.LAYOUT と合わせる） */
-.stagewrap { position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; }
+.stagewrap { grid-area: stage; position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; }
 .panels { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: row; gap: 6px; padding: 0 4px; }
 .lay-stack .panels { flex-direction: column; }
 .team { flex: 1 1 0; min-height: 0; min-width: 0; display: flex; flex-direction: column; background: var(--panel); border: 2px solid var(--tc); border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.35); }
@@ -284,7 +320,7 @@ body[data-view="live"] { overflow: hidden; }
 .endscore b { font-size: 34px; font-variant-numeric: tabular-nums; }
 
 /* 画面の下：パスミス・★（いつでも押せる）・いま記録したもの・取り消す */
-.gbar { flex: none; display: flex; align-items: stretch; gap: 6px; padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); height: calc(60px + env(safe-area-inset-bottom)); }
+.gbar { grid-area: gbar; flex: none; display: flex; align-items: stretch; gap: 6px; padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); height: calc(60px + env(safe-area-inset-bottom)); min-width: 0; }
 .gb { position: relative; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 76px; padding: 0 10px; border: 0; border-radius: 12px; color: #fff; line-height: 1.1; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.22); transition: transform 0.06s, filter 0.06s, opacity 0.2s; }
 .gb b { font-size: 17px; font-weight: 900; white-space: nowrap; }
 .gb small { font-size: 11px; font-weight: 800; white-space: nowrap; }
@@ -344,6 +380,59 @@ body[data-view="live"] { overflow: hidden; }
 .short .gbar { height: calc(50px + env(safe-area-inset-bottom)); padding-top: 4px; padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
 .short .gb small { display: none; }
 .short .gb.k-mark b::after { content: ' あとで見る'; font-size: 13px; }
+
+/* ---------- 撮影中の大きなワイプ（中・大） ----------
+   横長の画面（dk-side）：右側の列に映像。下の帯（パスミス・★・いま記録したもの）も、その下へ
+   縦長の画面：上の帯の下（dk-top）か、縦長の動画なら右側の列（dk-col）。映像の大きさは js の layoutWipe */
+/* （右側の列の幅は min-content＝ワイプの幅。auto だと、下の帯の文の長さまで広がってしまう） */
+.live.dk-side { grid-template-columns: minmax(0, 1fr) min-content; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "bar bar" "stage wipe" "stage gbar"; }
+.live.dk-col { grid-template-columns: minmax(0, 1fr) min-content; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "bar bar" "stage wipe" "gbar gbar"; }
+.live.dk-top { grid-template-rows: auto auto minmax(0, 1fr) auto; grid-template-areas: "bar" "wipe" "stage" "gbar"; }
+.wipe { grid-area: wipe; display: flex; align-items: flex-start; justify-content: center; min-width: 0; min-height: 0; padding: 0 6px 6px 0; }
+.dk-top .wipe { padding: 0 4px 6px; }
+.wipebox { position: relative; flex: none; background: #000; border: 2px solid var(--line2); border-radius: 12px; overflow: hidden; }
+.wipebox.rec { border-color: var(--bad); box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.35); }
+.wipebox.warn { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.45); }
+.wipeopen { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; display: block; }
+.wipev { position: absolute; left: 50%; top: 50%; display: block; pointer-events: none; }
+.wipetag { position: absolute; left: 6px; bottom: 6px; max-width: calc(100% - 12px); padding: 3px 8px; border-radius: 999px; background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 12.5px; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; pointer-events: none; }
+.wipetag.rec { background: rgba(220, 38, 38, 0.88); }
+.wipectl { position: absolute; right: 6px; top: 6px; display: flex; gap: 6px; }
+.wipesz { width: 36px; height: 36px; padding: 0; border: 1px solid rgba(255, 255, 255, 0.65); border-radius: 50%; background: rgba(0, 0, 0, 0.5); color: #fff; font-size: 21px; font-weight: 900; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+.wipesz:active { background: rgba(0, 0, 0, 0.75); }
+.wipesz:disabled { opacity: 0.3; }
+.wipebox.tiny .wipectl { right: 4px; top: 4px; gap: 4px; }
+.wipebox.tiny .wipesz { width: 28px; height: 28px; font-size: 17px; }
+.wipebox.tiny .wipetag { left: 4px; bottom: 4px; padding: 2px 6px; font-size: 11.5px; }
+/* 横長の画面：下の帯を、映像の下の列に（いま記録したもの・その下にパスミスと★）。高さは決まった数（js が残りの高さを測る） */
+html .live.dk-side:not(.dk-x) .gbar { height: auto; flex-wrap: wrap; align-content: flex-end; gap: 6px; padding-top: 0; padding-left: 0; padding-right: 6px; }
+html .live.dk-side:not(.dk-x) .lastbar { order: -1; flex: 1 1 100%; height: 50px; }
+html .live.dk-side:not(.dk-x) .gb { flex: 1 1 0; min-width: 0; height: 56px; padding: 0 6px; }
+@media (min-width: 700px) and (min-height: 600px) {
+  .live.dk-side.dk-x .gb { min-width: 104px; padding: 0 12px; }       /* 特大：下の帯は自分のチームの下（幅が狭い）。いま記録したものの場所を残す */
+  html .live.dk-side:not(.dk-x) .lastbar { height: 62px; }
+  html .live.dk-side:not(.dk-x) .gb { height: 70px; }
+}
+html .live.dk-side.short:not(.dk-x) .lastbar { height: 44px; }
+html .live.dk-side.short:not(.dk-x) .gb { height: 46px; }
+/* （列が狭いので、★ の「あとで見る」は ★ の下に小さく） */
+html .live.dk-side:not(.dk-x) .gb.k-mark b::after { content: none; }
+html .live.dk-side:not(.dk-x) .gb small { display: block; }
+/* 特大：相手チームの枠を小さくして、映像の下に置く（自分のチームは残りの広さに。js の layoutWipe・placeOpp）。
+   横長の画面：右の列（上の帯の下から画面の下まで）。下の帯（パスミス・★）は自分のチームの下 */
+.live.dk-side.dk-x { grid-template-areas: "bar bar" "stage wipe" "gbar wipe"; }
+.live.dk-x .wipe { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px; }
+.live.dk-x .wipe > .wipebox { align-self: center; }
+.live.dk-x .wipe > .team { flex: 1 1 0; min-width: 0; min-height: 0; }
+.live.dk-top.dk-x .wipe > .team { flex: none; }                   /* 縦長の画面：高さは js が決める */
+.live.dk-side.dk-x .wipe > .team.oppone { flex: 0 1 auto; }        /* 相手チームが1行だけ：その高さ（残りが少なければ縮める）。下は空けておく */
+.live.dk-side.dk-x .wipe { padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+html[data-rot="90"] .live.dk-side.dk-x .wipe { padding-bottom: calc(6px + env(safe-area-inset-left)); }
+html[data-rot="270"] .live.dk-side.dk-x .wipe { padding-bottom: calc(6px + env(safe-area-inset-right)); }
+/* 撮影の画面：ワイプの大きさ */
+.wiperow { gap: 6px; margin-top: 8px; align-items: center; }
+.wiperow b { font-size: 14px; }
+.wiperow .note { flex-basis: 100%; margin: 0; }
 
 /* ---------- 下から出る小窓 ---------- */
 .sheet { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-end; justify-content: center; }
@@ -725,6 +814,32 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     return pool.sort((a, b) => b.score - a.score)[0];
   };
 
+  /* 1つのチームだけを、W×H の枠（チームの枠の外側の大きさ）に並べるときの列の数。
+     ワイプ「特大」で、相手チームを映像の下に小さく置くとき・自分のチームだけを残りに並べるときに使う。
+     考え方は planLayout と同じ（ボタンの幅と高さの小さいほうが大きいもの。列を増やすのは、ボタンが十分に大きくなるときだけ）。
+     maxC：列の数の上限（相手チームは 4 まで） */
+  BT.planTeam = function (W, H, n, headH, maxC) {
+    const K = BT.LAYOUT;
+    const fixed = 2 * K.border + headH + 2 * K.rpad;
+    const rows = Math.max(1, n || 0);
+    const cand = [];
+    for (let c = 1; c <= Math.min(maxC || 3, rows); c++) {
+      const r = Math.ceil(rows / c);
+      const cellW = (W - 2 * K.border - 2 * K.rpad - (c - 1) * K.cgap) / c;
+      const nw = Math.round(BT.clamp(cellW * 0.2, 32, 64));
+      const bw = (cellW - nw - 4 * K.bgap) / 4;
+      const rowH = Math.min((H - fixed - (r - 1) * K.rgap) / r, K.rmax);
+      const size = Math.min(bw, rowH) + 0.15 * Math.min(Math.abs(bw - rowH), 30);
+      const colCost = (size >= 34 ? 5 : 1) * (c - 1);
+      const score = Math.min(size, 44) + 0.1 * Math.max(0, Math.min(size, 64) - 44) - colCost;
+      cand.push({ c, r, cellW, nw, bw, rowH, base: fixed + (r - 1) * K.rgap, size, score, scroll: rowH < K.rmin });
+    }
+    const okW = cand.filter((x) => x.bw >= K.minBw);
+    const pool = okW.length ? okW : [cand.slice().sort((a, b) => b.bw - a.bw)[0]];
+    const still = pool.filter((x) => !x.scroll);               // 縦にすべらない並べ方があれば、そちらを（列が増えても）
+    return (still.length ? still : pool).sort((a, b) => b.score - a.score)[0];
+  };
+
   /* ---------- 集計 ---------- */
   BT.score = function (game, until) {
     const s = [0, 0];
@@ -1014,9 +1129,11 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
 
   /* ---------- 設定 ---------- */
   /* names：選手の名前も出す / unknown：「？」（だれか分からないとき）の行を出す / sound：タップ音 / theme：画面の色
-     camQuality：撮影の画質（'720' | '1080'）/ camAudio：録画に音も入れる */
+     camQuality：撮影の画質（'720' | '1080'）/ camAudio：録画に音も入れる / camOrient：撮る向き（'land' 横 | 'port' 縦）
+     uiRot：アプリごと横向きにする（90・270。画面の向きのロックをしたまま、横に倒して使う）/ camRot・camRotF：映像の向きの手直し（ふつう・アプリごと横向きのとき）
+     camWipe：記録の画面に映すカメラの映像（ワイプ）の大きさ（'s' 小：上の帯の中 | 'm' 中 | 'l' 大） */
   function prefs() {
-    const p = Object.assign({ sound: false, theme: 'auto', names: true, unknown: true, camQuality: '720', camAudio: true }, readJSON(K.prefs) || {});
+    const p = Object.assign({ sound: false, theme: 'auto', names: true, unknown: true, camQuality: '720', camAudio: true, camOrient: 'land', uiRot: 0, camRot: 0, camRotF: null, camWipe: 'm' }, readJSON(K.prefs) || {});
     delete p.actions;        // 前の版の「ボタンの組み合わせ」（いまは、選手ごとのボタンに決まっている）
     return p;
   }
@@ -1301,6 +1418,22 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     return b;
   }
   const timescaleOf = (dv, box) => { const v1 = dv.getUint8(box.body) === 1; return u32(dv, box.body + 4 + (v1 ? 16 : 8)); };
+  /* tkhd の写し b（Uint8Array）に、映す向き（時計回りの角度 90・180・270）の行列を書く。
+     中身（コマ）はそのままで、再生するときに回して映す（ffmpeg の display_rotation と同じ書き方。x・y はずらさない） */
+  const MATRIX = {
+    0: [0x10000, 0, 0, 0, 0x10000, 0, 0, 0, 0x40000000],
+    90: [0, 0x10000, 0, -0x10000, 0, 0, 0, 0, 0x40000000],
+    180: [-0x10000, 0, 0, 0, -0x10000, 0, 0, 0, 0x40000000],
+    270: [0, -0x10000, 0, 0x10000, 0, 0, 0, 0, 0x40000000]
+  };
+  function withMatrix(b, rotate) {
+    const m = MATRIX[rotate];
+    if (!m) return b;
+    const d = new DataView(b.buffer, b.byteOffset, b.byteLength);
+    const off = 8 + (b[8] === 1 ? 52 : 40);       // 箱の頭 8 ＋（版・フラグ・時刻・track_ID・reserved・長さ・reserved・layer・alternate_group・volume・reserved）
+    m.forEach((v, i) => d.setInt32(off + i * 4, v));
+    return b;
+  }
 
   /* trak の中から、組み立てに使うものを取り出す */
   function readTrak(dv, trak) {
@@ -1319,8 +1452,10 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
   /* 細切れの MP4 を、ふつうの MP4 にする。
      戻り値 { flat, header（Uint8Array：ftyp＋moov＋mdat の頭）, ranges（元の Blob の [始め, 終わり) の並び。この順につなぐと mdat の中身）,
              duration（秒）, tracks: [{ handler, samples, duration }], truncated（最後が切れていた）}
-     flat: false … もともと、ふつうの MP4（または組み立てられない形）。そのまま使う */
-  async function flatten(blob) {
+     flat: false … もともと、ふつうの MP4（または組み立てられない形）。そのまま使う
+     opts.rotate：映像を時計回りに何度回して映すか（0・90・180・270。画面の向きのロックをしたまま、横に置いて撮ったとき） */
+  async function flatten(blob, opts) {
+    const rotate = (((opts && opts.rotate) || 0) % 360 + 360) % 360;
     const top = await scan(blob);
     const ftypBox = top.find((b) => b.type === 'ftyp' && b.complete);
     const moovTop = top.find((b) => b.type === 'moov' && b.complete);
@@ -1437,7 +1572,8 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
         used.forEach((T) => {
           const B = T.box;
           w.box('trak', () => {
-            w.bytes(withDuration(mdv, B.tkhd, 'tkhd', T.movieDur));
+            const tk = withDuration(mdv, B.tkhd, 'tkhd', T.movieDur);
+            w.bytes(T.handler === 'vide' && rotate ? withMatrix(tk, rotate) : tk);
             if (B.edts) w.bytes(copy(mdv, B.edts));
             else if (T.lead > 0) {
               // 最初のサンプルまでの空き（映像と音の始まりのずれを保つ）。B フレームがあるときは、いちばん早く映るサンプルの時刻（minCT）から映す
@@ -1497,7 +1633,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     w.bytes(moovBytes);
     if (big) { w.u32(1); w.str('mdat'); w.u64(payload + 16); } else { w.u32(payload + 8); w.str('mdat'); }
     return {
-      flat: true, header: w.out(), ranges, truncated,
+      flat: true, header: w.out(), ranges, truncated, rotate,
       duration: movieDur / movieTs,
       tracks: used.map((T) => ({ handler: T.handler, samples: T.sizes.length, duration: T.mediaDur / T.ts + T.lead / movieTs }))
     };
@@ -1652,7 +1788,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
       setState(s) { C.state = s; emit('state', s); },
       settings() { const t = C.stream && C.stream.getVideoTracks()[0]; return t && t.getSettings ? t.getSettings() : {}; },
       live() { return !!(C.stream && C.stream.getVideoTracks().some((t) => t.readyState === 'live')); },
-      /* 録画を始める。meta: { gameId, n, base（ファイル名のもと） }。戻り値：動画の情報（vstore の videos の形） */
+      /* 録画を始める。meta: { gameId, n, base（ファイル名のもと）, rotate（映す向き：時計回りの角度） }。戻り値：動画の情報（vstore の videos の形） */
       async start(meta) {
         if (C.rec) return C.seg;
         if (!C.live()) await C.open(C.opts);
@@ -1664,8 +1800,11 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
         try { rec = new MediaRecorder(C.stream, ro); } catch (e) { delete ro.videoKeyFrameIntervalDuration; rec = new MediaRecorder(C.stream, ro); }
         const s = C.stream.getVideoTracks()[0].getSettings ? C.stream.getVideoTracks()[0].getSettings() : {};
         const vid = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+        const rotate = [90, 180, 270].includes(meta.rotate) ? meta.rotate : 0;
+        const rw = s.width || q.w, rh = s.height || q.h;
         const seg = C.seg = {
-          vid, gameId: meta.gameId, n: meta.n || 1, startedAt: null, endedAt: null, mime: rec.mimeType || mime || 'video/webm', ext: '', w: s.width || q.w, h: s.height || q.h,
+          vid, gameId: meta.gameId, n: meta.n || 1, startedAt: null, endedAt: null, mime: rec.mimeType || mime || 'video/webm', ext: '',
+          w: rotate % 180 ? rh : rw, h: rotate % 180 ? rw : rh, rotate,            // w・h は映すときの大きさ（回したあと）
           bytes: 0, chunks: 0, status: 'recording', plan: null, duration: null, name: ''
         };
         seg.ext = extOf(seg.mime);
@@ -1686,12 +1825,12 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
         C.rec = rec;
         C.flush = () => chain;
         C.stopped = stopped;
-        seg.startCall = Date.now();
-        rec.start(SLICE);
-        await Promise.race([started, new Promise((r) => setTimeout(r, 1500))]);
         // 録画を始めた時刻は「start() を呼ぶ直前」。録画が始まった知らせ（start）は、実際の始まりより 0.05〜0.1 秒おそい
         // （Chromium で、映像に映した時刻と比べて確かめた。直前の時刻なら、ずれは 0.03 秒以内）
+        seg.startCall = Date.now();
         seg.startedAt = seg.startCall;
+        rec.start(SLICE);
+        await Promise.race([started, new Promise((r) => setTimeout(r, 1500))]);
         await BT.vstore.putVideo(Object.assign({}, seg));
         C.setState('recording');
         emit('start', seg);
@@ -1735,7 +1874,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
       v.bytes = blob.size;
       if (v.ext === 'mp4' && blob.size && BT.fmp4) {
         let plan = null;
-        try { plan = await BT.fmp4.flatten(blob); } catch (e) { plan = null; }
+        try { plan = await BT.fmp4.flatten(blob, { rotate: v.rotate || 0 }); } catch (e) { plan = null; }
         if (plan && plan.flat) { v.plan = { header: plan.header, ranges: plan.ranges, duration: plan.duration, truncated: plan.truncated }; v.duration = plan.duration; } else {
           // 中身（映像のデータ）が1つもない：始めてすぐ閉じた・止めた
           const top = await BT.fmp4.scan(blob).catch(() => []);
@@ -1749,6 +1888,11 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     if (!v.duration) v.duration = Math.max(0, (v.endedAt - v.startedAt) / 1000);
     v.status = 'done';
     if (v.empty) { await BT.vstore.remove(v.vid); v.gone = true; return v; }       // 何も録れていない動画は残さない
+    if (v.rotate && !v.plan) {           // 向きを書けなかった（WebM・組み直せない形）：回さずに保存される。大きさも回す前のものに
+      v.rotateLost = true;
+      if (v.rotate % 180) [v.w, v.h] = [v.h, v.w];
+      v.rotate = 0;
+    }
     await BT.vstore.putVideo(v);
     return v;
   }
@@ -1828,6 +1972,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
   function go(view) {
     S.view = view;
     BT.ui.closeSheet(true);
+    if (view !== 'live') delete document.documentElement.dataset.rot;
     if (view === 'home') renderHome();
     else if (view === 'setup') renderSetup();
     else if (view === 'live') buildLive();
@@ -2078,12 +2223,22 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     // 撮影中は、カメラの小さな映像（押すと撮影の画面）
     L.camThumb = h('video', { class: 'camthumb', muted: true, playsinline: true, autoplay: true });
     L.camBtn = h('button', { class: 'cambtn', id: 'btnCam', hidden: true, 'aria-label': '撮影の画面を開く', onclick: openCamera }, L.camThumb, h('i', { class: 'camdot' }));
-    const bar = h('header', { class: 'lbar' }, L.clock, L.start, L.period,
+    L.camThumb.addEventListener('resize', onCamResize);
+    const bar = L.bar = h('header', { class: 'lbar' }, L.clock, L.start, L.period,
       h('div', { class: 'score', 'aria-label': '得点' }, L.score[0], h('span', { class: 'dash' }, '−'), L.score[1]),
       L.camBtn,
       h('button', { class: 'menubtn', id: 'btnMenu', 'aria-label': 'メニュー', onclick: openMenu }, h('span', null, '≡'), h('small', null, 'メニュー')));
+    // 撮影中の大きなワイプ（中・大）。ボタンに重ならないよう、横長の画面なら右側・縦長なら上に置く（置き場所と大きさは layoutWipe）
+    L.wipeVid = h('video', { class: 'wipev', muted: true, playsinline: true, autoplay: true });
+    L.wipeVid.muted = true; L.wipeVid.playsInline = true;
+    L.wipeTag = h('span', { class: 'wipetag', id: 'wipeTag' });
+    L.wipeSmall = h('button', { class: 'wipesz', id: 'btnWipeSmall', 'aria-label': 'ワイプを小さくする', onclick: () => setWipe(-1) }, '－');
+    L.wipeBig = h('button', { class: 'wipesz', id: 'btnWipeBig', 'aria-label': 'ワイプを大きくする', onclick: () => setWipe(1) }, '＋');
+    L.wipeBox = h('div', { class: 'wipebox', id: 'wipeBox' },
+      h('button', { class: 'wipeopen', id: 'btnWipe', 'aria-label': '撮影の画面を開く', onclick: openCamera }, L.wipeVid),
+      L.wipeTag, h('div', { class: 'wipectl' }, L.wipeSmall, L.wipeBig));
+    L.wipe = h('aside', { class: 'wipe', id: 'wipe', hidden: true, 'aria-label': 'カメラの映像' }, L.wipeBox);
     const P = L.panelsEl = h('main', { class: 'panels' }, [0, 1].map(buildPanel));
-    P.addEventListener('click', onPanelClick);
     L.cover = h('div', { class: 'cover', id: 'cover', hidden: true });
     // 画面の下：パスミス・★（チーム・選手は決めない）と、いま記録したもの・取り消す
     const gbtn = (type, id, label, sub) => {
@@ -2095,7 +2250,8 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     };
     L.last = h('div', { class: 'lastbar', id: 'lastbar' });
     L.gbar = h('footer', { class: 'gbar' }, gbtn('pass', 'btnPass', 'パスミス'), gbtn('mark', 'btnMark', '★', 'あとで見る'), L.last);
-    L.root = h('div', { class: 'live' }, bar, h('div', { class: 'stagewrap' }, P, L.cover), L.gbar);
+    L.root = h('div', { class: 'live' }, bar, L.wipe, h('div', { class: 'stagewrap' }, P, L.cover), L.gbar);
+    L.root.addEventListener('click', onPanelClick);        // 選手のボタン（相手チームの枠は、ワイプ「特大」で映像の下に移るので、記録の画面全体で受ける）
     V.append(L.root);
     updateLive();
     layoutLive();
@@ -2143,9 +2299,17 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     const L = S.L;
     if (!L || !L.root || !L.root.isConnected) return;
     const live = L.root, P = L.panelsEl;
-    live.classList.toggle('short', root.innerHeight < 430);
-    const plan = BT.planLayout(P.clientWidth, P.clientHeight, [L.panels[0].n, L.panels[1].n], L.panels[0].head.offsetHeight || 22);
-    live.classList.toggle('lay-side', plan.arr === 'side');
+    live.classList.toggle('short', (live.clientHeight || root.innerHeight) < 430);
+    layoutWipe();
+    const n = [L.panels[0].n, L.panels[1].n], headH = L.panels[0].head.offsetHeight || 22;
+    let plan;
+    if (L.oppMoved) {
+      // ワイプ「特大」：自分のチームは残りの広さに・相手チームは映像の下の枠に、それぞれ並べる
+      const os = L.panels[1].sec;
+      const teams = [BT.planTeam(P.clientWidth - 2 * BT.LAYOUT.pad, P.clientHeight, n[0], headH, 3), BT.planTeam(os.offsetWidth, os.offsetHeight, n[1], headH, 4)];
+      plan = { arr: 'x', teams, scroll: teams.some((t) => t.scroll) };
+    } else plan = BT.planLayout(P.clientWidth, P.clientHeight, n, headH);
+    live.classList.toggle('lay-side', plan.arr !== 'stack');
     live.classList.toggle('lay-stack', plan.arr === 'stack');
     L.plan = plan;
     plan.teams.forEach((T, tm) => {
@@ -2203,6 +2367,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     if (!L) return;
     const started = !!g.startedAt, ended = !!g.endedAt;
     L.start.hidden = started;
+    { const lab = camOn() && !camRec() ? '● 録画＋スタート' : '▶ スタート'; if (L.start.textContent !== lab) L.start.textContent = lab; L.start.classList.toggle('rec', camOn() && !camRec()); }
     L.clock.hidden = !started;
     L.clock.classList.toggle('ended', ended);
     tickClock(true);
@@ -2222,10 +2387,12 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     // スタートの前・試合が終わったあとは、パネルの上に大きなボタンを出す
     L.cover.innerHTML = '';
     if (!started) {
+      const cam = camOn(), recNow = camRec();
       L.cover.append(h('div', { class: 'cover-card' },
-        h('button', { class: 'startbig', id: 'btnStartBig', onclick: start }, '▶ スタート'),
+        h('button', { class: 'startbig' + (cam && !recNow ? ' recstart' : ''), id: 'btnStartBig', onclick: start },
+          cam ? (recNow ? '▶ 記録をスタート' : [h('span', { class: 'rdot' }), '録画と記録をスタート']) : '▶ スタート'),
         h('p', null, h('b', null, 'ティップオフ（試合開始のジャンプボール）の瞬間'), 'に押してください。'),
-        h('p', { class: 'note' }, '時計が動き出し、そこからの時間でプレーを記録します。あとで動画と合わせるときの目印にもなります。'),
+        h('p', { class: 'note' }, cam ? (recNow ? '録画中です。押すと、記録の時計が動き出します（録画は続けたまま）。' : '押した瞬間に、録画と記録の時計が同時に始まります。') : '時計が動き出し、そこからの時間でプレーを記録します。あとで動画と合わせるときの目印にもなります。'),
         coverCam(),
         h('button', { class: 'btn small', onclick: openPeriod }, `${BT.periodLabel(g.startPeriod || 1)} から始める（変える）`)));
     } else if (ended) {
@@ -2252,6 +2419,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     if (camRec() && S.camSheet) S.camSheet.draw(true);
     if (S.view !== 'live' || !S.game || !S.L) return;
     tickClock();
+    if (camRec() && !S.L.wipe.hidden) wipeTag();
   }
 
   /* 記録の画面のお知らせ：ボタンを隠さないよう、画面の下（いま記録したものの所）に出す（ほかの画面・小窓の上では、ふつうのお知らせ） */
@@ -2347,7 +2515,11 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     save();
     updateLive();
     // 撮影していたら、録画を止めて仕上げ、カメラを閉じる
-    if (camOn()) { say('動画を仕上げています…', '', 15000); await camClose(); say(videoCount(g) ? '動画を保存しました' : '試合を終えました', 'ok', 3000); }
+    if (camOn()) {
+      say('動画を仕上げています…', '', 15000);
+      const v = await camClose();
+      if (!(v && v.rotateLost)) say(videoCount(g) ? '動画を保存しました' : '試合を終えました', 'ok', 3000);      // （向きを書けなかった知らせは消さない）
+    }
     BT.ui.keepAwake(false);
     updateLive();
     openStats();
@@ -2496,7 +2668,9 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     S.camBusy = true;
     try {
       if (!S.cam || !S.cam.live()) { if (!(await camOpen())) return; }
-      await S.cam.start({ gameId: g.id, n: (g.videos || []).length + 1, base: BT.fileBase(g) });
+      const [w, h] = rawDims();
+      S.camRawLand = w && h ? w >= h : null;          // 録画を始めたときの映像の向き（途中で向きが変わったら、別の動画にする）
+      await S.cam.start({ gameId: g.id, n: (g.videos || []).length + 1, base: BT.fileBase(g), rotate: effRot() });
       BT.store.persist();
       BT.ui.keepAwake(true);
       guard();
@@ -2510,22 +2684,31 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     try {
       const v = await S.cam.stop();
       if (v && v.empty) say('録画が短すぎて、動画にできませんでした', 'warn', 4000);
+      else if (v && v.rotateLost) say(`動画${v.n}を保存しました。ただし、このブラウザでは動画に向きを書けなかったので、横倒しのまま再生されます`, 'warn', 9000);
       else if (!quiet && v) say(`動画${v.n}を保存しました（${BT.fmtTime(v.duration || 0)}・${mb(v.bytes)}）`, 'ok', 4000);
       return v;
     } finally { S.camBusy = false; updateCamUI(); if (S.L) updateLive(); }
   }
   async function camClose() {
-    if (!S.cam) return;
-    await camStop(true);
+    if (!S.cam) return null;
+    const v = await camStop(true);
     await S.cam.close();
     updateCamUI();
+    return v;
   }
   /* 画面を離れていた（ほかのアプリ・画面を消した）あと：その間は録画が止まっていることがあるので、新しい動画として続ける */
-  async function camSplit() {
+  async function camSplit(msg) {
     if (!camRec() || S.camBusy) return;
     await camStop(true);
     await camStart();
-    if (camRec()) say('画面を離れていた間は、録画が止まっていたかもしれないので、ここから新しい動画として録画しています', 'warn', 7000);
+    if (camRec()) say(msg || '画面を離れていた間は、録画が止まっていたかもしれないので、ここから新しい動画として録画しています', 'warn', 7000);
+  }
+  /* 映像の大きさ（向き）が変わった：iPhone などを回した。録画中なら、ここから別の動画にする（1本の動画の中で向きが変わらないように） */
+  function onCamResize() {
+    updateCamUI();
+    if (!camRec() || S.camBusy || S.camRawLand == null) return;
+    const [w, h] = rawDims();
+    if (w && h && (w >= h) !== S.camRawLand) camSplit('映像の向きが変わったので、ここから新しい動画として録画しています');
   }
   async function onCamLost() {
     if (camRec()) await camStop(true);
@@ -2533,15 +2716,215 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     say('カメラが止まりました（ほかのアプリが使った など）。≡ メニューの「撮影」から再開できます', 'warn', 8000);
   }
   /* 上の帯の小さな映像・撮影の画面の表示を書き換える（progress：数字だけ） */
+  /* ---------- 撮る向き ----------
+     ・ふつうは、端末を横に向ければ、画面も映像も横になる（画面の向きのロックを外しているとき）
+     ・画面の向きのロックをしたまま横に倒すと、画面は縦のまま・映像は横倒しで届く。そのときは「アプリごと横向き」：
+       アプリの画面を CSS で 90° 回し（uiRot）、録画には「回して映す」向きを書く（fmp4 の行列。中身は回さない）
+     ・それでも映像の向きが合わないとき（端末による違い）は「↻ 映像を回す」で直す（見えている小さな映像が、録れる動画の向き） */
+  const rotActive = () => ['90', '270'].includes(document.documentElement.dataset.rot || '');
+  /* 録画に書く向き（時計回りの角度） */
+  function effRot() {
+    if (rotActive()) return S.prefs.camRotF != null ? S.prefs.camRotF : S.prefs.uiRot === 90 ? 270 : 90;
+    return S.prefs.camRot || 0;
+  }
+  /* カメラから届く映像の大きさ（回す前） */
+  function rawDims() {
+    const v = S.L && S.L.camThumb;
+    if (v && v.videoWidth && v.videoHeight) return [v.videoWidth, v.videoHeight];
+    const st = S.cam ? S.cam.settings() : {};
+    return [st.width || 0, st.height || 0];
+  }
+  /* 録れる動画の向きが、選んだ向き（横・縦）と合っているか */
+  function orientOK() {
+    const [w0, h0] = rawDims();
+    if (!w0 || !h0) return true;
+    const [w, h] = effRot() % 180 ? [h0, w0] : [w0, h0];
+    return S.prefs.camOrient === 'port' ? h >= w : w >= h;
+  }
+  /* アプリごと横向き：記録の画面で、撮影中、端末が縦（画面の向きのロック）のときだけ */
+  function applyRot() {
+    const de = document.documentElement;
+    const want = S.view === 'live' && camOn() && S.prefs.uiRot && root.innerHeight > root.innerWidth ? S.prefs.uiRot : 0;
+    const before = de.dataset.rot || '';
+    if (want) { de.dataset.rot = String(want); de.style.setProperty('--rvw', root.innerWidth + 'px'); de.style.setProperty('--rvh', root.innerHeight + 'px'); } else delete de.dataset.rot;
+    if ((de.dataset.rot || '') !== before && S.L) layoutLive();      // 画面の縦横が入れかわったので、並べ直す
+  }
+  function setUiRot(r) {
+    if (camRec()) { say('録画を止めると変えられます', 'warn'); return; }
+    S.prefs.uiRot = r; S.prefs.camRotF = null; savePrefs();
+    applyRot(); layoutLive(); updateCamUI(); if (S.L) updateLive();
+  }
+  function turnVideo() {
+    if (camRec()) { say('録画を止めると変えられます', 'warn'); return; }
+    const next = (effRot() + 90) % 360;
+    if (rotActive()) S.prefs.camRotF = next; else S.prefs.camRot = next;
+    savePrefs(); updateCamUI(); if (S.L) updateLive();
+  }
+  /* 小さな映像・大きな映像を、録れる動画の向きに回して、入れ物いっぱいに映す */
+  function fitPreview(box, video, rot, cover) {
+    if (!box || !video) return;
+    const bw = box.clientWidth, bh = box.clientHeight;
+    if (!bw || !bh) return;
+    const side = rot % 180 !== 0;
+    video.style.width = (side ? bh : bw) + 'px';
+    video.style.height = (side ? bw : bh) + 'px';
+    video.style.objectFit = cover ? 'cover' : 'contain';
+    video.style.transform = `translate(-50%, -50%) rotate(${rot}deg)`;
+  }
+  /* ---------- 大きなワイプ（中・大） ----------
+     記録の画面に、カメラの映像を大きく映す。選手のボタンに重ならないよう、映像の場所を先に取り、
+     ボタンは残りの広さで並べ直す（planLayout。ボタンは少し小さくなる）。
+       横長の画面（iPad・スマホの横向き）：右側の列。下の帯（パスミス・★・いま記録したもの）も映像の下へ移し、ボタンの行に高さを回す
+       縦長の画面：上の帯の下（縦長の動画なら右側の列）
+     映像の面積は、記録の画面の 中 約 10%・大 約 20%（横は画面の 45% まで・縦は残りの高さに収まるまで）。
+     中は、選手のボタンの行が縦にすべるようになるなら、すべらない大きさまで小さくする（大は、すべっても大きく）。小は、上の帯の中の小さな映像。
+     特大は、相手チームの枠を小さくして映像の下に置き、その列（帯）いっぱいに映像を映す。自分のチームは残りの広さに */
+  const WIPES = ['s', 'm', 'l', 'x'];
+  const WIPE_AREA = { m: 0.1, l: 0.2 };
+  const wipeSize = () => (S.view === 'live' && camOn() && S.cam.stream && ['m', 'l', 'x'].includes(S.prefs.camWipe) ? S.prefs.camWipe : null);
+  /* 相手チームの枠を、ワイプの中（特大）か、ふつうの場所（2チームの並び）に置く */
+  function placeOpp(inWipe) {
+    const L = S.L, sec = L.panels[1].sec;
+    L.oppMoved = inWipe;
+    if (!inWipe) { sec.style.height = ''; sec.classList.remove('oppone'); }
+    if (sec.parentNode !== (inWipe ? L.wipe : L.panelsEl)) (inWipe ? L.wipe : L.panelsEl).append(sec);
+  }
+  const shownRot = () => (camRec() && S.cam.seg ? S.cam.seg.rotate : effRot());        // 映す向き（録画中は、その動画の向き）
+  /* 録れる動画の、横÷縦 */
+  function wipeAr() {
+    const [w0, h0] = rawDims();
+    return w0 && h0 ? (shownRot() % 180 ? h0 / w0 : w0 / h0) : 16 / 9;
+  }
+  const wipeKey = () => { const sz = wipeSize(); return sz ? sz + ':' + wipeAr().toFixed(3) : ''; };
+  function layoutWipe() {
+    const L = S.L, live = L.root, sz = wipeSize();
+    L.wipeKey = wipeKey();
+    L.wipeOn = false; L.wipeFallback = false;
+    const off = () => { ['side', 'col', 'top', 'x'].forEach((m) => live.classList.remove('dk-' + m)); L.wipe.hidden = true; };
+    off();
+    if (sz !== 'x') placeOpp(false);
+    if (!sz) return;
+    const K = BT.LAYOUT;
+    const ar = wipeAr();
+    const lc = getComputedStyle(live);
+    const W = live.clientWidth - parseFloat(lc.paddingLeft) - parseFloat(lc.paddingRight);
+    const H = live.clientHeight - parseFloat(lc.paddingTop) - parseFloat(lc.paddingBottom);
+    const barH = L.bar.offsetHeight, gH0 = L.gbar.offsetHeight;          // ワイプがないときの、上の帯・下の帯の高さ
+    const x = sz === 'x';
+    const mode = W >= H ? 'side' : !x && ar < 1 ? 'col' : 'top';
+    live.classList.add('dk-' + mode);
+    if (x) { live.classList.add('dk-x'); placeOpp(true); }
+    if (x) L.panels[1].sec.classList.toggle('oppone', L.panels[1].n <= 1);     // 相手チームが1行だけ（名簿なし）
+    L.wipe.hidden = false;
+    const gH = L.gbar.offsetHeight;                                      // 横長の画面では、下の帯はワイプの下の列に移る（高さが変わる）
+    const wc = getComputedStyle(L.wipe);
+    const padX = parseFloat(wc.paddingLeft) + parseFloat(wc.paddingRight), padY = parseFloat(wc.paddingTop) + parseFloat(wc.paddingBottom);
+    const gap = parseFloat(wc.columnGap || wc.gap) || 0;                 // 特大：映像と相手チームの枠のすきま
+    const n = [L.panels[0].n, L.panels[1].n], headH = L.panels[0].head.offsetHeight || 22;
+    const rest = H - barH - gH - padY;
+    const MINW = 120;
+    let vw;
+    if (x) {
+      // 特大：映像と、その下に相手チームの枠（小さく。名簿なしなら1行・名簿ありでも2行は見せて、あとは縦にすべらせる）。
+      // 横長の画面は右の列（上の帯の下から画面の下まで。下の帯は自分のチームの下）、縦長の画面は上の帯の下の帯
+      const oppH = 2 * K.border + headH + 2 * K.rpad + (n[1] <= 1 ? 32 : 2 * 32 + K.rgap);
+      let fits;
+      if (mode === 'side') {
+        // 列の幅は画面の 55% まで（相手チームが1行だけなら 62% まで。相手の枠に空きを作らず、映像を大きく）
+        vw = Math.min(W * (n[1] <= 1 ? 0.62 : 0.55) - padX, Math.max(60, H - barH - padY - gap - oppH) * ar);
+        fits = (w) => !BT.planTeam(W - w - padX - 2 * K.pad, H - barH - gH, n[0], headH, 3).scroll;
+      } else {
+        vw = Math.min(W - padX, Math.max(60, rest * 0.4) * ar);
+        fits = (w) => !BT.planTeam(W - 2 * K.pad, rest - w / ar - gap - oppH, n[0], headH, 3).scroll;
+      }
+      vw = Math.max(MINW, vw);
+      // 自分のチームの行が縦にすべるようになるなら、すべらない大きさまで映像を小さく（もともとすべるなら、そのまま）
+      if (!fits(vw) && fits(MINW)) {
+        let a = MINW, b = vw;
+        for (let i = 0; i < 10; i++) { const mid = (a + b) / 2; if (fits(mid)) a = mid; else b = mid; }
+        vw = a;
+      }
+      L.oppH = oppH;
+      if (mode === 'top') {
+        // 縦長の画面：残りの高さに余裕があれば、相手チームの行を多めに見せる（残りの 30% まで。自分のチームの行がすべらない範囲で）
+        const free = rest - vw / ar - gap;
+        for (let hh = Math.max(oppH, free * 0.3); hh > oppH; hh -= 8) {
+          if (!BT.planTeam(W - 2 * K.pad, free - hh, n[0], headH, 3).scroll) { L.oppH = hh; break; }
+        }
+      }
+    } else {
+      const maxW = (mode === 'top' ? W : W * 0.45) - padX;
+      const maxH = mode === 'top' ? Math.min(rest * 0.4, rest - 120) : rest;
+      vw = Math.max(MINW, Math.min(Math.sqrt(WIPE_AREA[sz] * W * H * ar), maxW, Math.max(60, maxH) * ar));
+      if (sz === 'm') {
+        // 中：選手のボタンの行が縦にすべるようにならない（もともとすべるときは、ボタンが小さくなりすぎない）大きさまで。
+        // ボタンの並べ方は、残りの広さで planLayout を試して決める
+        const planFor = (w) => BT.planLayout(mode === 'top' ? W : W - w - padX, mode === 'side' ? H - barH : H - barH - gH - (mode === 'top' ? w / ar + padY : 0), n, headH);
+        const base = BT.planLayout(W, H - barH - gH0, n, headH);
+        const fits = (w) => { const p = planFor(w); return (base.scroll || !p.scroll) && p.size >= Math.min(base.size, 28); };
+        if (!fits(vw)) {
+          // いちばん小さくしても入らない（小さなスマホに、2チームとも大勢）：上の帯の小さな映像のまま（撮影の画面で、わけを知らせる）
+          if (!fits(MINW)) { off(); L.wipeFallback = true; return; }
+          let lo = MINW, hi = vw;
+          for (let i = 0; i < 10; i++) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
+          vw = lo;
+        }
+      }
+    }
+    L.wipeOn = true;
+    L.wipeBox.classList.toggle('tiny', vw < 220);          // 小さめのワイプ：「－」「＋」も小さく
+    L.wipeBox.style.width = Math.floor(vw) + 'px';
+    L.wipeBox.style.height = Math.floor(vw / ar) + 'px';
+    // 縦長の画面の特大：相手チームの枠の高さを決めておく（中身の行の数で、帯が伸びないように）
+    L.panels[1].sec.style.height = x && mode === 'top' ? Math.round(L.oppH) + 'px' : '';
+    fitPreview(L.wipeBox, L.wipeVid, shownRot(), true);
+  }
+  /* ワイプの大きさを変える（v：'s' | 'm' | 'l'、または ＋1・−1） */
+  function setWipe(v) {
+    const cur = Math.max(0, WIPES.indexOf(S.prefs.camWipe));
+    const next = typeof v === 'number' ? WIPES[BT.clamp(cur + v, 0, WIPES.length - 1)] : v;
+    if (!WIPES.includes(next) || next === S.prefs.camWipe) return;
+    S.prefs.camWipe = next;
+    savePrefs();
+    layoutLive();
+    updateCamUI();
+    if (next === 's' && S.L && !S.camSheet) say('ワイプを小さくしました（上の帯の映像を押すと、撮影の画面で大きくできます）', 'ok', 4000);
+    if (next === 'x' && S.L && !S.camSheet) say('特大：相手チームの欄を小さくして、映像の下に移しました', 'ok', 4500);
+  }
+  /* ワイプの左下：録画中なら、録画の時間 */
+  function wipeTag() {
+    const t = S.L.wipeTag, rec = camRec();
+    const s = rec ? `● 録画 ${BT.fmtTime(S.cam.elapsed())}` : S.camBusy || S.cam.state === 'finishing' ? '仕上げ中…' : '録画していません';
+    if (t.textContent !== s) t.textContent = s;
+    t.classList.toggle('rec', rec);
+  }
   function updateCamUI(progress) {
     const L = S.L;
+    applyRot();
     if (L && L.camBtn) {
-      const on = camOn() && S.cam.stream;
-      L.camBtn.hidden = !on;
+      const on = !!(camOn() && S.cam.stream);
+      if (wipeKey() !== L.wipeKey) layoutLive();        // ワイプが出た・消えた・大きさや縦横が変わった：置き場所とボタンの並べ方をやり直す
+      const big = !!(on && L.wipeOn);
+      L.camBtn.hidden = !on || big;
       L.camBtn.classList.toggle('rec', camRec());
+      L.camBtn.classList.toggle('warn', on && !orientOK());
+      // 上の帯の小さな映像は、隠れていても映像をつないでおく（映像の大きさで、カメラの向きが変わったことが分かるため）
       if (on && L.camThumb.srcObject !== S.cam.stream) { L.camThumb.srcObject = S.cam.stream; L.camThumb.muted = true; const p = L.camThumb.play(); if (p && p.catch) p.catch(() => {}); }
       if (!on && L.camThumb.srcObject) L.camThumb.srcObject = null;
-      if (on) { const st = S.cam.settings(); if (st.width && st.height) L.camBtn.style.setProperty('--ar', String(st.width / st.height)); }
+      if (on && !big) {
+        const [w, h] = rawDims();
+        const rot = shownRot();
+        if (w && h) L.camBtn.style.setProperty('--ar', String(rot % 180 ? h / w : w / h));
+        fitPreview(L.camBtn, L.camThumb, rot, true);
+      }
+      if (big) {
+        if (L.wipeVid.srcObject !== S.cam.stream) { L.wipeVid.srcObject = S.cam.stream; L.wipeVid.muted = true; const p = L.wipeVid.play(); if (p && p.catch) p.catch(() => {}); }
+        L.wipeBox.classList.toggle('rec', camRec());
+        L.wipeBox.classList.toggle('warn', !orientOK());
+        L.wipeBig.disabled = S.prefs.camWipe === 'x';
+        wipeTag();
+        fitPreview(L.wipeBox, L.wipeVid, shownRot(), true);
+      } else if (L.wipeVid.srcObject) L.wipeVid.srcObject = null;
     }
     if (S.camSheet) S.camSheet.draw(progress);
   }
@@ -2553,56 +2936,124 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     const hours = free / 1e9 / q.perHour;
     return `空き ${mb(free)}（${q.label.replace(/（.*/, '')} で約 ${hours >= 10 ? Math.floor(hours) : hours.toFixed(1)} 時間）${hours < 1.2 ? '・⚠ 1試合ぶん入らないかもしれません' : ''}`;
   }
-  /* 撮影の画面（大きな映像・録画を始める／止める・空き容量） */
+  /* 撮影の画面（大きな映像・撮る向き・録画と記録を同時にスタート・録画を始める／止める・空き容量） */
   async function openCamera() {
     if (!camOn() && !(await camOpen())) return;
     const C = S.cam;
     const big = h('video', { class: 'campv', muted: true, playsinline: true, autoplay: true });
     big.muted = true; big.playsInline = true; big.srcObject = C.stream;
     { const p = big.play(); if (p && p.catch) p.catch(() => {}); }
+    const pvbox = h('div', { class: 'campvw' }, big);
     const stat = h('div', { class: 'camstat', id: 'camStat', role: 'status' });
     const info = h('div', { class: 'note', id: 'camInfo' });
+    const orient = h('div', { class: 'camorient', id: 'camOrient' });
+    const wipeRow = h('div', { class: 'row wiperow', id: 'camWipe' });
     const store = h('div', { class: 'note', id: 'camStore' });
-    const acts = h('div', { class: 'row camacts' });
+    const acts = h('div', { class: 'camacts' });
     let lastKey = '';
+    /* 大きな映像の入れ物：録れる動画の縦横の比で、画面に収まる大きさ */
+    const fitBig = () => {
+      const [w0, h0] = rawDims();
+      const rot = camRec() && S.cam.seg ? S.cam.seg.rotate : effRot();
+      const ar = w0 && h0 ? (rot % 180 ? h0 / w0 : w0 / h0) : 16 / 9;
+      const appH = (S.L && S.L.root && S.L.root.clientHeight) || root.innerHeight;
+      const maxW = pvbox.parentNode ? pvbox.parentNode.clientWidth : 600, maxH = Math.max(140, appH * 0.42);
+      let bw = maxW, bh = bw / ar;
+      if (bh > maxH) { bh = maxH; bw = bh * ar; }
+      pvbox.style.width = Math.round(bw) + 'px'; pvbox.style.height = Math.round(bh) + 'px';
+      fitPreview(pvbox, big, rot, false);
+    };
     const draw = (progress) => {
       if (!S.cam) return;
       const rec = camRec(), busy = !!S.camBusy || S.cam.state === 'finishing';
-      const seg = S.cam.seg;
+      const seg = S.cam.seg, started = !!S.game.startedAt, ended = !!S.game.endedAt;
       stat.className = 'camstat' + (rec ? ' rec' : '');
       stat.textContent = busy && !rec ? '動画を仕上げています…' : rec ? `● 録画中 ${BT.fmtTime(S.cam.elapsed())}・${mb(seg ? seg.bytes : 0)}（動画${seg ? seg.n : ''}）` : S.cam.state === 'off' ? 'カメラは切れています' : 'カメラの準備ができています（まだ録画していません）';
-      const st = S.cam.settings();
-      info.textContent = `${st.width || '?'}×${st.height || '?'}・${S.cam.opts && S.cam.opts.audio ? '音あり' : '音なし'}${st.width && st.height && st.width < st.height ? '・⚠ 縦向きで撮っています。コート全体を撮るなら、端末を横向きにしてから録画を始めてください' : ''}`;
+      const [w0, h0] = rawDims();
+      const rot = rec && seg ? seg.rotate : effRot();
+      const [w, hh] = rot % 180 ? [h0, w0] : [w0, h0];
+      info.textContent = `${w || '?'}×${hh || '?'}（${w >= hh ? '横向き' : '縦向き'}）・${S.cam.opts && S.cam.opts.audio ? '音あり' : '音なし'}`;
+      fitBig();
       if (progress) return;
-      const key = [rec, busy, S.cam.state, !!S.game.startedAt].join();
+      const ok = orientOK(), land = S.prefs.camOrient !== 'port';
+      const fb = !!(S.L && S.L.wipeFallback);
+      const key = [rec, busy, S.cam.state, started, ended, ok, land, rotActive(), S.prefs.uiRot, rot, S.prefs.camWipe, fb].join();
       if (key === lastKey) return;
       lastKey = key;
+      // 記録の画面のワイプ（カメラの映像）の大きさ
+      wipeRow.innerHTML = '';
+      wipeRow.append(h('b', null, 'ワイプの大きさ'),
+        ...[['s', '小'], ['m', '中'], ['l', '大'], ['x', '特大']].map(([v, lab]) => h('button', { class: 'btn small' + ((S.prefs.camWipe || 'm') === v ? ' on' : ''), dataset: { wipe: v }, 'aria-pressed': String((S.prefs.camWipe || 'm') === v), onclick: () => setWipe(v) }, lab)),
+        h('span', { class: 'note' }, fb
+          ? 'この画面の大きさと人数では、中にすると選手のボタンが入りきらないので、上の帯に小さく映しています。大にすると大きく映せます（行を縦にすべらせて選びます）'
+          : '記録の画面に映す映像。中・大は、選手のボタンに重ならない所に出します（中はボタンの行がすべらない大きさまで・大はもっと大きく）。特大は、相手チームの欄を小さくして映像の下に移し、その分、映像を大きく映します（自分のチームのボタンは広いまま）'));
+      // 撮る向き
+      orient.innerHTML = '';
+      orient.append(h('div', { class: 'row' }, h('b', null, '撮る向き'),
+        [['land', '横向き（コート全体）'], ['port', '縦向き']].map(([v, lab]) => h('button', { class: 'btn small' + ((S.prefs.camOrient || 'land') === v ? ' on' : ''), dataset: { orient: v }, disabled: rec,
+          onclick: () => { S.prefs.camOrient = v; if (v === 'port') S.prefs.uiRot = 0; savePrefs(); applyRot(); layoutLive(); updateCamUI(); if (S.L) updateLive(); } }, lab))));
+      if (rotActive()) {
+        orient.append(h('div', { class: 'orientbox ok' },
+          h('p', null, `📱 アプリごと横向きにしています（スマホの上側を${S.prefs.uiRot === 90 ? '左' : '右'}に向けて使う）。画面の文字がさかさまなら、反対向きを選んでください。`),
+          h('div', { class: 'row' },
+            h('button', { class: 'btn small', id: 'btnRotFlip', disabled: rec, onclick: () => setUiRot(S.prefs.uiRot === 90 ? 270 : 90) }, '上下を入れかえる'),
+            h('button', { class: 'btn small', id: 'btnRotOff', disabled: rec, onclick: () => setUiRot(0) }, '元に戻す（縦の画面）'))));
+      } else if (!ok) {
+        orient.append(h('div', { class: 'orientbox warn', id: 'orientWarn' },
+          h('p', null, h('b', null, land ? '⚠ いまは縦向きの映像です。スマホを横向きにしてください。' : '⚠ いまは横向きの映像です。端末を縦向きにしてください。')),
+          land ? [
+            h('p', { class: 'note' }, '横にしても画面が回らないとき（画面の向きのロック中）は、アプリごと横向きにできます：'),
+            h('div', { class: 'row' },
+              h('button', { class: 'btn', id: 'btnRot90', disabled: rec, onclick: () => setUiRot(90) }, '⟲ 上側を左にして使う'),
+              h('button', { class: 'btn', id: 'btnRot270', disabled: rec, onclick: () => setUiRot(270) }, '⟳ 上側を右にして使う'))
+          ] : null));
+      }
+      orient.append(h('div', { class: 'row turnrow' },
+        h('span', { class: 'note' }, '上の映像の向きが、録れる動画の向きです。横倒し・さかさまのときは'),
+        h('button', { class: 'btn small', id: 'btnTurn', disabled: rec, onclick: turnVideo }, '↻ 映像を回す')));
+      // 回して映す向きは、MP4 の目次に書く。WebM（Firefox など）には書けないので、先に知らせる
+      if (rot && /webm/.test(rec && seg ? seg.mime : BT.camera.pickMime(!!(S.cam.opts && S.cam.opts.audio)))) {
+        orient.append(h('p', { class: 'orientbox warn', id: 'rotWebm' }, '⚠ このブラウザの録画（WebM）には向きを書けないので、動画は横倒しのまま保存されます。画面の向きのロックを外して端末を横にするか、Safari・Chrome で開いてください。'));
+      }
+      if (rec) orient.append(h('p', { class: 'note' }, '向きは、録画を止めると変えられます。'));
+      // ボタン
       acts.innerHTML = '';
-      if (rec) acts.append(h('button', { class: 'btn danger-fill', id: 'btnCamStop', disabled: busy, onclick: () => camStop() }, '■ 録画を止める'));
-      else if (S.cam.state !== 'off') acts.append(h('button', { class: 'btn recbtn', id: 'btnCamRec', disabled: busy, onclick: () => camStart() }, '● 録画を始める'),
-        h('button', { class: 'btn', id: 'btnCamOff', disabled: busy, onclick: () => { camClose().then(() => BT.ui.closeSheet()); } }, 'カメラを切る'));
+      if (rec) {
+        if (!started) acts.append(h('button', { class: 'btn startboth', id: 'btnCamBoth', onclick: () => { BT.ui.closeSheet(); start(); } }, '▶ 記録もスタート（ティップオフで押す）'));
+        acts.append(h('button', { class: 'btn danger-fill', id: 'btnCamStop', disabled: busy, onclick: () => camStop() }, '■ 録画を止める'));
+      } else if (S.cam.state !== 'off') {
+        if (!started) {
+          acts.append(h('button', { class: 'btn startboth rec', id: 'btnCamBoth', disabled: busy, onclick: () => { BT.ui.closeSheet(); start(); } }, h('span', { class: 'rdot' }), '録画と記録を同時にスタート'),
+            h('p', { class: 'note bothnote' }, 'ティップオフ（試合開始のジャンプボール）の瞬間に押すと、録画と記録の時計が同時に始まります。'));
+        }
+        acts.append(h('div', { class: 'row' },
+          h('button', { class: 'btn' + (started ? ' recbtn' : ''), id: 'btnCamRec', disabled: busy || ended, onclick: () => camStart() }, started ? '● 録画を始める' : '● 録画だけ先に始める（ウォーミングアップから撮る）'),
+          h('button', { class: 'btn', id: 'btnCamOff', disabled: busy, onclick: () => { camClose().then(() => BT.ui.closeSheet()); } }, 'カメラを切る')));
+      }
     };
     S.camSheet = { draw };
+    big.addEventListener('resize', () => draw());
     BT.ui.sheet({
       title: '📹 撮影しながら記録', cls: 'camsheet',
-      body: h('div', null, big, stat, info, acts, store,
+      body: h('div', null, pvbox, stat, info, wipeRow, orient, acts, store,
         h('ul', { class: 'camnotes note' },
-          h('li', null, S.game.startedAt ? '録画を止めて、また始めると、別の動画になります（どれも、記録と時刻が合っています）' : '試合の「▶ スタート」を押すと、録画も自動で始まります（ウォーミングアップから撮るなら、先に「● 録画を始める」）'),
           h('li', null, '「試合を終える」で、録画も止まります。動画はこの端末（このブラウザ）に保存され、終わったあと「🎬 場面を切り出す」で、そのまま「バスケ得点クリップ」で開けます'),
+          h('li', null, '録画を止めて、また始めると、別の動画になります（どれも、記録と時刻が合っています）'),
           h('li', null, 'ほかのアプリに切りかえたり、画面を消したりすると、録画は止まります（戻ると、新しい動画として続けます）'),
           h('li', null, '電池をたくさん使います。電源につないでおくと安心です'))),
       onClose: () => { big.srcObject = null; S.camSheet = null; }
     });
     draw();
+    requestAnimationFrame(() => draw());
     storageText().then((t) => { store.textContent = t; });
   }
-  /* スタート前の札の中：撮影の準備 */
+  /* スタート前の札の中：撮影 */
   function coverCam() {
     if (!BT.camera.supported()) return null;
-    if (!camOn()) return h('button', { class: 'btn small', id: 'btnCamOn', onclick: openCamera }, '📹 撮影しながら記録する（この端末のカメラ）');
-    return h('div', { class: 'covercam' + (camRec() ? ' rec' : '') },
-      h('span', null, camRec() ? '● 録画中（スタートを押すと、記録も始まります）' : '📹 カメラの準備OK。スタートを押すと、録画も始まります'),
-      h('button', { class: 'btn small', onclick: openCamera }, '撮影の画面'));
+    if (!camOn()) return h('button', { class: 'btn camon', id: 'btnCamOn', onclick: openCamera }, '📹 撮影しながら記録する（この端末のカメラ）');
+    return h('div', { class: 'covercam' + (camRec() ? ' rec' : '') + (orientOK() ? '' : ' warn') },
+      h('span', null, !orientOK() ? '⚠ 縦向きの映像です（撮影の画面で向きを設定）' : camRec() ? `● 録画中 ${BT.fmtTime(S.cam.elapsed())}` : '📹 カメラの準備OK'),
+      h('button', { class: 'btn small', id: 'btnCamSheet', onclick: openCamera }, '撮影の画面'));
   }
   /* 撮影した動画の一覧（試合のあと・書き出す） */
   function videoItems(g) {
@@ -2857,7 +3308,13 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
           h('li', null, '「≡ メニュー」→「記録の一覧」で、どの記録でも、チーム・番号・プレー・時刻を直したり消したりできます'),
           h('li', null, '名簿にない背番号は、チームの帯の「＋番号」で足せます')),
         h('h4', null, '撮影しながら記録する（この端末のカメラ）'),
-        h('p', null, '「📹 撮影しながら記録する」（スタート前の札・≡ メニュー）で、録画しながら同じ画面で記録できます。端末は横向きに。「▶ スタート」で録画も始まり、「試合を終える」で止まります。録画を始めた時刻が分かっているので、試合のあと「🎬 場面を切り出す」で、時刻あわせなしで場面を切り出せます。動画はこの端末の中に保存されます（「⬇ 保存」で写真・ファイルへ）。'),
+        h('p', null, '「📹 撮影しながら記録する」（スタート前の札・≡ メニュー）で、録画しながら同じ画面で記録できます。ティップオフの瞬間に、赤い「● 録画と記録をスタート」を押すと、録画と記録が同時に始まります（ウォーミングアップから撮るときは、撮影の画面の「● 録画だけ先に始める」）。「試合を終える」で録画も止まります。録画を始めた時刻が分かっているので、試合のあと「🎬 場面を切り出す」で、時刻あわせなしで場面を切り出せます。動画はこの端末の中に保存されます（「⬇ 保存」で写真・ファイルへ）。'),
+        h('ul', null,
+          h('li', null, h('b', null, '撮る向き'), '：撮影の画面で「横向き（コート全体）」か「縦向き」を選びます。横向きなら、端末を横にしてください'),
+          h('li', null, h('b', null, '画面の向きのロックをしたまま'), '横に置くときは、撮影の画面の「⟲ 上側を左にして使う」「⟳ 上側を右にして使う」で、アプリごと横向きになり、横向きの動画が録れます'),
+          h('li', null, '撮影の画面の映像の向きが、録れる動画の向きです。横倒し・さかさまのときは「↻ 映像を回す」で直せます'),
+          h('li', null, h('b', null, 'ワイプ（記録の画面のカメラの映像）'), '：映像の右上の「＋」「－」か、撮影の画面の「ワイプの大きさ」で、小・中・大・特大。中・大は、選手のボタンに重ならない所（横長の画面なら右側）に出し、ボタンは残りの広さに並べ直します。中は、ボタンの行が縦にすべらない大きさまで。大は、もっと大きく（人数が多いと、行を縦にすべらせて選びます）。映像を押すと撮影の画面'),
+          h('li', null, h('b', null, '特大'), '：相手チームの欄を小さくして映像の下に移し、その分、映像をいちばん大きく映します。自分のチームのボタンは広いまま（パスミス・★はその下）。相手の人数が多いと、相手の行は縦にすべらせて選びます')),
         h('h4', null, 'ピリオド'),
         h('p', null, '時計の右の「1Q」を押して、次のピリオドが始まる瞬間に「2Q を始める」。時計は止まらずに進みます（試合の時計ではなく、スタートからの時間です。動画と同じように進むので、あとで動画と合わせられます）。'),
         h('h4', null, '動画から場面を切り出す'),
@@ -2885,7 +3342,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && BT.ui.sheetOpen()) BT.ui.closeSheet(); });
     setInterval(tick, 200);
     let rq = 0;
-    const relayout = () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(layoutLive); };
+    const relayout = () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(() => { applyRot(); layoutLive(); updateCamUI(); }); };
     root.addEventListener('resize', relayout);
     root.addEventListener('orientationchange', () => setTimeout(relayout, 250));
     document.addEventListener('visibilitychange', () => {
@@ -2903,7 +3360,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
     else go('home');
   }
 
-  BT.app = { S, init, start, undo, redo, openMenu, openLog, openEdit, openStats, openExport, openSettings, openPeriod, openKeypad, endGame, reopen, newGame, go, resume, openCamera, camStart, camStop, camClose, camSplit };
+  BT.app = { S, init, start, undo, redo, openMenu, openLog, openEdit, openStats, openExport, openSettings, openPeriod, openKeypad, endGame, reopen, newGame, go, resume, openCamera, camStart, camStop, camClose, camSplit, setUiRot, turnVideo, effRot, orientOK, setWipe };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }
