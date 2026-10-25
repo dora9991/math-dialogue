@@ -1118,9 +1118,10 @@
     }
     // 重なった箱は、点数の高い方だけ（2つに分けた所の重なり）
     out.sort((a, b) => b.score - a.score);
-    const iou = (a, b) => { const x = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)), y = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)); const i = x * y; return i / (a.w * a.h + b.w * b.h - i || 1); };
+    // 重なりの割合（合わせた広さに対して）と、小さい方の箱が どれだけ入っているか（2つに分けた さかいめで切れた箱）
+    const ov = (a, b) => { const x = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)), y = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)); const i = x * y; return [i / (a.w * a.h + b.w * b.h - i || 1), i / (Math.min(a.w * a.h, b.w * b.h) || 1)]; };
     const keep = [];
-    for (const b of out) if (!keep.some((k) => iou(k, b) > 0.45)) keep.push(b);
+    for (const b of out) if (!keep.some((k) => { const [u, c] = ov(k, b); return u > 0.45 || c > 0.7; })) keep.push(b);
     return keep;
   }
   // 見つけた人 → { box, foot（画面）, x, y（コート m）, color }。コートの外の人は のぞく

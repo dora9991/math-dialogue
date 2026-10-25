@@ -454,8 +454,9 @@ const stOf = (r, k) => ((r.metrics || []).find((m) => m[0] === k) || [])[1];
     await page.waitForSelector('[data-ck="calibOk"]', { timeout: 5000 });
     await page.screenshot({ path: path.join(OUT, 'check-calib-done.png'), fullPage: true });
     // 画面の点 → コート：ほかの点も合うか（3P ラインのトップ・コーナー）
-    const Hm = await page.evaluate(() => BC.check._state().H);
-    const back = (p) => { const q = proj(p); const sx = 1; const w = Hm[6] * q[0] * (640 / 960) + Hm[7] * q[1] * (640 / 960) + Hm[8]; return [(Hm[0] * q[0] * (640 / 960) + Hm[1] * q[1] * (640 / 960) + Hm[2]) / w, (Hm[3] * q[0] * (640 / 960) + Hm[4] * q[1] * (640 / 960) + Hm[5]) / w]; };
+    const [Hm, workW] = await page.evaluate(() => [BC.check._state().H, BC.check._state().work.width]);
+    const k = workW / TEAM.W; // 動画の画素 → 作業用キャンバスの画素
+    const back = (p) => { const q = proj(p).map((v) => v * k); const w = Hm[6] * q[0] + Hm[7] * q[1] + Hm[8]; return [(Hm[0] * q[0] + Hm[1] * q[1] + Hm[2]) / w, (Hm[3] * q[0] + Hm[4] * q[1] + Hm[5]) / w]; };
     const calErr = Math.max(...[[0, 8.325], [-6.6, 0.5], [6.6, 0.5], [0, 14]].map((p) => { const q = back(p); return Math.hypot(q[0] - p[0], q[1] - p[1]); }));
     ok(calErr < 0.5, `コートの位置：タップ4点から、ほかの点も ${calErr.toFixed(2)}m 以内`);
     await page.click('[data-ck="calibOk"]');
