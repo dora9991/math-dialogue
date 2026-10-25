@@ -110,20 +110,22 @@ function linForm(r) {
   const L = line(Q(s * n, d), b);
   return { tex: ltex(L), a: L.a };
 }
-/** 一次関数でない式（TeX）：反比例の形か、定数 */
-function nonLinForm(r) {
-  const k = pick(r, [2, 3, 4, 5, 6, 8, 10, 12]), kind = r(0, 3);
-  if (kind === 0) return `y=\\frac{${k}}{x}`;
-  if (kind === 1) return `xy=${k}`;
-  if (kind === 2) return `y=${pick(r, [1, 2, 3, 5, 7, -2, -4])}`;
-  return `y=-\\frac{${k}}{x}`;
+/** 一次関数でない式（TeX）：反比例の形か、定数。kind＝0〜3 で、式の種類を指定できる。why＝一次関数でないわけ */
+function nonLinForm(r, kind = r(0, 3)) {
+  const k = pick(r, [2, 3, 4, 5, 6, 8, 10, 12]);
+  if (kind === 0) return { tex: `y=\\frac{${k}}{x}`, why: "$x$ が分母にある（反比例の形）" };
+  if (kind === 1) return { tex: `xy=${k}`, why: "$xy$ が一定の形（反比例）で、$y=ax+b$ の形にならない" };
+  if (kind === 2) return { tex: `y=${pick(r, [1, 2, 3, 5, 7, -2, -4])}`, why: "$x$ をふくまない（$a=0$）" };
+  return { tex: `y=-\\frac{${k}}{x}`, why: "$x$ が分母にある（反比例の形）" };
 }
+/** 負の数の「−」（文の中で使う） */
+const mn = (n) => String(n).replace("-", "−");
 
 // ── dr.8：タクシーなどの料金（どちらも基本料金あり）─────────────────────────────
 //   A 社：基本料金 FA ＋ 1あたり pA　B 社：基本料金 FB ＋ 1あたり pB。FA＞FB で pA＜pB。同じ料金になる量 xeq＝(FA−FB)/(pB−pA)
 const CTX2 = {
-  taxi: { lead: "タクシーの", u: "km", names: ["A 社", "B 社"], fee: "基本料金", def: "$x$ km 乗るときの料金を $y$ 円とする。", ask: (k) => `${k}km 乗る`, noun: "km", pA: [250, 300, 350], dp: [50, 100], FB: [300, 400, 500, 600], xs: [2, 3, 4, 5, 6], fstep: 100 },
-  rent: { lead: "レンタカーの", u: "日", names: ["A 社", "B 社"], fee: "基本料金", def: "$x$ 日借りるときの料金を $y$ 円とする。", ask: (k) => `${k}日借りる`, noun: "日", pA: [3000, 3500, 4000], dp: [500, 1000], FB: [2000, 3000, 4000], xs: [2, 3, 4, 5], fstep: 500 },
+  taxi: { lead: "タクシーの ", u: "km", names: ["A 社", "B 社"], fee: "基本料金", def: "$x$ km 乗るときの料金を $y$ 円とする。", ask: (k) => `${k}km 乗る`, noun: "km", pA: [250, 300, 350], dp: [50, 100], FB: [300, 400, 500, 600], xs: [2, 3, 4, 5, 6], fstep: 100 },
+  rent: { lead: "レンタカーの ", u: "日", names: ["A 社", "B 社"], fee: "基本料金", def: "$x$ 日借りるときの料金を $y$ 円とする。", ask: (k) => `${k}日借りる`, noun: "日", pA: [3000, 3500, 4000], dp: [500, 1000], FB: [2000, 3000, 4000], xs: [2, 3, 4, 5], fstep: 500 },
   phone: { lead: "スマートフォンの料金プランがある。", u: "GB", names: ["A プラン", "B プラン"], fee: "基本料", def: "1か月に $x$ GB 使うときの料金を $y$ 円とする。", ask: (k) => `${k}GB 使う`, noun: "GB", pA: [200, 300, 400], dp: [100, 200], FB: [500, 800, 1000, 1500], xs: [3, 4, 5, 6, 8], fstep: 100 },
 };
 function mk2(r, key) {
@@ -170,19 +172,19 @@ export const UNITS = [
       1: [
         // 17d01a 一次関数であるものを選ぶ
         t("17d01a", (r) => {
-          const f = linForm(r), wrongs = shuffle(r, [nonLinForm(r), nonLinForm(r), nonLinForm(r), nonLinForm(r)]);
+          const f = linForm(r), wrongs = shuffle(r, [0, 1, 2, 3]).slice(0, 3).map((k) => nonLinForm(r, k).tex);
           const ans = TX(f.tex);
           return {
             q: "次のうち、$y$ が $x$ の一次関数であるものはどれか。",
             ans,
-            choices: choices4(r, ans, wrongs.map(TX), () => TX(nonLinForm(r))),
+            choices: choices4(r, ans, wrongs.map(TX), () => TX(nonLinForm(r).tex)),
             hint: "一次関数は、$y=ax+b$（$a\\neq 0$）の形で表せる式。$x$ が分母にあるものや、$x$ をふくまないものは、その形になる？",
             steps: [`${ans} は $y=ax+b$ の形で表せる。`, "ほかの3つは、$x$ が分母にある（反比例の形）か、$x$ をふくまない（$a=0$）ので、一次関数ではない。"],
           };
         }),
         // 17d01b 一次関数でないものを選ぶ
         t("17d01b", (r) => {
-          const ans = TX(nonLinForm(r)), ws = [];
+          const nl = nonLinForm(r), ans = TX(nl.tex), ws = [];
           const seen = new Set([ans]);
           for (let n = 0; n < 40 && ws.length < 3; n++) { const f = TX(linForm(r).tex); if (!seen.has(f)) { seen.add(f); ws.push(f); } }
           return {
@@ -190,7 +192,7 @@ export const UNITS = [
             ans,
             choices: choices4(r, ans, ws),
             hint: "一次関数は、$y=ax+b$（$a\\neq 0$）の形で表せる式。どれが、その形にならない？",
-            steps: [`${ans} は、$x$ が分母にある（反比例の形）か、$x$ をふくまない（$a=0$）ので、一次関数ではない。`, "ほかの3つは、$y=ax+b$（$a\\neq 0$）の形で表せる。（$y=ax$ のような比例の式も、一次関数）"],
+            steps: [`${ans} は、${nl.why}ので、一次関数ではない。`, "ほかの3つは、$y=ax+b$（$a\\neq 0$）の形で表せる。（$y=ax$ のような比例の式も、一次関数）"],
           };
         }),
         // 17d01c 一次関数の変化の割合
@@ -207,7 +209,7 @@ export const UNITS = [
         t("17d02a", (r) => {
           const L = randLine(r, INT_A, 6), x1 = r(-3, 3), x2 = x1 + r(1, 5), v1 = yAt(L, x1), v2 = yAt(L, x2), d = qsub(v2, v1);
           return {
-            q: `一次関数 ${TX(ltex(L))} で、$x$ が ${x1} から ${x2} まで増加するとき、$y$ の増加量は？`,
+            q: `一次関数 ${TX(ltex(L))} で、$x$ が ${mn(x1)} から ${mn(x2)} まで増加するとき、$y$ の増加量は？`,
             ans: num(d),
             hint: "$x$ がふえはじめる値と、ふえ終わる値を、それぞれ式に入れて、$y$ の値を求めよう。$y$ は、どれだけ変わった？",
             steps: [`${TX(`x=${x1}`)} のとき ${TX(`y=${aX(L.a, x1)}${L.b[0] < 0 ? "-" : "+"}${Math.abs(L.b[0])}=${qt(v1)}`)}。`, `${TX(`x=${x2}`)} のとき ${TX(`y=${aX(L.a, x2)}${L.b[0] < 0 ? "-" : "+"}${Math.abs(L.b[0])}=${qt(v2)}`)}。`, `$y$ の増加量は ${TX(`${qt(v2)}-${P(v1)}=${qt(d)}`)}。`],
@@ -217,7 +219,7 @@ export const UNITS = [
         t("17d02b", (r) => {
           const L = randLine(r, INT_A, 6), x1 = r(-3, 3), x2 = x1 + r(1, 5), v1 = yAt(L, x1), v2 = yAt(L, x2), d = qsub(v2, v1), rt = rate(L, x1, x2);
           return {
-            q: `一次関数 ${TX(ltex(L))} で、$x$ が ${x1} から ${x2} まで増加するとき、変化の割合は？`,
+            q: `一次関数 ${TX(ltex(L))} で、$x$ が ${mn(x1)} から ${mn(x2)} まで増加するとき、変化の割合は？`,
             ans: num(rt),
             hint: "変化の割合は、（$y$ の増加量）÷（$x$ の増加量）。それぞれ、いくつ増えた？",
             steps: [`$x$ の増加量は ${TX(`${x2}-${P(x1)}=${x2 - x1}`)}。$y$ の増加量は ${TX(`${qt(v2)}-${P(v1)}=${qt(d)}`)}。`, `変化の割合は ${TX(`\\frac{${qt(d)}}{${x2 - x1}}=${qt(rt)}`)}。（一次関数では、いつも $a$ に等しい）`],
@@ -351,7 +353,7 @@ export const UNITS = [
             q: `方程式 ${TX(eq)} を、$y$ について解くと、一次関数の式になる。その式の${ask}は？`,
             ans: num(ask === "傾き" ? L.a : L.b),
             hint: "$y$ の項だけを左辺に残すには、$x$ の項を、どうすればいい？ そのあと、$y$ の係数でわる。",
-            steps: [`${TX(eq)} の $x$ の項を右辺に移項して、${TX(`${b === 1 ? "" : b}y=${mv}`)}。`, `両辺を ${b} でわって、${TX(ltex(L))}。`, ask === "傾き" ? `傾きは ${TX(qt(L.a))}。` : `切片は ${TX(qt(L.b))}。`],
+            steps: [`${TX(eq)} の $x$ の項を右辺に移項して、${TX(`${b === 1 ? "" : b}y=${mv}`)}。`, `両辺を ${mn(b)} でわって、${TX(ltex(L))}。`, ask === "傾き" ? `傾きは ${TX(qt(L.a))}。` : `切片は ${TX(qt(L.b))}。`],
           };
         }),
         // 17d06b y＝k、x＝h のグラフ（通る点と平行な軸）の4択
