@@ -1,0 +1,3 @@
+# 検査のときにできる画像（tools/look.cjs）と、Artifact 用の1ファイル（tools/bundle.cjs --artifact）
+tools/_out/
+dist/
