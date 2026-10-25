@@ -51,7 +51,7 @@ const slopeLine = (p1, p2) => {
 /** 切片の解説の1行（傾き a、点 p を通る） */
 const interceptLine = (a, p) => {
   const [x, y] = p, b = qsub(Qa(y), qmul(Qa(a), Qa(x)));
-  if (qiszero(Qa(x))) return `点 ${PT(p)} は y 軸上の点なので、切片は ${TX(dt(y))}。`;
+  if (qiszero(Qa(x))) return `点 ${PT(p)} は $y$ 軸上の点なので、切片は ${TX(dt(y))}。`;
   return `点 ${PT(p)} を通るので、${TX(`${dt(y)}=${aX(a, x)}+b`)} より ${TX(`b=${dt(b)}`)}。`;
 };
 /** x＝X を代入して y を出す解説の1行（最後に値） */
@@ -319,7 +319,7 @@ export const UNITS = [
         t("14q04", (r) => {
           const key = pick(r, ["tank", "plant", "water", "spring"]), sc = SC[key];
           const a = Qa(pick(r, sc.A)), b = Q(pick(r, sc.B));
-          if (qeq(absQ(a), b)) return { skip: true };
+          if (qeq(absQ(a), b) || qeq(a, Q(1))) return { skip: true };   // 傾きが 1 のときは、式に「1」が見えないので、はずす
           const l = line(a, b), ask = pick(r, ["a", "b"]), m = sc.mean;
           const right = ask === "a" ? m.rate : m.init;
           const num = ask === "a" ? dt(a) : dt(b);
