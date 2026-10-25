@@ -368,6 +368,11 @@ const stOf = (r, k) => ((r.metrics || []).find((m) => m[0] === k) || [])[1];
     await page.waitForTimeout(300);
     await page.screenshot({ path: path.join(OUT, 'check-how.png'), fullPage: true });
     ok(await page.$('.ck-model .mo-stage svg') != null, 'とり方：見本のアニメーション');
+    await page.click('.ck-back');
+    await page.waitForSelector(STEP('home'));
+    ok(true, 'もどる → 入口');
+    await page.click('[data-mode="shoot"]');
+    await page.waitForSelector(STEP('how'));
     // 動画でないファイル
     fs.writeFileSync(path.join(MEDIA, 'not-video.webm'), 'これは動画ではありません');
     await page.setInputFiles('.ck-file-input', path.join(MEDIA, 'not-video.webm'));

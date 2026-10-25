@@ -70,6 +70,17 @@
 .ck-teamfig { border-radius: var(--r); overflow: hidden; background: var(--floor-out); max-width: 320px; margin: 0 auto; }
 .ck-teamfig svg { display: block; width: 100%; height: auto; }
 .ck-teamfig.ck-free { background: var(--sheet-2); max-width: 220px; }
+.ck-persp { max-width: 360px; background: var(--line); }
+.ck-pc-wall { fill: var(--line-2); }
+.ck-pc-ground { fill: color-mix(in srgb, var(--floor) 70%, var(--ink) 18%); }
+.ck-pc-court { fill: var(--floor); }
+.ck-pc-paint { fill: var(--floor-paint); }
+.ck-pc-line { fill: none; stroke: #fff; stroke-width: 1.1; opacity: 0.9; }
+.ck-pc-board { fill: #fff; stroke: var(--ink-3); stroke-width: 0.8; }
+.ck-pc-rim { fill: none; stroke: var(--ball); stroke-width: 1.2; }
+.ck-pc-o { fill: var(--ck-off); }
+.ck-pc-x { fill: var(--ck-def); }
+.ck-pc-o circle, .ck-pc-x circle { fill: var(--skin); }
 .ck-how-txt { display: flex; flex-direction: column; gap: 10px; }
 .ck-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
 .ck-badges span { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px 5px 8px; border-radius: 999px; background: var(--ball-soft); border: 1px solid var(--ball-line); font-weight: 700; font-size: var(--fs-s); }

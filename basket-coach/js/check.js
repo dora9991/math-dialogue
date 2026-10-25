@@ -152,8 +152,8 @@
     });
   }
   const ACTIONS = {
-    home: () => { fresh(null); S.root = currentRoot(); paint(); },
-    mode: (b) => { const r = currentRoot(); fresh(b.dataset.mode); S.root = r; paint(); },
+    home: () => { const r = currentRoot(); fresh(null); S.root = r; setHash('#check'); paint(); },
+    mode: (b) => { const r = currentRoot(); fresh(b.dataset.mode); S.root = r; setHash('#check/' + b.dataset.mode); paint(); },
     how: () => go('how'),
     range: () => { S.video && S.video.pause(); go('range'); },
     preview: () => previewRange(),
@@ -173,6 +173,8 @@
     teamGo: () => runTeam(),
   };
   const currentRoot = () => S && S.root;
+  // アドレスの # を、画面に合わせて書きかえる（hashchange は起こさない）
+  const setHash = (h) => { try { if (/^#check/.test(location.hash) && location.hash !== h) history.replaceState(history.state, '', h); } catch (e) { /* なし */ } };
 
   /* ---------- 入口 ---------- */
   SCREENS.home = {
@@ -208,7 +210,7 @@
         ${backBtn('home', 'ほかの チェック')}
         <h1 class="ck-title">${esc(m.name)}を チェック</h1>
         <div class="ck-how">
-          <div class="ck-how-fig">${model ? '<div class="ck-model"></div><p class="ck-cap">見本（正しい形）</p>' : m.id === 'team' ? `<div class="ck-teamfig">${m.icon}</div><p class="ck-cap">高い所から、コートの半分を とる</p>` : `<div class="ck-teamfig ck-free">${m.icon}</div>`}</div>
+          <div class="ck-how-fig">${model ? '<div class="ck-model"></div><p class="ck-cap">見本（正しい形）</p>' : m.id === 'team' ? `<div class="ck-teamfig ck-persp">${perspectiveCourt()}</div><p class="ck-cap">こんなふうに 映るように（ゴールが おくに 見える）</p>` : `<div class="ck-teamfig ck-free">${m.icon}</div>`}</div>
           <div class="ck-how-txt">
             <h2 class="sec-h">とり方</h2>
             <p class="ck-badges">${h.badges.map(([ic, t]) => `<span>${ic}${esc(t)}</span>`).join('')}</p>
@@ -404,13 +406,14 @@
     const g = c.getContext('2d');
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.drawImage(S.snap || S.work, 0, 0, W, H);
+    const k = uiK(c, W);
     (S.cands || []).forEach((lm, i) => {
-      drawSkeleton(g, lm, 1, 1, { lw: 3 });
+      drawSkeleton(g, lm, 1, 1, { lw: 3 * k });
       const b = BA.boxOf(lm);
-      g.lineWidth = 3; g.strokeStyle = '#fff'; g.setLineDash([8, 6]);
-      g.strokeRect(b[0] - 8, b[1] - 8, b[2] - b[0] + 16, b[3] - b[1] + 16);
+      g.lineWidth = 3 * k; g.strokeStyle = '#fff'; g.setLineDash([8 * k, 6 * k]);
+      g.strokeRect(b[0] - 8 * k, b[1] - 8 * k, b[2] - b[0] + 16 * k, b[3] - b[1] + 16 * k);
       g.setLineDash([]);
-      label(g, String(i + 1), (b[0] + b[2]) / 2, b[1] - 22, { big: true });
+      label(g, String(i + 1), (b[0] + b[2]) / 2, b[1] - 24 * k, { big: true, k });
     });
   }
 
@@ -463,13 +466,14 @@
     if (c.width !== W) { c.width = W; c.height = H; }
     const g = c.getContext('2d');
     g.drawImage(S.work, 0, 0);
+    const k = uiK(c, W);
     if (teamMode) {
       for (const q of people || []) {
-        g.lineWidth = 3;
+        g.lineWidth = 3 * k;
         g.strokeStyle = q.team === 0 ? css('--ck-off') : q.team === 1 ? css('--ck-def') : 'rgba(255,255,255,0.7)';
         g.strokeRect(q.box.x, q.box.y, q.box.w, q.box.h);
       }
-    } else for (const lm of people || []) drawSkeleton(g, lm, 1, 1, { lw: 3 });
+    } else for (const lm of people || []) drawSkeleton(g, lm, 1, 1, { lw: 3 * k });
   }
 
   async function runSelf() {
@@ -540,19 +544,23 @@
       g.lineWidth = 1.5; g.strokeStyle = 'rgba(0,0,0,0.6)'; g.stroke();
     }
   }
+  // 文字のラベル。k：キャンバスの1画素が 画面の何 px か の逆数（大きなキャンバスでも、画面で同じ大きさに）
   function label(g, text, x, y, opt = {}) {
-    const fs = opt.big ? 22 : opt.fs || 15;
+    const k = opt.k || 1;
+    const fs = (opt.big ? 22 : opt.fs || 15) * k;
     g.font = `700 ${fs}px ${css('--font-body') || 'sans-serif'}`;
-    const w = g.measureText(text).width + 14, h = fs + 10;
+    const w = g.measureText(text).width + 14 * k, h = fs + 10 * k;
     const bx = clamp(x - w / 2, 2, g.canvas.width / (g.getTransform().a || 1) - w - 2), by = clamp(y - h / 2, 2, g.canvas.height / (g.getTransform().d || 1) - h - 2);
     g.fillStyle = opt.bg || 'rgba(255,255,255,0.94)';
     g.strokeStyle = opt.edge || 'rgba(0,0,0,0.25)';
-    g.lineWidth = 1;
+    g.lineWidth = k;
     roundRect(g, bx, by, w, h, h / 2); g.fill(); g.stroke();
     g.fillStyle = opt.ink || '#1f2328';
     g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(text, bx + w / 2, by + h / 2 + 1);
   }
+  // キャンバス c（論理の幅 W）が、画面で何 px に見えているか → 大きさをそろえる倍率
+  const uiK = (c, W) => { const w = c.getBoundingClientRect().width || 360; return W / w; };
   function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
   // 角度のしるし（ひざ・ひじ）
   function angleMark(g, a, b, c, sx, sy, text, col) {
@@ -992,6 +1000,25 @@
     L.push([[-6.6, 0], ...arc(0, 1.575, 6.75, a0, a1, 40), [6.6, 0]]);
     return L;
   }
+  // とり方の絵：高い所から見たコート（こう映ると よい）
+  function perspectiveCourt() {
+    const Hc = BA.homography([[-7.5, 0], [7.5, 0], [7.5, 14], [-7.5, 14]], [[78, 46], [242, 46], [312, 172], [8, 172]]);
+    const P = (p) => BA.applyH(Hc, p).map((v) => Math.round(v * 10) / 10);
+    const path = (pts, close) => 'M' + pts.map(P).map((q) => q.join(' ')).join(' L') + (close ? ' Z' : '');
+    const lines = courtLines().map((l) => `<path class="ck-pc-line" d="${path(l)}"/>`).join('');
+    const ppl = (TEAM_THUMB.o.map((p) => [p, 'o']).concat(TEAM_THUMB.x.map((p) => [p, 'x']))).map(([p, t]) => {
+      const f = P(p), f2 = P([p[0] + 0.5, p[1]]);
+      const h = Math.hypot(f2[0] - f[0], f2[1] - f[1]) * 3.5;
+      return { f, h, t };
+    }).sort((a, b) => a.f[1] - b.f[1]).map(({ f, h, t }) => `<g class="ck-pc-${t}"><rect x="${f[0] - h * 0.17}" y="${f[1] - h * 0.78}" width="${h * 0.34}" height="${h * 0.62}" rx="${h * 0.12}"/><circle cx="${f[0]}" cy="${f[1] - h * 0.9}" r="${h * 0.13}"/></g>`).join('');
+    const rim = P([0, 1.575]);
+    return `<svg viewBox="0 0 320 180" role="img" aria-label="高い所から見たコートの絵">
+      <rect class="ck-pc-wall" width="320" height="180"/><rect class="ck-pc-ground" y="34" width="320" height="146"/>
+      <path class="ck-pc-court" d="${path([[-7.5, 0], [7.5, 0], [7.5, 14], [-7.5, 14]], true)}"/>
+      <path class="ck-pc-paint" d="${path([[-2.45, 0], [2.45, 0], [2.45, 5.8], [-2.45, 5.8]], true)}"/>${lines}
+      <rect class="ck-pc-board" x="${rim[0] - 9}" y="${rim[1] - 22}" width="18" height="11"/><ellipse class="ck-pc-rim" cx="${rim[0]}" cy="${rim[1] - 9}" rx="4" ry="1.4"/>${ppl}</svg>`;
+  }
+
   SCREENS.calib = {
     html() {
       const cal = S.calib;
@@ -1057,9 +1084,10 @@
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.drawImage(S.snap, 0, 0, W, H);
     const cal = S.calib;
+    const k = uiK(c, W);
     if (S.H && cal.pts.length === 4) {
       const Hi = BA.invertH(S.H);
-      g.lineWidth = 2.5; g.strokeStyle = css('--ok'); g.shadowColor = 'rgba(0,0,0,0.6)'; g.shadowBlur = 3;
+      g.lineWidth = 2.5 * k; g.strokeStyle = css('--ok'); g.shadowColor = 'rgba(0,0,0,0.6)'; g.shadowBlur = 3 * k;
       for (const l of courtLines()) {
         g.beginPath();
         let on = false;
@@ -1075,9 +1103,9 @@
       g.shadowBlur = 0;
     }
     cal.pts.forEach((p, i) => {
-      g.beginPath(); g.arc(p[0], p[1], 7, 0, Math.PI * 2);
-      g.fillStyle = css('--ball'); g.fill(); g.lineWidth = 2; g.strokeStyle = '#fff'; g.stroke();
-      label(g, String(i + 1), p[0] + 16, p[1] - 16, {});
+      g.beginPath(); g.arc(p[0], p[1], 6 * k, 0, Math.PI * 2);
+      g.fillStyle = css('--ball'); g.fill(); g.lineWidth = 2 * k; g.strokeStyle = '#fff'; g.stroke();
+      label(g, String(i + 1), p[0] + 16 * k, p[1] - 18 * k, { k });
     });
   }
 
@@ -1214,9 +1242,10 @@
     const g = c.getContext('2d');
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.drawImage(S.snap, 0, 0, W, H);
+    const k = uiK(c, W);
     for (const p of S.people0 || []) {
       const t = S.colors.length === 2 && p.color ? BA.classify(p.color, S.colors, 55) : -1;
-      g.lineWidth = 3;
+      g.lineWidth = 3 * k;
       g.strokeStyle = t === 0 ? css('--ck-off') : t === 1 ? css('--ck-def') : 'rgba(255,255,255,0.9)';
       g.strokeRect(p.box.x, p.box.y, p.box.w, p.box.h);
     }
