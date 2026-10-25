@@ -73,6 +73,13 @@ const meetSteps = (L1, L2_) => {
   ];
 };
 
+/** 交点を 1 行で：右辺を等しいとおいて x、y を求める */
+const meetOne = (L1, L2_) => {
+  const [x, y] = meet(L1, L2_);
+  return `${TX(`${rhs(L1)}=${rhs(L2_)}`)} より ${TX(`x=${qt(x)}`)}、これを ${TX(ltex(L1))} に代入して ${TX(`y=${qt(y)}`)}。交点は ${PT([x, y])}。`;
+};
+/** k v＝n を解く解説の式（文字は v）。k＝1 なら「v=…」だけ */
+const solveV = (k, v, n, val) => (qeq(k, Q(1)) ? TX(`${v}=${qt(val)}`) : `${TX(`${coefX(k, v)}=${qt(n)}`)}、${TX(`${v}=${qt(val)}`)}`);
 /** ax+by＝c の 2 式を cases で（問題文用） */
 const SYS = (e1, e2) => TX(casesTex([linTex(...e1), linTex(...e2)]));
 /** 連立方程式 e1、e2（[a, b, c]）を、加減法で解く解説（x か y を直接消せる組だけ）。解 [x, y]（整数）。できなければ null */
@@ -297,9 +304,9 @@ export const UNITS = [
             steps: [
               fitLine("ℓ", c.p1, c.L1),
               fitLine("m", c.p2, c.L2),
-              ...meetSteps(c.L1, c.L2).slice(0, 2),
-              `${TX(ltex(c.L1))} に ${TX(`x=${qt(m[0])}`)} を代入して、${TX(`y=${substY(c.L1, m[0])}=${qt(m[1])}`)}。`,
-            ].slice(0, 5),
+              meetSteps(c.L1, c.L2).slice(0, 2).join(""),
+              `${TX(ltex(c.L1))} に ${TX(`x=${qt(m[0])}`)} を代入して、${TX(`y=${substY(c.L1, m[0])}=${qt(m[1])}`)}。よって交点は ${PT(m)}。`,
+            ],
           };
         }),
         // 13d05 3 つの直線が 1 点で交わる：a の値
@@ -317,10 +324,10 @@ export const UNITS = [
             ans: c.a,
             hint: "3本の直線が 1点で交わるとき、その点は 3本すべての上にある。まず、式がわかっている 2本の交点を求めよう。",
             steps: [
-              ...meetSteps(c.L1, c.L2).slice(0, 1).concat([`${solveX(qsub(c.L1.a, c.L2.a), qsub(c.L2.b, c.L1.b), Q(c.x0))}、${TX(`y=${c.y0}`)}。2直線の交点は ${PT([c.x0, c.y0])}。`]),
-              `${TX(third)} も点 ${PT([c.x0, c.y0])} を通るので、${TX(`${c.y0}=${c.x0 === 1 ? "a" : c.x0 + "a"}${c.cc < 0 ? "-" : "+"}${Math.abs(c.cc)}`)}。`,
-              `${TX(`${c.x0 === 1 ? "a" : c.x0 + "a"}=${c.y0 - c.cc}`)}、${TX(`a=${c.a}`)}。`,
-            ].filter((s) => s.length > 0),
+              meetOne(c.L1, c.L2),
+              `${TX(third)} も点 ${PT([c.x0, c.y0])} を通るので、${TX(`${c.y0}=${coefX(Q(c.x0), "a")}${c.cc < 0 ? "-" : "+"}${Math.abs(c.cc)}`)}。`,
+              `${solveV(Q(c.x0), "a", Q(c.y0 - c.cc), Q(c.a))}。`,
+            ],
           };
         }),
       ],
@@ -360,7 +367,7 @@ export const UNITS = [
             unit: "cm²",
             hint: "底辺を AB と考えると、高さは、P のどんな値になる？ A、B、P の座標を、ひとつずつ求めよう。",
             steps: [
-              meetSteps(c.L1, c.L2).slice(1, 3).join(""),
+              meetOne(c.L1, c.L2),
               ...d06Axes(c),
               `AB ${TX(`=${AB}`)}、P の $y$ 座標の絶対値が高さ ${Math.abs(c.py)} なので、${TX(`\\frac{1}{2}\\times ${AB}\\times ${Math.abs(c.py)}=${qt(area)}`)}（cm²）`,
             ],
@@ -493,8 +500,8 @@ function q04Case(r) {
 }
 function q04Steps(c) {
   return [
-    ...meetSteps(c.L1, c.L2).slice(0, 2).map((s, i) => (i === 1 ? `${s.replace(/。$/, "")}。` : s)),
-    `交点は ${PT([c.x0, c.y0])}。これを通る、傾き ${TX(String(c.s))} の直線 ${TX(`y=${c.s === 1 ? "" : c.s === -1 ? "-" : c.s}x+b`)} に代入して、${TX(`${c.y0}=${aTimes(Q(c.s), Q(c.x0))}+b`)} より ${TX(`b=${c.b}`)}。`,
+    meetOne(c.L1, c.L2),
+    `傾き ${TX(String(c.s))} の直線を ${TX(`y=${c.s === 1 ? "" : c.s === -1 ? "-" : c.s}x+b`)} として、点 ${PT([c.x0, c.y0])} を代入すると、${TX(`${c.y0}=${aTimes(Q(c.s), Q(c.x0))}+b`)} より ${TX(`b=${c.b}`)}。`,
     `式は ${TX(ltex(line(c.s, c.b)))}。`,
   ];
 }

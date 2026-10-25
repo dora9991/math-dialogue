@@ -34,7 +34,7 @@ const decS = (v) => String(round(qval(Z(v))));
 const evalTex = (l, x, dec = false) => {
   const T = dec ? decS : qt, X = par(x), a = l.a, b = l.b;
   let s;
-  if (qeq(a, Q(1))) s = X; else if (qeq(a, Q(-1))) s = `-${X}`; else s = `${T(a)}\\times ${X}`;
+  if (qeq(a, Q(1))) s = qt(Z(x)); else if (qeq(a, Q(-1))) s = `-${X}`; else s = `${T(a)}\\times ${X}`;
   if (b[0] !== 0) s += (b[0] < 0 ? "" : "+") + T(b);
   return s;
 };

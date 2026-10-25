@@ -25,7 +25,7 @@ const PT = (p) => $(ptex2(p));
 /** 係数つきの文字の TeX（c は Q）  x, -x, 3x, \frac{3}{4}x */
 const cx = (c, v = "x") => { const [n, d] = c, ab = Math.abs(n), co = d === 1 ? (ab === 1 ? "" : String(ab)) : `\\frac{${ab}}{${d}}`; return `${n < 0 ? "-" : ""}${co}${v}`; };
 /** a×x の TeX（a が ±1 のときは省く）  2\times 3、-(-4)、\frac{1}{2}\times 6 */
-const mulTex = (a, x) => { const X = par(x); return qeq(a, Q(1)) ? X : qeq(a, Q(-1)) ? `-${X}` : `${qt(a)}\\times ${X}`; };
+const mulTex = (a, x) => (qeq(a, Q(1)) ? qt(Z(x)) : qeq(a, Q(-1)) ? `-${par(x)}` : `${qt(a)}\\times ${par(x)}`);
 /** 整数の符号つき定数項（先頭以外）  +3、-2 */
 const sc = (n) => (n < 0 ? `-${Math.abs(n)}` : `+${n}`);
 /** y＝ax+b に x を入れた右辺の TeX  例 2\times 3-1 */

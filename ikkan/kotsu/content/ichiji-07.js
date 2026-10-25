@@ -31,7 +31,7 @@ const cx = (c) => { const [n, d] = c, ab = Math.abs(n), co = d === 1 ? (ab === 1
 const evalTex = (l, x) => {
   const X = par(x), a = l.a, b = l.b;
   let s;
-  if (qeq(a, Q(1))) s = X; else if (qeq(a, Q(-1))) s = `-${X}`; else s = `${qt(a)}\\times ${X}`;
+  if (qeq(a, Q(1))) s = qt(Z(x)); else if (qeq(a, Q(-1))) s = `-${X}`; else s = `${qt(a)}\\times ${X}`;
   if (b[0] !== 0) s += (b[0] < 0 ? "" : "+") + qt(b);
   return s;
 };
