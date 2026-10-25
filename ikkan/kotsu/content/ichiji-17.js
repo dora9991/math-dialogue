@@ -12,7 +12,7 @@
 import { t, pick, choices4, shuffle, rnz, round } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
 import { Q, qadd, qsub, qmul, qdiv, qneg, qeq, qval, qiszero, linTex, poly, ptex } from "../algebra.js";
-import { line, lineSlopePoint, lineThrough, fromStd, yAt, xAt, rate, yRange, meet, xIntercept, triArea, onLine, ltex, ptex2, qt, num } from "../linear.js";
+import { line, lineThrough, fromStd, yAt, xAt, rate, yRange, meet, xIntercept, triArea, onLine, ltex, ptex2, qt, num } from "../linear.js";
 
 const unit = unitFor("ichiji");
 
@@ -217,7 +217,7 @@ export const UNITS = [
         }),
         // 17d02b x が x1 から x2 まで増加するとき、変化の割合
         t("17d02b", (r) => {
-          const L = randLine(r, INT_A, 6), x1 = r(-3, 3), x2 = x1 + r(1, 5), v1 = yAt(L, x1), v2 = yAt(L, x2), d = qsub(v2, v1), rt = rate(L, x1, x2);
+          const L = randLine(r, INT_A, 6), x1 = r(-3, 3), x2 = x1 + r(2, 5), v1 = yAt(L, x1), v2 = yAt(L, x2), d = qsub(v2, v1), rt = rate(L, x1, x2);
           return {
             q: `一次関数 ${TX(ltex(L))} で、$x$ が ${mn(x1)} から ${mn(x2)} まで増加するとき、変化の割合は？`,
             ans: num(rt),

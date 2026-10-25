@@ -10,8 +10,8 @@
 // ============================================================
 import { t, pick, choices4, shuffle } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
-import { Q, qadd, qsub, qmul, qdiv, qneg, qeq, qval, qiszero } from "../algebra.js";
-import { line, lineThrough, yAt, xAt, meet, onLine, ltex, num } from "../linear.js";
+import { Q, qadd, qsub, qmul, qneg, qeq, qiszero } from "../algebra.js";
+import { line, yAt, meet, onLine, ltex } from "../linear.js";
 
 const unit = unitFor("ichiji");
 
@@ -52,7 +52,7 @@ const CTX = {
   photo: {
     lead: "写真を焼き増しする。", names: ["A 店", "B 店"], shop: "店", u: "枚", fee: "会員料", fstep: 50,
     def: "$x$ 枚（$x$ は整数）焼き増しするときの料金を $y$ 円とする。", ask: (k) => `${k}枚焼き増しする`,
-    combos: [[30, 15, [20, 30, 40]], [20, 10, [20, 30, 40]], [25, 15, [20, 30]], [40, 20, [15, 20, 25]], [30, 20, [20, 30, 40]]],
+    combos: [[30, 15, [20, 30, 40]], [20, 10, [20, 30, 40]], [25, 15, [20, 30]], [40, 20, [15, 20, 25]], [30, 20, [20, 30, 40]], [50, 30, [10, 20, 25]], [35, 20, [10, 20]], [45, 15, [5, 10, 15]], [40, 25, [10, 20]]],
   },
   print: {
     lead: "クラスの文集を印刷する。", names: ["X 社", "Y 社"], shop: "社", u: "冊", fee: "基本料金", fstep: 100,
@@ -248,7 +248,7 @@ function triCase(r) {
 
 export const UNITS = [
   unit("15", {
-    name: "料金プランを式とグラフでくらべる",
+    name: "料金プランを式でくらべる",
     desc: "2つのプランの式をつくり、同じ料金になる量と、どちらが安いかを調べる",
     prereqs: ["J2-ik14", "J2-rk02"],
     points: [

@@ -23,7 +23,7 @@ const axt = (a) => ltex(line(a, 0)).slice(2);
 /** 直線 l に x を入れた計算と値の TeX：2\times 3-7=-1 */
 const subTex = (l, x) => {
   const xv = Array.isArray(x) ? x : [x, 1], xs = qt(xv), xp = xv[0] < 0 ? `(${xs})` : xs;
-  const s = l.a[0] === 1 && l.a[1] === 1 ? xs : l.a[0] === -1 && l.a[1] === 1 ? `-${xp}` : `${qt(l.a)}\\times ${xp}`;
+  const s = xv[0] === 0 && Math.abs(l.a[0]) === 1 && l.a[1] === 1 ? "0" : l.a[0] === 1 && l.a[1] === 1 ? xs : l.a[0] === -1 && l.a[1] === 1 ? `-${xp}` : `${qt(l.a)}\\times ${xp}`;
   const b = qiszero(l.b) ? "" : `${l.b[0] < 0 ? "-" : "+"}${qt([Math.abs(l.b[0]), l.b[1]])}`;
   return `${s}${b}=${qt(yAt(l, xv))}`;
 };
@@ -185,7 +185,7 @@ export const UNITS = [
           return {
             q: `一次関数 ${L(l)} で、$x=${x}$ のときの $y$ の値は？`,
             ans: num(yAt(l, x)),
-            hint: "式の $x$ を、与えられた数でおきかえると、どうなるかな？ 負の数は、かっこをつけて入れよう。",
+            hint: "式の $x$ を、与えられた数でおきかえると、どうなるかな？ 負の数を入れるときは、どう書けばよいかな？",
             steps: [`$x=${x}$ を代入する。`, `${$(`y=${subTex(l, x)}`)}。`],
           };
         }),
@@ -210,7 +210,7 @@ export const UNITS = [
           return {
             q: `一次関数 ${L(l)} で、$x=${x}$ のときの $y$ の値は？`,
             ans: num(yAt(l, x)),
-            hint: "式の $x$ のところに、数を入れて計算しよう。",
+            hint: "式の $x$ のところに数を入れると、$y$ はいくつになるかな？",
             steps: [`$x=${x}$ を代入する。`, `${$(`y=${subTex(l, x)}`)}。`],
           };
         }),
@@ -223,7 +223,7 @@ export const UNITS = [
           return {
             q: `一次関数 ${L(l)} で、$y=${y0}$ のときの $x$ の値は？`,
             ans: x,
-            hint: "$y$ の値がわかっているとき、式の $y$ に代入すると、$x$ についての方程式になるよ。",
+            hint: "$y$ の値がわかっているとき、式の $y$ に代入すると、何についての方程式になるかな？",
             steps: [`$y=${y0}$ を代入して、${solveLine(l, y0)}。`, `答えは $x=${x}$。`],
           };
         }),
@@ -259,7 +259,7 @@ export const UNITS = [
             q: `${c.setup}。${c.when(Y)}。`,
             ans: k,
             unit: c.xU,
-            hint: "まず、$y$ を $x$ の式で表そう。合計金額がわかっているとき、$x$ はどうやって求めるかな？",
+            hint: "$y$ は $x$ の式でどう表せるかな？ 合計金額がわかっているとき、$x$ はどうやって求めるかな？",
             steps: [`$y$ を $x$ の式で表すと ${L(l)}。`, `${$(`y=${Y}`)} を代入して、${solveLine(l, Y)}。`, `答えは ${k}${c.xU}。`],
           };
         }),
@@ -271,7 +271,7 @@ export const UNITS = [
             q: `${c.setup}。$y$ を $x$ の式で表すと？`,
             ans,
             choices,
-            hint: "$x$ がふえると、$y$ はふえるかな、へるかな？ はじめの量は、$x$ が 0 のときの $y$ だよ。",
+            hint: "$x$ がふえると、$y$ はふえるかな、へるかな？ はじめの量は、$x$ がいくつのときの $y$ かな？",
             steps: [`$x$ が 1 ふえるごとに ${c.a} へるので、へる分は ${$(axt(c.a))}。`, `はじめの ${c.b} からへる分をひいて、${$(`y=${c.b}-${axt(c.a)}`)}。ならべかえて ${L(right)}。`],
           };
         }),
@@ -292,7 +292,7 @@ export const UNITS = [
             q: `${c.setup}。${c.when(Y)}。`,
             ans: k,
             unit: c.xU,
-            hint: "まず、$y$ を $x$ の式で表そう。へる場面では、$x$ の係数はどんな数になるかな？",
+            hint: "$y$ は $x$ の式でどう表せるかな？ へる場面では、$x$ の係数はどんな数になるかな？",
             steps: [`$y$ を $x$ の式で表すと ${L(l)}。`, `${$(`y=${Y}`)} を代入して、${solveLine(l, Y)}。`, `答えは ${k}${c.xU}。`],
           };
         }),
@@ -357,9 +357,9 @@ export const UNITS = [
             () => { const p = r(3, 9); return { q: `縦が ${p} cm、横が $x$ cm の長方形の、周の長さを $y$ cm とする。`, l: line(2, 2 * p), xr: [2, 12], why: `周の長さは、縦 2本と横 2本の和で、${$(`${p}\\times 2+x\\times 2`)}。` }; },
             () => { const s = r(3, 9); return { q: `となり合う 2辺が $x$ cm と ${s} cm の平行四辺形の、周の長さを $y$ cm とする。`, l: line(2, 2 * s), xr: [2, 12], why: `平行四辺形の向かい合う辺は等しいので、周の長さは ${$(`x\\times 2+${s}\\times 2`)}。` }; },
           ])();
-          if (pick(r, ["b", "y"]) === "b") return { q: `${sc.q}$y$ を $x$ の式で表したとき、定数項 $b$ の値は？`, ans: sc.l.b[0], hint: "周の長さを、$x$ をふくむ辺と、$x$ をふくまない辺に分けて考えよう。", steps: [sc.why, `整理して ${L(sc.l)}。`, `定数項は $b=${sc.l.b[0]}$。`] };
+          if (pick(r, ["b", "y"]) === "b") return { q: `${sc.q}$y$ を $x$ の式で表したとき、定数項 $b$ の値は？`, ans: sc.l.b[0], hint: "周の長さは、$x$ をふくむ辺と、$x$ をふくまない辺に分けると、どう表せるかな？", steps: [sc.why, `整理して ${L(sc.l)}。`, `定数項は $b=${sc.l.b[0]}$。`] };
           const x = r(sc.xr[0], sc.xr[1]);
-          return { q: `${sc.q}$x=${x}$ のときの $y$ の値は？`, ans: num(yAt(sc.l, x)), unit: "cm", hint: "まず、周の長さを $x$ の式で表そう。", steps: [sc.why, `整理して ${L(sc.l)}。`, `$x=${x}$ を代入して、${$(`y=${subTex(sc.l, x)}`)}（cm）。`] };
+          return { q: `${sc.q}$x=${x}$ のときの $y$ の値は？`, ans: num(yAt(sc.l, x)), unit: "cm", hint: "周の長さは、$x$ の式でどう表せるかな？", steps: [sc.why, `整理して ${L(sc.l)}。`, `$x=${x}$ を代入して、${$(`y=${subTex(sc.l, x)}`)}（cm）。`] };
         }),
       ],
       // ───────── 4 入試レベル ─────────
@@ -399,7 +399,7 @@ export const UNITS = [
             q: `次のア〜エのうち、$y$ が $x$ の一次関数であるものは、何個あるか。${hasXY ? "（$xy$ をふくむ式は、$y$ について解いて考える。）" : ""}\n${tag.map((e) => `${e.c} ${$(e.tex)}`).join("　　")}`,
             ans: k,
             unit: "個",
-            hint: "1つずつ、かっこをはずして整理しよう。$x^2$ が消えて、$y=ax+b$ の形になるものはどれかな？",
+            hint: "1つずつ、かっこをはずして整理すると、どうなるかな？ $x^2$ は残るかな、消えるかな？",
             steps: [tag.filter((e) => e.lin).map((e) => `${e.c}：${e.note}`).join(" "), tag.filter((e) => !e.lin).map((e) => `${e.c}：${e.note}`).join(" "), `一次関数は ${linL.join("、")} の ${k}個。`],
           };
         }),

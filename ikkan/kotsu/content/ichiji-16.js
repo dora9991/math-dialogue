@@ -158,7 +158,7 @@ export const UNITS = [
         }),
         // 16d02a 正方形：P が辺 AB 上のとき、y を x の式で（4択）
         t("16d02a", (r) => {
-          const s = pick(r, [6, 8, 10, 12]), L = line(Q(s, 2), 0);
+          const s = pick(r, [4, 6, 8, 10, 12, 14]), L = line(Q(s, 2), 0);
           return {
             q: `1辺 ${s}cm の正方形 ABCD。点 P は、A から辺 AB、BC の上を C まで、毎秒 1cm で動く。A を出発して $x$ 秒後の、三角形 APD の面積を $y$ cm² とする。P が辺 AB 上にあるとき、$y$ を $x$ の式で表すと、次のうちどれか。`,
             ans: TX(ltex(L)),
@@ -169,7 +169,7 @@ export const UNITS = [
         }),
         // 16d02b 正方形：P が辺 BC 上のとき、y の値
         t("16d02b", (r) => {
-          const s = pick(r, [6, 8, 10, 12]), x = r(s + 1, 2 * s - 1), y = s * s / 2;
+          const s = pick(r, [4, 6, 8, 10, 12, 14]), x = r(s + 1, 2 * s - 1), y = s * s / 2;
           return {
             q: `1辺 ${s}cm の正方形 ABCD。点 P は、A から辺 AB、BC の上を C まで、毎秒 1cm で動く。A を出発して $x$ 秒後の、三角形 APD の面積を $y$ cm² とする。A を出発して ${x}秒後、P は辺 BC 上にある。このときの、三角形 APD の面積は何 cm² か。`,
             ans: y, unit: "cm²",
@@ -179,7 +179,7 @@ export const UNITS = [
         }),
         // 16d02c 正方形：y＝20 になるのは何秒後か
         t("16d02c", (r) => {
-          const s = pick(r, [6, 8, 10, 12]), x0 = r(2, s - 1), k = (s / 2) * x0;
+          const s = pick(r, [4, 6, 8, 10, 12, 14]), x0 = r(2, s - 1), k = (s / 2) * x0;
           return {
             q: `1辺 ${s}cm の正方形 ABCD。点 P は、A から辺 AB、BC の上を C まで、毎秒 1cm で動く。A を出発して $x$ 秒後の、三角形 APD の面積を $y$ cm² とする。三角形 APD の面積が ${k}cm² になるのは、A を出発して何秒後か。`,
             ans: x0, unit: "秒後",
