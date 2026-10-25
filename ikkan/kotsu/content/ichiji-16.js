@@ -8,7 +8,7 @@
 //   dr.5（A さんのまちがいを説明する）は、(a) まちがいの理由を選ぶ4択、(b) 正しい式での面積の値、の2つにした。
 //   式を答える問題は入力欄で打てないので、4択（誤答は、÷2 のわすれ・底辺と高さの取りちがえ・符号まちがい・速さのかけわすれ など。正解と同じ式にならないものだけ）にした。
 // ============================================================
-import { t, pick, choices4, shuffle, round } from "../kit.js";
+import { t, pick, choices4, round } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
 import { Q, qadd, qsub, qmul, qdiv, qneg, qeq, qval, qiszero } from "../algebra.js";
 import { line, lineThrough, yAt, xAt, onLine, ltex, qt } from "../linear.js";
@@ -27,19 +27,29 @@ const cxq = (c) => { const s = qt(c); return s === "1" ? "x" : s === "-1" ? "-x"
 const HALF = "\\frac{1}{2}";
 /** 長方形の言い方 */
 const rectOf = (p, q) => `長方形 ABCD（AB＝${p}cm、BC＝${q}cm）`;
-/** 式の4択：正解 L、ありがちな誤答の直線 cands。正解と同じ式になるものは、はずす */
-const lineChoices = (r, L, cands, fills = []) => {
-  const seen = new Set([ltex(L)]);
-  const wrongs = [];
-  for (const w of shuffle(r, cands.filter(Boolean))) {
-    const s = ltex(w);
-    if (seen.has(s)) continue;
-    seen.add(s); wrongs.push(TX(s));
-  }
-  return choices4(r, TX(ltex(L)), wrongs, (i) => {
-    const w = fills[i % Math.max(1, fills.length)];
-    return w && ltex(w) !== ltex(L) ? TX(ltex(w)) : null;
-  });
+// ── 式の4択の選び方 ──────────────────────────────────────────────
+//  誤答が「正解を1か所だけ変えたもの」ばかりだと、計算せずに「ほかの式と、傾き・切片がいちばんそろっている式」を選ぶだけで当たってしまう。
+//  そこで、誤答の候補から 3つを選ぶとき、(1) 正解と傾きも切片もそろわない誤答、(2) 誤答どうしでそろう組、も入る選び方にする
+//  （そのような当て方で正解が選べる組を、およそ 35% にする）。また、正解が分数をふくまない式のときは、分数をふくむ誤答を使わない
+//  （書式で見分けられないように）。正解が分数をふくむときは、誤答も分数をふくむものを先に使う。
+const featScore = (ls) => ls.map((x, i) => ls.reduce((s, y, j) => (j === i ? s : s + (qeq(x.a, y.a) ? 1 : 0) + (qeq(x.b, y.b) ? 1 : 0)), 0));
+const guessable = (ls) => { const sc = featScore(ls), mx = Math.max(...sc); return sc[0] === mx && sc.filter((v) => v === mx).length === 1; };
+const pick3 = (r, L, pool) => {
+  const hit = [], miss = [];
+  for (let i = 0; i < pool.length; i++) for (let j = i + 1; j < pool.length; j++) for (let k = j + 1; k < pool.length; k++) (guessable([L, pool[i], pool[j], pool[k]]) ? hit : miss).push([pool[i], pool[j], pool[k]]);
+  const want = r(1, 100) <= 35, first = want ? hit : miss, second = want ? miss : hit, list = first.length ? first : second;
+  return list.length ? pick(r, list) : pool.slice(0, 3);
+};
+/** 式の4択：正解 L、ありがちな誤答の直線 cands、足りないときの補い fills。keep(w)＝その誤答が条件をみたさないことの確認。tex＝式の書き方 */
+const lineChoices = (r, L, cands, fills = [], keep = () => true, tex = ltex) => {
+  const hasF = (w) => tex(w).includes("\\frac"), same = (w) => hasF(w) === hasF(L), seen = new Set([tex(L)]);
+  const take = (list) => { const out = []; for (const w of list) { if (!w) continue; const s = tex(w); if (seen.has(s) || !keep(w)) continue; seen.add(s); out.push(w); } return out; };
+  const c1 = take(cands), f1 = take(fills);
+  let pool = c1.filter(same);
+  if (pool.length < 4) pool = pool.concat(f1.filter(same));
+  if (pool.length < 3) pool = pool.concat(c1.filter((w) => !same(w)), f1.filter((w) => !same(w)));
+  if (pool.length < 3) pool = pool.concat(take([1, -1, 2, -2, 3, -3].flatMap((k) => [line(qadd(L.a, Q(k)), L.b), line(L.a, qadd(L.b, Q(k)))])));
+  return choices4(r, TX(tex(L)), pick3(r, L, pool).map((w) => TX(tex(w))));
 };
 /** 2点を通る直線の4択（折れ線の2本目など）。誤答は、2点を両方は通らないものだけ */
 const throughChoices = (r, L, p1, p2) => {
@@ -52,10 +62,12 @@ const throughChoices = (r, L, p1, p2) => {
     inv ? line(inv, qsub(y1, qmul(inv, x1))) : null,                     // 傾きを (x の増加量)÷(y の増加量) にしてしまう
     line(a, qadd(y1, qmul(a, x1))),                                      // 切片の代入ミス（y＋a×x としてしまう）
     line(a, y1),                                                         // 切片を y 座標そのものにしてしまう
-  ].filter((w) => w && !(onLine(w, p1) && onLine(w, p2)));
+    line(qneg(a), qneg(b)),                                              // 傾きも切片も、符号をまちがえる
+    qiszero(b) ? null : line(b, qneg(a)),                                // 入れかえたうえで、符号もまちがえる
+  ];
   const one = Q(1);
-  const fills = [line(qadd(a, one), b), line(a, qadd(b, one)), line(qsub(a, one), b), line(a, qsub(b, one))].filter((w) => !(onLine(w, p1) && onLine(w, p2)));
-  return lineChoices(r, L, cand, fills);
+  const fills = [line(qadd(a, one), b), line(a, qadd(b, one)), line(qsub(a, one), b), line(a, qsub(b, one))];
+  return lineChoices(r, L, cand, fills, (w) => !(onLine(w, p1) && onLine(w, p2)));
 };
 const mulTex = (c, v) => (c === 1 ? v : `${c}${v}`);
 /** 傾き a を 1 ふやした直線（4択の補い用） */
@@ -139,7 +151,10 @@ export const UNITS = [
               line(Q(c.p, 2), 0),                  // 速さをかけわすれる（BP＝x としてしまう）
               line(Q(c.q * c.v, 2), 0),            // 底辺に BC を使ってしまう
               line(Q(c.p * c.v, 2), c.p),          // 切片をつけてしまう
-            ], [bump(c.s)]),
+              line(Q(-c.p * c.v, 2), Q(c.p * c.q, 2)),   // 三角形 APC の式を書いてしまう
+              line(c.p * c.v, c.p),                // ÷2 をわすれ、切片もつけてしまう
+              line(Q(c.p * c.v, 2) , c.q),         // 切片に BC をつけてしまう
+            ], [bump(c.s), line(qsub(c.s, Q(1)), 0)]),
             hint: "三角形 ABP の底辺と高さは、それぞれ、どの辺？ 高さは、時間とともに、どう変わる？",
             steps: [`BP は、毎秒 ${c.v}cm で $x$ 秒動くので ${TX(`BP=${bp}`)}（cm）。`, `底辺 AB＝${c.p}cm、高さ BP より ${TX(`y=${HALF}\\times ${c.p}\\times ${bp}=${cxq(c.s).replace(/^x$/, "x")}`)}。`],
           };
@@ -162,7 +177,7 @@ export const UNITS = [
           return {
             q: `1辺 ${s}cm の正方形 ABCD。点 P は、A から辺 AB、BC の上を C まで、毎秒 1cm で動く。A を出発して $x$ 秒後の、三角形 APD の面積を $y$ cm² とする。P が辺 AB 上にあるとき、$y$ を $x$ の式で表すと、次のうちどれか。`,
             ans: TX(ltex(L)),
-            choices: lineChoices(r, L, [line(s, 0), line(Q(1, 2), 0), line(s * s / 2, 0), line(Q(-s, 2), s * s / 2), line(Q(s, 2), s)], [bump(Q(s, 2))]),
+            choices: lineChoices(r, L, [line(s, 0), line(Q(1, 2), 0), line(s * s / 2, 0), line(Q(-s, 2), s * s / 2), line(Q(s, 2), s), line(s, s), line(s * s / 2, s / 2)], [bump(Q(s, 2))]),
             hint: "P が辺 AB 上にあるとき、三角形 APD の底辺と高さは、それぞれ、どの辺（どの長さ）？",
             steps: [`AP＝$x$ cm。三角形 APD は、底辺 AD＝${s}cm、高さ AP＝$x$ cm。`, `${TX(`y=${HALF}\\times ${s}\\times x=${cxq(Q(s, 2))}`)}（$0\\leqq x\\leqq ${s}$）。`],
           };
@@ -189,26 +204,26 @@ export const UNITS = [
         }),
         // 16q01 小テスト（1）P が辺 BC 上にあるとき、y を x の式で（4択）
         t("16q01", (r) => {
-          const p = r(4, 10), q = r(p === 4 ? 5 : 4, 10);
+          const p = pick(r, [4, 6, 8, 10]), q = r(4, 10);
           if (p === q) return { skip: true };
           const L = line(Q(p, 2), 0);
           return {
             q: `${rectOf(p, q)}がある。点 P は、B を出発して、毎秒 1cm の速さで、辺 BC、CD の上を D まで動く。P が B を出発して $x$ 秒後の、三角形 ABP の面積を $y$ cm² とする。P が辺 BC 上にあるとき、$y$ を $x$ の式で表すと、次のうちどれか。`,
             ans: TX(ltex(L)),
-            choices: lineChoices(r, L, [line(p, 0), line(Q(q, 2), 0), line(Q(1, 2), 0), line(Q(p, 2), p), line(Q(-p, 2), Q(p * q, 2))], [bump(Q(p, 2))]),
+            choices: lineChoices(r, L, [line(p, 0), line(Q(q, 2), 0), line(Q(1, 2), 0), line(Q(p, 2), p), line(Q(-p, 2), Q(p * q, 2)), line(p, p), line(Q(p * q, 2), 0)], [bump(Q(p, 2))]),
             hint: "P が辺 BC 上にあるとき、三角形 ABP の底辺と高さは、それぞれ、どの辺？ 高さは、時間とともに、どう変わる？",
             steps: [`BP＝$x$ cm。三角形 ABP は、底辺 AB＝${p}cm、高さ BP＝$x$ cm。`, `${TX(`y=${HALF}\\times ${p}\\times x=${cxq(Q(p, 2))}`)}。`],
           };
         }),
         // 16q02 小テスト（2）（1）のとき、x の変域（C に着くのは何秒後か）
         t("16q02", (r) => {
-          const p = r(4, 10), q = r(5, 12);
-          if (p === q) return { skip: true };
+          const p = r(4, 10), v = pick(r, [2, 3]), T = r(3, 6), q = v * T;
+          if (p === q || p === T || v === T) return { skip: true };   // 答えが問題文の数と同じにならないように
           return {
-            q: `${rectOf(p, q)}がある。点 P は、B を出発して、毎秒 1cm の速さで、辺 BC、CD の上を D まで動く。P が B を出発して $x$ 秒後の、三角形 ABP の面積を $y$ cm² とする。P が辺 BC 上にある間の $x$ の変域は、$0\\leqq x\\leqq a$ である。$a$ の値は？`,
-            ans: q, unit: "",
+            q: `${rectOf(p, q)}がある。点 P は、B を出発して、毎秒 ${v}cm の速さで、辺 BC、CD の上を D まで動く。P が B を出発して $x$ 秒後の、三角形 ABP の面積を $y$ cm² とする。P が辺 BC 上にある間の $x$ の変域は、$0\\leqq x\\leqq a$ である。$a$ の値は？`,
+            ans: T,
             hint: "辺 BC 上にいるのは、P がどこからどこまで動く間かな？",
-            steps: [`BC＝${q}cm を毎秒 1cm で動くので、C に着くのは ${TX(`${q}\\div 1=${q}`)}（秒後）。`, `P が辺 BC 上にあるのは ${TX(`0\\leqq x\\leqq ${q}`)} の間。よって ${TX(`a=${q}`)}。`],
+            steps: [`BC＝${q}cm を毎秒 ${v}cm で動くので、C に着くのは ${TX(`${q}\\div ${v}=${T}`)}（秒後）。`, `P が辺 BC 上にあるのは ${TX(`0\\leqq x\\leqq ${T}`)} の間。よって ${TX(`a=${T}`)}。`],
           };
         }),
       ],
@@ -220,7 +235,7 @@ export const UNITS = [
           return {
             q: `${rectOf(p, q)}で、点 P は、A から辺 AB、BC の上を C まで、毎秒 1cm で動く。A を出発して $x$ 秒後の、三角形 APC の面積を $y$ cm² とする。P が辺 AB 上にある（$0\\leqq x\\leqq ${p}$）とき、$y$ を $x$ の式で表すと、次のうちどれか。`,
             ans: TX(ltex(ab)),
-            choices: lineChoices(r, ab, [line(Q(p, 2), 0), line(q, 0), line(Q(p * q, 2), 0), line(Q(q, 2), q), line(Q(-q, 2), Q(p * q, 2))], [bump(Q(q, 2))]),
+            choices: lineChoices(r, ab, [line(Q(p, 2), 0), line(q, 0), line(Q(p * q, 2), 0), line(Q(q, 2), q), line(Q(-q, 2), Q(p * q, 2)), line(Q(q, 2), Q(-q, 2)), line(Q(-p, 2), Q(p * q, 2))], [bump(Q(q, 2))]),
             hint: "P が辺 AB 上にあるとき、三角形 APC の底辺を AP とすると、高さは、どの辺の長さ？",
             steps: [`AP＝$x$ cm。三角形 APC は、底辺 AP＝$x$ cm、高さ BC＝${q}cm。`, `${TX(`y=${HALF}\\times x\\times ${q}=${cxq(Q(q, 2))}`)}。`],
           };
@@ -236,6 +251,9 @@ export const UNITS = [
               line(Q(-p, 2), Q(p * q, 2)),           // PC＝BC−x としてしまう
               line(Q(-q, 2), Q(q * (p + q), 2)),     // 底辺と高さを取りちがえる
               line(-p, p * (p + q)),                 // ÷2 をわすれる
+              line(Q(p, 2), Q(p * (p + q), 2)),      // 傾きの符号をまちがえる
+              line(Q(-p, 2), Q(p * p, 2)),           // PC＝AB−x としてしまう
+              line(Q(p, 2), Q(-p * (p + q), 2)),     // 傾きも切片も、符号をまちがえる
             ], [line(Q(-p, 2), qadd(Q(p * (p + q), 2), Q(1)))]),
             hint: "P が辺 BC 上にあるとき、三角形 APC の底辺は、どの線分？ その長さは、$x$ を使うと、どう表せる？",
             steps: [`P が辺 BC 上のとき、PC＝（AB＋BC）−AP＝${p + q}−$x$（cm）。高さは AB＝${p}cm。`, `${TX(`y=${HALF}\\times (${p + q}-x)\\times ${p}`)}。かっこをはずして ${TX(ltex(bc))}。`],
@@ -296,15 +314,18 @@ export const UNITS = [
           return {
             q: `∠B＝90°、AB＝${p}cm、BC＝${q}cm の直角三角形 ABC。点 P は、B から C まで、辺 BC 上を毎秒 ${v}cm で動く。B を出発して $x$ 秒後の、三角形 ABP の面積を $y$ cm²、三角形 APC の面積を $z$ cm² とする。$z$ を $x$ の式で表すと、次のうちどれか。`,
             ans: TX(ltex(c.zL).replace(/^y/, "z")),
-            choices: (() => {
-              const zt = (L) => ltex(L).replace(/^y/, "z");
-              const right = c.zL, seen = new Set([zt(right)]), wrongs = [];
-              const cand = [line(Q(-p, 2), Q(p * q, 2)), line(Q(p * v, 2), Q(-p * q, 2)), line(Q(p * v, 2), Q(p * q, 2)), line(-p * v, p * q), line(Q(-q * v, 2), Q(q * q, 2)), line(Q(p * v, 2), 0)];
-              for (const w of shuffle(r, cand)) { const s = zt(w); if (seen.has(s)) continue; seen.add(s); wrongs.push(TX(s)); }
-              return choices4(r, TX(zt(right)), wrongs, (i) => TX(zt(line(qadd(Q(-p * v, 2), Q((i % 2 ? 1 : -1) * (Math.floor(i / 2) + 1))), Q(p * q, 2)))));
-            })(),
+            choices: lineChoices(r, c.zL, [
+              line(Q(-p, 2), Q(p * q, 2)),            // 速さをかけわすれる（PC＝BC−x としてしまう）
+              line(Q(p * v, 2), Q(-p * q, 2)),        // PC＝x−BC としてしまう
+              line(Q(p * v, 2), Q(p * q, 2)),         // PC＝BC＋BP としてしまう
+              line(-p * v, p * q),                    // ÷2 をわすれる
+              line(Q(-q * v, 2), Q(q * q, 2)),        // 高さに BC を使ってしまう
+              line(Q(p * v, 2), 0),                   // 三角形 ABP の式を書いてしまう
+              line(Q(-p * v, 2), 0),                  // 切片を入れわすれる
+              line(Q(p * q, 2), Q(-p * v, 2)),        // 傾きと切片を入れかえてしまう
+            ], [line(qadd(Q(-p * v, 2), Q(1)), Q(p * q, 2)), line(Q(-p * v, 2), qadd(Q(p * q, 2), Q(1)))], () => true, (L) => ltex(L).replace(/^y/, "z")),
             hint: "三角形 APC の底辺を PC とすると、PC の長さは、BC から BP をひいたもの。BP は、$x$ を使うと、どう表せる？",
-            steps: [`BP＝${mulTex(v, "x")}（cm）なので PC＝${q}−${mulTex(v, "x")}（cm）。高さは AB＝${p}cm。`, `${TX(`z=${HALF}\\times (${q}-${mulTex(v, "x")})\\times ${p}`)}。かっこをはずして ${TX(ltex(c.zL).replace(/^y/, "z"))}。`],
+            steps: [`${TX(`BP=${mulTex(v, "x")}`)}（cm）なので ${TX(`PC=${q}-${mulTex(v, "x")}`)}（cm）。高さは AB＝${p}cm。`, `${TX(`z=${HALF}\\times (${q}-${mulTex(v, "x")})\\times ${p}`)}。かっこをはずして ${TX(ltex(c.zL).replace(/^y/, "z"))}。`],
           };
         }),
         // 16d04b 直角三角形：y＝z になるのは何秒後か（y が z の k倍）

@@ -34,6 +34,25 @@ const solveVar = (k, v, n) => {
 };
 const tryGen = (fn, n = 400) => { for (let i = 0; i < n; i++) { const v = fn(); if (v) return v; } return null; };
 const NZ = (r, m) => rnz(r, -m, m);
+// ── 点を選ぶ4択の誤答の選び方（式の4択と同じ考え方）：「他の選択肢と x 座標・y 座標がいちばんそろう点」を選ぶ当て方で、正解が決まらないようにする ──
+const sharePt = (u, v) => (String(u[0]) === String(v[0]) ? 1 : 0) + (String(u[1]) === String(v[1]) ? 1 : 0);
+/** 正解の点 good と、誤答の候補から、誤答の点を 3 つ選ぶ（正解と x 座標も y 座標もそろわない点を 1 つ以上入れる） */
+const pickWrongPts = (r, good, cands) => {
+  const key = (p) => p.map(String).join("|"), seen = new Set([key(good)]), pool = [];
+  for (const c of cands) { if (!seen.has(key(c))) { seen.add(key(c)); pool.push(c); } }
+  const trips = [];
+  for (let i = 0; i < pool.length; i++) for (let j = i + 1; j < pool.length; j++) for (let k = j + 1; k < pool.length; k++) trips.push([pool[i], pool[j], pool[k]]);
+  const info = (t) => {
+    const set = [good, ...t], sc = set.map((c, i) => set.reduce((n, d, j) => n + (i === j ? 0 : sharePt(c, d)), 0));
+    return { unrel: t.some((w) => sharePt(good, w) === 0), c: sc[0], maxW: Math.max(...sc.slice(1)), minW: Math.min(...sc.slice(1)) };
+  };
+  const all = trips.filter((t) => info(t).unrel && info(t).c >= info(t).minW);
+  const hi = all.filter((t) => info(t).c > info(t).maxW), mid = all.filter((t) => info(t).c === info(t).maxW), lo = all.filter((t) => info(t).c < info(t).maxW);
+  const order = shuffle(r, [hi, hi, mid, lo, lo, lo].filter((g) => g.length));
+  const use = order.length ? order[0] : trips.filter((t) => info(t).unrel);
+  return pick(r, use.length ? use : trips);
+};
+
 /** 軸に平行な直線の言い方：$x$ 軸に平行な直線で、点 $(0, 2)$ を通る */
 const descr = (par, pt) => `${TX(par)} 軸に平行な直線で、点 ${PT(pt)} を通る`;
 
@@ -103,9 +122,8 @@ export const UNITS = [
           const v = pick(r, ["x", "y"]), val = NZ(r, 6), m = tryGen(() => { const m = NZ(r, 7); return Math.abs(m) === Math.abs(val) ? null : m; });   // 誤答どうしが重ならないように m＝±val をはずす
           const on = (p) => (v === "y" ? p[1] === val : p[0] === val);
           const good = v === "y" ? [m, val] : [val, m];
-          const cand = v === "y" ? [[val, m], [m, -val], [-val, m], [-m, -val]] : [[m, val], [-val, m], [m, -val], [-m, -val]];
-          const wrongs = [], seen = new Set([good.join()]);
-          for (const p of shuffle(r, cand)) { if (on(p) || seen.has(p.join())) continue; seen.add(p.join()); wrongs.push(PT(p)); }
+          const cand = (v === "y" ? [[val, m], [m, -val], [-val, m], [-m, -val], [m, val + 1], [m, val - 1], [-m, val + 1]] : [[m, val], [-val, m], [m, -val], [-m, -val], [val + 1, m], [val - 1, m], [val + 1, -m]]).filter((q) => !on(q));
+          const wrongs = pickWrongPts(r, good, cand).map((q) => PT(q));
           return {
             q: `方程式 ${HV(v, val)} のグラフ上にある点は、次のうちどれか。`,
             ans: PT(good),
@@ -189,7 +207,7 @@ export const UNITS = [
         }),
         // 12q01b 小テスト（1）グラフが軸と交わる点の座標
         t("12q01b", (r) => {
-          const v = pick(r, ["x", "y"]), val = NZ(r, 7), form = pick(r, ["plain", "A", "B"]);
+          const v = pick(r, ["x", "y"]), val = NZ(r, 7), form = pick(r, ["A", "B"]);   // y＝k の形そのままだと、答えが式の数字そのものになるので、2y＝−10 のような形だけにする
           const e = hvEq(r, v, val, form);
           return {
             q: v === "y"
@@ -271,7 +289,7 @@ export const UNITS = [
           return {
             q: `4つの直線 ${shuffle(r, lines).join("、")} で囲まれた長方形の面積が ${S}cm² であるとき、$${name}$ の値は？ただし、$${name}$ は $${qt(k1)}$ より${side > 0 ? "大きい" : "小さい"}。（座標の 1 目もりを 1cm とする。）`,
             ans,
-            hint: `長方形の面積は、横の長さ×縦の長さ。はじめから決まっているほうの長さは、いくつ？ もう一方を、${name} を使った式で表せるかな？`,
+            hint: `長方形の面積は、横の長さ×縦の長さ。はじめから決まっているほうの長さは、いくつ？ もう一方を、$${name}$ を使った式で表せるかな？`,
             steps: [
               `${v === "x" ? "横" : "縦"}の長さは ${TX(Wt)}（cm）、${v === "x" ? "縦" : "横"}の長さは ${TX(`${qt(k2.b)}-${P(k2.a)}=${h}`)}（cm）。`,
               `${TX(`(${Wt})\\times ${h}=${S}`)}`,

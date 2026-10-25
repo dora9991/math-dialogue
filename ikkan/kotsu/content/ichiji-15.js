@@ -21,19 +21,29 @@ const TX = (s) => `$${s}$`;
 const cx = (c) => (c === 1 ? "x" : c === -1 ? "-x" : `${c}x`);
 /** 直線の右辺（y＝ の右） */
 const rhs = (L) => ltex(L).slice(2);
-/** 式の4択：正解 L、ありがちな誤答の直線 cands。正解と同じ式になるものは、はずす */
-const lineChoices = (r, L, cands, fills = []) => {
-  const seen = new Set([ltex(L)]);
-  const wrongs = [];
-  for (const w of shuffle(r, cands.filter(Boolean))) {
-    const s = ltex(w);
-    if (seen.has(s)) continue;
-    seen.add(s); wrongs.push(TX(s));
-  }
-  return choices4(r, TX(ltex(L)), wrongs, (i) => {
-    const w = fills[i % Math.max(1, fills.length)];
-    return w && ltex(w) !== ltex(L) ? TX(ltex(w)) : null;
-  });
+// ── 式の4択の選び方 ──────────────────────────────────────────────
+//  誤答が「正解を1か所だけ変えたもの」ばかりだと、計算せずに「ほかの式と、傾き・切片がいちばんそろっている式」を選ぶだけで当たってしまう。
+//  そこで、誤答の候補から 3つを選ぶとき、(1) 正解と傾きも切片もそろわない誤答、(2) 誤答どうしでそろう組、も入る選び方にする
+//  （そのような当て方で正解が選べる組を、およそ 35% にする）。また、正解が分数をふくまない式のときは、分数をふくむ誤答を使わない
+//  （書式で見分けられないように）。正解が分数をふくむときは、誤答も分数をふくむものを先に使う。
+const featScore = (ls) => ls.map((x, i) => ls.reduce((s, y, j) => (j === i ? s : s + (qeq(x.a, y.a) ? 1 : 0) + (qeq(x.b, y.b) ? 1 : 0)), 0));
+const guessable = (ls) => { const sc = featScore(ls), mx = Math.max(...sc); return sc[0] === mx && sc.filter((v) => v === mx).length === 1; };
+const pick3 = (r, L, pool) => {
+  const hit = [], miss = [];
+  for (let i = 0; i < pool.length; i++) for (let j = i + 1; j < pool.length; j++) for (let k = j + 1; k < pool.length; k++) (guessable([L, pool[i], pool[j], pool[k]]) ? hit : miss).push([pool[i], pool[j], pool[k]]);
+  const want = r(1, 100) <= 35, first = want ? hit : miss, second = want ? miss : hit, list = first.length ? first : second;
+  return list.length ? pick(r, list) : pool.slice(0, 3);
+};
+/** 式の4択：正解 L、ありがちな誤答の直線 cands、足りないときの補い fills。keep(w)＝その誤答が条件をみたさないことの確認。tex＝式の書き方 */
+const lineChoices = (r, L, cands, fills = [], keep = () => true, tex = ltex) => {
+  const hasF = (w) => tex(w).includes("\\frac"), same = (w) => hasF(w) === hasF(L), seen = new Set([tex(L)]);
+  const take = (list) => { const out = []; for (const w of list) { if (!w) continue; const s = tex(w); if (seen.has(s) || !keep(w)) continue; seen.add(s); out.push(w); } return out; };
+  const c1 = take(cands), f1 = take(fills);
+  let pool = c1.filter(same);
+  if (pool.length < 4) pool = pool.concat(f1.filter(same));
+  if (pool.length < 3) pool = pool.concat(c1.filter((w) => !same(w)), f1.filter((w) => !same(w)));
+  if (pool.length < 3) pool = pool.concat(take([1, -1, 2, -2, 3, -3].flatMap((k) => [line(qadd(L.a, Q(k)), L.b), line(L.a, qadd(L.b, Q(k)))])));
+  return choices4(r, TX(tex(L)), pick3(r, L, pool).map((w) => TX(tex(w))));
 };
 
 // ── 料金プランの場面（A 店・B 店のように、2つのプランをくらべる）──────────────────
@@ -101,6 +111,8 @@ const eqR = (r, p) => ({
     line(p.pR + p.FR, 0),              // 基本料金を 1あたりの料金にたしてしまう
     line(p.pR, 0),                     // 基本料金を入れわすれる
     line(p.pS, p.FR),                  // もう一方の店の 1あたりの料金を使う
+    line(p.pS, 0),                     // もう一方の店の式を書いてしまう
+    line(-p.pR, p.FR),                 // 傾きの符号をまちがえる
   ], [line(p.pR * 2, p.FR), line(p.pR, p.FR * 2), line(p.pS + p.pR, p.FR)]),
   hint: `料金は、「${p.c.fee}」と「${p.c.u}数ぶんの料金」の和。$x$ ${p.c.u}ぶんの料金は、$x$ を使って、どう表せる？`,
   steps: [`（料金）＝（1${p.c.u}の料金）×（${p.c.u}数）＋（${p.c.fee}）。`, `${p.nR}は、1${p.c.u}が ${p.pR}円で、${p.c.fee}が ${p.FR}円だから、${TX(ltex(p.lR))}。`],
@@ -207,7 +219,8 @@ function callCase(r) {
     if (FA > 1000) continue;
     const lA = line(pA, FA), lB = line(pB, FB), m = meet(lA, lB);
     if (!m || !qeq(m[0], Q(xeq))) throw new Error("通話プランの交点が合わない");
-    const two = (L) => { const xs = shuffle(r, [0, 1, 2, 3, 4, 5, 6]).slice(0, 2).sort((a, b) => a - b); return xs.map((x) => [x, yAt(L, x)[0]]); };
+    // 点の x に、交点の x は使わない（答えが見えるので）
+    const two = (L) => { const xs = shuffle(r, [0, 1, 2, 3, 4, 5, 6].filter((v) => v !== xeq)).slice(0, 2).sort((a, b) => a - b); return xs.map((x) => [x, yAt(L, x)[0]]); };
     const ptA = two(lA), ptB = two(lB);
     const PT = (p) => TX(`(${p[0]}, ${p[1]})`);
     return {
@@ -226,9 +239,11 @@ const callChoices = (r, L, p1, p2) => {
     line(qneg(a), b),                                                      // 傾きの符号まちがい
     line(a, qadd(Q(y1), qmul(a, Q(x1)))),                                  // 切片の代入ミス（y＋a×x としてしまう）
     line(a, Q(y1)),                                                        // 切片を y 座標そのものにしてしまう
-  ].filter((w) => w && !(onLine(w, p1) && onLine(w, p2)));
+    line(qneg(a), qneg(b)),                                                // 傾きも切片も、符号をまちがえる
+    qiszero(b) ? null : line(b, qneg(a)),                                  // 入れかえたうえで、符号もまちがえる
+  ];
   const one = Q(50);
-  return lineChoices(r, L, cand, [line(qadd(a, one), b), line(a, qadd(b, one)), line(qsub(a, one), b), line(a, qsub(b, one))].filter((w) => !(onLine(w, p1) && onLine(w, p2))));
+  return lineChoices(r, L, cand, [line(qadd(a, one), b), line(a, qadd(b, one)), line(qsub(a, one), b), line(a, qsub(b, one))], (w) => !(onLine(w, p1) && onLine(w, p2)));
 };
 
 // ── 小テスト（5）：3つの店（A は基本料金なし、B と C は基本料金あり）────────────────
@@ -296,9 +311,9 @@ export const UNITS = [
           return {
             q: `${c.text}水そう P の水の量 $y$ L を、$x$ の式で表すと、次のうちどれか。`,
             ans: TX(ltex(c.lP)),
-            choices: lineChoices(r, c.lP, [line(c.rP, c.P0), line(c.P0, -c.rP), line(-c.P0, c.rP), line(-c.rQ, c.P0), line(-c.rP, c.Q0 === 0 ? -c.P0 : c.P0 + c.Q0)], [line(-c.rP, c.P0 + 10), line(-c.rP - 1, c.P0)]),
+            choices: lineChoices(r, c.lP, [line(c.rP, c.P0), line(c.P0, -c.rP), line(-c.P0, c.rP), line(-c.rQ, c.P0), line(-c.rP, c.Q0 === 0 ? -c.P0 : c.P0 + c.Q0), line(c.rQ, c.Q0)], [line(-c.rP, c.P0 + 10), line(-c.rP - 1, c.P0)]),
             hint: "水がぬけていくと、水の量は、ふえる？ へる？ 1分間に何 L かわる？ はじめの量は？",
-            steps: [`P は、はじめに ${c.P0}L あり、毎分 ${c.rP}L ずつへっていく。`, `$x$ 分後には ${c.rP}x（L）へるので、${TX(ltex(c.lP))}。`],
+            steps: [`P は、はじめに ${c.P0}L あり、毎分 ${c.rP}L ずつへっていく。`, `$x$ 分後には ${TX(`${c.rP}x`)}（L）へるので、${TX(ltex(c.lP))}。`],
           };
         }),
         // 15d04b 2つの水そう：水の量が等しくなるのは何分後か（何 L のときか）
@@ -331,7 +346,7 @@ export const UNITS = [
           return {
             q: `${c.text}兄の道のり $y$ m を、$x$ の式で表すと、次のうちどれか。`,
             ans: TX(ltex(c.lA)),
-            choices: lineChoices(r, c.lA, [line(c.vA, -c.d), line(c.vA, c.vA * c.d), line(c.vB, -c.vA * c.d), line(c.vA, -c.vB * c.d), line(-c.vA, c.vA * c.d)], [line(c.vA, -c.vA * c.d - 100), line(c.vA + 10, -c.vA * c.d)]),
+            choices: lineChoices(r, c.lA, [line(c.vA, -c.d), line(c.vA, c.vA * c.d), line(c.vB, -c.vA * c.d), line(c.vA, -c.vB * c.d), line(-c.vA, c.vA * c.d), line(c.vB, 0), line(c.vB, -c.vB * c.d)], [line(c.vA, -c.vA * c.d - 100), line(c.vA + 10, -c.vA * c.d)]),
             hint: "兄が歩いているのは、弟が出発して何分後から？ 兄が歩いた時間は、$x$ を使うと、どう表せる？",
             steps: [`兄が歩いている時間は ${TX(`x-${c.d}`)}（分）。`, `道のり＝速さ×時間 より ${TX(`y=${c.vA}(x-${c.d})`)}。かっこをはずして ${TX(ltex(c.lA))}。`],
           };

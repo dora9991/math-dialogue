@@ -54,25 +54,68 @@ const solveYSteps = (a, b, c) => {
     : [`${TX(coefX(a, "x"))} を右辺に移項して、${TX(move)}。`, `両辺を ${TX(String(b))} でわって、${TX(ltex(L))}。`];
 };
 
+
+// ── 式を選ぶ4択の誤答の選び方 ─────────────────────────────────────────
+//   正解と傾きも切片もそろわない誤答を 1 つ以上入れる。さらに、誤答どうしでそろう組ができるようにして、
+//   「他の選択肢と傾き・切片がいちばん共通する式」「ひとつだけ浮いている式」を選ぶ、という当て方で正解が決まらないようにする。
+const share = (u, v) => (qeq(u.a, v.a) ? 1 : 0) + (qeq(u.b, v.b) ? 1 : 0);
+/** 正解 L と、誤答の候補（main。足りなければ low も使う）から、誤答の直線を 3 つ選ぶ */
+const pickWrongs = (r, L, main, low = []) => {
+  const uniq = (cs) => {
+    const seen = new Set([ltex(L)]), out = [];
+    for (const w of cs) { const s = ltex(w); if (!seen.has(s) && !(qeq(w.a, L.a) && qeq(w.b, L.b))) { seen.add(s); out.push(w); } }
+    return out;
+  };
+  let pool = uniq(main);
+  if (pool.length < 5) pool = uniq([...main, ...low]);
+  const trips = [];
+  for (let i = 0; i < pool.length; i++) for (let j = i + 1; j < pool.length; j++) for (let k = j + 1; k < pool.length; k++) trips.push([pool[i], pool[j], pool[k]]);
+  const info = (t) => {
+    const set = [L, ...t], sc = set.map((c, i) => set.reduce((n, d, j) => n + (i === j ? 0 : share(c, d)), 0));
+    return { unrel: t.some((w) => share(L, w) === 0), c: sc[0], maxW: Math.max(...sc.slice(1)), minW: Math.min(...sc.slice(1)) };
+  };
+  const all = trips.filter((t) => info(t).unrel && info(t).c >= info(t).minW);
+  const hi = all.filter((t) => info(t).c > info(t).maxW), mid = all.filter((t) => info(t).c === info(t).maxW), lo = all.filter((t) => info(t).c < info(t).maxW);
+  // 正解が「いちばんそろう」（hi）／同点（mid）／他のほうがそろう（lo）を、まぜて出す
+  const order = shuffle(r, [hi, hi, mid, lo, lo, lo].filter((g) => g.length));
+  const use = order.length ? order[0] : trips.filter((t) => info(t).unrel);
+  return pick(r, use.length ? use : trips);
+};
+
 /** ax+by＝c を y について解いた式の4択。誤答は「ありがちな間違い」で、正解と同じ直線にならないものだけ */
 const solveChoices = (r, a, b, c) => {
   const L = fromStd(a, b, c);
-  const cand = [
+  const main = [
     line(Q(a, b), Q(c, b)),          // x の項を移項しても、符号を変えない
     line(Q(-a, b), Q(-c, b)),        // 定数項の符号をまちがえる
     line(Q(a, b), Q(-c, b)),         // x の項も定数項も符号をまちがえる
     line(Q(-a, 1), Q(c, 1)),         // 両辺を b でわり忘れる
     line(Q(-a, b), Q(c, 1)),         // 定数項だけ b でわり忘れる
     line(Q(-a, 1), Q(c, b)),         // x の項だけ b でわり忘れる
+    line(L.b, L.a),                  // 傾きと切片をとりちがえる
+    line(L.b, qneg(L.a)),            // 傾きと切片をとりちがえて、符号もまちがえる
   ];
-  const seen = new Set([ltex(L)]);
-  const wrongs = [];
-  for (const w of shuffle(r, cand)) {
-    const s = ltex(w);
-    if (seen.has(s) || (qeq(w.a, L.a) && qeq(w.b, L.b))) continue;
-    seen.add(s); wrongs.push(TX(s));
-  }
+  const wrongs = pickWrongs(r, L, main).map((w) => TX(ltex(w)));
   return choices4(r, TX(ltex(L)), wrongs, (i) => TX(ltex(line(qadd(L.a, Q(i + 1)), L.b))));
+};
+
+// ── 点を選ぶ4択の誤答の選び方（式の4択と同じ考え方）：「他の選択肢と x 座標・y 座標がいちばんそろう点」を選ぶ当て方で、正解が決まらないようにする ──
+const sharePt = (u, v) => (String(u[0]) === String(v[0]) ? 1 : 0) + (String(u[1]) === String(v[1]) ? 1 : 0);
+/** 正解の点 good と、誤答の候補から、誤答の点を 3 つ選ぶ（正解と x 座標も y 座標もそろわない点を 1 つ以上入れる） */
+const pickWrongPts = (r, good, cands) => {
+  const key = (p) => p.map(String).join("|"), seen = new Set([key(good)]), pool = [];
+  for (const c of cands) { if (!seen.has(key(c))) { seen.add(key(c)); pool.push(c); } }
+  const trips = [];
+  for (let i = 0; i < pool.length; i++) for (let j = i + 1; j < pool.length; j++) for (let k = j + 1; k < pool.length; k++) trips.push([pool[i], pool[j], pool[k]]);
+  const info = (t) => {
+    const set = [good, ...t], sc = set.map((c, i) => set.reduce((n, d, j) => n + (i === j ? 0 : sharePt(c, d)), 0));
+    return { unrel: t.some((w) => sharePt(good, w) === 0), c: sc[0], maxW: Math.max(...sc.slice(1)), minW: Math.min(...sc.slice(1)) };
+  };
+  const all = trips.filter((t) => info(t).unrel && info(t).c >= info(t).minW);
+  const hi = all.filter((t) => info(t).c > info(t).maxW), mid = all.filter((t) => info(t).c === info(t).maxW), lo = all.filter((t) => info(t).c < info(t).maxW);
+  const order = shuffle(r, [hi, hi, mid, lo, lo, lo].filter((g) => g.length));
+  const use = order.length ? order[0] : trips.filter((t) => info(t).unrel);
+  return pick(r, use.length ? use : trips);
 };
 
 /** 係数 a、b（0 でない）と、定数 c を、条件に合うまでつくる。fn が null を返したら作り直し */
@@ -161,7 +204,7 @@ export const UNITS = [
             const ks = [-4, -3, -2, -1, 0, 1, 2, 3, 4, 6].filter((k) => (c - a * k) % b === 0);
             if (!ks.length) return null;
             const k = pick(r, ks);
-            return [a, b, c, k, (c - a * k) / b];
+            return [a, b, c, k, (c - a * k) / b + 0];   // + 0 で −0 を 0 にする
           });
           const L = fromStd(a, b, c);
           return {
@@ -203,13 +246,13 @@ export const UNITS = [
             const pts = latticePts(a, b, c, [-6, 6], 8);
             if (pts.length < 2 || c === 0) return null;
             const g = pick(r, pts), [x0, y0] = g;
-            const near = [[y0, x0], [-x0, y0], [x0, -y0], [-x0, -y0], [x0 + 1, y0], [x0, y0 + 1], [x0 - 1, y0], [x0, y0 - 1], [x0 + 2, y0], [x0, y0 + 2]];
+            const near = [[y0, x0], [-x0, y0], [x0, -y0], [-x0, -y0], [x0 + 1, y0], [x0, y0 + 1], [x0 - 1, y0], [x0, y0 - 1], [x0 + 2, y0], [x0, y0 + 2], [y0, -x0], [-y0, x0], [-y0, -x0]];
             const off = [], seen = new Set([g.join(",")]);
             for (const p of shuffle(r, near)) {
               if (seen.has(p.join(",")) || a * p[0] + b * p[1] === c) continue;
               seen.add(p.join(",")); off.push(p);
             }
-            return off.length >= 3 ? [a, b, c, g, off.slice(0, 3)] : null;
+            return off.length >= 3 ? [a, b, c, g, pickWrongPts(r, g, off)] : null;
           });
           const ans = TX(ptex2(good));
           return {
@@ -530,7 +573,7 @@ function q04Steps(c4, ask) {
   const { c, p, q, a, b } = c4;
   return ask === "a"
     ? [`点 ${PT([p, 0])} を代入して、${TX(`${coefX(p, "a")}+b\\times 0=${c}`)}。`, `${TX(`${coefX(p, "a")}=${c}`)}、${TX(`a=${a}`)}。`]
-    : [`点 ${PT([0, q])} を代入して、${TX(`a\\times 0+${coefX(q, "b")}=${c}`)}。`, `${TX(`${coefX(q, "b")}=${c}`)}、${TX(`b=${b}`)}。`];
+    : [`点 ${PT([0, q])} を代入して、${TX(`a\\times 0${q < 0 ? "" : "+"}${coefX(q, "b")}=${c}`)}。`, `${TX(`${coefX(q, "b")}=${c}`)}、${TX(`b=${b}`)}。`];
 }
 
 // 移さなかった問題はなし（グラフをかく問題は、切片・x 軸との交点・ある x での y を聞く形にした）

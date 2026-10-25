@@ -33,21 +33,31 @@ const rhs = (L) => ltex(L).slice(2);
 /** x の係数つきの項（1 は省く） */
 const cxq = (c) => { const s = qt(c); return s === "1" ? "x" : s === "-1" ? "-x" : `${s}x`; };
 /** 「a×x」の書き方（a＝±1 は省く） */
-const aX = (a, x) => (qeq(Qa(a), Q(1)) ? P(x) : qeq(Qa(a), Q(-1)) ? `-${P(x)}` : `${P(a)}\\times ${P(x)}`);
+const aX = (a, x) => (qiszero(Qa(x)) ? "0" : qeq(Qa(a), Q(1)) ? P(x) : qeq(Qa(a), Q(-1)) ? `-${P(x)}` : `${P(a)}\\times ${P(x)}`);
 const HALF = "\\frac{1}{2}";
-/** 式の4択：正解 L、ありがちな誤答の直線 cands。正解と同じ式にならないものだけ。keep(w)＝その誤答が条件をみたさないことの確認 */
-const lineChoices = (r, L, cands, fills = [], keep = () => true) => {
-  const seen = new Set([ltex(L)]);
-  const wrongs = [];
-  for (const w of shuffle(r, cands.filter(Boolean))) {
-    const s = ltex(w);
-    if (seen.has(s) || !keep(w)) continue;
-    seen.add(s); wrongs.push(TX(s));
-  }
-  return choices4(r, TX(ltex(L)), wrongs, (i) => {
-    const w = fills[i % Math.max(1, fills.length)];
-    return w && ltex(w) !== ltex(L) && keep(w) ? TX(ltex(w)) : null;
-  });
+// ── 式の4択の選び方 ──────────────────────────────────────────────
+//  誤答が「正解を1か所だけ変えたもの」ばかりだと、計算せずに「ほかの式と、傾き・切片がいちばんそろっている式」を選ぶだけで当たってしまう。
+//  そこで、誤答の候補から 3つを選ぶとき、(1) 正解と傾きも切片もそろわない誤答、(2) 誤答どうしでそろう組、も入る選び方にする
+//  （そのような当て方で正解が選べる組を、およそ 35% にする）。また、正解が分数をふくまない式のときは、分数をふくむ誤答を使わない
+//  （書式で見分けられないように）。正解が分数をふくむときは、誤答も分数をふくむものを先に使う。
+const featScore = (ls) => ls.map((x, i) => ls.reduce((s, y, j) => (j === i ? s : s + (qeq(x.a, y.a) ? 1 : 0) + (qeq(x.b, y.b) ? 1 : 0)), 0));
+const guessable = (ls) => { const sc = featScore(ls), mx = Math.max(...sc); return sc[0] === mx && sc.filter((v) => v === mx).length === 1; };
+const pick3 = (r, L, pool) => {
+  const hit = [], miss = [];
+  for (let i = 0; i < pool.length; i++) for (let j = i + 1; j < pool.length; j++) for (let k = j + 1; k < pool.length; k++) (guessable([L, pool[i], pool[j], pool[k]]) ? hit : miss).push([pool[i], pool[j], pool[k]]);
+  const want = r(1, 100) <= 35, first = want ? hit : miss, second = want ? miss : hit, list = first.length ? first : second;
+  return list.length ? pick(r, list) : pool.slice(0, 3);
+};
+/** 式の4択：正解 L、ありがちな誤答の直線 cands、足りないときの補い fills。keep(w)＝その誤答が条件をみたさないことの確認。tex＝式の書き方 */
+const lineChoices = (r, L, cands, fills = [], keep = () => true, tex = ltex) => {
+  const hasF = (w) => tex(w).includes("\\frac"), same = (w) => hasF(w) === hasF(L), seen = new Set([tex(L)]);
+  const take = (list) => { const out = []; for (const w of list) { if (!w) continue; const s = tex(w); if (seen.has(s) || !keep(w)) continue; seen.add(s); out.push(w); } return out; };
+  const c1 = take(cands), f1 = take(fills);
+  let pool = c1.filter(same);
+  if (pool.length < 4) pool = pool.concat(f1.filter(same));
+  if (pool.length < 3) pool = pool.concat(c1.filter((w) => !same(w)), f1.filter((w) => !same(w)));
+  if (pool.length < 3) pool = pool.concat(take([1, -1, 2, -2, 3, -3].flatMap((k) => [line(qadd(L.a, Q(k)), L.b), line(L.a, qadd(L.b, Q(k)))])));
+  return choices4(r, TX(tex(L)), pick3(r, L, pool).map((w) => TX(tex(w))));
 };
 const INT_A = [1, 2, 3, 4, 5, -1, -2, -3, -4, -5];
 const randLine = (r, as = INT_A, bmax = 8) => line(pick(r, as), rnz(r, -bmax, bmax));
@@ -60,7 +70,7 @@ const slopeLine = (p1, p2) => {
 /** 切片の解説の1行（傾き a、点 p を通る） */
 const interceptLine = (a, p) => {
   const [x, y] = p, b = qsub(Qa(y), qmul(Qa(a), Qa(x)));
-  if (qiszero(Qa(x))) return `点 ${PT(p)} は y 軸上の点なので、切片は ${TX(qt(y))}。`;
+  if (qiszero(Qa(x))) return `点 ${PT(p)} は $y$ 軸上の点なので、切片は ${TX(qt(y))}。`;
   return `点 ${PT(p)} を通るので、${TX(`${qt(y)}=${aX(a, x)}+b`)} より ${TX(`b=${qt(b)}`)}。`;
 };
 /** 直線上の格子点から、異なる 2 点を選ぶ（順番は x の小さい順）。作れないなら null */
@@ -91,6 +101,8 @@ const twoPtChoices = (r, L, p1, p2, noInv = false) => {
     inv && !noInv ? line(inv, qsub(y1, qmul(inv, x1))) : null,           // 傾きを (x の増加量)÷(y の増加量) にしてしまう
     line(a, qadd(y1, qmul(a, x1))),                                      // 切片の代入ミス（y＋a×x としてしまう）
     line(a, y1),                                                         // 切片を y 座標そのものにしてしまう
+    line(qneg(a), qneg(b)),                                              // 傾きも切片も、符号をまちがえる
+    qiszero(b) ? null : line(b, qneg(a)),                                // 入れかえたうえで、符号もまちがえる
   ];
   const one = Q(1);
   const fills = [line(qadd(a, one), b), line(a, qadd(b, one)), line(qsub(a, one), b), line(a, qsub(b, one))];
@@ -199,7 +211,7 @@ export const UNITS = [
         t("17d01c", (r) => {
           const f = linForm(r);
           return {
-            q: `一次関数 ${TX(f.tex)} の、変化の割合は？`,
+            q: `一次関数 ${TX(f.tex)} の、変化の割合は？（約分した分数か、整数で答えよう。）`,
             ans: num(f.a),
             hint: "一次関数 $y=ax+b$ の変化の割合は、一定。それは、式の中の、どの数？ 符号にも気をつけよう。",
             steps: [`${TX(f.tex)} を $y=ax+b$ の形に見ると、$x$ の係数が ${TX(qt(f.a))}。`, `変化の割合は一定で、$a$ に等しいので、${TX(qt(f.a))}。`],
@@ -208,6 +220,7 @@ export const UNITS = [
         // 17d02a x が x1 から x2 まで増加するとき、y の増加量
         t("17d02a", (r) => {
           const L = randLine(r, INT_A, 6), x1 = r(-3, 3), x2 = x1 + r(1, 5), v1 = yAt(L, x1), v2 = yAt(L, x2), d = qsub(v2, v1);
+          if (x1 === 0 || x2 === 0) return { skip: true };   // x＝0 のとき「y＝-0+2」のような式になるので、はずす
           return {
             q: `一次関数 ${TX(ltex(L))} で、$x$ が ${mn(x1)} から ${mn(x2)} まで増加するとき、$y$ の増加量は？`,
             ans: num(d),
@@ -311,6 +324,9 @@ export const UNITS = [
               line(qneg(a), qadd(y0, qmul(a, Q(x0)))),   // 傾きの符号をまちがえ、切片もずれる
               line(b, a),                                // 傾きと切片の入れかえ
               line(a, qsub(y0, a)),                      // x をかけわすれる
+              line(qneg(a), b),                          // 傾きの符号をまちがえる
+              line(qadd(a, Q(1)), b),                    // 傾きをまちがえる（切片は合っている）
+              line(qneg(a), qneg(b)),                    // 傾きも切片も、符号をまちがえる
             ], [line(qadd(a, Q(1)), b), line(a, qadd(b, Q(1)))], (w) => !onLine(w, p)),
             hint: "式を $y=ax+b$ と書くと、$a$ はわかっている。通る点の座標を代入すると、$b$ はどうやって決まる？",
             steps: [`傾きが ${TX(qt(a))} だから、${TX(`y=${cxq(a)}+b`)}。`, `点 ${PT(p)} を通るので、${TX(`${qt(y0)}=${aX(a, x0)}+b`)} より ${TX(`b=${qt(b)}`)}。`, `式は ${TX(ltex(L))}。`],
@@ -350,7 +366,7 @@ export const UNITS = [
           const L = fromStd(a, b, c), ask = r(0, 1) === 0 ? "傾き" : "切片";
           const eq = linTex(a, b, c), mv = ptex(poly([-a, { x: 1 }], [c, {}]));
           return {
-            q: `方程式 ${TX(eq)} を、$y$ について解くと、一次関数の式になる。その式の${ask}は？`,
+            q: `方程式 ${TX(eq)} を、$y$ について解くと、一次関数の式になる。その式の${ask}は？（約分した分数か、整数で答えよう。）`,
             ans: num(ask === "傾き" ? L.a : L.b),
             hint: "$y$ の項だけを左辺に残すには、$x$ の項を、どうすればいい？ そのあと、$y$ の係数でわる。",
             steps: [`${TX(eq)} の $x$ の項を右辺に移項して、${TX(`${b === 1 ? "" : b}y=${mv}`)}。`, `両辺を ${mn(b)} でわって、${TX(ltex(L))}。`, ask === "傾き" ? `傾きは ${TX(qt(L.a))}。` : `切片は ${TX(qt(L.b))}。`],
@@ -422,7 +438,7 @@ export const UNITS = [
             ans: TX(ltex(c.L)),
             choices: lineChoices(r, c.L, [line(c.d, c.B), line(c.B, -c.d), line(-c.B, c.d), line(c.d, -c.B), line(-c.d, -c.B)], [line(-c.d, c.B + 100), line(-c.d - 10, c.B)]),
             hint: "使うごとに、残高は、増える？ 減る？ はじめの残高は、式のどこに入る？",
-            steps: [`はじめの残高が ${c.B}円で、1回ごとに ${c.d}円ずつ減る。`, `$x$ 回使うと ${c.d}x 円減るので、${TX(ltex(c.L))}。`],
+            steps: [`はじめの残高が ${c.B}円で、1回ごとに ${c.d}円ずつ減る。`, `$x$ 回使うと ${TX(`${c.d}x`)} 円減るので、${TX(ltex(c.L))}。`],
           };
         }),
         // 17q04b 小テスト（4）残高が 280円になるのは何回使ったときか
