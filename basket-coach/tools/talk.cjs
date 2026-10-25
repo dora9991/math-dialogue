@@ -12,7 +12,8 @@ const ctx = { console };
 ctx.window = ctx;
 vm.createContext(ctx);
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const files = ['js/core.js', ...[...html.matchAll(/<script src="(data\/[^"]+)"><\/script>/g)].map((m) => m[1])];
+// 動き（BC.motion）・ケガ（BC.aid）のしくみも先に読む（data/motions-*.js・data/aid.js が使う）
+const files = ['js/core.js', 'js/motion.js', 'js/aid.js', ...[...html.matchAll(/<script src="(data\/[^"]+)"><\/script>/g)].map((m) => m[1])];
 for (const f of files) if (fs.existsSync(path.join(root, f))) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
 const BC = ctx.BC;
 

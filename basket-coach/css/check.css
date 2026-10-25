@@ -1,0 +1,285 @@
+/* 動画チェック（js/check.js）。クラスは ck- で始まる。色・字は css/coach.css の :root の変数。
+   共通の部品（.btn .btn.primary .btn.big .chip .card .sec-h）は coach.css のものを使う。
+   グラフの色：線は --ck-line（1本のとき）、攻め --ck-off・守り --ck-def（2本のとき。色の見分けやすさは検査ずみ）。 */
+:root {
+  --ck-line: #d9581a;
+  --ck-off: #2457b8;
+  --ck-def: #c8372d;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --ck-line: #e8692c; --ck-off: #5f87dc; --ck-def: #df5f53; }
+}
+:root[data-theme="dark"] { --ck-line: #e8692c; --ck-off: #5f87dc; --ck-def: #df5f53; }
+
+.ck { display: flex; flex-direction: column; gap: 14px; padding-bottom: 8px; }
+.ck > * { margin: 0; }
+.ck .sec-h { margin-top: 6px; }
+.ck-ic { flex: none; display: block; }
+
+/* 見出し・文 */
+.ck-head { display: flex; flex-direction: column; gap: 4px; }
+.ck-title { margin: 0; font-family: var(--font-round); font-weight: 800; font-size: var(--fs-xl); line-height: 1.35; text-wrap: balance; }
+.ck-head2 { margin: 0; font-family: var(--font-round); font-weight: 800; font-size: var(--fs-l); }
+.ck-lead { margin: 0; color: var(--ink-2); }
+.ck-note { margin: 0; color: var(--ink-2); font-size: var(--fs-s); }
+.ck-note-s { font-size: var(--fs-xs); color: var(--ink-3); }
+.ck-cap { margin: 4px 0 0; text-align: center; font-size: var(--fs-xs); color: var(--ink-3); font-weight: 700; }
+.ck-date { margin: -8px 0 0; color: var(--ink-3); font-size: var(--fs-s); }
+.ck-err { margin: 0; padding: 12px 14px; border-radius: var(--r-s); background: var(--warn-soft); color: var(--ink); border-left: 5px solid var(--warn); font-size: var(--fs-s); }
+.ck-cheer { margin: 0; padding: 12px 14px; border-radius: var(--r-s); background: var(--ok-soft); font-weight: 700; }
+
+/* もどる */
+.ck-back {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 4px;
+  min-height: 48px; padding: 0 14px 0 8px; margin: -6px 0 -6px -8px;
+  border: 0; background: none; color: var(--ink-2); font-weight: 700; font-size: var(--fs-s); border-radius: 999px;
+}
+.ck-back:hover { background: var(--sheet-2); color: var(--ink); }
+
+/* 動画は どこにも送らない */
+.ck-privacy { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 12px 14px; border-radius: var(--r); background: var(--ok-soft); font-size: var(--fs-s); line-height: 1.6; }
+.ck-privacy .ck-ic { color: var(--ok); margin-top: 2px; }
+.ck-privacy b { display: block; }
+.ck-privacy-s { background: none; padding: 0 2px; color: var(--ink-3); font-size: var(--fs-xs); align-items: center; }
+
+/* 入口のカード */
+.ck-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ck-modes-1 { grid-template-columns: 1fr; }
+.ck-mode {
+  display: flex; flex-direction: column; align-items: stretch; gap: 6px; text-align: left;
+  min-height: 132px; padding: 10px 12px 12px; border-radius: var(--r);
+  border: 1px solid var(--line); background: var(--sheet); color: inherit; box-shadow: var(--shadow);
+  transition: transform 0.15s, border-color 0.15s;
+}
+.ck-mode:hover { border-color: var(--ball-line); }
+.ck-mode:active { transform: scale(0.98); }
+.ck-mode-fig { display: block; height: 86px; border-radius: var(--r-s); background: var(--sheet-2); overflow: hidden; }
+.ck-mode-fig svg { width: 100%; height: 100%; display: block; }
+.ck-mode-txt { display: flex; flex-direction: column; gap: 1px; }
+.ck-mode-txt b { font-family: var(--font-round); font-weight: 800; font-size: var(--fs-m); line-height: 1.35; }
+.ck-mode-txt small { color: var(--ink-3); font-size: var(--fs-xs); line-height: 1.4; }
+.ck-mode-team { flex-direction: row; align-items: center; min-height: 96px; gap: 12px; }
+.ck-mode-team .ck-mode-fig { width: 38%; flex: none; height: auto; aspect-ratio: 1; background: var(--floor-out); }
+.ck-mode-team .ck-mode-txt b { font-size: var(--fs-l); }
+
+/* とり方 */
+.ck-how { display: grid; grid-template-columns: 1fr; gap: 14px; align-items: start; }
+@media (min-width: 560px) { .ck-how { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); } }
+.ck-how-fig .mo-stage svg { max-height: 36vh; }
+.ck-how-fig .mo-ctl { justify-content: center; }
+.ck-teamfig { border-radius: var(--r); overflow: hidden; background: var(--floor-out); max-width: 320px; margin: 0 auto; }
+.ck-teamfig svg { display: block; width: 100%; height: auto; }
+.ck-teamfig.ck-free { background: var(--sheet-2); max-width: 220px; }
+.ck-how-txt { display: flex; flex-direction: column; gap: 10px; }
+.ck-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.ck-badges span { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px 5px 8px; border-radius: 999px; background: var(--ball-soft); border: 1px solid var(--ball-line); font-weight: 700; font-size: var(--fs-s); }
+.ck-badges .ck-ic { color: var(--ball); }
+.ck-tips { margin: 0; padding: 0; list-style: none; counter-reset: tip; display: flex; flex-direction: column; gap: 8px; }
+.ck-tips li { counter-increment: tip; display: grid; grid-template-columns: 30px 1fr; gap: 8px; align-items: start; line-height: 1.55; }
+.ck-tips li::before { content: counter(tip); display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--sheet); font-family: var(--font-num); font-weight: 600; font-size: 0.95rem; margin-top: 1px; }
+
+/* 動画をえらぶ（label の中の input は見えなくする。display:none だと開かない端末がある） */
+.ck-file { position: relative; overflow: hidden; cursor: pointer; }
+.ck-file-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.ck-file:focus-within { outline: 3px solid var(--ball); outline-offset: 2px; }
+
+/* 動画・キャンバスの台 */
+.ck-stage { position: relative; width: 100%; max-height: 62vh; background: #0d0f10; border-radius: var(--r-s); overflow: hidden; margin: 0 auto; }
+.ck-stage > video, .ck-stage > canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ck-video { object-fit: contain; background: #0d0f10; }
+.ck-over { pointer-events: none; }
+.ck-tapzone { cursor: crosshair; touch-action: manipulation; box-shadow: 0 0 0 3px var(--ball-line); }
+@supports not (aspect-ratio: 1) { .ck-stage { height: 56vw; } }
+
+/* はんい */
+.ck-range { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: var(--r); background: var(--sheet); border: 1px solid var(--line); }
+.ck-range-sum { margin: 0; }
+.ck-range-sum b { font-size: 1.6rem; color: var(--ball); }
+.ck-range-sum small { color: var(--ink-3); font-size: var(--fs-xs); display: block; }
+.ck-rangebox summary { min-height: 44px; display: flex; align-items: center; font-weight: 700; color: var(--ink-2); cursor: pointer; }
+.ck-rangebox[open] summary { margin-bottom: 4px; }
+.ck-sl { display: flex; flex-direction: column; gap: 0; font-size: var(--fs-s); }
+.ck-sl b { font-size: 1.15rem; }
+.ck-sl input[type="range"], .ck-scrub { width: 100%; height: 44px; accent-color: var(--ball); margin: 0; }
+.ck-range .btn { align-self: flex-start; }
+
+/* AI の読みこみ・進み具合 */
+.ck-load { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 28px 16px; border-radius: var(--r); background: var(--sheet); border: 1px solid var(--line); text-align: center; }
+.ck-load-t { margin: 0; font-weight: 700; }
+.ck-spin { width: 44px; height: 44px; border-radius: 50%; border: 5px solid var(--ball-soft); border-top-color: var(--ball); animation: ck-spin 0.9s linear infinite; }
+@keyframes ck-spin { to { transform: rotate(360deg); } }
+.ck-bar { width: 100%; height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.ck-bar i { display: block; height: 100%; width: 0; background: var(--ball); border-radius: 999px; transition: width 0.2s linear; }
+.ck-bar-big { height: 14px; }
+.ck-prog { margin: -4px 0 0; text-align: center; color: var(--ink-2); }
+.ck-prog b { font-size: 1.3rem; color: var(--ink); }
+
+/* 結果のまとめ */
+.ck-sum-top { display: flex; align-items: center; gap: 14px; }
+.ck-ring { width: 92px; height: 92px; flex: none; }
+.ck-ring-bg { fill: none; stroke: var(--line); stroke-width: 9; }
+.ck-ring-n { font-family: var(--font-num); font-weight: 600; font-size: 30px; text-anchor: middle; dominant-baseline: middle; fill: var(--ink); }
+.ck-ring-u { font-size: 11px; font-weight: 700; text-anchor: middle; fill: var(--ink-3); }
+.ck-counts { display: flex; gap: 12px; margin: 4px 0 0; font-weight: 700; font-size: var(--fs-l); }
+.ck-counts .ck-good { color: var(--ok); }
+.ck-counts .ck-okk { color: var(--warn); }
+.ck-counts .ck-badd { color: var(--bad); }
+
+/* 再生 */
+.ck-player { display: flex; flex-direction: column; gap: 8px; }
+.ck-ctl { display: flex; align-items: center; gap: 6px; }
+.ck-ib { width: 48px; height: 48px; flex: none; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--line-2); background: var(--sheet); color: var(--ink); padding: 0; }
+.ck-ib:hover { border-color: var(--ink-3); }
+.ck-play { background: var(--ball); border-color: var(--ball); color: var(--ball-ink); }
+.ck-scrub { flex: 1; min-width: 0; }
+.ck-speed { flex: none; min-width: 52px; height: 48px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--sheet); font-size: 1.05rem; color: var(--ink); }
+.ck-keys { display: flex; flex-wrap: wrap; gap: 6px; }
+.ck-keys .chip { min-height: 44px; padding-inline: 14px; }
+.ck-key[aria-current="true"] { background: var(--ball); border-color: var(--ball); color: var(--ball-ink); }
+
+/* よくできている・1つだけ直す・ぜんぶ */
+.ck-sec { display: flex; flex-direction: column; gap: 10px; }
+.ck-goods { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ck-goods li { display: grid; grid-template-columns: 30px 1fr; column-gap: 6px; font-weight: 700; padding: 10px 12px; border-radius: var(--r-s); background: var(--ok-soft); }
+.ck-goods li .ck-st { grid-row: span 2; color: var(--ok); font-size: 1.3rem; line-height: 1.3; }
+.ck-goods small { font-weight: 400; color: var(--ink-2); font-size: var(--fs-s); line-height: 1.55; }
+.ck-mets { display: flex; flex-direction: column; gap: 10px; }
+.ck-met { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: var(--r); background: var(--sheet); border: 1px solid var(--line); border-left: 6px solid var(--line-2); }
+.ck-met.ck-good { border-left-color: var(--ok); }
+.ck-met.ck-ok { border-left-color: var(--warn); }
+.ck-met.ck-bad { border-left-color: var(--bad); }
+.ck-met-main { box-shadow: var(--shadow); }
+.ck-met-main.ck-bad { background: var(--bad-soft); }
+.ck-met-main.ck-ok { background: var(--warn-soft); }
+.ck-met-h { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.ck-st { font-weight: 800; font-size: 1.35rem; line-height: 1; flex: none; }
+.ck-met.ck-good .ck-st { color: var(--ok); }
+.ck-met.ck-ok .ck-st { color: var(--warn); }
+.ck-met.ck-bad .ck-st { color: var(--bad); }
+.ck-met.ck-na .ck-st { color: var(--ink-3); }
+.ck-met-l { font-weight: 700; font-family: var(--font-round); flex: 1 1 8em; min-width: 0; }
+.ck-met-v { font-size: var(--fs-l); white-space: nowrap; margin-left: auto; }
+.ck-met-msg { margin: 0; line-height: 1.65; }
+.ck-met-note { margin: -4px 0 0; color: var(--ink-3); font-size: var(--fs-xs); }
+.ck-met-act { display: flex; flex-wrap: wrap; gap: 6px; }
+.ck-met-act:empty { display: none; }
+.ck-met-act .chip { min-height: 40px; display: inline-flex; align-items: center; gap: 5px; }
+.ck-link::before { content: "▶"; font-size: 0.7em; color: var(--ball); }
+
+/* グラフ（1つのグラフに1つの量） */
+.ck-charts { display: flex; flex-direction: column; gap: 12px; }
+.ck-fig1 { margin: 0; padding: 10px 10px 6px; border-radius: var(--r); background: var(--sheet); border: 1px solid var(--line); }
+.ck-fig1 figcaption { font-weight: 700; font-size: var(--fs-s); color: var(--ink-2); margin: 0 0 2px 4px; }
+.ck-svg { width: 100%; overflow: hidden; }
+.ck-chart { display: block; max-width: 100%; touch-action: pan-y; cursor: crosshair; }
+.ck-grid { stroke: var(--line); stroke-width: 1; shape-rendering: crispEdges; }
+.ck-tick { fill: var(--ink-3); font-size: 11px; font-family: var(--font-num); font-weight: 600; }
+.ck-mark { stroke: var(--line-2); stroke-width: 1; }
+.ck-mark-t { fill: var(--ink-2); font-size: 10.5px; font-weight: 700; }
+.ck-line { fill: none; stroke: var(--ck-line); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ck-line.off { stroke: var(--ck-off); }
+.ck-line.def { stroke: var(--ck-def); }
+.ck-end-l { fill: var(--ink-2); font-size: 11.5px; font-weight: 700; }
+.ck-head { stroke: var(--ink); stroke-width: 1.5; }
+.ck-cross { stroke: var(--ink-3); stroke-width: 1; }
+.ck-tip { margin: 2px 0 0 6px; font-size: var(--fs-s); color: var(--ink-3); display: flex; gap: 6px 10px; align-items: baseline; flex-wrap: wrap; }
+.ck-tip b { color: var(--ink); font-size: 1.1rem; }
+.ck-legend { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--fs-xs); color: var(--ink-2); }
+.ck-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.ck-legend i { display: inline-block; flex: none; }
+.ck-legend .lg-line { width: 16px; height: 0; border-top: 2px solid var(--ck-line); }
+.ck-legend .lg-line.off { border-color: var(--ck-off); }
+.ck-legend .lg-line.def { border-color: var(--ck-def); }
+.ck-legend .lg-off { width: 11px; height: 11px; border-radius: 50%; background: var(--ck-off); }
+.ck-legend .lg-def { width: 11px; height: 11px; position: relative; }
+.ck-legend .lg-def::before, .ck-legend .lg-def::after { content: ""; position: absolute; left: 4.5px; top: -1px; width: 2.5px; height: 13px; background: var(--ck-def); border-radius: 2px; transform: rotate(45deg); }
+.ck-legend .lg-def::after { transform: rotate(-45deg); }
+.ck-legend .lg-unk { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); opacity: 0.7; }
+
+/* 見本と くらべる */
+.ck-cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: start; }
+.ck-cmp figure { margin: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ck-cmp figcaption { text-align: center; font-weight: 700; font-size: var(--fs-s); color: var(--ink-2); }
+.ck-snap { width: 100%; height: auto; display: block; border-radius: var(--r-s); background: #0d0f10; aspect-ratio: 4 / 3; object-fit: contain; }
+.ck-model2 .mo-stage svg { max-height: 32vh; }
+.ck-model2 .mo-ctl { display: none; }
+.ck-notes { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; color: var(--ink-2); font-size: var(--fs-s); }
+.ck-end { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+
+/* コートの4点 */
+.ck-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--line-2); border-radius: 999px; overflow: hidden; background: var(--sheet); }
+.ck-seg button { min-height: 48px; border: 0; background: none; font-weight: 700; font-size: var(--fs-s); color: var(--ink-2); padding: 4px 8px; line-height: 1.3; }
+.ck-seg button + button { border-left: 1px solid var(--line-2); }
+.ck-seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+.ck-calib { display: grid; grid-template-columns: 104px 1fr; gap: 12px; align-items: center; }
+.ck-calib-t { margin: 0; font-weight: 700; font-size: var(--fs-l); line-height: 1.45; }
+.ck-calib-t .num { font-size: 1.5rem; color: var(--ball); }
+.ck-mini { border-radius: var(--r-s); overflow: hidden; background: var(--floor-out); }
+.ck-mini svg { display: block; width: 100%; height: auto; }
+.ck-mini-f { fill: var(--floor); }
+.ck-mini-pt { fill: var(--floor-paint); }
+.ck-mini-l { fill: none; stroke: var(--floor-line); stroke-width: 0.14; opacity: 0.8; }
+.ck-mini-goal { stroke: var(--floor-line); stroke-width: 0.2; }
+.ck-mini-rim { fill: none; stroke: var(--ball); stroke-width: 0.14; }
+.ck-mini-p circle { fill: var(--sheet); stroke: var(--ink-3); stroke-width: 0.16; }
+.ck-mini-p text { font-size: 1.05px; font-family: var(--font-num); font-weight: 600; text-anchor: middle; dominant-baseline: central; fill: var(--ink-2); }
+.ck-mini-p.done circle { fill: var(--ok); stroke: var(--sheet); }
+.ck-mini-p.done text, .ck-mini-p.now text { fill: #fff; }
+.ck-mini-p.now circle { fill: var(--ball); stroke: var(--sheet); animation: ck-pulse 1.1s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes ck-pulse { 50% { transform: scale(1.3); } }
+
+/* チームの色 */
+.ck-swatches { display: flex; gap: 10px; margin: 0; flex-wrap: wrap; }
+.ck-swatch { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--sheet); font-weight: 700; }
+.ck-swatch i { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--sheet); box-shadow: 0 0 0 1px var(--line-2); }
+.ck-swatch.empty i { border: 2px dashed var(--line-2); box-shadow: none; }
+.ck-swatch-i { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: -1px; box-shadow: 0 0 0 1px var(--line-2); }
+.ck-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* 上から見たコート */
+.ck-court { border-radius: var(--r); overflow: hidden; background: var(--floor-out); }
+.ck-court-svg { display: block; width: 100%; height: auto; max-height: 64vh; margin: 0 auto; }
+.ck-court .cv-out { fill: var(--floor-out); }
+.ck-court .cv-floor { fill: var(--floor); }
+.ck-court .cv-paint { fill: var(--floor-paint); }
+.ck-court .cv-line { fill: none; stroke: var(--floor-line); stroke-width: 0.07; opacity: 0.8; }
+.ck-court .cv-dash { stroke-dasharray: 0.3 0.25; }
+.ck-court .cv-board { stroke: var(--floor-line); stroke-width: 0.12; }
+.ck-court .cv-rim { fill: none; stroke: var(--ball); stroke-width: 0.08; }
+.ck-p-off { fill: var(--ck-off); stroke: var(--sheet); stroke-width: 0.09; }
+.ck-p-def { stroke: var(--ck-def); stroke-width: 0.17; stroke-linecap: round; fill: none; }
+.ck-p-unk { fill: var(--ink-3); opacity: 0.6; }
+.ck-trail { fill: none; stroke-width: 0.12; stroke-linecap: round; stroke-linejoin: round; opacity: 0.55; }
+.ck-trail.off { stroke: var(--ck-off); }
+.ck-trail.def { stroke: var(--ck-def); }
+.ck-trail.unk { stroke: var(--ink-3); opacity: 0.3; }
+.ck-heat-off { fill: var(--ck-off); }
+.ck-heat-def { fill: var(--ck-def); }
+
+/* きろく（1件のカード） */
+.ck-sums { display: flex; flex-direction: column; gap: 8px; }
+.ck-sumc {
+  display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  min-height: 72px; padding: 8px 14px 8px 8px; border-radius: var(--r); border: 1px solid var(--line); background: var(--sheet);
+  color: inherit; text-decoration: none;
+}
+.ck-sumc:hover { border-color: var(--ball-line); }
+.ck-sumc-img { width: 76px; height: 56px; object-fit: cover; border-radius: var(--r-s); background: var(--sheet-2); display: block; }
+.ck-sumc-none { display: grid; place-items: center; color: var(--ink-3); }
+.ck-sumc-main { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
+.ck-sumc-main b { font-family: var(--font-round); font-weight: 800; }
+.ck-sumc-main small { color: var(--ink-3); font-size: var(--fs-xs); }
+.ck-dots { display: flex; gap: 2px; font-style: normal; font-weight: 800; letter-spacing: 0.02em; }
+.ck-dots i { font-style: normal; }
+.ck-dots .ck-good { color: var(--ok); }
+.ck-dots .ck-ok { color: var(--warn); }
+.ck-dots .ck-bad { color: var(--bad); }
+.ck-sumc-score { text-align: right; line-height: 1; }
+.ck-sumc-score b { font-size: 1.9rem; }
+.ck-sumc-score small { font-size: var(--fs-xs); color: var(--ink-3); margin-left: 1px; }
+.ck-rec-img { width: 168px; max-width: 46%; height: auto; border-radius: var(--r-s); display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ck-spin, .ck-mini-p.now circle { animation: none; }
+  .ck-bar i, .ck-mode { transition: none; }
+}
