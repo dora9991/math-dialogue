@@ -25,6 +25,8 @@ const coefX = (c, v) => ltex(line(c, 0)).slice(2).replace(/x/g, v);
 const lin = (m, k, v) => coefX(m, v) + (k === 0 ? "" : `${k < 0 ? "-" : "+"}${Math.abs(k)}`);
 /** $y=2$、$x=-3$ */
 const HV = (v, val) => TX(`${v}=${qt(val)}`);
+/** 文章の中の数（負の数も $ で包む） */
+const V = (n) => TX(String(n));
 /** k×v＝n を解く解説の式：「3x=12」「x=4」 */
 const solveVar = (k, v, n) => {
   const val = qdiv(Q(n), Q(k));
@@ -75,8 +77,8 @@ export const UNITS = [
             choices: choices4(r, good, wrongs),
             hint: `${HV(v, val)} をみたす点 $(x, y)$ では、${v === "y" ? "$y$" : "$x$"} の値はいくつ？ もう一方の値は、どんな数でもよい？`,
             steps: v === "y"
-              ? [`${HV("y", val)} は、$y$ 座標がいつも ${val} の点の集まり。`, `$x$ 軸に平行な直線で、$y$ 軸と点 ${PT([0, val])} で交わる。`]
-              : [`${HV("x", val)} は、$x$ 座標がいつも ${val} の点の集まり。`, `$y$ 軸に平行な直線で、$x$ 軸と点 ${PT([val, 0])} で交わる。`],
+              ? [`${HV("y", val)} は、$y$ 座標がいつも ${V(val)} の点の集まり。`, `$x$ 軸に平行な直線で、$y$ 軸と点 ${PT([0, val])} で交わる。`]
+              : [`${HV("x", val)} は、$x$ 座標がいつも ${V(val)} の点の集まり。`, `$y$ 軸に平行な直線で、$x$ 軸と点 ${PT([val, 0])} で交わる。`],
           };
         }),
         // 12d01b 直線の式を答える（図の読みとり → 通る点を言って、式を選ぶ4択）
@@ -92,8 +94,8 @@ export const UNITS = [
             choices: choices4(r, good, wrongs),
             hint: v === "y" ? "$x$ 軸に平行な直線上の点は、$y$ 座標がどれも同じ。その値は、交わる点のどちらの座標？" : "$y$ 軸に平行な直線上の点は、$x$ 座標がどれも同じ。その値は、交わる点のどちらの座標？",
             steps: v === "y"
-              ? [`$x$ 軸に平行な直線は、$y$ 座標がいつも同じ。通る点 ${PT([0, val])} の $y$ 座標は ${val}。`, `式は ${good}。`]
-              : [`$y$ 軸に平行な直線は、$x$ 座標がいつも同じ。通る点 ${PT([val, 0])} の $x$ 座標は ${val}。`, `式は ${good}。`],
+              ? [`$x$ 軸に平行な直線は、$y$ 座標がいつも同じ。通る点 ${PT([0, val])} の $y$ 座標は ${V(val)}。`, `式は ${good}。`]
+              : [`$y$ 軸に平行な直線は、$x$ 座標がいつも同じ。通る点 ${PT([val, 0])} の $x$ 座標は ${V(val)}。`, `式は ${good}。`],
           };
         }),
         // 12d01c グラフ上にある点（4択）
@@ -109,7 +111,7 @@ export const UNITS = [
             ans: PT(good),
             choices: choices4(r, PT(good), wrongs),
             hint: `グラフ上の点は、${HV(v, val)} をみたす。座標の${v === "y" ? "$y$" : "$x$"}の値に注目しよう。`,
-            steps: [`${HV(v, val)} のグラフ上の点は、${v === "y" ? "$y$" : "$x$"} 座標がいつも ${val}。`, `${PT(good)} は ${v === "y" ? "$y$" : "$x$"} 座標が ${val} なので、グラフ上にある。`],
+            steps: [`${HV(v, val)} のグラフ上の点は、${v === "y" ? "$y$" : "$x$"} 座標がいつも ${V(val)}。`, `${PT(good)} は ${v === "y" ? "$y$" : "$x$"} 座標が ${V(val)} なので、グラフ上にある。`],
           };
         }),
         // 12d02 y＝k または x＝h の形に直す
@@ -138,7 +140,7 @@ export const UNITS = [
             ans: good,
             choices: choices4(r, good, wrongs),
             hint: `$${par}$ 軸に平行な直線上の点は、${par === "x" ? "$y$" : "$x$"} 座標がどれも同じ。通る点の座標から、その値はわかる？`,
-            steps: [`$${par}$ 軸に平行な直線は、${par === "x" ? "$y$" : "$x$"} 座標がいつも同じ。`, `点 ${PT([p, q])} の${par === "x" ? "$y$" : "$x$"}座標は ${par === "x" ? q : p} なので、式は ${good}。`],
+            steps: [`$${par}$ 軸に平行な直線は、${par === "x" ? "$y$" : "$x$"} 座標がいつも同じ。`, `点 ${PT([p, q])} の ${par === "x" ? "$y$" : "$x$"} 座標は ${V(par === "x" ? q : p)} なので、式は ${good}。`],
           };
         }),
         // 12d03b 2点を通る直線の式（4択。y 座標が等しい／x 座標が等しい）
@@ -154,8 +156,8 @@ export const UNITS = [
             choices: choices4(r, good, shuffle(r, cand).slice(0, 3)),
             hint: "2点の座標をくらべよう。$x$ 座標と $y$ 座標の、どちらが等しい？",
             steps: same === "y"
-              ? [`2点の $y$ 座標が ${k} で等しいので、$x$ 軸に平行な直線。`, `式は ${good}。`]
-              : [`2点の $x$ 座標が ${k} で等しいので、$y$ 軸に平行な直線。`, `式は ${good}。`],
+              ? [`2点の $y$ 座標が ${V(k)} で等しいので、$x$ 軸に平行な直線。`, `式は ${good}。`]
+              : [`2点の $x$ 座標が ${V(k)} で等しいので、$y$ 軸に平行な直線。`, `式は ${good}。`],
           };
         }),
         // 12d04 4つの直線で囲まれた長方形の面積
@@ -165,7 +167,7 @@ export const UNITS = [
             q: `4つの直線 ${shuffle(r, [HV("x", x1), HV("x", x2), HV("y", y1), HV("y", y2)]).join("、")} で囲まれた長方形の面積は？（座標の 1 目もりを 1cm とする。）`,
             ans: (x2 - x1) * (y2 - y1),
             unit: "cm²",
-            hint: "$x=$ の直線 2本の間の長さが、長方形の横。$y=$ の直線 2本の間は？",
+            hint: "長方形の横の長さは、$x=$ の直線 2本から、どう求められる？ 縦の長さは、$y=$ の直線 2本から？",
             steps: rectSteps(x1, x2, y1, y2),
           };
         }),
@@ -209,7 +211,7 @@ export const UNITS = [
             ans: good,
             choices: choices4(r, good, wrongs),
             hint: `$x$ 軸に平行な直線は $y$ 座標が、$y$ 軸に平行な直線は $x$ 座標が、それぞれ一定。通る点の座標のどちらを使う？`,
-            steps: [`$x$ 軸に平行な直線は、$y$ 座標がいつも同じ。${PT([p, q])} の $y$ 座標は ${q} なので ${HV("y", q)}。`, `$y$ 軸に平行な直線は、$x$ 座標がいつも同じ。${PT([p, q])} の $x$ 座標は ${p} なので ${HV("x", p)}。`],
+            steps: [`$x$ 軸に平行な直線は、$y$ 座標がいつも同じ。${PT([p, q])} の $y$ 座標は ${V(q)} なので ${HV("y", q)}。`, `$y$ 軸に平行な直線は、$x$ 座標がいつも同じ。${PT([p, q])} の $x$ 座標は ${V(p)} なので ${HV("x", p)}。`],
           };
         }),
         // 12q02b 小テスト（2）点を通り、軸に平行な直線 y＝k（または x＝h）の値
@@ -223,8 +225,8 @@ export const UNITS = [
             ans: par === "x" ? q : p,
             hint: par === "x" ? "$x$ 軸に平行な直線上の点は、どの座標がどれも同じ？" : "$y$ 軸に平行な直線上の点は、どの座標がどれも同じ？",
             steps: par === "x"
-              ? [`$x$ 軸に平行な直線は、$y$ 座標がいつも同じ。${PT([p, q])} の $y$ 座標は ${q}。`, `式は ${HV("y", q)}。`]
-              : [`$y$ 軸に平行な直線は、$x$ 座標がいつも同じ。${PT([p, q])} の $x$ 座標は ${p}。`, `式は ${HV("x", p)}。`],
+              ? [`$x$ 軸に平行な直線は、$y$ 座標がいつも同じ。${PT([p, q])} の $y$ 座標は ${V(q)}。`, `式は ${HV("y", q)}。`]
+              : [`$y$ 軸に平行な直線は、$x$ 座標がいつも同じ。${PT([p, q])} の $x$ 座標は ${V(p)}。`, `式は ${HV("x", p)}。`],
           };
         }),
         // 12q03 小テスト（3）長方形の面積
@@ -266,7 +268,7 @@ export const UNITS = [
             q: `点 ${TX(`P(${c.e1}, ${c.e2})`)} が直線 ${HV("x", c.h)} の上にある。$a$ の値は？`,
             ans: c.val,
             hint: "直線 $x=h$ の上にある点は、$x$ 座標がどれも同じ。点 P の $x$ 座標は、どんな式？",
-            steps: [`P は直線 ${HV("x", c.h)} の上にあるので、$x$ 座標が ${c.h}。`, `${TX(`${c.e1}=${c.h}`)}　${solveVar(c.m, c.nm, c.h - c.k)}。`],
+            steps: [`P は直線 ${HV("x", c.h)} の上にあるので、$x$ 座標が ${V(c.h)}。`, `${TX(`${c.e1}=${c.h}`)}　${solveVar(c.m, c.nm, c.h - c.k)}。`],
           };
         }),
         // 12d06b 点 Q(b+1, 3b−2) が直線 y＝4 の上：b
@@ -277,7 +279,7 @@ export const UNITS = [
             q: `点 ${TX(`Q(${c.e2}, ${c.e1})`)} が直線 ${HV("y", c.h)} の上にある。$b$ の値は？`,
             ans: c.val,
             hint: "直線 $y=k$ の上にある点は、$y$ 座標がどれも同じ。点 Q の $y$ 座標は、どんな式？",
-            steps: [`Q は直線 ${HV("y", c.h)} の上にあるので、$y$ 座標が ${c.h}。`, `${TX(`${c.e1}=${c.h}`)}　${solveVar(c.m, c.nm, c.h - c.k)}。`],
+            steps: [`Q は直線 ${HV("y", c.h)} の上にあるので、$y$ 座標が ${V(c.h)}。`, `${TX(`${c.e1}=${c.h}`)}　${solveVar(c.m, c.nm, c.h - c.k)}。`],
           };
         }),
       ],
@@ -336,7 +338,8 @@ export const UNITS = [
         t("12d08", (r) => {
           const c = tryGen(() => {
             const xb = r(2, 8), k = r(2, 9) * pick(r, [1, 1, -1]), sx = pick(r, [1, 1, -1]);
-            return (xb * Math.abs(k)) % 2 !== 0 ? null : { xb, k, sx };
+            const a0 = Q(k, sx * xb);
+            return (xb * Math.abs(k)) % 2 !== 0 || a0[1] > 4 || Math.abs(a0[0]) > 6 || (xb * Math.abs(k)) / 2 < 3 ? null : { xb, k, sx };
           });
           const a = Q(c.k, c.sx * c.xb), L = line(a, 0), area = (c.xb * Math.abs(c.k)) / 2, vx = c.sx * c.xb;
           return {
@@ -358,7 +361,7 @@ export const UNITS = [
             const x1 = qdiv(Q(k), a), y2 = qmul(a, Q(h));
             if (!qisint(x1) || !qisint(y2) || x1[0] === h || y2[0] === k) return null;
             const area = triArea([x1, Q(k)], [Q(h), y2], [Q(h), Q(k)]);
-            return qisint(area) && area[0] <= 40 ? { a, k, h, V1: [x1[0], k], V2: [h, y2[0]], V3: [h, k], area } : null;
+            return qisint(area) && area[0] >= 3 && area[0] <= 40 ? { a, k, h, V1: [x1[0], k], V2: [h, y2[0]], V3: [h, k], area } : null;
           });
           const L = line(c.a, 0), legV = Math.abs(c.k - c.V2[1]), legH = Math.abs(c.V1[0] - c.h);
           return {
@@ -441,7 +444,7 @@ function d07Steps(c) {
   const [e1, e2] = c.which === "x" ? [c.eA, c.eB] : [c.eC, c.eD];
   const par = c.which === "x" ? "$y$ 軸" : "$x$ 軸", co = c.which === "x" ? "$x$" : "$y$";
   return [
-    `${par}に平行な直線上の2点は、${co}座標が等しい。${TX(`${e1}=${e2}`)}。`,
+    `${par}に平行な直線上の2点は、${co} 座標が等しい。${TX(`${e1}=${e2}`)}。`,
     `${solveVar(c.p1 - c.p2, c.nm, c.k2 - c.k1)}。`,
   ];
 }

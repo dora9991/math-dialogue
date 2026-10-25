@@ -46,7 +46,11 @@ const evalTex = (l, x) => {
 const calcTex = (l, x) => { const e = evalTex(l, x), y = qt(yAt(l, x)); return e === y ? `y=${y}` : `y=${e}=${y}`; };
 
 /** 変域つきの直線：sign＝1（右上がり）／-1（右下がり）／0（どちらか）。frac なら分数の傾き（x の端は分母の倍数にして、y を整数にする） */
-const mkDom = (r, sign, frac, B = 6) => {
+const mkDom = (r, sign, frac, B = 6, nz = false) => {
+  for (let i = 0; i < 100; i++) { const d = mkDom0(r, sign, frac, B); if (!nz || (d.lo !== 0 && d.hi !== 0)) return d; }
+  return mkDom0(r, sign, frac, B);
+};
+const mkDom0 = (r, sign, frac, B) => {
   const s = sign || sgn(r);
   let a, q = 1;
   if (frac) { const [p, qq] = fr(r, [1, 2, 3], [2, 3, 4]); a = Q(s * p, qq); q = qq; } else a = Q(s * r(1, 4));
@@ -101,7 +105,7 @@ const rangeQ = (r, d, loOpen = false, hiOpen = false) => {
   return {
     q: `一次関数 ${$(ltex(L))} で、x の変域が ${$(xr(lo, hi, loOpen, hiOpen))} のとき、y の変域はどれか。`,
     ans, choices,
-    hint: loOpen || hiOpen ? "グラフの両はしの点は、ふくまれるかな？ x の端がふくまれないとき、それに対応する y の端はどうなる？" : "x の変域の両はしの値を式に入れて、y の値を求めよう。不等号の左には、小さいほうの数を書くよ。",
+    hint: loOpen || hiOpen ? "グラフの両はしの点は、ふくまれるかな？ x の端がふくまれないとき、それに対応する y の端はどうなる？" : "x の変域の両はしの値を式に入れて、y の値を求めよう。不等号の左に書くのは、大きいほうの数かな、小さいほうの数かな？",
     steps: [`${$(`x=${lo}`)} のとき ${$(calcTex(L, lo))}、${$(`x=${hi}`)} のとき ${$(calcTex(L, hi))}。`, `${flip}${openTxt}`, `y の変域は ${ans}。`],
   };
 };
@@ -132,7 +136,7 @@ export const UNITS = [
         t("08d03a", (r) => rangeQ(r, mkDom(r, 0, r(0, 1) === 1))),
         // 08d03b 演習（3）線分の両はしの点：y 座標が最大（最小）になる点の x 座標
         t("08d03b", (r) => {
-          const d = mkDom(r, 0, r(0, 1) === 1), { L, lo, hi, a } = d, ask = pick(r, ["max", "min"]);
+          const d = mkDom(r, 0, r(0, 1) === 1, 6, true), { L, lo, hi, a } = d, ask = pick(r, ["max", "min"]);
           const atX = ask === "max" ? (a[0] > 0 ? hi : lo) : (a[0] > 0 ? lo : hi);
           return {
             q: `一次関数 ${$(ltex(L))} のグラフを、x の変域 ${$(xr(lo, hi))} の部分だけかく。この線分上の点のうち、y 座標が${askTxt[ask]}になる点の x 座標は？`,
@@ -156,7 +160,7 @@ export const UNITS = [
         t("08d05a", (r) => {
           const c = tank(r);
           return {
-            q: `${c.intro}水がなくなる（y が 0 になる）のは、${c.start}から何${c.unit}後か。`,
+            q: `${c.intro}${c.gone}のは、${c.start}から何${c.unit}後か。`,
             ans: c.T,
             unit: `${c.unit}後`,
             hint: `${c.start}から x ${c.unit}後の量 y を、x の式で表そう。y が 0 になるのは、x がいくつのとき？`,
@@ -167,10 +171,10 @@ export const UNITS = [
         t("08d05b", (r) => {
           const c = tank(r), say = (X, Y) => `${$(`0${LE}x${LE}${X}`)}、${$(`0${LE}y${LE}${Y}`)}`;
           return {
-            q: `${c.intro}x の変域と y の変域の組として、正しいものはどれか。（${c.what}は、なくなるまで考える）`,
+            q: `${c.intro}x の変域と y の変域の組として、正しいものはどれか。（${c.until}を考える）`,
             ans: say(c.T, c.H),
             choices: choices4(r, say(c.T, c.H), [say(c.H, c.H), say(c.H, c.T), say(c.T, c.T)]),
-            hint: `x は、${c.start}からの時間。最初と、${c.what}がなくなるときの x と y を考えよう。`,
+            hint: `x は、${c.start}からの時間。最初のときと、${c.gone}ときの、x と y を考えよう。`,
             steps: [`x ${c.unit}後の${c.what}は、${$(`y=${-c.k}x+${c.H}`)}。`, `最初は ${$(`x=0`)} で ${$(`y=${c.H}`)}。なくなるのは ${$(`y=0`)} のときで、${$(`x=${c.T}`)}。`, `x の変域は ${$(`0${LE}x${LE}${c.T}`)}、y の変域は ${$(`0${LE}y${LE}${c.H}`)}。`],
           };
         }),
@@ -186,7 +190,7 @@ export const UNITS = [
               q: `一次関数 ${$(eqn)}（${$(neg ? "a<0" : "a>0")}）で、x の変域が ${$(xr(lo, hi))} のとき、y の変域は ${$(rangeTex(bd))} である。a の値は？`,
               ans: a,
               hint: "a の正負から、グラフが右上がりか右下がりかがわかるよ。x の端のうち、y が最小（最大）になるのはどちらかな？",
-              steps: [neg ? `${$("a<0")} だから右下がり。x が大きいほど y は小さいので、${$(`x=${lo}`)} のとき y は最大の ${N(known.y)}。` : `${$("a>0")} だから右上がり。x が大きいほど y も大きいので、${$(`x=${lo}`)} のとき y は最小の ${N(known.y)}。`, `${$(`x=${lo}`)}、${$(`y=${known.y}`)} を代入して ${$(`${known.y}=a\\times ${par(lo)}${b < 0 ? "-" : "+"}${Math.abs(b)}`)}、${$(`a=${a}`)}。`, `確かめ　${$(`x=${hi}`)} のとき ${$(`y=${a}\\times ${par(hi)}${b < 0 ? "-" : "+"}${Math.abs(b)}=${other.y}`)}　○`],
+              steps: [neg ? `${$("a<0")} だから右下がり。x が大きいほど y は小さいので、${$(`x=${lo}`)} のとき y は最大の ${N(known.y)}。` : `${$("a>0")} だから右上がり。x が大きいほど y も大きいので、${$(`x=${lo}`)} のとき y は最小の ${N(known.y)}。`, `${$(`x=${lo}`)}、${$(`y=${qt(known.y)}`)} を代入して ${$(`${qt(known.y)}=a\\times ${par(lo)}${b < 0 ? "-" : "+"}${Math.abs(b)}`)}、${$(`a=${a}`)}。`, `確かめ　${$(`x=${hi}`)} のとき ${$(`y=${a}\\times ${par(hi)}${b < 0 ? "-" : "+"}${Math.abs(b)}=${qt(other.y)}`)}　○`],
             };
           }
           return { skip: true };
@@ -195,10 +199,10 @@ export const UNITS = [
       // ───────── 4 入試レベル ─────────
       4: [
         // 08d07a 演習（7）① x の変域 −4≦x≦8 のとき、y の変域（最大値・最小値）
-        t("08d07a", (r) => maxMinQ(r, mkDom(r, r(0, 3) === 0 ? 1 : -1, true, 7), pick(r, ["max", "min"]))),
+        t("08d07a", (r) => maxMinQ(r, mkDom(r, r(0, 3) === 0 ? 1 : -1, true, 7, true), pick(r, ["max", "min"]))),
         // 08d07b 演習（7）② y の変域から、x の変域（最大値・最小値）
         t("08d07b", (r) => {
-          const d = mkDom(r, r(0, 3) === 0 ? 1 : -1, true, 7), { L, lo, hi, a } = d, bd = bounds(L, lo, hi), ask = pick(r, ["max", "min"]);
+          const d = mkDom(r, r(0, 3) === 0 ? 1 : -1, true, 7, true), { L, lo, hi, a } = d, bd = bounds(L, lo, hi), ask = pick(r, ["max", "min"]);
           const ans = ask === "max" ? hi : lo;
           const xAtMax = xAt(L, bd.max)[0], xAtMin = xAt(L, bd.min)[0];
           return {
@@ -231,7 +235,7 @@ export const UNITS = [
               q: `一次関数 ${$(`y=ax${b < 0 ? "-" : "+"}${Math.abs(b)}`)} で、x の変域が ${$(xr(lo, hi))} のとき、y の変域は ${$(rangeTex(bd))} である。a の値は？`,
               ans: a,
               hint: "y の変域の幅は、x の変域の幅の何倍かな？ a が正の場合と負の場合を両方考えて、y の変域が合うほうを選ぼう。",
-              steps: [`y の変域の幅は ${qt(Q(qval(bd.max) - qval(bd.min)))}、x の変域の幅は ${hi - lo} だから、a の絶対値は ${W}。a は ${W} か ${-W}。`, `${$(`a=${W}`)} のとき y の変域は ${$(rangeTex(pos))}、${$(`a=${-W}`)} のとき ${$(rangeTex(neg))}。`, `y の変域が ${$(rangeTex(bd))} になるのは ${$(`a=${a}`)} のとき。`],
+              steps: [`y の変域の幅は ${qt(Q(qval(bd.max) - qval(bd.min)))}、x の変域の幅は ${hi - lo} だから、a の絶対値は ${W}。a は ${W} か ${N(-W)}。`, `${$(`a=${W}`)} のとき y の変域は ${$(rangeTex(pos))}、${$(`a=${-W}`)} のとき ${$(rangeTex(neg))}。`, `y の変域が ${$(rangeTex(bd))} になるのは ${$(`a=${a}`)} のとき。`],
             };
           }
           return { skip: true };
@@ -249,14 +253,14 @@ function tank(r) {
   const kind = r(0, 2);
   if (kind === 0) {
     const k = pick(r, [2, 3, 4, 5]), T = r(6, 16), H = k * T;
-    return { k, T, H, unit: "分", what: "水面の高さ", start: "栓をぬいて", intro: `高さ ${H}cm の水そうに、水がいっぱい入っている。底の栓をぬくと、水面の高さが 1 分間に ${k}cm ずつ下がる。栓をぬいてから x 分後の水面の高さを y cm とする。` };
+    return { k, T, H, unit: "分", what: "水面の高さ", start: "栓をぬいて", gone: "水がなくなる", until: "水がなくなるまでの間", intro: `高さ ${H}cm の水そうに、水がいっぱい入っている。底の栓をぬくと、水面の高さが 1 分間に ${k}cm ずつ下がる。栓をぬいてから x 分後の水面の高さを y cm とする。` };
   }
   if (kind === 1) {
     const k = pick(r, [4, 5, 6, 8, 10]), T = r(5, 16), H = k * T;
-    return { k, T, H, unit: "分", what: "タンクの水の量", start: "くみ出しはじめて", intro: `水が ${H}L 入ったタンクから、ポンプで水を 1 分間に ${k}L ずつくみ出す。くみ出しはじめてから x 分後のタンクの水の量を y L とする。` };
+    return { k, T, H, unit: "分", what: "タンクの水の量", start: "くみ出しはじめて", gone: "タンクの水がなくなる", until: "水がなくなるまでの間", intro: `水が ${H}L 入ったタンクから、ポンプで水を 1 分間に ${k}L ずつくみ出す。くみ出しはじめてから x 分後のタンクの水の量を y L とする。` };
   }
-  const k = pick(r, [2, 3]), T = r(4, 10), H = k * T;
-  return { k, T, H, unit: "時間", what: "ろうそくの長さ", start: "火をつけて", intro: `長さ ${H}cm のろうそくに火をつけると、1 時間に ${k}cm ずつ短くなる。火をつけてから x 時間後のろうそくの長さを y cm とする。` };
+  const k = pick(r, [2, 3]), T = r(5, 10), H = k * T;
+  return { k, T, H, unit: "時間", what: "ろうそくの長さ", start: "火をつけて", gone: "ろうそくが燃えつきる", until: "燃えつきるまでの間", intro: `長さ ${H}cm のろうそくに火をつけると、1 時間に ${k}cm ずつ短くなる。火をつけてから x 時間後のろうそくの長さを y cm とする。` };
 }
 
 // 移さなかった問題：なし。グラフをかく問題（dr.3）は、線分の両はしの点を聞く形にして移した。
