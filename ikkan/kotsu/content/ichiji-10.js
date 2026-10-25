@@ -67,26 +67,50 @@ const interceptLine = (a, p) => {
   return `点 ${PT(p)} を通るので、${TX(`${qt(y)}=${aX(a, x)}+b`)} より ${TX(`b=${qt(b)}`)}。`;
 };
 
+
+// ── 式を選ぶ4択の誤答の選び方 ─────────────────────────────────────────
+//   正解と傾きも切片もそろわない誤答を 1 つ以上入れる。さらに、誤答どうしでそろう組ができるようにして、
+//   「他の選択肢と傾き・切片がいちばん共通する式」「ひとつだけ浮いている式」を選ぶ、という当て方で正解が決まらないようにする。
+const share = (u, v) => (qeq(u.a, v.a) ? 1 : 0) + (qeq(u.b, v.b) ? 1 : 0);
+/** 正解 L と、誤答の候補（main。足りなければ low も使う）から、誤答の直線を 3 つ選ぶ */
+const pickWrongs = (r, L, main, low = []) => {
+  const uniq = (cs) => {
+    const seen = new Set([ltex(L)]), out = [];
+    for (const w of cs) { const s = ltex(w); if (!seen.has(s) && !(qeq(w.a, L.a) && qeq(w.b, L.b))) { seen.add(s); out.push(w); } }
+    return out;
+  };
+  let pool = uniq(main);
+  if (pool.length < 5) pool = uniq([...main, ...low]);
+  const trips = [];
+  for (let i = 0; i < pool.length; i++) for (let j = i + 1; j < pool.length; j++) for (let k = j + 1; k < pool.length; k++) trips.push([pool[i], pool[j], pool[k]]);
+  const info = (t) => {
+    const set = [L, ...t], sc = set.map((c, i) => set.reduce((n, d, j) => n + (i === j ? 0 : share(c, d)), 0));
+    return { unrel: t.some((w) => share(L, w) === 0), c: sc[0], maxW: Math.max(...sc.slice(1)), minW: Math.min(...sc.slice(1)) };
+  };
+  const all = trips.filter((t) => info(t).unrel && info(t).c >= info(t).minW);
+  const hi = all.filter((t) => info(t).c > info(t).maxW), mid = all.filter((t) => info(t).c === info(t).maxW), lo = all.filter((t) => info(t).c < info(t).maxW);
+  // 正解が「いちばんそろう」（hi）／同点（mid）／他のほうがそろう（lo）を、まぜて出す
+  const order = shuffle(r, [hi, hi, mid, lo, lo, lo].filter((g) => g.length));
+  const use = order.length ? order[0] : trips.filter((t) => info(t).unrel);
+  return pick(r, use.length ? use : trips);
+};
+
 /** 2点 p1、p2 を通る直線 L の式の4択。誤答は「ありがちな間違い」で、2点を両方は通らないものだけ */
 const lineChoices = (r, L, p1, p2) => {
   const [x1, y1] = p1, a = L.a, b = L.b;
   const inv = qdiv(Q(1), a);
-  const cand = [
+  const main = [
     line(b, a),                                              // 傾きと切片の入れかえ
     line(a, qneg(b)),                                        // 切片の符号まちがい
     line(qneg(a), b),                                        // 傾きの符号まちがい
-    line(inv, qsub(Q(y1), qmul(inv, Q(x1)))),                // 傾きを (x の増加量)÷(y の増加量) にしてしまう
     line(a, qadd(Q(y1), qmul(a, Q(x1)))),                    // 切片の代入ミス（y＋a×x としてしまう）
     line(a, Q(y1)),                                          // 切片を y 座標そのものにしてしまう
+    line(qneg(a), qneg(b)),                                  // 傾きも切片も符号をまちがえる
+    line(b, qneg(a)),                                        // 傾きと切片を入れかえて、符号もまちがえる
   ];
-  const seen = new Set([ltex(L)]);
-  const wrongs = [];
-  const order = a[1] === 1 ? [...shuffle(r, cand.filter((_, i) => i !== 3)), cand[3]] : shuffle(r, cand);   // 傾きが整数のとき、分数の誤答（逆数）は最後に回す
-  for (const w of order) {
-    const s = ltex(w);
-    if (seen.has(s) || (onLine(w, p1) && onLine(w, p2))) continue;
-    seen.add(s); wrongs.push(TX(s));
-  }
+  const low = [line(inv, qsub(Q(y1), qmul(inv, Q(x1))))];   // 傾きを (x の増加量)÷(y の増加量) にしてしまう（傾きが整数のときは、分数になるので最後に回す）
+  const cands = a[1] === 1 ? { main, low } : { main: [...main, ...low], low: [] };
+  const wrongs = pickWrongs(r, L, cands.main.filter((w) => !(onLine(w, p1) && onLine(w, p2))), cands.low).map((w) => TX(ltex(w)));
   const fills = [line(qadd(a, Q(1)), b), line(a, qadd(b, Q(1))), line(qsub(a, Q(1)), b), line(a, qsub(b, Q(1)))];
   return choices4(r, TX(ltex(L)), wrongs, (i) => {
     const w = fills[i % fills.length];
@@ -366,19 +390,16 @@ export const UNITS = [
           const p = rnz(r, -8, 8), q = rnz(r, -8, 8);
           if (Math.abs(p) < 2 || Math.abs(q) < 2 || Math.abs(p) === Math.abs(q)) return { skip: true };
           const L = lineThrough([p, 0], [0, q]);
-          const cand = [
+          const main = [
             line(qneg(L.a), L.b),                                  // 傾きの符号まちがい
             line(qdiv(Q(-p), Q(q)), Q(q)),                          // 傾きの分母と分子を取りちがえる
             line(L.a, Q(p)),                                        // 切片に x 軸との交点の x 座標を使う
-            line(qdiv(Q(q), Q(p)), Q(q)),                           // 傾きを (y 座標)÷(x 座標) にしてしまう
+            line(L.a, qneg(L.b)),                                   // 切片の符号まちがい
+            line(qneg(L.a), qneg(L.b)),                             // 傾きも切片も符号をまちがえる
+            line(L.b, L.a),                                         // 傾きと切片の入れかえ
+            line(qdiv(Q(-p), Q(q)), Q(p)),                          // 分母と分子を取りちがえて、切片に x 座標を使う
           ];
-          const seen = new Set([ltex(L)]);
-          const wrongs = [];
-          for (const w of shuffle(r, cand)) {
-            const s = ltex(w);
-            if (seen.has(s) || (onLine(w, [p, 0]) && onLine(w, [0, q]))) continue;
-            seen.add(s); wrongs.push(TX(s));
-          }
+          const wrongs = pickWrongs(r, L, main.filter((w) => !(onLine(w, [p, 0]) && onLine(w, [0, q])))).map((w) => TX(ltex(w)));
           return {
             q: `グラフが $x$ 軸と点 ${PT([p, 0])} で、$y$ 軸と点 ${PT([0, q])} で交わる直線の式は、次のうちどれか。`,
             ans: TX(ltex(L)),
@@ -467,14 +488,16 @@ export const UNITS = [
           const c = rangeCase(r);
           if (!c) return { skip: true };
           const [p1, p2] = rangePts(c);
-          const cand = [c.other, line(c.L.b, c.L.a), line(c.L.a, qneg(c.L.b)), line(qneg(c.L.a), c.L.b), line(c.L.a, Q(c.sgn > 0 ? c.ylo : c.yhi))];
-          const seen = new Set([ltex(c.L)]);
-          const wrongs = [];
-          for (const w of [c.other, ...shuffle(r, cand.slice(1))]) {
-            const s = ltex(w);
-            if (seen.has(s) || rangeOk(c, w)) continue;
-            seen.add(s); wrongs.push(TX(s));
-          }
+          const main = [
+            c.other,                                                // 傾きの正負を取りちがえた式（もう一方の場合の式）
+            line(c.L.b, c.L.a),                                     // 傾きと切片の入れかえ
+            line(c.L.a, qneg(c.L.b)),                               // 切片の符号まちがい
+            line(qneg(c.L.a), c.L.b),                               // 傾きの符号まちがい
+            line(c.L.a, Q(c.sgn > 0 ? c.ylo : c.yhi)),              // 切片を y の変域の端の値にしてしまう
+            line(qneg(c.L.a), qneg(c.L.b)),                         // 傾きも切片も符号をまちがえる
+            line(c.L.b, qneg(c.L.a)),                               // 傾きと切片を入れかえて、符号もまちがえる
+          ].filter((w) => !rangeOk(c, w));
+          const wrongs = pickWrongs(r, c.L, main).map((w) => TX(ltex(w)));
           return {
             q: `${rangeText(c)}$a$ が${c.sgn > 0 ? "正" : "負"}の数のとき、この一次関数の式は、次のうちどれか。`,
             ans: TX(ltex(c.L)),

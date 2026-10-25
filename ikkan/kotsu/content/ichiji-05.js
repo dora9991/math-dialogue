@@ -103,13 +103,13 @@ export const UNITS = [
       1: [
         // 05d01a 演習（1）傾きと切片と向き（4択）
         t("05d01a", (r) => {
-          const e = exprOf(r, slopeOf(r, true), pick(r, ["std", "std", "rev"])), a = e.a, b = e.b;
-          const right = descOf(a, b), neg = (q) => [-q[0], q[1]];
-          const wrongs = [descOf(b, a), descOf(neg(a), b), descOf(a, neg(b)), descOf(neg(a), neg(b)), descOf(b, neg(a))];
+          const e = exprOf(r, slopeOf(r, true), pick(r, ["std", "std", "rev"])), a = e.a, b = e.b, right = line(a, b);
+          const cells = gridCells(r, right, [b, [-a[0], a[1]], [a[1], a[0]]], [[-b[0], b[1]], a], null);      // 傾きのまちがい×切片のまちがい の 2×2
+          const ans = descOf(a, b);
           return {
             q: `一次関数 ${$(e.tex)} のグラフについて、傾きと切片と向きの組として正しいものは、次のうちどれか。`,
-            ans: right,
-            choices: choices4(r, right, wrongs.filter((w) => w !== right)),
+            ans,
+            choices: shuffle(r, [ans, ...cells.map((l) => descOf(l.a, l.b))]),
             hint: "式を $y=ax+b$ の形にならべかえると、どうなるかな？ 傾きは $a$ と $b$ のどちらかな？ 向きは、何の符号で決まったかな？",
             steps: [e.form === "rev" ? `$x$ の項を先に書くと、${$(e.std)}。` : `${$(e.tex)} は、$y=ax+b$ の形。`, `傾き（$a$）は ${N(qt(a))}、切片（$b$）は ${N(qt(b))}。傾きが${a[0] > 0 ? "正" : "負"}の数だから、${dirOf(a)}。`],
           };
@@ -136,14 +136,17 @@ export const UNITS = [
         }),
         // 05d02b 演習（2）傾きと右へ進む量 → 上へ／下へ いくつ進むか（4択）
         t("05d02b", (r) => {
-          const a = slopeOf(r, true), n = a[1] * (a[1] === 1 ? r(2, 4) : r(1, 4)), rise = Q(a[0] * (n / a[1])), sg = rise[0] > 0 ? 1 : -1;
-          const txt = (v) => `${v[0] > 0 ? "上" : "下"}へ ${N(qt(absq(v)))} 進む`, mv = (s, m) => [s * m[0], m[1]];
-          const ans = txt(rise), recip = Q(n * a[1], a[0]);
-          const cands = [mv(-sg, absq(rise)), mv(sg, absq(a)), mv(sg, [n, 1]), mv(-sg, [n, 1]), recip].map(txt).filter((s) => s !== ans);
+          const a = slopeOf(r, true), n = a[1] * (a[1] === 1 ? r(2, 4) : r(1, 4)), rise = Q(a[0] * (n / a[1])), sg = rise[0] > 0 ? 1 : -1, m = absq(rise);
+          const txt = (v) => `${v[0] > 0 ? "上" : "下"}へ ${N(qt(absq(v)))} 進む`, signed = (s2, mag) => [s2 * mag[0], mag[1]];
+          const ans = txt(rise);
+          // 向きのまちがい×大きさのまちがい の 2×2。大きさのまちがい：傾きそのまま・右へ進む量そのまま・割り算にした・1 ずれ
+          const bads = [absq(a), Q(n), Q(n * a[1], a[0]), Q(a[0] < 0 ? -a[0] : a[0], 1), qadd(m, Q(1)), qadd(m, Q(-1)), qmul(m, Q(2))].map((v) => absq(v)).filter((v, i, arr) => !qeq(v, m) && v[0] !== 0 && arr.findIndex((w) => qeq(w, v)) === i);
+          const m1 = shuffle(r, bads.slice(0, 3))[0] ?? bads[0];
+          const cells = [signed(sg, m1), signed(-sg, m), signed(-sg, m1)].map(txt);
           return {
             q: `傾きが ${N(qt(a))} のグラフは、右へ ${n} 進むと、上へ進むか、下へ進むか。また、いくつ進むか。`,
             ans,
-            choices: choices4(r, ans, cands, (i) => { const m = Math.abs(rise[0]) + [1, -1, 2, -2, 3][i % 5]; return m > 0 ? txt([sg * m, 1]) : null; }),
+            choices: shuffle(r, [ans, ...cells]),
             hint: "傾きが正の数のときと負の数のときで、進む向きはどうなるかな？ 傾きは、右へ 1 進むときの量だったね。",
             steps: [`傾き ${N(qt(a))} は、右へ 1 進むと、${a[0] > 0 ? "上" : "下"}へ ${N(qt(absq(a)))} 進むことを表す。`, `右へ ${n} 進むと、${$(`${par(a)}\\times ${n}=${qt(rise)}`)} だから、${ans}。`],
           };
@@ -166,7 +169,7 @@ export const UNITS = [
           const a = slopeOf(r, true), b = nz(r, 4), pts = twoPoints(r, a, b, true);
           if (!pts) return { skip: true };
           const [p1, p2] = pts, right = line(a, b);
-          const { ans, choices } = lineChoices(r, right, [line(Q(b), a), line([-a[0], a[1]], b), line(a, -b), line([-a[0], a[1]], -b)], pts);
+          const { ans, choices } = gridChoices(r, right, [[-a[0], a[1]], b, [a[1], a[0]]], [-b, a], pts);
           const dx = p2[0] - p1[0], dyv = p2[1] - p1[1];
           return {
             q: `直線 ℓ は、2点 ${PT(p1, "A")}、${PT(p2, "B")} を通る。ℓ の式は？`,
@@ -314,7 +317,7 @@ export const UNITS = [
           const n = pick(r, [3, 4, 5]), a = Q(coprimeTo(r, n, 3), n), b = nz(r, 4), pts = twoPoints(r, a, b, true);
           if (!pts) return { skip: true };
           const [p1, p2] = pts, right = line(a, b), dx = p2[0] - p1[0], dyv = p2[1] - p1[1];
-          const { ans, choices } = lineChoices(r, right, [line(Q(b), a), line([-a[0], a[1]], b), line(a, -b), line([a[1], a[0]], b)], pts);
+          const { ans, choices } = gridChoices(r, right, [[-a[0], a[1]], b, [a[1], a[0]]], [-b, a], pts);
           return {
             q: `直線 ℓ は、2点 ${PT(p1, "A")}、${PT(p2, "B")} を通る。ℓ の式は？`,
             ans,

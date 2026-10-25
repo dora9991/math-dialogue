@@ -70,7 +70,32 @@ const solveStep = (l, Y, xu = "") => {
     : `${TX(`${dt(Y)}=${rhs}`)} より ${TX(`${ax}=${dt(rest)}`)}、${TX(`x=${dt(X)}`)}${xu ? `（${xu}）` : ""}。`;
 };
 
-/** 2点 p1、p2 を通る直線 L の式の4択。誤答は「ありがちな間違い」で、2点を両方は通らないものだけ */
+// ── 式の4択の選び方 ──────────────────────────────────────────────
+//  誤答が「正解を1か所だけ変えたもの」ばかりだと、計算せずに「ほかの式と、傾き・切片がいちばんそろっている式」を選ぶだけで当たってしまう。
+//  そこで、誤答の候補から 3つを選ぶとき、(1) 正解と傾きも切片もそろわない誤答、(2) 誤答どうしでそろう組、も入る選び方にする
+//  （そのような当て方で正解が選べる組を、およそ 35% にする）。また、正解が分数をふくまない式のときは、分数をふくむ誤答を使わない
+//  （書式で見分けられないように）。正解が分数をふくむときは、誤答も分数をふくむものを先に使う。
+const featScore = (ls) => ls.map((x, i) => ls.reduce((s, y, j) => (j === i ? s : s + (qeq(x.a, y.a) ? 1 : 0) + (qeq(x.b, y.b) ? 1 : 0)), 0));
+const guessable = (ls) => { const sc = featScore(ls), mx = Math.max(...sc); return sc[0] === mx && sc.filter((v) => v === mx).length === 1; };
+const pick3 = (r, L, pool) => {
+  const hit = [], miss = [];
+  for (let i = 0; i < pool.length; i++) for (let j = i + 1; j < pool.length; j++) for (let k = j + 1; k < pool.length; k++) (guessable([L, pool[i], pool[j], pool[k]]) ? hit : miss).push([pool[i], pool[j], pool[k]]);
+  const want = r(1, 100) <= 35, first = want ? hit : miss, second = want ? miss : hit, list = first.length ? first : second;
+  return list.length ? pick(r, list) : pool.slice(0, 3);
+};
+/** 式の4択：正解 L、ありがちな誤答の直線 cands、足りないときの補い fills。keep(w)＝その誤答が条件をみたさないことの確認。tex＝式の書き方 */
+const chooseLines = (r, L, cands, fills = [], keep = () => true, tex = ltexD) => {
+  const hasF = (w) => tex(w).includes("\\frac"), same = (w) => hasF(w) === hasF(L), seen = new Set([tex(L)]);
+  const take = (list) => { const out = []; for (const w of list) { if (!w) continue; const s = tex(w); if (seen.has(s) || !keep(w)) continue; seen.add(s); out.push(w); } return out; };
+  const c1 = take(cands), f1 = take(fills);
+  let pool = c1.filter(same);
+  if (pool.length < 4) pool = pool.concat(f1.filter(same));
+  if (pool.length < 3) pool = pool.concat(c1.filter((w) => !same(w)), f1.filter((w) => !same(w)));
+  if (pool.length < 3) pool = pool.concat(take([1, -1, 2, -2, 3, -3].flatMap((k) => [line(qadd(L.a, Q(k)), L.b), line(L.a, qadd(L.b, Q(k)))])));
+  return choices4(r, TX(tex(L)), pick3(r, L, pool).map((w) => TX(tex(w))));
+};
+
+/** 2点 p1、p2 を通る直線 L の式の4択。誤答は「ありがちな間違い」で、2点を両方は通らないものだけ。小数で書く場面なので、分数になる誤答（傾きの逆数など）は使わない */
 const lineChoices = (r, L, p1, p2) => {
   const [x1, y1] = [Qa(p1[0]), Qa(p1[1])], a = L.a, b = L.b;
   const inv = qiszero(a) ? null : qdiv(Q(1), a);
@@ -78,24 +103,16 @@ const lineChoices = (r, L, p1, p2) => {
     qiszero(b) ? null : line(b, a),                                      // 傾きと切片の入れかえ
     qiszero(b) ? null : line(a, qneg(b)),                                // 切片の符号まちがい
     line(qneg(a), b),                                                    // 傾きの符号まちがい
-    inv ? line(inv, qsub(y1, qmul(inv, x1))) : null,                     // 傾きを (x の増加量)÷(y の増加量) にしてしまう
+    line(qneg(a), qneg(b)),                                              // 傾きも切片も、符号をまちがえる
+    qiszero(b) ? null : line(b, qneg(a)),                                // 入れかえたうえで、符号もまちがえる
+    inv ? line(inv, qsub(y1, qmul(inv, x1))) : null,                     // 傾きを (x の増加量)÷(y の増加量) にしてしまう（小数で書けるときだけ）
     line(a, qadd(y1, qmul(a, x1))),                                      // 切片の代入ミス（y＋a×x としてしまう）
     line(a, y1),                                                         // 切片を y 座標そのものにしてしまう
+    line(a, qsub(y1, a)),                                                // 切片を求めるとき、x をかけわすれる
   ];
-  const seen = new Set([ltexD(L)]);
-  const wrongs = [];
-  const order = shuffle(r, cand.filter(Boolean));
-  for (const w of order) {
-    const s = ltexD(w);
-    if (seen.has(s) || (onLine(w, p1) && onLine(w, p2))) continue;
-    seen.add(s); wrongs.push(TX(s));
-  }
   const one = Q(1);
   const fills = [line(qadd(a, one), b), line(a, qadd(b, one)), line(qsub(a, one), b), line(a, qsub(b, one))];
-  return choices4(r, TX(ltexD(L)), wrongs, (i) => {
-    const w = fills[i % fills.length];
-    return onLine(w, p1) && onLine(w, p2) ? null : TX(ltexD(w));
-  });
+  return chooseLines(r, L, cand, fills, (w) => !(onLine(w, p1) && onLine(w, p2)), ltexD);
 };
 
 // ── 実験の場面 ─────────────────────────────────────────────────

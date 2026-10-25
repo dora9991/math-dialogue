@@ -215,15 +215,18 @@ export const UNITS = [
         // 04q03 小テスト（3）点 (2, 7) は y＝3x+1 のグラフの上にあるか（理由つきで選ぶ）
         t("04q03", (r) => {
           const a = nz(r, 5), b = nz(r, 8), l = line(a, b), p = r(-3, 4), on = r(0, 1) === 1, yv = a * p + b;
-          let q0 = on ? yv : yv + pick(r, [-3, -2, -1, 1, 2, 3]);
-          const claim = (v) => (v === q0 ? `グラフの上にある。${$(`x=${p}`)} のとき ${$(`y=${v}`)} となり、点の $y$ 座標 ${N(q0)} と同じだから。` : `グラフの上にない。${$(`x=${p}`)} のとき ${$(`y=${v}`)} となり、点の $y$ 座標 ${N(q0)} とちがうから。`);
-          const vals = [...new Set([a * p - b, a * p, b * p + a, a * q0 + b, yv + 1, yv - 1].filter((v) => v !== yv && Math.abs(v) < 60))];
-          const ans = claim(yv);
+          const q0 = on ? yv : yv + pick(r, [-3, -2, -1, 1, 2, 3]);
+          // 選択肢は「結論（ある／ない）」×「代入して出した y の値（正しい／まちがい）」の 2×2。結論の並びでは正解がわからない
+          const claim = (c, v) => `グラフの上に${c ? "ある" : "ない"}。${$(`x=${p}`)} を代入すると ${$(`y=${v}`)} になるから。`;
+          const vals = [a * p - b, a * p, b * p + a, a * q0 + b, yv + 1, yv - 1, yv + 2, yv - 2].filter((v) => v !== yv && v !== q0 && Math.abs(v) < 60);
+          const vw = pick(r, vals);
+          const ans = claim(on, yv);
+          const cells = [claim(!on, yv), claim(on, vw), claim(!on, vw)];
           return {
             q: `点 ${$(ptex2([p, q0]))} は、一次関数 ${L(l)} のグラフの上にあるか。理由とともに、正しいものを選ぼう。`,
             ans,
-            choices: choices4(r, ans, shuffle(r, vals).map(claim)),
-            hint: "点の $x$ 座標を式に代入して出た $y$ の値は、点の $y$ 座標と同じになるかな？",
+            choices: shuffle(r, [ans, ...cells]),
+            hint: "点の $x$ 座標を式に代入すると、$y$ の値はいくつになるかな？ それは、点の $y$ 座標と同じになるかな？",
             steps: [`点の $x$ 座標 ${N(p)} を代入すると、${$(`y=${subTex(l, p)}`)}。`, on ? `点の $y$ 座標 ${N(q0)} と同じだから、グラフの上にある。` : `点の $y$ 座標 ${N(q0)} とちがうから、グラフの上にない。`],
           };
         }),
