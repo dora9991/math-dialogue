@@ -214,7 +214,7 @@ export const UNITS = [
         }),
         // 08d08 演習（8）y＝ax+2 で x の変域が −2≦x≦3、y の最大値と最小値の差が 10。a の値をすべて求める
         t("08d08", (r) => {
-          const lo = r(-4, -1), hi = lo + r(3, 6), d = hi - lo, m = r(1, 5), D = d * m, b = rnz(r, -5, 5), big = r(0, 1) === 1;
+          const lo = r(-4, -1), hi = r(1, 4), d = hi - lo, m = r(1, 5), D = d * m, b = rnz(r, -5, 5), big = r(0, 1) === 1;
           const ca = (c) => (c === 1 ? "a" : c === -1 ? "-a" : `${c}a`), lin = (c) => `${ca(c)}${b < 0 ? "-" : "+"}${Math.abs(b)}`;
           return {
             q: `一次関数 ${$(`y=ax${b < 0 ? "-" : "+"}${Math.abs(b)}`)} で、x の変域が ${$(xr(lo, hi))} のとき、y の最大値と最小値の差が ${D} になった。a の値は 2 つある。${big ? "大きい" : "小さい"}ほうの a の値は？`,

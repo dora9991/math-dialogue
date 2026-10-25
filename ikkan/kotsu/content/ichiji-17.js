@@ -124,7 +124,7 @@ function nonLinForm(r) {
 const CTX2 = {
   taxi: { lead: "タクシーの", u: "km", names: ["A 社", "B 社"], fee: "基本料金", def: "$x$ km 乗るときの料金を $y$ 円とする。", ask: (k) => `${k}km 乗る`, noun: "km", pA: [250, 300, 350], dp: [50, 100], FB: [300, 400, 500, 600], xs: [2, 3, 4, 5, 6], fstep: 100 },
   rent: { lead: "レンタカーの", u: "日", names: ["A 社", "B 社"], fee: "基本料金", def: "$x$ 日借りるときの料金を $y$ 円とする。", ask: (k) => `${k}日借りる`, noun: "日", pA: [3000, 3500, 4000], dp: [500, 1000], FB: [2000, 3000, 4000], xs: [2, 3, 4, 5], fstep: 500 },
-  phone: { lead: "スマートフォンの通信プランの", u: "GB", names: ["A プラン", "B プラン"], fee: "基本料", def: "1か月に $x$ GB 使うときの料金を $y$ 円とする。", ask: (k) => `${k}GB 使う`, noun: "GB", pA: [200, 300, 400], dp: [100, 200], FB: [500, 800, 1000, 1500], xs: [3, 4, 5, 6, 8], fstep: 100 },
+  phone: { lead: "スマートフォンの料金プランがある。", u: "GB", names: ["A プラン", "B プラン"], fee: "基本料", def: "1か月に $x$ GB 使うときの料金を $y$ 円とする。", ask: (k) => `${k}GB 使う`, noun: "GB", pA: [200, 300, 400], dp: [100, 200], FB: [500, 800, 1000, 1500], xs: [3, 4, 5, 6, 8], fstep: 100 },
 };
 function mk2(r, key) {
   const c = CTX2[key];
@@ -134,7 +134,8 @@ function mk2(r, key) {
     const lA = line(pA, FA), lB = line(pB, FB), m = meet(lA, lB);
     if (!m || !qeq(m[0], Q(xeq))) throw new Error("料金の交点が合わない");
     const swap = r(0, 1) === 1, [nA, nB] = swap ? [c.names[1], c.names[0]] : c.names;
-    const dA = `${nA}は、${c.fee} ${FA}円と、1${c.u} ごとに ${pA}円。`, dB = `${nB}は、${c.fee} ${FB}円と、1${c.u} ごとに ${pB}円。`;
+    const sp = /^[a-zA-Z]/.test(c.u) ? " " : "";
+    const dA = `${nA}は、${c.fee} ${FA}円と、1${c.u}${sp}ごとに ${pA}円。`, dB = `${nB}は、${c.fee} ${FB}円と、1${c.u}${sp}ごとに ${pB}円。`;
     return { c, pA, pB, FA, FB, xeq, lA, lB, nA, nB, lead: `${c.lead}${swap ? dB + dA : dA + dB}${c.def}` };
   }
   throw new Error("mk2 が作れない");
@@ -208,7 +209,7 @@ export const UNITS = [
           return {
             q: `一次関数 ${TX(ltex(L))} で、$x$ が ${x1} から ${x2} まで増加するとき、$y$ の増加量は？`,
             ans: num(d),
-            hint: "$x=" + x1 + "$ のときと、$x=" + x2 + "$ のときの $y$ の値を、それぞれ求めて、くらべよう。",
+            hint: "$x$ がふえはじめる値と、ふえ終わる値を、それぞれ式に入れて、$y$ の値を求めよう。$y$ は、どれだけ変わった？",
             steps: [`${TX(`x=${x1}`)} のとき ${TX(`y=${aX(L.a, x1)}${L.b[0] < 0 ? "-" : "+"}${Math.abs(L.b[0])}=${qt(v1)}`)}。`, `${TX(`x=${x2}`)} のとき ${TX(`y=${aX(L.a, x2)}${L.b[0] < 0 ? "-" : "+"}${Math.abs(L.b[0])}=${qt(v2)}`)}。`, `$y$ の増加量は ${TX(`${qt(v2)}-${P(v1)}=${qt(d)}`)}。`],
           };
         }),
@@ -238,7 +239,7 @@ export const UNITS = [
         t("17d03b", (r) => {
           const L = randLine(r, [1, 2, 3, 4, -2, -3, -4, -1, [1, 2], [-1, 2]], 6);
           const a = L.a, b = L.b;
-          if (qeq(a, b) || qeq(a, qneg(b)) || qiszero(b)) return { skip: true };
+          if (qeq(a, b) || qeq(a, Q(-1)) || qiszero(b)) return { skip: true };
           const up = a[0] > 0, dir = (u) => (u ? "右上がり" : "右下がり");
           const pts = { b: [Q(0), b], a: [Q(0), a], x: [b, Q(0)] };
           const txt = (u, k) => `${dir(u)}の直線で、点 ${PT(pts[k])} を通る。`;
@@ -276,7 +277,7 @@ export const UNITS = [
           return {
             q: `一次関数 ${TX(ltex(L))} で、$x$ の変域が ${TX(`${x1}\\leqq x\\leqq ${x2}`)} のとき、$y$ の変域は、次のうちどれか。`,
             ans: right,
-            choices: choices4(r, right, wrongs, (i) => rg(Q(qval(lo) + 1 + i, 1) ? Q(lo[0] + (i + 1) * lo[1], lo[1]) : lo, hi)),
+            choices: choices4(r, right, wrongs, (i) => rg(qsub(lo, Q(i + 1)), hi)),
             hint: "両はしの $x$ の値を、式に入れて、$y$ の値を求めよう。小さいほうを左に書く。",
             steps: [`${TX(`x=${x1}`)} のとき ${TX(`y=${qt(yAt(L, x1))}`)}、${TX(`x=${x2}`)} のとき ${TX(`y=${qt(yAt(L, x2))}`)}。`, `小さいほうを左に書いて ${right}。`],
           };
@@ -516,7 +517,7 @@ export const UNITS = [
             return {
               q: `${peakText(c)}三角形 APC の面積が ${dt(k)}cm² になるのは、A を出発してから、2回ある。${askT}`,
               ans: ansOf(xs), unit: ask === "sum" ? "秒" : "秒後",
-              hint: `グラフは折れ線。0≦x≦${c.p} のときと、それ以降とで、式がちがう。それぞれの式に、面積の値を入れてみよう。`.replace(/0≦x≦(\d+)/, "$0\\leqq x\\leqq $1$"),
+              hint: `グラフは折れ線。${TX(`0\\leqq x\\leqq ${c.p}`)} のときと、それ以降とで、式がちがう。それぞれの式に、面積の値を入れてみよう。`,
               steps: [
                 `0≦x≦${c.p} のとき ${TX(ltex(c.L1))}、${c.p}≦x≦${c.p + c.q} のとき ${TX(ltex(c.L2))}。（2点の座標から求めた）`,
                 `${TX(`${rhs(c.L1)}=${dt(k)}`)} より ${TX(`x=${x1}`)}。${TX(`${rhs(c.L2)}=${dt(k)}`)} より ${TX(`x=${dt(x2)}`)}。どちらも変域に合う。`,
@@ -539,7 +540,7 @@ export const UNITS = [
             const A = [Q(-a), Q(0)], Pp = [Q(px), py], Cc = [C[0], Q(0)], area = triArea(A, Pp, Cc), AC = qsub(C[0], Q(-a));
             if (!qeq(area, Q(AC[0] * py[0], 2))) throw new Error("PAC の面積が合わない");
             return {
-              q: `直線 ℓ は 2点 A(${-a}, 0)、B(0, ${b}) を通り、直線 m の式は ${TX(ltex(m))} である。ℓ と m の交点を P、m と $x$ 軸との交点を C とする。三角形 PAC の面積を求めよう。（座標の 1目もりを 1cm とする。）`,
+              q: `直線 ℓ は 2点 A(−${a}, 0)、B(0, ${b}) を通り、直線 m の式は ${TX(ltex(m))} である。ℓ と m の交点を P、m と $x$ 軸との交点を C とする。三角形 PAC の面積を求めよう。（座標の 1目もりを 1cm とする。）`,
               ans: ansOf(area), unit: "cm²",
               hint: "まず、ℓ の式を求めよう。P、C の座標がわかれば、三角形 PAC の底辺と高さは、どの長さ？",
               steps: [
