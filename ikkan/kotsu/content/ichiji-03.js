@@ -321,7 +321,7 @@ export const UNITS = [
         // 03q05 小テスト チャレンジ：x が増えると y が増える、x=x1 で y=y1 → x=x3 のときの y
         t("03q05", (r) => {
           const d = pick(r, [1, 1, 2]), a = d === 1 ? Q(nz(r, 5)) : Q(pick(r, [1, 3, 5]) * pick(r, [1, -1]), 2);
-          const x1 = r(-1, 3), dx = d === 1 ? r(2, 5) : 2 * r(1, 3), x2 = x1 + dx, l = line(a, nz(r, 9)), dyv = dy(l, x1, x2)[0], y1 = yAt(l, x1)[0];
+          const x1 = d * r(-1, 2), dx = d === 1 ? r(2, 5) : 2 * r(1, 3), x2 = x1 + dx, l = line(a, nz(r, 9)), dyv = dy(l, x1, x2)[0], y1 = yAt(l, x1)[0];
           const x3 = x1 - d * r(1, 5), v = yAt(l, x3)[0], d31 = x1 - x3, up = a[0] * d31 / a[1];
           return {
             q: `一次関数で、$x$ の値が ${N(x1)} から ${N(x2)} まで増加すると、$y$ の値は ${upDown(dyv)}。また、$x=${x1}$ のとき $y=${y1}$ である。$x=${x3}$ のときの $y$ の値は？`,
