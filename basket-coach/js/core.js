@@ -215,7 +215,8 @@
         // 1字は、漢字（肘・膝・奥など）だけ使う
         if ((n.length >= 2 || /^[\u4e00-\u9fff]$/.test(n)) && !strong.has(n)) weak.add(n);
       });
-      items.push({ it, strong: [...strong], weak: [...weak], grams: bigrams([...strong].join('|')) });
+      const byLen = (a, b) => b.length - a.length;
+      items.push({ it, strong: [...strong].sort(byLen), weak: [...weak].sort(byLen), grams: bigrams([...strong].join('|')) });
     }
     const skills = BC.skills.map((s) => ({ s, words: [s.name, ...(s.words || [])].map(BC.norm).filter((w) => w.length >= 2) }));
     BC._index = { items, skills };
@@ -238,14 +239,19 @@
   function scoreItem(text, raw, grams, e) {
     let s = 0;
     const hits = [];
+    // すでに当たった長い言葉の中にある短い言葉（「ピックアンドロール」の中の「ロール」）は、重ねて数えない
+    const named = [];
+    const inside = (t) => named.some((h) => h.length > t.length && h.includes(t));
     for (const t of e.strong) {
-      if (hasTerm(text, raw, t)) { s += 4 + t.length * 1.3; hits.push(t); }
+      if (inside(t)) continue;
+      if (hasTerm(text, raw, t)) { s += 4 + t.length * 1.3; hits.push(t); named.push(t); }
       else {
         const st = stem(t);
         if (st && st.length >= 4 && text.includes(st)) { s += 3 + st.length * 1.1; hits.push(st); }
       }
     }
     for (const w of e.weak) {
+      if (inside(w)) continue;
       if (hasTerm(text, raw, w)) { s += Math.min(w.length, 6) * 1.0 + 0.5; hits.push(w); }
       else {
         // 語尾のちがい（「下を見る」と「下を見て」など）は、最後の1字を外して見る
@@ -320,7 +326,9 @@
       if (e.it.kind_ === 'issue') s *= 1.08;
       out.push({ item: e.it, score: Math.round(s * 10) / 10, hits: r.hits });
     }
-    out.sort((a, b) => b.score - a.score);
+    // 同じ点なら、困りごと → 戦術 → 練習 → 視点 の順
+    const rank = { issue: 0, tactic: 1, drill: 2, view: 3 };
+    out.sort((a, b) => b.score - a.score || rank[a.item.kind_] - rank[b.item.kind_]);
     return out;
   };
   BC.skillsIn = function (input) {
@@ -358,7 +366,9 @@
     const strongOther = topOther && topOther.hits.some((h) => topOther.item.kind_ !== 'issue' && isStrong(topOther.item, h));
     // 困っている言い方（「やられた」「できない」「苦手」）なら、名前が同じ戦術より困りごとを先に
     const complain = /(ない|なかった|られ|苦手|困|悩|負け|弱い|下手|へた)/.test(BC.norm(input));
-    const lean = complain && topIssue && topIssue.score >= 5 ? 2 : 1.05;
+    // 改善の視点は、最初の答えとしては狭いので、困りごとより はっきり上のときだけ
+    let lean = complain && topIssue && topIssue.score >= 5 ? 2 : 1.05;
+    if (topOther && topOther.item.kind_ === 'view') lean = Math.max(lean, 1.3);
     if (topOther && strongOther && (!topIssue || topOther.score > topIssue.score * lean)) {
       const rel = BC.issuesFor(topOther.item.id).slice(0, 4);
       return { type: 'item', item: topOther.item, alts: others.slice(1, 4).filter((h) => h.score >= topOther.score * 0.6).map((h) => h.item), related: rel, ctx };
