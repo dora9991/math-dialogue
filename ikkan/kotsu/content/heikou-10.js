@@ -259,7 +259,9 @@ function pickBadPair(r, q, ok, cands, nOk, nBad) {
     return { bad, t: [ov(ok) - ov(bad), jsum[0] + jsum[1] - jsum[2] - jsum[3], csum[2] + csum[3] - csum[0] - csum[1]] };
   });
   // t[0]＞0 … 正解の組のほうが、問題文と重なる。t[1]＞0 … 正解の組のほうが、ほかとよく似ている。t[2]＞0 … 同じく、字の近さ
-  const fit = (z) => z.t.reduce((acc, v, i) => acc + (Math.abs(v) < 1e-9 || Math.sign(v) === want[i] ? 1 : 0), 0);
+  // 同じ文字が、2つの三角形の同じ位置に入っているかどうか（「形」）が、正解の組と同じ誤答の組を、えらびやすくする（形だけで、正解の組を当てられないように）
+  const shapeOf = (x) => { const m = new Map(); return strip(x).replace(/[A-Z]/g, (c) => { if (!m.has(c)) m.set(c, String.fromCharCode(97 + m.size)); return m.get(c); }); };
+  const fit = (z) => 3 * (shapeOf(z.bad) === shapeOf(ok) ? 1 : 0) + z.t.reduce((acc, v, i) => acc + (Math.abs(v) < 1e-9 || Math.sign(v) === want[i] ? 1 : 0), 0);
   const top = Math.max(...scored.map(fit));
   return pick(r, scored.filter((z) => fit(z) === top)).bad;
 }
@@ -272,7 +274,7 @@ function gridQ(r, cfg, { note = NOTE } = {}) {
   const ok = pair(A1, A2);
   const q = `${introOf(cfg)}\n${note}\n${LEGEND}\n${pick(r, GRID_ASK)}`;
   const wc = pick(r, CONDS3.filter((c) => c !== cls));
-  const bad = pickBadPair(r, q, ok, (cfg.wrongs || permsOf(cfg.T2)).map((T) => pair(A1, rot(T))), NUM[cls], NUM[wc]);
+  const bad = pickBadPair(r, q, ok, [...(cfg.wrongs || permsOf(cfg.T2)).map((T) => pair(A1, rot(T))), ...(cfg.wrongs ? [] : permsOf(cfg.T1).map((T) => pair(rot(T), A2))), ...(cfg.wrongs && cfg.shapeOk ? permsOf(cfg.T1).map((T) => pair(rot(T), A2)) : [])], NUM[cls], NUM[wc]);
   const ans = `${ok}、${NUM[cls]}`;
   return {
     q,
