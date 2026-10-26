@@ -19,15 +19,13 @@ const bigrams = (s) => { const x = strip(s).replace(/\s/g, ""), o = new Set(); f
 const jac = (a, b) => { let i = 0; for (const x of a) if (b.has(x)) i++; return i / (a.size + b.size - i || 1); };
 function cueFree(choices, ans) {
   const n = choices.length, ai = choices.findIndex((c) => String(c) === String(ans));
-  const T = choices.map((c) => new Set(toks(c))), B = choices.map(bigrams), cnt = {};
-  T.forEach((s) => s.forEach((w) => { cnt[w] = (cnt[w] || 0) + 1; }));
-  const sim = B.map((b, i) => B.reduce((a, o, j) => (i === j ? a : a + jac(b, o)), 0));
-  const sc = [
-    choices.map((c) => strip(c).length), sim,
-    T.map((s) => [...s].filter((w) => cnt[w] === 1).length),
-    T.map((s) => Object.keys(cnt).filter((w) => cnt[w] === n - 1 && !s.has(w)).length),
-    T.map((s) => [...s].reduce((a, w) => a + cnt[w], 0)),
-  ];
+  const B = choices.map(bigrams), sim = B.map((b, i) => B.reduce((a, o, j) => (i === j ? a : a + jac(b, o)), 0));
+  const sc = [choices.map((c) => strip(c).length), sim];
+  for (const tk of [toks, (s) => [...strip(s).replace(/[\s、。]/g, "")]]) {   // 語ごと・1字ごと
+    const T = choices.map((c) => new Set(tk(c))), cnt = {};
+    T.forEach((s) => s.forEach((w) => { cnt[w] = (cnt[w] || 0) + 1; }));
+    sc.push(T.map((s) => [...s].filter((w) => cnt[w] === 1).length), T.map((s) => Object.keys(cnt).filter((w) => cnt[w] === n - 1 && !s.has(w)).length), T.map((s) => [...s].reduce((a, w) => a + cnt[w], 0)));
+  }
   for (const v of sc) for (const sgn of [1, -1]) {
     const w = v.map((x) => sgn * x), m = Math.max(...w);
     if (w[ai] === m && w.filter((x) => x === m).length === 1) return false;

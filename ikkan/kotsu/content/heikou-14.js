@@ -9,10 +9,16 @@
 //   ・証明（仮定・結論・根拠）：証明は書けないので、穴うめ（4択）・根拠を選ぶ4択・合同から出る角の大きさ（数値入力）に直した。SKIPPED は 0。
 //   答えは、問題文の数字・等しいものの組から計算して出す（手で書かない）。
 // ============================================================
-import { t, pick, choices4, sample, shuffle } from "../kit.js";
+import { t as t0, pick, choices4, sample, shuffle } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
 
 const unit = unitFor("heikou");
+
+/** t(id, build) と同じ。ただし、数の答えが問題文の数とたまたま同じになる組は、作り直す（skip） */
+const t = (id, build) => t0(id, (r) => {
+  const p = build(r);
+  return p && typeof p.ans === "number" && ((p.q.match(/\d+/g) || []).map(Number)).includes(p.ans) ? { skip: true } : p;
+});
 
 // ── 道具（この授業の問題用に足した小さな関数）──────────────────────────
 const LETTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ";   // I と O は、1・0 とまぎらわしいので、のぞく
@@ -35,11 +41,30 @@ const gon = (n) => `${kan(n)}角形`;                 // 十二角形
 const rgon = (n) => (n === 3 ? "正三角形" : n === 4 ? "正方形" : `正${gon(n)}`);   // 正十二角形
 const DIV360 = [5, 6, 8, 9, 10, 12, 15, 18, 20, 24, 30];   // 360 の約数（正n角形の1つの外角が整数の度になる n）
 
+/** 誤答の候補 pool から k 個えらぶ。正解 ans の「長さの順位」が、かたよらないように（長さで当てられないように） */
+function pickWrongs(r, ans, pool, k = 3) {
+  const target = r(0, k), len = (x) => String(x).length;
+  let first = null;
+  for (let i = 0; i < 80; i++) {
+    const w = shuffle(r, pool).slice(0, k), lo = w.filter((x) => len(x) < len(ans)).length, ties = w.filter((x) => len(x) === len(ans)).length;
+    if (!first) first = w;
+    if (target >= lo && target <= lo + ties) return w;
+  }
+  return first;
+}
+/** 重みつきで 1つえらぶ */
+function pickW(r, keys, w) {
+  const tot = keys.reduce((s, k) => s + w[k], 0);
+  let x = r(0, 9999) / 10000 * tot;
+  for (const k of keys) { if (x < w[k]) return k; x -= w[k]; }
+  return keys[keys.length - 1];
+}
+
 // 合同条件
 const COND = { SSS: "3組の辺", SAS: "2組の辺とその間の角", ASA: "1組の辺とその両端の角", NONE: "どれにもあてはまらない" };
 const condChoices = (r, key) => choices4(r, COND[key], Object.keys(COND).filter((k) => k !== key).map((k) => COND[k]));
-/** 三角形の頂点の番号 0, 1, 2 で、等しいものを言う。辺 SIDE(i, j)（頂点 i と j をむすぶ辺）、角 ANG(i)（頂点 i の角） */
-const SIDE = (i, j) => ({ k: "s", i, j });
+/** 三角形の頂点の番号 0, 1, 2 で、等しいものを言う。辺 SIDE(i, j)（頂点 i と j をむすぶ辺。common＝true なら「辺 ○○ が共通」）、角 ANG(i)（頂点 i の角） */
+const SIDE = (i, j, common = false) => ({ k: "s", i, j, common });
 const ANG = (i) => ({ k: "a", i });
 /** 等しいもの 3つから、あてはまる合同条件を判定する（SSS／SAS／ASA／NONE）。辺2・角1 は、角が2辺の間（2辺に共通な頂点）の角のときだけ SAS。辺1・角2 は、2つの角が辺の両端のときだけ ASA */
 function judge(els) {
@@ -56,29 +81,107 @@ function judge(els) {
   }
   return "NONE";
 }
-/** 三角形の頂点の並び V の、頂点 i の角の名前（i 以外の 2頂点を、番号の小さい順にはさむ）。例 V=[A,O,B] なら、i=0 → OAB、i=1 → AOB、i=2 → ABO */
-const angName = (V, i) => { const o = [0, 1, 2].filter((x) => x !== i); return V[o[0]] + V[i] + V[o[1]]; };
-/** 等しいもの e を、「AB＝DE」「∠OAB＝∠ODC」の形の文字にする。short＝true なら、角は「∠B＝∠E」の短い形（頂点の名前がすべてちがう 2つの三角形用） */
+/** 三角形の頂点の並び V の、頂点 i の角の名前（i 以外の 2頂点を、番号の小さい順にはさむ）。例 V=[A,O,B] なら、i=0 → OAB、i=1 → AOB、i=2 → ABO。short＝true なら、頂点の名前だけ（B） */
+const angName = (V, i, short = false) => { if (short) return V[i]; const o = [0, 1, 2].filter((x) => x !== i); return V[o[0]] + V[i] + V[o[1]]; };
+const sorted2 = (e) => (e.i < e.j ? [e.i, e.j] : [e.j, e.i]);
+/** 等しいもの e を、「AB＝DE」「∠OAB＝∠ODC」「辺 AC が共通」の形の文字にする。short＝true なら、角は「∠B＝∠E」の短い形（頂点の名前がすべてちがう 2つの三角形用） */
 const elText = (e, V1, V2, short = false) => {
-  if (e.k === "s") { const [i, j] = (e.i + 1) % 3 === e.j || (e.j + 1) % 3 === e.i ? ((e.i + 1) % 3 === e.j ? [e.i, e.j] : [e.j, e.i]) : [e.i, e.j]; return `${V1[i]}${V1[j]}＝${V2[i]}${V2[j]}`; }
-  return short ? `∠${V1[e.i]}＝∠${V2[e.i]}` : `∠${angName(V1, e.i)}＝∠${angName(V2, e.i)}`;
+  if (e.k === "s") { const [i, j] = sorted2(e); return e.common ? `辺 ${V1[i]}${V1[j]} が共通` : `${V1[i]}${V1[j]}＝${V2[i]}${V2[j]}`; }
+  return `∠${angName(V1, e.i, short)}＝∠${angName(V2, e.i, short)}`;
 };
-
-/** 証明の穴うめの問題。holes＝穴の候補 { 名前: { ans, pool（誤答の候補）, steps } }。lines(H)＝証明の行（H(名前) は、その穴なら「（　）」、そうでなければ正しいことば） */
-function fillQ(r, N, head, lines, holes) {
-  const key = pick(r, Object.keys(holes));
-  const H = (k) => (k === key ? "（　）" : holes[k].ans);
-  const h = holes[key];
+const oth = (v) => [0, 1, 2].filter((z) => z !== v);
+/** 等しいもの 3つの組の全部（種類ごと）。SSA＝2辺と、その間にない角。AAA＝3組の角 */
+const TRI = {
+  SSS: [[SIDE(0, 1), SIDE(1, 2), SIDE(0, 2)]],
+  SAS: [0, 1, 2].map((v) => [SIDE(v, oth(v)[0]), SIDE(v, oth(v)[1]), ANG(v)]),
+  ASA: [[0, 1], [1, 2], [0, 2]].map(([i, j]) => [SIDE(i, j), ANG(i), ANG(j)]),
+  SSA: [0, 1, 2].flatMap((v) => oth(v).map((w) => [SIDE(v, oth(v)[0]), SIDE(v, oth(v)[1]), ANG(w)])),
+  AAA: [[ANG(0), ANG(1), ANG(2)]],
+};
+/** 合同条件の解説（3行）。els＝等しいもの 3つ、key＝judge の答え */
+function condSteps(els, V1, V2, key, short = false) {
+  const ss = els.filter((e) => e.k === "s"), aa = els.filter((e) => e.k === "a");
+  let mid;
+  if (key === "SSS") mid = "辺が 3組とも、それぞれ等しい。";
+  else if (key === "SAS") {
+    const v = aa[0].i, [x, y] = ss.map((e) => [e.i, e.j].find((z) => z !== v));
+    mid = `∠${angName(V1, v, short)} は、辺 ${V1[v]}${V1[Math.min(x, y)]} と ${V1[v]}${V1[Math.max(x, y)]} の間の角。`;
+  } else if (key === "ASA") {
+    const [i, j] = sorted2(ss[0]);
+    mid = `辺 ${V1[i]}${V1[j]} の両端の角（∠${angName(V1, i, short)} と ∠${angName(V1, j, short)}）が、それぞれ等しい。`;
+  } else if (aa.length === 3) mid = "3組の角が等しいだけでは、大きさがちがう三角形もある。";
+  else {
+    const v = [ss[0].i, ss[0].j].find((z) => z === ss[1].i || z === ss[1].j);
+    mid = `∠${angName(V1, aa[0].i, short)} は、等しい 2辺の間の角ではない（間の角は ∠${angName(V1, v, short)}）。`;
+  }
+  return [`等しいのは、${els.map((e) => elText(e, V1, V2, short)).join("、")}。`, mid, key === "NONE" ? "だから、3つの合同条件のどれにもあてはまらない。" : `だから、合同条件は「${COND[key]}」。`];
+}
+/**
+ * 合同条件を聞く問題。intro＋等しいもの 3つ＋outro。kinds＝{ SSS: [組, …], SAS: […], ASA: […], NONE: […] }（等しいものの組。空の種類は出さない）。
+ * 答えが、種類ごとに同じくらい出る。
+ */
+function condQ(r, N, { intro, outro = "。三角形の合同条件のうち、あてはまるものは？", V1, V2, kinds, short = false }) {
+  const key = pick(r, Object.keys(kinds).filter((k) => kinds[k].length));
+  const els0 = pick(r, kinds[key]);
+  if (judge(els0) !== key) throw new Error(`種類がちがう: ${key}`);
   return {
-    q: N(`${head}次は、その証明である。（　）にあてはまるものは？\n${lines(H).join("\n")}`),
-    ans: h.ans,
-    choices: choices4(r, h.ans, sample(r, h.pool, 3)),
-    hint: "証明は、仮定や共通・対頂角などを示す行、合同条件の行、合同から結論を導く行の順に書いた。空欄は、どの行にあるかな？",
+    q: N(`${intro}${shuffle(r, els0).map((e) => elText(e, V1, V2, short)).join("、")}${outro}`),
+    ans: COND[key],
+    choices: condChoices(r, key),
+    hint: "三角形の合同条件は3つ。それぞれ、どんな条件だったかな？",
+    steps: condSteps(els0, V1, V2, key, short).map(N),
+  };
+}
+
+// ── 線分 AB と CD が点 O で交わる図（AO＝BO のような形）の、証明の穴うめ ──
+/**
+ * 三角形 △AOC と △BOD の証明。kind＝asa（AO＝BO、∠OAC＝∠OBD）／sas（AO＝BO、CO＝DO）／sss（AO＝BO、CO＝DO、AC＝BD）。
+ * 空欄の候補：hyp（「仮定より」の語）／ref3（「対頂角」の語）／eq3（③の行ぜんぶ＝どの角が等しいか）／cond（合同条件）。
+ * 「対応する辺（角）は等しい」の空欄は、正解が「辺」か「角」の 2通りしかなく、問題を読まずに絞りこめてしまうので、つくらない。
+ */
+function xbowProof(r, kind) {
+  const V1 = ["A", "O", "C"], V2 = ["B", "O", "D"], t1 = "△AOC", t2 = "△BOD";
+  const spec = {
+    asa: { els: [SIDE(0, 1), ANG(0), ANG(1)], concls: [SIDE(0, 2), SIDE(1, 2), ANG(2)], w: { hyp: 0.3, ref3: 0.3, eq3: 2, cond: 2 } },
+    sas: { els: [SIDE(0, 1), SIDE(1, 2), ANG(1)], concls: [SIDE(0, 2), ANG(0), ANG(2)], w: { hyp: 0.3, ref3: 0.3, eq3: 2, cond: 2 } },
+    sss: { els: [SIDE(0, 1), SIDE(1, 2), SIDE(0, 2)], concls: [ANG(0), ANG(2)], w: { hyp: 0.3, cond: 2 } },
+  }[kind];
+  const key = judge(spec.els), vert = "∠AOC＝∠BOD";
+  const hyps = kind === "sss" ? spec.els.map((e) => elText(e, V1, V2)) : spec.els.filter((e) => !(e.k === "a" && e.i === 1)).map((e) => elText(e, V1, V2));
+  const c = pick(r, spec.concls), conclTx = elText(c, V1, V2);
+  const others = ["SSS", "SAS", "ASA"].filter((k) => k !== key).map((k) => COND[k]);
+  const holes = {
+    hyp: { w: spec.w.hyp, ans: "仮定", pool: ["対頂角", "結論", "共通"], steps: [`${hyps.join("、")} は、問題文の「ならば」の前に書いてあること。`, "このように、条件として与えられていることを使うときは、「仮定より」と書く。"] },
+    cond: { w: spec.w.cond, ans: COND[key], pool: [...others, "3組の角"], steps: condSteps(spec.els, V1, V2, key) },
+  };
+  if (kind !== "sss") {
+    holes.ref3 = { w: spec.w.ref3, ans: "対頂角", pool: ["仮定", "同位角", "錯角", "外角"], steps: ["∠AOC と ∠BOD は、直線 AB と CD が交わってできる、向かい合う角。", "向かい合う角を「対頂角」といい、対頂角は等しい。"] };
+    holes.eq3 = { w: spec.w.eq3, ans: vert, pool: ["∠COB＝∠DOA", "∠OCA＝∠ODB", "∠AOC＝∠COB"], steps: [`${t1} の ∠AOC に対応する、${t2} の角は ∠BOD。`, "∠AOC と ∠BOD は、向かい合う角（対頂角）だから等しい。"] };
+  }
+  return {
+    head: `線分 AB と CD が点 O で交わり、${hyps.join("、")} ならば、${conclTx} である。`,
+    holes,
+    lines: (k) => [
+      `${t1} と ${t2} において`,
+      kind === "sss" ? `${k === "hyp" ? "（　）" : "仮定"}より　${hyps[0]} …①　　${hyps[1]} …②　　${hyps[2]} …③` : `${k === "hyp" ? "（　）" : "仮定"}より　${hyps[0]} …①　　${hyps[1]} …②`,
+      ...(kind === "sss" ? [] : [k === "eq3" ? "（　） …③" : `${k === "ref3" ? "（　）" : "対頂角"}は等しいから　${vert} …③`]),
+      `①、②、③より、${k === "cond" ? "（　）" : COND[key]}が、それぞれ等しいから　${t1}≡${t2}`,
+      `合同な図形の、対応する${c.k === "s" ? "辺" : "角"}は等しいから　${conclTx}`,
+    ],
+  };
+}
+/** 証明の穴うめの問題をつくる。proof＝{ head, holes, lines(穴の名前) }。穴は、出やすさ w で選ぶ */
+function proofQ(r, N, proof) {
+  const keys = Object.keys(proof.holes), k = pickW(r, keys, Object.fromEntries(keys.map((x) => [x, proof.holes[x].w])));
+  const h = proof.holes[k], ans = N(h.ans);
+  return {
+    q: N(`${proof.head}次は、その証明である。（　）にあてはまるものは？\n${proof.lines(k).join("\n")}`),
+    ans,
+    choices: choices4(r, ans, pickWrongs(r, ans, h.pool.map(N))),
+    hint: "証明は、等しいものを3つ示す行、合同条件の行、合同から結論を導く行の順に書いた。空欄は、何を書くところかな？",
     steps: h.steps.map(N),
   };
 }
-const holeCond = (key, say) => ({ ans: COND[key], pool: [...["SSS", "SAS", "ASA"].filter((k) => k !== key).map((k) => COND[k]), "3組の角"], steps: [...say, `だから、合同条件は「${COND[key]}」。`] });
-const holeCorr = (word, concl, tri1, tri2) => ({ ans: word, pool: ["辺", "角", "頂点", "直線", "面"].filter((x) => x !== word), steps: [`${tri1}≡${tri2} だから、対応する辺や角は等しい。`, `結論の ${concl} は${word}の等しさだから、「対応する${word}は等しい」を使う。`] });
 
 // ── 平行線と角 ───────────────────────────────────────────
 // ℓ∥m（ℓ が上、m が下）。直線 n が、ℓ と A、m と B で交わる。ℓ 上に A の左 C・右 D、m 上に B の左 E・右 F、n 上に A より上 G・B より下 H。
@@ -117,18 +220,22 @@ function route(a, b) {
   }
   throw new Error("道すじがない");
 }
-/** 平行線と角の問題：角 a の大きさが g のとき、角 b の大きさ。道すじの解説つき */
-function parProblem(r, a, b) {
-  const N = namer(r, 8);
-  const g = pick(r, [r(35, 85), r(95, 145)]);
-  const path = route(a, b);
-  let v = g;
-  const steps = path.map((s) => {
+/** 角 a の大きさが v0 のとき、角 b の大きさ。道すじの解説（1行ずつ）と、答え */
+function parWalk(a, b, v0) {
+  let v = v0;
+  const steps = route(a, b).map((s) => {
     const nm = ANG8[s.to.pt][s.to.pos], from = ANG8[s.from.pt][s.from.pos];
     if (s.kind === "line") { const nv = 180 - v; const t1 = `一直線の角は 180° だから、∠${nm}＝180°−${v}°＝${nv}°`; v = nv; return t1; }
     const word = { vert: "対頂角", corr: "平行線の同位角", alt: "平行線の錯角" }[s.kind];
     return `${word}は等しいから、∠${nm}＝∠${from}＝${v}°`;
   });
+  return { steps, v };
+}
+/** 平行線と角の問題：角 a の大きさが g のとき、角 b の大きさ。道すじの解説つき */
+function parProblem(r, a, b) {
+  const N = namer(r, 8);
+  const g = pick(r, [r(35, 85), r(95, 145)]);
+  const { steps, v } = parWalk(a, b, g);
   const ans = cls8(a.pos) === cls8(b.pos) ? g : 180 - g;
   if (v !== ans) throw new Error("道すじと答えが合わない");
   return {
@@ -139,10 +246,38 @@ function parProblem(r, a, b) {
     steps: steps.map(N),
   };
 }
+/**
+ * 平行線と角の問題（角の大きさを言わず、同じ点にできる 2つの角 X、Y の関係「X は Y の k倍」「X は Y より d° 大きい」を言う）。
+ * X＋Y＝180°（一直線の角）から X、Y を出し、同位角・錯角・対頂角で、別の角 b にうつす。答えは、問題文の数字にない。
+ * far＝true なら、b は X、Y とはちがう点（A か B）の角。
+ */
+function relProblem(r, far) {
+  const N = namer(r, 8);
+  const pt0 = r(0, 1), p1 = pick(r, POS4), p2 = pick(r, [flipV(p1), flipH(p1)]);
+  const X = { pt: pt0, pos: p1 }, Y = { pt: pt0, pos: p2 };   // X が大きいほうの角
+  const times = r(0, 1) === 0;
+  const k = pick(r, [2, 3, 4, 5]), d = pick(r, [20, 40, 60, 80, 100]);
+  const y = times ? 180 / (k + 1) : (180 - d) / 2, x = times ? y * k : (180 + d) / 2;
+  const b = pick(r, NODES8.filter((n) => nodeKey(n) !== nodeKey(X) && nodeKey(n) !== nodeKey(Y) && (!far || n.pt !== pt0)));
+  const src = cls8(b.pos) === cls8(X.pos) ? X : Y, v0 = src === X ? x : y;
+  const { steps, v } = parWalk(src, b, v0);
+  const nx = ANG8[X.pt][X.pos], ny = ANG8[Y.pt][Y.pos];
+  return {
+    q: N(`${PAR_SETUP}∠${nx} は ∠${ny} ${times ? `の ${k}倍` : `より ${d}° 大きい`}。∠${ANG8[b.pt][b.pos]} の大きさは何度か。`),
+    ans: v,
+    unit: "度",
+    hint: "平行な2直線に1本の直線が交わるとき、同位角や錯角はどうなるかな？ 対頂角や、一直線の角は？",
+    steps: [
+      times
+        ? `∠${nx}＋∠${ny}＝180°（一直線の角）で、∠${nx} は ∠${ny} の ${k}倍だから、∠${ny}＝180°÷(${k}+1)＝${y}°、∠${nx}＝${y}°×${k}＝${x}°。`
+        : `∠${nx}＋∠${ny}＝180°（一直線の角）で、∠${nx} は ∠${ny} より ${d}° 大きいから、∠${ny}＝(180°−${d}°)÷2＝${y}°、∠${nx}＝${y}°+${d}°＝${x}°。`,
+      ...steps,
+    ].map(N),
+  };
+}
 const PAIRS = (f) => NODES8.flatMap((a) => NODES8.filter((b) => nodeKey(a) !== nodeKey(b) && f(a, b)).map((b) => [a, b]));
 const CROSS = PAIRS((a, b) => cls8(a.pos) !== cls8(b.pos));                                // 答えが 180°−（与えられた角）
 const CROSS_PT = PAIRS((a, b) => cls8(a.pos) !== cls8(b.pos) && a.pt !== b.pt);             // 2つの角が、A と B にわかれている（答えは 180°−（与えられた角）。道すじは 2回）
-const SAME_FAR = PAIRS((a, b) => cls8(a.pos) === cls8(b.pos) && a.pt !== b.pt && !interior(a));   // 答えが与えられた角に等しくなるもの。外がわの角どうしで、道すじが 2回（対頂角と同位角）
 
 // ── 角の問題の、ことばを整える ──
 const sum = (xs) => xs.reduce((s, x) => s + x, 0);
@@ -163,8 +298,8 @@ export const UNITS = [
       1: [
         // 14d01a 演習（1）①平行線と角：一直線の角と同位角（など）で、角の大きさを求める
         t("14d01a", (r) => {
-          const [a, b] = r(0, 9) < 7 ? pick(r, CROSS) : pick(r, SAME_FAR);   // 答えが 180°−（与えられた角）になるものが多いが、等しくなるもの（道すじが2回）も、まぜる
-          return parProblem(r, a, b);
+          if (r(0, 9) < 5) { const [a, b] = pick(r, CROSS); return parProblem(r, a, b); }   // 角の大きさを 1つ言って、聞く（答えは 180°−その角）
+          return relProblem(r, false);                                                  // 2つの角の関係（○倍・○°大きい）を言って、聞く（答えは問題文にない数）
         }),
         // 14d01b 演習（1）②三角形の内角の和（外角の問いも）
         t("14d01b", (r) => {
@@ -242,7 +377,8 @@ export const UNITS = [
         }),
         // 14q01 小テスト（1）平行線と角：A と B にわかれた角どうし（同位角・錯角・対頂角・一直線の角）
         t("14q01", (r) => {
-          const [a, b] = r(0, 9) < 8 ? pick(r, CROSS_PT) : pick(r, SAME_FAR);
+          if (r(0, 9) < 5) { const [a, b] = pick(r, CROSS_PT); return parProblem(r, a, b); }
+          return relProblem(r, true);
           return parProblem(r, a, b);
         }),
         // 14q02a 小テスト（2）①n角形の内角の和

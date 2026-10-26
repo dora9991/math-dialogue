@@ -22,15 +22,13 @@ const bigrams = (s) => { const x = strip(s).replace(/\s/g, ""), o = new Set(); f
 const jac = (a, b) => { let i = 0; for (const x of a) if (b.has(x)) i++; return i / (a.size + b.size - i || 1); };
 function cueFree(choices, ans) {
   const n = choices.length, ai = choices.findIndex((c) => String(c) === String(ans));
-  const T = choices.map((c) => new Set(toks(c))), B = choices.map(bigrams), cnt = {};
-  T.forEach((s) => s.forEach((w) => { cnt[w] = (cnt[w] || 0) + 1; }));
-  const sim = B.map((b, i) => B.reduce((a, o, j) => (i === j ? a : a + jac(b, o)), 0));
-  const sc = [
-    choices.map((c) => strip(c).length), sim,
-    T.map((s) => [...s].filter((w) => cnt[w] === 1).length),
-    T.map((s) => Object.keys(cnt).filter((w) => cnt[w] === n - 1 && !s.has(w)).length),
-    T.map((s) => [...s].reduce((a, w) => a + cnt[w], 0)),
-  ];
+  const B = choices.map(bigrams), sim = B.map((b, i) => B.reduce((a, o, j) => (i === j ? a : a + jac(b, o)), 0));
+  const sc = [choices.map((c) => strip(c).length), sim];
+  for (const tk of [toks, (s) => [...strip(s).replace(/[\s、。]/g, "")]]) {   // 語ごと・1字ごと
+    const T = choices.map((c) => new Set(tk(c))), cnt = {};
+    T.forEach((s) => s.forEach((w) => { cnt[w] = (cnt[w] || 0) + 1; }));
+    sc.push(T.map((s) => [...s].filter((w) => cnt[w] === 1).length), T.map((s) => Object.keys(cnt).filter((w) => cnt[w] === n - 1 && !s.has(w)).length), T.map((s) => [...s].reduce((a, w) => a + cnt[w], 0)));
+  }
   for (const v of sc) for (const sgn of [1, -1]) {
     const w = v.map((x) => sgn * x), m = Math.max(...w);
     if (w[ai] === m && w.filter((x) => x === m).length === 1) return false;
@@ -299,6 +297,49 @@ function circleQ(r) {
   };
 }
 
+// ── 等しい辺・角がこれだけのとき、合同といえるか（チャレンジ）──────────────────────────
+/** same＝true：1辺と、2つの角（のこりの角は内角の和で等しい）→ いえる。false：2つの角だけ（等しい辺がない）→ いえない。
+ *  言い方（「内角の和から」「それぞれ」などの有無）を、選択肢ごとにかえて、長さや語で答えがわからないようにする */
+function q05(r, same) {
+  const N = names(r), [u, w, o] = shuffle(r, [0, 1, 2]), X = N.X, Y = N.Y;
+  const items = same ? [sideI(r, N, u, w), angI(N, u), angI(N, o)] : [angI(N, u), angI(N, o)];
+  const txt = shuffle(r, items).map((x) => x.txt).join("、");
+  const dd = `∠${X[w]}＝∠${Y[w]}`, op = (s) => (r(0, 1) ? s : ""), NOC = () => pick(r, ["どの合同条件にもあてはまらない", "合同条件にあてはまらない"]);
+  let ans, ws, steps;
+  if (same) {
+    ans = `いえる。${op("内角の和から ")}${dd} がいえるので、1組の辺とその両端の角が${op("、それぞれ")}等しくなるから。`;
+    ws = [
+      `いえる。${op("内角の和から ")}${dd} がいえるので、3組の辺が${op("、それぞれ")}等しくなるから。`,
+      `いえない。${op("内角の和を使っても ")}${dd} とはいえず、${NOC()}から。`,
+      `いえない。等しい辺は 1組だけで、${dd} も${op("いえないので、")}いえず、${NOC()}から。`.replace("いえずいえず", "いえず").replace("もいえないので、いえず", "もいえず"),
+    ];
+    steps = [
+      `${X[u]}${X[w]}＝${Y[u]}${Y[w]}、∠${X[u]}＝∠${Y[u]}、∠${X[o]}＝∠${Y[o]} がわかっている。`,
+      `内角の和は 180° だから　∠${X[w]}＝180°−∠${X[u]}−∠${X[o]}、∠${Y[w]}＝180°−∠${Y[u]}−∠${Y[o]}。よって　${dd}`,
+      `辺 ${X[u]}${X[w]} の両端の角 ∠${X[u]}、∠${X[w]} が、それぞれ等しい。だから、1組の辺とその両端の角がそれぞれ等しいといえる。`,
+    ];
+  } else {
+    ans = `いえない。${op("内角の和から ")}${dd} がいえても、等しい辺が${op("1組も")}ないので、${NOC()}から。`;
+    ws = [
+      `いえない。等しい角は 2組だけで、のこりの角は等しくならないので、${NOC()}から。`,
+      `いえない。${op("内角の和から ")}${dd} がいえても、等しい辺が 2組ないと、${NOC()}から。`,
+      `いえる。${op("内角の和から ")}${dd} がいえるので、1組の辺とその両端の角が${op("、それぞれ")}等しくなるから。`,
+    ];
+    steps = [
+      `∠${X[u]}＝∠${Y[u]}、∠${X[o]}＝∠${Y[o]} がわかっているだけで、等しい辺がわかっていない。`,
+      `内角の和から ${dd} がいえても、合同条件の 3つは、どれも、等しい辺が 1組以上ある。辺がわからないと、どの合同条件にもあてはまらない。`,
+      `だから、△${N.t1}≡△${N.t2} とは、いえない。`,
+    ];
+  }
+  return {
+    q: `△${N.t1} と △${N.t2} で、${txt} がわかっている。△${N.t1}≡△${N.t2} といえるか。その理由として、正しいものはどれか。`,
+    ans,
+    choices: choices4(r, ans, ws),
+    hint: "等しい辺は何組、等しい角は何組あるかな？ のこりの角は、どうなるかな？",
+    steps,
+  };
+}
+
 export const UNITS = [
   unit("09", {
     name: "三角形の合同条件",
@@ -392,47 +433,10 @@ export const UNITS = [
         t("09d07b", (r) => listQ(r, false)),
         // 09d08 演習（8）CA の長さから、△ABC は何通りかけるか（円と半直線の交わり方）
         tc("09d08", (r) => circleQ(r)),
-        // 09q05 小テスト（5）チャレンジ：等しい辺・角がこれだけのとき、合同といえるか（理由を選ぶ4択）
-        t("09q05", (r) => {
-          const N = names(r), [u, w, o] = shuffle(r, [0, 1, 2]), X = N.X, Y = N.Y;
-          const same = pick(r, [true, false]);   // true：1辺と 2つの角（のこりの角は内角の和で等しい）→ いえる／false：2つの角だけ（等しい辺がない）→ いえない
-          const items = same ? [sideI(r, N, u, w), angI(N, u), angI(N, o)] : [angI(N, u), angI(N, o)];
-          const txt = shuffle(r, items).map((x) => x.txt).join("、");
-          let ans, ws, steps;
-          const dd = `∠${X[w]}＝∠${Y[w]}`, v2 = (long, short) => pick(r, [long, short]);   // 言い方を、選択肢ごとにかえる（長さで答えがわからないように）
-          if (same) {
-            ans = v2(`いえる。内角の和から ${dd} がいえるので、1組の辺とその両端の角が、それぞれ等しくなるから。`, `いえる。${dd} がいえるので、1組の辺とその両端の角が等しくなるから。`);
-            ws = [
-              v2(`いえる。内角の和から ${dd} がいえるので、3組の辺が、それぞれ等しくなるから。`, `いえる。${dd} がいえるので、3組の辺が等しくなるから。`),
-              v2(`いえない。内角の和を使っても ${dd} とはいえず、合同条件にあてはまらないから。`, `いえない。${dd} とはいえず、合同条件にあてはまらないから。`),
-              v2(`いえない。等しい辺は 1組だけで、${dd} もいえないので、どの合同条件にもあてはまらないから。`, `いえない。等しい辺は 1組だけで、${dd} もいえないから。`),
-            ];
-            steps = [
-              `${X[u]}${X[w]}＝${Y[u]}${Y[w]}、∠${X[u]}＝∠${Y[u]}、∠${X[o]}＝∠${Y[o]} がわかっている。`,
-              `内角の和は 180° だから　∠${X[w]}＝180°−∠${X[u]}−∠${X[o]}、∠${Y[w]}＝180°−∠${Y[u]}−∠${Y[o]}。よって　${dd}`,
-              `辺 ${X[u]}${X[w]} の両端の角 ∠${X[u]}、∠${X[w]} が、それぞれ等しい。だから、1組の辺とその両端の角がそれぞれ等しいといえる。`,
-            ];
-          } else {
-            ans = v2(`いえない。内角の和から ${dd} がいえても、等しい辺がないので、合同条件にあてはまらないから。`, `いえない。${dd} がいえても、等しい辺がないから。`);
-            ws = [
-              v2(`いえる。内角の和から ${dd} がいえるので、1組の辺とその両端の角が、それぞれ等しくなるから。`, `いえる。${dd} がいえるので、1組の辺とその両端の角が等しくなるから。`),
-              v2(`いえる。内角の和から ${dd} がいえるので、辺の長さも、それぞれ等しくなるから。`, `いえる。${dd} がいえるので、辺の長さも等しくなるから。`),
-              v2(`いえない。内角の和を使っても ${dd} とはいえず、合同条件にあてはまらないから。`, `いえない。${dd} とはいえず、合同条件にあてはまらないから。`),
-            ];
-            steps = [
-              `∠${X[u]}＝∠${Y[u]}、∠${X[o]}＝∠${Y[o]} がわかっているだけで、等しい辺がわかっていない。`,
-              `内角の和から ${dd} がいえても、合同条件の 3つは、どれも、等しい辺が 1組以上ある。辺がわからないと、どの合同条件にもあてはまらない。`,
-              `だから、△${N.t1}≡△${N.t2} とは、いえない。`,
-            ];
-          }
-          return {
-            q: `△${N.t1} と △${N.t2} で、${txt} がわかっている。△${N.t1}≡△${N.t2} といえるか。その理由として、正しいものはどれか。`,
-            ans,
-            choices: choices4(r, ans, ws),
-            hint: "等しい辺は何組、等しい角は何組あるかな？ のこりの角は、どうなるかな？",
-            steps,
-          };
-        }),
+        // 09q05a 小テスト（5）チャレンジ：AB＝DE、∠A＝∠D、∠C＝∠F のとき、合同といえるか（理由を選ぶ4択）
+        t("09q05a", (r) => q05(r, true)),
+        // 09q05b 小テスト（5）チャレンジ：等しい角が 2組だけ（等しい辺がない）とき、合同といえるか（理由を選ぶ4択）
+        t("09q05b", (r) => q05(r, false)),
       ],
     },
   }),
