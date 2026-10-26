@@ -141,8 +141,8 @@ function parProblem(r, a, b) {
 }
 const PAIRS = (f) => NODES8.flatMap((a) => NODES8.filter((b) => nodeKey(a) !== nodeKey(b) && f(a, b)).map((b) => [a, b]));
 const CROSS = PAIRS((a, b) => cls8(a.pos) !== cls8(b.pos));                                // 答えが 180°−（与えられた角）
-const SAME = PAIRS((a, b) => cls8(a.pos) === cls8(b.pos));                                 // 答えが与えられた角に等しい（対頂角・同位角・錯角など）
-const TWO_PT = PAIRS((a, b) => a.pt !== b.pt);                                             // 2つの角が、A と B にわかれている（半分は 180°−、半分は等しい）
+const CROSS_PT = PAIRS((a, b) => cls8(a.pos) !== cls8(b.pos) && a.pt !== b.pt);             // 2つの角が、A と B にわかれている（答えは 180°−（与えられた角）。道すじは 2回）
+const SAME_FAR = PAIRS((a, b) => cls8(a.pos) === cls8(b.pos) && a.pt !== b.pt && !interior(a));   // 答えが与えられた角に等しくなるもの。外がわの角どうしで、道すじが 2回（対頂角と同位角）
 
 // ── 角の問題の、ことばを整える ──
 const sum = (xs) => xs.reduce((s, x) => s + x, 0);
@@ -163,7 +163,7 @@ export const UNITS = [
       1: [
         // 14d01a 演習（1）①平行線と角：一直線の角と同位角（など）で、角の大きさを求める
         t("14d01a", (r) => {
-          const [a, b] = r(0, 9) < 6 ? pick(r, CROSS) : pick(r, SAME);   // 答えが 180°−（与えられた角）になるものと、等しくなるものを、まぜる
+          const [a, b] = r(0, 9) < 7 ? pick(r, CROSS) : pick(r, SAME_FAR);   // 答えが 180°−（与えられた角）になるものが多いが、等しくなるもの（道すじが2回）も、まぜる
           return parProblem(r, a, b);
         }),
         // 14d01b 演習（1）②三角形の内角の和（外角の問いも）
@@ -242,7 +242,7 @@ export const UNITS = [
         }),
         // 14q01 小テスト（1）平行線と角：A と B にわかれた角どうし（同位角・錯角・対頂角・一直線の角）
         t("14q01", (r) => {
-          const [a, b] = pick(r, TWO_PT);
+          const [a, b] = r(0, 9) < 8 ? pick(r, CROSS_PT) : pick(r, SAME_FAR);
           return parProblem(r, a, b);
         }),
         // 14q02a 小テスト（2）①n角形の内角の和
