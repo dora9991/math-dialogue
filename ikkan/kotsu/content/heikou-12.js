@@ -18,25 +18,49 @@ const t = (id, build) => t0(id, (r) => {
   return p && typeof p.ans === "number" && ((p.q.match(/\d+/g) || []).map(Number)).includes(p.ans) ? { skip: true } : p;
 });
 
-/** 誤答の候補 pool から3つえらぶ。正解 ans の「長さの順位」が、かたよらないように（長さで当てられないように） */
-function pickWrongs(r, ans, pool, k = 3) {
-  const target = r(0, k), len = (x) => String(x).length;
-  let first = null;
-  for (let i = 0; i < 60; i++) {
-    const w = shuffle(r, pool).slice(0, k), lo = w.filter((x) => len(x) < len(ans)).length, ties = w.filter((x) => len(x) === len(ans)).length;
-    if (!first) first = w;
-    if (target >= lo && target <= lo + ties) return w;
+const strip = (x) => String(x).replace(/[\s$]/g, "");
+const cdist = (a, b) => { const m = new Map(); for (const c of strip(a)) m.set(c, (m.get(c) || 0) + 1); for (const c of strip(b)) m.set(c, (m.get(c) || 0) - 1); let d = 0; for (const v of m.values()) d += Math.abs(v); return d; };
+const gram2 = (x) => { const t = strip(x), g = new Set(); for (let i = 0; i < t.length - 1; i++) g.add(t.slice(i, i + 2)); return g; };
+const jacc = (a, b) => { let i = 0; for (const x of a) if (b.has(x)) i++; return i / (a.size + b.size - i || 1); };
+/** 正解 ans と誤答 ws（3つ）で、ans の「長さの順位」「字の近さの順位」「文字の並びの重なりの順位」（と、q があれば「問題文との重なりの順位」）を調べる。順位 0＝いちばん短い／いちばんほかに近い／いちばん問題文と重なる。同点なら範囲 [最小, 最大] */
+function rankOf(ans, ws, q) {
+  const all = [ans, ...ws], len = all.map((x) => strip(x).length);
+  const lo = ws.filter((x) => strip(x).length < len[0]).length, ties = ws.filter((x) => strip(x).length === len[0]).length;
+  const cs = all.map((c, j) => all.reduce((acc, d, k) => (k === j ? acc : acc + cdist(c, d)), 0));
+  const clo = cs.slice(1).filter((v) => v < cs[0]).length, cties = cs.slice(1).filter((v) => v === cs[0]).length;
+  const G = all.map(gram2), js = G.map((g, j) => G.reduce((acc, h, k) => (k === j ? acc : acc + jacc(g, h)), 0));
+  const jlo = js.slice(1).filter((v) => v > js[0] + 1e-9).length, jties = js.slice(1).filter((v) => Math.abs(v - js[0]) <= 1e-9).length;
+  const out = [[lo, lo + ties], [clo, clo + cties], [jlo, jlo + jties]];
+  if (q) {
+    const Q = gram2(q), ov = G.map((g) => { let c = 0; for (const y of g) if (Q.has(y)) c++; return c / (g.size || 1); });
+    const olo = ov.slice(1).filter((v) => v > ov[0] + 1e-9).length, oties = ov.slice(1).filter((v) => Math.abs(v - ov[0]) <= 1e-9).length;
+    out.push([olo, olo + oties]);
   }
-  return first;
+  return out;
 }
+const RANK_W = [3, 1, 1, 1];   // 長さの順位を、いちばん優先する
+/** 誤答の組をつくる関数 make（3つの配列を返す）を何回か試して、正解の「長さ」「字の近さ」「文字の重なり」（と、q があれば「問題文との重なり」）の順位が、
+ *  どれも（ランダムにえらんだ）順位になる組をえらぶ（長さや、ほかの選択肢との似かた、問題文との似かたで、正解を当てられないように）。全部は合わないときは、いちばん多く合う組のなかから、ランダムに */
+function pickBal(r, ans, make, tries = 200, q = "") {
+  const T = [r(0, 3), r(0, 3), r(0, 3), r(0, 3)];
+  let best = [], bestScore = -1;
+  for (let i = 0; i < tries; i++) {
+    const w = make();
+    if (!w || w.length < 3) continue;
+    const sc = rankOf(ans, w, q).reduce((acc, k, m) => acc + (T[m] >= k[0] && T[m] <= k[1] ? RANK_W[m] : 0), 0);
+    if (sc > bestScore) { best = [w]; bestScore = sc; } else if (sc === bestScore) best.push(w);
+  }
+  return best.length ? pick(r, best) : null;
+}
+const pickWrongs = (r, ans, pool, k = 3, q = "") => pickBal(r, ans, () => shuffle(r, pool).slice(0, k), 200, q);
 
 // ── 証明の材料 ────────────────────────────────────────────────
 //   空欄 B(id, 答え, 誤答の候補, 種類, なぜそうなるか)。種類：assume（仮定より…）／word（対頂角・錯角・共通 など、ことば）／cond（合同条件）／prop（合同な図形の性質）／corr（対応する辺・角）／sum（内角の和）
 const B = (id, ans, wr, kind, why) => ({ id, ans, wr, kind, why });
 const COND3 = ["3組の辺", "2組の辺とその間の角", "1組の辺とその両端の角"];
-const condB = (id, ans, why) => B(id, ans, [...COND3.filter((c) => c !== ans), "3組の角"], "cond", why);
+const condB = (id, ans, why) => B(id, ans, [...COND3.filter((c) => c !== ans), "3組の角", "2組の辺と、その間にない角", "1組の辺と、その片方の端の角"], "cond", why);   // 誤答の言いかたは、長さがいろいろ（合同条件の名前の長さで、正解を当てられないように）
 const PROP_SIDE = "合同な図形の、対応する辺は等しい", PROP_ANG = "合同な図形の、対応する角は等しい";
-const propB = (id, ang, why) => B(id, ang ? PROP_ANG : PROP_SIDE, [ang ? PROP_SIDE : PROP_ANG, "三角形の合同条件", ang ? "平行線の錯角は等しい" : "対頂角は等しい"], "prop", why);
+const propB = (id, ang, why) => B(id, ang ? PROP_ANG : PROP_SIDE, [ang ? PROP_SIDE : PROP_ANG, "三角形の合同条件", "対頂角は等しい", "平行線の錯角は等しい", "三角形の内角の和は 180°"], "prop", why);
 const HINT = {
   assume: "「仮定より」の行は、問題文に書いてあることだね。問題文では、どの辺（角）が等しいと言っていたかな？",
   word: "この行で等しいといっている角は、どんな位置にある角かな？ 習った『等しくなるわけ』のうち、どれにあてはまるかな？",
@@ -53,7 +77,7 @@ function blankQ(r, P, b) {
   return {
     q: `${P.setup}\n次の証明で、□ にあてはまるものは、どれか。\n${show(P, b.id)}`,
     ans: b.ans,
-    choices: choices4(r, b.ans, pickWrongs(r, b.ans, b.wr)),
+    choices: choices4(r, b.ans, pickWrongs(r, b.ans, b.wr, 3, `${P.setup}\n${show(P, b.id)}`)),
     hint: HINT[b.kind],
     steps: [`□ をふくむ行は　${filled}`, b.why, `答えは「${b.ans}」。`],
   };
@@ -93,7 +117,7 @@ function pfAsa([a, b, c, d, o], swap = false) {
       [B("b1", "対頂角", ["錯角", "同位角", "共通な角"], "word", `${a}${b} と ${c}${d} が交わってできる、向かい合った角だから、対頂角。`), `は等しいから　∠${a}${o}${c}＝∠${b}${o}${d} …②`],
       [`${a}${c}∥${d}${b} で、平行線の`, B("b2", "錯角", ["同位角", "対頂角", "外角"], "word", `${a}${c}∥${d}${b} のとき、${ang[0]} と ${ang[1]} は、直線 ${c}${d}（${a}${b}）をはさんで反対がわにある角だから、錯角。`), `は等しいから　${ang[0]}＝${ang[1]} …③`],
       ["①、②、③ より、", condB("b3", "1組の辺とその両端の角", `①、②、③ は、辺 1組（${g1}＝${g2}）と、その両端の角 2組の内容。`), `が、それぞれ等しいから　△${a}${o}${c}≡△${b}${o}${d}`],
-      [B("b4", PROP_SIDE, [PROP_ANG, "三角形の合同条件", "対頂角は等しい"], "prop", `合同がいえたあとで、${k1}、${k2} が等しい（辺）ことを導くのは、合同な図形の、対応する辺は等しいという性質。`), `から　${k1}＝${k2}`],
+      [B("b4", PROP_SIDE, [PROP_ANG, "三角形の合同条件", "対頂角は等しい", "平行線の錯角は等しい", "三角形の内角の和は 180°"], "prop", `合同がいえたあとで、${k1}、${k2} が等しい（辺）ことを導くのは、合同な図形の、対応する辺は等しいという性質。`), `から　${k1}＝${k2}`],
     ],
   };
 }
@@ -121,22 +145,22 @@ function pfEq([a, b, c, d, e]) {
       [`△${a}${d}${e} は正三角形だから　${a}${d}＝`, B("b2", `${a}${e}`, [`${a}${b}`, `${a}${c}`, `${b}${d}`, `${c}${e}`], "assume", `正三角形 ${a}${d}${e} の辺は、${a}${d}＝${d}${e}＝${e}${a}。△${a}${b}${d} の辺 ${a}${d} に対応するのは、△${a}${c}${e} の辺 ${a}${e}。`), " …②"],
       [`∠${b}${a}${d}＝60°+∠${c}${a}${d}、∠${c}${a}${e}＝60°+∠${c}${a}${d} だから　∠${b}${a}${d}＝∠`, B("b3", `${c}${a}${e}`, [`${c}${a}${d}`, `${d}${a}${e}`, `${b}${a}${c}`, `${a}${c}${e}`], "corr", `∠${b}${a}${d} と ∠${c}${a}${e} は、どちらも 60°+∠${c}${a}${d} だから等しい。`), " …③"],
       ["①、②、③ より、", condB("b4", "2組の辺とその間の角", `①、②、③ は、辺 2組（${a}${b}＝${a}${c}、${a}${d}＝${a}${e}）と、その間の角 ∠${b}${a}${d}＝∠${c}${a}${e} の内容。`), `が、それぞれ等しいから　△${a}${b}${d}≡△${a}${c}${e}`],
-      [B("b5", PROP_SIDE, [PROP_ANG, "三角形の合同条件", "対頂角は等しい"], "prop", `合同がいえたあとで、${b}${d}、${c}${e} が等しい（辺）ことを導くのは、合同な図形の、対応する辺は等しいという性質。`), `から　${b}${d}＝${c}${e}`],
+      [B("b5", PROP_SIDE, [PROP_ANG, "三角形の合同条件", "対頂角は等しい", "平行線の錯角は等しい", "三角形の内角の和は 180°"], "prop", `合同がいえたあとで、${b}${d}、${c}${e} が等しい（辺）ことを導くのは、合同な図形の、対応する辺は等しいという性質。`), `から　${b}${d}＝${c}${e}`],
     ],
   };
 }
 // 5) 線分 AB の中点 M を通る直線 ℓ。A、B から ℓ への垂線の足 P、Q ならば AP＝BQ（1組の辺とその両端の角。対頂角、内角の和）
 function pfMid([a, b, m, p, q]) {
   return {
-    setup: `線分 ${a}${b} の中点を ${m} とし、${m} を通る直線 ℓ をひく（ℓ は ${a}${b} と重ならない）。${a}、${b} から ℓ にひいた垂線と ℓ との交点を、それぞれ ${p}、${q} とする。このとき、${a}${p}＝${b}${q} である。`,
+    setup: `線分 ${a}${b} の中点を ${m} とし、${m} を通る直線 ℓ をひく（ℓ は ${a}${b} と重ならず、${a}${b} に垂直でもない）。${a}、${b} から ℓ にひいた垂線と ℓ との交点を、それぞれ ${p}、${q} とする。このとき、${a}${p}＝${b}${q} である。`,
     lines: [
       [`△${a}${p}${m} と △${b}${q}${m} において`],
       [`仮定より　${a}${m}＝${b}${m} …①`],
       [`仮定より　∠${a}${p}${m}＝∠${b}${q}${m}＝90° …②`],
       [B("b1", "対頂角", ["錯角", "同位角", "共通な角"], "word", `${a}${b} と ℓ が ${m} で交わってできる、向かい合った角だから、対頂角。`), `は等しいから　∠${a}${m}${p}＝∠${b}${m}${q} …③`],
-      [`②、③ と、`, B("b2", "三角形の内角の和は 180°", ["合同な図形の、対応する角は等しい", "対頂角は等しい", "三角形の合同条件"], "sum", `②（直角どうし）と ③ から、2つの角が等しい。三角形の内角の和は 180° だから、残りの角も等しい。`), ` から　∠${p}${a}${m}＝∠${q}${b}${m} …④`],
+      [`②、③ と、`, B("b2", "三角形の内角の和は 180°", ["合同な図形の、対応する角は等しい", "対頂角は等しい", "三角形の合同条件", "四角形の内角の和は 360°", "三角形の外角の和は 360°"], "sum", `②（直角どうし）と ③ から、2つの角が等しい。三角形の内角の和は 180° だから、残りの角も等しい。`), ` から　∠${p}${a}${m}＝∠${q}${b}${m} …④`],
       ["①、③、④ より、", condB("b3", "1組の辺とその両端の角", `①、③、④ は、辺 1組（${a}${m}＝${b}${m}）と、その両端の角 2組（∠${a}${m}${p}＝∠${b}${m}${q}、∠${p}${a}${m}＝∠${q}${b}${m}）の内容。`), `が、それぞれ等しいから　△${a}${p}${m}≡△${b}${q}${m}`],
-      [B("b4", PROP_SIDE, [PROP_ANG, "三角形の合同条件", "対頂角は等しい"], "prop", `合同がいえたあとで、${a}${p}、${b}${q} が等しい（辺）ことを導くのは、合同な図形の、対応する辺は等しいという性質。`), `から　${a}${p}＝${b}${q}`],
+      [B("b4", PROP_SIDE, [PROP_ANG, "三角形の合同条件", "対頂角は等しい", "平行線の錯角は等しい", "三角形の内角の和は 180°"], "prop", `合同がいえたあとで、${a}${p}、${b}${q} が等しい（辺）ことを導くのは、合同な図形の、対応する辺は等しいという性質。`), `から　${a}${p}＝${b}${q}`],
     ],
   };
 }
@@ -150,7 +174,7 @@ function pfBis([o, p, a, b, x, y]) {
       [`${o}${p} は ∠${x}${o}${y} の二等分線だから　∠${a}${o}${p}＝∠`, B("b2", `${b}${o}${p}`, [`${a}${o}${b}`, `${o}${p}${b}`, `${x}${o}${y}`], "corr", `${o}${p} が ∠${x}${o}${y} を二等分するから、∠${a}${o}${p}＝∠${b}${o}${p}。`), " …②"],
       [`${o}${p} は`, B("b3", "共通", ["対頂角", "同位角", "錯角"], "word", `${o}${p} は、△${o}${a}${p} にも △${o}${b}${p} にもふくまれる辺だから、共通。`), " …③"],
       ["①、②、③ より、", condB("b4", "2組の辺とその間の角", `①、②、③ は、辺 2組（${o}${a}＝${o}${b}、${o}${p} は共通）と、その間の角 ∠${a}${o}${p}＝∠${b}${o}${p} の内容。`), `が、それぞれ等しいから　△${o}${a}${p}≡△${o}${b}${p}`],
-      [B("b5", PROP_SIDE, [PROP_ANG, "三角形の合同条件", "対頂角は等しい"], "prop", `合同がいえたあとで、${p}${a}、${p}${b} が等しい（辺）ことを導くのは、合同な図形の、対応する辺は等しいという性質。`), `から　${p}${a}＝${p}${b}`],
+      [B("b5", PROP_SIDE, [PROP_ANG, "三角形の合同条件", "対頂角は等しい", "平行線の錯角は等しい", "三角形の内角の和は 180°"], "prop", `合同がいえたあとで、${p}${a}、${p}${b} が等しい（辺）ことを導くのは、合同な図形の、対応する辺は等しいという性質。`), `から　${p}${a}＝${p}${b}`],
     ],
   };
 }
@@ -173,10 +197,11 @@ function flawQ(r) {
   if (key === "miss") flawed = [lines[0], lines[1], lines[2], F.bad, lines[5]];   // ③ の行をぬいて、合同条件の行は ①、② だけ
   else flawed = lines.map((l, i) => (i === F.at ? F.bad : l));
   const wrongs = Object.keys(FLAW).filter((k) => k !== key).map((k) => FLAW[k].desc);
+  const q = `${P.setup}\n次の証明には、まちがいが1か所ある。まちがいを正しく言いあてているものは、どれか。\n${flawed.join("\n")}`;
   return {
-    q: `${P.setup}\n次の証明には、まちがいが1か所ある。まちがいを正しく言いあてているものは、どれか。\n${flawed.join("\n")}`,
+    q,
     ans: F.desc,
-    choices: choices4(r, F.desc, pickWrongs(r, F.desc, wrongs)),
+    choices: choices4(r, F.desc, pickWrongs(r, F.desc, wrongs, 3, q)),
     hint: "証明の1行ずつについて、「なぜそういえるか」をたしかめてみよう。ことばや数が、あっているかな？ 使った合同条件の形になっているかな？",
     steps: [`まちがっている行は　${F.bad}`, F.note, `答えは「${F.desc}」。`],
   };
@@ -223,18 +248,41 @@ function stmtOf(r, key) {
 function rsnQ(r, keys) {
   const key = pick(r, keys), text = stmtOf(r, key), real = key === "altP" ? "alt" : key, ans = RSN[real];
   const wrongs = Object.keys(RSN).filter((k) => k !== real).map((k) => RSN[k]);
+  const q = `次のことがいえる根拠は、どれか。\n${text}`;
   return {
-    q: `次のことがいえる根拠は、どれか。\n${text}`,
+    q,
     ans,
-    choices: choices4(r, ans, pickWrongs(r, ans, wrongs)),
+    choices: choices4(r, ans, pickWrongs(r, ans, wrongs, 3, q)),
     hint: "このことは、問題の条件かな、習った性質かな？ 習った性質なら、どの性質にあてはまるかな？",
     steps: [real === "vert" ? "2直線が交わってできる、向かい合った角どうしだから、対頂角。" : real === "alt" ? "平行な 2直線に交わる直線をはさんで、反対がわにある角どうしだから、平行線の錯角。" : real === "corr" ? "平行な 2直線と交わる直線で、同じ位置にある角どうしだから、平行線の同位角。" : real === "pc" ? "合同だとわかっている図形の、対応する辺だから、合同な図形の性質（辺）。" : real === "pa" ? "合同だとわかっている図形の、対応する角だから、合同な図形の性質（角）。" : real === "sum" ? "三角形の3つの内角の和が 180° であることを使っている。" : real === "reg" ? "正三角形の定義から、3つの辺は等しい。" : "等しい辺と角の組み方が、三角形の合同条件のどれにあてはまるかを見る。", `答えは「${ans}」。`],
   };
 }
 
 // ── 証明の根拠にしてよいもの・いけないもの（dr.2）─────────────────────────────
-const OKS = ["問題で、はじめに与えられていること（仮定）", "対頂角は等しい", "平行線の同位角は等しい", "平行線の錯角は等しい", "三角形の合同条件", "合同な図形の、対応する辺や角は等しい", "三角形の内角の和は 180°", "どちらの三角形にもふくまれる辺は、共通"];
-const NGS = ["図を見て、等しく見えること", "これから示そうとしていること（結論）", "定規ではかった長さ", "分度器ではかった角の大きさ", "何個かの図で成り立ったこと", "なんとなく、成り立ちそうなこと", "友達が「そうだ」と言ったこと"];
+const OKS = ["問題で、はじめに与えられていること（仮定）", "対頂角は等しい", "平行線の同位角は等しい", "平行線の錯角は等しい", "三角形の合同条件", "合同な図形の、対応する辺や角は等しい", "三角形の内角の和は 180°", "どちらの三角形にもふくまれる辺は、共通", "正三角形の3つの辺は等しい", "問題文に書いてある、等しい辺や角"];
+const NGS = ["図を見て、等しく見えること", "これから示そうとしていること（結論）", "定規ではかった長さ", "分度器ではかった角の大きさ", "何個かの図で成り立ったこと", "なんとなく、成り立ちそうなこと", "友達が「そうだ」と言ったこと", "図で、ぴったり重なって見えること", "問題文に書いていない、自分で決めた条件", "はかったら、ほとんど同じだったこと"];
+const LET4 = ["ア", "イ", "ウ", "エ"], LET6 = ["ア", "イ", "ウ", "エ", "オ", "カ"];
+/** 4つ（ア〜エ）のうち、根拠にしてよいものが k 個。wantOk＝true なら「してよいもの」、false なら「してはいけないもの」を、すべて選んだ組をたずねる4択 */
+function groundSetQ(r, wantOk) {
+  const k = pick(r, [1, 2, 2, 3]), ok = shuffle(r, OKS).slice(0, k), ng = shuffle(r, NGS).slice(0, 4 - k);
+  const list = shuffle(r, [...ok.map((x) => ({ x, v: true })), ...ng.map((x) => ({ x, v: false }))]);
+  const target = [0, 1, 2, 3].filter((i) => list[i].v === wantOk), other = [0, 1, 2, 3].filter((i) => !target.includes(i));
+  const flip = (set, x) => (set.includes(x) ? set.filter((y) => y !== x) : [...set, x].sort((m, n) => m - n));
+  let a, b;
+  if (target.length === 2) { a = pick(r, target); b = pick(r, other); } else if (target.length === 1) { [a, b] = shuffle(r, other).slice(0, 2); } else { [a, b] = shuffle(r, target).slice(0, 2); }
+  const setTxt = (s2) => (s2.length === 1 ? `${LET4[s2[0]]}だけ` : s2.map((i) => LET4[i]).join("と"));
+  const ans = setTxt(target), name = wantOk ? "してよい" : "してはいけない";
+  const ask = pick(r, wantOk
+    ? ["次のア〜エのうち、証明の根拠にしてよいものを、すべて選んだ組はどれか。", "証明の中で、そのまま理由として書いてよいものを、次のア〜エからすべて選んだ組はどれか。", "次のア〜エのうち、証明の根拠にしてよいものだけを集めた組はどれか。"]
+    : ["次のア〜エのうち、証明の根拠にしてはいけないものを、すべて選んだ組はどれか。", "証明の中で、理由として書いてはいけないものを、次のア〜エからすべて選んだ組はどれか。", "次のア〜エのうち、証明の根拠にしてはいけないものだけを集めた組はどれか。"]);
+  return {
+    q: `${ask}\n${list.map((o, i) => `${LET4[i]} ${o.x}`).join("\n")}`,
+    ans,
+    choices: choices4(r, ans, [setTxt(flip(target, a)), setTxt(flip(target, b)), setTxt(flip(flip(target, a), b))]),
+    hint: "ア〜エを1つずつ読んで、証明の中で理由として書いてよいかどうかを考えよう。証明の根拠にできるのは、どんなことだったかな？",
+    steps: ["証明の根拠にできるのは、仮定と、すでに正しいと認められた性質。", `根拠にしてよいもの … ${list.map((o, i) => (o.v ? LET4[i] : null)).filter(Boolean).join("、")}　　根拠にしてはいけないもの … ${list.map((o, i) => (o.v ? null : LET4[i])).filter(Boolean).join("、")}`, `${name}ものを選ぶと　${ans}。`],
+  };
+}
 
 export const UNITS = [
   unit("12", {
@@ -251,37 +299,20 @@ export const UNITS = [
       1: [
         // 12d01 演習（1）対頂角・合同な図形の性質・合同条件などの、根拠
         t("12d01", (r) => rsnQ(r, ["vert", "pc", "sss", "pa", "alt", "corr", "altP", "sum", "reg", "sas", "asa"])),
-        // 12d02a 演習（2）証明の根拠にしてよいもの（1つ）
-        t("12d02a", (r) => {
-          const ans = pick(r, OKS);
-          return {
-            q: "次のうち、証明の根拠にしてよいものは、どれか。",
-            ans,
-            choices: choices4(r, ans, pickWrongs(r, ans, NGS)),
-            hint: "証明の根拠にできるのは、すでに正しいと認められたこと（問題の仮定や、習った性質）だったね。図や、はかった結果は、どうかな？",
-            steps: ["証明の根拠にできるのは、仮定と、すでに正しいと認められた性質。", "図で等しく見えること、はかった長さや角、これから示すこと、何個かの図で成り立ったことは、根拠にできない。", `答えは「${ans}」。`],
-          };
-        }),
-        // 12d02b 演習（2）証明の根拠にしてはいけないもの（1つ）
-        t("12d02b", (r) => {
-          const ans = pick(r, NGS);
-          return {
-            q: "次のうち、証明の根拠にしてはいけないものは、どれか。",
-            ans,
-            choices: choices4(r, ans, pickWrongs(r, ans, OKS)),
-            hint: "証明の根拠にできるのは、すでに正しいと認められたこと（問題の仮定や、習った性質）だったね。図や、はかった結果は、どうかな？",
-            steps: ["証明の根拠にできるのは、仮定と、すでに正しいと認められた性質。", "図で等しく見えること、はかった長さや角、これから示すこと、何個かの図で成り立ったことは、根拠にできない。", `答えは「${ans}」。`],
-          };
-        }),
-        // 12d02c 演習（2）6つのうち、根拠にしてよいものはいくつか
+        // 12d02a 演習（2）証明の根拠にしてよいものを、すべて選んだ組
+        t("12d02a", (r) => groundSetQ(r, true)),
+        // 12d02b 演習（2）証明の根拠にしてはいけないものを、すべて選んだ組
+        t("12d02b", (r) => groundSetQ(r, false)),
+        // 12d02c 演習（2）6つのうち、根拠にしてよい（してはいけない）ものはいくつか
         t("12d02c", (r) => {
-          const k = r(2, 4), ok = shuffle(r, OKS).slice(0, k), ng = shuffle(r, NGS).slice(0, 6 - k), list = shuffle(r, [...ok.map((x) => ({ x, v: true })), ...ng.map((x) => ({ x, v: false }))]), LET = ["ア", "イ", "ウ", "エ", "オ", "カ"];
+          const k = r(2, 4), ok = shuffle(r, OKS).slice(0, k), ng = shuffle(r, NGS).slice(0, 6 - k), list = shuffle(r, [...ok.map((x) => ({ x, v: true })), ...ng.map((x) => ({ x, v: false }))]);
+          const wantOk = r(0, 1) === 0, n = wantOk ? k : 6 - k;
           return {
-            q: `次のア〜カのうち、証明の根拠にしてよいものは、いくつあるか。\n${list.map((o, i) => `${LET[i]} ${o.x}`).join("\n")}`,
-            ans: k,
+            q: `次のア〜カのうち、証明の根拠に${wantOk ? "してよい" : "してはいけない"}ものは、いくつあるか。\n${list.map((o, i) => `${LET6[i]} ${o.x}`).join("\n")}`,
+            ans: n,
             unit: "個",
-            hint: "1つずつ、すでに正しいと認められたこと（仮定や習った性質）かどうかを見分けよう。図や、はかった結果は、どうかな？",
-            steps: [`根拠にしてよいもの … ${list.map((o, i) => (o.v ? LET[i] : null)).filter(Boolean).join("、")}`, `根拠にしてはいけないもの … ${list.map((o, i) => (o.v ? null : LET[i])).filter(Boolean).join("、")}`, `してよいものは ${k}個。`],
+            hint: "ア〜カを1つずつ読んで、証明の中で理由として書いてよいかどうかを考えよう。証明の根拠にできるのは、どんなことだったかな？",
+            steps: [`根拠にしてよいもの … ${list.map((o, i) => (o.v ? LET6[i] : null)).filter(Boolean).join("、")}`, `根拠にしてはいけないもの … ${list.map((o, i) => (o.v ? null : LET6[i])).filter(Boolean).join("、")}`, `${wantOk ? "してよい" : "してはいけない"}ものは ${n}個。`],
           };
         }),
       ],
