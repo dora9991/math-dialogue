@@ -24,13 +24,14 @@ const gram2 = (x) => { const t = strip(x), g = new Set(); for (let i = 0; i < t.
 const jacc = (a, b) => { let i = 0; for (const x of a) if (b.has(x)) i++; return i / (a.size + b.size - i || 1); };
 /** 正解 ans と誤答 ws（3つ）で、ans の「長さの順位」「字の近さの順位」「文字の並びの重なりの順位」（と、q があれば「問題文との重なりの順位」）を調べる。順位 0＝いちばん短い／いちばんほかに近い／いちばん問題文と重なる。同点なら範囲 [最小, 最大] */
 function rankOf(ans, ws, q) {
-  const all = [ans, ...ws], len = all.map((x) => strip(x).length);
+  const all = [ans, ...ws], len = all.map((x) => strip(x).length), raw = all.map((x) => String(x).length);
+  const rlo = ws.filter((x) => String(x).length < raw[0]).length, rties = ws.filter((x) => String(x).length === raw[0]).length;
   const lo = ws.filter((x) => strip(x).length < len[0]).length, ties = ws.filter((x) => strip(x).length === len[0]).length;
   const cs = all.map((c, j) => all.reduce((acc, d, k) => (k === j ? acc : acc + cdist(c, d)), 0));
   const clo = cs.slice(1).filter((v) => v < cs[0]).length, cties = cs.slice(1).filter((v) => v === cs[0]).length;
   const G = all.map(gram2), js = G.map((g, j) => G.reduce((acc, h, k) => (k === j ? acc : acc + jacc(g, h)), 0));
   const jlo = js.slice(1).filter((v) => v > js[0] + 1e-9).length, jties = js.slice(1).filter((v) => Math.abs(v - js[0]) <= 1e-9).length;
-  const out = [[lo, lo + ties], [clo, clo + cties], [jlo, jlo + jties]];
+  const out = [[rlo, rlo + rties], [lo, lo + ties], [clo, clo + cties], [jlo, jlo + jties]];
   if (q) {
     const Q = gram2(q), ov = G.map((g) => { let c = 0; for (const y of g) if (Q.has(y)) c++; return c / (g.size || 1); });
     const olo = ov.slice(1).filter((v) => v > ov[0] + 1e-9).length, oties = ov.slice(1).filter((v) => Math.abs(v - ov[0]) <= 1e-9).length;
@@ -38,11 +39,11 @@ function rankOf(ans, ws, q) {
   }
   return out;
 }
-const RANK_W = [3, 1, 1, 1];   // 長さの順位を、いちばん優先する
+const RANK_W = [3, 2, 1, 1, 1];   // 長さ（文字列そのまま、空白と記号をのぞく）の順位を優先する
 /** 誤答の組をつくる関数 make（3つの配列を返す）を何回か試して、正解の「長さ」「字の近さ」「文字の重なり」（と、q があれば「問題文との重なり」）の順位が、
  *  どれも（ランダムにえらんだ）順位になる組をえらぶ（長さや、ほかの選択肢との似かた、問題文との似かたで、正解を当てられないように）。全部は合わないときは、いちばん多く合う組のなかから、ランダムに */
 function pickBal(r, ans, make, tries = 200, q = "") {
-  const T = [r(0, 3), r(0, 3), r(0, 3), r(0, 3)];
+  const T = [r(0, 3), r(0, 3), r(0, 3), r(0, 3), r(0, 3)];
   let best = [], bestScore = -1;
   for (let i = 0; i < tries; i++) {
     const w = make();
@@ -247,7 +248,7 @@ function stmtOf(r, key) {
 }
 function rsnQ(r, keys) {
   const key = pick(r, keys), text = stmtOf(r, key), real = key === "altP" ? "alt" : key, ans = RSN[real];
-  const wrongs = Object.keys(RSN).filter((k) => k !== real).map((k) => RSN[k]);
+  const wrongs = [...Object.keys(RSN).filter((k) => k !== real).map((k) => RSN[k]), "正方形の4つの辺は等しい", "四角形の内角の和は 360°", "正三角形の3つの角は等しい"].filter((x) => x !== ans);
   const q = `次のことがいえる根拠は、どれか。\n${text}`;
   return {
     q,

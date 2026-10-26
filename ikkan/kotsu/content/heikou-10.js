@@ -50,23 +50,24 @@ const gram2 = (x) => { const t = strip(x), g = new Set(); for (let i = 0; i < t.
 const jacc = (a, b) => { let i = 0; for (const x of a) if (b.has(x)) i++; return i / (a.size + b.size - i || 1); };
 /** 正解 ans と誤答 ws（3つ）で、ans の「長さの順位」「字の近さの順位」「文字の並びの重なりの順位」を調べる。順位 0＝いちばん短い／いちばんほかに近い。同点なら範囲 [最小, 最大] */
 function rankOf(ans, ws) {
-  const all = [ans, ...ws], len = all.map((x) => strip(x).length);
+  const all = [ans, ...ws], len = all.map((x) => strip(x).length), raw = all.map((x) => String(x).length);
+  const rlo = ws.filter((x) => String(x).length < raw[0]).length, rties = ws.filter((x) => String(x).length === raw[0]).length;
   const lo = ws.filter((x) => strip(x).length < len[0]).length, ties = ws.filter((x) => strip(x).length === len[0]).length;
   const cs = all.map((c, j) => all.reduce((acc, d, k) => (k === j ? acc : acc + cdist(c, d)), 0));
   const clo = cs.slice(1).filter((v) => v < cs[0]).length, cties = cs.slice(1).filter((v) => v === cs[0]).length;
   const G = all.map(gram2), js = G.map((g, j) => G.reduce((acc, h, k) => (k === j ? acc : acc + jacc(g, h)), 0));
   const jlo = js.slice(1).filter((v) => v > js[0] + 1e-9).length, jties = js.slice(1).filter((v) => Math.abs(v - js[0]) <= 1e-9).length;
-  return [[lo, lo + ties], [clo, clo + cties], [jlo, jlo + jties]];
+  return [[rlo, rlo + rties], [lo, lo + ties], [clo, clo + cties], [jlo, jlo + jties]];
 }
 /** 誤答の組をつくる関数 make（3つの配列を返す）を何回か試して、正解の「長さ」「字の近さ」「文字の重なり」の順位が、どれも（ランダムにえらんだ）順位になる組をえらぶ
  *  （長さや、ほかの選択肢との似かたで、正解を当てられないように）。全部は合わないときは、いちばん多く合う組のなかから、ランダムに */
 function pickBal(r, ans, make, tries = 200) {
-  const T = [r(0, 3), r(0, 3), r(0, 3)];
+  const T = [r(0, 3), r(0, 3), r(0, 3), r(0, 3)], W = [3, 2, 1, 1];   // 長さ（文字列そのまま・空白と記号をのぞく）、字の近さ、文字の重なり、の順位
   let best = [], bestScore = -1;
   for (let i = 0; i < tries; i++) {
     const w = make();
     if (!w || w.length < 3) continue;
-    const sc = rankOf(ans, w).reduce((acc, k, m) => acc + (T[m] >= k[0] && T[m] <= k[1] ? 1 : 0), 0);
+    const sc = rankOf(ans, w).reduce((acc, k, m) => acc + (T[m] >= k[0] && T[m] <= k[1] ? W[m] : 0), 0);
     if (sc > bestScore) { best = [w]; bestScore = sc; } else if (sc === bestScore) best.push(w);
   }
   return best.length ? pick(r, best) : null;
@@ -84,6 +85,8 @@ const RSN = {   // どれも8字（長さで当てられないように）
   vert: "対頂角になるから",
   alt: "錯角どうしだから",
 };
+/** 理由の選択肢にまぜる、まちがった理由（どの図でも、正解にはならない） */
+const RSN_BAD = ["測ると等しいから", "見ると等しいから", "条件にあるものだから"];
 const RSN_WHY = {
   side: "どちらの三角形にもふくまれる辺だから、共通な辺。",
   angleC: "どちらの三角形にもふくまれる角だから、共通な角。",
@@ -279,7 +282,7 @@ function reasonQ(r, cfg) {
   return {
     q: `${introOf(cfg)}\n${tri(cfg.T1)} と ${tri(cfg.T2)} で、${pick(r, [`${f.ask} といえる理由は、次のうちどれか。`, `${f.ask} といえるのは、どうしてか。次のうちから選ぼう。`])}`,
     ans,
-    choices: choices4(r, ans, Object.values(RSN).filter((x) => x !== ans)),
+    choices: choices4(r, ans, pickBal(r, ans, () => shuffle(r, [...Object.values(RSN).filter((x) => x !== ans), ...RSN_BAD]).slice(0, 3))),
     hint: "この等しい組は、問題の条件に書いてあるかな？ 書いていないとき、2つの三角形の形のうえから等しいといえる理由には、どんなものがあったかな？",
     steps: [`「${f.ask}」は、問題の条件に書いていない。`, RSN_WHY[f.rsn], `答えは「${ans}」。`],
   };
