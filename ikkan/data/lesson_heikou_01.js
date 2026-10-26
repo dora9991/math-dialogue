@@ -58,7 +58,7 @@
       if (only) { const lr = o.lr && o.lr[k] != null ? o.lr[k] : 5.4; txt.push({ p: v, t: o.t[k], dx: lr * Math.cos(mid), dy: -lr * Math.sin(mid) }); return; }
       ang.push({ k, at: v, a: p, b: q, t: o.t[k], r: o.r || 4, lr: o.lr && o.lr[k] != null ? o.lr[k] : (String(o.t[k]).length > 2 ? 8.6 : 6.8) });
     });
-    if (o.cap) txt.push({ p: 'l1', t: o.cap, dx: -1, dy: -4.5, anchor: 'start', size: 3.4 });
+    if (o.cap) txt.push({ p: 'l1', t: o.cap, dx: -1, dy: -4.5, anchor: 'start' });
     const nm = o.names || ['ℓ', 'm'];
     const spec = { pts, segs: [['l1', 'l2', { lab: nm[0] }], ['m1', 'm2', { lab: nm[1] }], ['n1', 'n2']], ang, A: AN, scale: o.scale, pad: o.pad == null ? 7 : o.pad };
     if (txt.length) spec.txt = txt;

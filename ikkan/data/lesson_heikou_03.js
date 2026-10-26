@@ -54,7 +54,7 @@
     if (bis === 'E') { segs.push(['B', 'E'], ['C', 'E']); spec.vl.E = ['E', 60, 3.4]; }
     if (o.line) { segs.push(['dA', 'eA']); spec.vl.dA = ['D', 180, 3.4]; spec.vl.eA = ['E', 0, 3.4]; }
     if (o.par) spec.par = [['B', 'C', 1], ['dA', 'eA', 1]];
-    if (o.cap) { const xs = Object.values(pts).map(q => q[0]), ys = Object.values(pts).map(q => q[1]); txt.push({ p: [Math.min(...xs), Math.max(...ys)], t: o.cap, dx: -8, dy: 0, anchor: 'start', size: 3.4 }); }
+    if (o.cap) { const xs = Object.values(pts).map(q => q[0]), ys = Object.values(pts).map(q => q[1]); txt.push(o.capR ? { p: [Math.max(...xs), Math.max(...ys)], t: o.cap, dx: 0, dy: 0, anchor: 'end' } : { p: [Math.min(...xs), Math.max(...ys)], t: o.cap, dx: -8, dy: 0, anchor: 'start' }); }
     if (segs.length) spec.segs = segs;
     if (txt.length) spec.txt = txt;
     if (o.ans) spec.a = o.ans(spec);
@@ -74,7 +74,7 @@
   /* ---------------- 問題のデータ（図・答えは、ここから作る） ---------------- */
   const TW = { B: 48, C: 64, w: 6.2, t: { a: 'a', b: 'b', c: 'c' }, r: 4, ans: ansLine };   // 学習課題：△ABC（∠A＝68°、∠B＝48°、∠C＝64°）
   const TE = { B: 45, C: 70, w: 5.6, ext: 3.2, t: { a: 'a', b: 'b', c: 'c', d: 'd' }, r: 4 };               // 例題：∠A＝65°、∠B＝45°、∠C＝70°、外角 ∠d＝110°
-  const T_TH = [['ア', { B: 40, C: 75 }], ['イ', { B: 110, C: 32 }], ['ウ', { B: 72, C: 50 }]];                      // 考えよう：ア（∠A＝65°）イ（∠B＝110°、鈍角）ウ（∠A＝58°）
+  const T_TH = [['ア', { B: 40, C: 75 }], ['イ', { B: 110, C: 32, capR: true }], ['ウ', { B: 72, C: 50 }]];                      // 考えよう：ア（∠A＝65°）イ（∠B＝110°、鈍角）ウ（∠A＝58°）
   const thFig = (o, cap) => Object.assign({ w: 5.4, t: { a: 'a', b: 'b', c: 'c' }, r: 3.2, lr: { a: 6.8, b: 6.8, c: 6.8 }, cap, pad: 9 }, o);
   const T_D1 = [['①', { B: 70, C: 60, w: 5.4, t: { a: 'x', b: '70°', c: '60°' } }, 50], ['②', { B: 90, C: 35, t: { a: 'x', b: '', c: '35°' }, right: true }, 55], ['③', { B: 105, C: 28, t: { a: 'x', b: '105°', c: '28°' } }, 47]];   // 基礎（1）
   const T_D2 = [['①', { B: 45, C: 70, ext: 3, t: { a: '65°', b: '45°', d: 'x' } }, 110], ['②', { B: 45, C: 55, ext: 3, t: { b: '45°', a: 'x', d: '125°' } }, 80], ['③', { B: 60, C: 68, ext: 3, t: { a: '52°', b: '60°', d: 'x' } }, 112]];   // 基礎（2）

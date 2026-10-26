@@ -34,10 +34,11 @@
     keys.forEach(k => {
       const [v, p, q] = AN[k], V = pts[v], u = z => { const L = Math.hypot(pts[z][0] - V[0], pts[z][1] - V[1]); return [(pts[z][0] - V[0]) / L, (pts[z][1] - V[1]) / L]; };
       const mid = Math.atan2(u(p)[1] + u(q)[1], u(p)[0] + u(q)[0]);
-      if (only) { const lr = o.lr && o.lr[k] != null ? o.lr[k] : 5.4; txt.push({ p: v, t: o.t[k], dx: lr * Math.cos(mid), dy: -lr * Math.sin(mid) }); return; }
+      if (o.arc && o.arc.indexOf(k) >= 0) ang.push({ k, at: v, a: p, b: q, r: o.r || 4 });   // 弧だけ（字は、下で、弧から少しはなして置く）
+      if (only) { const lr = o.lr && o.lr[k] != null ? o.lr[k] : 5.4; txt.push(lab(v, mid * 180 / Math.PI, lr, o.t[k])); return; }
       ang.push({ k, at: v, a: p, b: q, t: o.t[k], r: o.r || 4, lr: o.lr && o.lr[k] != null ? o.lr[k] : (String(o.t[k]).replace(/\{\{|\}\}/g, '').length > 3 ? 9.4 : String(o.t[k]).length > 2 ? 8.6 : 6.8) });
     });
-    if (o.cap) txt.push({ p: 'l1', t: o.cap, dx: -1, dy: -4.5, anchor: 'start', size: 3.4 });
+    if (o.cap) txt.push({ p: 'l1', t: o.cap, dx: -1, dy: -4.5, anchor: 'start' });
     const nm = o.names || ['ℓ', 'm'];
     const spec = { pts, segs: [['l1', 'l2', { lab: nm[0] }], ['m1', 'm2', { lab: nm[1] }], ['n1', 'n2']], ang, A: AN, scale: o.scale, pad: o.pad == null ? 7 : o.pad };
     if (txt.length) spec.txt = txt;
@@ -56,7 +57,9 @@
     });
     return { pts, segs, ang, A, scale: o.scale, pad: o.pad == null ? 7 : o.pad };
   };
-  const lab = (v, d, r, t) => ({ p: v, t, dx: r * Math.cos(rad(d)), dy: -r * Math.sin(rad(d)) });   // 字を、頂点 v から向き d（度）に r mm のところに
+  // 字を、頂点 v から向き d（度）に r mm のところに。スライドの図は字が大きくなる（IK.labelScale 倍）ので、そのぶん、距離もひろげる（描くときに計算する）
+  const GR = () => 3.0 * (((typeof IK !== 'undefined' && IK.labelScale) || 1) - 1);
+  const lab = (v, d, r, t) => ({ p: v, t, get dx() { return (r + 0.7 * GR()) * Math.cos(rad(d)); }, get dy() { return -(r + 0.7 * GR()) * Math.sin(rad(d)); } });
   const ZIG = o => {
     const h = 4.2, A = [0, h], E = pp(A, o.r1 || 3, -o.al), r2 = E[1] / Math.sin(rad(o.ga)), C = pp(E, r2, 180 + o.ga);
     const xs = [A[0], E[0], C[0]], x0 = Math.min(...xs) - 1.6, x1 = Math.max(...xs) + 2.4;
@@ -79,7 +82,7 @@
   };
   const mkFig = o => (o.lines ? ML(o) : o.al ? ZIG(o) : o.d1 != null ? ZZ(o) : TRV(o));
   // checks の式の中に、そのまま埋めこむ：座標から角を計算し直す
-  const LIB = 'const rad = ' + rad + '; const pp = ' + pp + '; const aD = ' + aD + '; const lab = ' + lab + '; const TRV = ' + TRV + '; const ML = ' + ML + '; const ZIG = ' + ZIG + '; const ZZ = ' + ZZ + ';' +
+  const LIB = 'const rad = ' + rad + '; const pp = ' + pp + '; const aD = ' + aD + '; const GR = ' + GR + '; const lab = ' + lab + '; const TRV = ' + TRV + '; const ML = ' + ML + '; const ZIG = ' + ZIG + '; const ZZ = ' + ZZ + ';' +
     ' const val = (s, k) => { const g = s.A[k]; return aD(s.pts[g[0]], s.pts[g[1]], s.pts[g[2]]); };' +
     ' const cr = (u, w) => u[0] * w[1] - u[1] * w[0];' +
     ' const par = s => Math.abs(cr([s.pts.l2[0] - s.pts.l1[0], s.pts.l2[1] - s.pts.l1[1]], [s.pts.m2[0] - s.pts.m1[0], s.pts.m2[1] - s.pts.m1[1]])) < 1e-9;' +
@@ -98,7 +101,7 @@
   const T_W = { th: 65, pl: 0, pm: 0, par: true, t: { a: 'a', e: 'b', c: 'c' }, scale: 4.8, r: 3.6 };                   // 学習課題：ℓ∥m。∠a＝∠b＝∠c＝65°
   const T_EA = { th: 75, pl: 0, pm: 0, t: { a: '75°', e: '75°' }, scale: 3.8, r: 3.6, cap: 'ア', names: ['a', 'b'] };       // 例題 ア：同位角 75° と 75° → 平行
   const T_EB = { th: 60, pl: 0, pm: -3, t: { c: '60°', e: '63°' }, scale: 3.8, r: 3.6, cap: 'イ', names: ['c', 'd'] };      // 例題 イ：錯角 60° と 63° → 平行でない
-  const T_TH = { th: 65, pl: 0, pm: 0, par: true, t: ALL, scale: 5.0 };                                                // 考えよう：ℓ∥m。∠a＝65°。a・c・e・g＝65°、b・d・f・h＝115°
+  const T_TH = { th: 65, pl: 0, pm: 0, par: true, t: ALL, scale: 5.0, arc: ['a'], lr: { a: 9.6 } };                                                // 考えよう：ℓ∥m。∠a＝65°。a・c・e・g＝65°、b・d・f・h＝115°
   const T_D1 = [['①', { th: 60, par: true, t: { a: '60°', e: 'x' } }, 60], ['②', { th: 125, par: true, t: { d: '55°', f: 'x' } }, 55], ['③', { th: 100, par: true, t: { c: '100°', g: 'x' } }, 100]];   // 基礎（1）
   const T_D2 = [['ア', { th: 52, t: { a: '52°', e: '52°' } }, true], ['イ', { th: 100, t: { c: '100°', e: '100°' } }, true], ['ウ', { th: 48, pm: -4, t: { c: '48°', e: '52°' } }, false]];            // 基礎（2）：ア○ イ○ ウ×
   const T_D3 = [['①', { th: 70, par: true, t: { b: '110°', e: 'x' } }, 70], ['②', { th: 115, par: true, t: { a: '115°', g: 'x' } }, 115], ['③', { th: 80, h: 5.6, par: true, t: { c: '80°', f: 'x' } }, 100]];   // 標準（3）
