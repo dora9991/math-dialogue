@@ -205,10 +205,9 @@ const sumTex = ([a, c]) => poly([a, c], "n");
 const paren = (s) => (/[+−]/.test(s) ? `(${s})` : s);
 /** 連続する k 個の（種類 kind の）数の和についてのことがら。仮定の k や種類だけをかえたもの、結論の「〜の倍数」の数だけをかえたものを、まちがい候補にする */
 function consStmt(r, kind, k) {
-  const C = CONS[kind], g = C.gcd(k), words = ["整数", "偶数", "奇数"], ks = [3, 5, 7, 9];
-  const h = (kk, w) => `${kk}つの${w}が連続している`;
-  return mk(h(k, C.word), `その和は ${g} の倍数`,
-    uniq([...ks.map((kk) => h(kk, C.word)), ...words.map((w) => h(k, w))], h(k, C.word)).filter((x) => x !== h(k, C.word)),
+  const C = CONS[kind], g = C.gcd(k), ks = [3, 5, 7, 9];
+  const h = (kk) => `${kk}つの${C.word}が連続している`;
+  return mk(h(k), `その和は ${g} の倍数`, ks.filter((kk) => kk !== k).map(h),
     uniq([g + 1, g * 2, g + 2, g - 1].filter((v) => v > 1).map((v) => `その和は ${v} の倍数`), `その和は ${g} の倍数`));
 }
 /** 和の式の4択 */
@@ -221,7 +220,8 @@ function consExprQ(r, kinds, ks) {
   const sameC = [[A0 - C.a, C0], [A0 + C.a, C0], [A0 * 2, C0], [A0 + 1, C0]].filter(([x]) => x > 0 && x !== A0);
   const far = [[A0 + C.a * 2, C0 + 1], [1, k], [Math.max(1, A0 - 2), C0 + S1]].filter(([x, y]) => x !== A0 && y !== C0 && x > 0);
   const as = (list) => [...new Set(list.map(([x, y]) => $(sumTex([x, y]))))].filter((x) => x !== ans);
-  const picks = [pick(r, as(sameA)), pick(r, as(sameC)), pick(r, as(far))];
+  // 正解が「kn」(定数項なし) のときは、「kn+1」のように正解をふくむ誤答は入れない
+  const picks = C0 === 0 ? [...shuffle(r, as(sameC)).slice(0, 2), pick(r, as(far))] : [pick(r, as(sameA)), pick(r, as(sameC)), pick(r, as(far))];
   return {
     q: `連続する${k}つの${C.word}の真ん中を $${C.mid}$（$n$ は整数）とする。${k}つの${C.word}の和を、$n$ の式で表すと、次のうちどれか。`,
     ans,
