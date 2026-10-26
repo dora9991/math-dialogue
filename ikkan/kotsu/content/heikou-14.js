@@ -42,15 +42,25 @@ const rgon = (n) => (n === 3 ? "正三角形" : n === 4 ? "正方形" : `正${go
 const DIV360 = [5, 6, 8, 9, 10, 12, 15, 18, 20, 24, 30];   // 360 の約数（正n角形の1つの外角が整数の度になる n）
 
 /** 誤答の候補 pool から k 個えらぶ。正解 ans の「長さの順位」が、かたよらないように（長さで当てられないように） */
-function pickWrongs(r, ans, pool, k = 3) {
+function pickWrongs(r, ans, pool, k = 3, central = false) {
   const target = r(0, k), len = (x) => String(x).length;
-  let first = null;
-  for (let i = 0; i < 80; i++) {
+  // central＝true：ほかの選択肢と文字の並びがいちばん似ている（「いちばん多数派」に見える）のが正解、とならないよう、その順位もばらけさせる
+  const bg = (x) => { const t = new Set(), u = String(x); for (let n = 0; n < u.length - 1; n++) t.add(u.slice(n, n + 2)); return t; };
+  const sm = (a, b) => { const A = bg(a), B = bg(b); let c = 0; for (const x of A) if (B.has(x)) c++; return c / (A.size + B.size - c || 1); };
+  const cTarget = r(0, k);
+  let first = null, firstLen = null;
+  for (let i = 0; i < (central ? 400 : 80); i++) {
     const w = shuffle(r, pool).slice(0, k), lo = w.filter((x) => len(x) < len(ans)).length, ties = w.filter((x) => len(x) === len(ans)).length;
     if (!first) first = w;
-    if (target >= lo && target <= lo + ties) return w;
+    const lenOk = target >= lo && target <= lo + ties;
+    if (!central) { if (lenOk) return w; continue; }
+    const score = (x) => [ans, ...w].reduce((sum, y) => sum + (y === x ? 0 : sm(x, y)), 0), me = score(ans);
+    const clo = w.filter((x) => score(x) < me - 1e-9).length, cties = w.filter((x) => Math.abs(score(x) - me) < 1e-9).length;
+    const cenOk = cTarget >= clo && cTarget <= clo + cties;
+    if (cenOk && lenOk) return w;
+    if (cenOk && !firstLen) firstLen = w;
   }
-  return first;
+  return firstLen || first;
 }
 /** 重みつきで 1つえらぶ */
 function pickW(r, keys, w) {
@@ -137,6 +147,7 @@ function condQ(r, N, { intro, outro = "。三角形の合同条件のうち、�
 /**
  * 三角形 △AOC と △BOD の証明。kind＝asa（AO＝BO、∠OAC＝∠OBD）／sas（AO＝BO、CO＝DO）／sss（AO＝BO、CO＝DO、AC＝BD）。
  * 空欄の候補：eq3（③の行ぜんぶ＝どの角が等しいか。sss の証明にはない）／cond（合同条件）。
+ * eq3 の誤答は、どれも図で必ず成り立つとは限らない等式にする（対頂角どうし ∠COB＝∠DOA や、合同から出る ∠OCA＝∠ODB は、真なので入れない）。
  * 「仮定より」「対頂角」「対応する辺（角）は等しい」の語の空欄は、正解が 1〜2通りしかなく、問題を読まずに絞りこめてしまうので、つくらない。
  */
 function xbowProof(r, kind) {
@@ -154,7 +165,7 @@ function xbowProof(r, kind) {
     cond: { w: spec.w.cond, ans: COND[key], pool: [...others, "3組の角"], steps: condSteps(spec.els, V1, V2, key) },
   };
   if (kind !== "sss") {
-    holes.eq3 = { w: spec.w.eq3, ans: vert, pool: ["∠COB＝∠DOA", "∠OCA＝∠ODB", "∠AOC＝∠COB"], steps: [`${t1} の ∠AOC に対応する、${t2} の角は ∠BOD。`, "∠AOC と ∠BOD は、向かい合う角（対頂角）だから等しい。"] };
+    holes.eq3 = { w: spec.w.eq3, central: true, ans: vert, pool: ["∠AOC＝∠COB", "∠AOC＝∠AOD", "∠BOD＝∠DOA", "∠OAC＝∠OCA", "∠AOC＝∠OBD", "∠OCA＝∠BOD", "∠COB＝∠COA", "∠OBD＝∠BOD", "∠ACO＝∠COB"], steps: [`${t1} の ∠AOC に対応する、${t2} の角は ∠BOD。`, "∠AOC と ∠BOD は、向かい合う角（対頂角）だから等しい。"] };
   }
   return {
     head: `線分 AB と CD が点 O で交わり、${hyps.join("、")} ならば、${conclTx} である。`,
@@ -175,7 +186,7 @@ function proofQ(r, N, proof) {
   return {
     q: N(`${proof.head}次は、その証明である。（　）にあてはまるものは？\n${proof.lines(k).join("\n")}`),
     ans,
-    choices: choices4(r, ans, pickWrongs(r, ans, h.pool.map(N))),
+    choices: choices4(r, ans, pickWrongs(r, ans, h.pool.map(N), 3, h.central)),
     hint: "証明は、等しいものを3つ示す行、合同条件の行、合同から結論を導く行の順に書いた。空欄は、何を書くところかな？",
     steps: h.steps.map(N),
   };
@@ -276,24 +287,29 @@ function relProblem(r, far) {
 /**
  * 平行線と角の問題（角 a の大きさ g を言って、a と同じ大きさの角 2つ（または 180°−g の角 2つ）の「和」を聞く）。
  * 答えは 2g か 360°−2g で、問題文の数字にも、180°−g にもならない。far＝true なら、2つの角は a とはちがう点（A か B）の角。
+ * 2つの角を求める道すじで同じ手順は 1回にまとめ、解説（手順＋和の行）が maxLines 行に収まる組だけをつくる。
  */
-function sumProblem(r, far) {
-  const N = namer(r, 8);
-  const a = pick(r, NODES8), g = pick(r, [r(35, 85), r(95, 145)]);
-  const same = r(0, 1) === 0;
-  const pool = NODES8.filter((n) => nodeKey(n) !== nodeKey(a) && (cls8(n.pos) === cls8(a.pos)) === same && (!far || n.pt !== a.pt));
-  const [b, c] = sample(r, pool, 2);
-  const w1 = parWalk(a, b, g), w2 = parWalk(a, c, g);
-  const ans = same ? 2 * g : 360 - 2 * g;
-  if (w1.v + w2.v !== ans) throw new Error("道すじと答えが合わない");
-  const nb = ANG8[b.pt][b.pos], nc = ANG8[c.pt][c.pos];
-  return {
-    q: N(`${PAR_SETUP}∠${ANG8[a.pt][a.pos]}＝${g}° のとき、∠${nb} と ∠${nc} の大きさの和は何度か。`),
-    ans,
-    unit: "度",
-    hint: "平行な2直線に1本の直線が交わるとき、同位角や錯角はどうなるかな？ 対頂角や、一直線の角は？ まず、それぞれの角の大きさを求めよう。",
-    steps: [...w1.steps, ...w2.steps, `∠${nb}＋∠${nc}＝${w1.v}°＋${w2.v}°＝${ans}°。`].map(N),
-  };
+function sumProblem(r, far, maxLines) {
+  for (let tries = 0; tries < 200; tries++) {
+    const a = pick(r, NODES8), g = pick(r, [r(35, 85), r(95, 145)]);
+    const same = r(0, 1) === 0;
+    const pool = NODES8.filter((n) => nodeKey(n) !== nodeKey(a) && (cls8(n.pos) === cls8(a.pos)) === same && (!far || n.pt !== a.pt));
+    const [b, c] = sample(r, pool, 2);
+    const w1 = parWalk(a, b, g), w2 = parWalk(a, c, g);
+    const walk = [...new Set([...w1.steps, ...w2.steps])];   // 同じ行は 1回だけ
+    if (walk.length + 1 > maxLines) continue;
+    const ans = same ? 2 * g : 360 - 2 * g;
+    if (w1.v + w2.v !== ans) throw new Error("道すじと答えが合わない");
+    const N = namer(r, 8), nb = ANG8[b.pt][b.pos], nc = ANG8[c.pt][c.pos];
+    return {
+      q: N(`${PAR_SETUP}∠${ANG8[a.pt][a.pos]}＝${g}° のとき、∠${nb} と ∠${nc} の大きさの和は何度か。`),
+      ans,
+      unit: "度",
+      hint: "平行な2直線に1本の直線が交わるとき、同位角や錯角はどうなるかな？ 対頂角や、一直線の角は？ まず、それぞれの角の大きさを求めよう。",
+      steps: [...walk, `∠${nb}＋∠${nc}＝${w1.v}°＋${w2.v}°＝${ans}°。`].map(N),
+    };
+  }
+  throw new Error("和の問題がつくれない");
 }
 const PAIRS = (f) => NODES8.flatMap((a) => NODES8.filter((b) => nodeKey(a) !== nodeKey(b) && f(a, b)).map((b) => [a, b]));
 const CROSS = PAIRS((a, b) => cls8(a.pos) !== cls8(b.pos));                                // 答えが 180°−（与えられた角）
@@ -318,10 +334,10 @@ export const UNITS = [
       1: [
         // 14d01a 演習（1）①平行線と角：一直線の角と同位角（など）で、角の大きさを求める
         t("14d01a", (r) => {
-          const m = r(0, 9);
-          if (m < 4) { const [a, b] = pick(r, CROSS); return parProblem(r, a, b); }   // 角の大きさを 1つ言って、聞く（答えは 180°−その角）
-          if (m < 7) return relProblem(r, false);                                      // 2つの角の関係（○倍・○°大きい）を言って、聞く（答えは問題文にない数）
-          return sumProblem(r, false);                                                 // 角の大きさを 1つ言って、2つの角の和を聞く（答えは 2g か 360°−2g）
+          const m = r(0, 19);
+          if (m < 9) { const [a, b] = pick(r, CROSS); return parProblem(r, a, b); }   // 角の大きさを 1つ言って、聞く（答えは 180°−その角。1〜2手）
+          if (m < 16) return relProblem(r, false);                                     // 2つの角の関係（○倍・○°大きい）を言って、聞く（答えは問題文にない数）
+          return sumProblem(r, false, 3);                                              // 角の大きさを 1つ言って、2つの角の和を聞く（答えは 2g か 360°−2g。解説は 3行まで）
         }),
         // 14d01b 演習（1）②三角形の内角の和（外角の問いも）
         t("14d01b", (r) => {
@@ -399,10 +415,10 @@ export const UNITS = [
         }),
         // 14q01 小テスト（1）平行線と角：A と B にわかれた角どうし（同位角・錯角・対頂角・一直線の角）
         t("14q01", (r) => {
-          const m = r(0, 9);
-          if (m < 4) { const [a, b] = pick(r, CROSS_PT); return parProblem(r, a, b); }
-          if (m < 7) return relProblem(r, true);
-          return sumProblem(r, true);
+          const m = r(0, 19);
+          if (m < 8) { const [a, b] = pick(r, CROSS_PT); return parProblem(r, a, b); }
+          if (m < 15) return relProblem(r, true);
+          return sumProblem(r, true, 4);
         }),
         // 14q02a 小テスト（2）①n角形の内角の和
         t("14q02a", (r) => {

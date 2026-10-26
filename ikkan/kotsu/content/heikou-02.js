@@ -62,10 +62,10 @@ const bigrams = (s) => { const t2 = String(s).replace(/\s/g, ""), m = new Map();
 const sim = (a, b) => { const A = bigrams(a), B = bigrams(b); let i = 0, u = 0; for (const x of new Set([...A.keys(), ...B.keys()])) { i += Math.min(A.get(x) || 0, B.get(x) || 0); u += Math.max(A.get(x) || 0, B.get(x) || 0); } return u ? i / u : 0; };
 const digitsOf = (s) => String(s).match(/\d+/g) || [];
 /** 誤答を、候補 pool から3つ、ランダムに選ぶ。正解だけが、文字の長さ・ほかの選択肢との似かた・数字の重なりで、目立たないようにする */
-function fairPick(r, correct, pool, q = "") {
+function fairPick(r, correct, pool, q = "", must = []) {
   let last = null;
   for (let tries = 0; tries < 300; tries++) {
-    const w = sample(r, pool, Math.min(3, pool.length)), opts = [correct, ...w].map(String);
+    const w = [...must, ...sample(r, pool.filter((x) => !must.includes(x)), Math.min(3 - must.length, pool.length))], opts = [correct, ...w].map(String);
     last = w;
     const feats = [
       (o) => o.length,

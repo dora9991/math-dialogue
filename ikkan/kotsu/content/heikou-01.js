@@ -31,6 +31,8 @@ const $ = (s) => `$${s}$`;
 const mod = (a, n) => ((a % n) + n) % n;
 const PTS = "ABCDEFGHJKPQRSTUVWXYZ".split("");   // 点の名前（I・L・M・N・O は、ほかと見まちがえるので使わない）
 const SETS4 = [["A", "B", "C", "D"], ["P", "Q", "R", "S"], ["E", "F", "G", "H"], ["W", "X", "Y", "Z"], ["J", "K", "T", "U"]];
+/** 式（文字 x）のある問題では、点の名前に W・X・Y・Z を使わない（変数 x と見まちがえるため） */
+const noXYZ = (list) => list.filter((c) => !"WXYZ".includes(c));
 /** 直角でない角（度） */
 const ang = (r, lo = 25, hi = 155) => { let a = r(lo, hi); while (a === 90) a = r(lo, hi); return a; };
 /** 1次式 px+q の TeX（p＝1 なら x+q）と、(px+q)° */
@@ -53,10 +55,10 @@ const bigrams = (s) => { const t2 = String(s).replace(/\s/g, ""), m = new Map();
 const sim = (a, b) => { const A = bigrams(a), B = bigrams(b); let i = 0, u = 0; for (const x of new Set([...A.keys(), ...B.keys()])) { i += Math.min(A.get(x) || 0, B.get(x) || 0); u += Math.max(A.get(x) || 0, B.get(x) || 0); } return u ? i / u : 0; };
 const digitsOf = (s) => String(s).match(/\d+/g) || [];
 /** 誤答を、候補 pool から3つ、ランダムに選ぶ。正解だけが、文字の長さ・ほかの選択肢との似かた・数字の重なりで、目立たないようにする */
-function fairPick(r, correct, pool, q = "") {
+function fairPick(r, correct, pool, q = "", must = []) {
   let last = null;
   for (let tries = 0; tries < 300; tries++) {
-    const w = sample(r, pool, Math.min(3, pool.length)), opts = [correct, ...w].map(String);
+    const w = [...must, ...sample(r, pool.filter((x) => !must.includes(x)), Math.min(3 - must.length, pool.length))], opts = [correct, ...w].map(String);
     last = w;
     const feats = [
       (o) => o.length,
@@ -70,12 +72,42 @@ function fairPick(r, correct, pool, q = "") {
   return last;
 }
 
+/** 正解が、ほかの選択肢との似かたで、いちばん上でも、いちばん下でもない（正解が「みんなに似ている」「だれにも似ていない」で当たらない） */
+function simMiddle(opts, correct) {
+  const f = (o) => opts.reduce((s, p) => (p === o ? s : s + sim(o, p)), 0);
+  const vs = opts.map(f), c = f(correct);
+  return vs.some((v) => v > c + 1e-9) && vs.some((v) => v < c - 1e-9);
+}
+/** 誤答を、「どこをまちがえているか（tag）」がかさならないように選ぶ。items＝[{ t: 文, tag }]、pre＝先に決めた誤答（items の一部）。
+ *  正解だけが、長さ・数字・問題文の語・似かたで目立たないようにする */
+function pickByTag(r, correct, items, q = "", pre = []) {
+  const feats = (opts) => [
+    (o) => o.length,
+    (o) => digitsOf(o).filter((n) => digitsOf(q).includes(n)).length,
+    (o) => [...bigrams(o).keys()].filter((b) => bigrams(q).has(b)).length,
+    (o) => opts.reduce((s, p) => (p === o ? s : s + digitsOf(o).filter((n) => digitsOf(p).includes(n)).length), 0),
+  ];
+  let last = null;
+  for (let tries = 0; tries < 400; tries++) {
+    const used = new Set(pre.map((it) => it.tag)), pick3 = [...pre];
+    for (const it of shuffle(r, items.filter((x) => !pre.includes(x)))) {
+      if (pick3.length >= 3) break;
+      if (!used.has(it.tag)) { used.add(it.tag); pick3.push(it); }
+    }
+    if (pick3.length < 3) continue;
+    const opts = [correct, ...pick3.map((it) => it.t)].map(String);
+    last = pick3.map((it) => it.t);
+    if (noTell(feats(opts), opts, String(correct)) && (tries > 300 || simMiddle(opts, String(correct)))) return last;
+  }
+  return last || sample(r, items.map((it) => it.t), 3);
+}
+
 // ── 2直線が点 O で交わる図 ──────────────────────────────────────
 /** 直線 pq と 直線 su が点 O で交わる。O のまわりに、半直線が p, s, q, u の順にならぶ。角 k0＝∠pOs、k1＝∠sOq、k2＝∠qOu、k3＝∠uOp（k と k+2 が対頂角、k と k+1 が一直線） */
-function cross2(r, extra = 0) {
-  const base = shuffle(r, pick(r, SETS4)), [p, q, s, u] = base;
+function cross2(r, extra = 0, hasX = false) {
+  const base = shuffle(r, pick(r, hasX ? SETS4.filter((st) => st.every((c) => !"WXYZ".includes(c))) : SETS4)), [p, q, s, u] = base;
   const ring = [p, s, q, u];
-  const rest = shuffle(r, PTS.filter((x) => !base.includes(x))).slice(0, extra);
+  const rest = shuffle(r, (hasX ? noXYZ(PTS) : PTS).filter((x) => !base.includes(x))).slice(0, extra);
   return {
     p, q, s, u, ring, rest,
     intro: `2直線 ${p}${q} と ${s}${u} が点 O で交わっている（O は、${p} と ${q} のあいだにも、${s} と ${u} のあいだにもある）。`,
@@ -84,8 +116,8 @@ function cross2(r, extra = 0) {
 }
 
 /** 3直線が点 O で交わる図。6本の半直線 O…は、この順に O のまわりにならぶ。部屋 i＝∠(R[i])O(R[i+1])。部屋 i と i+3 が対頂角、i から i+2 の3つが一直線 */
-function cross3(r) {
-  const R = sample(r, PTS, 6).sort();
+function cross3(r, hasX = false) {
+  const R = sample(r, hasX ? noXYZ(PTS) : PTS, 6).sort();
   return {
     R,
     intro: `3直線 ${R[0]}${R[3]}、${R[1]}${R[4]}、${R[2]}${R[5]} が点 O で交わっていて、半直線 ${R.map((x) => `O${x}`).join("、")} は、この順に O のまわりにならんでいる（O は、${R[0]} と ${R[3]}、${R[1]} と ${R[4]}、${R[2]} と ${R[5]} のあいだにある）。`,
@@ -209,14 +241,24 @@ function relationQ(r, par = false) {
 }
 
 // ── 問題 ───────────────────────────────────────────────
-/** 01d01a 対頂角：2つの対頂角の和 */
+/** 01d01a 対頂角：2つの対頂角の和／和がわかっているときの、1つの角 */
 function vertSum(r) {
   const X = cross2(r), k = r(0, 3), a = ang(r);
+  const hint = `${X.nm(k)} と ${X.nm(k + 2)} は、どんな位置の角かな？ その2つの大きさには、どんな関係があったかな？`;
+  if (r(0, 1) === 0) {
+    return {
+      q: `${X.intro}${X.nm(k)}＋${X.nm(k + 2)}＝${2 * a}° のとき、${X.nm(k)} の大きさは何度か。`,
+      ans: a,
+      unit: "度",
+      hint,
+      steps: [`${X.nm(k)} と ${X.nm(k + 2)} は、向かい合う角（対頂角）だから、等しい。`, `どちらも ${2 * a}° の半分で、${a}°。よって、${X.nm(k)}＝${a}°。`],
+    };
+  }
   return {
     q: `${X.intro}${X.nm(k)}＝${a}° のとき、${X.nm(k)} と ${X.nm(k + 2)} の大きさの和は何度か。`,
     ans: 2 * a,
     unit: "度",
-    hint: `${X.nm(k)} と ${X.nm(k + 2)} は、どんな位置の角かな？ その2つの大きさには、どんな関係があったかな？`,
+    hint,
     steps: [`${X.nm(k)} と ${X.nm(k + 2)} は、向かい合う角（対頂角）だから、等しい。`, `${X.nm(k + 2)}＝${X.nm(k)}＝${a}°`, `和は $${a}+${a}=${2 * a}$ より、${2 * a}°。`],
   };
 }
@@ -291,7 +333,7 @@ function vertEq(r) {
   for (let i = 0; i < 200; i++) {
     const x = r(5, 40), a = ang(r, 30, 150), e1 = expr(r, x, a), e2 = expr(r, x, a);
     if (!e1 || !e2 || e1.p === e2.p) continue;
-    const X = cross2(r), k = r(0, 3);
+    const X = cross2(r, 0, true), k = r(0, 3);
     const big = e1.p > e2.p ? e1 : e2, small = big === e1 ? e2 : e1, d = big.p - small.p, rhs = small.q - big.q;
     return {
       q: `${X.intro}${X.nm(k)}＝${dgx(e1.p, e1.q)}、${X.nm(k + 2)}＝${dgx(e2.p, e2.q)} のとき、$x$ の値は？`,
@@ -309,7 +351,7 @@ function straightEq(r) {
   for (let i = 0; i < 200; i++) {
     const x = r(5, 40), a = ang(r, 30, 150), e1 = expr(r, x, a), e2 = expr(r, x, 180 - a);
     if (!e1 || !e2) continue;
-    const X = cross2(r), k = r(0, 3), j = r(0, 1) ? k + 1 : k + 3, s = sumLin([e1, e2]);
+    const X = cross2(r, 0, true), k = r(0, 3), j = r(0, 1) ? k + 1 : k + 3, s = sumLin([e1, e2]);
     return {
       q: `${X.intro}${X.nm(k)}＝${dgx(e1.p, e1.q)}、${X.nm(j)}＝${dgx(e2.p, e2.q)} のとき、$x$ の値は？`,
       ans: x,
@@ -341,7 +383,7 @@ function altEq(r, askAngle) {
     const vals = ps.map((p, k) => p * x + qs[k]);
     if (qs.some((v) => v === 0 || Math.abs(v) > 60) || vals.some((v) => v < 20 || v > 130)) continue;
     const es = ps.map((p, k) => ({ p, q: qs[k] }));
-    const X = cross3(r), j = r(0, 5), trio = [j, j + 2, j + 4], u = r(0, 2), s = sumLin(es);
+    const X = cross3(r, true), j = r(0, 5), trio = [j, j + 2, j + 4], u = r(0, 2), s = sumLin(es);
     return {
       q: `${X.intro}${trio.map((n, k) => `${X.nm(n)}＝${dgx(es[k].p, es[k].q)}`).join("、")} のとき、${askAngle ? `${X.nm(trio[u])} の大きさは何度か。` : "$x$ の値は？"}`,
       ans: askAngle ? vals[u] : x,
@@ -397,20 +439,54 @@ function bisectSupp(r) {
 
 /** 01q03 「一直線の角」を使った説明（対頂角が等しいわけ）を選ぶ4択 */
 function whyEqual(r) {
-  const X = cross2(r), i = r(0, 3), T1 = X.nm(i), M = X.nm(i + 1), T2 = X.nm(i + 2), N = X.nm(i + 3);
-  const right = `${T1}＋${M} も ${T2}＋${M} も一直線の角で、どちらも 180° だから、${M} をひいて ${T1}＝${T2} となる。`;
-  const pool = [
-    `${T1}＋${T2} も ${M}＋${N} も一直線の角で、どちらも 180° だから、${M} をひいて ${T1}＝${T2} となる。`,   // 一直線にならない組を足している
-    `${T1}＋${M} も ${T2}＋${N} も一直線の角で、どちらも 180° だから、${M} をひいて ${T1}＝${T2} となる。`,   // 2つ目の式に ${M} がない
-    `${T1}＋${M} も ${T2}＋${M} も一直線の角で、どちらも 180° だから、${N} をひいて ${T1}＝${T2} となる。`,   // 式にない角をひいている
-    `${T1} と ${T2} は向かい合う角で、向かい合う角は一直線の角と同じ 180° だから、${M} をひいて ${T1}＝${T2} となる。`,
-    `${T1}＋${M} は一直線の角で 180° だが、${T2} は ${M} と一直線にならないから、${T1}＝${T2} とはいえない。`,
-  ];
+  const X = cross2(r), i = r(0, 3), c = pick(r, [1, 3]), T1 = X.nm(i), T2 = X.nm(i + 2), M = X.nm(i + c), N = X.nm(i + 4 - c);   // M＝ひく角、N＝もう一方のとなりの角（どちらをひいても正しい説明になる）
+  // 述べ方は2通り。A＝「T1＋M は…、T2＋M は…」（同じ角の名前が3回出る）、B＝「T1 も T2 も、M と合わせると一直線の角になるから…」（2回まで）。
+  // 正解も誤答も、どちらの述べ方でも、同じ角の名前が3回出るものと2回のものがある。誤答は、まちがえている場所（tag）がかさならないように選ぶ
+  const styleA = r(0, 1) === 0;
+  const eqc = `${T1}＝${T2}`;
+  let right, thrice, others;
+  const it = (t, tag) => ({ t, tag });
+  if (styleA) {
+    const mk = (a1, k1, a2, k2, sub, concl) => `${a1} は${k1}、${a2} は${k2} だから、${sub} をひいて ${concl} となる。`;
+    const L = "一直線の角で 180°";
+    right = mk(`${T1}＋${M}`, L, `${T2}＋${M}`, L, M, eqc);
+    thrice = [
+      it(mk(`${T1}＋${M}`, L, `${T2}＋${M}`, "直角で 90°", M, eqc), "value"),
+      it(mk(`${T1}＋${M}`, L, `${T2}＋${M}`, "一周の角で 360°", M, eqc), "value"),
+      it(`${T1} と ${M} と ${T2} は一直線にならぶので、${T1}＋${M}＋${T2}＝180° だから、${M} をひいて ${eqc} となる。`, "form"),
+      it(mk(`${T1}＋${M}`, L, `${T2}＋${M}`, L, M, `${T1}＝${M}`), "concl"),
+      it(mk(`${T1}＋${M}`, L, `${T2}＋${M}`, L, M, `${T1}＋${T2}＝180°`), "concl"),
+    ];
+    others = [
+      it(mk(`${T1}＋${T2}`, L, `${M}＋${N}`, L, M, eqc), "pair"),             // 一直線にならない組を足している
+      it(mk(`${T1}＋${M}`, L, `${T2}＋${N}`, L, M, eqc), "second"),            // 2つ目の式に ${M} がない
+      it(mk(`${T1}＋${M}`, L, `${T2}＋${M}`, L, N, eqc), "sub"),               // 式にない角をひいている
+      it(`${T1} と ${T2} は向かい合う角で、向かい合う角は一直線の角と同じ 180° だから、${M} をひいて ${eqc} となる。`, "form"),
+      it(`${T1}＋${M} は一直線の角で 180° だが、${T2} は ${M} と一直線にならないから、${eqc} とはいえない。`, "concl"),
+    ];
+  } else {
+    right = `${T1} も ${T2} も、${M} と合わせると一直線の角（180°）になるから、${M} をひいて ${eqc} となる。`;
+    thrice = [   // この述べ方でも、同じ角の名前を3回使う誤答を入れる
+      it(`${T1} と ${M} を合わせても、${T1} と ${N} を合わせても一直線の角（180°）になるから、${T1} をひいて ${M}＝${N} となる。`, "concl"),
+      it(`${T1} も ${T2} も、${T1} と ${M} と ${T2} を合わせると一直線の角（180°）になるから、${M} をひいて ${eqc} となる。`, "form"),
+    ];
+    others = [
+      it(`${T1} も ${T2} も、${M} と合わせると一周の角（360°）になるから、${M} をひいて ${eqc} となる。`, "value"),
+      it(`${T1} も ${T2} も、${M} と合わせると直角（90°）になるから、${M} をひいて ${eqc} となる。`, "value"),
+      it(`${T1} も ${T2} も、${N} と合わせると一直線の角（180°）になるから、${M} をひいて ${eqc} となる。`, "sub"),   // ひく角がずれている
+      it(`${T1} と ${T2} は向かい合う角で、向かい合う角は一直線の角と同じ 180° だから、${M} をひいて ${eqc} となる。`, "form"),
+      it(`${T1} は ${M} と合わせると一直線の角（180°）になるが、${T2} は ${M} と合わせても一直線にならないから、${eqc} とはいえない。`, "concl"),
+      it(`${T1} も ${T2} も、${M} と合わせると一直線の角（180°）になるから、${M} をたして ${T1}＋${T2}＝360° となる。`, "concl"),
+    ];
+  }
   const q = `${X.intro}対頂角 ${T1} と ${T2} が等しいことを、一直線の角の大きさを使って説明したい。正しい説明は、次のうちどれか。`;
+  const pre = [];   // 同じ角を3回使う誤答を、1〜2つ入れる（まちがえている場所は、かさならない）
+  for (const x of shuffle(r, thrice)) if (pre.length < (r(0, 2) < 2 ? 2 : 1) && !pre.some((y) => y.tag === x.tag)) pre.push(x);
+  const choicesWrong = pickByTag(r, right, [...thrice, ...others], q, pre);
   return {
     q,
     ans: right,
-    choices: choices4(r, right, fairPick(r, right, pool, q)),
+    choices: choices4(r, right, choicesWrong),
     hint: `${T1} と ${T2} は、それぞれ、どの角と一直線にならんでいるかな？ 共通の角はどれかな？`,
     steps: [
       `${T1} と ${M} は一直線にならぶので、${T1}＋${M}＝180°。${T2} と ${M} も一直線にならぶので、${T2}＋${M}＝180°。`,

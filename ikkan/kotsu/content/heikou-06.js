@@ -11,10 +11,19 @@ import { unitFor } from "../unit-kit.js";
 
 const unit = unitFor("heikou");
 
-/** t(id, build) と同じ。ただし、数の答えが問題文の数とたまたま同じになる組は、作り直す（skip） */
+/** 解説の算式（「180°−25°−75°＝80°」の形）を $…$ に入れる（° は ^\circ、∠ は \angle、× は \times、÷ は \div）。すでに $…$ の中にあるものは、そのまま */
+const MATH_RUN = /[0-9A-Z∠△●○(][0-9A-Z∠△●○°+\-−×÷＝=().]*/g;
+const mathify = (line) => line.split("$").map((seg, i) => (i % 2 ? seg : seg.replace(MATH_RUN, (run) => {
+  if (!/[＝=+\-−×÷]/.test(run) || !/[0-9●○]/.test(run) || /[+\-−×÷＝=]$/.test(run)) return run;
+  return "$" + run.replace(/∠/g, "\\angle ").replace(/△/g, "\\triangle ").replace(/°/g, "^\\circ").replace(/＝/g, "=").replace(/−/g, "-").replace(/×/g, "\\times ").replace(/÷/g, "\\div ").replace(/●/g, "\\bullet ").replace(/○/g, "\\bigcirc ") + "$";
+}))).join("$");
+
+/** t(id, build) と同じ。ただし、数の答えが問題文の数とたまたま同じになる組は作り直し（skip）、解説の算式は $…$ に入れる */
 const t = (id, build) => t0(id, (r) => {
   const p = build(r);
-  return p && typeof p.ans === "number" && ((p.q.match(/\d+/g) || []).map(Number)).includes(p.ans) ? { skip: true } : p;
+  if (!p || p.skip) return p;
+  if (typeof p.ans === "number" && ((p.q.match(/\d+/g) || []).map(Number)).includes(p.ans)) return { skip: true };
+  return { ...p, steps: p.steps.map(mathify) };
 });
 
 // ── 道具（この授業の問題用に足した小さな関数）──────────────────────────
@@ -73,7 +82,7 @@ function extRest(r, n, { lo = 40, hi = 130, xlo = 25, xhi = 150 } = {}) {
       ans: x,
       unit: "度",
       hint: "多角形の外角の和は、何度だったかな？ 求めたい外角のほかの外角の和は、何度かな？",
-      steps: [`多角形の外角の和は、何角形でも 360°。`, `頂点 ${V} の外角＝360°−(${vals.map((v) => `${v}°`).join("+")})＝${x}°`],
+      steps: [`多角形の外角の和は、何角形でも 360°。`, `頂点 ${V} の外角は　360°−(${vals.map((v) => `${v}°`).join("+")})＝${x}°`],
     };
   }
   return { skip: true };
@@ -84,25 +93,32 @@ const ROBOT = (L, th) => `ロボットが、「まっすぐ ${L} m 進み、そ�
 // ── n を使った式を選ぶ（06d07a・b）────────────────────────────────────
 // 正 (n＋k) 角形の 1つの内角を、n で表した式を選ぶ。問題文は考え方（内角の和÷個数／180°−外角）を言わない。
 // 正しい式は 2通り（分数の形 A＝内角の和÷個数、180−外角 の形 B）あるが、1つの問題には、そのどちらか1つしか出さない。
-// 4つの選択肢は、式を 2つの部分（A は 分子・分母、B は 先頭の記号・外角の分子）に分けて、それぞれ「正しい形」と「ありがちな誤り」を用意し、
-// （正・正）（正・誤）（誤・正）（誤・誤）の 2×2 でそろえる。どの選択肢も、ほかの選択肢との共通部分の数が同じなので、形を見ただけでは当たらない。
+// 式は 3つの部分でできている（A は 係数・かっこの中・分母、B は 先頭の記号・外角の分子・外角の分母）。
+// 4つの選択肢は、正解と、3つの部分のうち 2つをかえた誤答 3つ（かえる 2つの組み合わせは、3通りすべて）。
+// どの選択肢どうしも、ちがう部分の数が同じ（2つ）で、変える部分の大きさもそろえてあるので、どれかが「ほかの選択肢の中心」にならない。
 const lin = (c) => (c === 0 ? "n" : c > 0 ? `n+${c}` : `n-${-c}`);                 // n＋c
 const times = (coef, c) => (c === 0 ? `${coef}n` : `${coef}(${lin(c)})`);           // coef(n＋c)
 const fr = (num, den) => `\\frac{${num}}{${den}}`;
-/** k ごとの部品。A＝分数の形（分子 num・分母 den）、B＝180− の形（先頭 op・外角の分子 num）。値の関数 f も持つ */
+/** k ごとの部品。各部分は [正しい形, [ありがちな誤り…]]。tex(a, b, c)、val(a, b, c)(n) */
 function exprParts(k) {
   const g = (n) => n + k, e = (tex, f) => ({ tex, f });
   return {
     true: (n) => 180 - 360 / g(n),
     A: {
-      num: [e(times(180, k - 2), (n) => 180 * (g(n) - 2)), [e(times(180, k + 2), (n) => 180 * (g(n) + 2)), e(times(360, k - 2), (n) => 360 * (g(n) - 2)), e(times(180, k - 1), (n) => 180 * (g(n) - 1)), e(`180n${k - 2 >= 0 ? "+" : "-"}${Math.abs(k - 2) || ""}`.replace(/[+-]$/, "") , (n) => 180 * n + (k - 2))].filter((x) => k !== 2 || x.tex !== "180n")],
-      den: [e(lin(k), g), [e("2", () => 2), e(lin(k - 1), (n) => n + k - 1), ...(k !== 2 ? [e(lin(k - 2), (n) => n + k - 2)] : [e(lin(k + 1), (n) => n + k + 1)])]],
-      tex: (a, b) => fr(a, b), val: (a, b) => (n) => a(n) / b(n),
+      parts: [
+        [e("180", () => 180), [e("360", () => 360), e("90", () => 90)]],                                       // 係数
+        [e(String(k - 2), () => k - 2), [e(String(k + 2), () => k + 2), e(String(k - 1), () => k - 1), ...(k !== 2 ? [e("0", () => 0)] : [])]],      // かっこの中 n＋○（0 は、「−2」を忘れた形）
+        [e(lin(k), g), [e(lin(k - 1), (n) => n + k - 1), e(lin(k + 1), (n) => n + k + 1), ...(k !== 0 ? [e("n", (n) => n)] : [])]],                    // 分母
+      ],
+      tex: (a, b, c) => fr(times(a, +b), c), val: (a, b, c) => (n) => (a(n) * (n + b(n))) / c(n),
     },
     B: {
-      num: [e("180-X", (x) => 180 - x), [e("180+X", (x) => 180 + x), e("360-X", (x) => 360 - x), e("X-180", (x) => x - 180)]],
-      den: [e("360", () => 360), [e("180", () => 180), e("720", () => 720), e("540", () => 540)]],
-      tex: (a, b) => a.replace("X", fr(b, lin(k))), val: (a, b) => (n) => a(b(n) / g(n)),
+      parts: [
+        [e("180-X", (x) => 180 - x), [e("180+X", (x) => 180 + x), e("90-X", (x) => 90 - x)]],                  // 先頭の記号
+        [e("360", () => 360), [e("720", () => 720), e("540", () => 540)]],                                      // 外角の分子
+        [e(lin(k), g), [e(lin(k - 1), (n) => n + k - 1), e(lin(k + 1), (n) => n + k + 1), ...(k !== 0 ? [e("n", (n) => n)] : [])]],                    // 外角の分母
+      ],
+      tex: (a, b, c) => a.replace("X", fr(b, c)), val: (a, b, c) => (n) => a(b(n) / c(n)),
     },
   };
 }
@@ -111,26 +127,26 @@ const sameFn = (f, h) => [4, 5, 6, 7, 9, 10, 12].every((n) => Math.abs(f(n) - h(
 for (let k = 0; k <= 3; k++) {
   const P = exprParts(k);
   for (const key of ["A", "B"]) {
-    const Q = P[key], right = Q.val(Q.num[0].f, Q.den[0].f);
+    const Q = P[key], [p1, p2, p3] = Q.parts, right = Q.val(p1[0].f, p2[0].f, p3[0].f);
     if (!sameFn(right, P.true)) throw new Error(`正しい式が正しくない: k=${k} ${key}`);
-    for (const a of [Q.num[0], ...Q.num[1]]) for (const b of [Q.den[0], ...Q.den[1]]) {
-      if (a === Q.num[0] && b === Q.den[0]) continue;
-      if (sameFn(Q.val(a.f, b.f), P.true)) throw new Error(`正しい式と同じになる誤答: k=${k} ${key} ${a.tex} ${b.tex}`);
+    for (const a of [p1[0], ...p1[1]]) for (const b of [p2[0], ...p2[1]]) for (const c of [p3[0], ...p3[1]]) {
+      if (a === p1[0] && b === p2[0] && c === p3[0]) continue;
+      if (sameFn(Q.val(a.f, b.f, c.f), P.true)) throw new Error(`正しい式と同じになる誤答: k=${k} ${key} ${a.tex} ${b.tex} ${c.tex}`);
     }
   }
 }
 /** form＝"A"（分数の形）か "B"（180−外角 の形）が正解 */
 function exprQ(r, form) {
-  const k = pick(r, [0, 0, 1, 2, 3]), Q = exprParts(k)[form], tex = (a, b) => $(Q.tex(a.tex, b.tex));
-  const a2 = pick(r, Q.num[1]), b2 = pick(r, Q.den[1]), ans = tex(Q.num[0], Q.den[0]);
+  const k = pick(r, [0, 0, 1, 2, 3]), Q = exprParts(k)[form], [p1, p2, p3] = Q.parts, tex = (a, b, c) => $(Q.tex(a.tex, b.tex, c.tex));
+  const a2 = pick(r, p1[1]), b2 = pick(r, p2[1]), c2 = pick(r, p3[1]), a0 = p1[0], b0 = p2[0], c0 = p3[0], ans = tex(a0, b0, c0);
   const polyN = k === 0 ? "$n$" : `$(n+${k})$`;
   const steps = form === "A"
     ? [`正${polyN}角形の内角の和は　${$(times(180, k - 2))} 度。`, `内角は ${$(lin(k))} 個とも等しいので、内角の和を ${$(lin(k))} でわって　${ans} 度。`]
-    : [`正${polyN}角形の外角の和は 360° で、外角は ${$(lin(k))} 個とも等しいので、1つの外角は ${$(fr(360, lin(k)))} 度。`, `内角＝180°−外角 だから　${ans} 度。`];
+    : [`正${polyN}角形の外角の和は 360° で、外角は ${$(lin(k))} 個とも等しいので、1つの外角は ${$(fr(360, lin(k)))} 度。`, `内角は、180° から外角をひいた大きさだから　${ans} 度。`];
   return {
     q: `正 ${polyN} 角形の 1つの内角の大きさ（単位は度）を、$n$ を使って表した式は、次のうちどれか。`,
     ans,
-    choices: shuffle(r, [ans, tex(Q.num[0], b2), tex(a2, Q.den[0]), tex(a2, b2)]),
+    choices: shuffle(r, [ans, tex(a2, b2, c0), tex(a2, b0, c2), tex(a0, b2, c2)]),
     hint: "正多角形の 1つの内角は、どう求められたかな？ 内角の和や外角の和を、$n$ を使って表せないかな？",
     steps,
   };
@@ -258,9 +274,9 @@ export const UNITS = [
         t("06d07b", (r) => exprQ(r, "B")),
         // 06d07c 演習（7）n＝6 のとき、2つの式が同じ値になる → n＝○ のときの値
         t("06d07c", (r) => {
-          const n = pick(r, [5, 6, 8, 9, 10, 12, 15, 18, 20, 24]), a = 180 - 360 / n;
+          const n = pick(r, [5, 6, 8, 9, 10, 12, 15, 18, 20, 24, 30, 36, 40, 45]), a = 180 - 360 / n, F1 = $("\\frac{180(n-2)}{n}"), F2 = $("180-\\frac{360}{n}");
           return {
-            q: `正 $n$ 角形の 1つの内角の大きさは、${$("\\frac{180(n-2)}{n}")} 度とも、${$("180-\\frac{360}{n}")} 度とも表せる。$n=${n}$ のとき、この大きさは何度か。`,
+            q: pick(r, [`正 $n$ 角形の 1つの内角の大きさは、${F1} 度とも、${F2} 度とも表せる。$n=${n}$ のとき、この大きさは何度か。`, `正 $n$ 角形の 1つの内角の大きさを、2通りの式 ${F1} 度、${F2} 度で表した。$n=${n}$ のとき、2つの式は同じ値になる。その値は何度か。`]),
             ans: a,
             unit: "度",
             hint: "$n$ に数を入れて、2つの式を、それぞれ計算すると、どうなるかな？ 同じ値になるかな？",
@@ -272,12 +288,12 @@ export const UNITS = [
       4: [
         // 06d08a 演習（8）① 正三十六角形などの、1つの内角
         t("06d08a", (r) => {
-          const n = pick(r, [30, 36, 40, 45, 60, 72, 90]), e = 360 / n, a = 180 - e;
+          const n = pick(r, [18, 20, 24, 30, 36, 40, 45, 60, 72, 90]), e = 360 / n, a = 180 - e;
           return {
-            q: `${rgon(n)}の 1つの内角の大きさは？`,
+            q: pick(r, [`${rgon(n)}の 1つの内角の大きさは？`, `${rgon(n)}がある。その 1つの内角の大きさは？`]),
             ans: a,
             unit: "度",
-            hint: "1つの外角を先に求めたら、内角はどう求められるかな？ 同じ頂点で、内角と外角の和は何度だったかな？",
+            hint: "正多角形の 1つの内角は、どう求められたかな？ 同じ頂点で、内角と外角の和は何度だったかな？",
             steps: [`${rgon(n)}の 1つの外角は　360°÷${n}＝${e}°`, `1つの内角は　180°−${e}°＝${a}°`],
           };
         }),
@@ -310,7 +326,7 @@ function extApex(r, pool) {
     q: `${intro}辺 ${prev}${X} を ${X} の方へ、辺 ${next}${Y} を ${Y} の方へのばした 2本の直線の交点を ${P} とする。∠${X}${P}${Y} の大きさは？`,
     ans: apex,
     unit: "度",
-    hint: "正多角形の 1つの外角は、何度かな？ 辺をのばしてできる角は、この多角形の何にあたるかな？",
+    hint: `正多角形の 1つの角の大きさは、求められるかな？ ∠${X}${P}${Y} は、多角形の角とどう結びつくかな？`,
     steps: [`${rgon(n)}の 1つの外角は　360°÷${n}＝${e}°`, `∠${P}${X}${Y} は ${X} の外角、∠${P}${Y}${X} は ${Y} の外角だから、どちらも ${e}°`, `△${P}${X}${Y} の内角の和から　∠${X}${P}${Y}＝180°−${e}°−${e}°＝${apex}°`],
   };
 }

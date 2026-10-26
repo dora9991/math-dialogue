@@ -86,6 +86,36 @@ function fairPick(r, correct, pool, q = "", must = []) {
   return last;
 }
 
+/** 正解が、ほかの選択肢との似かたで、いちばん上でも、いちばん下でもない（正解が「みんなに似ている」「だれにも似ていない」で当たらない） */
+function simMiddle(opts, correct) {
+  const f = (o) => opts.reduce((s, p) => (p === o ? s : s + sim(o, p)), 0);
+  const vs = opts.map(f), c = f(correct);
+  return vs.some((v) => v > c + 1e-9) && vs.some((v) => v < c - 1e-9);
+}
+/** 誤答を、「どこをまちがえているか（tag）」がかさならないように選ぶ。items＝[{ t: 文, tag }]、pre＝先に決めた誤答（items の一部）。
+ *  正解だけが、長さ・数字・問題文の語・似かたで目立たないようにする */
+function pickByTag(r, correct, items, q = "", pre = []) {
+  const feats = (opts) => [
+    (o) => o.length,
+    (o) => digitsOf(o).filter((n) => digitsOf(q).includes(n)).length,
+    (o) => [...bigrams(o).keys()].filter((b) => bigrams(q).has(b)).length,
+    (o) => opts.reduce((s, p) => (p === o ? s : s + digitsOf(o).filter((n) => digitsOf(p).includes(n)).length), 0),
+  ];
+  let last = null;
+  for (let tries = 0; tries < 400; tries++) {
+    const used = new Set(pre.map((it) => it.tag)), pick3 = [...pre];
+    for (const it of shuffle(r, items.filter((x) => !pre.includes(x)))) {
+      if (pick3.length >= 3) break;
+      if (!used.has(it.tag)) { used.add(it.tag); pick3.push(it); }
+    }
+    if (pick3.length < 3) continue;
+    const opts = [correct, ...pick3.map((it) => it.t)].map(String);
+    last = pick3.map((it) => it.t);
+    if (noTell(feats(opts), opts, String(correct)) && (tries > 300 || simMiddle(opts, String(correct)))) return last;
+  }
+  return last || sample(r, items.map((it) => it.t), 3);
+}
+
 // ── 問題 ───────────────────────────────────────────────
 /** 03d01a 内角の和：2つの内角から、残りの内角 */
 function interior(r) {

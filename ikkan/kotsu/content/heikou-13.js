@@ -332,7 +332,7 @@ export const UNITS = [
         t("13q02b", (r) => {
           const N = namer(r, 4);
           const a = r(25, 70), b = r(50, 120), c = 180 - a - b;
-          if (c < 15 || c === a || c === b) return { skip: true };
+          if (c < 15 || c > 85 || c === a || c === b) return { skip: true };   // c＞90° だと、C でへこんだ（ダーツ形の）四角形になるので、さける
           return {
             q: N(`四角形 ABCD で、AB＝AD、∠BAC＝∠DAC である。∠BAC＝${a}°、∠ABC＝${b}° のとき、∠ACD の大きさは何度か。`),
             ans: c,
