@@ -457,51 +457,41 @@ function whyEqual(r) {
   let slots, fmt, extra;
   if (styleA) {
     slots = {
-      pair: [[`${T1}＋${M}`, `${T2}＋${M}`], [`${T1}＋${T2}`, `${M}＋${N}`], [`${T1}＋${M}`, `${T2}＋${N}`]],
+      pair: [[`${T1}＋${M}`, `${T2}＋${M}`], [`${T1}＋${T2}`, `${M}＋${N}`], [`${T1}＋${M}`, `${T2}＋${N}`], [`${T1}＋${M}`, `${T1}＋${T2}`]],
       val: ["一直線の角で 180°", "直角で 90°", "一周の角で 360°"],
       sub: [M, N],
-      concl: [eqc, `${T1}＝${M}`, `${T1}＋${T2}＝180°`],
+      concl: [eqc, `${M}＝${N}`, `${T1}＋${T2}＝180°`, `${T1}＝${M}`],
     };
     fmt = (o) => `${slots.pair[o.pair][0]} は一直線の角で 180°、${slots.pair[o.pair][1]} は${slots.val[o.val]} だから、${slots.sub[o.sub]} をひいて ${slots.concl[o.concl]} となる。`;
     extra = [   // 言い方がちがう誤答
-      `${T1} と ${M} と ${T2} は一直線にならぶので、${T1}＋${M}＋${T2}＝180° だから、${M} をひいて ${eqc} となる。`,
-      `${T1} と ${T2} は向かい合う角で、向かい合う角は一直線の角と同じ 180° だから、${M} をひいて ${eqc} となる。`,
-      `${T1}＋${M} は一直線の角で 180° だが、${T2} は ${M} と一直線にならないから、${eqc} とはいえない。`,
+      `${T1} と ${M} と ${T2} は一直線にならぶので、${T1}＋${M}＋${T2} は一直線の角で 180° だから、${M} をひいて ${eqc} となる。`,
+      `${T1} と ${T2} は向かい合う角で、向かい合う角は一直線の角で 180° だから、${M} をひいて ${eqc} となる。`,
+      `${T1}＋${M} は一直線の角で 180°、${T2} は ${M} と一直線にならない角で 180° だから、${M} をひいて ${eqc} となる。`,
     ];
   } else {
     slots = {
       pair: [[M, M], [N, M], [M, N]],   // 「T1 も T2 も、X と合わせると…、Y をひいて…」の X、Y（0番だけが正しい。N、N の組も正しいので使わない）
       val: ["一直線の角（180°）", "一周の角（360°）", "直角（90°）"],
       sub: [0],
-      concl: [eqc, `${T1}＋${T2}＝360°`, `${M}＝${N}`],
+      concl: [eqc, `${T1}＋${T2}＝360°`, `${M}＝${N}`, `${T1}＝${M}`],
     };
     fmt = (o) => `${T1} も ${T2} も、${slots.pair[o.pair][0]} と合わせると${slots.val[o.val]}になるから、${slots.pair[o.pair][1]} をひいて ${slots.concl[o.concl]} となる。`;
     extra = [
       `${T1} も ${T2} も、${T1} と ${M} と ${T2} を合わせると一直線の角（180°）になるから、${M} をひいて ${eqc} となる。`,
-      `${T1} と ${T2} は向かい合う角で、向かい合う角は一直線の角と同じ 180° だから、${M} をひいて ${eqc} となる。`,
-      `${T1} は ${M} と合わせると一直線の角（180°）になるが、${T2} は ${M} と合わせても一直線にならないから、${eqc} とはいえない。`,
+      `${T1} と ${T2} は向かい合う角で、向かい合うと一直線の角（180°）になるから、${M} をひいて ${eqc} となる。`,
+      `${T1} は ${M} と合わせると一直線の角（180°）になるが、${T2} は ${M} と合わせても一直線にならず 180°になるから、${M} をひいて ${eqc} となる。`,
     ];
   }
   const right = fmt({ pair: 0, val: 0, sub: 0, concl: 0 });
   const keys = Object.keys(slots).filter((k) => slots[k].length > 1);
   const mutate = (o, k) => { const v = pick(r, [...slots[k].keys()].filter((x) => x !== o[k])); return { ...o, [k]: v }; };
-  const maxName = (o) => { const m = new Map(); for (const t of o.match(/∠[A-Z]{3}/g) || []) m.set(t, (m.get(t) || 0) + 1); return Math.max(...m.values()); };
   const base = { pair: 0, val: 0, sub: 0, concl: 0 };
-  let chosen = null;
-  for (let tries = 0; tries < 200 && !chosen; tries++) {
-    const ks = shuffle(r, keys), b = mutate(base, ks[0]), w2 = mutate(r(0, 1) ? b : base, ks[1]);
-    const w3o = r(0, 2) === 0 ? null : mutate(r(0, 1) ? b : base, ks[2 % ks.length]);
-    const texts = [fmt(b), fmt(w2), w3o ? fmt(w3o) : pick(r, extra)];
-    if (new Set([right, ...texts]).size < 4) continue;
-    if (styleA) { if (fmt({ pair: 0, val: 0, sub: 1, concl: 0 }) === right) continue; }
-    // 正解と同じ（同じ角の名前を3回使う）誤答の数：Aでは1〜2つ、Bでは0〜1つ
-    const nThree = texts.filter((t) => maxName(t) >= 3).length;
-    if (styleA ? nThree < 1 || nThree > 2 : nThree > 1) continue;
-    const opts = [right, ...texts];
-    const feats = [(o) => o.length, (o) => digitsOf(o).filter((n) => digitsOf(q).includes(n)).length, (o) => [...bigrams(o).keys()].filter((g) => bigrams(q).has(g)).length];
-    if (noTell(feats, opts, right) && simMiddle(opts, right)) chosen = texts;
-  }
-  if (!chosen) chosen = sample(r, [fmt(mutate(base, "val")), fmt(mutate(base, "concl")), ...extra], 3);
+  // 誤答は「ふた組の双子」にする：（正解から1か所だけ変えたもの）と、（言い方のちがう誤答 d と、d から1か所だけ変えたもの d'）。正解だけが「みんなに似ている」ことにならない
+  const twin = fmt(mutate(base, pick(r, keys)));
+  const fam = pick(r, extra);
+  const famTwin = r(0, 1) ? fam.replace(/180°/g, pick(r, ["90°", "360°"])) : fam.replace(`${M} をひいて`, `${N} をひいて`);
+  let chosen = [twin, fam, famTwin];
+  if (new Set([right, ...chosen]).size < 4 || fam === famTwin) chosen = [fmt(mutate(base, "val")), fmt(mutate(base, "concl")), fam];
   return {
     q,
     ans: right,

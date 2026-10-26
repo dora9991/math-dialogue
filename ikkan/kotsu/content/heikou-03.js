@@ -40,8 +40,9 @@ const sumLin = (es) => es.reduce((s, e) => ({ p: s.p + e.p, q: s.q + e.q }), { p
 const solveParts = (P, Q, total, x) => [...(Q !== 0 ? [`${lin(P, Q)}=${total}`] : []), ...(P !== 1 ? [`${P}x=${total - Q}`] : []), `x=${x}`];
 
 /** 三角形の頂点の名前（△ABC など）。extra 個ぶん、ほかの点の名前も用意する */
-function tri(r, extra = 0) {
-  const base = pick(r, TRIS), rest = shuffle(r, PTS.filter((x) => !base.includes(x))).slice(0, extra);
+function tri(r, extra = 0, hasX = false) {
+  const bad = hasX ? "WXYZ" : "";           // 式に文字 x が出る問題では、点の名前に W・X・Y・Z を使わない（x とまぎらわしい）
+  const base = pick(r, TRIS.filter((v) => !v.some((c) => bad.includes(c)))), rest = shuffle(r, PTS.filter((c) => !base.includes(c) && !bad.includes(c))).slice(0, extra);
   return { V: base, A: base[0], B: base[1], C: base[2], rest, name: `△${base.join("")}` };
 }
 const rnd5 = (r, lo, hi) => lo + r(0, hi - lo);
@@ -156,8 +157,8 @@ function pair2(r) {
   return [40, 60];
 }
 /** 外角の図：頂点 V で、辺 UV を V の先へのばした直線上に点 D をとる（V は U と D のあいだ）。外角 ∠WVD は、V にとなり合わない内角 ∠U、∠W の和に等しい */
-function frameExt(r) {
-  const T = tri(r, 1), V = pick(r, T.V), rest = T.V.filter((x) => x !== V), U = pick(r, rest), W = rest.find((x) => x !== U), D = T.rest[0];
+function frameExt(r, hasX = false) {
+  const T = tri(r, 1, hasX), V = pick(r, T.V), rest = T.V.filter((x) => x !== V), U = pick(r, rest), W = rest.find((x) => x !== U), D = T.rest[0];
   return { T, V, U, W, D, intro: `${T.name} で、辺 ${U}${V} を ${V} の先へのばした直線上に点 ${D} をとる（${V} は ${U} と ${D} のあいだにある）。`, ext: `∠${W}${V}${D}` };
 }
 /** 03d02a 外角の性質：となり合わない2つの内角から、外角 */
@@ -210,7 +211,7 @@ function interiorEq(r, askMax) {
 /** 03d04 外角が数で、となり合わない2つの内角が x の式：x の値、または 1つの内角 */
 function extEq(r, askAngle) {
   for (let i = 0; i < 500; i++) {
-    const F = frameExt(r), x = r(5, 40), a = r(20, 90), b = r(20, 90), ext = a + b;
+    const F = frameExt(r, true), x = r(5, 40), a = r(20, 90), b = r(20, 90), ext = a + b;
     const e1 = pick(r, [1, 2, 3]), e2 = pick(r, [1, 2, 3]);
     const q1 = a - e1 * x, q2 = b - e2 * x;
     if (q1 === 0 || q2 === 0 || Math.abs(q1) > 40 || Math.abs(q2) > 40 || e1 === e2 || ext > 170) continue;
@@ -386,24 +387,45 @@ function auxProof(r) {
   const { T, D, E, A, B, C, head } = auxHead(r);
   const dab = `∠${D}${A}${B}`, eac = `∠${E}${A}${C}`;
   const X1 = [[`∠${B}`, `∠${C}`], [`∠${C}`, `∠${B}`]];          // ∠DAB＝?、∠EAC＝?（0 が正しい）
-  const W1 = ["平行線の錯角は等しい", "対頂角は等しい", "三角形の外角の性質", "平行線の同側内角の和は 180°", "平行な直線は交わらない"];   // 0 が正しい
+  const W1 = ["平行線の錯角は等しい", "平行線の同位角は等しい", "対頂角は等しい", "平行線の同側内角の和は 180°", "平行な直線は交わらない"];   // 0 が正しい
   const Y = [`${dab}＋∠${A}＋${eac}`, `${dab}＋∠${A}`, `${dab}＋${eac}`, `∠${B}＋∠${C}`];     // 0 が正しい
-  const W2 = ["一直線の角は 180°", "対頂角は等しい", "三角形の内角の和は 180°", "平行線の錯角は等しい"];   // 0 が正しい
+  const W2 = ["一直線の角は 180°", "一周の角は 360°", "三角形の内角の和は 180°", "平行線の錯角は等しい"];   // 0 が正しい
   const fmt = ([x, w1, y, w2]) => `${dab}＝${X1[x][0]}、${eac}＝${X1[x][1]}（${W1[w1]}）。${Y[y]}＝180°（${W2[w2]}）。`;
   const ans = fmt([0, 0, 0, 0]);
-  // 誤答：L＝ことがらの運び方がまちがい（根拠の言葉は正しい）、R＝根拠の言葉がまちがい。LとRをまぜる
-  const poolL = [], poolR = [];
-  for (let x = 0; x < 2; x++) for (let w1 = 0; w1 < W1.length; w1++) for (let y = 0; y < 4; y++) for (let w2 = 0; w2 < W2.length; w2++) {
-    const m = (x ? 1 : 0) + (w1 ? 1 : 0) + (y ? 1 : 0) + (w2 ? 1 : 0);
-    if (m < 1 || m > 2) continue;
-    (w1 === 0 && w2 === 0 ? poolL : poolR).push(fmt([x, w1, y, w2]));
-  }
-  const nL = r(1, 2), must = sample(r, poolL, nL);
+  // 誤答の作りかた：どの誤答も、正解から「1〜2か所」だけちがう（場所は、x＝対応のずれ／w1＝1つめの根拠／y＝和の式／w2＝2つめの根拠）。
+  // ・和の式の足りない誤答（y）は、0〜2個（ふつう1個）。ほとんどの誤答は、和の式は正しいまま、対応のずれ・根拠の言葉をまちがえる
+  // ・同じ場所を2つの誤答でまちがえるときも、まちがい方はべつにする（「これをふくむものを選ぶ」で当たらないように）
   const q = `${head}${T.name} の内角の和が 180° になるわけを説明する文として、次のうち正しいものはどれか。`;
+  const nVals = [1, W1.length - 1, Y.length - 1, W2.length - 1];
+  const feats = (opts) => [
+    (o) => o.length,
+    (o) => opts.reduce((s2, p2) => (p2 === o ? s2 : s2 + sim(o, p2)), 0),
+    (o) => digitsOf(o).filter((n) => digitsOf(q).includes(n)).length,
+    (o) => [...bigrams(o).keys()].filter((b2) => bigrams(q).has(b2)).length,
+  ];
+  const shareOdd = (a2, b2) => {      // 正解にない言いまわし（4文字）を、2つの誤答が共有していないか
+    for (let i = 0; i + 4 <= a2.length; i++) { const g = a2.slice(i, i + 4); if (b2.includes(g) && !ans.includes(g)) return true; }
+    return false;
+  };
+  const nN = pick(r, [0, 0, 1, 1, 1, 1, 2]);
+  let wrong = null;
+  for (let tries = 0; tries < 500; tries++) {
+    const specs = [0, 1, 2].map(() => sample(r, [0, 1, 2, 3], r(1, 2)).map((slot) => [slot, r(1, nVals[slot])]));
+    const cnt = [0, 0, 0, 0];
+    specs.forEach((sp) => sp.forEach(([slot]) => cnt[slot]++));
+    if (cnt[0] > 1 || cnt[2] !== nN || cnt[1] > (tries < 200 ? 1 : 2) || cnt[3] > (tries < 200 ? 1 : 2)) continue;
+    const w = specs.map((sp) => { const o = [0, 0, 0, 0]; sp.forEach(([slot, v]) => { o[slot] = v; }); return fmt(o); });
+    if (new Set(w).size < 3 || w.includes(ans)) continue;
+    wrong = w;
+    if (tries < 250 && w.some((a2, i) => w.some((b2, j) => j > i && shareOdd(a2, b2)))) continue;
+    const opts = [ans, ...w];
+    if (noTell(feats(opts), opts, ans)) break;
+  }
+  if (!wrong) wrong = [fmt([1, 0, 0, 0]), fmt([0, 1, 0, 0]), fmt([0, 0, 1, 0])];
   return {
     q,
     ans,
-    choices: choices4(r, ans, fairPick(r, ans, poolR, q, must)),
+    choices: choices4(r, ans, wrong),
     hint: `${dab} と等しい角は、どれかな？ 点 ${A} のまわりで、一直線にならぶ角は、どれとどれかな？`,
     steps: [`${D}${E}∥${B}${C} だから、錯角が等しく、${dab}＝∠${B}、${eac}＝∠${C}。`, `${D}、${A}、${E} は一直線上にあるので、${dab}＋∠${A}＋${eac}＝180°（一直線の角は 180°）。`, `よって、正しいのは「${ans}」。`],
   };

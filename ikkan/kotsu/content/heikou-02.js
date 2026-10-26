@@ -105,9 +105,9 @@ const ssi = (i) => (inner(i) ? { 2: 5, 3: 4, 4: 3, 5: 2 }[i] : -1);
 const adj = (i) => [idx(vtxOf(i), qd(i) + 1), idx(vtxOf(i), qd(i) + 3)];
 const sameClass = (i, j) => i % 2 === j % 2;
 
-/** 点の名前をつけて、8つの角の名前を決める。par＝true なら「ℓ∥m。」から始める */
-function trans(r, par = false) {
-  const [P, Q, A, B, C, D, E, F] = sample(r, PTS, 8);
+/** 点の名前をつけて、8つの角の名前を決める。par＝true なら「ℓ∥m。」から始める。hasX＝true（式に x が出る問題）なら、点の名前に W・X・Y・Z を使わない */
+function trans(r, par = false, hasX = false) {
+  const [P, Q, A, B, C, D, E, F] = sample(r, hasX ? PTS.filter((c) => !"WXYZ".includes(c)) : PTS, 8);
   const tri = [[A, P, E], [E, P, B], [B, P, Q], [Q, P, A], [C, Q, P], [P, Q, D], [D, Q, F], [F, Q, C]];
   const flip = tri.map(() => r(0, 1) === 1);
   const nm = (i) => { const [x, v, y] = tri[i]; return flip[i] ? `∠${y}${v}${x}` : `∠${x}${v}${y}`; };
@@ -135,17 +135,28 @@ function angleOptions(r, S, X, correct, pool) {
 }
 
 // ── ℓ∥m のとき、角の大きさを求める問題 ─────────────────────────────
-/** 02d01a・b 同位角（rel＝corr）・錯角（rel＝alt）：ℓ∥m のとき、2つの角の大きさの和 */
+/** 02d01a・b 同位角（rel＝corr）・錯角（rel＝alt）：ℓ∥m のとき、∠X＝a° から2つの角の大きさの和を求める形と、2つの角の和（2a°）から ∠X を求める形 */
 function parSum(r, rel) {
   const S = trans(r, true);
   const X = rel === "alt" ? pick(r, [2, 3, 4, 5]) : r(0, 7), Y = rel === "alt" ? alt(X) : corr(X), a = ang(r);
   const word = rel === "alt" ? "錯角" : "同位角";
+  const hint = `${S.nm(X)} と ${S.nm(Y)} は、それぞれどの点のどのあたりの角かな？ ℓ∥m のとき、この2つの角の大きさには、どんな関係があったかな？`;
+  const first = `${S.nm(X)} は${S.where(X)}、${S.nm(Y)} は${S.where(Y)}で、この2つは${word}。`;
+  if (r(0, 1) === 0) {
+    return {
+      q: `${S.intro}${S.nm(X)}＋${S.nm(Y)}＝${2 * a}° のとき、${S.nm(X)} の大きさは何度か。`,
+      ans: a,
+      unit: "度",
+      hint,
+      steps: [first, `ℓ∥m だから、${word}は等しく、${S.nm(X)}＝${S.nm(Y)}。`, `2つの角の和が ${2 * a}° だから、$${2 * a}\\div 2=${a}$ より、${S.nm(X)}＝${a}°。`],
+    };
+  }
   return {
     q: `${S.intro}${S.nm(X)}＝${a}° のとき、${S.nm(X)} と ${S.nm(Y)} の大きさの和は何度か。`,
     ans: 2 * a,
     unit: "度",
-    hint: `${S.nm(X)} と ${S.nm(Y)} は、それぞれどの点のどのあたりの角かな？ ℓ∥m のとき、この2つの角の大きさには、どんな関係があったかな？`,
-    steps: [`${S.nm(X)} は${S.where(X)}、${S.nm(Y)} は${S.where(Y)}で、この2つは${word}。`, `ℓ∥m だから、${word}は等しく、${S.nm(Y)}＝${S.nm(X)}＝${a}°。`, `和は $${a}+${a}=${2 * a}$ より、${2 * a}°。`],
+    hint,
+    steps: [first, `ℓ∥m だから、${word}は等しく、${S.nm(Y)}＝${S.nm(X)}＝${a}°。`, `和は $${a}+${a}=${2 * a}$ より、${2 * a}°。`],
   };
 }
 /** 02d03a・02q01c ℓ∥m：∠X＝a° のとき、ちがう交点の、和が 180° になる角（同位角→一直線の2回の関係） */
@@ -194,7 +205,8 @@ const TYPES = {
   "alt=": { par: true, word: "錯角" },
   "corr!": { par: false, word: "同位角" },
   "alt!": { par: false, word: "錯角" },
-  "ssi=": { par: false, word: "同側" },
+  "ssi!": { par: false, word: "同側" },       // 内側の同じがわの角で、値は等しくない（和も 180° ではない）
+  "oth=": { par: false, word: "その他" },     // 同位角でも錯角でもない位置の角で、値は等しい（等しくても、平行とはいえない）
   "corr180": { par: false, word: "同位角" },
   "alt180": { par: false, word: "錯角" },
 };
@@ -202,7 +214,11 @@ const TYPES = {
 function mkCond(r, type) {
   const innerX = type.startsWith("alt") || type.startsWith("ssi");
   const x = innerX ? pick(r, [2, 3, 4, 5]) : r(0, 7);
-  const y = type.startsWith("alt") ? alt(x) : type.startsWith("ssi") ? ssi(x) : corr(x);
+  let y;
+  if (type.startsWith("alt")) y = alt(x);
+  else if (type.startsWith("ssi")) y = ssi(x);
+  else if (type === "oth=") y = pick(r, [idx(1 - vtxOf(x), qd(x) + 1), idx(1 - vtxOf(x), qd(x) + 3)].filter((j) => j !== ssi(x)));    // ちがう交点で、番号の偶奇がちがう角（内側の同じがわの角は除く）
+  else y = corr(x);
   const a = ang(r, 30, 150);
   let vy = a;
   if (type.endsWith("!")) { const d = pick(r, [-1, 1]) * r(6, 40); vy = a + d; if (vy < 20 || vy > 160 || vy === 90) vy = a - d; }
@@ -215,17 +231,19 @@ const condText = (S, c) => `${S.nm(c.x)}＝${c.vx}°、${S.nm(c.y)}＝${c.vy}°`
 /** 条件が ℓ∥m を言えるか／言えないかの、わけ（「…ので」につなぐ形） */
 const condWhy = (S, c) => {
   const w = TYPES[c.type].word, two = `${S.nm(c.x)} と ${S.nm(c.y)}`;
-  if (c.type === "ssi=") return `${two} は内側の同じがわの角で、同位角でも錯角でもない`;
+  if (c.type === "ssi!") return `${two} は内側の同じがわの角で、同位角でも錯角でもない`;
+  if (c.type === "oth=") return `${two} は、同位角でも錯角でもない位置の角で、等しくても平行の条件にならない`;
   if (TYPES[c.type].par) return `${two} は${w}で、どちらも ${c.vx}° で等しい`;
   return `${two} は${w}だが、${c.vx}° と ${c.vy}° で等しくない`;
 };
-/** 条件を n 個つくる（par の個数を指定）。同じ角の組を2回使わない */
-function condSet(r, S, nPar, nTotal, forceSsi = false) {
+/** 条件を nTotal 個つくる（平行といえるものを nPar 個、同位角・錯角ではないのに値が等しい誤りを nEq 個、残りは値が合わない誤り）。同じ角の組を2回使わない */
+function condSet(r, S, nPar, nTotal, nEq = 0) {
+  const UNEQ = ["corr!", "alt!", "corr180", "alt180", "ssi!", "ssi!"];
   for (let t1 = 0; t1 < 300; t1++) {
     const types = [
       ...Array.from({ length: nPar }, () => pick(r, ["corr=", "alt="])),
-      ...(forceSsi && nTotal - nPar > 0 ? ["ssi="] : []),
-      ...Array.from({ length: nTotal - nPar - (forceSsi && nTotal - nPar > 0 ? 1 : 0) }, () => pick(r, ["corr!", "alt!", "corr180", "alt180", "ssi="])),
+      ...Array.from({ length: nEq }, () => "oth="),
+      ...Array.from({ length: nTotal - nPar - nEq }, () => pick(r, UNEQ)),
     ];
     const cs = types.map((ty) => mkCond(r, ty));
     if (cs.some((c) => !c)) continue;
@@ -238,7 +256,7 @@ function condSet(r, S, nPar, nTotal, forceSsi = false) {
 /** 02d02a・02q02 4つの条件のうち、ℓ∥m といえるものを選ぶ4択 */
 function judgeChoice(r) {
   for (let i = 0; i < 100; i++) {
-    const S = trans(r, false), cs = condSet(r, S, 1, 4, true);
+    const S = trans(r, false), cs = condSet(r, S, 1, 4, pick(r, [1, 2, 2, 3, 3]));
     if (!cs) continue;
     const ok = cs.find((c) => TYPES[c.type].par), opts = cs;
     const ans = condText(S, ok);
@@ -262,7 +280,7 @@ function judgeChoice(r) {
 /** 02d02b 3つの条件ア〜ウのうち、ℓ∥m といえるものはいくつあるか */
 function judgeCount(r) {
   for (let i = 0; i < 100; i++) {
-    const S = trans(r, false), k = pick(r, [1, 1, 2, 2, 3]), cs = condSet(r, S, k, 3, false);
+    const S = trans(r, false), k = pick(r, [1, 1, 2, 2, 3]), cs = condSet(r, S, k, 3, r(0, 3 - k));
     if (!cs) continue;
     const order = shuffle(r, cs), LET = ["ア", "イ", "ウ"];
     const parNames = order.map((c, j) => (TYPES[c.type].par ? LET[j] : null)).filter(Boolean);
@@ -283,26 +301,42 @@ function judgeCount(r) {
 const MATCH = [[["a", "c"], ["b", "d"]], [["a", "b"], ["c", "d"]], [["a", "d"], ["b", "c"]]];
 const matchText = (m) => m.map(([x, y]) => `${x}∥${y}`).join(" と ");
 function fourLines(r) {
-  for (let i = 0; i < 200; i++) {
-    const mi = r(0, 2), M = MATCH[mi], v = ang(r, 35, 145);
-    let w = r(0, 2) === 0 ? 180 - v : ang(r, 35, 145);
-    if (w === v) continue;
-    const val = {}; M[0].forEach((l) => (val[l] = v)); M[1].forEach((l) => (val[l] = w));
-    const side = {}; ["a", "b", "c", "d"].forEach((l) => (side[l] = r(0, 2) === 0 ? "左上" : "右上"));
-    const nLeft = Object.values(side).filter((s) => s === "左上").length;
+  const L = ["a", "b", "c", "d"], NONE = "どの組も平行ではない";
+  for (let i = 0; i < 400; i++) {
+    const none = r(0, 3) === 0;       // 4回に1回くらいは、平行な組が1つもない（答えは「どの組も平行ではない」）
+    const side = {};
+    let mi = -1, M = null, val = {};
+    if (!none) {
+      mi = r(0, 2); M = MATCH[mi];
+      const v = ang(r, 35, 145), w = r(0, 2) === 0 ? 180 - v : ang(r, 35, 145);
+      if (w === v) continue;
+      M[0].forEach((l) => (val[l] = v)); M[1].forEach((l) => (val[l] = w));
+      L.forEach((l) => (side[l] = r(0, 2) === 0 ? "左上" : "右上"));
+    } else if (r(0, 2) < 2) {
+      // 見かけの数がそろう組（左右がちがう2本が、同じ数に見える）をわざと入れる。でも実は、右上の角にそろえると等しくない
+      const T = MATCH[r(0, 2)], g1 = ang(r, 35, 145), g2 = ang(r, 35, 145);
+      if (g1 === g2 || g1 + g2 === 180) continue;
+      L.forEach((l) => (side[l] = null));
+      [[T[0], g1], [T[1], g2]].forEach(([pair, g]) => { const left = r(0, 1); side[pair[left]] = "左上"; side[pair[1 - left]] = "右上"; val[pair[left]] = 180 - g; val[pair[1 - left]] = g; });
+    } else {
+      const vs = sample(r, Array.from({ length: 111 }, (_, k) => 35 + k).filter((k) => k !== 90), 4);
+      L.forEach((l, k) => { val[l] = vs[k]; side[l] = r(0, 1) === 0 ? "左上" : "右上"; });
+    }
+    const nLeft = Object.values(side).filter((s2) => s2 === "左上").length;
     if (nLeft < 1 || nLeft > 2) continue;
-    const given = {}; ["a", "b", "c", "d"].forEach((l) => (given[l] = side[l] === "右上" ? val[l] : 180 - val[l]));
-    if (new Set(Object.values(given)).size < 3) continue;   // 同じ数が3つ以上ならぶ組は使わない
-    const ans = matchText(M), wrongs = [...MATCH.filter((_, j) => j !== mi).map(matchText), "どの組も平行ではない"];
-    const desc = ["a", "b", "c", "d"].map((l) => `${l} は${side[l]}の角が ${given[l]}°`).join("、");
+    const given = {}; L.forEach((l) => (given[l] = side[l] === "右上" ? val[l] : 180 - val[l]));
+    if (!none && new Set(Object.values(given)).size < 3) continue;   // 同じ数が3つ以上ならぶ組は使わない
+    if (none && new Set(Object.values(val)).size < 4) continue;       // 平行な組がない：右上の角にそろえた4つの数は、すべてちがう
+    const ans = none ? NONE : matchText(M), wrongs = none ? MATCH.map(matchText) : [...MATCH.filter((_, j) => j !== mi).map(matchText), NONE];
+    const desc = L.map((l) => `${l} は${side[l]}の角が ${given[l]}°`).join("、");
     return {
       q: `直線 n に、4本の直線 a、b、c、d が、上から順に交わっている。各直線が n と交わる点のまわりの角のうち、n の上のほうにあって、その直線の右がわにある角を「右上の角」、左がわにある角を「左上の角」とよぶ。${desc}。平行な直線の組として、正しいものはどれか。`,
       ans,
       choices: choices4(r, ans, wrongs),
       hint: "2直線が平行になる条件は、何だったかな？ くらべる角の位置は、そろっているかな？",
       steps: [
-        `右上の角にそろえる。${["a", "b", "c", "d"].map((l) => (side[l] === "右上" ? `${l} … ${given[l]}°` : `${l} … $180-${given[l]}=${val[l]}$ より ${val[l]}°`)).join("、")}。`,
-        `同位角が等しい直線の組は平行だから、${ans}。`,
+        `右上の角にそろえる。${L.map((l) => (side[l] === "右上" ? `${l} … ${given[l]}°` : `${l} … $180-${given[l]}=${val[l]}$ より ${val[l]}°`)).join("、")}。`,
+        none ? "右上の角（同位角）が等しい直線の組は、1つもないので、平行な組はない。" : `同位角が等しい直線の組は平行だから、${ans}。`,
       ],
     };
   }
@@ -364,7 +398,7 @@ function zz(r, mode) {
 /** 02d06a・b ℓ∥m：∠X＝(px+q)°、∠Y＝(rx+s)° のとき、x（または∠X の大きさ） */
 function parEq(r, askAngle) {
   for (let i = 0; i < 300; i++) {
-    const S = trans(r, true), x = r(5, 35), a = ang(r, 30, 150);
+    const S = trans(r, true, true), x = r(5, 35), a = ang(r, 30, 150);
     const X = r(0, 7), Y = pick(r, [0, 1, 2, 3, 4, 5, 6, 7].filter((j) => vtxOf(j) !== vtxOf(X)));
     const eq = sameClass(X, Y), vy = eq ? a : 180 - a;
     // 等しい組は、同位角か錯角のどちらか（そのまま使える組）だけ
@@ -415,7 +449,7 @@ const FALSE_ST = [
 ];
 function stmtChoice(r) {
   const askTrue = r(0, 1) === 0;   // 「正しいもの」を選ぶ問いと、「正しくないもの」を選ぶ問いがある
-  const q = askTrue ? "次のうち、正しいものはどれか。（正しいものは、1つだけ）" : "次のうち、正しくないものはどれか。（正しくないものは、1つだけ）";
+  const q = askTrue ? "2直線に1つの直線が交わるとき、次のうち、正しいものはどれか。（正しいものは、1つだけ）" : "2直線に1つの直線が交わるとき、次のうち、正しくないものはどれか。（正しくないものは、1つだけ）";
   const A = askTrue ? TRUE_ST : FALSE_ST, B = askTrue ? FALSE_ST : TRUE_ST, T = pick(r, A);
   const Fs = fairPick(r, T[0], B.map((f) => f[0]), q).map((txt) => B.find((f) => f[0] === txt));
   return {

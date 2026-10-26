@@ -7,8 +7,8 @@
 //   「2組の辺と、その間にない角」「1組の辺と1組の角」「2辺だけ」は、かならず合同とはいえない（反例がある）。「1組の辺と、両端でない 2つの角」は、内角の和から残りの角が等しくなるので、合同といえる。
 //   3組の角が等しい場合は、授業計画で「この時間では扱わない」ので、問題・選択肢・要点に出さない。
 //   dr.4（作図して辺の長さを測る）は、作図・測定ができないので SKIPPED。dr.8（コンパスで通り数を調べる）は、「何通りかけるか」を数で答える問題にした（C から半直線までの距離を言って、円との交わり方で決まるものだけ）。
-//   「3通り答えよう」「すべて選ぼう」「条件を書こう」は、組を選ぶ4択・いくつあるかの数・1つ選ぶ4択にした。
-//   4択は、選択肢の形（長さ・ほかの選択肢との似かた・語の出かた）だけで正解が当たらないように、t() が作り直す。
+//   「3通り答えよう」（dr.5）は、あと 1つ加える候補ア〜エのうち、かならず合同といえる 3つの組を選ぶ4択にした。「2通り答えよう」（dr.3）は、2つの組を選ぶ4択。「すべて選ぼう」「条件を書こう」は、いくつあるかの数・1つ選ぶ4択にした。
+//   4択は、選択肢の形（長さ・ほかの選択肢との似かた・語の出かた）だけで正解が当たらないように、t() が作り直す。答えを先にきめる問題（09d03・09q01b・09q05a/b）は、答えは作り直さず、ほかの選択肢だけを作り直す。
 // ============================================================
 import { t as t0, pick, choices4, shuffle } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
@@ -146,7 +146,7 @@ function vertexNames(r) { const n = pick(r, ["ABC", "ABC", "DEF", "PQR", "XYZ", 
 const angPair = (x, y) => { const [p, q] = [x, y].sort(); return `∠${p} と ∠${q}`; };
 const sidePair = (x, y) => { const [p, q] = [x, y].sort(); return `辺 ${p} と辺 ${q}`; };
 /** 辺 AB と辺 AC の間の角／辺 BC の両端の角／∠B をはさむ 2辺。
- *  誤答には、正解に出てくる文字・辺も混ぜる（文字や辺の出かただけで、正解がわからないように） */
+ *  誤答には、正解に出てくる文字・辺も混ぜる（文字や辺の出かただけで、正解がわからないように）。∠B（真ん中の頂点）のときも出る */
 function termQ(r, kind) {
   const V = vertexNames(r), tri = V.join(""), nm = (x, y) => [x, y].sort().join("");
   const [v, u, w] = shuffle(r, V);
@@ -171,13 +171,15 @@ function termQ(r, kind) {
       steps: [`辺 ${sUW} の両はしの頂点は、頂点 ${[u, w].sort().join("、")}。`, `辺 ${sUW} の両端の角は　${ans}。`],
     };
   }
-  const right = sidePair(sUV, sVW);
+  // ∠v をはさむ 2辺。選択肢の 2辺の並べ方は、選択肢ごとにばらばらにする（アルファベット順にすると、真ん中の頂点のとき、正解だけが「ほかの 2つと似た形」になるため）
+  const sp = (x, y) => { const [p, q] = r(0, 1) ? [x, y] : [y, x]; return `辺 ${p} と辺 ${q}`; };
+  const right = sp(sUV, sVW);
   return {
     q: `△${tri} で、∠${v} をはさむ 2辺は、次のうちどれか。`,
     ans: right,
-    choices: choices4(r, right, [sidePair(sUV, sUW), sidePair(sVW, sUW), `辺 ${pick(r, [sUV, sVW])}`]),
+    choices: choices4(r, right, [sp(sUV, sUW), sp(sVW, sUW), `辺 ${sUW}`]),
     hint: "角を「はさむ」2辺とは、どんな辺のことだったかな？",
-    steps: [`頂点 ${v} を通る辺は、辺 ${sUV} と辺 ${sVW}。`, `∠${v} をはさむ 2辺は　${right}。`],
+    steps: [`頂点 ${v} を通る辺は、辺 ${sUV} と辺 ${sVW}。`, `∠${v} をはさむ 2辺は　${sidePair(sUV, sVW)}。（辺 ${sUW} は、∠${v} の向かい側の辺で、頂点 ${v} を通らない。）`],
   };
 }
 
@@ -192,9 +194,13 @@ function pairQ(r) {
   for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) pairs.push([cand[i], cand[j]]);
   const good = pairs.filter((p) => p[0].ok && p[1].ok);
   if (good.length !== 1) throw new Error("どちらを加えても合同といえる組が 1つでない");
-  const bads = shuffle(r, pairs.filter((p) => p !== good[0])).slice(0, 3);
   const txt = (p) => `${p[0].k}と${p[1].k}`;
   const ans = txt(good[0]);
+  let bads = shuffle(r, pairs.filter((p) => p !== good[0])).slice(0, 3);
+  for (let i = 0; i < 80; i++) {   // 答え（正しい組）はそのまま、ほかの 3つの組だけを作り直す（答えのかたよりが出ないように）
+    bads = shuffle(r, pairs.filter((p) => p !== good[0])).slice(0, 3);
+    if (cueFree([ans, ...bads.map(txt)], ans)) break;
+  }
   return {
     q: `△${N.t1} と △${N.t2} で、${base.map((x) => x.txt).join("、")} がわかっている。あと 1つ、次のア〜エのどれかを加えて考える。${cand.map((x) => `　${x.k} ${x.it.txt}`).join("")}　次の組のうち、どちらを加えても、かならず △${N.t1}≡△${N.t2} といえるものは、どれか。`,
     ans,
@@ -219,7 +225,7 @@ function countQ(r) {
   const askValid = r(0, 1) === 0, ans = items.filter((x) => x.ok === askValid).length;
   const KANA = "アイウエ";
   return {
-    q: `△${N.t1} と △${N.t2} で、${base.map((x) => x.txt).join("、")} がわかっている。あと 1つ、次のア〜エのうちの 1つを加えて考える。${items.map((x, i) => `　${KANA[i]} ${x.it.txt}`).join("")}　このうち、加えると、${askValid ? "かならず" : "かならずしも"} △${N.t1}≡△${N.t2} と${askValid ? "いえるもの" : "いえるとはかぎらないもの"}は、いくつあるか。`,
+    q: `△${N.t1} と △${N.t2} で、${base.map((x) => x.txt).join("、")} がわかっている。あと 1つ、次のア〜エのうちの 1つを加えて考える。${items.map((x, i) => `　${KANA[i]} ${x.it.txt}`).join("")}　このうち、${askValid ? `加えると、かならず △${N.t1}≡△${N.t2} といえるもの` : `加えても、△${N.t1}≡△${N.t2} とはかぎらないもの`}は、いくつあるか。`,
     ans, unit: "つ",
     hint: "合同条件は 3つあったね。それぞれを加えたとき、そのどれかにあてはまるかな？",
     steps: [
@@ -228,23 +234,24 @@ function countQ(r) {
     ],
   };
 }
-/** 2辺＋その間にない角（SSA）になるとき、合同といえるとはかぎらないわけ（4択）。「間の角である／ない」×「あてはまる／あてはまらない」を、言い方をかえて 2×2 にそろえる */
-function reasonQ(r) {
-  const N = names(r), [u, w, v] = shuffle(r, [0, 1, 2]);   // 辺 uw と角 u、あとから辺 wv を加える → 2辺 uw・wv は w で出会い、角 u は間の角ではない
-  const base = [sideI(r, N, u, w), angI(N, u)], add = sideI(r, N, w, v);
-  const cl = classify(N, [...base, add]);
-  if (cl.type !== "SSA" || cl.a !== u || cl.b !== w) throw new Error("SSA にならない");
-  const s1 = sideNm(N, u, w), s2 = sideNm(N, w, v), A = `∠${N.X[u]}`;
-  const NOTB = ["間の角ではない", "間の角になっていない"], BETW = ["間の角である", "間の角になっている"];
-  const SASX = ["2組の辺とその間の角にあてはまる", "「2組の辺とその間の角」の合同条件になる"], NONEX = ["どの合同条件にもあてはまらない", "合同条件のどれにもあてはまらない"];
-  const mk = (between, sas) => `等しい角 ${A} は、等しい 2辺 ${s1}、${s2} の${pick(r, between ? BETW : NOTB)}ので、${pick(r, sas ? SASX : NONEX)}から。`;
-  const ans = mk(false, false);
+/** あと 1つ、何がわかれば合同か（dr.5「3通り」）：1辺と、その片はしの角がわかっている。あと 1つ加える候補ア〜エのうち、かならず合同といえる 3つを選ぶ（選択肢は「ア、イ、ウ」など、3つの組。どの組も、候補を 1つずつ外した形） */
+function tripleQ(r) {
+  const N = names(r), [u, w, v] = shuffle(r, [0, 1, 2]);   // 辺 uw と、頂点 u の角がわかっている
+  const base = [sideI(r, N, u, w), angI(N, u)];
+  const KANA = "アイウエ";
+  const items = shuffle(r, [sideI(r, N, u, v), angI(N, w), angI(N, v), sideI(r, N, w, v)]).map((it, i) => { const cl = classify(N, [...base, it]); return { it, ok: cl.ok, k: KANA[i], why: explain(N, cl).slice(-1)[0] }; });
+  if (items.filter((x) => !x.ok).length !== 1) throw new Error("加えても合同といえないものが 1つでない");
+  const grp = (omit) => items.filter((x) => x !== omit).map((x) => x.k).join("、");
+  const bad = items.find((x) => !x.ok), ans = grp(bad);
   return {
-    q: `△${N.t1} と △${N.t2} で、${base.map((x) => x.txt).join("、")} がわかっている。これに ${add.txt} を加えても、△${N.t1}≡△${N.t2} といえるとはかぎらない。そのわけとして、正しいものはどれか。`,
+    q: `△${N.t1} と △${N.t2} で、${base.map((x) => x.txt).join("、")} がわかっている。あと 1つ、次のア〜エのうちの 1つを加えて考える。${items.map((x) => `　${x.k} ${x.it.txt}`).join("")}　このうち、加えると、かならず △${N.t1}≡△${N.t2} といえるものを、すべて選ぶとき、正しい組はどれか。`,
     ans,
-    choices: choices4(r, ans, [mk(true, true), mk(true, false), mk(false, true)]),
-    hint: "合同条件は 3つあったね。わかっている条件は、そのどれかにあてはまるかな？ 等しい角は、等しい辺のどこにあるのかな？",
-    steps: [...explain(N, cl), `正しいわけは「${ans}」。ほかの選択肢は、${A} が 2辺の間の角だと言っていたり、2組の辺とその間の角にあてはまると言っていたりして、まちがっている。`],
+    choices: choices4(r, ans, items.filter((x) => x.ok).map(grp)),
+    hint: "合同条件は 3つあったね。ア〜エを 1つずつ加えてみて、そのどれかにあてはまるか、たしかめてみよう。",
+    steps: [
+      ...items.map((x) => `${x.k} ${x.it.txt} … ${x.why}（${x.ok ? "合同といえる" : "かならずしも合同とはいえない"}）`).reduce((acc, line, i) => { if (i % 2 === 0) acc.push(line); else acc[acc.length - 1] += `　${line}`; return acc; }, []),
+      `かならず合同といえるのは ${ans} の 3つ。`,
+    ],
   };
 }
 
@@ -266,7 +273,7 @@ function listQ(r, wantValid) {
   if ([...valids, ...invalids].some((x) => !x)) return { skip: true };
   const ans = wantValid ? valids[0] : invalids[0], wrongs = wantValid ? invalids : valids;
   return {
-    q: `△${N.t1} と △${N.t2} について、次の 4つのうち、${wantValid ? "それがわかれば、かならず" : "それがわかっても、かならずしも"} △${N.t1}≡△${N.t2} と${wantValid ? "いえるもの" : "いえるとはかぎらないもの"}は、どれか。`,
+    q: `△${N.t1} と △${N.t2} について、次の 4つのうち、${wantValid ? `それがわかれば、かならず △${N.t1}≡△${N.t2} といえるもの` : `それがわかっても、△${N.t1}≡△${N.t2} とはかぎらないもの`}は、どれか。`,
     ans: ans.txt,
     choices: choices4(r, ans.txt, wrongs.map((x) => x.txt)),
     hint: "合同条件は 3つあったね。それぞれの条件が、そのどれかにあてはまるかな？ そのままでは、あてはまらないときは、ほかの条件が出せないかな？",
@@ -305,7 +312,7 @@ function circleQ(r) {
 
 // ── 等しい辺・角がこれだけのとき、合同といえるか（チャレンジ）──────────────────────────
 /** same＝true：1辺と、2つの角（のこりの角は内角の和で等しい）→ いえる。false：2つの角だけ（等しい辺がない）→ いえない。
- *  言い方（「内角の和から」「それぞれ」などの有無）を、選択肢ごとにかえて、長さや語で答えがわからないようにする */
+ *  4つの選択肢は、ちがう形の理由にして、同じ言葉（両端・内角の和・1組の辺など）を、正解にも誤りにも入れる。言い方（「内角の和から」「それぞれ」などの有無）も、選択肢ごとにかえる */
 function q05(r, same) {
   const N = names(r), [u, w, o] = shuffle(r, [0, 1, 2]), X = N.X, Y = N.Y;
   const items = same ? [sideI(r, N, u, w), angI(N, u), angI(N, o)] : [angI(N, u), angI(N, o)];
@@ -315,9 +322,9 @@ function q05(r, same) {
   if (same) {
     ans = `いえる。${op("内角の和から ")}${dd} がいえるので、1組の辺とその両端の角が${op("、それぞれ")}等しくなるから。`;
     ws = [
+      `いえる。${dd} がいえるので、2組の辺とその間の角が${op("、それぞれ")}等しくなるから。`,
       `いえる。${op("内角の和から ")}${dd} がいえるので、3組の辺が${op("、それぞれ")}等しくなるから。`,
-      `いえない。${op("内角の和を使っても ")}${dd} とはいえず、${NOC()}から。`,
-      `いえない。等しい辺は 1組だけで、${dd} も${op("いえないので、")}いえず、${NOC()}から。`.replace("いえずいえず", "いえず").replace("もいえないので、いえず", "もいえず"),
+      `いえない。${op("内角の和から ")}${dd} がいえても、等しい角の位置が辺の両端ではないので、${NOC()}から。`,
     ];
     steps = [
       `${X[u]}${X[w]}＝${Y[u]}${Y[w]}、∠${X[u]}＝∠${Y[u]}、∠${X[o]}＝∠${Y[o]} がわかっている。`,
@@ -327,9 +334,9 @@ function q05(r, same) {
   } else {
     ans = `いえない。${op("内角の和から ")}${dd} がいえても、等しい辺が${op("1組も")}ないので、${NOC()}から。`;
     ws = [
-      `いえない。等しい角は 2組だけで、のこりの角は等しくならないので、${NOC()}から。`,
-      `いえない。${op("内角の和から ")}${dd} がいえても、合同条件は等しい辺が 2組以上ないと使えないので、あてはまらないから。`,
       `いえる。${op("内角の和から ")}${dd} がいえるので、1組の辺とその両端の角が${op("、それぞれ")}等しくなるから。`,
+      `いえない。${dd} がいえるかどうかは、${op("内角の和を使っても、")}わからないので、${NOC()}から。`,
+      `いえる。${dd} がいえるので、等しい辺がなくても、辺の両端の角が${op("、それぞれ")}等しいといえて、合同条件にあてはまるから。`,
     ];
     steps = [
       `∠${X[u]}＝∠${Y[u]}、∠${X[o]}＝∠${Y[o]} がわかっているだけで、等しい辺がわかっていない。`,
@@ -365,7 +372,7 @@ export const UNITS = [
         // 09d01b 演習（1）② 辺 BC の両端の角
         t("09d01b", (r) => termQ(r, "ends")),
         // 09d01c 演習（1）③ ∠B をはさむ 2辺
-        t("09d01c", (r) => termQ(r, "sandwich")),
+        tn("09d01c", (r) => termQ(r, "sandwich")),
         // 09d02 演習（2）条件から合同条件（①②③）。ときどき、どの合同条件にもあてはまらない条件も出す
         tn("09d02", (r) => condChoice(r, ["SSS", "SAS", "ASA", "SSS", "SAS", "ASA", "SSA"])),
         // 09q01a 小テスト（1）合同条件として正しいもの
@@ -379,13 +386,19 @@ export const UNITS = [
             steps: [`三角形の合同条件は、「${LBL.SSS}」「${LBL.SAS}」「${LBL.ASA}」の 3つ。`, `正しいのは「${ans}」。ほかの選択肢は、条件が足りなかったり、角の位置がちがったりして、かならず合同とはいえない。`],
           };
         }),
-        // 09q01b 小テスト（1）合同条件でないもの
-        t("09q01b", (r) => {
-          const ans = wording(r, pick(r, FALSE5));
+        // 09q01b 小テスト（1）合同条件でないもの（答えになる条件は、先に等しい確率できめ、言い方だけを作り直す。三角形の周・面積は、誤答の選択肢としてだけ使う）
+        t0("09q01b", (r) => {
+          const F6 = FALSE5.slice(0, 6), base = pick(r, [F6[0], F6[4], F6[1], F6[1], F6[2], F6[2], F6[3], F6[3], F6[5], F6[5]]);   // 「〜にない」の入った条件が、答えになりすぎないように、そうでない条件を 2倍の重みにする
+          let ans, choices;
+          for (let i = 0; i < 80; i++) {
+            ans = wording(r, base);
+            choices = choices4(r, ans, TRUE3.map((x) => wording(r, x)));
+            if (cueFree(choices, ans)) break;
+          }
           return {
             q: "次のうち、三角形の合同条件ではないものはどれか。",
             ans,
-            choices: choices4(r, ans, TRUE3.map((x) => wording(r, x))),
+            choices,
             hint: HINT_3,
             steps: [`三角形の合同条件は、「${LBL.SSS}」「${LBL.SAS}」「${LBL.ASA}」の 3つ。`, `合同条件ではないのは「${ans}」。この条件だけでは、かならず合同とはいえない。`],
           };
@@ -406,8 +419,8 @@ export const UNITS = [
       ],
       // ───────── 3 応用 ─────────
       3: [
-        // 09d05 演習（5）2辺と、その間にない角が等しいとき、合同といえるとはかぎらないわけ（正しい説明を選ぶ4択）
-        t("09d05", (r) => reasonQ(r)),
+        // 09d05 演習（5）あと 1つ、何がわかれば合同といえるか（3通り）→ かならず合同といえる 3つの組を選ぶ4択
+        tn("09d05", (r) => tripleQ(r)),
         // 09d06a 演習（6）対応する角の大きさ
         t("09d06a", (r) => {
           const N = names(r), type = pick(r, ["SSS", "SAS", "ASA"]), c = cond(r, N, type);
