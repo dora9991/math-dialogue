@@ -25,7 +25,7 @@ const ctx = { console };
 ctx.window = ctx;
 vm.createContext(ctx);
 const dataDir = fs.readdirSync(path.join(root, 'data'));
-const files = ['js/vendor/qrcode.js', 'js/core.js', 'js/qr.js', 'js/figs.js', 'js/figs3d.js', 'js/plan.js', 'js/rec.js', 'js/plansheet.js', 'data/lessons.js',
+const files = ['js/vendor/qrcode.js', 'js/core.js', 'js/qr.js', 'js/figs.js', 'js/geo.js', 'js/figs3d.js', 'js/plan.js', 'js/rec.js', 'js/plansheet.js', 'data/lessons.js',
   ...dataDir.filter(f => /^ws_.*\.js$/.test(f)).sort().map(f => 'data/' + f),
   ...dataDir.filter(f => /^lesson_.*\.js$/.test(f)).sort().map(f => 'data/' + f)];
 for (const f of files) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });

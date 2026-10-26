@@ -43,7 +43,7 @@ const ctx = { console };
 ctx.window = ctx;
 vm.createContext(ctx);
 const dataDir = fs.readdirSync(path.join(IKKAN, "data"));
-for (const f of ["js/vendor/qrcode.js", "js/core.js", "js/qr.js", "js/figs.js", "js/figs3d.js", "js/plan.js", "js/rec.js", "js/plansheet.js", "data/lessons.js",
+for (const f of ["js/vendor/qrcode.js", "js/core.js", "js/qr.js", "js/figs.js", "js/geo.js", "js/figs3d.js", "js/plan.js", "js/rec.js", "js/plansheet.js", "data/lessons.js",
   ...dataDir.filter((f) => /^ws_.*\.js$/.test(f)).sort().map((f) => "data/" + f),
   ...dataDir.filter((f) => /^lesson_.*\.js$/.test(f)).sort().map((f) => "data/" + f)]) vm.runInContext(fs.readFileSync(path.join(IKKAN, f), "utf8"), ctx, { filename: f });
 const catalog = new Map(ctx.IK.rec.catalog(KEYS).map((c) => [c.id, c]));
