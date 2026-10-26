@@ -41,6 +41,13 @@ const t = (id, build) => t0(id, (r) => {
   }
   return p && typeof p.ans === "number" && ((p.q.match(/\d+/g) || []).map(Number)).includes(p.ans) ? { skip: true } : p;
 });
+/** 型をいくつか混ぜる問題：まず型を 1つえらんでから、その型の中だけで作り直す（作り直しの検査で、型の出る割合がかたよらないように） */
+const tMix = (id, builders) => t0(id, (r) => {
+  const f = pick(r, builders);
+  let p;
+  for (let i = 0; i < 80; i++) { p = f(r); if (!p || p.skip || !p.choices || cueFree(p.choices, p.ans)) break; }
+  return p;
+});
 /** 「正しい／まちがい」の言い方は、選択肢ごとにばらばらにえらぶ（言い方で正解がわからないように） */
 const YES = ["等しい", "同じ", "一致する"], NO = ["等しくない", "異なる", "一致しない"];
 
@@ -328,28 +335,29 @@ function ribbonWhy(r) {
   };
 }
 
-/** 折れ線 A−E−C で ∠AEC＝∠PAE＋∠QCE になる理由を選ぶ4択（文の中の 2か所に、錯角か、ほかの言葉が入る。文の形は 2通り） */
+/** 折れ線 A−E−C で ∠AEC＝∠PAE＋∠QCE になる理由を選ぶ4択（文の中の 2か所に、正しい言葉か、まちがった言葉が入る。文の形は 2通り） */
 function zigWhy(r) {
   const sd = side2(r);
   let a, c;
   do { a = r(20, 65); c = r(20, 65); } while (a === c || 2 * a + c > 170 || a + 2 * c > 170);
   const e = a + c;
   const cell = pick(r, [
-    (x, y) => `E を通り ${x}をひくと、∠PAE と ∠QCE の${y}が、∠AEC を 2つに分けるから。`,
-    (x, y) => `${x}を E を通るようにひくと、∠PAE の${y}と ∠QCE の${y}が、あわせて ∠AEC になるから。`,
+    (x, y) => `E を通る、${x}をひくと、∠PAE と ∠QCE の${y}が、∠AEC を 2つに分けるから。`,
+    (x, y) => `点 E で、${x}をひき、∠AEC を 2つに分けると、∠PAE と ∠QCE の${y}ができるから。`,
   ]);
   const ans = cell("ℓ に平行な直線", "錯角");
   const shown = wrongCells(r, ["ℓ に平行な直線", "ℓ に垂直な直線"], ["錯角", "同位角", "対頂角"]);
+  const notes = [shown.some((c2) => c2[0] !== "ℓ に平行な直線") ? "ℓ に垂直な直線では、平行線の性質が使えない" : "", shown.some((c2) => c2[1] !== "錯角") ? "∠AEC の中にできるのは錯角で、同位角や対頂角は ∠AEC の中にできない" : ""].filter(Boolean);
   return {
     q: `${LM}ℓ 上に点 A と、A より${sd}の点 P、m 上に点 C と、C より${sd}の点 Q をとり、ℓ と m のあいだに点 E をとる。A と E、E と C を線分で結ぶ。∠PAE＝${a}°、∠QCE＝${c}° のとき、∠AEC＝${e}° となる。そのわけとして、正しいものはどれか。`,
     ans,
-    choices: choices4(r, ans, shown.map((c) => cell(c[0], c[1]))),
+    choices: choices4(r, ans, shown.map((c2) => cell(c2[0], c2[1]))),
     hint: "∠PAE と ∠QCE を、∠AEC の中にうつして考えるには、どんな線が役に立ったかな？ そのとき等しくなる角は、何という角かな？",
     steps: [
       "E を通り、ℓ に平行な直線をひく。",
       `平行線の錯角は等しいから、∠AEC は、∠PAE の錯角（${a}°）と、∠QCE の錯角（${c}°）に分けられる。`,
       `∠AEC＝${a}°+${c}°＝${e}°。正しいわけは「${ans}」`,
-      "同位角や対頂角は、E を通る平行線では、∠AEC の中にできない。だから、ほかの選択肢は誤り。",
+      `ほかの選択肢が誤りなのは、${notes.join("；")}から。`,
     ],
   };
 }
@@ -439,7 +447,7 @@ export const UNITS = [
         // 07d05a 演習（5）① リボン形の角
         t("07d05a", (r) => ribbon(r)),
         // 07d05b 演習（5）② ∠A+∠B＝∠C+∠D になるわけ（正しいわけを選ぶ4択）。ときどき、折れ線 A−E−C で ∠AEC＝∠PAE+∠QCE になるわけも聞く
-        t("07d05b", (r) => (r(0, 2) === 0 ? zigWhy(r) : ribbonWhy(r))),
+        tMix("07d05b", [zigWhy, ribbonWhy, ribbonWhy]),
       ],
       // ───────── 4 入試レベル ─────────
       4: [
