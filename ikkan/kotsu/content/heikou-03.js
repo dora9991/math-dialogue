@@ -64,7 +64,16 @@ function noTell(feats, opts, correct) {
     return !(hi === 0 && lo === 3) && !(lo === 0 && hi === 3);
   });
 }
-const bigrams = (s) => { const t2 = String(s).replace(/\s/g, ""), m = new Map(); for (let i = 0; i < t2.length - 1; i++) m.set(t2.slice(i, i + 2), (m.get(t2.slice(i, i + 2)) || 0) + 1); return m; };
+const BG_CACHE = new Map();
+const bigrams = (s) => {
+  const key = String(s);
+  if (BG_CACHE.has(key)) return BG_CACHE.get(key);
+  if (BG_CACHE.size > 4000) BG_CACHE.clear();
+  const t2 = key.replace(/\s/g, ""), m = new Map();
+  for (let i = 0; i < t2.length - 1; i++) m.set(t2.slice(i, i + 2), (m.get(t2.slice(i, i + 2)) || 0) + 1);
+  BG_CACHE.set(key, m);
+  return m;
+};
 /** 文字列どうしの似かた（2文字ずつの一致の割合） */
 const sim = (a, b) => { const A = bigrams(a), B = bigrams(b); let i = 0, u = 0; for (const x of new Set([...A.keys(), ...B.keys()])) { i += Math.min(A.get(x) || 0, B.get(x) || 0); u += Math.max(A.get(x) || 0, B.get(x) || 0); } return u ? i / u : 0; };
 const digitsOf = (s) => String(s).match(/\d+/g) || [];
@@ -102,7 +111,7 @@ function pickByTag(r, correct, items, q = "", pre = []) {
     (o) => opts.reduce((s, p) => (p === o ? s : s + digitsOf(o).filter((n) => digitsOf(p).includes(n)).length), 0),
   ];
   let last = null;
-  for (let tries = 0; tries < 400; tries++) {
+  for (let tries = 0; tries < 150; tries++) {
     const used = new Set(pre.map((it) => it.tag)), pick3 = [...pre];
     for (const it of shuffle(r, items.filter((x) => !pre.includes(x)))) {
       if (pick3.length >= 3) break;
@@ -111,7 +120,7 @@ function pickByTag(r, correct, items, q = "", pre = []) {
     if (pick3.length < 3) continue;
     const opts = [correct, ...pick3.map((it) => it.t)].map(String);
     last = pick3.map((it) => it.t);
-    if (noTell(feats(opts), opts, String(correct)) && (tries > 300 || simMiddle(opts, String(correct)))) return last;
+    if (noTell(feats(opts), opts, String(correct)) && (tries > 100 || simMiddle(opts, String(correct)))) return last;
   }
   return last || sample(r, items.map((it) => it.t), 3);
 }

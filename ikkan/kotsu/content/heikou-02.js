@@ -57,7 +57,16 @@ function noTell(feats, opts, correct) {
     return !(hi === 0 && lo === 3) && !(lo === 0 && hi === 3);
   });
 }
-const bigrams = (s) => { const t2 = String(s).replace(/\s/g, ""), m = new Map(); for (let i = 0; i < t2.length - 1; i++) m.set(t2.slice(i, i + 2), (m.get(t2.slice(i, i + 2)) || 0) + 1); return m; };
+const BG_CACHE = new Map();
+const bigrams = (s) => {
+  const key = String(s);
+  if (BG_CACHE.has(key)) return BG_CACHE.get(key);
+  if (BG_CACHE.size > 4000) BG_CACHE.clear();
+  const t2 = key.replace(/\s/g, ""), m = new Map();
+  for (let i = 0; i < t2.length - 1; i++) m.set(t2.slice(i, i + 2), (m.get(t2.slice(i, i + 2)) || 0) + 1);
+  BG_CACHE.set(key, m);
+  return m;
+};
 /** 文字列どうしの似かた（2文字ずつの一致の割合） */
 const sim = (a, b) => { const A = bigrams(a), B = bigrams(b); let i = 0, u = 0; for (const x of new Set([...A.keys(), ...B.keys()])) { i += Math.min(A.get(x) || 0, B.get(x) || 0); u += Math.max(A.get(x) || 0, B.get(x) || 0); } return u ? i / u : 0; };
 const digitsOf = (s) => String(s).match(/\d+/g) || [];

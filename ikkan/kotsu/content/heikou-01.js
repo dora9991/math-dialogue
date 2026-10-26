@@ -50,7 +50,16 @@ function noTell(feats, opts, correct) {
     return !(hi === 0 && lo === 3) && !(lo === 0 && hi === 3);
   });
 }
-const bigrams = (s) => { const t2 = String(s).replace(/\s/g, ""), m = new Map(); for (let i = 0; i < t2.length - 1; i++) m.set(t2.slice(i, i + 2), (m.get(t2.slice(i, i + 2)) || 0) + 1); return m; };
+const BG_CACHE = new Map();
+const bigrams = (s) => {
+  const key = String(s);
+  if (BG_CACHE.has(key)) return BG_CACHE.get(key);
+  if (BG_CACHE.size > 4000) BG_CACHE.clear();
+  const t2 = key.replace(/\s/g, ""), m = new Map();
+  for (let i = 0; i < t2.length - 1; i++) m.set(t2.slice(i, i + 2), (m.get(t2.slice(i, i + 2)) || 0) + 1);
+  BG_CACHE.set(key, m);
+  return m;
+};
 /** 文字列どうしの似かた（2文字ずつの一致の割合） */
 const sim = (a, b) => { const A = bigrams(a), B = bigrams(b); let i = 0, u = 0; for (const x of new Set([...A.keys(), ...B.keys()])) { i += Math.min(A.get(x) || 0, B.get(x) || 0); u += Math.max(A.get(x) || 0, B.get(x) || 0); } return u ? i / u : 0; };
 const digitsOf = (s) => String(s).match(/\d+/g) || [];
@@ -88,7 +97,7 @@ function pickByTag(r, correct, items, q = "", pre = []) {
     (o) => opts.reduce((s, p) => (p === o ? s : s + digitsOf(o).filter((n) => digitsOf(p).includes(n)).length), 0),
   ];
   let last = null;
-  for (let tries = 0; tries < 400; tries++) {
+  for (let tries = 0; tries < 150; tries++) {
     const used = new Set(pre.map((it) => it.tag)), pick3 = [...pre];
     for (const it of shuffle(r, items.filter((x) => !pre.includes(x)))) {
       if (pick3.length >= 3) break;
@@ -97,7 +106,7 @@ function pickByTag(r, correct, items, q = "", pre = []) {
     if (pick3.length < 3) continue;
     const opts = [correct, ...pick3.map((it) => it.t)].map(String);
     last = pick3.map((it) => it.t);
-    if (noTell(feats(opts), opts, String(correct)) && (tries > 300 || simMiddle(opts, String(correct)))) return last;
+    if (noTell(feats(opts), opts, String(correct)) && (tries > 100 || simMiddle(opts, String(correct)))) return last;
   }
   return last || sample(r, items.map((it) => it.t), 3);
 }
@@ -440,53 +449,63 @@ function bisectSupp(r) {
 /** 01q03 「一直線の角」を使った説明（対頂角が等しいわけ）を選ぶ4択 */
 function whyEqual(r) {
   const X = cross2(r), i = r(0, 3), c = pick(r, [1, 3]), T1 = X.nm(i), T2 = X.nm(i + 2), M = X.nm(i + c), N = X.nm(i + 4 - c);   // M＝ひく角、N＝もう一方のとなりの角（どちらをひいても正しい説明になる）
-  // 述べ方は2通り。A＝「T1＋M は…、T2＋M は…」（同じ角の名前が3回出る）、B＝「T1 も T2 も、M と合わせると一直線の角になるから…」（2回まで）。
-  // 正解も誤答も、どちらの述べ方でも、同じ角の名前が3回出るものと2回のものがある。誤答は、まちがえている場所（tag）がかさならないように選ぶ
-  const styleA = r(0, 1) === 0;
   const eqc = `${T1}＝${T2}`;
-  let right, thrice, others;
-  const it = (t, tag) => ({ t, tag });
+  const q = `${X.intro}対頂角 ${T1} と ${T2} が等しいことを、一直線の角の大きさを使って説明したい。正しい説明は、次のうちどれか。`;
+  // 述べ方は2通り。A＝「T1＋M は…、T2＋M は…」（同じ角の名前が3回出る）、B＝「T1 も T2 も、M と合わせると…」（2回まで）。
+  // 説明の部品（スロット）ごとに、正しい形（0番）とまちがった形をもち、誤答は「正解から1〜2か所だけ変えたもの」を、正解がまん中に見えないように組み合わせる
+  const styleA = r(0, 1) === 0;
+  let slots, fmt, extra;
   if (styleA) {
-    const mk = (a1, k1, a2, k2, sub, concl) => `${a1} は${k1}、${a2} は${k2} だから、${sub} をひいて ${concl} となる。`;
-    const L = "一直線の角で 180°";
-    right = mk(`${T1}＋${M}`, L, `${T2}＋${M}`, L, M, eqc);
-    thrice = [
-      it(mk(`${T1}＋${M}`, L, `${T2}＋${M}`, "直角で 90°", M, eqc), "value"),
-      it(mk(`${T1}＋${M}`, L, `${T2}＋${M}`, "一周の角で 360°", M, eqc), "value"),
-      it(`${T1} と ${M} と ${T2} は一直線にならぶので、${T1}＋${M}＋${T2}＝180° だから、${M} をひいて ${eqc} となる。`, "form"),
-      it(mk(`${T1}＋${M}`, L, `${T2}＋${M}`, L, M, `${T1}＝${M}`), "concl"),
-      it(mk(`${T1}＋${M}`, L, `${T2}＋${M}`, L, M, `${T1}＋${T2}＝180°`), "concl"),
-    ];
-    others = [
-      it(mk(`${T1}＋${T2}`, L, `${M}＋${N}`, L, M, eqc), "pair"),             // 一直線にならない組を足している
-      it(mk(`${T1}＋${M}`, L, `${T2}＋${N}`, L, M, eqc), "second"),            // 2つ目の式に ${M} がない
-      it(mk(`${T1}＋${M}`, L, `${T2}＋${M}`, L, N, eqc), "sub"),               // 式にない角をひいている
-      it(`${T1} と ${T2} は向かい合う角で、向かい合う角は一直線の角と同じ 180° だから、${M} をひいて ${eqc} となる。`, "form"),
-      it(`${T1}＋${M} は一直線の角で 180° だが、${T2} は ${M} と一直線にならないから、${eqc} とはいえない。`, "concl"),
+    slots = {
+      pair: [[`${T1}＋${M}`, `${T2}＋${M}`], [`${T1}＋${T2}`, `${M}＋${N}`], [`${T1}＋${M}`, `${T2}＋${N}`]],
+      val: ["一直線の角で 180°", "直角で 90°", "一周の角で 360°"],
+      sub: [M, N],
+      concl: [eqc, `${T1}＝${M}`, `${T1}＋${T2}＝180°`],
+    };
+    fmt = (o) => `${slots.pair[o.pair][0]} は一直線の角で 180°、${slots.pair[o.pair][1]} は${slots.val[o.val]} だから、${slots.sub[o.sub]} をひいて ${slots.concl[o.concl]} となる。`;
+    extra = [   // 言い方がちがう誤答
+      `${T1} と ${M} と ${T2} は一直線にならぶので、${T1}＋${M}＋${T2}＝180° だから、${M} をひいて ${eqc} となる。`,
+      `${T1} と ${T2} は向かい合う角で、向かい合う角は一直線の角と同じ 180° だから、${M} をひいて ${eqc} となる。`,
+      `${T1}＋${M} は一直線の角で 180° だが、${T2} は ${M} と一直線にならないから、${eqc} とはいえない。`,
     ];
   } else {
-    right = `${T1} も ${T2} も、${M} と合わせると一直線の角（180°）になるから、${M} をひいて ${eqc} となる。`;
-    thrice = [   // この述べ方でも、同じ角の名前を3回使う誤答を入れる
-      it(`${T1} と ${M} を合わせても、${T1} と ${N} を合わせても一直線の角（180°）になるから、${T1} をひいて ${M}＝${N} となる。`, "concl"),
-      it(`${T1} も ${T2} も、${T1} と ${M} と ${T2} を合わせると一直線の角（180°）になるから、${M} をひいて ${eqc} となる。`, "form"),
-    ];
-    others = [
-      it(`${T1} も ${T2} も、${M} と合わせると一周の角（360°）になるから、${M} をひいて ${eqc} となる。`, "value"),
-      it(`${T1} も ${T2} も、${M} と合わせると直角（90°）になるから、${M} をひいて ${eqc} となる。`, "value"),
-      it(`${T1} も ${T2} も、${N} と合わせると一直線の角（180°）になるから、${M} をひいて ${eqc} となる。`, "sub"),   // ひく角がずれている
-      it(`${T1} と ${T2} は向かい合う角で、向かい合う角は一直線の角と同じ 180° だから、${M} をひいて ${eqc} となる。`, "form"),
-      it(`${T1} は ${M} と合わせると一直線の角（180°）になるが、${T2} は ${M} と合わせても一直線にならないから、${eqc} とはいえない。`, "concl"),
-      it(`${T1} も ${T2} も、${M} と合わせると一直線の角（180°）になるから、${M} をたして ${T1}＋${T2}＝360° となる。`, "concl"),
+    slots = {
+      pair: [[M, M], [N, M], [M, N]],   // 「T1 も T2 も、X と合わせると…、Y をひいて…」の X、Y（0番だけが正しい。N、N の組も正しいので使わない）
+      val: ["一直線の角（180°）", "一周の角（360°）", "直角（90°）"],
+      sub: [0],
+      concl: [eqc, `${T1}＋${T2}＝360°`, `${M}＝${N}`],
+    };
+    fmt = (o) => `${T1} も ${T2} も、${slots.pair[o.pair][0]} と合わせると${slots.val[o.val]}になるから、${slots.pair[o.pair][1]} をひいて ${slots.concl[o.concl]} となる。`;
+    extra = [
+      `${T1} も ${T2} も、${T1} と ${M} と ${T2} を合わせると一直線の角（180°）になるから、${M} をひいて ${eqc} となる。`,
+      `${T1} と ${T2} は向かい合う角で、向かい合う角は一直線の角と同じ 180° だから、${M} をひいて ${eqc} となる。`,
+      `${T1} は ${M} と合わせると一直線の角（180°）になるが、${T2} は ${M} と合わせても一直線にならないから、${eqc} とはいえない。`,
     ];
   }
-  const q = `${X.intro}対頂角 ${T1} と ${T2} が等しいことを、一直線の角の大きさを使って説明したい。正しい説明は、次のうちどれか。`;
-  const pre = [];   // 同じ角を3回使う誤答を、1〜2つ入れる（まちがえている場所は、かさならない）
-  for (const x of shuffle(r, thrice)) if (pre.length < (r(0, 2) < 2 ? 2 : 1) && !pre.some((y) => y.tag === x.tag)) pre.push(x);
-  const choicesWrong = pickByTag(r, right, [...thrice, ...others], q, pre);
+  const right = fmt({ pair: 0, val: 0, sub: 0, concl: 0 });
+  const keys = Object.keys(slots).filter((k) => slots[k].length > 1);
+  const mutate = (o, k) => { const v = pick(r, [...slots[k].keys()].filter((x) => x !== o[k])); return { ...o, [k]: v }; };
+  const maxName = (o) => { const m = new Map(); for (const t of o.match(/∠[A-Z]{3}/g) || []) m.set(t, (m.get(t) || 0) + 1); return Math.max(...m.values()); };
+  const base = { pair: 0, val: 0, sub: 0, concl: 0 };
+  let chosen = null;
+  for (let tries = 0; tries < 200 && !chosen; tries++) {
+    const ks = shuffle(r, keys), b = mutate(base, ks[0]), w2 = mutate(r(0, 1) ? b : base, ks[1]);
+    const w3o = r(0, 2) === 0 ? null : mutate(r(0, 1) ? b : base, ks[2 % ks.length]);
+    const texts = [fmt(b), fmt(w2), w3o ? fmt(w3o) : pick(r, extra)];
+    if (new Set([right, ...texts]).size < 4) continue;
+    if (styleA) { if (fmt({ pair: 0, val: 0, sub: 1, concl: 0 }) === right) continue; }
+    // 正解と同じ（同じ角の名前を3回使う）誤答の数：Aでは1〜2つ、Bでは0〜1つ
+    const nThree = texts.filter((t) => maxName(t) >= 3).length;
+    if (styleA ? nThree < 1 || nThree > 2 : nThree > 1) continue;
+    const opts = [right, ...texts];
+    const feats = [(o) => o.length, (o) => digitsOf(o).filter((n) => digitsOf(q).includes(n)).length, (o) => [...bigrams(o).keys()].filter((g) => bigrams(q).has(g)).length];
+    if (noTell(feats, opts, right) && simMiddle(opts, right)) chosen = texts;
+  }
+  if (!chosen) chosen = sample(r, [fmt(mutate(base, "val")), fmt(mutate(base, "concl")), ...extra], 3);
   return {
     q,
     ans: right,
-    choices: choices4(r, right, choicesWrong),
+    choices: choices4(r, right, chosen),
     hint: `${T1} と ${T2} は、それぞれ、どの角と一直線にならんでいるかな？ 共通の角はどれかな？`,
     steps: [
       `${T1} と ${M} は一直線にならぶので、${T1}＋${M}＝180°。${T2} と ${M} も一直線にならぶので、${T2}＋${M}＝180°。`,
