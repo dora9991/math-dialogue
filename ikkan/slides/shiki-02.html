@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>式の計算　第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:3px solid #2b3647;padding:6px 14px}   /* 表の罫線は、色ではなく、はっきりした濃い線（プロジェクターでも見える） */
+#deck th{background:#eceff4}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="s02-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">第1時の重要語句から、1人1問ずつ、言葉を選んで出題する。<br>聞かれた人は、その言葉の意味を、自分の言葉で言う。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">単項式</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">多項式</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">項</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">係数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">次数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">1次式・2次式</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">式の計算　第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+<aside>【導入 3分】前時（第1時）の重要語句を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト 7分（前時分。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="s02-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+</div>
+<h2 style="font-size:56px;font-weight:700;line-height:1.3;color:#1E3A5F">文字が2種類でも、同類項をまとめて、<br>たし算・ひき算をしよう</h2>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:28px 48px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+<p style="font-size:46px;font-weight:500;line-height:1.4">1冊 <i>a</i> 円のノートと、1本 <i>b</i> 円のペンを買う。</p>
+</div>
+<p style="font-size:46px;font-weight:500;line-height:1.4">A 班は、ノート 3冊とペン 2本を買う。</p>
+<p style="font-size:46px;font-weight:500;line-height:1.4">B 班は、ノート 5冊とペン 4本を買う。</p>
+<p style="font-size:46px;font-weight:500;line-height:1.4">（1）2つの班の代金の合計を、式で表そう。</p>
+<p style="font-size:46px;font-weight:500;line-height:1.4">（2）B 班の代金は、A 班の代金より何円多いかを、式で表そう。</p>
+</div>
+<p style="font-size:40px;line-height:1.5;color:#1F2A37">【自分の考え】（1）（2）の式と、簡単にした形を書こう。ペアと見くらべよう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+<aside>【解説 4分・学習課題】めあてを書く。2つの班の代金の合計と差を、式で表す。個人で考え、ペアで交換する。発問：合計は、どんな式になるだろう。／B班は、A班より何円多い？　式にすると？　想定される反応：ノートどうし、ペンどうしをまとめて 8a+6b。差は 2a+2b。留意：14ab とした人は、ペアと比べさせる。確かめ方は、考えようで使う。</aside>
+</section>
+<section id="s02-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+</div>
+<p style="font-size:44px;line-height:1.5;color:#6B7480">（1）2つの班の代金の合計　（2）B 班は、A 班より何円多いか</p>
+<div style="display:flex;flex-direction:row;gap:28px;align-items:stretch">
+<div style="display:flex;flex-direction:column;gap:8px;flex:1;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:28px 40px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">（1）合計</p>
+<p style="font-size:48px;line-height:1.4;color:#C0392B">(3<i>a</i>+2<i>b</i>)+(5<i>a</i>+4<i>b</i>)</p>
+<p style="font-size:48px;line-height:1.4;color:#C0392B">＝3<i>a</i>+5<i>a</i>+2<i>b</i>+4<i>b</i></p>
+<p style="font-size:38px;line-height:1.4;color:#C0392B">←ノートどうし、ペンどうし</p>
+<p style="font-size:52px;font-weight:700;line-height:1.4;color:#C0392B">＝8<i>a</i>+6<i>b</i>（円）</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;flex:1;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:28px 40px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">（2）B 班−A 班</p>
+<p style="font-size:48px;line-height:1.4;color:#C0392B">(5<i>a</i>+4<i>b</i>)−(3<i>a</i>+2<i>b</i>)</p>
+<p style="font-size:48px;line-height:1.4;color:#C0392B">＝5<i>a</i>+4<i>b</i>−3<i>a</i>−2<i>b</i></p>
+<p style="font-size:52px;font-weight:700;line-height:1.4;color:#C0392B">＝2<i>a</i>+2<i>b</i>（円）</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+<aside>【解説 4分・学習課題のまとめ】いくつかのペアの式を聞いて、板書にまとめる。ノートどうし、ペンどうしをまとめる考えを取り上げる。14ab とした人は、ペアと比べさせる。確かめ方は、考えようで使う。赤い字は、先生の板書。</aside>
+</section>
+<section id="s02-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:30px 56px">
+<p style="font-size:46px;line-height:1.5"><u>　　　　　</u> … 文字の部分が同じ項。　3<i>a</i> と 5<i>a</i>、2<i>xy</i> と −7<i>xy</i> など</p>
+<p style="font-size:46px;line-height:1.5">同類項は、分配法則で 1つの項に <u>　　　　　　</u> ことができる。</p>
+<p style="font-size:46px;line-height:1.5">　　3<i>a</i>+5<i>a</i>＝(3+5)<i>a</i>＝8<i>a</i></p>
+<p style="font-size:46px;line-height:1.5">かっこの前が − のときは、<br>　　かっこの中の各項の <u>　　　　</u> を変えてはずす。</p>
+<p style="font-size:46px;line-height:1.5">　　−(2<i>x</i>−5<i>y</i>)＝−2<i>x</i>+<u>　　　　</u></p>
+<p style="font-size:46px;line-height:1.5">加法は、かっこをはずして、同類項をまとめる。</p>
+<p style="font-size:46px;line-height:1.5">減法は、ひく式の各項の符号を変えて、加える。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+<aside>【解説 3分・ことば】「ノートどうし、ペンどうし」の考えに、同類項と名前をつける。分配法則を確かめる。空欄は、先生が言ってから書かせる。発問：3a と 5a は、なぜまとめられるのだろう。　想定される反応：空欄に書き込む。留意：重要語句は、先生が言い切る。</aside>
+</section>
+<section id="s02-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:30px 56px">
+<p style="font-size:46px;line-height:1.5"><span style="color:#C0392B"><b>同類項</b></span> … 文字の部分が同じ項。　3<i>a</i> と 5<i>a</i>、2<i>xy</i> と −7<i>xy</i> など</p>
+<p style="font-size:46px;line-height:1.5">同類項は、分配法則で 1つの項に <span style="color:#C0392B"><b>まとめる</b></span> ことができる。</p>
+<p style="font-size:46px;line-height:1.5">　　3<i>a</i>+5<i>a</i>＝(3+5)<i>a</i>＝8<i>a</i></p>
+<p style="font-size:46px;line-height:1.5">かっこの前が − のときは、<br>　　かっこの中の各項の <span style="color:#C0392B"><b>符号</b></span> を変えてはずす。</p>
+<p style="font-size:46px;line-height:1.5">　　−(2<i>x</i>−5<i>y</i>)＝−2<i>x</i>+<span style="color:#C0392B"><b>5<i>y</i></b></span></p>
+<p style="font-size:46px;line-height:1.5">加法は、かっこをはずして、同類項をまとめる。</p>
+<p style="font-size:46px;line-height:1.5">減法は、ひく式の各項の符号を変えて、加える。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。3a と 5a は、文字の部分が同じ（同類項）なので、分配法則で 1つの項にまとめられる。−( ) をはずすときは、かっこの中の全部の項の符号を変える。</aside>
+</section>
+<section id="s02-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+</div>
+<p style="font-size:52px;font-weight:500;line-height:1.5">次の計算をしよう。</p>
+<div style="display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:3px solid #1B7F5C;border-radius:20px;padding:36px 56px">
+<p style="font-size:56px;line-height:1.5">（1）(4<i>x</i>+<u>　　</u><i>y</i>)+(2<i>x</i>−<u>　　</u><i>y</i>)</p>
+<p style="font-size:56px;line-height:1.5">（2）(4<i>x</i>+<u>　　</u><i>y</i>)−(2<i>x</i>−<u>　　</u><i>y</i>)</p>
+</div>
+<p style="font-size:40px;line-height:1.5;color:#6B7480">【くらべよう】（1）と（2）で、かっこをはずしたあとの、ちがうところを見つけよう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+<aside>【解説 5分・例題】(4x+3y)+(2x−5y) と、ひき算を計算し、かっこのはずし方をくらべる。空欄の数は、先生が言ってから書かせる。発問：（1）と（2）で、かっこをはずしたあとの、ちがいは？　想定される反応：加法はそのまま。減法は、ひく式の各項の符号を変える。留意：縦に書く方法は、演習プリントの標準で扱う。</aside>
+</section>
+<section id="s02-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:28px;align-items:stretch">
+<div style="display:flex;flex-direction:column;gap:6px;flex:1;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:28px 36px">
+<p style="font-size:48px;line-height:1.4;color:#C0392B">（1）(4<i>x</i>+3<i>y</i>)+(2<i>x</i>−5<i>y</i>)</p>
+<p style="font-size:48px;line-height:1.4;color:#C0392B">　　＝4<i>x</i>+3<i>y</i>+2<i>x</i>−5<i>y</i></p>
+<p style="font-size:38px;line-height:1.4;color:#C0392B">　　　←かっこをそのままはずす</p>
+<p style="font-size:48px;font-weight:700;line-height:1.4;color:#C0392B">　　＝6<i>x</i>−2<i>y</i></p>
+<p style="font-size:38px;line-height:1.4;color:#C0392B">　　　←同類項をまとめる</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;flex:1;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:28px 36px">
+<p style="font-size:48px;line-height:1.4;color:#C0392B">（2）(4<i>x</i>+3<i>y</i>)−(2<i>x</i>−5<i>y</i>)</p>
+<p style="font-size:48px;line-height:1.4;color:#C0392B">　　＝4<i>x</i>+3<i>y</i>−2<i>x</i>+5<i>y</i></p>
+<p style="font-size:38px;line-height:1.4;color:#C0392B">　　　←ひく式の各項の符号を変える</p>
+<p style="font-size:48px;font-weight:700;line-height:1.4;color:#C0392B">　　＝2<i>x</i>+8<i>y</i></p>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;border-left:8px solid #C0392B;padding:0px 0px 0px 32px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">くらべよう</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B"><b>2<i>x</i> と −5<i>y</i> の符号が変わっている。</b>（−2<i>x</i>、+5<i>y</i> になる）</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。（1）は、かっこをそのままはずして、同類項をまとめる。（2）は、ひく式の各項の符号を変えてはずす。縦に書く方法は、演習プリントの標準で扱う。</aside>
+</section>
+<section id="s02-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+</div>
+<h2 style="font-size:46px;font-weight:700;line-height:1.4;color:#1F2A37"><i>x</i>²+<i>x</i> を、A さんは 2<i>x</i>² に、B さんは <i>x</i>³ に、C さんは 2<i>x</i> に、まとめた。<br>3人の考えは、正しいだろうか。<i>x</i> にいろいろな数を入れて、確かめよう。</h2>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:28px">
+<div style="display:flex;flex-direction:column;gap:10px;flex:1">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:8px 28px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">①</p>
+<p style="font-size:44px;line-height:1.3"><i>x</i> に数を入れて、<br>表を完成させよう。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:8px 28px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">②</p>
+<p style="font-size:44px;line-height:1.3">気づいたこと</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:8px 28px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">③</p>
+<p style="font-size:44px;line-height:1.3"><i>x</i>²+<i>x</i> は、1つの項に<br>まとめられるだろうか。<br>理由も書こう。</p>
+</div>
+</div>
+<div style="width:760px">
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:30%;text-align:center"><i>x</i> の値</th><th style="width:17.5%;text-align:center">1</th><th style="width:17.5%;text-align:center">2</th><th style="width:17.5%;text-align:center">3</th><th style="width:17.5%;text-align:center">−1</th></tr>
+<tr><td style="text-align:center"><b><i>x</i>²+<i>x</i></b></td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td></tr>
+<tr><td style="text-align:center"><b>A　2<i>x</i>²</b></td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td></tr>
+<tr><td style="text-align:center"><b>B　<i>x</i>³</b></td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td></tr>
+<tr><td style="text-align:center"><b>C　2<i>x</i></b></td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td><td style="text-align:center">　</td></tr>
+</table>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:12px 28px">
+<p style="font-size:34px;font-weight:700;color:#D9730D;white-space:nowrap">発展<br>（解き終わった人は）</p>
+<p style="font-size:34px;line-height:1.4"><i>x</i>²+<i>x</i> と 2<i>x</i>² が等しくなる <i>x</i> の値は、1 のほかにもあるだろうか。−3 から 3 までの整数で調べよう。等しくなるのは、どんなときだろう。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+<aside>【演習 23分・考えよう】進め方：基礎（個人、5分）→ 終わった人から考えようへ。立ち歩きOK。解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「説明できるようになる」と伝える。標準は、考えようと合わせて学び合い（14分）。ヒントを出す順：1）x に 1、2、3 を入れて、値を表にまとめる。2）等しくなる値と、等しくならない値を、分けて見る。3）x² と x を、同類項の言葉を使って見くらべる。判断：表が進まない→共有1〜2分／気づきが出ない→ヒント1／説明が止まる→ヒント2・3／残り5分→指名で説明。答えは言わない。方向性（最後に一言）：「式がいつでも等しいかを、数を入れて調べる方法は、これからも使うよ。ほかの式でも、自分で試してみよう。」</aside>
+</section>
+<section id="s02-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">文字が2種類でも、同類項をまとめて、<br>たし算・ひき算をしよう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">同類項</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">項をまとめる</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">かっこをはずす</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">符号を変える</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">式の計算　第2時　文字が2種類でも、同類項をまとめて、たし算・ひき算をしよう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。口で言う。ワークシートと演習プリントを回収。今日の小テストは、次時のはじめ用。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

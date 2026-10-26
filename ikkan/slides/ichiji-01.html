@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>一次関数　第1時　比例に似ているけれど、比例ではない関係を調べよう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:3px solid #2b3647;padding:6px 14px}   /* 表の罫線は、色ではなく、はっきりした濃い線（プロジェクターでも見える） */
+#deck th{background:#eceff4}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="i01-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+</div>
+<h2 style="font-size:68px;font-weight:700;line-height:1.3">1年の関数と比例のことばを、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">1年「比例・反比例」の重要語句から、1人1問ずつ、言葉を選んで出題する。<br>聞かれた人は、その言葉の意味を、自分の言葉で言う。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">関数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">比例</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">比例定数</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">一次関数　第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+<aside>【導入 3分】1年「比例・反比例」の重要語句（関数・比例・比例定数）を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト 7分（前時分＝連立方程式 第13時。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="i01-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+</div>
+<h2 style="font-size:56px;font-weight:700;line-height:1.3;color:#1E3A5F">比例に似ているけれど、比例ではない関係を調べよう</h2>
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:16px 36px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+<p style="font-size:44px;font-weight:500;line-height:1.45">まいさんは、家から 200 m 進んだ地点を通ってから、<br>分速 70 m で、同じ道をまっすぐ歩き続けた。<br>この地点を通ってから <i>x</i>分後の、家からの道のりを <i>y</i> m とする。<br><i>x</i> と <i>y</i> の関係を調べよう。<i>y</i> は <i>x</i> に比例するといえるだろうか。</p>
+</div>
+<p style="font-size:40px;line-height:1.4;color:#1F2A37">【表】<i>x</i> の値が 0 から 5 のときの、<i>y</i> の値を求めよう。</p>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:40px;color:#1F2A37">
+<tr><th style="width:22%;text-align:center"><i>x</i>（分）</th><th style="width:13%;text-align:center">0</th><th style="width:13%;text-align:center">1</th><th style="width:13%;text-align:center">2</th><th style="width:13%;text-align:center">3</th><th style="width:13%;text-align:center">4</th><th style="width:13%;text-align:center">5</th></tr>
+<tr><td style="text-align:center"><b><i>y</i>（m）</b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td></tr>
+</table>
+<p style="font-size:40px;line-height:1.4;color:#1F2A37">【比例といえるか】わけも書こう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+<aside>【解説 4分・学習課題】めあてを書く。表をうめ、「比例といえるか」を個人→ペアで考え、式に表す。発問：x が 2倍になると、y も 2倍になっているだろうか。／y を x の式で表すと、どうなるだろう。　想定される反応：y は 200、270、…。2倍にならないから、比例ではない。y＝70x+200。　留意：りくさんとの比べは、考えようで。ここでは出さない。</aside>
+</section>
+<section id="i01-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+</div>
+<p style="font-size:44px;line-height:1.5;color:#6B7480"><i>y</i> は <i>x</i> に比例するといえるだろうか。</p>
+<div style="display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:32px 48px">
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:42px;color:#1F2A37">
+<tr><th style="width:22%;text-align:center"><i>x</i>（分）</th><th style="width:13%;text-align:center">0</th><th style="width:13%;text-align:center">1</th><th style="width:13%;text-align:center">2</th><th style="width:13%;text-align:center">3</th><th style="width:13%;text-align:center">4</th><th style="width:13%;text-align:center">5</th></tr>
+<tr><td style="text-align:center"><b><i>y</i>（m）</b></td><td style="text-align:center"><span style="color:#C0392B"><b>200</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>270</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>340</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>410</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>480</b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>550</b></span></td></tr>
+</table>
+<p style="font-size:44px;line-height:1.5;color:#C0392B"><i>x</i> が 1 から 2 に 2倍になっても、<i>y</i> は 270 から 340 で、2倍にならない。<br>だから、<b><i>y</i> は <i>x</i> に比例しない。</b></p>
+<div style="border-top:2px solid #E3E6EA;padding:16px 0px 0px 0px;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px">
+<p style="font-size:40px;font-weight:700;color:#6B7480">【式】</p>
+<p style="font-size:54px;line-height:1.3;color:#C0392B"><b><i>y</i>＝70<i>x</i>+200</b></p>
+</div>
+<p style="font-size:38px;line-height:1.4;color:#C0392B">（<i>x</i>分で歩く 70×<i>x</i> m に、はじめの 200 m をたす）</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+<aside>【解説 4分・学習課題のまとめ】いくつかのペアの考えを聞いて、板書にまとめる。赤い字は、先生の板書。表の y は 200、270、340、410、480、550。x が 1 から 2 に 2倍になっても y は 2倍にならないから、比例しない。式は y＝70x+200。りくさんとの比べは、考えようで。ここでは出さない。</aside>
+</section>
+<section id="i01-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<p style="font-size:46px;line-height:1.6"><i>x</i> の値を決めると、<i>y</i> の値がただ1つに決まるとき、<br><i>y</i> は <i>x</i> の<u>　　　　　</u>である。（1年）</p>
+<p style="font-size:46px;line-height:1.6"><i>y</i> が <i>x</i> の<u>　　　　　</u> <i>y</i>＝<u>　　　　　</u> で表されるとき、<br><i>y</i> は <i>x</i> の<u>　　　　　　</u>であるという。</p>
+<p style="font-size:46px;line-height:1.6"><i>a</i>、<i>b</i> は<u>　　　　　</u>（決まった数）で、<i>a</i> は 0 でない。<br>例　<i>y</i>＝70<i>x</i>+200</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+<aside>【解説 3分・ことば】関数・一次関数・1次式・定数を押さえる。空欄は、先生が言ってから書かせる。発問：y＝70x+200 は、y＝ax+b の形といえるだろうか。a、b は、それぞれいくつ？　想定される反応：空欄に書き込む。　留意：重要語句は、先生が言い切る。</aside>
+</section>
+<section id="i01-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<p style="font-size:46px;line-height:1.6"><i>x</i> の値を決めると、<i>y</i> の値がただ1つに決まるとき、<br><i>y</i> は <i>x</i> の<span style="color:#C0392B"><b>関数</b></span>である。（1年）</p>
+<p style="font-size:46px;line-height:1.6"><i>y</i> が <i>x</i> の<span style="color:#C0392B"><b>1次式</b></span> <i>y</i>＝<span style="color:#C0392B"><b><i>a</i><i>x</i>+<i>b</i></b></span> で表されるとき、<br><i>y</i> は <i>x</i> の<span style="color:#C0392B"><b>一次関数</b></span>であるという。</p>
+<p style="font-size:46px;line-height:1.6"><i>a</i>、<i>b</i> は<span style="color:#C0392B"><b>定数</b></span>（決まった数）で、<i>a</i> は 0 でない。<br>例　<i>y</i>＝70<i>x</i>+200</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え（関数・1次式・ax+b・一次関数・定数）。先生が言い切ってから、書かせる。y＝70x+200 では、a＝70、b＝200 と読ませるとよい。</aside>
+</section>
+<section id="i01-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+</div>
+<p style="font-size:46px;font-weight:500;line-height:1.45">次の（1）〜（3）について、<i>y</i> を <i>x</i> の式で表そう。<br>また、<i>y</i> が <i>x</i> の一次関数であるものには ○、<br>そうでないものには × をつけよう。</p>
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;background:#FFFFFF;border:3px solid #1B7F5C;border-radius:16px;padding:18px 40px">
+<p style="font-size:44px;font-weight:700;color:#1B7F5C">（1）</p>
+<p style="font-size:44px;line-height:1.4">1本 <u>　　　</u>円の鉛筆を <i>x</i>本と、<u>　　　　</u>円のノート 1冊を買ったときの、<br>代金 <i>y</i>円</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;background:#FFFFFF;border:3px solid #1B7F5C;border-radius:16px;padding:18px 40px">
+<p style="font-size:44px;font-weight:700;color:#1B7F5C">（2）</p>
+<p style="font-size:44px;line-height:1.4">面積が <u>　　　</u> cm² の長方形の、縦の長さ <i>x</i> cm と、横の長さ <i>y</i> cm</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;background:#FFFFFF;border:3px solid #1B7F5C;border-radius:16px;padding:18px 40px">
+<p style="font-size:44px;font-weight:700;color:#1B7F5C">（3）</p>
+<p style="font-size:44px;line-height:1.4">1辺が <i>x</i> cm の正方形の、周の長さ <i>y</i> cm</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+<aside>【解説 5分・例題】（1）〜（3）を式に表し、一次関数かどうかを判断する。発問：（2）は、y＝ax+b の形に表せるだろうか。／y＝4x には、定数の項がない。一次関数といえるだろうか。　想定される反応：式の形で判断する。反比例は ×。比例は ○（一次関数にふくまれる）。　留意：数字（50、100、24）は、先生が言ってから書かせる。</aside>
+</section>
+<section id="i01-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:22px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:40px 56px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:36px">
+<p style="font-size:56px;line-height:1.4;color:#C0392B">（1）<i>y</i>＝50<i>x</i>+100</p>
+<p style="font-size:52px;line-height:1.4;color:#C0392B"><b>一次関数　○</b></p>
+</div>
+<div style="border-top:2px solid #E3E6EA;padding:20px 0px 0px 0px;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:36px">
+<p style="font-size:56px;line-height:1.4;color:#C0392B">（2）<i>xy</i>＝24 より　<i>y</i>＝24⁄<i>x</i></p>
+<p style="font-size:52px;line-height:1.4;color:#C0392B"><b>一次関数でない　×</b></p>
+</div>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">（反比例）</p>
+</div>
+<div style="border-top:2px solid #E3E6EA;padding:20px 0px 0px 0px;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:36px">
+<p style="font-size:56px;line-height:1.4;color:#C0392B">（3）<i>y</i>＝4<i>x</i></p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">（<i>y</i>＝4<i>x</i>+0 と見て）</p>
+<p style="font-size:52px;line-height:1.4;color:#C0392B"><b>一次関数　○</b></p>
+</div>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">（比例も、一次関数にふくまれる）</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。（1）y＝50x+100 は一次関数。（2）xy＝24 より y＝24/x。反比例で、一次関数ではない。（3）y＝4x は、y＝4x+0 と見て一次関数。比例も、一次関数にふくまれる。数字は、先生が言ってから書かせる。</aside>
+</section>
+<section id="i01-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+</div>
+<h2 style="font-size:46px;font-weight:700;line-height:1.3;color:#1F2A37">まいさん（<i>y</i>＝70<i>x</i>+200）と、りくさん（<i>y</i>＝70<i>x</i>）を、くらべよう。</h2>
+<p style="font-size:34px;line-height:1.4;color:#6B7480">まいさんが 200 m の地点を通ったとき、りくさんは家を出発して、分速 70 m で、同じ道を歩きはじめた。</p>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:14px 36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">①</p>
+<p style="font-size:44px;line-height:1.4">2人の、<i>x</i>分後の道のりを、表にまとめよう。</p>
+</div>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:30%;text-align:center"><i>x</i>（分）</th><th style="width:11.6%;text-align:center">0</th><th style="width:11.6%;text-align:center">1</th><th style="width:11.6%;text-align:center">2</th><th style="width:11.6%;text-align:center">3</th><th style="width:11.6%;text-align:center">4</th><th style="width:11.6%;text-align:center">5</th></tr>
+<tr><td style="text-align:center"><b>りくさん　<i>y</i>＝70<i>x</i></b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td></tr>
+<tr><td style="text-align:center"><b>まいさん　<i>y</i>＝70<i>x</i>+200</b></td><td style="text-align:center">200</td><td style="text-align:center">270</td><td style="text-align:center">340</td><td style="text-align:center">410</td><td style="text-align:center">480</td><td style="text-align:center">550</td></tr>
+</table>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">②</p>
+<p style="font-size:44px;line-height:1.4">気づいたこと（同じところ・ちがうところ）</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">③</p>
+<p style="font-size:44px;line-height:1.4">なぜ、そうなるのだろう。場面や式にもどって、説明しよう。</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:14px;padding:8px 20px">
+<p style="font-size:26px;line-height:1.4;color:#1F2A37"><span style="color:#D9730D"><b>発展</b></span>　演習まで解き終わった人は、考えてみよう！　<i>y</i>＝70<i>x</i>+200 の <i>x</i> に、−1、−2 を入れると、<i>y</i> はいくつになるだろう。場面では、何を表しているか、考えよう。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+<aside>【演習 23分・考えよう】進め方（演習① 2分）：ゴールは、「考えよう」（ワークシート裏）を全員が説明できること。立ち歩きOK、解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「説明できるようになる」と伝える。基礎（演習② 5分・個人）→ 解いたら教卓の解答で答え合わせ → 終わった人から考えようへ。考えよう＋標準（演習③ 14分・学び合い）：立ち歩きで、教え合い・説明し合い。先生は回って、気づきの言葉を拾い、必要なら判断して短く全体に戻す。問い：りくさんは、家から分速 70 m で歩いた（y＝70x）。まいさんは、200 m 進んだ地点から、分速 70 m で歩いた（y＝70x+200）。2人を表でくらべて、同じところと、ちがうところを見つけよう。ヒントを出す順：1）x＝0、1、2、… の y を、表の横に見て、変わり方を調べる。2）同じ x の値で、2人の y をくらべる。3）場面にもどって、「200」は何を表しているか考える。判断：計算でつまずく→共有／気づきが出ない→ヒント1／止まる→ヒント2・3／残り5分→指名。答えは言わない。方向性（演習④ 2分・最後に一言）：「くらべると、見えてくることがあるね。この見方は、これから学ぶ一次関数でも使えるよ。身のまわりに、同じような関係がないか、探してみよう。」</aside>
+</section>
+<section id="i01-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">比例に似ているけれど、比例ではない関係を調べよう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">関数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">一次関数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">1次式</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">定数</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">一次関数　第1時　比例に似ているけれど、比例ではない関係を調べよう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。ワークシートと演習プリントを回収（未完成でも出す）。裏の発展は、解き終わった人向け。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>連立方程式　第11時　条件を変えると、解はどうなるだろう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:3px solid #2b3647;padding:6px 14px}   /* 表の罫線は、色ではなく、はっきりした濃い線（プロジェクターでも見える） */
+#deck th{background:#eceff4}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="r11-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第11時　条件を変えると、解はどうなるだろう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">第10時の重要語句から、1人1問ずつ、言葉を選んで出題する。<br>聞かれた人は、その言葉の意味を、自分の言葉で言う。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">もとにする量</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">増えた量・減った量</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">増えたあとの量</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">％の表し方</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">連立方程式　第11時　条件を変えると、解はどうなるだろう</p>
+<aside>【導入 3分】前時（第10時）の重要語句（もとにする量・増えた量・減った量・増えたあとの量・％の表し方）を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト 7分（前時分。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="r11-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第11時　条件を変えると、解はどうなるだろう</p>
+</div>
+<h2 style="font-size:56px;font-weight:700;line-height:1.3;color:#1E3A5F">条件を変えたとき、連立方程式の解がどうなるかを調べよう</h2>
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:12px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:20px 48px 24px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+<p style="font-size:44px;font-weight:500;line-height:1.4">的当てゲームで、3点の的と 5点の的がある。<br>ゆうさんは、どちらの的にも 1回以上あてて、<br>合わせて 10回あてたところ、得点は 38点だった。<br>ゆうさんは、3点の的と 5点の的に、それぞれ何回あてたのだろう。</p>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:24%;text-align:center">　</th><th style="width:25.3%;text-align:center">3点の的</th><th style="width:25.3%;text-align:center">5点の的</th><th style="width:25.3%;text-align:center">合計</th></tr>
+<tr><td style="text-align:center"><b>回数（回）</b></td><td style="text-align:center"><i>x</i></td><td style="text-align:center"><i>y</i></td><td style="text-align:center">10</td></tr>
+<tr><td style="text-align:center"><b>得点（点）</b></td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center">38</td></tr>
+</table>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第11時　条件を変えると、解はどうなるだろう</p>
+<aside>【解説 4分・学習課題】めあてを書く。的当ての問題を、表に整理して解く（3点の的にあてた回数を x回、5点の的にあてた回数を y回として、表を完成させる → 式を2つつくる → 解く → 確かめて、答える）。「得点が 35点だったら？」と投げかけ、次へつなぐ。発問：得点が 38点でなく 35点だったら、同じように解けるかな。　想定される反応：x+y＝10、3x+5y＝38。x＝6、y＝4。　留意：解き方は短く。時間は、例題に残す。</aside>
+</section>
+<section id="r11-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第11時　条件を変えると、解はどうなるだろう</p>
+</div>
+<p style="font-size:40px;line-height:1.4;color:#6B7480">ゆうさんは、3点の的と 5点の的に、それぞれ何回あてたのだろう。</p>
+<div style="display:flex;flex-direction:column;gap:14px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:24px 48px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:56px">
+<div style="width:860px">
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:40px;color:#1F2A37">
+<tr><th style="width:31%;text-align:center">　</th><th style="width:23%;text-align:center">3点の的</th><th style="width:23%;text-align:center">5点の的</th><th style="width:23%;text-align:center">合計</th></tr>
+<tr><td style="text-align:center"><b>回数（回）</b></td><td style="text-align:center"><i>x</i></td><td style="text-align:center"><i>y</i></td><td style="text-align:center">10</td></tr>
+<tr><td style="text-align:center"><b>得点（点）</b></td><td style="text-align:center"><span style="color:#C0392B"><b>3<i>x</i></b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>5<i>y</i></b></span></td><td style="text-align:center">38</td></tr>
+</table>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:16px">
+<p style="font-size:150px;font-weight:400;line-height:1;color:#C0392B">{</p>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px">
+<p style="font-size:56px;line-height:1.3;color:#C0392B"><i>x</i>+<i>y</i>＝10</p>
+<p style="font-size:34px;color:#6B7480">①</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px">
+<p style="font-size:56px;line-height:1.3;color:#C0392B">3<i>x</i>+5<i>y</i>＝38</p>
+<p style="font-size:34px;color:#6B7480">②</p>
+</div>
+</div>
+</div>
+</div>
+<p style="font-size:46px;line-height:1.4;color:#C0392B">②−①×3　2<i>y</i>＝8　<i>y</i>＝4　　① に代入　<i>x</i>＝6</p>
+<p style="font-size:46px;line-height:1.4;color:#C0392B">確かめ　6+4＝10、3×6+5×4＝18+20＝38</p>
+<p style="font-size:46px;line-height:1.4;color:#C0392B">回数として、合っている。（どちらも 1回以上の整数）</p>
+<p style="font-size:54px;font-weight:700;line-height:1.3;color:#C0392B">3点の的 6回、5点の的 4回</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第11時　条件を変えると、解はどうなるだろう</p>
+<aside>【解説 4分・学習課題のまとめ】板書の順：表の得点の行（3点の的 3x点、5点の的 5y点）→ 回数の関係 x+y＝10 と、得点の関係 3x+5y＝38 → 解く → 確かめて、答える。赤い字は、先生の板書。「得点が 35点だったら？」と投げかけ、次へつなぐ。解き方は短く。時間は、例題に残す。</aside>
+</section>
+<section id="r11-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第11時　条件を変えると、解はどうなるだろう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:24px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<div style="display:flex;flex-direction:row;gap:20px;align-items:flex-start">
+<p style="font-size:44px;font-weight:700;line-height:1.5;color:#2563C9">①</p>
+<p style="font-size:44px;line-height:1.5">連立方程式を解いて求めた <i>x</i>、<i>y</i> の値が、<br><u>　　　　　　　</u>になるとは限らない。</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:20px;align-items:flex-start">
+<p style="font-size:44px;font-weight:700;line-height:1.5;color:#2563C9">②</p>
+<p style="font-size:44px;line-height:1.5">回数・人数・個数は、<u>　　　　</u>でなければならない。<br>負の数にもならない。</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:20px;align-items:flex-start">
+<p style="font-size:44px;font-weight:700;line-height:1.5;color:#2563C9">③</p>
+<p style="font-size:44px;line-height:1.5">道のり・時間・重さは、小数や分数でもよいが、負の数にはならない。</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:20px;align-items:flex-start">
+<p style="font-size:44px;font-weight:700;line-height:1.5;color:#2563C9">④</p>
+<p style="font-size:44px;line-height:1.5">解を求めたら、<u>　　　　　　　</u>にもどして、<br>整数か・負でないか・問題の条件に合うかを<u>　　　　　</u>。</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第11時　条件を変えると、解はどうなるだろう</p>
+<aside>【解説 3分・ことば】解と問題の答えのちがいを押さえる。回数は整数、道のり・時間は小数や分数でもよい。空欄は、先生が言ってから書かせる。発問：解を求めたら、それで終わりかな。　想定される反応：場面にもどして確かめる。　留意：重要語句は、先生が言い切る。</aside>
+</section>
+<section id="r11-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第11時　条件を変えると、解はどうなるだろう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:24px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<div style="display:flex;flex-direction:row;gap:20px;align-items:flex-start">
+<p style="font-size:44px;font-weight:700;line-height:1.5;color:#2563C9">①</p>
+<p style="font-size:44px;line-height:1.5">連立方程式を解いて求めた <i>x</i>、<i>y</i> の値が、<br><span style="color:#C0392B"><b>問題の答え</b></span>になるとは限らない。</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:20px;align-items:flex-start">
+<p style="font-size:44px;font-weight:700;line-height:1.5;color:#2563C9">②</p>
+<p style="font-size:44px;line-height:1.5">回数・人数・個数は、<span style="color:#C0392B"><b>整数</b></span>でなければならない。<br>負の数にもならない。</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:20px;align-items:flex-start">
+<p style="font-size:44px;font-weight:700;line-height:1.5;color:#2563C9">③</p>
+<p style="font-size:44px;line-height:1.5">道のり・時間・重さは、小数や分数でもよいが、負の数にはならない。</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:20px;align-items:flex-start">
+<p style="font-size:44px;font-weight:700;line-height:1.5;color:#2563C9">④</p>
+<p style="font-size:44px;line-height:1.5">解を求めたら、<span style="color:#C0392B"><b>もとの問題</b></span>にもどして、<br>整数か・負でないか・問題の条件に合うかを<span style="color:#C0392B"><b>確かめる</b></span>。</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第11時　条件を変えると、解はどうなるだろう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。「解を求めたら、場面にもどして確かめる」を、声に出して言わせるとよい。</aside>
+</section>
+<section id="r11-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第11時　条件を変えると、解はどうなるだろう</p>
+</div>
+<p style="font-size:52px;font-weight:500;line-height:1.5">学習課題で、ゆうさんの得点が、次のときだったとする。<br>それぞれ、連立方程式をつくって解き、<br>その解が問題の答えになるかを調べよう。</p>
+<div style="display:flex;flex-direction:row;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;flex:1;background:#FFFFFF;border:3px solid #1B7F5C;border-radius:16px;padding:28px 48px">
+<p style="font-size:64px;font-weight:700;color:#1B7F5C">①</p>
+<p style="font-size:64px;font-weight:700;line-height:1.3"><u>　　　　</u>点</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;flex:1;background:#FFFFFF;border:3px solid #1B7F5C;border-radius:16px;padding:28px 48px">
+<p style="font-size:64px;font-weight:700;color:#1B7F5C">②</p>
+<p style="font-size:64px;font-weight:700;line-height:1.3"><u>　　　　</u>点</p>
+</div>
+</div>
+<p style="font-size:40px;line-height:1.5;color:#6B7480">ゆうさんは、3点の的と 5点の的に、どちらも 1回以上、合わせて 10回あてた。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第11時　条件を変えると、解はどうなるだろう</p>
+<aside>【解説 5分・例題】得点が ①35点 ②44点 のとき、連立方程式を解いて、答えになるか判断する。得点の数字は、先生が言ってから書かせる。発問：y＝5/2 は、回数として、ありえる？　想定される反応：①x＝15/2、y＝5/2 で ×。②x＝3、y＝7 で ○。　留意：「計算まちがい」と思わせない。解は正しく、答えにならないだけ。</aside>
+</section>
+<section id="r11-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第11時　条件を変えると、解はどうなるだろう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:22px 44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:40px">
+<div style="width:210px">
+<p style="font-size:46px;font-weight:700;color:#1B7F5C">① 35点</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:16px">
+<p style="font-size:130px;font-weight:400;line-height:1;color:#C0392B">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:18px">
+<p style="font-size:50px;line-height:1.3;color:#C0392B"><i>x</i>+<i>y</i>＝10</p>
+<p style="font-size:32px;color:#6B7480">①</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:18px">
+<p style="font-size:50px;line-height:1.3;color:#C0392B">3<i>x</i>+5<i>y</i>＝35</p>
+<p style="font-size:32px;color:#6B7480">②</p>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:46px;line-height:1.4;color:#C0392B">②−①×3　2<i>y</i>＝5</p>
+<p style="font-size:46px;line-height:1.4;color:#C0392B"><i>y</i>＝5⁄2、<i>x</i>＝15⁄2</p>
+</div>
+</div>
+<p style="font-size:46px;font-weight:700;line-height:1.4;color:#C0392B">回数が整数にならないので、問題の答えにならない　×</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:22px 44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:40px">
+<div style="width:210px">
+<p style="font-size:46px;font-weight:700;color:#1B7F5C">② 44点</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:16px">
+<p style="font-size:130px;font-weight:400;line-height:1;color:#C0392B">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:18px">
+<p style="font-size:50px;line-height:1.3;color:#C0392B"><i>x</i>+<i>y</i>＝10</p>
+<p style="font-size:32px;color:#6B7480">①</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:18px">
+<p style="font-size:50px;line-height:1.3;color:#C0392B">3<i>x</i>+5<i>y</i>＝44</p>
+<p style="font-size:32px;color:#6B7480">②</p>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:46px;line-height:1.4;color:#C0392B">②−①×3　2<i>y</i>＝14</p>
+<p style="font-size:46px;line-height:1.4;color:#C0392B"><i>y</i>＝7、<i>x</i>＝3</p>
+<p style="font-size:46px;line-height:1.4;color:#C0392B">確かめ　9+35＝44</p>
+</div>
+</div>
+<p style="font-size:46px;font-weight:700;line-height:1.4;color:#C0392B">どちらも 1回以上の整数で、問題に合う　○</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第11時　条件を変えると、解はどうなるだろう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。①は x＝15/2、y＝5/2 で ×。②は x＝3、y＝7 で ○。「計算まちがい」と思わせない。解は正しく、答えにならないだけ。</aside>
+</section>
+<section id="r11-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第11時　条件を変えると、解はどうなるだろう</p>
+</div>
+<h2 style="font-size:50px;font-weight:700;line-height:1.3;color:#1F2A37">得点を変えると、連立方程式の解は、どうなるだろう。</h2>
+<p style="font-size:34px;line-height:1.35;color:#6B7480">3点の的と 5点の的に、どちらも 1回以上、合わせて 10回あてた。<br>①得点が表のときの解を求め、問題の答えになるものに○、ならないものに×をつけよう。（空いている所は、自分で決めた得点や、友達に出された得点を調べよう。小数で書いてよい）</p>
+<div style="display:flex;flex-direction:column;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:8px 28px">
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:28%;text-align:center"><span style="color:#D9730D">①</span> 得点（点）</th><th style="width:8%;text-align:center">28</th><th style="width:8%;text-align:center">30</th><th style="width:8%;text-align:center">31</th><th style="width:8%;text-align:center">34</th><th style="width:8%;text-align:center">40</th><th style="width:8%;text-align:center">49</th><th style="width:8%;text-align:center">52</th><th style="width:8%;text-align:center"><u>　　</u></th><th style="width:8%;text-align:center"><u>　　</u></th></tr>
+<tr><td style="text-align:center"><b>3点の的 <i>x</i>（回）</b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td></tr>
+<tr><td style="text-align:center"><b>5点の的 <i>y</i>（回）</b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td></tr>
+<tr><td style="text-align:center"><b>答えになるか（○・×）</b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td></tr>
+</table>
+</div>
+<div style="display:flex;flex-direction:row;gap:12px;align-items:stretch">
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:8px 28px;width:640px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">②</p>
+<p style="font-size:44px;line-height:1.4">気づいたことを書こう。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:8px 28px;flex:1">
+<p style="font-size:44px;font-weight:700;color:#D9730D">③</p>
+<p style="font-size:44px;line-height:1.4;flex:1">なぜ、そうなるのだろう。<br>連立方程式を使って、説明しよう。</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px;border:3px solid #D9730D;border-radius:14px;padding:10px 28px">
+<p style="font-size:30px;font-weight:700;color:#D9730D">発展</p>
+<p style="font-size:32px;line-height:1.4;color:#1F2A37;flex:1">3点の的を 4点の的に変えると、答えになる得点は、どう変わるだろう。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第11時　条件を変えると、解はどうなるだろう</p>
+<aside>【演習 23分・考えよう】進め方（演習① 2分）：ゴールは、「考えよう」で、得点を変えたときの解を調べ、連立方程式を使って説明すること。立ち歩きOK、解答は教卓（考えようの答えはない）。「見つけて終わり」でなく「説明できる」ことが目標と伝える。基礎（個人 5分）：解いたら、教卓の解答で答え合わせ。早く終わったら、考えようへ。考えよう＋標準（学び合い 14分）：得点を変えて解き、表に記録する。①は、得点が表のときの解を求め、問題の答えになるものに ○、ならないものに × をつける（空いている所は、自分で決めた得点や、友達に出された得点を調べる。小数で書いてよい）。自分で決めた得点を友達に出題し、○×を比べる。標準は、考えようを終えた人から。先生は回って気づきを拾い、必要なら短く全体に戻す。問い：3点の的と 5点の的に、どちらも 1回以上、合わせて 10回あてた。得点を変えると、連立方程式の解は、どうなるだろう。いろいろな得点で調べ、気づいたことを、連立方程式を使って説明しよう。ヒントを出す順：1）得点を1つずつ変えて、はじめと同じ手順で解き、表に書く。2）○と×の得点を見くらべる。得点が 2点ふえると、x、y は何回ずつ変わる？ 3）全部が 3点の的だったら、何点？　5点の的に 1回かえると、何点ふえる？　判断：解き方でつまずく→共有／気づきが出ない→ヒント1／止まる→ヒント2・3／残り5分→指名。答えは言わない。方向性（演習④ 最後に一言 2分）：「連立方程式の解は、問題の答えになるとは限らない。解を求めたら、場面にもどして確かめよう。次の時間は、自分で問題をつくって、解き合うよ。」</aside>
+</section>
+<section id="r11-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第11時　条件を変えると、解はどうなるだろう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">条件を変えたとき、連立方程式の解がどうなるかを調べよう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">解と問題の答え</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">整数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">場面にもどして確かめる</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">連立方程式　第11時　条件を変えると、解はどうなるだろう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。ワークシートと演習プリントを回収（未完成でも出す）。裏の発展は、解き終わった人向け。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

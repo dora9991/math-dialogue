@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>一次関数　第14時　実験の結果を一次関数とみなして、予測しよう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:3px solid #2b3647;padding:6px 14px}   /* 表の罫線は、色ではなく、はっきりした濃い線（プロジェクターでも見える） */
+#deck th{background:#eceff4}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="i14-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第14時　実験の結果を一次関数とみなして、予測しよう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">第13時の重要語句から、1人1問ずつ、言葉を選んで出題する。<br>聞かれた人は、その言葉の意味を、自分の言葉で言う。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">連立方程式の解</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">2直線の交点</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">交点の座標</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">平行</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">一次関数　第14時　実験の結果を一次関数とみなして、予測しよう</p>
+<aside>【導入 3分】前時（第13時・連立方程式とグラフ）の重要語句（連立方程式の解・2直線の交点・交点の座標・平行）を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト 7分（前時分。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。今日の小テストは、次時用。</aside>
+</section>
+<section id="i14-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第14時　実験の結果を一次関数とみなして、予測しよう</p>
+</div>
+<h2 style="font-size:60px;font-weight:700;line-height:1.3;color:#1E3A5F">実験の結果を一次関数とみなして、予測しよう</h2>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:36px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:20px 36px">
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:12px;width:1248px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+<p style="font-size:44px;font-weight:500;line-height:1.45">ばねに、同じおもりを <i>x</i>個つるしたときの、<br>ばねの長さ <i>y</i> cm を調べた。<br>おもりを 8個つるしたときの長さを、はかる前に予測しよう。</p>
+<div style="width:1248px">
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:22%;text-align:center"><i>x</i>（個）</th><th style="width:13%;text-align:center">1</th><th style="width:13%;text-align:center">2</th><th style="width:13%;text-align:center">3</th><th style="width:13%;text-align:center">4</th><th style="width:13%;text-align:center">5</th><th style="width:13%;text-align:center">6</th></tr>
+<tr><td style="text-align:center"><b><i>y</i>（cm）</b></td><td style="text-align:center">6.2</td><td style="text-align:center">7.8</td><td style="text-align:center">10.1</td><td style="text-align:center">12.1</td><td style="text-align:center">13.8</td><td style="text-align:center">16.2</td></tr>
+</table>
+</div>
+</div>
+<img src="img/ichiji-14_f1_q.png" alt="ばねの長さの点が、ほぼ一直線上にならんだ座標平面" style="width:302px;height:500px;object-fit:contain">
+</div>
+<p style="font-size:38px;line-height:1.5;color:#1F2A37">【式】点の近くを通る直線を図にひき、式を求めよう。　【予測】8個のときの長さは？</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第14時　実験の結果を一次関数とみなして、予測しよう</p>
+<aside>【解説 4分・学習課題】めあてを書く。ばねの実験の点に直線をひき、式を求めて、8個のときの長さを予測する。発問：点は、ぴったり一直線にならんでいる？／式は、どの 2点を使うと求めやすい？　想定される反応：ほぼ一直線 → 一次関数とみなす。(2, 8)、(6, 16) から y＝2x+4。8個で 20cm。　留意：ぴったりでなくてよい（はかり方でずれる）。整数の点を選ぶ。</aside>
+</section>
+<section id="i14-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第14時　実験の結果を一次関数とみなして、予測しよう</p>
+</div>
+<p style="font-size:44px;line-height:1.5;color:#6B7480">ばねの実験。おもり 8個のときの長さを、予測しよう。</p>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:40px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:20px 48px">
+<div style="display:flex;flex-direction:column;gap:8px;width:1200px">
+<p style="font-size:44px;line-height:1.4;color:#C0392B">点は、ほぼ一直線上にならぶ → <b>一次関数とみなす</b></p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">直線が通る (2, 8)、(6, 16) から</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">傾き＝(16−8)⁄(6−2)＝2</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">8＝2×2+<i>b</i>　　<i>b</i>＝4</p>
+<p style="font-size:54px;font-weight:700;line-height:1.4;color:#C0392B"><i>y</i>＝2<i>x</i>+4</p>
+<p style="font-size:48px;line-height:1.4;color:#C0392B"><i>x</i>＝8 のとき　<i>y</i>＝2×8+4＝20　　<b>およそ 20cm</b></p>
+<p style="font-size:36px;line-height:1.4;color:#6B7480">（直線の引き方で、式は少しちがってよい）</p>
+</div>
+<img src="img/ichiji-14_f1_a.png" alt="点の近くを通る直線 y＝2x+4 と、通る点 (2, 8)、(6, 16)、(8, 20)" style="width:302px;height:500px;object-fit:contain">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第14時　実験の結果を一次関数とみなして、予測しよう</p>
+<aside>【解説 4分・学習課題のまとめ】板書の順：点は、ほぼ一直線上にならぶ → 一次関数とみなす → 直線が通る整数の点を 2つ選ぶ（(2, 8)、(6, 16)）→ 傾きと切片を求めて式 → x＝8 を代入して予測。赤い字は、先生の板書。直線の引き方で、式は少しちがってよい。</aside>
+</section>
+<section id="i14-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第14時　実験の結果を一次関数とみなして、予測しよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:32px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:44px 56px">
+<p style="font-size:48px;line-height:1.6">調べた点が、ほぼ一直線上にならぶとき、<br><u>　　　　　　</u>と<u>　　　　　</u>ことができる。</p>
+<p style="font-size:48px;line-height:1.6">点の近くを通る直線の式を使って、<br>調べていない値を求めることを<u>　　　　</u>という。</p>
+<p style="font-size:48px;line-height:1.6">式は、直線が通る<u>　　　　　　</u>を 2つ選んで求める。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第14時　実験の結果を一次関数とみなして、予測しよう</p>
+<aside>【解説 3分・ことば】「みなす」「予測」を押さえる。空欄は、先生が言ってから書かせる。発問：「予測」とは、何を求めること？　想定される反応：空欄に書き込む。　留意：重要語句は、先生が言い切る。信じてよい範囲は、ここで言わない。</aside>
+</section>
+<section id="i14-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第14時　実験の結果を一次関数とみなして、予測しよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:32px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:44px 56px">
+<p style="font-size:48px;line-height:1.6">調べた点が、ほぼ一直線上にならぶとき、<br><span style="color:#C0392B"><b>一次関数</b></span>と<span style="color:#C0392B"><b>みなす</b></span>ことができる。</p>
+<p style="font-size:48px;line-height:1.6">点の近くを通る直線の式を使って、<br>調べていない値を求めることを<span style="color:#C0392B"><b>予測</b></span>という。</p>
+<p style="font-size:48px;line-height:1.6">式は、直線が通る<span style="color:#C0392B"><b>整数の点</b></span>を 2つ選んで求める。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第14時　実験の結果を一次関数とみなして、予測しよう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。「みなす」と「予測」を、ばねの実験にあてはめて、言わせるとよい。信じてよい範囲は、ここで言わない。</aside>
+</section>
+<section id="i14-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第14時　実験の結果を一次関数とみなして、予測しよう</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:40px">
+<div style="display:flex;flex-direction:column;gap:28px;width:1229px">
+<p style="font-size:46px;font-weight:500;line-height:1.5">ろうそくに火をつけて、<u>　　</u>時間ごとに長さを調べた。<br>火をつけてから <i>x</i>時間後の長さを <i>y</i> cm とする。<br>燃えつきる（<i>y</i>＝<u>　　</u>）のは、何時間後と予測できるか。</p>
+<div style="width:1229px">
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:40px;color:#1F2A37">
+<tr><th style="width:22%;text-align:center"><i>x</i>（時間）</th><th style="width:13%;text-align:center">1</th><th style="width:13%;text-align:center">2</th><th style="width:13%;text-align:center">3</th><th style="width:13%;text-align:center">4</th><th style="width:13%;text-align:center">5</th><th style="width:13%;text-align:center">6</th></tr>
+<tr><td style="text-align:center"><b><i>y</i>（cm）</b></td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center">11.9</td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center">7.8</td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center">3.9</td></tr>
+</table>
+</div>
+</div>
+<img src="img/ichiji-14_f2_q.png" alt="ろうそくの長さの点が、ほぼ右下がりの一直線上にならんだ座標平面" style="width:395px;height:500px;object-fit:contain">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第14時　実験の結果を一次関数とみなして、予測しよう</p>
+<aside>【解説 5分・例題】ろうそくの実験。式を求め、燃えつきる（y＝0）のは何時間後かを予測する。数字（1時間ごと・14.2・10.1・6.1・0）は、先生が言ってから書かせる。発問：長さが 0 になるのは、y がいくつのとき？／傾きが負なのは、なぜ？　想定される反応：y＝−2x+16。0＝−2x+16 で x＝8。8時間後。　留意：数字は、先生が言ってから書かせる。y から x を求める向きを見せる。</aside>
+</section>
+<section id="i14-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第14時　実験の結果を一次関数とみなして、予測しよう</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px;width:1229px">
+<div style="width:1229px">
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:40px;color:#1F2A37">
+<tr><th style="width:22%;text-align:center"><i>x</i>（時間）</th><th style="width:13%;text-align:center">1</th><th style="width:13%;text-align:center">2</th><th style="width:13%;text-align:center">3</th><th style="width:13%;text-align:center">4</th><th style="width:13%;text-align:center">5</th><th style="width:13%;text-align:center">6</th></tr>
+<tr><td style="text-align:center"><b><i>y</i>（cm）</b></td><td style="text-align:center"><span style="color:#C0392B"><b>14.2</b></span></td><td style="text-align:center">11.9</td><td style="text-align:center"><span style="color:#C0392B"><b>10.1</b></span></td><td style="text-align:center">7.8</td><td style="text-align:center"><span style="color:#C0392B"><b>6.1</b></span></td><td style="text-align:center">3.9</td></tr>
+</table>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:20px 40px">
+<p style="font-size:44px;line-height:1.4;color:#C0392B">点は、ほぼ一直線上にならぶ → <b>一次関数とみなす</b></p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">直線が通る (2, 12)、(6, 4) から</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">傾き＝(4−12)⁄(6−2)＝−2　　12＝−2×2+<i>b</i>　<i>b</i>＝16</p>
+<p style="font-size:50px;font-weight:700;line-height:1.4;color:#C0392B"><i>y</i>＝−2<i>x</i>+16</p>
+<p style="font-size:46px;line-height:1.4;color:#C0392B"><i>y</i>＝0 のとき　0＝−2<i>x</i>+16　<i>x</i>＝8　　<b>8時間後</b></p>
+</div>
+</div>
+<img src="img/ichiji-14_f2_a.png" alt="直線 y＝−2x+16 と、通る点 (2, 12)、(6, 4)、(8, 0)" style="width:395px;height:500px;object-fit:contain">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第14時　実験の結果を一次関数とみなして、予測しよう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。点は、ほぼ一直線上にならぶ → 一次関数とみなす → (2, 12)、(6, 4) から y＝−2x+16 → y＝0 を代入して x＝8。8時間後。y から x を求める向きを見せる。傾きが負なのは、右下がり（長さが減る）から。数字は、先生が言ってから書かせる。</aside>
+</section>
+<section id="i14-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第14時　実験の結果を一次関数とみなして、予測しよう</p>
+</div>
+<h2 style="font-size:44px;font-weight:700;line-height:1.35;color:#1F2A37">実験の結果から、<i>y</i>＝2<i>x</i>+4 を求めた。<i>x</i> にどんな値を入れても、<br>長さは計算できる。計算した長さは、どこまで信じてよいだろう。</h2>
+<div style="display:flex;flex-direction:row;align-items:stretch;gap:20px">
+<div style="display:flex;flex-direction:column;gap:10px;width:950px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:14px 28px">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:16px">
+<p style="font-size:44px;font-weight:700;line-height:1.35;color:#D9730D">①</p>
+<p style="font-size:44px;line-height:1.35"><i>x</i> の値を式に入れて、<i>y</i> の値を求めよう。<br>信じてよいと思うものに ○、<br>信じにくいと思うものに △ をつけよう。</p>
+</div>
+<div style="width:950px">
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:52%;text-align:center"><i>x</i>（個）</th><th style="width:9.6%;text-align:center">7</th><th style="width:9.6%;text-align:center">10</th><th style="width:9.6%;text-align:center">20</th><th style="width:9.6%;text-align:center">50</th><th style="width:9.6%;text-align:center">100</th></tr>
+<tr><td style="text-align:center"><b><i>y</i>（cm）</b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td></tr>
+<tr><td style="text-align:center"><b>信じてよいか（○・△）</b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　</u></td></tr>
+</table>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;flex:1">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:16px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:12px 24px">
+<p style="font-size:44px;font-weight:700;line-height:1.35;color:#D9730D">②</p>
+<p style="font-size:44px;line-height:1.35">○と△をつけた<br>わけを書こう。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:16px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:12px 24px;flex:1">
+<p style="font-size:44px;font-weight:700;line-height:1.35;color:#D9730D">③</p>
+<p style="font-size:44px;line-height:1.35">信じてよい <i>x</i> の範囲を、<br>自分で決めよう。<br>決めたわけも書こう。</p>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:10px 24px">
+<p style="font-size:28px;font-weight:700;line-height:1.45;color:#D9730D;white-space:nowrap">発展</p>
+<p style="font-size:28px;line-height:1.45">演習まで解き終わった人は、考えてみよう！　A さんは (2, 8)、(6, 16) を通る直線をひいた。B さんは (1, 6.2)、(5, 13.8) を通る直線をひいた。B さんの式を求め、<i>x</i>＝8 のときと <i>x</i>＝50 のときの予測が、A さんとどれだけちがうか調べよう。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">一次関数　第14時　実験の結果を一次関数とみなして、予測しよう</p>
+<aside>【演習 23分・考えよう】進め方：演習① 考えようの提示 2分（ゴールは「考えよう」＝ワークシート裏を、全員が説明できること。立ち歩きOK、解答は教卓。考えようの答えはない。「できた人が教える」ではなく「説明できるようになる」と伝える）→ 演習② 基礎 5分（個人。解いたら、教卓の解答で答え合わせ。早く終わったら、考えようへ。直線の引き方で、式は少しちがってよい）→ 演習③ 考えよう＋標準 14分（学び合い。立ち歩きで、教え合い・説明し合い。先生は回って、気づきの言葉を拾い、必要なら判断して短く全体に戻す）→ 演習④ 方向性 2分。問い：実験から y＝2x+4 を求めた。x にどんな値を入れても、長さは計算できる。計算した長さは、どこまで信じてよいだろう。ヒントを出す順：1）表の x を、実験した 1〜6個とくらべて、近いか遠いかを見る。2）おもりをたくさんつるしたら、実さいのばねはどうなるか、思い出す。3）「信じてよい」と言えるわけは、実験の結果か、式か、場面のようすか。判断：○△が分かれたら共有1〜2分／止まる→ヒント1／わけが言えない→ヒント2・3／残り5分→指名。答えは言わない。方向性（演習④ 最後に一言）：「みなして予測するのは、便利な考え方。その予測をどこまで使ってよいかは、いつも自分で考えよう。次は、グラフで判断する問題だよ。」　発展は、演習まで解き終わった人向け。</aside>
+</section>
+<section id="i14-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第14時　実験の結果を一次関数とみなして、予測しよう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">実験の結果を一次関数とみなして、予測しよう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">一次関数とみなす</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">予測</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">一次関数　第14時　実験の結果を一次関数とみなして、予測しよう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。ワークシートと演習プリントを回収（未完成でも出す）。裏の発展は、解き終わった人向け。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

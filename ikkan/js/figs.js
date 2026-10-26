@@ -40,8 +40,10 @@
     return out + (an.length ? h.ans(an.join('')) : '');
   };
 
-  /* ---- 座標平面。{ xmin, xmax, ymin, ymax, lines:[{ a, b, from, to, text, at:[x, y], anchor }], points:[{ x, y }] }
-          lines（y＝ax+b の線分）と points は、解答を表示したときだけ赤で出る ---- */
+  /* ---- 座標平面。{ xmin, xmax, ymin, ymax, labelStep, lines:[{ a, b, from, to, text, at:[x, y], anchor, dash }], points:[{ x, y, text, at:[x, y], anchor }], given:{ lines:[…同じ形…], points:[…同じ形…], vlines:[{ x, from, to, text, at, anchor }] } }
+          lines（y＝ax+b の線分）と points は、解答を表示したときだけ赤で出る。
+          given は、問題として最初から出す線・点（黒。生徒が読みとる直線、与えられた点など）。vlines は x＝h の線。
+          線は、座標平面の枠（ymin〜ymax）からはみ出さないように、自動で切る。labelStep：目もりの数字を、何目もりごとに書くか（省略は 1）。dash：true で点線 ---- */
   const coord = o => (W, H, h) => {
     const x0 = o.xmin != null ? o.xmin : -4, x1 = o.xmax != null ? o.xmax : 4, y0 = o.ymin != null ? o.ymin : -4, y1 = o.ymax != null ? o.ymax : 4;
     const padL = 6, padR = 7, padT = 7, padB = 6;
@@ -53,17 +55,33 @@
     for (let y = y0; y <= y1; y++) out += h.ln(X(x0), Y(y), X(x1), Y(y), '#c9d1da', 0.15);
     out += h.ln(X(x0) - 1, Y(0), X(x1) + 2.4, Y(0), '#222', 0.3) + head(X(x1) + 3.4, Y(0), 0, '#222', 1.6);
     out += h.ln(X(0), Y(y0) + 1, X(0), Y(y1) - 2.4, '#222', 0.3) + head(X(0), Y(y1) - 3.4, -Math.PI / 2, '#222', 1.6);
-    const fs = Math.min(2.5, u * 0.6);
-    for (let x = x0; x <= x1; x++) if (x !== 0) out += h.tx(X(x), Y(0) + 3, mn(x), fs, 'middle');
-    for (let y = y0; y <= y1; y++) if (y !== 0) out += h.tx(X(0) - 1, Y(y) + fs * 0.35, mn(y), fs, 'end');
+    const fs = Math.min(2.5, u * 0.6), ls = o.labelStep || 1;
+    const halo = ' stroke="#fff" stroke-width="0.7" stroke-linejoin="round" paint-order="stroke"';   // 目もりの数字が、方眼の線や直線にかさなっても読めるように、白いふちをつける
+    for (let x = x0; x <= x1; x++) if (x !== 0 && x % ls === 0) out += h.tx(X(x), Y(0) + 3, mn(x), fs, 'middle', halo);
+    for (let y = y0; y <= y1; y++) if (y !== 0 && y % ls === 0) out += h.tx(X(0) - 1, Y(y) + fs * 0.35, mn(y), fs, 'end', halo);
     out += h.tx(X(0) - 1.3, Y(0) - 1.0, 'O', 2.6, 'end', ' class="pl"') + h.tx(X(x1) + 2.6, Y(0) + 4.6, 'x', 3, 'middle', ' class="pl"') + h.tx(X(0) - 2.4, Y(y1) - 2.4, 'y', 3, 'end', ' class="pl"');
+    // 線（y＝ax+b）を、枠（ymin〜ymax）の中だけに切って描く。col：色、sw：太さ、dash：点線
+    const lineSvg = (l, col, sw) => {
+      let fr = l.from != null ? l.from : x0, to = l.to != null ? l.to : x1;
+      const a = l.a || 0, b = l.b || 0;
+      if (a !== 0) {
+        const xa = (y0 - b) / a, xb = (y1 - b) / a, lo = Math.min(xa, xb), hi = Math.max(xa, xb);
+        if (l.from == null) fr = Math.max(fr, lo);
+        if (l.to == null) to = Math.min(to, hi);
+      }
+      if (fr >= to) return '';
+      return h.ln(X(fr), Y(a * fr + b), X(to), Y(a * to + b), col, sw, ` stroke-linecap="round"${l.dash ? ' stroke-dasharray="1.6 1.2"' : ''}`);
+    };
+    const labelSvg = (l, col) => (l.text && l.at ? h.rich(X(l.at[0]), Y(l.at[1]), l.text, 3, l.anchor || 'start') : '');
+    const dotSvg = (p, col) => `<circle cx="${f2(X(p.x))}" cy="${f2(Y(p.y))}" r="0.85" fill="${col}"/>` + labelSvg(p, col);
+    const g = o.given || {};
+    (g.lines || []).forEach(l => { out += lineSvg(l, '#1f2328', 0.5) + labelSvg(l); });
+    (g.vlines || []).forEach(l => { const fr = l.from != null ? l.from : y0, to = l.to != null ? l.to : y1; out += h.ln(X(l.x), Y(fr), X(l.x), Y(to), '#1f2328', 0.5, ' stroke-linecap="round"') + labelSvg(l); });
+    (g.points || []).forEach(p => { out += dotSvg(p, '#1f2328'); });
     const an = [];
-    (o.lines || []).forEach(l => {
-      const fr = l.from != null ? l.from : x0, to = l.to != null ? l.to : x1, b = l.b || 0;
-      an.push(h.ln(X(fr), Y(l.a * fr + b), X(to), Y(l.a * to + b), RED, 0.5, ' stroke-linecap="round"'));
-      if (l.text && l.at) an.push(h.rich(X(l.at[0]), Y(l.at[1]), l.text, 3, l.anchor || 'start'));
-    });
-    (o.points || []).forEach(p => an.push(`<circle cx="${f2(X(p.x))}" cy="${f2(Y(p.y))}" r="0.85" fill="${RED}"/>`));
+    (o.lines || []).forEach(l => { an.push(lineSvg(l, RED, 0.5) + labelSvg(l)); });
+    (o.vlines || []).forEach(l => { const fr = l.from != null ? l.from : y0, to = l.to != null ? l.to : y1; an.push(h.ln(X(l.x), Y(fr), X(l.x), Y(to), RED, 0.5, ' stroke-linecap="round"') + labelSvg(l)); });
+    (o.points || []).forEach(p => an.push(dotSvg(p, RED)));
     return out + (an.length ? h.ans(an.join('')) : '');
   };
 

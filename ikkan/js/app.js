@@ -9,10 +9,10 @@
   const $app = document.getElementById('app');
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const MM = 96 / 25.4;   // 1mm のピクセル数
-  const TABS = [['plan', '授業計画'], ['ws', 'ワークシート'], ['dr', '演習プリント'], ['qz', '小テスト'], ['set', '3点セット（印刷）']];
+  const TABS = [['plan', '授業計画'], ['slide', 'スライド'], ['ws', 'ワークシート'], ['dr', '演習プリント'], ['qz', '小テスト'], ['set', '3点セット（印刷）']];
   let ans = false, fit = 'w', cur = null, curTab = 'ws';
 
-  const tabsOf = id => TABS.filter(([k]) => (k === 'plan' ? IK.plans[id] : k === 'dr' ? IK.drills[id] : k === 'qz' ? IK.quizzes[id] : k === 'set' ? (IK.drills[id] || IK.quizzes[id]) : IK.lessons[id]));
+  const tabsOf = id => TABS.filter(([k]) => (k === 'plan' ? IK.plans[id] : k === 'slide' ? (IK.slides && IK.slides[id]) : k === 'dr' ? IK.drills[id] : k === 'qz' ? IK.quizzes[id] : k === 'set' ? (IK.drills[id] || IK.quizzes[id]) : IK.lessons[id]));
   const sheetOf = (id, tab) => (tab === 'dr' ? IK.drills[id] : tab === 'qz' ? IK.quizzes[id] : IK.lessons[id]);
   // 3点セット：印刷する順（ワークシート → 演習プリント → 小テスト）
   const partsOf = id => [['ワークシート', IK.lessons[id]], ['演習プリント', IK.drills[id]], ['小テスト', IK.quizzes[id]]].filter(p => p[1]);
@@ -143,14 +143,33 @@
     </div>`;
   }
 
+  // スライド：授業ごとのページ（slides/<授業のID>.html）を、枠の中に出す。1つにまとめたファイル（IK.single）では、公開サイトのページを開く
+  function showSlide(id, l, tabs) {
+    const info = IK.slides[id], url = (IK.single ? IK.qrBase : '') + info.file;
+    const seg = `<nav class="seg" aria-label="資料の切りかえ">${tabs.map(([k, n]) => `<a href="#/${esc(id)}/${k}"${k === 'slide' ? ' aria-current="page"' : ''}>${esc(n)}</a>`).join('')}</nav>`;
+    $app.innerHTML = `<header class="top">
+        <a class="brand" href="#/" title="一覧へ">← 一覧</a>
+        <div class="ttl"><small>${esc([l.unitName, l.no].filter(Boolean).join('　'))}</small><b>${esc(l.title)}</b></div>
+        ${seg}
+        <span class="sp"></span>
+        <a class="btn main2" href="${esc(url)}" target="_blank" rel="noopener">スライドだけを開く（全画面・印刷）</a>
+      </header>
+      <div class="pages-wrap">
+        <p class="hint">授業のスライドです（${info.n}枚）。矢印キー・タップで進みます。<b>N</b> で先生のメモ、<b>F</b> で全画面。生徒に見せるときは、メモを出さずに。</p>
+        ${IK.noPrint ? `<p class="hint"><a href="${esc(url)}" target="_blank" rel="noopener">スライドをひらく</a></p>` : `<div class="slidebox"><iframe src="${esc(url)}" title="${esc(l.title)}　スライド" allowfullscreen loading="lazy"></iframe></div>`}
+      </div>`;
+    setAns(false);
+  }
+
   function show(id, tab, askAns) {
     const l = IK.lessons[id];
     if (!l) { location.hash = '#/'; return; }
     const tabs = tabsOf(id);
     if (!tabs.some(([k]) => k === tab)) tab = 'ws';
     curTab = tab;
-    cur = tab === 'plan' ? { paper: 'A4' } : sheetOf(id, tab);
+    cur = tab === 'plan' || tab === 'slide' ? { paper: 'A4' } : sheetOf(id, tab);
     document.title = `${l.title}　数学ワークシート`;
+    if (tab === 'slide') { showSlide(id, l, tabs); return; }
     const pages = tab === 'plan' ? R.planHTML(IK.plans[id], l)
       : tab === 'set' ? partsOf(id).map(([n, sh], i) => `<div class="set-cap">${'①②③'[i]} ${esc(n)}　<small>A4 ${nPages(sh) > 1 ? `${nPages(sh)}ページ（表裏）` : '1ページ（片面）'}</small></div>${R.pagesHTML(sh)}`).join('')
       : R.pagesHTML(cur);
@@ -179,7 +198,7 @@
     else if (h[0] === 'print') showPrint(h[1], h.includes('ans'), h[2] === 'sched' ? 'sched' : '');
     else if (h[0] === 'rsum') { cur = null; document.body.classList.remove('ans-on'); IK.recui.sum($app); }
     else if (h[0] === 'r' && IK.recui && (h[2] ? IK.recui.record($app, h[1], h[2]) : IK.recui.unit($app, h[1]))) { cur = null; document.body.classList.remove('ans-on'); }
-    else show(h[0], ['plan', 'ws', 'dr', 'qz', 'set'].includes(h[1]) ? h[1] : 'ws', h.includes('ans') ? true : undefined);
+    else show(h[0], ['plan', 'slide', 'ws', 'dr', 'qz', 'set'].includes(h[1]) ? h[1] : 'ws', h.includes('ans') ? true : undefined);
     window.scrollTo(0, 0);
   }
 

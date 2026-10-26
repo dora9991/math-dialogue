@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>連立方程式　第10時　割合の問題を、表に整理して解こう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:3px solid #2b3647;padding:6px 14px}   /* 表の罫線は、色ではなく、はっきりした濃い線（プロジェクターでも見える） */
+#deck th{background:#eceff4}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="r10-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第10時　割合の問題を、表に整理して解こう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">1人1問ずつ出題して、言葉の意味を、自分の言葉で言う。<br>式や例を使って、説明してもよい。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">道のり・速さ・時間</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">分速・時速</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">単位をそろえる</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">解を確かめる</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">連立方程式　第10時　割合の問題を、表に整理して解こう</p>
+<aside>【導入 3分】前時の重要語句を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト（前時分。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解なら満点）。</aside>
+</section>
+<section id="r10-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第10時　割合の問題を、表に整理して解こう</p>
+</div>
+<h2 style="font-size:60px;font-weight:700;line-height:1.3;color:#1E3A5F">割合の問題を、表に整理して、連立方程式で解こう</h2>
+<div style="display:flex;flex-direction:column;gap:10px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:16px 40px">
+<div style="display:flex;flex-direction:row;align-items:center">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+</div>
+<p style="font-size:44px;font-weight:500;line-height:1.35">ある店で、先月は、おにぎりとサンドイッチを合わせて 300個売った。<br>今月は、先月とくらべて、おにぎりが 10％ 増え、<br>サンドイッチが 20％ 減って、合わせて 6個減った。<br>先月売れた、おにぎりとサンドイッチの個数を、それぞれ求めよう。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:36px">
+<div style="display:flex;flex-direction:column;width:860px">
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:26%;text-align:center"></th><th style="width:22%;text-align:center">おにぎり</th><th style="width:34%;text-align:center">サンドイッチ</th><th style="width:18%;text-align:center">合計</th></tr>
+<tr><td style="text-align:center"><b>先月（個）</b></td><td style="text-align:center"><i>x</i></td><td style="text-align:center"><i>y</i></td><td style="text-align:center">300</td></tr>
+<tr><td style="text-align:center"><b>増減（個）</b></td><td style="text-align:center"><u>　　</u></td><td style="text-align:center"><u>　　　</u></td><td style="text-align:center">−6</td></tr>
+</table>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;flex:1">
+<p style="font-size:44px;line-height:1.35">【表】先月のおにぎりを <i>x</i>個、<br>サンドイッチを <i>y</i>個として、<br>表を完成させよう。</p>
+<p style="font-size:34px;line-height:1.4;color:#6B7480">（増えた個数は ＋、減った個数は − で表す）</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第10時　割合の問題を、表に整理して解こう</p>
+<aside>【解説 4分・学習課題】めあてを書く。先月の個数を x、y として表に整理し、表を横に見て式を2つつくる。発問：10％ 増えた個数は、x を使うと、どう表せるだろう。　想定される反応：10％ 増 → (10/100)x、20％ 減 → −(20/100)y。x+y＝300、(10/100)x−(20/100)y＝−6。留意：100個の 10％ は 10個、と数で確かめる。②は ×10 で係数を整数に（第5時）。</aside>
+</section>
+<section id="r10-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第10時　割合の問題を、表に整理して解こう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:28px 56px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="font-size:44px;line-height:1.35;color:#C0392B">増減の行　おにぎり (10⁄100)<i>x</i>、サンドイッチ −(20⁄100)<i>y</i></p>
+<p style="font-size:44px;line-height:1.35;color:#C0392B">個数の関係　<b><i>x</i>+<i>y</i>＝300 …①</b></p>
+<p style="font-size:44px;line-height:1.35;color:#C0392B">増減の関係　<b>(10⁄100)<i>x</i>−(20⁄100)<i>y</i>＝−6 …②</b></p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;border-top:2px solid #E3E6EA;padding:16px 0 0 0">
+<p style="font-size:44px;line-height:1.35;color:#C0392B">②×10　<i>x</i>−2<i>y</i>＝−60 …③</p>
+<p style="font-size:44px;line-height:1.35;color:#C0392B">①−③　3<i>y</i>＝360　<i>y</i>＝120　　① に代入　<i>x</i>＝180</p>
+<p style="font-size:44px;line-height:1.35;color:#C0392B">確かめ　180+120＝300、(10⁄100)×180−(20⁄100)×120＝18−24＝−6</p>
+<p style="font-size:44px;line-height:1.35;color:#C0392B">個数として、合っている。</p>
+<p style="font-size:50px;font-weight:700;line-height:1.35;color:#C0392B">おにぎり 180個、サンドイッチ 120個</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第10時　割合の問題を、表に整理して解こう</p>
+<aside>【解説 4分・学習課題のまとめ】ペアの式を聞いて、板書にまとめる。「増減」の行で、式をつくる。②は、×10 で係数を整数にする（第5時）。解いたら、解が個数として合っているか確かめる。赤い字は、先生の板書。</aside>
+</section>
+<section id="r10-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第10時　割合の問題を、表に整理して解こう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:24px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:36px 56px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:44px;line-height:1.5">① <i>x</i> の <i>a</i>％ は、<u>　　　　　　</u> と表される。</p>
+<p style="font-size:44px;line-height:1.5">　（例）<i>x</i> 円の 30％ → (30⁄100)<i>x</i> 円</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:44px;line-height:1.5">② <i>a</i>％ 増えたあとの量は、<i>x</i>+(<i>a</i>⁄100)<i>x</i>＝<u>　　　　　　　　</u>、</p>
+<p style="font-size:44px;line-height:1.5">　<i>a</i>％ 減ったあとの量は、<i>x</i>−(<i>a</i>⁄100)<i>x</i>＝<u>　　　　　　　　</u>。</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:44px;line-height:1.5">③ 割合の問題は、<u>　　　　　　　</u>を文字でおく。</p>
+<p style="font-size:44px;line-height:1.5">　手順は、第8・9時と同じ。</p>
+<p style="font-size:44px;line-height:1.5">　文字をおく → <u>　　</u>に整理 → 式を<u>　　　</u> → 解く → <u>　　　　</u>て答える</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第10時　割合の問題を、表に整理して解こう</p>
+<aside>【解説 3分・ことば】％の表し方、増えた量とあとの量のちがい、もとにする量。手順は第8・9時と同じ（文字をおく→表→式を2つ→解く→確かめ）。空欄は、言ってから書かせる。発問：20％ 減ったあとの量は、もとの量の何％だろう。　想定される反応：80％ → (80/100)x。留意：重要語句は、先生が言い切る。</aside>
+</section>
+<section id="r10-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第10時　割合の問題を、表に整理して解こう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:24px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:36px 56px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:44px;line-height:1.5">① <i>x</i> の <i>a</i>％ は、<span style="color:#C0392B"><b>(<i>a</i>⁄100)<i>x</i></b></span> と表される。</p>
+<p style="font-size:44px;line-height:1.5">　（例）<i>x</i> 円の 30％ → (30⁄100)<i>x</i> 円</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:44px;line-height:1.5">② <i>a</i>％ 増えたあとの量は、<i>x</i>+(<i>a</i>⁄100)<i>x</i>＝<span style="color:#C0392B"><b>((100+<i>a</i>)⁄100)<i>x</i></b></span>、</p>
+<p style="font-size:44px;line-height:1.5">　<i>a</i>％ 減ったあとの量は、<i>x</i>−(<i>a</i>⁄100)<i>x</i>＝<span style="color:#C0392B"><b>((100−<i>a</i>)⁄100)<i>x</i></b></span>。</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:44px;line-height:1.5">③ 割合の問題は、<span style="color:#C0392B"><b>もとにする量</b></span>を文字でおく。</p>
+<p style="font-size:44px;line-height:1.5">　手順は、第8・9時と同じ。</p>
+<p style="font-size:44px;line-height:1.5">　文字をおく → <span style="color:#C0392B"><b>表</b></span>に整理 → 式を<span style="color:#C0392B"><b>2つ</b></span> → 解く → <span style="color:#C0392B"><b>確かめ</b></span>て答える</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第10時　割合の問題を、表に整理して解こう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。20％ 減ったあとの量は 100−20＝80 で、(80/100)x。10％ 増えたあとの量は、(110/100)x。</aside>
+</section>
+<section id="r10-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:26px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第10時　割合の問題を、表に整理して解こう</p>
+</div>
+<p style="font-size:44px;font-weight:500;line-height:1.35">ある中学校の昨年度の部員は、運動部と文化部を合わせて <u>　　　</u>人だった。<br>今年度は、昨年度とくらべて、運動部が <u>　　</u>％ 減り、<br>文化部が <u>　　</u>％ 増えて、合わせて <u>　　　</u>人になった。<br>昨年度の運動部と文化部の部員は、それぞれ何人だったか。</p>
+<p style="font-size:44px;font-weight:500;line-height:1.35">昨年度の運動部を <i>x</i>人、文化部を <i>y</i>人とする。</p>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:28%;text-align:center"></th><th style="width:24%;text-align:center">運動部</th><th style="width:24%;text-align:center">文化部</th><th style="width:24%;text-align:center">合計</th></tr>
+<tr><td style="text-align:center"><b>昨年度（人）</b></td><td style="text-align:center"><i>x</i></td><td style="text-align:center"><i>y</i></td><td style="text-align:center"><u>　　　</u></td></tr>
+<tr><td style="text-align:center"><b>今年度（人）</b></td><td style="text-align:center"><u>　　　　　</u></td><td style="text-align:center"><u>　　　　　</u></td><td style="text-align:center"><u>　　　</u></td></tr>
+</table>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第10時　割合の問題を、表に整理して解こう</p>
+<aside>【解説 5分・例題】部員の問題。昨年度を x、y として表に整理し、「今年度」の行から式をつくる。解いて、人数として合うか確かめる。発問：解が人数として合っているか、どう確かめる？　想定される反応：(80/100)x、(110/100)y。8x+11y＝1380。x＝90、y＝60。留意：学習課題は「増減」の行、例題は「あとの量」の行。数字は、先生が言ってから書かせる。</aside>
+</section>
+<section id="r10-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第10時　割合の問題を、表に整理して解こう</p>
+</div>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:28%;text-align:center"></th><th style="width:24%;text-align:center">運動部</th><th style="width:24%;text-align:center">文化部</th><th style="width:24%;text-align:center">合計</th></tr>
+<tr><td style="text-align:center"><b>昨年度（人）</b></td><td style="text-align:center"><i>x</i></td><td style="text-align:center"><i>y</i></td><td style="text-align:center"><span style="color:#C0392B"><b>150</b></span></td></tr>
+<tr><td style="text-align:center"><b>今年度（人）</b></td><td style="text-align:center"><span style="color:#C0392B"><b>(80⁄100)<i>x</i></b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>(110⁄100)<i>y</i></b></span></td><td style="text-align:center"><span style="color:#C0392B"><b>138</b></span></td></tr>
+</table>
+<div style="display:flex;flex-direction:column;gap:4px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:18px 56px">
+<p style="font-size:44px;line-height:1.35;color:#C0392B"><i>x</i>+<i>y</i>＝150 …①　　(80⁄100)<i>x</i>+(110⁄100)<i>y</i>＝138 …②</p>
+<p style="font-size:44px;line-height:1.35;color:#C0392B">②×10　8<i>x</i>+11<i>y</i>＝1380 …③　　③−①×8　3<i>y</i>＝180　<i>y</i>＝60</p>
+<p style="font-size:44px;line-height:1.35;color:#C0392B">① に代入　<i>x</i>＝90</p>
+<p style="font-size:44px;line-height:1.35;color:#C0392B">確かめ　90+60＝150、(80⁄100)×90+(110⁄100)×60＝72+66＝138</p>
+<p style="font-size:44px;line-height:1.35;color:#C0392B">人数として、合っている。</p>
+<p style="font-size:50px;font-weight:700;line-height:1.35;color:#C0392B">運動部 90人、文化部 60人</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第10時　割合の問題を、表に整理して解こう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。「今年度」の行は、あとの量（20％ 減 → 80％、10％ 増 → 110％）。②は ×10 で係数を整数にして解き、人数として合っているか確かめる。</aside>
+</section>
+<section id="r10-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第10時　割合の問題を、表に整理して解こう</p>
+</div>
+<h2 style="font-size:44px;font-weight:700;line-height:1.2;color:#1F2A37">先月、おにぎりとサンドイッチを合わせて 300個売った店で、<br>今月は、おにぎりが 10％ 増え、サンドイッチが 10％ 減った。<br>全体の個数は、増えたのか、減ったのか。先月の分け方を変えて、調べよう。</h2>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:16px">
+<div style="display:flex;flex-direction:column;width:985px">
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:12px 20px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:16px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">①</p>
+<div style="display:flex;flex-direction:column;flex:1"><p style="font-size:44px;line-height:1.25">先月のおにぎりの個数が、<br>下の表のときの、全体の増減を求めよう。</p></div>
+</div>
+<table style="font-family:'Noto Sans JP', sans-serif;font-size:38px;color:#1F2A37">
+<tr><th style="width:57.7%;text-align:center">先月のおにぎり <i>x</i>（個）</th><th style="width:10.6%;text-align:center">100</th><th style="width:10.6%;text-align:center">150</th><th style="width:10.6%;text-align:center">200</th><th style="width:10.5%;text-align:center">250</th></tr>
+<tr><td style="text-align:center"><b>先月のサンドイッチ <i>y</i>（個）</b></td><td style="text-align:center"><u>　</u></td><td style="text-align:center"><u>　</u></td><td style="text-align:center"><u>　</u></td><td style="text-align:center"><u>　</u></td></tr>
+<tr><td style="text-align:center"><b>おにぎりの増減（個）</b></td><td style="text-align:center"><u>　</u></td><td style="text-align:center"><u>　</u></td><td style="text-align:center"><u>　</u></td><td style="text-align:center"><u>　</u></td></tr>
+<tr><td style="text-align:center"><b>サンドイッチの増減（個）</b></td><td style="text-align:center"><u>　</u></td><td style="text-align:center"><u>　</u></td><td style="text-align:center"><u>　</u></td><td style="text-align:center"><u>　</u></td></tr>
+<tr><td style="text-align:center"><b>全体の増減（個）</b></td><td style="text-align:center"><u>　</u></td><td style="text-align:center"><u>　</u></td><td style="text-align:center"><u>　</u></td><td style="text-align:center"><u>　</u></td></tr>
+</table>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;flex:1">
+<p style="font-size:34px;line-height:1.35;color:#6B7480">（増えた個数は ＋、<br>減った個数は − で表す）</p>
+<div style="display:flex;flex-direction:column;gap:10px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:12px 18px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:14px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">②</p>
+<p style="font-size:44px;line-height:1.3">気づいたこと</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:14px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">③</p>
+<div style="display:flex;flex-direction:column;flex:1"><p style="font-size:44px;line-height:1.3">なぜ、そうなるのだろう。<br>表の行や、式を使って、<br>説明しよう。</p></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px;border:3px solid #D9730D;border-radius:14px;padding:10px 24px">
+<p style="font-size:30px;line-height:1.35;color:#1F2A37"><b><span style="color:#D9730D">発展</span></b>　解き終わった人は、<br>ワークシート裏の発展へ。</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第10時　割合の問題を、表に整理して解こう</p>
+<aside>【演習 23分・考えよう】進め方（2分）：ゴールは、考えようを、全員が説明できること。立ち歩きOK。解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「説明できるようになる」と伝える。基礎（個人 5分）：解いたら、教卓の解答で答え合わせ。早く終わったら、考えようへ。考えよう＋標準（学び合い 14分）：立ち歩きで、教え合い・説明し合い。ヒントを出す順：1）先月のおにぎりを 100・150・200・250個として、残りの行を、表にする。2）全体の増減が 0 になるのは、どんなときか。表から探す。3）「全体の増減」の行を式で書き、1/10 でくくって見る。判断：符号でつまずく→行の名前を確かめる／気づきが出ない→ヒント1／止まる→ヒント2・3／残り5分→指名。答えは言わない。方向性（最後に一言 2分）：「割合の問題は、『何をもとにしているか』に目をつけると、見通しがよくなる。次の時間は、条件の数を変えたとき、解や答えがどうなるかを調べるよ。」</aside>
+</section>
+<section id="r10-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第10時　割合の問題を、表に整理して解こう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">割合の問題を、表に整理して、連立方程式で解こう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">もとにする量</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">増えた量・減った量</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">増えたあとの量</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">％の表し方</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">連立方程式　第10時　割合の問題を、表に整理して解こう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。ワークシートと演習プリントを回収（未完成でも出す）。裏の発展は、解き終わった人向け。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

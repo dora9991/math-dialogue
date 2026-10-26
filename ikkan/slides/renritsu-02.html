@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>連立方程式　第2時　2つの式をたしたりひいたりして、文字を1つ消そう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:3px solid #2b3647;padding:6px 14px}   /* 表の罫線は、色ではなく、はっきりした濃い線（プロジェクターでも見える） */
+#deck th{background:#eceff4}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="r02-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+</div>
+<h2 style="font-size:68px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">第1時の重要語句から、1人1問ずつ、言葉を選んで出題する。<br>聞かれた人は、その言葉の意味を、自分の言葉で言う。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">2元1次方程式</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">解</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">連立方程式</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">連立方程式の解</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">連立方程式　第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+<aside>【導入 3分】前時（第1時）の重要語句（2元1次方程式・解・連立方程式・連立方程式の解）を、ペアで1人1問ずつ出題し合う。言葉の意味を、言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト 7分（前時分。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="r02-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+</div>
+<h2 style="font-size:60px;font-weight:700;line-height:1.3;color:#1E3A5F">2つの式をたしたりひいたりして、<br>文字を1つ消し、連立方程式を解こう</h2>
+<div style="display:flex;flex-direction:column;gap:16px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:28px 48px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+</div>
+<p style="font-size:46px;font-weight:500;line-height:1.45">えんぴつ2本とノート3冊を買うと 540円、<br>えんぴつ2本とノート1冊を買うと 300円だった。<br>えんぴつ1本を <i>x</i>円、ノート1冊を <i>y</i>円として、<br>それぞれの値段を求めよう。</p>
+</div>
+<p style="font-size:40px;line-height:1.5;color:#1F2A37">【自分の考え】2つの買い物をくらべて、考えよう。式にも表そう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+<aside>【解説 4分・学習課題】めあてを書く。えんぴつ・ノートの2つの買い物をくらべて、値段を考える。個人→ペア（【ペア】自分とちがう考えを書く）。発問：2つの買い物で、同じところと、ちがうところは？／ちがいから、何がわかるだろう。　想定される反応：えんぴつ2本は同じ。ちがいは、ノート2冊で 240円。　留意：絵や図で、同じ部分を消して見せてもよい。式 ①−② と結びつける。</aside>
+</section>
+<section id="r02-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:24px 48px">
+<p style="font-size:44px;line-height:1.4;color:#C0392B">2つの買い物をくらべると、えんぴつ2本は同じ。</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">ちがいは、ノート2冊で <b>540−300＝240</b></p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">ノート1冊は <b>240÷2＝120</b>（円）。</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">えんぴつ2本は <b>300−120＝180</b> だから、1本は <b>90</b>（円）</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:40px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:20px 48px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+<p style="font-size:130px;font-weight:400;line-height:1;color:#C0392B">{</p>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px">
+<div style="width:290px"><p style="font-size:48px;line-height:1.3;color:#C0392B">2<i>x</i>+3<i>y</i>＝540</p></div>
+<p style="font-size:34px;color:#6B7480">①</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px">
+<div style="width:290px"><p style="font-size:48px;line-height:1.3;color:#C0392B">2<i>x</i>+<i>y</i>＝300</p></div>
+<p style="font-size:34px;color:#6B7480">②</p>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;flex:1">
+<p style="font-size:44px;line-height:1.4;color:#C0392B">①−②　2<i>y</i>＝240　　<i>y</i>＝120</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">② に代入　2<i>x</i>+120＝300　　2<i>x</i>＝180　　<i>x</i>＝90</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B"><b>→ <i>x</i>＝90、<i>y</i>＝120</b></p>
+</div>
+</div>
+<p style="font-size:54px;font-weight:700;line-height:1.4;color:#C0392B">答え　えんぴつ 90円、ノート 120円</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+<aside>【解説 4分・学習課題のまとめ】赤い字は、先生の板書。2つの買い物をくらべると、えんぴつ2本は同じで、ちがいはノート2冊の 240円。この「くらべる」考えを、式 ①−② と結びつける。このあと、【ペア】自分とちがう考えを書く。絵や図で、同じ部分を消して見せてもよい。</aside>
+</section>
+<section id="r02-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:26px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<p style="font-size:46px;line-height:1.55"><u>　　　　　　</u> … 2つの式の左辺どうし、右辺どうしを、<br>たしたり、ひいたりして、1つの文字を<u>　　　　</u>して解く方法。</p>
+<p style="font-size:46px;line-height:1.55">（等式の性質）A＝B、C＝D のとき　A+C＝B+D　　A−C＝B−D</p>
+<p style="font-size:46px;line-height:1.55">連立方程式の解を求めることを、連立方程式を<u>　　　　</u>という。</p>
+<p style="font-size:46px;line-height:1.55">解は、<i>x</i>、<i>y</i> の<u>　　　　</u>の値を求めて、<br><i>x</i>＝…、<i>y</i>＝… の形で答える。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+<aside>【解説 3分・ことば】加減法・消去・解く、を押さえる。式をたし・ひきしてよいわけを、短く言う。空欄は、先生が言ってから書かせる。発問：式どうしを、ひいてよいのは、なぜだろう。／ひいたら、何が消えた？　想定される反応：空欄に書き込む。　留意：わけは、てんびんで。左右から、同じものを取りのぞく。</aside>
+</section>
+<section id="r02-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:26px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<p style="font-size:46px;line-height:1.55"><span style="color:#C0392B"><b>加減法</b></span> … 2つの式の左辺どうし、右辺どうしを、<br>たしたり、ひいたりして、1つの文字を<span style="color:#C0392B"><b>消去</b></span>して解く方法。</p>
+<p style="font-size:46px;line-height:1.55">（等式の性質）A＝B、C＝D のとき　A+C＝B+D　　A−C＝B−D</p>
+<p style="font-size:46px;line-height:1.55">連立方程式の解を求めることを、連立方程式を<span style="color:#C0392B"><b>解く</b></span>という。</p>
+<p style="font-size:46px;line-height:1.55">解は、<i>x</i>、<i>y</i> の<span style="color:#C0392B"><b>両方</b></span>の値を求めて、<br><i>x</i>＝…、<i>y</i>＝… の形で答える。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。式をたし・ひきしてよいわけは、てんびんで。左右から、同じものを取りのぞく。</aside>
+</section>
+<section id="r02-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:40px">
+<p style="font-size:52px;font-weight:500;line-height:1.4">連立方程式</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:14px">
+<p style="font-size:150px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px">
+<div style="width:360px"><p style="font-size:56px;line-height:1.3"><i>x</i>+2<i>y</i>＝<u>　　　</u></p></div>
+<p style="font-size:34px;color:#6B7480">①</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px">
+<div style="width:360px"><p style="font-size:56px;line-height:1.3">3<i>x</i>−2<i>y</i>＝<u>　　　</u></p></div>
+<p style="font-size:34px;color:#6B7480">②</p>
+</div>
+</div>
+</div>
+<p style="font-size:52px;font-weight:500;line-height:1.4">を、加減法で解こう。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+<aside>【解説 5分・例題】x+2y＝10、3x−2y＝6 を、加減法で解く。たして x、代入して y を求め、確かめる。発問：どちらの文字を消せそうだろう。／消したあと、もう1つの文字は、どう求める？　想定される反応：消す文字を決め、①+② で x を求める。x＝4 を ① に代入。　留意：「どの文字を消すか」を、かならず書かせる。</aside>
+</section>
+<section id="r02-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:36px">
+<p style="font-size:44px;font-weight:500;line-height:1.4">連立方程式</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+<p style="font-size:120px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px">
+<div style="width:250px"><p style="font-size:46px;line-height:1.3"><i>x</i>+2<i>y</i>＝<span style="color:#C0392B"><b>10</b></span></p></div>
+<p style="font-size:34px;color:#6B7480">①</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px">
+<div style="width:250px"><p style="font-size:46px;line-height:1.3">3<i>x</i>−2<i>y</i>＝<span style="color:#C0392B"><b>6</b></span></p></div>
+<p style="font-size:34px;color:#6B7480">②</p>
+</div>
+</div>
+</div>
+<p style="font-size:44px;font-weight:500;line-height:1.4">を、加減法で解こう。</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:28px 48px">
+<p style="font-size:46px;line-height:1.4;color:#C0392B"><b><i>y</i> を消去</b>　①+②　4<i>x</i>＝16　　<i>x</i>＝4</p>
+<p style="font-size:46px;line-height:1.4;color:#C0392B">① に代入　4+2<i>y</i>＝10　　2<i>y</i>＝6　　<i>y</i>＝3　<b>→ <i>x</i>＝4、<i>y</i>＝3</b></p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:16px;border-top:2px solid #E3E6EA;padding:12px 0px 0px 0px">
+<div style="width:170px"><p style="font-size:46px;line-height:1.4;color:#C0392B">確かめ</p></div>
+<div style="width:640px"><p style="font-size:46px;line-height:1.4;color:#C0392B">① 左辺＝4+2×3＝10</p></div>
+<div style="width:280px"><p style="font-size:46px;line-height:1.4;color:#C0392B">右辺＝10</p></div>
+<p style="font-size:46px;line-height:1.4;color:#C0392B"><b>○</b></p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:16px">
+<div style="width:170px"></div>
+<div style="width:640px"><p style="font-size:46px;line-height:1.4;color:#C0392B">② 左辺＝3×4−2×3＝6</p></div>
+<div style="width:280px"><p style="font-size:46px;line-height:1.4;color:#C0392B">右辺＝6</p></div>
+<p style="font-size:46px;line-height:1.4;color:#C0392B"><b>○</b></p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。y を消去して、①+② で x を求め、① に代入して y を求める。最後に、もとの式 ①、② に代入して確かめる。「どの文字を消すか」を、かならず書かせる。</aside>
+</section>
+<section id="r02-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+</div>
+<h2 style="font-size:46px;font-weight:700;line-height:1.35;color:#1F2A37">ア〜エの連立方程式を、加減法で解こう。<br>2つの式を「たす」か「ひく」かは、式のどこを見て決めればよいだろう。</h2>
+<div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center">
+<div style="display:flex;flex-direction:row;align-items:center;gap:8px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">ア</p>
+<p style="font-size:110px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:10px"><p style="font-size:44px;line-height:1.25">3<i>x</i>+<i>y</i>＝11</p><p style="font-size:30px;color:#6B7480">①</p></div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:10px"><p style="font-size:44px;line-height:1.25"><i>x</i>+<i>y</i>＝5</p><p style="font-size:30px;color:#6B7480">②</p></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:8px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">イ</p>
+<p style="font-size:110px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:10px"><p style="font-size:44px;line-height:1.25">2<i>x</i>+3<i>y</i>＝−1</p><p style="font-size:30px;color:#6B7480">①</p></div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:10px"><p style="font-size:44px;line-height:1.25">−2<i>x</i>+<i>y</i>＝5</p><p style="font-size:30px;color:#6B7480">②</p></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:8px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">ウ</p>
+<p style="font-size:110px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:10px"><p style="font-size:44px;line-height:1.25"><i>x</i>+4<i>y</i>＝−1</p><p style="font-size:30px;color:#6B7480">①</p></div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:10px"><p style="font-size:44px;line-height:1.25">3<i>x</i>−4<i>y</i>＝13</p><p style="font-size:30px;color:#6B7480">②</p></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:8px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">エ</p>
+<p style="font-size:110px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:10px"><p style="font-size:44px;line-height:1.25">4<i>x</i>+3<i>y</i>＝5</p><p style="font-size:30px;color:#6B7480">①</p></div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:10px"><p style="font-size:44px;line-height:1.25">4<i>x</i>−<i>y</i>＝9</p><p style="font-size:30px;color:#6B7480">②</p></div>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:0px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;border-bottom:2px solid #F0C9A0;padding:8px 8px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">①</p>
+<p style="font-size:44px;line-height:1.35">ア〜エを解いて、消す文字と、「たす」「ひく」を、表に書こう。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;border-bottom:2px solid #F0C9A0;padding:8px 8px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">②</p>
+<p style="font-size:44px;line-height:1.35">気づいたこと</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;border-bottom:2px solid #F0C9A0;padding:8px 8px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">③</p>
+<p style="font-size:44px;line-height:1.35">「たす」か「ひく」かは、式のどこを見て決めればよいか。理由も書こう。</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:14px;padding:8px 20px">
+<p style="font-size:30px;line-height:1.35;color:#1F2A37"><span style="color:#D9730D"><b>発展</b></span>　演習まで解き終わった人は、考えてみよう！</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:16px">
+<p style="font-size:30px;line-height:1.35;color:#1F2A37">連立方程式</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:6px">
+<p style="font-size:70px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:2px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:8px"><p style="font-size:30px;line-height:1.25"><i>x</i>+<i>y</i>＝12</p><p style="font-size:24px;color:#6B7480">①</p></div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:8px"><p style="font-size:30px;line-height:1.25"><i>x</i>−<i>y</i>＝4</p><p style="font-size:24px;color:#6B7480">②</p></div>
+</div>
+</div>
+<p style="font-size:30px;line-height:1.35;color:#1F2A37">で、<i>x</i> を求めたあと、<i>y</i> を、代入しないで求められるだろうか。</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+<aside>【演習 23分・考えよう】進め方（演習① 2分）：ゴールは、「考えよう」（ワークシート裏）を全員が説明できること。立ち歩きOK、解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「説明できるようになる」と伝える。基礎（演習② 5分・個人）→ 解いたら教卓の解答で答え合わせ → 終わった人から考えようへ。考えよう＋標準（演習③ 14分・学び合い）：立ち歩きで、教え合い・説明し合い。ア〜エの解は、ワークシートの表（消す文字・たす／ひく・解 x、y）に書く。先生は回って、気づきの言葉を拾い、必要なら判断して短く全体に戻す。ヒントを出す順：1）4つを1つずつ解き、たしたかひいたかを表にまとめる。2）消えた文字の係数（符号もふくむ）を、くらべる。3）たしたとき・ひいたとき、消えた文字の係数は？　判断：ひく計算の符号でつまずく→共有1〜2分／気づきが出ない→ヒント1／止まる→ヒント2・3／残り5分→指名。答えは言わない。方向性（演習④ 2分・最後に一言）：「どこを見ると決められるか、自分の言葉でまとめておこう。次の時間は、そのきまりがそのままでは使えない連立方程式を考えるよ。」</aside>
+</section>
+<section id="r02-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">2つの式をたしたりひいたりして、<br>文字を1つ消し、連立方程式を解こう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">加減法</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">消去</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">連立方程式を解く</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">連立方程式　第2時　2つの式をたしたりひいたりして、文字を1つ消そう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。ワークシートと演習プリントを回収（未完成でも出す）。裏の発展は、解き終わった人向け。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>
