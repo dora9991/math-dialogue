@@ -289,6 +289,9 @@
      画面は、いちど作ったら作り直さず、数字（得点・回数）だけを書き換える
      （押している間にボタンが入れ替わると、Safari ではタップにならないため） */
   /* そのチームの行：背番号の小さい順＋「？」（だれか分からないとき。背番号がないチームは、この1行だけ） */
+  /* 選手の行のボタン（設定：シュートの失敗・ファウルを足す。ふだんは 2P・3P・FT・リバ） */
+  const rowTypes = () => BT.rowTypes({ miss: !!S.prefs.btnMiss, foul: !!S.prefs.btnFoul });
+  const rowSpec = () => BT.rowSpec(rowTypes());
   function rowsOf(tm) {
     const rows = S.game.teams[tm].players.map((p) => ({ no: p.no, name: p.name }));
     if (S.prefs.unknown !== false || !rows.length) rows.push({ no: null, name: '' });
@@ -366,12 +369,13 @@
       const row = h('div', { class: 'prow' + (r.no == null ? ' unk' : '') + (teamOnly ? ' teamonly' : ''), dataset: { no } },
         h('div', { class: 'pno' }, h('b', null, r.no != null ? r.no : teamOnly ? 'チーム' : '？'),
           r.no != null ? (S.prefs.names && r.name ? h('small', null, r.name) : null) : teamOnly ? null : h('small', null, 'だれか')));
-      BT.ROW_TYPES.forEach((type) => {
+      rowTypes().forEach((type) => {
         const d = BT.TYPE[type];
         const cnt = h('i', { class: 'cnt', hidden: true });
-        const el = h('button', { class: 'pb k-' + type, dataset: { type, no }, 'aria-label': `${BT.teamName(g, tm)} ${who} ${d.label}` }, h('b', null, d.btn), cnt);
+        const lab = d.btnShort ? [h('b', { class: 'bl' }, d.btn), h('b', { class: 'bs' }, d.btnShort)] : h('b', null, d.btn);
+        const el = h('button', { class: 'pb k-' + type + (d.kind === 'miss' ? ' miss' : ''), dataset: { type, no }, 'aria-label': `${BT.teamName(g, tm)} ${who} ${d.label}` }, lab, cnt);
         row.append(el);
-        L.btns.push({ team: tm, key: tm + ':' + no + ':' + type, el, cnt });
+        L.btns.push({ team: tm, type, key: tm + ':' + no + ':' + type, el, cnt });
       });
       P.roster.append(row);
     });
@@ -385,28 +389,34 @@
     const live = L.root, P = L.panelsEl;
     live.classList.toggle('short', (live.clientHeight || root.innerHeight) < 430);
     layoutWipe();
-    const n = [L.panels[0].n, L.panels[1].n], headH = L.panels[0].head.offsetHeight || 22;
+    const n = [L.panels[0].n, L.panels[1].n], headH = L.panels[0].head.offsetHeight || 22, spec = rowSpec();
     let plan;
     if (L.oppMoved) {
       // ワイプ「特大」：自分のチームは残りの広さに・相手チームは映像の下の枠に、それぞれ並べる
       const os = L.panels[1].sec;
-      const teams = [BT.planTeam(P.clientWidth - 2 * BT.LAYOUT.pad, P.clientHeight, n[0], headH, 3), BT.planTeam(os.offsetWidth, os.offsetHeight, n[1], headH, 4)];
+      const teams = [BT.planTeam(P.clientWidth - 2 * BT.LAYOUT.pad, P.clientHeight, n[0], headH, 3, spec), BT.planTeam(os.offsetWidth, os.offsetHeight, n[1], headH, 4, spec)];
       plan = { arr: 'x', teams, scroll: teams.some((t) => t.scroll) };
-    } else plan = BT.planLayout(P.clientWidth, P.clientHeight, n, headH);
+    } else plan = BT.planLayout(P.clientWidth, P.clientHeight, n, headH, spec);
+    const cols = spec.weights.map((w) => `minmax(0, ${w}fr)`).join(' ');      // 行のボタンの幅の割合（「×」は細め）
     live.classList.toggle('lay-side', plan.arr !== 'stack');
     live.classList.toggle('lay-stack', plan.arr === 'stack');
     L.plan = plan;
     plan.teams.forEach((T, tm) => {
       const sec = L.panels[tm].sec;
       const unit = Math.max(BT.LAYOUT.rmin, Math.min(T.bw, T.rowH));
+      sec.style.setProperty('--cols', cols);
       sec.style.setProperty('--c', T.c);
       sec.style.setProperty('--r', T.r);
       sec.style.setProperty('--nw', T.nw + 'px');
       sec.style.setProperty('--base', Math.ceil(T.base) + 'px');
-      sec.style.setProperty('--bf', Math.round(BT.clamp(unit * 0.44, 13, 24)) + 'px');
+      const bf = Math.round(BT.clamp(unit * 0.44, 13, 24));
+      sec.style.setProperty('--bf', bf + 'px');
+      const ff = Math.min(bf, Math.floor((T.bw - 6) / 4));                // 4文字の「ファウル」が入る文字の大きさ
+      sec.style.setProperty('--ff', ff + 'px');
       sec.style.setProperty('--nf', Math.round(BT.clamp(Math.min(Math.max(T.rowH, BT.LAYOUT.rmin) * 0.56, T.nw * 0.5), 14, 30)) + 'px');
       sec.classList.toggle('roomy', T.rowH >= 40 && T.nw >= 46);      // 名前を出す余裕（高さと、背番号の欄の幅）
-      sec.classList.toggle('narrowb', T.bw < 48);
+      sec.classList.toggle('narrowb', (T.bwMin || T.bw) < 48);
+      sec.classList.toggle('shortlab', ff < 12);                         // 入らないときは「ファウル」→「F」
       sec.classList.toggle('scroll', T.rowH < BT.LAYOUT.rmin);
     });
   }
@@ -465,7 +475,11 @@
     });
     // ボタンの右上の数（その選手が、そのプレーを何回したか）
     const tl = BT.tally(g);
-    L.btns.forEach((b) => setCnt(b.cnt, tl[b.key] || 0));
+    L.btns.forEach((b) => {
+      const c = tl[b.key] || 0;
+      setCnt(b.cnt, c);
+      if (b.type === 'foul' && b.el.dataset.no !== '') { b.cnt.classList.toggle('f4', c === 4); b.cnt.classList.toggle('f5', c >= 5); }   // 4つ目は黄・5つ目（退場）は赤
+    });
     BT.GLOBAL_TYPES.forEach((type) => setCnt(L.gb[type].cnt, tl['*:' + type] || 0));
     L.gbar.classList.toggle('off', !started || ended);
     // スタートの前・試合が終わったあとは、パネルの上に大きなボタンを出す
@@ -904,7 +918,7 @@
     const wc = getComputedStyle(L.wipe);
     const padX = parseFloat(wc.paddingLeft) + parseFloat(wc.paddingRight), padY = parseFloat(wc.paddingTop) + parseFloat(wc.paddingBottom);
     const gap = parseFloat(wc.columnGap || wc.gap) || 0;                 // 特大：映像と相手チームの枠のすきま
-    const n = [L.panels[0].n, L.panels[1].n], headH = L.panels[0].head.offsetHeight || 22;
+    const n = [L.panels[0].n, L.panels[1].n], headH = L.panels[0].head.offsetHeight || 22, spec = rowSpec();
     const rest = H - barH - gH - padY;
     const MINW = 120;
     let vw;
@@ -916,10 +930,10 @@
       if (mode === 'side') {
         // 列の幅は画面の 55% まで（相手チームが1行だけなら 62% まで。相手の枠に空きを作らず、映像を大きく）
         vw = Math.min(W * (n[1] <= 1 ? 0.62 : 0.55) - padX, Math.max(60, H - barH - padY - gap - oppH) * ar);
-        fits = (w) => !BT.planTeam(W - w - padX - 2 * K.pad, H - barH - gH, n[0], headH, 3).scroll;
+        fits = (w) => !BT.planTeam(W - w - padX - 2 * K.pad, H - barH - gH, n[0], headH, 3, spec).scroll;
       } else {
         vw = Math.min(W - padX, Math.max(60, rest * 0.4) * ar);
-        fits = (w) => !BT.planTeam(W - 2 * K.pad, rest - w / ar - gap - oppH, n[0], headH, 3).scroll;
+        fits = (w) => !BT.planTeam(W - 2 * K.pad, rest - w / ar - gap - oppH, n[0], headH, 3, spec).scroll;
       }
       vw = Math.max(MINW, vw);
       // 自分のチームの行が縦にすべるようになるなら、すべらない大きさまで映像を小さく（もともとすべるなら、そのまま）
@@ -933,7 +947,7 @@
         // 縦長の画面：残りの高さに余裕があれば、相手チームの行を多めに見せる（残りの 30% まで。自分のチームの行がすべらない範囲で）
         const free = rest - vw / ar - gap;
         for (let hh = Math.max(oppH, free * 0.3); hh > oppH; hh -= 8) {
-          if (!BT.planTeam(W - 2 * K.pad, free - hh, n[0], headH, 3).scroll) { L.oppH = hh; break; }
+          if (!BT.planTeam(W - 2 * K.pad, free - hh, n[0], headH, 3, spec).scroll) { L.oppH = hh; break; }
         }
       }
     } else {
@@ -943,8 +957,8 @@
       if (sz === 'm') {
         // 中：選手のボタンの行が縦にすべるようにならない（もともとすべるときは、ボタンが小さくなりすぎない）大きさまで。
         // ボタンの並べ方は、残りの広さで planLayout を試して決める
-        const planFor = (w) => BT.planLayout(mode === 'top' ? W : W - w - padX, mode === 'side' ? H - barH : H - barH - gH - (mode === 'top' ? w / ar + padY : 0), n, headH);
-        const base = BT.planLayout(W, H - barH - gH0, n, headH);
+        const planFor = (w) => BT.planLayout(mode === 'top' ? W : W - w - padX, mode === 'side' ? H - barH : H - barH - gH - (mode === 'top' ? w / ar + padY : 0), n, headH, spec);
+        const base = BT.planLayout(W, H - barH - gH0, n, headH, spec);
         const fits = (w) => { const p = planFor(w); return (base.scroll || !p.scroll) && p.size >= Math.min(base.size, 28); };
         if (!fits(vw)) {
           // いちばん小さくしても入らない（小さなスマホに、2チームとも大勢）：上の帯の小さな映像のまま（撮影の画面で、わけを知らせる）
@@ -1251,7 +1265,7 @@
           BT.sortNos(players).map((no) => h('button', { class: 'btn small nobtn' + (e.no === no ? ' on' : ''), onclick: () => { e.no = no; changed(); } }, '#' + no)))));
       }
       body.append(h('div', { class: 'field' }, h('span', null, 'プレー'), h('div', { class: 'row typepick' },
-        BT.editTypes(e.type).map((id) => { const d = BT.TYPE[id]; return h('button', { class: 'btn small k-' + d.kind + (e.type === id ? ' on' : ''), dataset: { etype: id }, onclick: () => { e.type = id; if (d.pts && e.team == null) e.team = 0; changed(); } }, d.label); }))));
+        BT.editTypes(e.type, rowTypes()).map((id) => { const d = BT.TYPE[id]; return h('button', { class: 'btn small k-' + d.kind + (e.type === id ? ' on' : ''), dataset: { etype: id }, onclick: () => { e.type = id; if (d.pts && e.team == null) e.team = 0; changed(); } }, d.label); }))));
       if (e.team == null) body.append(h('p', { class: 'note' }, '「チームなし」は、画面の下のボタン（パスミス・★）で記録したものです。チーム・背番号を付けることもできます。'));
     }
     BT.ui.sheet({
@@ -1300,6 +1314,12 @@
     };
     const t = st.map((x) => x.total);
     const fg = (s) => BT.pct(s.fg2m + s.fg3m, s.fg2a + s.fg3a);
+    const pf = BT.periodFouls(g);
+    // チームファウル（ピリオドごと。5つ目から相手にフリースロー）
+    const foulTable = pf.size ? h('div', { class: 'boxwrap' }, h('table', { class: 'per fouls', id: 'teamFouls' },
+      h('thead', null, h('tr', null, h('th', null, 'チームファウル'), per.map((p) => h('th', null, p.label)))),
+      h('tbody', null, [0, 1].map((tm) => h('tr', null, h('th', null, h('i', { class: 'chip', style: { background: teamColor(tm) } }), BT.teamName(g, tm)),
+        per.map((p) => { const f = (pf.get(p.period) || [0, 0])[tm]; return h('td', { class: f >= 5 ? 'bonus' : null }, String(f)); })))))) : null;
     const free = BT.teamlessStats(g);
     const freeText = BT.TYPES.filter((d) => free[d.id] > 0 && !d.shot && d.id !== 'reb').map((d) => `${d.label} ${free[d.id]}`).concat(free.reb ? [`リバウンド ${free.reb}`] : []).join('・');
     BT.ui.sheet({
@@ -1308,11 +1328,12 @@
         h('div', { class: 'boxwrap' }, h('table', { class: 'per' },
           h('thead', null, h('tr', null, h('th', null, ''), per.map((p) => h('th', null, p.label)), h('th', null, '計'))),
           h('tbody', null, [0, 1].map((tm) => h('tr', null, h('th', null, h('i', { class: 'chip', style: { background: teamColor(tm) } }), BT.teamName(g, tm)), per.map((p) => h('td', null, String(p.pts[tm]))), h('td', { class: 'sum' }, String(BT.score(g)[tm]))))))),
+        foulTable,
         [0, 1].map((tm) => h('section', { class: 'teamstat' },
           h('h3', null, h('i', { class: 'chip', style: { background: teamColor(tm) } }), BT.teamName(g, tm), h('small', null, ` 得点 ${t[tm].pts}` + (withA ? `・シュート成功率 ${fg(t[tm])}${t[tm].fta ? '・FT ' + BT.pct(t[tm].ftm, t[tm].fta) : ''}` : ''))),
           table(st[tm]))),
         freeText ? h('section', { class: 'teamstat free' }, h('h3', null, h('i', { class: 'chip neutral' }), 'チームなし', h('small', null, '（画面の下のボタン）')), h('p', { class: 'freeline' }, freeText)) : null,
-        h('p', { class: 'note' }, (withA ? '2P・3P・FT は「成功/打った数」。リバウンドの（ ）は、うちオフェンスリバウンド（同じチームが外したシュートの、10 秒以内のリバウンド）。' : '2P・3P・FT は、入れた本数です。') + '「番号なし」は「？」の行で記録したプレー、「チームなし」は画面の下のボタン（パスミス・★）で記録したものです（どちらも一覧から番号を付けられます）。')),
+        h('p', { class: 'note' }, (withA ? '2P・3P・FT は「成功/打った数」。リバウンドの（ ）は、うちオフェンスリバウンド（同じチームが外したシュートの、10 秒以内のリバウンド）。' : '2P・3P・FT は、入れた本数です（設定で「シュートの失敗」のボタンを出すと、成功率も出ます）。') + (pf.size ? 'チームファウルは、ピリオドごとの数（5つ目からは赤。相手にフリースロー）。' : '') + '「番号なし」は「？」の行で記録したプレー、「チームなし」は画面の下のボタン（パスミス・★）で記録したものです（どちらも一覧から番号を付けられます）。')),
       foot: [h('button', { class: 'btn', onclick: () => openExport(g) }, '💾 書き出す'), h('button', { class: 'btn primary', onclick: () => BT.ui.closeSheet() }, 'とじる')]
     });
   }
@@ -1351,6 +1372,11 @@
     const p = S.prefs;
     const body = h('div', { class: 'settings' });
     const chk = (key, label, after) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', dataset: { pref: key }, checked: p[key] !== false, onchange: (e) => { p[key] = e.target.checked; savePrefs(); if (after) after(); } }), label);
+    const off = (key, label, after) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', dataset: { pref: key }, checked: !!p[key], onchange: (e) => { p[key] = e.target.checked; savePrefs(); if (after) after(); } }), label);
+    body.append(h('section', { class: 'field', id: 'setButtons' }, h('span', null, '選手のボタン'),
+      h('p', { class: 'note' }, 'いつもある：2P・3P・FT（どれも成功）・リバ。下を選ぶと、選手ごとの行にボタンが増えます（1つずつは少し小さくなります）。'),
+      off('btnMiss', 'シュートの失敗（2P・3P・FT の「×」）も記録する → 集計にシュート成功率が出ます', refresh),
+      off('btnFoul', 'ファウルも記録する（5つ目で赤くなります）', refresh)));
     body.append(h('section', { class: 'field' }, h('span', null, '記録の画面'),
       chk('names', '背番号の下に、選手の名前も出す（行の高さに余裕があるとき）', refresh),
       chk('unknown', '「？」の行を出す（だれか分からないときに、チームだけで記録する）', refresh),
@@ -1385,6 +1411,7 @@
           h('li', null, h('b', null, '「？」の行'), '：だれか分からないとき。チームの記録になります（あとで一覧から番号を付けられます）'),
           h('li', null, h('b', null, '画面の下の「パスミス」「★ あとで見る」'), '：だれのかは決めずに、時刻だけを残します。いつでも押せます'),
           h('li', null, 'ボタンの右上の小さな数は、その選手がそのプレーをした回数です'),
+          h('li', null, h('b', null, 'シュートの失敗・ファウル'), '：「≡ メニュー」→「設定」の「選手のボタン」で、2P・3P・FT のとなりに失敗の「×」、リバのとなりに「ファウル」を出せます。失敗を記録すると、集計にシュート成功率が出ます。ファウルは、4つ目で黄・5つ目で赤になり、集計にピリオドごとのチームファウルが出ます'),
           h('li', null, '人数が多くて画面に入りきらないときは、行を上下にすべらせて探します（スマホは縦向き、または「ホーム画面に追加」すると広く使えます）')),
         h('h4', null, 'まちがえたとき'),
         h('ul', null,
