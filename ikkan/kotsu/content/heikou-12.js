@@ -157,25 +157,28 @@ function pfBis([o, p, a, b, x, y]) {
 
 // ── 証明のまちがいさがし（dr.4）：AC∥DB、AO＝BO ならば CO＝DO の証明の、1行をかえる ───────────────
 function flawQ(r) {
-  const L = pick(r, L5x), [a, b, c, d, o] = L, swap = r(0, 1) === 1, P = pfAsa(L, swap);
+  const L = pick(r, L5x), swap = r(0, 1) === 1, P = pfAsa(L, swap);
   const [g1, g2] = P.given, [k1, k2] = P.concl, [x1, x2] = P.ang;
-  const lines = P.lines.map((l) => l.map((x) => (typeof x === "string" ? x : x.ans)).join(""));
+  const lines = P.lines.map((l) => l.map((x) => (typeof x === "string" ? x : x.ans)).join(""));   // 正しい証明（0〜5行目）
+  // key：まちがいの種類。at＝かえた行の番号、bad＝まちがった行、desc＝まちがいの説明（正しく言いあてた文）
   const FLAW = {
-    miss: { fix: (ls) => [ls[0], ls[1], ls[2], ls[4].replace("①、②、③ より", "①、② より")], desc: "等しいと示したのが ① と ② の2つだけで、合同条件に必要な3つめが書かれていない。" },
-    rsn: { fix: (ls) => { const n = [...ls]; n[3] = n[3].replace("平行線の錯角は等しい", "平行線の同位角は等しい"); return n; }, desc: `③ の ${x1}＝${x2} の根拠を、錯角ではなく、同位角にしている。` },
-    look: { fix: (ls) => { const n = [...ls]; n[3] = `図で等しく見えるから　${x1}＝${x2} …③`; return n; }, desc: `③ の ${x1}＝${x2} の根拠を、図で等しく見えることにしている。` },
-    cond: { fix: (ls) => { const n = [...ls]; n[4] = n[4].replace("1組の辺とその両端の角", "2組の辺とその間の角"); return n; }, desc: "①、②、③ は、1組の辺とその両端の角の内容なのに、合同条件を「2組の辺とその間の角」と書いている。" },
-    prop: { fix: (ls) => { const n = [...ls]; n[5] = n[5].replace("対応する辺は等しい", "対応する角は等しい"); return n; }, desc: `${k1}、${k2} は辺なのに、結論を導く根拠を「合同な図形の、対応する角は等しい」にしている。` },
+    miss: { at: 4, bad: lines[4].replace("①、②、③ より", "①、② より"), desc: "等しいと示したのが ① と ② の2つだけで、合同条件に必要な3つめが書かれていない。", note: `③ として　${lines[3]}　を加えて、等しい組を3つそろえる。` },
+    rsn: { at: 3, bad: lines[3].replace("平行線の錯角は等しい", "平行線の同位角は等しい"), desc: `③ の ${x1}＝${x2} の根拠を、錯角ではなく、同位角にしている。`, note: `正しくは　${lines[3]}` },
+    look: { at: 3, bad: `図で等しく見えるから　${x1}＝${x2} …③`, desc: `③ の ${x1}＝${x2} の根拠を、図で等しく見えることにしている。`, note: `正しくは　${lines[3]}` },
+    cond: { at: 4, bad: lines[4].replace("1組の辺とその両端の角", "2組の辺とその間の角"), desc: "①、②、③ は、1組の辺とその両端の角の内容なのに、合同条件を「2組の辺とその間の角」と書いている。", note: `正しくは　${lines[4]}` },
+    prop: { at: 5, bad: lines[5].replace("対応する辺は等しい", "対応する角は等しい"), desc: `${k1}、${k2} は辺なのに、結論を導く根拠を「合同な図形の、対応する角は等しい」にしている。`, note: `正しくは　${lines[5]}` },
   };
-  const key = pick(r, Object.keys(FLAW)), flawed = FLAW[key].fix(lines);
-  const ans = FLAW[key].desc, wrongs = Object.keys(FLAW).filter((k) => k !== key).map((k) => FLAW[k].desc);
+  const key = pick(r, Object.keys(FLAW)), F = FLAW[key];
+  let flawed;
+  if (key === "miss") flawed = [lines[0], lines[1], lines[2], F.bad, lines[5]];   // ③ の行をぬいて、合同条件の行は ①、② だけ
+  else flawed = lines.map((l, i) => (i === F.at ? F.bad : l));
+  const wrongs = Object.keys(FLAW).filter((k) => k !== key).map((k) => FLAW[k].desc);
   return {
     q: `${P.setup}\n次の証明には、まちがいが1か所ある。まちがいを正しく言いあてているものは、どれか。\n${flawed.join("\n")}`,
-    ans,
-    choices: choices4(r, ans, pickWrongs(r, ans, wrongs)),
+    ans: F.desc,
+    choices: choices4(r, F.desc, pickWrongs(r, F.desc, wrongs)),
     hint: "証明の1行ずつについて、「なぜそういえるか」をたしかめてみよう。ことばや数が、あっているかな？ 使った合同条件の形になっているかな？",
-    steps: [`まちがいは　${key === "miss" ? "合同条件の行の前の、等しいと示した行の数" : key === "rsn" || key === "look" ? "③ の行の根拠" : key === "cond" ? "合同条件の名前" : "最後の行の根拠"}　にある。`, `正しくは　${lines[{ miss: 3, rsn: 3, look: 3, cond: 4, prop: 5 }[key]]}`, `答えは「${ans}」。`],
-    __flaw: key,
+    steps: [`まちがっている行は　${F.bad}`, F.note, `答えは「${F.desc}」。`],
   };
 }
 
@@ -219,7 +222,6 @@ function stmtOf(r, key) {
 }
 function rsnQ(r, keys) {
   const key = pick(r, keys), text = stmtOf(r, key), real = key === "altP" ? "alt" : key, ans = RSN[real];
-  if (/^(sum)$/.test(key) && /△.* で、∠(.)＝(\d+)°、∠(.)＝(\d+)° のとき、∠(.)＝(\d+)°$/.test(text) && +text.match(/∠.＝(\d+)°$/)[1] <= 0) return { skip: true };
   const wrongs = Object.keys(RSN).filter((k) => k !== real).map((k) => RSN[k]);
   return {
     q: `次のことがいえる根拠は、どれか。\n${text}`,
@@ -231,7 +233,7 @@ function rsnQ(r, keys) {
 }
 
 // ── 証明の根拠にしてよいもの・いけないもの（dr.2）─────────────────────────────
-const OKS = ["問題で、はじめに与えられていること（仮定）", "対頂角は等しい", "平行線の同位角は等しい", "平行線の錯角は等しい", "三角形の合同条件", "合同な図形の、対応する辺や角は等しい", "三角形の内角の和は 180°", "2つの三角形のどちらにもふくまれる辺は、共通"];
+const OKS = ["問題で、はじめに与えられていること（仮定）", "対頂角は等しい", "平行線の同位角は等しい", "平行線の錯角は等しい", "三角形の合同条件", "合同な図形の、対応する辺や角は等しい", "三角形の内角の和は 180°", "どちらの三角形にもふくまれる辺は、共通"];
 const NGS = ["図を見て、等しく見えること", "これから示そうとしていること（結論）", "定規ではかった長さ", "分度器ではかった角の大きさ", "何個かの図で成り立ったこと", "なんとなく、成り立ちそうなこと", "友達が「そうだ」と言ったこと"];
 
 export const UNITS = [
@@ -300,13 +302,12 @@ export const UNITS = [
             { k: "h1", t: `仮定より　${p}${q}＝${p}${s}` }, { k: "h2", t: `仮定より　${rr}${q}＝${rr}${s}` }, { k: "com", t: `${p}${rr} は共通` },
             { k: "cong", t: `3組の辺が、それぞれ等しいから　△${p}${q}${rr}≡△${p}${s}${rr}` }, { k: "end", t: `合同な図形の、対応する角は等しいから　∠${p}${q}${rr}＝∠${p}${s}${rr}` },
           ];
-          const LAB = shuffle(r, ["ア", "イ", "ウ", "エ", "オ", "カ"]), lab = Object.fromEntries(lines.map((l, i) => [l.k, LAB[i]]));
-          const shown = [...lines].sort((x, y) => LAB.indexOf(lab[x.k]) - LAB.indexOf(lab[y.k]) || 0).sort((x, y) => "アイウエオカ".indexOf(lab[x.k]) - "アイウエオカ".indexOf(lab[y.k]));
-          const ask = pick(r, ["first", "last", "before-end"]);
-          const key = { first: "start", last: "end", "before-end": "cong" }[ask], ans = lab[key];
+          const LAB = shuffle(r, ["ア", "イ", "ウ", "エ", "オ", "カ"]), lab = Object.fromEntries(lines.map((l, i) => [l.k, LAB[i]])), ord = "アイウエオカ";
+          const shown = [...lines].sort((x, y) => ord.indexOf(lab[x.k]) - ord.indexOf(lab[y.k]));
+          const ask = pick(r, ["first", "last", "before-end"]), key = { first: "start", last: "end", "before-end": "cong" }[ask], ans = lab[key];
           const others = shuffle(r, lines.filter((l) => l.k !== key).map((l) => lab[l.k])).slice(0, 3);
           return {
-            q: `「${p}${q}＝${p}${s}、${rr}${q}＝${rr}${s} ならば、∠${p}${q}${rr}＝∠${p}${s}${rr} である」の証明を、ばらばらにしたものを、次のア〜カに書いた。\n${shown.map((l) => `${lab[l.k]} ${l.t}`).join("\n")}\n正しい順にならべるとき、${ask === "first" ? "いちばん最初に書く" : ask === "last" ? "いちばん最後に書く" : "いちばん最後の行の、すぐ前に書く"}行は、どれか。`,
+            q: `四角形 ${p}${q}${rr}${s} で、「${p}${q}＝${p}${s}、${rr}${q}＝${rr}${s} ならば、∠${p}${q}${rr}＝∠${p}${s}${rr} である」の証明を、ばらばらにして、次のア〜カに書いた。\n${shown.map((l) => `${lab[l.k]} ${l.t}`).join("\n")}\n正しい順にならべるとき、${ask === "first" ? "いちばん最初に書く" : ask === "last" ? "いちばん最後に書く" : "いちばん最後の行の、すぐ前に書く"}行は、どれか。`,
             ans,
             choices: choices4(r, ans, others),
             hint: "証明は、どんな順に書くのだったかな？ 合同を示す行と、合同がいえたあとの行は、どちらが先かな？",
