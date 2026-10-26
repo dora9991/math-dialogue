@@ -25,7 +25,7 @@
   const TAU = 2 * Math.PI;
 
   const geo = o => (W, H, h) => {
-    const P = o.pts || {}, SZ = o.size || 3.0;
+    const P = o.pts || {}, LS = IK.labelScale || 1, SZ = (o.size || 3.0) * LS, GROW = SZ - (o.size || 3.0);   // LS＝字を大きくする倍率（スライドの図を書き出すときだけ。字が大きくなったぶん、字を置く距離もひろげる）
     const pt = k => { if (Array.isArray(k)) return k; if (!P[k]) throw new Error('GEO：点 ' + k + ' がありません'); return P[k]; };
     const polys = (v => (v == null ? [] : Array.isArray(v) ? v : [v]))(o.poly);
     const segList = (src) => {
@@ -67,8 +67,8 @@
         out += h.ln(X(sg.A[0]), Y(sg.A[1]), X(sg.B[0]), Y(sg.B[1]), stroke, w, (sg.op.dash ? ' stroke-dasharray="1.4 1"' : '') + ' stroke-linecap="round"');
         // 直線の名前（ℓ・m）：lab＝B のがわのはし、lab0＝A のがわのはし（はしの外がわ 3.4mm に、字をおく）
         const ex = X(sg.B[0]) - X(sg.A[0]), ey = Y(sg.B[1]) - Y(sg.A[1]), eL = Math.hypot(ex, ey) || 1;
-        if (sg.op.lab) out += h.rich(X(sg.B[0]) + ex / eL * 3.6, Y(sg.B[1]) + ey / eL * 3.6 + SZ * 0.34, sg.op.lab, SZ, 'middle');
-        if (sg.op.lab0) out += h.rich(X(sg.A[0]) - ex / eL * 3.6, Y(sg.A[1]) - ey / eL * 3.6 + SZ * 0.34, sg.op.lab0, SZ, 'middle');
+        if (sg.op.lab) out += h.rich(X(sg.B[0]) + ex / eL * (3.6 + GROW * 0.6), Y(sg.B[1]) + ey / eL * (3.6 + GROW * 0.6) + SZ * 0.34, sg.op.lab, SZ, 'middle');
+        if (sg.op.lab0) out += h.rich(X(sg.A[0]) - ex / eL * (3.6 + GROW * 0.6), Y(sg.A[1]) - ey / eL * (3.6 + GROW * 0.6) + SZ * 0.34, sg.op.lab0, SZ, 'middle');
       });
       // 角のしるし
       (src.ang || []).forEach(a => {
@@ -94,7 +94,7 @@
         if (a.t != null && a.t !== '') {
           const txt = String(a.t), len = txt.replace(/\{\{|\}\}/g, '').length;
           const mid = start + sweep / 2;
-          const rl = a.lr != null ? a.lr : (a.tin ? Math.max(2.2, r * 0.62) : r + (n - 1) * 1.3 + 1.6 + (len > 2 ? 3.8 : len > 1 ? 3.0 : 2.3));
+          const rl = a.lr != null ? a.lr + GROW * 0.7 : (a.tin ? Math.max(2.2, r * 0.62) : r + (n - 1) * 1.3 + 1.6 + (len > 2 ? 3.8 : len > 1 ? 3.0 : 2.3) + GROW * 0.7);
           const q = pp(rl, mid);
           out += h.rich(q[0], q[1] + SZ * 0.34, txt, SZ, 'middle');
         }
@@ -118,8 +118,8 @@
       // 頂点の字
       let vl = src.vl; if (typeof vl === 'string') { const o2 = {}; [...vl].forEach(c => { o2[c] = c; }); vl = o2; }
       Object.keys(vl || {}).forEach(n => {
-        let v = vl[n], t = n, d = null, k = 3.4;
-        if (typeof v === 'string') t = v; else if (Array.isArray(v)) { t = v[0]; d = v[1]; if (v[2] != null) k = v[2]; } else if (v) { t = v.t != null ? v.t : n; d = v.d != null ? v.d : null; if (v.k != null) k = v.k; }
+        let v = vl[n], t = n, d = null, k = 3.4 + GROW * 0.6;
+        if (typeof v === 'string') t = v; else if (Array.isArray(v)) { t = v[0]; d = v[1]; if (v[2] != null) k = v[2] + GROW * 0.6; } else if (v) { t = v.t != null ? v.t : n; d = v.d != null ? v.d : null; if (v.k != null) k = v.k + GROW * 0.6; }
         const p = pt(n);
         if (d == null) { const dx = p[0] - cen[0], dy = p[1] - cen[1]; d = (Math.abs(dx) + Math.abs(dy) < 1e-9) ? 90 : Math.atan2(dy, dx) * 180 / Math.PI; }
         const th = d * Math.PI / 180, q = [X(p[0]) + k * Math.cos(th), Y(p[1]) - k * Math.sin(th)];
@@ -133,7 +133,7 @@
     };
     let out = render(o, false);
     if (o.a) out += h.ans(render(o.a, true));
-    return out;
+    return `<g class="geo">${out}</g>`;   // class geo＝スライド用の書き出し（tools/slide-src.cjs）が、図の字を二重に大きくしないための目じるし
   };
 
   B.GEO = (o, fo) => B.SVG(geo(o), fo);

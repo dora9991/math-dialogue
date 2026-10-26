@@ -54,6 +54,7 @@ for (const id of ids) {
 (async () => {
   const b = await chromium.launch();
   const page = await (await b.newContext({ viewport: { width: 1000, height: 1300 }, deviceScaleFactor: 6 })).newPage();
+  await page.addInitScript((k) => { window.IK = window.IK || {}; window.IK.labelScale = k; }, LABEL);   // GEO（平面図形）は、字の大きさと置く距離を、図の側で変える
   await page.goto('file://' + path.join(root, 'index.html'));
   await page.addStyleTag({ content: 'header.top,.pbar{display:none !important}' });   // 上に貼りつく見出し（タブ・ボタン）が、図に写りこまないように
   let nFig = 0;
@@ -61,7 +62,7 @@ for (const id of ids) {
     await page.evaluate((h) => { location.hash = h; }, '#/' + id + '/ws');
     await page.waitForTimeout(300);
     await page.evaluate(() => { document.body.classList.remove('ans-on'); document.querySelector('.pages').style.zoom = 1; });
-    if (LABEL !== 1) await page.evaluate((k) => document.querySelectorAll('.wsp .wb-fig svg text').forEach((t) => { const fs = parseFloat(t.getAttribute('font-size')); if (fs) t.setAttribute('font-size', String(fs * k)); }), LABEL);
+    if (LABEL !== 1) await page.evaluate((k) => document.querySelectorAll('.wsp .wb-fig svg text').forEach((t) => { if (t.closest('.geo')) return; const fs = parseFloat(t.getAttribute('font-size')); if (fs) t.setAttribute('font-size', String(fs * k)); }), LABEL);
     const sel = '.wsp .wb-fig svg', n = await page.locator(sel).count();
     const infos = [];
     for (let i = 0; i < n; i++) {
