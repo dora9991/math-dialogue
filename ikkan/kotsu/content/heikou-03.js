@@ -69,16 +69,17 @@ const bigrams = (s) => { const t2 = String(s).replace(/\s/g, ""), m = new Map();
 const sim = (a, b) => { const A = bigrams(a), B = bigrams(b); let i = 0, u = 0; for (const x of new Set([...A.keys(), ...B.keys()])) { i += Math.min(A.get(x) || 0, B.get(x) || 0); u += Math.max(A.get(x) || 0, B.get(x) || 0); } return u ? i / u : 0; };
 const digitsOf = (s) => String(s).match(/\d+/g) || [];
 /** 誤答を、候補 pool から3つ、ランダムに選ぶ。正解だけが、文字の長さ・ほかの選択肢との似かた・数字の重なりで、目立たないようにする */
-function fairPick(r, correct, pool, q = "") {
+function fairPick(r, correct, pool, q = "", must = []) {
   let last = null;
   for (let tries = 0; tries < 300; tries++) {
-    const w = sample(r, pool, Math.min(3, pool.length)), opts = [correct, ...w].map(String);
+    const w = [...must, ...sample(r, pool.filter((x) => !must.includes(x)), Math.min(3 - must.length, pool.length))], opts = [correct, ...w].map(String);
     last = w;
     const feats = [
       (o) => o.length,
       (o) => opts.reduce((s, p) => (p === o ? s : s + sim(o, p)), 0),
       (o) => opts.reduce((s, p) => (p === o ? s : s + digitsOf(o).filter((n) => digitsOf(p).includes(n)).length), 0),
       (o) => digitsOf(o).filter((n) => digitsOf(q).includes(n)).length,
+      (o) => [...bigrams(o).keys()].filter((b) => bigrams(q).has(b)).length,                          // 問題文と、同じ言葉（2文字）がいくつあるか
     ];
     if (noTell(feats, opts, String(correct))) return w;
   }
@@ -193,20 +194,19 @@ function extEq(r, askAngle) {
 
 /** 03d05 ∠A と ∠B＋∠C の関係（和の □倍、□分の1、□° 大きい、□° 小さい）から ∠A */
 const KIND = [
-  { id: "same", text: () => "∠A＝∠B＋∠C", eq: () => "a=180-a", solve: () => ["2a=180"], a: () => 90 },
-  { id: "x2", text: () => "∠A が、∠B と ∠C の和の 2倍", eq: () => "a=2(180-a)", solve: () => ["3a=360"], a: () => 120 },
-  { id: "x3", text: () => "∠A が、∠B と ∠C の和の 3倍", eq: () => "a=3(180-a)", solve: () => ["4a=540"], a: () => 135 },
-  { id: "h", text: () => "∠A が、∠B と ∠C の和の半分", eq: () => "a=\\frac{1}{2}(180-a)", solve: () => ["3a=180"], a: () => 60 },
-  { id: "t", text: () => "∠A が、∠B と ∠C の和の 3分の1", eq: () => "a=\\frac{1}{3}(180-a)", solve: () => ["4a=180"], a: () => 45 },
-  { id: "plus", text: (d) => `∠A が、∠B と ∠C の和より ${d}° 大きい`, eq: (d) => `a=(180-a)+${d}`, solve: (d) => [`2a=${180 + d}`], a: (d) => (180 + d) / 2 },
-  { id: "minus", text: (d) => `∠A が、∠B と ∠C の和より ${d}° 小さい`, eq: (d) => `a=(180-a)-${d}`, solve: (d) => [`2a=${180 - d}`], a: (d) => (180 - d) / 2 },
+  { id: "same", text: (a, b, c) => `∠${a}＝∠${b}＋∠${c}`, eq: () => "a=180-a", solve: () => ["2a=180"], a: () => 90 },
+  { id: "x2", text: (a, b, c) => `∠${a} が、∠${b} と ∠${c} の和の 2倍`, eq: () => "a=2(180-a)", solve: () => ["3a=360"], a: () => 120 },
+  { id: "x3", text: (a, b, c) => `∠${a} が、∠${b} と ∠${c} の和の 3倍`, eq: () => "a=3(180-a)", solve: () => ["4a=540"], a: () => 135 },
+  { id: "h", text: (a, b, c) => `∠${a} が、∠${b} と ∠${c} の和の半分`, eq: () => "a=\\frac{1}{2}(180-a)", solve: () => ["3a=180"], a: () => 60 },
+  { id: "t", text: (a, b, c) => `∠${a} が、∠${b} と ∠${c} の和の 3分の1`, eq: () => "a=\\frac{1}{3}(180-a)", solve: () => ["4a=180"], a: () => 45 },
+  { id: "plus", text: (a, b, c, d) => `∠${a} が、∠${b} と ∠${c} の和より ${d}° 大きい`, eq: (d) => `a=(180-a)+${d}`, solve: (d) => [`2a=${180 + d}`], a: (d) => (180 + d) / 2 },
+  { id: "minus", text: (a, b, c, d) => `∠${a} が、∠${b} と ∠${c} の和より ${d}° 小さい`, eq: (d) => `a=(180-a)-${d}`, solve: (d) => [`2a=${180 - d}`], a: (d) => (180 - d) / 2 },
 ];
 function relAngleA(r) {
   const T = tri(r), v = shuffle(r, [0, 1, 2]), me = T.V[v[0]], o1 = T.V[v[1]], o2 = T.V[v[2]];
   const K = pick(r, KIND), d = pick(r, [10, 20, 30, 40, 50, 60]), ans = K.a(d);
-  const rename = (s2) => s2.replaceAll("∠A", `∠${me}`).replaceAll("∠B", `∠${o1}`).replaceAll("∠C", `∠${o2}`);
   return {
-    q: `${T.name} で、${rename(K.text(d))} のとき、∠${me} の大きさは何度か。`,
+    q: `${T.name} で、${K.text(me, o1, o2, d)} のとき、∠${me} の大きさは何度か。`,
     ans,
     unit: "度",
     hint: `三角形の3つの内角の和は、何度だったかな？ ∠${o1}＋∠${o2} を、∠${me} を使って表せないかな？`,
@@ -264,7 +264,7 @@ function excenter(r, back) {
   const T = tri(r, 2), [D, E] = T.rest, A = 2 * r(15, 65), half = A / 2;
   const stem = `${T.name} で、辺 ${T.B}${T.C} を ${T.C} の先へのばした直線上に点 ${D} をとる（${T.C} は ${T.B} と ${D} のあいだにある）。∠${T.B} の二等分線と、∠${T.A}${T.C}${D} の二等分線が、点 ${E} で交わっている。`;
   const ang = `∠${T.B}${E}${T.C}`, acd = `∠${T.A}${T.C}${D}`, ecd = `∠${E}${T.C}${D}`, ebc = `∠${E}${T.B}${T.C}`;
-  const l1 = `${ebc}＝$a$°、${ecd}＝$c$° とおく。二等分線だから、∠${T.B}＝2$a$°、${acd}＝2$c$°。`;
+  const l1 = `${ebc}＝${$("a^\\circ")}、${ecd}＝${$("c^\\circ")} とおく。二等分線だから、∠${T.B}＝${$("2a^\\circ")}、${acd}＝${$("2c^\\circ")}。`;
   const hint = "二等分線でできる角を、文字（a、c など）でおくと、外角の性質で、どんな式がつくれるかな？";
   if (!back) {
     return {
@@ -272,7 +272,7 @@ function excenter(r, back) {
       ans: half,
       unit: "度",
       hint,
-      steps: [l1, `外角の性質より、${acd}＝∠${T.A}＋∠${T.B} だから、${$(`2c=${A}+2a`)}。よって、${$(`c=${half}+a`)}。`, `△${E}${T.B}${T.C} の外角の性質より、${ecd}＝${ebc}＋${ang} だから、${ang}＝${ecd}−${ebc}＝${$("c-a")}（度）。`, `${$(`c-a=${half}`)} より、${ang}＝${half}°。`],
+      steps: [l1, `外角の性質より、${acd}＝∠${T.A}＋∠${T.B} だから、${$(`2c=${A}+2a`)}。よって、${$(`c=${half}+a`)}。`, `△${E}${T.B}${T.C} の外角の性質より、${ecd}＝${ebc}＋${ang} だから、${ang}＝${ecd}−${ebc} で、${$("c-a")} となる。`, `${$(`c-a=${half}`)} より、${ang}＝${half}°。`],
     };
   }
   return {
@@ -280,63 +280,93 @@ function excenter(r, back) {
     ans: A,
     unit: "度",
     hint,
-    steps: [l1, `△${E}${T.B}${T.C} の外角の性質より、${ecd}＝${ebc}＋${ang} だから、${$(`c=a+${half}`)}。`, `外角の性質より、∠${T.A}＝${acd}−∠${T.B}＝2$c$°−2$a$°＝${$("2(c-a)")}（度）。`, `${$(`2(c-a)=2\\times ${half}=${A}`)} より、∠${T.A}＝${A}°。`],
+    steps: [l1, `△${E}${T.B}${T.C} の外角の性質より、${ecd}＝${ebc}＋${ang} だから、${$(`c=a+${half}`)}。`, `外角の性質より、∠${T.A}＝${acd}−∠${T.B} だから、${$("2c-2a=2(c-a)")}。`, `${$(`2(c-a)=2\\times ${half}=${A}`)} より、∠${T.A}＝${A}°。`],
   };
 }
 
-/** 03q02a 補助線 DE（A を通り BC に平行）：∠DAB＝∠ABC などの根拠、または「いつも等しい角」を選ぶ4択 */
-function auxWord(r) {
-  const T = tri(r, 2), [D, E] = T.rest, A = T.A, B = T.B, C = T.C;
-  const p = pick(r, [{ a: `∠${D}${A}${B}`, b: `∠${A}${B}${C}`, via: B, others: [`∠${A}${C}${B}`, `∠${B}${A}${C}`, `∠${C}${A}${E}`] }, { a: `∠${E}${A}${C}`, b: `∠${A}${C}${B}`, via: C, others: [`∠${A}${B}${C}`, `∠${B}${A}${C}`, `∠${B}${A}${D}`] }]);
-  const head = `${T.name} で、${B} は左、${C} は右にある。${A} を通り、辺 ${B}${C} に平行な直線上に、${A} の左の点 ${D} と、${A} の右の点 ${E} をとる。`;
-  const steps = [`${D}${E} と ${B}${C} は平行で、直線 ${A}${p.via} が、この2直線に交わっている。`, `${p.a} と ${p.b} は、2直線の内側で、ななめ向かいにある角（錯角）だから、等しい。`];
-  if (r(0, 1) === 0) {
-    const ans = "平行線の錯角は等しい", wr = ["対頂角は等しい", "三角形の内角の和の性質", "三角形の外角の性質"];
-    return {
-      q: `${head}${p.a}＝${p.b} となるのは、何を使うからか。`,
-      ans,
-      choices: choices4(r, ans, wr),
-      hint: `${p.a} と ${p.b} は、それぞれどの点のどのあたりの角かな？ 自分で図にかいて、位置をたしかめよう。`,
-      steps: [...steps, `だから、使うのは「${ans}」。`],
-    };
-  }
-  const ans = p.b;
-  return {
-    q: `${head}${p.a} と、いつも大きさが等しいといえる角は、次のうちどれか。`,
-    ans,
-    choices: choices4(r, ans, p.others),
-    hint: `${p.a} は、どの点のどのあたりの角かな？ 平行線を使って、等しいといえる角は、どの位置の角かな？`,
-    steps: [...steps, `平行線の錯角は等しいから、${p.a}＝${p.b}。ほかの角は、いつも等しいとは限らない。`],
-  };
-}
-/** 03q02b 3つの角の和が一直線の角になる根拠を選ぶ4択 */
-function auxStraight(r) {
-  const T = tri(r, 2), [D, E] = T.rest, ans = "一直線の角の性質";
-  const pool = ["対頂角の性質", "平行線の錯角の性質", "三角形の内角の和の性質", "三角形の外角の性質", "一周の角の性質"];
-  const q = `${T.name} で、${T.A} を通り、辺 ${T.B}${T.C} に平行な直線 ${D}${E} をひく（${D}、${T.A}、${E} の順に一直線上にならぶ）。∠${D}${T.A}${T.B}、∠${T.B}${T.A}${T.C}、∠${T.C}${T.A}${E} の3つの角の和が、一直線の角と同じ大きさになるといえるのは、何を使うからか。`;
-  return {
-    q,
-    ans,
-    choices: choices4(r, ans, fairPick(r, ans, pool, q)),
-    hint: `∠${D}${T.A}${T.B}、∠${T.B}${T.A}${T.C}、∠${T.C}${T.A}${E} の3つの角は、点 ${T.A} のまわりで、どんな形にならんでいるかな？`,
-    steps: [`${D}、${T.A}、${E} は一直線上にあるので、点 ${T.A} のまわりの3つの角は、一直線にならぶ。`, `一直線の角は 180° だから、3つの角の和は 180°。`, `使うのは「${ans}」。ほかの性質は、この和の根拠にはならない。`],
-  };
-}
-/** 03q02c 内角の和が 180° になるわけの説明：根拠の組を選ぶ4択 */
-function auxProof(r) {
+// ── 補助線の問題（qz.2）：A を通り BC に平行な直線 DE（D は A の左、E は A の右。B は左、C は右）──
+function auxHead(r) {
   const T = tri(r, 2), [D, E] = T.rest;
-  const O1 = ["平行線の錯角の性質", "対頂角の性質", "三角形の外角の性質"];
-  const O2 = ["一直線の角の性質", "対頂角の性質", "三角形の内角の和の性質"];
-  const fmt = (p) => `① ${O1[p[0]]}　② ${O2[p[1]]}`;
-  const ans = fmt([0, 0]);
-  const pool = [[1, 0], [2, 0], [0, 1], [0, 2], [1, 1], [1, 2], [2, 1], [2, 2]].map(fmt);
-  const q = `${T.name} で、${T.B} は左、${T.C} は右にある。${T.A} を通り、辺 ${T.B}${T.C} に平行な直線上に、${T.A} の左の点 ${D} と、右の点 ${E} をとって、∠${T.A}＋∠${T.B}＋∠${T.C}＝180° を説明する。\n① ∠${D}${T.A}${T.B}＝∠${T.B}、∠${E}${T.A}${T.C}＝∠${T.C} となる根拠\n② ∠${D}${T.A}${T.B}＋∠${T.A}＋∠${E}${T.A}${T.C} が一直線の角の大きさになる根拠\n①、②の根拠の組として、正しいものはどれか。`;
+  return { T, D, E, A: T.A, B: T.B, C: T.C, head: `${T.name} で、${T.B} は左、${T.C} は右にある。${T.A} を通り、辺 ${T.B}${T.C} に平行な直線上に、${T.A} の左の点 ${D} と、${T.A} の右の点 ${E} をとる。` };
+}
+/** 03q02a 角の等式・和の式の根拠を選ぶ4択（等式の根拠は「錯角」、3つの角の和の根拠は「一直線の角」） */
+const REASONS = {
+  alt: "平行線の錯角の性質",
+  line: "一直線の角の性質",
+  vert: "対頂角の性質",
+  tri: "三角形の内角の和の性質",
+  same: "平行線の同側内角の性質",
+  ext: "三角形の外角の性質",
+};
+function auxReason(r) {
+  const { T, D, E, A, B, C, head } = auxHead(r);
+  const which = pick(r, ["alt", "line", "tri"]);
+  let stem, steps;
+  if (which === "alt") {
+    const p = pick(r, [{ a: `∠${D}${A}${B}`, b: `∠${A}${B}${C}`, via: B }, { a: `∠${E}${A}${C}`, b: `∠${A}${C}${B}`, via: C }]);
+    stem = `${head}${p.a}＝${p.b} となる根拠として、正しいものはどれか。`;
+    steps = [`${D}${E} と ${B}${C} は平行で、直線 ${A}${p.via} が、この2直線に交わっている。`, `${p.a} と ${p.b} は、2直線の内側で、ななめ向かいにある角（錯角）だから、等しい。`, `使うのは「${REASONS.alt}」（平行線の錯角は等しい）。`];
+  } else if (which === "line") {
+    stem = `${head}∠${D}${A}${B}＋∠${B}${A}${C}＋∠${C}${A}${E}＝180° となる根拠として、正しいものはどれか。`;
+    steps = [`点 ${A} のまわりの3つの角 ∠${D}${A}${B}、∠${B}${A}${C}、∠${C}${A}${E} は、直線 ${D}${E} の上に、一直線にならぶ。`, "一直線の角は 180° だから、3つの角の和は 180°。", `使うのは「${REASONS.line}」（一直線の角は 180°）。`];
+  } else {
+    stem = `${head}${T.name} の内角の和を、この直線 ${D}${E} をひいて説明する。この説明で、結論（説明して示すこと）にあたることがらは、次のうちどれか。`;
+    steps = [`説明して示したいのは、「${T.name} の内角の和は 180°」ということ。`, `「平行線の錯角の性質」と「一直線の角の性質」は、それを示すために使う根拠。`, `だから、結論にあたるのは「${REASONS.tri}」。`];
+  }
+  // 錯角・一直線の角・内角の和の3つは、かならず選択肢に入れる（どれが答えかは、問いによって変わる）。あと1つは、まぎらわしい性質
+  const ans = REASONS[which], must = ["alt", "line", "tri"].filter((k) => k !== which).map((k) => REASONS[k]);
+  const pool = ["same", "vert", "ext"].map((k) => REASONS[k]);
+  return {
+    q: stem,
+    ans,
+    choices: choices4(r, ans, fairPick(r, ans, pool, stem, must)),
+    hint: which === "alt" ? "等しいといわれている2つの角は、それぞれどの点のどのあたりの角かな？ 自分で図にかいて、位置をたしかめよう。" : which === "line" ? "和が 180° といわれている3つの角は、点 " + A + " のまわりで、どんな形にならんでいるかな？" : "この説明で、最初にわからないことは何で、最後に示したいことは何かな？ 途中で使う性質は、どれかな？",
+    steps,
+  };
+}
+/** 03q02b 補助線 DE：∠DAB（または ∠ABC）と ∠EAC（または ∠ACB）から、∠BAC（数）*/
+function auxNumber(r) {
+  const { T, D, E, A, B, C, head } = auxHead(r), [al, ga] = [r(20, 90), r(20, 90)];
+  if (al + ga > 160) return { skip: true };
+  const a1 = r(0, 1) === 0 ? { nm: `∠${D}${A}${B}`, alt: false } : { nm: `∠${A}${B}${C}`, alt: true };
+  const g1 = r(0, 1) === 0 ? { nm: `∠${E}${A}${C}`, alt: false } : { nm: `∠${A}${C}${B}`, alt: true };
+  const ans = 180 - al - ga;
+  const steps = [];
+  if (a1.alt || g1.alt) steps.push(`${D}${E} と ${B}${C} は平行だから、錯角は等しい。${a1.alt ? `∠${D}${A}${B}＝${a1.nm}＝${al}°` : ""}${a1.alt && g1.alt ? "、" : ""}${g1.alt ? `∠${E}${A}${C}＝${g1.nm}＝${ga}°` : ""}。`);
+  steps.push(`${D}、${A}、${E} は一直線上にあるので、∠${D}${A}${B}＋∠${B}${A}${C}＋∠${C}${A}${E}＝180°。`, `$180-${al}-${ga}=${ans}$ より、∠${B}${A}${C}＝${ans}°。`);
+  return {
+    q: `${head}${a1.nm}＝${al}°、${g1.nm}＝${ga}° のとき、∠${B}${A}${C} の大きさは何度か。`,
+    ans,
+    unit: "度",
+    hint: `${a1.nm} や ${g1.nm} は、${A} のまわりの角と、どんな関係にあるかな？ ∠${B}${A}${C} は、点 ${A} のまわりで、どんな形にならんだ角のひとつかな？`,
+    steps,
+  };
+}
+/** 03q02c ∠A＋∠B＋∠C＝180° の説明（2つの根拠のつながり）を選ぶ4択。どの選択肢も、同じ言葉を使う。まちがいは、対応のずれ・足りない角・理由ちがい */
+function auxProof(r) {
+  const { T, D, E, A, B, C, head } = auxHead(r);
+  const dab = `∠${D}${A}${B}`, eac = `∠${E}${A}${C}`;
+  const X1 = [[`∠${B}`, `∠${C}`], [`∠${C}`, `∠${B}`]];          // ∠DAB＝?、∠EAC＝?（0 が正しい）
+  const W1 = ["平行線の錯角は等しい", "対頂角は等しい", "三角形の外角の性質", "平行線の同側内角の和は 180°", "平行な直線は交わらない"];   // 0 が正しい
+  const Y = [`${dab}＋∠${A}＋${eac}`, `${dab}＋∠${A}`, `${dab}＋${eac}`, `∠${B}＋∠${C}`];     // 0 が正しい
+  const W2 = ["一直線の角は 180°", "対頂角は等しい", "三角形の内角の和は 180°", "平行線の錯角は等しい"];   // 0 が正しい
+  const fmt = ([x, w1, y, w2]) => `${dab}＝${X1[x][0]}、${eac}＝${X1[x][1]}（${W1[w1]}）。${Y[y]}＝180°（${W2[w2]}）。`;
+  const ans = fmt([0, 0, 0, 0]);
+  // 誤答：L＝ことがらの運び方がまちがい（根拠の言葉は正しい）、R＝根拠の言葉がまちがい。LとRをまぜる
+  const poolL = [], poolR = [];
+  for (let x = 0; x < 2; x++) for (let w1 = 0; w1 < W1.length; w1++) for (let y = 0; y < 4; y++) for (let w2 = 0; w2 < W2.length; w2++) {
+    const m = (x ? 1 : 0) + (w1 ? 1 : 0) + (y ? 1 : 0) + (w2 ? 1 : 0);
+    if (m < 1 || m > 2) continue;
+    (w1 === 0 && w2 === 0 ? poolL : poolR).push(fmt([x, w1, y, w2]));
+  }
+  const nL = r(1, 2), must = sample(r, poolL, nL);
+  const q = `${head}${T.name} の内角の和が 180° になるわけを説明する文として、次のうち正しいものはどれか。`;
   return {
     q,
     ans,
-    choices: choices4(r, ans, fairPick(r, ans, pool, q)),
-    hint: `①の2つの角は、どんな位置の角かな？ ②の3つの角は、点 ${T.A} のまわりで、どんな形にならんでいるかな？`,
-    steps: [`① ∠${D}${T.A}${T.B} と ∠${T.B} は、${D}${E}∥${T.B}${T.C} の錯角だから、等しい（∠${E}${T.A}${T.C} と ∠${T.C} も同じ）。`, `② ${D}、${T.A}、${E} は一直線上なので、3つの角は一直線にならび、和は 180°。`, `よって、正しい組は「${ans}」。`],
+    choices: choices4(r, ans, fairPick(r, ans, poolR, q, must)),
+    hint: `${dab} と等しい角は、どれかな？ 点 ${A} のまわりで、一直線にならぶ角は、どれとどれかな？`,
+    steps: [`${D}${E}∥${B}${C} だから、錯角が等しく、${dab}＝∠${B}、${eac}＝∠${C}。`, `${D}、${A}、${E} は一直線上にあるので、${dab}＋∠${A}＋${eac}＝180°（一直線の角は 180°）。`, `よって、正しいのは「${ans}」。`],
   };
 }
 
@@ -402,9 +432,9 @@ export const UNITS = [
         // 03d04b 同じ問題で、1つの内角
         t("03d04b", (r) => extEq(r, true)),
         // 03q02a 補助線：∠DAB と ∠B の関係を表す言葉
-        t("03q02a", auxWord),
+        t("03q02a", auxReason),
         // 03q02b 補助線：∠DAB＋∠BAC＋∠CAE＝180° の根拠
-        t("03q02b", auxStraight),
+        t("03q02b", auxNumber),
         // 03q02c 説明の根拠の組
         t("03q02c", auxProof),
         // 03q03 x、2x、3x → x

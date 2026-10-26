@@ -12,11 +12,39 @@ import { unitFor } from "../unit-kit.js";
 
 const unit = unitFor("heikou");
 
-/** t(id, build) と同じ。ただし、数の答えが問題文の数とたまたま同じになる組は、作り直す（skip） */
+/** 4択の「当てやすさ」を下げる検査：選択肢の形だけ（長さ・ほかの選択肢との似かた・語の出かた）で、正解が「単独のいちばん」になる問題は作り直す */
+const strip = (s) => String(s).replace(/\$/g, "");
+const toks = (s) => strip(s).match(/[A-Za-z]|\d+|[぀-ヿ一-鿿]+|[∠△≡∥⊥＝]/g) || [];
+const bigrams = (s) => { const x = strip(s).replace(/\s/g, ""), o = new Set(); for (let i = 0; i < x.length - 1; i++) o.add(x.slice(i, i + 2)); return o; };
+const jac = (a, b) => { let i = 0; for (const x of a) if (b.has(x)) i++; return i / (a.size + b.size - i || 1); };
+function cueFree(choices, ans) {
+  const n = choices.length, ai = choices.findIndex((c) => String(c) === String(ans));
+  const T = choices.map((c) => new Set(toks(c))), B = choices.map(bigrams), cnt = {};
+  T.forEach((s) => s.forEach((w) => { cnt[w] = (cnt[w] || 0) + 1; }));
+  const sim = B.map((b, i) => B.reduce((a, o, j) => (i === j ? a : a + jac(b, o)), 0));
+  const sc = [
+    choices.map((c) => strip(c).length), sim,
+    T.map((s) => [...s].filter((w) => cnt[w] === 1).length),
+    T.map((s) => Object.keys(cnt).filter((w) => cnt[w] === n - 1 && !s.has(w)).length),
+    T.map((s) => [...s].reduce((a, w) => a + cnt[w], 0)),
+  ];
+  for (const v of sc) for (const sgn of [1, -1]) {
+    const w = v.map((x) => sgn * x), m = Math.max(...w);
+    if (w[ai] === m && w.filter((x) => x === m).length === 1) return false;
+  }
+  return true;
+}
+/** t(id, build) と同じ。ただし、(1) 数の答えが問題文の数とたまたま同じになる組は、作り直す（skip）、(2) 4択は、形だけで正解が当たる組を、作り直す */
 const t = (id, build) => t0(id, (r) => {
-  const p = build(r);
+  let p;
+  for (let i = 0; i < 80; i++) {
+    p = build(r);
+    if (!p || p.skip || !p.choices || cueFree(p.choices, p.ans)) break;
+  }
   return p && typeof p.ans === "number" && ((p.q.match(/\d+/g) || []).map(Number)).includes(p.ans) ? { skip: true } : p;
 });
+/** 「正しい／まちがい」の言い方は、選択肢ごとにばらばらにえらぶ（言い方で正解がわからないように） */
+const YES = ["等しい", "同じ", "一致する"], NO = ["等しくない", "異なる", "一致しない"];
 
 // ── 道具（この授業の問題用に足した小さな関数）──────────────────────────
 const LM = "ℓ∥m の 2直線を、ℓ が上、m が下の横向きにおく。";
@@ -202,27 +230,24 @@ function ribbon(r) {
   };
 }
 
-/** リボン形で ∠BAD＋∠ABC＝∠BCD＋∠ADC になる理由を選ぶ4択 */
+/** リボン形で ∠BAD＋∠ABC＝∠BCD＋∠ADC になる理由を選ぶ4択。どの選択肢も「内角の和は ○° で、∠AOB と ∠COD は ○ で等しいから」の形（○ に、正しい言葉か、まちがった言葉が入る） */
 function ribbonWhy(r) {
-  const v = ribbonNums(r);
-  const ans = "△AOB と △COD の内角の和は、どちらも 180° で、∠AOB＝∠COD（対頂角）だから。";
-  const wrongs = [
-    ["△AOB と △COD の内角の和は、どちらも 180° で、同位角が等しいので ∠AOB＝∠COD だから。", "「同位角」は誤り（平行線は出てこないので、同位角は使えない。∠AOB と ∠COD は対頂角）"],
-    ["△AOB と △COD の内角の和は、どちらも 180° で、∠AOB と ∠COD の和が 180° だから。", `「和が 180°」は誤り（∠AOB＝∠COD＝${180 - v.A - v.B}° で、和は 180° にならない）`],
-    ["∠BAD と ∠ADC、∠ABC と ∠BCD が、それぞれ錯角で等しいから。", `「錯角で等しい」は誤り（∠BAD＝${v.A}° と ∠ADC＝${v.D}° は等しくないし、平行線も出てこない）`],
-    ["四角形 ABCD の 4つの内角の和が 360° だから。", `「4つの内角の和が 360°」は誤り（4つの角の和は ${v.A + v.B + v.C + v.D}°）`],
-  ];
-  const shown = shuffle(r, wrongs).slice(0, 3);
+  const v = ribbonNums(r), o = 180 - v.A - v.B;
+  const cell = (sum, rel) => `△AOB と △COD の内角の和は、どちらも ${sum}° で、∠AOB と ∠COD は${rel}で等しいから。`;
+  const ans = cell(180, "対頂角");
+  const cells = [[360, "対頂角"], [180, "同位角"], [180, "錯角"], [360, "同位角"], [360, "錯角"]];
+  const shown = shuffle(r, cells).slice(0, 3);
+  const why = (c) => [c[0] === 360 ? "三角形の内角の和は 180° で、360° ではない" : "", c[1] !== "対頂角" ? `${c[1]}は平行線があるときの言葉で、ここでは ∠AOB と ∠COD は対頂角` : ""].filter(Boolean).join("；");
   return {
     q: `${RIB_HEAD}∠BAD＝${v.A}°、∠ABC＝${v.B}°、∠BCD＝${v.C}°、∠ADC＝${v.D}° のとき、∠BAD+∠ABC＝∠BCD+∠ADC が成り立つ。そのわけとして、正しいものはどれか。`,
     ans,
-    choices: choices4(r, ans, shown.map((w) => w[0])),
+    choices: choices4(r, ans, shown.map((c) => cell(c[0], c[1]))),
     hint: "2本の線分が交わるところに、どんな 2つの三角形ができるかな？ その 2つの三角形で、等しいといえる角はどこかな？",
     steps: [
-      `△AOB の内角の和から　∠AOB＝180°−(∠BAD+∠ABC)＝180°−(${v.A}°+${v.B}°)＝${180 - v.A - v.B}°`,
+      `△AOB の内角の和から　∠AOB＝180°−(∠BAD+∠ABC)＝180°−(${v.A}°+${v.B}°)＝${o}°`,
       `△COD の内角の和から　∠COD＝180°−(∠BCD+∠ADC)＝180°−(${v.C}°+${v.D}°)＝${180 - v.C - v.D}°`,
       "∠AOB と ∠COD は対頂角で等しいから、180° からひく 2つの角の和も等しい。正しいわけは「" + ans + "」",
-      `ほかの選択肢：${shown.map((w) => w[1]).join("；")}。`,
+      `ほかの選択肢が誤りなのは、${shown.map((c) => why(c)).join("；")}。`,
     ],
   };
 }
@@ -294,7 +319,7 @@ export const UNITS = [
         // 07q04a 小テスト（4）補助線とは（名前を選ぶ4択）
         t("07q04a", (r) => {
           const ans = "補助線";
-          const pool = [["対角線", "多角形の頂点どうしを結ぶ線分"], ["垂線", "直線に垂直に交わる直線"], ["対称軸", "図形を折ると重なる直線"], ["弦", "円周上の 2点を結ぶ線分"], ["直径", "円の中心を通る弦"], ["母線", "円錐の頂点と底面の円周を結ぶ線分"]];
+          const pool = [["対角線", "多角形の頂点どうしを結ぶ線分"], ["垂線", "直線に垂直に交わる直線"], ["対称の軸", "図形を折ると重なる直線"], ["弦", "円周上の 2点を結ぶ線分"], ["直径", "円の中心を通る弦"], ["母線", "円錐の頂点と底面の円周を結ぶ線分"], ["円の接線", "円と 1点だけで交わる直線"], ["垂直二等分線", "線分の真ん中を通って垂直に交わる直線"]];
           const ws = shuffle(r, pool).slice(0, 3);
           return {
             q: pick(r, ["角の大きさを求めるために、あとからかき入れる線を、何というか。", "図形の角の大きさを求めやすくするために、あとからかき足す線を、何というか。"]),
@@ -304,17 +329,16 @@ export const UNITS = [
             steps: ["角の大きさを求めるために、あとからかき入れる線を「補助線」という。", `ほかの選択肢は、${ws.map((w) => `${w[0]}（${w[1]}）`).join("、")}のこと。`],
           };
         }),
-        // 07q04b 小テスト（4）平行な 2直線に 1つの直線が交わるとき、等しくなる角（性質を選ぶ4択）
+        // 07q04b 小テスト（4）平行な 2直線に 1つの直線が交わるとき、同位角・錯角はどうなるか（性質を選ぶ4択）
         t("07q04b", (r) => {
-          const tail = pick(r, [["いつも等しい", "等しいとはかぎらない"], ["かならず等しい", "等しくなるとはかぎらない"]]);
-          const [y, n] = tail;
-          const ans = `同位角も、錯角も、${y}。`;
+          const mk = (a, b) => `同位角は${pick(r, a ? YES : NO)}。錯角は${pick(r, b ? YES : NO)}。`;
+          const ans = mk(true, true);
           return {
             q: pick(r, ["平行な 2直線に 1つの直線が交わるとき、同位角と錯角について、正しいものはどれか。", "ℓ∥m の 2直線に、直線 n が交わっている。同位角と錯角について、正しいものはどれか。"]),
             ans,
-            choices: choices4(r, ans, [`同位角は${y}が、錯角は${n}。`, `錯角は${y}が、同位角は${n}。`, `同位角も、錯角も、${n}。`]),
-            hint: "平行線の性質を思い出そう。同位角と錯角は、どちらが等しくなるのかな？",
-            steps: ["平行な 2直線に 1つの直線が交わるとき、同位角は等しく、錯角も等しい（平行線の性質）。", `正しいのは「${ans}」。`],
+            choices: choices4(r, ans, [mk(true, false), mk(false, true), mk(false, false)]),
+            hint: "同位角と錯角について、平行線の性質を思い出そう。",
+            steps: ["平行な 2直線に 1つの直線が交わるとき、同位角は等しく、錯角も等しい（平行線の性質）。", `正しいのは「${ans}」。ほかの選択肢は、同位角か錯角の少なくとも一方が、等しくないことになっている。`],
           };
         }),
       ],

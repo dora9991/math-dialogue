@@ -82,51 +82,57 @@ function extRest(r, n, { lo = 40, hi = 130, xlo = 25, xhi = 150 } = {}) {
 const ROBOT = (L, th) => `ロボットが、「まっすぐ ${L} m 進み、その場で左へ ${th}° 向きを変える」ことをくり返す。はじめの位置にもどり、はじめと同じ向きになるまで続ける。`;
 
 // ── n を使った式を選ぶ（06d07a・b）────────────────────────────────────
-/** 正n角形の1つの内角（度）を表す式の4択。2つの部分（部分1・部分2）のそれぞれに「正しい形」と「ありがちな誤り」を用意して、
- *  （正・正）（正・誤）（誤・正）（誤・誤）の 2×2 でそろえる。どの選択肢も、ほかの選択肢との共通部分の数が同じになるので、形を見ただけでは正解が当たらない。
- *  tex(a, b)＝式の TeX、val(a, b)(n)＝式の値（正解と同じ式になっていないことを、読みこむときに確かめる） */
-const GRID = {
-  sum: {
-    how: "内角の和を $n$ でわる",
-    parts: [
-      { ok: { tex: "180(n-2)", f: (n) => 180 * (n - 2) }, bad: [{ tex: "180(n+2)", f: (n) => 180 * (n + 2) }, { tex: "360(n-2)", f: (n) => 360 * (n - 2) }, { tex: "180n-2", f: (n) => 180 * n - 2 }, { tex: "180(n-1)", f: (n) => 180 * (n - 1) }] },
-      { ok: { tex: "n", f: (n) => n }, bad: [{ tex: "2", f: () => 2 }, { tex: "n-2", f: (n) => n - 2 }, { tex: "n-1", f: (n) => n - 1 }] },
-    ],
-    tex: (a, b) => `\\frac{${a}}{${b}}`,
-    val: (a, b) => (n) => a(n) / b(n),
-    steps: [`正${$("n")}角形の内角の和は ${$("180(n-2)")} 度。`, `内角は ${$("n")} 個とも等しいので、内角の和を ${$("n")} でわって　${$("\\frac{180(n-2)}{n}")} 度。`],
-    hint: "正 $n$ 角形の内角の和は、どう表せたかな？ 正多角形の内角は、すべてどうなっているかな？",
-  },
-  ext: {
-    how: "180° から、1つの外角をひく",
-    parts: [
-      { ok: { tex: "180-X", f: (x) => 180 - x }, bad: [{ tex: "360-X", f: (x) => 360 - x }, { tex: "X-180", f: (x) => x - 180 }, { tex: "180+X", f: (x) => 180 + x }] },
-      { ok: { tex: "360", f: () => 360 }, bad: [{ tex: "180", f: () => 180 }, { tex: "720", f: () => 720 }, { tex: "540", f: () => 540 }] },
-    ],
-    tex: (a, b) => a.replace("X", `\\frac{${b}}{n}`),
-    val: (a, b) => (n) => a(b(n) / n),
-    steps: [`正${$("n")}角形の外角の和は 360° で、外角は ${$("n")} 個とも等しいので、1つの外角は ${$("\\frac{360}{n}")} 度。`, `内角＝180°−外角 だから　${$("180-\\frac{360}{n}")} 度。`],
-    hint: "正 $n$ 角形の 1つの外角は、どう表せたかな？ 同じ頂点で、内角と外角の和は何度だったかな？",
-  },
-};
-// 誤りの形が、正しい式と同じ式になっていないか、読みこむときに確かめる
-for (const [key, G] of Object.entries(GRID)) {
-  const [P1, P2] = G.parts, right = G.val(P1.ok.f, P2.ok.f);
-  for (const a of [P1.ok, ...P1.bad]) for (const b of [P2.ok, ...P2.bad]) {
-    if (a === P1.ok && b === P2.ok) continue;
-    const f = G.val(a.f, b.f);
-    if ([5, 6, 7, 8, 9, 10, 12].every((n) => Math.abs(f(n) - right(n)) < 1e-9)) throw new Error(`正しい式と同じになる選択肢: ${key} ${a.tex} ${b.tex}`);
+// 正 (n＋k) 角形の 1つの内角を、n で表した式を選ぶ。問題文は考え方（内角の和÷個数／180°−外角）を言わない。
+// 正しい式は 2通り（分数の形 A＝内角の和÷個数、180−外角 の形 B）あるが、1つの問題には、そのどちらか1つしか出さない。
+// 4つの選択肢は、式を 2つの部分（A は 分子・分母、B は 先頭の記号・外角の分子）に分けて、それぞれ「正しい形」と「ありがちな誤り」を用意し、
+// （正・正）（正・誤）（誤・正）（誤・誤）の 2×2 でそろえる。どの選択肢も、ほかの選択肢との共通部分の数が同じなので、形を見ただけでは当たらない。
+const lin = (c) => (c === 0 ? "n" : c > 0 ? `n+${c}` : `n-${-c}`);                 // n＋c
+const times = (coef, c) => (c === 0 ? `${coef}n` : `${coef}(${lin(c)})`);           // coef(n＋c)
+const fr = (num, den) => `\\frac{${num}}{${den}}`;
+/** k ごとの部品。A＝分数の形（分子 num・分母 den）、B＝180− の形（先頭 op・外角の分子 num）。値の関数 f も持つ */
+function exprParts(k) {
+  const g = (n) => n + k, e = (tex, f) => ({ tex, f });
+  return {
+    true: (n) => 180 - 360 / g(n),
+    A: {
+      num: [e(times(180, k - 2), (n) => 180 * (g(n) - 2)), [e(times(180, k + 2), (n) => 180 * (g(n) + 2)), e(times(360, k - 2), (n) => 360 * (g(n) - 2)), e(times(180, k - 1), (n) => 180 * (g(n) - 1)), e(`180n${k - 2 >= 0 ? "+" : "-"}${Math.abs(k - 2) || ""}`.replace(/[+-]$/, "") , (n) => 180 * n + (k - 2))].filter((x) => k !== 2 || x.tex !== "180n")],
+      den: [e(lin(k), g), [e("2", () => 2), e(lin(k - 1), (n) => n + k - 1), ...(k !== 2 ? [e(lin(k - 2), (n) => n + k - 2)] : [e(lin(k + 1), (n) => n + k + 1)])]],
+      tex: (a, b) => fr(a, b), val: (a, b) => (n) => a(n) / b(n),
+    },
+    B: {
+      num: [e("180-X", (x) => 180 - x), [e("180+X", (x) => 180 + x), e("360-X", (x) => 360 - x), e("X-180", (x) => x - 180)]],
+      den: [e("360", () => 360), [e("180", () => 180), e("720", () => 720), e("540", () => 540)]],
+      tex: (a, b) => a.replace("X", fr(b, lin(k))), val: (a, b) => (n) => a(b(n) / g(n)),
+    },
+  };
+}
+const sameFn = (f, h) => [4, 5, 6, 7, 9, 10, 12].every((n) => Math.abs(f(n) - h(n)) < 1e-9);
+// 組み立てた式が、正しい式と同じになっていないか（正しい式以外）、読みこむときに確かめる
+for (let k = 0; k <= 3; k++) {
+  const P = exprParts(k);
+  for (const key of ["A", "B"]) {
+    const Q = P[key], right = Q.val(Q.num[0].f, Q.den[0].f);
+    if (!sameFn(right, P.true)) throw new Error(`正しい式が正しくない: k=${k} ${key}`);
+    for (const a of [Q.num[0], ...Q.num[1]]) for (const b of [Q.den[0], ...Q.den[1]]) {
+      if (a === Q.num[0] && b === Q.den[0]) continue;
+      if (sameFn(Q.val(a.f, b.f), P.true)) throw new Error(`正しい式と同じになる誤答: k=${k} ${key} ${a.tex} ${b.tex}`);
+    }
   }
 }
-function exprQ(r, key) {
-  const G = GRID[key], [P1, P2] = G.parts, tex = (a, b) => $(G.tex(a.tex, b.tex));
-  const a2 = pick(r, P1.bad), b2 = pick(r, P2.bad), ans = tex(P1.ok, P2.ok);
+/** form＝"A"（分数の形）か "B"（180−外角 の形）が正解 */
+function exprQ(r, form) {
+  const k = pick(r, [0, 0, 1, 2, 3]), Q = exprParts(k)[form], tex = (a, b) => $(Q.tex(a.tex, b.tex));
+  const a2 = pick(r, Q.num[1]), b2 = pick(r, Q.den[1]), ans = tex(Q.num[0], Q.den[0]);
+  const polyN = k === 0 ? "$n$" : `$(n+${k})$`;
+  const steps = form === "A"
+    ? [`正${polyN}角形の内角の和は　${$(times(180, k - 2))} 度。`, `内角は ${$(lin(k))} 個とも等しいので、内角の和を ${$(lin(k))} でわって　${ans} 度。`]
+    : [`正${polyN}角形の外角の和は 360° で、外角は ${$(lin(k))} 個とも等しいので、1つの外角は ${$(fr(360, lin(k)))} 度。`, `内角＝180°−外角 だから　${ans} 度。`];
   return {
-    q: `正 $n$ 角形の 1つの内角の大きさ（単位は度）を、「${G.how}」考え方で、$n$ を使った式に表す。正しい式は、次のうちどれか。`,
+    q: `正 ${polyN} 角形の 1つの内角の大きさ（単位は度）を、$n$ を使って表した式は、次のうちどれか。`,
     ans,
-    choices: shuffle(r, [ans, tex(P1.ok, b2), tex(a2, P2.ok), tex(a2, b2)]),
-    hint: G.hint,
-    steps: G.steps,
+    choices: shuffle(r, [ans, tex(Q.num[0], b2), tex(a2, Q.den[0]), tex(a2, b2)]),
+    hint: "正多角形の 1つの内角は、どう求められたかな？ 内角の和や外角の和を、$n$ を使って表せないかな？",
+    steps,
   };
 }
 
@@ -246,10 +252,10 @@ export const UNITS = [
             steps: [`向きを変えた角度の合計が 360° になると、もとの向きにもどる。360°÷${th}°＝${n} だから、${n}回向きを変えて 1周する。`, `ロボットは、${rgon(n)}のまわりを 1周する。進んだ道のりは　${L}×${n}＝${L * n}（m）`],
           };
         }),
-        // 06d07a 演習（7）① 内角の和を n でわった式
-        t("06d07a", (r) => exprQ(r, "sum")),
-        // 06d07b 演習（7）② 180° から外角をひいた式
-        t("06d07b", (r) => exprQ(r, "ext")),
+        // 06d07a 演習（7）正n角形の1つの内角を n で表した式（正解は、内角の和÷個数 の分数の形）
+        t("06d07a", (r) => exprQ(r, "A")),
+        // 06d07b 演習（7）正n角形の1つの内角を n で表した式（正解は、180°−外角 の形）
+        t("06d07b", (r) => exprQ(r, "B")),
         // 06d07c 演習（7）n＝6 のとき、2つの式が同じ値になる → n＝○ のときの値
         t("06d07c", (r) => {
           const n = pick(r, [5, 6, 8, 9, 10, 12, 15, 18, 20, 24]), a = 180 - 360 / n;
@@ -298,13 +304,13 @@ export const UNITS = [
 /** 正n角形 ABC… の、となりあう頂点 X、Y（辺 XY）の外がわに、のばした 2本の直線の交点 P をつくり、∠XPY を求める */
 function extApex(r, pool) {
   const n = pick(r, pool), e = 360 / n, apex = 180 - 2 * e;
-  const i = r(1, Math.min(n - 3, 5)), prev = NM[i - 1], X = NM[i], Y = NM[i + 1], next = NM[i + 2], P = pick(r, ["P", "F", "Q"]);
-  const intro = n <= 10 ? `${rgon(n)} ${names(n)}` : `${rgon(n)}（頂点を A、B、C、… の順にとる）`;
+  const i = r(1, Math.min(n - 3, 5)), prev = NM[i - 1], X = NM[i], Y = NM[i + 1], next = NM[i + 2], P = "Z";   // 交点の名前は、頂点（最大 24個 ＝ A〜X）に使わない Z
+  const intro = n <= 10 ? `${rgon(n)} ${names(n)} で、` : `${rgon(n)}（頂点を A、B、C、… の順にとる）で、`;
   return {
-    q: `${intro} で、辺 ${prev}${X} を ${X} の方へ、辺 ${next}${Y} を ${Y} の方へのばした 2本の直線の交点を ${P} とする。∠${X}${P}${Y} の大きさは？`,
+    q: `${intro}辺 ${prev}${X} を ${X} の方へ、辺 ${next}${Y} を ${Y} の方へのばした 2本の直線の交点を ${P} とする。∠${X}${P}${Y} の大きさは？`,
     ans: apex,
     unit: "度",
-    hint: `正多角形の 1つの外角は、何度かな？ △${P}${X}${Y} の 2つの角は、どの角にあたるかな？`,
+    hint: "正多角形の 1つの外角は、何度かな？ 辺をのばしてできる角は、この多角形の何にあたるかな？",
     steps: [`${rgon(n)}の 1つの外角は　360°÷${n}＝${e}°`, `∠${P}${X}${Y} は ${X} の外角、∠${P}${Y}${X} は ${Y} の外角だから、どちらも ${e}°`, `△${P}${X}${Y} の内角の和から　∠${X}${P}${Y}＝180°−${e}°−${e}°＝${apex}°`],
   };
 }

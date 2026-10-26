@@ -12,13 +12,41 @@ import { unitFor } from "../unit-kit.js";
 
 const unit = unitFor("heikou");
 
-/** t(id, build) と同じ。ただし、数の答えが問題文の数とたまたま同じになる組は、作り直す（skip）。
- *  対応を読みとる問題（辺・角の対応）は、答えが問題文の数の 1つになるのが本来の形なので、tc（そのまま）を使う */
-const tc = t0;
+/** 4択の「当てやすさ」を下げる検査：選択肢の形だけ（長さ・ほかの選択肢との似かた・語の出かた）で、正解が「単独のいちばん」になる問題は作り直す */
+const strip = (s) => String(s).replace(/\$/g, "");
+const toks = (s) => strip(s).match(/[A-Za-z]|\d+|[぀-ヿ一-鿿]+|[∠△≡∥⊥＝]/g) || [];
+const bigrams = (s) => { const x = strip(s).replace(/\s/g, ""), o = new Set(); for (let i = 0; i < x.length - 1; i++) o.add(x.slice(i, i + 2)); return o; };
+const jac = (a, b) => { let i = 0; for (const x of a) if (b.has(x)) i++; return i / (a.size + b.size - i || 1); };
+function cueFree(choices, ans) {
+  const n = choices.length, ai = choices.findIndex((c) => String(c) === String(ans));
+  const T = choices.map((c) => new Set(toks(c))), B = choices.map(bigrams), cnt = {};
+  T.forEach((s) => s.forEach((w) => { cnt[w] = (cnt[w] || 0) + 1; }));
+  const sim = B.map((b, i) => B.reduce((a, o, j) => (i === j ? a : a + jac(b, o)), 0));
+  const sc = [
+    choices.map((c) => strip(c).length), sim,
+    T.map((s) => [...s].filter((w) => cnt[w] === 1).length),
+    T.map((s) => Object.keys(cnt).filter((w) => cnt[w] === n - 1 && !s.has(w)).length),
+    T.map((s) => [...s].reduce((a, w) => a + cnt[w], 0)),
+  ];
+  for (const v of sc) for (const sgn of [1, -1]) {
+    const w = v.map((x) => sgn * x), m = Math.max(...w);
+    if (w[ai] === m && w.filter((x) => x === m).length === 1) return false;
+  }
+  return true;
+}
+/** t(id, build) と同じ。ただし、(1) 数の答えが問題文の数とたまたま同じになる組は、作り直す（skip）、(2) 4択は、形だけで正解が当たる組を、作り直す。
+ *  対応を読みとる数の問題（辺の長さ・角の大きさ）は、答えが問題文の数の 1つになるのが本来の形なので、tc（(1) をしない）を使う */
+const tc = (id, build) => t0(id, build);
 const t = (id, build) => t0(id, (r) => {
-  const p = build(r);
+  let p;
+  for (let i = 0; i < 80; i++) {
+    p = build(r);
+    if (!p || p.skip || !p.choices || cueFree(p.choices, p.ans)) break;
+  }
   return p && typeof p.ans === "number" && ((p.q.match(/\d+/g) || []).map(Number)).includes(p.ans) ? { skip: true } : p;
 });
+/** 「正しい／まちがい」の言い方は、選択肢ごとにばらばらにえらぶ（言い方で正解がわからないように） */
+const YES = ["等しい", "同じ", "一致する"], NO = ["等しくない", "異なる", "一致しない"];
 
 // ── 道具（この授業の問題用に足した小さな関数）──────────────────────────
 const $ = (s) => `$${s}$`;
@@ -82,27 +110,54 @@ const HINT_S = "辺の両はしの頂点に、それぞれ対応する頂点は�
 const HINT_LEN = "合同な図形で、対応する辺の長さは、どうなっていたかな？ どの辺とどの辺が対応するかは、≡ の書き方からわかるかな？";
 const HINT_ANG = "合同な図形で、対応する角の大きさは、どうなっていたかな？ どの角とどの角が対応するかは、≡ の書き方からわかるかな？";
 
-/** 頂点の対応（4択）。三角形は 3択、四角形は 4択 */
+/** 順序つきの 2つ組（ならべかえ）：x≠y のすべて */
+const ordPairs = (arr) => arr.flatMap((x) => arr.filter((y) => y !== x).map((y) => [x, y]));
+/** 頂点の対応（4択）。四角形は 1つ（選択肢は 4つの頂点）、三角形は 2つを順に（選択肢は、ならべかえた 2つ組） */
 function qVertex(r, kind, perm) {
-  const C = corr(r, kind, perm), toR = r(0, 1) === 0, from = toR ? C.L : C.base, v = pick(r, from), ans = toR ? C.fwd[v] : C.bwd[v], to = toR ? C.base : C.L;
+  const C = corr(r, kind, perm), toR = r(0, 1) === 0, from = toR ? C.L : C.base, to = toR ? C.base : C.L, map = (v) => (toR ? C.fwd[v] : C.bwd[v]);
+  if (kind === 4) {
+    const v = pick(r, from), ans = map(v);
+    return {
+      q: `${C.stmt} のとき、頂点 ${v} に対応する頂点は、次のうちどれか。`,
+      ans: `頂点 ${ans}`,
+      choices: choices4(r, `頂点 ${ans}`, to.filter((x) => x !== ans).map((x) => `頂点 ${x}`)),
+      hint: HINT_V,
+      steps: [CORR_STEP(C), `頂点 ${v} に対応する頂点は、頂点 ${ans}。`],
+    };
+  }
+  const [v1, v2] = shuffle(r, from).slice(0, 2), fmt = (a, b) => `頂点 ${a}、頂点 ${b}`, ans = fmt(map(v1), map(v2));
+  const wrongs = shuffle(r, ordPairs(to).filter(([a, b]) => fmt(a, b) !== ans)).slice(0, 3).map(([a, b]) => fmt(a, b));
   return {
-    q: `${C.stmt} のとき、頂点 ${v} に対応する頂点は、次のうちどれか。`,
-    ans: `頂点 ${ans}`,
-    choices: choices4(r, `頂点 ${ans}`, to.filter((x) => x !== ans).map((x) => `頂点 ${x}`)),
+    q: `${C.stmt} のとき、頂点 ${v1}、頂点 ${v2} に対応する頂点は、順に、次のうちどれか。`,
+    ans,
+    choices: choices4(r, ans, wrongs),
     hint: HINT_V,
-    steps: [CORR_STEP(C), `頂点 ${v} に対応する頂点は、頂点 ${ans}。`],
+    steps: [CORR_STEP(C), `頂点 ${v1} に対応する頂点は頂点 ${map(v1)}、頂点 ${v2} に対応する頂点は頂点 ${map(v2)}。`, `順に答えて　${ans}。`],
   };
 }
-/** 辺の対応（4択） */
+/** 辺の対応（4択）。四角形は 1つ（選択肢は 4つの辺）、三角形は 2つを順に（選択肢は、ならべかえた 2つ組） */
 function qSide(r, kind, perm) {
-  const C = corr(r, kind, perm), toR = r(0, 1) === 0, s = pick(r, toR ? C.lSides : C.rSides), ans = toR ? sideToR(C, s) : sideToL(C, s), to = toR ? C.rSides : C.lSides;
-  const [x, y] = s, [px, py] = toR ? [C.fwd[x], C.fwd[y]] : [C.bwd[x], C.bwd[y]];
+  const C = corr(r, kind, perm), toR = r(0, 1) === 0, fromS = toR ? C.lSides : C.rSides, toS = toR ? C.rSides : C.lSides;
+  const mapS = (s) => (toR ? sideToR(C, s) : sideToL(C, s)), mapV = (v) => (toR ? C.fwd[v] : C.bwd[v]);
+  const why = (s) => `辺 ${s} の両はしの頂点 ${s[0]}、${s[1]} に対応するのは、頂点 ${mapV(s[0])}、${mapV(s[1])}。辺 ${s} に対応する辺は、辺 ${mapS(s)}。`;
+  if (kind === 4) {
+    const s = pick(r, fromS), ans = mapS(s);
+    return {
+      q: `${C.stmt} のとき、辺 ${s} に対応する辺は、次のうちどれか。`,
+      ans: `辺 ${ans}`,
+      choices: choices4(r, `辺 ${ans}`, toS.filter((z) => z !== ans).map((z) => `辺 ${z}`)),
+      hint: HINT_S,
+      steps: [CORR_STEP(C), why(s)],
+    };
+  }
+  const [s1, s2] = shuffle(r, fromS).slice(0, 2), fmt = (a, b) => `辺 ${a}、辺 ${b}`, ans = fmt(mapS(s1), mapS(s2));
+  const wrongs = shuffle(r, ordPairs(toS).filter(([a, b]) => fmt(a, b) !== ans)).slice(0, 3).map(([a, b]) => fmt(a, b));
   return {
-    q: `${C.stmt} のとき、辺 ${s} に対応する辺は、次のうちどれか。`,
-    ans: `辺 ${ans}`,
-    choices: choices4(r, `辺 ${ans}`, to.filter((z) => z !== ans).map((z) => `辺 ${z}`)),
+    q: `${C.stmt} のとき、辺 ${s1}、辺 ${s2} に対応する辺は、順に、次のうちどれか。`,
+    ans,
+    choices: choices4(r, ans, wrongs),
     hint: HINT_S,
-    steps: [CORR_STEP(C), `辺 ${s} の両はしの頂点 ${x}、${y} に対応するのは、頂点 ${px}、${py}。`, `辺 ${s} に対応する辺は、辺 ${ans}。`],
+    steps: [CORR_STEP(C), why(s1), `${why(s2)} 順に答えて　${ans}。`],
   };
 }
 /** 辺の長さ（数）：片方の図形の辺の長さを言って、もう片方の辺の長さを聞く */
@@ -268,6 +323,7 @@ function xyQ(r, ask) {
     const x = r(2, 9), y = r(1, 9), p1 = r(1, 4), p2 = r(1, 4), p3 = r(1, 4), p4 = r(1, 3), L1 = r(6, 24), L2 = r(5, 20);
     const q1 = L1 - p1 * x, q2 = L1 - p2 * x, q3 = L2 - p3 * x, q4 = L2 - p4 * y;
     if (p1 === p2 || x === y || [q1, q2, q3, q4].some((q) => q === 0 || Math.abs(q) > 12)) continue;
+    if ((p3 === p1 && q3 === q1) || (p3 === p2 && q3 === q2)) continue;   // 2つの辺が、同じ式にならないように
     const dp = Math.abs(p1 - p2), dq = p1 > p2 ? q2 - q1 : q1 - q2;
     const e1 = poly([p1, q1]), e2 = poly([p2, q2]), e3 = poly([p3, q3]), e4 = poly([p4, q4], "y");
     const xs = [dp === 1 ? `AB＝DE だから　${$(`${e1}=${e2}`)}、${$(`x=${x}`)}` : `AB＝DE だから　${$(`${e1}=${e2}`)}、${$(`${dp}x=${dq}`)}、${$(`x=${x}`)}`];
@@ -302,13 +358,13 @@ export const UNITS = [
       // ───────── 1 基礎 ─────────
       1: [
         // 08d01a 演習（1）① 頂点 B に対応する頂点
-        t("08d01a", (r) => qVertex(r, 3, false)),
+        t("08d01a", (r) => qVertex(r, pick(r, [3, 4]), false)),
         // 08d01b 演習（1）②③ 辺の長さ
         tc("08d01b", (r) => qLength(r, 3, false)),
         // 08d01c 演習（1）④ 角の大きさ
         tc("08d01c", (r) => qAngle(r, 3, false)),
         // 08d01d 演習（1）⑤ 辺 AC に対応する辺
-        t("08d01d", (r) => qSide(r, 3, false)),
+        t("08d01d", (r) => qSide(r, pick(r, [3, 4]), false)),
         // 08d02a 演習（2）①② 四角形の辺の長さ
         tc("08d02a", (r) => qLength(r, 4, false)),
         // 08d02b 演習（2）③ 四角形の角の大きさ
@@ -318,11 +374,11 @@ export const UNITS = [
         // 08q01a 小テスト（1）重なり合う頂点・辺・角を何というか
         t("08q01a", (r) => {
           const ans = "対応する頂点・辺・角";
-          const pool = ["共通の", "対称な", "平行な", "垂直な", "隣り合う"];
+          const pool = ["共有", "隣接", "交差", "接続", "並行"];
           return {
             q: "合同な図形で、重なり合う頂点・辺・角を、それぞれ何というか。",
             ans,
-            choices: choices4(r, ans, shuffle(r, pool).slice(0, 3).map((x) => `${x}頂点・辺・角`)),
+            choices: choices4(r, ans, shuffle(r, pool).slice(0, 3).map((x) => `${x}する頂点・辺・角`)),
             hint: "ぴったり重なる 2つの図形で、重なり合う頂点どうしを、何とよんだかな？",
             steps: ["合同な図形で、重なり合う頂点・辺・角を、それぞれ「対応する頂点・辺・角」という。", `正しいのは「${ans}」。`],
           };
@@ -365,7 +421,7 @@ export const UNITS = [
           };
         }),
         // 08d03b 演習（3）辺 AC に対応する辺（≡ の右がわを並べかえた形）
-        t("08d03b", (r) => qSide(r, 3, true)),
+        t("08d03b", (r) => qSide(r, pick(r, [3, 4]), true)),
         // 08d04 演習（4）四角形の 3つの角から、のこりの角に対応する角
         t("08d04", (r) => {
           const C = corr(r, 4, true), v = angles(r, 4), m = r(0, 3), toR = r(0, 1) === 0;
@@ -394,16 +450,16 @@ export const UNITS = [
         t("08d05a", (r) => stmtQ(r, 1, "次の 4つの文のうち、いつでも合同といえるものは、どれか。", "合同な図形は、ぴったり重なるのだったね。その条件がそろっても、重ならない図形は、つくれないかな？")),
         // 08d05b 演習（5）合同とはかぎらないもの（1つ選ぶ）
         t("08d05b", (r) => stmtQ(r, 3, "次の 4つの文のうち、合同であるとはかぎらないものは、どれか。", "合同な図形は、ぴったり重なるのだったね。その条件がそろっても、重ならない図形は、つくれないかな？")),
-        // 08d05c 演習（5）ア 合同な図形の性質（4択）
+        // 08d05c 演習（5）ア 合同な図形の性質（4択。「長さ」「大きさ」それぞれについて、等しいか等しくないかを、言い方をかえて 2×2 にそろえる）
         t("08d05c", (r) => {
-          const [y, n] = pick(r, [["いつも等しい", "等しいとはかぎらない"], ["かならず等しい", "等しくなるとはかぎらない"]]);
-          const ans = `対応する線分の長さも、対応する角の大きさも、${y}。`;
+          const mk = (a, b) => `対応する線分の長さは${pick(r, a ? YES : NO)}。対応する角の大きさは${pick(r, b ? YES : NO)}。`;
+          const ans = mk(true, true);
           return {
             q: pick(r, ["合同な 2つの図形について、正しいものはどれか。", "△ABC≡△DEF のとき、対応する辺と角について、正しいものはどれか。"]),
             ans,
-            choices: choices4(r, ans, [`対応する線分の長さは${y}が、対応する角の大きさは${n}。`, `対応する角の大きさは${y}が、対応する線分の長さは${n}。`, `対応する線分の長さも、対応する角の大きさも、${n}。`]),
+            choices: choices4(r, ans, [mk(true, false), mk(false, true), mk(false, false)]),
             hint: "ぴったり重なるとき、対応する線分や角は、どうなっているかな？",
-            steps: ["合同な図形は、ぴったり重なるので、対応する線分の長さは等しく、対応する角の大きさも等しい。", `正しいのは「${ans}」。`],
+            steps: ["合同な図形は、ぴったり重なるので、対応する線分の長さは等しく、対応する角の大きさも等しい。", `正しいのは「${ans}」。ほかの選択肢は、線分の長さか角の大きさの少なくとも一方が、等しくないことになっている。`],
           };
         }),
         // 08d06 演習（6）周の長さから、のこりの辺の長さ
