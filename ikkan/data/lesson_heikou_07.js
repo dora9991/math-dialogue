@@ -12,8 +12,7 @@
    ・見本（空間図形 第1時）との違い：図は平面図形の GEO（js/geo.js）。補助線を、解答だけの赤い点線で出す。
    検算：node tools/verify.cjs　／　見た目：node tools/check.cjs */
 (function () {
-  const { M, K, B, G, F, C2, BR, T, HD, WD, MA, SVG } = IK.b;
-  const GEO = IK.b.GEO || (() => SVG(() => ''));   // 検算（verify.cjs）は geo.js を読まないので、そのときだけ空の図にする
+  const { M, K, B, G, F, C2, BR, T, HD, WD, MA, GEO } = IK.b;
   const J = JSON.stringify;
 
   /* ---------------- 角度から座標をつくる道具 ----------------
