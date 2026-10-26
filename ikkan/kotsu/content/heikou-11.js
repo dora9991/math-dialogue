@@ -224,7 +224,7 @@ function rwQ(r, list) {
   const mkS = ([h, c]) => sent2n(varH(h), varC(c));
   const good = mkS(it.good);
   const q = `次のことがらを、「〇〇〇 ならば △△△」の形に書き直したい。正しい書き直しは、次のうちどれか。\n「${it.o}」`;
-  const wrongs = pickBal(r, good, () => { const ws = [mkS(it.sw), ...shuffle(r, it.ws).slice(0, 2).map(mkS)]; return new Set([good, ...ws]).size === 4 ? ws : null; }, 400, q, [6, 4, 1, 1, 0]);
+  const wrongs = pickBal(r, good, () => { const ws = [mkS(it.sw), ...shuffle(r, it.ws).slice(0, 2).map(mkS)]; return new Set([good, ...ws]).size === 4 ? ws : null; }, 400, q, [5, 4, 3, 2, 0]);
   return {
     q,
     ans: good,
