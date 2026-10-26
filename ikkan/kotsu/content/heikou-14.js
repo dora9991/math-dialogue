@@ -273,6 +273,28 @@ function relProblem(r, far) {
     ].map(N),
   };
 }
+/**
+ * 平行線と角の問題（角 a の大きさ g を言って、a と同じ大きさの角 2つ（または 180°−g の角 2つ）の「和」を聞く）。
+ * 答えは 2g か 360°−2g で、問題文の数字にも、180°−g にもならない。far＝true なら、2つの角は a とはちがう点（A か B）の角。
+ */
+function sumProblem(r, far) {
+  const N = namer(r, 8);
+  const a = pick(r, NODES8), g = pick(r, [r(35, 85), r(95, 145)]);
+  const same = r(0, 1) === 0;
+  const pool = NODES8.filter((n) => nodeKey(n) !== nodeKey(a) && (cls8(n.pos) === cls8(a.pos)) === same && (!far || n.pt !== a.pt));
+  const [b, c] = sample(r, pool, 2);
+  const w1 = parWalk(a, b, g), w2 = parWalk(a, c, g);
+  const ans = same ? 2 * g : 360 - 2 * g;
+  if (w1.v + w2.v !== ans) throw new Error("道すじと答えが合わない");
+  const nb = ANG8[b.pt][b.pos], nc = ANG8[c.pt][c.pos];
+  return {
+    q: N(`${PAR_SETUP}∠${ANG8[a.pt][a.pos]}＝${g}° のとき、∠${nb} と ∠${nc} の大きさの和は何度か。`),
+    ans,
+    unit: "度",
+    hint: "平行な2直線に1本の直線が交わるとき、同位角や錯角はどうなるかな？ 対頂角や、一直線の角は？ まず、それぞれの角の大きさを求めよう。",
+    steps: [...w1.steps, ...w2.steps, `∠${nb}＋∠${nc}＝${w1.v}°＋${w2.v}°＝${ans}°。`].map(N),
+  };
+}
 const PAIRS = (f) => NODES8.flatMap((a) => NODES8.filter((b) => nodeKey(a) !== nodeKey(b) && f(a, b)).map((b) => [a, b]));
 const CROSS = PAIRS((a, b) => cls8(a.pos) !== cls8(b.pos));                                // 答えが 180°−（与えられた角）
 const CROSS_PT = PAIRS((a, b) => cls8(a.pos) !== cls8(b.pos) && a.pt !== b.pt);             // 2つの角が、A と B にわかれている（答えは 180°−（与えられた角）。道すじは 2回）
@@ -296,8 +318,10 @@ export const UNITS = [
       1: [
         // 14d01a 演習（1）①平行線と角：一直線の角と同位角（など）で、角の大きさを求める
         t("14d01a", (r) => {
-          if (r(0, 9) < 5) { const [a, b] = pick(r, CROSS); return parProblem(r, a, b); }   // 角の大きさを 1つ言って、聞く（答えは 180°−その角）
-          return relProblem(r, false);                                                  // 2つの角の関係（○倍・○°大きい）を言って、聞く（答えは問題文にない数）
+          const m = r(0, 9);
+          if (m < 4) { const [a, b] = pick(r, CROSS); return parProblem(r, a, b); }   // 角の大きさを 1つ言って、聞く（答えは 180°−その角）
+          if (m < 7) return relProblem(r, false);                                      // 2つの角の関係（○倍・○°大きい）を言って、聞く（答えは問題文にない数）
+          return sumProblem(r, false);                                                 // 角の大きさを 1つ言って、2つの角の和を聞く（答えは 2g か 360°−2g）
         }),
         // 14d01b 演習（1）②三角形の内角の和（外角の問いも）
         t("14d01b", (r) => {
@@ -375,9 +399,10 @@ export const UNITS = [
         }),
         // 14q01 小テスト（1）平行線と角：A と B にわかれた角どうし（同位角・錯角・対頂角・一直線の角）
         t("14q01", (r) => {
-          if (r(0, 9) < 5) { const [a, b] = pick(r, CROSS_PT); return parProblem(r, a, b); }
-          return relProblem(r, true);
-          return parProblem(r, a, b);
+          const m = r(0, 9);
+          if (m < 4) { const [a, b] = pick(r, CROSS_PT); return parProblem(r, a, b); }
+          if (m < 7) return relProblem(r, true);
+          return sumProblem(r, true);
         }),
         // 14q02a 小テスト（2）①n角形の内角の和
         t("14q02a", (r) => {
