@@ -58,7 +58,12 @@
      given：問題文の「〜＝〜」の組。辺の組は、同じ本数の印（tick）、角の組は、同じ本数の弧（ang）になる（図と問題文がずれない） */
   const mark = given => { const tick = [], ang = []; let ns = 0, na = 0; (given || []).forEach(g => { if (g[0][0] === '∠') { na++; g.forEach(s => { const [a, v, b] = [...s.replace('∠', '')]; ang.push({ at: v, a, b, n: na, k: na }); }); } else { ns++; g.forEach(s => tick.push([s[0], s[1], ns])); } }); return { tick, ang }; };
   const figData = f => { const mk = mark(f.given); return { pts: f.pts, tick: mk.tick.concat(f.tick || []), ang: mk.ang.concat(f.ang || []), par: f.par || [] }; };
-  const geoOf = (f, o) => GEO(Object.assign({ poly: f.poly, segs: f.segs, vl: f.vl, dots: f.dots, size: f.size, pad: f.pad, a: f.a }, figData(f), o || {}));
+  // 平行のしるしと同じ辺に、等しい印をつけるときは、等しい印を、辺の中点からずらして（辺の 18〜38％の所に）かく（重ならないように）。checks には、もとの辺の組を渡す
+  const geoOf = (f, o) => {
+    const d = figData(f), P = f.pts, key = (x, y) => [x, y].sort().join(''), pk = d.par.map(q => key(q[0], q[1]));
+    const tick = d.tick.map(([x, y, n]) => (pk.includes(key(x, y)) ? [[P[x][0] + (P[y][0] - P[x][0]) * 0.18, P[x][1] + (P[y][1] - P[x][1]) * 0.18], [P[x][0] + (P[y][0] - P[x][0]) * 0.38, P[x][1] + (P[y][1] - P[x][1]) * 0.38], n] : [x, y, n]));
+    return GEO(Object.assign({ poly: f.poly, segs: f.segs, vl: f.vl, dots: f.dots, size: f.size, pad: f.pad, a: f.a }, d, { tick }, o || {}));
+  };
   const KIND = { SSS: '3組の辺', SAS: '2組の辺とその間の角', ASA: '1組の辺とその両端の角' };
   const srt = s => [...s].sort().join('');
   const pairText = e => e[2] || (e[0][0] !== '∠' && srt(e[0]) === srt(e[1]) ? e[0] + ' は共通' : e[0] + '＝' + e[1]);
