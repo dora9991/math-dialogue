@@ -42,25 +42,35 @@ const L6 = [["A", "B", "C", "D", "E", "P"], ["P", "Q", "R", "S", "T", "U"], ["K"
 const L7 = [["A", "B", "C", "D", "E", "F", "P"], ["P", "Q", "R", "S", "T", "U", "V"], ["K", "L", "M", "N", "X", "Y", "Z"]];
 const PAIRS3 = [[["A", "B", "C"], ["D", "E", "F"]], [["P", "Q", "R"], ["X", "Y", "Z"]], [["K", "L", "M"], ["N", "P", "Q"]]];
 const seg = (x, y) => [x, y].sort().join("");
+/** 誤答の候補 pool から3つえらぶ。正解 ans の「長さの順位」（いちばん短い〜いちばん長い）が、かたよらないように（長さで当てられないように） */
+function pickWrongs(r, ans, pool, k = 3) {
+  const target = r(0, k), len = (x) => String(x).length;
+  let first = null;
+  for (let i = 0; i < 60; i++) {
+    const w = shuffle(r, pool).slice(0, k), lo = w.filter((x) => len(x) < len(ans)).length, ties = w.filter((x) => len(x) === len(ans)).length;
+    if (!first) first = w;
+    if (target >= lo && target <= lo + ties) return w;
+  }
+  return first;
+}
+
 
 // ── 等しい組 ──────────────────────────────────────────────
 /** k＝"S"（辺）か "A"（角）、i＝T1 の頂点の番号（辺は、その頂点の向かいの辺）、text＝文、src＝わけ、
  *  rsn＝問題文に書いてないときの見つけ方、ask＝「〜といえるのは、どうしてか」で聞く式 */
 const fact = (k, i, text, src, rsn, ask) => ({ k, i, text, src, rsn, ask });
 const factLine = (facts) => facts.map((f) => `${f.text}${f.src ? `（${f.src}）` : ""}`).join("、");
-const RSN = {
-  side: "共通な辺だから",
-  angleC: "共通な角だから",
-  vert: "対頂角は等しいから",
-  alt: "平行線の錯角は等しいから",
-  corr: "平行線の同位角は等しいから",
-  cond: "問題の条件に書いてあるから",
+const RSN = {   // どれも8字（長さで当てられないように）
+  side: "共通する辺だから",
+  angleC: "共通する角だから",
+  vert: "対頂角であるから",
+  alt: "錯角どうしだから",
 };
 const RSN_WHY = {
   side: "どちらの三角形にもふくまれる辺だから、共通な辺。",
   angleC: "どちらの三角形にもふくまれる角だから、共通な角。",
   vert: "2直線が交わってできる、向かい合った角だから、対頂角。",
-  alt: "平行な2直線に1本の直線が交わってできる、錯角だから。",
+  alt: "平行な2直線に1本の直線が交わるとき、2直線の間で、交わる直線をはさんで反対がわにある角どうしだから、錯角。",
 };
 /** 三角形 ok の頂点の並べ方を、かえたもの（5通り） */
 const permsOf = (ok) => [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]].map((p) => p.map((i) => ok[i])).filter((v) => v.join("") !== ok.join(""));
@@ -120,12 +130,13 @@ const crossFacts = ([a, b, c, d, o]) => ({
   hid: fact("A", 1, `∠${a}${o}${c}＝∠${b}${o}${d}`, "対頂角", "vert", `∠${a}${o}${c}＝∠${b}${o}${d}`),
 });
 const cfgCross = (L, given) => {
-  const [a, b, c, d, o] = L, fs = crossFacts(L);
+  const [a, b, c, d, o] = L, fs = crossFacts(L), par = given.includes("PAR"), g2 = given.filter((g) => g !== "PAR");
+  const alt = (i) => fact("A", i, i === 0 ? `∠${o}${a}${c}＝∠${o}${b}${d}` : `∠${o}${c}${a}＝∠${o}${d}${b}`, "平行線の錯角", "alt", i === 0 ? `∠${o}${a}${c}＝∠${o}${b}${d}` : `∠${o}${c}${a}＝∠${o}${d}${b}`);
   return {
     name: "cross", intro: `線分 ${a}${b} と ${c}${d} が点 ${o} で交わっている（${o} は、${a}${b} の間にも ${c}${d} の間にもある）。`,
-    given: given.map((g) => fs[g].text).join("、"),
+    given: [...(par ? [`${a}${c}∥${d}${b}`] : []), ...g2.map((g) => fs[g].text)].join("、"),
     T1: [a, o, c], T2: [b, o, d],
-    facts: [...given.map((g) => fs[g]), fs.hid],
+    facts: [...g2.map((g) => fs[g]), ...(par ? [alt(0), alt(2)] : []), fs.hid],
   };
 };
 /** △abc で、辺 ab 上に d、辺 ac 上に e。variant：1＝ab＝ac・ad＝ae、2＝ab＝ac・∠abe＝∠acd、3＝ad＝ae・∠adc＝∠aeb */
@@ -144,22 +155,24 @@ const cfgOverlap = ([a, b, c, d, e], variant) => {
 };
 const introOf = (cfg) => `${cfg.intro}${cfg.given ? `${cfg.given} である。` : ""}`;
 
-/** 設定 cfg から、(合同な三角形の組) × (使う合同条件) の 2×2 の4択をつくる */
+const NUM = { SSS: "①", SAS: "②", ASA: "③" };
+const LEGEND = "（合同条件　① 3組の辺が、それぞれ等しい　② 2組の辺とその間の角が、それぞれ等しい　③ 1組の辺とその両端の角が、それぞれ等しい）";
+/** 設定 cfg から、(合同な三角形の組) × (使う合同条件の番号) の 2×2 の4択をつくる。合同条件は番号にして、選択肢の長さをそろえる（正解だけ短い・長い、にならないように） */
 function gridQ(r, cfg, { note = NOTE } = {}) {
   const cls = clsOf(cfg.facts);
   if (!CONDS3.includes(cls)) throw new Error(`gridQ：合同条件の形でない ${cfg.name} ${cls}`);
   const ok = `${tri(cfg.T1)}≡${tri(cfg.T2)}`;
   const bad = `${tri(cfg.T1)}≡${tri(pick(r, cfg.wrongs || permsOf(cfg.T2)))}`;
   const wc = pick(r, CONDS3.filter((c) => c !== cls));
-  const ans = `${ok}、${COND[cls]}`;
+  const ans = `${ok}、${NUM[cls]}`;
   return {
-    q: `${introOf(cfg)}\n${note}\n合同な三角形の組（記号 ≡ で表す）と、使う合同条件の組として、いつでも正しいものは、次のうちどれか。`,
+    q: `${introOf(cfg)}\n${note}\n${LEGEND}\n合同な三角形の組（記号 ≡ で表す）と、使う合同条件の番号の組として、いつでも正しいものは、次のうちどれか。`,
     ans,
-    choices: choices4(r, ans, [`${ok}、${COND[wc]}`, `${bad}、${COND[cls]}`, `${bad}、${COND[wc]}`]),
+    choices: choices4(r, ans, [`${ok}、${NUM[wc]}`, `${bad}、${NUM[cls]}`, `${bad}、${NUM[wc]}`]),
     hint: `${tri(cfg.T1)} と ${tri(cfg.T2)} で、等しい辺や角を3つ見つけられるかな？ 3つがそろったら、3つの合同条件のどれかの形になっているかな？`,
     steps: [
       `${tri(cfg.T1)} と ${tri(cfg.T2)} で、${factLine(cfg.facts)}。`,
-      `${COND[cls]}が、それぞれ等しいから　${ok}。`,
+      `${NUM[cls]}（${COND[cls]}）が、それぞれ等しいから　${ok}。`,
       `頂点は、対応する順に書く（${cfg.T1.map((v, i) => `${v} に ${cfg.T2[i]}`).join("、")}）。答えは「${ans}」。`,
     ],
   };
@@ -169,9 +182,9 @@ function gridQ(r, cfg, { note = NOTE } = {}) {
 function reasonQ(r, cfg) {
   const f = pick(r, cfg.facts.filter((x) => x.rsn)), ans = RSN[f.rsn];
   return {
-    q: `${introOf(cfg)}\n${tri(cfg.T1)} と ${tri(cfg.T2)} で、${f.ask} といえるのは、どうしてか。`,
+    q: `${introOf(cfg)}\n${tri(cfg.T1)} と ${tri(cfg.T2)} で、${f.ask} といえる理由は、次のうちどれか。`,
     ans,
-    choices: choices4(r, ans, shuffle(r, Object.values(RSN).filter((x) => x !== ans)).slice(0, 3)),
+    choices: choices4(r, ans, Object.values(RSN).filter((x) => x !== ans)),
     hint: "この等しい組は、問題の条件に書いてあるかな？ 書いていないとき、図の形から等しいといえる理由には、どんなものがあったかな？",
     steps: [`「${f.ask}」は、問題の条件に書いていない。`, RSN_WHY[f.rsn], `答えは「${ans}」。`],
   };
@@ -234,7 +247,12 @@ export const UNITS = [
         // 10d01a 演習（1）AB＝AC、D は辺 BC の中点 → 合同な三角形と合同条件（3組の辺）。二等分線の場合は、2組の辺とその間の角
         t("10d01a", (r) => gridQ(r, pick(r, [cfgIsoMid, cfgIsoMid, cfgIsoBis])(perm4(r)))),
         // 10d01b 演習（1）問題文に書いていない等しい組（AD は共通 など）の理由
-        t("10d01b", (r) => reasonQ(r, pick(r, [cfgIsoMid, cfgIsoBis, cfgKite, cfgOpp, () => cfgOverlap(pick(r, L5), pick(r, [1, 2, 3]))])(perm4(r)))),
+        t("10d01b", (r) => reasonQ(r, pick(r, [
+          () => pick(r, [cfgIsoMid, cfgIsoBis, cfgKite, cfgOpp])(perm4(r)),        // 共通な辺
+          () => cfgOverlap(pick(r, L5), pick(r, [1, 2, 3])),                       // 共通な角
+          () => cfgCross(cross5(r), pick(r, [["OA", "OC"], ["OA", "A0"], ["OC", "A2"]])),   // 対頂角
+          () => pick(r, [cfgParEq, cfgParEq2, cfgParPar])(perm4(r)),               // 錯角（または共通な辺）
+        ])())),
         // 10d01c 演習（1）共通な辺（角）を選ぶ
         t("10d01c", (r) => {
           const ang = r(0, 4) === 0;
@@ -251,11 +269,15 @@ export const UNITS = [
           const cfg = pick(r, [cfgIsoMid, cfgIsoBis, cfgKite, cfgOpp, cfgParEq, cfgParEq2, cfgParPar])(perm4(r));
           const s1 = sidesOf(cfg.T1), s2 = sidesOf(cfg.T2), com = s1.filter((x) => s2.includes(x));
           if (com.length !== 1) return { skip: true };
-          const ans = `辺 ${com[0]}`, wrongs = [...s1, ...s2].filter((x) => x !== com[0]);
+          // 図にある、三角形の辺ではない線分（もう1本の対角線、または、もとの三角形の辺）も、誤答の候補に入れる
+          const vs = [...new Set([...cfg.T1, ...cfg.T2])].sort(), others = [];
+          for (let i = 0; i < vs.length; i++) for (let j = i + 1; j < vs.length; j++) { const e = vs[i] + vs[j]; if (!s1.includes(e) && !s2.includes(e)) others.push(e); }
+          const ans = `辺 ${com[0]}`, wrongs = [...new Set([...s1, ...s2].filter((x) => x !== com[0]))];
+          const pool = shuffle(r, wrongs).slice(0, 3 - Math.min(others.length, 1)).concat(others.length ? [pick(r, others)] : []);
           return {
             q: `${introOf(cfg)}\n${tri(cfg.T1)} と ${tri(cfg.T2)} に共通な辺は、次のうちどれか。`,
             ans,
-            choices: choices4(r, ans, shuffle(r, [...new Set(wrongs)].map((x) => `辺 ${x}`)).slice(0, 3)),
+            choices: choices4(r, ans, pool.map((x) => `辺 ${x}`)),
             hint: "2つの三角形の、辺を3本ずつ書き出してみよう。どちらにも出てくる辺はどれかな？",
             steps: [`${tri(cfg.T1)} の辺は ${s1.join("、")}、${tri(cfg.T2)} の辺は ${s2.join("、")}。`, `どちらにも出てくる辺は「${com[0]}」。答えは「${ans}」。`],
           };
@@ -265,9 +287,9 @@ export const UNITS = [
         // 10d02b 演習（2）平行線の錯角・共通な辺の理由
         t("10d02b", (r) => reasonQ(r, pick(r, [cfgParEq, cfgParEq2, cfgParPar])(perm4(r)))),
         // 10d03a 演習（3）線分 AB と CD が点 O で交わり、…（1組の辺とその両端の角。対頂角）
-        t("10d03a", (r) => gridQ(r, cfgCross(cross5(r), pick(r, [["OA", "OC"], ["OA", "A0"], ["OC", "A2"], ["OA", "A0"], ["OC", "A2"]])))),
+        t("10d03a", (r) => gridQ(r, cfgCross(cross5(r), pick(r, [["OA", "OC"], ["OA", "A0"], ["OC", "A2"], ["PAR", "OA"], ["PAR", "OC"], ["PAR", "AC"]])))),
         // 10d03b 演習（3）対頂角の理由
-        t("10d03b", (r) => reasonQ(r, cfgCross(cross5(r), pick(r, [["OA", "OC"], ["OA", "A0"], ["OC", "A2"]])))),
+        t("10d03b", (r) => reasonQ(r, cfgCross(cross5(r), pick(r, [["OA", "OC"], ["PAR", "OA"], ["PAR", "OC"], ["PAR", "AC"]])))),
       ],
       // ───────── 2 標準 ─────────
       2: [
@@ -299,11 +321,13 @@ export const UNITS = [
         t("10d05", (r) => {
           const [a, b, c, d] = perm4(r);
           const g = pick(r, [{ t: `${c}${b}＝${c}${d}`, c: "SSS" }, { t: `∠${b}${a}${c}＝∠${d}${a}${c}`, c: "SAS" }]);
-          const bad = [`${a}${b}∥${d}${c}`, `${a}${d}∥${b}${c}`, `${b}${c}＝${a}${d}`, `∠${a}${c}${b}＝∠${a}${c}${d}`, `${a}${c}＝${b}${d}`];
+          const angW = [`∠${a}${c}${b}＝∠${a}${c}${d}`, `∠${b}${a}${d}＝90°`], oth = [`${a}${b}∥${d}${c}`, `${a}${d}∥${b}${c}`, `${b}${c}＝${a}${d}`, `${a}${c}＝${b}${d}`];
+          // 正解が「角の式」のときは、誤答にも「角の式」を1つ入れ、「式の形」で当たらないようにする
+          const bad = g.c === "SAS" ? [pick(r, angW), ...pickWrongs(r, g.t, oth, 2)] : [pick(r, angW), ...shuffle(r, oth).slice(0, 2)];
           return {
             q: `四角形 ${a}${b}${c}${d} で、${a}${b}＝${a}${d} である。対角線 ${a}${c} をひくとき、${tri([a, b, c])}≡${tri([a, d, c])} といえるためには、あと1つ、次のどれがわかればよいか。`,
             ans: g.t,
-            choices: choices4(r, g.t, shuffle(r, bad).slice(0, 3)),
+            choices: choices4(r, g.t, bad),
             hint: `${a}${b}＝${a}${d} はわかっているね。${a}${c} は、2つの三角形で、どうなっているかな？ あと1つで、3つの合同条件のどれかの形になるのは、どんな等しさかな？`,
             steps: [`${a}${b}＝${a}${d}（条件）、${a}${c} は共通（共通な辺）。`, g.c === "SSS" ? `あと ${g.t} がわかれば、3組の辺が、それぞれ等しくなる。` : `あと ${g.t} がわかれば、等しい2辺 ${a}${b}、${a}${c} の間の角が等しくなり、2組の辺とその間の角が、それぞれ等しくなる。`, `ほかの選択肢では、どの合同条件の形にもならない。答えは「${g.t}」。`],
           };
@@ -337,11 +361,21 @@ export const UNITS = [
       ],
       // ───────── 3 応用 ─────────
       3: [
-        // 10d06a 演習（6）AB＝DE、BC＝EF、∠C＝∠F … 「間の角」のことばで、合同といえるか（といえないわけ）
+        // 10d06a 演習（6）AB＝DE、BC＝EF、∠C＝∠F … 「間の角」のことばで、合同といえるか（といえないわけ）／あと1組、どの角が等しければよいか
         t("10d06a", (r) => {
           const [T1, T2] = pickPairs(r), v = r(0, 2), sides = [0, 1, 2].filter((x) => x !== v);
-          const between = r(0, 1) === 1, x = between ? v : pick(r, sides);
           const [s1, s2] = sides.map((i) => sideTxt(T1, i)), [e1, e2] = sides.map((i) => sideTxt(T2, i));
+          if (r(0, 1) === 0) {
+            const ans = `∠${T1[v]}＝∠${T2[v]}`, odd = "どの角でもよい";
+            return {
+              q: `${tri(T1)} と ${tri(T2)} で、${s1}＝${e1}、${s2}＝${e2} である。あと1組、角が等しいことがわかったとき、2組の辺とその間の角が、それぞれ等しくなって、${tri(T1)}≡${tri(T2)} がいつでもいえるのは、どの角が等しいときか。`,
+              ans,
+              choices: choices4(r, ans, [0, 1, 2].filter((x) => x !== v).map((x) => `∠${T1[x]}＝∠${T2[x]}`).concat([odd])),
+              hint: "2組の辺とその間の角が等しければ合同になるのだったね。「間の角」とは、どの角のことだったかな？ 等しい2辺は、どの頂点に集まっているかな？",
+              steps: [`等しい2辺は ${s1} と ${s2}。この2辺は、頂点 ${T1[v]} に集まっている。`, `2辺の間の角は ∠${T1[v]}。∠${T1[v]}＝∠${T2[v]} なら、2組の辺とその間の角が、それぞれ等しくなる。`, `ほかの角では、等しい2辺の間の角にならず、合同条件にあてはまらない。答えは「${ans}」。`],
+            };
+          }
+          const between = r(0, 1) === 1, x = between ? v : pick(r, sides);
           const stmt = (yes, bet) => `${yes ? "いえる" : "いえない"}。∠${T1[x]} は、${s1} と ${s2} の間の角${bet ? "だから" : "ではないから"}。`;
           const ans = stmt(between, between);
           return {
@@ -374,7 +408,7 @@ export const UNITS = [
           const good = [`${a}${o}＝${d}${o}`, `${b}${o}＝${c}${o}`, `${a}${b}＝${d}${c}`];
           const angs = [`∠${o}${a}${b}＝∠${o}${d}${c}`, `∠${o}${b}${a}＝∠${o}${c}${d}`, `∠${a}${o}${b}＝∠${d}${o}${c}`];
           const sides = [`${a}${o}＝${b}${o}`, `${a}${d}＝${b}${c}`, `${a}${o}＝${c}${o}`, `${b}${o}＝${d}${o}`];
-          const g = pick(r, good), w = r(0, 1) ? [pick(r, angs), ...shuffle(r, sides).slice(0, 2)] : [...shuffle(r, angs).slice(0, 2), pick(r, sides)];
+          const g = pick(r, good), w = [pick(r, angs), ...shuffle(r, sides).slice(0, 2)];
           return {
             q: `線分 ${a}${d} と ${b}${c} が点 ${o} で交わり、${a}${b}∥${c}${d} である（${o} は、${a}${d} の間にも ${b}${c} の間にもある）。${tri([a, o, b])}≡${tri([d, o, c])} といえるために、あと1つ、次のどれがわかればよいか。（共通な辺（角）・対頂角・平行線の錯角は、すでに使ってよい。）`,
             ans: g,
@@ -438,37 +472,41 @@ export const UNITS = [
             steps: [common, `対応する角は等しいから　∠${C}${B}${E}＝∠${B}${A}${D}＝${x}°。`, ask === "ABE" ? `∠${A}${B}${E}＝∠${A}${B}${C}−∠${C}${B}${E}＝60°−${x}°＝${ans}°` : `△${B}${C}${E} の内角の和から　∠${B}${E}${C}＝180°−60°−${x}°＝${ans}°`],
           };
         }),
-        // 10q04a チャレンジ 正n角形の対角線で、△ABC≡△BCD のとき、辺 AC に対応する辺
+        // 10q04a チャレンジ 正n角形の、となり合う3つの頂点でつくる三角形の合同（△ABC≡△BCD）。対応する辺、または、使う合同条件
         t("10q04a", (r) => {
-          const n = r(5, 8), V = "ABCDEFGH".slice(0, n), ans = `辺 ${V[1]}${V[3]}`;
+          const n = r(5, 8), V = "ABCDEFGH".slice(0, n), i = r(0, n - 4), [w, x, y, z] = [V[i], V[i + 1], V[i + 2], V[i + 3]], nm = `正${"五六七八"[n - 5]}角形`;
+          if (r(0, 3) === 0) {
+            const ans = COND.SAS;
+            return {
+              q: `${nm} ${V} で、対角線 ${w}${y}、${x}${z} をひく。△${w}${x}${y}≡△${x}${y}${z} を示すとき、使う合同条件は、次のうちどれか。（使ってよいのは、正多角形の辺・角の性質だけとする。）`,
+              ans,
+              choices: choices4(r, ans, Object.values(COND).filter((c) => c !== ans)),
+              hint: "正多角形では、辺の長さや、内角の大きさについて、何がいえたかな？ 2つの三角形で、等しいところを書き出してみよう。",
+              steps: [`${nm}だから、すべての辺が等しく　${w}${x}＝${x}${y}、${x}${y}＝${y}${z}。すべての内角も等しく　∠${w}${x}${y}＝∠${x}${y}${z}。`, `∠${w}${x}${y}、∠${x}${y}${z} は、等しい2辺の間の角。`, `2組の辺とその間の角が、それぞれ等しいから　△${w}${x}${y}≡△${x}${y}${z}。答えは「${ans}」。`],
+            };
+          }
+          // 辺 → 対応する辺（聞く辺は、片方の三角形にしかない辺。△wxy にしかない辺は wx・wy、△xyz にしかない辺は yz・xz）
+          const ask = pick(r, [{ s: `${w}${x}`, a: `${x}${y}`, t: "1" }, { s: `${w}${y}`, a: `${x}${z}`, t: "1" }, { s: `${y}${z}`, a: `${x}${y}`, t: "2" }, { s: `${x}${z}`, a: `${w}${y}`, t: "2" }]);
+          const all = shuffle(r, [`${w}${x}`, `${x}${y}`, `${w}${y}`, `${y}${z}`, `${x}${z}`].filter((e) => e !== ask.s && e !== ask.a)).slice(0, 2).concat([`${w}${z}`]);
+          const ans = `辺 ${ask.a}`, map1 = { [w]: x, [x]: y, [y]: z }, map2 = { [x]: w, [y]: x, [z]: y };
           return {
-            q: `正${"五六七八"[n - 5]}角形 ${V} で、対角線 ${V[0]}${V[2]}、${V[1]}${V[3]} をひくと、△${V[0]}${V[1]}${V[2]}≡△${V[1]}${V[2]}${V[3]} となる。このとき、辺 ${V[0]}${V[2]} に対応する辺は、次のうちどれか。`,
+            q: `${nm} ${V} で、対角線 ${w}${y}、${x}${z} をひくと、△${w}${x}${y}≡△${x}${y}${z} となる。このとき、辺 ${ask.s} に対応する辺は、次のうちどれか。`,
             ans,
-            choices: choices4(r, ans, [`辺 ${V[1]}${V[2]}`, `辺 ${V[2]}${V[3]}`, `辺 ${V[0]}${V[1]}`]),
-            hint: "合同な三角形は、頂点を対応する順に書くのだったね。△ABC の A、B、C には、△BCD のどの頂点が対応するかな？",
-            steps: [`△${V[0]}${V[1]}${V[2]}≡△${V[1]}${V[2]}${V[3]} だから、対応する頂点は　${V[0]} と ${V[1]}、${V[1]} と ${V[2]}、${V[2]} と ${V[3]}。`, `辺 ${V[0]}${V[2]} の両はしの ${V[0]}、${V[2]} には、${V[1]}、${V[3]} が対応する。`, `答えは「${ans}」。`],
+            choices: choices4(r, ans, all.map((e) => `辺 ${e}`)),
+            hint: `合同な三角形は、頂点を対応する順に書くのだったね。△${w}${x}${y} の ${w}、${x}、${y} には、△${x}${y}${z} のどの頂点が対応するかな？`,
+            steps: [`△${w}${x}${y}≡△${x}${y}${z} だから、対応する頂点は　${w} と ${x}、${x} と ${y}、${y} と ${z}。`, `辺 ${ask.s} の両はしの ${ask.s[0]}、${ask.s[1]} に対応するのは、${[...ask.s].map((c) => (ask.t === "1" ? map1[c] : map2[c])).join("、")}。`, `答えは「${ans}」。`],
           };
         }),
-        // 10q04b チャレンジ 正n角形で、△ABC≡△BCD を示す合同条件
-        t("10q04b", (r) => {
-          const n = r(5, 8), V = "ABCDEFGH".slice(0, n), ans = COND.SAS, nm = `正${"五六七八"[n - 5]}角形`;
-          return {
-            q: `${nm} ${V} で、△${V[0]}${V[1]}${V[2]}≡△${V[1]}${V[2]}${V[3]} を示すとき、使う合同条件は、次のうちどれか。（使ってよいのは、正多角形の辺・角の性質だけとする。）`,
-            ans,
-            choices: choices4(r, ans, Object.values(COND).filter((x) => x !== ans)),
-            hint: "正多角形では、辺の長さや、内角の大きさについて、何がいえたかな？ △ABC と △BCD で、等しいところを書き出してみよう。",
-            steps: [`${nm}だから、すべての辺が等しく　${V[0]}${V[1]}＝${V[1]}${V[2]}、${V[1]}${V[2]}＝${V[2]}${V[3]}。すべての内角も等しく　∠${V[0]}${V[1]}${V[2]}＝∠${V[1]}${V[2]}${V[3]}。`, `∠${V[0]}${V[1]}${V[2]}、∠${V[1]}${V[2]}${V[3]} は、等しい2辺の間の角。`, `2組の辺とその間の角が、それぞれ等しいから　△${V[0]}${V[1]}${V[2]}≡△${V[1]}${V[2]}${V[3]}。答えは「${ans}」。`],
-          };
-        }),
-        // 10q04c チャレンジ 対角線 AC の長さから、BD と CE の長さの和（対応する辺は等しい）
+        // 10q04c チャレンジ 対角線の長さから、ほかの対角線の長さの和（となり合う3つの頂点でつくる三角形は合同、対応する辺は等しい）
         t("10q04c", (r) => {
           const n = r(5, 8), V = "ABCDEFGH".slice(0, n), d = r(3, 9), m = n === 5 ? 2 : r(2, 3);
-          const diag = (i) => `${V[i]}${V[i + 2]}`, others = Array.from({ length: m }, (_, k) => diag(k + 1));
+          const ids = shuffle(r, Array.from({ length: n - 2 }, (_, k) => k)).slice(0, m + 1), dn = (k) => `${V[k]}${V[k + 2]}`;
+          const given = ids[0], others = ids.slice(1).sort((u, v) => u - v).map(dn);
           return {
-            q: `正${"五六七八"[n - 5]}角形 ${V} で、対角線 ${diag(0)} の長さが ${d} cm のとき、対角線 ${others.join(" と ")} の長さの和は何 cm か。（${diag(0)}、${others.join("、")} は、となり合う頂点を1つとばして結んだ対角線。）`,
+            q: `正${"五六七八"[n - 5]}角形 ${V} で、対角線 ${dn(given)} の長さが ${d} cm のとき、対角線 ${others.join(" と ")} の長さの和は何 cm か。（${[given, ...ids.slice(1)].sort((u, v) => u - v).map(dn).join("、")} は、となり合う頂点を1つとばして結んだ対角線。）`,
             ans: m * d, unit: "cm",
             hint: "となり合う3つの頂点でつくる三角形は、どれも合同になるかな？ 合同な図形の、対応する辺について、何がいえたかな？",
-            steps: [`となり合う3つの頂点でつくる三角形は、2組の辺とその間の角が、それぞれ等しいから、どれも合同（例：△${V[0]}${V[1]}${V[2]}≡△${V[1]}${V[2]}${V[3]}）。`, `合同な図形の、対応する辺は等しいから　${[diag(0), ...others].join("＝")}＝${d} cm。`, `${others.map(() => d).join(" + ")}＝${m * d}（cm）`],
+            steps: [`となり合う3つの頂点でつくる三角形は、2組の辺とその間の角が、それぞれ等しいから、どれも合同（例：△${V[0]}${V[1]}${V[2]}≡△${V[1]}${V[2]}${V[3]}）。`, `合同な図形の、対応する辺は等しいから　${[dn(given), ...others].join("＝")}＝${d} cm。`, `${others.map(() => d).join(" + ")}＝${m * d}（cm）`],
           };
         }),
       ],

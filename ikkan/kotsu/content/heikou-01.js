@@ -14,10 +14,16 @@ import { unitFor } from "../unit-kit.js";
 
 const unit = unitFor("heikou");
 
-/** t(id, build) と同じ。ただし、数の答えが問題文の数とたまたま同じになる組は、作り直す（skip） */
+/** t(id, build) と同じ。ただし、次の組は作り直す（skip）：数の答えが、問題文に書かれた角の大きさ・式の数とたまたま同じ／解説に同じ式が2回出る */
 const t = (id, build) => t0(id, (r) => {
   const p = build(r);
-  return p && typeof p.ans === "number" && ((p.q.match(/\d+/g) || []).map(Number)).includes(p.ans) ? { skip: true } : p;
+  if (!p || p.skip) return p;
+  if (typeof p.ans === "number") {
+    const shown = [...p.q.matchAll(/(\d+)°/g)].map((m) => +m[1]).concat([...p.q.matchAll(/\$[^$]*\$/g)].flatMap((m) => (m[0].match(/\d+/g) || []).map(Number)));
+    if (shown.includes(p.ans)) return { skip: true };
+  }
+  const maths = (p.steps || []).flatMap((s) => [...s.matchAll(/\$([^$]*)\$/g)].map((m) => m[1])).filter((m) => m.length > 4);
+  return maths.some((m, k) => maths.indexOf(m) !== k) ? { skip: true } : p;
 });
 
 // ── 道具（この授業の問題用に足した小さな関数）──────────────────────────
@@ -33,6 +39,7 @@ const dgx = (p, q) => `$(${lin(p, q)})^\\circ$`;
 const sumLin = (es) => es.reduce((s, e) => ({ p: s.p + e.p, q: s.q + e.q }), { p: 0, q: 0 });
 const eqLeft = (es) => es.map((e) => `(${lin(e.p, e.q)})`).join("+");
 
+// ── 4択の誤答を選ぶ道具 ────────────────────────────────────────
 /** 4択を「当てやすく」しない：どの特徴（feats）でも、正解だけが最大にも最小にもならないようにする */
 function noTell(feats, opts, correct) {
   return feats.every((f) => {
@@ -40,6 +47,26 @@ function noTell(feats, opts, correct) {
     const hi = vs.filter((v) => v > c).length, lo = vs.filter((v) => v < c).length;
     return !(hi === 0 && lo === 3) && !(lo === 0 && hi === 3);
   });
+}
+const bigrams = (s) => { const t2 = String(s).replace(/\s/g, ""), m = new Map(); for (let i = 0; i < t2.length - 1; i++) m.set(t2.slice(i, i + 2), (m.get(t2.slice(i, i + 2)) || 0) + 1); return m; };
+/** 文字列どうしの似かた（2文字ずつの一致の割合） */
+const sim = (a, b) => { const A = bigrams(a), B = bigrams(b); let i = 0, u = 0; for (const x of new Set([...A.keys(), ...B.keys()])) { i += Math.min(A.get(x) || 0, B.get(x) || 0); u += Math.max(A.get(x) || 0, B.get(x) || 0); } return u ? i / u : 0; };
+const digitsOf = (s) => String(s).match(/\d+/g) || [];
+/** 誤答を、候補 pool から3つ、ランダムに選ぶ。正解だけが、文字の長さ・ほかの選択肢との似かた・数字の重なりで、目立たないようにする */
+function fairPick(r, correct, pool, q = "") {
+  let last = null;
+  for (let tries = 0; tries < 300; tries++) {
+    const w = sample(r, pool, Math.min(3, pool.length)), opts = [correct, ...w].map(String);
+    last = w;
+    const feats = [
+      (o) => o.length,
+      (o) => opts.reduce((s, p) => (p === o ? s : s + sim(o, p)), 0),
+      (o) => opts.reduce((s, p) => (p === o ? s : s + digitsOf(o).filter((n) => digitsOf(p).includes(n)).length), 0),
+      (o) => digitsOf(o).filter((n) => digitsOf(q).includes(n)).length,
+    ];
+    if (noTell(feats, opts, String(correct))) return w;
+  }
+  return last;
 }
 
 // ── 2直線が点 O で交わる図 ──────────────────────────────────────
@@ -111,7 +138,8 @@ function angleOptions(r, S, X, correct, pool) {
     const w = sample(r, pool, 3), opts = [correct, ...w];
     last = opts;
     const f2 = (i) => opts.reduce((s, j) => (j === i ? s : s + [...lt(i)].filter((c) => lt(j).has(c)).length), 0);   // ほかの選択肢と、文字がいくつ重なるか
-    if (noTell([...feats, f2], opts, correct)) return opts;
+    const f3 = (i) => opts.reduce((s, j) => (j === i ? s : s + sim(S.nm(i), S.nm(j))), 0);                          // ほかの選択肢と、名前がどれだけ似ているか
+    if (noTell([...feats, f2, f3], opts, correct)) return opts;
   }
   return last;
 }
@@ -198,7 +226,7 @@ function straightAng(r) {
     q: `${X.intro}${X.nm(k)}＝${a}° のとき、${X.nm(j)} の大きさは何度か。`,
     ans: 180 - a,
     unit: "度",
-    hint: `${X.nm(k)} と ${X.nm(j)} は、どんな位置の角かな？ 一直線をつくる角の和は、何度だったかな？`,
+    hint: `${X.nm(k)} と ${X.nm(j)} は、どんな位置の角かな？ その2つの大きさの和について、何がいえたかな？`,
     steps: [`${X.nm(k)} と ${X.nm(j)} は、一直線の上にならぶ角だから、和が 180°。`, `$180-${a}=${180 - a}$ より、${X.nm(j)}＝${180 - a}°。`],
   };
 }
@@ -212,7 +240,7 @@ function threeStraight(r) {
     q: `${X.intro}${known.map((i) => `${X.nm(j + i)}＝${room(j + i)}°`).join("、")} のとき、${X.nm(j + u)} の大きさは何度か。`,
     ans: room(j + u),
     unit: "度",
-    hint: `${X.nm(j)}、${X.nm(j + 1)}、${X.nm(j + 2)} は、どんな線の上にならんでいるかな？ その線をつくる角の和は、何度だったかな？`,
+    hint: `${X.nm(j)}、${X.nm(j + 1)}、${X.nm(j + 2)} の3つの角をあわせると、どんな角になるかな？ その角は、何度だったかな？`,
     steps: [`${lead}、O、${end} は一直線上にあるから、${X.nm(j)}、${X.nm(j + 1)}、${X.nm(j + 2)} の和は 180°。`, `$180-${room(j + known[0])}-${room(j + known[1])}=${room(j + u)}$ より、${X.nm(j + u)}＝${room(j + u)}°。`],
   };
 }
@@ -238,7 +266,7 @@ function altRoomsSum(r) {
     q: `${X.intro}${X.nm(trio[known[0]])}＋${X.nm(trio[known[1]])}＝${sum}° のとき、${X.nm(trio[u])} の大きさは何度か。`,
     ans,
     unit: "度",
-    hint: `${X.nm(trio[u])} の対頂角に目をつけよう。一直線にならぶ角の和は、何度だったかな？`,
+    hint: `${X.nm(trio[u])} の対頂角は、どの角かな？ 一直線にならぶ角の和は、何度だったかな？`,
     steps: [altReason(X, j), `$180-${sum}=${ans}$ より、${X.nm(trio[u])}＝${ans}°。`],
   };
 }
@@ -267,7 +295,7 @@ function vertEq(r) {
     return {
       q: `${X.intro}${X.nm(k)}＝${dgx(e1.p, e1.q)}、${X.nm(k + 2)}＝${dgx(e2.p, e2.q)} のとき、$x$ の値は？`,
       ans: x,
-      hint: `${X.nm(k)} と ${X.nm(k + 2)} は、どんな位置の角かな？ その2つの大きさが等しいことを、式で表せないかな？`,
+      hint: `${X.nm(k)} と ${X.nm(k + 2)} は、どんな位置の角かな？ その2つの大きさには、どんな関係があるかな？ それを式にできないかな？`,
       steps: [
         `${X.nm(k)} と ${X.nm(k + 2)} は対頂角だから、等しい。`,
         `${$(`${lin(e1.p, e1.q)}=${lin(e2.p, e2.q)}`)} より、${(d === 1 ? [`x=${x}`] : [`${d}x=${rhs}`, `x=${x}`]).map($).join("、")}`,
@@ -284,7 +312,7 @@ function straightEq(r) {
     return {
       q: `${X.intro}${X.nm(k)}＝${dgx(e1.p, e1.q)}、${X.nm(j)}＝${dgx(e2.p, e2.q)} のとき、$x$ の値は？`,
       ans: x,
-      hint: `${X.nm(k)} と ${X.nm(j)} は、どんな位置の角かな？ その2つの大きさの和は、何度だったかな？`,
+      hint: `${X.nm(k)} と ${X.nm(j)} は、どんな位置の角かな？ その2つの大きさには、どんな関係があるかな？ それを式にできないかな？`,
       steps: [
         `${X.nm(k)} と ${X.nm(j)} は一直線の上にならぶ角だから、和が 180°。`,
         `${$(`(${lin(e1.p, e1.q)})+(${lin(e2.p, e2.q)})=180`)} より、${solveParts(s.p, s.q, 180, x).map($).join("、")}`,
@@ -366,24 +394,29 @@ function bisectSupp(r) {
   };
 }
 
-/** 01q03 「一直線の角は 180°」を使った説明（対頂角が等しいわけ）を選ぶ4択 */
+/** 01q03 「一直線の角」を使った説明（対頂角が等しいわけ）を選ぶ4択 */
 function whyEqual(r) {
   const X = cross2(r), i = r(0, 3), T1 = X.nm(i), M = X.nm(i + 1), T2 = X.nm(i + 2), N = X.nm(i + 3);
-  const right = `${T1}＋${M}＝180°、${T2}＋${M}＝180° だから、${T1}＝${T2} となる。`;
-  const wrongs = [
-    `${T1}＋${M}＝90°、${T2}＋${M}＝90° だから、${T1}＝${T2} となる。`,
-    `${T1}＋${T2}＝180°、${M}＋${N}＝180° だから、${T1}＝${T2} となる。`,
-    `${T1} も ${T2} も、${M} と合わせると 360° になるから、${T1}＝${T2} となる。`,
-    `分度器ではかると、${T1} も ${T2} も同じ大きさだったから、${T1}＝${T2} となる。`,
+  const right = `${T1}＋${M} も ${T2}＋${M} も一直線の角で等しいから、${M} をひいて ${T1}＝${T2} となる。`;
+  const twins = [
+    `${T1}＋${M} も ${T2}＋${M} も直角で、どちらも等しいから、${M} をひいて ${T1}＝${T2} となる。`,     // 正解から1か所だけ変えたもの
+    `${T1}＋${M} も ${T2}＋${M} も一周の角で等しいから、${M} をひいて ${T1}＝${T2} となる。`,
   ];
+  const others = [
+    `${T1}＋${T2} も ${M}＋${N} も一直線の角で等しいから、共通の角をひいて ${T1}＝${T2} となる。`,
+    `分度器ではかると、${T1} も ${T2} も同じ大きさに見えたから、見たとおり ${T1}＝${T2} となる。`,
+    `${T1} と ${T2} は向かい合う角で、向かい合う角はいつも同じに見えるから、${T1}＝${T2} となる。`,
+  ];
+  const q = `${X.intro}対頂角 ${T1} と ${T2} が等しいことを、一直線の角の大きさを使って説明したい。正しい説明は、次のうちどれか。`;
+  const pool = [...others, ...(r(0, 1) ? twins : [pick(r, twins)])];   // 正解に似た誤答は、あったりなかったりする
   return {
-    q: `${X.intro}対頂角 ${T1} と ${T2} が等しいことを、「一直線の角は 180°」を使って説明したい。正しい説明は、次のうちどれか。`,
+    q,
     ans: right,
-    choices: choices4(r, right, sample(r, wrongs, 3)),
+    choices: choices4(r, right, fairPick(r, right, pool, q)),
     hint: `${T1} と ${T2} は、それぞれ、どの角と一直線にならんでいるかな？ 共通の角はどれかな？`,
     steps: [
       `${T1} と ${M} は一直線にならぶので、${T1}＋${M}＝180°。${T2} と ${M} も一直線にならぶので、${T2}＋${M}＝180°。`,
-      `どちらも 180° から ${M} をひいた大きさだから、${T1}＝${T2}。`,
+      `どちらも 180° で同じ大きさだから、共通の ${M} をひいて、${T1}＝${T2}。`,
       `正しい説明は「${right}」`,
     ],
   };

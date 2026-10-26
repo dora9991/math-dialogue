@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>平行と合同　第1時　2直線が交わってできる角には、どんな関係があるだろう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:3px solid #2b3647;padding:6px 14px}   /* 表の罫線は、色ではなく、はっきりした濃い線（プロジェクターでも見える） */
+#deck th{background:#eceff4}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="h01-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">1年で習った図形のことばを、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">1年「平面図形」のことばから、1人1問ずつ、選んで出題する。<br>聞かれた人は、そのことばの意味を、自分の言葉で言う。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">平行</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">垂直</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">垂直二等分線</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">角の二等分線</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">平行と合同　第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+<aside>【導入 3分】1年「平面図形」の重要語句（平行・垂直・垂直二等分線・角の二等分線など）を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。（第1時は、前時の重要語句がないので、1年で習った平面図形のことばを言い合う。）このあと、小テスト 7分（前時分：一次関数 第17時。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="h01-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+</div>
+<h2 style="font-size:60px;font-weight:700;line-height:1.3;color:#1E3A5F">2直線が交わってできる角には、どんな関係があるだろう</h2>
+<div style="display:flex;flex-direction:row;align-items:center;gap:40px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:28px 40px">
+<div style="display:flex;flex-direction:column;gap:18px;flex:1">
+<div style="display:flex;flex-direction:row">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+</div>
+<p style="font-size:44px;font-weight:500;line-height:1.45">右の図のように、2直線 <i>ℓ</i>、<i>m</i> が交わっている。<br>∠<i>a</i>＝50° のとき、∠<i>b</i>、∠<i>c</i>、∠<i>d</i> の大きさは、<br>それぞれ何度だろう。分度器を使わずに求めよう。</p>
+<p style="font-size:44px;font-weight:500;line-height:1.45">また、向かい合う角（∠<i>a</i> と ∠<i>c</i> など）の<br>大きさの関係は、∠<i>a</i> が 50° 以外のときも<br>成り立つだろうか。そのわけも、説明しよう。</p>
+</div>
+<img src="img/heikou-01_f1_q.png" alt="2直線ℓ、mが交わってできる4つの角a、b、c、d" style="width:480px;height:374px;object-fit:contain">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">平行と合同　第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+<aside>【解説 4分・学習課題】めあてを書く。∠a＝50° のとき ∠b・∠c・∠d を、分度器なしで求める。個人で考え、ペアで交換する。発問：分度器を使わずに、どうやって求める？／向かい合う角は、50° 以外でも等しいだろうか。　想定される反応：一直線の角は 180° を使う。向かい合う角は等しい。留意：「はかったら等しい」で終わらせず、ほかの角度でも言えるか問う。</aside>
+</section>
+<section id="h01-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:24px">
+<div style="display:flex;flex-direction:column;gap:6px;flex:1;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:22px 36px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">【求め方】</p>
+<p style="font-size:46px;line-height:1.45;color:#C0392B">∠<i>b</i>＝180°−50°＝130°</p>
+<p style="font-size:46px;line-height:1.45;color:#C0392B">∠<i>c</i>＝180°−130°＝50°</p>
+<p style="font-size:46px;line-height:1.45;color:#C0392B">∠<i>d</i>＝180°−50°＝130°</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;flex:1;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:22px 36px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">【気づいたこと】</p>
+<p style="font-size:46px;line-height:1.45;color:#C0392B"><b>向かい合う角は、等しい。</b></p>
+<p style="font-size:46px;line-height:1.45;color:#C0392B">∠<i>a</i>＝∠<i>c</i>＝50°、∠<i>b</i>＝∠<i>d</i>＝130°</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px">
+<div style="display:flex;flex-direction:column;gap:6px;flex:1;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:22px 36px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">【わけ】</p>
+<p style="font-size:44px;line-height:1.45;color:#C0392B">∠<i>a</i>＋∠<i>b</i>＝180° より　∠<i>a</i>＝180°−∠<i>b</i></p>
+<p style="font-size:44px;line-height:1.45;color:#C0392B">∠<i>c</i>＋∠<i>b</i>＝180° より　∠<i>c</i>＝180°−∠<i>b</i></p>
+<p style="font-size:44px;line-height:1.45;color:#C0392B"><b>よって　∠<i>a</i>＝∠<i>c</i></b></p>
+<p style="font-size:44px;line-height:1.45;color:#C0392B">（∠<i>b</i>＝∠<i>d</i> も同じ。∠<i>a</i> が何度でも、成り立つ。）</p>
+</div>
+<img src="img/heikou-01_f1_a.png" alt="2直線ℓ、mが交わってできる4つの角a、b、c、d" style="width:436px;height:340px;object-fit:contain">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">平行と合同　第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+<aside>【解説 4分・学習課題のまとめ】いくつかのペアの求め方と気づきを聞いて、板書にまとめる。一直線の角が 180° であることを使うと、∠a が何度のときでも説明できる、をおさえる。赤い字は、先生の板書。</aside>
+</section>
+<section id="h01-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:36px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:32px 48px">
+<div style="display:flex;flex-direction:column;gap:24px;flex:1">
+<p style="font-size:46px;line-height:1.5">2直線が交わってできる角のうち、<br>向かい合う角を<u>　　　　</u>という。</p>
+<p style="font-size:46px;line-height:1.5">対頂角は<u>　　　　</u>。</p>
+<p style="font-size:46px;line-height:1.5">例題の図の ∠<i>a</i> と ∠<i>e</i> のように、<br>同じ位置にある角を<u>　　　　</u>、<br>∠<i>c</i> と ∠<i>e</i> のように、2直線の内側で、<br>ななめ向かいにある角を<u>　　　</u>という。</p>
+</div>
+<img src="img/heikou-01_f2_q.png" alt="2直線ℓ、mに直線が交わってできる8つの角a〜h" style="width:513px;height:500px;object-fit:contain">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">平行と合同　第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+<aside>【解説 3分・ことば】対頂角・同位角・錯角を押さえる。空欄は、先生が言ってから書かせる。発問：∠a と ∠e は、どこが同じ位置だろう。　想定される反応：空欄に書き込む。留意：位置を、指でなぞらせる。右の図は、次の例題と同じ図。</aside>
+</section>
+<section id="h01-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:36px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:32px 48px">
+<div style="display:flex;flex-direction:column;gap:24px;flex:1">
+<p style="font-size:46px;line-height:1.5">2直線が交わってできる角のうち、<br>向かい合う角を<span style="color:#C0392B"><b>対頂角</b></span>という。</p>
+<p style="font-size:46px;line-height:1.5">対頂角は<span style="color:#C0392B"><b>等しい</b></span>。</p>
+<p style="font-size:46px;line-height:1.5">例題の図の ∠<i>a</i> と ∠<i>e</i> のように、<br>同じ位置にある角を<span style="color:#C0392B"><b>同位角</b></span>、<br>∠<i>c</i> と ∠<i>e</i> のように、2直線の内側で、<br>ななめ向かいにある角を<span style="color:#C0392B"><b>錯角</b></span>という。</p>
+</div>
+<img src="img/heikou-01_f2_a.png" alt="2直線ℓ、mに直線が交わってできる8つの角a〜h" style="width:513px;height:500px;object-fit:contain">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">平行と合同　第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。同位角は F の形、錯角は Z の形、と指でなぞらせる。</aside>
+</section>
+<section id="h01-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px;flex:1">
+<p style="font-size:50px;font-weight:500;line-height:1.5">右の図で、∠<u>　　</u> について、<br>次の角を答えよう。</p>
+<p style="font-size:50px;font-weight:500;line-height:1.5">（1）対頂角 … ∠<u>　　</u></p>
+<p style="font-size:50px;font-weight:500;line-height:1.5">（2）同位角 … ∠<u>　　</u></p>
+<p style="font-size:50px;font-weight:500;line-height:1.5">（3）錯角 … ∠<u>　　</u></p>
+<p style="font-size:40px;line-height:1.5;color:#6B7480">∠のあとの文字は、先生が言ってから書こう。</p>
+</div>
+<img src="img/heikou-01_f2_q.png" alt="2直線ℓ、mに直線が交わってできる8つの角a〜h" style="width:513px;height:500px;object-fit:contain">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">平行と合同　第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+<aside>【解説 5分・例題】図の ∠d について、対頂角・同位角・錯角を答える。ℓ と m は平行でない。発問：∠d の対頂角は？ 同位角は？ 錯角は？　想定される反応：対頂角は ∠b、同位角は ∠h、錯角は ∠f。留意：角の名前は、先生が言ってから書かせる。F の形・Z の形を示す。</aside>
+</section>
+<section id="h01-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:40px">
+<div style="display:flex;flex-direction:column;gap:10px;flex:1;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:28px 40px">
+<p style="font-size:44px;line-height:1.5;color:#6B7480">∠<span style="color:#C0392B"><b><i>d</i></b></span> について</p>
+<p style="font-size:50px;line-height:1.45;color:#C0392B">（1）対頂角 … <b>∠<i>b</i></b></p>
+<p style="font-size:50px;line-height:1.45;color:#C0392B">（2）同位角 … <b>∠<i>h</i></b></p>
+<p style="font-size:50px;line-height:1.45;color:#C0392B">（3）錯角 … <b>∠<i>f</i></b></p>
+<div style="display:flex;flex-direction:column;gap:6px;border-top:2px solid #E3E6EA;padding:14px 0px 0px 0px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">【見つけ方】</p>
+<p style="font-size:44px;line-height:1.45;color:#C0392B">対頂角 … 2直線の向かい合う角（X の形）</p>
+<p style="font-size:44px;line-height:1.45;color:#C0392B">同位角 … F の形　　錯角 … Z の形</p>
+</div>
+</div>
+<img src="img/heikou-01_f2_a.png" alt="2直線ℓ、mに直線が交わってできる8つの角a〜h" style="width:513px;height:500px;object-fit:contain">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">平行と合同　第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。∠d の対頂角は ∠b、同位角は ∠h、錯角は ∠f。対頂角は X の形、同位角は F の形、錯角は Z の形で見つける。角の名前は、先生が言ってから書かせる。</aside>
+</section>
+<section id="h01-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:32px">
+<div style="display:flex;flex-direction:column;gap:16px;flex:1">
+<p style="font-size:48px;font-weight:700;line-height:1.35;color:#1F2A37">2直線 <i>ℓ</i>、<i>m</i> に、直線 <i>n</i> が交わっている。同位角や錯角は、いつも等しいといえるだろうか。ア〜ウの図で、調べよう。</p>
+<p style="font-size:44px;line-height:1.4"><span style="color:#D9730D"><b>①</b></span>　∠<i>c</i> の大きさを求め、同位角・<br>錯角が等しいか調べよう。（○か×）</p>
+<p style="font-size:44px;line-height:1.4"><span style="color:#D9730D"><b>②</b></span>　気づいたことを書こう。</p>
+<p style="font-size:44px;line-height:1.4"><span style="color:#D9730D"><b>③</b></span>　同位角が等しくなるのは、<br>2直線 <i>ℓ</i>、<i>m</i> が、どんなときだろう。<br>予想しよう。</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;width:864px">
+<div style="display:flex;flex-direction:row;gap:16px">
+<img src="img/heikou-01_f3_q.png" alt="図ア：2直線ℓ、mと直線nの図。70°、70°、∠c" style="width:424px;height:350px;object-fit:contain">
+<img src="img/heikou-01_f4_q.png" alt="図イ：2直線ℓ、mと直線nの図。62°、80°、∠c" style="width:424px;height:350px;object-fit:contain">
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:16px">
+<img src="img/heikou-01_f5_q.png" alt="図ウ：2直線ℓ、mと直線nの図。115°、95°、∠c" style="width:424px;height:350px;object-fit:contain">
+<div style="display:flex;flex-direction:column;gap:6px;flex:1;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:16px 20px">
+<p style="font-size:30px;font-weight:700;color:#D9730D">発展</p>
+<p style="font-size:30px;line-height:1.4">3本の直線が1点で交わっているとき、となり合う3つの角の和は、何度になるだろう。理由も考えよう。</p>
+</div>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">平行と合同　第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+<aside>【演習 23分・考えよう】進め方：基礎（個人）→ 終わった人から考えようへ。立ち歩きOK。解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「説明できるようになる」と伝える。ヒントを出す順：1）∠c は、分度器を使わなくても、求められる。∠c の対頂角に目をつける。2）表の ○ と × のならび方を、同位角と錯角で、くらべる。3）○ の図と × の図で、ℓ と m のようすのちがいを、見くらべる。判断：∠c が出ない→共有／気づきが出ない→ヒント1／止まる→ヒント2・3／残り5分→指名。答えは言わない。方向性（最後に一言）：「角の大きさを調べると、見えてくることがあったね。それがいつでも成り立つのか、どんなときに成り立つのかは、次の時間に確かめよう。」</aside>
+</section>
+<section id="h01-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">2直線が交わってできる角には、どんな関係があるだろう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">対頂角</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">同位角</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">錯角</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">平行と合同　第1時　2直線が交わってできる角には、どんな関係があるだろう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。口で言う。ワークシートと演習プリントを回収（未完成でも出す）。裏の発展は、解き終わった人向け。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

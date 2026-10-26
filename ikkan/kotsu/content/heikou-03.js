@@ -13,10 +13,16 @@ import { unitFor } from "../unit-kit.js";
 
 const unit = unitFor("heikou");
 
-/** t(id, build) と同じ。ただし、数の答えが問題文の数とたまたま同じになる組は、作り直す（skip） */
+/** t(id, build) と同じ。ただし、次の組は作り直す（skip）：数の答えが、問題文に書かれた角の大きさ・式の数とたまたま同じ／解説に同じ式が2回出る */
 const t = (id, build) => t0(id, (r) => {
   const p = build(r);
-  return p && typeof p.ans === "number" && ((p.q.match(/\d+/g) || []).map(Number)).includes(p.ans) ? { skip: true } : p;
+  if (!p || p.skip) return p;
+  if (typeof p.ans === "number") {
+    const shown = [...p.q.matchAll(/(\d+)°/g)].map((m) => +m[1]).concat([...p.q.matchAll(/\$[^$]*\$/g)].flatMap((m) => (m[0].match(/\d+/g) || []).map(Number)));
+    if (shown.includes(p.ans)) return { skip: true };
+  }
+  const maths = (p.steps || []).flatMap((s) => [...s.matchAll(/\$([^$]*)\$/g)].map((m) => m[1])).filter((m) => m.length > 4);
+  return maths.some((m, k) => maths.indexOf(m) !== k) ? { skip: true } : p;
 });
 
 // ── 道具（この授業の問題用に足した小さな関数）──────────────────────────
@@ -47,6 +53,36 @@ function angles3(r, lo = 20, hi = 110) {
     if (c >= lo && c <= hi) return [a, b, c];
   }
   return [50, 60, 70];
+}
+
+// ── 4択の誤答を選ぶ道具 ────────────────────────────────────────
+/** 4択を「当てやすく」しない：どの特徴（feats）でも、正解だけが最大にも最小にもならないようにする */
+function noTell(feats, opts, correct) {
+  return feats.every((f) => {
+    const vs = opts.map(f), c = f(correct);
+    const hi = vs.filter((v) => v > c).length, lo = vs.filter((v) => v < c).length;
+    return !(hi === 0 && lo === 3) && !(lo === 0 && hi === 3);
+  });
+}
+const bigrams = (s) => { const t2 = String(s).replace(/\s/g, ""), m = new Map(); for (let i = 0; i < t2.length - 1; i++) m.set(t2.slice(i, i + 2), (m.get(t2.slice(i, i + 2)) || 0) + 1); return m; };
+/** 文字列どうしの似かた（2文字ずつの一致の割合） */
+const sim = (a, b) => { const A = bigrams(a), B = bigrams(b); let i = 0, u = 0; for (const x of new Set([...A.keys(), ...B.keys()])) { i += Math.min(A.get(x) || 0, B.get(x) || 0); u += Math.max(A.get(x) || 0, B.get(x) || 0); } return u ? i / u : 0; };
+const digitsOf = (s) => String(s).match(/\d+/g) || [];
+/** 誤答を、候補 pool から3つ、ランダムに選ぶ。正解だけが、文字の長さ・ほかの選択肢との似かた・数字の重なりで、目立たないようにする */
+function fairPick(r, correct, pool, q = "") {
+  let last = null;
+  for (let tries = 0; tries < 300; tries++) {
+    const w = sample(r, pool, Math.min(3, pool.length)), opts = [correct, ...w].map(String);
+    last = w;
+    const feats = [
+      (o) => o.length,
+      (o) => opts.reduce((s, p) => (p === o ? s : s + sim(o, p)), 0),
+      (o) => opts.reduce((s, p) => (p === o ? s : s + digitsOf(o).filter((n) => digitsOf(p).includes(n)).length), 0),
+      (o) => digitsOf(o).filter((n) => digitsOf(q).includes(n)).length,
+    ];
+    if (noTell(feats, opts, String(correct))) return w;
+  }
+  return last;
 }
 
 // ── 問題 ───────────────────────────────────────────────
@@ -248,20 +284,20 @@ function excenter(r, back) {
   };
 }
 
-/** 03q02a 補助線 DE（A を通り BC に平行）：∠DAB と ∠B などの関係を表す言葉、または「いつも等しい角」を選ぶ4択 */
+/** 03q02a 補助線 DE（A を通り BC に平行）：∠DAB＝∠ABC などの根拠、または「いつも等しい角」を選ぶ4択 */
 function auxWord(r) {
   const T = tri(r, 2), [D, E] = T.rest, A = T.A, B = T.B, C = T.C;
   const p = pick(r, [{ a: `∠${D}${A}${B}`, b: `∠${A}${B}${C}`, via: B, others: [`∠${A}${C}${B}`, `∠${B}${A}${C}`, `∠${C}${A}${E}`] }, { a: `∠${E}${A}${C}`, b: `∠${A}${C}${B}`, via: C, others: [`∠${A}${B}${C}`, `∠${B}${A}${C}`, `∠${B}${A}${D}`] }]);
   const head = `${T.name} で、${B} は左、${C} は右にある。${A} を通り、辺 ${B}${C} に平行な直線上に、${A} の左の点 ${D} と、${A} の右の点 ${E} をとる。`;
-  const steps = [`${D}${E} と ${B}${C} は平行で、直線 ${A}${p.via} が、この2直線に交わっている。`, `${p.a} と ${p.b} は、2直線の内側で、ななめ向かいにある角なので、錯角。`, `平行線の錯角は等しいから、${p.a}＝${p.b}。`];
+  const steps = [`${D}${E} と ${B}${C} は平行で、直線 ${A}${p.via} が、この2直線に交わっている。`, `${p.a} と ${p.b} は、2直線の内側で、ななめ向かいにある角（錯角）だから、等しい。`];
   if (r(0, 1) === 0) {
-    const ans = "錯角";
+    const ans = "平行線の錯角は等しい", wr = ["対頂角は等しい", "三角形の内角の和の性質", "三角形の外角の性質"];
     return {
-      q: `${head}${p.a} と ${p.b} は、どんな関係の角か。`,
+      q: `${head}${p.a}＝${p.b} となるのは、何を使うからか。`,
       ans,
-      choices: choices4(r, ans, ["同位角", "対頂角", "内角と外角"]),
+      choices: choices4(r, ans, wr),
       hint: `${p.a} と ${p.b} は、それぞれどの点のどのあたりの角かな？ 自分で図にかいて、位置をたしかめよう。`,
-      steps,
+      steps: [...steps, `だから、使うのは「${ans}」。`],
     };
   }
   const ans = p.b;
@@ -270,44 +306,37 @@ function auxWord(r) {
     ans,
     choices: choices4(r, ans, p.others),
     hint: `${p.a} は、どの点のどのあたりの角かな？ 平行線を使って、等しいといえる角は、どの位置の角かな？`,
-    steps: [...steps.slice(0, 2), `平行線の錯角は等しいから、${p.a}＝${p.b}。ほかの角は、いつも等しいとは限らない。`],
+    steps: [...steps, `平行線の錯角は等しいから、${p.a}＝${p.b}。ほかの角は、いつも等しいとは限らない。`],
   };
 }
-/** 03q02b ∠DAB＋∠BAC＋∠CAE＝180° となる根拠を選ぶ4択 */
+/** 03q02b 3つの角の和が一直線の角になる根拠を選ぶ4択 */
 function auxStraight(r) {
-  const T = tri(r, 2), [D, E] = T.rest, ans = "一直線の角は 180°";
-  const wr = ["対頂角は等しい", "平行線の同位角は等しい", "三角形の内角の和は 180°"];
+  const T = tri(r, 2), [D, E] = T.rest, ans = "一直線の角の性質";
+  const pool = ["対頂角の性質", "平行線の錯角の性質", "三角形の内角の和の性質", "三角形の外角の性質", "一周の角の性質"];
+  const q = `${T.name} で、${T.A} を通り、辺 ${T.B}${T.C} に平行な直線 ${D}${E} をひく（${D}、${T.A}、${E} の順に一直線上にならぶ）。∠${D}${T.A}${T.B}、∠${T.B}${T.A}${T.C}、∠${T.C}${T.A}${E} の3つの角の和が、一直線の角と同じ大きさになるといえるのは、何を使うからか。`;
   return {
-    q: `${T.name} で、${T.A} を通り、辺 ${T.B}${T.C} に平行な直線 ${D}${E} をひく（${D}、${T.A}、${E} の順に一直線上にならぶ）。∠${D}${T.A}${T.B}＋∠${T.B}${T.A}${T.C}＋∠${T.C}${T.A}${E}＝180° となるのは、何を使うからか。`,
+    q,
     ans,
-    choices: choices4(r, ans, wr),
+    choices: choices4(r, ans, fairPick(r, ans, pool, q)),
     hint: `∠${D}${T.A}${T.B}、∠${T.B}${T.A}${T.C}、∠${T.C}${T.A}${E} の3つの角は、点 ${T.A} のまわりで、どんな形にならんでいるかな？`,
-    steps: [`${D}、${T.A}、${E} は一直線上にあるので、点 ${T.A} のまわりの3つの角 ∠${D}${T.A}${T.B}、∠${T.B}${T.A}${T.C}、∠${T.C}${T.A}${E} は、一直線にならぶ。`, `一直線の角は 180° だから、和が 180°。`, `「対頂角」「同位角」「三角形の内角の和」は、この式の根拠にはならない。`],
+    steps: [`${D}、${T.A}、${E} は一直線上にあるので、点 ${T.A} のまわりの3つの角は、一直線にならぶ。`, `一直線の角は 180° だから、3つの角の和は 180°。`, `使うのは「${ans}」。ほかの性質は、この和の根拠にはならない。`],
   };
 }
 /** 03q02c 内角の和が 180° になるわけの説明：根拠の組を選ぶ4択 */
 function auxProof(r) {
   const T = tri(r, 2), [D, E] = T.rest;
-  const O1 = ["平行線の錯角は等しい", "対頂角は等しい", "三角形の外角の性質"];
-  const O2 = ["一直線の角は 180°", "対頂角は等しい", "三角形の内角の和は 180°"];
+  const O1 = ["平行線の錯角の性質", "対頂角の性質", "三角形の外角の性質"];
+  const O2 = ["一直線の角の性質", "対頂角の性質", "三角形の内角の和の性質"];
   const fmt = (p) => `① ${O1[p[0]]}　② ${O2[p[1]]}`;
-  const right = [0, 0], ans = fmt(right);
-  const pool = [[1, 0], [2, 0], [0, 1], [0, 2], [1, 1], [1, 2], [2, 1], [2, 2]];
-  const share = (p, o) => (p[0] === o[0] ? 1 : 0) + (p[1] === o[1] ? 1 : 0);
-  let opts = null;
-  for (let i = 0; i < 200; i++) {
-    const w = sample(r, pool, 3), all = [right, ...w];
-    const f = (p) => all.reduce((sum, o) => (o === p ? sum : sum + share(p, o)), 0);
-    const vs = all.map(f), c = f(right);
-    opts = w;
-    if (!(vs.filter((v) => v < c).length === 3) && !(vs.filter((v) => v > c).length === 3)) break;
-  }
+  const ans = fmt([0, 0]);
+  const pool = [[1, 0], [2, 0], [0, 1], [0, 2], [1, 1], [1, 2], [2, 1], [2, 2]].map(fmt);
+  const q = `${T.name} で、${T.B} は左、${T.C} は右にある。${T.A} を通り、辺 ${T.B}${T.C} に平行な直線上に、${T.A} の左の点 ${D} と、右の点 ${E} をとって、∠${T.A}＋∠${T.B}＋∠${T.C}＝180° を説明する。\n① ∠${D}${T.A}${T.B}＝∠${T.B}、∠${E}${T.A}${T.C}＝∠${T.C} となる根拠\n② ∠${D}${T.A}${T.B}＋∠${T.A}＋∠${E}${T.A}${T.C} が一直線の角の大きさになる根拠\n①、②の根拠の組として、正しいものはどれか。`;
   return {
-    q: `${T.name} で、${T.B} は左、${T.C} は右にある。${T.A} を通り、辺 ${T.B}${T.C} に平行な直線上に、${T.A} の左の点 ${D} と、右の点 ${E} をとって、∠${T.A}＋∠${T.B}＋∠${T.C}＝180° を説明する。\n① ∠${D}${T.A}${T.B}＝∠${T.B}、∠${E}${T.A}${T.C}＝∠${T.C} となる根拠\n② ∠${D}${T.A}${T.B}＋∠${T.A}＋∠${E}${T.A}${T.C}＝180° となる根拠\n①、②の根拠の組として、正しいものはどれか。`,
+    q,
     ans,
-    choices: choices4(r, ans, opts.map(fmt)),
+    choices: choices4(r, ans, fairPick(r, ans, pool, q)),
     hint: `①の2つの角は、どんな位置の角かな？ ②の3つの角は、点 ${T.A} のまわりで、どんな形にならんでいるかな？`,
-    steps: [`① ∠${D}${T.A}${T.B} と ∠${T.B} は、${D}${E}∥${T.B}${T.C} の錯角だから、等しい（∠${E}${T.A}${T.C} と ∠${T.C} も同じ）。`, `② ${D}、${T.A}、${E} は一直線上なので、一直線の角は 180° だから、∠${D}${T.A}${T.B}＋∠${T.A}＋∠${E}${T.A}${T.C}＝180°。`, `よって、正しい組は「${ans}」。`],
+    steps: [`① ∠${D}${T.A}${T.B} と ∠${T.B} は、${D}${E}∥${T.B}${T.C} の錯角だから、等しい（∠${E}${T.A}${T.C} と ∠${T.C} も同じ）。`, `② ${D}、${T.A}、${E} は一直線上なので、3つの角は一直線にならび、和は 180°。`, `よって、正しい組は「${ans}」。`],
   };
 }
 

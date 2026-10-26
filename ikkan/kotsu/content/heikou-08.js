@@ -7,10 +7,18 @@
 //   「すべて選ぼう」（dr.5・qz.4）は、「いつも合同といえるもの」「合同とはかぎらないもの」を 1つ選ぶ4択にした。折り返し（dr.9）は、点の名前と位置関係を文で言い切った。
 //   対応する頂点・辺・角は、≡ の左がわ・右がわの並びから計算で出す（手で書かない）。
 // ============================================================
-import { t, pick, choices4, shuffle, poly } from "../kit.js";
+import { t as t0, pick, choices4, shuffle, poly } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
 
 const unit = unitFor("heikou");
+
+/** t(id, build) と同じ。ただし、数の答えが問題文の数とたまたま同じになる組は、作り直す（skip）。
+ *  対応を読みとる問題（辺・角の対応）は、答えが問題文の数の 1つになるのが本来の形なので、tc（そのまま）を使う */
+const tc = t0;
+const t = (id, build) => t0(id, (r) => {
+  const p = build(r);
+  return p && typeof p.ans === "number" && ((p.q.match(/\d+/g) || []).map(Number)).includes(p.ans) ? { skip: true } : p;
+});
 
 // ── 道具（この授業の問題用に足した小さな関数）──────────────────────────
 const $ = (s) => `$${s}$`;
@@ -39,7 +47,7 @@ const sideToL = (C, s) => nameSide(C.bwd[s[0]], C.bwd[s[1]]);
 const pairText = (C) => C.L.map((x) => `${x} と ${C.fwd[x]}`).join("、");
 const CORR_STEP = (C) => `${C.stmt} は、${pairText(C)} が対応していることを表す（≡ では、対応する頂点を同じ順に書く）。`;
 
-/** 三角形の 3辺（どれも ずるくない：ちがう長さで、三角形ができる） */
+/** 三角形の 3辺（3つともちがう長さで、三角形ができる） */
 function triSides(r, lo = 3, hi = 9) {
   for (;;) {
     const s = [r(lo, hi), r(lo, hi), r(lo, hi)];
@@ -54,7 +62,7 @@ function quadSides(r) {
     if (new Set(s).size >= 3 && m < s.reduce((a, b) => a + b, 0) - m) return s;
   }
 }
-/** 内角の組：三角形は和 180°、四角形は和 360°（どれも 35〜125°、ちがう大きさが多い） */
+/** 内角の組：三角形は和 180°（30〜100°）、四角形は和 360°（55〜125°）。ちがう大きさが 3つ以上 */
 function angles(r, kind) {
   for (;;) {
     const n = kind, tot = kind === 3 ? 180 : 360, lo = kind === 3 ? 30 : 55, hi = kind === 3 ? 100 : 125, a = [];
@@ -63,7 +71,7 @@ function angles(r, kind) {
     const last = tot - s;
     if (last < lo || last > hi) continue;
     a.push(last);
-    if (new Set(a).size >= n - 1) return a;
+    if (new Set(a).size >= 3) return a;
   }
 }
 const sideTexts = (C, vals, which) => (which === "L" ? C.lSides : C.rSides).map((s, i) => `${s}＝${vals[i]}cm`).join("、");
@@ -119,7 +127,7 @@ function qAngle(r, kind, perm) {
   };
 }
 
-/** 三角形：2つの角を言って（左の角でも、右の角でも）、のこりの 1つの角（内角の和 180°）。a2＝言う角の数 */
+/** 三角形：2つの角を言って（左の角でも、右の角でも。mixed なら 1つずつ）、のこりの 1つの角を聞く（内角の和 180°） */
 function angleChase(r, perm, opt = {}) {
   const C = corr(r, 3, perm), v = angles(r, 3);
   const k = r(0, 2), others = [0, 1, 2].filter((i) => i !== k);
@@ -143,17 +151,19 @@ function angleChase(r, perm, opt = {}) {
 }
 
 // ── 「いつも合同といえるか」の文 ─────────────────────────────────────
-const rectPair = (r, kind) => {   // kind＝area（面積が同じ）／peri（周の長さが同じ）：ちがう長方形を 2つ
+const rectPair = (r, kind) => {   // kind＝area（面積が同じ）／peri（周の長さが同じ）：ちがう長方形（正方形でない）を 2つ。縦＜横
   for (let i = 0; i < 200; i++) {
+    const fs = [];
+    let n;
     if (kind === "area") {
-      const n = pick(r, [12, 16, 18, 20, 24, 30, 36]), fs = [];
-      for (let w = 1; w * w <= n; w++) if (n % w === 0 && n / w >= 2) fs.push([w, n / w]);
-      if (fs.length >= 2) { const [p, q] = shuffle(r, fs).slice(0, 2); return { n, p, q }; }
+      n = pick(r, [12, 16, 18, 20, 24, 30, 36]);
+      for (let w = 1; w * w < n; w++) if (n % w === 0) fs.push([w, n / w]);
     } else {
-      const n = r(8, 20), fs = [];
-      for (let w = 1; w < n / 2; w++) fs.push([w, n / 2 - w]);   // 縦＋横＝周の半分
-      if (n % 2 === 0 && fs.length >= 2) { const [p, q] = shuffle(r, fs).slice(0, 2); return { n, p, q }; }
+      const h = r(5, 10);   // 縦＋横
+      n = 2 * h;
+      for (let w = 1; 2 * w < h; w++) fs.push([w, h - w]);
     }
+    if (fs.length >= 2) { const [p, q] = shuffle(r, fs).slice(0, 2); return { n, p, q }; }
   }
   return null;
 };
@@ -175,18 +185,24 @@ const STM = [
   { ok: true, text: "周の長さが等しい 2つの正方形は、合同である。", why: () => "正方形の周の長さは1辺で決まるので、周の長さが等しければ1辺も等しく、ぴったり重なる。" },
   { ok: true, text: "1辺の長さが等しい 2つの正三角形は、合同である。", why: () => "正三角形は、3つの辺が等しく、3つの角が 60° なので、1辺が決まると形も大きさも決まる。" },
   { ok: true, text: "周の長さが等しい 2つの正三角形は、合同である。", why: () => "正三角形の周の長さは1辺で決まるので、周の長さが等しければ1辺も等しく、ぴったり重なる。" },
+  { ok: true, text: "縦と横の長さがそれぞれ等しい 2つの長方形は、合同である。", why: () => "長方形は、4つの角が直角なので、縦と横の長さが決まると、形も大きさも決まる。" },
+  { ok: true, text: "面積が等しく、縦の長さも等しい 2つの長方形は、合同である。", why: () => "面積を縦の長さでわると横の長さが決まるので、縦と横の長さがそれぞれ等しくなり、ぴったり重なる。" },
+  { ok: true, text: "半径と中心角がそれぞれ等しい 2つのおうぎ形は、合同である。", why: () => "半径と中心角が決まると、おうぎ形の形も大きさも決まる。" },
   { ok: false, text: "面積が等しい 2つの長方形は、合同である。", why: (r) => { const g = rectPair(r, "area"); return `たとえば、縦 ${g.p[0]}cm・横 ${g.p[1]}cm と、縦 ${g.q[0]}cm・横 ${g.q[1]}cm の長方形は、面積が同じ（${g.n}cm²）でも、重ならない。`; } },
   { ok: false, text: "周の長さが等しい 2つの長方形は、合同である。", why: (r) => { const g = rectPair(r, "peri"); return `たとえば、縦 ${g.p[0]}cm・横 ${g.p[1]}cm と、縦 ${g.q[0]}cm・横 ${g.q[1]}cm の長方形は、周の長さが同じ（${g.n}cm）でも、重ならない。`; } },
   { ok: false, text: "周の長さが等しい 2つの三角形は、合同である。", why: (r) => { const g = triPair(r); return `たとえば、辺が ${g.x.join("cm・")}cm の三角形と、${g.y.join("cm・")}cm の三角形は、周の長さが同じ（${g.per}cm）でも、重ならない。`; } },
   { ok: false, text: "面積が等しい 2つの三角形は、合同である。", why: (r) => { const b = pick(r, [[4, 3], [6, 2], [8, 3], [6, 4]]); return `たとえば、底辺 ${b[0]}cm・高さ ${b[1] * 2}cm と、底辺 ${b[0] * 2}cm・高さ ${b[1]}cm の三角形は、面積が同じ（${b[0] * b[1]}cm²）でも、重ならない。`; } },
-  { ok: false, text: "面積が等しい 2つの図形は、合同である。", why: (r) => { const a = pick(r, [3, 4, 5, 6]); return `たとえば、1辺 ${a}cm の正方形と、縦 ${a / 1}cm の半分・横 ${a * 2}cm の長方形のように、面積が同じ（${a * a}cm²）でも、形がちがって重ならない図形がある。`.replace(`縦 ${a / 1}cm の半分・横 ${a * 2}cm`, `縦 ${a}cm 横 ${a}cm でない、縦 1cm・横 ${a * a}cm`); } },
+  { ok: false, text: "半径が等しい 2つのおうぎ形は、合同である。", why: (r) => { const a = pick(r, [[90, 60], [120, 45], [180, 90], [60, 30]]), rad2 = r(4, 9); return `たとえば、半径 ${rad2}cm で、中心角が ${a[0]}° と ${a[1]}° のおうぎ形は、半径が同じでも、重ならない。`; } },
+  { ok: false, text: "底辺と高さがそれぞれ等しい 2つの三角形は、合同である。", why: (r) => { const b = r(4, 9), h = r(3, 7); return `たとえば、底辺 ${b}cm・高さ ${h}cm の三角形でも、頂点の位置がちがえば（直角三角形と二等辺三角形など）、形がちがって重ならない。`; } },
+  { ok: false, text: "縦の長さが等しい 2つの長方形は、合同である。", why: (r) => { const a = r(3, 6), b = a + r(1, 3), c = b + r(1, 3); return `たとえば、縦 ${a}cm・横 ${b}cm と、縦 ${a}cm・横 ${c}cm の長方形は、縦が同じでも、重ならない。`; } },
+  { ok: false, text: "面積が等しい 2つの図形は、合同である。", why: (r) => { const a = pick(r, [3, 4, 5, 6]); return `たとえば、1辺 ${a}cm の正方形と、縦 1cm・横 ${a * a}cm の長方形は、面積が同じ（${a * a}cm²）でも、重ならない。`; } },
   { ok: false, text: "周の長さが等しい 2つの図形は、合同である。", why: (r) => { const a = pick(r, [3, 4, 5, 6]); return `たとえば、1辺 ${a}cm の正方形と、縦 ${a - 1}cm・横 ${a + 1}cm の長方形は、周の長さが同じ（${4 * a}cm）でも、重ならない。`; } },
 ];
 /** 文を 4つならべる。nOk＝いつも合同といえる文の数（1か 3） */
 function stmtQ(r, nOk, stem, hintOK) {
   const oks = shuffle(r, STM.filter((s) => s.ok)).slice(0, nOk), bads = shuffle(r, STM.filter((s) => !s.ok)).slice(0, 4 - nOk);
   const want = nOk === 1 ? oks[0] : bads[0], wrongs = nOk === 1 ? bads : oks;   // 「いつも合同といえるもの」を聞くときは ok が答え、「合同とはかぎらないもの」を聞くときは bad が答え
-  const lines = (wrongs).map((s) => `「${s.text.replace(/。$/, "")}」… ${s.ok ? s.why(r) : s.why(r)}`);
+  const lines = wrongs.map((s) => `「${s.text.replace(/。$/, "")}」… ${s.why(r)}`);
   return {
     q: stem,
     ans: want.text,
@@ -209,17 +225,21 @@ function foldOK(b, c, d) {
     return dot(sub(m, V), n) / dot(w, n);
   };
   const f = (t) => { const Ap = [t, 0], uD = at(A, B, Ap), D = [A[0] + uD * (B[0] - A[0]), A[1] + uD * (B[1] - A[1])]; return { Ap, uD, D, v: ang(B, D, Ap) - d }; };
-  let prev = f(0.01), roots = [];
+  const brackets = [];
+  let t0 = 0.01, f0 = f(t0);
   for (let i = 1; i <= 400; i++) {
-    const cur = f(0.01 + (0.98 * i) / 400);
-    if (prev.v === 0 || prev.v * cur.v < 0) roots.push(cur);
-    prev = cur;
+    const t1 = 0.01 + (0.98 * i) / 400, f1 = f(t1);
+    if (f0.v * f1.v < 0) brackets.push([t0, t1]);
+    t0 = t1; f0 = f1;
   }
-  if (roots.length !== 1) return false;
-  const { Ap, uD, D } = roots[0], uE = at(A, C, Ap);
+  if (brackets.length !== 1) return false;
+  let [lo, hi] = brackets[0];
+  const sgn = f(lo).v > 0;
+  for (let k = 0; k < 60; k++) { const mid = (lo + hi) / 2; if ((f(mid).v > 0) === sgn) lo = mid; else hi = mid; }
+  const { Ap, uD } = f((lo + hi) / 2), uE = at(A, C, Ap);
   if (!(uD > 0.03 && uD < 0.97 && uE > 0.03 && uE < 0.97)) return false;
   const E = [A[0] + uE * (C[0] - A[0]), A[1] + uE * (C[1] - A[1])];
-  if (Math.abs(ang(Ap, E, C) - (2 * A0 - d)) > 0.8) return false;   // 式の確かめ（折り返しの計算とずれていたら、使わない）
+  if (Math.abs(ang(Ap, E, C) - (2 * A0 - d)) > 1e-6) return false;   // 式の確かめ（折り返しの計算とずれていたら、使わない）
   return true;
 }
 function foldQ(r) {
@@ -242,25 +262,25 @@ function foldQ(r) {
 }
 
 // ── x、y の値（dr.8）──────────────────────────────────────────────
-const lin = (p, q, v = "x") => `(${poly([p, q], v)})`;
+const lin = (p, q, v = "x") => $(`(${poly([p, q], v)})`);
 function xyQ(r, ask) {
   for (let i = 0; i < 500; i++) {
     const x = r(2, 9), y = r(1, 9), p1 = r(1, 4), p2 = r(1, 4), p3 = r(1, 4), p4 = r(1, 3), L1 = r(6, 24), L2 = r(5, 20);
     const q1 = L1 - p1 * x, q2 = L1 - p2 * x, q3 = L2 - p3 * x, q4 = L2 - p4 * y;
     if (p1 === p2 || x === y || [q1, q2, q3, q4].some((q) => q === 0 || Math.abs(q) > 12)) continue;
-    const big = p1 > p2, dp = Math.abs(p1 - p2), dq = big ? q2 - q1 : q1 - q2;
+    const dp = Math.abs(p1 - p2), dq = p1 > p2 ? q2 - q1 : q1 - q2;
     const e1 = poly([p1, q1]), e2 = poly([p2, q2]), e3 = poly([p3, q3]), e4 = poly([p4, q4], "y");
-    const xs = [
-      `AB＝DE だから　${$(`${e1}=${e2}`)}　${$(`${dp === 1 ? "" : dp}x=${dq}`)}　${$(`x=${x}`)}`,
-    ];
+    const xs = [dp === 1 ? `AB＝DE だから　${$(`${e1}=${e2}`)}、${$(`x=${x}`)}` : `AB＝DE だから　${$(`${e1}=${e2}`)}、${$(`${dp}x=${dq}`)}、${$(`x=${x}`)}`];
     const ys = [
-      `BC＝EF だから　${$(`${e3}=${e4}`)}　${$(`x=${x}`)} を入れて　${$(`${L2}=${e4}`)}　${$(`y=${y}`)}`,
+      `BC＝EF だから　${$(`${e3}=${e4}`)}。${$(`x=${x}`)} を入れて　${$(`${L2}=${e4}`)}、${$(`y=${y}`)}`,
       `（確かめ　AB＝DE＝${L1}cm、BC＝EF＝${L2}cm）`,
     ];
+    const qq = `△ABC≡△DEF で、AB＝${lin(p1, q1)}cm、DE＝${lin(p2, q2)}cm、BC＝${lin(p3, q3)}cm、EF＝${lin(p4, q4, "y")}cm である。${$(ask)} の値は？`;
+    if ((qq.match(/\d+/g) || []).map(Number).includes(ask === "x" ? x : y)) continue;
     return {
-      q: `△ABC≡△DEF で、AB＝${lin(p1, q1)}cm、DE＝${lin(p2, q2)}cm、BC＝${lin(p3, q3)}cm、EF＝${lin(p4, q4, "y")}cm である。${$(ask)} の値は？`.replace(/\(([^)]*)\)/g, (m, g) => `$(${g})$`),
+      q: qq,
       ans: ask === "x" ? x : y,
-      hint: ask === "x" ? "合同な図形で、対応する辺の長さは、どうなっていたかな？ AB に対応する辺は、どれかな？" : "合同な図形で、対応する辺の長さは、どうなっていたかな？ BC に対応する辺は、どれかな？ $x$ の値は、わかるかな？",
+      hint: ask === "x" ? "合同な図形で、対応する辺の長さは、どうなっていたかな？ AB に対応する辺は、どれかな？" : "合同な図形で、対応する辺の長さは、どうなっていたかな？ BC に対応する辺は、どれかな？ そのために、$x$ の値は、わかるかな？",
       steps: ask === "x" ? xs : [...xs, ...ys],
     };
   }
@@ -284,21 +304,21 @@ export const UNITS = [
         // 08d01a 演習（1）① 頂点 B に対応する頂点
         t("08d01a", (r) => qVertex(r, 3, false)),
         // 08d01b 演習（1）②③ 辺の長さ
-        t("08d01b", (r) => qLength(r, 3, false)),
+        tc("08d01b", (r) => qLength(r, 3, false)),
         // 08d01c 演習（1）④ 角の大きさ
-        t("08d01c", (r) => qAngle(r, 3, false)),
+        tc("08d01c", (r) => qAngle(r, 3, false)),
         // 08d01d 演習（1）⑤ 辺 AC に対応する辺
         t("08d01d", (r) => qSide(r, 3, false)),
         // 08d02a 演習（2）①② 四角形の辺の長さ
-        t("08d02a", (r) => qLength(r, 4, false)),
+        tc("08d02a", (r) => qLength(r, 4, false)),
         // 08d02b 演習（2）③ 四角形の角の大きさ
-        t("08d02b", (r) => qAngle(r, 4, false)),
+        tc("08d02b", (r) => qAngle(r, 4, false)),
         // 08d02c 演習（2）④ 辺 AD に対応する辺
         t("08d02c", (r) => qSide(r, 4, false)),
         // 08q01a 小テスト（1）重なり合う頂点・辺・角を何というか
         t("08q01a", (r) => {
           const ans = "対応する頂点・辺・角";
-          const pool = ["共通の", "対称な", "平行な", "同位の", "対頂の"];
+          const pool = ["共通の", "対称な", "平行な", "垂直な", "隣り合う"];
           return {
             q: "合同な図形で、重なり合う頂点・辺・角を、それぞれ何というか。",
             ans,
@@ -310,21 +330,22 @@ export const UNITS = [
         // 08q01b 小テスト（1）合同を表す記号
         t("08q01b", (r) => {
           const ans = "≡";
-          const ws = shuffle(r, ["∥", "⊥", "∠", "△", "≠"]).slice(0, 3);
+          const MEAN = { "∥": "平行", "⊥": "垂直", "∠": "角", "△": "三角形", "≠": "等しくない" };
+          const ws = shuffle(r, Object.keys(MEAN)).slice(0, 3);
           return {
             q: pick(r, ["合同であることを表す記号は、次のうちどれか。", "△ABC と △DEF が合同であることを、△ABC □ △DEF と書く。□ に入る記号は、次のうちどれか。"]),
             ans,
             choices: choices4(r, ans, ws),
-            hint: "△ABC と △DEF がぴったり重なることを、記号で書くとき、2本の線ではなく、何本の線の記号を使ったかな？",
-            steps: ["合同であることは、記号 ≡ を使って、△ABC≡△DEF のように書く。", `ほかの記号は、${ws.join("、")}（平行・垂直・角・三角形・等しくない、などに使う）。`],
+            hint: "△ABC と △DEF がぴったり重なることを、記号で書くとき、どんな記号を使ったかな？",
+            steps: ["合同であることは、記号 ≡ を使って、△ABC≡△DEF のように書く。", `ほかの記号は、${ws.map((w) => `${w}（${MEAN[w]}）`).join("、")}を表す。`],
           };
         }),
         // 08q02a 小テスト（2）① 頂点 A に対応する頂点
         t("08q02a", (r) => qVertex(r, 3, r(0, 2) === 0)),
         // 08q02b 小テスト（2）② 辺の長さ
-        t("08q02b", (r) => qLength(r, 3, r(0, 2) === 0)),
+        tc("08q02b", (r) => qLength(r, 3, r(0, 2) === 0)),
         // 08q02c 小テスト（2）③ 角の大きさ
-        t("08q02c", (r) => qAngle(r, 3, r(0, 2) === 0)),
+        tc("08q02c", (r) => qAngle(r, 3, r(0, 2) === 0)),
         // 08q02d 小テスト（2）④ 辺 DF に対応する辺
         t("08q02d", (r) => qSide(r, 3, r(0, 2) === 0)),
       ],
@@ -392,13 +413,15 @@ export const UNITS = [
           const rs = (i) => sideToR(C, C.lSides[i]);
           const given = toR ? others.map((i) => `${C.lSides[i]}＝${vals[i]}cm`).join("、") : others.map((i) => `${rs(i)}＝${vals[i]}cm`).join("、");
           const askN = toR ? rs(ti) : t0;
+          const left = (i) => C.lSides[i];
           return {
             q: `${C.stmt} で、${given} である。△ABC の周の長さが ${P}cm のとき、辺 ${askN} の長さは何 cm か。`,
             ans: vals[ti], unit: "cm",
-            hint: "三角形の周の長さは、3つの辺の長さの和だったね。辺 " + askN + " に対応する辺は、どれかな？",
+            hint: `三角形の周の長さは、3つの辺の長さの和だったね。辺 ${askN} に対応する辺は、どれかな？`,
             steps: [
               CORR_STEP(C),
-              `${t0}＝${P}−${vals[others[0]]}−${vals[others[1]]}＝${vals[ti]}（cm）　△ABC の周の長さから、ほかの 2辺をひいた。`,
+              toR ? `△ABC の辺は　${others.map((i) => `${left(i)}＝${vals[i]}cm`).join("、")}` : `対応する辺は等しいから　${others.map((i) => `${rs(i)}＝${left(i)}＝${vals[i]}cm`).join("、")}`,
+              `${t0}＝${P}−${vals[others[0]]}−${vals[others[1]]}＝${vals[ti]}（cm）`,
               toR ? `辺 ${askN} は辺 ${t0} に対応するから　${askN}＝${t0}＝${vals[ti]}cm` : `求める辺は ${t0} だから　${vals[ti]}cm`,
             ],
           };
@@ -417,17 +440,19 @@ export const UNITS = [
         // 08q05 小テスト（5）チャレンジ：周の長さと x から、辺 DF
         t("08q05", (r) => {
           for (let i = 0; i < 500; i++) {
-            const x = r(2, 8), s = triSides(r, 5, 16), [ab, bc, ca] = s, P = ab + bc + ca, p1 = r(2, 3), p3 = r(2, 4);
+            const x = r(2, 8), [ab, bc, ca] = triSides(r, 5, 16), P = ab + bc + ca, p1 = r(2, 3), p3 = r(2, 4);
             const c2 = ab - x, q1 = ab - p1 * x, q3 = bc - p3 * x;
             if (c2 === 0 || q1 === 0 || q3 === 0 || Math.abs(q1) > 12 || Math.abs(q3) > 12 || Math.abs(c2) > 12) continue;
             const e1 = poly([p1, q1]), e2 = poly([1, c2]), e3 = poly([p3, q3]);
+            const qq = `△ABC≡△DEF で、AB＝${lin(p1, q1)}cm、DE＝${lin(1, c2)}cm、BC＝${lin(p3, q3)}cm である。△ABC の周の長さが ${P}cm のとき、辺 DF の長さは何 cm か。`;
+            if ((qq.match(/\d+/g) || []).map(Number).includes(ca)) continue;
             return {
-              q: `△ABC≡△DEF で、AB＝(${$(e1)})cm、DE＝(${$(e2)})cm、BC＝(${$(e3)})cm である。△ABC の周の長さが ${P}cm のとき、辺 DF の長さは何 cm か。`.replace(/\(\$([^$]*)\$\)/g, (m, g) => `$(${g})$`),
+              q: qq,
               ans: ca, unit: "cm",
               hint: "AB に対応する辺は、どれかな？ そこから、$x$ の値がわかるかな？ 辺 DF に対応する辺は、どれかな？",
               steps: [
-                `AB＝DE だから　${$(`${e1}=${e2}`)}　${$(`x=${x}`)}`,
-                `AB＝${ab}cm、BC＝${$(e3)} に ${$(`x=${x}`)} を入れて　BC＝${bc}cm`,
+                `AB＝DE だから　${$(`${e1}=${e2}`)}、${$(`x=${x}`)}`,
+                `${$(`x=${x}`)} を入れて　AB＝${p1}×${x}${q1 < 0 ? "−" : "+"}${Math.abs(q1)}＝${ab}（cm）、BC＝${p3}×${x}${q3 < 0 ? "−" : "+"}${Math.abs(q3)}＝${bc}（cm）`,
                 `CA＝${P}−${ab}−${bc}＝${ca}（cm）`,
                 `DF は CA に対応するから　DF＝CA＝${ca}cm`,
               ],

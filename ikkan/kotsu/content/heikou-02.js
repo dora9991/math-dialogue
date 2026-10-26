@@ -14,10 +14,16 @@ import { unitFor } from "../unit-kit.js";
 
 const unit = unitFor("heikou");
 
-/** t(id, build) と同じ。ただし、数の答えが問題文の数とたまたま同じになる組は、作り直す（skip） */
+/** t(id, build) と同じ。ただし、次の組は作り直す（skip）：数の答えが、問題文に書かれた角の大きさ・式の数とたまたま同じ／解説に同じ式が2回出る */
 const t = (id, build) => t0(id, (r) => {
   const p = build(r);
-  return p && typeof p.ans === "number" && ((p.q.match(/\d+/g) || []).map(Number)).includes(p.ans) ? { skip: true } : p;
+  if (!p || p.skip) return p;
+  if (typeof p.ans === "number") {
+    const shown = [...p.q.matchAll(/(\d+)°/g)].map((m) => +m[1]).concat([...p.q.matchAll(/\$[^$]*\$/g)].flatMap((m) => (m[0].match(/\d+/g) || []).map(Number)));
+    if (shown.includes(p.ans)) return { skip: true };
+  }
+  const maths = (p.steps || []).flatMap((s) => [...s.matchAll(/\$([^$]*)\$/g)].map((m) => m[1])).filter((m) => m.length > 4);
+  return maths.some((m, k) => maths.indexOf(m) !== k) ? { skip: true } : p;
 });
 
 // ── 道具（この授業の問題用に足した小さな関数）──────────────────────────
@@ -42,6 +48,7 @@ function expr(r, x, a, ps = [1, 2, 3, 4]) {
   return null;
 }
 
+// ── 4択の誤答を選ぶ道具 ────────────────────────────────────────
 /** 4択を「当てやすく」しない：どの特徴（feats）でも、正解だけが最大にも最小にもならないようにする */
 function noTell(feats, opts, correct) {
   return feats.every((f) => {
@@ -49,6 +56,26 @@ function noTell(feats, opts, correct) {
     const hi = vs.filter((v) => v > c).length, lo = vs.filter((v) => v < c).length;
     return !(hi === 0 && lo === 3) && !(lo === 0 && hi === 3);
   });
+}
+const bigrams = (s) => { const t2 = String(s).replace(/\s/g, ""), m = new Map(); for (let i = 0; i < t2.length - 1; i++) m.set(t2.slice(i, i + 2), (m.get(t2.slice(i, i + 2)) || 0) + 1); return m; };
+/** 文字列どうしの似かた（2文字ずつの一致の割合） */
+const sim = (a, b) => { const A = bigrams(a), B = bigrams(b); let i = 0, u = 0; for (const x of new Set([...A.keys(), ...B.keys()])) { i += Math.min(A.get(x) || 0, B.get(x) || 0); u += Math.max(A.get(x) || 0, B.get(x) || 0); } return u ? i / u : 0; };
+const digitsOf = (s) => String(s).match(/\d+/g) || [];
+/** 誤答を、候補 pool から3つ、ランダムに選ぶ。正解だけが、文字の長さ・ほかの選択肢との似かた・数字の重なりで、目立たないようにする */
+function fairPick(r, correct, pool, q = "") {
+  let last = null;
+  for (let tries = 0; tries < 300; tries++) {
+    const w = sample(r, pool, Math.min(3, pool.length)), opts = [correct, ...w].map(String);
+    last = w;
+    const feats = [
+      (o) => o.length,
+      (o) => opts.reduce((s, p) => (p === o ? s : s + sim(o, p)), 0),
+      (o) => opts.reduce((s, p) => (p === o ? s : s + digitsOf(o).filter((n) => digitsOf(p).includes(n)).length), 0),
+      (o) => digitsOf(o).filter((n) => digitsOf(q).includes(n)).length,
+    ];
+    if (noTell(feats, opts, String(correct))) return w;
+  }
+  return last;
 }
 
 // ── 2直線に1つの直線が交わる図（同位角・錯角）──────────────────────────
@@ -90,8 +117,9 @@ function angleOptions(r, S, X, correct, pool) {
   for (let tries = 0; tries < 300; tries++) {
     const w = sample(r, pool, 3), opts = [correct, ...w];
     last = opts;
-    const f2 = (i) => opts.reduce((s, j) => (j === i ? s : s + [...lt(i)].filter((c) => lt(j).has(c)).length), 0);
-    if (noTell([...feats, f2], opts, correct)) return opts;
+    const f2 = (i) => opts.reduce((s, j) => (j === i ? s : s + [...lt(i)].filter((c) => lt(j).has(c)).length), 0);   // ほかの選択肢と、文字がいくつ重なるか
+    const f3 = (i) => opts.reduce((s, j) => (j === i ? s : s + sim(S.nm(i), S.nm(j))), 0);                          // ほかの選択肢と、名前がどれだけ似ているか
+    if (noTell([...feats, f2, f3], opts, correct)) return opts;
   }
   return last;
 }
@@ -119,7 +147,7 @@ function parSupp(r) {
     q: `${S.intro}${S.nm(X)}＝${a}° のとき、${S.nm(Y)} の大きさは何度か。`,
     ans: 180 - a,
     unit: "度",
-    hint: `${S.nm(X)} と ${S.nm(Y)} は、それぞれどの点のどのあたりの角かな？ ℓ∥m を使って大きさがわかる角と、一直線の角を、つないでいけないかな？`,
+    hint: `${S.nm(X)} と ${S.nm(Y)} は、それぞれどの点のどのあたりの角かな？ ℓ∥m のとき、${S.nm(X)} と大きさが等しい角は、どれかな？`,
     steps: [
       `${S.nm(X)} の同位角は ${S.nm(Z)}（${S.where(Z)}）。ℓ∥m だから、${S.nm(Z)}＝${a}°。`,
       `${S.nm(Y)} は ${S.nm(Z)} と一直線にならぶ角（${S.where(Y)}）なので、$180-${a}=${180 - a}$ より、${180 - a}°。`,
@@ -204,7 +232,8 @@ function judgeChoice(r) {
     if (!cs) continue;
     const ok = cs.find((c) => TYPES[c.type].par), opts = cs;
     const ans = condText(S, ok);
-    const feats = [(c) => (c.vx === c.vy ? 1 : 0), (c) => Math.abs(c.vx - c.vy), (c) => (c.vx + c.vy === 180 ? 1 : 0)];
+    const feats = [(c) => (c.vx === c.vy ? 1 : 0), (c) => Math.abs(c.vx - c.vy), (c) => (c.vx + c.vy === 180 ? 1 : 0), (c) => new Set([...S.tri[c.x], ...S.tri[c.y]]).size,
+      (c) => cs.reduce((sum, o) => (o === c ? sum : sum + sim(condText(S, c), condText(S, o))), 0)];
     if (!noTell(feats, opts, ok)) continue;
     const wrongs = cs.filter((c) => c !== ok);
     return {
@@ -228,7 +257,7 @@ function judgeCount(r) {
     const order = shuffle(r, cs), LET = ["ア", "イ", "ウ"];
     const parNames = order.map((c, j) => (TYPES[c.type].par ? LET[j] : null)).filter(Boolean);
     return {
-      q: `${S.intro}次のア〜ウは、それぞれ別の図で、角の大きさがわかっているとする。ℓ∥m といえるものは、いくつあるか。\n${order.map((c, j) => `${LET[j]} ${condText(S, c)}`).join("\n")}`,
+      q: `${S.intro}次のア〜ウは、それぞれ別の場合の、角の大きさである。ℓ∥m といえるものは、いくつあるか。\n${order.map((c, j) => `${LET[j]} ${condText(S, c)}`).join("\n")}`,
       ans: k,
       unit: "個",
       hint: "2直線が平行になるのは、どんな角が等しいときだったかな？ アイウの2つの角は、それぞれどの位置の角どうしかな？",
@@ -277,7 +306,10 @@ function zig(r, mode) {
   const al = r(15, 85);
   let ga = r(15, 85);
   while (al + ga > 165) ga = r(15, 85);
-  const x = al + ga, ask = mode === "x" ? "x" : pick(r, ["x", "x", "al", "ga"]);
+  const x = al + ga;
+  // 求める角が α か γ のときは、条件から答えが2通りに読めないように（x＋（わかっている角）≦ 180°）、組を選ぶ
+  const ask = mode === "x" ? "x" : pick(r, ["x", "x", "al", "ga"]);
+  if ((ask === "al" && x + ga > 175) || (ask === "ga" && x + al > 175)) return { skip: true };
   const given = { x: `∠${A}${E}${C}＝${x}°`, al: `∠${B}${A}${E}＝${al}°`, ga: `∠${D}${C}${E}＝${ga}°` };
   const target = { x: `∠${A}${E}${C}`, al: `∠${B}${A}${E}`, ga: `∠${D}${C}${E}` }[ask];
   const ans = { x, al, ga }[ask];
@@ -310,7 +342,7 @@ function zz(r, mode) {
     ? [`点 ${B}、${C} を通って ℓ に平行な直線をひく。`, `${B} で、∠${A}${B}${C}＝${be}° のうち、錯角 ${al}° の残りは $${be}-${al}=${de}$ より ${de}°。`, `${C} で、∠${B}${C}${D}＝${ga}° のうち、錯角 ${de}° の残りは $${ga}-${de}=${ep}$ より ${ep}°。`, `${ep}° は m との錯角だから、∠${C}${D}${L}＝${ep}°。`]
     : [`点 ${B}、${C} を通って ℓ に平行な直線をひく。`, `${C} で、∠${B}${C}${D}＝${ga}° のうち、m との錯角 ${x}° の残りは $${ga}-${x}=${de}$ より ${de}°。`, `${B} で、∠${A}${B}${C}＝${be}° のうち、${C} での錯角 ${de}° の残りは $${be}-${de}=${al}$ より ${al}°。`, `${al}° は ℓ との錯角だから、∠${R}${A}${B}＝${al}°。`];
   return {
-    q: `ℓ∥m。点 ${A} は ℓ 上、点 ${D} は m 上にあり、点 ${B}、${C} は ℓ と m のあいだにある。${A}、${B}、${C}、${D} を順に線分で結んだ折れ線は、${A} から ${dw}下の ${B}、${dw2}下の ${C}、${dw}下の ${D} の順に進む。ℓ 上に ${A} の${dw}の点 ${R}、m 上に ${D} の${dw2}の点 ${L} をとる。${known} のとき、${target} の大きさは何度か。`,
+    q: `ℓ∥m。点 ${A} は ℓ 上、点 ${D} は m 上にあり、点 ${B}、${C} は ℓ と m のあいだにある。${A}、${B}、${C}、${D} を順に線分で結んだ折れ線は、${A} から${dw}下に ${B}、そこから${dw2}下に ${C}、そこから${dw}下に ${D} へと進む。ℓ 上に ${A} の${dw}の点 ${R}、m 上に ${D} の${dw2}の点 ${L} をとる。${known} のとき、${target} の大きさは何度か。`,
     ans,
     unit: "度",
     hint: `点 ${B}、${C} を通る、ℓ に平行な直線をひくと、角はどう分けられるかな？ 平行線の錯角は、どんな関係だったかな？`,
@@ -369,9 +401,10 @@ const FALSE_ST = [
   ["錯角が等しければ、2直線は交わる。", "錯角が等しいと平行になり、交わらない。"],
 ];
 function stmtChoice(r) {
-  const T = pick(r, TRUE_ST), Fs = sample(r, FALSE_ST, 3);
+  const T = pick(r, TRUE_ST), q = "次のうち、正しいものはどれか。（正しいものは、1つだけ）";
+  const Fs = fairPick(r, T[0], FALSE_ST.map((f) => f[0]), q).map((txt) => FALSE_ST.find((f) => f[0] === txt));
   return {
-    q: "次のうち、正しいものはどれか。（正しいものは、1つだけ）",
+    q,
     ans: T[0],
     choices: choices4(r, T[0], Fs.map((f) => f[0])),
     hint: "平行線の性質と、平行線になる条件は、それぞれどんなことがらだったかな？ 「ならば」の前と後ろを入れかえても、正しいかな？",
