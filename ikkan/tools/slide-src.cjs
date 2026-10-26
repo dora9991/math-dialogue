@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* スライドをつくるための「元の資料」を、授業ごとに書き出す。
-   使い方：  NODE_PATH=$(npm root -g) node tools/slide-src.cjs <単元のキー（kukan・data・shiki・renritsu・ichiji）> <JSON の出力先フォルダ> [--label-scale=1.5]
+   使い方：  NODE_PATH=$(npm root -g) node tools/slide-src.cjs <単元のキー（kukan・data・shiki・renritsu・ichiji・heikou）> <JSON の出力先フォルダ> [--label-scale=1.5]
    書き出すもの：
      <出力先>/<授業のID>.json … ワークシートの表面・裏（問題・答え・表・図の場所）と、授業計画（50分の流れ・発問・重要語句・考えよう）
      slides/img/<授業のID>_f<N>_q.png・_a.png … ワークシートの図を、1つずつ PNG にしたもの（問題用＝空欄のまま、答え用＝赤い答え）。JSON の figs の q・a が、この場所（img/…png）
