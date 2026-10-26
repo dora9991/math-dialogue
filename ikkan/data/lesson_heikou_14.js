@@ -44,7 +44,7 @@
   };
   // 平行な ℓ（y＝3）、m（y＝0）の間の折れ線 A−E−F−C。∠EAL2＝a、∠AEF＝e、∠FCM1＝c。∠EFC＝a＋e−c
   const wP = (a, e, c) => {
-    const r = Math.PI / 180, phi = 180 - a - e, A = [0, 3], E = [A[0] + 1.6 * Math.cos(a * r), 3 - 1.6 * Math.sin(a * r)], F = [E[0] + 2.0 * Math.cos(phi * r), E[1] + 2.0 * Math.sin(phi * r)], tt = F[1] / Math.sin(c * r), C = [F[0] + tt * Math.cos(c * r), 0];
+    const r = Math.PI / 180, phi = 180 - a - e, A = [0, 3], E = [A[0] + 2.4 * Math.cos(a * r), 3 - 2.4 * Math.sin(a * r)], F = [E[0] + 1.6 * Math.cos(phi * r), E[1] + 1.6 * Math.sin(phi * r)], tt = F[1] / Math.sin(c * r), C = [F[0] + tt * Math.cos(c * r), 0];
     return { A, E, F, C, L1: [-0.9, 3], L2: [C[0] + 0.9, 3], M1: [-0.9, 0], M2: [C[0] + 0.9, 0], EG: [E[0] - 1.1, E[1]], EH: [E[0] + 1.1, E[1]], FG: [F[0] - 1.1, F[1]], FH: [F[0] + 1.1, F[1]] };
   };
   // 線分 AD と BC が O で交わり、OD＝−OA、OC＝−OB（点対称）。AB∥DC
@@ -83,11 +83,11 @@
     // 凸多角形
     poly: (angs, lens, texts) => { const pts = polyP(angs, lens), nm = Object.keys(pts); return GEO({ pts, poly: nm.join(''), vl: nm.join(''), ang: nm.map((k, i) => ({ at: k, a: nm[(i + nm.length - 1) % nm.length], b: nm[(i + 1) % nm.length], t: texts[i], r: 4.4 })), pad: 6 }); },
     // 折れ線 A−E−C と、ℓ∥m（答えには、E を通る平行線を赤で）
-    zig: () => GEO({ pts: zigP(38, 41), segs: [['L1', 'L2', { lab: 'ℓ' }], ['M1', 'M2', { lab: 'm' }], ['A', 'E'], ['E', 'C']], par: [['L1', 'A', 1], ['M1', 'C', 1]], vl: { A: ['A', 120], E: ['E', 0], C: ['C', 240] }, pad: 6,
+    zig: () => GEO({ pts: zigP(38, 41), segs: [['L1', 'L2', { lab: 'ℓ' }], ['M1', 'M2', { lab: 'm' }], ['A', 'E'], ['E', 'C']], par: [['L1', 'A', 1], ['M1', 'C', 1]], vl: { A: ['A', 120], E: ['E', 40], C: ['C', 240] }, pad: 6,
       ang: [{ at: 'A', a: 'L2', b: 'E', t: '38°', r: 5 }, { at: 'C', a: 'M2', b: 'E', t: '41°', r: 5 }, { at: 'E', a: 'A', b: 'C', r: 4.5 }], txt: [{ p: 'E', t: 'x', dx: -9.5, dy: -3.2 }], a: { segs: [['G', 'H', { dash: 1 }]] } }),
     // 折れ線 A−E−F−C（ℓ∥m）。答えには、E、F を通る平行線を赤で
     w: () => GEO({ pts: wP(48, 112, 63), segs: [['L1', 'L2', { lab: 'ℓ' }], ['M1', 'M2', { lab: 'm' }], ['A', 'E'], ['E', 'F'], ['F', 'C']], par: [['L1', 'A', 1], ['M1', 'C', 1]], vl: { A: ['A', 110], E: ['E', 250], F: ['F', 70], C: ['C', 290] }, pad: 6,
-      ang: [{ at: 'A', a: 'L2', b: 'E', t: '48°', r: 5 }, { at: 'E', a: 'A', b: 'F', t: '112°', r: 4.5 }, { at: 'C', a: 'M1', b: 'F', t: '63°', r: 5 }, { at: 'F', a: 'E', b: 'C', t: 'x', r: 4.5 }],
+      ang: [{ at: 'A', a: 'L2', b: 'E', t: '48°', r: 5, lr: 11 }, { at: 'E', a: 'A', b: 'F', t: '112°', r: 4.5, lr: 8.5 }, { at: 'C', a: 'M1', b: 'F', t: '63°', r: 5, lr: 10 }, { at: 'F', a: 'E', b: 'C', t: 'x', r: 4.5, lr: 7 }],
       a: { segs: [['EG', 'EH', { dash: 1 }], ['FG', 'FH', { dash: 1 }]] } }),
     // 線分 AD、BC が O で交わる（AO＝DO、BO＝CO）。AB∥DC は、結論なので、しるしをつけない
     bow: () => GEO({ pts: bowP(), segs: [['A', 'B'], ['C', 'D'], ['A', 'D'], ['B', 'C']], tick: [['A', 'O', 1], ['O', 'D', 1], ['B', 'O', 2], ['O', 'C', 2]], vl: { A: 'A', B: 'B', C: 'C', D: 'D', O: ['O', 270, 3.4] }, pad: 6 }),
@@ -95,10 +95,10 @@
     bow2: () => GEO({ pts: bow2P(), segs: [['A', 'B'], ['C', 'D'], ['A', 'C'], ['B', 'D']], tick: [['A', 'O', 1], ['O', 'B', 1]], vl: { A: 'A', B: 'B', C: 'C', D: 'D', O: ['O', 340, 3.4] }, pad: 6,
       ang: [{ at: 'A', a: 'O', b: 'C', n: 1, r: 4.5 }, { at: 'B', a: 'O', b: 'D', n: 1, r: 4.5 }] }),
     // M は AB の中点、AC∥DB
-    mid: () => GEO({ pts: midP(), segs: [['A', 'B'], ['C', 'D'], ['A', 'C'], ['D', 'B']], tick: [['A', 'M', 1], ['M', 'B', 1]], par: [['A', 'C', 1], ['D', 'B', 1]], vl: { A: 'A', B: 'B', C: 'C', D: 'D', M: ['M', 90, 3.4] }, pad: 6 }),
+    mid: () => GEO({ pts: midP(), segs: [['A', 'B'], ['C', 'D'], ['A', 'C'], ['D', 'B']], tick: [['A', 'M', 1], ['M', 'B', 1]], par: [['A', 'C', 1], ['D', 'B', 1]], vl: { A: 'A', B: 'B', C: 'C', D: 'D', M: ['M', 235, 3.4] }, pad: 6 }),
     // △ABC と、∠B、∠C の二等分線の交点 I
-    bis: () => GEO({ pts: bisP(), poly: 'ABC', segs: [['B', 'I'], ['C', 'I']], vl: { A: 'A', B: 'B', C: 'C', I: ['I', 270, 3.6] }, pad: 6,
-      ang: [{ at: 'A', a: 'B', b: 'C', t: '56°', r: 5, lr: 10 }, { at: 'B', a: 'C', b: 'I', n: 1, r: 5 }, { at: 'B', a: 'I', b: 'A', n: 1, r: 5 }, { at: 'C', a: 'B', b: 'I', n: 2, r: 5 }, { at: 'C', a: 'I', b: 'A', n: 2, r: 5 }, { at: 'I', a: 'B', b: 'C', t: 'x', r: 3.5 }] })
+    bis: () => GEO({ pts: bisP(), poly: 'ABC', segs: [['B', 'I'], ['C', 'I']], vl: { A: 'A', B: 'B', C: 'C', I: ['I', 90, 3.4] }, pad: 6,
+      ang: [{ at: 'A', a: 'B', b: 'C', t: '56°', r: 5, lr: 10 }, { at: 'B', a: 'C', b: 'I', n: 1, r: 5 }, { at: 'B', a: 'I', b: 'A', n: 1, r: 5 }, { at: 'C', a: 'B', b: 'I', n: 2, r: 5 }, { at: 'C', a: 'I', b: 'A', n: 2, r: 5 }, { at: 'I', a: 'B', b: 'C', t: 'x', r: 3, lr: 5.2 }] })
   };
 
   /* ---------------- 答えの文（画面にも checks にも、同じ文字列を使う） ---------------- */
@@ -308,7 +308,7 @@
       T('（2）', '① 十二角形の内角の和　　② 正十五角形の 1つの外角\n③ 1つの内角が 144° の正多角形は、正何角形か。（3点）', 2),
       B(3, A_Q2),
       C2([
-        T('（3）', '右の図で、AO＝BO、∠OAC＝∠OBD ならば、AC＝BD である。空欄をうめて、証明を完成させよう。（4点）', 4)
+        T('（3）', '右の図で、AO＝BO、∠OAC＝∠OBD ならば、\nAC＝BD である。空欄をうめて、\n証明を完成させよう。（4点）', 3)
       ], [
         F(5, FIG.bow2())
       ], '2:1'),
