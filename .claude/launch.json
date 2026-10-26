@@ -128,6 +128,12 @@
       "port": 5192
     },
     {
+      "name": "tangocho",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8794", "--directory", "tangocho"],
+      "port": 8794
+    },
+    {
       "name": "basket-tap",
       "runtimeExecutable": "node",
       "runtimeArgs": ["basket-tap/tests/server.cjs", "5193"],

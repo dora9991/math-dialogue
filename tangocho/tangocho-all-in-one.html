@@ -1,0 +1,2019 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>計算単語帳</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%231d5fbf%22/%3E%3Ctext x=%2216%22 y=%2224%22 font-size=%2220%22 text-anchor=%22middle%22 fill=%22%23fff%22%3E%E7%AE%97%3C/text%3E%3C/svg%3E">
+<style>
+/* tangocho：計算単語帳。画面（ホーム・単元・1分トレーニング）と、実寸（mm）でつくる印刷シート。 */
+:root{
+  --ui:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic UI","Meiryo",sans-serif;
+  --paper-font:"BIZ UDPGothic","Hiragino Sans","Yu Gothic","Meiryo","Noto Sans JP","IPAPGothic",sans-serif;
+  --bg:#f4f2ec;--panel:#fff;--ink:#1f2933;--ink2:#52606d;--ink3:#667382;--line:#d9d5c8;
+  --acc:#1d5fbf;--acc-soft:#e8f0fc;--on-acc:#fff;--ans:#c62020;--ans-soft:#fdecec;--ok:#2f7d4f;--ok-soft:#e3f3ea;--warn:#c7790a;
+  --top1:#1d4f91;--top2:#2f7bd0;
+  --c-basic:#2f7bd0;--c-two:#2f8f5f;--c-frac:#b9791a;--c-other:#8a5cbf;
+  --fig-bg:#fff;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14181d;--panel:#1d2329;--ink:#e6e9ec;--ink2:#a9b3bd;--ink3:#8a96a2;--line:#2f3841;
+    --acc:#7db2ff;--acc-soft:#1e2e45;--on-acc:#10233f;--ans:#ff8a8a;--ans-soft:#3a2224;--ok:#6fcf97;--ok-soft:#1d3329;--warn:#f0b35a;
+    --top1:#16314f;--top2:#1f4d85;
+    --c-basic:#7db2ff;--c-two:#6fcf97;--c-frac:#f0b35a;--c-other:#c3a1f0;
+    --fig-bg:#1d2329;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14181d;--panel:#1d2329;--ink:#e6e9ec;--ink2:#a9b3bd;--ink3:#8a96a2;--line:#2f3841;
+  --acc:#7db2ff;--acc-soft:#1e2e45;--on-acc:#10233f;--ans:#ff8a8a;--ans-soft:#3a2224;--ok:#6fcf97;--ok-soft:#1d3329;--warn:#f0b35a;
+  --top1:#16314f;--top2:#1f4d85;
+  --c-basic:#7db2ff;--c-two:#6fcf97;--c-frac:#f0b35a;--c-other:#c3a1f0;
+  --fig-bg:#1d2329;color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);-webkit-text-size-adjust:100%}
+body{line-height:1.55}
+button{font:inherit;color:inherit}
+a{color:var(--acc)}
+/* 左右の余白は 16px 以上（スマホの端のバーもよける） */
+.wrap{max-width:1040px;margin:0 auto;padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap.narrow{max-width:720px}
+
+/* ---- 上の帯 ---- */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:18px;padding-left:max(16px,env(safe-area-inset-left,0px),calc((100% - 1008px)/2));padding-right:max(16px,env(safe-area-inset-right,0px),calc((100% - 1008px)/2));background:linear-gradient(135deg,var(--top1),var(--top2));color:#fff}
+.top h1{margin:0;font-size:24px;letter-spacing:.04em;line-height:1.3}
+.top h1 small{font-size:14px;font-weight:400;opacity:.9;margin-left:4px}
+.top p{margin:2px 0 0;font-size:13px;opacity:.92}
+.top.slim{padding-block:12px}
+.top.slim h1{font-size:19px}
+.top .back{display:inline-block;color:#fff;opacity:.9;font-size:13px;text-decoration:none;margin-bottom:2px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:6px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);text-decoration:none;cursor:pointer;font-size:14px;font-weight:600}
+.top .btn{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.4);color:#fff}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--on-acc)}
+.top .btn.pri{background:#fff;color:#1d4f91;border-color:#fff}
+.btn:focus-visible,.q:focus-visible,.chip:focus-visible,.ucard:focus-visible{outline:3px solid var(--warn);outline-offset:2px}
+
+/* ---- ホーム ---- */
+.howto{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:8px}
+.howto>div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.howto b{color:var(--acc)}
+.howto p{margin:2px 0 0;font-size:13px;color:var(--ink2)}
+.howto .pair{grid-column:1/-1;background:var(--acc-soft);border:1px solid var(--line);border-radius:12px;padding:8px 14px;font-size:14px}
+.howto .pair summary{cursor:pointer;font-weight:700;color:var(--acc)}
+.howto .pair p{color:var(--ink);font-size:14px}
+@media(max-width:700px){.howto{grid-template-columns:1fr}}
+.cat{margin:22px 0 6px;--c:var(--c-basic)}
+.cat.c-two{--c:var(--c-two)}.cat.c-frac{--c:var(--c-frac)}.cat.c-other{--c:var(--c-other)}
+.cat h2{margin:0 0 10px;font-size:17px;border-left:6px solid var(--c);padding-left:10px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.cat h2 small{font-size:12px;font-weight:400;color:var(--ink3)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.ucard{display:flex;flex-direction:column;gap:2px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--c);border-radius:12px;color:var(--ink);text-decoration:none}
+.ucard:hover{border-color:var(--c)}
+.ucard b{font-size:16px}
+.ucard .nt{font-size:12px;color:var(--ink2)}
+.ucard .mt{font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:6px;margin-top:4px}
+.dots{display:inline-flex;gap:4px}
+.dot{width:11px;height:11px;border-radius:50%;border:2px solid var(--ink3);display:inline-block}
+.dot.on{background:var(--ok);border-color:var(--ok)}
+.foot{margin:26px 0 0;font-size:12px;color:var(--ink3)}
+.hbtns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bk{margin:0 0 12px;font-size:14px}
+
+/* ---- ハンドブック ---- */
+.book{padding-bottom:48px}
+.bintro{background:var(--acc-soft);border:1px solid var(--line);border-radius:12px;padding:6px 16px;margin-bottom:8px}
+.bsec h2{margin:26px 0 8px;font-size:18px;border-left:6px solid var(--c-other);padding-left:10px}
+.blk{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 16px 12px;margin-bottom:10px}
+.blk.hit{border-color:var(--warn);box-shadow:0 0 0 3px var(--warn)}
+.blk h3{margin:8px 0 4px;font-size:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.blk .tag{font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;background:var(--acc);color:var(--on-acc)}
+.blk.rule .tag{background:var(--c-two);color:var(--on-acc)}
+.blk ul,.blk ol{margin:4px 0;padding-left:22px}
+.blk li{margin:2px 0}
+.blk table{border-collapse:collapse;margin:6px 0;font-size:14px;font-variant-numeric:tabular-nums}
+.blk th,.blk td{border:1px solid var(--line);padding:3px 12px;text-align:left}
+.blk th{background:var(--bg)}
+.blk .two{display:flex;gap:16px;flex-wrap:wrap}
+.blk ul.flow{display:flex;flex-wrap:wrap;gap:6px 14px;list-style:none;padding:0}
+.blk ul.flow li{padding:2px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:15px}
+.blk .memo{display:none;margin:8px 0 0;padding:6px 10px;border-left:4px solid var(--warn);background:var(--bg);border-radius:6px;font-size:13px;color:var(--ink2)}
+.book.show-memo .memo{display:block}
+.blk .bgo{display:inline-block;margin-top:8px;font-size:13px}
+.memo-tgl{display:flex;align-items:center;gap:6px;font-size:13px;color:#fff}
+.later{margin:20px 0 0;font-size:12px;color:var(--ink3)}
+
+/* ---- 単元 ---- */
+.step{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.step.ok{border-color:var(--ok)}
+.step .sh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.step .sh b{font-size:18px;color:var(--acc)}
+.step .sm{margin:4px 0 8px;color:var(--ink2);font-size:14px}
+.step.ok .sm b{color:var(--ok)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;min-height:40px;padding:4px 14px;border-radius:999px;border:1px solid var(--acc);color:var(--acc);text-decoration:none;font-weight:600;font-size:14px;background:var(--acc-soft)}
+.chip.dice{border-style:dashed}
+.step .pl{display:inline-block;margin-top:10px;font-size:13px}
+
+/* ---- 1分トレーニング ---- */
+.setnav{display:flex;align-items:center;gap:8px;font-size:14px}
+.setnav b{font-size:20px}
+.play{display:grid;grid-template-columns:270px 1fr;gap:16px;align-items:start;max-width:1200px}
+.ctl{position:sticky;top:10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.timer{position:relative;width:150px;height:150px;margin:0 auto}
+.timer svg{width:100%;height:100%}
+.timer .bg{fill:none;stroke:var(--line);stroke-width:8}
+.timer .fg{fill:none;stroke:var(--acc);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .1s linear}
+.timer[data-phase="ready"] .fg{stroke:var(--warn)}
+.timer[data-phase="done"] .fg{stroke:var(--ans)}
+.tn{position:absolute;inset:0;display:grid;place-items:center;font-size:52px;font-weight:700;font-variant-numeric:tabular-nums;padding-bottom:10px}
+.tl{position:absolute;left:0;right:0;bottom:30px;text-align:center;font-size:12px;color:var(--ink3)}
+.btns{display:flex;gap:8px}
+.btns .pri{flex:1;min-height:48px;font-size:16px}
+.tgl{display:flex;align-items:center;gap:8px;font-size:14px;min-height:32px;cursor:pointer}
+.tgl input{width:20px;height:20px}
+.sizes{font-size:13px;color:var(--ink2);display:flex;align-items:center;gap:4px}
+.sizes button{min-width:40px;min-height:34px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer}
+.sizes button.on{background:var(--acc);border-color:var(--acc);color:var(--on-acc)}
+.score{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 12px;padding:10px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--line)}
+.score .sc b{font-size:34px;line-height:1}
+.score .sc small{font-size:14px;color:var(--ink2)}
+.score .gl{font-size:13px;color:var(--ink2)}
+.score .ps{font-weight:700;color:var(--ok)}
+.score.ok{background:var(--ok-soft);border-color:var(--ok)}
+.hint{margin:0;font-size:12px;color:var(--ink3)}
+.score .fb{flex-basis:100%;font-size:12px;color:var(--ink3)}
+.step .nm2{margin-left:6px;font-size:12px;color:var(--ink3)}
+.qs .part{grid-column:1/-1;margin-top:8px;padding:6px 12px;border-left:6px solid var(--warn);background:var(--panel);border-radius:6px;font-size:14px;color:var(--ink2)}
+.qs .part b{color:var(--warn)}
+.plink{font-size:13px}
+/* スマホ：操作パネルを横並びにして、問題までのスクロールを短くする（基本の指定より後ろに書く） */
+@media(max-width:780px){
+  .play{grid-template-columns:1fr}
+  .ctl{position:static;display:grid;grid-template-columns:96px 1fr;gap:4px 12px;align-items:center;padding:10px 12px}
+  .timer{width:96px;height:96px;margin:0}
+  .tn{font-size:34px;padding-bottom:6px}.tl{bottom:20px;font-size:10px}
+  .ctl .tgl,.ctl .sizes,.ctl .score,.ctl .plink{grid-column:1/-1}
+  .ctl .tgl{min-height:28px}
+  .ctl .hint{display:none}
+}
+
+.qs{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(var(--qw),100%),1fr));gap:8px}
+.qs.z-s{--qw:230px;--qf:19px}.qs.z-m{--qw:290px;--qf:25px}.qs.z-l{--qw:420px;--qf:36px}
+.qs.fig{--qw:400px}.qs.fig.z-s{--qw:330px}.qs.fig.z-l{--qw:520px}
+.q{width:100%;display:flex;align-items:center;gap:10px;padding:8px 12px;min-height:56px;border:2px solid var(--line);border-radius:12px;background:var(--panel);font-size:var(--qf);cursor:pointer;text-align:left;font-variant-numeric:tabular-nums}
+.q .no{flex:none;display:grid;place-items:center;width:1.5em;height:1.5em;border-radius:50%;background:var(--bg);font-size:.55em;color:var(--ink2)}
+.q .qt{display:inline-flex;align-items:center;gap:.3em;min-width:0;flex-wrap:wrap;row-gap:2px}
+.qs.lg{--qw:460px}
+.q .a{color:var(--ans);visibility:hidden}
+.show-ans .q .a{visibility:visible}
+.q .mk{margin-left:auto;font-size:1.2em;font-weight:700;width:1.1em;text-align:center}
+.q[data-m="o"]{background:var(--ok-soft);border-color:var(--ok)}
+.q[data-m="o"] .mk::after{content:"○";color:var(--ans)}
+.q[data-m="x"] .mk::after{content:"✗";color:var(--acc)}
+.q .fg{flex:none;width:min(46%,200px);color:var(--ink)}
+.q .fg svg{width:100%;height:auto;display:block}
+.q .qt>span{min-width:0}
+/* スマホ：字を小さめにして、長い式はおりかえす（横にはみ出さない） */
+@media(max-width:640px){
+  .qs.z-s{--qf:14px}.qs.z-m{--qf:17px}.qs.z-l{--qf:21px}
+  .q{padding:6px 10px;gap:8px;min-height:50px}
+  .q .fg{width:min(40%,150px)}
+  .setnav{gap:6px}
+}
+.slot{display:inline-block;min-width:calc(var(--aw,3) * 1em);border-bottom:.08em solid var(--ink3);text-align:center;line-height:1.2;padding:0 .15em}
+.po{margin-left:.1em}
+.slot.sf{border-bottom:0;min-width:1.4em}
+.fr.bl>span{display:block;min-width:1.1em;height:1em}
+
+/* 分数（立てて書く） */
+.fr{display:inline-flex;flex-direction:column;align-items:stretch;vertical-align:middle;text-align:center;line-height:1.04;margin:0 .12em;font-size:.88em}
+.fr>span:first-child{border-bottom:.07em solid currentColor;padding:0 .15em .02em}
+.fr>span:last-child{padding:.02em .15em 0}
+.fig text{stroke:var(--fig-bg);stroke-width:3.4px;paint-order:stroke;stroke-linejoin:round;fill:currentColor}
+
+/* ---- 印刷シート：紙は実寸（mm）。画面では幅に合わせて縮めて見せる ---- */
+body.is-sheet{background:#dcdad2}
+.opts{display:flex;flex-wrap:wrap;gap:10px 18px;padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+.opts label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--ink2)}
+.opts select,.opts input{min-height:38px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:inherit;font-size:14px}
+.opts input{width:84px}
+.rng{display:flex;align-items:center;gap:6px;color:var(--ink)}
+.sinfo{margin:8px 16px;font-size:13px;color:var(--ink2)}
+.pages{display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px}
+.page{--paper-ans:#d62828;position:relative;flex:none;width:210mm;height:297mm;padding:12mm 10mm 10mm;background:#fff;color:#1f2328;font-family:var(--paper-font);display:flex;flex-direction:column;box-shadow:0 1px 3px rgba(0,0,0,.18),0 8px 24px rgba(0,0,0,.12);overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page .pl{position:absolute;top:4.5mm;left:10mm;right:10mm;font-size:2.8mm;color:#8a94a0;text-align:center}
+.page .fig text,.page .fig{--fig-bg:#fff}
+.cut{position:relative;flex:none;height:7mm}
+.cut::before{content:"";position:absolute;left:0;right:0;top:50%;border-top:.25mm dashed #9aa4ae}
+.cut span{position:absolute;left:6mm;top:50%;transform:translateY(-50%);background:#fff;padding:0 1.5mm;font-size:3.6mm;color:#9aa4ae;line-height:1}
+.card{flex:1;min-height:0;display:flex;flex-direction:column;padding:2.4mm 4.5mm 2mm;border:.35mm solid #1f2328;border-radius:2.5mm;--fs:5.4mm}
+.card.fs-l{--fs:5.9mm}.card.fs-m{--fs:5.2mm}.card.fs-s{--fs:4.4mm}
+.card.fr-card{--fs:4.9mm}
+.card.fr-card .fr{font-size:.8em}
+.card.fr-card .ci{gap:1.6mm}
+.ch{display:flex;align-items:baseline;gap:3mm;padding-bottom:1.4mm;border-bottom:.3mm solid #1f2328;font-size:3.5mm;white-space:nowrap}
+.ch .cu{font-size:4.8mm}
+.ch .cn{margin-left:1mm;padding:.2mm 2.2mm;border-radius:99px;background:#1f2328;color:#fff;font-size:3.4mm}
+.ch .cp{padding:.2mm 2mm;border:.3mm solid #1f2328;border-radius:99px;font-size:3.2mm}
+.ch .cp.hard{background:#eceff2}
+.ch .cg{margin-left:auto}
+.hh{display:grid;grid-template-columns:1fr 1fr;column-gap:7mm;margin-top:.8mm;font-size:3.1mm;color:#4a5560}
+.hh .hard{color:#1f2328}
+.hh.one{grid-template-columns:1fr}
+.card.mir .hh{direction:rtl}
+.card.mir .hh span{direction:ltr}
+.card.empty{border:0;visibility:hidden}
+.ch .cg b{font-size:4.6mm}
+.cb{flex:1;min-height:0;display:grid;grid-auto-flow:column;grid-template-rows:repeat(var(--rows),1fr);grid-template-columns:1fr 1fr;column-gap:7mm;margin-top:.6mm}
+.card.mir .cb{direction:rtl}
+.card.mir .ci{direction:ltr}
+.ci{display:flex;align-items:center;gap:2mm;min-width:0;border-bottom:.2mm dotted #aab2bb;white-space:nowrap}
+.ci .no{flex:none;display:grid;place-items:center;width:6mm;height:6mm;border-radius:50%;background:#eceff2;font-size:3.3mm;color:#4a5560;font-family:var(--ui)}
+.ci .qt{display:inline-flex;align-items:center;gap:1.3mm;min-width:0;font-size:var(--fs);font-variant-numeric:tabular-nums}
+.ci .slot{min-width:calc(var(--aw,3) * 1em);height:1.25em;border-bottom:.3mm solid #1f2328}
+.ci .a{color:var(--paper-ans);font-weight:700}
+.ci .po{margin-left:0}
+.card.fig .ci{gap:1.5mm}
+.card.fig .fg{flex:none;width:41mm;height:19.2mm;color:#1f2328}
+.card.fig .fg svg{width:100%;height:100%;display:block}
+.card.fig .qt{font-size:4.2mm;flex-wrap:wrap;row-gap:0}
+.cf{display:flex;justify-content:space-between;align-items:baseline;gap:4mm;padding-top:1.4mm;font-size:3.3mm;color:#4a5560}
+.cf u{display:inline-block;width:11mm;border-bottom:.25mm solid #55606b;text-decoration:none}
+.cf u.nm{width:30mm}
+
+@page{size:A4 portrait;margin:0}
+@media print{
+  html,body{background:#fff!important}
+  .noprint{display:none!important}
+  .pages{display:block;padding:0;zoom:1!important}
+  .page{margin:0;box-shadow:none;break-after:page;page-break-after:always}
+  .page:last-child{break-after:auto;page-break-after:auto}
+}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ---- js/core.js ---- */
+/* tangocho：計算単語帳（1分トレーニング）の土台。画面を持たない（ブラウザでも node の検査でも読める）。
+   問題は「単元・STEP・セット番号」から作る。同じ番号なら、いつ・どの端末で開いても同じ問題になる（紙と画面が一致する）。
+   1セット＝20問。前半10問（その STEP のふつうの問題）＋ 後半10問（同じ STEP の中で、少しだけむずかしい問題）。
+     計算の早い子が前半をすぐ解き終わっても、そのまま後半へ進める。
+   問題の形：{ pre, eq, ans, post, fig, meta }
+     「pre ＝ ［ans］ post」の形で出る（eq:false なら「＝」なし）。文字の中の {3/4} は分数。
+     fig＝図（SVG）、meta＝図の寸法など（tools/verify.cjs が別の道すじで検算するための材料）。 */
+(function () {
+  'use strict';
+  const TG = (window.TG = window.TG || {});
+  TG.units = [];
+  TG.cats = [
+    { id: 'basic', name: '1けたの計算', sub: 'たす・ひく・かける・わる' },
+    { id: 'two', name: '2けたの計算', sub: '暗算で、ひっ算なしで' },
+    { id: 'frac', name: '分数・小数', sub: '約分までやって答える' },
+    { id: 'other', name: '割合・単位・図形・時間', sub: '身のまわりの数のあつかい' },
+    { id: 'vocab', name: '語彙カード（暗記して反射に）', sub: 'ハンドブック 小3〜中3。前半は出す向き、後半は逆向き' },
+  ];
+
+  /* ---------------- 乱数（同じ種なら同じ並び） ---------------- */
+  function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function mulberry32(a) {
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  TG.rng = function (seed) {
+    const f = mulberry32(hash(String(seed)));
+    return {
+      next: f,
+      int: (a, b) => a + Math.floor(f() * (b - a + 1)),
+      pick: arr => arr[Math.floor(f() * arr.length)],
+      chance: p => f() < p,
+      shuffle: arr => { const x = arr.slice(); for (let i = x.length - 1; i > 0; i--) { const j = Math.floor(f() * (i + 1)); [x[i], x[j]] = [x[j], x[i]]; } return x; },
+    };
+  };
+
+  /* ---------------- 数の小道具 ---------------- */
+  TG.gcd = function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; };
+  // 約分した分数（整数になるなら整数）。問題の中の分数は {n/d}
+  TG.frac = (n, d) => { const g = TG.gcd(n, d); n /= g; d /= g; return d === 1 ? String(n) : `{${n}/${d}}`; };
+  TG.fracRaw = (n, d) => `{${n}/${d}}`;
+  // 100倍した整数 → 小数の文字（250→2.5、5→0.05、100→1）。小数の計算は整数でやって、誤差を出さない
+  TG.dec = h => { const i = Math.floor(h / 100), f = h % 100; return f ? i + '.' + String(f).padStart(2, '0').replace(/0$/, '') : String(i); };
+
+  /* ---------------- 表示用の文字 ---------------- */
+  const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  TG.esc = esc;
+  // 文字の中：{3/4}＝分数、^{10}＝上つき（2の10乗）。² ³ はふつうの文字（どのフォントにもある）
+  TG.html = s => esc(s).replace(/\{(\d+)\/(\d+)\}/g, '<span class="fr"><span>$1</span><span>$2</span></span>').replace(/\^\{(\d+)\}/g, '<sup>$1</sup>');
+
+  /* ---------------- 単元 ---------------- */
+  // 単元：{ id, cat, name, note, n（1セットの問題数。前半と後半で半分ずつ）, goal（1分の目標。STEPごとの配列）, layout:'text'|'fig',
+  //         steps:[{ name, gen(r) または mix（前半）, name2, gen2 または mix2（後半・少しむずかしい） }] }
+  // gen(r) は問題を1つ返す。条件に合わないときは null を返して、作りなおす。
+  // mix：[[重み, 関数], …]。重みの割合で「問題の種類」をえらび、その種類のなかで条件に合う問題ができるまで作りなおす
+  //      （種類をえらびなおさないので、通りにくい種類が少なくなりすぎない。割引・三角形・円すい…のように、種類がまざる STEP で使う）
+  TG.addUnit = function (u) { u.layout = u.layout || 'text'; TG.units.push(u); return u; };
+  TG.unit = id => TG.units.find(u => u.id === id);
+
+  const produce = (st, r, hard) => {
+    const mix = hard ? st.mix2 : st.mix, gen = hard ? st.gen2 : st.gen;
+    if (!mix) return gen(r);
+    let x = r.next() * mix.reduce((s, m) => s + m[0], 0), fn = mix[mix.length - 1][1];
+    for (const m of mix) { if ((x -= m[0]) < 0) { fn = m[1]; break; } }
+    for (let k = 0; k < 500; k++) { const it = fn(r); if (it) return it; }
+    return null;
+  };
+
+  // 1セット分の問題。setNo は 1 以上の整数（どんな大きな数でも、その番号ごとに決まった問題になる）。
+  // 候補の少ない後半（少しむずかしい問題）を先に作り、前半はその残りから選ぶ（同じ問題がかぶらない）
+  TG.makeSet = function (unitId, step, setNo) {
+    const u = TG.unit(unitId);
+    const st = u && u.steps[step - 1];
+    if (!st) return null;
+    const r = TG.rng(`${u.id}/${step}/${setNo}`);
+    const n = st.n || u.n, half = n / 2, seen = new Set();   // st.n：その STEP だけ問題数がちがうとき（候補の少ない語彙カード）
+    const make = (hard, count) => {
+      const out = [];
+      for (let tries = 0; out.length < count && tries < 30000; tries++) {
+        const it = produce(st, r, hard);
+        if (!it) continue;
+        it.post = it.post || '';
+        if (it.eq === undefined) it.eq = true;
+        const key = it.key || it.pre + '|' + it.post + '|' + (it.meta ? JSON.stringify(it.meta) : '');   // key：順番を入れかえただけの式（31×8 と 8×31）を同じ問題として数える
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(it);
+      }
+      return out;
+    };
+    const back = make(true, half), front = make(false, n - half);
+    return { unit: u, step, stepInfo: st, setNo, goal: TG.goalOf(u, step), half, items: [...front, ...back] };
+  };
+  TG.goalOf = (u, step) => (Array.isArray(u.goal) ? u.goal[step - 1] : u.goal);
+})();
+
+/* ---- js/units-basic.js ---- */
+/* 単元：1けたの計算・2けたの計算（たし算・ひき算・かけ算・わり算）。
+   各 STEP は 前半（gen／mix）＋ 後半（gen2／mix2＝同じ STEP の中で少しだけむずかしい。name2 がその説明）。
+   どれも「条件に合わなければ null を返して作りなおす」書き方。条件は tools/verify.cjs が別の道すじで確かめる。 */
+(function () {
+  'use strict';
+  const TG = window.TG;
+  const q = (pre, ans, o) => Object.assign({ pre: String(pre), eq: true, ans: String(ans) }, o);
+  // 順番を入れかえても同じ問題として数える（key を式の形にそろえる）。2けた×1けたは、たまに順番を入れかえて出す
+  const mulQ = (r, a, m) => q(r.chance(0.25) ? `${m} × ${a}` : `${a} × ${m}`, a * m, { key: `${a}×${m}` });
+  const either = (r, a, b) => q(r.chance(0.5) ? `${a} × ${b}` : `${b} × ${a}`, a * b, { key: `${Math.min(a, b)}×${Math.max(a, b)}` });
+
+  /* ---------- 1けた ---------- */
+  TG.addUnit({
+    id: 'add1', cat: 'basic', name: 'たし算（1けた）', note: '1けた＋1けた', n: 20, goal: [15, 12, 8],
+    steps: [
+      { name: '和が10まで',
+        gen: r => { const a = r.int(1, 9), b = r.int(1, 9); return a + b <= 10 ? q(`${a} + ${b}`, a + b) : null; },
+        name2: '3つの数（和が10まで）',
+        gen2: r => { const a = r.int(1, 6), b = r.int(1, 6), c = r.int(1, 6); return a + b + c >= 6 && a + b + c <= 10 ? q(`${a} + ${b} + ${c}`, a + b + c) : null; } },
+      { name: 'くり上がりあり',
+        gen: r => { const a = r.int(2, 9), b = r.int(2, 9); return a + b >= 11 ? q(`${a} + ${b}`, a + b) : null; },
+        name2: '和が13以上',
+        gen2: r => { const a = r.int(4, 9), b = r.int(4, 9); return a + b >= 13 ? q(`${a} + ${b}`, a + b) : null; } },
+      { name: '3つの数（10をつくる）',
+        gen: r => { const a = r.int(1, 9), c = r.int(2, 9); return q(r.shuffle([a, 10 - a, c]).join(' + '), 10 + c); },
+        name2: '3つの数（10の組なし）',
+        gen2: r => {
+          const v = [r.int(3, 9), r.int(3, 9), r.int(3, 9)], s = v[0] + v[1] + v[2];
+          return s >= 18 && s <= 26 && !(v[0] + v[1] === 10 || v[0] + v[2] === 10 || v[1] + v[2] === 10) ? q(v.join(' + '), s) : null;
+        } },
+    ],
+  });
+
+  TG.addUnit({
+    id: 'sub1', cat: 'basic', name: 'ひき算（1けた）', note: '10までの数・くり下がり', n: 20, goal: [14, 11, 8],
+    steps: [
+      { name: '10までのひき算',
+        gen: r => { const a = r.int(2, 10), b = r.int(1, a - 1); return q(`${a} − ${b}`, a - b); },
+        name2: 'ひき算を2回',
+        gen2: r => { const a = r.int(6, 10), b = r.int(1, 5), c = r.int(1, 5); return a - b - c >= 1 ? q(`${a} − ${b} − ${c}`, a - b - c) : null; } },
+      { name: 'くり下がりあり（11〜18−1けた）',
+        gen: r => { const a = r.int(11, 18), b = r.int(2, 9); return b > a % 10 ? q(`${a} − ${b}`, a - b) : null; },
+        name2: 'ひく数が6〜9',
+        gen2: r => { const a = r.int(13, 18), b = r.int(6, 9); return b > a % 10 ? q(`${a} − ${b}`, a - b) : null; } },
+      { name: 'ミックス',
+        gen: r => { const a = r.int(10, 19), b = r.int(2, 9); return q(`${a} − ${b}`, a - b); },
+        name2: 'ひき算を2回（10をまたぐ）',
+        gen2: r => {
+          const a = r.int(12, 19), b = r.int(2, 7), c = r.int(2, 7), x = a - b - c;
+          return x >= 1 && Math.floor(a / 10) !== Math.floor(x / 10) ? q(`${a} − ${b} − ${c}`, x) : null;
+        } },
+    ],
+  });
+
+  TG.addUnit({
+    id: 'mul1', cat: 'basic', name: 'かけ算（九九）', note: '1けた×1けた', n: 20, goal: [14, 10, 10],
+    steps: [
+      { name: '2・3・4・5のだん',
+        gen: r => { const a = r.pick([2, 3, 4, 5]), b = r.int(2, 9); return q(r.chance(0.5) ? `${a} × ${b}` : `${b} × ${a}`, a * b); },
+        name2: '6〜9をかける',
+        gen2: r => either(r, r.pick([2, 3, 4, 5]), r.int(6, 9)) },
+      { name: '6・7・8・9のだん',
+        gen: r => { const a = r.pick([6, 7, 8, 9]), b = r.int(3, 9); return q(r.chance(0.5) ? `${a} × ${b}` : `${b} × ${a}`, a * b); },
+        name2: '6〜9どうし',
+        gen2: r => either(r, r.int(6, 9), r.int(6, 9)) },
+      { name: 'ミックス（全部のだん）',
+        gen: r => { const a = r.int(2, 9), b = r.int(2, 9); return q(`${a} × ${b}`, a * b); },
+        name2: '10のかたまり×1けた',
+        gen2: r => { const a = r.int(2, 9) * 10, b = r.int(2, 9); return q(r.chance(0.5) ? `${a} × ${b}` : `${b} × ${a}`, a * b, { key: `${a}×${b}` }); } },
+    ],
+  });
+
+  TG.addUnit({
+    id: 'div1', cat: 'basic', name: 'わり算（九九のぎゃく）', note: '九九で答えが出るわり算', n: 20, goal: [12, 9, 9],
+    steps: [
+      { name: 'わる数が2〜5',
+        gen: r => { const d = r.int(2, 5), v = r.int(2, 9); return q(`${d * v} ÷ ${d}`, v); },
+        name2: '答えが6〜9',
+        gen2: r => { const d = r.int(2, 5), v = r.int(6, 9); return q(`${d * v} ÷ ${d}`, v); } },
+      { name: 'わる数が6〜9',
+        gen: r => { const d = r.int(6, 9), v = r.int(2, 9); return q(`${d * v} ÷ ${d}`, v); },
+        name2: '答えが6〜9',
+        gen2: r => { const d = r.int(6, 9), v = r.int(6, 9); return q(`${d * v} ÷ ${d}`, v); } },
+      { name: 'ミックス',
+        gen: r => { const d = r.int(2, 9), v = r.int(2, 9); return q(`${d * v} ÷ ${d}`, v); },
+        name2: '10のかたまりのわり算',
+        gen2: r => { const d = r.int(2, 9), v = r.int(2, 9); return q(`${d * v * 10} ÷ ${d}`, v * 10); } },
+    ],
+  });
+
+  /* ---------- 2けた ---------- */
+  // 2けた−2けた（くり下がりあり）の式をひとつ作る
+  const borrow2 = r => {
+    const ta = r.int(2, 9), tb = r.int(1, 8), ua = r.int(0, 8), ub = r.int(1, 9);
+    if (ua >= ub || ta <= tb) return null;
+    const a = ta * 10 + ua, b = tb * 10 + ub; return q(`${a} − ${b}`, a - b);
+  };
+
+  TG.addUnit({
+    id: 'add2', cat: 'two', name: 'たし算（2けた）', note: '2けた＋2けた', n: 20, goal: [8, 6, 5],
+    steps: [
+      { name: 'くり上がりなし',
+        gen: r => {
+          const ta = r.int(1, 8), tb = r.int(1, 8), ua = r.int(1, 9), ub = r.int(1, 9);
+          if (ua + ub > 9 || ta + tb > 9) return null;
+          const a = ta * 10 + ua, b = tb * 10 + ub; return q(`${a} + ${b}`, a + b);
+        },
+        name2: '十の位がくり上がる',
+        gen2: r => {
+          const ta = r.int(2, 9), tb = r.int(2, 9), ua = r.int(1, 9), ub = r.int(1, 9);
+          if (ua + ub > 9 || ta + tb < 10) return null;
+          const a = ta * 10 + ua, b = tb * 10 + ub; return q(`${a} + ${b}`, a + b);
+        } },
+      { name: '一の位がくり上がる（100未満）',
+        gen: r => {
+          const ta = r.int(1, 8), tb = r.int(1, 8), ua = r.int(1, 9), ub = r.int(1, 9);
+          if (ua + ub < 10 || ta + tb + 1 > 9) return null;
+          const a = ta * 10 + ua, b = tb * 10 + ub; return q(`${a} + ${b}`, a + b);
+        },
+        name2: '答えが80〜99',
+        gen2: r => {
+          const a = r.int(21, 89), b = r.int(21, 89), s = a + b;
+          return a % 10 + b % 10 >= 10 && s >= 80 && s <= 99 ? q(`${a} + ${b}`, s) : null;
+        } },
+      { name: '答えが100をこえる',
+        gen: r => {
+          const a = r.int(21, 99), b = r.int(21, 99);
+          return a + b < 100 || (a % 10 === 0 && b % 10 === 0) ? null : q(`${a} + ${b}`, a + b);
+        },
+        name2: '大きい数どうし',
+        gen2: r => {
+          const a = r.int(55, 99), b = r.int(55, 99);
+          return a % 10 + b % 10 >= 10 && a + b >= 120 ? q(`${a} + ${b}`, a + b) : null;
+        } },
+    ],
+  });
+
+  TG.addUnit({
+    id: 'sub2', cat: 'two', name: 'ひき算（2けた）', note: '2けた−2けた', n: 20, goal: [8, 6, 5],
+    steps: [
+      { name: 'くり下がりなし',
+        gen: r => {
+          const ta = r.int(2, 9), tb = r.int(1, 8), ua = r.int(1, 9), ub = r.int(1, 9);
+          if (ua < ub || ta <= tb) return null;
+          const a = ta * 10 + ua, b = tb * 10 + ub; return q(`${a} − ${b}`, a - b);
+        },
+        name2: '3つの数のひき算',
+        gen2: r => {
+          const a = r.int(60, 99), b = r.int(11, 39), c = r.int(11, 39);
+          return a % 10 >= b % 10 + c % 10 && Math.floor(a / 10) >= Math.floor(b / 10) + Math.floor(c / 10) + 1 && b % 10 && c % 10 ? q(`${a} − ${b} − ${c}`, a - b - c) : null;
+        } },
+      { name: 'くり下がりあり',
+        gen: borrow2,
+        name2: '一の位が0／差が小さい',
+        mix2: [
+          [1, r => { const a = r.int(3, 9) * 10, b = r.int(11, a - 1); return b % 10 ? q(`${a} − ${b}`, a - b) : null; }],
+          [1, r => { const a = r.int(50, 99), b = a - r.int(5, 19); return b >= 11 && a % 10 < b % 10 ? q(`${a} − ${b}`, a - b) : null; }],
+        ] },
+      { name: '100からひく／ミックス',
+        mix: [
+          [1, r => { const b = r.int(11, 99); return b % 10 ? q(`100 − ${b}`, 100 - b) : null; }],
+          [1, borrow2],
+        ],
+        name2: '3けた−2けた',
+        gen2: r => { const a = r.int(110, 199), b = r.int(11, 99); return a - b >= 10 && a % 10 < b % 10 ? q(`${a} − ${b}`, a - b) : null; } },
+    ],
+  });
+
+  TG.addUnit({
+    id: 'mul2', cat: 'two', name: 'かけ算（2けた×1けた）', note: '2けた×1けた', n: 20, goal: [7, 5, 4],
+    steps: [
+      { name: 'くり上がりなし',
+        gen: r => {
+          const m = r.int(2, 4), t = r.int(1, 4), u = r.int(0, 4);
+          if (t * m > 9 || u * m > 9 || (u === 0 && r.chance(0.7))) return null;
+          return mulQ(r, t * 10 + u, m);
+        },
+        name2: 'くり上がりが1回',
+        gen2: r => {
+          const m = r.int(2, 5), a = r.int(11, 49);
+          return a % 10 * m >= 10 && a % 10 * m <= 19 && a * m < 100 ? mulQ(r, a, m) : null;
+        } },
+      { name: 'くり上がりあり（100未満）',
+        gen: r => {
+          const t = r.int(1, 9), u = r.int(2, 9), m = r.int(2, 9), a = t * 10 + u;
+          return u * m >= 10 && a * m < 100 ? mulQ(r, a, m) : null;
+        },
+        name2: 'かける数が5〜9',
+        gen2: r => {
+          const a = r.int(11, 19), m = r.int(5, 9);
+          return a % 10 * m >= 10 && a * m < 100 ? mulQ(r, a, m) : null;
+        } },
+      { name: '答えが100をこえる',
+        gen: r => {
+          const a = r.int(12, 99), m = r.int(2, 9), p = a * m;
+          return a % 10 && p >= 100 && p <= 300 ? mulQ(r, a, m) : null;
+        },
+        name2: '答えが300〜600',
+        gen2: r => {
+          const a = r.int(35, 99), m = r.int(4, 9), p = a * m;
+          return a % 10 && p >= 300 && p <= 600 ? mulQ(r, a, m) : null;
+        } },
+    ],
+  });
+
+  TG.addUnit({
+    id: 'div2', cat: 'two', name: 'わり算（2けた÷1けた）', note: 'わりきれるもの', n: 20, goal: [7, 5, 5],
+    steps: [
+      { name: 'あまりが出ない（十の位からわれる）',
+        gen: r => {
+          const d = r.int(2, 4), a = r.int(1, 9), b = r.int(0, 9);
+          if (d * a > 9 || d * b > 9 || (b === 0 && r.chance(0.6))) return null;
+          const v = a * 10 + b; return q(`${d * v} ÷ ${d}`, v);
+        },
+        name2: '十の位にあまりが出る（わる数2〜4）',
+        gen2: r => {
+          const d = r.int(2, 4), v = r.int(10, Math.floor(99 / d)), x = d * v;
+          return Math.floor(x / 10) % d ? q(`${x} ÷ ${d}`, v) : null;
+        } },
+      { name: '十の位にあまりが出る',
+        gen: r => {
+          const d = r.int(2, 9), v = r.int(10, Math.floor(99 / d)), x = d * v;
+          return Math.floor(x / 10) % d ? q(`${x} ÷ ${d}`, v) : null;
+        },
+        name2: 'わる数が5〜9',
+        gen2: r => {
+          const d = r.int(5, 9), v = r.int(10, Math.floor(99 / d)), x = d * v;
+          return Math.floor(x / 10) % d ? q(`${x} ÷ ${d}`, v) : null;
+        } },
+      { name: 'ミックス（九九の範囲もふくむ）',
+        gen: r => {
+          const d = r.int(2, 9), v = r.int(2, Math.floor(99 / d)), x = d * v;
+          return x >= 10 ? q(`${x} ÷ ${d}`, v) : null;
+        },
+        name2: '3けた÷1けた',
+        gen2: r => {
+          const d = r.int(2, 9), v = r.int(11, 125), x = d * v;
+          return x >= 100 && x <= 250 ? q(`${x} ÷ ${d}`, v) : null;
+        } },
+    ],
+  });
+})();
+
+/* ---- js/units-frac.js ---- */
+/* 単元：分数のかけ算・わり算（かんたんなもの）、小数のたし算・ひき算。
+   分数の答えは約分したもの（整数になるなら整数）。小数は 100倍した整数で計算して、誤差を出さない。
+   各 STEP は 前半（gen／mix）＋ 後半（gen2／mix2＝同じ STEP の中で少しだけむずかしい。name2 がその説明）。 */
+(function () {
+  'use strict';
+  const TG = window.TG;
+  const { gcd, frac: f, fracRaw: raw, dec } = TG;
+  const q = (pre, ans, o) => Object.assign({ pre: String(pre), eq: true, ans: String(ans) }, o);
+  // 約分ずみの真分数 a/b（b は lo〜max）を作る
+  const proper = (r, max, lo) => { const b = r.int(lo || 2, max), a = r.int(1, b - 1); return gcd(a, b) === 1 ? [a, b] : null; };
+  // 2つの真分数
+  const two = (r, max, lo) => { const p = proper(r, max, lo), s = proper(r, max, lo); return p && s ? [p[0], p[1], s[0], s[1]] : null; };
+
+  /* ---------- 分数のかけ算 ---------- */
+  TG.addUnit({
+    id: 'fmul', cat: 'frac', name: '分数のかけ算', note: 'かんたんなもの', n: 20, goal: [6, 5, 4],
+    steps: [
+      { name: '分数×整数（答えが整数）',
+        gen: r => {
+          const p = proper(r, 8), k = r.int(1, 4);
+          if (!p || p[1] * k > 30) return null;
+          const [a, b] = p, n = b * k;
+          return q(r.chance(0.7) ? `${raw(a, b)} × ${n}` : `${n} × ${raw(a, b)}`, a * k, { key: `${a}/${b}×${n}` });
+        },
+        name2: '分母が6〜9',
+        gen2: r => {
+          const p = proper(r, 9, 6), k = r.int(2, 4);
+          if (!p) return null;
+          const [a, b] = p, n = b * k;
+          return q(r.chance(0.7) ? `${raw(a, b)} × ${n}` : `${n} × ${raw(a, b)}`, a * k, { key: `${a}/${b}×${n}` });
+        } },
+      { name: '分数×分数（約分なし）',
+        gen: r => {
+          const t = two(r, 9); if (!t) return null;
+          const [a, b, c, d] = t;
+          return gcd(a * c, b * d) === 1 && b * d <= 45 ? q(`${raw(a, b)} × ${raw(c, d)}`, raw(a * c, b * d)) : null;
+        },
+        name2: '分子も2以上',
+        gen2: r => {
+          const t = two(r, 9, 5); if (!t) return null;
+          const [a, b, c, d] = t;
+          return a >= 2 && c >= 2 && gcd(a * c, b * d) === 1 && b * d <= 63 ? q(`${raw(a, b)} × ${raw(c, d)}`, raw(a * c, b * d)) : null;
+        } },
+      { name: '約分がある',
+        mix: [
+          [3, r => {   // 分数×整数（整数と分母が約分できる）
+            const p = proper(r, 9), n = r.int(2, 12);
+            if (!p) return null;
+            const [a, b] = p;
+            return gcd(b, n) > 1 && n % b ? q(`${raw(a, b)} × ${n}`, f(a * n, b)) : null;
+          }],
+          [7, r => {
+            const t = two(r, 9); if (!t) return null;
+            const [a, b, c, d] = t;
+            return gcd(a * c, b * d) > 1 && b * d <= 72 ? q(`${raw(a, b)} × ${raw(c, d)}`, f(a * c, b * d)) : null;
+          }],
+        ],
+        name2: '約分が2回',
+        gen2: r => {
+          const t = two(r, 9); if (!t) return null;
+          const [a, b, c, d] = t;
+          return gcd(a, d) > 1 && gcd(c, b) > 1 ? q(`${raw(a, b)} × ${raw(c, d)}`, f(a * c, b * d)) : null;
+        } },
+    ],
+  });
+
+  /* ---------- 分数のわり算 ---------- */
+  TG.addUnit({
+    id: 'fdiv', cat: 'frac', name: '分数のわり算', note: 'かんたんなもの', n: 20, goal: [6, 4, 4],
+    steps: [
+      { name: '分数÷整数',
+        gen: r => {
+          const p = proper(r, 8), n = r.int(2, 6);
+          if (!p || p[1] * n > 40) return null;
+          return q(`${raw(p[0], p[1])} ÷ ${n}`, f(p[0], p[1] * n));
+        },
+        name2: '分子を整数でわれる（約分）',
+        gen2: r => {
+          const p = proper(r, 9, 3), n = r.int(2, 6);
+          if (!p || gcd(p[0], n) === 1 || p[1] * n > 54) return null;
+          return q(`${raw(p[0], p[1])} ÷ ${n}`, f(p[0], p[1] * n));
+        } },
+      { name: '分数÷分数（約分なし）',
+        gen: r => {
+          const t = two(r, 9); if (!t) return null;
+          const [a, b, c, d] = t;
+          return gcd(a * d, b * c) === 1 && a * d <= 40 && b * c <= 40 ? q(`${raw(a, b)} ÷ ${raw(c, d)}`, raw(a * d, b * c)) : null;
+        },
+        name2: '分子も2以上',
+        gen2: r => {
+          const t = two(r, 9, 5); if (!t) return null;
+          const [a, b, c, d] = t;
+          return a >= 2 && c >= 2 && gcd(a * d, b * c) === 1 && a * d <= 63 && b * c <= 63 ? q(`${raw(a, b)} ÷ ${raw(c, d)}`, raw(a * d, b * c)) : null;
+        } },
+      { name: '約分がある／整数÷分数',
+        mix: [
+          [4, r => {   // 整数÷分数（わられる数が、分子の倍数）
+            const s = proper(r, 9), k = r.int(1, 4);
+            if (!s || s[0] * k < 2) return null;
+            return q(`${s[0] * k} ÷ ${raw(s[0], s[1])}`, s[1] * k);
+          }],
+          [6, r => {
+            const t = two(r, 9); if (!t) return null;
+            const [a, b, c, d] = t;
+            return gcd(a * d, b * c) > 1 && a * d !== b * c && a * d <= 72 && b * c <= 72 ? q(`${raw(a, b)} ÷ ${raw(c, d)}`, f(a * d, b * c)) : null;
+          }],
+        ],
+        name2: '大きく約分できる',
+        gen2: r => {
+          const t = two(r, 9, 4); if (!t) return null;
+          const [a, b, c, d] = t;
+          return gcd(a * d, b * c) >= 3 && a * d !== b * c && a * d <= 100 && b * c <= 100 ? q(`${raw(a, b)} ÷ ${raw(c, d)}`, f(a * d, b * c)) : null;
+        } },
+    ],
+  });
+
+  /* ---------- 小数のたし算（数は 100倍した整数で持つ） ---------- */
+  TG.addUnit({
+    id: 'dadd', cat: 'frac', name: '小数のたし算', note: '小数第1位・第2位', n: 20, goal: [7, 6, 4],
+    steps: [
+      { name: '小数第1位（くり上がりなし）',
+        gen: r => {
+          const ta = r.int(1, 9), tb = r.int(1, 9);
+          if (ta + tb > 9) return null;
+          const a = r.int(0, 9) * 100 + ta * 10, b = r.int(0, 9) * 100 + tb * 10;
+          return q(`${dec(a)} + ${dec(b)}`, dec(a + b));
+        },
+        name2: '整数の部分が2けた',
+        gen2: r => {
+          const ta = r.int(1, 9), tb = r.int(1, 9);
+          if (ta + tb > 9) return null;
+          const a = r.int(10, 29) * 100 + ta * 10, b = r.int(10, 29) * 100 + tb * 10;
+          return q(`${dec(a)} + ${dec(b)}`, dec(a + b));
+        } },
+      { name: '小数第1位（くり上がりあり）',
+        gen: r => {
+          const ta = r.int(1, 9), tb = r.int(1, 9);
+          if (ta + tb < 10) return null;
+          const a = r.int(0, 9) * 100 + ta * 10, b = r.int(0, 9) * 100 + tb * 10;
+          return q(`${dec(a)} + ${dec(b)}`, dec(a + b));
+        },
+        name2: '整数の部分が2けた',
+        gen2: r => {
+          const ta = r.int(1, 9), tb = r.int(1, 9), ia = r.int(5, 29), ib = r.int(5, 29);
+          if (ta + tb < 10 || (ia < 10 && ib < 10)) return null;
+          const a = ia * 100 + ta * 10, b = ib * 100 + tb * 10;
+          return q(`${dec(a)} + ${dec(b)}`, dec(a + b));
+        } },
+      { name: '小数第2位（かんたんなもの）',
+        mix: [
+          [3, r => {   // 合わせて整数になる組（0.25＋0.75 など）
+            const t = r.int(0, 8), h = r.int(1, 9);
+            const a = r.int(0, 3) * 100 + t * 10 + h, b = r.int(0, 3) * 100 + (9 - t) * 10 + (10 - h);
+            return q(`${dec(a)} + ${dec(b)}`, dec(a + b));
+          }],
+          [7, r => {   // 100分の1の位でくり上がらない
+            const ha = r.int(1, 9), hb = r.int(0, 9);
+            if (ha + hb > 9) return null;
+            const a = r.int(0, 3) * 100 + r.int(0, 9) * 10 + ha, b = r.int(0, 3) * 100 + r.int(0, 9) * 10 + hb;
+            return b ? q(`${dec(a)} + ${dec(b)}`, dec(a + b)) : null;
+          }],
+        ],
+        name2: '10分の1の位もくり上がる',
+        gen2: r => {
+          const ha = r.int(1, 9), hb = r.int(1, 9), ta = r.int(1, 9), tb = r.int(1, 9);
+          if (ha + hb > 9 || ta + tb < 10) return null;
+          const a = r.int(0, 3) * 100 + ta * 10 + ha, b = r.int(0, 3) * 100 + tb * 10 + hb;
+          return q(`${dec(a)} + ${dec(b)}`, dec(a + b));
+        } },
+    ],
+  });
+
+  /* ---------- 小数のひき算 ---------- */
+  TG.addUnit({
+    id: 'dsub', cat: 'frac', name: '小数のひき算', note: '小数第1位・第2位', n: 20, goal: [7, 5, 4],
+    steps: [
+      { name: '小数第1位（くり下がりなし）',
+        gen: r => {
+          const ia = r.int(1, 9), ib = r.int(0, ia), ta = r.int(1, 9), tb = r.int(1, ta);
+          const a = ia * 100 + ta * 10, b = ib * 100 + tb * 10;
+          return a > b ? q(`${dec(a)} − ${dec(b)}`, dec(a - b)) : null;
+        },
+        name2: '整数の部分が2けた',
+        gen2: r => {
+          const ia = r.int(12, 29), ib = r.int(10, ia), ta = r.int(1, 9), tb = r.int(1, ta);
+          const a = ia * 100 + ta * 10, b = ib * 100 + tb * 10;
+          return a > b ? q(`${dec(a)} − ${dec(b)}`, dec(a - b)) : null;
+        } },
+      { name: '小数第1位（くり下がりあり）',
+        gen: r => {
+          const ib = r.int(0, 8), ia = r.int(ib + 1, 9), tb = r.int(1, 9), ta = r.chance(0.3) ? 0 : r.int(0, tb - 1);
+          const a = ia * 100 + ta * 10, b = ib * 100 + tb * 10;
+          return q(`${dec(a)} − ${dec(b)}`, dec(a - b));
+        },
+        name2: '整数の部分が2けた',
+        gen2: r => {
+          const ib = r.int(5, 28), ia = r.int(Math.max(ib + 1, 11), 30), tb = r.int(1, 9), ta = r.chance(0.3) ? 0 : r.int(0, tb - 1);
+          const a = ia * 100 + ta * 10, b = ib * 100 + tb * 10;
+          return q(`${dec(a)} − ${dec(b)}`, dec(a - b));
+        } },
+      { name: '小数第2位（かんたんなもの）',
+        mix: [
+          [4, r => {   // 1−0.25 のように、整数から末尾が5の小数をひく
+            const ia = r.int(1, 5), a = ia * 100, b = r.int(0, ia - 1) * 100 + r.int(0, 9) * 10 + 5;
+            return q(`${dec(a)} − ${dec(b)}`, dec(a - b));
+          }],
+          [6, r => {   // どの位もくり下がらない
+            const ia = r.int(0, 3), ib = r.int(0, ia), ta = r.int(0, 9), tb = r.int(0, ta), ha = r.int(1, 9), hb = r.int(0, ha);
+            const a = ia * 100 + ta * 10 + ha, b = ib * 100 + tb * 10 + hb;
+            return b > 0 && a > b && (ib < ia || tb < ta || hb < ha) ? q(`${dec(a)} − ${dec(b)}`, dec(a - b)) : null;
+          }],
+        ],
+        name2: '10分の1の位がくり下がる',
+        gen2: r => {
+          const ib = r.int(0, 2), ia = r.int(ib + 1, 3), tb = r.int(2, 9), ta = r.int(0, tb - 1), ha = r.int(1, 9), hb = r.int(1, ha);
+          const a = ia * 100 + ta * 10 + ha, b = ib * 100 + tb * 10 + hb;
+          return q(`${dec(a)} − ${dec(b)}`, dec(a - b));
+        } },
+    ],
+  });
+})();
+
+/* ---- js/units-misc.js ---- */
+/* 単元：割合・単位の変換・時間。  種類のまざる STEP は mix（js/core.js）で、種類ごとの出る割合を決めている。
+   各 STEP は 前半（gen／mix）＋ 後半（gen2／mix2＝同じ STEP の中で少しだけむずかしい。name2 がその説明）。 */
+(function () {
+  'use strict';
+  const TG = window.TG;
+  const { dec, fracRaw: raw, frac: f } = TG;
+  const q = (pre, ans, o) => Object.assign({ pre: String(pre), eq: true, ans: String(ans) }, o);
+
+  /* ---------- 割合 ---------- */
+  // 分数→百分率（暗算でできるものだけ）
+  const FRAC_PCT = [[1, 2, 50], [1, 4, 25], [3, 4, 75], [1, 5, 20], [2, 5, 40], [3, 5, 60], [4, 5, 80], [1, 10, 10], [3, 10, 30], [7, 10, 70], [9, 10, 90], [1, 20, 5], [3, 20, 15]];
+  const BASES = [10, 20, 25, 40, 50, 60, 80, 100, 200, 250, 300, 400, 500];   // もとにする量（暗算しやすい数）
+  const PCTS = [5, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90];
+  const wari = p => `${Math.floor(p / 10)}割${p % 10 ? p % 10 + '分' : ''}`;   // 35 → 3割5分（p は10〜99）
+
+  TG.addUnit({
+    id: 'ratio', cat: 'other', name: '割合', note: '百分率・歩合・○％の計算', n: 20, goal: [7, 6, 4],
+    steps: [
+      { name: '割合のいいかえ（小数・％・割）', mix: [
+        [1, r => { const p = r.chance(0.7) ? r.int(2, 98) : r.pick([110, 120, 125, 130, 150, 175, 200]); return q(dec(p), p, { post: '%' }); }],   // 小数→％
+        [1, r => { const p = r.chance(0.8) ? r.int(2, 98) : r.pick([110, 120, 125, 150, 200]); return q(`${p} %`, dec(p)); }],                 // ％→小数
+        [1, r => { const w = r.int(1, 9), s = r.chance(0.5) ? r.int(1, 9) : 0; return q(`${w}割${s ? s + '分' : ''}`, w * 10 + s, { post: '%' }); }],   // 割→％
+        [1, r => { const p = r.int(2, 19) * 5; return p % 10 ? q(`${p} %`, `${Math.floor(p / 10)}割5分`) : q(`${p} %`, p / 10, { post: '割' }); }],   // ％→割
+        [1, r => { const [a, b, p] = r.pick(FRAC_PCT); return q(raw(a, b), p, { post: '%' }); }],                                              // 分数→％
+      ],
+        name2: 'いろいろないいかえ',
+        mix2: [
+          [1, r => { const p = r.pick([10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 5, 15]); return q(`${p} %`, f(p, 100)); }],      // ％→分数
+          [1, r => { const p = r.int(2, 19) * 5; return q(dec(p), wari(p)); }],                                                      // 小数→歩合（0.35＝3割5分）
+          [1, r => { const p = r.int(2, 19) * 5; return q(wari(p), dec(p)); }],                                                      // 歩合→小数
+          [1, r => { const p = r.pick([105, 110, 120, 125, 130, 140, 150, 175, 180, 200, 250]); return q(`${p} %`, dec(p)); }],     // 100％をこえる
+        ] },
+      { name: '○の△％（きりのいい数）', mix: [
+        [1, r => {   // ○の△割
+          const base = r.pick(BASES.filter(b => b % 10 === 0)), w = r.int(1, 9), v = base * w / 10;
+          return v <= 400 ? q(`${base} の ${w}割`, v) : null;
+        }],
+        [3, r => {   // ○の△％（100％をこえるものもふくむ）
+          const base = r.pick([20, 30, 40, 50, 60, 80, 100, 120, 150, 200, 250, 300, 400, 500, 600, 800, 1000]), p = r.pick([...PCTS, 150, 200]);
+          const v = base * p / 100;
+          return v === Math.floor(v) && v >= 1 && v <= 400 ? q(`${base} の ${p} %`, v) : null;
+        }],
+      ],
+        name2: '5％・15％・110％など',
+        gen2: r => {
+          const base = r.pick([20, 40, 60, 80, 100, 120, 160, 200, 240, 280, 300, 400, 600]), p = r.pick([5, 15, 35, 45, 55, 65, 85, 95, 110, 120, 125, 150]);
+          const v = base * p / 100;
+          return v === Math.floor(v) && v >= 1 && v <= 500 ? q(`${base} の ${p} %`, v) : null;
+        } },
+      { name: '何％？・もとにする量・割引', mix: [
+        [35, r => {   // □は○の何％
+          const base = r.pick(BASES), p = r.pick(PCTS), v = base * p / 100;
+          return v === Math.floor(v) ? q(`${v} は ${base} の`, p, { eq: false, post: '%' }) : null;
+        }],
+        [25, r => {   // もとにする量
+          const base = r.pick(BASES), p = r.pick([10, 20, 25, 30, 40, 50, 60, 75, 80]), v = base * p / 100;
+          return v === Math.floor(v) ? q('', base, { eq: false, post: `の ${p} % は ${v}` }) : null;
+        }],
+        [25, r => {   // 割引き
+          const price = r.pick([200, 300, 400, 500, 600, 800, 1000, 1200, 1500, 2000]);
+          const wari = r.chance(0.5), p = wari ? r.pick([1, 2, 3, 5]) * 10 : r.pick([10, 20, 25, 30, 50]);
+          return price * p % 100 ? null : q(`${price}円の ${wari ? p / 10 + '割' : p + ' %'}引き`, price - price * p / 100, { post: '円' });
+        }],
+        [15, r => {   // 増し
+          const base = r.pick([40, 50, 80, 100, 200, 300, 400, 500]), p = r.pick([10, 20, 25, 50]);
+          return base * p % 100 ? null : q(`${base}人の ${p} %増し`, base + base * p / 100, { post: '人' });
+        }],
+      ],
+        name2: 'ねだんの変化から割合を出す',
+        mix2: [
+          [1, r => {   // ○円→△円は、□％引き
+            const price = r.pick([200, 300, 400, 500, 600, 800, 1000, 1200, 1500, 2000]), p = r.pick([10, 20, 25, 30, 40, 50, 60, 75]);
+            return price * p % 100 ? null : q(`${price}円 → ${price - price * p / 100}円は`, p, { eq: false, post: '%引き' });
+          }],
+          [1, r => {   // □円の○割引きが△円
+            const price = r.pick([200, 300, 400, 500, 600, 800, 1000, 1200, 1500, 2000]), p = r.pick([10, 20, 25, 30, 40, 50]);
+            return price * p % 100 ? null : q('', price, { eq: false, post: `円の ${p % 10 ? p + ' %' : p / 10 + '割'}引きが ${price - price * p / 100}円` });
+          }],
+          [1, r => {   // ○人→△人は、□％増し
+            const base = r.pick([40, 50, 80, 100, 200, 300, 400]), p = r.pick([10, 20, 25, 50]);
+            return base * p % 100 ? null : q(`${base}人 → ${base + base * p / 100}人は`, p, { eq: false, post: '%増し' });
+          }],
+        ] },
+    ],
+  });
+
+  /* ---------- 単位の変換 ---------- */
+  // [大きい単位, 小さい単位, 倍率]
+  const LEN = [['km', 'm', 1000], ['m', 'cm', 100], ['cm', 'mm', 10], ['kg', 'g', 1000], ['t', 'kg', 1000], ['L', 'mL', 1000], ['L', 'dL', 10], ['dL', 'mL', 100]];
+  const AREA = [['m²', 'cm²', 10000], ['ha', 'm²', 10000], ['a', 'm²', 100], ['m³', 'L', 1000], ['L', 'cm³', 1000], ['dL', 'cm³', 100], ['m³', 'cm³', 1000000]];
+  const both = (r, big, small, k, v) => (r.chance(0.5) ? q(`${v} ${big}`, v * k, { post: small }) : q(`${v * k} ${small}`, v, { post: big }));
+
+  TG.addUnit({
+    id: 'unit', cat: 'other', name: '単位の変換', note: '長さ・重さ・かさ・面積・体積', n: 20, goal: [10, 8, 7],
+    steps: [
+      { name: '大きい単位→小さい単位',
+        gen: r => {
+          const [big, small, k] = r.pick(LEN), v = k === 10 ? r.int(2, 20) : r.int(2, 9);
+          return q(`${v} ${big}`, v * k, { post: small });
+        },
+        name2: '2つの単位をあわせる（2 m 30 cm など）',
+        gen2: r => {
+          const [big, small, k] = r.pick(LEN);
+          const a = r.int(1, 9), b = k === 10 ? r.int(1, 9) : k === 100 ? r.int(1, 19) * 5 : r.int(1, 9) * 100;   // 小さい単位の端数（k 未満）
+          return b < k ? q(`${a} ${big} ${b} ${small}`, a * k + b, { post: small }) : null;
+        } },
+      { name: '小さい単位↔大きい単位（小数）',
+        gen: r => {
+          const [big, small, k] = r.pick(LEN), t = r.int(2, 99);   // t＝大きい単位で数えた値の10倍（0.2〜9.9）
+          if (t % 10 === 0) return null;
+          const sm = t * k / 10;
+          return r.chance(0.5) ? q(`${sm} ${small}`, dec(t * 10), { post: big }) : q(`${dec(t * 10)} ${big}`, sm, { post: small });
+        },
+        name2: '小数第2位（0.35 m など）',
+        gen2: r => {
+          const [big, small, k] = r.pick(LEN.filter(l => l[2] >= 100)), h = r.int(5, 299);   // h＝大きい単位で数えた値の100倍
+          if (h % 10 === 0) return null;
+          const sm = h * k / 100;
+          return r.chance(0.5) ? q(`${sm} ${small}`, dec(h), { post: big }) : q(`${dec(h)} ${big}`, sm, { post: small });
+        } },
+      { name: '面積・体積の単位',
+        mix: [
+          [9, r => { const [big, small, k] = r.pick(AREA); return both(r, big, small, k, k === 1000000 ? r.int(1, 3) : r.int(2, 9)); }],
+          [1, r => both(r, 'mL', 'cm³', 1, r.int(2, 9))],   // 1 mL ＝ 1 cm³（同じ大きさ）。たまに出す
+        ],
+        name2: '小数がまざる',
+        gen2: r => {
+          const [big, small, k] = r.pick(AREA.filter(l => l[2] <= 10000)), t = r.int(2, 99);
+          if (t % 10 === 0) return null;
+          const sm = t * k / 10;
+          return r.chance(0.5) ? q(`${sm} ${small}`, dec(t * 10), { post: big }) : q(`${dec(t * 10)} ${big}`, sm, { post: small });
+        } },
+    ],
+  });
+
+  /* ---------- 時間 ---------- */
+  const T = (h, m) => (m ? `${h}時${m}分` : `${h}時`);              // 時刻
+  const D = min => { const h = Math.floor(min / 60), m = min % 60; return (h ? `${h}時間` : '') + (m ? `${m}分` : ''); };   // 時間の長さ
+  const MIN5 = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+
+  TG.addUnit({
+    id: 'time', cat: 'other', name: '時間', note: '時刻・単位・経過時間', n: 20, goal: [7, 6, 5],
+    steps: [
+      { name: '○分後・○分前の時刻',
+        gen: r => {
+          const start = r.int(6, 10) * 60 + r.pick(MIN5), d = r.pick([10, 15, 20, 25, 30, 35, 40, 45, 50, 70, 75, 80, 90, 100, 110, 130, 150]);
+          const dir = r.chance(0.5) ? 1 : -1, end = start + dir * d;
+          if (end < 5 * 60 || end >= 12 * 60) return null;
+          return q(`${T(Math.floor(start / 60), start % 60)}の ${D(d)}${dir > 0 ? '後' : '前'}`, T(Math.floor(end / 60), end % 60));
+        },
+        name2: '長い時間（1時間25分 など）',
+        gen2: r => {
+          const start = r.int(6, 10) * 60 + r.pick(MIN5), d = r.pick([85, 95, 105, 115, 125, 135, 145, 155, 165, 175, 185]);
+          const dir = r.chance(0.5) ? 1 : -1, end = start + dir * d;
+          if (end < 5 * 60 || end >= 13 * 60) return null;
+          return q(`${T(Math.floor(start / 60), start % 60)}の ${D(d)}${dir > 0 ? '後' : '前'}`, T(Math.floor(end / 60), end % 60));
+        } },
+      { name: '時間の単位（時・分・秒）', mix: [
+        [1, r => { const m = r.int(65, 170); return m % 60 && m % 5 === 0 ? q(`${m}分`, D(m)) : null; }],                                                       // 分→時間と分
+        [1, r => { const h = r.int(1, 3), m = r.pick([5, 10, 15, 20, 25, 30, 40, 45, 50]); return q(`${h}時間${m}分`, h * 60 + m, { post: '分' }); }],           // 時間と分→分
+        [1, r => { const s = r.pick([120, 180, 240, 300, 360, 420]); return q(`${s}秒`, s / 60, { post: '分' }); }],                                            // 秒→分
+        [1, r => { const x = r.pick([25, 50, 75, 125, 150, 225, 250]); return q(`${dec(x)}時間`, x * 60 / 100, { post: '分' }); }],                              // 小数の時間→分
+        [1, r => { const m = r.pick([15, 30, 45, 75, 90, 105, 150]); return q(`${m}分`, dec(m * 100 / 60), { post: '時間' }); }],                                // 分→小数の時間
+      ],
+        name2: '小数の時間・分と秒',
+        mix2: [
+          [1, r => { const h = r.int(1, 4), m = r.pick([15, 30, 45]); return q(`${h}時間${m}分`, dec(h * 100 + m * 100 / 60), { post: '時間' }); }],   // 1時間30分＝1.5時間
+          [1, r => { const m = r.int(35, 60) * 5; return m % 60 ? q(`${m}分`, D(m)) : null; }],                                                       // 205分＝3時間25分
+          [1, r => { const s = r.int(9, 40) * 10; return s % 60 ? q(`${s}秒`, `${Math.floor(s / 60)}分${s % 60 ? s % 60 + '秒' : ''}`) : null; }],   // 210秒＝3分30秒
+          [1, r => { const m = r.int(1, 6), s = r.int(1, 5) * 10; return q(`${m}分${s}秒`, m * 60 + s, { post: '秒' }); }],                           // 2分30秒＝150秒
+        ] },
+      { name: '経過時間（時刻の差）',
+        gen: r => {
+          const a = r.int(7, 11) * 60 + r.pick(MIN5), d = r.int(5, 50) * 5;
+          const b = a + d;
+          if (b >= 13 * 60) return null;   // 午前〜お昼すぎの時刻だけ（24時間表記は使わない）
+          return q(`${T(Math.floor(a / 60), a % 60)}〜${T(Math.floor(b / 60), b % 60)}`, D(d));
+        },
+        name2: '分がたりない（くり下がり）',
+        gen2: r => {
+          const a = r.int(6, 9) * 60 + r.pick(MIN5.slice(1)), d = r.int(13, 70) * 5, b = a + d;
+          if (b >= 13 * 60 || b % 60 >= a % 60) return null;   // 終わりの「分」が始めの「分」より小さい
+          return q(`${T(Math.floor(a / 60), a % 60)}〜${T(Math.floor(b / 60), b % 60)}`, D(d));
+        } },
+    ],
+  });
+})();
+
+/* ---- js/figs.js ---- */
+/* 図（SVG）。面積・体積の問題に添える小さな図。ひとつの図は 150×70 の枠に入る。
+   長さは図に書きこむ（図は目安で、縮尺どおりではない）。線と字は currentColor なので、画面の明るい・暗いに合う。 */
+(function () {
+  'use strict';
+  const TG = window.TG;
+  const F = (TG.figs = {});
+
+  const W = 150, H = 70;
+  const n1 = v => (Math.round(v * 10) / 10).toString();
+  const pts = a => a.map(p => n1(p[0]) + ',' + n1(p[1])).join(' ');
+  const svg = body => `<svg class="fig" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">${body}</svg>`;
+  const poly = a => `<polygon points="${pts(a)}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>`;
+  const seg = (a, b, dash) => `<line x1="${n1(a[0])}" y1="${n1(a[1])}" x2="${n1(b[0])}" y2="${n1(b[1])}" stroke="currentColor" stroke-width="${dash ? 1.2 : 1.6}" stroke-linecap="round"${dash ? ' stroke-dasharray="4 3"' : ''}/>`;
+  const tx = (x, y, s, anchor) => `<text x="${n1(x)}" y="${n1(y)}" text-anchor="${anchor || 'middle'}" font-size="12">${s}</text>`;
+  // 直角の印（角 c に、x方向 sx・y方向 sy の向きで）
+  const rt = (c, sx, sy) => `<polyline points="${n1(c[0] + 6 * sx)},${n1(c[1])} ${n1(c[0] + 6 * sx)},${n1(c[1] + 6 * sy)} ${n1(c[0])},${n1(c[1] + 6 * sy)}" fill="none" stroke="currentColor" stroke-width="1"/>`;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  // 寸法の比をなるべく保って、枠 (mw×mh) に入れる。細くなりすぎないように下限をつける
+  const fit = (w, h, mw, mh, lw, lh) => { const k = Math.min(mw / w, mh / h); return [clamp(w * k, lw || 24, mw), clamp(h * k, lh || 18, mh)]; };
+
+  /* ---------------- 平面 ---------------- */
+  F.rect = (w, h, u) => {
+    const [rw, rh] = fit(w, h, 100, 40), x = 14, y = 6;
+    return svg(poly([[x, y], [x + rw, y], [x + rw, y + rh], [x, y + rh]]) + tx(x + rw / 2, y + rh + 14, `${w}${u}`) + tx(x + rw + 6, y + rh / 2 + 4, `${h}${u}`, 'start'));
+  };
+  F.square = (a, u) => {
+    const s = 38, x = 24, y = 6;
+    return svg(poly([[x, y], [x + s, y], [x + s, y + s], [x, y + s]]) + tx(x + s / 2, y + s + 14, `${a}${u}`) + tx(x + s + 6, y + s / 2 + 4, `${a}${u}`, 'start'));
+  };
+  // 三角形：kind='right'（直角三角形）か 'acute'（高さを点線で示す）。apex は頂点の位置（0.3〜0.7）
+  F.triangle = (b, h, u, kind, apex) => {
+    const [bw, th] = fit(b, h, 100, 40, kind === 'right' ? 24 : 56), x = 14, y = 6, base = y + th;
+    if (kind === 'right') {
+      return svg(poly([[x, base], [x + bw, base], [x + bw, y]]) + rt([x + bw, base], -1, -1) + tx(x + bw / 2, base + 14, `${b}${u}`) + tx(x + bw + 6, y + th / 2 + 4, `${h}${u}`, 'start'));
+    }
+    // 高さの字は、点線のそばの、広いほうに置く（頂点が左寄りなら右、右寄りなら左、まん中なら点線の上）
+    const ax = x + bw * apex, hy = base - th * 0.45 + 4;
+    const lab = apex < 0.5 ? tx(ax - 4, hy, `${h}${u}`, 'start') : apex > 0.5 ? tx(ax + 4, hy, `${h}${u}`, 'end') : tx(ax, hy, `${h}${u}`);
+    return svg(poly([[x, base], [x + bw, base], [ax, y]]) + seg([ax, y], [ax, base], true) + rt([ax, base], 1, -1) + tx(x + bw / 2, base + 14, `${b}${u}`) + lab);
+  };
+  F.parallelogram = (b, h, u) => {
+    const k = Math.min(80 / b, 40 / h), bw = clamp(b * k, 28, 80), rh = clamp(h * k, 20, 40), s = Math.min(bw * 0.3, 22), x = 14, y = 6, base = y + rh;
+    return svg(poly([[x + s, y], [x + s + bw, y], [x + bw, base], [x, base]]) + seg([x + s, y], [x + s, base], true) + rt([x + s, base], 1, -1) + tx(x + bw / 2, base + 14, `${b}${u}`) + tx(x + s + 4, y + rh / 2 + 4, `${h}${u}`, 'start'));
+  };
+  F.trapezoid = (a, b, h, u) => {
+    const k = Math.min(100 / b, 34 / h), bw = clamp(b * k, 40, 100), tw = clamp(a * k, 20, bw - 12), rh = clamp(h * k, 20, 34), x = 14, y = 16, base = y + rh, off = (bw - tw) * 0.25;
+    return svg(poly([[x + off, y], [x + off + tw, y], [x + bw, base], [x, base]]) + seg([x + off, y], [x + off, base], true) + rt([x + off, base], 1, -1)
+      + tx(x + off + tw / 2, y - 4, `${a}${u}`) + tx(x + bw / 2, base + 14, `${b}${u}`) + tx(x + off + 4, y + rh / 2 + 4, `${h}${u}`, 'start'));
+  };
+  F.circle = (r, u) => {
+    const cx = 44, cy = 35, R = 28;
+    return svg(`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="currentColor" stroke-width="1.6"/>` + seg([cx, cy], [cx + R, cy]) + `<circle cx="${cx}" cy="${cy}" r="1.8" fill="currentColor"/>` + tx(cx + R + 6, cy + 4, `半径 ${r}${u}`, 'start'));
+  };
+
+  F.semicircle = (r, u) => {
+    const cx = 44, cy = 50, R = 30;
+    return svg(`<path d="M${cx - R},${cy} A${R},${R} 0 0 1 ${cx + R},${cy} Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>`
+      + seg([cx, cy], [cx + R, cy]) + `<circle cx="${cx}" cy="${cy}" r="1.8" fill="currentColor"/>` + tx(cx + R + 6, cy + 4, `半径 ${r}${u}`, 'start'));
+  };
+
+  /* ---------------- 立体（斜めから見た図）。見えない辺は点線 ---------------- */
+  // 点 p が凸多角形 poly の内側か
+  const inside = (p, poly_) => {
+    let s = 0;
+    for (let i = 0; i < poly_.length; i++) {
+      const a = poly_[i], b = poly_[(i + 1) % poly_.length], c = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+      if (c !== 0) { if (s && Math.sign(c) !== s) return false; s = Math.sign(c); }
+    }
+    return true;
+  };
+  // 手前の面が front（多角形）で、奥へ (dx, -dy) ずらした柱。見えない辺を点線にする
+  const prismOblique = (front, dx, dy) => {
+    const back = front.map(p => [p[0] + dx, p[1] - dy]);
+    const hid = back.map(p => inside(p, front));
+    let out = poly(front);
+    front.forEach((p, i) => {
+      const j = (i + 1) % front.length;
+      out += seg(p, back[i], hid[i]) + seg(back[i], back[j], hid[i] || hid[j]);
+    });
+    return out;
+  };
+
+  F.cuboid = (a, b, c, u) => {
+    const x = 30, dx = 16, dy = 14, fw = 38 + 26 * a / Math.max(a, b, c), fh = 18 + 10 * c / Math.max(a, b, c), yt = 8 + dy, yb = yt + fh;
+    const front = [[x, yt], [x + fw, yt], [x + fw, yb], [x, yb]];
+    return svg(prismOblique(front, dx, dy) + tx(x + fw / 2, yb + 13, `${a}${u}`) + tx(x - 4, (yt + yb) / 2 + 4, `${c}${u}`, 'end') + tx(x + fw + dx / 2 + 4, yb - dy / 2 + 12, `${b}${u}`, 'start'));
+  };
+  F.cube = (a, u) => {
+    const x = 40, s = 34, dx = 14, dy = 12, yt = 8 + dy, yb = yt + s;
+    return svg(prismOblique([[x, yt], [x + s, yt], [x + s, yb], [x, yb]], dx, dy) + tx(x + s / 2, yb + 13, `一辺 ${a}${u}`));
+  };
+  // 三角柱：手前の面が直角三角形（底辺 b・高さ h）、奥行きが柱の高さ L
+  F.triPrism = (b, h, L, u) => {
+    const x = 30, dx = 18, dy = 14, fw = 52, fh = 32, yb = 8 + dy + fh;
+    return svg(prismOblique([[x, yb], [x + fw, yb], [x, yb - fh]], dx, dy) + rt([x, yb], 1, -1) + tx(x + fw / 2, yb + 13, `${b}${u}`) + tx(x - 4, yb - fh / 2 + 4, `${h}${u}`, 'end') + tx(x + fw + dx / 2 + 4, yb - dy / 2 + 12, `${L}${u}`, 'start'));
+  };
+  // 台形柱：手前の面が台形（上底 a・下底 b・高さ h）、奥行きが柱の高さ L
+  F.trapPrism = (a, b, h, L, u) => {
+    const x = 26, dx = 14, dy = 9, bw = 58, tw = 34, fh = 38, off = 8, yt = 6 + dy, yb = yt + fh;
+    return svg(prismOblique([[x + off, yt], [x + off + tw, yt], [x + bw, yb], [x, yb]], dx, dy)
+      + seg([x + off, yt], [x + off, yb], true) + rt([x + off, yb], 1, -1)
+      + tx(x + off + tw / 2, yt + 12, `${a}${u}`) + tx(x + off + 5, yt + 31, `${h}${u}`, 'start') + tx(x + bw / 2, yb + 13, `${b}${u}`)
+      + tx(x + bw + dx / 2 + 4, yb - dy / 2 + 12, `${L}${u}`, 'start'));
+  };
+  // 底面積がわかっている柱（底面は六角形で描く）
+  F.prismBase = (S, H, u) => {
+    const cx = 58, by = 56, R = 34, ry = 11, hp = 26;
+    const base = [0, 1, 2, 3, 4, 5].map(i => [cx + R * Math.cos(i * Math.PI / 3), by + ry * Math.sin(i * Math.PI / 3)]);
+    const top = base.map(p => [p[0], p[1] - hp]);
+    let out = poly(top);
+    for (let i = 0; i < 6; i++) {
+      const front = i <= 3;   // i=0〜3 が手前側（0 と 3 が左右のはし）
+      out += seg(top[i], base[i], !front);
+      const j = (i + 1) % 6;
+      out += seg(base[i], base[j], !(i <= 2));
+    }
+    return svg(out + tx(cx, by - hp - ry - 5, `底面積 ${S}${u}²`) + tx(cx + R + 6, by - hp / 2 + 4, `高さ ${H}${u}`, 'start'));
+  };
+  // diam が true なら、半径ではなく直径を図に書く（r は半径。書く長さは 2r）
+  const rlabel = (r, u, diam) => (diam ? `直径 ${2 * r}${u}` : `半径 ${r}${u}`);
+  F.cylinder = (r, h, u, diam) => {
+    const cx = 44, rx = 26, ry = 8, ty = 14, by = 52;
+    return svg(`<ellipse cx="${cx}" cy="${ty}" rx="${rx}" ry="${ry}" fill="none" stroke="currentColor" stroke-width="1.6"/>`
+      + seg([cx - rx, ty], [cx - rx, by]) + seg([cx + rx, ty], [cx + rx, by])
+      + `<path d="M${cx - rx},${by} A${rx},${ry} 0 0 0 ${cx + rx},${by}" fill="none" stroke="currentColor" stroke-width="1.6"/>`
+      + `<path d="M${cx - rx},${by} A${rx},${ry} 0 0 1 ${cx + rx},${by}" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 3"/>`
+      + seg(diam ? [cx - rx, ty] : [cx, ty], [cx + rx, ty]) + `<circle cx="${cx}" cy="${ty}" r="1.8" fill="currentColor"/>`
+      + tx(cx + rx + 6, ty + 4, rlabel(r, u, diam), 'start') + tx(cx + rx + 6, (ty + by) / 2 + 8, `高さ ${h}${u}`, 'start'));
+  };
+  F.cone = (r, h, u, diam) => {
+    const cx = 44, rx = 26, ry = 8, ay = 6, by = 52;
+    return svg(seg([cx, ay], [cx - rx, by]) + seg([cx, ay], [cx + rx, by])
+      + `<path d="M${cx - rx},${by} A${rx},${ry} 0 0 0 ${cx + rx},${by}" fill="none" stroke="currentColor" stroke-width="1.6"/>`
+      + `<path d="M${cx - rx},${by} A${rx},${ry} 0 0 1 ${cx + rx},${by}" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 3"/>`
+      + seg([cx, ay], [cx, by], true) + seg(diam ? [cx - rx, by] : [cx, by], [cx + rx, by]) + `<circle cx="${cx}" cy="${by}" r="1.8" fill="currentColor"/>`
+      + tx(cx + rx + 6, by + 4, rlabel(r, u, diam), 'start') + tx(cx + rx + 6, (ay + by) / 2 + 2, `高さ ${h}${u}`, 'start'));
+  };
+  // 四角すい（底面 a×b の長方形）
+  F.pyramid = (a, b, h, u) => {
+    const x = 16, bw = 46, sk = 16, by = 46, ry = 9, ay = 4;
+    const BL = [x, by + ry], BR = [x + bw, by + ry], TR = [x + bw + sk, by - ry], TL = [x + sk, by - ry], ctr = [x + bw / 2 + sk / 2, by], A = [ctr[0], ay];
+    return svg(seg(A, BL) + seg(A, BR) + seg(A, TR) + seg(A, TL, true) + seg(BL, BR) + seg(BR, TR) + seg(BL, TL, true) + seg(TL, TR, true) + seg(A, ctr, true)
+      + tx(x + bw / 2, by + ry + 12, `${a}${u}`) + tx(BR[0] + sk / 2 + 5, by + 6, `${b}${u}`, 'start') + tx(TR[0] + 8, (ay + by) / 2 + 2, `高さ ${h}${u}`, 'start'));
+  };
+})();
+
+/* ---- js/units-geo.js ---- */
+/* 単元：面積・体積（図つき）。meta に寸法を残す（tools/verify.cjs が、meta から面積・体積を別に計算して答えと見比べる）。
+   各 STEP は 前半（gen／mix）＋ 後半（gen2／mix2＝同じ STEP の中で少しだけむずかしい。name2 がその説明）。
+   図つきの単元は、1セット（20問）を「前半カード・後半カード」の2枚に分けて印刷する。 */
+(function () {
+  'use strict';
+  const TG = window.TG;
+  const F = TG.figs;
+  // 図がつり合う比（細長すぎる図を作らない）
+  const ok = (a, b, max) => Math.max(a, b) / Math.min(a, b) <= max;
+  const unit = r => (r.chance(0.8) ? 'cm' : 'm');
+
+  /* ---------- 面積 ---------- */
+  const area = (shape, dims, u, fig, ans) => ({ pre: '面積', eq: true, ans: String(ans), post: `${u}²`, fig, meta: { kind: 'area', shape, dims, u } });
+
+  const rect = r => {
+    const u = unit(r), w = r.int(2, 12), h = r.int(2, 12);
+    return w !== h && ok(w, h, 2.5) && w * h <= 100 ? area('rect', [w, h], u, F.rect(w, h, u), w * h) : null;
+  };
+  const rectBig = r => {   // 一辺が10〜15
+    const u = unit(r), w = r.int(10, 15), h = r.int(3, 9);
+    return w * h <= 120 ? area('rect', [w, h], u, F.rect(w, h, u), w * h) : null;
+  };
+  const square = r => { const u = unit(r), a = r.int(2, 10); return area('square', [a], u, F.square(a, u), a * a); };
+  const triangle = r => {
+    const u = unit(r), b = r.int(2, 12), h = r.int(2, 12);
+    return ok(b, h, 2.5) && (b * h) % 2 === 0 && b * h <= 120 ? area('triangle', [b, h], u, F.triangle(b, h, u, r.chance(0.5) ? 'right' : 'acute', r.pick([0.3, 0.5, 0.7])), b * h / 2) : null;
+  };
+  const triangleBig = r => {
+    const u = unit(r), b = r.int(8, 16), h = r.int(4, 14);
+    return ok(b, h, 2.5) && (b * h) % 2 === 0 && b * h / 2 <= 90 ? area('triangle', [b, h], u, F.triangle(b, h, u, r.chance(0.5) ? 'right' : 'acute', r.pick([0.3, 0.5, 0.7])), b * h / 2) : null;
+  };
+  const parallelogram = r => {
+    const u = unit(r), b = r.int(2, 12), h = r.int(2, 12);
+    return ok(b, h, 2.5) && b * h <= 100 ? area('parallelogram', [b, h], u, F.parallelogram(b, h, u), b * h) : null;
+  };
+  const parallelogramBig = r => {
+    const u = unit(r), b = r.int(8, 16), h = r.int(4, 12);
+    return ok(b, h, 2.5) && b * h <= 150 ? area('parallelogram', [b, h], u, F.parallelogram(b, h, u), b * h) : null;
+  };
+  const trapezoid = r => {
+    const u = unit(r), a = r.int(2, 10), b = r.int(a + 1, 12), h = r.int(2, 10);
+    return (a + b) * h % 2 === 0 && ok(b, h, 3) && (a + b) * h / 2 <= 90 ? area('trapezoid', [a, b, h], u, F.trapezoid(a, b, h, u), (a + b) * h / 2) : null;
+  };
+  const trapezoidBig = r => {
+    const u = unit(r), a = r.int(3, 12), b = r.int(a + 1, 16), h = r.int(4, 12);
+    return (a + b) * h % 2 === 0 && ok(b, h, 3) && (a + b) * h / 2 <= 120 ? area('trapezoid', [a, b, h], u, F.trapezoid(a, b, h, u), (a + b) * h / 2) : null;
+  };
+  const circle = r => { const u = unit(r), rr = r.int(2, 10); return area('circle', [rr], u, F.circle(rr, u), `${rr * rr}π`); };
+  const circleBig = r => { const u = unit(r), rr = r.int(6, 12); return area('circle', [rr], u, F.circle(rr, u), `${rr * rr}π`); };
+  const semicircle = r => { const u = unit(r), rr = r.pick([2, 4, 6, 8, 10]); return area('semicircle', [rr], u, F.semicircle(rr, u), `${rr * rr / 2}π`); };
+
+  TG.addUnit({
+    id: 'area', cat: 'other', layout: 'fig', name: '面積', note: '長方形・三角形・平行四辺形・台形・円', n: 20, goal: [6, 5, 4],
+    steps: [
+      { name: '長方形・正方形', mix: [[7, rect], [3, square]], name2: '一辺が10〜15', gen2: rectBig },
+      { name: '三角形・平行四辺形', mix: [[55, triangle], [45, parallelogram]], name2: '大きい数', mix2: [[1, triangleBig], [1, parallelogramBig]] },
+      { name: '台形・円・ミックス', mix: [[45, trapezoid], [20, circle], [20, triangle], [15, parallelogram]], name2: '半円・大きい台形・円', mix2: [[1, trapezoidBig], [1, circleBig], [1, semicircle]] },
+    ],
+  });
+
+  /* ---------- 体積 ---------- */
+  const vol = (shape, dims, fig, ans) => ({ pre: '体積', eq: true, ans: String(ans), post: 'cm³', fig, meta: { kind: 'vol', shape, dims, u: 'cm' } });
+  const U = 'cm';
+
+  const cuboid = r => {
+    const a = r.int(2, 6), b = r.int(2, 6), c = r.int(2, 6);
+    return !(a === b && b === c) && a * b * c <= 120 ? vol('cuboid', [a, b, c], F.cuboid(a, b, c, U), a * b * c) : null;
+  };
+  const cuboidBig = r => {   // どれかが10。あとは小さい数
+    const a = r.int(2, 10), b = r.int(2, 10), c = r.int(2, 10);
+    return !(a === b && b === c) && Math.max(a, b, c) >= 8 && a * b * c <= 240 && a * b * c >= 100 ? vol('cuboid', [a, b, c], F.cuboid(a, b, c, U), a * b * c) : null;
+  };
+  const cube = r => { const a = r.int(2, 5); return vol('cube', [a], F.cube(a, U), a ** 3); };
+  const cubeBig = r => { const a = r.pick([6, 10]); return vol('cube', [a], F.cube(a, U), a ** 3); };
+  const triPrism = r => {
+    const b = r.int(2, 8), h = r.int(2, 8), L = r.int(2, 8);
+    return (b * h) % 2 === 0 && (b * h / 2) * L <= 120 ? vol('triPrism', [b, h, L], F.triPrism(b, h, L, U), (b * h / 2) * L) : null;
+  };
+  const triPrismBig = r => {
+    const b = r.int(4, 10), h = r.int(4, 10), L = r.int(3, 10);
+    return (b * h) % 2 === 0 && (b * h / 2) * L <= 250 ? vol('triPrism', [b, h, L], F.triPrism(b, h, L, U), (b * h / 2) * L) : null;
+  };
+  const prismBase = r => {
+    const S = r.pick([6, 8, 9, 10, 12, 15, 16, 18, 20, 24, 25, 30]), H = r.int(2, 8);
+    return S * H <= 200 ? vol('prismBase', [S, H], F.prismBase(S, H, U), S * H) : null;
+  };
+  const trapPrism = r => {
+    const a = r.int(2, 6), b = r.int(a + 1, 8), h = r.int(2, 6), L = r.int(2, 8);
+    return (a + b) * h % 2 === 0 && (a + b) * h / 2 * L <= 200 ? vol('trapPrism', [a, b, h, L], F.trapPrism(a, b, h, L, U), (a + b) * h / 2 * L) : null;
+  };
+  const cylinder = r => { const rr = r.int(2, 5), h = r.int(2, 9); return vol('cylinder', [rr, h], F.cylinder(rr, h, U), `${rr * rr * h}π`); };
+  const cylinderD = r => { const rr = r.int(2, 5), h = r.int(2, 9); return vol('cylinderD', [2 * rr, h], F.cylinder(rr, h, U, true), `${rr * rr * h}π`); };
+  const cone = r => {
+    const rr = r.int(2, 6), h = r.int(2, 9);
+    return (rr * rr * h) % 3 === 0 ? vol('cone', [rr, h], F.cone(rr, h, U), `${rr * rr * h / 3}π`) : null;
+  };
+  const coneD = r => {
+    const rr = r.int(2, 6), h = r.int(2, 12);
+    return (rr * rr * h) % 3 === 0 ? vol('coneD', [2 * rr, h], F.cone(rr, h, U, true), `${rr * rr * h / 3}π`) : null;
+  };
+  const pyramid = r => {
+    const a = r.int(2, 8), b = r.chance(0.7) ? a : r.int(2, 8), h = r.int(2, 9);
+    return (a * b * h) % 3 === 0 && a * b * h / 3 <= 150 ? vol('pyramid', [a, b, h], F.pyramid(a, b, h, U), a * b * h / 3) : null;
+  };
+  const pyramidBig = r => {
+    const a = r.int(4, 10), b = r.chance(0.6) ? a : r.int(4, 10), h = r.int(3, 12);
+    return (a * b * h) % 3 === 0 && a * b * h / 3 <= 250 ? vol('pyramid', [a, b, h], F.pyramid(a, b, h, U), a * b * h / 3) : null;
+  };
+
+  TG.addUnit({
+    id: 'volume', cat: 'other', layout: 'fig', name: '体積', note: '直方体・角柱・円柱・すい体', n: 20, goal: [5, 4, 3],
+    steps: [
+      { name: '直方体・立方体', mix: [[7, cuboid], [3, cube]], name2: '大きい直方体', mix2: [[8, cuboidBig], [2, cubeBig]] },
+      { name: '角柱（底面積×高さ）', mix: [[1, triPrism], [1, prismBase]], name2: '台形の柱・大きい三角柱', mix2: [[1, trapPrism], [1, triPrismBig]] },
+      { name: '円柱・角すい・円すい', mix: [[35, cylinder], [30, cone], [35, pyramid]], name2: '直径で出る・大きいすい体', mix2: [[1, cylinderD], [1, coneD], [1, pyramidBig]] },
+    ],
+  });
+})();
+
+/* ---- js/units-vocab.js ---- */
+/* 単元：語彙カード（ハンドブック 小3〜中3）。暗記して反射にする語彙と、毎回同じ型で処理する作法のドリル。
+   どのカードも、前半は「出す向き」・後半は「逆向き」（変換の往復。ハンドブック §7）。
+   問題には meta（種類 k と、もとの数）を残す。tools/verify.cjs が、meta から問題の文字と答えをもう一度つくって見比べる。
+   形の書き方：it(meta, 式, 答え, {post})＝「式 ＝ ［答え］ 単位」／ slot(meta, 前, 答え, 後)＝「前 ［答え］ 後」（＝なし） */
+(function () {
+  'use strict';
+  const TG = window.TG;
+  const { gcd, frac: f, fracRaw: raw, dec } = TG;
+  // 乗の字：² ³ はふつうの文字、4乗以上は上つき（^{4}）
+  const sup = e => (e === 2 ? '²' : e === 3 ? '³' : `^{${e}}`);
+  const MINUS = '−';
+  const it = (meta, pre, ans, o) => Object.assign({ pre: String(pre), eq: true, ans: String(ans), meta }, o);
+  const slot = (meta, pre, ans, post, o) => Object.assign({ pre: String(pre), eq: false, ans: String(ans), post: post || '', meta }, o);
+  // 決まった表（pool）から1つえらぶ。tuple を build に渡して、問題にする
+  const from = (pool, build) => r => build(r.pick(pool), r);
+
+  /* ================= 小3〜小4：九九の弱点・キリ番ペア・計算の作法 ================= */
+  const FACTS = [[6, 7], [7, 8], [6, 8], [4, 7], [7, 9], [25, 4], [125, 8], [15, 4], [75, 4]];
+  const factF = r => {   // 6×7 ＝ □
+    const [a, b] = r.pick(FACTS), sw = r.chance(0.5), [x, y] = sw ? [b, a] : [a, b];
+    return it({ k: 'mulfact', a: x, b: y, hide: 0 }, `${x} × ${y}`, x * y, { key: `mf0-${a}-${b}` });
+  };
+  const factR = r => {   // □ × 7 ＝ 42 ／ 6 × □ ＝ 42
+    const [a, b] = r.pick(FACTS), sw = r.chance(0.5), [x, y] = sw ? [b, a] : [a, b], h = r.chance(0.5) ? 1 : 2;
+    return h === 1 ? slot({ k: 'mulfact', a: x, b: y, hide: 1 }, '', x, `× ${y} ＝ ${x * y}`, { key: `mf1-${x}-${y}` })
+      : slot({ k: 'mulfact', a: x, b: y, hide: 2 }, `${x} ×`, y, `＝ ${x * y}`, { key: `mf2-${x}-${y}` });
+  };
+  const comp100 = r => { const n = r.int(11, 89); return n % 10 ? slot({ k: 'comp', n, N: 100 }, `${n} +`, 100 - n, '＝ 100') : null; };   // 足して100
+  const comp1000 = r => { const n = r.int(21, 199) * 5; return slot({ k: 'comp', n, N: 1000 }, `${n} +`, 1000 - n, '＝ 1000'); };   // 足して1000
+  const evenA = r => r.int(6, 49) * 2;
+  const x5 = r => { const a = evenA(r); return it({ k: 'xmul', a, m: 5 }, `${a} × 5`, a * 5); };
+  const x50 = r => { const a = evenA(r); return it({ k: 'xmul', a, m: 50 }, `${a} × 50`, a * 50); };
+  const x99 = r => { const a = r.pick([98, 99]), m = r.int(3, 9); return it({ k: 'xmul', a, m }, `${a} × ${m}`, a * m); };
+  const reord = r => {   // 25×13×4 ＝ 25×4 を先に
+    const [a, b, k] = r.chance(0.5) ? [25, 4, r.int(11, 19)] : [125, 8, r.int(3, 9)];
+    const pre = r.pick([`${a} × ${k} × ${b}`, `${b} × ${k} × ${a}`]);
+    return it({ k: 'reord', a, b, kk: k, pre }, pre, a * b * k);
+  };
+
+  TG.addUnit({
+    id: 'vkuku', cat: 'vocab', name: '九九の弱点・キリ番・計算の作法', note: '小3〜小4の語彙', n: 20, goal: [10, 8],
+    steps: [
+      { name: '九九の弱点ゾーン・キリ番ペア・足して100', mix: [[1, factF], [1, comp100]], name2: '逆から（□をもとめる）・足して1000', mix2: [[1, factR], [1, comp1000]] },
+      { name: '×5・×50（÷2をつかう）', mix: [[1, x5], [1, x50]], name2: '×99・×98／並べかえてキリ番', mix2: [[1, x99], [1, reord]] },
+    ],
+  });
+
+  /* ================= 小5〜小6：小数⇔分数 変換表 ================= */
+  const FR1 = [[1, 2, '0.5'], [1, 4, '0.25'], [3, 4, '0.75'], [1, 5, '0.2'], [2, 5, '0.4'], [3, 5, '0.6'], [4, 5, '0.8'], [1, 10, '0.1'], [3, 10, '0.3'], [7, 10, '0.7']];
+  const FR2 = [[1, 8, '0.125'], [3, 8, '0.375'], [5, 8, '0.625'], [7, 8, '0.875'], [1, 20, '0.05'], [1, 25, '0.04'], [1, 50, '0.02'], [3, 20, '0.15'], [7, 20, '0.35'], [2, 25, '0.08'], [3, 25, '0.12'], [3, 50, '0.06']];
+  const f2dF = pool => from(pool, ([n, d, s]) => it({ k: 'f2d', n, d, s, rev: 0 }, raw(n, d), s));
+  const f2dR = pool => from(pool, ([n, d, s]) => it({ k: 'f2d', n, d, s, rev: 1 }, s, raw(n, d)));
+  const REC = [[1, 3, '0.333…'], [1, 6, '0.166…'], [1, 7, '0.142857…'], [1, 9, '0.111…']];
+  const recF = from(REC, ([n, d, s]) => it({ k: 'rec', n, d, s, rev: 0 }, raw(n, d), s));
+  const recR = from(REC, ([n, d, s]) => it({ k: 'rec', n, d, s, rev: 1 }, s, raw(n, d)));
+  const DEC = [['0.5', 1, 2], ['0.25', 1, 4], ['0.75', 3, 4], ['0.2', 1, 5], ['0.4', 2, 5], ['0.6', 3, 5], ['0.8', 4, 5], ['0.125', 1, 8], ['0.375', 3, 8]];
+  const dprod = r => {   // 0.25×0.25 ＝ 1/16（分数に直すと、かんたん）
+    const [sx, nx, dx] = r.pick(DEC), [sy, ny, dy] = r.pick(DEC);
+    if (dx * dy > 40) return null;
+    return it({ k: 'dprod', x: sx, y: sy }, `${sx} × ${sy}`, f(nx * ny, dx * dy), { key: `dp-${[sx, sy].sort().join('-')}` });
+  };
+  const dfrac = r => {   // 0.75×2/5 ＝ 3/10
+    const [sx, nx, dx] = r.pick(DEC), [n, d] = r.pick([[1, 2], [1, 4], [3, 4], [1, 5], [2, 5], [3, 5], [4, 5]]);
+    return it({ k: 'dfrac', x: sx, n, d }, `${sx} × ${raw(n, d)}`, f(nx * n, dx * d));
+  };
+
+  TG.addUnit({
+    id: 'vfrac', cat: 'vocab', name: '小数⇔分数 変換表', note: '小5〜小6の語彙（最重要）', n: 20, goal: [10, 10, 7],
+    steps: [
+      { name: '1/2・1/4・1/5・1/10 の仲間', gen: f2dF(FR1), name2: '小数→分数（逆向き）', gen2: f2dR(FR1) },
+      { name: '1/8・1/20・1/25・1/50 の仲間', gen: f2dF(FR2), name2: '小数→分数（逆向き）', gen2: f2dR(FR2) },
+      { name: '循環小数のおまけ・小数×小数', mix: [[4, recF], [6, dprod]], name2: '逆向き・小数×分数', mix2: [[4, recR], [6, dfrac]] },
+    ],
+  });
+
+  /* ================= 小5〜小6：360の約数感覚 ================= */
+  const ANG = [72, 60, 45, 40, 36, 30, 90, 120, 180, 270];
+  const PCT = [18, 36, 54, 72, 90, 108, 144, 180, 216, 270, 288, 324];   // 角度÷3.6 が整数になるもの
+  const degF = from(ANG, a => slot({ k: 'deg', a, rev: 0 }, `${a}° は 360° の`, f(a, 360), ''));
+  const degR = from(ANG, a => slot({ k: 'deg', a, rev: 1 }, `360° の ${f(a, 360)} は`, a, '°'));
+  const pctF = from(PCT, a => slot({ k: 'degp', a, rev: 0 }, `${a}° は 360° の`, a * 10 / 36, '%'));
+  const pctR = from(PCT, a => slot({ k: 'degp', a, rev: 1 }, `360° の ${a * 10 / 36} % は`, a, '°'));
+
+  TG.addUnit({
+    id: 'v360', cat: 'vocab', name: '360の約数感覚（角度）', note: '小5〜小6の語彙', n: 20, goal: [10, 8],
+    steps: [
+      { name: '角度→分数（360を約分）', gen: degF, name2: '分数→角度（逆向き）', gen2: degR },
+      { name: '円グラフ・おうぎ形（％と角度）', gen: pctF, name2: '％→角度（逆向き）', gen2: pctR },
+    ],
+  });
+
+  /* ================= 小5〜小6：時間⇔分数・単位換算 ================= */
+  const TM = [15, 20, 45, 12, 6, 30, 10, 40, 24, 36];
+  const hours = m => (m === 6 ? '0.1' : f(m, 60));
+  const SPD = [18, 36, 54, 72, 90, 108];   // 時速 km（÷3.6 で秒速 m が整数）
+  const UNF = [['L', 'mL', 1000], ['L', 'cm³', 1000], ['m²', 'cm²', 10000], ['ha', 'm²', 10000]];
+  const tmF = from(TM, m => it({ k: 'tm', m, rev: 0 }, `${m}分`, hours(m), { post: '時間' }));
+  const tmR = from(TM, m => it({ k: 'tm', m, rev: 1 }, `${hours(m)}時間`, m, { post: '分' }));
+  const spdF = from(SPD, kmh => slot({ k: 'spd', kmh, rev: 0 }, `時速 ${kmh} km ＝ 秒速`, kmh * 5 / 18, 'm'));
+  const spdR = from(SPD, kmh => slot({ k: 'spd', kmh, rev: 1 }, `秒速 ${kmh * 5 / 18} m ＝ 時速`, kmh, 'km'));
+  const unF = from(UNF, ([a, b, fac]) => it({ k: 'unf', a, b, fac, rev: 0 }, `1 ${a}`, fac, { post: b }));
+  const unR = from(UNF, ([a, b, fac]) => it({ k: 'unf', a, b, fac, rev: 1 }, `${fac} ${b}`, 1, { post: a }));
+
+  TG.addUnit({
+    id: 'vtime', cat: 'vocab', name: '時間と単位の語彙', note: '小5〜小6の語彙', n: 20, goal: [10, 8],
+    steps: [
+      { name: '時間⇔分数（15分＝1/4時間 など）', gen: tmF, name2: '分数の時間→分（逆向き）', gen2: tmR },
+      { name: '速さ（時速→秒速）・単位換算', mix: [[6, spdF], [4, unF]], name2: '逆向き（秒速→時速など）', mix2: [[6, spdR], [4, unR]] },
+    ],
+  });
+
+  /* ================= 小5〜小6：3.14の段 ================= */
+  const PI_K = [2, 3, 4, 5, 6, 8, 9, 10, 16, 25];
+  const PI_T = [5, 6, 8, 9, 16, 25];          // 3.14×（この数）が答えになる、たし算の合計
+  const PI_D = [2, 3, 4, 5, 6, 8, 9, 16];     // ひき算の答え（段にある数）
+  const piF = from(PI_K, k => it({ k: 'pi', n: k, rev: 0 }, `3.14 × ${k}`, dec(314 * k)));
+  const piR = from(PI_K, k => slot({ k: 'pi', n: k, rev: 1 }, '3.14 ×', k, `＝ ${dec(314 * k)}`));
+  const piSum = r => {   // 3.14×7＋3.14×9 ＝ 3.14×16（くくる）
+    const T = r.pick(PI_T), a = r.int(1, T - 1), b = T - a;
+    return it({ k: 'pi2', a, b, op: '+' }, `3.14 × ${a} + 3.14 × ${b}`, dec(314 * T));
+  };
+  const piDiff = r => {   // 3.14×25−3.14×9 ＝ 3.14×16
+    const T = r.pick([9, 16, 25, 8, 6, 10, 12]), d = r.pick(PI_D);
+    return d < T ? it({ k: 'pi2', a: T, b: T - d, op: '−' }, `3.14 × ${T} − 3.14 × ${T - d}`, dec(314 * d)) : null;
+  };
+
+  TG.addUnit({
+    id: 'vpi', cat: 'vocab', name: '3.14の段', note: '小5〜小6の語彙', n: 20, goal: [10, 8],
+    steps: [
+      { name: '3.14×□ の答え', gen: piF, name2: '3.14×□＝◯ の□（逆向き）', gen2: piR },
+      { name: '3.14は最後に1回だけ（くくる）', gen: piSum, name2: 'ひき算でくくる', gen2: piDiff },
+    ],
+  });
+
+  /* ================= 中1〜中3：平方数・べき乗 ================= */
+  const sqF = pool => from(pool, n => it({ k: 'sq', n, rev: 0 }, `${n}${sup(2)}`, n * n));
+  const sqR = pool => from(pool, n => it({ k: 'sq', n, rev: 1 }, `√${n * n}`, n));
+  const R1 = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20], R2 = [11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25];
+
+  TG.addUnit({
+    id: 'vsq', cat: 'vocab', name: '平方数（11〜25）', note: '中1〜中3の語彙', n: 20, goal: [10, 10],
+    steps: [
+      { name: '11²〜20²', gen: sqF(R1), name2: '√ → 数（逆向き）', gen2: sqR(R1) },
+      { name: '11²〜25²（20〜25で貴族）', gen: sqF(R2), name2: '√ → 数（逆向き）', gen2: sqR(R2) },
+    ],
+  });
+
+  const POW1 = [2, 3, 4, 5, 6, 7, 8, 9, 10].map(e => [2, e]);
+  const POW2 = [[3, 2], [3, 3], [3, 4], [3, 5], [5, 2], [5, 3], [5, 4], [4, 3], [6, 3], [7, 3], [8, 3], [9, 3], [10, 3]];
+  const powF = pool => from(pool, ([b, e]) => it({ k: 'pw', b, e, rev: 0 }, `${b}${sup(e)}`, b ** e));
+  const powR = pool => from(pool, ([b, e]) => (e === 3
+    ? slot({ k: 'pw', b, e, rev: 1 }, '', b, `³ ＝ ${b ** e}`)               // □³ ＝ 343
+    : slot({ k: 'pw', b, e, rev: 1 }, `${b} の`, e, `乗 ＝ ${b ** e}`)));      // 2 の □ 乗 ＝ 128
+
+  TG.addUnit({
+    id: 'vpow', cat: 'vocab', name: 'べき乗・立方数', note: '中1〜中3の語彙', n: 20, goal: [9, 9],
+    steps: [
+      { name: '2のべき（2²〜2¹⁰）', n: 18, gen: powF(POW1), name2: '何乗か？（逆向き）', gen2: powR(POW1) },
+      { name: '3・5のべき・立方数', gen: powF(POW2), name2: '何乗か？／□³（逆向き）', gen2: powR(POW2) },
+    ],
+  });
+
+  /* ================= 中1〜中3：平方根 ================= */
+  const RT = [[2, '1.41421356'], [3, '1.7320508'], [5, '2.2360679'], [6, '2.449'], [8, '2.83'], [10, '3.16']];
+  const rtF = from(RT, ([n, s]) => slot({ k: 'rt', n, s, rev: 0 }, `√${n} ≒`, s, ''));
+  const rtR = from(RT, ([n, s]) => slot({ k: 'rt', n, s, rev: 1 }, '√', n, `≒ ${s}`));
+  const sqrtF = r => {   // √48 ＝ 4√3
+    const a = r.int(2, 7), b = r.pick([2, 3, 5, 6, 7]);
+    return a * a * b <= 200 ? it({ k: 'rts', a, b, rev: 0 }, `√${a * a * b}`, `${a}√${b}`) : null;
+  };
+  const sqrtR = r => {   // 4√3 ＝ √48
+    const a = r.int(2, 9), b = r.pick([2, 3, 5, 6, 7]);
+    return it({ k: 'rts', a, b, rev: 1 }, `${a}√${b}`, `√${a * a * b}`);
+  };
+
+  TG.addUnit({
+    id: 'vroot', cat: 'vocab', name: '平方根の語彙と作法', note: '中1〜中3の語彙', n: 20, goal: [6, 8],
+    steps: [
+      { name: '近似値（√2・√3・√5 と その仲間）', n: 12, gen: rtF, name2: '近似値→√（逆向き）', gen2: rtR },
+      { name: '√の中の平方数を見つける', gen: sqrtF, name2: 'a√b → √（逆向き）', gen2: sqrtR },
+    ],
+  });
+
+  /* ================= 中1〜中3：素数っぽい合成数・倍数判定 ================= */
+  const FAKE = [[51, 3, 17], [57, 3, 19], [87, 3, 29], [91, 7, 13], [119, 7, 17], [133, 7, 19], [143, 11, 13], [187, 11, 17], [209, 11, 19], [221, 13, 17]];
+  const compF = from(FAKE, ([n, p, q]) => it({ k: 'fake', n, p, q, rev: 0 }, `${n}`, `${p} × ${q}`));
+  const compR = from(FAKE, ([n, p, q]) => it({ k: 'fake', n, p, q, rev: 1 }, `${p} × ${q}`, n));
+  const PR_LO = [53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 31, 37, 41, 43, 47], CP_LO = [51, 57, 87, 91, 93, 77, 69, 39, 49, 33];
+  const PR_HI = [101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229];
+  const CP_HI = [119, 133, 143, 187, 209, 221, 121, 169, 161, 203, 217, 111, 117, 123, 129, 141, 147, 153];
+  const isPrime = n => { for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return n > 1; };
+  const isPrimeQ = (pr, cp) => r => { const n = r.pick(r.chance(0.5) ? pr : cp); return slot({ k: 'isprime', n }, `${n} は素数？`, isPrime(n) ? '○' : '×', ''); };
+  const multQ = ds => r => {
+    const d = r.pick(ds), big = d >= 4 ? 99999 : 9999;
+    const N = r.chance(0.5) ? d * r.int(Math.ceil(100 / d), Math.floor(big / d)) : r.int(100, big);
+    return slot({ k: 'mult', N, d }, `${N} は ${d} の倍数？`, N % d === 0 ? '○' : '×', '');
+  };
+
+  TG.addUnit({
+    id: 'vcomp', cat: 'vocab', name: '素数っぽい合成数・倍数判定', note: '中1〜中3の語彙', n: 20, goal: [10, 10, 9],
+    steps: [
+      { name: '引っかけ合成数（91＝7×13 など）', gen: compF, name2: '積→もとの数（逆向き）', gen2: compR },
+      { name: '素数かどうか（○×）', gen: isPrimeQ(PR_LO, CP_LO), name2: '100〜229の数', gen2: isPrimeQ(PR_HI, CP_HI) },
+      { name: '倍数判定（3・9：各位の和）', gen: multQ([3, 9]), name2: '4（下2桁）・8（下3桁）', gen2: multQ([4, 8]) },
+    ],
+  });
+
+  /* ================= 中1〜中3：有名直角三角形 ================= */
+  const T1 = [[3, 4, 5], [5, 12, 13]], T2 = [[3, 4, 5], [5, 12, 13], [8, 15, 17], [7, 24, 25]];
+  const triF = trips => r => {   // 直角をはさむ2辺 → 斜辺
+    const [a, b, c] = r.pick(trips), m = r.int(1, trips === T1 && c === 13 ? 3 : 4), sw = r.chance(0.5);
+    const [x, y] = sw ? [b * m, a * m] : [a * m, b * m];
+    return c * m <= 52 ? it({ k: 'tri', a: x, b: y, c: c * m, ask: 'hyp' }, `直角をはさむ辺 ${x}・${y} の斜辺`, c * m) : null;
+  };
+  const triR = trips => r => {   // 斜辺と一辺 → もう一辺
+    const [a, b, c] = r.pick(trips), m = r.int(1, 3), sw = r.chance(0.5);
+    const [x, y] = sw ? [b * m, a * m] : [a * m, b * m];
+    return c * m <= 52 ? it({ k: 'tri', a: x, b: y, c: c * m, ask: 'leg' }, `斜辺 ${c * m}・一辺 ${x} のもう一辺`, y) : null;
+  };
+  // 45°定規＝1:1:√2（直角二等辺三角形）、30°定規＝1:2:√3（30°・60°・90°）
+  const jogiF = r => {   // 斜辺をもとめる
+    const a = r.int(2, 9);
+    return r.chance(0.5) ? it({ k: 'jogi', t: 'iso', a, ask: 'hyp' }, `45°定規 等辺 ${a} の斜辺`, `${a}√2`)
+      : it({ k: 'jogi', t: '30', a, ask: 'hyp' }, `30°定規 短辺 ${a} の斜辺`, 2 * a);
+  };
+  const jogiR = r => {   // 逆向き：斜辺→等辺／短辺→長辺
+    const a = r.int(2, 9);
+    return r.chance(0.5) ? it({ k: 'jogi', t: 'iso', a, ask: 'leg' }, `45°定規 斜辺 ${a}√2 の等辺`, a)
+      : it({ k: 'jogi', t: '30', a, ask: 'leg' }, `30°定規 短辺 ${a} の長辺`, `${a}√3`);
+  };
+
+  TG.addUnit({
+    id: 'vtri', cat: 'vocab', name: '有名直角三角形', note: '中1〜中3の語彙', n: 20, goal: [8, 8, 8],
+    steps: [
+      { name: '3:4:5 と 5:12:13（2倍・3倍…）', gen: triF(T1), name2: '斜辺と一辺→もう一辺', gen2: triR(T1) },
+      { name: '8:15:17・7:24:25もまぜる', gen: triF(T2), name2: '斜辺と一辺→もう一辺', gen2: triR(T2) },
+      { name: '三角定規（45°＝1:1:√2、30°＝1:2:√3）', gen: jogiF, name2: '逆向き・長いほうの辺', gen2: jogiR },
+    ],
+  });
+
+  /* ================= 作法ドリル（小5〜中3） ================= */
+  const div05 = r => { const n = r.int(3, 30); return it({ k: 'divd', n, d: '0.5' }, `${n} ÷ 0.5`, n * 2); };
+  const div025 = r => { const n = r.int(3, 30); return it({ k: 'divd', n, d: '0.25' }, `${n} ÷ 0.25`, n * 4); };
+  const divFr = r => {   // 整数 ÷ 1/2・1/4・1/3（÷分数 ＝ ×逆数）
+    const [n, d] = r.pick([[1, 2], [1, 4], [1, 3]]), a = r.int(2, 20);
+    return it({ k: 'divf', a, n, d }, `${a} ÷ ${raw(n, d)}`, a * d);
+  };
+  const SUBX = [`x${sup(2)}`, `${MINUS}x${sup(2)}`, `(${MINUS}x)${sup(2)}`, `2x${sup(2)}`, `${MINUS}2x${sup(2)}`, `x${sup(3)}`, `${MINUS}x${sup(3)}`];
+  const subx = r => {   // x＝−3 のとき x² ＝ 9、−x² ＝ −9
+    const x = -r.int(2, 6), ex = r.pick(SUBX), v = { 0: x * x, 1: -(x * x), 2: x * x, 3: 2 * x * x, 4: -2 * x * x, 5: x ** 3, 6: -(x ** 3) }[SUBX.indexOf(ex)];
+    return it({ k: 'subx', x, ex }, `x ＝ ${MINUS}${-x} のとき、${ex}`, v < 0 ? `${MINUS}${-v}` : v);
+  };
+  const signed = n => (n < 0 ? `${MINUS}${-n}` : String(n));
+  const dist = r => {   // −2(x−3) ＝ −2x＋6
+    const c = r.pick([2, 3, 4, 5, 6, 7, 8, 9, -2, -3, -4, -5, -6, -7, -8, -9]), d = r.pick([1, 2, 3, 4, 5, 6, 7, 8, 9, -1, -2, -3, -4, -5, -6, -7, -8, -9]);
+    const k = c * d;
+    return it({ k: 'dist', c, d }, `${c < 0 ? MINUS : ''}${Math.abs(c)}(x ${d < 0 ? MINUS : '+'} ${Math.abs(d)})`, `${signed(c)}x ${k < 0 ? MINUS : '+'} ${Math.abs(k)}`);
+  };
+  const recinv = r => {   // 1÷(1/4)＝4、1÷(2/3)＝3/2
+    const [a, b] = r.pick([[1, 2], [1, 3], [1, 4], [1, 5], [2, 3], [3, 4], [2, 5], [3, 5], [4, 5], [3, 2], [5, 3], [4, 3]]);
+    return it({ k: 'recinv', a, b }, `1 ÷ ${raw(a, b)}`, f(b, a));
+  };
+
+  TG.addUnit({
+    id: 'vrule', cat: 'vocab', name: '作法ドリル（÷0.5・代入・分配）', note: '小5〜中3の作法', n: 20, goal: [8, 7],
+    steps: [
+      { name: '÷0.5・÷0.25（わると増える）', mix: [[1, div05], [1, div025]], name2: '小数×小数（分数に直す）・÷分数', mix2: [[1, dprod], [1, divFr]] },
+      { name: '代入（括弧）・−の分配・逆数の逆数', mix: [[1, subx]], name2: '−の分配・逆数の逆数', mix2: [[1, dist], [1, recinv]] },
+    ],
+  });
+})();
+
+/* ---- js/handbook.js ---- */
+/* 「数学の単語帳 — 計算効率ハンドブック v2」のうち、小3〜中3の部分（§0〜§3）と使い方（§7）。読むページ（#/book）に出す。
+   高校基礎・入試編（§4〜§6）は、今回は入れていない。
+   block：{ kind:'vocab'（暗記して反射にする）| 'rule'（毎回同じ型で処理する習慣）, title, html, memo（先生メモ）, deck（練習できる語彙カードの単元 id）, step } */
+(function () {
+  'use strict';
+  const TG = window.TG;
+  TG.book = {
+    title: '数学の単語帳 — 計算効率ハンドブック',
+    version: 'v2（小3〜中3）',
+    intro: `<p><b>思想</b>：英単語と同じで、数学にも「考えずに反射で出てくるべき語彙」がある。</p>
+      <ul>
+        <li><b>【語彙】</b> … 暗記して反射にする数値・対応表（例：2<sup>10</sup>=1024）</li>
+        <li><b>【作法】</b> … 毎回同じ型で処理する計算習慣（例：分数の掛け算は約分が先）</li>
+        <li><b>【感覚】</b> … 問題を見た瞬間に働く方針選択の勘（例：「和と積を見たら対称式」）※高校・入試編で出てくる</li>
+      </ul>
+      <p>「先生メモ」は、進学校の教師が現場で感じる、生徒の困り感。学年は「初出」であり、上の学年で反射になっていなければ戻ってよい。</p>`,
+    sections: [
+      {
+        id: 's0', title: '0. 全学年共通の三大作法', grade: '全学年',
+        blocks: [
+          { kind: 'rule', title: '三大作法',
+            html: `<ol>
+              <li><b>計算する前に、全体を1秒眺める。</b>約分・並べ替え・分配（くくり出し）・置き換えのチャンスを探してから手を動かす。</li>
+              <li><b>概算で検算する。</b>桁数と一の位、答えの範囲（確率なら0〜1）だけでも確認する癖。</li>
+              <li><b>「＝」は縦に揃えて書く。</b>計算ミスの多くは「答案が汚くて自分の字を読み違える」ことから起きる。</li>
+            </ol>`,
+            memo: '計算力の差は「速さ」ではなく「手を動かす前に見る量」の差。速い生徒ほど、実は書く前に長く見ている。' },
+        ],
+      },
+      {
+        id: 's1', title: '1. 小3〜小4：整数の語彙', grade: '小3〜小4',
+        blocks: [
+          { kind: 'vocab', title: '九九の弱点ゾーン', deck: 'vkuku', step: 1,
+            html: `<ul class="flow"><li>6×7=42</li><li>7×8=56</li><li>6×8=48</li><li>4×7=28</li><li>7×9=63</li></ul>`,
+            memo: '九九全体ではなく、この5〜6個だけが中3になっても遅い。因数分解のつまずきの根がここにある。' },
+          { kind: 'vocab', title: '相性のいいペア（キリ番を作る組）', deck: 'vkuku', step: 1,
+            html: `<table><thead><tr><th>反射</th><th>使い所</th></tr></thead><tbody>
+              <tr><td>25×4=100</td><td>25や4を見たら相方を探す</td></tr>
+              <tr><td>125×8=1000</td><td>8×125系</td></tr>
+              <tr><td>15×4=60 / 75×4=300</td><td>時間・角度計算</td></tr>
+              <tr><td>足して100のペア（37+63 など）</td><td>補数感覚。暗算の土台</td></tr></tbody></table>` },
+          { kind: 'rule', title: '作法', deck: 'vkuku', step: 2,
+            html: `<ul>
+              <li><b>×5 は ×10÷2</b>（48×5 = 480÷2 = 240）。×50 は ×100÷2。</li>
+              <li><b>×99, ×98 は分配</b>（98×7 = 700−14 = 686）。</li>
+              <li><b>たし算・かけ算は並べ替えてよい</b>（25×13×4 → 25×4 を先に）。</li></ul>`,
+            memo: '「左から順に計算しなければいけない」という思い込みが強い。「並べ替えは合法」と明示的に許可すると計算が変わる。' },
+        ],
+      },
+      {
+        id: 's2', title: '2. 小5〜小6：小数・分数・割合の語彙', grade: '小5〜小6',
+        blocks: [
+          { kind: 'vocab', title: '小数⇔分数 変換表（最重要）', deck: 'vfrac', step: 1,
+            html: `<div class="two"><table><thead><tr><th>分数</th><th>小数</th></tr></thead><tbody>
+                <tr><td>1/2</td><td>0.5</td></tr><tr><td>1/4</td><td>0.25</td></tr><tr><td>3/4</td><td>0.75</td></tr>
+                <tr><td>1/5</td><td>0.2</td></tr><tr><td>2/5</td><td>0.4</td></tr><tr><td>3/5</td><td>0.6</td></tr><tr><td>4/5</td><td>0.8</td></tr></tbody></table>
+              <table><thead><tr><th>分数</th><th>小数</th></tr></thead><tbody>
+                <tr><td>1/8</td><td>0.125</td></tr><tr><td>3/8</td><td>0.375</td></tr><tr><td>5/8</td><td>0.625</td></tr><tr><td>7/8</td><td>0.875</td></tr>
+                <tr><td>1/20</td><td>0.05</td></tr><tr><td>1/25</td><td>0.04</td></tr><tr><td>1/50</td><td>0.02</td></tr></tbody></table></div>
+              <p>おまけ：1/3=0.333…　1/6=0.166…　<b>1/7=0.142857…（142857が循環）</b>　1/9=0.111…</p>`,
+            memo: 'この表が反射の生徒は 0.25×0.25 を 1/16 と即答する。なっていない生徒は高3でも小数の筆算をする。費用対効果が最も高い暗記項目。' },
+          { kind: 'vocab', title: '360の約数感覚（角度・割合・円グラフ）', deck: 'v360', step: 1,
+            html: `<ul class="flow"><li>72/360=1/5</li><li>60/360=1/6</li><li>45/360=1/8</li><li>40/360=1/9</li><li>36/360=1/10</li><li>30/360=1/12</li></ul>`,
+            memo: '円グラフ・おうぎ形・確率まで一生使う。「360を見たら約分」の反射。' },
+          { kind: 'vocab', title: '時間⇔分数・単位換算', deck: 'vtime', step: 1,
+            html: `<ul>
+              <li>15分=1/4時間　20分=1/3時間　45分=3/4時間　12分=1/5時間　6分=0.1時間</li>
+              <li>時速36km＝秒速10m（÷3.6 の代表例として1つ暗記）</li>
+              <li>1L=1000mL=1000cm³　1m²=10000cm²　1ha=10000m²</li></ul>` },
+          { kind: 'vocab', title: '3.14の段', deck: 'vpi', step: 1,
+            html: `<ul class="flow"><li>×2=6.28</li><li>×3=9.42</li><li>×4=12.56</li><li>×5=15.7</li><li>×6=18.84</li><li>×8=25.12</li><li>×9=28.26</li><li>×16=50.24</li><li>×25=78.5</li></ul>` },
+          { kind: 'rule', title: '作法', deck: 'vrule', step: 1,
+            html: `<ul>
+              <li><b>分数の掛け算は、必ず約分を先にしてから計算する。</b></li>
+              <li><b>小数の乗除は分数に直せないか先に考える</b>（0.75×0.4 = 3/4×2/5 = 3/10）。</li>
+              <li><b>÷0.5 は ×2、÷0.25 は ×4。</b>（「割ると増える」ことへの違和感をここで解消しておく）</li>
+              <li><b>わり算が続くときは分数で書いて、まとめて約分。</b></li>
+              <li><b>3.14 は最後に1回だけ掛ける</b>（複合図形は 3.14×(16−4) と先にくくる）。</li></ul>`,
+            memo: '「÷小数・÷分数で数が大きくなる」を気持ち悪いまま放置した生徒は、高校で割合・確率・濃度すべてに不安を抱える。ここは急がず身体化させたい。' },
+        ],
+      },
+      {
+        id: 's3', title: '3. 中1〜中3：代数と根号の語彙', grade: '中1〜中3',
+        blocks: [
+          { kind: 'vocab', title: '平方数（11〜19は必須、20〜25で貴族）', deck: 'vsq', step: 1,
+            html: `<p>121, 144, 169, 196, 225, 256, 289, 324, 361 ／ 441, 484, 529, 576, 625</p>`,
+            memo: '語彙にあると √169・因数分解・三平方・解の吟味がすべて速い。ないと √169 で素因数分解を始める。' },
+          { kind: 'vocab', title: 'べき乗', deck: 'vpow', step: 1,
+            html: `<ul>
+              <li>2のべき：2, 4, 8, 16, 32, 64, 128, 256, 512, <b>1024（=2<sup>10</sup>）</b></li>
+              <li>3のべき：3, 9, 27, 81, 243　　5のべき：5, 25, 125, 625</li>
+              <li>立方数：1, 8, 27, 64, 125, 216, 343, 512, 729, 1000</li></ul>` },
+          { kind: 'vocab', title: '平方根の近似値（語呂ごと）', deck: 'vroot', step: 1,
+            html: `<ul>
+              <li>√2≒1.41421356（一夜一夜に人見頃）　√3≒1.7320508（人並みに奢れや）　√5≒2.2360679（富士山麓オウム鳴く）</li>
+              <li>派生：√6=√2√3≒2.449　√8=2√2≒2.83　√10≒3.16</li></ul>` },
+          { kind: 'vocab', title: '素数っぽい顔をした合成数（引っかけ番付）', deck: 'vcomp', step: 1,
+            html: `<ul>
+              <li>51=3×17　57=3×19　87=3×29　<b>91=7×13</b>　119=7×17　133=7×19　143=11×13　187=11×17　209=11×19　221=13×17</li>
+              <li>セットで：倍数判定法（各位の和→3・9、下2桁→4、下3桁→8）</li></ul>`,
+            memo: '91=7×13 は中3の因数分解から大学入試の整数問題まで出続ける横綱。' },
+          { kind: 'vocab', title: '有名直角三角形', deck: 'vtri', step: 1,
+            html: `<ul><li>3:4:5　5:12:13　8:15:17　7:24:25　／　三角定規 1:1:√2　1:2:√3</li></ul>` },
+          { kind: 'rule', title: '作法', deck: 'vrule', step: 2,
+            html: `<ul>
+              <li><b>√の中に平方数を見つける反射</b>：√48 → √(16×3) = 4√3。</li>
+              <li><b>因数分解は「共通因数→公式」の順。</b></li>
+              <li><b>代入は括弧をつけてから</b>：x=−3 なら (−3)²。</li>
+              <li><b>−の分配は全員に配る</b>：−2(x−3) = −2x+6。</li>
+              <li><b>繁分数の入口</b>：÷分数は×逆数。<b>1/(1/4) = 4</b> を「逆数の逆数」として即答できるか。</li>
+              <li>3.14の段は卒業し、<b>πは文字として最後まで残す</b>（小学校からの作法切り替えを明示）。</li></ul>`,
+            memo: '代入の括弧：符号ミスの過半数はここ。' },
+        ],
+      },
+    ],
+    usage: `<ul>
+      <li>単語帳なので、<b>単元の前ではなく日常の帯時間で回す</b>（英単語テストと同じ運用）。</li>
+      <li>テストは「変換の往復」：0.375→3/8 だけでなく 3/8→0.375 も。この形を見たら？→第一手を答える形式のカードにもできる。
+        <br>→ この単語帳の語彙カードは、<b>前半が一方向、後半が逆向き</b>（往復）になっている。</li>
+      <li>生徒への伝え方：「暗記の押し付けではなく、<b>考える体力を高級な問題のために温存する技術</b>」。語彙が反射になるほど、ワーキングメモリが思考に使える。</li></ul>`,
+    later: '高校基礎（三角比・対数・弧度法・階乗と組合せ）、大学入試編（§5）、入試の検算五種（§6）は、今回は入れていません。',
+  };
+})();
+
+/* ---- js/app.js ---- */
+/* tangocho：計算単語帳の画面。  ホーム → 単元（STEP とセットをえらぶ）→ 1分トレーニング／印刷シート。
+   場所は URL の # で決まる（そのまま共有・ブックマークできる）：
+     #/                         ホーム
+     #/u/<単元>                  単元（STEP・セットをえらぶ）
+     #/u/<単元>/<STEP>/<セット>    1分トレーニング
+     #/sheet?mode=pair&u=all&step=all&from=1&to=1   印刷シート（mode：q＝問題だけ／qa＝問題と答え／pair＝両面） */
+(function () {
+  'use strict';
+  const TG = window.TG;
+  const $app = document.getElementById('app');
+  const { esc, html: h } = TG;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const SECONDS = 60;
+  const ART = !!window.TG_ARTIFACT;   // Claude のアーティファクトとして開いたとき：印刷ダイアログは開けないので、印刷のボタンは出さない
+
+  /* ---------------- 記録（このブラウザの中だけ。使えないときは、開いているあいだだけ） ---------------- */
+  const KEY = 'tangocho.v1';
+  let mem = {};
+  const store = {
+    read() { try { return Object.assign({}, JSON.parse(localStorage.getItem(KEY)) || {}, mem); } catch (e) { return Object.assign({}, mem); } },
+    write(k, v) { mem[k] = v; try { localStorage.setItem(KEY, JSON.stringify(store.read())); } catch (e) { /* 使えなくても動く */ } },
+  };
+  const bestOf = (uid, step) => store.read()['best:' + uid + ':' + step] | 0;
+  const saveBest = (uid, step, n) => { if (n > bestOf(uid, step)) store.write('best:' + uid + ':' + step, n); };
+  const passed = (u, step) => bestOf(u.id, step) >= TG.goalOf(u, step);
+  const soundOn = () => store.read().sound !== 0;
+
+  /* ---------------- 部品 ---------------- */
+  // 1問ぶんの「式 ＝ 答え 単位」。showAns が false なら、答えの欄はあけておく
+  function qLine(it, showAns) {
+    const pre = it.pre ? `<span class="pre">${h(it.pre)}</span>` : '';
+    const eq = it.eq ? '<span class="eq">＝</span>' : '';
+    // 分数の答えは、下線のかわりに分数の枠（棒だけ）。書く場所になる
+    const frac = /^\{\d+\/\d+\}$/.test(it.ans);
+    const ans = frac ? `<span class="slot sf"><span class="a">${showAns ? h(it.ans) : '<span class="fr bl"><span></span><span></span></span>'}</span></span>`
+      : `<span class="slot"><span class="a">${showAns ? h(it.ans) : ''}</span></span>`;
+    const post = it.post ? `<span class="po">${h(it.post)}</span>` : '';
+    return pre + eq + ans + post;
+  }
+  // 字の長さに合わせて、紙の上の字の大きさをかえる（長い式は少し小さく）
+  function sizeClass(items) {
+    const len = it => (it.pre + it.post + it.ans).replace(/\{\d+\/\d+\}/g, 'xx').length + (it.eq ? 2 : 0);
+    const m = Math.max(...items.map(len));
+    const size = m <= 11 ? 'fs-l' : m <= 18 ? 'fs-m' : 'fs-s';
+    return items.some(it => /\{/.test(it.pre + it.ans)) && size === 'fs-l' ? 'fs-m fr-card' : size + (items.some(it => /\{/.test(it.pre + it.ans)) ? ' fr-card' : '');
+  }
+  // 答えの欄の幅（em）。いちばん長い答えが入るように、カードの中で同じにする（問題面と答え面で、欄の位置がそろう）
+  function ansWidth(items) {
+    const m = Math.max(...items.map(it => it.ans.replace(/\{\d+\/\d+\}/g, '88').length));
+    return clamp(m * 0.62 + 0.9, 2.4, 9).toFixed(1);
+  }
+  const dots = u => u.steps.map((_, i) => `<i class="dot${passed(u, i + 1) ? ' on' : ''}" title="STEP${i + 1}"></i>`).join('');
+
+  /* ---------------- ホーム ---------------- */
+  function homeView() {
+    const cats = TG.cats.map(c => {
+      const us = TG.units.filter(u => u.cat === c.id);
+      return `<section class="cat c-${c.id}"><h2>${esc(c.name)}<small>${esc(c.sub || '')}</small></h2><div class="grid">${us.map(u =>
+        `<a class="ucard" href="#/u/${u.id}"><b>${esc(u.name)}</b><span class="nt">${esc(u.note)}</span><span class="mt">${u.n}問（前半${u.n / 2}＋後半${u.n / 2}）／ 1分　<span class="dots">${dots(u)}</span></span></a>`).join('')}</div></section>`;
+    }).join('');
+    return `<header class="top"><div><h1>計算単語帳</h1><p>頭の中で計算する力を、1分ずつきたえる。ひとりでも、ペアでも。</p></div>
+      <span class="hbtns"><a class="btn" href="#/book">📖 ハンドブック</a>${ART ? '' : '<a class="btn" href="#/sheet">🖨 プリント・配布シート</a>'}</span></header>
+    <main class="wrap">
+      <section class="howto">
+        <div><b>① えらぶ</b><p>単元をえらぶと、STEP1→3 とだんだんむずかしくなる。「語彙カード」は、ハンドブックの暗記ものを前半・後半（往復）で練習できる。</p></div>
+        <div><b>② 1分はかる</b><p>紙に書かず、頭の中で計算して声に出す。「スタート」で 1分。早く終わったら、後半の少しむずかしい問題へ。</p></div>
+        <div><b>③ ○を数える</b><p>答え合わせで ○ をつけて数える。目標をこえたら合格！ 次の STEP へ。</p></div>
+        <details class="pair"><summary>ペア学習のやりかた</summary>
+          <p><b>出題者</b>は「答えを見る」にして、問題を読み上げる。<b>回答者</b>は問題だけ見て（または耳で聞いて）、頭の中で計算して答える。出題者が ○ をつけ、1分たったら交代。</p>
+          <p>${ART ? '紙で使うなら、リポジトリの <b>pdf/計算単語帳_ペア用_セット1.pdf</b> を両面印刷する。' : '紙で使うなら、「プリント・配布シート」で<b>ペア用（両面）</b>を印刷する。'}おもてが問題（回答者）、うらが問題＋答え（出題者）。</p>
+          <p>セット番号は、同じ番号なら同じ問題。「セット3ね」と言い合える。🎲 で新しい問題も出せる。</p></details>
+      </section>${cats}
+      <p class="foot">記録（最高の○の数）は、このブラウザの中だけに残ります。　<a href="#/book">📖 ハンドブック（読み物）</a></p>
+      ${ART ? '<p class="foot">印刷用のシートとPDFは、リポジトリの tangocho フォルダ（tangocho-all-in-one.html と pdf/）にあります。</p>' : ''}
+    </main>`;
+  }
+
+  /* ---------------- 単元 ---------------- */
+  function unitView(u) {
+    const steps = u.steps.map((s, i) => {
+      const st = i + 1, best = bestOf(u.id, st), goal = TG.goalOf(u, st);
+      const chips = [1, 2, 3, 4, 5, 6].map(n => `<a class="chip" href="#/u/${u.id}/${st}/${n}">セット${n}</a>`).join('');
+      return `<section class="step${passed(u, st) ? ' ok' : ''}"><div class="sh"><b>STEP${st}</b><span>${esc(s.name)}</span></div>
+        <p class="sm">1分で <b>${goal}問</b> が目標　<span class="nm2">後半：${esc(s.name2)}</span>${best ? `　　最高 <b>${best}問</b>${passed(u, st) ? ' ✓合格' : ''}` : ''}</p>
+        <div class="chips">${chips}<a class="chip dice" href="#/u/${u.id}/${st}/${Math.floor(100 + Math.random() * 9900)}" title="新しい問題">🎲 べつの問題</a></div>
+        ${ART ? '' : `<a class="pl" href="#/sheet?mode=pair&u=${u.id}&step=${st}&from=1&to=1">🖨 印刷する</a>`}</section>`;
+    }).join('');
+    const book = u.cat === 'vocab' ? `<p class="bk"><a href="#/book/${u.id}">📖 ハンドブックの該当ページを読む</a></p>` : '';
+    return `<header class="top"><div><a class="back" href="#/">← 単元いちらん</a><h1>${esc(u.name)}</h1><p>${esc(u.note)}　／　1セット ${u.n}問（前半${u.n / 2}問＋後半${u.n / 2}問）・1分</p></div>
+      ${ART ? '' : `<a class="btn" href="#/sheet?mode=pair&u=${u.id}&step=all&from=1&to=1">🖨 この単元を印刷</a>`}</header>
+    <main class="wrap narrow">${book}${steps}</main>`;
+  }
+
+  /* ---------------- ハンドブック（読み物） ---------------- */
+  function bookView(focus) {
+    const B = TG.book;
+    const memoOn = store.read().memo === 1;
+    const seen = new Set();
+    const sections = B.sections.map(s => `<section class="bsec" id="${s.id}"><h2>${esc(s.title)}</h2>${s.blocks.map(b => {
+      const first = b.deck && !seen.has(b.deck) ? (seen.add(b.deck), ` data-deck="${b.deck}"`) : '';
+      const unit = b.deck ? TG.unit(b.deck) : null;
+      const go = unit ? `<a class="bgo" href="#/u/${b.deck}/${b.step || 1}/1">▶ カードで練習（${esc(unit.name)}）</a>` : '';
+      return `<article class="blk ${b.kind}"${first}><h3><span class="tag">${b.kind === 'vocab' ? '語彙' : '作法'}</span>${esc(b.title)}</h3>${b.html}${b.memo ? `<p class="memo"><b>先生メモ</b>　${esc(b.memo)}</p>` : ''}${go}</article>`;
+    }).join('')}</section>`).join('');
+    $app.innerHTML = `<div class="noprint"><header class="top slim"><div><a class="back" href="#/">← 単元いちらん</a><h1>📖 ${esc(B.title)} <small>${esc(B.version)}</small></h1></div>
+        <span class="hbtns"><label class="memo-tgl"><input type="checkbox" id="memo"${memoOn ? ' checked' : ''}> 先生メモを表示</label>${ART ? '' : '<button class="btn" id="bprint">🖨 印刷</button>'}</span></header></div>
+      <main class="wrap narrow book${memoOn ? ' show-memo' : ''}" id="book"><section class="bintro">${B.intro}</section>${sections}
+        <section class="bsec"><h2>使い方（授業運用メモ）</h2><article class="blk">${B.usage}</article></section>
+        <p class="later">${esc(B.later)}</p></main>`;
+    document.getElementById('memo').addEventListener('change', e => {
+      store.write('memo', e.target.checked ? 1 : 0);
+      document.getElementById('book').classList.toggle('show-memo', e.target.checked);
+    });
+    const bp = document.getElementById('bprint');
+    if (bp) bp.addEventListener('click', () => window.print());
+    if (focus) { const el = document.querySelector(`[data-deck="${focus}"]`); if (el) { el.scrollIntoView(); el.classList.add('hit'); } }
+  }
+
+  /* ---------------- 1分トレーニング ---------------- */
+  let cleanup = null;   // 画面を離れるときに、タイマーを止める
+
+  function playView(u, step, setNo) {
+    const set = TG.makeSet(u.id, step, setNo);
+    const n = set.items.length;
+    const isFig = u.layout === 'fig';
+    const base = `#/u/${u.id}/${step}/`;
+    const lis = set.items.map((it, i) => (i === set.half ? `<li class="part"><b>ここから後半</b>　少しむずかしい：${esc(set.stepInfo.name2)}</li>` : '')
+      + `<li><button class="q" data-i="${i}" data-m=""><span class="no">${i + 1}</span>${it.fig ? `<span class="fg">${it.fig}</span>` : ''}<span class="qt">${qLine(it, true)}</span><span class="mk"></span></button></li>`).join('');
+    $app.innerHTML = `<header class="top slim"><div><a class="back" href="#/u/${u.id}">← ${esc(u.name)}</a>
+        <h1>STEP${step} <small>${esc(set.stepInfo.name)}</small></h1></div>
+      <nav class="setnav"><a class="btn" href="${base}${Math.max(1, setNo - 1)}" aria-label="前のセット">◀</a><span>セット <b>${setNo}</b></span><a class="btn" href="${base}${setNo + 1}" aria-label="次のセット">▶</a>
+        <a class="btn" href="${base}${Math.floor(100 + Math.random() * 9900)}" title="新しい問題">🎲</a></nav></header>
+      <main class="play wrap">
+        <aside class="ctl">
+          <div class="timer" id="timer"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="bg" cx="50" cy="50" r="44"/><circle class="fg" id="ring" cx="50" cy="50" r="44" transform="rotate(-90 50 50)"/></svg><div class="tn" id="tn">${SECONDS}</div><div class="tl" id="tl">びょう</div></div>
+          <div class="btns"><button class="btn pri" id="go">▶ スタート</button><button class="btn" id="rs">もどす</button></div>
+          <label class="tgl"><input type="checkbox" id="ans"> <span>答えを見る（出題者）</span></label>
+          <label class="tgl"><input type="checkbox" id="snd"${soundOn() ? ' checked' : ''}> <span>音</span></label>
+          <div class="sizes" id="sizes">文字　<button data-s="s">小</button><button data-s="m" class="on">中</button><button data-s="l">大</button></div>
+          <div class="score" id="score"><span class="sc"><b id="sc">0</b><small>／${n}問</small></span><span class="gl">目標 ${set.goal}問</span><span class="ps" id="ps"></span><span class="fb" id="fb">前半 0／${set.half}　後半 0／${n - set.half}</span></div>
+          <p class="hint">問題をタップすると ○ → ✗ → なし。○の数が得点。</p>
+          ${ART ? '' : `<a class="plink" href="#/sheet?mode=pair&u=${u.id}&step=${step}&from=${setNo}&to=${setNo}">🖨 このセットを印刷</a>`}
+        </aside>
+        <ol class="qs${isFig ? ' fig' : ''}${set.items.some(it => (it.pre + it.post + it.ans).replace(/\{\d+\/\d+\}/g, 'xx').length > 16) ? ' lg' : ''} z-m" style="--aw:${ansWidth(set.items)}" id="qs">${lis}</ol>
+      </main>`;
+    bindPlay(u, step, set);
+  }
+
+  function beep(freq, ms) {
+    if (!soundOn()) return;
+    try {
+      const A = window.AudioContext || window.webkitAudioContext, c = new A(), o = c.createOscillator(), g = c.createGain();
+      o.frequency.value = freq; g.gain.value = 0.12; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + ms / 1000);
+      setTimeout(() => c.close(), ms + 200);
+    } catch (e) { /* 音が出なくても動く */ }
+  }
+
+  function bindPlay(u, step, set) {
+    const $ = id => document.getElementById(id);
+    const qs = $('qs'), go = $('go'), tn = $('tn'), tl = $('tl'), ring = $('ring'), timer = $('timer');
+    const C = 2 * Math.PI * 44;
+    ring.style.strokeDasharray = C;
+    let phase = 'idle', iv = null, readyEnd = 0, runEnd = 0;
+
+    const score = () => qs.querySelectorAll('.q[data-m="o"]').length;
+    function refresh() {
+      const s = score(), front = qs.querySelectorAll('.q[data-m="o"]').length && [...qs.querySelectorAll('.q[data-m="o"]')].filter(b => +b.dataset.i < set.half).length;
+      $('sc').textContent = s;
+      $('fb').textContent = `前半 ${front}／${set.half}　後半 ${s - front}／${set.items.length - set.half}`;
+      const ok = s >= set.goal;
+      $('ps').textContent = ok ? '合格！' : '';
+      $('score').classList.toggle('ok', ok);
+      if (s) saveBest(u.id, step, s);
+    }
+    function draw(sec, frac, label) {
+      tn.textContent = sec; tl.textContent = label;
+      ring.style.strokeDashoffset = C * (1 - frac);
+      timer.dataset.phase = phase;
+    }
+    function reset() {
+      clearInterval(iv); iv = null; phase = 'idle';
+      draw(SECONDS, 1, 'びょう'); go.textContent = '▶ スタート';
+    }
+    function finish() {
+      clearInterval(iv); iv = null; phase = 'done';
+      draw(0, 0, 'おわり！'); go.textContent = '▶ もういちど';
+      $('ans').checked = true; qs.classList.add('show-ans');
+      beep(660, 700);
+    }
+    function loop() {
+      const now = performance.now();
+      if (phase === 'ready') {
+        const left = Math.ceil((readyEnd - now) / 1000);
+        if (left > 0) { draw(left, 1, 'よーい'); return; }
+        phase = 'run'; runEnd = now + SECONDS * 1000; go.textContent = '■ ストップ'; beep(880, 250);
+      }
+      if (phase === 'run') {
+        const left = (runEnd - now) / 1000;
+        if (left <= 0) { finish(); return; }
+        draw(Math.ceil(left), left / SECONDS, 'びょう');
+      }
+    }
+    go.addEventListener('click', () => {
+      if (phase === 'ready' || phase === 'run') { reset(); return; }
+      qs.querySelectorAll('.q').forEach(b => { b.dataset.m = ''; });
+      refresh();
+      phase = 'ready'; readyEnd = performance.now() + 3000; go.textContent = '■ ストップ';
+      iv = setInterval(loop, 100); loop();
+    });
+    $('rs').addEventListener('click', () => { reset(); });
+    $('ans').addEventListener('change', e => qs.classList.toggle('show-ans', e.target.checked));
+    $('snd').addEventListener('change', e => store.write('sound', e.target.checked ? 1 : 0));
+    $('sizes').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      qs.classList.remove('z-s', 'z-m', 'z-l'); qs.classList.add('z-' + b.dataset.s);
+      $('sizes').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    });
+    qs.addEventListener('click', e => {
+      const b = e.target.closest('.q'); if (!b) return;
+      b.dataset.m = { '': 'o', o: 'x', x: '' }[b.dataset.m];
+      refresh();
+    });
+    const key = e => {
+      if (e.target.closest('input,select,textarea')) return;
+      if (e.key === ' ' && !e.target.closest('button,a')) { e.preventDefault(); go.click(); }
+      else if (e.key === 'a') { $('ans').checked = !$('ans').checked; $('ans').dispatchEvent(new Event('change')); }
+    };
+    document.addEventListener('keydown', key);
+    cleanup = () => { clearInterval(iv); document.removeEventListener('keydown', key); };
+    reset();
+  }
+
+  /* ---------------- 印刷シート ---------------- */
+  // 1枚のカード（＝1セット）。kind：'q'＝問題だけ（答えの欄はあけておく）／'qa'＝答えつき（赤字）。mirror：うら面用に、左右の列を入れかえる
+  // part：'all'＝20問を1枚に（左の列が前半、右の列が後半）／0＝前半だけ／1＝後半だけ（図つきの単元は、前半カードと後半カードの2枚にする）
+  function cardHTML(set, kind, mirror, part) {
+    const u = set.unit, n = set.items.length, lo = part === 1 ? set.half : 0, hi = part === 0 ? set.half : n;
+    const sub = set.items.slice(lo, hi);
+    const items = sub.map((it, i) => `<div class="ci"><span class="no">${lo + i + 1}</span>${it.fig ? `<span class="fg">${it.fig}</span>` : ''}<span class="qt">${qLine(it, kind === 'qa')}</span></div>`).join('');
+    const hard = `後半　少しむずかしい：${esc(set.stepInfo.name2)}`;
+    const tag = part === 0 ? '<span class="cp">前半</span>' : part === 1 ? `<span class="cp hard">後半</span>` : '';
+    const cols = part === 'all' ? `<div class="hh"><span>前半</span><span class="hard">${hard}</span></div>` : part === 1 ? `<div class="hh one"><span class="hard">${hard}</span></div>` : '';
+    return `<article class="card ${u.layout === 'fig' ? 'fig ' : ''}${sizeClass(set.items)}${mirror ? ' mir' : ''}" style="--rows:${Math.ceil(sub.length / 2)};--aw:${ansWidth(set.items)}">
+      <header class="ch"><b class="cu">${esc(u.name)}</b><span class="cs">STEP${set.step}　${esc(set.stepInfo.name)}</span><span class="cn">セット${set.setNo}</span>${tag}<span class="cg">1分で <b>${set.goal}</b>問</span></header>
+      ${cols}<div class="cb">${items}</div>
+      <footer class="cf"><span>月　日（　）</span><span>○　<u></u>　／ ${sub.length}問</span><span>名前 <u class="nm"></u></span></footer></article>`;
+  }
+  // spec＝{ set, part }。null は、あきの枠（図つきの前半・後半を、同じ紙にそろえるため）
+  const cardOf = (spec, kind, mirror) => (spec ? cardHTML(spec.set, kind, mirror, spec.part) : '<article class="card empty"></article>');
+  const pageHTML = (specs, kind, mirror, label) => `<section class="page"><div class="pl">${label}</div>${specs.map(s => cardOf(s, kind, mirror)).join('<div class="cut"><span>✂</span></div>')}</section>`;
+
+  function sheetView(p) {
+    const mode = ['q', 'qa', 'pair'].includes(p.get('mode')) ? p.get('mode') : 'pair';
+    const uid = TG.unit(p.get('u')) ? p.get('u') : 'all';
+    const stepP = ['1', '2', '3'].includes(p.get('step')) ? p.get('step') : 'all';
+    const from = clamp(parseInt(p.get('from'), 10) || 1, 1, 99999);
+    const to = clamp(parseInt(p.get('to'), 10) || from, from, from + 9);
+    const units = uid === 'all' ? TG.units : [TG.unit(uid)];
+    const steps = stepP === 'all' ? [1, 2, 3] : [+stepP];
+    const sets = [];
+    units.forEach(u => steps.filter(st => st <= u.steps.length).forEach(st => { for (let no = from; no <= to; no++) sets.push(TG.makeSet(u.id, st, no)); }));
+    const tooMany = sets.length > 100;
+    if (tooMany) sets.length = 100;
+
+    // 1枚の紙＝カード2枚。文字の単元は1セット＝1カード、図つきの単元は1セット＝前半・後半の2カード（同じ紙にそろえる）
+    const sheets = [];
+    let cur = [];
+    const place = group => {
+      if (group.length === 2 && cur.length === 1) { sheets.push([cur[0], null]); cur = []; }
+      cur.push(...group);
+      if (cur.length === 2) { sheets.push(cur); cur = []; }
+    };
+    sets.forEach(s => place(s.unit.layout === 'fig' ? [{ set: s, part: 0 }, { set: s, part: 1 }] : [{ set: s, part: 'all' }]));
+    if (cur.length) sheets.push([cur[0], null]);
+    const pages = [];
+    sheets.forEach(sp => {
+      if (mode === 'q') pages.push(pageHTML(sp, 'q', false, '問題'));
+      else if (mode === 'qa') pages.push(pageHTML(sp, 'qa', false, '問題と答え（赤字）'));
+      else {
+        pages.push(pageHTML(sp, 'q', false, 'おもて：問題（回答者に見せる）'));
+        pages.push(pageHTML(sp, 'qa', true, 'うら：問題と答え（出題者が見る）'));
+      }
+    });
+    const opt = (v, cur, label) => `<option value="${v}"${String(v) === String(cur) ? ' selected' : ''}>${esc(label)}</option>`;
+    const back = uid === 'all' ? '#/' : `#/u/${uid}`;
+    $app.innerHTML = `<div class="noprint"><header class="top slim"><div><a class="back" href="${back}">← もどる</a><h1>プリント・配布シート</h1></div>
+        <button class="btn pri" id="print">🖨 印刷する</button></header>
+      <form class="opts" id="opts">
+        <label>形式<select name="mode">${opt('pair', mode, 'ペア用（おもて＝問題／うら＝問題と答え）')}${opt('q', mode, '問題だけ（答えを書く欄つき）')}${opt('qa', mode, '問題と答え（答えは赤字）')}</select></label>
+        <label>単元<select name="u">${opt('all', uid, 'ぜんぶ')}${TG.units.map(u => opt(u.id, uid, u.name)).join('')}</select></label>
+        <label>STEP<select name="step">${opt('all', stepP, 'ぜんぶ')}${[1, 2, 3].map(s => opt(s, stepP, 'STEP' + s)).join('')}</select></label>
+        <label>セット番号<span class="rng"><input name="from" type="number" min="1" max="99999" value="${from}"> 〜 <input name="to" type="number" min="1" max="99999" value="${to}"></span></label>
+      </form>
+      <p class="sinfo">セット <b>${sets.length}</b> 組（1セット＝20問・1分）→ A4 <b>${sheets.length}</b> 枚${mode === 'pair' ? '（両面。プリンターの設定は「両面印刷・長辺とじ」）' : '（片面）'}。1枚のA4を半分に切ると、A5のカードになります。${tooMany ? '<br><b>多すぎるので 100 セットまでにしました。</b>' : ''}</p></div>
+      <div class="pages" id="pages">${pages.join('')}</div>`;
+    const form = document.getElementById('opts');
+    form.addEventListener('change', () => {
+      const d = new FormData(form), q = new URLSearchParams();
+      ['mode', 'u', 'step', 'from', 'to'].forEach(k => q.set(k, d.get(k)));
+      location.hash = '#/sheet?' + q.toString();
+    });
+    document.getElementById('print').addEventListener('click', () => window.print());
+    // 画面では紙を幅に合わせて縮めて見せる（印刷は実寸）
+    const fitPages = () => {
+      const el = document.getElementById('pages'); if (!el) return;
+      el.style.zoom = clamp((document.documentElement.clientWidth - 24) / (210 * 3.7795), 0.3, 1);
+    };
+    fitPages(); window.addEventListener('resize', fitPages);
+    cleanup = () => window.removeEventListener('resize', fitPages);
+  }
+
+  /* ---------------- ルーター ---------------- */
+  function route() {
+    if (cleanup) { cleanup(); cleanup = null; }
+    const [path, qs] = (location.hash.slice(1) || '/').split('?');
+    const seg = path.split('/').filter(Boolean);
+    const u = seg[0] === 'u' && TG.unit(seg[1]);
+    document.body.className = '';
+    window.scrollTo(0, 0);
+    if (seg[0] === 'book') { document.body.classList.add('is-book'); bookView(seg[1]); return; }
+    if (seg[0] === 'sheet' && !ART) { document.body.classList.add('is-sheet'); sheetView(new URLSearchParams(qs || '')); return; }
+    if (u) {
+      const step = parseInt(seg[2], 10), no = parseInt(seg[3], 10);
+      if (step >= 1 && step <= u.steps.length && no >= 1) { document.body.classList.add('is-play'); playView(u, step, no); return; }
+      $app.innerHTML = unitView(u); return;
+    }
+    $app.innerHTML = homeView();
+  }
+  window.addEventListener('hashchange', route);
+  route();
+})();
+
+</script>
+</body>
+</html>
