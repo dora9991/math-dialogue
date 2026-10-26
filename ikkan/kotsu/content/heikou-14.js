@@ -136,26 +136,24 @@ function condQ(r, N, { intro, outro = "。三角形の合同条件のうち、�
 // ── 線分 AB と CD が点 O で交わる図（AO＝BO のような形）の、証明の穴うめ ──
 /**
  * 三角形 △AOC と △BOD の証明。kind＝asa（AO＝BO、∠OAC＝∠OBD）／sas（AO＝BO、CO＝DO）／sss（AO＝BO、CO＝DO、AC＝BD）。
- * 空欄の候補：hyp（「仮定より」の語）／ref3（「対頂角」の語）／eq3（③の行ぜんぶ＝どの角が等しいか）／cond（合同条件）。
- * 「対応する辺（角）は等しい」の空欄は、正解が「辺」か「角」の 2通りしかなく、問題を読まずに絞りこめてしまうので、つくらない。
+ * 空欄の候補：eq3（③の行ぜんぶ＝どの角が等しいか。sss の証明にはない）／cond（合同条件）。
+ * 「仮定より」「対頂角」「対応する辺（角）は等しい」の語の空欄は、正解が 1〜2通りしかなく、問題を読まずに絞りこめてしまうので、つくらない。
  */
 function xbowProof(r, kind) {
   const V1 = ["A", "O", "C"], V2 = ["B", "O", "D"], t1 = "△AOC", t2 = "△BOD";
   const spec = {
-    asa: { els: [SIDE(0, 1), ANG(0), ANG(1)], concls: [SIDE(0, 2), SIDE(1, 2), ANG(2)], w: { hyp: 0.3, ref3: 0.3, eq3: 2, cond: 2 } },
-    sas: { els: [SIDE(0, 1), SIDE(1, 2), ANG(1)], concls: [SIDE(0, 2), ANG(0), ANG(2)], w: { hyp: 0.3, ref3: 0.3, eq3: 2, cond: 2 } },
-    sss: { els: [SIDE(0, 1), SIDE(1, 2), SIDE(0, 2)], concls: [ANG(0), ANG(2)], w: { hyp: 0.3, cond: 2 } },
+    asa: { els: [SIDE(0, 1), ANG(0), ANG(1)], concls: [SIDE(0, 2), SIDE(1, 2), ANG(2)], w: { eq3: 2, cond: 2 } },
+    sas: { els: [SIDE(0, 1), SIDE(1, 2), ANG(1)], concls: [SIDE(0, 2), ANG(0), ANG(2)], w: { eq3: 2, cond: 2 } },
+    sss: { els: [SIDE(0, 1), SIDE(1, 2), SIDE(0, 2)], concls: [ANG(0), ANG(2)], w: { cond: 2 } },
   }[kind];
   const key = judge(spec.els), vert = "∠AOC＝∠BOD";
   const hyps = kind === "sss" ? spec.els.map((e) => elText(e, V1, V2)) : spec.els.filter((e) => !(e.k === "a" && e.i === 1)).map((e) => elText(e, V1, V2));
   const c = pick(r, spec.concls), conclTx = elText(c, V1, V2);
   const others = ["SSS", "SAS", "ASA"].filter((k) => k !== key).map((k) => COND[k]);
   const holes = {
-    hyp: { w: spec.w.hyp, ans: "仮定", pool: ["対頂角", "結論", "共通"], steps: [`${hyps.join("、")} は、問題文の「ならば」の前に書いてあること。`, "このように、条件として与えられていることを使うときは、「仮定より」と書く。"] },
     cond: { w: spec.w.cond, ans: COND[key], pool: [...others, "3組の角"], steps: condSteps(spec.els, V1, V2, key) },
   };
   if (kind !== "sss") {
-    holes.ref3 = { w: spec.w.ref3, ans: "対頂角", pool: ["仮定", "同位角", "錯角", "外角"], steps: ["∠AOC と ∠BOD は、直線 AB と CD が交わってできる、向かい合う角。", "向かい合う角を「対頂角」といい、対頂角は等しい。"] };
     holes.eq3 = { w: spec.w.eq3, ans: vert, pool: ["∠COB＝∠DOA", "∠OCA＝∠ODB", "∠AOC＝∠COB"], steps: [`${t1} の ∠AOC に対応する、${t2} の角は ∠BOD。`, "∠AOC と ∠BOD は、向かい合う角（対頂角）だから等しい。"] };
   }
   return {
@@ -163,8 +161,8 @@ function xbowProof(r, kind) {
     holes,
     lines: (k) => [
       `${t1} と ${t2} において`,
-      kind === "sss" ? `${k === "hyp" ? "（　）" : "仮定"}より　${hyps[0]} …①　　${hyps[1]} …②　　${hyps[2]} …③` : `${k === "hyp" ? "（　）" : "仮定"}より　${hyps[0]} …①　　${hyps[1]} …②`,
-      ...(kind === "sss" ? [] : [k === "eq3" ? "（　） …③" : `${k === "ref3" ? "（　）" : "対頂角"}は等しいから　${vert} …③`]),
+      kind === "sss" ? `仮定より　${hyps[0]} …①　　${hyps[1]} …②　　${hyps[2]} …③` : `仮定より　${hyps[0]} …①　　${hyps[1]} …②`,
+      ...(kind === "sss" ? [] : [k === "eq3" ? "（　） …③" : `対頂角は等しいから　${vert} …③`]),
       `①、②、③より、${k === "cond" ? "（　）" : COND[key]}が、それぞれ等しいから　${t1}≡${t2}`,
       `合同な図形の、対応する${c.k === "s" ? "辺" : "角"}は等しいから　${conclTx}`,
     ],
@@ -433,8 +431,8 @@ export const UNITS = [
           const AAAs = [[ANG(0), ANG(1), ANG(2)]];
           const pos = r(0, 1) === 0;   // 「合同といえるもの」を選ぶか、「合同といえないもの」を選ぶか
           const picked = pos
-            ? [pick(r, [...SSSs, ...SASs, ...ASAs]), ...sample(r, [...SSAs, ...AAAs], 3)]
-            : [pick(r, [...SSAs, ...AAAs]), pick(r, SSSs), pick(r, SASs), pick(r, ASAs)];   // 3組の辺・2組の辺とその間の角・1組の辺とその両端の角を 1つずつ
+            ? [pick(r, pick(r, [SSSs, SASs, ASAs])), AAAs[0], ...sample(r, SSAs, 2)]
+            : [pick(r, pick(r, [SSAs, AAAs])), pick(r, SSSs), pick(r, SASs), pick(r, ASAs)];   // 3組の辺・2組の辺とその間の角・1組の辺とその両端の角を 1つずつ
           const items = picked.map((els, n) => ({ isAns: n === 0, els, tx: shuffle(r, els).map((e) => elText(e, V1, V2, true)).join("、"), key: judge(els) }));
           const say = (it) => (it.key === "SSS" ? "3組の辺が、それぞれ等しい" : it.key === "SAS" ? "2組の辺とその間の角が、それぞれ等しい" : it.key === "ASA" ? "1組の辺とその両端の角が、それぞれ等しい"
             : it.els.every((e) => e.k === "a") ? "3組の角だけでは、大きさがちがう三角形もある" : `∠${V1[it.els.find((e) => e.k === "a").i]} は、等しい 2辺の間の角ではない`);
@@ -446,33 +444,14 @@ export const UNITS = [
             steps: shuffle(r, items).map((it) => N(`${it.tx} … ${say(it)}から、合同${it.key === "NONE" ? "といえない" : "といえる"}${it.isAns ? "　← 答え" : ""}`)),
           };
         }),
-        // 14d04b 演習（4）条件から、合同条件を答える
+        // 14d04b 演習（4）条件から、合同条件を答える（答えが、3組の辺・2組の辺とその間の角・1組の辺とその両端の角・あてはまらない、のどれも、同じくらい出る）
         t("14d04b", (r) => {
-          const N = namer(r, 6), V1 = ["A", "B", "C"], V2 = ["D", "E", "F"];
-          const kind = pick(r, ["SSS", "SAS", "SAS", "ASA", "ASA", "SSA", "SSA", "AAA"]);
-          const v = r(0, 2), x = (v + 1) % 3, y = (v + 2) % 3;
-          const els = kind === "SSS" ? [SIDE(0, 1), SIDE(1, 2), SIDE(2, 0)]
-            : kind === "SAS" ? [SIDE(v, x), SIDE(v, y), ANG(v)]
-            : kind === "ASA" ? [SIDE(v, x), ANG(v), ANG(x)]
-            : kind === "SSA" ? [SIDE(v, x), SIDE(v, y), ANG(pick(r, [x, y]))]
-            : [ANG(0), ANG(1), ANG(2)];
-          const key = judge(els), tx = shuffle(r, els).map((e) => elText(e, V1, V2, true));
-          const angs = els.filter((e) => e.k === "a");
-          return {
-            q: N(`△ABC と △DEF で、${tx.join("、")} のとき、三角形の合同条件のうち、あてはまるものは？`),
-            ans: COND[key],
-            choices: condChoices(r, key),
-            hint: "三角形の合同条件は3つ。それぞれ、どんな条件だったかな？",
-            steps: [
-              `等しいのは、${tx.join("、")}。`,
-              kind === "SAS" ? `∠${V1[v]} は、辺 ${V1[v]}${V1[x]} と ${V1[v]}${V1[y]} の間の角。`
-                : kind === "ASA" ? `辺 ${V1[v]}${V1[x]} の両端の角（∠${V1[v]} と ∠${V1[x]}）が、それぞれ等しい。`
-                : kind === "SSS" ? "辺が 3組とも、それぞれ等しい。"
-                : kind === "SSA" ? `∠${V1[angs[0].i]} は、等しい 2辺の間の角ではない（間の角は ∠${V1[v]}）。`
-                : "3組の角が等しいだけでは、大きさがちがう三角形もある。",
-              key === "NONE" ? "だから、3つの合同条件のどれにもあてはまらない。" : `だから、合同条件は「${COND[key]}」。`,
-            ].map(N),
-          };
+          const N = namer(r, 6);
+          return condQ(r, N, {
+            intro: "△ABC と △DEF で、", outro: " のとき、三角形の合同条件のうち、あてはまるものは？",
+            V1: ["A", "B", "C"], V2: ["D", "E", "F"], short: true,
+            kinds: { SSS: TRI.SSS, SAS: TRI.SAS, ASA: TRI.ASA, NONE: [...TRI.SSA, ...TRI.AAA, ...TRI.AAA, ...TRI.AAA] },
+          });
         }),
         // 14d04c 演習（4）の続き：△ABC≡△DEF のとき、対応する角の大きさ（三角形の内角の和もつかう）
         t("14d04c", (r) => {
@@ -499,18 +478,15 @@ export const UNITS = [
           const sidesAll = [[0, 1], [1, 2], [2, 0]];
           const sideEq = (i, j, i2, j2) => `${V1[i]}${V1[j]}＝${V2[i2]}${V2[j2]}`;
           const angEq = (i, j) => `∠${V1[i]}＝∠${V2[j]}`;
-          const wrongSide = () => { const [i, j] = pick(r, sidesAll); const [i2, j2] = pick(r, sidesAll.filter(([p, q]) => !(p === i && q === j))); return sideEq(i, j, i2, j2); };
-          const wrongAng = () => { const i = r(0, 2), j = (i + r(1, 2)) % 3; return angEq(i, j); };
-          const side = r(0, 1) === 0;
-          const ansT = side ? (() => { const [i, j] = pick(r, sidesAll); return sideEq(i, j, i, j); })() : (() => { const i = r(0, 2); return angEq(i, i); })();
-          const mk = side ? [wrongSide, wrongSide, wrongAng] : [wrongAng, wrongAng, wrongSide];   // 答えが辺のときも角のときも、誤答に辺と角の両方を入れる
-          const ws = new Set();
-          for (let n = 0; n < 80 && ws.size < 3; n++) { const w = mk[ws.size](); if (w !== ansT) ws.add(w); }
-          if (ws.size < 3) return { skip: true };
+          // 対応している組（辺3・角3）が正解の候補、対応していない組（辺6・角6）が誤答の候補。辺か角かで、正解を当てられないようにする
+          const right = [...sidesAll.map(([i, j]) => sideEq(i, j, i, j)), ...[0, 1, 2].map((i) => angEq(i, i))];
+          const wrong = [...sidesAll.flatMap(([i, j]) => sidesAll.filter(([p, q]) => !(p === i && q === j)).map(([i2, j2]) => sideEq(i, j, i2, j2))), ...[0, 1, 2].flatMap((i) => oth(i).map((j) => angEq(i, j)))];
+          const ansT = pick(r, right);
+          const ws = pickWrongs(r, ansT, wrong);
           return {
             q: N(`△${V1.join("")}≡△${V2.join("")} のとき、次のうち、必ず成り立つものはどれか。`),
             ans: N(ansT),
-            choices: choices4(r, N(ansT), [...ws].map(N)),
+            choices: choices4(r, N(ansT), ws.map(N)),
             hint: "合同な図形を「≡」で書くとき、対応する頂点は、どんな順にならべたかな？",
             steps: [
               `対応する頂点は、${V1.map((p, m) => `${p}と${V2[m]}`).join("、")}。`,
@@ -529,22 +505,11 @@ export const UNITS = [
             steps: [`外角は 180°−${inn}°＝${ex}°。`, `外角の和は 360° だから、360°÷${ex}°＝${n}。正${n}角形。`],
           };
         }),
-        // 14q03a 小テスト（3）AO＝BO、∠OAC＝∠OBD → AC＝BD の穴うめ（対頂角・合同条件・対応する辺）
+        // 14q03a 小テスト（3）線分 AB と CD が点 O で交わる図の、証明の穴うめ（AO＝BO、∠OAC＝∠OBD ／ AO＝BO、CO＝DO ／ AO＝BO、CO＝DO、AC＝BD の、3つの証明のどれか）
         t("14q03a", (r) => {
-          const N = namer(r, 4, "O"), t1 = "△AOC", t2 = "△BOD";
-          return fillQ(r, N, "線分 AB と CD が点 O で交わり、AO＝BO、∠OAC＝∠OBD ならば、AC＝BD である。",
-            (H) => [
-              `${t1} と ${t2} において`,
-              "仮定より　AO＝BO …①　　∠OAC＝∠OBD …②",
-              `${H("vert")}は等しいから　∠AOC＝∠BOD …③`,
-              `①、②、③より、${H("cond")}が、それぞれ等しいから　${t1}≡${t2}`,
-              `合同な図形の、対応する${H("corr")}は等しいから　AC＝BD`,
-            ],
-            {
-              vert: { ans: "対頂角", pool: ["同位角", "錯角", "外角", "内角"], steps: ["∠AOC と ∠BOD は、直線 AB と CD が交わってできる、向かい合う角。", "向かい合う角を「対頂角」といい、対頂角は等しい。"] },
-              cond: holeCond("ASA", ["等しいのは、AO＝BO、∠OAC＝∠OBD、∠AOC＝∠BOD。", "辺 AO の両端の角（∠OAC と ∠AOC）が、それぞれ等しい。"]),
-              corr: holeCorr("辺", "AC＝BD", t1, t2),
-            });
+          const N = namer(r, 4, "O");
+          // 合同条件の空欄の答えが、3つとも同じくらい出るように（sss の証明は、空欄の候補が合同条件だけなので、重みを小さくする）
+          return proofQ(r, N, xbowProof(r, pick(r, ["asa", "asa", "sas", "sas", "sss"])));
         }),
         // 14q03b 小テスト（3）の続き：△AOC≡△BOD の対応する角（∠ODB）
         t("14q03b", (r) => {
@@ -600,33 +565,28 @@ export const UNITS = [
             ].map(N),
           };
         }),
-        // 14d05c 演習（5）証明の各行の根拠（中点・錯角・対頂角）／合同条件
+        // 14d05c 演習（5）証明の各行の根拠（中点・錯角・対頂角）／合同条件（3つの等式だけを使う。3組の辺・2組の辺とその間の角・1組の辺とその両端の角）
         t("14d05c", (r) => {
           const N = namer(r, 4, "M");
           const head = "線分 AB の中点を M とする。M を通る線分 CD を、C が AB の上がわ、D が下がわになるようにひく（M は CD 上にある）。AC∥DB である。CM＝DM を証明するために、△AMC と △BMD の合同を示す。";
           const k = pick(r, ["mid", "alt", "vert", "cond"]);
           if (k === "cond") {
-            const V1 = ["A", "M", "C"], V2 = ["B", "M", "D"], els = [SIDE(0, 1), ANG(0), ANG(1)], key = judge(els);
-            return {
-              q: N(`${head}AM＝BM、∠MAC＝∠MBD、∠AMC＝∠BMD がいえるとき、合同条件は、次のうちどれか。`),
-              ans: COND[key],
-              choices: condChoices(r, key),
-              hint: "三角形の合同条件は3つ。それぞれ、どんな条件だったかな？",
-              steps: [
-                "等しいのは、AM＝BM、∠MAC＝∠MBD、∠AMC＝∠BMD。",
-                "辺 AM の両端の角（∠MAC と ∠AMC）が、それぞれ等しい。",
-                `だから、合同条件は「${COND[key]}」。`,
-              ].map(N),
-            };
+            return condQ(r, N, {
+              intro: `${head}次の 3つだけがわかっている（ほかのことは使わない）。`,
+              V1: ["A", "M", "C"], V2: ["B", "M", "D"],
+              kinds: { SSS: TRI.SSS, SAS: TRI.SAS, ASA: TRI.ASA },
+            });
           }
+          // 3つの根拠（中点・錯角・対頂角）は、どれも、どこかで正解になる。のこり 1つは、いつも誤答
+          const U = { mid: "M は AB の中点だから", alt: "平行線の錯角は等しいから", vert: "対頂角は等しいから" };
+          const far = ["平行線の同位角は等しいから", "M は CD の中点だから"];
           const eq = { mid: "AM＝BM", alt: "∠MAC＝∠MBD", vert: "∠AMC＝∠BMD" }[k];
-          const ans = { mid: "M は AB の中点だから", alt: "平行線の錯角は等しいから", vert: "対頂角は等しいから" }[k];
-          const wrongs = [...["M は AB の中点だから", "平行線の錯角は等しいから", "対頂角は等しいから"].filter((x) => x !== ans), pick(r, ["平行線の同位角は等しいから", "共通だから"])];
+          const ans = N(U[k]), fixed = ["mid", "alt", "vert"].filter((x) => x !== k).map((x) => N(U[x]));
           const why = { mid: ["AM と BM は、AB を 2つに分けた線分。M は AB の中点（真ん中の点）。", "だから、根拠は「M は AB の中点だから」。"], alt: ["AC∥DB で、直線 AB が 2直線に交わっている。C と D は、AB をはさんで反対がわにある。", "だから、∠MAC と ∠MBD は錯角。根拠は「平行線の錯角は等しいから」。"], vert: ["直線 AB と CD が M で交わってできる、向かい合う角。", "だから、根拠は「対頂角は等しいから」。"] }[k];
           return {
             q: N(`${head}${eq} と書く根拠として、正しいものは、次のうちどれか。`),
-            ans: N(ans),
-            choices: choices4(r, N(ans), wrongs.map(N)),
+            ans,
+            choices: choices4(r, ans, [...fixed, ...pickWrongs(r, ans, far.map(N), 1)]),
             hint: "証明の各行で、等しいと書いたわけを思い出そう。どんな性質を使ったかな？",
             steps: why.map(N),
           };
@@ -686,30 +646,38 @@ export const UNITS = [
             steps: [`∠IBC＝${b}°÷2＝${b / 2}°、∠ICB＝${c}°÷2＝${c / 2}°。`, `△IBC の内角の和は 180° だから、∠BIC＝180°−(${b / 2}°+${c / 2}°)＝${ans}°。`].map(N),
           };
         }),
-        // 14d07b 演習（7）②∠A＝a° のとき、∠BIC を a で表す式（4択）。∠IBC＋∠ICB を a で表す問い、∠B・∠C から ∠BIC を表す問いもある
+        // 14d07b 演習（7）②∠A＝a° のとき、∠BIC を a で表す式（4択）。∠B・∠C から表す問い、∠IBC＋∠ICB・∠A などを表す問いもある
         t("14d07b", (r) => {
-          const N = namer(r, 3), v = pick(r, ["a", "a", "ibc", "bc"]);
+          const N = namer(r, 3), G = pick(r, ["a", "bc"]);
           const head = "△ABC の ∠B、∠C の二等分線の交点を I とする。";
-          const hint = "文字を、具体的な数（たとえば 56° など）におきかえて、求める角を計算してみよう。その手順を、文字のままで、たどってみよう。";
-          const spec = {
-            a: {
-              q: `${head}∠A＝$a$° のとき、∠BIC の大きさ（単位は度）を $a$ を使って表した式として、正しいものは、次のうちどれか。`,
-              ans: "$90+\\frac{1}{2}a$", near: ["$90-\\frac{1}{2}a$", "$180-\\frac{1}{2}a$", "$90+a$"], far: ["$180-a$", "$\\frac{1}{2}a$", "$2a$"],
-              steps: ["∠B＋∠C＝180°−$a$°。二等分線だから、∠IBC＋∠ICB＝$\\frac{1}{2}(180-a)$°。", "△IBC の内角の和は 180° だから、∠BIC＝180°−$\\frac{1}{2}(180-a)$°＝$90+\\frac{1}{2}a$°。"],
-            },
-            ibc: {
-              q: `${head}∠A＝$a$° のとき、∠IBC と ∠ICB の大きさの和（単位は度）を $a$ を使って表した式として、正しいものは、次のうちどれか。`,
-              ans: "$90-\\frac{1}{2}a$", near: ["$90+\\frac{1}{2}a$", "$180-\\frac{1}{2}a$", "$90-a$"], far: ["$180-a$", "$\\frac{1}{2}a$", "$2a$"],
-              steps: ["∠B＋∠C＝180°−$a$°。", "二等分線だから、∠IBC＋∠ICB＝(∠B＋∠C)÷2＝$\\frac{1}{2}(180-a)$°＝$90-\\frac{1}{2}a$°。"],
-            },
-            bc: {
-              q: `${head}∠B＝$b$°、∠C＝$c$° のとき、∠BIC の大きさ（単位は度）を $b$、$c$ を使って表した式として、正しいものは、次のうちどれか。`,
-              ans: "$180-\\frac{1}{2}(b+c)$", near: ["$180-(b+c)$", "$90+\\frac{1}{2}(b+c)$", "$90-\\frac{1}{2}(b+c)$"], far: ["$\\frac{1}{2}(b+c)$", "$b+c$"],
-              steps: ["二等分線だから、∠IBC＝$\\frac{1}{2}b$°、∠ICB＝$\\frac{1}{2}c$°。", "△IBC の内角の和は 180° だから、∠BIC＝180°−($\\frac{1}{2}b+\\frac{1}{2}c$)°＝$180-\\frac{1}{2}(b+c)$°。"],
-            },
-          }[v];
-          const ws = [...sample(r, spec.near, 2), pick(r, spec.far)];
-          return { q: N(spec.q), ans: spec.ans, choices: choices4(r, spec.ans, ws), hint, steps: spec.steps.map(N) };
+          // 3つの式は、どれも、どこかで正解になる（聞くものがちがう）。のこり 1つは、いつも誤答
+          const spec = G === "a"
+            ? {
+              given: "∠A＝$a$°", vars: "$a$",
+              items: [
+                { ask: "∠BIC の大きさ", ans: "$90+\\frac{1}{2}a$", steps: ["∠B＋∠C＝180°−$a$°。二等分線だから、∠IBC＋∠ICB＝$\\frac{1}{2}(180-a)$°。", "△IBC の内角の和は 180° だから、∠BIC＝180°−$\\frac{1}{2}(180-a)$°＝$90+\\frac{1}{2}a$°。"] },
+                { ask: "∠IBC と ∠ICB の大きさの和", ans: "$90-\\frac{1}{2}a$", steps: ["∠B＋∠C＝180°−$a$°。", "二等分線だから、∠IBC＋∠ICB＝(∠B＋∠C)÷2＝$\\frac{1}{2}(180-a)$°＝$90-\\frac{1}{2}a$°。"] },
+                { ask: "∠B と ∠C の大きさの和", ans: "$180-a$", steps: ["三角形の内角の和は 180° だから、∠B＋∠C＝180°−$a$°。"] },
+              ],
+              never: ["$180-\\frac{1}{2}a$", "$90+a$", "$\\frac{1}{2}a$", "$2a$"],
+            }
+            : {
+              given: "∠B＝$b$°、∠C＝$c$°", vars: "$b$、$c$",
+              items: [
+                { ask: "∠BIC の大きさ", ans: "$180-\\frac{1}{2}(b+c)$", steps: ["二等分線だから、∠IBC＝$\\frac{1}{2}b$°、∠ICB＝$\\frac{1}{2}c$°。", "△IBC の内角の和は 180° だから、∠BIC＝180°−($\\frac{1}{2}b+\\frac{1}{2}c$)°＝$180-\\frac{1}{2}(b+c)$°。"] },
+                { ask: "∠A の大きさ", ans: "$180-(b+c)$", steps: ["三角形の内角の和は 180° だから、∠A＝180°−($b+c$)°＝$180-(b+c)$°。"] },
+                { ask: "∠IBC と ∠ICB の大きさの和", ans: "$\\frac{1}{2}(b+c)$", steps: ["二等分線だから、∠IBC＝$\\frac{1}{2}b$°、∠ICB＝$\\frac{1}{2}c$°。", "和は、$\\frac{1}{2}b+\\frac{1}{2}c=\\frac{1}{2}(b+c)$°。"] },
+              ],
+              never: ["$90+\\frac{1}{2}(b+c)$", "$90-\\frac{1}{2}(b+c)$", "$b+c$", "$180+\\frac{1}{2}(b+c)$"],
+            };
+          const item = pick(r, spec.items), fixed = spec.items.filter((x) => x !== item).map((x) => x.ans);
+          return {
+            q: N(`${head}${spec.given} のとき、${item.ask}（単位は度）を ${spec.vars} を使って表した式として、正しいものは、次のうちどれか。`),
+            ans: item.ans,
+            choices: choices4(r, item.ans, [...fixed, ...pickWrongs(r, item.ans, spec.never, 1)]),
+            hint: "文字を、具体的な数（たとえば 56° など）におきかえて、求める角を計算してみよう。その手順を、文字のままで、たどってみよう。",
+            steps: item.steps.map(N),
+          };
         }),
         // 14d07c 演習（7）の逆：∠BIC から ∠A
         t("14d07c", (r) => {

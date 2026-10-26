@@ -356,13 +356,13 @@ export const UNITS = [
       // ───────── 1 基礎 ─────────
       1: [
         // 08d01a 演習（1）① 頂点 B に対応する頂点
-        t("08d01a", (r) => qVertex(r, pick(r, [3, 4]), false)),
+        t("08d01a", (r) => qVertex(r, pick(r, [3, 4]), r(0, 3) === 0)),
         // 08d01b 演習（1）②③ 辺の長さ
         tc("08d01b", (r) => qLength(r, 3, false)),
         // 08d01c 演習（1）④ 角の大きさ
         tc("08d01c", (r) => qAngle(r, 3, false)),
         // 08d01d 演習（1）⑤ 辺 AC に対応する辺
-        t("08d01d", (r) => qSide(r, pick(r, [3, 4]), false)),
+        t("08d01d", (r) => qSide(r, pick(r, [3, 4]), r(0, 3) === 0)),
         // 08d02a 演習（2）①② 四角形の辺の長さ
         tc("08d02a", (r) => qLength(r, 4, false)),
         // 08d02b 演習（2）③ 四角形の角の大きさ

@@ -235,7 +235,7 @@ function ribbonWhy(r) {
   const ans = cell(180, "対頂角");
   const cells = [[360, "対頂角"], [180, "同位角"], [180, "錯角"], [360, "同位角"], [360, "錯角"]];
   const shown = shuffle(r, cells).slice(0, 3);
-  const why = (c) => [c[0] === 360 ? "三角形の内角の和は 180° で、360° ではない" : "", c[1] !== "対頂角" ? `${c[1]}は平行線があるときの言葉で、ここでは ∠AOB と ∠COD は対頂角` : ""].filter(Boolean).join("；");
+  const notes = [...new Set(shown.flatMap((c) => [c[0] === 360 ? "三角形の内角の和は 180° で、360° ではない" : "", c[1] !== "対頂角" ? `${c[1]}は平行線があるときの言葉で、ここでは ∠AOB と ∠COD は対頂角` : ""]).filter(Boolean))];
   return {
     q: `${RIB_HEAD}∠BAD＝${v.A}°、∠ABC＝${v.B}°、∠BCD＝${v.C}°、∠ADC＝${v.D}° のとき、∠BAD+∠ABC＝∠BCD+∠ADC が成り立つ。そのわけとして、正しいものはどれか。`,
     ans,
@@ -245,7 +245,7 @@ function ribbonWhy(r) {
       `△AOB の内角の和から　∠AOB＝180°−(∠BAD+∠ABC)＝180°−(${v.A}°+${v.B}°)＝${o}°`,
       `△COD の内角の和から　∠COD＝180°−(∠BCD+∠ADC)＝180°−(${v.C}°+${v.D}°)＝${180 - v.C - v.D}°`,
       "∠AOB と ∠COD は対頂角で等しいから、180° からひく 2つの角の和も等しい。正しいわけは「" + ans + "」",
-      `ほかの選択肢が誤りなのは、${shown.map((c) => why(c)).join("；")}。`,
+      `ほかの選択肢が誤りなのは、${notes.join("；")}から。`,
     ],
   };
 }

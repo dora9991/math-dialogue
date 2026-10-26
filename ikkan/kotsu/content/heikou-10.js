@@ -41,19 +41,34 @@ const L5 = [["A", "B", "C", "D", "E"], ["P", "Q", "R", "S", "T"], ["F", "G", "H"
 const L6 = [["A", "B", "C", "D", "E", "P"], ["P", "Q", "R", "S", "T", "U"], ["K", "L", "M", "N", "X", "Y"], ["X", "Y", "Z", "U", "V", "W"]];
 const L7 = [["A", "B", "C", "D", "E", "F", "P"], ["P", "Q", "R", "S", "T", "U", "V"], ["K", "L", "M", "N", "X", "Y", "Z"], ["W", "X", "Y", "Z", "U", "V", "T"], ["E", "F", "G", "H", "J", "K", "L"]];
 const PAIRS3 = [[["A", "B", "C"], ["D", "E", "F"]], [["P", "Q", "R"], ["X", "Y", "Z"]], [["K", "L", "M"], ["N", "P", "Q"]], [["D", "E", "F"], ["G", "H", "J"]], [["L", "M", "N"], ["R", "S", "T"]], [["X", "Y", "Z"], ["U", "V", "W"]]];
-const seg = (x, y) => [x, y].sort().join("");
-/** 誤答の候補 pool から3つえらぶ。正解 ans の「長さの順位」（いちばん短い〜いちばん長い）が、かたよらないように（長さで当てられないように） */
-function pickWrongs(r, ans, pool, k = 3) {
-  const target = r(0, k), len = (x) => String(x).length;
-  let first = null;
-  for (let i = 0; i < 60; i++) {
-    const w = shuffle(r, pool).slice(0, k), lo = w.filter((x) => len(x) < len(ans)).length, ties = w.filter((x) => len(x) === len(ans)).length;
-    if (!first) first = w;
-    if (target >= lo && target <= lo + ties) return w;
-  }
-  return first;
+const strip = (x) => String(x).replace(/[\s$]/g, "");
+const cdist = (a, b) => { const m = new Map(); for (const c of strip(a)) m.set(c, (m.get(c) || 0) + 1); for (const c of strip(b)) m.set(c, (m.get(c) || 0) - 1); let d = 0; for (const v of m.values()) d += Math.abs(v); return d; };
+const gram2 = (x) => { const t = strip(x), g = new Set(); for (let i = 0; i < t.length - 1; i++) g.add(t.slice(i, i + 2)); return g; };
+const jacc = (a, b) => { let i = 0; for (const x of a) if (b.has(x)) i++; return i / (a.size + b.size - i || 1); };
+/** 正解 ans と誤答 ws（3つ）で、ans の「長さの順位」「字の近さの順位」「文字の並びの重なりの順位」を調べる。順位 0＝いちばん短い／いちばんほかに近い。同点なら範囲 [最小, 最大] */
+function rankOf(ans, ws) {
+  const all = [ans, ...ws], len = all.map((x) => strip(x).length);
+  const lo = ws.filter((x) => strip(x).length < len[0]).length, ties = ws.filter((x) => strip(x).length === len[0]).length;
+  const cs = all.map((c, j) => all.reduce((acc, d, k) => (k === j ? acc : acc + cdist(c, d)), 0));
+  const clo = cs.slice(1).filter((v) => v < cs[0]).length, cties = cs.slice(1).filter((v) => v === cs[0]).length;
+  const G = all.map(gram2), js = G.map((g, j) => G.reduce((acc, h, k) => (k === j ? acc : acc + jacc(g, h)), 0));
+  const jlo = js.slice(1).filter((v) => v > js[0] + 1e-9).length, jties = js.slice(1).filter((v) => Math.abs(v - js[0]) <= 1e-9).length;
+  return [[lo, lo + ties], [clo, clo + cties], [jlo, jlo + jties]];
 }
-
+/** 誤答の組をつくる関数 make（3つの配列を返す）を何回か試して、正解の「長さ」「字の近さ」「文字の重なり」の順位が、どれも（ランダムにえらんだ）順位になる組をえらぶ
+ *  （長さや、ほかの選択肢との似かたで、正解を当てられないように）。全部は合わないときは、いちばん多く合う組のなかから、ランダムに */
+function pickBal(r, ans, make, tries = 200) {
+  const T = [r(0, 3), r(0, 3), r(0, 3)];
+  let best = [], bestScore = -1;
+  for (let i = 0; i < tries; i++) {
+    const w = make();
+    if (!w || w.length < 3) continue;
+    const sc = rankOf(ans, w).reduce((acc, k, m) => acc + (T[m] >= k[0] && T[m] <= k[1] ? 1 : 0), 0);
+    if (sc > bestScore) { best = [w]; bestScore = sc; } else if (sc === bestScore) best.push(w);
+  }
+  return best.length ? pick(r, best) : null;
+}
+const seg = (x, y) => [x, y].sort().join("");
 
 // ── 等しい組 ──────────────────────────────────────────────
 /** k＝"S"（辺）か "A"（角）、i＝T1 の頂点の番号（辺は、その頂点の向かいの辺）、text＝文、src＝わけ、
@@ -63,7 +78,7 @@ const factLine = (facts) => facts.map((f) => `${f.text}${f.src ? `（${f.src}）
 const RSN = {   // どれも8字（長さで当てられないように）
   side: "共通する辺だから",
   angleC: "共通する角だから",
-  vert: "対頂角であるから",
+  vert: "対頂角になるから",
   alt: "錯角どうしだから",
 };
 const RSN_WHY = {
@@ -148,7 +163,7 @@ const cfgOverlap = ([a, b, c, d, e], variant) => {
     3: { given: `${a}${d}＝${a}${e}、∠${a}${d}${c}＝∠${a}${e}${b}`, facts: [fact("S", 1, `${a}${e}＝${a}${d}`, "条件"), fact("A", 2, `∠${a}${e}${b}＝∠${a}${d}${c}`, "条件"), hid] },
   }[variant];
   return {
-    name: "overlap", intro: `△${a}${b}${c} で、辺 ${a}${b} 上に点 ${d}、辺 ${a}${c} 上に点 ${e} がある（${d}、${e} は頂点とは異なる点）。${b}${e} と ${c}${d} をひく。`,
+    name: "overlap", intro: `△${a}${b}${c} で、辺 ${a}${b} 上に点 ${d}、辺 ${a}${c} 上に点 ${e} がある（${d}、${e} は頂点とは異なる点）。点 ${b} と ${e}、点 ${c} と ${d} を、それぞれ結ぶ。`,
     given: V.given, T1: [a, b, e], T2: [a, c, d], facts: V.facts,
     commonAngle: { ans: `∠${b}${a}${c}`, wrongs: [`∠${a}${b}${e}`, `∠${a}${c}${d}`, `∠${a}${e}${b}`, `∠${a}${d}${c}`] },
   };
@@ -216,15 +231,34 @@ const GRID_ASK = [
   "合同な三角形を記号 ≡ で表したものと、そのとき使う合同条件の番号の組のうち、いつでも正しいものを選ぼう。",
 ];
 /** 設定 cfg から、(合同な三角形の組) × (使う合同条件の番号) の 2×2 の4択をつくる。合同条件は番号にして、選択肢の長さをそろえる（正解だけ短い・長い、にならないように） */
+/** 2×2 の4択で、誤答の組 bad を、候補 cands からえらぶ。正解の組 ok と bad のどちらが、(1) 問題文と文字がよく重なるか、(2) 4つの選択肢のなかで「ほかとよく似ている」か、が、
+ *  毎回同じ向きにならないように（どちらかの組が、いつも目立たないように）、向きをランダムにきめて、それに合う bad をえらぶ。 */
+function pickBadPair(r, q, ok, cands, nOk, nBad) {
+  const gs = (x) => { const t = strip(x), g = new Set(); for (let i = 0; i < t.length - 1; i++) g.add(t.slice(i, i + 2)); return g; };
+  const jc = (a, b) => { let i = 0; for (const x of a) if (b.has(x)) i++; return i / (a.size + b.size - i || 1); };
+  const Q = gs(q), ov = (x) => { const g = gs(x); let c = 0; for (const y of g) if (Q.has(y)) c++; return c / (g.size || 1); };
+  const want = [r(0, 1) ? 1 : -1, r(0, 1) ? 1 : -1, r(0, 1) ? 1 : -1];
+  const scored = cands.map((bad) => {
+    const opts = [`${ok}、${nOk}`, `${ok}、${nBad}`, `${bad}、${nOk}`, `${bad}、${nBad}`], G = opts.map(gs);
+    const jsum = G.map((g, j) => G.reduce((acc, h, k) => (k === j ? acc : acc + jc(g, h)), 0));
+    const csum = opts.map((c, j) => opts.reduce((acc, d, k) => (k === j ? acc : acc + cdist(c, d)), 0));
+    return { bad, t: [ov(ok) - ov(bad), jsum[0] + jsum[1] - jsum[2] - jsum[3], csum[2] + csum[3] - csum[0] - csum[1]] };
+  });
+  // t[0]＞0 … 正解の組のほうが、問題文と重なる。t[1]＞0 … 正解の組のほうが、ほかとよく似ている。t[2]＞0 … 同じく、字の近さ
+  const fit = (z) => z.t.reduce((acc, v, i) => acc + (Math.abs(v) < 1e-9 || Math.sign(v) === want[i] ? 1 : 0), 0);
+  const top = Math.max(...scored.map(fit));
+  return pick(r, scored.filter((z) => fit(z) === top)).bad;
+}
 function gridQ(r, cfg, { note = NOTE } = {}) {
   const cls = clsOf(cfg.facts);
   if (!CONDS3.includes(cls)) throw new Error(`gridQ：合同条件の形でない ${cfg.name} ${cls}`);
   const ok = `${tri(cfg.T1)}≡${tri(cfg.T2)}`;
-  const bad = `${tri(cfg.T1)}≡${tri(pick(r, cfg.wrongs || permsOf(cfg.T2)))}`;
+  const q = `${introOf(cfg)}\n${note}\n${LEGEND}\n${pick(r, GRID_ASK)}`;
   const wc = pick(r, CONDS3.filter((c) => c !== cls));
+  const bad = pickBadPair(r, q, ok, (cfg.wrongs || permsOf(cfg.T2)).map((T) => `${tri(cfg.T1)}≡${tri(T)}`), NUM[cls], NUM[wc]);
   const ans = `${ok}、${NUM[cls]}`;
   return {
-    q: `${introOf(cfg)}\n${note}\n${LEGEND}\n${pick(r, GRID_ASK)}`,
+    q,
     ans,
     choices: choices4(r, ans, [`${ok}、${NUM[wc]}`, `${bad}、${NUM[cls]}`, `${bad}、${NUM[wc]}`]),
     hint: `${tri(cfg.T1)} と ${tri(cfg.T2)} で、等しい辺や角を3つ見つけられるかな？ 3つがそろったら、3つの合同条件のどれかの形になっているかな？`,
@@ -251,20 +285,10 @@ function reasonQ(r, cfg) {
 // ── 「あと1つ」の問題：いま等しいとわかっていること（known）に、1つ足すと、合同条件の形になるもの ─────────────────
 //   cands の各文は fact（k＝S/A、i＝番号、text＝文）。known と cand をあわせて judge() にかけ、SSS／SAS／ASA ＝ 正解、NONE ＝ 誤答の候補。
 //   AAS（3つの合同条件の形ではないが、合同にはなるもの）は、正解にも誤答にも使わない。irrel＝足しても合同条件の形にならない、ほかの文（S＝辺、A＝角どうし、A90＝直角、P＝平行）。
-//   誤答は、正解と同じ形の文を 2つ、ちがう形の文を 1つ（正解の形が、ひとつだけ目立たないように）。
+//   誤答は、できるだけ、正解と同じ形の文だけにする（形で、正解を当てられないように）。同じ形の誤答が足りないときだけ、ちがう形の文で補う。
 const NOTE_USE = "（共通な辺（角）・対頂角・平行線の錯角は、すでに使ってよい。）";
 function pickMix(r, ans, same, other) {
-  const len = (x) => String(x).length, target = r(0, 3);
-  let first = null;
-  for (let i = 0; i < 80; i++) {
-    const w = [...shuffle(r, same).slice(0, 2), ...shuffle(r, other)];
-    const w3 = w.slice(0, 3);
-    if (w3.length < 3) continue;
-    const lo = w3.filter((x) => len(x) < len(ans)).length, ties = w3.filter((x) => len(x) === len(ans)).length;
-    if (!first) first = w3;
-    if (target >= lo && target <= lo + ties) return w3;
-  }
-  return first;
+  return pickBal(r, ans, () => (same.length >= 3 ? shuffle(r, same).slice(0, 3) : [...shuffle(r, same), ...shuffle(r, other)].slice(0, 3)));
 }
 function extraQ(r, { stem, T1, T2, known, cands, irrel }) {
   const cls = (c) => clsOf([...known, c]);
@@ -300,7 +324,7 @@ function diagExtra(r, kind) {
     const cands = [t("S", 2, `${a}${b}＝${c}${d}`), t("A", 2, `∠${a}${c}${b}＝∠${c}${a}${d}`), t("S", 0, `${b}${c}＝${d}${a}`)];
     return extraQ(r, {
       stem: `四角形 ${a}${b}${c}${d} で、${a}${b}∥${d}${c} である。対角線 ${a}${c} をひく。${ASK_ONE(r, T1, T2)}`, T1, T2, known, cands,
-      irrel: { S: [`${a}${b}＝${b}${c}`, `${a}${c}＝${b}${d}`, `${a}${d}＝${d}${c}`], A: [`∠${b}${a}${c}＝∠${b}${c}${a}`, `∠${d}${a}${c}＝∠${d}${c}${a}`], A90: [`∠${a}${b}${c}＝90°`, `∠${b}${a}${d}＝90°`], P: [] },
+      irrel: { S: [`${a}${b}＝${b}${c}`, `${a}${c}＝${b}${d}`, `${a}${d}＝${d}${c}`], A: [`∠${b}${a}${c}＝∠${b}${c}${a}`, `∠${d}${a}${c}＝∠${d}${c}${a}`, `∠${a}${c}${b}＝∠${a}${c}${d}`, `∠${b}${a}${c}＝∠${d}${a}${c}`], A90: [`∠${a}${b}${c}＝90°`, `∠${b}${a}${d}＝90°`], P: [] },
     });
   }
   const T1 = [a, b, c], T2 = [a, d, c], F = {
@@ -311,8 +335,8 @@ function diagExtra(r, kind) {
   return extraQ(r, {
     stem: `四角形 ${a}${b}${c}${d} で、${F[kind].text} である。対角線 ${a}${c} をひく。${ASK_ONE(r, T1, T2)}`, T1, T2, known, cands,
     irrel: {
-      S: [`${b}${c}＝${a}${d}`, `${a}${c}＝${b}${d}`, `${a}${b}＝${b}${c}`, `${c}${d}＝${a}${d}`],
-      A: [`∠${b}${c}${d}＝∠${b}${a}${d}`, `∠${b}${a}${c}＝∠${b}${c}${a}`, `∠${d}${a}${c}＝∠${d}${c}${a}`],
+      S: [`${b}${c}＝${a}${d}`, `${a}${c}＝${b}${d}`, `${a}${b}＝${b}${c}`, `${c}${d}＝${a}${d}`, `${a}${b}＝${c}${d}`],
+      A: [`∠${b}${c}${d}＝∠${b}${a}${d}`, `∠${b}${a}${c}＝∠${b}${c}${a}`, `∠${d}${a}${c}＝∠${d}${c}${a}`, `∠${a}${b}${c}＝∠${b}${c}${d}`, `∠${a}${d}${c}＝∠${a}${c}${d}`],
       A90: [`∠${b}${a}${d}＝90°`, `∠${a}${b}${c}＝90°`],
       P: [`${a}${b}∥${d}${c}`, `${a}${d}∥${b}${c}`],
     },
@@ -335,7 +359,7 @@ function crossExtra(r, kind) {
   }
   return extraQ(r, {
     stem: `線分 ${a}${d} と ${b}${c} が点 ${o} で交わっている（${o} は、${a}${d} の間にも ${b}${c} の間にもある）。${given} である。${ASK_ONE(r, T1, T2)}`, T1, T2, known, cands,
-    irrel: { S: [`${a}${o}＝${b}${o}`, `${a}${d}＝${b}${c}`, `${b}${o}＝${d}${o}`, `${a}${o}＝${c}${o}`], A: [`∠${o}${a}${b}＝∠${o}${b}${a}`, `∠${o}${d}${c}＝∠${o}${c}${d}`], A90: [`∠${a}${o}${b}＝90°`], P: [] },
+    irrel: { S: [`${a}${o}＝${b}${o}`, `${a}${d}＝${b}${c}`, `${b}${o}＝${d}${o}`, `${a}${o}＝${c}${o}`], A: [`∠${o}${a}${b}＝∠${o}${b}${a}`, `∠${o}${d}${c}＝∠${o}${c}${d}`, `∠${o}${a}${b}＝∠${o}${c}${d}`, `∠${o}${b}${a}＝∠${o}${d}${c}`], A90: [`∠${a}${o}${b}＝90°`], P: [] },
   });
 }
 
@@ -512,7 +536,7 @@ export const UNITS = [
             };
           }
           const between = r(0, 1) === 1, x = between ? v : pick(r, sides);
-          const stmt = (yes, bet) => `${yes ? "いえる" : "いえない"}。∠${T1[x]} は、${s1} と ${s2} の間の角${bet ? "だから" : "ではないから"}。`;
+          const stmt = (yes, bet) => `${yes ? "いえる" : "いえない"}。∠${T1[x]} は、${s1} と ${s2} の間に${bet ? "ある" : "ない"}角だから。`;
           const ans = stmt(between, between);
           return {
             q: `${tri(T1)} と ${tri(T2)} で、${s1}＝${e1}、${s2}＝${e2}、∠${T1[x]}＝∠${T2[x]} であるとき、${tri(T1)}≡${tri(T2)} といえるか。理由もふくめて、正しいものを選ぼう。`,
@@ -589,10 +613,12 @@ export const UNITS = [
             steps: [common, `対応する角は等しいから　∠${C}${B}${E}＝∠${B}${A}${D}＝${x}°。`, ask === "ABE" ? `∠${A}${B}${E}＝∠${A}${B}${C}−∠${C}${B}${E}＝60°−${x}°＝${ans}°` : `△${B}${C}${E} の内角の和から　∠${B}${E}${C}＝180°−60°−${x}°＝${ans}°`],
           };
         }),
-        // 10q04a チャレンジ 正n角形の、となり合う3つの頂点でつくる三角形の合同（△ABC≡△BCD）。対応する辺、または、使う合同条件
+        // 10q04a チャレンジ 正n角形の、となり合う3つの頂点でつくる三角形の合同（△ABC≡△BCD）。対応する辺、対応する角、または、使う合同条件
         t("10q04a", (r) => {
           const n = r(5, 8), V = "ABCDEFGH".slice(0, n), i = r(0, n - 4), [w, x, y, z] = [V[i], V[i + 1], V[i + 2], V[i + 3]], nm = `正${"五六七八"[n - 5]}角形`;
-          if (r(0, 3) === 0) {
+          const u = V[(i + 4) % n], srt = (p1, p2) => [p1, p2].sort().join("");
+          const kind = r(0, 5);
+          if (kind === 0) {
             const ans = COND.SAS;
             return {
               q: `${nm} ${V} で、対角線 ${w}${y}、${x}${z} をひく。△${w}${x}${y}≡△${x}${y}${z} を示すとき、使う合同条件は、次のうちどれか。（使ってよいのは、正多角形の辺・角の性質だけとする。）`,
@@ -602,12 +628,33 @@ export const UNITS = [
               steps: [`${nm}だから、すべての辺が等しく　${w}${x}＝${x}${y}、${x}${y}＝${y}${z}。すべての内角も等しく　∠${w}${x}${y}＝∠${x}${y}${z}。`, `∠${w}${x}${y}、∠${x}${y}${z} は、等しい2辺の間の角。`, `2組の辺とその間の角が、それぞれ等しいから　△${w}${x}${y}≡△${x}${y}${z}。答えは「${ans}」。`],
             };
           }
+          const head = `${nm} ${V} で、対角線 ${w}${y}、${x}${z} をひくと、△${w}${x}${y}≡△${x}${y}${z} となる。このとき、`;
+          const map1 = { [w]: x, [x]: y, [y]: z }, map2 = { [x]: w, [y]: x, [z]: y };
+          if (kind <= 2) {
+            // 角 → 対応する角（角の名前は、両はしの文字をアルファベット順にそろえて書く）
+            const ang = (p1, v, p2) => { const [a1, a2] = [p1, p2].sort(); return `∠${a1}${v}${a2}`; };
+            const A1 = [ang(x, w, y), ang(w, x, y), ang(w, y, x)], A2 = [ang(y, x, z), ang(x, y, z), ang(x, z, y)];   // △wxy の w・x・y の角、△xyz の x・y・z の角
+            const k = r(0, 2), fromFirst = r(0, 1) === 0, ask = fromFirst ? A1[k] : A2[k], ans = fromFirst ? A2[k] : A1[k];
+            const pool = [...A1, ...A2, ang(w, y, z), ang(w, x, z)].filter((a) => a !== ask && a !== ans);
+            const wrongs = pickBal(r, ans, () => shuffle(r, pool).slice(0, 3));
+            const vOf = (a) => a[2];   // 角の頂点
+            const from = fromFirst ? [w, x, y] : [x, y, z], to = fromFirst ? [x, y, z] : [w, x, y];
+            return {
+              q: `${head}${ask} に対応する角は、次のうちどれか。`,
+              ans,
+              choices: choices4(r, ans, wrongs),
+              hint: `合同な三角形は、頂点を対応する順に書くのだったね。△${w}${x}${y} の ${w}、${x}、${y} には、△${x}${y}${z} のどの頂点が対応するかな？`,
+              steps: [`△${w}${x}${y}≡△${x}${y}${z} だから、対応する頂点は　${w} と ${x}、${x} と ${y}、${y} と ${z}。`, `${ask} の頂点 ${vOf(ask)} に対応する頂点は ${to[from.indexOf(vOf(ask))]}。両はしの文字も、対応する頂点にかえて、${ans}。`, `答えは「${ans}」。`],
+            };
+          }
           // 辺 → 対応する辺（聞く辺は、片方の三角形にしかない辺。△wxy にしかない辺は wx・wy、△xyz にしかない辺は yz・xz）
           const ask = pick(r, [{ s: `${w}${x}`, a: `${x}${y}`, t: "1" }, { s: `${w}${y}`, a: `${x}${z}`, t: "1" }, { s: `${y}${z}`, a: `${x}${y}`, t: "2" }, { s: `${x}${z}`, a: `${w}${y}`, t: "2" }]);
-          const all = shuffle(r, [`${w}${x}`, `${x}${y}`, `${w}${y}`, `${y}${z}`, `${x}${z}`].filter((e) => e !== ask.s && e !== ask.a)).slice(0, 2).concat([`${w}${z}`]);
-          const ans = `辺 ${ask.a}`, map1 = { [w]: x, [x]: y, [y]: z }, map2 = { [x]: w, [y]: x, [z]: y };
+          // 誤答の候補：ほかの辺（三角形の辺と、対角線 wz）と、三角形の外にある多角形の辺（ほかの頂点 u をふくむもの）
+          const pool = [`${w}${x}`, `${x}${y}`, `${w}${y}`, `${y}${z}`, `${x}${z}`, `${w}${z}`, srt(z, u), srt(u, w)].filter((e) => e !== ask.s && e !== ask.a);
+          const ans = `辺 ${ask.a}`;
+          const all = pickBal(r, ans, () => shuffle(r, pool).slice(0, 3).map((e) => `辺 ${e}`)).map((e) => e.slice(2));
           return {
-            q: `${nm} ${V} で、対角線 ${w}${y}、${x}${z} をひくと、△${w}${x}${y}≡△${x}${y}${z} となる。このとき、辺 ${ask.s} に対応する辺は、次のうちどれか。`,
+            q: `${head}辺 ${ask.s} に対応する辺は、次のうちどれか。`,
             ans,
             choices: choices4(r, ans, all.map((e) => `辺 ${e}`)),
             hint: `合同な三角形は、頂点を対応する順に書くのだったね。△${w}${x}${y} の ${w}、${x}、${y} には、△${x}${y}${z} のどの頂点が対応するかな？`,

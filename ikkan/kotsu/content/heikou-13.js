@@ -135,27 +135,28 @@ function condQ(r, N, { intro, V1, V2, kinds }) {
 /**
  * 辺を共通にもつ 2つの三角形で示す証明（たこ形・台形）。
  * hyps＝仮定の等しいもの（組の番号つき）、els＝合同条件につかう 3つ（共通な辺をふくむ）、concl＝結論の候補［等しいもの, …］。
- * 空欄の候補：hyp（「仮定より」の語）／ref3（「共通」の語）／seg3（③の行ぜんぶ＝どの辺が共通か）／cond（合同条件）。
- * 「対応する辺（角）は等しい」の空欄は、正解が「辺」か「角」の 2通りしかなく、問題を読まずに絞りこめてしまうので、つくらない。
+ * 空欄の候補：seg3（③の行ぜんぶ＝どの辺が共通か）／cond（合同条件）。
+ * 問題文に、ひく対角線の名前は書かない（seg3 の答えが、そのまま問題文に書いてあることになるので）。共通な辺は、「△〜 と △〜 において」の行から見つける。
+ * 「仮定より」「共通」「対応する辺（角）は等しい」の語の空欄は、正解が 1〜2通りしかなく、問題を読まずに絞りこめてしまうので、つくらない（seg3 の選択肢の中に「共通」の語は出る）。
  */
-function commonSideProof(r, { t1, t2, V1, V2, els, concls, seg, wrongSegs, diag, w }) {
+function commonSideProof(r, { t1, t2, V1, V2, els, concls, seg: seg0, wrongSegs: wrongSegs0, w }) {
+  const flip = (s) => (r(0, 1) ? s : s[1] + s[0]);   // 辺の名前の文字の順は、どちらでもよい（正解だけ、文字の並びがちがって見えないように）
+  const seg = flip(seg0), wrongSegs = wrongSegs0.map(flip);
   const key = judge(els);
   const hypEls = els.filter((e) => !e.common), hyps = hypEls.map((e) => elText(e, V1, V2));
   const c = pick(r, concls), conclTx = elText(c, V1, V2), word = c.k === "s" ? "辺" : "角";   // 結論の種類（最後の行の「対応する辺（角）」に入る語）
   const others = ["SSS", "SAS", "ASA"].filter((k) => k !== key).map((k) => COND[k]);
   const holes = {
-    hyp: { w: w.hyp, ans: "仮定", pool: ["共通", "結論", "対頂角"], steps: [`${hyps.join("、")} は、問題文の「ならば」の前に書いてあること。`, "このように、条件として与えられていることを使うときは、「仮定より」と書く。"] },
-    ref3: { w: w.ref3, ans: "共通", pool: ["仮定", "結論", "対頂角", "同位角"], steps: [`${t1} と ${t2} は、辺 ${seg} をどちらもふくんでいる。`, "このように、2つの三角形が同じ辺をもつとき、その辺は「共通」という。"] },
     seg3: { w: w.seg3, ans: `${seg} は共通`, pool: wrongSegs.map((s) => `${s} は共通`), steps: [`${t1} と ${t2} の両方にふくまれる辺は、${seg}。`, `だから、③は「${seg} は共通」。`] },
     cond: { w: w.cond, ans: COND[key], pool: [...others, "3組の角"], steps: condSteps(els, V1, V2, key) },
   };
   return {
-    head: `四角形 ABCD で、${hyps.join("、")} ならば、${conclTx} である。対角線 ${diag} をひいて証明する。`,
+    head: `四角形 ABCD で、${hyps.join("、")} ならば、${conclTx} である。対角線をひいて証明する。`,
     holes,
     lines: (k) => [
       `${t1} と ${t2} において`,
-      `${k === "hyp" ? "（　）" : "仮定"}より　${hyps[0]} …①　　${hyps[1]} …②`,
-      k === "seg3" ? "（　） …③" : `${seg} は${k === "ref3" ? "（　）" : "共通"} …③`,
+      `仮定より　${hyps[0]} …①　　${hyps[1]} …②`,
+      k === "seg3" ? "（　） …③" : `${seg} は共通 …③`,
       `①、②、③より、${k === "cond" ? "（　）" : COND[key]}が、それぞれ等しいから　${t1}≡${t2}`,
       `合同な図形の、対応する${word}は等しいから　${conclTx}`,
     ],
@@ -178,11 +179,11 @@ const KITE_SEGS = (p, q) => [`${p}B`, `${q}B`, `${p}D`, `${q}D`, "BD"];
 function kiteProof(r, kind, p, q) {
   const V1 = [p, "B", q], V2 = [p, "D", q], C = SIDE(0, 2, true);
   const spec = {
-    sss: { els: [SIDE(0, 1), SIDE(1, 2), C], concls: [ANG(0), ANG(2), ANG(1)], w: { hyp: 0.3, ref3: 0.3, seg3: 2, cond: 2 } },
-    sas: { els: [SIDE(0, 1), ANG(0), C], concls: [SIDE(1, 2), ANG(1), ANG(2)], w: { hyp: 0.3, ref3: 0.3, seg3: 2, cond: 2 } },
-    asa: { els: [ANG(0), ANG(2), C], concls: [SIDE(0, 1), SIDE(1, 2), ANG(1)], w: { hyp: 0.3, ref3: 0.3, seg3: 2, cond: 2 } },
+    sss: { els: [SIDE(0, 1), SIDE(1, 2), C], concls: [ANG(0), ANG(2), ANG(1)], w: { seg3: 2, cond: 2 } },
+    sas: { els: [SIDE(0, 1), ANG(0), C], concls: [SIDE(1, 2), ANG(1), ANG(2)], w: { seg3: 2, cond: 2 } },
+    asa: { els: [ANG(0), ANG(2), C], concls: [SIDE(0, 1), SIDE(1, 2), ANG(1)], w: { seg3: 2, cond: 2 } },
   }[kind];
-  return commonSideProof(r, { t1: `△${p}B${q}`, t2: `△${p}D${q}`, V1, V2, els: spec.els, concls: spec.concls, seg: `${p}${q}`, wrongSegs: KITE_SEGS(p, q), diag: `${p}${q}`, w: spec.w });
+  return commonSideProof(r, { t1: `△${p}B${q}`, t2: `△${p}D${q}`, V1, V2, els: spec.els, concls: spec.concls, seg: `${p}${q}`, wrongSegs: KITE_SEGS(p, q), w: spec.w });
 }
 /** 台形のような形（AB＝DC、∠ABC＝∠DCB のような形）の証明。kind＝sas／sss／asa。三角形は △ABC と △DCB（共通な辺 BC） */
 function trapProof(r, kind) {
@@ -192,7 +193,7 @@ function trapProof(r, kind) {
     sss: { els: [SIDE(0, 1), SIDE(0, 2), C], concls: [ANG(1), ANG(0), ANG(2)] },
     asa: { els: [ANG(1), ANG(2), C], concls: [SIDE(0, 1), SIDE(0, 2), ANG(0)] },
   }[kind];
-  return commonSideProof(r, { t1: "△ABC", t2: "△DCB", V1, V2, els: spec.els, concls: spec.concls, seg: "BC", wrongSegs: ["AB", "AC", "DC", "DB", "AD"], diag: "AC、DB", w: { hyp: 0.3, ref3: 0.3, seg3: 2, cond: 2 } });
+  return commonSideProof(r, { t1: "△ABC", t2: "△DCB", V1, V2, els: spec.els, concls: spec.concls, seg: "BC", wrongSegs: ["AB", "AC", "DC", "DB", "AD"], w: { seg3: 2, cond: 2 } });
 }
 
 export const UNITS = [

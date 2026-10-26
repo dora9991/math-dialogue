@@ -19,94 +19,140 @@ const t = (id, build) => t0(id, (r) => {
 });
 
 const $ = (s) => `$${s}$`;
-/** 誤答の候補 pool から3つえらぶ。正解 ans の「長さの順位」が、かたよらないように（長さで当てられないように） */
-function pickWrongs(r, ans, pool, k = 3) {
-  const target = r(0, k), len = (x) => String(x).length;
-  let first = null;
-  for (let i = 0; i < 60; i++) {
-    const w = shuffle(r, pool).slice(0, k), lo = w.filter((x) => len(x) < len(ans)).length, ties = w.filter((x) => len(x) === len(ans)).length;
-    if (!first) first = w;
-    if (target >= lo && target <= lo + ties) return w;
-  }
-  return first;
+const strip = (x) => String(x).replace(/[\s$]/g, "");
+const cdist = (a, b) => { const m = new Map(); for (const c of strip(a)) m.set(c, (m.get(c) || 0) + 1); for (const c of strip(b)) m.set(c, (m.get(c) || 0) - 1); let d = 0; for (const v of m.values()) d += Math.abs(v); return d; };
+const gram2 = (x) => { const t = strip(x), g = new Set(); for (let i = 0; i < t.length - 1; i++) g.add(t.slice(i, i + 2)); return g; };
+const jacc = (a, b) => { let i = 0; for (const x of a) if (b.has(x)) i++; return i / (a.size + b.size - i || 1); };
+/** 正解 ans と誤答 ws（3つ）で、ans の「長さの順位」「字の近さの順位」「文字の並びの重なりの順位」を調べる。順位 0＝いちばん短い／いちばんほかに近い。同点なら範囲 [最小, 最大] */
+function rankOf(ans, ws) {
+  const all = [ans, ...ws], len = all.map((x) => strip(x).length);
+  const lo = ws.filter((x) => strip(x).length < len[0]).length, ties = ws.filter((x) => strip(x).length === len[0]).length;
+  const cs = all.map((c, j) => all.reduce((acc, d, k) => (k === j ? acc : acc + cdist(c, d)), 0));
+  const clo = cs.slice(1).filter((v) => v < cs[0]).length, cties = cs.slice(1).filter((v) => v === cs[0]).length;
+  const G = all.map(gram2), js = G.map((g, j) => G.reduce((acc, h, k) => (k === j ? acc : acc + jacc(g, h)), 0));
+  const jlo = js.slice(1).filter((v) => v > js[0] + 1e-9).length, jties = js.slice(1).filter((v) => Math.abs(v - js[0]) <= 1e-9).length;
+  return [[lo, lo + ties], [clo, clo + cties], [jlo, jlo + jties]];
 }
+const rankScore = (T, ans, ws) => rankOf(ans, ws).reduce((acc, k, m) => acc + (T[m] >= k[0] && T[m] <= k[1] ? 1 : 0), 0);
+/** 誤答の組をつくる関数 make（3つの配列を返す）を何回か試して、正解の「長さ」「字の近さ」「文字の重なり」の順位が、どれも（ランダムにえらんだ）順位になる組をえらぶ
+ *  （長さや、ほかの選択肢との似かたで、正解を当てられないように）。全部は合わないときは、いちばん多く合う組のなかから、ランダムに */
+function pickBal(r, ans, make, tries = 200) {
+  const T = [r(0, 3), r(0, 3), r(0, 3)];
+  let best = [], bestScore = -1;
+  for (let i = 0; i < tries; i++) {
+    const w = make();
+    if (!w || w.length < 3) continue;
+    const sc = rankScore(T, ans, w);
+    if (sc > bestScore) { best = [w]; bestScore = sc; } else if (sc === bestScore) best.push(w);
+  }
+  return best.length ? pick(r, best) : null;
+}
+const pickWrongs = (r, ans, pool, k = 3) => pickBal(r, ans, () => shuffle(r, pool).slice(0, k));
 
 const L4 = [["A", "B", "C", "D"], ["P", "Q", "R", "S"], ["E", "F", "G", "H"], ["K", "L", "M", "N"], ["W", "X", "Y", "Z"]];
 const pairs3 = [["A", "B", "C", "D", "E", "F"], ["P", "Q", "R", "X", "Y", "Z"], ["K", "L", "M", "N", "P", "Q"]];   // 2つの三角形の頂点（△abc と △def）
 const LP6 = [["A", "B", "C", "D", "E", "F"], ["G", "H", "J", "K", "L", "M"], ["R", "S", "T", "U", "V", "W"]];     // 平行な 2直線の図の点（P、Q は交点に使うので、入れない）
 
 // ── ことがら「〇〇〇 ならば △△△ である」の材料 ──────────────────────────────
-//   text＝ことがらの文、h＝仮定、c＝結論、hv＝仮定の「まちがい候補」、cv＝結論の「まちがい候補」。
-//   まちがい候補は、このことがらには書いていないもので、同じところ（数・文字・語）だけをかえたもの。どれも、正解と同じくらい「そろって」見えるので、形で当てられない。
-//   結論のまちがい候補は、仮定のもとで成り立たないもの（成り立つことがらは、入れない）。
+//   text＝ことがらの文、h＝仮定、c＝結論、L＝文に出てくる英大文字（2つのことがらが、同じ文字を使わないようにするため）。
 const sp = (x) => (/[A-Za-z0-9°+=＝−)$]$/.test(x) ? " " : "");   // 英字・数字・記号で終わるときだけ、あとに空白を入れる
 /** 「ならば」の文。結論が「〜は等しい」で終わるときは、「である」をつけない（「同位角は等しい。」） */
 const sent2 = (h, c) => (/等しい$/.test(c) ? `${h}${sp(h)}ならば、${c}。` : `${h}${sp(h)}ならば、${c}${sp(c)}である。`);
-const mk = (h, c, hv, cv) => ({ text: sent2(h, c), h, c, hv, cv });
+const mk = (h, c, extra = {}) => ({ text: sent2(h, c), h, c, L: new Set(`${h}${c}`.match(/[A-Z]/g) || []), ...extra });
 const uniq = (arr, not) => [...new Set(arr)].filter((x) => x !== not);
+const share = (A, B) => !!A && [...A.L].some((x) => B.L.has(x));
+
+// 以下の stmtXxx(r, A) は、ことがらを1つつくる。A は、同時に出すもう1つのことがら（あれば）。A と同じ文字や数を使わない・A の仮定から結論の文が成り立ってしまわない、ように気をつける。
 
 /** 等式の性質：a＝b ならば、a+c＝b+c（式は $ で囲む） */
-function stmtAlg(r) {
-  const L = shuffle(r, ["a", "b", "c", "d", "e"]), [p, q, m, x1, x2] = L, op = pick(r, ["+", "-", "\\times"]);
-  const e = (v) => (op === "\\times" ? `${v}${m}` : `${v}${op}${m}`), rhs = (X) => (op === "\\times" ? `${q}${X}` : `${q}${op}${X}`);
-  return mk($(`${p}=${q}`), $(`${e(p)}=${e(q)}`), [$(`${p}=${m}`), $(`${p}=${x1}`), $(`${p}=${x2}`)], [$(`${e(p)}=${rhs(p)}`), $(`${e(p)}=${rhs(q)}`), $(`${e(p)}=${rhs(x1)}`), $(`${e(p)}=${rhs(x2)}`)]);
+function stmtAlg(r, A) {
+  const L = shuffle(r, A ? ["p", "q", "s", "t", "u"] : ["a", "b", "c", "d", "e"]), [p, q, m] = L, op = pick(r, ["+", "-", "\\times"]);
+  const e = (v) => (op === "\\times" ? `${v}${m}` : `${v}${op}${m}`);
+  return mk($(`${p}=${q}`), $(`${e(p)}=${e(q)}`));
 }
 /** 合同：△ABC≡△DEF ならば、∠A＝∠D（など） */
-function stmtCong(r) {
-  const [a, b, c, d, e, f] = pick(r, pairs3), T1 = [a, b, c], T2 = [d, e, f], i = r(0, 5);
-  const side = (T, k) => `${T[(k + 1) % 3]}${T[(k + 2) % 3]}`, oth = (k) => [0, 1, 2].filter((x) => x !== k);
-  const hv = [`△${a}${b}${c}≡△${e}${f}${d}`, `△${a}${b}${c}≡△${f}${d}${e}`, `△${a}${b}${c}≡△${d}${f}${e}`, `△${a}${b}${c}≡△${e}${d}${f}`];
-  if (i < 3) return mk(`△${a}${b}${c}≡△${d}${e}${f}`, `∠${T1[i]}＝∠${T2[i]}`, hv, [...oth(i).map((k) => `∠${T1[i]}＝∠${T2[k]}`), ...oth(i).map((k) => `∠${T1[i]}＝∠${T1[k]}`)]);
-  const k0 = i - 3;
-  return mk(`△${a}${b}${c}≡△${d}${e}${f}`, `${side(T1, k0)}＝${side(T2, k0)}`, hv, [...oth(k0).map((k) => `${side(T1, k0)}＝${side(T2, k)}`), ...oth(k0).map((k) => `${side(T1, k0)}＝${side(T1, k)}`)]);
+function stmtCong(r, A) {
+  const ok = pairs3.filter((pr) => !A || !pr.some((ch) => A.L.has(ch)));
+  const [a, b, c, d, e, f] = pick(r, ok), T1 = [a, b, c], T2 = [d, e, f], i = r(0, 5);
+  const side = (T, k) => `${T[(k + 1) % 3]}${T[(k + 2) % 3]}`;
+  return mk(`△${a}${b}${c}≡△${d}${e}${f}`, i < 3 ? `∠${T1[i]}＝∠${T2[i]}` : `${side(T1, i - 3)}＝${side(T2, i - 3)}`);
 }
 /** 三角形の内角の和：△ABC で、∠A＝50°、∠B＝60° ならば、∠C＝70° */
-function stmtAng(r) {
-  const [a, b, c] = pick(r, [["A", "B", "C"], ["P", "Q", "R"], ["D", "E", "F"]]), V = shuffle(r, [a, b, c]);
+function stmtAng(r, A) {
+  const ok = [["A", "B", "C"], ["P", "Q", "R"], ["D", "E", "F"]].filter((t3) => !A || !t3.some((ch) => A.L.has(ch)));
+  const [a, b, c] = pick(r, ok), V = shuffle(r, [a, b, c]);
   let x, y;
   do { x = 5 * r(4, 17); y = 5 * r(4, 17); } while (x + y > 150 || x === y);
   const z = 180 - x - y, T = `△${a}${b}${c}`;
-  return { ...mk(`${T} で、∠${V[0]}＝${x}°、∠${V[1]}＝${y}°`, `∠${V[2]}＝${z}°`,
-    uniq([y + 10, y - 10, y + 20, y - 20].filter((v) => v > 0 && x + v < 180), y).map((v) => `${T} で、∠${V[0]}＝${x}°、∠${V[1]}＝${v}°`),
-    uniq([z + 10, z - 10, z + 20, x + y].filter((v) => v > 0 && v < 180), z).map((v) => `∠${V[2]}＝${v}°`)), x, y, z, V, T };
+  return { ...mk(`${T} で、∠${V[0]}＝${x}°、∠${V[1]}＝${y}°`, `∠${V[2]}＝${z}°`), x, y, z, V, T };
 }
 /** 倍数：x が 6 の倍数ならば、x は 3 の倍数 */
-function stmtMult(r) {
-  const [kj, k] = pick(r, [[6, 3], [6, 2], [10, 5], [10, 2], [12, 6], [12, 4], [12, 3], [15, 5], [15, 3], [20, 10], [20, 5], [20, 4], [18, 9], [18, 6], [14, 7], [21, 7]]);
-  return mk(`$x$ が ${kj} の倍数`, `$x$ は ${k} の倍数`, uniq([k, kj + k, kj * 2, kj + 2, kj - 2], kj).map((n) => `$x$ が ${n} の倍数`), uniq([k + 1, k * 2, kj + k, k + 2, kj - 1], k).filter((n) => !(n % k === 0 && kj % n === 0)).map((n) => `$x$ は ${n} の倍数`));
+function stmtMult(r, A) {
+  const all = [[6, 3], [6, 2], [10, 5], [10, 2], [12, 6], [12, 4], [12, 3], [15, 5], [15, 3], [20, 10], [20, 5], [20, 4], [18, 9], [18, 6], [14, 7], [21, 7]];
+  // もう1つのことがらの仮定から、この結論が成り立ってしまわない（k が、相手の kj の約数でない）ようにえらぶ
+  const ok = all.filter(([kj, k]) => !A || (A.kj % k !== 0 && kj % A.k !== 0 && kj !== A.kj && k !== A.k));
+  const [kj, k] = pick(r, ok);
+  return mk(`$x$ が ${kj} の倍数`, `$x$ は ${k} の倍数`, { kj, k });
 }
+// 整数の和・積：hk＝仮定の種類（ee＝どちらも偶数、oo＝どちらも奇数、cons＝連続する2つの整数）、ck＝結論の種類（和・積が偶数・奇数）
 const PARITY = [
-  mk("2つの整数がどちらも偶数", "その和は偶数", ["2つの整数がどちらも奇数", "2つの整数のうち、1つが偶数", "2つの整数がどちらも3の倍数"], ["その和は奇数", "その積は奇数", "その差は奇数"]),
-  mk("2つの整数がどちらも奇数", "その和は偶数", ["2つの整数がどちらも偶数", "2つの整数のうち、1つが奇数", "2つの整数がどちらも3の倍数"], ["その和は奇数", "その積は偶数", "その差は奇数"]),
-  mk("2つの整数がどちらも偶数", "その積は偶数", ["2つの整数がどちらも奇数", "2つの整数のうち、1つが偶数", "2つの整数がどちらも3の倍数"], ["その積は奇数", "その和は奇数", "その差は奇数"]),
-  mk("2つの整数がどちらも奇数", "その積は奇数", ["2つの整数がどちらも偶数", "2つの整数のうち、1つが奇数", "2つの整数がどちらも3の倍数"], ["その積は偶数", "その和は奇数", "その差は奇数"]),
-  mk("連続する2つの整数", "その和は奇数", ["連続する3つの整数", "連続する2つの偶数", "連続する2つの奇数"], ["その和は偶数", "その積は奇数", "その差は偶数"]),
+  mk("2つの整数がどちらも偶数", "その和は偶数", { hk: "ee", ck: "sumE" }),
+  mk("2つの整数がどちらも奇数", "その和は偶数", { hk: "oo", ck: "sumE" }),
+  mk("2つの整数がどちらも偶数", "その積は偶数", { hk: "ee", ck: "prodE" }),
+  mk("2つの整数がどちらも奇数", "その積は奇数", { hk: "oo", ck: "prodO" }),
+  mk("連続する2つの整数", "その和は奇数", { hk: "cons", ck: "sumO" }),
 ];
-/** 図形などの基本的なことがら */
-function stmtGeo(r) {
+const PAR_TRUE = { ee: ["sumE", "prodE"], oo: ["sumE", "prodO"], cons: ["sumO", "prodE"] };   // 仮定のもとで、いつでも成り立つ結論
+function stmtParity(r, A) {
+  const ok = PARITY.filter((S) => !A || (S.h !== A.h && S.c !== A.c && !PAR_TRUE[A.hk].includes(S.ck) && !PAR_TRUE[S.hk].includes(A.ck)));
+  return pick(r, ok);
+}
+/** 図形などの基本的なことがら。group＝仲間（同じ仲間は、いっしょに出さない） */
+function stmtGeo(r, A) {
   const [a, b, c, d] = pick(r, L4);
-  return pick(r, [
-    mk("2直線が平行", "同位角は等しい", ["2直線が垂直", "2直線が交わる"], ["同位角の和は 180°", "同位角は 90°", "同位角の差は 90°"]),
-    mk("2直線が平行", "錯角は等しい", ["2直線が垂直", "2直線が交わる"], ["錯角の和は 180°", "錯角は 90°", "錯角の差は 90°"]),
-    mk("2つの角が対頂角", "その2つの角は等しい", ["2つの角が同位角", "2つの角が錯角", "2つの角が内角"], ["その2つの角の和は 180°", "その2つの角は直角", "その2つの角の差は 90°"]),
-    mk(`△${a}${b}${c} が正三角形`, `${a}${b}＝${b}${c}＝${c}${a}`, [`△${a}${b}${c} が直角三角形`, `△${a}${b}${c} が鋭角三角形`, `△${a}${b}${c} が鈍角三角形`], [`∠${a}＝90°`, `${a}${b}＝2${b}${c}`, `${a}${b}+${b}${c}＝${c}${a}`]),
-    mk(`四角形 ${a}${b}${c}${d} が正方形`, `${a}${b}＝${b}${c}＝${c}${d}＝${d}${a}`, [`四角形 ${a}${b}${c}${d} が長方形`, `四角形 ${a}${b}${c}${d} が台形`, `四角形 ${a}${b}${c}${d} がひし形`], [`${a}${b}＝2${b}${c}`, `${a}${c}＝${b}${c}`, `${a}${b}＝${b}${c}＝${c}${d}＝${d}${a}＝${a}${c}`]),
-    mk(`四角形 ${a}${b}${c}${d} で、∠${a}＝∠${c}、∠${b}＝∠${d}`, `∠${a}+∠${b}＝180°`, [`四角形 ${a}${b}${c}${d} で、∠${a}＝∠${b}、∠${c}＝∠${d}`, `四角形 ${a}${b}${c}${d} で、∠${a}＝∠${d}、∠${b}＝∠${c}`, `四角形 ${a}${b}${c}${d} で、∠${a}＝∠${b}＝∠${c}＝∠${d}`], [`∠${a}+∠${b}＝90°`, `∠${a}+∠${b}＝270°`, `∠${a}+∠${b}＝360°`]),
-  ]);
+  const ok = [
+    mk("2直線が平行", "同位角は等しい", { group: "line" }),
+    mk("2直線が平行", "錯角は等しい", { group: "line" }),
+    mk("2つの角が対頂角", "その2つの角は等しい", { group: "vert" }),
+    mk(`△${a}${b}${c} が正三角形`, `${a}${b}＝${b}${c}＝${c}${a}`, { group: "tri" }),
+    mk(`四角形 ${a}${b}${c}${d} が正方形`, `${a}${b}＝${b}${c}＝${c}${d}＝${d}${a}`, { group: "sq" }),
+    mk(`四角形 ${a}${b}${c}${d} で、∠${a}＝∠${c}、∠${b}＝∠${d}`, `∠${a}+∠${b}＝180°`, { group: "quad" }),
+  ].filter((S) => !A || (S.group !== A.group && !share(A, S) && !(S.group === "sq" && A.group === "quad") && !(S.group === "quad" && A.group === "sq")));
+  return pick(r, ok);
+}
+/** 連続する数の和：k個の連続する数（種類 kind）の和は、g の倍数（consStmt は下で定義） */
+
+/** 2つのことがら（同じ型）を、条件に合うまでつくりなおして、組にする。gen(r, A) は、ことがらを1つ返す。4つの部分（2つの仮定・2つの結論）が、どれも別の文字列になるようにする */
+function pairMaker(r, gen) {
+  return () => {
+    for (let i = 0; i < 60; i++) {
+      const A = gen(r, null), B = gen(r, A);
+      if (A && B && new Set([A.h, A.c, B.h, B.c]).size === 4) return [A, B];
+    }
+    return null;
+  };
 }
 
-/** ことがら S の、仮定（または結論）を選ぶ4択。誤答は、同じところだけをかえた「まちがい候補」。ときどき、仮定と結論の取りちがえ（入れかえたもの）を入れる */
-function hcQ(r, S, { ctx = "" } = {}) {
-  const askH = r(0, 1) === 0, name = askH ? "仮定" : "結論";
-  const good = askH ? S.h : S.c, swap = askH ? S.c : S.h, pool = askH ? S.hv : S.cv;
-  const useSwap = pool.length < 3 || r(0, 2) === 0;
-  const wrongs = useSwap ? [swap, ...shuffle(r, pool).slice(0, 2)] : shuffle(r, pool).slice(0, 3);
+/** 2つのことがら ア・イ を出して、一方の仮定（または結論）を選ぶ4択。選択肢は、2つのことがらの 4つの部分（アの仮定・結論、イの仮定・結論）で、どれも問題文にそのまま書いてある
+ *  （書き方・長さ・問題文にあるかないか、では当てられない）。mkPair は、組をつくる関数。pre は、問題文の最初につける文 */
+function hcQ(r, mkPair, { pre = "" } = {}) {
+  const T = [r(0, 3), r(0, 3), r(0, 3)];
+  let best = [], bestScore = -1;
+  for (let i = 0; i < 30; i++) {
+    const pr = mkPair();
+    if (!pr) continue;
+    const askFirst = r(0, 1) === 0, askH = r(0, 1) === 0, S = askFirst ? pr[0] : pr[1], O = askFirst ? pr[1] : pr[0];
+    const good = askH ? S.h : S.c, swap = askH ? S.c : S.h, ws = [swap, O.h, O.c], sc = rankScore(T, good, ws);
+    const cand = { pr, askFirst, askH, S, good, ws };
+    if (sc > bestScore) { best = [cand]; bestScore = sc; } else if (sc === bestScore) best.push(cand);
+  }
+  const { pr, askFirst, askH, S, good, ws } = pick(r, best), name = askH ? "仮定" : "結論", lab = askFirst ? "ア" : "イ";
   return {
-    q: `次のことがらの、${name}は、次のうちどれか。\n${ctx}「${S.text}」`,
+    q: `${pre}次の2つのことがらがある。\nア「${pr[0].text}」\nイ「${pr[1].text}」\n${lab}の${name}は、次のうちどれか。`,
     ans: good,
-    choices: choices4(r, good, wrongs),
+    choices: choices4(r, good, ws),
     hint: "「ならば」の前と後ろは、それぞれ何というのだったかな？",
-    steps: [`「ならば」の前が仮定、後ろが結論。`, `このことがらでは　仮定 … ${S.h}　　結論 … ${S.c}`, `${name}は「${good}」。`],
+    steps: [`「ならば」の前が仮定、後ろが結論。`, `${lab}では　仮定 … ${S.h}　　結論 … ${S.c}`, `${lab}の${name}は「${good}」。`],
   };
 }
 
