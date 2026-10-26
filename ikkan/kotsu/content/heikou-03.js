@@ -399,10 +399,15 @@ function auxProof(r) {
   const nVals = [1, W1.length - 1, Y.length - 1, W2.length - 1];
   const feats = (opts) => [
     (o) => o.length,
-    (o) => opts.reduce((s2, p2) => (p2 === o ? s2 : s2 + sim(o, p2)), 0),
     (o) => digitsOf(o).filter((n) => digitsOf(q).includes(n)).length,
     (o) => [...bigrams(o).keys()].filter((b2) => bigrams(q).has(b2)).length,
   ];
+  // 正解が、ほかの選択肢との似かたで、1位〜4位のどの順位にもなるようにする（順位を先に決めて、それに合う誤答の組をさがす）
+  const simRank = (opts) => {
+    const f = (o) => opts.reduce((s2, p2) => (p2 === o ? s2 : s2 + sim(o, p2)), 0), vs = opts.map(f), c = f(opts[0]);
+    return vs.some((v, k) => k > 0 && Math.abs(v - c) < 1e-9) ? 0 : 1 + vs.filter((v) => v > c + 1e-9).length;
+  };
+  const wantRank = pick(r, [1, 2, 3, 3]), capOf = (tries) => (tries < 120 ? Math.min(wantRank, 2) : 2);
   const shareOdd = (a2, b2) => {      // 正解にない言いまわし（4文字）を、2つの誤答が共有していないか
     for (let i = 0; i + 4 <= a2.length; i++) { const g = a2.slice(i, i + 4); if (b2.includes(g) && !ans.includes(g)) return true; }
     return false;
@@ -413,13 +418,14 @@ function auxProof(r) {
     const specs = [0, 1, 2].map(() => sample(r, [0, 1, 2, 3], r(1, 2)).map((slot) => [slot, r(1, nVals[slot])]));
     const cnt = [0, 0, 0, 0];
     specs.forEach((sp) => sp.forEach(([slot]) => cnt[slot]++));
-    if (cnt[0] > 1 || cnt[2] !== nN || cnt[1] > (tries < 200 ? 1 : 2) || cnt[3] > (tries < 200 ? 1 : 2)) continue;
+    if (cnt[0] > (wantRank >= 3 ? 3 : 1) || cnt[2] !== nN || cnt[1] > capOf(tries) || cnt[3] > capOf(tries)) continue;
     const w = specs.map((sp) => { const o = [0, 0, 0, 0]; sp.forEach(([slot, v]) => { o[slot] = v; }); return fmt(o); });
     if (new Set(w).size < 3 || w.includes(ans)) continue;
     wrong = w;
-    if (tries < 250 && w.some((a2, i) => w.some((b2, j) => j > i && shareOdd(a2, b2)))) continue;
+    if (wantRank <= 2 && tries < 250 && w.some((a2, i) => w.some((b2, j) => j > i && shareOdd(a2, b2)))) continue;
     const opts = [ans, ...w];
-    if (noTell(feats(opts), opts, ans)) break;
+    const rk = simRank(opts);
+    if (noTell(feats(opts), opts, ans) && (rk === wantRank || (tries >= 400 && rk >= 2))) break;
   }
   if (!wrong) wrong = [fmt([1, 0, 0, 0]), fmt([0, 1, 0, 0]), fmt([0, 0, 1, 0])];
   return {
