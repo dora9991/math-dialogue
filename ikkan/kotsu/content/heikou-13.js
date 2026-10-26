@@ -3,14 +3,22 @@
 //   ikkan の演習プリント（heikou-13.dr.1〜4）・小テスト（heikou-13.qz.1〜3）を、コツコツくんのテンプレートにしたもの。
 //   テンプレート id＝「13」＋ d（演習）／q（小テスト）＋ ikkan の問題の番号（＋ 型ごとに a, b…）。例：13d01a ＝ heikou-13.dr.1 の穴うめ（4択）
 //   図は出せないので、頂点の名前・位置関係・等しい辺や角（仮定）を、すべて問題文に書いた。「右の図」とは書かない。
-//   証明は書けないので、(a) 証明の穴うめ（共通・合同条件・対応する辺や角）を選ぶ4択、(b) 「どの角が等しければよいか」「どの根拠か」を選ぶ4択、
+//   証明は書けないので、(a) 証明の穴うめ（仮定・共通・共通な辺・合同条件・対応する辺や角）を選ぶ4択、(b) 「どの角が等しければよいか」「どの根拠か」「どの合同条件か」を選ぶ4択、
 //   (c) 合同から出る角の大きさ（数値入力）、に直した。証明の全文を書かせる問題は、どれも (a)(b)(c) の形で移した（SKIPPED は 0）。
 //   角の大きさ・合同条件は、問題文の数字・等しいものの組から計算して出す（手で書かない）。合同条件は judge（辺・角の位置から判定）で出す。
+//   合同条件を聞く問題は、「次の 3つだけがわかっている（ほかのことは使わない）」と言い切り、3組の辺・2組の辺とその間の角・1組の辺とその両端の角・あてはまらない、が、まんべんなく答えになるようにした。
+//   4択の「当てやすさ」（長さ・かたち・正解の語の出方で、問題を読まずに当てられる割合）は、各テンプレート 35〜45% 以下になるよう、誤答の長さ・出し方をそろえた。
 // ============================================================
-import { t, pick, choices4, sample } from "../kit.js";
+import { t as t0, pick, choices4, sample, shuffle } from "../kit.js";
 import { unitFor } from "../unit-kit.js";
 
 const unit = unitFor("heikou");
+
+/** t(id, build) と同じ。ただし、数の答えが問題文の数とたまたま同じになる組は、作り直す（skip） */
+const t = (id, build) => t0(id, (r) => {
+  const p = build(r);
+  return p && typeof p.ans === "number" && ((p.q.match(/\d+/g) || []).map(Number)).includes(p.ans) ? { skip: true } : p;
+});
 
 // ── 道具（この授業の問題用に足した小さな関数）──────────────────────────
 const LETTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ";   // I と O は、1・0 とまぎらわしいので、のぞく
@@ -28,14 +36,33 @@ function namer(r, k, avoid = "") {
   return (str) => str.replace(/[A-Z]/g, (c) => { const i = CAN.indexOf(c); return i >= 0 && i < k ? seq[i] : c; });
 }
 
+/** 誤答の候補 pool から k 個えらぶ。正解 ans の「長さの順位」が、かたよらないように（長さで当てられないように） */
+function pickWrongs(r, ans, pool, k = 3) {
+  const target = r(0, k), len = (x) => String(x).length;
+  let first = null;
+  for (let i = 0; i < 80; i++) {
+    const w = shuffle(r, pool).slice(0, k), lo = w.filter((x) => len(x) < len(ans)).length, ties = w.filter((x) => len(x) === len(ans)).length;
+    if (!first) first = w;
+    if (target >= lo && target <= lo + ties) return w;
+  }
+  return first;
+}
+/** 重みつきで 1つえらぶ */
+function pickW(r, keys, w) {
+  const tot = keys.reduce((s, k) => s + w[k], 0);
+  let x = r(0, 9999) / 10000 * tot;
+  for (const k of keys) { if (x < w[k]) return k; x -= w[k]; }
+  return keys[keys.length - 1];
+}
+
 const kan = (n) => (n < 10 ? "〇一二三四五六七八九"[n] : n < 20 ? "十" + (n % 10 ? "一二三四五六七八九"[n % 10 - 1] : "") : "二三四五六七八九"[Math.floor(n / 10) - 2] + "十" + (n % 10 ? "一二三四五六七八九"[n % 10 - 1] : ""));
 const polyName = (n) => (n === 3 ? "正三角形" : n === 4 ? "正方形" : `正${kan(n)}角形`);
 
 // 合同条件
 const COND = { SSS: "3組の辺", SAS: "2組の辺とその間の角", ASA: "1組の辺とその両端の角", NONE: "どれにもあてはまらない" };
 const condChoices = (r, key) => choices4(r, COND[key], Object.keys(COND).filter((k) => k !== key).map((k) => COND[k]));
-/** 三角形の頂点の番号 0, 1, 2 で、等しいものを言う。辺 SIDE(i, j)（頂点 i と j をむすぶ辺）、角 ANG(i)（頂点 i の角） */
-const SIDE = (i, j) => ({ k: "s", i, j });
+/** 三角形の頂点の番号 0, 1, 2 で、等しいものを言う。辺 SIDE(i, j)（頂点 i と j をむすぶ辺。common＝true なら「辺 ○○ が共通」）、角 ANG(i)（頂点 i の角） */
+const SIDE = (i, j, common = false) => ({ k: "s", i, j, common });
 const ANG = (i) => ({ k: "a", i });
 /** 等しいもの 3つから、あてはまる合同条件を判定する（SSS／SAS／ASA／NONE）。辺2・角1 は、角が2辺の間（2辺に共通な頂点）の角のときだけ SAS。辺1・角2 は、2つの角が辺の両端のときだけ ASA */
 function judge(els) {
@@ -54,27 +81,119 @@ function judge(els) {
 }
 /** 三角形の頂点の並び V の、頂点 i の角の名前（i 以外の 2頂点を、番号の小さい順にはさむ）。例 V=[A,O,B] なら、i=0 → OAB、i=1 → AOB、i=2 → ABO */
 const angName = (V, i) => { const o = [0, 1, 2].filter((x) => x !== i); return V[o[0]] + V[i] + V[o[1]]; };
-const elOne = (e, V) => (e.k === "s" ? V[e.i] + V[e.j] : "∠" + angName(V, e.i));
-/** 等しいもの e を、「AB＝DC」「∠OAB＝∠ODC」の形の文字にする（V1、V2＝2つの三角形の頂点の並び） */
-const elText = (e, V1, V2) => `${elOne(e, V1)}＝${elOne(e, V2)}`;
-
-/** 証明の穴うめの問題。holes＝穴の候補 { 名前: { ans, pool（誤答の候補）, steps } }。lines(H)＝証明の行（H(名前) は、その穴なら「（　）」、そうでなければ正しいことば） */
-function fillQ(r, N, head, lines, holes) {
-  const key = pick(r, Object.keys(holes));
-  const H = (k) => (k === key ? "（　）" : holes[k].ans);
-  const h = holes[key];
+const sorted2 = (e) => (e.i < e.j ? [e.i, e.j] : [e.j, e.i]);
+/** 等しいもの e を、「AB＝DC」「∠OAB＝∠ODC」「辺 AC が共通」の形の文字にする（V1、V2＝2つの三角形の頂点の並び） */
+const elText = (e, V1, V2) => {
+  if (e.k === "s") { const [i, j] = sorted2(e); return e.common ? `辺 ${V1[i]}${V1[j]} が共通` : `${V1[i]}${V1[j]}＝${V2[i]}${V2[j]}`; }
+  return `∠${angName(V1, e.i)}＝∠${angName(V2, e.i)}`;
+};
+const oth = (v) => [0, 1, 2].filter((z) => z !== v);
+/** 等しいもの 3つの組の全部（種類ごと）。SSA＝2辺と、その間にない角。AAA＝3組の角 */
+const TRI = {
+  SSS: [[SIDE(0, 1), SIDE(1, 2), SIDE(0, 2)]],
+  SAS: [0, 1, 2].map((v) => [SIDE(v, oth(v)[0]), SIDE(v, oth(v)[1]), ANG(v)]),
+  ASA: [[0, 1], [1, 2], [0, 2]].map(([i, j]) => [SIDE(i, j), ANG(i), ANG(j)]),
+  SSA: [0, 1, 2].flatMap((v) => oth(v).map((w) => [SIDE(v, oth(v)[0]), SIDE(v, oth(v)[1]), ANG(w)])),
+  AAA: [[ANG(0), ANG(1), ANG(2)]],
+};
+/** 合同条件の解説（3行）。els＝等しいもの 3つ、key＝judge の答え */
+function condSteps(els, V1, V2, key) {
+  const ss = els.filter((e) => e.k === "s"), aa = els.filter((e) => e.k === "a");
+  let mid;
+  if (key === "SSS") mid = "辺が 3組とも、それぞれ等しい。";
+  else if (key === "SAS") {
+    const v = aa[0].i, [x, y] = ss.map((e) => [e.i, e.j].find((z) => z !== v));
+    mid = `∠${angName(V1, v)} は、辺 ${V1[v]}${V1[Math.min(x, y)]} と ${V1[v]}${V1[Math.max(x, y)]} の間の角。`;
+  } else if (key === "ASA") {
+    const [i, j] = sorted2(ss[0]);
+    mid = `辺 ${V1[i]}${V1[j]} の両端の角（∠${angName(V1, i)} と ∠${angName(V1, j)}）が、それぞれ等しい。`;
+  } else if (aa.length === 3) mid = "3組の角が等しいだけでは、大きさがちがう三角形もある。";
+  else {
+    const v = [ss[0].i, ss[0].j].find((z) => z === ss[1].i || z === ss[1].j);
+    mid = `∠${angName(V1, aa[0].i)} は、等しい 2辺の間の角ではない（間の角は ∠${angName(V1, v)}）。`;
+  }
+  return [`等しいのは、${els.map((e) => elText(e, V1, V2)).join("、")}。`, mid, key === "NONE" ? "だから、3つの合同条件のどれにもあてはまらない。" : `だから、合同条件は「${COND[key]}」。`];
+}
+/**
+ * 合同条件を聞く問題。intro＝状況の紹介（「…について、次の 3つだけがわかっている（ほかのことは使わない）。」まで）、
+ * kinds＝{ SSS: [組, …], SAS: […], ASA: […], NONE: […] }（等しいものの組。空の種類は出さない）。答えが、種類ごとに同じくらい出る。
+ */
+function condQ(r, N, { intro, V1, V2, kinds }) {
+  const key = pick(r, Object.keys(kinds).filter((k) => kinds[k].length));
+  const els0 = pick(r, kinds[key]);
+  if (judge(els0) !== key) throw new Error(`種類がちがう: ${key}`);
   return {
-    q: N(`${head}次は、その証明である。（　）にあてはまるものは？\n${lines(H).join("\n")}`),
-    ans: h.ans,
-    choices: choices4(r, h.ans, sample(r, h.pool, 3)),
-    hint: "証明は、仮定や共通を示す行、合同条件の行、合同から結論を導く行の順に書いた。空欄は、どの行にあるかな？",
+    q: N(`${intro}${shuffle(r, els0).map((e) => elText(e, V1, V2)).join("、")}。三角形の合同条件のうち、あてはまるものは？`),
+    ans: COND[key],
+    choices: condChoices(r, key),
+    hint: "三角形の合同条件は3つ。それぞれ、どんな条件だったかな？",
+    steps: condSteps(els0, V1, V2, key).map(N),
+  };
+}
+
+// ── 証明の穴うめ ───────────────────────────────────────────
+/**
+ * 辺を共通にもつ 2つの三角形で示す証明（たこ形・台形）。
+ * hyps＝仮定の等しいもの（組の番号つき）、els＝合同条件につかう 3つ（共通な辺をふくむ）、concl＝結論の候補［等しいもの, …］。
+ * 空欄の候補：hyp（「仮定より」の語）／ref3（「共通」の語）／seg3（③の行ぜんぶ＝どの辺が共通か）／cond（合同条件）。
+ * 「対応する辺（角）は等しい」の空欄は、正解が「辺」か「角」の 2通りしかなく、問題を読まずに絞りこめてしまうので、つくらない。
+ */
+function commonSideProof(r, { t1, t2, V1, V2, els, concls, seg, wrongSegs, diag, w }) {
+  const key = judge(els);
+  const hypEls = els.filter((e) => !e.common), hyps = hypEls.map((e) => elText(e, V1, V2));
+  const c = pick(r, concls), conclTx = elText(c, V1, V2), word = c.k === "s" ? "辺" : "角";   // 結論の種類（最後の行の「対応する辺（角）」に入る語）
+  const others = ["SSS", "SAS", "ASA"].filter((k) => k !== key).map((k) => COND[k]);
+  const holes = {
+    hyp: { w: w.hyp, ans: "仮定", pool: ["共通", "結論", "対頂角"], steps: [`${hyps.join("、")} は、問題文の「ならば」の前に書いてあること。`, "このように、条件として与えられていることを使うときは、「仮定より」と書く。"] },
+    ref3: { w: w.ref3, ans: "共通", pool: ["仮定", "結論", "対頂角", "同位角"], steps: [`${t1} と ${t2} は、辺 ${seg} をどちらもふくんでいる。`, "このように、2つの三角形が同じ辺をもつとき、その辺は「共通」という。"] },
+    seg3: { w: w.seg3, ans: `${seg} は共通`, pool: wrongSegs.map((s) => `${s} は共通`), steps: [`${t1} と ${t2} の両方にふくまれる辺は、${seg}。`, `だから、③は「${seg} は共通」。`] },
+    cond: { w: w.cond, ans: COND[key], pool: [...others, "3組の角"], steps: condSteps(els, V1, V2, key) },
+  };
+  return {
+    head: `四角形 ABCD で、${hyps.join("、")} ならば、${conclTx} である。対角線 ${diag} をひいて証明する。`,
+    holes,
+    lines: (k) => [
+      `${t1} と ${t2} において`,
+      `${k === "hyp" ? "（　）" : "仮定"}より　${hyps[0]} …①　　${hyps[1]} …②`,
+      k === "seg3" ? "（　） …③" : `${seg} は${k === "ref3" ? "（　）" : "共通"} …③`,
+      `①、②、③より、${k === "cond" ? "（　）" : COND[key]}が、それぞれ等しいから　${t1}≡${t2}`,
+      `合同な図形の、対応する${word}は等しいから　${conclTx}`,
+    ],
+  };
+}
+/** 証明の穴うめの問題をつくる。proof＝{ head, holes, lines(穴の名前) }。穴は、出やすさ w で選ぶ */
+function proofQ(r, N, proof) {
+  const keys = Object.keys(proof.holes), k = pickW(r, keys, Object.fromEntries(keys.map((x) => [x, proof.holes[x].w])));
+  const h = proof.holes[k], ans = N(h.ans);
+  return {
+    q: N(`${proof.head}次は、その証明である。（　）にあてはまるものは？\n${proof.lines(k).join("\n")}`),
+    ans,
+    choices: choices4(r, ans, pickWrongs(r, ans, h.pool.map(N))),
+    hint: "証明は、等しいものを3つ示す行、合同条件の行、合同から結論を導く行の順に書いた。空欄は、何を書くところかな？",
     steps: h.steps.map(N),
   };
 }
-/** 穴の候補（共通／合同条件／対応する辺や角）を、まとめてつくる */
-const holeCommon = (side, tri1, tri2) => ({ ans: "共通", pool: ["仮定", "結論", "対頂角", "同位角", "錯角"], steps: [`${tri1} と ${tri2} は、辺 ${side} をどちらもふくんでいる。`, "このように、2つの三角形が同じ辺をもつとき、その辺は「共通」という。"] });
-const holeCond = (key, say) => ({ ans: COND[key], pool: [...["SSS", "SAS", "ASA"].filter((k) => k !== key).map((k) => COND[k]), "3組の角"], steps: [...say, `だから、合同条件は「${COND[key]}」。`] });
-const holeCorr = (word, concl, tri1, tri2) => ({ ans: word, pool: ["辺", "角", "頂点", "直線", "面"].filter((x) => x !== word), steps: [`${tri1}≡${tri2} だから、対応する辺や角は等しい。`, `結論の ${concl} は${word}の等しさだから、「対応する${word}は等しい」を使う。`] });
+const KITE_SEGS = (p, q) => [`${p}B`, `${q}B`, `${p}D`, `${q}D`, "BD"];
+/** たこ形（AB＝AD、CB＝CD のような形）の証明。kind＝sss／sas／asa。p・q＝対角線の両はし */
+function kiteProof(r, kind, p, q) {
+  const V1 = [p, "B", q], V2 = [p, "D", q], C = SIDE(0, 2, true);
+  const spec = {
+    sss: { els: [SIDE(0, 1), SIDE(1, 2), C], concls: [ANG(0), ANG(2), ANG(1)], w: { hyp: 0.3, ref3: 0.3, seg3: 2, cond: 2 } },
+    sas: { els: [SIDE(0, 1), ANG(0), C], concls: [SIDE(1, 2), ANG(1), ANG(2)], w: { hyp: 0.3, ref3: 0.3, seg3: 2, cond: 2 } },
+    asa: { els: [ANG(0), ANG(2), C], concls: [SIDE(0, 1), SIDE(1, 2), ANG(1)], w: { hyp: 0.3, ref3: 0.3, seg3: 2, cond: 2 } },
+  }[kind];
+  return commonSideProof(r, { t1: `△${p}B${q}`, t2: `△${p}D${q}`, V1, V2, els: spec.els, concls: spec.concls, seg: `${p}${q}`, wrongSegs: KITE_SEGS(p, q), diag: `${p}${q}`, w: spec.w });
+}
+/** 台形のような形（AB＝DC、∠ABC＝∠DCB のような形）の証明。kind＝sas／sss／asa。三角形は △ABC と △DCB（共通な辺 BC） */
+function trapProof(r, kind) {
+  const V1 = ["A", "B", "C"], V2 = ["D", "C", "B"], C = SIDE(1, 2, true);
+  const spec = {
+    sas: { els: [SIDE(0, 1), ANG(1), C], concls: [ANG(0), ANG(2), SIDE(0, 2)] },
+    sss: { els: [SIDE(0, 1), SIDE(0, 2), C], concls: [ANG(1), ANG(0), ANG(2)] },
+    asa: { els: [ANG(1), ANG(2), C], concls: [SIDE(0, 1), SIDE(0, 2), ANG(0)] },
+  }[kind];
+  return commonSideProof(r, { t1: "△ABC", t2: "△DCB", V1, V2, els: spec.els, concls: spec.concls, seg: "BC", wrongSegs: ["AB", "AC", "DC", "DB", "AD"], diag: "AC、DB", w: { hyp: 0.3, ref3: 0.3, seg3: 2, cond: 2 } });
+}
 
 export const UNITS = [
   unit("13", {
@@ -89,41 +208,15 @@ export const UNITS = [
     levels: {
       // ───────── 1 基礎 ─────────
       1: [
-        // 13d01a 演習（1）四角形 ABCD：AB＝AD、CB＝CD ならば ∠BAC＝∠DAC（空欄「共通」「3組の辺」「角」のどれかを聞く。「CB＝CD」の空欄は、問題文に書いてあるので聞かない）
+        // 13d01a 演習（1）四角形 ABCD：AB＝AD、CB＝CD ならば ∠BAC＝∠DAC（たこ形。3組の辺・2組の辺とその間の角・1組の辺とその両端の角の、3つの証明のどれか。「CB＝CD」の空欄は、問題文に書いてあるので聞かない）
         t("13d01a", (r) => {
           const N = namer(r, 4), [p, q] = pick(r, [["A", "C"], ["C", "A"]]);
-          const t1 = `△${p}B${q}`, t2 = `△${p}D${q}`, concl = `∠B${p}${q}＝∠D${p}${q}`;
-          return fillQ(r, N, `四角形 ABCD で、${p}B＝${p}D、${q}B＝${q}D ならば、${concl} である。対角線 ${p}${q} をひいて証明する。`,
-            (H) => [
-              `${t1} と ${t2} において`,
-              `仮定より　${p}B＝${p}D …①　　${q}B＝${q}D …②`,
-              `${p}${q} は${H("common")} …③`,
-              `①、②、③より、${H("cond")}が、それぞれ等しいから　${t1}≡${t2}`,
-              `合同な図形の、対応する${H("corr")}は等しいから　${concl}`,
-            ],
-            {
-              common: holeCommon(`${p}${q}`, t1, t2),
-              cond: holeCond("SSS", [`等しいのは、${p}B＝${p}D、${q}B＝${q}D、${p}${q}（共通）の、辺3組。`]),
-              corr: holeCorr("角", concl, t1, t2),
-            });
+          return proofQ(r, N, kiteProof(r, pick(r, ["sss", "sas", "asa"]), p, q));
         }),
-        // 13q01a 小テスト（1）四角形 ABCD：AB＝DC、∠ABC＝∠DCB ならば ∠BAC＝∠CDB（空欄「共通」「2組の辺とその間の角」「角」）
+        // 13q01a 小テスト（1）四角形 ABCD：AB＝DC、∠ABC＝∠DCB ならば ∠BAC＝∠CDB（台形のような形。2組の辺とその間の角・3組の辺・1組の辺とその両端の角の、3つの証明のどれか）
         t("13q01a", (r) => {
-          const N = namer(r, 4), c = pick(r, [["∠BAC＝∠CDB", "角"], ["∠ACB＝∠DBC", "角"], ["AC＝DB", "辺"]]);
-          const t1 = "△ABC", t2 = "△DCB";
-          return fillQ(r, N, `四角形 ABCD で、AB＝DC、∠ABC＝∠DCB ならば、${c[0]} である。対角線 AC、DB をひいて証明する。`,
-            (H) => [
-              `${t1} と ${t2} において`,
-              "仮定より　AB＝DC …①　　∠ABC＝∠DCB …②",
-              `BC は${H("common")} …③`,
-              `①、②、③より、${H("cond")}が、それぞれ等しいから　${t1}≡${t2}`,
-              `合同な図形の、対応する${H("corr")}は等しいから　${c[0]}`,
-            ],
-            {
-              common: holeCommon("BC", t1, t2),
-              cond: holeCond("SAS", ["等しいのは、AB＝DC、∠ABC＝∠DCB、BC（共通）。", "∠ABC は辺 AB と BC の間の角、∠DCB は辺 DC と CB の間の角。"]),
-              corr: holeCorr(c[1], c[0], t1, t2),
-            });
+          const N = namer(r, 4);
+          return proofQ(r, N, trapProof(r, pick(r, ["sas", "sss", "asa"])));
         }),
       ],
       // ───────── 2 標準 ─────────
@@ -180,26 +273,14 @@ export const UNITS = [
             ].map(N),
           };
         }),
-        // 13d02b 演習（2）△AOB と △DOC の合同条件（錯角から ASA ／ 対頂角から SAS）
+        // 13d02b 演習（2）△AOB と △DOC の合同条件（3つの等式だけを使う。3組の辺・2組の辺とその間の角・1組の辺とその両端の角・3組の角）
         t("13d02b", (r) => {
-          const N = namer(r, 4, "O"), V1 = ["A", "O", "B"], V2 = ["D", "O", "C"];
-          const v = pick(r, ["asa", "sas"]);
-          const els = v === "asa" ? [SIDE(0, 2), ANG(0), ANG(2)] : [SIDE(0, 1), SIDE(2, 1), ANG(1)];
-          const key = judge(els), tx = els.map((e) => elText(e, V1, V2));
-          const head = v === "asa"
-            ? "線分 AD と BC が点 O で交わっていて、AB∥DC、AB＝DC である。平行線の錯角は等しいから、∠OAB＝∠ODC、∠ABO＝∠DCO である。"
-            : "線分 AD と BC が点 O で交わっていて、AO＝DO、BO＝CO である。対頂角は等しいから、∠AOB＝∠DOC である。";
-          return {
-            q: N(`${head}△AOB と △DOC の合同条件は、次のうちどれか。`),
-            ans: COND[key],
-            choices: condChoices(r, key),
-            hint: "三角形の合同条件は3つ。それぞれ、どんな条件だったかな？",
-            steps: [
-              `等しいのは、${tx.join("、")}。`,
-              v === "asa" ? "辺 AB の両端の角（∠OAB と ∠ABO）が、それぞれ等しい。" : "∠AOB は、辺 AO と BO の間の角（∠DOC は、DO と CO の間の角）。",
-              `だから、合同条件は「${COND[key]}」。`,
-            ].map(N),
-          };
+          const N = namer(r, 4, "O");
+          return condQ(r, N, {
+            intro: "線分 AD と BC が点 O で交わっている。△AOB と △DOC について、次の 3つだけがわかっている（ほかのことは使わない）。",
+            V1: ["A", "O", "B"], V2: ["D", "O", "C"],
+            kinds: { SSS: TRI.SSS, SAS: TRI.SAS, ASA: TRI.ASA, NONE: TRI.AAA },
+          });
         }),
         // 13d02c 演習（2）AO＝DO の利用：AB∥DC、AB＝DC のとき、O は AD の中点でも BC の中点でもある
         t("13d02c", (r) => {
@@ -232,27 +313,19 @@ export const UNITS = [
             ].map(N),
           };
         }),
-        // 13q02a 小テスト（2）四角形 ABCD：AB＝AD、∠BAC＝∠DAC → 合同条件（間の角なら 2組の辺とその間の角、間にない角なら あてはまらない）
+        // 13q02a 小テスト（2）四角形 ABCD の対角線 AC：△ABC と △ADC の合同条件（3つの等式だけを使う）
         t("13q02a", (r) => {
-          const N = namer(r, 4);
-          const v = pick(r, ["sas", "none"]);
-          const els = v === "sas" ? [SIDE(0, 1), SIDE(2, 0), ANG(0)] : [SIDE(0, 1), SIDE(2, 0), ANG(1)];
-          const key = judge(els);
-          const ang = els.find((e) => e.k === "a");
-          const angTx = `∠${angName(["A", "B", "C"], ang.i)}＝∠${angName(["A", "D", "C"], ang.i)}`;
-          return {
-            q: N(v === "sas"
-              ? `四角形 ABCD で、AB＝AD、∠BAC＝∠DAC ならば、BC＝DC である。△ABC と △ADC について、AB＝AD、${angTx} と、辺 AC が共通であることを使う。三角形の合同条件のうち、あてはまるものは？`
-              : `四角形 ABCD で、AB＝AD、∠ABC＝∠ADC である。△ABC と △ADC について、AB＝AD、${angTx} と、辺 AC が共通であることを使う。三角形の合同条件のうち、あてはまるものは？`),
-            ans: COND[key],
-            choices: condChoices(r, key),
-            hint: "三角形の合同条件は3つ。それぞれ、どんな条件だったかな？",
-            steps: [
-              `等しいのは、辺 AB と AD、辺 AC（共通）、${angTx}。`,
-              v === "sas" ? "∠BAC は、辺 AB と AC の間の角（∠DAC は、辺 AD と AC の間の角）。" : "∠ABC は、辺 AB と AC の間の角ではない（間の角は ∠BAC）。",
-              key === "SAS" ? "だから、合同条件は「2組の辺とその間の角」。" : "だから、3つの合同条件のどれにもあてはまらない。",
-            ].map(N),
-          };
+          const N = namer(r, 4), C = SIDE(0, 2, true);
+          return condQ(r, N, {
+            intro: "四角形 ABCD の対角線 AC をひく。△ABC と △ADC について、次の 3つだけがわかっている（ほかのことは使わない）。",
+            V1: ["A", "B", "C"], V2: ["A", "D", "C"],
+            kinds: {
+              SSS: [[SIDE(0, 1), SIDE(1, 2), C]],
+              SAS: [[SIDE(0, 1), ANG(0), C], [SIDE(1, 2), ANG(2), C]],
+              ASA: [[ANG(0), ANG(2), C]],
+              NONE: [[SIDE(0, 1), ANG(1), C], [SIDE(1, 2), ANG(1), C]],
+            },
+          });
         }),
         // 13q02b 小テスト（2）の続き：AB＝AD、∠BAC＝∠DAC → △ABC≡△ADC を使って、∠ACD を求める
         t("13q02b", (r) => {
@@ -278,8 +351,9 @@ export const UNITS = [
         t("13d03a", (r) => {
           const N = namer(r, 5), [x, y] = pick(r, [["D", "E"], ["E", "D"]]);
           const V1 = ["A", "B", y], V2 = ["A", "C", x];
-          const ans = `∠${angName(V1, 0)}＝∠${angName(V2, 0)}`;
-          const ws = [`∠${angName(V1, 1)}＝∠${angName(V2, 1)}`, `∠${angName(V1, 2)}＝∠${angName(V2, 2)}`, `B${y}＝C${x}`];
+          const ang = (i) => `∠${angName(V1, i)}＝∠${angName(V2, i)}`;
+          const ans = ang(0);
+          const ws = [ang(1), ang(2), `B${y}＝C${x}`];
           return {
             q: N(`AB＝AC の △ABC で、辺 AB 上に点 ${x}、辺 AC 上に点 ${y} を、A${x}＝A${y} となるようにとる。B${y}＝C${x} を証明するために、△AB${y} と △AC${x} の合同を、「2組の辺とその間の角」を使って示す。AB＝AC、A${y}＝A${x} のほかに、等しいことを示せばよいものは、次のうちどれか。`),
             ans: N(ans),
@@ -292,74 +366,74 @@ export const UNITS = [
             ].map(N),
           };
         }),
-        // 13d03b 演習（3）3つの等しいものから、合同条件を選ぶ（間の角が共通なら SAS、間にない角なら あてはまらない）
+        // 13d03b 演習（3）△ABE と △ACD の合同条件（3つの等式だけを使う）
         t("13d03b", (r) => {
           const N = namer(r, 5), [x, y] = pick(r, [["D", "E"], ["E", "D"]]);
-          const V1 = ["A", "B", y], V2 = ["A", "C", x];
-          const ang = pick(r, [0, 0, 1, 2]);
-          const els = [SIDE(0, 1), SIDE(2, 0), ANG(ang)], key = judge(els);
-          const angTx = elText(ANG(ang), V1, V2);
-          return {
-            q: N(`AB＝AC の △ABC で、辺 AB 上に点 ${x}、辺 AC 上に点 ${y} を、A${x}＝A${y} となるようにとる。△AB${y} と △AC${x} について、AB＝AC、A${y}＝A${x}、${angTx} がわかっているとき、三角形の合同条件のうち、あてはまるものは？`),
-            ans: COND[key],
-            choices: condChoices(r, key),
-            hint: "三角形の合同条件は3つ。それぞれ、どんな条件だったかな？",
-            steps: [
-              `等しいのは、辺 AB と AC、辺 A${y} と A${x}、${angTx}。`,
-              ang === 0 ? `∠BA${y} は、辺 AB と A${y} の間の角（∠CA${x} は、辺 AC と A${x} の間の角）。` : `${angTx.split("＝")[0]} は、辺 AB と A${y} の間の角ではない（間の角は ∠BA${y}）。`,
-              key === "SAS" ? "だから、合同条件は「2組の辺とその間の角」。" : "だから、3つの合同条件のどれにもあてはまらない。",
-            ].map(N),
-          };
+          return condQ(r, N, {
+            intro: `△AB${y} と △AC${x} について、次の 3つだけがわかっている（ほかのことは使わない）。`,
+            V1: ["A", "B", y], V2: ["A", "C", x],
+            kinds: { SSS: TRI.SSS, SAS: TRI.SAS, ASA: TRI.ASA, NONE: [...TRI.SSA, ...TRI.SSA, ...TRI.AAA] },
+          });
         }),
-        // 13d03c 演習（3）の続き：∠AEB から ∠BDC（△ABE≡△ACD の対応する角と、一直線の角）
+        // 13d03c 演習（3）の続き：△ABE≡△ACD の対応する角と、一直線の角・三角形の内角の和
         t("13d03c", (r) => {
           const N = namer(r, 5), [x, y] = pick(r, [["D", "E"], ["E", "D"]]);
-          const a = r(55, 150), ans = 180 - a;
-          if (a === 90) return { skip: true };
+          const mode = pick(r, ["ext", "adc", "bdc"]);
+          const head = `AB＝AC の △ABC で、辺 AB 上に点 ${x}、辺 AC 上に点 ${y} を、A${x}＝A${y} となるようにとる。`;
+          const cong = `△AB${y} と △AC${x} は、AB＝AC、A${y}＝A${x}、∠A が共通で、2組の辺とその間の角が等しいから合同。`;
+          if (mode === "ext") {
+            const a = r(55, 150);
+            if (a === 90) return { skip: true };
+            const ans = 180 - a;
+            return {
+              q: N(`${head}∠A${y}B＝${a}° のとき、∠B${x}C の大きさは何度か。`),
+              ans,
+              unit: "度",
+              hint: "合同になる三角形はどれかな？ 合同な図形の、対応する角はどうなる？ 一直線の角は何度だったかな？",
+              steps: [cong, `対応する角は等しいから、∠A${x}C＝∠A${y}B＝${a}°。`, `A、${x}、B は一直線上にあるから、∠B${x}C＝180°−${a}°＝${ans}°。`].map(N),
+            };
+          }
+          const al = r(20, 90), b = r(10, Math.floor((180 - al) / 2) - 5), v = 180 - al - b;
+          if (b < 10 || v === al || v === b) return { skip: true };
+          const ask = mode === "adc" ? `∠A${x}C` : `∠B${x}C`, ans = mode === "adc" ? v : al + b;
           return {
-            q: N(`AB＝AC の △ABC で、辺 AB 上に点 ${x}、辺 AC 上に点 ${y} を、A${x}＝A${y} となるようにとる。∠A${y}B＝${a}° のとき、∠B${x}C の大きさは何度か。`),
+            q: N(`${head}∠BAC＝${al}°、∠AB${y}＝${b}° のとき、${ask} の大きさは何度か。`),
             ans,
             unit: "度",
-            hint: "合同になる三角形はどれかな？ 合同な図形の、対応する角はどうなる？ 一直線の角は何度だったかな？",
-            steps: [
-              `△AB${y} と △AC${x} は、AB＝AC、A${y}＝A${x}、∠A が共通で、2組の辺とその間の角が等しいから合同。`,
-              `対応する角は等しいから、∠A${x}C＝∠A${y}B＝${a}°。`,
-              `A、${x}、B は一直線上にあるから、∠B${x}C＝180°−${a}°＝${ans}°。`,
-            ].map(N),
+            hint: "合同になる三角形はどれかな？ 合同な図形の、対応する角はどうなる？ 三角形の内角の和は何度だったかな？",
+            steps: mode === "adc"
+              ? [cong, `△AB${y} の内角の和は 180° だから、∠A${y}B＝180°−${al}°−${b}°＝${v}°。`, `対応する角は等しいから、∠A${x}C＝∠A${y}B＝${v}°。`].map(N)
+              : [cong, `△AB${y} の内角の和は 180° だから、∠A${y}B＝180°−${al}°−${b}°＝${v}°。対応する角は等しいから、∠A${x}C＝${v}°。`, `A、${x}、B は一直線上にあるから、∠B${x}C＝180°−${v}°＝${ans}°。`].map(N),
           };
         }),
-        // 13d04a 演習（4）①正方形で BE＝CF：AB＝BC・∠ABE＝∠BCF の根拠と、合同条件
+        // 13d04a 演習（4）①正方形で BE＝CF：AB＝BC・∠ABE＝∠BCF・BE＝CF の根拠、または合同条件（3つの等式だけを使う）
         t("13d04a", (r) => {
           const N = namer(r, 6);
           const head = "正方形 ABCD の辺 BC 上に点 E、辺 CD 上に点 F を、BE＝CF となるようにとる。AE＝BF を証明するために、△ABE と △BCF の合同を示す。";
-          const k = pick(r, ["side", "angle", "cond"]);
+          const k = pick(r, ["side", "angle", "hyp", "cond"]);
           if (k === "cond") {
-            const els = [SIDE(0, 1), SIDE(1, 2), ANG(1)], key = judge(els);   // △ABE と △BCF：AB＝BC、BE＝CF、∠ABE＝∠BCF
-            return {
-              q: N(`${head}AB＝BC、∠ABE＝∠BCF、BE＝CF がいえるとき、合同条件は、次のうちどれか。`),
-              ans: COND[key],
-              choices: condChoices(r, key),
-              hint: "三角形の合同条件は3つ。それぞれ、どんな条件だったかな？",
-              steps: [
-                "等しいのは、AB＝BC、BE＝CF、∠ABE＝∠BCF。",
-                "∠ABE は辺 AB と BE の間の角、∠BCF は辺 BC と CF の間の角。",
-                `だから、合同条件は「${COND[key]}」。`,
-              ].map(N),
-            };
+            return condQ(r, N, {
+              intro: `${head}次の 3つだけがわかっている（ほかのことは使わない）。`,
+              V1: ["A", "B", "E"], V2: ["B", "C", "F"],
+              kinds: { SSS: TRI.SSS, SAS: TRI.SAS, ASA: TRI.ASA },
+            });
           }
-          const side = k === "side";
-          const ans = side ? "正方形の4つの辺は等しいから" : "正方形の4つの角は、すべて 90° だから";
-          const pool = side
-            ? ["正方形の対角線の長さは等しいから", "仮定の BE＝CF があるから", "△ABE≡△BCF だから", "AB と BC は共通の辺だから", "平行線の錯角は等しいから"]
-            : ["正方形の対角線の長さは等しいから", "仮定の BE＝CF があるから", "△ABE≡△BCF だから", "∠ABE と ∠BCF は共通の角だから", "∠ABE と ∠BCF は対頂角だから"];
+          // 3つの根拠（辺・角・仮定）は、どれも、どこかで正解になる。もう 1つは、いつも誤答
+          const U = { side: "正方形の4つの辺は、すべて等しいから", angle: "正方形の4つの角は、すべて 90° だから", hyp: "仮定で BE＝CF とされているから" };
+          const far = ["正方形の対角線の長さは等しいから", "平行線の錯角は等しいから", "合同な図形の、対応する辺は等しいから", "対頂角は等しいから"];
+          const eq = { side: "AB＝BC", angle: "∠ABE＝∠BCF", hyp: "BE＝CF" }[k];
+          const ans = N(U[k]);
+          const pool = [...["side", "angle", "hyp"].filter((x) => x !== k).map((x) => U[x]), pick(r, far)].map(N);
           return {
-            q: N(`${head}${side ? "AB＝BC" : "∠ABE＝∠BCF"} と書く根拠として、正しいものは、次のうちどれか。`),
-            ans: N(ans),
-            choices: choices4(r, N(ans), sample(r, pool, 3).map(N)),
+            q: N(`${head}${eq} と書く根拠として、正しいものは、次のうちどれか。`),
+            ans,
+            choices: choices4(r, ans, pool),
             hint: "証明の1行ごとに、等しいと書いたわけがあったね。ここでは、何がわけになるかな？",
-            steps: side
-              ? ["AB と BC は、正方形 ABCD の辺。正方形の4つの辺は、すべて等しい。", "だから、根拠は「正方形の4つの辺は等しいから」。"].map(N)
-              : ["∠ABE は ∠ABC（正方形の角）と同じ角で 90°、∠BCF は ∠BCD（正方形の角）と同じ角で 90°。", "だから、根拠は「正方形の4つの角は、すべて 90° だから」。"].map(N),
+            steps: {
+              side: ["AB と BC は、正方形 ABCD の辺。正方形の4つの辺は、すべて等しい。", "だから、根拠は「正方形の4つの辺は、すべて等しいから」。"],
+              angle: ["∠ABE は ∠ABC（正方形の角）と同じ角で 90°、∠BCF は ∠BCD（正方形の角）と同じ角で 90°。", "だから、根拠は「正方形の4つの角は、すべて 90° だから」。"],
+              hyp: ["BE＝CF は、問題文で「BE＝CF となるようにとる」と言っていること（仮定）。", "だから、根拠は「仮定で BE＝CF とされているから」。"],
+            }[k].map(N),
           };
         }),
         // 13q03a 小テスト（3）チャレンジ：外側の正三角形 ABD、ACE：∠BAE（または ∠DAC）＝∠BAC＋60°
@@ -403,32 +477,26 @@ export const UNITS = [
         t("13q03b", (r) => {
           const N = namer(r, 5), k = pick(r, ["AB", "AE", "ang"]);
           const head = "△ABC の外側に、辺 AB、AC を1辺とする正三角形 ABD、ACE をつくる。BE＝DC を証明するために、△ABE と △ADC の合同を示す。";
-          const hint = "証明の1行ごとに、等しいと書いたわけがあったね。ここでは、何がわけになるかな？";
-          if (k !== "ang") {
-            const eq = k === "AB" ? "AB＝AD" : "AE＝AC", ans = N(k === "AB" ? "正三角形 ABD の辺だから" : "正三角形 ACE の辺だから");
-            const ws = [k === "AB" ? "正三角形 ACE の辺だから" : "正三角形 ABD の辺だから", "結論の BE＝DC があるから", "共通の辺だから", "対頂角は等しいから", "平行線の錯角は等しいから"];
-            const tri = k === "AB" ? "ABD" : "ACE";
-            return {
-              q: N(`${head}${eq} と書く根拠として、正しいものは、次のうちどれか。`),
-              ans,
-              choices: choices4(r, ans, [N(ws[0]), ...sample(r, ws.slice(1), 2).map(N)]),
-              hint,
-              steps: [`${eq.split("＝")[0]} と ${eq.split("＝")[1]} は、正三角形 ${tri} の辺。正三角形の3つの辺は、すべて等しい。`, `だから、根拠は「正三角形 ${tri} の辺だから」。`].map(N),
-            };
-          }
-          const ans = N("∠BAE＝∠BAC＋60°、∠DAC＝60°＋∠BAC だから");
-          const near = ["∠BAE＝∠BAC＋60°、∠DAC＝∠BAC だから", "∠BAE＝∠BAC＋60°、∠DAC＝∠BAC−60° だから"], far = ["∠BAE と ∠DAC は、対頂角だから", "∠BAE と ∠DAC は、共通の角だから", "AB＝AD、AC＝AE だから", "平行線の錯角は等しいから"];
-          const ws = [pick(r, near), ...sample(r, far, 2)].map(N);   // 60° をふくむ誤答を1つ入れる（正解だけが 60° をふくまないように）。どの誤答も、2つの角が等しくなる理由にはならない
+          // 3つの根拠は、どれも、どこかで正解になる。のこり 1つは、いつも誤答（長さ・かたちを、正解にそろえる）
+          const U = { AB: "正三角形 ABD の 3つの辺は、すべて等しいから", AE: "正三角形 ACE の 3つの辺は、すべて等しいから", ang: "∠BAE も ∠DAC も、∠BAC＋60° だから" };
+          const farSide = ["∠BAE と ∠DAC は、向かい合う角（対頂角）だから", "AB と DC が平行で、錯角が等しいから", "結論の BE＝DC を、そのまま使えるから", "∠BAE と ∠DAC は、2つの三角形に共通の角だから"];
+          const farAng = [...farSide, "∠BAE は ∠BAC＋60°、∠DAC は ∠BAC だから", "∠BAE は ∠BAC＋60°、∠DAC は ∠BAC−60° だから"];
+          const eq = { AB: "AB＝AD", AE: "AE＝AC", ang: "∠BAE＝∠DAC" }[k];
+          const lead = k === "ang" ? `AB＝AD、AE＝AC のほかに、∠BAE＝∠DAC をいう。この ∠BAE＝∠DAC が成り立つ理由として、` : `${eq} と書く根拠として、`;
+          const ans = N(U[k]);
+          const pool = [...["AB", "AE", "ang"].filter((x) => x !== k).map((x) => U[x]), pick(r, k === "ang" ? farAng : farSide)].map(N);
           return {
-            q: N(`${head}AB＝AD、AE＝AC のほかに、∠BAE＝∠DAC をいう。この ∠BAE＝∠DAC が成り立つ理由として、正しいものは、次のうちどれか。`),
+            q: N(`${head}${lead}正しいものは、次のうちどれか。`),
             ans,
-            choices: choices4(r, ans, ws),
-            hint: N("正三角形の1つの角は何度だったかな？ ∠BAE や ∠DAC は、どんな角をつなぎ合わせてできているかな？"),
-            steps: [
-              "正三角形の1つの角は 60° だから、∠CAE＝60°、∠DAB＝60°。",
-              "E は AC について B と反対がわ、D は AB について C と反対がわにあるから、∠BAE＝∠BAC＋60°、∠DAC＝60°＋∠BAC。",
-              "よって ∠BAE＝∠DAC。ほかの理由は、この場合には当てはまらない。",
-            ].map(N),
+            choices: choices4(r, ans, pool),
+            hint: k === "ang" ? N("正三角形の1つの角は何度だったかな？ ∠BAE や ∠DAC は、どんな角をつなぎ合わせてできているかな？") : "証明の1行ごとに、等しいと書いたわけがあったね。ここでは、何がわけになるかな？",
+            steps: k === "ang"
+              ? [
+                "正三角形の1つの角は 60° だから、∠CAE＝60°、∠DAB＝60°。",
+                "E は AC について B と反対がわ、D は AB について C と反対がわにあるから、∠BAE＝∠BAC＋60°、∠DAC＝60°＋∠BAC。",
+                "よって ∠BAE＝∠DAC。ほかの理由は、この場合には当てはまらない。",
+              ].map(N)
+              : [`${eq.split("＝")[0]} と ${eq.split("＝")[1]} は、正三角形 ${k === "AB" ? "ABD" : "ACE"} の辺。正三角形の3つの辺は、すべて等しい。`, `だから、根拠は「正三角形 ${k === "AB" ? "ABD" : "ACE"} の 3つの辺は、すべて等しいから」。`].map(N),
           };
         }),
         // 13q03c 小テスト（3）チャレンジ：△ABE≡△ADC の対応する角と、三角形の内角の和：∠ACD＝120°−∠BAC−∠ABE
