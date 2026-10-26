@@ -12,8 +12,8 @@
    ang   … 角のしるし。{ at:'B', a:'A', b:'C', t:'x', n:1, r:5 }＝∠ABC（B が頂点、半直線 B→A と B→C のあいだの小さいほう）。
             t＝角の字（'x'・'65°'・'{{65°}}'＝空欄（解答で赤））。n＝弧の本数（1〜3。等しい角のしるし）。r＝弧の半径（mm。既定 5）。
             right:true＝直角のしるし（小さな□）。reflex:true＝大きいほう（180°より大きい角）。lr＝字の置き場所（頂点からの距離 mm）、tin:true＝字を弧の内がわに。
-   tick  … 等しい辺のしるし。['A','B',1]（本数）。
-   par   … 平行のしるし（＞）。['A','B',1]（本数。向きは、A→B）。
+   tick  … 等しい辺のしるし。['A','B',1]（本数）。4つ目の数 pos（0〜1）で、A から B へ、どのあたりに付けるか（既定 0.5＝まん中）。
+   par   … 平行のしるし（＞）。['A','B',1]（本数。向きは、A→B）。tick と同じ辺に付けるときは、pos（0〜1）でずらす：['A','B',1,0.3]。
    dots  … 点（●）をうつ名前の配列。['A','B']
    txt   … 好きな字。{ p:[x,y]（座標。または名前）, t:'ℓ', dx:0, dy:0（mm）, anchor:'middle', size:3 }
    a     … 解答を表示したときだけ、赤で出すもの。{ segs, ang, tick, par, vl, txt, dots }（中身の書き方は同じ）。点（pts）は共通。
@@ -100,9 +100,9 @@
         }
       });
       // 等しい辺のしるし・平行のしるし
-      const mark = (list, kind) => (list || []).forEach(([a, b, nn]) => {
+      const mark = (list, kind) => (list || []).forEach(([a, b, nn, pos]) => {
         const Ax = SX(a), Ay = SY(a), Bx = SX(b), By = SY(b), L = Math.hypot(Bx - Ax, By - Ay) || 1, u = [(Bx - Ax) / L, (By - Ay) / L], v = [-u[1], u[0]];
-        const n = nn || 1, gap = 1.3, cx = (Ax + Bx) / 2, cy = (Ay + By) / 2;
+        const n = nn || 1, gap = 1.3, q = pos == null ? 0.5 : pos, cx = Ax + (Bx - Ax) * q, cy = Ay + (By - Ay) * q;
         for (let k = 0; k < n; k++) {
           const t = (k - (n - 1) / 2) * gap, px = cx + u[0] * t, py = cy + u[1] * t;
           if (kind === 'tick') out += h.ln(px - v[0] * 1.3, py - v[1] * 1.3, px + v[0] * 1.3, py + v[1] * 1.3, stroke, 0.36);

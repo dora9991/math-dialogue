@@ -14,8 +14,7 @@
    ・範囲：二等辺三角形・平行四辺形の性質や、直角三角形の合同条件は使わない（第5章）。正方形・正三角形は、辺の長さ・角の大きさ（小学校で学習ずみ）だけを使う。
    検算：node tools/verify.cjs　／　見た目：node tools/check.cjs */
 (function () {
-  const { M, K, B, G, F, C2, BR, T, HD, WD, MA } = IK.b;
-  const GEO = IK.b.GEO || ((o, fo) => IK.b.SVG(() => '', fo));   // verify.cjs は geo.js を読みこまない（図の中身は検査しない）
+  const { M, K, B, G, F, C2, BR, T, HD, WD, MA, GEO } = IK.b;
   const J = JSON.stringify;
 
   /* ---------------- 図の座標（図と checks の両方で使う。Math だけを使う、独立した関数） ---------------- */
