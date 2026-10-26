@@ -447,7 +447,7 @@ export const UNITS = [
         // 10d01a 演習（1）AB＝AC、D は辺 BC の中点 → 合同な三角形と合同条件（3組の辺）。二等分線の場合は、2組の辺とその間の角
         t("10d01a", (r) => gridQ(r, byClass(r, { SSS: 34, SAS: 33, ASA: 33 }, { SSS: ["isoMid", "isoMid", "kite"], SAS: ["isoBis", "isoBis", "ovl1"], ASA: ["ovl2", "ovl3"] }))),
         // 10d01b 演習（1）問題文に書いていない等しい組（AD は共通 など）の理由
-        t("10d01b", (r) => { const fams = ["isoMid", "isoBis", "kite", "opp", "ovl1", "ovl2", "ovl3", "crossSAS", "crossA", "crossB", "parEq", "parEq2", "parPar", "sqr", "regt"]; return reasonQ(r, FAMILY[pick(r, fams)](r), fams); }),
+        t("10d01b", (r) => { const fams = ["isoMid", "kite", "opp", "ovl1", "ovl2", "ovl3", "crossSAS", "crossA", "crossB", "crossP1", "parEq", "parPar", "sqr", "sqr", "regt", "regt"]; return reasonQ(r, FAMILY[pick(r, fams)](r), fams); }),
         // 10d01c 演習（1）共通な辺（角）を選ぶ
         t("10d01c", (r) => {
           const ang = r(0, 4) === 0;
@@ -480,11 +480,11 @@ export const UNITS = [
         // 10d02a 演習（2）AB∥DC、AB＝DC → △ABC≡△CDA（2組の辺とその間の角。錯角と共通な辺）
         t("10d02a", (r) => gridQ(r, byClass(r, { SSS: 25, SAS: 35, ASA: 40 }, { SSS: ["opp", "kite"], SAS: ["parEq", "parEq", "parEq2"], ASA: ["parPar", "crossP1", "crossP2", "crossP3"] }))),
         // 10d02b 演習（2）平行線の錯角・共通な辺の理由
-        t("10d02b", (r) => { const fams = ["parEq", "parEq2", "parPar", "crossP1", "crossP2", "crossP3", "kite", "opp", "isoBis", "ovl1", "ovl3", "sqr", "regt"]; return reasonQ(r, FAMILY[pick(r, fams)](r), fams); }),
+        t("10d02b", (r) => { const fams = ["parEq", "parPar", "crossP1", "crossP3", "kite", "opp", "isoBis", "ovl1", "ovl2", "ovl3", "crossSAS", "sqr", "sqr", "regt", "regt"]; return reasonQ(r, FAMILY[pick(r, fams)](r), fams); }),
         // 10d03a 演習（3）線分 AB と CD が点 O で交わり、…（1組の辺とその両端の角。対頂角）
         t("10d03a", (r) => gridQ(r, byClass(r, { SSS: 20, SAS: 40, ASA: 40 }, { SSS: ["opp", "kite"], SAS: ["crossSAS", "crossSAS", "crossSAS", "kiteSAS"], ASA: ["crossA", "crossB", "crossP1", "crossP2", "crossP3"] }))),
         // 10d03b 演習（3）対頂角の理由
-        t("10d03b", (r) => { const fams = ["crossSAS", "crossA", "crossB", "crossP1", "crossP2", "crossP3", "crossSAS", "ovl2", "kite", "opp", "sqr", "regt"]; return reasonQ(r, FAMILY[pick(r, fams)](r), fams); }),
+        t("10d03b", (r) => { const fams = ["crossSAS", "crossA", "crossB", "crossP1", "crossP2", "parPar", "ovl2", "ovl3", "kite", "opp", "isoBis", "sqr", "sqr", "regt", "regt"]; return reasonQ(r, FAMILY[pick(r, fams)](r), fams); }),
       ],
       // ───────── 2 標準 ─────────
       2: [
