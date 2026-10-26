@@ -97,31 +97,62 @@
         boxes.push(bx);
       });
     });
-    const clear = (b, vx, vy, r) => {   // 箱 b が、線・ほかの字・この角の弧（半径 r）にかからない
+    // 角の弧（どの角のも）。字がかからないように、点にして、おぼえておく
+    const arcPts = [];
+    srcs.forEach(src => (src.ang || []).forEach(an => {
+      if (an.right) return;
+      const V = pt(an.at), A = pt(an.a), C = pt(an.b), vx = X(V[0]), vy = Y(V[1]), ta = Math.atan2(-(Y(A[1]) - vy), X(A[0]) - vx), tb = Math.atan2(-(Y(C[1]) - vy), X(C[0]) - vx);
+      let d = ((tb - ta) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI), st = ta, sw = d; if (d > Math.PI) { st = tb; sw = 2 * Math.PI - d; }
+      for (let k = 0; k < (an.n || 1); k++) for (let i = 0; i <= 12; i++) { const q = st + sw * i / 12, rr = (an.r || 5) + k * 1.3; arcPts.push([vx + rr * Math.cos(q), vy - rr * Math.sin(q)]); }
+    }));
+    const clear = (b, vx, vy, r) => {   // 箱 b が、線・弧・ほかの字・この角の弧（半径 r）にかからない
       const hw = b.w / 2 + 0.7, hh = b.h / 2 + 0.7;
       for (const sg of segs) {
         const n = Math.max(2, Math.ceil(Math.hypot(sg[1][0] - sg[0][0], sg[1][1] - sg[0][1]) / 0.4));
         for (let i = 0; i <= n; i++) { const x = sg[0][0] + (sg[1][0] - sg[0][0]) * i / n, y = sg[0][1] + (sg[1][1] - sg[0][1]) * i / n; if (Math.abs(x - b.cx) < hw && Math.abs(y - b.cy) < hh) return false; }
       }
+      for (const q of arcPts) if (Math.abs(q[0] - b.cx) < hw && Math.abs(q[1] - b.cy) < hh) return false;
       for (const c of boxes.concat(placed)) if (Math.abs(b.cx - c.cx) < (b.w + c.w) / 2 + 0.4 && Math.abs(b.cy - c.cy) < (b.h + c.h) / 2 + 0.4) return false;
       const ddx = Math.max(Math.abs(vx - b.cx) - b.w / 2, 0), ddy = Math.max(Math.abs(vy - b.cy) - b.h / 2, 0);
       return Math.hypot(ddx, ddy) >= r + 0.9;
     };
-    srcs.forEach(src => (src.ang || []).forEach(an => {
-      if (an.right || an.t == null || an.t === '') return;
+    const todo = [];
+    srcs.forEach(src => (src.ang || []).forEach(an => { if (!(an.right || an.t == null || an.t === '')) todo.push({ src, an }); }));
+    const wedge = e => { const V = pt(e.an.at), A = pt(e.an.a), C = pt(e.an.b), a1 = Math.atan2(A[1] - V[1], A[0] - V[0]), a2 = Math.atan2(C[1] - V[1], C[0] - V[0]); let d = Math.abs(a1 - a2); return d > Math.PI ? 2 * Math.PI - d : d; };
+    todo.sort((p, q) => wedge(p) - wedge(q));   // せまい角の字を、先に置く
+    // 頂点の位置（字の候補が、ほかの頂点のほうに近いと、まちがえやすい）
+    const verts = {};
+    srcs.forEach(src => { let vl = src.vl; if (typeof vl === 'string') { const o2 = {}; [...vl].forEach(c => { o2[c] = c; }); vl = o2; } Object.keys(vl || {}).forEach(n => { if (P[n]) verts[n] = [X(P[n][0]), Y(P[n][1])]; }); });
+    todo.forEach(({ src, an }) => {
       const V = pt(an.at), A = pt(an.a), C = pt(an.b), vx = X(V[0]), vy = Y(V[1]), r = an.r || 5;
       const ua = [X(A[0]) - vx, Y(A[1]) - vy], uc = [X(C[0]) - vx, Y(C[1]) - vy], la = Math.hypot(...ua), lc = Math.hypot(...uc);
       let bxv = ua[0] / la + uc[0] / lc, byv = ua[1] / la + uc[1] / lc; const bl = Math.hypot(bxv, byv) || 1; bxv /= bl; byv /= bl;
-      const text = String(an.t), rmax = Math.min(la, lc) - 1.5;
-      for (let rho = r + 2.2; rho <= rmax; rho += 0.4) {   // 角の内がわ
-        const b = boxOf(vx + rho * bxv, vy + rho * byv, text, SZ);
-        if (clear(b, vx, vy, r)) { an.lr = Math.round((rho - 0.7 * GROW) * 100) / 100; placed.push(b); return; }
+      const half = Math.acos(Math.max(-1, Math.min(1, (ua[0] * uc[0] + ua[1] * uc[1]) / (la * lc)))) / 2, bAng = Math.atan2(byv, bxv);
+      const text = String(an.t), arcMid = [vx + r * bxv, vy + r * byv];
+      let best = null;
+      for (const f of [1, 0.88, 0.78]) {   // 字の大きさ（SZ の何倍か）。大きいほうを先に
+        const fs = SZ * f;
+        for (let th = 0; th < 360; th += 10) {
+          const ang = th * Math.PI / 180, dx = Math.cos(ang), dy = Math.sin(ang);
+          let dd = Math.abs(((ang - bAng) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);   // bisector からのずれ
+          const inside = dd <= half * 0.9;
+          for (let rho = r + 2.0; rho <= r + 22; rho += 0.5) {
+            const b = boxOf(vx + rho * dx, vy + rho * dy, text, fs);
+            if (b.cx - b.w / 2 < 1.5 || b.cx + b.w / 2 > W - 1.5 || b.cy - b.h / 2 < 1.5 || b.cy + b.h / 2 > H - 1.5) continue;
+            if (!clear(b, vx, vy, r)) continue;
+            if (Object.keys(verts).some(n => Math.hypot(verts[n][0] - vx, verts[n][1] - vy) > 0.5 && Math.hypot(verts[n][0] - b.cx, verts[n][1] - b.cy) < rho * 0.95)) continue;   // ほかの頂点のほうが近い
+            const sc = Math.hypot(b.cx - arcMid[0], b.cy - arcMid[1]) + (inside ? 0 : 3.5);
+            if (!best || sc < best.sc - 1e-9 || (f < best.f && sc < best.sc + 0)) best = { sc, f, fs, rho, dx, dy, th, b, inside, dd };
+            break;   // この向きでは、いちばん近いところで十分
+          }
+        }
+        if (best && best.sc <= 14) break;   // 十分近くにおけたら、小さい字にしない
       }
-      for (let rho = r + 2.2; rho <= r + 30; rho += 0.4) {   // 角の外がわ（頂点をはさんで、反対がわ）
-        const b = boxOf(vx - rho * bxv, vy - rho * byv, text, SZ);
-        if (clear(b, vx, vy, r)) { src.txt = (src.txt || []).concat([{ p: V, t: text, dx: -rho * bxv, dy: -rho * byv }]); delete an.t; placed.push(b); return; }
-      }
-    }));
+      if (!best) return;
+      placed.push(best.b);
+      if (best.f === 1 && best.inside && best.dd < 0.12) an.lr = Math.round((best.rho - 0.7 * GROW) * 100) / 100;
+      else { src.txt = (src.txt || []).concat([{ p: V, t: text, dx: best.rho * best.dx, dy: best.rho * best.dy, size: Math.round(best.fs * 100) / 100 }]); delete an.t; }
+    });
     return o;
   };
 
@@ -141,9 +172,9 @@
     return reg(name, {
       pts, segs: [['A', 'E'], ['E', 'C']].concat(LM), par: parMarks(HL, x1), on: ON,
       vl: { A: ['A', 135], E: ['E', 35, 3.8], C: ['C', 225] },
-      ang: [{ at: 'A', a: 'L2', b: 'E', t: lab.A }, { at: 'C', a: 'M2', b: 'E', t: lab.C }, { at: 'E', a: 'A', b: 'C', v: lab.E }],
-      txt: [sideTxt('E', 180 - a, 180 + c, 180, lab.E)],
-      a: { segs: [['D1', 'D2', { dash: 1 }]], ang: [{ at: 'E', a: 'D1', b: 'A', t: a + '°', r: 12, lr: 19 }, { at: 'E', a: 'D1', b: 'C', t: c + '°', r: 12, lr: 19 }] },
+      ang: [{ at: 'A', a: 'L2', b: 'E', t: lab.A }, { at: 'C', a: 'M2', b: 'E', t: lab.C }, LS > 1 ? { at: 'E', a: 'A', b: 'C', t: lab.E } : { at: 'E', a: 'A', b: 'C', v: lab.E }],
+      txt: LS > 1 ? [] : [sideTxt('E', 180 - a, 180 + c, 180, lab.E)],
+      a: { segs: [['D1', 'D2', { dash: 1 }]], ang: [{ at: 'E', a: 'D1', b: 'A', t: a + '°', r: LS > 1 ? 8 : 12, lr: 19 }, { at: 'E', a: 'D1', b: 'C', t: c + '°', r: LS > 1 ? 8 : 12, lr: 19 }] },
       xv: xv == null ? a + c : xv
     });
   };
