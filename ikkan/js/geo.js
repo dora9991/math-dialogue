@@ -25,7 +25,7 @@
   const TAU = 2 * Math.PI;
 
   const geo = o => (W, H, h) => {
-    const P = o.pts || {}, LS = IK.labelScale || 1, SZ = (o.size || 3.0) * LS, GROW = SZ - (o.size || 3.0);   // LS＝字を大きくする倍率（スライドの図を書き出すときだけ。字が大きくなったぶん、字を置く距離もひろげる）
+    const P = o.pts || {}, LS = IK.labelScale || 1, SZ0 = o.size || 3.0; let SZ = SZ0 * LS, GROW = SZ - SZ0;   // LS＝字を大きくする倍率（スライドの図を書き出すときだけ。字が大きくなったぶん、字を置く距離もひろげる）
     const pt = k => { if (Array.isArray(k)) return k; if (!P[k]) throw new Error('GEO：点 ' + k + ' がありません'); return P[k]; };
     const polys = (v => (v == null ? [] : Array.isArray(v) ? v : [v]))(o.poly);
     const segList = (src) => {
@@ -47,28 +47,38 @@
     [o, o.a || {}].forEach(src => (src.txt || []).forEach(t => { if (t.p) all.push(pt(t.p)); }));
     const xs = all.map(p => p[0]), ys = all.map(p => p[1]);
     const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-    const pad = o.pad == null ? 7 : o.pad, bw = Math.max(x1 - x0, 1e-6), bh = Math.max(y1 - y0, 1e-6);
+    const pad = (o.pad == null ? 7 : o.pad) + GROW * 1.0, bw = Math.max(x1 - x0, 1e-6), bh = Math.max(y1 - y0, 1e-6);
     const s = o.scale || Math.min((W - 2 * pad) / bw, (H - 2 * pad) / bh);
     const ox = (W - bw * s) / 2 - x0 * s, oy = (H - bh * s) / 2 + y1 * s;
     const X = x => ox + x * s, Y = y => oy - y * s;
     const SX = p => X(pt(p)[0]), SY = p => Y(pt(p)[1]);
+    // 字を大きくするときの上限：多角形では、いちばん短い辺の 0.2 倍まで（となりあう頂点の角の字が、たがいにぶつからないように）
+    if (LS > 1 && polys.length) {
+      let minSide = Infinity;
+      polys.forEach(pl => { const n = [...pl]; for (let i = 0; i < n.length; i++) { const A = pt(n[i]), B2 = pt(n[(i + 1) % n.length]); minSide = Math.min(minSide, Math.hypot((A[0] - B2[0]) * s, (A[1] - B2[1]) * s)); } });
+      if (isFinite(minSide)) { SZ = Math.max(SZ0, Math.min(SZ, 0.2 * minSide)); GROW = SZ - SZ0; }
+    }
     const cen = (() => {   // 字をおく向きの基準：図形（poly）の中心。なければ、全部の点の中心
       const names = polys.length ? [...polys.join('')] : Object.keys(P);
       const ps = names.map(n => P[n]).filter(Boolean);
       return [ps.reduce((a, p) => a + p[0], 0) / ps.length, ps.reduce((a, p) => a + p[1], 0) / ps.length];
     })();
 
+    // 字の箱（おおよその大きさ）。角の字どうし・角の字と頂点の字が重なったときに、少しずらすために使う
+    const fixedBoxes = [];
+    const boxOf = (cx, cy, txt, fs) => { const body = String(txt).replace(/\{\{|\}\}/g, ''); const w = [...body].reduce((a2, c) => a2 + (c.charCodeAt(0) > 0x2e80 ? 1.0 : 0.58) * fs, 0) + (/\{\{/.test(String(txt)) ? 2.4 : 0); return { cx, cy, w: w + 0.6, h: fs * 0.95 }; };
     const render = (src, red) => {
       const stroke = red ? RED : INK;
       let out = '';
+      const angLabs = [];
       // 線分
       segList(src).forEach(sg => {
         const w = sg.op.w || 0.32;
         out += h.ln(X(sg.A[0]), Y(sg.A[1]), X(sg.B[0]), Y(sg.B[1]), stroke, w, (sg.op.dash ? ' stroke-dasharray="1.4 1"' : '') + ' stroke-linecap="round"');
         // 直線の名前（ℓ・m）：lab＝B のがわのはし、lab0＝A のがわのはし（はしの外がわ 3.4mm に、字をおく）
         const ex = X(sg.B[0]) - X(sg.A[0]), ey = Y(sg.B[1]) - Y(sg.A[1]), eL = Math.hypot(ex, ey) || 1;
-        if (sg.op.lab) out += h.rich(X(sg.B[0]) + ex / eL * (3.6 + GROW * 0.6), Y(sg.B[1]) + ey / eL * (3.6 + GROW * 0.6) + SZ * 0.34, sg.op.lab, SZ, 'middle');
-        if (sg.op.lab0) out += h.rich(X(sg.A[0]) - ex / eL * (3.6 + GROW * 0.6), Y(sg.A[1]) - ey / eL * (3.6 + GROW * 0.6) + SZ * 0.34, sg.op.lab0, SZ, 'middle');
+        if (sg.op.lab) { const lx = X(sg.B[0]) + ex / eL * (3.6 + GROW * 0.6), ly = Y(sg.B[1]) + ey / eL * (3.6 + GROW * 0.6); out += h.rich(lx, ly + SZ * 0.34, sg.op.lab, SZ, 'middle'); fixedBoxes.push(boxOf(lx, ly, sg.op.lab, SZ)); }
+        if (sg.op.lab0) { const lx = X(sg.A[0]) - ex / eL * (3.6 + GROW * 0.6), ly = Y(sg.A[1]) - ey / eL * (3.6 + GROW * 0.6); out += h.rich(lx, ly + SZ * 0.34, sg.op.lab0, SZ, 'middle'); fixedBoxes.push(boxOf(lx, ly, sg.op.lab0, SZ)); }
       });
       // 角のしるし
       (src.ang || []).forEach(a => {
@@ -94,9 +104,14 @@
         if (a.t != null && a.t !== '') {
           const txt = String(a.t), len = txt.replace(/\{\{|\}\}/g, '').length;
           const mid = start + sweep / 2;
-          const rl = a.lr != null ? a.lr + GROW * 0.7 : (a.tin ? Math.max(2.2, r * 0.62) : r + (n - 1) * 1.3 + 1.6 + (len > 2 ? 3.8 : len > 1 ? 3.0 : 2.3) + GROW * 0.7);
+          let rl = a.lr != null ? a.lr + GROW * 0.7 : (a.tin ? Math.max(2.2, r * 0.62) : r + (n - 1) * 1.3 + 1.6 + (len > 2 ? 3.8 : len > 1 ? 3.0 : 2.3) + GROW * 0.7);
+          // 多角形の頂点の内角の字は、図形の中心にむかうので、遠くにおきすぎると、たがいに重なる。中心までの距離の 55％までにおさえる
+          if (a.lr == null && !a.tin && polys.length && [...polys.join('')].indexOf(a.at) >= 0) {
+            const dc = Math.hypot(vx - X(cen[0]), vy - Y(cen[1]));
+            if (dc > 0) rl = Math.min(rl, Math.max(r + SZ * 0.55 + 1.2, dc * 0.55));
+          }
           const q = pp(rl, mid);
-          out += h.rich(q[0], q[1] + SZ * 0.34, txt, SZ, 'middle');
+          angLabs.push({ txt, ...boxOf(q[0], q[1], txt, SZ) });
         }
       });
       // 等しい辺のしるし・平行のしるし
@@ -123,17 +138,53 @@
         const p = pt(n);
         if (d == null) { const dx = p[0] - cen[0], dy = p[1] - cen[1]; d = (Math.abs(dx) + Math.abs(dy) < 1e-9) ? 90 : Math.atan2(dy, dx) * 180 / Math.PI; }
         const th = d * Math.PI / 180, q = [X(p[0]) + k * Math.cos(th), Y(p[1]) - k * Math.sin(th)];
-        out += h.rich(q[0], q[1] + SZ * 0.34, t, SZ, 'middle');
+        out += h.rich(q[0], q[1] + SZ * 0.34, t, SZ, 'middle'); fixedBoxes.push(boxOf(q[0], q[1], t, SZ));
       });
       // 好きな字
       (src.txt || []).forEach(t => {
-        const p = pt(t.p); out += h.rich(X(p[0]) + (t.dx || 0), Y(p[1]) + (t.dy || 0) + (t.size || SZ) * 0.34, t.t, t.size || SZ, t.anchor || 'middle');
+        const p = pt(t.p), fs = t.size || SZ, tx = X(p[0]) + (t.dx || 0), ty = Y(p[1]) + (t.dy || 0); out += h.rich(tx, ty + fs * 0.34, t.t, fs, t.anchor || 'middle');
+        const bx = boxOf(tx, ty, t.t, fs); if (t.anchor === 'start') bx.cx += bx.w / 2; else if (t.anchor === 'end') bx.cx -= bx.w / 2; fixedBoxes.push(bx);
       });
+      // 角の字：ほかの字（頂点の字・直線の名前・好きな字・さきに置いた角の字）や、たがいに重なっていたら、少しずらす
+      for (let it = 0; it < 60; it++) {
+        let moved = false;
+        angLabs.forEach((a, i) => {
+          const others = [...fixedBoxes, ...angLabs.filter((_, j) => j !== i)];
+          others.forEach(b => {
+            const dx = a.cx - b.cx, dy = a.cy - b.cy, ox = (a.w + b.w) / 2 - Math.abs(dx), oy = (a.h + b.h) / 2 - Math.abs(dy);
+            if (ox > 0.2 && oy > 0.2) {
+              const mine = angLabs.indexOf(b) >= 0 ? 0.5 : 1;   // 相手も角の字なら、半分ずつ動く
+              if (ox < oy) a.cx += (dx >= 0 ? 1 : -1) * ox * mine; else a.cy += (dy >= 0 ? 1 : -1) * oy * mine;
+              moved = true;
+            }
+          });
+        });
+        if (!moved) break;
+      }
+      angLabs.forEach(a => { out += h.rich(a.cx, a.cy + SZ * 0.34, a.txt, SZ, 'middle'); fixedBoxes.push({ cx: a.cx, cy: a.cy, w: a.w, h: a.h }); });
       return out;
     };
     let out = render(o, false);
     if (o.a) out += h.ans(render(o.a, true));
-    return `<g class="geo">${out}</g>`;   // class geo＝スライド用の書き出し（tools/slide-src.cjs）が、図の字を二重に大きくしないための目じるし
+    // 図のはしから字や線がはみ出していたら、全体を縮めて、枠におさめる（字を大きくしたとき・字を遠くにおいたときの、右はし・下はしの切れを防ぐ）
+    let x0b = Infinity, x1b = -Infinity, y0b = Infinity, y1b = -Infinity;
+    const grow = (x, y) => { if (isFinite(x) && isFinite(y)) { x0b = Math.min(x0b, x); x1b = Math.max(x1b, x); y0b = Math.min(y0b, y); y1b = Math.max(y1b, y); } };
+    (out.match(/<line [^>]*>/g) || []).forEach(t => { const g = k => parseFloat((t.match(new RegExp(k + '="([^"]+)"')) || [])[1]); grow(g('x1'), g('y1')); grow(g('x2'), g('y2')); });
+    (out.match(/points="[^"]+"/g) || []).forEach(t => t.slice(8, -1).trim().split(/\s+/).forEach(pq => { const q = pq.split(',').map(parseFloat); grow(q[0], q[1]); }));
+    (out.match(/<circle [^>]*>/g) || []).forEach(t => { const g = k => parseFloat((t.match(new RegExp(k + '="([^"]+)"')) || [])[1]); grow(g('cx') - g('r'), g('cy') - g('r')); grow(g('cx') + g('r'), g('cy') + g('r')); });
+    (out.match(/<text [^>]*>[\s\S]*?<\/text>/g) || []).forEach(t => {
+      const g = k => (t.match(new RegExp(k + '="([^"]+)"')) || [])[1], fs = parseFloat(g('font-size')) || SZ, an = g('text-anchor') || 'start';
+      const body = t.replace(/<[^>]+>/g, ''), w = [...body].reduce((a2, c) => a2 + (c.charCodeAt(0) > 0x2e80 ? 1.0 : 0.58) * fs, 0), x = parseFloat(g('x')), y = parseFloat(g('y'));
+      const xa = an === 'middle' ? x - w / 2 : an === 'end' ? x - w : x;
+      grow(xa, y - fs * 1.0); grow(xa + w, y + fs * 0.3);
+    });
+    let tr = '';
+    if (isFinite(x0b) && (x0b < 1.2 || x1b > W - 1.2 || y0b < 1.2 || y1b > H - 1.2)) {
+      const k = Math.min(1, (W - 2.4) / Math.max(x1b - x0b, 1e-6), (H - 2.4) / Math.max(y1b - y0b, 1e-6));
+      const tx = (W - k * (x0b + x1b)) / 2, ty = (H - k * (y0b + y1b)) / 2;
+      tr = ` transform="translate(${f2(tx)} ${f2(ty)}) scale(${f2(k * 1000) / 1000})"`;
+    }
+    return `<g class="geo"${tr}>${out}</g>`;   // class geo＝スライド用の書き出し（tools/slide-src.cjs）が、図の字を二重に大きくしないための目じるし
   };
 
   B.GEO = (o, fo) => B.SVG(geo(o), fo);

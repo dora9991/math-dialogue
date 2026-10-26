@@ -95,7 +95,7 @@ function extDiff(r, lo, hi, step) {
     q: `${f.text}${f.ext}＝${e}°、∠${giv}＝${vg}° のとき、∠${ask} の大きさは？`,
     ans: va,
     unit: "度",
-    hint: "外角の性質を、式にしてみよう。外角と、となりあわない 2つの内角の間に、どんな関係があったかな？",
+    hint: "外角の性質を、式で表せないかな？ 外角と、となりあわない 2つの内角の間に、どんな関係があったかな？",
     steps: [`${f.ext} は、${f.V} にとなりあわない 2つの内角 ∠${giv}、∠${ask} の和に等しい（外角の性質）。`, `${e}°＝∠${giv}+∠${ask}＝${vg}°+∠${ask} だから、∠${ask}＝${e}°−${vg}°＝${va}°`],
   };
 }
@@ -162,13 +162,13 @@ function relSteps(R, tail) {
 const relBad = (R, val) => [Math.abs(R.f1.m), Math.abs(R.f2.m), R.f1.k, R.f2.k].includes(val);   // 答えが、問題文の数と同じになる組は使わない
 
 // ── 内角の比 ───────────────────────────────────────────────────────
-/** 比 p：q：r（p≦q≦r、これ以上かんたんにできない比）で、合計が 180 の約数になるもの */
+/** 比 p：q：r（p＜q＜r、これ以上かんたんにできない比）で、合計が 180 の約数になるもの */
 const gcd2 = (a, b) => (b ? gcd2(b, a % b) : a);
 const RATIOS = (() => {
   const out = [];
   for (let p = 1; p <= 7; p++) for (let q = p; q <= 9; q++) for (let s = q; s <= 9; s++) {
     const sum = p + q + s;
-    if (180 % sum || (p === q && q === s) || gcd2(gcd2(p, q), s) !== 1) continue;
+    if (180 % sum || p === q || q === s || gcd2(gcd2(p, q), s) !== 1) continue;   // 同じ数をふくむ比は、解説の式が重なるので使わない
     const u = 180 / sum, a = [p * u, q * u, s * u];
     if (a[0] < 10) continue;
     out.push({ p, q, s, sum, u, a, kind: kindOf(...a) });
@@ -286,7 +286,7 @@ export const UNITS = [
             q: `次の 4つの組は、それぞれ三角形の 2つの内角の大きさを表している。${TRI[k]}になるものは、どれか。`,
             ans: txt(prs[0]),
             choices: choices4(r, txt(prs[0]), prs.slice(1).map(txt)),
-            hint: "三角形の3つの内角の和は何度だったかな？ 組ごとに、残りの角を求めて調べよう。",
+            hint: "三角形の3つの内角の和は何度だったかな？ 組ごとに、残りの角を求めると、種類がわかるかな？",
             steps: [`組ごとに、残りの角を　180°−（2つの角の和）　で求める。`, `${line(prs[0])}　　${line(prs[1])}`, `${line(prs[2])}　　${line(prs[3])}`, `${TRI[k]}になるのは「${txt(prs[0])}」。`],
           };
         }),
@@ -342,7 +342,7 @@ export const UNITS = [
         }),
         // 04d05b 演習（5）内角の比から、いちばん大きい内角
         t("04d05b", (r) => {
-          const R = pick(r, RATIOS), big = R.a[2], ord = shuffle(r, [R.p, R.q, R.s]);
+          const R = pick(r, RATIOS.filter((x) => x.kind !== 1)), big = R.a[2], ord = shuffle(r, [R.p, R.q, R.s]);   // 直角になる比は、答えがいつも 90° になるので使わない
           return {
             q: `三角形の 3つの内角の大きさの比が ${ord.join("：")} のとき、いちばん大きい内角は何度か。`,
             ans: big,
@@ -376,7 +376,7 @@ export const UNITS = [
             q: `${f.text}${f.ext}＝${e}° で、∠${bigN} は ∠${smN} の ${k}倍である。△ABC の 3つの内角のうち、いちばん大きいものは何度か。`,
             ans: mx,
             unit: "度",
-            hint: "外角の性質と、内角の和 180° のどちらも、使えそうかな？ 3つの内角を、全部求めてくらべよう。",
+            hint: "外角の性質と、内角の和 180° のどちらも、使えそうかな？ 3つの内角は、それぞれ何度になるかな？",
             steps: [`${f.ext}＝∠${bigN}+∠${smN}＝${e}° と、∠${bigN}＝${k}∠${smN} から　∠${smN}＝${y}°、∠${bigN}＝${X}°`, `∠${f.V}＝180°−${e}°＝${V}°（${f.ext} は ∠${f.V} の外角）`, `3つの内角は ${X}°、${y}°、${V}° だから、いちばん大きいのは ${mx}°。`],
           };
         }),

@@ -39,7 +39,7 @@
   // 内角の字：labels[k]＝頂点 k の内角の字（null なら書かない）。sp[k]＝{ r, lr } の変更
   const intAng = (n, labels, sp) => labels.map((t, k) => (t == null ? null : Object.assign({ at: NM[k], a: NM[(k + n - 1) % n], b: NM[(k + 1) % n], t, r: 3.6, lr: 7.4 }, (sp && sp[k]) || {}))).filter(Boolean);
   // 図の見出し（ア・①）を、図の枠の左上のすみに書く
-  const GEOC = (o, t) => { const blk = GEO(o), g = blk.svg; blk.svg = (W, H, h) => g(W, H, h) + h.tx(1.2, 4.4, t, 3.6, 'start'); return blk; };
+  const GEOC = (o, t) => { const blk = GEO(o), g = blk.svg; blk.svg = (W, H, h) => { const k = Math.min(1.6, (window.IK && window.IK.labelScale) || 1); return g(W, H, h) + '<g class="geo">' + h.tx(1.2, 1.4 + 3.0 * k, t, 3.6 * k, 'start') + '</g>'; }; return blk; };
 
   /* ---------------- 検算の道具（checks の式の中に、そのまま埋めこむ） ----------------
      ag(P, a, b, c)：座標 P から、∠abc（b が頂点）の大きさ（度）　geoOK(o)：GEO の図 o の、数字の角の字が座標と合っているか・多角形が凸か・字のない同じ本数の弧が等しいか
