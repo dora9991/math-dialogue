@@ -23,10 +23,11 @@
   const triSSS = (ab, bc, ca) => { const x = (ab * ab + bc * bc - ca * ca) / (2 * bc); return [[x, Math.sqrt(ab * ab - x * x)], [0, 0], [bc, 0]]; };   // A・B・C
   const rigid = (P, o) => P.map(p => { let x = o.flip ? -p[0] : p[0], y = p[1]; const t = rad(o.rot || 0), c = Math.cos(t), s = Math.sin(t); [x, y] = [x * c - y * s, x * s + y * c]; return [x + (o.to ? o.to[0] : 0), y + (o.to ? o.to[1] : 0)]; });
   const cen = P => [P.reduce((a, p) => a + p[0], 0) / P.length, P.reduce((a, p) => a + p[1], 0) / P.length];
-  // 辺 i→j の字（text）：多角形の外がわ（中心から遠ざかる向き）に k mm
+  const LS = IK.labelScale || 1;   // スライドの図を書き出すときだけ、図の字を LS 倍にする（tools/slide-src.cjs）。紙に印刷するときは 1
+  // 辺 i→j の字（text）：多角形の外がわ（中心から遠ざかる向き）に k mm。スライド（LS＞1）では、字が大きくなるぶん、辺から遠ざける
   const lenTxt = (P, names, i, j, text, k) => {
     const a = P[i], b = P[j], m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], c = cen(P), d = Math.hypot(m[0] - c[0], m[1] - c[1]) || 1, nx = (m[0] - c[0]) / d, ny = (m[1] - c[1]) / d;
-    const w = [...String(text).replace(/[{}]/g, '')].reduce((s, ch) => s + (/[\x20-\x7e]/.test(ch) ? 1.7 : 3), 0), kk = Math.max(k || 0, w / 2 * Math.abs(nx) + 1.6 * Math.abs(ny) + 1.8);   // 字の大きさしだいで、辺からはなす
+    const w = [...String(text).replace(/[{}]/g, '')].reduce((s, ch) => s + (/[\x20-\x7e]/.test(ch) ? 1.7 : 3), 0) * LS, kk = Math.max((k || 0) * (1 + (LS - 1) * 0.4), w / 2 * Math.abs(nx) + 1.6 * LS * Math.abs(ny) + 1.8 + (LS - 1) * 0.8);   // 字の大きさしだいで、辺からはなす
     return { p: m, t: text, dx: kk * nx, dy: -kk * ny, i: names[i] + names[j] };
   };
   const FIGS = [];   // 検算（checks）に渡す、すべての図
@@ -81,7 +82,7 @@
   // 例題：四角形 ABCD（AB＝3、BC＝4、CD＝2.5、∠B＝90°、∠C＝70°）と、それを裏返して回した 四角形 EFGH
   const Q1 = [[0, 3], [0, 0], [4, 0], [4 + 2.5 * Math.cos(rad(110)), 2.5 * Math.sin(rad(110))]];
   const Z_E = pair('例題', Q1, 'ABCD', 'EFGH', {
-    tf: { flip: true, rot: -70 }, stack: true, lens1: [[0, 1, '{{3cm}}'], [1, 2, '{{4cm}}'], [2, 3, '{{2.5cm}}']], angs1: [[1, 'R'], [2, '{{70°}}']],
+    tf: { flip: true, rot: -70 }, stack: true, gap: LS > 1 ? 2.6 : undefined, lens1: [[0, 1, '{{3cm}}'], [1, 2, '{{4cm}}'], [2, 3, '{{2.5cm}}']], angs1: [[1, 'R'], [2, '{{70°}}']],
     rlens2: [[1, 2, '4cm']], rangs2: [[2, '70°']], map: { A: 'E', B: 'F', C: 'G', D: 'H' }, ask: [['F', 'G', 4], ['G', 'H', 2.5], ['E', 'F', 3]], askA: [['F', 'G', 'H', 70]]
   });
   // 考えよう：△ABC（AB＝4、BC＝6、CA＝5）と、△DEF（△ABC を裏返して回した形。DE＝4、EF＝6、FD＝5）

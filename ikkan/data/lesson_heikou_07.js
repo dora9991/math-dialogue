@@ -40,119 +40,30 @@
     return spec;
   };
 
-  /* ---------------- スライド用の、角の字の置き場所（labelScale＞1 のときだけ。紙に印刷するときは、何もしない） ----------------
-     スライドでは、図の字が 1.8倍になる。GEO は、角の字どうしが重なるのは、少しずらすが、字が線にかかるのは直せない。
-     そこで、ワークシートの図（ws）だけ、図の枠（W×H mm）から GEO と同じ縮尺を求め、角の字を、線や、ほかの字にかからない場所に置きなおす。
-     まず、角の内がわ（二等分線の上）をさがし、せまくて入らないときは、角の外がわにおく（頂点のすぐ外。弧のそば）。 */
-  const fit = (spec0, frame) => {
+  /* ---------------- スライド用の、角の字の置き場所（LS＞1 のときだけ。紙に印刷するときは、何もしない） ----------------
+     スライドでは、図の字が 1.8倍になる。GEO は、角の字どうしが重なるのは少しずらすが、字が線にかかるのや、どの角の字かわかりにくいのは、直せない。
+     そこで、ワークシートの図（ws）だけ、角の字を、手で決めた場所に置く。tbl の書き方：
+       '頂点:半直線の先'（例 'A:E'。解答の赤い字は 'a/E:A'）＝ [向き（度。右が 0・上が 90）, 頂点から字の中心までの距離（mm）, 字の大きさの倍率（省略は 1）]
+       'vl:E' ＝ [向き, 距離]（頂点の字の置き場所）
+     pad は、図のまわりの余白（mm）。GEO は、枠からはみ出すと全体を縮めておさめるので、横長の図は、余白をけずると、図が大きくなる。 */
+  const place = (spec0, tbl, pad) => {
     if (!(LS > 1)) return spec0;
-    const o = JSON.parse(JSON.stringify(spec0)), P = o.pts, W = frame[0], H = frame[1], srcs = [o, o.a || {}];
-    const pt = k => (Array.isArray(k) ? k : P[k]);
-    const polyList = src => (src.poly == null ? [] : Array.isArray(src.poly) ? src.poly : [src.poly]);
-    const edges = src => {
-      const out = [];
-      polyList(src).forEach(pl => { const n = [...pl]; n.forEach((_, i) => out.push([pt(n[i]), pt(n[(i + 1) % n.length])])); });
-      (src.segs || []).forEach(sg => { if (typeof sg === 'string') { const n = [...sg]; out.push([pt(n[0]), pt(n[1])]); } else out.push([pt(sg[0]), pt(sg[1])]); });
-      return out;
-    };
-    const all = Object.values(P).slice();
-    srcs.forEach(src => edges(src).forEach(e => all.push(e[0], e[1])));
-    srcs.forEach(src => (src.txt || []).forEach(t => { if (t.p) all.push(pt(t.p)); }));
-    const xs = all.map(p => p[0]), ys = all.map(p => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-    const SZ0 = o.size || 3;
-    let SZ = SZ0 * LS, GROW = SZ - SZ0;
-    const pad = (o.pad == null ? 7 : o.pad) + GROW, bw = Math.max(x1 - x0, 1e-6), bh = Math.max(y1 - y0, 1e-6);
-    const s = o.scale || Math.min((W - 2 * pad) / bw, (H - 2 * pad) / bh), ox = (W - bw * s) / 2 - x0 * s, oy = (H - bh * s) / 2 + y1 * s;
-    const X = x => ox + x * s, Y = y => oy - y * s;
-    const polys = polyList(o);
-    if (polys.length) {
-      let minSide = Infinity;
-      polys.forEach(pl => { const n = [...pl]; n.forEach((_, i) => { const a = pt(n[i]), b = pt(n[(i + 1) % n.length]); minSide = Math.min(minSide, Math.hypot((a[0] - b[0]) * s, (a[1] - b[1]) * s)); }); });
-      if (isFinite(minSide)) { SZ = Math.max(SZ0, Math.min(SZ, 0.2 * minSide)); GROW = SZ - SZ0; }
-    }
-    const cenNames = polys.length ? [...polys.join('')] : Object.keys(P), cps = cenNames.map(n => P[n]).filter(Boolean);
-    const cen = [cps.reduce((a, p) => a + p[0], 0) / cps.length, cps.reduce((a, p) => a + p[1], 0) / cps.length];
-    const boxOf = (cx, cy, text, fs) => { const body = String(text).replace(/\{\{|\}\}/g, ''), blank = /\{\{/.test(String(text)); const w = [...body].reduce((a, c) => a + (c.charCodeAt(0) > 0x2e80 ? 1.0 : 0.58) * fs, 0) + (blank ? 2.4 : 0); return { cx, cy, w: w + 0.6, h: fs * 0.95 + (blank ? 1.4 : 0) }; };
-    const segs = [], boxes = [], placed = [];
-    srcs.forEach(src => {
-      edges(src).forEach(e => segs.push([[X(e[0][0]), Y(e[0][1])], [X(e[1][0]), Y(e[1][1])]]));
-      (src.segs || []).forEach(sg => {
-        const op = typeof sg === 'string' ? {} : (sg[2] || {});
-        if (!(op.lab || op.lab0)) return;
-        const a = pt(sg[0]), b = pt(sg[1]), ex = X(b[0]) - X(a[0]), ey = Y(b[1]) - Y(a[1]), L = Math.hypot(ex, ey) || 1, d = 3.6 + GROW * 0.6;
-        if (op.lab) boxes.push(boxOf(X(b[0]) + ex / L * d, Y(b[1]) + ey / L * d, op.lab, SZ));
-        if (op.lab0) boxes.push(boxOf(X(a[0]) - ex / L * d, Y(a[1]) - ey / L * d, op.lab0, SZ));
+    const o = JSON.parse(JSON.stringify(spec0));
+    if (pad != null) o.pad = pad;
+    const used = {};
+    [o, o.a].forEach(src => {
+      if (!src) return;
+      (src.ang || []).forEach(an => {
+        const key = (src === o ? '' : 'a/') + an.at + ':' + an.b, v = tbl[key];
+        if (!v || an.t == null || an.t === '') return;
+        used[key] = 1;
+        (src.txt = src.txt || []).push({ p: an.at, t: an.t, dx: Math.round(v[1] * Math.cos(rad(v[0])) * 100) / 100, dy: -Math.round(v[1] * Math.sin(rad(v[0])) * 100) / 100, size: Math.round(3 * LS * (v[2] || 1) * 100) / 100 });
+        delete an.t;
       });
-      let vl = src.vl; if (typeof vl === 'string') { const o2 = {}; [...vl].forEach(c => { o2[c] = c; }); vl = o2; }
-      Object.keys(vl || {}).forEach(n => {
-        let v = vl[n], t = n, d = null, k = 3.4 + GROW * 0.6;
-        if (typeof v === 'string') t = v; else if (Array.isArray(v)) { t = v[0]; d = v[1]; if (v[2] != null) k = v[2] + GROW * 0.6; } else if (v) { t = v.t != null ? v.t : n; d = v.d != null ? v.d : null; if (v.k != null) k = v.k + GROW * 0.6; }
-        const p = P[n];
-        if (d == null) { const dx = p[0] - cen[0], dy = p[1] - cen[1]; d = (Math.abs(dx) + Math.abs(dy) < 1e-9) ? 90 : Math.atan2(dy, dx) * 180 / Math.PI; }
-        boxes.push(boxOf(X(p[0]) + k * Math.cos(d * Math.PI / 180), Y(p[1]) - k * Math.sin(d * Math.PI / 180), t, SZ));
-      });
-      (src.txt || []).forEach(t => {
-        const p = pt(t.p), fs = t.size || SZ, bx = boxOf(X(p[0]) + (t.dx || 0), Y(p[1]) + (t.dy || 0), t.t, fs);
-        if (t.anchor === 'start') bx.cx += bx.w / 2; else if (t.anchor === 'end') bx.cx -= bx.w / 2;
-        boxes.push(bx);
-      });
+      Object.keys(tbl).filter(k => k.startsWith('vl:') && src === o).forEach(k => { const n = k.slice(3), v = tbl[k]; used[k] = 1; const cur = (o.vl || {})[n]; (o.vl = o.vl || {})[n] = [Array.isArray(cur) ? cur[0] : n, v[0], v[1]]; });
     });
-    // 角の弧（どの角のも）。字がかからないように、点にして、おぼえておく
-    const arcPts = [];
-    srcs.forEach(src => (src.ang || []).forEach(an => {
-      if (an.right) return;
-      const V = pt(an.at), A = pt(an.a), C = pt(an.b), vx = X(V[0]), vy = Y(V[1]), ta = Math.atan2(-(Y(A[1]) - vy), X(A[0]) - vx), tb = Math.atan2(-(Y(C[1]) - vy), X(C[0]) - vx);
-      let d = ((tb - ta) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI), st = ta, sw = d; if (d > Math.PI) { st = tb; sw = 2 * Math.PI - d; }
-      for (let k = 0; k < (an.n || 1); k++) for (let i = 0; i <= 12; i++) { const q = st + sw * i / 12, rr = (an.r || 5) + k * 1.3; arcPts.push([vx + rr * Math.cos(q), vy - rr * Math.sin(q)]); }
-    }));
-    const clear = (b, vx, vy, r) => {   // 箱 b が、線・弧・ほかの字・この角の弧（半径 r）にかからない
-      const hw = b.w / 2 + 0.7, hh = b.h / 2 + 0.7;
-      for (const sg of segs) {
-        const n = Math.max(2, Math.ceil(Math.hypot(sg[1][0] - sg[0][0], sg[1][1] - sg[0][1]) / 0.4));
-        for (let i = 0; i <= n; i++) { const x = sg[0][0] + (sg[1][0] - sg[0][0]) * i / n, y = sg[0][1] + (sg[1][1] - sg[0][1]) * i / n; if (Math.abs(x - b.cx) < hw && Math.abs(y - b.cy) < hh) return false; }
-      }
-      for (const q of arcPts) if (Math.abs(q[0] - b.cx) < hw && Math.abs(q[1] - b.cy) < hh) return false;
-      for (const c of boxes.concat(placed)) if (Math.abs(b.cx - c.cx) < (b.w + c.w) / 2 + 0.4 && Math.abs(b.cy - c.cy) < (b.h + c.h) / 2 + 0.4) return false;
-      const ddx = Math.max(Math.abs(vx - b.cx) - b.w / 2, 0), ddy = Math.max(Math.abs(vy - b.cy) - b.h / 2, 0);
-      return Math.hypot(ddx, ddy) >= r + 0.9;
-    };
-    const todo = [];
-    srcs.forEach(src => (src.ang || []).forEach(an => { if (!(an.right || an.t == null || an.t === '')) todo.push({ src, an }); }));
-    const wedge = e => { const V = pt(e.an.at), A = pt(e.an.a), C = pt(e.an.b), a1 = Math.atan2(A[1] - V[1], A[0] - V[0]), a2 = Math.atan2(C[1] - V[1], C[0] - V[0]); let d = Math.abs(a1 - a2); return d > Math.PI ? 2 * Math.PI - d : d; };
-    todo.sort((p, q) => wedge(p) - wedge(q));   // せまい角の字を、先に置く
-    // 頂点の位置（字の候補が、ほかの頂点のほうに近いと、まちがえやすい）
-    const verts = {};
-    srcs.forEach(src => { let vl = src.vl; if (typeof vl === 'string') { const o2 = {}; [...vl].forEach(c => { o2[c] = c; }); vl = o2; } Object.keys(vl || {}).forEach(n => { if (P[n]) verts[n] = [X(P[n][0]), Y(P[n][1])]; }); });
-    todo.forEach(({ src, an }) => {
-      const V = pt(an.at), A = pt(an.a), C = pt(an.b), vx = X(V[0]), vy = Y(V[1]), r = an.r || 5;
-      const ua = [X(A[0]) - vx, Y(A[1]) - vy], uc = [X(C[0]) - vx, Y(C[1]) - vy], la = Math.hypot(...ua), lc = Math.hypot(...uc);
-      let bxv = ua[0] / la + uc[0] / lc, byv = ua[1] / la + uc[1] / lc; const bl = Math.hypot(bxv, byv) || 1; bxv /= bl; byv /= bl;
-      const half = Math.acos(Math.max(-1, Math.min(1, (ua[0] * uc[0] + ua[1] * uc[1]) / (la * lc)))) / 2, bAng = Math.atan2(byv, bxv);
-      const text = String(an.t), arcMid = [vx + r * bxv, vy + r * byv];
-      let best = null;
-      for (const f of [1, 0.88, 0.78]) {   // 字の大きさ（SZ の何倍か）。大きいほうを先に
-        const fs = SZ * f;
-        for (let th = 0; th < 360; th += 10) {
-          const ang = th * Math.PI / 180, dx = Math.cos(ang), dy = Math.sin(ang);
-          let dd = Math.abs(((ang - bAng) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);   // bisector からのずれ
-          const inside = dd <= half * 0.9;
-          for (let rho = r + 2.0; rho <= r + 22; rho += 0.5) {
-            const b = boxOf(vx + rho * dx, vy + rho * dy, text, fs);
-            if (b.cx - b.w / 2 < 1.5 || b.cx + b.w / 2 > W - 1.5 || b.cy - b.h / 2 < 1.5 || b.cy + b.h / 2 > H - 1.5) continue;
-            if (!clear(b, vx, vy, r)) continue;
-            if (Object.keys(verts).some(n => Math.hypot(verts[n][0] - vx, verts[n][1] - vy) > 0.5 && Math.hypot(verts[n][0] - b.cx, verts[n][1] - b.cy) < rho * 0.95)) continue;   // ほかの頂点のほうが近い
-            const sc = Math.hypot(b.cx - arcMid[0], b.cy - arcMid[1]) + (inside ? 0 : 3.5);
-            if (!best || sc < best.sc - 1e-9 || (f < best.f && sc < best.sc + 0)) best = { sc, f, fs, rho, dx, dy, th, b, inside, dd };
-            break;   // この向きでは、いちばん近いところで十分
-          }
-        }
-        if (best && best.sc <= 14) break;   // 十分近くにおけたら、小さい字にしない
-      }
-      if (!best) return;
-      placed.push(best.b);
-      if (best.f === 1 && best.inside && best.dd < 0.12) an.lr = Math.round((best.rho - 0.7 * GROW) * 100) / 100;
-      else { src.txt = (src.txt || []).concat([{ p: V, t: text, dx: best.rho * best.dx, dy: best.rho * best.dy, size: Math.round(best.fs * 100) / 100 }]); delete an.t; }
-    });
+    const miss = Object.keys(tbl).filter(k => !used[k]);
+    if (miss.length) throw new Error('place：' + (spec0.name || '') + ' に、見つからない字 ' + miss.join('・'));
     return o;
   };
 
@@ -174,7 +85,7 @@
       vl: { A: ['A', 135], E: ['E', 35, 3.8], C: ['C', 225] },
       ang: [{ at: 'A', a: 'L2', b: 'E', t: lab.A }, { at: 'C', a: 'M2', b: 'E', t: lab.C }, LS > 1 ? { at: 'E', a: 'A', b: 'C', t: lab.E } : { at: 'E', a: 'A', b: 'C', v: lab.E }],
       txt: LS > 1 ? [] : [sideTxt('E', 180 - a, 180 + c, 180, lab.E)],
-      a: { segs: [['D1', 'D2', { dash: 1 }]], ang: [{ at: 'E', a: 'D1', b: 'A', t: a + '°', r: LS > 1 ? 8 : 12, lr: 19 }, { at: 'E', a: 'D1', b: 'C', t: c + '°', r: LS > 1 ? 8 : 12, lr: 19 }] },
+      a: { segs: [['D1', 'D2', { dash: 1 }]], ang: [{ at: 'E', a: 'D1', b: 'A', t: a + '°', r: 12, lr: 19 }, { at: 'E', a: 'D1', b: 'C', t: c + '°', r: 12, lr: 19 }] },
       xv: xv == null ? a + c : xv
     });
   };
@@ -196,7 +107,7 @@
     return reg(name, {
       pts: Object.assign({ A, E, F, C }, lines2(HL, x0, x1)), segs: [['A', 'E'], ['E', 'F'], ['F', 'C']].concat(LM), par: parMarks(HL, x1), on: ON,
       vl: { A: ['A', 135], E: ['E', 0], F: ['F', 180], C: ['C', 270] },
-      ang: [{ at: 'A', a: 'L2', b: 'E', t: lab.A }, { at: 'E', a: 'A', b: 'F', t: lab.E }, { at: 'F', a: 'E', b: 'C', t: lab.F }, { at: 'C', a: 'M1', b: 'F', t: lab.C }],
+      ang: [{ at: 'A', a: 'L2', b: 'E', t: lab.A }, { at: 'E', a: 'A', b: 'F', t: lab.E }, { at: 'F', a: 'E', b: 'C', t: lab.F }, { at: 'C', a: 'M1', b: 'F', t: lab.C, r: LS > 1 ? 10 : 5 }],
       xv: e + c - a
     });
   };
@@ -307,6 +218,15 @@
   const Z_TU = cap(ruler('考えよう ウ', 25, { C: 'x' }), 'ウ', 'bl');                                             // ∠x＝20°
   for (const z of [Z_TI, Z_TU, Z_TA]) delete z.a;   // 考えようの図には、答え（補助線）を出さない
   const Z_EX = dart('発展', 40, 35, 30, { A: '40°', B: '35°', C: '30°', D: 'x' }, 105); delete Z_EX.a;
+  // スライド用の、角の字の置き場所（place を見よ）。[向き（度）, 頂点からの距離（mm）, 字の大きさの倍率]
+  const PL = {
+    T: { 'A:E': [-17.5, 17], 'C:E': [25, 14], 'E:C': [200, 9.5], 'a/E:A': [162.5, 20], 'a/E:C': [205, 20] },
+    E: { 'B:D': [-3, 13], 'C:D': [190, 12] },
+    A: { 'A:E': [25, 10], 'E:F': [185, 10.5], 'F:C': [10, 10.5], 'C:F': [170, 18.5] },
+    I: { 'A:C': [-90, 13.5], 'B:D': [45, 11], 'C:D': [60, 7.5], 'D:C': [-92, 10] },
+    U: { 'A:B': [-11, 16], 'A:C': [-42, 13.5], 'B:C': [177.5, 10.5], 'C:B': [10, 15] },
+    X: { 'A:C': [-90, 12.4, 0.85], 'B:D': [-41, 6.7], 'C:D': [241, 6], 'vl:C': [20, 4.5] }
+  };
   const Z_D1 = zig1('基礎（1）①', 40, 30, { A: '40°', E: 'x', C: '30°' });                    // 70°
   const Z_D2 = zig1('基礎（1）②', 55, 40, { A: '55°', E: '95°', C: 'x' }, 40);                // 40°
   const Z_D3 = dart('基礎（1）③', 50, 35, 40, { A: '50°', B: '35°', C: '40°', D: 'x' }, 125, 16);  // 125°
@@ -458,7 +378,7 @@
         T('', '【補助線と求め方】', 1),
         B(10, T_W)
       ], [
-        F(11, GEO(fit(Z_T, [72, 77])))
+        F(11, GEO(place(Z_T, PL.T)))
       ], '3:2'),
       G(1),
       WD('図形の中や外に、角を求めるためにかき入れる線を{{補助線}}という。\n平行な 2直線に 1つの直線が交わるとき、{{同位角}}も{{錯角}}も等しい。\n三角形の内角の和は{{180}}°。三角形の外角は、となりあわない 2つの{{内角}}の和に等しい。', 4),
@@ -468,13 +388,13 @@
         T('', '【補助線と求め方】', 1),
         B(12, T_E)
       ], [
-        F(13, GEO(fit(Z_E, [72, 91])))
+        F(13, GEO(place(Z_E, PL.E)))
       ], '3:2'),
       BR(),
 
       // ---- 裏：考えよう ----
       K('考えよう', '次のア〜ウの図で、∠x の大きさを求めよう。（ア・ウは ℓ∥m）\n補助線を、できるだけいろいろなひき方で見つけよう。うまくいく補助線には、どんな共通点があるだろう。', 3),
-      F(8, GEO(fit(Z_TA, [59.3, 56])), GEO(fit(Z_TI, [59.3, 56])), GEO(fit(Z_TU, [59.3, 56]))),
+      F(8, GEO(place(Z_TA, PL.A, 3)), GEO(place(Z_TI, PL.I)), GEO(place(Z_TU, PL.U, 3))),
       T('①', 'ア〜ウの ∠x の大きさを求めよう。補助線を、図にかきこもう。', 1),
       B(6, ''),
       T('②', '補助線の、ほかのひき方を見つけよう。ちがう色のペンで図にかきこんで、同じ答えになるか確かめよう。', 2),
@@ -485,7 +405,7 @@
         T('発展', '演習まで解き終わった人は、考えてみよう！\n例題のブーメラン形が ∠x＝∠A+∠B+∠C になることを、例題とはちがう補助線のひき方でも、確かめられるだろうか。', 5),
         B(3, '')
       ], [
-        F(8, GEO(fit(Z_EX, [72, 56])))
+        F(8, GEO(place(Z_EX, PL.X)))
       ], '3:2')
     ],
 
