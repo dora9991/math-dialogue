@@ -130,7 +130,7 @@
     {
       "name": "zenrekiken68",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8795", "--directory", "zenrekiken68"],
+      "runtimeArgs": ["-m", "http.server", "8795", "--directory", "public/zenrekiken68"],
       "port": 8795
     },
     {

@@ -1,15 +1,15 @@
 # 全歴研 第68回 研究大会（佐賀大会）サイト（試作）
 
-静的HTMLだけのサイト。サーバー不要。
+静的HTMLだけのサイト。サーバー不要。場所は `public/zenrekiken68/`（このメモだけ公開されないよう `docs/` に置いている）。
 
 ```
-index.html        本文とCSS（ほぼここだけ編集する）
-data/archive.js   アーカイブ配信（YouTube）の一覧
-js/archive.js     アーカイブの表示と動画プレーヤー（基本は触らない）
+public/zenrekiken68/index.html        本文とCSS（ほぼここだけ編集する）
+public/zenrekiken68/data/archive.js   アーカイブ配信（YouTube）の一覧
+public/zenrekiken68/js/archive.js     アーカイブの表示と動画プレーヤー（基本は触らない）
 ```
 
 ```bash
-python3 -m http.server 8795 --directory zenrekiken68   # http://localhost:8795/
+python3 -m http.server 8795 --directory public/zenrekiken68   # http://localhost:8795/
 ```
 
 ## 内容の出どころ
@@ -36,8 +36,14 @@ python3 -m http.server 8795 --directory zenrekiken68   # http://localhost:8795/
 5. アーカイブを出す場合は、登壇者・発表者の了承と、映像に映る方の同意を主催者側で確認する。参考の案内では「すべて対面で開催」となっているので、映像公開をするかどうか自体も主催者の判断になる
 6. 参加者名簿・個人情報はこのフォルダ／リポジトリに入れない（無料の GitHub Pages はリポジトリが公開になる）
 
-## 公開のしかた（推奨）
+## 公開のしかた
 
+**試作版として見せる（いまの状態）**
+- `public/` に置いてあるので、`npm run deploy` で本体のアプリと一緒に GitHub Pages へ出る。URL は `https://dora9991.github.io/math-dialogue/zenrekiken68/`。
+- 「試作版」バナーと `noindex` を残したまま出す。検索には表示されず、URL を知っている人だけが見られる。
+- やめるときは `public/zenrekiken68/` を消して、もう一度 `npm run deploy` する。
+
+**公式サイトとして出す（主催者の了承のあと）**
 - このフォルダを**専用リポジトリ**（できれば Organization 名義）に移し、GitHub Pages で公開する。
 - 独自ドメインを使い、**ドメインの名義と GitHub の管理者権限は大会側に渡す**。作った人がいなくなっても運用できる形にしておく。
 - 参加申込など送信が必要な機能は、Peatix や Google フォームなど外部サービスにリンクする。
