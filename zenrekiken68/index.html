@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- 試作の間は検索に出さない。公開するときにこの1行を消す -->
+<meta name="robots" content="noindex,nofollow">
+<title>全歴研 第68回 佐賀大会</title>
+<meta name="description" content="全歴研 第68回 佐賀大会の開催案内・プログラム・アーカイブ配信">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+<a class="skip" href="#main">本文へ</a>
+<div id="draft-banner" class="draft" hidden>試作版です。内容は仮で、黄色の<span class="todo">【要入力】</span>は確定情報に差し替えます。</div>
+
+<header class="nav" id="top">
+  <div class="nav-in">
+    <a class="brand" href="#top"><span id="brand-org">全歴研</span><small>第68回 佐賀大会</small></a>
+    <nav aria-label="サイト内メニュー">
+      <a href="#news">お知らせ</a>
+      <a href="#overview">開催概要</a>
+      <a href="#program">プログラム</a>
+      <a href="#archive">アーカイブ</a>
+      <a href="#access">アクセス</a>
+      <a href="#apply">参加申込</a>
+      <a href="#contact">問い合わせ</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-in">
+    <p class="eyebrow" id="hero-org"></p>
+    <h1>第68回 佐賀大会</h1>
+    <p class="theme" id="hero-theme"></p>
+    <ul class="facts">
+      <li><span>日程</span><b id="hero-dates"></b></li>
+      <li><span>会場</span><b id="hero-venue"></b></li>
+    </ul>
+    <p class="hero-btns">
+      <a class="btn" href="#apply">参加申込</a>
+      <a class="btn ghost" href="#program">プログラム</a>
+      <a class="btn ghost" href="#archive">アーカイブ</a>
+    </p>
+  </div>
+</section>
+
+<main id="main">
+  <section id="news" class="block"><h2>お知らせ</h2><div id="news-list" class="news"></div></section>
+  <section id="overview" class="block"><h2>開催概要</h2><dl id="overview-list" class="dl"></dl></section>
+  <section id="program" class="block"><h2>プログラム</h2><div id="program-list"></div></section>
+
+  <section id="archive" class="block">
+    <h2>アーカイブ配信</h2>
+    <p id="archive-note" class="lead"></p>
+    <p id="archive-links" class="links"></p>
+    <div id="archive-chips" class="chips" role="group" aria-label="日程で絞り込む"></div>
+    <div id="archive-grid" class="grid"></div>
+  </section>
+
+  <section id="access" class="block"><h2>アクセス</h2><div id="access-body"></div></section>
+  <section id="apply" class="block"><h2>参加申込</h2><div id="apply-body" class="panel"></div></section>
+  <section id="contact" class="block"><h2>お問い合わせ</h2><dl id="contact-list" class="dl"></dl></section>
+</main>
+
+<footer class="foot">
+  <p id="foot-name"></p>
+  <p><a href="#top">ページの先頭へ</a></p>
+</footer>
+
+<dialog id="player" aria-label="動画プレーヤー">
+  <div class="player-bar"><span id="player-title"></span><button type="button" id="player-close" aria-label="閉じる">×</button></div>
+  <div class="ratio"><iframe id="player-frame" title="YouTube 動画" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+</dialog>
+
+<script src="data/site-data.js"></script>
+<script src="js/site.js"></script>
+</body>
+</html>
