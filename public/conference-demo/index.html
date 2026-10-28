@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- サンプルなので、検索には出さない（出したいときは、この1行を消す） -->
+<meta name="robots" content="noindex,nofollow">
+<title>【サンプル】サンプル歴史教育研究会 第3回研究大会</title>
+<meta name="description" content="これはサンプルです。実際の研究大会とは関係ありません。研究大会の案内サイトの作り方を見せるための、架空のサイトです。">
+<meta property="og:title" content="【サンプル】研究大会の案内サイト">
+<meta property="og:description" content="これはサンプルです。実際の研究大会とは関係ありません。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@500;700;900&display=swap" rel="stylesheet">
+
+<!--
+  このサイトは「サンプル」です（実際の研究大会・団体とは関係ありません）。団体名・日程・会場・参加費などは、すべて架空です。
+  【つくり方】本文はこの index.html を書き換える。決まっていない項目は <span class="tbd">調整中</span> にする。
+  アーカイブ配信（YouTube）は data/archive.js に動画IDを足すだけで、#archive に並ぶ。
+-->
+
+<style>
+:root{
+  --porcelain:#F4F6F5;   /* 白磁 */
+  --paper:#FFFFFF;
+  --ink:#1B2430;
+  --muted:#4B5666;
+  --gosu:#1E3A6E;        /* 呉須（染付の藍） */
+  --gosu-deep:#142A52;
+  --gosu-tint:#E3E9F3;
+  --line:#CBD3DF;
+  --on-dark:#F4F6F5;
+  --on-dark-2:#D5DEEE;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  margin:0;background:var(--porcelain);color:var(--ink);
+  font-family:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  font-size:1rem;line-height:1.9;letter-spacing:.02em;
+  -webkit-text-size-adjust:100%;
+}
+.serif,h1,h2,h3{font-family:"Zen Old Mincho","Hiragino Mincho ProN","Yu Mincho","MS PMincho",serif}
+a{color:var(--gosu);text-underline-offset:.2em;text-decoration-thickness:1px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:3px solid var(--gosu);outline-offset:3px;border-radius:2px}
+.skip{position:absolute;left:-999px;top:8px;background:var(--gosu);color:#fff;padding:.6rem 1rem;z-index:100}
+.skip:focus{left:8px}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+
+/* header */
+.bar{position:sticky;top:0;z-index:50;background:rgba(244,246,245,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+.bar-in{max-width:1040px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.brand{font-weight:700;font-size:1.05rem;color:var(--gosu-deep);text-decoration:none;padding:.7rem 0;white-space:nowrap}
+.bar nav{flex:1;min-width:0;overflow-x:auto}
+.bar ul{list-style:none;margin:0;padding:0;display:flex;gap:2px;justify-content:flex-end}
+.bar nav a{display:block;padding:.75rem .7rem;line-height:1.3;font-size:.92rem;color:var(--ink);text-decoration:none;white-space:nowrap}
+.bar nav a:hover{color:var(--gosu);text-decoration:underline}
+@media (max-width:760px){.bar ul{justify-content:flex-start}.brand{padding-bottom:0}}
+
+/* hero */
+.hero{position:relative;overflow:hidden;background:var(--gosu);color:var(--on-dark)}
+.hero::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.16' stroke-width='1'%3E%3Ccircle cx='0' cy='0' r='28.28'/%3E%3Ccircle cx='40' cy='0' r='28.28'/%3E%3Ccircle cx='0' cy='40' r='28.28'/%3E%3Ccircle cx='40' cy='40' r='28.28'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-image:linear-gradient(to left,#000 0,rgba(0,0,0,.15) 75%,transparent 100%);
+          mask-image:linear-gradient(to left,#000 0,rgba(0,0,0,.15) 75%,transparent 100%);
+}
+.hero-in{position:relative;max-width:1040px;margin:0 auto;padding:clamp(44px,8vw,96px) 20px;display:grid;grid-template-columns:1fr auto;gap:clamp(16px,5vw,64px);align-items:center}
+.lead{font-size:clamp(1.15rem,2.6vw,1.6rem);line-height:1.7;font-weight:700;margin:0 0 1.6rem;max-width:18em}
+.facts{margin:0 0 2rem;display:grid;gap:.9rem;max-width:30rem}
+.facts div{display:grid;grid-template-columns:6.2em 1fr;gap:.2em .8em;align-items:baseline}
+.facts dt{font-size:.88rem;color:var(--on-dark-2)}
+.facts dd{margin:0;font-weight:500}
+.hero .tbd{background:transparent;color:var(--on-dark);border-color:var(--on-dark-2)}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-block;padding:.8rem 1.4rem;min-height:44px;background:var(--on-dark);color:var(--gosu-deep);font-weight:700;text-decoration:none;border:1px solid var(--on-dark);border-radius:2px}
+.btn:hover{background:#fff}
+.btn.ghost{background:transparent;color:var(--on-dark);border-color:var(--on-dark-2)}
+.btn.ghost:hover{background:rgba(255,255,255,.1)}
+.hero :focus-visible{outline-color:#fff}
+.vt{writing-mode:vertical-rl;margin:0;height:max-content;font-weight:700;line-height:1.35}
+.vt span{display:block}
+.vt-sub{font-size:clamp(.9rem,2.2vw,1.1rem);font-weight:500;letter-spacing:.16em;margin-left:.9em;color:var(--on-dark-2)}
+.vt-main{font-size:clamp(3.4rem,10vw,6.8rem);font-weight:900;letter-spacing:.12em;line-height:1.1}
+.tcy{text-combine-upright:all}
+@media (max-width:560px){
+  .facts div{grid-template-columns:1fr}
+  .btn{width:100%;text-align:center}
+}
+
+/* sections */
+.block{padding:clamp(52px,7vw,92px) 0}
+.block.alt{background:var(--paper)}
+h2{font-size:clamp(1.55rem,3.2vw,2.05rem);font-weight:700;line-height:1.4;margin:0 0 .6rem;color:var(--gosu-deep)}
+h3{font-size:1.2rem;font-weight:700;line-height:1.5;margin:0}
+.intro{max-width:40em;color:var(--muted);margin:0 0 2rem}
+p{margin:0 0 1rem}
+.tbd{display:inline-block;border:1px dashed #6B778A;border-radius:3px;padding:0 .65em;background:#fff;color:#3F4A5A;font-size:.9em;line-height:1.7;margin-right:.4em}
+.small{font-size:.9rem;color:var(--muted)}
+
+/* news */
+.news{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.news li{display:grid;grid-template-columns:9.5em 1fr;gap:.2em 1.2em;padding:1.1rem 0;border-bottom:1px solid var(--line)}
+.news time{color:var(--muted);font-weight:500}
+.news p{margin:0;max-width:40em}
+@media (max-width:640px){.news li{grid-template-columns:1fr}}
+
+/* overview */
+.spec{margin:0;border-top:1px solid var(--line)}
+.spec div{display:grid;grid-template-columns:11em 1fr;gap:.2em 1.4em;padding:1.05rem 0;border-bottom:1px solid var(--line)}
+.spec dt{font-weight:700;color:var(--gosu-deep)}
+.spec dd{margin:0;max-width:40em}
+@media (max-width:640px){.spec div{grid-template-columns:1fr}}
+
+/* schedule */
+.days{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin:0 0 1.2rem;padding:0;list-style:none}
+.day{background:var(--porcelain);padding:1.4rem 1.4rem 1.2rem;border-top:3px solid var(--gosu)}
+.day h3{margin-bottom:.2rem}
+.day .sub{color:var(--muted);font-size:.92rem;margin:0 0 .9rem}
+.day ul{margin:0;padding:0;list-style:none}
+.day li{padding:.45rem 0;border-top:1px solid var(--line);font-size:.96rem;line-height:1.7}
+.day li span{display:block;color:var(--muted);font-size:.86rem}
+@media (max-width:860px){.days{grid-template-columns:1fr}}
+
+/* sessions */
+.sess{margin:0;padding:0;list-style:none;border-top:1px solid var(--line)}
+.sess li{display:grid;grid-template-columns:12em 1fr;gap:.3em 1.4em;padding:1.1rem 0;border-bottom:1px solid var(--line)}
+.sess strong{font-family:"Zen Old Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-size:1.1rem;color:var(--gosu-deep)}
+.sess p{margin:0;max-width:40em}
+.sess .ex{display:block;margin-top:.3rem;color:var(--muted);font-size:.92rem}
+@media (max-width:640px){.sess li{grid-template-columns:1fr}}
+
+/* entry */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,64px)}
+.fee{margin:0;border-top:1px solid var(--line)}
+.fee div{display:flex;justify-content:space-between;gap:1rem;padding:.8rem 0;border-bottom:1px solid var(--line)}
+.fee dt{font-weight:500}
+.fee dd{margin:0;font-weight:700;color:var(--gosu-deep);white-space:nowrap}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+
+/* saga */
+.spots{display:grid;grid-template-columns:1fr 1fr;gap:0 clamp(24px,5vw,64px);margin:0;padding:0;list-style:none;border-top:1px solid var(--line)}
+.spots li{padding:1.1rem 0;border-bottom:1px solid var(--line)}
+.spots h3{font-size:1.1rem;margin-bottom:.2rem}
+.spots p{margin:0;color:var(--muted);font-size:.96rem}
+@media (max-width:760px){.spots{grid-template-columns:1fr}}
+
+/* past */
+.past{margin:0 0 2.4rem;padding:0;list-style:none;border-top:1px solid var(--line)}
+.past > li{display:grid;grid-template-columns:6.4rem 1fr;gap:.4rem 1.4rem;padding:1.5rem 0;border-bottom:1px solid var(--line)}
+.num{font-family:"Zen Old Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-weight:900;font-size:1.7rem;line-height:1.2;color:var(--gosu)}
+.past h3{margin-bottom:.3rem}
+.when{margin:0 0 .5rem;color:var(--muted);font-size:.95rem}
+.when span{display:inline-block;margin-right:1.2em}
+.past p{max-width:40em}
+.links{display:flex;flex-wrap:wrap;gap:.3rem 1.4rem;margin:.6rem 0 0;padding:0;list-style:none}
+.links a{display:inline-block;padding:.35rem 0}
+@media (max-width:640px){.past > li{grid-template-columns:1fr}.num{font-size:1.4rem}}
+.sub-h{font-size:1.25rem;margin:0 0 .5rem;color:var(--gosu-deep)}
+.chips{display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0 1.2rem;padding:0;list-style:none}
+.chips li{background:var(--gosu-tint);color:var(--gosu-deep);padding:.25rem .8rem;border-radius:2px;font-size:.92rem;line-height:1.7}
+
+/* about */
+.linklist{margin:1rem 0 0;padding:0;list-style:none;border-top:1px solid var(--line)}
+.linklist li{padding:.7rem 0;border-bottom:1px solid var(--line)}
+.linklist span{display:block;color:var(--muted);font-size:.88rem}
+
+/* footer */
+footer{background:var(--gosu-deep);color:var(--on-dark-2);padding:40px 0 48px;font-size:.92rem}
+footer p{margin:0 0 .5rem;max-width:44em}
+footer .name{color:var(--on-dark);font-family:"Zen Old Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-weight:700;font-size:1.1rem}
+footer a{color:var(--on-dark)}
+footer :focus-visible{outline-color:#fff}
+
+/* sample banner（このサイトがサンプルであることを、いちばん上に出す） */
+.sample{background:#FFE08A;color:#3B2A00;border-bottom:3px solid #B58900;text-align:center;padding:.75rem 16px;line-height:1.6}
+.sample strong{display:block;font-size:1.1rem}
+.sample span{display:block;font-size:.9rem}
+
+/* archive */
+.alinks{display:flex;flex-wrap:wrap;gap:.4rem 1.4rem;align-items:center;margin:0 0 1rem;padding:0;list-style:none}
+.alinks[hidden],.fchips[hidden]{display:none}
+.fchips{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.2rem}
+.fchip{font:inherit;font-size:.92rem;line-height:1.7;min-height:44px;padding:.25rem 1.1rem;border:1px solid var(--gosu);border-radius:2px;background:var(--paper);color:var(--gosu);cursor:pointer}
+.fchip:hover{background:var(--gosu-tint)}
+.fchip[aria-pressed="true"]{background:var(--gosu);color:#fff}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
+.vcard{display:flex;flex-direction:column;padding:0;text-align:left;font:inherit;color:inherit;background:var(--porcelain);border:1px solid var(--line);border-top:3px solid var(--gosu);border-radius:2px;cursor:pointer}
+.vcard:hover{border-color:var(--gosu)}
+.thumb{position:relative;display:grid;place-items:center;aspect-ratio:16/9;background:var(--gosu-tint);overflow:hidden}
+.thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.play{position:relative;width:54px;height:54px;border-radius:50%;background:rgba(20,42,82,.85)}
+.play::after{content:"";position:absolute;left:21px;top:16px;border-left:16px solid #fff;border-top:11px solid transparent;border-bottom:11px solid transparent}
+.vbody{display:flex;flex-direction:column;gap:.1rem;padding:.8rem 1rem 1rem}
+.vgroup{font-size:.82rem;font-weight:700;color:var(--gosu)}
+.vtitle{font-weight:700;line-height:1.6}
+.vspeaker{font-size:.9rem;color:var(--muted)}
+dialog#player{border:0;padding:0;width:min(960px,96vw);background:#000}
+dialog#player::backdrop{background:rgba(10,16,28,.72)}
+.player-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:.3rem .4rem .3rem 1rem;background:var(--gosu-deep);color:var(--on-dark);font-size:.92rem}
+.player-bar button{font:inherit;font-size:1.5rem;line-height:1;min-width:44px;min-height:44px;color:var(--on-dark);background:transparent;border:0;cursor:pointer}
+.ratio{position:relative;aspect-ratio:16/9}
+.ratio iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+</style>
+</head>
+<body>
+<a class="skip" href="#overview">本文へ移動</a>
+<div class="sample" role="note">
+  <strong>これはサンプルです。実際の研究大会とは関係ありません。</strong>
+  <span>サイトの作り方を見せるために作った架空のサイトです。団体名・日程・会場・参加費などは、すべて架空です。</span>
+</div>
+
+<header class="bar">
+  <div class="bar-in">
+    <a class="brand" href="#top">【サンプル】第3回 研究大会</a>
+    <nav aria-label="ページ内メニュー">
+      <ul>
+        <li><a href="#overview">大会概要</a></li>
+        <li><a href="#schedule">日程</a></li>
+        <li><a href="#sessions">分科会</a></li>
+        <li><a href="#entry">参加申込</a></li>
+        <li><a href="#archive">アーカイブ</a></li>
+        <li><a href="#area">開催地の歴史</a></li>
+        <li><a href="#past">過去の大会</a></li>
+        <li><a href="#about">団体について</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="hero" id="top" aria-labelledby="title">
+  <div class="hero-in">
+    <div>
+      <p class="lead serif">歴史教育の実践が、ここに集まります。（サンプル）</p>
+      <dl class="facts">
+        <div><dt>開催形態</dt><dd>すべて対面で開催</dd></div>
+        <div><dt>共催</dt><dd>サンプル地方歴史教育研究会</dd></div>
+        <div><dt>日程・会場</dt><dd>2099年7月30日（木）〜8月1日（土）／サンプル大学 サンプルキャンパス</dd></div>
+      </dl>
+      <div class="btns">
+        <a class="btn" href="#overview">大会概要を見る</a>
+        <a class="btn ghost" href="#past">過去の大会を見る</a>
+      </div>
+    </div>
+    <h1 class="vt" id="title" aria-label="サンプル歴史教育研究会 第3回研究大会 サンプル（これはサンプルです）">
+      <span class="vt-sub" aria-hidden="true">サンプル歴史教育研究会 第<span class="tcy" style="display:inline">3</span>回研究大会</span>
+      <span class="vt-main" aria-hidden="true">サンプル</span>
+    </h1>
+  </div>
+</section>
+
+<section class="block" id="news" aria-labelledby="h-news">
+  <div class="wrap">
+    <h2 id="h-news">お知らせ</h2>
+    <ul class="news">
+      <li>
+        <time datetime="2099-03-06">2099年3月6日</time>
+        <p>このサイトは、研究大会の案内サイトの作り方を見せるための<strong>サンプル</strong>です。団体・日程・会場などは、すべて架空です。</p>
+      </li>
+      <li>
+        <time datetime="2099-02-22">2099年2月22日</time>
+        <p>（サンプル）第3回研究大会を、すべて対面で開催することが決まりました。</p>
+      </li>
+      <li>
+        <time datetime="2098-07-31">2098年7月31日</time>
+        <p>（サンプル）第3回研究大会を、サンプル地方歴史教育研究会との共催で開催します。</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section class="block alt" id="overview" aria-labelledby="h-overview">
+  <div class="wrap">
+    <h2 id="h-overview">大会概要</h2>
+    <p class="intro">このページの内容は、すべて架空です。「調整中」の札は、まだ決まっていない項目に付ける表示の見本です。</p>
+    <dl class="spec">
+      <div><dt>大会名</dt><dd>サンプル歴史教育研究会 第3回研究大会（サンプル市大会）</dd></div>
+      <div><dt>開催時期</dt><dd>2099年7月30日（木）〜8月1日（土）</dd></div>
+      <div><dt>会場</dt><dd>サンプル大学 サンプルキャンパス（架空）</dd></div>
+      <div><dt>開催形態</dt><dd>対面で開催します。</dd></div>
+      <div><dt>大会テーマ</dt><dd>歴史を問い、歴史に学ぶ（サンプル）</dd></div>
+      <div><dt>主催</dt><dd>サンプル歴史教育研究会<br><span class="small">開催地の主催団体は決まり次第掲載します。</span></dd></div>
+      <div><dt>共催</dt><dd>サンプル地方歴史教育研究会</dd></div>
+      <div><dt>後援</dt><dd><span class="tbd">調整中</span></dd></div>
+      <div><dt>記念講演・シンポジウム</dt><dd><span class="tbd">調整中</span></dd></div>
+    </dl>
+  </div>
+</section>
+
+<section class="block" id="schedule" aria-labelledby="h-schedule">
+  <div class="wrap">
+    <h2 id="h-schedule">日程と流れ（サンプル）</h2>
+    <p class="intro">時刻や内容は、サンプルです。</p>
+    <ol class="days">
+      <li class="day">
+        <h3>1日目</h3>
+        <p class="sub">総会と分科会</p>
+        <ul>
+          <li><span>9:30</span>受付</li>
+          <li><span>10:00〜11:00</span>総会</li>
+          <li><span>13:00〜17:00</span>第2〜第5分科会</li>
+          <li><span>17:30〜</span>情報交換会</li>
+        </ul>
+      </li>
+      <li class="day">
+        <h3>2日目</h3>
+        <p class="sub">シンポジウムと記念講演</p>
+        <ul>
+          <li><span>9:30〜12:00</span>第1分科会（シンポジウム）</li>
+          <li><span>13:30〜15:00</span>記念講演</li>
+          <li><span>15:30〜</span>閉会集会</li>
+          <li><span>16:00〜</span>史跡見学の説明</li>
+        </ul>
+      </li>
+      <li class="day">
+        <h3>3日目</h3>
+        <p class="sub">史跡見学（希望者）</p>
+        <ul>
+          <li><span>9:00〜16:20</span>バスと徒歩で史跡をめぐります（サンプル）。参加費は別で、定員があります。</li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="block alt" id="sessions" aria-labelledby="h-sessions">
+  <div class="wrap">
+    <h2 id="h-sessions">分科会（サンプル）</h2>
+    <p class="intro">シンポジウムと、4つの分科会で構成する例です。発表者とテーマは、すべて架空です。</p>
+    <ul class="sess">
+      <li>
+        <strong>第1分科会</strong>
+        <p>シンポジウム<span class="ex">（サンプル）小学校・中学校・高校の歴史教育をつなぐ</span></p>
+      </li>
+      <li>
+        <strong>第2分科会</strong>
+        <p>歴史総合<span class="ex">（サンプル）授業の軸足をどこに置くか</span></p>
+      </li>
+      <li>
+        <strong>第3分科会</strong>
+        <p>日本史探究<span class="ex">（サンプル）深い学びをどう導くか</span></p>
+      </li>
+      <li>
+        <strong>第4分科会</strong>
+        <p>世界史探究<span class="ex">（サンプル）生徒の学習文脈を授業に活かす</span></p>
+      </li>
+      <li>
+        <strong>第5分科会</strong>
+        <p>社会に開かれた歴史教育<span class="ex">（サンプル）博物館との連携と、地域に根ざした探究</span></p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section class="block" id="entry" aria-labelledby="h-entry">
+  <div class="wrap">
+    <h2 id="h-entry">参加申込</h2>
+    <div class="two">
+      <div>
+        <p class="intro" style="margin-bottom:1rem">申込の受付は、大会案内の公開とあわせて始まります。</p>
+        <p><span class="tbd">調整中</span>申込ページ</p>
+        <p class="small">このサイトはサンプルなので、実際には申し込めません。実際のサイトでは、Google フォームなどの申込ページへのリンクを、ここに載せます。</p>
+      </div>
+      <div>
+        <h3 class="sub-h">参加費（サンプル）</h3>
+        <dl class="fee">
+          <div><dt>一般</dt><dd>3,000円</dd></div>
+          <div><dt>学生</dt><dd>1,000円</dd></div>
+          <div><dt>史跡見学（希望者）</dt><dd>4,000円</dd></div>
+        </dl>
+        <p class="small" style="margin-top:.8rem">金額はすべてサンプルです。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block alt" id="archive" aria-labelledby="h-archive">
+  <div class="wrap">
+    <h2 id="h-archive">アーカイブ配信</h2>
+    <p class="intro">YouTube の動画を並べる場所の見本です。動画のIDを <code>data/archive.js</code> に足すと、ここに一覧が並び、クリックで再生できます（日ごとの絞り込み・再生リストにも対応）。このサンプルには、動画を載せていません。</p>
+    <ul class="alinks" id="archive-links" hidden></ul>
+    <div class="fchips" id="archive-chips" role="group" aria-label="絞り込み" hidden></div>
+    <div class="vgrid" id="archive-grid"></div>
+    <p class="small" id="archive-empty">現在公開中のアーカイブはありません。</p>
+  </div>
+</section>
+
+<section class="block" id="area" aria-labelledby="h-area">
+  <div class="wrap">
+    <h2 id="h-area">開催地の歴史にふれる（サンプル）</h2>
+    <p class="intro">遠方からお越しの方に向けて、開催地の歴史スポットを紹介する欄の見本です。ここに載せている場所は、すべて架空です。</p>
+    <ul class="spots">
+      <li>
+        <h3>サンプル城跡</h3>
+        <p>築城から廃城までの歴史を、復元模型とあわせて学べます（架空）。</p>
+      </li>
+      <li>
+        <h3>サンプル歴史資料館</h3>
+        <p>地域の古文書や出土品を展示しています（架空）。</p>
+      </li>
+      <li>
+        <h3>サンプル港跡</h3>
+        <p>江戸時代に栄えた港の跡で、当時の石積みが残っています（架空）。</p>
+      </li>
+      <li>
+        <h3>サンプル窯跡</h3>
+        <p>地域の焼き物の歴史にふれられます（架空）。</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section class="block alt" id="past" aria-labelledby="h-past">
+  <div class="wrap">
+    <h2 id="h-past">過去の研究大会（サンプル）</h2>
+    <p class="intro">近年の大会の案内を並べる欄の見本です。実際のサイトでは、ここに大会案内や開催要項へのリンクを載せます。</p>
+    <ol class="past" style="margin-bottom:0">
+      <li>
+        <div class="num">第2回</div>
+        <div>
+          <h3>サンプル町大会</h3>
+          <p class="when"><span>2098年7月31日〜8月1日</span><span>サンプル町文化会館（架空）</span></p>
+          <p>大会テーマは「歴史を伝える」（サンプル）。記念講演と4つの分科会で、対面のみの開催でした。</p>
+        </div>
+      </li>
+      <li>
+        <div class="num">第1回</div>
+        <div>
+          <h3>サンプル村大会</h3>
+          <p class="when"><span>2097年7月25日・26日</span><span>サンプル村公民館（架空）</span></p>
+          <p>大会テーマは「地域から歴史を考える」（サンプル）。初めての開催で、分科会を3つ設けました。</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="block" id="about" aria-labelledby="h-about">
+  <div class="wrap">
+    <h2 id="h-about">サンプル歴史教育研究会について</h2>
+    <p style="max-width:40em">サンプル歴史教育研究会は、このサイトのために作った<strong>架空の団体</strong>です。実在の団体や研究大会とは、関係ありません。</p>
+    <p style="max-width:40em">実際の研究大会のサイトでは、ここに団体の紹介や、関連サイトへのリンクを載せます。</p>
+  </div>
+</section>
+
+<section class="block alt" id="contact" aria-labelledby="h-contact">
+  <div class="wrap">
+    <h2 id="h-contact">お問い合わせ</h2>
+    <p><span class="tbd">調整中</span>このサイトはサンプルなので、問い合わせ先はありません。</p>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p class="name">サンプル歴史教育研究会 第3回研究大会（サンプル市大会）</p>
+    <p>共催：サンプル地方歴史教育研究会</p>
+    <p><strong>このサイトはサンプルです。実際の研究大会・団体とは関係ありません。</strong>掲載内容は、すべて架空です。</p>
+  </div>
+</footer>
+
+<dialog id="player" aria-label="動画プレーヤー">
+  <div class="player-bar"><span id="player-title"></span><button type="button" id="player-close" aria-label="閉じる">×</button></div>
+  <div class="ratio"><iframe id="player-frame" title="YouTube 動画" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+</dialog>
+
+<script src="data/archive.js"></script>
+<script src="js/archive.js"></script>
+</body>
+</html>
