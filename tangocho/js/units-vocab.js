@@ -155,7 +155,7 @@
   TG.addUnit({
     id: 'vpow', cat: 'vocab', name: 'べき乗・立方数', note: '中1〜中3の語彙', n: 20, goal: [9, 9],
     steps: [
-      { name: '2のべき（2²〜2¹⁰）', n: 18, gen: powF(POW1), name2: '何乗か？（逆向き）', gen2: powR(POW1) },
+      { name: '2のべき（2²〜2の10乗）', n: 18, gen: powF(POW1), name2: '何乗か？（逆向き）', gen2: powR(POW1) },
       { name: '3・5のべき・立方数', gen: powF(POW2), name2: '何乗か？／□³（逆向き）', gen2: powR(POW2) },
     ],
   });

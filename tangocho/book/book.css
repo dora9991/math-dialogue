@@ -1,0 +1,224 @@
+/* 数学の単語帳（本）。B5（182×257mm）縦・左とじ。1ページ＝1つの .pg（実寸）。奇数ページ＝右ページ（表紙が1ページ目）。
+   書体：本文・見出し＝Noto Serif JP／数字・問題・表＝Noto Sans JP（どちらも SIL Open Font License。book/fonts/ に置く） */
+@font-face{font-family:"BkSans";src:url("../fonts/NotoSansJP-400.ttf");font-weight:400}
+@font-face{font-family:"BkSans";src:url("../fonts/NotoSansJP-500.ttf");font-weight:500}
+@font-face{font-family:"BkSans";src:url("../fonts/NotoSansJP-700.ttf");font-weight:700}
+@font-face{font-family:"BkSans";src:url("../fonts/NotoSansJP-900.ttf");font-weight:900}
+@font-face{font-family:"BkSym";src:url("../fonts/BIZUDGothic-Regular.ttf");font-weight:400 600}   /* ≒ など、Noto JP（Google 版）にない字の代用 */
+@font-face{font-family:"BkSym";src:url("../fonts/BIZUDGothic-Bold.ttf");font-weight:700 900}
+@font-face{font-family:"BkSerif";src:url("../fonts/NotoSerifJP-400.ttf");font-weight:400}
+@font-face{font-family:"BkSerif";src:url("../fonts/NotoSerifJP-700.ttf");font-weight:700}
+@font-face{font-family:"BkSerif";src:url("../fonts/NotoSerifJP-900.ttf");font-weight:900}
+
+:root{
+  --sans:BkSans,BkSym,"Noto Sans JP","IPAexGothic","IPAGothic",sans-serif;
+  --serif:BkSerif,BkSym,"Noto Serif JP","IPAexMincho","IPAMincho",serif;
+  --navy:#12294f;--navy2:#1d3f73;--amber:#f2b134;
+  --ink:#1c2430;--ink2:#46505e;--ink3:#6b7482;--line:#c9d0d9;--tint:#f3f5f8;--memo:#fbf3df;
+  --red:#e0301e;                     /* 答えの赤（赤シートでかくせる赤） */
+  --c1:#2b6cb0;--c2:#2f855a;--c3:#6b46c1;--c0:#12294f;
+  --c1t:#e6eff9;--c2t:#e4f2ea;--c3t:#eee8f8;
+}
+@page{size:182mm 257mm;margin:0}
+*{box-sizing:border-box}
+html,body{margin:0;background:#8d949e}
+body{font-family:var(--sans);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+@media print{html,body{background:#fff}.pg{margin:0!important;box-shadow:none!important}}
+@media screen{.pg{margin:8mm auto;box-shadow:0 2px 10px rgba(0,0,0,.35)}}
+a{color:inherit;text-decoration:none}
+
+/* ---------------- ページの枠 ---------------- */
+.pg{position:relative;width:182mm;height:257mm;overflow:hidden;background:#fff;break-after:page;page-break-after:always;--c:var(--c0);--ct:var(--tint)}
+.pg:last-child{break-after:auto;page-break-after:auto}
+.pg.c1{--c:var(--c1);--ct:var(--c1t)}.pg.c2{--c:var(--c2);--ct:var(--c2t)}.pg.c3{--c:var(--c3);--ct:var(--c3t)}
+.pg .in{position:absolute;top:15mm;bottom:16mm}
+.pg.odd .in{left:19mm;right:13mm}
+.pg.even .in{left:13mm;right:19mm}
+/* 柱（上）と ノンブル（下） */
+.run{position:absolute;top:7mm;font-size:2.7mm;color:var(--ink3);letter-spacing:.06em;white-space:nowrap}
+.pg.odd .run{right:13mm}.pg.even .run{left:13mm}
+.run b{color:var(--c);font-weight:700}
+.folio{position:absolute;bottom:7.5mm;font-size:3.1mm;font-weight:700;color:var(--ink2);font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:1.6mm}
+.pg.odd .folio{right:13mm}.pg.even .folio{left:13mm;flex-direction:row-reverse}
+.folio i{display:block;width:2.2mm;height:2.2mm;border-radius:50%;background:var(--c)}
+/* 小口のインデックス（章ごとの色。ページを閉じたままでも見える） */
+.tab{position:absolute;width:5mm;height:26mm;background:var(--c)}
+.pg.odd .tab{right:0}.pg.even .tab{left:0}
+.pg.c1 .tab{top:36mm}.pg.c2 .tab{top:66mm}.pg.c3 .tab{top:96mm}
+
+/* ---------------- 表紙・扉・奥付 ---------------- */
+.cover{background:var(--navy);color:#fff}
+.cover .dial{position:absolute;left:34mm;bottom:-40mm;width:170mm;height:170mm}
+.cover .t1{position:absolute;left:19mm;top:30mm;font:900 25mm/1.1 var(--serif);letter-spacing:.02em}
+.cover .t2{position:absolute;left:19mm;top:98mm;font:500 5.4mm/1.7 var(--sans);letter-spacing:.06em;color:#dbe5f5}
+.cover .t2 b{font-weight:700;color:#fff}
+.cover .grade{position:absolute;left:19mm;top:126mm;font:700 4.6mm/1 var(--sans);letter-spacing:.14em;color:var(--navy);background:var(--amber);padding:2.4mm 5mm;border-radius:99px}
+.cover .tabs{position:absolute;right:0;top:34mm;display:flex;flex-direction:column;gap:3mm}
+.cover .tabs i{display:block;width:9mm;height:24mm}
+.cover .tabs i:nth-child(1){background:#4a90d9}.cover .tabs i:nth-child(2){background:#3fae7a}.cover .tabs i:nth-child(3){background:#9b7be0}
+.cover .tag{position:absolute;left:19mm;bottom:15mm;font:500 3.8mm/1.7 var(--sans);letter-spacing:.14em;color:#b9c7e0;text-align:left}
+.cover.back{background:var(--navy)}
+.cover.back .cp{position:absolute;left:19mm;right:19mm;top:44mm;font:700 6mm/1.8 var(--serif);letter-spacing:.04em}
+.cover.back .cb{position:absolute;left:19mm;right:19mm;top:84mm;font:400 3.6mm/1.9 var(--sans);color:#d3def0}
+.cover.back .cb li{margin-bottom:2mm}
+.cover.back ul{margin:0;padding-left:5mm}
+.cover.back .tag{left:19mm;right:auto;text-align:left}
+.cover.back .dot3{position:absolute;left:19mm;bottom:30mm;display:flex;gap:2mm}.cover.back .dot3 i{display:block;width:8mm;height:3mm}
+.title-pg .tp1{position:absolute;left:0;right:0;top:78mm;text-align:center;font:900 15mm/1.2 var(--serif);letter-spacing:.04em;color:var(--navy)}
+.title-pg .tp2{position:absolute;left:0;right:0;top:106mm;text-align:center;font:500 4.8mm/1.8 var(--sans);letter-spacing:.08em;color:var(--ink2)}
+.title-pg .tp3{position:absolute;left:0;right:0;top:122mm;text-align:center;font:700 4mm/1 var(--sans);letter-spacing:.14em;color:var(--c0)}
+.title-pg .tp4{position:absolute;left:0;right:0;bottom:30mm;text-align:center;font:400 3.8mm/1.9 var(--serif);color:var(--ink2)}
+.title-pg .bar{position:absolute;left:50%;top:116mm;width:18mm;margin-left:-9mm;height:.7mm;background:var(--amber)}
+.colo .in{display:flex;flex-direction:column;justify-content:flex-end}
+.colo h2{font:900 5mm/1.4 var(--serif);margin:0 0 5mm;color:var(--navy)}
+.colo dl{margin:0 0 7mm;font:400 3.5mm/1.8 var(--sans)}
+.colo dt{font-weight:700;color:var(--ink2);margin-top:3mm;font-size:3.1mm;letter-spacing:.1em}
+.colo dd{margin:0}
+.colo .box{border:.3mm solid var(--line);border-radius:1.5mm;padding:4mm 5mm;margin-top:4mm}
+
+/* ---------------- 文章のページ（はじめに・使い方・ハンドブック） ---------------- */
+.txt h1{font:900 8.2mm/1.3 var(--serif);margin:0 0 6mm;color:var(--navy);letter-spacing:.02em}
+.txt h1 small{display:block;font:700 3.2mm/1 var(--sans);letter-spacing:.18em;color:var(--c);margin-bottom:2.6mm}
+.txt h2{font:700 4.6mm/1.4 var(--serif);margin:7mm 0 2.6mm;color:var(--navy);padding-left:3mm;border-left:1.4mm solid var(--c)}
+.txt p{font:400 3.6mm/1.95 var(--serif);margin:0 0 3.2mm;text-align:justify}
+.txt p.lead{font-size:4mm;line-height:2}
+.txt ul,.txt ol{margin:0 0 3.4mm;padding-left:5.5mm;font:400 3.6mm/1.9 var(--serif)}
+.txt li{margin-bottom:1.2mm}
+.txt b{font-weight:700}
+.txt.pref p{font-size:3.95mm;line-height:2.15;margin-bottom:4.2mm}
+.txt.pref p.lead{font-size:4.5mm;line-height:2.1}
+.txt .sign{text-align:right;color:var(--ink3);font-size:3.2mm}
+
+/* ハンドブックのブロック */
+.hb{margin:0 0 5.4mm;padding:0 0 0 4.4mm;border-left:1.1mm solid var(--c);break-inside:avoid}
+.hb h3{margin:0 0 1.8mm;font:700 4.2mm/1.5 var(--serif);color:var(--ink);display:flex;align-items:center;gap:2.4mm}
+.hb .tg{font:700 2.8mm/1 var(--sans);letter-spacing:.1em;color:#fff;background:var(--c);padding:1.1mm 2.2mm;border-radius:.8mm}
+.hb.rule .tg{background:var(--navy)}
+.hb p,.hb li{font:400 3.5mm/1.85 var(--serif)}
+.hb p{margin:0 0 1.6mm}
+.hb ul,.hb ol{margin:0 0 1.6mm;padding-left:5mm}
+.hb li{margin-bottom:.8mm}
+.hb ul.flow{display:flex;flex-wrap:wrap;gap:1.6mm 2.4mm;list-style:none;padding:0;margin:0 0 2mm}
+.hb ul.flow li{font:500 3.9mm/1 var(--sans);padding:1.8mm 3mm;border:.3mm solid var(--c);border-radius:1.2mm;background:var(--ct);margin:0;font-variant-numeric:tabular-nums}
+.hb table{border-collapse:collapse;margin:1mm 0 2mm;font:400 3.5mm/1.4 var(--sans);font-variant-numeric:tabular-nums}
+.hb th,.hb td{border:.25mm solid var(--line);padding:1.1mm 3.4mm;text-align:left}
+.hb th{background:var(--ct);font-weight:700;color:var(--ink2)}
+.hb .two{display:flex;gap:6mm}
+.hb .memo{margin:2mm 0 0;padding:2.2mm 3.4mm;background:var(--memo);border-radius:1.2mm;font:400 3.2mm/1.75 var(--serif);color:#5a4a1a}
+.hb .memo b{font:700 2.8mm/1 var(--sans);letter-spacing:.1em;margin-right:2mm;color:#8a6a10}
+.hb .go{margin-top:2mm;font:500 3.1mm/1.4 var(--sans);color:var(--c)}
+.hb .go a{border-bottom:.2mm solid var(--c)}
+.hb sup{font-size:.7em;line-height:0}
+
+/* ページの見かた（見返し） */
+.howpg .mini{position:relative;width:98.3mm;height:138.8mm;margin:0 auto}
+.howpg .mini .pg{margin:0!important;box-shadow:none!important;break-after:auto!important}
+.howpg .mini .scale{position:absolute;left:0;top:0;width:182mm;height:257mm;transform:scale(.54);transform-origin:0 0;border:.5mm solid var(--line)}
+.howpg .co{position:absolute;width:6mm;height:6mm;border-radius:50%;background:var(--amber);color:var(--navy);font:900 3.6mm/6mm var(--sans);text-align:center;box-shadow:0 0 0 .6mm #fff}
+.howpg .legend{margin:5mm 0 0;padding:0;columns:2;column-gap:8mm}
+.howpg .legend li{font:400 3.1mm/1.6 var(--sans);margin-bottom:3mm;list-style:none;display:flex;gap:2mm;break-inside:avoid}
+.howpg .legend li i{flex:none;width:5mm;height:5mm;border-radius:50%;background:var(--amber);color:var(--navy);font:900 3mm/5mm var(--sans);text-align:center;font-style:normal;margin-top:.3mm}
+.howpg .legend b{font-weight:700}
+.howpg .note{margin-top:2mm}
+
+/* ---------------- 目次 ---------------- */
+.toc h1{margin-bottom:4mm}
+.toc ol{list-style:none;margin:0;padding:0}
+.toc li{display:flex;align-items:baseline;gap:2mm;font:400 3.5mm/1 var(--sans);height:5.2mm}
+.toc li a{display:flex;flex:1;align-items:baseline;gap:2mm;min-width:0}
+.toc li .t{white-space:nowrap}
+.toc li .d{flex:1;border-bottom:.25mm dotted var(--ink3);transform:translateY(-.8mm);min-width:4mm}
+.toc li .p{font-variant-numeric:tabular-nums;color:var(--ink2);width:8mm;text-align:right}
+.toc li.c1{--c:var(--c1)}.toc li.c2{--c:var(--c2)}.toc li.c3{--c:var(--c3)}
+.toc li.l0{font-weight:700;margin-top:1.6mm}
+.toc li.l1{height:9mm;font:900 4.4mm/1 var(--serif);color:var(--navy);margin-top:2.6mm}
+.toc li.l1 .n{color:#fff;background:var(--c);padding:1mm 2.2mm;border-radius:.8mm;font:700 3mm/1 var(--sans);letter-spacing:.06em;margin-right:1mm}
+.toc li.l2{padding-left:4mm;font-weight:700;color:var(--ink2);font-size:3.3mm}
+.toc li.l3{padding-left:9mm;font-size:3.3mm}
+.toc li.l3 .g{color:var(--ink3);font-size:2.8mm}
+
+/* ---------------- 章扉 ---------------- */
+.chap{background:var(--ct)}
+.chap .big{position:absolute;left:19mm;top:46mm;font:900 66mm/1 var(--serif);color:var(--c);opacity:.16;letter-spacing:-.02em}
+.chap .g{position:absolute;left:19mm;top:84mm;font:700 4.2mm/1 var(--sans);letter-spacing:.2em;color:var(--c)}
+.chap h1{position:absolute;left:19mm;right:19mm;top:94mm;margin:0;font:900 12mm/1.3 var(--serif);color:var(--navy)}
+.chap .flow3{position:absolute;left:19mm;right:19mm;top:132mm;display:flex;gap:3mm}
+.chap .flow3 div{flex:1;background:#fff;border-radius:1.6mm;padding:3.4mm 3.6mm;font:400 3.2mm/1.7 var(--sans);border-top:1.2mm solid var(--c)}
+.chap .flow3 b{display:block;font:700 4mm/1.3 var(--serif);color:var(--navy);margin-bottom:1mm}
+.chap .units{position:absolute;left:19mm;right:19mm;top:168mm;font:400 3.2mm/1.9 var(--sans);color:var(--ink2)}
+.chap .units b{font-weight:700;color:var(--navy);margin-right:2mm}
+.chap .dial2{color:var(--c);position:absolute;right:-30mm;top:-26mm;width:110mm;height:110mm;opacity:.55}
+
+/* ---------------- 単元の扉（STEP一覧と記録） ---------------- */
+.opener h1{margin:0;font:900 9.4mm/1.25 var(--serif);color:var(--navy)}
+.opener .sec{font:700 3.1mm/1 var(--sans);letter-spacing:.16em;color:var(--c);margin-bottom:3mm}
+.opener .note{font:400 3.8mm/1.7 var(--sans);color:var(--ink2);margin:2.2mm 0 7mm}
+.opener table{width:100%;border-collapse:collapse;font:400 3.3mm/1.5 var(--sans)}
+.opener th{background:var(--c);color:#fff;font-weight:700;font-size:3mm;padding:2mm 2.4mm;text-align:left;letter-spacing:.04em}
+.opener td{border-bottom:.25mm solid var(--line);padding:3mm 2.4mm;vertical-align:top}
+.opener td.s{white-space:nowrap;font:900 4mm/1.2 var(--sans);color:var(--c)}
+.opener td.s small{display:block;font:700 2.6mm/1.4 var(--sans);color:var(--ink3);letter-spacing:.06em;margin-top:.8mm}
+.opener td .nm{display:block;font:700 3.4mm/1.45 var(--sans);color:var(--ink)}
+.opener td .hd{display:block;color:var(--ink2);font-size:3mm;margin-top:1mm}
+.opener td .hd i{font-style:normal;color:var(--c);font-weight:700}
+.opener td.g{text-align:center;white-space:nowrap}
+.opener td.g b{font:900 5mm/1 var(--sans);color:var(--ink)}
+.opener td.g small{display:block;font-size:2.6mm;color:var(--ink3);margin-top:.8mm}
+.opener td.r{min-width:30mm}
+.opener td.r div{border-bottom:.25mm solid var(--ink3);height:5.2mm;font-size:2.6mm;color:var(--ink3);display:flex;align-items:flex-end;margin-bottom:1mm}
+.opener .tip{margin-top:8mm;padding:4mm 5mm;background:var(--ct);border-radius:1.6mm;font:400 3.3mm/1.85 var(--serif);color:var(--ink2)}
+.opener .tip b{font-weight:700;color:var(--navy)}
+.opener .tip .rd{color:var(--red);font-weight:700}
+
+/* ---------------- 1分トレーニングのページ ---------------- */
+.drill .in{display:flex;flex-direction:column}
+.dh{display:flex;justify-content:space-between;align-items:flex-end;height:20mm;padding-bottom:2.4mm;border-bottom:.5mm solid var(--c);flex:none}
+.dh .l{min-width:0}
+.dh .un{font:700 3mm/1 var(--sans);letter-spacing:.12em;color:var(--ink3);margin-bottom:2.2mm}
+.dh .st{display:flex;align-items:center;gap:3mm}
+.dh .stb{font:900 4.2mm/1 var(--sans);color:#fff;background:var(--c);padding:1.6mm 3mm;border-radius:1mm;letter-spacing:.06em;white-space:nowrap}
+.dh .stn{margin:0;font:900 5.6mm/1.25 var(--serif);color:var(--navy)}
+.dh .r{flex:none;text-align:right}
+.dh .set{display:inline-block;font:700 3.6mm/1 var(--sans);color:var(--c);border:.4mm solid var(--c);padding:1.3mm 3mm;border-radius:99px;margin-bottom:2mm}
+.dh .gl{font:400 3.2mm/1 var(--sans);color:var(--ink2)}
+.dh .gl b{font:900 5.4mm/1 var(--sans);color:var(--ink);margin:0 .6mm}
+.rec{flex:none;display:flex;justify-content:flex-end;gap:5mm;font:400 2.9mm/1 var(--sans);color:var(--ink3);margin:2.4mm 0 0;height:5mm;align-items:flex-end}
+.rec u{display:inline-block;border-bottom:.25mm solid var(--ink3);text-decoration:none;width:17mm;margin:0 1mm}
+.rec u.s{width:9mm}
+.bar{flex:none;display:flex;align-items:baseline;gap:3mm;height:6.2mm;font:700 3.2mm/6.2mm var(--sans);color:var(--ink2);letter-spacing:.1em;margin-top:2mm;padding-left:1mm;border-bottom:.25mm solid var(--line)}
+.bar small{font:500 3mm/6.2mm var(--sans);color:var(--ink3);letter-spacing:.02em}
+.bar.hard{color:var(--c)}
+.bar.hard small{color:var(--ink2)}
+.rows{list-style:none;margin:0;padding:0;flex:1;display:flex;flex-direction:column;min-height:0}
+.rows.hard{background:var(--ct);border-radius:0 0 1.4mm 1.4mm}
+.rw{flex:1;display:flex;align-items:center;gap:3mm;min-height:0;border-bottom:.2mm dotted #b4bcc7;padding-left:1mm;white-space:nowrap}
+.rw:last-child{border-bottom:0}
+.rw .no{flex:none;width:6.4mm;height:6.4mm;border-radius:50%;background:#e9edf2;color:var(--ink2);font:700 3.1mm/6.4mm var(--sans);text-align:center;font-variant-numeric:tabular-nums}
+.rows.hard .rw .no{background:#fff}
+.rw .qt{display:inline-flex;align-items:center;gap:1.8mm;font:500 var(--fs,5mm)/1.15 var(--sans);font-variant-numeric:tabular-nums;color:var(--ink);min-width:0}
+.rw .fg{flex:none;width:38mm;height:17.7mm;color:var(--ink)}
+.rw .fg svg{display:block;width:100%;height:100%}
+.slot{display:inline-block;min-width:calc(var(--aw,3) * 1em);border-bottom:.3mm solid var(--ink3);text-align:center;line-height:1.25;padding:0 .2em}
+.slot .a{color:var(--red);font-weight:700}
+.slot.sf{border-bottom:0;min-width:1.6em}
+.rw .po{margin-left:-.4mm}
+.fr{display:inline-flex;flex-direction:column;align-items:stretch;vertical-align:middle;text-align:center;line-height:1.02;margin:0 .1em;font-size:.82em}
+.fr>span:first-child{border-bottom:.07em solid currentColor;padding:0 .15em .02em}
+.fr>span:last-child{padding:.02em .15em 0}
+.fig text{stroke:#fff;stroke-width:3.4px;paint-order:stroke;stroke-linejoin:round;fill:currentColor}
+.rows.hard .fig text{stroke:var(--ct)}
+.sup{font-size:.7em}
+sup{font-size:.7em;line-height:0}
+.dfoot{flex:none;height:6mm;margin-top:1.6mm;display:flex;justify-content:space-between;font:400 2.7mm/1 var(--sans);color:var(--ink3);align-items:center}
+.dfoot .rd{color:var(--red);font-weight:700}
+
+/* 合格チェック表・メモ */
+.check table{width:100%;border-collapse:collapse;font:400 3.3mm/1.3 var(--sans)}
+.check th{background:var(--navy);color:#fff;font-size:3mm;padding:1.8mm 2mm;text-align:left}
+.check td{border-bottom:.25mm solid var(--line);padding:.6mm 2mm;height:5.5mm;line-height:1.2}
+.check td.sc{text-align:center;white-space:nowrap;font-size:2.8mm;color:var(--ink3)}
+.check td.sc b{color:var(--ink);font-size:3.2mm;margin-right:1mm}
+.check td.sc i{display:inline-block;width:3.4mm;height:3.4mm;border:.3mm solid var(--ink3);border-radius:.6mm;vertical-align:-.7mm;margin-left:1.4mm}
+.check tr.ch td{background:var(--ct);font:700 3.2mm/1.2 var(--sans);color:var(--c);height:5.5mm}
+.memo-pg .ln{position:absolute;left:0;right:0;border-bottom:.25mm dotted #b4bcc7}
+.memo-pg .mt{position:absolute;left:0;top:0;font:700 3.2mm/1 var(--sans);letter-spacing:.2em;color:var(--ink3)}
