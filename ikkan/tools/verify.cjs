@@ -62,7 +62,9 @@ function checkDrill(id, dr) {
   const labels = bl => bl.filter(b => b.type === 'meate' && b.label).map(b => b.label);
   total += 3;
   if (pages.length !== 2) { bad(id, `演習プリントが ${pages.length} ページ（A4 の表裏 2ページにする）`); return; }
-  const f = labels(pages[0]), r = labels(pages[1]);
+  // 新しい形の見出し（確かめる・使ってみる・ひろげる・チャレンジ★★）は、基礎・標準・応用・入試レベルと同じ段として読む
+  const AS = { 確かめる: '基礎', 使ってみる: '標準', ひろげる: '応用', 'チャレンジ★★': '入試レベル', 'チャレンジ★': '入試レベル' }, std = x => AS[x] || x;
+  const f = labels(pages[0]).map(std), r = labels(pages[1]).map(std);
   if (!(f.includes('基礎') && f.includes('標準')) || f.includes('応用') || f.includes('入試レベル')) bad(id, `演習プリントの表は「基礎・標準」にする（いまの見出し：${f.join('・')}）`);
   else if (!(r.includes('応用') && r.includes('入試レベル')) || r.includes('基礎') || r.includes('標準')) bad(id, `演習プリントの裏は「応用・入試レベル」にする（いまの見出し：${r.join('・')}）`);
   else console.log(`  演習プリント：表＝${f.join('・')}／裏＝${r.join('・')}`);
