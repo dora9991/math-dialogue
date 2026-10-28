@@ -1,0 +1,69 @@
+/* 編集画面の見た目（クラス名は ce- で始める。公開側の見本 css/site-sample.css とぶつけないため） */
+*{box-sizing:border-box}
+body{margin:0;background:var(--porcelain);color:var(--ink);line-height:1.8;-webkit-text-size-adjust:100%;
+  font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif}
+body > main,body > .ce-card,body > .ce-banner,.ce-top{max-width:880px;margin-left:auto;margin-right:auto}
+:focus-visible{outline:3px solid var(--gosu);outline-offset:2px;border-radius:2px}
+.ce-skip{position:absolute;left:-999px;top:8px;background:var(--gosu);color:#fff;padding:.5rem 1rem;z-index:10}
+.ce-skip:focus{left:8px}
+
+.ce-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.4rem 1rem;padding:16px 16px 4px}
+.ce-top h1{margin:0;font-size:1.3rem;color:var(--gosu-deep)}
+.ce-who{margin:0;font-size:.9rem;color:var(--muted)}
+.ce-badge{display:inline-block;background:var(--gosu-tint);color:var(--gosu-deep);border-radius:3px;padding:0 .7em}
+.ce-link{font:inherit;background:none;border:0;color:var(--gosu);text-decoration:underline;cursor:pointer;padding:.5rem}
+
+.ce-banner{margin-top:8px;margin-bottom:0;padding:.6rem 1rem;border-radius:3px;background:#FFF4C9;color:#5C4500;border:1px solid #C9A227}
+.ce-banner.ce-error{background:#FDECEC;color:#8A1C1C;border-color:#D98B8B}
+.ce-banner.ce-good{background:#E6F4EA;color:#14532D;border-color:#8CC9A0}
+.ce-banner button{margin-left:.6rem}
+body > .ce-banner{width:calc(100% - 32px)}
+
+main{padding:0 16px 48px}
+.ce-card{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:16px;margin:16px 16px}
+main .ce-card{margin-left:0;margin-right:0}
+.ce-card h2{margin:0 0 .3rem;font-size:1.1rem;color:var(--gosu-deep)}
+.ce-note{color:var(--muted);font-size:.9rem;margin:0 0 .8rem}
+
+.ce-tabs{display:flex;gap:4px;margin:16px 0 0;border-bottom:2px solid var(--gosu);overflow-x:auto}
+.ce-tab{font:inherit;background:var(--gosu-tint);border:1px solid var(--line);border-bottom:0;border-radius:4px 4px 0 0;padding:.5rem 1.1rem;cursor:pointer;color:var(--gosu-deep);white-space:nowrap;min-height:44px}
+.ce-tab[aria-selected="true"]{background:var(--gosu);color:#fff;border-color:var(--gosu)}
+.ce-dot{display:inline-block;width:.6em;height:.6em;border-radius:50%;background:#E0A400;margin-left:.4em}
+
+.ce-panel{background:var(--paper);border:1px solid var(--line);border-top:0;padding:16px}
+.ce-item{border:1px solid var(--line);border-radius:4px;padding:12px;margin:0 0 12px;background:#FBFCFC}
+.ce-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px;margin-bottom:8px}
+.ce-head strong{color:var(--gosu-deep)}
+.ce-ops{display:flex;gap:4px}
+.ce-ic{font:inherit;min-width:44px;min-height:44px;border:1px solid var(--line);background:#fff;border-radius:4px;cursor:pointer;color:var(--ink)}
+.ce-ic:disabled{opacity:.35;cursor:default}
+.ce-ic.ce-del{color:#8A1C1C}
+.ce-field{margin:0 0 10px}
+.ce-lab{display:block;font-size:.85rem;color:var(--muted)}
+.ce-field input,.ce-field textarea{width:100%;font:inherit;padding:.5rem .6rem;border:1px solid #98A4B5;border-radius:4px;background:#fff;color:var(--ink)}
+.ce-field textarea{resize:vertical;min-height:4.5em}
+.ce-row{display:grid;grid-template-columns:8em 1fr;gap:0 10px}
+@media (max-width:560px){.ce-row{grid-template-columns:1fr}}
+.ce-sub{border-top:1px dashed var(--line);padding-top:10px;margin-top:10px}
+.ce-add{margin:4px 0 0;display:flex;flex-wrap:wrap;gap:8px}
+
+.ce-btn{font:inherit;min-height:44px;padding:.4rem 1.2rem;border:1px solid var(--gosu);background:#fff;color:var(--gosu);border-radius:4px;cursor:pointer}
+.ce-btn:hover:not(:disabled){background:var(--gosu-tint)}
+.ce-btn.ce-primary{background:var(--gosu);color:#fff}
+.ce-btn.ce-primary:hover:not(:disabled){background:var(--gosu-deep)}
+.ce-btn.ce-ghost{border-color:#98A4B5;color:var(--ink)}
+.ce-btn:disabled{opacity:.45;cursor:default}
+
+.ce-problems{margin:12px 0 0}
+.ce-problems ul{margin:0;padding:0;list-style:none}
+.ce-problems li{padding:.35rem .8rem;margin:0 0 4px;border-radius:3px;font-size:.92rem}
+.ce-problems .ce-e{background:#FDECEC;color:#8A1C1C}
+.ce-problems .ce-w{background:#FFF4C9;color:#5C4500}
+.ce-bar{position:sticky;bottom:0;background:rgba(244,246,245,.97);border-top:1px solid var(--line);padding:8px 0;margin-top:12px}
+.ce-status{margin:0 0 6px;font-size:.85rem;line-height:1.6;color:var(--muted)}
+.ce-actions{margin:0;display:flex;flex-wrap:wrap;gap:8px}
+@media (max-width:560px){
+  .ce-actions{gap:6px}
+  .ce-actions .ce-btn{padding:.3rem .8rem;font-size:.9rem}
+}
+.ce-preview{padding:4px 0}

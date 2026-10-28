@@ -134,6 +134,12 @@
       "port": 8795
     },
     {
+      "name": "conference-editor",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8797", "--directory", "conference-editor"],
+      "port": 8797
+    },
+    {
       "name": "tangocho",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8794", "--directory", "tangocho"],
