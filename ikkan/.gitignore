@@ -1,2 +1,5 @@
 # 検査のときにできる画像（tools/check.cjs）
 tools/_out/
+
+# 検査の作業用のコピー（tools/check.cjs）
+.check-index-*.html

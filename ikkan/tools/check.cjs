@@ -28,7 +28,11 @@ async function readQr(page, loc) {
   const outDir = path.resolve(process.argv[2] || path.join(root, 'tools', '_out'));
   const only = process.argv.slice(3);
   fs.mkdirSync(outDir, { recursive: true });
-  const url = 'file://' + path.join(root, 'index.html');
+  // data/ に置いただけで index.html に書いていない授業も、検査できるようにする（作業用のコピーを、このフォルダにつくって、終わったら消す）
+  const { html: idxHtml, added } = require('./lib-index.cjs').withLessons(root);
+  const idxFile = added.length ? path.join(root, `.check-index-${process.pid}.html`) : path.join(root, 'index.html');
+  if (added.length) { fs.writeFileSync(idxFile, idxHtml); process.on('exit', () => { try { fs.unlinkSync(idxFile); } catch (e) { /* なければよい */ } }); }
+  const url = 'file://' + idxFile;
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1300 }, deviceScaleFactor: 2 });
   const errors = [];

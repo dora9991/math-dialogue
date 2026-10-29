@@ -310,7 +310,7 @@
   // 記録ページの QR コード（演習プリント・小テスト・学習予定表の右上）。sheet.qr に '#/' のあとの場所（例：r/kukan-03/dr）を書く
   const QR_MM = 14, QR_TOP = 6.5;
   IK.qrBase = IK.qrBase || 'https://dora9991.github.io/math-dialogue/ikkan/';
-  IK.qrUnits = IK.qrUnits || ['kukan', 'data', 'shiki', 'renritsu', 'ichiji', 'heikou'];   // 記録ページ（コツコツくんにつなぐ）を使う単元
+  IK.qrUnits = IK.qrUnits || ['kukan', 'data', 'shiki', 'renritsu', 'ichiji', 'heikou', 'kukan_new', 'data_new', 'seifu', 'moji', 'hotei', 'hirei', 'heimen'];   // 記録ページ（コツコツくんにつなぐ）を使う単元
 
   function pagesHTML(sheet) {
     const g = geo(sheet), P = g.P, pages = splitPages(sheet.blocks), hd = sheet.head != null ? sheet.head : '';
@@ -348,8 +348,9 @@
     delete meta.plan; delete meta.ws; delete meta.dr; delete meta.qz;
     IK.add(id, meta, ws || []);
     const rec = k => (IK.qrUnits.indexOf(meta.unit) >= 0 ? { qr: `r/${id}/${k}` } : {});   // 記録ページの QR（IK.qrUnits の単元だけ）
-    if (qz) IK.quizzes[id] = Object.assign({ id, paper: 'A4', pitch: 7, dots: true, head: (meta.head ? meta.head + '・' : '') + '小テスト', blocks: qz }, rec('qz'));
-    if (dr) IK.drills[id] = Object.assign({ id, paper: 'A4', pitch: 7, dots: true, head: (meta.head ? meta.head + '・' : '') + '演習', blocks: dr }, rec('dr'));
+    const lay = { pitch: meta.pitch || 7, dots: meta.dots !== false };   // 罫の幅（新しい形は 8mm）・ドット罫線は、ワークシートと同じにする
+    if (qz) IK.quizzes[id] = Object.assign({ id, paper: 'A4', pitch: lay.pitch, dots: lay.dots, head: (meta.head ? meta.head + '・' : '') + '小テスト', blocks: qz }, rec('qz'));
+    if (dr) IK.drills[id] = Object.assign({ id, paper: 'A4', pitch: lay.pitch, dots: lay.dots, head: (meta.head ? meta.head + '・' : '') + '演習', blocks: dr }, rec('dr'));
     if (plan) IK.plans[id] = Object.assign({ id }, plan);
   };
   // ワークシートを書くときの道具（data/ws_<単元>.js で使う）
