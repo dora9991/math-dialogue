@@ -209,6 +209,18 @@ table.xs td {
 .print-doc table.yr td { height: 4.7mm; font-size: 7pt; white-space: nowrap; overflow: hidden; padding: 0 2px; }
 .print-doc table.yr td.dn { width: 6mm; text-align: center; font-weight: bold; }
 
+/* 画面で見るとき：Excel の画面と同じように、細線（昼休み・学年・日の区切り、外枠）をはっきり黒く、
+   極細線（コマとコマのあいだ）はうすい灰色に。線の位置は印刷と同じ。印刷は上の太さのまま */
+#app .xs {
+  --thin: 2px solid #000;
+  --hair: 1px solid #a6a6a6;
+}
+#app .page {
+  width: max-content;
+  height: auto;
+  min-height: 297mm;
+}
+
 /* 画面（操作するところ）の見た目。印刷には出ない。 */
 :root {
   --ui: 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Meiryo UI', 'Meiryo', 'IPAPGothic', system-ui, sans-serif;
@@ -350,7 +362,6 @@ h3 { font-size: 15px; margin: 0 0 8px; }
 .side .card { margin: 0; }
 
 /* シートの上での操作の印（印刷には出ない） */
-#app .xs td.own { background-image: linear-gradient(90deg, rgba(31, 95, 139, 0.07), transparent); }
 .xs td.c, .xs td.ev, .xs td.st { cursor: pointer; }
 .xs td.c:hover, .xs td.ev:hover, .xs td.st:hover { box-shadow: inset 0 0 0 2px rgba(26, 115, 232, 0.35); }
 .xs td.sel { box-shadow: inset 0 0 0 2px var(--sel) !important; background-image: linear-gradient(rgba(26, 115, 232, 0.12), rgba(26, 115, 232, 0.12)); }
@@ -2065,6 +2076,8 @@ body.demo-on #toast { bottom: 170px; }
       if (!tb) return;
       box.style.zoom = '';
       u.fit(box);
+      // 画面（操作するところ）では縮めない：線がにじまないように。紙に合わせて縮めるのは印刷のときだけ
+      if (pg.closest('#app')) return;
       const cs = getComputedStyle(pg);
       const aw = pg.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
       const ah = pg.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);

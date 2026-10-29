@@ -199,3 +199,15 @@ table.xs td {
 .print-doc td.w, .print-doc td.wkn { text-align: center; width: 9mm; }
 .print-doc table.yr td { height: 4.7mm; font-size: 7pt; white-space: nowrap; overflow: hidden; padding: 0 2px; }
 .print-doc table.yr td.dn { width: 6mm; text-align: center; font-weight: bold; }
+
+/* 画面で見るとき：Excel の画面と同じように、細線（昼休み・学年・日の区切り、外枠）をはっきり黒く、
+   極細線（コマとコマのあいだ）はうすい灰色に。線の位置は印刷と同じ。印刷は上の太さのまま */
+#app .xs {
+  --thin: 2px solid #000;
+  --hair: 1px solid #a6a6a6;
+}
+#app .page {
+  width: max-content;
+  height: auto;
+  min-height: 297mm;
+}

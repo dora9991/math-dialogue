@@ -420,6 +420,8 @@
       if (!tb) return;
       box.style.zoom = '';
       u.fit(box);
+      // 画面（操作するところ）では縮めない：線がにじまないように。紙に合わせて縮めるのは印刷のときだけ
+      if (pg.closest('#app')) return;
       const cs = getComputedStyle(pg);
       const aw = pg.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
       const ah = pg.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
