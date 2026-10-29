@@ -57,7 +57,7 @@
       weekMeta: {},
       teach: {},
       targets: {},
-      opt: { mark: true, showStaff: true, firstHeaderColor: true, printDate: true },
+      opt: { mark: true, showStaff: true, firstHeaderColor: true, printDate: true, backupDated: false },
       savedAt: '',
       backupAt: '',
     };

@@ -22,7 +22,20 @@
             <button class="btn danger" data-act="wipe">全部消して最初から</button>
           </div>
           <p class="small muted" style="margin-top:8px">最後の保存：${st.savedAt ? new Date(st.savedAt).toLocaleString('ja-JP') : 'まだ'}　／　最後のバックアップ：${st.backupAt ? new Date(st.backupAt).toLocaleString('ja-JP') : 'まだ'}</p>`,
-          'インターネットには何も送りません。ブラウザの「閲覧データを削除」をすると消えるので、週に1回くらいバックアップを書き出してください（別のパソコンへ移すときも、このファイルを「戻す」で読みこみます）。'
+          '入力した内容は、このブラウザに自動で保存されます。インターネットには何も送りません。ブラウザの「閲覧データを削除」をすると消えるので、週に1回くらいバックアップをとってください（別のパソコンへ移すときも、このファイルを「戻す」で読みこみます）。'
+        )}
+        ${sec(
+          'バックアップの保存先フォルダ（ボタン一つで上書き保存）',
+          K.backup.supported()
+            ? `<div class="row"><span>保存先：</span><b data-bkfolder>…</b>
+                <button class="btn small primary" data-act="bk-choose">フォルダを選ぶ・変える</button>
+                <button class="btn small" data-act="bk-save" data-bkneed>いま保存する</button>
+                <button class="btn small" data-act="bk-restore" data-bkneed>保存先のバックアップから戻す</button>
+                <button class="btn small danger" data-act="bk-forget" data-bkneed>保存先を解除</button></div>
+              <p class="small" style="margin:8px 0 0">保存するファイル：<code>${u.esc(K.store.backupName(false))}</code>（毎回、上書き）</p>
+              <label class="chk small" style="margin-top:6px"><input type="checkbox" data-o="backupDated" ${st.opt.backupDated ? 'checked' : ''}>上書きのほかに、日付つきのファイルも残す（例：<code>${u.esc(K.store.backupName(true))}</code>。1日1つ）</label>`
+            : '<p class="help">このブラウザでは、フォルダへの上書き保存は使えません（Edge か Chrome なら使えます）。上の「バックアップを書き出す」で、ダウンロードの場所に保存してください。</p>',
+          '一度フォルダを選んでおくと、右上の「バックアップ」を押すだけで、そのフォルダのファイルに上書き保存します。OneDrive や学校の共有フォルダなど、パソコンが壊れても残る場所がおすすめです。2回目からは、ブラウザが「保存を許可しますか」と聞くことがあります（「許可」を押す）。'
         )}
         ${sec(
           '学校・年度',
@@ -67,6 +80,12 @@
       </div>`;
       const root = el.firstElementChild;
       const commit = (label, fn) => K.store.commit(label, fn);
+      const fl = root.querySelector('[data-bkfolder]');
+      if (fl)
+        K.backup.folder().then((h) => {
+          fl.textContent = h ? `「${h.name}」フォルダ` : 'まだ決めていません';
+          root.querySelectorAll('[data-bkneed]').forEach((b) => (b.disabled = !h));
+        });
       root.addEventListener('change', (e) => {
         const t = e.target;
         if (t.dataset.s) commit('学校の設定', (s) => (s.school[t.dataset.s] = t.dataset.s === 'year' ? Number(t.value) : t.value));
@@ -105,6 +124,13 @@
         const act = b.dataset.act;
         if (act === 'import') K.app.go('settings', 'import');
         if (act === 'export') K.store.exportJson();
+        if (act === 'bk-choose') K.backup.choose(false);
+        if (act === 'bk-save') K.backup.button();
+        if (act === 'bk-restore') K.backup.restoreFromFolder();
+        if (act === 'bk-forget' && (await u.confirm('保存先フォルダを解除します（フォルダの中のファイルは消えません）。', '解除する'))) {
+          await K.backup.forget();
+          K.app.refresh();
+        }
         if (act === 'wipe' && (await u.confirm('すべてのデータを消して、最初の状態にします。\n（念のため、先にバックアップを書き出してください）', '全部消す'))) K.store.replace(m.blank(m.st.school.year), '全部消す');
         if (act === 'add-term') commit('期間を足す', (s) => {
           const id = 't' + u.uid();

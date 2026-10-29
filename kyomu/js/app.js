@@ -30,7 +30,7 @@
           <button class="icon demo-btn" data-top="help" title="やりたいことを選ぶと、操作のデモが流れます（キーの ?）">▶ 使い方・デモ</button>
           <button class="icon" data-top="undo" title="元に戻す（Ctrl+Z）">↶ 戻す</button>
           <button class="icon" data-top="redo" title="やり直す（Ctrl+Y）">↷</button>
-          <button class="icon" data-top="backup" title="データを JSON ファイルに書き出す">バックアップ</button>
+          <button class="icon" data-top="backup" title="バックアップ（保存先フォルダを決めておくと、ボタン一つで上書き保存）">バックアップ</button>
         </div>
       </header>
       <main id="main"></main>`;
@@ -42,10 +42,7 @@
       if (b.dataset.top === 'help') K.demo.panel();
       if (b.dataset.top === 'undo') K.store.undo();
       if (b.dataset.top === 'redo') K.store.redo();
-      if (b.dataset.top === 'backup') {
-        K.store.exportJson();
-        backupChip();
-      }
+      if (b.dataset.top === 'backup') K.backup.button().then(backupChip);
     });
   }
 

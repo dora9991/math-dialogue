@@ -28,7 +28,8 @@ const ok = (cond, msg) => {
 (async () => {
   await new Promise((r) => server.listen(0, r));
   const port = server.address().port;
-  const browser = await chromium.launch();
+  // 日本語のファイル名を正しく扱えるように、ブラウザは UTF-8 の設定で起動する（Linux で LANG が無いとき用）
+  const browser = await chromium.launch({ env: Object.assign({}, process.env, { LANG: process.env.LANG || 'C.UTF-8' }) });
   const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
   const errs = [];
   page.on('pageerror', (e) => errs.push(String(e)));
@@ -148,6 +149,58 @@ const ok = (cond, msg) => {
   const pdf = await page.pdf({ printBackground: true, preferCSSPageSize: true });
   const pages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
   ok(pages === 1, `週行事の印刷は 1 ページ（${pages}）`);
+
+  // バックアップ：保存先フォルダにボタン一つで上書き保存（ブラウザのフォルダ機能はまねで代用）
+  await page.emulateMedia({ media: 'screen' });
+  await page.evaluate(() => {
+    window.__files = {};
+    let asked = 0;
+    const dir = {
+      name: 'テスト用フォルダ',
+      queryPermission: async () => (asked ? 'granted' : 'prompt'),
+      requestPermission: async () => ((asked = 1), 'granted'),
+      getFileHandle: async (name, o) => {
+        if (!(name in window.__files) && !(o && o.create)) throw Object.assign(new Error('なし'), { name: 'NotFoundError' });
+        return {
+          createWritable: async () => {
+            let buf = '';
+            return { write: async (b) => (buf += await b.text()), close: async () => (window.__files[name] = buf) };
+          },
+          getFile: async () => new File([window.__files[name]], name, { lastModified: Date.now() }),
+        };
+      },
+    };
+    window.showDirectoryPicker = async () => dir;
+  });
+  await page.click('[data-top="backup"]');
+  await page.click('.modal [data-pick]');
+  await page.waitForTimeout(300);
+  let files = await page.evaluate(() => Object.keys(window.__files));
+  ok(files.length === 1 && /_バックアップ\.json$/.test(files[0]), `はじめて：フォルダを選んで保存（${files.join(',')}）`);
+  await page.evaluate(() => K.store.commit('t', (st) => (st.school.name = 'テスト中学校（変更）')));
+  await page.click('[data-top="backup"]');
+  await page.waitForTimeout(300);
+  files = await page.evaluate(() => Object.keys(window.__files));
+  const saved = await page.evaluate((n) => JSON.parse(window.__files[n]).school.name, files[0]);
+  ok(files.length === 1 && saved === 'テスト中学校（変更）' && !(await page.locator('.modal').count()), '2回目から：ボタン一つで同じファイルに上書き');
+  await page.evaluate(() => K.store.commit('t', (st) => (st.opt.backupDated = true)));
+  await page.click('[data-top="backup"]');
+  await page.waitForTimeout(300);
+  files = await page.evaluate(() => Object.keys(window.__files));
+  ok(files.length === 2, `日付つきのファイルも残す（${files.join(',')}）`);
+  await page.evaluate(() => K.store.commit('t', (st) => (st.school.name = 'こわれた')));
+  await page.evaluate(() => K.app.go('settings'));
+  await page.waitForTimeout(300);
+  await page.click('[data-act="bk-restore"]');
+  await page.click('.modal [data-ok]');
+  await page.waitForTimeout(400);
+  ok((await page.evaluate(() => K.m.st.school.name)) === 'テスト中学校（変更）', '保存先フォルダのバックアップから戻す');
+  await page.evaluate(() => {
+    delete window.showDirectoryPicker;
+    K.store.commit('t', (st) => (st.opt.backupDated = false));
+  });
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-top="backup"]')]);
+  ok(/\.json$/.test(dl.suggestedFilename()), `フォルダ機能がないブラウザでは、ダウンロードで保存（${dl.suggestedFilename()}）`);
 
   // 操作デモ：全部のデモが最後まで流れ、終わったら元のデータに戻る
   await page.emulateMedia({ media: 'screen' });

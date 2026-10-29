@@ -133,15 +133,21 @@
     s.emit('replace');
   };
 
-  s.exportJson = () => {
+  // バックアップの中身（書き出した日時も記録する）
+  s.backupJson = () => {
     m.st.backupAt = new Date().toISOString();
     const json = JSON.stringify(m.st, null, 1);
-    const stamp = new Date();
-    const name = `教務時間割_R${m.st.school.year - 2018}_${stamp.getFullYear()}${u.pad(stamp.getMonth() + 1)}${u.pad(stamp.getDate())}.json`;
-    u.download(name, json);
     lastJson = JSON.stringify(m.st);
     write();
+    return json;
   };
+  s.backupName = (dated) => {
+    const r = `R${m.st.school.year - 2018}`;
+    if (!dated) return `教務時間割_${r}_バックアップ.json`;
+    const d = new Date();
+    return `教務時間割_${r}_${d.getFullYear()}${u.pad(d.getMonth() + 1)}${u.pad(d.getDate())}.json`;
+  };
+  s.exportJson = () => u.download(s.backupName(true), s.backupJson());
 
   s.importJson = (file) =>
     new Promise((res, rej) => {

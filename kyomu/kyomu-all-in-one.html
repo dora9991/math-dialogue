@@ -797,7 +797,7 @@ body.demo-on #toast { bottom: 170px; }
       weekMeta: {},
       teach: {},
       targets: {},
-      opt: { mark: true, showStaff: true, firstHeaderColor: true, printDate: true },
+      opt: { mark: true, showStaff: true, firstHeaderColor: true, printDate: true, backupDated: false },
       savedAt: '',
       backupAt: '',
     };
@@ -1212,15 +1212,21 @@ body.demo-on #toast { bottom: 170px; }
     s.emit('replace');
   };
 
-  s.exportJson = () => {
+  // バックアップの中身（書き出した日時も記録する）
+  s.backupJson = () => {
     m.st.backupAt = new Date().toISOString();
     const json = JSON.stringify(m.st, null, 1);
-    const stamp = new Date();
-    const name = `教務時間割_R${m.st.school.year - 2018}_${stamp.getFullYear()}${u.pad(stamp.getMonth() + 1)}${u.pad(stamp.getDate())}.json`;
-    u.download(name, json);
     lastJson = JSON.stringify(m.st);
     write();
+    return json;
   };
+  s.backupName = (dated) => {
+    const r = `R${m.st.school.year - 2018}`;
+    if (!dated) return `教務時間割_${r}_バックアップ.json`;
+    const d = new Date();
+    return `教務時間割_${r}_${d.getFullYear()}${u.pad(d.getMonth() + 1)}${u.pad(d.getDate())}.json`;
+  };
+  s.exportJson = () => u.download(s.backupName(true), s.backupJson());
 
   s.importJson = (file) =>
     new Promise((res, rej) => {
@@ -1242,6 +1248,175 @@ body.demo-on #toast { bottom: 170px; }
   s.daysSinceBackup = () => {
     if (!m.st.backupAt) return null;
     return Math.floor((Date.now() - new Date(m.st.backupAt).getTime()) / 86400000);
+  };
+})();
+
+/* ---- js/backup.js ---- */
+/* バックアップを、決めておいたフォルダにボタン一つで上書き保存する。
+   ブラウザの「ファイルに直接書きこむ機能」（File System Access API。Edge・Chrome で使える）を使う。
+   選んだフォルダは、このブラウザの中（IndexedDB）に覚えておく。フォルダの中身をのぞいたり、ほかのファイルにさわったりはしない。
+   使えないブラウザ（Safari・Firefox）では、これまでどおりダウンロードで保存する。 */
+(function () {
+  const K = window.K;
+  const u = K.u;
+  const m = K.m;
+  const B = (K.backup = {});
+  const DB = 'kyomu-backup';
+  let mem = null; // IndexedDB にしまえないとき（テストなど）は、開いている間だけ覚える
+
+  B.supported = () => typeof window.showDirectoryPicker === 'function';
+
+  /* ---------- IndexedDB（フォルダの覚え書き） ---------- */
+  function db() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open(DB, 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('h');
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  }
+  async function idb(mode, fn) {
+    const d = await db();
+    return new Promise((res, rej) => {
+      const tx = d.transaction('h', mode);
+      const req = fn(tx.objectStore('h'));
+      tx.oncomplete = () => res(req && req.result);
+      tx.onerror = () => rej(tx.error);
+      tx.onabort = () => rej(tx.error);
+    });
+  }
+  B.folder = async () => {
+    if (mem) return mem;
+    try {
+      return (await idb('readonly', (s) => s.get('dir'))) || null;
+    } catch (e) {
+      return null;
+    }
+  };
+  async function remember(h) {
+    mem = null;
+    try {
+      await idb('readwrite', (s) => s.put(h, 'dir'));
+    } catch (e) {
+      mem = h;
+    }
+  }
+  B.forget = async () => {
+    mem = null;
+    try {
+      await idb('readwrite', (s) => s.delete('dir'));
+    } catch (e) {
+      /* なにもしない */
+    }
+  };
+
+  // 書きこんでよいか（2回目からは、ブラウザが「このフォルダへの保存を許可しますか」と聞くことがある）
+  async function allowed(h) {
+    const o = { mode: 'readwrite' };
+    if (h.queryPermission && (await h.queryPermission(o)) === 'granted') return true;
+    if (h.requestPermission) return (await h.requestPermission(o)) === 'granted';
+    return true;
+  }
+
+  /* ---------- フォルダを選ぶ・保存する・戻す ---------- */
+  B.pick = async () => {
+    const h = await window.showDirectoryPicker({ id: 'kyomu-backup', mode: 'readwrite', startIn: 'documents' });
+    await remember(h);
+    return h;
+  };
+
+  async function writeFile(dir, name, text) {
+    const fh = await dir.getFileHandle(name, { create: true });
+    const w = await fh.createWritable();
+    await w.write(new Blob([text], { type: 'application/json' }));
+    await w.close();
+  }
+
+  // 保存先フォルダに上書き保存（日付つきも残す設定なら、そちらも）
+  B.saveToFolder = async (dir) => {
+    if (!(await allowed(dir))) throw new Error('フォルダへの保存が許可されませんでした');
+    const json = K.store.backupJson();
+    const name = K.store.backupName(false);
+    await writeFile(dir, name, json);
+    if (m.st.opt.backupDated) await writeFile(dir, K.store.backupName(true), json);
+    return name;
+  };
+
+  B.restoreFromFolder = async () => {
+    const dir = await B.folder();
+    if (!dir) return u.toast('保存先フォルダがまだ決まっていません');
+    try {
+      if (!(await allowed(dir))) return u.toast('フォルダを読むことが許可されませんでした');
+      const fh = await dir.getFileHandle(K.store.backupName(false));
+      const f = await fh.getFile();
+      const when = new Date(f.lastModified).toLocaleString('ja-JP');
+      if (!(await u.confirm(`保存先フォルダ「${dir.name}」の\n${f.name}（${when} に保存）\nから戻します。いまの内容は、このファイルの内容に置きかわります。`, '戻す'))) return;
+      await K.store.importJson(f);
+      u.toast('保存先フォルダのバックアップから戻しました');
+    } catch (e) {
+      u.toast(e && e.name === 'NotFoundError' ? `保存先フォルダに ${K.store.backupName(false)} がありません` : '読みこめませんでした：' + (e.message || e), 5000);
+    }
+  };
+
+  /* ---------- 上の「バックアップ」ボタン ---------- */
+  B.button = async () => {
+    if (K.store.inSandbox && K.store.inSandbox()) return u.toast('デモ中はバックアップしません');
+    if (!B.supported()) {
+      K.store.exportJson();
+      return u.toast('ダウンロードの場所に保存しました（このブラウザでは、フォルダへの上書き保存は使えません。Edge か Chrome なら使えます）', 6000);
+    }
+    const dir = await B.folder();
+    if (!dir) return B.setup();
+    try {
+      const name = await B.saveToFolder(dir);
+      u.toast(`「${dir.name}」フォルダに保存しました（${name}）`, 4000);
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      const md = u.modal(`<h3>保存先フォルダに保存できませんでした</h3>
+        <p class="pre">${u.esc(e.message || String(e))}</p>
+        <p class="help">フォルダの名前を変えたり、消したり、移したりしたときにおこります。フォルダを選びなおすか、今回はダウンロードで保存してください。</p>
+        <div class="btns"><button class="btn" data-dl>今回はダウンロードで保存</button><button class="btn primary" data-pick>フォルダを選びなおす</button></div>`);
+      md.el.querySelector('[data-dl]').addEventListener('click', () => {
+        md.close();
+        K.store.exportJson();
+      });
+      md.el.querySelector('[data-pick]').addEventListener('click', () => {
+        md.close();
+        B.choose(true);
+      });
+    }
+  };
+
+  // はじめて押したとき：保存先を決めるか、今回はダウンロードか
+  B.setup = () => {
+    const md = u.modal(`<h3>バックアップの保存先</h3>
+      <p>保存先のフォルダを<b>一度だけ</b>選んでおくと、次からは「バックアップ」を押すだけで、そのフォルダの <code>${u.esc(K.store.backupName(false))}</code> に上書き保存します。</p>
+      <p class="help">おすすめは、OneDrive や学校の共有フォルダなど、パソコンが壊れても残る場所です。選んだフォルダは、このブラウザが覚えています（中のほかのファイルにはさわりません）。<br>
+      2回目からは、ブラウザが「このフォルダへの保存を許可しますか」と聞くことがあります。そのときは「許可」を押してください。</p>
+      <div class="btns"><button class="btn" data-dl>今回はダウンロードで保存</button><button class="btn primary" data-pick>保存先のフォルダを選ぶ</button></div>`);
+    md.el.querySelector('[data-dl]').addEventListener('click', () => {
+      md.close();
+      K.store.exportJson();
+    });
+    md.el.querySelector('[data-pick]').addEventListener('click', () => {
+      md.close();
+      B.choose(true);
+    });
+  };
+
+  // フォルダを選ぶ（save：選んだあと、そのまま保存する）
+  B.choose = async (save) => {
+    try {
+      const dir = await B.pick();
+      if (save) {
+        const name = await B.saveToFolder(dir);
+        u.toast(`「${dir.name}」フォルダに保存しました（${name}）。次からはボタン一つで上書きします`, 5000);
+      } else u.toast(`保存先を「${dir.name}」フォルダにしました`);
+      if (K.app && K.app.refresh) K.app.refresh();
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      u.toast('フォルダを選べませんでした：' + (e.message || e), 5000);
+    }
   };
 })();
 
@@ -4786,7 +4961,20 @@ body.demo-on #toast { bottom: 170px; }
             <button class="btn danger" data-act="wipe">全部消して最初から</button>
           </div>
           <p class="small muted" style="margin-top:8px">最後の保存：${st.savedAt ? new Date(st.savedAt).toLocaleString('ja-JP') : 'まだ'}　／　最後のバックアップ：${st.backupAt ? new Date(st.backupAt).toLocaleString('ja-JP') : 'まだ'}</p>`,
-          'インターネットには何も送りません。ブラウザの「閲覧データを削除」をすると消えるので、週に1回くらいバックアップを書き出してください（別のパソコンへ移すときも、このファイルを「戻す」で読みこみます）。'
+          '入力した内容は、このブラウザに自動で保存されます。インターネットには何も送りません。ブラウザの「閲覧データを削除」をすると消えるので、週に1回くらいバックアップをとってください（別のパソコンへ移すときも、このファイルを「戻す」で読みこみます）。'
+        )}
+        ${sec(
+          'バックアップの保存先フォルダ（ボタン一つで上書き保存）',
+          K.backup.supported()
+            ? `<div class="row"><span>保存先：</span><b data-bkfolder>…</b>
+                <button class="btn small primary" data-act="bk-choose">フォルダを選ぶ・変える</button>
+                <button class="btn small" data-act="bk-save" data-bkneed>いま保存する</button>
+                <button class="btn small" data-act="bk-restore" data-bkneed>保存先のバックアップから戻す</button>
+                <button class="btn small danger" data-act="bk-forget" data-bkneed>保存先を解除</button></div>
+              <p class="small" style="margin:8px 0 0">保存するファイル：<code>${u.esc(K.store.backupName(false))}</code>（毎回、上書き）</p>
+              <label class="chk small" style="margin-top:6px"><input type="checkbox" data-o="backupDated" ${st.opt.backupDated ? 'checked' : ''}>上書きのほかに、日付つきのファイルも残す（例：<code>${u.esc(K.store.backupName(true))}</code>。1日1つ）</label>`
+            : '<p class="help">このブラウザでは、フォルダへの上書き保存は使えません（Edge か Chrome なら使えます）。上の「バックアップを書き出す」で、ダウンロードの場所に保存してください。</p>',
+          '一度フォルダを選んでおくと、右上の「バックアップ」を押すだけで、そのフォルダのファイルに上書き保存します。OneDrive や学校の共有フォルダなど、パソコンが壊れても残る場所がおすすめです。2回目からは、ブラウザが「保存を許可しますか」と聞くことがあります（「許可」を押す）。'
         )}
         ${sec(
           '学校・年度',
@@ -4831,6 +5019,12 @@ body.demo-on #toast { bottom: 170px; }
       </div>`;
       const root = el.firstElementChild;
       const commit = (label, fn) => K.store.commit(label, fn);
+      const fl = root.querySelector('[data-bkfolder]');
+      if (fl)
+        K.backup.folder().then((h) => {
+          fl.textContent = h ? `「${h.name}」フォルダ` : 'まだ決めていません';
+          root.querySelectorAll('[data-bkneed]').forEach((b) => (b.disabled = !h));
+        });
       root.addEventListener('change', (e) => {
         const t = e.target;
         if (t.dataset.s) commit('学校の設定', (s) => (s.school[t.dataset.s] = t.dataset.s === 'year' ? Number(t.value) : t.value));
@@ -4869,6 +5063,13 @@ body.demo-on #toast { bottom: 170px; }
         const act = b.dataset.act;
         if (act === 'import') K.app.go('settings', 'import');
         if (act === 'export') K.store.exportJson();
+        if (act === 'bk-choose') K.backup.choose(false);
+        if (act === 'bk-save') K.backup.button();
+        if (act === 'bk-restore') K.backup.restoreFromFolder();
+        if (act === 'bk-forget' && (await u.confirm('保存先フォルダを解除します（フォルダの中のファイルは消えません）。', '解除する'))) {
+          await K.backup.forget();
+          K.app.refresh();
+        }
         if (act === 'wipe' && (await u.confirm('すべてのデータを消して、最初の状態にします。\n（念のため、先にバックアップを書き出してください）', '全部消す'))) K.store.replace(m.blank(m.st.school.year), '全部消す');
         if (act === 'add-term') commit('期間を足す', (s) => {
           const id = 't' + u.uid();
@@ -5834,8 +6035,10 @@ body.demo-on #toast { bottom: 170px; }
   });
 
   add('印刷・保存', 'backup', 'バックアップしたい・別のパソコンに移したい', 'JSON に書き出す・戻す', async (h) => {
-    await h.point('[data-top="backup"]', 'データはこのブラウザの中だけにあります。「バックアップ」で JSON ファイルに書き出しておきます（週に1回くらい）。');
+    await h.point('[data-top="backup"]', '入力した内容は、このブラウザに自動で保存されています。もしものために「バックアップ」でファイルにも残しておきます（週に1回くらい）。');
+    await h.say('はじめて押したときに保存先のフォルダ（OneDrive など）を選んでおくと、次からはボタン一つで、そのフォルダのファイルに上書き保存されます。');
     await h.go('settings');
+    if (u.$('#main [data-act="bk-choose"]')) await h.point('#main [data-act="bk-choose"]', '保存先のフォルダは、ここで変えたり、そのフォルダのバックアップから戻したりできます。日付つきのファイルも残す設定もあります。');
     await h.point('#main label.btn:has([data-restore])', '別のパソコンでは「バックアップから戻す」でそのファイルを読みこめば、同じ状態になります。');
   });
 
@@ -6005,7 +6208,7 @@ body.demo-on #toast { bottom: 170px; }
           <button class="icon demo-btn" data-top="help" title="やりたいことを選ぶと、操作のデモが流れます（キーの ?）">▶ 使い方・デモ</button>
           <button class="icon" data-top="undo" title="元に戻す（Ctrl+Z）">↶ 戻す</button>
           <button class="icon" data-top="redo" title="やり直す（Ctrl+Y）">↷</button>
-          <button class="icon" data-top="backup" title="データを JSON ファイルに書き出す">バックアップ</button>
+          <button class="icon" data-top="backup" title="バックアップ（保存先フォルダを決めておくと、ボタン一つで上書き保存）">バックアップ</button>
         </div>
       </header>
       <main id="main"></main>`;
@@ -6017,10 +6220,7 @@ body.demo-on #toast { bottom: 170px; }
       if (b.dataset.top === 'help') K.demo.panel();
       if (b.dataset.top === 'undo') K.store.undo();
       if (b.dataset.top === 'redo') K.store.redo();
-      if (b.dataset.top === 'backup') {
-        K.store.exportJson();
-        backupChip();
-      }
+      if (b.dataset.top === 'backup') K.backup.button().then(backupChip);
     });
   }
 
