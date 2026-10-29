@@ -20,6 +20,7 @@ function createFake(opts) {
     users: new Set(opts.users || ["editor@example.com", "stranger@example.com"]), // ログインできる人（招待済み）
     editors: new Set(opts.editors || ["editor@example.com"]),                       // conf_editors に載っている人
     code: "123456",
+    password: "correct-horse",   // 全員共通の検査用パスワード
     ttl: opts.ttl || 3600,       // アクセストークンの有効秒数（短くすると更新の検査ができる）
     rows: { news: blank(), overview: blank(), program: blank() },
     access: new Map(),           // アクセストークン → メール
@@ -59,6 +60,12 @@ function createFake(opts) {
     if (path === "/auth/v1/verify" && method === "POST") {
       if (body.type !== "email" || !state.users.has(body.email) || body.token !== state.code) {
         return { status: 403, json: { code: 403, error_code: "otp_expired", msg: "Token has expired or is invalid" } };
+      }
+      return ok(session(body.email));
+    }
+    if (path === "/auth/v1/token" && method === "POST" && u.searchParams.get("grant_type") === "password") {
+      if (!state.users.has(body.email) || body.password !== state.password) {
+        return { status: 400, json: { code: 400, error_code: "invalid_credentials", msg: "Invalid login credentials" } };
       }
       return ok(session(body.email));
     }

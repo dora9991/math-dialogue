@@ -310,6 +310,7 @@
     $("ce-login").hidden = false;
     $("ce-logout").hidden = true;
     $("ce-mode").textContent = "共同編集：ログインしてください";
+    $("ce-password").value = "";
     if (message) banner(message, "error");
   }
   async function load() {
@@ -336,6 +337,13 @@
       try { await store.signOut(); } catch (e2) { /* 無視 */ }
       showLogin(e.message);
     }
+  }
+  async function onSignin() {
+    var email = $("ce-email").value.trim(), pw = $("ce-password").value;
+    if (!email || !pw) { banner("メールアドレスとパスワードを入力してください。", "error"); return; }
+    banner(""); $("ce-signin").disabled = true;
+    try { var r = await store.signInWithPassword(email, pw); $("ce-password").value = ""; await afterLogin(r.user); }
+    catch (e) { banner(e.message, "error"); } finally { $("ce-signin").disabled = false; }
   }
   async function onSend() {
     var email = $("ce-email").value.trim();
@@ -378,6 +386,8 @@
     $("ce-discard").addEventListener("click", onDiscard);
     $("ce-send").addEventListener("click", onSend);
     $("ce-verify").addEventListener("click", onVerify);
+    $("ce-signin").addEventListener("click", onSignin);
+    $("ce-password").addEventListener("keydown", function (e) { if (e.key === "Enter") onSignin(); });
     $("ce-logout").addEventListener("click", onLogout);
     window.addEventListener("beforeunload", function (e) {
       if (state.rows && anyDirty()) { e.preventDefault(); e.returnValue = ""; }

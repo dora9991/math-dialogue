@@ -2,11 +2,14 @@
 -- 大会サイト編集ツール スキーマ（お知らせ／大会概要／プログラム）
 --
 -- 使い方：Supabase ダッシュボード → SQL Editor に貼って Run。何度流しても壊れない（再実行OK）。
--- ★ 大会ごとに「新しい Supabase プロジェクト」を作ることをすすめる（名義・引き継ぎ・個人情報の分離のため）。
+-- 既存のプロジェクト（会員サイトなど、誰でも登録できるもの）に足してもよい。作るのは conf_ で始まる名前のものだけで、
+-- 既存のテーブルや設定には触れない。
 --
 -- 守り方（ここが肝）
 --   ・公開側（anon キー）  … 「公開済み」の列（key / published / published_at）だけ読める。下書きは読めない。書けない。
---   ・編集者（ログイン済み）… conf_editors に載っているメールアドレスの人だけ、下書きの読み書きと公開ができる。
+--   ・編集者（ログイン済み）… conf_editors に載っている「ユーザーID」の人だけ、下書きの読み書きと公開ができる。
+--     ★ メールアドレスではなくユーザーIDで判定する。誰でも登録できるプロジェクトで、他人が編集者と同じメールアドレスで
+--       登録しても（メール確認をしていない設定でも）、IDが違うので編集者にはなれない。
 --   ・公開（published を書き換える）は conf_publish() 経由だけ。画面から直接 published を書き換えることはできない。
 --   ・更新者・更新時刻・版番号（version）はサーバー側で付ける。改ざんできない。
 --   ・更新のたびに、変更前の内容が conf_content_history に残る（取り消しの保険）。
@@ -15,9 +18,17 @@
 
 -- ---------- テーブル ----------
 
--- 編集してよい人（メールアドレスは小文字で登録する）
+-- 旧版（メールアドレスで判定していた版）の conf_editors が残っていたら、作り直す（編集者の登録し直しが必要）
+do $$ begin
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'conf_editors' and column_name = 'email') then
+    drop table conf_editors;
+  end if;
+end $$;
+
+-- 編集してよい人（ユーザーID。登録のしかたは、このファイルの最後）
 create table if not exists conf_editors (
-  email text primary key check (email = lower(email))
+  user_id uuid primary key references auth.users (id) on delete cascade
 );
 
 -- 中身：key ごとに1行（news / overview / program）。draft=下書き、published=公開中
@@ -52,10 +63,7 @@ on conflict (key) do nothing;
 -- いまログインしている人が編集者か（RLS の中から呼ぶ。conf_editors は直接は読ませない）
 create or replace function conf_is_editor() returns boolean
 language sql stable security definer set search_path = public as $$
-  select exists (
-    select 1 from conf_editors
-    where email = lower(coalesce(auth.jwt() ->> 'email', ''))
-  )
+  select exists (select 1 from conf_editors where user_id = auth.uid())
 $$;
 revoke all on function conf_is_editor() from public;
 grant execute on function conf_is_editor() to authenticated;
@@ -126,7 +134,16 @@ create policy conf_content_editor_update on conf_content
   for update to authenticated using (conf_is_editor()) with check (conf_is_editor());
 
 -- ---------- 編集者の登録（例） ----------
--- 1) ダッシュボード → Authentication → Providers → Email で「Allow new users to sign up」を OFF にする
--- 2) Authentication → Users → Invite user（または Add user）で、編集者のメールアドレスを招待する
--- 3) 同じメールアドレス（小文字）を、ここにも登録する：
---    insert into conf_editors (email) values ('someone@example.com');
+-- 編集者にしたい人が、先にそのプロジェクトのユーザーとして存在していること（会員として登録済み、または
+-- Authentication → Users → Invite user で招待済み）。そのうえで、SQL Editor でメールアドレスから登録する：
+--
+--    insert into conf_editors (user_id)
+--    select id from auth.users where lower(email) = lower('someone@example.com');
+--
+-- 登録できたか確認する（1行出れば登録できている。0行なら、そのメールアドレスのユーザーがまだいない）：
+--
+--    select u.email, e.user_id from conf_editors e join auth.users u on u.id = e.user_id;
+--
+-- 外すとき：
+--
+--    delete from conf_editors where user_id = (select id from auth.users where lower(email) = lower('someone@example.com'));

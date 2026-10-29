@@ -303,6 +303,30 @@ function serve() {
     await page.waitForSelector("#ce-login:not([hidden])");
     eq(await page.evaluate(() => localStorage.getItem("conferenceEditor.session")), null, "共同：ログアウトでログイン情報が消える");
     ok(fake.state.log.some((l) => l === "POST /auth/v1/logout"), "共同：サーバーにもログアウトを伝える");
+
+    // パスワードでログイン（会員サイトのアカウントを想定）
+    await page.fill("#ce-email", "editor@example.com");
+    await page.fill("#ce-password", "wrong-password");
+    await page.click("#ce-signin");
+    await page.waitForFunction(() => /パスワードが違います/.test(document.getElementById("ce-banner").textContent));
+    ok(await page.locator("#ce-app").isHidden(), "共同：パスワードが違えば入れない");
+    await page.fill("#ce-password", "correct-horse");
+    await page.press("#ce-password", "Enter");
+    await page.waitForSelector("#ce-app:not([hidden])");
+    ok(/editor@example.com/.test(await page.locator("#ce-mode").textContent()), "共同：パスワード（Enterキー）でログインできる");
+    ok(/公開後に直した下書き/.test(await page.locator('.ce-item [data-f="text"]').first().inputValue()), "共同：パスワードでログインしても、同じ中身が出る");
+    eq(await page.inputValue("#ce-password"), "", "共同：ログイン後、パスワード欄は空に戻る");
+    await snap(page, "editor-after-password-login");
+    // 編集者でない人は、パスワードが合っていても入れない
+    await page.click("#ce-logout");
+    await page.waitForSelector("#ce-login:not([hidden])");
+    await page.fill("#ce-email", "stranger@example.com");
+    await page.fill("#ce-password", "correct-horse");
+    await page.click("#ce-signin");
+    await page.waitForFunction(() => /編集者として登録されていない/.test(document.getElementById("ce-banner").textContent));
+    ok(await page.locator("#ce-app").isHidden(), "共同：編集者でない人は、パスワードが合っていても編集画面に入れない");
+    eq(await page.evaluate(() => localStorage.getItem("conferenceEditor.session")), null, "共同：入れなかった人のログイン情報は残らない（パスワード）");
+    await snap(page, "login-password");
     await ctx.close();
   }
 

@@ -24,9 +24,13 @@
 <!-- ログイン（共同編集モードのときだけ） -->
 <section id="ce-login" class="ce-card" hidden aria-labelledby="ce-login-h">
   <h2 id="ce-login-h">ログイン</h2>
-  <p class="ce-note">登録されたメールアドレスだけ使えます。メールに届く「リンク」を開くか、「6桁のコード」を入力してください。</p>
+  <p class="ce-note">すでにアカウントがあり、編集者として登録された人だけが、編集できます。パスワードで入るか、メールに届く「リンク」「6桁のコード」で入ってください。</p>
   <div class="ce-field"><label for="ce-email"><span class="ce-lab">メールアドレス</span></label>
-    <input id="ce-email" type="email" autocomplete="email" inputmode="email"></div>
+    <input id="ce-email" type="email" autocomplete="username" inputmode="email"></div>
+  <div class="ce-field"><label for="ce-password"><span class="ce-lab">パスワード</span></label>
+    <input id="ce-password" type="password" autocomplete="current-password"></div>
+  <p><button id="ce-signin" type="button" class="ce-btn ce-primary">パスワードでログイン</button></p>
+  <p class="ce-note">パスワードを使わないとき：</p>
   <p><button id="ce-send" type="button" class="ce-btn">ログイン用のメールを送る</button></p>
   <div id="ce-code-box" hidden>
     <div class="ce-field"><label for="ce-code"><span class="ce-lab">6桁のコード</span></label>

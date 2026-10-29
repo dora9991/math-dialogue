@@ -63,6 +63,10 @@
         if (status === 429) return S.ConfError("other", "短い間に何度も送信されました。少し待ってからもう一度お試しください。");
         return S.ConfError("other", "ログイン用のメールを送れませんでした。登録されていないメールアドレスの可能性があります。");
       }
+      if (ctx === "password") {
+        if (status === 429) return S.ConfError("other", "短い間に何度も試されました。少し待ってからもう一度お試しください。");
+        return S.ConfError("auth", "メールアドレスかパスワードが違います。");
+      }
       if (ctx === "verify") return S.ConfError("auth", "コードが違うか、期限が切れています。もう一度メールを送ってください。");
       if (status === 401) return S.ConfError("auth", "ログインの期限が切れました。もう一度ログインしてください。");
       if (status === 403 || code === "42501") return S.ConfError("forbidden", "このメールアドレスは編集者として登録されていません。事務局の管理者に連絡してください。");
@@ -122,6 +126,12 @@
       },
       verifyCode: async function (email, code) {
         var data = await http("/auth/v1/verify", { method: "POST", ctx: "verify", body: { type: "email", email: String(email).trim().toLowerCase(), token: String(code).replace(/\s+/g, "") } });
+        saveSession(toSession(data));
+        return { user: session.email };
+      },
+      // 会員サイトなど、すでにパスワードを持っているアカウントで入る（アカウントは新しく作らない）
+      signInWithPassword: async function (email, password) {
+        var data = await http("/auth/v1/token?grant_type=password", { method: "POST", ctx: "password", body: { email: String(email).trim().toLowerCase(), password: String(password) } });
         saveSession(toSession(data));
         return { user: session.email };
       },

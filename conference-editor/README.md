@@ -30,22 +30,27 @@ python3 -m http.server 8797 --directory conference-editor
 
 ## 共同編集にする（Supabase）
 
-**大会ごとに新しい Supabase プロジェクトを作る**ことをすすめる（名義・引き継ぎ・個人情報の分離のため。無料枠で作れる）。
+既存のプロジェクト（会員サイトなど）に足しても、大会ごとに新しいプロジェクトを作ってもよい。足すのは `conf_` で始まる名前のテーブル・関数だけで、既存のものには触れない。
 
-1. Supabase で新しいプロジェクトを作る。
-2. **SQL Editor** に `supabase/schema.sql` を貼って Run（再実行しても壊れない）。
-3. **Authentication → Providers → Email** で「Allow new users to sign up」を **OFF** にする（知らない人がアカウントを作れないように）。
-4. **Authentication → URL Configuration** で、Site URL に編集画面のURLを入れ、Redirect URLs にも同じURLを追加する。
-5. **Authentication → Email Templates → Magic Link** の本文に `{{ .Token }}` を足す（メールに6桁のコードが載る）。
-   会社のメールはリンクを自動で開いて無効にしてしまうことがあるので、**コード入力でもログインできる**ようにしてある。
-6. **Authentication → Users → Invite user** で、編集者のメールアドレスを招待する。
-7. 同じメールアドレス（**小文字**）を、SQL Editor で登録する。
+編集者は、メールアドレスではなく**ユーザーID**で判定する。誰でも登録できるプロジェクトで、他人が編集者と同じメールアドレスで登録しても（メール確認をしていない設定でも）、編集者になれないようにするため。
+
+1. Supabase の **SQL Editor** に `supabase/schema.sql` を貼って Run（再実行しても壊れない）。
+2. 編集者にしたい人が、そのプロジェクトのユーザーとして存在していること（会員として登録済み、または **Authentication → Users → Invite user**）。その人を、SQL Editor で登録する。
    ```sql
-   insert into conf_editors (email) values ('someone@example.com');
-   ```
-8. **Project Settings → API** の Project URL と anon（publishable）キーを `config.js` に書き、`BACKEND` を `"supabase"` にする。
+   insert into conf_editors (user_id)
+   select id from auth.users where lower(email) = lower('someone@example.com');
 
-登録されていない人は、ログインできても編集画面に入れない（中身が読めない）。
+   -- 登録できたか確認（1行出れば登録できている。0行なら、そのメールアドレスのユーザーがまだいない）
+   select u.email, e.user_id from conf_editors e join auth.users u on u.id = e.user_id;
+   ```
+   メールアドレスで探して登録するので、そのアカウントが**本人のもの**であることを、先に確認すること（Authentication → Users の一覧で、メールアドレスと作成日時を見る）。
+3. **Project Settings → API** の Project URL と anon（publishable）キーを `config.js` に書き、`BACKEND` を `"supabase"` にする。
+4. ログインの方法（編集画面から、アカウントを新しく作ることはできない）：
+   - **パスワード**：すでにパスワードを持つアカウント（会員サイトのアカウントなど）なら、そのまま使える。Supabase 側の設定は要らない。
+   - **メールのリンク／6桁のコード**：**Authentication → URL Configuration** の Redirect URLs に、編集画面のURLを足す（Site URL は変えない）。コードで入るには、**Email Templates → Magic Link** の本文に `{{ .Token }}` を足す。会社のメールはリンクを自動で開いて無効にしてしまうことがあるので、コードでも入れるようにしてある。
+     ※ メールのテンプレートはプロジェクト全体で共通。会員サイトでマジックリンクを使っているなら、影響を確認してから変えること。
+
+専用の新しいプロジェクトにする場合は、Authentication → Providers → Email の「Allow new users to sign up」を OFF にすると、さらに安心。
 
 ## 公開側のサイトに組み込む
 
@@ -72,8 +77,9 @@ python3 -m http.server 8797 --directory conference-editor
 |---|---|
 | 公開側（anon キー） | 公開済みの内容（`key` / `published` / `published_at`）を読むだけ。下書きは読めない。書けない |
 | ログイン済みだが編集者ではない人 | 何も読めない・書けない・公開できない |
-| 編集者（`conf_editors` に載っている人） | 下書きの読み書き。公開は `conf_publish()` 経由だけ（`published` を直接は書き換えられない） |
+| 編集者（`conf_editors` に載っている**ユーザーID**の人） | 下書きの読み書き。公開は `conf_publish()` 経由だけ（`published` を直接は書き換えられない） |
 
+- 編集者は**ユーザーID**で判定する。メールアドレスは信用しない（編集者と同じメールアドレスを名乗る別のIDは、何も読めず・書けず・公開できない）。
 - 更新者・更新時刻・版番号（`version`）はサーバー側で付ける。改ざんできない。
 - 更新のたびに、変更前の内容が `conf_content_history` に残る（画面からはまだ戻せない。Supabase のダッシュボードで見られる）。
 - 同時編集は「後勝ち」にせず、版番号で衝突を検出して知らせる。

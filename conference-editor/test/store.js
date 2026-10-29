@@ -82,6 +82,22 @@ async function code(p) { try { await p; return "ok"; } catch (e) { return e.code
     eq(await code(st.loadAll()), "auth", "Supabase：ログアウト後は読めない");
   }
 
+  { // パスワードでのログイン（会員サイトのアカウントを想定）
+    const fake = createFake();
+    const { st, storage } = make(fake);
+    await st.init();
+    eq(await code(st.signInWithPassword("editor@example.com", "wrong")), "auth", "Supabase：パスワードが違えば auth エラー");
+    eq(await code(st.signInWithPassword("nobody@example.com", "correct-horse")), "auth", "Supabase：登録のないメールも同じエラー（どちらが違うかは教えない）");
+    const r = await st.signInWithPassword(" Editor@Example.com ", "correct-horse");
+    eq(r.user, "editor@example.com", "Supabase：パスワードでログインできる（メールの大文字・空白は整える）");
+    ok(!!storage.getItem("conferenceEditor.session"), "Supabase：パスワードでのログイン情報も保存する");
+    const all = await st.loadAll();
+    ok(all.news && all.news.version === 1, "Supabase：パスワードでログインした人も読み込める");
+    ok(fake.state.log.some((l) => l === "POST /auth/v1/token"), "Supabase：パスワードの token エンドポイントを呼んだ");
+    const local = new Local({ storage: memStorage() });
+    eq(await code(local.signInWithPassword("a", "b")), "other", "ローカル：パスワードログインは使えない");
+  }
+
   { // 編集者として登録されていない人
     const fake = createFake();
     const { st } = make(fake);

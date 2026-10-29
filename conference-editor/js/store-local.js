@@ -31,6 +31,7 @@
       init: function () { return Promise.resolve({ user: null, needsLogin: false }); },
       requestLogin: function () { return Promise.reject(S.ConfError("other", "ローカルモードではログインは不要です。")); },
       verifyCode: function () { return Promise.reject(S.ConfError("other", "ローカルモードではログインは不要です。")); },
+      signInWithPassword: function () { return Promise.reject(S.ConfError("other", "ローカルモードではログインは不要です。")); },
       signOut: function () { return Promise.resolve(); },
 
       loadAll: function () { return Promise.resolve(load()); },
