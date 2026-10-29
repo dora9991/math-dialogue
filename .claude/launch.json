@@ -92,6 +92,12 @@
       "port": 8784
     },
     {
+      "name": "conference-editor",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8797", "--directory", "conference-editor"],
+      "port": 8797
+    },
+    {
       "name": "startup-kit",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8786", "--directory", "startup-kit"],
@@ -132,12 +138,6 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8795", "--directory", "zenrekiken68"],
       "port": 8795
-    },
-    {
-      "name": "conference-editor",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8797", "--directory", "conference-editor"],
-      "port": 8797
     },
     {
       "name": "tangocho",
