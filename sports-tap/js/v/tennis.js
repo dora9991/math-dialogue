@@ -206,7 +206,10 @@
       if (!rootEl.isConnected) return;
       rootEl.classList.toggle('short', (rootEl.clientHeight || root.innerHeight) < 430);
       const W = panels.clientWidth, H = panels.clientHeight;
-      const wide = W > H * 1.05;
+      // 左右に並べるのは、横長で、しかも片側にボタンが楽に並ぶ幅があるときだけ
+      // （スマホ縦で撮影のワイプを上に出すと、入れ物は横長になるが、片側の幅は狭すぎる）
+      const need = 64 + types().length * 52;
+      const wide = W > H * 1.05 && (W - 14) / 2 >= need;
       panels.classList.toggle('wide', wide);
       const rows = g.teams[0].players.length + 0.75;
       const sideW = wide ? (W - 14) / 2 : W - 8;

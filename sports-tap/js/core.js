@@ -10,7 +10,11 @@
      opts: 種目ごとの試合の形式（前半の長さ・セット数・距離 など。種目の defaultOpts）,
      teams: [ 自分, 相手 ]  … { name, color, colorName, players: [{ no: '7', name: '' }] }（水泳はレーン。種目が決める）
      events: [ { id, t, type, team, no, …種目ごとの項目 } ]  … 追加した順
+     videos: [ { vid, n, startedAt, endedAt, duration, name, mime, w, h, bytes } ]（この端末のカメラで撮影しながら記録したとき。なくてよい。livecam.js）
+       startedAt：録画を始めた時刻（エポックミリ秒。記録の startedAt と同じ時計）→ 記録の t 秒 ＝ 動画の t ＋（startedAt(記録) − startedAt(動画)）/1000 秒
+       動画の中身は、この端末のブラウザ（IndexedDB 'stap-media'。vstore.js）にだけある。書き出す JSON には、ファイル名・時刻・長さだけが入る
    }
+   書き出す JSON には、記録ごとに text（呼び名）と when（場面の呼び名「前半 23:41」など）、types に scene（場面として切り出すか）も付ける。
      t   : スタートからの秒（prec の細かさ）。ストップウォッチと同じで、止まらずに進む（あとで動画と合わせられる）
      type: 種目の TYPES の id
      team: 0 = 自分・1 = 相手・null = チームなし（「★ あとで見る」など）
@@ -263,7 +267,7 @@
   ST.summary = function (game) {
     const sp = ST.sportOf(game);
     const names = sp && sp.sideNames ? sp.sideNames(game) : [ST.teamName(game, 0), ST.teamName(game, 1)];
-    return { id: game.id, sport: game.sport, title: game.title || '', date: game.date, startedAt: game.startedAt, endedAt: game.endedAt, names, colors: [game.teams[0].color, game.teams[1].color], score: ST.score(game), scoreText: ST.scoreText(game), n: (game.events || []).filter((e) => !(ST.typeOf(game, e.type) || {}).meta).length, at: Date.now() };
+    return { id: game.id, sport: game.sport, title: game.title || '', date: game.date, startedAt: game.startedAt, endedAt: game.endedAt, names, colors: [game.teams[0].color, game.teams[1].color], score: ST.score(game), scoreText: ST.scoreText(game), n: (game.events || []).filter((e) => !(ST.typeOf(game, e.type) || {}).meta).length, videos: (game.videos || []).filter((v) => !v.gone).length, at: Date.now() };
   };
 
   /* ---------- 記録の画面の並べ方（チームの行。バスケ タップ記録の planLayout と同じ考え方） ----------
@@ -332,8 +336,21 @@
     const sp = ST.sportOf(game);
     g.sportName = sp ? sp.name : '';
     g.types = {};
-    if (sp) (sp.TYPES || []).forEach((d) => { g.types[d.id] = { label: d.label, pts: d.pts || 0 }; });
+    // scene：動画の場面として切り出すもの（ピリオドの始まり・走者の手直しなどは入れない）
+    if (sp) (sp.TYPES || []).forEach((d) => { g.types[d.id] = { label: d.label, short: d.short || '', pts: d.pts || 0, kind: d.kind || '', meta: !!d.meta, scene: !d.meta && d.kind !== 'adj' }; });
     if (sp && sp.exportExtra) sp.exportExtra(game, g);
+    g.sideNames = sp && sp.sideNames ? sp.sideNames(game) : [ST.teamName(game, 0), ST.teamName(game, 1)];
+    // 記録ごとの呼び名（text：「致遠館 #10 たけし ゴール」）と、場面の呼び名（when：「前半 23:41」「3回表」「第2セット」）。
+    // 動画の切り出し（バスケ得点クリップ）が、種目のルールを知らなくても、場面に名前を付けられるように
+    const byId = new Map((game.events || []).map((e) => [e.id, e]));
+    g.events.forEach((e) => {
+      const src = byId.get(e.id) || e;
+      try { e.text = ST.eventText(game, src, true); } catch (err) { e.text = e.type; }
+      let when = '';
+      try { when = sp && sp.sceneText ? sp.sceneText(game, src) : sp && sp.timeText ? sp.timeText(game, src) : ''; } catch (err) { when = ''; }
+      if (!when && e.set) when = `第${e.set}セット`;
+      e.when = String(when || '');
+    });
     g.app = ST.APP;
     delete g.seq;
     return g;
@@ -361,6 +378,8 @@
     g.date = /^\d{4}-\d{2}-\d{2}$/.test(obj.date || '') ? obj.date : g.date;
     g.startedAt = isFinite(obj.startedAt) && obj.startedAt > 0 ? obj.startedAt : null;
     g.endedAt = isFinite(obj.endedAt) && obj.endedAt > 0 ? obj.endedAt : null;
+    const vids = ST.cleanVideos(obj.videos);
+    if (vids.length) g.videos = vids;
     if (sp.importExtra) sp.importExtra(obj, g);
     const okId = (id) => typeof id === 'string' && /^e\d{1,7}$/.test(id);
     const used = new Set();
@@ -385,6 +404,15 @@
     return { name: String(t.name || '').trim().slice(0, 20), color, colorName: String(t.colorName || ST.nearestColorName(color)).slice(0, 8), players: cleanPlayers(t.players, keepOrder) };
   }
   ST.cleanTeam = cleanTeam;
+  /* 撮影しながら記録した動画の情報をそろえる（読み込んだファイル用。形の合わないものは捨てる） */
+  ST.cleanVideos = function (list) {
+    return (Array.isArray(list) ? list : []).filter((v) => v && isFinite(v.startedAt) && v.startedAt > 0).slice(0, 50).map((v, i) => ({
+      vid: String(v.vid || 'v' + i).slice(0, 40), n: isFinite(v.n) ? Math.round(v.n) : i + 1, startedAt: +v.startedAt,
+      endedAt: isFinite(v.endedAt) ? +v.endedAt : null, duration: isFinite(v.duration) ? +v.duration : null,
+      name: String(v.name || '').slice(0, 120), mime: String(v.mime || '').slice(0, 60), w: +v.w || null, h: +v.h || null, bytes: +v.bytes || null,
+      status: 'done', gone: true        // 読み込んだ記録の動画は、この端末にはない（ファイル名・時刻だけ）
+    }));
+  };
   /* 0〜1 の割合 → 「67%」（打った数が 0 なら「—」） */
   ST.pct = (m, a) => (a ? Math.round(100 * m / a) + '%' : '—');
 })(typeof window !== 'undefined' ? window : globalThis);

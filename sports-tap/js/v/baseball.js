@@ -254,9 +254,12 @@
     }
     function layout() {
       if (!rootEl.isConnected) return;
-      const W = rootEl.clientWidth || root.innerWidth, H = rootEl.clientHeight || root.innerHeight;
+      const H = rootEl.clientHeight || root.innerHeight;
       rootEl.classList.toggle('short', H < 430);
-      rootEl.classList.toggle('bb-wide', W > H * 1.15 && W >= 600);
+      // 2列にするかは、記録のボタンの入れ物の大きさで決める（撮影のワイプを出すと、その分せまくなる）
+      const sw = rootEl.querySelector('.stagewrap');
+      const W2 = (sw && sw.clientWidth) || rootEl.clientWidth || root.innerWidth, H2 = (sw && sw.clientHeight) || H;
+      rootEl.classList.toggle('bb-wide', W2 > H2 * 1.15 && W2 >= 600);
     }
     function tick() { if (g.startedAt) clock.set(ST.fmtTime(ctx.elapsed())); }
     L.update = update;

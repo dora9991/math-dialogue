@@ -305,6 +305,7 @@
     },
     cleanEvent: (e) => ({}),
     sideNames: (game) => [sideName(game, 0), sideName(game, 1)],
+    sceneText: (game, e) => snapText(game, e),        // 動画の切り出しの場面の呼び名（その時点のポイント・ゲーム）
     fileWho: (game) => ST.safeName(sideName(game, 0)) + 'vs' + ST.safeName(sideName(game, 1)),
     score, scoreText,
     editTypes: (game, e) => (e.type === 'mark' ? ['mark'] : ['ace', 'win', 'err', 'df', 'pt', 'flt']),

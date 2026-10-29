@@ -411,6 +411,54 @@ if (ffmpeg) {
   Promise.all(pending).then(() => fs.rmSync(dir, { recursive: true, force: true }));
 }
 
+section('スポーツ タップ記録（8種目）の記録を読む');
+{
+  // スポーツ タップ記録の核（sports-tap/js）で試合を作り、書き出した形をそのまま読む
+  const sctx = { console, Math, Date, JSON };
+  sctx.globalThis = sctx;
+  vm.createContext(sctx);
+  ['core.js', 'sp/team.js', 'sp/volley.js'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(__dirname, '..', '..', 'sports-tap', 'js', f), 'utf8'), sctx, { filename: f }));
+  const ST = sctx.ST;
+  const TLs = load(['core.js', 'mp4.js', 'taplog.js']).taplog;
+  const T0 = Date.UTC(2026, 9, 19, 6, 30, 0);
+  const g = ST.newGame({ sport: 'soccer', now: T0, tz: 540, teams: [{ name: '致遠館', players: ST.parseNumbers('1-11').map((no) => ({ no, name: no === '10' ? 'たけし' : '' })) }, { name: '城南' }] });
+  g.startedAt = T0;
+  ST.SPORTS.soccer.onStart(g);
+  ST.addEvent(g, { t: 10, type: 'goal', team: 0, no: '10' });
+  ST.addEvent(g, { t: 20, type: 'shot', team: 1, no: null });
+  ST.addEvent(g, { t: 30, type: 'ck', team: 0, no: null });
+  ST.addEvent(g, { t: 40, type: 'mark', team: null });
+  g.videos = [{ vid: 'v1', n: 1, startedAt: T0 - 5000, duration: 60, name: 'サッカー記録_動画1.mp4' }];
+  const log = TLs.parse(JSON.parse(JSON.stringify(ST.exportData(g))), 'a.json');
+  ok(log.format === 'sports-tap' && log.sportName === 'サッカー' && log.app === 'スポーツ タップ記録', 'サッカーの記録として読める');
+  ok(TLs.plays(log).length === 4 && !log.events.some((e) => e.type === 'period'), '場面は4つ（前半の始まりは場面にしない）', log.events.map((e) => e.type));
+  ok(TLs.groupsOf(log).map((x) => x.label).join('/') === 'ゴール/シュート/コーナーキック/★ あとで見る', '絞り込みのまとまり＝記録にある種類（短い呼び名）', TLs.groupsOf(log));
+  const goal = log.events.find((e) => e.type === 'goal');
+  ok(TLs.eventLabel(log, goal) === '致遠館 #10 たけし ゴール' && TLs.periodLabel(goal.period) === '前半 0:10', '呼び名「致遠館 #10 たけし ゴール」・場面「前半 0:10」', { label: TLs.eventLabel(log, goal), when: goal.period });
+  ok(TLs.scoreText(log) === '1 − 0' && TLs.teamName(log, 0) === '致遠館', '得点の文字・チームの名前');
+  const A = TLs.videoAnchors(log, log.videos[0]);
+  const cl = TLs.clips(log, A, { teams: [true, true], groups: { goal: true }, players: [] }, null, 60).clips;
+  ok(cl.length === 1 && Math.abs(cl[0].at - 15) < 0.01, '撮影しながら記録した動画：記録の 0:10 のゴール ＝ 動画の 0:15（録画は 5 秒前から）', cl.map((c) => c.at));
+  ok(TLs.matchShots(log, [1, 2, 3, 4]) === null, '得点を自動で探して合わせるのは、バスケだけ');
+  // バレー：点の種類で絞り込み・場面は「第1セット」
+  const v = ST.newGame({ sport: 'volley', now: T0, teams: [{ name: '致遠館', players: ST.parseNumbers('1-6') }, { name: '城南' }] });
+  v.startedAt = T0;
+  if (ST.SPORTS.volley.onStart) ST.SPORTS.volley.onStart(v);
+  ST.addEvent(v, { t: 5, type: 'atk', team: 0, no: '4' });
+  ST.addEvent(v, { t: 9, type: 'err', team: 1, no: null });
+  const vlog = TLs.parse(ST.exportData(v), '');
+  ok(TLs.plays(vlog).length === 2 && /第1セット/.test(vlog.events[0].period) && TLs.groupsOf(vlog).some((x) => x.id === 'atk'), 'バレー：アタック・ミスが場面に・場面の呼び名は第1セット', vlog.events.map((e) => [e.type, e.period]));
+  // この端末で記録した試合：書き出す形（stap:export:<id>）がある試合だけ
+  const mem = new Map();
+  const fake = { getItem: (k) => (mem.has(k) ? mem.get(k) : null), setItem: (k, val) => mem.set(k, String(val)) };
+  fake.setItem('btap:games', JSON.stringify([{ id: 'b1', n: 3, startedAt: 1 }]));
+  fake.setItem('stap:games', JSON.stringify([{ id: g.id, sport: 'soccer', n: 4, startedAt: 2 }, { id: 'x', sport: 'volley', n: 2, startedAt: 3 }]));
+  fake.setItem('stap:export:' + g.id, JSON.stringify(ST.exportData(g)));
+  const lg = TLs.localGames(fake);
+  ok(lg.map((x) => x.app + ':' + x.id).join(',') === `stap:${g.id},btap:b1`, 'この端末の試合：バスケと、書き出す形のあるスポーツ タップ記録の試合', lg.map((x) => x.id));
+  ok(TLs.localGame(g.id, fake, 'stap').format === 'sports-tap' && TLs.localGame('b1', fake) === null, 'スポーツ タップ記録の試合は stap:export: から読む');
+}
+
 Promise.all(pending).then(() => {
   console.log(`\n${pass} ok / ${fail} fail`);
   process.exit(fail ? 1 : 0);

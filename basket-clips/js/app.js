@@ -18,6 +18,7 @@
   const HOOP_COL = ['#22c55e', '#e879f9'];
   const ICON = ['🏀', '🛡'];
   const WHAT = ['入れた', '入れられた'];
+  const SPORT_ICON = { soccer: '⚽', volley: '🏐', futsal: '🥅', handball: '🤾', tennis: '🎾', baseball: '⚾', rugby: '🏉', swim: '🏊' };      // スポーツ タップ記録の種目
 
   const S = {
     media: null, key: null, st: BS.store.fresh(),
@@ -840,17 +841,17 @@
       title: '📲 タップ記録を読み込む',
       body: h('div', { class: 'logdlg' },
         h('button', { class: 'btn primary', id: 'btnLogFile', onclick: () => { BS.ui.closeModal(); pickLogFile(); } }, '📂 記録のファイル（.json）を選ぶ'),
-        h('p', { class: 'note' }, '「バスケ タップ記録」の「書き出す」→「記録のファイル」で保存したファイルです。'),
+        h('p', { class: 'note' }, '「バスケ タップ記録」「スポーツ タップ記録」（サッカー・バレーなど）の「書き出す」→「記録のファイル」で保存したファイルです。'),
         h('h4', null, 'この端末（このブラウザ）で記録した試合'),
         h('div', { class: 'lglist' }, games.slice(0, 20).map((g) => {
-          const raw = g.videos ? TL.localGame(g.id) : null;
+          const raw = g.videos ? TL.localGame(g.id, g.app) : null;
           const vids = raw && Array.isArray(raw.videos) ? raw.videos.filter((v) => !v.gone && v.status !== 'recording') : [];
           return h('div', { class: 'lgrow' },
-            h('button', { class: 'lg', dataset: { game: g.id }, onclick: () => { const r = TL.localGame(g.id); if (r) loadLog(r, ''); else BS.ui.toast('この試合の記録が見つかりませんでした', 'err'); } },
-              h('b', null, when(g)),
+            h('button', { class: 'lg', dataset: { game: g.id }, onclick: () => { const r = TL.localGame(g.id, g.app); if (r) loadLog(r, ''); else BS.ui.toast('この試合の記録が見つかりませんでした', 'err'); } },
+              h('b', null, when(g), g.app === 'stap' ? h('small', { class: 'note' }, ` ${g.sport && SPORT_ICON[g.sport] ? SPORT_ICON[g.sport] + ' ' : ''}スポーツ タップ記録`) : null),
               h('span', { class: 'lgvs' }, h('i', { class: 'chip', style: { background: (g.colors || [])[0] || '#888' } }), ` ${(g.names || [])[0] || '自分'} ${g.score ? g.score[0] + ' − ' + g.score[1] : ''} ${(g.names || [])[1] || '相手'} `, h('i', { class: 'chip', style: { background: (g.colors || [])[1] || '#888' } })),
               h('small', { class: 'note' }, `${g.n}件の記録${vids.length ? `・📹 撮影した動画 ${vids.length}本` : ''}`)),
-            vids.length ? h('div', { class: 'lgvids' }, vids.map((v) => h('button', { class: 'btn small primary', dataset: { tapvideo: v.vid }, onclick: () => openTapVideo(g.id, v.vid) },
+            vids.length ? h('div', { class: 'lgvids' }, vids.map((v) => h('button', { class: 'btn small primary', dataset: { tapvideo: v.vid }, onclick: () => openTapVideo(g.id, v.vid, g.app) },
               `📹 動画${v.n}（${BS.fmtTime(v.duration || 0)}）を記録と一緒に開く`))) : null);
         }))),
       buttons: [{ label: 'とじる' }]
@@ -915,16 +916,17 @@
     return v ? cameraSync(v) : false;
   }
   /* タップ記録で撮影した動画を、この端末から、記録と一緒に開く（時刻あわせなし） */
-  async function openTapVideo(gameId, vid) {
-    const raw = TL.localGame(gameId);
+  async function openTapVideo(gameId, vid, app) {
+    const raw = TL.localGame(gameId, app);
     if (!raw) { BS.ui.toast('この試合の記録が、この端末に見つかりませんでした', 'err', 6000); return false; }
     let log;
     try { log = TL.parse(raw, ''); } catch (e) { BS.ui.toast('タップ記録を読み込めませんでした：' + e.message, 'err', 7000); return false; }
     BS.ui.toast('撮影した動画を開いています…', '', 3000);
-    const f = await BS.tapvideo.file(vid);
+    const dbName = app === 'stap' ? BS.tapvideo.DB_STAP : undefined;
+    const f = await BS.tapvideo.file(vid, dbName);
     if (!f) { BS.ui.toast('この動画が、この端末（このブラウザ）に見つかりませんでした。保存した動画のファイルを「🎬 動画を選ぶ」で開いてください（時刻は自動で合わせます）', 'err', 9000); return false; }
     BS.ui.closeModal();
-    const v = log.videos.find((x) => x.vid === vid) || await BS.tapvideo.meta(vid);
+    const v = log.videos.find((x) => x.vid === vid) || await BS.tapvideo.meta(vid, dbName);
     S.pendingLog = log;
     S.quietAttach = true;
     try { openFile(f); } finally { S.quietAttach = false; }
@@ -962,13 +964,13 @@
   /* ② 記録 */
   function logCard() {
     const log = S.st.log;
-    const sc = TL.score(log);
     const cnt = TL.counts(log, { teams: [true, true] }).grp;
-    const parts = TL.GROUPS.filter((g) => cnt[g.id]).map((g) => `${g.label} ${cnt[g.id]}`);
-    return h('section', { class: 'card step logcard', id: 'logCard' }, stepHead(2, 'タップ記録（バスケ タップ記録）', log.startedAt ? `${log.date} ${clockAt(log.startedAt, log.tz)} スタート` : log.date, true),
+    const parts = TL.groupsOf(log).filter((g) => cnt[g.id]).map((g) => `${g.label} ${cnt[g.id]}`);
+    const appName = log.format === 'sports-tap' ? `${log.sportName ? log.sportName + '・' : ''}${log.app}` : 'バスケ タップ記録';
+    return h('section', { class: 'card step logcard', id: 'logCard' }, stepHead(2, `タップ記録（${appName}）`, log.startedAt ? `${log.date} ${clockAt(log.startedAt, log.tz)} スタート` : log.date, true),
       h('div', { class: 'logvs' },
         h('span', { class: 'lt' }, h('i', { class: 'chip', style: { background: teamColor(0) } }), TL.teamName(log, 0)),
-        h('b', null, `${sc[0]} − ${sc[1]}`),
+        h('b', null, TL.scoreText(log)),
         h('span', { class: 'lt' }, TL.teamName(log, 1), h('i', { class: 'chip', style: { background: teamColor(1) } }))),
       h('p', { class: 'note' }, `記録 ${TL.plays(log).length}件：${parts.join('・')}${log.title ? '（' + log.title + '）' : ''}`),
       h('div', { class: 'row' },
@@ -1030,7 +1032,7 @@
   function afterFilter() { S.logOut = null; save(); render(); drawTimeline(); makeLogThumbs(); }
   function toggleGroup(id) {
     const V = logView();
-    const present = TL.GROUPS.map((g) => g.id).filter((g) => TL.counts(S.st.log, V).grp[g]);
+    const present = TL.groupsOf(S.st.log).map((g) => g.id).filter((g) => TL.counts(S.st.log, V).grp[g]);
     if (!Object.keys(V.groups).length) V.groups = { [id]: true };       // 「すべて」から押したら、それだけ
     else {
       if (V.groups[id]) delete V.groups[id]; else V.groups[id] = true;
@@ -1059,7 +1061,7 @@
       [0, 1].map((tm) => h('button', { class: 'fchip' + (V.teams[tm] !== false ? ' on' : ''), dataset: { fteam: String(tm) }, 'aria-pressed': V.teams[tm] !== false ? 'true' : 'false',
         onclick: () => { V.teams[tm] = V.teams[tm] === false; if (V.teams[0] === false && V.teams[1] === false) V.teams[1 - tm] = true; afterFilter(); } },
       h('i', { class: 'chip', style: { background: teamColor(tm) } }), TL.teamName(log, tm)))));
-    const present = TL.GROUPS.filter((g) => cnt.grp[g.id]);
+    const present = TL.groupsOf(log).filter((g) => cnt.grp[g.id]);
     const allG = !Object.keys(V.groups).length;
     card.append(h('div', { class: 'frow' }, h('span', { class: 'flab' }, 'プレー'),
       h('button', { class: 'fchip' + (allG ? ' on' : ''), dataset: { fgrp: 'all' }, onclick: () => { V.groups = {}; afterFilter(); } }, 'すべて'),
@@ -1143,7 +1145,7 @@
     const parts = [];
     if (V.teams[0] === false || V.teams[1] === false) parts.push(TL.teamName(log, V.teams[0] === false ? 1 : 0));
     if (V.players.length) parts.push(V.players.map((k) => '#' + k.split(':')[1]).join('・'));
-    if (Object.keys(V.groups).length) parts.push(TL.GROUPS.filter((g) => V.groups[g.id]).map((g) => g.label).join('・'));
+    if (Object.keys(V.groups).length) parts.push(TL.groupsOf(log).filter((g) => V.groups[g.id]).map((g) => g.label).join('・'));
     return parts.length ? parts.join(' ') : 'タップ記録の場面';
   }
   function logExportBox() {
@@ -1901,11 +1903,11 @@
     root.addEventListener('pagehide', flush);
     document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
     render(); drawTimeline();
-    // 「バスケ タップ記録」の「🎬 場面を切り出す」から来たとき：撮影した動画と記録を開く（?tapgame=…&tapvideo=…）
+    // 「バスケ タップ記録」「スポーツ タップ記録」の「🎬 場面を切り出す」から来たとき：撮影した動画と記録を開く（?tapgame=…&tapvideo=…&tapapp=stap）
     try {
       const q = new URLSearchParams(root.location.search);
       if (q.get('tapgame') && q.get('tapvideo')) {
-        openTapVideo(q.get('tapgame'), q.get('tapvideo'));
+        openTapVideo(q.get('tapgame'), q.get('tapvideo'), q.get('tapapp') === 'stap' ? 'stap' : 'btap');
         if (root.history && history.replaceState) history.replaceState(null, '', root.location.pathname);
       }
     } catch (e) { /* 古いブラウザ */ }

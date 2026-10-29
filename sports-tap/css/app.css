@@ -436,3 +436,96 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
 /* 記録の一覧：時刻の欄（「前半 23:41」なども入る幅） */
 .lrow { grid-template-columns: minmax(60px, auto) 16px minmax(40px, auto) 1fr auto; }
 .lrow.per { grid-template-columns: minmax(60px, auto) 1fr; }
+
+/* ========== 撮影しながら記録する（バスケ タップ記録と同じ見た目） ========== */
+/* 撮影中：上の帯の小さな映像（押すと撮影の画面）。録画中は赤いふちと点 */
+.cambtn { position: relative; flex: none; height: clamp(46px, 7.4vmin, 64px); aspect-ratio: var(--ar, 1.7778); max-width: 120px; padding: 0; border: 2px solid var(--line2); border-radius: 10px; background: #000; overflow: hidden; }
+.camthumb { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.cambtn .camdot { position: absolute; top: 4px; left: 4px; width: 9px; height: 9px; border-radius: 50%; background: #9aa3af; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.45); }
+.cambtn.rec { border-color: var(--bad); box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.35); }
+.cambtn.rec .camdot { background: #ef4444; animation: rec 1.6s ease-in-out infinite; }
+.short .cambtn { height: 40px; }
+/* 幅の狭いスマホで撮影中：上の帯を詰めて、カメラの映像の場所を空ける */
+@media (max-width: 430px) {
+  .cambtn { max-width: 34px; }
+  .lbar:has(.cambtn:not([hidden])) { gap: 4px; padding-left: 4px; padding-right: 4px; }
+  .lbar:has(.cambtn:not([hidden])) .menubtn { min-width: 38px; padding: 0 4px; }
+  .lbar:has(.cambtn:not([hidden])) .menubtn small { display: none; }
+  .lbar:has(.cambtn:not([hidden])) .clock { min-width: 0; padding: 0 7px; gap: 5px; }
+  .lbar:has(.cambtn:not([hidden])) .clock .recdot { width: 8px; height: 8px; }
+  .lbar:has(.cambtn:not([hidden])) .period { min-width: 36px; padding: 0 4px; }
+  .lbar:has(.cambtn:not([hidden])) .score { gap: 3px; }
+}
+/* 撮影の画面：大きな映像（録れる動画の向きに回して映す。大きさは js の fitPreview） */
+.cambtn .camthumb { position: absolute; left: 50%; top: 50%; width: 100%; height: 100%; }
+.cambtn.warn { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.45); }
+.campvw { position: relative; margin: 0 auto; width: 100%; height: 200px; background: #000; border-radius: 12px; overflow: hidden; }
+.campvw .campv { position: absolute; left: 50%; top: 50%; display: block; background: #000; }
+.camorient { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.camorient .row b { font-size: 14px; }
+.orientbox { border-radius: 10px; padding: 8px 10px; border: 1px solid var(--line); background: var(--panel2); }
+.orientbox p { margin: 0 0 6px; }
+.orientbox.warn { border-color: #f59e0b; background: var(--warn-soft); }
+.orientbox.ok { border-color: var(--accent); background: var(--accent-soft); }
+.turnrow { gap: 6px; }
+/* 録画と記録を同時にスタート */
+.camacts { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 4px; }
+.btn.startboth { width: 100%; min-height: 58px; font-size: 19px; font-weight: 900; border-radius: 14px; background: var(--good); border-color: var(--good); color: #fff; }
+.btn.startboth.rec { background: #dc2626; border-color: #dc2626; }
+.bothnote { margin: 0; }
+.rdot { display: inline-block; width: 0.62em; height: 0.62em; border-radius: 50%; background: #fff; margin-right: 0.35em; vertical-align: 0.05em; box-shadow: 0 0 0 0.12em rgba(255, 255, 255, 0.35); }
+.startbig.recstart { background: #dc2626; font-size: 28px; }
+.startbtn.rec { background: #dc2626; font-size: clamp(15px, 3vmin, 22px); }
+.btn.camon { font-weight: 700; border-color: var(--accent); color: var(--accent); }
+.camstat { margin-top: 10px; font-weight: 800; font-size: 16px; font-variant-numeric: tabular-nums; }
+.camstat.rec { color: var(--bad); }
+.camacts { margin: 10px 0 4px; }
+.btn.recbtn { background: #dc2626; border-color: #dc2626; color: #fff; font-weight: 800; }
+.camnotes { margin: 10px 0 0; padding-left: 18px; }
+.camnotes li { margin: 3px 0; }
+
+/* スタート前の札の中の撮影 */
+.covercam { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 13.5px; font-weight: 700; }
+.covercam.rec span { color: var(--bad); }
+.covercam.warn { border-color: #f59e0b; background: var(--warn-soft); }
+/* 撮影した動画の一覧 */
+.vlist { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.vitem { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: space-between; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; text-align: left; }
+.vitem .vt { display: flex; flex-direction: column; min-width: 0; }
+.vitem .vt small { color: var(--muted); font-size: 12px; }
+.vhead { margin: 10px 0 2px; font-size: 14px; }
+
+
+.wipe { grid-area: wipe; display: flex; align-items: flex-start; justify-content: center; min-width: 0; min-height: 0; padding: 0 6px 6px 0; }
+.cam-top .wipe { padding: 0 4px 6px; }
+.wipebox { position: relative; flex: none; background: #000; border: 2px solid var(--line2); border-radius: 12px; overflow: hidden; }
+.wipebox.rec { border-color: var(--bad); box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.35); }
+.wipebox.warn { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.45); }
+.wipeopen { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; display: block; }
+.wipev { position: absolute; left: 50%; top: 50%; display: block; pointer-events: none; }
+.wipetag { position: absolute; left: 6px; bottom: 6px; max-width: calc(100% - 12px); padding: 3px 8px; border-radius: 999px; background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 12.5px; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; pointer-events: none; }
+.wipetag.rec { background: rgba(220, 38, 38, 0.88); }
+.wipectl { position: absolute; right: 6px; top: 6px; display: flex; gap: 6px; }
+.wipesz { width: 36px; height: 36px; padding: 0; border: 1px solid rgba(255, 255, 255, 0.65); border-radius: 50%; background: rgba(0, 0, 0, 0.5); color: #fff; font-size: 21px; font-weight: 900; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+.wipesz:active { background: rgba(0, 0, 0, 0.75); }
+.wipesz:disabled { opacity: 0.3; }
+.wipebox.tiny .wipectl { right: 4px; top: 4px; gap: 4px; }
+.wipebox.tiny .wipesz { width: 28px; height: 28px; font-size: 17px; }
+.wipebox.tiny .wipetag { left: 4px; bottom: 4px; padding: 2px 6px; font-size: 11.5px; }
+
+/* 撮影の画面：ワイプの大きさ */
+.wiperow { gap: 6px; margin-top: 8px; align-items: center; }
+.wiperow b { font-size: 14px; }
+.wiperow .note { flex-basis: 100%; margin: 0; }
+
+
+/* ---------- 撮影しながら記録する（livecam.js）：ワイプ（中・大）の場所 ----------
+   横長の画面（cam-side）：右の列。縦長の画面（cam-top）：上の帯の下。記録のボタンは残りの広さに（種目の画面が並べ直す） */
+.live.cam-side { grid-template-columns: minmax(0, 1fr) min-content; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "bar bar" "stage wipe" "gbar gbar"; }
+.live.cam-top { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr) auto; grid-template-areas: "bar" "wipe" "stage" "gbar"; }
+/* テニスは、上の帯の下にスコアの帯（board）がある */
+.live.fam-tennis.cam-side { grid-template-rows: auto auto minmax(0, 1fr) auto; grid-template-areas: "bar bar" "board wipe" "stage wipe" "gbar gbar"; }
+.live.fam-tennis.cam-top { grid-template-rows: auto auto auto minmax(0, 1fr) auto; grid-template-areas: "bar" "wipe" "board" "stage" "gbar"; }
+.live.cam-side .wipe { padding: 0 6px 6px 0; }
+/* 撮影の準備ができているときのスタート（録画と記録を一緒に） */
+.startbtn.rec { background: #dc2626; }

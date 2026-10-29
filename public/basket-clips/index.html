@@ -2899,7 +2899,8 @@ a.btn { text-decoration: none; }
   ];
   const WIN = { lead: 6, lag: 2 };      // タップした瞬間の「前 6 秒・後 2 秒」（人がタップするのは、プレーの 1〜2 秒あと）
 
-  const periodLabel = (p) => (p <= 4 ? p + 'Q' : 'OT' + (p - 4));
+  /* ピリオドの呼び名。スポーツ タップ記録の記録は、場面の呼び名（「前半 23:41」「3回表」など）の文字をそのまま持つ */
+  const periodLabel = (p) => (typeof p === 'string' ? p : p <= 4 ? p + 'Q' : 'OT' + (p - 4));
   const isHex = (c) => /^#[0-9a-f]{6}$/i.test(c || '');
   function normNo(v) {
     const s = String(v == null ? '' : v).replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).trim();
@@ -2911,7 +2912,8 @@ a.btn { text-decoration: none; }
   function parse(obj, fileName) {
     if (typeof obj === 'string') { try { obj = JSON.parse(obj); } catch (e) { throw new Error('JSON として読めませんでした'); } }
     if (!obj || typeof obj !== 'object') throw new Error('記録のファイルではないようです');
-    if (obj.format !== 'basket-tap') throw new Error('「バスケ タップ記録」の記録のファイルではないようです');
+    if (obj.format === 'sports-tap') return parseSports(obj, fileName);
+    if (obj.format !== 'basket-tap') throw new Error('「バスケ タップ記録」「スポーツ タップ記録」の記録のファイルではないようです');
     if (!Array.isArray(obj.events) || !Array.isArray(obj.teams)) throw new Error('記録の中身（events・teams）がありません');
     const names = obj.types && typeof obj.types === 'object' ? obj.types : {};
     const teams = [0, 1].map((i) => {
@@ -2947,12 +2949,64 @@ a.btn { text-decoration: none; }
     };
   }
 
+  /* 「スポーツ タップ記録」（サッカー・バレー・野球など8種目）の記録。書き出した形（stap:export:<id> も同じ）には、
+     記録ごとの呼び名（text）・場面の呼び名（when）、種類ごとの名前（types[].label）と、場面として切り出すか（types[].scene）が付いている。
+     ここでは種目のルールは知らなくてよい：場面として切り出すものだけを並べ、絞り込みのまとまりは「記録の種類」ごと */
+  function parseSports(obj, fileName) {
+    if (!Array.isArray(obj.events) || !Array.isArray(obj.teams)) throw new Error('記録の中身（events・teams）がありません');
+    const types = obj.types && typeof obj.types === 'object' ? obj.types : {};
+    const sideNames = Array.isArray(obj.sideNames) ? obj.sideNames : [];
+    const teams = [0, 1].map((i) => {
+      const t = obj.teams[i] || {};
+      const color = isHex(t.color) ? t.color : i ? '#2f6fed' : '#f4f4f4';
+      const players = (Array.isArray(t.players) ? t.players : []).map((p) => ({ no: normNo(p && p.no), name: String((p && p.name) || '').slice(0, 12) })).filter((p) => p.no != null);
+      return { name: String(sideNames[i] || t.name || '').trim().slice(0, 30), color, colorName: String(t.colorName || '').slice(0, 8), players };
+    });
+    const groups = [];
+    const events = [];
+    obj.events.forEach((e, i) => {
+      if (!e || !isFinite(e.t) || e.t < 0) return;
+      const d = types[e.type] || {};
+      if (d.scene === false || d.meta) return;
+      const id = typeof e.id === 'string' && e.id ? e.id.slice(0, 20) : 'x' + i;
+      const label = String(d.label || e.type).slice(0, 30);
+      if (!groups.some((g) => g.id === e.type)) groups.push({ id: String(e.type), label: String(d.short || label).slice(0, 20), last: d.kind === 'mark' });     // 絞り込みのボタンは短い呼び名
+      const team = e.team === 0 || e.team === 1 ? e.team : null;
+      events.push({ id, t: Math.round(e.t * 100) / 100, type: String(e.type), team, no: team != null && e.no != null ? normNo(e.no) : null, period: String(e.when || '').slice(0, 40), label, text: String(e.text || label).slice(0, 80), grp: String(e.type), pts: d.pts || 0 });
+    });
+    const seen = new Set();
+    events.forEach((e, i) => { if (seen.has(e.id)) e.id = 'x' + i + '_' + e.id; seen.add(e.id); });
+    events.sort((a, b) => a.t - b.t);
+    if (!events.length) throw new Error('この記録には、場面にできる記録がありません');
+    // 絞り込みのまとまりの並びは、種類の並び（書き出した types の順）。「★ あとで見る」はいちばん後ろ
+    const order = Object.keys(types);
+    groups.sort((a, b) => (a.last - b.last) || (order.indexOf(a.id) - order.indexOf(b.id)));
+    groups.forEach((x) => { delete x.last; });
+    const videos = (Array.isArray(obj.videos) ? obj.videos : []).filter((v) => v && isFinite(v.startedAt) && v.startedAt > 0).slice(0, 50)
+      .map((v, i) => ({ vid: String(v.vid || 'v' + i).slice(0, 40), n: isFinite(v.n) ? Math.round(v.n) : i + 1, startedAt: +v.startedAt, duration: isFinite(v.duration) ? +v.duration : null, name: String(v.name || '').slice(0, 120), gone: !!v.gone }));
+    return {
+      format: 'sports-tap', app: String(obj.app || 'スポーツ タップ記録').slice(0, 30), sport: String(obj.sport || '').slice(0, 20), sportName: String(obj.sportName || '').slice(0, 20),
+      id: String(obj.id || '').slice(0, 40), title: String(obj.title || '').slice(0, 40), date: /^\d{4}-\d{2}-\d{2}$/.test(obj.date || '') ? obj.date : '',
+      startedAt: isFinite(obj.startedAt) && obj.startedAt > 0 ? +obj.startedAt : null, tz: isFinite(obj.tz) ? +obj.tz : 540,
+      scoreText: String(obj.scoreText || '').slice(0, 60), teams, events, groups, videos, file: fileName ? String(fileName).slice(0, 80) : '', loadedAt: Date.now()
+    };
+  }
+
   const plays = (log) => ((log && log.events) || []).filter((e) => e.type !== 'period');
+  /* 絞り込みのまとまり（バスケは GROUPS。スポーツ タップ記録は、その記録にある種類） */
+  const groupsOf = (log) => (log && log.format === 'sports-tap' ? log.groups || [] : GROUPS);
+  /* 得点の文字（「12 − 8」。スポーツ タップ記録は、その種目の書き方「セット 2−1」「1 − 1（PK 4−3）」など） */
+  function scoreText(log) {
+    if (log && log.format === 'sports-tap') return log.scoreText || '';
+    const s = score(log);
+    return `${s[0]} − ${s[1]}`;
+  }
   const teamName = (log, tm) => (tm !== 0 && tm !== 1 ? '' : (log.teams[tm] && log.teams[tm].name) || (tm ? '相手' : '自分'));
   const playerName = (log, tm, no) => { const p = ((log.teams[tm] || {}).players || []).find((x) => x.no === no); return p ? p.name : ''; };
   /* 「#7 たけし 2P成功」 */
   function eventLabel(log, e, withTeam) {
     if (e.type === 'period') return `${periodLabel(e.period)} 開始`;
+    if (log && log.format === 'sports-tap') return e.text || e.label;         // 書き出したときの呼び名（「致遠館 #10 たけし ゴール」）
     const nm = e.no != null ? playerName(log, e.team, e.no) : '';
     return [withTeam && e.team != null ? teamName(log, e.team) : '', e.no != null ? '#' + e.no + (nm ? ' ' + nm : '') : '', e.label].filter(Boolean).join(' ');
   }
@@ -3052,6 +3106,7 @@ a.btn { text-decoration: none; }
      戻り値 { offset（動画の時刻 − 記録の時刻）, matched, nLog, nShots } か null（見比べられるほどの数がないとき） */
   function matchShots(log, shotTimes, tol) {
     tol = tol || 2.5;
+    if (log && log.format === 'sports-tap') return null;          // 自動で探すのはバスケの得点だけ
     const A = plays(log).filter((e) => TYPES[e.type] && TYPES[e.type].made).map((e) => e.t).sort((a, b) => a - b);
     const B = (shotTimes || []).filter(isFinite).slice().sort((a, b) => a - b);
     if (A.length < 3 || B.length < 3) return null;
@@ -3184,22 +3239,25 @@ a.btn { text-decoration: none; }
     return null;
   }
 
-  /* 同じブラウザの「バスケ タップ記録」が保存した試合の一覧（同じサイトなら読める） */
+  /* 同じブラウザの「バスケ タップ記録」「スポーツ タップ記録」が保存した試合の一覧（同じサイトなら読める）。
+     スポーツ タップ記録は、書き出した形（stap:export:<id>。試合を終えたとき・「🎬 場面を切り出す」で作る）がある試合だけ。
+     app：'btap'（バスケ）| 'stap'（スポーツ。sport・sportName も） */
   function localGames(storage) {
     const ls = storage || (function () { try { return root.localStorage; } catch (e) { return null; } })();
     if (!ls) return [];
-    try {
-      const list = JSON.parse(ls.getItem('btap:games') || '[]');
-      return (Array.isArray(list) ? list : []).filter((g) => g && g.id && g.n > 0).sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
-    } catch (e) { return []; }
+    const read = (k) => { try { const v = JSON.parse(ls.getItem(k) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } };
+    const b = read('btap:games').filter((g) => g && g.id && g.n > 0).map((g) => Object.assign({}, g, { app: 'btap' }));
+    const st = read('stap:games').filter((g) => g && g.id && g.n > 0 && ls.getItem('stap:export:' + g.id)).map((g) => Object.assign({}, g, { app: 'stap' }));
+    return b.concat(st).sort((a, b2) => (b2.startedAt || 0) - (a.startedAt || 0));
   }
-  function localGame(id, storage) {
+  function localGame(id, storage, app) {
+    if (typeof storage === 'string') { app = storage; storage = null; }
     const ls = storage || (function () { try { return root.localStorage; } catch (e) { return null; } })();
     if (!ls) return null;
-    try { return JSON.parse(ls.getItem('btap:game:' + id) || 'null'); } catch (e) { return null; }
+    try { return JSON.parse(ls.getItem((app === 'stap' ? 'stap:export:' : 'btap:game:') + id) || 'null'); } catch (e) { return null; }
   }
 
-  BS.taplog = { TYPES, GROUPS, WIN, periodLabel, parse, plays, teamName, playerName, eventLabel, score, cleanAnchors, toVideo, shift, setAnchor, clips, reel, counts, matchShots, creationTime, parseISO, fromCreation, videoAnchors, matchVideo, localGames, localGame };
+  BS.taplog = { TYPES, GROUPS, WIN, periodLabel, parse, plays, groupsOf, scoreText, teamName, playerName, eventLabel, score, cleanAnchors, toVideo, shift, setAnchor, clips, reel, counts, matchShots, creationTime, parseISO, fromCreation, videoAnchors, matchVideo, localGames, localGame };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -3207,6 +3265,7 @@ a.btn { text-decoration: none; }
 /* js/tapvideo.js */
 /* バスケ得点クリップ — 「バスケ タップ記録」で撮影しながら記録した動画を、この端末（このブラウザ）から読む
    タップ記録は、撮影した動画を IndexedDB 'btap-media' に保存している（同じサイトなので、ここからも読める）。
+   スポーツ タップ記録（8種目）は 'stap-media'（name に DB_STAP を渡す）。
    データの形は basket-tap/js/vstore.js の先頭（ここは読むだけ。書きかえない）：
      videos：{ vid, gameId, n, startedAt, endedAt, mime, plan（{ header, ranges } | null）, duration, name, … }
      chunks：{ vid, i, blob }（i の順につなぐと、録画した動画そのもの）
@@ -3215,12 +3274,13 @@ a.btn { text-decoration: none; }
   'use strict';
   const BS = root.BS = root.BS || {};
   const DB = 'btap-media';
+  const DB_STAP = 'stap-media';        // 「スポーツ タップ記録」（8種目）の動画。形は同じ（sports-tap/js/vstore.js）
 
   /* DB を開く（まだないときは作らない：作ってしまうと、タップ記録の側で入れ物が作れなくなるため） */
-  function open() {
+  function open(name) {
     return new Promise((resolve) => {
       let req;
-      try { req = root.indexedDB.open(DB); } catch (e) { resolve(null); return; }
+      try { req = root.indexedDB.open(name || DB); } catch (e) { resolve(null); return; }
       let fresh = false;
       req.onupgradeneeded = () => { fresh = true; try { req.transaction.abort(); } catch (e) { /* 無視 */ } };
       req.onsuccess = () => { const db = req.result; if (fresh || !db.objectStoreNames.contains('videos') || !db.objectStoreNames.contains('chunks')) { db.close(); resolve(null); return; } resolve(db); };
@@ -3239,23 +3299,23 @@ a.btn { text-decoration: none; }
     });
   }
   /* その試合の動画の一覧（古い順） */
-  async function videos(gameId) {
-    const db = await open();
+  async function videos(gameId, name) {
+    const db = await open(name);
     if (!db) return [];
     const list = await get(db, 'videos', (s) => s.index('gameId').getAll(gameId));
     db.close();
     return (list || []).filter((v) => v.status === 'done').sort((a, b) => a.startedAt - b.startedAt);
   }
-  async function meta(vid) {
-    const db = await open();
+  async function meta(vid, name) {
+    const db = await open(name);
     if (!db) return null;
     const v = await get(db, 'videos', (s) => s.get(vid));
     db.close();
     return v || null;
   }
   /* 再生できる動画のファイル（File）。なければ null */
-  async function file(vid) {
-    const db = await open();
+  async function file(vid, name) {
+    const db = await open(name);
     if (!db) return null;
     const v = await get(db, 'videos', (s) => s.get(vid));
     const list = v ? await get(db, 'chunks', (s) => s.getAll(IDBKeyRange.bound([vid, 0], [vid, Infinity]))) : null;
@@ -3269,7 +3329,7 @@ a.btn { text-decoration: none; }
     try { return new File([out], v.name || 'video.mp4', { type, lastModified: v.startedAt || Date.now() }); } catch (e) { out.name = v.name; return out; }
   }
 
-  BS.tapvideo = { open, videos, meta, file, DB };
+  BS.tapvideo = { open, videos, meta, file, DB, DB_STAP };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -3746,6 +3806,7 @@ a.btn { text-decoration: none; }
   const HOOP_COL = ['#22c55e', '#e879f9'];
   const ICON = ['🏀', '🛡'];
   const WHAT = ['入れた', '入れられた'];
+  const SPORT_ICON = { soccer: '⚽', volley: '🏐', futsal: '🥅', handball: '🤾', tennis: '🎾', baseball: '⚾', rugby: '🏉', swim: '🏊' };      // スポーツ タップ記録の種目
 
   const S = {
     media: null, key: null, st: BS.store.fresh(),
@@ -4568,17 +4629,17 @@ a.btn { text-decoration: none; }
       title: '📲 タップ記録を読み込む',
       body: h('div', { class: 'logdlg' },
         h('button', { class: 'btn primary', id: 'btnLogFile', onclick: () => { BS.ui.closeModal(); pickLogFile(); } }, '📂 記録のファイル（.json）を選ぶ'),
-        h('p', { class: 'note' }, '「バスケ タップ記録」の「書き出す」→「記録のファイル」で保存したファイルです。'),
+        h('p', { class: 'note' }, '「バスケ タップ記録」「スポーツ タップ記録」（サッカー・バレーなど）の「書き出す」→「記録のファイル」で保存したファイルです。'),
         h('h4', null, 'この端末（このブラウザ）で記録した試合'),
         h('div', { class: 'lglist' }, games.slice(0, 20).map((g) => {
-          const raw = g.videos ? TL.localGame(g.id) : null;
+          const raw = g.videos ? TL.localGame(g.id, g.app) : null;
           const vids = raw && Array.isArray(raw.videos) ? raw.videos.filter((v) => !v.gone && v.status !== 'recording') : [];
           return h('div', { class: 'lgrow' },
-            h('button', { class: 'lg', dataset: { game: g.id }, onclick: () => { const r = TL.localGame(g.id); if (r) loadLog(r, ''); else BS.ui.toast('この試合の記録が見つかりませんでした', 'err'); } },
-              h('b', null, when(g)),
+            h('button', { class: 'lg', dataset: { game: g.id }, onclick: () => { const r = TL.localGame(g.id, g.app); if (r) loadLog(r, ''); else BS.ui.toast('この試合の記録が見つかりませんでした', 'err'); } },
+              h('b', null, when(g), g.app === 'stap' ? h('small', { class: 'note' }, ` ${g.sport && SPORT_ICON[g.sport] ? SPORT_ICON[g.sport] + ' ' : ''}スポーツ タップ記録`) : null),
               h('span', { class: 'lgvs' }, h('i', { class: 'chip', style: { background: (g.colors || [])[0] || '#888' } }), ` ${(g.names || [])[0] || '自分'} ${g.score ? g.score[0] + ' − ' + g.score[1] : ''} ${(g.names || [])[1] || '相手'} `, h('i', { class: 'chip', style: { background: (g.colors || [])[1] || '#888' } })),
               h('small', { class: 'note' }, `${g.n}件の記録${vids.length ? `・📹 撮影した動画 ${vids.length}本` : ''}`)),
-            vids.length ? h('div', { class: 'lgvids' }, vids.map((v) => h('button', { class: 'btn small primary', dataset: { tapvideo: v.vid }, onclick: () => openTapVideo(g.id, v.vid) },
+            vids.length ? h('div', { class: 'lgvids' }, vids.map((v) => h('button', { class: 'btn small primary', dataset: { tapvideo: v.vid }, onclick: () => openTapVideo(g.id, v.vid, g.app) },
               `📹 動画${v.n}（${BS.fmtTime(v.duration || 0)}）を記録と一緒に開く`))) : null);
         }))),
       buttons: [{ label: 'とじる' }]
@@ -4643,16 +4704,17 @@ a.btn { text-decoration: none; }
     return v ? cameraSync(v) : false;
   }
   /* タップ記録で撮影した動画を、この端末から、記録と一緒に開く（時刻あわせなし） */
-  async function openTapVideo(gameId, vid) {
-    const raw = TL.localGame(gameId);
+  async function openTapVideo(gameId, vid, app) {
+    const raw = TL.localGame(gameId, app);
     if (!raw) { BS.ui.toast('この試合の記録が、この端末に見つかりませんでした', 'err', 6000); return false; }
     let log;
     try { log = TL.parse(raw, ''); } catch (e) { BS.ui.toast('タップ記録を読み込めませんでした：' + e.message, 'err', 7000); return false; }
     BS.ui.toast('撮影した動画を開いています…', '', 3000);
-    const f = await BS.tapvideo.file(vid);
+    const dbName = app === 'stap' ? BS.tapvideo.DB_STAP : undefined;
+    const f = await BS.tapvideo.file(vid, dbName);
     if (!f) { BS.ui.toast('この動画が、この端末（このブラウザ）に見つかりませんでした。保存した動画のファイルを「🎬 動画を選ぶ」で開いてください（時刻は自動で合わせます）', 'err', 9000); return false; }
     BS.ui.closeModal();
-    const v = log.videos.find((x) => x.vid === vid) || await BS.tapvideo.meta(vid);
+    const v = log.videos.find((x) => x.vid === vid) || await BS.tapvideo.meta(vid, dbName);
     S.pendingLog = log;
     S.quietAttach = true;
     try { openFile(f); } finally { S.quietAttach = false; }
@@ -4690,13 +4752,13 @@ a.btn { text-decoration: none; }
   /* ② 記録 */
   function logCard() {
     const log = S.st.log;
-    const sc = TL.score(log);
     const cnt = TL.counts(log, { teams: [true, true] }).grp;
-    const parts = TL.GROUPS.filter((g) => cnt[g.id]).map((g) => `${g.label} ${cnt[g.id]}`);
-    return h('section', { class: 'card step logcard', id: 'logCard' }, stepHead(2, 'タップ記録（バスケ タップ記録）', log.startedAt ? `${log.date} ${clockAt(log.startedAt, log.tz)} スタート` : log.date, true),
+    const parts = TL.groupsOf(log).filter((g) => cnt[g.id]).map((g) => `${g.label} ${cnt[g.id]}`);
+    const appName = log.format === 'sports-tap' ? `${log.sportName ? log.sportName + '・' : ''}${log.app}` : 'バスケ タップ記録';
+    return h('section', { class: 'card step logcard', id: 'logCard' }, stepHead(2, `タップ記録（${appName}）`, log.startedAt ? `${log.date} ${clockAt(log.startedAt, log.tz)} スタート` : log.date, true),
       h('div', { class: 'logvs' },
         h('span', { class: 'lt' }, h('i', { class: 'chip', style: { background: teamColor(0) } }), TL.teamName(log, 0)),
-        h('b', null, `${sc[0]} − ${sc[1]}`),
+        h('b', null, TL.scoreText(log)),
         h('span', { class: 'lt' }, TL.teamName(log, 1), h('i', { class: 'chip', style: { background: teamColor(1) } }))),
       h('p', { class: 'note' }, `記録 ${TL.plays(log).length}件：${parts.join('・')}${log.title ? '（' + log.title + '）' : ''}`),
       h('div', { class: 'row' },
@@ -4758,7 +4820,7 @@ a.btn { text-decoration: none; }
   function afterFilter() { S.logOut = null; save(); render(); drawTimeline(); makeLogThumbs(); }
   function toggleGroup(id) {
     const V = logView();
-    const present = TL.GROUPS.map((g) => g.id).filter((g) => TL.counts(S.st.log, V).grp[g]);
+    const present = TL.groupsOf(S.st.log).map((g) => g.id).filter((g) => TL.counts(S.st.log, V).grp[g]);
     if (!Object.keys(V.groups).length) V.groups = { [id]: true };       // 「すべて」から押したら、それだけ
     else {
       if (V.groups[id]) delete V.groups[id]; else V.groups[id] = true;
@@ -4787,7 +4849,7 @@ a.btn { text-decoration: none; }
       [0, 1].map((tm) => h('button', { class: 'fchip' + (V.teams[tm] !== false ? ' on' : ''), dataset: { fteam: String(tm) }, 'aria-pressed': V.teams[tm] !== false ? 'true' : 'false',
         onclick: () => { V.teams[tm] = V.teams[tm] === false; if (V.teams[0] === false && V.teams[1] === false) V.teams[1 - tm] = true; afterFilter(); } },
       h('i', { class: 'chip', style: { background: teamColor(tm) } }), TL.teamName(log, tm)))));
-    const present = TL.GROUPS.filter((g) => cnt.grp[g.id]);
+    const present = TL.groupsOf(log).filter((g) => cnt.grp[g.id]);
     const allG = !Object.keys(V.groups).length;
     card.append(h('div', { class: 'frow' }, h('span', { class: 'flab' }, 'プレー'),
       h('button', { class: 'fchip' + (allG ? ' on' : ''), dataset: { fgrp: 'all' }, onclick: () => { V.groups = {}; afterFilter(); } }, 'すべて'),
@@ -4871,7 +4933,7 @@ a.btn { text-decoration: none; }
     const parts = [];
     if (V.teams[0] === false || V.teams[1] === false) parts.push(TL.teamName(log, V.teams[0] === false ? 1 : 0));
     if (V.players.length) parts.push(V.players.map((k) => '#' + k.split(':')[1]).join('・'));
-    if (Object.keys(V.groups).length) parts.push(TL.GROUPS.filter((g) => V.groups[g.id]).map((g) => g.label).join('・'));
+    if (Object.keys(V.groups).length) parts.push(TL.groupsOf(log).filter((g) => V.groups[g.id]).map((g) => g.label).join('・'));
     return parts.length ? parts.join(' ') : 'タップ記録の場面';
   }
   function logExportBox() {
@@ -5629,11 +5691,11 @@ a.btn { text-decoration: none; }
     root.addEventListener('pagehide', flush);
     document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
     render(); drawTimeline();
-    // 「バスケ タップ記録」の「🎬 場面を切り出す」から来たとき：撮影した動画と記録を開く（?tapgame=…&tapvideo=…）
+    // 「バスケ タップ記録」「スポーツ タップ記録」の「🎬 場面を切り出す」から来たとき：撮影した動画と記録を開く（?tapgame=…&tapvideo=…&tapapp=stap）
     try {
       const q = new URLSearchParams(root.location.search);
       if (q.get('tapgame') && q.get('tapvideo')) {
-        openTapVideo(q.get('tapgame'), q.get('tapvideo'));
+        openTapVideo(q.get('tapgame'), q.get('tapvideo'), q.get('tapapp') === 'stap' ? 'stap' : 'btap');
         if (root.history && history.replaceState) history.replaceState(null, '', root.location.pathname);
       }
     } catch (e) { /* 古いブラウザ */ }
