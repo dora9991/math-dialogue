@@ -41,8 +41,7 @@
   ];
   const WIN = { lead: 6, lag: 2 };      // タップした瞬間の「前 6 秒・後 2 秒」（人がタップするのは、プレーの 1〜2 秒あと）
 
-  /* ピリオドの呼び名。スポーツ タップ記録の記録は、場面の呼び名（「前半 23:41」「3回表」など）の文字をそのまま持つ */
-  const periodLabel = (p) => (typeof p === 'string' ? p : p <= 4 ? p + 'Q' : 'OT' + (p - 4));
+  const periodLabel = (p) => (p <= 4 ? p + 'Q' : 'OT' + (p - 4));
   const isHex = (c) => /^#[0-9a-f]{6}$/i.test(c || '');
   function normNo(v) {
     const s = String(v == null ? '' : v).replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).trim();
@@ -54,8 +53,7 @@
   function parse(obj, fileName) {
     if (typeof obj === 'string') { try { obj = JSON.parse(obj); } catch (e) { throw new Error('JSON として読めませんでした'); } }
     if (!obj || typeof obj !== 'object') throw new Error('記録のファイルではないようです');
-    if (obj.format === 'sports-tap') return parseSports(obj, fileName);
-    if (obj.format !== 'basket-tap') throw new Error('「バスケ タップ記録」「スポーツ タップ記録」の記録のファイルではないようです');
+    if (obj.format !== 'basket-tap') throw new Error('「バスケ タップ記録」の記録のファイルではないようです');
     if (!Array.isArray(obj.events) || !Array.isArray(obj.teams)) throw new Error('記録の中身（events・teams）がありません');
     const names = obj.types && typeof obj.types === 'object' ? obj.types : {};
     const teams = [0, 1].map((i) => {
@@ -91,64 +89,12 @@
     };
   }
 
-  /* 「スポーツ タップ記録」（サッカー・バレー・野球など8種目）の記録。書き出した形（stap:export:<id> も同じ）には、
-     記録ごとの呼び名（text）・場面の呼び名（when）、種類ごとの名前（types[].label）と、場面として切り出すか（types[].scene）が付いている。
-     ここでは種目のルールは知らなくてよい：場面として切り出すものだけを並べ、絞り込みのまとまりは「記録の種類」ごと */
-  function parseSports(obj, fileName) {
-    if (!Array.isArray(obj.events) || !Array.isArray(obj.teams)) throw new Error('記録の中身（events・teams）がありません');
-    const types = obj.types && typeof obj.types === 'object' ? obj.types : {};
-    const sideNames = Array.isArray(obj.sideNames) ? obj.sideNames : [];
-    const teams = [0, 1].map((i) => {
-      const t = obj.teams[i] || {};
-      const color = isHex(t.color) ? t.color : i ? '#2f6fed' : '#f4f4f4';
-      const players = (Array.isArray(t.players) ? t.players : []).map((p) => ({ no: normNo(p && p.no), name: String((p && p.name) || '').slice(0, 12) })).filter((p) => p.no != null);
-      return { name: String(sideNames[i] || t.name || '').trim().slice(0, 30), color, colorName: String(t.colorName || '').slice(0, 8), players };
-    });
-    const groups = [];
-    const events = [];
-    obj.events.forEach((e, i) => {
-      if (!e || !isFinite(e.t) || e.t < 0) return;
-      const d = types[e.type] || {};
-      if (d.scene === false || d.meta) return;
-      const id = typeof e.id === 'string' && e.id ? e.id.slice(0, 20) : 'x' + i;
-      const label = String(d.label || e.type).slice(0, 30);
-      if (!groups.some((g) => g.id === e.type)) groups.push({ id: String(e.type), label: String(d.short || label).slice(0, 20), last: d.kind === 'mark' });     // 絞り込みのボタンは短い呼び名
-      const team = e.team === 0 || e.team === 1 ? e.team : null;
-      events.push({ id, t: Math.round(e.t * 100) / 100, type: String(e.type), team, no: team != null && e.no != null ? normNo(e.no) : null, period: String(e.when || '').slice(0, 40), label, text: String(e.text || label).slice(0, 80), grp: String(e.type), pts: d.pts || 0 });
-    });
-    const seen = new Set();
-    events.forEach((e, i) => { if (seen.has(e.id)) e.id = 'x' + i + '_' + e.id; seen.add(e.id); });
-    events.sort((a, b) => a.t - b.t);
-    if (!events.length) throw new Error('この記録には、場面にできる記録がありません');
-    // 絞り込みのまとまりの並びは、種類の並び（書き出した types の順）。「★ あとで見る」はいちばん後ろ
-    const order = Object.keys(types);
-    groups.sort((a, b) => (a.last - b.last) || (order.indexOf(a.id) - order.indexOf(b.id)));
-    groups.forEach((x) => { delete x.last; });
-    const videos = (Array.isArray(obj.videos) ? obj.videos : []).filter((v) => v && isFinite(v.startedAt) && v.startedAt > 0).slice(0, 50)
-      .map((v, i) => ({ vid: String(v.vid || 'v' + i).slice(0, 40), n: isFinite(v.n) ? Math.round(v.n) : i + 1, startedAt: +v.startedAt, duration: isFinite(v.duration) ? +v.duration : null, name: String(v.name || '').slice(0, 120), gone: !!v.gone }));
-    return {
-      format: 'sports-tap', app: String(obj.app || 'スポーツ タップ記録').slice(0, 30), sport: String(obj.sport || '').slice(0, 20), sportName: String(obj.sportName || '').slice(0, 20),
-      id: String(obj.id || '').slice(0, 40), title: String(obj.title || '').slice(0, 40), date: /^\d{4}-\d{2}-\d{2}$/.test(obj.date || '') ? obj.date : '',
-      startedAt: isFinite(obj.startedAt) && obj.startedAt > 0 ? +obj.startedAt : null, tz: isFinite(obj.tz) ? +obj.tz : 540,
-      scoreText: String(obj.scoreText || '').slice(0, 60), teams, events, groups, videos, file: fileName ? String(fileName).slice(0, 80) : '', loadedAt: Date.now()
-    };
-  }
-
   const plays = (log) => ((log && log.events) || []).filter((e) => e.type !== 'period');
-  /* 絞り込みのまとまり（バスケは GROUPS。スポーツ タップ記録は、その記録にある種類） */
-  const groupsOf = (log) => (log && log.format === 'sports-tap' ? log.groups || [] : GROUPS);
-  /* 得点の文字（「12 − 8」。スポーツ タップ記録は、その種目の書き方「セット 2−1」「1 − 1（PK 4−3）」など） */
-  function scoreText(log) {
-    if (log && log.format === 'sports-tap') return log.scoreText || '';
-    const s = score(log);
-    return `${s[0]} − ${s[1]}`;
-  }
   const teamName = (log, tm) => (tm !== 0 && tm !== 1 ? '' : (log.teams[tm] && log.teams[tm].name) || (tm ? '相手' : '自分'));
   const playerName = (log, tm, no) => { const p = ((log.teams[tm] || {}).players || []).find((x) => x.no === no); return p ? p.name : ''; };
   /* 「#7 たけし 2P成功」 */
   function eventLabel(log, e, withTeam) {
     if (e.type === 'period') return `${periodLabel(e.period)} 開始`;
-    if (log && log.format === 'sports-tap') return e.text || e.label;         // 書き出したときの呼び名（「致遠館 #10 たけし ゴール」）
     const nm = e.no != null ? playerName(log, e.team, e.no) : '';
     return [withTeam && e.team != null ? teamName(log, e.team) : '', e.no != null ? '#' + e.no + (nm ? ' ' + nm : '') : '', e.label].filter(Boolean).join(' ');
   }
@@ -248,7 +194,6 @@
      戻り値 { offset（動画の時刻 − 記録の時刻）, matched, nLog, nShots } か null（見比べられるほどの数がないとき） */
   function matchShots(log, shotTimes, tol) {
     tol = tol || 2.5;
-    if (log && log.format === 'sports-tap') return null;          // 自動で探すのはバスケの得点だけ
     const A = plays(log).filter((e) => TYPES[e.type] && TYPES[e.type].made).map((e) => e.t).sort((a, b) => a - b);
     const B = (shotTimes || []).filter(isFinite).slice().sort((a, b) => a - b);
     if (A.length < 3 || B.length < 3) return null;
@@ -381,23 +326,20 @@
     return null;
   }
 
-  /* 同じブラウザの「バスケ タップ記録」「スポーツ タップ記録」が保存した試合の一覧（同じサイトなら読める）。
-     スポーツ タップ記録は、書き出した形（stap:export:<id>。試合を終えたとき・「🎬 場面を切り出す」で作る）がある試合だけ。
-     app：'btap'（バスケ）| 'stap'（スポーツ。sport・sportName も） */
+  /* 同じブラウザの「バスケ タップ記録」が保存した試合の一覧（同じサイトなら読める） */
   function localGames(storage) {
     const ls = storage || (function () { try { return root.localStorage; } catch (e) { return null; } })();
     if (!ls) return [];
-    const read = (k) => { try { const v = JSON.parse(ls.getItem(k) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } };
-    const b = read('btap:games').filter((g) => g && g.id && g.n > 0).map((g) => Object.assign({}, g, { app: 'btap' }));
-    const st = read('stap:games').filter((g) => g && g.id && g.n > 0 && ls.getItem('stap:export:' + g.id)).map((g) => Object.assign({}, g, { app: 'stap' }));
-    return b.concat(st).sort((a, b2) => (b2.startedAt || 0) - (a.startedAt || 0));
+    try {
+      const list = JSON.parse(ls.getItem('btap:games') || '[]');
+      return (Array.isArray(list) ? list : []).filter((g) => g && g.id && g.n > 0).sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
+    } catch (e) { return []; }
   }
-  function localGame(id, storage, app) {
-    if (typeof storage === 'string') { app = storage; storage = null; }
+  function localGame(id, storage) {
     const ls = storage || (function () { try { return root.localStorage; } catch (e) { return null; } })();
     if (!ls) return null;
-    try { return JSON.parse(ls.getItem((app === 'stap' ? 'stap:export:' : 'btap:game:') + id) || 'null'); } catch (e) { return null; }
+    try { return JSON.parse(ls.getItem('btap:game:' + id) || 'null'); } catch (e) { return null; }
   }
 
-  BS.taplog = { TYPES, GROUPS, WIN, periodLabel, parse, plays, groupsOf, scoreText, teamName, playerName, eventLabel, score, cleanAnchors, toVideo, shift, setAnchor, clips, reel, counts, matchShots, creationTime, parseISO, fromCreation, videoAnchors, matchVideo, localGames, localGame };
+  BS.taplog = { TYPES, GROUPS, WIN, periodLabel, parse, plays, teamName, playerName, eventLabel, score, cleanAnchors, toVideo, shift, setAnchor, clips, reel, counts, matchShots, creationTime, parseISO, fromCreation, videoAnchors, matchVideo, localGames, localGame };
 })(typeof window !== 'undefined' ? window : globalThis);

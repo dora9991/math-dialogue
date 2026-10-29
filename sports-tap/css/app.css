@@ -529,3 +529,59 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
 .live.cam-side .wipe { padding: 0 6px 6px 0; }
 /* 撮影の準備ができているときのスタート（録画と記録を一緒に） */
 .startbtn.rec { background: #dc2626; }
+
+/* ---------- サッカー：フリーキックのくわしい記録・設定の「記録用」「分析用」 ---------- */
+.fkbox { display: flex; flex-direction: column; gap: 14px; }
+.fkrow .fkbtn { min-width: 92px; min-height: 52px; font-size: 17px; font-weight: 800; }
+.fkrow .fkbtn.yc.on { background: #facc15; border-color: #a16207; color: #2b1d00; }
+.fkrow .fkbtn.rc.on { background: #dc2626; border-color: #991b1b; color: #fff; }
+.togsec { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel2); }
+.togsec > b { font-size: 14px; margin-bottom: 2px; }
+.chk.sub { padding-left: 26px; font-size: 13.5px; }
+.norows { padding: 10px; }
+
+/* ========== 動画で場面を見返す（review.js） ==========
+   横長の画面：左に動画と操作・右に絞り込みと場面の一覧。縦長の画面：上に動画（上に貼りつく）・下に一覧 */
+body[data-view="review"] { overflow-x: hidden; }
+.rv { max-width: 1280px; margin: 0 auto; padding: 10px max(10px, env(safe-area-inset-left)) calc(24px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+@media (min-width: 900px) { .rv { grid-template-columns: minmax(0, 1.45fr) minmax(320px, 1fr); align-items: start; } .rv-player { position: sticky; top: 64px; } }
+.rv-player { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.rv-vwrap { position: relative; background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 16 / 9; }
+.rv-video { width: 100%; height: 100%; display: block; background: #000; }
+.rv-label { position: absolute; left: 8px; top: 8px; max-width: calc(100% - 16px); padding: 4px 10px; border-radius: 999px; background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 13.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.rv-ctl { display: flex; flex-direction: column; gap: 6px; }
+.rvbtns { flex-wrap: nowrap; gap: 6px; }
+.rvbtns .btn { flex: 1 1 0; min-width: 0; padding: 6px 2px; font-weight: 800; white-space: nowrap; font-size: clamp(12.5px, 3.6vw, 15px); }
+.rvbtns .rvplay { flex: 1.4 1 0; font-size: 20px; }
+.rvspeed { gap: 6px; }
+.rvspeed b, .rv-src .row > b { font-size: 13.5px; color: var(--muted); }
+.rv-src { display: flex; flex-direction: column; gap: 6px; }
+.rv-src .note.ok, .rv-sync.ok .note { color: var(--good); }
+.rv-sync { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 2px solid var(--ask); border-radius: 12px; background: var(--warn-soft); }
+.rv-sync.ok { border: 1px solid var(--line); background: var(--panel2); }
+.rv-sync p { margin: 0; }
+.rvsel { flex: 1; min-width: 0; max-width: 100%; min-height: 40px; border-radius: 10px; border: 1px solid var(--line2); background: var(--panel); padding: 4px 8px; font-size: 14px; }
+.rv-side { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.rv-filter { display: flex; flex-direction: column; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+.frow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.flab { font-size: 12.5px; font-weight: 800; color: var(--muted); min-width: 3em; }
+.fchip { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 3px 11px; border-radius: 999px; border: 1px solid var(--line2); background: var(--panel2); font-size: 13.5px; }
+.fchip small { color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.fchip.on { background: var(--accent-soft); border-color: var(--accent); font-weight: 800; box-shadow: inset 0 0 0 1px var(--accent); }
+.rv-win { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+.rv-win summary { cursor: pointer; font-size: 14px; }
+.rv-win summary b { font-weight: 800; }
+.rv-win .winnow { display: block; margin: 2px 0 0 1.1em; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+.rv-win[open] .winnow { display: none; }
+.winrow { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.winrow b { font-size: 13.5px; }
+.winrow .row { display: grid; grid-template-columns: 1.4em repeat(7, minmax(0, 1fr)); gap: 4px; align-items: center; }
+.winrow .btn.small { min-width: 0; padding: 3px 2px; font-variant-numeric: tabular-nums; }
+.rvlist { display: flex; flex-direction: column; gap: 4px; }
+.rvrow { display: grid; grid-template-columns: 30px minmax(0, 1fr) 30px; align-items: center; gap: 8px; text-align: left; background: var(--panel); border: 1px solid var(--line); border-left: 6px solid var(--tc, var(--line2)); border-radius: 10px; padding: 7px 10px; min-height: 52px; }
+.rvrow .ix { font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; text-align: center; }
+.rvrow .rvt { display: flex; flex-direction: column; min-width: 0; }
+.rvrow .rvt b { font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rvrow .rvt small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.rvrow .rvgo { font-style: normal; color: var(--accent); font-weight: 900; text-align: center; }
+.rvrow.playing { background: var(--accent-soft); border-color: var(--accent); }

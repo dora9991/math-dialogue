@@ -78,13 +78,33 @@
     return s;
   }
 
+  /* ---------- フリーキックのカード ----------
+     フリーキック（type に detail: 'fk'）には、直接・間接（fk: 'd' | 'i'）と、反則した側へのカード（card: 'n' なし | 'y' イエロー | 'r' レッド、cno: 背番号）を持てる。
+     フリーキックを蹴るのは e.team、カードをもらうのは相手（1 − e.team）。退場の数え方・集計では、カードを1つの記録として足して数える */
+  function withCards(sp, game) {
+    const out = [];
+    ST.sorted(game).forEach((e) => {
+      out.push(e);
+      const d = sp.TYPE[e.type];
+      if (d && d.detail === 'fk' && (e.card === 'y' || e.card === 'r') && (e.team === 0 || e.team === 1) && sp.TYPE[e.card === 'y' ? 'yc' : 'rc']) {
+        out.push({ id: e.id + 'c', t: e.t, type: e.card === 'y' ? 'yc' : 'rc', team: 1 - e.team, no: e.cno != null ? String(e.cno) : null, fromFk: e.id });
+      }
+    });
+    return out;
+  }
+  function fkText(sp, e) {
+    const kind = e.fk === 'i' ? '間接' : e.fk === 'd' ? '直接' : '';
+    const card = e.card === 'y' ? 'イエロー' : e.card === 'r' ? 'レッド' : '';
+    return `フリーキック${kind ? '（' + kind + '）' : ''}${card ? `・${card}${e.cno != null ? ' #' + e.cno : ''}` : ''}`;
+  }
+
   /* ---------- 一時退場・退場 ---------- */
   /* t の時点で：outs（もう出られない選手 'チーム:番号'）, susp（一時退場中 [{ team, no, rem, label }]）, short（チームごとの人数の少なさ） */
   function penalties(sp, game, t) {
     const now = playTime(game, t);
     const outs = new Set(), susp = [];
     const cnt = {};
-    ST.sorted(game).forEach((e) => {
+    withCards(sp, game).forEach((e) => {
       if (e.t > t + 1e-9 || e.team == null) return;
       const d = sp.TYPE[e.type];
       if (!d || !(d.susp || d.suspOpt || d.out || d.teamSusp || d.yellow)) return;
@@ -158,15 +178,21 @@
   function rowTypes(sp, sprefs, p) {
     if (p === SO) return ['sog', 'sox'];
     const on = new Set(sp.base);
-    (sp.toggles || []).forEach((tg) => { if (tg.row !== 'team' && isOn(sprefs, tg)) tg.types.forEach((x) => on.add(x)); });
+    (sp.toggles || []).forEach((tg) => { if (!tg.row && isOn(sprefs, tg)) (tg.types || []).forEach((x) => on.add(x)); });
     return sp.rowOrder.filter((x) => on.has(x));
+  }
+  /* 設定で選ぶ種類（row：'team' チームの行・'global' 画面の下）：その種類を入れた設定がどれも「使わない」なら出さない。設定に入っていない種類はいつも出す */
+  function chosen(sp, sprefs, list, row) {
+    const tgs = (sp.toggles || []).filter((x) => x.row === row);
+    return (list || []).filter((type) => { const mine = tgs.filter((x) => (x.types || []).includes(type)); return !mine.length || mine.some((x) => isOn(sprefs, x)); });
   }
   /* チームの行（チームとしての記録：CK・FK・タイムアウト…）。設定で消せる。PK戦の間はなし */
   function teamTypes(sp, sprefs, p) {
     if (p === SO || !sp.teamTypes || !sp.teamTypes.length) return [];
-    const tg = (sp.toggles || []).find((x) => x.row === 'team');
-    return !tg || isOn(sprefs, tg) ? sp.teamTypes.slice() : [];
+    return chosen(sp, sprefs, sp.teamTypes, 'team');
   }
+  /* 画面の下の、いつでも押せるボタン（★ あとで見る など） */
+  function globalTypes(sp, sprefs) { return chosen(sp, sprefs, sp.globalTypes || [], 'global'); }
   function isOn(sprefs, tg) { const r = (sprefs && sprefs.rows) || {}; return r[tg.key] != null ? !!r[tg.key] : !!tg.def; }
   const WEIGHT = (sp, id) => ((sp.TYPE[id] || {}).kind === 'miss' ? 0.75 : 1);
   /* 一覧で直すときに選べる種類 */
@@ -176,7 +202,7 @@
     const ids = [];
     const add = (x) => { if (!ids.includes(x) && sp.TYPE[x]) ids.push(x); };
     rowTypes(sp, sprefs, 1).forEach(add);
-    (sp.teamTypes || []).forEach(add);
+    teamTypes(sp, sprefs, 1).forEach(add);
     (sp.globalTypes || []).forEach(add);
     if (!ids.includes(e.type)) add(e.type);
     return ids;
@@ -192,7 +218,7 @@
       const blank = () => ({ c: {}, pts: 0 });
       team.players.forEach((p) => byNo.set(p.no, Object.assign({ no: p.no, name: p.name }, blank())));
       const unknown = blank(), total = blank();
-      (game.events || []).forEach((e) => {
+      withCards(sp, game).forEach((e) => {
         const d = sp.TYPE[e.type];
         if (!d || d.meta || e.team !== tm) return;
         let s = unknown;
@@ -200,7 +226,11 @@
           if (!byNo.has(e.no)) byNo.set(e.no, Object.assign({ no: e.no, name: '', extra: true }, blank()));
           s = byNo.get(e.no);
         }
-        [s, total].forEach((x) => { x.c[e.type] = (x.c[e.type] || 0) + 1; x.pts += d.pts || 0; });
+        [s, total].forEach((x) => {
+          x.c[e.type] = (x.c[e.type] || 0) + 1;
+          x.pts += d.pts || 0;
+          if (d.detail === 'fk' && e.fk) { const k = e.fk === 'i' ? 'fki' : 'fkd'; x.c[k] = (x.c[k] || 0) + 1; }      // 直接・間接の数
+        });
       });
       const rows = Array.from(byNo.values()).sort((a, b) => ST.cmpNo(a.no, b.no));
       return { team: tm, rows, unknown, total };
@@ -209,6 +239,7 @@
   /* 集計の表の列：{ key, label, n（数える種類）, a（打った数に入れる種類。あれば「成功/打った数」）, pts（得点） }。記録のある列だけ出す */
   function colValue(col, s) {
     if (col.pts) return s.pts ? String(s.pts) : '';
+    if (col.f) { const v = col.f(s); return v ? String(v) : ''; }
     const n = (col.n || []).reduce((m, t) => m + (s.c[t] || 0), 0);
     if (col.a) { const a = col.a.reduce((m, t) => m + (s.c[t] || 0), 0); return a ? `${n}/${a}` : ''; }
     return n ? String(n) : '';
@@ -248,6 +279,7 @@
     const d = sp.TYPE[e.type];
     if (!d) return e.type;
     if (d.so) return `${sp.shootout || 'PK戦'} ${d.label}`;
+    if (d.detail === 'fk') return fkText(sp, e);
     return d.label;
   }
   /* ピリオドの時間の呼び名：「前半 23:41」「後半 40+1:05」 */
@@ -292,7 +324,7 @@
       family: 'team', prec: 10, hasTeams: true, periodNames: ['前半', '後半', '延長前半', '延長後半'], SO,
       globalTypes: ['mark']
     }, def);
-    sp.TYPES = COMMON.concat(def.TYPES);
+    sp.TYPES = COMMON.filter((c) => !def.TYPES.some((d) => d.id === c.id)).concat(def.TYPES);      // 種目の側で同じ id を書けば、そちらを使う
     sp.TYPE = {};
     sp.TYPES.forEach((d) => { sp.TYPE[d.id] = d; });
     sp.defaultOpts = () => Object.assign({ len: def.lenDefault, elen: def.elenDefault }, def.moreOpts ? def.moreOpts() : {});
@@ -313,6 +345,10 @@
     sp.score = score; sp.soScore = shootout; sp.scoreText = scoreText;
     sp.rowTypes = (sprefs, p) => rowTypes(sp, sprefs, p);
     sp.teamTypesOf = (sprefs, p) => teamTypes(sp, sprefs, p);
+    sp.globalTypesOf = (sprefs) => globalTypes(sp, sprefs);
+    sp.withCards = (game) => withCards(sp, game);
+    sp.fkText = (e) => fkText(sp, e);
+    sp.isOn = (sprefs, key) => { const tg = (sp.toggles || []).find((x) => x.key === key); return tg ? isOn(sprefs, tg) : false; };
     sp.weight = (id) => WEIGHT(sp, id);
     sp.editTypes = (game, e, sprefs) => editTypes(sp, game, e, sprefs);
     sp.stats = stats; sp.colValue = colValue; sp.usedCols = (st) => usedCols(sp, st); sp.isEmpty = isEmpty;
@@ -321,6 +357,14 @@
     sp.csvEvents = csvEvents; sp.csvBox = csvBox;
     sp.cleanEvent = (e) => {
       if (e.type === 'period' || e.type === 'pend') return isFinite(e.period) && e.period >= 1 ? { period: Math.min(SO, Math.round(e.period)) } : null;
+      if ((sp.TYPE[e.type] || {}).detail === 'fk') {
+        const o = {};
+        if (e.fk === 'd' || e.fk === 'i') o.fk = e.fk;
+        if (e.card === 'y' || e.card === 'r' || e.card === 'n') o.card = e.card;
+        const cno = e.cno != null ? ST.normNo(e.cno) : null;
+        if (cno != null) o.cno = cno;
+        return o;
+      }
       return {};
     };
     sp.keepFirst = true;               // スタートの記録（前半の始まり）は、取り消し・消すができない（時刻は直せる）
@@ -363,45 +407,71 @@
   }
   ST.teamSport = teamSport;
 
-  /* ========== サッカー ========== */
+  /* ========== サッカー ==========
+     ボタンは、使うものを設定で1つずつ選べる（記録用・分析用）。はじめは：
+       記録用：ゴール（選手の行）・ゴールキック・フリーキック（直接・間接／カードと背番号）・コーナーキック（チームの行）
+       分析用：シュート（何番が打ったか。選手の行）・あとでチェック（画面の下）
+     動画で見返すとき（review.js）の場面の長さ：シュート・ゴールは 30 秒前〜5 秒後、あとでチェックは 10 秒前〜10 秒後（設定で変えられる） */
   teamSport({
-    id: 'soccer', name: 'サッカー', icon: '⚽', desc: 'ゴール・シュート・アシスト・カード・CK／FK。前半・後半とアディショナルタイム、PK戦',
+    id: 'soccer', name: 'サッカー', icon: '⚽', desc: 'ゴールキック・フリーキック（直接・間接・カード）・コーナーキック・シュート・あとでチェック。前半・後半・PK戦。撮影して場面を見返す',
     lenChoices: [45, 40, 35, 30, 25, 20, 15, 12, 10], lenDefault: 40, lenNote: '高校 40 分・中学 30〜35 分・一般 45 分・8人制（小学生）15〜20 分',
     elenChoices: [15, 10, 5], elenDefault: 10,
     shootout: 'PK戦', shootoutShort: 'PK', twoYellowOut: true, redShort: true,
     presets: [['1〜11', '1-11'], ['1〜18', '1-18'], ['1〜20', '1-20'], ['1〜25', '1-25']],
-    start: 'キックオフ',
+    start: 'キックオフ', camWide: 'ピッチ全体',
+    win: { shot: [30, 5], mark: [10, 10], other: [10, 10] },
     TYPES: [
       { id: 'goal', btn: 'ゴール', label: 'ゴール', pts: 1, kind: 'made', col: C.goal, shot: true },
-      { id: 'shot', btn: 'シュート', btnShort: '×', label: 'シュート（外れ・止められた）', short: 'シュート', kind: 'miss', col: C.goal, shot: true, of: 'goal' },
+      { id: 'shot', btn: 'シュート', btnShort: 'シュ', label: 'シュート（外れ・止められた）', short: 'シュート', kind: 'miss', col: C.goal, shot: true, of: 'goal' },
       { id: 'ast', btn: 'アシスト', btnShort: 'A', label: 'アシスト', kind: 'good', col: C.ast },
       { id: 'save', btn: 'セーブ', label: 'セーブ（GK）', kind: 'good', col: C.save },
       { id: 'foul', btn: 'ファウル', btnShort: 'F', label: 'ファウル', kind: 'foul', col: C.foul },
-      { id: 'yc', btn: '警告', label: '警告（イエロー）', kind: 'card', col: C.yc, yellow: true },
-      { id: 'rc', btn: '退場', label: '退場（レッド）', kind: 'card', col: C.rc, out: true },
-      { id: 'ck', btn: 'CK', label: 'コーナーキック', kind: 'set', col: C.set },
-      { id: 'fk', btn: 'FK', label: 'フリーキック', kind: 'set', col: C.set },
-      { id: 'off', btn: 'オフサイド', btnShort: 'OS', label: 'オフサイド', kind: 'set', col: C.set }
+      { id: 'yc', btn: '警告', label: 'イエローカード', short: 'イエロー', kind: 'card', col: C.yc, yellow: true },
+      { id: 'rc', btn: '退場', label: 'レッドカード', short: 'レッド', kind: 'card', col: C.rc, out: true },
+      { id: 'gk', btn: 'ゴールキック', btnShort: 'GK', label: 'ゴールキック', kind: 'set', col: '#0f766e' },
+      { id: 'fk', btn: 'フリーキック', btnShort: 'FK', label: 'フリーキック', kind: 'set', col: '#6d28d9', detail: 'fk' },
+      { id: 'ck', btn: 'コーナーキック', btnShort: 'CK', label: 'コーナーキック', kind: 'set', col: '#1d4ed8' },
+      { id: 'off', btn: 'オフサイド', btnShort: 'OS', label: 'オフサイド', kind: 'set', col: C.set },
+      { id: 'mark', btn: '★ あとでチェック', label: '★ あとでチェック', short: 'あとでチェック', kind: 'mark', global: true }
     ],
-    base: ['goal', 'shot'],
+    base: [],
     rowOrder: ['goal', 'shot', 'ast', 'save', 'foul', 'yc', 'rc'],
-    teamTypes: ['ck', 'fk', 'off'],
+    teamTypes: ['gk', 'fk', 'ck', 'off'],
+    togglesTitle: 'ボタン（使うものを選ぶ）',
+    togglesNote: 'チェックを外したボタンは、記録の画面に出しません（それまでの記録は残ります）。ボタンが少ないほど、1つずつが大きくなります。',
+    toggleSecs: [['rec', '記録用（公式の記録・数を数える）'], ['ana', '分析用（自分たちのふり返り・動画で見返す）']],
     toggles: [
-      { key: 'ast', label: 'アシスト', types: ['ast'] },
-      { key: 'card', label: '警告・退場（イエロー・レッド。警告2回で退場の印）', types: ['yc', 'rc'] },
-      { key: 'foul', label: 'ファウル', types: ['foul'] },
-      { key: 'save', label: 'セーブ（GK）', types: ['save'] },
-      { key: 'team', label: 'チームの行（CK・FK・オフサイド）', types: ['ck', 'fk', 'off'], row: 'team', def: true }
+      { key: 'goal', sec: 'rec', label: 'ゴール（得点。だれが決めたか）', types: ['goal'], def: true },
+      { key: 'gk', sec: 'rec', label: 'ゴールキック', types: ['gk'], row: 'team', def: true },
+      { key: 'fk', sec: 'rec', label: 'フリーキック', types: ['fk'], row: 'team', def: true },
+      { key: 'fkKind', sec: 'rec', sub: true, label: '直接・間接を分けて数える（フリーキックを押したあとに選ぶ）', def: true },
+      { key: 'fkCard', sec: 'rec', sub: true, label: 'そのときのカード（イエロー・レッド・なし）と、もらった背番号も選ぶ', def: true },
+      { key: 'ck', sec: 'rec', label: 'コーナーキック', types: ['ck'], row: 'team', def: true },
+      { key: 'card', sec: 'rec', label: 'イエロー・レッド（選手の行。フリーキックとは別に記録するとき）', types: ['yc', 'rc'] },
+      { key: 'off', sec: 'rec', label: 'オフサイド', types: ['off'], row: 'team' },
+      { key: 'shot', sec: 'ana', label: 'シュート（何番が打ったか。外れ・止められた）', types: ['shot'], def: true },
+      { key: 'mark', sec: 'ana', label: 'あとでチェック（★。だれのかは決めずに、時刻だけ）', types: ['mark'], row: 'global', def: true },
+      { key: 'ast', sec: 'ana', label: 'アシスト', types: ['ast'] },
+      { key: 'save', sec: 'ana', label: 'セーブ（GK）', types: ['save'] },
+      { key: 'foul', sec: 'ana', label: 'ファウル', types: ['foul'] }
     ],
     cols: [
       { key: 'pts', label: '得点', pts: true }, { key: 'shot', label: 'シュート', n: ['goal', 'shot'] }, { key: 'ast', label: 'アシスト', n: ['ast'] },
-      { key: 'save', label: 'セーブ', n: ['save'] }, { key: 'foul', label: 'ファウル', n: ['foul'] }, { key: 'yc', label: '警告', n: ['yc'] }, { key: 'rc', label: '退場', n: ['rc'] },
-      { key: 'ck', label: 'CK', n: ['ck'] }, { key: 'fk', label: 'FK', n: ['fk'] }, { key: 'off', label: 'オフサイド', n: ['off'] }
+      { key: 'save', label: 'セーブ', n: ['save'] }, { key: 'foul', label: 'ファウル', n: ['foul'] }, { key: 'yc', label: 'イエロー', n: ['yc'] }, { key: 'rc', label: 'レッド', n: ['rc'] },
+      { key: 'gk', label: 'GK', n: ['gk'] }, { key: 'fk', label: 'FK', n: ['fk'] }, { key: 'fkd', label: 'FK直接', n: ['fkd'] }, { key: 'fki', label: 'FK間接', n: ['fki'] },
+      { key: 'ck', label: 'CK', n: ['ck'] }, { key: 'off', label: 'オフサイド', n: ['off'] }
     ],
-    moreHelp: [['サッカーのしくみ', [
-      'シュート：「ゴール」と「シュート」（外れ・止められた）で、集計にシュート数と決定率が出ます',
-      '警告・退場：設定で出せます。警告2回で、その選手の行に「退場」の印。チームの帯に「−1」（1人少ない）',
+    moreHelp: [['サッカーのボタン', [
+      '記録用：ゴール（選手の行）、ゴールキック・フリーキック・コーナーキック（チームの行。押したチームが蹴る）',
+      'フリーキック：押した瞬間の時刻で残し、そのあと「直接・間接」と「カード（なし・イエロー・レッド）」、カードをもらった選手の背番号（相手のチーム）を選びます。選ばずに閉じても、フリーキックとして残ります。あとから「記録の一覧」でも直せます',
+      'イエロー2回（フリーキックのカードも数える）で、その選手の行に「退場」の印。チームの帯に「−1」（1人少ない）',
+      '分析用：シュート（何番が打ったか）、あとでチェック（★。気になった場面の時刻だけ）',
+      'どのボタンを使うかは「≡ メニュー」→「設定」で、1つずつ選べます',
       'オウンゴールは、相手チームの「？」の行の「ゴール」で記録してください（得点は相手に入ります）'
+    ]], ['動画で見返す', [
+      '撮影しながら記録した動画（または、あとで選んだ試合の動画）で、記録した場面を見返せます（「≡ メニュー」→「場面を見返す」、試合のあとの札の「🎬 場面を見る」）',
+      '場面の長さ：シュート・ゴールは 30 秒前〜5 秒後、あとでチェックは 10 秒前〜10 秒後（見返す画面で、前と後の秒数を変えられます）',
+      '再生の速さ（0.5〜4倍）を選べます。続けて再生すると、選んだ場面だけを順に見られます'
     ]]]
   });
 

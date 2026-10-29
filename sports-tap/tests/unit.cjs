@@ -47,11 +47,19 @@ ok(gl.team === 0 && gl.no === '9', '得点のある記録は「チームなし�
 eq(sc.score(g), [2, 0], '得点：ゴールだけを数える');
 eq(ST.scoreText(g), '2 − 0', '得点の文字');
 eq(ST.eventText(g, g.events[1], true), '致遠館 #10 たけし ゴール', '一覧の呼び名');
-eq(sc.rowTypes({ rows: {} }, 1), ['goal', 'shot'], 'ふだんの選手のボタン：ゴール・シュート');
-eq(sc.rowTypes({ rows: { ast: true, card: true } }, 1), ['goal', 'shot', 'ast', 'yc', 'rc'], '設定で足す：アシスト・警告・退場（並びは決まった順）');
-eq(sc.teamTypesOf({ rows: {} }, 1), ['ck', 'fk', 'off'], 'チームの行：CK・FK・オフサイド（はじめから出す）');
-eq(sc.teamTypesOf({ rows: { team: false } }, 1), [], 'チームの行は設定で消せる');
+eq(sc.rowTypes({ rows: {} }, 1), ['goal', 'shot'], 'ふだんの選手のボタン：ゴール（記録用）・シュート（分析用）');
+eq(sc.rowTypes({ rows: { ast: true, card: true } }, 1), ['goal', 'shot', 'ast', 'yc', 'rc'], '設定で足す：アシスト・イエロー・レッド（並びは決まった順）');
+eq(sc.rowTypes({ rows: { goal: false, shot: false } }, 1), [], 'ゴール・シュートも「使わない」にできる');
+eq(sc.teamTypesOf({ rows: {} }, 1), ['gk', 'fk', 'ck'], 'チームの行：ゴールキック・フリーキック・コーナーキック（はじめから出す）');
+eq(sc.teamTypesOf({ rows: { gk: false, off: true } }, 1), ['fk', 'ck', 'off'], 'チームの行のボタンも1つずつ選べる（ゴールキックを消す・オフサイドを足す）');
+eq(sc.globalTypesOf({ rows: {} }), ['mark'], '画面の下：あとでチェック');
+eq(sc.globalTypesOf({ rows: { mark: false } }), [], 'あとでチェックも「使わない」にできる');
+eq([sc.isOn({ rows: {} }, 'fkKind'), sc.isOn({ rows: {} }, 'fkCard'), sc.isOn({ rows: { fkCard: false } }, 'fkCard')], [true, true, false], 'フリーキックの直接・間接とカード：はじめは選ぶ（設定で外せる）');
+eq(sc.toggleSecs.map((x) => x[0]), ['rec', 'ana'], '設定は「記録用」「分析用」に分けて並べる');
 eq([sc.weight('shot'), sc.weight('goal')], [0.75, 1], '失敗のボタンは少し細く');
+eq(sc.win, { shot: [30, 5], mark: [10, 10], other: [10, 10] }, '動画で見返す場面の長さ：シュート 30 秒前〜5 秒後・あとでチェック 10 秒前〜10 秒後');
+eq(sc.TYPE.mark.label, '★ あとでチェック', 'サッカーは「あとでチェック」（ほかの種目は「あとで見る」のまま）');
+eq(ST.SPORTS.futsal.TYPE.mark.label, '★ あとで見る', '（フットサルは「あとで見る」）');
 
 section('サッカー：ピリオドと時計');
 let c = sc.clockAt(g, 600);
@@ -74,6 +82,38 @@ const p2 = g.events.find((e) => e.type === 'period' && e.period === 2);
 p2.t = 3550;
 eq(sc.periodAt(g, 3500), 1, 'ピリオドの始まりを直すと、記録のピリオドも変わる（3500 は前半のハーフタイムの間）');
 p2.t = 3400;
+
+section('サッカー：フリーキック（直接・間接・カード）');
+{
+  const gf = ST.newGame({ sport: 'soccer', now: T0, teams: [{ name: '致遠館', players: ST.parseNumbers('1-11') }, { name: '城南', players: ST.parseNumbers('1-11') }] });
+  gf.startedAt = T0; sc.onStart(gf);
+  const f1 = ST.addEvent(gf, { t: 50, type: 'fk', team: 0, no: null, fk: 'd', card: 'y', cno: '5' });
+  ST.addEvent(gf, { t: 80, type: 'fk', team: 0, no: null, fk: 'i', card: 'n' });
+  ST.addEvent(gf, { t: 90, type: 'fk', team: 1, no: null, fk: 'd', card: 'n' });
+  ST.addEvent(gf, { t: 120, type: 'gk', team: 1, no: null });
+  ST.addEvent(gf, { t: 130, type: 'ck', team: 0, no: null });
+  eq(sc.typeLabel(gf, f1), 'フリーキック（直接）・イエロー #5', '呼び名：フリーキック（直接）・イエロー #5');
+  eq(ST.eventText(gf, f1, true), '致遠館 フリーキック（直接）・イエロー #5', '一覧の呼び名（蹴ったのは致遠館）');
+  let pf = sc.penalties(gf, 100);
+  ok(!pf.outs.has('1:5'), 'フリーキックのイエロー1回：相手の #5 はまだ出られる');
+  ST.addEvent(gf, { t: 300, type: 'fk', team: 0, no: null, fk: 'd', card: 'y', cno: '5' });
+  pf = sc.penalties(gf, 310);
+  ok(pf.outs.has('1:5') && pf.short[1] === 1, 'フリーキックのイエロー2回：相手の #5 は退場の印・相手は1人少ない', { outs: Array.from(pf.outs), short: pf.short });
+  const st = sc.stats(gf);
+  const c0 = st[0].total.c, c1 = st[1].total.c;
+  eq([c0.fk, c0.fkd, c0.fki, c1.fk, c1.fkd, c1.gk, c0.ck], [3, 2, 1, 1, 1, 1, 1], '集計：致遠館の FK 3（直接 2・間接 1）・城南の FK 1（直接）・城南の GK 1・致遠館の CK 1');
+  const r5 = st[1].rows.find((r) => r.no === '5');
+  eq([r5.c.yc, c1.yc, c0.yc || 0], [2, 2, 0], 'カードは、もらった選手（相手の #5）の行に数える');
+  eq(['fk', 'fkd', 'fki', 'yc'].map((k) => sc.colValue(sc.cols.find((x) => x.key === k), st[0].total)), ['3', '2', '1', ''], '集計の表：FK・FK直接・FK間接');
+  const ex2 = ST.exportData(gf);
+  const fkEx = ex2.events.find((e) => e.id === f1.id);
+  ok(fkEx.fk === 'd' && fkEx.card === 'y' && fkEx.cno === '5' && fkEx.text === '致遠館 フリーキック（直接）・イエロー #5', '書き出す JSON：直接・カード・背番号と呼び名');
+  const back2 = ST.importData(JSON.stringify(ex2));
+  const fkBack = back2.events.find((e) => e.id === f1.id);
+  ok(fkBack && fkBack.fk === 'd' && fkBack.card === 'y' && fkBack.cno === '5', '読み込み：フリーキックのくわしい記録も戻る', fkBack);
+  const csvRows = sc.csvEvents(gf);
+  ok(csvRows.some((r) => r[8] === 'フリーキック（間接）'), '記録の一覧（CSV）にも「フリーキック（間接）」');
+}
 
 section('サッカー：PK戦');
 ST.addEvent(g, { t: 6000, type: 'period', period: 9 });

@@ -7,6 +7,9 @@
   const ST = root.ST;
   const { h, $ } = ST.ui;
   const BASKET_URL = '../basket-tap/';
+  const ONLY = ST.CONFIG.only;           // 1つの種目だけのアプリ（サッカー タップ記録）なら、その種目の id
+  /* 専用のアプリがある種目（種目を選ぶ画面では、そのアプリへのリンクにする） */
+  const STANDALONE = ONLY ? {} : { soccer: { href: '../soccer-tap/', note: '専用のアプリ「サッカー タップ記録」（ゴールキック・フリーキック・コーナーキック・シュート・あとでチェック。撮影して場面を見返す）' } };
 
   const S = {
     view: 'picker',
@@ -23,6 +26,7 @@
   };
   const now = () => Date.now();
   let cam = null;            // 撮影しながら記録する（livecam.js。init で作る）
+  let rv = null;             // 動画で場面を見返す（review.js。init で作る）
   const sport = () => ST.SPORTS[(S.game && S.game.sport) || S.sport] || null;
   const viewOf = (sp) => (sp && ST.VIEWS[sp.family]) || {};
   const sprefs = (id) => ST.store.sportPrefs(S.prefs, id || (sport() || {}).id);
@@ -64,11 +68,12 @@
       if (u.href !== root.location.href) history.replaceState(history.state, '', u.href);
     } catch (e) { /* file:// など */ }
     const sp = ST.SPORTS[id];
-    document.title = sp ? `${sp.name} タップ記録` : ST.APP;
+    document.title = ONLY ? ST.APP : sp ? `${sp.name} タップ記録` : ST.APP;
   }
 
   /* ---------- 画面の切り替え ---------- */
   function go(view) {
+    if (S.view === 'review' && rv) rv.close();
     S.view = view;
     ST.ui.closeSheet(true);
     if (S.L && S.L.destroy) S.L.destroy();
@@ -82,6 +87,17 @@
     else if (view === 'home') renderHome();
     else if (view === 'setup') renderSetup();
     else if (view === 'live') buildLive();
+    root.scrollTo(0, 0);
+  }
+  /* 動画で場面を見返す（vid：はじめに開く撮影した動画） */
+  function openReview(g, vid) {
+    if (!rv) return;
+    ST.ui.closeSheet(true);
+    if (S.view === 'live' && S.L && S.L.destroy) S.L.destroy();
+    S.L = null;
+    if (cam) cam.detach();
+    S.view = 'review';
+    rv.render(g || S.game, vid);
     root.scrollTo(0, 0);
   }
   function openGame(game) {
@@ -113,6 +129,8 @@
             ST.SPORT_ORDER.map((id) => {
               const sp = ST.SPORTS[id];
               const n = ST.store.games(id).length;
+              const solo = STANDALONE[id];
+              if (solo) return h('a', { class: 'sportbtn solo', href: solo.href, dataset: { solo: id } }, h('span', { class: 'si', 'aria-hidden': 'true' }, sp.icon), h('span', { class: 'st' }, h('b', null, sp.name), h('small', null, solo.note)), h('i', { class: 'sn' }, '別のアプリ'));
               return h('button', { class: 'sportbtn', dataset: { sport: id }, onclick: () => { setSport(id); go('home'); } },
                 h('span', { class: 'si', 'aria-hidden': 'true' }, sp.icon), h('span', { class: 'st' }, h('b', null, sp.name), h('small', null, sp.desc)), n ? h('i', { class: 'sn' }, `${n}試合`) : null);
             }),
@@ -153,7 +171,7 @@
     const going = goingGame();
     V.append(
       h('header', { class: 'hbar' },
-        h('button', { class: 'btn small', id: 'btnSports', onclick: () => { setSport(null); go('picker'); } }, '← 種目'),
+        ONLY ? null : h('button', { class: 'btn small', id: 'btnSports', onclick: () => { setSport(null); go('picker'); } }, '← 種目'),
         h('div', { class: 'brand' }, h('span', { class: 'logo', 'aria-hidden': 'true' }, sp.icon), h('div', null, h('b', null, `${sp.name} タップ記録`), h('small', null, sp.desc))),
         h('button', { class: 'btn icon', id: 'btnHelp', 'aria-label': '使い方', onclick: () => help(sp) }, '？')),
       h('main', { class: 'home' },
@@ -162,10 +180,9 @@
         list.length ? h('section', { class: 'card' }, h('h2', null, `これまでの${sp.unit || '試合'}`), h('div', { class: 'games' }, list.map(gameRow))) : h('section', { class: 'card steps3' },
           h('h2', null, 'つかいかた'),
           h('ol', null, (sp.steps || []).map(([b, s]) => h('li', null, h('b', null, b), h('span', null, s))))),
-        h('section', { class: 'card tools' }, h('h2', null, '撮影しながら記録する・動画から場面を切り出す'),
-          h('p', null, '記録の画面で「📹 撮影しながら記録する」を選ぶと、この端末のカメラで録画しながら記録できます（録画と記録の時刻はぴったり合います）。終わったら「🎬 場面を切り出す」で、記録した場面（ゴール・アタック など）を、選手ごと・プレーごとに動画から切り出せます。'),
+        h('section', { class: 'card tools' }, h('h2', null, '撮影しながら記録する・動画で場面を見返す'),
+          h('p', null, '記録の画面で「📹 撮影しながら記録する」を選ぶと、この端末のカメラで録画しながら記録できます（録画と記録の時刻はぴったり合います）。終わったら「🎬 場面を見る」で、記録した場面を、選手ごと・プレーごとに、前と後の秒数を決めて見返せます（ほかのカメラで撮った試合の動画も、1か所だけ時刻を合わせれば見返せます）。'),
           h('div', { class: 'row' },
-            h('a', { class: 'btn', href: '../basket-clips/', target: '_blank', rel: 'noopener' }, '🎬 バスケ得点クリップを開く（場面の切り出し）'),
             h('button', { class: 'btn', onclick: importFile }, '📂 記録のファイルを開く'))),
         h('p', { class: 'note' }, '🔒 記録と撮影した動画は、この端末のブラウザの中だけに保存します（どこにも送りません）。')));
   }
@@ -465,6 +482,7 @@
           h('button', { class: 'btn primary', onclick: openStats }, '📊 集計を見る'),
           h('button', { class: 'btn primary', onclick: () => openExport(g) }, '💾 書き出す')),
         cam ? cam.videoItems(g) : null,
+        rv && !(cam && cam.videoCount(g)) ? h('button', { class: 'btn', id: 'btnReview', onclick: () => openReview(g) }, '🎬 試合の動画で場面を見返す') : null,
         h('button', { class: 'btn small', onclick: reopen }, '続きを記録する（まちがえて終えたとき）')));
     }
     el.hidden = started && !ended;
@@ -572,7 +590,6 @@
       const v = await cam.close();
       if (!(v && v.rotateLost)) say(cam.videoCount(g) ? '動画を保存しました' : `${sport().unit || '試合'}を終えました`, 'ok', 3000);
     }
-    ST.store.saveExport(g);              // 「バスケ得点クリップ」の「この端末で記録した試合」から読めるように
     ST.ui.keepAwake(false);
     updateLive();
     openStats();
@@ -595,10 +612,11 @@
   function onPop() {
     S.guarded = false;
     if (ST.ui.sheetOpen()) { ST.ui.closeSheet(); guard(); return; }
+    if (S.view === 'review') { go('live'); if (S.game && S.game.startedAt && !S.game.endedAt) guard(); return; }
     if (S.view === 'live' && S.game && S.game.startedAt && !S.game.endedAt) { guard(); say('記録中です（終えるときは ≡ メニューから）', 'warn', 4000); return; }
     if (S.view === 'setup' && S.setupFor === 'edit' && S.game) { go('live'); if (S.game.startedAt && !S.game.endedAt) guard(); return; }
     if (S.view === 'live' || S.view === 'setup') go('home');
-    else if (S.view === 'home') { setSport(null); go('picker'); }
+    else if (S.view === 'home' && !ONLY) { setSport(null); go('picker'); }
   }
 
   /* ---------- メニュー ---------- */
@@ -612,6 +630,7 @@
       body: h('div', { class: 'menu' },
         extra.map((x) => item(x.icon, x.label, x.sub, x.fn)),
         item('📋', '記録の一覧', '時刻・選手・記録を直す、消す', () => openLog()),
+        rv ? item('🎬', '場面を見返す（動画）', '撮影した動画・試合の動画で、記録した場面を見る（前と後の秒数・速さを選べる）', () => openReview(g)) : null,
         item('📊', '集計', sp.statsSub || '選手ごとの記録', openStats),
         item('👥', sp.setupEditTitle || 'チーム・形式を直す', sp.setupEditSub || '名前・色・背番号・試合の形式', () => { S.setupFor = 'edit'; go('setup'); }),
         item('🎛', '設定', 'ボタンの組み合わせ・名前の表示・音・画面の色', openSettings),
@@ -728,13 +747,13 @@
     ST.ui.sheet({
       title: '書き出す',
       body: h('div', { class: 'export' },
-        h('button', { class: 'xitem', id: 'btnExpJson', onclick: () => go2('json') }, h('b', null, '🎬 記録のファイル（JSON）'), h('small', null, '「バスケ得点クリップ」で試合の動画と一緒に開くと、記録した場面を動画から切り出せます。この記録アプリで開き直すこともできます')),
+        h('button', { class: 'xitem', id: 'btnExpJson', onclick: () => go2('json') }, h('b', null, '🗂 記録のファイル（JSON）'), h('small', null, 'この記録アプリで開き直せるファイル（ほかの端末でも）。時刻つきなので、試合の動画と合わせて見返せます')),
         exportsOf(sp).map((x) => h('button', { class: 'xitem', id: 'btnExp_' + x.key, onclick: () => go2(x) }, h('b', null, x.label), h('small', null, x.desc))),
         h('p', { class: 'note' }, share ? 'スマホでは「共有」が開きます（AirDrop・「ファイル」に保存・LINE など）。' : 'ダウンロードのフォルダに保存します。'),
         cam && cam.videoCount(g) ? h('h4', { class: 'vhead' }, '📹 撮影した動画（MP4）') : null,
         cam ? cam.videoItems(g) : null,
-        cam && cam.videoCount(g) ? h('p', { class: 'note' }, '動画を保存したら、記録のファイルと一緒に「バスケ得点クリップ」で開くと、ほかの端末（パソコンなど）でも、時刻あわせなしで場面を切り出せます。') : null,
-        h('a', { class: 'btn', href: '../basket-clips/', target: '_blank', rel: 'noopener' }, '🎬 バスケ得点クリップを開く（動画から場面を切り出す）'))
+        cam && cam.videoCount(g) ? h('p', { class: 'note' }, '保存した動画は、ほかの端末（パソコンなど）でも、記録のファイルを開いて「場面を見返す」→「試合の動画を選ぶ」で見返せます（時刻は1か所だけ合わせます）。') : null,
+        rv && S.game && S.game.id === g.id ? h('button', { class: 'btn', id: 'btnExpReview', onclick: () => openReview(g) }, '🎬 動画で場面を見返す') : null)
     });
   }
 
@@ -744,9 +763,12 @@
     const body = h('div', { class: 'settings' });
     const box = (obj, key, label, defOn, after) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', dataset: { pref: key }, checked: obj[key] != null ? !!obj[key] : !!defOn, onchange: (e) => { obj[key] = e.target.checked; savePrefs(); if (after) after(); } }), label);
     if (sp.toggles && sp.toggles.length) {
+      // 種目によっては「記録用」「分析用」に分けて並べる（sp.toggleSecs）。sub：その上の項目の中の選び方（字下げ）
+      const tbox = (tg) => { const el = box(pr.rows, tg.key, tg.label, tg.def, refresh); if (tg.sub) el.classList.add('sub'); return el; };
+      const secs = sp.toggleSecs ? sp.toggleSecs.map(([k, lab]) => h('div', { class: 'togsec', dataset: { sec: k } }, h('b', null, lab), sp.toggles.filter((tg) => tg.sec === k).map(tbox))) : sp.toggles.map(tbox);
       body.append(h('section', { class: 'field', id: 'setButtons' }, h('span', null, sp.togglesTitle || '選手のボタン'),
         h('p', { class: 'note' }, sp.togglesNote || `いつもある：${(sp.base || []).map((x) => sp.TYPE[x].btn || sp.TYPE[x].label).join('・')}。下を選ぶと、ボタンが増えます（1つずつは少し小さくなります）。`),
-        sp.toggles.map((tg) => box(pr.rows, tg.key, tg.label, tg.def, refresh))));
+        secs));
     }
     if (sp.family === 'team' || sp.rowNames) {
       body.append(h('section', { class: 'field' }, h('span', null, '記録の画面'),
@@ -777,7 +799,7 @@
           h('li', null, 'スタート前の札、または「≡ メニュー」→「撮影しながら記録」でカメラを開きます。試合が始まる瞬間に赤い「● 録画と記録をスタート」を押すと、録画と記録が同時に始まります（ウォーミングアップから撮るときは「● 録画だけ先に始める」）'),
           h('li', null, '記録の画面に、カメラの映像（ワイプ）が出ます。映像の「＋」「－」か撮影の画面で、小（上の帯の中）・中・大。中・大は、記録のボタンに重ならない所（横長の画面は右、縦長の画面は上）に出し、ボタンは残りの広さに並べ直します'),
           h('li', null, '撮る向きは、撮影の画面で「横向き」か「縦向き」。横向きなら端末を横にしてください（画面の向きのロックを外す）。映像が横倒し・さかさまのときは「↻ 映像を回す」'),
-          h('li', null, `「${sp.unit || '試合'}を終える」で録画も止まり、動画が仕上がります（MP4）。動画ごとに「🎬 場面を切り出す」（同じ端末の「バスケ得点クリップ」で、時刻あわせなしで開く）・「⬇ 保存」（写真・ファイルへ）・「🗑」`),
+          h('li', null, `「${sp.unit || '試合'}を終える」で録画も止まり、動画が仕上がります（MP4）。動画ごとに「🎬 場面を見る」（記録した場面を、前と後の秒数・速さを選んで見返す。時刻あわせはいりません）・「⬇ 保存」（写真・ファイルへ）・「🗑」`),
           h('li', null, '動画はこの端末（このブラウザ）の中に保存します。ほかのアプリに切りかえたり、画面を消したりすると録画は止まり、戻ったところから新しい動画として続けます。電池をたくさん使うので、電源につないでおくと安心です')),
         h('h4', null, 'まちがえたとき'),
         h('ul', null,
@@ -797,7 +819,7 @@
       title: '使い方', wide: true,
       body: h('div', { class: 'help' },
         h('p', null, '「バスケ タップ記録」と同じしくみ（試合を見ながら、押した瞬間の時刻つきで記録する）を、ほかの種目に合わせたものです。'),
-        h('ul', null, ST.SPORT_ORDER.map((id) => { const sp = ST.SPORTS[id]; return h('li', null, h('b', null, `${sp.icon} ${sp.name}`), '：', sp.desc); })),
+        h('ul', null, ST.SPORT_ORDER.map((id) => { const sp = ST.SPORTS[id]; return h('li', null, h('b', null, `${sp.icon} ${sp.name}`), '：', STANDALONE[id] ? STANDALONE[id].note : sp.desc); })),
         h('p', { class: 'note' }, '🔒 記録はこの端末のブラウザの中だけに保存します。どこにも送りません。'))
     });
   }
@@ -820,7 +842,8 @@
   function init() {
     applyTheme();
     // 撮影しながら記録する（カメラ・録画は livecam.js。骨組みの道具を貸す）
-    if (ST.livecam) cam = ST.livecam.create({ S, save, savePrefs, say, update: () => updateLive(), start, guard, sport });
+    if (ST.livecam) cam = ST.livecam.create({ S, save, savePrefs, say, update: () => updateLive(), start, guard, sport, openReview: (g, vid) => openReview(g, vid) });
+    if (ST.review) rv = ST.review.create({ S, save, savePrefs, sprefs: (id) => sprefs(id), timeText, back: () => go('live') });
     if (root.matchMedia) { try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme); } catch (e) { /* 古いブラウザ */ } }
     document.addEventListener('touchstart', () => {}, { passive: true });
     document.addEventListener('contextmenu', (e) => { if (S.view === 'live' && e.target.closest && e.target.closest('.live')) e.preventDefault(); });
@@ -842,6 +865,7 @@
     let want = null;
     try { want = new URL(root.location.href).searchParams.get('s'); } catch (e) { want = null; }
     if (want && !ST.SPORTS[want]) want = null;
+    if (ONLY) want = ONLY;                 // 1つの種目だけのアプリは、いつもその種目のホームから
     const cur = ST.store.current();
     const g = cur ? ST.store.loadGame(cur) : null;
     if (g && g.startedAt && !g.endedAt && (!want || want === g.sport)) { openGame(g); return; }
@@ -850,7 +874,7 @@
     else { setSport(null); go('picker'); }
   }
 
-  ST.app = { S, init, start, undo, redo, openMenu, openLog, openEdit, openStats, openExport, openSettings, endGame, reopen, newGame, go, resume, setSport, rebuild, ctx, cam: () => cam };
+  ST.app = { S, init, start, undo, redo, openMenu, openLog, openEdit, openStats, openExport, openSettings, endGame, reopen, newGame, go, resume, setSport, rebuild, ctx, cam: () => cam, rv: () => rv, openReview };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }

@@ -6,7 +6,8 @@
 (function (root) {
   'use strict';
   const ST = root.ST;
-  const K = { games: 'stap:games', game: 'stap:game:', current: 'stap:current', teams: 'stap:teams', prefs: 'stap:prefs', export: 'stap:export:' };
+  const P = (ST.CONFIG && ST.CONFIG.key) || 'stap';        // 保存のキーの頭（サッカー タップ記録は 'ssoc'。アプリごとに別の保存）
+  const K = { games: P + ':games', game: P + ':game:', current: P + ':current', teams: P + ':teams', prefs: P + ':prefs' };
   const KEEP = 80;          // 覚えておく試合の数（古いものから消す。書き出したファイルは残る）
 
   function ls() { try { return root.localStorage || null; } catch (e) { return null; } }
@@ -31,7 +32,7 @@
     if (!ok || list.length > KEEP) {
       const old = list.slice().sort((a, b) => (a.startedAt || a.at || 0) - (b.startedAt || b.at || 0)).filter((x) => x.id !== game.id);
       const n = ok ? list.length - KEEP : Math.max(5, list.length - KEEP);
-      old.slice(0, n).forEach((x) => { remove(K.game + x.id); remove(K.export + x.id); const i = list.findIndex((y) => y.id === x.id); if (i >= 0) list.splice(i, 1); });
+      old.slice(0, n).forEach((x) => { remove(K.game + x.id); const i = list.findIndex((y) => y.id === x.id); if (i >= 0) list.splice(i, 1); });
       if (!ok) ok = writeJSON(K.game + game.id, game);
     }
     writeJSON(K.games, list);
@@ -39,13 +40,9 @@
   }
   function deleteGame(id) {
     remove(K.game + id);
-    remove(K.export + id);
     writeJSON(K.games, games().filter((x) => x.id !== id));
     if (current() === id) setCurrent(null);
   }
-  /* 書き出す形（記録ごとの呼び名つき）を、この端末にも置いておく。「バスケ得点クリップ」が、種目のルールを知らなくても読めるように
-     （試合を終えたとき・「🎬 場面を切り出す」を押したとき。キー stap:export:<id>） */
-  function saveExport(game) { try { return writeJSON(K.export + game.id, ST.exportData(game)); } catch (e) { return false; } }
   function current() { const s = ls(); try { return s ? s.getItem(K.current) : null; } catch (e) { return null; } }
   function setCurrent(id) { const s = ls(); if (!s) return; try { if (id) s.setItem(K.current, id); else s.removeItem(K.current); } catch (e) { /* 無視 */ } }
 
@@ -94,5 +91,5 @@
     return Promise.resolve(false);
   }
 
-  ST.store = { games, loadGame, saveGame, saveExport, deleteGame, current, setCurrent, teams, saveTeam, deleteTeam, myTeam, prefs, savePrefs, sportPrefs, persist, KEYS: K };
+  ST.store = { games, loadGame, saveGame, deleteGame, current, setCurrent, teams, saveTeam, deleteTeam, myTeam, prefs, savePrefs, sportPrefs, persist, KEYS: K };
 })(typeof window !== 'undefined' ? window : globalThis);

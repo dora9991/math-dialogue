@@ -23,7 +23,10 @@
 (function (root) {
   'use strict';
   const ST = root.ST = root.ST || {};
-  ST.APP = 'スポーツ タップ記録';
+  /* 1つの種目だけのアプリ（サッカー タップ記録 など）は、index.html で先に ST.CONFIG を置く：
+     { app: 'サッカー タップ記録', only: 'soccer', key: 'ssoc'（保存のキーの頭）, db: 'ssoc-media'（撮影した動画の保存場所） } */
+  ST.CONFIG = Object.assign({ app: 'スポーツ タップ記録', only: null, key: 'stap', db: 'stap-media' }, ST.CONFIG || {});
+  ST.APP = ST.CONFIG.app;
   ST.FORMAT = 'sports-tap';
   ST.VERSION = 1;
 
@@ -341,7 +344,7 @@
     if (sp && sp.exportExtra) sp.exportExtra(game, g);
     g.sideNames = sp && sp.sideNames ? sp.sideNames(game) : [ST.teamName(game, 0), ST.teamName(game, 1)];
     // 記録ごとの呼び名（text：「致遠館 #10 たけし ゴール」）と、場面の呼び名（when：「前半 23:41」「3回表」「第2セット」）。
-    // 動画の切り出し（バスケ得点クリップ）が、種目のルールを知らなくても、場面に名前を付けられるように
+    // ほかのアプリ（動画の編集など）が、種目のルールを知らなくても、場面に名前を付けられるように
     const byId = new Map((game.events || []).map((e) => [e.id, e]));
     g.events.forEach((e) => {
       const src = byId.get(e.id) || e;

@@ -20,7 +20,9 @@
       h('div', { class: 'score', 'aria-label': '得点' }, L.score[0], h('span', { class: 'dash' }, '−'), L.score[1], L.so),
       ctx.ui.menuBtn());
     const P = L.panelsEl = h('main', { class: 'panels' }, [0, 1].map((tm) => buildPanel(tm)));
-    const gl = (sp.globalTypes || []).map((type) => {
+    const globals = sp.globalTypesOf ? sp.globalTypesOf(ctx.sprefs) : (sp.globalTypes || []);
+    L.globals = globals;
+    const gl = globals.map((type) => {
       const d = sp.TYPE[type];
       const cnt = h('i', { class: 'cnt', hidden: true });
       const parts = String(d.btn).split(' ');
@@ -59,12 +61,15 @@
       Pn.rows = new Map();
       L.btns = L.btns.filter((b) => b.team !== tm);
       const types = sp.rowTypes(pr, p), ttypes = sp.teamTypesOf(pr, p);
-      const rows = g.teams[tm].players.map((x) => ({ no: x.no, name: x.name }));
-      const teamOnly = !rows.length;
-      if (pr.unknown !== false || teamOnly) rows.push({ no: null, name: '' });
+      // 選手の行のボタンを全部「使わない」にしたときは、選手の行は出さない（チームの行だけ）
+      const rows = types.length ? g.teams[tm].players.map((x) => ({ no: x.no, name: x.name })) : [];
+      const teamOnly = !g.teams[tm].players.length;
+      if (types.length && (pr.unknown !== false || teamOnly)) rows.push({ no: null, name: '' });
       if (ttypes.length) rows.push({ team: true });
+      if (!rows.length) rows.push({ none: true });
       Pn.n = rows.length;
       rows.forEach((r) => {
+        if (r.none) { Pn.roster.append(h('p', { class: 'note norows' }, '使うボタンがありません（≡ メニュー → 設定）')); return; }
         if (r.team) {
           const row = h('div', { class: 'prow trow', style: { '--tk': ttypes.length } }, h('div', { class: 'pno' }, h('b', null, 'チーム')));
           ttypes.forEach((type) => row.append(btn(tm, null, type, `${ST.teamName(g, tm)} チームの ${sp.TYPE[type].label}`, true)));
@@ -195,7 +200,7 @@
       if (so) L.so.textContent = `${sp.shootoutShort} ${so[0]}−${so[1]}`;
       const tl = ST.tally(g);
       L.btns.forEach((b) => { const c = tl[b.key] || 0; setCnt(b.cnt, c); });
-      (sp.globalTypes || []).forEach((type) => setCnt(L.gb[type].cnt, tl['*:' + type] || 0));
+      L.globals.forEach((type) => setCnt(L.gb[type].cnt, tl['*:' + type] || 0));
       // 累積ファウル（フットサル）：5つで黄・6つ目から赤（第2PK）
       const f = g.startedAt ? sp.foulsNow(g, ctx.elapsed()) : null;
       [0, 1].forEach((tm) => {
@@ -229,8 +234,55 @@
     const sec = b.closest('.team');
     if (!sec) return;
     const tm = Number(sec.dataset.team);
-    if (b.dataset.type) ctx.record({ type: b.dataset.type, team: tm, no: b.dataset.no === '' ? null : b.dataset.no }, b);
-    else if (b.dataset.add) openKeypad(ctx, L, tm);
+    if (b.dataset.type) {
+      const sp = ctx.sport, d = sp.TYPE[b.dataset.type] || {};
+      const ev = { type: b.dataset.type, team: tm, no: b.dataset.no === '' ? null : b.dataset.no };
+      // フリーキック：押した瞬間の時刻で残し、そのあとに直接・間接とカードを選ぶ（選ばずに閉じても、そのまま残る）
+      if (d.detail === 'fk') { if (sp.isOn(ctx.sprefs, 'fkKind')) ev.fk = 'd'; if (sp.isOn(ctx.sprefs, 'fkCard')) ev.card = 'n'; }
+      const e2 = ctx.record(ev, b);
+      if (e2 && d.detail === 'fk' && (ev.fk || ev.card)) openFk(ctx, e2.id);
+    } else if (b.dataset.add) openKeypad(ctx, L, tm);
+  }
+
+  /* ---------- フリーキックのくわしい記録（直接・間接・カード・背番号） ---------- */
+  function fkBody(ctx, e, changed, opts) {
+    const g = ctx.game, sp = ctx.sport, pr = ctx.sprefs;
+    const box = h('div', { class: 'fkbox' });
+    const other = e.team === 0 || e.team === 1 ? 1 - e.team : null;
+    const pick = (label, cur, list, set) => h('div', { class: 'field' }, h('span', null, label), h('div', { class: 'row fkrow' },
+      list.map(([v, lab, cls]) => h('button', { class: 'btn fkbtn' + (cls ? ' ' + cls : '') + (cur === v ? ' on' : ''), dataset: { fkv: String(v) }, 'aria-pressed': String(cur === v), onclick: () => set(v) }, lab))));
+    if (opts.all || sp.isOn(pr, 'fkKind') || e.fk) box.append(pick('直接・間接', e.fk || null, [['d', '直接'], ['i', '間接']], (v) => { e.fk = v; changed(); }));
+    if (opts.all || sp.isOn(pr, 'fkCard') || (e.card && e.card !== 'n')) {
+      box.append(pick(`カード（${other != null ? ST.teamName(g, other) : '相手'}の反則）`, e.card || 'n', [['n', 'なし'], ['y', '🟨 イエロー', 'yc'], ['r', '🟥 レッド', 'rc']], (v) => { e.card = v; if (v === 'n') delete e.cno; changed(v); }));
+      if (e.card === 'y' || e.card === 'r') {
+        const nos = other != null ? g.teams[other].players.map((p) => p.no) : [];
+        if (e.cno != null && !nos.includes(e.cno)) nos.push(e.cno);
+        box.append(h('div', { class: 'field' }, h('span', null, `カードをもらった選手（${other != null ? ST.teamName(g, other) : '相手'}）`), h('div', { class: 'row nopick' },
+          h('button', { class: 'btn small' + (e.cno == null ? ' on' : ''), dataset: { cno: '' }, onclick: () => { delete e.cno; changed(); } }, '番号なし'),
+          ST.sortNos(nos).map((no) => h('button', { class: 'btn small nobtn' + (e.cno === no ? ' on' : ''), dataset: { cno: no }, onclick: () => { e.cno = no; changed(); } }, '#' + no)))));
+      }
+    }
+    return box;
+  }
+  function openFk(ctx, id) {
+    const g = ctx.game;
+    const e = ST.findEvent(g, id);
+    if (!e) return;
+    let s = null;
+    const redraw = () => { const nb = fkBody(ctx, e, changed, {}); s.body.innerHTML = ''; s.body.append(nb, h('p', { class: 'note' }, '時刻は押した瞬間のままです。選ばずに閉じても、フリーキックとして残ります（あとで「記録の一覧」で直せます）。')); };
+    const changed = (v) => { ctx.save(); ctx.update(); redraw(); };
+    s = ST.ui.sheet({
+      title: `フリーキック（${ST.teamName(g, e.team)}）・${ctx.timeText(e)}`, cls: 'fksheet',
+      body: h('div'),
+      foot: [h('button', { class: 'btn primary', id: 'btnFkOk', onclick: () => s.close() }, 'OK')]
+    });
+    redraw();
+  }
+  /* 一覧で直す：フリーキックなら、くわしい記録も直せる */
+  function editExtra(ctx, e, body, changed) {
+    const d = ctx.sport.TYPE[e.type] || {};
+    if (d.detail !== 'fk') return;
+    body.append(fkBody(ctx, e, changed, { all: true }));
   }
 
   /* ---------- ピリオド（前半を終える・後半を始める・延長・PK戦） ---------- */
@@ -337,6 +389,18 @@
       const all = (sp.TYPES || []).filter((d) => d.shot).reduce((m, d) => m + (t[d.id] || 0), 0);
       return all ? `・シュート ${all}本（決定率 ${ST.pct(made, all)}）` : '';
     };
+    /* チームの記録の数（ゴールキック・フリーキック（直接・間接）・コーナーキック…）とカード */
+    const setLine = (tm) => {
+      const c = st[tm].total.c;
+      const parts = (sp.teamTypes || []).filter((x) => c[x]).map((x) => {
+        const d = sp.TYPE[x];
+        const nm = d.btnShort && d.btnShort.length <= 3 ? d.btnShort : (d.short || d.label);
+        return d.detail === 'fk' && (c.fkd || c.fki) ? `${nm} ${c[x]}（直接 ${c.fkd || 0}・間接 ${c.fki || 0}）` : `${nm} ${c[x]}`;
+      });
+      if (c.yc) parts.push(`イエロー ${c.yc}`);
+      if (c.rc) parts.push(`レッド ${c.rc}`);
+      return parts.length ? '・' + parts.join('・') : '';
+    };
     const kickLine = (tm) => {
       const t = st[tm].total.c;
       const made = (sp.TYPES || []).filter((d) => d.kick && d.kind === 'made').reduce((m, d) => m + (t[d.id] || 0), 0);
@@ -352,11 +416,11 @@
         h('tbody', null, [0, 1].map((tm) => h('tr', null, h('th', null, chip(tm), ST.teamName(g, tm)), per.map((p) => h('td', null, String(p.pts[tm]))), h('td', { class: 'sum' }, String(sp.score(g)[tm])), so ? h('td', { class: 'sum' }, String(so[tm])) : null))))),
       foulTable,
       [0, 1].map((tm) => h('section', { class: 'teamstat' },
-        h('h3', null, chip(tm), ST.teamName(g, tm), h('small', null, ` 得点 ${st[tm].total.pts}${shotLine(tm)}${kickLine(tm)}`)),
+        h('h3', null, chip(tm), ST.teamName(g, tm), h('small', null, ` 得点 ${st[tm].total.pts}${shotLine(tm)}${kickLine(tm)}${setLine(tm)}`)),
         table(st[tm]))),
       free ? h('section', { class: 'teamstat free' }, h('h3', null, h('i', { class: 'chip neutral' }), 'チームなし'), h('p', { class: 'freeline' }, free)) : null,
       h('p', { class: 'note' }, (sp.statsNote || '「成功/打った数」は、失敗のボタン（×）も使ったときに出ます。') + '時刻は「記録の一覧」で確かめられます。'));
   }
 
-  ST.addView('team', { build, stats });
+  ST.addView('team', { build, stats, editExtra });
 })(typeof window !== 'undefined' ? window : globalThis);

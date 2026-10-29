@@ -7,13 +7,12 @@
      ・上の帯の小さな映像（メニューの左。押すと撮影の画面）。録画中は赤いふち
      ・ワイプ（大きめの映像）：中・大。横長の画面は右の列、縦長の画面は上の帯の下。記録のボタンは、残りの広さに並べ直す
        （.live に cam-side・cam-top を付けて、grid の場所を足す。種目の画面は自分の入れ物の大きさで並べ直すので、そのまま動く）
-     ・スタート前の札の「📹 撮影しながら記録する」・試合のあとの札の動画の一覧（🎬 場面を切り出す・⬇ 保存・🗑）
+     ・スタート前の札の「📹 撮影しながら記録する」・試合のあとの札の動画の一覧（🎬 場面を見る・⬇ 保存・🗑）
    設定：S.prefs.cam = { quality: '720' | '1080', audio, orient: 'land' | 'port', rot（映像の向きの手直し 0・90・180・270）, wipe: 's' | 'm' | 'l' } */
 (function (root) {
   'use strict';
   const ST = root.ST;
   const { h } = ST.ui;
-  const CLIPS_URL = '../basket-clips/';
   const WIPES = ['s', 'm', 'l'];
   /* 種目ごとの言葉：横向きで撮るもの・スタートの合図 */
   const WIDE = { soccer: 'ピッチ全体', rugby: 'グラウンド全体', baseball: 'グラウンド全体', swim: 'プール全体' };
@@ -345,7 +344,7 @@
         title: '📹 撮影しながら記録', cls: 'camsheet',
         body: h('div', null, pvbox, stat, info, wipeRow, orient, acts, store,
           h('ul', { class: 'camnotes note' },
-            h('li', null, `「${sp.unit || '試合'}を終える」で、録画も止まります。動画はこの端末（このブラウザ）に保存され、終わったあと「🎬 場面を切り出す」で、記録した場面を動画から切り出せます（時刻あわせはいりません）`),
+            h('li', null, `「${sp.unit || '試合'}を終える」で、録画も止まります。動画はこの端末（このブラウザ）に保存され、終わったあと「🎬 場面を見る」で、記録した場面を見返せます（時刻あわせはいりません）`),
             h('li', null, '録画を止めて、また始めると、別の動画になります（どれも、記録と時刻が合っています）'),
             h('li', null, 'ほかのアプリに切りかえたり、画面を消したりすると、録画は止まります（戻ると、新しい動画として続けます）'),
             h('li', null, '電池をたくさん使います。電源につないでおくと安心です'))),
@@ -376,16 +375,9 @@
       return h('div', { class: 'vlist' }, vs.map((v) => h('div', { class: 'vitem', dataset: { vid: v.vid } },
         h('div', { class: 'vt' }, h('b', null, `📹 動画${v.n}`), h('small', null, `${clockOf(v.startedAt)}から・${ST.fmtTime(v.duration || 0)}・${mb(v.bytes)}${v.status === 'recording' ? '・録画中' : ''}`)),
         h('div', { class: 'row vacts' },
-          h('button', { class: 'btn small primary', dataset: { clip: v.vid }, disabled: v.status === 'recording', onclick: () => toClips(g, v) }, '🎬 場面を切り出す'),
+          h('button', { class: 'btn small primary', dataset: { clip: v.vid }, disabled: v.status === 'recording', onclick: () => api.openReview(g, v.vid) }, '🎬 場面を見る'),
           h('button', { class: 'btn small', dataset: { savevid: v.vid }, disabled: v.status === 'recording', onclick: () => saveVideo(v) }, '⬇ 保存'),
           h('button', { class: 'btn small danger', title: 'この端末から消す', 'aria-label': `動画${v.n}をこの端末から消す`, disabled: v.status === 'recording', onclick: () => deleteVideo(g, v) }, '🗑')))));
-    }
-    /* 「🎬 場面を切り出す」：同じ端末の「バスケ得点クリップ」で、記録と動画を一緒に開く（時刻あわせなし）。
-       切り出す側が種目のルールを知らなくても読めるよう、書き出す形（記録ごとの呼び名つき）を保存しておく */
-    function toClips(g, v) {
-      api.save();
-      ST.store.saveExport(g);
-      root.location.href = `${CLIPS_URL}?tapgame=${encodeURIComponent(g.id)}&tapvideo=${encodeURIComponent(v.vid)}&tapapp=stap`;
     }
     async function saveVideo(v) {
       ST.ui.toast('動画を用意しています…', '', 3000);

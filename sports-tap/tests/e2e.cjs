@@ -4,7 +4,8 @@
 //     built … public/sports-tap/index.html（1ファイル版。公開するもの）
 //   SHOTS=フォルダ を付けると、画面の写真（スクリーンショット）をそこに保存する（見た目の確認用）
 // 骨組み（種目を選ぶ・準備・記録・取り消し・一覧で直す・集計・書き出し・読み込み・開き直し）と、
-// チームの行で記録する種目（サッカー・フットサル・ハンドボール・ラグビー）を確かめる。ほかの種目は e2e-volley.cjs など。
+// チームの行で記録する種目を確かめる：サッカーは専用のアプリ「サッカー タップ記録」（dev は sports-tap/soccer.html・built は public/soccer-tap/）、
+// フットサル・ハンドボール・ラグビーは「スポーツ タップ記録」。ほかの種目は e2e-volley.cjs など。
 // 時計は Playwright の clock で進める（「スタートから 10 秒でゴール」などを、待たずに正確に確かめる）。
 const fs = require('fs');
 const path = require('path');
@@ -101,21 +102,32 @@ const dl = async (page, sel) => {
 };
 
 (async () => {
-  const root = MODE === 'built' ? path.join(__dirname, '..', '..', 'public', 'sports-tap') : path.join(__dirname, '..');
-  if (MODE === 'built' && !fs.existsSync(path.join(root, 'index.html'))) { console.log('public/sports-tap/index.html がありません。先に node sports-tap/build.mjs'); process.exit(1); }
-  const srv = await start(0, root);
+  // dev はリポジトリ全体（/sports-tap/・/sports-tap/soccer.html）、built は public/（/sports-tap/・/soccer-tap/）を配る
+  const root = MODE === 'built' ? path.join(__dirname, '..', '..', 'public') : path.join(__dirname, '..', '..');
+  if (MODE === 'built' && !fs.existsSync(path.join(root, 'soccer-tap', 'index.html'))) { console.log('public/soccer-tap/index.html がありません。先に node sports-tap/build.mjs'); process.exit(1); }
+  const srv0 = await start(0, root);
+  const SP = srv0.url + 'sports-tap/', SO = srv0.url + (MODE === 'built' ? 'soccer-tap/' : 'sports-tap/soccer.html');
+  const srv = { url: SP, close: () => srv0.close() };
   const browser = await chromium.launch();
   const PHONE = { width: 390, height: 664 };
   try {
     /* ========== 種目を選ぶ → サッカー ========== */
-    section('種目を選ぶ・サッカーの準備');
-    let { ctx, page, errors } = await openPage(browser, srv.url, PHONE);
+    section('種目を選ぶ（スポーツ タップ記録）');
+    let { ctx, page, errors } = await openPage(browser, SP, PHONE);
     const sports = await page.$$eval('#sportGrid [data-sport]', (els) => els.map((e) => e.dataset.sport));
-    ok(sports.length >= 4 && sports[0] === 'soccer' && sports.includes('rugby'), '種目を選ぶ画面に、種目が並ぶ（サッカーが最初）', sports);
+    ok(sports.includes('futsal') && sports.includes('rugby') && !sports.includes('soccer'), '種目を選ぶ画面に、種目が並ぶ（サッカーは入れない）', sports);
+    ok(await page.$('#sportGrid a.solo[data-solo="soccer"][href="../soccer-tap/"]') != null, 'サッカーは専用のアプリ「サッカー タップ記録」へのリンク');
     ok(await page.$('#sportGrid a.basket[href="../basket-tap/"]') != null, 'バスケは「バスケ タップ記録」へのリンク');
     await shot(page, '01-picker');
-    await tap(page, '[data-sport="soccer"]');
-    ok(page.url().includes('s=soccer') && (await page.title()) === 'サッカー タップ記録', '種目を選ぶと、URL に ?s=soccer・題名もサッカーに');
+    await tap(page, '[data-sport="futsal"]');
+    ok(page.url().includes('s=futsal') && (await page.title()) === 'フットサル タップ記録', '種目を選ぶと、URL に ?s=futsal・題名もフットサルに');
+    ok(errors.length === 0, 'ページのエラーなし', errors);
+    await ctx.close();
+
+    section('サッカー タップ記録（専用のアプリ）：準備');
+    ({ ctx, page, errors } = await openPage(browser, SO, PHONE));
+    ok((await page.title()) === 'サッカー タップ記録' && await page.isVisible('#btnNew') && await page.$('#btnSports') == null, 'サッカーのホームから開く（種目を選ぶ画面はない）');
+    ok(await page.evaluate(() => ST.CONFIG.key === 'ssoc' && ST.store.KEYS.games === 'ssoc:games' && ST.vstore.DB === 'ssoc-media'), '保存（記録・撮影した動画）は、スポーツ タップ記録とは別（ssoc）');
     await tap(page, '#btnNew');
     ok(await page.$('#optsCard [data-opt="len"] .btn.on[data-v="40"]') != null, '試合の形式：前半・後半 40 分が選ばれている');
     await tap(page, '#optsCard [data-opt="len"] [data-v="30"]');
@@ -139,6 +151,7 @@ const dl = async (page, sel) => {
     await page.clock.runFor(2000);
     await tap(page, tb(0, 'ck'));
     await tap(page, tb(0, 'ck'));                      // 二度押し（0.45 秒以内）は1回に
+    ok(await page.$(tb(0, 'gk')) != null && await page.$(tb(0, 'fk')) != null, 'チームの行：ゴールキック・フリーキック・コーナーキック');
     await page.clock.runFor(1000);
     await tap(page, '#btn_mark');
     g = await game(page);
@@ -151,7 +164,7 @@ const dl = async (page, sel) => {
     ok((await page.textContent('#score0')) === '1' && (await page.textContent('#score1')) === '0', '上の帯の得点 1−0');
     ok((await page.textContent(pb(0, '10', 'goal') + ' .cnt')) === '1', 'ボタンの回数');
     ok((await page.textContent('#tval')) === '0:18', '時計：前半が始まってからの時間 0:18');
-    ok(/0:10/.test(await page.textContent('#lastbar')) === false && /★/.test(await page.textContent('#lastbar')), '下の帯に、いま記録したもの');
+    ok(/あとでチェック/.test(await page.textContent('#lastbar')), '下の帯に、いま記録したもの（あとでチェック）');
     ok((await barOverlap(page)).length === 0, '上の帯が重ならない', await barOverlap(page));
     ok((await allVisible(page)).length === 0, 'ボタンが画面に収まる・文字がはみ出さない', await allVisible(page));
     await shot(page, '04-live');
@@ -169,8 +182,51 @@ const dl = async (page, sel) => {
     await tap(page, '#btnMsgAct');
     ok(plays(await game(page)).length === 4, '「やり直す」2回で、2つとも戻る');
 
+    section('フリーキック（直接・間接・カード・背番号）');
+    await page.clock.runFor(3000);
+    await tap(page, tb(1, 'fk'));                     // 相手のフリーキック（致遠館の反則）
+    ok(await page.isVisible('.fksheet') && /フリーキック（相手）/.test(await page.textContent('.fksheet header')), 'フリーキックを押すと、くわしい記録の小窓');
+    let fk = (await game(page)).events.slice(-1)[0];
+    ok(fk.type === 'fk' && fk.team === 1 && fk.fk === 'd' && fk.card === 'n' && fk.t === 21, '押した瞬間の時刻（21.0 秒）で、はじめは「直接・カードなし」で残る', fk);
+    await tap(page, '.fksheet [data-fkv="i"]');
+    await tap(page, '.fksheet [data-fkv="y"]');
+    ok(await page.$('.fksheet [data-cno="4"]') != null, 'カードを選ぶと、反則した側（致遠館）の背番号が出る');
+    await tap(page, '.fksheet [data-cno="4"]');
+    await shot(page, '04b-fk');
+    await tap(page, '#btnFkOk');
+    fk = (await game(page)).events.slice(-1)[0];
+    ok(fk.fk === 'i' && fk.card === 'y' && fk.cno === '4' && fk.t === 21, '間接・イエロー・#4（時刻はそのまま）', fk);
+    ok(/フリーキック（間接）・イエロー #4/.test(await page.textContent('#lastbar')), '下の帯に「フリーキック（間接）・イエロー #4」');
+    await page.clock.runFor(2000);
+    await tap(page, tb(1, 'fk'));
+    await tap(page, '.fksheet [data-fkv="y"]');
+    await tap(page, '.fksheet [data-cno="4"]');
+    await tap(page, '#btnFkOk');
+    ok((await page.textContent('#panel0 .prow[data-no="4"] .ptag')) === '退場' && /−1/.test(await page.textContent('#panel0 .tshort')), 'フリーキックのイエロー2回で、#4 の行に「退場」・チームの帯に「−1」');
+    await tap(page, '#btnUndo');
+    ok(await page.$('#panel0 .prow[data-no="4"].out') == null, '取り消すと、退場の印も消える');
+    // 設定：使うボタンを選ぶ
+    await tap(page, '#btnMenu');
+    await page.tap('.mitem:has-text("設定")');
+    ok(/記録用/.test(await page.textContent('#setButtons')) && /分析用/.test(await page.textContent('#setButtons')), '設定：ボタンを「記録用」「分析用」に分けて選ぶ');
+    await page.uncheck('[data-pref="gk"]');
+    await page.uncheck('[data-pref="fkCard"]');
+    await page.tap('.sheet-card header .x');
+    ok(await page.$(tb(0, 'gk')) == null && await page.$(tb(0, 'fk')) != null, 'ゴールキックを「使わない」→ チームの行から消える');
+    await page.clock.runFor(1000);
+    await tap(page, tb(0, 'fk'));
+    ok(await page.isVisible('.fksheet') && await page.$('.fksheet [data-fkv="y"]') == null && await page.$('.fksheet [data-fkv="i"]') != null, 'カードを選ばない設定：小窓は「直接・間接」だけ');
+    await tap(page, '#btnFkOk');
+    await tap(page, '#btnUndo');
+    await tap(page, '#btnMenu');
+    await page.tap('.mitem:has-text("設定")');
+    await page.check('[data-pref="gk"]');
+    await page.check('[data-pref="fkCard"]');
+    await page.tap('.sheet-card header .x');
+    ok(await page.$(tb(0, 'gk')) != null, '「使う」に戻すと、また出る');
+
     section('ピリオド：前半を終える・後半・アディショナルタイム');
-    await page.clock.runFor((30 * 60 - 18 + 83) * 1000);       // 前半 30 分を 1:23 過ぎた
+    await page.clock.runFor((30 * 60 - 24 + 83) * 1000);       // 前半 30 分を 1:23 過ぎた
     ok((await page.textContent('#tval')) === '30+1:23' && (await page.$('#clock.over')) != null, '時計：30 分を過ぎると「30+1:23」');
     await tap(page, '#btnPeriod');
     await tap(page, '#btnEndPeriod');
@@ -340,7 +396,7 @@ const dl = async (page, sel) => {
     section('画面の大きさ（サッカー 18人ずつ・ボタンを全部）');
     const sizes = [['スマホ縦', 390, 664], ['iPhone SE', 375, 553], ['スマホ横', 844, 390], ['iPad 縦', 820, 1180], ['iPad 横', 1180, 820]];
     for (const [label, w, hh] of sizes) {
-      ({ ctx, page, errors } = await openPage(browser, srv.url + '?s=soccer', { width: w, height: hh }));
+      ({ ctx, page, errors } = await openPage(browser, SO, { width: w, height: hh }));
       await page.evaluate(() => { const p = ST.app.S.prefs; ST.store.sportPrefs(p, 'soccer').rows = { ast: true, card: true, foul: true, save: true }; ST.store.savePrefs(p); });
       await tap(page, '#btnNew');
       await setupTeams(page, '致遠館', '1-18', '城南', '1-18');
@@ -355,7 +411,7 @@ const dl = async (page, sel) => {
     }
 
     section('読み込み（書き出したファイルを開く）');
-    ({ ctx, page, errors } = await openPage(browser, srv.url, PHONE));
+    ({ ctx, page, errors } = await openPage(browser, SO, PHONE));
     const tmp = path.join(require('os').tmpdir(), 'stap-import.json');
     fs.writeFileSync(tmp, j.text);
     const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.tap('.tools .btn')]);

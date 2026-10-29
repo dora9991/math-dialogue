@@ -3,7 +3,7 @@
    録画を止めたら、細切れの MP4 をふつうの MP4 に組み直す「組み立て図」（fmp4.flatten の header と ranges）も保存する。
    動画の中身は、切れはしのまま1回だけ保存する（組み直した動画を、もう1つ保存しない。容量を2倍にしないため）。
 
-   ■ データの形（バスケ得点クリップ basket-clips/js/tapvideo.js も、同じ形で読む。DB の名前だけ違う）
+   ■ データの形（バスケ タップ記録の vstore.js と同じ形。DB の名前だけ違う）
    DB 'stap-media'（版 1。バスケ タップ記録の 'btap-media' とは別）
      videos：{ vid, gameId, n（その試合の何本目か）, startedAt（録画を始めた時刻・エポックミリ秒）, endedAt,
                mime, ext, w, h, bytes, chunks（切れはしの数）, status（'recording' | 'done'）,
@@ -12,7 +12,7 @@
 (function (root) {
   'use strict';
   const ST = root.ST = root.ST || {};
-  const DB = 'stap-media', VER = 1;      // （バスケ タップ記録の 'btap-media' とは別）
+  const DB = (ST.CONFIG && ST.CONFIG.db) || 'stap-media', VER = 1;      // （バスケ タップ記録の 'btap-media' とは別。サッカー タップ記録は 'ssoc-media'）
   let dbp = null;
 
   const supported = () => { try { return !!root.indexedDB; } catch (e) { return false; } };
