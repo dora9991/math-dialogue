@@ -22,7 +22,16 @@ public/conference-demo/data/archive.js   アーカイブ配信（YouTube）の�
 public/conference-demo/js/archive.js     アーカイブの表示と動画プレーヤー
 ```
 
-## 中身を変える
+## 編集ツールで書き換える（お知らせ・大会概要・日程と流れ）
+
+この3つは、編集ツール（`conference-editor/`）の画面で書き換えて「公開する」と、このデモに出る。
+
+- 公開したものがあれば、それを表示する。**まだ公開していない項目や、読み込めなかったときは、`index.html` に書いてある元の内容**がそのまま表示される。
+- 保存先の設定（Supabase の URL とキー）は、`conference-editor/config.js` に書く。デモも同じ設定を読む。
+- 公開側から Supabase へは、公開キー（anon）で「公開済みの列」だけを読む。下書きは読めない。
+- 編集の手順・守り（誰が書けるか）は `conference-editor/README.md`。
+
+## 中身を変える（編集ツール以外）
 
 - 本文は `index.html` を書き換える。決まっていない項目は `<span class="tbd">調整中</span>`。
 - アーカイブ配信は、`data/archive.js` の `videos` に動画IDを足すと、一覧に並び、クリックで再生できる（日ごとの絞り込み・再生リストにも対応）。
