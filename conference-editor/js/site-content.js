@@ -32,44 +32,59 @@
   }
   function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
 
-  function renderNews(target, items) {
+  // 編集画面のプレビュー用：空の行も「（…を書いてください）」と薄く出す（opts.keepBlank）。公開側では、空の行は出さない。
+  function ph(text) { return el("span", { "class": "ce-ph" }, [text]); }
+  function keep(opts) { return !!(opts && opts.keepBlank); }
+
+  // どの行も、元の並びの番号を data-i に持つ（編集画面で「いま編集している行」を光らせるため）
+  function renderNews(target, items, opts) {
     clear(target);
-    items.forEach(function (n) {
+    items.forEach(function (n, i) {
       var time = el("time", n.date ? { datetime: n.date } : {}, [S.jpDate(n.date)]);
-      var body = n.url ? el("a", { href: n.url, target: "_blank", rel: "noopener" }, [n.text]) : withTbd(n.text);
       var p = el("p", {}, []);
-      p.appendChild(body);
-      target.appendChild(el("li", {}, [time, p]));
+      if (n.text) p.appendChild(n.url ? el("a", { href: n.url, target: "_blank", rel: "noopener" }, [n.text]) : withTbd(n.text));
+      else if (keep(opts)) p.appendChild(ph("（本文を書いてください。公開すると、この行は出ません）"));
+      var li = el("li", { "data-i": String(i) }, [time, p]);
+      if (!n.text) li.className = "ce-blank";
+      target.appendChild(li);
     });
   }
-  function renderOverview(target, rows) {
+  function renderOverview(target, rows, opts) {
     clear(target);
-    rows.forEach(function (r) {
-      var dd = el("dd", {}, []);
-      dd.appendChild(withTbd(r.v));
-      target.appendChild(el("div", {}, [el("dt", {}, [r.k]), dd]));
+    rows.forEach(function (r, i) {
+      var dt = el("dt", {}, []), dd = el("dd", {}, []);
+      if (r.k) dt.appendChild(document.createTextNode(r.k)); else if (keep(opts)) dt.appendChild(ph("（項目名）"));
+      if (r.v) dd.appendChild(withTbd(r.v)); else if (keep(opts)) dd.appendChild(ph("（内容を書いてください）"));
+      var row = el("div", { "data-i": String(i) }, [dt, dd]);
+      if (!r.k || !r.v) row.className = "ce-blank";
+      target.appendChild(row);
     });
   }
-  function renderProgram(target, days) {
+  function renderProgram(target, days, opts) {
     clear(target);
-    days.forEach(function (d) {
+    days.forEach(function (d, i) {
       var ul = el("ul", {}, []);
-      d.items.forEach(function (it) {
-        var li = el("li", {}, it.time ? [el("span", {}, [it.time])] : []);
-        li.appendChild(withTbd(it.text));
+      d.items.forEach(function (it, j) {
+        var li = el("li", { "data-j": String(j) }, it.time ? [el("span", {}, [it.time])] : []);
+        if (it.text) li.appendChild(withTbd(it.text)); else if (keep(opts)) li.appendChild(ph("（内容を書いてください）"));
+        if (!it.text) li.className = "ce-blank";
         ul.appendChild(li);
       });
-      target.appendChild(el("li", { "class": "day" }, [el("h3", {}, [d.label]), d.sub ? el("p", { "class": "sub" }, [d.sub]) : null, ul]));
+      var h3 = el("h3", {}, []);
+      if (d.label) h3.appendChild(document.createTextNode(d.label)); else if (keep(opts)) h3.appendChild(ph("（日の見出し）"));
+      var day = el("li", { "class": d.label ? "day" : "day ce-blank", "data-i": String(i) }, [h3, d.sub ? el("p", { "class": "sub" }, [d.sub]) : null, ul]);
+      target.appendChild(day);
     });
   }
   var RENDER = { news: renderNews, overview: renderOverview, program: renderProgram };
 
   // content: { news?: [...], overview?: [...], program?: [...] } を targets の各要素に描く。描いた key の一覧を返す。
-  function render(content, targets) {
+  // opts.keepBlank: 空の行も（薄く）出す（編集画面のプレビュー用）。
+  function render(content, targets, opts) {
     var done = [];
     S.KEYS.forEach(function (key) {
       if (!content || !Array.isArray(content[key]) || !targets || !targets[key]) return;
-      RENDER[key](targets[key], S.normalize(key, content[key], true));
+      RENDER[key](targets[key], S.normalize(key, content[key], !keep(opts)), opts);
       done.push(key);
     });
     return done;

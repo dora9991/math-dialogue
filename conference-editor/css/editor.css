@@ -1,50 +1,97 @@
-/* 編集画面の見た目（クラス名は ce- で始める。公開側の見本 css/site-sample.css とぶつけないため） */
+/* 編集画面の見た目（クラス名は ce- で始める。公開側の見本 css/site-sample.css とぶつけないため）
+   3列：左＝サイトの見取り図／中＝入力欄／右＝サイトでの見え方。狭い画面では、上から順に縦に並べる。 */
 *{box-sizing:border-box}
 body{margin:0;background:var(--porcelain);color:var(--ink);line-height:1.8;-webkit-text-size-adjust:100%;
   font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif}
-body > main,body > .ce-card,body > .ce-banner,.ce-top{max-width:880px;margin-left:auto;margin-right:auto}
 :focus-visible{outline:3px solid var(--gosu);outline-offset:2px;border-radius:2px}
 .ce-skip{position:absolute;left:-999px;top:8px;background:var(--gosu);color:#fff;padding:.5rem 1rem;z-index:10}
 .ce-skip:focus{left:8px}
 
-.ce-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.4rem 1rem;padding:16px 16px 4px}
+.ce-top{max-width:1280px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.4rem 1rem;padding:16px 16px 4px}
 .ce-top h1{margin:0;font-size:1.3rem;color:var(--gosu-deep)}
 .ce-who{margin:0;font-size:.9rem;color:var(--muted)}
 .ce-badge{display:inline-block;background:var(--gosu-tint);color:var(--gosu-deep);border-radius:3px;padding:0 .7em}
 .ce-link{font:inherit;background:none;border:0;color:var(--gosu);text-decoration:underline;cursor:pointer;padding:.5rem}
 
-.ce-banner{margin-top:8px;margin-bottom:0;padding:.6rem 1rem;border-radius:3px;background:#FFF4C9;color:#5C4500;border:1px solid #C9A227}
+.ce-banner{max-width:1248px;width:calc(100% - 32px);margin:8px auto 0;padding:.6rem 1rem;border-radius:3px;background:#FFF4C9;color:#5C4500;border:1px solid #C9A227}
+.ce-banner[hidden]{display:none}
 .ce-banner.ce-error{background:#FDECEC;color:#8A1C1C;border-color:#D98B8B}
 .ce-banner.ce-good{background:#E6F4EA;color:#14532D;border-color:#8CC9A0}
 .ce-banner button{margin-left:.6rem}
-body > .ce-banner{width:calc(100% - 32px)}
 
-main{padding:0 16px 48px}
-.ce-card{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:16px;margin:16px 16px}
-main .ce-card{margin-left:0;margin-right:0}
+.ce-card{max-width:880px;margin:16px auto;width:calc(100% - 32px);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:16px}
+.ce-card[hidden]{display:none}
 .ce-card h2{margin:0 0 .3rem;font-size:1.1rem;color:var(--gosu-deep)}
 .ce-note{color:var(--muted);font-size:.9rem;margin:0 0 .8rem}
 
-.ce-tabs{display:flex;gap:4px;margin:16px 0 0;border-bottom:2px solid var(--gosu);overflow-x:auto}
-.ce-tab{font:inherit;background:var(--gosu-tint);border:1px solid var(--line);border-bottom:0;border-radius:4px 4px 0 0;padding:.5rem 1.1rem;cursor:pointer;color:var(--gosu-deep);white-space:nowrap;min-height:44px}
-.ce-tab[aria-selected="true"]{background:var(--gosu);color:#fff;border-color:var(--gosu)}
-.ce-dot{display:inline-block;width:.6em;height:.6em;border-radius:50%;background:#E0A400;margin-left:.4em}
+/* ---- 3列の枠 ---- */
+.ce-app{max-width:1280px;margin:0 auto;padding:12px 16px 48px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.ce-app[hidden]{display:none}
+@media (min-width:1000px){
+  .ce-app{grid-template-columns:210px minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+  .ce-map{position:sticky;top:12px}
+  .ce-side{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+  .ce-jump{display:none}
+}
 
-.ce-panel{background:var(--paper);border:1px solid var(--line);border-top:0;padding:16px}
-.ce-item{border:1px solid var(--line);border-radius:4px;padding:12px;margin:0 0 12px;background:#FBFCFC}
-.ce-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px;margin-bottom:8px}
-.ce-head strong{color:var(--gosu-deep)}
-.ce-ops{display:flex;gap:4px}
+/* ---- 左：サイトの見取り図 ---- */
+.ce-map-title{margin:0 0 8px;font-weight:700;color:var(--gosu-deep);font-size:.95rem;line-height:1.5}
+.ce-map-title small{display:block;font-weight:400;color:var(--muted);font-size:.78rem}
+.ce-tabs{display:flex;flex-direction:row;gap:10px;overflow-x:auto;padding:10px 2px 6px}
+@media (min-width:1000px){.ce-tabs{flex-direction:column;overflow:visible;padding:8px 0 0}}
+.ce-tab,.ce-tab-fixed{position:relative;display:grid;grid-template-columns:44px 1fr;grid-template-areas:"ico name" "ico sub";column-gap:10px;align-items:center;
+  text-align:left;border-radius:8px;padding:8px 10px;min-height:54px;flex:0 0 auto;min-width:176px}
+@media (min-width:1000px){.ce-tab,.ce-tab-fixed{min-width:0}}
+@media (max-width:999px){
+  .ce-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;overflow:visible;padding:12px 0 4px}
+  .ce-tab{grid-template-columns:1fr;grid-template-areas:"ico" "name";justify-items:center;text-align:center;min-width:0;padding:8px 4px;row-gap:2px}
+  .ce-tab-sub,.ce-tab-fixed{display:none}
+  .ce-tab-name{font-size:.88rem}
+  .ce-tab-now{right:4px}
+}
+.ce-tab{font:inherit;cursor:pointer;background:#fff;border:2px solid var(--line);color:var(--gosu-deep)}
+.ce-tab:hover{border-color:var(--gosu)}
+.ce-tab[aria-selected="true"]{background:var(--gosu);border-color:var(--gosu);color:#fff;box-shadow:0 3px 10px rgba(30,58,110,.35)}
+.ce-tab-ico{grid-area:ico}
+.ce-tab-name{grid-area:name;font-weight:700;line-height:1.3}
+.ce-tab-sub{grid-area:sub;font-size:.74rem;line-height:1.3;opacity:.8}
+.ce-tab-now{position:absolute;top:-10px;right:8px;background:#E0A400;color:#2B1F00;font-size:.7rem;font-weight:700;padding:0 9px;border-radius:999px;line-height:1.7}
+.ce-dot{display:inline-block;width:.65em;height:.65em;border-radius:50%;background:#E0A400;margin-left:.4em;vertical-align:middle}
+.ce-tab-fixed{border:2px dashed var(--line);color:var(--muted);background:transparent;font-size:.8rem}
+.ce-tab-fixed .ce-tab-name{font-weight:400}
+
+/* ---- 中：いま編集しているところ ---- */
+.ce-where{background:var(--gosu-tint);border-left:6px solid var(--gosu);border-radius:4px;padding:12px 16px}
+.ce-where-label{margin:0;font-size:.8rem;color:var(--gosu);font-weight:700;letter-spacing:.04em}
+.ce-where-title{margin:0;font-family:"Zen Old Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-size:1.7rem;color:var(--gosu-deep);line-height:1.3}
+.ce-where-desc{margin:.2rem 0 .4rem;font-size:.9rem}
+.ce-where-links{margin:0;display:flex;gap:6px 18px;flex-wrap:wrap;font-size:.9rem}
+.ce-where-links a{color:var(--gosu)}
+.ce-where-links a[hidden]{display:none}
+
+/* ---- 入力欄 ---- */
+.ce-panel{margin-top:12px}
+.ce-item{border:2px solid var(--line);border-left-width:6px;border-radius:6px;padding:12px;margin:0 0 12px;background:#fff}
+.ce-item.ce-active{border-color:var(--gosu);background:#F7FAFF;box-shadow:0 0 0 3px rgba(30,58,110,.14)}
+.ce-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-bottom:8px}
+.ce-head strong{color:var(--gosu-deep);white-space:nowrap}
+.ce-sum{flex:1 1 7rem;min-width:0;color:var(--muted);font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ce-now{display:none;background:#E0A400;color:#2B1F00;font-size:.72rem;font-weight:700;padding:0 9px;border-radius:999px;line-height:1.7}
+.ce-item.ce-active > .ce-head .ce-now,.ce-sub.ce-active > .ce-head .ce-now{display:inline-block}
+.ce-ops{display:flex;gap:4px;margin-left:auto}
 .ce-ic{font:inherit;min-width:44px;min-height:44px;border:1px solid var(--line);background:#fff;border-radius:4px;cursor:pointer;color:var(--ink)}
 .ce-ic:disabled{opacity:.35;cursor:default}
 .ce-ic.ce-del{color:#8A1C1C}
 .ce-field{margin:0 0 10px}
-.ce-lab{display:block;font-size:.85rem;color:var(--muted)}
+.ce-lab{display:block;font-size:.88rem;font-weight:700;color:var(--gosu-deep)}
+.ce-hint{display:block;font-size:.78rem;color:var(--muted);line-height:1.5;margin-bottom:2px}
 .ce-field input,.ce-field textarea{width:100%;font:inherit;padding:.5rem .6rem;border:1px solid #98A4B5;border-radius:4px;background:#fff;color:var(--ink)}
+.ce-field input::placeholder,.ce-field textarea::placeholder{color:#9AA5B5}
 .ce-field textarea{resize:vertical;min-height:4.5em}
 .ce-row{display:grid;grid-template-columns:8em 1fr;gap:0 10px}
 @media (max-width:560px){.ce-row{grid-template-columns:1fr}}
-.ce-sub{border-top:1px dashed var(--line);padding-top:10px;margin-top:10px}
+.ce-sub{border:1px dashed var(--line);border-radius:6px;padding:10px;margin-top:10px;background:#FBFCFC}
+.ce-sub.ce-active{border:2px solid var(--gosu);background:#F7FAFF}
 .ce-add{margin:4px 0 0;display:flex;flex-wrap:wrap;gap:8px}
 
 .ce-btn{font:inherit;min-height:44px;padding:.4rem 1.2rem;border:1px solid var(--gosu);background:#fff;color:var(--gosu);border-radius:4px;cursor:pointer}
@@ -63,7 +110,31 @@ main .ce-card{margin-left:0;margin-right:0}
 .ce-status{margin:0 0 6px;font-size:.85rem;line-height:1.6;color:var(--muted)}
 .ce-actions{margin:0;display:flex;flex-wrap:wrap;gap:8px}
 @media (max-width:560px){
-  .ce-actions{gap:6px}
-  .ce-actions .ce-btn{padding:.3rem .8rem;font-size:.9rem}
+  .ce-bar{padding:6px 0}
+  .ce-status{font-size:.74rem;line-height:1.45;margin-bottom:4px}
+  .ce-actions{gap:6px;flex-wrap:nowrap}
+  .ce-actions .ce-btn{flex:1 1 auto;min-width:0;padding:.3rem .4rem;font-size:.82rem}
 }
-.ce-preview{padding:4px 0}
+
+/* ---- 右：サイトでの見え方 ---- */
+.ce-pv-title{margin:0 0 6px;font-weight:700;color:var(--gosu-deep);line-height:1.5}
+.ce-pv-title small{display:block;font-weight:400;color:var(--muted);font-size:.8rem}
+.ce-pv-frame{border:1px solid #98A4B5;border-radius:8px;overflow:hidden;background:#fff;box-shadow:0 2px 10px rgba(20,42,82,.12)}
+.ce-pv-bar{display:flex;align-items:center;gap:5px;background:#E6EAF0;padding:6px 10px;font-size:.75rem;color:var(--muted)}
+.ce-pv-bar i{width:9px;height:9px;border-radius:50%;background:#B7C0CE;display:inline-block}
+.ce-pv-bar span{margin-left:8px}
+.ce-pv-page{padding:14px 14px 18px;background:var(--porcelain)}
+.ce-pv-h{font-family:"Zen Old Mincho","Hiragino Mincho ProN","Yu Mincho",serif;margin:0 0 .5rem;font-size:1.4rem;color:var(--gosu-deep)}
+.ce-preview{background:var(--paper);padding:0 12px 6px}
+.ce-preview .news li,.ce-preview .spec div{padding:.8rem 0}
+@media (min-width:641px){
+  .ce-preview .news li{grid-template-columns:8.5em 1fr}
+  .ce-preview .spec div{grid-template-columns:8em 1fr}
+}
+.ce-preview .days{grid-template-columns:1fr}
+.ce-preview [data-i],.ce-preview [data-j]{cursor:pointer}
+.ce-preview .ce-hl{background:#FFF1B8 !important;box-shadow:inset 0 0 0 3px #E0A400}
+.ce-preview li.ce-hl2{background:#FFF1B8;box-shadow:inset 0 0 0 2px #E0A400}
+.ce-preview .ce-blank{opacity:.65;outline:1px dashed #98A4B5;outline-offset:-1px}
+.ce-ph{color:#6C7788;font-style:italic;font-size:.9em}
+.ce-pv-note{margin:8px 0 0;font-size:.8rem}

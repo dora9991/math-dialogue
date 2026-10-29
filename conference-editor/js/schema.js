@@ -8,7 +8,7 @@
   "use strict";
 
   var KEYS = ["news", "overview", "program"];
-  var LABELS = { news: "お知らせ", overview: "大会概要", program: "プログラム" };
+  var LABELS = { news: "お知らせ", overview: "大会概要", program: "日程と流れ" };
   var LIMITS = { items: 100, days: 10, dayItems: 60, short: 120, long: 1000, url: 500 };
   var LOCAL_KEY = "conferenceEditor.v1"; // ブラウザ内保存（ローカルモード）の保存先
 
@@ -92,7 +92,7 @@
         if (blank(n.k) && !blank(n.v)) add("error", w2, "項目名が空です。");
         else if (!blank(n.k) && blank(n.v)) add("warn", w2, "「" + str(n.k, 30) + "」の内容が空です（公開されません）。");
       } else if (key === "program") {
-        var w3 = "プログラム " + (i + 1) + "日目";
+        var w3 = "日程と流れ " + (i + 1) + "日目";
         if (blank(n.label)) add("error", w3, "日の見出し（例：1日目）が空です。");
         (Array.isArray(n.items) ? n.items : []).forEach(function (it, j) {
           if (blank((it || {}).text)) add("error", w3 + " の " + (j + 1) + "つ目", "内容が空です。");

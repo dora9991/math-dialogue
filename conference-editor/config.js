@@ -7,6 +7,8 @@
 // 先に supabase/schema.sql を、そのプロジェクトの SQL Editor で実行しておくこと（README の手順）。
 window.CONF_EDITOR_CONFIG = {
   BACKEND: "supabase",
+  // 編集した内容が出るサイト（編集画面からの相対URL）。「サイトのこの部分を開く」のリンクに使う。いらなければ消してよい。
+  SITE_URL: "../conference-demo/",
   SUPABASE_URL: "https://mtzhbiadzqjhvhzzdsbn.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_mq8nUqxVfGtnNHp5UCUtCA_9-x1xn7E"
 };

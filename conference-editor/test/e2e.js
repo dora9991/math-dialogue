@@ -10,7 +10,7 @@ let bad = 0;
 const ok = (c, m) => { if (!c) { bad++; console.log("✗", m); } else if (process.env.VERBOSE) console.log("✓", m); };
 const eq = (a, b, m) => ok(JSON.stringify(a) === JSON.stringify(b), m + "  期待 " + JSON.stringify(b) + " 実際 " + JSON.stringify(a));
 
-const LOCAL_CONFIG = 'window.CONF_EDITOR_CONFIG={BACKEND:"local",SUPABASE_URL:"",SUPABASE_ANON_KEY:""};';
+const LOCAL_CONFIG = 'window.CONF_EDITOR_CONFIG={BACKEND:"local",SUPABASE_URL:"",SUPABASE_ANON_KEY:"",SITE_URL:"../conference-demo/"};';
 const ROOT = path.resolve(__dirname, "..");
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8" };
 function serve() {
@@ -42,7 +42,7 @@ function serve() {
   // ローカルモード
   // =================================================================
   {
-    const ctx = await browser.newContext({ viewport: { width: 1000, height: 900 } });
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     await ctx.route("**/config.js", (r) => r.fulfill({ contentType: "text/javascript", body: LOCAL_CONFIG })); // 設定の既定は supabase なので、ローカルの検査は設定を明示
     const page = await ctx.newPage();
     track(page, "local");
@@ -76,6 +76,38 @@ function serve() {
     await page.locator('.ce-item').nth(0).locator('[data-op="down"]').click();
     eq(await page.locator("#ce-preview .news li").nth(0).locator("p").textContent(), "最初のお知らせ調整中詳細は後日", "お知らせ：↓で順番が入れ替わる");
     eq(await page.locator("#ce-preview .news .tbd").count(), 1, "お知らせ：【調整中】は札になる（.tbd が1つ）");
+
+    // ---- 見取り図・「いま編集しているところ」・光る行 ----
+    eq(await page.locator("#ce-tabs .ce-tab").count(), 3, "見取り図：編集できる場所が3つ");
+    eq(await page.locator("#ce-tabs .ce-tab-fixed").count(), 2, "見取り図：編集しない部分（ページの上・そのほか）も薄く出る");
+    eq(await page.locator(".ce-tab[aria-selected='true'] .ce-tab-now").textContent(), "編集中", "見取り図：いま編集している場所に「編集中」の札");
+    eq(await page.locator("#ce-where-title").textContent(), "お知らせ", "「いま編集しているところ」の見出し");
+    eq(await page.locator("#ce-where-link").getAttribute("href"), "../conference-demo/#news", "「サイトのこの部分を開く」のリンク（お知らせ）");
+    ok(await page.locator(".ce-hint").count() >= 3, "入力欄に、サイトのどこに出るかの説明がある");
+    ok(await page.locator('[data-f="text"]').first().getAttribute("placeholder") !== null, "入力欄に、書き方の例（プレースホルダー）がある");
+    // 入力欄に触ると、プレビューの該当する行が光る
+    await page.locator(".ce-item").nth(1).locator('[data-f="text"]').click();
+    ok(await page.locator(".ce-item").nth(1).evaluate((n) => n.classList.contains("ce-active")), "光る行：触った入力欄のカードが「編集中」になる");
+    eq(await page.locator("#ce-preview .ce-hl").getAttribute("data-i"), "1", "光る行：プレビューの2番目の行が光る");
+    eq(await page.locator("#ce-preview .ce-hl").count(), 1, "光る行：光るのは1行だけ");
+    ok(/編集中/.test(await page.locator(".ce-item").nth(1).locator(".ce-now").innerText()), "光る行：カードに「編集中」の札が見える");
+    await page.locator(".ce-item").nth(0).locator('[data-f="text"]').click();
+    eq(await page.locator("#ce-preview .ce-hl").getAttribute("data-i"), "0", "光る行：別の入力欄に移ると、光る行も移る");
+    // カードの見出しに、中身の要約が出る
+    ok(/最初のお知らせ/.test(await page.locator(".ce-item").nth(0).locator(".ce-sum").textContent()), "カードの見出しに、中身の要約が出る");
+    await page.locator(".ce-item").nth(0).locator('[data-f="text"]').fill("最初のお知らせ【調整中】詳細は後日");
+    // プレビューの行を押すと、その入力欄に移る
+    await page.locator("#ce-preview li[data-i='1']").click();
+    eq(await page.evaluate(() => document.activeElement.closest(".ce-item").getAttribute("data-i")), "1", "プレビューの行を押すと、その入力欄に移る");
+    // 書き終えていない行は、プレビューで点線の薄い行になる（公開するとサイトには出ない）
+    await page.getByRole("button", { name: "お知らせを追加" }).click();
+    eq(await page.locator("#ce-preview .ce-blank").count(), 1, "空のカードは、プレビューで点線の薄い行になる");
+    ok(/書いてください/.test(await page.locator("#ce-preview .ce-blank").textContent()), "空の行に「書いてください」の案内が出る");
+    eq(await page.locator("#ce-preview .ce-hl").getAttribute("data-i"), "2", "追加した行が、すぐ光る（どこを書くのか分かる）");
+    await page.locator(".ce-item").nth(2).locator('[data-op="del"]').click();   // 追加した空のカードを消す
+    eq(await page.locator("#ce-preview .ce-blank").count(), 0, "空のカードを消すと、点線の行も消える");
+    eq(await page.locator(".ce-item").count(), 2, "お知らせは2件に戻る");
+    dialogs.length = 0;   // ここまでの確認ダイアログは、次の検査に数えない
 
     // ---- 点検：不正なURLは公開できない（リンクを付けた5/10の項目 = 2番目のカード） ----
     const second = page.locator(".ce-item").nth(1);
@@ -142,7 +174,8 @@ function serve() {
     eq(await page.locator("#ce-panel .ce-item").count(), 5, "概要：標準の項目が5つ入る");
     await page.locator(".ce-item").nth(2).locator('[data-f="v"]').fill("佐賀市内の会場");
     await page.locator(".ce-item").nth(1).getByRole("button", { name: "【調整中】を入れる" }).click();
-    eq(await page.locator("#ce-preview .spec > div").count(), 2, "概要：プレビューは内容のある行だけ（開催日程の札＋会場。空の3行は出ない）");
+    eq(await page.locator("#ce-preview .spec > div:not(.ce-blank)").count(), 2, "概要：プレビューで、内容のある行は2つ（開催日程の札＋会場）");
+    eq(await page.locator("#ce-preview .spec > div.ce-blank").count(), 3, "概要：書いていない3行は、点線の薄い行で出る（公開するとサイトには出ない）");
     ok(await page.locator("#ce-preview .spec .tbd").count() === 1, "概要：札が1つ");
     ok(/内容が空/.test(await page.locator("#ce-problems").textContent()), "概要：内容が空の項目は注意が出る");
     await page.locator("#ce-publish").click();
@@ -150,7 +183,7 @@ function serve() {
     await snap(page, "editor-overview");
 
     // ---- プログラム ----
-    await tab(page, "プログラム");
+    await tab(page, "日程と流れ");
     await page.getByRole("button", { name: "日を追加" }).click();
     await page.locator(".ce-item").nth(0).locator('[data-f="sub"]').fill("総会と分科会");
     await page.getByRole("button", { name: "この日に項目を追加" }).click();
@@ -160,6 +193,13 @@ function serve() {
     await page.locator(".ce-sub").nth(1).locator('[data-f="text"]').fill("総会");
     await page.getByRole("button", { name: "日を追加" }).click();
     eq(await page.locator(".ce-item").nth(1).locator('[data-f="label"]').inputValue(), "2日目", "プログラム：日の見出しは自動で「2日目」");
+    eq(await page.locator("#ce-where-title").textContent(), "日程と流れ", "「いま編集しているところ」の見出しが、場所に合わせて変わる");
+    eq(await page.locator("#ce-where-link").getAttribute("href"), "../conference-demo/#schedule", "「サイトのこの部分を開く」のリンク（日程と流れ）");
+    eq(await page.locator(".ce-tab[aria-selected='true']").getAttribute("data-key"), "program", "見取り図：「日程と流れ」が選ばれている");
+    await page.locator(".ce-sub").nth(0).locator('[data-f="text"]').click();
+    eq(await page.locator(".ce-sub.ce-active").count(), 1, "光る行：触った項目のカードが「編集中」になる");
+    eq(await page.locator("#ce-preview .day.ce-hl").count(), 1, "光る行：その日のカードが光る");
+    ok(/受付/.test(await page.locator("#ce-preview li.ce-hl2").textContent()), "光る行：その項目の行が、さらに光る");
     eq(await page.locator("#ce-preview .day").count(), 2, "プログラム：プレビューに2日");
     eq(await page.locator("#ce-preview .day").nth(0).locator("li").count(), 2, "プログラム：1日目に2項目");
     await page.locator(".ce-sub").nth(1).locator('[data-op="up"]').click();
