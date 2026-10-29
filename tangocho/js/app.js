@@ -56,7 +56,7 @@
     const cats = TG.cats.map(c => {
       const us = TG.units.filter(u => u.cat === c.id);
       return `<section class="cat c-${c.id}"><h2>${esc(c.name)}<small>${esc(c.sub || '')}</small></h2><div class="grid">${us.map(u =>
-        `<a class="ucard" href="#/u/${u.id}"><b>${esc(u.name)}</b><span class="nt">${esc(u.note)}</span><span class="mt">${u.n}問（前半${u.n / 2}＋後半${u.n / 2}）／ 1分　<span class="dots">${dots(u)}</span></span></a>`).join('')}</div></section>`;
+        `<a class="ucard" href="#/u/${u.id}"><b>${esc(u.name)}</b><span class="nt">${esc(u.note)}</span><span class="mt">${TG.nText(u)}（前半・後半が半分ずつ）／ 1分　<span class="dots">${dots(u)}</span></span></a>`).join('')}</div></section>`;
     }).join('');
     return `<header class="top"><div><h1>計算単語帳</h1><p>頭の中で計算する力を、1分ずつきたえる。ひとりでも、ペアでも。</p></div>
       <span class="hbtns"><a class="btn" href="#/book">📖 ハンドブック</a>${ART ? '' : '<a class="btn" href="#/sheet">🖨 プリント・配布シート</a>'}</span></header>
@@ -81,12 +81,12 @@
       const st = i + 1, best = bestOf(u.id, st), goal = TG.goalOf(u, st);
       const chips = [1, 2, 3, 4, 5, 6].map(n => `<a class="chip" href="#/u/${u.id}/${st}/${n}">セット${n}</a>`).join('');
       return `<section class="step${passed(u, st) ? ' ok' : ''}"><div class="sh"><b>STEP${st}</b><span>${esc(s.name)}</span></div>
-        <p class="sm">1分で <b>${goal}問</b> が目標　<span class="nm2">後半：${esc(s.name2)}</span>${best ? `　　最高 <b>${best}問</b>${passed(u, st) ? ' ✓合格' : ''}` : ''}</p>
+        <p class="sm">1分で <b>${goal}問</b> が目標（1セット ${TG.nOf(u, st)}問）　<span class="nm2">後半：${esc(s.name2)}</span>${best ? `　　最高 <b>${best}問</b>${passed(u, st) ? ' ✓合格' : ''}` : ''}</p>
         <div class="chips">${chips}<a class="chip dice" href="#/u/${u.id}/${st}/${Math.floor(100 + Math.random() * 9900)}" title="新しい問題">🎲 べつの問題</a></div>
         ${ART ? '' : `<a class="pl" href="#/sheet?mode=pair&u=${u.id}&step=${st}&from=1&to=1">🖨 印刷する</a>`}</section>`;
     }).join('');
     const book = u.cat === 'vocab' ? `<p class="bk"><a href="#/book/${u.id}">📖 ハンドブックの該当ページを読む</a></p>` : '';
-    return `<header class="top"><div><a class="back" href="#/">← 単元いちらん</a><h1>${esc(u.name)}</h1><p>${esc(u.note)}　／　1セット ${u.n}問（前半${u.n / 2}問＋後半${u.n / 2}問）・1分</p></div>
+    return `<header class="top"><div><a class="back" href="#/">← 単元いちらん</a><h1>${esc(u.name)}</h1><p>${esc(u.note)}　／　1セット ${TG.nText(u)}（前半・後半が半分ずつ）・1分</p></div>
       ${ART ? '' : `<a class="btn" href="#/sheet?mode=pair&u=${u.id}&step=all&from=1&to=1">🖨 この単元を印刷</a>`}</header>
     <main class="wrap narrow">${book}${steps}</main>`;
   }
@@ -123,6 +123,7 @@
     const set = TG.makeSet(u.id, step, setNo);
     const n = set.items.length;
     const isFig = u.layout === 'fig';
+    const zs = n > 30 && !isFig ? 's' : 'm';   // 問題の多いセットは、小さめの字で（1画面に多くのせる）
     const base = `#/u/${u.id}/${step}/`;
     const lis = set.items.map((it, i) => (i === set.half ? `<li class="part"><b>ここから後半</b>　少しむずかしい：${esc(set.stepInfo.name2)}</li>` : '')
       + `<li><button class="q" data-i="${i}" data-m=""><span class="no">${i + 1}</span>${it.fig ? `<span class="fg">${it.fig}</span>` : ''}<span class="qt">${qLine(it, true)}</span><span class="mk"></span></button></li>`).join('');
@@ -136,12 +137,12 @@
           <div class="btns"><button class="btn pri" id="go">▶ スタート</button><button class="btn" id="rs">もどす</button></div>
           <label class="tgl"><input type="checkbox" id="ans"> <span>答えを見る（出題者）</span></label>
           <label class="tgl"><input type="checkbox" id="snd"${soundOn() ? ' checked' : ''}> <span>音</span></label>
-          <div class="sizes" id="sizes">文字　<button data-s="s">小</button><button data-s="m" class="on">中</button><button data-s="l">大</button></div>
+          <div class="sizes" id="sizes">文字　${['s', 'm', 'l'].map((k, i) => `<button data-s="${k}"${k === zs ? ' class="on"' : ''}>${'小中大'[i]}</button>`).join('')}</div>
           <div class="score" id="score"><span class="sc"><b id="sc">0</b><small>／${n}問</small></span><span class="gl">目標 ${set.goal}問</span><span class="ps" id="ps"></span><span class="fb" id="fb">前半 0／${set.half}　後半 0／${n - set.half}</span></div>
           <p class="hint">問題をタップすると ○ → ✗ → なし。○の数が得点。</p>
           ${ART ? '' : `<a class="plink" href="#/sheet?mode=pair&u=${u.id}&step=${step}&from=${setNo}&to=${setNo}">🖨 このセットを印刷</a>`}
         </aside>
-        <ol class="qs${isFig ? ' fig' : ''}${set.items.some(it => (it.pre + it.post + it.ans).replace(/\{\d+\/\d+\}/g, 'xx').length > 16) ? ' lg' : ''} z-m" style="--aw:${ansWidth(set.items)}" id="qs">${lis}</ol>
+        <ol class="qs${isFig ? ' fig' : ''}${set.items.some(it => (it.pre + it.post + it.ans).replace(/\{\d+\/\d+\}/g, 'xx').length > 16) ? ' lg' : ''} z-${zs}" style="--aw:${ansWidth(set.items)}" id="qs">${lis}</ol>
       </main>`;
     bindPlay(u, step, set);
   }
@@ -232,7 +233,7 @@
 
   /* ---------------- 印刷シート ---------------- */
   // 1枚のカード（＝1セット）。kind：'q'＝問題だけ（答えの欄はあけておく）／'qa'＝答えつき（赤字）。mirror：うら面用に、左右の列を入れかえる
-  // part：'all'＝20問を1枚に（左の列が前半、右の列が後半）／0＝前半だけ／1＝後半だけ（図つきの単元は、前半カードと後半カードの2枚にする）
+  // part：'all'＝1セットを1枚に（左の列が前半、右の列が後半）／0＝前半だけ／1＝後半だけ（図つきの単元は、前半カードと後半カードの2枚にする）
   function cardHTML(set, kind, mirror, part) {
     const u = set.unit, n = set.items.length, lo = part === 1 ? set.half : 0, hi = part === 0 ? set.half : n;
     const sub = set.items.slice(lo, hi);
@@ -247,7 +248,7 @@
   }
   // spec＝{ set, part }。null は、あきの枠（図つきの前半・後半を、同じ紙にそろえるため）
   const cardOf = (spec, kind, mirror) => (spec ? cardHTML(spec.set, kind, mirror, spec.part) : '<article class="card empty"></article>');
-  const pageHTML = (specs, kind, mirror, label) => `<section class="page"><div class="pl">${label}</div>${specs.map(s => cardOf(s, kind, mirror)).join('<div class="cut"><span>✂</span></div>')}</section>`;
+  const pageHTML = (specs, kind, mirror, label) => `<section class="page${specs.length === 1 ? ' one' : ''}"><div class="pl">${label}</div>${specs.map(s => cardOf(s, kind, mirror)).join('<div class="cut"><span>✂</span></div>')}</section>`;
 
   function sheetView(p) {
     const mode = ['q', 'qa', 'pair'].includes(p.get('mode')) ? p.get('mode') : 'pair';
@@ -265,12 +266,18 @@
     // 1枚の紙＝カード2枚。文字の単元は1セット＝1カード、図つきの単元は1セット＝前半・後半の2カード（同じ紙にそろえる）
     const sheets = [];
     let cur = [];
+    const flush = () => { if (cur.length) { sheets.push([cur[0], null]); cur = []; } };
     const place = group => {
-      if (group.length === 2 && cur.length === 1) { sheets.push([cur[0], null]); cur = []; }
+      if (group.length === 2 && cur.length === 1) flush();
       cur.push(...group);
       if (cur.length === 2) { sheets.push(cur); cur = []; }
     };
-    sets.forEach(s => place(s.unit.layout === 'fig' ? [{ set: s, part: 0 }, { set: s, part: 1 }] : [{ set: s, part: 'all' }]));
+    // 問題の多いセット（25問以上）は、1セットで A4 1枚（半分の大きさでは、1行が低すぎて書けない）
+    sets.forEach(s => {
+      if (s.unit.layout === 'fig') place([{ set: s, part: 0 }, { set: s, part: 1 }]);
+      else if (s.items.length > 24) { flush(); sheets.push([{ set: s, part: 'all' }]); }
+      else place([{ set: s, part: 'all' }]);
+    });
     if (cur.length) sheets.push([cur[0], null]);
     const pages = [];
     sheets.forEach(sp => {
@@ -291,7 +298,7 @@
         <label>STEP<select name="step">${opt('all', stepP, 'ぜんぶ')}${[1, 2, 3].map(s => opt(s, stepP, 'STEP' + s)).join('')}</select></label>
         <label>セット番号<span class="rng"><input name="from" type="number" min="1" max="99999" value="${from}"> 〜 <input name="to" type="number" min="1" max="99999" value="${to}"></span></label>
       </form>
-      <p class="sinfo">セット <b>${sets.length}</b> 組（1セット＝20問・1分）→ A4 <b>${sheets.length}</b> 枚${mode === 'pair' ? '（両面。プリンターの設定は「両面印刷・長辺とじ」）' : '（片面）'}。1枚のA4を半分に切ると、A5のカードになります。${tooMany ? '<br><b>多すぎるので 100 セットまでにしました。</b>' : ''}</p></div>
+      <p class="sinfo">セット <b>${sets.length}</b> 組（1セット＝20〜50問・1分）→ A4 <b>${sheets.length}</b> 枚${mode === 'pair' ? '（両面。プリンターの設定は「両面印刷・長辺とじ」）' : '（片面）'}。1枚のA4に、1セット（25問以上のとき）か、2セット（A5のカード2枚。切って使える）がのります。${tooMany ? '<br><b>多すぎるので 100 セットまでにしました。</b>' : ''}</p></div>
       <div class="pages" id="pages">${pages.join('')}</div>`;
     const form = document.getElementById('opts');
     form.addEventListener('change', () => {

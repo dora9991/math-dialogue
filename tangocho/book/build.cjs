@@ -79,7 +79,8 @@ function qLine(it) {
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 function fontSize(items) {
   const m = Math.max(...items.map((it) => plain(it.pre + it.post + it.ans).length + (it.eq ? 2 : 0)));
-  const s = m <= 20 ? 5.3 : m <= 26 ? 4.9 : m <= 32 ? 4.5 : 4.1;
+  let s = m <= 20 ? 5.3 : m <= 26 ? 4.9 : m <= 32 ? 4.5 : 4.1;
+  if (items.length > 20) s = Math.min(s, 182 / (items.length / 2) * 0.66);   // 2列のとき：1行の高さ（約182mm÷行数）に字を入れる
   return items.some((it) => /\{\d+\/\d+\}/.test(it.pre + it.ans + it.post)) ? Math.min(s, 4.6) : s;   // 立てて書く分数は、行の高さをとる
 }
 function ansWidth(items) {
@@ -89,7 +90,8 @@ function ansWidth(items) {
 const rowsHTML = (items, from, hard) => `<ol class="rows${hard ? ' hard' : ''}" start="${from + 1}">${items.map((it, i) => `<li class="rw"><span class="no">${from + i + 1}</span>${it.fig ? `<span class="fg">${it.fig}</span>` : ''}<span class="qt">${qLine(it)}</span></li>`).join('')}</ol>`;
 
 /* ---------------- 1分トレーニングの1ページ ---------------- */
-// part：'all'＝20問（前半10＋後半10）／0＝前半だけ／1＝後半だけ（図つきの単元は、前半と後半を別のページにする）
+// part：'all'＝1ページに全部／0＝前半だけ／1＝後半だけ（図つきの単元は、前半と後半を別のページにする）
+// 20問までは1列（前半10＋後半10を、上から下へ）。それより多い単元は2列（左の列が前半、右の列が後半）
 function drillBody(set, part, setNo, mini) {
   const u = set.unit, st = set.stepInfo, items = set.items, h2 = set.half;
   const lo = part === 1 ? h2 : 0, hi = part === 0 ? h2 : items.length;
@@ -97,12 +99,15 @@ function drillBody(set, part, setNo, mini) {
   const hd = (tag, cls, inner) => (mini ? `<div class="${cls}">${inner}</div>` : `<${tag} class="${cls}">${inner}</${tag}>`);
   const partLabel = part === 0 ? '　前半' : part === 1 ? '　後半' : '';
   const front = part === 'all' || part === 0, back = part === 'all' || part === 1;
-  const fig = u.layout === 'fig';
+  const cols = part === 'all' && items.length > 20;
+  const half2 = (tag, cls, a, b) => `<div class="bar two${cls}"><div><span>${tag}</span><small>${a}</small></div><em>${b}</em></div>`;
   return `<div class="dh"><div class="l"><div class="un">${esc(u.name)}</div><div class="st"><span class="stb">STEP ${set.step}</span>${hd('h3', 'stn', esc(st.name))}</div></div>
       <div class="r"><div class="set">セット ${setNo}${partLabel}</div><div class="gl">1分で<b>${set.goal}</b>問</div></div></div>
     <div class="rec"><span>日付<u></u></span><span>○の数<u class="s"></u>／${sub.length}</span></div>
+    ${cols ? `<div class="cols"><div class="col">${half2('前半', '', `1〜${h2}`, 'ふつうの問題')}${rowsHTML(items.slice(0, h2), 0, false)}</div>
+      <div class="col">${half2('後半', ' hard', `${h2 + 1}〜${items.length}`, '少しむずかしい：' + esc(st.name2))}${rowsHTML(items.slice(h2), h2, true)}</div></div>` : `
     ${front ? `<div class="bar"><span>前半</span><small>ふつうの問題（1〜${h2}）</small></div>${rowsHTML(items.slice(0, h2), 0, false)}` : ''}
-    ${back ? `<div class="bar hard"><span>後半</span><small>少しむずかしい：${esc(st.name2)}（${h2 + 1}〜${items.length}）</small></div>${rowsHTML(items.slice(h2), h2, true)}` : ''}
+    ${back ? `<div class="bar hard"><span>後半</span><small>少しむずかしい：${esc(st.name2)}（${h2 + 1}〜${items.length}）</small></div>${rowsHTML(items.slice(h2), h2, true)}` : ''}`}
     <div class="dfoot"><span><span class="rd">赤字</span>は答え。赤シートでかくせます。</span><span>${esc(u.name)} ／ STEP ${set.step} ／ セット ${setNo}${partLabel}</span></div>`;
 }
 function drillStyle(set) { return `--fs:${fontSize(set.items)}mm;--aw:${ansWidth(set.items)}`; }
@@ -139,10 +144,10 @@ function frontMatter() {
   // 2 ページの見かた（見返し）
   const demo = TG.makeSet('add1', 2, 1);
   const mini = `<div class="mini"><div class="scale"><div class="pg odd c1 drill" style="${drillStyle(demo)};margin:0"><div class="in">${drillBody(demo, 'all', 1, true)}</div></div></div>
-    ${[[5, 5], [87, 5], [87, 18], [5, 22.6], [35.6, 26.7], [5, 74], [3, 36]].map((p, i) => `<div class="co" style="left:${p[0]}mm;top:${p[1]}mm">${i + 1}</div>`).join('')}</div>`;
-  const legend = ['単元の名前と STEP。STEP が上がるほど、むずかしくなります。', 'セット番号と、1分の目標（合格ライン）。目標以上に ○ がついたら合格です。', '記録欄。日付と、○ の数を書きます。', '<b>前半（10問）</b>。そのSTEPの、ふつうの問題です。', '<b>赤字は答え</b>。赤シートでかくせます。ペアの出題者は、これを見て ○ をつけます。', '<b>後半（10問）</b>。同じSTEPの中で、少しだけむずかしい問題。早く終わった人は、ここへ。', '問題の番号。1分で、どこまで進めたかを数えます。'];
+    ${[[-2.6, 9.6], [92, 9.6], [51.6, 18.4], [-2.6, 25], [33.6, 29.6], [92, 25], [3.2, 33.4]].map((p, i) => `<div class="co" style="left:${p[0]}mm;top:${p[1]}mm">${i + 1}</div>`).join('')}</div>`;
+  const legend = ['単元の名前と STEP。STEP が上がるほど、むずかしくなります。', 'セット番号と、1分の目標（合格ライン）。目標以上に ○ がついたら合格です。', '記録欄。日付と、○ の数を書きます。', '<b>前半</b>（左の列）。そのSTEPの、ふつうの問題です。', '<b>赤字は答え</b>。赤シートでかくせます。ペアの出題者は、これを見て ○ をつけます。', '<b>後半</b>（右の列）。同じSTEPの中で、少しだけむずかしい問題。早く終わった人は、ここへ。', '問題の番号。1分で、どこまで進めたかを数えます。'];
   add({ cls: 'howpg txt', ch: 0, body: `<h1><small>HOW TO READ</small>ページの見かた</h1><div>${mini}<ul class="legend">${legend.map((t, i) => `<li><i>${i + 1}</i><span>${t}</span></li>`).join('')}</ul>
-    <div class="note"><p style="font-size:3.4mm">たし算（1けた）STEP 2 セット1 の実際のページを、縮めたものです。<br>1ページ＝1セット＝20問。1分はかって、解けた数を数えます。</p></div></div>` });
+    <div class="note"><p style="font-size:3.3mm;line-height:1.6">たし算（1けた）STEP 2 セット1 の実際のページを、縮めたものです。1ページ＝1セット（このページは40問。問題の数は、単元とSTEPで20〜50問）。1分はかって、解けた数を数えます。</p></div></div>` });
   // 3 扉
   needRecto();
   add({ cls: 'title-pg', norun: true, nofolio: true, raw: `<div class="tp1">数学の単語帳</div><div class="bar"></div><div class="tp2">計算効率ハンドブック ＋ 1分トレーニング</div><div class="tp3">小3〜中3編</div><div class="tp4">頭の中で計算する力を、1分ずつ。</div>` });
@@ -164,8 +169,9 @@ function frontMatter() {
     <h2>章の流れ</h2>
     <p>学年の順に、3つの章です。どの章も「読む → 覚える → 計算する」の順に進みます。</p>
     <ul>${CH.map((c) => `<li><b>第${c.n}章　${c.grade}</b>　${c.title}</li>`).join('')}</ul>
-    <h2>1セットは20問、時間は1分</h2>
-    <p>1ページが1セットです。<b>前半の10問</b>は、そのSTEPのふつうの問題。<b>後半の10問</b>は、同じSTEPの中で少しだけむずかしい問題です（語彙カードは、後半が逆向きになります）。1分はかって、どこまで解けたか、○ の数を数えます。</p>
+    <h2>1セットは1ページ、時間は1分</h2>
+    <p>1ページが1セットです。問題の数は、単元とSTEPによって<b>20〜50問</b>。計算のとても速い人が、1分でやっと解き終わるくらいの量にしてあります（短い計算ほど多く、図を読む問題は少なく）。ほとんどの人は、途中で1分がきます。それで大丈夫です。</p>
+    <p><b>前半</b>（左の列。20問のページは上半分）は、そのSTEPのふつうの問題。<b>後半</b>（右の列。20問のページは下半分）は、同じSTEPの中で少しだけむずかしい問題です（語彙カードは、後半が逆向きになります）。1分はかって、どこまで解けたか、○ の数を数えます。</p>
     <p>STEPごとに「目標（合格ライン）」があります。目標以上に ○ がついたら合格。次のSTEPへ進みましょう。前半を早く終えた人は、そのまま後半へ。後半は、1分で終わらなくてもかまいません。</p>` });
   // 6 ひとりで・ペアで
   add({ cls: 'txt', body: `<h1><small>HOW TO USE</small>ひとりで、ペアで</h1>
@@ -237,14 +243,14 @@ function unitPages(id, c, secLabel) {
   const fig = u.layout === 'fig';
   const rows = u.steps.map((st, i) => {
     const step = i + 1, goal = TG.goalOf(u, step), cells = [];
-    for (let s = 1; s <= SETS; s++) cells.push(`<td class="r"><div>セット${s}　<span style="margin-left:auto">p.{{p:${id}:${step}:${s}}}</span></div><div>日付</div><div>○の数　　／${st.n || u.n}</div></td>`);
-    return `<tr><td class="s">STEP ${step}<small>${st.n ? st.n + '問' : ''}</small></td><td><span class="nm">${esc(st.name)}</span><span class="hd"><i>後半</i>　${esc(st.name2)}</span></td><td class="g"><b>${goal}</b><small>問 / 1分</small></td>${cells.join('')}</tr>`;
+    for (let s = 1; s <= SETS; s++) cells.push(`<td class="r"><div>セット${s}　<span style="margin-left:auto">p.{{p:${id}:${step}:${s}}}</span></div><div>日付</div><div>○の数　　／${TG.nOf(u, step)}</div></td>`);
+    return `<tr><td class="s">STEP ${step}<small>${TG.nOf(u, step)}問</small></td><td><span class="nm">${esc(st.name)}</span><span class="hd"><i>後半</i>　${esc(st.name2)}</span></td><td class="g"><b>${goal}</b><small>問 / 1分</small></td>${cells.join('')}</tr>`;
   }).join('');
   const hbRef = Object.values(TG.book.sections).flatMap((s) => s.blocks).find((b) => b.deck === id);
   const tip = vocab
     ? `<b>語彙カード</b>は、前半が表のとおりの向き、後半が<b>逆向き</b>（往復）です。<span class="rd">赤字</span>の答えを、赤シートでかくして使います。${hbRef ? `<br>ハンドブックの説明は p.{{p:hb:${id}}} にあります。` : ''}`
     : fig ? `図のある問題は、前半と後半を<b>べつのページ</b>にしました（1セット＝2ページ）。<span class="rd">赤字</span>は答えです。` : `<span class="rd">赤字</span>は答えです。赤シートでかくして、頭の中で計算しましょう。ペアなら、出題者が本を持って問題を読み上げます。`;
-  add({ cls: 'opener', ch: c.n, tab: true, run, body: `<div class="sec">第${c.n}章　${secLabel}</div><h1>${esc(u.name)}</h1><p class="note">${esc(u.note)}　／　1セット${u.n}問（前半${u.n / 2}＋後半${u.n / 2}）・1分</p>
+  add({ cls: 'opener', ch: c.n, tab: true, run, body: `<div class="sec">第${c.n}章　${secLabel}</div><h1>${esc(u.name)}</h1><p class="note">${esc(u.note)}　／　1セット${TG.nText(u)}（前半・後半が半分ずつ）・1分</p>
     <table><thead><tr><th>STEP</th><th>内容</th><th style="text-align:center">目標</th>${Array.from({ length: SETS }, (_, i) => `<th>セット${i + 1}の記録</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>
     <div class="tip">${tip}</div>` });
   u.steps.forEach((st, i) => {
@@ -280,7 +286,7 @@ function backMatter() {
   // 裏表紙（総ページ数を偶数にする）
   while ((pages.length + 1) % 4 !== 0) memoPage(0);   // 裏表紙で、総ページ数が4の倍数になる
   add({ cls: 'cover back', norun: true, nofolio: true, raw: `<div class="cp">頭の中で計算する力を、<br>1分ずつ。</div>
-    <div class="cb"><ul><li>1ページ＝1セット＝20問。前半10問は、そのSTEPのふつうの問題。後半10問は、少しむずかしい問題。</li><li>答えは赤字。赤シートをのせれば、ひとりでも、ペアでも。</li><li>読む → 覚える → 計算する。小3〜小4、小5〜小6、中1〜中3の3章。</li></ul></div>
+    <div class="cb"><ul><li>1ページ＝1セット＝20〜50問。前半は、そのSTEPのふつうの問題。後半は、少しむずかしい問題。</li><li>答えは赤字。赤シートをのせれば、ひとりでも、ペアでも。</li><li>読む → 覚える → 計算する。小3〜小4、小5〜小6、中1〜中3の3章。</li></ul></div>
     <div class="dot3"><i style="background:#4a90d9"></i><i style="background:#3fae7a"></i><i style="background:#9b7be0"></i></div><div class="tag">数学の単語帳　小3〜中3編</div>` });
 }
 

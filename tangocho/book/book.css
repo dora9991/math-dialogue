@@ -113,7 +113,7 @@ a{color:inherit;text-decoration:none}
 /* ページの見かた（見返し） */
 .howpg .mini{position:relative;width:98.3mm;height:138.8mm;margin:0 auto}
 .howpg .mini .pg{margin:0!important;box-shadow:none!important;break-after:auto!important}
-.howpg .mini .scale{position:absolute;left:0;top:0;width:182mm;height:257mm;transform:scale(.54);transform-origin:0 0;border:.5mm solid var(--line)}
+.howpg .mini .scale{position:absolute;left:0;top:0;width:182mm;height:257mm;zoom:.54;border:.5mm solid var(--line)}   /* transform だと、印刷のとき「縮める前」の大きさで次のページへ送られて、下が切れる。zoom なら縮んだ大きさで組まれる */
 .howpg .co{position:absolute;width:6mm;height:6mm;border-radius:50%;background:var(--amber);color:var(--navy);font:900 3.6mm/6mm var(--sans);text-align:center;box-shadow:0 0 0 .6mm #fff}
 .howpg .legend{margin:5mm 0 0;padding:0;columns:2;column-gap:8mm}
 .howpg .legend li{font:400 3.1mm/1.6 var(--sans);margin-bottom:3mm;list-style:none;display:flex;gap:2mm;break-inside:avoid}
@@ -190,6 +190,16 @@ a{color:inherit;text-decoration:none}
 .bar.hard{color:var(--c)}
 .bar.hard small{color:var(--ink2)}
 .rows{list-style:none;margin:0;padding:0;flex:1;display:flex;flex-direction:column;min-height:0}
+/* 2列（20問より多い単元）：左が前半、右が後半 */
+.cols{flex:1;display:flex;gap:6mm;min-height:0;margin-top:2mm}
+.col{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.bar.two{display:block;height:11mm;margin-top:0;padding:1.2mm 1mm 0;line-height:1.2}
+.bar.two>div{display:flex;align-items:baseline;gap:3mm;height:4.4mm}
+.bar.two span{font:700 3.2mm/1.2 var(--sans);letter-spacing:.1em}
+.bar.two small{font:500 3mm/1.2 var(--sans);color:var(--ink3);letter-spacing:.02em}
+.bar.two em{display:block;font:500 2.8mm/1.25 var(--sans);font-style:normal;color:var(--ink2);margin-top:.6mm;white-space:nowrap;overflow:hidden}
+.cols .rw{gap:2.2mm}
+.cols .rw .no{width:5.4mm;height:5.4mm;font:700 2.8mm/5.4mm var(--sans)}
 .rows.hard{background:var(--ct);border-radius:0 0 1.4mm 1.4mm}
 .rw{flex:1;display:flex;align-items:center;gap:3mm;min-height:0;border-bottom:.2mm dotted #b4bcc7;padding-left:1mm;white-space:nowrap}
 .rw:last-child{border-bottom:0}

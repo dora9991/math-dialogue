@@ -253,6 +253,10 @@ body.is-sheet{background:#dcdad2}
   .page{margin:0;box-shadow:none;break-after:page;page-break-after:always}
   .page:last-child{break-after:auto;page-break-after:auto}
 }
+/* 1セットで A4 1枚（25問以上）：切り取り線なし、字を少し大きく */
+.page.one .card{--fs:6mm}
+.page.one .card.fs-m{--fs:5.8mm}.page.one .card.fs-s{--fs:5mm}
+.page.one .ci .no{width:6.6mm;height:6.6mm;font-size:3.6mm}
 
 </style>
 </head>
@@ -262,8 +266,10 @@ body.is-sheet{background:#dcdad2}
 /* ---- js/core.js ---- */
 /* tangocho：計算単語帳（1分トレーニング）の土台。画面を持たない（ブラウザでも node の検査でも読める）。
    問題は「単元・STEP・セット番号」から作る。同じ番号なら、いつ・どの端末で開いても同じ問題になる（紙と画面が一致する）。
-   1セット＝20問。前半10問（その STEP のふつうの問題）＋ 後半10問（同じ STEP の中で、少しだけむずかしい問題）。
+   1セット＝20〜50問（単元・STEP ごとに決める）。前半（半分）はその STEP のふつうの問題、後半（半分）は同じ STEP の中で少しだけむずかしい問題。
      計算の早い子が前半をすぐ解き終わっても、そのまま後半へ進める。
+     問題数は「計算のとても速い人が、1分でやっと解き終わる量」が目安。1けたのたし算・ひき算は50問、九九は32〜40問、2けたのたし算・ひき算は20〜30問、
+     分数・小数・割合・図形・語彙カードは20問前後（単元の n が基本で、STEP だけちがうときは STEP の n）。
    問題の形：{ pre, eq, ans, post, fig, meta }
      「pre ＝ ［ans］ post」の形で出る（eq:false なら「＝」なし）。文字の中の {3/4} は分数。
      fig＝図（SVG）、meta＝図の寸法など（tools/verify.cjs が別の道すじで検算するための材料）。 */
@@ -322,6 +328,9 @@ body.is-sheet{background:#dcdad2}
   //      （種類をえらびなおさないので、通りにくい種類が少なくなりすぎない。割引・三角形・円すい…のように、種類がまざる STEP で使う）
   TG.addUnit = function (u) { u.layout = u.layout || 'text'; TG.units.push(u); return u; };
   TG.unit = id => TG.units.find(u => u.id === id);
+  // 1セットの問題数（STEP の n があればそれ、なければ単元の n）／単元ぜんたいの問題数の書き方（20問、または 30〜50問）
+  TG.nOf = (u, step) => (u.steps[step - 1] && u.steps[step - 1].n) || u.n;
+  TG.nText = u => { const ns = u.steps.map((_, i) => TG.nOf(u, i + 1)), lo = Math.min(...ns), hi = Math.max(...ns); return lo === hi ? `${lo}問` : `${lo}〜${hi}問`; };
 
   const produce = (st, r, hard) => {
     const mix = hard ? st.mix2 : st.mix, gen = hard ? st.gen2 : st.gen;
@@ -339,7 +348,7 @@ body.is-sheet{background:#dcdad2}
     const st = u && u.steps[step - 1];
     if (!st) return null;
     const r = TG.rng(`${u.id}/${step}/${setNo}`);
-    const n = st.n || u.n, half = n / 2, seen = new Set();   // st.n：その STEP だけ問題数がちがうとき（候補の少ない語彙カード）
+    const n = TG.nOf(u, step), half = n / 2, seen = new Set();   // st.n：その STEP だけ問題数がちがうとき
     const make = (hard, count) => {
       const out = [];
       for (let tries = 0; out.length < count && tries < 30000; tries++) {
@@ -363,28 +372,30 @@ body.is-sheet{background:#dcdad2}
 /* ---- js/units-basic.js ---- */
 /* 単元：1けたの計算・2けたの計算（たし算・ひき算・かけ算・わり算）。
    各 STEP は 前半（gen／mix）＋ 後半（gen2／mix2＝同じ STEP の中で少しだけむずかしい。name2 がその説明）。
-   どれも「条件に合わなければ null を返して作りなおす」書き方。条件は tools/verify.cjs が別の道すじで確かめる。 */
+   どれも「条件に合わなければ null を返して作りなおす」書き方。条件は tools/verify.cjs が別の道すじで確かめる。
+   問題数（n）は「計算のとても速い人が、1分でやっと解き終わる量」を目安にした。短い計算ほど多い（1けたのたし算・ひき算は50問）。
+   単元の n が基本で、STEP だけちがうときは STEP に n を書く（前半と後半で半分ずつ）。 */
 (function () {
   'use strict';
   const TG = window.TG;
   const q = (pre, ans, o) => Object.assign({ pre: String(pre), eq: true, ans: String(ans) }, o);
   // 順番を入れかえても同じ問題として数える（key を式の形にそろえる）。2けた×1けたは、たまに順番を入れかえて出す
   const mulQ = (r, a, m) => q(r.chance(0.25) ? `${m} × ${a}` : `${a} × ${m}`, a * m, { key: `${a}×${m}` });
-  const either = (r, a, b) => q(r.chance(0.5) ? `${a} × ${b}` : `${b} × ${a}`, a * b, { key: `${Math.min(a, b)}×${Math.max(a, b)}` });
+  const either = (r, a, b) => q(r.chance(0.5) ? `${a} × ${b}` : `${b} × ${a}`, a * b);   // 7×8 と 8×7 は、べつの問題（九九は往復で覚える）
 
   /* ---------- 1けた ---------- */
   TG.addUnit({
-    id: 'add1', cat: 'basic', name: 'たし算（1けた）', note: '1けた＋1けた', n: 20, goal: [15, 12, 8],
+    id: 'add1', cat: 'basic', name: 'たし算（1けた）', note: '1けた＋1けた', n: 50, goal: [15, 12, 8],
     steps: [
       { name: '和が10まで',
         gen: r => { const a = r.int(1, 9), b = r.int(1, 9); return a + b <= 10 ? q(`${a} + ${b}`, a + b) : null; },
         name2: '3つの数（和が10まで）',
         gen2: r => { const a = r.int(1, 6), b = r.int(1, 6), c = r.int(1, 6); return a + b + c >= 6 && a + b + c <= 10 ? q(`${a} + ${b} + ${c}`, a + b + c) : null; } },
-      { name: 'くり上がりあり',
+      { name: 'くり上がりあり', n: 40,
         gen: r => { const a = r.int(2, 9), b = r.int(2, 9); return a + b >= 11 ? q(`${a} + ${b}`, a + b) : null; },
-        name2: '和が13以上',
-        gen2: r => { const a = r.int(4, 9), b = r.int(4, 9); return a + b >= 13 ? q(`${a} + ${b}`, a + b) : null; } },
-      { name: '3つの数（10をつくる）',
+        name2: '2けた＋1けた（くり上がり）',
+        gen2: r => { const a = r.int(12, 89), b = r.int(2, 9); return a % 10 + b >= 10 ? q(r.chance(0.3) ? `${b} + ${a}` : `${a} + ${b}`, a + b, { key: `${a}+${b}` }) : null; } },
+      { name: '3つの数（10をつくる）', n: 30,
         gen: r => { const a = r.int(1, 9), c = r.int(2, 9); return q(r.shuffle([a, 10 - a, c]).join(' + '), 10 + c); },
         name2: '3つの数（10の組なし）',
         gen2: r => {
@@ -395,17 +406,17 @@ body.is-sheet{background:#dcdad2}
   });
 
   TG.addUnit({
-    id: 'sub1', cat: 'basic', name: 'ひき算（1けた）', note: '10までの数・くり下がり', n: 20, goal: [14, 11, 8],
+    id: 'sub1', cat: 'basic', name: 'ひき算（1けた）', note: '10までの数・くり下がり', n: 50, goal: [14, 11, 8],
     steps: [
       { name: '10までのひき算',
         gen: r => { const a = r.int(2, 10), b = r.int(1, a - 1); return q(`${a} − ${b}`, a - b); },
         name2: 'ひき算を2回',
         gen2: r => { const a = r.int(6, 10), b = r.int(1, 5), c = r.int(1, 5); return a - b - c >= 1 ? q(`${a} − ${b} − ${c}`, a - b - c) : null; } },
-      { name: 'くり下がりあり（11〜18−1けた）',
+      { name: 'くり下がりあり（11〜18−1けた）', n: 40,
         gen: r => { const a = r.int(11, 18), b = r.int(2, 9); return b > a % 10 ? q(`${a} − ${b}`, a - b) : null; },
-        name2: 'ひく数が6〜9',
-        gen2: r => { const a = r.int(13, 18), b = r.int(6, 9); return b > a % 10 ? q(`${a} − ${b}`, a - b) : null; } },
-      { name: 'ミックス',
+        name2: '2けた−1けた（くり下がり）',
+        gen2: r => { const a = r.int(21, 98), b = r.int(2, 9); return b > a % 10 ? q(`${a} − ${b}`, a - b) : null; } },
+      { name: 'ミックス', n: 40,
         gen: r => { const a = r.int(10, 19), b = r.int(2, 9); return q(`${a} − ${b}`, a - b); },
         name2: 'ひき算を2回（10をまたぐ）',
         gen2: r => {
@@ -416,13 +427,13 @@ body.is-sheet{background:#dcdad2}
   });
 
   TG.addUnit({
-    id: 'mul1', cat: 'basic', name: 'かけ算（九九）', note: '1けた×1けた', n: 20, goal: [14, 10, 10],
+    id: 'mul1', cat: 'basic', name: 'かけ算（九九）', note: '1けた×1けた', n: 40, goal: [14, 10, 10],
     steps: [
       { name: '2・3・4・5のだん',
         gen: r => { const a = r.pick([2, 3, 4, 5]), b = r.int(2, 9); return q(r.chance(0.5) ? `${a} × ${b}` : `${b} × ${a}`, a * b); },
         name2: '6〜9をかける',
         gen2: r => either(r, r.pick([2, 3, 4, 5]), r.int(6, 9)) },
-      { name: '6・7・8・9のだん',
+      { name: '6・7・8・9のだん', n: 32,   // 6〜9どうしの九九は16通りしかない（後半は、その全部）
         gen: r => { const a = r.pick([6, 7, 8, 9]), b = r.int(3, 9); return q(r.chance(0.5) ? `${a} × ${b}` : `${b} × ${a}`, a * b); },
         name2: '6〜9どうし',
         gen2: r => either(r, r.int(6, 9), r.int(6, 9)) },
@@ -434,13 +445,13 @@ body.is-sheet{background:#dcdad2}
   });
 
   TG.addUnit({
-    id: 'div1', cat: 'basic', name: 'わり算（九九のぎゃく）', note: '九九で答えが出るわり算', n: 20, goal: [12, 9, 9],
+    id: 'div1', cat: 'basic', name: 'わり算（九九のぎゃく）', note: '九九で答えが出るわり算', n: 40, goal: [12, 9, 9],
     steps: [
-      { name: 'わる数が2〜5',
+      { name: 'わる数が2〜5', n: 32,   // 九九のぎゃくは32通り（後半は、そのうち答えが6〜9の16通り）
         gen: r => { const d = r.int(2, 5), v = r.int(2, 9); return q(`${d * v} ÷ ${d}`, v); },
         name2: '答えが6〜9',
         gen2: r => { const d = r.int(2, 5), v = r.int(6, 9); return q(`${d * v} ÷ ${d}`, v); } },
-      { name: 'わる数が6〜9',
+      { name: 'わる数が6〜9', n: 32,
         gen: r => { const d = r.int(6, 9), v = r.int(2, 9); return q(`${d * v} ÷ ${d}`, v); },
         name2: '答えが6〜9',
         gen2: r => { const d = r.int(6, 9), v = r.int(6, 9); return q(`${d * v} ÷ ${d}`, v); } },
@@ -460,7 +471,7 @@ body.is-sheet{background:#dcdad2}
   };
 
   TG.addUnit({
-    id: 'add2', cat: 'two', name: 'たし算（2けた）', note: '2けた＋2けた', n: 20, goal: [8, 6, 5],
+    id: 'add2', cat: 'two', name: 'たし算（2けた）', note: '2けた＋2けた', n: 30, goal: [8, 6, 5],
     steps: [
       { name: 'くり上がりなし',
         gen: r => {
@@ -474,7 +485,7 @@ body.is-sheet{background:#dcdad2}
           if (ua + ub > 9 || ta + tb < 10) return null;
           const a = ta * 10 + ua, b = tb * 10 + ub; return q(`${a} + ${b}`, a + b);
         } },
-      { name: '一の位がくり上がる（100未満）',
+      { name: '一の位がくり上がる（100未満）', n: 24,
         gen: r => {
           const ta = r.int(1, 8), tb = r.int(1, 8), ua = r.int(1, 9), ub = r.int(1, 9);
           if (ua + ub < 10 || ta + tb + 1 > 9) return null;
@@ -485,7 +496,7 @@ body.is-sheet{background:#dcdad2}
           const a = r.int(21, 89), b = r.int(21, 89), s = a + b;
           return a % 10 + b % 10 >= 10 && s >= 80 && s <= 99 ? q(`${a} + ${b}`, s) : null;
         } },
-      { name: '答えが100をこえる',
+      { name: '答えが100をこえる', n: 20,
         gen: r => {
           const a = r.int(21, 99), b = r.int(21, 99);
           return a + b < 100 || (a % 10 === 0 && b % 10 === 0) ? null : q(`${a} + ${b}`, a + b);
@@ -499,7 +510,7 @@ body.is-sheet{background:#dcdad2}
   });
 
   TG.addUnit({
-    id: 'sub2', cat: 'two', name: 'ひき算（2けた）', note: '2けた−2けた', n: 20, goal: [8, 6, 5],
+    id: 'sub2', cat: 'two', name: 'ひき算（2けた）', note: '2けた−2けた', n: 30, goal: [8, 6, 5],
     steps: [
       { name: 'くり下がりなし',
         gen: r => {
@@ -512,14 +523,14 @@ body.is-sheet{background:#dcdad2}
           const a = r.int(60, 99), b = r.int(11, 39), c = r.int(11, 39);
           return a % 10 >= b % 10 + c % 10 && Math.floor(a / 10) >= Math.floor(b / 10) + Math.floor(c / 10) + 1 && b % 10 && c % 10 ? q(`${a} − ${b} − ${c}`, a - b - c) : null;
         } },
-      { name: 'くり下がりあり',
+      { name: 'くり下がりあり', n: 24,
         gen: borrow2,
         name2: '一の位が0／差が小さい',
         mix2: [
           [1, r => { const a = r.int(3, 9) * 10, b = r.int(11, a - 1); return b % 10 ? q(`${a} − ${b}`, a - b) : null; }],
           [1, r => { const a = r.int(50, 99), b = a - r.int(5, 19); return b >= 11 && a % 10 < b % 10 ? q(`${a} − ${b}`, a - b) : null; }],
         ] },
-      { name: '100からひく／ミックス',
+      { name: '100からひく／ミックス', n: 20,
         mix: [
           [1, r => { const b = r.int(11, 99); return b % 10 ? q(`100 − ${b}`, 100 - b) : null; }],
           [1, borrow2],
@@ -1740,7 +1751,7 @@ body.is-sheet{background:#dcdad2}
     const cats = TG.cats.map(c => {
       const us = TG.units.filter(u => u.cat === c.id);
       return `<section class="cat c-${c.id}"><h2>${esc(c.name)}<small>${esc(c.sub || '')}</small></h2><div class="grid">${us.map(u =>
-        `<a class="ucard" href="#/u/${u.id}"><b>${esc(u.name)}</b><span class="nt">${esc(u.note)}</span><span class="mt">${u.n}問（前半${u.n / 2}＋後半${u.n / 2}）／ 1分　<span class="dots">${dots(u)}</span></span></a>`).join('')}</div></section>`;
+        `<a class="ucard" href="#/u/${u.id}"><b>${esc(u.name)}</b><span class="nt">${esc(u.note)}</span><span class="mt">${TG.nText(u)}（前半・後半が半分ずつ）／ 1分　<span class="dots">${dots(u)}</span></span></a>`).join('')}</div></section>`;
     }).join('');
     return `<header class="top"><div><h1>計算単語帳</h1><p>頭の中で計算する力を、1分ずつきたえる。ひとりでも、ペアでも。</p></div>
       <span class="hbtns"><a class="btn" href="#/book">📖 ハンドブック</a>${ART ? '' : '<a class="btn" href="#/sheet">🖨 プリント・配布シート</a>'}</span></header>
@@ -1765,12 +1776,12 @@ body.is-sheet{background:#dcdad2}
       const st = i + 1, best = bestOf(u.id, st), goal = TG.goalOf(u, st);
       const chips = [1, 2, 3, 4, 5, 6].map(n => `<a class="chip" href="#/u/${u.id}/${st}/${n}">セット${n}</a>`).join('');
       return `<section class="step${passed(u, st) ? ' ok' : ''}"><div class="sh"><b>STEP${st}</b><span>${esc(s.name)}</span></div>
-        <p class="sm">1分で <b>${goal}問</b> が目標　<span class="nm2">後半：${esc(s.name2)}</span>${best ? `　　最高 <b>${best}問</b>${passed(u, st) ? ' ✓合格' : ''}` : ''}</p>
+        <p class="sm">1分で <b>${goal}問</b> が目標（1セット ${TG.nOf(u, st)}問）　<span class="nm2">後半：${esc(s.name2)}</span>${best ? `　　最高 <b>${best}問</b>${passed(u, st) ? ' ✓合格' : ''}` : ''}</p>
         <div class="chips">${chips}<a class="chip dice" href="#/u/${u.id}/${st}/${Math.floor(100 + Math.random() * 9900)}" title="新しい問題">🎲 べつの問題</a></div>
         ${ART ? '' : `<a class="pl" href="#/sheet?mode=pair&u=${u.id}&step=${st}&from=1&to=1">🖨 印刷する</a>`}</section>`;
     }).join('');
     const book = u.cat === 'vocab' ? `<p class="bk"><a href="#/book/${u.id}">📖 ハンドブックの該当ページを読む</a></p>` : '';
-    return `<header class="top"><div><a class="back" href="#/">← 単元いちらん</a><h1>${esc(u.name)}</h1><p>${esc(u.note)}　／　1セット ${u.n}問（前半${u.n / 2}問＋後半${u.n / 2}問）・1分</p></div>
+    return `<header class="top"><div><a class="back" href="#/">← 単元いちらん</a><h1>${esc(u.name)}</h1><p>${esc(u.note)}　／　1セット ${TG.nText(u)}（前半・後半が半分ずつ）・1分</p></div>
       ${ART ? '' : `<a class="btn" href="#/sheet?mode=pair&u=${u.id}&step=all&from=1&to=1">🖨 この単元を印刷</a>`}</header>
     <main class="wrap narrow">${book}${steps}</main>`;
   }
@@ -1807,6 +1818,7 @@ body.is-sheet{background:#dcdad2}
     const set = TG.makeSet(u.id, step, setNo);
     const n = set.items.length;
     const isFig = u.layout === 'fig';
+    const zs = n > 30 && !isFig ? 's' : 'm';   // 問題の多いセットは、小さめの字で（1画面に多くのせる）
     const base = `#/u/${u.id}/${step}/`;
     const lis = set.items.map((it, i) => (i === set.half ? `<li class="part"><b>ここから後半</b>　少しむずかしい：${esc(set.stepInfo.name2)}</li>` : '')
       + `<li><button class="q" data-i="${i}" data-m=""><span class="no">${i + 1}</span>${it.fig ? `<span class="fg">${it.fig}</span>` : ''}<span class="qt">${qLine(it, true)}</span><span class="mk"></span></button></li>`).join('');
@@ -1820,12 +1832,12 @@ body.is-sheet{background:#dcdad2}
           <div class="btns"><button class="btn pri" id="go">▶ スタート</button><button class="btn" id="rs">もどす</button></div>
           <label class="tgl"><input type="checkbox" id="ans"> <span>答えを見る（出題者）</span></label>
           <label class="tgl"><input type="checkbox" id="snd"${soundOn() ? ' checked' : ''}> <span>音</span></label>
-          <div class="sizes" id="sizes">文字　<button data-s="s">小</button><button data-s="m" class="on">中</button><button data-s="l">大</button></div>
+          <div class="sizes" id="sizes">文字　${['s', 'm', 'l'].map((k, i) => `<button data-s="${k}"${k === zs ? ' class="on"' : ''}>${'小中大'[i]}</button>`).join('')}</div>
           <div class="score" id="score"><span class="sc"><b id="sc">0</b><small>／${n}問</small></span><span class="gl">目標 ${set.goal}問</span><span class="ps" id="ps"></span><span class="fb" id="fb">前半 0／${set.half}　後半 0／${n - set.half}</span></div>
           <p class="hint">問題をタップすると ○ → ✗ → なし。○の数が得点。</p>
           ${ART ? '' : `<a class="plink" href="#/sheet?mode=pair&u=${u.id}&step=${step}&from=${setNo}&to=${setNo}">🖨 このセットを印刷</a>`}
         </aside>
-        <ol class="qs${isFig ? ' fig' : ''}${set.items.some(it => (it.pre + it.post + it.ans).replace(/\{\d+\/\d+\}/g, 'xx').length > 16) ? ' lg' : ''} z-m" style="--aw:${ansWidth(set.items)}" id="qs">${lis}</ol>
+        <ol class="qs${isFig ? ' fig' : ''}${set.items.some(it => (it.pre + it.post + it.ans).replace(/\{\d+\/\d+\}/g, 'xx').length > 16) ? ' lg' : ''} z-${zs}" style="--aw:${ansWidth(set.items)}" id="qs">${lis}</ol>
       </main>`;
     bindPlay(u, step, set);
   }
@@ -1916,7 +1928,7 @@ body.is-sheet{background:#dcdad2}
 
   /* ---------------- 印刷シート ---------------- */
   // 1枚のカード（＝1セット）。kind：'q'＝問題だけ（答えの欄はあけておく）／'qa'＝答えつき（赤字）。mirror：うら面用に、左右の列を入れかえる
-  // part：'all'＝20問を1枚に（左の列が前半、右の列が後半）／0＝前半だけ／1＝後半だけ（図つきの単元は、前半カードと後半カードの2枚にする）
+  // part：'all'＝1セットを1枚に（左の列が前半、右の列が後半）／0＝前半だけ／1＝後半だけ（図つきの単元は、前半カードと後半カードの2枚にする）
   function cardHTML(set, kind, mirror, part) {
     const u = set.unit, n = set.items.length, lo = part === 1 ? set.half : 0, hi = part === 0 ? set.half : n;
     const sub = set.items.slice(lo, hi);
@@ -1931,7 +1943,7 @@ body.is-sheet{background:#dcdad2}
   }
   // spec＝{ set, part }。null は、あきの枠（図つきの前半・後半を、同じ紙にそろえるため）
   const cardOf = (spec, kind, mirror) => (spec ? cardHTML(spec.set, kind, mirror, spec.part) : '<article class="card empty"></article>');
-  const pageHTML = (specs, kind, mirror, label) => `<section class="page"><div class="pl">${label}</div>${specs.map(s => cardOf(s, kind, mirror)).join('<div class="cut"><span>✂</span></div>')}</section>`;
+  const pageHTML = (specs, kind, mirror, label) => `<section class="page${specs.length === 1 ? ' one' : ''}"><div class="pl">${label}</div>${specs.map(s => cardOf(s, kind, mirror)).join('<div class="cut"><span>✂</span></div>')}</section>`;
 
   function sheetView(p) {
     const mode = ['q', 'qa', 'pair'].includes(p.get('mode')) ? p.get('mode') : 'pair';
@@ -1949,12 +1961,18 @@ body.is-sheet{background:#dcdad2}
     // 1枚の紙＝カード2枚。文字の単元は1セット＝1カード、図つきの単元は1セット＝前半・後半の2カード（同じ紙にそろえる）
     const sheets = [];
     let cur = [];
+    const flush = () => { if (cur.length) { sheets.push([cur[0], null]); cur = []; } };
     const place = group => {
-      if (group.length === 2 && cur.length === 1) { sheets.push([cur[0], null]); cur = []; }
+      if (group.length === 2 && cur.length === 1) flush();
       cur.push(...group);
       if (cur.length === 2) { sheets.push(cur); cur = []; }
     };
-    sets.forEach(s => place(s.unit.layout === 'fig' ? [{ set: s, part: 0 }, { set: s, part: 1 }] : [{ set: s, part: 'all' }]));
+    // 問題の多いセット（25問以上）は、1セットで A4 1枚（半分の大きさでは、1行が低すぎて書けない）
+    sets.forEach(s => {
+      if (s.unit.layout === 'fig') place([{ set: s, part: 0 }, { set: s, part: 1 }]);
+      else if (s.items.length > 24) { flush(); sheets.push([{ set: s, part: 'all' }]); }
+      else place([{ set: s, part: 'all' }]);
+    });
     if (cur.length) sheets.push([cur[0], null]);
     const pages = [];
     sheets.forEach(sp => {
@@ -1975,7 +1993,7 @@ body.is-sheet{background:#dcdad2}
         <label>STEP<select name="step">${opt('all', stepP, 'ぜんぶ')}${[1, 2, 3].map(s => opt(s, stepP, 'STEP' + s)).join('')}</select></label>
         <label>セット番号<span class="rng"><input name="from" type="number" min="1" max="99999" value="${from}"> 〜 <input name="to" type="number" min="1" max="99999" value="${to}"></span></label>
       </form>
-      <p class="sinfo">セット <b>${sets.length}</b> 組（1セット＝20問・1分）→ A4 <b>${sheets.length}</b> 枚${mode === 'pair' ? '（両面。プリンターの設定は「両面印刷・長辺とじ」）' : '（片面）'}。1枚のA4を半分に切ると、A5のカードになります。${tooMany ? '<br><b>多すぎるので 100 セットまでにしました。</b>' : ''}</p></div>
+      <p class="sinfo">セット <b>${sets.length}</b> 組（1セット＝20〜50問・1分）→ A4 <b>${sheets.length}</b> 枚${mode === 'pair' ? '（両面。プリンターの設定は「両面印刷・長辺とじ」）' : '（片面）'}。1枚のA4に、1セット（25問以上のとき）か、2セット（A5のカード2枚。切って使える）がのります。${tooMany ? '<br><b>多すぎるので 100 セットまでにしました。</b>' : ''}</p></div>
       <div class="pages" id="pages">${pages.join('')}</div>`;
     const form = document.getElementById('opts');
     form.addEventListener('change', () => {
