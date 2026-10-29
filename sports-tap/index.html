@@ -453,6 +453,155 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
 .lrow { grid-template-columns: minmax(60px, auto) 16px minmax(40px, auto) 1fr auto; }
 .lrow.per { grid-template-columns: minmax(60px, auto) 1fr; }
 
+/* ========== 撮影しながら記録する（バスケ タップ記録と同じ見た目） ========== */
+/* 撮影中：上の帯の小さな映像（押すと撮影の画面）。録画中は赤いふちと点 */
+.cambtn { position: relative; flex: none; height: clamp(46px, 7.4vmin, 64px); aspect-ratio: var(--ar, 1.7778); max-width: 120px; padding: 0; border: 2px solid var(--line2); border-radius: 10px; background: #000; overflow: hidden; }
+.camthumb { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.cambtn .camdot { position: absolute; top: 4px; left: 4px; width: 9px; height: 9px; border-radius: 50%; background: #9aa3af; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.45); }
+.cambtn.rec { border-color: var(--bad); box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.35); }
+.cambtn.rec .camdot { background: #ef4444; animation: rec 1.6s ease-in-out infinite; }
+.short .cambtn { height: 40px; }
+/* 幅の狭いスマホで撮影中：上の帯を詰めて、カメラの映像の場所を空ける */
+@media (max-width: 430px) {
+  .cambtn { max-width: 34px; }
+  .lbar:has(.cambtn:not([hidden])) { gap: 4px; padding-left: 4px; padding-right: 4px; }
+  .lbar:has(.cambtn:not([hidden])) .menubtn { min-width: 38px; padding: 0 4px; }
+  .lbar:has(.cambtn:not([hidden])) .menubtn small { display: none; }
+  .lbar:has(.cambtn:not([hidden])) .clock { min-width: 0; padding: 0 7px; gap: 5px; }
+  .lbar:has(.cambtn:not([hidden])) .clock .recdot { width: 8px; height: 8px; }
+  .lbar:has(.cambtn:not([hidden])) .period { min-width: 36px; padding: 0 4px; }
+  .lbar:has(.cambtn:not([hidden])) .score { gap: 3px; }
+}
+/* 撮影の画面：大きな映像（録れる動画の向きに回して映す。大きさは js の fitPreview） */
+.cambtn .camthumb { position: absolute; left: 50%; top: 50%; width: 100%; height: 100%; }
+.cambtn.warn { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.45); }
+.campvw { position: relative; margin: 0 auto; width: 100%; height: 200px; background: #000; border-radius: 12px; overflow: hidden; }
+.campvw .campv { position: absolute; left: 50%; top: 50%; display: block; background: #000; }
+.camorient { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.camorient .row b { font-size: 14px; }
+.orientbox { border-radius: 10px; padding: 8px 10px; border: 1px solid var(--line); background: var(--panel2); }
+.orientbox p { margin: 0 0 6px; }
+.orientbox.warn { border-color: #f59e0b; background: var(--warn-soft); }
+.orientbox.ok { border-color: var(--accent); background: var(--accent-soft); }
+.turnrow { gap: 6px; }
+/* 録画と記録を同時にスタート */
+.camacts { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 4px; }
+.btn.startboth { width: 100%; min-height: 58px; font-size: 19px; font-weight: 900; border-radius: 14px; background: var(--good); border-color: var(--good); color: #fff; }
+.btn.startboth.rec { background: #dc2626; border-color: #dc2626; }
+.bothnote { margin: 0; }
+.rdot { display: inline-block; width: 0.62em; height: 0.62em; border-radius: 50%; background: #fff; margin-right: 0.35em; vertical-align: 0.05em; box-shadow: 0 0 0 0.12em rgba(255, 255, 255, 0.35); }
+.startbig.recstart { background: #dc2626; font-size: 28px; }
+.startbtn.rec { background: #dc2626; font-size: clamp(15px, 3vmin, 22px); }
+.btn.camon { font-weight: 700; border-color: var(--accent); color: var(--accent); }
+.camstat { margin-top: 10px; font-weight: 800; font-size: 16px; font-variant-numeric: tabular-nums; }
+.camstat.rec { color: var(--bad); }
+.camacts { margin: 10px 0 4px; }
+.btn.recbtn { background: #dc2626; border-color: #dc2626; color: #fff; font-weight: 800; }
+.camnotes { margin: 10px 0 0; padding-left: 18px; }
+.camnotes li { margin: 3px 0; }
+
+/* スタート前の札の中の撮影 */
+.covercam { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 13.5px; font-weight: 700; }
+.covercam.rec span { color: var(--bad); }
+.covercam.warn { border-color: #f59e0b; background: var(--warn-soft); }
+/* 撮影した動画の一覧 */
+.vlist { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.vitem { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: space-between; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; text-align: left; }
+.vitem .vt { display: flex; flex-direction: column; min-width: 0; }
+.vitem .vt small { color: var(--muted); font-size: 12px; }
+.vhead { margin: 10px 0 2px; font-size: 14px; }
+
+
+.wipe { grid-area: wipe; display: flex; align-items: flex-start; justify-content: center; min-width: 0; min-height: 0; padding: 0 6px 6px 0; }
+.cam-top .wipe { padding: 0 4px 6px; }
+.wipebox { position: relative; flex: none; background: #000; border: 2px solid var(--line2); border-radius: 12px; overflow: hidden; }
+.wipebox.rec { border-color: var(--bad); box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.35); }
+.wipebox.warn { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.45); }
+.wipeopen { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; display: block; }
+.wipev { position: absolute; left: 50%; top: 50%; display: block; pointer-events: none; }
+.wipetag { position: absolute; left: 6px; bottom: 6px; max-width: calc(100% - 12px); padding: 3px 8px; border-radius: 999px; background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 12.5px; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; pointer-events: none; }
+.wipetag.rec { background: rgba(220, 38, 38, 0.88); }
+.wipectl { position: absolute; right: 6px; top: 6px; display: flex; gap: 6px; }
+.wipesz { width: 36px; height: 36px; padding: 0; border: 1px solid rgba(255, 255, 255, 0.65); border-radius: 50%; background: rgba(0, 0, 0, 0.5); color: #fff; font-size: 21px; font-weight: 900; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+.wipesz:active { background: rgba(0, 0, 0, 0.75); }
+.wipesz:disabled { opacity: 0.3; }
+.wipebox.tiny .wipectl { right: 4px; top: 4px; gap: 4px; }
+.wipebox.tiny .wipesz { width: 28px; height: 28px; font-size: 17px; }
+.wipebox.tiny .wipetag { left: 4px; bottom: 4px; padding: 2px 6px; font-size: 11.5px; }
+
+/* 撮影の画面：ワイプの大きさ */
+.wiperow { gap: 6px; margin-top: 8px; align-items: center; }
+.wiperow b { font-size: 14px; }
+.wiperow .note { flex-basis: 100%; margin: 0; }
+
+
+/* ---------- 撮影しながら記録する（livecam.js）：ワイプ（中・大）の場所 ----------
+   横長の画面（cam-side）：右の列。縦長の画面（cam-top）：上の帯の下。記録のボタンは残りの広さに（種目の画面が並べ直す） */
+.live.cam-side { grid-template-columns: minmax(0, 1fr) min-content; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "bar bar" "stage wipe" "gbar gbar"; }
+.live.cam-top { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr) auto; grid-template-areas: "bar" "wipe" "stage" "gbar"; }
+/* テニスは、上の帯の下にスコアの帯（board）がある */
+.live.fam-tennis.cam-side { grid-template-rows: auto auto minmax(0, 1fr) auto; grid-template-areas: "bar bar" "board wipe" "stage wipe" "gbar gbar"; }
+.live.fam-tennis.cam-top { grid-template-rows: auto auto auto minmax(0, 1fr) auto; grid-template-areas: "bar" "wipe" "board" "stage" "gbar"; }
+.live.cam-side .wipe { padding: 0 6px 6px 0; }
+/* 撮影の準備ができているときのスタート（録画と記録を一緒に） */
+.startbtn.rec { background: #dc2626; }
+
+/* ---------- サッカー：フリーキックのくわしい記録・設定の「記録用」「分析用」 ---------- */
+.fkbox { display: flex; flex-direction: column; gap: 14px; }
+.fkrow .fkbtn { min-width: 92px; min-height: 52px; font-size: 17px; font-weight: 800; }
+.fkrow .fkbtn.yc.on { background: #facc15; border-color: #a16207; color: #2b1d00; }
+.fkrow .fkbtn.rc.on { background: #dc2626; border-color: #991b1b; color: #fff; }
+.togsec { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel2); }
+.togsec > b { font-size: 14px; margin-bottom: 2px; }
+.chk.sub { padding-left: 26px; font-size: 13.5px; }
+.norows { padding: 10px; }
+
+/* ========== 動画で場面を見返す（review.js） ==========
+   横長の画面：左に動画と操作・右に絞り込みと場面の一覧。縦長の画面：上に動画（上に貼りつく）・下に一覧 */
+body[data-view="review"] { overflow-x: hidden; }
+.rv { max-width: 1280px; margin: 0 auto; padding: 10px max(10px, env(safe-area-inset-left)) calc(24px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+@media (min-width: 900px) { .rv { grid-template-columns: minmax(0, 1.45fr) minmax(320px, 1fr); align-items: start; } .rv-player { position: sticky; top: 64px; } }
+.rv-player { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.rv-vwrap { position: relative; background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 16 / 9; }
+.rv-video { width: 100%; height: 100%; display: block; background: #000; }
+.rv-label { position: absolute; left: 8px; top: 8px; max-width: calc(100% - 16px); padding: 4px 10px; border-radius: 999px; background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 13.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.rv-ctl { display: flex; flex-direction: column; gap: 6px; }
+.rvbtns { flex-wrap: nowrap; gap: 6px; }
+.rvbtns .btn { flex: 1 1 0; min-width: 0; padding: 6px 2px; font-weight: 800; white-space: nowrap; font-size: clamp(12.5px, 3.6vw, 15px); }
+.rvbtns .rvplay { flex: 1.4 1 0; font-size: 20px; }
+.rvspeed { gap: 6px; }
+.rvspeed b, .rv-src .row > b { font-size: 13.5px; color: var(--muted); }
+.rv-src { display: flex; flex-direction: column; gap: 6px; }
+.rv-src .note.ok, .rv-sync.ok .note { color: var(--good); }
+.rv-sync { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 2px solid var(--ask); border-radius: 12px; background: var(--warn-soft); }
+.rv-sync.ok { border: 1px solid var(--line); background: var(--panel2); }
+.rv-sync p { margin: 0; }
+.rvsel { flex: 1; min-width: 0; max-width: 100%; min-height: 40px; border-radius: 10px; border: 1px solid var(--line2); background: var(--panel); padding: 4px 8px; font-size: 14px; }
+.rv-side { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.rv-filter { display: flex; flex-direction: column; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+.frow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.flab { font-size: 12.5px; font-weight: 800; color: var(--muted); min-width: 3em; }
+.fchip { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 3px 11px; border-radius: 999px; border: 1px solid var(--line2); background: var(--panel2); font-size: 13.5px; }
+.fchip small { color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.fchip.on { background: var(--accent-soft); border-color: var(--accent); font-weight: 800; box-shadow: inset 0 0 0 1px var(--accent); }
+.rv-win { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+.rv-win summary { cursor: pointer; font-size: 14px; }
+.rv-win summary b { font-weight: 800; }
+.rv-win .winnow { display: block; margin: 2px 0 0 1.1em; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+.rv-win[open] .winnow { display: none; }
+.winrow { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.winrow b { font-size: 13.5px; }
+.winrow .row { display: grid; grid-template-columns: 1.4em repeat(7, minmax(0, 1fr)); gap: 4px; align-items: center; }
+.winrow .btn.small { min-width: 0; padding: 3px 2px; font-variant-numeric: tabular-nums; }
+.rvlist { display: flex; flex-direction: column; gap: 4px; }
+.rvrow { display: grid; grid-template-columns: 30px minmax(0, 1fr) 30px; align-items: center; gap: 8px; text-align: left; background: var(--panel); border: 1px solid var(--line); border-left: 6px solid var(--tc, var(--line2)); border-radius: 10px; padding: 7px 10px; min-height: 52px; }
+.rvrow .ix { font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; text-align: center; }
+.rvrow .rvt { display: flex; flex-direction: column; min-width: 0; }
+.rvrow .rvt b { font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rvrow .rvt small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.rvrow .rvgo { font-style: normal; color: var(--accent); font-weight: 900; text-align: center; }
+.rvrow.playing { background: var(--accent-soft); border-color: var(--accent); }
+
 </style>
 <style>
 /* スポーツ タップ記録 — バレーボールの画面（.fam-volley の下だけ。並べ方・ボタンの形はチームの種目と同じ app.css） */
@@ -797,7 +946,11 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
      opts: 種目ごとの試合の形式（前半の長さ・セット数・距離 など。種目の defaultOpts）,
      teams: [ 自分, 相手 ]  … { name, color, colorName, players: [{ no: '7', name: '' }] }（水泳はレーン。種目が決める）
      events: [ { id, t, type, team, no, …種目ごとの項目 } ]  … 追加した順
+     videos: [ { vid, n, startedAt, endedAt, duration, name, mime, w, h, bytes } ]（この端末のカメラで撮影しながら記録したとき。なくてよい。livecam.js）
+       startedAt：録画を始めた時刻（エポックミリ秒。記録の startedAt と同じ時計）→ 記録の t 秒 ＝ 動画の t ＋（startedAt(記録) − startedAt(動画)）/1000 秒
+       動画の中身は、この端末のブラウザ（IndexedDB 'stap-media'。vstore.js）にだけある。書き出す JSON には、ファイル名・時刻・長さだけが入る
    }
+   書き出す JSON には、記録ごとに text（呼び名）と when（場面の呼び名「前半 23:41」など）、types に scene（場面として切り出すか）も付ける。
      t   : スタートからの秒（prec の細かさ）。ストップウォッチと同じで、止まらずに進む（あとで動画と合わせられる）
      type: 種目の TYPES の id
      team: 0 = 自分・1 = 相手・null = チームなし（「★ あとで見る」など）
@@ -806,7 +959,10 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
 (function (root) {
   'use strict';
   const ST = root.ST = root.ST || {};
-  ST.APP = 'スポーツ タップ記録';
+  /* 1つの種目だけのアプリ（サッカー タップ記録 など）は、index.html で先に ST.CONFIG を置く：
+     { app: 'サッカー タップ記録', only: 'soccer', key: 'ssoc'（保存のキーの頭）, db: 'ssoc-media'（撮影した動画の保存場所） } */
+  ST.CONFIG = Object.assign({ app: 'スポーツ タップ記録', only: null, key: 'stap', db: 'stap-media' }, ST.CONFIG || {});
+  ST.APP = ST.CONFIG.app;
   ST.FORMAT = 'sports-tap';
   ST.VERSION = 1;
 
@@ -1050,7 +1206,7 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
   ST.summary = function (game) {
     const sp = ST.sportOf(game);
     const names = sp && sp.sideNames ? sp.sideNames(game) : [ST.teamName(game, 0), ST.teamName(game, 1)];
-    return { id: game.id, sport: game.sport, title: game.title || '', date: game.date, startedAt: game.startedAt, endedAt: game.endedAt, names, colors: [game.teams[0].color, game.teams[1].color], score: ST.score(game), scoreText: ST.scoreText(game), n: (game.events || []).filter((e) => !(ST.typeOf(game, e.type) || {}).meta).length, at: Date.now() };
+    return { id: game.id, sport: game.sport, title: game.title || '', date: game.date, startedAt: game.startedAt, endedAt: game.endedAt, names, colors: [game.teams[0].color, game.teams[1].color], score: ST.score(game), scoreText: ST.scoreText(game), n: (game.events || []).filter((e) => !(ST.typeOf(game, e.type) || {}).meta).length, videos: (game.videos || []).filter((v) => !v.gone).length, at: Date.now() };
   };
 
   /* ---------- 記録の画面の並べ方（チームの行。バスケ タップ記録の planLayout と同じ考え方） ----------
@@ -1119,8 +1275,21 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     const sp = ST.sportOf(game);
     g.sportName = sp ? sp.name : '';
     g.types = {};
-    if (sp) (sp.TYPES || []).forEach((d) => { g.types[d.id] = { label: d.label, pts: d.pts || 0 }; });
+    // scene：動画の場面として切り出すもの（ピリオドの始まり・走者の手直しなどは入れない）
+    if (sp) (sp.TYPES || []).forEach((d) => { g.types[d.id] = { label: d.label, short: d.short || '', pts: d.pts || 0, kind: d.kind || '', meta: !!d.meta, scene: !d.meta && d.kind !== 'adj' }; });
     if (sp && sp.exportExtra) sp.exportExtra(game, g);
+    g.sideNames = sp && sp.sideNames ? sp.sideNames(game) : [ST.teamName(game, 0), ST.teamName(game, 1)];
+    // 記録ごとの呼び名（text：「致遠館 #10 たけし ゴール」）と、場面の呼び名（when：「前半 23:41」「3回表」「第2セット」）。
+    // ほかのアプリ（動画の編集など）が、種目のルールを知らなくても、場面に名前を付けられるように
+    const byId = new Map((game.events || []).map((e) => [e.id, e]));
+    g.events.forEach((e) => {
+      const src = byId.get(e.id) || e;
+      try { e.text = ST.eventText(game, src, true); } catch (err) { e.text = e.type; }
+      let when = '';
+      try { when = sp && sp.sceneText ? sp.sceneText(game, src) : sp && sp.timeText ? sp.timeText(game, src) : ''; } catch (err) { when = ''; }
+      if (!when && e.set) when = `第${e.set}セット`;
+      e.when = String(when || '');
+    });
     g.app = ST.APP;
     delete g.seq;
     return g;
@@ -1148,6 +1317,8 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     g.date = /^\d{4}-\d{2}-\d{2}$/.test(obj.date || '') ? obj.date : g.date;
     g.startedAt = isFinite(obj.startedAt) && obj.startedAt > 0 ? obj.startedAt : null;
     g.endedAt = isFinite(obj.endedAt) && obj.endedAt > 0 ? obj.endedAt : null;
+    const vids = ST.cleanVideos(obj.videos);
+    if (vids.length) g.videos = vids;
     if (sp.importExtra) sp.importExtra(obj, g);
     const okId = (id) => typeof id === 'string' && /^e\d{1,7}$/.test(id);
     const used = new Set();
@@ -1172,6 +1343,15 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     return { name: String(t.name || '').trim().slice(0, 20), color, colorName: String(t.colorName || ST.nearestColorName(color)).slice(0, 8), players: cleanPlayers(t.players, keepOrder) };
   }
   ST.cleanTeam = cleanTeam;
+  /* 撮影しながら記録した動画の情報をそろえる（読み込んだファイル用。形の合わないものは捨てる） */
+  ST.cleanVideos = function (list) {
+    return (Array.isArray(list) ? list : []).filter((v) => v && isFinite(v.startedAt) && v.startedAt > 0).slice(0, 50).map((v, i) => ({
+      vid: String(v.vid || 'v' + i).slice(0, 40), n: isFinite(v.n) ? Math.round(v.n) : i + 1, startedAt: +v.startedAt,
+      endedAt: isFinite(v.endedAt) ? +v.endedAt : null, duration: isFinite(v.duration) ? +v.duration : null,
+      name: String(v.name || '').slice(0, 120), mime: String(v.mime || '').slice(0, 60), w: +v.w || null, h: +v.h || null, bytes: +v.bytes || null,
+      status: 'done', gone: true        // 読み込んだ記録の動画は、この端末にはない（ファイル名・時刻だけ）
+    }));
+  };
   /* 0〜1 の割合 → 「67%」（打った数が 0 なら「—」） */
   ST.pct = (m, a) => (a ? Math.round(100 * m / a) + '%' : '—');
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -1187,7 +1367,8 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
 (function (root) {
   'use strict';
   const ST = root.ST;
-  const K = { games: 'stap:games', game: 'stap:game:', current: 'stap:current', teams: 'stap:teams', prefs: 'stap:prefs' };
+  const P = (ST.CONFIG && ST.CONFIG.key) || 'stap';        // 保存のキーの頭（サッカー タップ記録は 'ssoc'。アプリごとに別の保存）
+  const K = { games: P + ':games', game: P + ':game:', current: P + ':current', teams: P + ':teams', prefs: P + ':prefs' };
   const KEEP = 80;          // 覚えておく試合の数（古いものから消す。書き出したファイルは残る）
 
   function ls() { try { return root.localStorage || null; } catch (e) { return null; } }
@@ -1458,6 +1639,1349 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
 
 </script>
 <script>
+/* js/fmp4.js */
+/* スポーツ タップ記録 — （バスケ タップ記録と同じしくみ）細切れの MP4（fragmented MP4）を、ふつうの MP4 に組み直す
+   ブラウザの録画（MediaRecorder）は、少しずつ書き出せる「細切れの MP4」（moof と mdat のくり返し）を作る。
+   そのままでも再生はできるが、長い動画では、先のほうへ飛ぶ（シーク）のが遅い・写真アプリに入らない、などがある。
+   ここでは、細切れの目次（moof）を読んで、ふつうの MP4（moov に全部の目次・mdat に中身）を組み立てる。
+     ・中身（映像と音のデータ）は読み込まない。元の Blob の「どこからどこまで」を並べた Blob を作るだけなので、
+       1時間（1GB 以上）の動画でもメモリをほとんど使わない（読むのは目次の部分だけ）
+     ・録画の途中でページが閉じた（最後が切れている）ファイルでも、そろっているところまでで組み立てる
+     ・中身の形式（H.264・VP9・AAC・Opus など）には、さわらない（stsd をそのまま写す）
+   DOM 非依存（node のテストからも読み込める。Blob の slice / arrayBuffer だけを使う）。 */
+(function (root) {
+  'use strict';
+  const ST = root.ST = root.ST || {};
+
+  const u32 = (dv, p) => dv.getUint32(p);
+  const i32 = (dv, p) => dv.getInt32(p);
+  const u64 = (dv, p) => dv.getUint32(p) * 4294967296 + dv.getUint32(p + 4);
+  const four = (dv, p) => String.fromCharCode(dv.getUint8(p), dv.getUint8(p + 1), dv.getUint8(p + 2), dv.getUint8(p + 3));
+  async function read(blob, start, end) { return new DataView(await blob.slice(start, end).arrayBuffer()); }
+
+  /* dv の [p, end) にある箱の並び */
+  function boxes(dv, p, end) {
+    const out = [];
+    while (p + 8 <= end) {
+      let size = u32(dv, p), head = 8;
+      const type = four(dv, p + 4);
+      if (size === 1) { if (p + 16 > end) break; size = u64(dv, p + 8); head = 16; } else if (size === 0) size = end - p;
+      if (size < head || p + size > end) break;
+      out.push({ type, start: p, size, body: p + head, end: p + size });
+      p += size;
+    }
+    return out;
+  }
+  const kid = (dv, box, type) => boxes(dv, box.body, box.end).find((b) => b.type === type) || null;
+
+  /* いちばん外側の箱の並び（中身は読まない）。最後が切れている箱は complete: false */
+  async function scan(blob) {
+    const top = [];
+    const N = blob.size;
+    let p = 0;
+    while (p + 8 <= N) {
+      const dv = await read(blob, p, Math.min(N, p + 16));
+      let size = u32(dv, 0), head = 8;
+      const type = four(dv, 4);
+      if (size === 1) { if (dv.byteLength < 16) break; size = u64(dv, 8); head = 16; } else if (size === 0) size = N - p;
+      if (size < head) break;
+      const complete = p + size <= N;
+      top.push({ type, start: p, size, head, complete });
+      if (!complete) break;
+      p += size;
+    }
+    return top;
+  }
+
+  /* 書き込み（大きさの分からない箱は、あとで大きさを書き込む） */
+  function writer() {
+    let buf = new Uint8Array(4096), len = 0;
+    const need = (n) => { if (len + n <= buf.length) return; let m = buf.length * 2; while (m < len + n) m *= 2; const b = new Uint8Array(m); b.set(buf.subarray(0, len)); buf = b; };
+    const W = {
+      get len() { return len; },
+      u8(v) { need(1); buf[len++] = v & 255; },
+      u16(v) { need(2); buf[len++] = (v >>> 8) & 255; buf[len++] = v & 255; },
+      u32(v) { need(4); v = v >>> 0; buf[len++] = v >>> 24; buf[len++] = (v >>> 16) & 255; buf[len++] = (v >>> 8) & 255; buf[len++] = v & 255; },
+      i32(v) { W.u32(v | 0); },
+      u64(v) { W.u32(Math.floor(v / 4294967296)); W.u32(v % 4294967296); },
+      str(s) { for (let i = 0; i < 4; i++) W.u8(s.charCodeAt(i)); },
+      bytes(u8) { need(u8.length); buf.set(u8, len); len += u8.length; },
+      box(type, fn) { const at = len; W.u32(0); W.str(type); fn(); const size = len - at; buf[at] = size >>> 24; buf[at + 1] = (size >>> 16) & 255; buf[at + 2] = (size >>> 8) & 255; buf[at + 3] = size & 255; },
+      full(type, version, flags, fn) { W.box(type, () => { W.u8(version); W.u8(flags >>> 16); W.u16(flags & 0xffff); fn(); }); },
+      out() { return buf.slice(0, len); }
+    };
+    return W;
+  }
+  const copy = (dv, box) => new Uint8Array(dv.buffer, dv.byteOffset + box.start, box.size).slice();
+  /* 箱の写し（版によって位置の違う「長さ（duration）」の欄だけを書き換える） */
+  function withDuration(dv, box, kind, value) {
+    const b = copy(dv, box);
+    const d = new DataView(b.buffer);
+    const head = box.body - box.start;
+    const v1 = b[head] === 1;
+    // mvhd・mdhd：作成(4|8) 更新(4|8) timescale(4) 長さ(4|8) / tkhd：作成 更新 track_ID(4) reserved(4) 長さ
+    const off = head + 4 + (v1 ? 16 : 8) + (kind === 'tkhd' ? 8 : 4);
+    if (v1) { d.setUint32(off, Math.floor(value / 4294967296)); d.setUint32(off + 4, value % 4294967296); } else d.setUint32(off, Math.min(0xffffffff, value));
+    return b;
+  }
+  const timescaleOf = (dv, box) => { const v1 = dv.getUint8(box.body) === 1; return u32(dv, box.body + 4 + (v1 ? 16 : 8)); };
+  /* tkhd の写し b（Uint8Array）に、映す向き（時計回りの角度 90・180・270）の行列を書く。
+     中身（コマ）はそのままで、再生するときに回して映す（ffmpeg の display_rotation と同じ書き方。x・y はずらさない） */
+  const MATRIX = {
+    0: [0x10000, 0, 0, 0, 0x10000, 0, 0, 0, 0x40000000],
+    90: [0, 0x10000, 0, -0x10000, 0, 0, 0, 0, 0x40000000],
+    180: [-0x10000, 0, 0, 0, -0x10000, 0, 0, 0, 0x40000000],
+    270: [0, -0x10000, 0, 0x10000, 0, 0, 0, 0, 0x40000000]
+  };
+  function withMatrix(b, rotate) {
+    const m = MATRIX[rotate];
+    if (!m) return b;
+    const d = new DataView(b.buffer, b.byteOffset, b.byteLength);
+    const off = 8 + (b[8] === 1 ? 52 : 40);       // 箱の頭 8 ＋（版・フラグ・時刻・track_ID・reserved・長さ・reserved・layer・alternate_group・volume・reserved）
+    m.forEach((v, i) => d.setInt32(off + i * 4, v));
+    return b;
+  }
+
+  /* trak の中から、組み立てに使うものを取り出す */
+  function readTrak(dv, trak) {
+    const tkhd = kid(dv, trak, 'tkhd'), mdia = kid(dv, trak, 'mdia');
+    const mdhd = mdia && kid(dv, mdia, 'mdhd'), hdlr = mdia && kid(dv, mdia, 'hdlr'), minf = mdia && kid(dv, mdia, 'minf');
+    const stbl = minf && kid(dv, minf, 'stbl'), stsd = stbl && kid(dv, stbl, 'stsd');
+    if (!tkhd || !mdhd || !hdlr || !minf || !stsd) return null;
+    const v1 = dv.getUint8(tkhd.body) === 1;
+    return {
+      id: u32(dv, tkhd.body + 4 + (v1 ? 16 : 8)), handler: four(dv, hdlr.body + 8), ts: timescaleOf(dv, mdhd),
+      box: { trak, tkhd, mdia, mdhd, hdlr, minf, stsd, edts: kid(dv, trak, 'edts') },
+      sizes: [], durs: [], ctos: [], sync: [], chunks: [], first: null, time: 0, anyCto: false, negCto: false, allSync: true
+    };
+  }
+
+  /* 細切れの MP4 を、ふつうの MP4 にする。
+     戻り値 { flat, header（Uint8Array：ftyp＋moov＋mdat の頭）, ranges（元の Blob の [始め, 終わり) の並び。この順につなぐと mdat の中身）,
+             duration（秒）, tracks: [{ handler, samples, duration }], truncated（最後が切れていた）}
+     flat: false … もともと、ふつうの MP4（または組み立てられない形）。そのまま使う
+     opts.rotate：映像を時計回りに何度回して映すか（0・90・180・270。画面の向きのロックをしたまま、横に置いて撮ったとき） */
+  async function flatten(blob, opts) {
+    const rotate = (((opts && opts.rotate) || 0) % 360 + 360) % 360;
+    const top = await scan(blob);
+    const ftypBox = top.find((b) => b.type === 'ftyp' && b.complete);
+    const moovTop = top.find((b) => b.type === 'moov' && b.complete);
+    if (!moovTop) throw new Error('MP4 の目次（moov）がありません');
+    const mdv = await read(blob, moovTop.start, moovTop.start + moovTop.size);
+    const moov = { type: 'moov', start: 0, size: moovTop.size, body: moovTop.head, end: moovTop.size };
+    const mk = boxes(mdv, moov.body, moov.end);
+    const mvex = mk.find((b) => b.type === 'mvex');
+    const moofs = top.filter((b) => b.type === 'moof' && b.complete);
+    if (!mvex || !moofs.length) return { flat: false, header: null, ranges: null, duration: null, tracks: [], truncated: false };
+    const mvhd = mk.find((b) => b.type === 'mvhd');
+    const movieTs = mvhd ? timescaleOf(mdv, mvhd) : 1000;
+    const tracks = mk.filter((b) => b.type === 'trak').map((t) => readTrak(mdv, t)).filter(Boolean);
+    const byId = {};
+    tracks.forEach((T) => { byId[T.id] = T; });
+    const trex = {};
+    boxes(mdv, mvex.body, mvex.end).filter((b) => b.type === 'trex').forEach((b) => {
+      trex[u32(mdv, b.body + 4)] = { sdi: u32(mdv, b.body + 8), dur: u32(mdv, b.body + 12), size: u32(mdv, b.body + 16), flags: u32(mdv, b.body + 20) };
+    });
+    const N = blob.size;
+    const runs = [];          // { T, off, bytes, chunk }（中身の場所）
+    let truncated = !top[top.length - 1].complete;
+    for (const mf of moofs) {
+      const dv = await read(blob, mf.start, mf.start + mf.size);
+      const moof = { start: 0, body: mf.head, end: mf.size };
+      let prevEnd = null;
+      for (const traf of boxes(dv, moof.body, moof.end).filter((b) => b.type === 'traf')) {
+        const tfhd = kid(dv, traf, 'tfhd');
+        if (!tfhd) continue;
+        const fl = u32(dv, tfhd.body) & 0xffffff;
+        const T = byId[u32(dv, tfhd.body + 4)];
+        const X = trex[u32(dv, tfhd.body + 4)] || { sdi: 1, dur: 0, size: 0, flags: 0 };
+        let q = tfhd.body + 8;
+        let base;
+        if (fl & 0x1) { base = u64(dv, q); q += 8; } else base = (fl & 0x20000) ? mf.start : (prevEnd != null ? prevEnd : mf.start);
+        const sdi = (fl & 0x2) ? u32(dv, (q += 4) - 4) : X.sdi;
+        const ddur = (fl & 0x8) ? u32(dv, (q += 4) - 4) : X.dur;
+        const dsize = (fl & 0x10) ? u32(dv, (q += 4) - 4) : X.size;
+        const dflags = (fl & 0x20) ? u32(dv, (q += 4) - 4) : X.flags;
+        if (!T) continue;
+        // 時刻（tfdt）：あいだが空いていたら、前のサンプルを長くして、時刻の流れを保つ
+        const tfdt = kid(dv, traf, 'tfdt');
+        if (tfdt) {
+          const t = dv.getUint8(tfdt.body) === 1 ? u64(dv, tfdt.body + 4) : u32(dv, tfdt.body + 4);
+          if (T.first == null) { T.first = t; T.time = t; } else if (t > T.time && T.durs.length) { T.durs[T.durs.length - 1] += t - T.time; T.time = t; }
+        } else if (T.first == null) { T.first = 0; T.time = 0; }
+        let pos = base;
+        for (const trun of boxes(dv, traf.body, traf.end).filter((b) => b.type === 'trun')) {
+          const tf = u32(dv, trun.body) & 0xffffff, ver = dv.getUint8(trun.body);
+          const n = u32(dv, trun.body + 4);
+          let r = trun.body + 8;
+          if (tf & 0x1) { pos = base + i32(dv, r); r += 4; }
+          let firstFlags = null;
+          if (tf & 0x4) { firstFlags = u32(dv, r); r += 4; }
+          const start = pos;
+          let bytes = 0, count = 0;
+          for (let i = 0; i < n; i++) {
+            const dur = (tf & 0x100) ? u32(dv, (r += 4) - 4) : ddur;
+            const size = (tf & 0x200) ? u32(dv, (r += 4) - 4) : dsize;
+            let sf = (tf & 0x400) ? u32(dv, (r += 4) - 4) : dflags;
+            if (i === 0 && firstFlags != null) sf = firstFlags;
+            const cto = (tf & 0x800) ? (ver === 0 ? u32(dv, (r += 4) - 4) : i32(dv, (r += 4) - 4)) : 0;
+            if (start + bytes + size > N) { truncated = true; break; }        // 中身が切れている（録画の途中で閉じた）
+            T.sizes.push(size); T.durs.push(dur); T.ctos.push(cto);
+            if (cto) { T.anyCto = true; if (cto < 0) T.negCto = true; }
+            const sync = T.handler !== 'vide' || !((sf >>> 16) & 1);
+            T.sync.push(sync);
+            if (!sync) T.allSync = false;
+            T.time += dur;
+            bytes += size; count++;
+          }
+          if (count) { const chunk = { n: count, sdi }; T.chunks.push(chunk); runs.push({ T, off: start, bytes, chunk }); }
+          pos = start + bytes;
+        }
+        prevEnd = pos;
+      }
+    }
+    const used = tracks.filter((T) => T.sizes.length);
+    if (!used.length) throw new Error('動画の中身がありません');
+
+    // 中身の並べ方：元の場所の順に、すき間なくつなぐ（となり合う所は1つの範囲にまとめる）
+    runs.sort((a, b) => a.off - b.off);
+    let payload = 0;
+    const ranges = [];
+    runs.forEach((x) => {
+      x.chunk.rel = payload;
+      const last = ranges[ranges.length - 1];
+      if (last && last[1] === x.off) last[1] += x.bytes; else ranges.push([x.off, x.off + x.bytes]);
+      payload += x.bytes;
+    });
+
+    // 長さ
+    used.forEach((T) => {
+      T.mediaDur = T.durs.reduce((s, d) => s + d, 0);
+      T.lead = T.first > 0 ? Math.round(T.first / T.ts * movieTs) : 0;          // 最初のサンプルまでの空き（movie の時間の単位）
+      T.movieDur = Math.round(T.mediaDur / T.ts * movieTs) + T.lead;      // （B フレームのずれは下で足す）
+      // いちばん早く映るサンプルの時刻（B フレームがあると 0 より後）。空きを入れるときは、そこから映す（編集リスト）
+      T.minCT = 0; T.maxEnd = T.mediaDur;
+      if (T.anyCto && !T.negCto) {
+        let dts = 0, m = Infinity, e = 0;
+        for (let i = 0; i < T.durs.length; i++) { m = Math.min(m, dts + T.ctos[i]); e = Math.max(e, dts + T.ctos[i] + T.durs[i]); dts += T.durs[i]; }
+        T.minCT = isFinite(m) ? m : 0; T.maxEnd = Math.max(e, T.mediaDur);
+      }
+      if (T.lead > 0) T.movieDur = T.lead + Math.round(T.maxEnd / T.ts * movieTs);
+    });
+    const movieDur = Math.max(...used.map((T) => T.movieDur));
+    const ftyp = ftypBox ? new Uint8Array(await blob.slice(ftypBox.start, ftypBox.start + ftypBox.size).arrayBuffer())
+      : (() => { const w = writer(); w.box('ftyp', () => { w.str('isom'); w.u32(512); ['isom', 'iso2', 'mp41'].forEach((s) => w.str(s)); }); return w.out(); })();
+
+    const buildMoov = (base, co64) => {
+      const w = writer();
+      w.box('moov', () => {
+        if (mvhd) w.bytes(withDuration(mdv, mvhd, 'mvhd', movieDur));
+        used.forEach((T) => {
+          const B = T.box;
+          w.box('trak', () => {
+            const tk = withDuration(mdv, B.tkhd, 'tkhd', T.movieDur);
+            w.bytes(T.handler === 'vide' && rotate ? withMatrix(tk, rotate) : tk);
+            if (B.edts) w.bytes(copy(mdv, B.edts));
+            else if (T.lead > 0) {
+              // 最初のサンプルまでの空き（映像と音の始まりのずれを保つ）。B フレームがあるときは、いちばん早く映るサンプルの時刻（minCT）から映す
+              const empty = T.lead + Math.round(T.minCT / T.ts * movieTs);
+              const shown = Math.round((T.maxEnd - T.minCT) / T.ts * movieTs);      // 映る長さ（最後のサンプルが映り終わるまで）
+              w.box('edts', () => w.full('elst', 0, 0, () => {
+                w.u32(2);
+                w.u32(empty); w.i32(-1); w.u16(1); w.u16(0);
+                w.u32(shown); w.i32(T.minCT); w.u16(1); w.u16(0);
+              }));
+            }
+            w.box('mdia', () => {
+              w.bytes(withDuration(mdv, B.mdhd, 'mdhd', T.mediaDur));
+              w.bytes(copy(mdv, B.hdlr));
+              w.box('minf', () => {
+                boxes(mdv, B.minf.body, B.minf.end).forEach((b) => { if (b.type !== 'stbl') w.bytes(copy(mdv, b)); });
+                w.box('stbl', () => {
+                  w.bytes(copy(mdv, B.stsd));
+                  // stts：サンプルの長さ（同じ長さが続く所はまとめる）
+                  const stts = [];
+                  T.durs.forEach((d) => { const l = stts[stts.length - 1]; if (l && l[1] === d) l[0]++; else stts.push([1, d]); });
+                  w.full('stts', 0, 0, () => { w.u32(stts.length); stts.forEach(([c, d]) => { w.u32(c); w.u32(d); }); });
+                  if (T.anyCto) {
+                    const ctts = [];
+                    T.ctos.forEach((o) => { const l = ctts[ctts.length - 1]; if (l && l[1] === o) l[0]++; else ctts.push([1, o]); });
+                    w.full('ctts', T.negCto ? 1 : 0, 0, () => { w.u32(ctts.length); ctts.forEach(([c, o]) => { w.u32(c); w.i32(o); }); });
+                  }
+                  if (!T.allSync) {
+                    const idx = [];
+                    T.sync.forEach((s, i) => { if (s) idx.push(i + 1); });
+                    w.full('stss', 0, 0, () => { w.u32(idx.length); idx.forEach((i) => w.u32(i)); });
+                  }
+                  w.full('stsz', 0, 0, () => { w.u32(0); w.u32(T.sizes.length); T.sizes.forEach((s) => w.u32(s)); });
+                  const stsc = [];
+                  T.chunks.forEach((c, i) => { const l = stsc[stsc.length - 1]; if (!l || l[1] !== c.n || l[2] !== c.sdi) stsc.push([i + 1, c.n, c.sdi]); });
+                  w.full('stsc', 0, 0, () => { w.u32(stsc.length); stsc.forEach(([f, n, s]) => { w.u32(f); w.u32(n); w.u32(s); }); });
+                  if (co64) w.full('co64', 0, 0, () => { w.u32(T.chunks.length); T.chunks.forEach((c) => w.u64(base + c.rel)); });
+                  else w.full('stco', 0, 0, () => { w.u32(T.chunks.length); T.chunks.forEach((c) => w.u32(base + c.rel)); });
+                });
+              });
+            });
+          });
+        });
+        mk.filter((b) => b.type === 'udta').forEach((b) => w.bytes(copy(mdv, b)));
+      });
+      return w.out();
+    };
+    const big = payload + 8 > 0xffffffff;
+    const mdatHead = big ? 16 : 8;
+    let co64 = false;
+    let moovBytes = buildMoov(0, false);
+    let base = ftyp.length + moovBytes.length + mdatHead;
+    if (base + payload > 0xffffffff) { co64 = true; moovBytes = buildMoov(0, true); base = ftyp.length + moovBytes.length + mdatHead; }
+    moovBytes = buildMoov(base, co64);
+    const w = writer();
+    w.bytes(ftyp);
+    w.bytes(moovBytes);
+    if (big) { w.u32(1); w.str('mdat'); w.u64(payload + 16); } else { w.u32(payload + 8); w.str('mdat'); }
+    return {
+      flat: true, header: w.out(), ranges, truncated, rotate,
+      duration: movieDur / movieTs,
+      tracks: used.map((T) => ({ handler: T.handler, samples: T.sizes.length, duration: T.mediaDur / T.ts + T.lead / movieTs }))
+    };
+  }
+
+  /* 組み立てた MP4 の Blob（header と、元の Blob の範囲をつなぐだけ。中身は写さない） */
+  function compose(blob, plan, type) {
+    if (!plan || !plan.flat) return blob;
+    return new Blob([plan.header].concat(plan.ranges.map(([s, e]) => blob.slice(s, e))), { type: type || 'video/mp4' });
+  }
+
+  ST.fmp4 = { scan, flatten, compose, boxes };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/vstore.js */
+/* スポーツ タップ記録 — （バスケ タップ記録と同じしくみ）撮影した動画の保存（このブラウザの IndexedDB。どこにも送らない）
+   録画は数秒ごとの切れはし（chunk）で届くので、届くたびに保存する（途中でページが閉じても、そこまでは残る）。
+   録画を止めたら、細切れの MP4 をふつうの MP4 に組み直す「組み立て図」（fmp4.flatten の header と ranges）も保存する。
+   動画の中身は、切れはしのまま1回だけ保存する（組み直した動画を、もう1つ保存しない。容量を2倍にしないため）。
+
+   ■ データの形（バスケ タップ記録の vstore.js と同じ形。DB の名前だけ違う）
+   DB 'stap-media'（版 1。バスケ タップ記録の 'btap-media' とは別）
+     videos：{ vid, gameId, n（その試合の何本目か）, startedAt（録画を始めた時刻・エポックミリ秒）, endedAt,
+               mime, ext, w, h, bytes, chunks（切れはしの数）, status（'recording' | 'done'）,
+               plan（{ header: Uint8Array, ranges: [[始め, 終わり)…], duration, truncated } | null）, duration（秒）, name（保存するときのファイル名） }
+     chunks：{ vid, i, blob }（キー [vid, i]。i の順につなぐと、録画した動画そのもの） */
+(function (root) {
+  'use strict';
+  const ST = root.ST = root.ST || {};
+  const DB = (ST.CONFIG && ST.CONFIG.db) || 'stap-media', VER = 1;      // （バスケ タップ記録の 'btap-media' とは別。サッカー タップ記録は 'ssoc-media'）
+  let dbp = null;
+
+  const supported = () => { try { return !!root.indexedDB; } catch (e) { return false; } };
+  function open() {
+    if (dbp) return dbp;
+    dbp = new Promise((resolve, reject) => {
+      let req;
+      try { req = root.indexedDB.open(DB, VER); } catch (e) { reject(e); return; }
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains('videos')) db.createObjectStore('videos', { keyPath: 'vid' }).createIndex('gameId', 'gameId');
+        if (!db.objectStoreNames.contains('chunks')) db.createObjectStore('chunks', { keyPath: ['vid', 'i'] });
+      };
+      req.onsuccess = () => { const db = req.result; db.onversionchange = () => { db.close(); dbp = null; }; resolve(db); };
+      req.onerror = () => reject(req.error || new Error('IndexedDB を開けませんでした'));
+      req.onblocked = () => reject(new Error('IndexedDB がほかのタブで使われています'));
+    });
+    dbp.catch(() => { dbp = null; });
+    return dbp;
+  }
+  /* 1回のやりとり。fn(stores) の戻り値（IDBRequest なら、その結果）を返す */
+  async function tx(names, mode, fn) {
+    const db = await open();
+    return new Promise((resolve, reject) => {
+      const t = db.transaction(names, mode);
+      const stores = {};
+      [].concat(names).forEach((n) => { stores[n] = t.objectStore(n); });
+      let out;
+      try { out = fn(stores); } catch (e) { reject(e); return; }
+      t.oncomplete = () => resolve(out && typeof out === 'object' && 'result' in out && 'readyState' in out ? out.result : out);
+      t.onerror = () => reject(t.error || new Error('保存できませんでした'));
+      t.onabort = () => reject(t.error || new Error('保存できませんでした（空きが足りない など）'));
+    });
+  }
+  const range = (vid) => IDBKeyRange.bound([vid, 0], [vid, Infinity]);
+
+  const putChunk = (vid, i, blob) => tx('chunks', 'readwrite', (s) => { s.chunks.put({ vid, i, blob }); });
+  const putVideo = (v) => tx('videos', 'readwrite', (s) => { s.videos.put(v); });
+  const getVideo = (vid) => tx('videos', 'readonly', (s) => s.videos.get(vid));
+  const videosOf = (gameId) => tx('videos', 'readonly', (s) => s.videos.index('gameId').getAll(gameId)).then((list) => (list || []).sort((a, b) => a.startedAt - b.startedAt));
+  const allVideos = () => tx('videos', 'readonly', (s) => s.videos.getAll()).then((list) => list || []);
+  const chunks = (vid) => tx('chunks', 'readonly', (s) => s.chunks.getAll(range(vid))).then((list) => (list || []).sort((a, b) => a.i - b.i).map((c) => c.blob));
+  /* 録画した動画そのもの（切れはしをつないだもの） */
+  async function raw(vid, mime) { return new Blob(await chunks(vid), { type: mime || 'video/mp4' }); }
+  /* 保存・再生に使う動画（組み直した MP4。組み立て図がなければ、録画したまま） */
+  async function file(vid) {
+    const v = await getVideo(vid);
+    if (!v) return null;
+    const blob = await raw(vid, v.mime);
+    const out = v.plan && ST.fmp4 ? ST.fmp4.compose(blob, Object.assign({ flat: true }, v.plan), 'video/mp4') : blob;
+    try { return new File([out], v.name || ('video.' + (v.ext || 'mp4')), { type: v.plan ? 'video/mp4' : (v.mime || 'video/mp4'), lastModified: v.startedAt }); } catch (e) { return out; }
+  }
+  const remove = (vid) => tx(['videos', 'chunks'], 'readwrite', (s) => { s.videos.delete(vid); s.chunks.delete(range(vid)); });
+  async function removeGame(gameId) { const list = await videosOf(gameId); for (const v of list) await remove(v.vid); return list.length; }
+  async function estimate() {
+    try { if (navigator.storage && navigator.storage.estimate) { const e = await navigator.storage.estimate(); return { usage: e.usage || 0, quota: e.quota || 0 }; } } catch (e) { /* 分からない */ }
+    return null;
+  }
+
+  ST.vstore = { supported, open, putChunk, putVideo, getVideo, videosOf, allVideos, chunks, raw, file, remove, removeGame, estimate, DB };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/camera.js */
+/* スポーツ タップ記録 — （バスケ タップ記録と同じしくみ）この端末のカメラで撮影しながら記録する
+   カメラ（getUserMedia）の映像を、ブラウザの録画（MediaRecorder）で録る。
+   録画を始めた時刻（startedAt）を記録と同じ時計（Date.now）で持つので、あとで動画と記録の時刻を合わせる必要がない
+   （記録の t 秒 ＝ 動画の t ＋（記録のスタート − 録画の始まり）秒）。
+   録画は数秒ごとに IndexedDB へ保存し（vstore）、止めたら、ふつうの MP4 に組み直す図を作る（fmp4.flatten）。
+   1回の録画（録画を始めてから止めるまで）＝ 動画1本。途中で止めて、また始めると、別の動画になる（それぞれに始まりの時刻がある）。 */
+(function (root) {
+  'use strict';
+  const ST = root.ST = root.ST || {};
+
+  const QUALITY = {
+    '720': { w: 1280, h: 720, bps: 3000000, label: '720p（ふつう）', perHour: 1.4 },
+    '1080': { w: 1920, h: 1080, bps: 6000000, label: '1080p（きれい・容量 2 倍）', perHour: 2.8 }
+  };
+  const SLICE = 1000;          // 何ミリ秒ごとに受け取って保存するか
+  // （Chrome は、キーフレームで区切った「ひとまとまり」がそろってから渡すので、区切りも 1 秒ごとにする。
+  //   途中でページが閉じたとき失うのは、最後の数秒）
+
+  function supported() {
+    try { return !!(root.navigator && navigator.mediaDevices && navigator.mediaDevices.getUserMedia && root.MediaRecorder); } catch (e) { return false; }
+  }
+  /* 録画の形式：MP4 を優先（iPhone・iPad の Safari は H.264、Chrome は H.264 か VP9）。だめなら WebM */
+  function pickMime(audio) {
+    const list = audio
+      ? ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4;codecs=avc1', 'video/mp4;codecs=vp9,opus', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
+      : ['video/mp4;codecs=avc1.42E01E', 'video/mp4;codecs=avc1', 'video/mp4;codecs=vp9', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    for (const m of list) { try { if (MediaRecorder.isTypeSupported(m)) return m; } catch (e) { /* 次 */ } }
+    return '';
+  }
+  const extOf = (mime) => (/webm/.test(mime || '') ? 'webm' : 'mp4');
+
+  function create() {
+    const bus = {};
+    const emit = (ev, a) => (bus[ev] || []).forEach((fn) => { try { fn(a); } catch (e) { /* 表示の失敗で止めない */ } });
+    const C = {
+      stream: null, rec: null, seg: null, state: 'off', opts: null, error: null,
+      on(ev, fn) { (bus[ev] = bus[ev] || []).push(fn); },
+      /* カメラを開く。opts: { quality: '720' | '1080', audio: true | false } */
+      async open(opts) {
+        C.opts = Object.assign({ quality: '720', audio: true }, opts || {});
+        if (C.stream && C.stream.getVideoTracks().some((t) => t.readyState === 'live')) return C.stream;
+        const q = QUALITY[C.opts.quality] || QUALITY['720'];
+        const video = { facingMode: { ideal: 'environment' }, width: { ideal: q.w }, height: { ideal: q.h }, frameRate: { ideal: 30, max: 30 } };
+        const audio = C.opts.audio ? { echoCancellation: false, noiseSuppression: false, autoGainControl: false } : false;
+        let st;
+        try { st = await navigator.mediaDevices.getUserMedia({ video, audio }); } catch (e) {
+          // 音（マイク）を断られたときは、映像だけで
+          if (audio && e && (e.name === 'NotAllowedError' || e.name === 'NotFoundError')) { st = await navigator.mediaDevices.getUserMedia({ video, audio: false }); C.opts.audio = false; emit('notice', 'マイクが使えないので、音なしで撮ります'); } else throw e;
+        }
+        C.stream = st;
+        st.getVideoTracks().forEach((t) => t.addEventListener('ended', () => emit('trackended')));
+        C.setState(C.rec ? C.state : 'ready');
+        return st;
+      },
+      setState(s) { C.state = s; emit('state', s); },
+      settings() { const t = C.stream && C.stream.getVideoTracks()[0]; return t && t.getSettings ? t.getSettings() : {}; },
+      live() { return !!(C.stream && C.stream.getVideoTracks().some((t) => t.readyState === 'live')); },
+      /* 録画を始める。meta: { gameId, n, base（ファイル名のもと）, rotate（映す向き：時計回りの角度） }。戻り値：動画の情報（vstore の videos の形） */
+      async start(meta) {
+        if (C.rec) return C.seg;
+        if (!C.live()) await C.open(C.opts);
+        const q = QUALITY[C.opts.quality] || QUALITY['720'];
+        const mime = pickMime(C.opts.audio && C.stream.getAudioTracks().length > 0);
+        const ro = { videoBitsPerSecond: q.bps, audioBitsPerSecond: 96000, videoKeyFrameIntervalDuration: 1000 };      // （知らない設定は、ブラウザが無視する）
+        if (mime) ro.mimeType = mime;
+        let rec;
+        try { rec = new MediaRecorder(C.stream, ro); } catch (e) { delete ro.videoKeyFrameIntervalDuration; rec = new MediaRecorder(C.stream, ro); }
+        const s = C.stream.getVideoTracks()[0].getSettings ? C.stream.getVideoTracks()[0].getSettings() : {};
+        const vid = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+        const rotate = [90, 180, 270].includes(meta.rotate) ? meta.rotate : 0;
+        const rw = s.width || q.w, rh = s.height || q.h;
+        const seg = C.seg = {
+          vid, gameId: meta.gameId, n: meta.n || 1, startedAt: null, endedAt: null, mime: rec.mimeType || mime || 'video/webm', ext: '',
+          w: rotate % 180 ? rh : rw, h: rotate % 180 ? rw : rh, rotate,            // w・h は映すときの大きさ（回したあと）
+          bytes: 0, chunks: 0, status: 'recording', plan: null, duration: null, name: ''
+        };
+        seg.ext = extOf(seg.mime);
+        seg.name = `${meta.base || 'スポーツ動画'}_動画${seg.n}.${seg.ext}`;
+        let chain = Promise.resolve();
+        let i = 0;
+        const stopped = new Promise((resolve) => { rec.addEventListener('stop', () => resolve()); });
+        rec.addEventListener('dataavailable', (e) => {
+          if (!e.data || !e.data.size) return;
+          const k = i++, blob = e.data;
+          seg.bytes += blob.size; seg.chunks = i;
+          // 保存は届いた順に1つずつ（順番が入れかわらないように）
+          chain = chain.then(() => ST.vstore.putChunk(vid, k, blob)).then(() => ST.vstore.putVideo(Object.assign({}, seg, { plan: null }))).catch((err) => { C.error = err; emit('error', err); });
+          emit('progress', seg);
+        });
+        rec.addEventListener('error', (e) => { C.error = (e && e.error) || new Error('録画でエラーが起きました'); emit('error', C.error); });
+        const started = new Promise((resolve) => { rec.addEventListener('start', () => { seg.startEvt = Date.now(); resolve(); }); });
+        C.rec = rec;
+        C.flush = () => chain;
+        C.stopped = stopped;
+        // 録画を始めた時刻は「start() を呼ぶ直前」。録画が始まった知らせ（start）は、実際の始まりより 0.05〜0.1 秒おそい
+        // （Chromium で、映像に映した時刻と比べて確かめた。直前の時刻なら、ずれは 0.03 秒以内）
+        seg.startCall = Date.now();
+        seg.startedAt = seg.startCall;
+        rec.start(SLICE);
+        await Promise.race([started, new Promise((r) => setTimeout(r, 1500))]);
+        await ST.vstore.putVideo(Object.assign({}, seg));
+        C.setState('recording');
+        emit('start', seg);
+        return seg;
+      },
+      elapsed() { return C.seg && C.seg.startedAt && C.rec ? (Date.now() - C.seg.startedAt) / 1000 : 0; },
+      /* 録画を止めて、仕上げる（ふつうの MP4 に組み直す図を作る）。戻り値：動画の情報 */
+      async stop() {
+        const rec = C.rec, seg = C.seg;
+        if (!rec || !seg) return null;
+        C.setState('finishing');
+        try { if (rec.state !== 'inactive') rec.stop(); } catch (e) { /* もう止まっている */ }
+        await Promise.race([C.stopped, new Promise((r) => setTimeout(r, 4000))]);
+        await C.flush();
+        seg.endedAt = Date.now();
+        C.rec = null; C.seg = null;
+        const done = await finish(seg);
+        C.setState(C.live() ? 'ready' : 'off');
+        emit('done', done);
+        return done;
+      },
+      /* カメラを閉じる（録画中なら、止めて仕上げてから） */
+      async close() {
+        let done = null;
+        if (C.rec) done = await C.stop();
+        if (C.stream) C.stream.getTracks().forEach((t) => { try { t.stop(); } catch (e) { /* 無視 */ } });
+        C.stream = null;
+        C.setState('off');
+        return done;
+      }
+    };
+    return C;
+  }
+
+  /* 録画を仕上げる：切れはしをつないで、MP4 なら組み直す図を作り、長さを決めて保存する。
+     録画の途中でページが閉じた動画（status: 'recording' のまま残ったもの）にも使う */
+  async function finish(seg) {
+    const v = Object.assign({}, seg);
+    try {
+      const blob = await ST.vstore.raw(v.vid, v.mime);
+      v.bytes = blob.size;
+      if (v.ext === 'mp4' && blob.size && ST.fmp4) {
+        let plan = null;
+        try { plan = await ST.fmp4.flatten(blob, { rotate: v.rotate || 0 }); } catch (e) { plan = null; }
+        if (plan && plan.flat) { v.plan = { header: plan.header, ranges: plan.ranges, duration: plan.duration, truncated: plan.truncated }; v.duration = plan.duration; } else {
+          // 中身（映像のデータ）が1つもない：始めてすぐ閉じた・止めた
+          const top = await ST.fmp4.scan(blob).catch(() => []);
+          if (!top.some((b) => b.type === 'moof' || b.type === 'mdat')) v.empty = true;
+        }
+      } else if (!blob.size) v.empty = true;
+    } catch (e) { /* 読めなくても、記録の時刻だけで */ }
+    // 長さが分からない（WebM で、途中で閉じた）ときは、保存した切れはしの数からの目安
+    if (!v.endedAt && !v.duration && v.chunks) v.duration = v.chunks * SLICE / 1000;
+    if (!v.endedAt) v.endedAt = v.startedAt + Math.round((v.duration || 0) * 1000);
+    if (!v.duration) v.duration = Math.max(0, (v.endedAt - v.startedAt) / 1000);
+    v.status = 'done';
+    if (v.empty) { await ST.vstore.remove(v.vid); v.gone = true; return v; }       // 何も録れていない動画は残さない
+    if (v.rotate && !v.plan) {           // 向きを書けなかった（WebM・組み直せない形）：回さずに保存される。大きさも回す前のものに
+      v.rotateLost = true;
+      if (v.rotate % 180) [v.w, v.h] = [v.h, v.w];
+      v.rotate = 0;
+    }
+    await ST.vstore.putVideo(v);
+    return v;
+  }
+  /* 前回、録画の途中で閉じた動画を仕上げる（その試合の 'recording' のまま残ったもの） */
+  async function recover(gameId) {
+    const list = await ST.vstore.videosOf(gameId);
+    const out = [];
+    for (const v of list) {
+      if (v.status !== 'recording') continue;
+      if (!v.chunks) { await ST.vstore.remove(v.vid); continue; }
+      out.push(await finish(Object.assign({}, v, { endedAt: null, duration: null })));
+    }
+    return out;
+  }
+
+  ST.camera = { supported, create, finish, recover, pickMime, QUALITY, SLICE };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/livecam.js */
+/* スポーツ タップ記録 — 撮影しながら記録する（この端末のカメラ）。記録の画面に、どの種目でも同じように付ける
+   カメラ・録画・保存・MP4 への組み直しは、バスケ タップ記録と同じ部品（camera.js・vstore.js・fmp4.js）。
+   録画を始めた時刻を記録と同じ時計（Date.now）で持つので、あとで動画と記録の時刻を合わせる必要がない
+   （記録の t 秒 ＝ 動画の t ＋（記録のスタート − 録画の始まり）秒）。
+
+   記録の画面に足すもの（種目の画面には手を入れない。骨組みが、できあがった画面に差しこむ）
+     ・上の帯の小さな映像（メニューの左。押すと撮影の画面）。録画中は赤いふち
+     ・ワイプ（大きめの映像）：中・大。横長の画面は右の列、縦長の画面は上の帯の下。記録のボタンは、残りの広さに並べ直す
+       （.live に cam-side・cam-top を付けて、grid の場所を足す。種目の画面は自分の入れ物の大きさで並べ直すので、そのまま動く）
+     ・スタート前の札の「📹 撮影しながら記録する」・試合のあとの札の動画の一覧（🎬 場面を見る・⬇ 保存・🗑）
+   設定：S.prefs.cam = { quality: '720' | '1080', audio, orient: 'land' | 'port', rot（映像の向きの手直し 0・90・180・270）, wipe: 's' | 'm' | 'l' } */
+(function (root) {
+  'use strict';
+  const ST = root.ST;
+  const { h } = ST.ui;
+  const WIPES = ['s', 'm', 'l'];
+  /* 種目ごとの言葉：横向きで撮るもの・スタートの合図 */
+  const WIDE = { soccer: 'ピッチ全体', rugby: 'グラウンド全体', baseball: 'グラウンド全体', swim: 'プール全体' };
+  const CUE = { soccer: 'キックオフ', futsal: 'キックオフ', handball: 'スローオフ', rugby: 'キックオフ', volley: '最初のサーブ', tennis: '最初のサーブ', baseball: 'プレイボール', swim: 'スタートの合図' };
+
+  function create(api) {
+    const S = api.S;
+    const P = () => { S.prefs.cam = Object.assign({ quality: '720', audio: true, orient: 'land', rot: 0, wipe: 'm' }, S.prefs.cam || {}); return S.prefs.cam; };
+    const M = { cam: null, busy: false, rawLand: null, hiddenAt: 0, errAt: 0, el: null, sheet: null };
+    const on = () => !!(M.cam && M.cam.state !== 'off');
+    const rec = () => !!(M.cam && M.cam.rec);
+    const mb = (n) => (n >= 1e9 ? (n / 1e9).toFixed(2) + 'GB' : Math.max(0, Math.round((n || 0) / 1e6)) + 'MB');
+    const clockOf = (ms) => (ms ? ST.hmsAt(ms, S.game ? S.game.tz : ST.localTz()).slice(0, 5) : '');
+    const supported = () => ST.camera.supported();
+    const videoCount = (g) => ((g && g.videos) || []).filter((v) => !v.gone).length;
+    const say = (t, k, ms) => api.say(t, k, ms);
+
+    /* ---------- カメラ ---------- */
+    function ensure() {
+      if (M.cam) return M.cam;
+      const C = M.cam = ST.camera.create();
+      C.on('state', () => { refresh(); api.update(); });
+      C.on('start', (seg) => upsert(seg));
+      C.on('done', (v) => { upsert(v); api.update(); });
+      C.on('progress', () => refresh(true));
+      C.on('error', (e) => {
+        if (M.errAt && Date.now() - M.errAt < 3000) return;
+        M.errAt = Date.now();
+        const msg = '録画を止めました：保存できませんでした' + (e && e.message ? '（' + e.message + '）' : '') + '。空きを増やしてから、もう一度「● 録画」';
+        if (rec()) stopRec(true).then(() => say(msg, 'err', 10000)); else say(msg, 'err', 10000);
+      });
+      C.on('notice', (t) => say(t, 'warn', 5000));
+      C.on('trackended', async () => { if (rec()) await stopRec(true); if (M.cam) await M.cam.close(); say('カメラが止まりました（ほかのアプリが使った など）。≡ メニューの「撮影」から再開できます', 'warn', 8000); });
+      return C;
+    }
+    /* 記録に、動画の情報（ファイル名・録画を始めた時刻・長さ）を入れる（書き出す JSON にも入る。中身は入れない） */
+    function upsert(v) {
+      const g = S.game;
+      if (!g || v.gameId !== g.id) return;
+      g.videos = g.videos || [];
+      const o = { vid: v.vid, n: v.n, startedAt: v.startedAt, endedAt: v.endedAt, duration: v.duration, bytes: v.bytes, mime: v.plan ? 'video/mp4' : v.mime, name: v.name, w: v.w, h: v.h, status: v.status };
+      if (v.gone) o.gone = true;
+      const i = g.videos.findIndex((x) => x.vid === v.vid);
+      if (i >= 0) Object.assign(g.videos[i], o); else g.videos.push(o);
+      api.save();
+    }
+    async function openCam() {
+      if (!supported()) { ST.ui.toast('この端末・ブラウザでは撮影できません（カメラか録画に対応していません）', 'err', 7000); return false; }
+      if (!ST.vstore.supported()) { ST.ui.toast('このブラウザには動画を保存できません（プライベートブラウズ など）', 'err', 7000); return false; }
+      const C = ensure();
+      try { await C.open({ quality: P().quality || '720', audio: P().audio !== false }); } catch (e) {
+        const denied = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError');
+        ST.ui.toast(denied ? 'カメラの使用が許可されていません。端末の設定（iPhone は 設定 → Safari → カメラ）で、許可してください' : 'カメラを開けませんでした' + (e && e.message ? '（' + e.message + '）' : ''), 'err', 9000);
+        return false;
+      }
+      refresh();
+      return true;
+    }
+    async function startRec() {
+      const g = S.game;
+      if (!g || M.busy || rec()) return;
+      M.busy = true;
+      try {
+        if (!M.cam || !M.cam.live()) { if (!(await openCam())) return; }
+        const [w, hh] = rawDims();
+        M.rawLand = w && hh ? w >= hh : null;
+        await M.cam.start({ gameId: g.id, n: (g.videos || []).length + 1, base: ST.fileBase(g), rotate: P().rot || 0 });
+        ST.store.persist();
+        ST.ui.keepAwake(true);
+        api.guard();
+      } catch (e) { ST.ui.toast('録画を始められませんでした' + (e && e.message ? '：' + e.message : ''), 'err', 7000); } finally { M.busy = false; refresh(); api.update(); }
+    }
+    async function stopRec(quiet) {
+      if (!rec()) return null;
+      M.busy = true;
+      refresh();
+      if (!quiet) say('動画を仕上げています…', '', 15000);
+      try {
+        const v = await M.cam.stop();
+        if (v && v.empty) say('録画が短すぎて、動画にできませんでした', 'warn', 4000);
+        else if (v && v.rotateLost) say(`動画${v.n}を保存しました。ただし、このブラウザでは動画に向きを書けなかったので、横倒しのまま再生されます`, 'warn', 9000);
+        else if (!quiet && v) say(`動画${v.n}を保存しました（${ST.fmtTime(v.duration || 0)}・${mb(v.bytes)}）`, 'ok', 4000);
+        return v;
+      } finally { M.busy = false; refresh(); api.update(); }
+    }
+    async function close() {
+      if (!M.cam) return null;
+      const v = await stopRec(true);
+      await M.cam.close();
+      refresh();
+      return v;
+    }
+    /* 画面を離れていた・映像の向きが変わった：ここから新しい動画として続ける（1本の動画の中で、途切れや向きの変わりがないように） */
+    async function split(msg) {
+      if (!rec() || M.busy) return;
+      await stopRec(true);
+      await startRec();
+      if (rec()) say(msg || '画面を離れていた間は、録画が止まっていたかもしれないので、ここから新しい動画として録画しています', 'warn', 7000);
+    }
+    /* カメラから届く映像の大きさ（回す前）。上の帯の小さな映像は、隠れていても映像をつないでおく（大きさで、向きが変わったことが分かる） */
+    function rawDims() {
+      const v = M.el && M.el.thumb;
+      if (v && v.videoWidth && v.videoHeight) return [v.videoWidth, v.videoHeight];
+      const st = M.cam ? M.cam.settings() : {};
+      return [st.width || 0, st.height || 0];
+    }
+    const shownRot = () => (rec() && M.cam.seg ? M.cam.seg.rotate : P().rot || 0);
+    function aspect() { const [w0, h0] = rawDims(); return w0 && h0 ? (shownRot() % 180 ? h0 / w0 : w0 / h0) : 16 / 9; }
+    /* 録れる動画の向きが、選んだ向き（横・縦）と合っているか */
+    function orientOK() {
+      const [w0, h0] = rawDims();
+      if (!w0 || !h0) return true;
+      const [w, hh] = (P().rot || 0) % 180 ? [h0, w0] : [w0, h0];
+      return P().orient === 'port' ? hh >= w : w >= hh;
+    }
+    function turn() {
+      if (rec()) { say('録画を止めると変えられます', 'warn'); return; }
+      const p = P();
+      p.rot = ((p.rot || 0) + 90) % 360;
+      api.savePrefs();
+      refresh(); api.update(); layoutNow();
+    }
+    /* 映像を、録れる動画の向きに回して、入れ物いっぱいに映す */
+    function fit(box, video, rot, cover) {
+      if (!box || !video) return;
+      const bw = box.clientWidth, bh = box.clientHeight;
+      if (!bw || !bh) return;
+      const side = rot % 180 !== 0;
+      video.style.width = (side ? bh : bw) + 'px';
+      video.style.height = (side ? bw : bh) + 'px';
+      video.style.objectFit = cover ? 'cover' : 'contain';
+      video.style.transform = `translate(-50%, -50%) rotate(${rot}deg)`;
+    }
+    function bind(video) {
+      if (!video) return;
+      const want = on() && M.cam.stream ? M.cam.stream : null;
+      if (video.srcObject !== want) { video.srcObject = want; video.muted = true; if (want) { const p = video.play(); if (p && p.catch) p.catch(() => {}); } }
+    }
+
+    /* ---------- 記録の画面に差しこむ ---------- */
+    function attach(rootEl) {
+      const thumb = h('video', { class: 'camthumb', muted: true, playsinline: true, autoplay: true });
+      thumb.muted = true; thumb.playsInline = true;
+      const btn = h('button', { class: 'cambtn', id: 'btnCam', hidden: true, 'aria-label': '撮影の画面を開く', onclick: openSheet }, thumb, h('i', { class: 'camdot' }));
+      const wv = h('video', { class: 'wipev', muted: true, playsinline: true, autoplay: true });
+      wv.muted = true; wv.playsInline = true;
+      const tag = h('span', { class: 'wipetag', id: 'wipeTag' });
+      const small = h('button', { class: 'wipesz', id: 'btnWipeSmall', 'aria-label': 'ワイプを小さくする', onclick: () => setWipe(-1) }, '－');
+      const big = h('button', { class: 'wipesz', id: 'btnWipeBig', 'aria-label': 'ワイプを大きくする', onclick: () => setWipe(1) }, '＋');
+      const box = h('div', { class: 'wipebox', id: 'wipeBox' }, h('button', { class: 'wipeopen', id: 'btnWipe', 'aria-label': '撮影の画面を開く', onclick: openSheet }, wv), tag, h('div', { class: 'wipectl' }, small, big));
+      const wipe = h('aside', { class: 'wipe', id: 'wipe', hidden: true, 'aria-label': 'カメラの映像' }, box);
+      const bar = rootEl.querySelector('.lbar');
+      const menu = bar && bar.querySelector('.menubtn');
+      if (bar) bar.insertBefore(btn, menu || null);
+      rootEl.appendChild(wipe);
+      thumb.addEventListener('resize', onResize);
+      M.el = { root: rootEl, thumb, btn, wv, tag, small, big, box, wipe, key: '' };
+      refresh();
+    }
+    function onResize() {
+      refresh();
+      if (!rec() || M.busy || M.rawLand == null) return;
+      const [w, hh] = rawDims();
+      if (w && hh && (w >= hh) !== M.rawLand) split('映像の向きが変わったので、ここから新しい動画として録画しています');
+    }
+    const wipeOn = () => !!(M.el && S.view === 'live' && on() && M.cam.stream && ['m', 'l'].includes(P().wipe));
+    const wipeKey = () => (wipeOn() ? P().wipe + ':' + aspect().toFixed(3) : '');
+    /* ワイプの場所と大きさ。種目の画面の並べ直しは、このあと骨組みが呼ぶ（記録のボタンは残りの広さに） */
+    function layout() {
+      const E = M.el;
+      if (!E || !E.root.isConnected) return;
+      const R = E.root;
+      E.key = wipeKey();
+      R.classList.remove('cam-side', 'cam-top');
+      if (!wipeOn()) { E.wipe.hidden = true; return; }
+      const sz = P().wipe, ar = aspect();
+      const W = R.clientWidth, H = R.clientHeight;
+      const mode = W >= H ? 'side' : 'top';
+      R.classList.add('cam-' + mode);
+      E.wipe.hidden = false;
+      const bar = R.querySelector('.lbar'), gbar = R.querySelector('.gbar');
+      const rest = H - (bar ? bar.offsetHeight : 60) - (gbar ? gbar.offsetHeight : 60) - 8;
+      let vw;
+      if (mode === 'side') vw = Math.min(W * (sz === 'l' ? 0.44 : 0.3), Math.max(80, rest - 8) * ar);
+      else vw = Math.min(W - 12, Math.max(60, rest * (sz === 'l' ? 0.38 : 0.26)) * ar);
+      vw = Math.max(120, Math.floor(vw));
+      E.box.style.width = vw + 'px';
+      E.box.style.height = Math.floor(vw / ar) + 'px';
+      E.box.classList.toggle('tiny', vw < 220);
+      fit(E.box, E.wv, shownRot(), true);
+    }
+    function layoutNow() { if (S.L && S.L.root) { layout(); if (S.L.layout) S.L.layout(); } }
+    function setWipe(v) {
+      const cur = Math.max(0, WIPES.indexOf(P().wipe));
+      const next = typeof v === 'number' ? WIPES[ST.clamp(cur + v, 0, WIPES.length - 1)] : v;
+      if (!WIPES.includes(next) || next === P().wipe) return;
+      P().wipe = next;
+      api.savePrefs();
+      layoutNow();
+      refresh();
+      if (next === 's' && !M.sheet) say('ワイプを小さくしました（上の帯の映像を押すと、撮影の画面で大きくできます）', 'ok', 4000);
+    }
+    function wipeTag() {
+      const E = M.el;
+      if (!E) return;
+      const r = rec();
+      const s = r ? `● 録画 ${ST.fmtTime(M.cam.elapsed())}` : M.busy || (M.cam && M.cam.state === 'finishing') ? '仕上げ中…' : '録画していません';
+      if (E.tag.textContent !== s) E.tag.textContent = s;
+      E.tag.classList.toggle('rec', r);
+    }
+    /* 表示を書き換える（progress：数字だけ） */
+    function refresh(progress) {
+      const E = M.el;
+      if (E && E.root.isConnected) {
+        const live = !!(on() && M.cam.stream);
+        if (wipeKey() !== E.key) layoutNow();       // ワイプが出た・消えた・大きさや縦横が変わった：置き場所と記録のボタンの並べ方をやり直す
+        const big = wipeOn();
+        E.btn.hidden = !live || big;
+        E.btn.classList.toggle('rec', rec());
+        E.btn.classList.toggle('warn', live && !orientOK());
+        bind(E.thumb);
+        if (live && !big) {
+          const [w, hh] = rawDims();
+          const rot = shownRot();
+          if (w && hh) E.btn.style.setProperty('--ar', String(rot % 180 ? hh / w : w / hh));
+          fit(E.btn, E.thumb, rot, true);
+        }
+        if (big) {
+          bind(E.wv);
+          E.box.classList.toggle('rec', rec());
+          E.box.classList.toggle('warn', !orientOK());
+          E.big.disabled = P().wipe === 'l';
+          wipeTag();
+          fit(E.box, E.wv, shownRot(), true);
+        } else if (E.wv.srcObject) E.wv.srcObject = null;
+      }
+      if (M.sheet) M.sheet.draw(progress);
+    }
+    function tick() {
+      if (rec() && M.sheet) M.sheet.draw(true);
+      if (rec() && M.el && !M.el.wipe.hidden) wipeTag();
+    }
+
+    /* ---------- 撮影の画面 ---------- */
+    async function storageText() {
+      const e = await ST.vstore.estimate();
+      if (!e || !e.quota) return '';
+      const free = Math.max(0, e.quota - e.usage);
+      const q = ST.camera.QUALITY[P().quality || '720'];
+      const hours = free / 1e9 / q.perHour;
+      return `空き ${mb(free)}（${q.label.replace(/（.*/, '')} で約 ${hours >= 10 ? Math.floor(hours) : hours.toFixed(1)} 時間）${hours < 1.2 ? '・⚠ 1試合ぶん入らないかもしれません' : ''}`;
+    }
+    async function openSheet() {
+      if (!on() && !(await openCam())) return;
+      const C = M.cam, sp = api.sport();
+      const big = h('video', { class: 'campv', muted: true, playsinline: true, autoplay: true });
+      big.muted = true; big.playsInline = true; big.srcObject = C.stream;
+      { const p = big.play(); if (p && p.catch) p.catch(() => {}); }
+      const pvbox = h('div', { class: 'campvw' }, big);
+      const stat = h('div', { class: 'camstat', id: 'camStat', role: 'status' });
+      const info = h('div', { class: 'note', id: 'camInfo' });
+      const wipeRow = h('div', { class: 'row wiperow', id: 'camWipe' });
+      const orient = h('div', { class: 'camorient', id: 'camOrient' });
+      const acts = h('div', { class: 'camacts' });
+      const store = h('div', { class: 'note', id: 'camStore' });
+      let lastKey = '';
+      const fitBig = () => {
+        const ar = aspect();
+        const appH = (S.L && S.L.root && S.L.root.clientHeight) || root.innerHeight;
+        const maxW = pvbox.parentNode ? pvbox.parentNode.clientWidth : 600, maxH = Math.max(140, appH * 0.42);
+        let bw = maxW, bh = bw / ar;
+        if (bh > maxH) { bh = maxH; bw = bh * ar; }
+        pvbox.style.width = Math.round(bw) + 'px'; pvbox.style.height = Math.round(bh) + 'px';
+        fit(pvbox, big, shownRot(), false);
+      };
+      const draw = (progress) => {
+        if (!M.cam) return;
+        const r = rec(), busy = !!M.busy || M.cam.state === 'finishing';
+        const seg = M.cam.seg, g = S.game, started = !!g.startedAt, ended = !!g.endedAt;
+        stat.className = 'camstat' + (r ? ' rec' : '');
+        stat.textContent = busy && !r ? '動画を仕上げています…' : r ? `● 録画中 ${ST.fmtTime(M.cam.elapsed())}・${mb(seg ? seg.bytes : 0)}（動画${seg ? seg.n : ''}）` : M.cam.state === 'off' ? 'カメラは切れています' : 'カメラの準備ができています（まだ録画していません）';
+        const [w0, h0] = rawDims();
+        const rot = shownRot();
+        const [w, hh] = rot % 180 ? [h0, w0] : [w0, h0];
+        info.textContent = `${w || '?'}×${hh || '?'}（${w >= hh ? '横向き' : '縦向き'}）・${M.cam.opts && M.cam.opts.audio ? '音あり' : '音なし'}`;
+        fitBig();
+        if (progress) return;
+        const ok = orientOK(), land = P().orient !== 'port';
+        const key = [r, busy, M.cam.state, started, ended, ok, land, rot, P().wipe].join();
+        if (key === lastKey) return;
+        lastKey = key;
+        wipeRow.innerHTML = '';
+        wipeRow.append(h('b', null, 'ワイプの大きさ'),
+          ...[['s', '小'], ['m', '中'], ['l', '大']].map(([v, lab]) => h('button', { class: 'btn small' + (P().wipe === v ? ' on' : ''), dataset: { wipe: v }, 'aria-pressed': String(P().wipe === v), onclick: () => setWipe(v) }, lab)),
+          h('span', { class: 'note' }, '記録の画面に映す映像。小は上の帯の中の小さな映像。中・大は、記録のボタンに重ならない所（横長の画面は右、縦長の画面は上）に出し、ボタンは残りの広さに並べ直します'));
+        orient.innerHTML = '';
+        orient.append(h('div', { class: 'row' }, h('b', null, '撮る向き'),
+          [['land', `横向き（${sp.camWide || WIDE[sp.id] || 'コート全体'}）`], ['port', '縦向き']].map(([v, lab]) => h('button', { class: 'btn small' + ((P().orient || 'land') === v ? ' on' : ''), dataset: { orient: v }, disabled: r,
+            onclick: () => { P().orient = v; api.savePrefs(); refresh(); api.update(); } }, lab))));
+        if (!ok) {
+          orient.append(h('div', { class: 'orientbox warn', id: 'orientWarn' },
+            h('p', null, h('b', null, land ? '⚠ いまは縦向きの映像です。端末を横向きにしてください。' : '⚠ いまは横向きの映像です。端末を縦向きにしてください。')),
+            land ? h('p', { class: 'note' }, '横にしても画面が回らないときは、画面の向きのロックを外してください（iPhone はコントロールセンターの 🔒）。ロックしたまま撮るときは、下の「↻ 映像を回す」で、録れる動画を横向きにできます（記録のボタンは縦の画面のままです）。') : null));
+        }
+        orient.append(h('div', { class: 'row turnrow' },
+          h('span', { class: 'note' }, '上の映像の向きが、録れる動画の向きです。横倒し・さかさまのときは'),
+          h('button', { class: 'btn small', id: 'btnTurn', disabled: r, onclick: turn }, '↻ 映像を回す')));
+        if (rot && /webm/.test(r && seg ? seg.mime : ST.camera.pickMime(!!(M.cam.opts && M.cam.opts.audio)))) {
+          orient.append(h('p', { class: 'orientbox warn', id: 'rotWebm' }, '⚠ このブラウザの録画（WebM）には向きを書けないので、動画は横倒しのまま保存されます。Safari・Chrome で開いてください。'));
+        }
+        if (r) orient.append(h('p', { class: 'note' }, '向きは、録画を止めると変えられます。'));
+        acts.innerHTML = '';
+        if (r) {
+          if (!started) acts.append(h('button', { class: 'btn startboth', id: 'btnCamBoth', onclick: () => { ST.ui.closeSheet(); api.start(); } }, `▶ 記録もスタート（${sp.startShort || CUE[sp.id] || '試合開始'}で押す）`));
+          acts.append(h('button', { class: 'btn danger-fill', id: 'btnCamStop', disabled: busy, onclick: () => stopRec() }, '■ 録画を止める'));
+        } else if (M.cam.state !== 'off') {
+          if (!started) {
+            acts.append(h('button', { class: 'btn startboth rec', id: 'btnCamBoth', disabled: busy, onclick: () => { ST.ui.closeSheet(); api.start(); } }, h('span', { class: 'rdot' }), '録画と記録を同時にスタート'),
+              h('p', { class: 'note bothnote' }, `${sp.startHint || '試合が始まる瞬間'}に押すと、録画と記録の時計が同時に始まります。`));
+          }
+          acts.append(h('div', { class: 'row' },
+            h('button', { class: 'btn' + (started ? ' recbtn' : ''), id: 'btnCamRec', disabled: busy || ended, onclick: () => startRec() }, started ? '● 録画を始める' : '● 録画だけ先に始める（ウォーミングアップから撮る）'),
+            h('button', { class: 'btn', id: 'btnCamOff', disabled: busy, onclick: () => { close().then(() => ST.ui.closeSheet()); } }, 'カメラを切る')));
+        }
+      };
+      M.sheet = { draw };
+      big.addEventListener('resize', () => draw());
+      ST.ui.sheet({
+        title: '📹 撮影しながら記録', cls: 'camsheet',
+        body: h('div', null, pvbox, stat, info, wipeRow, orient, acts, store,
+          h('ul', { class: 'camnotes note' },
+            h('li', null, `「${sp.unit || '試合'}を終える」で、録画も止まります。動画はこの端末（このブラウザ）に保存され、終わったあと「🎬 場面を見る」で、記録した場面を見返せます（時刻あわせはいりません）`),
+            h('li', null, '録画を止めて、また始めると、別の動画になります（どれも、記録と時刻が合っています）'),
+            h('li', null, 'ほかのアプリに切りかえたり、画面を消したりすると、録画は止まります（戻ると、新しい動画として続けます）'),
+            h('li', null, '電池をたくさん使います。電源につないでおくと安心です'))),
+        onClose: () => { big.srcObject = null; M.sheet = null; }
+      });
+      draw();
+      requestAnimationFrame(() => draw());
+      storageText().then((t) => { store.textContent = t; });
+    }
+
+    /* ---------- 骨組みから呼ぶもの ---------- */
+    /* スタート前の札の中 */
+    function coverPart() {
+      if (!supported()) return null;
+      if (!on()) return h('button', { class: 'btn camon', id: 'btnCamOn', onclick: openSheet }, '📹 撮影しながら記録する（この端末のカメラ）');
+      return h('div', { class: 'covercam' + (rec() ? ' rec' : '') + (orientOK() ? '' : ' warn') },
+        h('span', null, !orientOK() ? '⚠ 向きが合っていません（撮影の画面で）' : rec() ? `● 録画中 ${ST.fmtTime(M.cam.elapsed())}` : '📹 カメラの準備OK'),
+        h('button', { class: 'btn small', id: 'btnCamSheet', onclick: openSheet }, '撮影の画面'));
+    }
+    /* スタートのボタンの文字（カメラの準備ができていれば、録画も一緒に始める） */
+    const startLabel = () => (on() && !rec() ? [h('span', { class: 'rdot' }), '録画と記録をスタート'] : rec() ? '▶ 記録をスタート' : null);
+    /* スタートを押した：カメラの準備ができていて、まだ録画していなければ、録画も始める */
+    function onStart() { if (on() && !rec()) startRec().then(() => { if (rec()) say('録画も始めました', 'ok', 2500); }); }
+    /* 撮影した動画の一覧（試合のあと・書き出す） */
+    function videoItems(g) {
+      const vs = ((g && g.videos) || []).filter((v) => !v.gone);
+      if (!vs.length) return null;
+      return h('div', { class: 'vlist' }, vs.map((v) => h('div', { class: 'vitem', dataset: { vid: v.vid } },
+        h('div', { class: 'vt' }, h('b', null, `📹 動画${v.n}`), h('small', null, `${clockOf(v.startedAt)}から・${ST.fmtTime(v.duration || 0)}・${mb(v.bytes)}${v.status === 'recording' ? '・録画中' : ''}`)),
+        h('div', { class: 'row vacts' },
+          h('button', { class: 'btn small primary', dataset: { clip: v.vid }, disabled: v.status === 'recording', onclick: () => api.openReview(g, v.vid) }, '🎬 場面を見る'),
+          h('button', { class: 'btn small', dataset: { savevid: v.vid }, disabled: v.status === 'recording', onclick: () => saveVideo(v) }, '⬇ 保存'),
+          h('button', { class: 'btn small danger', title: 'この端末から消す', 'aria-label': `動画${v.n}をこの端末から消す`, disabled: v.status === 'recording', onclick: () => deleteVideo(g, v) }, '🗑')))));
+    }
+    async function saveVideo(v) {
+      ST.ui.toast('動画を用意しています…', '', 3000);
+      let f = null;
+      try { f = await ST.vstore.file(v.vid); } catch (e) { f = null; }
+      if (!f) { ST.ui.toast('この動画は、この端末にはもうありません', 'err', 5000); return; }
+      const r = await ST.ui.shareOrDownload(f.name || v.name, f, true);
+      if (r === 'downloaded') ST.ui.toast(`保存しました：${f.name || v.name}`, 'ok', 5000);
+      else if (r === 'shared') ST.ui.toast('送りました（「ビデオを保存」で写真に入ります）', 'ok', 4000);
+    }
+    function deleteVideo(g, v) {
+      ST.ui.confirm(`動画${v.n}をこの端末から消しますか？`, `${ST.fmtTime(v.duration || 0)}・${mb(v.bytes)}。消すと元に戻せません（保存した動画・記録は残ります）。`, '消す', async () => {
+        try { await ST.vstore.remove(v.vid); } catch (e) { /* もうない */ }
+        v.gone = true;
+        api.save();
+        api.update();
+        ST.ui.toast('消しました', 'ok');
+      }, true);
+    }
+    /* 前回、録画の途中で閉じた動画を、そろっている所までで仕上げる */
+    function recover(g) {
+      if (rec() || !(g.videos || []).some((v) => v.status === 'recording') || !ST.vstore.supported()) return;
+      ST.camera.recover(g.id).then(async (list) => {
+        list.forEach(upsert);
+        for (const v of g.videos || []) {
+          if (v.status !== 'recording' || list.some((x) => x.vid === v.vid)) continue;
+          const m = await ST.vstore.getVideo(v.vid).catch(() => null);
+          if (m && m.status === 'done') upsert(m); else { v.status = 'done'; v.gone = true; }
+        }
+        api.save();
+        if (list.some((v) => !v.gone)) say('前回の録画を、閉じる前までの分で保存しました', 'ok', 5000);
+        api.update();
+      }).catch(() => {});
+    }
+    /* 画面を離れた・戻った */
+    function onVisibility(hidden) {
+      if (hidden) { if (rec()) M.hiddenAt = Date.now(); return; }
+      if (M.hiddenAt) { const away = Date.now() - M.hiddenAt; M.hiddenAt = 0; if (away > 1500) split(); }
+    }
+    /* 設定の画面 */
+    function settingsPart(reopen) {
+      if (!supported()) return null;
+      const p = P();
+      return h('section', { class: 'field', id: 'setCamera' }, h('span', null, '撮影（この端末のカメラ）'),
+        h('div', { class: 'row' }, Object.keys(ST.camera.QUALITY).map((k) => h('button', { class: 'btn small' + ((p.quality || '720') === k ? ' on' : ''), dataset: { camq: k }, onclick: () => { p.quality = k; api.savePrefs(); reopen(); } }, ST.camera.QUALITY[k].label))),
+        h('label', { class: 'chk' }, h('input', { type: 'checkbox', dataset: { pref: 'camAudio' }, checked: p.audio !== false, onchange: (e) => { p.audio = e.target.checked; api.savePrefs(); } }), '録画に音も入れる（笛・声援）'),
+        h('p', { class: 'note' }, `1時間あたり、720p で約 ${ST.camera.QUALITY['720'].perHour}GB・1080p で約 ${ST.camera.QUALITY['1080'].perHour}GB。次にカメラを開いたときから変わります。`));
+    }
+    const menuItem = () => (supported() ? { icon: '📹', label: rec() ? '撮影（録画中）' : '撮影しながら記録', sub: rec() ? '録画を止める・ワイプの大きさ・空き容量' : 'この端末のカメラで録画（時刻は自動で合う）', fn: openSheet } : null);
+    const detach = () => { if (M.el) { M.el.thumb.srcObject = null; M.el.wv.srcObject = null; } M.el = null; };
+
+    return { attach, detach, layout, refresh, tick, coverPart, startLabel, onStart, startRec, stopRec, close, split, videoItems, recover, onVisibility, settingsPart, menuItem, openSheet, setWipe, turn, orientOK, isOn: on, isRec: rec, videoCount, M };
+  }
+
+  ST.livecam = { create };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/review.js */
+/* スポーツ タップ記録 — 動画で場面を見返す（このアプリの中だけで。ほかのアプリはいらない）
+   記録した場面（シュート・あとでチェック・フリーキック など）を、試合の動画から「前◯秒〜後◯秒」で切り出して再生する。
+
+   ■ 動画
+     ・この端末のカメラで撮影しながら記録した動画（livecam.js。IndexedDB にある）：録画を始めた時刻が分かるので、時刻あわせはいらない
+         動画の時刻 ＝ 記録の t ＋（記録のスタート − 録画の始まり）秒
+     ・あとで選んだ試合の動画のファイル：1か所だけ合わせる（動画の中で、記録のどれか（ふつうはキックオフ）の瞬間で止めて「ここ」）。
+         合わせたずれは、ファイルの名前と大きさで覚えておく（game.syncs）。ファイルそのものは保存しない（開くたびに選ぶ）
+   ■ 場面の長さ（前・後の秒数）：まとまりごとに選べる（種目の win。サッカーは シュート・ゴール 30 秒前〜5 秒後、あとでチェック 10 秒前〜10 秒後）
+       shot：シュート・得点 / mark：あとでチェック（★） / other：そのほか（フリーキック・コーナーキック など）
+     設定は種目ごとに S.prefs.sp[種目].win、再生の速さは S.prefs.rvSpeed */
+(function (root) {
+  'use strict';
+  const ST = root.ST;
+  const { h } = ST.ui;
+  const SPEEDS = [0.5, 1, 1.5, 2, 4];
+  const BEFORE = [5, 10, 15, 20, 30, 45, 60];
+  const AFTER = [3, 5, 10, 15, 20, 30];
+  const DEF_WIN = { shot: [10, 3], mark: [10, 10], other: [8, 3] };
+  const GROUP_LABEL = { shot: 'シュート・得点', mark: 'あとでチェック（★）', other: 'そのほか' };
+
+  function create(api) {
+    const S = api.S;
+    const R = { game: null, src: null, url: '', offset: null, filter: { types: null, teams: [true, true, true], players: [] }, playing: null, reel: null, ri: 0, raf: 0, el: null, winOpen: null };
+    const narrow = () => !!(root.matchMedia && root.matchMedia('(max-width: 899px)').matches);
+
+    const sport = () => ST.sportOf(R.game);
+    const winOf = () => { const sp = sport(), pr = api.sprefs(sp.id); return Object.assign({}, DEF_WIN, sp.win || {}, pr.win || {}); };
+    const groupOf = (d) => (d.kind === 'mark' ? 'mark' : d.shot || d.pts || d.so ? 'shot' : 'other');
+    const groupLabel = (k) => (k === 'shot' && sport().id === 'soccer' ? 'シュート・ゴール' : GROUP_LABEL[k]);
+    const speed = () => (SPEEDS.includes(S.prefs.rvSpeed) ? S.prefs.rvSpeed : 1);
+    const camVideos = () => (R.game.videos || []).filter((v) => !v.gone && v.status !== 'recording');
+    const fileKey = (f) => `${f.name}|${f.size}`;
+    const isCard = (e, d) => d.kind === 'card' || e.card === 'y' || e.card === 'r';
+
+    /* 場面の一覧（いまの動画・絞り込み・長さで）。[{ e, d, grp, v（動画の時刻）, t0, t1, label, when }] */
+    function scenes(all) {
+      if (R.offset == null) return [];
+      const sp = sport(), W = winOf();
+      const dur = R.el && R.el.video.duration > 0 ? R.el.video.duration : Infinity;
+      const f = R.filter;
+      const out = [];
+      ST.sorted(R.game).forEach((e) => {
+        const d = sp.TYPE[e.type];
+        if (!d || d.meta || d.kind === 'adj') return;
+        const v = e.t + R.offset;
+        if (v < 0 || v > dur) return;
+        if (!all) {
+          if (f.types && !f.types.includes(e.type) && !(f.types.includes('*card') && isCard(e, d))) return;
+          const tk = e.team === 0 || e.team === 1 ? e.team : 2;
+          if (f.teams[tk] === false) return;
+          if (f.players.length && !(e.team != null && e.no != null && f.players.includes(e.team + ':' + e.no))) return;
+        }
+        const grp = groupOf(d), w = W[grp] || W.other;
+        out.push({ e, d, grp, v, t0: Math.max(0, v - w[0]), t1: Math.min(dur, v + w[1]), label: ST.eventText(R.game, e, true), when: api.timeText(e) });
+      });
+      return out;
+    }
+    /* 続けて再生の区間：重なる場面は1つにつなぐ（同じところを2回見せない） */
+    function reelOf(list) {
+      const out = [];
+      list.slice().sort((a, b) => a.t0 - b.t0).forEach((c) => {
+        const prev = out[out.length - 1];
+        if (prev && c.t0 <= prev.t1 + 0.3) { prev.t1 = Math.max(prev.t1, c.t1); prev.items.push(c); return; }
+        out.push({ t0: c.t0, t1: c.t1, items: [c] });
+      });
+      return out;
+    }
+
+    /* ---------- 動画 ---------- */
+    async function useCam(v) {
+      stop();
+      let f = null;
+      try { f = await ST.vstore.file(v.vid); } catch (e) { f = null; }
+      if (!f) { ST.ui.toast('この動画は、この端末にはもうありません', 'err', 5000); return; }
+      setSrc({ kind: 'cam', vid: v.vid, n: v.n, name: v.name }, f, (R.game.startedAt - v.startedAt) / 1000);
+    }
+    function useFile(f) {
+      stop();
+      const key = fileKey(f);
+      const off = R.game.syncs && isFinite(R.game.syncs[key]) ? R.game.syncs[key] : null;
+      setSrc({ kind: 'file', key, name: f.name }, f, off);
+    }
+    function setSrc(src, blob, offset) {
+      if (R.url) URL.revokeObjectURL(R.url);
+      R.url = URL.createObjectURL(blob);
+      R.src = src;
+      R.offset = offset;
+      R.el.video.src = R.url;
+      R.el.video.playbackRate = speed();
+      R.el.video.addEventListener('loadedmetadata', () => { R.el.video.playbackRate = speed(); draw(); }, { once: true });
+      draw();
+    }
+    function pickFile() {
+      const inp = h('input', { type: 'file', accept: 'video/*,.mp4,.mov,.m4v,.webm', style: { display: 'none' } });
+      inp.addEventListener('change', () => { const f = inp.files && inp.files[0]; inp.remove(); if (f) useFile(f); });
+      document.body.appendChild(inp);
+      inp.click();
+    }
+    /* いまの映像の位置を、記録 e の瞬間にする（あとで選んだ動画の時刻あわせ） */
+    function syncAt(e) {
+      const v = R.el.video.currentTime || 0;
+      R.offset = Math.round((v - e.t) * 100) / 100;
+      if (R.src && R.src.kind === 'file') { R.game.syncs = R.game.syncs || {}; R.game.syncs[R.src.key] = R.offset; api.save(); }
+      ST.ui.toast(`合わせました：記録の ${ST.fmtTime(e.t)}（${ST.eventText(R.game, e, true)}）＝ 動画の ${ST.fmtTime(v, 1)}`, 'ok', 4000);
+      draw();
+    }
+    function nudge(d) {
+      if (R.offset == null) return;
+      R.offset = Math.round((R.offset + d) * 100) / 100;
+      if (R.src && R.src.kind === 'file') { R.game.syncs = R.game.syncs || {}; R.game.syncs[R.src.key] = R.offset; api.save(); }
+      draw();
+    }
+
+    /* ---------- 再生 ---------- */
+    function stop() {
+      cancelAnimationFrame(R.raf);
+      R.playing = null; R.reel = null;
+      if (R.el && R.el.video && !R.el.video.paused) R.el.video.pause();
+    }
+    function watch() {
+      cancelAnimationFrame(R.raf);
+      const loop = () => {
+        const vd = R.el && R.el.video;
+        if (!vd || !R.playing) return;
+        if (vd.currentTime >= R.playing.t1 - 0.02 || vd.ended) {
+          if (R.reel && R.ri + 1 < R.reel.length) { R.ri++; go(R.reel[R.ri]); return; }
+          vd.pause();
+          R.playing = null; R.reel = null;
+          drawNow();
+          return;
+        }
+        drawNow();
+        R.raf = requestAnimationFrame(loop);
+      };
+      R.raf = requestAnimationFrame(loop);
+    }
+    function go(seg) {
+      const vd = R.el.video;
+      R.playing = seg;
+      vd.currentTime = seg.t0;
+      vd.playbackRate = speed();
+      const p = vd.play();
+      if (p && p.catch) p.catch(() => {});
+      watch();
+      draw();
+      // スマホ縦：一覧を下に見ていたら、映像が見えるところまで戻す
+      const r = vd.getBoundingClientRect(), top = (document.querySelector('.hbar') || { offsetHeight: 0 }).offsetHeight;
+      if (r.top < top || r.bottom > root.innerHeight) root.scrollTo({ top: Math.max(0, root.scrollY + r.top - top - 8), behavior: 'smooth' });
+    }
+    function playOne(c) { R.reel = null; go({ t0: c.t0, t1: c.t1, items: [c] }); }
+    function playAll() {
+      const list = reelOf(scenes());
+      if (!list.length) { ST.ui.toast('場面がありません（絞り込み・動画を確かめてください）', 'warn'); return; }
+      R.reel = list; R.ri = 0;
+      go(list[0]);
+    }
+    function step(d) {
+      if (R.reel) { const i = ST.clamp(R.ri + d, 0, R.reel.length - 1); if (i !== R.ri) { R.ri = i; go(R.reel[i]); } return; }
+      const list = scenes();
+      if (!list.length) return;
+      const cur = R.playing ? R.playing.items[0] : null;
+      let i = cur ? list.findIndex((c) => c.e.id === cur.e.id) : -1;
+      i = ST.clamp(i + d, 0, list.length - 1);
+      playOne(list[i]);
+    }
+    function setSpeed(x) { S.prefs.rvSpeed = x; api.savePrefs(); if (R.el) R.el.video.playbackRate = x; draw(); }
+    function setWin(grp, k, v) { const sp = sport(), pr = api.sprefs(sp.id); const W = winOf(); pr.win = Object.assign({}, pr.win || {}, { [grp]: k === 0 ? [v, W[grp][1]] : [W[grp][0], v] }); api.savePrefs(); draw(); }
+
+    /* ---------- 画面 ---------- */
+    function render(game, vid) {
+      R.game = game;
+      R.src = null; R.offset = null;
+      R.filter = { types: null, teams: [true, true, true], players: [] };
+      R.winOpen = null;
+      document.body.dataset.view = 'review';
+      const V = document.querySelector('#view');
+      V.innerHTML = '';
+      const video = h('video', { class: 'rv-video', playsinline: true, preload: 'auto', controls: true });
+      video.playsInline = true;
+      const label = h('div', { class: 'rv-label', id: 'rvLabel' });
+      const ctl = h('div', { class: 'rv-ctl', id: 'rvCtl' });
+      const srcBox = h('div', { class: 'rv-src', id: 'rvSrc' });
+      const side = h('div', { class: 'rv-side', id: 'rvSide' });
+      const back = h('button', { class: 'btn', id: 'btnRvBack', onclick: () => { close(); api.back(); } }, '← 記録へ戻る');
+      V.append(
+        h('header', { class: 'hbar' }, back, h('b', { class: 'htitle' }, `${sport().icon} 場面を見返す`), h('span', { class: 'spacer' })),
+        h('main', { class: 'rv' },
+          h('section', { class: 'rv-player' }, h('div', { class: 'rv-vwrap' }, video, label), ctl, srcBox),
+          side));
+      R.el = { video, label, ctl, srcBox, side };
+      video.addEventListener('pause', () => drawNow());
+      video.addEventListener('play', () => drawNow());
+      video.addEventListener('ratechange', () => { if (Math.abs(video.playbackRate - speed()) > 0.01 && R.playing) video.playbackRate = speed(); });
+      const cams = camVideos();
+      const first = vid ? cams.find((v) => v.vid === vid) : cams[0];
+      if (first) useCam(first); else draw();
+    }
+    function close() { stop(); if (R.url) { URL.revokeObjectURL(R.url); R.url = ''; } if (R.el) { R.el.video.removeAttribute('src'); R.el.video.load(); } R.el = null; }
+    /* 再生中に変わるところだけ（場面の名前・ボタンの印） */
+    function drawNow() {
+      if (!R.el) return;
+      const p = R.playing;
+      const it = p ? p.items[0] : null;
+      R.el.label.hidden = !it;
+      if (it) {
+        const n = R.reel ? `${R.ri + 1}/${R.reel.length}` : '';
+        const t = p.items.length > 1 ? `${it.label} ほか${p.items.length - 1}` : it.label;
+        const s = `${n ? '▶ ' + n + '　' : '▶ '}${t}（${it.when}）`;
+        if (R.el.label.textContent !== s) R.el.label.textContent = s;
+      }
+      const pb = R.el.ctl.querySelector('#btnRvPlay');
+      if (pb) pb.textContent = R.el.video.paused ? '▶' : '⏸';
+      R.el.side.querySelectorAll('.rvrow').forEach((row) => row.classList.toggle('playing', !!(p && p.items.some((c) => c.e.id === row.dataset.id))));
+    }
+    function draw() {
+      if (!R.el) return;
+      const g = R.game, sp = sport(), E = R.el;
+      // 操作
+      const seek = (d) => { const vd = E.video; vd.currentTime = Math.max(0, (vd.currentTime || 0) + d); };
+      E.ctl.innerHTML = '';
+      E.ctl.append(
+        h('div', { class: 'row rvbtns' },
+          h('button', { class: 'btn', id: 'btnRvPrev', title: '前の場面', onclick: () => step(-1) }, '⏮'),
+          h('button', { class: 'btn', onclick: () => seek(-10) }, '−10秒'),
+          h('button', { class: 'btn', onclick: () => seek(-5) }, '−5秒'),
+          h('button', { class: 'btn primary rvplay', id: 'btnRvPlay', onclick: () => { const vd = E.video; if (vd.paused) { vd.playbackRate = speed(); vd.play().catch(() => {}); } else { vd.pause(); stop(); } } }, '▶'),
+          h('button', { class: 'btn', onclick: () => seek(5) }, '+5秒'),
+          h('button', { class: 'btn', onclick: () => seek(10) }, '+10秒'),
+          h('button', { class: 'btn', id: 'btnRvNext', title: '次の場面', onclick: () => step(1) }, '⏭')),
+        h('div', { class: 'row rvspeed', id: 'rvSpeed' }, h('b', null, '速さ'),
+          SPEEDS.map((x) => h('button', { class: 'btn small' + (speed() === x ? ' on' : ''), dataset: { speed: String(x) }, 'aria-pressed': String(speed() === x), onclick: () => setSpeed(x) }, x + '倍'))));
+      // 動画
+      const cams = camVideos();
+      E.srcBox.innerHTML = '';
+      E.srcBox.append(h('div', { class: 'row' }, h('b', null, '動画'),
+        cams.map((v) => h('button', { class: 'btn small' + (R.src && R.src.vid === v.vid ? ' on' : ''), dataset: { rvvid: v.vid }, onclick: () => useCam(v) }, `📹 動画${v.n}（${ST.fmtTime(v.duration || 0)}）`)),
+        h('button', { class: 'btn small' + (R.src && R.src.kind === 'file' ? ' on' : ''), id: 'btnRvFile', onclick: pickFile }, R.src && R.src.kind === 'file' ? `📂 ${R.src.name}` : '📂 試合の動画を選ぶ')));
+      if (!R.src) E.srcBox.append(h('p', { class: 'note' }, cams.length ? '' : 'この試合は撮影しながら記録していません。スマホ・ビデオカメラで撮った試合の動画を選ぶと、1か所だけ時刻を合わせて見返せます。'));
+      else if (R.src.kind === 'cam') E.srcBox.append(h('p', { class: 'note ok', id: 'rvSyncOk' }, `✓ 撮影しながら記録した動画なので、時刻はぴったり合っています（記録の 0:00 ＝ 動画の ${ST.fmtTime(Math.max(0, R.offset), 1)}）`));
+      else if (R.offset != null) E.srcBox.append(h('div', { class: 'rv-sync ok', id: 'rvSyncOk' }, h('p', { class: 'note' }, `✓ 時刻を合わせています（記録の 0:00 ＝ 動画の ${ST.fmtTime(Math.max(0, R.offset), 1)}）。ずれていたら：`),
+        h('div', { class: 'row' }, [-1, -0.5, 0.5, 1].map((d) => h('button', { class: 'btn small', dataset: { nudge: String(d) }, onclick: () => nudge(d) }, (d > 0 ? '+' : '−') + Math.abs(d) + '秒')),
+          h('button', { class: 'btn small', onclick: () => { R.offset = null; draw(); } }, '合わせ直す'))));
+      else E.srcBox.append(syncCard());
+      // 右側：絞り込み・長さ・一覧
+      E.side.innerHTML = '';
+      if (R.offset == null) { E.side.append(h('p', { class: 'note' }, R.src ? '時刻を合わせると、記録した場面が並びます。' : '動画を選ぶと、記録した場面が並びます。')); drawNow(); return; }
+      const all = scenes(true);
+      const list = scenes();
+      E.side.append(filters(all), winBox(), h('button', { class: 'btn primary huge', id: 'btnRvAll', disabled: !list.length, onclick: playAll }, `▶ 続けて再生（${list.length}場面）`));
+      E.side.append(list.length ? h('div', { class: 'rvlist' }, list.map((c, i) => h('button', { class: 'rvrow', dataset: { id: c.e.id }, style: { '--tc': c.e.team === 0 || c.e.team === 1 ? g.teams[c.e.team].color : 'var(--line2)' }, onclick: () => playOne(c) },
+        h('span', { class: 'ix' }, String(i + 1)), h('span', { class: 'rvt' }, h('b', null, c.label), h('small', null, `${c.when}・動画 ${ST.fmtTime(c.v)}（${ST.fmtTime(c.t0)}〜${ST.fmtTime(c.t1)}）`)), h('i', { class: 'rvgo' }, '▶'))))
+        : h('p', { class: 'note' }, all.length ? 'この絞り込みの場面はありません。' : 'この動画の中に、記録した場面がありません（動画と記録の時刻を確かめてください）。'));
+      drawNow();
+    }
+    /* あとで選んだ動画の時刻あわせ */
+    function syncCard() {
+      const g = R.game;
+      const cand = ST.sorted(g).filter((e) => { const d = ST.typeOf(g, e.type) || {}; return d.kind !== 'adj'; });
+      const startEv = cand.find((e) => e.t === 0) || cand[0];
+      const sel = h('select', { class: 'rvsel', id: 'rvSyncSel' }, cand.slice(0, 300).map((e) => h('option', { value: e.id, selected: e === startEv }, `${ST.fmtTime(e.t)}　${ST.eventText(g, e, true)}${e.t === 0 ? '（スタート）' : ''}`)));
+      return h('div', { class: 'rv-sync', id: 'rvSync' },
+        h('b', null, '時刻を合わせる（1か所だけ）'),
+        h('p', { class: 'note' }, `動画を、記録のどれかの瞬間（ふつうは${sport().start || 'スタート'}）で止めてから、その記録を選んで「ここに合わせる」。ほかの場面は全部、同じだけずらして並べます。`),
+        h('div', { class: 'row' }, sel, h('button', { class: 'btn primary', id: 'btnRvSync', onclick: () => { const e = ST.findEvent(g, sel.value); if (e) syncAt(e); } }, 'いまの位置に合わせる')));
+    }
+    function filters(all) {
+      const g = R.game, sp = sport(), f = R.filter;
+      const count = (fn) => all.filter(fn).length;
+      const types = [];
+      all.forEach((c) => { if (!types.includes(c.e.type)) types.push(c.e.type); });
+      const anyCard = all.some((c) => isCard(c.e, c.d));
+      const tchip = (id, lab, n) => h('button', { class: 'fchip' + ((f.types == null ? id === 'all' : f.types.includes(id)) ? ' on' : ''), dataset: { rvtype: id }, onclick: () => {
+        if (id === 'all') f.types = null;
+        else { const cur = f.types || []; f.types = cur.includes(id) ? cur.filter((x) => x !== id) : cur.concat([id]); if (!f.types.length) f.types = null; }
+        stop(); draw();
+      } }, lab, n != null ? h('small', null, String(n)) : null);
+      const box = h('div', { class: 'rv-filter' });
+      box.append(h('div', { class: 'frow' }, h('span', { class: 'flab' }, '場面'),
+        tchip('all', 'すべて', all.length),
+        types.map((t) => { const d = sp.TYPE[t]; return tchip(t, d.short || d.label.replace(/（.*$/, ''), count((c) => c.e.type === t)); }),
+        anyCard ? tchip('*card', 'カード', count((c) => isCard(c.e, c.d))) : null));
+      if (sp.hasTeams) {
+        box.append(h('div', { class: 'frow' }, h('span', { class: 'flab' }, 'チーム'),
+          [0, 1].map((tm) => h('button', { class: 'fchip' + (f.teams[tm] !== false ? ' on' : ''), dataset: { rvteam: String(tm) }, onclick: () => { f.teams[tm] = f.teams[tm] === false; stop(); draw(); } }, h('i', { class: 'chip', style: { background: g.teams[tm].color } }), ST.teamName(g, tm))),
+          all.some((c) => c.e.team == null) ? h('button', { class: 'fchip' + (f.teams[2] !== false ? ' on' : ''), dataset: { rvteam: '2' }, onclick: () => { f.teams[2] = f.teams[2] === false; stop(); draw(); } }, 'チームなし') : null));
+        const ps = [];
+        all.forEach((c) => { if (c.e.team != null && c.e.no != null) { const k = c.e.team + ':' + c.e.no; if (!ps.includes(k)) ps.push(k); } });
+        ps.sort((a, b) => (Number(a.split(':')[0]) - Number(b.split(':')[0])) || ST.cmpNo(a.split(':')[1], b.split(':')[1]));
+        if (ps.length) box.append(h('div', { class: 'frow' }, h('span', { class: 'flab' }, '選手'),
+          h('button', { class: 'fchip' + (!f.players.length ? ' on' : ''), dataset: { rvplayer: 'all' }, onclick: () => { f.players = []; stop(); draw(); } }, '全員'),
+          ps.map((k) => { const [tm, no] = k.split(':'); const nm = ST.playerName(g, Number(tm), no); return h('button', { class: 'fchip' + (f.players.includes(k) ? ' on' : ''), dataset: { rvplayer: k }, onclick: () => { f.players = f.players.includes(k) ? f.players.filter((x) => x !== k) : f.players.concat([k]); stop(); draw(); } },
+            h('i', { class: 'chip', style: { background: g.teams[Number(tm)].color } }), '#' + no + (nm ? ' ' + nm : ''), h('small', null, String(count((c) => c.e.team === Number(tm) && c.e.no === no)))); })));
+      }
+      return box;
+    }
+    /* 場面の長さ（前・後の秒数） */
+    function winBox() {
+      const W = winOf();
+      const groups = ['shot', 'mark', 'other'].filter((k) => scenes(true).some((c) => c.grp === k));
+      // スマホ縦では、はじめはたたむ（いまの秒数は見出しに出す）。開け閉めは、選び直しても覚えておく
+      if (R.winOpen == null) R.winOpen = !narrow();
+      const now = groups.map((k) => `${groupLabel(k).replace(/（.*$/, '')} ${W[k][0]}秒前〜${W[k][1]}秒後`).join('・');
+      const box = h('details', { class: 'rv-win', id: 'rvWin', open: R.winOpen }, h('summary', null, h('b', null, '場面の長さ（前と後の秒数）'), h('small', { class: 'winnow' }, now)));
+      box.addEventListener('toggle', () => { R.winOpen = box.open; });
+      groups.forEach((k) => {
+        box.append(h('div', { class: 'winrow', dataset: { grp: k } }, h('b', null, groupLabel(k)),
+          h('div', { class: 'row' }, h('span', { class: 'note' }, '前'), BEFORE.map((x) => h('button', { class: 'btn small' + (W[k][0] === x ? ' on' : ''), dataset: { wb: k + ':' + x }, onclick: () => setWin(k, 0, x) }, x + '秒'))),
+          h('div', { class: 'row' }, h('span', { class: 'note' }, '後'), AFTER.map((x) => h('button', { class: 'btn small' + (W[k][1] === x ? ' on' : ''), dataset: { wa: k + ':' + x }, onclick: () => setWin(k, 1, x) }, x + '秒')))));
+      });
+      return box;
+    }
+
+    return { render, close, scenes, reelOf, winOf, setSpeed, setWin, playAll, playOne, syncAt, nudge, useFile, R };
+  }
+
+  ST.review = { create, SPEEDS, DEF_WIN };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
 /* js/sp/team.js */
 /* スポーツ タップ記録 — チームの行で記録する種目（サッカー・フットサル・ハンドボール・ラグビー）。画面を持たない部分
    記録の画面は、バスケ タップ記録と同じ「選手1人＝1行」。行のボタンを1回押せば、その選手のプレーとして時刻つきで残る。
@@ -1539,13 +3063,33 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     return s;
   }
 
+  /* ---------- フリーキックのカード ----------
+     フリーキック（type に detail: 'fk'）には、直接・間接（fk: 'd' | 'i'）と、反則した側へのカード（card: 'n' なし | 'y' イエロー | 'r' レッド、cno: 背番号）を持てる。
+     フリーキックを蹴るのは e.team、カードをもらうのは相手（1 − e.team）。退場の数え方・集計では、カードを1つの記録として足して数える */
+  function withCards(sp, game) {
+    const out = [];
+    ST.sorted(game).forEach((e) => {
+      out.push(e);
+      const d = sp.TYPE[e.type];
+      if (d && d.detail === 'fk' && (e.card === 'y' || e.card === 'r') && (e.team === 0 || e.team === 1) && sp.TYPE[e.card === 'y' ? 'yc' : 'rc']) {
+        out.push({ id: e.id + 'c', t: e.t, type: e.card === 'y' ? 'yc' : 'rc', team: 1 - e.team, no: e.cno != null ? String(e.cno) : null, fromFk: e.id });
+      }
+    });
+    return out;
+  }
+  function fkText(sp, e) {
+    const kind = e.fk === 'i' ? '間接' : e.fk === 'd' ? '直接' : '';
+    const card = e.card === 'y' ? 'イエロー' : e.card === 'r' ? 'レッド' : '';
+    return `フリーキック${kind ? '（' + kind + '）' : ''}${card ? `・${card}${e.cno != null ? ' #' + e.cno : ''}` : ''}`;
+  }
+
   /* ---------- 一時退場・退場 ---------- */
   /* t の時点で：outs（もう出られない選手 'チーム:番号'）, susp（一時退場中 [{ team, no, rem, label }]）, short（チームごとの人数の少なさ） */
   function penalties(sp, game, t) {
     const now = playTime(game, t);
     const outs = new Set(), susp = [];
     const cnt = {};
-    ST.sorted(game).forEach((e) => {
+    withCards(sp, game).forEach((e) => {
       if (e.t > t + 1e-9 || e.team == null) return;
       const d = sp.TYPE[e.type];
       if (!d || !(d.susp || d.suspOpt || d.out || d.teamSusp || d.yellow)) return;
@@ -1619,15 +3163,21 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
   function rowTypes(sp, sprefs, p) {
     if (p === SO) return ['sog', 'sox'];
     const on = new Set(sp.base);
-    (sp.toggles || []).forEach((tg) => { if (tg.row !== 'team' && isOn(sprefs, tg)) tg.types.forEach((x) => on.add(x)); });
+    (sp.toggles || []).forEach((tg) => { if (!tg.row && isOn(sprefs, tg)) (tg.types || []).forEach((x) => on.add(x)); });
     return sp.rowOrder.filter((x) => on.has(x));
+  }
+  /* 設定で選ぶ種類（row：'team' チームの行・'global' 画面の下）：その種類を入れた設定がどれも「使わない」なら出さない。設定に入っていない種類はいつも出す */
+  function chosen(sp, sprefs, list, row) {
+    const tgs = (sp.toggles || []).filter((x) => x.row === row);
+    return (list || []).filter((type) => { const mine = tgs.filter((x) => (x.types || []).includes(type)); return !mine.length || mine.some((x) => isOn(sprefs, x)); });
   }
   /* チームの行（チームとしての記録：CK・FK・タイムアウト…）。設定で消せる。PK戦の間はなし */
   function teamTypes(sp, sprefs, p) {
     if (p === SO || !sp.teamTypes || !sp.teamTypes.length) return [];
-    const tg = (sp.toggles || []).find((x) => x.row === 'team');
-    return !tg || isOn(sprefs, tg) ? sp.teamTypes.slice() : [];
+    return chosen(sp, sprefs, sp.teamTypes, 'team');
   }
+  /* 画面の下の、いつでも押せるボタン（★ あとで見る など） */
+  function globalTypes(sp, sprefs) { return chosen(sp, sprefs, sp.globalTypes || [], 'global'); }
   function isOn(sprefs, tg) { const r = (sprefs && sprefs.rows) || {}; return r[tg.key] != null ? !!r[tg.key] : !!tg.def; }
   const WEIGHT = (sp, id) => ((sp.TYPE[id] || {}).kind === 'miss' ? 0.75 : 1);
   /* 一覧で直すときに選べる種類 */
@@ -1637,7 +3187,7 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     const ids = [];
     const add = (x) => { if (!ids.includes(x) && sp.TYPE[x]) ids.push(x); };
     rowTypes(sp, sprefs, 1).forEach(add);
-    (sp.teamTypes || []).forEach(add);
+    teamTypes(sp, sprefs, 1).forEach(add);
     (sp.globalTypes || []).forEach(add);
     if (!ids.includes(e.type)) add(e.type);
     return ids;
@@ -1653,7 +3203,7 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
       const blank = () => ({ c: {}, pts: 0 });
       team.players.forEach((p) => byNo.set(p.no, Object.assign({ no: p.no, name: p.name }, blank())));
       const unknown = blank(), total = blank();
-      (game.events || []).forEach((e) => {
+      withCards(sp, game).forEach((e) => {
         const d = sp.TYPE[e.type];
         if (!d || d.meta || e.team !== tm) return;
         let s = unknown;
@@ -1661,7 +3211,11 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
           if (!byNo.has(e.no)) byNo.set(e.no, Object.assign({ no: e.no, name: '', extra: true }, blank()));
           s = byNo.get(e.no);
         }
-        [s, total].forEach((x) => { x.c[e.type] = (x.c[e.type] || 0) + 1; x.pts += d.pts || 0; });
+        [s, total].forEach((x) => {
+          x.c[e.type] = (x.c[e.type] || 0) + 1;
+          x.pts += d.pts || 0;
+          if (d.detail === 'fk' && e.fk) { const k = e.fk === 'i' ? 'fki' : 'fkd'; x.c[k] = (x.c[k] || 0) + 1; }      // 直接・間接の数
+        });
       });
       const rows = Array.from(byNo.values()).sort((a, b) => ST.cmpNo(a.no, b.no));
       return { team: tm, rows, unknown, total };
@@ -1670,6 +3224,7 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
   /* 集計の表の列：{ key, label, n（数える種類）, a（打った数に入れる種類。あれば「成功/打った数」）, pts（得点） }。記録のある列だけ出す */
   function colValue(col, s) {
     if (col.pts) return s.pts ? String(s.pts) : '';
+    if (col.f) { const v = col.f(s); return v ? String(v) : ''; }
     const n = (col.n || []).reduce((m, t) => m + (s.c[t] || 0), 0);
     if (col.a) { const a = col.a.reduce((m, t) => m + (s.c[t] || 0), 0); return a ? `${n}/${a}` : ''; }
     return n ? String(n) : '';
@@ -1709,6 +3264,7 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     const d = sp.TYPE[e.type];
     if (!d) return e.type;
     if (d.so) return `${sp.shootout || 'PK戦'} ${d.label}`;
+    if (d.detail === 'fk') return fkText(sp, e);
     return d.label;
   }
   /* ピリオドの時間の呼び名：「前半 23:41」「後半 40+1:05」 */
@@ -1753,7 +3309,7 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
       family: 'team', prec: 10, hasTeams: true, periodNames: ['前半', '後半', '延長前半', '延長後半'], SO,
       globalTypes: ['mark']
     }, def);
-    sp.TYPES = COMMON.concat(def.TYPES);
+    sp.TYPES = COMMON.filter((c) => !def.TYPES.some((d) => d.id === c.id)).concat(def.TYPES);      // 種目の側で同じ id を書けば、そちらを使う
     sp.TYPE = {};
     sp.TYPES.forEach((d) => { sp.TYPE[d.id] = d; });
     sp.defaultOpts = () => Object.assign({ len: def.lenDefault, elen: def.elenDefault }, def.moreOpts ? def.moreOpts() : {});
@@ -1774,6 +3330,10 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     sp.score = score; sp.soScore = shootout; sp.scoreText = scoreText;
     sp.rowTypes = (sprefs, p) => rowTypes(sp, sprefs, p);
     sp.teamTypesOf = (sprefs, p) => teamTypes(sp, sprefs, p);
+    sp.globalTypesOf = (sprefs) => globalTypes(sp, sprefs);
+    sp.withCards = (game) => withCards(sp, game);
+    sp.fkText = (e) => fkText(sp, e);
+    sp.isOn = (sprefs, key) => { const tg = (sp.toggles || []).find((x) => x.key === key); return tg ? isOn(sprefs, tg) : false; };
     sp.weight = (id) => WEIGHT(sp, id);
     sp.editTypes = (game, e, sprefs) => editTypes(sp, game, e, sprefs);
     sp.stats = stats; sp.colValue = colValue; sp.usedCols = (st) => usedCols(sp, st); sp.isEmpty = isEmpty;
@@ -1782,6 +3342,14 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     sp.csvEvents = csvEvents; sp.csvBox = csvBox;
     sp.cleanEvent = (e) => {
       if (e.type === 'period' || e.type === 'pend') return isFinite(e.period) && e.period >= 1 ? { period: Math.min(SO, Math.round(e.period)) } : null;
+      if ((sp.TYPE[e.type] || {}).detail === 'fk') {
+        const o = {};
+        if (e.fk === 'd' || e.fk === 'i') o.fk = e.fk;
+        if (e.card === 'y' || e.card === 'r' || e.card === 'n') o.card = e.card;
+        const cno = e.cno != null ? ST.normNo(e.cno) : null;
+        if (cno != null) o.cno = cno;
+        return o;
+      }
       return {};
     };
     sp.keepFirst = true;               // スタートの記録（前半の始まり）は、取り消し・消すができない（時刻は直せる）
@@ -1824,45 +3392,71 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
   }
   ST.teamSport = teamSport;
 
-  /* ========== サッカー ========== */
+  /* ========== サッカー ==========
+     ボタンは、使うものを設定で1つずつ選べる（記録用・分析用）。はじめは：
+       記録用：ゴール（選手の行）・ゴールキック・フリーキック（直接・間接／カードと背番号）・コーナーキック（チームの行）
+       分析用：シュート（何番が打ったか。選手の行）・あとでチェック（画面の下）
+     動画で見返すとき（review.js）の場面の長さ：シュート・ゴールは 30 秒前〜5 秒後、あとでチェックは 10 秒前〜10 秒後（設定で変えられる） */
   teamSport({
-    id: 'soccer', name: 'サッカー', icon: '⚽', desc: 'ゴール・シュート・アシスト・カード・CK／FK。前半・後半とアディショナルタイム、PK戦',
+    id: 'soccer', name: 'サッカー', icon: '⚽', desc: 'ゴールキック・フリーキック（直接・間接・カード）・コーナーキック・シュート・あとでチェック。前半・後半・PK戦。撮影して場面を見返す',
     lenChoices: [45, 40, 35, 30, 25, 20, 15, 12, 10], lenDefault: 40, lenNote: '高校 40 分・中学 30〜35 分・一般 45 分・8人制（小学生）15〜20 分',
     elenChoices: [15, 10, 5], elenDefault: 10,
     shootout: 'PK戦', shootoutShort: 'PK', twoYellowOut: true, redShort: true,
     presets: [['1〜11', '1-11'], ['1〜18', '1-18'], ['1〜20', '1-20'], ['1〜25', '1-25']],
-    start: 'キックオフ',
+    start: 'キックオフ', camWide: 'ピッチ全体',
+    win: { shot: [30, 5], mark: [10, 10], other: [10, 10] },
     TYPES: [
       { id: 'goal', btn: 'ゴール', label: 'ゴール', pts: 1, kind: 'made', col: C.goal, shot: true },
-      { id: 'shot', btn: 'シュート', btnShort: '×', label: 'シュート（外れ・止められた）', short: 'シュート', kind: 'miss', col: C.goal, shot: true, of: 'goal' },
+      { id: 'shot', btn: 'シュート', btnShort: 'シュ', label: 'シュート（外れ・止められた）', short: 'シュート', kind: 'miss', col: C.goal, shot: true, of: 'goal' },
       { id: 'ast', btn: 'アシスト', btnShort: 'A', label: 'アシスト', kind: 'good', col: C.ast },
       { id: 'save', btn: 'セーブ', label: 'セーブ（GK）', kind: 'good', col: C.save },
       { id: 'foul', btn: 'ファウル', btnShort: 'F', label: 'ファウル', kind: 'foul', col: C.foul },
-      { id: 'yc', btn: '警告', label: '警告（イエロー）', kind: 'card', col: C.yc, yellow: true },
-      { id: 'rc', btn: '退場', label: '退場（レッド）', kind: 'card', col: C.rc, out: true },
-      { id: 'ck', btn: 'CK', label: 'コーナーキック', kind: 'set', col: C.set },
-      { id: 'fk', btn: 'FK', label: 'フリーキック', kind: 'set', col: C.set },
-      { id: 'off', btn: 'オフサイド', btnShort: 'OS', label: 'オフサイド', kind: 'set', col: C.set }
+      { id: 'yc', btn: '警告', label: 'イエローカード', short: 'イエロー', kind: 'card', col: C.yc, yellow: true },
+      { id: 'rc', btn: '退場', label: 'レッドカード', short: 'レッド', kind: 'card', col: C.rc, out: true },
+      { id: 'gk', btn: 'ゴールキック', btnShort: 'GK', label: 'ゴールキック', kind: 'set', col: '#0f766e' },
+      { id: 'fk', btn: 'フリーキック', btnShort: 'FK', label: 'フリーキック', kind: 'set', col: '#6d28d9', detail: 'fk' },
+      { id: 'ck', btn: 'コーナーキック', btnShort: 'CK', label: 'コーナーキック', kind: 'set', col: '#1d4ed8' },
+      { id: 'off', btn: 'オフサイド', btnShort: 'OS', label: 'オフサイド', kind: 'set', col: C.set },
+      { id: 'mark', btn: '★ あとでチェック', label: '★ あとでチェック', short: 'あとでチェック', kind: 'mark', global: true }
     ],
-    base: ['goal', 'shot'],
+    base: [],
     rowOrder: ['goal', 'shot', 'ast', 'save', 'foul', 'yc', 'rc'],
-    teamTypes: ['ck', 'fk', 'off'],
+    teamTypes: ['gk', 'fk', 'ck', 'off'],
+    togglesTitle: 'ボタン（使うものを選ぶ）',
+    togglesNote: 'チェックを外したボタンは、記録の画面に出しません（それまでの記録は残ります）。ボタンが少ないほど、1つずつが大きくなります。',
+    toggleSecs: [['rec', '記録用（公式の記録・数を数える）'], ['ana', '分析用（自分たちのふり返り・動画で見返す）']],
     toggles: [
-      { key: 'ast', label: 'アシスト', types: ['ast'] },
-      { key: 'card', label: '警告・退場（イエロー・レッド。警告2回で退場の印）', types: ['yc', 'rc'] },
-      { key: 'foul', label: 'ファウル', types: ['foul'] },
-      { key: 'save', label: 'セーブ（GK）', types: ['save'] },
-      { key: 'team', label: 'チームの行（CK・FK・オフサイド）', types: ['ck', 'fk', 'off'], row: 'team', def: true }
+      { key: 'goal', sec: 'rec', label: 'ゴール（得点。だれが決めたか）', types: ['goal'], def: true },
+      { key: 'gk', sec: 'rec', label: 'ゴールキック', types: ['gk'], row: 'team', def: true },
+      { key: 'fk', sec: 'rec', label: 'フリーキック', types: ['fk'], row: 'team', def: true },
+      { key: 'fkKind', sec: 'rec', sub: true, label: '直接・間接を分けて数える（フリーキックを押したあとに選ぶ）', def: true },
+      { key: 'fkCard', sec: 'rec', sub: true, label: 'そのときのカード（イエロー・レッド・なし）と、もらった背番号も選ぶ', def: true },
+      { key: 'ck', sec: 'rec', label: 'コーナーキック', types: ['ck'], row: 'team', def: true },
+      { key: 'card', sec: 'rec', label: 'イエロー・レッド（選手の行。フリーキックとは別に記録するとき）', types: ['yc', 'rc'] },
+      { key: 'off', sec: 'rec', label: 'オフサイド', types: ['off'], row: 'team' },
+      { key: 'shot', sec: 'ana', label: 'シュート（何番が打ったか。外れ・止められた）', types: ['shot'], def: true },
+      { key: 'mark', sec: 'ana', label: 'あとでチェック（★。だれのかは決めずに、時刻だけ）', types: ['mark'], row: 'global', def: true },
+      { key: 'ast', sec: 'ana', label: 'アシスト', types: ['ast'] },
+      { key: 'save', sec: 'ana', label: 'セーブ（GK）', types: ['save'] },
+      { key: 'foul', sec: 'ana', label: 'ファウル', types: ['foul'] }
     ],
     cols: [
       { key: 'pts', label: '得点', pts: true }, { key: 'shot', label: 'シュート', n: ['goal', 'shot'] }, { key: 'ast', label: 'アシスト', n: ['ast'] },
-      { key: 'save', label: 'セーブ', n: ['save'] }, { key: 'foul', label: 'ファウル', n: ['foul'] }, { key: 'yc', label: '警告', n: ['yc'] }, { key: 'rc', label: '退場', n: ['rc'] },
-      { key: 'ck', label: 'CK', n: ['ck'] }, { key: 'fk', label: 'FK', n: ['fk'] }, { key: 'off', label: 'オフサイド', n: ['off'] }
+      { key: 'save', label: 'セーブ', n: ['save'] }, { key: 'foul', label: 'ファウル', n: ['foul'] }, { key: 'yc', label: 'イエロー', n: ['yc'] }, { key: 'rc', label: 'レッド', n: ['rc'] },
+      { key: 'gk', label: 'GK', n: ['gk'] }, { key: 'fk', label: 'FK', n: ['fk'] }, { key: 'fkd', label: 'FK直接', n: ['fkd'] }, { key: 'fki', label: 'FK間接', n: ['fki'] },
+      { key: 'ck', label: 'CK', n: ['ck'] }, { key: 'off', label: 'オフサイド', n: ['off'] }
     ],
-    moreHelp: [['サッカーのしくみ', [
-      'シュート：「ゴール」と「シュート」（外れ・止められた）で、集計にシュート数と決定率が出ます',
-      '警告・退場：設定で出せます。警告2回で、その選手の行に「退場」の印。チームの帯に「−1」（1人少ない）',
+    moreHelp: [['サッカーのボタン', [
+      '記録用：ゴール（選手の行）、ゴールキック・フリーキック・コーナーキック（チームの行。押したチームが蹴る）',
+      'フリーキック：押した瞬間の時刻で残し、そのあと「直接・間接」と「カード（なし・イエロー・レッド）」、カードをもらった選手の背番号（相手のチーム）を選びます。選ばずに閉じても、フリーキックとして残ります。あとから「記録の一覧」でも直せます',
+      'イエロー2回（フリーキックのカードも数える）で、その選手の行に「退場」の印。チームの帯に「−1」（1人少ない）',
+      '分析用：シュート（何番が打ったか）、あとでチェック（★。気になった場面の時刻だけ）',
+      'どのボタンを使うかは「≡ メニュー」→「設定」で、1つずつ選べます',
       'オウンゴールは、相手チームの「？」の行の「ゴール」で記録してください（得点は相手に入ります）'
+    ]], ['動画で見返す', [
+      '撮影しながら記録した動画（または、あとで選んだ試合の動画）で、記録した場面を見返せます（「≡ メニュー」→「場面を見返す」、試合のあとの札の「🎬 場面を見る」）',
+      '場面の長さ：シュート・ゴールは 30 秒前〜5 秒後、あとでチェックは 10 秒前〜10 秒後（見返す画面で、前と後の秒数を変えられます）',
+      '再生の速さ（0.5〜4倍）を選べます。続けて再生すると、選んだ場面だけを順に見られます'
     ]]]
   });
 
@@ -2593,6 +4187,7 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     },
     cleanEvent: (e) => ({}),
     sideNames: (game) => [sideName(game, 0), sideName(game, 1)],
+    sceneText: (game, e) => snapText(game, e),        // 動画の切り出しの場面の呼び名（その時点のポイント・ゲーム）
     fileWho: (game) => ST.safeName(sideName(game, 0)) + 'vs' + ST.safeName(sideName(game, 1)),
     score, scoreText,
     editTypes: (game, e) => (e.type === 'mark' ? ['mark'] : ['ace', 'win', 'err', 'df', 'pt', 'flt']),
@@ -3450,7 +5045,9 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
       h('div', { class: 'score', 'aria-label': '得点' }, L.score[0], h('span', { class: 'dash' }, '−'), L.score[1], L.so),
       ctx.ui.menuBtn());
     const P = L.panelsEl = h('main', { class: 'panels' }, [0, 1].map((tm) => buildPanel(tm)));
-    const gl = (sp.globalTypes || []).map((type) => {
+    const globals = sp.globalTypesOf ? sp.globalTypesOf(ctx.sprefs) : (sp.globalTypes || []);
+    L.globals = globals;
+    const gl = globals.map((type) => {
       const d = sp.TYPE[type];
       const cnt = h('i', { class: 'cnt', hidden: true });
       const parts = String(d.btn).split(' ');
@@ -3489,12 +5086,15 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
       Pn.rows = new Map();
       L.btns = L.btns.filter((b) => b.team !== tm);
       const types = sp.rowTypes(pr, p), ttypes = sp.teamTypesOf(pr, p);
-      const rows = g.teams[tm].players.map((x) => ({ no: x.no, name: x.name }));
-      const teamOnly = !rows.length;
-      if (pr.unknown !== false || teamOnly) rows.push({ no: null, name: '' });
+      // 選手の行のボタンを全部「使わない」にしたときは、選手の行は出さない（チームの行だけ）
+      const rows = types.length ? g.teams[tm].players.map((x) => ({ no: x.no, name: x.name })) : [];
+      const teamOnly = !g.teams[tm].players.length;
+      if (types.length && (pr.unknown !== false || teamOnly)) rows.push({ no: null, name: '' });
       if (ttypes.length) rows.push({ team: true });
+      if (!rows.length) rows.push({ none: true });
       Pn.n = rows.length;
       rows.forEach((r) => {
+        if (r.none) { Pn.roster.append(h('p', { class: 'note norows' }, '使うボタンがありません（≡ メニュー → 設定）')); return; }
         if (r.team) {
           const row = h('div', { class: 'prow trow', style: { '--tk': ttypes.length } }, h('div', { class: 'pno' }, h('b', null, 'チーム')));
           ttypes.forEach((type) => row.append(btn(tm, null, type, `${ST.teamName(g, tm)} チームの ${sp.TYPE[type].label}`, true)));
@@ -3625,7 +5225,7 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
       if (so) L.so.textContent = `${sp.shootoutShort} ${so[0]}−${so[1]}`;
       const tl = ST.tally(g);
       L.btns.forEach((b) => { const c = tl[b.key] || 0; setCnt(b.cnt, c); });
-      (sp.globalTypes || []).forEach((type) => setCnt(L.gb[type].cnt, tl['*:' + type] || 0));
+      L.globals.forEach((type) => setCnt(L.gb[type].cnt, tl['*:' + type] || 0));
       // 累積ファウル（フットサル）：5つで黄・6つ目から赤（第2PK）
       const f = g.startedAt ? sp.foulsNow(g, ctx.elapsed()) : null;
       [0, 1].forEach((tm) => {
@@ -3659,8 +5259,55 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     const sec = b.closest('.team');
     if (!sec) return;
     const tm = Number(sec.dataset.team);
-    if (b.dataset.type) ctx.record({ type: b.dataset.type, team: tm, no: b.dataset.no === '' ? null : b.dataset.no }, b);
-    else if (b.dataset.add) openKeypad(ctx, L, tm);
+    if (b.dataset.type) {
+      const sp = ctx.sport, d = sp.TYPE[b.dataset.type] || {};
+      const ev = { type: b.dataset.type, team: tm, no: b.dataset.no === '' ? null : b.dataset.no };
+      // フリーキック：押した瞬間の時刻で残し、そのあとに直接・間接とカードを選ぶ（選ばずに閉じても、そのまま残る）
+      if (d.detail === 'fk') { if (sp.isOn(ctx.sprefs, 'fkKind')) ev.fk = 'd'; if (sp.isOn(ctx.sprefs, 'fkCard')) ev.card = 'n'; }
+      const e2 = ctx.record(ev, b);
+      if (e2 && d.detail === 'fk' && (ev.fk || ev.card)) openFk(ctx, e2.id);
+    } else if (b.dataset.add) openKeypad(ctx, L, tm);
+  }
+
+  /* ---------- フリーキックのくわしい記録（直接・間接・カード・背番号） ---------- */
+  function fkBody(ctx, e, changed, opts) {
+    const g = ctx.game, sp = ctx.sport, pr = ctx.sprefs;
+    const box = h('div', { class: 'fkbox' });
+    const other = e.team === 0 || e.team === 1 ? 1 - e.team : null;
+    const pick = (label, cur, list, set) => h('div', { class: 'field' }, h('span', null, label), h('div', { class: 'row fkrow' },
+      list.map(([v, lab, cls]) => h('button', { class: 'btn fkbtn' + (cls ? ' ' + cls : '') + (cur === v ? ' on' : ''), dataset: { fkv: String(v) }, 'aria-pressed': String(cur === v), onclick: () => set(v) }, lab))));
+    if (opts.all || sp.isOn(pr, 'fkKind') || e.fk) box.append(pick('直接・間接', e.fk || null, [['d', '直接'], ['i', '間接']], (v) => { e.fk = v; changed(); }));
+    if (opts.all || sp.isOn(pr, 'fkCard') || (e.card && e.card !== 'n')) {
+      box.append(pick(`カード（${other != null ? ST.teamName(g, other) : '相手'}の反則）`, e.card || 'n', [['n', 'なし'], ['y', '🟨 イエロー', 'yc'], ['r', '🟥 レッド', 'rc']], (v) => { e.card = v; if (v === 'n') delete e.cno; changed(v); }));
+      if (e.card === 'y' || e.card === 'r') {
+        const nos = other != null ? g.teams[other].players.map((p) => p.no) : [];
+        if (e.cno != null && !nos.includes(e.cno)) nos.push(e.cno);
+        box.append(h('div', { class: 'field' }, h('span', null, `カードをもらった選手（${other != null ? ST.teamName(g, other) : '相手'}）`), h('div', { class: 'row nopick' },
+          h('button', { class: 'btn small' + (e.cno == null ? ' on' : ''), dataset: { cno: '' }, onclick: () => { delete e.cno; changed(); } }, '番号なし'),
+          ST.sortNos(nos).map((no) => h('button', { class: 'btn small nobtn' + (e.cno === no ? ' on' : ''), dataset: { cno: no }, onclick: () => { e.cno = no; changed(); } }, '#' + no)))));
+      }
+    }
+    return box;
+  }
+  function openFk(ctx, id) {
+    const g = ctx.game;
+    const e = ST.findEvent(g, id);
+    if (!e) return;
+    let s = null;
+    const redraw = () => { const nb = fkBody(ctx, e, changed, {}); s.body.innerHTML = ''; s.body.append(nb, h('p', { class: 'note' }, '時刻は押した瞬間のままです。選ばずに閉じても、フリーキックとして残ります（あとで「記録の一覧」で直せます）。')); };
+    const changed = (v) => { ctx.save(); ctx.update(); redraw(); };
+    s = ST.ui.sheet({
+      title: `フリーキック（${ST.teamName(g, e.team)}）・${ctx.timeText(e)}`, cls: 'fksheet',
+      body: h('div'),
+      foot: [h('button', { class: 'btn primary', id: 'btnFkOk', onclick: () => s.close() }, 'OK')]
+    });
+    redraw();
+  }
+  /* 一覧で直す：フリーキックなら、くわしい記録も直せる */
+  function editExtra(ctx, e, body, changed) {
+    const d = ctx.sport.TYPE[e.type] || {};
+    if (d.detail !== 'fk') return;
+    body.append(fkBody(ctx, e, changed, { all: true }));
   }
 
   /* ---------- ピリオド（前半を終える・後半を始める・延長・PK戦） ---------- */
@@ -3767,6 +5414,18 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
       const all = (sp.TYPES || []).filter((d) => d.shot).reduce((m, d) => m + (t[d.id] || 0), 0);
       return all ? `・シュート ${all}本（決定率 ${ST.pct(made, all)}）` : '';
     };
+    /* チームの記録の数（ゴールキック・フリーキック（直接・間接）・コーナーキック…）とカード */
+    const setLine = (tm) => {
+      const c = st[tm].total.c;
+      const parts = (sp.teamTypes || []).filter((x) => c[x]).map((x) => {
+        const d = sp.TYPE[x];
+        const nm = d.btnShort && d.btnShort.length <= 3 ? d.btnShort : (d.short || d.label);
+        return d.detail === 'fk' && (c.fkd || c.fki) ? `${nm} ${c[x]}（直接 ${c.fkd || 0}・間接 ${c.fki || 0}）` : `${nm} ${c[x]}`;
+      });
+      if (c.yc) parts.push(`イエロー ${c.yc}`);
+      if (c.rc) parts.push(`レッド ${c.rc}`);
+      return parts.length ? '・' + parts.join('・') : '';
+    };
     const kickLine = (tm) => {
       const t = st[tm].total.c;
       const made = (sp.TYPES || []).filter((d) => d.kick && d.kind === 'made').reduce((m, d) => m + (t[d.id] || 0), 0);
@@ -3782,13 +5441,13 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
         h('tbody', null, [0, 1].map((tm) => h('tr', null, h('th', null, chip(tm), ST.teamName(g, tm)), per.map((p) => h('td', null, String(p.pts[tm]))), h('td', { class: 'sum' }, String(sp.score(g)[tm])), so ? h('td', { class: 'sum' }, String(so[tm])) : null))))),
       foulTable,
       [0, 1].map((tm) => h('section', { class: 'teamstat' },
-        h('h3', null, chip(tm), ST.teamName(g, tm), h('small', null, ` 得点 ${st[tm].total.pts}${shotLine(tm)}${kickLine(tm)}`)),
+        h('h3', null, chip(tm), ST.teamName(g, tm), h('small', null, ` 得点 ${st[tm].total.pts}${shotLine(tm)}${kickLine(tm)}${setLine(tm)}`)),
         table(st[tm]))),
       free ? h('section', { class: 'teamstat free' }, h('h3', null, h('i', { class: 'chip neutral' }), 'チームなし'), h('p', { class: 'freeline' }, free)) : null,
       h('p', { class: 'note' }, (sp.statsNote || '「成功/打った数」は、失敗のボタン（×）も使ったときに出ます。') + '時刻は「記録の一覧」で確かめられます。'));
   }
 
-  ST.addView('team', { build, stats });
+  ST.addView('team', { build, stats, editExtra });
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -4358,7 +6017,10 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
       if (!rootEl.isConnected) return;
       rootEl.classList.toggle('short', (rootEl.clientHeight || root.innerHeight) < 430);
       const W = panels.clientWidth, H = panels.clientHeight;
-      const wide = W > H * 1.05;
+      // 左右に並べるのは、横長で、しかも片側にボタンが楽に並ぶ幅があるときだけ
+      // （スマホ縦で撮影のワイプを上に出すと、入れ物は横長になるが、片側の幅は狭すぎる）
+      const need = 64 + types().length * 52;
+      const wide = W > H * 1.05 && (W - 14) / 2 >= need;
       panels.classList.toggle('wide', wide);
       const rows = g.teams[0].players.length + 0.75;
       const sideW = wide ? (W - 14) / 2 : W - 8;
@@ -4758,9 +6420,12 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     }
     function layout() {
       if (!rootEl.isConnected) return;
-      const W = rootEl.clientWidth || root.innerWidth, H = rootEl.clientHeight || root.innerHeight;
+      const H = rootEl.clientHeight || root.innerHeight;
       rootEl.classList.toggle('short', H < 430);
-      rootEl.classList.toggle('bb-wide', W > H * 1.15 && W >= 600);
+      // 2列にするかは、記録のボタンの入れ物の大きさで決める（撮影のワイプを出すと、その分せまくなる）
+      const sw = rootEl.querySelector('.stagewrap');
+      const W2 = (sw && sw.clientWidth) || rootEl.clientWidth || root.innerWidth, H2 = (sw && sw.clientHeight) || H;
+      rootEl.classList.toggle('bb-wide', W2 > H2 * 1.15 && W2 >= 600);
     }
     function tick() { if (g.startedAt) clock.set(ST.fmtTime(ctx.elapsed())); }
     L.update = update;
@@ -5477,6 +7142,9 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
   const ST = root.ST;
   const { h, $ } = ST.ui;
   const BASKET_URL = '../basket-tap/';
+  const ONLY = ST.CONFIG.only;           // 1つの種目だけのアプリ（サッカー タップ記録）なら、その種目の id
+  /* 専用のアプリがある種目（種目を選ぶ画面では、そのアプリへのリンクにする） */
+  const STANDALONE = ONLY ? {} : { soccer: { href: '../soccer-tap/', note: '専用のアプリ「サッカー タップ記録」（ゴールキック・フリーキック・コーナーキック・シュート・あとでチェック。撮影して場面を見返す）' } };
 
   const S = {
     view: 'picker',
@@ -5492,6 +7160,8 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     guarded: false
   };
   const now = () => Date.now();
+  let cam = null;            // 撮影しながら記録する（livecam.js。init で作る）
+  let rv = null;             // 動画で場面を見返す（review.js。init で作る）
   const sport = () => ST.SPORTS[(S.game && S.game.sport) || S.sport] || null;
   const viewOf = (sp) => (sp && ST.VIEWS[sp.family]) || {};
   const sprefs = (id) => ST.store.sportPrefs(S.prefs, id || (sport() || {}).id);
@@ -5533,28 +7203,47 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
       if (u.href !== root.location.href) history.replaceState(history.state, '', u.href);
     } catch (e) { /* file:// など */ }
     const sp = ST.SPORTS[id];
-    document.title = sp ? `${sp.name} タップ記録` : ST.APP;
+    document.title = ONLY ? ST.APP : sp ? `${sp.name} タップ記録` : ST.APP;
   }
 
   /* ---------- 画面の切り替え ---------- */
   function go(view) {
+    if (S.view === 'review' && rv) rv.close();
     S.view = view;
     ST.ui.closeSheet(true);
     if (S.L && S.L.destroy) S.L.destroy();
     S.L = null;
+    if (cam) {
+      cam.detach();
+      // ホーム・種目の一覧へ出るときは、カメラを閉じる（録画していたら、そこまでで仕上げる）。準備の画面へは、録画したまま行き来できる
+      if ((view === 'home' || view === 'picker') && cam.isOn()) cam.close();
+    }
     if (view === 'picker') renderPicker();
     else if (view === 'home') renderHome();
     else if (view === 'setup') renderSetup();
     else if (view === 'live') buildLive();
     root.scrollTo(0, 0);
   }
+  /* 動画で場面を見返す（vid：はじめに開く撮影した動画） */
+  function openReview(g, vid) {
+    if (!rv) return;
+    ST.ui.closeSheet(true);
+    if (S.view === 'live' && S.L && S.L.destroy) S.L.destroy();
+    S.L = null;
+    if (cam) cam.detach();
+    S.view = 'review';
+    rv.render(g || S.game, vid);
+    root.scrollTo(0, 0);
+  }
   function openGame(game) {
+    if (S.game && S.game.id !== game.id && cam && cam.isOn()) cam.close();
     S.game = game;
     S.redo = [];
     setSport(game.sport);
     ST.store.setCurrent(game.id);
     go('live');
     if (game.startedAt && !game.endedAt) { ST.ui.keepAwake(true); guard(); }
+    if (cam) cam.recover(game);          // 前回、録画の途中で閉じた動画があれば、そろっている所までで仕上げる
   }
 
   /* ========== 種目を選ぶ ========== */
@@ -5575,10 +7264,12 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
             ST.SPORT_ORDER.map((id) => {
               const sp = ST.SPORTS[id];
               const n = ST.store.games(id).length;
+              const solo = STANDALONE[id];
+              if (solo) return h('a', { class: 'sportbtn solo', href: solo.href, dataset: { solo: id } }, h('span', { class: 'si', 'aria-hidden': 'true' }, sp.icon), h('span', { class: 'st' }, h('b', null, sp.name), h('small', null, solo.note)), h('i', { class: 'sn' }, '別のアプリ'));
               return h('button', { class: 'sportbtn', dataset: { sport: id }, onclick: () => { setSport(id); go('home'); } },
                 h('span', { class: 'si', 'aria-hidden': 'true' }, sp.icon), h('span', { class: 'st' }, h('b', null, sp.name), h('small', null, sp.desc)), n ? h('i', { class: 'sn' }, `${n}試合`) : null);
             }),
-            h('a', { class: 'sportbtn basket', href: BASKET_URL }, h('span', { class: 'si', 'aria-hidden': 'true' }, '🏀'), h('span', { class: 'st' }, h('b', null, 'バスケットボール'), h('small', null, '専用のアプリ「バスケ タップ記録」（撮影しながら記録・動画の切り出しも）')), h('i', { class: 'sn' }, '別のアプリ')))),
+            h('a', { class: 'sportbtn basket', href: BASKET_URL }, h('span', { class: 'si', 'aria-hidden': 'true' }, '🏀'), h('span', { class: 'st' }, h('b', null, 'バスケットボール'), h('small', null, '専用のアプリ「バスケ タップ記録」（得点の場面を動画から自動で探す道具とも組める）')), h('i', { class: 'sn' }, '別のアプリ')))),
         h('section', { class: 'card steps3' },
           h('h2', null, 'どの種目でも同じ使い方'),
           h('ol', null,
@@ -5615,7 +7306,7 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     const going = goingGame();
     V.append(
       h('header', { class: 'hbar' },
-        h('button', { class: 'btn small', id: 'btnSports', onclick: () => { setSport(null); go('picker'); } }, '← 種目'),
+        ONLY ? null : h('button', { class: 'btn small', id: 'btnSports', onclick: () => { setSport(null); go('picker'); } }, '← 種目'),
         h('div', { class: 'brand' }, h('span', { class: 'logo', 'aria-hidden': 'true' }, sp.icon), h('div', null, h('b', null, `${sp.name} タップ記録`), h('small', null, sp.desc))),
         h('button', { class: 'btn icon', id: 'btnHelp', 'aria-label': '使い方', onclick: () => help(sp) }, '？')),
       h('main', { class: 'home' },
@@ -5624,9 +7315,11 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
         list.length ? h('section', { class: 'card' }, h('h2', null, `これまでの${sp.unit || '試合'}`), h('div', { class: 'games' }, list.map(gameRow))) : h('section', { class: 'card steps3' },
           h('h2', null, 'つかいかた'),
           h('ol', null, (sp.steps || []).map(([b, s]) => h('li', null, h('b', null, b), h('span', null, s))))),
-        h('section', { class: 'card tools' }, h('h2', null, '記録のファイルを開く'),
-          h('div', { class: 'row' }, h('button', { class: 'btn', onclick: importFile }, '📂 記録のファイルを開く'))),
-        h('p', { class: 'note' }, '🔒 記録はこの端末のブラウザの中だけに保存します（どこにも送りません）。')));
+        h('section', { class: 'card tools' }, h('h2', null, '撮影しながら記録する・動画で場面を見返す'),
+          h('p', null, '記録の画面で「📹 撮影しながら記録する」を選ぶと、この端末のカメラで録画しながら記録できます（録画と記録の時刻はぴったり合います）。終わったら「🎬 場面を見る」で、記録した場面を、選手ごと・プレーごとに、前と後の秒数を決めて見返せます（ほかのカメラで撮った試合の動画も、1か所だけ時刻を合わせれば見返せます）。'),
+          h('div', { class: 'row' },
+            h('button', { class: 'btn', onclick: importFile }, '📂 記録のファイルを開く'))),
+        h('p', { class: 'note' }, '🔒 記録と撮影した動画は、この端末のブラウザの中だけに保存します（どこにも送りません）。')));
   }
   function gameLine(g) {
     const when = g.startedAt ? `${g.date} ${new Date(g.startedAt).toTimeString().slice(0, 5)}` : `${g.date}（まだスタートしていません）`;
@@ -5639,9 +7332,9 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
   }
   function gameRow(g) {
     return h('div', { class: 'grow', dataset: { id: g.id } },
-      h('button', { class: 'gopen', onclick: () => resume(g.id) }, gameLine(g), h('small', { class: 'note' }, `${g.n}件の記録${g.endedAt ? '' : g.startedAt ? '・記録中' : ''}`)),
+      h('button', { class: 'gopen', onclick: () => resume(g.id) }, gameLine(g), h('small', { class: 'note' }, `${g.n}件の記録${g.videos ? `・📹 動画${g.videos}本` : ''}${g.endedAt ? '' : g.startedAt ? '・記録中' : ''}`)),
       h('button', { class: 'btn small', title: '書き出す', onclick: () => { const game = ST.store.loadGame(g.id); if (game) openExport(game); } }, '書き出す'),
-      h('button', { class: 'btn small danger', title: '消す', onclick: () => ST.ui.confirm('この記録を消しますか？', `${g.date} ${g.names[0]} ${g.scoreText || ''} ${g.names[1]}（${g.n}件の記録）。消すと元に戻せません。書き出したファイルは残ります。`, '消す', () => { ST.store.deleteGame(g.id); renderHome(); ST.ui.toast('消しました', 'ok'); }, true) }, '消す'));
+      h('button', { class: 'btn small danger', title: '消す', onclick: () => ST.ui.confirm('この記録を消しますか？', `${g.date} ${g.names[0]} ${g.scoreText || ''} ${g.names[1]}（${g.n}件の記録${g.videos ? `・撮影した動画${g.videos}本` : ''}）。消すと元に戻せません。書き出したファイル・保存した動画は残ります。`, '消す', () => { ST.store.deleteGame(g.id); if (ST.vstore && ST.vstore.supported()) ST.vstore.removeGame(g.id).catch(() => {}); renderHome(); ST.ui.toast('消しました', 'ok'); }, true) }, '消す'));
   }
   function resume(id) {
     const g = ST.store.loadGame(id);
@@ -5828,10 +7521,12 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     S.parts = { last: null, cover: null };
     S.L = view.build(ctx);
     V.append(S.L.root);
+    if (cam) cam.attach(S.L.root);      // 撮影：上の帯の小さな映像・ワイプを、種目の画面に差しこむ
     updateLive();
+    if (cam) cam.layout();
     if (S.L.layout) S.L.layout();
   }
-  function rebuild() { if (S.view === 'live' && S.game) { if (S.L && S.L.destroy) S.L.destroy(); buildLive(); } }
+  function rebuild() { if (S.view === 'live' && S.game) { if (S.L && S.L.destroy) S.L.destroy(); if (cam) cam.detach(); buildLive(); } }
   function canRecord(quiet) {
     if (!S.game.startedAt) { if (!quiet) say(`先に「▶ スタート」を押してください`, 'warn'); return false; }
     if (S.game.endedAt) { if (!quiet) say(`${sport().unit || '試合'}は終わっています`, 'warn'); return false; }
@@ -5859,10 +7554,12 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
   function updateLive(bump) {
     if (!S.L) return;
     if (S.L.update) S.L.update(bump);
+    if (cam) cam.refresh();
     updateCover();
     renderLast();
   }
   function tick() {
+    if (cam) cam.tick();
     if (S.view !== 'live' || !S.game || !S.L) return;
     if (S.L.tick) S.L.tick();
   }
@@ -5875,7 +7572,13 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
   }
   function startBtn() {
     const el = h('button', { class: 'startbtn', id: 'btnStart', onclick: start }, '▶ スタート');
-    return { el, update() { el.hidden = !!S.game.startedAt; } };
+    return { el, update() {
+      el.hidden = !!S.game.startedAt;
+      const r = !!(cam && cam.isOn() && !cam.isRec());           // カメラの準備ができていれば、録画も一緒に始める
+      const lab = r ? '● 録画＋スタート' : '▶ スタート';
+      if (el.textContent !== lab) el.textContent = lab;
+      el.classList.toggle('rec', r);
+    } };
   }
   function menuBtn() { return h('button', { class: 'menubtn', id: 'btnMenu', 'aria-label': 'メニュー', onclick: openMenu }, h('span', null, '≡'), h('small', null, 'メニュー')); }
   /* 下の帯：いま記録したもの・取り消す（左に、種目の「いつでも押せる」ボタンを並べられる） */
@@ -5901,9 +7604,10 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     el.innerHTML = '';
     if (!started) {
       el.append(h('div', { class: 'cover-card' },
-        h('button', { class: 'startbig', id: 'btnStartBig', onclick: start }, '▶ スタート'),
+        h('button', { class: 'startbig' + (cam && cam.isOn() && !cam.isRec() ? ' recstart' : ''), id: 'btnStartBig', onclick: start }, (cam && cam.startLabel()) || '▶ スタート'),
         h('p', null, h('b', null, sp.startHint || '試合が始まる瞬間'), 'に押してください。'),
-        h('p', { class: 'note' }, '時計が動き出し、そこからの時間で記録します。あとで動画と合わせるときの目印にもなります。'),
+        h('p', { class: 'note' }, cam && cam.isOn() ? (cam.isRec() ? '録画中です。押すと、記録の時計が動き出します（録画は続けたまま）。' : '押した瞬間に、録画と記録の時計が同時に始まります。') : '時計が動き出し、そこからの時間で記録します。あとで動画と合わせるときの目印にもなります。'),
+        cam ? cam.coverPart() : null,
         view.coverExtra ? view.coverExtra(ctx) : null));
     } else if (ended) {
       el.append(h('div', { class: 'cover-card' },
@@ -5912,6 +7616,8 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
         h('div', { class: 'row center' },
           h('button', { class: 'btn primary', onclick: openStats }, '📊 集計を見る'),
           h('button', { class: 'btn primary', onclick: () => openExport(g) }, '💾 書き出す')),
+        cam ? cam.videoItems(g) : null,
+        rv && !(cam && cam.videoCount(g)) ? h('button', { class: 'btn', id: 'btnReview', onclick: () => openReview(g) }, '🎬 試合の動画で場面を見返す') : null,
         h('button', { class: 'btn small', onclick: reopen }, '続きを記録する（まちがえて終えたとき）')));
     }
     el.hidden = started && !ended;
@@ -5997,6 +7703,7 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     guard();
     if (S.L && S.L.onStart) S.L.onStart();
     updateLive();
+    if (cam) cam.onStart();             // 撮影の準備ができていて、まだ録画していなければ、録画も始める
   }
   function cancelStart() {
     const g = S.game;
@@ -6007,10 +7714,17 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     rebuild();
     say('スタートを取り消しました', 'ok');
   }
-  function endGame() {
+  async function endGame() {
     const g = S.game;
     g.endedAt = now();
     save();
+    updateLive();
+    // 撮影していたら、録画を止めて仕上げ、カメラを閉じる
+    if (cam && cam.isOn()) {
+      say('動画を仕上げています…', '', 15000);
+      const v = await cam.close();
+      if (!(v && v.rotateLost)) say(cam.videoCount(g) ? '動画を保存しました' : `${sport().unit || '試合'}を終えました`, 'ok', 3000);
+    }
     ST.ui.keepAwake(false);
     updateLive();
     openStats();
@@ -6033,10 +7747,11 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
   function onPop() {
     S.guarded = false;
     if (ST.ui.sheetOpen()) { ST.ui.closeSheet(); guard(); return; }
+    if (S.view === 'review') { go('live'); if (S.game && S.game.startedAt && !S.game.endedAt) guard(); return; }
     if (S.view === 'live' && S.game && S.game.startedAt && !S.game.endedAt) { guard(); say('記録中です（終えるときは ≡ メニューから）', 'warn', 4000); return; }
     if (S.view === 'setup' && S.setupFor === 'edit' && S.game) { go('live'); if (S.game.startedAt && !S.game.endedAt) guard(); return; }
     if (S.view === 'live' || S.view === 'setup') go('home');
-    else if (S.view === 'home') { setSport(null); go('picker'); }
+    else if (S.view === 'home' && !ONLY) { setSport(null); go('picker'); }
   }
 
   /* ---------- メニュー ---------- */
@@ -6044,12 +7759,13 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     const g = S.game, sp = sport(), view = viewOf(sp);
     const plays = g.events.filter((e) => !(ST.typeOf(g, e.type) || {}).meta).length;
     const item = (icon, label, sub, fn, cls) => h('button', { class: 'mitem' + (cls ? ' ' + cls : ''), onclick: () => { s.close(); fn(); } }, h('span', { class: 'mi' }, icon), h('span', { class: 'mt' }, h('b', null, label), sub ? h('small', null, sub) : null));
-    const extra = view.menuItems ? view.menuItems(ctx) : [];
+    const extra = (view.menuItems ? view.menuItems(ctx) : []).concat(cam && cam.menuItem() ? [cam.menuItem()] : []);
     const s = ST.ui.sheet({
       title: g.startedAt ? `メニュー（${ST.fmtTime(elapsed())}・${plays}件の記録）` : 'メニュー',
       body: h('div', { class: 'menu' },
         extra.map((x) => item(x.icon, x.label, x.sub, x.fn)),
         item('📋', '記録の一覧', '時刻・選手・記録を直す、消す', () => openLog()),
+        rv ? item('🎬', '場面を見返す（動画）', '撮影した動画・試合の動画で、記録した場面を見る（前と後の秒数・速さを選べる）', () => openReview(g)) : null,
         item('📊', '集計', sp.statsSub || '選手ごとの記録', openStats),
         item('👥', sp.setupEditTitle || 'チーム・形式を直す', sp.setupEditSub || '名前・色・背番号・試合の形式', () => { S.setupFor = 'edit'; go('setup'); }),
         item('🎛', '設定', 'ボタンの組み合わせ・名前の表示・音・画面の色', openSettings),
@@ -6058,7 +7774,7 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
         g.endedAt ? item('▶', '続きを記録する', 'まちがえて終えたとき', reopen) : null,
         g.startedAt && !plays ? item('↺', 'スタートを取り消す', 'まちがえて押したとき（記録がまだないときだけ）', () => ST.ui.confirm('スタートを取り消しますか？', '時計が 0:00 に戻ります。', '取り消す', cancelStart)) : null,
         item('❓', '使い方', null, () => help(sp)),
-        item('🏠', `${sp.name}のホームへ`, g.startedAt && !g.endedAt ? '記録は保存されています。あとで続きから記録できます' : null, () => go('home')))
+        item('🏠', `${sp.name}のホームへ`, cam && cam.isRec() ? '録画を止めて、ホームへ（記録は保存されています）' : g.startedAt && !g.endedAt ? '記録は保存されています。あとで続きから記録できます' : null, () => (cam && cam.isOn() ? cam.close().then(() => go('home')) : go('home'))))
     });
   }
 
@@ -6166,9 +7882,13 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     ST.ui.sheet({
       title: '書き出す',
       body: h('div', { class: 'export' },
-        h('button', { class: 'xitem', id: 'btnExpJson', onclick: () => go2('json') }, h('b', null, '🗂 記録のファイル（JSON）'), h('small', null, 'この記録アプリで開き直せるファイル。時刻つきなので、ほかのアプリ（動画の切り出しなど）でも使えます')),
+        h('button', { class: 'xitem', id: 'btnExpJson', onclick: () => go2('json') }, h('b', null, '🗂 記録のファイル（JSON）'), h('small', null, 'この記録アプリで開き直せるファイル（ほかの端末でも）。時刻つきなので、試合の動画と合わせて見返せます')),
         exportsOf(sp).map((x) => h('button', { class: 'xitem', id: 'btnExp_' + x.key, onclick: () => go2(x) }, h('b', null, x.label), h('small', null, x.desc))),
-        h('p', { class: 'note' }, share ? 'スマホでは「共有」が開きます（AirDrop・「ファイル」に保存・LINE など）。' : 'ダウンロードのフォルダに保存します。'))
+        h('p', { class: 'note' }, share ? 'スマホでは「共有」が開きます（AirDrop・「ファイル」に保存・LINE など）。' : 'ダウンロードのフォルダに保存します。'),
+        cam && cam.videoCount(g) ? h('h4', { class: 'vhead' }, '📹 撮影した動画（MP4）') : null,
+        cam ? cam.videoItems(g) : null,
+        cam && cam.videoCount(g) ? h('p', { class: 'note' }, '保存した動画は、ほかの端末（パソコンなど）でも、記録のファイルを開いて「場面を見返す」→「試合の動画を選ぶ」で見返せます（時刻は1か所だけ合わせます）。') : null,
+        rv && S.game && S.game.id === g.id ? h('button', { class: 'btn', id: 'btnExpReview', onclick: () => openReview(g) }, '🎬 動画で場面を見返す') : null)
     });
   }
 
@@ -6178,9 +7898,12 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     const body = h('div', { class: 'settings' });
     const box = (obj, key, label, defOn, after) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', dataset: { pref: key }, checked: obj[key] != null ? !!obj[key] : !!defOn, onchange: (e) => { obj[key] = e.target.checked; savePrefs(); if (after) after(); } }), label);
     if (sp.toggles && sp.toggles.length) {
+      // 種目によっては「記録用」「分析用」に分けて並べる（sp.toggleSecs）。sub：その上の項目の中の選び方（字下げ）
+      const tbox = (tg) => { const el = box(pr.rows, tg.key, tg.label, tg.def, refresh); if (tg.sub) el.classList.add('sub'); return el; };
+      const secs = sp.toggleSecs ? sp.toggleSecs.map(([k, lab]) => h('div', { class: 'togsec', dataset: { sec: k } }, h('b', null, lab), sp.toggles.filter((tg) => tg.sec === k).map(tbox))) : sp.toggles.map(tbox);
       body.append(h('section', { class: 'field', id: 'setButtons' }, h('span', null, sp.togglesTitle || '選手のボタン'),
         h('p', { class: 'note' }, sp.togglesNote || `いつもある：${(sp.base || []).map((x) => sp.TYPE[x].btn || sp.TYPE[x].label).join('・')}。下を選ぶと、ボタンが増えます（1つずつは少し小さくなります）。`),
-        sp.toggles.map((tg) => box(pr.rows, tg.key, tg.label, tg.def, refresh))));
+        secs));
     }
     if (sp.family === 'team' || sp.rowNames) {
       body.append(h('section', { class: 'field' }, h('span', null, '記録の画面'),
@@ -6188,6 +7911,7 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
         sp.family === 'team' ? box(pr, 'unknown', '「？」の行を出す（だれか分からないときに、チームだけで記録する）', true, refresh) : null));
     }
     if (view.settings) body.append(view.settings(ctx, refresh));
+    if (cam) { const c = cam.settingsPart(openSettings); if (c) body.append(c); }
     body.append(h('section', { class: 'field' }, h('span', null, '音'),
       box(p, 'sound', '押したときに音を出す（「ピッ」）', false, () => { if (p.sound) ST.ui.beep(880, 60); })));
     body.append(h('section', { class: 'field' }, h('span', null, '画面の色'),
@@ -6205,6 +7929,13 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
       body: h('div', { class: 'help' },
         h('ol', null, (sp.steps || []).map(([b, s]) => h('li', null, h('b', null, b), '：', s))),
         (sp.help || []).map(([title, items]) => [h('h4', null, title), h('ul', null, items.map((x) => h('li', null, x)))]),
+        h('h4', null, '撮影しながら記録する（この端末のカメラ）'),
+        h('ul', null,
+          h('li', null, 'スタート前の札、または「≡ メニュー」→「撮影しながら記録」でカメラを開きます。試合が始まる瞬間に赤い「● 録画と記録をスタート」を押すと、録画と記録が同時に始まります（ウォーミングアップから撮るときは「● 録画だけ先に始める」）'),
+          h('li', null, '記録の画面に、カメラの映像（ワイプ）が出ます。映像の「＋」「－」か撮影の画面で、小（上の帯の中）・中・大。中・大は、記録のボタンに重ならない所（横長の画面は右、縦長の画面は上）に出し、ボタンは残りの広さに並べ直します'),
+          h('li', null, '撮る向きは、撮影の画面で「横向き」か「縦向き」。横向きなら端末を横にしてください（画面の向きのロックを外す）。映像が横倒し・さかさまのときは「↻ 映像を回す」'),
+          h('li', null, `「${sp.unit || '試合'}を終える」で録画も止まり、動画が仕上がります（MP4）。動画ごとに「🎬 場面を見る」（記録した場面を、前と後の秒数・速さを選んで見返す。時刻あわせはいりません）・「⬇ 保存」（写真・ファイルへ）・「🗑」`),
+          h('li', null, '動画はこの端末（このブラウザ）の中に保存します。ほかのアプリに切りかえたり、画面を消したりすると録画は止まり、戻ったところから新しい動画として続けます。電池をたくさん使うので、電源につないでおくと安心です')),
         h('h4', null, 'まちがえたとき'),
         h('ul', null,
           h('li', null, '画面の下の「↶ 取り消す」で、いちばん新しい記録を取り消し（「やり直す」で戻せます）'),
@@ -6223,7 +7954,7 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
       title: '使い方', wide: true,
       body: h('div', { class: 'help' },
         h('p', null, '「バスケ タップ記録」と同じしくみ（試合を見ながら、押した瞬間の時刻つきで記録する）を、ほかの種目に合わせたものです。'),
-        h('ul', null, ST.SPORT_ORDER.map((id) => { const sp = ST.SPORTS[id]; return h('li', null, h('b', null, `${sp.icon} ${sp.name}`), '：', sp.desc); })),
+        h('ul', null, ST.SPORT_ORDER.map((id) => { const sp = ST.SPORTS[id]; return h('li', null, h('b', null, `${sp.icon} ${sp.name}`), '：', STANDALONE[id] ? STANDALONE[id].note : sp.desc); })),
         h('p', { class: 'note' }, '🔒 記録はこの端末のブラウザの中だけに保存します。どこにも送りません。'))
     });
   }
@@ -6245,24 +7976,31 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
   /* ---------- 起動 ---------- */
   function init() {
     applyTheme();
+    // 撮影しながら記録する（カメラ・録画は livecam.js。骨組みの道具を貸す）
+    if (ST.livecam) cam = ST.livecam.create({ S, save, savePrefs, say, update: () => updateLive(), start, guard, sport, openReview: (g, vid) => openReview(g, vid) });
+    if (ST.review) rv = ST.review.create({ S, save, savePrefs, sprefs: (id) => sprefs(id), timeText, back: () => go('live') });
     if (root.matchMedia) { try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme); } catch (e) { /* 古いブラウザ */ } }
     document.addEventListener('touchstart', () => {}, { passive: true });
     document.addEventListener('contextmenu', (e) => { if (S.view === 'live' && e.target.closest && e.target.closest('.live')) e.preventDefault(); });
     document.addEventListener('dblclick', (e) => { if (S.view === 'live') e.preventDefault(); }, { passive: false });
     root.addEventListener('popstate', onPop);
-    root.addEventListener('beforeunload', (e) => { if (S.view === 'live' && S.game && S.game.startedAt && !S.game.endedAt) { e.preventDefault(); e.returnValue = ''; } });
+    root.addEventListener('beforeunload', (e) => { if ((cam && cam.isRec()) || (S.view === 'live' && S.game && S.game.startedAt && !S.game.endedAt)) { e.preventDefault(); e.returnValue = ''; } });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && ST.ui.sheetOpen()) ST.ui.closeSheet(); });
     setInterval(tick, 100);
     let rq = 0;
-    const relayout = () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(() => { if (S.view === 'live' && S.L && S.L.layout) S.L.layout(); }); };
+    const relayout = () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(() => { if (S.view === 'live' && S.L) { if (cam) { cam.layout(); cam.refresh(); } if (S.L.layout) S.L.layout(); } }); };
     root.addEventListener('resize', relayout);
     root.addEventListener('orientationchange', () => setTimeout(relayout, 250));
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+    document.addEventListener('visibilitychange', () => {
+      if (cam) cam.onVisibility(document.hidden);        // 画面を離れていたあいだは、録画が止まっていることがある → 新しい動画として続ける
+      if (!document.hidden) tick();
+    });
     if (root.location && location.protocol === 'https:' && navigator.serviceWorker) navigator.serviceWorker.register('sw.js').catch(() => {});
     // URL の ?s=種目 → その種目のホーム。記録中の試合があれば、そのまま続きから
     let want = null;
     try { want = new URL(root.location.href).searchParams.get('s'); } catch (e) { want = null; }
     if (want && !ST.SPORTS[want]) want = null;
+    if (ONLY) want = ONLY;                 // 1つの種目だけのアプリは、いつもその種目のホームから
     const cur = ST.store.current();
     const g = cur ? ST.store.loadGame(cur) : null;
     if (g && g.startedAt && !g.endedAt && (!want || want === g.sport)) { openGame(g); return; }
@@ -6271,7 +8009,7 @@ body[data-family="baseball"] .box td, body[data-family="baseball"] .box th { ver
     else { setSport(null); go('picker'); }
   }
 
-  ST.app = { S, init, start, undo, redo, openMenu, openLog, openEdit, openStats, openExport, openSettings, endGame, reopen, newGame, go, resume, setSport, rebuild, ctx };
+  ST.app = { S, init, start, undo, redo, openMenu, openLog, openEdit, openStats, openExport, openSettings, endGame, reopen, newGame, go, resume, setSport, rebuild, ctx, cam: () => cam, rv: () => rv, openReview };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }
