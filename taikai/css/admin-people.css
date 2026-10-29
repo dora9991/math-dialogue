@@ -1,0 +1,187 @@
+/* 参加者・入金／受付（QR）／名札・受付名簿の印刷 */
+
+/* ── 一覧 ── */
+.pp-stats .stat-value small { font-size: 13px; }
+.pp-bulk { position: sticky; top: 64px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; margin-bottom: 12px; border-radius: var(--radius); background: var(--soft); border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--line)); box-shadow: var(--shadow); }
+.pp-bulk b { margin-right: 4px; }
+.pp-table td { vertical-align: middle; }
+.pp-table .pp-ck { width: 34px; padding-right: 0; }
+.pp-table .pp-ck input { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+.pp-name b { display: block; white-space: nowrap; }
+.pp-name small, .pp-org small { display: block; color: var(--muted); font-size: 11.5px; line-height: 1.4; }
+.pp-org { min-width: 150px; font-size: 13.5px; }
+.pp-table tr.is-sel td { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.pp-table tr.is-cancel td { color: var(--faint); }
+.pp-table tr.is-cancel .pp-name b { text-decoration: line-through; }
+.pp-pay { border: 0; background: none; padding: 0; cursor: pointer; border-radius: 99px; }
+.pp-pay:hover .chip { outline: 2px solid color-mix(in srgb, var(--primary) 35%, transparent); }
+
+/* ── 集計 ── */
+.pp-agg .card-head h3 { font-size: 15px; }
+.agg-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.agg-table th { text-align: left; font-weight: 500; padding: 4px 8px 4px 0; width: 42%; line-height: 1.45; }
+.agg-table td { padding: 4px 0; }
+.agg-table .agg-bar { width: 38%; padding-right: 10px; }
+.agg-table tr + tr { border-top: 1px solid var(--line2); }
+
+/* ── 詳細の窓 ── */
+.pd-modal .modal-body { padding-top: 14px; }
+.pd-chips { margin-bottom: 12px; }
+.pd-grid { display: grid; grid-template-columns: 1fr 210px; gap: 20px; align-items: start; }
+.pd-h { font-size: 13.5px; color: var(--muted); margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--line2); }
+.pd-main > .pd-h:first-child { margin-top: 0; }
+.pd-dl { margin: 0; display: grid; gap: 0; }
+.pd-dl > div { display: grid; grid-template-columns: 170px 1fr; gap: 10px; padding: 5px 0; border-bottom: 1px dashed var(--line2); font-size: 14px; }
+.pd-dl dt { color: var(--muted); font-size: 13px; }
+.pd-dl dd { margin: 0; white-space: pre-wrap; }
+.fee-lines { list-style: none; margin: 0 0 6px; padding: 0; font-size: 13.5px; }
+.fee-lines li { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
+.fee-total { display: flex; justify-content: space-between; font-weight: 700; padding-top: 6px; border-top: 1px solid var(--line); }
+.pd-fee { margin-top: 12px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--panel2); border: 1px solid var(--line2); }
+.pd-pay { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: var(--radius-sm); background: var(--panel2); }
+.pd-total { font-size: 20px; margin-right: 6px; }
+.pd-days { display: grid; gap: 6px; }
+.pd-day { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 4px 10px; border-radius: var(--radius-sm); border: 1px solid var(--line2); }
+.pd-day > span:first-child { flex: 1; min-width: 140px; }
+.pd-day.on { background: var(--ok-soft); border-color: transparent; }
+.ok-text { color: var(--ok); }
+.pd-memo { min-height: 60px; }
+.pd-mails details { border: 1px solid var(--line2); border-radius: var(--radius-sm); padding: 6px 10px; margin-bottom: 6px; font-size: 14px; }
+.pd-mails summary { cursor: pointer; }
+.pd-pre { white-space: pre-wrap; font-family: inherit; font-size: 13px; margin: 8px 0 2px; color: var(--text); background: var(--panel2); padding: 8px 10px; border-radius: 6px; }
+.pd-threads { margin: 0; padding-left: 1.1em; font-size: 14px; }
+.pd-side { position: sticky; top: 0; display: grid; gap: 10px; }
+.pd-qr { display: grid; justify-items: center; gap: 4px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; color: #111; }
+.pd-qr .qr { width: 170px; }
+.pd-qr .muted { color: #555; }
+.pd-links { display: grid; gap: 6px; }
+.pd-links .btn { justify-content: flex-start; }
+.pd-foot { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line2); }
+.pd-edit .aform { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px 16px; }
+.pd-edit .aform-h { grid-column: 1 / -1; font-size: 14px; margin: 8px 0 0; color: var(--primary); }
+.pd-edit .opts { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.pd-edit .opt { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.pd-edit .opt input { width: 17px; height: 17px; accent-color: var(--primary); }
+.pd-edit .consent p { font-size: 13px; color: var(--muted); margin: 0 0 4px; }
+.pd-edit .fee-tag { color: var(--muted); font-size: 12px; }
+.imp-table select { min-width: 180px; }
+@media (max-width: 720px) {
+  .pd-grid { grid-template-columns: 1fr; }
+  .pd-side { position: static; order: -1; grid-template-columns: 130px 1fr; align-items: start; }
+  .pd-qr .qr { width: 110px; }
+  .pd-dl > div { grid-template-columns: 1fr; gap: 0; }
+}
+
+/* ── 受付（QR） ── */
+.ci-days { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 8px; margin-bottom: 16px; }
+.ci-day { display: grid; gap: 2px; text-align: left; padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; font: inherit; }
+.ci-day.on { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent); }
+.ci-day-date { font-weight: 700; }
+.ci-day-label { font-size: 12px; color: var(--muted); }
+.ci-day-n { font-size: 13px; color: var(--muted); }
+.ci-day-n b { font-size: 18px; color: var(--text); font-variant-numeric: tabular-nums; }
+.ci-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 16px; align-items: start; }
+.ci-side { display: grid; gap: 16px; }
+.ci-video-wrap { position: relative; aspect-ratio: 4 / 3; border-radius: var(--radius); overflow: hidden; background: #0b1020; }
+.ci-video-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ci-frame { position: absolute; inset: 18% 22%; pointer-events: none; opacity: 0; transition: opacity .2s; }
+.ci-video-wrap.on .ci-frame { opacity: 1; }
+.ci-frame i { position: absolute; width: 28px; height: 28px; border: 4px solid var(--ev-accent); }
+.ci-frame i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 8px 0 0 0; }
+.ci-frame i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 8px 0 0; }
+.ci-frame i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 8px; }
+.ci-frame i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 8px 0; }
+.ci-idle { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 6px; color: #aab3cc; font-size: 14px; }
+.ci-idle .ic { width: 40px; height: 40px; opacity: .7; }
+.ci-video-wrap.on .ci-idle { display: none; }
+.ci-cam-msg { margin: 10px 0 0; padding: 8px 12px; border-radius: var(--radius-sm); background: var(--info-soft); font-size: 13px; }
+.ci-cam-msg.bad { background: var(--bad-soft); }
+.ci-cam-msg.warn { background: var(--warn-soft); }
+.ci-input { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line2); }
+.ci-input-row { flex-wrap: nowrap; }
+.ci-input-row input { flex: 1; min-width: 0; font-family: ui-monospace, Menlo, Consolas, monospace; letter-spacing: .04em; }
+
+.ci-result { border-radius: 16px; padding: 16px 18px; border: 2px solid var(--line); background: var(--panel); min-height: 150px; animation: pop .18s ease; }
+.ci-result.idle { display: flex; gap: 14px; align-items: center; color: var(--muted); border-style: dashed; animation: none; }
+.ci-result.idle b { color: var(--text); }
+.ci-result.idle p { margin: 2px 0 0; }
+.ci-result.idle .ci-r-icon .ic { width: 44px; height: 44px; }
+.ci-result.ok { border-color: var(--ok); background: var(--ok-soft); }
+.ci-result.warn { border-color: var(--warn); background: var(--warn-soft); }
+.ci-result.already { border-color: var(--info); background: var(--info-soft); }
+.ci-result.bad { border-color: var(--bad); background: var(--bad-soft); }
+.ci-r-top { display: flex; align-items: center; gap: 10px; }
+.ci-r-icon { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; flex: none; }
+.ci-r-icon .ic { width: 24px; height: 24px; }
+.ci-result.ok .ci-r-icon { background: var(--ok); color: #fff; }
+.ci-result.warn .ci-r-icon { background: var(--warn); color: #fff; }
+.ci-result.already .ci-r-icon { background: var(--info); color: #fff; }
+.ci-result.bad .ci-r-icon { background: var(--bad); color: #fff; }
+.ci-r-title { font-size: 19px; flex: 1; line-height: 1.4; }
+.ci-r-at { font-family: ui-monospace, Menlo, monospace; font-size: 18px; font-weight: 700; }
+.ci-r-person { margin-top: 10px; }
+.ci-r-kana { font-size: 13px; color: var(--muted); }
+.ci-r-name { font-size: 30px; font-weight: 700; line-height: 1.3; font-family: var(--serif); }
+.ci-r-name small { font-size: 14px; color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-weight: 600; }
+.ci-r-org { font-size: 15px; margin-bottom: 6px; }
+.ci-r-chips { margin: 6px 0; }
+.ci-r-needs { margin-top: 8px; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--panel); border: 1px solid var(--info); font-size: 14px; font-weight: 600; }
+.ci-r-collect { margin-top: 10px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--panel); border: 1px solid var(--warn); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.ci-r-msg { margin: 10px 0 0; }
+.ci-recent, .ci-hits { list-style: none; margin: 0; padding: 0; }
+.ci-recent li { padding: 5px 0; border-bottom: 1px solid var(--line2); font-size: 14px; }
+.ci-recent li:last-child, .ci-hits li:last-child { border-bottom: 0; }
+.ci-hits { margin-top: 8px; }
+.ci-hits li { display: flex; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line2); }
+.ci-hit-main { flex: 1; min-width: 0; line-height: 1.5; }
+.ci-test-qr { width: min(300px, 100%); margin: 0 auto; }
+@media (max-width: 900px) {
+  .ci-grid { grid-template-columns: 1fr; }
+  .ci-r-name { font-size: 26px; }
+  .ci-video-wrap { aspect-ratio: 16 / 10; max-height: 38vh; margin: 0 auto; }
+  .ci-input { margin-top: 10px; padding-top: 10px; }
+  .ci-input .help { display: none; }
+}
+
+/* ── 印刷の帯の絞りこみ ── */
+.print-bar select { width: auto; min-height: 34px; padding: 4px 10px; font-size: 14px; }
+
+/* ── 印刷：名札（A4 10面 91×55mm） ── */
+.badge-sheet { padding: 11mm 14mm; display: grid; grid-template-columns: 91mm 91mm; grid-template-rows: repeat(5, 55mm); align-content: start; gap: 0; }
+.badge { position: relative; width: 91mm; height: 55mm; display: flex; flex-direction: column; overflow: hidden; outline: .2mm dashed #c9c9c9; outline-offset: -.1mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.badge-band { display: flex; align-items: center; justify-content: space-between; gap: 2mm; height: 9mm; padding: 0 4mm; background: var(--ev-deep); color: #fff; font-size: 7.5pt; border-bottom: .8mm solid var(--ev-accent); }
+.badge-band span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--serif); }
+.badge-band b { white-space: nowrap; font-size: 8.5pt; color: var(--ev-accent2); }
+.badge-body { flex: 1; display: flex; align-items: center; gap: 3mm; padding: 2mm 4mm 3mm 5mm; min-height: 0; }
+.badge-who { flex: 1; min-width: 0; }
+.badge-kana { font-size: 7.5pt; color: #555; letter-spacing: .08em; }
+.badge-name { font-family: var(--serif); font-size: 21pt; font-weight: 700; line-height: 1.2; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.badge-org { font-size: 8.5pt; color: #222; line-height: 1.35; margin-top: 1.5mm; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.badge-qr { width: 19mm; flex: none; display: grid; justify-items: center; gap: .5mm; }
+.badge-qr .qr { width: 19mm; border-radius: 0; }
+.badge-qr span { font-size: 6.5pt; color: #333; }
+.badge-kind { position: absolute; left: 5mm; bottom: 2.2mm; font-size: 6.5pt; padding: 0 1.6mm; border: .25mm solid #888; border-radius: 1mm; color: #333; }
+.badge.blank .blank-line { border-bottom: .3mm solid #bbb; height: 9mm; margin-right: 4mm; }
+.badge.blank .badge-org.blank-line { height: 6mm; width: 70%; }
+@media print { .badge { outline: none; } }
+
+/* ── 印刷：受付名簿 ── */
+.roster-sheet { padding: 12mm 12mm 14mm; font-size: 8.5pt; }
+.roster-head { display: flex; justify-content: space-between; gap: 8mm; font-size: 8pt; border-bottom: .3mm solid #0f1d44; padding-bottom: 1.5mm; }
+.roster-title { font-size: 13pt; margin: 3mm 0 2mm; }
+.roster-title small { font-size: 9pt; color: #555; font-weight: 500; }
+.roster { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.roster th, .roster td { border: .2mm solid #999; padding: .8mm 1.4mm; line-height: 1.3; vertical-align: middle; }
+.roster th { background: #eef1f8; font-size: 7.5pt; font-weight: 600; white-space: nowrap; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.roster tbody tr { height: 6.6mm; }
+.roster .r-no { width: 8mm; text-align: center; }
+.roster .r-code { width: 17mm; font-size: 7.5pt; }
+.roster .r-name b { display: block; font-size: 9pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.roster .r-name small { display: block; font-size: 6.5pt; color: #555; white-space: nowrap; overflow: hidden; }
+.roster .r-org { font-size: 7.5pt; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.roster .r-fee { width: 17mm; text-align: right; white-space: nowrap; font-size: 8pt; }
+.roster .r-paid { width: 10mm; text-align: center; }
+.roster .r-day { width: 9.5mm; text-align: center; font-size: 9pt; }
+.roster .r-paid { font-size: 8.5pt; }
+.roster .r-memo { width: 22mm; }
+.roster-foot { position: absolute; bottom: 6mm; right: 12mm; font-size: 8pt; color: #555; }
