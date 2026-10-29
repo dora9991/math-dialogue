@@ -287,6 +287,9 @@ footer a,footer .name{color:#FFE27A}
 /* サンプル表示：サイトが黄色でも埋もれないよう紺色にして、動かさず、最初からそのまま出す */
 .sample{background:var(--gosu-deep);color:#FFE27A;border-bottom:4px solid var(--sun)}
 .sample span{color:#F6EBC8}
+/* ?local で開いたとき（サンプルの編集画面で書いた内容を、このブラウザの中から表示しているとき）の目印 */
+.local-chip{position:fixed;left:12px;bottom:12px;z-index:60;max-width:calc(100vw - 24px);margin:0;padding:.45rem .9rem;border-radius:999px;background:var(--gosu-deep);color:#FFE27A;font-size:.85rem;line-height:1.5;box-shadow:0 6px 16px -6px rgba(20,42,82,.5)}
+.local-chip a{color:#fff}
 
 /* スクロールで現れる（JS が動いているときだけ。動かないときは、最初から全部見える） */
 .js .reveal{opacity:0;translate:0 22px;transition:opacity .8s ease,translate .8s cubic-bezier(.2,.7,.2,1)}
@@ -585,7 +588,26 @@ footer a,footer .name{color:#FFE27A}
 <script src="../conference-editor/config.js"></script>
 <script src="../conference-editor/js/schema.js"></script>
 <script src="../conference-editor/js/site-content.js"></script>
-<script>if (window.SiteContent) SiteContent.apply(window.CONF_EDITOR_CONFIG);</script>
+<!-- ?local を付けて開くと、サンプルの編集画面（../conference-editor/sample/）で「公開する」を押した内容を、
+     このブラウザの中から読んで表示する（Supabase には繋がない）。付けないときは、いつもの表示。 -->
+<script>
+(function () {
+  if (!window.SiteContent) return;
+  var cfg = window.CONF_EDITOR_CONFIG;
+  if (/[?&]local(=|&|$)/.test(location.search)) {
+    cfg = { BACKEND: "local" };
+    var chip = document.createElement("p");
+    chip.className = "local-chip";
+    chip.appendChild(document.createTextNode("練習用の編集画面で書いた内容を表示中（このブラウザだけ） "));
+    var a = document.createElement("a");
+    a.href = "./";
+    a.textContent = "ふつうの表示にする";
+    chip.appendChild(a);
+    document.body.appendChild(chip);
+  }
+  SiteContent.apply(cfg);
+})();
+</script>
 <!-- スクロールして見えたセクションから、ふわっと表示する。使えない環境では、全部すぐ表示する -->
 <script>
 (function () {
