@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- サンプルなので、検索には出さない（出したいときは、この1行を消す） -->
 <meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#F6C945">
 <title>【サンプル】サンプル歴史教育研究会 第3回研究大会</title>
 <meta name="description" content="これはサンプルです。実際の研究大会とは関係ありません。研究大会の案内サイトの作り方を見せるための、架空のサイトです。">
 <meta property="og:title" content="【サンプル】研究大会の案内サイト">
@@ -205,7 +206,115 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
 .player-bar button{font:inherit;font-size:1.5rem;line-height:1;min-width:44px;min-height:44px;color:var(--on-dark);background:transparent;border:0;cursor:pointer}
 .ratio{position:relative;aspect-ratio:16/9}
 .ratio iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+
+/* ============================================================
+   黄色テーマと、開いたときの動き（上の紺色の設定を上書きする）
+   ・色を変えたいときは、この下の --sun 系の色だけ変えればよい
+   ・動きを止めたいときは、このブロックの @keyframes と animation を消す
+   ・OS の「視差効果を減らす」設定の人には、動きなしで全部すぐ表示される
+   ============================================================ */
+:root{
+  --sun:#F6C945;         /* 山吹 */
+  --sun-bright:#FFD84D;
+  --sun-deep:#E5A800;
+  --sun-soft:#FFF1BC;
+  --amber-ink:#8A5A00;   /* 黄色に合う、読める茶色 */
+  --porcelain:#FFFAE8;   /* ページの地：うすいクリーム */
+  --gosu-tint:#FFF0B5;
+  --line:#E6D48F;
+}
+.block.alt{background:#FFF4C6}
+.bar{background:rgba(255,250,232,.94);animation:drop .6s cubic-bezier(.2,.7,.2,1) both}
+.bar nav a{box-shadow:inset 0 -3px 0 transparent;transition:box-shadow .2s ease,color .2s ease}
+.bar nav a:hover{box-shadow:inset 0 -3px 0 var(--sun-deep)}
+
+/* hero：山吹色のグラデーションに、紺色の文字 */
+.hero{background:linear-gradient(135deg,#FFE066 0%,#F6C945 48%,#F0B400 100%);color:var(--gosu-deep)}
+.hero-in{z-index:1}
+.hero::before{
+  inset:-40px 0 0 -40px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cg fill='none' stroke='%238A5A00' stroke-opacity='.2' stroke-width='1'%3E%3Ccircle cx='0' cy='0' r='28.28'/%3E%3Ccircle cx='40' cy='0' r='28.28'/%3E%3Ccircle cx='0' cy='40' r='28.28'/%3E%3Ccircle cx='40' cy='40' r='28.28'/%3E%3C/g%3E%3C/svg%3E");
+  animation:waves 26s linear infinite;
+}
+.hero::after{
+  content:"";position:absolute;pointer-events:none;
+  right:4%;top:50%;width:clamp(300px,42vw,560px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.82) 0,rgba(255,250,225,.45) 38%,rgba(255,255,255,0) 68%);
+  translate:0 -50%;
+  animation:sun 1.6s cubic-bezier(.2,.7,.2,1) both,breathe 8s ease-in-out 1.6s infinite alternate;
+}
+.facts dt,.vt-sub{color:#5C4200}
+.hero .tbd{background:rgba(255,255,255,.55);color:var(--gosu-deep);border-color:var(--amber-ink)}
+.hero :focus-visible{outline-color:var(--gosu-deep)}
+.btn{background:var(--gosu-deep);color:#FFE27A;border:2px solid var(--gosu-deep);border-radius:999px;transition:transform .2s ease,box-shadow .2s ease,background .2s ease}
+.btn:hover{background:var(--gosu);transform:translateY(-2px);box-shadow:0 8px 16px -6px rgba(20,42,82,.45)}
+.btn.ghost{background:transparent;color:var(--gosu-deep);border-color:var(--gosu-deep)}
+.btn.ghost:hover{background:rgba(20,42,82,.1)}
+
+/* hero の入場：上から順に、ふわっと */
+.hero .lead{animation:rise .9s cubic-bezier(.2,.7,.2,1) .25s both}
+.hero .facts div{animation:rise .8s cubic-bezier(.2,.7,.2,1) both}
+.hero .facts div:nth-child(1){animation-delay:.4s}
+.hero .facts div:nth-child(2){animation-delay:.5s}
+.hero .facts div:nth-child(3){animation-delay:.6s}
+.hero .btns{animation:rise .8s cubic-bezier(.2,.7,.2,1) .8s both}
+.hero .vt-sub{animation:subIn .9s ease-out .2s both}
+.hero .vt-main{animation:vtIn 1.4s cubic-bezier(.3,.6,.2,1) .35s both}
+
+/* 見出しの下の山吹色の線 */
+h2::after{content:"";display:block;width:3.2rem;height:5px;margin-top:.5rem;border-radius:3px;background:linear-gradient(90deg,var(--sun-deep),var(--sun-bright))}
+.num{color:var(--amber-ink)}
+.tbd{border-color:#A97D00;color:#5C4200}
+.chips li{border-radius:999px}
+
+/* 日程のカード */
+.day{background:#fff;border-top:4px solid var(--sun-deep);border-radius:10px;box-shadow:0 10px 24px -16px rgba(138,90,0,.5);transition:transform .25s ease,box-shadow .25s ease}
+.day:hover{transform:translateY(-4px);box-shadow:0 16px 28px -16px rgba(138,90,0,.6)}
+
+/* アーカイブ */
+.fchip{border-color:var(--gosu-deep);color:var(--gosu-deep);border-radius:999px;background:#fff;transition:background .2s ease}
+.fchip:hover{background:var(--sun-soft)}
+.fchip[aria-pressed="true"]{background:var(--gosu-deep);color:#FFE27A}
+.vcard{background:#fff;border-top:4px solid var(--sun-deep);border-radius:10px;overflow:hidden;transition:transform .25s ease,box-shadow .25s ease}
+.vcard:hover{border-color:var(--sun-deep);transform:translateY(-4px);box-shadow:0 16px 28px -16px rgba(138,90,0,.6)}
+.vgroup{color:var(--amber-ink)}
+.thumb{background:var(--sun-soft)}
+
+/* フッター */
+footer{border-top:5px solid var(--sun)}
+footer a,footer .name{color:#FFE27A}
+
+/* サンプル表示：サイトが黄色でも埋もれないよう紺色にして、動かさず、最初からそのまま出す */
+.sample{background:var(--gosu-deep);color:#FFE27A;border-bottom:4px solid var(--sun)}
+.sample span{color:#F6EBC8}
+
+/* スクロールで現れる（JS が動いているときだけ。動かないときは、最初から全部見える） */
+.js .reveal{opacity:0;translate:0 22px;transition:opacity .8s ease,translate .8s cubic-bezier(.2,.7,.2,1)}
+.js .reveal.in{opacity:1;translate:none}
+.js .reveal h2::after{width:0;transition:width .9s cubic-bezier(.2,.7,.2,1) .25s}
+.js .reveal.in h2::after{width:3.2rem}
+.js .reveal .day{opacity:0;translate:0 16px;transition:opacity .7s ease,translate .7s cubic-bezier(.2,.7,.2,1),transform .25s ease,box-shadow .25s ease}
+.js .reveal.in .day{opacity:1;translate:none}
+.js .reveal.in .day:nth-child(2){transition-delay:.12s,.12s,0s,0s}
+.js .reveal.in .day:nth-child(3){transition-delay:.24s,.24s,0s,0s}
+
+@keyframes waves{to{translate:40px 40px}}
+@keyframes sun{from{scale:.3;opacity:0}to{scale:1;opacity:1}}
+@keyframes breathe{from{scale:1;opacity:.9}to{scale:1.07;opacity:1}}
+@keyframes rise{from{opacity:0;translate:0 18px}to{opacity:1;translate:0 0}}
+@keyframes drop{from{opacity:0;translate:0 -100%}to{opacity:1;translate:0 0}}
+@keyframes subIn{from{opacity:0;translate:14px 0}to{opacity:1;translate:0 0}}
+@keyframes vtIn{from{opacity:0;clip-path:inset(0 0 100% 0)}to{opacity:1;clip-path:inset(0 0 0 0)}}
+
+/* 動きを減らす設定の人と、印刷：動かさず、全部すぐ表示する */
+@media (prefers-reduced-motion:reduce),print{
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .js .reveal,.js .reveal .day{opacity:1!important;translate:none!important}
+  .js .reveal h2::after{width:3.2rem}
+  .btn:hover,.day:hover,.vcard:hover{transform:none!important}
+}
 </style>
+<script>document.documentElement.className+=" js"</script>
 </head>
 <body>
 <a class="skip" href="#overview">本文へ移動</a>
@@ -255,7 +364,7 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
 </section>
 
 <section class="block" id="news" aria-labelledby="h-news">
-  <div class="wrap">
+  <div class="wrap reveal">
     <h2 id="h-news">お知らせ</h2>
     <ul class="news" data-content="news">
       <li>
@@ -275,7 +384,7 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
 </section>
 
 <section class="block alt" id="overview" aria-labelledby="h-overview">
-  <div class="wrap">
+  <div class="wrap reveal">
     <h2 id="h-overview">大会概要</h2>
     <p class="intro">このページの内容は、すべて架空です。「調整中」の札は、まだ決まっていない項目に付ける表示の見本です。</p>
     <dl class="spec" data-content="overview">
@@ -293,7 +402,7 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
 </section>
 
 <section class="block" id="schedule" aria-labelledby="h-schedule">
-  <div class="wrap">
+  <div class="wrap reveal">
     <h2 id="h-schedule">日程と流れ（サンプル）</h2>
     <p class="intro">時刻や内容は、サンプルです。</p>
     <ol class="days" data-content="program">
@@ -329,7 +438,7 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
 </section>
 
 <section class="block alt" id="sessions" aria-labelledby="h-sessions">
-  <div class="wrap">
+  <div class="wrap reveal">
     <h2 id="h-sessions">分科会（サンプル）</h2>
     <p class="intro">シンポジウムと、4つの分科会で構成する例です。発表者とテーマは、すべて架空です。</p>
     <ul class="sess">
@@ -358,7 +467,7 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
 </section>
 
 <section class="block" id="entry" aria-labelledby="h-entry">
-  <div class="wrap">
+  <div class="wrap reveal">
     <h2 id="h-entry">参加申込</h2>
     <div class="two">
       <div>
@@ -380,7 +489,7 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
 </section>
 
 <section class="block alt" id="archive" aria-labelledby="h-archive">
-  <div class="wrap">
+  <div class="wrap reveal">
     <h2 id="h-archive">アーカイブ配信</h2>
     <p class="intro">YouTube の動画を並べる場所の見本です。動画のIDを <code>data/archive.js</code> に足すと、ここに一覧が並び、クリックで再生できます（日ごとの絞り込み・再生リストにも対応）。このサンプルには、動画を載せていません。</p>
     <ul class="alinks" id="archive-links" hidden></ul>
@@ -391,7 +500,7 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
 </section>
 
 <section class="block" id="area" aria-labelledby="h-area">
-  <div class="wrap">
+  <div class="wrap reveal">
     <h2 id="h-area">開催地の歴史にふれる（サンプル）</h2>
     <p class="intro">遠方からお越しの方に向けて、開催地の歴史スポットを紹介する欄の見本です。ここに載せている場所は、すべて架空です。</p>
     <ul class="spots">
@@ -416,7 +525,7 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
 </section>
 
 <section class="block alt" id="past" aria-labelledby="h-past">
-  <div class="wrap">
+  <div class="wrap reveal">
     <h2 id="h-past">過去の研究大会（サンプル）</h2>
     <p class="intro">近年の大会の案内を並べる欄の見本です。実際のサイトでは、ここに大会案内や開催要項へのリンクを載せます。</p>
     <ol class="past" style="margin-bottom:0">
@@ -441,7 +550,7 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
 </section>
 
 <section class="block" id="about" aria-labelledby="h-about">
-  <div class="wrap">
+  <div class="wrap reveal">
     <h2 id="h-about">サンプル歴史教育研究会について</h2>
     <p style="max-width:40em">サンプル歴史教育研究会は、このサイトのために作った<strong>架空の団体</strong>です。実在の団体や研究大会とは、関係ありません。</p>
     <p style="max-width:40em">実際の研究大会のサイトでは、ここに団体の紹介や、関連サイトへのリンクを載せます。</p>
@@ -449,7 +558,7 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
 </section>
 
 <section class="block alt" id="contact" aria-labelledby="h-contact">
-  <div class="wrap">
+  <div class="wrap reveal">
     <h2 id="h-contact">お問い合わせ</h2>
     <p><span class="tbd">調整中</span>このサイトはサンプルなので、問い合わせ先はありません。</p>
   </div>
@@ -477,5 +586,21 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
 <script src="../conference-editor/js/schema.js"></script>
 <script src="../conference-editor/js/site-content.js"></script>
 <script>if (window.SiteContent) SiteContent.apply(window.CONF_EDITOR_CONFIG);</script>
+<!-- スクロールして見えたセクションから、ふわっと表示する。使えない環境では、全部すぐ表示する -->
+<script>
+(function () {
+  var els = [].slice.call(document.querySelectorAll(".reveal"));
+  function show(e) { e.classList.add("in"); }
+  try {
+    if (!("IntersectionObserver" in window)) { els.forEach(show); return; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (x) {
+        if (x.isIntersecting) { show(x.target); io.unobserve(x.target); }
+      });
+    }, { rootMargin: "0px 0px -8% 0px" });
+    els.forEach(function (e) { io.observe(e); });
+  } catch (err) { els.forEach(show); }
+})();
+</script>
 </body>
 </html>

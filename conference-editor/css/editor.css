@@ -123,7 +123,8 @@ body{margin:0;background:var(--porcelain);color:var(--ink);line-height:1.8;-webk
 .ce-pv-bar{display:flex;align-items:center;gap:5px;background:#E6EAF0;padding:6px 10px;font-size:.75rem;color:var(--muted)}
 .ce-pv-bar i{width:9px;height:9px;border-radius:50%;background:#B7C0CE;display:inline-block}
 .ce-pv-bar span{margin-left:8px}
-.ce-pv-page{padding:14px 14px 18px;background:var(--porcelain)}
+/* 公開サイトが黄色いテーマなので、プレビューの中だけ同じ色にそろえる（編集画面の部品の色は変えない） */
+.ce-pv-page{--porcelain:#FFFAE8;--line:#E6D48F;--gosu-tint:#FFF0B5;padding:14px 14px 18px;background:var(--porcelain)}
 .ce-pv-h{font-family:"Zen Old Mincho","Hiragino Mincho ProN","Yu Mincho",serif;margin:0 0 .5rem;font-size:1.4rem;color:var(--gosu-deep)}
 .ce-preview{background:var(--paper);padding:0 12px 6px}
 .ce-preview .news li,.ce-preview .spec div{padding:.8rem 0}
