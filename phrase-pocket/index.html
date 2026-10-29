@@ -130,6 +130,7 @@ textarea.field{resize:vertical}
 .scene span{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin-top:2px}
 .scene.review{background:var(--blue-soft);border-color:transparent}
 .scene.review:hover{border-color:var(--blue)}
+.scene[aria-current="true"]{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue)}
 .custom{display:flex;flex-wrap:wrap;gap:8px}
 .custom .field{flex:1 1 240px;min-width:0}
 .opts{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center}
@@ -148,8 +149,20 @@ details.about[open] summary{margin-bottom:8px}
 /* talk: chat */
 .chatbar{flex:none;border-bottom:1px solid var(--rule);background:var(--paper)}
 .chatbar-in{display:flex;align-items:center;gap:8px;padding-block:7px}
-.chatbar .title{font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.chatbar .lv{font-size:12px;color:var(--ink-2);border:1px solid var(--rule);border-radius:999px;padding:1px 9px;white-space:nowrap}
+.scene-btn{appearance:none;border:0;background:none;padding:6px 4px;cursor:pointer;display:flex;align-items:center;gap:8px;flex:1;min-width:0;text-align:left;border-radius:8px}
+.scene-btn:hover{background:var(--blue-soft)}
+#chat-title{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scene-btn .lv{font-size:12px;color:var(--ink-2);border:1px solid var(--rule);border-radius:999px;padding:0 8px;white-space:nowrap}
+.scene-btn .caret{color:var(--ink-2);font-size:12px}
+.today{appearance:none;border:0;cursor:pointer;font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--marker-soft);color:var(--marker-ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.toggle{appearance:none;cursor:pointer;font-size:12.5px;padding:4px 11px;border-radius:999px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink-2);white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.toggle::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--rule)}
+.toggle[aria-pressed="true"]{color:var(--blue);border-color:var(--blue);font-weight:700}
+.toggle[aria-pressed="true"]::before{background:var(--blue)}
+.divider{align-self:stretch;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-2);letter-spacing:.04em}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--rule)}
+.msg.welcome .bubble{border-style:dashed}
+.panel-head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
 .log{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .log-in{padding-block:18px 26px;display:flex;flex-direction:column;gap:16px}
 .msg{display:flex;flex-direction:column;gap:6px;max-width:88%;min-width:0}
@@ -178,10 +191,6 @@ details.about[open] summary{margin-bottom:8px}
 .pen.howto,.pen.meaning{color:var(--blue);background:var(--blue-soft)}
 .pen.nice{color:var(--green);background:var(--green-soft)}
 .pen.phrase{color:var(--marker-ink);background:var(--marker-soft);font-family:var(--font-ja);font-size:13.5px}
-.recap{margin-top:6px}
-.recap li{display:flex;gap:8px;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--rule);flex-wrap:wrap}
-.recap li:last-child{border-bottom:0}
-.recap .en{font-weight:600}
 .composer{flex:none;border-top:1px solid var(--rule);background:var(--sheet)}
 .comp-in{display:flex;gap:8px;align-items:flex-end;padding-top:10px}
 .comp-in textarea{flex:1;min-width:0;resize:none;border:1px solid var(--rule);border-radius:12px;padding:9px 12px;background:var(--paper);min-height:44px;max-height:168px;line-height:1.5;font-size:16px}
@@ -294,17 +303,39 @@ details.about[open] summary{margin-bottom:8px}
   <main>
     <!-- 話す -->
     <section class="view" id="v-talk" role="tabpanel" aria-labelledby="tab-talk" hidden>
-      <div class="pane" id="talk-start">
+      <div class="pane chat" id="talk-chat">
+        <div class="chatbar"><div class="wrap chatbar-in">
+          <button class="scene-btn" type="button" id="scene-btn" aria-haspopup="dialog" title="場面とレベルを変える"><span id="chat-title">フリートーク</span><span class="lv" id="chat-level"></span><span class="caret" aria-hidden="true">▾</span></button>
+          <button class="today" type="button" id="today-chip" hidden></button>
+          <button class="toggle" type="button" id="speak-toggle" aria-pressed="true">読み上げ</button>
+        </div></div>
+        <div class="log" id="log"><div class="wrap log-in" id="log-in"></div></div>
+        <form class="composer" id="composer">
+          <div class="wrap">
+            <div class="comp-in">
+              <textarea id="msg" rows="1" maxlength="4000" placeholder="Type in English…" aria-label="メッセージ"></textarea>
+              <button class="btn primary" type="submit" id="send" aria-label="送る">送る</button>
+              <button class="btn" type="button" id="stop" hidden>止める</button>
+            </div>
+            <div class="comp-hint" id="comp-hint"></div>
+          </div>
+        </form>
+      </div>
+
+      <div class="pane" id="talk-start" hidden role="dialog" aria-labelledby="panel-title">
         <div class="wrap view-in">
-          <div>
-            <h2 class="h-title">今日は何を話す？</h2>
-            <p class="lead">英語で話しかけてください。わからないときは日本語で聞いてOK。言い直したほうがいいところや、新しい表現は、自動でノートに入ります。</p>
+          <div class="panel-head">
+            <div>
+              <h2 class="h-title" id="panel-title">場面と設定</h2>
+              <p class="lead">場面を選ぶと、いまの会話のままその場面に切りかわります。</p>
+            </div>
+            <button class="btn" type="button" id="panel-close">会話にもどる</button>
           </div>
           <div id="start-notice" hidden></div>
           <div class="scenes" id="scene-grid"></div>
           <form class="custom" id="custom-form">
             <input class="field" id="custom-scene" type="text" maxlength="200" placeholder="場面を自分で書く　例）ALTの先生と授業の打ち合わせ">
-            <button class="btn" type="submit">この場面で話す</button>
+            <button class="btn" type="submit">この場面にする</button>
           </form>
           <div class="opts">
             <div class="opt"><span>レベル</span>
@@ -322,30 +353,12 @@ details.about[open] summary{margin-bottom:8px}
             <summary>Claudeに伝えておくこと（任意）</summary>
             <textarea class="field" id="about" rows="3" maxlength="600" placeholder="例）中学校の先生。子どもが3人。週末はギターを弾く。&#10;話題えらびに使われます。"></textarea>
           </details>
+          <div class="row"><button class="btn" type="button" id="new-thread">新しい会話をはじめる</button><span class="small muted">いまの会話は「これまでの会話」に残ります。</span></div>
           <div id="recent-wrap" hidden>
             <p class="label">これまでの会話</p>
             <ul class="recent" id="recent"></ul>
           </div>
         </div>
-      </div>
-
-      <div class="pane chat" id="talk-chat" hidden>
-        <div class="chatbar"><div class="wrap chatbar-in">
-          <span class="title" id="chat-title"></span>
-          <span class="lv" id="chat-level"></span>
-          <button class="btn" type="button" id="chat-end">おわる</button>
-        </div></div>
-        <div class="log" id="log"><div class="wrap log-in" id="log-in"></div></div>
-        <form class="composer" id="composer">
-          <div class="wrap">
-            <div class="comp-in">
-              <textarea id="msg" rows="1" maxlength="4000" placeholder="Type in English…" aria-label="メッセージ"></textarea>
-              <button class="btn primary" type="submit" id="send" aria-label="送る">送る</button>
-              <button class="btn" type="button" id="stop" hidden>止める</button>
-            </div>
-            <div class="comp-hint" id="comp-hint"></div>
-          </div>
-        </form>
       </div>
 
       <div class="pane chat" id="talk-past" hidden>
@@ -438,7 +451,7 @@ const SCENES = [
   { key: 'shop',   ja: 'お店・レストラン', en: 'Ordering & shopping', desc: '注文・質問・支払い',     prompt: 'Role-play: you are staff at a cafe, restaurant or shop abroad, and I am the customer. Include ordering, asking questions and paying.' },
 ];
 const REVIEW_SCENE = { key: 'review', ja: 'ノートの表現を使ってみる', en: 'Review talk', desc: '', prompt: 'Free conversation designed so that I get natural chances to use the expressions on my practice list. Bring them up one by one through your questions, and let me try them.' };
-const KICKOFF = '(Please start now: greet me in one short line and ask your first question for this scene.)';
+const KICKOFF = '(From the practice app: we are switching to this scene now. Start it with one short line and a question for me.)';
 const IMPORT_HELP = [
   '今日の英会話をふりかえって、次の4つを箇条書きでまとめてください。',
   '1. 私の英語で、言い直したほうがいいところ（私の表現 → 自然な表現、理由）',
@@ -453,8 +466,8 @@ const S = {
   store: null, storeKind: 'loading', itemsLoaded: false,
   items: [], itemsById: new Map(), sessions: [],
   sample: null, sampleState: 'pending',
-  prefs: { level: 'normal', speed: 'quick', about: '' },
-  chat: null, past: null, busy: false, ctl: null,
+  prefs: { level: 'normal', speed: 'quick', about: '', autoSpeak: true },
+  chat: null, past: null, panel: false, threadReady: false, busy: false, ctl: null,
   practice: null,
   noteFilter: 'all', noteQuery: '',
   imp: { busy: false, ctl: null, result: null, error: '' },
@@ -548,28 +561,48 @@ function use(name) {
 const coarse = (() => { try { return matchMedia('(pointer: coarse)').matches; } catch (e) { return false; } })();
 
 /* ---------- speech (read aloud) ---------- */
+// 日本語と英語を切り分けて、それぞれの声で読む（英語は英語の声、日本語の説明は日本語の声）
 const canSpeak = typeof window.speechSynthesis !== 'undefined' && typeof window.SpeechSynthesisUtterance !== 'undefined';
-const JA_RE = /[぀-ヿ㐀-鿿！-｠]/;
-function englishOnly(t) {
-  const out = [];
-  String(t || '').replace(/\*\*/g, '').split(/\n+/).forEach(line => {
-    (line.match(/[^.!?。！？]+[.!?。！？]*/g) || []).forEach(s => { if (s.trim() && !JA_RE.test(s)) out.push(s.trim()); });
-  });
-  return out.join(' ');
+const JA_RUN = /[　-ヿ㐀-鿿！-｠]+/g;
+const SAYABLE = /[A-Za-z0-9぀-ヿ㐀-鿿]/;
+let ttsPrimed = false;
+function voiceFor(lang) {
+  const vs = speechSynthesis.getVoices();
+  if (lang === 'ja') return vs.find(x => /^ja/i.test(x.lang)) || null;
+  return vs.find(x => /^en[-_]US/i.test(x.lang)) || vs.find(x => /^en/i.test(x.lang)) || null;
+}
+function speechParts(text) {
+  const t = String(text || '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim();
+  const parts = [];
+  const push = (str, lang) => {
+    str = str.trim(); if (!str || !SAYABLE.test(str)) return;
+    const last = parts[parts.length - 1];
+    if (last && last.lang === lang) last.text += ' ' + str; else parts.push({ text: str, lang });
+  };
+  let at = 0;
+  t.replace(JA_RUN, (m, i) => { push(t.slice(at, i), 'en'); push(m, 'ja'); at = i + m.length; return m; });
+  push(t.slice(at), 'en');
+  return parts;
 }
 function speak(text) {
   if (!canSpeak) return;
   try {
-    const en = englishOnly(text); if (!en) return;
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(en);
-    u.lang = 'en-US'; u.rate = 0.95;
-    const vs = speechSynthesis.getVoices();
-    const v = vs.find(x => /^en[-_]US/i.test(x.lang)) || vs.find(x => /^en/i.test(x.lang));
-    if (v) u.voice = v;
-    speechSynthesis.speak(u);
+    speechParts(text).forEach(part => {
+      const u = new SpeechSynthesisUtterance(part.text);
+      u.lang = part.lang === 'ja' ? 'ja-JP' : 'en-US';
+      u.rate = part.lang === 'ja' ? 1.05 : 0.95;
+      const v = voiceFor(part.lang); if (v) u.voice = v;
+      speechSynthesis.speak(u);
+    });
   } catch (e) { /* ignore */ }
 }
+// スマホは、最初の1回をタップの中で鳴らしておかないと、あとから自動で読めないことがある
+function primeSpeech() {
+  if (!canSpeak || ttsPrimed) return;
+  try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); ttsPrimed = true; } catch (e) { /* ignore */ }
+}
+function stopSpeech() { if (canSpeak) { try { speechSynthesis.cancel(); } catch (e) { /* ignore */ } } }
 function speakBtn(text) { return canSpeak ? iconBtn('speak', '読み上げ', () => speak(text)) : null; }
 
 /* ---------- errors ---------- */
@@ -692,6 +725,7 @@ function applyPrefs(p) {
   if (LEVELS[p.level]) S.prefs.level = p.level;
   if (p.speed === 'quick' || p.speed === 'deep') S.prefs.speed = p.speed;
   if (typeof p.about === 'string') S.prefs.about = p.about.slice(0, 600);
+  if (typeof p.autoSpeak === 'boolean') S.prefs.autoSpeak = p.autoSpeak;
   syncPrefsUI();
 }
 function savePrefs() {
@@ -775,9 +809,10 @@ function toggleMastered(it) {
 function rulesFor(c) {
   const lv = LEVELS[c.level] || LEVELS.normal;
   const about = (S.prefs.about || '').trim();
-  const t = c.targets || [];
+  const t = pickTargets(c.sceneKey === 'review' ? 8 : 5);
   return [
     'You are my English conversation partner and a kind, clear tutor. I am a Japanese adult learning English.',
+    'This is one long, ongoing conversation. Days may pass between my messages; if so, just pick it up naturally. Lines in parentheses come from the practice app, not from me.',
     'Scene: ' + c.scenePrompt,
     'My level: ' + lv.en,
     about ? 'About me (use it only to choose topics): ' + about : '',
@@ -809,7 +844,7 @@ function notesForTurn(c, idx) {
   return list.map(n => { const o = { kind: n.kind, en: n.en, ja: n.ja }; if (n.wrong) o.wrong = n.wrong; return o; });
 }
 function buildTurns(c) {
-  const msgs = c.messages.map((m, i) => ({ m, i })).filter(x => !x.m.pending && !(x.m.role === 'assistant' && !x.m.content));
+  const msgs = c.messages.map((m, i) => ({ m, i })).filter(x => (x.m.role === 'user' || x.m.role === 'assistant') && !x.m.pending && !(x.m.role === 'assistant' && !x.m.content));
   const recent = msgs.slice(-40);
   const turns = [{ role: 'user', content: rulesFor(c) }];
   recent.forEach(x => {
@@ -841,19 +876,55 @@ function parseNotes(raw) {
 }
 
 /* ================= talk: flow ================= */
-function newChat(scene) {
-  if (S.busy) return;
-  if (S.sampleState === 'none' || S.sampleState === 'off') { toast('Claudeとつながっていないので、会話は始められません'); return; }
-  const targets = pickTargets(scene.key === 'review' ? 8 : 5);
-  if (scene.key === 'review' && !targets.length) { toast('ノートにまだ表現がありません'); return; }
-  const now = Date.now();
-  S.past = null;
-  S.chat = { id: genId('s_'), sceneKey: scene.key, sceneJa: scene.ja, scenePrompt: scene.prompt, level: S.prefs.level,
-    targets: targets.map(t => ({ en: t.en, ja: t.ja })), messages: [{ role: 'user', content: KICKOFF, hidden: true, ts: now }],
-    pickedIds: [], createdAt: now, ended: false };
-  renderTalk();
+// 会話は1本につながっている。開くと前回の続きから。場面を変えても同じ会話のまま続く。
+const MAX_THREAD = 260;
+function sceneByKey(k) { return SCENES.find(x => x.key === k) || (k === 'review' ? REVIEW_SCENE : null); }
+function claudeOff() { return S.sampleState === 'none' || S.sampleState === 'off'; }
+function newThread(scene) {
+  scene = scene || SCENES[0];
+  return { id: genId('s_'), sceneKey: scene.key, sceneJa: scene.ja, scenePrompt: scene.prompt, level: S.prefs.level, messages: [], pickedIds: [], createdAt: Date.now() };
+}
+function threadFromLog(id, meta, log) {
+  const sc = sceneByKey(log.sceneKey || meta.sceneKey);
+  return { id, sceneKey: log.sceneKey || meta.sceneKey || 'free', sceneJa: log.sceneJa || meta.title || 'フリートーク',
+    scenePrompt: log.scenePrompt || (sc ? sc.prompt : SCENES[0].prompt), level: log.level || S.prefs.level,
+    messages: (log.messages || []).map(m => Object.assign({}, m, { notes: m.notes ? m.notes.map(n => Object.assign({}, n)) : undefined })),
+    pickedIds: (meta.pickedIds || []).slice(), createdAt: meta.createdAt || Date.now() };
+}
+let resumeStarted = false;
+function resumeThread() {
+  if (resumeStarted) return;
+  resumeStarted = true;
+  const last = S.sessions.find(x => x.kind === 'chat');
+  const done = () => { if (!S.chat) S.chat = newThread(); S.threadReady = true; refreshTalk(); scrollLog(true); };
+  if (S.chat || !last) { done(); return; }
+  storeReady.then(st => st.getLog(last.id)).then(log => {
+    if (S.chat) return;
+    if (log && (log.messages || []).length < MAX_THREAD) S.chat = threadFromLog(last.id, last, log);
+    else S.chat = newThread(sceneByKey(last.sceneKey) || undefined);
+  }).catch(e => console.warn(e)).then(done);
+}
+function setScene(scene) {
+  if (S.busy) { toast('返事を待ってから切りかえてください'); return; }
+  if (claudeOff()) { toast('Claudeとつながっていないので、会話できません'); return; }
+  if (scene.key === 'review' && !pickTargets(1).length) { toast('ノートにまだ表現がありません'); return; }
+  if (!S.chat) S.chat = newThread(scene);
+  const c = S.chat, now = Date.now();
+  c.sceneKey = scene.key; c.sceneJa = scene.ja; c.scenePrompt = scene.prompt; c.level = S.prefs.level;
+  if (c.messages.some(m => !m.hidden)) c.messages.push({ role: 'event', content: scene.ja + 'の場面にしました', ts: now });
+  c.messages.push({ role: 'user', content: KICKOFF, hidden: true, ts: now });
+  S.panel = false;
+  renderTalk(); scrollLog(true);
   askClaude();
 }
+function startNewThread() {
+  if (S.busy) return;
+  const c = S.chat;
+  S.chat = newThread(c ? { key: c.sceneKey, ja: c.sceneJa, prompt: c.scenePrompt } : null);
+  S.threadReady = true; S.panel = false;
+  renderTalk(); focusComposer();
+}
+function focusComposer() { if (!coarse) { try { $('#msg').focus(); } catch (e) { /* ignore */ } } }
 async function askClaude() {
   const c = S.chat; if (!c || S.busy) return;
   S.busy = true;
@@ -867,6 +938,7 @@ async function askClaude() {
   }
   const ctl = new AbortController(); S.ctl = ctl;
   const turns = buildTurns(c);
+  let spoke = false;
   try {
     const res = await sample(turns, {
       cache: false, signal: ctl.signal, modelTier: S.prefs.speed === 'deep' ? 'default' : 'quick',
@@ -875,6 +947,7 @@ async function askClaude() {
     const sp = splitReply(res.text, true);
     m.content = sp.reply || '…'; m.pending = false;
     if (res.truncated) m.error = '返事が途中で切れました。';
+    spoke = true;
     const notes = parseNotes(sp.notesRaw);
     if (notes.length) {
       let lastUser = null;
@@ -896,7 +969,10 @@ async function askClaude() {
   } finally {
     if (S.ctl === ctl) S.ctl = null;
     S.busy = false;
-    if (S.chat === c) { renderLog(); updateComposer(); scrollLog(); }
+    if (S.chat === c) {
+      renderLog(); updateComposer(); scrollLog(); renderChatBar();
+      if (spoke && S.prefs.autoSpeak && S.view === 'talk' && !S.past && !S.panel) speak(m.content);
+    }
     persistChat(c);
   }
 }
@@ -907,19 +983,15 @@ function retryLast(m) {
 }
 function submitMsg() {
   const ta = $('#msg'); const text = ta.value.trim();
-  if (!text || S.busy || !S.chat || S.chat.ended) return;
+  if (!text || S.busy || !S.threadReady) return;
+  if (claudeOff()) { toast('Claudeとつながっていないので、会話できません'); return; }
+  stopSpeech(); primeSpeech();
+  if (!S.chat) S.chat = newThread();
+  if (S.chat.messages.length >= MAX_THREAD) { const c = S.chat; S.chat = newThread({ key: c.sceneKey, ja: c.sceneJa, prompt: c.scenePrompt }); }
   ta.value = ''; autosize(ta);
+  try { ta.focus(); } catch (e) { /* ignore */ }
   S.chat.messages.push({ role: 'user', content: text, ts: Date.now() });
   askClaude();
-}
-function endChat() {
-  const c = S.chat; if (!c) return;
-  if (S.ctl) S.ctl.abort();
-  const turns = c.messages.filter(m => m.role === 'user' && !m.hidden).length;
-  if (!turns) { S.chat = null; renderTalk(); return; }
-  c.ended = true;
-  persistChat(c);
-  renderTalk(); scrollLog(true);
 }
 function cleanMsgs(msgs) {
   return msgs.filter(m => !m.pending && !(m.role === 'assistant' && !m.content)).slice(-300).map(m => {
@@ -935,12 +1007,12 @@ function persistChat(c) {
   if (!userMsgs.length) return;
   const now = Date.now();
   const meta = { kind: 'chat', title: c.sceneJa, sceneKey: c.sceneKey, level: c.level, createdAt: c.createdAt, updatedAt: now,
-    turns: userMsgs.length, pickedIds: (c.pickedIds || []).slice(-200), firstLine: userMsgs[0].content.slice(0, 90) };
-  const log = { messages: cleanMsgs(c.messages), sceneJa: c.sceneJa, sceneKey: c.sceneKey, scenePrompt: c.scenePrompt, level: c.level, targets: c.targets || [] };
+    turns: userMsgs.length, pickedIds: (c.pickedIds || []).slice(-200), firstLine: userMsgs[userMsgs.length - 1].content.slice(0, 90) };
+  const log = { messages: cleanMsgs(c.messages), sceneJa: c.sceneJa, sceneKey: c.sceneKey, scenePrompt: c.scenePrompt, level: c.level };
   withStore(st => Promise.all([st.setSession(c.id, meta), st.setLog(c.id, log)]));
 }
 function openPast(id) {
-  const meta = S.sessions.find(s => s.id === id);
+  const meta = S.sessions.find(x => x.id === id);
   if (!meta) { toast('その会話は見つかりませんでした'); return; }
   S.past = { id, meta, log: null, loading: true, confirmDel: false };
   go('talk'); renderTalk();
@@ -950,35 +1022,30 @@ function openPast(id) {
 }
 function continuePast() {
   const p = S.past; if (!p || !p.log || S.busy) return;
-  const log = p.log, meta = p.meta;
-  const scene = SCENES.find(s => s.key === (log.sceneKey || meta.sceneKey));
-  S.chat = { id: p.id, sceneKey: log.sceneKey || meta.sceneKey || 'free', sceneJa: log.sceneJa || meta.title || 'フリートーク',
-    scenePrompt: log.scenePrompt || (scene ? scene.prompt : SCENES[0].prompt), level: log.level || S.prefs.level,
-    targets: (log.targets || []).map(t => ({ en: t.en, ja: t.ja })),
-    messages: (log.messages || []).map(m => Object.assign({}, m, { notes: m.notes ? m.notes.map(n => Object.assign({}, n)) : undefined })),
-    pickedIds: (meta.pickedIds || []).slice(), createdAt: meta.createdAt || Date.now(), ended: false };
-  S.past = null;
-  renderTalk(); scrollLog(true);
-  $('#msg').focus();
+  S.chat = threadFromLog(p.id, p.meta, p.log);
+  S.threadReady = true; S.past = null; S.panel = false;
+  renderTalk(); scrollLog(true); focusComposer();
 }
 
 /* ================= talk: render ================= */
 function renderTalk() {
   const start = $('#talk-start'), chat = $('#talk-chat'), past = $('#talk-past');
-  start.hidden = !!(S.chat || S.past);
-  chat.hidden = !S.chat || !!S.past;
   past.hidden = !S.past;
+  start.hidden = !!S.past || !S.panel;
+  chat.hidden = !!S.past || !!S.panel;
   if (S.past) renderPast();
-  else if (S.chat) { renderChatBar(); renderLog(); updateComposer(); }
-  else renderStart();
+  else if (S.panel) renderStart();
+  else { renderChatBar(); renderLog(); updateComposer(); }
 }
-function renderNotices() {
-  const box = $('#start-notice'), imp = $('#imp-notice');
-  const off = S.sampleState === 'none' || S.sampleState === 'off';
-  const msg = S.sampleState === 'off'
+function refreshTalk() { if (S.view === 'talk') renderTalk(); }
+function noticeText() {
+  return S.sampleState === 'off'
     ? 'Claudeの利用が許可されていないため、会話と取り込みは使えません。ページのメニューの「権限」から許可できます。ノートと練習（自己採点）は使えます。'
     : 'この画面ではClaudeとつながっていません。claude.ai でこのページを開くと、会話と取り込みが使えます。ノートと練習（自己採点）はここでも使えます。';
-  [box, imp].forEach(el => { el.hidden = !off; el.className = 'notice warn'; el.textContent = off ? msg : ''; });
+}
+function renderNotices() {
+  const off = claudeOff();
+  [$('#start-notice'), $('#imp-notice')].forEach(el => { el.hidden = !off; el.className = 'notice warn'; el.textContent = off ? noticeText() : ''; });
 }
 let sceneGridBuilt = false;
 function renderStart() {
@@ -986,13 +1053,15 @@ function renderStart() {
   const grid = $('#scene-grid');
   if (!sceneGridBuilt) {
     sceneGridBuilt = true;
-    grid.append(h('button', { class: 'scene review', type: 'button', id: 'scene-review', hidden: true, onclick: () => newChat(REVIEW_SCENE) },
+    grid.append(h('button', { class: 'scene review', type: 'button', id: 'scene-review', 'data-key': 'review', hidden: true, onclick: () => setScene(REVIEW_SCENE) },
       h('b', null, REVIEW_SCENE.ja), h('i', null, REVIEW_SCENE.en), h('span', { id: 'review-desc' })));
-    SCENES.forEach(sc => grid.append(h('button', { class: 'scene', type: 'button', onclick: () => newChat(sc) },
+    SCENES.forEach(sc => grid.append(h('button', { class: 'scene', type: 'button', 'data-key': sc.key, onclick: () => setScene(sc) },
       h('b', null, sc.ja), h('i', null, sc.en), h('span', null, sc.desc))));
   }
+  const cur = S.chat ? S.chat.sceneKey : 'free';
+  $$('#scene-grid .scene').forEach(b => b.setAttribute('aria-current', String(b.dataset.key === cur)));
   const n = S.items.filter(it => !it.mastered).length;
-  const rv = $('#scene-review'); rv.hidden = n === 0;
+  $('#scene-review').hidden = n === 0;
   $('#review-desc').textContent = 'ノートの表現（' + Math.min(n, 8) + '個）が会話に出てきます';
   syncPrefsUI();
   renderRecent();
@@ -1001,19 +1070,24 @@ function renderRecent() {
   const wrap = $('#recent-wrap'), ul = $('#recent');
   const list = S.sessions.slice(0, 12);
   wrap.hidden = !list.length;
-  fill(ul, ...list.map(s => h('li', null, h('button', { type: 'button', onclick: () => openPast(s.id) },
-    h('span', { class: 'r-date' }, shortDate(s.updatedAt || s.createdAt || 0)),
-    h('span', { class: 'r-title' }, s.kind === 'import' ? '取り込み：' + (s.title || '') : (s.title || '会話')),
-    h('span', { class: 'r-count' }, (s.kind === 'import' ? '' : (s.turns || 0) + '往復・') + ((s.pickedIds || []).length) + '件'),
-    s.firstLine ? h('span', { class: 'r-first' }, s.firstLine) : null))));
+  fill(ul, ...list.map(x => h('li', null, h('button', { type: 'button', onclick: () => openPast(x.id) },
+    h('span', { class: 'r-date' }, shortDate(x.updatedAt || x.createdAt || 0)),
+    h('span', { class: 'r-title' }, (x.kind === 'import' ? '取り込み：' + (x.title || '') : (x.title || '会話')) + (S.chat && S.chat.id === x.id ? '（いまの会話）' : '')),
+    h('span', { class: 'r-count' }, (x.kind === 'import' ? '' : (x.turns || 0) + '往復・') + ((x.pickedIds || []).length) + '件'),
+    x.firstLine ? h('span', { class: 'r-first' }, x.firstLine) : null))));
 }
+function todayCount() { const t0 = startOfDay(Date.now()); return S.items.filter(it => (it.createdAt || 0) >= t0).length; }
 function renderChatBar() {
   const c = S.chat;
-  $('#chat-title').textContent = c.sceneJa;
-  $('#chat-level').textContent = (LEVELS[c.level] || LEVELS.normal).ja;
-  const b = $('#chat-end');
-  b.textContent = c.ended ? '新しい会話' : 'おわる';
-  b.classList.toggle('primary', !!c.ended);
+  $('#chat-title').textContent = c ? c.sceneJa : 'フリートーク';
+  $('#chat-level').textContent = (LEVELS[(c && c.level) || S.prefs.level] || LEVELS.normal).ja;
+  const n = todayCount(), chip = $('#today-chip');
+  chip.hidden = !n; chip.textContent = '今日 +' + n; chip.title = '今日ノートに入った数（タップでノートへ）';
+  const t = $('#speak-toggle');
+  t.hidden = !canSpeak;
+  t.setAttribute('aria-pressed', String(!!S.prefs.autoSpeak));
+  t.textContent = S.prefs.autoSpeak ? '読み上げ オン' : '読み上げ オフ';
+  t.title = S.prefs.autoSpeak ? '返事を自動で読み上げます（タップで止める）' : '返事の自動読み上げは止まっています（タップでオン）';
 }
 function penEl(n) {
   const st = { new: 'ノートへ', again: '練習にもどしました', used: 'レベルアップ', seen: 'ノートにあります' }[n.status] || '';
@@ -1040,39 +1114,38 @@ function msgEl(m, readOnly) {
     m.notes && m.notes.length ? h('div', { class: 'pens' }, m.notes.map(penEl)) : null,
     m.error && !readOnly ? h('div', { class: 'err' }, h('span', null, m.error), m.retry ? h('button', { class: 'link', type: 'button', onclick: () => retryLast(m) }, 'もう一度') : null) : null);
 }
+// 日付の区切りと「場面にしました」の区切りを入れながら並べる
+function logEls(messages, readOnly) {
+  const out = []; let lastDay = '';
+  messages.filter(m => !m.hidden).forEach(m => {
+    const d = dayKey(m.ts || 0);
+    if (d !== lastDay) { lastDay = d; out.push(h('div', { class: 'divider' }, dayLabel(m.ts || 0))); }
+    out.push(m.role === 'event' ? h('div', { class: 'divider' }, m.content) : msgEl(m, readOnly));
+  });
+  return out;
+}
+function welcomeEl() {
+  return h('div', { class: 'msg ai welcome' }, h('div', { class: 'bubble' },
+    fmt("Hi! I'm here whenever you want to talk. Just type, or speak with your keyboard's mic, in English.\n日本語で「〜って英語でなんて言うの？」と聞いてもOKです。")));
+}
 function updateBubble(m) {
   const el = bubbleEls.get(m); if (!el) return;
   fill(el, m.content ? fmt(m.content) : thinkingEl());
   scrollLog();
 }
 function renderLog() {
-  const c = S.chat; if (!c) return;
   const box = $('#log-in');
-  fill(box, ...c.messages.filter(m => !m.hidden).map(m => msgEl(m, false)));
-  if (c.ended) box.append(recapEl(c));
-}
-function recapEl(c) {
-  const items = (c.pickedIds || []).map(id => S.itemsById.get(id)).filter(Boolean);
-  const cnt = { stumble: 0, phrase: 0, nice: 0 };
-  items.forEach(it => { cnt[(KINDS[it.kind] || KINDS.phrase).group]++; });
-  return h('div', { class: 'sheet recap' },
-    h('h3', null, 'おつかれさまでした'),
-    h('p', { class: 'muted small' }, items.length
-      ? 'この会話で ' + items.length + '件 ノートに入りました（つまずき ' + cnt.stumble + '・拾った表現 ' + cnt.phrase + '・使えた ' + cnt.nice + '）。'
-      : '今回はノートに入ったものはありません。'),
-    items.length ? h('ul', null, items.map(it => h('li', null, kindTag(it.kind), h('span', { class: 'en' }, it.en), h('span', { class: 'muted small' }, it.ja)))) : null,
-    h('div', { class: 'row' },
-      items.some(it => STUMBLE.has(it.kind)) ? h('button', { class: 'btn primary', type: 'button', onclick: () => go('practice') }, 'さっそく練習する') : null,
-      h('button', { class: 'btn', type: 'button', onclick: () => { S.chat = null; renderTalk(); } }, '新しい会話')));
+  if (!S.threadReady || !S.chat) { fill(box, h('p', { class: 'muted' }, '前回の会話を読み込んでいます…')); return; }
+  const c = S.chat;
+  const vis = c.messages.some(m => !m.hidden);
+  fill(box, claudeOff() ? h('div', { class: 'notice warn' }, noticeText()) : null, vis ? null : welcomeEl(), ...logEls(c.messages, false));
 }
 function updateComposer() {
-  const c = S.chat;
-  const comp = $('#composer');
-  comp.hidden = !c || !!c.ended;
   $('#send').hidden = S.busy;
   $('#stop').hidden = !S.busy;
+  $('#msg').disabled = !S.threadReady;
   $('#comp-hint').textContent = coarse
-    ? '日本語で質問してもOK ・ キーボードの音声入力も使えます'
+    ? 'キーボードのマイクで話して「送る」だけ。日本語の質問もOK'
     : '日本語で質問してもOK ・ Enterで送信（Shift+Enterで改行）';
 }
 function scrollLog(force) {
@@ -1084,21 +1157,22 @@ function renderPast() {
   const p = S.past, head = $('#past-head'), log = $('#past-log');
   const meta = p.meta || {};
   const isImport = meta.kind === 'import';
-  fill(head, 
+  const isCurrent = !!(S.chat && S.chat.id === p.id);
+  fill(head,
     h('button', { class: 'btn ghost', type: 'button', onclick: () => { S.past = null; renderTalk(); } }, '← もどる'),
     h('span', { class: 'title' }, shortDate(meta.updatedAt || meta.createdAt || 0) + '　' + (isImport ? '取り込み：' : '') + (meta.title || '')),
-    !isImport && p.log ? h('button', { class: 'btn primary', type: 'button', onclick: continuePast, disabled: S.busy }, '続きを話す') : null,
+    !isImport && p.log && !isCurrent ? h('button', { class: 'btn primary', type: 'button', onclick: continuePast, disabled: S.busy }, 'この会話の続きを話す') : null,
     p.confirmDel
       ? h('button', { class: 'btn danger', type: 'button', onclick: () => {
           const id = p.id; withStore(st => st.deleteSession(id));
-          if (S.chat && S.chat.id === id) S.chat = null;
+          if (S.chat && S.chat.id === id) S.chat = newThread();
           S.past = null; renderTalk(); toast('会話を削除しました（ノートの表現は残ります）');
         } }, '本当に削除')
       : h('button', { class: 'btn ghost', type: 'button', onclick: () => { p.confirmDel = true; renderPast(); setTimeout(() => { if (S.past === p) { p.confirmDel = false; renderPast(); } }, 4000); } }, '削除'));
   if (p.loading) { fill(log, h('p', { class: 'muted' }, '読み込み中…')); return; }
   if (!p.log) { fill(log, h('p', { class: 'muted' }, 'この会話の記録は見つかりませんでした。')); return; }
   if (isImport) { fill(log, h('div', { class: 'sheet' }, h('pre', { class: 'raw' }, p.log.raw || ''))); return; }
-  fill(log, ...(p.log.messages || []).filter(m => !m.hidden).map(m => msgEl(m, true)));
+  fill(log, ...logEls(p.log.messages || [], true));
 }
 
 /* ================= notes ================= */
@@ -1360,7 +1434,7 @@ function renderRoundEnd(root) {
     h('div', { class: 'row' },
       dueLeft ? h('button', { class: 'btn primary', type: 'button', onclick: () => startRound(dueItems().sort(practiceOrder).slice(0, 10).map(i => i.id)) }, 'つづける（あと' + dueLeft + '問）') : null,
       h('button', { class: 'btn', type: 'button', onclick: () => { S.practice = null; renderPractice(); } }, '練習のはじめにもどる'),
-      h('button', { class: 'btn', type: 'button', onclick: () => { S.practice = null; renderPractice(); go('talk'); } }, '会話で使ってみる')));
+      h('button', { class: 'btn', type: 'button', onclick: () => { S.practice = null; renderPractice(); go('talk'); setScene(REVIEW_SCENE); } }, '会話で使ってみる')));
 }
 
 /* ================= import ================= */
@@ -1466,11 +1540,12 @@ function onItemsChanged() {
   renderBadges();
   if (S.view === 'notes') renderNotes();
   if (S.view === 'practice' && !S.practice) renderPractice();
-  if (S.view === 'talk' && !S.chat && !S.past) renderStart();
-  if (S.view === 'talk' && S.chat && S.chat.ended) renderLog();
+  if (S.view === 'talk' && S.panel) renderStart();
+  else if (S.view === 'talk' && !S.past) renderChatBar();
 }
 function onSessionsChanged() {
-  if (S.view === 'talk' && !S.chat && !S.past) renderRecent();
+  if (!S.threadReady) resumeThread();
+  if (S.view === 'talk' && S.panel) renderRecent();
   if (S.view === 'notes') renderNotesList();
 }
 function go(view) {
@@ -1479,8 +1554,8 @@ function go(view) {
   show(view);
 }
 function show(view) {
-  // 「話す」から離れたら、終わった会話と過去ログの表示は閉じておく（もどったときは会話の一覧から）
-  if (view !== 'talk') { S.past = null; if (S.chat && S.chat.ended) S.chat = null; }
+  // 「話す」から離れたら、過去ログと設定の画面は閉じておく（もどったときは会話の続きから）
+  if (view !== 'talk') { S.past = null; S.panel = false; stopSpeech(); }
   S.view = view;
   VIEWS.forEach(v => {
     $('#v-' + v).hidden = v !== view;
@@ -1497,13 +1572,23 @@ function bind() {
   $('#custom-form').addEventListener('submit', e => {
     e.preventDefault();
     const v = $('#custom-scene').value.trim(); if (!v) { $('#custom-scene').focus(); return; }
-    newChat({ key: 'custom', ja: v.length > 24 ? v.slice(0, 24) + '…' : v, prompt: 'A scene I described (it may be in Japanese): ' + v + '. Play whatever role this needs.' });
+    setScene({ key: 'custom', ja: v.length > 24 ? v.slice(0, 24) + '…' : v, prompt: 'A scene I described (it may be in Japanese): ' + v + '. Play whatever role this needs.' });
     $('#custom-scene').value = '';
   });
-  $('#seg-level').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.prefs.level = b.dataset.v; syncPrefsUI(); savePrefs(); });
+  $('#seg-level').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.prefs.level = b.dataset.v; if (S.chat) S.chat.level = b.dataset.v; syncPrefsUI(); savePrefs(); });
   $('#seg-speed').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.prefs.speed = b.dataset.v; syncPrefsUI(); savePrefs(); });
   $('#about').addEventListener('input', e => { S.prefs.about = e.target.value.slice(0, 600); savePrefs(); });
-  $('#chat-end').addEventListener('click', () => { if (S.chat && S.chat.ended) { S.chat = null; renderTalk(); } else endChat(); });
+  $('#scene-btn').addEventListener('click', () => { S.panel = true; stopSpeech(); renderTalk(); $('#talk-start').scrollTop = 0; });
+  $('#panel-close').addEventListener('click', () => { S.panel = false; renderTalk(); scrollLog(true); focusComposer(); });
+  $('#new-thread').addEventListener('click', startNewThread);
+  $('#today-chip').addEventListener('click', () => go('notes'));
+  $('#speak-toggle').addEventListener('click', () => {
+    S.prefs.autoSpeak = !S.prefs.autoSpeak; savePrefs();
+    if (S.prefs.autoSpeak) primeSpeech(); else stopSpeech();
+    renderChatBar(); toast(S.prefs.autoSpeak ? '返事を自動で読み上げます' : '自動読み上げを止めました');
+  });
+  // 送るボタンを押してもキーボードが閉じないように、入力欄からフォーカスを外さない
+  $('#send').addEventListener('mousedown', e => e.preventDefault());
   const ta = $('#msg');
   $('#composer').addEventListener('submit', e => { e.preventDefault(); submitMsg(); });
   ta.addEventListener('input', () => autosize(ta));
@@ -1530,7 +1615,7 @@ function boot(data) {
   samplePromise = use('sample').then(s => {
     S.sample = s || null;
     if (S.sampleState === 'pending') S.sampleState = s ? 'ready' : 'none';
-    if (S.view === 'talk' && !S.chat && !S.past) renderStart();
+    if (S.view === 'talk') renderTalk();
     if (S.view === 'import') renderImport();
     if (S.view === 'practice' && S.practice) renderPractice();
     return S.sample;
@@ -1538,7 +1623,7 @@ function boot(data) {
   initStore().catch(e => { console.warn(e); attachStore(new LocalStore()); });
   try {
     const hot = window.claude && window.claude.hot;
-    if (hot && typeof hot.snapshot === 'function') hot.snapshot(() => ({ view: S.view, chat: S.chat && !S.busy ? { id: S.chat.id, sceneKey: S.chat.sceneKey, sceneJa: S.chat.sceneJa, scenePrompt: S.chat.scenePrompt, level: S.chat.level, targets: S.chat.targets, messages: cleanMsgs(S.chat.messages), pickedIds: S.chat.pickedIds, createdAt: S.chat.createdAt, ended: S.chat.ended } : null }));
+    if (hot && typeof hot.snapshot === 'function') hot.snapshot(() => ({ view: S.view, chat: S.chat && !S.busy ? { id: S.chat.id, sceneKey: S.chat.sceneKey, sceneJa: S.chat.sceneJa, scenePrompt: S.chat.scenePrompt, level: S.chat.level, messages: cleanMsgs(S.chat.messages), pickedIds: S.chat.pickedIds, createdAt: S.chat.createdAt } : null }));
   } catch (e) { /* ignore */ }
 }
 
