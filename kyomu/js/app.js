@@ -27,6 +27,7 @@
         <div class="right">
           <span id="save-state"></span>
           <span id="backup-chip"></span>
+          <button class="icon demo-btn" data-top="help" title="やりたいことを選ぶと、操作のデモが流れます（キーの ?）">▶ 使い方・デモ</button>
           <button class="icon" data-top="undo" title="元に戻す（Ctrl+Z）">↶ 戻す</button>
           <button class="icon" data-top="redo" title="やり直す（Ctrl+Y）">↷</button>
           <button class="icon" data-top="backup" title="データを JSON ファイルに書き出す">バックアップ</button>
@@ -38,6 +39,7 @@
       if (t) app.go(t.dataset.tab);
       const b = e.target.closest('[data-top]');
       if (!b) return;
+      if (b.dataset.top === 'help') K.demo.panel();
       if (b.dataset.top === 'undo') K.store.undo();
       if (b.dataset.top === 'redo') K.store.redo();
       if (b.dataset.top === 'backup') {
@@ -89,6 +91,8 @@
     render.same = false;
   };
 
+  app.welcome = () => welcome();
+  app.needsWelcome = () => !m.st.savedAt && !m.st.events.length && !Object.keys(m.st.ovr).length;
   function welcome() {
     const md = u.modal(
       `<h2>教務・時間割へようこそ</h2>
@@ -97,6 +101,7 @@
       <div class="card" style="margin-top:12px">
         <h3>はじめ方</h3>
         <div class="row" style="gap:10px">
+          <button class="btn" data-w="demo">▶ まず操作のデモを見る</button>
           <button class="btn primary" data-w="import">今の Excel（週行事）から取り込む</button>
           <button class="btn" data-w="restore">バックアップ（JSON）から戻す</button>
           <button class="btn" data-w="blank">空の状態から始める</button>
@@ -108,6 +113,7 @@
       const b = e.target.closest('[data-w]');
       if (!b) return;
       md.close();
+      if (b.dataset.w === 'demo') K.demo.panel();
       if (b.dataset.w === 'import') app.go('settings', 'import');
       if (b.dataset.w === 'restore') app.go('settings');
       if (b.dataset.w === 'blank') {
@@ -140,6 +146,10 @@
         return;
       }
       if (u.$('.modal-back')) return;
+      if (e.key === '?' && !inField) {
+        e.preventDefault();
+        return K.demo.panel();
+      }
       const v = V[cur];
       if (v && v.key) v.key(e);
     });

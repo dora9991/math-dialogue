@@ -133,7 +133,7 @@
         const g = m.cls(x.c).g;
         const cls = mb.dataset.merge === 'grade' ? m.st.classes.filter((c) => c.g === g).map((c) => c.id) : mb.dataset.merge === 'all' ? m.st.classes.map((c) => c.id) : ui.sel.map((y) => y.c);
         const cur = (m.base(ui.term).cells[`${x.wd}|${x.s}|${x.c}`] || {}).t || '';
-        const text = prompt('まとめた枠に入れる文字（例：読書・総）', cur);
+        const text = await u.ask('まとめた枠に入れる文字', cur, { help: '例：読書・総' });
         if (text == null) return;
         ops.baseMerge(ui.term, x.wd, x.s, cls, text.trim());
         ui.sel = cls.map((c) => ({ wd: x.wd, s: x.s, c }));
@@ -160,7 +160,7 @@
         const r = td.dataset.r;
         const b = m.base(ui.term);
         const cur = b.staff[`${wd}|${r}`] || '';
-        const v = prompt(`${u.WD[wd]}曜 ${Number(r) + 1}行目の「出張等」（毎週の定例。空にすると消す）`, cur);
+        const v = await u.ask(`${u.WD[wd]}曜 ${Number(r) + 1}行目の「出張等」`, cur, { help: '毎週の定例（④運営委員会 など）。空にすると消します。' });
         if (v == null) return;
         K.store.commit('定例の書きこみ', () => {
           if (v.trim()) b.staff[`${wd}|${r}`] = v.trim();

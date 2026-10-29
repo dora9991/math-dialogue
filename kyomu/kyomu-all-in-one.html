@@ -205,7 +205,7 @@ table.xs td {
 .print-doc tr.sun td, .print-doc tr.hol td, .print-doc td.sun, .print-doc td.hol { background: #fbe4e2; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .print-doc tr.sat td, .print-doc td.sat { background: #e6eef8; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .print-doc td.d { text-align: right; width: 8mm; font-weight: bold; }
-.print-doc td.w, .print-doc td.wk { text-align: center; width: 9mm; }
+.print-doc td.w, .print-doc td.wkn { text-align: center; width: 9mm; }
 .print-doc table.yr td { height: 4.7mm; font-size: 7pt; white-space: nowrap; overflow: hidden; padding: 0 2px; }
 .print-doc table.yr td.dn { width: 6mm; text-align: center; font-weight: bold; }
 
@@ -398,7 +398,7 @@ table.mon th, table.mon td { border: 1px solid #c9d0d7; padding: 3px 6px; vertic
 table.mon th { background: #f3f5f7; }
 table.mon td.d { width: 34px; text-align: right; font-weight: 700; }
 table.mon td.w { width: 26px; text-align: center; }
-table.mon td.wk { width: 44px; text-align: center; color: var(--sub); font-size: 12px; }
+table.mon td.wkn { width: 44px; text-align: center; color: var(--sub); font-size: 12px; }
 table.mon tr.sun td.w, table.mon tr.hol td.w, table.mon tr.sun td.d, table.mon tr.hol td.d { color: #c62828; }
 table.mon tr.sat td.w, table.mon tr.sat td.d { color: #1565c0; }
 table.mon tr.off td { background: #f6f7f8; }
@@ -458,6 +458,56 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
   #print-area .page { margin: 0; box-shadow: none; break-after: page; page-break-after: always; }
   #print-area .page:last-child { break-after: auto; page-break-after: auto; }
 }
+
+/* ---------- 操作デモ ---------- */
+.top .demo-btn { background: #ffd400; color: #22324a; border-color: #ffd400; font-weight: 700; }
+.top .demo-btn:hover { background: #ffe34d; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag {
+  display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  border: 1px solid #c9d6e2; background: #f5f9fc; color: var(--ink); border-radius: 10px;
+  padding: 7px 12px 7px 30px; cursor: pointer; position: relative; text-align: left; font-weight: 700; min-width: 200px;
+}
+.tag small { font-weight: 400; color: var(--sub); font-size: 11.5px; }
+.tag .pl { position: absolute; left: 10px; top: 8px; color: var(--accent); font-size: 12px; }
+.tag:hover { border-color: var(--accent); background: var(--accent-soft); }
+#demo-layer { position: fixed; inset: 0; z-index: 150; pointer-events: none; }
+#demo-layer .dm-block { position: fixed; inset: 0; pointer-events: auto; background: transparent; cursor: progress; }
+#demo-layer .dm-block.off { pointer-events: none; }
+#demo-layer .dm-ring {
+  position: fixed; border: 3px solid #ff9f1a; border-radius: 8px; box-shadow: 0 0 0 4px rgba(255, 159, 26, 0.25);
+  transition: all 0.45s ease; opacity: 0; pointer-events: none;
+}
+#demo-layer .dm-cursor {
+  position: fixed; left: 0; top: 0; width: 26px; height: 26px; transition-property: transform; transition-timing-function: cubic-bezier(0.3, 0.7, 0.3, 1);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35)); pointer-events: none; z-index: 3;
+}
+#demo-layer .dm-cursor.grab svg path { fill: #ffe9a8; }
+#demo-layer .dm-click { position: absolute; left: -12px; top: -12px; width: 30px; height: 30px; border-radius: 50%; border: 3px solid #ff9f1a; opacity: 0; }
+#demo-layer .dm-click.go { animation: dmclick 0.45s ease-out; }
+@keyframes dmclick { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+#demo-layer .dm-ghost {
+  position: fixed; left: 0; top: 0; min-width: 28px; padding: 2px 6px; background: #ffff00; border: 2px solid #ff9f1a; border-radius: 4px;
+  font-family: var(--mincho); font-weight: 700; opacity: 0; transition-property: transform, opacity; pointer-events: none; z-index: 2;
+}
+#demo-layer .dm-card {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(760px, calc(100vw - 24px));
+  background: #22324a; color: #fff; border-radius: 14px; padding: 12px 16px 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  pointer-events: auto; z-index: 4; transition: top 0.3s, bottom 0.3s;
+}
+#demo-layer .dm-card.top { bottom: auto; top: 64px; }
+#demo-layer .dm-tag { font-size: 12px; color: #ffd400; font-weight: 700; margin-bottom: 4px; }
+#demo-layer .dm-text { font-size: 16px; line-height: 1.6; min-height: 2.6em; }
+#demo-layer .dm-text b { color: #ffd400; }
+#demo-layer .dm-foot { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12.5px; }
+#demo-layer .dm-foot button, #demo-layer .dm-foot select { background: rgba(255, 255, 255, 0.12); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 6px; padding: 3px 10px; cursor: pointer; font-size: 12.5px; }
+#demo-layer .dm-foot select option { color: #000; }
+#demo-layer .dm-foot button.pri { background: #ffd400; color: #22324a; border-color: #ffd400; font-weight: 700; }
+#demo-layer .dm-prog { opacity: 0.75; }
+.dm-preview { background: #e9ecef; padding: 10px; max-height: 70vh; overflow: auto; }
+.dm-preview .page { zoom: 0.5; margin: 0 auto 10px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2); }
+@media print { #demo-layer { display: none !important; } }
+body.demo-on #toast { bottom: 170px; }
 
 </style>
 </head>
@@ -642,6 +692,32 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
         m.close();
         res(true);
       });
+    });
+
+  // 文字を1つ入れてもらう（ブラウザの prompt の代わり）。やめたら null
+  u.ask = (title, def, opts) =>
+    new Promise((res) => {
+      const o = opts || {};
+      let done = false;
+      const m = u.modal(
+        `<h3>${u.esc(title)}</h3>${o.help ? `<p class="help">${u.esc(o.help)}</p>` : ''}
+        ${o.multi ? `<textarea data-ask style="min-height:90px">${u.esc(def || '')}</textarea>` : `<input type="text" data-ask value="${u.esc(def || '')}" style="width:100%">`}
+        <div class="btns"><button class="btn" data-close>やめる</button><button class="btn primary" data-ok>${u.esc(o.ok || 'OK')}</button></div>`,
+        { onClose: () => !done && res(null) }
+      );
+      const inp = m.el.querySelector('[data-ask]');
+      setTimeout(() => {
+        inp.focus();
+        if (inp.select) inp.select();
+      }, 40);
+      const ok = () => {
+        done = true;
+        const v = inp.value;
+        m.close();
+        res(v);
+      };
+      m.el.querySelector('[data-ok]').addEventListener('click', ok);
+      if (!o.multi) inp.addEventListener('keydown', (e) => e.key === 'Enter' && ok());
     });
 
   /* 文字をセルの幅に収める（Excel の「縮小して全体を表示」と同じ考え方） */
@@ -1028,7 +1104,43 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
     return !!data;
   };
 
+  let sandbox = false;
+  // 試し箱（デモ）：この間は保存しない。終わったら元のデータ・元に戻すの履歴をそのまま戻す
+  s.sandbox = (on) => {
+    if (on) {
+      if (sandbox) return;
+      // まだ書きこんでいない変更があれば、先に保存しておく
+      try {
+        if (m.st.savedAt || undo.length) localStorage.setItem(KEY, JSON.stringify(m.st));
+      } catch (e) {
+        /* 保存できなくてもデモは続ける */
+      }
+      sandbox = { st: JSON.stringify(m.st), undo: undo.slice(), redo: redo.slice(), lastJson };
+      return;
+    }
+    if (!sandbox) return;
+    const x = sandbox;
+    sandbox = false;
+    m.st = m.normalize(JSON.parse(x.st));
+    undo.length = 0;
+    undo.push(...x.undo);
+    redo.length = 0;
+    redo.push(...x.redo);
+    lastJson = x.lastJson;
+    s.emit('sandbox-end');
+  };
+  s.inSandbox = () => !!sandbox;
+  s.load2 = (data) => {
+    // 試し箱の中で、見本のデータに入れかえる（保存しない）
+    m.st = m.normalize(data);
+    lastJson = JSON.stringify(m.st);
+    undo.length = 0;
+    redo.length = 0;
+    s.emit('sandbox-load');
+  };
+
   const write = u.debounce(() => {
+    if (sandbox) return s.status('デモ中（保存しません）');
     try {
       m.st.savedAt = new Date().toISOString();
       lastJson = JSON.stringify(m.st);
@@ -2806,7 +2918,7 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
         <label data-k="short">何校時まで</label><div data-k="short"><select data-f="upTo">${m.st.slots.filter((x) => x.counted).map((x) => `<option value="${x.id}" ${e.upTo === x.id ? 'selected' : ''}>${x.label}校時まで</option>`).join('')}</select> <span class="small muted">（それより後の校時は時間割が空になり、時数に数えない）</span></div>
         <label data-k="swap">何曜の時間割</label><div data-k="swap"><select data-f="swapWd">${[1, 2, 3, 4, 5].map((w) => `<option value="${w}" ${Number(e.swapWd) === w ? 'selected' : ''}>${u.WD[w]}曜校時</option>`).join('')}</select></div>
         <label data-k="event staff">だれが</label><div data-k="event staff" class="row">${targetBoxes(e.targets)}</div>
-        <label data-k="staff">先生の名前</label><div data-k="staff"><input type="text" data-f="who" value="${u.esc(e.who || '')}" placeholder="例：山田、佐藤（その時間の授業に注意が出ます）" style="width:100%"></div>
+        <label data-k="staff">先生の名前</label><div data-k="staff"><input type="text" data-f="who" value="${u.esc(e.who || '')}" placeholder="例：山田、鈴木（その時間の授業に注意が出ます）" style="width:100%"></div>
         <label data-k="event staff">時間</label><div data-k="event staff" class="row"><select data-f="from">${slotOptions(e.from, true)}</select> 〜 <select data-f="to"><option value="">（同じ）</option>${slotOptions(e.to, false)}</select></div>
         <label data-k="event">時間割の欄</label><div data-k="event" class="row"><input type="text" data-f="short" value="${u.esc(e.short || '')}" placeholder="短い名前（空なら名前）" style="width:180px"><label class="chk small"><input type="checkbox" data-f="noText" ${e.noText ? 'checked' : ''}>欄は空のまま</label></div>
         <label data-k="event">時数</label><div data-k="event"><select data-f="countAs">${countOptions(e.countAs == null ? '行事' : e.countAs)}</select> <span class="small muted">として数える</span></div>
@@ -2927,7 +3039,7 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
   //   10/3〜10/4 2年 職場体験 #総
   //   11/3 休 文化の日
   //   9/24 火曜校時
-  //   職員: 9/24 ①-② 教務会議 山田、佐藤
+  //   職員: 9/24 ①-② 教務会議 山田、鈴木
   E.parseLine = (line, fy) => {
     let s = u.norm(line).replace(/\t+/g, ' ');
     if (!s) return null;
@@ -3025,7 +3137,7 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
     const md = u.modal(
       `<h3>行事をまとめて入力</h3>
       <p class="help">1行に1つ。<b>日付 → 対象 → 校時 → 名前</b> の順に書きます（対象・校時はなくてもよい）。Excel の年間行事予定から「日付」と「行事名」の列をコピーして貼りつけてもOK。<br>
-      例：<code>10/3 全校 1-6 体育大会</code>　<code>10/14〜10/16 2年 5-6校時 職場体験 #総</code>　<code>11/3 休 文化の日</code>　<code>9/24 火曜校時</code>　<code>7/13〜7/16 短縮4 三者面談</code>　<code>職員: 9/24 ④ 運営委員会 山田、佐藤</code><br>
+      例：<code>10/3 全校 1-6 体育大会</code>　<code>10/14〜10/16 2年 5-6校時 職場体験 #総</code>　<code>11/3 休 文化の日</code>　<code>9/24 火曜校時</code>　<code>7/13〜7/16 短縮4 三者面談</code>　<code>職員: 9/24 ④ 運営委員会 山田、鈴木</code><br>
       <code>#総</code> は「総合として数える」、<code>#なし</code> は時数に数えない（ふつうは「行事」として数えます）。</p>
       <textarea data-b style="min-height:180px" placeholder="4/6 全校 1-6 始業式"></textarea>
       <div class="preview" data-pv>ここに読み取った結果が出ます</div>
@@ -3116,6 +3228,14 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
     },
   };
   const redraw = () => V.week.el && draw(V.week.el);
+  // デモの前後で、選んでいるコマなどを空にする（mon も消すと、次に開いたとき今週から）
+  V.week.resetUi = (all) => {
+    ui.sel = [];
+    ui.swapFrom = null;
+    ui.hl = null;
+    ui.cntMode = 'week';
+    if (all) ui.mon = null;
+  };
   V.week.redraw = redraw;
   V.week.go = (d) => {
     ui.mon = u.monday(d);
@@ -3253,7 +3373,8 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
         ・シートのコマをクリックで選ぶ（Shift で横に広げる、Ctrl/⌘ で追加）<br>
         ・コマを<b>ドラッグして別のコマに落とす</b>と入れ替え。記録が右と「出張等」の欄に残ります<br>
         ・ダブルクリックで文字を直接入力<br>
-        ・行事・出張等の欄をクリックすると、書きこみ・行事の追加ができます</p></div>`;
+        ・行事・出張等の欄をクリックすると、書きこみ・行事の追加ができます</p>
+        <button class="btn small" data-act="demo">▶ 操作のデモを見る</button></div>`;
     const x = ui.sel[0];
     const r = m.cell(x.d, x.s, x.c);
     const multi = ui.sel.length > 1;
@@ -3612,11 +3733,11 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
   }
 
   // お知らせの吹き出し（その日の行事欄の2行目から6行ぶん）
-  function addBox(i) {
+  async function addBox(i) {
     const d = u.add(ui.mon, i);
     let row = 2;
     for (let k = 0; k < i; k++) row += m.day(u.add(ui.mon, k)).layout.length + 1;
-    const text = prompt('吹き出しに書く文（印刷にも出ます）', '');
+    const text = await u.ask('吹き出しに書く文（印刷にも出ます）', '', { multi: true });
     if (!text) return;
     K.store.commit('吹き出しを足す', (st) => {
       const w = (st.weekMeta[ui.mon] = st.weekMeta[ui.mon] || {});
@@ -3722,13 +3843,14 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
         const g = m.cls(x.c).g;
         const cls = b.dataset.merge === 'grade' ? m.st.classes.filter((c) => c.g === g).map((c) => c.id) : b.dataset.merge === 'all' ? m.st.classes.map((c) => c.id) : ui.sel.map((y) => y.c);
         const cur = m.cell(x.d, x.s, x.c).t;
-        const t = prompt('まとめた枠に入れる文字（例：学年集会・自習・総）', cur || '');
+        const t = await u.ask('まとめた枠に入れる文字', cur || '', { help: '例：学年集会・自習・総（空にすると空の枠）' });
         if (t == null) return;
         ops.merge(x.d, x.s, cls, t.trim());
         ui.sel = cls.map((c) => ({ d: x.d, s: x.s, c }));
       }
       if (b.dataset.mark != null) ops.mark(ui.sel, b.dataset.mark);
       if (b.dataset.act === 'copy') copyNotice();
+      if (b.dataset.act === 'demo') K.demo.panel();
       if (b.dataset.act === 'boxadd') addBox(Number(side.querySelector('[data-boxday]').value));
       if (b.dataset.boxdel != null)
         K.store.commit('吹き出しを消す', (st) => {
@@ -3836,7 +3958,7 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
       const wk = wd === 1 || d === first ? m.weekNo(u.monday(d)) : '';
       const note = !day.school && !day.term && !day.hol && wd >= 1 && wd <= 5 ? '休業期間' : '';
       rows += `<tr class="${cls}" data-d="${d}">
-        <td class="d">${u.day(d)}</td><td class="w">${u.WD[wd]}</td><td class="wk">${wk ? `第${wk}週` : ''}</td>
+        <td class="d">${u.day(d)}</td><td class="w">${u.WD[wd]}</td><td class="wkn">${wk ? `第${wk}週` : ''}</td>
         <td class="evs" data-add="event">${day.hol ? `<span class="evi k-holiday">${u.esc(day.hol)}</span>` : ''}${stu.map((e) => evHtml(e, d)).join('')}${note ? `<span class="tg muted">${note}</span>` : ''}</td>
         <td class="evs" data-add="staff">${stf.map((e) => evHtml(e, d)).join('')}</td>
         <td class="w">${day.school ? '○' : ''}</td>
@@ -4397,7 +4519,7 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
         const g = m.cls(x.c).g;
         const cls = mb.dataset.merge === 'grade' ? m.st.classes.filter((c) => c.g === g).map((c) => c.id) : mb.dataset.merge === 'all' ? m.st.classes.map((c) => c.id) : ui.sel.map((y) => y.c);
         const cur = (m.base(ui.term).cells[`${x.wd}|${x.s}|${x.c}`] || {}).t || '';
-        const text = prompt('まとめた枠に入れる文字（例：読書・総）', cur);
+        const text = await u.ask('まとめた枠に入れる文字', cur, { help: '例：読書・総' });
         if (text == null) return;
         ops.baseMerge(ui.term, x.wd, x.s, cls, text.trim());
         ui.sel = cls.map((c) => ({ wd: x.wd, s: x.s, c }));
@@ -4424,7 +4546,7 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
         const r = td.dataset.r;
         const b = m.base(ui.term);
         const cur = b.staff[`${wd}|${r}`] || '';
-        const v = prompt(`${u.WD[wd]}曜 ${Number(r) + 1}行目の「出張等」（毎週の定例。空にすると消す）`, cur);
+        const v = await u.ask(`${u.WD[wd]}曜 ${Number(r) + 1}行目の「出張等」`, cur, { help: '毎週の定例（④運営委員会 など）。空にすると消します。' });
         if (v == null) return;
         K.store.commit('定例の書きこみ', () => {
           if (v.trim()) b.staff[`${wd}|${r}`] = v.trim();
@@ -4569,7 +4691,7 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
           ${ui.tab !== 'assign' ? '<button class="btn primary" data-act="print">印刷・PDF</button>' : ''}
         </div>
         <div class="card">
-          ${ui.tab === 'assign' ? `<h2>担当表</h2><p class="help">クラス×教科ごとに、担当の先生の名前を入れます（2人なら「山田・佐藤」）。Excel の表をコピーして、左上のマスを選んで貼りつけることもできます。<br>入れると：①入れ替えのとき、先生があいているコマが緑に光る　②同じ先生が同じ時間に2クラスにいると赤い枠　③職員の予定に「だれが」を書くと、その先生の授業に⚠</p><div style="overflow:auto">${assignTable()}</div>`
+          ${ui.tab === 'assign' ? `<h2>担当表</h2><p class="help">クラス×教科ごとに、担当の先生の名前を入れます（2人なら「山田・鈴木」）。Excel の表をコピーして、左上のマスを選んで貼りつけることもできます。<br>入れると：①入れ替えのとき、先生があいているコマが緑に光る　②同じ先生が同じ時間に2クラスにいると赤い枠　③職員の予定に「だれが」を書くと、その先生の授業に⚠</p><div style="overflow:auto">${assignTable()}</div>`
           : ui.tab === 'one' ? `<h2>${u.esc(ui.who || '先生ごとの時間割')}</h2>${personal(ui.who, ui.mon)}`
           : `<h2>全員の週　<span class="small muted">第${m.weekNo(ui.mon)}週</span></h2><p class="help">空いているマス＝その時間は授業なし。自習監督や代わりの先生を探すときに。赤＝同じ時間に2クラス／不在なのに授業あり。</p><div style="overflow:auto">${matrix(ui.mon)}</div>`}
         </div></div>`;
@@ -5050,6 +5172,806 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
   };
 })();
 
+/* ---- js/demo-data.js ---- */
+/* デモ用の見本の学校（「見本中学校」）。先生の名前も時間割もすべて架空。
+   毎回おなじ時間割になるように、決まった乱数で作る。 */
+(function () {
+  const K = window.K;
+  const u = K.u;
+  const m = K.m;
+  const DD = (K.demoData = {});
+
+  // 決まった順番で出る乱数
+  function rng(seed) {
+    let a = seed >>> 0;
+    return () => {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const shuffle = (arr, r) => {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(r() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  // 学年ごとの週の時数（固定のコマ：月3 道・木7 学・金5〜6 総 をのぞく 27 コマ）
+  const COUNTS = {
+    1: { 国: 4, 社: 3, 数: 4, 理: 3, 英: 4, 音: 2, 美: 1, 体: 3, 技: 1, 家: 1, 書: 1 },
+    2: { 国: 4, 社: 3, 数: 4, 理: 4, 英: 4, 音: 1, 美: 1, 体: 3, 技: 1, 家: 1, 英ALT: 1 },
+    3: { 国: 3, 社: 4, 数: 4, 理: 4, 英: 4, 音: 1, 美: 1, 体: 3, 技家: 1, 探: 1, 英ALT: 1 },
+  };
+  // 担当（架空）
+  const T = {
+    国: ['山田', '鈴木', '高橋'],
+    社: ['伊藤', '伊藤', '渡辺'],
+    数: ['中村', '小川', '加藤'],
+    理: ['吉田', '山本', '森'],
+    英: ['池田', '前田', '岡田'],
+    英ALT: [null, '前田', '岡田'],
+    音: ['長谷川', '長谷川', '長谷川'],
+    美: ['村上', '村上', '村上'],
+    体: ['近藤・坂本', '近藤・坂本', '近藤・坂本'],
+    技: ['遠藤', '遠藤', null],
+    家: ['青木', '青木', null],
+    技家: [null, null, '原田'],
+    書: ['山田', null, null],
+  };
+  const HR = { '1-1': '山田', '1-2': '中村', '1-3': '吉田', '2-1': '鈴木', '2-2': '小川', '2-3': '山本', '3-1': '高橋', '3-2': '加藤', '3-3': '森' };
+
+  function makeTimetable(classes, daySlots) {
+    const free = [];
+    for (let wd = 1; wd <= 5; wd++)
+      daySlots[wd].forEach((s) => {
+        if (s === 'am' || s === 'pm' || s === '7') return;
+        if (wd === 1 && s === '3') return;
+        if (wd === 5 && (s === '5' || s === '6')) return;
+        free.push(`${wd}|${s}`);
+      });
+    const teacherOf = (cid, sj) => {
+      if (sj === '探') return [HR[cid]];
+      const g = Number(cid[0]);
+      const t = T[sj] && T[sj][g - 1];
+      return t ? t.split('・') : [];
+    };
+    for (let seed = 1; seed < 400; seed++) {
+      const r = rng(seed * 7919);
+      const cells = {};
+      const busy = {}; // slot -> Set(先生)
+      const mark = (slot, names) => names.forEach((n) => (busy[slot] = busy[slot] || new Set()).add(n));
+      const isBusy = (slot, names) => names.some((n) => busy[slot] && busy[slot].has(n));
+      const left = {};
+      classes.forEach((c) => (left[c.id] = Object.assign({}, COUNTS[c.g])));
+      let ok = true;
+      // 体育は学年そろって同じ時間（先生は学年をまたいで同じなので、学年どうしはずらす）
+      for (const g of [1, 2, 3]) {
+        const ids = classes.filter((c) => c.g === g).map((c) => c.id);
+        const cand = shuffle(free, r).filter((sl) => !isBusy(sl, teacherOf(ids[0], '体')));
+        const days = new Set();
+        const pick = [];
+        for (const sl of cand) {
+          const wd = sl.split('|')[0];
+          if (days.has(wd)) continue;
+          pick.push(sl);
+          days.add(wd);
+          if (pick.length === 3) break;
+        }
+        if (pick.length < 3) ok = false;
+        pick.forEach((sl) => {
+          ids.forEach((id) => {
+            cells[`${sl}|${id}`] = '体';
+            left[id].体--;
+          });
+          mark(sl, teacherOf(ids[0], '体'));
+        });
+      }
+      if (!ok) continue;
+      // のこりを、先生が重ならないように埋める
+      for (const sl of shuffle(free, r)) {
+        const wd = sl.split('|')[0];
+        for (const c of shuffle(classes, r)) {
+          if (cells[`${sl}|${c.id}`]) continue;
+          const today = free.filter((x) => x.split('|')[0] === wd).map((x) => cells[`${x}|${c.id}`]);
+          const opts = Object.entries(left[c.id])
+            .filter(([sj, n]) => n > 0 && !isBusy(sl, teacherOf(c.id, sj)))
+            .sort((a, b) => b[1] - a[1] + (today.includes(a[0]) ? 2 : 0) - (today.includes(b[0]) ? 2 : 0) + (r() - 0.5) * 0.5);
+          if (!opts.length) {
+            ok = false;
+            break;
+          }
+          const sj = opts[0][0];
+          cells[`${sl}|${c.id}`] = sj;
+          left[c.id][sj]--;
+          mark(sl, teacherOf(c.id, sj));
+        }
+        if (!ok) break;
+      }
+      if (ok) return { cells, teacherOf };
+    }
+    return null;
+  }
+
+  DD.make = (year) => {
+    const st = m.blank(year);
+    st.school.name = '見本中学校';
+    st.opt.printDate = true;
+    const tt = makeTimetable(st.classes, st.daySlots);
+    const base = { cells: {}, staff: { '2|5': '④運営委員会', '2|7': '⑥1年会議', '3|2': '①教育相談', '4|2': '①2年会議', '4|6': '⑤3年会議' } };
+    for (let wd = 1; wd <= 5; wd++)
+      st.daySlots[wd].forEach((s) =>
+        st.classes.forEach((c) => {
+          const k = `${wd}|${s}|${c.id}`;
+          if (s === 'am') base.cells[k] = { t: '読書', m: `am${wd}g${c.g}` };
+          else if (s === 'pm') base.cells[k] = { t: 'C' };
+          else if (s === '7') base.cells[k] = { t: '学' };
+          else if (wd === 1 && s === '3') base.cells[k] = { t: '道' };
+          else if (wd === 5 && (s === '5' || s === '6')) base.cells[k] = { t: '総' };
+          else if (tt) base.cells[k] = { t: tt.cells[`${wd}|${s}|${c.id}`] || '' };
+        })
+      );
+    // 後期は、技術と家庭の時間を入れかえた形
+    const late = u.clone(base);
+    Object.values(late.cells).forEach((x) => {
+      if (x.t === '技') x.t = '家';
+      else if (x.t === '家') x.t = '技';
+    });
+    st.bases = { t1: u.clone(base), t2: u.clone(base), t3: late, t4: u.clone(late) };
+    // 担当表
+    if (tt)
+      st.classes.forEach((c) => {
+        Object.keys(T).forEach((sj) => {
+          const n = tt.teacherOf(c.id, sj);
+          if (n.length) st.teach[`${c.id}|${sj}`] = n.join('・');
+        });
+        ['道', '学', '総', '探'].forEach((sj) => (st.teach[`${c.id}|${sj}`] = HR[c.id]));
+      });
+    // 計画時数（標準授業時数）
+    const STD = { 国: [140, 140, 105], 社: [105, 105, 140], 数: [140, 105, 140], 理: [105, 140, 140], 英: [140, 140, 140], 音: [45, 35, 35], 美: [45, 35, 35], 体: [105, 105, 105], 技家: [70, 70, 35], 道: [35, 35, 35], 総: [50, 70, 70], 学: [35, 35, 35] };
+    [1, 2, 3].forEach((g) => {
+      st.targets[g] = {};
+      Object.entries(STD).forEach(([k, v]) => (st.targets[g][k] = v[g - 1]));
+    });
+    // 行事（見本）
+    const t1 = st.terms[0].start;
+    const t3 = st.terms[2].start;
+    const ev = (o) => st.events.push(Object.assign({ id: u.uid(), kind: 'event', targets: ['all'], inYear: true, inMonth: true, countAs: '行事' }, o));
+    ev({ date: t1, title: '始業式', from: '1', to: '2' });
+    ev({ date: u.add(t1, 1), title: '入学式', targets: ['g1'], from: 'all', noText: false });
+    ev({ date: u.add(t1, 22), title: '体育大会', from: 'all' });
+    ev({ date: st.terms[1].start, title: '始業式', from: '1', to: '2' });
+    ev({ date: u.add(st.terms[1].start, 9), title: '文化祭', from: 'all' });
+    ev({ date: t3, title: '後期始業式', from: '1' });
+    st.events.push({ id: u.uid(), kind: 'staff', date: u.add(t3, 1), title: '職員会議', from: '7', targets: ['all'], inYear: false, inMonth: true });
+    ev({ date: u.add(t3, 9), title: '避難訓練', from: '5', place: '運動場' });
+    ev({ date: u.add(t3, 16), title: '中間考査', from: 'all', noText: false, countAs: '' });
+    ev({ date: st.terms[1].end, title: '前期終業式', from: '6' });
+    // 少しだけ過去の週の変更（時数の「学年内の差」が見えるように）
+    const mon0 = u.monday(u.add(t3, 7));
+    const put = (d, s, c, t) => (st.ovr[`${d}|${s}|${c}`] = { t, mk: 'o' });
+    put(u.add(mon0, 1), '2', '1-2', '自習');
+    put(u.add(mon0, 2), '4', '1-2', '自習');
+    put(u.add(mon0, 3), '1', '2-3', '自習');
+    st.savedAt = new Date().toISOString();
+    return st;
+  };
+
+  // デモで使う週（後期の、平日がぜんぶ授業日で行事のない週）
+  DD.week = () => {
+    const t3 = m.st.terms[2];
+    let mon = u.monday(u.add(t3.start, 14));
+    for (let k = 0; k < 10; k++, mon = u.add(mon, 7)) {
+      const ok = [0, 1, 2, 3, 4].every((i) => {
+        const day = m.day(u.add(mon, i));
+        return day.school && !day.events.some((e) => e.kind !== 'staff');
+      });
+      if (ok) return mon;
+    }
+    return u.monday(u.add(t3.start, 14));
+  };
+})();
+
+/* ---- js/demo.js ---- */
+/* 操作デモ：「やりたいこと」のタグを押すと、見本の学校で、実際の画面の上でカーソルが動いて操作を見せる。
+   デモの間は保存しない（試し箱）。終わったら、元のデータ・元の画面に戻る。 */
+(function () {
+  const K = window.K;
+  const u = K.u;
+  const m = K.m;
+  const D = (K.demo = {});
+  D.speed = Number(localStorage.getItem('kyomu-demo-speed') || 1); // 1＝ふつう、1.6＝ゆっくり、0.55＝はやく
+  let R = null; // いま流れているデモ
+
+  class Stop extends Error {}
+
+  /* ---------- 画面の部品 ---------- */
+  function layer() {
+    let el = u.$('#demo-layer');
+    if (el) return el;
+    el = u.h(`<div id="demo-layer">
+      <div class="dm-block"></div>
+      <div class="dm-ring"></div>
+      <div class="dm-ghost"></div>
+      <div class="dm-cursor"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M3 2l7.5 19 2.6-7.9L21 10.5z" fill="#fff" stroke="#111" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="dm-click"></span></div>
+      <div class="dm-card" role="status" aria-live="polite">
+        <div class="dm-tag"></div>
+        <div class="dm-text"></div>
+        <div class="dm-foot">
+          <span class="dm-prog"></span>
+          <span style="flex:1"></span>
+          <button data-dm="pause">一時停止</button>
+          <select data-dm="speed" title="速さ"><option value="1.6">ゆっくり</option><option value="1">ふつう</option><option value="0.55">はやく</option></select>
+          <button data-dm="stop">やめる</button>
+        </div>
+      </div>
+    </div>`);
+    document.body.appendChild(el);
+    el.querySelector('[data-dm="speed"]').value = String(D.speed);
+    el.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-dm]');
+      if (!b || !R) return;
+      if (b.dataset.dm === 'pause') {
+        R.paused = !R.paused;
+        b.textContent = R.paused ? '再生' : '一時停止';
+      }
+      if (b.dataset.dm === 'stop') D.stop();
+      if (b.dataset.dm === 'again') D.play(R.id);
+      if (b.dataset.dm === 'others') {
+        D.stop();
+        D.panel();
+      }
+      if (b.dataset.dm === 'next' && R.next) D.play(R.next);
+    });
+    el.querySelector('[data-dm="speed"]').addEventListener('change', (e) => {
+      D.speed = Number(e.target.value);
+      localStorage.setItem('kyomu-demo-speed', D.speed);
+    });
+    return el;
+  }
+
+  /* ---------- 動かす道具 ---------- */
+  const H = {};
+  H.sleep = async (ms) => {
+    const end = Date.now() + ms * D.speed;
+    while (Date.now() < end || (R && R.paused)) {
+      if (!R || R.stopped) throw new Stop();
+      await new Promise((r) => setTimeout(r, 40));
+    }
+    if (!R || R.stopped) throw new Stop();
+  };
+  H.read = (text) => H.sleep(1400 + String(text).length * 55);
+
+  // 要素を待って探す（セレクタか、要素を返す関数）
+  H.find = async (target, ms) => {
+    const end = Date.now() + (ms || 5000);
+    for (;;) {
+      if (!R || R.stopped) throw new Stop();
+      const el = typeof target === 'function' ? target() : u.$(target);
+      if (el && el.getClientRects().length) return el;
+      if (Date.now() > end) throw new Error('デモの相手が見つかりませんでした：' + (typeof target === 'string' ? target : '（コマ）'));
+      await new Promise((r) => setTimeout(r, 60));
+    }
+  };
+
+  function inView(el) {
+    const r = el.getBoundingClientRect();
+    return r.top >= 60 && r.bottom <= window.innerHeight - 150 && r.left >= 0 && r.right <= window.innerWidth;
+  }
+  H.show = async (el) => {
+    if (!inView(el)) {
+      el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: D.speed < 0.2 ? 'auto' : 'smooth' });
+      await H.sleep(450);
+    }
+  };
+
+  let cx = window.innerWidth / 2;
+  let cy = window.innerHeight / 2;
+  function placeCursor(x, y, dur) {
+    const c = u.$('#demo-layer .dm-cursor');
+    c.style.transitionDuration = `${Math.max(0, dur)}ms`;
+    c.style.transform = `translate(${x - 4}px, ${y - 3}px)`;
+    cx = x;
+    cy = y;
+  }
+  function ring(el) {
+    const rg = u.$('#demo-layer .dm-ring');
+    if (!el) {
+      rg.style.opacity = 0;
+      return;
+    }
+    const r = el.getBoundingClientRect();
+    rg.style.opacity = 1;
+    rg.style.left = `${r.left - 4}px`;
+    rg.style.top = `${r.top - 4}px`;
+    rg.style.width = `${r.width + 8}px`;
+    rg.style.height = `${r.height + 8}px`;
+    // 説明の札が、光らせたところに重ならないように
+    const card = u.$('#demo-layer .dm-card');
+    card.classList.toggle('top', r.top + r.height / 2 > window.innerHeight * 0.55);
+  }
+  H.move = async (el) => {
+    await H.show(el);
+    const r = el.getBoundingClientRect();
+    const x = r.left + Math.min(r.width / 2, r.width - 6);
+    const y = r.top + Math.min(r.height / 2, 14);
+    const dist = Math.hypot(x - cx, y - cy);
+    const dur = Math.min(900, 250 + dist * 0.7) * D.speed;
+    placeCursor(x, y, dur);
+    ring(el);
+    await H.sleep(Math.min(900, 250 + dist * 0.7) + 120);
+    return el;
+  };
+  const pulse = async () => {
+    const c = u.$('#demo-layer .dm-click');
+    c.classList.remove('go');
+    void c.offsetWidth;
+    c.classList.add('go');
+    await H.sleep(260);
+  };
+  H.click = async (target, opts) => {
+    const el = await H.move(await H.find(target));
+    await pulse();
+    const o = opts || {};
+    if (el.matches('input[type=checkbox],input[type=radio],button,a,label') && !o.shift && !o.ctrl) el.click();
+    else el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window, shiftKey: !!o.shift, ctrlKey: !!o.ctrl }));
+    await H.sleep(o.wait != null ? o.wait : 380);
+    return el;
+  };
+  H.select = async (target, value) => {
+    const el = await H.move(await H.find(target));
+    await pulse();
+    el.value = value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    await H.sleep(380);
+    return el;
+  };
+  H.type = async (target, text, opts) => {
+    const el = await H.move(await H.find(target));
+    await pulse();
+    el.focus();
+    if (!opts || opts.clear !== false) el.value = '';
+    for (const ch of String(text)) {
+      el.value += ch;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      await H.sleep(ch === '\n' ? 160 : 55);
+    }
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    await H.sleep(250);
+    return el;
+  };
+  H.setDate = async (target, value) => H.select(target, value);
+  // ドラッグ（つかんで運んで、落とす）
+  H.drag = async (from, to) => {
+    const a = await H.move(await H.find(from));
+    const ghost = u.$('#demo-layer .dm-ghost');
+    ghost.textContent = (a.textContent || '').trim() || '空き';
+    const ra = a.getBoundingClientRect();
+    ghost.style.transitionDuration = '0ms';
+    ghost.style.transform = `translate(${ra.left + ra.width / 2 - 14}px, ${ra.top + ra.height / 2 - 12}px)`;
+    ghost.style.opacity = 1;
+    u.$('#demo-layer .dm-cursor').classList.add('grab');
+    const dt = typeof DataTransfer === 'function' ? new DataTransfer() : null;
+    a.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    await H.sleep(250);
+    const b = await H.find(to);
+    await H.show(b);
+    const rb = b.getBoundingClientRect();
+    const dur = 900 * D.speed;
+    ghost.style.transitionDuration = `${dur}ms`;
+    ghost.style.transform = `translate(${rb.left + rb.width / 2 - 14}px, ${rb.top + rb.height / 2 - 12}px)`;
+    placeCursor(rb.left + rb.width / 2, rb.top + rb.height / 2, dur);
+    ring(b);
+    await H.sleep(950);
+    b.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    await H.sleep(150);
+    b.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    a.dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer: dt }));
+    ghost.style.opacity = 0;
+    u.$('#demo-layer .dm-cursor').classList.remove('grab');
+    await H.sleep(450);
+  };
+  // 説明を出して、読む時間だけ待つ
+  H.say = async (text, opts) => {
+    const t = u.$('#demo-layer .dm-text');
+    t.innerHTML = u.esc(text).replace(/「([^」]+)」/g, '「<b>$1</b>」');
+    R.n++;
+    u.$('#demo-layer .dm-prog').textContent = `${Math.min(R.n, R.total)} / ${R.total}`;
+    if (!opts || !opts.nowait) await H.read(text);
+  };
+  H.point = async (target, text) => {
+    const el = await H.move(await H.find(target));
+    if (text) await H.say(text);
+    return el;
+  };
+  H.go = async (view, ...p) => {
+    ring(null);
+    K.app.go(view, ...p);
+    await H.sleep(500);
+    window.scrollTo(0, 0);
+  };
+  H.okModal = async () => {
+    const btns = u.$$('.modal-back .modal [data-ok]');
+    if (btns.length) await H.click(() => btns[btns.length - 1]);
+  };
+  H.closeModals = () => u.$$('.modal-back').forEach((x) => x.remove());
+  H.text = async (target) => ((await H.find(target)).textContent || '').trim();
+
+  /* ---------- 見本の週のコマを指す ---------- */
+  const W = {};
+  W.day = (i) => u.add(W.mon, i);
+  // 週のシートのコマ（i：月=0…金=4、s：校時、c：クラス）
+  W.cell = (i, s, c) => () => u.$$(`#main .xs td.c[data-d="${W.day(i)}"][data-s="${s}"]`).find((td) => td.dataset.c.split(',').includes(c));
+  W.stLine = (i, s) => () => {
+    const lay = m.day(W.day(i)).layout;
+    return u.$(`#main .xs td.st[data-d="${W.day(i)}"][data-r="${lay.indexOf(s) + 1}"]`);
+  };
+  W.evLine = (i, r) => () => u.$(`#main .xs td.ev[data-d="${W.day(i)}"][data-r="${r}"]`);
+  W.baseCell = (wd, s, c) => () => u.$$(`#main .xs td.c[data-wd="${wd}"][data-s="${s}"]`).find((td) => td.dataset.c.split(',').includes(c));
+  W.subj = (i, s, c) => m.cell(W.day(i), s, c).t;
+  // 入れ替えの相手：同じクラスで、ちがう教科・ふつうの授業のコマ（道・総・学などはさける）
+  W.partner = (i0, s0, c, fromDay) => {
+    const t0 = W.subj(i0, s0, c);
+    const fixed = ['道', '総', '学', 'C', '読書', ''];
+    for (let i = fromDay == null ? i0 + 1 : fromDay; i < 5; i++)
+      for (const s of ['4', '2', '5', '3', '1', '6']) {
+        const t = W.subj(i, s, c);
+        if (t !== t0 && !fixed.includes(t) && !(i === i0 && s === s0)) return { i, s };
+      }
+    return { i: Math.min(4, i0 + 1), s: '4' };
+  };
+  const WDN = (i) => u.WD[u.dow(W.day(i))];
+
+  /* ---------- デモの台本（やりたいこと） ---------- */
+  const S = [];
+  // 説明の数（進み具合の表示用）は、台本の中の say と、文つきの point を数える
+  const countSteps = (fn) => {
+    const src = fn.toString();
+    return (src.match(/h\.say\(/g) || []).length + (src.match(/h\.point\([^;]*?,\s*[`'"]/g) || []).length;
+  };
+  const add = (group, id, title, desc, steps) => S.push({ group, id, title, desc, steps, total: countSteps(steps) });
+
+  add('週の時間割を変える', 'swap', '授業を入れ替えたい', 'コマをドラッグして入れ替え。記録が残る', async (h) => {
+    await h.go('week', W.mon);
+    await h.say('週行事の画面です。今の Excel の週案と同じ形で、そのまま印刷できます。');
+    const p = W.partner(1, '2', '1-1', 3);
+    const a = W.subj(1, '2', '1-1');
+    const b = W.subj(p.i, p.s, '1-1');
+    await h.point(W.cell(1, '2', '1-1'), `1-1 の${WDN(1)}曜2限「${a}」を…`);
+    await h.say(`${WDN(p.i)}曜${p.s}限の「${b}」と入れ替えます。コマをつかんで、相手のコマまでドラッグします。`, { nowait: true });
+    await h.drag(W.cell(1, '2', '1-1'), W.cell(p.i, p.s, '1-1'));
+    await h.point(W.cell(p.i, p.s, '1-1'), '入れ替わりました。変えたコマは黄色になります（印刷にも出ます。消すこともできます）。');
+    await h.point('.side .logs li', '右の「この週の変更の記録」に、何と何を入れ替えたかが残ります。');
+    await h.point(W.stLine(1, '2'), '「出張等」の欄にも「1-1○は△日分」と、今の Excel と同じ書き方で自動で入ります。');
+    await h.point('[data-act="copy"]', '「お知らせ文をコピー」で、変更の一覧をメールや日報に貼りつけられます。');
+  });
+
+  add('週の時間割を変える', 'cand', '入れ替えられるコマを探したい', '先生が空いているコマが緑に光る', async (h) => {
+    await h.go('week', W.mon);
+    await h.say('入れ替えたいコマをクリックで選びます。');
+    await h.click(W.cell(2, '3', '2-1'));
+    await h.point('#main .xs td.cand-ok', '担当表が入っていると、入れ替えても先生がぶつからないコマが緑に光ります（ぶつかるコマは斜線）。');
+    await h.click('.side [data-act="swap"]');
+    await h.say('「⇄ 入れ替え」を押して（キーの S でも）、緑のコマをクリックします。', { nowait: true });
+    await h.click('#main .xs td.cand-ok');
+    await h.point('.side .logs li', '入れ替わって、記録が残りました。');
+  });
+
+  add('週の時間割を変える', 'set', '1コマだけ別の教科にしたい', '時間数調整・○日分の補充・自習', async (h) => {
+    await h.go('week', W.mon);
+    const cur = W.subj(0, '5', '1-2');
+    const to = ['国', '数', '英'].find((x) => x !== cur);
+    await h.click(W.cell(0, '5', '1-2'));
+    await h.say(`${WDN(0)}曜5限の 1-2「${cur}」を選びました。右に、教科のボタンが出ます。`);
+    await h.select('.side [data-ui="why"]', 'adjust');
+    await h.say('「出張等」の欄に残す文の書き方を選べます（○→○／時間数調整／○日分の補充／自由に書く）。');
+    await h.click(`.side .grid-btn [data-set="${to}"]`);
+    await h.point(W.cell(0, '5', '1-2'), `「${to}」になりました。手で変えたコマは橙色。`);
+    await h.point(W.stLine(0, '5'), `出張等の欄に「1-2${to}は時間数調整」と入りました。`);
+    await h.say('ダブルクリックすると、教科以外の文字（学年集会など）も直接書けます。');
+  });
+
+  add('週の時間割を変える', 'undo', '変更を取り消したい', '記録から1つずつ戻す・Ctrl+Z', async (h) => {
+    await h.go('week', W.mon);
+    await h.say('まず、試しに入れ替えをしてみます。', { nowait: true });
+    const p = W.partner(4, '1', '3-1', 4);
+    await h.drag(W.cell(4, '1', '3-1'), W.cell(p.i, p.s, '3-1'));
+    await h.point('.side .logs li', '記録が残っています。');
+    await h.click('.side .logs li [data-logact="revert"]');
+    await h.point(W.cell(4, '1', '3-1'), '「取り消す」で、その入れ替えだけ元に戻りました（記録も消えます）。');
+    await h.point('[data-top="undo"]', '直前の操作は「戻す」（Ctrl+Z）でも戻せます。「記録だけ消す」と、変更はそのままで記録の文だけ消えます。');
+  });
+
+  add('週の時間割を変える', 'merge', '学年で1くくりにしたい', '学年集会・学年取扱などを1つの枠に', async (h) => {
+    await h.go('week', W.mon);
+    await h.click(W.cell(2, '6', '3-1'));
+    await h.say('3-1 のコマを選んで、右の「3年でまとめる」を押します。');
+    await h.click('.side [data-merge="grade"]');
+    await h.type('.modal [data-ask]', '学年集会');
+    await h.okModal();
+    await h.point(W.cell(2, '6', '3-2'), '3年の3クラスが、1つの枠になりました（Excel のセルの結合と同じ見た目）。');
+    await h.say('「全校でまとめる」や、Shift で横に選んでから「選んだクラスで」もできます。まとめを解除するボタンもあります。');
+  });
+
+  add('行事', 'event', '行事を入れて、時間割を自動で埋めたい', '学年と校時を入れると、その時間が行事に', async (h) => {
+    await h.go('week', W.mon);
+    await h.click('[data-act="addev"]');
+    await h.type('.modal [data-f="title"]', '職場体験事前指導');
+    await h.setDate('.modal [data-f="date"]', W.day(3));
+    await h.click('.modal [data-tg="g2"]');
+    await h.say('だれが：2年。時間：5〜6校時。', { nowait: true });
+    await h.select('.modal [data-f="from"]', '5');
+    await h.select('.modal [data-f="to"]', '6');
+    await h.select('.modal [data-f="countAs"]', '総');
+    await h.point('.modal [data-pv]', '「総合として数える」にしました。ここに、この行事で何コマ埋まり、どの授業が減るかが出ます。');
+    await h.okModal();
+    await h.sleep(300);
+    if (u.$$('.modal-back').length) await h.okModal();
+    await h.point(W.cell(3, '5', '2-1'), '2年の5・6校時が、学年ひとくくりで自動で埋まりました。時数も「総」として数えなおされます。');
+    await h.point(W.evLine(3, 6), '行事欄にも出ます。年間行事・月行事にも同じ行事が出ます（1つのデータなので、どこで直しても全部にそろう）。');
+    await h.go('month', W.day(3).slice(0, 7));
+    await h.point(() => u.$(`#main tr[data-d="${W.day(3)}"] td.evs`), '月行事に出ています。■ がついているのは、時間割を埋める行事です。');
+  });
+
+  add('行事', 'bulk', '行事をまとめて入れたい', '1行に1つ。Excel から貼りつけても', async (h) => {
+    await h.go('year');
+    await h.say('年間行事の画面です。日が縦、月が横の 1 枚の表です。');
+    await h.click('[data-act="bulk"]');
+    const y = m.st.school.year;
+    const d1 = u.md(W.day(1));
+    const d3 = u.md(W.day(3));
+    const lines = [`${d1} 全校 6校時 生徒総会`, `${d3} 1年 5-6校時 校外学習事前指導 #総`, `${u.md(u.add(W.mon, 7))} 休 開校記念日`, `職員: ${d1} ④ 教務会議 山田、鈴木`];
+    await h.type('.modal textarea[data-b]', lines.join('\n'));
+    await h.point('.modal [data-pv]', '日付 → 対象 → 校時 → 名前 の順に読み取って、下にならべて見せます（#総 は「総合として数える」）。');
+    await h.okModal();
+    await h.point(() => u.$(`#main td.cell[data-d="${W.day(1)}"]`), `年間行事に入りました。週行事の時間割も、その時間が自動で埋まります（${y}年度）。`);
+  });
+
+  add('行事', 'swapday', '曜日を振りかえたい（○曜校時）', '「木曜を火曜の時間割で」など', async (h) => {
+    await h.go('week', W.mon);
+    await h.click('[data-act="addev"]');
+    await h.select('.modal [data-f="kind"]', 'swap');
+    await h.setDate('.modal [data-f="date"]', W.day(4));
+    await h.select('.modal [data-f="swapWd"]', '1');
+    await h.point('.modal [data-pv]', `${WDN(4)}曜日を「月曜校時」にします。`);
+    await h.okModal();
+    await h.point(W.cell(4, '1', '1-1'), `${WDN(4)}曜日が、月曜日の時間割に変わりました。行事欄には「月曜校時」と出ます。`);
+  });
+
+  add('行事', 'short', '短縮日課にしたい（○校時まで）', '三者面談など。後ろの校時は数えない', async (h) => {
+    await h.go('week', W.mon);
+    await h.click('[data-act="addev"]');
+    await h.select('.modal [data-f="kind"]', 'short');
+    await h.type('.modal [data-f="title"]', '三者面談');
+    await h.setDate('.modal [data-f="date"]', W.day(1));
+    await h.setDate('.modal [data-f="end"]', W.day(2));
+    await h.select('.modal [data-f="upTo"]', '4');
+    await h.okModal();
+    await h.point(W.cell(1, '5', '1-1'), '2日間、5校時からあとが空になりました。時数にも数えません。');
+    await h.say('1日だけなら、週行事の校時の数字をクリックして「この校時は授業なし」でもできます。');
+  });
+
+  add('行事', 'staff', '出張・会議を入れたい', '先生の名前を書くと、その先生の授業に注意', async (h) => {
+    await h.go('week', W.mon);
+    const who = m.teachersOf('1-1', W.subj(0, '1', '1-1'))[0] || '山田';
+    await h.click('[data-act="addstaff"]');
+    await h.type('.modal [data-f="title"]', '出張');
+    await h.setDate('.modal [data-f="date"]', W.day(0));
+    await h.type('.modal [data-f="who"]', who);
+    await h.select('.modal [data-f="from"]', 'all');
+    await h.okModal();
+    await h.point(W.stLine(0, '1'), `出張等の欄に「出張 ${who}」と出ました。`);
+    await h.point('#main .xs td.issue', `${who}先生の授業に赤い枠がつきます。コマを選ぶと、右に「不在」と出ます。自習や入れ替えを考える目印に。`);
+  });
+
+  add('行事', 'calendar', '月行事・年間行事を見たい', '同じ行事が月・年・週にそろって出る', async (h) => {
+    await h.go('month', W.mon.slice(0, 7));
+    await h.say('月行事：1日1行。行事・職員の予定・授業日。下に授業日数。');
+    await h.click(() => u.$(`#main tr[data-d="${W.day(2)}"] td.evs[data-add="event"]`));
+    await h.say('あいているところをクリックすると、その日に行事を追加できます。', { nowait: true });
+    await h.click('.modal [data-close]');
+    await h.go('year');
+    await h.point('#main table.yr', '年間行事：4月〜3月を1枚に。A4横（A3にも）で印刷できます。');
+    await h.point('#main table.yr tr.tot', 'いちばん下に、月ごとの授業日数。年間・期間ごとの合計も出ます。');
+  });
+
+  add('時数', 'hours', '時数を確かめたい', '累計・見込み・計画との差・学年内の差', async (h) => {
+    await h.go('week', W.mon);
+    await h.point('#main [data-cnt="week"]', '週行事の下に、その週のクラスごと・教科ごとの時数が自動で出ます。');
+    await h.click('#main [data-cnt="cum"]');
+    await h.say('「累計」で、年度のはじめからこの週までの合計に。');
+    await h.go('hours');
+    await h.click('#main [data-mode="gap"]');
+    await h.point('#main table.cnt td.gap1, #main table.cnt td.gap2', '「学年内の差」：同じ学年でいちばん多いクラスとの差。橙のクラスは時間数の調整が必要かもしれません。');
+    await h.click('#main [data-mode="diff"]');
+    await h.say('「見込み − 計画」：これからの週は基本時間割と行事から計算した見込み。赤は計画より少ない、青は多い。');
+  });
+
+  add('準備', 'base', '基本時間割をつくりたい・直したい', '期間ごと（1学期・2学期前期…）', async (h) => {
+    await h.go('base', 't1');
+    await h.say('基本時間割：1学期・2学期前期・2学期後期・3学期後期ごとにつくります（上のボタンで切りかえ）。');
+    await h.click(W.baseCell(2, '3', '1-1'));
+    await h.click('.side .grid-btn [data-set="数"]');
+    await h.say('コマを選んで、右の教科のボタンを押すと入ります。', { nowait: true });
+    const bc = (wd, s) => (m.base('t1').cells[`${wd}|${s}|1-1`] || {}).t;
+    const s2 = ['2', '1', '5', '4', '6'].find((s) => bc(3, s) !== bc(2, '4') && !['道', '総', '学'].includes(bc(3, s))) || '2';
+    await h.drag(W.baseCell(2, '4', '1-1'), W.baseCell(3, s2, '1-1'));
+    await h.say('ドラッグで入れ替えもできます。');
+    await h.point('#main table.cnt', '下に、この基本時間割の週の時数（クラス×教科）。');
+    await h.point('#main [data-copy]', 'ほかの期間からコピーして、ちがうところだけ直せます。');
+  });
+
+  add('準備', 'teachers', '空いている先生を探したい', '担当表・全員の空き時間・先生ごと', async (h) => {
+    await h.go('teachers');
+    await h.say('「全員の週」：先生×時間の一覧。空いているマスは授業なし。自習監督や代わりの先生を探すときに。');
+    await h.click('#main a[data-who]');
+    await h.say('先生の名前を押すと、その先生の週の時間割。');
+    await h.click('#main [data-tab2="assign"]');
+    await h.point('#main [data-t]', '担当表：クラス×教科ごとに先生の名前。Excel の表をコピーして貼りつけることもできます。');
+  });
+
+  add('準備', 'import', '今の Excel から取り込みたい', '週行事の .xlsx をそのまま', async (h) => {
+    await h.go('settings', 'import');
+    await h.point('#main label.btn:has([data-files])', 'ここで、今の週行事の Excel を選びます（1学期・2学期のファイルをまとめて選べます）。');
+    await h.say('基本時間割（R8の前期・後期）、週のシート（時間割・行事欄・出張等・結合・色・吹き出し）を読み取ります。');
+    await h.say('ファイルはこのパソコンのブラウザの中で読むだけで、どこにも送りません。');
+  });
+
+  add('印刷・保存', 'print', '印刷・PDFにしたい', 'Excel と同じ形で A4 縦1枚', async (h) => {
+    await h.go('week', W.mon);
+    await h.click('[data-act="print"]');
+    await h.click('.modal input[name="rng"][value="many"]');
+    await h.say('この週だけ／第○週〜第○週をまとめて。出張等の欄・変更の色を入れるかも選べます。', { nowait: true });
+    await h.click('.modal [data-go]');
+    await h.point('.dm-preview .page', 'Excel と同じ形で、1週＝A4縦1枚になります。');
+    await h.say('PDF にするときは、印刷の画面の送信先で「PDF に保存」を選びます（デモでは印刷の画面のかわりに見本を出しています）。');
+    H.closeModals();
+  });
+
+  add('印刷・保存', 'backup', 'バックアップしたい・別のパソコンに移したい', 'JSON に書き出す・戻す', async (h) => {
+    await h.point('[data-top="backup"]', 'データはこのブラウザの中だけにあります。「バックアップ」で JSON ファイルに書き出しておきます（週に1回くらい）。');
+    await h.go('settings');
+    await h.point('#main label.btn:has([data-restore])', '別のパソコンでは「バックアップから戻す」でそのファイルを読みこめば、同じ状態になります。');
+  });
+
+  // 通しで見る
+  const TOUR = ['swap', 'event', 'set', 'hours', 'print'];
+
+  /* ---------- 印刷はデモの中では見本を見せる ---------- */
+  function preview(pages, land) {
+    const md = u.modal(`<h3>印刷の見本</h3><div class="dm-preview ${land ? 'land' : ''}">${pages.join('')}</div><div class="btns"><button class="btn" data-close>閉じる</button></div>`, { wide: true, noFocus: true });
+    K.sheet.fitPages(md.el);
+  }
+
+  /* ---------- 流す・止める ---------- */
+  D.active = () => !!R;
+  D.play = async (id, chain) => {
+    const sc = S.find((x) => x.id === id);
+    if (!sc) return;
+    if (R) {
+      R.stopped = true;
+      await new Promise((r) => setTimeout(r, 80));
+    }
+    const first = !K.store.inSandbox();
+    if (first) D.origHash = location.hash;
+    H.closeModals();
+    K.store.sandbox(true);
+    K.store.load2(K.demoData.make(m.st.school.year || u.fy(u.today())));
+    W.mon = K.demoData.week();
+    const el = layer();
+    el.classList.add('on');
+    document.body.classList.add('demo-on');
+    el.querySelector('.dm-tag').textContent = `▶ ${sc.title}`;
+    el.querySelector('.dm-foot').classList.remove('done');
+    el.querySelector('[data-dm="pause"]').textContent = '一時停止';
+    if (K.views.week.resetUi) K.views.week.resetUi();
+    const me = (R = { id, n: 0, total: sc.total, paused: false, stopped: false, chain: chain || null });
+    try {
+      await sc.steps(H);
+      if (me !== R) return;
+      const next = chain && chain.length ? chain[0] : null;
+      R.next = next;
+      ring(null);
+      el.querySelector('.dm-text').innerHTML = next ? 'つづきを流します…' : 'デモはここまでです。このまま見本の学校を<b>さわってみてもOK</b>（保存されません）。「閉じる」で元のデータに戻ります。';
+      R.n = R.total;
+      el.querySelector('.dm-prog').textContent = '';
+      if (next) {
+        await H.sleep(1200);
+        return D.play(next, chain.slice(1));
+      }
+      done(el);
+    } catch (e) {
+      if (me !== R) return;
+      if (!(e instanceof Stop)) {
+        console.warn(e);
+        el.querySelector('.dm-text').textContent = 'デモをうまく進められませんでした。画面の大きさを変えて、もう一度ためしてください。';
+        done(el);
+      }
+    }
+  };
+  function done(el) {
+    if (R) R.done = true;
+    const foot = el.querySelector('.dm-foot');
+    foot.classList.add('done');
+    foot.innerHTML = `<span class="dm-prog"></span><span style="flex:1"></span><button data-dm="again">もう一度</button><button data-dm="others">ほかのデモ</button><button data-dm="stop" class="pri">閉じる</button>`;
+    u.$('#demo-layer .dm-block').classList.add('off');
+  }
+  D.stop = () => {
+    if (!R) return;
+    R.stopped = true;
+    R = null;
+    const el = u.$('#demo-layer');
+    if (el) el.remove();
+    document.body.classList.remove('demo-on');
+    H.closeModals();
+    K.store.sandbox(false);
+    if (K.views.week.resetUi) K.views.week.resetUi(true);
+    if (D.origHash != null && location.hash !== D.origHash) location.hash = D.origHash;
+    else K.app.refresh();
+    D.origHash = null;
+    u.toast('デモを終わりました。データは元のままです');
+    if (K.app.needsWelcome && K.app.needsWelcome()) setTimeout(() => K.app.welcome(), 300);
+  };
+
+  // デモ中は、人のキー操作を止める（Esc でデモを終わる）
+  window.addEventListener(
+    'keydown',
+    (e) => {
+      if (!R || !e.isTrusted || R.done) return;
+      if (e.target.closest && e.target.closest('#demo-layer')) return;
+      e.stopPropagation();
+      e.preventDefault();
+      if (e.key === 'Escape') D.stop();
+      if (e.key === ' ') {
+        R.paused = !R.paused;
+        const b = u.$('#demo-layer [data-dm="pause"]');
+        if (b) b.textContent = R.paused ? '再生' : '一時停止';
+      }
+    },
+    true
+  );
+
+  /* ---------- やりたいことのタグ ---------- */
+  D.list = () => S.map(({ id, group, title, desc }) => ({ id, group, title, desc }));
+  D.panel = () => {
+    const groups = [...new Set(S.map((x) => x.group))];
+    const md = u.modal(
+      `<h2>やりたいことから選ぶ</h2>
+      <p class="help">タグを押すと、見本の学校（見本中学校）で、実際の画面の上で操作のデモが流れます。<b>あなたのデータは変わりません</b>。とちゅうで「一時停止」「やめる」（Esc）、速さも変えられます。</p>
+      <div class="row" style="margin:6px 0 12px"><button class="btn primary" data-demo-tour>▶ 通しで見る（約2〜3分：入れ替え → 行事 → 1コマ変更 → 時数 → 印刷）</button></div>
+      ${groups
+        .map(
+          (g) => `<h3 style="margin-top:10px">${u.esc(g)}</h3><div class="tags">${S.filter((x) => x.group === g)
+            .map((x) => `<button class="tag" data-demo="${x.id}" title="${u.esc(x.desc)}"><span class="pl">▶</span>${u.esc(x.title)}<small>${u.esc(x.desc)}</small></button>`)
+            .join('')}</div>`
+        )
+        .join('')}
+      <div class="btns"><button class="btn" data-close>閉じる</button></div>`,
+      { wide: true, noFocus: true }
+    );
+    md.el.addEventListener('click', (e) => {
+      const t = e.target.closest('[data-demo]');
+      if (t) {
+        md.close();
+        D.play(t.dataset.demo);
+      }
+      if (e.target.closest('[data-demo-tour]')) {
+        md.close();
+        D.play(TOUR[0], TOUR.slice(1));
+      }
+    });
+  };
+
+  // 印刷：デモの中では印刷の画面のかわりに見本を出す
+  const run0 = K.print.run;
+  K.print.run = (pages, land) => (R ? preview(pages, land) : run0(pages, land));
+})();
+
 /* ---- js/app.js ---- */
 /* アプリの外枠：上のタブ、画面の切りかえ、元に戻す（Ctrl+Z）、はじめて開いたときの案内。 */
 (function () {
@@ -5080,6 +6002,7 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
         <div class="right">
           <span id="save-state"></span>
           <span id="backup-chip"></span>
+          <button class="icon demo-btn" data-top="help" title="やりたいことを選ぶと、操作のデモが流れます（キーの ?）">▶ 使い方・デモ</button>
           <button class="icon" data-top="undo" title="元に戻す（Ctrl+Z）">↶ 戻す</button>
           <button class="icon" data-top="redo" title="やり直す（Ctrl+Y）">↷</button>
           <button class="icon" data-top="backup" title="データを JSON ファイルに書き出す">バックアップ</button>
@@ -5091,6 +6014,7 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
       if (t) app.go(t.dataset.tab);
       const b = e.target.closest('[data-top]');
       if (!b) return;
+      if (b.dataset.top === 'help') K.demo.panel();
       if (b.dataset.top === 'undo') K.store.undo();
       if (b.dataset.top === 'redo') K.store.redo();
       if (b.dataset.top === 'backup') {
@@ -5142,6 +6066,8 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
     render.same = false;
   };
 
+  app.welcome = () => welcome();
+  app.needsWelcome = () => !m.st.savedAt && !m.st.events.length && !Object.keys(m.st.ovr).length;
   function welcome() {
     const md = u.modal(
       `<h2>教務・時間割へようこそ</h2>
@@ -5150,6 +6076,7 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
       <div class="card" style="margin-top:12px">
         <h3>はじめ方</h3>
         <div class="row" style="gap:10px">
+          <button class="btn" data-w="demo">▶ まず操作のデモを見る</button>
           <button class="btn primary" data-w="import">今の Excel（週行事）から取り込む</button>
           <button class="btn" data-w="restore">バックアップ（JSON）から戻す</button>
           <button class="btn" data-w="blank">空の状態から始める</button>
@@ -5161,6 +6088,7 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
       const b = e.target.closest('[data-w]');
       if (!b) return;
       md.close();
+      if (b.dataset.w === 'demo') K.demo.panel();
       if (b.dataset.w === 'import') app.go('settings', 'import');
       if (b.dataset.w === 'restore') app.go('settings');
       if (b.dataset.w === 'blank') {
@@ -5193,6 +6121,10 @@ table.yr tr.tot td { font-weight: 700; background: #f8f9fa; text-align: center; 
         return;
       }
       if (u.$('.modal-back')) return;
+      if (e.key === '?' && !inField) {
+        e.preventDefault();
+        return K.demo.panel();
+      }
       const v = V[cur];
       if (v && v.key) v.key(e);
     });

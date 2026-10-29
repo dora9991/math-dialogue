@@ -33,7 +33,7 @@
       const wk = wd === 1 || d === first ? m.weekNo(u.monday(d)) : '';
       const note = !day.school && !day.term && !day.hol && wd >= 1 && wd <= 5 ? '休業期間' : '';
       rows += `<tr class="${cls}" data-d="${d}">
-        <td class="d">${u.day(d)}</td><td class="w">${u.WD[wd]}</td><td class="wk">${wk ? `第${wk}週` : ''}</td>
+        <td class="d">${u.day(d)}</td><td class="w">${u.WD[wd]}</td><td class="wkn">${wk ? `第${wk}週` : ''}</td>
         <td class="evs" data-add="event">${day.hol ? `<span class="evi k-holiday">${u.esc(day.hol)}</span>` : ''}${stu.map((e) => evHtml(e, d)).join('')}${note ? `<span class="tg muted">${note}</span>` : ''}</td>
         <td class="evs" data-add="staff">${stf.map((e) => evHtml(e, d)).join('')}</td>
         <td class="w">${day.school ? '○' : ''}</td>

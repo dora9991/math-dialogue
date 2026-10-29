@@ -99,7 +99,7 @@
           ${ui.tab !== 'assign' ? '<button class="btn primary" data-act="print">印刷・PDF</button>' : ''}
         </div>
         <div class="card">
-          ${ui.tab === 'assign' ? `<h2>担当表</h2><p class="help">クラス×教科ごとに、担当の先生の名前を入れます（2人なら「山田・佐藤」）。Excel の表をコピーして、左上のマスを選んで貼りつけることもできます。<br>入れると：①入れ替えのとき、先生があいているコマが緑に光る　②同じ先生が同じ時間に2クラスにいると赤い枠　③職員の予定に「だれが」を書くと、その先生の授業に⚠</p><div style="overflow:auto">${assignTable()}</div>`
+          ${ui.tab === 'assign' ? `<h2>担当表</h2><p class="help">クラス×教科ごとに、担当の先生の名前を入れます（2人なら「山田・鈴木」）。Excel の表をコピーして、左上のマスを選んで貼りつけることもできます。<br>入れると：①入れ替えのとき、先生があいているコマが緑に光る　②同じ先生が同じ時間に2クラスにいると赤い枠　③職員の予定に「だれが」を書くと、その先生の授業に⚠</p><div style="overflow:auto">${assignTable()}</div>`
           : ui.tab === 'one' ? `<h2>${u.esc(ui.who || '先生ごとの時間割')}</h2>${personal(ui.who, ui.mon)}`
           : `<h2>全員の週　<span class="small muted">第${m.weekNo(ui.mon)}週</span></h2><p class="help">空いているマス＝その時間は授業なし。自習監督や代わりの先生を探すときに。赤＝同じ時間に2クラス／不在なのに授業あり。</p><div style="overflow:auto">${matrix(ui.mon)}</div>`}
         </div></div>`;

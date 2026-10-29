@@ -176,6 +176,32 @@
       });
     });
 
+  // 文字を1つ入れてもらう（ブラウザの prompt の代わり）。やめたら null
+  u.ask = (title, def, opts) =>
+    new Promise((res) => {
+      const o = opts || {};
+      let done = false;
+      const m = u.modal(
+        `<h3>${u.esc(title)}</h3>${o.help ? `<p class="help">${u.esc(o.help)}</p>` : ''}
+        ${o.multi ? `<textarea data-ask style="min-height:90px">${u.esc(def || '')}</textarea>` : `<input type="text" data-ask value="${u.esc(def || '')}" style="width:100%">`}
+        <div class="btns"><button class="btn" data-close>やめる</button><button class="btn primary" data-ok>${u.esc(o.ok || 'OK')}</button></div>`,
+        { onClose: () => !done && res(null) }
+      );
+      const inp = m.el.querySelector('[data-ask]');
+      setTimeout(() => {
+        inp.focus();
+        if (inp.select) inp.select();
+      }, 40);
+      const ok = () => {
+        done = true;
+        const v = inp.value;
+        m.close();
+        res(v);
+      };
+      m.el.querySelector('[data-ok]').addEventListener('click', ok);
+      if (!o.multi) inp.addEventListener('keydown', (e) => e.key === 'Enter' && ok());
+    });
+
   /* 文字をセルの幅に収める（Excel の「縮小して全体を表示」と同じ考え方） */
   u.fit = (root) => {
     u.$$('.fit', root).forEach((el) => {

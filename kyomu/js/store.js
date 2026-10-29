@@ -25,7 +25,43 @@
     return !!data;
   };
 
+  let sandbox = false;
+  // 試し箱（デモ）：この間は保存しない。終わったら元のデータ・元に戻すの履歴をそのまま戻す
+  s.sandbox = (on) => {
+    if (on) {
+      if (sandbox) return;
+      // まだ書きこんでいない変更があれば、先に保存しておく
+      try {
+        if (m.st.savedAt || undo.length) localStorage.setItem(KEY, JSON.stringify(m.st));
+      } catch (e) {
+        /* 保存できなくてもデモは続ける */
+      }
+      sandbox = { st: JSON.stringify(m.st), undo: undo.slice(), redo: redo.slice(), lastJson };
+      return;
+    }
+    if (!sandbox) return;
+    const x = sandbox;
+    sandbox = false;
+    m.st = m.normalize(JSON.parse(x.st));
+    undo.length = 0;
+    undo.push(...x.undo);
+    redo.length = 0;
+    redo.push(...x.redo);
+    lastJson = x.lastJson;
+    s.emit('sandbox-end');
+  };
+  s.inSandbox = () => !!sandbox;
+  s.load2 = (data) => {
+    // 試し箱の中で、見本のデータに入れかえる（保存しない）
+    m.st = m.normalize(data);
+    lastJson = JSON.stringify(m.st);
+    undo.length = 0;
+    redo.length = 0;
+    s.emit('sandbox-load');
+  };
+
   const write = u.debounce(() => {
+    if (sandbox) return s.status('デモ中（保存しません）');
     try {
       m.st.savedAt = new Date().toISOString();
       lastJson = JSON.stringify(m.st);

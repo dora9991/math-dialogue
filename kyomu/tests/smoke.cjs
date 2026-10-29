@@ -130,12 +130,12 @@ const ok = (cond, msg) => {
   const pr = await page.evaluate(() => [
     K.ev.parseLine('10/14〜10/16 2年 5-6校時 職場体験 #総', 2026),
     K.ev.parseLine('1/14 火曜校時', 2026),
-    K.ev.parseLine('職員: 10/15 ④ 教務会議 山田、佐藤', 2026),
+    K.ev.parseLine('職員: 10/15 ④ 教務会議 山田、鈴木', 2026),
     K.ev.parseLine('7/13〜7/16 短縮4 三者面談', 2026),
   ]);
   ok(pr[0].date === '2026-10-14' && pr[0].end === '2026-10-16' && pr[0].targets[0] === 'g2' && pr[0].from === '5' && pr[0].to === '6' && pr[0].countAs === '総', 'まとめて入力：学年・校時・時数');
   ok(pr[1].kind === 'swap' && pr[1].swapWd === 2 && pr[1].date === '2027-01-14', 'まとめて入力：火曜校時（1月は次の年）');
-  ok(pr[2].kind === 'staff' && pr[2].from === '4' && pr[2].who === '山田、佐藤', 'まとめて入力：職員の予定と先生の名前');
+  ok(pr[2].kind === 'staff' && pr[2].from === '4' && pr[2].who === '山田、鈴木', 'まとめて入力：職員の予定と先生の名前');
   ok(pr[3].kind === 'short' && pr[3].upTo === '4', 'まとめて入力：短縮日課');
 
   // 印刷：週が A4 1 枚に収まる
@@ -148,6 +148,29 @@ const ok = (cond, msg) => {
   const pdf = await page.pdf({ printBackground: true, preferCSSPageSize: true });
   const pages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
   ok(pages === 1, `週行事の印刷は 1 ページ（${pages}）`);
+
+  // 操作デモ：全部のデモが最後まで流れ、終わったら元のデータに戻る
+  await page.emulateMedia({ media: 'screen' });
+  const stBefore = await page.evaluate(() => JSON.stringify(K.m.st));
+  const ids = await page.evaluate(() => K.demo.list().map((x) => x.id));
+  const bad = [];
+  for (const id of ids) {
+    await page.evaluate((x) => {
+      K.demo.speed = 0.08;
+      K.demo.play(x);
+    }, id);
+    let txt = '';
+    for (let i = 0; i < 300; i++) {
+      await page.waitForTimeout(100);
+      txt = await page.evaluate(() => (document.querySelector('#demo-layer .dm-text') || {}).textContent || '');
+      if (/ここまで|うまく進められ/.test(txt)) break;
+    }
+    if (!/ここまで/.test(txt)) bad.push(id);
+    await page.evaluate(() => K.demo.stop());
+    await page.waitForTimeout(150);
+  }
+  ok(!bad.length, `操作デモ ${ids.length}本が最後まで流れる${bad.length ? '（だめ：' + bad.join('・') + '）' : ''}`);
+  ok((await page.evaluate(() => JSON.stringify(K.m.st))) === stBefore, 'デモのあと、データは元のまま');
 
   for (const tab of ['month', 'year', 'hours', 'base', 'teachers', 'settings']) {
     await page.emulateMedia({ media: 'screen' });

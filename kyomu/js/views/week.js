@@ -54,6 +54,14 @@
     },
   };
   const redraw = () => V.week.el && draw(V.week.el);
+  // デモの前後で、選んでいるコマなどを空にする（mon も消すと、次に開いたとき今週から）
+  V.week.resetUi = (all) => {
+    ui.sel = [];
+    ui.swapFrom = null;
+    ui.hl = null;
+    ui.cntMode = 'week';
+    if (all) ui.mon = null;
+  };
   V.week.redraw = redraw;
   V.week.go = (d) => {
     ui.mon = u.monday(d);
@@ -191,7 +199,8 @@
         ・シートのコマをクリックで選ぶ（Shift で横に広げる、Ctrl/⌘ で追加）<br>
         ・コマを<b>ドラッグして別のコマに落とす</b>と入れ替え。記録が右と「出張等」の欄に残ります<br>
         ・ダブルクリックで文字を直接入力<br>
-        ・行事・出張等の欄をクリックすると、書きこみ・行事の追加ができます</p></div>`;
+        ・行事・出張等の欄をクリックすると、書きこみ・行事の追加ができます</p>
+        <button class="btn small" data-act="demo">▶ 操作のデモを見る</button></div>`;
     const x = ui.sel[0];
     const r = m.cell(x.d, x.s, x.c);
     const multi = ui.sel.length > 1;
@@ -550,11 +559,11 @@
   }
 
   // お知らせの吹き出し（その日の行事欄の2行目から6行ぶん）
-  function addBox(i) {
+  async function addBox(i) {
     const d = u.add(ui.mon, i);
     let row = 2;
     for (let k = 0; k < i; k++) row += m.day(u.add(ui.mon, k)).layout.length + 1;
-    const text = prompt('吹き出しに書く文（印刷にも出ます）', '');
+    const text = await u.ask('吹き出しに書く文（印刷にも出ます）', '', { multi: true });
     if (!text) return;
     K.store.commit('吹き出しを足す', (st) => {
       const w = (st.weekMeta[ui.mon] = st.weekMeta[ui.mon] || {});
@@ -660,13 +669,14 @@
         const g = m.cls(x.c).g;
         const cls = b.dataset.merge === 'grade' ? m.st.classes.filter((c) => c.g === g).map((c) => c.id) : b.dataset.merge === 'all' ? m.st.classes.map((c) => c.id) : ui.sel.map((y) => y.c);
         const cur = m.cell(x.d, x.s, x.c).t;
-        const t = prompt('まとめた枠に入れる文字（例：学年集会・自習・総）', cur || '');
+        const t = await u.ask('まとめた枠に入れる文字', cur || '', { help: '例：学年集会・自習・総（空にすると空の枠）' });
         if (t == null) return;
         ops.merge(x.d, x.s, cls, t.trim());
         ui.sel = cls.map((c) => ({ d: x.d, s: x.s, c }));
       }
       if (b.dataset.mark != null) ops.mark(ui.sel, b.dataset.mark);
       if (b.dataset.act === 'copy') copyNotice();
+      if (b.dataset.act === 'demo') K.demo.panel();
       if (b.dataset.act === 'boxadd') addBox(Number(side.querySelector('[data-boxday]').value));
       if (b.dataset.boxdel != null)
         K.store.commit('吹き出しを消す', (st) => {

@@ -50,7 +50,7 @@
         <label data-k="short">何校時まで</label><div data-k="short"><select data-f="upTo">${m.st.slots.filter((x) => x.counted).map((x) => `<option value="${x.id}" ${e.upTo === x.id ? 'selected' : ''}>${x.label}校時まで</option>`).join('')}</select> <span class="small muted">（それより後の校時は時間割が空になり、時数に数えない）</span></div>
         <label data-k="swap">何曜の時間割</label><div data-k="swap"><select data-f="swapWd">${[1, 2, 3, 4, 5].map((w) => `<option value="${w}" ${Number(e.swapWd) === w ? 'selected' : ''}>${u.WD[w]}曜校時</option>`).join('')}</select></div>
         <label data-k="event staff">だれが</label><div data-k="event staff" class="row">${targetBoxes(e.targets)}</div>
-        <label data-k="staff">先生の名前</label><div data-k="staff"><input type="text" data-f="who" value="${u.esc(e.who || '')}" placeholder="例：山田、佐藤（その時間の授業に注意が出ます）" style="width:100%"></div>
+        <label data-k="staff">先生の名前</label><div data-k="staff"><input type="text" data-f="who" value="${u.esc(e.who || '')}" placeholder="例：山田、鈴木（その時間の授業に注意が出ます）" style="width:100%"></div>
         <label data-k="event staff">時間</label><div data-k="event staff" class="row"><select data-f="from">${slotOptions(e.from, true)}</select> 〜 <select data-f="to"><option value="">（同じ）</option>${slotOptions(e.to, false)}</select></div>
         <label data-k="event">時間割の欄</label><div data-k="event" class="row"><input type="text" data-f="short" value="${u.esc(e.short || '')}" placeholder="短い名前（空なら名前）" style="width:180px"><label class="chk small"><input type="checkbox" data-f="noText" ${e.noText ? 'checked' : ''}>欄は空のまま</label></div>
         <label data-k="event">時数</label><div data-k="event"><select data-f="countAs">${countOptions(e.countAs == null ? '行事' : e.countAs)}</select> <span class="small muted">として数える</span></div>
@@ -171,7 +171,7 @@
   //   10/3〜10/4 2年 職場体験 #総
   //   11/3 休 文化の日
   //   9/24 火曜校時
-  //   職員: 9/24 ①-② 教務会議 山田、佐藤
+  //   職員: 9/24 ①-② 教務会議 山田、鈴木
   E.parseLine = (line, fy) => {
     let s = u.norm(line).replace(/\t+/g, ' ');
     if (!s) return null;
@@ -269,7 +269,7 @@
     const md = u.modal(
       `<h3>行事をまとめて入力</h3>
       <p class="help">1行に1つ。<b>日付 → 対象 → 校時 → 名前</b> の順に書きます（対象・校時はなくてもよい）。Excel の年間行事予定から「日付」と「行事名」の列をコピーして貼りつけてもOK。<br>
-      例：<code>10/3 全校 1-6 体育大会</code>　<code>10/14〜10/16 2年 5-6校時 職場体験 #総</code>　<code>11/3 休 文化の日</code>　<code>9/24 火曜校時</code>　<code>7/13〜7/16 短縮4 三者面談</code>　<code>職員: 9/24 ④ 運営委員会 山田、佐藤</code><br>
+      例：<code>10/3 全校 1-6 体育大会</code>　<code>10/14〜10/16 2年 5-6校時 職場体験 #総</code>　<code>11/3 休 文化の日</code>　<code>9/24 火曜校時</code>　<code>7/13〜7/16 短縮4 三者面談</code>　<code>職員: 9/24 ④ 運営委員会 山田、鈴木</code><br>
       <code>#総</code> は「総合として数える」、<code>#なし</code> は時数に数えない（ふつうは「行事」として数えます）。</p>
       <textarea data-b style="min-height:180px" placeholder="4/6 全校 1-6 始業式"></textarea>
       <div class="preview" data-pv>ここに読み取った結果が出ます</div>
