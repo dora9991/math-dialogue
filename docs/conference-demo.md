@@ -45,8 +45,10 @@ public/conference-demo/js/archive.js     アーカイブの表示と動画プレ
 - OS の「視差効果を減らす」設定の人と印刷では、動きなしで全部すぐ表示する。
 - 動きを止めたいときは、`<style>` 最後の `@keyframes` と `animation`／`.js .reveal` の行を消す。
 
+見た目と動きの検査は、編集ツール側にある（`conference-editor/test/demo-look.js`、PR #61）。デモの黄色いテーマや動きを直したら、そのリポジトリで次を実行する。
+
 ```
-npm ではなく、そのまま実行できる検査：NODE_PATH=$(npm root -g) node conference-editor/test/demo-look.js
+NODE_PATH=$(npm root -g) node conference-editor/test/demo-look.js
 ```
 
 ## 検索に出さない
