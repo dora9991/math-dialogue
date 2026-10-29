@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>大会サイト 編集画面</title>
+<link rel="stylesheet" href="css/site-sample.css">
+<link rel="stylesheet" href="css/editor.css">
+</head>
+<body>
+<a class="ce-skip" href="#ce-app">編集画面へ</a>
+
+<header class="ce-top">
+  <h1>大会サイト 編集画面</h1>
+  <p class="ce-who">
+    <span id="ce-mode" class="ce-badge"></span>
+    <button id="ce-logout" type="button" class="ce-link" hidden>ログアウト</button>
+  </p>
+</header>
+
+<p id="ce-banner" class="ce-banner" role="status" hidden></p>
+
+<!-- ログイン（共同編集モードのときだけ） -->
+<section id="ce-login" class="ce-card" hidden aria-labelledby="ce-login-h">
+  <h2 id="ce-login-h">ログイン</h2>
+  <p class="ce-note">すでにアカウントがあり、編集者として登録された人だけが、編集できます。パスワードで入るか、メールに届く「リンク」「6桁のコード」で入ってください。</p>
+  <div class="ce-field"><label for="ce-email"><span class="ce-lab">メールアドレス</span></label>
+    <input id="ce-email" type="email" autocomplete="username" inputmode="email"></div>
+  <div class="ce-field"><label for="ce-password"><span class="ce-lab">パスワード</span></label>
+    <input id="ce-password" type="password" autocomplete="current-password"></div>
+  <p><button id="ce-signin" type="button" class="ce-btn ce-primary">パスワードでログイン</button></p>
+  <p class="ce-note">パスワードを使わないとき：</p>
+  <p><button id="ce-send" type="button" class="ce-btn">ログイン用のメールを送る</button></p>
+  <div id="ce-code-box" hidden>
+    <div class="ce-field"><label for="ce-code"><span class="ce-lab">6桁のコード</span></label>
+      <input id="ce-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="12"></div>
+    <p><button id="ce-verify" type="button" class="ce-btn">コードでログイン</button></p>
+  </div>
+</section>
+
+<main id="ce-app" hidden>
+  <div id="ce-tabs" class="ce-tabs" role="tablist" aria-label="編集する項目"></div>
+  <section id="ce-panel" class="ce-panel" role="tabpanel"></section>
+
+  <section id="ce-problems" class="ce-problems" aria-live="polite"></section>
+
+  <section class="ce-bar" aria-label="保存と公開">
+    <p id="ce-status" class="ce-status"></p>
+    <p class="ce-actions">
+      <button id="ce-save" type="button" class="ce-btn">下書きを保存</button>
+      <button id="ce-publish" type="button" class="ce-btn ce-primary">公開する</button>
+      <button id="ce-discard" type="button" class="ce-btn ce-ghost">公開中の内容に戻す</button>
+    </p>
+  </section>
+
+  <section class="ce-card">
+    <h2>プレビュー</h2>
+    <p class="ce-note">公開したときの見え方です。空の行は表示されません。</p>
+    <div id="ce-preview" class="ce-preview"></div>
+  </section>
+</main>
+
+<script src="config.js"></script>
+<script src="js/schema.js"></script>
+<script src="js/site-content.js"></script>
+<script src="js/store-local.js"></script>
+<script src="js/store-supabase.js"></script>
+<script src="js/editor.js"></script>
+</body>
+</html>

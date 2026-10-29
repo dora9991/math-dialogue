@@ -18,6 +18,7 @@
   このサイトは「サンプル」です（実際の研究大会・団体とは関係ありません）。団体名・日程・会場・参加費などは、すべて架空です。
   【つくり方】本文はこの index.html を書き換える。決まっていない項目は <span class="tbd">調整中</span> にする。
   アーカイブ配信（YouTube）は data/archive.js に動画IDを足すだけで、#archive に並ぶ。
+  お知らせ・大会概要・日程と流れは、編集ツール（../conference-editor/）で書き換えられる（data-content の場所）。
 -->
 
 <style>
@@ -256,7 +257,7 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
 <section class="block" id="news" aria-labelledby="h-news">
   <div class="wrap">
     <h2 id="h-news">お知らせ</h2>
-    <ul class="news">
+    <ul class="news" data-content="news">
       <li>
         <time datetime="2099-03-06">2099年3月6日</time>
         <p>このサイトは、研究大会の案内サイトの作り方を見せるための<strong>サンプル</strong>です。団体・日程・会場などは、すべて架空です。</p>
@@ -277,7 +278,7 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
   <div class="wrap">
     <h2 id="h-overview">大会概要</h2>
     <p class="intro">このページの内容は、すべて架空です。「調整中」の札は、まだ決まっていない項目に付ける表示の見本です。</p>
-    <dl class="spec">
+    <dl class="spec" data-content="overview">
       <div><dt>大会名</dt><dd>サンプル歴史教育研究会 第3回研究大会（サンプル市大会）</dd></div>
       <div><dt>開催時期</dt><dd>2099年7月30日（木）〜8月1日（土）</dd></div>
       <div><dt>会場</dt><dd>サンプル大学 サンプルキャンパス（架空）</dd></div>
@@ -295,7 +296,7 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
   <div class="wrap">
     <h2 id="h-schedule">日程と流れ（サンプル）</h2>
     <p class="intro">時刻や内容は、サンプルです。</p>
-    <ol class="days">
+    <ol class="days" data-content="program">
       <li class="day">
         <h3>1日目</h3>
         <p class="sub">総会と分科会</p>
@@ -470,5 +471,11 @@ dialog#player::backdrop{background:rgba(10,16,28,.72)}
 
 <script src="data/archive.js"></script>
 <script src="js/archive.js"></script>
+<!-- 編集ツール（../conference-editor/）で公開した内容を、お知らせ・大会概要・日程と流れに流し込む。
+     まだ公開していない項目や、読み込めなかったときは、上に書いてある元の内容がそのまま表示される。 -->
+<script src="../conference-editor/config.js"></script>
+<script src="../conference-editor/js/schema.js"></script>
+<script src="../conference-editor/js/site-content.js"></script>
+<script>if (window.SiteContent) SiteContent.apply(window.CONF_EDITOR_CONFIG);</script>
 </body>
 </html>
