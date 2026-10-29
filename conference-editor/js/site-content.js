@@ -80,9 +80,10 @@
     cfg = cfg || {};
     if (cfg.BACKEND === "supabase") {
       var base = String(cfg.SUPABASE_URL || "").replace(/\/+$/, "");
-      return fetch(base + "/rest/v1/conf_content?select=key,published,published_at", {
-        headers: { apikey: cfg.SUPABASE_ANON_KEY, Authorization: "Bearer " + cfg.SUPABASE_ANON_KEY }
-      }).then(function (res) {
+      var headers = { apikey: cfg.SUPABASE_ANON_KEY };
+      // 新形式の公開キー（sb_publishable_…）は JWT ではないので、Authorization には入れない
+      if (String(cfg.SUPABASE_ANON_KEY).split(".").length === 3) headers.Authorization = "Bearer " + cfg.SUPABASE_ANON_KEY;
+      return fetch(base + "/rest/v1/conf_content?select=key,published,published_at", { headers: headers }).then(function (res) {
         if (!res.ok) throw new Error("HTTP " + res.status);
         return res.json();
       }).then(function (rows) {

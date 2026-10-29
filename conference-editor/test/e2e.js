@@ -10,6 +10,7 @@ let bad = 0;
 const ok = (c, m) => { if (!c) { bad++; console.log("✗", m); } else if (process.env.VERBOSE) console.log("✓", m); };
 const eq = (a, b, m) => ok(JSON.stringify(a) === JSON.stringify(b), m + "  期待 " + JSON.stringify(b) + " 実際 " + JSON.stringify(a));
 
+const LOCAL_CONFIG = 'window.CONF_EDITOR_CONFIG={BACKEND:"local",SUPABASE_URL:"",SUPABASE_ANON_KEY:""};';
 const ROOT = path.resolve(__dirname, "..");
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8" };
 function serve() {
@@ -42,6 +43,7 @@ function serve() {
   // =================================================================
   {
     const ctx = await browser.newContext({ viewport: { width: 1000, height: 900 } });
+    await ctx.route("**/config.js", (r) => r.fulfill({ contentType: "text/javascript", body: LOCAL_CONFIG })); // 設定の既定は supabase なので、ローカルの検査は設定を明示
     const page = await ctx.newPage();
     track(page, "local");
     const dialogs = [];

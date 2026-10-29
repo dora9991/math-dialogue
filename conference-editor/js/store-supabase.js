@@ -17,6 +17,8 @@
     try { return String(JSON.parse(b64urlToText(String(token).split(".")[1])).email || "").toLowerCase(); }
     catch (e) { return ""; }
   }
+  // 新形式の公開キー（sb_publishable_…）は JWT ではない。JWT のときだけ Authorization にも入れる（apikey ヘッダーは常に送る）
+  function looksLikeJwt(k) { return String(k).split(".").length === 3; }
   function safeJson(text) { try { return JSON.parse(text); } catch (e) { return null; } }
   function nowSec() { return Math.floor(Date.now() / 1000); }
 
@@ -95,7 +97,8 @@
     async function http(path, o) {
       o = o || {};
       var headers = Object.assign({ apikey: anon, "Content-Type": "application/json" }, o.headers || {});
-      headers.Authorization = "Bearer " + (o.auth ? await token() : anon);
+      if (o.auth) headers.Authorization = "Bearer " + await token();
+      else if (looksLikeJwt(anon)) headers.Authorization = "Bearer " + anon;
       var res;
       try {
         res = await fetchFn(base + path, { method: o.method || "GET", headers: headers, body: o.body === undefined ? undefined : JSON.stringify(o.body) });

@@ -144,6 +144,26 @@ async function code(p) { try { await p; return "ok"; } catch (e) { return e.code
     eq(await code(down.requestLogin("editor@example.com")), "network", "Supabase：通信できなければ network エラー");
   }
 
+  { // 公開キーの形式：JWT でない新形式（sb_publishable_…）は apikey だけ。JWT なら Authorization にも入れる
+    const fake = createFake();
+    const seen = [];
+    const spy = (u, i) => { seen.push(i.headers); return fake.fetch(u, i); };
+    const mk = (key) => new Sb({ SUPABASE_URL: cfg.SUPABASE_URL, SUPABASE_ANON_KEY: key }, { fetch: spy, storage: memStorage(), location: { origin: "https://x", pathname: "/", search: "", hash: "" } });
+    await mk(ANON).requestLogin("editor@example.com");
+    eq(seen[0].apikey, ANON, "Supabase：apikey ヘッダーは常に送る");
+    eq(seen[0].Authorization, undefined, "Supabase：JWT でない公開キーは Authorization に入れない");
+    try { await mk("aaa.bbb.ccc").requestLogin("editor@example.com"); } catch (e) { /* 偽のサーバーは別のキーを断る。ここでは送ったヘッダーだけ見る */ }
+    eq(seen[1].Authorization, "Bearer aaa.bbb.ccc", "Supabase：JWT の公開キーは Authorization にも入れる");
+    // ログイン後のリクエストは、公開キーではなく本人のトークン
+    const st = mk(ANON);
+    await st.init();
+    await st.verifyCode("editor@example.com", "123456");
+    await st.loadAll();
+    const last = seen[seen.length - 1];
+    ok(/^Bearer eyJ/.test(last.Authorization || "") || /^Bearer .+\..+\..+/.test(last.Authorization || ""), "Supabase：ログイン後は、本人のトークンで読み込む");
+    ok(last.Authorization !== "Bearer " + ANON, "Supabase：ログイン後は、公開キーを Authorization に使わない");
+  }
+
   console.log(bad ? "\n失敗 " + bad + " 件" : "store: すべて通過");
   process.exit(bad ? 1 : 0);
 })().catch((e) => { console.error("検査が異常終了:", e); process.exit(2); });

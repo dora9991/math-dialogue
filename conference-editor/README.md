@@ -17,10 +17,12 @@
 
 | BACKEND | 保存先 | 使う場面 |
 |---|---|---|
-| `"local"`（初期値） | このブラウザの中 | 自分ひとりで使う／試す。ログイン不要。他の端末とは共有されない |
+| `"local"` | このブラウザの中 | 自分ひとりで使う／試す。ログイン不要。他の端末とは共有されない |
 | `"supabase"` | Supabase | 事務局の数人でログインして共同編集する |
 
 ## すぐ試す（ローカルモード）
+
+いまの `config.js` は Supabase（`quiz/` などと同じ数学ラボ2のプロジェクト）につなぐ設定。ローカルで試すときは、`config.js` の `BACKEND` を `"local"` に変える（コミットしない）。
 
 ```bash
 python3 -m http.server 8797 --directory conference-editor

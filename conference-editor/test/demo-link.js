@@ -44,6 +44,7 @@ function serve() {
   });
 }
 
+const LOCAL_CONFIG = 'window.CONF_EDITOR_CONFIG={BACKEND:"local",SUPABASE_URL:"",SUPABASE_ANON_KEY:""};';
 const SB_CONFIG = 'window.CONF_EDITOR_CONFIG={BACKEND:"supabase",SUPABASE_URL:"https://fake.supabase.test",SUPABASE_ANON_KEY:"' + ANON + '"};';
 async function routeSupabase(ctx, fake, seen) {
   await ctx.route("**/conference-editor/config.js", (r) => r.fulfill({ contentType: "text/javascript", body: SB_CONFIG }));
@@ -72,6 +73,11 @@ const PUBLISHED = {
     page.on("pageerror", (e) => errors.push(label + " pageerror: " + e.message));
     page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource|ERR_|CORS|net::/.test(m.text())) errors.push(label + " console: " + m.text()); });
   };
+  async function localContext() {
+    const ctx = await browser.newContext({ viewport: { width: 1000, height: 900 } });
+    await ctx.route("**/conference-editor/config.js", (r) => r.fulfill({ contentType: "text/javascript", body: LOCAL_CONFIG })); // 設定の既定は supabase なので、ローカルの検査は設定を明示
+    return ctx;
+  }
   const url = base + "/conference-demo/";
   const staticCounts = { news: 3, overview: 9, program: 3 };
   const counts = async (page) => ({
@@ -83,7 +89,7 @@ const PUBLISHED = {
 
   // ---- A. 何も公開していない（ローカル・空）：元の内容のまま ----
   {
-    const ctx = await browser.newContext({ viewport: { width: 1000, height: 900 } });
+    const ctx = await localContext();
     const page = await ctx.newPage(); track(page, "A");
     await page.goto(url); await page.waitForTimeout(250);
     eq(await page.locator("[data-content]").count(), 3, "A：流し込む場所（data-content）が3つある");
@@ -94,7 +100,7 @@ const PUBLISHED = {
 
   // ---- B. ローカルで公開した内容が出る／一部だけ公開したら残りは元のまま ----
   {
-    const ctx = await browser.newContext({ viewport: { width: 1000, height: 900 } });
+    const ctx = await localContext();
     const page = await ctx.newPage(); track(page, "B");
     await page.goto(url);
     await page.evaluate((pub) => {
@@ -137,7 +143,7 @@ const PUBLISHED = {
     ok(!/まだ公開していない下書き/.test(await page.locator("body").innerText()), "C：下書きは出ない");
     const reads = seen.filter((r) => r.method === "GET" && /\/rest\/v1\/conf_content/.test(r.url));
     ok(reads.length >= 1, "C：公開済みを読みに行った");
-    ok(reads.every((r) => r.auth === "Bearer " + ANON), "C：読むときは anon キーだけ（ログインのトークンは使わない）");
+    ok(reads.every((r) => r.auth === undefined), "C：読むときは apikey（公開キー）だけ。ログインのトークンも、Authorization も使わない（JWT でない公開キーのとき）");
     ok(reads.every((r) => /select=key,published,published_at/.test(decodeURIComponent(r.url))), "C：読む列は key / published / published_at だけ");
     ok(seen.every((r) => r.method === "GET"), "C：公開側は読むだけ（書き込みをしない）");
     await bannerOk(page, "C");
@@ -190,7 +196,7 @@ const PUBLISHED = {
 
   // ---- G. 編集画面（ローカル）で公開 → デモに出る（同じブラウザ） ----
   {
-    const ctx = await browser.newContext({ viewport: { width: 1000, height: 900 } });
+    const ctx = await localContext();
     const ed = await ctx.newPage(); track(ed, "G:editor");
     ed.on("dialog", (d) => d.accept());
     await ed.goto(base + "/conference-editor/index.html");
