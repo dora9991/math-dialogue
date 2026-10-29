@@ -15,7 +15,7 @@
 | 🏊 水泳 | レーンごとの大きな「タッチ」 | 0.01 秒まで。スプリット・ラップ・順位、何組も続けて計れる、練習（サークル）の本ごとのタイム |
 
 - インストール不要・通信なし。**記録はその端末のブラウザの中だけ**に保存し、どこにも送りません
-- 公開するときの URL（予定）：`https://dora9991.github.io/math-dialogue/sports-tap/` 。種目ごとに `?s=soccer`（`volley` `futsal` `handball` `tennis` `baseball` `rugby` `swim`）を付けると、その種目から開きます。iPhone は「共有」→「ホーム画面に追加」
+- 公開ページ：**https://dora9991.github.io/math-dialogue/sports-tap/** 。種目ごとに `?s=soccer`（`volley` `futsal` `handball` `tennis` `baseball` `rugby` `swim`）を付けると、その種目から開きます。iPhone は「共有」→「ホーム画面に追加」
 - 1ファイル版：`public/sports-tap/index.html`（`node sports-tap/build.mjs` で作る）
 - バスケは、撮影しながら記録・動画の切り出しまでできる専用の「バスケ タップ記録」へのリンクを、種目を選ぶ画面に置いています
 

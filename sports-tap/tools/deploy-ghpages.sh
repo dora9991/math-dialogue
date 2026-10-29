@@ -32,6 +32,7 @@ if git diff --cached --quiet; then
   exit 0
 fi
 git diff --cached --stat | tail -12
-git commit -q -m "スポーツ タップ記録を /sports-tap/ に公開（sports-tap/ だけを入れかえ。ほかの公開物は変えない）"
+git commit -q -m "スポーツ タップ記録を /sports-tap/ に公開（sports-tap/ だけを入れかえ。ほかの公開物は変えない）" \
+  -m "${COMMIT_TRAILER:-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>}"
 git push origin HEAD:gh-pages
 echo "公開しました: https://dora9991.github.io/math-dialogue/sports-tap/ （反映まで1〜2分）"
