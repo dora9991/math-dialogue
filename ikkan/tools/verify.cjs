@@ -195,7 +195,8 @@ function checkRec(id) {
     const items = IK.rec.items(id, k), nos = items.map(i => i.no);
     if (!items.length) { bad(id, `${nm}から、問題（（1）（2）…）を取り出せない`); return; }
     if (nos.length !== new Set(nos).size) bad(id, `${nm}の問題の番号がかぶっている：${nos.join('、')}`);
-    const noAns = items.filter(i => !i.ans).map(i => i.label);
+    const isNew = IK.lessons[id].form === 'new' && k === 'dr';   // 新しい形：（7）ひろげる（考えよう）は、答えを載せないのが決まり
+    const noAns = items.filter(i => !i.ans && !(isNew && i.label === '（7）')).map(i => i.label);
     console.log(`  記録ページ（${nm}）：${items.length}問・QR ${size}モジュール${noAns.length ? `・答えのない問題 ${noAns.join('')}（作図など）` : ''}`);
     items.forEach(i => { seen[i.id] = (seen[i.id] || 0) + 1; });
   });
