@@ -34,13 +34,13 @@
 
   // 例題：球の形のパン 小（直径 8cm）と大（直径 12cm）
   const balls = SVG((W, H, h) => {
-    const defs = [{ n: '小', d: 8 }, { n: '大', d: 12 }], s = (H - 4 - 8) / 12, cy = 4 + 6 * s;
+    const defs = [{ n: '小', d: 8 }, { n: '大', d: 12 }], s = (H - 6 - 8) / 12, cy = 6 + 6 * s;
     let x = 5, out = '';
     defs.forEach(d => {
       const r = d.d / 2 * s, cx = x + r;
       out += `<circle cx="${f2(cx)}" cy="${f2(cy)}" r="${f2(r)}" fill="#fff" stroke="#222" stroke-width="0.32"/>`
         + arc(cx, cy, r, Q * r, 0, Math.PI, false) + arc(cx, cy, r, Q * r, Math.PI, 2 * Math.PI, true)
-        + h.ln(cx - r, cy, cx + r, cy, '#555', 0.2) + h.tx(cx, cy - 1.4 - Q * r, d.d + 'cm', 2.8, 'middle')
+        + h.ln(cx - r, cy, cx + r, cy, '#555', 0.2) + h.tx(cx, cy - r - 1.6, d.d + 'cm', 2.8, 'middle')
         + h.tx(cx, cy + 6 * s + 5, d.n, 3.2, 'middle');
       x += 2 * r + 12;
     });

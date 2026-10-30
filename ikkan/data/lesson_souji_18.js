@@ -60,8 +60,8 @@
       `(() => { const r=2, h=24/(PI*r*r), V=(rr,hh)=>PI*rr*rr*hh; return near(V(r,h),24) && near(V(3,h*1.5),81) && near(24*9/4,54) && !near(54,81); })()`,
       // （3）△ABC∽△DEF：AB＝4、CA＝6、BC＝5 の 2.5倍（DE＝10 のとき）→ FD＝15
       `(() => { ${LIB} const A=[0,0], B=[4,0], C=[3.5625,Math.sqrt(36-3.5625**2)], k=2.5; const S=p=>[p[0]*k,p[1]*k]; return near(len(A,B),4) && near(len(C,A),6) && near(len(S(A),S(B)),10) && near(len(S(C),S(A)),15); })()`,
-      // （4）A、B、C：AD＝4・DB＝8（AB＝12）、AC＝9、D、E は AB、AC を 1：3 に分ける点（AE＝3）→ EC＝6、DE∥BC
-      `(() => { ${LIB} const A=[0,0], B=[12,0], C=[9*Math.cos(1),9*Math.sin(1)], D=at(A,B,1/3), E=at(A,C,1/3); return near(len(A,D),4) && near(len(D,B),8) && near(len(A,E),3) && near(len(E,C),6) && z(cr(v(D,E),v(B,C))); })()`,
+      // （4）A、B、C：AD＝6・DB＝4（AB＝10）、AC＝5、D、E は AB、AC を 3：2 に分ける点（AE＝3）→ EC＝2、DE∥BC
+      `(() => { ${LIB} const A=[0,0], B=[10,0], C=[5*Math.cos(1),5*Math.sin(1)], D=at(A,B,0.6), E=at(A,C,0.6); return near(len(A,D),6) && near(len(D,B),4) && near(len(A,E),3) && near(len(E,C),2) && z(cr(v(D,E),v(B,C))); })()`,
       // （5）M、N は AB、AC の中点、BC＝18 → MN＝9、MN∥BC
       `(() => { ${LIB} const A=[3,7], B=[0,0], C=[18,0], M=mid(A,B), N=mid(A,C); return near(len(M,N),9) && z(cr(v(M,N),v(B,C))); })()`,
       // （6）AB：DE＝BC：EF＝2：3、∠A＝∠D でも、相似とはかぎらない：AB＝8、BC＝5、∠A＝30°（sin C＝0.8）の三角形と、DE＝12、EF＝7.5、∠D＝30°（∠F が鈍角）の三角形。∠C≠∠F
@@ -119,8 +119,8 @@
         T('（3）', '△ABC∽△DEF で、AB＝4cm、DE＝10cm、CA＝6cm のとき、FD の長さを求めよう。', 4),
         B(2, '4：10＝6：FD\nFD＝15cm')
       ], [
-        T('（4）', '△ABC の辺 AB、AC 上に点 D、E があり、DE∥BC である。AD＝4cm、DB＝8cm、AE＝3cm のとき、EC の長さを求めよう。', 5),
-        B(2, '4：8＝3：EC\nEC＝6cm')
+        T('（4）', '△ABC の辺 AB、AC 上に点 D、E があり、DE∥BC である。AD＝6cm、DB＝4cm、AE＝3cm のとき、EC の長さを求めよう。', 5),
+        B(2, '6：4＝3：EC\nEC＝2cm')
       ], '1:1'),
       C2([
         T('（5）', '△ABC の辺 AB、AC の中点を M、N とする。BC＝18cm のとき、MN の長さを求めよう。また、MN と BC の関係を、記号で表そう。', 5),
