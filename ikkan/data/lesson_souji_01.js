@@ -112,16 +112,16 @@
       'near(6 / 9, 2 / 3) && near(180 - 50 - 60, 70)',
       // （6）△ABC∽△DEF、AB＝6、BC＝12、CA＝15、DE＝4：相似比 6：4＝3：2 → EF＝12÷3×2＝8、FD＝15÷3×2＝10（AB 6÷4＝BC 12÷8＝CA 15÷10）
       'near(6 / 4, 12 / 8) && near(12 / 8, 15 / 10) && near(12 / 1.5, 8) && near(15 / 1.5, 10)',
-      // （7）考えよう（答えは載せない。ここで確かめるだけ）：正方形・円・正三角形は、いつでも相似（比も角も同じ）。長方形・ひし形・二等辺三角形は、いつでもは相似でない（反例：2×1 と 3×1 の長方形、角のちがうひし形、頂角のちがう二等辺三角形）
-      `(() => { const rectSim = (a, b, c, d2) => near(a / c, b / d2); const ang2 = th => { const Q = [[0, 0], [1, 0], [1 + Math.cos(th * Math.PI / 180), Math.sin(th * Math.PI / 180)], [Math.cos(th * Math.PI / 180), Math.sin(th * Math.PI / 180)]]; return Math.atan2(Q[3][1], Q[3][0]) * 180 / Math.PI; }; const apex = (b, h) => 2 * Math.atan2(b / 2, h) * 180 / Math.PI; return rectSim(2, 2, 5, 5) && !rectSim(2, 1, 3, 1) && near(ang2(60), 60) && !near(ang2(60), ang2(80)) && !near(apex(2, 3), apex(2, 2)) && near(180 / 3, 60); })()`,
+      // （7）考えよう（答えは載せない。ここで確かめるだけ）：正方形・正三角形は、大きさがちがっても いつも相似（辺の比も角も同じ）。長方形（2×1 と 3×1）・ひし形（60°と 80°）・二等辺三角形（高さのちがう 2つ）は、いつでもは相似でない
+      `(() => { ${POLY} const sim = (P, Q) => { const a = sd(P), b = sd(Q), x = an(P), y = an(Q); return a.length === b.length && b.every((v, k) => near(v / a[k], b[0] / a[0])) && y.every((v, k) => near(v, x[k])); }; const rect = (w, h) => [[0, 0], [w, 0], [w, h], [0, h]], rh = t => [[0, 0], [1, 0], [1 + Math.cos(t * Math.PI / 180), Math.sin(t * Math.PI / 180)], [Math.cos(t * Math.PI / 180), Math.sin(t * Math.PI / 180)]], iso = (b, h) => [[0, 0], [b, 0], [b / 2, h]], eq = b => iso(b, b * Math.sqrt(3) / 2); return sim(rect(2, 2), rect(7, 7)) && sim(eq(2), eq(5)) && sim(rect(2, 1), rect(4, 2)) && !sim(rect(2, 1), rect(3, 1)) && !sim(rh(60), rh(80)) && sim(rh(60), rh(60)) && !sim(iso(2, 3), iso(2, 2)); })()`,
       // （8）周の長さ：相似比 2：5、△ABC の周 14 → △DEF の周 14×5÷2＝35。座標で確かめる（辺 4・5・5 の三角形を 2.5倍した三角形の周）
       chk('第1時 （8）', `const P = { A: [0, 0], B: [4, 0], C: [1, 4.8] }; const per = Q => d(Q, 'AB') + d(Q, 'BC') + d(Q, 'CA'); const k = 14 / per(P); const Q = {}; Object.keys(P).forEach(n => { Q[n] = [P[n][0] * k * 2.5, P[n][1] * k * 2.5]; }); return near(per(P) * k, 14) && near(per(Q), 35) && near(14 * 5 / 2, 35) && near(35 / 14, 5 / 2);`),
       // 小テスト（1）（2）：△ABC∽△DEF（AB＝2、BC＝3、CA＝4 → DE＝6、EF＝9、FD＝12。相似比 1：3）。C に対応する頂点 F、AB に対応する辺 DE、∠B に対応する角 ∠E
       chk('第1時 小テスト（1）', `const P = ${J(Q_ABC)}, Q = ${J(Q_DEF)}; const R = simR(P, Q, 'ABC', 'DEF'); return near(d(P, 'AB'), 2) && near(d(P, 'BC'), 3) && near(d(P, 'CA'), 4) && near(d(Q, 'DE'), 6) && near(d(Q, 'EF'), 9) && near(d(Q, 'FD'), 12) && R !== null && near(R, 3) && near(d(P, 'AB') / d(Q, 'DE'), 1 / 3) && near(ang(P, 'B', 'C', 'A'), ang(Q, 'E', 'F', 'D'));`),
       // 小テスト（3）相似比 2：3、AB＝8 → EF＝8×3÷2＝12　（4）∠A＝50°、∠B＝70° → ∠F＝∠C＝180−50−70＝60°
       'near(8 * 3 / 2, 12) && near(180 - 50 - 70, 60)',
-      // 小テスト（5）チャレンジ：正三角形は、どれも 3つの角が 60°・3辺の比が 1：1：1 でいつも相似。ひし形は、辺の比は同じでも、角がちがうもの（60°と 80°）がある
-      `(() => { const rh = th => ({ side: 1, angle: th }); return near(180 / 3, 60) && !near(rh(60).angle, rh(80).angle) && near(rh(60).side, rh(80).side); })()`
+      // 小テスト（5）チャレンジ：正三角形は、大きさがちがっても いつも相似（角はどれも 60°・辺の比は 1：1：1）。ひし形は、辺の比がどれも 1 でも、角（60°と 80°）がちがうと相似でない
+      `(() => { ${POLY} const sim = (P, Q) => { const a = sd(P), b = sd(Q), x = an(P), y = an(Q); return a.length === b.length && b.every((v, k) => near(v / a[k], b[0] / a[0])) && y.every((v, k) => near(v, x[k])); }; const rh = t => [[0, 0], [1, 0], [1 + Math.cos(t * Math.PI / 180), Math.sin(t * Math.PI / 180)], [Math.cos(t * Math.PI / 180), Math.sin(t * Math.PI / 180)]], iso = (b, h) => [[0, 0], [b, 0], [b / 2, h]], eq = b => iso(b, b * Math.sqrt(3) / 2); return [1, 2, 3.5, 9].every(b => sim(eq(1), eq(b)) && an(eq(b)).every(v => near(v, 60))) && sd(rh(60)).every(v => near(v, 1)) && sd(rh(80)).every(v => near(v, 1)) && !sim(rh(60), rh(80)); })()`
     ],
 
     /* ================= ワークシート（A4 1枚・約12分） ================= */
