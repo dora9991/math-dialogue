@@ -26,16 +26,23 @@ async function readQr(page, loc) {
 (async () => {
   const root = path.resolve(__dirname, '..');
   const outDir = path.resolve(process.argv[2] || path.join(root, 'tools', '_out'));
-  const only = process.argv.slice(3);
+  // 使い方：check.cjs 出力先 [授業のID …] [--units=単元,単元]（--units は、その単元の全授業と、単元ごとの検査（学習予定表・まとめ印刷）をする）
+  const args = process.argv.slice(3), unitsArg = args.find(a => a.startsWith('--units=')), unitsSel = unitsArg ? unitsArg.slice(8).split(',') : null;
+  let only = args.filter(a => !a.startsWith('--'));
   fs.mkdirSync(outDir, { recursive: true });
-  const url = 'file://' + path.join(root, 'index.html');
+  // data/ に置いただけで index.html に書いていない授業も、検査できるようにする（作業用のコピーを、このフォルダにつくって、終わったら消す）
+  const { html: idxHtml, added } = require('./lib-index.cjs').withLessons(root);
+  const idxFile = added.length ? path.join(root, `.check-index-${process.pid}.html`) : path.join(root, 'index.html');
+  if (added.length) { fs.writeFileSync(idxFile, idxHtml); process.on('exit', () => { try { fs.unlinkSync(idxFile); } catch (e) { /* なければよい */ } }); }
+  const url = 'file://' + idxFile;
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1300 }, deviceScaleFactor: 2 });
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   await page.goto(url + '#/');
-  const lessons = await page.evaluate(() => IK.order.map(id => ({ id, plan: !!IK.plans[id], dr: !!IK.drills[id], qz: !!IK.quizzes[id], trial: /試作/.test(IK.lessons[id].no || ''), qr: IK.qrUnits.indexOf(IK.lessons[id].unit) >= 0 })));
+  const lessons = await page.evaluate(() => IK.order.map(id => ({ id, unit: IK.lessons[id].unit, plan: !!IK.plans[id], dr: !!IK.drills[id], qz: !!IK.quizzes[id], trial: /試作/.test(IK.lessons[id].no || ''), qr: IK.qrUnits.indexOf(IK.lessons[id].unit) >= 0 })));
+  if (unitsSel) only = lessons.filter(l => unitsSel.includes(l.unit)).map(l => l.id);
   let bad = 0;
 
   for (const L of lessons.filter(l => !only.length || only.includes(l.id))) {
@@ -49,7 +56,7 @@ async function readQr(page, loc) {
       await page.waitForSelector('.wsp');
       await page.evaluate(() => { document.querySelector('.pages').style.zoom = 1; });
       const res = await page.evaluate(([trial, expectQr]) => {
-        const issues = [], first = document.querySelector('.wsp');
+        const issues = [], notes = [], first = document.querySelector('.wsp');
         const pitchPx = parseFloat(first.style.getPropertyValue('--pitch') || '7') * 96 / 25.4;
         document.querySelectorAll('.wsp').forEach((sp, pi) => {
           if (sp.classList.contains('plan-page')) {
@@ -81,6 +88,7 @@ async function readQr(page, loc) {
             const lines = tx.getBoundingClientRect().height / pitchPx, have = b.getBoundingClientRect().height / pitchPx;
             const label = (b.querySelector('.tag') ? b.querySelector('.tag').textContent + '：' : '板書：') + tx.textContent.slice(0, 18);
             if (lines > have + 0.05) issues.push(`ページ${pi + 1} 行あふれ（${have}行の枠に ${Math.round(lines * 100) / 100}行）「${label}」`);
+            else if (b.classList.contains('wb-t') && !b.classList.contains('box') && have - Math.ceil(lines - 0.05) >= 1) notes.push(`ページ${pi + 1} T の行数が多め（${have}行の枠に、字は ${Math.ceil(lines - 0.05)}行）「${label}」`);   // 参考：33行をむだに使っていないか
             if (tx.scrollWidth > tx.clientWidth + 1) issues.push(`ページ${pi + 1} 横はみ出し「${label}」`);
           });
           sp.querySelectorAll('.wt').forEach((t, k) => {   // 表が、枠の高さを超えていないか
@@ -139,7 +147,7 @@ async function readQr(page, loc) {
             });
           });
         });
-        return { issues };
+        return { issues, notes };
       }, [L.trial, L.qr && (tab === 'dr' || tab === 'qz')]);
       const mode = tab === 'plan' ? '授業計画' : (ans ? '解答つき' : '生徒用'), tag = tab === 'plan' ? 'plan' : (ans ? 'ans' : 'student');
       const n = await page.locator('.wsp').count();
@@ -154,6 +162,7 @@ async function readQr(page, loc) {
       const name = `${L.id}（${tab === 'dr' ? '演習プリント・' : tab === 'qz' ? '小テスト・' : tab === 'plan' ? '' : 'ワークシート・'}${mode}）`;
       if (res.issues.length) { bad += res.issues.length; console.log(`✗ ${name}`); res.issues.forEach(s => console.log('   ' + s)); }
       else console.log(`○ ${name}　${n}ページ・指摘 0`);
+      if (!ans && res.notes && res.notes.length) res.notes.forEach(s => console.log('   （参考）' + s));
     }
   }
   // 3点セット：ページ数と、印刷（PDF）のページ数
@@ -174,9 +183,9 @@ async function readQr(page, loc) {
     else console.log(`○ ${L.id}（3点セット）　${got}ページ・印刷 ${pdfPages}ページ（両面なら ${Math.ceil(want / 2)}枚＋）`);
   }
   // 学習予定表（#/print/<単元>/sched）：表裏 2 ページ、はみ出しなし、QR（単元の記録ページ）
-  if (!only.length) {
+  if (!only.length || unitsSel) {
     if (!jsQR) console.log('（jsqr・pngjs がないので、QR の読みとりは省略しました）');
-    for (const key of await page.evaluate(() => IK.qrUnits.filter(k => IK.plansheet(k)))) {
+    for (const key of (await page.evaluate(() => IK.qrUnits.filter(k => IK.plansheet(k)))).filter(k => !unitsSel || unitsSel.includes(k))) {
       await page.goto(url + '#/print/' + key + '/sched');
       await page.reload();
       await page.waitForSelector('.wsp');
@@ -185,7 +194,7 @@ async function readQr(page, loc) {
       const n = await page.locator('.wsp').count();
       const pdf = await page.pdf({ preferCSSPageSize: true, printBackground: true });
       const pdfPages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
-      if (n !== 2) msgs.push(`学習予定表が ${n} ページ（A4 表裏の 2 ページにする）`);
+      if (n > 2) msgs.push(`学習予定表が ${n} ページ（A4 表裏の 2 ページ以内にする）`);   // 授業が少ない単元（5時間など）は、1ページでよい
       if (pdfPages !== n) msgs.push(`印刷（PDF）のページ数が ${pdfPages}（${n} ページのはず）`);
       const r = await page.evaluate(() => {
         const o = [], pitch = 7 * 96 / 25.4;
@@ -236,13 +245,13 @@ async function readQr(page, loc) {
     await page.setViewportSize({ width: 1000, height: 1300 });
   }
   // 単元まとめ印刷：ページ数（両面印刷の白紙をふくむ）と、印刷（PDF）のページ数
-  if (!only.length) {
+  if (!only.length || unitsSel) {
     const units = await page.evaluate(() => IK.units.map(u => {
       const ids = IK.order.filter(id => IK.lessons[id].unit === u.key && (IK.plans[id] || IK.drills[id] || IK.quizzes[id]));
       const docs = ids.flatMap(id => [IK.lessons[id], IK.drills[id], IK.quizzes[id]].filter(Boolean)).map(sh => sh.blocks.filter(b => b.type === 'break').length + 1);
       return { key: u.key, n: ids.length, pages: docs.reduce((a, c) => a + c, 0), blanks: docs.filter((n, i) => n % 2 === 1 && i < docs.length - 1).length };
     }).filter(u => u.n));
-    for (const u of units) {
+    for (const u of units.filter(u => !unitsSel || unitsSel.includes(u.key))) {
       await page.goto(url + '#/print/' + u.key);
       await page.reload();
       await page.waitForSelector('.pbar');
@@ -306,5 +315,6 @@ async function readQr(page, loc) {
   if (errors.length) { bad += errors.length; console.log('ブラウザのエラー：'); errors.forEach(e => console.log('   ' + e)); }
   await browser.close();
   console.log(`画像：${outDir}`);
+  console.log(bad ? `✗ ${bad} 件の指摘` : '○ 指摘 0');
   process.exit(bad ? 1 : 0);
 })();

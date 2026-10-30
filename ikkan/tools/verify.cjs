@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-/* 検算と形の検査（ブラウザなしで動く）。  使い方：node tools/verify.cjs
+/* 検算と形の検査（ブラウザなしで動く）。  使い方：node tools/verify.cjs [授業のID または 単元のキー …]（指定すると、その授業だけを調べる。例：node tools/verify.cjs kukan_new-02 data_new）
    すべての授業について：
    ① checks に書いた式が成り立つか（PI＝π、near(a, b)＝ほぼ等しい）
-   ② ワークシート・演習プリントが、1ページの行数（37行）におさまっているか
+   ② ワークシート・演習プリント・小テストが、1ページの行数（罫 7mm で 37行、新しい形の 8mm で 33行）におさまっているか
    ③ 板書・解答の行数（\n で区切った行）が、B(行数, …) の枠に入るか
    ④ ワークシート：1問目（最初の学習課題・例題）には、空欄 {{ }} がないか。2問目以降には、空欄（問題文か表）があるか
       （考えようは、最初から全部印刷する。「ことば」の空欄は、重要語句の穴埋めなので数えない）
@@ -10,8 +10,11 @@
    ⑤ 時間割の分の合計が 50 か。解説・発問が 10〜15 分か。演習が 20 分以上か
    ⑥ 考えようの解答（教卓の解答）に、考えようの答えが載っていないか（ワークシートの考えようの下の B に、答えを書いていない）
    演習プリント・小テストについて（印刷の3点セット）：
-   ⑦ 演習プリントは A4 表裏の 2ページ。表＝基礎・標準、裏＝応用・入試レベル
+   ⑦ 演習プリントは A4 表裏の 2ページ。表＝基礎・標準（新しい形は 確かめる・使ってみる）、裏＝応用・入試レベル（ひろげる・チャレンジ★★）
    ⑧ 小テストは A4 1ページ・10点満点。チャレンジの前の問題の点数（○点）の合計が 10。最後の「チャレンジ」は 1問だけで、別枠（正解なら、ほかがまちがっていても満点） 
+   新しい形（授業に form: 'new'）について：
+⑩ ワークシートは A4 1枚（めあて・「今日の問い」・ことば・例題）。罫は 8mm。演習プリントは 確かめる 2問・使ってみる 4問（表）／ひろげる 1問（考えよう）・チャレンジ★★ 1問（ヒントカードつき）（裏）の 8問。
+   「ここまでできたら、今日の合格！」の行がある。ひろげる（考えよう）の下に、答えを書いていない
    記録ページ（IK.qrUnits の単元）について：
 ⑨ 演習プリント・小テストに QR があり、読みとりやすい大きさ（33 モジュール＝バージョン 4 まで）か。問題の番号・問題IDがかぶらないか。
    答えのない問題（作図など）は、ひろって知らせる。学習予定表が A4 表裏 2 ページ以内におさまるか
@@ -25,10 +28,16 @@ const ctx = { console };
 ctx.window = ctx;
 vm.createContext(ctx);
 const dataDir = fs.readdirSync(path.join(root, 'data'));
-const files = ['js/vendor/qrcode.js', 'js/core.js', 'js/qr.js', 'js/figs.js', 'js/figs3d.js', 'js/plan.js', 'js/rec.js', 'js/plansheet.js', 'data/lessons.js',
+const files = ['js/vendor/qrcode.js', 'js/core.js', 'js/qr.js', 'js/figs.js', 'js/geo.js', 'js/figs3d.js', 'js/plan.js', 'js/rec.js', 'js/plansheet.js', 'data/lessons.js',
   ...dataDir.filter(f => /^ws_.*\.js$/.test(f)).sort().map(f => 'data/' + f),
   ...dataDir.filter(f => /^lesson_.*\.js$/.test(f)).sort().map(f => 'data/' + f)];
-for (const f of files) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
+const only = process.argv.slice(2).filter(a => !a.startsWith('-'));   // 授業のID（kukan_new-02）か、単元のキー（kukan_new）
+const pick = id => !only.length || only.some(o => id === o || id.startsWith(o + '-'));
+const fileOf = id => 'lesson_' + id.replace(/-(\d+)$/, '_$1') + '.js';
+const loadErr = [];   // 読みこめなかったファイル（ほかの人が書きかけのものがあっても、止まらないようにする）
+for (const f of files) {
+  try { vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f }); } catch (e) { loadErr.push([f, e.message]); }
+}
 const IK = ctx.IK;
 
 const near = (a, b) => Math.abs(a - b) < 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
@@ -62,7 +71,9 @@ function checkDrill(id, dr) {
   const labels = bl => bl.filter(b => b.type === 'meate' && b.label).map(b => b.label);
   total += 3;
   if (pages.length !== 2) { bad(id, `演習プリントが ${pages.length} ページ（A4 の表裏 2ページにする）`); return; }
-  const f = labels(pages[0]), r = labels(pages[1]);
+  // 新しい形の見出し（確かめる・使ってみる・ひろげる・チャレンジ★★）は、基礎・標準・応用・入試レベルと同じ段として読む
+  const AS = { 確かめる: '基礎', 使ってみる: '標準', ひろげる: '応用', 'チャレンジ★★': '入試レベル', 'チャレンジ★': '入試レベル' }, std = x => AS[x] || x;
+  const f = labels(pages[0]).map(std), r = labels(pages[1]).map(std);
   if (!(f.includes('基礎') && f.includes('標準')) || f.includes('応用') || f.includes('入試レベル')) bad(id, `演習プリントの表は「基礎・標準」にする（いまの見出し：${f.join('・')}）`);
   else if (!(r.includes('応用') && r.includes('入試レベル')) || r.includes('基礎') || r.includes('標準')) bad(id, `演習プリントの裏は「応用・入試レベル」にする（いまの見出し：${r.join('・')}）`);
   else console.log(`  演習プリント：表＝${f.join('・')}／裏＝${r.join('・')}`);
@@ -135,6 +146,42 @@ function checkPlan(id, p) {
   if (!th.q || !(th.views || []).length || !(th.hints || []).length || !th.direction) bad(id, '考えようの設計（問い・見方・ヒント・方向性）がそろっていない');
 }
 
+// ⑩ 新しい形：ワークシート A4 1枚・演習プリント 8問（確かめる 2・使ってみる 4・ひろげる 1・チャレンジ★★ 1）
+function checkNew(id, l) {
+  total += 8;
+  if (l.pitch !== 8) bad(id, `新しい形の罫は 8mm にする（pitch: 8。いま ${l.pitch}）`);
+  if (l.blocks.some(b => b.type === 'break')) bad(id, 'ワークシートは A4 1枚にする（BR() を使わない）');
+  const k0 = kids({ type: 'cols', cols: [{ blocks: l.blocks }] }, [])[0];
+  if (!k0 || k0.label !== '今日の問い') bad(id, 'ワークシートの最初の枠は「今日の問い」にする');
+  if (!l.blocks.some(b => b.type === 'words')) bad(id, 'ワークシートに「ことば」（WD）がない');
+  const dr = IK.drills[id];
+  if (!dr) { bad(id, '演習プリントがない'); return; }
+  const flat = []; eachBlock(dr.blocks, b => flat.push(b));
+  const SEC = ['確かめる', '使ってみる', 'ひろげる', 'チャレンジ★★'], want = { '確かめる': 2, '使ってみる': 4, 'ひろげる': 1, 'チャレンジ★★': 1 };
+  let sec = null; const cnt = {}, nos = [];
+  flat.forEach(b => {
+    if (b.type === 'meate' && SEC.includes(b.label)) { sec = b.label; cnt[sec] = cnt[sec] || 0; }
+    else if (b.type === 'text' && /^（\d+）$/.test(b.label || '') && sec) { cnt[sec]++; nos.push(+b.label.slice(1, -1)); }
+  });
+  const miss = SEC.filter(k => cnt[k] === undefined);
+  if (miss.length) bad(id, `演習プリントに見出し「${miss.join('」「')}」がない`);
+  else {
+    const diff = SEC.filter(k => cnt[k] !== want[k]);
+    if (diff.length) bad(id, `演習プリントの問題数：${SEC.map(k => `${k} ${cnt[k]}`).join('・')}（確かめる 2・使ってみる 4・ひろげる 1・チャレンジ★★ 1 にする）`);
+    else if (nos.some((n, i) => n !== i + 1)) bad(id, `演習プリントの問題の番号が（1）〜（8）の順になっていない：${nos.join('、')}`);
+    else console.log('  新しい形：確かめる 2・使ってみる 4・ひろげる 1・チャレンジ★★ 1（8問）');
+  }
+  const hiro = flat.find(b => b.type === 'meate' && b.label === 'ひろげる');
+  if (hiro && !/^考えよう/.test(hiro.text)) bad(id, 'ひろげる の見出しは「考えよう：…」で始める');
+  if (!flat.some(b => b.type === 'text' && /今日の合格/.test(b.text))) bad(id, '演習プリントの表の終わりに「★ ここまでできたら、今日の合格！」の行がない');
+  const iC = flat.findIndex(b => b.type === 'meate' && b.label === 'チャレンジ★★'), iH = flat.indexOf(hiro);
+  if (iC >= 0 && !flat.slice(iC).some(b => b.type === 'manabi' && b.label === 'ヒントカード')) bad(id, 'チャレンジ★★ に「ヒントカード」（MA）がない');
+  if (iH >= 0 && iC > iH) {
+    const leak = flat.slice(iH, iC).filter(b => b.type === 'board' && b.answer);
+    if (leak.length) bad(id, `ひろげる（考えよう）の下に答えが書いてある（${leak.length}か所）。考えようの答えは載せない`);
+  }
+}
+
 // ⑨ 記録ページ：QR・問題の取り出し・問題ID
 const seen = {};
 function checkRec(id) {
@@ -148,13 +195,16 @@ function checkRec(id) {
     const items = IK.rec.items(id, k), nos = items.map(i => i.no);
     if (!items.length) { bad(id, `${nm}から、問題（（1）（2）…）を取り出せない`); return; }
     if (nos.length !== new Set(nos).size) bad(id, `${nm}の問題の番号がかぶっている：${nos.join('、')}`);
-    const noAns = items.filter(i => !i.ans).map(i => i.label);
+    const isNew = IK.lessons[id].form === 'new' && k === 'dr';   // 新しい形：（7）ひろげる（考えよう）は、答えを載せないのが決まり
+    const noAns = items.filter(i => !i.ans && !(isNew && i.label === '（7）')).map(i => i.label);
     console.log(`  記録ページ（${nm}）：${items.length}問・QR ${size}モジュール${noAns.length ? `・答えのない問題 ${noAns.join('')}（作図など）` : ''}`);
     items.forEach(i => { seen[i.id] = (seen[i.id] || 0) + 1; });
   });
 }
 
-for (const id of IK.order) {
+const ids = IK.order.filter(pick);
+if (only.length && !ids.length) { console.log(`✗ 「${only.join('・')}」にあてはまる授業がない（読みこめたファイル ${files.length - loadErr.length}）`); ng++; }
+for (const id of ids) {
   const l = IK.lessons[id];
   console.log(`${id}　${l.title}`);
   (l.checks || []).forEach(src => {
@@ -169,13 +219,19 @@ for (const id of IK.order) {
   if (IK.drills[id]) { checkSheet(id, '演習プリント', IK.drills[id]); checkDrill(id, IK.drills[id]); }
   if (IK.quizzes[id]) { checkSheet(id, '小テスト', IK.quizzes[id]); checkQuiz(id, IK.quizzes[id]); }
   if (IK.plans[id]) checkPlan(id, IK.plans[id]);
+  if (l.form === 'new') checkNew(id, l);
   if (IK.qrUnits.indexOf(l.unit) >= 0 && (IK.drills[id] || IK.quizzes[id])) checkRec(id);
 }
+// 読みこめなかったファイル（指定したときは、指定した授業のものだけ、指摘にする）
+loadErr.forEach(([f, m]) => {
+  if (!only.length || ids.some(id => f.endsWith('/' + fileOf(id)))) bad(f, `読みこめない（${m}）`);
+  else console.log(`（参考：${f} は読みこめない。${m}）`);
+});
 // ⑨ 問題IDが全体でかぶらないか、学習予定表が表裏 2 ページ以内か
 total++;
 const dup = Object.keys(seen).filter(k => seen[k] > 1);
 if (dup.length) bad('記録', `問題IDがかぶっている：${dup.slice(0, 5).join('、')}`); else console.log(`\n記録ページ：問題ID ${Object.keys(seen).length} 件（かぶりなし）`);
-IK.qrUnits.forEach(u => {
+IK.qrUnits.filter(u => !only.length || ids.some(id => IK.lessons[id].unit === u)).forEach(u => {
   const ps = IK.plansheet(u);
   if (!ps) return;
   total++;

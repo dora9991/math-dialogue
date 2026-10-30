@@ -15,6 +15,7 @@ export const UNITS_CFG = {
   shiki: { prefix: "sk", grade: "J2", area: "num", chapterName: "式の計算（ikkan の授業）", ikkanName: "式の計算" },
   renritsu: { prefix: "rk", grade: "J2", area: "num", chapterName: "連立方程式（ikkan の授業）", ikkanName: "連立方程式" },
   ichiji: { prefix: "ik", grade: "J2", area: "func", chapterName: "一次関数（ikkan の授業）", ikkanName: "一次関数" },
+  heikou: { prefix: "hk", grade: "J2", area: "geo", chapterName: "平行と合同（ikkan の授業）", ikkanName: "平行と合同" },
 };
 
 /**

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* スライドをつくるための「元の資料」を、授業ごとに書き出す。
-   使い方：  NODE_PATH=$(npm root -g) node tools/slide-src.cjs <単元のキー（kukan・data・shiki・renritsu・ichiji）> <JSON の出力先フォルダ> [--label-scale=1.5]
+   使い方：  NODE_PATH=$(npm root -g) node tools/slide-src.cjs <単元のキー（kukan・data・shiki・renritsu・ichiji・heikou）> <JSON の出力先フォルダ> [--label-scale=1.5] [--crop]
    書き出すもの：
      <出力先>/<授業のID>.json … ワークシートの表面・裏（問題・答え・表・図の場所）と、授業計画（50分の流れ・発問・重要語句・考えよう）
      slides/img/<授業のID>_f<N>_q.png・_a.png … ワークシートの図を、1つずつ PNG にしたもの（問題用＝空欄のまま、答え用＝赤い答え）。JSON の figs の q・a が、この場所（img/…png）
@@ -13,6 +13,7 @@ const { chromium } = require('playwright');
 const root = path.resolve(__dirname, '..');
 const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const [unit, outDir] = args;
+const CROP = process.argv.includes('--crop');   // 図のまわりの白い余白を切りつめる（答えの図もふくめた範囲で、問題用・答え用とも同じに切る。スライドで、図を大きく映せる）
 const scaleArg = process.argv.find((a) => a.startsWith('--label-scale=')), LABEL = scaleArg ? parseFloat(scaleArg.split('=')[1]) : 1;   // 図の字（目もりの数字・点の名前など）を、スクリーンで読めるように、何倍にするか
 if (!unit || !outDir) { console.log('使い方：node tools/slide-src.cjs <単元のキー> <出力先フォルダ>'); process.exit(1); }
 fs.mkdirSync(outDir, { recursive: true });
@@ -23,7 +24,7 @@ const ctx = { console };
 ctx.window = ctx;
 vm.createContext(ctx);
 const dataDir = fs.readdirSync(path.join(root, 'data'));
-for (const f of ['js/vendor/qrcode.js', 'js/core.js', 'js/qr.js', 'js/figs.js', 'js/figs3d.js', 'js/plan.js', 'js/rec.js', 'js/plansheet.js', 'data/lessons.js',
+for (const f of ['js/vendor/qrcode.js', 'js/core.js', 'js/qr.js', 'js/figs.js', 'js/geo.js', 'js/figs3d.js', 'js/plan.js', 'js/rec.js', 'js/plansheet.js', 'data/lessons.js',
   ...dataDir.filter((f) => /^ws_.*\.js$/.test(f)).sort().map((f) => 'data/' + f),
   ...dataDir.filter((f) => /^lesson_.*\.js$/.test(f)).sort().map((f) => 'data/' + f)]) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
 const IK = ctx.IK;
@@ -54,6 +55,7 @@ for (const id of ids) {
 (async () => {
   const b = await chromium.launch();
   const page = await (await b.newContext({ viewport: { width: 1000, height: 1300 }, deviceScaleFactor: 6 })).newPage();
+  await page.addInitScript((k) => { window.IK = window.IK || {}; window.IK.labelScale = k; }, LABEL);   // GEO（平面図形）は、字の大きさと置く距離を、図の側で変える
   await page.goto('file://' + path.join(root, 'index.html'));
   await page.addStyleTag({ content: 'header.top,.pbar{display:none !important}' });   // 上に貼りつく見出し（タブ・ボタン）が、図に写りこまないように
   let nFig = 0;
@@ -61,8 +63,24 @@ for (const id of ids) {
     await page.evaluate((h) => { location.hash = h; }, '#/' + id + '/ws');
     await page.waitForTimeout(300);
     await page.evaluate(() => { document.body.classList.remove('ans-on'); document.querySelector('.pages').style.zoom = 1; });
-    if (LABEL !== 1) await page.evaluate((k) => document.querySelectorAll('.wsp .wb-fig svg text').forEach((t) => { const fs = parseFloat(t.getAttribute('font-size')); if (fs) t.setAttribute('font-size', String(fs * k)); }), LABEL);
+    if (LABEL !== 1) await page.evaluate((k) => document.querySelectorAll('.wsp .wb-fig svg text').forEach((t) => { if (t.closest('.geo')) return; const fs = parseFloat(t.getAttribute('font-size')); if (fs) t.setAttribute('font-size', String(fs * k)); }), LABEL);
     const sel = '.wsp .wb-fig svg', n = await page.locator(sel).count();
+    if (CROP) {
+      await page.evaluate(() => document.body.classList.add('ans-on'));
+      await page.evaluate((sel) => document.querySelectorAll(sel).forEach((svg) => {
+        const G = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        while (svg.firstChild) G.appendChild(svg.firstChild);
+        svg.appendChild(G);
+        const bb = G.getBBox(), m = 1.3;
+        while (G.firstChild) svg.insertBefore(G.firstChild, G);
+        svg.removeChild(G);
+        if (!(bb.width > 4 && bb.height > 4)) return;
+        const w = bb.width + 2 * m, h = bb.height + 2 * m;
+        svg.setAttribute('viewBox', `${bb.x - m} ${bb.y - m} ${w} ${h}`);
+        svg.setAttribute('width', w + 'mm'); svg.setAttribute('height', h + 'mm');
+      }), '.wsp .wb-fig svg');
+      await page.evaluate(() => document.body.classList.remove('ans-on'));
+    }
     const infos = [];
     for (let i = 0; i < n; i++) {
       const el = page.locator(sel).nth(i), box = await el.boundingBox();

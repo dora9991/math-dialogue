@@ -5,7 +5,7 @@
 
    スライドの元（slides-src/<単元>/<接頭字><授業の番号2けた>-<種類>.html）：1枚＝<section id="…"> が1つだけのファイル（1920×1080 の画面。
    スタイルは、すべてインライン。<aside> が、先生の速記メモ）。画像は、`img/<名前>.png`（slides/img/ にある）。
-   接頭字：k＝空間図形（kukan）、d＝データの活用（data）、s＝式の計算（shiki）、r＝連立方程式（renritsu）、i＝一次関数（ichiji）
+   接頭字：k＝空間図形（kukan）、d＝データの活用（data）、s＝式の計算（shiki）、r＝連立方程式（renritsu）、i＝一次関数（ichiji）、h＝平行と合同（heikou）
    種類（この順に並ぶ）：pair（ペア学習）・aim（めあて＋学習課題）・aim-a・word-q（ことば）・word-a・ex-q（例題）・ex-a・ex2-q・ex2-a・ex3-q・ex3-a・think（考えよう）・end（振り返り）
    できるもの：slides/<授業のID>.html（そのまま、ブラウザで開ける。矢印キー・タップで進む。F＝全画面、N＝先生のメモ、P＝印刷）、data/slides.js（授業のID → ページ・枚数） */
 const fs = require('fs');
@@ -14,7 +14,7 @@ const vm = require('vm');
 
 const root = path.resolve(__dirname, '..');
 const CHECK = process.argv.includes('--check');
-const PREFIX = { k: 'kukan', d: 'data', s: 'shiki', r: 'renritsu', i: 'ichiji' };
+const PREFIX = { k: 'kukan', d: 'data', s: 'shiki', r: 'renritsu', i: 'ichiji', h: 'heikou' };
 const KINDS = ['pair', 'aim', 'aim-a', 'word-q', 'word-a', 'ex-q', 'ex-a', 'ex2-q', 'ex2-a', 'ex3-q', 'ex3-a', 'think', 'end'];
 
 // ikkan の授業データ（題・単元名を使う）
@@ -22,7 +22,7 @@ const ctx = { console };
 ctx.window = ctx;
 vm.createContext(ctx);
 const dataDir = fs.readdirSync(path.join(root, 'data'));
-for (const f of ['js/vendor/qrcode.js', 'js/core.js', 'js/qr.js', 'js/figs.js', 'js/figs3d.js', 'js/plan.js', 'js/rec.js', 'js/plansheet.js', 'data/lessons.js',
+for (const f of ['js/vendor/qrcode.js', 'js/core.js', 'js/qr.js', 'js/figs.js', 'js/geo.js', 'js/figs3d.js', 'js/plan.js', 'js/rec.js', 'js/plansheet.js', 'data/lessons.js',
   ...dataDir.filter((f) => /^ws_.*\.js$/.test(f)).sort().map((f) => 'data/' + f),
   ...dataDir.filter((f) => /^lesson_.*\.js$/.test(f)).sort().map((f) => 'data/' + f)]) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
 const IK = ctx.IK;
