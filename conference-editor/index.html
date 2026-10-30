@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>大会サイト 編集画面</title>
+<link rel="stylesheet" href="css/site-sample.css">
+<link rel="stylesheet" href="css/editor.css">
+</head>
+<body>
+<a class="ce-skip" href="#ce-app">編集画面へ</a>
+
+<header class="ce-top">
+  <h1>大会サイト 編集画面</h1>
+  <p class="ce-who">
+    <span id="ce-mode" class="ce-badge"></span>
+    <button id="ce-logout" type="button" class="ce-link" hidden>ログアウト</button>
+  </p>
+</header>
+
+<p id="ce-banner" class="ce-banner" role="status" hidden></p>
+
+<!-- ログイン（共同編集モードのときだけ） -->
+<section id="ce-login" class="ce-card" hidden aria-labelledby="ce-login-h">
+  <h2 id="ce-login-h">ログイン</h2>
+  <p class="ce-note">すでにアカウントがあり、編集者として登録された人だけが、編集できます。パスワードで入るか、メールに届く「リンク」「6桁のコード」で入ってください。</p>
+  <div class="ce-field"><label for="ce-email"><span class="ce-lab">メールアドレス</span></label>
+    <input id="ce-email" type="email" autocomplete="username" inputmode="email"></div>
+  <div class="ce-field"><label for="ce-password"><span class="ce-lab">パスワード</span></label>
+    <input id="ce-password" type="password" autocomplete="current-password"></div>
+  <p><button id="ce-signin" type="button" class="ce-btn ce-primary">パスワードでログイン</button></p>
+  <p class="ce-note">パスワードを使わないとき：</p>
+  <p><button id="ce-send" type="button" class="ce-btn">ログイン用のメールを送る</button></p>
+  <div id="ce-code-box" hidden>
+    <div class="ce-field"><label for="ce-code"><span class="ce-lab">6桁のコード</span></label>
+      <input id="ce-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="12"></div>
+    <p><button id="ce-verify" type="button" class="ce-btn">コードでログイン</button></p>
+  </div>
+</section>
+
+<div id="ce-app" class="ce-app" hidden>
+
+  <!-- 左：サイトの見取り図。編集したい場所を選ぶ。いま編集している場所が色で分かる -->
+  <nav class="ce-map" aria-label="サイトの見取り図">
+    <p class="ce-map-title">サイトの見取り図<small>編集したい場所を選びます（ページの上から順）</small></p>
+    <div id="ce-tabs" class="ce-tabs" role="tablist" aria-orientation="vertical" aria-label="編集する場所"></div>
+  </nav>
+
+  <!-- 中：いま編集しているところ／入力欄／保存と公開 -->
+  <main class="ce-main">
+    <section id="ce-where" class="ce-where" aria-live="polite">
+      <p class="ce-where-label">いま編集しているところ</p>
+      <h2 id="ce-where-title" class="ce-where-title"></h2>
+      <p id="ce-where-desc" class="ce-where-desc"></p>
+      <p class="ce-where-links">
+        <a id="ce-where-link" href="#" target="_blank" rel="noopener" hidden>サイトのこの部分を開く ↗</a>
+        <a class="ce-jump" href="#ce-side">↓ サイトでの見え方を見る</a>
+      </p>
+    </section>
+
+    <section id="ce-panel" class="ce-panel" role="tabpanel"></section>
+
+    <section id="ce-problems" class="ce-problems" aria-live="polite"></section>
+
+    <section class="ce-bar" aria-label="保存と公開">
+      <p id="ce-status" class="ce-status"></p>
+      <p class="ce-actions">
+        <button id="ce-save" type="button" class="ce-btn">下書きを保存</button>
+        <button id="ce-publish" type="button" class="ce-btn ce-primary">公開する</button>
+        <button id="ce-discard" type="button" class="ce-btn ce-ghost">公開中の内容に戻す</button>
+      </p>
+    </section>
+  </main>
+
+  <!-- 右：サイトでの見え方。入力欄を触ると、ここの該当する行が光る（行を押すと、入力欄に飛ぶ） -->
+  <aside id="ce-side" class="ce-side" aria-label="サイトでの見え方">
+    <p class="ce-pv-title">サイトでの見え方<small>いまの下書きです。公開すると、こう出ます。<br>光っている行が、いま編集している行です（行を押すと、入力欄に移ります）。</small></p>
+    <div class="ce-pv-frame">
+      <div class="ce-pv-bar" aria-hidden="true"><i></i><i></i><i></i><span>サイトのページ</span></div>
+      <div class="ce-pv-page">
+        <h3 id="ce-pv-h" class="ce-pv-h"></h3>
+        <div id="ce-preview" class="ce-preview"></div>
+      </div>
+    </div>
+    <p class="ce-note ce-pv-note">点線の薄い行は、まだ書き終えていない行です。公開すると、サイトには出ません。</p>
+  </aside>
+</div>
+
+<script src="config.js"></script>
+<script src="js/schema.js"></script>
+<script src="js/site-content.js"></script>
+<script src="js/store-local.js"></script>
+<script src="js/store-supabase.js"></script>
+<script src="js/editor.js"></script>
+</body>
+</html>
