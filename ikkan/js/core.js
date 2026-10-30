@@ -310,7 +310,7 @@
   // 記録ページの QR コード（演習プリント・小テスト・学習予定表の右上）。sheet.qr に '#/' のあとの場所（例：r/kukan-03/dr）を書く
   const QR_MM = 14, QR_TOP = 6.5;
   IK.qrBase = IK.qrBase || 'https://dora9991.github.io/math-dialogue/ikkan/';
-  IK.qrUnits = IK.qrUnits || ['kukan', 'data', 'shiki', 'renritsu', 'ichiji', 'heikou', 'kukan_new', 'data_new', 'seifu', 'moji', 'hotei', 'hirei', 'heimen'];   // 記録ページ（コツコツくんにつなぐ）を使う単元
+  IK.qrUnits = IK.qrUnits || ['kukan', 'data', 'shiki', 'renritsu', 'ichiji', 'heikou', 'kukan_new', 'data_new', 'seifu', 'moji', 'hotei', 'hirei', 'heimen', 'sankaku', 'kakuritsu', 'hako', 'takou', 'heihou', 'niji', 'kansu', 'souji', 'en', 'sanhei', 'hyouhon'];   // 記録ページ（コツコツくんにつなぐ）を使う単元
 
   function pagesHTML(sheet) {
     const g = geo(sheet), P = g.P, pages = splitPages(sheet.blocks), hd = sheet.head != null ? sheet.head : '';
