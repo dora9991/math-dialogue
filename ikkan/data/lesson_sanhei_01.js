@@ -11,7 +11,7 @@
   const RED = '#d62828', INK = '#222';
   const f2 = n => String(Math.round(n * 100) / 100);
   // 字の幅のめやす（mm）。字の大きさ s
-  const tw = (t, s) => [...String(t)].reduce((a, ch) => a + (/[0-9]/.test(ch) ? 0.56 : /[A-Za-z]/.test(ch) ? 0.52 : /[⺀-￿]/.test(ch) ? 1 : 0.6) * s, 0);
+  const tw = (t, s) => [...String(t)].reduce((a, ch) => a + (/[0-9]/.test(ch) ? 0.62 : /[A-Za-z]/.test(ch) ? 0.58 : /[⺀-￿]/.test(ch) ? 1 : 0.6) * s, 0);
   const wOf = (str, s) => String(str).split(/(√\d+)/).filter(Boolean).reduce((a, p) => a + (p[0] === '√' ? 0.7 * s + (p.length - 1) * 0.56 * s : tw(p, s)), 0);
 
   // 図の中の字。「2√13cm」のように書くと、√ のあとの数字の上に線をひく（h.rich は √ に対応していないため、ここで描く）。c＝√ の線の色
@@ -32,7 +32,7 @@
   //   pts＝{名前:[x,y]}  polys＝['ABC']（閉じた多角形）  segs＝[['A','B',{dash:1}]]  right＝[['C','B','A']]（C の直角のしるし）
   //   lens＝[{a:'B',b:'C',t:'6cm',flip:true,k:1.4,dx,dy,red:true}]（辺の長さ。字は図形の外がわ。red＝解答のとき赤）
   //   angs＝[{at:'B',a:'C',b:'A',t:'45°',r:5,lr:9}]（角の弧と字）  vn＝'ABC'（頂点の名前を書く）  names＝{A:向き(度)}
-  //   cap＝図の名前  scale＝1目もりの mm  pad＝まわりの余白  under・extra＝(h,X,Y,s)=>'SVG'（さきに描く・あとに描く）
+  //   cap＝図の名前  w＝図の幅の割合  scale＝1目もりの mm  pad＝まわりの余白  under・extra＝(h,X,Y,s)=>'SVG'（さきに描く・あとに描く）
   const FIG = o => SVG((W, H, h) => {
     const P = o.pts, pt = k => (Array.isArray(k) ? k : P[k]);
     const all = Object.keys(P).map(k => P[k]).concat(o.ext || []);
@@ -74,7 +74,7 @@
       out += h.tx(sx(k) + kk * Math.cos(an), sy(k) - kk * Math.sin(an) + 1.1, k, 3.3, 'middle', ' class="pl"');
     });
     return out;
-  });
+  }, o.w ? { w: o.w } : undefined);
 
   // 直角三角形（直角は左下の C。a＝横の辺 CB、b＝たての辺 CA）。ha・vb・hy＝辺の字、angB・angA＝B・A のところの角の字、cap＝図の名前
   const RT = (a, b, o) => {

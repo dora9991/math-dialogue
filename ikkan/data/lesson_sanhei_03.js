@@ -11,7 +11,7 @@
   const RED = '#d62828', INK = '#222';
   const f2 = n => String(Math.round(n * 100) / 100);
   // 字の幅のめやす（mm）。字の大きさ s
-  const tw = (t, s) => [...String(t)].reduce((a, ch) => a + (/[0-9]/.test(ch) ? 0.56 : /[A-Za-z]/.test(ch) ? 0.52 : /[⺀-￿]/.test(ch) ? 1 : 0.6) * s, 0);
+  const tw = (t, s) => [...String(t)].reduce((a, ch) => a + (/[0-9]/.test(ch) ? 0.62 : /[A-Za-z]/.test(ch) ? 0.58 : /[⺀-￿]/.test(ch) ? 1 : 0.6) * s, 0);
   const wOf = (str, s) => String(str).split(/(√\d+)/).filter(Boolean).reduce((a, p) => a + (p[0] === '√' ? 0.7 * s + (p.length - 1) * 0.56 * s : tw(p, s)), 0);
 
   // 図の中の字。「2√13cm」のように書くと、√ のあとの数字の上に線をひく（h.rich は √ に対応していないため、ここで描く）。c＝√ の線の色
