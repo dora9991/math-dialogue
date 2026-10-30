@@ -4,9 +4,11 @@
   [['seifu', '正の数・負の数', 'new'], ['moji', '文字と式', 'new'], ['hotei', '方程式', 'new'], ['hirei', '比例と反比例', 'new'], ['heimen', '平面図形', 'new'],
    ['kukan', '空間図形'], ['kukan_new', '空間図形（新しい形）', 'new'], ['data', 'データの活用'], ['data_new', 'データの活用（新しい形）', 'new']]
     .forEach(([key, name, form]) => IK.unit(form ? { key, grade: 1, name, form } : { key, grade: 1, name }));
-  // 中2（第1章から、つくった授業のある単元だけ）
+  // 中2（第1章から、つくった授業のある単元だけ）。第1〜4章は、前の形（shiki など）も残し、新しい形（shiki_new など）を足した
   [['shiki', '式の計算'], ['renritsu', '連立方程式'], ['ichiji', '一次関数'], ['heikou', '平行と合同']]
     .forEach(([key, name]) => IK.unit({ key, grade: 2, name }));
+  [['shiki_new', '式の計算（新しい形）'], ['renritsu_new', '連立方程式（新しい形）'], ['ichiji_new', '一次関数（新しい形）'], ['heikou_new', '平行と合同（新しい形）']]
+    .forEach(([key, name]) => IK.unit({ key, grade: 2, name, form: 'new' }));
   // 中2の第5〜7章（新しい形）。授業ナビ 標準版では 三角形と四角形（sankaku）・確率（kakuritsu）・データの比較（hako）
   [['sankaku', '図形と証明（三角形と四角形）'], ['kakuritsu', '確率'], ['hako', 'データの比較（箱ひげ図）']]
     .forEach(([key, name]) => IK.unit({ key, grade: 2, name, form: 'new' }));
@@ -130,4 +132,5 @@
     '「文字を1つ消せば、1年の方程式になる」という考えで解き方をつくり、方法を選んで説明する',
     '2つの数量がわからない問題を連立方程式で解決し、解が問題に合うかを確かめる'
   ];
+  ['shiki', 'renritsu', 'ichiji', 'heikou'].forEach(k => { IK.unitGoals[k + '_new'] = IK.unitGoals[k]; });
 })();
