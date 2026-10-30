@@ -38,7 +38,9 @@
   const on = (P, p, a, b) => near(d(P, a + p) + d(P, p + b), d(P, a + b));
   // 3辺の長さ (a, b, c) の三角形の、角の大きさ（度）：余弦定理
   const angs = (a, b, c) => [[a, b, c], [b, c, a], [c, a, b]].map(([x, y, z]) => Math.acos((y * y + z * z - x * x) / (2 * y * z)) * 180 / Math.PI);
-  const LIB = 'const d = ' + d + '; const ang = ' + ang + '; const cong = ' + cong + '; const on = ' + on + '; const angs = ' + angs + ';';
+  // 2つの角（度）から三角形をつくる：底辺 BC＝4、∠B＝a、∠C＝b。A は、B と C から出る 2本の半直線の交点（辺の長さは使わない）
+  const byRays = (a, b) => { const r = x => x * Math.PI / 180, w = [Math.cos(r(a)), Math.sin(r(a))], q = [4 - Math.cos(r(b)), Math.sin(r(b))], t = (4 * q[1]) / (w[0] * q[1] - w[1] * (q[0] - 4)); return { A: [t * w[0], t * w[1]], B: [0, 0], C: [4, 0] }; };
+  const LIB = 'const d = ' + d + '; const ang = ' + ang + '; const cong = ' + cong + '; const on = ' + on + '; const angs = ' + angs + '; const byRays = ' + byRays + ';';
   const chk = (label, body) => '/* ' + label + ' */ (() => { ' + LIB + ' ' + body + ' })()';
 
   /* ---------------- 図（GEO・SVG） ---------------- */
@@ -77,18 +79,18 @@
       chk('第4時 （5）', `const P = ${J(P_5())}; return near(d(P, 'AB'), d(P, 'AC')) && on(P, 'D', 'B', 'C') && near(ang(P, 'A', 'B', 'D'), 18) && near(ang(P, 'B', 'A', 'C'), 60) && near(ang(P, 'D', 'A', 'C'), 78);`),
       // （6）整数 a、b がどちらも偶数ならば a+b は偶数（−20〜20 ですべて）。逆の反例 a＝1、b＝3
       'Array.from({ length: 41 }, (_, i) => i - 20).filter(a => a % 2 === 0).every(a => Array.from({ length: 41 }, (_, i) => i - 20).filter(b => b % 2 === 0).every(b => (a + b) % 2 === 0)) && (1 + 3) % 2 === 0 && 1 % 2 !== 0 && 3 % 2 !== 0',
-      // （7）考えよう（答えは載せない。ここで確かめるだけ）：ア 平行→同位角（座標：平行な 2直線と1本の直線）、逆（同位角が等しい→平行：向きが同じ）／イ x＞2→x＞0、逆は x＝1 が反例／ウ AB＝AC→∠B＝∠C、逆は 2本の半直線でつくった三角形で AB＝AC／エ 6の倍数→3の倍数、逆は 9 が反例
-      chk('第4時 （7）', `const par = (t) => { const u = [Math.cos(t), Math.sin(t)], l1 = [[0, 0], [u[0], u[1]]], l2 = [[2, 3], [2 + u[0], 3 + u[1]]], v = [1, 0.3], cr = (p, q) => p[0] * q[1] - p[1] * q[0], ag = (a, b) => Math.acos((a[0] * b[0] + a[1] * b[1]) / (Math.hypot(...a) * Math.hypot(...b))); return near(ag(u, v), ag(u, v)) && Math.abs(cr(u, u)) < 1e-9; }; const xs = Array.from({ length: 41 }, (_, i) => (i - 20) / 4); const ok = xs.filter(x => x > 2).every(x => x > 0) && xs.some(x => x > 0 && !(x > 2)); const ns = Array.from({ length: 60 }, (_, i) => i + 1); const ok2 = ns.filter(n => n % 6 === 0).every(n => n % 3 === 0) && ns.some(n => n % 3 === 0 && n % 6 !== 0); const T = { A: [2, 2 * Math.tan(65 * Math.PI / 180)], B: [0, 0], C: [4, 0] }; const ok3 = near(d(T, 'AB'), d(T, 'AC')) && near(ang(T, 'B', 'A', 'C'), ang(T, 'C', 'A', 'B')); const S = { A: [4 - Math.cos(65 * Math.PI / 180) * 0, 0] }; return par(0.4) && ok && ok2 && ok3;`),
+      // （7）考えよう（答えは載せない。ここで確かめるだけ）：もとのことがらと逆が、それぞれ正しいか。ア 平行 ⇔ 同位角が等しい（直線の向きの角で、しらべつくす）、イ x＞2 → x＞0（逆は、x＝1 が反例）、ウ AB＝AC ⇔ ∠B＝∠C（座標・2本の半直線）、エ 6の倍数 → 3の倍数（逆は、9 が反例）。表は ○○・○×・○○・○×
+      chk('第4時 （7）', `const xs = Array.from({ length: 81 }, (_, i) => (i - 40) / 4), ns = Array.from({ length: 120 }, (_, i) => i + 1), th = Array.from({ length: 18 }, (_, i) => i * 10), ca = t => ((t - 37) % 180 + 180) % 180; const f = [th.every(a => th.every(b => a !== b || ca(a) === ca(b))), xs.filter(x => x > 2).every(x => x > 0), [30, 45, 70].every(t => { const T = { A: [2, 2 * Math.tan(t * Math.PI / 180)], B: [0, 0], C: [4, 0] }; return near(d(T, 'AB'), d(T, 'AC')) && near(ang(T, 'B', 'A', 'C'), ang(T, 'C', 'A', 'B')); }), ns.filter(n => n % 6 === 0).every(n => n % 3 === 0)]; const b = [th.every(a => th.every(c => ca(a) !== ca(c) || a === c)), xs.filter(x => x > 0).every(x => x > 2), [30, 45, 70].every(t => { const P = byRays(t, t); return near(d(P, 'AB'), d(P, 'AC')); }), ns.filter(n => n % 3 === 0).every(n => n % 6 === 0)]; return f.map((v, i) => (v ? '○' : '×') + (b[i] ? '○' : '×')).join('') === '○○○×○○○×';`),
       // （8）正三角形 ABC、CDE（B、C、E は一直線上）：△ACE≡△BCD（AC＝BC、CE＝CD、∠ACE＝∠BCD＝120°）、AE＝BD。答えの行数
       chk('第4時 （8）', `const P = ${J(P_8())}; return near(d(P, 'AB'), d(P, 'BC')) && near(d(P, 'BC'), d(P, 'CA')) && near(d(P, 'CD'), d(P, 'DE')) && near(d(P, 'DE'), d(P, 'EC')) && on(P, 'C', 'B', 'E') && near(ang(P, 'C', 'A', 'E'), 120) && near(ang(P, 'C', 'B', 'D'), 120) && near(ang(P, 'C', 'A', 'D'), 60) && cong(P, 'ACE', 'BCD') && near(d(P, 'AE'), d(P, 'BD')) && ${J(A_8)}.split('\\n').length === 10;`),
-      // 小テスト（1）2直線が平行ならば、錯角は等しい（座標）、逆（錯角が等しい → 平行）も正しい
-      chk('第4時 小テスト（1）', `const u = [Math.cos(0.7), Math.sin(0.7)], w = [1, 0.2], a = Math.acos((u[0] * w[0] + u[1] * w[1]) / (Math.hypot(...u) * Math.hypot(...w))); const l1 = [3, 1], l2 = [3 + u[0] * 2, 1 + u[1] * 2]; return near(u[0] * (l2[1] - l1[1]) - u[1] * (l2[0] - l1[0]), 0) && near(a, a);`),
+      // 小テスト（1）2直線が平行ならば、錯角は等しい。逆（錯角が等しいならば、平行）も正しい：直線の向きの角（0°〜170°）で、しらべつくす
+      'Array.from({ length: 18 }, (_, i) => i * 10).every((a, _, th) => th.every(b => { const ca = t => ((t - 37) % 180 + 180) % 180; return (a === b) === (ca(a) === ca(b)); }))',
       // 小テスト（2）x＝−4 ならば x²＝16。逆は x＝4 が反例
       '(-4) ** 2 === 16 && 4 ** 2 === 16 && 4 !== -4 && Array.from({ length: 41 }, (_, i) => i - 20).filter(x => x * x === 16).join() === "-4,4"',
       // 小テスト（4）正三角形、∠BAD＝22°：∠ADC＝82°
       chk('第4時 小テスト（4）', `const P = ${J(P_Q4())}; return near(d(P, 'AB'), d(P, 'AC')) && on(P, 'D', 'B', 'C') && near(ang(P, 'A', 'B', 'D'), 22) && near(ang(P, 'D', 'A', 'C'), 82);`),
-      // 小テスト チャレンジ：もとも逆も正しいのは、ア（x＝5 ⇔ x+2＝7）、イ（∠B＝∠C ⇔ AB＝AC）。ウ（正三角形→二等辺三角形）、エ（a＝b → a²＝b²）は、逆が正しくない
-      chk('第4時 小テスト チャレンジ', `const xs = Array.from({ length: 41 }, (_, i) => i - 20); const aF = xs.filter(x => x === 5).every(x => x + 2 === 7), aB = xs.filter(x => x + 2 === 7).every(x => x === 5); const iso = (a, b) => { const r = x => x * Math.PI / 180, w = [Math.cos(r(a)), Math.sin(r(a))], q = [4 - Math.cos(r(b)), Math.sin(r(b))], t = (4 * q[1]) / (w[0] * q[1] - w[1] * (q[0] - 4)), A = [t * w[0], t * w[1]], B = [0, 0], C = [4, 0]; return [near(Math.hypot(A[0] - B[0], A[1] - B[1]), Math.hypot(A[0] - C[0], A[1] - C[1])), near(a, b)]; }; const iF = [30, 45, 70].every(t => iso(t, t)[0] === true); const uF = angs(4, 4, 4).every(x => near(x, 60)) && near(angs(5, 5, 3)[0], angs(5, 5, 3)[1]) && !near(angs(5, 5, 3)[1], angs(5, 5, 3)[2]); const eF = xs.filter(a => a === 2).every(a => a * a === 4), eB = xs.filter(a => a * a === 4).every(a => a === 2); return aF && aB && iF && uF && eF && !eB && 'アイ' === 'アイ';`)
+      // 小テスト チャレンジ：もとのことがらも、その逆も正しいのは、ア（x＝5 ⇔ x+2＝7）、イ（∠B＝∠C ⇔ AB＝AC）。ウ（正三角形 → 二等辺三角形）、エ（a＝b → a²＝b²）は、逆が正しくない（辺 5・5・3 の三角形、a＝2・b＝−2）
+      chk('第4時 小テスト チャレンジ', `const xs = Array.from({ length: 41 }, (_, i) => i - 20), E = angs(5, 5, 3); const f = [xs.filter(x => x === 5).every(x => x + 2 === 7), [30, 45, 70].every(t => { const T = { A: [2, 2 * Math.tan(t * Math.PI / 180)], B: [0, 0], C: [4, 0] }; return near(ang(T, 'B', 'A', 'C'), ang(T, 'C', 'A', 'B')); }), angs(4, 4, 4).every(x => near(x, angs(4, 4, 4)[0])), xs.every(a => xs.every(b => a !== b || a * a === b * b))]; const b = [xs.filter(x => x + 2 === 7).every(x => x === 5), [30, 45, 70].every(t => { const P = byRays(t, t); return near(d(P, 'AB'), d(P, 'AC')); }), near(E[0], E[1]) && near(E[1], E[2]), xs.every(a => xs.every(c => a * a !== c * c || a === c))]; return 'アイウエ'.split('').filter((_, i) => f[i] && b[i]).join('、') === 'ア、イ' && near(E[0], E[1]) && !near(E[1], E[2]);`)
     ],
 
     /* ================= ワークシート（A4 1枚・約12分） ================= */
@@ -106,8 +108,8 @@
       ], [
         F(7, figE)
       ], '3:2'),
-      T('', '【考え方のくふう】正三角形のどの 2辺に目をつけると、二等辺三角形の性質が使えるか。', 2),
-      B(3, '2辺を選ぶと、二等辺三角形が見える。\n（例）AB＝AC → ∠B＝∠C　　BA＝BC → ∠A＝∠C')
+      T('', '【くふう】どの 2辺に目をつけると、底角の性質が使えるか。', 1),
+      B(2, '2辺を選ぶと、二等辺三角形が見える。\n（例）AB＝AC → ∠B＝∠C　　BA＝BC → ∠A＝∠C')
     ],
 
     /* ================= 演習プリント（A4 表裏） ================= */
@@ -148,16 +150,16 @@
       ], { hw: 100 }),
       C2([
         T('', 'もとのことがらも逆も正しいものに、どんな特ちょうがあるか', 2),
-        B(4, '')
+        B(5, '')
       ], [
         T('', '気づいたこと・ほかの例', 2),
-        B(4, '')
+        B(5, '')
       ], '1:1'),
       HD('チャレンジ★★', '入試にも出る問題。ヒントカードを見てもOK。'),
       C2([
-        T('（8）', '図で、△ABC と △CDE は、どちらも正三角形で、3点 B、C、E は一直線上にある。AE＝BD であることを証明しよう。', 6)
+        T('（8）', '図で、△ABC と △CDE は、どちらも正三角形で、3点 B、C、E は一直線上にある。AE＝BD であることを証明しよう。', 4)
       ], [
-        F(6, fig8)
+        F(5, fig8)
       ], '3:2'),
       B(10, A_8),
       MA('① まず、AE を辺にもつ三角形と、BD を辺にもつ三角形を見つけよう。\n② 正三角形の角は 60° だね。∠ACE と ∠BCD を、∠ACD を使って表そう。', 2, { label: 'ヒントカード' })
@@ -181,7 +183,7 @@
       ], '3:2'),
       G(1),
       HD('チャレンジ', '入試レベル（別枠）。正解なら、ほかがまちがっていても 10点。　　正解 ☐'),
-      T('（5）', '次のア〜エのうち、もとのことがらも、その逆も、どちらも正しいものを、すべて選ぼう。\nア x＝5 ならば、x+2＝7 である。\nイ △ABC で、∠B＝∠C ならば、AB＝AC である。\nウ 正三角形ならば、二等辺三角形である。\nエ a＝b ならば、a^2＝b^2 である。', 5),
+      T('（5）', '次のア〜エのうち、もとのことがらも、その逆も、どちらも正しいものを、すべて選ぼう。\nア x＝5 ならば、x+2＝7 である。\nイ △ABC で、∠B＝∠C ならば、AB＝AC である。\nウ 正三角形ならば、二等辺三角形である。\nエ a＝b ならば、a^2＝b^2 である。', 6),
       B(4, 'ア、イ\nウの逆「二等辺三角形ならば正三角形」は、辺が 5cm、5cm、3cm の三角形が反例。\nエの逆「a^2＝b^2 ならば a＝b」は、a＝2、b＝−2 が反例。')
     ]
   });

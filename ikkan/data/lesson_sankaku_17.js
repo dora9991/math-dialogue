@@ -52,14 +52,10 @@
   const D2 = pg(4.2, 2.4, 72);
   const fig2 = cap(GEO({ pts: D2, poly: 'ABCD', vl: VL4, pad: 6,
     ang: [{ at: 'B', a: 'A', b: 'C', t: '72°', r: 5 }, { at: 'C', a: 'B', b: 'D', t: 'x', r: 5 }] }), '図2');
-  // 図3：ひし形 ABCD、∠A＝104° → ∠ABD＝38°（対角線 BD）
-  const D3 = pg(3, 3, 76);
-  const fig3 = cap(GEO({ pts: D3, poly: 'ABCD', segs: ['BD'], tick: [['A', 'B', 1], ['B', 'C', 1], ['C', 'D', 1], ['D', 'A', 1]], vl: VL4, pad: 6,
-    ang: [{ at: 'A', a: 'B', b: 'D', t: '104°', r: 5 }, { at: 'B', a: 'A', b: 'D', t: 'x', r: 8 }] }), '図3');
-  // 図4：台形 ABCD（AD∥BC、AD＝2、BC＝3）。O は対角線の交点
+  // 図3：台形 ABCD（AD∥BC、AD＝2、BC＝3）。O は対角線の交点
   const isect = (P, Q, R, S) => { const d = [Q[0] - P[0], Q[1] - P[1]], e = [S[0] - R[0], S[1] - R[1]], t = ((R[0] - P[0]) * e[1] - (R[1] - P[1]) * e[0]) / (d[0] * e[1] - d[1] * e[0]); return [P[0] + t * d[0], P[1] + t * d[1]]; };
-  const D4 = { A: [0.8, 2.4], B: [0, 0], C: [3, 0], D: [2.8, 2.4] }; D4.O = isect(D4.A, D4.C, D4.B, D4.D);
-  const fig4 = cap(GEO({ pts: D4, poly: 'ABCD', segs: ['AC', 'BD'], par: [['A', 'D', 1, 0.5], ['B', 'C', 1, 0.5]], vl: Object.assign({ O: ['O', 90, 3] }, VL4), pad: 6 }), '図4');
+  const D3 = { A: [0.8, 2.4], B: [0, 0], C: [3, 0], D: [2.8, 2.4] }; D3.O = isect(D3.A, D3.C, D3.B, D3.D);
+  const fig3 = cap(GEO({ pts: D3, poly: 'ABCD', segs: ['AC', 'BD'], par: [['A', 'D', 1, 0.5], ['B', 'C', 1, 0.5]], vl: Object.assign({ O: ['O', 90, 3] }, VL4), pad: 6 }), '図3');
 
   // ---- チャレンジ（8）：▱ABCD。M は AD の中点。直線 BM と CD の延長の交点 E ----
   const C8 = pg(4, 2.4, 70); C8.M = [(C8.A[0] + C8.D[0]) / 2, (C8.A[1] + C8.D[1]) / 2]; C8.E = [2 * C8.M[0] - C8.B[0], 2 * C8.M[1] - C8.B[1]];
@@ -96,16 +92,16 @@
       `(() => { ${LIB} const P=${J(T0)}; const bt=(X,Y,W)=>z(cr(v(X,Y),v(Y,W)))&&dot(v(X,Y),v(Y,W))>0; return isPara(P.A,P.B,P.C,P.D) && near(len(P.A,P.E),len(P.C,P.F)) && bt(P.B,P.E,P.D) && bt(P.B,P.F,P.D) && z(dot(v(P.A,P.E),v(P.B,P.D))) && z(dot(v(P.C,P.F),v(P.B,P.D))) && near(len(P.A,P.B),len(P.C,P.D)) && near(deg(P.A,P.E,P.B),90) && near(deg(P.C,P.F,P.D),90) && near(deg(P.A,P.B,P.D),deg(P.C,P.D,P.B)) && near(len(P.B,P.E),len(P.D,P.F)) && near(ar(P.A,P.B,P.D),ar(P.C,P.B,P.D)) && near(len(P.B,P.D)*len(P.A,P.E)/2,ar(P.A,P.B,P.D)) && near(len(P.B,P.D)*len(P.C,P.F)/2,ar(P.C,P.B,P.D)); })()`,
       // 例題：① 二等辺三角形 ∠A＝40° → ∠B＝(180−40)÷2＝70°　② ▱ ∠A＝115° → ∠B＝180−115＝65°　③ ひし形 ∠ABC＝56° → ∠BAC＝(180−56)÷2＝62°（座標から）
       `(() => { ${LIB} const a=${J(W1)}, b=${J(W2)}, c=${J(W3)}; return near(len(a.A,a.B),len(a.A,a.C)) && near(deg(a.B,a.A,a.C),40) && near(deg(a.A,a.B,a.C),70) && near((180-40)/2,70) && isPara(b.A,b.B,b.C,b.D) && near(deg(b.D,b.A,b.B),115) && near(deg(b.A,b.B,b.C),65) && near(180-115,65) && isPara(c.A,c.B,c.C,c.D) && near(len(c.A,c.B),len(c.B,c.C)) && near(deg(c.A,c.B,c.C),56) && near(deg(c.B,c.A,c.C),62) && near((180-56)/2,62); })()`,
-      // （1）図1：二等辺三角形 ∠A＝52° → ∠B＝64°　図2：▱ ∠B＝72° → ∠C＝108°　図3：ひし形 ∠A＝104° → ∠ABD＝(180−104)÷2＝38°
-      `(() => { ${LIB} const a=${J(D1)}, b=${J(D2)}, c=${J(D3)}; return near(len(a.A,a.B),len(a.A,a.C)) && near(deg(a.B,a.A,a.C),52) && near(deg(a.A,a.B,a.C),64) && near((180-52)/2,64) && isPara(b.A,b.B,b.C,b.D) && near(deg(b.A,b.B,b.C),72) && near(deg(b.B,b.C,b.D),108) && near(180-72,108) && isPara(c.A,c.B,c.C,c.D) && [len(c.A,c.B),len(c.B,c.C),len(c.C,c.D),len(c.D,c.A)].every(s=>near(s,3)) && near(deg(c.B,c.A,c.D),104) && near(deg(c.A,c.B,c.D),38) && near((180-104)/2,38); })()`,
+      // （1）図1：二等辺三角形 ∠A＝52° → ∠B＝64°　図2：▱ ∠B＝72° → ∠C＝108°
+      `(() => { ${LIB} const a=${J(D1)}, b=${J(D2)}; return near(len(a.A,a.B),len(a.A,a.C)) && near(deg(a.B,a.A,a.C),52) && near(deg(a.A,a.B,a.C),64) && near((180-52)/2,64) && isPara(b.A,b.B,b.C,b.D) && near(deg(b.A,b.B,b.C),72) && near(deg(b.B,b.C,b.D),108) && near(180-72,108); })()`,
       // （2）「x が 10 の倍数ならば x は 5 の倍数」は正しい。逆「x が 5 の倍数ならば x は 10 の倍数」は、x＝15 が反例（5 の倍数で、10 の倍数でない）
       `(() => { const imp=x=>x%10!==0||x%5===0, conv=x=>x%5!==0||x%10===0, xs=Array.from({length:60},(_,i)=>i+1); return xs.every(imp) && !conv(15) && 15%5===0 && 15%10!==0 && xs.filter(x=>!conv(x)).every(x=>x%10===5); })()`,
       // （3）直角三角形（∠C＝90°）で斜辺 AB＝5：もう1つの辺（BC＝3）を加えても、鋭角（∠B＝acos(3/5)）を加えても、残りの辺・角が決まり、たがいに合同（辺は 3、4、5）
       `(() => { const hyp=5, viaLeg=[3,Math.sqrt(hyp*hyp-9)], a=Math.acos(3/5), viaAngle=[hyp*Math.cos(a),hyp*Math.sin(a)]; return near(viaLeg[0],viaAngle[0]) && near(viaLeg[1],viaAngle[1]) && near(viaLeg[1],4) && near(9+16,hyp*hyp); })()`,
       // （4）AD∥BC の四角形 ABCD：AB∥DC を加えるか、AD＝BC（同じ向き）を加えると、平行四辺形（座標：A、D の高さが同じ）
       `(() => { ${LIB} const B=[0,0], C=[5,0]; return [[1,2],[2,3],[-1,1.5]].every(([ax,h])=>{ const A=[ax,h]; const D=[ax+5,h]; return isPara(A,B,C,D) && near(len(A,D),len(B,C)); }); })()`,
-      // （5）図4：台形（AD＝2、BC＝3）。△ABO＝8、△OBC＝12 のとき △ABC＝20＝△DBC、△DCO＝20−12＝8（座標の面積の比で）
-      `(() => { ${LIB} const P=${J(D4)}, k=8/ar(P.A,P.B,P.O); return z(cr(v(P.A,P.D),v(P.B,P.C))) && near(ar(P.O,P.B,P.C)*k,12) && near(ar(P.A,P.B,P.C)*k,20) && near(ar(P.D,P.B,P.C)*k,20) && near(ar(P.D,P.C,P.O)*k,8) && near(8+12,20) && near(20-12,8); })()`,
+      // （5）図3：台形（AD＝2、BC＝3）。△ABO＝8、△OBC＝12 のとき △ABC＝20＝△DBC、△DCO＝20−12＝8（座標の面積の比で）
+      `(() => { ${LIB} const P=${J(D3)}, k=8/ar(P.A,P.B,P.O); return z(cr(v(P.A,P.D),v(P.B,P.C))) && near(ar(P.O,P.B,P.C)*k,12) && near(ar(P.A,P.B,P.C)*k,20) && near(ar(P.D,P.B,P.C)*k,20) && near(ar(P.D,P.C,P.O)*k,8) && near(8+12,20) && near(20-12,8); })()`,
       // （6）▱ABCD（AD、BC の中点 M、N）：四角形 ANCM は平行四辺形（AM∥NC、AM＝NC）
       `(() => { ${LIB} const P=${J(pg(5,2.8,66))}, M=mid(P.A,P.D), N=mid(P.B,P.C); return isPara(P.A,P.N||N,P.C,M) && z(cr(v(P.A,M),v(N,P.C))) && near(len(P.A,M),len(N,P.C)) && near(len(P.A,M),len(P.A,P.D)/2); })()`,
       // （8）▱ABCD（M は AD の中点）：直線 BM と CD の延長の交点 E。△ABM≡△DEM（AM＝DM、∠AMB＝∠DME 対頂角、∠BAM＝∠EDM 錯角）、AB＝DE、AB∥DE → 四角形 ABDE は平行四辺形
@@ -128,40 +124,42 @@
       G(1),
       WD('二等辺三角形の{{底角}}は等しい。\n直角三角形は、斜辺と{{他の1辺}}が等しいと合同。\n平行四辺形の対角線は、それぞれの{{中点}}で交わる。\n平行線の間のきょりは、どこでも{{等しい}}。', 4, { label: 'ことば（教科書で調べよう）' }),
       G(1),
-      K('例題', '図の ∠x の大きさを求めよう。同じ印の辺は等しい。① 二等辺三角形　② 平行四辺形　③ ひし形', 2),
+      K('例題', '図の ∠x の大きさを求めよう。また、使った性質を、表に書こう。（同じ印の辺は等しい）', 2),
       F(5, w1, w2, w3),
-      T('', '【くふう】①〜③ で使った性質を、それぞれ書こう。', 1),
-      B(2, '① 底角は等しい　② となり合う角の和は 180°\n③ 4辺が等しいから、△ABC は二等辺三角形')
+      TB('', null, [
+        ['① 二等辺三角形', ['{{底角}}は等しい']],
+        ['② 平行四辺形', ['{{となり合う角}}の和は 180°']],
+        ['③ ひし形', ['4辺が等しいから、{{二等辺三角形}}']]
+      ], { hw: 56 })
     ],
 
     /* ================= 演習プリント（A4 表裏） ================= */
     dr: [
       HD('確かめる', 'ことばと、基本をたしかめよう。'),
       WD('① 二等辺三角形の{{底角}}は等しい。\n② 直角三角形は、{{斜辺}}と1つの鋭角が等しければ合同である。\n③ 平行四辺形の対角線は、それぞれの{{中点}}で交わる。\n④ 平行線の間のきょりは、どこでも{{等しい}}。', 4, { label: 'ことば' }),
-      F(5, fig1, fig2, fig3, fig4),
+      F(5, fig1, fig2, fig3),
       C2([
-        T('（1）', '図1〜図3の ∠x の大きさを求めよう。同じ印の辺は等しい。（図2は ▱ABCD、図3は ひし形 ABCD）', 4),
-        B(3, '図1 … (180°−52°)÷2＝64°\n図2 … 180°−72°＝108°\n図3 … (180°−104°)÷2＝38°')
+        T('（1）', '図1、図2の ∠x の大きさを求めよう。同じ印の辺は等しい。（図2は ▱ABCD）', 3),
+        B(2, '図1 … (180°−52°)÷2＝64°\n図2 … 180°−72°＝108°')
       ], [
-        T('（2）', '「x が 10 の倍数ならば、x は 5 の倍数である」の逆を書こう。また、その逆が正しいかどうかを答え、正しくないときは、反例をあげよう。', 6),
-        B(3, '逆 … x が 5 の倍数ならば、\n　　x は 10 の倍数である。\n正しくない。反例（例）x＝15')
+        T('（2）', '「x が 10 の倍数ならば、x は 5 の倍数」の逆を書き、正しいか答えよう。正しくなければ、反例も。', 4),
+        B(3, '逆 … x が 5 の倍数ならば、\nx は 10 の倍数。　正しくない。\n反例（例）x＝15')
       ], '1:1'),
-      MA('【説明】二等辺三角形の底角が等しいことを、補助線を使って、隣の人に説明しよう。\n説明できた ☐　　聞いてくれた人（　　　　　　）', 2),
-      G(1),
+      MA('【説明】二等辺三角形の底角が等しいわけを、隣の人に説明しよう。\n説明できた ☐　　聞いてくれた人（　　　　　　）', 2),
       HD('使ってみる', '学んだことを、いろいろな場面で使ってみよう。'),
       C2([
-        T('（3）', '△ABC と △DEF は、∠C＝∠F＝90°、AB＝DE である。あと1つ、どんな条件があると合同といえるか。2通り答えよう。', 5),
-        B(3, '（例）BC＝EF\n　　　∠A＝∠D')
+        T('（3）', '△ABC と △DEF は、∠C＝∠F＝90°、AB＝DE である。あと1つ、どんな条件があれば合同か。2通り答えよう。', 4),
+        B(1, '（例）BC＝EF、∠A＝∠D')
       ], [
-        T('（4）', '四角形 ABCD で、AD∥BC のとき、あと1つ、どんな条件があれば、平行四辺形といえるか。2通り答えよう。', 5),
-        B(3, '（例）AB∥DC\n　　　AD＝BC')
+        T('（4）', '四角形 ABCD で、AD∥BC のとき、あと1つ、どんな条件があれば、平行四辺形か。2通り答えよう。', 4),
+        B(1, '（例）AB∥DC、AD＝BC')
       ], '1:1'),
       C2([
-        T('（5）', '図4の台形 ABCD（AD∥BC）で、△ABO＝8cm^2、△OBC＝12cm^2 のとき、△DBC と △DCO の面積を求めよう。', 4),
+        T('（5）', '図3の台形 ABCD（AD∥BC）で、△ABO＝8cm^2、△OBC＝12cm^2 のとき、△DBC と △DCO の面積を求めよう。', 4),
         B(2, '△DBC＝8+12＝20（cm^2）\n△DCO＝20−12＝8（cm^2）')
       ], [
-        T('（6）', '▱ABCD の辺 AD、BC の中点を、M、N とする。四角形 ANCM が平行四辺形になるわけを説明しよう。', 4),
-        B(3, 'AM∥NC で　AM＝[[1/2]]AD＝NC\n1組の対辺が平行で等しい')
+        T('（6）', '▱ABCD の辺 AD、BC の中点 M、N。四角形 ANCM が平行四辺形になるわけを説明しよう。', 3),
+        B(2, 'AM∥NC で　AM＝[[1/2]]AD＝NC\n1組の対辺が平行で等しい')
       ], '1:1'),
       G(1),
       T('', '★ ここまでできたら、今日の合格！　　合格 ☐', 1),
@@ -179,12 +177,12 @@
       G(1),
       HD('チャレンジ★★', '入試にも出る問題。ヒントカードを見てもOK。'),
       C2([
-        T('（8）', '右の ▱ABCD で、辺 AD の中点を M とする。直線 BM と、辺 CD の延長との交点を E とする。四角形 ABDE が平行四辺形になることを証明しよう。', 6)
+        T('（8）', '右の ▱ABCD で、辺 AD の中点を M とする。直線 BM と、辺 CD の延長との交点を E とする。四角形 ABDE が平行四辺形になることを証明しよう。', 4)
       ], [
         F(6, fig8)
       ], '3:2'),
       B(9, '（仮定）▱ABCD、AM＝DM、E は BM と CD の延長との交点\n（結論）四角形 ABDE は平行四辺形\n（証明）△ABM と △DEM において\n仮定より　AM＝DM …①\n対頂角は等しいから　∠AMB＝∠DME …②\nAB∥EC より、錯角は等しいから　∠BAM＝∠EDM …③\n①、②、③より、1組の辺とその両端の角が、\nそれぞれ等しいから　△ABM≡△DEM　よって　AB＝DE\nAB∥DE で AB＝DE だから、四角形 ABDE は平行四辺形'),
-      MA('① △ABM と合同になりそうな三角形は、どれかな。M は AD の何だったかな。\n② 四角形 ABDE が平行四辺形になるには、AB と DE について、何がいえればよいかな。', 3, { label: 'ヒントカード' })
+      MA('① △ABM と合同になりそうな三角形は、どれかな。M は AD の何だったかな。\n② 四角形 ABDE が平行四辺形になるには、AB と DE について、何がいえればよいかな。', 4, { label: 'ヒントカード' })
     ],
 
     /* ================= 小テスト（A4 1枚・5分・10点満点） ================= */

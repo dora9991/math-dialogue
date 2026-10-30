@@ -33,8 +33,8 @@
     const a = -Math.atan2(C[1] - Bq[1], C[0] - Bq[0]), rot = p => [p[0] * Math.cos(a) - p[1] * Math.sin(a), p[0] * Math.sin(a) + p[1] * Math.cos(a)];
     const P = { A: rot(A), B: rot(Bq), C: rot(C), D: rot(D) }; return withO(P);
   })();
-  // 演習プリント 図3：∠BAC＝45°、∠ACB＝50°（∠B＝85°）。BC＝4.4
-  const PD3 = (() => { const bc = 4.4, ab = bc * Math.sin(50 * R) / Math.sin(45 * R); return pg(ab, bc, 85); })();
+  // 演習プリント 図3：∠BAC＝60°、∠ACB＝50°（∠B＝70°）。BC＝5
+  const PD3 = (() => { const bc = 5, ab = bc * Math.sin(50 * R) / Math.sin(60 * R); return pg(ab, bc, 70); })();
   // （8）：AB＝4、BC＝7、∠B＝70°。∠B の二等分線と AD の交点 E、∠D の二等分線と BC の交点 F
   const PE = pg(4, 7, 70);
   PE.E = meet(PE.B, bisDir(PE.B, PE.A, PE.C), PE.A, [1, 0]);
@@ -47,7 +47,7 @@
   const dFig2 = cap(GEO({ pts: PD2, poly: 'ABCD', segs: ['AC', 'BD'], dots: ['O'], vl: Object.assign({ O: ['O', 90, 3.2] }, vlPG), pad: 7 }), '図2');
   const dFig3 = cap(GEO({
     pts: PD3, poly: 'ABCD', segs: ['AC'], vl: vlPG,
-    ang: [{ at: 'A', a: 'B', b: 'C', t: '45°', r: 6 }, { at: 'C', a: 'A', b: 'B', t: '50°', r: 6 }], pad: 8
+    ang: [{ at: 'A', a: 'B', b: 'C', t: '60°', r: 6 }, { at: 'C', a: 'A', b: 'B', t: '50°', r: 6 }], pad: 8
   }), '図3');
   const exFig = GEO({ pts: PG2, poly: 'ABCD', segs: ['AC'], vl: vlPG, pad: 8 });
   const figE = GEO({
@@ -78,8 +78,8 @@
       chk(`const S=${J(PD1)}; return para(S) && near(len(S,'AB'),6) && near(len(S,'BC'),9) && near(deg(S,'ABC'),65) && near(len(S,'CD'),6) && near(len(S,'AD'),9) && near(deg(S,'CDA'),65) && near(deg(S,'DAB'),115) && near(180-65,115);`),
       // （2）図2：AC＝10、BD＝14。OA＝OC＝5、OB＝OD＝7。（図の座標でも、対角線の交点は両方の中点）
       chk(`const S=${J(PD2)}; return para(S) && near(len(S,'AC'),10) && near(len(S,'BD'),14) && near(len(S,'AO'),5) && near(len(S,'OC'),5) && near(len(S,'BO'),7) && near(len(S,'OD'),7) && near(10/2,5) && near(14/2,7) && near(len(S,'AB')**2+len(S,'BC')**2, (100+196)/2);`),
-      // （3）図3：∠BAC＝45°、∠ACB＝50°。AB∥DC の錯角 ∠ACD＝∠BAC＝45°。∠D＝∠B＝180°−45°−50°＝85°
-      chk(`const S=${J(PD3)}; return para(S) && near(deg(S,'BAC'),45) && near(deg(S,'ACB'),50) && near(deg(S,'ACD'),45) && near(deg(S,'ABC'),85) && near(deg(S,'CDA'),85) && near(180-45-50,85);`),
+      // （3）図3：∠BAC＝60°、∠ACB＝50°。AB∥DC の錯角 ∠ACD＝∠BAC＝60°。∠D＝∠B＝180°−60°−50°＝70°
+      chk(`const S=${J(PD3)}; return para(S) && near(deg(S,'BAC'),60) && near(deg(S,'ACB'),50) && near(deg(S,'ACD'),60) && near(deg(S,'ABC'),70) && near(deg(S,'CDA'),70) && near(180-60-50,70);`),
       // （4）∠A：∠B＝3：2、∠A＋∠B＝180°（AD∥BC）。∠A＝108°、∠B＝72°、∠C＝∠A＝108°。座標：∠B＝72° の平行四辺形で確かめる
       chk(`const S=${J(pg(4, 6, 72))}; return para(S) && near(deg(S,'DAB'),108) && near(deg(S,'ABC'),72) && near(deg(S,'BCD'),108) && near(180*3/5,108) && near(180*2/5,72) && near(108*2,72*3);`),
       // （5）AC＝10、BD＝12、AB＝4（△OAB の周＝15）：OA＝5、OB＝6。O(0,0)、A(−5,0)、B(−4.5,√15.75)、C(5,0)、D(4.5,−√15.75)：平行四辺形、AB＝4、△OAB の周 15
@@ -131,8 +131,8 @@
       G(1),
       HD('使ってみる', '性質を使って、長さや角の大きさを求めよう。'),
       C2([
-        T('（3）', '図3の ▱ABCD で、∠BAC＝45°、∠ACB＝50° のとき、∠ACD、∠D の大きさを求めよう。', 3),
-        B(3, '∠ACD＝45°（錯角）\n∠D＝∠B＝85°\n（180°−45°−50°）')
+        T('（3）', '図3の ▱ABCD で、∠BAC＝60°、∠ACB＝50° のとき、∠ACD、∠D の大きさを求めよう。', 3),
+        B(3, '∠ACD＝60°（錯角）\n∠D＝∠B＝70°\n（180°−60°−50°）')
       ], [
         T('（4）', '▱ABCD で、∠A と ∠B の大きさの比が 3：2 のとき、∠A、∠B、∠C を求めよう。', 3),
         B(3, '∠A＝108°、∠B＝72°\n（180°を 3：2 に分ける）\n∠C＝∠A＝108°')
@@ -175,7 +175,7 @@
       B(2, 'CD＝4cm、AD＝7cm、∠D＝70°'),
       T('（2）', '▱ABCD の対角線の交点を O とする。AC＝12cm のとき、OA の長さを求めよう。根拠も書こう。（2点）', 2),
       B(2, '6cm\n平行四辺形の対角線は、それぞれの中点で交わる。'),
-      T('（3）', '平行四辺形の性質として、いつも成り立つとは限らないものを、ア〜エから選ぼう。（2点）\nア 対辺は等しい　　　　　　　イ 対角は等しい\nウ 対角線の長さは等しい　　　エ 対角線は、それぞれの中点で交わる', 3),
+      T('（3）', '平行四辺形の性質として、いつも成り立つとは限らないものを、ア〜エから選ぼう。（2点）\nア 対辺は等しい　　　　　　　イ 対角は等しい\nウ 対角線の長さは等しい　　　エ 対角線は、それぞれの中点で交わる', 4),
       B(1, 'ウ'),
       T('（4）', '▱ABCD で、∠A が ∠B より 40°大きいとき、∠A、∠B の大きさを求めよう。（3点）', 2),
       B(2, '∠A＋∠B＝180° だから　∠B＝(180°−40°)÷2＝70°\n∠A＝70°+40°＝110°'),
