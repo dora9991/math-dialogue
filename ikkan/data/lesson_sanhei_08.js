@@ -24,7 +24,6 @@
     const pad = o.pad || 7, s = Math.min((W - 2 * pad) / (x1 - x0), (H - 2 * pad) / (y1 - y0));
     const ox = W / 2 - (x0 + x1) / 2 * s, oy = H / 2 + (y0 + y1) / 2 * s;
     const X = k => ox + pr(k)[0] * s, Y = k => oy - pr(k)[1] * s;
-    const cx = ox + (x0 + x1) / 2 * s, cy = oy - (y0 + y1) / 2 * s;
     const dir = (p, q) => { const dx = X(q) - X(p), dy = Y(q) - Y(p), L = Math.hypot(dx, dy) || 1; return [dx / L, dy / L]; };
     const EDGES = [['A', 'B'], ['B', 'C'], ['C', 'D'], ['D', 'A'], ['E', 'F'], ['F', 'G'], ['G', 'H'], ['H', 'E'], ['A', 'E'], ['B', 'F'], ['C', 'G'], ['D', 'H']];
     const HID = ['AD', 'CD', 'DH'];
@@ -33,10 +32,8 @@
       const hid = HID.includes([a, b].sort().join(''));
       out += h.ln(X(a), Y(a), X(b), Y(b), INK, hid ? 0.22 : 0.34, hid ? ' stroke-dasharray="1.2 0.9"' : ' stroke-linecap="round"');
     });
-    names.forEach(n => {   // 頂点の字：図の中心から外へ
-      let dx = X(n) - cx, dy = Y(n) - cy; const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
-      out += h.tx(X(n) + dx * 3.2, Y(n) + dy * 3.2 + 1.1, n, 3.1, 'middle');
-    });
+    const VD = Object.assign({ A: 225, B: 300, C: 335, D: 150, E: 135, F: 345, G: 45, H: 110 }, o.vl || {});   // 頂点の字をおく向き（度）。かくれた頂点 D は、左上
+    names.forEach(n => { out += h.tx(X(n) + 3.3 * Math.cos(VD[n] * R), Y(n) - 3.3 * Math.sin(VD[n] * R) + 1.1, n, 3.1, 'middle'); });
     const draw = (g, c) => {
       let t = '';
       (g.seg || []).forEach(sg => { const op = sg[2] || {}; t += h.ln(X(sg[0]), Y(sg[0]), X(sg[1]), Y(sg[1]), c, op.w || 0.5, (op.dash ? ' stroke-dasharray="1.4 1"' : '') + ' stroke-linecap="round"'); });
@@ -53,10 +50,10 @@
     return out;
   });
 
-  // 今日の問い：AB＝5cm、BC＝2cm、CG＝3cm。AG は印刷、解答＝底面の対角線 AC と、直角のしるし（赤）
+  // 今日の問い：AB＝5cm、BC＝3cm、CG＝2cm。AG は印刷、解答＝底面の対角線 AC と、直角のしるし（赤）
   const figToday = CUBOID({
-    w: 5, d: 2, h: 3, seg: [['A', 'G', { w: 0.55 }]],
-    lab: [[[2.5, 0, 0], '5cm', 270, 5.2], [[5, 1, 0], '2cm', -20, 5.2], [[5, 2, 1.5], '3cm', 0, 4.6]],
+    w: 5, d: 3, h: 2, seg: [['A', 'G', { w: 0.55 }]],
+    lab: [[[2.5, 0, 0], '5cm', 270, 5.2], [[5, 1.5, 0], '3cm', -20, 5.2], [[5, 3, 1], '2cm', 0, 4.6]],
     a: { seg: [['A', 'C', { dash: 1 }], ['C', 'G', { w: 0.6 }]], rt: [['C', 'A', 'G']] }
   });
   // 図1：AB＝12cm、BC＝4cm、CG＝3cm
@@ -79,8 +76,8 @@
     head: '三平方の定理　第8時',
     pitch: 8, dots: true,
     checks: [
-      // 今日の問い：A(0,0,0)・G(5,2,3)。AC＝√29（底面）、CG＝3、AG＝√38。AC^2+CG^2＝AG^2
-      `(() => { ${LIB} const A = [0, 0, 0], C = [5, 2, 0], G = [5, 2, 3]; return near(d(A, C), Math.sqrt(29)) && near(d(C, G), 3) && near(d(A, G), Math.sqrt(38)) && near(d(A, C) ** 2 + d(C, G) ** 2, d(A, G) ** 2) && near(25 + 4 + 9, 38); })()`,
+      // 今日の問い：A(0,0,0)・G(5,3,2)。AC＝√34（底面）、CG＝2、AG＝√38。AC^2+CG^2＝AG^2
+      `(() => { ${LIB} const A = [0, 0, 0], C = [5, 3, 0], G = [5, 3, 2]; return near(d(A, C), Math.sqrt(34)) && near(d(C, G), 2) && near(d(A, G), Math.sqrt(38)) && near(d(A, C) ** 2 + d(C, G) ** 2, d(A, G) ** 2) && near(25 + 9 + 4, 38); })()`,
       // 例題 (1) 1・2・2：底面の対角線の2乗 5、対角線 3　(2) 4・5・7：41、90、3√10　(3) 立方体 5：50、75、5√3
       `(() => { ${LIB} const O = [0, 0, 0]; return near(d(O, [1, 2, 0]) ** 2, 5) && near(d(O, [1, 2, 2]), 3) && near(d(O, [4, 5, 0]) ** 2, 41) && near(d(O, [4, 5, 7]) ** 2, 90) && near(d(O, [4, 5, 7]), 3 * Math.sqrt(10)) && near(d(O, [5, 5, 0]) ** 2, 50) && near(d(O, [5, 5, 5]) ** 2, 75) && near(d(O, [5, 5, 5]), 5 * Math.sqrt(3)); })()`,
       // （1）図1：AB＝12・BC＝4・CG＝3。AC＝4√10（AC^2＝160）、AG＝13
@@ -104,10 +101,10 @@
     /* ================= ワークシート（A4 1枚・約12分） ================= */
     ws: [
       M('直方体の対角線の長さを、三平方の定理で求めよう'),
-      K('今日の問い', '直方体 ABCD−EFGH で、AB＝5cm、BC＝2cm、CG＝3cm である。対角線 AG の長さを求めたい。立体の中の、どこに直角三角形があるだろう。図に線をかき入れて、考えよう。', 3),
+      K('今日の問い', '直方体 ABCD−EFGH で、AB＝5cm、BC＝3cm、CG＝2cm である。対角線 AG の長さを求めたい。立体の中の、どこに直角三角形があるだろう。図に線をかき入れて、考えよう。', 3),
       F(6, figToday),
       T('①', '自分の考え（3分）　線をかき入れて、求め方を書こう。', 1),
-      B(4, '（例）底面の対角線 AC をひく。△ABC で　AC^2＝5^2+2^2＝29\nCG は底面に垂直だから、△ACG は ∠ACG＝90° の直角三角形\nAG^2＝AC^2+CG^2＝29+3^2＝38\nAG＞0 だから　AG＝√{38}cm'),
+      B(4, '（例）底面の対角線 AC をひく。△ABC で　AC^2＝5^2+3^2＝34\nCG は底面に垂直だから、△ACG は ∠ACG＝90° の直角三角形\nAG^2＝AC^2+CG^2＝34+2^2＝38\nAG＞0 だから　AG＝√{38}cm'),
       T('②', 'ペアの考え（3分）　自分とちがう考え・気づきを書こう。', 1),
       B(3, ''),
       G(1),
@@ -141,10 +138,10 @@
       HD('使ってみる', '3辺の2乗をたして、求めよう。'),
       C2([
         T('（3）', '3辺が 3cm、5cm、6cm の直方体の、対角線の長さを求めよう。', 2),
-        B(3, '√{9+25+36}＝√{70}cm')
+        B(2, '√{9+25+36}＝√{70}cm')
       ], [
         T('（4）', '底面が 1辺 4cm の正方形で、高さが 9cm の正四角柱の、対角線の長さを求めよう。', 3),
-        B(3, '√{16+16+81}＝√{113}cm')
+        B(2, '√{16+16+81}＝√{113}cm')
       ], '1:1'),
       C2([
         T('（5）', '辺の比が 1：2：2 の直方体の、対角線が 12cm のとき、3辺の長さと体積を求めよう。', 3),

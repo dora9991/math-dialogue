@@ -13,8 +13,8 @@
      座標は数学の向き（y が上）、角度は度。CF(範囲 [x0, y0, x1, y1], 図の番号, (k, r) => { … })
      k＝黒（問題として出す図）、r＝赤（作図の跡・答え。解答のときだけ出る）。どちらにも、次の道具がある。
        ln(p, q, 太さ, 点線)　arc(中心, 半径, 角0, 角1)＝弧（角0 → 角1 は反時計まわり）　circ(中心, 半径)　dot(p)
-       lb(p, 字, 向き, きょり mm)＝点の名前　tx(p, 字, dx, dy)　cap(p, 字)＝ア・イの見出し
-       am(頂点, 点, 点, 半径 mm)＝角のしるし　al(頂点, 点, 点, きょり mm, 字)＝角の大きさの字　rt(頂点, 点, 点, 大きさ mm)＝直角のしるし */
+       lbf(p, 字, 向き)＝点の名前（線や字をよけて、自動でおく。線をかいたあとに呼ぶ）　lb(p, 字, 向き, きょり mm)＝場所を決めて置く　tx(p, 字, dx, dy)　cap(p, 字)＝ア・イの見出し
+       am(頂点, 点, 点, 半径 mm)＝角のしるし　alf(頂点, 点, 点, 字, 最小のきょり mm)＝角の大きさの字（自動）　rt(頂点, 点, 点, 大きさ mm)＝直角のしるし */
   const INK = '#222', RED = '#d62828', D2R = Math.PI / 180;
   const pol = (c, r, a) => [c[0] + r * Math.cos(a * D2R), c[1] + r * Math.sin(a * D2R)];   // 中心 c から、向き a（度）、きょり r の点
   const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
@@ -24,29 +24,54 @@
     const [x0, y0, x1, y1] = box, pad = 2.5, f2 = h.f2, top = cap ? 4 : 0;
     const s = Math.min((W - 2 * pad) / (x1 - x0), (H - top - 2 * pad) / (y1 - y0));
     const X = x => (W - (x1 - x0) * s) / 2 + (x - x0) * s, Y = y => top + (H - top - (y1 - y0) * s) / 2 + (y1 - y) * s;
+    const obs = [], rects = [];   // 線・弧・点の上の点（mm）と、置いた字の枠。字をおく場所をさがすとき、よけるもの
+    const emOf = IK.render.emOf, strip = t => String(t).replace(/\{\{|\}\}|\\/g, '');
+    const sample = (ax, ay, bx, by) => { const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 0.5)); for (let i = 0; i <= n; i++) obs.push([ax + (bx - ax) * i / n, ay + (by - ay) * i / n]); };
+    const sampleArc = (cx, cy, r, a0, a1) => { const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) * D2R * r / 0.5)); for (let i = 0; i <= n; i++) { const a = (a0 + (a1 - a0) * i / n) * D2R; obs.push([cx + r * Math.cos(a), cy - r * Math.sin(a)]); } };
+    const box0 = (t, sz) => [emOf(strip(t).replace(/°/g, '.')) * sz * 0.85 / 2 + 0.6, sz * 0.55 + 0.4];                // 字の枠の半分の大きさ（mm）
+    const free = (cx, cy, hw, hh) => cx - hw >= 0.3 && cx + hw <= W - 0.3 && cy - hh >= top && cy + hh <= H - 0.3 && !obs.some(q => Math.abs(q[0] - cx) < hw && Math.abs(q[1] - cy) < hh) && !rects.some(q => Math.abs(q[0] - cx) < hw + q[2] && Math.abs(q[1] - cy) < hh + q[3]);
     const mk = col => {
       const o = { s: '' }, dsh = ' stroke-dasharray="1.4 1"';
       const turn = (V, P, Q) => { const a1 = dir(V, P), a2 = dir(V, Q); return [a1, ((a2 - a1 + 540) % 360) - 180]; };   // 角の始まりの向きと、まわる角（−180〜180）
-      o.ln = (p, q, w, dash) => { o.s += h.ln(X(p[0]), Y(p[1]), X(q[0]), Y(q[1]), col, w || 0.32, ' stroke-linecap="round"' + (dash ? dsh : '')); return o; };
+      o.ln = (p, q, w, dash) => { sample(X(p[0]), Y(p[1]), X(q[0]), Y(q[1])); o.s += h.ln(X(p[0]), Y(p[1]), X(q[0]), Y(q[1]), col, w || 0.32, ' stroke-linecap="round"' + (dash ? dsh : '')); return o; };
       o.arc = (c, r, a0, a1, w, dash) => {
         const p0 = pol(c, r, a0), p1 = pol(c, r, a1), rs = r * s;
+        sampleArc(X(c[0]), Y(c[1]), rs, a0, a1);
         o.s += `<path d="M${f2(X(p0[0]))},${f2(Y(p0[1]))} A${f2(rs)},${f2(rs)} 0 ${Math.abs(a1 - a0) > 180 ? 1 : 0} ${a1 > a0 ? 0 : 1} ${f2(X(p1[0]))},${f2(Y(p1[1]))}" fill="none" stroke="${col}" stroke-width="${w || 0.32}" stroke-linecap="round"${dash ? dsh : ''}/>`; return o;
       };
-      o.circ = (c, r, w, dash) => { o.s += `<circle cx="${f2(X(c[0]))}" cy="${f2(Y(c[1]))}" r="${f2(r * s)}" fill="none" stroke="${col}" stroke-width="${w || 0.32}"${dash ? dsh : ''}/>`; return o; };
-      o.dot = (p, r) => { o.s += `<circle cx="${f2(X(p[0]))}" cy="${f2(Y(p[1]))}" r="${r || 0.7}" fill="${col}"/>`; return o; };
-      o.tx = (p, t, dx, dy, an, size) => { const sz = size || 3; o.s += h.rich(X(p[0]) + (dx || 0), Y(p[1]) + (dy || 0) + sz * 0.34, t, sz, an || 'middle'); return o; };   // (dx, dy)＝字の中心のずれ（mm。下が +）
-      o.lb = (p, t, a, d, size) => o.tx(p, t, d * Math.cos(a * D2R), -d * Math.sin(a * D2R), 'middle', size);
+      o.circ = (c, r, w, dash) => { sampleArc(X(c[0]), Y(c[1]), r * s, 0, 360); o.s += `<circle cx="${f2(X(c[0]))}" cy="${f2(Y(c[1]))}" r="${f2(r * s)}" fill="none" stroke="${col}" stroke-width="${w || 0.32}"${dash ? dsh : ''}/>`; return o; };
+      o.dot = (p, r) => { obs.push([X(p[0]), Y(p[1])]); o.s += `<circle cx="${f2(X(p[0]))}" cy="${f2(Y(p[1]))}" r="${r || 0.7}" fill="${col}"/>`; return o; };
+      o.tx = (p, t, dx, dy, an, size) => {   // (dx, dy)＝字の中心のずれ（mm。下が +）
+        const sz = size || 3, cx = X(p[0]) + (dx || 0), cy = Y(p[1]) + (dy || 0);
+        if (!an || an === 'middle') { const [hw, hh] = box0(t, sz); rects.push([cx, cy, hw, hh]); }
+        o.s += h.rich(cx, cy + sz * 0.34, t, sz, an || 'middle'); return o;
+      };
+      o.lb = (p, t, a, d, size) => o.tx(p, t, d * Math.cos(a * D2R), -d * Math.sin(a * D2R), 'middle', size);   // 向き a、きょり d の決まった場所
+      // 点の名前：向き pref（度）のほうに、線や字をよけて、自動でおく
+      o.lbf = (p, t, pref, d0, size) => {
+        const sz = size || 3, [hw, hh] = box0(t, sz), px = X(p[0]), py = Y(p[1]);
+        for (const dd of [0, 0.8, 1.6, 2.4]) for (const off of [0, 25, -25, 50, -50, 75, -75, 100, -100, 130, -130, 160, 180]) {
+          const a = (pref + off) * D2R, d = (d0 || 1.4) + dd + Math.abs(Math.cos(a)) * hw + Math.abs(Math.sin(a)) * hh, cx = px + d * Math.cos(a), cy = py - d * Math.sin(a);
+          if (free(cx, cy, hw, hh)) return o.tx(p, t, cx - px, cy - py, 'middle', sz);
+        }
+        return o.lb(p, t, pref, 3.4, sz);
+      };
       o.cap = (p, t) => { o.s += h.tx(X(p[0]), Y(p[1]) + 1, h.svgMath(t), 3, 'middle', ' class="cap"'); return o; };
       o.am = (V, P, Q, rm, w) => {
         const [a1, d] = turn(V, P, Q), vx = X(V[0]), vy = Y(V[1]), e = a1 + d;
+        sampleArc(vx, vy, rm, a1, e);
         o.s += `<path d="M${f2(vx + rm * Math.cos(a1 * D2R))},${f2(vy - rm * Math.sin(a1 * D2R))} A${rm} ${rm} 0 0 ${d > 0 ? 0 : 1} ${f2(vx + rm * Math.cos(e * D2R))},${f2(vy - rm * Math.sin(e * D2R))}" fill="none" stroke="${col}" stroke-width="${w || 0.28}"/>`; return o;
       };
-      o.al = (V, P, Q, rm, t, size) => {
-        const [a1, d] = turn(V, P, Q), m = (a1 + d / 2) * D2R, sz = size || 3;
-        o.s += h.rich(X(V[0]) + rm * Math.cos(m), Y(V[1]) - rm * Math.sin(m) + sz * 0.34, t, sz, 'middle'); return o;
+      // 角の大きさの字：頂点から、角の二等分線の上を、rmin（mm）から遠ざけながら、線や字にふれない場所をさがす
+      o.alf = (V, P, Q, t, rmin, size) => {
+        const [a1, d] = turn(V, P, Q), m = (a1 + d / 2) * D2R, sz = size || 3, [hw, hh] = box0(t, sz), vx = X(V[0]), vy = Y(V[1]);
+        const rmax = Math.min(dist(V, P), dist(V, Q)) * s - 2.5;   // 角の2辺の長さの内がわだけ
+        for (let rm = rmin || 8; rm < rmax; rm += 0.5) { const cx = vx + rm * Math.cos(m), cy = vy - rm * Math.sin(m); if (free(cx, cy, hw, hh)) return o.tx(V, t, cx - vx, cy - vy, 'middle', sz); }
+        return o.tx(V, t, (rmin || 8) * Math.cos(m), -(rmin || 8) * Math.sin(m), 'middle', sz);
       };
       o.rt = (V, P, Q, m) => {
         const a1 = dir(V, P) * D2R, a2 = dir(V, Q) * D2R, u = [Math.cos(a1), -Math.sin(a1)], w = [Math.cos(a2), -Math.sin(a2)], vx = X(V[0]), vy = Y(V[1]), mm = m || 2.6;
+        sample(vx + u[0] * mm, vy + u[1] * mm, vx + (u[0] + w[0]) * mm, vy + (u[1] + w[1]) * mm); sample(vx + (u[0] + w[0]) * mm, vy + (u[1] + w[1]) * mm, vx + w[0] * mm, vy + w[1] * mm);
         o.s += `<polyline points="${f2(vx + u[0] * mm)},${f2(vy + u[1] * mm)} ${f2(vx + (u[0] + w[0]) * mm)},${f2(vy + (u[1] + w[1]) * mm)} ${f2(vx + w[0] * mm)},${f2(vy + w[1] * mm)}" fill="none" stroke="${col}" stroke-width="0.28"/>`; return o;
       };
       return o;
@@ -76,9 +101,9 @@
   const figMain = CF([-3.8, -3.6, 3.8, 3.9], '', (k, r) => {
     [P1, Q1, R1].forEach(p => { k.ln(p, A1).ln(p, B1); k.dot(p); k.am(p, A1, B1, 6); });
     k.ln(A1, B1, 0.9).dot(A1).dot(B1);
-    k.al(P1, A1, B1, 12, '30°');
-    k.lb(A1, 'A', 205, 3.4).lb(B1, 'B', 335, 3.4).lb(P1, 'P', 95, 3.2).lb(Q1, 'Q', 160, 3.2).lb(R1, 'R', 25, 3.2);
     r.arc(Oc, 3, -60, 240, 0.5);
+    k.alf(P1, A1, B1, '30°', 9);
+    k.lbf(A1, 'A', 205).lbf(B1, 'B', 335).lbf(P1, 'P', 95).lbf(Q1, 'Q', 160).lbf(R1, 'R', 25);
   });
 
   // 例題：線分 BC（B(0,0)、C(4,0)）を、上がわから見る。ア＝A、D から 70° で見こむ（4点は円周上）／イ＝A から 70°、D から 55°（D は円の外）
@@ -89,8 +114,8 @@
     const B2 = sh(Bx, dx), C2p = sh(Cx, dx), A2 = sh(Aa, dx), D2 = sh(Dp, dx);
     quad(k, A2, B2, C2p, D2);
     k.am(A2, B2, C2p, 5).am(D2, B2, C2p, 5);
-    k.lb(A2, 'A', 150, 3.4).lb(D2, 'D', 40, 3.4).lb(B2, 'B', 225, 3.4).lb(C2p, 'C', 315, 3.4).cap([dx + 2, 4.6], tag);
     r.circ(sh(ci70.c, dx), ci70.r, 0.5);
+    k.lbf(A2, 'A', 150).lbf(D2, 'D', 40).lbf(B2, 'B', 225).lbf(C2p, 'C', 315).cap([dx + 2, 4.6], tag);
   };
   const figEx = CF([-1.3, -1.9, 11.3, 5.1], '', (k, r) => { panel(k, r, 0, Da, 'ア'); panel(k, r, 6, Di, 'イ'); });
 
@@ -98,26 +123,28 @@
   const B1a = pol(Oc, 3, 214), C1a = pol(Oc, 3, 326), D1a = pol(Oc, 3, 35), A1a = pol(Oc, 3, 150);
   const fig1 = CF([-3.7, -3.7, 3.7, 3.7], '図1', (k, r) => {
     quad(k, A1a, B1a, C1a, D1a);
-    k.am(A1a, B1a, C1a, 5).al(A1a, B1a, C1a, 9.5, '56°').am(D1a, B1a, C1a, 5).al(D1a, B1a, C1a, 9.5, '56°');
-    k.lb(A1a, 'A', 150, 3.4).lb(B1a, 'B', 214, 3.4).lb(C1a, 'C', 326, 3.4).lb(D1a, 'D', 35, 3.4);
+    k.am(A1a, B1a, C1a, 5).am(D1a, B1a, C1a, 5);
     r.circ(Oc, 3, 0.5);
+    k.alf(A1a, B1a, C1a, '56°', 9).alf(D1a, B1a, C1a, '56°', 9);
+    k.lbf(A1a, 'A', 150).lbf(B1a, 'B', 214).lbf(C1a, 'C', 326).lbf(D1a, 'D', 35);
   });
   // 図2：A(−2.2,2.2)、D(2.2,2.2)。B は AD を下から 62° で、C は 70° で見こむ（4点は円周上にない）
   const A2f = [-2.2, 2.2], D2f = [2.2, 2.2], cB = viewCirc(D2f, A2f, 62), cC = viewCirc(D2f, A2f, 70);
   const B2f = pol(cB.c, cB.r, 235), C2f = pol(cC.c, cC.r, 300);
   const fig2 = CF([-3.3, -1.9, 3.3, 3.9], '図2', (k) => {
     quad(k, A2f, B2f, C2f, D2f);
-    k.am(B2f, A2f, D2f, 5).al(B2f, A2f, D2f, 9.5, '62°').am(C2f, A2f, D2f, 5).al(C2f, A2f, D2f, 9.5, '70°');
-    k.lb(A2f, 'A', 135, 3.4).lb(D2f, 'D', 45, 3.4).lb(B2f, 'B', 225, 3.4).lb(C2f, 'C', 315, 3.4);
+    k.am(B2f, A2f, D2f, 5).am(C2f, A2f, D2f, 5);
+    k.alf(B2f, A2f, D2f, '62°', 9).alf(C2f, A2f, D2f, '70°', 9);
+    k.lbf(A2f, 'A', 135).lbf(D2f, 'D', 45).lbf(B2f, 'B', 225).lbf(C2f, 'C', 315);
   });
   // 図3：A 100°、B 234°、C 326°、D 24°（弧 AD＝76°、弧 BC＝92°、弧 CD＝58°）。∠ABD＝∠ACD＝38°、∠BAC＝46°、∠CAD＝29°
   const A3 = pol(Oc, 3, 100), B3 = pol(Oc, 3, 234), C3 = pol(Oc, 3, 326), D3 = pol(Oc, 3, 24);
   const fig3 = CF([-3.7, -3.7, 3.7, 3.8], '図3', (k, r) => {
     quad(k, A3, B3, C3, D3);
-    k.am(A3, B3, C3, 5).al(A3, B3, C3, 9, '46°').am(A3, C3, D3, 7.5).al(A3, C3, D3, 12.5, '29°');
-    k.am(B3, A3, D3, 5).al(B3, A3, D3, 9, '38°').am(C3, A3, D3, 5).al(C3, A3, D3, 9, '38°');
-    k.lb(A3, 'A', 100, 3.4).lb(B3, 'B', 234, 3.4).lb(C3, 'C', 326, 3.4).lb(D3, 'D', 24, 3.4);
+    k.am(A3, B3, C3, 5).am(A3, C3, D3, 7.5).am(B3, A3, D3, 5).am(C3, A3, D3, 5);
     r.circ(Oc, 3, 0.5);
+    k.alf(A3, B3, C3, '46°', 8).alf(A3, C3, D3, '29°', 8).alf(B3, A3, D3, '38°', 8).alf(C3, A3, D3, '38°', 8);
+    k.lbf(A3, 'A', 100).lbf(B3, 'B', 234).lbf(C3, 'C', 326).lbf(D3, 'D', 24);
   });
 
   // （7）図4：円 O（半径 3）。A 230°、B 310°（中心角 80°）、P は長いほうの弧の上（∠APB＝40°）。X は円の内側、Y は円の外側
@@ -126,7 +153,7 @@
     k.circ(Oc, 3);
     [P4, X4, Y4].forEach(p => k.ln(p, A4).ln(p, B4));
     [A4, B4, P4, X4, Y4].forEach(p => k.dot(p));
-    k.lb(A4, 'A', 215, 3.4).lb(B4, 'B', 325, 3.4).lb(P4, 'P', 125, 3.2).lb(X4, 'X', 0, 3.0).lb(Y4, 'Y', 90, 3.2);
+    k.lbf(A4, 'A', 215).lbf(B4, 'B', 325).lbf(P4, 'P', 125).lbf(X4, 'X', 90).lbf(Y4, 'Y', 90);
   });
 
   // （8）図5：鋭角三角形 ABC（B(0,0)、C(6,0)、A(2,4.8)）。B から AC への垂線の足 D、C から AB への垂線の足 E。解答＝BC を直径とする円
@@ -137,8 +164,9 @@
     k.ln(At, Bt).ln(Bt, Ct).ln(Ct, At).ln(Bt, Dt).ln(Ct, Et);
     [At, Bt, Ct, Dt, Et].forEach(p => k.dot(p));
     k.rt(Dt, Bt, Ct, 2.2).rt(Et, Ct, Bt, 2.2);
-    k.lb(At, 'A', 90, 3.2).lb(Bt, 'B', 225, 3.4).lb(Ct, 'C', 315, 3.4).lb(Dt, 'D', 20, 3.4).lb(Et, 'E', 160, 3.4);
-    r.circ(Mt, 3, 0.5).dot(Mt).lb(Mt, 'M', 270, 3.2);
+    r.circ(Mt, 3, 0.5).dot(Mt);
+    k.lbf(At, 'A', 90).lbf(Bt, 'B', 225).lbf(Ct, 'C', 315).lbf(Dt, 'D', 20).lbf(Et, 'E', 160);
+    r.lbf(Mt, 'M', 270);
   });
 
   // 検算に使う座標（図と同じ）
@@ -208,7 +236,7 @@
     dr: [
       HD('確かめる', 'ことばと、基本をたしかめよう。'),
       WD('① 同じ弧に対する円周角は{{等しい}}。直径に対する円周角は{{90°}}である。\n② 2点 P、Q が直線 AB の{{同じ側}}にあり、∠APB＝∠AQB ならば、\n　 4点 A、B、P、Q は{{1つの円周上}}にある。\n③ ②を、円周角の定理の{{逆}}という。', 4, { label: 'ことば' }),
-      F(5, fig1, fig2, fig3),
+      F(6, fig1, fig2, fig3),
       C2([
         T('（1）', '図1の 4点 A、B、C、D は、1つの円周上にあるといえるか。（A、D は直線 BC の同じ側）', 3),
         B(3, 'いえる\n∠BAC＝∠BDC\nだから。')
@@ -219,17 +247,17 @@
       MA('【説明】4点が 1つの円周上にあるかどうかの調べ方を、隣の人に説明しよう。\n説明できた ☐　　聞いてくれた人（　　　　　　）', 2),
       HD('使ってみる', '円周角の定理の逆を使って、角や長さを求めよう。'),
       C2([
-        T('（3）', '図3の四角形 ABCD で、∠ABD＝∠ACD＝38°。∠BDC と ∠CBD の大きさを求めよう。', 4),
+        T('（3）', '図3の四角形 ABCD で、∠ABD＝∠ACD＝38°。∠BDC と ∠CBD を求めよう。', 3),
         B(3, '4点は同じ円周上\n∠BDC＝∠BAC＝46°\n∠CBD＝∠CAD＝29°')
       ], [
-        T('（4）', 'ゴールのはば AB＝5\\m。∠APB＝30° となる P は、A、B を通る円 O の周上にある。∠AOB と半径を求めよう。', 4),
+        T('（4）', '5\\m のゴール AB を 30° で見こむ点 P は、円 O の周上にある。∠AOB と半径を求めよう。', 3),
         B(3, '∠AOB＝30°×2＝60°\n△OAB は正三角形\n半径は 5\\m')
       ], '1:1'),
       C2([
-        T('（5）', 'P、Q は直線 AB の反対側にある。∠APB＝∠AQB＝50° のとき、4点 A、B、P、Q は 1つの円周上にあるといえるか。', 4),
+        T('（5）', 'P、Q は直線 AB の反対側。∠APB＝∠AQB＝50° のとき、4点 A、B、P、Q は円周上にあるといえるか。', 3),
         B(2, 'いえない\n反対側だから。')
       ], [
-        T('（6）', '四角形 ABCD で、∠BAC＝∠BDC＝38°、∠ACB＝64°。∠ADB と ∠ABC を求めよう。', 4),
+        T('（6）', '四角形 ABCD で、∠BAC＝∠BDC＝38°、∠ACB＝64°。∠ADB と ∠ABC を求めよう。', 3),
         B(3, '∠ADB＝∠ACB＝64°\n∠ABC＝180°−38°\n　　−64°＝78°')
       ], '1:1'),
       T('', '★ ここまでできたら、今日の合格！　　合格 ☐', 1),
