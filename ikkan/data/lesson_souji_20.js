@@ -15,7 +15,7 @@
   const J = JSON.stringify;
 
   // 図に、見出し（図1・図2）をつける（SVG・GEO の図は、見出しを自分でかかない）
-  const cap = (fig, text) => SVG((W, H, h) => h.tx(W / 2, 3.5, text, 3, 'middle', ' class="cap"') + `<g transform="translate(0 4.4)">${fig.svg(W, H - 4.4, h)}</g>`);
+  const cap = (fig, text, w) => SVG((W, H, h) => h.tx(W / 2, 3.5, text, 3, 'middle', ' class="cap"') + `<g transform="translate(0 4.4)">${fig.svg(W, H - 4.4, h)}</g>`, w ? { w } : undefined);
   const at = (P, Q, t) => [P[0] + (Q[0] - P[0]) * t, P[1] + (Q[1] - P[1]) * t];
   const mid = (P, Q) => at(P, Q, 0.5);
   // 3辺の長さから、三角形の頂点 B(0,0)・C(a,0)・A を出す
@@ -37,31 +37,31 @@
     txt: [
       { p: mid(X0.A, X0.D), t: '4cm', dx: -2.5, anchor: 'end' }, { p: mid(X0.D, X0.B), t: '8cm', dx: -2.5, anchor: 'end' },
       { p: mid(X0.A, X0.E), t: '5cm', dx: 2.5, anchor: 'start' }, { p: mid(X0.E, X0.C), t: 'x', dx: 2.5, anchor: 'start' },
-      { p: mid(X0.D, X0.E), t: 'y', dy: -3.4 }, { p: mid(X0.B, X0.C), t: '18cm', dy: 5.5 }
+      { p: mid(X0.D, X0.E), t: 'y', dy: 4.4 }, { p: mid(X0.B, X0.C), t: '18cm', dy: 5.5 }
     ]
   });
 
   // ---- 演習プリント 図1：ℓ∥m∥n と、2本の直線（AB＝6、BC＝8、EF＝12）。高さは 7：4：0（AB：BC＝3：4） ----
   const P1 = { A: [1, 7], C: [3, 0], D: [6, 7], F: [8, 0] }; P1.B = at(P1.A, P1.C, 3 / 7); P1.E = at(P1.D, P1.F, 3 / 7);
   const para = cap(SVG((W, H, h) => {
-    const u = (H - 8) / 7, Yv = y => 4 + (7 - y) * u, Xv = x => 7 + x * 7.2, ln = (a, b, c, d, w) => h.ln(Xv(a), Yv(b), Xv(c), Yv(d), '#222', w || 0.32, ' stroke-linecap="round"');
+    const u = (H - 12) / 7, xs = (W - 22) / 9.8, Yv = y => 5 + (7 - y) * u, Xv = x => 6 + (x + 0.4) * xs, ln = (a, b, c, d) => h.ln(Xv(a), Yv(b), Xv(c), Yv(d), '#222', 0.32, ' stroke-linecap="round"');
     let s = '';
     [[7, 'ℓ'], [4, 'm'], [0, 'n']].forEach(([y, nm]) => { s += ln(-0.4, y, 9.4, y) + h.tx(Xv(9.4) + 3, Yv(y) + 1.1, nm, 3.2, 'start', ' class="pl"'); });
     [['A', 'C'], ['D', 'F']].forEach(([p, q]) => { const a = at(P1[p], P1[q], -0.09), b = at(P1[p], P1[q], 1.09); s += ln(a[0], a[1], b[0], b[1]); });
     Object.keys(P1).forEach(n => { s += `<circle cx="${h.f2(Xv(P1[n][0]))}" cy="${h.f2(Yv(P1[n][1]))}" r="0.7" fill="#222"/>`; });
     const lab = (n, dx, dy) => h.tx(Xv(P1[n][0]) + dx, Yv(P1[n][1]) + dy, n, 3.1, 'middle', ' class="pl"');
-    s += lab('A', -3.2, -1.5) + lab('B', -3.4, 1.2) + lab('C', -3.2, 3.6) + lab('D', -3.2, -1.5) + lab('E', -3.4, 1.2) + lab('F', -3.2, 3.6);
+    s += lab('A', -3.2, -1.8) + lab('B', -3.4, -1.8) + lab('C', -3.2, 4) + lab('D', -3.2, -1.8) + lab('E', -3.4, -1.8) + lab('F', -3.2, 4);
     const side = (p, q, t) => { const m = mid(P1[p], P1[q]); return h.tx(Xv(m[0]) + 2.6, Yv(m[1]) + 1.1, t, 3, 'start'); };
     s += side('A', 'B', '6cm') + side('B', 'C', '8cm') + side('D', 'E', 'x') + side('E', 'F', '12cm');
     return s;
-  }), '図1');
+  }), '図1', 1.35);
 
   // ---- 演習プリント 図2：△ABC（AB＝10、AC＝14、BC＝15）。DE∥BC、AD＝6、DB＝4、DE＝9 ----
   const Z0 = tri3(15, 14, 10); Z0.D = at(Z0.A, Z0.B, 0.6); Z0.E = at(Z0.A, Z0.C, 0.6);
   const fig2 = cap(GEO({
-    pts: Z0, poly: 'ABC', segs: ['DE'], dots: ['D', 'E'], par: [['D', 'E', 1, 0.5], ['B', 'C', 1, 0.5]], pad: 8,
+    pts: Z0, poly: 'ABC', segs: ['DE'], dots: ['D', 'E'], par: [['D', 'E', 1, 0.5], ['B', 'C', 1, 0.5]], pad: 6,
     vl: { A: ['A', 90], B: ['B', 225], C: ['C', 315], D: ['D', 180, 3], E: ['E', 0, 3] },
-    txt: [{ p: mid(Z0.A, Z0.D), t: '6cm', dx: -2.5, anchor: 'end' }, { p: mid(Z0.D, Z0.B), t: '4cm', dx: -2.5, anchor: 'end' }, { p: mid(Z0.D, Z0.E), t: '9cm', dy: -3.4 }]
+    txt: [{ p: mid(Z0.A, Z0.D), t: '6cm', dx: -2.5, anchor: 'end' }, { p: mid(Z0.D, Z0.B), t: '4cm', dx: -2.5, anchor: 'end' }, { p: mid(Z0.D, Z0.E), t: '9cm', dy: 4.4 }]
   }), '図2');
 
   // ---- 演習プリント（7）：AB、AC を 3等分して、BC に平行な 2本の線をひく ----
@@ -73,19 +73,19 @@
   const fig8 = GEO({
     pts: R8, poly: 'ABC', segs: ['DE'], dots: ['D', 'E'], pad: 8,
     ang: [{ at: 'C', a: 'A', b: 'B', right: true, r: 3.4 }, { at: 'E', a: 'D', b: 'A', right: true, r: 3 }],
-    vl: { A: ['A', 90], B: ['B', 315], C: ['C', 225], D: ['D', 180, 3], E: ['E', 150, 3.2] },
+    vl: { A: ['A', 90], B: ['B', 315], C: ['C', 225], D: ['D', 180, 3], E: ['E', 30, 3.4] },
     txt: [{ p: mid(R8.A, R8.D), t: '10cm', dx: -2.5, anchor: 'end' }, { p: mid(R8.C, R8.B), t: '9cm', dy: 5.5 }, { p: at(R8.A, R8.B, 0.75), t: '15cm', dx: 2.5, anchor: 'start' }]
   });
 
-  // ---- 小テスト（1）（2）：△ABC（AB＝6、AC＝12、BC＝9）。DE∥BC、AD＝2、DB＝4、AE＝4、EC＝x、DE＝y ----
-  const Q1 = tri3(9, 12, 6); Q1.D = at(Q1.A, Q1.B, 1 / 3); Q1.E = at(Q1.A, Q1.C, 1 / 3);
+  // ---- 小テスト（1）（2）：△ABC（AB＝18、AC＝12、BC＝15）。DE∥BC、AD＝6、DB＝12、AE＝4、EC＝x（8）、DE＝y（5） ----
+  const Q1 = tri3(15, 12, 18); Q1.D = at(Q1.A, Q1.B, 1 / 3); Q1.E = at(Q1.A, Q1.C, 1 / 3);
   const q1 = GEO({
     pts: Q1, poly: 'ABC', segs: ['DE'], dots: ['D', 'E'], par: [['D', 'E', 1, 0.5], ['B', 'C', 1, 0.5]], pad: 8,
     vl: { A: ['A', 90], B: ['B', 225], C: ['C', 315], D: ['D', 180, 3], E: ['E', 0, 3] },
     txt: [
-      { p: mid(Q1.A, Q1.D), t: '2cm', dx: -2.5, anchor: 'end' }, { p: mid(Q1.D, Q1.B), t: '4cm', dx: -2.5, anchor: 'end' },
+      { p: mid(Q1.A, Q1.D), t: '6cm', dx: -2.5, anchor: 'end' }, { p: mid(Q1.D, Q1.B), t: '12cm', dx: -2.5, anchor: 'end' },
       { p: mid(Q1.A, Q1.E), t: '4cm', dx: 2.5, anchor: 'start' }, { p: mid(Q1.E, Q1.C), t: 'x', dx: 2.5, anchor: 'start' },
-      { p: mid(Q1.D, Q1.E), t: 'y', dy: -3.4 }, { p: mid(Q1.B, Q1.C), t: '9cm', dy: 5.5 }
+      { p: mid(Q1.D, Q1.E), t: 'y', dy: 4.4 }, { p: mid(Q1.B, Q1.C), t: '15cm', dy: 5.5 }
     ]
   });
 
@@ -122,8 +122,8 @@
       `(() => { ${LIB} const P={A:[2,6],B:[0,0],C:[6,0]}; return [3,4,5].every(n => { const S=k=>ar(P.A,at(P.A,P.B,k/n),at(P.A,P.C,k/n)), parts=Array.from({length:n},(_,i)=>S(i+1)-S(i)); return parts.every((p,i)=>near(p/parts[0],2*(i+1)-1)); }); })()`,
       // （8）直角三角形 C(0,0)・B(9,0)・A(0,12)。D(0,2)（AD＝10）、E(4.8,5.6)＝D から AB への垂線の足。DE⊥AB、AE＝8、DE＝6。△ABC∽△ADE（∠A 共通、∠C＝∠E＝90°）、AB：AD＝AC：AE＝15：10＝12：8
       `(() => { ${LIB} const P=${J(R8)}, foot=(Q,A,B)=>{ const u=v(A,B), t=dot(v(A,Q),u)/dot(u,u); return [A[0]+t*u[0],A[1]+t*u[1]]; }, E=foot(P.D,P.A,P.B); return near(len(P.A,P.B),15) && near(len(P.A,P.C),12) && near(len(P.B,P.C),9) && near(len(P.A,P.D),10) && near(E[0],P.E[0]) && near(E[1],P.E[1]) && z(dot(v(P.D,P.E),v(P.A,P.B))) && near(len(P.A,P.E),8) && near(len(P.D,P.E),6) && near(deg(P.B,P.A,P.C),deg(P.D,P.A,P.E)) && near(deg(P.A,P.C,P.B),90) && near(deg(P.A,P.E,P.D),90) && near(15/10,12/8) && near(deg(P.A,P.B,P.C),deg(P.A,P.D,P.E)); })()`,
-      // 小テスト（1）△ABC（AB＝6、AC＝12、BC＝9）。D は AD＝2、E は AE＝4（DE∥BC）：EC＝8、DE＝3　（2）面積の比 △ADE：△ABC＝1：9
-      `(() => { ${LIB} const P=tri(9,12,6), D=at(P.A,P.B,1/3), E=at(P.A,P.C,1/3); return near(len(P.A,D),2) && near(len(D,P.B),4) && near(len(P.A,E),4) && near(len(E,P.C),8) && z(cr(v(D,E),v(P.B,P.C))) && near(len(D,E),3) && near(ar(P.A,P.B,P.C)/ar(P.A,D,E),9); })()`,
+      // 小テスト（1）△ABC（AB＝18、AC＝12、BC＝15）。D は AD＝6、E は AE＝4（DE∥BC）：DB＝12、EC＝8、DE＝5　（2）面積の比 △ADE：△ABC＝1：9
+      `(() => { ${LIB} const P=tri(15,12,18), D=at(P.A,P.B,1/3), E=at(P.A,P.C,1/3); return near(len(P.A,D),6) && near(len(D,P.B),12) && near(len(P.A,E),4) && near(len(E,P.C),8) && z(cr(v(D,E),v(P.B,P.C))) && near(len(D,E),5) && near(len(P.B,P.C),15) && near(ar(P.A,P.B,P.C)/ar(P.A,D,E),9); })()`,
       // 小テスト（3）相似比 2：5、小さいほう 16 → 大きいほう 250（立方体の辺 2 と 5：体積 8 と 125）
       'near(16 * 5 ** 3 / 2 ** 3, 250) && near(2 ** 3, 8) && near(5 ** 3, 125)',
       // 小テスト（4）∠A＝∠D＝70°、∠B＝∠E＝50° → ∠C＝∠F＝60°（2組の角が等しいと、3つとも等しい）
@@ -161,7 +161,7 @@
     dr: [
       HD('確かめる', 'ことばと、基本をたしかめよう。'),
       WD('① 相似な図形で、対応する辺の比を{{相似比}}という。\n② 相似条件：3組の辺の比／2組の辺の比と{{その間の角}}／{{2組の角}}\n③ DE∥BC のとき　AD：AB＝AE：AC＝{{DE}}：BC\n④ 相似比 m：n のとき、面積の比 {{m^2：n^2}}、体積の比 {{m^3：n^3}}', 4, { label: 'ことば' }),
-      F(4, para, fig2),
+      F(5, para, fig2),
       C2([
         T('（1）', '△ABC∽△DEF で、AB＝6cm、BC＝10cm、DE＝9cm のとき、相似比と、辺 EF の長さを求めよう。', 3),
         B(2, '相似比 6：9＝2：3\n10：EF＝2：3　　EF＝15cm')
@@ -169,7 +169,7 @@
         T('（2）', '図1で、ℓ∥m∥n である。DE の長さを求めよう。', 3),
         B(2, '6：8＝DE：12\nDE＝9cm')
       ], '1:1'),
-      MA('【説明】2つの三角形が相似かを調べるとき、何に目をつけるか、隣の人に説明しよう。\n説明できた ☐　　聞いてくれた人（　　　　　　）', 2),
+      MA('【説明】三角形が相似かを調べるとき、何に目をつけるか説明しよう。\n説明できた ☐　　聞いてくれた人（　　　　　　）', 2),
       G(1),
       HD('使ってみる', '学んだことを使って、求めよう。'),
       C2([
@@ -201,10 +201,10 @@
       ], { hw: 52 }),
       C2([
         T('', '気づいたこと', 1),
-        B(5, '')
+        B(4, '')
       ], [
         T('', '6等分のときの比を予想して、理由も書こう', 2),
-        B(4, '')
+        B(3, '')
       ], '1:1'),
       G(1),
       HD('チャレンジ★★', '入試にも出る問題。ヒントカードを見てもOK。'),
@@ -214,18 +214,21 @@
         F(7, fig8)
       ], '3:2'),
       B(6, '（仮定）∠ACB＝90°、DE⊥AB　（結論）△ABC∽△ADE\n（証明）△ABC と △ADE で\n共通な角だから　∠BAC＝∠DAE …①\n仮定より　∠ACB＝∠AED＝90° …②\n①、② より、2組の角が、それぞれ等しいから　△ABC∽△ADE\n② 相似だから　AB：AD＝AC：AE　　15：10＝12：AE　　AE＝8cm'),
-      MA('① 2つの三角形に、共通な角はあるかな。ほかに、等しい角はあるかな。\n② △ABC と △ADE で、AE に対応する辺は、どれかな。', 4, { label: 'ヒントカード' })
+      MA('① 2つの三角形に、共通な角はあるかな。ほかに、等しい角はあるかな。\n② △ABC と △ADE で、AE に対応する辺は、どれかな。', 3, { label: 'ヒントカード' })
     ],
 
     /* ================= 小テスト（A4 1枚・5分・10点満点） ================= */
     qz: [
       HD('小テスト', '5分で解こう。　　　　　　　　　　　　　得点（　　　　／10点）'),
       G(1),
-      T('（1）', '図で、DE∥BC である。x、y の値を求めよう。（3点）', 1),
-      F(4, q1),
-      B(2, 'x … 2：4＝4：x　　x＝8\ny … 2：6＝y：9　　y＝3'),
+      C2([
+        T('（1）', '図で、DE∥BC である。x、y の値を求めよう。（3点）', 2),
+        B(3, 'x … 6：12＝4：x　　x＝8\ny … 6：18＝y：15　　y＝5')
+      ], [
+        F(5, q1)
+      ], '3:2'),
       T('（2）', '上の図で、△ADE と △ABC の面積の比を求めよう。（2点）', 1),
-      B(2, '相似比 2：6＝1：3　　面積の比 1：9'),
+      B(2, '相似比 6：18＝1：3　　面積の比 1：9'),
       T('（3）', '相似比が 2：5 の 2つの立体がある。小さいほうの体積が 16cm^3 のとき、大きいほうの体積を求めよう。（2点）', 2),
       B(2, '体積の比は 8：125　　16×[[125/8]]＝250（cm^3）'),
       T('（4）', '△ABC と △DEF で、∠A＝∠D＝70°、∠B＝∠E＝50° である。△ABC∽△DEF といえる。使う相似条件を答えよう。（3点）', 2),

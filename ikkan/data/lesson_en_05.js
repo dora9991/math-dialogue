@@ -29,7 +29,7 @@
     const sample = (ax, ay, bx, by) => { const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 0.5)); for (let i = 0; i <= n; i++) obs.push([ax + (bx - ax) * i / n, ay + (by - ay) * i / n]); };
     const sampleArc = (cx, cy, r, a0, a1) => { const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) * D2R * r / 0.5)); for (let i = 0; i <= n; i++) { const a = (a0 + (a1 - a0) * i / n) * D2R; obs.push([cx + r * Math.cos(a), cy - r * Math.sin(a)]); } };
     const box0 = (t, sz) => [emOf(strip(t).replace(/°/g, '.')) * sz * 0.85 / 2 + 0.6, sz * 0.55 + 0.4];                // 字の枠の半分の大きさ（mm）
-    const free = (cx, cy, hw, hh) => cx - hw >= 0.3 && cx + hw <= W - 0.3 && cy - hh >= top && cy + hh <= H - 0.3 && !obs.some(q => Math.abs(q[0] - cx) < hw + 0.5 && Math.abs(q[1] - cy) < hh + 0.5) && !rects.some(q => Math.abs(q[0] - cx) < hw + q[2] && Math.abs(q[1] - cy) < hh + q[3]);
+    const free = (cx, cy, hw, hh, mg) => cx - hw >= 0.3 && cx + hw <= W - 0.3 && cy - hh >= top && cy + hh <= H - 0.3 && !obs.some(q => Math.abs(q[0] - cx) < hw + mg && Math.abs(q[1] - cy) < hh + mg) && !rects.some(q => Math.abs(q[0] - cx) < hw + q[2] && Math.abs(q[1] - cy) < hh + q[3]);
     const mk = col => {
       const o = { s: '' }, dsh = ' stroke-dasharray="1.4 1"';
       const turn = (V, P, Q) => { const a1 = dir(V, P), a2 = dir(V, Q); return [a1, ((a2 - a1 + 540) % 360) - 180]; };   // 角の始まりの向きと、まわる角（−180〜180）
@@ -50,9 +50,9 @@
       // 点の名前：向き pref（度）のほうに、線や字をよけて、自動でおく
       o.lbf = (p, t, pref, d0, size) => {
         const sz = size || 3, [hw, hh] = box0(t, sz), px = X(p[0]), py = Y(p[1]);
-        for (const dd of [0, 0.8, 1.6, 2.4, 3.2, 4.4]) for (const off of [0, 22, -22, 45, -45, 67, -67, 90, -90, 112, -112, 135, -135, 157, -157, 180]) {
+        for (const mg of [0.5, 0.1]) for (const dd of [0, 0.8, 1.6, 2.4, 3.2, 4.4]) for (const off of [0, 22, -22, 45, -45, 67, -67, 90, -90, 112, -112, 135, -135, 157, -157, 180]) {
           const a = (pref + off) * D2R, d = (d0 || 1.4) + dd + Math.abs(Math.cos(a)) * hw + Math.abs(Math.sin(a)) * hh, cx = px + d * Math.cos(a), cy = py - d * Math.sin(a);
-          if (free(cx, cy, hw, hh)) return o.tx(p, t, cx - px, cy - py, 'middle', sz);
+          if (free(cx, cy, hw, hh, mg)) return o.tx(p, t, cx - px, cy - py, 'middle', sz);
         }
         return o.lb(p, t, pref, 3.4, sz);
       };
@@ -66,7 +66,7 @@
       o.alf = (V, P, Q, t, rmin, size) => {
         const [a1, d] = turn(V, P, Q), m = (a1 + d / 2) * D2R, sz = size || 3, [hw, hh] = box0(t, sz), vx = X(V[0]), vy = Y(V[1]);
         const rmax = Math.min(dist(V, P), dist(V, Q)) * s - 2.5;   // 角の2辺の長さの内がわだけ
-        for (let rm = rmin || 8; rm < rmax; rm += 0.5) { const cx = vx + rm * Math.cos(m), cy = vy - rm * Math.sin(m); if (free(cx, cy, hw, hh)) return o.tx(V, t, cx - vx, cy - vy, 'middle', sz); }
+        for (const mg of [0.5, 0.1]) for (let rm = rmin || 8; rm < rmax; rm += 0.5) { const cx = vx + rm * Math.cos(m), cy = vy - rm * Math.sin(m); if (free(cx, cy, hw, hh, mg)) return o.tx(V, t, cx - vx, cy - vy, 'middle', sz); }
         return o.tx(V, t, (rmin || 8) * Math.cos(m), -(rmin || 8) * Math.sin(m), 'middle', sz);
       };
       o.rt = (V, P, Q, m) => {
@@ -137,14 +137,14 @@
     k.alf(B2f, A2f, D2f, '62°', 9).alf(C2f, A2f, D2f, '70°', 9);
     k.lbf(A2f, 'A', 135).lbf(D2f, 'D', 45).lbf(B2f, 'B', 225).lbf(C2f, 'C', 315);
   });
-  // 図3：A 100°、B 234°、C 326°、D 24°（弧 AD＝76°、弧 BC＝92°、弧 CD＝58°）。∠ABD＝∠ACD＝38°、∠BAC＝46°、∠CAD＝29°
-  const A3 = pol(Oc, 3, 100), B3 = pol(Oc, 3, 234), C3 = pol(Oc, 3, 326), D3 = pol(Oc, 3, 24);
+  // 図3：A 100°、B 234°、C 304°、D 24°（弧 AD＝76°、弧 BC＝70°、弧 CD＝80°）。∠ABD＝∠ACD＝38°、∠BAC＝35°、∠CAD＝40°
+  const A3 = pol(Oc, 3, 100), B3 = pol(Oc, 3, 234), C3 = pol(Oc, 3, 304), D3 = pol(Oc, 3, 24);
   const fig3 = CF([-3.7, -3.7, 3.7, 3.8], '図3', (k, r) => {
     quad(k, A3, B3, C3, D3);
     k.am(A3, B3, C3, 5).am(A3, C3, D3, 7.5).am(B3, A3, D3, 5).am(C3, A3, D3, 5);
     r.circ(Oc, 3, 0.5);
-    k.alf(A3, B3, C3, '46°', 8).alf(A3, C3, D3, '29°', 8).alf(B3, A3, D3, '38°', 8).alf(C3, A3, D3, '38°', 8);
-    k.lbf(A3, 'A', 100).lbf(B3, 'B', 234).lbf(C3, 'C', 326).lbf(D3, 'D', 24);
+    k.alf(A3, B3, C3, '35°', 8).alf(A3, C3, D3, '40°', 8).alf(B3, A3, D3, '38°', 8).alf(C3, A3, D3, '38°', 8);
+    k.lbf(A3, 'A', 100).lbf(B3, 'B', 234).lbf(C3, 'C', 304).lbf(D3, 'D', 24);
   });
 
   // （7）図4：円 O（半径 3）。A 230°、B 310°（中心角 80°）、P は長いほうの弧の上（∠APB＝40°）。X は円の内側、Y は円の外側
@@ -195,8 +195,8 @@
       chk(`const A=${J(A1a)},B=${J(B1a)},C=${J(C1a)},D=${J(D1a)}; return near(ang(A,B,C),56) && near(ang(D,B,C),56) && side(B,C,A)===side(B,C,D) && cyc(B,C,A,D);`),
       // 図2・（2）：∠ABD＝62°、∠ACD＝70°（B、C は AD の同じ側）→ 円周上にない
       chk(`const A=${J(A2f)},D=${J(D2f)},B=${J(B2f)},C=${J(C2f)}; return near(ang(B,A,D),62) && near(ang(C,A,D),70) && side(A,D,B)===side(A,D,C) && !cyc(A,D,B,C);`),
-      // 図3・（3）：∠ABD＝∠ACD＝38° → 円周上。∠BAC＝46° → ∠BDC＝46°、∠CAD＝29° → ∠CBD＝29°
-      chk(`const A=${J(A3)},B=${J(B3)},C=${J(C3)},D=${J(D3)}; return near(ang(B,A,D),38) && near(ang(C,A,D),38) && side(A,D,B)===side(A,D,C) && cyc(A,D,B,C) && near(ang(A,B,C),46) && near(ang(A,C,D),29) && near(ang(D,B,C),46) && near(ang(B,C,D),29);`),
+      // 図3・（3）：∠ABD＝∠ACD＝38° → 円周上。∠BAC＝35° → ∠BDC＝35°、∠CAD＝40° → ∠CBD＝40°
+      chk(`const A=${J(A3)},B=${J(B3)},C=${J(C3)},D=${J(D3)}; return near(ang(B,A,D),38) && near(ang(C,A,D),38) && side(A,D,B)===side(A,D,C) && cyc(A,D,B,C) && near(ang(A,B,C),35) && near(ang(A,C,D),40) && near(ang(D,B,C),35) && near(ang(B,C,D),40);`),
       // （4）AB＝5m、∠APB＝30°：中心 O、半径 5（△OAB は正三角形）、中心角 ∠AOB＝60°
       chk('const O=[0,0],A=pl(O,5,240),B=pl(O,5,300),P=pl(O,5,100); return near(len(A,B),5) && near(ang(P,A,B),30) && near(ang(O,A,B),60) && near(len(O,A),len(A,B)) && near(5/(2*Math.sin(30*RD)),5);'),
       // （5）A(−2,0)、B(2,0)。P は上から、Q は下から 50° で見こむ（反対側）→ 4点は円周上にない（50+50≠180）
@@ -257,7 +257,7 @@
       HD('使ってみる', '円周角の定理の逆を使って、角や長さを求めよう。'),
       C2([
         T('（3）', '図3の四角形 ABCD で、∠ABD＝∠ACD＝38°。∠BDC と ∠CBD を求めよう。', 3),
-        B(3, '4点は同じ円周上\n∠BDC＝∠BAC＝46°\n∠CBD＝∠CAD＝29°')
+        B(3, '4点は同じ円周上\n∠BDC＝∠BAC＝35°\n∠CBD＝∠CAD＝40°')
       ], [
         T('（4）', '5\\m のゴール AB を 30° で見こむ点 P は、円 O の周上にある。∠AOB と半径を求めよう。', 3),
         B(3, '∠AOB＝30°×2＝60°\n△OAB は正三角形\n半径は 5\\m')
@@ -286,7 +286,7 @@
       G(1),
       HD('チャレンジ★★', '入試にも出る問題。ヒントカードを見てもOK。'),
       C2([
-        T('（8）', '図5の鋭角三角形 ABC で、B から AC に垂線 BD、C から AB に垂線 CE をひく。4点 B、C、D、E は 1つの円周上にあるといえるか。理由も書こう。また、BC＝12cm のとき、この円の半径を求めよう。', 8),
+        T('（8）', '図5の鋭角三角形 ABC で、B から AC に垂線 BD、C から AB に垂線 CE をひく。4点 B、C、D、E は 1つの円周上にあるといえるか。理由も書こう。また、BC＝12cm のとき、この円の半径を求めよう。', 6),
         B(6, '∠BDC＝∠BEC＝90°で、\nD、E は直線 BC の\n同じ側だから、4点は\n1つの円周上にある。\nBC が直径だから、\n半径は 6cm')
       ], [
         F(5, fig5),
