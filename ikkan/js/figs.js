@@ -16,17 +16,26 @@
     return `<polygon points="${f2(x)},${f2(y)} ${f2(x + s * Math.cos(a1))},${f2(y + s * Math.sin(a1))} ${f2(x + s * Math.cos(a2))},${f2(y + s * Math.sin(a2))}" fill="${c}"/>`;
   };
 
-  /* ---- 数直線。{ min, max, arrows:[{ from, to, text }], marks:[{ at }] }
+  /* ---- 数直線。{ min, max, step, labelStep, dots:[位置…], pts:[{ at, name, a }], arrows:[{ from, to, text }], marks:[{ at }] }
+          step＝目もりの間かく（0.5 なら半目もり）、labelStep＝数字を書く間かく。dots＝最初から出す黒い点。pts＝名前つきの点（name は黒、a は解答のとき赤）
           arrows（動きの矢印）と marks（答えの位置）は、解答を表示したときだけ赤で出る。矢印は上にえがき、2本目からは高くなる（7・13・19mm）。字は弧の内側 ---- */
   const numline = o => (W, H, h) => {
     const min = o.min != null ? o.min : -6, max = o.max != null ? o.max : 6, padL = 7, padR = 7;
     const u = (W - padL - padR) / (max - min), X = v => padL + (v - min) * u, y0 = o.y != null ? o.y : H - 8;
     let out = h.ln(X(min) - 2.5, y0, X(max) + 2.5, y0, '#222', 0.32) + head(X(max) + 3.6, y0, 0, '#222') + head(X(min) - 3.6, y0, Math.PI, '#222');
-    for (let v = min; v <= max + 1e-9; v += 1) {
-      out += h.ln(X(v), y0 - 1.3, X(v), y0 + 1.3, '#222', 0.28);
-      out += h.tx(X(v), y0 + 5.3, mn(v), 2.9, 'middle');
+    const step = o.step || 1, lstep = o.labelStep || step;   // step：目もりの間かく（0.5 など）。labelStep：数字を書く間かく（省略は step と同じ）
+    for (let i = 0; i <= Math.round((max - min) / step); i++) {
+      const v = min + i * step, big = Math.abs(v / lstep - Math.round(v / lstep)) < 1e-9, tk = big ? 1.3 : 0.8;
+      out += h.ln(X(v), y0 - tk, X(v), y0 + tk, '#222', 0.28);
+      if (big) out += h.tx(X(v), y0 + 5.3, mn(v), 2.9, 'middle');
     }
+    (o.dots || []).forEach(d => { out += `<circle cx="${f2(X(d))}" cy="${f2(y0)}" r="0.9" fill="#222"/>`; });   // 問題として最初から出す点（黒）
     const an = [];
+    (o.pts || []).forEach(p => {   // 名前つきの点：{ at, name:'A', a:'−5' }。名前は黒（点の上）、a（その点が表す数）は、解答のときだけ赤（名前の上）
+      out += `<circle cx="${f2(X(p.at))}" cy="${f2(y0)}" r="0.9" fill="#222"/>`;
+      if (p.name) out += h.tx(X(p.at), y0 - 3.2, p.name, 3.2, 'middle');
+      if (p.a != null) an.push(h.tx(X(p.at), y0 - 7.2, p.a, 3, 'middle'));
+    });
     (o.arrows || []).forEach((a, i) => {
       const x1 = X(a.from), x2 = X(a.to), mx = (x1 + x2) / 2, hh = a.h || 7 + 6 * i, cy = y0 - 2 * hh;
       an.push(`<path d="M${f2(x1)},${f2(y0)} Q${f2(mx)},${f2(cy)} ${f2(x2)},${f2(y0)}" fill="none" stroke="${RED}" stroke-width="0.5"/>`);

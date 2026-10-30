@@ -34,6 +34,8 @@ button{font:inherit;color:inherit}
 .wsp-qrcap{position:absolute;font-size:2.4mm;line-height:1.2;color:#6b7280;white-space:nowrap;text-align:right}
 .wsp-head.has-qr .w6{width:26mm}
 .wsp-head.has-qr .wh-mid{white-space:normal;line-height:1.15;font-size:2.8mm;display:flex;align-items:flex-end;justify-content:center;text-overflow:clip}
+.wh-pg{white-space:nowrap;margin-left:3mm}
+.wsp-head.has-qr .wh-mid{flex-wrap:wrap;column-gap:3mm}
 .wsp-rule{position:absolute;left:0;top:0;display:block;pointer-events:none;overflow:visible}
 .wsp-flow{position:relative;font-size:calc(var(--pitch) * .56);line-height:var(--pitch)}
 

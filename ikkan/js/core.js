@@ -320,7 +320,7 @@
       ${qr ? `<div class="wsp-qr" style="right:${P.mx}mm;top:${QR_TOP}mm;width:${QR_MM}mm;height:${QR_MM}mm">${qr}</div><div class="wsp-qrcap" style="right:${qrR}mm;top:${P.top - 10.6}mm">${esc(sheet.qrCap || '← 読みとって、丸つけ・記録')}</div>` : ''}
       <div class="wsp-head${qr ? ' has-qr' : ''}" style="left:${P.mx}mm;right:${qrR}mm;top:${P.top - 12}mm">
         <div class="wh-date"><span class="u w2"></span>月<span class="u w2"></span>日（<span class="u w1"></span>）</div>
-        <div class="wh-mid">${esc(hd)}${pages.length > 1 ? `　${pi + 1}／${pages.length}` : ''}</div>
+        <div class="wh-mid"><span>${esc(hd)}</span>${pages.length > 1 ? `<span class="wh-pg">${pi + 1}／${pages.length}</span>` : ''}</div>
         <div class="wh-name"><span class="u w1"></span>年<span class="u w1"></span>組<span class="u w1"></span>号　氏名<span class="u w6"></span></div>
       </div>
       <div class="wsp-body" style="left:${P.mx}mm;top:${P.top}mm;width:${g.cw}mm;height:${g.rows * g.pitch}mm">
