@@ -50,7 +50,7 @@
       // 点の名前：向き pref（度）のほうに、線や字をよけて、自動でおく
       o.lbf = (p, t, pref, d0, size) => {
         const sz = size || 3, [hw, hh] = box0(t, sz), px = X(p[0]), py = Y(p[1]);
-        for (const mg of [0.5, 0.1]) for (const dd of [0, 0.8, 1.6, 2.4, 3.2, 4.4]) for (const off of [0, 22, -22, 45, -45, 67, -67, 90, -90, 112, -112, 135, -135, 157, -157, 180]) {
+        for (const [mg, ddm] of [[0.5, 2.4], [0.1, 2.4], [0.5, 6], [0.1, 6]]) for (const off of [0, 22, -22, 45, -45, 67, -67, 90, -90, 112, -112, 135, -135, 157, -157, 180]) for (let dd = 0; dd <= ddm; dd += 0.8) {
           const a = (pref + off) * D2R, d = (d0 || 1.4) + dd + Math.abs(Math.cos(a)) * hw + Math.abs(Math.sin(a)) * hh, cx = px + d * Math.cos(a), cy = py - d * Math.sin(a);
           if (free(cx, cy, hw, hh, mg)) return o.tx(p, t, cx - px, cy - py, 'middle', sz);
         }
@@ -100,13 +100,13 @@
     const A = [-pa, 0], Bp = [pb, 0], C = pol(O0, pc, phi), D = pol(O0, pd, phi + 180), c = circum(A, Bp, C);
     return { A, B: Bp, C, D, c, r: dist(c, A) };
   };
-  // 弦の交わる図。marks＝true のとき、等しい角のしるし（∠PAC＝∠PDB は 1本、∠APC＝∠DPB は 2本）を赤でつける
-  const chordFig = (cap, g, marks) => CF(boxOf([...circPts(g.c, g.r)], 0.9), cap, (k, r) => {
+  // 弦の交わる図。bare＝true のとき、AC・DB はかかない。marks＝true のとき、等しい角のしるし（∠PAC＝∠PDB は 1本、∠APC＝∠DPB は 2本）を赤でつける
+  const chordFig = (cap, g, marks, bare) => CF(boxOf([...circPts(g.c, g.r)], 0.9), cap, (k, r) => {
     const P = O0, { A, B: Bp, C, D } = g;
-    k.circ(g.c, g.r).ln(A, Bp).ln(C, D).ln(A, C).ln(D, Bp);
+    k.circ(g.c, g.r).ln(A, Bp).ln(C, D); if (!bare) k.ln(A, C).ln(D, Bp);
     [A, Bp, C, D, P].forEach(Z => k.dot(Z));
     if (marks) r.am(A, P, C, 4.5).am(D, P, Bp, 4.5).am(P, A, C, 4.5).am(P, A, C, 6).am(P, D, Bp, 4.5).am(P, D, Bp, 6);
-    k.lbf(A, 'A', dir(g.c, A)).lbf(Bp, 'B', dir(g.c, Bp)).lbf(C, 'C', dir(g.c, C)).lbf(D, 'D', dir(g.c, D)).lbf(P, 'P', 90);
+    k.lbf(A, 'A', dir(g.c, A)).lbf(Bp, 'B', dir(g.c, Bp)).lbf(C, 'C', dir(g.c, C)).lbf(D, 'D', dir(g.c, D)).lbf(P, 'P', dir(P, g.c));
   });
   function circPts(c, r) { return [0, 90, 180, 270].map(a => pol(c, r, a)); }
   // 半円と垂線：AB を直径、AH＝ah、HB＝hb。C は弧の上で、CH⊥AB（CH＝√(ah×hb)）。ans＝true のとき、∠ACB＝90° のしるしを赤で出す
@@ -124,7 +124,7 @@
   const g1 = chordGeo(6, 4, 3, 8, -60);      // 図1（PA×PB＝24）
   const g2 = chordGeo(8, 3, 6, 4, -50);      // 図2（PA×PB＝24）
   const gQ = chordGeo(5, 8, 4, 10, -55);     // 小テスト（PA×PB＝40）
-  const figMain = chordFig('', gM, true), fig1 = chordFig('図1', g1, true), fig2 = chordFig('図2', g2, false), figQ = chordFig('', gQ, false);
+  const figMain = chordFig('', gM, true), fig1 = chordFig('図1', g1, true), fig2 = chordFig('図2', g2, false, true), figQ = chordFig('', gQ, false);
   const s8 = semiGeo(2, 18), fig8 = semiFig(s8, true), sQ = semiGeo(4, 16), figQ5 = semiFig(sQ, true);
 
   const CG = 'const P=[0,0], mk=(pa,pb,pc,pd,phi)=>({A:[-pa,0],B:[pb,0],C:pl(P,pc,phi),D:pl(P,pd,phi+180)}), sim=g=>near(ang(g.A,P,g.C),ang(g.D,P,g.B)) && near(ang(P,g.A,g.C),ang(P,g.D,g.B)) && near(len(P,g.A)/len(P,g.D),len(P,g.C)/len(P,g.B)) && near(len(P,g.A)/len(P,g.D),len(g.A,g.C)/len(g.D,g.B)) && cyc(g.A,g.B,g.C,g.D);';

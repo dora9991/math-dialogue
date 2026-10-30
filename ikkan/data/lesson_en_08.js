@@ -49,7 +49,7 @@
       // 点の名前：向き pref（度）のほうに、線や字をよけて、自動でおく
       o.lbf = (p, t, pref, d0, size) => {
         const sz = size || 3, [hw, hh] = box0(t, sz), px = X(p[0]), py = Y(p[1]);
-        for (const mg of [0.5, 0.1]) for (const dd of [0, 0.8, 1.6, 2.4, 3.2, 4.4]) for (const off of [0, 22, -22, 45, -45, 67, -67, 90, -90, 112, -112, 135, -135, 157, -157, 180]) {
+        for (const [mg, ddm] of [[0.5, 2.4], [0.1, 2.4], [0.5, 6], [0.1, 6]]) for (const off of [0, 22, -22, 45, -45, 67, -67, 90, -90, 112, -112, 135, -135, 157, -157, 180]) for (let dd = 0; dd <= ddm; dd += 0.8) {
           const a = (pref + off) * D2R, d = (d0 || 1.4) + dd + Math.abs(Math.cos(a)) * hw + Math.abs(Math.sin(a)) * hh, cx = px + d * Math.cos(a), cy = py - d * Math.sin(a);
           if (free(cx, cy, hw, hh, mg)) return o.tx(p, t, cx - px, cy - py, 'middle', sz);
         }
@@ -125,16 +125,15 @@
   };
   const one = (cap, f) => CF([-3.7, -3.7, 3.7, 3.9], cap, k => f(k, Oc));
 
-  // 今日の問い：AC は直径（A 180°、C 0°）。B 80°、D 228°（∠BAC＝40°）。解答＝わかる角（∠ABC＝90°、∠ACB＝50°、∠BDC＝40°、∠BOC＝80°）
-  const A1 = pol(Oc, Rn, 180), C1 = pol(Oc, Rn, 0), B1 = pol(Oc, Rn, 80), D1 = pol(Oc, Rn, 228);
+  // 今日の問い：AC は直径（A 180°、C 0°）。B 80°、D 300°（∠BAC＝40°）。解答＝直角のしるし（∠ABC＝∠ADC＝90°）。わかる角は、∠ACB＝50°、∠BDC＝40°、∠BOC＝80° など
+  const A1 = pol(Oc, Rn, 180), C1 = pol(Oc, Rn, 0), B1 = pol(Oc, Rn, 80), D1 = pol(Oc, Rn, 300);
   const figMain = CF([-3.7, -3.7, 3.7, 3.9], '', (k, r) => {
     k.circ(Oc, Rn).ln(A1, C1).ln(A1, B1).ln(B1, C1).ln(C1, D1).ln(D1, A1).ln(B1, D1);
     [A1, B1, C1, D1, Oc].forEach(Z => k.dot(Z));
     k.am(A1, C1, B1, 5);
-    r.rt(B1, A1, C1, 2.4).rt(D1, A1, C1, 2.4).am(C1, A1, B1, 5).am(D1, B1, C1, 5).am(Oc, B1, C1, 4);
-    k.alf(A1, C1, B1, '40°', 9);
-    r.alf(C1, A1, B1, '50°', 8).alf(Oc, B1, C1, '80°', 7).alf(D1, B1, C1, '40°', 9);
-    k.lbf(A1, 'A', 180).lbf(B1, 'B', 80).lbf(C1, 'C', 0).lbf(D1, 'D', 228).lbf(Oc, 'O', 270);
+    r.rt(B1, A1, C1, 2.4).rt(D1, A1, C1, 2.4);
+    k.alf(A1, C1, B1, '40°', 8);
+    k.lbf(A1, 'A', 180).lbf(B1, 'B', 80).lbf(C1, 'C', 0).lbf(D1, 'D', 300).lbf(Oc, 'O', 250);
   });
 
   // 例題：ア＝中心角 124°（A 208°、B 332°、P 90°）、イ＝同じ弧（A 223°、B 317°、P 70°、Q 125°。∠AQB＝47°）、ウ＝直径（P 76°。∠ABP＝52°）
@@ -148,19 +147,20 @@
 
   // 演習プリント 図1〜3（∠x）
   const fig1 = one('図1', (k, c) => dCen(k, c, 202, 338, 90, '136°', 'x'));        // 136° → 68°
-  const fig2 = one('図2', (k, c) => dSame(k, c, 237, 303, 60, 125, '33°', 'x'));   // 33°
-  const fig3 = one('図3', (k, c) => dDia(k, c, 130, '25°', 'x'));                   // ∠ABP＝25° → ∠PAB＝65°
+  const fig2 = one('図2', (k, c) => dSame(k, c, 214, 326, 60, 125, '56°', 'x'));   // 56°
+  const fig3 = one('図3', (k, c) => dDia(k, c, 64, '58°', 'x'));                    // ∠ABP＝58° → ∠PAB＝32°
 
   // （8）図4：BD は直径。B 190°、C 260°、D 10°、A 110°（弧 AB＝80°、BC＝70°、CD＝110°、DA＝100°）。∠ABD＝50°、∠BDC＝35°
   const A4 = pol(Oc, Rn, 110), B4 = pol(Oc, Rn, 190), C4 = pol(Oc, Rn, 260), D4 = pol(Oc, Rn, 10);
   const ix = (P, Q, R, S) => { const d = (Q[0] - P[0]) * (S[1] - R[1]) - (Q[1] - P[1]) * (S[0] - R[0]), t = ((R[0] - P[0]) * (S[1] - R[1]) - (R[1] - P[1]) * (S[0] - R[0])) / d; return [P[0] + t * (Q[0] - P[0]), P[1] + t * (Q[1] - P[1])]; };
   const P4 = ix(A4, C4, B4, D4);
   const fig4 = CF([-3.7, -3.7, 3.7, 3.8], '', (k) => {
+    k.circ(Oc, Rn);
     quad(k, A4, B4, C4, D4);
-    k.dot(P4);
+    k.dot(P4).dot(Oc);
     k.am(B4, A4, D4, 5).am(D4, B4, C4, 5);
     k.alf(B4, A4, D4, '50°', 8).alf(D4, B4, C4, '35°', 8);
-    k.lbf(A4, 'A', 110).lbf(B4, 'B', 190).lbf(C4, 'C', 260).lbf(D4, 'D', 10).lbf(P4, 'P', 30);
+    k.lbf(A4, 'A', 110).lbf(B4, 'B', 190).lbf(C4, 'C', 260).lbf(D4, 'D', 10).lbf(P4, 'P', 60).lbf(Oc, 'O', 240);
   });
 
   // 小テスト（1）ア：中心角 152°（A 194°、B 346°、P 90°）、イ：直径（P 106°。∠ABP＝37°）
@@ -174,7 +174,7 @@
   const figQ5 = CF(boxOf([...[0, 90, 180, 270].map(a => pol(Oc, 3, a)), Tq], 0.9), '', (k) => {
     k.circ(Oc, 3).ln(Aq, Tq).ln(Tq, Cq).ln(Oc, Cq).ln(Aq, Cq);
     [Aq, Bq, Cq, Tq, Oc].forEach(Z => k.dot(Z));
-    k.am(Tq, Aq, Cq, 5).alf(Tq, Aq, Cq, '32°', 8);
+    k.am(Tq, Aq, Cq, 6);
     k.lbf(Aq, 'A', 180).lbf(Bq, 'B', 300).lbf(Cq, 'C', 90).lbf(Tq, 'T', 0).lbf(Oc, 'O', 250);
   });
 
@@ -188,12 +188,12 @@
     head: '円　第8時',
     pitch: 8, dots: true,
     checks: [
-      // 今日の問い：AC は直径、∠BAC＝40°（B 80°）。D 228°。∠ABC＝∠ADC＝90°、∠ACB＝50°、∠BDC＝40°（弧 BC）、∠BOC＝80°、∠ADB＝50°（弧 AB）、∠OBC＝50°（OB＝OC）
+      // 今日の問い：AC は直径、∠BAC＝40°（B 80°）。D 300°。∠ABC＝∠ADC＝90°、∠ACB＝50°、∠BDC＝40°（弧 BC）、∠BOC＝80°、∠ADB＝50°（弧 AB）、∠OBC＝50°（OB＝OC）
       chk2(`const A=${J(A1)},B=${J(B1)},C=${J(C1)},Dd=${J(D1)}; return near(len(O,A),len(O,C)) && near(len(A,C),6) && near(ang(A,C,B),40) && near(ang(B,A,C),90) && near(ang(Dd,A,C),90) && near(ang(C,A,B),50) && near(ang(Dd,B,C),40) && near(ang(O,B,C),80) && near(ang(Dd,A,B),50) && near(ang(B,O,C),50) && near(180-90-40,50);`),
       // 例題 ア：∠AOB＝124° → ∠APB＝62°。イ：∠AQB＝47° → ∠APB＝47°（P、Q は同じ側）。ウ：AB 直径、∠ABP＝52° → ∠PAB＝38°
       chk2(`const c=[0,0],A=${pp(cA, 208)},Bq=${pp(cA, 332)},P=${pp(cA, 90)}; const A2=${pp(cA, 223)},B2=${pp(cA, 317)},P2=${pp(cA, 70)},Q2=${pp(cA, 125)}; const A3=[-3,0],B3=[3,0],P3=${pp(cA, 76)}; return near(ang(c,A,Bq),124) && near(ang(P,A,Bq),62) && near(124/2,62) && near(ang(Q2,A2,B2),47) && near(ang(P2,A2,B2),47) && side(A2,B2,P2)===side(A2,B2,Q2) && near(ang(P3,A3,B3),90) && near(ang(B3,A3,P3),52) && near(ang(A3,B3,P3),38) && near(180-90-52,38);`),
-      // 図1：∠AOB＝136° → 68°。図2：∠AQB＝33° → 33°。図3：AB 直径、∠ABP＝25° → ∠PAB＝65°
-      chk2(`const A=${pp(cA, 202)},Bq=${pp(cA, 338)},P=${pp(cA, 90)}; const A2=${pp(cA, 237)},B2=${pp(cA, 303)},P2=${pp(cA, 60)},Q2=${pp(cA, 125)}; const A3=[-3,0],B3=[3,0],P3=${pp(cA, 130)}; return near(ang(O,A,Bq),136) && near(ang(P,A,Bq),68) && near(ang(Q2,A2,B2),33) && near(ang(P2,A2,B2),33) && side(A2,B2,P2)===side(A2,B2,Q2) && near(ang(B3,A3,P3),25) && near(ang(A3,B3,P3),65) && near(180-90-25,65);`),
+      // 図1：∠AOB＝136° → 68°。図2：∠AQB＝56° → 56°。図3：AB 直径、∠ABP＝58° → ∠PAB＝32°
+      chk2(`const A=${pp(cA, 202)},Bq=${pp(cA, 338)},P=${pp(cA, 90)}; const A2=${pp(cA, 214)},B2=${pp(cA, 326)},P2=${pp(cA, 60)},Q2=${pp(cA, 125)}; const A3=[-3,0],B3=[3,0],P3=${pp(cA, 64)}; return near(ang(O,A,Bq),136) && near(ang(P,A,Bq),68) && near(ang(Q2,A2,B2),56) && near(ang(P2,A2,B2),56) && side(A2,B2,P2)===side(A2,B2,Q2) && near(ang(B3,A3,P3),58) && near(ang(A3,B3,P3),32) && near(180-90-58,32);`),
       // （2）円周を 15等分（A 90°、B 66°、C 42°、D 18°、E −6°）：∠BAC＝12°、∠BAE＝36°（弧 BE は 3つ分）
       chk2('const A=pl(O,3,90),B=pl(O,3,66),C=pl(O,3,42),Dd=pl(O,3,18),E=pl(O,3,-6); return near(ang(A,B,C),12) && near(ang(A,B,E),36) && near(360/15/2,12) && near(12*3,36);'),
       // （3）弧 AB＝70°、BC＝80°、CD＝88°、DA＝122°（A 90°）：∠CAD＝∠CBD＝44°（A、B は CD の同じ側 → 円周上）、∠ABD＝61° → ∠ACD＝61°
@@ -245,7 +245,7 @@
       F(5, fig1, fig2, fig3),
       C2([
         T('（1）', '図1〜3で、∠x の大きさを求めよう。', 2),
-        B(3, '図1 … 68°\n図2 … 33°\n図3 … 65°')
+        B(3, '図1 … 68°\n図2 … 56°\n図3 … 32°')
       ], [
         T('（2）', '円周を 15等分する点を、順に A、B、C、D、E、… とする。∠BAC と ∠BAE を求めよう。', 3),
         B(3, '∠BAC＝12°\n（360°÷15÷2）\n∠BAE＝12°×3＝36°')

@@ -50,7 +50,7 @@
       // 点の名前：向き pref（度）のほうに、線や字をよけて、自動でおく
       o.lbf = (p, t, pref, d0, size) => {
         const sz = size || 3, [hw, hh] = box0(t, sz), px = X(p[0]), py = Y(p[1]);
-        for (const mg of [0.5, 0.1]) for (const dd of [0, 0.8, 1.6, 2.4, 3.2, 4.4]) for (const off of [0, 22, -22, 45, -45, 67, -67, 90, -90, 112, -112, 135, -135, 157, -157, 180]) {
+        for (const [mg, ddm] of [[0.5, 2.4], [0.1, 2.4], [0.5, 6], [0.1, 6]]) for (const off of [0, 22, -22, 45, -45, 67, -67, 90, -90, 112, -112, 135, -135, 157, -157, 180]) for (let dd = 0; dd <= ddm; dd += 0.8) {
           const a = (pref + off) * D2R, d = (d0 || 1.4) + dd + Math.abs(Math.cos(a)) * hw + Math.abs(Math.sin(a)) * hh, cx = px + d * Math.cos(a), cy = py - d * Math.sin(a);
           if (free(cx, cy, hw, hh, mg)) return o.tx(p, t, cx - px, cy - py, 'middle', sz);
         }

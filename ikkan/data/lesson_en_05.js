@@ -50,7 +50,7 @@
       // 点の名前：向き pref（度）のほうに、線や字をよけて、自動でおく
       o.lbf = (p, t, pref, d0, size) => {
         const sz = size || 3, [hw, hh] = box0(t, sz), px = X(p[0]), py = Y(p[1]);
-        for (const mg of [0.5, 0.1]) for (const dd of [0, 0.8, 1.6, 2.4, 3.2, 4.4]) for (const off of [0, 22, -22, 45, -45, 67, -67, 90, -90, 112, -112, 135, -135, 157, -157, 180]) {
+        for (const [mg, ddm] of [[0.5, 2.4], [0.1, 2.4], [0.5, 6], [0.1, 6]]) for (const off of [0, 22, -22, 45, -45, 67, -67, 90, -90, 112, -112, 135, -135, 157, -157, 180]) for (let dd = 0; dd <= ddm; dd += 0.8) {
           const a = (pref + off) * D2R, d = (d0 || 1.4) + dd + Math.abs(Math.cos(a)) * hw + Math.abs(Math.sin(a)) * hh, cx = px + d * Math.cos(a), cy = py - d * Math.sin(a);
           if (free(cx, cy, hw, hh, mg)) return o.tx(p, t, cx - px, cy - py, 'middle', sz);
         }
@@ -197,8 +197,8 @@
       chk(`const A=${J(A2f)},D=${J(D2f)},B=${J(B2f)},C=${J(C2f)}; return near(ang(B,A,D),62) && near(ang(C,A,D),70) && side(A,D,B)===side(A,D,C) && !cyc(A,D,B,C);`),
       // 図3・（3）：∠ABD＝∠ACD＝38° → 円周上。∠BAC＝35° → ∠BDC＝35°、∠CAD＝40° → ∠CBD＝40°
       chk(`const A=${J(A3)},B=${J(B3)},C=${J(C3)},D=${J(D3)}; return near(ang(B,A,D),38) && near(ang(C,A,D),38) && side(A,D,B)===side(A,D,C) && cyc(A,D,B,C) && near(ang(A,B,C),35) && near(ang(A,C,D),40) && near(ang(D,B,C),35) && near(ang(B,C,D),40);`),
-      // （4）AB＝5m、∠APB＝30°：中心 O、半径 5（△OAB は正三角形）、中心角 ∠AOB＝60°
-      chk('const O=[0,0],A=pl(O,5,240),B=pl(O,5,300),P=pl(O,5,100); return near(len(A,B),5) && near(ang(P,A,B),30) && near(ang(O,A,B),60) && near(len(O,A),len(A,B)) && near(5/(2*Math.sin(30*RD)),5);'),
+      // （4）AB＝5m、∠APB＝30°：中心 O、半径 5（△OAB は正三角形）、中心角 ∠AOB＝60°、直径 10
+      chk('const O=[0,0],A=pl(O,5,240),B=pl(O,5,300),P=pl(O,5,100); return near(len(A,B),5) && near(ang(P,A,B),30) && near(ang(O,A,B),60) && near(len(O,A),len(A,B)) && near(5/(2*Math.sin(30*RD)),5) && near(2*5/(2*Math.sin(30*RD)),10);'),
       // （5）A(−2,0)、B(2,0)。P は上から、Q は下から 50° で見こむ（反対側）→ 4点は円周上にない（50+50≠180）
       chk('const A=[-2,0],B=[2,0],P=view(A,B,50,100),Q=view(B,A,50,260); return near(ang(P,A,B),50) && near(ang(Q,A,B),50) && side(A,B,P)!==side(A,B,Q) && !cyc(A,B,P,Q);'),
       // （6）弧 AB＝128°、弧 BC＝76°、弧 CD＝80°、弧 DA＝76°（A 90°）：∠BAC＝∠BDC＝38°、∠ACB＝64° → ∠ADB＝64°、∠ABC＝78°
@@ -259,8 +259,8 @@
         T('（3）', '図3の四角形 ABCD で、∠ABD＝∠ACD＝38°。∠BDC と ∠CBD を求めよう。', 3),
         B(3, '4点は同じ円周上\n∠BDC＝∠BAC＝35°\n∠CBD＝∠CAD＝40°')
       ], [
-        T('（4）', '5\\m のゴール AB を 30° で見こむ点 P は、円 O の周上にある。∠AOB と半径を求めよう。', 3),
-        B(3, '∠AOB＝30°×2＝60°\n△OAB は正三角形\n半径は 5\\m')
+        T('（4）', '5\\m のゴール AB を 30° で見こむ点 P は、円 O の周上にある。∠AOB と円の直径を求めよう。', 3),
+        B(3, '∠AOB＝30°×2＝60°\n△OAB は正三角形\n半径 5\\m、直径 10\\m')
       ], '1:1'),
       C2([
         T('（5）', 'P、Q は直線 AB の反対側。∠APB＝∠AQB＝50° のとき、4点 A、B、P、Q は円周上にあるといえるか。', 3),
