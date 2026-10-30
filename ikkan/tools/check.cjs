@@ -26,7 +26,9 @@ async function readQr(page, loc) {
 (async () => {
   const root = path.resolve(__dirname, '..');
   const outDir = path.resolve(process.argv[2] || path.join(root, 'tools', '_out'));
-  const only = process.argv.slice(3);
+  // 使い方：check.cjs 出力先 [授業のID …] [--units=単元,単元]（--units は、その単元の全授業と、単元ごとの検査（学習予定表・まとめ印刷）をする）
+  const args = process.argv.slice(3), unitsArg = args.find(a => a.startsWith('--units=')), unitsSel = unitsArg ? unitsArg.slice(8).split(',') : null;
+  let only = args.filter(a => !a.startsWith('--'));
   fs.mkdirSync(outDir, { recursive: true });
   // data/ に置いただけで index.html に書いていない授業も、検査できるようにする（作業用のコピーを、このフォルダにつくって、終わったら消す）
   const { html: idxHtml, added } = require('./lib-index.cjs').withLessons(root);
@@ -39,7 +41,8 @@ async function readQr(page, loc) {
   page.on('pageerror', e => errors.push(String(e)));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   await page.goto(url + '#/');
-  const lessons = await page.evaluate(() => IK.order.map(id => ({ id, plan: !!IK.plans[id], dr: !!IK.drills[id], qz: !!IK.quizzes[id], trial: /試作/.test(IK.lessons[id].no || ''), qr: IK.qrUnits.indexOf(IK.lessons[id].unit) >= 0 })));
+  const lessons = await page.evaluate(() => IK.order.map(id => ({ id, unit: IK.lessons[id].unit, plan: !!IK.plans[id], dr: !!IK.drills[id], qz: !!IK.quizzes[id], trial: /試作/.test(IK.lessons[id].no || ''), qr: IK.qrUnits.indexOf(IK.lessons[id].unit) >= 0 })));
+  if (unitsSel) only = lessons.filter(l => unitsSel.includes(l.unit)).map(l => l.id);
   let bad = 0;
 
   for (const L of lessons.filter(l => !only.length || only.includes(l.id))) {
@@ -180,9 +183,9 @@ async function readQr(page, loc) {
     else console.log(`○ ${L.id}（3点セット）　${got}ページ・印刷 ${pdfPages}ページ（両面なら ${Math.ceil(want / 2)}枚＋）`);
   }
   // 学習予定表（#/print/<単元>/sched）：表裏 2 ページ、はみ出しなし、QR（単元の記録ページ）
-  if (!only.length) {
+  if (!only.length || unitsSel) {
     if (!jsQR) console.log('（jsqr・pngjs がないので、QR の読みとりは省略しました）');
-    for (const key of await page.evaluate(() => IK.qrUnits.filter(k => IK.plansheet(k)))) {
+    for (const key of (await page.evaluate(() => IK.qrUnits.filter(k => IK.plansheet(k)))).filter(k => !unitsSel || unitsSel.includes(k))) {
       await page.goto(url + '#/print/' + key + '/sched');
       await page.reload();
       await page.waitForSelector('.wsp');
@@ -242,13 +245,13 @@ async function readQr(page, loc) {
     await page.setViewportSize({ width: 1000, height: 1300 });
   }
   // 単元まとめ印刷：ページ数（両面印刷の白紙をふくむ）と、印刷（PDF）のページ数
-  if (!only.length) {
+  if (!only.length || unitsSel) {
     const units = await page.evaluate(() => IK.units.map(u => {
       const ids = IK.order.filter(id => IK.lessons[id].unit === u.key && (IK.plans[id] || IK.drills[id] || IK.quizzes[id]));
       const docs = ids.flatMap(id => [IK.lessons[id], IK.drills[id], IK.quizzes[id]].filter(Boolean)).map(sh => sh.blocks.filter(b => b.type === 'break').length + 1);
       return { key: u.key, n: ids.length, pages: docs.reduce((a, c) => a + c, 0), blanks: docs.filter((n, i) => n % 2 === 1 && i < docs.length - 1).length };
     }).filter(u => u.n));
-    for (const u of units) {
+    for (const u of units.filter(u => !unitsSel || unitsSel.includes(u.key))) {
       await page.goto(url + '#/print/' + u.key);
       await page.reload();
       await page.waitForSelector('.pbar');
