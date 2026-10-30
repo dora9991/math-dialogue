@@ -1,0 +1,248 @@
+// 回帰テスト（node sports-tap/tests/unit.cjs）
+// 共通の核（core.js）と、チームの行で記録する種目（サッカー・フットサル・ハンドボール・ラグビー：sp/team.js）の、画面を持たない部分を確かめる。
+// ほかの種目は unit-volley.cjs・unit-tennis.cjs・unit-baseball.cjs・unit-swim.cjs。
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+
+function load(files) {
+  const ctx = { console, Math, Date, JSON };
+  ctx.globalThis = ctx;
+  vm.createContext(ctx);
+  files.forEach((f) => vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', f), 'utf8'), ctx, { filename: f }));
+  return ctx.ST;
+}
+let pass = 0, fail = 0;
+const ok = (c, name, extra) => { if (c) { pass++; console.log('  ok  ', name); } else { fail++; console.log('  FAIL', name, extra !== undefined ? JSON.stringify(extra) : ''); } };
+const eq = (a, b, name) => ok(JSON.stringify(a) === JSON.stringify(b), name, { got: a, want: b });
+const near = (a, b, name, tol) => ok(Math.abs(a - b) <= (tol || 1e-6), name, { got: a, want: b });
+const section = (t) => console.log('\n■ ' + t);
+const ST = load(['core.js', 'sp/team.js']);
+const T0 = Date.UTC(2026, 9, 19, 6, 30, 0);
+
+section('共通の道具');
+eq(ST.parseNumbers('1-11'), ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'], '「1-11」→ 1〜11');
+eq(ST.parseNumbers('４〜６、２３ ００ 0 07'), ['0', '00', '4', '5', '6', '7', '23'], '全角・「〜」・00 と 0 は別・07 は 7');
+eq(ST.formatNumbers(['1', '2', '3', '5', '00']), '00, 1-3, 5', '短い文字に');
+eq([ST.fmtTime(65), ST.fmtTime(3725), ST.fmtTime(12.34, 2), ST.fmtTime(9.94, 1)], ['1:05', '1:02:05', '0:12.34', '0:09.9'], 'fmtTime（小数の桁も）');
+eq([ST.fmtRace(62.354), ST.fmtRace(35.1), ST.fmtRace(-1)], ['1:02.35', '35.10', '—'], 'fmtRace（水泳のタイム）');
+eq(ST.SPORT_ORDER.slice(0, 4), ['soccer', 'futsal', 'handball', 'rugby'], 'チーム系の4種目が登録される（並びは、種目を選ぶ画面の順）');
+eq(ST.cleanOpts(ST.SPORTS.soccer, { len: 45, elen: 99, zz: 1 }), { len: 45, elen: 10 }, '試合の形式：選べない値は、はじめの値に・知らない項目は捨てる');
+
+section('サッカー：記録と得点');
+const sc = ST.SPORTS.soccer;
+let g = ST.newGame({ sport: 'soccer', now: T0, tz: 540, teams: [{ name: '致遠館', players: ST.parseNumbers('1-11').map((no) => ({ no, name: no === '10' ? 'たけし' : '' })) }, { name: '城南' }] });
+ok(g.format === 'sports-tap' && g.sport === 'soccer' && g.version === 1 && g.date === '2026-10-19' && g.prec === 10, '新しい試合の形（種目・日付は日本時間・0.1 秒）');
+eq(g.opts, { len: 40, elen: 10 }, 'サッカーの形式のはじめ：前半・後半 40 分・延長 10 分');
+g.startedAt = T0;
+sc.onStart(g);
+eq(g.events.map((e) => [e.type, e.t, e.period]), [['period', 0, 1]], 'スタートで「前半 開始」（t=0）');
+eq(ST.elapsed(g, T0 + 125432), 125.4, 'スタートからの秒（0.1 秒まで）');
+ST.addEvent(g, { t: 10, type: 'goal', team: 0, no: '10' });
+ST.addEvent(g, { t: 20, type: 'shot', team: 1, no: null });
+ST.addEvent(g, { t: 30, type: 'ck', team: 0, no: null });
+ST.addEvent(g, { t: 35, type: 'mark', team: null });
+const gl = ST.addEvent(g, { t: 40, type: 'goal', team: null, no: '9' });
+ok(gl.team === 0 && gl.no === '9', '得点のある記録は「チームなし」にできない（自分のチームに）');
+eq(sc.score(g), [2, 0], '得点：ゴールだけを数える');
+eq(ST.scoreText(g), '2 − 0', '得点の文字');
+eq(ST.eventText(g, g.events[1], true), '致遠館 #10 たけし ゴール', '一覧の呼び名');
+eq(sc.rowTypes({ rows: {} }, 1), ['goal', 'shot'], 'ふだんの選手のボタン：ゴール（記録用）・シュート（分析用）');
+eq(sc.rowTypes({ rows: { ast: true, card: true } }, 1), ['goal', 'shot', 'ast', 'yc', 'rc'], '設定で足す：アシスト・イエロー・レッド（並びは決まった順）');
+eq(sc.rowTypes({ rows: { goal: false, shot: false } }, 1), [], 'ゴール・シュートも「使わない」にできる');
+eq(sc.teamTypesOf({ rows: {} }, 1), ['gk', 'fk', 'ck'], 'チームの行：ゴールキック・フリーキック・コーナーキック（はじめから出す）');
+eq(sc.teamTypesOf({ rows: { gk: false, off: true } }, 1), ['fk', 'ck', 'off'], 'チームの行のボタンも1つずつ選べる（ゴールキックを消す・オフサイドを足す）');
+eq(sc.globalTypesOf({ rows: {} }), ['mark'], '画面の下：あとでチェック');
+eq(sc.globalTypesOf({ rows: { mark: false } }), [], 'あとでチェックも「使わない」にできる');
+eq([sc.isOn({ rows: {} }, 'fkKind'), sc.isOn({ rows: {} }, 'fkCard'), sc.isOn({ rows: { fkCard: false } }, 'fkCard')], [true, true, false], 'フリーキックの直接・間接とカード：はじめは選ぶ（設定で外せる）');
+eq(sc.toggleSecs.map((x) => x[0]), ['rec', 'ana'], '設定は「記録用」「分析用」に分けて並べる');
+eq([sc.weight('shot'), sc.weight('goal')], [0.75, 1], '失敗のボタンは少し細く');
+eq(sc.win, { shot: [30, 5], mark: [10, 10], other: [10, 10] }, '動画で見返す場面の長さ：シュート 30 秒前〜5 秒後・あとでチェック 10 秒前〜10 秒後');
+eq(sc.TYPE.mark.label, '★ あとでチェック', 'サッカーは「あとでチェック」（ほかの種目は「あとで見る」のまま）');
+eq(ST.SPORTS.futsal.TYPE.mark.label, '★ あとで見る', '（フットサルは「あとで見る」）');
+
+section('サッカー：ピリオドと時計');
+let c = sc.clockAt(g, 600);
+ok(c.p === 1 && c.name === '前半' && c.sec === 600 && c.over === 0 && !c.ended, '前半 10:00');
+c = sc.clockAt(g, 2400 + 83);
+ok(c.over === 83 && c.len === 2400, '40 分を過ぎると「40+1:23」（over）', c);
+eq(sc.clockText(g, 2483), '前半 40+1:23', '時刻の呼び名：前半 40+1:23');
+ST.addEvent(g, { t: 2500, type: 'pend', period: 1 });
+c = sc.clockAt(g, 2800);
+ok(c.ended && c.p === 1 && c.sec === 2500, 'ハーフタイム：時計は前半の終わりで止まる');
+ST.addEvent(g, { t: 3400, type: 'period', period: 2 });
+c = sc.clockAt(g, 3460);
+ok(c.p === 2 && c.name === '後半' && c.sec === 60, '後半 1:00（後半が始まってからの時間）');
+eq(sc.periodAt(g, 3401), 2, 'その時刻のピリオド');
+ST.addEvent(g, { t: 3500, type: 'goal', team: 1, no: null });
+eq(sc.periodScores(g).map((p) => [p.label, p.pts]), [['前半', [2, 0]], ['後半', [0, 1]]], 'ピリオドごとの得点');
+near(sc.playTime(g, 3460), 2500 + 60, '試合が進んでいた時間（ハーフタイムは数えない）');
+// 後半の始まりを直すと、それより後の記録は後半に
+const p2 = g.events.find((e) => e.type === 'period' && e.period === 2);
+p2.t = 3550;
+eq(sc.periodAt(g, 3500), 1, 'ピリオドの始まりを直すと、記録のピリオドも変わる（3500 は前半のハーフタイムの間）');
+p2.t = 3400;
+
+section('サッカー：フリーキック（直接・間接・カード）');
+{
+  const gf = ST.newGame({ sport: 'soccer', now: T0, teams: [{ name: '致遠館', players: ST.parseNumbers('1-11') }, { name: '城南', players: ST.parseNumbers('1-11') }] });
+  gf.startedAt = T0; sc.onStart(gf);
+  const f1 = ST.addEvent(gf, { t: 50, type: 'fk', team: 0, no: null, fk: 'd', card: 'y', cno: '5' });
+  ST.addEvent(gf, { t: 80, type: 'fk', team: 0, no: null, fk: 'i', card: 'n' });
+  ST.addEvent(gf, { t: 90, type: 'fk', team: 1, no: null, fk: 'd', card: 'n' });
+  ST.addEvent(gf, { t: 120, type: 'gk', team: 1, no: null });
+  ST.addEvent(gf, { t: 130, type: 'ck', team: 0, no: null });
+  eq(sc.typeLabel(gf, f1), 'フリーキック（直接）・イエロー #5', '呼び名：フリーキック（直接）・イエロー #5');
+  eq(ST.eventText(gf, f1, true), '致遠館 フリーキック（直接）・イエロー #5', '一覧の呼び名（蹴ったのは致遠館）');
+  let pf = sc.penalties(gf, 100);
+  ok(!pf.outs.has('1:5'), 'フリーキックのイエロー1回：相手の #5 はまだ出られる');
+  ST.addEvent(gf, { t: 300, type: 'fk', team: 0, no: null, fk: 'd', card: 'y', cno: '5' });
+  pf = sc.penalties(gf, 310);
+  ok(pf.outs.has('1:5') && pf.short[1] === 1, 'フリーキックのイエロー2回：相手の #5 は退場の印・相手は1人少ない', { outs: Array.from(pf.outs), short: pf.short });
+  const st = sc.stats(gf);
+  const c0 = st[0].total.c, c1 = st[1].total.c;
+  eq([c0.fk, c0.fkd, c0.fki, c1.fk, c1.fkd, c1.gk, c0.ck], [3, 2, 1, 1, 1, 1, 1], '集計：致遠館の FK 3（直接 2・間接 1）・城南の FK 1（直接）・城南の GK 1・致遠館の CK 1');
+  const r5 = st[1].rows.find((r) => r.no === '5');
+  eq([r5.c.yc, c1.yc, c0.yc || 0], [2, 2, 0], 'カードは、もらった選手（相手の #5）の行に数える');
+  eq(['fk', 'fkd', 'fki', 'yc'].map((k) => sc.colValue(sc.cols.find((x) => x.key === k), st[0].total)), ['3', '2', '1', ''], '集計の表：FK・FK直接・FK間接');
+  const ex2 = ST.exportData(gf);
+  const fkEx = ex2.events.find((e) => e.id === f1.id);
+  ok(fkEx.fk === 'd' && fkEx.card === 'y' && fkEx.cno === '5' && fkEx.text === '致遠館 フリーキック（直接）・イエロー #5', '書き出す JSON：直接・カード・背番号と呼び名');
+  const back2 = ST.importData(JSON.stringify(ex2));
+  const fkBack = back2.events.find((e) => e.id === f1.id);
+  ok(fkBack && fkBack.fk === 'd' && fkBack.card === 'y' && fkBack.cno === '5', '読み込み：フリーキックのくわしい記録も戻る', fkBack);
+  const csvRows = sc.csvEvents(gf);
+  ok(csvRows.some((r) => r[8] === 'フリーキック（間接）'), '記録の一覧（CSV）にも「フリーキック（間接）」');
+}
+
+section('サッカー：PK戦');
+ST.addEvent(g, { t: 6000, type: 'period', period: 9 });
+eq(sc.rowTypes({ rows: { ast: true } }, 9), ['sog', 'sox'], 'PK戦の間は「成功」「×」だけ');
+eq(sc.teamTypesOf({ rows: {} }, 9), [], 'PK戦の間はチームの行なし');
+ST.addEvent(g, { t: 6010, type: 'sog', team: 0, no: '10' });
+ST.addEvent(g, { t: 6020, type: 'sox', team: 1, no: null });
+ST.addEvent(g, { t: 6030, type: 'sog', team: 0, no: '9' });
+eq(sc.soScore(g), [2, 0], 'PK戦の結果');
+eq(sc.score(g), [2, 1], 'PK戦は試合の得点に入れない');
+eq(ST.scoreText(g), '2 − 1（PK 2−0）', '得点の文字に PK');
+eq(sc.typeLabel(g, g.events[g.events.length - 1]), 'PK戦 成功', 'PK戦の記録の呼び名');
+eq(sc.periodScores(g).map((p) => p.label), ['前半', '後半'], 'ピリオドごとの得点に PK戦は入れない');
+
+section('サッカー：警告・退場');
+let g2 = ST.newGame({ sport: 'soccer', now: T0, teams: [{ players: ST.parseNumbers('1-11') }, {}] });
+g2.startedAt = T0; sc.onStart(g2);
+ST.addEvent(g2, { t: 100, type: 'yc', team: 0, no: '5' });
+let pen = sc.penalties(g2, 200);
+ok(!pen.outs.has('0:5') && pen.short[0] === 0, '警告1回：まだ出られる');
+ST.addEvent(g2, { t: 300, type: 'yc', team: 0, no: '5' });
+pen = sc.penalties(g2, 400);
+ok(pen.outs.has('0:5') && pen.short[0] === 1, '警告2回で退場（チームは1人少ない）', { outs: Array.from(pen.outs), short: pen.short });
+ST.addEvent(g2, { t: 500, type: 'rc', team: 1, no: null });
+pen = sc.penalties(g2, 600);
+eq(pen.short, [1, 0], '番号なしの退場は、行の印にできない（人数の少なさは、番号の付いた退場だけ）');
+
+section('ハンドボール：2分間退場・失格・シュート率');
+const hb = ST.SPORTS.handball;
+let g3 = ST.newGame({ sport: 'handball', now: T0, teams: [{ players: ST.parseNumbers('1-14') }, {}] });
+eq(g3.opts, { len: 30, elen: 5 }, 'ハンドボールの形式のはじめ：30 分');
+g3.startedAt = T0; hb.onStart(g3);
+eq(hb.rowTypes({ rows: {} }, 1), ['goal', 'shotx', 'yc', 's2', 'dq'], 'ふだん：ゴール・×（失敗）・警告・2分・失格');
+ST.addEvent(g3, { t: 1700, type: 's2', team: 0, no: '7' });
+pen = hb.penalties(g3, 1730);
+ok(pen.susp.length === 1 && Math.round(pen.susp[0].rem) === 90 && pen.short[0] === 1, '2分間退場：30 秒たって、のこり 1:30・チームは1人少ない', pen.susp);
+ST.addEvent(g3, { t: 1800, type: 'pend', period: 1 });
+ST.addEvent(g3, { t: 2400, type: 'period', period: 2 });
+near(hb.penalties(g3, 2300).susp[0].rem, 20, 'のこり時間は、ハーフタイムの間は減らない（前半の終わりで のこり 20 秒）', 0.01);
+near(hb.penalties(g3, 2410).susp[0].rem, 120 - 100 - 10, 'ハーフタイムをはさんで：前半 100 秒・後半 10 秒 → のこり 10 秒', 0.01);
+eq(hb.penalties(g3, 2425).susp.length, 0, '2分たったら、もどれる');
+ST.addEvent(g3, { t: 2500, type: 's2', team: 0, no: '7' });
+ST.addEvent(g3, { t: 2700, type: 's2', team: 0, no: '7' });
+pen = hb.penalties(g3, 2710);
+ok(pen.outs.has('0:7') && pen.susp.length === 1 && pen.short[0] === 1, '3回目の2分間退場で失格の印（2分間は1人少ない）');
+eq(hb.penalties(g3, 2830).short, [0, 0], '失格のあとも、2分たてばチームの人数はもどる');
+ST.addEvent(g3, { t: 2900, type: 'dq', team: 1, no: null });
+eq(hb.penalties(g3, 2950).short, [0, 1], '失格：チームは2分間1人少ない');
+ST.addEvent(g3, { t: 100, type: 'goal', team: 0, no: '3' });
+ST.addEvent(g3, { t: 110, type: 'shotx', team: 0, no: '3' });
+ST.addEvent(g3, { t: 120, type: 'g7', team: 0, no: '3' });
+ST.addEvent(g3, { t: 130, type: 'x7', team: 0, no: '3' });
+const st3 = hb.stats(g3)[0];
+const r3 = st3.rows.find((r) => r.no === '3');
+eq(hb.cols.filter((x) => ['pts', 'shot', 'g7'].includes(x.key)).map((col) => hb.colValue(col, r3)), ['2', '2/4', '1/2'], '集計：得点 2・シュート 2/4・7m 1/2');
+eq(hb.score(g3), [2, 0], '7mスローの成功も1点');
+
+section('フットサル：累積ファウル・退場');
+const fs5 = ST.SPORTS.futsal;
+let g4 = ST.newGame({ sport: 'futsal', now: T0, teams: [{ players: ST.parseNumbers('1-12') }, {}] });
+g4.startedAt = T0; fs5.onStart(g4);
+eq(fs5.rowTypes({ rows: {} }, 1), ['goal', 'shot', 'foul'], 'ふだん：ゴール・シュート・ファウル');
+for (let i = 0; i < 5; i++) ST.addEvent(g4, { t: 100 + i, type: 'foul', team: 0, no: '4' });
+eq(fs5.foulsNow(g4, 200), [5, 0], '前半の累積ファウル 5');
+ST.addEvent(g4, { t: 1300, type: 'pend', period: 1 });
+ST.addEvent(g4, { t: 1900, type: 'period', period: 2 });
+eq(fs5.foulsNow(g4, 1950), [0, 0], '後半は 0 から（前半の数は持ち越さない）');
+for (let i = 0; i < 6; i++) ST.addEvent(g4, { t: 2000 + i, type: 'foul', team: 1, no: null });
+ST.addEvent(g4, { t: 3300, type: 'pend', period: 2 });
+ST.addEvent(g4, { t: 3400, type: 'period', period: 3 });
+ST.addEvent(g4, { t: 3410, type: 'foul', team: 1, no: null });
+eq(fs5.foulsNow(g4, 3420), [0, 7], '延長は後半の数を続ける（7つ目）');
+eq(Array.from(fs5.teamFouls(g4).entries()), [[1, [5, 0]], [2, [0, 7]]], 'ピリオドごとのチームファウル（延長は後半に入れる）');
+ST.addEvent(g4, { t: 3500, type: 'rc', team: 0, no: '4' });
+pen = fs5.penalties(g4, 3530);
+ok(pen.outs.has('0:4') && pen.short[0] === 1 && Math.round(pen.susp[0].rem) === 90, '退場：その選手は出られない・チームは2分間1人少ない', pen.susp);
+eq(fs5.penalties(g4, 3700).short, [0, 0], '2分たてば、チームの人数はもどる');
+
+section('ラグビー：得点・キックの成功率・シンビン');
+const rg = ST.SPORTS.rugby;
+let g5 = ST.newGame({ sport: 'rugby', now: T0, opts: { len: 30, sin: 10 }, teams: [{ players: ST.parseNumbers('1-15') }, {}] });
+eq(g5.opts, { len: 30, elen: 10, sin: 10 }, 'ラグビーの形式（シンビンの長さも）');
+g5.startedAt = T0; rg.onStart(g5);
+eq(rg.rowTypes({ rows: {} }, 1), ['try', 'con', 'pg', 'dg'], 'ふだん：トライ・ゴール・PG・DG');
+eq(rg.rowTypes({ rows: { kickx: true } }, 1), ['try', 'con', 'conx', 'pg', 'pgx', 'dg', 'dgx'], 'キックの失敗：それぞれのとなりに「×」');
+ST.addEvent(g5, { t: 100, type: 'try', team: 0, no: '11' });
+ST.addEvent(g5, { t: 160, type: 'con', team: 0, no: '10' });
+ST.addEvent(g5, { t: 400, type: 'pgx', team: 0, no: '10' });
+ST.addEvent(g5, { t: 500, type: 'pg', team: 1, no: null });
+ST.addEvent(g5, { t: 600, type: 'ptry', team: 0, no: null });
+eq(rg.score(g5), [14, 3], '得点：トライ 5＋ゴール 2＋認定トライ 7 ／ PG 3');
+const r10 = rg.stats(g5)[0].rows.find((r) => r.no === '10');
+eq(rg.colValue(rg.cols.find((x) => x.key === 'pg'), r10), '0/1', 'PG 0/1（失敗も記録したとき）');
+ST.addEvent(g5, { t: 700, type: 'yc', team: 0, no: '6' });
+pen = rg.penalties(g5, 760);
+ok(pen.susp.length === 1 && Math.round(pen.susp[0].rem) === 540, 'シンビン 10 分：1 分たって、のこり 9:00', pen.susp);
+g5.opts.sin = 2;
+ok(Math.round(rg.penalties(g5, 760).susp[0].rem) === 60, 'シンビンの長さは試合の形式で（7人制 2 分）');
+eq(rg.penalties(g5, 900).susp.length, 0, '2 分たてばもどる');
+
+section('一覧・CSV・書き出しと読み込み');
+const rows = sc.csvEvents(g);
+eq(rows[0].slice(0, 5), ['No', '時刻', 'スタートからの秒', 'ピリオド', 'ピリオドの時間'], '記録の一覧（CSV）の見出し');
+const goalRow = rows.find((r) => r[8] === 'ゴール' && r[6] === '10');
+eq([goalRow[3], goalRow[4], goalRow[10], goalRow[11]], ['前半', '0:10', 2 - 1, 0], '#10 のゴール：前半 0:10・その時点の得点 1−0');
+const htRow = rows.find((r) => r[8] === '前半 終了');
+ok(!!htRow && htRow[1] === '41:40', 'ピリオドの終わりも一覧に');
+const box = sc.csvBox(g);
+ok(box[0].includes('得点') && box[0].includes('PK戦') && box.some((r) => r[1] === '合計'), '選手ごとの集計（CSV）：得点・PK戦・合計の行');
+const ex = ST.exportData(g);
+ok(ex.format === 'sports-tap' && ex.sport === 'soccer' && ex.sportName === 'サッカー' && ex.scoreText === '2 − 1（PK 2−0）' && ex.periodNames[2] === '後半' && ex.shootout[0] === 2, '書き出す JSON：種目・得点・ピリオドの名前・PK戦');
+ok(ex.events.every((e, i, a) => !i || a[i - 1].t <= e.t), '書き出す記録は時刻の順');
+ok(ex.events.find((e) => e.type === 'goal').period === 1, '記録ごとにピリオドの番号も付く');
+const back = ST.importData(JSON.stringify(ex));
+ok(back.sport === 'soccer' && back.events.length === g.events.length && ST.scoreText(back) === ST.scoreText(g) && back.opts.len === 40, '読み込み：同じ記録になる');
+ok(back.events.every((e) => /^e\d+$/.test(e.id)) && new Set(back.events.map((e) => e.id)).size === back.events.length, '読み込み：記録の id は重ならない');
+let err = '';
+try { ST.importData({ format: 'basket-tap', events: [], teams: [] }); } catch (e) { err = e.message; }
+ok(/バスケ/.test(err), 'バスケの記録は「バスケ タップ記録で開いて」と知らせる', err);
+try { ST.importData({ format: 'sports-tap', sport: 'curling', events: [], teams: [] }); err = ''; } catch (e) { err = e.message; }
+ok(/開けません/.test(err), '知らない種目は開けない', err);
+eq(ST.fileBase(g).split('_').slice(0, 2), ['サッカー記録', '2026-10-19'], 'ファイル名：「サッカー記録_日付_…」');
+
+section('記録の画面の並べ方（planLayout）');
+const spec2 = ST.rowSpec([1, 0.75]);
+let plan = ST.planLayout(382, 520, [13, 2], 24, spec2);
+ok(plan && !plan.scroll && plan.teams[0].rowH >= 30, 'スマホ縦：自分 11人＋？＋チームの行、相手は2行 → すべらない', { arr: plan.arr, rowH: plan.teams.map((x) => Math.round(x.rowH)) });
+plan = ST.planLayout(1172, 700, [16, 16], 26, ST.rowSpec([1, 1, 1, 1, 0.75, 0.75, 0.75]));
+ok(plan && !plan.scroll && plan.teams[0].bwMin >= 30, 'iPad 横：15人ずつ・ボタン 7 つでも、すべらない', { bwMin: plan.teams.map((x) => Math.round(x.bwMin)), rowH: plan.teams.map((x) => Math.round(x.rowH)) });
+
+console.log(`\n${pass} ok / ${fail} fail`);
+process.exit(fail ? 1 : 0);

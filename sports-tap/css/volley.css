@@ -1,0 +1,29 @@
+/* スポーツ タップ記録 — バレーボールの画面（.fam-volley の下だけ。並べ方・ボタンの形はチームの種目と同じ app.css） */
+/* 上の帯：「第1セット」の下に、取ったセット数（2段）。サーブのチームの点に 🏐 */
+.fam-volley .setbtn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; line-height: 1; padding: 0 6px; min-width: 0; }
+.fam-volley .setlab { font-size: clamp(11px, 2.4vmin, 16px); font-weight: 800; white-space: nowrap; }
+.fam-volley .setsc { font-size: clamp(15px, 3.4vmin, 24px); font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fam-volley .setsc::before { content: 'セット '; font-size: 0.55em; font-weight: 700; color: var(--muted); vertical-align: 0.15em; }
+.fam-volley .short .setsc, .fam-volley.short .setsc { font-size: 14px; }
+.fam-volley .sc { position: relative; }
+.fam-volley .sc.srv::after { content: '🏐'; position: absolute; top: 2px; right: 2px; font-size: clamp(11px, 2.2vmin, 16px); line-height: 1; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45)); }
+@media (max-width: 400px) {
+  .fam-volley .setsc::before { content: none; }
+}
+/* チームの帯の 🏐：サーブのチームは明るく、もう一方はうすく（押すと、そのチームのサーブに入れかえる） */
+.fam-volley .thead { padding-left: 2px; gap: 4px; }
+.fam-volley .srvb { flex: none; width: 26px; height: 20px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: transparent; font-size: 13px; line-height: 1; opacity: 0.28; filter: grayscale(1); }
+.fam-volley .srvb.on { opacity: 1; filter: none; background: rgba(255, 255, 255, 0.9); border-color: rgba(0, 0, 0, 0.25); }
+.fam-volley .team.serving { box-shadow: 0 0 0 2px var(--accent), 0 0 0 1px rgba(128, 128, 128, 0.35); }
+@media (min-width: 700px) and (min-height: 600px) {
+  .fam-volley .srvb { width: 32px; height: 24px; font-size: 16px; }
+}
+/* スタート前の札：最初のサーブ */
+.fam-volley .fsb { border-left: 6px solid var(--tc); }
+.fam-volley .firstsrv { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 14px; }
+.fam-volley .endvb { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.fam-volley .endvb .note { margin: 0; }
+/* 集計：セットの表・ラリーの数字 */
+body[data-family="volley"] .vsets td.won { font-weight: 900; color: var(--good); }
+body[data-family="volley"] .rally { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13.5px; color: var(--muted); margin: 0 0 6px; }
+body[data-family="volley"] .rally span { white-space: nowrap; }
