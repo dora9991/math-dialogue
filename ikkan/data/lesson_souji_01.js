@@ -55,7 +55,7 @@
     for (let r = 0; r <= rows; r++) o += h.ln(x(0), y(r), x(cols), y(r), '#c9d1d9', 0.15);
     [[QA, 1, 'ア'], [QI, 9, 'イ'], [QU, 23, 'ウ']].forEach(([Q, off, nm]) => {
       o += `<polygon points="${Q.map(p => h.f2(x(p[0] + off)) + ',' + h.f2(y(p[1]))).join(' ')}" fill="#fff" stroke="#222" stroke-width="0.5" stroke-linejoin="round"/>`;
-      o += h.tx(x(off + Math.max(...Q.map(p => p[0])) / 2), y(0) + 5.4, nm, 3.4, 'middle', ' class="pl"');
+      o += h.tx(x(off + Math.max(...Q.map(p => p[0])) / 2), y(0) + 5.4, nm, 3.4, 'middle');
     });
     return o;
   });
@@ -76,7 +76,7 @@
     Object.keys(G_TRI).forEach(nm => {
       const Q = G_TRI[nm];
       o += `<polygon points="${Q.map(p => h.f2(x(p[0] + 0.5)) + ',' + h.f2(y(p[1]))).join(' ')}" fill="#fff" stroke="#222" stroke-width="0.5" stroke-linejoin="round"/>`;
-      o += h.tx(x(0.5 + (Math.min(...Q.map(p => p[0])) + Math.max(...Q.map(p => p[0]))) / 2), y(0) + 5.2, nm, 3.2, 'middle', ' class="pl"');
+      o += h.tx(x(0.5 + (Math.min(...Q.map(p => p[0])) + Math.max(...Q.map(p => p[0]))) / 2), y(0) + 5.2, nm, 3.2, 'middle');
     });
     return o;
   }), '図2', { w: 1.5 });
