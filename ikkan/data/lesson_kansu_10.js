@@ -21,7 +21,7 @@
       const xs = ox + 43, xe = xs + len;
       let s = h.ln(ox, y + 0.6, ox + 150, y + 0.6, '#9aa5b1', 0.25) + h.tx(ox, y - 2, speed, 3.4, 'start') + car(ox + 27, y);
       s += h.ln(xs, y - 2.6, xe - 1.6, y - 2.6, '#222', 0.4, dash ? ' stroke-dasharray="1.6 1.2"' : '') + head(xe, y - 2.6);
-      s += h.ln(xe, y - 6.5, xe, y + 1.2, '#222', 0.3, ' stroke-dasharray="0.9 0.9"');
+      s += h.ln(xe, y - 3.6, xe, y + 1.2, '#222', 0.3, ' stroke-dasharray="0.9 0.9"');
       s += h.rich((xs + xe) / 2, y - 5.2, label, 3, 'middle');
       return s;
     };

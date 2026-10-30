@@ -31,7 +31,7 @@
   const ruled = (n, o) => {
     o = o || {};
     return SVG((W, H, h) => {
-      const RED = '#d62828', top = o.cap ? 8.5 : 4.5, bot = H - 4.5, sp = (bot - top) / n, xl = 3, xr = W - (o.num ? 9 : 4);
+      const RED = '#d62828', top = o.cap ? 9 : 5, bot = H - 6.5, sp = (bot - top) / n, xl = 3, xr = W - (o.num ? 9 : 4);
       const ax = xl + (xr - xl) * 0.16, bx = xl + (xr - xl) * 0.84, X = k => ax + (bx - ax) * k / n, Y = k => top + k * sp;
       let s = o.cap ? h.tx(W / 2, 3.5, o.cap, 3, 'middle', ' class="cap"') : '';
       for (let k = 0; k <= n; k++) {
@@ -40,11 +40,12 @@
       }
       s += h.ln(X(0), Y(0), X(n), Y(n), '#222', 0.5, ' stroke-linecap="round"');
       s += `<circle cx="${h.f2(X(0))}" cy="${h.f2(Y(0))}" r="0.9" fill="#222"/>` + h.tx(X(0) - 3, Y(0) - 1.5, 'A', 3.1, 'middle', ' class="pl"');
-      s += `<circle cx="${h.f2(X(n))}" cy="${h.f2(Y(n))}" r="0.9" fill="#222"/>` + h.tx(X(n) + 3, Y(n) + 4, 'B', 3.1, 'middle', ' class="pl"');
-      if (o.P != null) s += `<circle cx="${h.f2(X(o.P))}" cy="${h.f2(Y(o.P))}" r="0.9" fill="#222"/>` + h.tx(X(o.P) - 3.2, Y(o.P) + 4.2, 'P', 3.1, 'middle', ' class="pl"');
+      s += `<circle cx="${h.f2(X(n))}" cy="${h.f2(Y(n))}" r="0.9" fill="#222"/>` + h.tx(X(n) + 3, Y(n) + 4.2, 'B', 3.1, 'middle', ' class="pl"');
+      const bk = (x, y) => `<rect x="${h.f2(x - 2.2)}" y="${h.f2(y - 2.6)}" width="4.4" height="3.8" fill="#fff"/>`;   // 字の白い地（罫線の上に字をのせる）
+      if (o.P != null) s += `<circle cx="${h.f2(X(o.P))}" cy="${h.f2(Y(o.P))}" r="0.9" fill="#222"/>` + bk(X(o.P) - 3.2, Y(o.P) + 2.2) + h.tx(X(o.P) - 3.2, Y(o.P) + 2.2, 'P', 3.1, 'middle', ' class="pl"');
       if (o.len) s += h.tx(xl + 2, bot - 1, o.len, 3, 'start');
       let r = (o.ans || []).map(k => `<circle cx="${h.f2(X(k))}" cy="${h.f2(Y(k))}" r="0.9" fill="${RED}"/>`).join('');
-      if (o.ansP != null) r += `<circle cx="${h.f2(X(o.ansP))}" cy="${h.f2(Y(o.ansP))}" r="1.1" fill="${RED}"/>` + h.tx(X(o.ansP) - 3.2, Y(o.ansP) + 4.2, 'P', 3.1, 'middle', ' class="pl" fill="' + RED + '"');
+      if (o.ansP != null) r += `<circle cx="${h.f2(X(o.ansP))}" cy="${h.f2(Y(o.ansP))}" r="1.1" fill="${RED}"/>` + bk(X(o.ansP) - 3.2, Y(o.ansP) + 2.2) + h.tx(X(o.ansP) - 3.2, Y(o.ansP) + 2.2, 'P', 3.1, 'middle', ' class="pl"');
       return s + (r ? h.ans(r) : '');
     });
   };
@@ -54,7 +55,7 @@
     pts: { A: [0.3, 5], B: [0.9, 3], C: [1.8, 0], D: [3.4, 5], E: [4.0, 3], F: [4.9, 0] }, pad: 6,
     segs: [[[-0.6, 5], [5.7, 5], { lab: 'ℓ' }], [[-0.6, 3], [5.7, 3], { lab: 'm' }], [[-0.6, 0], [5.7, 0], { lab: 'n' }], 'AC', 'DF'],
     dots: ['A', 'B', 'C', 'D', 'E', 'F'],
-    vl: { A: ['A', 110], B: ['B', 70], C: ['C', 250], D: ['D', 70], E: ['E', 110], F: ['F', 290] },
+    vl: { A: ['A', 110], B: ['B', 70], C: ['C', 250], D: ['D', 70], E: ['E', 235], F: ['F', 290] },
     txt: [{ p: [0.6, 4], t: '6cm', dx: -6 }, { p: [1.35, 1.5], t: '9cm', dx: -6 }, { p: [3.7, 4], t: '4cm', dx: 6.5 }, { p: [4.45, 1.5], t: 'x', dx: 5 }]
   });
 
@@ -98,7 +99,7 @@
       // （8）台形 A(2,4)・D(6,4)・B(0,0)・C(10,0)（AD＝4、BC＝10）。AE：EB＝1：2 の E を通る BC への平行線が DC と交わる点 F：EF＝6
       `(() => { const A=[2,4], D=[6,4], B=[0,0], C=[10,0], E=[A[0]+(B[0]-A[0])/3, A[1]+(B[1]-A[1])/3], t=(D[1]-E[1])/(D[1]-C[1]), F=[D[0]+(C[0]-D[0])*t, E[1]]; return near(Math.hypot(...[A[0]-D[0],A[1]-D[1]]),4) && near(F[0]-E[0],6) && near((2*4+1*10)/3,6) && near(6-4, 2); })()`,
       // 小テスト（1）8等分：8本目　（2）5本目、2本目との交点：AP：PB＝2：3　（3）18cm を 4：5 に分ける：AP＝8
-      `(() => { ${LIB} const A=[0,0], B=[3,5], P=onLine(A,B,2); return red(Math.round(d(A,P)*1000),Math.round(d(P,B)*1000))==="2:3" && near(18*4/9,8) && near(18-8,10); })()`,
+      `(() => { ${LIB} const A=[0,0], B=[3,5], P=onLine(A,B,2); return near(d(A,P)*3,d(P,B)*2) && near(18*4/9,8) && near(18-8,10); })()`,
       // 小テスト（4）3：5＝6：EF → EF＝10　（5）チャレンジ：6本目に合わせて、2本目・4本目の交点：AP＝PQ＝QB
       `(() => { ${LIB} const A=[0,0], B=[2,6], P=onLine(A,B,2), Q=onLine(A,B,4); return near(3/5*10,6) && near(d(A,P),d(P,Q)) && near(d(P,Q),d(Q,B)) && near(d(A,B),3*d(A,P)); })()`
     ],
@@ -116,9 +117,9 @@
       WD('平行線に 2つの直線が交わるとき、線分の{{比}}は等しい。\n間かくが等しい平行線は、ななめの線分を{{等分}}する。\n線分を m：n に分けるには、全体を{{m+n}}等分して考える。', 4, { label: 'ことば（教科書で調べよう）' }),
       G(1),
       C2([
-        K('例題', '長さ 14cm の紙テープ AB を、罫線を使って 3：4 に分ける点 P を求めよう。表の空欄をうめよう。', 4)
+        K('例題', '長さ 14cm の紙テープ AB を、罫線を使って 3：4 に分ける点 P を求めよう。表の空欄をうめよう。', 5)
       ], [
-        F(4, ruled(7, { num: true, len: 'AB＝14cm', ansP: 3 }))
+        F(5, ruled(7, { num: true, len: 'AB＝14cm', ansP: 3 }))
       ], '3:2'),
       TB('', null, [
         ['全体を、何等分と考えるか', ['{{7}}等分']],
@@ -146,7 +147,7 @@
         T('（3）', '21cm の線分 AB を、罫線を使って 2：5 に分ける点 P を求める。B は A から何本目に合わせ、AP は何 cm か。', 5),
         B(3, '2+5＝7　7本目\nAP＝21×[[2/7]]＝6\n　6cm')
       ], [
-        T('（4）', '数直線上に、1 を表す点 A と、15 を表す点 B がある。線分 AB を 3：4 に分ける点 P が表す数は。', 5),
+        T('（4）', '数直線上に、1 を表す点 A と、15 を表す点 B がある。線分 AB を 3：4 に分ける点 P が表す数は。', 4),
         B(3, 'AB＝14\nAP＝14×[[3/7]]＝6\nP は 1+6＝7')
       ], '1:1'),
       C2([
