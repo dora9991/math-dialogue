@@ -134,12 +134,6 @@
       "port": 5192
     },
     {
-      "name": "zenrekiken68",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8795", "--directory", "zenrekiken68"],
-      "port": 8795
-    },
-    {
       "name": "tangocho",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8794", "--directory", "tangocho"],
