@@ -50,7 +50,7 @@
   T2.O = isect(T2.A, T2.C, T2.B, T2.D);
   const fig2 = cap(trap(T2, { pad: 6 }), '図2');
   // ---- 図3：▱ABCD。辺 AD 上に点 P ----
-  const T3 = { B: [0, 0], C: [4.4, 0], A: [1.1, 2.4] }; T3.D = [T3.A[0] + 4.4, T3.A[1]]; T3.P = [2.4, 2.4];
+  const T3 = { B: [0, 0], C: [4.4, 0], A: [1.1, 2.4] }; T3.D = [T3.A[0] + 4.4, T3.A[1]]; T3.P = [T3.A[0] + 0.375 * 4.4, 2.4];
   const fig3 = cap(GEO({
     pts: T3, poly: 'ABCD', segs: ['PB', 'PC'], dots: ['P'], pad: 6,
     vl: { A: ['A', 135], B: ['B', 225], C: ['C', 315], D: ['D', 45], P: ['P', 90, 3.2] }
@@ -104,8 +104,8 @@
       `(() => { ${LIB} const P=${J(F1)}; const Pt={A:P.A,P:P.P,Q:P.Q,B:P.B,C:P.C}; return z(cr(v(P.A,P.Q),v(P.B,P.C))) && tri(Pt,ar(P.A,P.B,P.C))==="ABC,BCP,BCQ"; })()`,
       // （2）図2：台形（AD＝2、BC＝5）。△ABD と等しい三角形は △ACD だけ、△DCO と等しい三角形は △ABO だけ
       `(() => { ${LIB} const P=${J(T2)}; return z(cr(v(P.A,P.D),v(P.B,P.C))) && tri(P,ar(P.A,P.B,P.D))==="ABD,ACD" && tri(P,ar(P.D,P.C,P.O))==="ABO,CDO"; })()`,
-      // （3）（4）図3：▱ABCD（面積 48）の AD 上の点 P で △PBC は半分の 24、△PAB＋△PCD も 24。△PAB＝9 のとき △PCD＝15（P を動かしても、いつも）
-      `(() => { ${LIB} const P=${J(T3)}; const S=2*ar(P.A,P.B,P.C), k=48/S; return near(ar(P.P,P.B,P.C)*k,24) && near((ar(P.P,P.A,P.B)+ar(P.P,P.C,P.D))*k,24) && near(24-9,15) && [0.1,0.3,0.5,0.8].every(t=>{ const Q=[P.A[0]+t*(P.D[0]-P.A[0]),P.A[1]]; return near(ar(Q,P.B,P.C)*k,24) && near((ar(Q,P.A,P.B)+ar(Q,P.C,P.D))*k,24); }); })()`,
+      // （3）（4）図3：▱ABCD（面積 48）の AD 上の点 P（AP：PD＝3：5）で △PBC は半分の 24、△PAB＋△PCD も 24、△PAB＝9、△PCD＝15（P を動かしても、和はいつも 24）
+      `(() => { ${LIB} const P=${J(T3)}; const S=2*ar(P.A,P.B,P.C), k=48/S; return near(ar(P.P,P.B,P.C)*k,24) && near((ar(P.P,P.A,P.B)+ar(P.P,P.C,P.D))*k,24) && near(ar(P.P,P.A,P.B)*k,9) && near(ar(P.P,P.C,P.D)*k,15) && near(24-9,15) && [0.1,0.3,0.5,0.8].every(t=>{ const Q=[P.A[0]+t*(P.D[0]-P.A[0]),P.A[1]]; return near(ar(Q,P.B,P.C)*k,24) && near((ar(Q,P.A,P.B)+ar(Q,P.C,P.D))*k,24); }); })()`,
       // （5）図2：△ABO＝6、△OBC＝15（AO：OC＝AD：BC＝2：5 と同じ比）→ △ABC＝21＝△DBC、△DCO＝△DBC−△OBC＝6
       `(() => { ${LIB} const P=${J(T2)}, k=6/ar(P.A,P.B,P.O); return near(ar(P.O,P.B,P.C)*k,15) && near(ar(P.A,P.B,P.C)*k,21) && near(ar(P.D,P.B,P.C)*k,21) && near(ar(P.D,P.C,P.O)*k,6) && near(21-15,6); })()`,
       // （6）逆：BC を共通の底辺とし、A、D が BC の同じ側にあって △ABC＝△DBC ならば、AD∥BC（A、D の高さが等しい）
