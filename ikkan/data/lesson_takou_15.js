@@ -12,34 +12,34 @@
 
   // 道の図：正方形の花だん（1辺 p）、道（はば a）、点線（道のまん中を通る線）。p と a の字は、花だんと道のそばに書く
   const road = SVG((W, H, h) => {
-    const f = h.f2, a = 6, p = 18, o = p + 2 * a, x0 = W / 2 - o / 2, y0 = (H - o) / 2, ym = y0 + o / 2;
+    const f = h.f2, a = 7, p = 22, o = p + 2 * a, x0 = W / 2 - o / 2, y0 = (H - o) / 2, ym = y0 + o / 2;
     let s = `<rect x="${f(x0)}" y="${f(y0)}" width="${o}" height="${o}" fill="#eef1f5" stroke="#222" stroke-width="0.35"/>`;
     s += `<rect x="${f(x0 + a)}" y="${f(y0 + a)}" width="${p}" height="${p}" fill="#fff" stroke="#222" stroke-width="0.35"/>`;
     s += `<rect x="${f(x0 + a / 2)}" y="${f(y0 + a / 2)}" width="${p + a}" height="${p + a}" fill="none" stroke="#222" stroke-width="0.3" stroke-dasharray="1.2 0.9"/>`;
-    s += h.tx(W / 2, y0 + a + 6, '花だん', 3.2, 'middle');
+    s += h.tx(W / 2, y0 + a + 7, '花だん', 3.4, 'middle');
     const yp = y0 + a + p - 5;   // p の寸法線（花だんの中）
     s += h.ln(x0 + a + 1.5, yp, x0 + a + p - 1.5, yp, '#222', 0.25) + h.ln(x0 + a + 1.5, yp - 1, x0 + a + 1.5, yp + 1, '#222', 0.25) + h.ln(x0 + a + p - 1.5, yp - 1, x0 + a + p - 1.5, yp + 1, '#222', 0.25);
-    s += h.tx(W / 2, yp - 1.6, 'p', 3.2, 'middle');
+    s += h.rich(W / 2, yp - 1.6, 'p', 3.4, 'middle');
     s += h.ln(x0 + a + p, ym, x0 + o, ym, '#222', 0.25) + h.ln(x0 + a + p, ym - 1, x0 + a + p, ym + 1, '#222', 0.25) + h.ln(x0 + o, ym - 1, x0 + o, ym + 1, '#222', 0.25);   // a の寸法線（道のはば）
-    s += h.tx(x0 + o + 2.5, ym + 1.1, 'a', 3.2, 'start');
+    s += h.rich(x0 + o + 2.5, ym + 1.1, 'a', 3.4, 'start');
     s += h.ln(x0 - 5, ym, x0 + a / 2, ym, '#222', 0.22) + `<circle cx="${f(x0 + a / 2)}" cy="${f(ym)}" r="0.6" fill="#222"/>`;   // ℓ（点線）への引き出し線
-    s += h.tx(x0 - 6.5, ym + 1.1, 'ℓ', 3.4, 'end');
+    s += h.rich(x0 - 6.5, ym + 1.1, 'ℓ', 3.6, 'end');
     return s;
   });
 
   // 池の図：円形の池（半径 r）、道（はば a）、点線（道のまん中を通る線）
   const pond = SVG((W, H, h) => {
-    const f = h.f2, r = 9, a = 4, R = r + a, cx = W / 2, cy = H / 2;
+    const f = h.f2, r = 9.5, a = 5, R = r + a, cx = W / 2, cy = H / 2;
     let s = `<circle cx="${f(cx)}" cy="${f(cy)}" r="${R}" fill="#eef1f5" stroke="#222" stroke-width="0.35"/>`;
     s += `<circle cx="${f(cx)}" cy="${f(cy)}" r="${r}" fill="#fff" stroke="#222" stroke-width="0.35"/>`;
     s += `<circle cx="${f(cx)}" cy="${f(cy)}" r="${r + a / 2}" fill="none" stroke="#222" stroke-width="0.3" stroke-dasharray="1.2 0.9"/>`;
     s += h.tx(cx - 3.5, cy + 4.2, '池', 3.2, 'middle');
     s += h.ln(cx, cy, cx + r, cy, '#222', 0.25) + `<circle cx="${f(cx)}" cy="${f(cy)}" r="0.5" fill="#222"/>`;
-    s += h.tx(cx + r / 2, cy - 1.2, 'r', 3.2, 'middle');
+    s += h.rich(cx + r / 2, cy - 1.2, 'r', 3.4, 'middle');
     s += h.ln(cx + r, cy, cx + R, cy, '#222', 0.25) + h.ln(cx + r, cy - 1, cx + r, cy + 1, '#222', 0.25) + h.ln(cx + R, cy - 1, cx + R, cy + 1, '#222', 0.25);
-    s += h.tx(cx + R + 2.5, cy + 1.1, 'a', 3.2, 'start');
+    s += h.rich(cx + R + 2.5, cy + 1.1, 'a', 3.4, 'start');
     s += h.ln(cx - R - 8, cy, cx - r - a / 2, cy, '#222', 0.22) + `<circle cx="${f(cx - r - a / 2)}" cy="${f(cy)}" r="0.6" fill="#222"/>`;
-    s += h.tx(cx - R - 9.5, cy + 1.1, 'ℓ', 3.4, 'end');
+    s += h.rich(cx - R - 9.5, cy + 1.1, 'ℓ', 3.6, 'end');
     return s;
   });
 
@@ -76,7 +76,7 @@
     /* ================= ワークシート（A4 1枚・約12分） ================= */
     ws: [
       M('道の面積を、式を使って説明しよう'),
-      K('今日の問い', '正方形の花だん（1辺 p \\m）のまわりに、はば a \\m の道がある。道の面積を S \\m^2、道のまん中を通る線（点線）の長さを ℓ \\m とする。p＝10、a＝2 のとき、S＝96、aℓ＝96 で、S＝aℓ になった。ほかの p、a でも、S＝aℓ はいつも成り立つだろうか。式で説明しよう。', 4),
+      K('今日の問い', '正方形の花だん（1辺 p \\m）のまわりに、はば a \\m の道がある（図）。道の面積を S \\m^2、道のまん中を通る線（点線）の長さを ℓ \\m とする。p＝10、a＝2 のとき、S＝96、aℓ＝96 で、S＝aℓ になった。ほかの p、a でも、S＝aℓ はいつも成り立つだろうか。式で説明しよう。', 4),
       F(5, road),
       T('①', '自分の考え（3分）　S と ℓ を、p、a の式で表そう。', 1),
       B(5, '（例）大きい正方形の1辺は p+2a だから\nS＝(p+2a)^2−p^2＝4ap+4a^2\n点線の正方形の1辺は p+a（花だんの辺から [[a/2]] ずつ外）\nℓ＝4(p+a)、aℓ＝a×4(p+a)＝4ap+4a^2\nS と aℓ は同じ式。だから S＝aℓ はいつも成り立つ。'),
