@@ -62,7 +62,7 @@
   }
   const fig8 = GEO({
     pts: P8, poly: 'ABCD', segs: ['AE', 'BD'], dots: ['E', 'F'],
-    vl: { A: ['A', 135], B: ['B', 225], C: ['C', 315], D: ['D', 45], E: ['E', 270], F: ['F', 20, 3.6] }, pad: 6
+    vl: { A: ['A', 135], B: ['B', 225], C: ['C', 315], D: ['D', 45], E: ['E', 270], F: ['F', 63, 3.6] }, pad: 6
   });
   // 小テストの図：DE∥BC（AD＝0.6AB）
   const Q1 = para({ B: [0, 0], C: [6.4, 0], A: [3.4, 4.2] }, 0.6);
@@ -85,9 +85,9 @@
       // 今日の問い・図1：AB＝9、AC＝6、AD＝4（D は AB 上）。∠A は共通、∠ACD＝∠ABC（座標から）。AB：AC＝AC：AD＝3：2、3組の辺の比が等しく △ABC∽△ACD。D が C のところの角 ∠ACB を二つに分けるので ∠ACD＜∠ACB
       chk(`const ${pj(P1)}; return near(dd(A,B),9) && near(dd(A,C),6) && near(dd(A,D),4) && onSeg(A,B,D) && near(an(C,A,D),an(B,A,C)) && near(an(A,B,C),an(A,C,D)) && near(dd(A,B)/dd(A,C),dd(A,C)/dd(A,D)) && sim(A,B,C,A,C,D) && an(C,A,D)<an(C,A,B) && near(an(C,A,B),an(C,A,D)+an(C,D,B));`),
       // 例題・図2：AB∥CD（外積 0）。AB＝4、CD＝6。O は AD と BC の交点（AD、BC がともに O を通る）。錯角 ∠OAB＝∠ODC、∠OBA＝∠OCD。△OAB∽△ODC（A↔D、B↔C、O↔O）
-      chk(`const ${pj(P2)}; return near(cr(A,B,C,D),0) && near(dd(A,B),4) && near(dd(C,D),6) && near(cr(A,D,A,O),0) && near(cr(B,C,B,O),0) && onSeg(A,D,O) && onSeg(B,C,O) && near(an(A,O,B),an(D,O,C)) && near(an(A,B,O),an(D,C,O)) && near(an(B,A,O),an(C,D,O)) && sim(O,A,B,O,D,C) && near(dd(O,A)/dd(O,D),dd(A,B)/dd(C,D));`),
+      chk(`const ${pj(P2)}; return near(cr(A,B,C,D),0) && near(dd(A,B),4) && near(dd(C,D),6) && near(cr(A,D,A,O),0) && near(cr(B,C,B,O),0) && onSeg(A,D,O) && onSeg(B,C,O) && near(an(A,B,O),an(D,C,O)) && near(an(B,A,O),an(C,D,O)) && near(an(O,A,B),an(O,D,C)) && sim(O,A,B,O,D,C) && near(dd(O,A)/dd(O,D),dd(A,B)/dd(C,D));`),
       // （1）図1：DE∥BC（AD＝0.4AB）。∠DAE＝∠BAC（共通）、∠ADE＝∠ABC（同位角）、∠AED＝∠ACB。△ADE∽△ABC
-      chk(`const ${pj(D1)}; return near(cr(D,E,B,C),0) && onSeg(A,B,D) && onSeg(A,C,E) && near(an(A,D,E),an(A,B,C)) && near(an(A,E,D),an(A,C,B)) && sim(A,D,E,A,B,C);`),
+      chk(`const ${pj(D1)}; return near(cr(D,E,B,C),0) && onSeg(A,B,D) && onSeg(A,C,E) && near(an(A,D,E),an(A,B,C)) && near(an(D,A,E),an(B,A,C)) && near(an(E,A,D),an(C,A,B)) && sim(A,D,E,A,B,C);`),
       // （2）図2：AB∥CD、AB＝6、CD＝15、OA＝4（図のとおり）。錯角 ∠OAB＝∠ODC、∠OBA＝∠OCD
       chk(`const ${pj(D2)}; return near(cr(A,B,C,D),0) && near(dd(A,B),6) && near(dd(C,D),15) && near(dd(O,A),4) && near(an(A,B,O),an(D,C,O)) && near(an(B,A,O),an(C,D,O)) && sim(O,A,B,O,D,C);`),
       // （4）OA：OD＝AB：DC → 4：OD＝6：15 → OD＝4×15÷6＝10（座標でも OD＝10）
@@ -97,14 +97,14 @@
       // （5）D は AB 上、AC＝12、AD＝9：AB＝12²÷9＝16。座標 A(0,0)、B(16,0)、D(9,0)、C（AC＝12 で適当な向き）：∠ACD＝∠ABC、AB：AC＝AC：AD
       chk(`const t=57*Math.PI/180, A=[0,0], B=[144/9,0], D=[9,0], C=[12*Math.cos(t),12*Math.sin(t)]; return near(dd(A,B),16) && near(an(C,A,D),an(B,A,C)) && sim(A,B,C,A,C,D) && onSeg(A,B,D) && near(12*12/9,16);`),
       // （7）考えよう（答えは載せない。ここで確かめるだけ）：図4（P2）で、等しい角は 3組（∠OAB＝∠ODC、∠OBA＝∠OCD、∠AOB＝∠DOC）。どの 2組でも 2組の角が等しくなり、相似になる
-      chk(`const ${pj(P2)}; const e=[near(an(B,A,O),an(C,D,O)), near(an(A,B,O),an(D,C,O)), near(an(A,O,B),an(D,O,C))]; return e.every(Boolean) && sim(O,A,B,O,D,C) && near(an(A,O,B)+an(B,A,O)+an(A,B,O),180);`),
+      chk(`const ${pj(P2)}; const e=[near(an(B,A,O),an(C,D,O)), near(an(A,B,O),an(D,C,O)), near(an(O,A,B),an(O,D,C))]; return e.every(Boolean) && sim(O,A,B,O,D,C) && near(an(O,A,B)+an(B,A,O)+an(A,B,O),180);`),
       // （8）▱ABCD、BE：EC＝1：3、F＝AE∩BD。AD∥BC（錯角 ∠FAD＝∠FEB、∠FDA＝∠FBE）、△AFD∽△EFB。BF：FD＝BE：AD＝1：4 → BD＝20 のとき BF＝20÷5＝4
-      chk(`const ${pj(P8)}; return near(cr(A,D,B,C),0) && near(cr(A,B,D,C),0) && near(dd(B,E)/dd(E,C),1/3) && onSeg(A,E,F) && onSeg(B,D,F) && near(an(F,A,D),an(F,E,B)) && near(an(F,D,A),an(F,B,E)) && sim(F,A,D,F,E,B) && near(dd(B,F)/dd(F,D),1/4) && near(dd(B,E)/dd(A,D),1/4) && near(20/(1+4),4);`),
+      chk(`const ${pj(P8)}; return near(cr(A,D,B,C),0) && near(cr(A,B,D,C),0) && near(dd(B,E)/dd(E,C),1/3) && onSeg(A,E,F) && onSeg(B,D,F) && near(an(A,F,D),an(E,F,B)) && near(an(D,F,A),an(B,F,E)) && sim(F,A,D,F,E,B) && near(dd(B,F)/dd(F,D),1/4) && near(dd(B,E)/dd(A,D),1/4) && near(20/(1+4),4);`),
       // 小テスト（1）図：DE∥BC（AD＝0.6AB）。∠DAE＝∠BAC（共通）、∠ADE＝∠ABC（同位角）、△ADE∽△ABC
-      chk(`const ${pj(Q1)}; return near(cr(D,E,B,C),0) && onSeg(A,B,D) && onSeg(A,C,E) && near(an(A,D,E),an(A,B,C)) && sim(A,D,E,A,B,C);`),
+      chk(`const ${pj(Q1)}; return near(cr(D,E,B,C),0) && onSeg(A,B,D) && onSeg(A,C,E) && near(an(A,D,E),an(A,B,C)) && near(an(D,A,E),an(B,A,C)) && sim(A,D,E,A,B,C);`),
       // 小テスト（2）AC＝10、AD＝5：AB＝10²÷5＝20（座標：A(0,0)、B(20,0)、D(5,0)、C は AC＝10）。（3）AB∥CD、AB＝4、CD＝10、OA＝2：OD＝2×10÷4＝5
       chk(`const t=63*Math.PI/180, A=[0,0], B=[20,0], D=[5,0], C=[10*Math.cos(t),10*Math.sin(t)]; return near(an(C,A,D),an(B,A,C)) && sim(A,B,C,A,C,D) && near(10*10/5,20) && near(2*10/4,5) && near(dd(A,B)/dd(A,C),dd(A,C)/dd(A,D));`),
-      chk(`const O=[0,0], A=[-1.2,1.6], k=5/2, B=[2.8,1.6], D=[-k*A[0],-k*A[1]], C=[-k*B[0],-k*B[1]]; return near(dd(O,A),2) && near(dd(A,B),4) && near(cr(A,B,C,D),0) && near(dd(O,D),5) && near(dd(C,D),5) && near(2*10/4,5) && sim(O,A,B,O,D,C);`),
+      chk(`const O=[0,0], A=[-1.2,1.6], k=5/2, B=[2.8,1.6], D=[-k*A[0],-k*A[1]], C=[-k*B[0],-k*B[1]]; return near(dd(O,A),2) && near(dd(A,B),4) && near(cr(A,B,C,D),0) && near(dd(O,D),5) && near(dd(C,D),10) && near(2*10/4,5) && sim(O,A,B,O,D,C);`),
       // 小テスト（4）チャレンジ：∠A＝90°、AD⊥BC、BD＝4、DC＝9：A(0,6)・B(−4,0)・C(9,0)・D(0,0)。AD＝6（AD×AD＝BD×DC＝36）。△DBA∽△DAC
       chk(`const A=[0,6], B=[-4,0], C=[9,0], D=[0,0]; return near(an(A,B,C),90) && near(dd(D,A),6) && near(dd(D,A)*dd(D,A),dd(B,D)*dd(D,C)) && sim(D,B,A,D,A,C) && near(4*9,36) && near(Math.sqrt(36),6);`)
     ],
@@ -138,7 +138,7 @@
         T('（2）', '図2で、AB∥CD のとき、△OAB と △ODC の等しい角を、2組答えよう。', 3),
         B(2, '∠OAB＝∠ODC\n∠OBA＝∠OCD（錯角）')
       ], '1:1'),
-      MA('【説明】相似の証明は、どんな順に書くか。図1で △ADE∽△ABC を示す場合を、隣の人に説明しよう。\n説明できた ☐　　聞いてくれた人（　　　　　　）', 2),
+      MA('【説明】相似の証明の書き順を、図1の例で、隣の人に説明しよう。\n説明できた ☐　　聞いてくれた人（　　　　　　）', 2),
       G(1),
       HD('使ってみる', '証明で見つけた相似を使って、長さを求めよう。'),
       C2([
@@ -149,13 +149,12 @@
         B(3, 'OA：OD＝AB：DC\n4：OD＝6：15\nOD＝10cm')
       ], '1:1'),
       C2([
-        T('（5）', '△ABC の辺 AB 上に点 D があり、∠ACD＝∠ABC である。AC＝12cm、AD＝9cm のとき、AB は何 cm か。', 5),
+        T('（5）', '△ABC の辺 AB 上に点 D があり、∠ACD＝∠ABC である。AC＝12cm、AD＝9cm のとき、AB は何 cm か。', 4),
         B(3, '△ABC∽△ACD\nAB：AC＝AC：AD\nAB：12＝12：9　AB＝16cm')
       ], [
-        T('（6）', '図3で、AB＝9cm、BC＝15cm のとき、BD は何 cm か。', 5),
+        T('（6）', '図3で、AB＝9cm、BC＝15cm のとき、BD は何 cm か。', 4),
         B(3, '△ABC∽△DBA\nAB：DB＝BC：BA\n9：BD＝15：9　BD＝5.4cm')
       ], '1:1'),
-      G(1),
       T('', '★ ここまでできたら、今日の合格！　　合格 ☐', 1),
       BR(),
 
