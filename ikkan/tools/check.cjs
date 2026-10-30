@@ -310,5 +310,6 @@ async function readQr(page, loc) {
   if (errors.length) { bad += errors.length; console.log('ブラウザのエラー：'); errors.forEach(e => console.log('   ' + e)); }
   await browser.close();
   console.log(`画像：${outDir}`);
+  console.log(bad ? `✗ ${bad} 件の指摘` : '○ 指摘 0');
   process.exit(bad ? 1 : 0);
 })();

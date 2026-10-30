@@ -88,7 +88,7 @@ button{font:inherit;color:inherit}
 
 /* 図 */
 .wb-fig{display:flex;gap:4mm;align-items:stretch;background:#fff}
-.wb-fig::before{content:"";position:absolute;top:-.4mm;bottom:-.4mm;left:-3mm;right:-3mm;background:#fff}
+.wb-fig::before{content:"";position:absolute;top:-.3mm;bottom:-.3mm;left:-3mm;right:-3mm;background:#fff}
 .wb-fig .fg{flex:none;position:relative}
 .fsvg{display:block;overflow:visible;fill:#222}
 .fsvg text{font-family:var(--wsfont)}
