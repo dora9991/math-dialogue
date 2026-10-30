@@ -122,7 +122,7 @@
 
   const gM = chordGeo(5, 3, 2.5, 6, -50);    // 今日の問い（PA×PB＝15＝PC×PD）
   const g1 = chordGeo(6, 4, 3, 8, -60);      // 図1（PA×PB＝24）
-  const g2 = chordGeo(12, 3, 4, 9, -40);     // 図2（PA×PB＝36）
+  const g2 = chordGeo(8, 3, 6, 4, -50);      // 図2（PA×PB＝24）
   const gQ = chordGeo(5, 8, 4, 10, -55);     // 小テスト（PA×PB＝40）
   const figMain = chordFig('', gM, true), fig1 = chordFig('図1', g1, true), fig2 = chordFig('図2', g2, false), figQ = chordFig('', gQ, false);
   const s8 = semiGeo(2, 18), fig8 = semiFig(s8, true), sQ = semiGeo(4, 16), figQ5 = semiFig(sQ, true);
@@ -140,16 +140,16 @@
       chk3('const g=mk(5,3,2.5,6,-50); return sim(g) && near(ang(P,g.A,g.C),ang(P,g.D,g.B)) && near(5/6,2.5/3) && near(5*3,2.5*6);'),
       // 図1・（1）（2）：PA＝6、PB＝4、PC＝3、PD＝8（△PAC∽△PDB）。PA：PD＝PC：PB → 6：PD＝3：4 → PD＝8
       chk3('const g=mk(6,4,3,8,-60); return sim(g) && near(len(P,g.D),6*4/3) && near(6/8,3/4);'),
-      // 図2・（3）：PA＝12、PC＝4、PD＝9 のとき PB＝3（12：9＝4：PB）。4点が円周上の図で確かめる
-      chk3('const g=mk(12,3,4,9,-40); return sim(g) && near(len(P,g.B),4*9/12) && near(12/9,4/3);'),
+      // 図2・（3）：PA＝8、PC＝6、PD＝4 のとき PB＝3（8：4＝6：PB）。4点が円周上の図で確かめる
+      chk3('const g=mk(8,3,6,4,-50); return sim(g) && near(len(P,g.B),6*4/8) && near(8/4,6/3);'),
       // （4）相似比 3：2：PA：PD＝PC：PB＝AC：DB＝3：2 の図（PA＝6、PB＝6、PC＝9、PD＝4）。AC＝12 なら DB＝8、PC＝9 なら PB＝6
       chk3('const g=mk(6,6,9,4,-45); return sim(g) && near(len(g.A,g.C)/len(g.D,g.B),1.5) && near(len(P,g.C)/len(P,g.B),1.5) && near(12/1.5,8) && near(9/1.5,6);'),
       // （5）PA＝PC のとき PB＝PD：PA＝PC＝4、PB＝6 の図では、PD＝6 が円周上。PD＝7 だと円周上にない
       chk3('const g=mk(4,6,4,6,-70), h=mk(4,6,4,7,-70); return cyc(g.A,g.B,g.C,g.D) && near(len(P,g.B),len(P,g.D)) && !cyc(h.A,h.B,h.C,h.D) && sim(g);'),
       // （6）AB＝12、PA＝2、PC＝4：PB＝10、PD＝5（2：5＝4：10）。AB＝PA＋PB
       chk3('const g=mk(2,10,4,5,-50); return sim(g) && near(len(g.A,g.B),12) && near(len(P,g.D),2*10/4) && near(2/5,4/10);'),
-      // （7）考えよう（答えは紙面に載せない）：表の 3組は、どれも PA×PB＝PC×PD（30＝30、36＝36、24＝24）で、4点は円周上
-      chk3('return [[5,6,3,10],[4,9,6,6],[8,3,2,12]].every(([a,b,c,d]) => near(a*b,c*d) && sim(mk(a,b,c,d,-50)));'),
+      // （7）考えよう（答えは紙面に載せない）：表の 3組は、どれも PA×PB＝PC×PD（30＝30、36＝36、18＝18）で、4点は円周上
+      chk3('return [[5,6,3,10],[4,9,6,6],[9,2,3,6]].every(([a,b,c,d]) => near(a*b,c*d) && sim(mk(a,b,c,d,-50)));'),
       // （8）図：A(−10,0)、B(10,0)、H(−8,0)、C(−8,6)。AH＝2、HB＝18、CH＝6（CH²＝2×18）。C は円 O（半径 10）の上、∠ACB＝90°、CH⊥AB
       chk3(`const A=${J(s8.A)},B=${J(s8.B)},H=${J(s8.H)},C=${J(s8.C)},O=[0,0]; return near(len(A,H),2) && near(len(H,B),18) && near(len(C,H),6) && near(len(O,C),10) && near(ang(C,A,B),90) && near(dot(v(H,C),v(H,B)),0) && near(len(C,H)**2,len(A,H)*len(H,B)) && near(len(A,H)/len(C,H),len(C,H)/len(H,B));`),
       // 小テスト（1）（2）：PA＝5、PB＝8、PC＝4、PD＝10（5×8＝4×10）→ PD＝5×8÷4＝10。△PAC∽△PDB
@@ -192,8 +192,8 @@
       MA('【説明】△PAC∽△PDB になるわけを、図に印をつけて、隣の人に説明しよう。\n説明できた ☐　　聞いてくれた人（　　　　　　）', 2),
       HD('使ってみる', '相似を使って、線分の長さを求めよう。'),
       C2([
-        T('（3）', '図2で、PA＝12cm、PC＝4cm、PD＝9cm のとき、PB は何 cm か。', 3),
-        B(3, 'PA:PD＝PC:PB\n12:9＝4:PB\nPB＝3cm')
+        T('（3）', '図2で、PA＝8cm、PC＝6cm、PD＝4cm のとき、PB は何 cm か。', 3),
+        B(3, 'PA:PD＝PC:PB\n8:4＝6:PB\nPB＝3cm')
       ], [
         T('（4）', '△PAC∽△PDB で、相似比は 3:2。AC＝12cm、PC＝9cm のとき、DB と PB は何 cm か。', 3),
         B(3, 'AC:DB＝3:2 より\nDB＝8cm\nPB＝6cm')
@@ -213,7 +213,7 @@
       TB('', ['PA', 'PB', 'PC', 'PD', 'PA×PB', 'PC×PD'], [
         ['ア', ['5', '6', '3', '10', '', '']],
         ['イ', ['4', '9', '6', '6', '', '']],
-        ['ウ', ['8', '3', '2', '12', '', '']]
+        ['ウ', ['9', '2', '3', '6', '', '']]
       ], { hw: 18 }),
       C2([
         T('', '気づいたこと', 1),
