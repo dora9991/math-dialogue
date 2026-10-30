@@ -88,9 +88,9 @@
   const axis = (x, y0, y1) => ({ lines: [L([x, y0], [x, y1], { w: 0.7 })], labels: [{ p: [x, y1], t: 'ℓ', dx: 3.2, dy: 3.4, cls: 'pl', halo: true }] });
 
   const figWS1 = gridFig([0, 0, 12, 6], P1, Q1, { lines: [L([2, 5], [8, 4], { arrow: 'end', w: 0.6 })] });
-  const figWS2 = gridFig([0, 0, 12, 5], P2, Q2, axis(6, 0, 5));
+  const figWS2 = gridFig([0, 0, 12, 5], P2, Q2, Object.assign({ over: { 2: [1.5, 3.8] } }, axis(6, 0, 5)), { over: { 2: [-1.5, 3.8] } });
   const fig1 = gridFig([0, 0, 8, 6], P3, Q3, { lines: [L([2, 0.8], [6, 0.8], { arrow: 'end', w: 0.6 })] });
-  const fig2 = gridFig([0, 0, 8, 6], P4, Q4, axis(4, 0, 6));
+  const fig2 = gridFig([0, 0, 8, 6], P4, Q4, Object.assign({ over: { 2: [1.2, 3.8] } }, axis(4, 0, 6)), { over: { 2: [-1.2, 3.8] } });
   const fig3 = gridFig([0, 0, 8, 6], P5, Q5, { dots: [{ p: O5 }], labels: [{ p: O5, t: 'O', dx: 3, dy: 3, halo: true }], over: { 2: [3.8, 0.6] } }, { noLinks: true });
   const fig6 = FIG({
     grid: [0, 0, 9, 7], pad: 5,
