@@ -73,14 +73,14 @@
     a: { tick: [['B', 'D', 2], ['D', 'C', 2]], ang: [{ at: 'D', a: 'A', b: 'B', right: true }, { at: 'D', a: 'A', b: 'C', right: true }] } });
   // 例題：BD は ∠B の二等分線。∠x＝∠BDC
   const figE = tri(P_E(), { pad: 5, segs: ['BD'], vl: vlD(['D', 20]), ang: [{ at: 'B', a: 'A', b: 'D', r: 6 }, { at: 'B', a: 'D', b: 'C', r: 6 }, { at: 'D', a: 'B', b: 'C', t: 'x', r: 4 }] });
-  const fig1 = tri(P_1(), { segs: ['AD'], vl: vlD(['D', 270]), ang: [{ at: 'A', a: 'B', b: 'D', r: 6 }, { at: 'A', a: 'D', b: 'C', r: 6 }], txt: [{ p: [7.5, 0], t: '10cm', dy: 5.5 }] });
+  const fig1 = tri(P_1(), { segs: ['AD'], vl: vlD(['D', 270]), ang: [{ at: 'A', a: 'B', b: 'D', r: 6 }, { at: 'A', a: 'D', b: 'C', r: 6 }] });
   const fig2 = tri(P_2(), { segs: [['A', 'E']], vl: Object.assign({ E: ['E', 135] }, VL), ang: [{ at: 'A', a: 'C', b: 'E', t: '110°', r: 5 }, { at: 'B', a: 'C', b: 'A', t: 'x', r: 5 }] });
   const fig3 = tri(P_3(), { segs: ['BD'], vl: vlD(['D', 20]), ang: [{ at: 'A', a: 'B', b: 'C', t: '76°', r: 6 }, { at: 'B', a: 'A', b: 'D', r: 6 }, { at: 'B', a: 'D', b: 'C', r: 6 }, { at: 'D', a: 'B', b: 'C', t: 'x', r: 4 }] });
   const fig4 = GEO({ pts: P_4(), poly: 'ABC', segs: ['AD'], vl: vlD(['D', 270]), tick: [['D', 'A', 1], ['D', 'B', 1], ['D', 'C', 1]], ang: [{ at: 'B', a: 'A', b: 'C', t: '38°', r: 5 }, { at: 'C', a: 'A', b: 'B', t: 'x', r: 5 }], pad: 4 });
   const fig5 = tri(P_5(), { segs: ['AD'], tick: [['A', 'B', 1], ['A', 'C', 1], ['D', 'A', 2], ['D', 'C', 2]], vl: vlD(['D', 270]), ang: [{ at: 'B', a: 'A', b: 'C', t: '40°', r: 5 }, { at: 'D', a: 'A', b: 'B', t: 'x', r: 4 }] });
   const fig7 = GEO({ pts: P_7(), poly: 'ABC', vl: VL, tick: [['A', 'B', 1], ['B', 'C', 1], ['C', 'A', 1]], pad: 5 });
   const fig8 = tri(P_8(), { pad: 5, segs: ['BD', 'CE'], vl: vlD(['D', 0], { E: ['E', 180] }), ang: [{ at: 'B', a: 'A', b: 'D', n: 1, r: 5 }, { at: 'B', a: 'D', b: 'C', n: 1, r: 5 }, { at: 'C', a: 'A', b: 'E', n: 2, r: 5 }, { at: 'C', a: 'E', b: 'B', n: 2, r: 5 }] });
-  const figQ1 = tri(P_Q1(), { segs: ['AD'], vl: vlD(['D', 270]), ang: [{ at: 'A', a: 'B', b: 'D', n: 2, r: 6 }, { at: 'A', a: 'D', b: 'C', n: 2, r: 6 }], txt: [{ p: [9, 0], t: '12cm', dy: 6 }] });
+  const figQ1 = tri(P_Q1(), { segs: ['AD'], vl: vlD(['D', 270]), ang: [{ at: 'A', a: 'B', b: 'D', n: 2, r: 6 }, { at: 'A', a: 'D', b: 'C', n: 2, r: 6 }] });
   const figQ2 = tri(P_Q2(), { segs: ['BD'], vl: vlD(['D', 20]), ang: [{ at: 'B', a: 'A', b: 'D', r: 6 }, { at: 'B', a: 'D', b: 'C', r: 6 }, { at: 'D', a: 'B', b: 'C', t: 'x', r: 4 }] });
   const figQ3 = tri(P_Q3(), { pad: 5, segs: ['DC', 'EB'], tick: TK.concat([['D', 'B', 2], ['E', 'C', 2]]), vl: vlD(['D', 180], { E: ['E', 0] }) });
   const figQC = tri(P_QC(), { pad: 5, segs: ['AD', 'DE'], vl: vlD(['D', 270], { E: ['E', 45] }), ang: [{ at: 'B', a: 'A', b: 'C', t: '65°', r: 6 }, { at: 'A', a: 'B', b: 'D', t: '30°', r: 7 }] });
@@ -163,7 +163,7 @@
       WD('① 二等辺三角形の{{頂角}}の二等分線は、底辺を{{垂直}}に{{2等分}}する。\n② 合同な図形では、{{対応}}する辺の長さや角の大きさは等しい。\n③ 三角形の外角は、となり合わない{{2つの内角}}の和に等しい。', 3, { label: 'ことば' }),
       F(4, cap(fig1, '図1'), cap(fig2, '図2')),
       C2([
-        T('（1）', '図1で、AD は ∠A の二等分線で、∠BAD＝28° である。BD の長さと、∠B の大きさを求めよう。', 3),
+        T('（1）', '図1（BC＝10cm）で、AD は ∠A の二等分線、∠BAD＝28°。BD の長さと ∠B を求めよう。', 3),
         B(2, '① 10÷2＝5（cm）\n② 180°−90°−28°＝62°')
       ], [
         T('（2）', '図2で、AB＝AC である。∠x の大きさを求めよう。', 3),
@@ -215,7 +215,7 @@
       HD('小テスト', '5分で解こう。　　　　　　　　　　　　　得点（　　　　／10点）'),
       G(1),
       C2([
-        T('（1）', '図1で、AB＝AC で、AD は ∠A の二等分線。BD の長さと ∠ADB の大きさを求めよう。（3点）', 3),
+        T('（1）', '図1（BC＝12cm）で、AB＝AC で、AD は ∠A の二等分線。BD の長さと ∠ADB の大きさを求めよう。（3点）', 3),
         F(4, figQ1),
         B(2, 'BD＝12÷2＝6（cm）\n∠ADB＝90°')
       ], [

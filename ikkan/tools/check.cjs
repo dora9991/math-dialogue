@@ -194,7 +194,7 @@ async function readQr(page, loc) {
       const n = await page.locator('.wsp').count();
       const pdf = await page.pdf({ preferCSSPageSize: true, printBackground: true });
       const pdfPages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
-      if (n !== 2) msgs.push(`学習予定表が ${n} ページ（A4 表裏の 2 ページにする）`);
+      if (n > 2) msgs.push(`学習予定表が ${n} ページ（A4 表裏の 2 ページ以内にする）`);   // 授業が少ない単元（5時間など）は、1ページでよい
       if (pdfPages !== n) msgs.push(`印刷（PDF）のページ数が ${pdfPages}（${n} ページのはず）`);
       const r = await page.evaluate(() => {
         const o = [], pitch = 7 * 96 / 25.4;

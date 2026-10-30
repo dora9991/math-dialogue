@@ -53,8 +53,9 @@
   // ア：1辺 8cm の正三角形。x＝高さ
   const figA = SVG((W, H, h) => {
     const s = 8, hgt = s * SQ3 / 2, k = Math.min((W - 18) / s, (H - 17) / hgt), bw = s * k, hh = hgt * k, bx = (W - bw) / 2 - 2, by = H - 6, ax = bx + bw / 2, ay = by - hh;
-    let out = h.tx(W / 2, 3.5, 'ア', 3, 'middle', ' class="cap"') + `<polygon points="${h.f2(bx)},${h.f2(by)} ${h.f2(bx + bw)},${h.f2(by)} ${h.f2(ax)},${h.f2(ay)}" fill="none" stroke="#222" stroke-width="0.34" stroke-linejoin="round"/>`;
+    let out = h.tx(W / 2, 3.5, 'ア（正三角形）', 3, 'middle', ' class="cap"') + `<polygon points="${h.f2(bx)},${h.f2(by)} ${h.f2(bx + bw)},${h.f2(by)} ${h.f2(ax)},${h.f2(ay)}" fill="none" stroke="#222" stroke-width="0.34" stroke-linejoin="round"/>`;
     out += h.ln(ax, ay, ax, by, '#222', 0.25, DASH) + h.rich(ax + 1.6, (ay + by) / 2 + 1, 'x', 3, 'start');
+    out += `<path d="M${h.f2(ax)},${h.f2(by - 2.2)} L${h.f2(ax - 2.2)},${h.f2(by - 2.2)} L${h.f2(ax - 2.2)},${h.f2(by)}" fill="none" stroke="#222" stroke-width="0.25"/>`;   // x は底辺への垂線（直角のしるし）
     const nx = hh, ny = -bw / 2, nl = Math.hypot(nx, ny);   // 右の辺の外がわ
     out += h.rich(ax + bw / 4 + nx / nl * 2.6, (ay + by) / 2 + ny / nl * 2.6 + 1, '8cm', 2.9, 'start');
     return out;

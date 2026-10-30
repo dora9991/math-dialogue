@@ -214,7 +214,7 @@
       ], [
         F(7, fig8)
       ], '3:2'),
-      B(6, 'DF∥EG∥BC に、直線 AB、AC が交わっている。\nAD：DE：EB＝1：1：1 だから　AF：FG：GC＝1：1：1\nCG＝21÷3＝7（cm）\n△AEG で、AE：AB＝2：3、EG∥BC だから　EG：BC＝2：3\nEG＝18×[[2/3]]＝12（cm）'),
+      B(6, 'DF∥EG∥BC に、直線 AB、AC が交わっている。\nAD：DE：EB＝1：1：1 だから　AF：FG：GC＝1：1：1\nCG＝21÷3＝7（cm）\n△ABC で、AE：AB＝2：3、EG∥BC だから　EG：BC＝2：3\nEG＝18×[[2/3]]＝12（cm）'),
       MA('① 平行な 3直線に、AB、AC が交わるね。AD：DE：EB は？\n② EG は、どの三角形の辺として考えられるかな。', 2, { label: 'ヒントカード' })
     ],
 

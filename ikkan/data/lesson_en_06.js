@@ -172,7 +172,7 @@
   const tA = [th0, th0 + dl[1], th0 + dl[1] + dl[2], th0 + dl[1] + dl[2] + dl[3]];   // 辺 AB、BC、CD、DA の接点の向き
   const vQ = [tA[3] + dl[0] / 2, th0 + dl[1] / 2, tA[1] + dl[2] / 2, tA[2] + dl[3] / 2].map((a, i) => pol(O0, Math.hypot(rQ, tn[i]), a));   // A、B、C、D
   const [A5, B5, C5, D5] = vQ;
-  const fig5 = CF(boxOf([...circPts(O0, rQ), ...vQ], 0.9), '', (k) => {
+  const fig5 = CF(boxOf([...circPts(O0, rQ), ...vQ], 0.9), '図5', (k) => {
     k.circ(O0, rQ).ln(A5, B5).ln(B5, C5).ln(C5, D5).ln(D5, A5);
     vQ.forEach(Z => k.dot(Z));
     k.lbf(A5, 'A', dir(O0, A5)).lbf(B5, 'B', dir(O0, B5)).lbf(C5, 'C', dir(O0, C5)).lbf(D5, 'D', dir(O0, D5));
@@ -277,7 +277,7 @@
         T('（5）', '円 O の接線 AP、AQ（P、Q は接点）で、∠PAQ＝60°。△APQ の名前と、∠POQ を答えよう。', 3),
         B(3, '正三角形\n∠POQ＝360°−90°×2\n　　−60°＝120°')
       ], [
-        T('（6）', 'M は AO の中点、P は円 M と円 O の交点。AO＝10cm のとき、MP と ∠APO を求めよう。', 3),
+        T('（6）', 'M は AO の中点。円 M（AO が直径）と円 O の交点が P。AO＝10cm。MP と ∠APO は？', 3),
         B(3, 'MP＝MA＝5cm\n∠APO＝90°')
       ], '1:1'),
       T('', '★ ここまでできたら、今日の合格！　　合格 ☐', 1),
