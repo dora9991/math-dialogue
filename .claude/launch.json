@@ -146,6 +146,12 @@
       "port": 8794
     },
     {
+      "name": "contents",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8795", "--directory", "contents"],
+      "port": 8795
+    },
+    {
       "name": "basket-tap",
       "runtimeExecutable": "node",
       "runtimeArgs": ["basket-tap/tests/server.cjs", "5193"],
