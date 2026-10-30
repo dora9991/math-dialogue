@@ -18,31 +18,31 @@
       const u = Math.min((W - padL - padR) / nx, (H - padT - padB) / ny), ox = padL + (W - padL - padR - u * nx) / 2, oy = padT + (H - padT - padB - u * ny) / 2;
       const X = x => ox + (x - win.xmin) * u, Y = y => oy + (win.ymax - y) * u;
       const e = extra ? extra({ X, Y, u, h }) : {};
-      return halo(blk.svg(W, H, h)) + (cap ? h.tx(ox, 4.3, cap, 3.4, 'start') : '') + (e.given || '') + (e.ans ? h.ans(e.ans) : '');
+      const cw = cap ? Array.from(cap).reduce((a, c) => a + (/[0-9A-Za-z]/.test(c) ? 0.6 : 1) * 3.4, 0) : 0;   // 見出しの幅。目もりの左にあきがあれば、そこに右そろえで書く（y 軸の字とかさならない）
+      return halo(blk.svg(W, H, h)) + (cap ? (ox - 1 >= cw ? h.tx(ox - 1, 4.3, cap, 3.4, 'end') : h.tx(ox, 4.3, cap, 3.4, 'start')) : '') + (e.given || '') + (e.ans ? h.ans(e.ans) : '');
     });
   };
   const pt = (name, x, y, dx, dy, anc) => ({ x, y, text: name, at: [x + (dx == null ? 0.25 : dx), y + (dy == null ? 0.25 : dy)], anchor: anc || 'start' });
   const para = (a, o) => Object.assign({ f: x => a * x * x }, o);   // 放物線 y＝a x²
 
   // ワークシート 図1・図2：図1＝y＝x² のグラフ（印刷）、図2＝予想をかく平面（解答のとき、y＝−x² が赤で出る）
-  const P1 = PL({ xmin: -3, xmax: 3, ymin: -5, ymax: 5, given: { curves: [para(1)] } }, '図1　y＝x²');
-  const P2 = PL({ xmin: -3, xmax: 3, ymin: -5, ymax: 5, curves: [para(-1)] }, '図2');
+  const P1 = PL({ xmin: -3, xmax: 3, ymin: -4, ymax: 4, given: { curves: [para(1)] } }, '図1　y＝x²');
+  const P2 = PL({ xmin: -3, xmax: 3, ymin: -4, ymax: 4, curves: [para(-1)] }, '図2');
   // 例題の図（図3）：y＝−[[1/2]]x² の表の点をとって、グラフをかく
-  const P3 = PL({ xmin: -4, xmax: 4, ymin: -9, ymax: 1, labelStep: 1, curves: [para(-0.5)], points: [-4, -2, 0, 2, 4].map(x => ({ x, y: -0.5 * x * x })) }, '図3');
+  const P3 = PL({ xmin: -4, xmax: 4, ymin: -9, ymax: 0.5, labelStep: 1, curves: [para(-0.5)], points: [-4, -2, 0, 2, 4].map(x => ({ x, y: -0.5 * x * x })) }, '図3');
   // 演習プリント 図1（表）：y＝−2x² をかく平面　図2（表）：①〜④ のグラフ
-  const D1 = PL({ xmin: -3, xmax: 3, ymin: -9, ymax: 1, curves: [para(-2)], points: [-2, -1, 0, 1, 2].map(x => ({ x, y: -2 * x * x })) }, '図1');
-  const D2 = PL({
-    xmin: -4, xmax: 4, ymin: -4, ymax: 4,
-    given: { curves: [para(0.25, { text: '①', at: [-4, 4.6], anchor: 'end' }), para(-2, { text: '②', at: [1.5, -3.4], anchor: 'start' }), para(1, { text: '③', at: [-2.2, 3.4], anchor: 'end' }), para(-1, { text: '④', at: [-2.2, -3.4], anchor: 'end' })] }
-  }, '図2');
+  const D1 = PL({ xmin: -3, xmax: 3, ymin: -9, ymax: 0.5, curves: [para(-2)], points: [-2, -1, 0, 1, 2].map(x => ({ x, y: -2 * x * x })) }, '図1');
+  const D2 = PL({ xmin: -4, xmax: 4, ymin: -4, ymax: 4, given: { curves: [para(0.25), para(-2), para(1), para(-1)] } }, '図2', ({ X, Y, h }) => ({
+    given: [['①', 4.35, 3.5, 'start'], ['③', 2, 4.9, 'middle'], ['②', -1.41, -5.2, 'middle'], ['④', 2, -5.2, 'middle']].map(l => h.tx(X(l[1]), Y(l[2]), l[0], 3.2, l[3], ' stroke="#fff" stroke-width="0.6" paint-order="stroke"')).join('')
+  }));
   // 裏の図：y＝x² と y＝−x² のグラフ。x 座標が 1、2、3 の 2点を結ぶ線分（PQ）を点線でかく
   const D3 = PL({ xmin: -4, xmax: 4, ymin: -9, ymax: 9, given: { curves: [para(1), para(-1)] } }, '', ({ X, Y, h }) => {
     let s = '';
     [1, 2, 3].forEach(p => { s += h.ln(X(p), Y(p * p), X(p), Y(-p * p), '#1f2328', 0.4, ' stroke-dasharray="1.2 0.9"') + `<circle cx="${h.f2(X(p))}" cy="${h.f2(Y(p * p))}" r="0.85" fill="#1f2328"/><circle cx="${h.f2(X(p))}" cy="${h.f2(Y(-p * p))}" r="0.85" fill="#1f2328"/>`; });
-    return { given: s + h.tx(X(1.4), Y(-1) + 1, 'y＝−x²', 2.9, 'start') + h.tx(X(1.4), Y(1) - 0.2, 'y＝x²', 2.9, 'start') };
+    return { given: s + h.tx(X(3.3), Y(8.2), 'y＝x²', 2.9, 'start', ' stroke="#fff" stroke-width="0.6" paint-order="stroke"') + h.tx(X(3.3), Y(-8.6), 'y＝−x²', 2.9, 'start', ' stroke="#fff" stroke-width="0.6" paint-order="stroke"') };
   });
   // 小テストの図：y＝−[[1/4]]x² をかく平面
-  const Q1 = PL({ xmin: -4, xmax: 4, ymin: -5, ymax: 1, curves: [para(-0.25)], points: [-4, -2, 0, 2, 4].map(x => ({ x, y: -0.25 * x * x })) }, '');
+  const Q1 = PL({ xmin: -4, xmax: 4, ymin: -5, ymax: 0.5, curves: [para(-0.25)], points: [-4, -2, 0, 2, 4].map(x => ({ x, y: -0.25 * x * x })) }, '');
 
   IK.lesson('kansu-05', {
     unit: 'kansu', unitName: '関数 y＝ax²', form: 'new', no: '第5時', title: 'a が負の数のときのグラフをかいて、特徴をまとめよう',
@@ -83,7 +83,7 @@
     /* ================= ワークシート（A4 1枚・約12分） ================= */
     ws: [
       M('y＝x^2 のグラフをもとに、a が負の数のときのグラフを調べよう'),
-      K('今日の問い', 'y＝x^2 のグラフは、図1のとおり。y＝−x^2 のグラフは、どんな形になるだろう。図2に予想をかき、そう考えたわけを書こう。', 2),
+      K('今日の問い', '図1は y＝x^2 のグラフ。y＝−x^2 のグラフは、どんな形になるだろう。図2に予想をかき、そのわけも書こう。', 2),
       F(7, P1, P2),
       T('①', '自分の考え（3分）　予想したグラフの形と、そのわけを書こう。', 1),
       B(3, '（例）x の値が同じとき、y の値の符号が反対になる。\nたとえば x＝2 のとき、y＝4 が y＝−4 になる。\nだから、上下がひっくり返った形で、下に開く。'),
@@ -115,12 +115,12 @@
         T('（2）', '下に開くグラフを、すべて選ぼう。\nア y＝4x^2　イ y＝−[[1/4]]x^2\nウ y＝−x^2　エ y＝[[1/2]]x^2', 4),
         B(1, 'イ、ウ')
       ], '1:1'),
-      MA('【説明】y＝x^2 と y＝−x^2 のグラフは、どんな関係にあるか、隣の人に説明しよう。\n説明できた ☐　　聞いてくれた人（　　　　　　）', 2),
+      MA('【説明】y＝x^2 と y＝−x^2 のグラフの関係を、隣の人に説明しよう。\n説明できた ☐　　聞いてくれた人（　　　　　　）', 2),
       G(1),
       HD('使ってみる', 'グラフの特徴を使って、調べよう。'),
       C2([
-        T('（3）', '図2の①〜④は、y＝x^2、y＝−x^2、y＝[[1/4]]x^2、y＝−2x^2 のグラフである。どれがどれか答えよう。', 4),
-        B(2, '① y＝[[1/4]]x^2　② y＝−2x^2\n③ y＝x^2　④ y＝−x^2')
+        T('（3）', '図2の①〜④は、ア〜エのどれか。\nア y＝x^2　イ y＝−x^2\nウ y＝[[1/4]]x^2　エ y＝−2x^2', 3),
+        B(2, '① ウ　② エ\n③ ア　④ イ')
       ], [
         T('（4）', 'y＝−3x^2 について、正しいものを、すべて選ぼう。\nア 点 (1, 3) を通る。\nイ y 軸について対称。\nウ y の値は 0 以下。', 5),
         B(1, 'イ、ウ')
@@ -137,24 +137,24 @@
 
       HD('ひろげる', '考えよう：2つのグラフの間の長さを、調べよう。'),
       C2([
-        T('（7）', '図で、y＝x^2 と y＝−x^2 のグラフの上に、x 座標が同じ 2点をとり、点線で結ぶ。x 座標が 1、2、3 のときの点線の長さを、表にまとめよう。', 6),
+        T('（7）', '図で、y＝x^2 と y＝−x^2 のグラフの上に、x 座標が同じ 2点をとり、点線で結ぶ。x 座標が 1、2、3 のときの点線の長さを、表にまとめよう。', 4),
         TB('x 座標', ['1', '2', '3'], [['点線の長さ', ['', '', '']]], { hw: 24 }),
         T('', '気づいたこと', 1),
-        B(3, '')
+        B(5, '')
       ], [
         F(12, D3)
       ], '1:1'),
       C2([
         T('', 'x 座標が 4 のときの長さは、いくつだろう。そのわけも書こう', 2),
-        B(5, '')
+        B(6, '')
       ], [
         T('', 'ほかの放物線（y＝2x^2 と y＝−2x^2 など）でも、調べよう', 2),
-        B(5, '')
+        B(6, '')
       ], '1:1'),
       G(1),
       HD('チャレンジ★★', '入試にも出る問題。ヒントカードを見てもOK。'),
       C2([
-        T('（8）', '放物線 ① y＝x^2、② y＝ax^2（a＜0）がある。② は点 (3, −3) を通る。①、② 上で x 座標が −6 の点を A、B とするとき、線分 AB の長さを求めよう。', 5),
+        T('（8）', '放物線 ① y＝x^2、② y＝ax^2（a＜0）がある。② は点 (3, −3) を通る。①、② 上で x 座標が −6 の点を A、B とするとき、線分 AB の長さを求めよう。', 4),
         B(6, '−3＝9a　より　a＝−[[1/3]]\nA の y 座標は (−6)^2＝36\nB の y 座標は −[[1/3]]×36＝−12\nAB＝36−(−12)＝48')
       ], [
         MA('① a の値は、通る点の座標から求められるかな。\n② A と B は、x 座標が同じ点。y 座標の差は、どう求めるかな。', 6, { label: 'ヒントカード' })
