@@ -130,7 +130,7 @@
   const figQ = CON({
     pts: { A: Aq, B: Bq, C: Cq }, dot: ['A', 'B', 'C'], lab: [['A', 'A', 180], ['B', 'B', 270], ['C', 'C', 45]],
     a: {
-      arc: [2, -2].flatMap(t => [arcT(Aq, bqAB.at(t), 14), arcT(Bq, bqAB.at(t), 14)]).concat([3.2, -3.2].flatMap(t => [arcT(Bq, bqBC.at(t), 14), arcT(Cq, bqBC.at(t), 14)])),
+      arc: [2, -2.5].flatMap(t => [arcT(Aq, bqAB.at(t), 8), arcT(Bq, bqAB.at(t), 8)]).concat([3.2, -3.2].flatMap(t => [arcT(Bq, bqBC.at(t), 8), arcT(Cq, bqBC.at(t), 8)])),
       seg: [[bqAB.at(-2.8), bqAB.at(4.4)], [bqBC.at(-3.8), bqBC.at(3.8)]], dot: [Pq], lab: [[Pq, 'P', 315, 4]]
     }
   });
@@ -238,9 +238,9 @@
     qz: [
       HD('小テスト', '5分で解こう。　　　　　　　　　　　　　得点（　　　　／10点）'),
       G(1),
-      T('（1）', '2点 P、Q から等しいきょりにある点は、どんな線の上にあるか。（2点）', 2),
+      T('（1）', '2点 P、Q から等しいきょりにある点は、どんな線の上にあるか。（2点）', 1),
       B(2, '線分 PQ の垂直二等分線の上'),
-      T('（2）', '角の2辺 OX、OY から等しいきょりにある点は、どんな線の上にあるか。（2点）', 2),
+      T('（2）', '角の2辺 OX、OY から等しいきょりにある点は、どんな線の上にあるか。（2点）', 1),
       B(2, '∠XOY の二等分線の上'),
       T('（3）', '3点 A、B、C から等しいきょりにある点 P を作図しよう。（作図の線は消さない）（4点）', 2),
       F(6, figQ),
