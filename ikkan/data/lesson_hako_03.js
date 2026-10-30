@@ -24,7 +24,7 @@
   const TS = [5, 12, 18, 26, 45];                                                    // 例題：80人の通学時間
 
   // ヒストグラム（キャプションつき）
-  const histFig = (counts, cap, o) => SVG((W, H, h) => HIST({ edges: E, counts, ymax: o.ymax, ystep: 2, xname: '(点)', yname: '(人)' }).svg(W, H, h) + h.tx(W / 2, 3.6, cap, 3, 'middle', ' class="cap"'));
+  const histFig = (counts, cap, o) => SVG((W, H, h) => HIST({ edges: E, counts, ymax: o.ymax, ystep: o.ystep || 2, xname: '(点)', yname: '(人)' }).svg(W, H, h) + h.tx(W / 2, 3.6, cap, 3, 'middle', ' class="cap"'));
   // 箱ひげ図の図。rows＝[{ name, v:[最小値, 第1四分位数, 中央値, 第3四分位数, 最大値], ans:true（解答のときだけ、赤で出す）}]
   // o＝{ min, max, step（数字をつける間かく）, sub（小目もり）, unit, cap（図の名前）}
   const BOXF = (rows, o) => SVG((W, H, h) => {
@@ -116,7 +116,7 @@
       HD('確かめる', 'ことばと、基本をたしかめよう。'),
       WD('① 箱ひげ図の4つの部分には、それぞれ、データの約{{25}}％が入る。\n② ヒストグラムの山が高いところでは、箱ひげ図の箱やひげは{{短く}}なる。\n③ 山が左に寄っているヒストグラムの箱ひげ図は、箱が{{左}}に寄る。\n④ 箱の中には、データの約{{半分}}が入る。', 4, { label: 'ことば' }),
       F(4, BOXF([{ v: [8, 14, 21, 29, 40] }], { min: 5, max: 45, step: 5, sub: 1, cap: '図1　60人の読書時間', unit: '（分）' }),
-        histFig(C2H, '図2　40人のテスト', { ymax: 12 })),
+        histFig(C2H, '図2　40人のテスト', { ymax: 12, ystep: 4 })),
       C2([
         T('（1）', '図1で、21分以上と14分以下の生徒は、およそ何人ずつか。', 2),
         B(2, '21分以上 約30人\n14分以下 約15人')

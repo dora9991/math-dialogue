@@ -62,7 +62,7 @@
   T8.D = foot(T8.P, T8.A, T8.B); T8.E = foot(T8.P, T8.A, T8.C); T8.H = foot(T8.B, T8.A, T8.C);
   const fig8 = GEO({
     pts: T8, poly: 'ABC', segs: ['PD', 'PE', ['B', 'H', { dash: 1 }]], dots: ['P'], pad: 7,
-    tick: [['A', 'B', 1, 0.5], ['A', 'C', 1, 0.5]],
+    tick: [['A', 'B', 1, 0.55], ['A', 'C', 1, 0.82]],
     ang: [{ at: 'D', a: 'P', b: 'A', right: true, r: 3 }, { at: 'E', a: 'P', b: 'A', right: true, r: 3 }, { at: 'H', a: 'B', b: 'A', right: true, r: 3 }],
     vl: { A: ['A', 90, 3.2], B: ['B', 225], C: ['C', 315], P: ['P', 270, 3.2], D: ['D', 150, 3.2], E: ['E', 20, 3.2], H: ['H', 30, 3.2] }
   });
