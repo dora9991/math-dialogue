@@ -1,7 +1,9 @@
 /* tangocho：計算単語帳（1分トレーニング）の土台。画面を持たない（ブラウザでも node の検査でも読める）。
    問題は「単元・STEP・セット番号」から作る。同じ番号なら、いつ・どの端末で開いても同じ問題になる（紙と画面が一致する）。
-   1セット＝20問。前半10問（その STEP のふつうの問題）＋ 後半10問（同じ STEP の中で、少しだけむずかしい問題）。
+   1セット＝20〜50問（単元・STEP ごとに決める）。前半（半分）はその STEP のふつうの問題、後半（半分）は同じ STEP の中で少しだけむずかしい問題。
      計算の早い子が前半をすぐ解き終わっても、そのまま後半へ進める。
+     問題数は「計算のとても速い人が、1分でやっと解き終わる量」が目安。1けたのたし算・ひき算は50問、九九は32〜40問、2けたのたし算・ひき算は20〜30問、
+     分数・小数・割合・図形・語彙カードは20問前後（単元の n が基本で、STEP だけちがうときは STEP の n）。
    問題の形：{ pre, eq, ans, post, fig, meta }
      「pre ＝ ［ans］ post」の形で出る（eq:false なら「＝」なし）。文字の中の {3/4} は分数。
      fig＝図（SVG）、meta＝図の寸法など（tools/verify.cjs が別の道すじで検算するための材料）。 */
@@ -60,6 +62,9 @@
   //      （種類をえらびなおさないので、通りにくい種類が少なくなりすぎない。割引・三角形・円すい…のように、種類がまざる STEP で使う）
   TG.addUnit = function (u) { u.layout = u.layout || 'text'; TG.units.push(u); return u; };
   TG.unit = id => TG.units.find(u => u.id === id);
+  // 1セットの問題数（STEP の n があればそれ、なければ単元の n）／単元ぜんたいの問題数の書き方（20問、または 30〜50問）
+  TG.nOf = (u, step) => (u.steps[step - 1] && u.steps[step - 1].n) || u.n;
+  TG.nText = u => { const ns = u.steps.map((_, i) => TG.nOf(u, i + 1)), lo = Math.min(...ns), hi = Math.max(...ns); return lo === hi ? `${lo}問` : `${lo}〜${hi}問`; };
 
   const produce = (st, r, hard) => {
     const mix = hard ? st.mix2 : st.mix, gen = hard ? st.gen2 : st.gen;
@@ -77,7 +82,7 @@
     const st = u && u.steps[step - 1];
     if (!st) return null;
     const r = TG.rng(`${u.id}/${step}/${setNo}`);
-    const n = st.n || u.n, half = n / 2, seen = new Set();   // st.n：その STEP だけ問題数がちがうとき（候補の少ない語彙カード）
+    const n = TG.nOf(u, step), half = n / 2, seen = new Set();   // st.n：その STEP だけ問題数がちがうとき
     const make = (hard, count) => {
       const out = [];
       for (let tries = 0; out.length < count && tries < 30000; tries++) {

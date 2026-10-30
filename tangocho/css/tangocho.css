@@ -244,3 +244,7 @@ body.is-sheet{background:#dcdad2}
   .page{margin:0;box-shadow:none;break-after:page;page-break-after:always}
   .page:last-child{break-after:auto;page-break-after:auto}
 }
+/* 1セットで A4 1枚（25問以上）：切り取り線なし、字を少し大きく */
+.page.one .card{--fs:6mm}
+.page.one .card.fs-m{--fs:5.8mm}.page.one .card.fs-s{--fs:5mm}
+.page.one .ci .no{width:6.6mm;height:6.6mm;font-size:3.6mm}

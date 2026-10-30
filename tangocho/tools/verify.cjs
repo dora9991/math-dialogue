@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* 検算と形の検査（ブラウザなしで動く）。  使い方：node tools/verify.cjs [セットの数=40]
    すべての単元・STEP・セット番号 1〜N について：
-   ① 1セット20問（前半10＋後半10）がそろっているか・同じ問題がかぶらないか・同じ番号で同じ問題になるか
+   ① 1セットの問題数（単元・STEP ごとに決めた20〜50問。前半と後半で半分ずつ）がそろっているか・同じ問題がかぶらないか・同じ番号で同じ問題になるか
    ② 答えが正しいか。作るときの計算とは別の道すじで確かめる
       （式は文字から読み直して分数で計算／割合・単位・時間は文字から読み直す／面積・体積は meta の寸法から計算し、図に寸法の字があるかも見る）
    ③ STEP の条件を守っているか。前半と後半で別々の条件（くり上がり・くり下がり・約分の有無・答えの大きさ など）
@@ -150,12 +150,12 @@ const hasTen = v => v.some((x, i) => v.some((y, j) => i < j && x + y === 10));
 const COND = {
   add1: [
     [([a, b]) => a + b <= 10, v => v.length === 3 && sum(v) >= 6 && sum(v) <= 10],
-    [([a, b]) => a + b >= 11 && a >= 2 && b >= 2, ([a, b]) => a + b >= 13 && a >= 4 && b >= 4],
+    [([a, b]) => a + b >= 11 && a >= 2 && b >= 2 && a <= 9 && b <= 9, ([x, y]) => { const [a, b] = x >= 10 ? [x, y] : [y, x]; return a >= 12 && a <= 89 && b >= 2 && b <= 9 && un(a) + b >= 10 && b < 10; }],
     [v => v.length === 3 && hasTen(v) && sum(v) <= 19, v => v.length === 3 && v.every(x => x >= 3) && sum(v) >= 18 && sum(v) <= 26 && !hasTen(v)],
   ],
   sub1: [
     [([a, b]) => a <= 10 && b < a, ([a, b, c]) => c !== undefined && a <= 10 && a - b - c >= 1],
-    [([a, b]) => a >= 11 && a <= 18 && b > a % 10 && a - b >= 1, ([a, b]) => a >= 13 && a <= 18 && b >= 6 && b <= 9 && b > a % 10],
+    [([a, b]) => a >= 11 && a <= 18 && b > a % 10 && a - b >= 1, ([a, b]) => a >= 21 && a <= 98 && b >= 2 && b <= 9 && b > un(a)],
     [([a, b]) => a >= 10 && a <= 19 && a - b >= 1, ([a, b, c]) => c !== undefined && a >= 12 && a <= 19 && a - b - c >= 1 && tn(a) !== tn(a - b - c)],
   ],
   mul1: [
@@ -296,10 +296,11 @@ function decOut(h) { const i = Math.floor(h / 100), f = h % 100; return f ? i + 
 /* ---------------- 本体 ---------------- */
 let sets = 0;
 for (const u of TG.units) {
-  if (u.n !== 20) bad(u.id, `1セットが20問でない（${u.n}）`);
+  if (!(u.n >= 20 && u.n <= 50 && u.n % 2 === 0)) bad(u.id, `1セットの問題数が20〜50の偶数でない（${u.n}）`);
   for (let step = 1; step <= u.steps.length; step++) {
-    const st = u.steps[step - 1], need = st.n || u.n;
-    if (need % 2 || need < 12) bad(`${u.id} STEP${step}`, `問題数が前半・後半に分けられない（${need}）`);
+    const st = u.steps[step - 1], need = TG.nOf(u, step);
+    if (need % 2 || need < 12 || need > 50) bad(`${u.id} STEP${step}`, `問題数が前半・後半に分けられない（${need}）`);
+    if (st.n && st.n === u.n) bad(`${u.id} STEP${step}`, 'STEP の n が単元の n と同じ（書かなくてよい）');
     if (!st.name2 || !(st.gen2 || st.mix2)) bad(`${u.id} STEP${step}`, '後半（name2・gen2/mix2）が決まっていない');
     for (let no = 1; no <= SETS; no++) {
       const s = TG.makeSet(u.id, step, no);
