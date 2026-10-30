@@ -1,0 +1,3 @@
+# マクロは日本語版 Excel 用に Shift_JIS・CRLF のまま保存する（改行を変えない）
+*.bas -text
+*.xlsx binary
