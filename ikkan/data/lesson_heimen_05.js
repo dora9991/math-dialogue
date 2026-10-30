@@ -73,7 +73,7 @@
   const C0 = [0, 0], D0 = [8, 6], PE = [1, 7], QE = [7, -1];
   const figEx = CON({
     pts: { C: C0, D: D0 }, seg: [['C', 'D']], dot: ['C', 'D'], lab: [['C', 'C', 200], ['D', 'D', -20]],
-    a: { arc: [arcT(C0, PE, 11), arcT(D0, PE, 11), arcT(C0, QE, 11), arcT(D0, QE, 11)], seg: [[PE, QE, { ext: [0.1, 0.1] }]], dot: [PE, QE], lab: [[PE, 'P', 45, 4.4], [QE, 'Q', -45, 4.4]] }
+    a: { arc: [arcT(C0, PE, 11), arcT(D0, PE, 11), arcT(C0, QE, 11), arcT(D0, QE, 11)], seg: [[PE, QE, { ext: [0.05, 0.05] }]], dot: [PE, QE], lab: [[PE, 'P', 45, 4.4], [QE, 'Q', 225, 4.4]] }
   });
   // 演習プリント 図1：線分 EF（E(0,3)、F(6,−1)）。交点 (5,4)、(1,−2)
   const E0 = [0, 3], F0 = [6, -1], PF = [5, 4], QF = [1, -2];
