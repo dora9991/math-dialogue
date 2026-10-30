@@ -74,13 +74,13 @@
   // 例題：BD は ∠B の二等分線。∠x＝∠BDC
   const figE = tri(P_E(), { pad: 5, segs: ['BD'], vl: vlD(['D', 20]), ang: [{ at: 'B', a: 'A', b: 'D', r: 6 }, { at: 'B', a: 'D', b: 'C', r: 6 }, { at: 'D', a: 'B', b: 'C', t: 'x', r: 4 }] });
   const fig1 = tri(P_1(), { segs: ['AD'], vl: vlD(['D', 270]), ang: [{ at: 'A', a: 'B', b: 'D', r: 6 }, { at: 'A', a: 'D', b: 'C', r: 6 }], txt: [{ p: [7.5, 0], t: '10cm', dy: 5.5 }] });
-  const fig2 = tri(P_2(), { segs: [['A', 'E']], vl: vlD(['E', 135]), ang: [{ at: 'A', a: 'C', b: 'E', t: '110°', r: 5 }, { at: 'B', a: 'C', b: 'A', t: 'x', r: 5 }] });
+  const fig2 = tri(P_2(), { segs: [['A', 'E']], vl: Object.assign({ E: ['E', 135] }, VL), ang: [{ at: 'A', a: 'C', b: 'E', t: '110°', r: 5 }, { at: 'B', a: 'C', b: 'A', t: 'x', r: 5 }] });
   const fig3 = tri(P_3(), { segs: ['BD'], vl: vlD(['D', 20]), ang: [{ at: 'A', a: 'B', b: 'C', t: '76°', r: 6 }, { at: 'B', a: 'A', b: 'D', r: 6 }, { at: 'B', a: 'D', b: 'C', r: 6 }, { at: 'D', a: 'B', b: 'C', t: 'x', r: 4 }] });
   const fig4 = GEO({ pts: P_4(), poly: 'ABC', segs: ['AD'], vl: vlD(['D', 270]), tick: [['D', 'A', 1], ['D', 'B', 1], ['D', 'C', 1]], ang: [{ at: 'B', a: 'A', b: 'C', t: '38°', r: 5 }, { at: 'C', a: 'A', b: 'B', t: 'x', r: 5 }], pad: 4 });
   const fig5 = tri(P_5(), { segs: ['AD'], tick: [['A', 'B', 1], ['A', 'C', 1], ['D', 'A', 2], ['D', 'C', 2]], vl: vlD(['D', 270]), ang: [{ at: 'B', a: 'A', b: 'C', t: '40°', r: 5 }, { at: 'D', a: 'A', b: 'B', t: 'x', r: 4 }] });
   const fig7 = GEO({ pts: P_7(), poly: 'ABC', vl: VL, tick: [['A', 'B', 1], ['B', 'C', 1], ['C', 'A', 1]], pad: 5 });
   const fig8 = tri(P_8(), { pad: 5, segs: ['BD', 'CE'], vl: vlD(['D', 0], { E: ['E', 180] }), ang: [{ at: 'B', a: 'A', b: 'D', n: 1, r: 5 }, { at: 'B', a: 'D', b: 'C', n: 1, r: 5 }, { at: 'C', a: 'A', b: 'E', n: 2, r: 5 }, { at: 'C', a: 'E', b: 'B', n: 2, r: 5 }] });
-  const figQ1 = tri(P_Q1(), { segs: ['AD'], vl: vlD(['D', 270]), ang: [{ at: 'A', a: 'B', b: 'D', r: 6 }, { at: 'A', a: 'D', b: 'C', r: 6 }], txt: [{ p: [9, 0], t: '12cm', dy: 5.5 }] });
+  const figQ1 = tri(P_Q1(), { segs: ['AD'], vl: vlD(['D', 270]), ang: [{ at: 'A', a: 'B', b: 'D', n: 2, r: 6 }, { at: 'A', a: 'D', b: 'C', n: 2, r: 6 }], txt: [{ p: [9, 0], t: '12cm', dy: 6 }] });
   const figQ2 = tri(P_Q2(), { segs: ['BD'], vl: vlD(['D', 20]), ang: [{ at: 'B', a: 'A', b: 'D', r: 6 }, { at: 'B', a: 'D', b: 'C', r: 6 }, { at: 'D', a: 'B', b: 'C', t: 'x', r: 4 }] });
   const figQ3 = tri(P_Q3(), { pad: 5, segs: ['DC', 'EB'], tick: TK.concat([['D', 'B', 2], ['E', 'C', 2]]), vl: vlD(['D', 180], { E: ['E', 0] }) });
   const figQC = tri(P_QC(), { pad: 5, segs: ['AD', 'DE'], vl: vlD(['D', 270], { E: ['E', 45] }), ang: [{ at: 'B', a: 'A', b: 'C', t: '65°', r: 6 }, { at: 'A', a: 'B', b: 'D', t: '30°', r: 7 }] });
@@ -121,8 +121,8 @@
       chk('第2時 （7）', `const P = ${J(P_7())}; return near(d(P, 'AB'), d(P, 'BC')) && near(d(P, 'BC'), d(P, 'CA')) && near(ang(P, 'A', 'B', 'C'), 60) && near(ang(P, 'B', 'A', 'C'), 60) && near(ang(P, 'C', 'A', 'B'), 60);`),
       // （8）BD、CE は ∠B、∠C の二等分線。△DBC≡△ECB（BC は共通、∠DCB＝∠EBC、∠DBC＝∠ECB）。BD＝CE。証明の行数
       chk('第2時 （8）', `const P = ${J(P_8())}; return near(d(P, 'AB'), d(P, 'AC')) && on(P, 'D', 'A', 'C') && on(P, 'E', 'A', 'B') && near(ang(P, 'B', 'A', 'D'), ang(P, 'B', 'D', 'C')) && near(ang(P, 'C', 'A', 'E'), ang(P, 'C', 'E', 'B')) && near(ang(P, 'C', 'D', 'B'), ang(P, 'B', 'E', 'C')) && near(ang(P, 'B', 'D', 'C'), ang(P, 'C', 'E', 'B')) && cong(P, 'DBC', 'ECB') && near(d(P, 'BD'), d(P, 'CE')) && ${J(A_8)}.split('\\n').length === 10;`),
-      // 小テスト（1）BC＝12、∠BAD＝34°：BD＝6、∠B＝56°
-      chk('第2時 小テスト（1）', `const P = ${J(P_Q1())}; return near(d(P, 'BC'), 12) && near(ang(P, 'A', 'B', 'D'), 34) && near(d(P, 'BD'), 6) && near(ang(P, 'B', 'A', 'C'), 56);`),
+      // 小テスト（1）BC＝12：BD＝6、∠ADB＝90°
+      chk('第2時 小テスト（1）', `const P = ${J(P_Q1())}; return near(d(P, 'AB'), d(P, 'AC')) && near(d(P, 'BC'), 12) && on(P, 'D', 'B', 'C') && near(ang(P, 'A', 'B', 'D'), ang(P, 'A', 'D', 'C')) && near(d(P, 'BD'), 6) && near(ang(P, 'D', 'A', 'B'), 90);`),
       // 小テスト（2）頂角 52°、BD は ∠B の二等分線：∠x＝84°
       chk('第2時 小テスト（2）', `const P = ${J(P_Q2())}; return near(ang(P, 'A', 'B', 'C'), 52) && near(d(P, 'AB'), d(P, 'AC')) && near(ang(P, 'B', 'A', 'D'), ang(P, 'B', 'D', 'C')) && near(ang(P, 'D', 'B', 'C'), 84);`),
       // 小テスト（3）証明：DB＝EC → △DBC≡△ECB（SAS）→ DC＝EB。空欄の答え 4つ
@@ -215,16 +215,16 @@
       HD('小テスト', '5分で解こう。　　　　　　　　　　　　　得点（　　　　／10点）'),
       G(1),
       C2([
-        T('（1）', '図1で、AD は ∠A の二等分線、∠BAD＝34°。BD の長さと ∠B を求めよう。（3点）', 3),
-        F(3, figQ1),
-        B(2, 'BD＝12÷2＝6（cm）\n∠B＝180°−90°−34°＝56°')
+        T('（1）', '図1で、AB＝AC で、AD は ∠A の二等分線。BD の長さと ∠ADB の大きさを求めよう。（3点）', 3),
+        F(4, figQ1),
+        B(2, 'BD＝12÷2＝6（cm）\n∠ADB＝90°')
       ], [
         T('（2）', '図2で、AB＝AC、∠A＝52°、BD は ∠B の二等分線。∠x を求めよう。（3点）', 3),
-        F(3, figQ2),
+        F(4, figQ2),
         B(2, '底角 (180°−52°)÷2＝64°　∠DBC＝32°\n∠x＝180°−32°−64°＝84°')
       ], '1:1'),
       C2([
-        T('（3）', '図で、AB＝AC、DB＝EC である。DC＝EB の証明の、空欄をうめよう。（4点）\n' + PF_Q3, 11),
+        T('（3）', '図で、AB＝AC、DB＝EC である。DC＝EB の証明の、空欄をうめよう。（4点）\n' + PF_Q3, 10),
         B(1, A_Q3)
       ], [
         F(8, figQ3)

@@ -130,7 +130,7 @@ NODE_PATH=$(npm root -g) node tools/check.cjs <画像の出力先> kukan_new-02 
 | 図 | 書き方 | 冒頭を読むファイル |
 |---|---|---|
 | 立体の見取図 | `SO({ shape, a, b, c, n, caption … })`・`POLY({ solid, V, … })`（凸多面体） | `js/core.js`（SO）・`js/figs3d.js`（POLY） |
-| 数直線・座標平面・ヒストグラム・おうぎ形・てんびん・長方形 | `NL`・`CO`・`HIST`・`SEC`・`BAL`・`RECT`。数直線は `NL({ min, max, step: 0.5, labelStep: 1, dots: [3], pts: [{ at: -2.5, name: 'A', a: '−2.5' }], arrows, marks })`（`step`＝半目もりなど、`dots`＝最初から出す点、`pts`＝名前つきの点：名前は黒・`a` は解答のとき赤） | `js/figs.js` |
+| 数直線・座標平面・ヒストグラム・おうぎ形・てんびん・長方形 | `NL`・`CO`・`HIST`・`SEC`・`BAL`・`RECT`。座標平面 `CO` は、曲線（放物線・双曲線など）も `curves: [{ f: x => x * x / 2, from, to, dash, text, at }]`（最初から出す曲線は `given: { curves: […] }`。外側の `curves` は、解答のとき赤）。図の中の字（`text`）には `[[ ]]`・`^` が効かないので、`'y＝x²'` のように Unicode の上つき文字を使う。数直線は `NL({ min, max, step: 0.5, labelStep: 1, dots: [3], pts: [{ at: -2.5, name: 'A', a: '−2.5' }], arrows, marks })`（`step`＝半目もりなど、`dots`＝最初から出す点、`pts`＝名前つきの点：名前は黒・`a` は解答のとき赤） | `js/figs.js` |
 | 平面図形（角・平行線・三角形・合同・作図の線） | `GEO({ pts, poly, segs, vl, ang, tick, par, dots, txt, a })` | `js/geo.js`（冒頭に、全部の書き方） |
 | 自由な図 | `SVG((W, H, h) => '<svg の中身（単位 mm）>')`。`h.ln`・`h.tx`・`h.ans(…)`（解答のときだけ出す） | 見本 `data/lesson_kukan_02.js`（図の関数の例） |
 

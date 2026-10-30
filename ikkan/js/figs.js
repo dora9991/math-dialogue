@@ -49,7 +49,7 @@
     return out + (an.length ? h.ans(an.join('')) : '');
   };
 
-  /* ---- 座標平面。{ xmin, xmax, ymin, ymax, labelStep, lines:[{ a, b, from, to, text, at:[x, y], anchor, dash }], points:[{ x, y, text, at:[x, y], anchor }], given:{ lines:[…同じ形…], points:[…同じ形…], vlines:[{ x, from, to, text, at, anchor }] } }
+  /* ---- 座標平面。{ xmin, xmax, ymin, ymax, labelStep, lines:[{ a, b, from, to, text, at:[x, y], anchor, dash }], points:[{ x, y, text, at:[x, y], anchor }], given:{ lines:[…同じ形…], curves:[{ f: x => x*x/2, from, to, dash, text, at }…]（曲線 y＝f(x)。放物線など。解答のときは、外側の curves が赤）, points:[…同じ形…], vlines:[{ x, from, to, text, at, anchor }] } }
           lines（y＝ax+b の線分）と points は、解答を表示したときだけ赤で出る。
           given は、問題として最初から出す線・点（黒。生徒が読みとる直線、与えられた点など）。vlines は x＝h の線。
           線は、座標平面の枠（ymin〜ymax）からはみ出さないように、自動で切る。labelStep：目もりの数字を、何目もりごとに書くか（省略は 1）。dash：true で点線 ---- */
@@ -83,11 +83,23 @@
     };
     const labelSvg = (l, col) => (l.text && l.at ? h.rich(X(l.at[0]), Y(l.at[1]), l.text, 3, l.anchor || 'start') : '');
     const dotSvg = (p, col) => `<circle cx="${f2(X(p.x))}" cy="${f2(Y(p.y))}" r="0.85" fill="${col}"/>` + labelSvg(p, col);
+    // 曲線 y＝f(x)（放物線など）。{ f: x => …, from, to, dash, text, at, anchor }。枠（ymin〜ymax）の外は、描かない
+    const curveSvg = (c, col, sw) => {
+      const fr = c.from != null ? c.from : x0, to = c.to != null ? c.to : x1, N = 240;
+      let d = '', pen = false;
+      for (let i = 0; i <= N; i++) {
+        const x = fr + (to - fr) * i / N, y = c.f(x);
+        if (y >= y0 - 1e-9 && y <= y1 + 1e-9) { d += (pen ? 'L' : 'M') + f2(X(x)) + ',' + f2(Y(y)) + ' '; pen = true; } else pen = false;
+      }
+      return d ? `<path d="${d}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"${c.dash ? ' stroke-dasharray="1.6 1.2"' : ''}/>` : '';
+    };
     const g = o.given || {};
+    (g.curves || []).forEach(c => { out += curveSvg(c, '#1f2328', 0.5) + labelSvg(c); });
     (g.lines || []).forEach(l => { out += lineSvg(l, '#1f2328', 0.5) + labelSvg(l); });
     (g.vlines || []).forEach(l => { const fr = l.from != null ? l.from : y0, to = l.to != null ? l.to : y1; out += h.ln(X(l.x), Y(fr), X(l.x), Y(to), '#1f2328', 0.5, ' stroke-linecap="round"') + labelSvg(l); });
     (g.points || []).forEach(p => { out += dotSvg(p, '#1f2328'); });
     const an = [];
+    (o.curves || []).forEach(c => { an.push(curveSvg(c, RED, 0.5) + labelSvg(c)); });
     (o.lines || []).forEach(l => { an.push(lineSvg(l, RED, 0.5) + labelSvg(l)); });
     (o.vlines || []).forEach(l => { const fr = l.from != null ? l.from : y0, to = l.to != null ? l.to : y1; an.push(h.ln(X(l.x), Y(fr), X(l.x), Y(to), RED, 0.5, ' stroke-linecap="round"') + labelSvg(l)); });
     (o.points || []).forEach(p => an.push(dotSvg(p, RED)));
