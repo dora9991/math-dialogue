@@ -33,7 +33,8 @@
     const vals = ans => { const out = []; String(ans).split('、').forEach(p => { const t = p.replace(/^x＝/, ''); (t.includes('±') ? [t.replace(/±/g, '+'), t.replace(/±/g, '−')] : [t]).forEach(u => out.push(EV(u))); }); return out.sort((p, q) => p - q); };
     const intRoots = eq => { const f = fn(eq), r = []; for (let x = -300; x <= 300; x++) if (Math.abs(f(x)) < 1e-9) r.push(x); return r; };
     const eqv = (a, b) => a.length === b.length && a.every((x, i) => Math.abs(x - b[i]) < 1e-9);
-    const solved = (eq, ans) => { const k = co(eq); if (!k || Math.abs(k[0]) < 1e-9) return false; const rs = rts(k), ys = vals(ans), f = fn(eq); return eqv(rs, ys) && ys.every(y => Math.abs(f(y)) < 1e-9) && eqv(ys.filter(y => Number.isInteger(y)), intRoots(eq)); };
+    const asc = ans => { const ps = String(ans).split('、'); if (ps.length < 2 || ps.some(p => p.includes('±'))) return true; const v = ps.map(p => EV(p.replace(/^x＝/, ''))); return v.every((y, i) => i === 0 || v[i - 1] < y); };   // 解は小さい順に書いてあるか
+    const solved = (eq, ans) => { const k = co(eq); if (!k || Math.abs(k[0]) < 1e-9) return false; const rs = rts(k), ys = vals(ans), f = fn(eq); return asc(ans) && eqv(rs, ys) && ys.every(y => Math.abs(f(y)) < 1e-9) && eqv(ys.filter(y => Number.isInteger(y)), intRoots(eq)); };
     const chain = (eqs, ans) => eqs.every(e => same(eqs[0], e)) && solved(eqs[0], ans);
     return { js, EV, fn, co, isQ, same, rts, vals, intRoots, solved, chain, eqv };
   }
@@ -66,7 +67,7 @@
         [['x^2+2x＝24', 'x^2+2x−24＝0', '(x−4)(x+6)＝0'], 'x＝−6、x＝4'], [['4x^2−8x−12＝0', 'x^2−2x−3＝0', '(x+1)(x−3)＝0'], 'x＝−1、x＝3'],
         [['(x+4)(x−3)＝8', 'x^2+x−20＝0', '(x−4)(x+5)＝0'], 'x＝−5、x＝4'], [['(x−3)^2＝x+9', 'x^2−7x＝0', 'x(x−7)＝0'], 'x＝0、x＝7']
       ]),
-      // （7）考えよう（答えは紙面に載せない）：x^2+ax−12＝0 の解が 2つとも整数になる整数 a は −11・−4・−1・1・4・11（−100〜100 を、整数の解の個数で調べる）。表の a＝1〜6 は ○×××○××ではなく、1 と 4 だけ
+      // （7）考えよう（答えは紙面に載せない）：x^2+ax−12＝0 の解が 2つとも整数になる整数 a は −11・−4・−1・1・4・11（−100〜100 を、整数の解の個数で調べる）。表の a＝1〜6 で解が 2つとも整数になるのは 1 と 4 だけ
       chk('第3時 （7）', 'const cnt = a => { let n = 0; for (let x = -300; x <= 300; x++) if (x * x + a * x - 12 === 0) n++; return n; }; return Array.from({ length: 201 }, (_, i) => i - 100).filter(a => cnt(a) === 2).join() === "-11,-4,-1,1,4,11" && [1, 2, 3, 4, 5, 6].map(cnt).join() === "2,0,0,2,0,0";'),
       ch('第3時 （7）：a＝1・4 の因数分解', [[['x^2+x−12＝0', '(x−3)(x+4)＝0'], 'x＝−4、x＝3'], [['x^2+4x−12＝0', '(x−2)(x+6)＝0'], 'x＝−6、x＝2'], [['x^2+11x−12＝0', '(x−1)(x+12)＝0'], 'x＝−12、x＝1']]),
       // （8）(x+3)^2＝5(x+3)：展開しても、右辺を 0 にしてくくっても x^2+x−6＝0。解は −3 と 2 の2つだけ（両辺を x+3 でわると x＝−3 が落ちる）

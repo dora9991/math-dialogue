@@ -33,7 +33,8 @@
     const vals = ans => { const out = []; String(ans).split('、').forEach(p => { const t = p.replace(/^x＝/, ''); (t.includes('±') ? [t.replace(/±/g, '+'), t.replace(/±/g, '−')] : [t]).forEach(u => out.push(EV(u))); }); return out.sort((p, q) => p - q); };
     const intRoots = eq => { const f = fn(eq), r = []; for (let x = -300; x <= 300; x++) if (Math.abs(f(x)) < 1e-9) r.push(x); return r; };
     const eqv = (a, b) => a.length === b.length && a.every((x, i) => Math.abs(x - b[i]) < 1e-9);
-    const solved = (eq, ans) => { const k = co(eq); if (!k || Math.abs(k[0]) < 1e-9) return false; const rs = rts(k), ys = vals(ans), f = fn(eq); return eqv(rs, ys) && ys.every(y => Math.abs(f(y)) < 1e-9) && eqv(ys.filter(y => Number.isInteger(y)), intRoots(eq)); };
+    const asc = ans => { const ps = String(ans).split('、'); if (ps.length < 2 || ps.some(p => p.includes('±'))) return true; const v = ps.map(p => EV(p.replace(/^x＝/, ''))); return v.every((y, i) => i === 0 || v[i - 1] < y); };   // 解は小さい順に書いてあるか
+    const solved = (eq, ans) => { const k = co(eq); if (!k || Math.abs(k[0]) < 1e-9) return false; const rs = rts(k), ys = vals(ans), f = fn(eq); return asc(ans) && eqv(rs, ys) && ys.every(y => Math.abs(f(y)) < 1e-9) && eqv(ys.filter(y => Number.isInteger(y)), intRoots(eq)); };
     const chain = (eqs, ans) => eqs.every(e => same(eqs[0], e)) && solved(eqs[0], ans);
     return { js, EV, fn, co, isQ, same, rts, vals, intRoots, solved, chain, eqv };
   }
