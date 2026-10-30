@@ -52,9 +52,9 @@
   const PR = "′";
 
   // 三角形の頂点の字：図形の中心から外むきに、k mm はなして書く（方眼の線の上でも読めるよう、白い地つき）
-  const vlab = (pts, names, k) => {
+  const vlab = (pts, names, k, over) => {
     const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length, cy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
-    return pts.map((p, i) => { const dx = p[0] - cx, dy = p[1] - cy, d = Math.hypot(dx, dy) || 1; return { p, t: names[i], dx: (k || 3.8) * dx / d, dy: -(k || 3.8) * dy / d, halo: true }; });
+    return pts.map((p, i) => { const dx = p[0] - cx, dy = p[1] - cy, d = Math.hypot(dx, dy) || 1, o = (over || {})[i]; return { p, t: names[i], dx: o ? o[0] : (k || 3.8) * dx / d, dy: o ? o[1] : -(k || 3.8) * dy / d, halo: true }; });   // over＝{ 番号: [dx, dy] }：字の位置を、自分で決めたいとき
   };
   const NM = 'ABC', NM2 = ['A' + PR, 'B' + PR, 'C' + PR];
   // 三角形 pts（名前 ABC）と、移動後 q（名前 A′B′C′。解答のときだけ赤）を、方眼 grid にかく。extra は、最初から出す線・字、ansExtra は、解答の線・字
@@ -65,8 +65,8 @@
       polys: [{ pts, w: 0.5 }].concat(e.polys || []),
       lines: e.lines || [],
       dots: e.dots || [],
-      labels: vlab(pts, NM).concat(e.labels || []),
-      a: { polys: [{ pts: q, w: 0.5 }], lines: (ae.noLinks ? [] : links).concat(ae.lines || []), dots: ae.dots || [], labels: vlab(q, NM2).concat(ae.labels || []) }
+      labels: vlab(pts, NM, null, e.over).concat(e.labels || []),
+      a: { polys: [{ pts: q, w: 0.5 }], lines: (ae.noLinks ? [] : links).concat(ae.lines || []), dots: ae.dots || [], labels: vlab(q, NM2, null, ae.over).concat(ae.labels || []) }
     }, o || {}));
   };
 
@@ -76,7 +76,7 @@
   // 例題：直線 ℓ（x＝6）で対称移動
   const P2 = [[2, 4], [4, 1], [5, 3]], Q2 = [[10, 4], [8, 1], [7, 3]];
   // 演習 図1：平行移動（右へ4）／図2：直線 ℓ（x＝4）で対称移動／図3：点 O（4, 2）を中心に時計回りに 90° 回転移動
-  const P3 = [[2, 4], [1, 2], [3, 2]], V3 = [4, 0], Q3 = [[6, 4], [5, 2], [7, 2]];
+  const P3 = [[2, 5], [1, 3], [3, 2]], V3 = [4, 0], Q3 = [[6, 5], [5, 3], [7, 2]];
   const P4 = [[1, 5], [2, 2], [3, 4]], Q4 = [[7, 5], [6, 2], [5, 4]];
   const O5 = [4, 2], P5 = [[1, 3], [2, 1], [2, 3]], Q5 = [[5, 5], [3, 4], [5, 4]];
   // チャレンジ：回転の中心 O（4, 3）をさがす（時計回りに 90°）
@@ -85,13 +85,13 @@
   const P7 = [[1, 3], [1, 1], [3, 2]], Q7 = [[6, 3], [6, 1], [8, 2]];
   const P8 = [[1, 4], [2, 1], [3, 3]], Q8 = [[7, 4], [6, 1], [5, 3]];
 
-  const axis = (x, y0, y1) => ({ lines: [L([x, y0], [x, y1], { w: 0.7 })], labels: [{ p: [x, y1], t: 'ℓ', dy: -3.6, cls: 'pl' }] });
+  const axis = (x, y0, y1) => ({ lines: [L([x, y0], [x, y1], { w: 0.7 })], labels: [{ p: [x, y1], t: 'ℓ', dx: 3.2, dy: 3.4, cls: 'pl', halo: true }] });
 
   const figWS1 = gridFig([0, 0, 12, 6], P1, Q1, { lines: [L([2, 5], [8, 4], { arrow: 'end', w: 0.6 })] });
   const figWS2 = gridFig([0, 0, 12, 5], P2, Q2, axis(6, 0, 5));
-  const fig1 = gridFig([0, 0, 8, 6], P3, Q3, { lines: [L([2, 1], [6, 1], { arrow: 'end', w: 0.6 })] });
+  const fig1 = gridFig([0, 0, 8, 6], P3, Q3, { lines: [L([2, 0.8], [6, 0.8], { arrow: 'end', w: 0.6 })] });
   const fig2 = gridFig([0, 0, 8, 6], P4, Q4, axis(4, 0, 6));
-  const fig3 = gridFig([0, 0, 8, 6], P5, Q5, { dots: [{ p: O5 }], labels: [{ p: O5, t: 'O', dx: 3, dy: 3, halo: true }] }, { noLinks: true });
+  const fig3 = gridFig([0, 0, 8, 6], P5, Q5, { dots: [{ p: O5 }], labels: [{ p: O5, t: 'O', dx: 3, dy: 3, halo: true }], over: { 2: [3.8, 0.6] } }, { noLinks: true });
   const fig6 = FIG({
     grid: [0, 0, 9, 7], pad: 5,
     polys: [{ pts: P6, w: 0.5 }, { pts: Q6, w: 0.5 }],
@@ -99,7 +99,7 @@
     a: { lines: [L(O6, P6[0], { dash: true }), L(O6, Q6[0], { dash: true }), L(O6, P6[1], { dash: true }), L(O6, Q6[1], { dash: true })], dots: [{ p: O6, r: 1 }], labels: [{ p: O6, t: 'O', dx: 3.2, dy: 3.2, halo: true }] }
   });
   const figQ1 = gridFig([0, 0, 9, 6], P7, Q7, { lines: [L([2, 5], [7, 5], { arrow: 'end', w: 0.6 })] });
-  const figQ2 = gridFig([0, 0, 9, 6], P8, Q8, axis(4, 0, 6));
+  const figQ2 = gridFig([0, 0, 9, 6], P8, Q8, Object.assign({ over: { 2: [0, 3.8] } }, axis(4, 0, 6)), { over: { 2: [0, 3.8] } });
 
   // 検算の道具（checks の式の先頭にそえる）
   const GL = 'const D=Math.PI/180, mv=(p,v)=>[p[0]+v[0],p[1]+v[1]], rot=(p,c,d)=>{const t=d*D,x=p[0]-c[0],y=p[1]-c[1];return [c[0]+x*Math.cos(t)-y*Math.sin(t), c[1]+x*Math.sin(t)+y*Math.cos(t)];}, refl=(p,a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],t=((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy),fx=a[0]+t*dx,fy=a[1]+t*dy;return [2*fx-p[0],2*fy-p[1]];}, same=(A,Bq)=>A.every((p,i)=>near(p[0],Bq[i][0])&&near(p[1],Bq[i][1])), v2=(p,q)=>[q[0]-p[0],q[1]-p[1]], cr=(u,w)=>u[0]*w[1]-u[1]*w[0], dot=(u,w)=>u[0]*w[0]+u[1]*w[1], len=u=>Math.hypot(u[0],u[1]);';
@@ -166,27 +166,27 @@
       WD('① 平行移動では、対応する点を結ぶ線分は、{{平行}}で長さが{{等しい}}。\n② 対称移動では、結ぶ線分は、軸で{{垂直}}に{{2等分}}される。\n③ 回転移動では、対応する点は、{{中心}}から{{等しい}}きょりにある。\n④ 180° の回転移動を、{{点対称移動}}という。', 4, { label: 'ことば' }),
       F(6, cap(fig1, '図1'), cap(fig2, '図2'), cap(fig3, '図3')),
       C2([
-        T('（1）', '図1で、△ABC を、矢印の方向に、矢印の長さだけ平行移動した △A′B′C′ を、図にかこう。', 4),
+        T('（1）', '図1で、△ABC を、矢印の方向に、矢印の長さだけ平行移動した △A′B′C′ をかこう。', 3),
         B(2, '図1の赤い三角形\n（A′ は A から右へ 4）')
       ], [
-        T('（2）', '図2で、△ABC を、直線 ℓ を対称の軸として対称移動した △A′B′C′ を、図にかこう。', 4),
+        T('（2）', '図2で、△ABC を、直線 ℓ を軸として対称移動した △A′B′C′ をかこう。', 3),
         B(2, '図2の赤い三角形\n（A′ は A と同じ高さ）')
       ], '1:1'),
-      MA('【説明】平行移動と対称移動で、対応する点を結ぶ線分には、どんなちがいがあるか、隣の人に説明しよう。\n説明できた ☐　　聞いてくれた人（　　　　　　）', 2),
+      MA('【説明】対応する点を結ぶ線分の性質を、平行移動と対称移動で言い比べよう。\n説明できた ☐　　聞いてくれた人（　　　　　　）', 2),
       G(1),
       HD('使ってみる', '移動の性質を使って、図をかいたり、求めたりしよう。'),
       C2([
-        T('（3）', '図3で、△ABC を、点 O を中心として時計回りに 90° 回転移動した △A′B′C′ を、図にかこう。', 3),
+        T('（3）', '図3で、△ABC を、点 O を中心に時計回りに 90° 回転移動した △A′B′C′ をかこう。', 3),
         B(2, '図3の赤い三角形\n（OA＝OA′、∠AOA′＝90°）')
       ], [
-        T('（4）', '△ABC を平行移動して △DEF に重ねた（A→D、B→E、C→F）。CF＝7cm のとき、線分 BE の長さを求めよう。また、BE と平行な線分を、すべて答えよう。', 6),
-        B(2, 'BE＝7cm\nAD、CF')
+        T('（4）', '△ABC を平行移動した △A′B′C′ で、CC′＝7cm。BB′ の長さと、BB′ に平行な線分は。', 3),
+        B(2, 'BB′＝7cm\nAA′、CC′')
       ], '1:1'),
       C2([
-        T('（5）', '点 A を、直線 ℓ を対称の軸として対称移動した点を A′ とする。AA′ と ℓ の交点を M とすると、AM＝3.5cm だった。AA′ の長さと、AA′ と ℓ のつくる角を求めよう。', 6),
+        T('（5）', '点 A を直線 ℓ で対称移動した点が A′。AA′ と ℓ の交点 M で AM＝3.5cm のとき、AA′ の長さと、2直線の角は。', 4),
         B(2, 'AA′＝3.5×2＝7（cm）\n角は 90°')
       ], [
-        T('（6）', '△ABC を、点 O を中心に時計回りに 55° 回転移動して、△A′B′C′ に重ねた。OB＝5cm のとき、OB′ の長さと、∠BOB′、∠COC′ の大きさを求めよう。', 6),
+        T('（6）', '△ABC を、点 O を中心に時計回りに 55° 回転移動して △A′B′C′ にした。OB＝5cm のとき、OB′ と ∠BOB′、∠COC′ は。', 4),
         B(2, 'OB′＝5cm\n∠BOB′＝∠COC′＝55°')
       ], '1:1'),
       G(1),
@@ -206,11 +206,11 @@
       G(1),
       HD('チャレンジ★★', '入試にも出る問題。ヒントカードを見てもOK。'),
       C2([
-        T('（8）', '右の図で、△ABC を、ある点 O を中心に回転移動すると、△A′B′C′ に重なった。回転の中心 O を、図にかきこもう。また、時計回りに何度回転したかも答えよう。（180° 以下）', 8),
-        B(5, 'O は、A と A′、B と B′ から等しいきょりの点\n方眼で確かめると\n　 O は、左から 4、下から 3\n∠AOA′＝90° だから\n　 時計回りに 90°')
+        T('（8）', '右の図で、△ABC を、ある点 O を中心に回転移動すると、△A′B′C′ に重なった。回転の中心 O を図にかきこもう。また、時計回りに何度回転したか答えよう。（180° 以下）', 6),
+        B(4, 'A と A′、B と B′ から\n等しいきょりの点が O\n左から 4、下から 3\n時計回りに 90°')
       ], [
-        MA('① 回転の中心から、A までと、A′ までは、どんな関係だったかな。\n② A と A′ から等しいきょりの点を、方眼でさがしてみよう。', 5, { label: 'ヒントカード' }),
-        F(10, fig6)
+        MA('① 回転の中心から、A までと、A′ までは、どんな関係だったかな。\n② A と A′ から等しいきょりの点を、方眼でさがしてみよう。', 6, { label: 'ヒントカード' }),
+        F(9, fig6)
       ], '1:1')
     ],
 
@@ -218,10 +218,10 @@
     qz: [
       HD('小テスト', '5分で解こう。　　　　　　　　　　　　　得点（　　　　／10点）'),
       G(1),
-      F(5, cap(figQ1, '図1'), cap(figQ2, '図2')),
-      T('（1）', '図1で、△ABC を、矢印の方向に、矢印の長さだけ平行移動した △A′B′C′ をかこう。（3点）', 2),
+      F(6, cap(figQ1, '図1'), cap(figQ2, '図2')),
+      T('（1）', '図1で、△ABC を平行移動した △A′B′C′ をかこう。（3点）\n矢印の方向に、矢印の長さだけ動かす。', 2),
       B(1, '図1の赤い三角形'),
-      T('（2）', '図2で、△ABC を、直線 ℓ を対称の軸として対称移動した △A′B′C′ をかこう。（3点）', 2),
+      T('（2）', '図2で、△ABC を対称移動した △A′B′C′ をかこう。（3点）\n直線 ℓ を、対称の軸とする。', 2),
       B(1, '図2の赤い三角形'),
       T('（3）', '△ABC を、点 O を中心に回転移動して、△A′B′C′ に重ねた。OA＝6cm、∠COC′＝75° のとき、OA′ の長さと ∠AOA′ の大きさを求めよう。（2点）', 3),
       B(2, 'OA′＝6cm、∠AOA′＝75°'),
