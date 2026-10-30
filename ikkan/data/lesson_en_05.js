@@ -29,7 +29,7 @@
     const sample = (ax, ay, bx, by) => { const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 0.5)); for (let i = 0; i <= n; i++) obs.push([ax + (bx - ax) * i / n, ay + (by - ay) * i / n]); };
     const sampleArc = (cx, cy, r, a0, a1) => { const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) * D2R * r / 0.5)); for (let i = 0; i <= n; i++) { const a = (a0 + (a1 - a0) * i / n) * D2R; obs.push([cx + r * Math.cos(a), cy - r * Math.sin(a)]); } };
     const box0 = (t, sz) => [emOf(strip(t).replace(/°/g, '.')) * sz * 0.85 / 2 + 0.6, sz * 0.55 + 0.4];                // 字の枠の半分の大きさ（mm）
-    const free = (cx, cy, hw, hh) => cx - hw >= 0.3 && cx + hw <= W - 0.3 && cy - hh >= top && cy + hh <= H - 0.3 && !obs.some(q => Math.abs(q[0] - cx) < hw && Math.abs(q[1] - cy) < hh) && !rects.some(q => Math.abs(q[0] - cx) < hw + q[2] && Math.abs(q[1] - cy) < hh + q[3]);
+    const free = (cx, cy, hw, hh) => cx - hw >= 0.3 && cx + hw <= W - 0.3 && cy - hh >= top && cy + hh <= H - 0.3 && !obs.some(q => Math.abs(q[0] - cx) < hw + 0.5 && Math.abs(q[1] - cy) < hh + 0.5) && !rects.some(q => Math.abs(q[0] - cx) < hw + q[2] && Math.abs(q[1] - cy) < hh + q[3]);
     const mk = col => {
       const o = { s: '' }, dsh = ' stroke-dasharray="1.4 1"';
       const turn = (V, P, Q) => { const a1 = dir(V, P), a2 = dir(V, Q); return [a1, ((a2 - a1 + 540) % 360) - 180]; };   // 角の始まりの向きと、まわる角（−180〜180）
@@ -50,7 +50,7 @@
       // 点の名前：向き pref（度）のほうに、線や字をよけて、自動でおく
       o.lbf = (p, t, pref, d0, size) => {
         const sz = size || 3, [hw, hh] = box0(t, sz), px = X(p[0]), py = Y(p[1]);
-        for (const dd of [0, 0.8, 1.6, 2.4]) for (const off of [0, 25, -25, 50, -50, 75, -75, 100, -100, 130, -130, 160, 180]) {
+        for (const dd of [0, 0.8, 1.6, 2.4, 3.2, 4.4]) for (const off of [0, 22, -22, 45, -45, 67, -67, 90, -90, 112, -112, 135, -135, 157, -157, 180]) {
           const a = (pref + off) * D2R, d = (d0 || 1.4) + dd + Math.abs(Math.cos(a)) * hw + Math.abs(Math.sin(a)) * hh, cx = px + d * Math.cos(a), cy = py - d * Math.sin(a);
           if (free(cx, cy, hw, hh)) return o.tx(p, t, cx - px, cy - py, 'middle', sz);
         }

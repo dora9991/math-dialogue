@@ -86,7 +86,7 @@
   SD4.E = crossPt(SD4, 'A', 'C', 'B', 'D');
   const SD8 = { A: 180, C: 0, B: 248, D: 76 };              // （8）：AC が直径、∠ACB＝34°、∠CAD＝38°
   const SQA = { A: 205, B: 335, P: 90 };                    // 小テスト ア：中心角 130°
-  const SQI = { A: 218, B: 322, P: 90, Q: 350 };            // イ：円周角 52°
+  const SQI = { A: 218, B: 322, P: 90, Q: 20 };             // イ：円周角 52°
   const SQU = { A: 180, B: 0, P: 112 };                     // ウ：AB が直径、∠PAB＝56°
   const SQ5 = { A: 90, B: 215, C: 325 };                    // チャレンジ：∠BAC＝55°
   const P6 = 2 * Math.acos(0.6) / D2R;                      // （6）：AB＝10、AP＝6、BP＝8 の P の向き（度）
@@ -138,7 +138,7 @@
   const qa = small('ア', SQA, [['O', 'A'], ['O', 'B'], ['P', 'A'], ['P', 'B']], pl(SQA, { O: ['O', 90, 3.2] }),
     [{ at: 'O', a: 'A', b: 'B', t: 'auto', r: 3.4, lr: 6.6 }, { at: 'P', a: 'A', b: 'B', t: 'x', r: 4.4, lr: 8.4 }]);
   const qi = small('イ', SQI, [['P', 'A'], ['P', 'B'], ['Q', 'A'], ['Q', 'B']], pl(SQI),
-    [{ at: 'P', a: 'A', b: 'B', t: 'auto', r: 4.4, lr: 8.4 }, { at: 'Q', a: 'A', b: 'B', t: 'x', r: 4.4, lr: 5.6 }], []);
+    [{ at: 'P', a: 'A', b: 'B', t: 'auto', r: 4.4, lr: 8.4 }, { at: 'Q', a: 'A', b: 'B', t: 'x', r: 4.4, lr: 7 }], []);
   const qu = small('ウ', SQU, [['A', 'B'], ['P', 'A'], ['P', 'B']], pl(SQU, { O: ['O', 270, 3.4] }),
     [{ at: 'A', a: 'B', b: 'P', t: 'auto', r: 4.4, lr: 8.6 }, { at: 'B', a: 'A', b: 'P', t: 'x', r: 4.4, lr: 7 }]);
   const q5 = CIRC({
