@@ -140,7 +140,7 @@
   const fig1 = CF(boxOf([...circPts(O0, 2), A1], 0.8), '図1', (k) => {
     k.circ(O0, 2).ln(A1, P1).ln(A1, Q1).ln(O0, P1).ln(O0, Q1).ln(P1, Q1);
     [O0, A1, P1, Q1].forEach(Z => k.dot(Z));
-    k.am(A1, P1, Q1, 3.5).alf(A1, P1, Q1, '64°', 5.5);
+    k.am(A1, P1, Q1, 2.8).alf(A1, P1, Q1, '64°', 5.5);
     k.lbf(O0, 'O', 180).lbf(A1, 'A', 0).lbf(P1, 'P', 100).lbf(Q1, 'Q', 260);
   });
   // 図2：△ABC（AB＝8、BC＝7、CA＝9）の 3辺にふれる円（内接円）。AP＝5、BQ＝3、CR＝4
@@ -183,7 +183,7 @@
   const figQ1 = CF(boxOf([...circPts(O0, 2), Aq], 0.8), '', (k) => {
     k.circ(O0, 2).ln(Aq, Pq).ln(Aq, Qq).ln(O0, Pq).ln(O0, Qq).ln(Pq, Qq);
     [O0, Aq, Pq, Qq].forEach(Z => k.dot(Z));
-    k.am(Aq, Pq, Qq, 3.5).alf(Aq, Pq, Qq, '44°', 5.5);
+    k.am(Aq, Pq, Qq, 2.8).alf(Aq, Pq, Qq, '44°', 5.5);
     k.lbf(O0, 'O', 180).lbf(Aq, 'A', 0).lbf(Pq, 'P', 100).lbf(Qq, 'Q', 260);
   });
   // 小テスト（5）：円 O（半径 3）の外の点 P（PA＝8）。接点 A、B。点 C（向き 0°）での接線が PA、PB と交わる点 D、E
