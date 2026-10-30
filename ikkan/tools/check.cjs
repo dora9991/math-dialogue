@@ -53,7 +53,7 @@ async function readQr(page, loc) {
       await page.waitForSelector('.wsp');
       await page.evaluate(() => { document.querySelector('.pages').style.zoom = 1; });
       const res = await page.evaluate(([trial, expectQr]) => {
-        const issues = [], first = document.querySelector('.wsp');
+        const issues = [], notes = [], first = document.querySelector('.wsp');
         const pitchPx = parseFloat(first.style.getPropertyValue('--pitch') || '7') * 96 / 25.4;
         document.querySelectorAll('.wsp').forEach((sp, pi) => {
           if (sp.classList.contains('plan-page')) {
@@ -85,6 +85,7 @@ async function readQr(page, loc) {
             const lines = tx.getBoundingClientRect().height / pitchPx, have = b.getBoundingClientRect().height / pitchPx;
             const label = (b.querySelector('.tag') ? b.querySelector('.tag').textContent + '：' : '板書：') + tx.textContent.slice(0, 18);
             if (lines > have + 0.05) issues.push(`ページ${pi + 1} 行あふれ（${have}行の枠に ${Math.round(lines * 100) / 100}行）「${label}」`);
+            else if (b.classList.contains('wb-t') && !b.classList.contains('box') && have - Math.ceil(lines - 0.05) >= 1) notes.push(`ページ${pi + 1} T の行数が多め（${have}行の枠に、字は ${Math.ceil(lines - 0.05)}行）「${label}」`);   // 参考：33行をむだに使っていないか
             if (tx.scrollWidth > tx.clientWidth + 1) issues.push(`ページ${pi + 1} 横はみ出し「${label}」`);
           });
           sp.querySelectorAll('.wt').forEach((t, k) => {   // 表が、枠の高さを超えていないか
@@ -143,7 +144,7 @@ async function readQr(page, loc) {
             });
           });
         });
-        return { issues };
+        return { issues, notes };
       }, [L.trial, L.qr && (tab === 'dr' || tab === 'qz')]);
       const mode = tab === 'plan' ? '授業計画' : (ans ? '解答つき' : '生徒用'), tag = tab === 'plan' ? 'plan' : (ans ? 'ans' : 'student');
       const n = await page.locator('.wsp').count();
@@ -158,6 +159,7 @@ async function readQr(page, loc) {
       const name = `${L.id}（${tab === 'dr' ? '演習プリント・' : tab === 'qz' ? '小テスト・' : tab === 'plan' ? '' : 'ワークシート・'}${mode}）`;
       if (res.issues.length) { bad += res.issues.length; console.log(`✗ ${name}`); res.issues.forEach(s => console.log('   ' + s)); }
       else console.log(`○ ${name}　${n}ページ・指摘 0`);
+      if (!ans && res.notes && res.notes.length) res.notes.forEach(s => console.log('   （参考）' + s));
     }
   }
   // 3点セット：ページ数と、印刷（PDF）のページ数
