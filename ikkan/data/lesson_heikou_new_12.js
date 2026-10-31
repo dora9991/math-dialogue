@@ -100,7 +100,7 @@
   const A_D5 = '∠OAB＝∠OCD（合同な図形の、対応する角）\n錯角が等しいから AB∥DC';
   const A_D6 = '等しい辺は AO＝BO の1組だけ。錯角 ∠OAC＝∠OBD を使って、1組の辺とその両端の角にする。';
   const A_D8 = '（仮定）正三角形 ABC、ADE　　（結論）BD＝CE\n（証明）△ABD と △ACE において\n正三角形だから　AB＝AC …①　　AD＝AE …②\n∠BAD＝60°+∠CAD、∠CAE＝60°+∠CAD より\n　∠BAD＝∠CAE …③\n①、②、③より、2組の辺とその間の角が、\nそれぞれ等しいから　△ABD≡△ACE\n合同な図形の、対応する辺は等しいから　BD＝CE';
-  const A_Q1 = '① 対頂角は等しい\n② 合同な図形の、対応する辺は等しい\n③ 三角形の合同条件（3組の辺）';
+  const A_Q1 = '① 合同な図形の、対応する辺は等しい（2点）\n② 三角形の合同条件（3組の辺）（2点）';
   const A_Q2 = blanksOf(PF_Q2).map((b, i) => b + '（' + [1, 1, 2, 2][i] + '点）').join('　');
   const A_QC = BL(PF_M);
 
@@ -129,7 +129,7 @@
       // チャレンジ（8）正三角形 ABC、ADE（頂点 A 共有）。∠BAD＝60°+∠CAD、∠CAE＝60°+∠CAD。△ABD≡△ACE（SAS）。BD＝CE。ほかの図（D、E の位置を変えた 24個）でも成り立つ
       chk('第12時 チャレンジ（8）', `const f = ${J(figData(F_EQ))}, P = f.pts; let ok = FIGOK(f) && CONG(P, ${J(C_EQ)}) && near(AN(P, '∠BAC'), 60) && near(AN(P, '∠DAE'), 60) && near(AN(P, '∠BAD'), AN(P, '∠BAC') + AN(P, '∠CAD')) && near(AN(P, '∠CAE'), AN(P, '∠DAE') + AN(P, '∠CAD')) && near(AN(P, '∠BAD'), AN(P, '∠CAE')) && near(D(P, 'BD'), D(P, 'CE')) && near(D(P, 'AB'), D(P, 'BC')) && near(D(P, 'AD'), D(P, 'DE')); const pl = (r, d) => [r * Math.cos(d * Math.PI / 180), r * Math.sin(d * Math.PI / 180)]; for (let i = 0; i < 24; i++) { const s = 2 + (i % 5) * 0.5, t = 1 + (i % 4) * 0.6, b = -80 + (i * 13) % 60, e = 20 + (i * 17) % 100, Q = { A: [0, 0], B: pl(s, b), C: pl(s, b + 60), D: pl(t, e), E: pl(t, e + 60) }; ok = ok && near(D(Q, 'BD'), D(Q, 'CE')) && CONG(Q, ${J(C_EQ)}.eq ? { t1: 'ABD', t2: 'ACE', kind: 'SAS', eq: [['AB', 'AC'], ['AD', 'AE'], ['∠BAD', '∠CAE']] } : null); } return ok && ${J(A_D8)}.split('\\n').length === 8;`),
       // 小テスト（1）：答えの行数
-      chk('第12時 小テスト（1）', `return ${J(A_Q1)}.split('\\n').length === 3;`),
+      chk('第12時 小テスト（1）', `return ${J(A_Q1)}.split('\\n').length === 2;`),
       // 小テスト（2）AC∥DB、CO＝DO ならば AO＝BO。△AOC≡△BOD（ASA：∠OCA＝∠ODB は錯角）
       chk('第12時 小テスト（2）', `const f = ${J(figData(F_Q2))}, P = f.pts; return FIGOK(f) && CONG(P, ${J(C_Q2)}) && near(D(P, 'AO'), D(P, 'BO')) && near(AN(P, '∠OCA'), AN(P, '∠ODB')) && ${J(A_Q2)}.replace(/（\\d点）/g, '') === '対頂角　錯角　1組の辺とその両端の角　辺' && ${J(A_Q2)}.match(/（(\\d)点）/g).map(t => +t[1]).reduce((a, c) => a + c, 0) === 6;`),
       // チャレンジ：M は AB の中点、AP⊥ℓ、BQ⊥ℓ（P、Q は ℓ 上）。△APM≡△BQM（ASA：∠PAM＝∠QBM は内角の和から）。AP＝BQ
@@ -165,10 +165,10 @@
         T('（1）', '線分 AB と CD が点 O で交わるとき、∠AOC＝∠BOD がいえる根拠を答えよう。', 3),
         B(2, A_D1)
       ], [
-        T('（2）', '根拠にしてよいものを、すべて選ぼう。\nア 仮定（わかっていること）\nイ 対頂角は等しい\nウ 図で、等しく見えること\nエ これから示したい結論', 5),
+        T('（2）', '根拠にできるものを全部選ぼう。\nア 仮定（わかっていること）\nイ 対頂角は等しい\nウ 図で、等しく見えること\nエ これから示したい結論', 5),
         B(1, A_D2)
       ], '1:1'),
-      MA('【説明】（1）の根拠を、「なぜ、そういえるか」を使って、隣の人に説明しよう。\n説明できた ☐　　聞いてくれた人（　　　　　　）', 2),
+      MA('【説明】（1）の根拠を、隣の人に説明しよう。\n説明できた ☐　　聞いてくれた人（　　　　　　）', 2),
       HD('使ってみる', '図を見て、根拠や合同条件を答えよう。'),
       F(5, cap(geoOf(F_PT), '図1'), cap(geoOf(F_PR), '図2'), cap(geoOf(F_H), '図3')),
       C2([
@@ -213,18 +213,18 @@
     qz: [
       HD('小テスト', '5分で解こう。　　　　　　　　　　　　　得点（　　　　／10点）'),
       G(1),
-      T('（1）', '次のことがいえる根拠を、答えよう。（4点）\n① 線分 AB と CD が点 O で交わっているとき、∠AOC＝∠BOD\n② △ABC≡△DEF のとき、BC＝EF\n③ AB＝DE、BC＝EF、CA＝FD のとき、△ABC≡△DEF', 4),
-      B(3, A_Q1),
+      T('（1）', '次のことがいえる根拠を、答えよう。（4点）\n① △ABC≡△DEF のとき、BC＝EF\n② AB＝DE、BC＝EF、CA＝FD のとき、△ABC≡△DEF', 3),
+      B(2, A_Q1),
       C2([
         T('（2）', '右の図で、AB と CD が点 O で交わり、AC∥DB、CO＝DO ならば、AO＝BO である。証明の空欄をうめよう。（6点）\n' + PF_Q2, 9),
-        B(1, A_Q2)
+        B(2, A_Q2)
       ], [
         F(8, geoOf(F_Q2))
       ], '3:1'),
       G(1),
       HD('チャレンジ', '入試レベル（別枠）。正解なら、ほかがまちがっていても 10点。　　正解 ☐'),
       C2([
-        T('（3）', '右の図で、M は線分 AB の中点で、直線 ℓ は M を通る。A、B から ℓ にひいた垂線の足を P、Q とすると、AP＝BQ である。証明の空欄をうめよう。\n' + PF_M, 11),
+        T('（3）', '右の図で、M は線分 AB の中点で、直線 ℓ は M を通る。A、B から ℓ にひいた垂線の足を P、Q とすると、AP＝BQ である。証明の空欄をうめよう。\n' + PF_M, 12),
         B(1, A_QC)
       ], [
         F(9, geoOf(F_M))
