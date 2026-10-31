@@ -88,7 +88,7 @@
   const planeTask = COX({
     xmin: -2, xmax: 5, ymin: -4, ymax: 8,
     given: { points: [{ x: P0.p, y: P0.q, text: '(2, 4)', at: [2.25, 4.9], anchor: 'start' }] },
-    lines: [{ a: P0.a, b: P0.b, text: 'y＝3x−2', at: [-1.7, -3.3], anchor: 'start' }]
+    lines: [{ a: P0.a, b: P0.b, text: 'y＝3x−2', at: [3.5, 6.3], anchor: 'start' }]
   });
   const planeTh = COX({
     xmin: -2, xmax: 5, ymin: -6, ymax: 4,
@@ -115,7 +115,7 @@
       G(1),
       WD('変化の割合は、グラフの{{傾き}}と等しい。\n傾き 3 なら、式は y＝3x+b と表せる。\n点 (p, q) を通る → x＝p、y＝q を{{代入}}。\n代入して {{b}} を求め、y＝ax+b の形で{{式}}を書く。', 4, { label: 'ことば（教科書で調べよう）' }),
       G(1),
-      K('例題', '変化の割合が {{−2}} で、x＝{{3}} のとき y＝{{1}} である一次関数の式を求めよう。', 2),
+      K('例題', '変化の割合が {{−2}} で、x＝{{3}} のとき y＝{{1}} である。式を求めよう。', 1),
       B(4, T_E1),
       T('', '【代入のくふう】x と y を、とりちがえないための方法を書こう。', 1),
       B(3, '座標 (3, 1) の上に、x、y と小さく書いておく。\nx＝3、y＝1 を、式のどこに入れるか、言いながら代入する。')
@@ -152,7 +152,7 @@
       G(1),
       HD('チャレンジ★★', '入試にも出る問題。ヒントカードを見てもOK。'),
       C2([
-        T('（8）', D8.t, 5),
+        T('（8）', D8.t, 3),
         B(6, D8.s)
       ], [
         MA('① 平行な直線の傾きは、どうなっているかな。\n② m の式が決まったら、点 (a, −3) の座標を、どう使えばいいかな。', 6, { label: 'ヒントカード' })
@@ -186,16 +186,16 @@
   const item = (label, text, ans, d) => push(label, `const d = ${J(d)}, c = cond(${J(text)}), e = fin(${J(ans)}); if (!c || !e) return false; const f = x => EV(e.replace(/^y＝/, ''), { x }); return near(c[0], d.a) && near(c[1], d.b) && near(f(d.p), d.q) && near(f(d.p + 1) - f(d.p), d.a) && near(d.q - d.a * d.p, d.b) && near(ab(e)[0], d.a) && near(ab(e)[1], d.b) && scanV(${J(ans)}, { x: d.p, y: d.q, a: d.a, b: d.b });`);
   item('第9時 今日の問い', T_WS[0], A_WS[0], P0);
   item('第9時 例題', T_WS.find(t => /変化の割合が/.test(t)), A_WS.find(t => /y＝−2x\+7/.test(t)), E1);
-  D.forEach((d, i) => item('第9時 演習（' + (i + 1 + (i < 2 ? 0 : 2) - (i < 2 ? 0 : 0)) + '）', d.t, d.s, d));
+  D.forEach((d, i) => item('第9時 演習（' + (i + 1) + '）', d.t, d.s, d));
   Q.forEach((d, i) => item('第9時 小テスト（' + (i + 1) + '）', d.t, d.s, d));
   // 画面に出る問題の文（K・T の text）と、データの文が同じ。答えの文は、B の中にある
   push('第9時 画面の問題文と答え', `const T = ${J(T_DR.concat(T_QZ).concat(T_WS))}.join('\\n'), A = ${J(A_DR.concat(A_QZ).concat(A_WS))}.join('\\n'), L = ${J(D.concat(Q).map(d => [d.t, d.s]))}; return L.every(([t, s]) => T.includes(t) && A.includes(s));`);
-  // 演習 6問の番号（（1）（2）は確かめる、（3）〜（6）は使ってみる）と、画面の文が対応している
-  push('第9時 演習の番号', `const T = ${J(T_DR)}, L = ${J(D.map(d => d.t))}; return L.every((t, i) => T.some(x => x === t) && T.indexOf(t) >= 0) && L.length === 6;`);
+  // 演習（1）〜（6）の問題の文が、画面に出る順（（1）（2）、（3）（4）、（5）（6））に、データと同じ
+  push('第9時 演習の番号', `const T = ${J(T_DR.slice(0, 6))}, L = ${J(D.map(d => d.t))}; return L.length === 6 && L.every((t, i) => T[i] === t);`);
   // チャレンジ（8）：画面の文から、平行 → 傾き −2、点 (3, 1)。m は y＝−2x+7。点 (a, −3) が m 上 → a＝5。もとの直線 y＝−2x+5 とは別の直線（切片がちがう）
   push('第9時 チャレンジ（8）', `const D = ${J(D8)}, t = ${J(T_DR.find(t => /に平行で、点 \(3, 1\) を通る直線を m/.test(t)))}, T = ${J(D8.s)}, c = cond(t), e = fin(T); return !!c && near(c[0], D.a) && near(c[1], D.b) && !!e && near(ab(e)[0], D.a) && near(ab(e)[1], D.b) && near(ab(e)[0] * 3 + ab(e)[1], 1) && near(D.a * D.a5 + D.b, -3) && !near(D.b, 5) && near(ab('y＝−2x+5')[0], ab(e)[0]) && scanV(T, { x: 3, y: 1, b: 7, a: 5 }) && /点 \\(a, −3\\)/.test(t);`);
   // 小テスト チャレンジ：点 (1, 4)、x が 2 増えると y が 3 増える → 傾き [[3/2]]、y＝[[3/2]]x+[[5/2]]。x＝−3 のとき y＝−2（k＝−2）。点 (1, 4) から x が 4 減ると、y は 6 減って 4−6＝−2
-  push('第9時 小テスト チャレンジ', `const D = ${J(QC)}, T = D.s, t = ${J(T_QZ[T_QZ.length - 1])}; return near(D.a, 3 / 2) && near(D.a * D.p + D.b, D.q) && near(D.a * D.x + D.b, D.k) && near(D.q + D.a * (D.x - D.p), D.k) && near(D.q - 3 / 2 * 4, D.k) && D.k === -2 && T.includes('k＝−2') && T.includes('y＝[[3/2]]x+[[5/2]]') && near(ab('y＝[[3/2]]x+[[5/2]]')[0], D.a) && near(ab('y＝[[3/2]]x+[[5/2]]')[1], D.b) && /x の値が 2 増加すると y の値が 3 増加/.test(t) && /点 \\(1, 4\\) を通り/.test(t) && /点 \\(−3, k\\)/.test(t) && scanV(T, { x: -3, y: -2, b: 5 / 2, k: -2 }) === scanV(T, { x: -3, y: -2, b: 5 / 2, k: -2 });`);
+  push('第9時 小テスト チャレンジ', `const D = ${J(QC)}, T = D.s, t = ${J(T_QZ[T_QZ.length - 1])}; return near(D.a, 3 / 2) && near(D.a * D.p + D.b, D.q) && near(D.a * D.x + D.b, D.k) && near(D.q + D.a * (D.x - D.p), D.k) && near(D.q - 3 / 2 * 4, D.k) && D.k === -2 && T.includes('k＝−2') && T.includes('y＝[[3/2]]x+[[5/2]]') && near(ab('y＝[[3/2]]x+[[5/2]]')[0], D.a) && near(ab('y＝[[3/2]]x+[[5/2]]')[1], D.b) && /x の値が 2 増加すると y の値が 3 増加/.test(t) && /点 \\(1, 4\\) を通り/.test(t) && /点 \\(−3, k\\)/.test(t) && (L => scanV(L.slice(1, 4).join('\\n'), { x: 1, y: 4, b: 5 / 2 }) && scanV(L[4], { x: -3, y: -2 }) && scanV(L[5], { k: -2 }) && arith(T))(T.split('\\n'));`);
   // 小テストの得点：2＋3＋3＋2＝10
   push('第9時 小テストの配点', `return ${J(Q.map(d => d.pt))}.reduce((a, c) => a + c, 0) === 10;`);
   // 今日の問い・例題の座標平面：赤い直線 y＝3x−2 は、印刷した点 (2, 4) を通る。枠（−2≦x≦5、−4≦y≦8）に、点 (2, 4)、切片 (0, −2) が入る
