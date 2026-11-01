@@ -55,11 +55,11 @@
   const TH = { A: [10, 24], B: [-4, -6], a: 2, b: 4 };
   // （1）y＝x+2（y＝x がかいてある）　（2）切片
   const D1 = { a: 1, b: 2, xs: XS, ys: XS.map(x => x + 2) };
-  const P_D1 = { xmin: -3, xmax: 3, ymin: -2, ymax: 6, given: { lines: [{ a: 1, b: 0, text: 'y＝x', at: [1.4, -0.9], anchor: 'start' }] }, lines: [{ a: 1, b: 2, text: 'y＝x+2', at: [-2.9, 2.2], anchor: 'start' }], points: [{ x: 0, y: 2 }, { x: 1, y: 3 }] };
+  const P_D1 = { xmin: -3, xmax: 3, ymin: -2, ymax: 6, given: { lines: [{ a: 1, b: 0, text: 'y＝x', at: [1.7, 0.45], anchor: 'start' }] }, lines: [{ a: 1, b: 2, text: 'y＝x+2', at: [-2.9, 2.2], anchor: 'start' }], points: [{ x: 0, y: 2 }, { x: 1, y: 3 }] };
   const D2 = [['y＝2x+5', 5], ['y＝−3x−1', -1], ['y＝[[1/3]]x', 0], ['y＝4−x', 4]];
   // （3）y＝−2x（かいてある）に ① y＝−2x+3（図2）② y＝−2x−2（図3）　（4）y＝3x−1 の上の点
-  const P_D3a = { xmin: -3, xmax: 3, ymin: -4, ymax: 5, given: { lines: [{ a: -2, b: 0, text: 'y＝−2x', at: [1.0, -3.4], anchor: 'end' }] }, lines: [{ a: -2, b: 3, text: 'y＝−2x+3', at: [3.0, 3.6], anchor: 'end' }], points: [{ x: 0, y: 3 }, { x: 1, y: 1 }] };
-  const P_D3b = { xmin: -3, xmax: 3, ymin: -4, ymax: 5, given: { lines: [{ a: -2, b: 0, text: 'y＝−2x', at: [1.0, -3.4], anchor: 'end' }] }, lines: [{ a: -2, b: -2, text: 'y＝−2x−2', at: [3.0, 1.5], anchor: 'end' }], points: [{ x: 0, y: -2 }, { x: -1, y: 0 }] };
+  const P_D3a = { xmin: -3, xmax: 3, ymin: -4, ymax: 5, given: { lines: [{ a: -2, b: 0, text: 'y＝−2x', at: [2.95, -2.6], anchor: 'end' }] }, lines: [{ a: -2, b: 3, text: 'y＝−2x+3', at: [3.0, 3.6], anchor: 'end' }], points: [{ x: 0, y: 3 }, { x: 1, y: 1 }] };
+  const P_D3b = { xmin: -3, xmax: 3, ymin: -4, ymax: 5, given: { lines: [{ a: -2, b: 0, text: 'y＝−2x', at: [2.95, -2.6], anchor: 'end' }] }, lines: [{ a: -2, b: -2, text: 'y＝−2x−2', at: [3.0, 1.5], anchor: 'end' }], points: [{ x: 0, y: -2 }, { x: -1, y: 0 }] };
   const D4 = { a: 3, b: -1, c: [['ア', 1, 2], ['イ', -1, -4], ['ウ', 2, 6], ['エ', 0, -1]] };
   // （5）y＝2x+b が (1, 5) を通る　（6）y＝[[1/2]]x+3
   const D5 = { a: 2, p: [1, 5], b: 3 };
