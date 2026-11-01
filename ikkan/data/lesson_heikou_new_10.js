@@ -86,7 +86,7 @@
   const F_KITE = { pts: { A: [0, 3.2], B: [-2, 0.9], C: [0, -1.8], D: [2, 0.9] }, poly: 'ABCD', segs: ['AC'], vl: 'ABCD', pad: 5, given: [['AB', 'AD'], ['CB', 'CD']] };
   const C_KITE = { t1: 'ABC', t2: 'ADC', eq: [['AB', 'AD'], ['CB', 'CD'], ['AC', 'AC']], kind: 'SSS' };
   // 例題：重なった三角形。AB＝AC、AD＝AE（D は AB 上、E は AC 上）。∠A は共通 → 2組の辺とその間の角
-  const OVA = [0, 4.4], OVB = [-2.6, 0], OVC = [2.6, 0], OVD = lerp(OVA, OVB, 0.55), OVE = lerp(OVA, OVC, 0.55);
+  const OVA = [0, 4.4], OVB = [-2.6, 0], OVC = [2.6, 0], OVD = lerp(OVA, OVB, 0.4), OVE = lerp(OVA, OVC, 0.4);
   const F_OV = { pts: { A: OVA, B: OVB, C: OVC, D: OVD, E: OVE }, poly: 'ABC', segs: ['BE', 'CD'], vl: { A: 'A', B: 'B', C: 'C', D: ['D', 180], E: ['E', 0] }, given: [['AB', 'AC'], ['AD', 'AE']] };
   const C_OV = { t1: 'ABE', t2: 'ACD', eq: [['AB', 'AC'], ['AE', 'AD'], ['∠BAE', '∠CAD', '∠A は共通']], kind: 'SAS' };
   // ひろげる（7）：線分 AD と BC が点 O で交わり、AB∥CD。図は AB＜CD（合同でない形）。答えは載せない

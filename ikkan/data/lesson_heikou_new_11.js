@@ -100,7 +100,7 @@
   const A_D6 = 'x は 6 の倍数だから、x＝6n と表せる。\nx＝6n＝3×2n で、2n は整数だから\nx は 3 の倍数である。';
   const A_D8 = '（仮定）四角形 ABCD で、∠A＝∠C、∠B＝∠D　　（結論）∠A+∠B＝180°\n（証明）四角形の内角の和は 360° だから\n　∠A+∠B+∠C+∠D＝360° …①\n仮定より　∠C＝∠A、∠D＝∠B だから、①は\n　∠A+∠B+∠A+∠B＝360°　　2∠A+2∠B＝360°\nよって　∠A+∠B＝180°';
   const A_Q1 = '① 仮定 … ' + ST_Q1[0].h + '　　結論 … ' + ST_Q1[0].c + '\n② 仮定 … ' + ST_Q1[1].h + '　　結論 … ' + ST_Q1[1].c;
-  const A_Q2 = RW_Q.t;
+  const A_Q2 = '（例）三角形が正三角形ならば、その3つの辺は等しい。\n　 「△ABC が正三角形ならば、AB＝BC＝CA」でもよい。';
   const A_Q3 = 'ならない。\nはかったのは、かいた図だけで、ほかの図でも成り立つとはいえない。';
   const A_QC = '（仮定）3つの偶数が連続している　　（結論）その和は 6 の倍数\n（証明）真ん中の偶数を 2n（n は整数）とすると、\n　3つの偶数は　2n−2、2n、2n+2\n　その和は　(2n−2)+2n+(2n+2)＝6n\n　n は整数だから、6n は 6 の倍数である。';
 
@@ -131,7 +131,7 @@
       // 演習（8）四角形 ABCD（∠A＝∠C、∠B＝∠D）：内角の和 360°、2∠A+2∠B＝360°、∠A+∠B＝180°（A を 40〜140°、B を 60〜120° で確かめ。平行四辺形の座標でも確かめ）
       chk('第11時 チャレンジ（8）', `let ok = STOK(${J(ST8)}); for (let a = 40; a <= 140; a += 10) for (let b = 60; b <= 120; b += 10) { const c = a, d = b, tot = a + b + c + d; ok = ok && near(tot, 2 * a + 2 * b) && (near(tot, 360) ? near(a + b, 180) : true); } const P = { A: [0, 0], B: [4, 0], C: [5.5, 3], D: [1.5, 3] }; return ok && near(AN(P, '∠DAB') + AN(P, '∠ABC') + AN(P, '∠BCD') + AN(P, '∠CDA'), 360) && near(AN(P, '∠DAB'), AN(P, '∠BCD')) && near(AN(P, '∠ABC'), AN(P, '∠CDA')) && near(AN(P, '∠DAB') + AN(P, '∠ABC'), 180) && ${J(A_D8)}.includes('∠A+∠B＝180°');`),
       // 小テスト（1）（2）：ならばの前後が、仮定・結論と一致。10 の倍数は 5 の倍数（500 まで）。△ABC≡△DEF のとき BC＝EF
-      chk('第11時 小テスト（1）（2）', `const S = ${J(ST_Q1)}.concat([${J(RW_Q)}]); let ok = S.every(STOK); for (let x = 10; x <= 500; x += 10) ok = ok && x % 5 === 0; const P = { A: [0, 0], B: [4, 0], C: [1, 3], D: [10, 1] }, c = Math.cos(0.5), s = Math.sin(0.5); P.E = [10 + 4 * c, 1 + 4 * s]; P.F = [10 + 1 * c - 3 * s, 1 + 1 * s + 3 * c]; return ok && near(D(P, 'BC'), D(P, 'EF')) && ${J(A_Q1)}.includes('仮定 … ' + S[0].h) && ${J(A_Q1)}.includes('結論 … ' + S[1].c) && ${J(A_Q2)} === S[2].t;`),
+      chk('第11時 小テスト（1）（2）', `const S = ${J(ST_Q1)}.concat([${J(RW_Q)}]); let ok = S.every(STOK); for (let x = 10; x <= 500; x += 10) ok = ok && x % 5 === 0; const P = { A: [0, 0], B: [4, 0], C: [1, 3], D: [10, 1] }, c = Math.cos(0.5), s = Math.sin(0.5); P.E = [10 + 4 * c, 1 + 4 * s]; P.F = [10 + 1 * c - 3 * s, 1 + 1 * s + 3 * c]; return ok && near(D(P, 'BC'), D(P, 'EF')) && ${J(A_Q1)}.includes('仮定 … ' + S[0].h) && ${J(A_Q1)}.includes('結論 … ' + S[1].c) && ${J(A_Q2)}.includes(S[2].h + 'ならば、' + S[2].c) && ${J(A_Q2)}.includes('3つの辺は等しい');`),
       // チャレンジ：連続する3つの偶数 2n−2、2n、2n+2 の和＝6n（n を −20〜20 で確かめ）。連続する3つの偶数の和が 6 の倍数（開始値が偶数）
       chk('第11時 小テスト チャレンジ', `let ok = STOK(${J(ST_QC)}); for (let n = -20; n <= 20; n++) ok = ok && (2 * n - 2) + 2 * n + (2 * n + 2) === 6 * n; for (let k = -30; k <= 30; k++) { const e = 2 * k; ok = ok && (e + (e + 2) + (e + 4)) % 6 === 0; } return ok && ${J(A_QC)}.includes('＝6n');`)
     ],

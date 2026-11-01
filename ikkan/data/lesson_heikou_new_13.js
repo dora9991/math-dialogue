@@ -73,7 +73,7 @@
     vl: { A: ['A', 135], B: ['B', 45], C: ['C', 225], D: ['D', 315], O: ['O', 90, 3.4] }, tick: [['A', 'B', 1, 0.3], ['D', 'C', 1, 0.3]], par: [['A', 'B', 1, 0.72], ['C', 'D', 1, 0.72]] };
   const C_BOW = { t1: 'AOB', t2: 'DOC', kind: 'ASA', eq: [['∠OAB', '∠ODC'], ['AB', 'DC'], ['∠OBA', '∠OCD']] };
   // AB＝AC、D は AB 上、E は AC 上で AD＝AE
-  const OV = (() => { const A = [0, 3.4], B = [-2.2, 0], C = [2.2, 0], r = 0.58; return { A, B, C, D: [A[0] + r * (B[0] - A[0]), A[1] + r * (B[1] - A[1])], E: [A[0] + r * (C[0] - A[0]), A[1] + r * (C[1] - A[1])] }; })();
+  const OV = (() => { const A = [0, 3.4], B = [-2.2, 0], C = [2.2, 0], r = 0.4; return { A, B, C, D: [A[0] + r * (B[0] - A[0]), A[1] + r * (B[1] - A[1])], E: [A[0] + r * (C[0] - A[0]), A[1] + r * (C[1] - A[1])] }; })();
   const F_OVER = { pts: OV, poly: 'ABC', segs: ['BE', 'CD'], vl: 'ABCDE', given: [['AB', 'AC'], ['AD', 'AE']], pad: 4 };
   const C_OVER = { t1: 'ABE', t2: 'ACD', kind: 'SAS', eq: [['AB', 'AC'], ['AE', 'AD'], ['∠BAE', '∠CAD']] };
   // AB＝AC、D は AC 上、E は AB 上で ∠ABD＝∠ACE（28°）
