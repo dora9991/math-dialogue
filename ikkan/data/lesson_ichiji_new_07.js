@@ -85,7 +85,7 @@
   const T_D3 = '① 切片 −2。右へ 1 進むと上へ 3 進む　y＝3x−2\n② 切片 1。右へ 3 進むと下へ 2 進む　y＝−[[2/3]]x+1';
   // （4）そうたさんのまちがい（右へ 2、上へ 3）と、正しい点（右へ 3、上へ 2）
   const D4 = { eq: 'y＝[[2/3]]x−1', a: 2 / 3, b: -1, wrong: [2, 2], right: [3, 1] };
-  const T_D4 = '傾き [[2/3]] は、右へ 3 進むと、上へ 2 進むこと。\n右へ進む量と、上へ進む量が、逆になっている。\n正しい点は (3, 1)';
+  const T_D4 = '傾き [[2/3]] は、右へ 3 進むと上へ 2 進むこと。右と上が逆。\n正しい点は (3, 1)';
   // （5）ヒントで当てる
   const D5 = { b: 3, abs: 2, ans: 'y＝−2x+3', both: ['y＝2x+3', 'y＝−2x+3'] };
   const T_D5 = '① y＝2x+3、y＝−2x+3\n② 右下がりは傾きが負の数。ヒントを 3つとも使うと、y＝−2x+3 に決まる。';
@@ -169,8 +169,8 @@
       G(1),
       HD('チャレンジ★★', '入試にも出る問題。ヒントカードを見てもOK。'),
       C2([
-        T('（8）', '直線 m は、y 軸上の点 (0, −3) を通り、右へ 2 進むと上へ 1 進む。m と x 軸、y 軸で囲まれた三角形の面積を求めよう。（1 目もりを 1cm とする。）', 7),
-        B(7, T_D8)
+        T('（8）', '直線 m は、y 軸上の点 (0, −3) を通り、右へ 2 進むと上へ 1 進む。m と x 軸、y 軸で囲まれた三角形の面積を求めよう。（1 目もりを 1cm とする。）', 5),
+        B(5, T_D8)
       ], [
         MA('① 直線 m の式は、どう書けるかな。\n② m と x 軸が交わる点は、y の値がいくつの点かな。', 6, { label: 'ヒントカード' })
       ], '1:1')
@@ -199,7 +199,7 @@
   };
 
   /* ---------------- 検算（画面の文字列・答えの文から、図の直線と独立に確かめる） ---------------- */
-  const A_WS = ANS(DEF.ws), A_DR = ANS(DEF.dr), A_QZ = ANS(DEF.qz);   // 教卓の解答（B の答え）。A_DR[0]＝（1）… A_DR[5]＝（6）、A_DR[7]＝（8）、A_QZ[0]＝（1）…
+  const A_WS = ANS(DEF.ws), A_DR = ANS(DEF.dr), A_QZ = ANS(DEF.qz);   // 教卓の解答（B の答え）。A_DR[0]＝（1）… A_DR[5]＝（6）、A_DR[6]＝（8）、A_QZ[0]＝（1）…
   const push = (label, body) => DEF.checks.push(chk(label, body));
   // 今日の問い：式カード A〜D。画面の式から読みとった (a, b) が、図の直線と同じ。4つの式・4つのグラフは、すべてちがう。合うグラフの番号は 1〜4 に 1つずつ
   push('第7時 今日の問い（式カードと図の直線）', `const C = ${J(CARDS)}, G = ${J(GR)}; return C.every(c => near(ab(c.eq)[0], c.a) && near(ab(c.eq)[1], c.b)) && new Set(C.map(c => c.eq)).size === 4 && new Set(G.map(g => g.a + ',' + g.b)).size === 4 && [1, 2, 3, 4].every(i => C.filter(c => c.g === i).length === 1) && C.every(c => { const g = G.find(g => g.n === c.g); return near(g.a, ab(c.eq)[0]) && near(g.b, ab(c.eq)[1]); });`);
@@ -224,7 +224,7 @@
   // （6）(0, −2) を通り、右へ 2 進むと上へ 3 進む → 傾き [[3/2]]。y＝[[3/2]]x−2。x＝8 のとき y＝10
   push('第7時 使ってみる（6）', `const D = ${J(D6)}, a = ab(D.eq), q = eqsOf(${J(A_DR[5])}); return near(a[0], 3 / 2) && near(a[1], -2) && onL(D.eq, 0, -2) && onL(D.eq, 2, 1) && near(a[0] * 8 + a[1], D.x8) && near(3 / 2 * 8 - 2, 10) && q.length >= 1 && q.every(e => near(ab(e)[0], a[0]) && near(ab(e)[1], a[1]));`);
   // チャレンジ（8）m：(0, −3)、右へ 2・上へ 1 → y＝[[1/2]]x−3。y＝0 になる x を 0〜20 までしらべて 6。三角形 (0, 0)、(6, 0)、(0, −3) の面積を座標から計算して 9
-  push('第7時 チャレンジ（8）', `const D = ${J(D8)}, a = ab(D.eq), xs = []; for (let x = 0; x <= 20; x++) if (near(a[0] * x + a[1], 0)) xs.push(x); const V = [[0, 0], [D.xi, 0], [0, a[1]]], ar = Math.abs(V[0][0] * (V[1][1] - V[2][1]) + V[1][0] * (V[2][1] - V[0][1]) + V[2][0] * (V[0][1] - V[1][1])) / 2; return near(a[0], 1 / 2) && near(a[1], -3) && xs.join() === '6' && onL(D.eq, 0, -3) && onL(D.eq, 2, -2) && near(ar, D.area) && near(6 * 3 / 2, 9) && ${J(A_DR[7])}.includes('9cm^2') && eqsOf(${J(A_DR[7])}).every(e => near(ab(e)[0], a[0]) && near(ab(e)[1], a[1]));`);
+  push('第7時 チャレンジ（8）', `const D = ${J(D8)}, a = ab(D.eq), xs = []; for (let x = 0; x <= 20; x++) if (near(a[0] * x + a[1], 0)) xs.push(x); const V = [[0, 0], [D.xi, 0], [0, a[1]]], ar = Math.abs(V[0][0] * (V[1][1] - V[2][1]) + V[1][0] * (V[2][1] - V[0][1]) + V[2][0] * (V[0][1] - V[1][1])) / 2; return near(a[0], 1 / 2) && near(a[1], -3) && xs.join() === '6' && onL(D.eq, 0, -3) && onL(D.eq, 2, -2) && near(ar, D.area) && near(6 * 3 / 2, 9) && ${J(A_DR[6])}.includes('9cm^2') && eqsOf(${J(A_DR[6])}).filter(e => /^y.*x/.test(e)).every(e => near(ab(e)[0], a[0]) && near(ab(e)[1], a[1]));`);
   // 小テスト（1）y＝−[[2/3]]x+4：右下がり（傾き負）、切片 4　（2）直線 ①②③：式が図の直線と同じ。方眼の交点を 2つ以上通る。答えの文の式が ①②③ の順に合う　（3）① と平行：ア（傾き 2）、③ と y 軸上の同じ点：エ（切片 1）
   push('第7時 小テスト（1）（2）（3）', `const q1 = ab(${J(Q1)}), Q = ${J(Q2)}, O = ${J(Q3)}, e2 = eqsOf(${J(A_QZ[1])}), p = k => ab(O.find(o => o[0] === k)[1]); return q1[0] < 0 && near(q1[1], 4) && Q.every(q => near(ab(q.eq)[0], q.a) && near(ab(q.eq)[1], q.b) && lat(q.eq, -5, 5, -5, 5) >= 2) && e2.length === 3 && e2.every((e, i) => near(ab(e)[0], Q[i].a) && near(ab(e)[1], Q[i].b)) && O.filter(o => near(ab(o[1])[0], ab(Q[0].eq)[0])).map(o => o[0]).join('') === 'ア' && O.filter(o => near(ab(o[1])[1], ab(Q[2].eq)[1])).map(o => o[0]).join('') === 'エ' && near(p('イ')[1], ab(Q[0].eq)[1]) && near(p('ウ')[0], ab(Q[2].eq)[0]) && /右下がり/.test(${J(A_QZ[0])}) && /切片 4/.test(${J(A_QZ[0])});`);
   // チャレンジ：a＜0、b＞0 のとき y＝bx+a は、傾き b＞0（右上がり）、切片 a＜0（x 軸より下）。ア〜エのうち、あてはまるのは ウ だけ
