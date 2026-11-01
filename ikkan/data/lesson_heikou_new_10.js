@@ -70,7 +70,7 @@
   // 平行のしるしと同じ辺に、等しい印をつけるときは、等しい印を、辺の中点からずらして（辺の 18〜38％の所に）かく（重ならないように）
   const geoOf = (f, o) => {
     const d = figData(f), P = f.pts, key = (x, y) => [x, y].sort().join(''), pk = d.par.map(q => key(q[0], q[1]));
-    const tick = d.tick.map(([x, y, n]) => (pk.includes(key(x, y)) ? [[P[x][0] + (P[y][0] - P[x][0]) * 0.18, P[x][1] + (P[y][1] - P[x][1]) * 0.18], [P[x][0] + (P[y][0] - P[x][0]) * 0.38, P[x][1] + (P[y][1] - P[x][1]) * 0.38], n] : [x, y, n]));
+    const tick = d.tick.map(([x, y, n, pos]) => (pk.includes(key(x, y)) ? [[P[x][0] + (P[y][0] - P[x][0]) * 0.18, P[x][1] + (P[y][1] - P[x][1]) * 0.18], [P[x][0] + (P[y][0] - P[x][0]) * 0.38, P[x][1] + (P[y][1] - P[x][1]) * 0.38], n] : [x, y, n, pos]));
     return GEO(Object.assign({ poly: f.poly, segs: f.segs, vl: f.vl, dots: f.dots, size: f.size, pad: f.pad, a: f.a }, d, { tick }, o || {}));
   };
   // 図の見出し（図1・図2 …）を、図の上に書く
@@ -116,7 +116,7 @@
   // チャレンジ（8）正方形 ABCD の辺 BC 上に E、辺 CD 上に F。BE＝CF。AE と BF の交点 P。∠BAE＝35° のとき ∠APB＝90°
   const T35 = Math.tan(rad(35));
   const SQE = [1, T35], SQF = [1 - T35, 1], SQP = ints([0, 0], SQE, [1, 0], SQF);
-  const F_SQ = { pts: { A: [0, 0], B: [1, 0], C: [1, 1], D: [0, 1], E: SQE, F: SQF, P: SQP }, poly: 'ABCD', segs: ['AE', 'BF'], vl: { A: ['A', 225], B: ['B', 315], C: ['C', 45], D: ['D', 135], E: ['E', 0], F: ['F', 90], P: ['P', 170, 3.4] }, given: [['BE', 'CF']], ang: [{ at: 'A', a: 'B', b: 'E', t: '35°', n: 1, r: 9, lr: 12.5 }], a: { ang: [{ at: 'P', a: 'A', b: 'B', right: true, r: 4.6 }, { at: 'B', a: 'C', b: 'F', t: '35°', n: 1, r: 8, lr: 11.5 }] } };
+  const F_SQ = { pts: { A: [0, 0], B: [1, 0], C: [1, 1], D: [0, 1], E: SQE, F: SQF, P: SQP }, poly: 'ABCD', segs: ['AE', 'BF'], vl: { A: ['A', 225], B: ['B', 315], C: ['C', 45], D: ['D', 135], E: ['E', 0], F: ['F', 90], P: ['P', 170, 3.4] }, tick: [['B', 'E', 1, 0.75], ['C', 'F', 1]], ang: [{ at: 'A', a: 'B', b: 'E', t: '35°', n: 1, r: 9, lr: 12.5 }], a: { ang: [{ at: 'P', a: 'A', b: 'B', right: true, r: 4.6 }, { at: 'B', a: 'C', b: 'F', t: '35°', n: 1, r: 8, lr: 11.5 }] } };
   const C_SQ = { t1: 'ABE', t2: 'BCF', eq: [['AB', 'BC'], ['BE', 'CF'], ['∠ABE', '∠BCF']], kind: 'SAS' };
   // 小テスト（1）ア〜エ　（2）AB＝CD、AD＝CB（対角線 AC）　（3）AD∥BC、AD＝CB（対角線 BD）　チャレンジ：正五角形
   const QOPT = [
