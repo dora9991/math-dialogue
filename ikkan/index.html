@@ -129,6 +129,12 @@ button{font:inherit;color:inherit}
 .top .brand{font-weight:700;font-size:15px;color:var(--ink);text-decoration:none;white-space:nowrap}
 .top .brand small{font-weight:600;font-size:11px;color:var(--ink3);margin-left:6px}
 .top .sp{flex:1}
+/* 前の授業・次の授業（画面の上と、紙面の下）。単元のはじめ・さいごは、押せない表示 */
+.pn{display:inline-flex;gap:6px;align-items:center}
+.pn .btn small{font-size:11px;color:var(--ink3);font-weight:600;max-width:16em;overflow:hidden;text-overflow:ellipsis}
+.btn.is-off{opacity:.4;cursor:default;pointer-events:none}
+.pn-bottom{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin:22px 16px 56px}
+.pn-bottom .btn{padding:10px 18px;font-size:15px}
 .top .ttl{display:flex;flex-direction:column;line-height:1.25;min-width:0}
 .top .ttl small{font-size:11px;color:var(--ink3);font-weight:700}
 .top .ttl b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
@@ -369,7 +375,7 @@ button{font:inherit;color:inherit}
 @page{size:A4;margin:0}
 @media print{
   html,body{background:#fff !important;height:auto !important}
-  .top,.hint,.home,.set-cap,.pbar,.rc,.rs{display:none !important}
+  .top,.hint,.home,.set-cap,.pbar,.rc,.rs,.pn{display:none !important}
   .wsp-blank{background:none !important}
   .wsp-blank span{display:none}
   /* 白紙の下はしに、うすい字を1行（プリンターの「白紙スキップ」で、とばされないようにする） */
@@ -4689,18 +4695,17 @@ var qrcode = function() {
       B(2, ''),
       BR(),
 
-      HD('応用', 'きまりを使って考えよう。'),
-      T('（7）', '辺の数が 21の角柱は、何角柱か。また、面の数と頂点の数を求めよう。', 1),
-      B(3, '辺は 3n本。3n＝21 より n＝7　…　七角柱\n面 7+2＝9、頂点 2×7＝14'),
-      T('（8）', '次のうち、多面体でないものをすべて選び、「平面」という言葉を使って、理由を説明しよう。　ア 五角柱　イ 円錐　ウ 六角錐　エ 半球', 2),
-      B(3, 'イ、エ。曲面があり、平面だけで囲まれていないから。'),
-      HD('入試レベル', '考えようで見つけたこと（頂点−辺+面＝2）を使おう。'),
-      T('（9）', '面の数が 7、辺の数が 15の多面体がある。頂点の数を求めよう。\nまた、そのような立体の例をあげよう。', 2),
-      B(3, '頂点の数は 10。\n（例）五角柱'),
-      T('（10）', '角柱の、面の数と辺の数と頂点の数をすべて合わせると 50になった。この角柱は、何角柱か。', 2),
-      B(3, '角柱の面・辺・頂点は、(n+2)+3n+2n＝6n+2\n6n+2＝50 より n＝8　…　八角柱'),
+      HD('応用', '次の問いに答えなさい。'),
       C2([
-        T('（11）', '立方体の 8つの角を、\nすべて切り落とした立体（図）の、\n面・辺・頂点の数を求めよう。', 3),
+        T('（7）', '辺の数が 21の角柱について、\n① 何角柱か答えなさい。\n② 面の数と頂点の数を\n　 求めなさい。', 4),
+        B(5, '① 辺は 3n本。3n＝21 より n＝7\n　 七角柱\n② 面 7+2＝9、頂点 2×7＝14')
+      ], [
+        T('（8）', '次のア〜エのうち、多面体でないものを、すべて選びなさい。\nア 五角柱　イ 円錐\nウ 六角錐　エ 半球', 4),
+        B(5, 'イ、エ\n（曲面があり、平面だけで囲まれていないから）')
+      ], '1:1'),
+      HD('入試レベル', '次の問いに答えなさい。'),
+      C2([
+        T('（9）', '立方体の 8つの角を、\nすべて切り落としてできた\n立体（図）の、面の数・辺の数・\n頂点の数を、それぞれ求めなさい。', 4),
         B(5, '面 … もとの面 6 + 切り口 8＝14\n頂点 … 切り口の三角形の頂点 3×8＝24\n辺 … もとの辺 12 + 切り口の辺 3×8＝36\n確かめ　24−36+14＝2')
       ], [
         F(8, cutCube())
@@ -4916,22 +4921,19 @@ var qrcode = function() {
       B(3, ''),
       BR(),
 
-      HD('応用', '理由をつけて考えよう。'),
+      HD('応用', '次の問いに答えなさい。'),
       C2([
-        T('（7）', '立方体の 6つの面の中心を、となり合う面どうしで結ぶと、立体ができる（図）。この立体は、どの面も合同な正三角形で、どの頂点にも同じ数の面が集まっている。何という立体か答えよう。', 4),
-        B(2, '頂点は 6個。面は 8つ（立方体の頂点 1つにつき 1つ）。\nどの頂点にも 4つ集まるから、正八面体')
-      ], [F(6, cubeOcta())], '3:2'),
+        T('（7）', '下の図は、立方体の 6つの面の中心を、となり合う面どうしで結んでできた立体である。この立体の名前を答えなさい。', 3),
+        F(6, cubeOcta()),
+        B(3, '頂点は 6個。面は 8つ。\nどの頂点にも 4つの面が集まるから、正八面体')
+      ], [
+        T('（8）', '下の図は、合同な 2つの正四面体を、1つの面ではり合わせた立体である。この立体は、正多面体といえるか。理由も答えなさい。', 5),
+        F(6, POLY({ V: bipyramid(), proj: 'ortho', az: 60, el: 20 })),
+        B(5, 'いえない。\n面は 6つとも合同な正三角形だが、頂点に集まる面の数が、3つの頂点と 4つの頂点があるから。')
+      ], '1:1'),
+      HD('入試レベル', '次の問いに答えなさい。'),
       C2([
-        T('（8）', '2つの合同な正四面体を、1つの面ではり合わせた立体（図）は、正多面体といえるか。理由も答えよう。', 3),
-        B(3, 'いえない。面は 6つとも合同な正三角形だが、頂点に集まる面の数が、3つの頂点と 4つの頂点があるから。')
-      ], [F(6, POLY({ V: bipyramid(), proj: 'ortho', az: 60, el: 20 }))], '3:2'),
-      HD('入試レベル', '考えようで見つけたことを使おう。'),
-      T('（9）', '1つの頂点に、正五角形を 3つ、または 4つ集める。それぞれ、立体の頂点になれるか。角の大きさに目をつけて、説明しよう。（正五角形の 1つの角は 108°）', 2),
-      B(3, '3つ … 108°×3＝324°　360° より小さいから、立体の頂点になる。（正十二面体）\n4つ … 108°×4＝432°　360° より大きく、重なるから、できない。'),
-      T('（10）', '面がすべて正三角形の正多面体がある。辺の数が 30のとき、面の数と頂点の数を求めよう。\n（頂点−辺+面＝2 を使ってよい）', 2),
-      B(3, '面の数を x とすると、辺は 3x÷2＝30　より x＝20（面 20）\n頂点−辺+面＝2 より　頂点＝2+30−20＝12'),
-      C2([
-        T('（11）', '正四面体の 4つの頂点を、辺を 3等分する点を通る平面で、すべて切り落とした立体（図）の、面・辺・頂点の数を求めよう。', 3),
+        T('（9）', '正四面体の 4つの頂点を、辺を 3等分する点を通る平面で、すべて切り落としてできた立体（図）の、面の数・辺の数・頂点の数を、それぞれ求めなさい。', 3),
         B(5, '面 … もとの面 4 + 切り口 4＝8\n頂点 … 切り口の三角形の頂点 3×4＝12\n辺 … もとの辺 6 + 切り口の辺 3×4＝18\n確かめ　12−18+8＝2')
       ], [F(8, POLY({ V: truncTetra(), proj: 'ortho', az: 140, el: 25 }))], '3:2'),
       MA('【当てる】ヒントを出して、友達に、どの正多面体か当ててもらおう。\n出したヒント（　　　　　　　　　　）　答え（　　　　）', 2),
@@ -80432,6 +80434,7 @@ var qrcode = function() {
 /* ikkan：画面。一覧 → 授業（授業計画／ワークシート／演習プリント／小テスト／3点セット）。解答の表示・かくす、印刷。
    場所：#/ ＝一覧、#/<授業のID> ＝ワークシート、#/<授業のID>/plan・/ws・/dr・/qz・/set ＝授業計画・ワークシート・演習プリント・小テスト・3点セット（印刷用）、
          最後に /ans をつけると、解答を表示した状態で開く（例：#/kukan-01/dr/ans）、
+         画面の上と下に「前の授業」「次の授業」のボタン（同じ単元の「第N時」どうし。資料と解答の表示は引きつぐ）、
          #/print/<単元のキー> ＝ 単元の授業を、まとめて印刷する画面（例：#/print/kukan）。最後に /sched をつけると、学習予定表だけを選んだ状態で開く、
          #/r/<単元のキー>、#/r/<授業のID>/<dr|qz>、#/rsum ＝ 記録ページ（生徒）・単元の記録の一覧（生徒）・記録の集計（先生）。js/recui.js */
 (function () {
@@ -80449,9 +80452,28 @@ var qrcode = function() {
   const partsOf = id => [['ワークシート', IK.lessons[id]], ['演習プリント', IK.drills[id]], ['小テスト', IK.quizzes[id]]].filter(p => p[1]);
   const nPages = sh => sh.blocks.filter(b => b.type === 'break').length + 1;
 
+  /* 前の授業・次の授業（同じ単元の中。一覧の並びと同じ）。いま見ている資料（ワークシート・演習プリント…）と、解答の表示は、そのまま引きつぐ。
+     解答の表示をかえたときは、setAns がボタンの行き先を書きかえる。単元のはじめ・さいごでは、押せない表示にする。 */
+  // 「第N時」の授業どうしだけで前後をとる（単元に混じっている「試作（旧形式）」のワークシートは、前後に入れない）
+  const isNo = l => /^第\d+時$/.test(l.no || '');
+  const neighbors = id => {
+    const l = IK.lessons[id], ids = l ? IK.order.filter(x => IK.lessons[x] && IK.lessons[x].unit === l.unit && isNo(IK.lessons[x]) === isNo(l)) : [], i = ids.indexOf(id);
+    return { prev: i > 0 ? ids[i - 1] : null, next: i >= 0 && i < ids.length - 1 ? ids[i + 1] : null };
+  };
+  const navHref = id => `#/${id}/${curTab}${ans && curTab !== 'plan' ? '/ans' : ''}`;
+  const pnHTML = (id, bottom) => {
+    const nb = neighbors(id), name = i => [IK.lessons[i].no, IK.lessons[i].title].filter(Boolean).join('　');
+    if (!nb.prev && !nb.next) return '';   // 前後のない授業（試作のワークシートなど）には、ボタンを出さない
+    const one = (to, text, off) => to
+      ? `<a class="btn" data-nav="${esc(to)}" href="${esc(navHref(to))}" title="${esc(name(to))}">${text}${bottom ? `<small>${esc(name(to))}</small>` : IK.lessons[to].no ? `<small>${esc(IK.lessons[to].no)}</small>` : ''}</a>`
+      : `<span class="btn is-off" aria-disabled="true">${text}<small>${off}</small></span>`;
+    return `<nav class="pn${bottom ? ' pn-bottom' : ''}" aria-label="前の授業・次の授業">${one(nb.prev, '← 前の授業', 'この単元のはじめ')}${one(nb.next, '次の授業 →', 'この単元のさいご')}</nav>`;
+  };
+
   const setAns = on => {
     ans = !!on;
     document.body.classList.toggle('ans-on', ans);
+    document.querySelectorAll('a[data-nav]').forEach(a => a.setAttribute('href', navHref(a.dataset.nav)));
     const b = document.getElementById('ansBtn');
     if (b) { b.setAttribute('aria-pressed', String(ans)); b.textContent = ans ? '解答をかくす' : '解答を表示'; }
     const h = document.getElementById('hint');
@@ -80581,6 +80603,7 @@ var qrcode = function() {
     $app.innerHTML = `<header class="top">
         <a class="brand" href="#/" title="一覧へ">← 一覧</a>
         <div class="ttl"><small>${esc([l.unitName, l.no].filter(Boolean).join('　'))}</small><b>${esc(l.title)}</b></div>
+        ${pnHTML(id)}
         ${seg}
         <span class="sp"></span>
         <a class="btn main2" href="${esc(url)}" target="_blank" rel="noopener">スライドだけを開く（全画面・印刷）</a>
@@ -80608,6 +80631,7 @@ var qrcode = function() {
     $app.innerHTML = `<header class="top">
         <a class="brand" href="#/" title="一覧へ">← 一覧</a>
         <div class="ttl"><small>${esc([l.unitName, l.no].filter(Boolean).join('　'))}</small><b>${esc(l.title)}</b></div>
+        ${pnHTML(id)}
         ${seg}
         <span class="sp"></span>
         ${(tab === 'dr' || tab === 'qz') && cur && cur.qr ? `<a class="btn" href="#/${esc(cur.qr)}" title="QR の行き先（生徒が丸つけ・記録をするページ）">記録ページ</a>` : ''}
@@ -80615,7 +80639,7 @@ var qrcode = function() {
         <button type="button" class="btn" id="fitBtn" title="紙面の見せ方">全体を見る</button>
         ${IK.noPrint ? '' : `<button type="button" class="btn${tab === 'set' ? ' main2' : ''}" id="prtBtn">${tab === 'set' ? '3点セットを印刷' : '印刷'}</button>`}
       </header>
-      <div class="pages-wrap">${tab === 'plan' ? '' : '<p class="hint" id="hint"></p>'}<div class="pages">${pages}</div></div>`;
+      <div class="pages-wrap">${tab === 'plan' ? '' : '<p class="hint" id="hint"></p>'}<div class="pages">${pages}</div>${pnHTML(id, true)}</div>`;
     setAns(tab === 'plan' ? false : tab === 'set' ? !!askAns : (askAns !== undefined ? askAns : ans));   // 3点セットは、いつも解答をかくした状態で開く（印刷用）
     const ab = document.getElementById('ansBtn'); if (ab) ab.onclick = () => setAns(!ans);
     document.getElementById('fitBtn').onclick = e => { fit = fit === 'w' ? 'all' : 'w'; e.target.textContent = fit === 'w' ? '全体を見る' : '幅に合わせる'; zoom(); };
