@@ -1,6 +1,7 @@
 /* ikkan：画面。一覧 → 授業（授業計画／ワークシート／演習プリント／小テスト／3点セット）。解答の表示・かくす、印刷。
    場所：#/ ＝一覧、#/<授業のID> ＝ワークシート、#/<授業のID>/plan・/ws・/dr・/qz・/set ＝授業計画・ワークシート・演習プリント・小テスト・3点セット（印刷用）、
          最後に /ans をつけると、解答を表示した状態で開く（例：#/kukan-01/dr/ans）、
+         画面の上と下に「前の授業」「次の授業」のボタン（同じ単元の「第N時」どうし。資料と解答の表示は引きつぐ）、
          #/print/<単元のキー> ＝ 単元の授業を、まとめて印刷する画面（例：#/print/kukan）。最後に /sched をつけると、学習予定表だけを選んだ状態で開く、
          #/r/<単元のキー>、#/r/<授業のID>/<dr|qz>、#/rsum ＝ 記録ページ（生徒）・単元の記録の一覧（生徒）・記録の集計（先生）。js/recui.js */
 (function () {
@@ -18,9 +19,28 @@
   const partsOf = id => [['ワークシート', IK.lessons[id]], ['演習プリント', IK.drills[id]], ['小テスト', IK.quizzes[id]]].filter(p => p[1]);
   const nPages = sh => sh.blocks.filter(b => b.type === 'break').length + 1;
 
+  /* 前の授業・次の授業（同じ単元の中。一覧の並びと同じ）。いま見ている資料（ワークシート・演習プリント…）と、解答の表示は、そのまま引きつぐ。
+     解答の表示をかえたときは、setAns がボタンの行き先を書きかえる。単元のはじめ・さいごでは、押せない表示にする。 */
+  // 「第N時」の授業どうしだけで前後をとる（単元に混じっている「試作（旧形式）」のワークシートは、前後に入れない）
+  const isNo = l => /^第\d+時$/.test(l.no || '');
+  const neighbors = id => {
+    const l = IK.lessons[id], ids = l ? IK.order.filter(x => IK.lessons[x] && IK.lessons[x].unit === l.unit && isNo(IK.lessons[x]) === isNo(l)) : [], i = ids.indexOf(id);
+    return { prev: i > 0 ? ids[i - 1] : null, next: i >= 0 && i < ids.length - 1 ? ids[i + 1] : null };
+  };
+  const navHref = id => `#/${id}/${curTab}${ans && curTab !== 'plan' ? '/ans' : ''}`;
+  const pnHTML = (id, bottom) => {
+    const nb = neighbors(id), name = i => [IK.lessons[i].no, IK.lessons[i].title].filter(Boolean).join('　');
+    if (!nb.prev && !nb.next) return '';   // 前後のない授業（試作のワークシートなど）には、ボタンを出さない
+    const one = (to, text, off) => to
+      ? `<a class="btn" data-nav="${esc(to)}" href="${esc(navHref(to))}" title="${esc(name(to))}">${text}${bottom ? `<small>${esc(name(to))}</small>` : IK.lessons[to].no ? `<small>${esc(IK.lessons[to].no)}</small>` : ''}</a>`
+      : `<span class="btn is-off" aria-disabled="true">${text}<small>${off}</small></span>`;
+    return `<nav class="pn${bottom ? ' pn-bottom' : ''}" aria-label="前の授業・次の授業">${one(nb.prev, '← 前の授業', 'この単元のはじめ')}${one(nb.next, '次の授業 →', 'この単元のさいご')}</nav>`;
+  };
+
   const setAns = on => {
     ans = !!on;
     document.body.classList.toggle('ans-on', ans);
+    document.querySelectorAll('a[data-nav]').forEach(a => a.setAttribute('href', navHref(a.dataset.nav)));
     const b = document.getElementById('ansBtn');
     if (b) { b.setAttribute('aria-pressed', String(ans)); b.textContent = ans ? '解答をかくす' : '解答を表示'; }
     const h = document.getElementById('hint');
@@ -150,6 +170,7 @@
     $app.innerHTML = `<header class="top">
         <a class="brand" href="#/" title="一覧へ">← 一覧</a>
         <div class="ttl"><small>${esc([l.unitName, l.no].filter(Boolean).join('　'))}</small><b>${esc(l.title)}</b></div>
+        ${pnHTML(id)}
         ${seg}
         <span class="sp"></span>
         <a class="btn main2" href="${esc(url)}" target="_blank" rel="noopener">スライドだけを開く（全画面・印刷）</a>
@@ -177,6 +198,7 @@
     $app.innerHTML = `<header class="top">
         <a class="brand" href="#/" title="一覧へ">← 一覧</a>
         <div class="ttl"><small>${esc([l.unitName, l.no].filter(Boolean).join('　'))}</small><b>${esc(l.title)}</b></div>
+        ${pnHTML(id)}
         ${seg}
         <span class="sp"></span>
         ${(tab === 'dr' || tab === 'qz') && cur && cur.qr ? `<a class="btn" href="#/${esc(cur.qr)}" title="QR の行き先（生徒が丸つけ・記録をするページ）">記録ページ</a>` : ''}
@@ -184,7 +206,7 @@
         <button type="button" class="btn" id="fitBtn" title="紙面の見せ方">全体を見る</button>
         ${IK.noPrint ? '' : `<button type="button" class="btn${tab === 'set' ? ' main2' : ''}" id="prtBtn">${tab === 'set' ? '3点セットを印刷' : '印刷'}</button>`}
       </header>
-      <div class="pages-wrap">${tab === 'plan' ? '' : '<p class="hint" id="hint"></p>'}<div class="pages">${pages}</div></div>`;
+      <div class="pages-wrap">${tab === 'plan' ? '' : '<p class="hint" id="hint"></p>'}<div class="pages">${pages}</div>${pnHTML(id, true)}</div>`;
     setAns(tab === 'plan' ? false : tab === 'set' ? !!askAns : (askAns !== undefined ? askAns : ans));   // 3点セットは、いつも解答をかくした状態で開く（印刷用）
     const ab = document.getElementById('ansBtn'); if (ab) ab.onclick = () => setAns(!ans);
     document.getElementById('fitBtn').onclick = e => { fit = fit === 'w' ? 'all' : 'w'; e.target.textContent = fit === 'w' ? '全体を見る' : '幅に合わせる'; zoom(); };
