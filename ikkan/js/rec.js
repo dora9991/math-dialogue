@@ -35,8 +35,10 @@
         if (STOP.has(x.type) || (x.type === 'text' && x.label)) break;
         if (x.type === 'board' && x.answer) ans.push(x.answer);
       }
-      const pt = /（(\d+)点）/.exec(b.text);
-      const text = String(b.text).replace(/\s*（\d+点）/, '');
+      // 配点：「（3点）」、または、1問の中の小さな問いごとに分けた「（ア 1点＋イ 1点）」（合計が、その問題の配点。分けた書き方は、問題文に残す）
+      const pm = /（([^（）]*?\d+点[^（）]*)）/.exec(b.text), split = !!pm && /\d+点[^（）]*\d+点/.test(pm[1]);
+      const pt = pm ? [null, (pm[1].match(/(\d+)点/g) || []).reduce((a, x) => a + parseInt(x, 10), 0)] : null;
+      const text = split ? String(b.text) : String(b.text).replace(/\s*（\d+点）/, '');
       // 「（1）①」「（1）②」のように、2つ（以上）が並んだ問題は、「（1）」の 1 つの問題にまとめる（自己採点は、組ごとに 1 つ）
       const sub = m[2] ? `${'①②③④⑤⑥⑦⑧⑨⑩'.indexOf(m[2]) + 1}つ目　` : '';   // 式の ①② と、まぎらわしくないように
       const prev = m[2] && out.find(o => o.no === +m[1]);

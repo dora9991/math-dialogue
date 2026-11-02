@@ -90,7 +90,8 @@ function checkQuiz(id, qz) {
   if (after.length !== 1) bad(id, `小テストのチャレンジは 1問だけにする（いま ${after.length} 問）`);
   else console.log(`  小テスト：${qs.length}問＋チャレンジ 1問（別枠）`);
   const head = flat.find(b => b.type === 'meate' && b.label === '小テスト'), full = head && String(head.text).match(/／\s*(\d+)点/);
-  const pts = qs.map(q => { const m = String(q.text).match(/（(\d+)点）/); return m ? +m[1] : NaN; });
+  // 配点は「（3点）」、または、小さな問いごとに分けた「（ア 1点＋イ 1点）」（合計がその問題の配点）
+  const pts = qs.map(q => { const m = String(q.text).match(/（([^（）]*?\d+点[^（）]*)）/); return m ? (m[1].match(/(\d+)点/g) || []).reduce((a, x) => a + parseInt(x, 10), 0) : NaN; });
   if (pts.some(isNaN)) bad(id, 'チャレンジの前の問題に、点数（○点）が書いていない問題がある');
   else if (!full) bad(id, '小テストの見出しに、得点らん（／○点）がない');
   else if (+full[1] !== 10) bad(id, `小テストは 10点満点にする（いま ${full[1]}点）`);
