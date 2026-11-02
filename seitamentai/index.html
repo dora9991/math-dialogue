@@ -52,6 +52,7 @@ body{margin:0;background:var(--wall);color:var(--chalk);font-family:var(--f-ui);
 .btn:hover{background:rgba(242,240,230,.18)}
 .btn:disabled{opacity:.35;cursor:default}
 .btn.primary{border-color:var(--yel);color:var(--yel)}
+a.btn{text-decoration:none;display:inline-block}
 .btn:focus-visible,.cellbtn:focus-visible,input:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
 .track{height:4px;margin:0 1.1rem;border-radius:2px;background:var(--chalk-4);position:relative;flex:none}
 .track i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--yel);transition:width .3s}
@@ -148,6 +149,7 @@ td.glow{animation:glow 1.6s ease-in-out infinite}
       <div class="prog" id="prog"><span id="pn">1</span> / <span id="pt">1</span></div>
       <div class="freebar" id="freebar" hidden><span class="chip">自由に試す</span><button class="btn" id="back" type="button">授業の流れにもどる</button></div>
       <div class="ctl">
+        <a class="btn" href="kazoekata.html">辺・頂点の数え方 ▶</a>
         <button class="btn" id="prev" type="button" aria-label="もどる（←キー）">◀ もどる</button>
         <button class="btn primary" id="next" type="button" aria-label="つぎへ（→キー）">つぎへ ▶</button>
         <button class="btn" id="fs" type="button" aria-label="全画面にする（Fキー）">全画面</button>
