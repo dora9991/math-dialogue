@@ -314,6 +314,8 @@ function getSolid(key){
   return SOL_CACHE[key]={key:key,V:V,faces:faces,R:R,center:[0,0,-R],maxL:maxL,vf:vf};
 }
 
+/* 図のいちばん低い点の z（頂点が原点）。机の上に置いたとき、頂点の高さは -lowest(F) */
+function lowest(F){var z=0;F.faces.forEach(function(f){f.pts.forEach(function(p){z=Math.min(z,p[2]);});});return z;}
 var CI={};
 function caseInfo(n,k){
   var key=n+'-'+k;if(CI[key])return CI[key];
@@ -338,7 +340,10 @@ function caseInfo(n,k){
     F1.faces.forEach(function(f){p1=p1.concat(f.pts);});
     var c1=centroid(p1),r1=0;p1.forEach(function(p){r1=Math.max(r1,len(sub(p,c1)));});
     I.solid=So;I.c1=c1;I.rho1=Math.max(r1*1.1,.8);I.rhoS=So.R*1.25;
+    I.hEnd=-lowest(F1);
+    I.foldTarget=[(center[0]+c1[0])/2,(center[1]+c1[1])/2,I.hEnd*.42];
   }
+  if(cmp>=0)I.hLift=-lowest(fanState(n,k,'lift',1));
   return CI[key]=I;
 }
 
@@ -355,8 +360,8 @@ function caseSteps(n,k,o){
   steps.push({type:'place',c:c,q:P.name+'を '+k+'つ 並べると…',dur:.7*(k-1)+.3,slider:'並べる',
     lines:[L('<span class="num">'+P.ang+' × '+k+' ＝ '+degText(sum)+'</span>',{cls:'key',later:true}),verdict],reveal:[[n,k,'sum']]});
   if(sol){
-    steps.push({type:'fold',c:c,q:'すき間を閉じるように、折り曲げると…',dur:2.6,slider:'折り曲げる',
-      lines:[L('とがった頂点ができた！',{cls:'ok',later:true}),L('すき間があるから、折り曲げて閉じることができる。',{cls:'dim',later:true})],
+    steps.push({type:'fold',c:c,q:'すき間を閉じるように、折り曲げると…',dur:2.8,delay:.9,slider:'折り曲げる',pull:true,
+      lines:[L('すき間が閉じて、山のように とがった頂点ができた！',{cls:'ok',later:true}),L('すき間があるから、折り曲げて閉じることができる。',{cls:'dim',later:true}),L('図の頂点を上にドラッグしても、折り曲げられます。',{cls:'dim'})],
       banner:{t:'とがった頂点ができた！'}});
     steps.push({type:'build',c:c,q:'どの頂点にも'+P.name+'が '+k+'つずつ 集まるように組み立てると…',dur:3.2,slider:'組み立てる',
       lines:[L(sol.name+(sol.sub?'<small>'+sol.sub+'</small>':''),{cls:'big',later:true}),L('面の数 '+sol.F+'　／　どの頂点にも'+P.name+'が '+k+'つ',{cls:'dim',later:true})],
@@ -366,7 +371,8 @@ function caseSteps(n,k,o){
   }else{
     var lines=[L(cmp===0?'360°になると、すき間がないので、折り曲げることができない。':'360°をこえると、重なってしまうので、頂点をつくれない。',{cls:'ng',later:true})];
     if(o.note)lines.push(L(o.note,{cls:'dim',later:true}));
-    steps.push({type:'tryfold',c:c,q:'折り曲げてみると…',dur:3.2,slider:'持ち上げる',lines:lines,reveal:[[n,k,'result']],
+    lines.push(L('図の頂点を上にドラッグして、持ち上げてみよう。',{cls:'dim'}));
+    steps.push({type:'tryfold',c:c,q:'折り曲げてみると…',dur:3.2,delay:.9,slider:'持ち上げる',pull:true,lines:lines,reveal:[[n,k,'result']],
       banner:{t:cmp===0?'✕ 折り曲げられない':'✕ 頂点をつくれない',ng:true}});
   }
   return steps;
@@ -489,6 +495,7 @@ function renderPanel(){
   var anim=!!st.dur&&st.type!=='summary1';
   $('slbox').hidden=!anim;$('sllabel').textContent=st.slider||'';
   $('hint').hidden=!st.c;
+  $('hint').textContent=st.pull?'頂点を上にドラッグで折り曲げる／まわりをドラッグで回す':'ドラッグで回せます（ダブルクリックでもどす）';
   cv.setAttribute('aria-label',(st.c?POLY[st.c.n].name+'を'+st.c.k+'つ。':'')+st.q.replace(/<[^>]+>/g,''));
   lastMeter='';
 }
@@ -517,14 +524,15 @@ function updateMeter(){
 }
 var sl=$('sl');
 function syncSlider(force){if(force||state.playing)sl.value=Math.round(state.value*1000);}
-sl.addEventListener('input',function(){
-  var st=cur();state.playing=false;state.value=sl.value/1000;
-  if(st.type==='tryfold'?state.value>=.5:state.value>=.999)setDone(true);
-});
+function setValue(v){
+  var st=cur();state.playing=false;state.value=v;syncSlider(true);
+  if(st.type==='tryfold'?v>=.5:v>=.999)setDone(true);
+}
+sl.addEventListener('input',function(){setValue(sl.value/1000);});
 
 /* ================= 立体の場面をつくる ================= */
 var INK='#2a2017',CH='#f2f0e6',PINK='#ff9db2',YEL='#ffe27a',VEIL='rgba(23,56,41,.85)';
-var OV_ORDER={olap:1,gap:2,arc:3,edges:4,seam:4,text:6,dot:7,vlabel:7,vdots:7};
+var OV_ORDER={olap:1,gap:2,arc:3,edges:4,seam:4,text:6,dot:7,vlabel:7,vdots:7,pullhint:8};
 var CHALK_FONT='"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
 function angLabel(n){return POLY[n].ang.replace('約','');}
 function flatScene(S,I,pv){
@@ -589,7 +597,9 @@ function scene3D(st,v){
     S.over.push({t:'edges',dirs:[F.E[0],F.E[I.k]],alpha:1});
     S.over.push({t:'dot'});
     S.flat=v<1e-4;S.hidden=smooth(.5,.95,v);
-    S.cam={target:lerp3(I.center,I.c1,e),rho:lerp(I.rho,I.rho1,e),theta:(-90+20*e)*DEG,psi:lerp(90,48,e)*DEG};
+    S.off=[0,0,-lowest(F)];S.floorA=1;
+    if(!state.playing&&v<.02)S.over.push({t:'pullhint'});
+    S.cam={target:I.foldTarget,rho:I.rho,theta:-70*DEG,psi:38*DEG};
   }else if(st.type==='build'){
     var So=I.solid,mL=So.maxL;
     So.faces.forEach(function(f,fi){
@@ -603,9 +613,10 @@ function scene3D(st,v){
     S.hidden=smooth(.9,1,v);
     S.over.push({t:'dot'});
     e=ease(v);
-    S.cam={target:lerp3(I.c1,So.center,e),rho:lerp(I.rho1,I.rhoS,e),theta:-70*DEG,psi:lerp(48,26,e)*DEG};
+    S.off=[0,0,I.hEnd];S.floorA=1-smooth(0,.35,v);
+    S.cam={target:lerp3(I.foldTarget,[0,0,I.hEnd-So.R],e),rho:lerp(I.rho,I.rhoS,e),theta:-70*DEG,psi:lerp(38,26,e)*DEG};
   }else if(st.type==='tryfold'){
-    if(v<1e-4){flatScene(S,I,1);S.flat=true;}
+    if(v<1e-4){flatScene(S,I,1);S.flat=true;S.off=[0,0,0];}
     else{
       F=fanState(I.n,I.k,'lift',v);var lim=F.phi[0]+TAU+1e-6,first=-1;
       F.faces.forEach(function(f,i){
@@ -614,9 +625,11 @@ function scene3D(st,v){
       });
       if(first>=0){var mid=(Math.max(F.phi[first],lim)+F.phi[I.k])/2;S.over.push({t:'text',p:cone(mid,F.beta,.72),txt:'重なる！',color:PINK,size:1.1,alpha:smooth(.05,.3,v)});}
       S.over.push({t:'dot'});
+      S.off=[0,0,-lowest(F)];
     }
-    e=ease(v);
-    S.cam={target:I.center,rho:I.rho,theta:(-90+28*e)*DEG,psi:lerp(90,40,e)*DEG};
+    S.floorA=1;
+    if(!state.playing&&v<.02)S.over.push({t:'pullhint'});
+    S.cam={target:[I.center[0],I.center[1],(I.hLift||0)*.4],rho:I.rho,theta:-70*DEG,psi:40*DEG};
   }
   return S;
 }
@@ -653,9 +666,27 @@ function draw3D(S,C,ga){
   var lw=clamp(C.sc*.011,1.2,3.2),fs=clamp(C.sc*.12,12,28);
   var items=S.faces.map(function(f){var c=centroid(f.pts);return {f:f,c:c,z:dot(sub(c,C.pos),C.f)};});
   if(!S.flat)items.sort(function(a,b){return (b.z-a.z)||(a.f.ord-b.f.ord);});
+  if(S.floorA>0&&S.off&&S.off[2]>1e-3)drawFloor(S,C,ga*S.floorA);
   items.forEach(function(it){it.front=shadeFace(it.f,C,ga,lw,S.flat,it.c);});
   if(S.hidden>0)drawHidden(items,C,ga*S.hidden,lw);
   S.over.slice().sort(function(a,b){return (OV_ORDER[a.t]||5)-(OV_ORDER[b.t]||5);}).forEach(function(o){drawOver(o,C,ga,lw,fs);});
+  ctx.globalAlpha=1;
+}
+/* 机（頂点から高さ off の下）に落ちる影 */
+function hull2(P){
+  P=P.slice().sort(function(a,b){return a[0]-b[0]||a[1]-b[1];});if(P.length<3)return P;
+  var cr=function(o,a,b){return (a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);},lo=[],up=[],i;
+  for(i=0;i<P.length;i++){while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],P[i])<=0)lo.pop();lo.push(P[i]);}
+  for(i=P.length-1;i>=0;i--){while(up.length>=2&&cr(up[up.length-2],up[up.length-1],P[i])<=0)up.pop();up.push(P[i]);}
+  lo.pop();up.pop();return lo.concat(up);
+}
+function drawFloor(S,C,a){
+  var z=-S.off[2],P=[];S.faces.forEach(function(f){f.pts.forEach(function(p){P.push([p[0],p[1]]);});});
+  var H2=hull2(P).map(function(q){return C.P([q[0],q[1],z]);});
+  ctx.globalAlpha=a*clamp(S.off[2]*3,0,1);
+  try{ctx.filter='blur('+Math.max(2,C.sc*.03)+'px)';}catch(e){}
+  path(H2);ctx.fillStyle='rgba(0,0,0,.32)';ctx.fill();
+  try{ctx.filter='none';}catch(e){}
   ctx.globalAlpha=1;
 }
 /* 見えない辺（となりの面がどれも裏向き）を点線で */
@@ -701,6 +732,12 @@ function drawOver(o,C,ga,lw,fs){
     p=C.P(o.p);text(o.txt,p[0],p[1],fs*(o.size||1),o.color||CH,VEIL);
   }else if(o.t==='dot'){
     ctx.beginPath();ctx.arc(V0[0],V0[1],lw*2.6,0,TAU);ctx.fillStyle=CH;ctx.fill();ctx.lineWidth=lw*.8;ctx.strokeStyle='rgba(20,30,24,.8)';ctx.stroke();
+  }else if(o.t==='pullhint'){
+    var pulse=RM?.5:.5+.5*Math.sin(Date.now()/260);
+    ctx.globalAlpha=a*(.55+.45*pulse);ctx.strokeStyle=YEL;ctx.lineWidth=lw*1.6;
+    ctx.beginPath();ctx.arc(V0[0],V0[1],fs*(.55+.15*pulse),0,TAU);ctx.stroke();
+    ctx.globalAlpha=a;
+    text('↑ つまんで持ち上げる',V0[0],V0[1]+fs*1.55,fs*.85,YEL,VEIL);
   }else if(o.t==='vlabel'){
     text('この頂点に集める',V0[0]-fs*3.6,V0[1]+fs*1.3,fs*.95,CH,VEIL);
   }else if(o.t==='vdots'){
@@ -777,7 +814,7 @@ function frame(now){
   var dt=Math.min(.05,(now-last)/1000);last=now;
   var st=cur();
   if(state.playing){
-    var x=st.dur?clamp(((now-state.t0)/1000-DELAY)/st.dur,0,1):1;
+    var x=st.dur?clamp(((now-state.t0)/1000-(st.delay!=null?st.delay:DELAY))/st.dur,0,1):1;
     state.value=st.type==='tryfold'?(x<.42?ease(x/.42):x<.6?1:1-ease((x-.6)/.4)):st.type==='fold'?ease(x):x;
     if(st.type==='tryfold'&&x>=.45)setDone(true);
     if(x>=1){state.playing=false;setDone(true);}
@@ -791,8 +828,8 @@ function frame(now){
     else{
       var S=scene3D(st,state.value);smoothCam(S.cam,dt);
       if(st.type==='build'&&state.done&&state.value>=1&&!drag&&!RM)autoT+=dt*.35;
-      var C=makeCam({target:camS.target,rho:camS.rho,theta:camS.theta+dragT+autoT,psi:clamp(camS.psi+dragP,-80*DEG,90*DEG)},W/2,H/2,Math.min(W,H)/2,.76);
-      draw3D(S,C,ga);
+      var C=makeCam({target:sub(camS.target,S.off||[0,0,0]),rho:camS.rho,theta:camS.theta+dragT+autoT,psi:clamp(camS.psi+dragP,-80*DEG,90*DEG)},W/2,H/2,Math.min(W,H)/2,.76);
+      draw3D(S,C,ga);lastC=C;
     }
   }
   updateMeter();
@@ -800,9 +837,27 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 
-cv.addEventListener('pointerdown',function(e){drag={x:e.clientX,y:e.clientY};try{cv.setPointerCapture(e.pointerId);}catch(_){}});
-cv.addEventListener('pointermove',function(e){if(!drag)return;dragT-=(e.clientX-drag.x)*.009;dragP+=(e.clientY-drag.y)*.009;drag.x=e.clientX;drag.y=e.clientY;});
-function endDrag(){drag=null;}
+var lastC=null,pull=null;
+function apexHit(e){
+  var st=cur();if(!lastC||!st.pull)return false;
+  var r=cv.getBoundingClientRect(),p=lastC.P([0,0,0]);
+  return Math.hypot(e.clientX-r.left-p[0],e.clientY-r.top-p[1])<Math.max(30,lastC.sc*.16);
+}
+cv.addEventListener('pointerdown',function(e){
+  try{cv.setPointerCapture(e.pointerId);}catch(_){}
+  if(apexHit(e)){
+    var st=cur(),I=caseInfo(st.c.n,st.c.k),h=st.type==='fold'?I.hEnd:(I.hLift||.3);
+    pull={y:e.clientY,v0:state.value,scale:Math.max(70,lastC.sc*h*Math.cos(clamp(camS.psi+dragP,0,1.4)))};
+    state.playing=false;cv.style.cursor='grabbing';return;
+  }
+  drag={x:e.clientX,y:e.clientY};
+});
+cv.addEventListener('pointermove',function(e){
+  if(pull){setValue(clamp(pull.v0-(e.clientY-pull.y)/pull.scale,0,1));return;}
+  if(!drag){cv.style.cursor=apexHit(e)?'ns-resize':'';return;}
+  dragT-=(e.clientX-drag.x)*.009;dragP+=(e.clientY-drag.y)*.009;drag.x=e.clientX;drag.y=e.clientY;
+});
+function endDrag(){drag=null;if(pull){pull=null;cv.style.cursor='';}}
 cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
 cv.addEventListener('dblclick',function(){dragT=0;dragP=0;autoT=0;});
 $('next').addEventListener('click',next);
