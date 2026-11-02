@@ -53,6 +53,12 @@ button{font:inherit;color:inherit}
 .wb-b{overflow:hidden}
 .wb-b .tx{display:none;grid-column:auto;top:calc(var(--pitch) * .06);padding-left:.8mm;color:var(--paper-ans)}
 .ans-on .wb-b .tx{display:block}
+/* 罫線のない紙面（演習プリント・小テスト）：答えらんを、うすい枠で囲む。小テストのチャレンジは、点線の枠 */
+.wsp-plain .wb-b::before{content:"";position:absolute;left:0;right:0;top:.7mm;bottom:.7mm;border:.25mm solid #b8c2ce;border-radius:1.2mm}
+.wsp-plain .wb-b .tx{position:relative;z-index:1;padding:0 2.4mm;top:calc(var(--pitch) * .06 + .7mm)}
+.pts{white-space:nowrap}
+.wsp-plain .wb-b.ch-prev::before{bottom:2.4mm}
+.ch-frame{z-index:3;position:absolute;left:-1.6mm;right:-1.6mm;border:.3mm dashed #8d99a8;border-radius:2mm;pointer-events:none}
 
 /* 答え（赤）：問題の中の空欄の数字、図の中の空欄の数字、板書 */
 .wsp .ansx{display:none;color:var(--paper-ans)}
