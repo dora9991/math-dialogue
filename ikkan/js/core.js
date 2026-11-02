@@ -324,7 +324,7 @@
         <div class="wh-name"><span class="u w1"></span>年<span class="u w1"></span>組<span class="u w1"></span>号　氏名<span class="u w6"></span></div>
       </div>
       <div class="wsp-body" style="left:${P.mx}mm;top:${P.top}mm;width:${g.cw}mm;height:${g.rows * g.pitch}mm">
-        ${ruleSVG(g, sheet.dots !== false)}
+        ${sheet.rule === false ? '' : ruleSVG(g, sheet.dots !== false)}
         <div class="wsp-flow">${bl.map(b => blockHTML(b, g.cw, g)).join('')}</div>
       </div>
     </div>`).join('');
@@ -348,9 +348,11 @@
     delete meta.plan; delete meta.ws; delete meta.dr; delete meta.qz;
     IK.add(id, meta, ws || []);
     const rec = k => (IK.qrUnits.indexOf(meta.unit) >= 0 ? { qr: `r/${id}/${k}` } : {});   // 記録ページの QR（IK.qrUnits の単元だけ）
-    const lay = { pitch: meta.pitch || 7, dots: meta.dots !== false };   // 罫の幅（新しい形は 8mm）・ドット罫線は、ワークシートと同じにする
-    if (qz) IK.quizzes[id] = Object.assign({ id, paper: 'A4', pitch: lay.pitch, dots: lay.dots, head: (meta.head ? meta.head + '・' : '') + '小テスト', blocks: qz }, rec('qz'));
-    if (dr) IK.drills[id] = Object.assign({ id, paper: 'A4', pitch: lay.pitch, dots: lay.dots, head: (meta.head ? meta.head + '・' : '') + '演習', blocks: dr }, rec('dr'));
+    // 罫の幅（新しい形は 8mm）は、ワークシートと同じ。演習プリント・小テストは、ノート型にしない（罫線・ドットを印刷しない。字・図の位置は、罫の行にそろえたまま）。
+    // 罫線をもどすときは、IK.rulePrints = true（ぜんぶの授業）か、授業の定義に rule: true（その授業だけ）。
+    const lay = { pitch: meta.pitch || 7, dots: meta.dots !== false, rule: meta.rule === true || IK.rulePrints === true };
+    if (qz) IK.quizzes[id] = Object.assign({ id, paper: 'A4', pitch: lay.pitch, dots: lay.dots, rule: lay.rule, head: (meta.head ? meta.head + '・' : '') + '小テスト', blocks: qz }, rec('qz'));
+    if (dr) IK.drills[id] = Object.assign({ id, paper: 'A4', pitch: lay.pitch, dots: lay.dots, rule: lay.rule, head: (meta.head ? meta.head + '・' : '') + '演習', blocks: dr }, rec('dr'));
     if (plan) IK.plans[id] = Object.assign({ id }, plan);
   };
   // ワークシートを書くときの道具（data/ws_<単元>.js で使う）
