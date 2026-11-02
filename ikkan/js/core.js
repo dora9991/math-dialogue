@@ -25,7 +25,7 @@
   const plain = t => italic(esc(String(t).replace(/\\([A-Za-z])/g, '\u0001$1')), '<i class="v">', '</i>').replace(/\n/g, '<br>').replace(/\u0001/g, '');
   function inl(s) {
     s = String(s == null ? '' : s);
-    const re = /\{\{([\s\S]*?)\}\}|\[\[([^\]\/]*)\/([^\]]*)\]\]|\*\*([\s\S]+?)\*\*|\^\{([^}]*)\}|\^([0-9]+|[A-Za-z])|√\{([^{}]*)\}|⟦([\s\S]*?)⟧/g;
+    const re = /\{\{([\s\S]*?)\}\}|\[\[([^\]\/]*)\/([^\]]*)\]\]|\*\*([\s\S]+?)\*\*|\^\{([^}]*)\}|\^([0-9]+|[A-Za-z])|√\{([^{}]*)\}|⟦([\s\S]*?)⟧|(（[^（）{}\[\]*^⟦⟧]*?\d+点[^（）{}\[\]*^⟦⟧]*）)/g;
     let out = '', last = 0, m;
     while ((m = re.exec(s))) {
       out += plain(s.slice(last, m.index));
@@ -35,6 +35,7 @@
       else if (m[5] !== undefined) out += `<sup>${inl(m[5])}</sup>`;
       else if (m[7] !== undefined) out += `<span class="sq">√<span>${inl(m[7])}</span></span>`;
       else if (m[8] !== undefined) out += `<span class="sys"><svg class="sysb" viewBox="0 0 10 40" preserveAspectRatio="none" aria-hidden="true"><path d="M9 1C5 1 5 3 5 7L5 15C5 18 3 20 1 20C3 20 5 22 5 25L5 33C5 37 5 39 9 39"/></svg>${m[8].split(';').map(r => `<span class="sysr">${inl(r.trim())}</span>`).join('')}</span>`;   // 連立方程式：⟦x+y=5 ; x−y=1⟧（; で行を分ける。左に大きな { がつく）
+      else if (m[9] !== undefined) out += `<span class="pts">${plain(m[9])}</span>`;   // 配点「（ア 1点＋イ 1点）」は、途中で折り返さない
       else out += `<sup>${plain(m[6])}</sup>`;
       last = re.lastIndex;
     }
@@ -272,7 +273,7 @@
     }
     if (b.type === 'board') {   // 板書の写し：ふだんは罫線だけ。解答を表示すると、教師の板書が赤で出る
       const an = b.answer ? `<div class="tx">${inl(b.answer)}</div>` : '';
-      return `<div class="wb wb-b" style="height:${rowsOf(b) * g.pitch}mm">${an}</div>`;
+      return `<div class="wb wb-b${b.cls ? ' ' + b.cls : ''}" style="height:${rowsOf(b) * g.pitch}mm">${an}</div>`;
     }
     if (b.type === 'gap') return `<div class="wb wb-gap" style="height:${rowsOf(b) * g.pitch}mm"></div>`;
     if (b.type === 'raw') return `<div class="wb wb-raw${b.cls ? ' ' + b.cls : ''}" style="height:${rowsOf(b) * g.pitch}mm">${b.html}</div>`;   // 学習予定表など、HTML をそのまま置く枠（高さは罫の行数）
@@ -313,6 +314,36 @@
   const heightOf = b => (b.type === 'cols' ? Math.max(...b.cols.map(c => c.blocks.reduce((a, x) => a + heightOf(x), 0))) : rowsOf(b));
   const splitPages = blocks => { const pages = [[]]; blocks.forEach(b => { if (b.type === 'break') pages.push([]); else pages[pages.length - 1].push(b); }); return pages; };
 
+  /* 小テストの紙面の配分：上の問題が約 2/3、チャレンジが約 1/3（チャレンジは枠で囲む）。
+     チャレンジの前に、すき間（G）を入れて、チャレンジを紙の下 1/3 にそろえる。チャレンジの答えらん（B）が、1/3 におさまらないときは、
+     答えの行数（\n の数）を下まわらない範囲で、へらす。 */
+  function shapeQuiz(blocks, pitch) {
+    const P = PAPER.A4, rows = Math.floor((P.h - P.top - P.bottom) / pitch + 1e-6);
+    const ci = blocks.findIndex(b => b.type === 'meate' && b.label === 'チャレンジ');
+    if (ci < 0) return { blocks, chRows: 0 };
+    const third = Math.floor(rows / 3), mainRows = rows - third;
+    const main = blocks.slice(0, ci), ch = blocks.slice(ci);
+    while (main.length && main[main.length - 1].type === 'gap') main.pop();
+    const sum = bl => bl.reduce((a, b) => a + heightOf(b), 0);
+    const boards = [];
+    (function walk(bl) { bl.forEach(b => { if (b.type === 'cols') b.cols.forEach(c => walk(c.blocks)); else if (b.type === 'board') boards.push(b); }); })(ch);
+    const lines = b => String(b.answer || '').split('\n').length;
+    boards.forEach(b => { b.rows0 = b.rows; });
+    for (let guard = 0; sum(ch) > third && guard < 40; guard++) {
+      const b = boards.filter(x => x.rows > Math.max(1, lines(x))).sort((a, c) => (c.rows - lines(c)) - (a.rows - lines(a)))[0];
+      if (!b) break;
+      b.rows -= 1;
+    }
+    // 上の問題の下に余った行は、問題ごとの答えらん（B）に、同じだけ配る（チャレンジが 1/3 より大きいときは、そのぶんを引く）。配りきれない分は、すき間にする
+    let fill = Math.min(mainRows - sum(main), rows - sum(main) - sum(ch));
+    const top = main.filter(b => b.type === 'board');
+    for (let guard = 0; fill > 0 && top.length && guard < 60; guard++) { top[guard % top.length].rows += 1; fill -= 1; }
+    // チャレンジの枠の直前の答えらんは、下に、すき間をあける（枠にくっつかないように）
+    if (!(fill > 0)) { const last = main[main.length - 1]; (last && last.type === 'cols' ? last.cols.map(c => c.blocks[c.blocks.length - 1]) : [last]).forEach(b => { if (b && b.type === 'board') b.cls = 'ch-prev'; }); }
+    const out = main.concat(fill > 0 ? [IK.b.G(fill)] : [], ch);
+    return { blocks: out, chRows: rows - sum(main.concat(fill > 0 ? [IK.b.G(fill)] : [])) };   // チャレンジの枠：チャレンジのはじまりから、紙の下まで
+  }
+
   // 記録ページの QR コード（演習プリント・小テスト・学習予定表の右上）。sheet.qr に '#/' のあとの場所（例：r/kukan-03/dr）を書く
   const QR_MM = 14, QR_TOP = 6.5;
   IK.qrBase = IK.qrBase || 'https://dora9991.github.io/math-dialogue/ikkan/';
@@ -322,7 +353,7 @@
     const g = geo(sheet), P = g.P, pages = splitPages(sheet.blocks), hd = sheet.head != null ? sheet.head : '';
     const qr = sheet.qr && IK.qr ? IK.qr.svg(IK.qrBase + '#/' + sheet.qr, QR_MM) : '';
     const qrR = P.mx + (qr ? QR_MM + 2 : 0);
-    return pages.map((bl, pi) => `<div class="wsp" style="width:${P.w}mm;height:${P.h}mm;--pitch:${g.pitch}mm">
+    return pages.map((bl, pi) => `<div class="wsp${sheet.rule === false ? ' wsp-plain' : ''}" style="width:${P.w}mm;height:${P.h}mm;--pitch:${g.pitch}mm">
       ${qr ? `<div class="wsp-qr" style="right:${P.mx}mm;top:${QR_TOP}mm;width:${QR_MM}mm;height:${QR_MM}mm">${qr}</div><div class="wsp-qrcap" style="right:${qrR}mm;top:${P.top - 10.6}mm">${esc(sheet.qrCap || '← 読みとって、丸つけ・記録')}</div>` : ''}
       <div class="wsp-head${qr ? ' has-qr' : ''}" style="left:${P.mx}mm;right:${qrR}mm;top:${P.top - 12}mm">
         <div class="wh-date"><span class="u w2"></span>月<span class="u w2"></span>日（<span class="u w1"></span>）</div>
@@ -331,6 +362,7 @@
       </div>
       <div class="wsp-body" style="left:${P.mx}mm;top:${P.top}mm;width:${g.cw}mm;height:${g.rows * g.pitch}mm">
         ${sheet.rule === false ? (sheet.topRule ? topRuleSVG(g) : '') : ruleSVG(g, sheet.dots !== false)}
+        ${sheet.chRows ? `<div class="ch-frame" style="top:${f2((g.rows - sheet.chRows) * g.pitch - 0.8)}mm;height:${f2(sheet.chRows * g.pitch + 0.8)}mm"></div>` : ''}
         <div class="wsp-flow">${bl.map(b => blockHTML(b, g.cw, g)).join('')}</div>
       </div>
     </div>`).join('');
@@ -357,8 +389,8 @@
     // 罫の幅（新しい形は 8mm）は、ワークシートと同じ。演習プリント・小テストは、ノート型にしない（罫線・ドットを印刷しない。字・図の位置は、罫の行にそろえたまま）。
     // 罫線をもどすときは、IK.rulePrints = true（ぜんぶの授業）か、授業の定義に rule: true（その授業だけ）。
     const lay = { pitch: meta.pitch || 7, dots: meta.dots !== false, rule: meta.rule === true || IK.rulePrints === true };
-    if (qz) IK.quizzes[id] = Object.assign({ id, paper: 'A4', pitch: lay.pitch, dots: lay.dots, rule: lay.rule, topRule: meta.topRule !== false, head: (meta.head ? meta.head + '・' : '') + '小テスト', blocks: qz }, rec('qz'));
-    if (dr) IK.drills[id] = Object.assign({ id, paper: 'A4', pitch: lay.pitch, dots: lay.dots, rule: lay.rule, head: (meta.head ? meta.head + '・' : '') + '演習', blocks: dr }, rec('dr'));
+    if (qz) { const sq = meta.chSplit === false ? { blocks: qz, chRows: 0 } : shapeQuiz(qz, lay.pitch); IK.quizzes[id] = Object.assign({ id, paper: 'A4', pitch: lay.pitch, dots: lay.dots, rule: lay.rule, topRule: meta.topRule !== false, chRows: sq.chRows, head: (meta.head ? meta.head + '・' : '') + '小テスト', blocks: sq.blocks }, rec('qz')); }
+    if (dr) IK.drills[id] = Object.assign({ id, paper: 'A4', pitch: lay.pitch, dots: lay.dots, rule: lay.rule, topRule: meta.topRule !== false, head: (meta.head ? meta.head + '・' : '') + '演習', blocks: dr }, rec('dr'));
     if (plan) IK.plans[id] = Object.assign({ id }, plan);
   };
   // ワークシートを書くときの道具（data/ws_<単元>.js で使う）
