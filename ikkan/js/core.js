@@ -302,6 +302,12 @@
     return `<svg class="wsp-rule" viewBox="0 0 ${f2(W)} ${f2(H)}" width="${f2(W)}mm" height="${f2(H)}mm" overflow="visible" aria-hidden="true">${s}</svg>`;
   }
 
+  // 罫線をかかない紙面（演習プリント・小テスト）の、日付・名前と本文のあいだの線（1本）。sheet.topRule で出す
+  function topRuleSVG(g) {
+    const W = f2(g.cw);
+    return `<svg class="wsp-rule" viewBox="0 0 ${W} 1" width="${W}mm" height="1mm" overflow="visible" aria-hidden="true"><line x1="0" y1="0" x2="${W}" y2="0" stroke="#58748e" stroke-width="0.35" stroke-linecap="round"/></svg>`;
+  }
+
   const geo = sheet => { const P = PAPER[sheet.paper] || PAPER.A4, pitch = sheet.pitch || 7; return { P, pitch, rows: Math.floor((P.h - P.top - P.bottom) / pitch + 1e-6), cw: P.w - 2 * P.mx }; };
   // ブロックの高さ（行）。2段組は、高い列
   const heightOf = b => (b.type === 'cols' ? Math.max(...b.cols.map(c => c.blocks.reduce((a, x) => a + heightOf(x), 0))) : rowsOf(b));
@@ -324,7 +330,7 @@
         <div class="wh-name"><span class="u w1"></span>年<span class="u w1"></span>組<span class="u w1"></span>号　氏名<span class="u w6"></span></div>
       </div>
       <div class="wsp-body" style="left:${P.mx}mm;top:${P.top}mm;width:${g.cw}mm;height:${g.rows * g.pitch}mm">
-        ${sheet.rule === false ? '' : ruleSVG(g, sheet.dots !== false)}
+        ${sheet.rule === false ? (sheet.topRule ? topRuleSVG(g) : '') : ruleSVG(g, sheet.dots !== false)}
         <div class="wsp-flow">${bl.map(b => blockHTML(b, g.cw, g)).join('')}</div>
       </div>
     </div>`).join('');
@@ -351,7 +357,7 @@
     // 罫の幅（新しい形は 8mm）は、ワークシートと同じ。演習プリント・小テストは、ノート型にしない（罫線・ドットを印刷しない。字・図の位置は、罫の行にそろえたまま）。
     // 罫線をもどすときは、IK.rulePrints = true（ぜんぶの授業）か、授業の定義に rule: true（その授業だけ）。
     const lay = { pitch: meta.pitch || 7, dots: meta.dots !== false, rule: meta.rule === true || IK.rulePrints === true };
-    if (qz) IK.quizzes[id] = Object.assign({ id, paper: 'A4', pitch: lay.pitch, dots: lay.dots, rule: lay.rule, head: (meta.head ? meta.head + '・' : '') + '小テスト', blocks: qz }, rec('qz'));
+    if (qz) IK.quizzes[id] = Object.assign({ id, paper: 'A4', pitch: lay.pitch, dots: lay.dots, rule: lay.rule, topRule: meta.topRule !== false, head: (meta.head ? meta.head + '・' : '') + '小テスト', blocks: qz }, rec('qz'));
     if (dr) IK.drills[id] = Object.assign({ id, paper: 'A4', pitch: lay.pitch, dots: lay.dots, rule: lay.rule, head: (meta.head ? meta.head + '・' : '') + '演習', blocks: dr }, rec('dr'));
     if (plan) IK.plans[id] = Object.assign({ id }, plan);
   };
