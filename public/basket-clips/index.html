@@ -88,6 +88,7 @@ a.btn { text-decoration: none; }
 .media-el { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
 .empty-media { color: #9aa8c0; text-align: center; padding: 20px; }
 .empty-media b { color: #e8eef8; font-size: 16px; }
+#noteCanvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 #overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; touch-action: none; }
 .ov-badge { position: absolute; left: 12px; top: 12px; display: flex; flex-direction: column; background: rgba(8, 12, 20, 0.78); color: #fff; border-left: 6px solid var(--team, #3b82f6); border-radius: 8px; padding: 5px 12px 6px; pointer-events: none; }
 .ov-badge b { font-size: 15px; }
@@ -302,6 +303,34 @@ a.btn { text-decoration: none; }
 .fchip.on small { color: rgba(255, 255, 255, 0.85); }
 .fchip .chip { width: 11px; height: 11px; }
 .logclips { display: flex; flex-direction: column; gap: 10px; }
+/* 💬 コメント・スタンプ */
+.notescard { display: flex; flex-direction: column; gap: 8px; }
+.notescard .step-h .num { background: #facc15; color: #3b2a00; font-size: 14px; }
+.notelist { display: flex; flex-direction: column; gap: 6px; max-height: 360px; overflow-y: auto; }
+.noterow { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; border: 1px solid var(--line); border-left: 5px solid #facc15; border-radius: 10px; padding: 6px 8px; }
+.noterow.playing { background: var(--accent-soft); border-color: var(--accent); }
+.noterow .nt { background: none; border: 0; color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 700; padding: 0; }
+.ntext { font-size: 14px; min-width: 0; overflow-wrap: anywhere; }
+.nst { font-size: 18px; }
+.ntags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+.ntag { background: var(--accent-soft); color: var(--accent); border: 0; border-radius: 99px; padding: 1px 8px; font-size: 12px; }
+.notedlg { display: flex; flex-direction: column; gap: 10px; }
+.stamps { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 6px; }
+.stamp { display: flex; flex-direction: column; align-items: center; gap: 1px; background: var(--panel2); border: 2px solid var(--line2); border-radius: 12px; padding: 4px 2px; }
+.stamp .se { font-size: 26px; line-height: 1.15; }
+.stamp small { font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+.stamp.on { border-color: var(--accent); background: var(--accent-soft); }
+.notetext, .notefree, .bookq { background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 7px 9px; font-size: 15px; width: 100%; }
+.notefree { width: 9em; padding: 4px 8px; font-size: 13px; }
+.notecopy { width: 100%; font-size: 13px; }
+.book { display: flex; flex-direction: column; gap: 8px; }
+.booklinks { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.booklist { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; }
+.bookrow { border: 1px solid var(--line); border-left: 5px solid var(--line2); border-radius: 10px; padding: 6px 10px; display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+.bookrow.here { border-left-color: #facc15; }
+.bkv { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bkv b { color: var(--text); }
+@media (pointer: coarse) { .notetext, .notefree, .bookq { font-size: 16px; } }
 /* 1場面の長さ（ふつう＋プレーごと） */
 .winbox { display: flex; flex-direction: column; gap: 4px; }
 .winby summary { cursor: pointer; font-size: 13px; color: var(--accent); }
@@ -364,6 +393,7 @@ a.btn { text-decoration: none; }
         <div class="media-slot" id="mediaSlot">
           <div class="empty-media"><b>試合の動画を選んでください</b><br>「🎬 動画を選ぶ」か、ここに動画ファイルをドロップ</div>
         </div>
+        <canvas id="noteCanvas" aria-hidden="true"></canvas>
         <canvas id="overlay" aria-hidden="true"></canvas>
         <div class="ov-badge" id="ovBadge" hidden></div>
         <div class="ov-drop" id="ovDrop" hidden>ここに動画ファイルをドロップ</div>
@@ -373,6 +403,7 @@ a.btn { text-decoration: none; }
         <button class="btn" id="btnBack" title="5秒戻る（← で2秒）">−5秒</button>
         <button class="btn" id="btnFwd" title="5秒進む（→ で2秒）">+5秒</button>
         <span class="fstep" role="group" aria-label="コマ送り"><button class="btn small" id="btnPrevF" title="1コマ戻る（,）。押し続けると続けて戻る" aria-label="1コマ戻る">◂</button><span class="fslab" aria-hidden="true">コマ</span><button class="btn small" id="btnNextF" title="1コマ進む（.）。押し続けると続けて進む" aria-label="1コマ進む">▸</button></span>
+        <button class="btn small" id="btnNote" title="いまの場面に、コメント・スタンプを入れる（動画の中に数秒出て、書き出す動画にも入る）">💬 コメント</button>
         <button class="btn small" id="btnShot" title="いまのコマを写真にする（iPhone・iPad は「画像を保存」で写真アプリへ。パソコンはダウンロード）">📷 写真</button>
         <select id="speedSel" title="再生の速さ" aria-label="再生の速さ"><option value="0.5">0.5倍</option><option value="1" selected>1倍</option><option value="2">2倍</option></select>
         <span class="time" id="timeText">0:00 / 0:00</span>
@@ -3301,6 +3332,176 @@ a.btn { text-decoration: none; }
 
 </script>
 <script>
+/* js/notes.js */
+/* バスケ得点クリップ — 動画のコメント・スタンプ（その場面から数秒、動画の中に出す。書き出す動画にも入れる）
+   DOM に依存しない部分（データの形・タグ・さがす・リンク）と、Canvas に描く部分（画面の上にも、書き出す動画にも同じ絵を描く）。
+
+   コメント：{ id: 'n1', t: 動画の秒, dur: 出す長さ（秒。ふつう 5）, text: '文', stamps: ['👍', …], tags: ['ヘルプ', …], at: 書いた時刻 }
+   コメント帳（このブラウザの中に、動画ごとにためておく）：{ [動画の見分け]: { name: 動画のファイル名, at, notes: [コメント…] } } */
+(function (root) {
+  'use strict';
+  const BS = root.BS = root.BS || {};
+
+  /* スタンプ（押すと、そのコメントに付く。いくつでも） */
+  const STAMPS = [
+    { s: '👍', l: 'いいね' }, { s: '👏', l: 'ナイス' }, { s: '🔥', l: 'すごい' }, { s: '💯', l: '満点' },
+    { s: '💪', l: 'がんばった' }, { s: '⭐', l: 'お手本' }, { s: '❗', l: 'ここ大事' }, { s: '❓', l: 'しつもん' },
+    { s: '😮', l: 'おどろき' }, { s: '🙆', l: 'OK' }, { s: '🙅', l: 'NG' }, { s: '🏀', l: 'バスケ' }
+  ];
+  /* よく使うタグ（ほかのことばも、文の中に「#ことば」と書けばタグになる） */
+  const TAGS = ['ヘルプ', 'リバウンド', 'ボックスアウト', 'スクリーン', 'ドライブ', 'パス', 'シュート', 'ディフェンス', '速攻', '声かけ', 'ポジション', 'ナイスプレー'];
+  const DUR = 5;                 // 動画の中に出す長さ（秒。ふつう）
+  const DURS = [3, 5, 8];
+  const MAX_TEXT = 60;
+
+  /* 文の中の「#ことば」「＃ことば」をタグにする（記号・空白まで） */
+  function parseTags(text) {
+    const out = [];
+    String(text || '').replace(/[#＃]([^\s#＃、。，．,.!！?？「」『』()（）\[\]]{1,20})/g, (m, w) => { if (!out.includes(w)) out.push(w); return m; });
+    return out;
+  }
+  const cleanTag = (w) => String(w || '').replace(/^[#＃]+/, '').trim().slice(0, 20);
+  /* 形をそろえる（形の合わないものは null） */
+  function clean(n) {
+    if (!n || typeof n !== 'object' || !isFinite(n.t) || n.t < 0) return null;
+    const text = String(n.text || '').trim().slice(0, MAX_TEXT);
+    const stamps = (Array.isArray(n.stamps) ? n.stamps : []).filter((s) => STAMPS.some((x) => x.s === s)).slice(0, 6);
+    const tags = [];
+    (Array.isArray(n.tags) ? n.tags : []).concat(parseTags(text)).map(cleanTag).forEach((w) => { if (w && !tags.includes(w)) tags.push(w); });
+    if (!text.trim() && !stamps.length) return null;
+    const dur = isFinite(n.dur) && n.dur > 0 ? Math.min(30, +n.dur) : DUR;
+    return { id: String(n.id || '').slice(0, 20) || 'n' + Math.round(n.t * 100), t: Math.round(n.t * 100) / 100, dur, text, stamps, tags: tags.slice(0, 8), at: isFinite(n.at) ? +n.at : 0 };
+  }
+  const cleanAll = (list) => (Array.isArray(list) ? list : []).map(clean).filter(Boolean).sort((a, b) => a.t - b.t);
+  /* いま（動画の t 秒）出ているコメント（古い順） */
+  const activeAt = (notes, t) => (notes || []).filter((n) => n.t <= t + 1e-6 && t < n.t + n.dur);
+  const nextId = (notes) => 'n' + ((notes || []).reduce((m, n) => Math.max(m, Number(String(n.id).slice(1)) || 0), 0) + 1);
+  const stampLabel = (s) => (STAMPS.find((x) => x.s === s) || {}).l || '';
+
+  /* さがすための形（全角・半角、カタカナ・ひらがな、大文字・小文字をそろえる） */
+  function norm(s) {
+    return String(s || '').normalize('NFKC').toLowerCase().replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60)).replace(/\s+/g, ' ').trim();
+  }
+  /* コメント帳からさがす：q（ことば。文・タグ・スタンプの呼び名にふくまれる）・tag（そのタグが付いたもの）。新しい動画 → 時刻の順 */
+  function search(book, q, tag) {
+    const nq = norm(q), out = [];
+    Object.keys(book || {}).forEach((key) => {
+      const v = book[key] || {};
+      cleanAll(v.notes).forEach((n) => {
+        if (tag && !n.tags.includes(tag)) return;
+        if (nq) {
+          const hay = norm([n.text, n.tags.join(' '), n.stamps.map(stampLabel).join(' ')].join(' '));
+          if (!nq.split(' ').every((w) => hay.includes(w))) return;
+        }
+        out.push(Object.assign({ key, name: v.name || '', vat: v.at || 0 }, n));
+      });
+    });
+    return out.sort((a, b) => (b.vat - a.vat) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0) || (a.t - b.t));
+  }
+  /* コメント帳のタグと数（多い順） */
+  function tagCounts(book) {
+    const m = {};
+    Object.keys(book || {}).forEach((k) => cleanAll((book[k] || {}).notes).forEach((n) => n.tags.forEach((w) => { m[w] = (m[w] || 0) + 1; })));
+    return Object.keys(m).map((w) => ({ tag: w, n: m[w] })).sort((a, b) => b.n - a.n || (a.tag < b.tag ? -1 : 1));
+  }
+  /* 調べるリンク：YouTube の検索・バスケ・グロウ（バスケ育成アプリ）のずかん */
+  const GROW = 'https://dora9991.github.io/math-dialogue/basket-coach/';
+  const youtubeUrl = (w) => 'https://www.youtube.com/results?search_query=' + encodeURIComponent('バスケ ' + String(w || '').trim());
+  const growUrl = (w) => GROW + '#q/' + encodeURIComponent(String(w || '').trim());
+  /* 文字で書き出す（LINE などに貼る）：「1:23 👍 ヘルプが遅い #ヘルプ」 */
+  function toText(notes, fmt, title) {
+    const lines = cleanAll(notes).map((n) => `${fmt(n.t)} ${n.stamps.join('')}${n.stamps.length && n.text ? ' ' : ''}${n.text}${n.tags.length ? '  ' + n.tags.map((w) => '#' + w).join(' ') : ''}`);
+    return (title ? title + '\n' : '') + lines.join('\n');
+  }
+  /* コメントの場面（書き出し・続けて見る）：コメントの 3 秒前から、出し終わって 1 秒後まで。重なるものは1つに */
+  function segments(notes, duration) {
+    const end = duration > 0 ? duration : Infinity, out = [];
+    cleanAll(notes).forEach((n) => {
+      const s = { t0: Math.max(0, n.t - 3), t1: Math.min(end, n.t + n.dur + 1), ids: [n.id], at: n.t };
+      const prev = out[out.length - 1];
+      if (prev && s.t0 <= prev.t1) { prev.t1 = Math.max(prev.t1, s.t1); prev.ids.push(n.id); } else out.push(s);
+    });
+    return out;
+  }
+
+  /* ---------- 描く（Canvas）----------
+     画面の下のまん中に、スタンプ（大きく。出たときにポンと大きくなる）と、コメントの吹き出し（タグは小さく下に）。
+     W×H：描く絵の大きさ（書き出す動画・画面の映像の大きさ）。x0・y0：映像の左上（画面では、映像のまわりの黒い帯をのぞく）。t：動画の秒 */
+  const FONT = '"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif';
+  const EMOJI = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", ' + FONT;
+  function wrap(ctx, text, maxW) {
+    const lines = [];
+    let cur = '';
+    Array.from(text).forEach((ch) => {
+      if (ch === '\n') { lines.push(cur); cur = ''; return; }
+      if (ctx.measureText(cur + ch).width > maxW && cur) { lines.push(cur); cur = ch; } else cur += ch;
+    });
+    if (cur) lines.push(cur);
+    return lines.slice(0, 3);
+  }
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function draw(ctx, W, H, notes, t, x0, y0) {
+    const act = activeAt(notes, t).slice(-3);
+    if (!act.length) return 0;
+    x0 = x0 || 0; y0 = y0 || 0;
+    const s = Math.min(W / 1280, H / 720) * 1.0;
+    let bottom = y0 + H - 34 * s;
+    // 新しいものほど下に（下から順に積む）
+    for (let i = act.length - 1; i >= 0; i--) {
+      const n = act[i];
+      const k = t - n.t, left = n.t + n.dur - t;
+      const alpha = Math.max(0, Math.min(1, k / 0.25, left / 0.3));
+      const pop = k < 0.3 ? 0.6 + 0.4 * Math.sin((k / 0.3) * Math.PI / 2) * 1.08 : 1;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      let boxH = 0, lines = [];
+      const fs = 30 * s, ts = 19 * s, pad = 16 * s, maxW = W * 0.78;
+      if (n.text) {
+        ctx.font = `bold ${fs}px ${FONT}`;
+        lines = wrap(ctx, n.text, maxW - 2 * pad);
+      }
+      const tagText = n.tags.length ? n.tags.map((w) => '#' + w).join('  ') : '';
+      if (lines.length || tagText) {
+        ctx.font = `bold ${fs}px ${FONT}`;
+        let bw = Math.max(0, ...lines.map((ln) => ctx.measureText(ln).width));
+        ctx.font = `${ts}px ${FONT}`;
+        if (tagText) bw = Math.max(bw, ctx.measureText(tagText).width);
+        bw = Math.min(maxW, bw + 2 * pad + 10 * s);
+        boxH = lines.length * fs * 1.25 + (tagText ? ts * 1.5 : 0) + pad * 1.4;
+        const bx = x0 + (W - bw) / 2, by = bottom - boxH;
+        ctx.fillStyle = 'rgba(8,12,20,0.80)';
+        roundRect(ctx, bx, by, bw, boxH, 12 * s); ctx.fill();
+        ctx.fillStyle = '#facc15';
+        ctx.fillRect(bx, by + 8 * s, 6 * s, boxH - 16 * s);
+        let y = by + pad * 0.7 + fs * 0.62;
+        ctx.font = `bold ${fs}px ${FONT}`; ctx.fillStyle = '#ffffff';
+        lines.forEach((ln) => { ctx.fillText(ln, x0 + W / 2 + 3 * s, y); y += fs * 1.25; });
+        if (tagText) { ctx.font = `${ts}px ${FONT}`; ctx.fillStyle = '#93c5fd'; ctx.fillText(tagText, x0 + W / 2 + 3 * s, y - fs * 0.25 + ts * 0.5); }
+      }
+      if (n.stamps.length) {
+        const es = 58 * s * pop;
+        ctx.font = `${es}px ${EMOJI}`;
+        const sy = bottom - boxH - (boxH ? 10 * s : 0) - 58 * s / 2;
+        ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8 * s;
+        ctx.fillText(n.stamps.join(' '), x0 + W / 2, sy);
+        boxH += 58 * s + (boxH ? 10 * s : 0);
+      }
+      ctx.restore();
+      bottom -= boxH + 12 * s;
+    }
+    return act.length;
+  }
+
+  BS.notes = { STAMPS, TAGS, DUR, DURS, MAX_TEXT, parseTags, cleanTag, clean, cleanAll, activeAt, nextId, stampLabel, norm, search, tagCounts, youtubeUrl, growUrl, GROW, toText, segments, draw };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
 /* js/tapvideo.js */
 /* バスケ得点クリップ — 「バスケ タップ記録」で撮影しながら記録した動画を、この端末（このブラウザ）から読む
    タップ記録は、撮影した動画を IndexedDB 'btap-media' に保存している（同じサイトなので、ここからも読める）。
@@ -3382,6 +3583,7 @@ a.btn { text-decoration: none; }
   const PREFIX = 'bclip:v1:';
   const INDEX = 'bclip:index';
   const PREFS = 'bclip:prefs';
+  const BOOK = 'bclip:notebook';      // コメント帳（動画ごとのコメント・スタンプ。動画の結果を消しても残す）
   const KEEP = 30;          // 覚えておく動画の数（古いものから消す）
 
   function ls() { try { return root.localStorage || null; } catch (e) { return null; } }
@@ -3431,7 +3633,8 @@ a.btn { text-decoration: none; }
       halfT: null, halfNo: null, result: null, edits: BS.clips.emptyEdits(), win: Object.assign({}, p.win), captions: p.captions !== false,
       // 記録（バスケ タップ記録）：log＝読み込んだ記録、sync＝時刻あわせ { anchors: [{ t, v }], how }、logView＝絞り込み、logWin＝1場面の長さ、logOff＝外した場面
       log: null, sync: null, logView: { teams: [true, true], groups: {}, players: [] }, logWin: JSON.parse(JSON.stringify(p.logWin)), logOff: {},
-      logAdds: []          // 自分で足した場面（動画の秒で持つ。時刻あわせを変えても動かない）
+      logAdds: [],         // 自分で足した場面（動画の秒で持つ。時刻あわせを変えても動かない）
+      notes: [], noteBurn: true, name: ''      // コメント・スタンプ（notes.js）・書き出す動画に入れるか・動画のファイル名（コメント帳に出す）
     };
   }
 
@@ -3446,6 +3649,7 @@ a.btn { text-decoration: none; }
     out.logView = Object.assign({ teams: [true, true], groups: {}, players: [] }, st.logView || {});
     out.logOff = st.logOff || {};
     out.logAdds = Array.isArray(st.logAdds) ? st.logAdds : [];
+    out.notes = Array.isArray(st.notes) ? st.notes : [];
     return out;
   }
 
@@ -3464,10 +3668,24 @@ a.btn { text-decoration: none; }
     if (!ok) { prune(10); ok = writeJSON(PREFIX + key, st); }
     writeJSON(INDEX, idx);
     savePrefs(st);
+    bookPut(key, st.name, st.notes);
     return ok;
   }
 
-  BS.store = { videoKey, prefs, fresh, load, save, fixLogWin, logWinDefault };
+  /* コメント帳：動画ごとのコメントを、ためておく（動画の結果を古いものから消しても、コメントは残す） */
+  function book() { const b = readJSON(BOOK); return b && typeof b === 'object' ? b : {}; }
+  function bookPut(key, name, notes) {
+    if (!key) return;
+    const b = book();
+    const list = Array.isArray(notes) ? notes : [];
+    const had = !!b[key];
+    if (!list.length && !had) return;
+    if (list.length) b[key] = { name: String(name || (b[key] && b[key].name) || '').slice(0, 120), at: Date.now(), notes: list };
+    else delete b[key];
+    writeJSON(BOOK, b);
+  }
+
+  BS.store = { videoKey, prefs, fresh, load, save, fixLogWin, logWinDefault, book, bookPut };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -3659,7 +3877,8 @@ a.btn { text-decoration: none; }
   }
 
   /* media: BS.createVideoMedia、clips: [{ t0, t1, label, sub, color }]
-     opts: { title: [行…], end: [行…], accent, captions（false で札なし）, cards（false で最初と最後の画面なし）, audio（false で音なし） }
+     opts: { title: [行…], end: [行…], accent, captions（false で札なし）, cards（false で最初と最後の画面なし）, audio（false で音なし）,
+             notes（コメント・スタンプ。notes.js の形。その動画の時刻から数秒、画面の下に描く） }
      onProgress(0〜1, 文字) / 戻り値 { blob, url, mime, ext, seconds, audio }（中止したら null） */
   async function exportReel(media, clips, opts, onProgress, signal) {
     opts = opts || {};
@@ -3735,6 +3954,7 @@ a.btn { text-decoration: none; }
           if (k < 0.25) drawFade(ctx, W, H, 1 - k / 0.25);
           if (left < 0.25) drawFade(ctx, W, H, 1 - left / 0.25);
           if (opts.captions !== false) drawCaption(ctx, W, H, c, opts);
+          if (opts.notes && opts.notes.length && BS.notes) BS.notes.draw(ctx, W, H, opts.notes, vt);      // コメント・スタンプ（その時刻から数秒）
           done = TITLE + acc + Math.min(Math.max(0, k), len);
           report(`${i + 1} / ${clips.length}`);
           await frame();
@@ -3855,6 +4075,7 @@ a.btn { text-decoration: none; }
   const { h, $ } = BS.ui;
   const C = BS.clips;
   const TL = BS.taplog;
+  const NT = BS.notes;
 
   /* ユニフォームの色（よくある色）。白・黒も選べるように、見本には枠を付ける */
   const COLORS = [
@@ -3879,7 +4100,8 @@ a.btn { text-decoration: none; }
     meta: null,                          // 動画の撮影の始まり（taplog.creationTime。時刻あわせの目安）
     logOut: null, openAuto: false, syncEdit: false, syncPick: null, logThumbJob: null, openWinBy: false,
     adj: null, adjLast: null,            // adj：「↔ 指でずらして合わせる」を開いている間の状態。adjLast：最後に見本にした場面・▶ で見た場面
-    fps: null                            // 動画の1秒のコマ数（MP4・MOV の目次から。分からなければ 30 として、コマ送りに使う）
+    fps: null,                           // 動画の1秒のコマ数（MP4・MOV の目次から。分からなければ 30 として、コマ送りに使う）
+    noteOut: null, openBook: null        // コメントの場面の書き出し・コメント帳の小窓の状態
   };
 
   /* ---------- 小さな道具 ---------- */
@@ -3924,7 +4146,8 @@ a.btn { text-decoration: none; }
     S.key = BS.store.videoKey(file);
     const saved = BS.store.load(S.key);
     S.st = saved || BS.store.fresh();
-    S.thumbs = {}; S.out = [null, null]; S.tab = 0; S.openSetup = false; S.openHow = null; S.live = null;
+    S.st.name = (typeof file === 'string' ? file.split('/').pop() : file.name) || S.st.name || '';
+    S.thumbs = {}; S.out = [null, null]; S.noteOut = null; S.tab = 0; S.openSetup = false; S.openHow = null; S.live = null;
     S.logOut = null; S.meta = null; S.syncEdit = false; S.syncPick = null; S.openAuto = false; S.fps = null;
     const attached = !!S.pendingLog;
     if (attached) { setLog(S.pendingLog); S.pendingLog = null; save(); }
@@ -3936,7 +4159,7 @@ a.btn { text-decoration: none; }
     m.on('play', updatePlayBtn);
     m.on('pause', updatePlayBtn);
     m.on('ready', () => {
-      render(); drawTimeline(); drawOverlay();
+      render(); drawTimeline(); drawOverlay(); drawNotes();
       if (S.st.result) makeThumbs();
       // ゴールがまだなら、自動で探す（前に探した動画・自分で教えた動画では探さない。ゴールの絵だけ作る）
       // 記録を読み込んでいるときは探さない（記録から場面を切り出すなら、ゴールは使わない。必要なら「得点を自動で探す」から）
@@ -3971,6 +4194,7 @@ a.btn { text-decoration: none; }
     if (tt && s !== lastTimeText) { lastTimeText = s; tt.textContent = s; }
     reelTick(t);
     drawTimeline();
+    drawNotes();
     if (!S.running) drawOverlay();
     const sn = $('#syncNow');
     if (sn) sn.textContent = BS.fmtTime(t, true);
@@ -4033,6 +4257,246 @@ a.btn { text-decoration: none; }
     if (ico && ico.textContent !== mark) ico.textContent = mark;
   }
 
+  /* ---------- 💬 コメント・スタンプ（notes.js） ----------
+     いまの場面に、コメント（文）・スタンプ・タグを入れる。その時刻から数秒（ふつう 5 秒）、映像の上に出る（書き出す動画にも同じ絵で入る）。
+     タグ（ヘルプ・リバウンドなど）は、コメント帳（ほかの動画のコメントも）でさがせて、YouTube・バスケ・グロウで調べられる */
+  const noteList = () => NT.cleanAll(S.st && S.st.notes);
+  function drawNotes() {
+    const cv = $('#noteCanvas');
+    if (!cv) return;
+    const r = cv.getBoundingClientRect();
+    const dpr = root.devicePixelRatio || 1;
+    if (cv.width !== Math.round(r.width * dpr) || cv.height !== Math.round(r.height * dpr)) { cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); }
+    const g = cv.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, r.width, r.height);
+    if (!S.media || !S.media.ready || S.marking) return;
+    const notes = noteList();
+    if (!notes.length) return;
+    // 映像の見えているところ（まわりの黒い帯をのぞく）に、書き出す動画と同じ絵を描く
+    const W = S.media.width, H = S.media.height, k = Math.min(r.width / W, r.height / H);
+    NT.draw(g, W * k, H * k, notes, now(), (r.width - W * k) / 2, (r.height - H * k) / 2);
+  }
+  function notesChanged(msg) {
+    S.noteOut = null;
+    save(); render(); drawTimeline(); drawNotes();
+    if (msg) BS.ui.toast(msg, 'ok', 2600);
+  }
+  /* 入れる・直す小窓（n：直すコメント。null なら、いまの場面に新しく） */
+  function openNote(n) {
+    if (!S.media || !S.media.ready) { BS.ui.toast('先に動画を選んでください', 'warn'); return; }
+    if (S.exporting) return;
+    if (S.reel.active) stopReel(true);
+    pause();
+    const edit = !!n;
+    const t = edit ? n.t : Math.round(now() * 100) / 100;
+    const f = edit ? { text: n.text, stamps: n.stamps.slice(), tags: n.tags.slice(), dur: n.dur, free: '' } : { text: '', stamps: [], tags: [], dur: NT.DUR, free: '' };
+    const body = h('div', { class: 'notedlg' });
+    const draw = () => {
+      body.innerHTML = '';
+      const usedTags = NT.tagCounts(BS.store.book()).map((x) => x.tag).filter((w) => !NT.TAGS.includes(w)).slice(0, 8);
+      body.append(
+        h('p', { class: 'note' }, `動画 ${BS.fmtTime(t, true)} から ${f.dur} 秒、映像の上に出ます（書き出す動画にも入ります）。`),
+        h('div', { class: 'stamps', role: 'group', 'aria-label': 'スタンプ' }, NT.STAMPS.map((x) => h('button', { class: 'stamp' + (f.stamps.includes(x.s) ? ' on' : ''), dataset: { stamp: x.s }, 'aria-pressed': f.stamps.includes(x.s) ? 'true' : 'false',
+          onclick: () => { f.stamps = f.stamps.includes(x.s) ? f.stamps.filter((y) => y !== x.s) : f.stamps.concat([x.s]).slice(-6); draw(); } }, h('span', { class: 'se' }, x.s), h('small', null, x.l)))),
+        h('textarea', { id: 'noteText', class: 'notetext', rows: 2, maxlength: NT.MAX_TEXT, placeholder: 'コメント（なくてよい。「#ヘルプ」のように書くとタグになります）', oninput: (e) => { f.text = e.target.value; } }, f.text),
+        h('div', { class: 'frow' }, h('span', { class: 'flab' }, 'タグ'),
+          NT.TAGS.concat(usedTags).concat(f.tags.filter((w) => !NT.TAGS.includes(w) && !usedTags.includes(w))).map((w) => h('button', { class: 'fchip' + (f.tags.includes(w) ? ' on' : ''), dataset: { ntag: w },
+            onclick: () => { f.tags = f.tags.includes(w) ? f.tags.filter((y) => y !== w) : f.tags.concat([w]); draw(); } }, '#' + w)),
+          h('input', { id: 'noteFree', class: 'notefree', type: 'text', maxlength: 20, placeholder: '＋ ほかのタグ', value: f.free, oninput: (e) => { f.free = e.target.value; },
+            onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); const w = NT.cleanTag(f.free); if (w && !f.tags.includes(w)) f.tags.push(w); f.free = ''; draw(); } } })),
+        h('div', { class: 'frow' }, h('span', { class: 'flab' }, '出す長さ'),
+          NT.DURS.map((d) => h('button', { class: 'fchip' + (f.dur === d ? ' on' : ''), dataset: { ndur: String(d) }, onclick: () => { f.dur = d; draw(); } }, `${d} 秒`))));
+      const ta = body.querySelector('#noteText');
+      if (ta) ta.value = f.text;
+    };
+    draw();
+    const buttons = [{ label: 'やめる' }];
+    if (edit) buttons.push({ label: '🗑 消す', cls: 'danger', onClick: () => { removeNote(n.id); } });
+    buttons.push({ label: edit ? '✓ 直す' : '💬 入れる', cls: 'primary', onClick: () => saveNote(n, t, f) });
+    BS.ui.modal({ title: edit ? '💬 コメント・スタンプを直す' : '💬 この場面にコメント・スタンプ', body, buttons });
+    const ok = $('#modal .modal-foot .btn.primary');
+    if (ok) ok.id = 'noteOk';
+    setTimeout(() => { const ta = $('#noteText'); if (ta && !edit && !(root.matchMedia && root.matchMedia('(pointer: coarse)').matches)) ta.focus(); }, 30);
+  }
+  function saveNote(n, t, f) {
+    const free = NT.cleanTag(f.free);
+    const tags = f.tags.concat(free && !f.tags.includes(free) ? [free] : []);
+    const cand = NT.clean({ id: n ? n.id : NT.nextId(S.st.notes), t, dur: f.dur, text: String(f.text || '').trim(), stamps: f.stamps, tags, at: n ? n.at : Date.now() });
+    if (!cand) { BS.ui.toast('コメントを書くか、スタンプを選んでください', 'warn'); return false; }
+    const list = (S.st.notes || []).filter((x) => !n || x.id !== n.id);
+    list.push(cand);
+    S.st.notes = list;
+    notesChanged(n ? 'コメントを直しました' : `入れました：動画 ${BS.fmtTime(t, true)} から ${cand.dur} 秒`);
+    return true;
+  }
+  function removeNote(id) {
+    S.st.notes = (S.st.notes || []).filter((x) => x.id !== id);
+    notesChanged('コメントを消しました');
+  }
+  function playNote(n) {
+    const segs = NT.segments([n], duration());
+    if (!segs.length) return;
+    startReel([Object.assign(segs[0], { kind: 'note', label: noteTitle(n), team: null, n: 1, total: 1 })], null, 'コメントの場面');
+  }
+  const noteTitle = (n) => `${n.stamps.join('')}${n.stamps.length && n.text ? ' ' : ''}${n.text || NT.stampLabel(n.stamps[0])}`.slice(0, 40);
+  function playNoteReel() {
+    const notes = noteList();
+    const segs = NT.segments(notes, duration());
+    if (!segs.length) return;
+    startReel(segs.map((seg, i) => Object.assign(seg, { kind: 'note', label: noteTitle(notes.find((n) => n.id === seg.ids[0])), team: null, n: i + 1, total: segs.length })), null, 'コメントの場面');
+  }
+  /* 文字でコピー（LINE などに貼って、コーチに見てもらう・しつもんする） */
+  function copyNotes() {
+    const text = NT.toText(noteList(), (t) => BS.fmtTime(t), `【${S.st.name || '動画'}】のコメント`);
+    const done = () => BS.ui.toast('コメントを文字でコピーしました（LINE などに貼れます）', 'ok', 3500);
+    const fallback = () => {
+      const ta = h('textarea', { style: { position: 'fixed', left: '-9999px', top: '0' } });
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      let okc = false; try { okc = document.execCommand('copy'); } catch (e) { okc = false; }
+      ta.remove();
+      if (okc) done(); else BS.ui.modal({ title: '📋 コメント（文字）', body: h('textarea', { class: 'notecopy', rows: 8, readonly: true }, text), buttons: [{ label: 'とじる', cls: 'primary' }] });
+    };
+    try { if (root.navigator && navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(done, fallback); return; } } catch (e) { /* 次へ */ }
+    fallback();
+  }
+  function notesCard() {
+    const notes = noteList();
+    const card = h('section', { class: 'card step notescard', id: 'notesCard' },
+      h('div', { class: 'step-h' }, h('span', { class: 'num', 'aria-hidden': 'true' }, '💬'), h('b', null, 'コメント・スタンプ'), h('small', null, notes.length ? `${notes.length}件` : '')));
+    card.append(h('div', { class: 'row' },
+      h('button', { class: 'btn primary', id: 'btnNoteAdd', disabled: !!S.exporting, onclick: () => openNote(null) }, `💬 この場面にコメント（動画 ${BS.fmtTime(now())}）`),
+      h('button', { class: 'btn small', id: 'btnBook', onclick: () => openBook('', null) }, '🔎 コメント帳')));
+    if (!notes.length) {
+      card.append(h('p', { class: 'note' }, '映像を止めて押すと、その場面にコメント・スタンプ（👍 いいね・❗ ここ大事・❓ しつもん など）・タグ（ヘルプ・リバウンドなど）を入れられます。その時刻から数秒、映像の上に出て、「動画にする」で書き出す動画にも入ります。'));
+      return card;
+    }
+    const box = h('div', { class: 'notelist', id: 'noteList' });
+    notes.forEach((n) => {
+      const row = h('div', { class: 'noterow', dataset: { id: 'N' + n.id } },
+        h('button', { class: 'nt', title: 'この時刻へ', onclick: () => seek(n.t) }, BS.fmtTime(n.t)),
+        h('div', { class: 'nb' },
+          h('div', { class: 'ntext' }, n.stamps.length ? h('span', { class: 'nst' }, n.stamps.join('')) : null, n.text ? ' ' + n.text : ''),
+          n.tags.length ? h('div', { class: 'ntags' }, n.tags.map((w) => h('button', { class: 'ntag', dataset: { tag: w }, title: `「${w}」のコメントをさがす・調べる`, onclick: () => openBook('', w) }, '#' + w))) : null),
+        h('div', { class: 'cops' },
+          h('button', { class: 'btn small', title: 'この場面を見る（コメントの 3 秒前から）', onclick: () => playNote(n) }, '▶'),
+          h('button', { class: 'btn small', title: '直す', dataset: { noteedit: n.id }, disabled: !!S.exporting, onclick: () => openNote(n) }, '✎'),
+          h('button', { class: 'btn small', title: '消す', dataset: { notedel: n.id }, disabled: !!S.exporting, onclick: () => removeNote(n.id) }, '🗑')));
+      box.append(row);
+    });
+    card.append(box);
+    const segs = NT.segments(notes, duration());
+    card.append(h('div', { class: 'row acts' },
+      h('button', { class: 'btn', id: 'btnNoteReel', disabled: !!S.exporting, onclick: playNoteReel }, `▶ コメントの場面を続けて見る（${segs.length}）`),
+      h('button', { class: 'btn good', id: 'btnNoteExport', disabled: !!S.exporting, onclick: doNoteExport }, '🎬 コメントの場面を動画にする'),
+      h('button', { class: 'btn small', id: 'btnNoteCopy', onclick: copyNotes }, '📋 文字でコピー')));
+    card.append(h('label', { class: 'switch' }, h('input', { type: 'checkbox', id: 'noteBurn', checked: S.st.noteBurn !== false, onchange: (e) => { S.st.noteBurn = e.target.checked; save(); } }),
+      ' 「動画にする」で書き出す動画に、コメント・スタンプを入れる'));
+    card.append(noteExportBox());
+    card.append(h('p', { class: 'note' }, 'コーチに見てもらうときは、「🎬 コメントの場面を動画にする」で作った動画や「📋 文字でコピー」を、LINE・BAND で送れます（❓ しつもん のスタンプが目印になります）。'));
+    return card;
+  }
+
+  /* 🔎 コメント帳：このブラウザにためてきたコメント（ほかの動画のものも）を、ことば・タグでさがす。
+     さがしたことば・タグは、YouTube（検索）・バスケ・グロウ（バスケ育成アプリのずかん）で調べられる */
+  function openBook(q, tag) {
+    const st = S.openBook = { q: q || '', tag: tag || null };
+    const input = h('input', { id: 'bookQ', class: 'bookq', type: 'search', placeholder: 'ことばでさがす（例：ヘルプ、リバウンド、しつもん）', value: st.q, oninput: () => { st.q = input.value; st.tag = null; upd(); } });
+    const tagRow = h('div', { class: 'frow booktags', id: 'bookTags' });
+    const linkRow = h('div', { class: 'booklinks', id: 'bookLinks' });
+    const count = h('p', { class: 'note', id: 'bookCount' });
+    const list = h('div', { class: 'booklist', id: 'bookList' });
+    const upd = () => {
+      const book = BS.store.book();
+      if (S.key) { const cur = noteList(); if (cur.length) book[S.key] = { name: S.st.name, at: Date.now(), notes: cur }; else delete book[S.key]; }      // いまの動画は、いちばん新しい中身で
+      const tags = NT.tagCounts(book);
+      tagRow.innerHTML = '';
+      // （append に配列を渡すと文字になるので、ひとつずつ渡す）
+      const chips = tags.length ? tags.slice(0, 30).map((x) => h('button', { class: 'fchip' + (st.tag === x.tag ? ' on' : ''), dataset: { btag: x.tag }, onclick: () => { st.tag = st.tag === x.tag ? null : x.tag; if (st.tag) { st.q = ''; input.value = ''; } upd(); } }, '#' + x.tag, h('small', null, String(x.n))))
+        : [h('span', { class: 'note' }, 'まだタグがありません')];
+      tagRow.append(h('span', { class: 'flab' }, 'タグ'), ...chips);
+      const word = st.tag || st.q.trim();
+      linkRow.innerHTML = '';
+      if (word) {
+        linkRow.append(h('span', { class: 'note' }, `「${word}」を調べる：`),
+          h('a', { class: 'btn small', id: 'bookYt', href: NT.youtubeUrl(word), target: '_blank', rel: 'noopener' }, '▶ YouTube'),
+          h('a', { class: 'btn small', id: 'bookGrow', href: NT.growUrl(word), target: '_blank', rel: 'noopener' }, '📘 バスケ・グロウ'));
+      }
+      const res = NT.search(book, st.q, st.tag);
+      count.textContent = Object.keys(book).length ? `${res.length}件${res.length > 100 ? '（はじめの 100 件）' : ''}` : 'まだコメントがありません。映像を止めて「💬 コメント」で入れると、ここにたまっていきます。';
+      list.innerHTML = '';
+      res.slice(0, 100).forEach((r) => {
+        const here = r.key === S.key;
+        list.append(h('div', { class: 'bookrow' + (here ? ' here' : ''), dataset: { key: r.key, id: r.id } },
+          h('div', { class: 'bkv' }, h('b', null, here ? 'この動画' : (r.name || '別の動画')), ` ${BS.fmtTime(r.t)}`),
+          h('div', { class: 'ntext' }, r.stamps.length ? h('span', { class: 'nst' }, r.stamps.join('')) : null, r.text ? ' ' + r.text : ''),
+          r.tags.length ? h('div', { class: 'ntags' }, r.tags.map((w) => h('button', { class: 'ntag', onclick: () => { st.tag = w; st.q = ''; input.value = ''; upd(); } }, '#' + w))) : null,
+          here ? h('button', { class: 'btn small', onclick: () => { BS.ui.closeModal(); const n = noteList().find((x) => x.id === r.id); if (n) playNote(n); } }, '▶ 見る')
+            : h('small', { class: 'note' }, 'その動画を開くと見られます')));
+      });
+    };
+    upd();
+    BS.ui.modal({ title: '🔎 コメント帳', body: h('div', { class: 'book' }, input, tagRow, linkRow, count, list), cls: 'bookcard', buttons: [{ label: 'とじる', cls: 'primary' }], onClose: () => { S.openBook = null; } });
+  }
+
+  /* コメントの場面を動画にする（コメントの 3 秒前から、出し終わって 1 秒後まで。重なるものは1つに。コメント・スタンプ入り） */
+  async function doNoteExport() {
+    if (S.exporting || !S.media) return;
+    stopReel(true);
+    cancelMarking();
+    const notes = noteList();
+    const segs = NT.segments(notes, duration());
+    if (!segs.length) { BS.ui.toast('コメントがありません', 'warn'); return; }
+    const clips = segs.map((seg, i) => ({ t0: seg.t0, t1: seg.t1, label: '💬 ' + noteTitle(notes.find((n) => n.id === seg.ids[0])), sub: `コメント ${i + 1} / ${segs.length}・動画 ${BS.fmtTime(seg.at)}`, color: '#facc15' }));
+    const ctrl = new AbortController();
+    S.exporting = { kind: 'note', ctrl };
+    S.noteOut = null;
+    render();
+    const name = (S.st.name || '').replace(/\.[^.]+$/, '');
+    try {
+      const res = await BS.exportReel(S.media, clips, {
+        title: ['💬 コメントの場面', name || '試合の動画', `${segs.length}場面`], end: [`💬 コメントの場面 ${segs.length}場面`, name || ''],
+        accent: '#facc15', captions: S.st.captions !== false, cards: true, notes
+      }, (frac, lab) => {
+        const bar = $('#expBar'), el = $('#expLabel');
+        if (bar) bar.style.width = (frac * 100).toFixed(1) + '%';
+        if (el) el.textContent = `${lab}（${Math.round(frac * 100)}%）`;
+      }, ctrl.signal);
+      if (res) {
+        res.name = `${baseName()}_コメント_${segs.length}場面.${res.ext}`;
+        S.noteOut = res;
+        BS.ui.toast('動画ができました。「⬇ 保存する」で保存できます', 'ok', 5000);
+      } else BS.ui.toast('書き出しを中止しました', 'warn');
+    } catch (err) {
+      console.error('[export]', err);
+      BS.ui.toast('書き出しに失敗しました：' + err.message, 'err', 8000);
+    }
+    S.exporting = null;
+    render();
+  }
+  function noteExportBox() {
+    const box = h('div', { class: 'exportbox', id: 'noteExportBox' });
+    const sup = BS.exportSupport();
+    const exp = S.exporting;
+    if (!sup) { box.append(h('p', { class: 'note' }, 'このブラウザは動画の書き出しに対応していません（Chrome・Edge・Safari の新しい版で使えます）。')); return box; }
+    if (exp && exp.kind === 'note') {
+      box.append(h('b', null, '🎬 コメントの場面を動画にしています… '), h('span', { id: 'expLabel', class: 'note' }, ''),
+        h('div', { class: 'progress' }, h('i', { id: 'expBar' })),
+        h('p', { class: 'note' }, '実際の長さの時間がかかります。このタブを表示したままにしてください（別のタブにすると止まります）。'),
+        h('button', { class: 'btn small danger', onclick: () => exp.ctrl.abort() }, '中止'));
+      return box;
+    }
+    const r = S.noteOut;
+    if (!r) { box.hidden = true; return box; }
+    box.append(h('div', { class: 'row' }, h('b', null, '✅ 動画ができました '),
+      h('span', { class: 'note' }, `${r.ext.toUpperCase()}・${(r.blob.size / 1048576).toFixed(1)}MB・約${Math.round(r.seconds)}秒${r.audio ? '' : '・音声なし'}`)),
+      h('video', { src: r.url, controls: true, playsinline: true, class: 'outvideo' }),
+      h('div', { class: 'row' },
+        h('a', { class: 'btn primary', href: r.url, download: r.name, id: 'btnNoteDownload' }, '⬇ 保存する'),
+        h('span', { class: 'note' }, r.ext === 'webm' ? 'WebM 形式です。iPhone で見るときは、MP4 に変換が必要なことがあります。' : 'MP4 形式です。スマホ・LINE でも見られます。')));
+    return box;
+  }
+
   /* ---------- 画面（右のパネル） ---------- */
   function render() {
     const P = $('#panel');
@@ -4044,6 +4508,7 @@ a.btn { text-decoration: none; }
       // 記録から切り出す：記録 → 時刻あわせ → 場面。自動の解析（ゴール）は、たたんだ中に
       P.append(stepVideo(), logCard(), syncCard());
       if (synced()) P.append(logClipsCard());
+      P.append(notesCard());
       const d = h('details', { class: 'setupfold', id: 'autoFold' }, h('summary', null, '得点を自動で探す（映像の解析）・チームの色'),
         h('p', { class: 'note' }, '記録がなくても、ボールがリングを通った場面を映像から探せます。探した得点は、記録との時刻あわせにも使えます。'),
         hasRes && !S.running ? resultsCard() : null, stepTeams(), stepGoals(), stepRun());
@@ -4051,14 +4516,16 @@ a.btn { text-decoration: none; }
       d.querySelector('summary').addEventListener('click', () => { S.openAuto = !d.open; });
       P.append(d);
     } else if (hasRes && !S.running) {
-      P.append(resultsCard());
+      P.append(resultsCard(), notesCard());
       const d = h('details', { class: 'setupfold' }, h('summary', null, '設定を変える（動画・チームの色・ゴール・後半）'),
         stepVideo(), stepTeams(), stepGoals(), stepRun());
       d.open = !!S.openSetup || !!S.marking;
       d.querySelector('summary').addEventListener('click', () => { S.openSetup = !d.open; });
       P.append(d);
     } else {
-      P.append(stepVideo(), stepTeams(), stepGoals(), stepRun());
+      P.append(stepVideo());
+      if (S.media) P.append(notesCard());
+      P.append(stepTeams(), stepGoals(), stepRun());
     }
     P.scrollTop = keepScroll;
   }
@@ -4540,10 +5007,11 @@ a.btn { text-decoration: none; }
 
   /* ---------- 続けて再生 ---------- */
   function segLabel(seg) {
-    if (seg.kind === 'log') return seg.label;
+    if (seg.kind === 'log' || seg.kind === 'note') return seg.label;
     return seg.maybe ? '🤔 たぶん入った？' : seg.rec ? `📋 記録 ${seg.n} / ${seg.total}` : `${ICON[seg.team]} ${WHAT[seg.team]} ${seg.n} / ${seg.total}`;
   }
   function segSub(seg) {
+    if (seg.kind === 'note') return `💬 コメント・動画 ${BS.fmtTime(seg.at)}${seg.total > 1 ? `・${seg.n} / ${seg.total}` : ''}`;
     if (seg.kind === 'log') return `${TL.periodLabel(seg.period)}・タップ記録 ${BS.fmtTime(seg.t)}${seg.total > 1 ? `・${seg.n} / ${seg.total}` : ''}`;
     return `${seg.half ? (seg.half === 2 ? '後半・' : '前半・') : ''}${BS.fmtTime(seg.at)}`;
   }
@@ -4608,6 +5076,7 @@ a.btn { text-decoration: none; }
     badge.append(h('b', null, segLabel(seg)), h('span', null, segSub(seg)));
     badge.hidden = false;
     document.querySelectorAll('.clip, .rec, .mb').forEach((r) => r.classList.toggle('playing', seg.ids.includes(r.dataset.id)));
+    document.querySelectorAll('.noterow').forEach((r) => r.classList.toggle('playing', seg.kind === 'note' && seg.ids.includes(r.dataset.id.slice(1))));
   }
 
   /* ---------- 動画にする ---------- */
@@ -4617,7 +5086,7 @@ a.btn { text-decoration: none; }
     const sup = BS.exportSupport();
     const exp = S.exporting;
     if (!sup) { box.append(h('p', { class: 'note' }, 'このブラウザは動画の書き出しに対応していません（Chrome・Edge・Safari の新しい版で使えます）。続けて再生は使えます。')); return box; }
-    if (exp && exp.kind !== 'log') {
+    if (exp && !exp.kind) {          // （得点の書き出し。タップ記録・コメントの書き出しは、それぞれの欄に出す）
       box.append(h('b', null, `🎬 ${exp.single ? 'この場面を' : WHAT[exp.team] + 'を'}動画にしています… `), h('span', { id: 'expLabel', class: 'note' }, ''),
         h('div', { class: 'progress' }, h('i', { id: 'expBar' })),
         h('p', { class: 'note' }, '実際の長さの時間がかかります。このタブを表示したままにしてください（別のタブにすると止まります）。'),
@@ -4652,7 +5121,7 @@ a.btn { text-decoration: none; }
     try {
       const res = await BS.exportReel(S.media, clips, {
         title, end: [`${WHAT[team]}ところ ${segs.length}シーン`, `${teamTag(0)} vs ${teamTag(1)}`],
-        accent: teamColor(team), captions: S.st.captions !== false, cards: !single
+        accent: teamColor(team), captions: S.st.captions !== false, cards: !single, notes: S.st.noteBurn !== false ? noteList() : []
       }, (frac, label) => {
         const bar = $('#expBar'), lab = $('#expLabel');
         if (bar) bar.style.width = (frac * 100).toFixed(1) + '%';
@@ -5495,7 +5964,7 @@ a.btn { text-decoration: none; }
     try {
       const res = await BS.exportReel(S.media, clips, {
         title: [ft, vs, `${segs.length}シーン`], end: [`${ft} ${segs.length}シーン`, vs],
-        accent: teamColor(segs[0].team), captions: S.st.captions !== false, cards: !single
+        accent: teamColor(segs[0].team), captions: S.st.captions !== false, cards: !single, notes: S.st.noteBurn !== false ? noteList() : []
       }, (frac, lab) => {
         const bar = $('#expBar'), el = $('#expLabel');
         if (bar) bar.style.width = (frac * 100).toFixed(1) + '%';
@@ -6105,6 +6574,11 @@ a.btn { text-decoration: none; }
         g.strokeStyle = '#facc15'; g.lineWidth = 1.5; g.strokeRect(x - 2.5, y, 5, 12);
       });
     }
+    // コメント・スタンプ（上のふちに、黄色の小さな三角）
+    noteList().forEach((n) => {
+      const xn = X(n.t);
+      g.fillStyle = '#facc15'; g.beginPath(); g.moveTo(xn - 4, 0); g.lineTo(xn + 4, 0); g.lineTo(xn, 6); g.closePath(); g.fill();
+    });
     // 再生位置
     const x = X(now());
     g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, Hh); g.stroke();
@@ -6135,6 +6609,8 @@ a.btn { text-decoration: none; }
         h('p', null, '試合中に「バスケ タップ記録」でプレーをタップしておくと、その記録（書き出したファイル）を、上の「📲 タップ記録」から読み込めます。動画の中の1つの場面（ティップオフなど）で時刻を合わせると、記録したプレーの場面を、チーム・プレー・選手で選んで、続けて見たり1本の動画にしたりできます。ゴールの指定や解析はいりません。'),
         h('p', null, '別のカメラで撮った動画で場面がずれるときは、③ の「↔ 指でずらして合わせる」（④ の各場面の「↔」でも）。場面の枠を目盛りの上で指で左右に動かすと、記録した瞬間のコマが出るので、プレーの瞬間で指を離して「これで合わせる」。全部の場面が同じだけずれます。'),
         h('p', null, '1場面の長さは、ふつう「タップした瞬間の前 10 秒・後 2 秒」（リバウンドと★は前 5 秒）。④ の「⏱ プレーごとに長さを変える」で変えられます。記録にない場面は、映像を止めて「＋ この瞬間を場面に足す」。'),
+        h('h4', null, '💬 コメント・スタンプ'),
+        h('p', null, '映像を止めて「💬 コメント」を押すと、その場面にコメント・スタンプ（👍 いいね・❗ ここ大事・❓ しつもん など）・タグ（ヘルプ・リバウンドなど）を入れられます。その時刻から 5 秒（3・8 秒も）映像の上に出て、「動画にする」で書き出す動画にも入ります。「🎬 コメントの場面を動画にする」で、コメントのところだけを1本に。「🔎 コメント帳」で、ほかの動画のコメントもことば・タグでさがせて、YouTube・バスケ・グロウで調べられます。コーチに見てもらうときは、できた動画や「📋 文字でコピー」を LINE・BAND で送ってください。'),
         h('h4', null, 'コマ送り・写真'),
         h('p', null, '映像の下の「◂ コマ ▸」で1コマずつ（押し続けると続けて）。「📷 写真」で、いまのコマを写真にできます（iPhone・iPad は「画像を保存」で写真アプリへ）。'),
         h('h4', null, 'どちらのチームの得点か'),
@@ -6195,6 +6671,7 @@ a.btn { text-decoration: none; }
     holdRepeat($('#btnPrevF'), () => stepFrame(-1));
     holdRepeat($('#btnNextF'), () => stepFrame(1));
     $('#btnShot').addEventListener('click', snapshot);
+    $('#btnNote').addEventListener('click', () => openNote(null));
     $('#speedSel').addEventListener('change', (e) => { if (S.media) S.media.rate = Number(e.target.value); });
     $('#reelPrev').addEventListener('click', () => stepReel(-1));
     $('#reelStop').addEventListener('click', () => stopReel());
@@ -6216,7 +6693,7 @@ a.btn { text-decoration: none; }
       if (js) readLogFile(js);
       if (!f && !js) BS.ui.toast('動画ファイル（MP4・MOV など）か、記録のファイル（.json）をドロップしてください', 'err');
     });
-    root.addEventListener('resize', () => { drawOverlay(); drawTimeline(); if (S.adj) adjFrame(); });
+    root.addEventListener('resize', () => { drawOverlay(); drawTimeline(); drawNotes(); if (S.adj) adjFrame(); });
     root.addEventListener('beforeunload', (e) => { if (S.running || S.exporting) { e.preventDefault(); e.returnValue = ''; } });
     // 閉じる・裏に回るときは、待たずに保存する（保存は 0.15 秒まとめてから書くため）
     const flush = () => { if (S.saveTimer) { clearTimeout(S.saveTimer); S.saveTimer = 0; if (S.key) BS.store.save(S.key, S.st); } };
@@ -6234,7 +6711,8 @@ a.btn { text-decoration: none; }
   }
 
   BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, findGoals, cancelFind, list, clipsFor, maybes: () => C.maybes(S.st.result, setupOf(), S.st.edits, list()), record: recRows, promote, unpromote, judge, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs,
-    loadLog, setLog, removeLog, logClips, syncAt, nudge, playLogReel, doLogExport, syncFromMeta, syncFromShots, openTapVideo, cameraSync, openAdjust, openAddScene, stepFrame, snapshot };
+    loadLog, setLog, removeLog, logClips, syncAt, nudge, playLogReel, doLogExport, syncFromMeta, syncFromShots, openTapVideo, cameraSync, openAdjust, openAddScene, stepFrame, snapshot,
+    openNote, openBook, doNoteExport, noteList };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }

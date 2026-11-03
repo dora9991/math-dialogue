@@ -179,6 +179,13 @@ const { chromium } = require('playwright');
   const libN = await page.$$eval('#lib-list .row-card', (r) => r.length);
   if (!libN) fail('ずかん：ピボット が見つからない');
   await shot(page, 'k-lib');
+  // ほかのアプリ（バスケ得点クリップのコメント帳）から「#q/ことば」で開く → ずかんで、そのことばをさがす
+  await go(page, 'q/' + encodeURIComponent('ヘルプ'));
+  await page.waitForTimeout(150);
+  const qHash = await page.evaluate(() => location.hash);
+  const qVal = await page.$eval('#lib-q', (e) => e.value).catch(() => '');
+  const qN = await page.$$eval('#lib-list .row-card', (r) => r.length).catch(() => 0);
+  if (qHash !== '#lib' || qVal !== 'ヘルプ' || !qN) fail(`#q/ヘルプ：ずかんで「ヘルプ」をさがさない（${qHash}・${qVal}・${qN}件）`);
   // きろく・ケガ・れんしゅう
   for (const [h, name] of [['log', 'k-log'], ['practice', 'k-practice'], ['s/shoot', 'k-skill'], ['aid', 'k-aid'], ['more', 'k-more'], ['settings', 'k-settings']]) { await go(page, h); await shot(page, name); }
   await go(page, 'log'); await shot(page, 'k-log-full', true);

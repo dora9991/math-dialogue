@@ -80,6 +80,7 @@ a.btn { text-decoration: none; }
 .media-el { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
 .empty-media { color: #9aa8c0; text-align: center; padding: 20px; }
 .empty-media b { color: #e8eef8; font-size: 16px; }
+#noteCanvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 #overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; touch-action: none; }
 .ov-badge { position: absolute; left: 12px; top: 12px; display: flex; flex-direction: column; background: rgba(8, 12, 20, 0.78); color: #fff; border-left: 6px solid var(--team, #3b82f6); border-radius: 8px; padding: 5px 12px 6px; pointer-events: none; }
 .ov-badge b { font-size: 15px; }
@@ -294,6 +295,34 @@ a.btn { text-decoration: none; }
 .fchip.on small { color: rgba(255, 255, 255, 0.85); }
 .fchip .chip { width: 11px; height: 11px; }
 .logclips { display: flex; flex-direction: column; gap: 10px; }
+/* 💬 コメント・スタンプ */
+.notescard { display: flex; flex-direction: column; gap: 8px; }
+.notescard .step-h .num { background: #facc15; color: #3b2a00; font-size: 14px; }
+.notelist { display: flex; flex-direction: column; gap: 6px; max-height: 360px; overflow-y: auto; }
+.noterow { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; border: 1px solid var(--line); border-left: 5px solid #facc15; border-radius: 10px; padding: 6px 8px; }
+.noterow.playing { background: var(--accent-soft); border-color: var(--accent); }
+.noterow .nt { background: none; border: 0; color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 700; padding: 0; }
+.ntext { font-size: 14px; min-width: 0; overflow-wrap: anywhere; }
+.nst { font-size: 18px; }
+.ntags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+.ntag { background: var(--accent-soft); color: var(--accent); border: 0; border-radius: 99px; padding: 1px 8px; font-size: 12px; }
+.notedlg { display: flex; flex-direction: column; gap: 10px; }
+.stamps { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 6px; }
+.stamp { display: flex; flex-direction: column; align-items: center; gap: 1px; background: var(--panel2); border: 2px solid var(--line2); border-radius: 12px; padding: 4px 2px; }
+.stamp .se { font-size: 26px; line-height: 1.15; }
+.stamp small { font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+.stamp.on { border-color: var(--accent); background: var(--accent-soft); }
+.notetext, .notefree, .bookq { background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 7px 9px; font-size: 15px; width: 100%; }
+.notefree { width: 9em; padding: 4px 8px; font-size: 13px; }
+.notecopy { width: 100%; font-size: 13px; }
+.book { display: flex; flex-direction: column; gap: 8px; }
+.booklinks { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.booklist { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; }
+.bookrow { border: 1px solid var(--line); border-left: 5px solid var(--line2); border-radius: 10px; padding: 6px 10px; display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+.bookrow.here { border-left-color: #facc15; }
+.bkv { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bkv b { color: var(--text); }
+@media (pointer: coarse) { .notetext, .notefree, .bookq { font-size: 16px; } }
 /* 1場面の長さ（ふつう＋プレーごと） */
 .winbox { display: flex; flex-direction: column; gap: 4px; }
 .winby summary { cursor: pointer; font-size: 13px; color: var(--accent); }

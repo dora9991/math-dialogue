@@ -26,6 +26,7 @@
         <div class="media-slot" id="mediaSlot">
           <div class="empty-media"><b>試合の動画を選んでください</b><br>「🎬 動画を選ぶ」か、ここに動画ファイルをドロップ</div>
         </div>
+        <canvas id="noteCanvas" aria-hidden="true"></canvas>
         <canvas id="overlay" aria-hidden="true"></canvas>
         <div class="ov-badge" id="ovBadge" hidden></div>
         <div class="ov-drop" id="ovDrop" hidden>ここに動画ファイルをドロップ</div>
@@ -35,6 +36,7 @@
         <button class="btn" id="btnBack" title="5秒戻る（← で2秒）">−5秒</button>
         <button class="btn" id="btnFwd" title="5秒進む（→ で2秒）">+5秒</button>
         <span class="fstep" role="group" aria-label="コマ送り"><button class="btn small" id="btnPrevF" title="1コマ戻る（,）。押し続けると続けて戻る" aria-label="1コマ戻る">◂</button><span class="fslab" aria-hidden="true">コマ</span><button class="btn small" id="btnNextF" title="1コマ進む（.）。押し続けると続けて進む" aria-label="1コマ進む">▸</button></span>
+        <button class="btn small" id="btnNote" title="いまの場面に、コメント・スタンプを入れる（動画の中に数秒出て、書き出す動画にも入る）">💬 コメント</button>
         <button class="btn small" id="btnShot" title="いまのコマを写真にする（iPhone・iPad は「画像を保存」で写真アプリへ。パソコンはダウンロード）">📷 写真</button>
         <select id="speedSel" title="再生の速さ" aria-label="再生の速さ"><option value="0.5">0.5倍</option><option value="1" selected>1倍</option><option value="2">2倍</option></select>
         <span class="time" id="timeText">0:00 / 0:00</span>
@@ -63,6 +65,7 @@
 <script src="js/auto-engine.js"></script>
 <script src="js/clips.js"></script>
 <script src="js/taplog.js"></script>
+<script src="js/notes.js"></script>
 <script src="js/tapvideo.js"></script>
 <script src="js/store.js"></script>
 <script src="js/media.js"></script>

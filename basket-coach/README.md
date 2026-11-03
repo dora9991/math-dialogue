@@ -14,6 +14,8 @@
 - インストール不要・ビルド不要。**記録も動画も、その端末の中だけで扱い、どこにも送らない**（AI の部品とフォントだけ、インターネットから読みこむ）
 - 公開ページ：**https://dora9991.github.io/math-dialogue/basket-coach/** （更新は `node tools/publish-pages.cjs`。gh-pages の `basket-coach/index.html` だけを差し替え、ほかの公開物には触らない）
 
+- ほかのアプリから、ずかんの検索を開ける：`https://dora9991.github.io/math-dialogue/basket-coach/#q/ことば`（例：`#q/ヘルプ`。[バスケ得点クリップ](https://dora9991.github.io/math-dialogue/basket-clips/)のコメント帳の「📘 バスケ・グロウ」から使う。はじめての人は、先にプロフィールを聞く）
+
 ## 開き方
 
 | どこで | どうする |

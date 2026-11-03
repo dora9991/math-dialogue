@@ -8,6 +8,7 @@
   const PREFIX = 'bclip:v1:';
   const INDEX = 'bclip:index';
   const PREFS = 'bclip:prefs';
+  const BOOK = 'bclip:notebook';      // コメント帳（動画ごとのコメント・スタンプ。動画の結果を消しても残す）
   const KEEP = 30;          // 覚えておく動画の数（古いものから消す）
 
   function ls() { try { return root.localStorage || null; } catch (e) { return null; } }
@@ -57,7 +58,8 @@
       halfT: null, halfNo: null, result: null, edits: BS.clips.emptyEdits(), win: Object.assign({}, p.win), captions: p.captions !== false,
       // 記録（バスケ タップ記録）：log＝読み込んだ記録、sync＝時刻あわせ { anchors: [{ t, v }], how }、logView＝絞り込み、logWin＝1場面の長さ、logOff＝外した場面
       log: null, sync: null, logView: { teams: [true, true], groups: {}, players: [] }, logWin: JSON.parse(JSON.stringify(p.logWin)), logOff: {},
-      logAdds: []          // 自分で足した場面（動画の秒で持つ。時刻あわせを変えても動かない）
+      logAdds: [],         // 自分で足した場面（動画の秒で持つ。時刻あわせを変えても動かない）
+      notes: [], noteBurn: true, name: ''      // コメント・スタンプ（notes.js）・書き出す動画に入れるか・動画のファイル名（コメント帳に出す）
     };
   }
 
@@ -72,6 +74,7 @@
     out.logView = Object.assign({ teams: [true, true], groups: {}, players: [] }, st.logView || {});
     out.logOff = st.logOff || {};
     out.logAdds = Array.isArray(st.logAdds) ? st.logAdds : [];
+    out.notes = Array.isArray(st.notes) ? st.notes : [];
     return out;
   }
 
@@ -90,8 +93,22 @@
     if (!ok) { prune(10); ok = writeJSON(PREFIX + key, st); }
     writeJSON(INDEX, idx);
     savePrefs(st);
+    bookPut(key, st.name, st.notes);
     return ok;
   }
 
-  BS.store = { videoKey, prefs, fresh, load, save, fixLogWin, logWinDefault };
+  /* コメント帳：動画ごとのコメントを、ためておく（動画の結果を古いものから消しても、コメントは残す） */
+  function book() { const b = readJSON(BOOK); return b && typeof b === 'object' ? b : {}; }
+  function bookPut(key, name, notes) {
+    if (!key) return;
+    const b = book();
+    const list = Array.isArray(notes) ? notes : [];
+    const had = !!b[key];
+    if (!list.length && !had) return;
+    if (list.length) b[key] = { name: String(name || (b[key] && b[key].name) || '').slice(0, 120), at: Date.now(), notes: list };
+    else delete b[key];
+    writeJSON(BOOK, b);
+  }
+
+  BS.store = { videoKey, prefs, fresh, load, save, fixLogWin, logWinDefault, book, bookPut };
 })(typeof window !== 'undefined' ? window : globalThis);

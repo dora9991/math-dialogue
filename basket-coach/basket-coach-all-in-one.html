@@ -19785,6 +19785,8 @@ BC && (BC.currentFile = "js/app.js");
   function route() {
     closeModal();
     const h = decodeURIComponent(location.hash.slice(1)) || 'home';
+    // ほかのアプリ（バスケ得点クリップのコメント帳など）から「#q/ことば」で開いたとき：ずかんで、そのことばをさがす
+    if (h.startsWith('q/')) { S.lib.q = h.slice(2).trim().slice(0, 40); location.replace(S.me ? '#lib' : '#hello'); return; }
     if (!S.me && h !== 'hello' && h !== 'about') { location.replace('#hello'); return; }
     if (h !== S.hash) {
       if (TOP.includes(h) || h === 'hello') stack.length = 0;

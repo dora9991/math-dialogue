@@ -189,6 +189,48 @@ const back = S2.load(key);
 ok(back && back.result.shots.length === 1 && back.edits.off.x && back.teams[0].name === '致遠館', '保存して読み戻せる');
 ok(S2.fresh().teams[0].colorName === '青', '次の動画でも、前回の色から始まる');
 ok(S2.load('nothing') === null, '保存していない動画は null');
+{
+  const BS4 = load(['core.js', 'clips.js', 'store.js'], { localStorage: fakeLS });
+  const st4 = BS4.store.fresh();
+  st4.name = '練習試合.mp4';
+  st4.notes = [{ id: 'n1', t: 12, text: 'ナイス', stamps: [], tags: ['パス'] }];
+  BS4.store.save('k4', st4);
+  ok(BS4.store.book().k4 && BS4.store.book().k4.name === '練習試合.mp4' && BS4.store.book().k4.notes.length === 1 && BS4.store.load('k4').notes.length === 1, 'コメント帳：保存すると、動画のファイル名と一緒にコメントがたまる（動画にも戻る）');
+  st4.notes = [];
+  BS4.store.save('k4', st4);
+  ok(!BS4.store.book().k4, 'コメントを全部消すと、コメント帳からも消える');
+}
+
+section('💬 コメント・スタンプ（notes.js）');
+{
+  const BN = load(['core.js', 'notes.js']);
+  const N = BN.notes;
+  ok(JSON.stringify(N.parseTags('ヘルプが遅い #ヘルプ ＃ボックスアウト。#ヘルプ')) === '["ヘルプ","ボックスアウト"]', '文の中の「#ことば」「＃ことば」がタグになる（同じものは1つ）');
+  const a = N.clean({ id: 'n1', t: 30.123, text: '  ヘルプが遅い #ヘルプ', stamps: ['👍', 'x', '❓'], tags: ['#リバウンド', 'ヘルプ'] });
+  ok(a && a.t === 30.12 && a.dur === 5 && a.stamps.join('') === '👍❓' && a.tags.join() === 'リバウンド,ヘルプ', 'そろえる：時刻・出す長さ 5 秒（ふつう）・知らないスタンプは捨てる・タグ（文の中のものも）', a);
+  ok(N.clean({ t: 3, text: '  ' }) === null && N.clean({ t: -1, text: 'a' }) === null && N.clean({ t: 3, stamps: ['👍'] }).text === '' && N.clean({ t: 1, text: 'a', dur: 99 }).dur === 30, 'コメントもスタンプもないもの・時刻のおかしいものは捨てる（スタンプだけはよい）・長さは 30 秒まで');
+  const list = N.cleanAll([{ id: 'n2', t: 50, text: 'ナイス', dur: 3 }, a, null, { t: 'x' }]);
+  ok(list.length === 2 && list[0].id === 'n1', '時刻の順にならべる');
+  ok(N.activeAt(list, 30.12).length === 1 && N.activeAt(list, 35.11).length === 1 && N.activeAt(list, 35.2).length === 0 && N.activeAt(list, 52.9).length === 1 && N.activeAt(list, 29).length === 0, 'その時刻から dur 秒だけ出す（30.12〜35.12・50〜53）');
+  ok(N.nextId(list) === 'n3' && N.nextId([]) === 'n1', '次の番号');
+  const book = { v1: { name: '練習試合.mp4', at: 100, notes: [a] }, v2: { name: '公式戦.mov', at: 200, notes: [{ id: 'n1', t: 10, text: 'ボックスアウト！', tags: ['リバウンド'] }, { id: 'n2', t: 20, stamps: ['❓'] }] } };
+  ok(N.search(book, 'へるぷ').map((r) => r.key + r.id).join() === 'v1n1', 'さがす：ひらがなでカタカナも（「へるぷ」→「ヘルプ」）');
+  ok(N.search(book, '', 'リバウンド').map((r) => r.key + r.id).join() === 'v2n1,v1n1', 'タグでさがす（新しい動画から）');
+  ok(N.search(book, 'しつもん').map((r) => r.key + r.id).join() === 'v2n2,v1n1' && N.search(book, '').length === 3, 'スタンプの呼び名でも（「しつもん」→ ❓）・ことばがなければ全部');
+  ok(JSON.stringify(N.tagCounts(book).slice(0, 2)) === '[{"tag":"リバウンド","n":2},{"tag":"ヘルプ","n":1}]', 'コメント帳のタグと数（多い順）', N.tagCounts(book));
+  ok(N.youtubeUrl('ヘルプ') === 'https://www.youtube.com/results?search_query=' + encodeURIComponent('バスケ ヘルプ') && N.growUrl('ヘルプ') === 'https://dora9991.github.io/math-dialogue/basket-coach/#q/' + encodeURIComponent('ヘルプ'), '調べるリンク：YouTube の検索（「バスケ ヘルプ」）・バスケ・グロウのずかん（#q/ヘルプ）');
+  ok(N.toText(list, (t) => '0:' + Math.floor(t)) === '0:30 👍❓ ヘルプが遅い #ヘルプ  #リバウンド #ヘルプ\n0:50 ナイス', '文字で書き出す（時刻・スタンプ・文・タグ）', N.toText(list, (t) => '0:' + Math.floor(t)));
+  const segs = N.segments([{ id: 'a', t: 10, text: 'x' }, { id: 'b', t: 14, text: 'y', dur: 3 }, { id: 'c', t: 40, text: 'z' }], 42);
+  ok(segs.length === 2 && segs[0].t0 === 7 && segs[0].t1 === 18 && segs[0].ids.join() === 'a,b' && segs[1].t0 === 37 && segs[1].t1 === 42, 'コメントの場面：3 秒前から出し終わって 1 秒後まで・重なるものは1つ・動画の終わりまで', segs);
+  // 描く（Canvas の代わりに、呼ばれたことを覚えておく）
+  const calls = [];
+  const ctx = { save() {}, restore() {}, beginPath() {}, moveTo() {}, arcTo() {}, closePath() {}, fill() {}, fillRect(x, y, w, h) { calls.push(['rect', this.fillStyle, Math.round(x), Math.round(w)]); },
+    fillText(t) { calls.push(['text', t]); }, measureText(t) { return { width: Array.from(t).length * 20 }; } };
+  ok(N.draw(ctx, 1280, 720, list, 31) === 1 && calls.some((c) => c[0] === 'text' && c[1] === 'ヘルプが遅い #ヘルプ') && calls.some((c) => c[0] === 'text' && c[1] === '👍 ❓') && calls.some((c) => c[0] === 'text' && c[1].includes('#リバウンド')) && calls.some((c) => c[0] === 'rect' && c[1] === '#facc15'),
+    '描く：コメントの文・スタンプ・タグ・黄色の印（出ている時刻）', calls);
+  calls.length = 0;
+  ok(N.draw(ctx, 1280, 720, list, 40) === 0 && calls.length === 0, '出ていない時刻には、何も描かない');
+}
 
 section('ゴールの自動検出（リング＋ネットを探す）');
 {
