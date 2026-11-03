@@ -30,7 +30,7 @@
     // 保存できないとき（プライベートブラウズ・空きがない）は、記録のたびに出さず、1回だけ知らせる
     if (!BT.store.saveGame(S.game) && !S.saveWarned) {
       S.saveWarned = true;
-      BT.ui.toast('このブラウザに保存できません（プライベートブラウズ・空きが足りない など）。記録は続けられますが、終わったら必ず「書き出す」でファイルに残してください', 'err', 9000);
+      BT.ui.toast('このブラウザに記録を保存できません（このサイトの小さな保存場所がいっぱい・プライベートブラウズ など。iPhone 本体の空きとは別）。記録は続けられますが、終わったら必ず「書き出す」でファイルに残してください', 'err', 10000);
     }
   }
   function applyTheme() {
@@ -730,8 +730,22 @@
     C.on('error', (e) => {
       if (S.camErrAt && Date.now() - S.camErrAt < 3000) return;
       S.camErrAt = Date.now();
-      const msg = '録画を止めました：保存できませんでした' + (e && e.message ? '（' + e.message + '）' : '') + '。空きを増やしてから、もう一度「● 録画」';
-      if (camRec()) camStop(true).then(() => say(msg, 'err', 10000)); else say(msg, 'err', 10000);
+      const kind = (e && e.kind) || BT.vstore.kindOf(e);
+      const stopWith = (msg) => { if (camRec()) camStop(true).then(() => say(msg, 'err', 12000)); else say(msg, 'err', 12000); };
+      if (kind === 'quota') {
+        // 本当にいっぱい：このサイトのブラウザの保存場所（iPhone 本体の空きとは別）。そこまでを仕上げて止める
+        stopWith('録画を止めました：このサイトのブラウザの保存場所がいっぱいです（iPhone 本体の空きとは別の場所）。撮った動画を「📲 写真に保存」で写真アプリに入れてから、🗑 でこのアプリの中から消すと空きます');
+        return;
+      }
+      // 保存が一度とぎれた（画面を消した・ほかのアプリに切りかえた など）：ここまでを仕上げて、新しい動画として続ける（1分に2回まで）
+      const t = Date.now();
+      S.camRetry = (S.camRetry || []).filter((x) => t - x < 60000);
+      if (camRec() && S.camRetry.length < 2) {
+        S.camRetry.push(t);
+        camSplit('保存が一度とぎれたので（画面を消した・ほかのアプリに切りかえた など）、ここから新しい動画として録画を続けています');
+        return;
+      }
+      stopWith('録画を止めました：動画をうまく保存できませんでした' + (e && (e.name || e.message) ? '（' + [e.name, e.message].filter(Boolean).join('：') + '）' : '') + '。もう一度「● 録画」を押してください（容量の問題ではありません）');
     });
     C.on('notice', (t) => say(t, 'warn', 5000));
     C.on('trackended', () => onCamLost());
@@ -1032,7 +1046,7 @@
     const free = Math.max(0, e.quota - e.usage);
     const q = BT.camera.QUALITY[S.prefs.camQuality || '720'];
     const hours = free / 1e9 / q.perHour;
-    return `空き ${mb(free)}（${q.label.replace(/（.*/, '')} で約 ${hours >= 10 ? Math.floor(hours) : hours.toFixed(1)} 時間）${hours < 1.2 ? '・⚠ 1試合ぶん入らないかもしれません' : ''}`;
+    return `動画をためる場所（このブラウザの中）の空き ${mb(free)}（${q.label.replace(/（.*/, '')} で約 ${hours >= 10 ? Math.floor(hours) : hours.toFixed(1)} 時間）${hours < 1.2 ? '・⚠ 1試合ぶん入らないかもしれません。撮った動画を写真に保存して、このアプリの中から消すと空きます' : ''}`;
   }
   /* 撮影の画面（大きな映像・撮る向き・録画と記録を同時にスタート・録画を始める／止める・空き容量） */
   async function openCamera() {
@@ -1161,21 +1175,27 @@
       h('div', { class: 'vt' }, h('b', null, `📹 動画${v.n}`), h('small', null, `${clockOf(v.startedAt)}から・${BT.fmtTime(v.duration || 0)}・${mb(v.bytes)}${v.status === 'recording' ? '・録画中' : ''}`)),
       h('div', { class: 'row vacts' },
         h('button', { class: 'btn small primary', dataset: { clip: v.vid }, disabled: v.status === 'recording', onclick: () => toClips(g, v) }, '🎬 場面を切り出す'),
-        h('button', { class: 'btn small', dataset: { savevid: v.vid }, disabled: v.status === 'recording', onclick: () => saveVideo(v) }, '⬇ 保存'),
+        h('button', { class: 'btn small' + (v.savedAt ? ' done' : ''), dataset: { savevid: v.vid }, disabled: v.status === 'recording', onclick: () => saveVideo(g, v) }, v.savedAt ? '✓ 保存した' : BT.ui.canShareFiles() ? '📲 写真に保存' : '⬇ 保存'),
         h('button', { class: 'btn small danger', title: 'この端末から消す', 'aria-label': `動画${v.n}をこの端末から消す`, disabled: v.status === 'recording', onclick: () => deleteVideo(g, v) }, '🗑')))));
   }
   function toClips(g, v) {
     save();
     root.location.href = `${CLIPS_URL}?tapgame=${encodeURIComponent(g.id)}&tapvideo=${encodeURIComponent(v.vid)}`;
   }
-  async function saveVideo(v) {
+  /* 動画を、この端末の写真アプリ（またはファイル）へ。iPhone・iPad は共有シートの「ビデオを保存」で写真に入る（iCloud 写真を使っていれば iCloud にも） */
+  async function saveVideo(g, v) {
     BT.ui.toast('動画を用意しています…', '', 3000);
     let f = null;
     try { f = await BT.vstore.file(v.vid); } catch (e) { f = null; }
     if (!f) { BT.ui.toast('この動画は、この端末にはもうありません', 'err', 5000); return; }
     const r = await BT.ui.shareOrDownload(f.name || v.name, f, true);
-    if (r === 'downloaded') BT.ui.toast(`保存しました：${f.name || v.name}`, 'ok', 5000);
-    else if (r === 'shared') BT.ui.toast('送りました（「ビデオを保存」で写真に入ります）', 'ok', 4000);
+    if (r !== 'downloaded' && r !== 'shared') return;
+    v.savedAt = Date.now();
+    save();
+    if (S.L) updateLive();
+    BT.ui.toast(r === 'shared'
+      ? '「ビデオを保存」を選んでいれば、写真アプリに入っています（iCloud 写真を使っていれば iCloud にも）。写真アプリで確かめたら、🗑 でこのアプリの中から消すと、次の試合の分が空きます'
+      : `保存しました：${f.name || v.name}（「ファイル」アプリのダウンロード）。確かめたら、🗑 でこのアプリの中から消すと空きます`, 'ok', 9000);
   }
   function deleteVideo(g, v) {
     BT.ui.confirm(`動画${v.n}をこの端末から消しますか？`, `${BT.fmtTime(v.duration || 0)}・${mb(v.bytes)}。消すと元に戻せません（保存した動画・記録は残ります）。`, '消す', async () => {
@@ -1419,7 +1439,11 @@
           h('li', null, '「≡ メニュー」→「記録の一覧」で、どの記録でも、チーム・番号・プレー・時刻を直したり消したりできます'),
           h('li', null, '名簿にない背番号は、チームの帯の「＋番号」で足せます')),
         h('h4', null, '撮影しながら記録する（この端末のカメラ）'),
-        h('p', null, '「📹 撮影しながら記録する」（スタート前の札・≡ メニュー）で、録画しながら同じ画面で記録できます。ティップオフの瞬間に、赤い「● 録画と記録をスタート」を押すと、録画と記録が同時に始まります（ウォーミングアップから撮るときは、撮影の画面の「● 録画だけ先に始める」）。「試合を終える」で録画も止まります。録画を始めた時刻が分かっているので、試合のあと「🎬 場面を切り出す」で、時刻あわせなしで場面を切り出せます。動画はこの端末の中に保存されます（「⬇ 保存」で写真・ファイルへ）。'),
+        h('p', null, '「📹 撮影しながら記録する」（スタート前の札・≡ メニュー）で、録画しながら同じ画面で記録できます。ティップオフの瞬間に、赤い「● 録画と記録をスタート」を押すと、録画と記録が同時に始まります（ウォーミングアップから撮るときは、撮影の画面の「● 録画だけ先に始める」）。「試合を終える」で録画も止まります。録画を始めた時刻が分かっているので、試合のあと「🎬 場面を切り出す」で、時刻あわせなしで場面を切り出せます。'),
+        h('ul', null,
+          h('li', null, h('b', null, '撮った動画は、試合のあと「📲 写真に保存」'), '：共有の画面で「ビデオを保存」を選ぶと、iPhone の写真アプリに入ります（iCloud 写真を使っていれば iCloud にも）。「ファイルに保存」なら iCloud Drive などへ'),
+          h('li', null, '録画のあいだ、動画はいったん、このブラウザの中にためます。写真に保存したら、🗑 でこのアプリの中から消すと、次の試合の分が空きます'),
+          h('li', null, '画面を消したり、ほかのアプリに切りかえたりして保存が一度とぎれたときは、自動で新しい動画として録画を続けます（「容量がいっぱい」ではありません）')),
         h('ul', null,
           h('li', null, h('b', null, '撮る向き'), '：撮影の画面で「横向き（コート全体）」か「縦向き」を選びます。横向きなら、端末を横にしてください'),
           h('li', null, h('b', null, '画面の向きのロックをしたまま'), '横に置くときは、撮影の画面の「⟲ 上側を左にして使う」「⟳ 上側を右にして使う」で、アプリごと横向きになり、横向きの動画が録れます'),
