@@ -165,6 +165,39 @@ eq(BT.editTypes('fg2', BT.rowTypes({ miss: true, foul: true })).slice(0, 8), ['f
   ok(BT.periodFouls(BT.newGame({ teams: [{ name: 'A' }, { name: 'B' }] })).size === 0, 'ファウルがなければ、チームファウルは出さない');
 }
 
+section('選手のボタンを足す（設定：Oリバ・Dリバ・アシスト・スティール）');
+eq(BT.rowTypes({ rebSplit: true }), ['fg2', 'fg3', 'ft', 'oreb', 'dreb'], 'リバを分ける：「Oリバ」「Dリバ」の2つに（「リバ」はなくなる）');
+eq(BT.rowTypes({ ast: true, stl: true }), ['fg2', 'fg3', 'ft', 'reb', 'ast', 'stl'], 'アシスト・スティール：リバのあと');
+eq(BT.rowTypes({ miss: true, rebSplit: true, ast: true, stl: true, foul: true }), ['fg2', 'fg2x', 'fg3', 'fg3x', 'ft', 'ftx', 'oreb', 'dreb', 'ast', 'stl', 'foul'], '全部を足すと 11 こ（ファウルはいちばん後ろ）');
+ok(BT.TYPE.oreb.btn === 'Oリバ' && BT.TYPE.oreb.btnShort === 'OR' && BT.TYPE.dreb.btn === 'Dリバ' && BT.TYPE.dreb.btnShort === 'DR' && BT.TYPE.ast.btnShort === 'AS' && BT.TYPE.stl.btn === 'スティール' && BT.TYPE.stl.btnShort === 'ST',
+  'ボタンの文字：Oリバ・Dリバ・アシスト・スティール（狭いときは OR・DR・AS・ST）');
+ok(Math.abs(BT.textEm('Oリバ') - 2.62) < 1e-9 && BT.textEm('スティール') === 5 && BT.textEm('ファウル') === 4, '文字の幅の目安（全角 1・半角 0.62。長い文字のボタンの文字の大きさに使う）');
+eq(BT.editTypes('fg2', BT.rowTypes({ rebSplit: true, ast: true, stl: true })).slice(0, 7), ['fg2', 'fg3', 'ft', 'oreb', 'dreb', 'ast', 'stl'], '一覧で直すときも、いまのボタンから選べる');
+{
+  const go = BT.newGame({ teams: [{ name: 'A', players: [{ no: '4' }, { no: '5' }] }, { name: 'B', players: [{ no: '9' }] }] });
+  go.startedAt = Date.now() - 1000 * 1000;
+  BT.addEvent(go, { t: 10, type: 'fg2x', team: 0, no: '4' });
+  BT.addEvent(go, { t: 12, type: 'oreb', team: 0, no: '5' });
+  BT.addEvent(go, { t: 14, type: 'fg2', team: 0, no: '5' });
+  BT.addEvent(go, { t: 15, type: 'ast', team: 0, no: '4' });
+  BT.addEvent(go, { t: 30, type: 'fg3x', team: 1, no: '9' });
+  BT.addEvent(go, { t: 32, type: 'dreb', team: 0, no: '4' });
+  BT.addEvent(go, { t: 40, type: 'stl', team: 0, no: '5' });
+  BT.addEvent(go, { t: 50, type: 'fg2x', team: 0, no: '4' });
+  BT.addEvent(go, { t: 52, type: 'reb', team: 0, no: '4' });        // 分けずに「リバ」で記録：同じチームの外れの 10 秒以内 → オフェンスに数える
+  const [A] = BT.stats(go);
+  const s4 = A.rows.find((r) => r.no === '4').s, s5 = A.rows.find((r) => r.no === '5').s;
+  ok(s4.reb === 2 && s4.oreb === 1 && s4.dreb === 1 && s4.ast === 1 && s4.fg2a === 2, '#4：リバウンド 2（うち O 1＝分けずに記録した分・D 1）・アシスト 1', s4);
+  ok(s5.reb === 1 && s5.oreb === 1 && s5.dreb === 0 && s5.stl === 1 && s5.pts === 2, '#5：Oリバ 1・スティール 1・2点', s5);
+  ok(A.total.reb === 3 && A.total.oreb === 2 && A.total.dreb === 1, 'チームの合計：リバウンド 3（O 2・D 1）', A.total);
+  ok(BT.offensiveRebounds(go).size === 1, '「Oリバ」の後は、前の外れを使い終わる（分けずに記録した「リバ」だけを推し量る）');
+  ok(BT.hasRebSplit(go) && !BT.hasRebSplit(BT.newGame({ teams: [{ name: 'A' }, { name: 'B' }] })), '「Oリバ」「Dリバ」の記録があるか（集計の OR・DR の列）');
+  const bx = BT.boxCSV(go).split('\r\n');
+  ok(bx[0].includes('リバウンド,うちオフェンス,うちディフェンス,アシスト,スティール') && bx.includes('A,4,,0,0,2,0,0,0,0,2,1,1,1,0,0,0,0,0,0'), '集計の CSV：うちディフェンスの列', bx.slice(0, 3));
+  const gi = BT.importData(JSON.stringify(BT.exportData(go)));
+  ok(['oreb', 'dreb', 'ast', 'stl'].every((t) => gi.events.some((e) => e.type === t)) && BT.exportData(go).types.oreb.label === 'オフェンスリバウンド', '書き出して読み込んでも、Oリバ・Dリバ・アシスト・スティールのまま（JSON に呼び名も入る）');
+}
+
 section('1つのチームだけの並べ方（BT.planTeam。ワイプ「特大」）');
 // W×H：チームの枠の外側の大きさ。n：行の数
 let pt = BT.planTeam(600, 744, 13, 22);
