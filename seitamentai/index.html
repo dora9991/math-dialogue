@@ -59,6 +59,9 @@ a.btn{text-decoration:none;display:inline-block}
 
 /* 舞台と板書 */
 .main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+.main.solo{grid-template-columns:minmax(0,1fr)}
+.main.solo .panel{display:none}
+.stageq{position:absolute;left:1rem;right:1rem;top:.9rem;margin:0;text-align:center;font-family:var(--f-chalk);font-weight:600;font-size:2.3rem;line-height:1.35;color:var(--chalk);text-wrap:balance;pointer-events:none}
 .stage{position:relative;min-width:0;min-height:0}
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
 #cv:active{cursor:grabbing}
@@ -125,6 +128,8 @@ td.glow{animation:glow 1.6s ease-in-out infinite}
 .tblnote{margin:0;font-size:.78rem;color:var(--chalk-2)}
 
 @media (max-width:899px){
+  .main.solo .stage{height:min(125vw,80vh)}
+  .stageq{font-size:1.5rem}
   html,body{height:auto}
   .app{height:auto;min-height:100%}
   .main{display:flex;flex-direction:column}
@@ -156,9 +161,10 @@ td.glow{animation:glow 1.6s ease-in-out infinite}
       </div>
     </header>
     <div class="track" aria-hidden="true"><i id="pbar"></i></div>
-    <div class="main">
+    <div class="main" id="main">
       <div class="stage" id="stage">
         <canvas id="cv" role="img" aria-label="立体の図"></canvas>
+        <h2 class="stageq" id="stageq" hidden></h2>
         <div class="banner" id="banner" hidden></div>
         <div class="scrub" id="scrub">
           <div class="sl" id="slbox"><label for="sl" id="sllabel">折り曲げる</label><input type="range" id="sl" min="0" max="1000" value="0"><button class="btn" id="replay" type="button" aria-label="もう一度動かす（Rキー）">↻ もう一度</button></div>
@@ -379,10 +385,13 @@ function caseSteps(n,k,o){
   }
   return steps;
 }
-var FLOW=[{type:'intro',q:'正多面体は、なぜ 5種類 しかないのだろう？',lines:[
-  L('<b>正多面体</b>…すべての面が合同な正多角形で、どの頂点にも同じ数の面が集まっている、へこみのない多面体。'),
-  L('正多面体は、この 5種類 しかない。',{cls:'ok'}),
-  L('図をドラッグすると、好きな向きに回せる。クリックすると大きくなる。',{cls:'dim'})]},
+var FLOW=[{type:'intro',solo:true,q:'正多面体は、どんな立体だろう？',lines:[]},
+  {type:'define',q:'正多面体は、どんな立体だろう？',lines:[
+  L('① すべての面が、<b>合同な正多角形</b>'),
+  L('② どの頂点にも、<b>同じ数の面</b>が集まっている'),
+  L('③ へこみがない'),
+  L('このような多面体を、<b>正多面体</b>という。',{cls:'dim'}),
+  L('正多面体は、この 5種類 しかない。それは、なぜだろう？',{cls:'key'})]},
   {type:'cards',q:'1つの<b>頂点</b>に注目して、正多角形のカードを集めていこう。',lines:[
   L('使うカードは、この4種類。辺の長さは、どれも同じ。'),
   L('1つの角の大きさに注目しよう。',{cls:'ok'})]}];
@@ -421,7 +430,7 @@ var W=0,H=0,DPR=1;
 var state={mode:'main',list:FLOW,idx:0,saveIdx:0,value:1,playing:false,done:true,t0:0};
 var camS=null,snap=true,fadeT=0,lastKey='',dragT=0,dragP=0,autoT=0,drag=null;
 function cur(){return state.list[state.idx];}
-function sceneKey(st){return st.c?st.c.n+'-'+st.c.k:st.type.replace(/\d$/,'');}
+function sceneKey(st){return st.c?st.c.n+'-'+st.c.k:st.type==='intro'||st.type==='define'?'gallery':st.type.replace(/\d$/,'');}
 
 function go(i,dir){
   state.idx=i;var st=cur(),key=sceneKey(st),now=performance.now();
@@ -484,7 +493,9 @@ function updateTable(){
 function renderPanel(){
   var st=cur(),tag=$('tag');
   if(st.c){var P=POLY[st.c.n];tag.innerHTML='<i class="sw" style="--c:'+P.css+'"></i>'+P.name+' × '+st.c.k;}
-  else tag.textContent=st.type==='intro'||st.type==='cards'?'考えよう':'まとめ';
+  else tag.textContent=st.type==='define'?'正多面体とは':st.type==='intro'||st.type==='cards'?'考えよう':'まとめ';
+  $('main').classList.toggle('solo',!!st.solo);
+  $('stageq').hidden=!st.solo;$('stageq').innerHTML=st.solo?st.q:'';
   $('q').innerHTML=st.q;
   $('lines').innerHTML=st.lines.map(function(l){return '<p class="'+(l.cls||'')+(l.later?' later':'')+'">'+l.h+'</p>';}).join('');
   panel.classList.toggle('done',state.done);
@@ -788,7 +799,7 @@ function drawIntro(ga){
   ctx.globalAlpha=1;
 }
 /* 5つの正多面体。1つずつ、ドラッグした向きに回る（トラックボール）。はなすと勢いで回り、ゆっくりの自転にもどる */
-function isGallery(st){return st.type==='intro'||/^summary/.test(st.type);}
+function isGallery(st){return st.type==='intro'||st.type==='define'||/^summary/.test(st.type);}
 function rotMat(ax,a){
   ax=nrm(ax);var c=Math.cos(a),s=Math.sin(a),t=1-c,x=ax[0],y=ax[1],z=ax[2];
   return [[t*x*x+c,t*x*y-s*z,t*x*z+s*y],[t*x*y+s*z,t*y*y+c,t*y*z-s*x],[t*x*z-s*y,t*y*z+s*x,t*z*z+c]];
@@ -803,15 +814,16 @@ var GAL=ORDER5.map(function(key,i){
 });
 var galFocus=-1,galDrag=null,snapGal=true;
 function galTargets(){
-  var H0=H;H=H-Math.min(40,H*.06);var g=gridCells(5,[5,3,2]);H=H0;
+  var q=$('stageq'),top=q.hidden?0:q.offsetTop+q.offsetHeight+4,H0=H;
+  H=H-top-Math.min(40,H*.06);var g=gridCells(5,[5,3,2]),HH=H;H=H0;
   return GAL.map(function(G,i){
-    var pc=g.pos[i];
-    if(galFocus<0)return {cx:pc.cx,cy:pc.cy-g.size*.08,s:g.size,a:1};
-    if(i===galFocus){var S=Math.min(W*.9,H*.72);return {cx:W/2,cy:H*.43,s:S,a:1};}
-    return {cx:pc.cx,cy:pc.cy-g.size*.08,s:g.size*.5,a:0};
+    var pc=g.pos[i],cy=top+pc.cy-g.size*.08;
+    if(galFocus<0)return {cx:pc.cx,cy:cy,s:g.size,a:1};
+    if(i===galFocus){var S=Math.min(W*.9,HH*.78);return {cx:W/2,cy:top+HH*.45,s:S,a:1};}
+    return {cx:pc.cx,cy:cy,s:g.size*.5,a:0};
   });
 }
-function drawSolids(v,dt,ga,intro){
+function drawSolids(v,dt,ga,mode){
   var T=galTargets(),ea=RM?1:1-Math.exp(-dt*9),eb=1-Math.exp(-dt*1.4);
   GAL.forEach(function(G,i){
     if(!G.r||snapGal)G.r={cx:T[i].cx,cy:T[i].cy,s:T[i].s,a:T[i].a};
@@ -837,8 +849,9 @@ function drawSolids(v,dt,ga,intro){
     ctx.globalAlpha=al;
     var ly=r.cy+r.s*.48;
     text(SOLID[G.key].name,r.cx,ly,fs,YEL);
-    text(intro?'面は '+POLY[n].name:POLY[n].name+' × '+k,r.cx,ly+fs*1.3,fs*.78,CH);
-    if(i===galFocus)text('もう一度クリックで、5つにもどる',r.cx,ly+fs*2.5,fs*.62,'rgba(242,240,230,.66)');
+    var sub2=mode==='intro'?'':mode==='define'?'面は '+POLY[n].name:POLY[n].name+' × '+k;
+    if(sub2)text(sub2,r.cx,ly+fs*1.3,fs*.78,CH);
+    if(i===galFocus)text('もう一度クリックで、5つにもどる',r.cx,ly+fs*(sub2?2.5:1.3),fs*.62,'rgba(242,240,230,.66)');
   });
   ctx.globalAlpha=1;
 }
@@ -878,7 +891,7 @@ function frame(now){
   if(W>0&&H>0){
     var ga=RM?1:clamp((now-fadeT)/320,0,1);
     if(st.type==='cards')drawIntro(ga);
-    else if(isGallery(st))drawSolids(st.type==='summary1'?state.value:1,dt,ga,st.type==='intro');
+    else if(isGallery(st))drawSolids(st.type==='summary1'?state.value:1,dt,ga,st.type);
     else{
       var S=scene3D(st,state.value);smoothCam(S.cam,dt);
       if(st.type==='build'&&state.done&&state.value>=1&&!drag&&!RM)autoT+=dt*.35;
