@@ -1066,6 +1066,209 @@ body.onboarding main { padding-bottom: 48px; }
   .ck-bar i, .ck-mode { transition: none; }
 }
 
+/* クラブの画面（js/club.js）。クラスは cl- で始まる。色・字は css/coach.css の :root の変数を使う。 */
+.cl-loading { display: flex; align-items: center; gap: 10px; color: var(--ink-2); padding: 40px 0; justify-content: center; font-weight: 700; }
+.cl-spin { width: 18px; height: 18px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--ball); animation: cl-spin 0.8s linear infinite; display: inline-block; flex: none; }
+@keyframes cl-spin { to { transform: rotate(360deg); } }
+.cl-msg { background: var(--warn-soft); border-radius: 14px; padding: 10px 14px; font-weight: 700; display: flex; gap: 8px; align-items: flex-start; }
+.cl-form { display: flex; flex-direction: column; gap: 14px; }
+.cl-form select, .cl-in { border: 2px solid var(--line-2); border-radius: 12px; background: var(--sheet); padding: 8px 12px; min-height: 44px; width: 100%; min-width: 0; font-size: 1rem; }
+.cl-form select:focus, .cl-in:focus { border-color: var(--o); outline: none; }
+textarea.cl-in { resize: vertical; line-height: 1.5; }
+.cl-red { color: var(--bad); }
+
+/* 級のバッジ（帯の色） */
+.cl-kyu { display: inline-flex; align-items: center; justify-content: center; min-width: 3.2em; padding: 1px 10px; border-radius: 999px; font-family: var(--font-round); font-weight: 800; font-size: 0.82rem; line-height: 1.6;
+  background: var(--k); color: var(--kt, #fff); text-shadow: var(--ks, 0 1px 1px rgba(0, 0, 0, 0.35)); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.18); white-space: nowrap; }
+.cl-kyu.none { background: var(--line); color: var(--ink-2); text-shadow: none; }
+.cl-kyu.small { font-size: 0.7rem; min-width: 2.6em; padding: 0 8px; }
+.cl-kyu.big { width: 76px; height: 76px; border-radius: 50%; font-size: 1.2rem; flex: none; padding: 0; box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.2), 0 0 0 4px var(--sheet), 0 0 0 6px var(--k); }
+.cl-kyu.big.none { box-shadow: 0 0 0 4px var(--sheet), 0 0 0 6px var(--line-2); font-size: 0.95rem; }
+.cl-av { width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--k); color: var(--kt, #fff); font-family: var(--font-round); font-weight: 800; font-size: 1.05rem; text-shadow: var(--ks, 0 1px 1px rgba(0, 0, 0, 0.3)); }
+.cl-av.coach { background: var(--o); }
+.cl-av .ic { width: 22px; height: 22px; }
+
+/* はじめの画面 */
+.cl-hero { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.cl-hero-ic { width: 72px; height: 72px; border-radius: 50%; background: var(--ball-soft); color: var(--ball); display: grid; place-items: center; }
+.cl-hero-ic .ic { width: 40px; height: 40px; }
+.cl-hero p { color: var(--ink-2); text-align: left; }
+
+/* 自分のカード */
+.cl-me { background: var(--sheet); border-radius: 24px; padding: 18px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; }
+.cl-me-top { display: flex; align-items: center; gap: 16px; }
+.cl-club { font-size: var(--fs-s); color: var(--ink-2); font-weight: 700; }
+.cl-name { font-family: var(--font-round); font-weight: 800; font-size: var(--fs-xl); line-height: 1.3; }
+.cl-name small { font-size: 0.85rem; color: var(--ink-3); margin-left: 4px; }
+.cl-next { font-weight: 700; }
+.cl-bar { background: var(--line); }
+.cl-code { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--ink-2); }
+.cl-code b { font-size: 1.6rem; color: var(--ink); letter-spacing: 0.08em; }
+.cl-notice { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: 0; border-radius: 16px; background: var(--gold); color: #2a1f00; padding: 10px 14px; font-weight: 700; }
+.cl-notice .ic { fill: currentColor; }
+.cl-notice small { margin-left: auto; background: rgba(255, 255, 255, 0.6); border-radius: 999px; padding: 0 10px; white-space: nowrap; flex: none; }
+.cl-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--sheet-2); border-radius: 16px; padding: 4px; border: 1.5px solid var(--line); }
+.cl-tabs a { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 6px; border-radius: 12px; text-decoration: none; color: var(--ink-2); font-family: var(--font-round); font-weight: 800; font-size: 0.92rem; text-align: center; }
+.cl-tabs a[aria-current="page"] { background: var(--sheet); color: var(--ball); box-shadow: var(--shadow); }
+
+/* 課題の行 */
+.cl-task .cl-st { align-self: center; }
+.cl-task.ok { border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); background: var(--ok-soft); }
+.cl-goal { display: flex; align-items: center; gap: 4px; font-weight: 700; color: var(--ink); }
+.cl-goal .ic { width: 1em; height: 1em; color: var(--ball); }
+.cl-coach-mini { font-size: var(--fs-xs); color: var(--o); display: flex; gap: 4px; align-items: center; }
+.cl-coach-mini .ic { width: 1em; height: 1em; }
+.cl-st { display: inline-flex; align-items: center; gap: 3px; font-size: 0.72rem; font-weight: 800; font-family: var(--font-round); border-radius: 999px; padding: 1px 10px; background: var(--line); color: var(--ink-2); white-space: nowrap; }
+.cl-st .ic { width: 1em; height: 1em; }
+.cl-st.wait { background: var(--warn-soft); color: var(--warn); }
+.cl-st.pass { background: var(--ok); color: #fff; }
+.cl-st.retry { background: var(--bad-soft); color: var(--bad); }
+
+/* 級のかいだん */
+.cl-ladder { display: flex; flex-direction: column; gap: 6px; }
+.cl-step { background: var(--sheet); border: 1.5px solid var(--line); border-radius: 16px; overflow: hidden; }
+.cl-step > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 10px 12px; }
+.cl-step > summary::-webkit-details-marker { display: none; }
+.cl-step[open] > summary { border-bottom: 1px solid var(--line); }
+.cl-step .rows { padding: 10px; }
+.cl-step-k { display: inline-grid; place-items: center; min-width: 3.4em; height: 34px; border-radius: 10px; background: var(--k); color: var(--kt, #fff); font-family: var(--font-round); font-weight: 800; text-shadow: var(--ks, 0 1px 1px rgba(0, 0, 0, 0.35)); padding: 0 8px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08); }
+.cl-step-t { font-weight: 700; display: flex; align-items: center; gap: 4px; color: var(--ink-2); font-size: var(--fs-s); }
+.cl-step-t .ic { width: 1.1em; height: 1.1em; }
+.cl-step.done .cl-step-t { color: var(--ok); }
+.cl-step.now { border-color: var(--ball); box-shadow: 0 0 0 2px var(--ball-soft); }
+.cl-step.lock .cl-step-k { opacity: 0.55; }
+.cl-step.lock .cl-task { opacity: 0.7; }
+
+/* 課題のページ */
+.cl-goal-big { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--ball-soft); border-radius: 18px; padding: 12px 16px; }
+.cl-goal-big b { font-family: var(--font-round); font-weight: 800; font-size: var(--fs-xl); }
+.cl-coach-c { display: flex; gap: 8px; align-items: flex-start; background: var(--o-soft); border-radius: 14px; padding: 10px 12px; font-size: var(--fs-s); }
+.cl-coach-c .ic { color: var(--o); margin-top: 2px; }
+.cl-send { gap: 14px; }
+.cl-count { display: flex; align-items: center; gap: 8px; }
+.cl-count input { width: 6.5em; text-align: center; font-family: var(--font-num); font-size: 1.6rem; font-weight: 600; border: 2px solid var(--line-2); border-radius: 12px; min-height: 52px; background: var(--sheet); }
+.cl-count .ib { width: 48px; height: 48px; border-radius: 14px; }
+.cl-count.sm .ib { width: 34px; height: 34px; border-radius: 10px; }
+.cl-count.sm b { min-width: 2.4em; text-align: center; font-size: 1.2rem; }
+.cl-unit { font-weight: 700; }
+.cl-pick { align-self: flex-start; }
+.cl-preview { display: flex; align-items: flex-end; gap: 10px; }
+.cl-preview img { width: 140px; height: 140px; object-fit: cover; border-radius: 14px; border: 1.5px solid var(--line); }
+.cl-sub { gap: 8px; padding: 12px 14px; }
+.cl-sub-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cl-sub-h .link-btn { margin-left: auto; padding: 0; }
+.cl-photo { display: block; border: 0; padding: 0; background: var(--sheet-2); border-radius: 14px; overflow: hidden; width: 100%; max-width: 420px; cursor: zoom-in; }
+.cl-photo.small { max-width: 180px; }
+.cl-photo-in { display: grid; place-items: center; min-height: 120px; }
+.cl-photo img { display: block; width: 100%; height: auto; max-height: 60vh; object-fit: contain; }
+.cl-photo-x { font-size: var(--fs-xs); color: var(--ink-3); padding: 20px; }
+.cl-zoom { display: block; width: 100%; height: auto; max-height: 70vh; object-fit: contain; border-radius: 14px; }
+
+/* ひろば */
+.cl-compose textarea { border: 2px solid var(--line-2); border-radius: 14px; padding: 10px 14px; font-size: 1rem; width: 100%; resize: vertical; min-height: 64px; background: var(--sheet); }
+.cl-compose textarea:focus { border-color: var(--o); outline: none; }
+.cl-feed { display: flex; flex-direction: column; gap: 12px; }
+.cl-post { gap: 10px; }
+.cl-post-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cl-post-who { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; flex-wrap: wrap; }
+.cl-post-who b { font-family: var(--font-round); font-weight: 800; }
+.cl-post-who small { color: var(--ink-3); font-size: var(--fs-xs); }
+.cl-body { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 1.02rem; }
+.cl-share { display: flex; align-items: center; gap: 8px; font-weight: 700; background: var(--sheet-2); border-radius: 12px; padding: 8px 12px; }
+.cl-share .ic { color: var(--ball); }
+.cl-cert { display: flex; align-items: center; gap: 12px; }
+.cl-cert-k { width: 64px; height: 64px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--k); color: var(--kt, #fff); font-family: var(--font-round); font-weight: 800; font-size: 1.05rem; text-shadow: var(--ks, 0 1px 1px rgba(0, 0, 0, 0.35)); box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.2); }
+.cl-cert b { display: block; font-family: var(--font-round); font-weight: 800; font-size: 1.08rem; }
+.cl-cert small { display: block; color: var(--ink-2); margin-top: 2px; }
+.cl-post.cert { background: linear-gradient(160deg, color-mix(in srgb, var(--gold) 22%, var(--sheet)), var(--sheet) 70%); }
+.cl-cert-big { width: 120px; height: 120px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: var(--k); color: var(--kt, #fff); font-family: var(--font-round); font-weight: 800; font-size: 1.8rem; text-shadow: var(--ks, 0 2px 2px rgba(0, 0, 0, 0.35)); box-shadow: inset 0 -8px 0 rgba(0, 0, 0, 0.2), 0 0 0 6px var(--sheet), 0 0 0 9px var(--gold); }
+.cl-stamps { display: flex; gap: 6px; flex-wrap: wrap; }
+.cl-stamp { display: inline-flex; align-items: center; gap: 4px; border: 1.5px solid var(--line-2); background: var(--sheet); border-radius: 999px; padding: 4px 10px; min-height: 38px; font-weight: 700; font-size: var(--fs-s); }
+.cl-stamp b { min-width: 0.6em; color: var(--ink-2); }
+.cl-stamp[aria-pressed="true"] { background: var(--ball-soft); border-color: var(--ball); }
+.cl-stamp[aria-pressed="true"] b { color: var(--ball); }
+.cl-stamp:disabled { opacity: 0.4; }
+.cl-post-ctl { display: flex; gap: 12px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+
+/* コーチ */
+.cl-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cl-tile { display: flex; flex-direction: column; gap: 2px; background: var(--sheet); border-radius: 18px; padding: 12px 14px; text-decoration: none; color: var(--ink); box-shadow: var(--shadow); }
+.cl-tile b { font-size: 2.1rem; line-height: 1.1; }
+.cl-tile span { font-size: var(--fs-s); font-weight: 700; color: var(--ink-2); }
+.cl-tile.hot { background: var(--ball-soft); box-shadow: var(--shadow), inset 0 0 0 2px var(--ball); }
+.cl-tile.hot b { color: var(--ball); }
+.cl-q { gap: 10px; }
+.cl-q-task { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cl-q-count { font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cl-q-count b { font-size: 1.3rem; }
+.cl-q-btns { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+.cl-ready { gap: 10px; border: 2px solid var(--gold); }
+.cl-recent { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: var(--sheet); border-radius: 12px; padding: 6px 10px; font-size: var(--fs-s); }
+.cl-mem .cl-av { width: 48px; height: 48px; }
+.cl-mem { grid-template-columns: 48px 1fr auto; }
+.cl-levels { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.cl-lv { display: flex; flex-direction: column; align-items: center; gap: 0; border: 2px solid var(--line-2); border-radius: 12px; background: var(--sheet); padding: 6px 2px; font-family: var(--font-round); font-weight: 800; font-size: 0.85rem; }
+.cl-lv small { font-size: 0.66rem; color: var(--ink-3); }
+.cl-lv.on { background: var(--k); color: var(--kt, #fff); border-color: var(--k); text-shadow: var(--ks, none); }
+.cl-lv.on small { color: inherit; opacity: 0.85; }
+.cl-toggle { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+.cl-toggle input { width: 24px; height: 24px; accent-color: var(--ball); flex: none; margin-top: 2px; }
+.cl-toggle span { display: flex; flex-direction: column; }
+.cl-toggle small { color: var(--ink-3); font-size: var(--fs-xs); }
+.danger-zone { border: 1.5px solid color-mix(in srgb, var(--bad) 40%, var(--line)); }
+
+/* 級をつくる */
+.cl-dlv { gap: 10px; border-left: 6px solid var(--k); }
+.cl-dlv-h { display: flex; align-items: center; gap: 6px; }
+.cl-dlv-h .cl-in { flex: 1; font-family: var(--font-round); font-weight: 800; }
+.cl-colors { display: flex; gap: 6px; flex-wrap: wrap; }
+.cl-color { width: 30px; height: 30px; border-radius: 50%; background: var(--c); border: 2px solid var(--sheet); box-shadow: 0 0 0 1.5px var(--line-2); padding: 0; }
+.cl-color[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--ink); }
+.cl-dt { border: 1.5px solid var(--line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 8px; background: var(--sheet-2); }
+.cl-dt-h { display: flex; align-items: center; gap: 8px; }
+.cl-dt-h > b { width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--sheet); display: grid; place-items: center; flex: none; font-size: 0.95rem; }
+.cl-dt-g { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cl-dt-g label, .cl-dt-l { display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-xs); font-weight: 700; color: var(--ink-2); }
+.cl-dt-l small { color: var(--ink-3); font-weight: 400; }
+.cl-dt-goal { font-size: var(--fs-xs); color: var(--ink-3); }
+.cl-save { grid-template-columns: 1fr 1.6fr; }
+
+/* ログインカード（印刷） */
+.cl-pick-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.cl-pick-k { display: flex; gap: 6px; align-items: center; font-weight: 700; background: var(--sheet); border-radius: 10px; padding: 6px 8px; }
+.cl-pick-k input { width: 20px; height: 20px; accent-color: var(--ball); }
+.cl-print { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 560px) { .cl-print { grid-template-columns: 1fr 1fr; } }
+.cl-card { border: 2px dashed var(--ink-3); border-radius: 16px; padding: 12px 14px; background: #fff; color: #1f2328; display: flex; flex-direction: column; gap: 6px; break-inside: avoid; }
+.cl-card-h { display: flex; align-items: center; gap: 6px; font-family: var(--font-round); font-weight: 800; color: #d9581a; }
+.cl-card-h small { color: #4b5159; font-weight: 700; margin-left: auto; }
+.cl-card-n { font-family: var(--font-round); font-weight: 800; font-size: 1.2rem; }
+.cl-card dl { margin: 0; display: grid; grid-template-columns: 1fr 0.7fr 1fr; gap: 6px; }
+.cl-card dl div { background: #f6f3ee; border-radius: 10px; padding: 4px 8px; }
+.cl-card dt { font-size: 0.68rem; color: #4b5159; font-weight: 700; }
+.cl-card dd { margin: 0; font-size: 1.4rem; letter-spacing: 0.06em; }
+.cl-card-f { font-size: 0.7rem; color: #4b5159; }
+@media print {
+  body * { visibility: hidden !important; }
+  .cl-print, .cl-print * { visibility: visible !important; }
+  .cl-print { position: absolute; left: 0; top: 0; width: 100%; grid-template-columns: 1fr 1fr; }
+  .tab, .top { display: none !important; }
+}
+
+/* ホームのカード */
+.cl-homecard { flex-direction: row; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }
+.cl-homecard > span:not(.cl-kyu) { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.cl-homecard b { font-family: var(--font-round); font-weight: 800; }
+.cl-homecard small { color: var(--ink-2); font-size: var(--fs-s); }
+.cl-homecard > .ic:first-child { width: 34px; height: 34px; color: var(--o); }
+.cl-cta { background: linear-gradient(160deg, color-mix(in srgb, var(--gold) 18%, var(--sheet)), var(--sheet) 70%); }
+.cl-cta > .ic { color: var(--gold); }
+.tab a .tab-dot, .top-nav a .tab-dot { position: absolute; top: 6px; right: calc(50% - 22px); width: 10px; height: 10px; border-radius: 50%; background: var(--bad); box-shadow: 0 0 0 2px var(--sheet); }
+.tab a, .top-nav a { position: relative; }
+.top-more { border: 0; background: none; color: var(--ink-2); width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; text-decoration: none; }
+.top-more .ic { width: 24px; height: 24px; }
+@media (prefers-reduced-motion: reduce) { .cl-spin { animation: none; } }
+
 </style>
 </head>
 <body>
@@ -14783,7 +14986,7 @@ BC && (BC.currentFile = "js/grow.js");
   G.starNext = (xp) => { const s = G.stars(xp); return s >= 5 ? null : STAR[s + 1] - xp; };
 
   // ふつうにもらえる経験値
-  G.XP = { drill: 10, menu: 20, check: 15, view: 5, aid: 2 };
+  G.XP = { drill: 10, menu: 20, check: 15, view: 5, aid: 2, pass: 10, kyu: 50 }; // pass：クラブの課題に合格・kyu：級に合格（js/club.js）
   // 練習メニューの経験値：時間とできた度合い（むずかしくても、やったら もらえる）
   G.drillXP = (min, rate) => Math.round(Math.max(5, Math.min(30, 6 + (min || 5) * 1.2)) + (rate === 3 ? 4 : rate === 1 ? 2 : 0));
 
@@ -14856,6 +15059,8 @@ BC && (BC.currentFile = "js/grow.js");
     { id: 'early', name: '朝れん', text: '朝 8時より前に練習した', icon: 'sun', test: (s) => s.early },
     { id: 'lv5', name: 'レギュラー', text: 'レベル 5 になった', icon: 'crown', test: (s) => s.level >= 5 },
     { id: 'lv10', name: 'エース', text: 'レベル 10 になった', icon: 'crown', test: (s) => s.level >= 10 },
+    { id: 'kyu1', name: 'はじめての級', text: 'クラブの級に はじめて合格した', icon: 'trophy', test: (s) => (s.count.kyu || 0) >= 1 },
+    { id: 'kyu5', name: '5つの級', text: 'クラブの級に 5つ合格した', icon: 'crown', test: (s) => (s.count.kyu || 0) >= 5 },
   ];
   G.badges = (s) => G.BADGES.map((b) => Object.assign({}, b, { got: !!b.test(s) }));
   // 前のまとめ → 後のまとめ で、新しくとれたバッジ
@@ -18709,6 +18914,1067 @@ BC && (BC.currentFile = "js/check.js");
   CK._reset = () => { const r = S && S.root; fresh(null); S.root = r; };
 })();
 
+/* ---- data/kyu.js ---- */
+BC && (BC.currentFile = "data/kyu.js");
+/* クラブの級（きゅう）のテンプレート：10級 → 1級。コーチがクラブをつくるときに、そのまま使える（あとで 回数・課題を直せる）。
+   1つの課題：{ title, drill_id（アプリの練習メニュー。やりかたとアニメーションへ）, target（目標の数）, unit（回・本・秒・往復・セット・周）,
+              cond（「10本中」「30秒で」「連続」「以内」など）, how（コーチから：見るところ）, photo（'need' 写真が必要・'opt' あってもよい・'none'）}
+   cond に「以内」があるものは、数が小さいほどよい（タイム）。 */
+(function () {
+  const BC = window.BC;
+  const T = (title, drill_id, target, unit, cond, how, photo = 'opt') => ({ title, drill_id, target, unit, cond, how, photo });
+  BC.KYU_TEMPLATE = [
+    { name: '10級', color: '#e9e5dc', note: 'はじめの一歩', tasks: [
+      T('ボディサークル（こしのまわりで回す）', 'd-handling', 10, '周', '連続', 'ボールを落とさずに。右回り・左回り どちらでもOK'),
+      T('ポンドドリブル（右手）', 'd-pound', 20, '回', 'その場で', 'ひざを曲げて、ボールを見すぎない'),
+      T('かべパス（チェストパス）', 'd-wallpass', 10, '回', '連続', '両手でとって、両手で出す'),
+      T('ゴール下シュート', 'd-formshoot', 3, '本', '10本中', 'リングの近くから。ボードを使ってもOK'),
+    ] },
+    { name: '9級', color: '#f2c94c', note: '左手もつかう', tasks: [
+      T('ポンドドリブル（左手）', 'd-pound', 20, '回', 'その場で', 'ききてと反対の手で'),
+      T('8の字ハンドリング', 'd-handling', 5, '回', '連続', '足のあいだを 8の字に通す'),
+      T('ジャンプストップ＆ピボット', 'd-jumpstop', 5, '回', '左右で', '両足で止まって、軸足をはなさずに回る'),
+      T('ゴール下シュート', 'd-formshoot', 5, '本', '10本中', 'ボードの四角をねらう'),
+    ] },
+    { name: '8級', color: '#f2994a', note: 'うごきながら', tasks: [
+      T('ドリブル（右手）', 'd-pound', 40, '回', '30秒で', 'つく回数を数える。左手もやってみよう'),
+      T('ジグザグドリブル', 'd-zigzag', 1, '往復', 'ミスなしで', 'コーン5本。前を見ながら'),
+      T('レイアップ（右から）', 'd-layup-step', 4, '本', '10本中', '右・左のステップで、右手で打つ'),
+      T('スタンス＆スライド', 'd-stance', 5, '往復', '20秒で', '足をクロスさせない。頭の高さを変えない'),
+    ] },
+    { name: '7級', color: '#27ae60', note: 'ききての反対も', tasks: [
+      T('クロスオーバー', 'd-moves', 20, '回', '連続', '低く・速く。体の前で左右に'),
+      T('レイアップ（左から）', 'd-weakhand-layup', 4, '本', '10本中', '左・右のステップで、左手で打つ'),
+      T('マイカンドリル', 'd-mikan', 8, '本', '30秒で', 'ゴール下で 左右交互に'),
+      T('フリースロー', 'd-ft', 3, '本', '10本中', 'ミニバスは ミニバスの距離でOK。毎回同じルーティンで'),
+    ] },
+    { name: '6級', color: '#56ccf2', note: 'リズムとスピード', tasks: [
+      T('2ボール・ドリブル', 'd-2ball', 30, '秒', 'つづけて', '2つのボールを同時に。落とさずに'),
+      T('レッグスルー', 'd-moves', 10, '回', '連続', '足のあいだを 低く通す'),
+      T('レイアップ（右と左）', 'd-layup-step', 7, '本', '10本中', '右から5本・左から5本の合計'),
+      T('5か所シューティング', 'd-around', 6, '本', '15本中', '5か所から3本ずつ'),
+    ] },
+    { name: '5級', color: '#2f80ed', note: 'まわりを見る', tasks: [
+      T('顔を上げるドリブル', 'd-headup', 8, '回', '10回中', 'コーチが出す指の数を 言えたら1回'),
+      T('スピードドリブル（オールコート）', 'd-speed-dribble', 10, '秒', '以内', 'エンドラインから 反対のエンドラインまで'),
+      T('フリースロー', 'd-ft', 5, '本', '10本中', ''),
+      T('キャッチ＆シュート', 'd-catchshoot', 5, '本', '10本中', 'パスを受けて すぐ打つ'),
+    ] },
+    { name: '4級', color: '#9b51e0', note: '試合で使うわざ', tasks: [
+      T('ユーロステップ', 'd-eurostep', 5, '本', '10本中', '1歩目と2歩目で 横にずらして決める'),
+      T('1ドリブル・プルアップ', 'd-pullup', 4, '本', '10本中', '1回ついて止まって、まっすぐ上へ'),
+      T('ジグザグ・ディフェンス', 'd-zigzag-d', 1, '往復', 'ぬかれずに', 'ドリブルする相手と'),
+      T('ボックスアウト', 'd-boxout', 4, '回', '5回中', '相手をおさえてから ボールをとる'),
+    ] },
+    { name: '3級', color: '#a0522d', note: 'ゴールのまわりで', tasks: [
+      T('フローター', 'd-floater', 4, '本', '10本中', '高く ふわっと'),
+      T('リバースレイアップ', 'd-reverse-layup', 5, '本', '10本中', 'ゴールの反対がわから'),
+      T('フリースロー', 'd-ft', 6, '本', '10本中', ''),
+      T('5か所シューティング（遠め）', 'd-around', 6, '本', '15本中', 'ミドルの距離（中学生は3Pラインも）'),
+    ] },
+    { name: '2級', color: '#d63a3a', note: 'プレッシャーの中で', tasks: [
+      T('プレッシャー・フリースロー', 'd-ftpressure', 3, 'セット', '5セット中', '2本つづけて入れたら 1セット'),
+      T('クローズアウト付きシュート', 'd-contested', 4, '本', '10本中', '守りが手を出しても フォームをくずさない'),
+      T('2ボール・ドリブル（高さを変える）', 'd-2ball', 30, '秒', 'つづけて', '高い・低いを まぜて'),
+      T('ライン走（スーサイド）', 'd-suicide', 35, '秒', '以内', 'ミニバスは コーチと決めた時間で'),
+    ] },
+    { name: '1級', color: '#222222', note: 'クラブのお手本', tasks: [
+      T('ビート・ザ・プロ', 'd-beatpro', 1, '回', '勝ち', 'プロに勝つ'),
+      T('1対1（ウイング）', 'd-1v1-wing', 3, '本', '5本中', 'ドライブでぬいて 決める'),
+      T('フリースロー', 'd-ft', 7, '本', '10本中', ''),
+      T('下の級の子に 教える', '', 1, '回', '', '下の級の子に、練習を1つ教えてあげよう（どんなふうに教えたか書いてね）', 'none'),
+    ] },
+  ];
+  // 課題の目標を、ことばで（例：「10本中 5本」「30秒で 40回」「10秒以内」）
+  BC.kyuGoal = (t) => {
+    const c = String(t.cond || '');
+    if (/以内/.test(c)) return `${t.target}${t.unit}${c}`;
+    return `${c ? c + ' ' : ''}${t.target}${t.unit}`;
+  };
+  // その数で 目標にとどいたか（「以内」は小さいほどよい）
+  BC.kyuMet = (t, n) => n != null && n !== '' && (/以内/.test(String(t.cond || '')) ? +n <= t.target : +n >= t.target);
+})();
+
+/* ---- js/club-config.js ---- */
+BC && (BC.currentFile = "js/club-config.js");
+// クラブ（js/club.js）の接続先。math-labo-second（数学ラボ2）の Supabase プロジェクトに相乗り（テーブル・関数は bg_ / _bg_ の接頭辞）。
+// anon（publishable）キーは「公開してよい」キー（quiz / home / lesson-live と同じ）。データは RLS と bg_* の RPC（トークンの確認）で守る。
+window.BC = window.BC || {};
+window.BC.CLUB_CONFIG = {
+  url: 'https://mtzhbiadzqjhvhzzdsbn.supabase.co',
+  key: 'sb_publishable_mq8nUqxVfGtnNHp5UCUtCA_9-x1xn7E',
+};
+
+/* ---- js/club.js ---- */
+BC && (BC.currentFile = "js/club.js");
+/* クラブの画面：コーチがつくった級（きゅう）に チャレンジ → 写真をつけて提出 → コーチが評価・認定 → ひろばで いいね。
+   サーバーは Supabase（club/schema.sql の bg_* 関数）。接続先は js/club-config.js（BC.CLUB_CONFIG）。
+   BC.club.render(el, ctx, sub)
+     sub（#club/…）：''（ホーム）・'feed'（ひろば）・'task/<id>'（課題）・'coach'（コーチのログイン）・'create'（クラブをつくる）・
+       コーチだけ：'review'（確認）・'members'・'member/<id>'・'design'（級をつくる）・'settings'・'cards'（ログインカード）
+     ctx：{ toast, modal, closeModal, ic, drillArt, addActs, confetti, shares, checks }（app.js から）
+   BC.club.homeHTML() … ホームに出す小さなカード（ログインしていれば、いまの級と お知らせ）
+   BC.club.refresh() … お知らせの数を読みなおす（タブの赤い点）。BC.club.onBadge = (n) => … で知らせる
+   この端末に残すもの（localStorage）：bc.club（ログインのトークン・クラブ・自分）・bc.club.seen（お祝いした合格）・bc.club.cache（ホームの級の表示用） */
+(function () {
+  const BC = window.BC;
+  const C = (BC.club = BC.club || {});
+  const KEY = 'bc.club';
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const S = { sess: null, home: null, feed: null, feedEnd: false, queue: null, members: null, draft: null, pins: {}, upload: null, photos: {}, el: null, sub: '', busy: false, badge: 0, msg: '' };
+  let X = {};
+  const ic = (n, cls) => (X.ic ? X.ic(n, cls) : '');
+  const ls = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* なし */ } },
+  };
+  S.sess = ls.get(KEY, null);
+
+  /* ---------- 通信 ---------- */
+  const cfg = () => BC.CLUB_CONFIG || {};
+  C.ready = () => !!(cfg().url && cfg().key);
+  async function rpc(fn, args) {
+    const { url, key } = cfg();
+    let r;
+    try {
+      r = await fetch(`${url}/rest/v1/rpc/${fn}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: key, Authorization: `Bearer ${key}` },
+        body: JSON.stringify(args || {}),
+      });
+    } catch (e) { return { error: 'net' }; }
+    /* 404：サーバー側（club/schema.sql）が まだ入っていない */
+    if (!r.ok) return { error: r.status === 404 ? 'setup' : 'http', status: r.status };
+    const j = await r.json().catch(() => null);
+    if (j && j.error === 'auth' && S.sess) { setSess(null); S.msg = 'ログインが切れました。もう一度 ログインしてね。'; }
+    return j || { error: 'http' };
+  }
+  const tok = () => (S.sess ? S.sess.token : '');
+  const ERR = {
+    net: 'インターネットに つながっていないみたい。つながる所で もう一度。',
+    http: 'サーバーと うまく話せませんでした。少しまってから もう一度。',
+    setup: 'クラブの サーバーを じゅんびしています。もう少し まってね。',
+    auth: 'ログインが切れました。もう一度 ログインしてね。',
+    bad_login: 'クラブコード・ばんごう・あいことば（コーチは合言葉）の どれかが ちがいます。',
+    locked: 'まちがいが続いたので、少し時間をおいてから ためしてね。',
+    weak_password: '合言葉は 8文字以上で、かんたんすぎないものに してください。',
+    bad_name: '名前を入れてください。',
+    bad_coach: 'コーチの名前を入れてください。',
+    need_photo: 'この課題は、写真が必要です。',
+    no_photo: '写真は のせられません。',
+    bad_photo: '写真を読みこめませんでした。べつの写真で ためしてね。',
+    photo_big: '写真が大きすぎます。',
+    photo_full: 'クラブの写真が いっぱいです。コーチに伝えてね。',
+    ng_word: 'だれかが いやな気持ちになる ことばが あるみたい。やさしい ことばで 書きなおそう。',
+    no_link: 'URL（リンク）は のせられません。',
+    private_info: '電話番号のような 長い数字は のせられません。',
+    empty: 'なにか 書いてね。',
+    not_coach: 'コーチだけが できます。',
+    not_kid: 'コーチは 提出できません。',
+    too_many: 'これ以上 ふやせません。',
+    bad_task: 'その課題は もうありません（コーチが直したのかも）。',
+    bad_count: '数を たしかめてね。',
+    bad_member: 'そのメンバーは いません。',
+    bad_level: 'その級は ありません。',
+    bad_levels: '級を1つ以上 つくってください。',
+    bad_sub: 'その提出は ありません。',
+    bad_post: 'その投稿は ありません。',
+  };
+  const errMsg = (j) => ERR[(j && j.error) || 'http'] || 'うまくいきませんでした。もう一度 ためしてね。';
+
+  function setSess(s) {
+    S.sess = s;
+    ls.set(KEY, s);
+    if (!s) { S.home = S.feed = S.queue = S.members = S.draft = null; S.photos = {}; ls.set('bc.club.cache', null); setBadge(0); }
+  }
+  const isCoach = () => S.sess && S.sess.me && S.sess.me.role === 'coach';
+
+  /* ---------- 小さな部品 ---------- */
+  // 級の色（帯の色）と、その上の字の色（明るい色には黒い字）
+  function kv(color) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(color || '');
+    const c = m ? '#' + m[1] : '#888888';
+    const n = parseInt(c.slice(1), 16);
+    const light = (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255 > 0.62;
+    return `--k:${c};--kt:${light ? '#1f2328' : '#fff'};--ks:${light ? 'none' : '0 1px 1px rgba(0,0,0,.35)'}`;
+  }
+  const kyuBadge = (k, cls = '') => (k ? `<span class="cl-kyu ${cls}" style="${kv(k.color)}">${esc(k.name)}</span>` : `<span class="cl-kyu none ${cls}">級なし</span>`);
+  const avatar = (m) => `<span class="cl-av${m && m.role === 'coach' ? ' coach' : ''}" style="${kv((m && m.kyu && m.kyu.color) || '#9aa3ab')}">${m && m.role === 'coach' ? ic('whistle') : esc(String((m && m.nickname) || '?').slice(0, 1))}</span>`;
+  const GRADES = { e12: '小1・2', e34: '小3・4', e56: '小5・6', j1: '中1', j2: '中2', j3: '中3', h: '高校', a: 'おとな' };
+  function ago(ts) {
+    const t = new Date(ts).getTime(), d = (Date.now() - t) / 1000;
+    if (d < 60) return 'たった今';
+    if (d < 3600) return `${Math.floor(d / 60)}分まえ`;
+    if (d < 86400) return `${Math.floor(d / 3600)}時間まえ`;
+    if (d < 172800) return 'きのう';
+    const x = new Date(t);
+    return `${x.getMonth() + 1}/${x.getDate()}`;
+  }
+  const STATUS = { pending: ['確認まち', 'wait'], pass: ['合格', 'pass'], retry: ['もう一度', 'retry'] };
+  const pill = (st) => (st ? `<span class="cl-st ${STATUS[st][1]}">${STATUS[st][0]}</span>` : '<span class="cl-st">まだ</span>');
+  const STAMPS = [['like', 'いいね', '👍'], ['nice', 'ナイス', '👏'], ['wow', 'すごい', '🌟'], ['cheer', 'がんばれ', '💪']];
+  const loading = () => `<div class="cl-loading" role="status"><span class="cl-spin"></span>よみこみ中…</div>`;
+  const backLink = (href, label) => `<a class="back-btn" href="${href}">${ic('back')}${esc(label || 'もどる')}</a>`;
+  const drill = (id) => (id && BC.get ? BC.get(id) : null);
+
+  /* ---------- 写真：小さくしてから送る（長い辺 960px・300KB まで） ---------- */
+  async function shrink(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((ok, ng) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ng; i.src = url; });
+      for (const max of [960, 800, 640]) {
+        const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        const cv = document.createElement('canvas');
+        cv.width = Math.max(1, Math.round(img.naturalWidth * k));
+        cv.height = Math.max(1, Math.round(img.naturalHeight * k));
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        for (const q of [0.8, 0.68, 0.56]) {
+          const d = cv.toDataURL('image/jpeg', q);
+          const b64 = d.slice(d.indexOf(',') + 1);
+          if (b64.length * 0.75 < 280000) return { b64, mime: 'image/jpeg', url: d };
+        }
+      }
+      return null;
+    } catch (e) { return null; } finally { URL.revokeObjectURL(url); }
+  }
+  // 写真の表示（あとから読みこむ）
+  const photoTag = (id, cls = '') => (id ? `<button type="button" class="cl-photo ${cls}" data-cl="zoom" data-id="${esc(id)}" aria-label="写真を大きく"><span class="cl-photo-in" data-photo="${esc(id)}"><span class="cl-spin"></span></span></button>` : '');
+  async function hydratePhotos(root) {
+    const els = [...root.querySelectorAll('[data-photo]')];
+    for (const el of els) {
+      const id = el.dataset.photo;
+      if (!S.photos[id]) {
+        const j = await rpc('bg_photo', { p_token: tok(), p_id: id });
+        S.photos[id] = j && j.ok ? `data:${j.mime};base64,${j.data}` : 'x';
+      }
+      if (el.isConnected) el.innerHTML = S.photos[id] === 'x' ? '<span class="cl-photo-x">写真を見られません</span>' : `<img src="${S.photos[id]}" alt="写真">`;
+    }
+  }
+
+  /* ---------- 画面の入り口 ---------- */
+  C.render = function (el, ctx, sub) {
+    X = ctx || X;
+    S.el = el;
+    S.sub = sub || '';
+    if (!C.ready()) { el.innerHTML = `<h1 class="page-h">クラブ</h1><p class="empty">このアプリでは、クラブの機能が まだ使えません（接続先が ありません）。</p>`; return; }
+    if (!S.sess) {
+      if (S.sub === 'create') return createPage();
+      if (S.sub === 'coach') return coachLoginPage();
+      return welcomePage();
+    }
+    if (isCoach()) {
+      const [a, b] = S.sub.split('/');
+      if (a === 'review') return reviewPage();
+      if (a === 'members') return membersPage();
+      if (a === 'member') return memberPage(b);
+      if (a === 'design') return designPage();
+      if (a === 'settings') return settingsPage();
+      if (a === 'cards') return cardsPage();
+      if (a === 'feed') return feedPage();
+      return coachHome();
+    }
+    const [a, b] = S.sub.split('/');
+    if (a === 'feed') return feedPage();
+    if (a === 'task') return taskPage(b);
+    return kidHome();
+  };
+  const paint = (html) => { if (S.el) { S.el.innerHTML = html; hydratePhotos(S.el); hydrateArt(S.el); } };
+  // 練習メニューの小さな絵（app.js の drillArt を使う）
+  function hydrateArt() { /* drillArt は HTML を返すので、描くときに入れている */ }
+  const rerender = () => C.render(S.el, X, S.sub);
+  function go(hash) { if (location.hash.slice(1) === hash) rerender(); else location.hash = hash; }
+
+  /* ---------- ログインしていない ---------- */
+  function welcomePage() {
+    const msg = S.msg; S.msg = '';
+    paint(`<section class="cl-hero">
+        <div class="cl-hero-ic">${ic('trophy')}</div>
+        <h1 class="page-h">クラブ</h1>
+        <p>コーチが つくった <b>級（きゅう）</b>に チャレンジ！ 写真をつけて送ると、コーチが見て「合格」を返してくれます。クラブの なかまと、がんばったことを 見せあって「いいね」できます。</p>
+      </section>
+      ${msg ? `<p class="cl-msg">${esc(msg)}</p>` : ''}
+      <section class="card">
+        <h2 class="sec-h">${ic('person')}子どもの ログイン</h2>
+        <p class="small">コーチから もらった ログインカードを 見て 入れてね。</p>
+        <form class="cl-form" data-clform="kid" autocomplete="off">
+          <label class="field"><span class="field-l">クラブコード</span><input name="code" inputmode="latin" autocapitalize="characters" maxlength="6" placeholder="例：K7X2QP" required></label>
+          <label class="field"><span class="field-l">ばんごう</span><input name="no" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="例：12" required></label>
+          <label class="field"><span class="field-l">あいことば（6けたの数字）</span><input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" required></label>
+          <button type="submit" class="btn primary big">${ic('next')}ログイン</button>
+        </form>
+      </section>
+      <section class="card">
+        <h2 class="sec-h">${ic('whistle')}コーチの方</h2>
+        <div class="btns"><a class="btn" href="#club/coach">コーチとして ログイン</a><a class="btn" href="#club/create">クラブを つくる</a></div>
+        <p class="small">子どものアカウントは、コーチがつくります（メールアドレスは いりません）。記録や写真は、クラブの中だけで見られます。</p>
+      </section>`);
+  }
+  function coachLoginPage() {
+    paint(`${backLink('#club')}<h1 class="page-h">コーチの ログイン</h1>
+      <form class="card cl-form" data-clform="coach" autocomplete="on">
+        <label class="field"><span class="field-l">クラブコード</span><input name="code" maxlength="6" autocapitalize="characters" required></label>
+        <label class="field"><span class="field-l">あなたの名前（例：たなかコーチ）</span><input name="name" maxlength="12" autocomplete="nickname" required></label>
+        <label class="field"><span class="field-l">コーチの合言葉</span><input name="pass" type="password" autocomplete="current-password" required></label>
+        <button type="submit" class="btn primary big">ログイン</button>
+        <p class="small">はじめての名前なら、そのクラブのコーチが1人ふえます（同じ合言葉を知っているコーチだけ）。</p>
+      </form>`);
+  }
+  function createPage() {
+    paint(`${backLink('#club')}<h1 class="page-h">クラブを つくる</h1>
+      <form class="card cl-form" data-clform="create" autocomplete="off">
+        <label class="field"><span class="field-l">クラブの名前</span><input name="name" maxlength="30" placeholder="例：さくらミニバス" required></label>
+        <label class="field"><span class="field-l">あなたの名前（コーチ）</span><input name="coach" maxlength="12" placeholder="例：たなかコーチ" required></label>
+        <label class="field"><span class="field-l">コーチの合言葉（8文字以上）</span><input name="pass" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label class="field"><span class="field-l">もう一度</span><input name="pass2" type="password" autocomplete="new-password" minlength="8" required></label>
+        <div class="field"><span class="field-l">級（きゅう）</span>
+          <p class="small">10級 → 1級 の テンプレート（各級に 課題が4つ）で はじめます。課題・回数・写真の有無は、あとで「級をつくる」で 自由に直せます。</p></div>
+        <button type="submit" class="btn primary big">${ic('plus')}つくる</button>
+        <p class="small">合言葉は わすれないように。ほかのコーチにも、この合言葉で入ってもらいます。<br>子どもの記録・写真は、このクラブの中だけで使われます。保護者の方の了解をとってから はじめてください。</p>
+      </form>`);
+  }
+
+  /* ---------- 子ども：ホーム（級にチャレンジ） ---------- */
+  async function loadHome() {
+    const j = await rpc('bg_home', { p_token: tok() });
+    if (!j.ok) return j;
+    S.home = j;
+    S.sess.me = j.me; S.sess.club = { id: j.club.id, code: j.club.code, name: j.club.name };
+    ls.set(KEY, S.sess);
+    ls.set('bc.club.cache', { me: j.me, club: S.sess.club, next: nextLevel(j), at: Date.now() });
+    setBadge(noticeCount(j));
+    return j;
+  }
+  const noticeCount = (h) => (h.me.role === 'coach' ? (h.counts.pending || 0) + (h.counts.waiting || 0) + (h.counts.ready || 0) : (h.notices.reviews || 0) + (h.notices.certs || 0) + (h.notices.reacts || 0));
+  function setBadge(n) { S.badge = n; if (C.onBadge) C.onBadge(n); }
+  const certSet = (h) => new Set((h.certs || []).map((c) => c.level_id));
+  const latestSub = (h, taskId) => (h.subs || []).find((s) => s.task_id === taskId) || null;
+  const passed = (h, taskId) => (h.subs || []).some((s) => s.task_id === taskId && s.status === 'pass');
+  // いまの目標の級：まだ認定されていない いちばん下の級
+  function nextLevel(h) {
+    if (!h || !h.levels) return null;
+    const cs = certSet(h);
+    const l = h.levels.find((x) => !cs.has(x.id));
+    if (!l) return null;
+    const done = l.tasks.filter((t) => passed(h, t.id)).length;
+    return { id: l.id, name: l.name, color: l.color, done, total: l.tasks.length };
+  }
+  // 新しい合格・認定のお祝い（この端末で1回だけ）と、経験値
+  function celebrateNew(h) {
+    const seen = ls.get('bc.club.seen', null);
+    const passIds = (h.subs || []).filter((s) => s.status === 'pass').map((s) => s.id);
+    const certIds = (h.certs || []).map((c) => c.level_id);
+    if (!seen || seen.club !== h.club.id || seen.member !== h.me.id) {
+      // はじめて開いた端末：いまある分は お祝いしない
+      ls.set('bc.club.seen', { club: h.club.id, member: h.me.id, pass: passIds, cert: certIds });
+      return;
+    }
+    const newPass = passIds.filter((id) => !seen.pass.includes(id));
+    const newCert = certIds.filter((id) => !seen.cert.includes(id));
+    ls.set('bc.club.seen', { club: h.club.id, member: h.me.id, pass: passIds, cert: certIds });
+    const acts = [];
+    for (const id of newPass) {
+      const s = h.subs.find((x) => x.id === id);
+      const t = findTask(h, s.task_id);
+      acts.push({ type: 'pass', id: s.task_id, skill: t && drill(t.task.drill_id) ? (drill(t.task.drill_id).skills || [])[0] : null, xp: 10 });
+    }
+    for (const id of newCert) acts.push({ type: 'kyu', id, xp: 50 });
+    if (acts.length && X.addActs) X.addActs(acts, { quiet: true });
+    if (newCert.length && X.modal) {
+      const l = h.levels.find((x) => x.id === newCert[newCert.length - 1]);
+      const c = h.certs.find((x) => x.level_id === (l && l.id));
+      if (l) {
+        X.modal(`<div class="celebrate pop">${X.confetti ? X.confetti() : ''}<h2 class="modal-h">ごうかく！</h2>
+          <div class="cl-cert-big" style="${kv(l.color)}"><span>${esc(l.name)}</span></div>
+          <p class="center">${esc(h.me.nickname)}さん、<b>${esc(l.name)}</b>に 合格しました！</p>
+          ${c && c.comment ? `<p class="cl-coach-c">${ic('whistle')}${esc(c.comment)}</p>` : ''}
+          <p class="center small">経験値 +50</p>
+          <div class="btns"><button type="button" class="btn primary big" data-act="modal-close">やったね！</button></div></div>`);
+      }
+    } else if (newPass.length && X.toast) {
+      X.toast(`コーチが「合格」をくれたよ！（${newPass.length}）`, 'xp');
+    }
+  }
+  function findTask(h, taskId) {
+    for (const l of h.levels || []) for (const t of l.tasks) if (t.id === taskId) return { level: l, task: t };
+    return null;
+  }
+  async function kidHome() {
+    if (!S.home) paint(loading());
+    const h = await loadHome();
+    if (!h.ok) return welcomeOr(h);
+    celebrateNew(h);
+    const cs = certSet(h);
+    const cur = h.levels.find((x) => !cs.has(x.id));
+    const n = h.notices;
+    const notice = [n.reviews && `コーチから 返事が <b>${n.reviews}</b>つ`, n.certs && `級の合格が <b>${n.certs}</b>つ`, n.reacts && `ひろばで スタンプが <b>${n.reacts}</b>こ`].filter(Boolean);
+    const taskRow = (t, open) => {
+      const s = latestSub(h, t.id);
+      const ok = passed(h, t.id);
+      const d = drill(t.drill_id);
+      return `<a class="row-card cl-task${ok ? ' ok' : ''}" href="#club/task/${t.id}">${d && X.drillArt ? X.drillArt(d) : `<span class="thumb art-ic">${ic('target')}</span>`}
+        <span class="rc-body"><span class="rc-title">${esc(t.title)}</span><span class="rc-sub cl-goal">${ic('target')}${esc(BC.kyuGoal(t))}</span>
+        ${s && s.comment && s.status !== 'pending' ? `<span class="cl-coach-mini">${ic('whistle')}${esc(s.comment)}</span>` : ''}</span>
+        ${ok ? pill('pass') : s ? pill(s.status) : pill(null)}</a>`;
+    };
+    const ladder = h.levels.slice().reverse().map((l) => {
+      const st = cs.has(l.id) ? 'done' : cur && l.id === cur.id ? 'now' : 'lock';
+      const done = l.tasks.filter((t) => passed(h, t.id)).length;
+      return `<details class="cl-step ${st}"><summary><span class="cl-step-k" style="${kv(l.color)}">${esc(l.name)}</span>
+        <span class="cl-step-t">${st === 'done' ? `${ic('check')}合格` : st === 'now' ? `いまの目標 <b class="num">${done}</b>/${l.tasks.length}` : `${ic('flag')}${esc(l.note || '')}`}</span></summary>
+        <div class="rows">${l.tasks.map((t) => taskRow(t)).join('') || '<p class="empty">課題はまだありません</p>'}</div></details>`;
+    }).join('');
+    paint(`<section class="cl-me">
+        <div class="cl-me-top">${kyuBadge(h.me.kyu, 'big')}<div><p class="cl-club">${esc(h.club.name)}</p><p class="cl-name">${esc(h.me.nickname)}<small>（${h.me.no}ばん）</small></p></div></div>
+        ${cur ? `<p class="cl-next">つぎは <b>${esc(cur.name)}</b>：課題 <b class="num">${cur.tasks.filter((t) => passed(h, t.id)).length}</b> / ${cur.tasks.length} 合格</p>
+          <div class="xpbar cl-bar"><i style="width:${cur.tasks.length ? Math.round(100 * cur.tasks.filter((t) => passed(h, t.id)).length / cur.tasks.length) : 0}%"></i></div>` : '<p class="cl-next">すべての級に 合格！ すごい！</p>'}
+      </section>
+      ${notice.length ? `<button type="button" class="cl-notice" data-cl="seen">${ic('star')}<span>${notice.join('・')}</span><small>OK</small></button>` : ''}
+      <nav class="cl-tabs"><a href="#club" aria-current="page">${ic('trophy')}級にチャレンジ</a><a href="#club/feed">${ic('people')}みんなの ひろば</a></nav>
+      ${cur ? `<section class="sec cl-cur"><h2 class="sec-h">${ic('target')}${esc(cur.name)}の 課題</h2><p class="small">課題をえらんで、できたら「送る」。写真をつけると、コーチが見やすいよ。</p>
+        <div class="rows">${cur.tasks.map((t) => taskRow(t)).join('')}</div></section>` : ''}
+      <section class="sec"><h2 class="sec-h">${ic('up')}級の かいだん</h2><div class="cl-ladder">${ladder}</div></section>
+      <p class="center"><button type="button" class="link-btn" data-cl="logout">ログアウト（この端末から）</button></p>`);
+  }
+  function welcomeOr(j) {
+    if (!S.sess) return welcomePage();
+    paint(`<p class="cl-msg">${esc(errMsg(j))}</p><div class="btns"><button type="button" class="btn" data-cl="retry">もう一度</button></div>`);
+  }
+
+  /* ---------- 子ども：課題のページ（提出） ---------- */
+  async function taskPage(id) {
+    if (!S.home) { paint(loading()); const j = await loadHome(); if (!j.ok) return welcomeOr(j); }
+    const h = S.home;
+    const f = findTask(h, id);
+    if (!f) return paint(`${backLink('#club')}<p class="empty">その課題は ありません（コーチが直したのかも）。</p>`);
+    const { level: l, task: t } = f;
+    const cs = certSet(h);
+    const cur = h.levels.find((x) => !cs.has(x.id));
+    const canSend = !passed(h, t.id) && cur && cur.id === l.id;
+    const subs = (h.subs || []).filter((s) => s.task_id === t.id);
+    const d = drill(t.drill_id);
+    const checks = (X.checks ? X.checks() : []).slice(0, 6);
+    const up = S.upload && S.upload.task === t.id ? S.upload : null;
+    paint(`${backLink('#club', '級にもどる')}
+      <p class="eyebrow">${kyuBadge(l)} 級の課題</p>
+      <h1 class="page-h">${esc(t.title)}</h1>
+      <section class="cl-goal-big"><span class="small">目標</span><b>${esc(BC.kyuGoal(t))}</b>${passed(h, t.id) ? `<span class="cl-st pass">${ic('check')}合格</span>` : ''}</section>
+      ${t.how ? `<p class="cl-coach-c">${ic('whistle')}<span><b>コーチから：</b>${esc(t.how)}</span></p>` : ''}
+      ${d ? `<section class="sec"><h2 class="sec-h">${ic('list')}やりかた</h2><a class="row-card" href="#${d.id}">${X.drillArt ? X.drillArt(d) : ''}<span class="rc-body"><span class="rc-title">${esc(d.name)}</span><span class="rc-sub">アニメーションと やりかたを見る</span></span>${ic('next', 'rc-go')}</a></section>` : ''}
+      ${canSend ? `<section class="card cl-send">
+        <h2 class="sec-h">${ic('up')}きろくを 送る</h2>
+        <div class="field"><span class="field-l">${/以内/.test(t.cond) ? 'タイム（秒）' : 'なん' + esc(t.unit) + ' できた？'}</span>
+          <div class="cl-count"><button type="button" class="ib" data-cl="cnt" data-d="-1" aria-label="へらす">${ic('minus')}</button>
+          <input id="cl-count" type="number" inputmode="numeric" min="0" max="99999" value="${t.target}" aria-label="数">
+          <button type="button" class="ib" data-cl="cnt" data-d="1" aria-label="ふやす">${ic('plus')}</button><span class="cl-unit">${esc(t.unit)}</span></div>
+          <p class="small" id="cl-met"></p></div>
+        ${t.photo !== 'none' ? `<div class="field"><span class="field-l">写真${t.photo === 'need' ? '（必要）' : '（あると コーチが見やすい）'}</span>
+          ${up ? `<div class="cl-preview"><img src="${up.url}" alt="えらんだ写真"><button type="button" class="btn" data-cl="unphoto">${ic('close')}はずす</button></div>` : ''}
+          <label class="btn cl-pick">${ic('camera')}${up ? 'べつの写真にする' : '写真を とる・えらぶ'}<input type="file" accept="image/*" id="cl-file" data-task="${t.id}" hidden></label>
+          <p class="small">顔が うつっていなくても だいじょうぶ（フォームが分かれば OK）。写真は 本人とコーチだけが見られます。</p></div>` : ''}
+        ${checks.length ? `<div class="field"><span class="field-l">動画チェックの けっかを つける（なくてもOK）</span>
+          <select id="cl-check"><option value="">つけない</option>${checks.map((c, i) => `<option value="${i}">${esc(checkLabel(c))}</option>`).join('')}</select></div>` : ''}
+        <label class="field"><span class="field-l">ひとこと（なくてもOK）</span><input id="cl-note" type="text" maxlength="100" placeholder="例：左手は あと少し"></label>
+        <button type="button" class="btn primary big" data-cl="send" data-task="${t.id}">${ic('up')}コーチに 送る</button>
+      </section>` : !passed(h, t.id) ? `<p class="cl-msg">${ic('flag')}この課題は、前の級に 合格すると 送れるように なります。</p>` : ''}
+      <section class="sec"><h2 class="sec-h">${ic('clock')}送った きろく</h2>
+        ${subs.length ? `<div class="rows">${subs.map((s) => `<div class="card cl-sub">
+          <div class="cl-sub-h">${pill(s.status)}<span class="num">${s.count == null ? '' : s.count + esc(t.unit)}</span><span class="small">${esc(ago(s.created_at))}</span>
+            ${s.status === 'pending' ? `<button type="button" class="link-btn" data-cl="cancel" data-id="${s.id}">とりけす</button>` : ''}</div>
+          ${s.note ? `<p class="small">${esc(s.note)}</p>` : ''}
+          ${s.check ? `<p class="small">${ic('camera', 'inline')}${esc(checkLabel(s.check))}</p>` : ''}
+          ${photoTag(s.photo_id, 'small')}
+          ${s.comment ? `<p class="cl-coach-c">${ic('whistle')}<span>${esc(s.comment)}</span></p>` : ''}</div>`).join('')}</div>` : '<p class="empty">まだ 送っていません。</p>'}
+      </section>`);
+    updateMet(t);
+  }
+  const checkLabel = (c) => `${c.label || c.mode || '動画チェック'}${c.score != null ? ' ' + c.score + '点' : ''}${c.metrics ? '（' + c.metrics.filter((m) => m.status === 'good').length + '◎）' : ''}`;
+  function updateMet(t) {
+    const el = document.getElementById('cl-met'), inp = document.getElementById('cl-count');
+    if (!el || !inp) return;
+    const n = inp.value;
+    el.innerHTML = n === '' ? '' : BC.kyuMet(t, n) ? `${ic('check', 'inline')}目標に とどいています！` : '目標まで あと少し。とどいていなくても、送って コーチに見てもらえます。';
+  }
+  async function send(taskId) {
+    const f = findTask(S.home, taskId);
+    if (!f || S.busy) return;
+    const t = f.task;
+    const cnt = (document.getElementById('cl-count') || {}).value;
+    const note = (document.getElementById('cl-note') || {}).value || '';
+    const sel = (document.getElementById('cl-check') || {}).value;
+    const up = S.upload && S.upload.task === taskId ? S.upload : null;
+    if (t.photo === 'need' && !up) return X.toast && X.toast('この課題は 写真が必要です');
+    let check = null;
+    if (sel !== '' && sel != null && X.checks) {
+      const c = X.checks()[+sel];
+      if (c) check = { mode: c.mode, label: c.label || (BC.check && BC.check.MODES && BC.check.MODES[c.mode] ? BC.check.MODES[c.mode].name : c.mode), score: c.score, metrics: (c.metrics || []).map((m) => ({ label: m.label, value: m.value, status: m.status })) };
+    }
+    S.busy = true;
+    const btn = document.querySelector('[data-cl="send"]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="cl-spin"></span>送っています…'; }
+    const j = await rpc('bg_submit', { p_token: tok(), p_task_id: taskId, p_count: cnt === '' ? null : Math.max(0, Math.round(+cnt)), p_note: note,
+      p_photo: up ? up.b64 : '', p_mime: up ? up.mime : '', p_check: check });
+    S.busy = false;
+    if (!j.ok) { if (btn) { btn.disabled = false; btn.innerHTML = `${ic('up')}コーチに 送る`; } return X.toast && X.toast(errMsg(j)); }
+    S.upload = null;
+    X.toast && X.toast('送ったよ！ コーチの確認を まってね');
+    await loadHome();
+    rerender();
+  }
+
+  /* ---------- ひろば ---------- */
+  async function feedPage(more) {
+    if (!S.feed || !more) paint(loading());
+    const before = more && S.feed && S.feed.length ? S.feed[S.feed.length - 1].created_at : null;
+    const j = await rpc('bg_feed', { p_token: tok(), p_before: before, p_limit: 20 });
+    if (!j.ok) return welcomeOr(j);
+    S.feed = more ? (S.feed || []).concat(j.posts) : j.posts;
+    S.feedEnd = j.posts.length < 20;
+    if (!S.home) await loadHome();
+    if (!isCoach()) rpc('bg_seen', { p_token: tok() }).then(() => { if (S.home) { S.home.notices.reacts = 0; setBadge(noticeCount(S.home)); } });
+    drawFeed();
+  }
+  function postCard(p) {
+    const me = S.sess.me;
+    const mine = p.member && p.member.id === me.id;
+    const st = p.status !== 'shown' ? `<span class="cl-st ${p.status === 'waiting' ? 'wait' : 'retry'}">${p.status === 'waiting' ? 'コーチの確認まち' : 'かくされています'}</span>` : '';
+    const body = p.kind === 'cert'
+      ? `<div class="cl-cert" style="${kv(p.meta.color)}"><span class="cl-cert-k">${esc(p.meta.level || '')}</span><span><b>${esc(p.member.nickname)}さんが ${esc(p.meta.level || '')}に 合格！</b>${p.meta.comment ? `<small>${ic('whistle', 'inline')}${esc(p.meta.by || 'コーチ')}：${esc(p.meta.comment)}</small>` : ''}</span></div>`
+      : `${p.kind === 'share' ? `<p class="cl-share">${ic(p.meta.type === 'badge' ? 'medal' : p.meta.type === 'check' ? 'camera' : p.meta.type === 'streak' ? 'fire' : 'trophy')}<span>${esc(p.meta.label || '')}</span></p>` : ''}
+         ${p.body ? `<p class="cl-body">${esc(p.body)}</p>` : ''}${photoTag(p.photo_id)}`;
+    return `<article class="card cl-post${p.kind === 'cert' ? ' cert' : ''}" data-post="${p.id}">
+      <header class="cl-post-h">${avatar(p.member)}<span class="cl-post-who"><b>${esc(p.member.nickname)}</b>${p.member.role === 'coach' ? '<span class="cl-st">コーチ</span>' : kyuBadge(p.member.kyu, 'small')}</span><span class="small">${esc(ago(p.created_at))}</span>${st}</header>
+      ${body}
+      <footer class="cl-stamps">${STAMPS.map(([k, label, e]) => `<button type="button" class="cl-stamp" data-cl="react" data-id="${p.id}" data-k="${k}" aria-pressed="${(p.mine || []).includes(k)}" ${p.status === 'hidden' ? 'disabled' : ''}><span aria-hidden="true">${e}</span>${label}<b class="num">${(p.reacts || {})[k] || ''}</b></button>`).join('')}</footer>
+      ${mine || isCoach() ? `<div class="cl-post-ctl">${isCoach() && p.status !== 'shown' ? `<button type="button" class="btn" data-cl="mod" data-id="${p.id}" data-s="shown">${ic('check')}みんなに出す</button>` : ''}
+        ${isCoach() && p.status === 'shown' && !mine ? `<button type="button" class="link-btn" data-cl="mod" data-id="${p.id}" data-s="hidden">かくす</button>` : ''}
+        <button type="button" class="link-btn" data-cl="delpost" data-id="${p.id}">消す</button></div>` : ''}
+    </article>`;
+  }
+  function drawFeed() {
+    const c = S.home ? S.home.club : { settings: {} };
+    const photos = (c.settings || {}).photos !== false;
+    const shares = (X.shares ? X.shares() : []).slice(0, 4);
+    const up = S.upload && S.upload.task === 'post' ? S.upload : null;
+    paint(`${isCoach() ? backLink('#club', 'コーチのページ') : ''}
+      ${isCoach() ? '<h1 class="page-h">ひろば</h1>' : `<nav class="cl-tabs"><a href="#club">${ic('trophy')}級にチャレンジ</a><a href="#club/feed" aria-current="page">${ic('people')}みんなの ひろば</a></nav>`}
+      <section class="card cl-compose">
+        <label class="sr" for="cl-post">がんばったこと</label>
+        <textarea id="cl-post" maxlength="140" rows="2" placeholder="${isCoach() ? 'クラブのみんなへ ひとこと' : 'きょう がんばったことを 書こう'}"></textarea>
+        ${shares.length ? `<div class="chips">${shares.map((s, i) => `<button type="button" class="chip" data-cl="share" data-i="${i}">${ic(s.type === 'badge' ? 'medal' : s.type === 'check' ? 'camera' : 'trophy', 'inline')}${esc(s.label)}</button>`).join('')}</div>` : ''}
+        ${up ? `<div class="cl-preview"><img src="${up.url}" alt="えらんだ写真"><button type="button" class="btn" data-cl="unphoto">${ic('close')}はずす</button></div>` : ''}
+        <div class="btns">${photos ? `<label class="btn">${ic('camera')}写真<input type="file" accept="image/*" id="cl-file" data-task="post" hidden></label>` : ''}<button type="button" class="btn primary" data-cl="post">${ic('plus')}のせる</button></div>
+        <p class="small">${isCoach() ? '' : 'やさしい ことばで。わるぐち・リンク・電話番号は のせられません。'}${photos && !isCoach() && (c.settings || {}).review_photos !== false ? '写真つきは、コーチが見てから みんなに出ます。' : ''}${(c.settings || {}).review_posts ? '投稿は、コーチが見てから みんなに出ます。' : ''}</p>
+      </section>
+      <div class="cl-feed">${S.feed.length ? S.feed.map(postCard).join('') : '<p class="empty">まだ 投稿は ありません。さいしょの 1つを 書いてみよう！</p>'}</div>
+      ${S.feed.length && !S.feedEnd ? '<div class="btns"><button type="button" class="btn" data-cl="more">もっと見る</button></div>' : ''}`);
+  }
+  async function doPost(share) {
+    if (S.busy) return;
+    const body = (document.getElementById('cl-post') || {}).value || '';
+    const up = S.upload && S.upload.task === 'post' ? S.upload : null;
+    if (!body.trim() && !up && !share) return X.toast && X.toast('なにか 書いてね');
+    S.busy = true;
+    const j = await rpc('bg_post', { p_token: tok(), p_body: body, p_photo: up ? up.b64 : '', p_mime: up ? up.mime : '', p_meta: share || null });
+    S.busy = false;
+    if (!j.ok) return X.toast && X.toast(errMsg(j));
+    S.upload = null;
+    X.toast && X.toast(j.status === 'waiting' ? 'のせたよ！ コーチが見てから みんなに出るよ' : 'のせたよ！');
+    feedPage();
+  }
+
+  /* ---------- コーチ：ホーム ---------- */
+  async function coachHome() {
+    if (!S.home) paint(loading());
+    const h = await loadHome();
+    if (!h.ok) return welcomeOr(h);
+    const c = h.counts;
+    paint(`<section class="cl-me coach">
+        <div class="cl-me-top">${avatar(h.me)}<div><p class="cl-club">${esc(h.club.name)}</p><p class="cl-name">${esc(h.me.nickname)}<small>（コーチ）</small></p></div></div>
+        <p class="cl-code">クラブコード <b class="num">${esc(h.club.code)}</b><button type="button" class="link-btn" data-cl="copy" data-v="${esc(h.club.code)}">コピー</button></p>
+      </section>
+      <section class="cl-tiles">
+        <a class="cl-tile${c.pending ? ' hot' : ''}" href="#club/review"><b class="num">${c.pending}</b><span>確認まちの 提出</span></a>
+        <a class="cl-tile${c.ready ? ' hot' : ''}" href="#club/review"><b class="num">${c.ready}</b><span>認定できる 級</span></a>
+        <a class="cl-tile${c.waiting ? ' hot' : ''}" href="#club/feed"><b class="num">${c.waiting}</b><span>ひろばの 確認まち</span></a>
+        <a class="cl-tile" href="#club/members"><b class="num">${c.kids}</b><span>子ども</span></a>
+      </section>
+      <div class="rows">
+        <a class="row-card more-row" href="#club/review"><span class="thumb art-ic">${ic('check')}</span><span class="rc-body"><span class="rc-title">確認・評価・級の認定</span><span class="rc-sub">写真を見て「合格」「もう一度」。課題がそろった子に 級を認定</span></span>${ic('next', 'rc-go')}</a>
+        <a class="row-card more-row" href="#club/members"><span class="thumb art-ic">${ic('people')}</span><span class="rc-body"><span class="rc-title">メンバー・ログインカード</span><span class="rc-sub">子どもを登録して、カードをわたす。あいことばの作りなおし</span></span>${ic('next', 'rc-go')}</a>
+        <a class="row-card more-row" href="#club/design"><span class="thumb art-ic">${ic('trophy')}</span><span class="rc-body"><span class="rc-title">級をつくる</span><span class="rc-sub">${h.levels.length}つの級・課題と回数を 自由に</span></span>${ic('next', 'rc-go')}</a>
+        <a class="row-card more-row" href="#club/feed"><span class="thumb art-ic">${ic('chat')}</span><span class="rc-body"><span class="rc-title">ひろば</span><span class="rc-sub">子どもの投稿・合格のお知らせ。確認して出す・かくす</span></span>${ic('next', 'rc-go')}</a>
+        <a class="row-card more-row" href="#club/settings"><span class="thumb art-ic">${ic('sliders')}</span><span class="rc-body"><span class="rc-title">せってい</span><span class="rc-sub">投稿のルール・写真・合言葉・ログアウト</span></span>${ic('next', 'rc-go')}</a>
+      </div>
+      ${c.kids ? '' : `<section class="card"><h2 class="sec-h">${ic('flag')}はじめに</h2><ol class="steps"><li><span>「メンバー」で 子どもを登録する（ニックネームでOK）</span></li><li><span>ログインカードを 印刷して わたす</span></li><li><span>「級をつくる」で、課題と回数を クラブに合わせる</span></li></ol></section>`}`);
+  }
+
+  /* ---------- コーチ：確認・評価・認定 ---------- */
+  const QUICK = ['いいね！', 'フォームがきれい！', 'あと少し！', 'ひざをもっと曲げよう', '目線を上げよう', '左手もがんばろう', 'つぎの級も がんばろう！'];
+  async function reviewPage() {
+    paint(loading());
+    const j = await rpc('bg_queue', { p_token: tok() });
+    if (!j.ok) return welcomeOr(j);
+    S.queue = j;
+    drawQueue();
+  }
+  function drawQueue() {
+    const j = S.queue;
+    const ready = j.ready.map((r) => `<div class="card cl-ready">
+        <div class="cl-post-h">${avatar(r.member)}<span class="cl-post-who"><b>${esc(r.member.nickname)}</b><small>${r.member.no}ばん</small></span>${kyuBadge(r.level)}</div>
+        <p>${esc(r.level.name)}の 課題が ぜんぶ合格しました。</p>
+        <input type="text" class="cl-in" maxlength="200" placeholder="ひとこと（例：よくがんばったね！）" data-for="${r.member.id}:${r.level.id}">
+        <button type="button" class="btn primary" data-cl="grant" data-m="${r.member.id}" data-l="${r.level.id}">${ic('trophy')}${esc(r.level.name)} 合格にする</button></div>`).join('');
+    const pend = j.pending.map((s) => {
+      const t = s.task;
+      const met = s.count != null && BC.kyuMet(t, s.count);
+      return `<article class="card cl-q" data-sub="${s.id}">
+        <header class="cl-post-h">${avatar(s.member)}<span class="cl-post-who"><b>${esc(s.member.nickname)}</b><small>${s.member.no}ばん・${esc(ago(s.created_at))}</small></span>${kyuBadge(s.member.kyu, 'small')}</header>
+        <p class="cl-q-task">${kyuBadge(t.level, 'small')}<b>${esc(t.title)}</b></p>
+        <p class="cl-q-count">目標 ${esc(BC.kyuGoal(t))} → <b class="num">${s.count == null ? '—' : s.count}${esc(t.unit)}</b> ${met ? `<span class="cl-st pass">${ic('check')}とどいた</span>` : s.count != null ? '<span class="cl-st retry">とどかない</span>' : ''}</p>
+        ${s.note ? `<p class="small">「${esc(s.note)}」</p>` : ''}
+        ${photoTag(s.photo_id)}
+        ${s.check ? `<p class="small">${ic('camera', 'inline')}${esc(checkLabel(s.check))}${s.check.metrics ? '：' + s.check.metrics.map((m) => `${m.label}${m.status === 'good' ? '◎' : m.status === 'ok' ? '○' : m.status === 'bad' ? '△' : ''}`).map(esc).join('・') : ''}</p>` : ''}
+        <div class="chips">${QUICK.map((q) => `<button type="button" class="chip" data-cl="quick" data-v="${esc(q)}">${esc(q)}</button>`).join('')}</div>
+        <textarea class="cl-in" rows="2" maxlength="200" placeholder="コーチから ひとこと" data-comment="${s.id}"></textarea>
+        <div class="cl-q-btns"><button type="button" class="btn" data-cl="review" data-id="${s.id}" data-s="retry">${ic('back')}もう一度</button><button type="button" class="btn primary" data-cl="review" data-id="${s.id}" data-s="pass">${ic('check')}合格</button></div>
+      </article>`;
+    }).join('');
+    paint(`${backLink('#club', 'コーチのページ')}<h1 class="page-h">確認・評価</h1>
+      ${j.ready.length ? `<section class="sec"><h2 class="sec-h">${ic('trophy')}認定できる級</h2><div class="rows">${ready}</div></section>` : ''}
+      <section class="sec"><h2 class="sec-h">${ic('check')}確認まち <small class="num">${j.pending.length}</small></h2>${pend ? `<div class="rows">${pend}</div>` : '<p class="empty">確認まちは ありません。</p>'}</section>
+      ${j.recent.length ? `<details class="more"><summary>さいきん評価したもの（${j.recent.length}）</summary><div class="rows">${j.recent.map((s) => `<div class="cl-recent">${pill(s.status)}<b>${esc(s.member.nickname)}</b><span>${esc(s.task.title)}</span><span class="small">${esc(ago(s.reviewed_at))}</span></div>`).join('')}</div></details>` : ''}
+      <section class="sec"><h2 class="sec-h">${ic('medal')}級を直接 認定する</h2><p class="small">課題の提出がなくても、練習で見て 認定できます：「メンバー」→ 子どもをえらぶ。</p></section>`);
+  }
+
+  /* ---------- コーチ：メンバー ---------- */
+  async function loadMembers() {
+    const j = await rpc('bg_members_list', { p_token: tok() });
+    if (j.ok) S.members = j.members;
+    return j;
+  }
+  async function membersPage() {
+    paint(loading());
+    const j = await loadMembers();
+    if (!j.ok) return welcomeOr(j);
+    if (!S.home) await loadHome();
+    const kids = S.members.filter((m) => m.role === 'kid');
+    const coaches = S.members.filter((m) => m.role === 'coach');
+    paint(`${backLink('#club', 'コーチのページ')}<h1 class="page-h">メンバー</h1>
+      <form class="card cl-form" data-clform="addkid" autocomplete="off">
+        <h2 class="sec-h">${ic('plus')}子どもを 登録</h2>
+        <label class="field"><span class="field-l">ニックネーム（本名でなくてOK）</span><input name="nick" maxlength="12" required></label>
+        <label class="field"><span class="field-l">学年</span><select name="grade"><option value="">（えらばない）</option>${Object.entries(GRADES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
+        <button type="submit" class="btn primary">${ic('plus')}登録して ログインカードを出す</button>
+      </form>
+      <section class="sec"><h2 class="sec-h">${ic('people')}子ども <small class="num">${kids.length}</small></h2>
+        ${kids.length ? `<div class="rows">${kids.map((k) => `<a class="row-card cl-mem" href="#club/member/${k.id}">${avatar(k)}<span class="rc-body"><span class="rc-title">${k.no}. ${esc(k.nickname)} ${kyuBadge(k.kyu, 'small')}</span>
+          <span class="rc-sub">${esc(GRADES[k.grade] || '')} 合格 ${k.passes}${k.pending ? `・確認まち ${k.pending}` : ''}${k.last ? `・さいご ${esc(ago(k.last))}` : ''}</span></span>${ic('next', 'rc-go')}</a>`).join('')}</div>
+          <div class="btns"><a class="btn" href="#club/cards">${ic('list')}ログインカードを 印刷</a></div>` : '<p class="empty">まだ いません。上で 登録してね。</p>'}
+      </section>
+      <section class="sec"><h2 class="sec-h">${ic('whistle')}コーチ</h2><p class="small">${coaches.map((x) => esc(x.nickname)).join('・')}</p>
+        <p class="small">ほかのコーチは、クラブコード <b>${esc(S.sess.club.code)}</b> と 合言葉で「コーチとして ログイン」すると ふえます。</p></section>`);
+  }
+  function pinCard(k, pin) {
+    return `<div class="cl-card"><p class="cl-card-h">${ic('ball')}バスケ・グロウ <small>${esc(S.sess.club.name)}</small></p>
+      <p class="cl-card-n">${esc(k.nickname)} さん</p>
+      <dl><div><dt>クラブコード</dt><dd class="num">${esc(S.sess.club.code)}</dd></div><div><dt>ばんごう</dt><dd class="num">${k.no}</dd></div><div><dt>あいことば</dt><dd class="num">${esc(pin)}</dd></div></dl>
+      <p class="cl-card-f">アプリの「クラブ」から ログイン。このカードは ほかの人に見せないでね。</p></div>`;
+  }
+  async function memberPage(id) {
+    if (!S.members) { paint(loading()); const j = await loadMembers(); if (!j.ok) return welcomeOr(j); }
+    if (!S.home) await loadHome();
+    const k = S.members.find((m) => m.id === id);
+    if (!k) return paint(`${backLink('#club/members', 'メンバー')}<p class="empty">いません。</p>`);
+    const certs = new Set(k.certs || []);
+    const pin = S.pins[k.id];
+    paint(`${backLink('#club/members', 'メンバー')}
+      <h1 class="page-h">${avatar(k)} ${k.no}. ${esc(k.nickname)}</h1>
+      ${pin ? `<section class="sec"><h2 class="sec-h">${ic('list')}ログインカード</h2>${pinCard(k, pin)}<div class="btns"><a class="btn" href="#club/cards">${ic('list')}印刷する</a></div></section>` : ''}
+      <form class="card cl-form" data-clform="editkid" data-id="${k.id}">
+        <label class="field"><span class="field-l">ニックネーム</span><input name="nick" maxlength="12" value="${esc(k.nickname)}"></label>
+        <label class="field"><span class="field-l">学年</span><select name="grade"><option value="">（えらばない）</option>${Object.entries(GRADES).map(([g, v]) => `<option value="${g}" ${k.grade === g ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+        <button type="submit" class="btn">${ic('save')}ほぞん</button>
+      </form>
+      <section class="sec"><h2 class="sec-h">${ic('trophy')}級の認定</h2><p class="small">押すと、その級に 合格／とり消し。課題の提出がなくても、練習で見て 認定できます。</p>
+        <div class="cl-levels">${S.home.levels.map((l) => `<button type="button" class="cl-lv${certs.has(l.id) ? ' on' : ''}" style="${kv(l.color)}" data-cl="${certs.has(l.id) ? 'uncert' : 'cert'}" data-m="${k.id}" data-l="${l.id}">${esc(l.name)}<small>${certs.has(l.id) ? '合格' : '—'}</small></button>`).join('')}</div></section>
+      <section class="sec"><h2 class="sec-h">${ic('person')}ログイン</h2>
+        <p class="small">あいことばを わすれたときは、作りなおして 新しいカードをわたしてください（前の端末は ログアウトします）。</p>
+        <div class="btns"><button type="button" class="btn" data-cl="repin" data-id="${k.id}">${ic('shuffle')}あいことばを 作りなおす</button></div></section>
+      <section class="sec"><h2 class="sec-h">${ic('trash')}消す</h2>
+        <p class="small">このメンバーの 提出・写真・投稿・認定が すべて消えます。もとに もどせません。</p>
+        <div class="btns"><button type="button" class="btn danger" data-cl="delkid" data-id="${k.id}">${S.armDel === k.id ? 'もう一度 押すと 消えます' : 'このメンバーを 消す'}</button></div></section>`);
+  }
+  async function cardsPage() {
+    if (!S.members) { paint(loading()); const j = await loadMembers(); if (!j.ok) return welcomeOr(j); }
+    const kids = S.members.filter((m) => m.role === 'kid');
+    const have = kids.filter((k) => S.pins[k.id]);
+    paint(`<div class="cl-noprint">${backLink('#club/members', 'メンバー')}<h1 class="page-h">ログインカード</h1>
+      <p class="small">あいことばは、登録したときと 作りなおしたときにしか 見られません（サーバーには、まぜた形でしか 残していません）。カードがない子は、えらんで「作りなおして カードにする」を押してください（その子の前の端末は ログアウトします）。</p>
+      <div class="cl-pick-list">${kids.map((k) => `<label class="cl-pick-k"><input type="checkbox" value="${k.id}" ${S.pins[k.id] ? 'checked disabled' : ''}>${k.no}. ${esc(k.nickname)}${S.pins[k.id] ? ' <small>（カードあり）</small>' : ''}</label>`).join('')}</div>
+      <div class="btns"><button type="button" class="btn" data-cl="repin-many">${ic('shuffle')}えらんだ子の あいことばを 作りなおして カードにする</button>
+      ${have.length ? `<button type="button" class="btn primary" data-cl="print">${ic('list')}印刷する（${have.length}まい）</button>` : ''}</div></div>
+      <div class="cl-print">${have.map((k) => pinCard(k, S.pins[k.id])).join('')}</div>`);
+  }
+
+  /* ---------- コーチ：級をつくる ---------- */
+  const UNITS = ['回', '本', '秒', '往復', 'セット', '分', '周', 'm', '点'];
+  async function designPage() {
+    if (!S.home) { paint(loading()); const j = await loadHome(); if (!j.ok) return welcomeOr(j); }
+    if (!S.draft) S.draft = JSON.parse(JSON.stringify(S.home.levels));
+    drawDesign();
+  }
+  function drawDesign() {
+    const D = S.draft;
+    const drills = (BC.lists && BC.lists.drill) || [];
+    paint(`${backLink('#club', 'コーチのページ')}<h1 class="page-h">級をつくる</h1>
+      <p class="small">下の級から じゅんに。課題の 目標（回数・本数・秒）を クラブに合わせて変えられます。「練習メニュー」をえらぶと、子どもは やりかたとアニメーションを見られます。</p>
+      <datalist id="cl-drills">${drills.map((d) => `<option value="${esc(d.id)}">${esc(d.name)}</option>`).join('')}</datalist>
+      ${D.map((l, i) => `<section class="card cl-dlv" style="${kv(l.color)}">
+        <div class="cl-dlv-h"><span class="cl-step-k">${esc(l.name || '?')}</span>
+          <input class="cl-in" value="${esc(l.name)}" maxlength="12" data-d="lname" data-i="${i}" aria-label="級の名前">
+          <span class="pl-sp"></span><button type="button" class="ib" data-cl="lup" data-i="${i}" aria-label="下へ">${ic('down')}</button><button type="button" class="ib" data-cl="ldown" data-i="${i}" aria-label="上へ">${ic('up')}</button><button type="button" class="ib" data-cl="ldel" data-i="${i}" aria-label="この級を消す">${ic('trash')}</button></div>
+        <div class="cl-colors">${['#e9e5dc', '#f2c94c', '#f2994a', '#27ae60', '#56ccf2', '#2f80ed', '#9b51e0', '#a0522d', '#d63a3a', '#222222'].map((c) => `<button type="button" class="cl-color" style="--c:${c}" data-cl="lcolor" data-i="${i}" data-c="${c}" aria-pressed="${l.color === c}" aria-label="色"></button>`).join('')}</div>
+        <input class="cl-in" value="${esc(l.note || '')}" maxlength="40" placeholder="ひとこと（例：はじめの一歩）" data-d="lnote" data-i="${i}">
+        ${l.tasks.map((t, j) => `<div class="cl-dt">
+          <div class="cl-dt-h"><b class="num">${j + 1}</b><input class="cl-in" value="${esc(t.title)}" maxlength="40" placeholder="課題の名前" data-d="title" data-i="${i}" data-j="${j}">
+            <button type="button" class="ib" data-cl="tdel" data-i="${i}" data-j="${j}" aria-label="課題を消す">${ic('trash')}</button></div>
+          <div class="cl-dt-g">
+            <label><span>じょうけん</span><input class="cl-in" value="${esc(t.cond || '')}" maxlength="20" placeholder="10本中・30秒で・以内" data-d="cond" data-i="${i}" data-j="${j}"></label>
+            <label><span>目標</span><span class="cl-count sm"><button type="button" class="ib" data-cl="tnum" data-i="${i}" data-j="${j}" data-d="-1" aria-label="へらす">${ic('minus')}</button><b class="num">${t.target}</b><button type="button" class="ib" data-cl="tnum" data-i="${i}" data-j="${j}" data-d="1" aria-label="ふやす">${ic('plus')}</button></span></label>
+            <label><span>単位</span><select class="cl-in" data-d="unit" data-i="${i}" data-j="${j}">${UNITS.map((u) => `<option ${t.unit === u ? 'selected' : ''}>${u}</option>`).join('')}</select></label>
+            <label><span>写真</span><select class="cl-in" data-d="photo" data-i="${i}" data-j="${j}"><option value="need" ${t.photo === 'need' ? 'selected' : ''}>必要</option><option value="opt" ${t.photo === 'opt' ? 'selected' : ''}>あってもよい</option><option value="none" ${t.photo === 'none' ? 'selected' : ''}>なし</option></select></label>
+          </div>
+          <label class="cl-dt-l"><span>練習メニュー</span><input class="cl-in" list="cl-drills" value="${esc(t.drill_id || '')}" placeholder="d-pound など（えらぶ）" data-d="drill_id" data-i="${i}" data-j="${j}"><small>${esc((drills.find((d) => d.id === t.drill_id) || {}).name || '')}</small></label>
+          <label class="cl-dt-l"><span>コーチから（見るところ）</span><input class="cl-in" value="${esc(t.how || '')}" maxlength="200" data-d="how" data-i="${i}" data-j="${j}"></label>
+          <p class="cl-dt-goal">子どもには「目標 <b>${esc(BC.kyuGoal(t))}</b>」と出ます</p>
+        </div>`).join('')}
+        ${l.tasks.length < 12 ? `<button type="button" class="link-btn" data-cl="tadd" data-i="${i}">＋ 課題を足す</button>` : ''}
+      </section>`).join('')}
+      <div class="btns"><button type="button" class="btn" data-cl="ladd">${ic('plus')}級を 足す（いちばん上に）</button><button type="button" class="btn" data-cl="ltpl">テンプレートに もどす</button></div>
+      <div class="do-bar cl-save"><button type="button" class="btn big" data-cl="dreset">やめる</button><button type="button" class="btn primary big" data-cl="dsave">${ic('save')}ほぞんする</button></div>
+      <p class="small">課題を消しても、合格した記録は のこります（子どもの画面からは 見えなくなります）。</p>`);
+  }
+  function readDesignInputs() {
+    if (!S.el || !S.draft) return;
+    S.el.querySelectorAll('[data-d]').forEach((el) => {
+      const i = +el.dataset.i, j = el.dataset.j != null ? +el.dataset.j : null, k = el.dataset.d;
+      const l = S.draft[i];
+      if (!l) return;
+      if (k === 'lname') l.name = el.value;
+      else if (k === 'lnote') l.note = el.value;
+      else if (j != null && l.tasks[j]) l.tasks[j][k] = el.value;
+    });
+  }
+
+  /* ---------- コーチ：せってい ---------- */
+  async function settingsPage() {
+    if (!S.home) { paint(loading()); const j = await loadHome(); if (!j.ok) return welcomeOr(j); }
+    const c = S.home.club, s = c.settings || {};
+    const tg = (k, label, note, def) => `<label class="cl-toggle"><input type="checkbox" name="${k}" ${(s[k] == null ? def : s[k]) ? 'checked' : ''}><span><b>${label}</b><small>${note}</small></span></label>`;
+    paint(`${backLink('#club', 'コーチのページ')}<h1 class="page-h">せってい</h1>
+      <form class="card cl-form" data-clform="settings">
+        <label class="field"><span class="field-l">クラブの名前</span><input name="name" maxlength="30" value="${esc(c.name)}"></label>
+        <span class="field-l">ひろばの ルール</span>
+        ${tg('review_posts', 'すべての投稿を、コーチが見てから出す', '小さい子が多いクラブに', false)}
+        ${tg('review_photos', '写真つきの投稿は、コーチが見てから出す', 'おすすめ', true)}
+        ${tg('photos', 'ひろばに 写真を のせられる', 'オフにすると、文とスタンプだけ', true)}
+        ${tg('cert_posts', '級の合格を ひろばで お知らせ', 'みんなで おめでとうを言える', true)}
+        <button type="submit" class="btn primary">${ic('save')}ほぞん</button>
+      </form>
+      <form class="card cl-form" data-clform="pass" autocomplete="off">
+        <h2 class="sec-h">${ic('person')}コーチの合言葉を 変える</h2>
+        <label class="field"><span class="field-l">いまの合言葉</span><input name="old" type="password" autocomplete="current-password" required></label>
+        <label class="field"><span class="field-l">新しい合言葉（8文字以上）</span><input name="new" type="password" autocomplete="new-password" minlength="8" required></label>
+        <button type="submit" class="btn">変える（ほかのコーチの端末は ログアウト）</button>
+      </form>
+      <section class="card"><h2 class="sec-h">${ic('aid')}子どもの 安全のために</h2>
+        <ul class="list"><li>保護者の方に、クラブで使うこと・写真を送ることを 伝えて、了解をとってから はじめてください。</li>
+        <li>名前は ニックネームで。顔の写真は いりません（フォームが分かれば十分）。</li>
+        <li>子どもどうしは、文を送りあえません（スタンプだけ）。投稿は いつでも かくせます。</li>
+        <li>提出の写真は、評価から45日で 自動で消えます。メンバーを消すと、その子のデータは すべて消えます。</li></ul></section>
+      <div class="btns"><button type="button" class="btn" data-cl="logout">${ic('back')}この端末から ログアウト</button></div>
+      <form class="card cl-form danger-zone" data-clform="delclub" autocomplete="off">
+        <h2 class="sec-h">${ic('trash')}クラブを 消す</h2>
+        <p class="small">このクラブの メンバー・級・提出・写真・投稿が すべて消えます。もとに もどせません。</p>
+        <label class="field"><span class="field-l">コーチの合言葉</span><input name="pass" type="password" autocomplete="current-password" required></label>
+        <button type="submit" class="btn danger">クラブを 消す</button>
+      </form>`);
+  }
+
+  /* ---------- ホームのカード・お知らせ ---------- */
+  C.homeHTML = function () {
+    if (!C.ready()) return '';
+    const cache = ls.get('bc.club.cache', null);
+    if (!S.sess || !cache) return `<a class="card cta cl-cta" href="#club">${ic('trophy')}<b>クラブ</b><small>コーチがつくった級に チャレンジ。ログインカードを もらった人は ここから</small></a>`;
+    const me = cache.me, nx = cache.next;
+    if (me.role === 'coach') return `<a class="card cl-homecard" href="#club">${ic('whistle')}<span><b>${esc(cache.club.name)}</b><small>コーチのページ${S.badge ? `・<b>${S.badge}</b>件 まっています` : ''}</small></span>${ic('next', 'rc-go')}</a>`;
+    return `<a class="card cl-homecard" href="#club">${kyuBadge(me.kyu)}<span><b>${esc(cache.club.name)}</b><small>${nx ? `つぎは ${esc(nx.name)}：課題 ${nx.done}/${nx.total} 合格` : 'すべての級に 合格！'}${S.badge ? `・<b class="cl-red">お知らせ ${S.badge}</b>` : ''}</small></span>${ic('next', 'rc-go')}</a>`;
+  };
+  C.refresh = async function () {
+    if (!C.ready() || !S.sess) return 0;
+    const j = await loadHome();
+    return j && j.ok ? S.badge : 0;
+  };
+  C.badge = () => S.badge;
+  C.session = () => S.sess;
+
+  /* ---------- 操作 ---------- */
+  document.addEventListener('click', async (e) => {
+    const t = e.target.closest('[data-cl]');
+    if (!t || !S.el || !S.el.contains(t)) return;
+    const d = t.dataset;
+    switch (d.cl) {
+      case 'retry': rerender(); break;
+      case 'logout':
+        await rpc('bg_logout', { p_token: tok() });
+        setSess(null);
+        go('club');
+        break;
+      case 'seen':
+        await rpc('bg_seen', { p_token: tok() });
+        if (S.home) { S.home.notices = { reviews: 0, certs: 0, reacts: 0 }; setBadge(0); }
+        t.remove();
+        break;
+      case 'copy':
+        try { await navigator.clipboard.writeText(d.v); X.toast && X.toast('コピーしました'); } catch (err) { /* なし */ }
+        break;
+      case 'cnt': {
+        const inp = document.getElementById('cl-count');
+        if (inp) { inp.value = Math.max(0, (+inp.value || 0) + +d.d); const f = findTask(S.home, (document.querySelector('[data-cl="send"]') || {}).dataset.task); if (f) updateMet(f.task); }
+        break;
+      }
+      case 'unphoto': S.upload = null; rerender(); break;
+      case 'send': send(d.task); break;
+      case 'cancel': {
+        const j = await rpc('bg_sub_cancel', { p_token: tok(), p_id: d.id });
+        if (!j.ok) X.toast && X.toast(errMsg(j));
+        await loadHome(); rerender();
+        break;
+      }
+      case 'zoom': {
+        const src = S.photos[d.id];
+        if (src && src !== 'x' && X.modal) X.modal(`<img class="cl-zoom" src="${src}" alt="写真"><div class="btns"><button type="button" class="btn" data-act="modal-close">とじる</button></div>`);
+        break;
+      }
+      case 'post': doPost(); break;
+      case 'share': { const s = (X.shares ? X.shares() : [])[+d.i]; if (s) doPost({ type: s.type, label: s.label }); break; }
+      case 'more': feedPage(true); break;
+      case 'react': {
+        const on = t.getAttribute('aria-pressed') !== 'true';
+        const j = await rpc('bg_react', { p_token: tok(), p_post_id: d.id, p_stamp: d.k, p_on: on });
+        if (!j.ok) { X.toast && X.toast(errMsg(j)); break; }
+        const i = S.feed.findIndex((p) => p.id === d.id);
+        if (i >= 0) {
+          S.feed[i] = Object.assign({}, S.feed[i], { reacts: j.post.reacts, mine: j.post.mine });
+          const card = S.el.querySelector(`[data-post="${d.id}"]`);
+          if (card) { const tmp = document.createElement('div'); tmp.innerHTML = postCard(S.feed[i]); card.replaceWith(tmp.firstElementChild); hydratePhotos(S.el); }
+        }
+        break;
+      }
+      case 'mod': {
+        const j = await rpc('bg_post_mod', { p_token: tok(), p_id: d.id, p_status: d.s });
+        X.toast && X.toast(j.ok ? (d.s === 'shown' ? 'みんなに出しました' : 'かくしました') : errMsg(j));
+        feedPage();
+        break;
+      }
+      case 'delpost': {
+        if (S.armPost !== d.id) { S.armPost = d.id; t.textContent = 'もう一度 押すと 消えます'; break; }
+        S.armPost = null;
+        const j = await rpc('bg_post_delete', { p_token: tok(), p_id: d.id });
+        X.toast && X.toast(j.ok ? '消しました' : errMsg(j));
+        feedPage();
+        break;
+      }
+      case 'quick': {
+        const box = t.closest('.cl-q').querySelector('[data-comment]');
+        if (box) box.value = (box.value ? box.value + ' ' : '') + d.v;
+        break;
+      }
+      case 'review': {
+        const box = S.el.querySelector(`[data-comment="${d.id}"]`);
+        const j = await rpc('bg_review', { p_token: tok(), p_id: d.id, p_status: d.s, p_comment: box ? box.value : '' });
+        if (!j.ok) { X.toast && X.toast(errMsg(j)); break; }
+        X.toast && X.toast(d.s === 'pass' ? '合格にしました' : '「もう一度」を返しました');
+        const q = await rpc('bg_queue', { p_token: tok() });
+        if (q.ok) S.queue = q;
+        drawQueue();
+        break;
+      }
+      case 'grant': {
+        const inp = S.el.querySelector(`[data-for="${d.m}:${d.l}"]`);
+        const j = await rpc('bg_grant', { p_token: tok(), p_member_id: d.m, p_level_id: d.l, p_comment: inp ? inp.value : '' });
+        if (!j.ok) { X.toast && X.toast(errMsg(j)); break; }
+        X.toast && X.toast(`${j.member.nickname}さんを ${j.member.kyu ? j.member.kyu.name : ''}に 認定しました`);
+        S.home = null;
+        reviewPage();
+        break;
+      }
+      case 'cert': case 'uncert': {
+        const j = await rpc(d.cl === 'cert' ? 'bg_grant' : 'bg_cert_remove', d.cl === 'cert'
+          ? { p_token: tok(), p_member_id: d.m, p_level_id: d.l, p_comment: '' }
+          : { p_token: tok(), p_member_id: d.m, p_level_id: d.l });
+        if (!j.ok) { X.toast && X.toast(errMsg(j)); break; }
+        await loadMembers();
+        memberPage(d.m);
+        break;
+      }
+      case 'repin': {
+        const k = S.members.find((m) => m.id === d.id);
+        const j = await rpc('bg_member_update', { p_token: tok(), p_member_id: d.id, p_nickname: k.nickname, p_grade: k.grade, p_reset_pin: true });
+        if (!j.ok) { X.toast && X.toast(errMsg(j)); break; }
+        S.pins[d.id] = j.pin;
+        memberPage(d.id);
+        break;
+      }
+      case 'repin-many': {
+        const ids = [...S.el.querySelectorAll('.cl-pick-k input:checked:not(:disabled)')].map((x) => x.value);
+        if (!ids.length) { X.toast && X.toast('子どもを えらんでね'); break; }
+        for (const id of ids) {
+          const k = S.members.find((m) => m.id === id);
+          const j = await rpc('bg_member_update', { p_token: tok(), p_member_id: id, p_nickname: k.nickname, p_grade: k.grade, p_reset_pin: true });
+          if (j.ok) S.pins[id] = j.pin;
+        }
+        cardsPage();
+        break;
+      }
+      case 'print': window.print(); break;
+      case 'delkid': {
+        if (S.armDel !== d.id) { S.armDel = d.id; memberPage(d.id); break; }
+        S.armDel = null;
+        const j = await rpc('bg_member_remove', { p_token: tok(), p_member_id: d.id });
+        X.toast && X.toast(j.ok ? '消しました' : errMsg(j));
+        S.members = null;
+        go('club/members');
+        break;
+      }
+      // 級をつくる
+      case 'tnum': { readDesignInputs(); const tk = S.draft[+d.i].tasks[+d.j]; tk.target = Math.max(1, Math.min(9999, (+tk.target || 1) + +d.d)); drawDesign(); break; }
+      case 'tadd': readDesignInputs(); S.draft[+d.i].tasks.push({ title: '', drill_id: '', target: 10, unit: '回', cond: '', how: '', photo: 'opt' }); drawDesign(); break;
+      case 'tdel': readDesignInputs(); S.draft[+d.i].tasks.splice(+d.j, 1); drawDesign(); break;
+      case 'lcolor': readDesignInputs(); S.draft[+d.i].color = d.c; drawDesign(); break;
+      case 'lup': case 'ldown': {
+        readDesignInputs();
+        const i = +d.i, j2 = d.cl === 'lup' ? i - 1 : i + 1;
+        if (j2 >= 0 && j2 < S.draft.length) [S.draft[i], S.draft[j2]] = [S.draft[j2], S.draft[i]];
+        drawDesign();
+        break;
+      }
+      case 'ldel': readDesignInputs(); if (S.draft.length > 1) S.draft.splice(+d.i, 1); drawDesign(); break;
+      case 'ladd': readDesignInputs(); S.draft.push({ name: '', color: '#888888', note: '', tasks: [] }); drawDesign(); break;
+      case 'ltpl': S.draft = JSON.parse(JSON.stringify(BC.KYU_TEMPLATE)).map((l, i) => Object.assign(l, { id: (S.home.levels[i] || {}).id })); drawDesign(); break;
+      case 'dreset': S.draft = null; go('club'); break;
+      case 'dsave': {
+        readDesignInputs();
+        const j = await rpc('bg_levels_save', { p_token: tok(), p_levels: S.draft });
+        if (!j.ok) { X.toast && X.toast(errMsg(j)); break; }
+        S.draft = JSON.parse(JSON.stringify(j.levels));
+        S.home.levels = j.levels;
+        X.toast && X.toast('ほぞんしました');
+        drawDesign();
+        break;
+      }
+      default: break;
+    }
+  });
+  document.addEventListener('input', (e) => {
+    if (!S.el || !S.el.contains(e.target)) return;
+    if (e.target.id === 'cl-count') { const f = findTask(S.home, (document.querySelector('[data-cl="send"]') || {}).dataset.task); if (f) updateMet(f.task); }
+  });
+  document.addEventListener('change', async (e) => {
+    if (e.target.id !== 'cl-file' || !e.target.files || !e.target.files[0]) return;
+    const task = e.target.dataset.task;
+    X.toast && X.toast('写真を じゅんび中…');
+    const r = await shrink(e.target.files[0]);
+    if (!r) { X.toast && X.toast('写真を読みこめませんでした'); return; }
+    // 書きかけの文・数は のこす
+    const keep = { post: (document.getElementById('cl-post') || {}).value, note: (document.getElementById('cl-note') || {}).value, count: (document.getElementById('cl-count') || {}).value };
+    S.upload = Object.assign(r, { task });
+    if (task === 'post') drawFeed(); else rerender();
+    setTimeout(() => {
+      if (keep.post && document.getElementById('cl-post')) document.getElementById('cl-post').value = keep.post;
+      if (keep.note && document.getElementById('cl-note')) document.getElementById('cl-note').value = keep.note;
+      if (keep.count && document.getElementById('cl-count')) document.getElementById('cl-count').value = keep.count;
+    }, 0);
+  });
+  document.addEventListener('submit', async (e) => {
+    const f = e.target.closest('[data-clform]');
+    if (!f) return;
+    e.preventDefault();
+    if (S.busy) return;
+    const v = (n) => (f.elements[n] ? f.elements[n].value.trim() : '');
+    const kind = f.dataset.clform;
+    const btn = f.querySelector('button[type="submit"]');
+    const done = () => { S.busy = false; if (btn) btn.disabled = false; };
+    S.busy = true;
+    if (btn) btn.disabled = true;
+    let j;
+    if (kind === 'kid') {
+      j = await rpc('bg_kid_login', { p_code: v('code').toUpperCase(), p_no: parseInt(v('no'), 10) || 0, p_pin: v('pin') });
+      done();
+      if (!j.ok) return X.toast && X.toast(errMsg(j));
+      setSess({ token: j.token, club: { id: j.club.id, code: j.club.code, name: j.club.name }, me: j.me });
+      X.toast && X.toast(`ようこそ、${j.me.nickname}さん！`);
+      return go('club');
+    }
+    if (kind === 'coach') {
+      j = await rpc('bg_coach_login', { p_code: v('code').toUpperCase(), p_pass: f.elements.pass.value, p_name: v('name') });
+      done();
+      if (!j.ok) return X.toast && X.toast(errMsg(j));
+      setSess({ token: j.token, club: { id: j.club.id, code: j.club.code, name: j.club.name }, me: j.me });
+      return go('club');
+    }
+    if (kind === 'create') {
+      if (f.elements.pass.value !== f.elements.pass2.value) { done(); return X.toast && X.toast('合言葉が 2つで ちがっています'); }
+      j = await rpc('bg_club_create', { p_name: v('name'), p_pass: f.elements.pass.value, p_coach: v('coach'), p_levels: BC.KYU_TEMPLATE || [] });
+      done();
+      if (!j.ok) return X.toast && X.toast(errMsg(j));
+      setSess({ token: j.token, club: { id: j.club.id, code: j.club.code, name: j.club.name }, me: j.me });
+      X.toast && X.toast('クラブを つくりました！');
+      return go('club');
+    }
+    if (kind === 'addkid') {
+      j = await rpc('bg_member_add', { p_token: tok(), p_nickname: v('nick'), p_grade: v('grade') });
+      done();
+      if (!j.ok) return X.toast && X.toast(errMsg(j));
+      S.pins[j.member.id] = j.pin;
+      await loadMembers();
+      return go('club/member/' + j.member.id);
+    }
+    if (kind === 'editkid') {
+      j = await rpc('bg_member_update', { p_token: tok(), p_member_id: f.dataset.id, p_nickname: v('nick'), p_grade: v('grade'), p_reset_pin: false });
+      done();
+      X.toast && X.toast(j.ok ? 'ほぞんしました' : errMsg(j));
+      await loadMembers();
+      return memberPage(f.dataset.id);
+    }
+    if (kind === 'settings') {
+      const st = {};
+      for (const k of ['review_posts', 'review_photos', 'photos', 'cert_posts']) st[k] = !!(f.elements[k] && f.elements[k].checked);
+      j = await rpc('bg_club_update', { p_token: tok(), p_name: v('name'), p_settings: st, p_old_pass: '', p_new_pass: '' });
+      done();
+      if (j.ok && S.home) { S.home.club = j.club; S.sess.club.name = j.club.name; ls.set(KEY, S.sess); }
+      return X.toast && X.toast(j.ok ? 'ほぞんしました' : errMsg(j));
+    }
+    if (kind === 'pass') {
+      j = await rpc('bg_club_update', { p_token: tok(), p_name: '', p_settings: {}, p_old_pass: f.elements.old.value, p_new_pass: f.elements.new.value });
+      done();
+      if (j.ok) f.reset();
+      return X.toast && X.toast(j.ok ? '合言葉を 変えました' : errMsg(j));
+    }
+    if (kind === 'delclub') {
+      if (S.armClub !== true) { S.armClub = true; done(); if (btn) btn.textContent = 'もう一度 押すと、すべて消えます'; return; }
+      S.armClub = false;
+      j = await rpc('bg_club_delete', { p_token: tok(), p_pass: f.elements.pass.value });
+      done();
+      if (!j.ok) return X.toast && X.toast(errMsg(j));
+      setSess(null);
+      X.toast && X.toast('クラブを消しました');
+      return go('club');
+    }
+    done();
+  });
+})();
+
 /* ---- js/app.js ---- */
 BC && (BC.currentFile = "js/app.js");
 /* バスケ・グロウ：画面。小学生・中学生が、自分で使って上達するためのアプリ。
@@ -18896,7 +20162,8 @@ BC && (BC.currentFile = "js/app.js");
   const back = (label = 'もどる') => `<button type="button" class="back-btn" data-act="back">${ic('back')}${esc(label)}</button>`;
 
   /* ---------- 成長：やったことを残す ---------- */
-  function addActs(list) {
+  // opt.quiet：経験値のお知らせ・お祝いを出さない（クラブの合格など、べつのお祝いを出すとき）
+  function addActs(list, opt = {}) {
     const before = sum();
     for (const a of list) S.acts.push(Object.assign({ at: Date.now() }, a));
     if (S.acts.length > 3000) S.acts = S.acts.slice(-3000);
@@ -18905,8 +20172,8 @@ BC && (BC.currentFile = "js/app.js");
     const xp = after.xp - before.xp;
     const news = G.newBadges(before, after);
     const up = after.level > before.level;
-    if (xp > 0) xpToast(xp, list);
-    if (up || news.length) setTimeout(() => celebrate(up ? after : null, news), xp > 0 ? 900 : 0);
+    if (xp > 0 && !opt.quiet) xpToast(xp, list);
+    if ((up || news.length) && !opt.quiet) setTimeout(() => celebrate(up ? after : null, news), xp > 0 ? 900 : 0);
     refreshTop();
     return { before, after, xp, news, up };
   }
@@ -18920,17 +20187,19 @@ BC && (BC.currentFile = "js/app.js");
     modal(`<div class="celebrate${reduceMotion() ? '' : ' pop'}">${confetti()}<h2 class="modal-h">やったね！</h2>${html}<div class="btns"><button type="button" class="btn primary big" data-act="modal-close">つづける</button></div></div>`);
   }
   const confetti = () => (reduceMotion() ? '' : `<div class="confetti" aria-hidden="true">${Array.from({ length: 18 }, (_, i) => `<i style="--i:${i};--x:${(i * 37) % 100}%"></i>`).join('')}</div>`);
-  const BADGE_COLOR = { first: 'ok', menu1: 'o', streak3: 'ball', streak7: 'ball', streak30: 'gold', drill10: 'o', drill50: 'gold', uniq10: 'ok', min300: 'o', check1: 'o', good5: 'gold', shooter: 'ball', handler: 'ball', defender: 'x', allround: 'gold', early: 'gold', lv5: 'ok', lv10: 'gold' };
+  const BADGE_COLOR = { first: 'ok', menu1: 'o', streak3: 'ball', streak7: 'ball', streak30: 'gold', drill10: 'o', drill50: 'gold', uniq10: 'ok', min300: 'o', check1: 'o', good5: 'gold', shooter: 'ball', handler: 'ball', defender: 'x', allround: 'gold', early: 'gold', lv5: 'ok', lv10: 'gold', kyu1: 'gold', kyu5: 'gold' };
   const badgeIcon = (b, got) => `<span class="badge-ic c-${BADGE_COLOR[b.id] || 'ok'}${got ? '' : ' off'}">${ic(b.icon === 'list' ? 'list' : b.icon)}</span>`;
 
   /* ---------- 画面のわく ---------- */
-  const TABS = [['home', 'ホーム', 'home'], ['practice', 'れんしゅう', 'ball'], ['check', 'チェック', 'camera'], ['log', 'きろく', 'chart'], ['more', 'もっと', 'more']];
+  // 下のタブは5つ。「もっと」は上のバーのボタン（パソコンの上のナビには ならべる）
+  const TABS = [['home', 'ホーム', 'home'], ['practice', 'れんしゅう', 'ball'], ['club', 'クラブ', 'trophy'], ['check', 'チェック', 'camera'], ['log', 'きろく', 'chart']];
   function shell() {
     app.innerHTML = `
       <header class="top"><div class="top-in">
         <a class="logo" href="#home">${LOGO}<span class="logo-text">バスケ・グロウ</span></a>
-        <nav class="top-nav" aria-label="画面">${TABS.map(([k, l, i]) => `<a href="#${k}" data-tab="${k}">${ic(i)}${l}</a>`).join('')}</nav>
+        <nav class="top-nav" aria-label="画面">${TABS.concat([['more', 'もっと', 'more']]).map(([k, l, i]) => `<a href="#${k}" data-tab="${k}">${ic(i)}${l}</a>`).join('')}</nav>
         <a class="lv-chip" href="#log" id="lv-chip"></a>
+        <a class="top-more" href="#more" data-tab="more" aria-label="もっと（そうだん・ずかん・ケガ・せってい）">${ic('more')}</a>
       </div></header>
       <main id="main"></main>
       <nav class="tab" aria-label="画面"><div class="tab-in">${TABS.map(([k, l, i]) => `<a href="#${k}" data-tab="${k}">${ic(i)}<span>${l}</span></a>`).join('')}</div></nav>`;
@@ -19084,6 +20353,8 @@ BC && (BC.currentFile = "js/app.js");
         ${t.note ? `<p class="small">${esc(t.note)}</p>` : ''}
         <div class="btns"><button type="button" class="btn primary big" data-act="menu-start">${ic('play')}スタート</button><button type="button" class="btn" data-act="menu-shuffle">${ic('shuffle')}ほかのメニュー</button></div>
       </section>
+
+      ${BC.club && BC.club.homeHTML ? BC.club.homeHTML() : ''}
 
       <section class="card ask">
         <h2 class="sec-h">${ic('chat')}なやみを書いてね</h2>
@@ -19767,6 +21038,42 @@ BC && (BC.currentFile = "js/app.js");
     store,
     get profile() { return { name: prof().name, grade: prof().grade }; },
   };
+  // クラブ（js/club.js）にわたすもの
+  const clubCtx = {
+    toast: (m, k) => toast(m, k), modal: (h) => modal(h), closeModal: () => closeModal(), ic, confetti: () => confetti(),
+    drillArt: (d) => drillArt(d),
+    addActs: (list, opt) => addActs(list, opt),
+    checks: () => store.get('bc.checks', []).map((c) => ({ mode: c.mode, label: (BC.check && BC.check.MODES && BC.check.MODES[c.mode] || {}).name || c.mode, score: c.score, metrics: c.metrics || [] })),
+    // ひろばに のせられる「アプリの記録」
+    shares: () => {
+      const s = sum(), out = [];
+      const today = G.day(Date.now());
+      const menu = S.acts.filter((a) => a.type === 'menu' && G.day(a.at) === today).length;
+      if (menu) { const min = S.acts.filter((a) => a.type === 'drill' && G.day(a.at) === today).reduce((t, a) => t + (a.min || 0), 0); out.push({ type: 'menu', label: `きょうのメニューを クリア（${min}分）` }); }
+      if (s.streak >= 2) out.push({ type: 'streak', label: `${s.streak}日 れんぞくで 練習中` });
+      const b = G.badges(s).filter((x) => x.got).pop();
+      if (b) out.push({ type: 'badge', label: `バッジ「${b.name}」をとった` });
+      const c = store.get('bc.checks', [])[0];
+      if (c && c.score != null) out.push({ type: 'check', label: `動画チェック ${(BC.check && BC.check.MODES && BC.check.MODES[c.mode] || {}).name || ''} ${c.score}点` });
+      return out;
+    },
+  };
+  function renderClub(sub) {
+    const m = main();
+    m.className = 'page-club';
+    setTabMark('club');
+    if (!BC.club || !BC.club.render) { m.innerHTML = '<h1 class="page-h">クラブ</h1><p>じゅんび中です。</p>'; return; }
+    BC.club.render(m, clubCtx, sub);
+  }
+  // クラブのお知らせ（タブの赤い点）
+  function clubDot(n) {
+    document.querySelectorAll('[data-tab="club"]').forEach((a) => {
+      let d = a.querySelector('.tab-dot');
+      if (n && !d) { d = document.createElement('i'); d.className = 'tab-dot'; d.setAttribute('aria-hidden', 'true'); a.appendChild(d); }
+      if (!n && d) d.remove();
+      a.setAttribute('aria-label', n ? `クラブ（お知らせ ${n}）` : 'クラブ');
+    });
+  }
   function renderCheck(sub) {
     const m = main();
     m.className = 'page-check';
@@ -19780,7 +21087,7 @@ BC && (BC.currentFile = "js/app.js");
   }
 
   /* ---------- 道すじ（ハッシュ） ---------- */
-  const TOP = ['home', 'practice', 'check', 'log', 'more'];
+  const TOP = ['home', 'practice', 'club', 'check', 'log', 'more'];
   const stack = []; // この中で開いたページの順（もどるボタン用）
   function route() {
     closeModal();
@@ -19802,6 +21109,7 @@ BC && (BC.currentFile = "js/app.js");
     else if (h === 'log') renderLog();
     else if (h === 'more') renderMore();
     else if (h === 'check' || h.startsWith('check/')) renderCheck(h.slice(6));
+    else if (h === 'club' || h.startsWith('club/')) renderClub(h.slice(5));
     else if (h === 'hello') renderHello(false);
     else if (h === 'settings') renderHello(true);
     else if (h === 'about') renderAbout();
@@ -20057,6 +21365,14 @@ BC && (BC.currentFile = "js/app.js");
   if (th) document.documentElement.dataset.theme = th;
   shell();
   route();
+  // クラブのお知らせ：はじめと、アプリにもどってきたとき（2分に1回まで）
+  if (BC.club) {
+    BC.club.onBadge = clubDot;
+    let lastClub = 0;
+    const pollClub = () => { if (Date.now() - lastClub < 120000 || !BC.club.session || !BC.club.session()) return; lastClub = Date.now(); BC.club.refresh().then(() => { if (S.page === 'home') rerender(); }); };
+    pollClub();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) pollClub(); });
+  }
   // 検査用（tools/look.cjs）
   window.BCAPP = { S, route, runStart, runEnd, getRun: () => RUN, addActs, sum, todayMenu, PL, store };
 })();
