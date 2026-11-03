@@ -254,6 +254,34 @@ a.btn { text-decoration: none; }
 .syncman li { margin: 6px 0; }
 .syncpick { width: 100%; max-width: 100%; background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 6px 8px; font-size: 14px; margin: 4px 0; }
 #syncNow { font-variant-numeric: tabular-nums; }
+/* ↔ 指でずらして合わせる（小窓） */
+.adjcta { margin: 2px 0 8px; }
+.adj { display: flex; flex-direction: column; gap: 8px; }
+.adj > .note:first-child { margin: 0; }
+.adjrefrow { display: flex; flex-direction: column; gap: 0; }
+.adjrefrow .syncpick { margin: 2px 0 0; }
+.modal-card.adjcard { width: min(680px, 100%); }
+.adjpv { position: relative; width: 100%; max-width: calc(var(--pvh, 32vh) * var(--ar, 1.7778)); margin: 0 auto; background: #000; border-radius: 10px; overflow: hidden; }
+.adjpv canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.adjtag { position: absolute; left: 6px; bottom: 6px; max-width: calc(100% - 150px); background: rgba(8, 12, 20, 0.75); color: #fff; font-size: 12px; line-height: 1.35; padding: 3px 8px; border-radius: 6px; border-left: 3px solid #fff; pointer-events: none; font-variant-numeric: tabular-nums; }
+.adjplay { position: absolute; right: 6px; bottom: 6px; background: rgba(8, 12, 20, 0.78); color: #fff; border: 1px solid rgba(255, 255, 255, 0.55); border-radius: 99px; padding: 5px 12px; font-size: 12.5px; line-height: 1.3; white-space: nowrap; }
+.adjplay:hover { border-color: #fff; }
+.adjzoom { display: inline-flex; align-items: center; gap: 4px; }
+@media (pointer: coarse) { .adj .syncpick { font-size: 16px; } }      /* iPhone：16px より小さいと、選ぶときに画面が拡大される */
+.adjruler { display: block; width: 100%; height: 80px; border-radius: 10px; background: #172033; cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.adjruler.dragging { cursor: grabbing; }
+.adjruler:focus { outline: none; }
+.adjruler:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.adjval { display: flex; align-items: center; gap: 4px 8px; flex-wrap: wrap; }
+.adjval b { font-size: 22px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+/* 横向きのスマホなど、高さが足りないとき：左に小さな画面、右に目盛りとボタン */
+@media (max-height: 520px) and (min-width: 600px) {
+  .modal-card.adjcard { width: min(980px, 100%); }
+  .adj { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 6px 14px; align-items: start; }
+  .adj > * { grid-column: 2; }
+  .adj > .adjhint { display: none; }
+  .adj > .adjpv { grid-column: 1; grid-row: 1 / span 6; --pvh: 60vh; }
+}
 .frow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .flab { font-size: 12px; font-weight: 700; color: var(--muted); min-width: 40px; }
 .fchip { display: inline-flex; align-items: center; gap: 5px; background: var(--panel2); border: 1px solid var(--line2); border-radius: 99px; padding: 4px 11px; font-size: 13px; line-height: 1.3; }

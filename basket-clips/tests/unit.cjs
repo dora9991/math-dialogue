@@ -319,6 +319,13 @@ section('「バスケ タップ記録」の記録（読み込み・時刻あわ�
   ok(TL.toVideo(78, A2) === 89.5 && TL.toVideo(90, A2) === 80, '合わせる点を足すと、その点より後ろの記録は、その点のずれ');
   const A3 = TL.setAnchor(A2, 95, 86, false);          // 95 秒の記録に効いている点（80 秒の点）だけ直す
   ok(A3.length === 2 && TL.toVideo(95, A3) === 86 && TL.toVideo(5, A3) === 16.5, '「⌖」：その記録に効いている点だけを直す（ほかの点はそのまま）', A3);
+  ok(TL.anchorIndex([], 5) === -1 && TL.anchorIndex(A3, 5) === 0 && TL.anchorIndex(A3, 94.9) === 0 && TL.anchorIndex(A3, 95) === 1 && TL.anchorIndex(A3, 300) === 1 && TL.anchorIndex([{ t: 10, v: 20 }], 3) === 0,
+    'その記録に効いている点の番号（最初の点より前の記録は、最初の点）');
+  const A4 = TL.shiftAt(A3, 100, 1.5);
+  ok(A4.length === 2 && TL.toVideo(100, A4) === 92.5 && TL.toVideo(5, A4) === 16.5, '「↔ 指でずらす」：見本の場面の区間（95 秒の点から後ろ）だけ 1.5 秒ずらす（ほかの区間はそのまま）', A4);
+  const A5 = TL.shiftAt(A3, 5, -0.3);
+  ok(TL.toVideo(5, A5) === 16.2 && TL.toVideo(100, A5) === 91, '前の区間だけを前へ 0.3 秒', A5);
+  ok(JSON.stringify(TL.shiftAt(A, 50, -0.3)) === JSON.stringify(TL.shift(A, -0.3)) && TL.shiftAt([], 3, 1).length === 0, '点が1つなら、全部をずらすのと同じ（点がなければ何もしない）');
 
   // 場面と絞り込み
   const S12 = TL.setAnchor([], 0, 12, true);

@@ -118,6 +118,19 @@
   }
   /* 合わせた点を、全部 d 秒ずらす（動画の時刻を後ろへ＝プラス） */
   const shift = (anchors, d) => cleanAnchors(anchors).map((a) => ({ t: a.t, v: Math.round((a.v + d) * 100) / 100 }));
+  /* 記録の時刻 t に効いている点の番号（t より前で、いちばん後ろの点。t がどの点より前なら最初の点）。点がなければ -1 */
+  function anchorIndex(anchors, t) {
+    const A = cleanAnchors(anchors);
+    let k = A.length ? 0 : -1;
+    A.forEach((x, i) => { if (x.t <= t + 1e-9) k = i; });
+    return k;
+  }
+  /* 記録の時刻 t に効いている点だけを d 秒ずらす（その点の区間の場面だけがずれる。点が1つなら shift と同じ） */
+  function shiftAt(anchors, t, d) {
+    const A = cleanAnchors(anchors);
+    const k = anchorIndex(A, t);
+    return A.map((a, i) => (i === k ? { t: a.t, v: Math.round((a.v + d) * 100) / 100 } : a));
+  }
   /* いちばん近くで効いている点を、(t, v) に置きかえる（ほかの点はそのまま。点がなければ足す） */
   function setAnchor(anchors, t, v, add) {
     const A = cleanAnchors(anchors);
@@ -341,5 +354,5 @@
     try { return JSON.parse(ls.getItem('btap:game:' + id) || 'null'); } catch (e) { return null; }
   }
 
-  BS.taplog = { TYPES, GROUPS, WIN, periodLabel, parse, plays, teamName, playerName, eventLabel, score, cleanAnchors, toVideo, shift, setAnchor, clips, reel, counts, matchShots, creationTime, parseISO, fromCreation, videoAnchors, matchVideo, localGames, localGame };
+  BS.taplog = { TYPES, GROUPS, WIN, periodLabel, parse, plays, teamName, playerName, eventLabel, score, cleanAnchors, toVideo, shift, anchorIndex, shiftAt, setAnchor, clips, reel, counts, matchShots, creationTime, parseISO, fromCreation, videoAnchors, matchVideo, localGames, localGame };
 })(typeof window !== 'undefined' ? window : globalThis);

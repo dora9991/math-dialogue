@@ -1,7 +1,8 @@
 // 画面を通した確認：「バスケ タップ記録」の記録から場面を切り出す（Playwright の Chromium を画面なしで）
 //   node basket-clips/tests/e2e-log.cjs [dev|built]
 // 流れ：記録を先に読み込む → 動画を開く → 撮影時刻から合わせる → ずらす → 手で合わせ直す → 絞り込み → 続けて再生
-//       → 「⌖」で合わせ直す → 1場面を動画にする → 開き直すと戻る → 同じ端末の記録から読み込む → 得点と照らし合わせて合わせる → 記録を外す
+//       → 「⌖」で合わせ直す → 「↔ 指でずらして合わせる」→ 1場面を動画にする → 開き直すと戻る → 同じ端末の記録から読み込む → 得点と照らし合わせて合わせる → 記録を外す
+//       → スマホの大きさの画面で「↔ 指でずらして合わせる」
 // テスト用の動画は ffmpeg で作る（120 秒・VP9 の MP4・撮影を終えた時刻 15:32:00 入り）。作業フォルダは WORK（既定は一時フォルダの basket-clips-e2e/）。
 const fs = require('fs');
 const os = require('os');
@@ -159,6 +160,127 @@ const anchors = (page) => page.evaluate(() => BS.app.S.st.sync && BS.app.S.st.sy
     // 元に戻す（記録の 0:33 ＝ 動画の 0:46）
     await page.evaluate((id) => BS.app.syncAt(id, 46, 'reset'), fg3);
 
+    console.log('\n■ ↔ 指でずらして合わせる（場面の枠を、目盛りの上で指で動かす）');
+    {
+      const adj = () => page.evaluate(() => { const A = BS.app.S.adj; return A && { d: A.d, ref: A.ref, val: document.querySelector('#adjVal').textContent, ok: document.querySelector('#adjOk').textContent, t: BS.app.S.media.time }; });
+      const closed = () => page.evaluate(() => document.querySelector('#modal').hidden && !BS.app.S.adj);
+      const atTime = (t) => page.waitForFunction((x) => Math.abs(BS.app.S.media.time - x) < 0.05, t, { timeout: 5000 }).then(() => true, () => false);
+      ok(await page.$('#btnAdjust') && await page.$('#logList [data-adjust]'), '③ に「↔ 指でずらして合わせる」、④ の各場面に「↔」');
+      await page.evaluate(() => BS.app.seek(75));
+      await sleep(200);
+      await page.click('#btnAdjust');
+      await page.waitForSelector('#adjRuler');
+      const ref = await page.evaluate(() => { const A = BS.app.S.adj, c = A.refs.find((x) => x.id === A.ref); return { id: c.id, t: c.t, at: c.at, sel: document.querySelector('#adjRef').value }; });
+      ok(ref.t === 61 && ref.at === 74 && ref.sel === ref.id, 'はじめの見本：いまの位置にいちばん近い得点（記録 1:01 の #10 2P成功 ＝ 動画 1:14）', ref);
+      ok(await atTime(74), '開くと、映像は見本の「記録した瞬間」（動画 1:14）へ');
+      await sleep(200);
+      const lit = await page.evaluate(() => { const cv = document.querySelector('#adjPv'); const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < d.length; i += 16) if (d[i] + d[i + 1] + d[i + 2] > 120) n++; return n / (d.length / 16); });
+      ok(lit > 0.3, `小さな画面に、そのコマが写る（明るいところ ${Math.round(lit * 100)}%）`, lit);
+      const W = await page.evaluate(() => document.querySelector('#adjRuler').clientWidth);
+      const box = await page.locator('#adjRuler').boundingBox();
+      const x = box.x + box.width / 2, y = box.y + box.height / 2;
+      await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 100, y, { steps: 8 }); await page.mouse.up();
+      const e1 = Math.round((100 * 10 / W) * 10) / 10;
+      let st = await adj();
+      ok(st.d === e1 && st.val === `+${e1.toFixed(1)} 秒` && st.ok.includes(`+${e1.toFixed(1)} 秒`), `目盛り（±5秒）の上で右へ 100px → 場面を後ろへ ${e1} 秒（「これで合わせる（+${e1.toFixed(1)} 秒）」）`, st);
+      ok(await atTime(74 + e1), '映像（小さな画面）は、ずらした「記録した瞬間」へ付いてくる');
+      a = await anchors(page);
+      ok(a.length === 1 && a[0].v === 46, '「これで合わせる」を押すまでは、時刻あわせを変えない', a);
+      await page.click('[data-adjstep="0.1"]');
+      await page.click('[data-adjstep="-1"]');
+      await page.focus('#adjRuler');
+      await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight'); await page.keyboard.press('Shift+ArrowRight');
+      st = await adj();
+      ok(Math.abs(st.d - Math.round((e1 + 0.3) * 10) / 10) < 1e-6, '「+0.1秒」「−1秒」のボタン・← → キー（0.1 秒。Shift で 1 秒）', st);
+      await page.click('[data-adjzoom="1"]');
+      const d0 = (await adj()).d;
+      await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x - 50, y, { steps: 5 }); await page.mouse.up();
+      st = await adj();
+      const e2 = Math.round((d0 - 50 * 60 / W) * 10) / 10;
+      ok(Math.abs(st.d - e2) < 1e-6 && e2 < -2, `目盛りを「±30秒」にすると、大きく動く（左へ 50px → ${st.d} 秒）`, { st, e2 });
+      await page.click('#adjReset');
+      ok((await adj()).d === 0 && (await page.textContent('#adjVal')) === '±0 秒', '「元に戻す」で ±0');
+      await page.click('[data-adjzoom="0"]');
+      // 指（タッチ）でのドラッグ
+      await page.evaluate(({ x, y }) => {
+        const el = document.querySelector('#adjRuler');
+        const ev = (type, cx) => el.dispatchEvent(new PointerEvent(type, { pointerId: 9, pointerType: 'touch', isPrimary: true, clientX: cx, clientY: y, bubbles: true, cancelable: true }));
+        ev('pointerdown', x); for (let i = 1; i <= 6; i++) ev('pointermove', x - i * 10); ev('pointerup', x - 60);
+      }, { x, y });
+      st = await adj();
+      const e3 = Math.round((-60 * 10 / W) * 10) / 10;
+      const ta = await page.evaluate(() => getComputedStyle(document.querySelector('#adjRuler')).touchAction);
+      ok(Math.abs(st.d - e3) < 1e-6 && ta === 'none', `指（タッチ）で左へ 60px → 場面を前へ ${-e3} 秒（目盛りの上では、画面がスクロールしない）`, { st, ta });
+      // 見本の場面を、いまのずらし方で再生する
+      await page.click('#adjReset');
+      await page.click('[data-adjstep="1"]');
+      await page.click('[data-adjstep="0.1"]');
+      await page.click('#adjPlay');
+      await sleep(900);
+      R = await page.evaluate(() => ({ active: BS.app.S.reel.active, seg: BS.app.S.reel.list[0], t: BS.app.S.media.time, paused: BS.app.S.media.paused, btn: document.querySelector('#adjPlay').textContent }));
+      ok(R.active && !R.paused && Math.abs(R.seg.t0 - (74 + 1.1 - 6)) < 0.02 && Math.abs(R.seg.t1 - (74 + 1.1 + 2)) < 0.02 && R.t >= R.seg.t0 - 0.05 && R.t <= R.seg.t1 && R.btn.includes('止める'),
+        '「▶ この場面を見る」：ずらした場面（記録した瞬間の前 6 秒・後 2 秒）を再生', R);
+      await page.click('#adjPlay');
+      ok(await page.waitForFunction(() => !BS.app.S.reel.active && BS.app.S.media.paused && document.querySelector('#adjPlay').textContent.includes('この場面を見る'), null, { timeout: 2000 }).then(() => true, () => false), 'もう一度押すと止まる');
+      // 見本を変えても、ずらす量はそのまま（同じずらし方を、ほかの場面でも確かめる）
+      const other = (await clipsOf(page)).find((c) => c.t === 33);
+      await page.selectOption('#adjRef', other.id);
+      st = await adj();
+      ok(st.d === 1.1 && st.ref === other.id && await atTime(other.at + 1.1), '見本の場面を変えても、ずらす量はそのまま（映像はその場面の記録した瞬間 ＋1.1 秒へ）', st);
+      await page.click('#adjOk');
+      a = await anchors(page);
+      ok(a.length === 1 && a[0].t === 33 && Math.abs(a[0].v - 47.1) < 1e-6, '「✓ これで合わせる」：全部の場面を後ろへ 1.1 秒（記録の 0:33 ＝ 動画の 0:47.1）', a);
+      ok(await closed() && (await page.textContent('#toasts')).includes('全部の場面を 後ろへ 1.1 秒ずらしました'), '小窓が閉じて、知らせる');
+      ok(Math.abs((await clipsOf(page))[0].at - 19.1) < 1e-6, 'ほかの場面も同じだけ（最初の場面 → 動画 0:19.1）');
+      // 最後に ▶ で見た場面が、次の見本になる
+      const row2 = (await clipsOf(page))[1];
+      await page.click(`#logList .clip[data-id="${row2.id}"] button[title="この場面を見る"]`);
+      await sleep(300);
+      await page.click('#btnAdjust');
+      await page.waitForSelector('#adjRuler');
+      ok((await adj()).ref === row2.id && !(await page.evaluate(() => BS.app.S.reel.active)), '最後に ▶ で見た場面が見本になる（開くと再生は止める）');
+      await page.keyboard.press('Escape');
+      ok(await closed(), 'Esc で閉じる');
+      await page.click('#btnLogReel');
+      await sleep(500);
+      await page.click('#reelNext');
+      await sleep(500);
+      const segIds = await page.evaluate(() => BS.app.S.reel.list[BS.app.S.reel.i].ids);
+      await page.click('#btnAdjust');
+      await page.waitForSelector('#adjRuler');
+      ok((await adj()).ref === segIds[0] && !(await page.evaluate(() => BS.app.S.reel.active)), '「▶ 続けて再生」の途中で開くと、再生中の場面が見本（再生は止める）', segIds);
+      await page.keyboard.press('Escape');
+      await page.evaluate(() => BS.app.seek(105));
+      await sleep(200);
+      await page.click('#btnAdjust');
+      await page.waitForSelector('#adjRuler');
+      const ft = (await clipsOf(page)).find((c) => c.t === 90);
+      ok((await adj()).ref === ft.id, '映像を遠くへ動かしたあとは、いまの位置にいちばん近い得点が見本（記録 1:30 のフリースロー）', await adj());
+      await page.keyboard.press('Escape');
+      // ④ の場面の「↔」→ やめる
+      const row4 = (await clipsOf(page))[3];
+      await page.click(`[data-adjust="${row4.id}"]`);
+      await page.waitForSelector('#adjRuler');
+      ok((await page.inputValue('#adjRef')) === row4.id, '④ の場面の「↔」：その場面を見本にして開く');
+      await page.click('[data-adjstep="1"]');
+      await page.click('.modal-foot .btn:not(.primary)');
+      a = await anchors(page);
+      ok(await closed() && Math.abs(a[0].v - 47.1) < 1e-6 && (await page.textContent('#toasts')).includes('ずらしていません'), '「やめる」：変えない（「ずらしていません」と知らせる）', a);
+      // 合わせた点が2つ（撮影を途中で止めた動画など）：見本の場面のある区間だけをずらす
+      await page.evaluate(() => { BS.app.S.st.sync.anchors = [{ t: 0, v: 13 }, { t: 70, v: 90 }]; BS.app.render(); });
+      const late = (await clipsOf(page)).find((c) => c.t === 90);
+      await page.click(`[data-adjust="${late.id}"]`);
+      await page.waitForSelector('#adjRuler');
+      ok((await page.textContent('#adjScope')).includes('記録の 1:10〜最後'), '合わせた点が2つのとき：「この場面のある区間（記録の 1:10〜最後）の場面だけ」', await page.textContent('#adjScope'));
+      await page.click('[data-adjstep="-1"]');
+      await page.click('#adjOk');
+      a = await anchors(page);
+      ok(a.length === 2 && a[0].v === 13 && a[1].t === 70 && a[1].v === 89, 'その区間の点だけを前へ 1 秒（前の区間はそのまま）', a);
+      ok((await page.textContent('#toasts')).includes('記録の 1:10〜最後 の場面を 前へ 1.0 秒'), '知らせにも、ずらした区間');
+    }
+    // 元に戻す（記録の 0:33 ＝ 動画の 0:46）
+    await page.evaluate((id) => BS.app.syncAt(id, 46, 'reset'), fg3);
+
     console.log('\n■ 1つの場面を動画にする');
     const first = (await clipsOf(page))[0];
     await page.click('#logList .clip >> nth=0 >> button[title="この場面だけを動画にする"]');
@@ -243,6 +365,44 @@ const anchors = (page) => page.evaluate(() => BS.app.S.st.sync && BS.app.S.st.sy
     ok(await page2.evaluate(() => !BS.app.S.finding && !!document.querySelector('#syncCard')), 'ゴールの自動検出は止まり、③ 時刻あわせへ');
     ok(errors2.length === 0, 'ページのエラーがない', errors2.slice(0, 3));
     await page2.close();
+
+    console.log('\n■ スマホの大きさ（390×844・指）で「↔ 指でずらして合わせる」');
+    {
+      const p3 = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+      const errors3 = [];
+      p3.on('pageerror', (e) => errors3.push(String(e)));
+      await p3.goto(srv.url);
+      await p3.waitForFunction(() => window.BS && BS.app && document.querySelector('#stepVideo'));
+      await p3.evaluate(() => localStorage.clear());
+      await p3.setInputFiles('#fileLog', logFile);
+      await p3.setInputFiles('#fileVideo', video);
+      await p3.waitForFunction(() => BS.app.S.media && BS.app.S.media.ready && BS.app.duration() > 100, null, { timeout: 30000 });
+      await p3.waitForSelector('#btnSyncMeta', { timeout: 10000 });
+      await p3.click('#btnSyncMeta');
+      await p3.tap('#btnAdjust');
+      await p3.waitForSelector('#adjRuler');
+      await sleep(300);
+      const L = await p3.evaluate(() => {
+        const r = (s) => { const b = document.querySelector(s).getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, w: b.width, h: b.height }; };
+        return { iw: innerWidth, ih: innerHeight, sw: document.documentElement.scrollWidth, card: r('.modal-card'), ruler: r('#adjRuler'), pv: r('.adjpv'), ok: r('#adjOk'), font: getComputedStyle(document.querySelector('#adjRef')).fontSize };
+      });
+      ok(L.sw === L.iw && L.card.l >= 0 && L.card.r <= L.iw && L.card.b <= L.ih && L.ok.b <= L.ih, '小窓が画面に収まる（横にはみ出さない・「これで合わせる」が見える）', L);
+      ok(L.ruler.w >= 300 && L.ruler.h >= 70 && L.pv.w >= 300 && L.pv.h >= 160, `目盛り ${Math.round(L.ruler.w)}×${Math.round(L.ruler.h)}・小さな画面 ${Math.round(L.pv.w)}×${Math.round(L.pv.h)}（指で扱える大きさ）`, L);
+      ok(L.font === '16px', '見本の場面を選ぶ欄は 16px（iPhone で選ぶときに拡大されない）', L.font);
+      await p3.evaluate(({ x, y }) => {
+        const el = document.querySelector('#adjRuler');
+        const ev = (type, cx) => el.dispatchEvent(new PointerEvent(type, { pointerId: 3, pointerType: 'touch', isPrimary: true, clientX: cx, clientY: y, bubbles: true, cancelable: true }));
+        ev('pointerdown', x); for (let i = 1; i <= 8; i++) ev('pointermove', x + i * 8); ev('pointerup', x + 64);
+      }, { x: L.ruler.l + L.ruler.w / 2, y: L.ruler.t + L.ruler.h / 2 });
+      const d3 = await p3.evaluate(() => BS.app.S.adj.d);
+      const e4 = Math.round((64 * 10 / Math.round(L.ruler.w)) * 10) / 10;
+      ok(Math.abs(d3 - e4) < 0.11 && d3 > 1.5, `指で右へ 64px → 後ろへ ${d3} 秒`, { d3, e4 });
+      await p3.tap('#adjOk');
+      const a3 = await p3.evaluate(() => BS.app.S.st.sync.anchors);
+      ok(a3.length === 1 && Math.abs(a3[0].v - (12 + d3)) < 1e-6, `「これで合わせる」：記録の 0:00 ＝ 動画の ${a3[0].v}`, a3);
+      ok(errors3.length === 0, 'ページのエラーがない', errors3.slice(0, 3));
+      await p3.close();
+    }
   } catch (e) {
     fail++;
     console.log('  FAIL 途中で止まりました:', e && e.stack || e);

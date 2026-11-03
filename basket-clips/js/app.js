@@ -29,7 +29,8 @@
     finding: null, autoGoals: true,      // finding：ゴールを自動で探している途中（findGoals）。autoGoals：動画を開いたら自動で探すか（テストで止める）
     pendingLog: null,                    // 動画より先に読み込んだ記録（動画を開いたら、その動画に付ける）
     meta: null,                          // 動画の撮影の始まり（taplog.creationTime。時刻あわせの目安）
-    logOut: null, openAuto: false, syncEdit: false, syncPick: null, logThumbJob: null
+    logOut: null, openAuto: false, syncEdit: false, syncPick: null, logThumbJob: null,
+    adj: null, adjLast: null             // adj：「↔ 指でずらして合わせる」を開いている間の状態。adjLast：最後に見本にした場面・▶ で見た場面
   };
 
   /* ---------- 小さな道具 ---------- */
@@ -661,6 +662,7 @@
     const R = S.reel;
     R.i = i;
     const seg = R.list[i];
+    if (seg.kind === 'log' && seg.ids) S.adjLast = seg.ids[0];      // 「↔ 指でずらして合わせる」の見本の候補
     seek(seg.t0, true).then(() => { if (S.reel === R && R.active && R.i === i) play(); });
     updateReelUI();
   }
@@ -888,7 +890,7 @@
     if (!sug) { BS.ui.toast('撮影時刻からは合わせられませんでした', 'warn'); return; }
     S.st.sync = { anchors: sug.anchors, how: 'meta', at: Date.now() };
     S.syncEdit = false;
-    afterSync('撮影時刻から合わせました（目安）。場面を ▶ で見て、ずれていたら「−1秒／+1秒」で直してください');
+    afterSync('撮影時刻から合わせました（目安）。場面を ▶ で見て、ずれていたら ③ の「↔ 指でずらして合わせる」で直してください');
   }
   function syncFromShots() {
     const shots = list().filter((it) => it.on).map((it) => it.t);
@@ -959,6 +961,307 @@
     });
   }
 
+  /* ---------- ↔ 指でずらして合わせる ----------
+     別のカメラで撮った動画は、時計のずれなどで、切り出す位置がずれることがある。
+     見本の場面の「枠」（色の帯。タップの前○秒〜後○秒）を、目盛りの上で指で左右に動かして合わせる。
+     動かしている間は、白い線（記録した瞬間）のコマを小さな画面に出す（映像の本体をその時刻へ動かして、その絵を写す）。
+     「これで合わせる」で、全部の場面を同じだけずらす（合わせた点が2つ以上あるときは、見本の場面のある区間だけ）。 */
+  const ADJ_R = [5, 30];      // 目盛りの片側の秒数（細かく・大きく）
+  const ADJ_H = 80;           // 目盛りの高さ（px）
+  const adjRef = () => { const A = S.adj; return A ? A.refs.find((c) => c.id === A.ref) || null : null; };
+  const adjWin = () => Object.assign({}, TL.WIN, S.st.logWin || {});
+  const fmtShift = (d) => (d ? `${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)} 秒` : '±0 秒');
+  /* 見本にできる場面：絞り込みにかかわらず、動画に入っている記録の全部 */
+  function adjRefs() {
+    if (!S.st.log || !synced()) return [];
+    return TL.clips(S.st.log, S.st.sync.anchors, { teams: [true, true] }, S.st.logWin, duration(), null).clips;
+  }
+  /* はじめの見本：再生中の場面 → 最後に見た場面・見本にした場面（映像がまだその近くにあれば）→ いまの映像の位置にいちばん近い得点 → いちばん近い場面 */
+  function adjDefault(refs) {
+    const R = S.reel, seg = R.active ? R.list[R.i] : null;
+    const playing = seg && seg.kind === 'log' ? seg.ids.find((x) => refs.some((c) => c.id === x)) : null;
+    if (playing) return playing;
+    const t = now();
+    const last = refs.find((c) => c.id === S.adjLast);
+    if (last && Math.abs(last.at - t) < 20) return last.id;
+    const near = (arr) => arr.reduce((b, c) => (!b || Math.abs(c.at - t) < Math.abs(b.at - t) ? c : b), null);
+    const c = near(refs.filter((x) => x.grp === 'score')) || near(refs);
+    return c ? c.id : null;
+  }
+  /* 見本の場面がある区間（合わせた点が2つ以上のとき）の言い方 */
+  function adjSection(c) {
+    const A = TL.cleanAnchors(S.st.sync.anchors);
+    if (A.length < 2) return null;
+    const k = TL.anchorIndex(A, c.t);
+    return `記録の ${k ? BS.fmtTime(A[k].t) : '0:00'}〜${k + 1 < A.length ? BS.fmtTime(A[k + 1].t) : '最後'}`;
+  }
+  function openAdjust(refId) {
+    if (!S.media || !synced() || S.exporting) return;
+    if (!S.media.ready || !(duration() > 0)) { BS.ui.toast('動画の読み込みが終わるまで、少し待ってください', 'warn'); return; }
+    const refs = adjRefs();
+    if (!refs.length) { BS.ui.toast('この動画に入っている記録の場面がありません。「合わせ直す」で合わせてください', 'warn', 6000); return; }
+    const id = refs.some((c) => c.id === refId) ? refId : adjDefault(refs);      // （再生中の場面を見本にするので、止める前に選ぶ）
+    stopReel(true);
+    pause();
+    const A = S.adj = { refs, ref: id, d: 0, zoom: 0, view: 0, drag: null, want: null, seeking: false, offs: [] };
+    const W = S.media.width, H = S.media.height, ratio = W / H;
+    const ruler = h('canvas', { id: 'adjRuler', class: 'adjruler', tabindex: '0', role: 'slider', 'aria-label': '場面の位置（左右に動かしてずらす。← → キーでも）' });
+    ruler.addEventListener('pointerdown', adjDown);
+    ruler.addEventListener('pointermove', adjMove);
+    ruler.addEventListener('pointerup', adjUp);
+    ruler.addEventListener('pointercancel', adjUp);
+    const body = h('div', { class: 'adj' },
+      h('p', { class: 'note adjhint' }, '場面の枠（色の帯）を指で左右に動かすと、白い線（記録した瞬間）のコマが上に出ます。プレーの瞬間（得点なら、ボールがリングを通ったところ）で指を離してください。'),
+      h('label', { class: 'adjrefrow' }, h('span', { class: 'note' }, '見本の場面'),
+        h('select', { id: 'adjRef', class: 'syncpick', onchange: (e) => adjSetRef(e.target.value) },
+          refs.map((c) => h('option', { value: c.id, selected: c.id === id }, `${BS.fmtTime(c.at)}　${c.label}`)))),
+      h('div', { class: 'adjpv', style: { aspectRatio: `${W} / ${H}`, '--ar': ratio.toFixed(4) } },
+        h('canvas', { id: 'adjPv' }), h('span', { class: 'adjtag', id: 'adjTag' }),
+        h('button', { class: 'adjplay', id: 'adjPlay', onclick: adjPlay }, '▶ この場面を見る')),
+      ruler,
+      h('div', { class: 'adjval' }, h('span', { class: 'note' }, 'ずらす量'), h('b', { id: 'adjVal' }, fmtShift(0)), h('span', { class: 'note', id: 'adjDir' }),
+        h('span', { class: 'spacer' }),
+        h('span', { class: 'adjzoom' }, h('span', { class: 'note' }, '目盛り'),
+          ADJ_R.map((r, i) => h('button', { class: 'btn small' + (i ? '' : ' on'), dataset: { adjzoom: String(i) }, title: i ? '大きく動かす（長いずれ）' : '細かく動かす', onclick: () => adjZoom(i) }, `±${r}秒`)))),
+      h('div', { class: 'row' },
+        [-1, -0.1, 0.1, 1].map((d) => h('button', { class: 'btn small', dataset: { adjstep: String(d) }, onclick: () => adjStep(d) }, (d > 0 ? '+' : '−') + Math.abs(d) + '秒')),
+        h('button', { class: 'btn small', id: 'adjReset', onclick: () => adjStep(-S.adj.d) }, '元に戻す')),
+      h('p', { class: 'note', id: 'adjScope' }));
+    BS.ui.modal({ title: '↔ 指でずらして合わせる', body, cls: 'adjcard', onClose: adjClose,
+      buttons: [{ label: 'やめる' }, { label: '✓ これで合わせる', cls: 'primary', onClick: adjApply }] });
+    const okBtn = $('#modal .modal-foot .btn.primary');
+    if (okBtn) okBtn.id = 'adjOk';
+    A.offs.push(S.media.on('time', adjFrame), S.media.on('play', adjPlayBtn), S.media.on('pause', adjPlayBtn));
+    adjSetRef(id, true);
+  }
+  function adjSetRef(id, first) {
+    const A = S.adj, prev = adjRef();
+    const c = A && A.refs.find((x) => x.id === id);
+    if (!c) return;
+    // 合わせた点が2つ以上で、区間がちがう場面に変えたら、ずらす量は 0 から（同じ区間なら、同じずらし方を別の場面でも確かめられる）
+    if (!first && prev && TL.anchorIndex(S.st.sync.anchors, prev.t) !== TL.anchorIndex(S.st.sync.anchors, c.t)) A.d = 0;
+    A.ref = id; A.view = c.at; S.adjLast = id;
+    A.d = adjClamp(A.d);         // （その場面で、記録した瞬間が動画の外へ出ないように）
+    if (S.reel.active) stopReel(true);
+    const sec = adjSection(c);
+    const sc = $('#adjScope');
+    if (sc) sc.textContent = sec ? `合わせた場所が ${TL.cleanAnchors(S.st.sync.anchors).length} か所あるので、この場面のある区間（${sec}）の場面だけをずらします。` : '「これで合わせる」で、全部の場面が同じだけずれます。目盛りの数字は、元の位置からの秒数です。';
+    adjRecenter(true);
+    adjUpdate();
+    adjPreview();
+  }
+  /* 数字・言葉・目盛りを書き直す */
+  function adjUpdate() {
+    const A = S.adj, c = adjRef();
+    if (!A || !c) return;
+    const m = c.at + A.d;
+    const val = $('#adjVal'), dir = $('#adjDir'), tag = $('#adjTag'), ok = $('#adjOk');
+    if (val) val.textContent = fmtShift(A.d);
+    if (dir) dir.textContent = A.d ? `（場面を${A.d > 0 ? '後ろ' : '前'}へ）` : '（いまのまま）';
+    if (tag) tag.textContent = `記録した瞬間 ${BS.fmtTime(m, true)}`;
+    if (ok) ok.textContent = A.d ? `✓ これで合わせる（${fmtShift(A.d)}）` : '✓ これで合わせる';
+    const r = $('#adjRuler');
+    if (r) { r.setAttribute('aria-valuenow', String(A.d)); r.setAttribute('aria-valuetext', fmtShift(A.d)); }
+    adjDraw();
+  }
+  /* ずらす量を、動画の中（記録した瞬間が 0 秒〜動画の終わり）に収める */
+  function adjClamp(d) {
+    const c = adjRef();
+    const end = duration() || Infinity;
+    return Math.round(BS.clamp(d, -c.at, Math.max(-c.at, end - c.at)) * 10) / 10;
+  }
+  function adjStep(dd) {
+    const A = S.adj;
+    if (!A || !adjRef()) return;
+    if (S.reel.active) stopReel(true);
+    A.d = adjClamp(A.d + dd);
+    adjRecenter();
+    adjUpdate();
+    adjPreview();
+  }
+  function adjZoom(i) {
+    const A = S.adj;
+    if (!A) return;
+    A.zoom = i;
+    document.querySelectorAll('[data-adjzoom]').forEach((b) => b.classList.toggle('on', b.dataset.adjzoom === String(i)));
+    adjRecenter(true);
+    adjUpdate();
+  }
+  /* 目盛りの表示範囲：枠が端に寄ったら、まん中へ戻す（instant でなければ、なめらかに） */
+  function adjRecenter(instant) {
+    const A = S.adj, c = adjRef();
+    if (!A || !c) return;
+    const R = ADJ_R[A.zoom], m = c.at + A.d;
+    A.anim = null;
+    if (instant) { A.view = Math.abs(A.d) <= R * 0.6 ? c.at : m; return; }
+    if (Math.abs(m - A.view) <= R * 0.6) return;
+    const from = A.view, t0 = performance.now(), anim = A.anim = {};
+    const step = (tt) => {
+      if (S.adj !== A || A.drag || A.anim !== anim) return;      // 指で動かし始めた・次の動きが始まったら、やめる
+      const k = Math.min(1, (tt - t0) / 220);
+      A.view = from + (m - from) * (1 - (1 - k) ** 3);
+      adjDraw();
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  /* 小さな画面：映像の本体を「記録した瞬間」へ動かす（動かしている途中は、前の移動が終わってから、最後の位置へ） */
+  function adjPreview() {
+    const A = S.adj, c = adjRef();
+    if (!A || !c || !S.media) return;
+    A.want = BS.clamp(c.at + A.d, 0, duration());
+    if (A.seeking) return;
+    A.seeking = true;
+    const next = () => {
+      if (S.adj !== A || A.want == null) { A.seeking = false; return; }
+      const t = A.want;
+      A.want = null;
+      seek(t).then(next, next);
+    };
+    next();
+  }
+  /* 映像の時刻が変わるたびに（移動・再生）、小さな画面と目盛りを描く */
+  function adjFrame() {
+    adjDrawPv(); adjDraw();
+    const A = S.adj;
+    if (A && !A.raf && S.media && S.media.paused) A.raf = requestAnimationFrame(() => { A.raf = 0; if (S.adj === A) adjDrawPv(); });     // Safari：seeked の直後は、前のコマが描かれることがある
+  }
+  function adjDrawPv() {
+    const cv = $('#adjPv');
+    if (!cv || !S.media) return;
+    const dpr = Math.min(2, root.devicePixelRatio || 1);
+    const w = Math.max(1, Math.round(cv.clientWidth * dpr)), hh = Math.max(1, Math.round(cv.clientHeight * dpr));
+    if (cv.width !== w || cv.height !== hh) { cv.width = w; cv.height = hh; }
+    const g = cv.getContext('2d');
+    g.fillStyle = '#000'; g.fillRect(0, 0, w, hh);
+    const v = S.media.el, vw = v.videoWidth, vh = v.videoHeight;
+    if (!vw || !vh || v.readyState < 2) return;
+    const k = Math.min(w / vw, hh / vh);
+    try { g.drawImage(v, (w - vw * k) / 2, (hh - vh * k) / 2, vw * k, vh * k); } catch (e) { /* まだ絵がない */ }
+  }
+  /* 目盛り：まん中あたりに場面の枠（色の帯）と白い線（記録した瞬間）。点線は元の位置、黄色の線は映像のいまの位置 */
+  function adjDraw() {
+    const A = S.adj, c = adjRef(), cv = $('#adjRuler');
+    if (!A || !c || !cv) return;
+    const dpr = root.devicePixelRatio || 1;
+    const w = cv.clientWidth || 300, Hh = ADJ_H;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(Hh * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(Hh * dpr); }
+    const g = cv.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, w, Hh);
+    g.fillStyle = '#172033'; g.fillRect(0, 0, w, Hh);
+    const R = ADJ_R[A.zoom], v0 = A.view - R, pps = w / (2 * R);
+    const X = (t) => (t - v0) * pps;
+    const dur = duration();
+    // 動画の外（始まりより前・終わりより後）は暗く
+    g.fillStyle = 'rgba(0,0,0,0.5)';
+    if (X(0) > 0) g.fillRect(0, 0, Math.min(w, X(0)), 50);
+    if (dur && X(dur) < w) g.fillRect(Math.max(0, X(dur)), 0, w - Math.max(0, X(dur)), 50);
+    // 目盛り（数字は、元の位置からの秒数）
+    const major = [0.5, 1, 2, 5, 10, 15, 30, 60].find((s) => s * pps >= (s < 1 ? 44 : 30)) || 60;
+    const minor = [major / 10, major / 5, major / 2].find((s) => s * pps >= 7) || major;
+    g.font = '11px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+    for (let k = Math.ceil((v0 - c.at) / minor - 1e-6), n = 0; n < 1000; k++, n++) {
+      const off = Math.round(k * minor * 1000) / 1000, x = X(c.at + off);
+      if (!(x <= w + 1)) break;
+      const isMajor = Math.abs(off / major - Math.round(off / major)) < 1e-6;
+      g.strokeStyle = isMajor ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)'; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(x, 52); g.lineTo(x, isMajor ? 62 : 57); g.stroke();
+      if (isMajor) {
+        const lab = off ? `${off > 0 ? '+' : '−'}${+Math.abs(off).toFixed(1)}` : '0';
+        g.font = off ? '11px system-ui, sans-serif' : 'bold 12px system-ui, sans-serif';
+        const tw = g.measureText(lab).width;
+        if (x - tw / 2 >= 1 && x + tw / 2 <= w - 1) { g.fillStyle = off ? '#cbd5e1' : '#fff'; g.fillText(lab, x, 75); }      // 端で切れる数字は書かない
+      }
+    }
+    // 元の位置（点線）
+    const x0 = X(c.at);
+    g.strokeStyle = 'rgba(255,255,255,0.45)'; g.setLineDash([3, 3]); g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x0, 14); g.lineTo(x0, 52); g.stroke(); g.setLineDash([]);
+    // 場面の枠
+    const win = adjWin(), m = c.at + A.d;
+    const bx0 = X(Math.max(0, m - win.lead)), bx1 = X(dur ? Math.min(dur, m + win.lag) : m + win.lag);
+    const col = teamColor(c.team);
+    g.globalAlpha = 0.38; g.fillStyle = col; g.fillRect(bx0, 18, bx1 - bx0, 28); g.globalAlpha = 1;
+    g.strokeStyle = col; g.lineWidth = 2; g.strokeRect(bx0, 18, bx1 - bx0, 28);
+    g.font = '11px system-ui, sans-serif';
+    const hint = '◀ 指で動かす ▶', hw = g.measureText(hint).width, xr = Math.min(bx1, X(m));
+    if (xr - bx0 > hw + 14) { g.fillStyle = 'rgba(255,255,255,0.92)'; g.fillText(hint, (bx0 + xr) / 2, 36); }
+    // 映像のいまの位置（再生しているとき・ずれているとき）
+    const xp = X(now());
+    if (Math.abs(now() - m) > 0.05 && xp >= 0 && xp <= w) { g.strokeStyle = '#fbbf24'; g.lineWidth = 2; g.beginPath(); g.moveTo(xp, 14); g.lineTo(xp, 52); g.stroke(); }
+    // 記録した瞬間（白い線と、その上の言葉）
+    const xm = X(m);
+    [['rgba(0,0,0,0.7)', 5], ['#fff', 2.5]].forEach(([s, lw]) => { g.strokeStyle = s; g.lineWidth = lw; g.beginPath(); g.moveTo(xm, 13); g.lineTo(xm, 52); g.stroke(); });
+    g.fillStyle = '#fff'; g.font = 'bold 11px system-ui, sans-serif';
+    const lab = '記録した瞬間', lw2 = g.measureText(lab).width;
+    g.fillText(lab, BS.clamp(xm, lw2 / 2 + 2, w - lw2 / 2 - 2), 11);
+  }
+  function adjDown(ev) {
+    const A = S.adj;
+    if (!A || (ev.pointerType === 'mouse' && ev.button !== 0)) return;
+    ev.preventDefault();
+    const cv = ev.currentTarget;
+    try { cv.setPointerCapture(ev.pointerId); } catch (e) { /* 指がもう離れている */ }
+    try { cv.focus({ preventScroll: true }); } catch (e) { /* 古いブラウザ */ }
+    if (S.reel.active) stopReel(true);
+    // 目盛りがまだ付いてきている途中で、枠が目盛りの外にあるなら、先に追いつかせる（触った瞬間に枠が跳ばないように）
+    const c = adjRef(), R = ADJ_R[A.zoom];
+    A.anim = null;
+    if (c && Math.abs(c.at + A.d - A.view) > R * 0.9) { A.view = c.at + A.d; adjDraw(); }
+    A.drag = { id: ev.pointerId, x: ev.clientX, d: A.d };
+    cv.classList.add('dragging');
+  }
+  function adjMove(ev) {
+    const A = S.adj, g = A && A.drag, c = adjRef();
+    if (!g || !c || ev.pointerId !== g.id) return;
+    const R = ADJ_R[A.zoom], cv = ev.currentTarget;
+    const d0 = g.d + (ev.clientX - g.x) * (2 * R) / (cv.clientWidth || 300);
+    // 記録した瞬間が、目盛りの外へ出ないように（出そうなら、指を離すと目盛りが付いてくる）
+    const d = adjClamp(BS.clamp(d0, A.view - R - c.at, A.view + R - c.at));
+    if (d !== A.d) { A.d = d; adjUpdate(); adjPreview(); }
+  }
+  function adjUp(ev) {
+    const A = S.adj, g = A && A.drag;
+    if (!g || ev.pointerId !== g.id) return;
+    A.drag = null;
+    ev.currentTarget.classList.remove('dragging');
+    adjRecenter();
+    adjUpdate();
+  }
+  /* 見本の場面を、いまのずらし方で再生する（映像の本体で再生して、小さな画面に写す） */
+  function adjPlay() {
+    const A = S.adj, c = adjRef();
+    if (!A || !c) return;
+    if (S.reel.active) { stopReel(true); adjPlayBtn(); return; }
+    const m = c.at + A.d, win = adjWin();
+    const seg = Object.assign({}, c, { on: true, at: m, t0: Math.max(0, m - win.lead), t1: Math.min(duration(), m + win.lag) });
+    startReel(logSegs([seg]), c.team, '見本の場面');
+  }
+  function adjPlayBtn() {
+    const b = $('#adjPlay');
+    if (b) b.textContent = S.reel.active && S.media && !S.media.paused ? '⏸ 止める' : '▶ この場面を見る';
+  }
+  function adjApply() {
+    const A = S.adj, c = adjRef();
+    if (!A || !c || !A.d || !synced()) return;
+    const d = A.d, sec = adjSection(c);
+    const anchors = TL.cleanAnchors(S.st.sync.anchors);
+    S.st.sync.anchors = sec ? TL.shiftAt(anchors, c.t, d) : TL.shift(anchors, d);
+    S.adjLast = c.id;
+    A.applied = true;
+    afterSync(null);
+    BS.ui.toast(`${sec ? `${sec} の場面` : '全部の場面'}を ${d > 0 ? '後ろへ' : '前へ'} ${Math.abs(d).toFixed(1)} 秒ずらしました`, 'ok', 3500);
+  }
+  function adjClose() {
+    const A = S.adj;
+    if (!A) return;
+    A.offs.forEach((off) => off());
+    S.adj = null;
+    if (S.reel.active) stopReel(true);
+    if (A.d && !A.applied) BS.ui.toast('ずらしていません（「✓ これで合わせる」を押すと決まります）', 'warn', 3500);
+  }
+
   /* ② 記録 */
   function logCard() {
     const log = S.st.log;
@@ -986,9 +1289,11 @@
       const how = { manual: '手で合わせました', meta: '撮影時刻から（目安）', shots: '自動で探した得点から', camera: '📹 撮影しながら記録した動画なので、自動でぴったり' }[S.st.sync.how] || '';
       card.append(
         h('p', { class: 'syncok', id: 'syncOk' }, `✓ 記録の ${BS.fmtTime(A[0].t)} ＝ 動画の ${BS.fmtTime(A[0].v, true)}`, h('span', { class: 'note' }, `（${how}${A.length > 1 ? `・ほかに ${A.length - 1} か所で合わせています` : ''}）`)),
+        h('div', { class: 'row adjcta' }, h('button', { class: 'btn primary', id: 'btnAdjust', disabled: !!S.exporting, onclick: () => openAdjust() }, '↔ 指でずらして合わせる'),
+          h('span', { class: 'note' }, '場面の枠を、コマを見ながら指で動かして合わせます（別のカメラで撮った動画で、場面がずれるとき）')),
         h('div', { class: 'row' }, h('span', { class: 'note' }, '全部の場面をずらす：'),
           [-1, -0.5, 0.5, 1].map((d) => h('button', { class: 'btn small', dataset: { nudge: String(d) }, onclick: () => nudge(d) }, (d > 0 ? '+' : '−') + Math.abs(d) + '秒'))),
-        h('p', { class: 'note' }, 'プレーが場面の終わりより後に起きるときは「+」、場面が始まったときにはもう終わっているときは「−」。1つの場面だけずれているときは、その場面の「⌖」で合わせ直せます。'),
+        h('p', { class: 'note' }, 'プレーが場面の終わりより後に起きるときは「+」、場面が始まったときにはもう終わっているときは「−」。④ の各場面の「↔」でも、その場面を見本にして指で合わせられます。'),
         h('div', { class: 'row' }, h('button', { class: 'btn small', id: 'btnResync', onclick: () => { S.syncEdit = true; render(); } }, '合わせ直す・合わせる場所を足す')));
       return card;
     }
@@ -1126,6 +1431,7 @@
         h('span', { class: 'note' }, `動画 ${BS.fmtTime(c.at)}・${TL.periodLabel(c.period)}・記録 ${BS.fmtTime(c.t)}`)),
       h('div', { class: 'cops' },
         h('button', { class: 'btn small', title: 'この場面を見る', onclick: (e) => { e.stopPropagation(); playLogOne(c); } }, '▶'),
+        h('button', { class: 'btn small', title: '指でずらして、時刻を合わせる（この場面を見本に）', 'aria-label': '指でずらして合わせる', dataset: { adjust: c.id }, disabled: !!S.exporting, onclick: (e) => { e.stopPropagation(); openAdjust(c.id); } }, '↔'),
         h('button', { class: 'btn small', title: 'いまの映像の位置を、この記録の瞬間にする（ずれを直す）', dataset: { align: c.id }, onclick: (e) => { e.stopPropagation(); confirmFix(c); } }, '⌖'),
         h('button', { class: 'btn small', title: 'この場面だけを動画にする', disabled: !!S.exporting, onclick: (e) => { e.stopPropagation(); doLogExport(c); } }, '⬇')));
     row.addEventListener('click', () => playLogOne(c));
@@ -1824,6 +2130,7 @@
         h('p', null, 'ボールがリングを通り、ネットも大きく揺れたものだけを「入った」にします。どちらか片方しか確かめられなかったもの（ボールは見えないがネットが大きく揺れた、リングに来たあとネットが揺れた、ボールは通ったがネットがあまり揺れなかった）は「🤔 たぶん入った（確認して）」に並べます。▶ で見て「入った」か「外れ」を押してください。はっきりした外れは、得点のタブには出しません（📋 記録 で見られます）。'),
         h('h4', null, '📲 「バスケ タップ記録」の記録から切り出す'),
         h('p', null, '試合中に「バスケ タップ記録」でプレーをタップしておくと、その記録（書き出したファイル）を、上の「📲 タップ記録」から読み込めます。動画の中の1つの場面（ティップオフなど）で時刻を合わせると、記録したプレーの場面を、チーム・プレー・選手で選んで、続けて見たり1本の動画にしたりできます。ゴールの指定や解析はいりません。'),
+        h('p', null, '別のカメラで撮った動画で場面がずれるときは、③ の「↔ 指でずらして合わせる」（④ の各場面の「↔」でも）。場面の枠を目盛りの上で指で左右に動かすと、記録した瞬間のコマが出るので、プレーの瞬間で指を離して「これで合わせる」。全部の場面が同じだけずれます。'),
         h('h4', null, 'どちらのチームの得点か'),
         h('p', null, 'ボールが入った「ゴール」で決めます。前半・後半それぞれ、チームが攻めるゴールは決まっているからです。1本の動画に後半も入っているときは、後半の始まりを教えてください（解析のあとに、ハーフタイムらしい場面を教えてくれることもあります）。逆になっていたら「⇄ 入れ替える」、1本だけ違うなら、その場面の「⇄」で直せます。'),
         h('h4', null, '見つからなかった得点があるとき'),
@@ -1844,8 +2151,16 @@
 
   /* ---------- キー操作 ---------- */
   function onKey(e) {
-    if (BS.ui.modalOpen()) { if (e.code === 'Escape') BS.ui.closeModal(); return; }
     const tag = (e.target && e.target.tagName) || '';
+    if (BS.ui.modalOpen()) {
+      if (e.code === 'Escape') BS.ui.closeModal();
+      // 「↔ 指でずらして合わせる」：← → で 0.1 秒（Shift で 1 秒）
+      else if (S.adj && (e.code === 'ArrowLeft' || e.code === 'ArrowRight') && !/^(INPUT|TEXTAREA|SELECT)$/.test(tag) && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        adjStep((e.code === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 1 : 0.1));
+      }
+      return;
+    }
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) && e.target.type !== 'checkbox') return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.code === 'Escape') { if (S.marking) cancelMarking(); else if (S.reel.active) stopReel(); return; }
@@ -1894,7 +2209,7 @@
       if (js) readLogFile(js);
       if (!f && !js) BS.ui.toast('動画ファイル（MP4・MOV など）か、記録のファイル（.json）をドロップしてください', 'err');
     });
-    root.addEventListener('resize', () => { drawOverlay(); drawTimeline(); });
+    root.addEventListener('resize', () => { drawOverlay(); drawTimeline(); if (S.adj) adjFrame(); });
     root.addEventListener('beforeunload', (e) => { if (S.running || S.exporting) { e.preventDefault(); e.returnValue = ''; } });
     // 閉じる・裏に回るときは、待たずに保存する（保存は 0.15 秒まとめてから書くため）
     const flush = () => { if (S.saveTimer) { clearTimeout(S.saveTimer); S.saveTimer = 0; if (S.key) BS.store.save(S.key, S.st); } };
@@ -1912,7 +2227,7 @@
   }
 
   BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, findGoals, cancelFind, list, clipsFor, maybes: () => C.maybes(S.st.result, setupOf(), S.st.edits, list()), record: recRows, promote, unpromote, judge, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs,
-    loadLog, setLog, removeLog, logClips, syncAt, nudge, playLogReel, doLogExport, syncFromMeta, syncFromShots, openTapVideo, cameraSync };
+    loadLog, setLog, removeLog, logClips, syncAt, nudge, playLogReel, doLogExport, syncFromMeta, syncFromShots, openTapVideo, cameraSync, openAdjust };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }
