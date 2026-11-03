@@ -7,6 +7,7 @@
   const { h, $ } = BS.ui;
   const C = BS.clips;
   const TL = BS.taplog;
+  const NT = BS.notes;
 
   /* ユニフォームの色（よくある色）。白・黒も選べるように、見本には枠を付ける */
   const COLORS = [
@@ -31,7 +32,8 @@
     meta: null,                          // 動画の撮影の始まり（taplog.creationTime。時刻あわせの目安）
     logOut: null, openAuto: false, syncEdit: false, syncPick: null, logThumbJob: null, openWinBy: false,
     adj: null, adjLast: null,            // adj：「↔ 指でずらして合わせる」を開いている間の状態。adjLast：最後に見本にした場面・▶ で見た場面
-    fps: null                            // 動画の1秒のコマ数（MP4・MOV の目次から。分からなければ 30 として、コマ送りに使う）
+    fps: null,                           // 動画の1秒のコマ数（MP4・MOV の目次から。分からなければ 30 として、コマ送りに使う）
+    noteOut: null, openBook: null        // コメントの場面の書き出し・コメント帳の小窓の状態
   };
 
   /* ---------- 小さな道具 ---------- */
@@ -76,7 +78,8 @@
     S.key = BS.store.videoKey(file);
     const saved = BS.store.load(S.key);
     S.st = saved || BS.store.fresh();
-    S.thumbs = {}; S.out = [null, null]; S.tab = 0; S.openSetup = false; S.openHow = null; S.live = null;
+    S.st.name = (typeof file === 'string' ? file.split('/').pop() : file.name) || S.st.name || '';
+    S.thumbs = {}; S.out = [null, null]; S.noteOut = null; S.tab = 0; S.openSetup = false; S.openHow = null; S.live = null;
     S.logOut = null; S.meta = null; S.syncEdit = false; S.syncPick = null; S.openAuto = false; S.fps = null;
     const attached = !!S.pendingLog;
     if (attached) { setLog(S.pendingLog); S.pendingLog = null; save(); }
@@ -88,7 +91,7 @@
     m.on('play', updatePlayBtn);
     m.on('pause', updatePlayBtn);
     m.on('ready', () => {
-      render(); drawTimeline(); drawOverlay();
+      render(); drawTimeline(); drawOverlay(); drawNotes();
       if (S.st.result) makeThumbs();
       // ゴールがまだなら、自動で探す（前に探した動画・自分で教えた動画では探さない。ゴールの絵だけ作る）
       // 記録を読み込んでいるときは探さない（記録から場面を切り出すなら、ゴールは使わない。必要なら「得点を自動で探す」から）
@@ -123,6 +126,7 @@
     if (tt && s !== lastTimeText) { lastTimeText = s; tt.textContent = s; }
     reelTick(t);
     drawTimeline();
+    drawNotes();
     if (!S.running) drawOverlay();
     const sn = $('#syncNow');
     if (sn) sn.textContent = BS.fmtTime(t, true);
@@ -185,6 +189,246 @@
     if (ico && ico.textContent !== mark) ico.textContent = mark;
   }
 
+  /* ---------- 💬 コメント・スタンプ（notes.js） ----------
+     いまの場面に、コメント（文）・スタンプ・タグを入れる。その時刻から数秒（ふつう 5 秒）、映像の上に出る（書き出す動画にも同じ絵で入る）。
+     タグ（ヘルプ・リバウンドなど）は、コメント帳（ほかの動画のコメントも）でさがせて、YouTube・バスケ・グロウで調べられる */
+  const noteList = () => NT.cleanAll(S.st && S.st.notes);
+  function drawNotes() {
+    const cv = $('#noteCanvas');
+    if (!cv) return;
+    const r = cv.getBoundingClientRect();
+    const dpr = root.devicePixelRatio || 1;
+    if (cv.width !== Math.round(r.width * dpr) || cv.height !== Math.round(r.height * dpr)) { cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); }
+    const g = cv.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, r.width, r.height);
+    if (!S.media || !S.media.ready || S.marking) return;
+    const notes = noteList();
+    if (!notes.length) return;
+    // 映像の見えているところ（まわりの黒い帯をのぞく）に、書き出す動画と同じ絵を描く
+    const W = S.media.width, H = S.media.height, k = Math.min(r.width / W, r.height / H);
+    NT.draw(g, W * k, H * k, notes, now(), (r.width - W * k) / 2, (r.height - H * k) / 2);
+  }
+  function notesChanged(msg) {
+    S.noteOut = null;
+    save(); render(); drawTimeline(); drawNotes();
+    if (msg) BS.ui.toast(msg, 'ok', 2600);
+  }
+  /* 入れる・直す小窓（n：直すコメント。null なら、いまの場面に新しく） */
+  function openNote(n) {
+    if (!S.media || !S.media.ready) { BS.ui.toast('先に動画を選んでください', 'warn'); return; }
+    if (S.exporting) return;
+    if (S.reel.active) stopReel(true);
+    pause();
+    const edit = !!n;
+    const t = edit ? n.t : Math.round(now() * 100) / 100;
+    const f = edit ? { text: n.text, stamps: n.stamps.slice(), tags: n.tags.slice(), dur: n.dur, free: '' } : { text: '', stamps: [], tags: [], dur: NT.DUR, free: '' };
+    const body = h('div', { class: 'notedlg' });
+    const draw = () => {
+      body.innerHTML = '';
+      const usedTags = NT.tagCounts(BS.store.book()).map((x) => x.tag).filter((w) => !NT.TAGS.includes(w)).slice(0, 8);
+      body.append(
+        h('p', { class: 'note' }, `動画 ${BS.fmtTime(t, true)} から ${f.dur} 秒、映像の上に出ます（書き出す動画にも入ります）。`),
+        h('div', { class: 'stamps', role: 'group', 'aria-label': 'スタンプ' }, NT.STAMPS.map((x) => h('button', { class: 'stamp' + (f.stamps.includes(x.s) ? ' on' : ''), dataset: { stamp: x.s }, 'aria-pressed': f.stamps.includes(x.s) ? 'true' : 'false',
+          onclick: () => { f.stamps = f.stamps.includes(x.s) ? f.stamps.filter((y) => y !== x.s) : f.stamps.concat([x.s]).slice(-6); draw(); } }, h('span', { class: 'se' }, x.s), h('small', null, x.l)))),
+        h('textarea', { id: 'noteText', class: 'notetext', rows: 2, maxlength: NT.MAX_TEXT, placeholder: 'コメント（なくてよい。「#ヘルプ」のように書くとタグになります）', oninput: (e) => { f.text = e.target.value; } }, f.text),
+        h('div', { class: 'frow' }, h('span', { class: 'flab' }, 'タグ'),
+          NT.TAGS.concat(usedTags).concat(f.tags.filter((w) => !NT.TAGS.includes(w) && !usedTags.includes(w))).map((w) => h('button', { class: 'fchip' + (f.tags.includes(w) ? ' on' : ''), dataset: { ntag: w },
+            onclick: () => { f.tags = f.tags.includes(w) ? f.tags.filter((y) => y !== w) : f.tags.concat([w]); draw(); } }, '#' + w)),
+          h('input', { id: 'noteFree', class: 'notefree', type: 'text', maxlength: 20, placeholder: '＋ ほかのタグ', value: f.free, oninput: (e) => { f.free = e.target.value; },
+            onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); const w = NT.cleanTag(f.free); if (w && !f.tags.includes(w)) f.tags.push(w); f.free = ''; draw(); } } })),
+        h('div', { class: 'frow' }, h('span', { class: 'flab' }, '出す長さ'),
+          NT.DURS.map((d) => h('button', { class: 'fchip' + (f.dur === d ? ' on' : ''), dataset: { ndur: String(d) }, onclick: () => { f.dur = d; draw(); } }, `${d} 秒`))));
+      const ta = body.querySelector('#noteText');
+      if (ta) ta.value = f.text;
+    };
+    draw();
+    const buttons = [{ label: 'やめる' }];
+    if (edit) buttons.push({ label: '🗑 消す', cls: 'danger', onClick: () => { removeNote(n.id); } });
+    buttons.push({ label: edit ? '✓ 直す' : '💬 入れる', cls: 'primary', onClick: () => saveNote(n, t, f) });
+    BS.ui.modal({ title: edit ? '💬 コメント・スタンプを直す' : '💬 この場面にコメント・スタンプ', body, buttons });
+    const ok = $('#modal .modal-foot .btn.primary');
+    if (ok) ok.id = 'noteOk';
+    setTimeout(() => { const ta = $('#noteText'); if (ta && !edit && !(root.matchMedia && root.matchMedia('(pointer: coarse)').matches)) ta.focus(); }, 30);
+  }
+  function saveNote(n, t, f) {
+    const free = NT.cleanTag(f.free);
+    const tags = f.tags.concat(free && !f.tags.includes(free) ? [free] : []);
+    const cand = NT.clean({ id: n ? n.id : NT.nextId(S.st.notes), t, dur: f.dur, text: String(f.text || '').trim(), stamps: f.stamps, tags, at: n ? n.at : Date.now() });
+    if (!cand) { BS.ui.toast('コメントを書くか、スタンプを選んでください', 'warn'); return false; }
+    const list = (S.st.notes || []).filter((x) => !n || x.id !== n.id);
+    list.push(cand);
+    S.st.notes = list;
+    notesChanged(n ? 'コメントを直しました' : `入れました：動画 ${BS.fmtTime(t, true)} から ${cand.dur} 秒`);
+    return true;
+  }
+  function removeNote(id) {
+    S.st.notes = (S.st.notes || []).filter((x) => x.id !== id);
+    notesChanged('コメントを消しました');
+  }
+  function playNote(n) {
+    const segs = NT.segments([n], duration());
+    if (!segs.length) return;
+    startReel([Object.assign(segs[0], { kind: 'note', label: noteTitle(n), team: null, n: 1, total: 1 })], null, 'コメントの場面');
+  }
+  const noteTitle = (n) => `${n.stamps.join('')}${n.stamps.length && n.text ? ' ' : ''}${n.text || NT.stampLabel(n.stamps[0])}`.slice(0, 40);
+  function playNoteReel() {
+    const notes = noteList();
+    const segs = NT.segments(notes, duration());
+    if (!segs.length) return;
+    startReel(segs.map((seg, i) => Object.assign(seg, { kind: 'note', label: noteTitle(notes.find((n) => n.id === seg.ids[0])), team: null, n: i + 1, total: segs.length })), null, 'コメントの場面');
+  }
+  /* 文字でコピー（LINE などに貼って、コーチに見てもらう・しつもんする） */
+  function copyNotes() {
+    const text = NT.toText(noteList(), (t) => BS.fmtTime(t), `【${S.st.name || '動画'}】のコメント`);
+    const done = () => BS.ui.toast('コメントを文字でコピーしました（LINE などに貼れます）', 'ok', 3500);
+    const fallback = () => {
+      const ta = h('textarea', { style: { position: 'fixed', left: '-9999px', top: '0' } });
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      let okc = false; try { okc = document.execCommand('copy'); } catch (e) { okc = false; }
+      ta.remove();
+      if (okc) done(); else BS.ui.modal({ title: '📋 コメント（文字）', body: h('textarea', { class: 'notecopy', rows: 8, readonly: true }, text), buttons: [{ label: 'とじる', cls: 'primary' }] });
+    };
+    try { if (root.navigator && navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(done, fallback); return; } } catch (e) { /* 次へ */ }
+    fallback();
+  }
+  function notesCard() {
+    const notes = noteList();
+    const card = h('section', { class: 'card step notescard', id: 'notesCard' },
+      h('div', { class: 'step-h' }, h('span', { class: 'num', 'aria-hidden': 'true' }, '💬'), h('b', null, 'コメント・スタンプ'), h('small', null, notes.length ? `${notes.length}件` : '')));
+    card.append(h('div', { class: 'row' },
+      h('button', { class: 'btn primary', id: 'btnNoteAdd', disabled: !!S.exporting, onclick: () => openNote(null) }, `💬 この場面にコメント（動画 ${BS.fmtTime(now())}）`),
+      h('button', { class: 'btn small', id: 'btnBook', onclick: () => openBook('', null) }, '🔎 コメント帳')));
+    if (!notes.length) {
+      card.append(h('p', { class: 'note' }, '映像を止めて押すと、その場面にコメント・スタンプ（👍 いいね・❗ ここ大事・❓ しつもん など）・タグ（ヘルプ・リバウンドなど）を入れられます。その時刻から数秒、映像の上に出て、「動画にする」で書き出す動画にも入ります。'));
+      return card;
+    }
+    const box = h('div', { class: 'notelist', id: 'noteList' });
+    notes.forEach((n) => {
+      const row = h('div', { class: 'noterow', dataset: { id: 'N' + n.id } },
+        h('button', { class: 'nt', title: 'この時刻へ', onclick: () => seek(n.t) }, BS.fmtTime(n.t)),
+        h('div', { class: 'nb' },
+          h('div', { class: 'ntext' }, n.stamps.length ? h('span', { class: 'nst' }, n.stamps.join('')) : null, n.text ? ' ' + n.text : ''),
+          n.tags.length ? h('div', { class: 'ntags' }, n.tags.map((w) => h('button', { class: 'ntag', dataset: { tag: w }, title: `「${w}」のコメントをさがす・調べる`, onclick: () => openBook('', w) }, '#' + w))) : null),
+        h('div', { class: 'cops' },
+          h('button', { class: 'btn small', title: 'この場面を見る（コメントの 3 秒前から）', onclick: () => playNote(n) }, '▶'),
+          h('button', { class: 'btn small', title: '直す', dataset: { noteedit: n.id }, disabled: !!S.exporting, onclick: () => openNote(n) }, '✎'),
+          h('button', { class: 'btn small', title: '消す', dataset: { notedel: n.id }, disabled: !!S.exporting, onclick: () => removeNote(n.id) }, '🗑')));
+      box.append(row);
+    });
+    card.append(box);
+    const segs = NT.segments(notes, duration());
+    card.append(h('div', { class: 'row acts' },
+      h('button', { class: 'btn', id: 'btnNoteReel', disabled: !!S.exporting, onclick: playNoteReel }, `▶ コメントの場面を続けて見る（${segs.length}）`),
+      h('button', { class: 'btn good', id: 'btnNoteExport', disabled: !!S.exporting, onclick: doNoteExport }, '🎬 コメントの場面を動画にする'),
+      h('button', { class: 'btn small', id: 'btnNoteCopy', onclick: copyNotes }, '📋 文字でコピー')));
+    card.append(h('label', { class: 'switch' }, h('input', { type: 'checkbox', id: 'noteBurn', checked: S.st.noteBurn !== false, onchange: (e) => { S.st.noteBurn = e.target.checked; save(); } }),
+      ' 「動画にする」で書き出す動画に、コメント・スタンプを入れる'));
+    card.append(noteExportBox());
+    card.append(h('p', { class: 'note' }, 'コーチに見てもらうときは、「🎬 コメントの場面を動画にする」で作った動画や「📋 文字でコピー」を、LINE・BAND で送れます（❓ しつもん のスタンプが目印になります）。'));
+    return card;
+  }
+
+  /* 🔎 コメント帳：このブラウザにためてきたコメント（ほかの動画のものも）を、ことば・タグでさがす。
+     さがしたことば・タグは、YouTube（検索）・バスケ・グロウ（バスケ育成アプリのずかん）で調べられる */
+  function openBook(q, tag) {
+    const st = S.openBook = { q: q || '', tag: tag || null };
+    const input = h('input', { id: 'bookQ', class: 'bookq', type: 'search', placeholder: 'ことばでさがす（例：ヘルプ、リバウンド、しつもん）', value: st.q, oninput: () => { st.q = input.value; st.tag = null; upd(); } });
+    const tagRow = h('div', { class: 'frow booktags', id: 'bookTags' });
+    const linkRow = h('div', { class: 'booklinks', id: 'bookLinks' });
+    const count = h('p', { class: 'note', id: 'bookCount' });
+    const list = h('div', { class: 'booklist', id: 'bookList' });
+    const upd = () => {
+      const book = BS.store.book();
+      if (S.key) { const cur = noteList(); if (cur.length) book[S.key] = { name: S.st.name, at: Date.now(), notes: cur }; else delete book[S.key]; }      // いまの動画は、いちばん新しい中身で
+      const tags = NT.tagCounts(book);
+      tagRow.innerHTML = '';
+      // （append に配列を渡すと文字になるので、ひとつずつ渡す）
+      const chips = tags.length ? tags.slice(0, 30).map((x) => h('button', { class: 'fchip' + (st.tag === x.tag ? ' on' : ''), dataset: { btag: x.tag }, onclick: () => { st.tag = st.tag === x.tag ? null : x.tag; if (st.tag) { st.q = ''; input.value = ''; } upd(); } }, '#' + x.tag, h('small', null, String(x.n))))
+        : [h('span', { class: 'note' }, 'まだタグがありません')];
+      tagRow.append(h('span', { class: 'flab' }, 'タグ'), ...chips);
+      const word = st.tag || st.q.trim();
+      linkRow.innerHTML = '';
+      if (word) {
+        linkRow.append(h('span', { class: 'note' }, `「${word}」を調べる：`),
+          h('a', { class: 'btn small', id: 'bookYt', href: NT.youtubeUrl(word), target: '_blank', rel: 'noopener' }, '▶ YouTube'),
+          h('a', { class: 'btn small', id: 'bookGrow', href: NT.growUrl(word), target: '_blank', rel: 'noopener' }, '📘 バスケ・グロウ'));
+      }
+      const res = NT.search(book, st.q, st.tag);
+      count.textContent = Object.keys(book).length ? `${res.length}件${res.length > 100 ? '（はじめの 100 件）' : ''}` : 'まだコメントがありません。映像を止めて「💬 コメント」で入れると、ここにたまっていきます。';
+      list.innerHTML = '';
+      res.slice(0, 100).forEach((r) => {
+        const here = r.key === S.key;
+        list.append(h('div', { class: 'bookrow' + (here ? ' here' : ''), dataset: { key: r.key, id: r.id } },
+          h('div', { class: 'bkv' }, h('b', null, here ? 'この動画' : (r.name || '別の動画')), ` ${BS.fmtTime(r.t)}`),
+          h('div', { class: 'ntext' }, r.stamps.length ? h('span', { class: 'nst' }, r.stamps.join('')) : null, r.text ? ' ' + r.text : ''),
+          r.tags.length ? h('div', { class: 'ntags' }, r.tags.map((w) => h('button', { class: 'ntag', onclick: () => { st.tag = w; st.q = ''; input.value = ''; upd(); } }, '#' + w))) : null,
+          here ? h('button', { class: 'btn small', onclick: () => { BS.ui.closeModal(); const n = noteList().find((x) => x.id === r.id); if (n) playNote(n); } }, '▶ 見る')
+            : h('small', { class: 'note' }, 'その動画を開くと見られます')));
+      });
+    };
+    upd();
+    BS.ui.modal({ title: '🔎 コメント帳', body: h('div', { class: 'book' }, input, tagRow, linkRow, count, list), cls: 'bookcard', buttons: [{ label: 'とじる', cls: 'primary' }], onClose: () => { S.openBook = null; } });
+  }
+
+  /* コメントの場面を動画にする（コメントの 3 秒前から、出し終わって 1 秒後まで。重なるものは1つに。コメント・スタンプ入り） */
+  async function doNoteExport() {
+    if (S.exporting || !S.media) return;
+    stopReel(true);
+    cancelMarking();
+    const notes = noteList();
+    const segs = NT.segments(notes, duration());
+    if (!segs.length) { BS.ui.toast('コメントがありません', 'warn'); return; }
+    const clips = segs.map((seg, i) => ({ t0: seg.t0, t1: seg.t1, label: '💬 ' + noteTitle(notes.find((n) => n.id === seg.ids[0])), sub: `コメント ${i + 1} / ${segs.length}・動画 ${BS.fmtTime(seg.at)}`, color: '#facc15' }));
+    const ctrl = new AbortController();
+    S.exporting = { kind: 'note', ctrl };
+    S.noteOut = null;
+    render();
+    const name = (S.st.name || '').replace(/\.[^.]+$/, '');
+    try {
+      const res = await BS.exportReel(S.media, clips, {
+        title: ['💬 コメントの場面', name || '試合の動画', `${segs.length}場面`], end: [`💬 コメントの場面 ${segs.length}場面`, name || ''],
+        accent: '#facc15', captions: S.st.captions !== false, cards: true, notes
+      }, (frac, lab) => {
+        const bar = $('#expBar'), el = $('#expLabel');
+        if (bar) bar.style.width = (frac * 100).toFixed(1) + '%';
+        if (el) el.textContent = `${lab}（${Math.round(frac * 100)}%）`;
+      }, ctrl.signal);
+      if (res) {
+        res.name = `${baseName()}_コメント_${segs.length}場面.${res.ext}`;
+        S.noteOut = res;
+        BS.ui.toast('動画ができました。「⬇ 保存する」で保存できます', 'ok', 5000);
+      } else BS.ui.toast('書き出しを中止しました', 'warn');
+    } catch (err) {
+      console.error('[export]', err);
+      BS.ui.toast('書き出しに失敗しました：' + err.message, 'err', 8000);
+    }
+    S.exporting = null;
+    render();
+  }
+  function noteExportBox() {
+    const box = h('div', { class: 'exportbox', id: 'noteExportBox' });
+    const sup = BS.exportSupport();
+    const exp = S.exporting;
+    if (!sup) { box.append(h('p', { class: 'note' }, 'このブラウザは動画の書き出しに対応していません（Chrome・Edge・Safari の新しい版で使えます）。')); return box; }
+    if (exp && exp.kind === 'note') {
+      box.append(h('b', null, '🎬 コメントの場面を動画にしています… '), h('span', { id: 'expLabel', class: 'note' }, ''),
+        h('div', { class: 'progress' }, h('i', { id: 'expBar' })),
+        h('p', { class: 'note' }, '実際の長さの時間がかかります。このタブを表示したままにしてください（別のタブにすると止まります）。'),
+        h('button', { class: 'btn small danger', onclick: () => exp.ctrl.abort() }, '中止'));
+      return box;
+    }
+    const r = S.noteOut;
+    if (!r) { box.hidden = true; return box; }
+    box.append(h('div', { class: 'row' }, h('b', null, '✅ 動画ができました '),
+      h('span', { class: 'note' }, `${r.ext.toUpperCase()}・${(r.blob.size / 1048576).toFixed(1)}MB・約${Math.round(r.seconds)}秒${r.audio ? '' : '・音声なし'}`)),
+      h('video', { src: r.url, controls: true, playsinline: true, class: 'outvideo' }),
+      h('div', { class: 'row' },
+        h('a', { class: 'btn primary', href: r.url, download: r.name, id: 'btnNoteDownload' }, '⬇ 保存する'),
+        h('span', { class: 'note' }, r.ext === 'webm' ? 'WebM 形式です。iPhone で見るときは、MP4 に変換が必要なことがあります。' : 'MP4 形式です。スマホ・LINE でも見られます。')));
+    return box;
+  }
+
   /* ---------- 画面（右のパネル） ---------- */
   function render() {
     const P = $('#panel');
@@ -196,6 +440,7 @@
       // 記録から切り出す：記録 → 時刻あわせ → 場面。自動の解析（ゴール）は、たたんだ中に
       P.append(stepVideo(), logCard(), syncCard());
       if (synced()) P.append(logClipsCard());
+      P.append(notesCard());
       const d = h('details', { class: 'setupfold', id: 'autoFold' }, h('summary', null, '得点を自動で探す（映像の解析）・チームの色'),
         h('p', { class: 'note' }, '記録がなくても、ボールがリングを通った場面を映像から探せます。探した得点は、記録との時刻あわせにも使えます。'),
         hasRes && !S.running ? resultsCard() : null, stepTeams(), stepGoals(), stepRun());
@@ -203,14 +448,16 @@
       d.querySelector('summary').addEventListener('click', () => { S.openAuto = !d.open; });
       P.append(d);
     } else if (hasRes && !S.running) {
-      P.append(resultsCard());
+      P.append(resultsCard(), notesCard());
       const d = h('details', { class: 'setupfold' }, h('summary', null, '設定を変える（動画・チームの色・ゴール・後半）'),
         stepVideo(), stepTeams(), stepGoals(), stepRun());
       d.open = !!S.openSetup || !!S.marking;
       d.querySelector('summary').addEventListener('click', () => { S.openSetup = !d.open; });
       P.append(d);
     } else {
-      P.append(stepVideo(), stepTeams(), stepGoals(), stepRun());
+      P.append(stepVideo());
+      if (S.media) P.append(notesCard());
+      P.append(stepTeams(), stepGoals(), stepRun());
     }
     P.scrollTop = keepScroll;
   }
@@ -692,10 +939,11 @@
 
   /* ---------- 続けて再生 ---------- */
   function segLabel(seg) {
-    if (seg.kind === 'log') return seg.label;
+    if (seg.kind === 'log' || seg.kind === 'note') return seg.label;
     return seg.maybe ? '🤔 たぶん入った？' : seg.rec ? `📋 記録 ${seg.n} / ${seg.total}` : `${ICON[seg.team]} ${WHAT[seg.team]} ${seg.n} / ${seg.total}`;
   }
   function segSub(seg) {
+    if (seg.kind === 'note') return `💬 コメント・動画 ${BS.fmtTime(seg.at)}${seg.total > 1 ? `・${seg.n} / ${seg.total}` : ''}`;
     if (seg.kind === 'log') return `${TL.periodLabel(seg.period)}・タップ記録 ${BS.fmtTime(seg.t)}${seg.total > 1 ? `・${seg.n} / ${seg.total}` : ''}`;
     return `${seg.half ? (seg.half === 2 ? '後半・' : '前半・') : ''}${BS.fmtTime(seg.at)}`;
   }
@@ -760,6 +1008,7 @@
     badge.append(h('b', null, segLabel(seg)), h('span', null, segSub(seg)));
     badge.hidden = false;
     document.querySelectorAll('.clip, .rec, .mb').forEach((r) => r.classList.toggle('playing', seg.ids.includes(r.dataset.id)));
+    document.querySelectorAll('.noterow').forEach((r) => r.classList.toggle('playing', seg.kind === 'note' && seg.ids.includes(r.dataset.id.slice(1))));
   }
 
   /* ---------- 動画にする ---------- */
@@ -769,7 +1018,7 @@
     const sup = BS.exportSupport();
     const exp = S.exporting;
     if (!sup) { box.append(h('p', { class: 'note' }, 'このブラウザは動画の書き出しに対応していません（Chrome・Edge・Safari の新しい版で使えます）。続けて再生は使えます。')); return box; }
-    if (exp && exp.kind !== 'log') {
+    if (exp && !exp.kind) {          // （得点の書き出し。タップ記録・コメントの書き出しは、それぞれの欄に出す）
       box.append(h('b', null, `🎬 ${exp.single ? 'この場面を' : WHAT[exp.team] + 'を'}動画にしています… `), h('span', { id: 'expLabel', class: 'note' }, ''),
         h('div', { class: 'progress' }, h('i', { id: 'expBar' })),
         h('p', { class: 'note' }, '実際の長さの時間がかかります。このタブを表示したままにしてください（別のタブにすると止まります）。'),
@@ -804,7 +1053,7 @@
     try {
       const res = await BS.exportReel(S.media, clips, {
         title, end: [`${WHAT[team]}ところ ${segs.length}シーン`, `${teamTag(0)} vs ${teamTag(1)}`],
-        accent: teamColor(team), captions: S.st.captions !== false, cards: !single
+        accent: teamColor(team), captions: S.st.captions !== false, cards: !single, notes: S.st.noteBurn !== false ? noteList() : []
       }, (frac, label) => {
         const bar = $('#expBar'), lab = $('#expLabel');
         if (bar) bar.style.width = (frac * 100).toFixed(1) + '%';
@@ -1647,7 +1896,7 @@
     try {
       const res = await BS.exportReel(S.media, clips, {
         title: [ft, vs, `${segs.length}シーン`], end: [`${ft} ${segs.length}シーン`, vs],
-        accent: teamColor(segs[0].team), captions: S.st.captions !== false, cards: !single
+        accent: teamColor(segs[0].team), captions: S.st.captions !== false, cards: !single, notes: S.st.noteBurn !== false ? noteList() : []
       }, (frac, lab) => {
         const bar = $('#expBar'), el = $('#expLabel');
         if (bar) bar.style.width = (frac * 100).toFixed(1) + '%';
@@ -2257,6 +2506,11 @@
         g.strokeStyle = '#facc15'; g.lineWidth = 1.5; g.strokeRect(x - 2.5, y, 5, 12);
       });
     }
+    // コメント・スタンプ（上のふちに、黄色の小さな三角）
+    noteList().forEach((n) => {
+      const xn = X(n.t);
+      g.fillStyle = '#facc15'; g.beginPath(); g.moveTo(xn - 4, 0); g.lineTo(xn + 4, 0); g.lineTo(xn, 6); g.closePath(); g.fill();
+    });
     // 再生位置
     const x = X(now());
     g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, Hh); g.stroke();
@@ -2287,6 +2541,8 @@
         h('p', null, '試合中に「バスケ タップ記録」でプレーをタップしておくと、その記録（書き出したファイル）を、上の「📲 タップ記録」から読み込めます。動画の中の1つの場面（ティップオフなど）で時刻を合わせると、記録したプレーの場面を、チーム・プレー・選手で選んで、続けて見たり1本の動画にしたりできます。ゴールの指定や解析はいりません。'),
         h('p', null, '別のカメラで撮った動画で場面がずれるときは、③ の「↔ 指でずらして合わせる」（④ の各場面の「↔」でも）。場面の枠を目盛りの上で指で左右に動かすと、記録した瞬間のコマが出るので、プレーの瞬間で指を離して「これで合わせる」。全部の場面が同じだけずれます。'),
         h('p', null, '1場面の長さは、ふつう「タップした瞬間の前 10 秒・後 2 秒」（リバウンドと★は前 5 秒）。④ の「⏱ プレーごとに長さを変える」で変えられます。記録にない場面は、映像を止めて「＋ この瞬間を場面に足す」。'),
+        h('h4', null, '💬 コメント・スタンプ'),
+        h('p', null, '映像を止めて「💬 コメント」を押すと、その場面にコメント・スタンプ（👍 いいね・❗ ここ大事・❓ しつもん など）・タグ（ヘルプ・リバウンドなど）を入れられます。その時刻から 5 秒（3・8 秒も）映像の上に出て、「動画にする」で書き出す動画にも入ります。「🎬 コメントの場面を動画にする」で、コメントのところだけを1本に。「🔎 コメント帳」で、ほかの動画のコメントもことば・タグでさがせて、YouTube・バスケ・グロウで調べられます。コーチに見てもらうときは、できた動画や「📋 文字でコピー」を LINE・BAND で送ってください。'),
         h('h4', null, 'コマ送り・写真'),
         h('p', null, '映像の下の「◂ コマ ▸」で1コマずつ（押し続けると続けて）。「📷 写真」で、いまのコマを写真にできます（iPhone・iPad は「画像を保存」で写真アプリへ）。'),
         h('h4', null, 'どちらのチームの得点か'),
@@ -2347,6 +2603,7 @@
     holdRepeat($('#btnPrevF'), () => stepFrame(-1));
     holdRepeat($('#btnNextF'), () => stepFrame(1));
     $('#btnShot').addEventListener('click', snapshot);
+    $('#btnNote').addEventListener('click', () => openNote(null));
     $('#speedSel').addEventListener('change', (e) => { if (S.media) S.media.rate = Number(e.target.value); });
     $('#reelPrev').addEventListener('click', () => stepReel(-1));
     $('#reelStop').addEventListener('click', () => stopReel());
@@ -2368,7 +2625,7 @@
       if (js) readLogFile(js);
       if (!f && !js) BS.ui.toast('動画ファイル（MP4・MOV など）か、記録のファイル（.json）をドロップしてください', 'err');
     });
-    root.addEventListener('resize', () => { drawOverlay(); drawTimeline(); if (S.adj) adjFrame(); });
+    root.addEventListener('resize', () => { drawOverlay(); drawTimeline(); drawNotes(); if (S.adj) adjFrame(); });
     root.addEventListener('beforeunload', (e) => { if (S.running || S.exporting) { e.preventDefault(); e.returnValue = ''; } });
     // 閉じる・裏に回るときは、待たずに保存する（保存は 0.15 秒まとめてから書くため）
     const flush = () => { if (S.saveTimer) { clearTimeout(S.saveTimer); S.saveTimer = 0; if (S.key) BS.store.save(S.key, S.st); } };
@@ -2386,7 +2643,8 @@
   }
 
   BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, findGoals, cancelFind, list, clipsFor, maybes: () => C.maybes(S.st.result, setupOf(), S.st.edits, list()), record: recRows, promote, unpromote, judge, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs,
-    loadLog, setLog, removeLog, logClips, syncAt, nudge, playLogReel, doLogExport, syncFromMeta, syncFromShots, openTapVideo, cameraSync, openAdjust, openAddScene, stepFrame, snapshot };
+    loadLog, setLog, removeLog, logClips, syncAt, nudge, playLogReel, doLogExport, syncFromMeta, syncFromShots, openTapVideo, cameraSync, openAdjust, openAddScene, stepFrame, snapshot,
+    openNote, openBook, doNoteExport, noteList };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }

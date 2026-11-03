@@ -76,7 +76,8 @@
   }
 
   /* media: BS.createVideoMedia、clips: [{ t0, t1, label, sub, color }]
-     opts: { title: [行…], end: [行…], accent, captions（false で札なし）, cards（false で最初と最後の画面なし）, audio（false で音なし） }
+     opts: { title: [行…], end: [行…], accent, captions（false で札なし）, cards（false で最初と最後の画面なし）, audio（false で音なし）,
+             notes（コメント・スタンプ。notes.js の形。その動画の時刻から数秒、画面の下に描く） }
      onProgress(0〜1, 文字) / 戻り値 { blob, url, mime, ext, seconds, audio }（中止したら null） */
   async function exportReel(media, clips, opts, onProgress, signal) {
     opts = opts || {};
@@ -152,6 +153,7 @@
           if (k < 0.25) drawFade(ctx, W, H, 1 - k / 0.25);
           if (left < 0.25) drawFade(ctx, W, H, 1 - left / 0.25);
           if (opts.captions !== false) drawCaption(ctx, W, H, c, opts);
+          if (opts.notes && opts.notes.length && BS.notes) BS.notes.draw(ctx, W, H, opts.notes, vt);      // コメント・スタンプ（その時刻から数秒）
           done = TITLE + acc + Math.min(Math.max(0, k), len);
           report(`${i + 1} / ${clips.length}`);
           await frame();

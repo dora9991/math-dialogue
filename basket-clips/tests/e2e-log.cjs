@@ -383,6 +383,72 @@ const anchors = (page) => page.evaluate(() => BS.app.S.st.sync && BS.app.S.st.sy
       ok((await page.textContent('#toasts')).includes('640×360'), 'そのままの大きさ（640×360）で保存と知らせる');
     }
 
+    console.log('\n■ 💬 コメント・スタンプ（その場面から 5 秒、動画の中に出る・書き出す動画にも入る）');
+    {
+      const notes = () => page.evaluate(() => BS.app.noteList());
+      const inkAt = async (t) => {
+        await page.evaluate((x) => BS.app.seek(x), t); await sleep(350);
+        return page.evaluate(() => { const cv = document.querySelector('#noteCanvas'); const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 3; i < d.length; i += 16) if (d[i] > 0) n++; return n; });
+      };
+      ok(await page.$('#notesCard') && (await page.textContent('#notesCard')).includes('この場面にコメント'), '「💬 コメント・スタンプ」の欄（まだコメントなし）');
+      await page.evaluate(() => BS.app.seek(30)); await sleep(300);
+      await page.click('#btnNote');
+      await page.waitForSelector('#noteOk');
+      ok((await page.textContent('.notedlg')).includes('動画 0:30.0 から 5 秒'), '映像の下の「💬 コメント」：いまの場面（動画 0:30.0）から 5 秒');
+      await page.click('.stamp[data-stamp="👍"]');
+      await page.click('.stamp[data-stamp="❓"]');
+      await page.fill('#noteText', 'ヘルプが遅い #ヘルプ');
+      await page.click('.fchip[data-ntag="リバウンド"]');
+      await page.click('#noteOk');
+      let ns = await notes();
+      ok(ns.length === 1 && ns[0].t === 30 && ns[0].dur === 5 && ns[0].stamps.join('') === '👍❓' && ns[0].tags.join() === 'リバウンド,ヘルプ' && ns[0].text === 'ヘルプが遅い #ヘルプ', '入れた：0:30・5 秒・👍❓・「ヘルプが遅い #ヘルプ」・タグ（リバウンド・ヘルプ）', ns);
+      const on = await inkAt(31), off = await inkAt(36.5);
+      ok(on > 200 && off === 0, '映像の上に、その時刻から 5 秒だけ出る（0:31 で出ている・0:36.5 で消える）', { on, off });
+      ok((await page.textContent('#noteList')).includes('ヘルプが遅い') && await page.$('#noteList .ntag[data-tag="ヘルプ"]'), '一覧に出る（タグは押すと、さがす・調べる）');
+      await page.click('#noteList [data-noteedit="n1"]');
+      await page.click('.fchip[data-ndur="8"]');
+      await page.click('#noteOk');
+      ok((await notes())[0].dur === 8 && (await inkAt(37)) > 200, '「✎」で直す：出す長さを 8 秒に（0:37 でも出ている）');
+      await page.click('#noteList .noterow button[title^="この場面を見る"]');
+      await sleep(500);
+      R = await page.evaluate(() => ({ active: BS.app.S.reel.active, seg: BS.app.S.reel.list[0], badge: document.querySelector('#ovBadge').textContent }));
+      ok(R.active && R.seg.t0 === 27 && R.seg.t1 === 39 && R.badge.includes('ヘルプが遅い'), '▶：コメントの 3 秒前から、出し終わって 1 秒後まで（0:27〜0:39）', R.seg);
+      await page.click('#reelStop');
+      await page.evaluate(() => BS.app.seek(60)); await sleep(250);
+      await page.click('#btnNote');
+      await page.click('#noteOk');
+      ok(await page.isVisible('#noteOk') && (await page.textContent('#toasts')).includes('スタンプを選んで'), '何も入れずに押すと、知らせて小窓はそのまま');
+      await page.click('.stamp[data-stamp="👏"]');
+      await page.click('#noteOk');
+      ns = await notes();
+      ok(ns.length === 2 && ns[1].stamps.join('') === '👏' && ns[1].text === '', 'スタンプだけでも入れられる（👏 ナイス）');
+      // コメント帳
+      await page.click('#btnBook');
+      await page.waitForSelector('#bookList');
+      ok((await page.$$('#bookList .bookrow')).length === 2, 'コメント帳：この動画のコメント 2 件');
+      await page.fill('#bookQ', 'へるぷ');
+      ok((await page.$$('#bookList .bookrow')).length === 1 && (await page.getAttribute('#bookYt', 'href')) === 'https://www.youtube.com/results?search_query=' + encodeURIComponent('バスケ へるぷ'), 'ことばでさがす（ひらがなでも「ヘルプ」）・YouTube で調べるリンク');
+      await page.click('#bookTags .fchip[data-btag="リバウンド"]');
+      ok((await page.getAttribute('#bookGrow', 'href')) === 'https://dora9991.github.io/math-dialogue/basket-coach/#q/' + encodeURIComponent('リバウンド') && (await page.$$('#bookList .bookrow')).length === 1, 'タグで絞る・バスケ・グロウ（ずかんで「リバウンド」）へのリンク');
+      await page.click('.modal-foot .btn.primary');
+      // コメントの場面を動画にする（書き出しの絵に、コメントを描いたか）
+      await page.evaluate(() => { const d = BS.notes.draw; window.__nd = 0; BS.notes.draw = function () { const r = d.apply(this, arguments); if (r && arguments.length === 5) window.__nd++; return r; }; });
+      await page.click('#btnNoteExport');
+      await page.waitForFunction(() => BS.app.S.exporting && BS.app.S.exporting.kind === 'note', null, { timeout: 5000 });
+      ok(await page.$('#noteExportBox #expBar') && !(await page.$('#exportBox #expBar')), '書き出している間は、コメントの欄に進み具合');
+      await page.waitForFunction(() => !BS.app.S.exporting, null, { timeout: 90000, polling: 300 });
+      const no = await page.evaluate(() => BS.app.S.noteOut && { size: BS.app.S.noteOut.blob.size, sec: BS.app.S.noteOut.seconds, name: BS.app.S.noteOut.name, drawn: window.__nd });
+      ok(no && no.size > 20000 && no.drawn > 20 && /_コメント_2場面\./.test(no.name), `「🎬 コメントの場面を動画にする」：2 場面・約 ${no && Math.round(no.sec)} 秒・コメント・スタンプを描いたコマ ${no && no.drawn}`, no);
+      const [dln] = await Promise.all([page.waitForEvent('download'), page.click('#btnNoteDownload')]);
+      ok(fs.statSync(await dln.path()).size === no.size, '「⬇ 保存する」で保存できる');
+      await page.click('#btnNoteCopy');
+      await sleep(400);
+      ok((await page.textContent('#toasts')).includes('コピー') || !!(await page.$('.notecopy')), '「📋 文字でコピー」（LINE などに貼る）');
+      if (await page.$('.notecopy')) await page.click('.modal-foot .btn.primary');
+      await page.click('#noteList [data-notedel="n2"]');
+      ok((await notes()).length === 1, '「🗑」で消せる');
+    }
+
     console.log('\n■ 1つの場面を動画にする');
     const first = (await clipsOf(page))[0];
     await page.click('#logList .clip >> nth=0 >> button[title="この場面だけを動画にする"]');
@@ -403,6 +469,7 @@ const anchors = (page) => page.evaluate(() => BS.app.S.st.sync && BS.app.S.st.sy
     await sleep(300);
     a = await anchors(page);
     ok(a && a[0].t === 33 && a[0].v === 46 && (await clipsOf(page)).length === 4, '同じ動画を開くと、記録・時刻あわせ・「得点」の絞り込みが戻る', a);
+    ok((await page.evaluate(() => BS.app.noteList().map((n) => n.text).join())) === 'ヘルプが遅い #ヘルプ', '…コメント・スタンプも戻る');
     await page.click('.fchip[data-fgrp="all"]');
 
     console.log('\n■ 同じ端末で記録した試合から読み込む');
@@ -504,6 +571,14 @@ const anchors = (page) => page.evaluate(() => BS.app.S.st.sync && BS.app.S.st.sy
       await p3.tap('#adjOk');
       const a3 = await p3.evaluate(() => BS.app.S.st.sync.anchors);
       ok(a3.length === 1 && Math.abs(a3[0].v - (12 + d3)) < 1e-6, `「これで合わせる」：記録の 0:00 ＝ 動画の ${a3[0].v}`, a3);
+      await p3.tap('#btnNote');
+      await p3.waitForSelector('#noteOk');
+      const NL = await p3.evaluate(() => {
+        const r = (sel) => { const b = document.querySelector(sel).getBoundingClientRect(); return { l: b.left, r: b.right, b: b.bottom }; };
+        return { iw: innerWidth, ih: innerHeight, sw: document.documentElement.scrollWidth, card: r('.modal-card'), ok: r('#noteOk'), stamps: document.querySelectorAll('.stamp').length, ta: getComputedStyle(document.querySelector('#noteText')).fontSize };
+      });
+      ok(NL.sw === NL.iw && NL.card.l >= 0 && NL.card.r <= NL.iw && NL.ok.b <= NL.ih && NL.stamps === 12 && NL.ta === '16px', 'スマホ：コメントの小窓が画面に収まる（スタンプ 12・文の欄は 16px）', NL);
+      await p3.tap('.modal-foot .btn:not(.primary)');
       ok(errors3.length === 0, 'ページのエラーがない', errors3.slice(0, 3));
       await p3.close();
     }
