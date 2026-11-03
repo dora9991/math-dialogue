@@ -551,17 +551,51 @@ async function measure(page, vid, times) {
       }
     }
 
-    console.log('\n■ 保存できなくなったら（空きが足りない など）、録画を止めて、そこまでを仕上げる');
-    await page.evaluate(() => { const g4 = BT.newGame({ teams: [{ name: 'A' }, { name: 'B' }] }); BT.store.saveGame(g4); BT.app.resume(g4.id); BT.app.start(); });
+    console.log('\n■ 保存がとぎれたとき：つなぎ直して続ける・新しい動画にする。「いっぱい」と出すのは本当にいっぱいのときだけ');
+    await page.evaluate(() => { const g4 = BT.newGame({ teams: [{ name: 'A' }, { name: 'B' }] }); BT.store.saveGame(g4); BT.app.resume(g4.id); BT.app.start(); BT.app.S.camRetry = []; });
     await page.evaluate(() => BT.app.camStart());
     await page.waitForFunction(() => BT.app.S.cam && BT.app.S.cam.rec);
-    await sleep(3500);
-    await page.evaluate(() => { const orig = BT.vstore.putChunk; BT.vstore.putChunk = () => Promise.reject(new Error('QuotaExceededError')); window.__restore = () => { BT.vstore.putChunk = orig; }; });
-    await page.waitForFunction(() => !BT.app.S.cam.rec && BT.app.S.game.videos[0].status === 'done', null, { timeout: 15000 });
-    const qv = await page.evaluate(() => BT.app.S.game.videos[0]);
-    ok((await page.textContent('#lastbar')).includes('録画を止めました') && qv.duration >= 1.5 && !qv.gone, `録画を止めて「録画を止めました：保存できませんでした…」・保存できた所まで（${qv.duration.toFixed(1)} 秒）は動画に`, qv);
+    await sleep(2500);
+    // ① ブラウザに保存のつながりを切られた（iPhone で画面を消した など）：開き直して、そのまま続ける
+    const b0 = await page.evaluate(async () => { const db = await BT.vstore.open(); db.close(); return BT.app.S.cam.seg.bytes; });
+    await sleep(3000);
+    let rs = await page.evaluate(() => ({ rec: !!BT.app.S.cam.rec, n: BT.app.S.game.videos.length, bytes: BT.app.S.cam.seg.bytes, last: document.querySelector('#lastbar').textContent }));
+    ok(rs.rec && rs.n === 1 && rs.bytes > b0 && !/保存|いっぱい|空き/.test(rs.last), `つながりが切れても、つなぎ直して同じ動画のまま録画を続ける（${b0}→${rs.bytes} バイト）・お知らせは出さない`, rs);
+    // ② 保存が一度とぎれた（中断）：そこまでを仕上げて、新しい動画として続ける。「いっぱい」とは言わない
+    await page.evaluate(() => { const orig = BT.vstore.putChunk; let once = true; BT.vstore.putChunk = (...a) => { if (once) { once = false; const e = new Error('The transaction was aborted'); e.name = 'AbortError'; return Promise.reject(e); } return orig(...a); }; window.__restore = () => { BT.vstore.putChunk = orig; }; });
+    await page.waitForFunction(() => BT.app.S.game.videos.length === 2 && BT.app.S.cam.rec, null, { timeout: 15000 });
+    rs = await page.evaluate(() => ({ last: document.querySelector('#lastbar').textContent, v1: BT.app.S.game.videos[0].status }));
+    ok(rs.last.includes('新しい動画として録画を続けています') && !/いっぱい|空きを増やし/.test(rs.last) && rs.v1 === 'done', '一度とぎれたら、そこまでを仕上げて新しい動画で続ける（「いっぱい」「空きを増やして」とは言わない）', rs);
+    await page.evaluate(() => window.__restore());
+    await sleep(3200);
+    // ③ 本当にいっぱい（QuotaExceededError）：このサイトのブラウザの保存場所がいっぱい（iPhone 本体の空きとは別）と言って止める
+    await page.evaluate(() => { BT.app.S.camRetry = []; const orig = BT.vstore.putChunk; BT.vstore.putChunk = () => Promise.reject(new DOMException('The quota has been exceeded.', 'QuotaExceededError')); window.__restore = () => { BT.vstore.putChunk = orig; }; });
+    await page.waitForFunction(() => !BT.app.S.cam.rec && BT.app.S.game.videos.every((v) => v.status === 'done'), null, { timeout: 15000 });
+    const qv = await page.evaluate(() => BT.app.S.game.videos[1]);
+    const ql = await page.textContent('#lastbar');
+    ok(ql.includes('保存場所がいっぱい') && ql.includes('iPhone 本体の空きとは別') && ql.includes('写真に保存') && qv.duration >= 1.5 && !qv.gone, `本当にいっぱいのときだけ「このサイトのブラウザの保存場所がいっぱい（iPhone 本体の空きとは別）…写真に保存して消すと空きます」・保存できた所まで（${qv.duration.toFixed(1)} 秒）は動画に`, { ql, qv });
+    await page.evaluate(() => window.__restore());
+    // ④ 何度も失敗する（容量ではない）：2回まで新しい動画で続けて、それでもだめなら止める。「容量の問題ではありません」
+    await page.evaluate(() => { BT.app.S.camRetry = []; BT.app.S.camErrAt = 0; });
+    await page.evaluate(() => BT.app.camStart());
+    await page.waitForFunction(() => BT.app.S.cam && BT.app.S.cam.rec);
+    const nBefore = await page.evaluate(() => BT.app.S.game.videos.length);
+    await page.evaluate(() => { const orig = BT.vstore.putChunk; BT.vstore.putChunk = () => { const e = new Error('Connection to Indexed Database server lost. Refresh the page to try again'); e.name = 'UnknownError'; return Promise.reject(e); }; window.__restore = () => { BT.vstore.putChunk = orig; }; });
+    await page.waitForFunction(() => !BT.app.S.cam.rec && BT.app.S.cam.state !== 'finishing' && /容量の問題ではありません/.test(document.querySelector('#lastbar').textContent), null, { timeout: 30000 });
+    rs = await page.evaluate((n0) => ({ added: BT.app.S.game.videos.length - n0, last: document.querySelector('#lastbar').textContent }), nBefore);
+    ok(rs.added >= 1 && rs.added <= 3 && !/いっぱい|空きを増やし/.test(rs.last), `何度も失敗するときは、2回まで新しい動画で続けてから止める（「容量の問題ではありません」・新しい動画 ${rs.added} 本）`, rs);
     await page.evaluate(() => window.__restore());
     await page.evaluate(() => BT.app.camClose());
+
+    // 写真に保存：ボタンの名前と、保存したあとの「✓ 保存した」
+    await page.evaluate(() => BT.app.endGame());
+    await page.waitForSelector('.stats');
+    await page.click('.sheet-card header .x');
+    const svLab = await page.textContent('#cover [data-savevid]');
+    ok(/写真に保存|⬇ 保存/.test(svLab), `試合のあと、動画ごとに「${svLab.trim()}」（共有できる端末では「📲 写真に保存」）`);
+    const [dlv] = await Promise.all([page.waitForEvent('download'), page.click('#cover [data-savevid]')]);
+    await page.waitForFunction(() => /保存した/.test(document.querySelector('#cover [data-savevid]').textContent));
+    ok(!!dlv && (await page.evaluate(() => !!BT.app.S.game.videos.find((v) => v.savedAt))), '保存すると「✓ 保存した」になる（試合の記録にも残る）');
 
     console.log('\n■ カメラを使えないとき');
     await page.evaluate(() => { window.__camDeny = true; });

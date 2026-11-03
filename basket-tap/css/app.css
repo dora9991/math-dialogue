@@ -243,6 +243,7 @@ html[data-rot] .sheet-card { max-height: calc(var(--rvw, 100vw) * 0.92); }
 .vitem .vt { display: flex; flex-direction: column; min-width: 0; }
 .vitem .vt small { color: var(--muted); font-size: 12px; }
 .vhead { margin: 10px 0 2px; font-size: 14px; }
+.vitem .btn.done { color: var(--good); border-color: var(--good); }
 
 /* 2つのチーム：左右に並べる（lay-side）か、上下に重ねる（lay-stack）。どちらにするかは js の BT.planLayout が決める
    （すきま・ふちの数字は、core.js の BT.LAYOUT と合わせる） */
