@@ -381,8 +381,11 @@ function caseSteps(n,k,o){
 }
 var FLOW=[{type:'intro',q:'正多面体は、なぜ 5種類 しかないのだろう？',lines:[
   L('<b>正多面体</b>…すべての面が合同な正多角形で、どの頂点にも同じ数の面が集まっている、へこみのない多面体。'),
-  L('1つの<b>頂点</b>に注目して、正多角形のカードを集めていこう。',{cls:'ok'}),
-  L('カードの辺の長さは、どれも同じ。',{cls:'dim'})]}];
+  L('正多面体は、この 5種類 しかない。',{cls:'ok'}),
+  L('図をドラッグすると、好きな向きに回せる。クリックすると大きくなる。',{cls:'dim'})]},
+  {type:'cards',q:'1つの<b>頂点</b>に注目して、正多角形のカードを集めていこう。',lines:[
+  L('使うカードは、この4種類。辺の長さは、どれも同じ。'),
+  L('1つの角の大きさに注目しよう。',{cls:'ok'})]}];
 function addCase(n,k,o){FLOW.push.apply(FLOW,caseSteps(n,k,o));}
 addCase(3,3,{ask:'1つの頂点に、正三角形を 3つ 集めると？'});
 addCase(3,4,{ask:'では、正三角形を 4つ 集めると？'});
@@ -422,8 +425,8 @@ function sceneKey(st){return st.c?st.c.n+'-'+st.c.k:st.type.replace(/\d$/,'');}
 
 function go(i,dir){
   state.idx=i;var st=cur(),key=sceneKey(st),now=performance.now();
-  if(key!==lastKey){snap=true;fadeT=now;lastKey=key;}
-  dragT=0;dragP=0;autoT=0;
+  if(key!==lastKey){snap=true;fadeT=now;lastKey=key;snapGal=true;}
+  dragT=0;dragP=0;autoT=0;galFocus=-1;galDrag=null;
   if(dir>=0&&st.dur&&!RM){state.value=0;state.playing=true;state.done=false;state.t0=now;}
   else{state.value=st.type==='tryfold'?0:1;state.playing=false;state.done=true;}
   renderPanel();renderBanner();syncSlider(true);
@@ -481,7 +484,7 @@ function updateTable(){
 function renderPanel(){
   var st=cur(),tag=$('tag');
   if(st.c){var P=POLY[st.c.n];tag.innerHTML='<i class="sw" style="--c:'+P.css+'"></i>'+P.name+' × '+st.c.k;}
-  else tag.textContent=st.type==='intro'?'考えよう':'まとめ';
+  else tag.textContent=st.type==='intro'||st.type==='cards'?'考えよう':'まとめ';
   $('q').innerHTML=st.q;
   $('lines').innerHTML=st.lines.map(function(l){return '<p class="'+(l.cls||'')+(l.later?' later':'')+'">'+l.h+'</p>';}).join('');
   panel.classList.toggle('done',state.done);
@@ -496,8 +499,8 @@ function renderPanel(){
   $('next').disabled=main&&state.idx===FLOW.length-1;
   var anim=!!st.dur&&st.type!=='summary1';
   $('slbox').hidden=!anim;$('sllabel').textContent=st.slider||'';
-  $('hint').hidden=!st.c;
-  $('hint').textContent=st.pull?'頂点を上にドラッグで折り曲げる／まわりをドラッグで回す':'ドラッグで回せます（ダブルクリックでもどす）';
+  $('hint').hidden=!st.c&&!isGallery(st);
+  $('hint').textContent=isGallery(st)?'ドラッグで好きな向きに回す／クリックで大きく':st.pull?'頂点を上にドラッグで折り曲げる／まわりをドラッグで回す':'ドラッグで回せます（ダブルクリックでもどす）';
   cv.setAttribute('aria-label',(st.c?POLY[st.c.n].name+'を'+st.c.k+'つ。':'')+st.q.replace(/<[^>]+>/g,''));
   lastMeter='';
 }
@@ -784,19 +787,68 @@ function drawIntro(ga){
   });
   ctx.globalAlpha=1;
 }
-function drawSolids(v,time,ga){
-  var g=gridCells(5,[5,3,2]),fs=clamp(g.size*.085,13,30);
-  ORDER5.forEach(function(key,i){
-    var q=clamp((v-i*.16)/.2,0,1);if(q<=0)return;
-    var So=getSolid(key),pc=g.pos[i],n=+key[0],k=+key[2],eo=easeOut(q);
-    var C=makeCam({target:So.center,rho:So.R*1.08,theta:-Math.PI/2+(RM?0:time*.4)+i*.9,psi:22*DEG},pc.cx,pc.cy-g.size*.08,g.size/2*(.6+.4*eo),.8);
-    var lw=clamp(C.sc*.011,1,2.6);
-    So.faces.forEach(function(f){if(dot(f.n,sub(C.pos,f.c))<=0)return;shadeFace({pts:f.idx.map(function(j){return So.V[j];}),nrm:f.n,col:POLY[n].col,alpha:eo},C,ga,lw,false,f.c);});
-    ctx.globalAlpha=ga*eo;
-    text(SOLID[key].name,pc.cx,pc.cy+g.size*.4,fs,YEL);
-    text(POLY[n].name+' × '+k,pc.cx,pc.cy+g.size*.4+fs*1.3,fs*.78,CH);
+/* 5つの正多面体。1つずつ、ドラッグした向きに回る（トラックボール）。はなすと勢いで回り、ゆっくりの自転にもどる */
+function isGallery(st){return st.type==='intro'||/^summary/.test(st.type);}
+function rotMat(ax,a){
+  ax=nrm(ax);var c=Math.cos(a),s=Math.sin(a),t=1-c,x=ax[0],y=ax[1],z=ax[2];
+  return [[t*x*x+c,t*x*y-s*z,t*x*z+s*y],[t*x*y+s*z,t*y*y+c,t*y*z-s*x],[t*x*z-s*y,t*y*z+s*x,t*z*z+c]];
+}
+function matMul(A,B){var C=[[0,0,0],[0,0,0],[0,0,0]];for(var i=0;i<3;i++)for(var j=0;j<3;j++)for(var k=0;k<3;k++)C[i][j]+=A[i][k]*B[k][j];return C;}
+function mv(M,v){return [dot(M[0],v),dot(M[1],v),dot(M[2],v)];}
+function orthoM(M){var a=nrm(M[0]),b=nrm(sub(M[1],mul(a,dot(a,M[1]))));return [a,b,cross(a,b)];}
+var GCAM={target:[0,0,0],theta:-Math.PI/2,psi:.12};
+var GAL=ORDER5.map(function(key,i){
+  var idle=mul(nrm([Math.sin(i*1.9+.4),Math.cos(i*1.3+.2)*.6,1.2]),.3);
+  return {key:key,M:matMul(rotMat([1,0,0],-.5),rotMat([0,0,1],.45+i*.8)),w:idle.slice(),idle:idle,r:null};
+});
+var galFocus=-1,galDrag=null,snapGal=true;
+function galTargets(){
+  var H0=H;H=H-Math.min(40,H*.06);var g=gridCells(5,[5,3,2]);H=H0;
+  return GAL.map(function(G,i){
+    var pc=g.pos[i];
+    if(galFocus<0)return {cx:pc.cx,cy:pc.cy-g.size*.08,s:g.size,a:1};
+    if(i===galFocus){var S=Math.min(W*.9,H*.72);return {cx:W/2,cy:H*.43,s:S,a:1};}
+    return {cx:pc.cx,cy:pc.cy-g.size*.08,s:g.size*.5,a:0};
+  });
+}
+function drawSolids(v,dt,ga,intro){
+  var T=galTargets(),ea=RM?1:1-Math.exp(-dt*9),eb=1-Math.exp(-dt*1.4);
+  GAL.forEach(function(G,i){
+    if(!G.r||snapGal)G.r={cx:T[i].cx,cy:T[i].cy,s:T[i].s,a:T[i].a};
+    else for(var x in T[i])G.r[x]=lerp(G.r[x],T[i][x],ea);
+    if(galDrag&&galDrag.i===i)return;
+    var sp=len(G.w);if(!RM&&sp>1e-6)G.M=orthoM(matMul(rotMat(G.w,sp*dt),G.M));
+    G.w=add(G.w,mul(sub(RM?[0,0,0]:G.idle,G.w),eb));
+  });
+  snapGal=false;
+  var order=[0,1,2,3,4];if(galFocus>=0)order.sort(function(a,b){return (a===galFocus)-(b===galFocus);});
+  order.forEach(function(i){
+    var G=GAL[i],r=G.r,q=clamp((v-i*.16)/.2,0,1);if(q<=0||r.a<.02)return;
+    var So=getSolid(G.key),n=+G.key[0],k=+G.key[2],eo=easeOut(q),al=ga*eo*r.a;
+    var C=makeCam({target:GCAM.target,rho:So.R*1.08,theta:GCAM.theta,psi:GCAM.psi},r.cx,r.cy,r.s/2*(.6+.4*eo),.8);
+    var lw=clamp(C.sc*.011,1,3),fs=clamp(r.s*.085,13,34);
+    var P=So.V.map(function(p){return mv(G.M,sub(p,So.center));});
+    var items=So.faces.map(function(f){
+      var pts=f.idx.map(function(j){return P[j];}),nn=mv(G.M,f.n),c=centroid(pts);
+      return {f:{pts:pts,nrm:nn,col:POLY[n].col,alpha:1},c:c,front:dot(nn,sub(C.pos,c))>0};
+    });
+    items.forEach(function(it){if(it.front)shadeFace(it.f,C,al,lw,false,it.c);});
+    drawHidden(items,C,al*.75,lw);
+    ctx.globalAlpha=al;
+    var ly=r.cy+r.s*.48;
+    text(SOLID[G.key].name,r.cx,ly,fs,YEL);
+    text(intro?'面は '+POLY[n].name:POLY[n].name+' × '+k,r.cx,ly+fs*1.3,fs*.78,CH);
+    if(i===galFocus)text('もう一度クリックで、5つにもどる',r.cx,ly+fs*2.5,fs*.62,'rgba(242,240,230,.66)');
   });
   ctx.globalAlpha=1;
+}
+function galHit(e){
+  var rc=cv.getBoundingClientRect(),x=e.clientX-rc.left,y=e.clientY-rc.top,best=-1,bd=Infinity;
+  GAL.forEach(function(G,i){
+    if(!G.r||G.r.a<.5)return;
+    var d=Math.hypot(x-G.r.cx,y-G.r.cy);if(d<G.r.s*.46&&d<bd){bd=d;best=i;}
+  });
+  return best;
 }
 
 /* ================= まわす・動かす ================= */
@@ -825,8 +877,8 @@ function frame(now){
   ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);
   if(W>0&&H>0){
     var ga=RM?1:clamp((now-fadeT)/320,0,1);
-    if(st.type==='intro')drawIntro(ga);
-    else if(/^summary/.test(st.type))drawSolids(st.type==='summary1'?state.value:1,now/1000,ga);
+    if(st.type==='cards')drawIntro(ga);
+    else if(isGallery(st))drawSolids(st.type==='summary1'?state.value:1,dt,ga,st.type==='intro');
     else{
       var S=scene3D(st,state.value);smoothCam(S.cam,dt);
       if(st.type==='build'&&state.done&&state.value>=1&&!drag&&!RM)autoT+=dt*.35;
@@ -847,6 +899,12 @@ function apexHit(e){
 }
 cv.addEventListener('pointerdown',function(e){
   try{cv.setPointerCapture(e.pointerId);}catch(_){}
+  if(isGallery(cur())){
+    var gi=galHit(e),t=performance.now();
+    galDrag={i:gi,x:e.clientX,y:e.clientY,x0:e.clientX,y0:e.clientY,t0:t,lt:t,moved:false,w:[0,0,0]};
+    if(gi>=0)GAL[gi].w=[0,0,0];
+    cv.style.cursor=gi>=0?'grabbing':'';return;
+  }
   if(apexHit(e)){
     var st=cur(),I=caseInfo(st.c.n,st.c.k),h=st.type==='fold'?I.hEnd:(I.hLift||.3);
     pull={y:e.clientY,v0:state.value,scale:Math.max(70,lastC.sc*h*Math.cos(clamp(camS.psi+dragP,0,1.4)))};
@@ -855,11 +913,28 @@ cv.addEventListener('pointerdown',function(e){
   drag={x:e.clientX,y:e.clientY};
 });
 cv.addEventListener('pointermove',function(e){
+  if(galDrag){
+    var gd=galDrag,dx=e.clientX-gd.x,dy=e.clientY-gd.y,t=performance.now(),dts=Math.max(.008,(t-gd.lt)/1000);
+    if(Math.hypot(e.clientX-gd.x0,e.clientY-gd.y0)>6)gd.moved=true;
+    gd.x=e.clientX;gd.y=e.clientY;gd.lt=t;
+    if(gd.i<0)return;
+    var C=makeCam({target:GCAM.target,rho:1,theta:GCAM.theta,psi:GCAM.psi},0,0,1,.8),K=.011;
+    var G=GAL[gd.i];G.M=orthoM(matMul(matMul(rotMat(C.u,dx*K),rotMat(C.r,dy*K)),G.M));
+    var wi=mul(add(mul(C.u,dx*K),mul(C.r,dy*K)),1/dts);gd.w=add(mul(gd.w,.5),mul(wi,.5));
+    return;
+  }
   if(pull){setValue(clamp(pull.v0-(e.clientY-pull.y)/pull.scale,0,1));return;}
   if(!drag){cv.style.cursor=apexHit(e)?'ns-resize':'';return;}
   dragT-=(e.clientX-drag.x)*.009;dragP+=(e.clientY-drag.y)*.009;drag.x=e.clientX;drag.y=e.clientY;
 });
-function endDrag(){drag=null;if(pull){pull=null;cv.style.cursor='';}}
+function endDrag(){
+  drag=null;if(pull){pull=null;cv.style.cursor='';}
+  if(galDrag){
+    var gd=galDrag;galDrag=null;cv.style.cursor='';
+    if(!gd.moved&&performance.now()-gd.t0<600){if(gd.i>=0)galFocus=galFocus===gd.i?-1:gd.i;else galFocus=-1;}
+    else if(gd.i>=0){var sp=len(gd.w),idle=performance.now()-gd.lt>120;GAL[gd.i].w=idle?[0,0,0]:sp>7?mul(gd.w,7/sp):gd.w;}
+  }
+}
 cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
 cv.addEventListener('dblclick',function(){dragT=0;dragP=0;autoT=0;});
 $('next').addEventListener('click',next);
@@ -882,6 +957,7 @@ document.addEventListener('keydown',function(e){
   else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();prev();}
   else if(k==='r'||k==='R')replay();
   else if(k==='f'||k==='F')toggleFS();
+  else if(k==='Escape'&&galFocus>=0)galFocus=-1;
 });
 
 var m=/^#step-(\d+)$/.exec(location.hash||''),start=m?clamp(+m[1]-1,0,FLOW.length-1):0;
