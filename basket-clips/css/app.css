@@ -89,6 +89,10 @@ a.btn { text-decoration: none; }
 .transport .btn.play { min-width: 44px; font-size: 15px; }
 .transport select { background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 5px 6px; font-size: 13px; }
 .time { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; margin-left: 4px; }
+/* コマ送り（◂ コマ ▸。押し続けると続けて送る）・写真 */
+.fstep { display: inline-flex; align-items: center; gap: 1px; border: 1px solid var(--line2); border-radius: 9px; padding: 1px; background: var(--panel); }
+.fstep .btn { min-width: 36px; min-height: 30px; border: 0; font-size: 15px; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+.fslab { font-size: 11.5px; color: var(--muted); padding: 0 3px; -webkit-user-select: none; user-select: none; }
 .spacer { flex: 1; }
 .reelbar { display: inline-flex; align-items: center; gap: 4px; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 8px; padding: 2px 6px; font-size: 12.5px; }
 #timeline { width: 100%; height: 40px; border-radius: 8px; cursor: pointer; display: block; touch-action: none; }
@@ -290,7 +294,29 @@ a.btn { text-decoration: none; }
 .fchip.on small { color: rgba(255, 255, 255, 0.85); }
 .fchip .chip { width: 11px; height: 11px; }
 .logclips { display: flex; flex-direction: column; gap: 10px; }
+/* 1場面の長さ（ふつう＋プレーごと） */
+.winbox { display: flex; flex-direction: column; gap: 4px; }
+.winby summary { cursor: pointer; font-size: 13px; color: var(--accent); }
+.winby summary small { color: var(--muted); }
+.wbgrid { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
+.wbrow { display: flex; align-items: center; gap: 4px 8px; flex-wrap: wrap; font-size: 13px; }
+.wblab { min-width: 6.2em; font-weight: 700; display: inline-flex; flex-direction: column; line-height: 1.25; }
+.wbtag { font-weight: 400; font-size: 11px; color: var(--muted); }
+.wbtag:empty { display: none; }
+.wbrow.dflt input { color: var(--muted); }
+.wbin { display: inline-flex; align-items: center; gap: 4px; }
+.wbrow input { width: 52px; background: var(--panel2); border: 1px solid var(--line2); border-radius: 6px; padding: 3px 6px; }
 .logclip .ct b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 自分で足した場面（左のふちを点線に）・足す小窓 */
+.logclip.user { border-left-style: dashed; }
+.addrow { margin-top: 2px; }
+.addscene { display: flex; flex-direction: column; gap: 10px; }
+.addscene .frow { align-items: center; }
+.addscene input { background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 6px 8px; font-size: 15px; }
+.addscene .addno { width: 70px; }
+.addscene .addmemo { flex: 1; min-width: 0; }
+.fchip:disabled { opacity: 0.4; cursor: not-allowed; }
+@media (pointer: coarse) { .addscene input { font-size: 16px; } }
 .logdlg { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .lglist { display: flex; flex-direction: column; gap: 6px; width: 100%; max-height: 340px; overflow-y: auto; }
 .lgrow { display: flex; flex-direction: column; gap: 4px; }

@@ -20,13 +20,33 @@
     return [file.name, file.size, file.lastModified || 0].join('|');
   }
 
+  /* タップ記録の1場面の長さ（はじめ）：ふつう 前 10・後 2、リバウンド・★ は前 5（by：プレーのまとまりごと） */
+  function logWinDefault() {
+    const T = BS.taplog;
+    return T ? { lead: T.WIN.lead, lag: T.WIN.lag, by: JSON.parse(JSON.stringify(T.WIN_BY)) } : { lead: 10, lag: 2, by: {} };
+  }
+  /* 保存してあった長さをそろえる。前の版（プレーごとの by がない）で、はじめのまま（前 6・後 2）なら、新しいはじめに。
+     変えていたら、それを「ふつう」にして、プレーごとのはじめ（リバウンド・★）を足す */
+  function fixLogWin(w) {
+    const d = logWinDefault();
+    if (!w || typeof w !== 'object') return d;
+    const num = (v, def) => (isFinite(v) && v >= 0 ? +v : def);
+    if (!w.by || typeof w.by !== 'object') {
+      if (+w.lead === 6 && +w.lag === 2) return d;
+      return { lead: num(w.lead, d.lead), lag: num(w.lag, d.lag), by: d.by };
+    }
+    const by = {};
+    Object.keys(w.by).forEach((g) => { const b = w.by[g]; if (b && isFinite(b.lead) && isFinite(b.lag)) by[g] = { lead: num(b.lead, d.lead), lag: num(b.lag, d.lag) }; });
+    return { lead: num(w.lead, d.lead), lag: num(w.lag, d.lag), by };
+  }
   /* 前回のチームの色・クリップの長さ（次の動画でも同じにする） */
   function prefs() {
-    return Object.assign({
+    const p = Object.assign({
       teams: [{ color: '#f4f4f4', colorName: '白', name: '' }, { color: '#2f6fed', colorName: '青', name: '' }],
-      win: { lead: BS.clips.WIN.lead, lag: BS.clips.WIN.lag }, captions: true,
-      logWin: BS.taplog ? { lead: BS.taplog.WIN.lead, lag: BS.taplog.WIN.lag } : { lead: 6, lag: 2 }
+      win: { lead: BS.clips.WIN.lead, lag: BS.clips.WIN.lag }, captions: true
     }, readJSON(PREFS) || {});
+    p.logWin = fixLogWin(p.logWin);
+    return p;
   }
   function savePrefs(st) { writeJSON(PREFS, { teams: st.teams, win: st.win, captions: st.captions, logWin: st.logWin }); }
 
@@ -36,7 +56,8 @@
       v: 1, teams: JSON.parse(JSON.stringify(p.teams)), hoops: [null, null], hoopTeam: [0, 1], fixed: false,
       halfT: null, halfNo: null, result: null, edits: BS.clips.emptyEdits(), win: Object.assign({}, p.win), captions: p.captions !== false,
       // 記録（バスケ タップ記録）：log＝読み込んだ記録、sync＝時刻あわせ { anchors: [{ t, v }], how }、logView＝絞り込み、logWin＝1場面の長さ、logOff＝外した場面
-      log: null, sync: null, logView: { teams: [true, true], groups: {}, players: [] }, logWin: Object.assign({}, p.logWin), logOff: {}
+      log: null, sync: null, logView: { teams: [true, true], groups: {}, players: [] }, logWin: JSON.parse(JSON.stringify(p.logWin)), logOff: {},
+      logAdds: []          // 自分で足した場面（動画の秒で持つ。時刻あわせを変えても動かない）
     };
   }
 
@@ -47,9 +68,10 @@
     const base = fresh();
     const out = Object.assign(base, st);
     out.edits = Object.assign(BS.clips.emptyEdits(), st.edits || {});
-    out.logWin = Object.assign({}, base.logWin, st.logWin || {});
+    out.logWin = st.logWin ? fixLogWin(st.logWin) : base.logWin;
     out.logView = Object.assign({ teams: [true, true], groups: {}, players: [] }, st.logView || {});
     out.logOff = st.logOff || {};
+    out.logAdds = Array.isArray(st.logAdds) ? st.logAdds : [];
     return out;
   }
 
@@ -71,5 +93,5 @@
     return ok;
   }
 
-  BS.store = { videoKey, prefs, fresh, load, save };
+  BS.store = { videoKey, prefs, fresh, load, save, fixLogWin, logWinDefault };
 })(typeof window !== 'undefined' ? window : globalThis);

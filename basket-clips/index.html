@@ -34,8 +34,8 @@
         <button class="btn play" id="btnPlay" title="再生 / 一時停止（スペース）"><span class="ico">▶</span></button>
         <button class="btn" id="btnBack" title="5秒戻る（← で2秒）">−5秒</button>
         <button class="btn" id="btnFwd" title="5秒進む（→ で2秒）">+5秒</button>
-        <button class="btn small" id="btnPrevF" title="1コマ戻る（,）">◂</button>
-        <button class="btn small" id="btnNextF" title="1コマ進む（.）">▸</button>
+        <span class="fstep" role="group" aria-label="コマ送り"><button class="btn small" id="btnPrevF" title="1コマ戻る（,）。押し続けると続けて戻る" aria-label="1コマ戻る">◂</button><span class="fslab" aria-hidden="true">コマ</span><button class="btn small" id="btnNextF" title="1コマ進む（.）。押し続けると続けて進む" aria-label="1コマ進む">▸</button></span>
+        <button class="btn small" id="btnShot" title="いまのコマを写真にする（iPhone・iPad は「画像を保存」で写真アプリへ。パソコンはダウンロード）">📷 写真</button>
         <select id="speedSel" title="再生の速さ" aria-label="再生の速さ"><option value="0.5">0.5倍</option><option value="1" selected>1倍</option><option value="2">2倍</option></select>
         <span class="time" id="timeText">0:00 / 0:00</span>
         <span class="spacer"></span>

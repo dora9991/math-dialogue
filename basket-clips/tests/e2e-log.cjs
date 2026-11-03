@@ -136,6 +136,25 @@ const anchors = (page) => page.evaluate(() => BS.app.S.st.sync && BS.app.S.st.sy
     await page.press('#lwinlead', 'Enter');
     await page.locator('#lwinlead').blur();
 
+    console.log('\n■ プレーごとの1場面の長さ（はじめは、リバウンド・★ あとで見る が前 5 秒）');
+    {
+      const setNum = async (sel, v) => { await page.fill(sel, String(v)); await page.press(sel, 'Enter'); await page.locator(sel).blur(); };
+      const leads = (grp) => page.evaluate((g) => BS.app.logClips().filter((c) => c.grp === g).map((c) => +(c.at - c.t0).toFixed(2)), grp);
+      const rowsW = () => page.$$eval('#winBy .wbrow', (els) => els.map((e) => `${e.dataset.wgrp}:${e.querySelector('input').value}${e.querySelector('.wbtag').textContent === 'ふつう' && e.classList.contains('dflt') ? '=' : ''}`).join(' '));
+      ok(await page.$('#winBy') && !(await page.$eval('#winBy', (d) => d.open)), '「⏱ プレーごとに長さを変える」は、たたんだ中');
+      await page.click('#winBy summary');
+      ok((await rowsW()) === 'score:6= miss:6= reb:5 pass:6= mark:5', '記録にあるプレーごとの前の秒数（得点・失敗・パスミスは「ふつう」の 6 秒・リバウンドと★は 5 秒）', await rowsW());
+      ok((await leads('reb')).every((x) => x === 5) && (await leads('mark')).every((x) => x === 5) && (await leads('score')).every((x) => x === 6), 'リバウンド・★ の場面は前 5 秒、得点は前 6 秒（ふつう）');
+      await setNum('#lwin-reb-lead', 3);
+      ok((await leads('reb')).every((x) => x === 3) && (await page.textContent('#winByText')).includes('リバウンド 前3'), 'リバウンドを前 3 秒に → リバウンドの場面だけ短くなる');
+      await setNum('#lwinlead', 7);
+      ok((await rowsW()).startsWith('score:7= miss:7= reb:3') && (await leads('score')).every((x) => x === 7) && (await leads('reb')).every((x) => x === 3), 'ふつうの長さを 7 秒に → 「ふつう」のプレー（得点など）は 7 秒、リバウンドは 3 秒のまま', await rowsW());
+      await page.click('#winReset');
+      ok((await rowsW()) === 'score:10= miss:10= reb:5 pass:10= mark:5' && (await page.inputValue('#lwinlead')) === '10', '「はじめの長さに戻す」：ふつう 前 10 秒・リバウンドと★は前 5 秒', await rowsW());
+      await setNum('#lwinlead', 6);
+      await page.click('#winBy summary');
+    }
+
     console.log('\n■ 続けて再生');
     const reelInfo = await page.evaluate(() => { const segs = BS.app.logClips(); return segs.length; });
     await page.click('#btnLogReel');
@@ -281,6 +300,89 @@ const anchors = (page) => page.evaluate(() => BS.app.S.st.sync && BS.app.S.st.sy
     // 元に戻す（記録の 0:33 ＝ 動画の 0:46）
     await page.evaluate((id) => BS.app.syncAt(id, 46, 'reset'), fg3);
 
+    console.log('\n■ ＋ この瞬間を場面に足す（記録にない場面を自分で）');
+    {
+      const users = () => page.evaluate(() => BS.app.logClips().filter((c) => c.user));
+      await page.evaluate(() => BS.app.seek(55.5));
+      await sleep(300);
+      await page.click('#btnAddScene');
+      await page.waitForSelector('#addOk');
+      ok((await page.textContent('.addscene')).includes('動画 0:55.5') && await page.$('.fchip[data-addtype="mark"].on') && await page.$('.fchip[data-addteam="null"].on'), '開くと、いまの位置（動画 0:55.5）・はじめは「★ あとで見る」「チームなし」');
+      await page.click('.fchip[data-addtype="stl"]');
+      await page.click('.fchip[data-addteam="0"]');
+      await page.fill('#addNo', '7');
+      await page.fill('#addMemo', 'いいディフェンス');
+      await page.click('#addOk');
+      const u = (await users())[0];
+      ok(u && u.at === 55.5 && u.label === '#7 たけし スティール：いいディフェンス' && u.team === 0 && Math.abs(u.at - u.t0 - 6) < 1e-9, '足した場面：動画 0:55.5・「#7 たけし スティール：いいディフェンス」・前 6 秒（ふつうの長さ）', u);
+      const urow = await page.$(`#logList .clip.user[data-id="${u.id}"]`);
+      ok(urow && (await urow.textContent()).includes('自分で足した場面') && !(await urow.$('[data-adjust]')) && !(await urow.$('[data-align]')) && await urow.$('[data-unadd]'), '一覧に「✋ 自分で足した場面」（「↔」「⌖」はなく、「🗑」で消せる）');
+      ok(await page.$('.fchip[data-fgrp="stl"]'), '絞り込みに「スティール」が出る');
+      await page.click('[data-nudge="1"]');
+      ok((await page.evaluate((id) => BS.app.logClips().find((c) => c.id === id).at, u.id)) === 55.5, '時刻あわせをずらしても、足した場面は動かない');
+      await page.click('[data-nudge="-1"]');
+      await page.evaluate(() => BS.app.seek(80));
+      await sleep(200);
+      await page.click('#btnAddScene');
+      await page.click('.fchip[data-addtype="fg3"]');
+      ok(await page.$('.fchip[data-addteam="0"].on') && await page.$eval('.fchip[data-addteam="null"]', (b) => b.disabled), '得点を選ぶと、チームは「自分」（チームなしは選べない）');
+      await page.fill('#addNo', 'ab');
+      await page.click('#addOk');
+      ok(await page.isVisible('#addOk') && (await page.textContent('#toasts')).includes('背番号は'), '背番号がおかしいと足さない（小窓はそのまま）');
+      await page.fill('#addNo', '');
+      await page.click('#addOk');
+      ok((await users()).length === 2 && (await users())[1].label === '3P成功', '番号なしでも足せる（「3P成功」）', (await users()).map((c) => c.label));
+      await page.click(`#logList .clip[data-id="${u.id}"] button[title="この場面を見る"]`);
+      await sleep(600);
+      R = await page.evaluate(() => ({ active: BS.app.S.reel.active, seg: BS.app.S.reel.list[0] }));
+      ok(R.active && Math.abs(R.seg.t0 - 49.5) < 0.01 && Math.abs(R.seg.t1 - 57.5) < 0.01, '▶ で、足した場面（0:49.5〜0:57.5）を再生', R.seg);
+      await page.click('#reelStop');
+      for (const id of (await users()).map((c) => c.id)) {
+        await page.click(`[data-unadd="${id}"]`);
+        await page.click('.modal-foot .btn.primary');
+      }
+      ok(await page.evaluate(() => !BS.app.logClips().some((c) => c.user) && BS.app.S.st.logAdds.length === 0), '「🗑」で消せる');
+    }
+
+    console.log('\n■ コマ送り（◂ コマ ▸）・📷 写真');
+    {
+      const tnow = () => page.evaluate(() => BS.app.S.media.time);
+      ok(await page.evaluate(() => BS.app.S.fps) === 30, '動画の目次から 1秒のコマ数（30）を読む');
+      await page.evaluate(() => BS.app.seek(10));
+      await sleep(200);
+      await page.click('#btnNextF');
+      await sleep(250);
+      ok(Math.abs((await tnow()) - 301.5 / 30) < 0.002, '▸：1コマ進む（10.000 → 10.050：コマのまん中）', await tnow());
+      await page.click('#btnPrevF'); await sleep(250);
+      await page.click('#btnPrevF'); await sleep(250);
+      ok(Math.abs((await tnow()) - 299.5 / 30) < 0.002, '◂ 2回：2コマ戻る（9.983）', await tnow());
+      await page.keyboard.press('Period'); await sleep(250);
+      ok(Math.abs((await tnow()) - 300.5 / 30) < 0.002, '「.」キーでも1コマ進む', await tnow());
+      await page.evaluate(() => BS.app.S.media.play());
+      await sleep(300);
+      await page.click('#btnNextF'); await sleep(300);
+      ok(await page.evaluate(() => BS.app.S.media.paused), '再生中に押すと、止めてからコマ送り');
+      const t0 = await tnow();
+      const nb = await page.locator('#btnNextF').boundingBox();
+      await page.mouse.move(nb.x + nb.width / 2, nb.y + nb.height / 2);
+      await page.mouse.down(); await sleep(1300); await page.mouse.up();
+      const moved = Math.round(((await tnow()) - t0) * 30);
+      ok(moved >= 4, `押し続けると、続けてコマ送り（1.3 秒で ${moved} コマ）`, moved);
+      await sleep(300);
+      const after = await tnow();
+      await sleep(300);
+      ok(Math.abs((await tnow()) - after) < 1e-6, '指を離すと止まる');
+      // 📷 写真（パソコンはダウンロード）
+      await page.evaluate(() => BS.app.seek(20));
+      await sleep(300);
+      const [jpg] = await Promise.all([page.waitForEvent('download'), page.click('#btnShot')]);
+      const jp = await jpg.path();
+      const head = fs.readFileSync(jp).subarray(0, 3);
+      const sz = fs.statSync(jp).size;
+      ok(/^log120_0-20\.0\.jpg$/.test(jpg.suggestedFilename()) && head[0] === 0xff && head[1] === 0xd8 && sz > 20000, `「📷 写真」：いまのコマを JPEG に（${jpg.suggestedFilename()}・${Math.round(sz / 1024)}KB）`, { name: jpg.suggestedFilename(), sz });
+      ok((await page.textContent('#toasts')).includes('640×360'), 'そのままの大きさ（640×360）で保存と知らせる');
+    }
+
     console.log('\n■ 1つの場面を動画にする');
     const first = (await clipsOf(page))[0];
     await page.click('#logList .clip >> nth=0 >> button[title="この場面だけを動画にする"]');
@@ -379,6 +481,8 @@ const anchors = (page) => page.evaluate(() => BS.app.S.st.sync && BS.app.S.st.sy
       await p3.waitForFunction(() => BS.app.S.media && BS.app.S.media.ready && BS.app.duration() > 100, null, { timeout: 30000 });
       await p3.waitForSelector('#btnSyncMeta', { timeout: 10000 });
       await p3.click('#btnSyncMeta');
+      const w3 = await p3.evaluate(() => BS.app.S.st.logWin);
+      ok(w3.lead === 10 && w3.lag === 2 && w3.by.reb.lead === 5 && w3.by.mark.lead === 5, 'はじめて使うブラウザでは、ふつう 前 10 秒・後 2 秒、リバウンドと★は前 5 秒', w3);
       await p3.tap('#btnAdjust');
       await p3.waitForSelector('#adjRuler');
       await sleep(300);
