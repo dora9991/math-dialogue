@@ -183,7 +183,8 @@
   const back = (label = 'もどる') => `<button type="button" class="back-btn" data-act="back">${ic('back')}${esc(label)}</button>`;
 
   /* ---------- 成長：やったことを残す ---------- */
-  function addActs(list) {
+  // opt.quiet：経験値のお知らせ・お祝いを出さない（クラブの合格など、べつのお祝いを出すとき）
+  function addActs(list, opt = {}) {
     const before = sum();
     for (const a of list) S.acts.push(Object.assign({ at: Date.now() }, a));
     if (S.acts.length > 3000) S.acts = S.acts.slice(-3000);
@@ -192,8 +193,8 @@
     const xp = after.xp - before.xp;
     const news = G.newBadges(before, after);
     const up = after.level > before.level;
-    if (xp > 0) xpToast(xp, list);
-    if (up || news.length) setTimeout(() => celebrate(up ? after : null, news), xp > 0 ? 900 : 0);
+    if (xp > 0 && !opt.quiet) xpToast(xp, list);
+    if ((up || news.length) && !opt.quiet) setTimeout(() => celebrate(up ? after : null, news), xp > 0 ? 900 : 0);
     refreshTop();
     return { before, after, xp, news, up };
   }
@@ -207,17 +208,19 @@
     modal(`<div class="celebrate${reduceMotion() ? '' : ' pop'}">${confetti()}<h2 class="modal-h">やったね！</h2>${html}<div class="btns"><button type="button" class="btn primary big" data-act="modal-close">つづける</button></div></div>`);
   }
   const confetti = () => (reduceMotion() ? '' : `<div class="confetti" aria-hidden="true">${Array.from({ length: 18 }, (_, i) => `<i style="--i:${i};--x:${(i * 37) % 100}%"></i>`).join('')}</div>`);
-  const BADGE_COLOR = { first: 'ok', menu1: 'o', streak3: 'ball', streak7: 'ball', streak30: 'gold', drill10: 'o', drill50: 'gold', uniq10: 'ok', min300: 'o', check1: 'o', good5: 'gold', shooter: 'ball', handler: 'ball', defender: 'x', allround: 'gold', early: 'gold', lv5: 'ok', lv10: 'gold' };
+  const BADGE_COLOR = { first: 'ok', menu1: 'o', streak3: 'ball', streak7: 'ball', streak30: 'gold', drill10: 'o', drill50: 'gold', uniq10: 'ok', min300: 'o', check1: 'o', good5: 'gold', shooter: 'ball', handler: 'ball', defender: 'x', allround: 'gold', early: 'gold', lv5: 'ok', lv10: 'gold', kyu1: 'gold', kyu5: 'gold' };
   const badgeIcon = (b, got) => `<span class="badge-ic c-${BADGE_COLOR[b.id] || 'ok'}${got ? '' : ' off'}">${ic(b.icon === 'list' ? 'list' : b.icon)}</span>`;
 
   /* ---------- 画面のわく ---------- */
-  const TABS = [['home', 'ホーム', 'home'], ['practice', 'れんしゅう', 'ball'], ['check', 'チェック', 'camera'], ['log', 'きろく', 'chart'], ['more', 'もっと', 'more']];
+  // 下のタブは5つ。「もっと」は上のバーのボタン（パソコンの上のナビには ならべる）
+  const TABS = [['home', 'ホーム', 'home'], ['practice', 'れんしゅう', 'ball'], ['club', 'クラブ', 'trophy'], ['check', 'チェック', 'camera'], ['log', 'きろく', 'chart']];
   function shell() {
     app.innerHTML = `
       <header class="top"><div class="top-in">
         <a class="logo" href="#home">${LOGO}<span class="logo-text">バスケ・グロウ</span></a>
-        <nav class="top-nav" aria-label="画面">${TABS.map(([k, l, i]) => `<a href="#${k}" data-tab="${k}">${ic(i)}${l}</a>`).join('')}</nav>
+        <nav class="top-nav" aria-label="画面">${TABS.concat([['more', 'もっと', 'more']]).map(([k, l, i]) => `<a href="#${k}" data-tab="${k}">${ic(i)}${l}</a>`).join('')}</nav>
         <a class="lv-chip" href="#log" id="lv-chip"></a>
+        <a class="top-more" href="#more" data-tab="more" aria-label="もっと（そうだん・ずかん・ケガ・せってい）">${ic('more')}</a>
       </div></header>
       <main id="main"></main>
       <nav class="tab" aria-label="画面"><div class="tab-in">${TABS.map(([k, l, i]) => `<a href="#${k}" data-tab="${k}">${ic(i)}<span>${l}</span></a>`).join('')}</div></nav>`;
@@ -371,6 +374,8 @@
         ${t.note ? `<p class="small">${esc(t.note)}</p>` : ''}
         <div class="btns"><button type="button" class="btn primary big" data-act="menu-start">${ic('play')}スタート</button><button type="button" class="btn" data-act="menu-shuffle">${ic('shuffle')}ほかのメニュー</button></div>
       </section>
+
+      ${BC.club && BC.club.homeHTML ? BC.club.homeHTML() : ''}
 
       <section class="card ask">
         <h2 class="sec-h">${ic('chat')}なやみを書いてね</h2>
@@ -1054,6 +1059,42 @@
     store,
     get profile() { return { name: prof().name, grade: prof().grade }; },
   };
+  // クラブ（js/club.js）にわたすもの
+  const clubCtx = {
+    toast: (m, k) => toast(m, k), modal: (h) => modal(h), closeModal: () => closeModal(), ic, confetti: () => confetti(),
+    drillArt: (d) => drillArt(d),
+    addActs: (list, opt) => addActs(list, opt),
+    checks: () => store.get('bc.checks', []).map((c) => ({ mode: c.mode, label: (BC.check && BC.check.MODES && BC.check.MODES[c.mode] || {}).name || c.mode, score: c.score, metrics: c.metrics || [] })),
+    // ひろばに のせられる「アプリの記録」
+    shares: () => {
+      const s = sum(), out = [];
+      const today = G.day(Date.now());
+      const menu = S.acts.filter((a) => a.type === 'menu' && G.day(a.at) === today).length;
+      if (menu) { const min = S.acts.filter((a) => a.type === 'drill' && G.day(a.at) === today).reduce((t, a) => t + (a.min || 0), 0); out.push({ type: 'menu', label: `きょうのメニューを クリア（${min}分）` }); }
+      if (s.streak >= 2) out.push({ type: 'streak', label: `${s.streak}日 れんぞくで 練習中` });
+      const b = G.badges(s).filter((x) => x.got).pop();
+      if (b) out.push({ type: 'badge', label: `バッジ「${b.name}」をとった` });
+      const c = store.get('bc.checks', [])[0];
+      if (c && c.score != null) out.push({ type: 'check', label: `動画チェック ${(BC.check && BC.check.MODES && BC.check.MODES[c.mode] || {}).name || ''} ${c.score}点` });
+      return out;
+    },
+  };
+  function renderClub(sub) {
+    const m = main();
+    m.className = 'page-club';
+    setTabMark('club');
+    if (!BC.club || !BC.club.render) { m.innerHTML = '<h1 class="page-h">クラブ</h1><p>じゅんび中です。</p>'; return; }
+    BC.club.render(m, clubCtx, sub);
+  }
+  // クラブのお知らせ（タブの赤い点）
+  function clubDot(n) {
+    document.querySelectorAll('[data-tab="club"]').forEach((a) => {
+      let d = a.querySelector('.tab-dot');
+      if (n && !d) { d = document.createElement('i'); d.className = 'tab-dot'; d.setAttribute('aria-hidden', 'true'); a.appendChild(d); }
+      if (!n && d) d.remove();
+      a.setAttribute('aria-label', n ? `クラブ（お知らせ ${n}）` : 'クラブ');
+    });
+  }
   function renderCheck(sub) {
     const m = main();
     m.className = 'page-check';
@@ -1067,7 +1108,7 @@
   }
 
   /* ---------- 道すじ（ハッシュ） ---------- */
-  const TOP = ['home', 'practice', 'check', 'log', 'more'];
+  const TOP = ['home', 'practice', 'club', 'check', 'log', 'more'];
   const stack = []; // この中で開いたページの順（もどるボタン用）
   function route() {
     closeModal();
@@ -1089,6 +1130,7 @@
     else if (h === 'log') renderLog();
     else if (h === 'more') renderMore();
     else if (h === 'check' || h.startsWith('check/')) renderCheck(h.slice(6));
+    else if (h === 'club' || h.startsWith('club/')) renderClub(h.slice(5));
     else if (h === 'hello') renderHello(false);
     else if (h === 'settings') renderHello(true);
     else if (h === 'about') renderAbout();
@@ -1344,6 +1386,14 @@
   if (th) document.documentElement.dataset.theme = th;
   shell();
   route();
+  // クラブのお知らせ：はじめと、アプリにもどってきたとき（2分に1回まで）
+  if (BC.club) {
+    BC.club.onBadge = clubDot;
+    let lastClub = 0;
+    const pollClub = () => { if (Date.now() - lastClub < 120000 || !BC.club.session || !BC.club.session()) return; lastClub = Date.now(); BC.club.refresh().then(() => { if (S.page === 'home') rerender(); }); };
+    pollClub();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) pollClub(); });
+  }
   // 検査用（tools/look.cjs）
   window.BCAPP = { S, route, runStart, runEnd, getRun: () => RUN, addActs, sum, todayMenu, PL, store };
 })();
