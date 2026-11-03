@@ -77,7 +77,7 @@
 
   /* media: BS.createVideoMedia、clips: [{ t0, t1, label, sub, color }]
      opts: { title: [行…], end: [行…], accent, captions（false で札なし）, cards（false で最初と最後の画面なし）, audio（false で音なし）,
-             notes（コメント・スタンプ。notes.js の形。その動画の時刻から数秒、画面の下に描く） }
+             notes（コメント・スタンプ。notes.js の形。その動画の時刻から数秒、画面の下に描く）, bitrate（映像の bps。ふつう 5000000） }
      onProgress(0〜1, 文字) / 戻り値 { blob, url, mime, ext, seconds, audio }（中止したら null） */
   async function exportReel(media, clips, opts, onProgress, signal) {
     opts = opts || {};
@@ -111,7 +111,7 @@
         audioDest.stream.getAudioTracks().forEach((tr) => stream.addTrack(tr));
       } catch (e) { audioDest = null; }
     }
-    const rec = new MediaRecorder(stream, { mimeType: fmt.mime, videoBitsPerSecond: 5000000 });
+    const rec = new MediaRecorder(stream, { mimeType: fmt.mime, videoBitsPerSecond: opts.bitrate || 5000000 });
     const chunks = [];
     rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
     const stopped = new Promise((res) => { rec.onstop = res; });

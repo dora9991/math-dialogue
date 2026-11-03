@@ -16,6 +16,7 @@
   /* よく使うタグ（ほかのことばも、文の中に「#ことば」と書けばタグになる） */
   const TAGS = ['ヘルプ', 'リバウンド', 'ボックスアウト', 'スクリーン', 'ドライブ', 'パス', 'シュート', 'ディフェンス', '速攻', '声かけ', 'ポジション', 'ナイスプレー'];
   const DUR = 5;                 // 動画の中に出す長さ（秒。ふつう）
+  const STAMP = 112, STAMP_ALONE = 150;      // スタンプの大きさ（1280×720 のときの画素。コメントと一緒・スタンプだけ）
   const DURS = [3, 5, 8];
   const MAX_TEXT = 60;
 
@@ -149,18 +150,19 @@
         if (tagText) { ctx.font = `${ts}px ${FONT}`; ctx.fillStyle = '#93c5fd'; ctx.fillText(tagText, x0 + W / 2 + 3 * s, y - fs * 0.25 + ts * 0.5); }
       }
       if (n.stamps.length) {
-        const es = 58 * s * pop;
-        ctx.font = `${es}px ${EMOJI}`;
-        const sy = bottom - boxH - (boxH ? 10 * s : 0) - 58 * s / 2;
-        ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8 * s;
+        const big = (boxH ? STAMP : STAMP_ALONE) * s;       // スタンプだけのときは、もっと大きく
+        ctx.font = `${Math.round(big * pop)}px ${EMOJI}`;
+        const sy = bottom - boxH - (boxH ? 12 * s : 0) - big / 2;
+        ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 12 * s;
         ctx.fillText(n.stamps.join(' '), x0 + W / 2, sy);
-        boxH += 58 * s + (boxH ? 10 * s : 0);
+        boxH += big + (boxH ? 12 * s : 0);
       }
       ctx.restore();
       bottom -= boxH + 12 * s;
+      if (bottom < y0 + H * 0.12) break;          // （いくつも重なって、画面の上まで来たら、古いものは描かない）
     }
     return act.length;
   }
 
-  BS.notes = { STAMPS, TAGS, DUR, DURS, MAX_TEXT, parseTags, cleanTag, clean, cleanAll, activeAt, nextId, stampLabel, norm, search, tagCounts, youtubeUrl, growUrl, GROW, toText, segments, draw };
+  BS.notes = { STAMPS, TAGS, DUR, DURS, STAMP, STAMP_ALONE, MAX_TEXT, parseTags, cleanTag, clean, cleanAll, activeAt, nextId, stampLabel, norm, search, tagCounts, youtubeUrl, growUrl, GROW, toText, segments, draw };
 })(typeof window !== 'undefined' ? window : globalThis);

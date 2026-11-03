@@ -445,6 +445,22 @@ const anchors = (page) => page.evaluate(() => BS.app.S.st.sync && BS.app.S.st.sy
       await sleep(400);
       ok((await page.textContent('#toasts')).includes('コピー') || !!(await page.$('.notecopy')), '「📋 文字でコピー」（LINE などに貼る）');
       if (await page.$('.notecopy')) await page.click('.modal-foot .btn.primary');
+      // 🎬 動画全体を書き出す（コメント・スタンプ入り）：書き出しに渡すものを確かめて、途中で中止
+      await page.click('#btnFullExport');
+      await page.waitForSelector('#fullOk');
+      const fx = await page.textContent('.fullexp');
+      ok(fx.includes('動画全体（2:00）') && fx.includes('約 2 分') && /約 \d+MB/.test(fx), '「🎬 動画全体を書き出す」：長さ（2:00）・かかる時間（約 2 分）・大きさの目安', fx);
+      await page.evaluate(() => { const orig = BS.exportReel; window.__fx = null; BS.exportReel = function (media, clips, opts) { window.__fx = { clips: clips.map((c) => [c.t0, c.t1]), cards: opts.cards, captions: opts.captions, bitrate: opts.bitrate, notes: (opts.notes || []).length }; return orig.apply(this, arguments); }; });
+      await page.click('#fullOk');
+      await page.waitForFunction(() => BS.app.S.exporting && BS.app.S.exporting.kind === 'full', null, { timeout: 5000 });
+      const fa = await page.evaluate(() => window.__fx);
+      ok(fa && fa.clips.length === 1 && fa.clips[0][0] === 0 && Math.abs(fa.clips[0][1] - 120) < 0.5 && fa.cards === false && fa.captions === false && fa.bitrate === 3000000 && fa.notes === 2,
+        '動画のはじめから終わりまで（0〜2:00）・はじめと終わりの画面なし・左上の札なし・コメント・スタンプ入り・3 Mbps', fa);
+      await sleep(1500);
+      ok((await page.textContent('#noteExportBox')).includes('動画全体を書き出しています') && /動画 0:0\d \/ 2:00/.test(await page.textContent('#expLabel')), '進み具合：「動画全体を書き出しています…」「動画 0:01 / 2:00」', await page.textContent('#expLabel'));
+      await page.click('#noteExportBox .btn.danger');
+      await page.waitForFunction(() => !BS.app.S.exporting, null, { timeout: 10000 });
+      ok(await page.evaluate(() => !BS.app.S.noteOut) && (await page.textContent('#toasts')).includes('中止'), '「中止」で止められる');
       await page.click('#noteList [data-notedel="n2"]');
       ok((await notes()).length === 1, '「🗑」で消せる');
     }

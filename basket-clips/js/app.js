@@ -321,11 +321,12 @@
     card.append(h('div', { class: 'row acts' },
       h('button', { class: 'btn', id: 'btnNoteReel', disabled: !!S.exporting, onclick: playNoteReel }, `▶ コメントの場面を続けて見る（${segs.length}）`),
       h('button', { class: 'btn good', id: 'btnNoteExport', disabled: !!S.exporting, onclick: doNoteExport }, '🎬 コメントの場面を動画にする'),
+      h('button', { class: 'btn good', id: 'btnFullExport', disabled: !!S.exporting, onclick: confirmFullExport }, '🎬 動画全体を書き出す（コメント・スタンプ入り）'),
       h('button', { class: 'btn small', id: 'btnNoteCopy', onclick: copyNotes }, '📋 文字でコピー')));
     card.append(h('label', { class: 'switch' }, h('input', { type: 'checkbox', id: 'noteBurn', checked: S.st.noteBurn !== false, onchange: (e) => { S.st.noteBurn = e.target.checked; save(); } }),
       ' 「動画にする」で書き出す動画に、コメント・スタンプを入れる'));
     card.append(noteExportBox());
-    card.append(h('p', { class: 'note' }, 'コーチに見てもらうときは、「🎬 コメントの場面を動画にする」で作った動画や「📋 文字でコピー」を、LINE・BAND で送れます（❓ しつもん のスタンプが目印になります）。'));
+    card.append(h('p', { class: 'note' }, 'コーチに見てもらうときは、「🎬 コメントの場面を動画にする」「🎬 動画全体を書き出す」で作った動画や「📋 文字でコピー」を、LINE・BAND で送れます（❓ しつもん のスタンプが目印になります）。'));
     return card;
   }
 
@@ -371,6 +372,88 @@
     BS.ui.modal({ title: '🔎 コメント帳', body: h('div', { class: 'book' }, input, tagRow, linkRow, count, list), cls: 'bookcard', buttons: [{ label: 'とじる', cls: 'primary' }], onClose: () => { S.openBook = null; } });
   }
 
+  /* 書き出しの間は、画面が自動で消えないようにする（消えると書き出しが止まる。使えないブラウザでは何もしない）。
+     （書き出しの音声の準備は、ボタンを押した直後でないとできないので、ここは待たずに呼ぶ） */
+  let wakeLock = null;
+  async function keepAwake(on) {
+    try {
+      if (on && !wakeLock && root.navigator && navigator.wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); }
+      else if (!on && wakeLock) { const w = wakeLock; wakeLock = null; await w.release(); }
+    } catch (e) { wakeLock = null; }
+  }
+  /* 書き出した動画の保存：⬇ 保存する（ダウンロード）・📲 写真に保存（iPhone・iPad。共有から「ビデオを保存」） */
+  const isIOS = () => { const nav = root.navigator || {}; return /iP(hone|ad|od)/.test(nav.userAgent || '') || (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1); };
+  function canShareVideo(r) {
+    try { return isIOS() && !!navigator.canShare && navigator.canShare({ files: [new File([r.blob], r.name, { type: r.blob.type || 'video/mp4' })] }); } catch (e) { return false; }
+  }
+  function shareVideo(r) {
+    let f;
+    try { f = new File([r.blob], r.name, { type: r.blob.type || 'video/mp4' }); } catch (e) { return; }
+    navigator.share({ files: [f], title: r.name }).then(() => BS.ui.toast('共有しました（「ビデオを保存」を選んだときは、写真アプリに入っています）', 'ok', 4500),
+      (err) => { if (!err || err.name !== 'AbortError') BS.ui.toast('共有できませんでした。「⬇ 保存する」を使ってください', 'warn', 5000); });
+  }
+  function saveRow(r, id) {
+    return h('div', { class: 'row' },
+      h('a', { class: 'btn primary', href: r.url, download: r.name, id }, '⬇ 保存する'),
+      canShareVideo(r) ? h('button', { class: 'btn', id: id + 'Share', onclick: () => shareVideo(r) }, '📲 写真に保存') : null,
+      h('span', { class: 'note' }, r.ext === 'webm' ? 'WebM 形式です。iPhone で見るときは、MP4 に変換が必要なことがあります。' : 'MP4 形式です。スマホ・LINE でも見られます。'));
+  }
+  const expProgress = (frac, lab) => {
+    const bar = $('#expBar'), el = $('#expLabel');
+    if (bar) bar.style.width = (frac * 100).toFixed(1) + '%';
+    if (el) el.textContent = `${lab}（${Math.round(frac * 100)}%）`;
+  };
+
+  /* 🎬 動画全体を書き出す（コメント・スタンプ入り）。動画のはじめから終わりまで、そのままの時刻で（はじめと終わりの画面・左上の札はなし）。
+     再生しながら書き出すので、動画と同じだけ時間がかかる。長い動画でも大きくなりすぎないよう 3 Mbps */
+  const FULL_RATE = 3000000;
+  function confirmFullExport() {
+    if (S.exporting || !S.media) return;
+    const dur = duration();
+    if (!(dur > 0)) { BS.ui.toast('動画の読み込みが終わってから押してください', 'warn'); return; }
+    const mb = Math.max(1, Math.round(dur * FULL_RATE / 8 / 1048576 * 1.05));
+    const long = dur > 20 * 60;
+    BS.ui.modal({
+      title: '🎬 動画全体を書き出す（コメント・スタンプ入り）',
+      body: h('div', { class: 'fullexp' },
+        h('p', null, `動画全体（${BS.fmtTime(dur)}）を、コメント・スタンプを入れたまま1本の動画にします。`),
+        h('p', { class: 'note' }, `再生しながら書き出すので、約 ${Math.max(1, Math.ceil(dur / 60))} 分かかります。できる動画は約 ${mb}MB です。書き出している間は、このタブを表示したままにしてください（画面が自動で消えないようにします）。`),
+        long ? h('p', { class: 'note warn' }, '長い動画は、スマホでは途中で止まることがあります（メモリが足りなくなるため）。パソコンで書き出すのがおすすめです。') : null,
+        noteList().length ? null : h('p', { class: 'note warn' }, 'まだコメント・スタンプがありません（そのままの動画になります）。')),
+      buttons: [{ label: 'やめる' }, { label: '🎬 書き出す', cls: 'primary', onClick: () => { doFullExport(); } }]
+    });
+    const ok = $('#modal .modal-foot .btn.primary');
+    if (ok) ok.id = 'fullOk';
+  }
+  async function doFullExport() {
+    if (S.exporting || !S.media) return;
+    stopReel(true);
+    cancelMarking();
+    const dur = duration();
+    if (!(dur > 0)) return;
+    const ctrl = new AbortController();
+    S.exporting = { kind: 'full', ctrl };
+    S.noteOut = null;
+    keepAwake(true);
+    render();
+    try {
+      const res = await BS.exportReel(S.media, [{ t0: 0, t1: dur, label: '', sub: '' }], { accent: '#facc15', captions: false, cards: false, notes: noteList(), bitrate: FULL_RATE },
+        (frac) => expProgress(frac, `動画 ${BS.fmtTime(frac * dur)} / ${BS.fmtTime(dur)}`), ctrl.signal);
+      if (res) {
+        res.name = `${baseName()}_コメント入り_全体.${res.ext}`;
+        res.kind = 'full';
+        S.noteOut = res;
+        BS.ui.toast('動画全体ができました。「⬇ 保存する」で保存できます', 'ok', 6000);
+      } else BS.ui.toast('書き出しを中止しました', 'warn');
+    } catch (err) {
+      console.error('[export]', err);
+      BS.ui.toast('書き出しに失敗しました：' + err.message, 'err', 8000);
+    }
+    S.exporting = null;
+    keepAwake(false);
+    render();
+  }
+
   /* コメントの場面を動画にする（コメントの 3 秒前から、出し終わって 1 秒後まで。重なるものは1つに。コメント・スタンプ入り） */
   async function doNoteExport() {
     if (S.exporting || !S.media) return;
@@ -383,6 +466,7 @@
     const ctrl = new AbortController();
     S.exporting = { kind: 'note', ctrl };
     S.noteOut = null;
+    keepAwake(true);
     render();
     const name = (S.st.name || '').replace(/\.[^.]+$/, '');
     try {
@@ -404,6 +488,7 @@
       BS.ui.toast('書き出しに失敗しました：' + err.message, 'err', 8000);
     }
     S.exporting = null;
+    keepAwake(false);
     render();
   }
   function noteExportBox() {
@@ -411,8 +496,8 @@
     const sup = BS.exportSupport();
     const exp = S.exporting;
     if (!sup) { box.append(h('p', { class: 'note' }, 'このブラウザは動画の書き出しに対応していません（Chrome・Edge・Safari の新しい版で使えます）。')); return box; }
-    if (exp && exp.kind === 'note') {
-      box.append(h('b', null, '🎬 コメントの場面を動画にしています… '), h('span', { id: 'expLabel', class: 'note' }, ''),
+    if (exp && (exp.kind === 'note' || exp.kind === 'full')) {
+      box.append(h('b', null, exp.kind === 'full' ? '🎬 動画全体を書き出しています… ' : '🎬 コメントの場面を動画にしています… '), h('span', { id: 'expLabel', class: 'note' }, ''),
         h('div', { class: 'progress' }, h('i', { id: 'expBar' })),
         h('p', { class: 'note' }, '実際の長さの時間がかかります。このタブを表示したままにしてください（別のタブにすると止まります）。'),
         h('button', { class: 'btn small danger', onclick: () => exp.ctrl.abort() }, '中止'));
@@ -420,12 +505,10 @@
     }
     const r = S.noteOut;
     if (!r) { box.hidden = true; return box; }
-    box.append(h('div', { class: 'row' }, h('b', null, '✅ 動画ができました '),
-      h('span', { class: 'note' }, `${r.ext.toUpperCase()}・${(r.blob.size / 1048576).toFixed(1)}MB・約${Math.round(r.seconds)}秒${r.audio ? '' : '・音声なし'}`)),
+    box.append(h('div', { class: 'row' }, h('b', null, r.kind === 'full' ? '✅ 動画全体（コメント・スタンプ入り）ができました ' : '✅ 動画ができました '),
+      h('span', { class: 'note' }, `${r.ext.toUpperCase()}・${(r.blob.size / 1048576).toFixed(1)}MB・約${r.seconds >= 90 ? BS.fmtTime(r.seconds) : Math.round(r.seconds) + '秒'}${r.audio ? '' : '・音声なし'}`)),
       h('video', { src: r.url, controls: true, playsinline: true, class: 'outvideo' }),
-      h('div', { class: 'row' },
-        h('a', { class: 'btn primary', href: r.url, download: r.name, id: 'btnNoteDownload' }, '⬇ 保存する'),
-        h('span', { class: 'note' }, r.ext === 'webm' ? 'WebM 形式です。iPhone で見るときは、MP4 に変換が必要なことがあります。' : 'MP4 形式です。スマホ・LINE でも見られます。')));
+      saveRow(r, 'btnNoteDownload'));
     return box;
   }
 
@@ -1048,6 +1131,7 @@
     const ctrl = new AbortController();
     S.exporting = { team, ctrl, single: !!single };
     S.out[team] = null;
+    keepAwake(true);
     render();
     const title = [`${ICON[team]} ${WHAT[team]}ところ`, `${teamTag(0)} vs ${teamTag(1)}`, `${segs.length}シーン`];
     try {
@@ -1070,6 +1154,7 @@
       BS.ui.toast('書き出しに失敗しました：' + err.message, 'err', 8000);
     }
     S.exporting = null;
+    keepAwake(false);
     render();
   }
 
@@ -1417,7 +1502,8 @@
     if (A.seeking) return;
     A.seeking = true;
     const next = () => {
-      if (S.adj !== A || A.want == null) { A.seeking = false; return; }
+      // （「▶ この場面を見る」で再生を始めたら、残っていた移動はしない。すると再生が止まってしまうため）
+      if (S.adj !== A || A.want == null || S.reel.active) { A.want = null; A.seeking = false; return; }
       const t = A.want;
       A.want = null;
       seek(t).then(next, next);
@@ -1538,6 +1624,7 @@
     const A = S.adj, c = adjRef();
     if (!A || !c) return;
     if (S.reel.active) { stopReel(true); adjPlayBtn(); return; }
+    A.want = null;            // まだ残っている小さな画面の移動は、もうしない（再生を止めてしまうため）
     const m = c.at + A.d, win = adjWin(c);
     const seg = Object.assign({}, c, { on: true, at: m, t0: Math.max(0, m - win.lead), t1: Math.min(duration(), m + win.lag) });
     startReel(logSegs([seg]), c.team, '見本の場面');
@@ -1873,9 +1960,7 @@
       box.append(h('div', { class: 'row' }, h('b', null, '✅ 動画ができました '),
         h('span', { class: 'note' }, `${r.ext.toUpperCase()}・${(r.blob.size / 1048576).toFixed(1)}MB・約${Math.round(r.seconds)}秒${r.audio ? '' : '・音声なし'}`)),
         h('video', { src: r.url, controls: true, playsinline: true, class: 'outvideo' }),
-        h('div', { class: 'row' },
-          h('a', { class: 'btn primary', href: r.url, download: r.name, id: 'btnLogDownload' }, '⬇ 保存する'),
-          h('span', { class: 'note' }, r.ext === 'webm' ? 'WebM 形式です。iPhone で見るときは、MP4 に変換が必要なことがあります。' : 'MP4 形式です。スマホ・LINE でも見られます。')));
+        saveRow(r, 'btnLogDownload'));
     } else box.append(h('p', { class: 'note' }, `選んだ場面をつないで、1本の動画（${sup.ext.toUpperCase()}）にします。音声も入ります。できる動画と同じくらいの時間がかかります。`));
     return box;
   }
@@ -1890,6 +1975,7 @@
     const ctrl = new AbortController();
     S.exporting = { kind: 'log', ctrl, single: !!single };
     S.logOut = null;
+    keepAwake(true);
     render();
     const ft = single ? single.label : filterTitle();
     const vs = `${TL.teamName(log, 0)} vs ${TL.teamName(log, 1)}`;
@@ -1913,6 +1999,7 @@
       BS.ui.toast('書き出しに失敗しました：' + err.message, 'err', 8000);
     }
     S.exporting = null;
+    keepAwake(false);
     render();
   }
   /* 場面の小さな絵（タップした 1 秒前のコマ） */
@@ -2542,7 +2629,7 @@
         h('p', null, '別のカメラで撮った動画で場面がずれるときは、③ の「↔ 指でずらして合わせる」（④ の各場面の「↔」でも）。場面の枠を目盛りの上で指で左右に動かすと、記録した瞬間のコマが出るので、プレーの瞬間で指を離して「これで合わせる」。全部の場面が同じだけずれます。'),
         h('p', null, '1場面の長さは、ふつう「タップした瞬間の前 10 秒・後 2 秒」（リバウンドと★は前 5 秒）。④ の「⏱ プレーごとに長さを変える」で変えられます。記録にない場面は、映像を止めて「＋ この瞬間を場面に足す」。'),
         h('h4', null, '💬 コメント・スタンプ'),
-        h('p', null, '映像を止めて「💬 コメント」を押すと、その場面にコメント・スタンプ（👍 いいね・❗ ここ大事・❓ しつもん など）・タグ（ヘルプ・リバウンドなど）を入れられます。その時刻から 5 秒（3・8 秒も）映像の上に出て、「動画にする」で書き出す動画にも入ります。「🎬 コメントの場面を動画にする」で、コメントのところだけを1本に。「🔎 コメント帳」で、ほかの動画のコメントもことば・タグでさがせて、YouTube・バスケ・グロウで調べられます。コーチに見てもらうときは、できた動画や「📋 文字でコピー」を LINE・BAND で送ってください。'),
+        h('p', null, '映像を止めて「💬 コメント」を押すと、その場面にコメント・スタンプ（👍 いいね・❗ ここ大事・❓ しつもん など）・タグ（ヘルプ・リバウンドなど）を入れられます。その時刻から 5 秒（3・8 秒も）映像の上に出て、「動画にする」で書き出す動画にも入ります。「🎬 コメントの場面を動画にする」で、コメントのところだけを1本に。「🎬 動画全体を書き出す」で、動画のはじめから終わりまでをコメント・スタンプ入りで1本に（動画と同じだけ時間がかかります）。「🔎 コメント帳」で、ほかの動画のコメントもことば・タグでさがせて、YouTube・バスケ・グロウで調べられます。コーチに見てもらうときは、できた動画や「📋 文字でコピー」を LINE・BAND で送ってください。'),
         h('h4', null, 'コマ送り・写真'),
         h('p', null, '映像の下の「◂ コマ ▸」で1コマずつ（押し続けると続けて）。「📷 写真」で、いまのコマを写真にできます（iPhone・iPad は「画像を保存」で写真アプリへ）。'),
         h('h4', null, 'どちらのチームの得点か'),
@@ -2644,7 +2731,7 @@
 
   BS.app = { S, init, openFile, run, cancelRun, render, toScreen, startMarking, cancelMarking, findGoals, cancelFind, list, clipsFor, maybes: () => C.maybes(S.st.result, setupOf(), S.st.edits, list()), record: recRows, promote, unpromote, judge, playReel, stopReel, doExport, swapTeams, setHalf, addManual, moveTeam, seek, duration, makeThumbs,
     loadLog, setLog, removeLog, logClips, syncAt, nudge, playLogReel, doLogExport, syncFromMeta, syncFromShots, openTapVideo, cameraSync, openAdjust, openAddScene, stepFrame, snapshot,
-    openNote, openBook, doNoteExport, noteList };
+    openNote, openBook, doNoteExport, noteList, confirmFullExport, doFullExport };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }

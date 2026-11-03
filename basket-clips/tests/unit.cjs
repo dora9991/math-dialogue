@@ -225,9 +225,20 @@ section('💬 コメント・スタンプ（notes.js）');
   // 描く（Canvas の代わりに、呼ばれたことを覚えておく）
   const calls = [];
   const ctx = { save() {}, restore() {}, beginPath() {}, moveTo() {}, arcTo() {}, closePath() {}, fill() {}, fillRect(x, y, w, h) { calls.push(['rect', this.fillStyle, Math.round(x), Math.round(w)]); },
-    fillText(t) { calls.push(['text', t]); }, measureText(t) { return { width: Array.from(t).length * 20 }; } };
+    fillText(t) { calls.push(['text', t, this.font]); }, measureText(t) { return { width: Array.from(t).length * 20 }; } };
   ok(N.draw(ctx, 1280, 720, list, 31) === 1 && calls.some((c) => c[0] === 'text' && c[1] === 'ヘルプが遅い #ヘルプ') && calls.some((c) => c[0] === 'text' && c[1] === '👍 ❓') && calls.some((c) => c[0] === 'text' && c[1].includes('#リバウンド')) && calls.some((c) => c[0] === 'rect' && c[1] === '#facc15'),
     '描く：コメントの文・スタンプ・タグ・黄色の印（出ている時刻）', calls);
+  const stampFont = (c) => (c.find((x) => x[0] === 'text' && /[👍👏❓]/u.test(x[1])) || [])[2] || '';
+  ok(stampFont(calls).startsWith('112px'), 'スタンプは大きく（1280×720 で 112px。前の版の約 2 倍）', stampFont(calls));
+  calls.length = 0;
+  N.draw(ctx, 1280, 720, list, 51.5);
+  ok(stampFont(calls) === '' && calls.some((c) => c[1] === 'ナイス'), '（文だけのコメントには、スタンプを描かない）');
+  calls.length = 0;
+  N.draw(ctx, 1280, 720, N.cleanAll([{ id: 'n9', t: 10, stamps: ['👏'] }]), 11);
+  ok(stampFont(calls).startsWith('150px') && !calls.some((c) => c[0] === 'rect'), 'スタンプだけのときは、もっと大きく（150px・吹き出しなし）', calls);
+  calls.length = 0;
+  N.draw(ctx, 640, 360, N.cleanAll([{ id: 'n9', t: 10, stamps: ['👏'] }]), 11);
+  ok(stampFont(calls).startsWith('75px'), '動画の大きさに合わせる（640×360 なら半分の 75px）', stampFont(calls));
   calls.length = 0;
   ok(N.draw(ctx, 1280, 720, list, 40) === 0 && calls.length === 0, '出ていない時刻には、何も描かない');
 }
