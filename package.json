@@ -9,10 +9,12 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "vite build && gh-pages -d dist",
-    "teacher": "node --env-file=.env.local scripts/teacher-server.mjs"
+    "teacher": "node --env-file=.env.local scripts/teacher-server.mjs",
+    "deploy:lab": "vite build && node scripts/deploy-solo-lab.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
+    "katex": "^0.16.11",
     "pdfjs-dist": "^4.10.38",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
