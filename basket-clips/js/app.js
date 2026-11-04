@@ -142,18 +142,20 @@
   }
   /* 押し続けると続けて（0.4 秒押したら、前の移動が終わるたびに次のコマへ） */
   function holdRepeat(btn, fn) {
-    let timer = 0, held = false;
+    let timer = 0, held = false, downAt = 0;
     const stop = () => { held = false; clearTimeout(timer); };
     btn.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       e.preventDefault();
       held = true;
+      downAt = Date.now();
       fn();
       const rep = () => { if (!held) return; Promise.resolve(fn()).then(() => { if (held) timer = setTimeout(rep, 40); }); };
       timer = setTimeout(rep, 400);
     });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => btn.addEventListener(ev, stop));
-    btn.addEventListener('click', (e) => { if (e.detail === 0) fn(); });       // キーボード（Enter・スペース）で押したとき
+    // キーボード（Enter・スペース）で押したとき（指で押したあとの click は、もう動かしたので使わない。指の click も detail が 0 のことがある）
+    btn.addEventListener('click', () => { if (Date.now() - downAt > 1000) fn(); });
   }
   /* 📷 写真：いまのコマを、そのままの大きさの JPEG に。iPhone・iPad は共有（「画像を保存」で写真アプリへ）、ほかはダウンロード。
      （Safari は、操作の直後でないと共有を開かないので、絵を作るところから共有まで、待たずに続けて行う） */
@@ -564,7 +566,7 @@
         h('span', { class: 'note' }, duration() ? `長さ ${BS.fmtTime(duration())}` : '読み込み中…'),
         h('button', { class: 'btn small', onclick: pickFile }, '別の動画を選ぶ')));
     }
-    if (S.pendingLog) card.append(h('p', { class: 'note logpending' }, `📲 タップ記録（${logTitle(S.pendingLog)}）を読み込みました。その試合の動画を選んでください。`));
+    if (S.pendingLog) card.append(h('p', { class: 'note logpending' }, `📲 タップ記録（${logTitle(S.pendingLog)}）を読み込みました。${S.pendingLog.mode === 'video' && S.pendingLog.src && S.pendingLog.src.name ? `記録したときの動画（${S.pendingLog.src.name}）を選んでください（時刻は自動で合わせます）。` : 'その試合の動画を選んでください。'}`));
     else if (!S.st.log) {
       card.append(h('div', { class: 'logcta' },
         h('div', null, h('b', null, '📲 「バスケ タップ記録」で記録した試合なら'), h('br'),
@@ -1201,7 +1203,7 @@
     if (!S.media) {
       S.pendingLog = log;
       render();
-      BS.ui.toast(`タップ記録（${logTitle(log)}・${TL.plays(log).length}件）を読み込みました。次に、その試合の動画を選んでください`, 'ok', 7000);
+      BS.ui.toast(`タップ記録（${logTitle(log)}・${TL.plays(log).length}件）を読み込みました。次に、${log.mode === 'video' && log.src && log.src.name ? `記録したときの動画（${log.src.name}）を選んでください（時刻は自動で合わせます）` : 'その試合の動画を選んでください'}`, 'ok', 7000);
       return log;
     }
     stopReel(true);
@@ -1238,7 +1240,7 @@
             h('button', { class: 'lg', dataset: { game: g.id }, onclick: () => { const r = TL.localGame(g.id); if (r) loadLog(r, ''); else BS.ui.toast('この試合の記録が見つかりませんでした', 'err'); } },
               h('b', null, when(g)),
               h('span', { class: 'lgvs' }, h('i', { class: 'chip', style: { background: (g.colors || [])[0] || '#888' } }), ` ${(g.names || [])[0] || '自分'} ${g.score ? g.score[0] + ' − ' + g.score[1] : ''} ${(g.names || [])[1] || '相手'} `, h('i', { class: 'chip', style: { background: (g.colors || [])[1] || '#888' } })),
-              h('small', { class: 'note' }, `${g.n}件の記録${vids.length ? `・📹 撮影した動画 ${vids.length}本` : ''}`)),
+              h('small', { class: 'note' }, `${g.n}件の記録${vids.length ? `・📹 撮影した動画 ${vids.length}本` : ''}${g.rv ? '・🎬 動画を見ながら記録（同じ動画を開くと、時刻は自動で合います）' : ''}`)),
             vids.length ? h('div', { class: 'lgvids' }, vids.map((v) => h('button', { class: 'btn small primary', dataset: { tapvideo: v.vid }, onclick: () => openTapVideo(g.id, v.vid) },
               `📹 動画${v.n}（${BS.fmtTime(v.duration || 0)}）を記録と一緒に開く`))) : null);
         }))),
@@ -1271,8 +1273,30 @@
   }
   function afterSync(msg) {
     S.logOut = null;
+    const nn = importLogNotes();
     save(); render(); drawTimeline(); makeLogThumbs(true);
-    if (msg) BS.ui.toast(msg, 'ok', 6500);
+    if (nn) drawNotes();
+    if (msg || nn) BS.ui.toast([msg, nn ? `💬 記録のコメント・スタンプ ${nn}件も、動画に入れました` : ''].filter(Boolean).join('。'), 'ok', 6500);
+  }
+  /* 記録のコメント・スタンプ（タップ記録の「動画を見ながら記録」で入れたもの）を、時刻を合わせたときに1回だけ、この動画のコメントに入れる
+     （記録の時刻 → 動画の時刻。同じ時刻・同じ中身のものは入れない）。入れた数を返す */
+  function importLogNotes() {
+    const log = S.st.log;
+    if (!log || !(log.notes && log.notes.length) || !synced()) return 0;
+    const key = (log.id || log.file || 'log') + ':' + log.notes.length;
+    if (S.st.logNotesIn === key) return 0;
+    S.st.logNotesIn = key;
+    const dur = duration(), list = S.st.notes = (S.st.notes || []).slice();
+    let n = 0;
+    log.notes.forEach((x) => {
+      const v = TL.toVideo(x.t, S.st.sync.anchors);
+      if (v == null || v < 0 || (dur > 0 && v > dur)) return;
+      const t = Math.round(v * 100) / 100;
+      if (list.some((y) => Math.abs(y.t - t) < 0.05 && y.text === x.text && y.stamps.join('') === x.stamps.join(''))) return;
+      const c = NT.clean(Object.assign({}, x, { id: NT.nextId(list), t }));
+      if (c) { list.push(c); n++; }
+    });
+    return n;
   }
   function syncFromMeta() {
     const sug = metaSuggestion();
@@ -1295,7 +1319,8 @@
     if (!anchors) return false;
     S.st.sync = { anchors, how: 'camera', at: Date.now(), vid: video.vid };
     S.syncEdit = false;
-    afterSync(quiet ? null : `📹 撮影しながら記録した動画（動画${video.n}）なので、時刻は自動で合わせました（記録の 0:00 ＝ 動画の ${BS.fmtTime(anchors[0].v - anchors[0].t, true)}）`);
+    afterSync(quiet ? null : video.file ? '🎬 タップ記録で「動画を見ながら記録」した動画なので、時刻は自動で合わせました（記録の時刻 ＝ 動画の時刻）'
+      : `📹 撮影しながら記録した動画（動画${video.n}）なので、時刻は自動で合わせました（記録の 0:00 ＝ 動画の ${BS.fmtTime(anchors[0].v - anchors[0].t, true)}）`);
     return true;
   }
   /* 開いた動画が、記録の videos のどれかなら（ファイル名・長さで）、合わせる。合わせたら true */
