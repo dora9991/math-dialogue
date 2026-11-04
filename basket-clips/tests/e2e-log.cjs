@@ -598,6 +598,49 @@ const anchors = (page) => page.evaluate(() => BS.app.S.st.sync && BS.app.S.st.sy
       ok(errors3.length === 0, 'ページのエラーがない', errors3.slice(0, 3));
       await p3.close();
     }
+
+    console.log('\n■ タップ記録で「撮った動画を見ながら記録」した試合（時刻は動画の時刻・💬 コメント入り）');
+    {
+      const ctx = { console, Math, Date, JSON };
+      ctx.globalThis = ctx;
+      vm.createContext(ctx);
+      vm.runInContext(fs.readFileSync(path.join(__dirname, '..', '..', 'basket-tap', 'js', 'core.js'), 'utf8'), ctx);
+      const BT = ctx.BT, t0 = Date.UTC(2026, 10, 3, 9, 0, 0);
+      const g = BT.newGame({ now: t0, tz: 540, teams: [{ name: '致遠館', players: [{ no: '7' }] }, { name: '城南', players: [{ no: '4' }] }] });
+      Object.assign(g, { startedAt: t0, mode: 'video', src: { name: 'log120.mp4', size: fs.statSync(video).size, duration: 120, w: 640, h: 360 },
+        notes: [{ id: 'n1', t: 30, dur: 5, text: 'ヘルプが遅い！', stamps: ['👍'], tags: ['ヘルプ'], at: t0 }, { id: 'n2', t: 61.5, dur: 3, text: '', stamps: ['👏'], tags: [], at: t0 }] });
+      g.videos = [{ vid: 'file1', n: 1, startedAt: t0, duration: 120, name: 'log120.mp4', status: 'done', gone: true, file: true }];
+      BT.addEvent(g, { t: 0, type: 'period', period: 1 });
+      BT.addEvent(g, { t: 45, type: 'fg3', team: 1, no: '4' });
+      BT.addEvent(g, { t: 5.2, type: 'fg2', team: 0, no: '7' });         // 動画を戻して記録したもの（時刻の順でなくてよい）
+      const rvFile = path.join(WORK, 'review-log.json');
+      fs.writeFileSync(rvFile, JSON.stringify(BT.exportData(g)));
+      const p4 = await browser.newPage({ viewport: { width: 1280, height: 860 } });
+      const errors4 = [];
+      p4.on('pageerror', (e) => errors4.push(String(e)));
+      await p4.goto(srv.url);
+      await p4.waitForFunction(() => window.BS && BS.app && document.querySelector('#stepVideo'));
+      await p4.setInputFiles('#fileLog', rvFile);
+      await p4.waitForFunction(() => BS.app.S.pendingLog);
+      ok((await p4.textContent('#stepVideo')).includes('記録したときの動画（log120.mp4）を選んでください（時刻は自動で合わせます）'), '記録を先に読み込むと「記録したときの動画（log120.mp4）を選んでください」');
+      await p4.setInputFiles('#fileVideo', video);
+      await p4.waitForFunction(() => BS.app.S.media && BS.app.S.media.ready && BS.app.S.st.sync, null, { timeout: 30000 });
+      const sy = await p4.evaluate(() => BS.app.S.st.sync);
+      ok(sy.how === 'camera' && sy.anchors.length === 1 && sy.anchors[0].t === 0 && sy.anchors[0].v === 0, '同じ動画を開くと、時刻は自動で合う（記録の時刻 ＝ 動画の時刻）', sy);
+      const toast = await p4.textContent('#toasts');
+      ok(toast.includes('動画を見ながら記録') && toast.includes('コメント・スタンプ 2件'), 'お知らせ：「動画を見ながら記録」した動画・記録のコメント 2 件も入れた', toast);
+      const cl4 = await p4.evaluate(() => BS.app.logClips().map((c) => [c.t, c.at, c.label]));
+      ok(cl4.length === 2 && cl4[0][1] === 5.2 && cl4[1][1] === 45, '場面：動画の 0:05.2（#7 2P成功）・0:45（#4 3P成功）', cl4);
+      let nt = await p4.evaluate(() => BS.app.S.st.notes.map((n) => [n.t, n.dur, n.text, n.stamps.join(''), n.tags.join(',')]));
+      ok(nt.length === 2 && nt[0][0] === 30 && nt[0][2] === 'ヘルプが遅い！' && nt[0][4] === 'ヘルプ' && nt[1][0] === 61.5 && nt[1][3] === '👏', '記録のコメント・スタンプが、この動画のコメントに入る（書き出す動画にも入る）', nt);
+      await p4.setInputFiles('#fileLog', rvFile);
+      await p4.waitForFunction(() => BS.app.S.st.sync && BS.app.S.st.sync.how === 'camera');
+      await sleep(300);
+      nt = await p4.evaluate(() => BS.app.S.st.notes.length);
+      ok(nt === 2, '同じ記録をもう一度読み込んでも、コメントは2重にならない', nt);
+      ok(errors4.length === 0, 'ページのエラーがない', errors4.slice(0, 3));
+      await p4.close();
+    }
   } catch (e) {
     fail++;
     console.log('  FAIL 途中で止まりました:', e && e.stack || e);

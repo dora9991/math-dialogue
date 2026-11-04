@@ -110,11 +110,12 @@
     ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
     ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
   }
-  function draw(ctx, W, H, notes, t, x0, y0) {
+  /* k：文字・スタンプを大きくする倍率（ふつう 1。スマホの小さな画面で見るときに大きく） */
+  function draw(ctx, W, H, notes, t, x0, y0, k) {
     const act = activeAt(notes, t).slice(-3);
     if (!act.length) return 0;
     x0 = x0 || 0; y0 = y0 || 0;
-    const s = Math.min(W / 1280, H / 720) * 1.0;
+    const s = Math.min(W / 1280, H / 720) * (k > 0 ? k : 1);
     let bottom = y0 + H - 34 * s;
     // 新しいものほど下に（下から順に積む）
     for (let i = act.length - 1; i >= 0; i--) {

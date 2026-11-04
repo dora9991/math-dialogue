@@ -10,6 +10,10 @@
      teams: [ 自分, 相手 ]  … { name, color, colorName, players: [{ no: '7', name: '' }] }
      events: [ { id, t, type, team, no } ]  … 追加した順
      videos: [ { vid, n, startedAt, endedAt, duration, name, mime, w, h, bytes } ]（この端末のカメラで撮影しながら記録したとき。なくてよい）
+     mode: 'video'（動画を見ながら記録した試合。t は「動画の時刻」。なければ、ふつうの記録＝スタートからの時間）
+       src: { name, size, duration, w, h }（そのとき見ていた動画のファイル。中身は持たない）。videos にも file: true の1本を入れる
+       （startedAt を記録と同じにしておくので、バスケ得点クリップで同じ動画を開くと、時刻あわせなしで合う）
+     notes: [ { id, t, dur, text, stamps, tags, at } ]（💬 コメント・スタンプ。t は記録の時刻。なくてよい）
        startedAt：録画を始めた時刻（エポックミリ秒。記録の startedAt と同じ時計）→ 記録の t 秒 ＝ 動画の t ＋（startedAt(記録) − startedAt(動画)）/1000 秒
        動画の中身は、この端末のブラウザ（IndexedDB 'btap-media'。vstore.js）にだけある。書き出す JSON には、ファイル名・時刻・長さだけが入る
        t   : スタートからの秒（0.1 秒まで）。ストップウォッチと同じで、止まらずに進む
@@ -253,6 +257,21 @@
     game.events.push(e);
     return e;
   };
+  /* 💬 コメント・スタンプをそろえる（形の合わないものは捨てる。くわしい形は js/notes.js） */
+  BT.cleanNotes = function (list) {
+    const out = (Array.isArray(list) ? list : []).filter((n) => n && isFinite(n.t) && n.t >= 0).slice(0, 500).map((n) => ({
+      id: /^n\d{1,6}$/.test(n.id || '') ? n.id : '', t: Math.round(n.t * 100) / 100, dur: isFinite(n.dur) && n.dur > 0 ? Math.min(30, +n.dur) : 5,
+      text: String(n.text || '').trim().slice(0, 60), stamps: (Array.isArray(n.stamps) ? n.stamps : []).map(String).slice(0, 6),
+      tags: (Array.isArray(n.tags) ? n.tags : []).map((w) => String(w).slice(0, 20)).filter(Boolean).slice(0, 8), at: isFinite(n.at) ? +n.at : 0
+    })).filter((n) => n.text || n.stamps.length);
+    // id がない・かぶっているものには、新しい番号を付ける
+    let k = out.reduce((m, n) => Math.max(m, n.id ? Number(n.id.slice(1)) : 0), 0);
+    const seen = new Set();
+    out.forEach((n) => { if (!n.id || seen.has(n.id)) n.id = 'n' + (++k); seen.add(n.id); });
+    return out;
+  };
+  /* 動画を見ながら記録した試合か（t は動画の時刻） */
+  BT.isReview = (game) => !!(game && game.mode === 'video');
   BT.findEvent = (game, id) => (game.events || []).find((e) => e.id === id) || null;
   BT.removeEvent = function (game, id) {
     const i = (game.events || []).findIndex((e) => e.id === id);
@@ -567,6 +586,13 @@
     g.endedAt = isFinite(obj.endedAt) && obj.endedAt > 0 ? obj.endedAt : null;
     const vids = BT.cleanVideos(obj.videos);
     if (vids.length) g.videos = vids;
+    if (obj.mode === 'video') {
+      g.mode = 'video';
+      const sr = obj.src && typeof obj.src === 'object' ? obj.src : {};
+      g.src = { name: String(sr.name || '').slice(0, 120), size: +sr.size || null, duration: isFinite(sr.duration) ? +sr.duration : null, w: +sr.w || null, h: +sr.h || null };
+    }
+    const notes = BT.cleanNotes(obj.notes);
+    if (notes.length) g.notes = notes;
     // 記録の id は、そのまま使えるもの（e＋数・重ならない）は残し、そうでないものに新しい番号を付ける
     const okId = (id) => typeof id === 'string' && /^e\d{1,7}$/.test(id);
     g.seq = obj.events.reduce((m, e) => Math.max(m, e && okId(e.id) ? Number(e.id.slice(1)) : 0), 0);
@@ -595,7 +621,7 @@
 
   /* 試合の一覧に出す短い情報 */
   BT.summary = function (game) {
-    return { id: game.id, title: game.title || '', date: game.date, startedAt: game.startedAt, endedAt: game.endedAt, names: [BT.teamName(game, 0), BT.teamName(game, 1)], colors: [game.teams[0].color, game.teams[1].color], score: BT.score(game), n: (game.events || []).filter((e) => e.type !== 'period').length, videos: (game.videos || []).filter((v) => !v.gone).length, at: Date.now() };
+    return { id: game.id, title: game.title || '', date: game.date, startedAt: game.startedAt, endedAt: game.endedAt, names: [BT.teamName(game, 0), BT.teamName(game, 1)], colors: [game.teams[0].color, game.teams[1].color], score: BT.score(game), n: (game.events || []).filter((e) => e.type !== 'period').length, videos: (game.videos || []).filter((v) => !v.gone).length, rv: BT.isReview(game), at: Date.now() };
   };
   /* 動画の情報をそろえる（読み込んだファイル用。形の合わないものは捨てる） */
   BT.cleanVideos = function (list) {
@@ -603,7 +629,8 @@
       vid: String(v.vid || 'v' + i).slice(0, 40), n: isFinite(v.n) ? Math.round(v.n) : i + 1, startedAt: +v.startedAt,
       endedAt: isFinite(v.endedAt) ? +v.endedAt : null, duration: isFinite(v.duration) ? +v.duration : null,
       name: String(v.name || '').slice(0, 120), mime: String(v.mime || '').slice(0, 60), w: +v.w || null, h: +v.h || null, bytes: +v.bytes || null,
-      status: 'done', gone: true        // 読み込んだ記録の動画は、この端末にはない（ファイル名・時刻だけ）
+      status: 'done', gone: true,        // 読み込んだ記録の動画は、この端末にはない（ファイル名・時刻だけ）
+      file: !!v.file                     // 動画を見ながら記録したときの、その動画（この端末で撮影したものではない）
     }));
   };
 })(typeof window !== 'undefined' ? window : globalThis);

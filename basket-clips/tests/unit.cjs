@@ -319,6 +319,19 @@ section('「バスケ タップ記録」の記録（読み込み・時刻あわ�
   ok(TL.eventLabel(log, log.events.find((e) => e.t === 5)) === '#7 たけし 2P成功' && TL.eventLabel(log, log.events.find((e) => e.t === 78), true) === '致遠館 リバウンド', '呼び名：「#7 たけし 2P成功」「致遠館 リバウンド」');
   const stored = TL.parse(JSON.parse(JSON.stringify(game)));      // 記録アプリがブラウザに保存している形（書き出す前）でも読める
   ok(TL.plays(stored).length === 10 && stored.events.find((e) => e.t === 78).period === 2, 'ブラウザに保存された形（同じ端末から読み込むとき）も読める');
+  ok(log.mode === '' && log.src === null && Array.isArray(log.notes) && log.notes.length === 0, 'ふつうの記録：mode なし・コメントなし');
+  {
+    // 撮った動画を見ながら記録した試合（t は動画の時刻・コメント入り）
+    const BSN = load(['core.js', 'clips.js', 'mp4.js', 'taplog.js', 'notes.js'], { escape, decodeURIComponent });
+    const rv = JSON.parse(JSON.stringify(BT.exportData(game)));
+    Object.assign(rv, { mode: 'video', src: { name: 'IMG_0001.MOV', duration: 2700.5 }, notes: [{ id: 'n1', t: 30, text: 'ヘルプ #ヘルプ', stamps: ['👍', 'xx'] }, { id: 'n2', t: 10, text: '' }] });
+    rv.videos = [{ vid: 'file1', n: 1, startedAt: rv.startedAt, duration: 2700.5, name: 'IMG_0001.MOV', file: true }];
+    const lr = BSN.taplog.parse(rv);
+    ok(lr.mode === 'video' && lr.src.name === 'IMG_0001.MOV' && lr.videos[0].file === true, '動画を見ながら記録した試合：mode・src・videos の file を読む', { mode: lr.mode, src: lr.src, v: lr.videos });
+    ok(lr.notes.length === 1 && lr.notes[0].stamps.join('') === '👍' && lr.notes[0].tags.join() === 'ヘルプ', 'コメント：notes.js の形にそろえる（知らないスタンプ・空のコメントは捨てる）', lr.notes);
+    const va = BSN.taplog.videoAnchors(lr, lr.videos[0]);
+    ok(va.length === 1 && va[0].t === 0 && va[0].v === 0 && BSN.taplog.matchVideo(lr, 'img_0001.mov', 10) === lr.videos[0], 'その動画なら、記録の時刻 ＝ 動画の時刻（ファイル名で見分ける）', va);
+  }
   let err = null;
   try { TL.parse({ format: 'basket-tap', teams: [], events: [{ t: 0, type: 'period', period: 1 }] }); } catch (e) { err = e.message; }
   ok(err && /プレーの記録がありません/.test(err), 'プレーのない記録は、分かる言葉で断る', err);

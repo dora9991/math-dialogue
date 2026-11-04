@@ -7,6 +7,8 @@
      チームなし：記録の画面の下の「パスミス」「★ あとで見る」（だれのかは決めずに、時刻だけ）。チームの絞り込みでは外さない。
      videos: [{ vid, n, startedAt（録画を始めた時刻・エポックミリ秒）, duration, name }]：その端末のカメラで撮影しながら記録した動画（なくてよい）。
        記録と同じ時計なので、その動画なら時刻あわせがいらない（videoAnchors）。
+     mode: 'video'：撮った動画を見ながら記録した試合（t は、その動画の時刻）。videos の1本（file: true）の startedAt が記録と同じなので、
+       同じ動画を開けば（ファイル名・長さで見分ける）時刻あわせがいらない。notes：💬 コメント・スタンプ（t は記録の時刻。形は notes.js）
    くわしくは basket-tap/js/core.js の先頭。
 
    時刻あわせ（sync）：記録の時刻 t と、動画の時刻 v の対応を「合わせた点」anchors: [{ t, v }] で持つ。
@@ -91,11 +93,14 @@
     events.sort((a, b) => a.t - b.t);
     if (!events.some((e) => e.type !== 'period')) throw new Error('この記録には、プレーの記録がありません');
     const videos = (Array.isArray(obj.videos) ? obj.videos : []).filter((v) => v && isFinite(v.startedAt) && v.startedAt > 0).slice(0, 50)
-      .map((v, i) => ({ vid: String(v.vid || 'v' + i).slice(0, 40), n: isFinite(v.n) ? Math.round(v.n) : i + 1, startedAt: +v.startedAt, duration: isFinite(v.duration) ? +v.duration : null, name: String(v.name || '').slice(0, 120), gone: !!v.gone }));
+      .map((v, i) => ({ vid: String(v.vid || 'v' + i).slice(0, 40), n: isFinite(v.n) ? Math.round(v.n) : i + 1, startedAt: +v.startedAt, duration: isFinite(v.duration) ? +v.duration : null, name: String(v.name || '').slice(0, 120), gone: !!v.gone, file: !!v.file }));
+    const review = obj.mode === 'video';
     return {
       format: 'basket-tap', id: String(obj.id || '').slice(0, 40), title: String(obj.title || '').slice(0, 40), date: /^\d{4}-\d{2}-\d{2}$/.test(obj.date || '') ? obj.date : '',
       startedAt: isFinite(obj.startedAt) && obj.startedAt > 0 ? +obj.startedAt : null, tz: isFinite(obj.tz) ? +obj.tz : 540,
-      teams, events, videos, file: fileName ? String(fileName).slice(0, 80) : '', loadedAt: Date.now()
+      teams, events, videos, file: fileName ? String(fileName).slice(0, 80) : '', loadedAt: Date.now(),
+      mode: review ? 'video' : '', src: review && obj.src && typeof obj.src === 'object' ? { name: String(obj.src.name || '').slice(0, 120), duration: isFinite(obj.src.duration) ? +obj.src.duration : null } : null,
+      notes: BS.notes ? BS.notes.cleanAll(obj.notes) : []
     };
   }
 

@@ -213,6 +213,36 @@ ok(pt.scroll && pt.bw >= BT.LAYOUT.minBw, '入りきらないとき：ボタン�
 pt = BT.planTeam(250, 400, 13, 22, 4);
 ok(pt.bw >= BT.LAYOUT.minBw && pt.c === 1, '幅が狭いときは、列を増やさない（ボタンの幅を保つ）', pt);
 eq([BT.inkOn('#f4f4f4'), BT.inkOn('#1f2f6e'), BT.inkOn('#f2c230')], ['#111111', '#ffffff', '#111111'], 'チームの色の上の文字の色（読みやすいほう）');
+
+section('撮った動画を見ながら記録した試合（mode: video）・💬 コメント');
+{
+  const gv = BT.newGame({ teams: [{ name: 'A', players: [{ no: '4' }] }, { name: 'B' }], now: Date.UTC(2026, 10, 3, 6, 0) });
+  gv.startedAt = Date.UTC(2026, 10, 3, 6, 0);
+  Object.assign(gv, { mode: 'video', src: { name: 'IMG_0001.MOV', size: 1234, duration: 2700.5, w: 1920, h: 1080 }, rvPos: 61.2,
+    notes: [{ id: 'n1', t: 30.123, dur: 5, text: ' ヘルプ！ ', stamps: ['👍'], tags: ['ヘルプ'], at: 1 }, { id: 'n2', t: 40, text: '', stamps: [] }, { id: 'zz', t: 50, text: '声', stamps: [], dur: 99 }] });
+  gv.videos = [{ vid: 'file1', n: 1, startedAt: gv.startedAt, duration: 2700.5, name: 'IMG_0001.MOV', status: 'done', gone: true, file: true }];
+  BT.addEvent(gv, { t: 0, type: 'period', period: 1 });
+  BT.addEvent(gv, { t: 1500.25, type: 'fg2', team: 0, no: '4' });
+  BT.addEvent(gv, { t: 12.3, type: 'fg3', team: 1, no: null });          // 動画を戻して、前の場面を記録（時刻の順でなくてよい）
+  ok(BT.isReview(gv) && !BT.isReview(BT.newGame({})), 'BT.isReview：動画を見ながら記録した試合か');
+  eq(BT.score(gv, 100), [0, 3], '得点は、動画の時刻まで（BT.score の until）');
+  eq(BT.sorted(gv).map((e) => e.t), [0, 12.3, 1500.3], '一覧・書き出しは時刻の順（記録した順ではなく）');
+  const ex = BT.exportData(gv);
+  ok(ex.mode === 'video' && ex.src.name === 'IMG_0001.MOV' && ex.notes.length === 3 && ex.videos[0].file === true && ex.videos[0].startedAt === ex.startedAt, '書き出す JSON：mode・src・notes・videos（file: true・startedAt が記録と同じ）', ex);
+  const gi = BT.importData(JSON.stringify(ex));
+  ok(gi.mode === 'video' && gi.src.duration === 2700.5 && gi.src.w === 1920 && gi.videos[0].file === true && gi.videos[0].gone === true, '読み込んでも、動画を見ながら記録した試合のまま（動画の情報も）', { mode: gi.mode, src: gi.src, v: gi.videos });
+  eq(gi.notes.map((n) => [n.id, n.t, n.dur, n.text, n.stamps.join('')]), [['n1', 30.12, 5, 'ヘルプ！', '👍'], ['n2', 50, 30, '声', '']], 'コメント：文もスタンプもないものは捨てる・id のないものに番号・出す長さは 30 秒まで');
+  eq(BT.cleanNotes([{ id: 'n2', t: 1, text: 'a' }, { id: 'n2', t: 2, text: 'b' }, { t: 3, text: 'c' }]).map((n) => n.id), ['n2', 'n3', 'n4'], 'コメントの id がかぶっていたら付け直す');
+  const plain = BT.importData(JSON.stringify(BT.exportData(BT.importData(JSON.stringify(Object.assign({}, ex, { mode: undefined, notes: undefined }))))));
+  ok(!plain.mode && !plain.src && !plain.notes, 'ふつうの記録には、mode・src・notes を足さない');
+  ok(BT.summary(gv).rv === true && BT.summary(plain).rv === false, '試合の一覧に「動画を見ながら」の印（summary.rv）');
+}
+{
+  // コメントの絵・形は、バスケ得点クリップと同じもの（js/notes.js をそのまま写して使う）
+  const a = fs.readFileSync(path.join(__dirname, '..', 'js', 'notes.js'), 'utf8');
+  const b = fs.readFileSync(path.join(__dirname, '..', '..', 'basket-clips', 'js', 'notes.js'), 'utf8');
+  ok(a === b, 'js/notes.js は basket-clips/js/notes.js と同じ（直したら、両方に写す）');
+}
 eq(BT.fmtTime(3725.46, true), '1:02:05.5', '時刻の書式（1時間以上・0.1 秒）');
 
 console.log(`\n${pass} ok / ${fail} fail`);
