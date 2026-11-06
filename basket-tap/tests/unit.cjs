@@ -245,5 +245,41 @@ section('撮った動画を見ながら記録した試合（mode: video）・�
 }
 eq(BT.fmtTime(3725.46, true), '1:02:05.5', '時刻の書式（1時間以上・0.1 秒）');
 
+section('1本にまとめた版：切り出し・クラウド');
+{
+  // 切り出しの部品は、バスケ得点クリップのものを写して使う（直したら、両方に）
+  ['taplog', 'media', 'mp4', 'export'].forEach((f) => {
+    const a2 = fs.readFileSync(path.join(__dirname, '..', 'js', 'clip', f + '.js'), 'utf8').split('\n').slice(1).join('\n');
+    const b2 = fs.readFileSync(path.join(__dirname, '..', '..', 'basket-clips', 'js', f + '.js'), 'utf8');
+    ok(a2 === b2, `js/clip/${f}.js は basket-clips/js/${f}.js と同じ`);
+  });
+  // 切り出した印（試合の一覧の「✓ 切り出しずみ」・ホームの「✂️ 切り出し待ち」）
+  const g = BT.newGame({ now: T0, tz: 540 });
+  g.startedAt = T0; g.endedAt = T0 + 60000;
+  BT.addEvent(g, { t: 0, type: 'period', period: 1 });
+  BT.addEvent(g, { t: 12.3, type: 'fg2', team: 0, no: '7' });
+  ok(BT.summary(g).trim === false, '切り出す前は summary.trim が false');
+  g.trims = { 'game.mp4|123': { anchors: [{ t: 0, v: 3 }], how: 'manual', view: { teams: [true, true], groups: {}, players: [] }, off: {}, adds: [], win: { lead: 10, lag: 2, by: {} } } };
+  g.trimmed = true; g.trimLast = 'game.mp4|123';
+  ok(BT.summary(g).trim === true, '切り出したら summary.trim が true');
+  const back = BT.importData(JSON.parse(JSON.stringify(BT.exportData(g))));
+  eq([back.trimmed, back.trimLast, back.trims['game.mp4|123'].anchors], [true, 'game.mp4|123', [{ t: 0, v: 3 }]], '書き出して読み込んでも、時刻あわせ（trims）が残る');
+  const bad = BT.importData(Object.assign(JSON.parse(JSON.stringify(BT.exportData(g))), { trims: { x: 1, y: { anchors: 'no' } } }));
+  ok(!bad.trims && !bad.trimmed, '形の合わない trims は読み込まない');
+}
+{
+  // 合言葉（クラウド）：16 文字・まぎらわしい文字なし。「-」・小文字・空白を許す
+  const ctx = { console, Math, Date, JSON, Uint8Array, crypto: require('crypto').webcrypto };
+  ctx.globalThis = ctx;
+  vm.createContext(ctx);
+  ['core.js', 'store.js', 'cloud.js'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', f), 'utf8'), ctx, { filename: f }));
+  const C = ctx.BT.cloud;
+  const k = C.newKey();
+  ok(/^[2-9A-HJKMNP-Z]{16}$/.test(k), '新しい合言葉は 16 文字（0・1・I・L・O を使わない）', k);
+  eq(C.normKey(k.toLowerCase().replace(/(.{4})(?=.)/g, '$1-')), k, '小文字・「-」区切りで入れても同じ合言葉');
+  eq([C.normKey('ABCD'), C.normKey('ABCD-EFGH-JKMN-PQR1'), C.normKey('')], [null, null, null], '短い・使わない文字（1）・空は null');
+  eq(C.showKey('ABCDEFGHJKMNPQRS'), 'ABCD-EFGH-JKMN-PQRS', '見せるときは 4 文字ずつ「-」');
+}
+
 console.log(`\n${pass} ok / ${fail} fail`);
 process.exit(fail ? 1 : 0);

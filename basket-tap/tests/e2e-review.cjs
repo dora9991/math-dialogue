@@ -9,6 +9,7 @@ const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { chromium } = require('./pw.cjs');
+const { stubCloud } = require('./cloudstub.cjs');
 const { start } = require('./server.cjs');
 
 const MODE = process.argv[2] || 'dev';
@@ -19,16 +20,18 @@ const ok = (c, name, extra) => { if (c) { pass++; console.log('  ok  ', name); }
 const shot = async (page, name) => { if (SHOTS) { fs.mkdirSync(SHOTS, { recursive: true }); await page.screenshot({ path: path.join(SHOTS, name + '.png'), animations: 'disabled' }); } };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function makeVideo(name, sec) {
+async function makeVideo(name, sec) {
   const file = path.join(WORK, name);
   if (!fs.existsSync(file)) {
     fs.mkdirSync(WORK, { recursive: true });
-    execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=size=640x360:rate=30', '-t', String(sec), '-c:v', 'libvpx-vp9', '-b:v', '300k', '-deadline', 'realtime', '-cpu-used', '8', '-pix_fmt', 'yuv420p', file]);
+    try { execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=size=640x360:rate=30', '-t', String(sec), '-c:v', 'libvpx-vp9', '-b:v', '300k', '-deadline', 'realtime', '-cpu-used', '8', '-pix_fmt', 'yuv420p', file]); }
+    catch (e) { await require('./tools/chrome-video.cjs').chromeVideo(chromium, file, sec); }      // ffmpeg がないとき：Chrome で作る（H.264）
   }
   return file;
 }
 async function openPage(browser, url, vp) {
   const ctx = await browser.newContext({ viewport: vp, deviceScaleFactor: SHOTS ? 2 : 1, hasTouch: true, isMobile: vp.width < 900, acceptDownloads: true, locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
+  await stubCloud(ctx);
   await ctx.addInitScript(() => { try { Object.defineProperty(navigator, 'canShare', { value: () => false, configurable: true }); } catch (e) { /* 無視 */ } });
   const page = await ctx.newPage();
   const errors = [];
@@ -68,7 +71,7 @@ async function layoutCheck(page) {
 (async () => {
   const root = MODE === 'built' ? path.join(__dirname, '..', '..', 'public', 'basket-tap') : path.join(__dirname, '..');
   if (MODE === 'built' && !fs.existsSync(path.join(root, 'index.html'))) { console.log('public/basket-tap/index.html がありません。先に node basket-tap/build.mjs'); process.exit(1); }
-  const VID = makeVideo('rv120.mp4', 120), SHORT = makeVideo('rv10.mp4', 10);
+  const VID = await makeVideo('rv120.mp4', 120), SHORT = await makeVideo('rv10.mp4', 10);
   const srv = await start(0, root);
   const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required', '--mute-audio'] });
   try {
@@ -77,7 +80,7 @@ async function layoutCheck(page) {
     await page.evaluate(() => localStorage.clear());
     await page.reload();
     await page.waitForFunction(() => window.BT && BT.app && document.querySelector('#btnNewReview'));
-    ok(await page.isVisible('#btnNewReview'), '試合の一覧に「🎬 撮った動画を見ながら記録する」');
+    ok(await page.isVisible('#btnNewReview'), 'ホームに「🎬 撮った動画を見ながら記録する」');
     await page.tap('#btnNewReview');
     ok((await page.textContent('.setup')).includes('撮った動画を見ながら記録します') && await page.isVisible('#btnToReview') && await page.isVisible('#btnToLive'), '試合の準備：動画を選ぶボタン（動画なしで記録することもできる）');
     await page.tap('#team0 [data-preset="4-18"]');
@@ -242,7 +245,7 @@ async function layoutCheck(page) {
     // 書き出す
     await page.tap('#btnMenu');
     await page.click('.menu .mitem:has-text("書き出す")');
-    ok((await page.textContent('.export')).includes('動画を見ながら記録した試合です'), '書き出す：同じ動画とバスケ得点クリップで開くと、時刻あわせなし');
+    ok((await page.textContent('.export')).includes('記録のファイル（JSON）') && !(await page.textContent('.export')).includes('バスケ得点クリップ'), '書き出す：集計・一覧の CSV と記録のファイル（別のアプリへの案内はない）');
     const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#btnExpJson')]);
     const ex = JSON.parse(fs.readFileSync(await dl.path(), 'utf8'));
     ok(ex.mode === 'video' && ex.src.name === 'rv120.mp4' && ex.videos[0].file && ex.videos[0].startedAt === ex.startedAt && ex.events.filter((e) => e.type !== 'period').length === 6, '記録のファイル（JSON）：mode・src・videos・記録 6 件', { mode: ex.mode, n: ex.events.length });
@@ -273,10 +276,24 @@ async function layoutCheck(page) {
     await page.click('.menu .mitem:has-text("記録を終える")');
     await page.click('.sheet-foot .btn.primary');
     await sleep(300);
-    ok((await page.textContent('.sheet-card')).includes('集計'), '「記録を終える」で集計');
-    await page.evaluate(() => BT.ui.closeSheet());
-    await page.evaluate(() => BT.app.go('home'));
-    ok((await page.textContent('.games')).includes('🎬 動画を見ながら') && await page.evaluate(() => !BT.app.S.rv), '試合の一覧に「🎬 動画を見ながら」・動画は外す');
+    ok(await page.evaluate(() => BT.app.S.view) === 'game' && await page.isVisible('.hubstats .stats') && await page.isVisible('.hubexport #btnExpBox'), '「記録を終える」で試合のページ（集計・書き出す）');
+    ok((await page.textContent('#hubTrim')).includes('場面を見る・動画にする'), '試合のページに「🎬 場面を見る・動画にする」（動画は選び直さない）');
+    // そのまま場面を切り出す：記録した動画のまま・時刻あわせなし
+    await page.tap('#hubTrim');
+    await page.waitForFunction(() => BT.trim.state && BT.trim.state.media && BT.trim.state.media.ready && document.querySelector('#tSyncOk'), null, { timeout: 15000 });
+    {
+      const r = await page.evaluate(() => ({ how: BT.trim.state.st.how, anchors: BT.trim.state.st.anchors, n: document.querySelectorAll('#tList .tclip').length, plays: BT.app.S.game.events.filter((e) => e.type !== 'period').length, name: BT.trim.state.file.name }));
+      ok(r.how === 'review' && JSON.stringify(r.anchors) === '[{"t":0,"v":0}]' && r.name === 'rv120.mp4', '✂️ 場面を切り出す：記録した動画のまま、時刻は自動（記録の時刻 ＝ 動画の時刻）', r);
+      ok(r.n === r.plays && r.n > 0, '記録した場面が全部並ぶ', r);
+    }
+    await page.tap('#tReel');
+    await sleep(800);
+    ok(await page.isVisible('#tReelBar') && await page.evaluate(() => !BT.trim.state.media.paused), '「▶ 続けて再生」で場面を再生');
+    await shot(page, 'review-trim');
+    await page.tap('#tDone');
+    ok(await page.evaluate(() => BT.app.S.view) === 'game' && await page.evaluate(() => BT.app.S.game.trimmed === true), '「✓ 終わる」で試合のページへ（切り出しずみ）');
+    await page.tap('#hubHome2');
+    ok((await page.textContent('#gameList')).includes('🎬 動画を見ながら記録') && await page.evaluate(() => !BT.app.S.rv), 'ホームの一覧に「🎬 動画を見ながら記録」・動画は外す');
     ok(errors.length === 0, 'ページのエラーがない', errors.slice(0, 3));
     await ctx.close();
 

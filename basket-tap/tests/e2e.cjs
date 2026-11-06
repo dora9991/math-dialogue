@@ -7,6 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('./pw.cjs');
+const { stubCloud } = require('./cloudstub.cjs');
 const { start } = require('./server.cjs');
 
 const MODE = process.argv[2] || 'dev';
@@ -20,6 +21,7 @@ async function openPage(browser, url, vp, opts) {
   const ctx = await browser.newContext(Object.assign({ viewport: vp, deviceScaleFactor: 2, hasTouch: true, isMobile: vp.width < 900, acceptDownloads: true, locale: 'ja-JP', timezoneId: 'Asia/Tokyo' }, opts || {}));
   // 「共有」は開かない（ダウンロードで確かめる）
   await ctx.addInitScript(() => { try { Object.defineProperty(navigator, 'canShare', { value: () => false, configurable: true }); } catch (e) { /* 無視 */ } });
+  await stubCloud(ctx);         // 本物のクラウドには送らない
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
@@ -82,7 +84,7 @@ const pb = (tm, no, type) => `#panel${tm} .prow[data-no="${no == null ? '' : no}
   try {
     console.log(`\n■ ${MODE === 'built' ? '1ファイル版（public/basket-tap/index.html）' : '開発版（basket-tap/index.html）'}・スマホ（390×713）`);
     const { ctx, page, errors } = await openPage(browser, srv.url, { width: 390, height: 713 });
-    ok(await page.$('#btnNew'), '最初は試合の一覧（「新しい試合を記録する」）');
+    ok(await page.$('#btnNew') && await page.$('#btnNewReview'), '最初はホーム（「試合を見ながら記録する」「撮った動画を見ながら記録する」）');
     await shot(page, 'phone-home');
 
     console.log('\n■ 試合の準備（チーム名・色・背番号をパッと）');
@@ -268,19 +270,31 @@ const pb = (tm, no, type) => `#panel${tm} .prow[data-no="${no == null ? '' : no}
     await page.clock.runFor(1000);
     ok((await page.textContent('#tval')).trim().startsWith('10:'), '時計はスタートから進み続けている', await page.textContent('#tval'));
 
-    console.log('\n■ 試合を終える');
+    console.log('\n■ 試合を終える（→ 試合のページ・「動画のトリミングを行いますか？」）');
     await tap(page, '#btnMenu');
     await page.click('.mitem:has-text("試合を終える")');
     await page.click('.sheet-foot .btn.primary');
     g = await game(page);
     ok(g.endedAt > g.startedAt, '終えた時刻');
-    await page.waitForSelector('.stats');
-    await page.click('.sheet-card header .x');
-    ok(await page.isVisible('#cover') && (await page.textContent('#cover')).includes('試合終了'), '「試合終了」と得点');
-    { const bb = await page.locator(pb(0, '4', 'fg2')).boundingBox(); await page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2); }
+    await page.waitForSelector('#askTrimYes');
+    ok((await page.textContent('.sheet-card header')).includes('動画のトリミングを行いますか？') && await page.isVisible('#askLater'), '終えると「動画のトリミングを行いますか？」（はい・あとで）');
+    await page.click('#askLater');
+    ok(await page.evaluate(() => BT.app.S.view) === 'game' && (await page.textContent('#hubNext')).includes('動画から場面を切り出す'), '「あとで」→ 試合のページ（✂️ 動画から場面を切り出す）');
+    { const sc = await page.evaluate(() => BT.score(BT.app.S.game)); ok((await page.textContent('.hsc')).replace(/\s/g, '') === `${sc[0]}−${sc[1]}`, '試合のページに得点', await page.textContent('.hsc')); }
+    ok(await page.isVisible('.hubstats .stats') && await page.isVisible('.hubexport #btnExpBox') && await page.isVisible('#hubHome2'), '試合のページに集計・書き出す・🏠 ホームへ戻る');
+    await shot(page, 'phone-hub');
+    await page.click('#hubHome2');
+    ok(await page.isVisible(`#waits [data-wait="${g.id}"]`), 'ホームの「✂️ 切り出し待ち」に、その試合（記録は残っている）');
+    ok((await page.textContent(`#gameList [data-id="${g.id}"]`)).includes('切り出し待ち'), 'これまでの試合に「✂️ 切り出し待ち」の札');
+    await page.click(`#waits [data-wait="${g.id}"] .gopen`);
+    ok(await page.evaluate(() => BT.app.S.view) === 'game', '切り出し待ちの試合を押すと、試合のページ');
+    // 終えた試合の記録の画面（試合のページから戻すまで）は、押しても記録しない
+    await page.evaluate(() => BT.app.go('live'));
+    ok(await page.isVisible('#cover') && (await page.textContent('#cover')).includes('試合終了') && await page.isVisible('#btnToHub'), '終えた試合の記録の画面は「試合終了」と「📄 試合のページへ」');
+    await page.evaluate(() => { const b = document.querySelector('#panel0 .prow[data-no="4"] .pb[data-type="fg2"]'); if (b) b.click(); });
     await tap(page, '#btnPass');
     ok(plays(await game(page)).length === n0, '終えたあとは記録しない（選手の行・パスミスとも）');
-    await page.click('#cover .btn.small');
+    await page.click('#cover button:has-text("続きを記録する")');
     ok(!(await game(page)).endedAt && !(await page.isVisible('#cover')), '「続きを記録する」で戻せる');
     ok(errors.length === 0, 'ページのエラーがない', errors.slice(0, 3));
 
@@ -375,7 +389,7 @@ const pb = (tm, no, type) => `#panel${tm} .prow[data-no="${no == null ? '' : no}
 
     console.log('\n■ 試合の一覧・次の試合（自分のチームは自動で入る）');
     await tap(page, '#btnMenu');
-    await page.click('.mitem:has-text("試合の一覧へ")');
+    await page.click('.mitem:has-text("ホームへ")');
     await page.waitForSelector('#btnNew');
     ok(await page.$('#btnResume'), '「記録中の試合があります」→ 続きを記録する');
     await tap(page, '#btnNew');

@@ -1,6 +1,6 @@
 // 撮影しながら記録する（この端末のカメラ）の確認：node basket-tap/tests/e2e-camera.cjs
-//   public/ の1ファイル版（basket-tap と basket-clips）を、公開と同じ並び（/basket-tap/・/basket-clips/）で開いて確かめる。
-//   先に node basket-tap/build.mjs と node basket-clips/build.mjs を実行しておくこと。
+//   public/ の1ファイル版（basket-tap）を、公開と同じ並び（/basket-tap/）で開いて確かめる。切り出しもアプリの中（✂️ 場面を切り出す）。
+//   先に node basket-tap/build.mjs を実行しておくこと。
 // カメラは「その瞬間の時刻（Date.now）を白黒の模様で描いた映像」に置きかえる（getUserMedia を差しかえ）。
 // 録れた動画のコマから模様を読んで、「動画の t 秒に映っているのは、録画を始めた時刻 ＋ t 秒の瞬間か」を確かめる
 // （＝記録と動画の時刻が、本当に合っているか）。
@@ -9,6 +9,7 @@ const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
 const { chromium } = require('./pw.cjs');
+const { stubCloud } = require('./cloudstub.cjs');
 const { start } = require('./server.cjs');
 
 let pass = 0, fail = 0;
@@ -85,11 +86,13 @@ async function measure(page, vid, times) {
 
 (async () => {
   const pub = path.join(__dirname, '..', '..', 'public');
-  for (const f of ['basket-tap/index.html', 'basket-clips/index.html']) if (!fs.existsSync(path.join(pub, f))) { console.log(`public/${f} がありません。先に build.mjs を実行してください`); process.exit(1); }
+  for (const f of ['basket-tap/index.html']) if (!fs.existsSync(path.join(pub, f))) { console.log(`public/${f} がありません。先に build.mjs を実行してください`); process.exit(1); }
   const srv = await start(0, pub);
   const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'], env: Object.assign({}, process.env, { LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' }) });
   try {
     const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 }, hasTouch: true, permissions: ['camera', 'microphone'], acceptDownloads: true, locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
+    await stubCloud(ctx);
+    await ctx.addInitScript(() => { try { Object.defineProperty(navigator, 'canShare', { value: () => false, configurable: true }); } catch (e) { /* 無視 */ } });      // （パソコンの Chrome は共有が使えるので、テストではダウンロードに）
     await ctx.addInitScript(fakeCamera);
     const page = await ctx.newPage();
     const errors = [];
@@ -149,8 +152,10 @@ async function measure(page, vid, times) {
     ok(/^バスケ記録_.+_致遠館vs城南_動画1\.mp4$/.test(v1.name) && v1.mime === 'video/mp4', `ファイル名：${v1.name}`);
     const metas = await page.evaluate(async (ids) => Promise.all(ids.map((id) => BT.vstore.getVideo(id))), [v1.vid, v2.vid]);
     ok(metas.every((m) => m && m.plan && m.plan.header && m.plan.ranges.length > 0), 'ふつうの MP4 に組み直す図がある（細切れの MP4 から）');
-    await page.click('.sheet-card header .x').catch(() => {});
-    ok(await page.$$eval('#cover .vitem', (els) => els.length) === 2, '「試合終了」の札に、動画2本（🎬 場面を切り出す・⬇ 保存・🗑）');
+    await page.waitForSelector('#askTrimYes');
+    ok(await page.$$eval('#sheet [data-camvid]', (els) => els.length) === 2, '「動画のトリミングを行いますか？」に「📹 撮影した動画1・2で切り出す（時刻あわせなし）」');
+    await page.click('#askLater');
+    ok(await page.evaluate(() => BT.app.S.view) === 'game' && await page.$$eval('.hubexport .vitem', (els) => els.length) === 2, '試合のページの「書き出す」に、動画2本（🎬 場面を切り出す・⬇ 保存・🗑）');
     await shot(page, 'cam-ended');
 
     console.log('\n■ 記録と動画の時刻が合っているか（映っている時刻を読む）');
@@ -163,7 +168,7 @@ async function measure(page, vid, times) {
     ok(Math.abs(m1.duration - v1.duration) < 0.2, 'ブラウザで開いた長さが、記録の長さと合う（組み直した MP4）', [m1.duration, v1.duration]);
 
     console.log('\n■ 動画を保存する');
-    const [dl] = await Promise.all([page.waitForEvent('download'), page.click(`#cover [data-savevid="${v1.vid}"]`)]);
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.click(`.hubexport [data-savevid="${v1.vid}"]`)]);
     const saved = path.join(WORK, dl.suggestedFilename());
     await dl.saveAs(saved);
     ok(dl.suggestedFilename() === v1.name, `保存のファイル名：${dl.suggestedFilename()}`);
@@ -171,55 +176,58 @@ async function measure(page, vid, times) {
     const pr = ffprobe(saved);
     ok(pr && Math.abs(+pr.format.duration - v1.duration) < 0.2 && pr.streams.some((s) => s.codec_type === 'video') && pr.streams.some((s) => s.codec_type === 'audio'), `保存した MP4：${pr && pr.streams.map((s) => s.codec_name).join('+')}・${pr && (+pr.format.duration).toFixed(2)} 秒（映像と音）`, pr);
     ok(boxes.includes('moov') && boxes.includes('mdat') && !boxes.includes('moof'), `ふつうの MP4（細切れでない）：${boxes.join(' ')}`);
-    const jsonDl = await (async () => { await page.click('#cover .btn.primary:has-text("書き出す")'); const [d] = await Promise.all([page.waitForEvent('download'), page.click('#btnExpJson')]); const p2 = path.join(WORK, d.suggestedFilename()); await d.saveAs(p2); await page.click('.sheet-card header .x'); return p2; })();
+    const jsonDl = await (async () => { const [d] = await Promise.all([page.waitForEvent('download'), page.click('.hubexport #btnExpJson')]); const p2 = path.join(WORK, d.suggestedFilename()); await d.saveAs(p2); return p2; })();
     const ex = JSON.parse(fs.readFileSync(jsonDl, 'utf8'));
     ok(ex.videos && ex.videos.length === 2 && ex.videos[0].startedAt === v1.startedAt && ex.videos[0].name === v1.name && !('plan' in ex.videos[0]), '記録のファイル（JSON）に、動画のファイル名・録画を始めた時刻・長さ（中身は入れない）');
     ok(errors.length === 0, 'ページのエラーがない（タップ記録）', errors.slice(0, 3));
 
-    console.log('\n■ 🎬 場面を切り出す → バスケ得点クリップ（時刻あわせなし）');
+    console.log('\n■ 📹 撮影した動画で切り出す（アプリの中・時刻あわせなし）');
     const fg2 = g.events.find((e) => e.type === 'fg2');
-    await Promise.all([page.waitForURL(/basket-clips/), page.click(`#cover [data-clip="${v1.vid}"]`)]);
-    await page.waitForFunction(() => window.BS && BS.app && BS.app.S.media && BS.app.S.media.ready && BS.app.S.st.log, null, { timeout: 20000 });
-    await sleep(500);
-    let st = await page.evaluate(() => ({ sync: BS.app.S.st.sync, clips: BS.app.logClips().map((c) => ({ t: c.t, at: c.at, label: c.label })), name: BS.app.S.media.file.name, url: location.href }));
+    const trimState = () => page.evaluate(() => { const T = BT.trim.state; return { how: T.st.how, anchors: T.st.anchors, clips: Array.from(document.querySelectorAll('#tList .tclip')).map((r) => r.querySelector('.ct b').textContent), at: (function () { const L = BS.taplog; return L.clips(L.parse(T.game, ''), T.st.anchors, { teams: [true, true] }, T.st.win, T.media.duration, null).clips.map((c) => ({ t: c.t, at: c.at, label: c.label })); })(), name: T.file.name }; });
+    await page.click(`#hubNext [data-camvid="${v1.vid}"]`);
+    await page.waitForFunction(() => BT.trim.state && BT.trim.state.media && BT.trim.state.media.ready && document.querySelector('#tSyncOk'), null, { timeout: 20000 });
+    await sleep(400);
+    let st = await trimState();
     const off1 = (g.startedAt - v1.startedAt) / 1000;
-    const c7 = st.clips.find((c) => c.label === '#7 たけし 2P成功');
-    ok(st.sync && st.sync.how === 'camera' && Math.abs(st.sync.anchors[0].v - st.sync.anchors[0].t - off1) < 0.02, `撮影した動画1と記録を開き、時刻は自動で合わせた（記録の 0:00 ＝ 動画の ${off1.toFixed(2)} 秒）`, st.sync);
-    ok(c7 && Math.abs(c7.at - (fg2.t + off1)) < 0.06, `「#7 たけし 2P成功」の場面：動画の ${c7 && c7.at} 秒`, st.clips);
-    ok(st.clips.some((c) => c.label === 'パスミス') && !st.url.includes('tapgame'), 'チームなしのパスミスも場面に・アドレスの「?tapgame=…」は消す');
-    ok((await page.textContent('#syncCard')).includes('撮影しながら記録した動画'), '③ に「📹 撮影しながら記録した動画なので、自動でぴったり」');
+    const c7 = st.at.find((c) => c.label === '#7 たけし 2P成功');
+    ok(st.how === 'camera' && Math.abs(st.anchors[0].v - st.anchors[0].t - off1) < 0.02, `撮影した動画1を開き、時刻は自動で合わせた（記録の 0:00 ＝ 動画の ${off1.toFixed(2)} 秒）`, st.anchors);
+    ok(c7 && Math.abs(c7.at - (fg2.t + off1)) < 0.06, `「#7 たけし 2P成功」の場面：動画の ${c7 && c7.at} 秒`, st.at);
+    ok(st.clips.some((c) => c === 'パスミス'), 'チームなしのパスミスも場面に');
+    ok((await page.textContent('#tSyncCard')).includes('撮影しながら記録した動画'), '② に「📹 撮影しながら記録した動画なので、自動でぴったり」');
     await shot(page, 'clips-camera');
 
-    console.log('\n■ 「この端末で記録した試合」から動画2を開く');
-    await page.click('#btnLog');
-    await page.waitForSelector(`[data-tapvideo="${v2.vid}"]`);
-    ok(await page.$$eval('.lgvids .btn', (els) => els.length) === 2, '試合の下に「📹 動画1・動画2を記録と一緒に開く」');
-    await page.click(`[data-tapvideo="${v2.vid}"]`);
-    await page.waitForFunction((n) => BS.app.S.media && BS.app.S.media.file && BS.app.S.media.file.name.endsWith(n) && BS.app.S.media.ready, '動画2.mp4', { timeout: 20000 });
+    console.log('\n■ 動画2で切り出す（試合のページから）');
+    await page.click('#tBackGame');
+    await page.click(`#hubNext [data-camvid="${v2.vid}"]`);
+    await page.waitForFunction((n) => BT.trim.state && BT.trim.state.media && BT.trim.state.file.name.endsWith(n) && BT.trim.state.media.ready && document.querySelector('#tSyncOk'), '動画2.mp4', { timeout: 20000 });
     await sleep(400);
-    st = await page.evaluate(() => ({ sync: BS.app.S.st.sync, clips: BS.app.logClips().map((c) => ({ t: c.t, at: c.at, label: c.label })), outside: null }));
+    st = await trimState();
     const off2 = (g.startedAt - v2.startedAt) / 1000;
     const ftEv = g.events.find((e) => e.type === 'ft');
-    const cft = st.clips.find((c) => c.t === ftEv.t);
-    ok(st.sync.how === 'camera' && Math.abs((st.sync.anchors[0].v - st.sync.anchors[0].t) - off2) < 0.02 && cft && Math.abs(cft.at - (ftEv.t + off2)) < 0.06, `動画2：記録の 0:00 ＝ 動画の ${off2.toFixed(2)} 秒（スタートより後に録画を始めた動画）・FT の場面 ${cft && cft.at} 秒`, st);
-    ok(!st.clips.some((c) => c.label === '#7 たけし 2P成功'), '動画2には、動画1の時間の場面は入らない');
+    const cft = st.at.find((c) => c.t === ftEv.t);
+    ok(st.how === 'camera' && Math.abs((st.anchors[0].v - st.anchors[0].t) - off2) < 0.02 && cft && Math.abs(cft.at - (ftEv.t + off2)) < 0.06, `動画2：記録の 0:00 ＝ 動画の ${off2.toFixed(2)} 秒（スタートより後に録画を始めた動画）・FT の場面 ${cft && cft.at} 秒`, st);
+    ok(!st.at.some((c) => c.label === '#7 たけし 2P成功'), '動画2には、動画1の時間の場面は入らない');
+    await page.click('#tBackGame');
 
     console.log('\n■ 保存した動画と記録のファイルを、別のブラウザで開く（ファイル名で見つけて、時刻あわせなし）');
     const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 860 }, locale: 'ja-JP' });
+    await stubCloud(ctx2);
+    await ctx2.addInitScript(() => { try { Object.defineProperty(navigator, 'canShare', { value: () => false, configurable: true }); } catch (e) { /* 無視 */ } });      // （パソコンの Chrome は共有が使えるので、テストではダウンロードに）
     const p2 = await ctx2.newPage();
     const errors2 = [];
     p2.on('pageerror', (e) => errors2.push(String(e)));
-    await p2.goto(srv.url + 'basket-clips/');
-    await p2.waitForFunction(() => window.BS && BS.app && document.querySelector('#stepVideo'));
-    await p2.setInputFiles('#fileLog', jsonDl);
-    await p2.waitForFunction(() => BS.app.S.pendingLog);
-    await p2.setInputFiles('#fileVideo', saved);
-    await p2.waitForFunction(() => BS.app.S.media && BS.app.S.media.ready && BS.app.S.st.sync, null, { timeout: 20000 });
-    const s2 = await p2.evaluate(() => BS.app.S.st.sync);
+    await p2.goto(srv.url + 'basket-tap/');
+    await p2.waitForFunction(() => window.BT && BT.app && document.querySelector('#btnNew'));
+    { const [fc] = await Promise.all([p2.waitForEvent('filechooser'), p2.click('text=記録のファイル（.json）を開く')]); await fc.setFiles(jsonDl); }
+    await p2.waitForFunction(() => BT.app.S.view === 'game');
+    await p2.click('#hubTrim');
+    { const [fc] = await Promise.all([p2.waitForEvent('filechooser'), p2.click('#tPick')]); await fc.setFiles(saved); }
+    await p2.waitForFunction(() => BT.trim.state && BT.trim.state.media && BT.trim.state.media.ready && document.querySelector('#tSyncOk'), null, { timeout: 20000 });
+    const s2 = await p2.evaluate(() => BT.trim.state.st);
     ok(s2.how === 'camera' && Math.abs((s2.anchors[0].v - s2.anchors[0].t) - off1) < 0.02, `ファイルを選んで開いても、動画1と分かって自動で合わせる（${(s2.anchors[0].v - s2.anchors[0].t).toFixed(2)} 秒）`, s2);
     ok(errors2.length === 0, 'ページのエラーがない（別のブラウザ）', errors2.slice(0, 3));
     await ctx2.close();
-    ok(errors.length === 0, 'ページのエラーがない（バスケ得点クリップ）', errors.slice(0, 3));
+    ok(errors.length === 0, 'ページのエラーがない（切り出し）', errors.slice(0, 3));
 
     console.log('\n■ 録画の途中でページを閉じても、そこまでは残る');
     await page.goto(srv.url + 'basket-tap/');
@@ -280,6 +288,8 @@ async function measure(page, vid, times) {
     console.log('\n■ 画面の向きのロックをしたまま横に置く：アプリごと横向き＋録画に向きを書く');
     {
       const c4 = await browser.newContext({ viewport: { width: 390, height: 664 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, permissions: ['camera', 'microphone'], acceptDownloads: true, locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
+      await stubCloud(c4);
+      await c4.addInitScript(() => { try { Object.defineProperty(navigator, 'canShare', { value: () => false, configurable: true }); } catch (e) { /* 無視 */ } });      // （パソコンの Chrome は共有が使えるので、テストではダウンロードに）
       await c4.addInitScript(fakeCamera);
       await c4.addInitScript(() => { window.__camPortrait = 'ccw'; });
       const p4 = await c4.newPage();
@@ -321,8 +331,8 @@ async function measure(page, vid, times) {
       ok(rm.rotate === 270 && rv.w === 640 && rv.h === 360, `動画の向き：270°（左へ 90°）・映す大きさ ${rv.w}×${rv.h}（横）`, { rm, rv });
       const mm = await measure(p4, rv.vid, [0.6, 2, Math.max(2.2, rv.duration - 0.6)]);
       ok(mm.out.every((x) => Math.abs(x.err) <= 150), `回して映した動画のコマからも時刻が読める（向きが正しい）・記録とのずれ ${mm.out.map((x) => x.err).join('・')} ミリ秒`, mm);
-      await p4.click('.sheet-card header .x').catch(() => {});
-      const [d4] = await Promise.all([p4.waitForEvent('download'), p4.click(`#cover [data-savevid="${rv.vid}"]`)]);
+      if (await p4.$('#askLater')) await p4.click('#askLater');
+      const [d4] = await Promise.all([p4.waitForEvent('download'), p4.click(`.hubexport [data-savevid="${rv.vid}"]`)]);
       const f4 = path.join(WORK, 'rot_' + d4.suggestedFilename());
       await d4.saveAs(f4);
       let rotInfo = '';
@@ -335,6 +345,8 @@ async function measure(page, vid, times) {
     console.log('\n■ 録画が WebM のブラウザ（Firefox など）：向きを書けないことを、先に知らせる');
     {
       const c5 = await browser.newContext({ viewport: { width: 390, height: 664 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, permissions: ['camera', 'microphone'], locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
+      await stubCloud(c5);
+      await c5.addInitScript(() => { try { Object.defineProperty(navigator, 'canShare', { value: () => false, configurable: true }); } catch (e) { /* 無視 */ } });      // （パソコンの Chrome は共有が使えるので、テストではダウンロードに）
       await c5.addInitScript(fakeCamera);
       await c5.addInitScript(() => { window.__camPortrait = 'ccw'; const o = MediaRecorder.isTypeSupported.bind(MediaRecorder); MediaRecorder.isTypeSupported = (m) => !/mp4/i.test(m) && o(m); });
       const p5 = await c5.newPage();
@@ -364,6 +376,8 @@ async function measure(page, vid, times) {
     console.log('\n■ スマホの大きさでも、上の帯（時計・得点・カメラの小さな映像・メニュー）が重ならない（ワイプ「小」）');
     for (const vp of [{ width: 390, height: 664, n: 'ふつうのスマホ' }, { width: 375, height: 553, n: 'iPhone SE' }, { width: 750, height: 340, n: 'スマホ横向き' }]) {
       const c3 = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, permissions: ['camera', 'microphone'], locale: 'ja-JP' });
+      await stubCloud(c3);
+      await c3.addInitScript(() => { try { Object.defineProperty(navigator, 'canShare', { value: () => false, configurable: true }); } catch (e) { /* 無視 */ } });      // （パソコンの Chrome は共有が使えるので、テストではダウンロードに）
       await c3.addInitScript(fakeCamera);
       const p3 = await c3.newPage();
       await p3.goto(srv.url + 'basket-tap/');
@@ -518,6 +532,8 @@ async function measure(page, vid, times) {
       ];
       for (const c of cases) {
         const cc = await browser.newContext({ viewport: { width: c.vp[0], height: c.vp[1] }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, permissions: ['camera', 'microphone'], locale: 'ja-JP' });
+        await stubCloud(cc);
+        await cc.addInitScript(() => { try { Object.defineProperty(navigator, 'canShare', { value: () => false, configurable: true }); } catch (e) { /* 無視 */ } });      // （パソコンの Chrome は共有が使えるので、テストではダウンロードに）
         await cc.addInitScript(fakeCamera);
         if (c.rot) await cc.addInitScript(() => { window.__camPortrait = 'ccw'; });
         const pc = await cc.newPage();
@@ -589,16 +605,17 @@ async function measure(page, vid, times) {
 
     // 写真に保存：ボタンの名前と、保存したあとの「✓ 保存した」
     await page.evaluate(() => BT.app.endGame());
-    await page.waitForSelector('.stats');
-    await page.click('.sheet-card header .x');
-    const svLab = await page.textContent('#cover [data-savevid]');
+    await page.waitForFunction(() => BT.app.S.view === 'game');
+    if (await page.$('#askLater')) await page.click('#askLater');
+    const svLab = await page.textContent('.hubexport [data-savevid]');
     ok(/写真に保存|⬇ 保存/.test(svLab), `試合のあと、動画ごとに「${svLab.trim()}」（共有できる端末では「📲 写真に保存」）`);
-    const [dlv] = await Promise.all([page.waitForEvent('download'), page.click('#cover [data-savevid]')]);
-    await page.waitForFunction(() => /保存した/.test(document.querySelector('#cover [data-savevid]').textContent));
+    const [dlv] = await Promise.all([page.waitForEvent('download'), page.click('.hubexport [data-savevid]')]);
+    await page.waitForFunction(() => /保存した/.test(document.querySelector('.hubexport [data-savevid]').textContent));
     ok(!!dlv && (await page.evaluate(() => !!BT.app.S.game.videos.find((v) => v.savedAt))), '保存すると「✓ 保存した」になる（試合の記録にも残る）');
 
     console.log('\n■ カメラを使えないとき');
     await page.evaluate(() => { window.__camDeny = true; });
+    await page.evaluate(() => BT.app.go('live'));
     await page.evaluate(() => BT.app.openCamera());
     await sleep(300);
     ok((await page.textContent('#toasts')).includes('許可'), 'カメラを断られたら「カメラの使用が許可されていません…」', await page.textContent('#toasts'));

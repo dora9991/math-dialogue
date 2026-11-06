@@ -593,6 +593,12 @@
     }
     const notes = BT.cleanNotes(obj.notes);
     if (notes.length) g.notes = notes;
+    // 場面の切り出し（動画ごとの時刻あわせ・絞り込み。js/trim.js）
+    if (obj.trims && typeof obj.trims === 'object' && !Array.isArray(obj.trims)) {
+      const tr = {};
+      Object.keys(obj.trims).slice(0, 20).forEach((k) => { const v = obj.trims[k]; if (v && typeof v === 'object' && Array.isArray(v.anchors)) tr[String(k).slice(0, 200)] = JSON.parse(JSON.stringify(v)); });
+      if (Object.keys(tr).length) { g.trims = tr; g.trimmed = !!obj.trimmed; if (typeof obj.trimLast === 'string') g.trimLast = obj.trimLast.slice(0, 200); }
+    }
     // 記録の id は、そのまま使えるもの（e＋数・重ならない）は残し、そうでないものに新しい番号を付ける
     const okId = (id) => typeof id === 'string' && /^e\d{1,7}$/.test(id);
     g.seq = obj.events.reduce((m, e) => Math.max(m, e && okId(e.id) ? Number(e.id.slice(1)) : 0), 0);
@@ -621,7 +627,7 @@
 
   /* 試合の一覧に出す短い情報 */
   BT.summary = function (game) {
-    return { id: game.id, title: game.title || '', date: game.date, startedAt: game.startedAt, endedAt: game.endedAt, names: [BT.teamName(game, 0), BT.teamName(game, 1)], colors: [game.teams[0].color, game.teams[1].color], score: BT.score(game), n: (game.events || []).filter((e) => e.type !== 'period').length, videos: (game.videos || []).filter((v) => !v.gone).length, rv: BT.isReview(game), at: Date.now() };
+    return { id: game.id, title: game.title || '', date: game.date, startedAt: game.startedAt, endedAt: game.endedAt, names: [BT.teamName(game, 0), BT.teamName(game, 1)], colors: [game.teams[0].color, game.teams[1].color], score: BT.score(game), n: (game.events || []).filter((e) => e.type !== 'period').length, videos: (game.videos || []).filter((v) => !v.gone).length, rv: BT.isReview(game), trim: !!game.trimmed, demo: !!game.demo || undefined, at: game.updatedAt || Date.now() };
   };
   /* 動画の情報をそろえる（読み込んだファイル用。形の合わないものは捨てる） */
   BT.cleanVideos = function (list) {
