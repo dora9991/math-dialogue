@@ -208,7 +208,7 @@
     modal(`<div class="celebrate${reduceMotion() ? '' : ' pop'}">${confetti()}<h2 class="modal-h">やったね！</h2>${html}<div class="btns"><button type="button" class="btn primary big" data-act="modal-close">つづける</button></div></div>`);
   }
   const confetti = () => (reduceMotion() ? '' : `<div class="confetti" aria-hidden="true">${Array.from({ length: 18 }, (_, i) => `<i style="--i:${i};--x:${(i * 37) % 100}%"></i>`).join('')}</div>`);
-  const BADGE_COLOR = { first: 'ok', menu1: 'o', streak3: 'ball', streak7: 'ball', streak30: 'gold', drill10: 'o', drill50: 'gold', uniq10: 'ok', min300: 'o', check1: 'o', good5: 'gold', shooter: 'ball', handler: 'ball', defender: 'x', allround: 'gold', early: 'gold', lv5: 'ok', lv10: 'gold', kyu1: 'gold', kyu5: 'gold' };
+  const BADGE_COLOR = { first: 'ok', menu1: 'o', streak3: 'ball', streak7: 'ball', streak30: 'gold', drill10: 'o', drill50: 'gold', uniq10: 'ok', min300: 'o', check1: 'o', good5: 'gold', shooter: 'ball', handler: 'ball', defender: 'x', allround: 'gold', early: 'gold', lv5: 'ok', lv10: 'gold', kyu1: 'gold', kyu5: 'gold', quest1: 'o', quest5: 'gold' };
   const badgeIcon = (b, got) => `<span class="badge-ic c-${BADGE_COLOR[b.id] || 'ok'}${got ? '' : ' off'}">${ic(b.icon === 'list' ? 'list' : b.icon)}</span>`;
 
   /* ---------- 画面のわく ---------- */
@@ -1115,7 +1115,8 @@
     const h = decodeURIComponent(location.hash.slice(1)) || 'home';
     // ほかのアプリ（バスケ得点クリップのコメント帳など）から「#q/ことば」で開いたとき：ずかんで、そのことばをさがす
     if (h.startsWith('q/')) { S.lib.q = h.slice(2).trim().slice(0, 40); location.replace(S.me ? '#lib' : '#hello'); return; }
-    if (!S.me && h !== 'hello' && h !== 'about') { location.replace('#hello'); return; }
+    // クラブの申し込みページ（#club/apply/コード）は、保護者がプロフィールなしで開ける
+    if (!S.me && h !== 'hello' && h !== 'about' && !h.startsWith('club/apply/')) { location.replace('#hello'); return; }
     if (h !== S.hash) {
       if (TOP.includes(h) || h === 'hello') stack.length = 0;
       if (stack.length > 1 && stack[stack.length - 2] === h) stack.pop(); else stack.push(h);

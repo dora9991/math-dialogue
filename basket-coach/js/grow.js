@@ -23,7 +23,7 @@
   G.starNext = (xp) => { const s = G.stars(xp); return s >= 5 ? null : STAR[s + 1] - xp; };
 
   // ふつうにもらえる経験値
-  G.XP = { drill: 10, menu: 20, check: 15, view: 5, aid: 2, pass: 10, kyu: 50 }; // pass：クラブの課題に合格・kyu：級に合格（js/club.js）
+  G.XP = { drill: 10, menu: 20, check: 15, view: 5, aid: 2, pass: 10, kyu: 50, qlog: 5, quest: 30 }; // pass：クラブの課題に合格・kyu：級に合格・qlog：自主練を1回きろく・quest：自主練をクリア（js/club.js）
   // 練習メニューの経験値：時間とできた度合い（むずかしくても、やったら もらえる）
   G.drillXP = (min, rate) => Math.round(Math.max(5, Math.min(30, 6 + (min || 5) * 1.2)) + (rate === 3 ? 4 : rate === 1 ? 2 : 0));
 
@@ -98,6 +98,8 @@
     { id: 'lv10', name: 'エース', text: 'レベル 10 になった', icon: 'crown', test: (s) => s.level >= 10 },
     { id: 'kyu1', name: 'はじめての級', text: 'クラブの級に はじめて合格した', icon: 'trophy', test: (s) => (s.count.kyu || 0) >= 1 },
     { id: 'kyu5', name: '5つの級', text: 'クラブの級に 5つ合格した', icon: 'crown', test: (s) => (s.count.kyu || 0) >= 5 },
+    { id: 'quest1', name: '自主練クリア', text: 'コーチの自主練を はじめてクリアした', icon: 'bolt', test: (s) => (s.count.quest || 0) >= 1 },
+    { id: 'quest5', name: '自主練マスター', text: 'コーチの自主練を 5つクリアした', icon: 'fire', test: (s) => (s.count.quest || 0) >= 5 },
   ];
   G.badges = (s) => G.BADGES.map((b) => Object.assign({}, b, { got: !!b.test(s) }));
   // 前のまとめ → 後のまとめ で、新しくとれたバッジ
