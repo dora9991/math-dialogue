@@ -358,7 +358,7 @@ function drawMesh(D, m, o) {
   if (o.fill !== false) list.forEach(function (x) {
     var fc = o.faceCol ? o.faceCol(x.f, x.i) : null, col = fc ? rgbOf(fc) : base;
     var fa = a * (o.faceA ? o.faceA(x.f, x.i) : 1); if (fa <= .003) return;
-    var nn = x.front ? x.n : mul(x.n, -1), lam = Math.max(0, dot(nn, L)), k = x.front ? .6 + .45 * lam : .42 + .22 * lam;
+    var nn = x.front ? x.n : mul(x.n, -1), lam = Math.max(0, dot(nn, L)), k = x.front || o.lit === 'both' ? .6 + .45 * lam : .42 + .22 * lam;
     var P = x.P.map(C.P);
     ctx.globalAlpha = gA * fa; ctx.beginPath(); P.forEach(function (p, i) { if (i) ctx.lineTo(p[0], p[1]); else ctx.moveTo(p[0], p[1]); }); ctx.closePath();
     ctx.fillStyle = rgbS(col, k); ctx.fill();

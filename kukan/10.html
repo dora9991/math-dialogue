@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>角錐と円錐の表面積</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/board.css">
+</head>
+<body>
+<script src="js/k3.js"></script>
+<script>
+/* 空間図形 第10時：角錐と円錐の表面積を、展開図を使って求めよう（ikkan の lesson_kukan_new_10 と同じ流れ）。
+   正四角錐（底面 1辺 6cm、側面の三角形の高さ 5cm → 立体の高さ 4cm）を、底面を動かさずに開く。
+   円錐は、手前の母線を動かさずに開く（K3.coneNet）。 */
+(function () {
+  var C = K3.COL, v = K3.v, DEG = v.DEG, K = K3, PI = Math.PI;
+  var PYR = K.pyramid([[-3, -3], [3, -3], [3, 3], [-3, 3]], [0, 0, 4]);
+  var CN = { r: 3, l: 9 }; CN.h = Math.sqrt(CN.l * CN.l - CN.r * CN.r);
+  function area(P) { var n = [0, 0, 0]; for (var i = 0; i < P.length; i++) n = v.add(n, v.cross(P[i], P[(i + 1) % P.length])); return v.len(n) / 2; }
+  (function () { var a = PYR.F.map(function (f) { return area(f.v.map(function (k) { return PYR.V[k]; })); }); if ((Math.abs(a[0] - 36) > 1e-9 || Math.abs(a[1] - 15) > 1e-9) && window.console) console.error('面積がちがう', a); })();
+  var NV = { th: -90, ps: 89, fov: 8 };
+  function camOf(m) { var w = v.mul(m, -1); return { th: Math.atan2(w[1], w[0]) / DEG, ps: Math.asin(w[2]) / DEG }; }
+  function coneV(r, l, fin) {
+    var h = Math.sqrt(l * l - r * r), c = camOf(fin.m), P = fin.side.V.concat(fin.base.V);
+    return { a: { th: -62, ps: 16, R: l * .62, target: [0, 0, h * .42] }, b: { th: c.th, ps: c.ps, fov: 6, R: l * 1.18, target: v.lerp3([0, 0, h], v.centroid(P), .8) } };
+  }
+  function lv(a, b, t) { return { th: v.lerp(a.th, b.th, t), ps: v.lerp(a.ps, b.ps, t), fov: v.lerp(a.fov || 30, b.fov || 30, t), R: v.lerp(a.R, b.R, t), target: v.lerp3(a.target, b.target, t) }; }
+  var CV = coneV(CN.r, CN.l, K.coneNet(CN.r, CN.h, 1, 1));
+  var ROLL = [{ r: 2, l: 6 }, { r: 3, l: 9 }, { r: 4, l: 10 }, { r: 5, l: 12 }];
+
+  K.run({
+    no: '第10時', title: '角錐と円錐の表面積を、展開図を使って求めよう',
+    model: K.frame([0, 0, 1], 6.5), view: { th: -58, ps: 26 },
+    links: [{ href: 'index.html', label: '目次' }, { href: '09.html', label: '◀ 第9時' }, { href: '11.html', label: '第11時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '正四角錐（底面 1辺 6cm、側面の三角形の高さ 5cm）', q: '正四角錐の、すべての面の面積の和を求めよう。',
+        notes: ['① 自分の考え（3分）　展開図をもとに、求め方を。', '② ペアの考え（3分）'],
+        draw: function (D) {
+          D.mesh(PYR, { col: C.lav });
+          D.seg([0, 0, 4], [0, -3, 0], { col: C.yel, w: D.lw * 1.6, dash: true }); D.label([0, -1.5, 2], '5cm', { col: C.yel, dx: -1 });
+          D.dim([-3, -3, 0], [3, -3, 0], '6cm', { off: [0, -.6, 0], dy: .8 });
+        } },
+      { tag: '今日の問い', q: '展開図に開くと？ 表面積は？', a: '96cm²', sub: '側面は 合同な二等辺三角形 4つ　1/2 × 6 × 5 × 4 ＝ 60、底面 6 × 6 ＝ 36　60 ＋ 36 ＝ 96', dur: 5,
+        view: function (s) { return s.ph && s.t > .2 ? NV : { th: -58, ps: 26 }; }, model: K.frame([0, 0, 0], 9.5),
+        b: { t: '側面 1/2×6×5×4＝60 ＋ 底面 36 ＝ <b>96cm²</b>', col: C.lav },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, net = K.unfold(PYR, 0, v.ease(v.clamp((t - .1) / .55, 0, 1)));
+          D.mesh(net, { two: true, lit: 'both', faceCol: function (f) { return f.fi === 0 ? C.blue : C.lav; } });
+          if (t > .7) net.F.forEach(function (f) { D.label(v.centroid(f.v.map(function (k) { return net.V[k]; })), f.fi === 0 ? '36' : '15', { plain: true, col: '#2a2017', size: 1.1, a: v.smooth(.7, .85, t) }); });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '角錐・円錐をまとめて何という？ その表面積は？', a: '錐体。表面積 ＝ 側面積 ＋ 底面積', sub: '円錐の側面は おうぎ形。半径は 母線、弧は 底面の円周', dur: 1,
+        b: { t: '<b>錐体の表面積 ＝ 側面積 ＋ 底面積</b>（底面は 1つ）', col: C.green }, spin: true,
+        draw: function (D) {
+          var g = D.grid(2, { cols: [2, 1] });
+          var p = g.pos[0], S = D.sub(p.cx, p.cy, g.size / 2, K.frame([0, 0, 1.6], 3.6)); S.mesh(PYR, { col: C.lav }); D.text(p.cx, p.ly, '角錐');
+          var q = g.pos[1], S2 = D.sub(q.cx, q.cy, g.size / 2, K.frame([0, 0, 1.6], 3.6)); S2.mesh(K.cone(3, 4), { col: C.pink }); D.text(q.cx, q.ly, '円錐');
+        } },
+      { tag: '例題', bh: '例題　円錐（底面の半径 3cm・母線 9cm）', model: K.frame([0, 0, 4], 9), view: function (s) { return s.ph ? lv(CV.a, CV.b, v.smooth(.05, .4, s.t)) : CV.a; },
+        q: '側面のおうぎ形は、母線を半径とする円の 何分のいくつ？', a: '1/3', sub: '弧 ＝ 底面の円周 2π×3＝6π。半径 9cm の円の周は 18π。6π ÷ 18π ＝ 1/3', dur: 5,
+        b: { t: '弧 6π ÷ 円周 18π ＝ <b>1/3</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, t1 = v.ease(v.clamp(t / .4, 0, 1)), n = K.coneNet(CN.r, CN.h, t1, t1);
+          D.mesh(n.side, { col: C.pink, two: true }); D.mesh(n.base, { col: C.blue, two: true });
+          if (t > .5) {
+            var a = v.smooth(.5, .65, t), ap = n.side.V[0], g = v.nrm(v.sub(n.side.V[1], ap)), e = v.nrm(v.sub(n.side.V[n.side.V.length - 1], ap)), w = v.nrm(v.sub(e, v.mul(g, v.dot(e, g))));
+            D.circle(ap, g, w, CN.l, { stroke: C.chalk, sa: .7 * a, sw: D.lw, dash: true });
+            for (var k = 0; k < 3; k++) D.seg(ap, v.add(ap, v.mul(v.rotAxis(g, v.nrm(v.cross(g, w)), k * 120 * DEG), CN.l)), { col: C.chalk, a: .6 * a, dash: true });
+            D.label(v.add(ap, v.mul(v.nrm(v.add(g, e)), 5)), '1/3', { col: C.yel, a: a, size: 1.2 });
+          }
+        } },
+      { tag: '例題', q: '円錐の表面積は？', a: '36π cm²', sub: '側面積 π × 9² × 1/3 ＝ 27π、底面積 π × 3² ＝ 9π、27π ＋ 9π ＝ 36π', dur: 1, model: K.frame([0, 0, 4], 9), view: CV.b,
+        b: { t: '側面積 π×9²×1/3＝27π ＋ 底面積 9π ＝ <b>36π cm²</b>', col: C.pink },
+        draw: function (D) {
+          var n = K.coneNet(CN.r, CN.h, 1, 1); D.mesh(n.side, { col: C.pink, two: true }); D.mesh(n.base, { col: C.blue, two: true });
+          if (D.ph) { D.label(v.centroid(n.side.V), '27π', { plain: true, col: '#2a2017', size: 1.2 }); D.label(n.base.ctr, '9π', { plain: true, col: '#2a2017', size: 1.2 }); }
+        } },
+      { tag: '考えよう', model: K.frame([0, 0, 4], 9), view: { th: -62, ps: 16, R: 9 },
+        q: '底面の半径や母線の長さがちがう円錐 ア〜エ の側面積を求めよう。どんなきまりが見つかるだろう。',
+        notes: ['ア 半径 2・母線 6　イ 3・9　ウ 4・10　エ 5・12', '計算と、気づいたこと', 'ほかの円錐を1つ決めて、確かめよう。'],
+        sliders: [{ key: 'k', label: '円錐', min: 0, max: 3, step: 1, val: 0, fmt: function (x) { var c = ROLL[x]; return 'アイウエ'[x] + '（' + c.r + '・' + c.l + '）'; } }, { key: 'o', label: '開く', min: 0, max: 1, val: 0, fmt: function () { return ''; } }],
+        draw: function (D) {
+          var c = ROLL[D.V.k], h = Math.sqrt(c.l * c.l - c.r * c.r), n = K.coneNet(c.r, h, D.V.o, D.V.o);
+          D.mesh(n.side, { col: C.pink, two: true, at: [0, 0, 4 - h * .5] }); D.mesh(n.base, { col: C.blue, two: true, at: [0, 0, 4 - h * .5] });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', model: K.frame([0, 0, 0], 13.5), view: { th: -90, ps: 62 },
+        q: '母線 12cm、底面の半径 3cm の円錐を、頂点 O を動かさずに 平面の上でころがす。もとの位置にもどるまでに、円錐自身は何回転するか。',
+        a: '4回転', sub: '底面のふちは、O を中心とする半径 12cm の円（周 24π）を進む。底面の円周 6π の 24π ÷ 6π ＝ 4 倍', dur: 8,
+        b: { t: '24π ÷ 6π ＝ <b>4回転</b>', col: C.orange },
+        banner: function (s) { if (s.ph !== 1) return ''; return Math.min(4, Math.floor(s.t * 4 + 1e-9)) + ' 回転'; },
+        draw: function (D) {
+          var l = 12, r = 3, h = Math.sqrt(l * l - r * r), t = D.ph ? D.t : 0, phi = t * v.TAU, beta = Math.asin(r / l);
+          D.circle([0, 0, 0], [1, 0, 0], [0, 1, 0], l, { stroke: C.chalk, sa: .6, sw: D.lw, dash: true });
+          if (t > 0) { D.arc([0, 0, 0], [1, 0, 0], [0, 1, 0], l, 0, phi, { col: C.orange, w: 2.6 }); }
+          var d = [Math.cos(phi), Math.sin(phi), 0], up = [0, 0, 1], side = v.cross(up, d);
+          var axis = v.add(v.mul(d, Math.cos(beta)), v.mul(up, Math.sin(beta)));
+          var b1 = v.cross(axis, side), spin = -phi * l / r;
+          var Rm = [side, b1, axis].reduce(function (M, col, j) { M[0][j] = col[0]; M[1][j] = col[1]; M[2][j] = col[2]; return M; }, [[0, 0, 0], [0, 0, 0], [0, 0, 0]]);
+          var cone = K.cone(r, h), Rz = v.rotM([0, 0, 1], spin), flip = v.rotM([1, 0, 0], Math.PI);
+          var M3 = function (p) { var q = v.mv(Rz, p); q = [q[0], q[1], h - q[2]]; return v.mv(Rm, q); };
+          var V = cone.V.map(M3), mk = { V: V, F: cone.F.map(function (f) { return { v: f.v, g: f.g, n: v.mv(Rm, (function (n) { var q = v.mv(Rz, n); return [q[0], q[1], -q[2]]; })(f.n)) }; }), ctr: v.centroid(V), R: l };
+          D.mesh(mk, { col: C.orange });
+          var mark = M3([r, 0, 0]); D.seg(M3([0, 0, h]), mark, { col: C.pink, w: D.lw * 2.4, glow: true });
+          D.dot([0, 0, 0], { col: C.chalk }); D.label([0, 0, 0], 'O', { dx: -.8, dy: .5 });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>
