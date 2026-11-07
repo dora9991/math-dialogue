@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>角錐と円錐の体積</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/board.css">
+</head>
+<body>
+<script src="js/k3.js"></script>
+<script>
+/* 空間図形 第11時：角錐や円錐の体積は、角柱や円柱の何分のいくつか（ikkan の lesson_kukan_new_11 と同じ流れ）。
+   同じ底面・同じ高さの、円錐の容器（先が下）と円柱の容器。円錐の水を、円柱に 3回うつす。
+   円錐の容器に水が f（体積の割合）入っているとき、水面の高さは h × f の 3乗根。 */
+(function () {
+  var C = K3.COL, v = K3.v, DEG = v.DEG, K = K3;
+  var R = 2, H = 4, X1 = -3.4, X2 = 3.4, WATER = '#5aa9e6';
+  var FR = K.frame([0, 0, 3], 6);
+  function cupCone(r, h) { return K.revolve([[0, 0, 'side'], [r, h, 'rim'], [0, h]]); }
+  function coneWater(D, at, f) { if (f <= .002) return; var k = Math.cbrt(f); D.mesh(cupCone(R * k, H * k), { at: at, col: WATER, a: .85, edges: false }); }
+  function cylWater(D, at, f) { if (f <= .002) return; D.mesh(K.cylinder(R * .995, H * f), { at: at, col: WATER, a: .85, edges: false }); }
+  function glassCone(D, at, lift) { D.mesh(cupCone(R, H), { at: at, col: '#d8e6ef', a: .22, edgeCol: 'rgba(242,240,230,.8)', ew: 1.2 }); }
+  function glassCyl(D, at) { D.mesh(K.cylinder(R, H), { at: at, col: '#d8e6ef', a: .22, edgeCol: 'rgba(242,240,230,.8)', ew: 1.2 }); }
+  /* t：0→1 で 3回うつす。i 回目（0,1,2）の間に、円錐の水 1→0、円柱の水 i/3→(i+1)/3 */
+  function pour(D, t) {
+    var k = Math.min(2, Math.floor(t * 3)), u = t * 3 - k, fill = t >= 1 ? 1 : (k + v.smooth(.25, .85, u)) / 3, cf = t >= 1 ? 0 : 1 - v.smooth(.25, .85, u);
+    var lift = Math.sin(Math.PI * v.clamp(u / .95, 0, 1)) * 1.6, tilt = v.smooth(.15, .3, u) * (1 - v.smooth(.85, .98, u));
+    var at = [X1 + (X2 - X1 - R * 1.6) * Math.sin(Math.PI * v.clamp(u / .95, 0, 1)) * .55, 0, lift];
+    if (t >= 1) at = [X1, 0, 0];
+    glassCyl(D, [X2, 0, 0]); cylWater(D, [X2, 0, 0], fill);
+    coneWater(D, at, cf); glassCone(D, at);
+    if (tilt > .02) D.seg(v.add(at, [R * .9, 0, H]), [X2 - R * .3, 0, H * fill + .1], { col: WATER, w: D.lw * 3 * tilt, a: .9 });
+    for (var j = 1; j < 3; j++) D.seg([X2 + R, 0, H * j / 3], [X2 + R + .5, 0, H * j / 3], { col: C.chalk, w: D.lw });
+    return { k: k, fill: fill };
+  }
+
+  K.run({
+    no: '第11時', title: '角錐や円錐の体積は、角柱や円柱の何分のいくつか',
+    model: FR, view: { th: -90, ps: 14 },
+    links: [{ href: 'index.html', label: '目次' }, { href: '10.html', label: '◀ 第10時' }, { href: '12.html', label: '第12時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '同じ底面・同じ高さの 円錐と円柱',
+        q: '底面も高さも同じ、円柱と円錐の容器がある。円錐の容器いっぱいの水を円柱にうつすと、何はい目でいっぱいになるだろう。',
+        notes: ['① 自分の考え（3分）　予想と、そう思ったわけ。', '② ペアの考え（3分）'],
+        draw: function (D) { glassCyl(D, [X2, 0, 0]); glassCone(D, [X1, 0, 0]); coneWater(D, [X1, 0, 0], 1); D.label([X1, 0, -.2], '円錐', { dy: 1 }); D.label([X2, 0, -.2], '円柱', { dy: 1 }); } },
+      { tag: '今日の問い', q: '実験してみよう。何はい目で いっぱいになる？', a: 'ちょうど 3ばい', sub: '円錐の体積は、同じ底面・同じ高さの円柱の 1/3', dur: 9,
+        b: { t: '円錐の水 3ばいで、円柱がいっぱい → 円錐は 円柱の <b>1/3</b>', col: C.blue },
+        banner: function (s) { if (!s.ph) return ''; return s.t >= 1 ? '3ばいで いっぱい！' : (Math.floor(s.t * 3) + 1) + 'はい目'; },
+        draw: function (D) { if (D.ph) pour(D, D.t); else { glassCyl(D, [X2, 0, 0]); glassCone(D, [X1, 0, 0]); coneWater(D, [X1, 0, 0], 1); } } },
+      { tag: 'ことば', bh: 'ことば', q: '角錐・円錐の体積を、式で表すと？', a: 'V ＝ 1/3 Sh', sub: 'S は底面積、h は高さ。錐体の高さは、頂点から底面にひいた垂線の長さ', dur: 1,
+        b: [{ t: '柱体の体積 V ＝ Sh', col: C.green }, { t: '<b>錐体の体積 V ＝ 1/3 Sh</b>（S：底面積、h：高さ）', col: C.green }],
+        draw: function (D) {
+          var g = D.grid(2, { cols: [2, 1] }), F2 = K.frame([0, 0, 1.6], 3.3);
+          var p = g.pos[0], S = D.sub(p.cx, p.cy, g.size / 2, F2); S.mesh(K.cylinder(2, 3.5), { col: C.blue }); D.text(p.cx, p.ly, '柱体 V ＝ Sh');
+          var q = g.pos[1], S2 = D.sub(q.cx, q.cy, g.size / 2, F2); S2.mesh(K.cone(2, 3.5), { col: C.pink }); S2.seg([0, 0, 3.5], [0, 0, 0], { col: C.yel, dash: true }); S2.right([0, 0, 0], [0, 0, 1], [1, 0, 0], { s: .35 }); S2.label([0, 0, 1.7], 'h', { col: C.yel, dx: .6 }); D.text(q.cx, q.ly, '錐体 V ＝ 1/3 Sh');
+        } },
+      { tag: '例題', bh: '例題', model: K.frame([0, 0, 3.5], 6.2), view: { th: -62, ps: 18 },
+        q: '（1）底面が 1辺 6cm の正方形、高さ 8cm の正四角錐の体積は？', a: '96cm³', sub: '「錐」だから 1/3。底面積 6 × 6 ＝ 36、1/3 × 36 × 8 ＝ 96', dur: 1,
+        b: { t: '（1）1/3 × 36 × 8 ＝ <b>96cm³</b>', col: C.lav },
+        draw: function (D) {
+          var P = K.pyramid([[-3, -3], [3, -3], [3, 3], [-3, 3]], [0, 0, 8]); D.mesh(P, { col: C.lav });
+          D.seg([0, 0, 8], [0, 0, 0], { col: C.yel, dash: true }); D.label([0, 0, 4], '8cm', { col: C.yel, dx: 1 }); D.dim([-3, -3, 0], [3, -3, 0], '6cm', { off: [0, -.6, 0], dy: .8 });
+          if (D.ph) D.poly([[-3, -3, 0], [3, -3, 0], [3, 3, 0], [-3, 3, 0]], { col: C.yel, a: .35 });
+        } },
+      { tag: '例題', model: K.frame([0, 0, 2], 4.4), view: { th: -62, ps: 18 },
+        q: '（2）底面の半径 3cm、高さ 4cm の円錐の体積は？', a: '12π cm³', sub: '1/3 × π × 3² × 4 ＝ 12π（同じ底面・高さの円柱 36π の 1/3）', dur: 1,
+        b: { t: '（2）1/3 × π × 3² × 4 ＝ <b>12π cm³</b>', col: C.pink },
+        draw: function (D) {
+          D.mesh(K.cone(3, 4), { col: C.pink }); D.seg([0, 0, 4], [0, 0, 0], { col: C.yel, dash: true }); D.label([0, 0, 2], '4cm', { col: C.yel, dx: 1 }); D.dim([0, 0, 0], [3, 0, 0], '3cm', { dy: .8 });
+          if (D.ph) D.mesh(K.cylinder(3, 4), { col: C.chalk, a: .12, edgeCol: 'rgba(242,240,230,.6)' });
+        } },
+      { tag: '考えよう', model: K.frame([0, 0, 2.5], 5.4), view: { th: -90, ps: 6, fov: 18 },
+        q: '底面積と高さが等しい角錐 ア・イ がある。頂点がかたむいている イ の体積は、ア と同じだろうか。うすい紙を重ねたモデルで考えよう。',
+        notes: ['予想と、そのわけ', '紙を重ねたモデルで、説明してみよう。', 'スライダーで、紙の枚数と、かたむきを変えられます。'],
+        sliders: [{ key: 'n', label: '紙の枚数', min: 4, max: 24, step: 1, val: 8, fmt: function (x) { return x + '枚'; } }, { key: 's', label: '頂点をずらす', min: 0, max: 3, val: 0, fmt: function (x) { return x.toFixed(1); } }],
+        draw: function (D) {
+          var n = D.V.n, s = D.V.s, h = 5, a = 2.2;
+          [[-3.2, 0], [3.2, s]].forEach(function (X, j) {
+            for (var i = 0; i < n; i++) {
+              var z = i / n * h, k = 1 - i / n, cx = X[0] + X[1] * i / n;
+              D.mesh(K.prism([[-a * k, -a * k], [a * k, -a * k], [a * k, a * k], [-a * k, a * k]], h / n * .9), { at: [cx, 0, z], col: j ? C.orange : C.blue, a: .9, ew: .6 });
+            }
+            D.label([X[0], 0, 0], j ? 'イ' : 'ア', { dy: 1.2 });
+          });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', model: K.frame([3, 3, 3], 6.2), view: { th: -58, ps: 22 },
+        q: '1辺 6cm の立方体 ABCD-EFGH で、4つの頂点 A、C、F、H を結んでできる三角錐 ACFH の体積は？',
+        a: '72cm³', sub: '立方体 216 から、角の三角錐（1/3 × 18 × 6 ＝ 36）4つを引く　216 − 36 × 4 ＝ 72', dur: 6,
+        b: { t: '216 − 36 × 4 ＝ <b>72cm³</b>', col: C.orange },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .7 ? '角の三角錐を 1つずつ 切りとる（36 × ' + Math.min(4, Math.floor(s.t / .7 * 4) + 1) + '）' : 'のこりが 三角錐 ACFH'; },
+        draw: function (D) {
+          var M = K.cuboid(6, 6, 6), P = M.P, t = D.ph ? D.t : 0;
+          var corners = [['B', 'A', 'C', 'F'], ['D', 'A', 'C', 'H'], ['E', 'A', 'F', 'H'], ['G', 'C', 'F', 'H']];
+          D.box(M, { dim: .55 });
+          corners.forEach(function (c, i) {
+            var s0 = i / 4 * .7, out = v.smooth(s0, s0 + .14, t), V = c.map(function (k) { return P[k]; }), dir = v.nrm(v.sub(V[0], M.ctr));
+            var tet = K.polyhedron(V, [[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]]);
+            D.mesh(tet, { col: C.blue, a: .45 * (1 - v.smooth(.75, .85, t) * .7), at: v.mul(dir, 2.4 * out) });
+          });
+          var core = K.polyhedron([P.A, P.C, P.F, P.H], [[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]]);
+          D.mesh(core, { col: C.orange, a: .5 + .45 * v.smooth(.7, .85, t) });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>
