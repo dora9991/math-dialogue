@@ -200,3 +200,111 @@ textarea.cl-in { resize: vertical; line-height: 1.5; }
 .top-more { border: 0; background: none; color: var(--ink-2); width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; text-decoration: none; }
 .top-more .ic { width: 24px; height: 24px; }
 @media (prefers-reduced-motion: reduce) { .cl-spin { animation: none; } }
+
+/* ---------- v2：級の種類・自主練・コーチの 拍手／いいね／怒り・予定・申し込み ---------- */
+.cl-tabs.four { grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.cl-tabs.four a { flex-direction: column; gap: 2px; padding: 8px 2px; font-size: 0.8rem; position: relative; }
+.cl-tabs.four a .ic { width: 22px; height: 22px; }
+.cl-tdot { display: inline-grid; place-items: center; min-width: 1.4em; height: 1.4em; padding: 0 4px; border-radius: 999px; background: var(--bad); color: #fff; font-size: 0.7rem; line-height: 1; }
+.cl-tabs.four .cl-tdot { position: absolute; top: 3px; right: 6px; }
+.cl-notice.ev { background: var(--o-soft); color: var(--o); text-decoration: none; }
+.cl-notice.ev .ic { fill: none; }
+.cl-notice.ev > .ic:last-child { margin-left: auto; }
+.cl-tracks { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: thin; }
+.cl-track { display: inline-flex; align-items: center; gap: 6px; flex: none; border: 1.5px solid var(--line-2); background: var(--sheet); border-radius: 999px; padding: 4px 10px 4px 8px; min-height: 40px; font-family: var(--font-round); font-weight: 800; font-size: 0.86rem; color: var(--ink-2); }
+.cl-track .ic { width: 18px; height: 18px; }
+.cl-track[aria-selected="true"] { border-color: var(--ball); background: var(--ball-soft); color: var(--ink); box-shadow: 0 0 0 2px var(--ball-soft); }
+.cl-track.add { border-style: dashed; }
+.cl-trh { display: flex; align-items: center; gap: 6px; font-family: var(--font-round); font-weight: 800; font-size: 0.95rem; margin: 10px 0 6px; }
+.cl-trh .ic { width: 1.1em; height: 1.1em; color: var(--ball); }
+.cl-chip { display: inline-flex; align-items: center; border-radius: 999px; padding: 1px 10px; background: var(--o-soft); color: var(--o); font-size: 0.72rem; font-weight: 800; font-family: var(--font-round); white-space: nowrap; }
+.cl-q-task { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cl-tiles.six .cl-tile small { display: block; color: var(--ball); font-size: var(--fs-xs); }
+.cl-tpl:disabled { opacity: 0.5; }
+.cl-tpl { width: 100%; text-align: left; }
+
+/* 自主練 */
+.cl-quest { display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--ink); }
+.cl-quest-h { display: flex; align-items: center; gap: 12px; }
+.cl-quest-h .rc-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cl-quest-n { display: flex; align-items: baseline; gap: 2px; flex: none; font-weight: 700; color: var(--ink-2); }
+.cl-quest-n b { font-size: 1.6rem; color: var(--ball); }
+.cl-quest-n small { font-size: var(--fs-xs); margin-left: 2px; }
+.cl-quest.clear { background: var(--ok-soft); }
+.cl-quest.over { opacity: 0.7; }
+.cl-quest.soon { border-style: dashed; }
+.cl-quest .small, .cl-quest .rc-sub { display: flex; align-items: center; gap: 4px; }
+.cl-qprog { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.cl-qprog > b { font-size: 2.6rem; line-height: 1; color: var(--ball); font-family: var(--font-round); }
+.cl-qprog > span:not(.cl-st) { font-weight: 800; color: var(--ink-2); }
+.cl-qprog .cl-bar { flex-basis: 100%; }
+.cl-qsum { font-weight: 800; }
+.cl-qkid > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+.cl-qkid > summary::-webkit-details-marker { display: none; }
+.cl-qkid > summary .rc-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.cl-bar.sm { height: 8px; }
+.cl-qlog { border-top: 1px dashed var(--line); margin-top: 10px; padding-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.cl-in.sm { min-height: 38px; padding: 4px 10px; font-size: 0.92rem; }
+.cl-ev-when { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-weight: 700; color: var(--ink-2); font-size: var(--fs-s); }
+.cl-ev-when .ic { width: 1em; height: 1em; }
+
+/* コーチの 拍手・いいね・怒り */
+.cl-creacts { display: flex; gap: 6px; flex-wrap: wrap; }
+.cl-creact { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; border-radius: 12px; padding: 3px 10px; background: var(--o-soft); font-size: var(--fs-s); }
+.cl-creact b { font-family: var(--font-round); }
+.cl-creact small { color: var(--ink-2); font-weight: 700; }
+.cl-creact.angry { background: var(--bad-soft); }
+.cl-creact.good { background: var(--ball-soft); }
+.cl-creact-c { flex-basis: 100%; font-weight: 700; }
+.cl-cbtns { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cl-cbtns > .ic { width: 1.2em; height: 1.2em; color: var(--o); }
+.cl-cbtn { display: inline-flex; align-items: center; gap: 4px; border: 1.5px solid var(--line-2); background: var(--sheet); border-radius: 999px; padding: 4px 12px; min-height: 40px; font-weight: 800; font-size: var(--fs-s); }
+.cl-cbtn[aria-pressed="true"].clap { background: var(--o-soft); border-color: var(--o); }
+.cl-cbtn[aria-pressed="true"].good { background: var(--ball-soft); border-color: var(--ball); }
+.cl-cbtn[aria-pressed="true"].angry { background: var(--bad-soft); border-color: var(--bad); }
+.cl-cert.quest .cl-cert-k { background: var(--gold); color: #2a1f00; }
+.cl-cert.quest .cl-cert-k .ic { width: 30px; height: 30px; }
+.cl-cert-big.quest { background: var(--gold); color: #2a1f00; }
+.cl-cert-big.quest .ic { width: 56px; height: 56px; }
+
+/* 予定と 参加 */
+.cl-event { display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: var(--ink); }
+.cl-event.closed { opacity: 0.8; }
+.cl-ev-kind { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cl-ev-t { font-family: var(--font-round); font-weight: 800; font-size: 1.12rem; line-height: 1.35; }
+.cl-ev-t small { font-size: 0.8rem; color: var(--ink-2); }
+.cl-ev-count { display: flex; gap: 10px; flex-wrap: wrap; font-size: var(--fs-s); font-weight: 700; color: var(--ink-2); }
+.cl-ev-count .yes b { color: var(--ok); }
+.cl-ev-count .no b { color: var(--bad); }
+.cl-ev-count .maybe b { color: var(--warn); }
+.cl-pre { white-space: pre-wrap; }
+.cl-answers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.cl-ans { word-break: keep-all; display: flex; align-items: center; justify-content: center; gap: 4px; border: 2px solid var(--line-2); background: var(--sheet); border-radius: 14px; min-height: 48px; padding: 4px; font-family: var(--font-round); font-weight: 800; font-size: 0.86rem; line-height: 1.2; }
+.cl-ans .ic { width: 1.1em; height: 1.1em; flex: none; }
+.cl-ans.yes[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: #fff; }
+.cl-ans.maybe[aria-pressed="true"] { background: var(--warn-soft); border-color: var(--warn); }
+.cl-ans.no[aria-pressed="true"] { background: var(--bad-soft); border-color: var(--bad); }
+.cl-ans:disabled { opacity: 0.45; }
+.cl-entry { display: flex; align-items: center; gap: 10px; background: var(--sheet); border-radius: 14px; padding: 6px 10px; }
+.cl-entry .rc-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cl-entry .rc-body small { color: var(--ink-2); }
+.cl-entry-set { display: flex; gap: 4px; flex: none; }
+.cl-ans-sm { width: 38px; height: 38px; border-radius: 10px; border: 1.5px solid var(--line-2); background: var(--sheet); font-weight: 800; font-size: 1rem; }
+.cl-ans-sm.yes[aria-pressed="true"] { background: var(--ok); color: #fff; border-color: var(--ok); }
+.cl-ans-sm.maybe[aria-pressed="true"] { background: var(--warn-soft); border-color: var(--warn); }
+.cl-ans-sm.no[aria-pressed="true"] { background: var(--bad-soft); border-color: var(--bad); }
+
+/* 申し込み */
+.cl-apply { display: flex; flex-direction: column; gap: 6px; }
+.cl-apply.new { box-shadow: var(--shadow), inset 4px 0 0 var(--ball); }
+.cl-apply.done { opacity: 0.75; }
+.cl-apply a { color: var(--o); font-weight: 700; word-break: break-all; }
+.cl-url { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; background: var(--sheet-2); border-radius: 10px; padding: 8px 10px; word-break: break-all; }
+.cl-radio { display: inline-flex; align-items: center; gap: 6px; margin-right: 14px; font-weight: 700; min-height: 40px; }
+.cl-radio input { width: 20px; height: 20px; accent-color: var(--ball); }
+.cl-check { display: flex; gap: 10px; align-items: flex-start; font-size: var(--fs-s); font-weight: 700; }
+.cl-check input { width: 22px; height: 22px; accent-color: var(--ball); flex: none; margin-top: 1px; }
+fieldset.field { border: 0; padding: 0; margin: 0; min-width: 0; }
+
+.cl-form textarea { border: 2px solid var(--line-2); border-radius: 12px; background: var(--sheet); color: var(--ink); padding: 8px 12px; width: 100%; min-width: 0; font: inherit; font-size: 1rem; line-height: 1.5; resize: vertical; }
+.cl-form textarea:focus { border-color: var(--o); outline: none; }
