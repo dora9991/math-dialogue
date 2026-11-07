@@ -187,7 +187,7 @@ function makeD(C, M, info) {
     /* 小さい画面（ギャラリーなど）。中心 (cx, cy)、半分の大きさ half、frame {ctr, R} */
     sub: function (cx, cy, half, frame, o) {
       o = o || {};
-      var C2 = makeCam({ target: frame.ctr, rho: frame.R * (o.rho || 1.05), theta: o.th != null ? o.th : C.th, psi: o.ps != null ? o.ps : C.ps, fov: o.fov || C.fov }, cx, cy, half, .82);
+      o = o || {}; var C2 = makeCam({ target: frame.ctr, rho: frame.R * (o.rho || 1.05), theta: o.th != null ? o.th : C.th, psi: o.ps != null ? o.ps : C.ps, fov: o.fov || C.fov }, cx, cy, half, .82);
       return makeD(C2, D.M, info);
     },
     /* 舞台を n こに分ける（ラベルの場所 lab を、下にとる） */
