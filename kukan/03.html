@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>空間の2直線の位置関係</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/board.css">
+</head>
+<body>
+<script src="js/k3.js"></script>
+<script>
+/* 空間図形 第3時：空間にある2つの直線は、どんな位置関係になるだろう（ikkan の lesson_kukan_new_03 と同じ流れ）。
+   直方体は AB＝4・AD＝3・AE＝2（ワークシートの例題と同じ）。辺の仲間分けは、座標から計算している（下の check で答えと照らし合わせる）。 */
+(function () {
+  var M = K3.cuboid(4, 3, 2), CUBE = K3.cuboid(3, 3, 3), C = K3.COL, v = K3.v, G = K3.group, E = K3.ekey;
+  var AB = { cross: G(M, 'AB', 'cross'), par: G(M, 'AB', 'par'), skew: G(M, 'AB', 'skew') };
+  var BC = { par: G(M, 'BC', 'par'), perp: G(M, 'BC', 'perp'), cross: G(M, 'BC', 'cross'), skew: G(M, 'BC', 'skew') };
+  /* 書いた答えと、計算した仲間分けが同じかどうか（ちがえば、コンソールに出す） */
+  function check(list, ans) { var a = list.map(E).sort().join(), b = ans.split('、').map(E).sort().join(); if (a !== b && window.console) console.error('答えがちがう', ans, list); }
+  check(AB.cross, 'AD、AE、BC、BF'); check(AB.par, 'DC、EF、HG'); check(AB.skew, 'DH、CG、EH、FG');
+  check(BC.par, 'AD、EH、FG'); check(BC.perp, 'AB、DC、BF、CG'); check(BC.skew, 'AE、DH、EF、HG');
+
+  function paint(list, col, o) { var r = {}; list.forEach(function (e, i) { r[e] = Object.assign({ col: col }, typeof o === 'function' ? o(i, list.length) : o || {}); }); return r; }
+  function mix() { var r = {}; for (var i = 0; i < arguments.length; i++) for (var k in arguments[i]) r[k] = arguments[i][k]; return r; }
+  /* 答えの辺を、1本ずつ順に出す */
+  function oneByOne(D) { return function (i, n) { var s = i / n * .75; return { a: v.smooth(s, s + .25, D.t) }; }; }
+  var base = { AB: { col: C.orange, w: 3 } }, baseBC = { BC: { col: C.orange, w: 3 } };
+  /* 辺 AB をふくむ面（扉のように AB のまわりを回す）。角 phi（度）。DC は 0°、HG は約34°、EF は 90° でこの面の上にのる */
+  var PHI = { DC: 0, HG: Math.atan2(M.h, M.d) / v.DEG, EF: 90 };
+
+  K3.run({
+    no: '第3時', title: '空間にある2つの直線は、どんな位置関係になるだろう',
+    model: M, view: { th: -60, ps: 24 },
+    links: [{ href: 'index.html', label: '目次' }, { href: '04.html', label: '第4時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '辺 AB と、ほかの 11本の辺',
+        q: '直方体で、辺 AB と、ほかの 11本の辺との関係を調べて、仲間分けしよう。',
+        notes: ['① 自分の考え（3分）　どこに目をつけたかも。', '② ペアの考え（3分）　自分とちがう分け方は？'],
+        draw: function (D) { D.box(null, { edges: base }); } },
+
+      { tag: '今日の問い', q: '辺 AB と 交わる辺は？', a: 'AD、AE、BC、BF', sub: '辺 AB と、点 A か 点 B で 交わる', dur: 1.8,
+        b: { key: 'cross', t: '交わる … AD、AE、BC、BF', col: C.yel },
+        draw: function (D) {
+          D.box(null, { edges: mix(paint(AB.cross, C.yel, oneByOne(D)), base) });
+          if (D.t > 0) { D.dot('A', { col: C.yel, a: D.t }); D.dot('B', { col: C.yel, a: D.t }); }
+        } },
+
+      { tag: '今日の問い', q: '辺 AB と 平行な辺は？', a: 'DC、EF、HG', sub: '辺 AB と 同じ平面の上にあって、交わらない', dur: 3.3,
+        b: { key: 'par', t: '平行 … DC、EF、HG', col: C.blue },
+        draw: function (D) {
+          var planes = [['A', 'B', 'C', 'D'], ['A', 'B', 'F', 'E'], ['A', 'B', 'G', 'H']], names = ['DC', 'EF', 'HG'];
+          planes.forEach(function (pl, k) {
+            var a = D.ph ? v.smooth(k / 3, k / 3 + .1, D.t) * (1 - v.smooth(k / 3 + .26, k / 3 + .36, D.t)) : 0;
+            if (a > 0) D.poly(pl, { col: C.blue, a: .22 * a, stroke: C.blue, sa: .6 * a });
+          });
+          var par = paint(names, C.blue, function (i) { return { a: D.ph ? v.smooth(i / 3, i / 3 + .12, D.t) : 0 }; });
+          D.box(null, { edges: mix(paint(AB.cross, C.yel, { a: .5, w: 1.8, noglow: true }), par, base) });
+        } },
+
+      { tag: '今日の問い', q: 'のこりの 4本（DH、CG、EH、FG）は、辺 AB と 交わる？ 平行？', a: 'どちらでもない',
+        sub: 'どこまでのばしても 交わらず、平行でもない', dur: 2.6,
+        b: { key: 'skew', t: '交わらず、平行でもない … DH、CG、EH、FG', col: C.pink },
+        draw: function (D) {
+          var pulse = .55 + .45 * Math.sin(D.now * 4), ext = 1.6 * v.ease(D.t);
+          var skew = D.ph ? paint(AB.skew, C.pink, { ext: ext }) : paint(AB.skew, C.chalk, { a: pulse, w: 2.2, noglow: true });
+          D.box(null, { edges: mix(paint(AB.cross, C.yel, { a: .5, w: 1.8, noglow: true }), paint(AB.par, C.blue, { a: .5, w: 1.8, noglow: true }), skew, { AB: { col: C.orange, w: 3, ext: ext } }) });
+        } },
+
+      { tag: 'ことば', q: '空間にある 2直線の位置関係は、何種類？', a: '交わる・平行・ねじれの位置 の 3つ',
+        sub: '平行でなく、交わらない 2直線は、<b>ねじれの位置</b>にある', dur: .8, spin: true,
+        b: { key: 'skew', t: 'ねじれの位置 … DH、CG、EH、FG', col: C.pink },
+        draw: function (D) {
+          D.box(null, { edges: mix(paint(AB.cross, C.yel), paint(AB.par, C.blue), paint(AB.skew, C.pink), base) });
+        } },
+
+      { tag: 'ことば', q: 'ねじれの位置にある 2直線は、同じ平面の上にあるだろうか？', a: 'ない',
+        sub: '辺 AB をふくむ面をどう回しても、CG は 面を 1点で つきぬけるだけ。平行な辺は、面の上にのることがある',
+        dur: 5, view: { th: -42, ps: 20 },
+        sliders: [{ key: 'phi', label: '面を回す', min: 0, max: 90, val: 0, anim: [0, 90], fmt: function (x) { return Math.round(x) + '°'; } }],
+        b: { t: 'ねじれの位置の 2直線は、同じ平面上に <b>ない</b>', col: C.pink },
+        draw: function (D) {
+          var show = D.ph === 1 || D.V.phi > .5, phi = D.V.phi * v.DEG;
+          var par = paint(AB.par, C.blue, { a: .45, w: 1.8, noglow: true }), onPlane = null;
+          if (show) Object.keys(PHI).forEach(function (k) { if (Math.abs(D.V.phi - PHI[k]) < 2.5) { par[k] = { col: C.blue, w: 3 }; onPlane = k; } });
+          D.box(null, { edges: mix(par, paint(AB.skew, C.pink, { w: 1.8, a: .8, noglow: true }), { CG: { col: C.pink, w: 3 } }, base) });
+          if (!show) return;
+          var n = [0, Math.cos(phi), Math.sin(phi)], m = [0, -Math.sin(phi), Math.cos(phi)], L = 4.3, a0 = [-.5, 0, 0], b0 = [M.w + .5, 0, 0];
+          D.poly([a0, b0, v.add(b0, v.mul(n, L)), v.add(a0, v.mul(n, L))], { col: C.yel, a: .16, stroke: C.yel, sa: .55 });
+          D.label(v.add([M.w + .5, 0, 0], v.mul(n, L * .92)), '辺 AB をふくむ面', { col: C.yel, size: .8, align: 'right', dx: -.3 });
+          /* ねじれの位置の辺が、面をつきぬける点 */
+          var labeled = false;
+          ['CG', 'FG', 'DH', 'EH'].forEach(function (e) {
+            var p = M.P[e[0]], q = M.P[e[1]], fp = v.dot(p, m), fq = v.dot(q, m);
+            if (fp * fq > 1e-9 || Math.abs(fp - fq) < 1e-9) return;
+            var x = v.add(p, v.mul(v.sub(q, p), fp / (fp - fq)));
+            if (v.dot(x, n) < -1e-6) return;
+            D.dot(x, { col: C.pink, r: 3 });
+            if (!labeled && !onPlane) { labeled = true; D.label(x, e + ' は 1点で つきぬける', { col: C.pink, size: .8, align: 'left', dx: .6 }); }
+          });
+          if (onPlane) D.label(v.lerp3(M.P[onPlane[0]], M.P[onPlane[1]], .5), onPlane + ' は この面の上', { col: C.blue, size: .8, dy: -1 });
+        } },
+
+      { tag: '例題', bh: '例題　辺 BC について', q: '辺 BC と 平行な辺は？', a: 'AD、EH、FG', dur: 1.6,
+        b: { t: '平行 … AD、EH、FG', col: C.blue },
+        draw: function (D) { D.box(null, { edges: mix(paint(BC.par, C.blue, oneByOne(D)), baseBC) }); } },
+
+      { tag: '例題', q: '辺 BC と 垂直に交わる辺は？', a: 'AB、DC、BF、CG', sub: '交わる辺のうち、直角に交わるもの（直方体では、交わる辺は みな垂直）', dur: 1.8,
+        b: { t: '垂直に交わる … AB、DC、BF、CG', col: C.yel },
+        draw: function (D) {
+          D.box(null, { edges: mix(paint(BC.par, C.blue, { a: .45, w: 1.8, noglow: true }), paint(BC.perp, C.yel, oneByOne(D)), baseBC) });
+          if (D.t > .5) {
+            var a = v.smooth(.5, .8, D.t), x = [1, 0, 0], y = [0, 1, 0], z = [0, 0, 1];
+            D.right('B', [-1, 0, 0], y, { a: a }); D.right('B', z, y, { a: a });
+            D.right('C', [-1, 0, 0], [0, -1, 0], { a: a }); D.right('C', z, [0, -1, 0], { a: a });
+          }
+        } },
+
+      { tag: '例題', q: '辺 BC と ねじれの位置にある辺は？', a: 'AE、DH、EF、HG', sub: '11本から、交わる辺と平行な辺を消すと、のこりが ねじれの位置', dur: 3.6,
+        b: { t: 'ねじれの位置 … AE、DH、EF、HG', col: C.pink },
+        banner: function (s) { if (s.ph !== 1) return ''; return s.t < .4 ? '交わる辺を 消す' : s.t < .72 ? '平行な辺を 消す' : 'のこりが ねじれの位置'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, ed = {};
+          M.edges.forEach(function (e) { if (E(e) !== E('BC')) ed[e] = { col: C.chalk, w: 2, noglow: true }; });
+          if (D.ph) {
+            var fc = v.smooth(.05, .18, t), gc = 1 - .85 * v.smooth(.25, .38, t);
+            BC.cross.forEach(function (e) { ed[e] = { col: fc > .5 ? C.yel : C.chalk, w: 2, a: gc, noglow: true }; });
+            var fp = v.smooth(.42, .52, t), gp = 1 - .85 * v.smooth(.58, .7, t);
+            BC.par.forEach(function (e) { ed[e] = { col: fp > .5 ? C.blue : C.chalk, w: 2, a: gp, noglow: true }; });
+            if (t > .74) BC.skew.forEach(function (e) { ed[e] = { col: C.pink, w: 2.5 }; });
+          }
+          D.box(null, { edges: mix(ed, baseBC) });
+        } },
+
+      { tag: '考えよう', q: '教室の中から、ねじれの位置にある 2直線を 見つけよう。また、同じ平面上にないといえるのは、なぜだろう。',
+        notes: ['見つけた例を、できるだけ多く 書こう。', '教室を 直方体とみると、どこが辺になるだろう。', '立ち歩いて、教え合おう。'], spin: true,
+        draw: function (D) {
+          D.box(null, { labels: false });
+          var y = M.d, bl = [[.8, y, .55], [3.2, y, .55], [3.2, y, 1.55], [.8, y, 1.55]];
+          D.poly(bl, { col: '#1d3b2f', a: .9, stroke: C.chalk, sa: .6 });
+          D.label(v.centroid(bl), '黒板', { size: .8, plain: true, col: 'rgba(242,240,230,.75)' });
+          D.label([M.w / 2, 0, 0], '教室', { size: .9, dy: 1.2 });
+        } },
+
+      { tag: 'チャレンジ', bh: 'チャレンジ', model: CUBE,
+        q: '立方体の 12本の辺から 2本を選ぶ。ねじれの位置にある 2本の組は、何通り？',
+        a: '12 × 4 ÷ 2 ＝ 24（通り）', sub: '1本の辺と ねじれの位置の辺は 4本。12 × 4 ＝ 48 は、同じ組を 2回ずつ 数えている', dur: 8,
+        b: { t: '12 × 4 ＝ 48 → 2回ずつ数えている → 48 ÷ 2 ＝ <b>24通り</b>', col: C.orange },
+        banner: function (s) {
+          if (s.ph !== 1) return '';
+          var k = Math.min(12, Math.floor(s.t / .84 * 12) + 1);
+          return s.t < .84 ? k + '本目：4 × ' + k + ' ＝ ' + (4 * k) : '48 ÷ 2 ＝ 24（通り）';
+        },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0;
+          if (!D.ph) { D.box(null, {}); return; }
+          if (t < .84) {
+            var k = Math.min(11, Math.floor(t / .84 * 12)), e = CUBE.edges[k], ed = {};
+            ed[e] = { col: C.orange, w: 3 };
+            G(CUBE, e, 'skew').forEach(function (s) { ed[s] = { col: C.pink, w: 2.5 }; });
+            D.box(null, { edges: ed });
+          } else {
+            D.box(null, { edges: { AB: { col: C.orange, w: 3 }, CG: { col: C.orange, w: 3 } } });
+            D.label(v.lerp3(CUBE.P.A, CUBE.P.B, .5), 'AB から見た CG', { col: C.orange, size: .8, dy: 1.1 });
+            D.label(v.lerp3(CUBE.P.C, CUBE.P.G, .5), 'CG から見た AB', { col: C.orange, size: .8, align: 'left', dx: .7 });
+            D.text(D.W / 2, D.H * .86, '同じ組を、2回 数えている', { col: C.yel });
+          }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

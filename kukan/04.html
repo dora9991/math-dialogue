@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>直線と平面の位置関係</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/board.css">
+</head>
+<body>
+<script src="js/k3.js"></script>
+<script>
+/* 空間図形 第4時：直線と平面、平面と平面の位置関係を調べよう（ikkan の lesson_kukan_new_04 と同じ流れ）。
+   直方体は AB＝4・AD＝3・AE＝2（ワークシートの例題と同じ）。辺と面の関係・きょりは、座標から計算している（下の check）。
+   考えようの「何本と垂直を調べればよいか」は、答えを出さない（ℓ と P 上の直線の角を、動かして調べる道具だけ）。 */
+(function () {
+  var M = K3.cuboid(4, 3, 2), C = K3.COL, v = K3.v, E = K3.ekey;
+  var F1 = { in: K3.edgesBy(M, 'ABCD', 'in'), cross: K3.edgesBy(M, 'ABCD', 'cross'), par: K3.edgesBy(M, 'ABCD', 'par') };
+  var F2 = { par: K3.edgesBy(M, 'ABFE', 'par'), perp: K3.edgesBy(M, 'ABFE', 'perp'), fpar: K3.facesBy(M, 'ABFE', 'par') };
+  function check(ok, what) { if (!ok && window.console) console.error('答えがちがう', what); }
+  function same(list, ans) { return list.map(E).sort().join() === ans.split('、').map(E).sort().join(); }
+  check(same(F1.in, 'AB、BC、CD、DA'), '面 ABCD の上'); check(same(F1.cross, 'AE、BF、CG、DH'), '面 ABCD と交わる'); check(same(F1.par, 'EF、FG、GH、HE'), '面 ABCD と平行');
+  check(same(F2.par, 'DC、CG、GH、HD'), '面 ABFE と平行な辺'); check(same(F2.perp, 'AD、BC、EH、FG'), '面 ABFE と垂直な辺');
+  check(F2.fpar.length === 1 && E(F2.fpar[0]) === E('DCGH'), '面 ABFE と平行な面'); check(Math.abs(K3.dist(M, 'D', 'ABFE') - 3) < 1e-9, 'きょり');
+  check(K3.pp(M, 'ABCD', 'EFGH') === 'par' && K3.pp(M, 'ABCD', 'ABFE') === 'perp', '面と面');
+
+  function paint(list, col, o) { var r = {}; list.forEach(function (e, i) { r[e] = Object.assign({ col: col }, typeof o === 'function' ? o(i, list.length) : o || {}); }); return r; }
+  function mix() { var r = {}; for (var i = 0; i < arguments.length; i++) for (var k in arguments[i]) r[k] = arguments[i][k]; return r; }
+  function oneByOne(D) { return function (i, n) { var s = i / n * .75; return { a: v.smooth(s, s + .25, D.t) }; }; }
+  var dimmed = { a: .45, w: 1.8, noglow: true };
+  var faceA = { ABCD: { col: C.blue, a: .3 } }, faceF = { ABFE: { col: C.yel, a: .22 } };
+
+  /* 考えようの道具：平面 P・点 O・直線 ℓ と、P の上の直線（O を通る） */
+  var POLE = { P: {}, edges: [], faces: [], ctr: [0, 0, .7], R: 2.4 };
+  var MDIR = [0, 62, 128];
+
+  K3.run({
+    no: '第4時', title: '直線と平面、平面と平面の位置関係を調べよう',
+    model: M, view: { th: -60, ps: 24 },
+    links: [{ href: 'index.html', label: '目次' }, { href: '03.html', label: '◀ 第3時' }],
+    steps: [
+      { tag: '今日の問い', bh: '面 ABCD と、12本の辺',
+        q: '直方体で、面 ABCD と、12本の辺との関係を調べて、仲間分けしよう。',
+        notes: ['① 自分の考え（3分）　どこに目をつけたかも。', '② ペアの考え（3分）　自分とちがう分け方は？'],
+        draw: function (D) { D.box(null, { faces: faceA }); } },
+
+      { tag: '今日の問い', q: '面 ABCD の 上にある辺は？', a: 'AB、BC、CD、DA', sub: '辺が、面 ABCD の上にある（面に ふくまれる）', dur: 1.8,
+        b: { key: 'in', t: '面の上にある … AB、BC、CD、DA', col: C.blue },
+        draw: function (D) { D.box(null, { faces: faceA, edges: paint(F1.in, C.blue, oneByOne(D)) }); } },
+
+      { tag: '今日の問い', q: '面 ABCD と 1点で交わる辺は？', a: 'AE、BF、CG、DH', sub: '辺は、面と 1点（A・B・C・D）で 交わる', dur: 2,
+        b: { key: 'cross', t: '1点で交わる … AE、BF、CG、DH', col: C.yel },
+        draw: function (D) {
+          if (D.t > 0) D.bigPlane('ABCD', { a: .14 * D.t });
+          D.box(null, { faces: faceA, edges: mix(paint(F1.in, C.blue, dimmed), paint(F1.cross, C.yel, function (i, n) { var s = i / n * .75; return { a: v.smooth(s, s + .25, D.t), ext: .9 * D.t }; })) });
+          'ABCD'.split('').forEach(function (k) { if (D.t > 0) D.dot(k, { col: C.yel, a: D.t }); });
+        } },
+
+      { tag: '今日の問い', q: '面 ABCD と 交わらない辺は？', a: 'EF、FG、GH、HE', sub: '面 ABCD を どこまで広げても、交わらない', dur: 2,
+        b: { key: 'par', t: '交わらない … EF、FG、GH、HE', col: C.lav },
+        draw: function (D) {
+          if (D.t > 0) D.bigPlane('ABCD', { a: .14 * D.t, ext: 1.6 * D.t });
+          D.box(null, { faces: faceA, edges: mix(paint(F1.in, C.blue, dimmed), paint(F1.cross, C.yel, dimmed), paint(F1.par, C.lav, function (i, n) { var s = i / n * .75; return { a: v.smooth(s, s + .25, D.t), ext: 1.2 * D.t }; })) });
+        } },
+
+      { tag: 'ことば', q: '直線と平面の 位置関係は、何種類？', a: '平面上に ある・1点で 交わる・平行 の 3つ', sub: '交わらない 直線と平面は、<b>平行</b>', dur: .8, spin: true,
+        b: [{ key: 'in', t: '平面上に ある … AB、BC、CD、DA', col: C.blue }, { key: 'par', t: '平行 … EF、FG、GH、HE', col: C.lav }],
+        draw: function (D) { D.box(null, { faces: faceA, edges: mix(paint(F1.in, C.blue), paint(F1.cross, C.yel), paint(F1.par, C.lav)) }); } },
+
+      { tag: 'ことば', q: '辺 AE と 面 ABCD は、垂直と いえるだろうか？', a: '垂直', sub: 'AE は、点 A を通る 面 ABCD 上の <b>どの直線とも</b> 垂直。このとき、AE と 面 ABCD は 垂直', dur: 5,
+        view: { th: -58, ps: 30 },
+        sliders: [{ key: 'psi', label: '面の上の直線を回す', min: 0, max: 360, val: 30, anim: [30, 390], fmt: function (x) { return Math.round(x % 360) + '°'; } }],
+        b: { t: 'AE ⊥ 面 ABCD … A を通る どの直線とも 垂直', col: C.yel },
+        draw: function (D) {
+          D.bigPlane('ABCD', { a: .12, ext: 1.4 });
+          D.box(null, { faces: faceA, edges: { AE: { col: C.yel, w: 3 } }, dim: .5 });
+          if (D.ph !== 1 && D.V.psi === 30) return;
+          var a = D.V.psi * v.DEG, u = [Math.cos(a), Math.sin(a), 0], A = M.P.A, L = 2.2;
+          D.seg(v.sub(A, v.mul(u, L)), v.add(A, v.mul(u, L)), { col: C.chalk, w: D.lw * 2.2, glow: true });
+          D.right('A', [0, 0, 1], u, { s: .38 });
+          D.label(v.add(A, v.add(v.mul(u, .62), [0, 0, .5])), '90°', { col: C.yel, size: .85 });
+          D.dot('A', { col: C.yel });
+        } },
+
+      { tag: 'ことば', bh: '2つの平面', q: '面 ABCD と 面 EFGH、面 ABCD と 面 ABFE は、それぞれ どんな関係？',
+        a: 'EFGH は 平行、ABFE は 交わる', sub: '面 ABCD と 面 ABFE は、辺 AB で 交わり、垂直。2つの平面の位置関係は、<b>交わる</b>・<b>平行</b>', dur: 2.6,
+        b: [{ t: '面 ABCD と 面 EFGH … 平行', col: C.lav }, { t: '面 ABCD と 面 ABFE … 交わる（交わりは AB）・垂直', col: C.yel }],
+        draw: function (D) {
+          var a1 = D.ph ? v.smooth(0, .35, D.t) : 0, a2 = D.ph ? v.smooth(.45, .8, D.t) : 0;
+          D.box(null, { faces: { ABCD: { col: C.blue, a: .3 }, EFGH: { col: C.lav, a: .3 * a1 }, ABFE: { col: C.yel, a: .26 * a2 } }, edges: a2 > 0 ? { AB: { col: C.orange, w: 3, a: a2, ext: .8 * a2 } } : {} });
+          if (a2 > .5) D.right([M.w / 2, 0, 0], [0, 1, 0], [0, 0, 1], { s: .42, a: a2 });
+          if (a1 > 0) D.label([M.w / 2, M.d / 2, M.h], '平行', { col: C.lav, size: .85, a: a1 });
+          if (a2 > 0) D.label([M.w / 2, 0, 0], '交わる（AB）', { col: C.yel, size: .85, a: a2, dy: 1.3 });
+        } },
+
+      { tag: 'ことば', bh: '点と平面の きょり', q: '点 D と 面 ABFE の きょりは、どこの長さ？', a: '辺 DA の長さ（3cm）',
+        sub: '点から 面にひいた <b>垂線</b>の長さ。面の上の ほかの点までより、いちばん短い', dur: 3.6,
+        view: { th: -122, ps: 22 },
+        sliders: [{ key: 's', label: '点 P を動かす', min: 0, max: 1, val: 0, anim: [0, 1], fmt: function (x) { return ''; } }],
+        b: { t: '点 D と 面 ABFE の きょり … DA ＝ 3cm', col: C.green },
+        draw: function (D) {
+          D.box(null, { faces: faceF, labels: true, dim: .7 });
+          D.dot('D', { col: C.green, r: 3 });
+          if (D.ph !== 1 && D.V.s === 0) return;
+          var P = v.lerp3(M.P.F, M.P.A, D.V.s), d = v.len(v.sub(P, M.P.D)), atA = D.V.s > .995;
+          D.seg('D', P, { col: C.green, w: D.lw * 2.4, glow: true });
+          D.dot(P, { col: C.chalk, r: 2.6 });
+          if (!atA) D.label(P, 'P', { dx: .9, dy: -.2, size: .9 });
+          D.label(v.lerp3(M.P.D, P, .5), (atA ? 'DA ＝ 3' : 'DP ＝ ' + d.toFixed(1)) + 'cm', { col: C.green, size: .9, dy: -.9 });
+          if (atA) { D.right('A', [1, 0, 0], [0, 1, 0], { col: C.green }); D.right('A', [0, 0, 1], [0, 1, 0], { col: C.green }); }
+        } },
+
+      { tag: '例題', bh: '例題　面 ABFE について（AB＝4cm、AD＝3cm、AE＝2cm）', q: '面 ABFE と 平行な辺は？', a: 'DC、CG、GH、HD', dur: 1.8,
+        b: { t: '平行な辺 … DC、CG、GH、HD', col: C.lav },
+        draw: function (D) { D.box(null, { faces: faceF, edges: paint(F2.par, C.lav, oneByOne(D)) }); } },
+
+      { tag: '例題', q: '面 ABFE と 垂直な辺は？', a: 'AD、BC、EH、FG', sub: '面 ABFE と交わる 4本は、どれも 垂直', dur: 1.8,
+        b: { t: '垂直な辺 … AD、BC、EH、FG', col: C.yel },
+        draw: function (D) {
+          D.box(null, { faces: faceF, edges: mix(paint(F2.par, C.lav, dimmed), paint(F2.perp, C.yel, oneByOne(D))) });
+          if (D.t > .6) { var a = v.smooth(.6, .9, D.t); D.right('A', [1, 0, 0], [0, 1, 0], { a: a }); D.right('B', [0, 0, 1], [0, 1, 0], { a: a }); }
+        } },
+
+      { tag: '例題', q: '面 ABFE と 平行な面は？', a: '面 DCGH', dur: 1.4,
+        b: { t: '平行な面 … 面 DCGH', col: C.lav },
+        draw: function (D) { D.box(null, { faces: { ABFE: { col: C.yel, a: .22 }, DCGH: { col: C.lav, a: .3 * D.t } }, edges: paint(['DC', 'CG', 'GH', 'HD'], C.lav, { a: D.t }) }); } },
+
+      { tag: '考えよう', scene: 'pole', model: POLE, view: { th: -62, ps: 22 },
+        q: '直線 ℓ が 平面 P に 垂直であることを 確かめるには、P 上の直線の 何本と 垂直であることを 調べればよいだろう。',
+        notes: ['予想してから、ℓ をかたむけて 調べよう。', 'P 上の直線を 1本・2本・3本 にして、ℓ との角を 見てみよう。', '三角定規と 下じきでも 確かめよう。'],
+        sliders: [
+          { key: 'n', label: 'P 上の直線', min: 1, max: 3, step: 1, val: 1, fmt: function (x) { return x + '本'; } },
+          { key: 'tilt', label: 'ℓ のかたむき', min: 0, max: 40, step: 1, val: 0, fmt: function (x) { return Math.round(x) + '°'; } },
+          { key: 'dir', label: 'たおす向き', min: 0, max: 360, step: 1, val: 90, fmt: function (x) { return Math.round(x) + '°'; } }
+        ],
+        draw: function (D) {
+          var S = 2.3, O = [0, 0, 0];
+          D.poly([[-S, -S, 0], [S, -S, 0], [S, S, 0], [-S, S, 0]], { col: C.blue, a: .13, stroke: C.blue, sa: .5 });
+          D.label([-S, S, 0], 'P', { col: C.blue, dx: -.6 });
+          var t = D.V.tilt * v.DEG, d = D.V.dir * v.DEG, u = [Math.sin(t) * Math.cos(d), Math.sin(t) * Math.sin(d), Math.cos(t)];
+          for (var k = 0; k < D.V.n; k++) {
+            var a = MDIR[k] * v.DEG, m = [Math.cos(a), Math.sin(a), 0];
+            D.seg(v.mul(m, -2.1), v.mul(m, 2.1), { col: C.chalk, w: D.lw * 1.8 });
+            var ang = Math.acos(Math.min(1, Math.abs(v.dot(u, m)))) / v.DEG, is90 = Math.abs(ang - 90) < .5;
+            if (is90) D.right(O, u, m, { s: .34 });
+            D.label(v.mul(m, 2.35), Math.round(ang) + '°', { col: is90 ? C.yel : C.chalk, size: .95 });
+          }
+          D.seg(v.mul(u, -.5), v.mul(u, 2.4), { col: C.orange, w: D.lw * 2.6, glow: true });
+          D.label(v.mul(u, 2.6), 'ℓ', { col: C.orange, size: 1.1 });
+          D.dot(O, { col: C.chalk }); D.label(O, 'O', { dx: -.8, dy: .6, size: .9 });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>
