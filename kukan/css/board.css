@@ -1,0 +1,101 @@
+/* 空間図形の黒板教材（kukan/）で共通の見た目。seitamentai/ と同じ黒板。
+   左＝立体の舞台（canvas）、右＝板書（問い・答え・たまっていく板書）。黒板なので1テーマだけ。 */
+:root{
+  --wall:#1a1814;
+  --frame:#7b522f;
+  --board-hi:#2d6150;
+  --board:#25503f;
+  --board-deep:#173829;
+  --board-veil:rgba(23,56,41,.72);
+  --chalk:#f2f0e6;
+  --chalk-2:rgba(242,240,230,.66);
+  --chalk-3:rgba(242,240,230,.30);
+  --chalk-4:rgba(242,240,230,.10);
+  --yel:#ffe27a;
+  --pink:#ff9db2;
+  --blue:#9ad8ff;
+  --lav:#c9b0ff;
+  --orange:#ffc078;
+  --green:#a9f0b0;
+  --f-chalk:"Klee One","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-ui:"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html{font-size:clamp(14px,.5vw + .85vh,24px)}
+html,body{height:100%}
+body{margin:0;background:var(--wall);color:var(--chalk);font-family:var(--f-ui);-webkit-font-smoothing:antialiased}
+.app{word-break:auto-phrase;box-sizing:border-box;height:100%;display:flex;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.board{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;border:10px solid var(--frame);border-radius:10px;overflow:hidden;
+  background:
+    radial-gradient(ellipse 50% 18% at 70% 30%,var(--chalk-4),transparent 70%),
+    radial-gradient(ellipse at 25% 15%,var(--board-hi) 0%,var(--board) 55%,var(--board-deep) 100%);
+  box-shadow:inset 0 0 70px rgba(0,0,0,.45),0 8px 24px rgba(0,0,0,.45)}
+
+.bar{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem 1rem;padding:.7rem 1.1rem .5rem}
+.bar h1{margin:0;flex:1 1 13rem;min-width:0;font-family:var(--f-chalk);font-weight:600;font-size:1.3rem;letter-spacing:.02em;text-wrap:balance}
+.bar h1 small{font-size:.75em;color:var(--chalk-2);margin-right:.5em}
+.prog{font-variant-numeric:tabular-nums;color:var(--chalk-2);font-size:.95rem;white-space:nowrap}
+.ctl{display:flex;gap:.45rem;flex-wrap:wrap}
+.btn{font:inherit;font-size:.95rem;color:var(--chalk);background:var(--chalk-4);border:2px solid var(--chalk-3);border-radius:10px;padding:.35rem .8rem;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-block}
+.btn:hover{background:rgba(242,240,230,.18)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.primary{border-color:var(--yel);color:var(--yel)}
+.btn:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
+.track{height:4px;margin:0 1.1rem;border-radius:2px;background:var(--chalk-4);position:relative;flex:none}
+.track i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--yel);transition:width .3s}
+
+.main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+.stage{position:relative;min-width:0;min-height:0}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.banner{position:absolute;left:50%;top:.8rem;transform:translateX(-50%);box-sizing:border-box;max-width:calc(100% - 2rem);
+  font-family:var(--f-chalk);font-weight:600;font-size:1.8rem;line-height:1.25;text-align:center;font-variant-numeric:tabular-nums;
+  padding:.2rem 1.1rem .3rem;border-radius:12px;background:var(--board-veil);color:var(--yel);pointer-events:none}
+.scrub{position:absolute;left:1rem;right:1rem;bottom:.7rem;display:flex;align-items:flex-end;gap:.4rem .8rem;flex-wrap:wrap;pointer-events:none}
+.scrub > *{pointer-events:auto}
+.sls{flex:1 1 16rem;min-width:0;display:flex;flex-direction:column;gap:.3rem}
+.sl{display:flex;align-items:center;gap:.7rem;background:var(--board-veil);border-radius:10px;padding:.3rem .7rem}
+.sl label{font-family:var(--f-chalk);font-weight:600;color:var(--chalk);font-size:1rem;white-space:nowrap;min-width:6.5em}
+.sl input{flex:1;min-width:4rem;accent-color:var(--yel)}
+.sl output{font-variant-numeric:tabular-nums;color:var(--chalk-2);font-size:.9rem;min-width:3.2em;text-align:right}
+.hint{margin-left:auto;font-size:.8rem;color:var(--chalk-2);pointer-events:none!important;white-space:nowrap}
+
+.panel{min-width:0;min-height:0;overflow:auto;border-left:2px dashed var(--chalk-4);padding:.5rem 1.2rem 1rem;display:flex;flex-direction:column;gap:.75rem}
+.tag{align-self:flex-start;display:inline-flex;align-items:center;gap:.5rem;font-weight:700;font-size:.95rem;color:var(--blue);border:2px solid currentColor;border-radius:999px;padding:.12rem .8rem}
+.tag.kangae{color:var(--orange)}
+.tag.kotoba{color:var(--green)}
+.q{margin:0;font-family:var(--f-chalk);font-weight:600;font-size:1.55rem;line-height:1.45;text-wrap:balance}
+.ansbox{display:flex;flex-direction:column;gap:.2rem}
+.ans{margin:0;font-family:var(--f-chalk);font-weight:600;font-size:2rem;line-height:1.25;color:var(--yel);font-variant-numeric:tabular-nums}
+.sub{margin:0;font-family:var(--f-chalk);font-weight:600;font-size:1rem;line-height:1.5;color:var(--chalk-2)}
+.wait{margin:0;font-size:.9rem;color:var(--chalk-2)}
+.later{opacity:0;transform:translateY(6px);transition:opacity .45s,transform .45s}
+.done .later{opacity:1;transform:none}
+.done .later + .later{transition-delay:.15s}
+.notes{display:flex;flex-direction:column;gap:.3rem}
+.notes p{margin:0;font-family:var(--f-chalk);font-weight:600;font-size:1.05rem;line-height:1.5;color:var(--chalk-2)}
+.notes p.key{color:var(--yel)}
+
+/* たまっていく板書 */
+.blist{margin-top:auto;display:flex;flex-direction:column;border-top:2px dashed var(--chalk-3);padding-top:.35rem}
+.panel.long .blist{max-height:46%;overflow:auto;flex:none;margin-top:auto;mask-image:linear-gradient(to bottom,transparent 0,#000 1.2rem);-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 1.2rem)}
+.blist h3{margin:.35rem 0 .1rem;font-family:var(--f-chalk);font-weight:600;font-size:.95rem;color:var(--chalk-2)}
+.bi{display:grid;grid-template-columns:1.3rem minmax(0,1fr);gap:.5rem;align-items:baseline;padding:.32rem 0;border-bottom:1.5px dashed var(--chalk-4)}
+.bi i{display:block;height:.32rem;border-radius:3px;background:var(--c,var(--chalk));transform:translateY(-.25rem)}
+.bi span{font-family:var(--f-chalk);font-weight:600;font-size:1.05rem;line-height:1.5;font-variant-numeric:tabular-nums;min-width:0}
+.bi span b{color:var(--yel);font-weight:600}
+
+@media (max-width:899px){
+  html,body{height:auto}
+  .app{height:auto;min-height:100%}
+  .main{display:flex;flex-direction:column}
+  .stage{width:100%;height:min(100vw,74vh);flex:none}
+  .panel{border-left:0;border-top:2px dashed var(--chalk-4);overflow:visible}
+  .q{font-size:1.35rem}
+  .banner{font-size:1.4rem}
+  .hint{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .later,.track i{transition:none}
+}
