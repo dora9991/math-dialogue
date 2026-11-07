@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>立面図・平面図・投影図</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/board.css">
+</head>
+<body>
+<script src="js/k3.js"></script>
+<script>
+/* 空間図形 第6時：立体を、正面と真上から見た図で表そう（ikkan の lesson_kukan_new_06 と同じ流れ）。
+   立体のうしろに「正面から見たスクリーン」、下に「真上から見たスクリーン」を置き、平行な光で映した形（立面図・平面図）をかく。
+   下のスクリーンを、うしろのスクリーンと同じ平面までたおすと、投影図になる（上が立面図、下が平面図）。 */
+(function () {
+  var C = K3.COL, v = K3.v, DEG = v.DEG, K = K3;
+  var Y0 = 2.4, Z0 = -.7, XS = 3, FR = K.frame([0, .6, 1.3], 4.6), FR0 = K.frame([0, 0, 1.5], 2.2);
+  var CYL = K.cylinder(1, 3), CONE = K.cone(1, 3), PYR = K.pyramid([[-1, -1], [1, -1], [1, 1], [-1, 1]], [0, 0, 3]),
+    TRI = K.prism([[-1, -1], [1, -1], [0, 1]], 3), FRU = K.frustum(3, 1, 3), BOX = K.prism([[-2, -1], [2, -1], [2, 1], [-2, 1]], 2),
+    LCYL = K.cylinder(1, 4), LTRI = K.prism([[-1, 0], [1, 0], [-1, 2]], 4);
+  var ROT = v.rotM([0, 1, 0], Math.PI / 2), ROTT = v.mv;
+  /* 横にねかせた立体（長さの向きを x に） */
+  var LYING = [{ m: BOX, o: {}, name: '直方体' }, { m: LCYL, o: { R: ROT, at: [-2, 0, 1] }, name: '横にした円柱' }, { m: LTRI, o: { R: v.rotM([0, 1, 0], Math.PI / 2), at: [-2, 0, 0] }, name: '横にした三角柱' }];
+  LTRI = K.prism([[0, -1], [0, 1], [-2, -1]], 4);
+  LYING[2] = { m: LTRI, o: { R: ROT, at: [-2, 0, 0] }, name: '横にした三角柱' };
+  var OBL = { th: -62, ps: 24 }, FRONT = { th: -90, ps: 0, fov: 5 }, TOP = { th: -90, ps: 89.5, fov: 5 };
+
+  function hingeRot(p, u) { var d = v.sub(p, [p[0], Y0, Z0]); return v.add([p[0], Y0, Z0], v.rotAxis(d, [1, 0, 0], u * Math.PI / 2)); }
+  /* スクリーン 2まいと、映った形。o: u（たおす 0→1）、sa（立体の濃さ）、la（光の線の濃さ）、fa・ta（立面図・平面図の濃さ） */
+  function screens(D, m, xf, o) {
+    o = o || {}; var u = o.u || 0, fa = o.fa == null ? 1 : o.fa, ta = o.ta == null ? 1 : o.ta;
+    var vq = [[-XS, Y0, Z0], [XS, Y0, Z0], [XS, Y0, 4.2], [-XS, Y0, 4.2]], hq = [[-XS, -3.2, Z0], [XS, -3.2, Z0], [XS, Y0, Z0], [-XS, Y0, Z0]].map(function (p) { return hingeRot(p, u); });
+    D.poly(vq, { col: C.blue, a: .1, stroke: C.blue, sa: .5 });
+    D.poly(hq, { col: C.green, a: .1, stroke: C.green, sa: .5 });
+    D.label([-XS, Y0, 4.2], '正面から見たスクリーン', { col: C.blue, size: .75, align: 'left', dx: .3, dy: .7, a: 1 - u });
+    function draw(list, map, a, col) {
+      if (a <= 0) return;
+      list.filter(function (e) { return !e.vis; }).forEach(function (e) { D.seg(map(e.a), map(e.b), { col: col, w: D.lw * 1.1, a: a * .8, dash: true }); });
+      list.filter(function (e) { return e.vis; }).forEach(function (e) { D.seg(map(e.a), map(e.b), { col: col, w: D.lw * 1.8, a: a }); });
+    }
+    var fe = K.viewEdges(m, xf, [0, 1, 0]), te = K.viewEdges(m, xf, [0, 0, -1]);
+    var fmap = function (p) { return [p[0], Y0, p[2]]; }, tmap = function (p) { return hingeRot([p[0], p[1], Z0], u); };
+    draw(fe, fmap, fa, C.yel); draw(te, tmap, ta, C.yel);
+    if (o.apex) D.dot(tmap(o.apex), { col: C.yel, r: 1.8, a: ta });
+    if (o.la > 0) {
+      fe.filter(function (e) { return e.vis; }).slice(0, 14).forEach(function (e) { D.seg(e.a, fmap(e.a), { col: C.blue, w: 1, a: o.la * .6, dash: true }); });
+      te.filter(function (e) { return e.vis; }).slice(0, 14).forEach(function (e) { D.seg(e.a, tmap(e.a), { col: C.green, w: 1, a: o.la * .6, dash: true }); });
+    }
+    if (o.names) { D.label([XS, Y0, 3.2], '立面図', { col: C.yel, align: 'left', dx: .4, a: fa }); D.label(hingeRot([XS, -1.6, Z0], u), '平面図', { col: C.yel, align: 'left', dx: .4, a: ta }); }
+    if (o.sa > 0) D.mesh(m, Object.assign({ col: o.col || C.blue, a: o.sa }, xf));
+  }
+  function view(ph, t, steps) { if (!ph) return steps[0]; for (var i = steps.length - 1; i > 0; i--) if (t >= steps[i][0]) return steps[i][1]; return steps[0]; }
+  function vfix(o) { return { th: o.th, ps: o.ps, fov: o.fov, rho: o.rho, target: o.target }; }
+  var P_FRONT = vfix({ th: -90, ps: 0, fov: 5, rho: 1.15, target: [0, Y0, Z0 - .6] });
+  function obl(rho) { return { th: -62, ps: 24, rho: rho || 1, target: [0, .4, 1.2] }; }
+
+  /* 例題：投影図 → 立体（下のスクリーンを起こして、立体を見せる） */
+  function rev(name, m, ans, col, apex) {
+    return { tag: '例題', model: FR, q: name + '：この投影図は、どんな立体？ 底面の形は？', a: ans[0] + '（底面 ' + ans[1] + '）', sub: ans[2], dur: 3.6,
+      b: { t: name + '　' + ans[0] + '・底面 ' + ans[1], col: col },
+      view: function (s) { return s.ph && s.t > .2 ? obl() : P_FRONT; },
+      draw: function (D) { var t = D.ph ? D.t : 0, u = 1 - v.ease(v.clamp((t - .25) / .45, 0, 1)); screens(D, m, {}, { u: u, sa: v.smooth(.55, .95, t), names: true, apex: apex, col: col }); } };
+  }
+
+  K.run({
+    no: '第6時', title: '立体を、正面と真上から見た図で表そう',
+    model: FR0, view: OBL,
+    links: [{ href: 'index.html', label: '目次' }, { href: '05.html', label: '◀ 第5時' }, { href: '07.html', label: '第7時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '正面と真上から見た形', q: '円柱と円錐を、正面と真上から見た形を、予想しよう。', spin: true,
+        notes: ['① 自分の考え（3分）　見る向きで、見え方はどうちがうかな。', '② ペアの考え（3分）'],
+        draw: function (D) {
+          var g = D.grid(2, { cols: [2, 1] });
+          [[CYL, '円柱'], [CONE, '円錐']].forEach(function (x, i) { var p = g.pos[i], S = D.sub(p.cx, p.cy, g.size / 2, K.frame([0, 0, 1.5], 2)); S.mesh(x[0], { col: i ? C.orange : C.blue }); D.text(p.cx, p.ly, x[1]); });
+        } },
+      { tag: '今日の問い', q: '円柱を、正面から見ると？', a: '長方形', dur: 1.2, view: function (s) { return s.ph ? FRONT : OBL; },
+        b: { t: '円柱 … 正面から 長方形', col: C.blue },
+        draw: function (D) { D.mesh(CYL, { col: C.blue }); } },
+      { tag: '今日の問い', q: '円柱を、真上から見ると？', a: '円', dur: 1.2, view: function (s) { return s.ph ? TOP : OBL; },
+        b: { t: '円柱 … 真上から 円', col: C.blue },
+        draw: function (D) { D.mesh(CYL, { col: C.blue }); } },
+      { tag: '今日の問い', q: '円錐を、正面から見ると？ 真上から見ると？', a: '正面 … 三角形、真上 … 円', sub: '真上から見ると、円のまん中に 頂点が見える。見る向きがちがうと、見える形がちがう', dur: 3.2,
+        view: function (s) { return !s.ph ? OBL : s.t < .5 ? FRONT : TOP; },
+        b: { t: '円錐 … 正面から 三角形、真上から 円（まん中に頂点）', col: C.orange },
+        banner: function (s) { return s.ph ? (s.t < .5 ? '正面から' : '真上から') : ''; },
+        draw: function (D) { D.mesh(CONE, { col: C.orange }); if (D.ph && D.t > .5) D.dot([0, 0, 3], { col: C.yel, r: 1.8 }); } },
+
+      { tag: 'ことば', bh: 'ことば', model: FR, q: '正面から見た図、真上から見た図、2つを組にした図を、それぞれ何という？', a: '立面図・平面図・投影図',
+        sub: '見えない線は <b>点線</b>。立面図と平面図の <b>横の幅</b>をそろえる', dur: 7.5,
+        view: function (s) { return !s.ph || s.t < .66 ? obl() : P_FRONT; },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .3 ? '正面と真上から、光を当てて映すと…' : s.t < .62 ? '下のスクリーンを、たおすと…' : '投影図（上が立面図、下が平面図）'; },
+        b: [{ t: '正面から見た図 … <b>立面図</b>　真上から見た図 … <b>平面図</b>', col: C.green }, { t: '2つを組にした図 … <b>投影図</b>（見えない線は点線、横の幅をそろえる）', col: C.green }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, show = v.smooth(.05, .25, t);
+          screens(D, CYL, {}, { u: v.ease(v.clamp((t - .32) / .28, 0, 1)), sa: 1 - v.smooth(.66, .82, t), la: show * (1 - v.smooth(.3, .4, t)), fa: show, ta: show, names: t > .25 });
+        } },
+
+      rev('ア', CYL, ['円柱', '円', '立面図が長方形 → 柱、平面図が円 → 底面は円'], C.blue),
+      rev('イ', CONE, ['円錐', '円', '立面図が三角形 → 錐。平面図のまん中の点は、頂点'], C.orange, [0, 0, 3]),
+      rev('ウ', PYR, ['正四角錐', '正方形', '平面図の対角線は、側面どうしの辺'], C.lav),
+      rev('エ', TRI, ['三角柱', '三角形', '立面図のまん中の点線は、うしろの辺（見えない線）'], C.green),
+
+      { tag: '例題', q: '立面図と平面図の、何を見れば 立体がわかる？', a: '立面図 → 柱か錐か、平面図 → 底面の形', sub: '立面図が長方形なら柱、三角形なら錐', spin: true,
+        b: { t: '立面図 → 柱（長方形）か 錐（三角形）か　／　平面図 → 底面の形', col: C.yel },
+        draw: function (D) {
+          var g = D.grid(4, { cols: [4, 2] });
+          [[CYL, 'ア 円柱 … 柱', C.blue], [CONE, 'イ 円錐 … 錐', C.orange], [PYR, 'ウ 正四角錐 … 錐', C.lav], [TRI, 'エ 三角柱 … 柱', C.green]].forEach(function (x, i) {
+            var p = g.pos[i], S = D.sub(p.cx, p.cy, g.size / 2, K.frame([0, 0, 1.5], 2.1)); S.mesh(x[0], { col: x[2] }); D.text(p.cx, p.ly, x[1], { size: .85 });
+          });
+        } },
+
+      { tag: '考えよう', model: FR, view: obl(1.05),
+        q: '立面図も平面図も、横 4cm・たて 2cm の長方形になる立体は、直方体だけだろうか。',
+        notes: ['ほかの立体を 2つ見つけて、見取図と置き方をかこう。', '見つけた立体が、同じ投影図になるのは なぜ？', '立面図と平面図だけで、立体が 1つに決まらないことはある？', '話し合ったあと、下のスライダーで確かめられます。'],
+        sliders: [
+          { key: 'k', label: '立体', min: 0, max: 2, step: 1, val: 0, fmt: function (x) { return LYING[x].name; } },
+          { key: 'u', label: '下のスクリーン', min: 0, max: 1, val: 0, fmt: function (x) { return x > .99 ? 'たおした' : ''; } }
+        ],
+        draw: function (D) { var L = LYING[D.V.k]; screens(D, L.m, L.o, { u: D.V.u, sa: 1, la: .6, names: true, col: [C.blue, C.orange, C.green][D.V.k] }); } },
+
+      { tag: 'チャレンジ', bh: 'チャレンジ', model: K.frame([0, .6, 1.3], 5.4),
+        q: '投影図で、立面図が台形（上の辺 2cm・下の辺 6cm・高さ 3cm）、平面図が 2つの円の立体。① 立体の名前 ② 上の面と下の面の円の半径 ③ 1回転させると、この立体になる平面図形は？',
+        a: '① 円錐台 ② 上 1cm・下 3cm ③ 直角台形', sub: '平面図の 2つの円は、上の面と下の面。立面図の台形を、軸で半分にした形を回す', dur: 6,
+        b: { t: '① 円錐台 ② 上 1cm・下 3cm ③ 直角台形（台形を軸で半分に）', col: C.orange },
+        view: function (s) { return s.ph && s.t > .2 ? obl(1.1) : { th: -90, ps: 0, fov: 5, rho: 1.25, target: [0, Y0, Z0 - .9] }; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, u = 1 - v.ease(v.clamp((t - .25) / .35, 0, 1));
+          screens(D, FRU, {}, { u: u, sa: v.smooth(.45, .7, t) * (t > .75 ? .55 : 1), names: true, col: C.orange });
+          if (t > .75) {
+            var a = v.smooth(.75, .9, t), ang = -90 * DEG + 90 * DEG;
+            D.poly(D.flat([[0, 0], [3, 0], [1, 3], [0, 3]], 0), { col: C.pink, a: .55 * a, stroke: C.pink, sa: a, sw: D.lw * 1.6 });
+            D.seg([0, 0, -.5], [0, 0, 3.8], { col: C.chalk, dash: true, a: a });
+            D.label([2.2, 0, 1.6], '直角台形', { col: C.pink, a: a, dx: 1.2 });
+          }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>
