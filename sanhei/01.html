@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>直角三角形の3辺の関係</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三平方の定理 第1時：直角三角形の3辺の長さには、どんな関係があるだろう（ikkan の lesson_sanhei_01 と同じ流れ）。
+   図の数値は ikkan のデータ（自作）と同じ（今日の問い ア 2・1、イ 3・1、ウ 3・2、例題 3・4／6・8／2・4、例題2 50−18、
+   考えようの半円 3・4・5、チャレンジ 200・36）。図は頂点の座標から描き、正方形の面積・辺の長さは座標から計算し直して確かめる（CH.check）。
+   方眼の上で、斜辺の上の正方形 R を「まわりの正方形 − 直角三角形4つ」で数える。∠C を直角からずらすと、P＋Q＝R が成り立たなくなる。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)', RD = Math.PI / 180;
+  /* ---- このページの道具 ---- */
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  /* √ の字：2乗した値 n（整数）→ '2√5' など */
+  function rt(n) { n = Math.round(n); var a = 1, b = n; for (var k = 2; k * k <= b; k++) while (b % (k * k) === 0) { a *= k; b /= k * k; } return b === 1 ? String(a) : (a === 1 ? '' : a) + '√' + b; }
+  function sq(s) { var m = /^(\d*)√(\d+)$/.exec(s); if (m) { var a = m[1] ? +m[1] : 1; return a * a * +m[2]; } return +s * +s; }
+  /* 長さ L が、字 s（'2√5' など）と同じか：L を2乗すると整数になり、s を2乗した値と等しい */
+  function isLen(L, s) { var q = L * L; return Math.abs(q - Math.round(q)) < 1e-7 && Math.round(q) === sq(s); }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D); if (o.maxW) size = CH.fitSize(D, s, o.maxW, size, { num: o.num }); CH.text(D, x, y, s, { col: o.col, a: o.a, size: size, num: o.num, align: o.align, outline: o.outline === false ? null : OUT }); }
+  /* 図の上の1行（row 行目） */
+  function top(D, s, col, a, row) { var B = CH.box(D, { t: 0, l: .03, r: .03 }), f = CH.fs(D, 1); say(D, B.cx, B.y0 + f * (.8 + (row || 0) * 1.35), s, { col: col || C.yel, a: a, size: f, maxW: B.w }); }
+  function cen(ps) { var x = 0, y = 0; ps.forEach(function (p) { x += p[0]; y += p[1]; }); return [x / ps.length, y / ps.length]; }
+  function area(ps) { var s = 0; ps.forEach(function (p, i) { var q = ps[(i + 1) % ps.length]; s += p[0] * q[1] - q[0] * p[1]; }); return Math.abs(s) / 2; }
+  function bbox(ps) { var b = [1e9, 1e9, -1e9, -1e9]; ps.forEach(function (p) { b[0] = Math.min(b[0], p[0]); b[1] = Math.min(b[1], p[1]); b[2] = Math.max(b[2], p[0]); b[3] = Math.max(b[3], p[1]); }); return b; }
+  /* 辺 pq の上の正方形（点 r の反対がわ） */
+  function sqOn(p, q, r) { var d = GE.sub(q, p), L = Math.hypot(d[0], d[1]), n = [-d[1] / L, d[0] / L]; if (n[0] * (r[0] - p[0]) + n[1] * (r[1] - p[1]) > 0) n = [-n[0], -n[1]]; return [p, q, GE.add(q, [n[0] * L, n[1] * L]), GE.add(p, [n[0] * L, n[1] * L])]; }
+  function poly(F, ps, o) { CH.poly(F.D, ps.map(function (p) { return F.X(p); }), o); }
+  /* 図の枠：四角 R に、座標の範囲 bx＝[x0, y0, x1, y1] を 1目もり u（px）で入れる（u を省くと、ぴったり） */
+  function frame(D, R, P, bx, u) {
+    var cx = (bx[0] + bx[2]) / 2, cy = (bx[1] + bx[3]) / 2; if (!u) u = Math.min(R.w / (bx[2] - bx[0]), R.h / (bx[3] - bx[1]));
+    return { X: function (p) { p = typeof p === 'string' ? P[p] : p; return [R.cx + (p[0] - cx) * u, R.cy - (p[1] - cy) * u]; }, u: u, D: D, P: P, R: R, s: CH.fs(D, 1), c: [cx, cy] };
+  }
+  /* 方眼（1目もり 1） */
+  function grid(F, x0, y0, x1, y1, a) {
+    var g = F.D.ctx, x, y, p, q; g.save(); g.globalAlpha = F.D.ga * (a == null ? 1 : a); g.strokeStyle = 'rgba(242,240,230,.15)'; g.lineWidth = 1; g.beginPath();
+    for (x = Math.ceil(x0 - 1e-9); x <= x1 + 1e-9; x++) { p = F.X([x, y0]); q = F.X([x, y1]); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); }
+    for (y = Math.ceil(y0 - 1e-9); y <= y1 + 1e-9; y++) { p = F.X([x0, y]); q = F.X([x1, y]); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); }
+    g.stroke(); g.restore();
+  }
+  /* 三角形の辺 pq の内がわ（重心のほう）に字 */
+  function inLab(F, p, q, G, txt, o) { o = o || {}; var m = F.X(GE.mid(p, q)), g = F.X(G), d = [g[0] - m[0], g[1] - m[1]], L = Math.hypot(d[0], d[1]) || 1, k = F.s * (o.k || .75); say(F.D, m[0] + d[0] / L * k, m[1] + d[1] / L * k, txt, { col: o.col, size: o.size || F.s * .85, a: o.a, num: o.num }); }
+  /* 辺 pq の外がわ（点 r の反対がわ）に字 */
+  function outLab(F, p, q, r, txt, o) { o = o || {}; var m = F.X(GE.mid(p, q)), a = F.X(p), b = F.X(q), c = F.X(r), n = [a[1] - b[1], b[0] - a[0]], L = Math.hypot(n[0], n[1]) || 1; if (n[0] * (c[0] - m[0]) + n[1] * (c[1] - m[1]) > 0) { n[0] = -n[0]; n[1] = -n[1]; } var k = F.s * (o.k || .9); say(F.D, m[0] + n[0] / L * k, m[1] + n[1] / L * k, txt, { col: o.col, size: o.size || F.s * .85, a: o.a, num: o.num }); }
+  /* 正方形 ps の名前と面積（2行）。小さい正方形は、out（画面の向き）の外がわに書く */
+  function sqName(F, ps, name, val, col, o) {
+    o = o || {}; var c = F.X(cen(ps)), side = GE.len(F.P, [ps[0], ps[1]]) * F.u, s0 = F.s * (o.k || .85), s = Math.min(s0, side * .38), x = c[0], al = 'center';
+    if (side < s0 * 2.3 && o.out) { s = s0 * .9; x = c[0] + o.out * (side / 2 + s * .35); al = o.out < 0 ? 'right' : 'left'; }
+    var two = val != null && val !== '';
+    say(F.D, x, two ? c[1] - s * .62 : c[1], name, { col: col, size: s, a: o.a, align: al });
+    if (two) say(F.D, x, c[1] + s * .62, val, { col: o.vcol || col, size: s, a: o.va == null ? o.a : o.va, align: al, num: true });
+  }
+  /* 直角三角形（直角は C）：C(0, 0)、B(a, 0)、A(b cos∠C, b sin∠C)。3辺の上の正方形 P（CB の下）・Q（CA の外）・R（AB の外） */
+  function tri(a, b, deg) { if (deg == null || deg === 90) return { C: [0, 0], B: [a, 0], A: [0, b] }; return { C: [0, 0], B: [a, 0], A: [b * Math.cos(deg * RD), b * Math.sin(deg * RD)] }; }
+  function sqs(T) { return { P: sqOn(T.C, T.B, T.A), Q: sqOn(T.A, T.C, T.B), R: sqOn(T.B, T.A, T.C) }; }
+  function nf(v) { return CH.near(v, Math.round(v)) || Math.abs(v - Math.round(v)) < 1e-7 ? String(Math.round(v)) : CH.f1(v); }
+
+  /* ---- 今日の問い：方眼の上の ア（2・1）、イ（3・1）、ウ（3・2） ---- */
+  var TODAY = [[2, 1, 'ア'], [3, 1, 'イ'], [3, 2, 'ウ']], AR = [[4, 1, 5], [9, 1, 10], [9, 4, 13]];
+  TODAY.forEach(function (g, i) {
+    var a = g[0], b = g[1], s = a + b, S = sqs(tri(a, b)), v = [area(S.P), area(S.Q), area(S.R)];
+    CH.check(v.every(function (x, j) { return CH.near(x, AR[i][j]); }) && CH.near(s * s - 4 * a * b / 2, v[2]) && CH.near(v[0] + v[1], v[2]) &&
+      S.R.every(function (p) { return Math.abs(p[0] - Math.round(p[0])) < 1e-9 && Math.abs(p[1] - Math.round(p[1])) < 1e-9; }), '今日の問い ' + g[2] + ' の P・Q・R');
+  });
+  /* ことば：∠C＝90° なら P＋Q＝R、ずらすと等しくない */
+  var PAIRS = [[2, 1], [3, 1], [3, 2], [4, 1], [4, 2], [4, 3], [1, 1], [2, 2]];
+  PAIRS.forEach(function (g) { [60, 75, 89, 90, 91, 105, 120].forEach(function (d) { var S = sqs(tri(g[0], g[1], d)), ok = CH.near(area(S.P) + area(S.Q), area(S.R)) || Math.abs(area(S.P) + area(S.Q) - area(S.R)) < 1e-7; CH.check(ok === (d === 90), 'ことば（' + g + '、∠C＝' + d + '°）'); }); });
+  /* 例題：3・4（見本）、6・8、2・4 */
+  var EX = [[3, 4, '9＋16＝25', '5'], [6, 8, '36＋64＝100', '10'], [2, 4, '4＋16＝20', '2√5']];
+  EX.forEach(function (e) { var S = sqs(tri(e[0], e[1])), T = tri(e[0], e[1]); CH.check(e[2] === (e[0] * e[0]) + '＋' + (e[1] * e[1]) + '＝' + Math.round(area(S.R)) && isLen(GE.len(T, 'AB'), e[3]) && rt(area(S.R)) === e[3], '例題 ' + e[0] + '・' + e[1]); });
+  /* 例題2：斜辺の上 50、1辺の上 18 → 残り 32、長さ 4√2（直角をはさむ辺 4√2 と 3√2） */
+  var E2 = tri(4 * Math.SQRT2, 3 * Math.SQRT2), S2 = sqs(E2);
+  CH.check(Math.abs(area(S2.R) - 50) < 1e-9 && Math.abs(area(S2.Q) - 18) < 1e-9 && Math.abs(area(S2.P) - 32) < 1e-9 && 50 - 18 === 32 && isLen(GE.len(E2, 'CB'), '4√2') && rt(32) === '4√2', '例題2');
+  /* チャレンジ：3つの面積の和 200、1辺の上 36 → R＝100、斜辺 10、もう1辺の上 64、長さ 8 */
+  var CHL = tri(8, 6), SC = sqs(CHL);
+  CH.check(Math.abs(area(SC.P) + area(SC.Q) + area(SC.R) - 200) < 1e-9 && Math.abs(area(SC.Q) - 36) < 1e-9 && 200 / 2 === 100 && 100 - 36 === 64 && isLen(GE.len(CHL, 'AB'), '10') && isLen(GE.len(CHL, 'CB'), '8'), 'チャレンジ');
+  /* 考えよう：形をのせる三角形の候補（答えは出さない） */
+  var KP = [[3, 4], [6, 8], [1, 2], [2, 3], [5, 2], [1, 1]];
+
+  /* ア・イ・ウ を、同じ目もりで並べる。t：答えの動き */
+  function three(D, t) {
+    var R = CH.box(D, { l: .02, r: .02, t: .13, b: .03 }), cs = CH.cols(R, 3, .05);
+    var bx = TODAY.map(function (g) { var a = g[0], b = g[1]; return [-b - 1.5, -a - 1.6, a + b + .3, a + b + .4]; });
+    var u = Math.min.apply(null, bx.map(function (b, i) { return Math.min(cs[i].w / (b[2] - b[0]), cs[i].h / (b[3] - b[1])); }));
+    TODAY.forEach(function (g, i) {
+      var a = g[0], b = g[1], s = a + b, T = tri(a, b), S = sqs(T), F = frame(D, cs[i], T, bx[i], u), v = AR[i];
+      grid(F, -b, -a, s, s);
+      poly(F, S.P, { fill: hexA(C.blue, .2), stroke: C.blue, sw: 2.4 }); poly(F, S.Q, { fill: hexA(C.blue, .2), stroke: C.blue, sw: 2.4 }); poly(F, S.R, { fill: hexA(C.orange, .2), stroke: C.orange, sw: 2.4 });
+      if (t > 0) {
+        var e1 = CH.smooth(0, .15, t), e2 = CH.smooth(.15, .3, t);
+        [[[0, 0], [a, 0], [0, b]], [[a, 0], [s, 0], [s, a]], [[s, a], [s, s], [b, s]], [[b, s], [0, s], [0, b]]].forEach(function (q) { poly(F, q, { fill: hexA(C.pink, .4), a: e2 }); });
+        poly(F, [[0, 0], [s, 0], [s, s], [0, s]], { stroke: C.yel, sw: 2.8, dash: true, a: e1 });
+        say(D, cs[i].cx, F.X([0, -a])[1] + F.s * .85, s + '×' + s + '−' + a + '×' + b + '÷2×4＝' + v[2], { col: C.yel, size: F.s * .8, maxW: cs[i].w, a: CH.smooth(.3, .45, t), num: true });
+      }
+      poly(F, [T.C, T.B, T.A], { stroke: C.chalk, sw: 2.6 }); GE.right(F, 'BCA', { r: Math.min(F.s * .5, u * .32) });
+      var va = t > 0 ? CH.smooth(.5, .65, t) : 0;
+      sqName(F, S.P, 'P', va > 0 ? String(v[0]) : null, C.blue, { va: va, out: 1 });
+      sqName(F, S.Q, 'Q', va > 0 ? String(v[1]) : null, C.blue, { va: va, out: -1 });
+      sqName(F, S.R, 'R', va > 0 ? String(v[2]) : null, C.orange, { va: va });
+      say(D, cs[i].x0 + F.s * .5, cs[i].y0 + F.s * .5, g[2], { size: F.s * 1.15 });
+    });
+    if (t > 0) top(D, t < .5 ? 'R ＝ まわりの正方形 − 直角三角形 4つ' : 'ア 4＋1＝5　イ 9＋1＝10　ウ 9＋4＝13 → P＋Q＝R', t < .5 ? C.yel : C.yel, CH.smooth(0, .06, t) * (t < .5 ? 1 - CH.smooth(.44, .5, t) : CH.smooth(.5, .56, t)));
+  }
+
+  /* 1つの三角形と、3辺の上の正方形（ことば・例題2・チャレンジ） */
+  function one(D, R, T, o) {
+    o = o || {}; var S = sqs(T), bx = bbox(S.P.concat(S.Q, S.R)), F = GE.fit(D, R, T, { bounds: [[bx[0], bx[1]], [bx[2], bx[3]]], pad: o.pad == null ? .03 : o.pad }), G = cen([T.A, T.B, T.C]);
+    if (o.grid) grid(F, Math.floor(bx[0]), Math.floor(bx[1]), Math.ceil(bx[2]), Math.ceil(bx[3]), o.grid);
+    poly(F, S.P, { fill: hexA(C.blue, .2), stroke: C.blue, sw: 2.4 }); poly(F, S.Q, { fill: hexA(C.blue, .2), stroke: C.blue, sw: 2.4 }); poly(F, S.R, { fill: hexA(o.rcol || C.orange, .2), stroke: o.rcol || C.orange, sw: 2.4 });
+    poly(F, [T.C, T.B, T.A], { stroke: C.chalk, sw: 2.6, fill: 'rgba(242,240,230,.06)' });
+    return { F: F, S: S, G: G };
+  }
+
+  K3.run({
+    no: '第1時', title: '直角三角形の3辺の長さには、どんな関係があるだろう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '第2時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '方眼（1目もり 1cm）の上の直角三角形', q: '方眼の上の直角三角形ア〜ウの、3つの辺を1辺とする正方形 P、Q、R をかいた。P、Q、R の面積には、どんな関係があるだろう。',
+        notes: ['① 自分の考え（3分）　面積の求め方と、見つけた関係を書こう。', '② ペアの考え（3分）　自分とちがう求め方は？'],
+        draw: function (D) { three(D, 0); } },
+      { tag: '今日の問い', q: 'R の面積は、どう求める？ P、Q、R の関係は？', a: 'P＋Q＝R', sub: 'R は、まわりの大きい正方形から、直角三角形4つをひいて求める。ア 4＋1＝5、イ 9＋1＝10、ウ 9＋4＝13', dur: 6,
+        b: [{ t: 'R ＝ まわりの正方形 − 直角三角形4つ（ア 3×3−2×1÷2×4＝5）', col: C.yel }, { t: 'ア 4＋1＝5　イ 9＋1＝10　ウ 9＋4＝13 → <b>P＋Q＝R</b>', col: C.yel }],
+        draw: function (D) { three(D, D.ph ? D.t : 0); } },
+      { tag: 'ことば', bh: 'ことば', q: '直角の向かいの辺を、何という？ 直角をはさむ2辺を a、b、斜辺を c とすると、どんな式が成り立つ？', a: '斜辺。a²＋b²＝c²（三平方の定理）', sub: '斜辺は、3つの辺でいちばん長い。斜辺の上の正方形の面積は、ほかの2辺の上の正方形の面積の和', dur: 3,
+        notes: ['スライダーで、辺 a・b の長さと、その間の角 ∠C を変えられます。∠C が直角でないときは？'],
+        sliders: [{ key: 'k', label: '辺 a・b', min: 0, max: PAIRS.length - 1, step: 1, val: 2, fmt: function (v) { return PAIRS[v][0] + '・' + PAIRS[v][1]; } },
+          { key: 'c', label: '∠C', min: 60, max: 120, step: 1, val: 90, fmt: function (v) { return v + '°'; } }],
+        b: [{ t: '直角の向かいの辺 … <b>斜辺</b>（いちばん長い）', col: C.green }, { t: '<b>三平方の定理</b>　a²＋b²＝c²（c は斜辺）', col: C.green }],
+        draw: function (D) {
+          var p = PAIRS[D.V.k], a = p[0], b = p[1], deg = D.V.c, right = deg === 90, T = tri(a, b, deg);
+          var O = one(D, CH.box(D, { l: .05, r: .05, t: .2, b: .04 }), T, { grid: right ? 1 : .45 }), F = O.F, S = O.S, t = D.ph ? D.t : 0;
+          var vP = area(S.P), vQ = area(S.Q), vR = area(S.R);
+          if (right) GE.right(F, 'BCA'); else GE.arc(F, 'BCA', { col: C.pink, lab: deg + '°', r: F.s * .9 });
+          if (D.ph) GE.seg(F, 'AB', { col: C.yel, w: 5, glow: true, a: CH.smooth(0, .3, t) });
+          inLab(F, T.C, T.B, O.G, 'a', { col: C.blue }); inLab(F, T.C, T.A, O.G, 'b', { col: C.blue }); inLab(F, T.A, T.B, O.G, right && D.ph && t > .3 ? 'c（斜辺）' : 'c', { col: D.ph ? C.yel : C.orange });
+          sqName(F, S.P, 'P', nf(vP), C.blue, { out: 1 }); sqName(F, S.Q, 'Q', nf(vQ), C.blue, { out: -1 }); sqName(F, S.R, 'R', nf(vR), C.orange);
+          if (right) { top(D, 'P＋Q＝R　' + nf(vP) + '＋' + nf(vQ) + '＝' + nf(vR), C.yel, 1, 0); if (D.ph) top(D, 'a²＋b²＝c²（三平方の定理）', C.green, CH.smooth(.45, .6, t), 1); }
+          else { top(D, '∠C が直角でないと…', C.pink, 1, 0); top(D, 'P＋Q＝' + nf(vP + vQ) + '、R＝' + nf(vR) + '（等しくない）', C.pink, 1, 1); }
+        } },
+      { tag: '例題', bh: '例題　斜辺の長さ', q: '直角をはさむ2辺が 6cm と 8cm、2cm と 4cm のとき、斜辺の上の正方形の面積 R と、斜辺の長さ c を求めよう。（3cm と 4cm は見本）', a: '6・8 … R＝100、c＝10　　2・4 … R＝20、c＝2√5', sub: 'c²＝R だから、c は R の平方根（c＞0）。√20＝√(4×5)＝2√5', dur: 4,
+        b: [{ t: 'c²＝R → c＝√R（c＞0）', col: C.pink }, { t: '6・8 → R＝100、c＝10　2・4 → R＝20、c＝<b>√20＝2√5</b>', col: C.pink }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .03, r: .03, t: .06, b: .04 }), rs = CH.rows(R, 2, .06), cs = CH.cols(rs[0], 3, .1), t = D.ph ? D.t : 0;
+          var u = Math.min.apply(null, EX.map(function (e, i) { return Math.min(cs[i].w / (e[0] + 1.4), cs[i].h / (e[1] + 1.2)); }));
+          var rev = [1, CH.smooth(.15, .35, t), CH.smooth(.55, .75, t)];
+          EX.forEach(function (e, i) {
+            var T = tri(e[0], e[1]), F = frame(D, cs[i], T, [-1.1, -1, e[0] + .3, e[1] + .2], u), G = cen([T.A, T.B, T.C]), on = i === 0 || D.ph;
+            poly(F, [T.C, T.B, T.A], { stroke: C.chalk, sw: 2.6, fill: 'rgba(242,240,230,.06)' }); GE.right(F, 'BCA', { r: Math.min(F.s * .5, u * .5) });
+            if (i && D.ph) GE.seg(F, 'AB', { col: C.yel, w: 4.5, glow: true, a: rev[i] });
+            outLab(F, T.C, T.B, T.A, e[0] + 'cm', { size: F.s * .8 }); outLab(F, T.C, T.A, T.B, e[1] + 'cm', { size: F.s * .8, k: 1.4 });
+            var cl = i === 0 ? e[3] : rev[i] > .5 ? e[3] : 'c';
+            inLab(F, T.A, T.B, G, cl, { col: C.yel, size: F.s * .85, k: -.9 });
+          });
+          CH.table(D, rs[1], ['直角をはさむ2辺', '3 と 4', '6 と 8', '2 と 4'], [['P＋Q＝R', EX[0][2], EX[1][2], EX[2][2]], ['斜辺 c', EX[0][3], EX[1][3], EX[2][3]]],
+            { fw: .3, hl: function (r, c) { return r > 0 && c > 1 && D.ph ? C.yel : null; }, show: function (r, c) { return r === 0 || c < 2 ? 1 : D.ph ? rev[c - 1] : 0; } });
+        } },
+      { tag: '例題', bh: '例題2　直角をはさむ辺の長さ', q: '直角三角形の3辺の上に正方形をかいた。斜辺の上が 50cm²、1辺の上が 18cm² のとき、残りの辺の上の正方形の面積と、その辺の長さ x を求めよう。', a: '32cm²、x＝4√2cm', sub: 'P＋Q＝R だから P＝50−18＝32。x²＝32 → x＝√32＝4√2', dur: 4,
+        b: { t: '50−18＝32 → x＝√32＝<b>4√2</b>（cm）', col: C.pink },
+        draw: function (D) {
+          var O = one(D, CH.box(D, { l: .05, r: .05, t: .12, b: .04 }), E2), F = O.F, S = O.S, t = D.ph ? D.t : 0, k1 = CH.smooth(.1, .4, t), k2 = CH.smooth(.55, .8, t);
+          GE.right(F, 'BCA');
+          if (D.ph) { poly(F, S.R, { fill: hexA(C.yel, .25 * (1 - k1 * .5)), a: k1 }); poly(F, S.Q, { fill: 'rgba(31,58,44,.6)', a: k1 * .8 }); poly(F, S.P, { fill: hexA(C.pink, .35), a: k1 }); }
+          sqName(F, S.Q, 'Q', '18', C.blue, { a: 1 - k1 * .5 }); sqName(F, S.R, 'R', '50', C.orange);
+          sqName(F, S.P, 'P', k1 > .5 ? '32' : '?', k1 > .5 ? C.pink : C.blue);
+          inLab(F, E2.C, E2.B, O.G, k2 > .5 ? 'x＝4√2' : 'x', { col: k2 > .5 ? C.yel : C.chalk, k: .8 });
+          if (D.ph) { top(D, '50 − 18 ＝ 32', C.pink, k1, 0); top(D, 'x² ＝ 32 → x ＝ √32 ＝ 4√2', C.yel, k2, 1); }
+        } },
+      { tag: '考えよう', q: '正方形のかわりに、3つの辺を直径とする半円を、三角形の外がわにかいた（3cm、4cm、5cm）。3つの半円の面積の間には、どんな関係があるだろう。',
+        notes: ['半円の面積を求めて、表にまとめよう。自分で直角三角形を1つ選んで、同じように確かめよう。', '正三角形をのせたら、どうなるかな。', 'スライダーで、のせる形と、三角形を変えられます。'],
+        sliders: [{ key: 's', label: 'のせる形', min: 0, max: 2, step: 1, val: 1, fmt: function (v) { return ['正方形', '半円', '正三角形'][v]; } },
+          { key: 'k', label: '三角形', min: 0, max: KP.length - 1, step: 1, val: 0, fmt: function (v) { var p = KP[v]; return p[0] + '・' + p[1] + '・' + rt(p[0] * p[0] + p[1] * p[1]); } }],
+        draw: function (D) {
+          var p = KP[D.V.k], T = tri(p[0], p[1]), sides = [['C', 'B', 'A', C.blue, 'P'], ['A', 'C', 'B', C.blue, 'Q'], ['B', 'A', 'C', C.orange, 'R']], all = [T.A, T.B, T.C], shapes = [];
+          sides.forEach(function (sd) {
+            var P0 = T[sd[0]], P1 = T[sd[1]], q = sqOn(P0, P1, T[sd[2]]), L = GE.len(T, sd[0] + sd[1]), m = GE.mid(P0, P1), n = GE.sub(GE.mid(q[2], q[3]), m), nl = Math.hypot(n[0], n[1]); n = [n[0] / nl, n[1] / nl];
+            var sh = D.V.s === 0 ? q : D.V.s === 2 ? [P0, P1, GE.add(m, [n[0] * L * Math.sqrt(3) / 2, n[1] * L * Math.sqrt(3) / 2])] : null;
+            if (sh) all = all.concat(sh); else all.push(GE.add(m, [n[0] * L / 2, n[1] * L / 2]), GE.add(m, [-n[1] * L / 2, n[0] * L / 2]), GE.add(m, [n[1] * L / 2, -n[0] * L / 2]), GE.add(GE.add(m, [n[0] * L / 2, n[1] * L / 2]), [-n[1] * L / 2, n[0] * L / 2]), GE.add(GE.add(m, [n[0] * L / 2, n[1] * L / 2]), [n[1] * L / 2, -n[0] * L / 2]));
+            shapes.push({ sh: sh, m: m, n: n, L: L, col: sd[3], name: sd[4], p0: P0, p1: P1 });
+          });
+          var bx = bbox(all), F = GE.fit(D, CH.box(D, { l: .05, r: .05, t: .06, b: .04 }), T, { bounds: [[bx[0], bx[1]], [bx[2], bx[3]]], pad: .03 }), G = cen([T.A, T.B, T.C]), g = D.ctx;
+          shapes.forEach(function (s) {
+            if (s.sh) poly(F, s.sh, { fill: hexA(s.col, .2), stroke: s.col, sw: 2.4 });
+            else {
+              var c = F.X(s.m), a0 = F.X(s.p0), r = s.L / 2 * F.u, th = Math.atan2(a0[1] - c[1], a0[0] - c[0]), mid = F.X(GE.add(s.m, s.n)), up = [mid[0] - c[0], mid[1] - c[1]], cw = Math.cos(th + Math.PI / 2) * up[0] + Math.sin(th + Math.PI / 2) * up[1] > 0;
+              g.save(); g.globalAlpha = D.ga; g.beginPath(); g.arc(c[0], c[1], r, th, th + (cw ? Math.PI : -Math.PI), !cw); g.closePath(); g.fillStyle = hexA(s.col, .2); g.fill(); g.strokeStyle = s.col; g.lineWidth = 2.4; g.stroke(); g.restore();
+            }
+            var lc = F.X(GE.add(s.m, [s.n[0] * s.L * (D.V.s === 1 ? .22 : D.V.s === 2 ? .3 : .5), s.n[1] * s.L * (D.V.s === 1 ? .22 : D.V.s === 2 ? .3 : .5)]));
+            say(D, lc[0], lc[1], s.name, { col: s.col, size: Math.min(F.s, s.L * F.u * .3) });
+          });
+          poly(F, [T.C, T.B, T.A], { stroke: C.chalk, sw: 2.6, fill: 'rgba(242,240,230,.06)' }); GE.right(F, 'BCA');
+          inLab(F, T.C, T.B, G, p[0] + 'cm', { size: F.s * .75, k: .8 }); inLab(F, T.C, T.A, G, p[1] + 'cm', { size: F.s * .75, k: 1.3 }); inLab(F, T.A, T.B, G, rt(p[0] * p[0] + p[1] * p[1]) + 'cm', { size: F.s * .75, k: 1.2 });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '直角三角形の3辺の上に、それぞれ正方形をかいたところ、3つの正方形の面積の和が 200cm² になった。直角をはさむ1辺の上の正方形が 36cm² のとき、斜辺の長さと、もう1辺の長さを求めよう。',
+        notes: ['ヒント① P＋Q と R には、どんな関係があったかな。', 'ヒント② 3つの面積の和を、R だけで表すと？'],
+        a: '斜辺 10cm、もう1辺 8cm', sub: 'P＋Q＝R だから P＋Q＋R＝2R＝200、R＝100、斜辺 √100＝10。もう1辺の上は 100−36＝64、長さ √64＝8', dur: 6,
+        b: { t: 'P＋Q＋R＝2R＝200 → R＝100 → 斜辺 <b>10cm</b>、100−36＝64 → <b>8cm</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, B = CH.box(D, { l: .03, r: .03, t: .06, b: .04 }), sp = CH.split(D, B, 2, .06), k1 = CH.smooth(.05, .3, t), k2 = CH.smooth(.38, .55, t), k3 = CH.smooth(.62, .85, t);
+          var O = one(D, sp[0], CHL), F = O.F, S = O.S; GE.right(F, 'BCA');
+          sqName(F, S.Q, 'Q', '36', C.blue); sqName(F, S.P, 'P', k3 > .5 ? '64' : '?', k3 > .5 ? C.pink : C.blue); sqName(F, S.R, 'R', k2 > .5 ? '100' : '?', k2 > .5 ? C.yel : C.orange);
+          inLab(F, CHL.C, CHL.A, O.G, '6cm', { size: F.s * .75, k: 1.2 });
+          if (k3 > .5) inLab(F, CHL.C, CHL.B, O.G, '8cm', { col: C.pink, size: F.s * .8 });
+          if (k2 > .5) inLab(F, CHL.A, CHL.B, O.G, '10cm', { col: C.yel, size: F.s * .8, k: 1 });
+          var R = sp[1], h = Math.min(R.h * .13, CH.fs(D) * 2), x0 = R.x0, w = R.w, y = R.y0 + h * .4, s = CH.fs(D, .85);
+          say(D, R.cx, y, '3つの面積の和 200cm²', { size: s, maxW: w }); y += h * .6;
+          CH.tape(D, x0, y, w, h, [{ v: 100, col: C.blue, txt: k1 > .5 ? 'P＋Q' : '' }, { v: 100, col: C.orange, txt: k1 > .5 ? 'R' : '' }], 200, {});
+          if (!D.ph) CH.text(D, R.cx, y + h / 2, 'P＋Q＋R', { size: s });
+          if (k1 > 0) { say(D, R.cx, y + h * 1.6, 'P＋Q＝R → 2R＝200', { col: C.yel, size: s, maxW: w, a: k1 }); }
+          if (k2 > 0) { say(D, R.cx, y + h * 2.5, 'R＝100 → 斜辺 √100＝10', { col: C.yel, size: s, maxW: w, a: k2 }); }
+          if (k3 > 0) {
+            var y2 = y + h * 3.3; CH.tape(D, x0, y2, w * .5, h, [{ v: 36, col: C.blue, txt: '36' }, { v: 64, col: C.pink, txt: '64' }], 100, { a: k3 });
+            say(D, R.cx, y2 + h * 1.6, 'P＝100−36＝64 → √64＝8', { col: C.pink, size: s, maxW: w, a: k3 });
+          }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>
