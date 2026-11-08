@@ -113,7 +113,7 @@
     if (Math.abs(sx) < .02 || (o.a != null && o.a <= 0)) return;
     g.save(); g.translate(x, y + (o.dy || 0)); g.scale(Math.abs(sx), 1);
     rr(D, -w / 2, -h / 2, w / 2, h / 2, { r: Math.min(w, h) * .18, fill: o.fill || ha(col, o.fa == null ? .2 : o.fa), stroke: col, sw: o.sw || 2.2, a: o.a, glow: o.glow });
-    if (s != null && s !== '') { var sz = Math.min(o.size || h * .52, w * .84 / Math.max(.01, TW(D, s, 100) / 100)); TX(D, 0, 1, s, { size: sz, col: o.tcol || C.chalk, a: o.a }); }
+    if (s != null && s !== '') { var sz = Math.min(hasFr(s) ? h * .58 : (o.size || h * .52), w * .84 / Math.max(.01, TW(D, s, 100) / 100)); TX(D, 0, 1, s, { size: sz, col: o.tcol || C.chalk, a: o.a }); }
     g.restore();
   }
   /* 式のカード：'5x|＋3|＝|2x|−9' と id の配列から。記号（＝ など）は op */
