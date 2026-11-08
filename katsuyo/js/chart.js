@@ -203,6 +203,77 @@ CH.stacks = function (D, Ax, vals, edges, o) {
   return out;
 };
 
+/* ---- 座標平面（一次関数など） ----
+   CH.plane(D, R, o)：o.x・o.y（[最小, 最大]）、o.step（方眼）、o.lab（目もりの字の間かく）、o.fit（false でなければ、縦横の1目もりを同じ長さに）
+   返すもの：X(x)・Y(y)（座標 → 画面）、R（実際の四角）、u（1目もりの長さ）、s（字の大きさ） */
+CH.mnum = function (v) { var r = Math.round(v * 1000) / 1000; return (r < 0 ? '−' : '') + String(Math.abs(r)); };
+CH.plane = function (D, R, o) {
+  o = o || {}; var xr = o.x || [-5, 5], yr = o.y || [-5, 5], st = o.step || 1, lab = o.lab || st, s = o.size || CH.fs(D, .72), g = D.ctx, a = o.a;
+  if (o.fit !== false) {
+    var u = Math.min(R.w / (xr[1] - xr[0]), R.h / (yr[1] - yr[0])), w = u * (xr[1] - xr[0]), h = u * (yr[1] - yr[0]);
+    R = rect(R.cx - w / 2, R.cy - h / 2, R.cx + w / 2, R.cy + h / 2);
+  }
+  var ux = R.w / (xr[1] - xr[0]), uy = R.h / (yr[1] - yr[0]);
+  var X = function (x) { return R.x0 + (x - xr[0]) * ux; }, Y = function (y) { return R.y1 - (y - yr[0]) * uy; };
+  var ox = clamp(0, xr[0], xr[1]), oy = clamp(0, yr[0], yr[1]), x, y;
+  g.save(); g.globalAlpha = A(D, a);
+  if (o.grid !== false) {
+    g.strokeStyle = 'rgba(242,240,230,.12)'; g.lineWidth = 1; g.beginPath();
+    for (x = Math.ceil(xr[0] / st) * st; x <= xr[1] + 1e-9; x += st) { g.moveTo(X(x), R.y0); g.lineTo(X(x), R.y1); }
+    for (y = Math.ceil(yr[0] / st) * st; y <= yr[1] + 1e-9; y += st) { g.moveTo(R.x0, Y(y)); g.lineTo(R.x1, Y(y)); }
+    g.stroke();
+  }
+  g.restore();
+  CH.arrow(D, R.x0 - 4, Y(oy), R.x1 + s * .9, Y(oy), { w: 2, a: a, head: 9 });
+  CH.arrow(D, X(ox), R.y1 + 4, X(ox), R.y0 - s * .9, { w: 2, a: a, head: 9 });
+  CH.text(D, R.x1 + s * 1.3, Y(oy) + s * .1, o.xn || 'x', { size: s * 1.2, a: a, col: 'rgba(242,240,230,.85)', w: 400 });
+  CH.text(D, X(ox) + s * .9, R.y0 - s * .8, o.yn || 'y', { size: s * 1.2, a: a, col: 'rgba(242,240,230,.85)', w: 400 });
+  if (ox === 0 && oy === 0) CH.text(D, X(0) - s * .7, Y(0) + s * .8, 'O', { size: s, a: a, num: true });
+  if (o.nums !== false) {
+    for (x = Math.ceil(xr[0] / lab) * lab; x <= xr[1] + 1e-9; x += lab) if (Math.abs(x) > 1e-9) { CH.line(D, X(x), Y(oy) - 4, X(x), Y(oy) + 4, { w: 1.4, a: a }); CH.text(D, X(x), Y(oy) + s * 1, CH.mnum(x), { size: s, num: true, a: a }); }
+    for (y = Math.ceil(yr[0] / lab) * lab; y <= yr[1] + 1e-9; y += lab) if (Math.abs(y) > 1e-9) { CH.line(D, X(ox) - 4, Y(y), X(ox) + 4, Y(y), { w: 1.4, a: a }); CH.text(D, X(ox) - s * .6, Y(y), CH.mnum(y), { size: s, num: true, align: 'right', a: a }); }
+  }
+  return { X: X, Y: Y, R: R, u: ux, xr: xr, yr: yr, s: s };
+};
+/* 関数のグラフ。f(x) を、平面の中だけ描く。o：x0・x1（変域）、t（0〜1 で途中まで）、col、w、dash、a */
+CH.fn = function (D, Pl, f, o) {
+  o = o || {}; var x0 = o.x0 == null ? Pl.xr[0] : o.x0, x1 = o.x1 == null ? Pl.xr[1] : o.x1, t = o.t == null ? 1 : clamp(o.t, 0, 1), n = o.n || 240, g = D.ctx, on = false;
+  var y0 = Pl.yr[0] - (Pl.yr[1] - Pl.yr[0]) * .002, y1 = Pl.yr[1] + (Pl.yr[1] - Pl.yr[0]) * .002;
+  g.save(); g.globalAlpha = A(D, o.a); g.strokeStyle = o.col || C.yel; g.lineWidth = o.w || 3; g.lineCap = 'round'; g.lineJoin = 'round';
+  if (o.dash) g.setLineDash(o.dash === true ? [8, 7] : o.dash);
+  if (o.glow) { g.shadowColor = hexA(o.col || C.yel, .55); g.shadowBlur = 8; }
+  g.beginPath();
+  for (var i = 0; i <= n * t; i++) {
+    var x = x0 + (x1 - x0) * i / n, y = f(x);
+    if (y >= y0 && y <= y1 && isFinite(y)) { if (on) g.lineTo(Pl.X(x), Pl.Y(y)); else g.moveTo(Pl.X(x), Pl.Y(y)); on = true; } else on = false;
+  }
+  g.stroke(); g.restore();
+};
+/* 直線 y＝ax＋b（変域つきでも）。端を ●（ふくむ）・○（ふくまない）にできる：o.ends ['in'|'out'|null, …] */
+CH.lin = function (D, Pl, a, b, o) {
+  o = o || {}; CH.fn(D, Pl, function (x) { return a * x + b; }, o);
+  if (o.ends) [o.x0, o.x1].forEach(function (x, i) { var e = o.ends[i]; if (!e || x == null) return; CH.pt(D, Pl, x, a * x + b, { col: o.col, open: e === 'out', a: o.a }); });
+};
+/* 座標の点。o：col、r、open（白ぬき）、lab（字）、dir（字の向き 'ne' 'nw' 'se' 'sw' 'n' 's' 'e' 'w'）、a */
+CH.pt = function (D, Pl, x, y, o) {
+  o = o || {}; var px = Pl.X(x), py = Pl.Y(y), r = o.r || CH.fs(D, .3), col = o.col || C.yel;
+  CH.circle(D, px, py, r, o.open ? { fill: '#1f3a2c', stroke: col, sw: 2.4, a: o.a } : { fill: col, stroke: 'rgba(20,30,24,.8)', sw: 1.2, a: o.a });
+  if (o.lab) {
+    var d = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0], ne: [.8, -.8], nw: [-.8, -.8], se: [.8, .8], sw: [-.8, .8] }[o.dir || 'ne'], s = o.size || CH.fs(D, .85);
+    CH.text(D, px + d[0] * s * .9, py + d[1] * s * .9, o.lab, { col: o.tcol || col, size: s, a: o.a, align: d[0] > .1 ? 'left' : d[0] < -.1 ? 'right' : 'center', outline: 'rgba(20,40,30,.9)' });
+  }
+};
+/* 平面の上の線分・矢印（座標で） */
+CH.pseg = function (D, Pl, p, q, o) { o = o || {}; (o.arrow ? CH.arrow : CH.line)(D, Pl.X(p[0]), Pl.Y(p[1]), Pl.X(q[0]), Pl.Y(q[1]), o); };
+/* 傾きの三角形：(x0, a*x0+b) から右へ dx、上へ a*dx。o.lx・o.ly（字）、col */
+CH.slopeTri = function (D, Pl, a, b, x0, dx, o) {
+  o = o || {}; var y0 = a * x0 + b, col = o.col || C.pink, s = CH.fs(D, .8), dy = a * dx;
+  CH.pseg(D, Pl, [x0, y0], [x0 + dx, y0], { col: col, w: 2.4, dash: true, a: o.a });
+  CH.pseg(D, Pl, [x0 + dx, y0], [x0 + dx, y0 + dy], { col: col, w: 2.4, dash: true, a: o.a });
+  CH.text(D, Pl.X(x0 + dx / 2), Pl.Y(y0) + (dy >= 0 ? s : -s), o.lx || ('＋' + CH.mnum(dx)), { col: col, size: s, a: o.a, outline: 'rgba(20,40,30,.9)' });
+  CH.text(D, Pl.X(x0 + dx) + s * .5, Pl.Y(y0 + dy / 2), o.ly || ((dy >= 0 ? '＋' : '') + CH.mnum(dy)), { col: col, size: s, a: o.a, align: 'left', outline: 'rgba(20,40,30,.9)' });
+};
+
 /* ---- 数の道具 ---- */
 CH.sum = function (a) { return a.reduce(function (s, x) { return s + x; }, 0); };
 CH.mean = function (a) { return CH.sum(a) / a.length; };

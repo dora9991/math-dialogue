@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>三角形と四角形の黒板</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+<style>
+/* 目次：黒板に、17時間を並べる */
+html,body{height:auto}
+.app{height:auto;min-height:100%}
+.menu{padding:.4rem 1.4rem 1.4rem;display:flex;flex-direction:column;gap:.9rem}
+.menu p.lead{margin:0;font-family:var(--f-chalk);font-weight:600;color:var(--chalk-2);font-size:1.05rem;line-height:1.6}
+.list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,22rem),1fr));gap:.6rem}
+.list li{display:flex;flex-direction:column;gap:.3rem;padding:.65rem .9rem;border:2px solid var(--chalk-4);border-radius:12px;min-width:0}
+.list li.on{border-color:var(--chalk-3);background:rgba(242,240,230,.05)}
+.list .no{font-family:var(--f-chalk);font-weight:600;font-size:.9rem;color:var(--chalk-2)}
+.list .ttl{font-family:var(--f-chalk);font-weight:600;font-size:1.1rem;line-height:1.45}
+.list li:not(.on) .ttl{color:var(--chalk-2)}
+.list .go{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.15rem}
+.list .soon{font-size:.85rem;color:var(--chalk-3)}
+</style>
+</head>
+<body>
+<div class="app" lang="ja">
+  <div class="board">
+    <header class="bar"><h1><small>中2</small>三角形と四角形の黒板（目次）</h1></header>
+    <div class="track" aria-hidden="true"></div>
+    <main class="menu">
+      <p class="lead">電子黒板に映して、図を動かしながら考える授業のページ。17時間ぶん。証明は1行ずつ、図の辺や角が光ります。</p>
+      <ul class="list" id="list"></ul>
+    </main>
+  </div>
+</div>
+<script>
+(function () {
+  /* 時間ごとの題名は、ikkan の三角形と四角形と同じ */
+  var L = [
+    ['第1時', '二等辺三角形の底角が等しいことを証明しよう', [['01.html', 'ひらく ▶']]],
+    ['第2時', '二等辺三角形の性質を使って、角や辺について考えよう', [['02.html', 'ひらく ▶']]],
+    ['第3時', '2つの角が等しい三角形は、二等辺三角形といえるだろうか', [['03.html', 'ひらく ▶']]],
+    ['第4時', '「逆」が正しいかどうかを調べよう', [['04.html', 'ひらく ▶']]],
+    ['第5時', '直角三角形が合同といえる条件を見つけよう', [['05.html', 'ひらく ▶']]],
+    ['第6時', '直角三角形の合同を使って、証明しよう', [['06.html', 'ひらく ▶']]],
+    ['第7時', '三角形の証明を、教え合って書けるようになろう', [['07.html', 'ひらく ▶']]],
+    ['第8時', '平行四辺形には、どんな性質があるだろう', [['08.html', 'ひらく ▶']]],
+    ['第9時', '平行四辺形の性質を使って、線分が等しいことを証明しよう', [['09.html', 'ひらく ▶']]],
+    ['第10時', '四角形が平行四辺形になる条件を見つけよう', [['10.html', 'ひらく ▶']]],
+    ['第11時', '平行四辺形になる条件を使って、証明しよう', [['11.html', 'ひらく ▶']]],
+    ['第12時', '長方形・ひし形・正方形は、平行四辺形とどんな関係だろう', [['12.html', 'ひらく ▶']]],
+    ['第13時', '条件カードで、四角形を仲間分けしよう', [['13.html', 'ひらく ▶']]],
+    ['第14時', '形を変えても面積が変わらないのは、どんなときだろう', [['14.html', 'ひらく ▶']]],
+    ['第15時', '面積を変えずに、土地の境界線をまっすぐにしよう', [['15.html', 'ひらく ▶']]],
+    ['第16時', '条件を変えて、新しい性質を見つけよう', [['16.html', 'ひらく ▶']]],
+    ['第17時', '「三角形と四角形」で学んだことを、整理して確かめよう', [['17.html', 'ひらく ▶']]],
+    ['証明', '証明パターン集（★〜★★★★、難易度別）', [['../shomei/index.html', '一覧をひらく ▶']]]
+  ];
+  document.getElementById('list').innerHTML = L.map(function (x) {
+    var on = !!x[2];
+    return '<li' + (on ? ' class="on"' : '') + '><span class="no">' + x[0] + '</span><span class="ttl">' + x[1] + '</span>' +
+      (on ? '<span class="go">' + x[2].map(function (l) { return '<a class="btn primary" href="' + l[0] + '">' + l[1] + '</a>'; }).join('') + '</span>' : '<span class="soon">準備中</span>') + '</li>';
+  }).join('');
+})();
+</script>
+</body>
+</html>
