@@ -100,7 +100,7 @@
       if (mode === 'side') { var w = B.w * .44, x = B.x1 - w + 10; return { scene: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), note: CH.rect(x, B.y0 + 4, B.x1, B.y0 + B.h * .56), text: CH.rect(x, B.y0 + B.h * .6, B.x1, B.y1), wide: true }; }
       var y = B.y0 + B.h * .56; return { scene: CH.rect(B.x0, B.y0, B.x1, y), note: CH.rect(B.x0, y + 8, B.cx - 6, B.y1), text: CH.rect(B.cx + 10, y + 14, B.x1, B.y1), wide: true };
     }
-    return { scene: CH.rect(B.x0, B.y0, B.x1, B.y0 + B.h * .5), note: CH.rect(B.x0 + 4, B.y0 + B.h * .52, B.x1 - 4, B.y0 + B.h * .78), text: CH.rect(B.x0 + 6, B.y0 + B.h * .8, B.x1, B.y1), wide: false };
+    return { scene: CH.rect(B.x0, B.y0, B.x1, B.y0 + B.h * .44), note: CH.rect(B.x0 + 4, B.y0 + B.h * .46, B.x1 - 4, B.y0 + B.h * .79), text: CH.rect(B.x0 + 6, B.y0 + B.h * .81, B.x1, B.y1), wide: false };
   }
   /* ノートの方眼（1目もり 1cm） */
   function note(D, Rn, w, h, cap) {

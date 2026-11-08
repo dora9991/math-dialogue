@@ -251,11 +251,11 @@ GE.proof = function (def, o) {
   GE.checkFig(P, def.fig || {}, name);
   (def.L || []).forEach(function (l) { GE.verify(P, l.t, alias, name); });
   var stars = '★★★★'.slice(0, def.lv || 1), tag = o.tag || ('証明 ' + stars), tri = def.tri || [];
-  function base(D, F, i, ph, t) {
+  function base(D, F, i, ph, t, k) {
     var hi = i >= 1 ? tri : [];
     hi.forEach(function (s, j) { GE.poly(F, s, { col: j ? C.orange : C.blue, fa: .2, stroke: false }); });
     GE.figure(F, def.fig);
-    if (o.draw) o.draw(D, F, { i: i, ph: ph, t: t });
+    if (o.draw) o.draw(D, F, { i: i, ph: ph, t: t, k: k == null ? -1 : k });
   }
   function box(D) { return CH.box(D, o.box || { l: .06, r: .06, t: .1, b: .12 }); }
   function mkF(D) { return GE.fit(D, box(D), P, { pad: def.pad, bounds: o.bounds || def.bounds }); }
@@ -268,7 +268,8 @@ GE.proof = function (def, o) {
   /* 方針 */
   var L = (def.L || []).slice(), first = L.length && !L[0].r && /で$|で、?$/.test(L[0].t) ? L.shift() : null;
   if (tri.length || def.plan) {
-    var pq = (def.plan && def.plan.q) || (def.goal ? '「' + def.goal + '」を示すには、どの三角形とどの三角形の合同を示せばよい？' : 'どの三角形とどの三角形の合同を示せばよい？');
+    var sw = (def.L || []).some(function (l) { return /∽/.test(l.t); }) ? '相似' : '合同';
+    var pq = (def.plan && def.plan.q) || (def.goal ? '「' + def.goal + '」を示すには、どの三角形とどの三角形の' + sw + 'を示せばよい？' : 'どの三角形とどの三角形の' + sw + 'を示せばよい？');
     var pa = (def.plan && def.plan.a) || (tri.length ? '△' + tri[0] + ' と △' + tri[1] : '');
     steps.push({ tag: tag, q: pq, a: pa, sub: (def.plan && def.plan.sub) || '', dur: 1.2, b: first ? { t: first.t } : (def.plan && def.plan.b ? { t: def.plan.b } : null),
       draw: function (D) { var F = mkF(D); base(D, F, D.ph ? 1 : 0, D.ph, D.t); if (def.goal) GE.glow(F, def.goal, alias, { col: C.pink, a: .9 }); } });
@@ -286,7 +287,7 @@ GE.proof = function (def, o) {
     st.dur = isCong ? 2.6 : 1;
     st.draw = function (D) {
       var F = mkF(D), t = D.ph ? D.t : (st.a ? 0 : 1), show = !st.a || D.ph || ask === 'r' || ask === 'c';
-      base(D, F, 1, D.ph, t);
+      base(D, F, 1, D.ph, t, k);
       if (isCong && (D.ph || !st.a)) { var m = /△([A-Z]{3})[≡∽]△([A-Z]{3})/.exec(l.t), pts = GE.moveTri(P, m[1], m[2], CH.smooth(.1, .9, t)); GE.polyP(F, pts, { col: C.yel, fa: .25 }); }
       else if (ask === 'c' || l.c) { var j0 = 0; L.slice(0, k).forEach(function (m, j) { if (/[≡∽]/.test(m.t)) j0 = j + 1; }); L.slice(j0, k).forEach(function (m) { if (m.n) GE.glow(F, m.t, alias, { col: C.yel, a: .85 }); }); }
       else if (show) GE.glow(F, l.t, alias, { col: C.yel, a: D.ph ? CH.smooth(0, .3, D.t) : 1 });

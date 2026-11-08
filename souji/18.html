@@ -46,7 +46,7 @@
     var B = CH.box(D, { l: .03, r: .03, t: .1, b: .05 });
     if (D.W > D.H * 1.05) { card(D, CH.rect(B.x0 + B.w * ((k || .6) + .03), B.y0, B.x1, B.y1), title, lines); return CH.rect(B.x0, B.y0, B.x0 + B.w * (k || .6), B.y1); }
     var h = card(D, B, title, lines, { dry: true }); card(D, CH.rect(B.x0, B.y0, B.x1, B.y0 + h), title, lines);
-    return CH.rect(B.x0, B.y0 + h + CH.fs(D, .6), B.x1, B.y1);
+    return CH.rect(B.x0, B.y0 + h + CH.fs(D, 1.3), B.x1, B.y1);
   }
   /* ---- 今日の問い：AB＝AC＝9、BC＝12。AD＝3、DB＝6（DE∥BC） ---- */
   var P0 = { B: [0, 0], C: [12, 0], A: [6, Math.sqrt(45)] }; P0.D = at(P0.A, P0.B, 1 / 3); P0.E = at(P0.A, P0.C, 1 / 3);
@@ -126,12 +126,12 @@
     steps: [
       { tag: '今日の問い', bh: 'ゆうさんの求め方', q: '△ABC で、DE∥BC、AD＝3cm、DB＝6cm、BC＝12cm のとき、DE の長さを、ゆうさんは「3：6＝DE：12 より、DE＝6cm」と求めた。まちがいを見つけて、正しく直そう。',
         notes: ['① 自分の考え（3分）　まちがいの場所と、直し方を書こう。', '② ペアの考え（3分）　自分とちがう気づきを書こう。'],
-        draw: function (D) { var F = fig0(D, withCard(D, 'ゆうさんの求め方', [['3：6＝DE：12　→　DE＝6cm']])); sideLab(F, P0.D, P0.E, 'DE？', [0, 1], { col: C.yel }); } },
+        draw: function (D) { var F = fig0(D, withCard(D, 'ゆうさんの求め方', [['3：6＝DE：12'], ['→　DE＝6cm']])); sideLab(F, P0.D, P0.E, 'DE？', [0, 1], { col: C.yel }); } },
       { tag: '今日の問い', q: 'まちがいはどこ？ 正しい DE の長さは？', a: 'AD：DB を使ったのがまちがい。DE＝4cm', sub: 'DE：BC と等しいのは、AD：AB（△ADE と △ABC の相似比）。AB＝3＋6＝9 → 3：9＝DE：12 → DE＝4', dur: 7,
         b: [{ t: '✕ 3：6＝DE：12（AD：DB を使った）', col: C.pink }, { t: '○ AD：AB＝DE：BC → 3：9＝DE：12 → <b>DE＝4cm</b>', col: C.yel }],
         banner: function (s) { if (!s.ph) return ''; return s.t < .3 ? 'DB は、△ADE の辺ではない' : s.t < .72 ? '△ADE を拡大すると、△ABC に重なる' : 'AD に対応するのは AB → 3：9＝DE：12'; },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, F = fig0(D, withCard(D, 'ゆうさんの求め方', [['3：6＝DE：12　→　DE＝6cm' + (t > .1 ? '　✕' : ''), t > .1 ? C.pink : null], [t > .1 ? '（AD：DB を使った）' : '', C.pink], [t > .76 ? '正しくは 3：9＝DE：12　→　DE＝4cm' : '', C.yel]])), a1 = v(0, .08, t) * (1 - v(.26, .32, t));
+          var t = D.ph ? D.t : 0, F = fig0(D, withCard(D, 'ゆうさんの求め方', [['3：6＝DE：12' + (t > .1 ? '　✕' : ''), t > .1 ? C.pink : null], ['→　DE＝6cm', t > .1 ? C.pink : null], [t > .1 ? '（AD：DB を使った）' : '', C.pink], [t > .76 ? '正しくは 3：9＝DE：12' : '', C.yel], [t > .76 ? '→　DE＝4cm' : '', C.yel]])), a1 = v(0, .08, t) * (1 - v(.26, .32, t));
           if (a1 > 0) { GE.seg(F, 'DB', { col: C.pink, w: 5, glow: true, a: a1 }); }
           if (t > .3 && t < .74) GE.polyP(F, GE.moveTri(P0, 'ADE', 'ABC', CH.smooth(.34, .66, t)), { col: C.yel, fa: .22, sw: 3 });
           if (t > .72) { var a2 = v(.72, .82, t); GE.seg(F, 'AB', { col: C.yel, w: 5, glow: true, a: a2 }); GE.seg(F, 'DE', { col: C.yel, w: 5, glow: true, a: a2 }); GE.seg(F, 'BC', { col: C.yel, w: 4, a: a2 }); sideLab(F, P0.D, P0.E, '4cm', [0, 1], { col: C.yel, a: a2 }); }

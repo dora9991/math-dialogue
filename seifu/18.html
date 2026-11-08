@@ -64,6 +64,25 @@
     TX(D, x, y + 1, txt, { size: z, col: o.tcol || C.chalk, a: a });
   }
   function S(v) { return CH.mnum(v); }
+  /* ---- 数直線（第2時などと同じ形。右に矢印、正は青・負はピンク） ---- */
+  var POS = C.blue, NEG = C.pink, OUT = 'rgba(20,40,30,.9)';
+  function sg(v) { return v > 0 ? '＋' + S(v) : S(v); }
+  function sc(v) { return v > 0 ? POS : v < 0 ? NEG : C.yel; }
+  function NL(D, x0, x1, y, min, max, o) {
+    o = o || {}; var s = o.s || CH.fs(D, .8), u = (x1 - x0) / (max - min), X = function (v) { return x0 + (v - min) * u; }, a = o.a == null ? 1 : o.a;
+    var lab = o.lab || [1, 2, 5, 10, 20, 50].filter(function (q) { return q * u >= s * 2.1; })[0] || 100, st = o.st || (u < 6 ? lab : 1);
+    CH.arrow(D, x0 - s * .5, y, x1 + s * 1.1, y, { w: 2, head: 9, a: a });
+    for (var v = Math.ceil(min / st) * st; v <= max + 1e-9; v += st) {
+      var isL = Math.abs(v / lab - Math.round(v / lab)) < 1e-9, h = v === 0 ? 9 : isL ? 7 : 4, la = a * (o.la ? o.la(v) : 1);
+      CH.line(D, X(v), y - h, X(v), y + h, { w: v === 0 ? 2.4 : 1.5, a: a });
+      if (isL && la > 0) CH.text(D, X(v), y + s * 1.25, o.fmt ? o.fmt(v) : S(v), { size: s, num: true, a: la, col: o.lc ? o.lc(v) : C.chalk });
+    }
+    return { X: X, y: y, s: s, u: u, x0: x0, x1: x1 };
+  }
+  function pt(D, L, v, col, lab, o) {
+    o = o || {}; CH.circle(D, L.X(v), L.y, o.r || L.s * .36, { fill: col, stroke: 'rgba(20,30,24,.8)', sw: 1.2, a: o.a });
+    if (lab) TX(D, L.X(v), L.y - L.s * (o.up || 1.15), lab, { col: o.tc || col, size: o.size || L.s, a: o.a, outline: OUT });
+  }
   /* ---- 数の検算：自然数・整数の組を全部ためす。分数は [分子, 分母] で正確に ---- */
   var N = [], Z = [], i, j; for (i = 1; i <= 20; i++) N.push(i); for (i = -20; i <= 20; i++) Z.push(i);
   var isNat = function (v) { return Number.isInteger(v) && v >= 1; }, isInt = function (v) { return Number.isInteger(v); };
@@ -228,12 +247,12 @@
         notes: ['−2 と −7、−3 と −3、−1.5 と −4、−5 と −2 の 和 と 差（左−右）を調べよう。', 'ほかの2つの負の数でも確かめて、「いつも」と言えるか書こう。', 'スライダーで、2つの負の数を変えられます。数直線に、和と差の場所が出ます。'],
         sliders: [{ key: 'a', label: '左の数', min: -10, max: -0.5, step: .5, val: -2, fmt: S }, { key: 'b', label: '右の数', min: -10, max: -0.5, step: .5, val: -7, fmt: S }],
         draw: function (D) {
-          var R = CH.box(D, { l: .06, r: .06, t: .1, b: .1 }), s = CH.fs(D), a = D.V.a, b = D.V.b, X = CH.numline(D, CH.rect(R.x0, R.y0, R.x1, R.cy + s), -20, 10, 1, { lab: 5, fmt: S });
-          var y = R.cy + s, z = Math.min(s * 1.05, R.w / 26);
-          CH.fillRect(D, X(-20), y - s * .25, X(0), y + s * .25, { fill: 'rgba(154,216,255,.12)' }); CH.text(D, X(-10), y + s * 2.6, '負の数', { size: s * .85, col: 'rgba(242,240,230,.6)' }); CH.text(D, X(5), y + s * 2.6, '正の数', { size: s * .85, col: 'rgba(242,240,230,.6)' });
-          [[a, '左の数', C.blue, 1], [b, '右の数', C.orange, 2], [a + b, '和', C.yel, 3], [a - b, '差（左−右）', C.pink, 4]].forEach(function (p, k) {
-            var yy = y - s * (1.2 + k * 1.75); CH.line(D, X(p[0]), y, X(p[0]), yy + s * .6, { col: p[2], w: 1.6, dash: [3, 4] }); CH.circle(D, X(p[0]), y, s * .3, { fill: p[2] });
-            TX(D, X(p[0]), yy, p[1] + ' ' + S(p[0]), { size: z, col: p[2], outline: 'rgba(23,56,41,.9)' });
+          var R = CH.box(D, { l: .06, r: .08, t: .1, b: .1 }), s = CH.fs(D), a = D.V.a, b = D.V.b, y = R.y0 + R.h * .72;
+          var L = NL(D, R.x0, R.x1, y, -20, 10, { s: CH.fs(D, .85), lab: 5, lc: function (v) { return v < 0 ? NEG : C.chalk; } }), z = Math.min(s * 1.05, R.w / 24);
+          CH.text(D, L.X(-10), y + s * 2.8, '← 負の数', { size: s * .85, col: NEG }); CH.text(D, L.X(5), y + s * 2.8, '正の数 →', { size: s * .85, col: POS });
+          [[a, '左の数', C.orange], [b, '右の数', C.lav], [a + b, '和', C.yel], [a - b, '差（左−右）', C.green]].forEach(function (p, k) {
+            var yy = y - s * (1.4 + k * 1.8); CH.line(D, L.X(p[0]), y, L.X(p[0]), yy + s * .6, { col: p[2], w: 1.6, dash: [3, 4] });
+            pt(D, L, p[0], p[2], null); TX(D, L.X(p[0]), yy, p[1] + ' ' + S(p[0]), { size: z, col: p[2], outline: OUT });
           });
         } },
       { tag: 'チャレンジ', bh: 'チャレンジ', q: 'いつでも正しいものを、すべて選ぼう。正しくないものには、正しくない例を書こう。（0でわることは考えない）', a: 'ア、イ', sub: 'ウ … [1/2]＋[1/2]＝1 は整数。エ … 3＋(−2)＝1 は 3 より小さい', dur: 5,

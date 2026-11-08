@@ -50,6 +50,8 @@
     if (dy && o.ly !== false) say(D, Pl.X(c[0]) + rt2 * s * .5, Pl.Y((c[1] + q[1]) / 2), o.ly || String(dy), { col: col, size: s, a: a, num: true, align: rt2 > 0 ? 'left' : 'right' });
     return c;
   }
+  /* 座標平面（目もりがせまいときは、目もりの字を 2 ごとに） */
+  function plane(D, R, o) { var u = Math.min(R.w / (o.x[1] - o.x[0]), R.h / (o.y[1] - o.y[0])); if (!o.lab && u < 24) o.lab = 2; return CH.plane(D, R, o); }
   function split(D) { return CH.split(D, CH.box(D, { l: .03, r: .03, t: .04, b: .03 }), 2, .04); }
 
   /* ---- 確かめ ---- */
@@ -80,7 +82,7 @@
         notes: ['スライダーで、点 B を動かせます（A は (−3, 1)）。'], sliders: SLB,
         b: [{ t: '2点を結ぶ線分を<b>斜辺</b>とする直角三角形をつくる', col: C.green }, { t: '横 … <b>x座標の差</b>、たて … <b>y座標の差</b>', col: C.green }],
         draw: function (D) {
-          var t = D.ph ? D.t : 0, sp = split(D), B = [D.V.bx, D.V.by], A = A0, Pl = CH.plane(D, sp[0], { x: [-6, 6], y: [-5, 6] }), dx = Math.abs(B[0] - A[0]), dy = Math.abs(B[1] - A[1]), d = dx * dx + dy * dy;
+          var t = D.ph ? D.t : 0, sp = split(D), B = [D.V.bx, D.V.by], A = A0, Pl = plane(D, sp[0], { x: [-6, 6], y: [-5, 6] }), dx = Math.abs(B[0] - A[0]), dy = Math.abs(B[1] - A[1]), d = dx * dx + dy * dy;
           if (d) { legs(D, Pl, A, B, { fill: 'rgba(255,226,122,.12)' }); CH.pseg(D, Pl, A, B, { col: C.yel, w: 4, glow: !!D.ph }); }
           CH.pt(D, Pl, A[0], A[1], { lab: 'A' + P2(A), dir: B[0] >= A[0] ? 'w' : 'e', col: C.blue }); CH.pt(D, Pl, B[0], B[1], { lab: 'B' + P2(B), dir: B[1] >= A[1] ? 'n' : 's', col: C.yel });
           lines(D, sp[1], [{ t: 'x座標の差　' + dx, col: C.pink }, { t: 'y座標の差　' + dy, col: C.pink }, { t: 'AB²＝' + dx + '²＋' + dy + '²＝' + d, col: C.chalk }, { t: 'AB＝' + rt(d), col: C.yel, big: true },
@@ -89,7 +91,7 @@
       { tag: '例題', bh: '例題　2点の間のきょり', q: '2点の間のきょり AB を求めよう。(1) (1, 2)、(4, 6)（見本）　(2) (−4, 3)、(2, −1)　(3) (−2, −3)、(1, 3)', a: '(2) 2√13　(3) 3√5', sub: '(2) 横 6、たて 4、AB²＝36＋16＝52　(3) 横 3、たて 6、AB²＝9＋36＝45', dur: 6,
         b: [{ t: '(1) 5　(2) 6²＋4²＝52 → <b>2√13</b>', col: C.pink }, { t: '(3) 3²＋6²＝45 → <b>3√5</b>', col: C.pink }],
         draw: function (D) {
-          var t = D.ph ? D.t : 0, sp = split(D), Pl = CH.plane(D, sp[0], { x: [-5, 5], y: [-4, 7] }), cols = [C.blue, C.pink, C.green], rev = [1, D.ph ? CH.smooth(.05, .3, t) : 0, D.ph ? CH.smooth(.5, .75, t) : 0], cur = rev[2] > 0 ? 2 : rev[1] > 0 ? 1 : 0;
+          var t = D.ph ? D.t : 0, sp = split(D), Pl = plane(D, sp[0], { x: [-5, 5], y: [-4, 7] }), cols = [C.blue, C.pink, C.green], rev = [1, D.ph ? CH.smooth(.05, .3, t) : 0, D.ph ? CH.smooth(.5, .75, t) : 0], cur = rev[2] > 0 ? 2 : rev[1] > 0 ? 1 : 0;
           EX.forEach(function (e, i) {
             var on = rev[i], a = i === cur ? 1 : .35;
             if (on > 0) legs(D, Pl, e[0], e[1], { col: cols[i], a: on * a, lx: false, ly: false });
@@ -103,7 +105,7 @@
       { tag: '例題', bh: '例題2　三角形の形', q: '3点 A(−3, −2)、B(−1, 0)、C(2, −3) を頂点とする △ABC は、どんな三角形か。3辺の長さの2乗を求めて答えよう。', a: '∠B＝90° の直角三角形', sub: 'AB²＝2²＋2²＝8、BC²＝3²＋3²＝18、CA²＝5²＋1²＝26。8＋18＝26 だから、三平方の定理の逆より ∠B＝90°', dur: 7,
         b: { t: 'AB²＝8、BC²＝18、CA²＝26、8＋18＝26 → <b>∠B＝90° の直角三角形</b>', col: C.pink },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, sp = split(D), Pl = CH.plane(D, sp[0], { x: [-5, 4], y: [-5, 2] }), k = [CH.smooth(.04, .2, t), CH.smooth(.24, .4, t), CH.smooth(.44, .6, t)], k4 = CH.smooth(.7, .85, t);
+          var t = D.ph ? D.t : 0, sp = split(D), Pl = plane(D, sp[0], { x: [-5, 4], y: [-5, 2] }), k = [CH.smooth(.04, .2, t), CH.smooth(.24, .4, t), CH.smooth(.44, .6, t)], k4 = CH.smooth(.7, .85, t);
           CH.poly(D, [TA, TB, TC].map(function (p) { return [Pl.X(p[0]), Pl.Y(p[1])]; }), { fill: 'rgba(154,216,255,.15)', stroke: C.chalk, sw: 2.6 });
           if (D.ph) { legs(D, Pl, TA, TB, { col: C.yel, a: k[0] * (1 - k[1] * .6), size: CH.fs(D, .7) }); legs(D, Pl, TB, TC, { col: C.pink, a: k[1] * (1 - k[2] * .6), size: CH.fs(D, .7) }); legs(D, Pl, TA, TC, { col: C.green, a: k[2] * (1 - k4 * .6), size: CH.fs(D, .7) }); }
           if (k4 > 0) rmark(D, Pl, TB, TA, TC, { col: C.yel, a: k4, r: CH.fs(D, .7) });
@@ -114,7 +116,7 @@
         notes: ['PA² と PB² を表にまとめて、気づいたことを書こう。', 'PA＝PB になる p の値を、式をつくって求めよう。', 'スライダーで、点 P を動かせます。円をかいて、くらべることもできます。'],
         sliders: [{ key: 'p', label: 'P の x座標 p', min: -2, max: 8, step: .5, val: 0, fmt: function (v) { return M(v); } }, { key: 'c', label: '円をかく', min: 0, max: 1, step: 1, val: 0, fmt: function (v) { return v ? 'かく' : '—'; } }],
         draw: function (D) {
-          var p = D.V.p, P = [p, 0], Pl = CH.plane(D, CH.box(D, { l: .06, r: .06, t: .06, b: .04 }), { x: [-3, 9], y: [-3, 5] }), g = D.ctx;
+          var p = D.V.p, P = [p, 0], Pl = plane(D, CH.box(D, { l: .06, r: .06, t: .06, b: .04 }), { x: [-3, 9], y: [-3, 5] }), g = D.ctx;
           if (D.V.c) { g.save(); g.beginPath(); g.rect(Pl.R.x0, Pl.R.y0, Pl.R.w, Pl.R.h); g.clip(); CH.circle(D, Pl.X(p), Pl.Y(0), dist(P, KA) * Pl.u, { stroke: C.blue, sw: 2 }); CH.circle(D, Pl.X(p), Pl.Y(0), dist(P, KB) * Pl.u, { stroke: C.pink, sw: 2 }); g.restore(); }
           legs(D, Pl, P, KA, { col: C.blue, lx: false, ly: false }); legs(D, Pl, P, KB, { col: C.pink, lx: false, ly: false });
           CH.pseg(D, Pl, P, KA, { col: C.blue, w: 3.4 }); CH.pseg(D, Pl, P, KB, { col: C.pink, w: 3.4 });
@@ -125,7 +127,7 @@
         a: '① AB＝9√2　② ∠A＝90° の直角三角形', sub: 'A(−3, 3)、B(6, 12)。AB²＝9²＋9²＝162。OA²＝18、OB²＝180。OA²＋AB²＝18＋162＝180＝OB² だから、∠A＝90°', dur: 9,
         b: { t: 'A(−3, 3)、B(6, 12) → AB＝<b>9√2</b>。OA²＋AB²＝OB² → <b>∠A＝90°</b> の直角三角形', col: C.orange },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, sp = split(D), Pl = CH.plane(D, sp[0], { x: [-6, 8], y: [-1, 13], lab: 2, size: CH.fs(D, .62) }), O = [0, 0], k1 = CH.smooth(.04, .25, t), k2 = CH.smooth(.32, .5, t), k3 = CH.smooth(.56, .72, t), k4 = CH.smooth(.78, .92, t);
+          var t = D.ph ? D.t : 0, sp = split(D), Pl = plane(D, sp[0], { x: [-6, 8], y: [-1, 13], lab: 2, size: CH.fs(D, .62) }), O = [0, 0], k1 = CH.smooth(.04, .25, t), k2 = CH.smooth(.32, .5, t), k3 = CH.smooth(.56, .72, t), k4 = CH.smooth(.78, .92, t);
           CH.fn(D, Pl, f, { col: C.green, w: 2.6 });
           CH.poly(D, [O, QA, QB].map(function (p) { return [Pl.X(p[0]), Pl.Y(p[1])]; }), { fill: 'rgba(154,216,255,.15)', stroke: C.chalk, sw: 2.4 });
           if (D.ph) { legs(D, Pl, QA, QB, { col: C.yel, a: k1 * (1 - k3 * .7), size: CH.fs(D, .75) }); legs(D, Pl, O, QA, { col: C.pink, a: k2 * (1 - k3 * .7), size: CH.fs(D, .7) }); legs(D, Pl, O, QB, { col: C.blue, a: k2 * (1 - k3 * .7), size: CH.fs(D, .7) }); }
@@ -139,7 +141,7 @@
 
   /* 今日の問い：A(−3, 1)、B(2, 3) */
   function today(D, t) {
-    var sp = split(D), Pl = CH.plane(D, sp[0], { x: [-5, 4], y: [-2, 5] }), k1 = CH.smooth(.04, .25, t), k2 = CH.smooth(.32, .5, t), k3 = CH.smooth(.6, .78, t);
+    var sp = split(D), Pl = plane(D, sp[0], { x: [-5, 4], y: [-2, 5] }), k1 = CH.smooth(.04, .25, t), k2 = CH.smooth(.32, .5, t), k3 = CH.smooth(.6, .78, t);
     if (t > 0) { legs(D, Pl, A0, B0, { a: k1, fill: 'rgba(255,226,122,.14)', lx: k2 > .5 ? '2−(−3)＝5' : '?', ly: k2 > .5 ? '3−1＝2' : '?', size: CH.fs(D, .75) }); CH.pt(D, Pl, 2, 1, { lab: 'C(2, 1)', dir: 'se', col: C.pink, a: k1 }); }
     CH.pseg(D, Pl, A0, B0, { col: C.yel, w: 4 });
     CH.pt(D, Pl, A0[0], A0[1], { lab: 'A(−3, 1)', dir: 'nw', col: C.yel }); CH.pt(D, Pl, B0[0], B0[1], { lab: 'B(2, 3)', dir: 'n', col: C.yel });

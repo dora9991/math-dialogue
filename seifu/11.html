@@ -250,8 +250,9 @@
       var bw = TW(D, p.base, z);
       if (a1 > 0) rr(D, x - z * .1, y - z * .72, x + bw + z * .1, y + z * .72, { stroke: C.yel, fill: ha(C.yel, .15), sw: 2.2, a: a1, glow: true });
       x += TX(D, x, y, p.base, { size: z, align: 'left', col: a1 > .5 ? C.yel : C.chalk });
+      if (a1 > 0) TX(D, x - bw / 2, y + z * 1.05, p.base.replace(/[()]/g, '') + ' を ' + p.e + '回', { size: z * .42, col: C.yel, a: a1 });
       x += TX(D, x, y, '^' + p.e, { size: z, align: 'left', col: a1 > .5 ? C.yel : C.chalk });
-      if (a1 > 0) TX(D, x + z * .2, y - z * .5, p.e + '回', { size: z * .45, col: C.yel, align: 'left', a: a1 });
+
       var x2 = one ? x + z * 1.4 : r.x0 + z * 1.4, y2 = one ? y : r.y0 + r.h * .75;
       if (a2 > 0) x2 += TX(D, x2, y2, line2, { size: z, align: 'left', a: a2 });
       if (a3 > 0) TX(D, x2 + z * .2, y2, line3, { size: z, align: 'left', col: C.yel, a: a3 });
