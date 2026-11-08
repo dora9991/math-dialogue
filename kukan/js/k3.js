@@ -92,11 +92,26 @@ function makeCam(c, cx, cy, half, q) {
 
 /* ================= 描く道具（ステップの draw(D) で使う） ================= */
 var ctx = null, DPR = 1, gA = 1;
-function text(txt, x, y, fs, color, outline, align) {
-  ctx.font = '600 ' + fs + 'px ' + CHALK_FONT; ctx.textAlign = align || 'center'; ctx.textBaseline = 'middle';
-  if (outline) { ctx.lineJoin = 'round'; ctx.lineWidth = fs * .26; ctx.strokeStyle = outline; ctx.strokeText(txt, x, y); }
-  ctx.fillStyle = color; ctx.fillText(txt, x, y);
+/* × と ÷ は、黒板の字体（Klee One）だと x と見分けにくいので、そこだけ BIZ UDPゴシックで描く */
+var OPS_FONT = '"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif';
+function mixedText(g, txt, x, y, font, stroke) {
+  txt = String(txt);
+  if (!/[×÷]/.test(txt)) { if (stroke) g.strokeText(txt, x, y); else g.fillText(txt, x, y); return; }
+  var size = (/(\d+(?:\.\d+)?)px/.exec(font) || [0, 16])[1], opf = '700 ' + size + 'px ' + OPS_FONT;
+  var parts = txt.split(/([×÷])/), fs = parts.map(function (p) { return p === '×' || p === '÷' ? opf : font; }), ws = [], w = 0, al = g.textAlign;
+  parts.forEach(function (p, i) { g.font = fs[i]; ws[i] = g.measureText(p).width; w += ws[i]; });
+  var x0 = al === 'left' || al === 'start' ? x : al === 'right' || al === 'end' ? x - w : x - w / 2;
+  g.textAlign = 'left';
+  parts.forEach(function (p, i) { g.font = fs[i]; if (stroke) g.strokeText(p, x0, y); else g.fillText(p, x0, y); x0 += ws[i]; });
+  g.textAlign = al; g.font = font;
 }
+function text(txt, x, y, fs, color, outline, align) {
+  var f = '600 ' + fs + 'px ' + CHALK_FONT; ctx.font = f; ctx.textAlign = align || 'center'; ctx.textBaseline = 'middle';
+  if (outline) { ctx.lineJoin = 'round'; ctx.lineWidth = fs * .26; ctx.strokeStyle = outline; mixedText(ctx, txt, x, y, f, true); }
+  ctx.fillStyle = color; mixedText(ctx, txt, x, y, f, false);
+}
+/* HTML の字の中の × ÷ を、見分けやすい字体の span でつつむ（タグの中はさわらない） */
+function opsHTML(h) { return String(h == null ? '' : h).replace(/(<[^>]*>)|([×÷])/g, function (m, tag, op) { return tag || '<span class="op">' + op + '</span>'; }); }
 function makeD(C, M, info) {
   var lw = clamp(C.sc * .02, 1.6, 3.4), fs = clamp(C.sc * .21, 14, 30);
   var D = {
@@ -604,7 +619,7 @@ function run(cfg) {
     panel.classList.toggle('long', items.length > 7);
     $('blist').innerHTML = (cfg.boardTitle ? '<h3>' + esc(cfg.boardTitle) + '</h3>' : '') + items.map(function (b) {
       if (b.h) return '<h3>' + b.h + '</h3>';
-      return '<div class="bi"><i style="--c:' + (b.col || 'var(--chalk-3)') + '"></i><span>' + b.t + '</span></div>';
+      return '<div class="bi"><i style="--c:' + (b.col || 'var(--chalk-3)') + '"></i><span>' + opsHTML(b.t) + '</span></div>';
     }).join('');
     var bl = $('blist'); bl.scrollTop = bl.scrollHeight;
   }
@@ -612,12 +627,12 @@ function run(cfg) {
     var st = cur(), a = hasAns(st);
     var tag = $('tag'); tag.textContent = st.tag || ''; tag.hidden = !st.tag;
     tag.className = 'tag' + (st.tag === '考えよう' || st.tag === 'チャレンジ' ? ' kangae' : st.tag === 'ことば' ? ' kotoba' : '');
-    $('q').innerHTML = st.q;
+    $('q').innerHTML = opsHTML(st.q);
     $('ansbox').hidden = !a;
-    $('ans').innerHTML = a && state.phase === 1 ? st.a : '';
-    $('sub').innerHTML = a && state.phase === 1 && st.sub ? st.sub : '';
+    $('ans').innerHTML = a && state.phase === 1 ? opsHTML(st.a) : '';
+    $('sub').innerHTML = a && state.phase === 1 && st.sub ? opsHTML(st.sub) : '';
     $('wait').hidden = !(a && state.phase === 0);
-    $('notes').innerHTML = (st.notes || []).map(function (t) { return '<p' + (t.key ? ' class="key"' : '') + '>' + (t.t || t) + '</p>'; }).join('');
+    $('notes').innerHTML = (st.notes || []).map(function (t) { return '<p' + (t.key ? ' class="key"' : '') + '>' + opsHTML(t.t || t) + '</p>'; }).join('');
     panel.classList.toggle('done', state.done && state.phase === 1);
     renderBoard();
     $('pn').textContent = state.idx + 1; $('pt').textContent = steps.length;
@@ -634,7 +649,7 @@ function run(cfg) {
     if (typeof st.banner === 'function') t = st.banner({ t: state.t, ph: state.phase, V: state.V, done: state.done }) || '';
     else if (st.banner && state.done && (state.phase === 1 || !hasAns(st))) t = st.banner;
     if (t === bannerTxt) return; bannerTxt = t;
-    var b = $('banner'); b.hidden = !t; b.textContent = t;
+    var b = $('banner'); b.hidden = !t; b.innerHTML = opsHTML(esc(t));
   }
 
   function resize() {
@@ -705,6 +720,7 @@ function run(cfg) {
 }
 
 window.K3 = {
+  mixedText: mixedText, opsHTML: opsHTML,
   run: run, cuboid: cuboid, ekey: ekey, rel: rel, isPerp: isPerp, group: group, face: face, lp: lp, edgesBy: edgesBy,
   pp: pp, facesBy: facesBy, dist: dist, jp: jp, COL: COL, v: V3, inPlane: inPlane,
   prism: prism, pyramid: pyramid, polyhedron: polyhedron, revolve: revolve, arcPts: arcPts, cylinder: cylinder, cone: cone, frustum: frustum,

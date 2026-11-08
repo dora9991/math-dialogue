@@ -36,7 +36,7 @@
   /* 字の行（四角の幅に入るよう、字を小さくする）。rows：[{ t, col, a }] */
   function say(D, Rr, rows, o) {
     o = o || {}; rows = rows.filter(Boolean); if (!rows.length) return;
-    var nc = Rr.w > Rr.h * 2.5 && rows.length > 3 ? 2 : 1, per = Math.ceil(rows.length / nc), cw = Rr.w / nc;
+    var nc = Rr.w > Rr.h * 2.5 && rows.length > 3 && Rr.h / (rows.length * 1.6) < CH.fs(D, .62) ? 2 : 1, per = Math.ceil(rows.length / nc), cw = Rr.w / nc;
     var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (per * 1.6));
     rows.forEach(function (r, i) {
       var w = tw(D, r.t, s), sz = w > cw - 6 ? s * (cw - 6) / w : s, c = Math.floor(i / per), j = i % per;
@@ -75,7 +75,7 @@
   }
   /* コンパスで弧をかく：a0 → a1 を k（0〜1）だけ。かいている途中は、コンパスの2本の足も見せる */
   function comp(F, c, r, a0, a1, k, o) {
-    o = o || {}; if (k <= 0) return; var a = a0 + (a1 - a0) * Math.min(1, k), col = o.col || C.blue;
+    o = o || {}; if (k <= 0) return; var a = a0 + (a1 - a0) * Math.min(1, k), col = o.col || C.blue; if (typeof c === 'string') c = F.P[c];
     arcAt(F, c, r, a0, a, { col: col, w: o.w || 2.2, a: o.a });
     if (k < 1 && !o.noLeg) {
       var p = F.X(GE.polar(c, r, a)), q = F.X(c), m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], d = [p[0] - q[0], p[1] - q[1]], L = Math.hypot(d[0], d[1]) || 1, n = [d[1] / L, -d[0] / L];

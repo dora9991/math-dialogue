@@ -196,11 +196,11 @@
       { tag: '今日の問い', q: '歩いた時間とともに変わる数量を、あげよう。', a: '歩いた道のり、残りの道のり、つかれぐあい など', sub: '時間がたつと、歩いた道のりはふえ、残りの道のりはへる。つかれぐあいも変わる', dur: 6,
         b: { t: '時間とともに変わる … 歩いた道のり・残りの道のり・つかれぐあい など', col: C.yel },
         draw: function (D) {
-          var L = lay(D), t = D.ph ? D.t : 0, m = D.ph ? Math.round(TMAX * CH.smooth(.05, .9, t) * 10) / 10 : 0;
+          var L = lay(D), t = D.ph ? D.t : 0, m = D.ph ? Math.round(TMAX * CH.smooth(.05, .9, t)) : 0;
           road(D, L.road, m, { split: D.ph, la: CH.smooth(.1, .25, t) });
-          meters(D, L.info, [{ n: '歩いた時間', v: (Math.round(m)) + ' 分', col: C.chalk },
-            { n: '歩いた道のり', v: Math.round(walked(m)) + ' m', col: C.yel, a: CH.smooth(.1, .25, t) },
-            { n: '残りの道のり', v: Math.round(LEN - walked(m)) + ' m', col: C.blue, a: CH.smooth(.3, .45, t) },
+          meters(D, L.info, [{ n: '歩いた時間', v: m + ' 分', col: C.chalk },
+            { n: '歩いた道のり', v: walked(m) + ' m', col: C.yel, a: CH.smooth(.1, .25, t) },
+            { n: '残りの道のり', v: (LEN - walked(m)) + ' m', col: C.blue, a: CH.smooth(.3, .45, t) },
             { n: 'つかれぐあい', bar: tiredAt(m), col: C.pink, a: CH.smooth(.5, .65, t) }]);
         } },
       { tag: '今日の問い', q: '時間を決めると、1つに決まるのはどれ？ 歩きはじめて 10分のときで考えよう。', a: '歩いた道のりと、残りの道のり', sub: '10分なら、いつでも 800 m と 1200 m。つかれぐあいは、日や人によってちがうので、1つに決まらない', dur: 5,

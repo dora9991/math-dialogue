@@ -99,3 +99,5 @@ body{margin:0;background:var(--wall);color:var(--chalk);font-family:var(--f-ui);
 @media (prefers-reduced-motion:reduce){
   .later,.track i{transition:none}
 }
+/* × と ÷ は、黒板の字体だと x と見分けにくいので、見分けやすい字体にする（k3.js の opsHTML） */
+.op{font-family:var(--f-ui);font-weight:700}

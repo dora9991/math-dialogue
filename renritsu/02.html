@@ -348,9 +348,11 @@
   }
   function q1(D) {
     var R = CH.box(D, { l: .04, r: .04, t: .06, b: .06 }), s = CH.fs(D), P = shop(D, CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .62));
-    var y = R.y0 + R.h * .76, u = P.u;
-    pencil(D, R.cx - s * 6, y + u * .6, u * .8); TX(D, R.cx - s * 5, y, 'えんぴつ 1本 x円', { size: fit(D, 'えんぴつ 1本 x円', R.w * .32, s), col: XC, align: 'left' });
-    note(D, R.cx + s * 1.6, y + u * .5, u * .8); TX(D, R.cx + s * 2.6, y, 'ノート 1冊 y円', { size: fit(D, 'ノート 1冊 y円', R.w * .32, s), col: YC, align: 'left' });
+    var y = R.y0 + R.h * .8, u = P.u * .7, z = s, t1 = 'えんぴつ 1本 … x円', t2 = 'ノート 1冊 … y円', w1 = TW(D, t1, z), w2 = TW(D, t2, z), W = u * 1.1 + w1 + s * 2 + u * 1.2 + w2;
+    if (W > R.w) { z *= R.w / W; w1 = TW(D, t1, z); w2 = TW(D, t2, z); W = R.w; }
+    var x = R.cx - W / 2;
+    pencil(D, x + u * .3, y + u * .7, u); TX(D, x + u * 1, y, t1, { size: z, col: XC, align: 'left' });
+    x += u * 1.1 + w1 + s * 2; note(D, x + u * .45, y + u * .55, u); TX(D, x + u * 1.15, y, t2, { size: z, col: YC, align: 'left' });
   }
   /* ---- 今日の問い（答え1）：同じものが消えて、ちがいはノート2冊 ---- */
   function q2(D, k) {
@@ -449,10 +451,20 @@
   }
   /* ---- 考えよう：ア〜エを「たす」「ひく」で ---- */
   function tool(D) {
-    var R = CH.box(D, { l: .04, r: .04, t: .05, b: .04 }), s = CH.fs(D), P = TH[D.V.e], op = D.V.o;
+    var R = CH.box(D, { l: .03, r: .03, t: .04, b: .04 }), s = CH.fs(D), P = TH[D.V.e], op = D.V.o;
     var row = function (c, lab) { return { x: term(c[0], 'x', true), y: term(c[1], 'y', false), c: S(c[2]), lab: lab }; };
-    var G = grid(D, CH.rect(R.x0, R.y0 + s * 1.6, R.x1, R.y1), COLS, { x: ['−2x', '0'], y: ['＋4y', '−4y'], c: ['13', '−1'], lab: ['…①'] }, 3);
-    TX(D, R.cx, R.y0 + s * .6, P[0] + ' の連立方程式', { size: s * 1.05, col: C.yel });
+    var nc = D.W > D.H * .9 ? 4 : 2, bw = R.w / nc, bh = Math.min(s * 3.2, R.h * .2);
+    TH.forEach(function (q, i) {
+      var cx = R.x0 + (i % nc + .5) * bw, y0 = R.y0 + Math.floor(i / nc) * (bh + s * .3), on = i === D.V.e;
+      rr(D, cx - bw * .46, y0, cx + bw * .46, y0 + bh, { stroke: on ? C.yel : 'rgba(242,240,230,.35)', sw: on ? 2.6 : 1.4, fill: on ? 'rgba(255,226,122,.08)' : null });
+      var z = Math.min(s * .85, fit(D, '2x＋3y＝−1', bw * .62, s * .85));
+      TX(D, cx - bw * .4, y0 + bh / 2, q[0], { size: z * 1.1, col: on ? C.yel : 'rgba(242,240,230,.75)', align: 'left' });
+      vbrace(D, cx - bw * .27, y0 + bh * .14, y0 + bh * .86, { w: z * .4, col: on ? C.yel : 'rgba(242,240,230,.6)', lw: 1.6 });
+      TX(D, cx - bw * .2, y0 + bh * .3, eqT.apply(null, q[1]), { size: z, align: 'left', col: on ? C.chalk : 'rgba(242,240,230,.7)' });
+      TX(D, cx - bw * .2, y0 + bh * .7, eqT.apply(null, q[2]), { size: z, align: 'left', col: on ? C.chalk : 'rgba(242,240,230,.7)' });
+    });
+    var top = R.y0 + Math.ceil(TH.length / nc) * (bh + s * .3) + s * .6;
+    var G = grid(D, CH.rect(R.x0, top, R.x1, R.y1), COLS, { x: ['−2x', '0'], y: ['＋4y', '−4y'], c: ['13', '−1'], lab: ['…①'] }, 3);
     grow(D, G, 0, row(P[1], '…①')); grow(D, G, 1, row(P[2], '…②'));
     if (!op) { TX(D, R.cx, G.Y(2), '「たす」か「ひく」を、えらぼう', { size: fit(D, '「たす」か「ひく」を、えらぼう', R.w, s), col: 'rgba(242,240,230,.75)' }); return; }
     var q = op === 1 ? 1 : -1, c = [0, 1, 2].map(function (i) { return P[1][i] + q * P[2][i]; });
@@ -500,7 +512,7 @@
         b: { t: '①＋② → 4x＝16 → x＝4、① に代入 → <b>x＝4、y＝3</b>', col: C.pink },
         draw: function (D) { ex1(D, D.ph ? D.t : 0); } },
       { tag: '考えよう', bh: '考えよう', q: 'ア〜エを加減法で解いて、表にまとめよう。2つの式を「たす」か「ひく」かは、式のどこを見て決めればよいだろう。',
-        notes: ['ア ' + SY('3x＋y＝11', 'x＋y＝5') + '　イ ' + SY('2x＋3y＝−1', '−2x＋y＝5') + '　ウ ' + SY('x＋4y＝−1', '3x−4y＝13') + '　エ ' + SY('4x＋3y＝5', '4x−y＝9'), '気づいたことを書こう。ほかの連立方程式でも確かめよう。', 'スライダーで、式と「たす」「ひく」を切りかえられます。'],
+        notes: ['ア〜エの連立方程式は、図の上にある。消す文字・たすかひくか・解を、表にまとめよう。', '気づいたことを書こう。ほかの連立方程式でも確かめよう。', 'スライダーで、式と「たす」「ひく」を切りかえられます。'],
         sliders: [{ key: 'e', label: '式', min: 0, max: 3, step: 1, val: 0, fmt: function (v) { return TH[v][0]; } }, { key: 'o', label: 'たす・ひく', min: 0, max: 2, step: 1, val: 0, fmt: function (v) { return ['—', '①＋②', '①−②'][v]; } }],
         draw: tool },
       { tag: 'チャレンジ', bh: 'チャレンジ', q: 'A さんは、連立方程式 ' + SY('5x＋4y＝17　…①', '5x−3y＝−4　…②') + ' を「①−② で y＝21」と計算した。まちがいを説明して、正しく解こう。',

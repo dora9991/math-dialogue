@@ -37,8 +37,9 @@ CH.text = function (D, x, y, s, o) {
   o = o || {}; var g = D.ctx, size = o.size || CH.fs(D);
   g.save(); g.globalAlpha = A(D, o.a);
   g.font = (o.w || 600) + ' ' + size + 'px ' + (o.num ? NUM : FONT); g.textAlign = o.align || 'center'; g.textBaseline = o.base || 'middle';
-  if (o.outline) { g.lineJoin = 'round'; g.lineWidth = size * .26; g.strokeStyle = o.outline; g.strokeText(s, x, y); }
-  g.fillStyle = o.col || C.chalk; g.fillText(s, x, y); g.restore();
+  var mt = !o.num && K.mixedText ? function (st) { K.mixedText(g, s, x, y, g.font, st); } : function (st) { if (st) g.strokeText(s, x, y); else g.fillText(s, x, y); };
+  if (o.outline) { g.lineJoin = 'round'; g.lineWidth = size * .26; g.strokeStyle = o.outline; mt(true); }
+  g.fillStyle = o.col || C.chalk; mt(false); g.restore();
 };
 CH.line = function (D, x0, y0, x1, y1, o) {
   o = o || {}; var g = D.ctx; g.save(); g.globalAlpha = A(D, o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.w || 2; g.lineCap = 'round';
