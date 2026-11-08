@@ -117,7 +117,7 @@
     var R = CH.box(D, { l: .03, r: .03, t: .04, b: .05 }), s = CH.fs(D), wide = R.w > R.h * 1.15 && R.w > 560;
     var A = wide ? CH.rect(R.x0, R.y0, R.x0 + R.w * .55, R.y1) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .7);
     var T = wide ? CH.rect(R.x0 + R.w * .58, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .73, R.x1, R.y1);
-    var band = CH.rect(A.x0, A.y0, A.x1, A.y0 + Math.min(A.h * .22, s * 3.6));
+    var band = CH.rect(A.x0, A.y0, A.x1, A.y0 + Math.min(A.h * .24, s * 4.4));
     var B = CH.rect(A.x0, band.y1 + s * .3, A.x1, A.y1), k = CH.clamp(B.w / B.h, 1.2, 1.8), w = Math.min(B.w, B.h * k), h = w / k;
     return { R: R, A: A, T: T, band: band, S: CH.rect(B.cx - w / 2, B.cy - h / 2, B.cx + w / 2, B.cy + h / 2), wide: wide, s: s };
   }
@@ -147,7 +147,7 @@
   function chips(D, L, list, a) {
     var b = L.band, n = list.length, s = L.s, cols = n <= 2 || b.w / n > s * 7.5 ? n : Math.ceil(n / 2), nr = Math.ceil(n / cols), cw = b.w / cols, rh = b.h / nr, out = [];
     list.forEach(function (c, k) {
-      var cx = b.x0 + (k % cols + .5) * cw, cy = b.y0 + (Math.floor(k / cols) + .5) * rh, z = Math.min(s * 1.05, rh * (c.eq.indexOf('[') >= 0 ? .4 : .55)), gw = Math.min(rh * 1.5, cw * .3);
+      var cx = b.x0 + (k % cols + .5) * cw, cy = b.y0 + (Math.floor(k / cols) + .5) * rh, z = Math.min(s * 1.15, rh * (c.eq.indexOf('[') >= 0 ? .46 : .55)), gw = Math.min(rh * 1.5, cw * .3);
       z = fit(D, c.eq, cw * .9 - gw - s * .3, z);
       var w = TX(D, 0, 0, c.eq, { size: z, measure: true }).w, x0 = cx - (w + gw + s * .3) / 2;
       TX(D, x0, cy, c.eq, { size: z, align: 'left', a: a ? a(k) : 1 });

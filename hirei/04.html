@@ -163,11 +163,11 @@
         } },
       { tag: '考えよう', bh: '考えよう', q: '比例の式は、1組の x、y の値がわかれば決まる。それは、なぜだろう。x＝3 のとき y＝6 の比例で、ほかの x のときの y の値を、表にして調べよう。',
         notes: ['x＝3 のとき y＝6 になる比例定数 a は、いくつあるだろう。', 'y の値をどう求めたか、わかったことを書こう。', 'スライダーで、比例定数 a を変えられます。'],
-        sliders: [{ key: 'a', label: '比例定数 a', min: .5, max: 4, step: .5, val: 1, fmt: function (v) { return nf(v); } }],
+        sliders: [{ key: 'a', label: '比例定数 a', min: .5, max: 4, step: .5, val: 1.5, fmt: function (v) { return nf(v); } }],
         draw: function (D) {
           var R = CH.box(D, { l: .05, r: .05, t: .06, b: .06 }), s = CH.fs(D), a = D.V.a, X5 = [1, 2, 3, 4, 5], hit = CH.near(a * 3, 6);
           var big = Math.min(s * 2, R.w / 8);
-          toks(D, R.cx, R.y0 + big * .6, [{ t: 'y' }, { t: '＝' }, { t: nf(a), col: C.green }, { t: 'x' }], big);
+          toks(D, R.cx, R.y0 + big * .6, [{ t: 'y' }, { t: '＝' }, { t: a === 1 ? '' : nf(a), col: C.green }, { t: 'x' }], big);
           CH.table(D, CH.rect(R.x0, R.y0 + R.h * .25, R.x1, R.y0 + R.h * .62), ['x'].concat(X5.map(String)), [['y'].concat(X5.map(function (x) { return nf(a * x); }))],
             { fw: .16, size: CH.fs(D, 1), rh: s * 2.5, hl: function (r, c) { return c === 3 ? (hit ? C.yel : C.blue) : null; } });
           CH.text(D, R.cx, R.y0 + R.h * .78, 'x＝3 のとき　y＝' + nf(3 * a), { size: s * 1.2, col: hit ? C.yel : C.chalk });

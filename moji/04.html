@@ -183,7 +183,7 @@
     CH.fillRect(D, x0, y, x0 + w1, y + h, { fill: hexA(C.blue, .25), stroke: C.blue, sw: 2 });
     CH.fillRect(D, x0 + w1, y, x0 + W, y + h, { fill: hexA(C.orange, .25), stroke: C.orange, sw: 2 });
     var ls = Math.min(s * 1.05, h * .45);
-    if (o.split) for (var i = 1; i < o.n; i++) CH.line(D, x0 + w1 * i / o.n, y, x0 + w1 * i / o.n, y + h, { col: C.yel, w: 2, a: o.split, dash: [5, 4] });
+    if (o.split) for (var i = 1; i < o.n; i++) { CH.line(D, x0 + w1 * i / o.n, y, x0 + w1 * i / o.n, y + h * .2, { col: C.yel, w: 2, a: o.split }); CH.line(D, x0 + w1 * i / o.n, y + h * .8, x0 + w1 * i / o.n, y + h, { col: C.yel, w: 2, a: o.split }); }
     if (o.split) for (var j = 0; j < o.n; j++) CH.text(D, x0 + w1 * (j + .5) / o.n, y + h + ls * .9, '100 cm', { size: ls * .85, col: C.yel, a: o.split });
     EQ(D, x0 + w1 / 2, y + h / 2, o.la || 'a m', ls, { col: C.chalk });
     EQ(D, x0 + w1 + (W - w1) / 2, y + h / 2, o.lb || 'b cm', Math.min(ls, CH.fitSize(D, o.lb || 'b cm', (W - w1) * .9, ls)));
@@ -264,11 +264,11 @@
         b: { t: '時間＝道のり÷速さ → y÷5＝<b>[y/5]</b>（時間）', col: C.pink },
         draw: function (D) {
           var t = D.ph ? D.t : 0, R = box(D), s = CH.fs(D), h = Math.min(R.h * .14, s * 2.4), y = R.y0 + R.h * .3, ex = t < .5;
-          CH.text(D, R.x0, y - s * 3.2, D.ph ? (ex ? 'たとえば y＝20 なら' : 'y km を 5 km ずつに区切る') : '時速 5 km で進む', { size: s * .95, align: 'left', col: 'rgba(242,240,230,.85)' });
+          CH.text(D, R.x0, y - 18 - s * 2.6, D.ph ? (ex ? 'たとえば y＝20 なら' : 'y km を 5 km ずつに区切る') : '時速 5 km で進む', { size: s * .95, align: 'left', col: 'rgba(242,240,230,.85)' });
           if (!D.ph) { CH.fillRect(D, R.x0, y, R.x1, y + h, { fill: hexA(C.blue, .2), stroke: C.blue, sw: 2 }); EQ(D, R.cx, y + h / 2, 'y km', s * 1.1); EQ(D, R.cx, y + h + s * 2, 'かかる時間　？', s * 1.1); return; }
           rep(D, R.x0, y, R.w, h, ex ? 4 : 'x', '5 km', C.blue, 1);
           brace(D, R.x0, R.x1, y - 6, C.chalk, 1, true);
-          EQ(D, R.cx, y - s * 1.5, ex ? '20 km' : 'y km', s);
+          EQ(D, R.cx, y - 18 - s * .8, ex ? '20 km' : 'y km', s);
           var big = Math.min(s * 1.6, R.w / 10), yy = y + h + R.h * .2;
           if (ex) EQ(D, R.cx, yy, '20÷5＝{y|4}（時間）', big, { a: CH.smooth(.15, .3, t) });
           else CHAIN(D, R.cx, yy, ['{p|y}÷5', '[{p|y}/5]（時間）'], CH.clamp((t - .55) / .35, 0, 1), big, { maps: [{ '÷#1': 'bar#1' }] });
@@ -307,7 +307,7 @@
         b: { t: '合計 65a＋75b、人数 a＋b → 平均 <b>[65a＋75b/a＋b]</b>（点）', col: C.orange },
         draw: function (D) {
           var t = D.ph ? D.t : 0, R = box(D), s = CH.fs(D), w = R.w > R.h * 1.05 && R.w > 520;
-          var F = w ? CH.rect(R.x0 + R.w * .08, R.y0 + s, R.x0 + R.w * .56, R.y1 - s * 3.6) : CH.rect(R.x0 + R.w * .12, R.y0 + s, R.x1 - R.w * .06, R.y0 + R.h * .5);
+          var F = w ? CH.rect(R.x0 + R.w * .08, R.y0 + s, R.x0 + R.w * .56, R.y1 - s * 3.6) : CH.rect(R.x0 + R.w * .12, R.y0 + s, R.x1 - R.w * .06, R.y0 + R.h * .46);
           var T = w ? CH.rect(R.x0 + R.w * .62, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .66, R.x1, R.y1);
           avgChart(D, F, CH.ease(CH.clamp((t - .55) / .25, 0, 1)), { area: CH.smooth(.05, .2, t), sum: CH.smooth(.3, .4, t), line: CH.smooth(.85, .95, t) });
           if (!D.ph) return;

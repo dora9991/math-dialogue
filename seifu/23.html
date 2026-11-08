@@ -206,7 +206,7 @@
             g.save(); g.globalAlpha = D.ga * (.3 + .7 * j / n); g.strokeStyle = nx > 0 ? POS : NEG; g.lineWidth = j === n ? 3 : 1.6; g.beginPath(); g.moveTo(x0, y); g.quadraticCurveTo((x0 + x1) / 2, y - h, x1, y); g.stroke(); g.restore();
             cur = nx;
           }
-          pt(D, L, 1, C.chalk, '1（はじめ）', { up: -1.9, size: s * .8, tc: 'rgba(242,240,230,.7)', a: .8 }); pt(D, L, cur, sc(cur), null, { r: s * .45 });
+          pt(D, L, 1, C.chalk, 'はじめ', { up: -2.9, size: s * .8, tc: 'rgba(242,240,230,.7)', a: .8 }); pt(D, L, cur, sc(cur), null, { r: s * .45 });
         } },
       { tag: 'チャレンジ', bh: 'チャレンジ', q: '東京を基準に、東京より進んでいる時間を正の数、おくれている時間を負の数で表す。北京 −1、ニューヨーク −14、ホノルル −19（時間）。北京とホノルルは何時間ちがう？ 東京が 12月5日の午前8時のとき、ニューヨークは何日の何時？', a: '18時間。12月4日の午後6時', sub: '(−1)−(−19)＝18（時間）。8＋(−14)＝−6 → 午前0時の6時間前だから、12月4日の午後6時（18時）', dur: 8,
         b: { t: '北京とホノルル (−1)−(−19)＝<b>18時間</b>　ニューヨーク 8＋(−14)＝−6 → <b>12月4日 午後6時</b>', col: C.orange },

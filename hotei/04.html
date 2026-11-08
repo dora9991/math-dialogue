@@ -206,16 +206,16 @@
   function arcA(D, x0, x1, y, h, col, k) {
     k = CH.clamp(k, 0, 1); if (k <= 0) return; var g = D.ctx, mx = (x0 + x1) / 2, N = 24, m = Math.max(1, Math.round(N * k));
     function P(u) { return [(1 - u) * (1 - u) * x0 + 2 * (1 - u) * u * mx + u * u * x1, (1 - u) * (1 - u) * y + 2 * (1 - u) * u * (y - h * 2) + u * u * y]; }
-    g.save(); g.globalAlpha = D.ga; g.strokeStyle = col; g.lineWidth = 2.2; g.lineCap = 'round'; g.beginPath();
+    g.save(); g.globalAlpha = D.ga; g.strokeStyle = col; g.lineWidth = 2.6; g.lineCap = 'round'; g.beginPath();
     for (var i = 0; i <= m; i++) { var p = P(i / N); if (i) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); } g.stroke(); g.restore();
-    if (k >= 1) { var q = P(.85); CH.arrow(D, q[0], q[1], x1, y, { col: col, w: 2.2, head: 8 }); }
+    if (k >= 1) { var q = P(.85); CH.arrow(D, q[0], q[1], x1, y, { col: col, w: 2.6, head: 9 }); }
   }
   /* 式の行 E（eqs の結果）の i 行目の左辺で、j 文字目のまん中 */
   function chx(D, E, left, j) { var x0 = E.ex - TW(D, left, E.z); return x0 + TW(D, left.slice(0, j), E.z) + TW(D, left.charAt(j), E.z) / 2; }
   /* かっこをはずす矢印：left の c 文字目（かっこの前の数）から、ts の文字へ */
   function dist(D, E, row, left, c, ts, k) {
     var y = E.ys[row] - E.z * .62, x0 = chx(D, E, left, c);
-    ts.forEach(function (j, i) { var x1 = chx(D, E, left, j); arcA(D, x0, x1, y, E.z * (.32 + i * .22), i ? C.pink : C.yel, CH.smooth(i * .45, i * .45 + .55, k)); });
+    ts.forEach(function (j, i) { var x1 = chx(D, E, left, j); arcA(D, x0, x1, y, E.z * (.42 + i * .3), i ? C.pink : C.yel, CH.smooth(i * .45, i * .45 + .55, k)); });
   }
   /* 小数の項のカードが、×10 で整数になる */
   function x10(D, R, y, A, B, k, o) {

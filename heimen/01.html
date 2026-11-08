@@ -157,8 +157,10 @@
   function symbols(D, t, ans) {
     var R = CH.box(D, { l: .03, r: .03, t: .05, b: .05 }), cs = CH.split(D, R, 3, .06);
     [PA, PP, PL].forEach(function (P, i) {
-      var c = cs[i], s = Math.min(CH.fs(D, 1.25), c.w * .16), side = Math.max(40, Math.min(c.w, c.h - s * 2.8)), y0 = c.cy - (side + s * 2.6) / 2;
-      var F = GE.fit(D, CH.rect(c.x0, y0 + s * 2.4, c.x1, y0 + s * 2.4 + side), P, { pad: .14, keys: i === 1 ? ['A', 'B', 'C', 'D'] : null, size: Math.min(CH.fs(D, .95), c.w * .09) });
+      var c = cs[i], row = c.w > c.h * 1.3, s = Math.min(CH.fs(D, 1.25), (row ? c.w * .45 : c.w) * .16), side = Math.max(40, Math.min(c.w, c.h - s * 2.8)), y0 = c.cy - (side + s * 2.6) / 2;
+      var fr = row ? CH.rect(c.x0 + c.w * .45, c.y0, c.x1, c.y1) : CH.rect(c.x0, y0 + s * 2.4, c.x1, y0 + s * 2.4 + side), tx0 = row ? c.x0 + c.w * .22 : c.cx, tw0 = row ? c.w * .44 : c.w;
+      if (row) y0 = c.cy - s * 1.1;
+      var F = GE.fit(D, fr, P, { pad: .14, keys: i === 1 ? ['A', 'B', 'C', 'D'] : null, size: Math.min(CH.fs(D, .95), fr.w * .09, fr.h * .12) });
       var k = ans ? CH.smooth(i / 3 + .02, i / 3 + .2, t) : 0, col = [C.yel, C.pink, C.green][i];
       if (i === 0) {
         GE.seg(F, 'BA', { w: 3, col: k > 0 ? col : null }); GE.seg(F, 'BC', { w: 3, col: k > 0 ? col : null }); dots(F, 'ABC');
@@ -174,8 +176,8 @@
         nm(F, { A: 180, B: 0, C: 180, D: 0 });
       }
       var tx = ['∠ABC', 'AB⊥CD', 'AB∥CD'][i], sub = ['角（頂点 B を まん中に）', '垂直', '平行'][i];
-      if (ans) CH.text(D, c.cx, y0 + s * .55, tx, { size: s, col: col, a: k, outline: OUT });
-      CH.text(D, c.cx, y0 + s * (ans ? 1.6 : 1.1), sub, { size: CH.fitSize(D, sub, c.w * .95, s * (ans ? .62 : .8)), col: ans ? col : 'rgba(242,240,230,.8)', a: ans ? k : 1, outline: OUT });
+      if (ans) CH.text(D, tx0, y0 + s * .55, tx, { size: s, col: col, a: k, outline: OUT });
+      CH.text(D, tx0, y0 + s * (ans ? 1.6 : 1.1), sub, { size: CH.fitSize(D, sub, tw0 * .95, s * (ans ? .62 : .8)), col: ans ? col : 'rgba(242,240,230,.8)', a: ans ? k : 1, outline: OUT });
     });
   }
 
