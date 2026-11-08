@@ -515,8 +515,8 @@
   }
   function word(D, k) {
     var R = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), W = wide(D), A = function (i) { return CH.smooth(.04 + i * .13, .14 + i * .13, k); };
-    var P = W ? { a: [.5, .1], b: [.5, .4], l: [.17, .4], r: [.83, .4], m1: [.3, .66], m2: [.7, .66], u: [.5, .9] } : { a: [.5, .07], b: [.5, .3], l: [.25, .52], r: [.75, .52], m1: [.25, .72], m2: [.75, .72], u: [.5, .92] };
-    var X = function (p) { return R.x0 + R.w * p[0]; }, Y = function (p) { return R.y0 + R.h * p[1]; }, bw = R.w * (W ? .36 : .46), bh = R.h * (W ? .15 : .15), sw = R.w * (W ? .3 : .46);
+    var P = W ? { a: [.5, .1], b: [.5, .4], l: [.14, .4], r: [.86, .4], m1: [.3, .66], m2: [.7, .66], u: [.5, .9] } : { a: [.5, .07], b: [.5, .3], l: [.25, .52], r: [.75, .52], m1: [.25, .72], m2: [.75, .72], u: [.5, .92] };
+    var X = function (p) { return R.x0 + R.w * p[0]; }, Y = function (p) { return R.y0 + R.h * p[1]; }, bw = R.w * (W ? .32 : .46), bh = R.h * (W ? .15 : .15), sw = R.w * (W ? .27 : .46);
     function link(p, q, i, col) { var a = A(i); if (a > 0) CH.arrow(D, X(p), Y(p) + (q[1] > p[1] ? bh / 2 : 0), X(q), Y(q) - (q[1] > p[1] ? bh / 2 : 0), { col: col || 'rgba(242,240,230,.6)', w: 1.8, a: a, head: 8 }); }
     link(P.a, P.b, 1); link(P.b, P.m1, 2); link(P.b, P.m2, 2);
     if (W) { CH.line(D, X(P.l) + sw / 2, Y(P.l), X(P.b) - bw / 2, Y(P.b), { col: 'rgba(242,240,230,.5)', dash: [5, 5], a: A(3) }); CH.line(D, X(P.r) - sw / 2, Y(P.r), X(P.b) + bw / 2, Y(P.b), { col: 'rgba(242,240,230,.5)', dash: [5, 5], a: A(3) }); }
@@ -569,7 +569,7 @@
     { t: 'エ', o: ['x＋y＝10', '50x＋90y＝600'], w: ['ラムネ（50円）x個とグミ（90円）y個で 10個・600円。', '解が x＝7.5、y＝2.5 なので、7.5個・2.5個 と答えた'] }];
   function tool(D) {
     var R = CH.box(D, { l: .03, r: .03, t: .02, b: .02 }), s = CH.fs(D), it = IT[D.V.i], x = D.V.x, y = D.V.y;
-    var nh = R.h * .42; rr(D, R.x0, R.y0, R.x1, R.y0 + nh, { r: 10, stroke: 'rgba(242,240,230,.55)', sw: 1.6, fill: 'rgba(242,240,230,.05)' });
+    var nh = Math.min(R.h * .42, s * 4.8); rr(D, R.x0, R.y0, R.x1, R.y0 + nh, { r: 10, stroke: 'rgba(242,240,230,.55)', sw: 1.6, fill: 'rgba(242,240,230,.05)' });
     var z = Math.min(s * 1.05, nh / 4.2);
     TX(D, R.x0 + z * .6, R.y0 + z * 1, it.t, { size: z * 1.1, col: C.yel, align: 'left' });
     it.w.forEach(function (l, j) { TX(D, R.x0 + z * 2, R.y0 + z * (1 + j * 1.7), l, { size: fit(D, l, R.w - z * 2.6, z), col: C.chalk, align: 'left' }); });
