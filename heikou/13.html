@@ -59,7 +59,7 @@
       if (i < n - 1) {
         var ya = y + bh + 4, yb = y + bh + gap - 4, b = o.why(i);
         CH.arrow(D, R.cx, ya, R.cx, yb, { col: 'rgba(242,240,230,.7)', w: 2.2, head: 9 });
-        if (b > 0) CH.text(D, R.cx + s * .7, (ya + yb) / 2, WHY[i], { size: s * .92, col: C.green, align: 'left', a: b, outline: OUT });
+        if (b > 0) { var ls = s * .92, lw = tw(D, WHY[i], ls), room = R.x1 - R.cx - s * .7; if (lw > room) ls *= room / lw; CH.text(D, R.cx + s * .7, (ya + yb) / 2, WHY[i], { size: ls, col: C.green, align: 'left', a: b, outline: OUT }); }
       }
     });
   }

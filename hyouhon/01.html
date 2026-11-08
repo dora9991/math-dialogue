@@ -73,6 +73,7 @@
 
   /* ---- 図の道具 ---- */
   function icard(D, x, y, w, h, it, col, a, wa) {
+    CH.card(D, x, y, w, h, '', { col: 'rgba(0,0,0,0)', fill: '#24463a', a: a });
     CH.card(D, x, y, w, h, '', { col: col || 'rgba(242,240,230,.6)', fill: col ? undefined : 'rgba(242,240,230,.07)', a: a });
     var s = CH.fs(D, .92), yy = wa > 0 ? y - h * .17 : y;
     ft(D, x, yy, it.k + '　' + it.t, { size: s, col: C.chalk, a: a }, w * .9);
@@ -228,16 +229,19 @@
   function cardsDraw(D, t) {
     var R = CH.box(D, { l: .05, r: .05, t: .08, b: .1 }), s = CH.fs(D), w = wide(D), hb = s * 2.2, gx = R.w * .03, gy = s * .8;
     /* はじめ：2列 × 3行（問いの順）　あと：全部を調べる・一部だけを調べる に分ける */
-    var cw0 = (R.w - gx) / 2, ch = Math.min((R.h - hb * (w ? 1 : 2) - gy * 2) / 3, s * 4.2), k = CH.ease(CH.smooth(0, .6, t)), wa = CH.smooth(.55, .85, t);
+    var cw0 = (R.w - gx) / 2, ch = Math.min((R.h - hb * (w ? 1 : 2) - gy * 2) / 3, s * 4.2), wa = CH.smooth(.55, .85, t);
     var fin = w ? { cw: (R.w - gx * 2) / 3, at: function (c, r) { return [R.x0 + c * ((R.w - gx * 2) / 3 + gx), R.y0 + hb + r * (ch + gy)]; } } : null;
     var F = { 0: [0, 0], 3: w ? [0, 1] : [1, 0], 1: w ? [1, 0] : [0, 1], 2: w ? [2, 0] : [1, 1], 4: w ? [1, 1] : [0, 2], 5: w ? [2, 1] : [1, 2] };
+    /* 1まいずつ 順に動かす（動いているカードを いちばん上に） */
+    var ORD = [0, 3, 1, 2, 4, 5], drawn = [];
     IT.forEach(function (it, i) {
-      var c0 = i % 2, r0 = Math.floor(i / 2), x0 = R.x0 + c0 * (cw0 + gx), y0 = R.y0 + hb * (w ? 1 : 1) + r0 * (ch + gy), xa, ya, cwa;
+      var kk = CH.ease(CH.smooth(ORD.indexOf(i) * .08, ORD.indexOf(i) * .08 + .14, t)), c0 = i % 2, r0 = Math.floor(i / 2), x0 = R.x0 + c0 * (cw0 + gx), y0 = R.y0 + hb * (w ? 1 : 1) + r0 * (ch + gy), xa, ya, cwa;
       if (w) { var p = fin.at(F[i][0], F[i][1]); xa = p[0]; ya = p[1]; cwa = fin.cw; }
       else { xa = R.x0 + F[i][0] * (cw0 + gx); ya = R.y0 + hb + F[i][1] * (ch + gy) + (F[i][1] >= 1 ? hb : 0); cwa = cw0; }
-      var x = CH.lerp(x0, xa, k), y = CH.lerp(y0, ya, k), cw = CH.lerp(cw0, cwa, k), col = t > .45 ? (it.g ? C.orange : C.blue) : null;
-      icard(D, x + cw / 2, y + ch / 2, cw, ch, it, col, 1, wa);
+      var x = CH.lerp(x0, xa, kk), y = CH.lerp(y0, ya, kk), cw = CH.lerp(cw0, cwa, kk), col = t > .5 ? (it.g ? C.orange : C.blue) : null;
+      drawn.push({ m: kk > 0 && kk < 1, f: function () { icard(D, x + cw / 2, y + ch / 2, cw, ch, it, col, 1, wa); } });
     });
+    drawn.filter(function (o) { return !o.m; }).concat(drawn.filter(function (o) { return o.m; })).forEach(function (o) { o.f(); });
     if (t > .4) {
       var a = CH.smooth(.4, .65, t);
       if (w) {

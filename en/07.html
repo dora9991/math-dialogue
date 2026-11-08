@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>円と相似</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 円 第7時：円の中に、相似な三角形を見つけよう（ikkan の lesson_en_07 と同じ流れ）。
+   弦 AB、CD が P で交わる図（PA＝5、PB＝3、PC＝2.5、PD＝6。PA×PB＝PC×PD なので 4点は 1つの円周上）。△PAC が拡大・裏返しで △PDB に重なる。
+   例題は △PAC∽△PDB の証明（GE.proof、相似条件 AA）を 1行ずつ。考えようは、弦を動かして PA・PB・PC・PD をはかる道具（積は出さない）。
+   チャレンジは半円と垂線（AH＝2、HB＝18 → CH＝6）。数値は ikkan のまま（自作）。行に書いた等式・相似は、座標で確かめる。 */
+(function () {
+  var C = CH.C, RAD = Math.PI / 180, O = [0, 0], R = 3;
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  /* ---- 円の図の道具（このページの中だけで使う） ---- */
+  function on(a) { return GE.polar(O, R, a); }                                         // 円周上の点（向き a 度）
+  function dg(x) { var r = Math.round(x * 10) / 10; return (Math.abs(r - Math.round(r)) < .05 ? String(Math.round(r)) : r.toFixed(1)) + '°'; }
+  /* 図の四角（fig）と、字を書く四角（side）。よこ長ならみぎ、たて長なら下 */
+  function lay(D, k) {
+    var B = CH.box(D, { l: .03, r: .03, t: .04, b: .04 });
+    if (B.w > B.h * 1.25 && B.w > 560) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .08, B.x1, B.y1), wide: true }; }
+    var h = B.h * .25; return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .04, B.y1 - h + 4, B.x1, B.y1), wide: false };
+  }
+  /* 円をふくめて、四角に入れる（円の大きさは、点が動いても変わらない） */
+  function fitC(D, Rr, P, o) { o = o || {}; return GE.fit(D, Rr, P, { keys: ['O'], bounds: GE.circBounds(O, R).concat(o.bounds || []), pad: o.pad == null ? .07 : o.pad }); }
+  function circle(F, o) { GE.circ(F, O, R, o); }
+  /* 円周の一部を太く（a0 → a1 は反時計まわり、度） */
+  function arcOn(F, a0, a1, o) {
+    o = o || {}; var g = F.D.ctx, p = F.X(O);
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.yel; g.lineWidth = o.w || 6; g.lineCap = 'round';
+    g.shadowColor = o.col || C.yel; g.shadowBlur = 8;
+    g.beginPath(); g.arc(p[0], p[1], R * F.u, -a0 * RAD, -a1 * RAD, true); g.stroke(); g.restore();
+  }
+  function segs(F, ss, o) { ss.split(' ').forEach(function (s) { GE.seg(F, s, o); }); }
+  function dots(F, ks, o) { ks.split('').forEach(function (k) { if (F.P[k]) GE.dot(F, k, o); }); }
+  /* 点の名前：{A: 向き（度）} */
+  function nm(F, m, o) {
+    o = o || {}; Object.keys(m).forEach(function (k) {
+      if (m[k] == null || !F.P[k]) return; var p = F.X(k), r = F.s * .95;
+      CH.text(F.D, p[0] + Math.cos(m[k] * RAD) * r, p[1] - Math.sin(m[k] * RAD) * r, k, { size: F.s, col: (o.col && o.col[k]) || C.chalk, a: o.a, outline: 'rgba(20,40,30,.9)' });
+    });
+  }
+  /* 角のしるし。字（座標から計算した大きさ、または o.t）は、二等分線の上の、2辺にふれないところに置く */
+  function mark(F, s, col, o) {
+    o = o || {}; var r = o.r || F.s * 1.05;
+    GE.arc(F, s, { col: col, fill: o.fill == null ? .3 : o.fill, a: o.a, r: r, n: o.n });
+    var t = o.t === false ? null : (o.t || dg(GE.ang(F.P, s))); if (!t) return;
+    var A = F.X(s[0]), V = F.X(s[1]), B = F.X(s[2]), a1 = Math.atan2(A[1] - V[1], A[0] - V[0]), d = Math.atan2(B[1] - V[1], B[0] - V[0]) - a1;
+    while (d > Math.PI) d -= 2 * Math.PI; while (d <= -Math.PI) d += 2 * Math.PI;
+    var sz = F.s * .82, g = F.D.ctx; g.save(); g.font = '600 ' + sz + 'px ' + FONT; var w = g.measureText(t).width; g.restore();
+    var m = a1 + d / 2, need = (Math.max(w, sz) / 2 + 3) / Math.sin(Math.abs(d) / 2), dd = CH.clamp(Math.max(r + sz * .9, need), 0, o.max || F.s * 4.2);
+    CH.text(F.D, V[0] + Math.cos(m) * dd, V[1] + Math.sin(m) * dd, t, { col: col, size: sz, a: o.a, outline: 'rgba(20,40,30,.9)' });
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする） */
+  function say(D, Rr, rows, o) {
+    o = o || {}; rows = rows.filter(Boolean); if (!rows.length) return;
+    var nc = Rr.w > Rr.h * 2.5 && rows.length > 3 ? 2 : 1, per = Math.ceil(rows.length / nc), cw = Rr.w / nc;   // 下の帯では 2列
+    var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (per * 1.6)), g = D.ctx;
+    rows.forEach(function (r, i) {
+      g.save(); g.font = '600 ' + s + 'px ' + FONT; var w = g.measureText(r.t).width; g.restore();
+      var sz = w > cw - 6 ? s * (cw - 6) / w : s, c = Math.floor(i / per), j = i % per;
+      CH.text(D, Rr.x0 + c * cw, Rr.y0 + s * .8 + j * s * 1.6, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left' });
+    });
+  }
+  function arcAt(F, c, r, a0, a1, o) {
+    o = o || {}; var g = F.D.ctx, p = F.X(c); g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.w || 2.4; g.lineCap = 'round';
+    g.beginPath(); g.arc(p[0], p[1], r * F.u, -a0 * RAD, -a1 * RAD, true); g.stroke(); g.restore();
+  }
+  function circum(P, Q, S) { var d = 2 * (P[0] * (Q[1] - S[1]) + Q[0] * (S[1] - P[1]) + S[0] * (P[1] - Q[1])), q = function (p) { return p[0] * p[0] + p[1] * p[1]; }; return [(q(P) * (Q[1] - S[1]) + q(Q) * (S[1] - P[1]) + q(S) * (P[1] - Q[1])) / d, (q(P) * (S[0] - Q[0]) + q(Q) * (P[0] - S[0]) + q(S) * (Q[0] - P[0])) / d]; }
+
+  /* ---- 数と検算 ---- */
+  /* 弦 AB、CD が P（原点）で交わる図：PA、PB、PC、PD と、P から D を見る向き（度） */
+  function chordGeo(pa, pb, pc, pd, phi) {
+    var A = [-pa, 0], B = [pb, 0], Cp = GE.polar(O, pc, phi + 180), Dp = GE.polar(O, pd, phi), c = circum(A, B, Cp), r = GE.len({}, [c, A]);
+    return { P: { P: O, A: A, B: B, C: Cp, D: Dp, W: [c[0] - r, c[1]], X: [c[0] + r, c[1]], Y: [c[0], c[1] - r], Z: [c[0], c[1] + r] }, c: c, r: r };
+  }
+  var G = chordGeo(5, 3, 2.5, 6, 130), P7 = G.P;
+  GE.verify(P7, 'PA＝5、PB＝3、PC＝2.5、PD＝6、∠PAC＝∠PDB、∠APC＝∠DPB、△PAC∽△PDB、PA：PD＝PC：PB＝AC：DB', null, '今日の問い');
+  CH.check(GE.near(GE.len({}, [G.c, P7.D]), G.r) && 5 * 3 === 2.5 * 6, '4点は 1つの円周上');
+  var FIG = { circles: [[G.c, 'A']], segs: ['AB', 'CD', 'AC', 'BD'], dots: ['P'], labels: ['A', 'B', 'C', 'D', 'P'], dir: { P: 'ne' } };
+  var PROOF = { id: 'en07', lv: 2, ttl: '例題　△PAC∽△PDB の証明', P: P7, fig: FIG,
+    q: '円の弦 AB、CD が点 P で交わるとき、△PAC∽△PDB であることを証明しよう。',
+    hyp: '弦 AB、CD が点 P で交わる', goal: '△PAC∽△PDB', tri: ['PAC', 'PDB'],
+    L: [{ t: '△PAC と △PDB で' },
+      { t: '∠PAC＝∠PDB', r: '弧 BC に対する円周角', n: 1, hint: '等しい角は？ どの弧に対する円周角？' },
+      { t: '∠APC＝∠DPB', r: '対頂角は等しい', n: 2, hint: 'もう 1組、等しい角は？ 根拠も。' },
+      { t: '①②より、2組の角が、それぞれ等しいので', c: 'AA' }, { t: '△PAC∽△PDB' }] };
+  var PS = GE.proof(PROOF, { tag: '例題' });
+  PS[0].b = PS[0].b.concat([PS[1].b]); PS.splice(1, 1);                                     // 方針のステップは、今日の問いと同じなので はぶく（「△PAC と △PDB で」は問題の板書へ）
+  /* 考えよう：円（中心 O、半径 4）。AB は y＝0.6 の横の弦、CD は P を通る（向き phi） */
+  var Q4 = 4, YP = .6;
+  function chordsAt(px, phi) {
+    var P = [px, YP], hx = Math.sqrt(Q4 * Q4 - YP * YP), u = [Math.cos(phi * RAD), Math.sin(phi * RAD)], b = P[0] * u[0] + P[1] * u[1], c = P[0] * P[0] + P[1] * P[1] - Q4 * Q4, s = Math.sqrt(b * b - c);
+    return { P: P, A: [-hx, YP], B: [hx, YP], D: [P[0] + u[0] * (-b + s), P[1] + u[1] * (-b + s)], C: [P[0] + u[0] * (-b - s), P[1] + u[1] * (-b - s)], O: O };
+  }
+  CH.check([[-2, 40], [0, 90], [1.5, 150], [2.6, 25]].every(function (q) { var g = chordsAt(q[0], q[1]); return GE.near(GE.len(g, 'PA') * GE.len(g, 'PB'), GE.len(g, 'PC') * GE.len(g, 'PD')); }), '考えよう（ここで確かめるだけ）');
+  var P8 = { O: O, A: [-10, 0], B: [10, 0], H: [-8, 0], C: [-8, 6] };                     // チャレンジ：AH＝2、HB＝18
+  GE.verify(P8, 'OC＝OA＝10、∠ACB＝90°、∠CHB＝90°、△ACH∽△CBH、AH：CH＝CH：HB、AH＝2、HB＝18、CH＝6', null, 'チャレンジ');
+  CH.check(2 * 18 === 36 && 6 * 6 === 36, 'チャレンジの計算');
+
+  /* 弦が交わる図（証明と同じ四角・同じ大きさ） */
+  function chords(D) { var F = GE.fit(D, CH.box(D, { l: .06, r: .06, t: .1, b: .12 }), P7); return F; }
+  function figure(F, o) {
+    o = o || {}; if (o.tri) { GE.poly(F, 'PAC', { col: C.blue, fa: .22 * o.tri, stroke: false }); GE.poly(F, 'PDB', { col: C.orange, fa: .22 * o.tri, stroke: false }); }
+    GE.figure(F, FIG);
+  }
+
+  var steps = [
+    { tag: '今日の問い', bh: '弦が交わる図', q: '円の 2つの弦 AB、CD が、点 P で交わっている。A と C、B と D を結んでできる △PAC と △PDB は、どんな関係にありそうだろう。',
+      notes: ['① 自分の考え（3分）　どんな関係か、わけもそえて。', '② ペアの考え（3分）'],
+      draw: function (D) { figure(chords(D), { tri: 1 }); } },
+    { tag: '今日の問い', q: '△PAC と △PDB は、どんな関係にありそう？', a: '相似（形が同じで、大きさがちがう）', sub: '等しい角が 2組ありそう（円周角・対頂角）。△PAC を裏返して拡大すると △PDB に重なる', dur: 3.5,
+      b: { t: '△PAC と △PDB は <b>相似</b> らしい（等しい角が 2組）', col: C.yel },
+      draw: function (D) { var F = chords(D); figure(F, { tri: 1 }); if (D.ph) GE.polyP(F, GE.moveTri(P7, 'PAC', 'PDB', CH.smooth(.05, .9, D.t)), { col: C.yel, fa: .25 }); } },
+    { tag: 'ことば', bh: 'ことば', q: '2組の角が、それぞれ等しい 2つの三角形は？ 相似な三角形の、対応する辺は？', a: '相似。対応する辺の比は等しい', sub: '同じ弧に対する円周角は等しい。対頂角は等しい', dur: 2.5,
+      b: [{ t: '同じ弧に対する <b>円周角</b> は等しい。<b>対頂角</b> は等しい', col: C.green }, { t: '<b>2組の角</b> が、それぞれ等しい 2つの三角形は <b>相似</b>', col: C.green }, { t: '相似な三角形の、対応する辺の <b>比</b> は等しい', col: C.green }],
+      draw: function (D) {
+        var t = D.ph ? D.t : 0, F = chords(D), a1 = D.ph ? CH.smooth(0, .4, t) : 0, a2 = D.ph ? CH.smooth(.45, .85, t) : 0; figure(F, { tri: 1 });
+        if (a1) { GE.arc(F, 'PAC', { col: C.yel, fill: .4, a: a1, r: F.s * 1.4 }); GE.arc(F, 'PDB', { col: C.yel, fill: .4, a: a1, r: F.s * 1.4 }); }
+        if (a2) { GE.arc(F, 'APC', { col: C.pink, fill: .4, n: 2, a: a2 }); GE.arc(F, 'DPB', { col: C.pink, fill: .4, n: 2, a: a2 }); }
+      } }
+  ].concat(PS).concat([
+    { tag: '考えよう', q: '弦 AB、CD が点 P で交わる。PA、PB、PC、PD の長さを調べて、PA×PB と PC×PD を計算しよう。気づいたことと、そのわけを書こう。',
+      notes: ['ア PA 5・PB 6・PC 3・PD 10　イ 4・9・6・6　ウ 9・2・3・6 でも計算しよう。', 'わけは、相似な三角形から考えよう。', 'スライダーで、P の位置と弦 CD の向きを変えられます（長さは小数第1位まで）。'],
+      sliders: [{ key: 'x', label: 'P の位置', min: -2.6, max: 2.6, step: .2, val: -.6, fmt: function (v) { return CH.mnum(v); } },
+        { key: 'ph', label: '弦 CD の向き', min: 30, max: 150, step: 5, val: 115, fmt: function (v) { return v + '°'; } }],
+      draw: function (D) {
+        var g = chordsAt(D.V.x, D.V.ph), L = lay(D), F = GE.fit(D, L.fig, g, { keys: ['O'], bounds: GE.circBounds(O, Q4), pad: .07 });
+        GE.circ(F, O, Q4); segs(F, 'AB CD'); segs(F, 'AC BD', { col: 'rgba(242,240,230,.55)', w: 1.8 });
+        dots(F, 'ABCDP'); nm(F, { A: 180, B: 0, C: D.V.ph + 180, D: D.V.ph, P: D.V.ph > 90 ? 40 : 140 });
+        say(D, L.side, ['PA', 'PB', 'PC', 'PD'].map(function (s, i) { return { t: s + '＝' + GE.len(g, s).toFixed(1) + 'cm', col: i < 2 ? C.yel : C.blue }; }));
+      } },
+    { tag: 'チャレンジ', bh: 'チャレンジ', q: 'AB を直径とする半円の弧の上に点 C をとり、C から AB に垂線 CH をひく。AH＝2cm、HB＝18cm のとき、CH の長さを求めよう。',
+      notes: ['ヒント① ∠ACB は、何度？', 'ヒント② △ACH と相似な三角形は、どれ？'],
+      a: 'CH＝6cm', sub: '∠ACB＝90°（半円の弧）から △ACH∽△CBH。AH：CH＝CH：HB → 2：CH＝CH：18 → CH×CH＝36', dur: 6,
+      b: { t: '△ACH∽△CBH → AH：CH＝CH：HB → CH×CH＝36 → CH＝<b>6cm</b>', col: C.orange },
+      draw: function (D) {
+        var t = D.ph ? D.t : 0, a1 = D.ph ? CH.smooth(0, .25, t) : 0, mv = D.ph ? CH.smooth(.3, .7, t) : 0, a3 = D.ph ? CH.smooth(.75, .95, t) : 0;
+        var L = lay(D), F = GE.fit(D, L.fig, P8, { bounds: [[-10, 0], [10, 10]], pad: .08 });
+        if (a1) { GE.poly(F, 'ACH', { col: C.blue, fa: .22, stroke: false }); GE.poly(F, 'CBH', { col: C.orange, fa: .22, stroke: false }); }
+        arcAt(F, O, 10, 0, 180); segs(F, 'AB AC CB'); GE.seg(F, 'CH', { col: C.pink });
+        GE.right(F, 'CHB', { col: C.pink, fill: true });
+        if (a1) GE.right(F, 'ACB', { col: C.yel, fill: true, a: a1 });
+        if (mv && mv < 1) GE.polyP(F, GE.moveTri(P8, 'ACH', 'CBH', mv), { col: C.yel, fa: .25 });
+        if (a3) { GE.arc(F, 'CAH', { col: C.yel, fill: .35, a: a3 }); GE.arc(F, 'BCH', { col: C.yel, fill: .35, a: a3, r: F.s * 1.5 }); }
+        dots(F, 'OABCH'); nm(F, { A: 180, B: 0, C: 100, H: 270, O: 90 });
+        var hp = F.X([-9, 0]), hb = F.X([1, 0]), ch = F.X([-8, 3]);
+        CH.text(D, hp[0], hp[1] + F.s * 1.6, '2cm', { size: F.s * .8 }); CH.text(D, hb[0], hb[1] + F.s * 1.6, '18cm', { size: F.s * .8 }); CH.text(D, ch[0] + F.s * .5, ch[1], a3 ? '6cm' : '？', { size: F.s * .85, col: C.pink, align: 'left', outline: 'rgba(20,40,30,.9)' });
+        if (D.ph) say(D, L.side, [{ t: '∠ACB＝90°（半円の弧）', col: C.yel, a: a1 }, { t: '△ACH∽△CBH', col: C.yel, a: mv }, { t: 'AH：CH＝CH：HB', a: a3 }, { t: '2：CH＝CH：18', a: a3 }, { t: 'CH×CH＝36 → CH＝6', col: C.pink, a: a3 }]);
+      } }
+  ]);
+
+  K3.run({
+    no: '第7時', title: '円の中に、相似な三角形を見つけよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '06.html', label: '◀ 第6時' }, { href: '08.html', label: '第8時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>
