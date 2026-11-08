@@ -515,11 +515,12 @@
   }
   function word(D, k) {
     var R = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), W = wide(D), A = function (i) { return CH.smooth(.04 + i * .13, .14 + i * .13, k); };
-    var P = W ? { a: [.5, .1], b: [.5, .4], l: [.14, .4], r: [.86, .4], m1: [.3, .66], m2: [.7, .66], u: [.5, .9] } : { a: [.5, .07], b: [.5, .3], l: [.25, .52], r: [.75, .52], m1: [.25, .72], m2: [.75, .72], u: [.5, .92] };
+    var P = W ? { a: [.5, .1], b: [.5, .4], l: [.14, .4], r: [.86, .4], m1: [.3, .66], m2: [.7, .66], u: [.5, .9] } : { a: [.5, .07], b: [.5, .47], l: [.25, .27], r: [.75, .27], m1: [.25, .69], m2: [.75, .69], u: [.5, .91] };
     var X = function (p) { return R.x0 + R.w * p[0]; }, Y = function (p) { return R.y0 + R.h * p[1]; }, bw = R.w * (W ? .32 : .46), bh = R.h * (W ? .15 : .15), sw = R.w * (W ? .27 : .46);
     function link(p, q, i, col) { var a = A(i); if (a > 0) CH.arrow(D, X(p), Y(p) + (q[1] > p[1] ? bh / 2 : 0), X(q), Y(q) - (q[1] > p[1] ? bh / 2 : 0), { col: col || 'rgba(242,240,230,.6)', w: 1.8, a: a, head: 8 }); }
     link(P.a, P.b, 1); link(P.b, P.m1, 2); link(P.b, P.m2, 2);
     if (W) { CH.line(D, X(P.l) + sw / 2, Y(P.l), X(P.b) - bw / 2, Y(P.b), { col: 'rgba(242,240,230,.5)', dash: [5, 5], a: A(3) }); CH.line(D, X(P.r) - sw / 2, Y(P.r), X(P.b) + bw / 2, Y(P.b), { col: 'rgba(242,240,230,.5)', dash: [5, 5], a: A(3) }); }
+    else [[P.l, -1], [P.r, 1]].forEach(function (q) { CH.line(D, X(q[0]), Y(q[0]) + bh / 2, X(P.b) + q[1] * bw * .3, Y(P.b) - bh / 2, { col: 'rgba(242,240,230,.5)', dash: [5, 5], a: A(3) }); });
     node(D, X(P.a), Y(P.a), bw * 1.3, bh, '連立方程式（2つの方程式の組）', '解 … 両方を成り立たせる x、y の組', C.chalk, 1);
     node(D, X(P.b), Y(P.b), bw, bh, '文字を1つ消す（消去）', null, C.yel, A(1), { bold: true });
     node(D, X(P.m1), Y(P.m1), W ? bw * .95 : sw, bh, '加減法', '係数をそろえて、たす・ひく', C.blue, A(2));
@@ -570,16 +571,16 @@
   function tool(D) {
     var R = CH.box(D, { l: .03, r: .03, t: .02, b: .02 }), s = CH.fs(D), it = IT[D.V.i], x = D.V.x, y = D.V.y;
     var nh = Math.min(R.h * .42, s * 4.8); rr(D, R.x0, R.y0, R.x1, R.y0 + nh, { r: 10, stroke: 'rgba(242,240,230,.55)', sw: 1.6, fill: 'rgba(242,240,230,.05)' });
-    var z = Math.min(s * 1.05, nh / 4.2);
+    var z = Math.min(s * 1.15, nh / 3.8);
     TX(D, R.x0 + z * .6, R.y0 + z * 1, it.t, { size: z * 1.1, col: C.yel, align: 'left' });
     it.w.forEach(function (l, j) { TX(D, R.x0 + z * 2, R.y0 + z * (1 + j * 1.7), l, { size: fit(D, l, R.w - z * 2.6, z), col: C.chalk, align: 'left' }); });
     var y0 = R.y0 + nh + s * 1.2;
-    TS(D, R.cx, y0, [['確かめ　x＝', C.chalk], [S(x), C.yel], ['、y＝', C.chalk], [S(y), C.yel], [' を、もとの式に入れると', C.chalk]], { size: fit(D, '確かめ　x＝−5.5、y＝−5.5 を、もとの式に入れると', R.w, s) });
+    TS(D, R.cx, y0, [['確かめ　x＝', C.chalk], [S(x), C.yel], ['、y＝', C.chalk], [S(y), C.yel], [' を、もとの式に入れると', C.chalk]], { size: fit(D, '確かめ　x＝−5.5、y＝−5.5 を、もとの式に入れると', R.w, s * 1.1) });
     var ex2 = it.t === 'ウ' ? ['x＋y', '2x−y'] : null;
     it.o.forEach(function (e, j) {
-      var p = e.split('＝'), lv = val(p[0], { x: x, y: y }), rv = val(p[1], { x: x, y: y }), ok = near(lv, rv), yy = y0 + s * (1.9 + j * 1.7);
+      var p = e.split('＝'), lv = val(p[0], { x: x, y: y }), rv = val(p[1], { x: x, y: y }), ok = near(lv, rv), yy = y0 + s * (2.2 + j * 2);
       var t = (it.t === 'ウ' ? (j ? '2x−y' : 'x＋y') + ' の値 ' + S(Math.round(lv * 100) / 100) + '（6？）' : p[0] + ' … ' + S(Math.round(lv * 100) / 100) + '、' + p[1] + ' … ' + S(Math.round(rv * 100) / 100));
-      TS(D, R.cx, yy, [[t + '　', C.chalk], [ok ? '成り立つ' : '成り立たない', ok ? C.yel : C.pink]], { size: fit(D, '50x＋90y … −720、600 … 600　成り立たない', R.w, s * .95) });
+      TS(D, R.cx, yy, [[t + '　', C.chalk], [ok ? '成り立つ' : '成り立たない', ok ? C.yel : C.pink]], { size: fit(D, '50x＋90y … −720、600 … 600　成り立たない', R.w, s * 1.1) });
     });
   }
 

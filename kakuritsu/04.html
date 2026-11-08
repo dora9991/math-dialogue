@@ -216,8 +216,12 @@
   }
   /* 字の四角に、行を上から（wide なら左よせ）。arr：[字, 色, 濃さ] */
   function say(D, Q, wide, arr, o) {
-    o = o || {}; var s = o.size || CH.fs(D), n = arr.length, lh = Math.min(s * 2.3, Q.h / Math.max(1, n + .4)), y = wide ? Q.cy - lh * (n - 1) / 2 : Q.y0 + lh * .6;
-    arr.forEach(function (r, i) { if (!r || (r[2] != null && r[2] <= 0)) return; TX(D, wide ? Q.x0 : Q.cx, y + i * lh, r[0], { col: r[1] || C.chalk, a: r[2], size: s, align: wide ? 'left' : 'center', maxW: Q.w }); });
+    o = o || {}; var s = o.size || CH.fs(D), n = arr.length, two = !wide && n > 4, nr = two ? Math.ceil(n / 2) : n, lh = Math.min(s * 2.3, Q.h / Math.max(1, nr + .4)), y = wide ? Q.cy - lh * (n - 1) / 2 : Q.y0 + lh * .6;
+    arr.forEach(function (r, i) {
+      if (!r || (r[2] != null && r[2] <= 0)) return;
+      if (two) TX(D, Q.x0 + Q.w * (i % 2 ? .75 : .25), y + Math.floor(i / 2) * lh, r[0], { col: r[1] || C.chalk, a: r[2], size: s, maxW: Q.w * .48 });
+      else TX(D, wide ? Q.x0 : Q.cx, y + i * lh, r[0], { col: r[1] || C.chalk, a: r[2], size: s, align: wide ? 'left' : 'center', maxW: Q.w });
+    });
   }
 
   /* ---- この時間のページ ---- */
@@ -252,7 +256,7 @@
           var Rb = CH.box(D, { l: .04, r: .04, t: .04, b: .06 }), s = CH.fs(D), t = D.ph ? D.t : 0, L = lay(D, Rb), k = D.ph ? Math.floor(36 * sm(0, .7, t)) : 0, a2 = sm(.78, .9, t);
           dice2(D, L[0], { cell: function (i, j) { return i * 6 + j < k ? (i + 1) + ',' + (j + 1) : ''; }, tcol: function (i, j) { return (i === 1 && j === 5) || (i === 5 && j === 1) ? (a2 > 0 ? C.pink : C.chalk) : C.chalk; },
             fill: function (i, j) { return (i === 1 && j === 5) || (i === 5 && j === 1) ? C.pink : null; }, fa: function () { return a2; } });
-          say(D, L[1], L[2], [['大の目 1〜6 に', C.chalk, sm(.1, .2, t)], ['小の目が 6通りずつ', C.chalk, sm(.1, .2, t)], ['6×6＝36通り', C.yel, sm(.7, .8, t)], ['(2, 6) と (6, 2) は', C.pink, a2], ['別の出方', C.pink, a2]]);
+          say(D, L[1], L[2], [['大の目 1〜6 それぞれに', C.chalk, sm(.1, .2, t)], ['小の目が 6通りずつ', C.chalk, sm(.1, .2, t)], ['6×6＝36通り', C.yel, sm(.7, .8, t)], ['(2, 6) と (6, 2) は別の出方', C.pink, a2]]);
         } },
       { tag: 'ことば', bh: 'ことば', q: '(2, 6) と (6, 2) は、同じ出方？ 別の出方？', a: '別の出方（大小を区別する）', dur: 4,
         sub: '大が 2・小が 6 と、大が 6・小が 2 は、ちがう出方。表の 36このますは、どれも同様に確からしい',

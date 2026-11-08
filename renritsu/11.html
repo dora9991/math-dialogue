@@ -456,6 +456,27 @@
   function frs(v) { if (Math.abs(v - Math.round(v)) < 1e-9) return S(Math.round(v)); for (var d = 2; d <= 12; d++) { var n = v * d; if (Math.abs(n - Math.round(n)) < 1e-9) return (v < 0 ? '−' : '') + '[' + Math.abs(Math.round(n)) + '/' + d + ']'; } return S(Math.round(v * 100) / 100); }
   /* 式の行（eqs と同じ）。行ごとに at（出る時）。mid の行は、せまい画面では書かない（右の答えの欄にある） */
   function eqsW(D, R, L, k, o) { var W = wide(D), M = L.filter(function (l, i) { return i === 0 || W || !l.mid; }); return eqs(D, R, M, k, ext({ at: M.slice(1).map(function (l) { return l.at; }) }, o || {})); }
+  /* ---- 2本の帯：前 [X | Y]、あと [X(1＋px) | Y(1＋py)]（増えた分は明るく、減った分は点線で下に）。
+     o：L（行の名前2つ）、num（数で書く）、unit、a2（あとの帯の濃さ）、tot（前の合計の字）、sum（あとの合計の字）、ux・uy（x・y の字） ---- */
+  function bands(D, R, X, Y, px, py, o) {
+    o = o || {}; var s = CH.fs(D), lw = Math.min(TW(D, o.L[0], s) + s * .8, R.w * .2), x0 = R.x0 + lw, mx = (o.max || (X + Y) * 1.12) * (o.sum ? 1.25 : 1), U = (R.x1 - x0 - s * .4) / mx, h = Math.min(s * 1.9, R.h * .2);
+    var y0 = R.y0 + R.h * .24, y1 = y0 + h * 2.3, a2 = o.a2 == null ? 1 : o.a2, n = o.num, un = o.unit || '';
+    var tz = fit(D, o.L[0], lw * .9, s), f = function (v) { return Math.round(v * 100) / 100; };
+    TX(D, R.x0, y0 + h / 2, o.L[0], { size: tz, col: 'rgba(242,240,230,.8)', align: 'left' });
+    band(D, x0, y0, U, h, [{ v: X, col: XC, txt: n ? f(X) + un : o.ux || 'x' }, { v: Y, col: YC, txt: n ? f(Y) + un : o.uy || 'y' }]);
+    brace(D, x0, x0 + (X + Y) * U, y0 - s * .2, -1, { h: s * .28, lab: o.tot, col: C.yel, size: s * .85 });
+    if (a2 <= 0) return { x0: x0, U: U, y0: y0, y1: y1, h: h };
+    TX(D, R.x0, y1 + h / 2, o.L[1], { size: tz, col: 'rgba(242,240,230,.8)', align: 'left', a: a2 });
+    function part(V, p, col, sx) {
+      var keep = { v: V * Math.min(1, 1 + p), col: col, txt: n ? f(V * Math.min(1, 1 + p)) + un : '' }, ch = { v: Math.abs(V * p), col: col, kind: p > 0 ? 'up' : 'down', txt: n ? (p > 0 ? '＋' : '−') + f(Math.abs(V * p)) : (p > 0 ? '＋' : '−') + Math.round(Math.abs(p) * 100) + '％' };
+      return [keep, ch];
+    }
+    var parts = part(X, px, XC).concat(part(Y, py, YC)), B = band(D, x0, y1, U, h, parts, { out: true, a: a2 });
+    var end = x0 + (X * (1 + px) + Y * (1 + py)) * U;
+    CH.line(D, x0 + (X + Y) * U, y0 + h, x0 + (X + Y) * U, y1 + h + s * .3, { col: 'rgba(242,240,230,.55)', dash: [4, 4], w: 1.4, a: a2 });
+    if (o.sum) { var sx = Math.max(end, x0 + (X + Y) * U) + s * .5; TX(D, sx, y1 + h / 2, o.sum, { size: fit(D, o.sum, R.x1 - sx, s * .85), col: C.yel, a: a2, align: 'left' }); }
+    return { x0: x0, U: U, y0: y0, y1: y1, h: h, B: B };
+  }
 
   /* ---- 数と検算 ---- */
   var E1 = 'x＋y＝10';
