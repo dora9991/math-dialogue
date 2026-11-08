@@ -569,7 +569,7 @@
     { t: 'ウ', o: ['x＋y＝6', '2x−y＝6'], w: ['x＋y＝2x−y＝6 を、', 'x＋y＝6 と x＋y＝2x−y の組にして解いた'] },
     { t: 'エ', o: ['x＋y＝10', '50x＋90y＝600'], w: ['ラムネ（50円）x個とグミ（90円）y個で 10個・600円。', '解が x＝7.5、y＝2.5 なので、7.5個・2.5個 と答えた'] }];
   function tool(D) {
-    var R = CH.box(D, { l: .03, r: .03, t: .02, b: .02 }), s = CH.fs(D), it = IT[D.V.i], x = D.V.x, y = D.V.y;
+    var R = CH.box(D, { l: .03, r: .03, t: .02, b: .02 }), s = CH.fs(D) * 1.25, it = IT[D.V.i], x = D.V.x, y = D.V.y;
     var nh = Math.min(R.h * .42, s * 4.8); rr(D, R.x0, R.y0, R.x1, R.y0 + nh, { r: 10, stroke: 'rgba(242,240,230,.55)', sw: 1.6, fill: 'rgba(242,240,230,.05)' });
     var z = Math.min(s * 1.15, nh / 3.8);
     TX(D, R.x0 + z * .6, R.y0 + z * 1, it.t, { size: z * 1.1, col: C.yel, align: 'left' });
