@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>箱ひげ図から読み取る</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* データの比較（箱ひげ図） 第3時：箱ひげ図から、分布のようすを読み取ろう（ikkan の lesson_hako_03 と同じ流れ）。
+   ヒストグラム ア〜ウ の下のあき場所へ、箱ひげ図 ①〜③ が飛んでいって組になる（山が左なら箱も左、山が高いと箱が短い）。
+   20人のドットを小さい順に 5人ずつぬり分けると、箱ひげ図の4つの部分に 5人ずつ。80人の帯を 4つに分けて、人数を読み取る。
+   考えようは、箱ひげ図だけ → ヒストグラム → ドットを重ねる（スライダー）。
+   データは自作（ikkan と同じ数値）。ヒストグラムの度数と箱ひげ図の 5つの値は、同じデータから ページの中で計算し直して照らし合わせている（CH.check）。
+   四分位数は教科書の求め方（中央値で前半・後半に分け、それぞれの中央値。個数が奇数のとき、中央値は前半・後半に入れない）。 */
+(function () {
+  var C = CH.C;
+  /* ---- 四分位数（教科書の求め方） ---- */
+  function md(a) { var m = a.length; return m % 2 ? a[(m - 1) / 2] : (a[m / 2 - 1] + a[m / 2]) / 2; }
+  function Q5(d) {
+    var s = d.slice().sort(function (a, b) { return a - b; }), n = s.length, h = Math.floor(n / 2);
+    var r = { s: s, n: n, min: s[0], q1: md(s.slice(0, h)), med: md(s), q3: md(s.slice(n - h)), max: s[n - 1] };
+    r.f = [r.min, r.q1, r.med, r.q3, r.max]; r.iqr = r.q3 - r.q1; r.rng = r.max - r.min; return r;
+  }
+  function eq5(d, f) { var r = Q5(d); return f.every(function (v, i) { return CH.near(r.f[i], v); }); }
+  function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  var E = [0, 10, 20, 30, 40, 50, 60];
+  function same(d, c, f) { return CH.bin(d, E).join() === c.join() && eq5(d, f); }
+  function cls(v) { return Math.floor(v / 10); }
+
+  var DA = [1, 1, 2, 4, 5, 7, 8, 9, 11, 13, 13, 15, 16, 22, 26, 28, 32, 38, 44, 50], CA = [8, 5, 3, 2, 1, 1], FA = [1, 6, 13, 27, 50];
+  var DI = [4, 16, 21, 23, 24, 24, 29, 29, 31, 31, 31, 31, 32, 33, 36, 38, 45, 47, 49, 57], CI = [1, 1, 6, 8, 3, 1], FI = [4, 24, 31, 37, 57];
+  var DU = [7, 11, 24, 29, 31, 33, 34, 42, 42, 46, 48, 49, 51, 52, 53, 53, 54, 57, 59, 59], CU = [1, 1, 2, 3, 5, 8], FU = [7, 32, 47, 53, 59];
+  var D3 = [1, 13, 15, 18, 20, 22, 22, 28, 29, 29, 30, 31, 31, 32, 33, 34, 34, 36, 36, 43, 45, 49, 51, 56], C3 = [1, 3, 6, 9, 3, 2], F3 = [1, 22, 31, 36, 56];
+  var D4 = [5, 5, 8, 8, 10, 10, 16, 18, 23, 23, 23, 29, 33, 35, 36, 38, 41, 44, 46, 47, 52, 54, 57, 58], C4 = [4, 4, 4, 4, 4, 4], F4 = [5, 13, 31, 45, 58];
+  var D40 = [1, 1, 5, 7, 7, 8, 8, 9, 11, 12, 12, 14, 14, 15, 19, 23, 28, 29, 31, 32, 36, 37, 41, 41, 41, 42, 47, 48, 49, 51, 51, 52, 52, 54, 54, 55, 55, 56, 58, 58], C40 = [8, 7, 3, 4, 7, 11], F40 = [1, 12, 34, 51, 58];
+  var D30 = [1, 9, 9, 13, 13, 16, 17, 17, 18, 21, 22, 23, 23, 24, 26, 26, 28, 29, 31, 32, 32, 33, 35, 36, 38, 41, 41, 45, 53, 58], C30 = [3, 6, 9, 7, 3, 2], F30 = [1, 17, 26, 35, 58];
+  var OPT = [[1, 22, 26, 41, 58], [1, 17, 33, 35, 58], F30], TS = [5, 12, 18, 26, 45];
+  CH.check(same(DA, CA, FA) && same(DI, CI, FI) && same(DU, CU, FU), '今日の問い（度数と 5つの値）');
+  CH.check([FA, FI, FU].map(function (f) { return [f[1], f[2], f[3]].map(cls).join(''); }).join() === '012,233,345' && FA[3] - FA[1] === 21 && FI[3] - FI[1] === 13 && FU[3] - FU[1] === 21, '今日の問い（箱の位置と長さ）');
+  CH.check(80 / 4 === 20 && 80 / 2 === 40, '例題（80人）');
+  CH.check(same(D3, C3, F3) && same(D4, C4, F4) && F3[3] - F3[1] === 14 && F4[3] - F4[1] === 32, '例題（図3・図4）');
+  CH.check(same(D40, C40, F40) && cls(34) === 3 && C40[3] < C40[1] && C40[3] < C40[4], '考えよう（答えは出さない。ここで確かめるだけ）');
+  CH.check(same(D30, C30, F30) && CH.cum(C30).join() === '3,9,18,25,28,30' && [F30[1], F30[2], F30[3]].map(cls).join() === '1,2,3' && cls(OPT[0][1]) !== 1 && cls(OPT[1][2]) !== 2, 'チャレンジ（ウ）');
+
+  var QC = [C.pink, C.yel, C.green], PC = [C.blue, C.green, C.yel, C.pink];
+  /* 箱ひげ図。X（値 → 横の位置）、cy、bh（箱の高さ）、f（5つの値）。o：col、a、w */
+  function boxplot(D, X, cy, bh, f, o) {
+    o = o || {}; var col = o.col || C.chalk, a = o.a == null ? 1 : o.a, w = o.w || 2.4, x = f.map(X), e = bh * .3;
+    CH.line(D, x[0], cy, x[1], cy, { col: col, w: w, a: a }); CH.line(D, x[3], cy, x[4], cy, { col: col, w: w, a: a });
+    CH.line(D, x[0], cy - e, x[0], cy + e, { col: col, w: w, a: a }); CH.line(D, x[4], cy - e, x[4], cy + e, { col: col, w: w, a: a });
+    CH.fillRect(D, x[1], cy - bh / 2, x[3], cy + bh / 2, { fill: hexA(col, .18), stroke: col, sw: w, a: a }); CH.line(D, x[2], cy - bh / 2, x[2], cy + bh / 2, { col: col, w: w + 1, a: a });
+  }
+  function brace(D, x0, x1, y, txt, col, a, o) {
+    o = o || {}; var s = CH.fs(D), d = o.down ? -1 : 1, lo = { col: col, w: 2.2, a: a };
+    CH.line(D, x0, y, x1, y, lo); CH.line(D, x0, y, x0, y + 7 * d, lo); CH.line(D, x1, y, x1, y + 7 * d, lo);
+    if (txt) { var tx = o.align === 'left' ? x0 : o.align === 'right' ? x1 : (x0 + x1) / 2; CH.text(D, tx, y - s * .72 * d, txt, { col: col, a: a, size: o.size || s * .85, align: o.align, outline: 'rgba(24,52,38,.9)' }); }
+  }
+  /* ヒストグラム（上に横ならび）と箱ひげ図（下に縦ならび）。組にすると、箱ひげ図が ヒストグラムの下のあき場所へ飛んでいく。
+     H：[{ c, n, col }]、BX：[{ f, n }]、to[i]：i番目の箱ひげ図が行く ヒストグラムの番号、o：t（0〜1）、ymax、yt、ord（飛ぶ順） */
+  function match(D, H, BX, to, o) {
+    var R = CH.box(D, { l: .04, r: .06, t: .06, b: .1 }), s = CH.fs(D), n = H.length, t = o.t || 0, ts = Math.max(12, s * .7);
+    var hb = R.y0 + R.h * .45, cols = CH.cols(CH.rect(R.x0 + s * 1.4, R.y0 + s * 1.3, R.x1, hb), n, n > 2 ? .09 : .12);
+    var bh = Math.min(s * 1.3, R.h * .07), slotY = hb + ts * 2.1 + bh / 2;
+    var low = CH.rect(R.x0 + s * 1.4, slotY + bh / 2 + s * .9, R.x1, R.y1), Xl = CH.numline(D, low, 0, 60, 1, { lab: 10, unit: '（点）' });
+    var rows = CH.rows(CH.rect(low.x0, low.y0, low.x1, low.y1 - s * .5), BX.length, .15), bh2 = Math.min(bh, rows[0].h * .6);
+    var AX = H.map(function (h, j) {
+      var Ax = CH.axes(D, cols[j], { x: [0, 60], y: [0, o.ymax], xt: [0, 20, 40, 60], yt: o.yt, size: ts });
+      CH.bars(D, Ax, E, h.c, { col: h.col, labels: o.labels }); CH.text(D, cols[j].cx, cols[j].y0 - s * .75, h.n, { col: h.col, size: s * 1.05 });
+      return Ax;
+    });
+    var landed = H.map(function () { return 0; }), ord = o.ord || BX.map(function (b, i) { return i; }), sp = .8 / BX.length;
+    AX.forEach(function (Ax, j) { var i = to.indexOf(j), k = CH.smooth(ord.indexOf(i) * sp, ord.indexOf(i) * sp + sp * .9, t); landed[j] = k;
+      if (k < 1) { CH.fillRect(D, Ax.X(0), slotY - bh * .7, Ax.X(60), slotY + bh * .7, { stroke: 'rgba(242,240,230,.35)', dash: true, sw: 1.4, a: 1 - k }); CH.text(D, Ax.X(30), slotY, '？', { col: 'rgba(242,240,230,.45)', a: 1 - k, size: s * .9 }); } });
+    BX.forEach(function (b, i) {
+      var j = to[i], Ax = AX[j], k = landed[j], e = CH.ease(k), q = rows[i];
+      CH.text(D, low.x0 - s * .8, q.cy, b.n, { size: s, col: 'rgba(242,240,230,.85)' });
+      if (k > 0) boxplot(D, Xl, q.cy, bh2, b.f, { a: .16 });
+      var X = function (v) { return CH.lerp(Xl(v), Ax.X(v), e); };
+      boxplot(D, X, CH.lerp(q.cy, slotY, e), CH.lerp(bh2, bh, e), b.f, { col: k > .5 ? H[j].col : C.chalk });
+      if (k >= 1) {
+        CH.text(D, Ax.X(0) - s * .7, slotY, b.n, { size: s * .9, col: H[j].col });
+        var ga = CH.smooth(.85, 1, t); if (ga > 0) [1, 2, 3].forEach(function (m) { CH.line(D, Ax.X(b.f[m]), slotY - bh / 2, Ax.X(b.f[m]), Ax.R.y0, { col: QC[m - 1], w: 1.8, dash: [4, 4], a: ga * .7 }); });
+      }
+    });
+  }
+
+  K3.run({
+    no: '第3時', title: '箱ひげ図から、分布のようすを読み取ろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '◀ 第2時' }, { href: '04.html', label: '第4時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '3つの学級（20人ずつ）の テストの得点', q: 'ア〜ウは、3つの学級（どれも 20人）の テスト（60点満点）の得点のヒストグラム。①〜③は、同じデータの箱ひげ図。ア〜ウは、それぞれ ①〜③ の どれだろう。理由も考えよう。',
+        notes: ['① 自分の考え（3分）　組と、そのわけを。', '② ペアの考え（3分）　自分とちがうわけを。'],
+        draw: function (D) { match(D, [{ c: CA, n: 'ア', col: C.blue }, { c: CI, n: 'イ', col: C.orange }, { c: CU, n: 'ウ', col: C.green }], [{ f: FI, n: '①' }, { f: FU, n: '②' }, { f: FA, n: '③' }], [1, 2, 0], { t: 0, ymax: 8, yt: [0, 4, 8] }); } },
+      { tag: '今日の問い', q: 'ア〜ウ と ①〜③ の組は？', a: 'ア … ③、イ … ①、ウ … ②', sub: '山が左に寄っている ア は、箱も左（③）。山が右の ウ は、箱も右（②）。山が高く、まん中に集まっている イ は、箱が短い（①）', dur: 6,
+        b: { t: '<b>ア … ③　イ … ①　ウ … ②</b>（山が左 → 箱も左、山が高い → 箱が短い）', col: C.yel },
+        draw: function (D) { match(D, [{ c: CA, n: 'ア', col: C.blue }, { c: CI, n: 'イ', col: C.orange }, { c: CU, n: 'ウ', col: C.green }], [{ f: FI, n: '①' }, { f: FU, n: '②' }, { f: FA, n: '③' }], [1, 2, 0], { t: D.ph ? D.t : 0, ymax: 8, yt: [0, 4, 8], ord: [2, 0, 1] }); } },
+      { tag: 'ことば', bh: 'ことば', q: 'ア の 20人を、小さい順に 5人ずつ ぬり分けると？ 箱ひげ図の 4つの部分（ひげ・箱の左・箱の右・ひげ）には、それぞれ どれだけ入る？', a: 'どの部分にも 5人ずつ（約 25％）。箱の中には 約半分',
+        sub: '部分の長さはちがっても、入る人数は 約 1/4 ずつ。データが集まっている（ヒストグラムの山が高い）ところでは、箱やひげが 短くなる', dur: 5,
+        b: [{ t: '4つの部分に、データが 約 <b>25％</b> ずつ（箱の中に 約 <b>半分</b>）', col: C.green }, { t: '山が高い（データが集まる）ところは、箱やひげが <b>短く</b> なる', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .08, r: .08, t: .06, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0;
+          var top = CH.rect(R.x0, R.y0 + s * 1.2, R.x1, R.y0 + R.h * .36), bot = CH.rect(R.x0, top.y1 + s * 2.2, R.x1, R.y1);
+          var Ax = CH.axes(D, top, { x: [0, 60], y: [0, 8], xt: E, yt: [0, 4, 8], size: Math.max(12, s * .7) }); CH.bars(D, Ax, E, CA, { col: C.blue, a: .7 });
+          CH.text(D, top.x1, top.y0 - s * .4, 'ア（20人）', { col: C.blue, align: 'right' });
+          var Xb = CH.numline(D, bot, 0, 60, 1, { lab: 10, unit: '（点）' }), bh = Math.min(s * 2.2, bot.h * .24), cy = bot.y1 - s * 2.1 - bh / 2, x = FA.map(Xb);
+          var r = Math.min(CH.fs(D, .42), (Xb(1) - Xb(0)) * .5), yd = cy - bh / 2 - s * 1.5, pa = function (q) { return CH.smooth(.08 + q * .1, .2 + q * .1, t); };
+          CH.line(D, bot.x0, yd + 2, bot.x1, yd + 2, { col: 'rgba(242,240,230,.25)', w: 1.2 });
+          CH.dots(D, Xb, yd, DA, { col: function (i) { var q = Math.floor(i / 5); return pa(q) > .5 ? PC[q] : C.chalk; }, r: r });
+          for (var q = 0; q < 4; q++) { var a = pa(q); if (a <= 0) continue; var hh = q === 0 || q === 3 ? bh * .3 : bh / 2; CH.fillRect(D, x[q], cy - hh, x[q + 1], cy + hh, { fill: hexA(PC[q], .4), a: a }); }
+          boxplot(D, Xb, cy, bh, FA, { col: C.blue });
+          var ca = CH.smooth(.55, .7, t);
+          if (ca > 0) for (q = 0; q < 4; q++) CH.text(D, (x[q] + x[q + 1]) / 2, cy - bh / 2 - s * .7, '5人', { col: PC[q], a: ca, size: Math.max(12, s * .8), outline: 'rgba(24,52,38,.9)' });
+          var ha = CH.smooth(.78, .95, t); if (ha > 0) brace(D, x[1], x[3], cy + bh / 2 + s * .5, '箱の中 10人（約半分）', C.orange, ha, { down: true });
+        } },
+      { tag: '例題', bh: '例題　80人の通学時間', q: '80人の通学時間の箱ひげ図。12分以下・18分以上・12〜26分・26分以上 の人数は、それぞれ およそ何人？', a: '約 20人・約 40人・約 40人・約 20人',
+        sub: '4つの部分に、約 1/4（80 ÷ 4 ＝ 20人）ずつ。18分（中央値）以上は 約半分の 40人', dur: 6,
+        b: { t: '12分以下 約<b>20人</b>・18分以上 約<b>40人</b>・12〜26分 約<b>40人</b>・26分以上 約<b>20人</b>', col: C.blue },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .08, t: .05, b: .04 }), s = CH.fs(D), t = D.ph ? D.t : 0;
+          var nl = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .34), X = CH.numline(D, nl, 0, 50, 1, { lab: 10, unit: '（分）' }), x = TS.map(X);
+          var bh = Math.min(s * 2, nl.h * .4), cy = nl.y1 - s * .7 - bh / 2; boxplot(D, X, cy, bh, TS, { col: C.blue });
+          var ty = R.y0 + R.h * .5, th = Math.min(s * 1.7, R.h * .09), w = R.w, xs = [0, 1, 2, 3, 4].map(function (k) { return R.x0 + w * k / 4; });
+          var da = CH.smooth(0, .25, t), la = CH.smooth(.25, .38, t);
+          CH.fillRect(D, R.x0, ty, R.x1, ty + th, { fill: 'rgba(242,240,230,.08)', stroke: 'rgba(242,240,230,.6)' });
+          if (t <= 0) CH.text(D, R.cx, ty + th / 2, '80人', { size: s * .9 });
+          for (var q = 0; q < 4; q++) {
+            if (da > 0) CH.fillRect(D, xs[q], ty, xs[q + 1], ty + th, { fill: hexA(PC[q], .35), stroke: PC[q], a: da });
+            if (la > 0) CH.text(D, (xs[q] + xs[q + 1]) / 2, ty + th / 2, '20人', { size: Math.min(s * .85, th * .6), a: la, num: false });
+          }
+          if (da > 0) for (var k = 0; k < 5; k++) { var y0 = k === 0 || k === 4 ? cy : cy + bh / 2; CH.line(D, x[k], y0, CH.lerp(x[k], xs[k], da), CH.lerp(y0, ty, da), { col: k === 0 || k === 4 ? C.lav : QC[k - 1], w: 1.8, dash: [5, 4], a: .8 }); }
+          var Q = [[0, 1, '12分以下 約20人', 'left'], [2, 4, '18分以上 約40人'], [1, 3, '12〜26分 約40人'], [3, 4, '26分以上 約20人', 'right']], rh = (R.y1 - (ty + th + s * .4)) / 4;
+          Q.forEach(function (b, j) { var a = CH.smooth(.42 + j * .13, .52 + j * .13, t); if (a <= 0) return; var y = ty + th + s * .4 + rh * (j + .3); brace(D, xs[b[0]] + 3, xs[b[1]] - 3, y, b[2], C.chalk, a, { down: true, align: b[3], size: Math.max(12, s * .78) }); });
+        } },
+      { tag: '例題', q: '図3・図4 は、どちらも 24人の得点のヒストグラム。それぞれの箱ひげ図は ①・② の どちら？', a: '図3 … ②、図4 … ①',
+        sub: '山が高く まん中に集まる 図3 は、箱が短い（36 − 22 ＝ 14）。どの階級も 4人で平らな 図4 は、箱が長い（45 − 13 ＝ 32）', dur: 4,
+        b: { t: '図3（山が高い）… ② 箱が短い（14）　図4（平ら）… ① 箱が長い（32）', col: C.pink },
+        draw: function (D) { match(D, [{ c: C3, n: '図3', col: C.blue }, { c: C4, n: '図4', col: C.orange }], [{ f: F4, n: '①' }, { f: F3, n: '②' }], [1, 0], { t: D.ph ? D.t : 0, ymax: 10, yt: [0, 5, 10], labels: true, ord: [1, 0] }); } },
+      { tag: '考えよう', q: '同じ 40人のテストの得点を、箱ひげ図とヒストグラムに表した。ヒストグラムとくらべて、箱ひげ図の「よいところ」と「わからないこと」は何だろう。',
+        notes: ['はじめは 箱ひげ図だけ。山の形を 予想してから、ヒストグラムを出そう。', '箱ひげ図のよいところ・わからないことを 書こう。', 'スライダーで、表し方を変えられます。'],
+        sliders: [{ key: 'v', label: '表し方', min: 0, max: 2, step: 1, val: 0, fmt: function (x) { return ['箱ひげ図だけ', 'ヒストグラムも', 'データの点も'][x]; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .1, r: .08, t: .06, b: .1 }), s = CH.fs(D), v = D.V.v;
+          var top = CH.rect(R.x0, R.y0 + s * .8, R.x1, R.y0 + R.h * .5), bot = CH.rect(R.x0, top.y1 + s * 2.6, R.x1, R.y1);
+          if (v >= 1) { var Ax = CH.axes(D, top, { x: [0, 60], y: [0, 12], xt: E, yt: [0, 4, 8, 12], xl: '（点）', yl: '（人）' }); CH.bars(D, Ax, E, C40, { col: C.lav, labels: true }); }
+          else { CH.fillRect(D, top.x0, top.y0, top.x1, top.y1, { stroke: 'rgba(242,240,230,.3)', dash: true, sw: 1.4 }); CH.text(D, top.cx, top.cy, 'ヒストグラムは、どんな形だろう？', { col: 'rgba(242,240,230,.5)', size: s * .9 }); }
+          var X = CH.numline(D, bot, 0, 60, 1, { lab: 10, unit: '（点）' }), bh = Math.min(s * 2, bot.h * .3), cy = bot.y1 - s * .9 - bh / 2;
+          if (v >= 2) CH.dots(D, X, cy - bh / 2 - s * .5, D40, { col: function () { return C.orange; }, r: Math.min(CH.fs(D, .4), (X(1) - X(0)) * .46) });
+          boxplot(D, X, cy, bh, F40, { col: C.lav });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '30人のテスト（60点満点）のヒストグラム。このデータの箱ひげ図は、ア〜ウ の どれ？ 中央値が入る階級は？', a: 'ウ、中央値は 20点以上 30点未満 の階級',
+        sub: '左から人数をたすと 3、9、18、25…。中央値（15・16番目）は 20〜30点、第1四分位数（8番目）は 10〜20点、第3四分位数（23番目）は 30〜40点', dur: 6,
+        b: { t: '<b>ウ</b> … 第1四分位数（8番目）10〜20点、中央値（15・16番目）<b>20〜30点</b>、第3四分位数（23番目）30〜40点', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .1, r: .08, t: .06, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0, ts = Math.max(12, s * .75);
+          var top = CH.rect(R.x0, R.y0 + s * 2.6, R.x1, R.y0 + R.h * .46), bot = CH.rect(R.x0, top.y1 + s * 2.4, R.x1, R.y1);
+          var ca = CH.smooth(0, .35, t), ha = CH.smooth(.4, .6, t), fa = CH.smooth(.65, .85, t), cum = CH.cum(C30);
+          var Ax = CH.axes(D, top, { x: [0, 60], y: [0, 10], xt: E, yt: [0, 5, 10], yl: '（人）', size: ts });
+          CH.bars(D, Ax, E, C30, { col: C.lav, labels: true, hl: function (i) { return ha > .5 && i >= 1 && i <= 3 ? QC[i - 1] : null; } });
+          if (ca > 0) { CH.text(D, Ax.X(60), top.y0 - s * 2.2, '左からたした人数', { align: 'right', size: ts, col: 'rgba(242,240,230,.6)', a: ca }); cum.forEach(function (c, i) { var a = CH.smooth(i * .05, i * .05 + .1, t); if (a > 0) CH.text(D, Ax.X(E[i] + 5), top.y0 - s * 1.05, String(c), { num: true, size: ts, a: a, col: C.chalk }); }); }
+          var X = CH.numline(D, bot, 0, 60, 1, { lab: 10, unit: '（点）' }), rows = CH.rows(CH.rect(bot.x0, bot.y0, bot.x1, bot.y1 - s * .5), 3, .2), bh = Math.min(s * 1.6, rows[0].h * .62);
+          if (ha > 0) [1, 2, 3].forEach(function (c) { CH.fillRect(D, X(c * 10), bot.y0 - s * .2, X(c * 10 + 10), bot.y1, { fill: hexA(QC[c - 1], .1), a: ha }); });
+          ['ア', 'イ', 'ウ'].forEach(function (nm, k) {
+            var q = rows[k], on = k === 2, a = on ? 1 : 1 - .65 * fa;
+            CH.text(D, q.x0 - s * 1.2, q.cy, nm, { size: s * 1.05, col: on && fa > .5 ? C.yel : C.chalk, a: a });
+            boxplot(D, X, q.cy, bh, OPT[k], { col: on && fa > .5 ? C.yel : C.chalk, a: a });
+          });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

@@ -189,7 +189,7 @@
     var k = frc ? 2.25 : 1.6, lh = z * k; if (lh * n > R.h) { lh = R.h / n; z = Math.min(z, lh / k); d = dims(z); }
     var x0 = o.align === 'left' ? R.x0 : R.cx - d.w / 2, ex = x0 + d.lw, y0 = o.top ? R.y0 + lh / 2 : R.cy - lh * n / 2 + lh / 2, ys = [], xe = [];
     L.forEach(function (l, i) {
-      var y = y0 + i * lh, a = at[i] < 0 ? 1 : CH.smooth(at[i], at[i] + .1, t), p = parts(l), col = l.col || C.chalk, x1; ys.push(y);
+      var y = y0 + i * lh, a = at[i] < 0 ? 1 : CH.smooth(at[i], Math.min(at[i] + .1, 1), t), p = parts(l), col = l.col || C.chalk, x1; ys.push(y);
       if (a <= 0) { xe.push(null); return; } a *= (o.a == null ? 1 : o.a);
       if (p) { if (p[0]) TM(D, ex, y, p[0], { size: z, col: col, a: a, align: 'right', hc: l.hc }); TX(D, ex, y, '＝', { size: z, col: col, a: a, align: 'left' }); x1 = ex + d.eq + TM(D, ex + d.eq, y, p[1], { size: z, col: col, a: a, align: 'left', hc: l.hc }); }
       else x1 = x0 + TM(D, x0, y, l.s, { size: z, col: col, a: a, align: 'left', hc: l.hc });
@@ -278,7 +278,7 @@
     card(D, G.X[c], y, G.W[c], G.h, s, { a: o.a, glow: !!o.col, col: o.col || null, fa: o.col ? .32 : null });
   }
   /* 加減法：行 i1（A）と 行 i2（B）を、たす（sg '＋'）・ひく（'−'）。結果は 行 ir（res：{x, y, c}。null の列は 0 になって消える）。
-     k：0→1（〜.2 消える列が光る、.22〜.55 カードが下へ、.52〜.72 結果が出る）。o：hold（結果の行を書かない）、keep（上の2行を描かない） */
+     k：0→1（〜.2 消える列が光る、.22〜.55 カードが下へ、.52〜.72 結果が出る）。o：hold（結果の行を書かない）、keep（上の2行を描かない）、noop（記号を描かない） */
   function addRows(D, G, A, B, i1, i2, ir, sg, res, k, o) {
     o = o || {};
     var hlA = k > .03 && k < .62, gone = function (c) { return res[c] === null; };
@@ -286,7 +286,7 @@
       var oo = {}; ['x', 'y', 'c'].forEach(function (c) { oo[c] = gone(c) ? (hlA ? { hl: C.pink } : { a: k >= .62 ? .45 : 1 }) : {}; });
       grow(D, G, p[0], p[1], oo);
     });
-    gc(D, G, i2, 'op', sg, { a: CH.smooth(0, .1, k), col: C.yel, size: .75 });
+    if (!o.noop) gc(D, G, i2, 'op', sg, { a: CH.smooth(0, .1, k), col: C.yel, size: .75 });
     rule(D, G, ir, CH.smooth(.08, .22, k));
     var m = CH.ease(CH.smooth(.22, .52, k)), fa = 1 - CH.smooth(.5, .6, k);
     ['x', 'y', 'c'].forEach(function (c) {
@@ -307,6 +307,10 @@
     card(D, x, y, CH.lerp(w0, w1, q), h, s, { sx: sx, a: o.a, glow: o.glow !== false, col: o.col || (f > .02 && f < .98 ? C.pink : null) });
   }
   /* 代入する値のチップ（x＝2 など）が、とんで入る */
+  /* 項の字：係数 c と文字 v（first なら ＋ をつけない）。'2x'・'−y'・'＋3y' */
+  function term(c, v, first) { if (!c) return ''; var m = Math.abs(c); return (c < 0 ? '−' : first ? '' : '＋') + (m === 1 && v ? '' : S(m)) + v; }
+  /* 'ax＋by＝c' の字 */
+  function eqT(a, b, c) { var l = term(a, 'x', true) + term(b, 'y', !a); return (l || '0') + '＝' + S(c); }
   function chip(D, x, y, s, o) { o = o || {}; var z = o.size || CH.fs(D, .9), w = TW(D, s, z) + z * .8; rr(D, x - w / 2, y - z * .75, x + w / 2, y + z * .75, { r: z * .4, fill: ha(o.col || C.yel, .18), stroke: o.col || C.yel, sw: 2, a: o.a }); TX(D, x, y, s, { size: z, col: o.col || C.yel, a: o.a }); return w; }
   /* ---- 数と検算 ---- */
   var XS = [0, 1, 2, 3, 4, 5, 6, 7, 8], YS = XS.map(function (x) { return 8 - x; }), SC = XS.map(function (x, i) { return 2 * x + 5 * YS[i]; });

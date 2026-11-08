@@ -288,10 +288,9 @@
   }
   /* 奇数 2n＋1 の碁石：上の列 n＋1 こ（さいごの 1こが ＋1）、下の列 n こ */
   function q2(D, t) {
-    var P = two(D, .56, .52), s = CH.fs(D), A = P[0], B = P[1], n = 4, r = Math.min(A.w / 28, A.h / 15, s * .8), g = r * 2.5;
+    var P = two(D, .56, .52), s = CH.fs(D), A = P[0], B = P[1], n = 4, r = Math.min(A.w / 33, A.h / 15, s * .8), g = r * 2.5;
     var e1 = CH.ease(sm(.08, .35, t)), e2 = CH.ease(sm(.42, .6, t)), la = sm(.62, .75, t);
-    var xa = A.cx - (2 * n + 4.2) * g / 2, ya = A.cy - g * 1.8, xb0 = xa + (n + 2.2) * g, yb0 = ya, xb = CH.lerp(xb0, xa, e1), yb = CH.lerp(yb0, ya + g * 2.2, e1);
-    TX(D, xa - r * 2.4, ya + g / 2, '2n＋1', { size: Math.min(s, r * 2.2), align: 'right', col: C.blue, a: 1 - e1 });
+    var xa = A.cx - (2 * n + 3.2) * g / 2, ya = A.cy - g * 1.8, xb0 = xa + (n + 2.2) * g, yb0 = ya, xb = CH.lerp(xb0, xa, e1), yb = CH.lerp(yb0, ya + g * 2.2, e1);
     rows2(D, xa, ya, n + 1, n, r, C.blue, { col1: function (rw, i) { return rw === 0 && i === n ? C.yel : null; } });
     rows2(D, xb, yb, n + 2, n + 1, r, C.green, { col1: function (rw, i) { return rw === 0 && i === n + 1 ? C.yel : null; }, skip: function (rw, i) { return rw === 0 && i === n + 1; } });
     var ex = CH.lerp(xb + (n + 1) * g, xa + n * g, e2), ey = CH.lerp(yb, ya + g, e2) - Math.sin(Math.PI * e2) * g;
@@ -300,7 +299,7 @@
     TX(D, xa + n * g / 2 - g / 2, ya - r * 2.6, '2n＋1', { size: Math.min(s, r * 2.2), col: C.blue, a: 1 - e1 });
     if (la > 0) {
       hug(D, xa - r, ya - r, xa + n * g + r, ya + g * 3.2 + r, r * .6, C.yel, { a: la, fa: .06 });
-      TX(D, xa + n * g / 2, ya + g * 3.2 + r * 3.2, 'n＋1 こが 4列 → 4(n＋1)', { size: fit(D, 'n＋1 こが 4列 → 4(n＋1)', A.w * .9, s), col: C.yel, a: la });
+      TX(D, A.cx, ya + g * 3.2 + r * 3.2, 'n＋1 こが 4列 → 4(n＋1)', { size: fit(D, 'n＋1 こが 4列 → 4(n＋1)', A.w * .9, s), col: C.yel, a: la });
     }
     chain(D, CH.rect(B.x0, B.y0, B.x1, B.y0 + B.h * .58), ['(2n＋1)＋(2n＋3)', '＝4n＋4', '＝4(n＋1)'], sm(.1, .8, t), { last: C.yel, size: Math.min(s * 1.25, B.w / 10) });
     var tx = 'n＋1 は整数だから、4(n＋1) は 4の倍数', ty = '（例）3＋5＝8、5＋7＝12、11＋13＝24';
