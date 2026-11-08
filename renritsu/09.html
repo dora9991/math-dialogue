@@ -424,6 +424,7 @@
     parts.forEach(function (p) {
       var w = Math.abs(p.v) * U, a = (o.a == null ? 1 : o.a) * (p.a == null ? 1 : p.a);
       if (w <= .5 || a <= 0) { out.push({ x0: x, x1: x }); return; }
+      if (p.kind === 'down' && o.out) { CH.fillRect(D, x, y + h + 3, x + w, y + h * 1.55 + 3, { stroke: p.col, dash: true, sw: 1.6, fill: ha(p.col, .08), a: a }); if (p.txt) TX(D, x + w / 2, y + h * 1.55 + 3 + Math.min(h * .4, CH.fs(D, .8)) * .9, p.txt, { size: fit(D, p.txt, Math.max(w * 1.6, CH.fs(D, 3)), Math.min(h * .45, CH.fs(D, .8))), col: p.col, a: a }); out.push({ x0: x, x1: x + w }); return; }
       if (p.kind === 'down') CH.fillRect(D, x, y, x + w, y + h, { stroke: p.col, dash: true, sw: 1.8, fill: ha(p.col, .08), a: a });
       else CH.fillRect(D, x, y, x + w, y + h, { fill: ha(p.col, p.kind === 'up' ? .7 : .4), stroke: p.col, sw: p.kind === 'up' ? 2.6 : 2, a: a });
       if (p.txt) { var z = Math.min(h * .52, CH.fs(D, .9)); TX(D, x + w / 2, y + h / 2, p.txt, { size: fit(D, p.txt, w * .9, z), col: p.kind ? p.col : C.chalk, a: a, outline: p.kind === 'up' ? OUT : null }); }
@@ -493,7 +494,7 @@
   function today(D, k) {
     var R = CH.box(D, { l: .03, r: .03, t: .02, b: .03 }), s = CH.fs(D), W = wide(D), ph = !!D.ph;
     var top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * (W ? .3 : .27)), G = road(D, top, 1960, 1960), u = Math.min(s * 2.4, top.h * .36);
-    brace(D, G.x0, G.x1, G.y - u * 1.25, -1, { h: s * .3, lab: '1960 m・20分', col: C.yel, size: s * .9 });
+    brace(D, G.x0, G.x1, G.y - u * 1.25, -1, { h: s * .3, lab: '1960 m・20分', col: C.yel, size: s * .9, a: ph ? 1 - CH.smooth(.58, .62, k) : 1 });
     var m = ph ? 20 * CH.smooth(.62, .95, k) : 0, d = m <= 12 ? 70 * m : 840 + 140 * (m - 12), fin = ph ? CH.smooth(.94, 1, k) : 0;
     if (!ph || k < .6) {
       TX(D, G.X(500), G.y + s * 1.5, '分速 70m で歩く', { size: fit(D, '分速 70m で歩く', G.X(980) - G.X(0), s * .85), col: XC });
