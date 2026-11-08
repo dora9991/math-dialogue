@@ -207,6 +207,17 @@
     }
     return out;
   }
+  /* 表と説明の字：横長なら 左に表・右に字、縦長なら 上に表・下に字。[表の四角, 字の四角, 横長か] */
+  function lay(D, Rb, k) {
+    var wide = D.W > D.H * .9; k = k || .62;
+    if (wide) return [CH.rect(Rb.x0, Rb.y0, Rb.x0 + Rb.w * k, Rb.y1), CH.rect(Rb.x0 + Rb.w * (k + .04), Rb.y0, Rb.x1, Rb.y1), true];
+    var gh = Math.min(Rb.w * .9, Rb.h * .64); return [CH.rect(Rb.x0, Rb.y0, Rb.x1, Rb.y0 + gh), CH.rect(Rb.x0, Rb.y0 + gh + 6, Rb.x1, Rb.y1), false];
+  }
+  /* 字の四角に、行を上から（wide なら左よせ）。arr：[字, 色, 濃さ] */
+  function say(D, Q, wide, arr, o) {
+    o = o || {}; var s = o.size || CH.fs(D), n = arr.length, lh = Math.min(s * 2.3, Q.h / Math.max(1, n + .4)), y = wide ? Q.cy - lh * (n - 1) / 2 : Q.y0 + lh * .6;
+    arr.forEach(function (r, i) { if (!r || (r[2] != null && r[2] <= 0)) return; TX(D, wide ? Q.x0 : Q.cx, y + i * lh, r[0], { col: r[1] || C.chalk, a: r[2], size: s, align: wide ? 'left' : 'center', maxW: Q.w }); });
+  }
 
   /* ---- この時間のページ ---- */
   var C12 = R(1, 12), isP = function (n) { return n > 1 && R(2, n - 1).every(function (d) { return n % d !== 0; }); };

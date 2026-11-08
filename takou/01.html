@@ -114,6 +114,19 @@
   }
   /* 幅 maxW に入る大きさ */
   function fit(D, s, maxW, size) { var w = TW(D, s, size); return w > maxW ? size * maxW / w : size; }
+  /* 字の列：parts＝[字 か {t, col, a}]。x はまん中（o.align 'left' なら左はし）。出ていない字も場所はとる。それぞれの位置 {x0, x1, cx} を返す */
+  function seq(D, x, y, parts, o) {
+    o = o || {}; var size = o.size || CH.fs(D), P = parts.map(function (p) { return typeof p === 'string' ? { t: p } : p; });
+    var ws = P.map(function (p) { return TW(D, p.t, size); }), tot = ws.reduce(function (a, b) { return a + b; }, 0);
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - tot : x - tot / 2, out = [];
+    P.forEach(function (p, i) {
+      var a = (p.a == null ? 1 : p.a) * (o.a == null ? 1 : o.a);
+      if (a > 0) TX(D, x0, y, p.t, { size: size, col: p.col || o.col, a: a, align: 'left', outline: o.outline });
+      out.push({ x0: x0, x1: x0 + ws[i], cx: x0 + ws[i] / 2 }); x0 += ws[i];
+    });
+    out.w = tot; return out;
+  }
+  function seqW(D, parts, size) { return parts.reduce(function (w, p) { return w + TW(D, typeof p === 'string' ? p : p.t, size); }, 0); }
   /* 字 e の中の、sub（n こめ）のまん中の x（左はし x0、大きさ z） */
   function xOf(D, e, sub, z, x0, n) { var p = plain(e), i = -1; n = n || 1; while (n-- > 0) i = p.indexOf(sub, i + 1); return x0 + TW(D, p.slice(0, i), z) + TW(D, sub, z) / 2; }
   /* 角の丸い四角 */
@@ -307,33 +320,33 @@
 
   /* ---- ことば：a(b＋c) の面積図と、わり算 ---- */
   function kotoba(D, t, ph) {
-    var R = CH.box(D, { l: .04, r: .04, t: .03, b: .03 }), w = wideOf(D), s = CH.fs(D), P = w ? CH.cols(R, 2, .08) : CH.rows(R, 2, .06), A = P[0], B = P[1];
+    var R = CH.box(D, { l: .04, r: .04, t: .03, b: .03 }), w = wideOf(D), s = CH.fs(D), P = w ? CH.cols(R, 2, .08) : [CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .4), CH.rect(R.x0, R.y0 + R.h * .44, R.x1, R.y1)], A = P[0], B = P[1];
     var cut = ph ? sm(0, .18, t) : 0, kc = ph ? sm(.12, .3, t) : 0, kf = ph ? sm(.28, .42, t) : 0;
-    chip(D, A.cx, A.y0 + s * .8, '分配法則', C.green, ph ? sm(.3, .45, t) : 0, s * .85);
-    var hA = w ? A.h * .55 : A.h * .62, G = area(D, CH.rect(A.x0, A.y0 + s * 1.6, A.x1, A.y0 + s * 1.6 + hA), [{ t: 'b', v: 3.2, col: C.blue }, { t: 'c', v: 2.4, col: C.orange }], [{ t: 'a', v: 2 }], {
+    chip(D, w ? A.cx : A.x0, A.y0 + s * .8, '分配法則', C.green, ph ? sm(.3, .45, t) : 0, s * .85, w ? null : 'left');
+    var hA = w ? A.h * .55 : A.h * .66, G = area(D, CH.rect(w ? A.x0 : A.x0 + A.w * .25, A.y0 + (w ? s * 1.6 : 0), A.x1, A.y0 + (w ? s * 1.6 : 0) + hA), [{ t: 'b', v: 3.2, col: C.blue }, { t: 'c', v: 2.4, col: C.orange }], [{ t: 'a', v: 2 }], {
       top: 'b＋c', cut: cut, seg: cut, cell: function (r, c) { return kc > 0 ? { t: c ? 'ac' : 'ab', col: c ? C.orange : C.blue, fa: .3 * kc, a: kc } : null; } });
     var f = 'a(b＋c)＝{b|ab}＋{o|ac}', z = Math.min(s * 1.3, fit(D, f, A.w, s * 1.3));
     TX(D, A.cx, Math.min(A.y1 - z * .6, G.y1 + z * 1.4), ph ? f : 'a(b＋c)＝？', { size: z, col: C.yel, a: ph ? kf : .8 });
     /* わり算：面積と縦がわかっている長方形の、横の長さ */
-    var k2 = ph ? sm(.45, .62, t) : 0, kd = ph ? sm(.5, 1, t) : 0, hB = w ? B.h * .45 : B.h * .5;
-    var G2 = area(D, CH.rect(B.x0, B.y0 + s * .3, B.x1, B.y0 + s * .3 + hB), [{ t: k2 > .5 ? '3x' : '？', v: 3 * XL, col: k2 > .5 ? C.blue : C.yel }, { t: k2 > .5 ? '4' : '？', v: 4, col: k2 > .5 ? C.orange : C.yel }], [{ t: '2x', v: 2 * XL }], {
+    var k2 = ph ? sm(.45, .62, t) : 0, kd = ph ? sm(.5, 1, t) : 0, hB = B.h * .45;
+    var G2 = area(D, w ? CH.rect(B.x0, B.y0 + s * .3, B.x1, B.y0 + s * .3 + hB) : CH.rect(B.x0, B.y0, B.x0 + B.w * .48, B.y1), [{ t: k2 > .5 ? '3x' : '？', v: 3 * XL, col: k2 > .5 ? C.blue : C.yel }, { t: k2 > .5 ? '4' : '？', v: 4, col: k2 > .5 ? C.orange : C.yel }], [{ t: '2x', v: 2 * XL }], {
       top: '？', cell: function (r, c) { return { t: c ? '8x' : '6x^2', col: c ? C.orange : C.blue, fa: .26 }; } });
-    chain(D, CH.rect(B.x0, G2.y1 + s * .4, B.x1, B.y1), LD, kd, { size: Math.min(s * 1.2, B.w / 9), last: C.yel });
+    chain(D, w ? CH.rect(B.x0, G2.y1 + s * .4, B.x1, B.y1) : CH.rect(B.x0 + B.w * .52, B.y0, B.x1, B.y1), LD, kd, { size: w ? Math.min(s * 1.35, B.w / 8) : s * 1.1, last: C.yel });
   }
 
   /* ---- 例題：かける式から、各項へ弧の矢印 ---- */
-  function distrib(D, R, L, k, from, tos, cols) {
+  function distrib(D, R, L, k, from, tos, cols, lab) {
     var s = CH.fs(D), z = Math.min(s * 1.3, R.w / 8.5), ch = chain(D, CH.rect(R.x0, R.y0 + z * 1.4, R.x1, R.y1), L, sm(.22, 1, k), { size: z, last: C.yel });
     var x0 = xOf(D, L[0], from[0], ch.z, ch.base, from[1]), y = ch.ys[0] - ch.z * .7;
     tos.forEach(function (to, i) { arc(D, x0, xOf(D, L[0], to, ch.z, ch.base), y, cols[i], sm(i * .1, .14 + i * .1, k), { h: ch.z * (.55 + .4 * i) }); });
+    if (lab) TX(D, Math.max(R.x0, ch.x0 - s * 2.2), ch.ys[0] - ch.z * 2.2, lab, { size: s * .9, align: 'left', col: C.pink });
     return ch;
   }
   function ex12(D, t, ph) {
     var R = CH.box(D, { l: .04, r: .04, t: .04, b: .04 }), w = wideOf(D), P = w ? CH.cols(R, 2, .06) : CH.rows(R, 2, .06), s = CH.fs(D);
     var k1 = ph ? CH.clamp(t * 2, 0, 1) : 0, k2 = ph ? CH.clamp(t * 2 - 1, 0, 1) : 0;
-    TX(D, P[0].x0, P[0].y0 + s * .6, '（1）', { size: s * .9, align: 'left', col: C.pink }); TX(D, P[1].x0, P[1].y0 + s * .6, '（2）', { size: s * .9, align: 'left', col: C.pink });
-    distrib(D, P[0], L1, k1, ['3x', 1], ['2x', '5y'], [C.blue, C.orange]);
-    distrib(D, P[1], L2, k2, ['(−2a)', 1], ['4a', '3b'], [C.blue, C.orange]);
+    distrib(D, P[0], L1, k1, ['3x', 1], ['2x', '5y'], [C.blue, C.orange], '（1）');
+    distrib(D, P[1], L2, k2, ['(−2a)', 1], ['4a', '3b'], [C.blue, C.orange], '（2）');
   }
   /* 例題（3）：面積図（表の形）で、横の長さ */
   function ex3(D, t, ph) {

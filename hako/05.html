@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>データの比較のまとめ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* データの比較（箱ひげ図） 第5時：「データの比較」で学んだことを、整理して確かめよう（ikkan の lesson_hako_05 と同じ流れ）。
+   2つの組の箱ひげ図で「そろっている」をくらべる。整理図（小さい順 → 中央値で分ける → 前半・後半の中央値 → 箱ひげ図）。
+   例題は、ばらばらのカードが小さい順にならび、まん中で分かれ、5つの点が数直線に落ちて箱ひげ図ができるまでを通しで。
+   考えようは、9つの点をドラッグして、同じ箱ひげ図になるデータをつくる道具（答えは出さない）。
+   データは自作（ikkan と同じ数値）。5つの値は教科書の求め方（中央値で前半・後半に分け、それぞれの中央値。
+   個数が奇数のとき、中央値は前半・後半に入れない）で、ページの中で計算し直して照らし合わせている（CH.check）。 */
+(function () {
+  var C = CH.C;
+  /* ---- 四分位数（教科書の求め方） ---- */
+  function md(a) { var m = a.length; return m % 2 ? a[(m - 1) / 2] : (a[m / 2 - 1] + a[m / 2]) / 2; }
+  function Q5(d) {
+    var s = d.slice().sort(function (a, b) { return a - b; }), n = s.length, h = Math.floor(n / 2);
+    var r = { s: s, n: n, min: s[0], q1: md(s.slice(0, h)), med: md(s), q3: md(s.slice(n - h)), max: s[n - 1] };
+    r.f = [r.min, r.q1, r.med, r.q3, r.max]; r.iqr = r.q3 - r.q1; r.rng = r.max - r.min; return r;
+  }
+  function eq5(d, f) { var r = Q5(d); return f.every(function (v, i) { return CH.near(r.f[i], v); }); }
+  function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function nf(v) { return String(Math.round(v * 100) / 100); }
+
+  var C1 = [30, 50, 65, 80, 95], C2 = [45, 60, 65, 70, 85], ST = [52, 20, 38, 47, 74, 55, 80, 29, 43, 35], FST = [20, 35, 45, 55, 80];
+  var BF = [0, 20, 45, 70, 150], AF = [10, 40, 60, 90, 140], G8 = [6, 11, 4, 9, 13, 8, 5, 16], T9 = [2, 4, 6, 8, 10];
+  CH.check(C1[2] === C2[2] && C1[4] - C1[0] === 65 && C2[4] - C2[0] === 40 && C1[3] - C1[1] === 30 && C2[3] - C2[1] === 10, '今日の問い（範囲・四分位範囲）');
+  CH.check(eq5(ST, FST) && Q5(ST).s.join() === '20,29,35,38,43,47,52,55,74,80' && Q5(ST).iqr === 20, '例題（家庭学習）');
+  CH.check([1, 2, 3].every(function (i) { return AF[i] > BF[i]; }) && AF[2] - BF[2] === 15 && AF[1] - BF[1] === 20 && AF[3] - BF[3] === 20, '例題（読書週間の前と後）');
+  CH.check(eq5([2, 3, 5, 5, 6, 7, 7, 9, 10], T9) && eq5([2, 4, 4, 6, 6, 6, 6, 10, 10], T9), '考えよう（答えは出さない。ここで確かめるだけ）');
+  var Q8 = Q5(G8); CH.check(6 + 11 + 4 + 9 + 13 + 8 + 5 === 56 && CH.sum(G8) === 72 && CH.mean(G8) === 9 && Q8.med === 8.5 && Q8.q1 === 5.5 && Q8.q3 === 12 && Q8.iqr === 6.5, 'チャレンジ');
+
+  var QN = ['第1四分位数', '中央値', '第3四分位数'], QCOL = [C.pink, C.yel, C.green], QC5 = [C.lav, C.pink, C.yel, C.green, C.lav];
+  /* 箱ひげ図。X（値 → 横の位置）、cy、bh、f（5つの値）。o：col、a、k（組み立ての進み：前半で箱、後半でひげ）、w */
+  function boxplot(D, X, cy, bh, f, o) {
+    o = o || {}; var col = o.col || C.chalk, a = o.a == null ? 1 : o.a, k = o.k == null ? 1 : o.k, w = o.w || 2.6, x = f.map(X), kb = CH.smooth(0, .5, k), kw = CH.smooth(.5, 1, k), e = bh * .3;
+    if (kw > 0) {
+      CH.line(D, x[1], cy, CH.lerp(x[1], x[0], kw), cy, { col: col, w: w, a: a }); CH.line(D, x[3], cy, CH.lerp(x[3], x[4], kw), cy, { col: col, w: w, a: a });
+      var ae = a * CH.smooth(.85, 1, k); if (ae > 0) { CH.line(D, x[0], cy - e, x[0], cy + e, { col: col, w: w, a: ae }); CH.line(D, x[4], cy - e, x[4], cy + e, { col: col, w: w, a: ae }); }
+    }
+    if (kb > 0) { var hh = bh / 2 * kb; CH.fillRect(D, x[1], cy - hh, x[3], cy + hh, { fill: hexA(col, .18), stroke: col, sw: w, a: a, dash: o.dash }); CH.line(D, x[2], cy - hh, x[2], cy + hh, { col: col, w: w + 1, a: a }); }
+  }
+  function brace(D, x0, x1, y, txt, col, a, o) {
+    o = o || {}; var s = CH.fs(D), d = o.down ? -1 : 1, lo = { col: col, w: 2.2, a: a };
+    CH.line(D, x0, y, x1, y, lo); CH.line(D, x0, y, x0, y + 7 * d, lo); CH.line(D, x1, y, x1, y + 7 * d, lo);
+    if (txt) CH.text(D, (x0 + x1) / 2, y - s * .72 * d, txt, { col: col, a: a, size: o.size || s * .85, outline: 'rgba(24,52,38,.9)' });
+  }
+  function tag(D, x, y, txt, col, a, o) { o = o || {}; CH.text(D, x, y, txt, { col: col, a: a, size: o.size || CH.fs(D, .85), align: o.align, outline: 'rgba(24,52,38,.9)' }); }
+
+  /* 小さい順のカードを、まん中で2つに分け（t1）、前半・後半を それぞれ まん中で分ける（t2）。
+     o：col、names、na、half、txt(i)、cy、pos(i, xc, cy, ch)（カードの位置を上書き）。返すもの：{ m：4つに分ける位置 [{ k, x, v }]、xs：カードの x、y0・y1：カードの上・下 } */
+  function split(D, R, vals, o) {
+    o = o || {}; var n = vals.length, h = Math.floor(n / 2), t1 = o.t1 || 0, t2 = o.t2 || 0, cuts = [], mk = [], s = CH.fs(D);
+    function seg(s0, m, k, w, t) {
+      if (m < 1) return;
+      if (m % 2) { var c = s0 + (m - 1) / 2; cuts.push({ p: c - .5, w: w / 2, t: t }, { p: c + .5, w: w / 2, t: t }); mk.push({ k: k, i: c, t: t }); }
+      else { var b = s0 + m / 2 - .5; cuts.push({ p: b, w: w, t: t }); mk.push({ k: k, b: b, t: t }); }
+    }
+    seg(0, n, 1, 1.2, t1); seg(0, h, 0, .8, t2); seg(n - h, h, 2, .8, t2);
+    var gw = 0, op = 0; cuts.forEach(function (c) { gw += c.w; op += c.w * c.t; });
+    var cw = Math.min(R.w / (n + gw), s * 3.2), ch = Math.min(cw * 1.2, s * 2.6), cy = o.cy || R.cy, x0 = R.cx - (n + op) * cw / 2;
+    function xc(i) { var off = 0; cuts.forEach(function (c) { if (c.p < i) off += c.w * c.t; }); return x0 + (i + .5 + off) * cw; }
+    var cardOf = {}; mk.forEach(function (m) { if (m.i != null) cardOf[m.i] = m; });
+    var ns = Math.max(12, s * .72), yt = cy - ch / 2, yb = cy + ch / 2;
+    if (o.half && t1 > 0) {
+      var ah = CH.smooth(.3, 1, t1), yh = yb + s * .55;
+      [[0, h - 1, '前半'], [n - h, n - 1, '後半']].forEach(function (q) {
+        var xa = xc(q[0]) - cw * .42, xb = xc(q[1]) + cw * .42, lo = { col: 'rgba(242,240,230,.75)', w: 1.8, a: ah };
+        CH.line(D, xa, yh, xb, yh, lo); CH.line(D, xa, yh - 6, xa, yh, lo); CH.line(D, xb, yh - 6, xb, yh, lo);
+        CH.text(D, (xa + xb) / 2, yh + ns * .85, q[2] + ' ' + h + '個', { size: ns, a: ah, col: 'rgba(242,240,230,.8)' });
+      });
+    }
+    var xs = vals.map(function (v, i) { return xc(i); });
+    vals.forEach(function (v, i) {
+      var m = cardOf[i], on = m && m.t > .5, col = on ? QCOL[m.k] : (o.colf && o.colf(i)) || o.col || C.blue, p = o.pos ? o.pos(i, xc, cy, ch) : [xc(i), cy];
+      CH.card(D, p[0], p[1], cw * .84, ch, o.txt ? o.txt(i) : v, { col: col, fill: on ? hexA(QCOL[m.k], .32) : null, sw: on ? 2.6 : 1.6, a: on ? 1 : 1 - .45 * CH.smooth(.5, 1, t2), size: Math.min(ch * .55, cw * .5) });
+    });
+    var out = [];
+    mk.forEach(function (m) {
+      var a = CH.smooth(.5, 1, m.t); if (a <= 0) return;
+      var col = QCOL[m.k], x, v, yl;
+      if (m.i != null) { x = xc(m.i); v = vals[m.i]; yl = yt - ns * .8; }
+      else {
+        x = (xc(m.b - .5) + xc(m.b + .5)) / 2; var va = vals[m.b - .5], vb = vals[m.b + .5]; v = typeof va === 'number' && typeof vb === 'number' ? (va + vb) / 2 : null;
+        CH.line(D, x, yt - 3, x, yb + 3, { col: col, w: 2.4, dash: [5, 4], a: a });
+        if (v != null) CH.text(D, x, yt - s * .62, nf(v), { col: col, num: true, w: 700, size: s * .9, a: a });
+        yl = yt - s * 1.25 - ns * .6;
+      }
+      if (o.names) CH.text(D, x, yl, o.names[m.k], { col: col, size: ns, a: a * (o.na == null ? 1 : o.na) });
+      out.push({ k: m.k, x: x, v: v });
+    });
+    return { m: out, xs: xs, y0: yt, y1: yb };
+  }
+  /* ばらばらのカード orig を、小さい順にならべかえてから（ts：0〜1）、split する。txt(j)：もとの j 番目のカードの字 */
+  function sortSplit(D, R, orig, o) {
+    var idx = orig.map(function (v, i) { return i; }).sort(function (a, b) { return orig[a] - orig[b] || a - b; }), ts = o.ts == null ? 1 : o.ts, e = CH.ease(ts), p = {};
+    for (var k in o) p[k] = o[k];
+    if (o.txt) p.txt = function (i) { return o.txt(idx[i]); };
+    if (ts < 1) { p.t1 = 0; p.t2 = 0; p.names = null; p.half = false; p.pos = function (i, xc, cy, ch) { var j = idx[i]; return [CH.lerp(xc(j), xc(i), e), cy - (i !== j ? Math.sin(Math.PI * e) * ch * .55 * (i > j ? 1 : -1) : 0)]; }; }
+    return split(D, R, idx.map(function (i) { return orig[i]; }), p);
+  }
+
+  /* ---- 考えよう：9つの点をドラッグ ---- */
+  var G9 = [1, 2, 3, 4, 5, 6, 7, 8, 9], dragI = null, L9 = null;
+  function live() { return L9 && performance.now() - L9.seen < 300; }
+  function setupDrag() {
+    var cv = document.getElementById('cv'); if (!cv) return;
+    function pt(e) { var r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+    function near(p) { var best = -1, bd = 1e9; L9.P.forEach(function (q, i) { var d = Math.hypot(q[0] - p[0], q[1] - p[1]); if (d < bd) { bd = d; best = i; } }); return bd < Math.max(L9.r * 2.2, 22) ? best : -1; }
+    cv.addEventListener('pointerdown', function (e) { if (!live()) return; var i = near(pt(e)); if (i < 0) return; dragI = i; try { cv.setPointerCapture(e.pointerId); } catch (_) { } e.preventDefault(); });
+    cv.addEventListener('pointermove', function (e) {
+      if (!live()) { cv.style.cursor = 'default'; return; }
+      var p = pt(e); if (dragI != null) G9[dragI] = CH.clamp(Math.round(L9.inv(p[0])), 0, 12); else cv.style.cursor = near(p) >= 0 ? 'grab' : 'default';
+    });
+    function end() { dragI = null; } cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  }
+
+  K3.run({
+    no: '第5時', title: '「データの比較」で学んだことを、整理して確かめよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '04.html', label: '◀ 第4時' }],
+    steps: [
+      { tag: '今日の問い', bh: '1組・2組（30人ずつ）の 数学のテストの得点', q: '1組と 2組（どちらも 30人）の、数学のテストの得点の箱ひげ図。どちらの組のほうが、得点が「そろっている」といえるだろう。箱ひげ図から読み取れることを根拠にして、説明しよう。',
+        notes: ['① 自分の考え（3分）　どちらの組か。わけを 数で。', '② ペアの考え（3分）　自分とちがう考えを。'],
+        draw: function (D) { classes(D, 0); } },
+      { tag: '今日の問い', q: '範囲と四分位範囲で くらべると？', a: '範囲 1組 65点・2組 40点、四分位範囲 1組 30点・2組 10点 → 2組のほうが そろっている',
+        sub: '中央値は どちらも 65点で同じ。まん中の値が同じでも、散らばりのようすは ちがう', dur: 5,
+        b: { t: '範囲 1組 65点・2組 <b>40点</b>　四分位範囲 1組 30点・2組 <b>10点</b> → <b>2組</b>のほうが そろっている', col: C.yel },
+        draw: function (D) { classes(D, D.ph ? D.t : 0); } },
+      { tag: 'ことば', bh: 'ことば', q: 'この単元で学んだことを、1つの図に 整理しよう。箱ひげ図は、どんな手順でかく？ 箱とひげは、何を表している？', a: '小さい順にならべる → 中央値で 前半・後半に分ける → それぞれの中央値（第1・第3四分位数）→ 5つの値を 箱ひげ図に',
+        sub: '箱の長さ ＝ 四分位範囲、ひげの端から端 ＝ 範囲。4つの部分に、データが 約 25％ずつ入る', dur: 6,
+        b: [{ t: '<b>四分位数</b> … 小さい順 → 中央値で分ける → 前半・後半の中央値（第1・第3四分位数）', col: C.green }, { t: '<b>箱ひげ図</b> … 箱の長さ＝<b>四分位範囲</b>、ひげの端から端＝<b>範囲</b>、4つの部分に約 25％ずつ', col: C.green }],
+        draw: function (D) { chart(D, D.ph ? D.t : 0); } },
+      { tag: '例題', bh: '例題　家庭学習の時間（10日間）', q: '10日間の家庭学習の時間（52 20 38 47 74 55 80 29 43 35 分）。小さい順にならべて、5つの値と四分位範囲を求め、箱ひげ図をかこう。', a: '最小値 20、第1四分位数 35、中央値 45、第3四分位数 55、最大値 80（分）。四分位範囲 20分',
+        sub: '小さい順 20 29 35 38 43 ｜ 47 52 55 74 80。中央値 (43＋47)÷2＝45、前半のまん中 35、後半のまん中 55、四分位範囲 55−35＝20', dur: 10,
+        b: { t: '20・35・45・55・80（分）、四分位範囲 55−35＝<b>20分</b>', col: C.blue },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .04, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0;
+          var top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .45), bot = CH.rect(R.x0 + R.w * .04, R.y0 + R.h * .6, R.x1 - R.w * .04, R.y1);
+          var S = sortSplit(D, top, ST, { ts: CH.smooth(0, .16, t), t1: CH.smooth(.18, .3, t), t2: CH.smooth(.32, .44, t), col: C.blue, half: true, names: QN, cy: top.y1 - s * 1.8 });
+          var X = CH.numline(D, bot, 10, 90, 5, { lab: 10, unit: '（分）' }), bh = Math.min(s * 2, bot.h * .32), cy = bot.y1 - s * .8 - bh / 2;
+          if (t < .46) return;
+          var from = [[S.xs[0], S.y1]].concat(S.m.sort(function (a, b) { return a.k - b.k; }).map(function (m) { return [m.x, S.y1]; })).concat([[S.xs[S.xs.length - 1], S.y1]]);
+          var tf = CH.smooth(.46, 1, t), pa = 1 - CH.smooth(.85, 1, tf), r = Math.max(4, s * .3), P = [];
+          FST.forEach(function (v, i) {
+            var fa = CH.smooth(i * .05, .25 + i * .05, tf), x = CH.lerp(from[i][0], X(v), CH.ease(fa)), y = CH.lerp(from[i][1] + 6, cy, CH.ease(fa)); P.push([x, y, fa]);
+            if (fa > 0) CH.line(D, from[i][0], from[i][1] + 6, x, y, { col: QC5[i], w: 1.6, dash: [4, 5], a: .55 });
+          });
+          boxplot(D, X, cy, bh, FST, { col: C.blue, k: CH.smooth(.48, 1, tf) });
+          P.forEach(function (p, i) { if (p[2] > 0 && pa > 0) CH.circle(D, p[0], p[1], r, { fill: QC5[i], stroke: 'rgba(20,30,24,.8)', sw: 1.2, a: pa }); });
+          var ia = CH.smooth(.92, 1, t); if (ia > 0) brace(D, X(35), X(55), cy - bh / 2 - s * .5, '四分位範囲 20', C.orange, ia);
+        } },
+      { tag: '例題', q: '読書週間の前と後に、35人の 1週間の読書時間を調べた。読書時間は 増えたといえるだろうか。数を 2つ使って説明しよう。', a: '増えたといえる。中央値が 45分 → 60分、第1四分位数が 20分 → 40分 に大きくなった',
+        sub: '第3四分位数も 70分 → 90分。箱が 全体に右へ動いた（最大値は 150分 → 140分 だが、1人の値なので 全体のようすは 箱で見る）', dur: 4,
+        b: { t: '読書週間 … 中央値 45→<b>60分</b>、第1四分位数 20→<b>40分</b> → 増えたといえる', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .12, r: .08, t: .12, b: .12 }), s = CH.fs(D), t = D.ph ? D.t : 0, X = CH.numline(D, R, 0, 150, 5, { lab: 25, unit: '（分）' });
+          var rows = CH.rows(CH.rect(R.x0, R.y0, R.x1, R.y1 - s * .6), 2, .55), bh = Math.min(s * 2, rows[0].h * .7);
+          [['前', BF, C.blue], ['後', AF, C.orange]].forEach(function (g, k) { CH.text(D, R.x0 - s * .8, rows[k].cy, g[0], { col: g[2], size: s * 1.05, align: 'right' }); boxplot(D, X, rows[k].cy, bh, g[1], { col: g[2] }); });
+          [1, 2, 3].forEach(function (i, j) {
+            var a = CH.smooth(j * .25, j * .25 + .3, t); if (a <= 0) return;
+            var x0 = X(BF[i]), y0 = rows[0].cy + bh / 2 + 4, x1 = X(AF[i]), y1 = rows[1].cy - bh / 2 - 4;
+            CH.arrow(D, x0, y0, CH.lerp(x0, x1, a), CH.lerp(y0, y1, a), { col: QCOL[i - 1], w: 2.6, a: a });
+            if (a >= 1) tag(D, (x0 + x1) / 2 + s * .4, (y0 + y1) / 2, '＋' + (AF[i] - BF[i]), QCOL[i - 1], 1, { align: 'left', size: s * .8 });
+          });
+        } },
+      { tag: '考えよう', q: '箱ひげ図（最小値 2・第1四分位数 4・中央値 6・第3四分位数 8・最大値 10）になる 9個のデータを、2通り つくろう。',
+        notes: ['小さい順に、表に書こう。2つのデータの ちがうところは？', '気づいたこと。', '点をドラッグして動かせます。下に、いまのデータの箱ひげ図が出ます。'],
+        draw: function (D) {
+          var R = CH.box(D, { l: .14, r: .08, t: .06, b: .1 }), s = CH.fs(D);
+          var top = CH.rect(R.x0, R.y0 + s * 1.4, R.x1, R.y0 + R.h * .48), bot = CH.rect(R.x0, top.y1 + s * 2.6, R.x1, R.y1);
+          var X = CH.numline(D, top, 0, 12, 1, { lab: 1 }), r = Math.min(s * .6, (X(1) - X(0)) * .42);
+          var P = CH.dots(D, X, top.y1, G9, { col: function (i) { return i === dragI ? C.yel : C.orange; }, r: r });
+          L9 = { P: P, r: r, seen: performance.now(), inv: function (px) { return (px - top.x0) / top.w * 12; } };
+          var q = Q5(G9), sz = CH.fitSize(D, 'いまのデータ（小さい順）：' + q.s.join('　'), R.w, s * .85);
+          CH.text(D, R.x0, R.y0 + s * .4, 'いまのデータ（小さい順）：' + q.s.join('　'), { align: 'left', size: sz, col: 'rgba(242,240,230,.85)' });
+          var Xb = CH.numline(D, bot, 0, 12, 1, { lab: 2 }), rows = CH.rows(CH.rect(bot.x0, bot.y0, bot.x1, bot.y1 - s * .6), 2, .3), bh = Math.min(s * 1.8, rows[0].h * .62), ok = eq5(G9, T9);
+          CH.text(D, bot.x0 - s * .6, rows[0].cy, '図', { align: 'right', size: s * .9 }); boxplot(D, Xb, rows[0].cy, bh, T9, { col: C.chalk });
+          CH.text(D, bot.x0 - s * .6, rows[1].cy, 'いま', { align: 'right', size: s * .9, col: C.orange }); boxplot(D, Xb, rows[1].cy, bh, q.f, { col: ok ? C.yel : C.orange });
+          if (ok) CH.fillRect(D, bot.x0 - s * 3, rows[1].cy - bh * .85, bot.x1 + 4, rows[1].cy + bh * .85, { stroke: C.yel, sw: 2.2, fill: 'rgba(255,226,122,.08)' });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '8人のゲームの得点　6　11　4　9　13　8　5　a（a は整数）。① 平均値が 9点のとき、a の値は？ ② そのとき、中央値と四分位範囲は？', a: '① a ＝ 16　② 中央値 8.5点、四分位範囲 6.5点',
+        sub: '① 合計 56 ＋ a ＝ 9 × 8 ＝ 72 より a ＝ 16　② 小さい順 4 5 6 8 ｜ 9 11 13 16。中央値 (8＋9)÷2＝8.5、第1四分位数 (5＋6)÷2＝5.5、第3四分位数 (11＋13)÷2＝12、四分位範囲 12−5.5＝6.5', dur: 9,
+        b: { t: '① <b>a ＝ 16</b>（56＋a＝72）　② 中央値 <b>8.5点</b>、四分位範囲 12−5.5＝<b>6.5点</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .06, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0, ra = CH.smooth(.12, .2, t);
+          var top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .55), bot = CH.rect(R.x0, top.y1 + s, R.x1, R.y1);
+          sortSplit(D, top, G8, { ts: CH.smooth(.28, .44, t), t1: CH.smooth(.46, .58, t), t2: CH.smooth(.6, .74, t), col: C.blue, half: true, names: QN, cy: top.y1 - s * 1.8,
+            colf: function (i) { return t < .44 && i === 7 ? C.lav : null; }, txt: function (j) { return j === 7 && ra < .5 ? 'a' : G8[j]; } });
+          var L = [['① 合計：56 ＋ a ＝ 9 × 8 ＝ 72　→　a ＝ 16', 0, C.chalk], ['② 四分位範囲：12 − 5.5 ＝ 6.5', .8, C.orange]];
+          L.forEach(function (l, j) { var a = CH.smooth(l[1], l[1] + .1, t); if (a <= 0) return; CH.text(D, bot.cx, bot.y0 + s * .8 + j * s * 1.9, l[0], { size: CH.fitSize(D, l[0], bot.w, s * .95), a: a, col: l[2] }); });
+        } }
+    ]
+  });
+  setupDrag();
+
+  /* 今日の問い：1組・2組（t：答えの動き） */
+  function classes(D, t) {
+    var R = CH.box(D, { l: .12, r: .08, t: .14, b: .12 }), s = CH.fs(D), X = CH.numline(D, R, 30, 100, 5, { lab: 10, unit: '（点）' });
+    var rows = CH.rows(CH.rect(R.x0, R.y0, R.x1, R.y1 - s * .6), 2, .5), bh = Math.min(s * 2.2, rows[0].h * .5);
+    var ma = CH.smooth(0, .2, t), ia = CH.smooth(.25, .5, t), ra = CH.smooth(.55, .8, t);
+    if (ma > 0) { CH.line(D, X(65), R.y0 - s * .3, X(65), R.y1, { col: C.yel, w: 2, dash: [6, 5], a: ma }); tag(D, X(65), R.y0 - s * .9, '中央値 65（同じ）', C.yel, ma); }
+    [['1組', C1, C.blue], ['2組', C2, C.orange]].forEach(function (g, k) {
+      var q = rows[k], f = g[1]; CH.text(D, R.x0 - s * .8, q.cy, g[0], { col: g[2], align: 'right', size: s }); boxplot(D, X, q.cy, bh, f, { col: g[2] });
+      if (ia > 0) brace(D, X(f[1]), X(f[3]), q.cy - bh / 2 - s * .5, '四分位範囲 ' + (f[3] - f[1]), C.pink, ia);
+      if (ra > 0) brace(D, X(f[0]), X(f[4]), q.cy + bh / 2 + s * .5, '範囲 ' + (f[4] - f[0]), C.green, ra, { down: true });
+    });
+  }
+  /* ことば：整理図（t：答えの動き） */
+  function chart(D, t) {
+    var R = CH.box(D, { l: .05, r: .05, t: .04, b: .06 }), s = CH.fs(D), narrow = R.w < 520;
+    var F = [[['データを', '小さい順に', 'ならべる'], C.yel], [['中央値で', '前半・後半に', '分ける'], C.blue], [['前半・後半の', '中央値', '＝第1・第3', '四分位数'], C.pink], [['5つの値を', '箱ひげ図に', '表す'], C.green]];
+    var top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * (narrow ? .46 : .36)), cards = [];
+    if (narrow) { var g = CH.rows(top, 2, .16); g.forEach(function (row) { CH.cols(row, 2, .18).forEach(function (c) { cards.push(c); }); }); }
+    else cards = CH.cols(top, 4, .07);
+    cards.forEach(function (c, i) {
+      var a = CH.smooth(i * .1, i * .1 + .1, t), L = F[i][0], col = F[i][1];
+      CH.card(D, c.cx, c.cy, c.w, c.h, '', { col: col, fill: hexA(col, .1) });
+      if (a <= 0) { CH.text(D, c.cx, c.cy, '？', { col: 'rgba(242,240,230,.4)', size: s }); }
+      else { var sz = Math.min(s * .85, c.h / (L.length + .8)); L.forEach(function (tx, j) { CH.text(D, c.cx, c.cy + (j - (L.length - 1) / 2) * sz * 1.25, tx, { size: CH.fitSize(D, tx, c.w * .88, sz), a: a }); }); }
+      if (i < 3 && (narrow ? i !== 1 : true)) { var c2 = cards[i + 1]; CH.arrow(D, c.x1 + 4, c.cy, c2.x0 - 4, c2.cy, { col: 'rgba(242,240,230,.7)', w: 2.2, head: 8 }); }
+      if (narrow && i === 1) { var c3 = cards[2]; CH.arrow(D, c.cx, c.y1 + 3, c3.cx, c3.y0 - 3, { col: 'rgba(242,240,230,.7)', w: 2.2, head: 8 }); }
+    });
+    var bot = CH.rect(R.x0 + R.w * .06, top.y1 + R.h * .08, R.x1 - R.w * .06, R.y1), V = [8, 30, 46, 62, 92], X = function (v) { return bot.x0 + v / 100 * bot.w; };
+    var bh = Math.min(s * 2.4, bot.h * .2), cy = bot.y0 + bot.h * .52, x = V.map(X), na = CH.smooth(.42, .58, t), ba = CH.smooth(.6, .75, t), pa = CH.smooth(.8, .95, t);
+    var PC = [C.blue, C.green, C.yel, C.pink];
+    if (pa > 0) for (var q = 0; q < 4; q++) { var hh = q === 0 || q === 3 ? bh * .32 : bh / 2; CH.fillRect(D, x[q], cy - hh, x[q + 1], cy + hh, { fill: hexA(PC[q], .3), a: pa }); }
+    boxplot(D, X, cy, bh, V, { col: C.chalk });
+    if (pa > 0) for (q = 0; q < 4; q++) tag(D, (x[q] + x[q + 1]) / 2, q === 0 || q === 3 ? cy - bh * .32 - s * .55 : cy, '約25％', C.chalk, pa, { size: CH.fitSize(D, '約25％', (x[q + 1] - x[q]) * .9, Math.max(12, s * .75)) });
+    if (na > 0) [['最小値', 0, 1], ['第1四分位数', 1, 1], ['中央値', 2, 2], ['第3四分位数', 3, 1], ['最大値', 4, 1]].forEach(function (l) { var y = cy + bh / 2 + s * (l[2] === 1 ? .8 : 1.95); CH.line(D, x[l[1]], cy + bh / 2 + 2, x[l[1]], y - s * .45, { col: QC5[l[1]], w: 1.4, a: na * .7 }); tag(D, x[l[1]], y, l[0], QC5[l[1]], na, { size: Math.max(12, s * .78) }); });
+    if (ba > 0) { brace(D, x[1], x[3], cy - bh / 2 - s * .55, '四分位範囲（箱の長さ）', C.pink, ba, { size: Math.max(12, s * .78) }); brace(D, x[0], x[4], cy - bh / 2 - s * 2.2, '範囲（ひげの端から端）', C.green, ba, { size: Math.max(12, s * .78) }); }
+  }
+})();
+</script>
+</body>
+</html>

@@ -352,7 +352,7 @@
     var labs = [['単項式', C.blue, 0], ['多項式・項', C.orange, .12], ['単項式の次数', C.yel, .34], ['多項式の次数', C.green, .64]];
     labs.forEach(function (l, i) {
       var y = R.y0 + R.h * rows[i], a = i === 0 ? 1 : sm(l[2], l[2] + .1, t);
-      if (wide) chip(D, R.x0, y, l[0], l[1], a, s * .85, 'left'); else chip(D, R.x0, y - h * .5 - s * .7, l[0], l[1], a, s * .7, 'left');
+      if (wide) chip(D, R.x0, y, l[0], l[1], a, s * .85, 'left'); else chip(D, R.x0, y - h * .5 - s * .75, l[0], l[1], a, s * .8, 'left');
     });
     var y0 = R.y0 + R.h * rows[0], ex = [['3a', ''], ['−7xy', ''], ['8', '']];
     crow(D, cx, y0, ex.map(function (q) { return { s: q[0] }; }).reduce(function (a, q, i) { if (i) a.push({ s: '、', op: true }); a.push(q); return a; }, []), h, { maxW: W * .9 });

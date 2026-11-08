@@ -481,24 +481,26 @@
     if (o.cand) cand(D, Pl, 10, o.cand);
     CH.lin(D, Pl, -3 / b, k / b, { col: C.blue, w: 3, dash: b === 3 && k === 30 ? [10, 8] : null });
     var xr = Pl.xr, yr = Pl.yr;
-    plab(D, Pl, xr[0] + 1.3, yr[1] - .6, '① x＋y＝10', { col: C.yel, size: s });
-    plab(D, Pl, xr[1] - .2, yr[1] - .6, '② 3x＋' + (b === 1 ? '' : b) + 'y＝' + k, { col: C.blue, size: s, align: 'right' });
+    if (o.lab !== false) { plab(D, Pl, xr[1] - .2, yr[1] - .6, '① x＋y＝10', { col: C.yel, size: s, align: 'right' }); plab(D, Pl, xr[1] - .2, yr[1] - 1.9, '② 3x＋' + (b === 1 ? '' : b) + 'y＝' + k, { col: C.blue, size: s, align: 'right' }); }
     var p = sol([1, 1, 10], [3, b, k]);
     if (p && p[0] >= xr[0] && p[0] <= xr[1] && p[1] >= yr[0] && p[1] <= yr[1] && o.pt !== false) { var ok = isAns(p), col = o.col || (ok ? C.yel : C.pink); CH.pt(D, Pl, p[0], p[1], { col: col, r: CH.fs(D, .34) }); if (o.glow !== false) glow(D, Pl, p, col); }
     return { Pl: Pl, p: p };
   }
   function side(D, R, L, t) { var s = CH.fs(D); return eqsW(D, R, L, t, { size: s * 1.1, top: true }); }
+  /* 広い画面は左に図・右に字。せまい画面は図を大きく、字は図の右上（直線のない所）に */
+  function lay(D, k) { if (wide(D)) return two(D, k); return [CH.box(D, { l: .02, r: .02, t: .01, b: .01 }), null]; }
+  function over(D, G, R) { return R || CH.rect(G.Pl.X(4.4), G.Pl.Y(G.Pl.yr[1] - .2), G.Pl.X(G.Pl.xr[1]), G.Pl.Y(6.4)); }
 
   /* ---- 今日の問い ---- */
   function today(D, k) {
-    var ph = !!D.ph, Rs = two(D, .6, .62), kk = ph ? Math.round(CH.lerp(38, 33, CH.smooth(.05, .35, k))) : 38, G = scene(D, Rs[0], kk, { cand: 1 }), Pl = G.Pl, p = G.p, s = CH.fs(D);
+    var ph = !!D.ph, Rs = lay(D, .6), kk = ph ? Math.round(CH.lerp(38, 33, CH.smooth(.05, .35, k))) : 38, G = scene(D, Rs[0], kk, { cand: 1, lab: !!Rs[1] }), Pl = G.Pl, p = G.p, s = CH.fs(D), TR = over(D, G, Rs[1]);
     if (!ph) {
-      side(D, Rs[1], [{ s: '{x＋y}＝10', lab: '…① 回数', hc: C.yel }, { s: '3x＋5y＝{38}', lab: '…② 得点', hc: C.blue, at: 0 }, { s: 'x＝6、y＝4', txt: true, col: C.yel, at: 0 }, { s: '1回以上の整数 → ○', txt: true, col: C.yel, at: 0 }, { s: '38点でないときは？', txt: true, col: 'rgba(242,240,230,.8)', at: 0 }], 1);
+      side(D, TR, [{ s: '{x＋y}＝10', lab: '…① 回数', hc: C.yel }, { s: '3x＋5y＝{38}', lab: '…② 得点', hc: C.blue, at: 0 }, { s: 'x＝6、y＝4', txt: true, col: C.yel, at: 0 }, { s: '1回以上の整数 → ○', txt: true, col: C.yel, at: 0 }, { s: '38点でないときは？', txt: true, col: 'rgba(242,240,230,.8)', at: 0 }], 1);
       plab(D, Pl, 6.3, 4.6, '(6, 4)', { col: C.yel });
       return;
     }
     if (k > .35) plab(D, Pl, p[0] + .25, p[1] + .7, '(' + frs(p[0]) + ', ' + frs(p[1]) + ')', { col: C.pink, a: CH.smooth(.36, .44, k) });
-    side(D, Rs[1], [{ s: E1, lab: '…①' }, { s: '3x＋5y＝{' + kk + '}', lab: '…②', hc: C.pink, at: 0 }, { s: '2y＝3', lab: '②−①×3', at: .45 }, { s: 'y＝[3/2]、x＝[17/2]', txt: true, col: C.pink, at: .58 }, { s: '回数が整数でない → ×', txt: true, col: C.pink, at: .72 }], k);
+    side(D, TR, [{ s: '{x＋y}＝10', lab: '…①', hc: C.yel }, { s: '3x＋5y＝{' + kk + '}', lab: '…②', hc: C.pink, at: 0 }, { s: '2y＝3', lab: '②−①×3', at: .45, mid: 1 }, { s: 'y＝[3/2]、x＝[17/2]', txt: true, col: C.pink, at: .58 }, { s: '回数が整数でない → ×', txt: true, col: C.pink, at: .72 }], k);
   }
 
   /* ---- ことば：ア〜エのカード ---- */
@@ -510,10 +512,10 @@
       rr(D, cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2, { r: 12, stroke: 'rgba(242,240,230,.6)', sw: 1.8, fill: 'rgba(242,240,230,.05)' });
       var z = Math.min(s * 1.2, h * .2);
       TX(D, cx - w / 2 + z * .5, cy - h / 2 + z * .9, c[0], { size: z, col: C.chalk, align: 'left' });
-      TX(D, cx, cy - h * .12, c[1], { size: z * .9, col: 'rgba(242,240,230,.8)' });
-      TX(D, cx, cy + h * .14, c[2], { size: fit(D, c[2], w * .6, z * 1.5), col: C.chalk });
+      TX(D, cx - w * .1, cy - h * .12, c[1], { size: z * .9, col: 'rgba(242,240,230,.8)' });
+      TX(D, cx - w * .1, cy + h * .14, c[2], { size: fit(D, c[2], w * .5, z * 1.5), col: C.chalk });
       if (a > 0) {
-        var r = Math.min(w, h) * .2, mx = cx + w * .3, my = cy - h * .1, g = D.ctx;
+        var r = Math.min(w, h) * .16, mx = cx + w * .32, my = cy - h * .05, g = D.ctx;
         g.save(); g.globalAlpha = D.ga * a; g.strokeStyle = col; g.lineWidth = 4; g.lineCap = 'round'; g.beginPath();
         if (c[3]) g.arc(mx, my, r * (1.6 - .6 * a), 0, Math.PI * 2); else { g.moveTo(mx - r, my - r); g.lineTo(mx + r, my + r); g.moveTo(mx + r, my - r); g.lineTo(mx - r, my + r); }
         g.stroke(); g.restore();
@@ -539,8 +541,8 @@
 
   /* ---- 考えよう：得点と的の点数 ---- */
   function tool(D) {
-    var Rs = two(D, .66, .74), k = D.V.k, b = D.V.b, G = scene(D, Rs[0], k, { b: b, xr: [-3, 13], yr: [-3, 13], glow: false, col: C.pink }), p = G.p, s = CH.fs(D);
-    var R = Rs[1], L = [{ s: '{x＋y}＝10', lab: '…①', hc: C.yel }, { s: '3x＋' + (b === 1 ? '' : b) + 'y＝{' + k + '}', lab: '…②', hc: C.blue }];
+    var Rs = lay(D, .66), k = D.V.k, b = D.V.b, G = scene(D, Rs[0], k, { b: b, xr: [-3, 13], yr: [-3, 13], glow: false, col: C.pink, lab: !!Rs[1] }), p = G.p, s = CH.fs(D);
+    var R = over(D, G, Rs[1]), L = [{ s: '{x＋y}＝10', lab: '…①', hc: C.yel }, { s: '3x＋' + (b === 1 ? '' : b) + 'y＝{' + k + '}', lab: '…②', hc: C.blue }];
     if (p) L.push({ s: 'x＝' + frs(p[0]), txt: true, col: C.pink }, { s: 'y＝' + frs(p[1]), txt: true, col: C.pink });
     eqs(D, R, L, 1, { size: s * 1.1, top: true, at: L.slice(1).map(function () { return -1; }) });
   }

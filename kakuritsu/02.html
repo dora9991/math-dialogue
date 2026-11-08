@@ -209,6 +209,17 @@
     }
     return out;
   }
+  /* 表と説明の字：横長なら 左に表・右に字、縦長なら 上に表・下に字。[表の四角, 字の四角, 横長か] */
+  function lay(D, Rb, k) {
+    var wide = D.W > D.H * .9; k = k || .62;
+    if (wide) return [CH.rect(Rb.x0, Rb.y0, Rb.x0 + Rb.w * k, Rb.y1), CH.rect(Rb.x0 + Rb.w * (k + .04), Rb.y0, Rb.x1, Rb.y1), true];
+    var gh = Math.min(Rb.w * .9, Rb.h * .64); return [CH.rect(Rb.x0, Rb.y0, Rb.x1, Rb.y0 + gh), CH.rect(Rb.x0, Rb.y0 + gh + 6, Rb.x1, Rb.y1), false];
+  }
+  /* 字の四角に、行を上から（wide なら左よせ）。arr：[字, 色, 濃さ] */
+  function say(D, Q, wide, arr, o) {
+    o = o || {}; var s = o.size || CH.fs(D), n = arr.length, lh = Math.min(s * 2.3, Q.h / Math.max(1, n + .4)), y = wide ? Q.cy - lh * (n - 1) / 2 : Q.y0 + lh * .6;
+    arr.forEach(function (r, i) { if (!r || (r[2] != null && r[2] <= 0)) return; TX(D, wide ? Q.x0 : Q.cx, y + i * lh, r[0], { col: r[1] || C.chalk, a: r[2], size: s, align: wide ? 'left' : 'center', maxW: Q.w }); });
+  }
 
   /* ---- この時間のページ ---- */
   var CO2 = cross(HT, HT), C20 = R(1, 20);
@@ -244,19 +255,23 @@
         sub: 'A、B を区別すると、(表, 表)(表, 裏)(裏, 表)(裏, 裏) の 4通り。1枚ずつは (表, 裏)(裏, 表) の 2通り。「3通り」と考えると、(表, 裏) と (裏, 表) を1つにしてしまう',
         b: { t: 'A、B を区別して 4通り。1枚ずつは 2通り → [2/4]＝[1/2]', col: C.yel },
         draw: function (D) {
-          var Rb = CH.box(D, { l: .04, r: .04, t: .06, b: .08 }), s = CH.fs(D), t = D.ph ? D.t : 0, P = CH.split(D, Rb, 2, .1), L = P[0], Q = P[1];
-          var rh = Math.min(L.h / 6.4, L.w / 5.2), r = rh * .36, x0 = L.cx - rh * 1.9, y0 = L.cy - rh * 2.6;
-          CH.text(D, x0, y0 - rh * .1, 'A', { col: DIM, size: s * .9 }); CH.text(D, x0 + rh, y0 - rh * .1, 'B', { col: DIM, size: s * .9 });
+          var Rb = CH.box(D, { l: .04, r: .04, t: .06, b: .08 }), s = CH.fs(D), t = D.ph ? D.t : 0, P = D.W > D.H * .9 ? CH.split(D, Rb, 2, .1) : [CH.rect(Rb.x0, Rb.y0, Rb.x1, Rb.y0 + Rb.h * .4), CH.rect(Rb.x0, Rb.y0 + Rb.h * .44, Rb.x1, Rb.y1)], L = P[0], Q = P[1];
+          var wide = D.W > D.H * .9, rh = wide ? Math.min(L.h / 6.4, L.w / 5.2) : Math.min(L.w / 8.6, L.h / 3.6), r = rh * .36;
+          var x0 = wide ? L.cx - rh * 1.9 : L.x0 + L.w / 8 - rh / 2, y0 = wide ? L.cy - rh * 2.6 : L.y0 + rh * .4;
           CO2.forEach(function (p, i) {
-            var a = D.ph ? sm(i * .1, i * .1 + .08, t) : 0, y = y0 + rh * (i + .8), hl = t > .45 && ONE(p) ? C.yel : null; if (a <= 0) return;
-            if (hl) CH.fillRect(D, x0 - rh * .55, y - rh * .46, x0 + rh * 3.9, y + rh * .46, { fill: ha(C.yel, .22), stroke: C.yel, sw: 1.6, a: sm(.45, .55, t) });
-            coin(D, x0, y, r, p[0], { a: a }); coin(D, x0 + rh, y, r, p[1], { a: a });
-            CH.text(D, x0 + rh * 1.6, y, '(' + p[0] + ', ' + p[1] + ')', { col: hl || C.chalk, align: 'left', size: Math.min(s, rh * .42), a: a });
+            var a = D.ph ? sm(i * .1, i * .1 + .08, t) : 0, hl = t > .45 && ONE(p) ? C.yel : null; if (a <= 0) return;
+            var x = wide ? x0 : x0 + i * L.w / 4, y = wide ? y0 + rh * (i + .8) : y0 + rh * .6;
+            if (hl) { if (wide) CH.fillRect(D, x - rh * .55, y - rh * .46, x + rh * 3.9, y + rh * .46, { fill: ha(C.yel, .22), stroke: C.yel, sw: 1.6, a: sm(.45, .55, t) }); else CH.fillRect(D, x - rh * .55, y - rh * .55, x + rh * 1.55, y + rh * 1.5, { fill: ha(C.yel, .22), stroke: C.yel, sw: 1.6, a: sm(.45, .55, t) }); }
+            coin(D, x, y, r, p[0], { a: a }); coin(D, x + rh, y, r, p[1], { a: a });
+            var lb = '(' + p[0] + ', ' + p[1] + ')';
+            if (wide) CH.text(D, x + rh * 1.6, y, lb, { col: hl || C.chalk, align: 'left', size: Math.min(s, rh * .42), a: a });
+            else CH.text(D, x + rh / 2, y + rh * .95, lb, { col: hl || C.chalk, size: CH.fitSize(D, lb, rh * 2, s * .9), a: a });
           });
-          if (t > .55) TX(D, L.cx, y0 + rh * 5.1, '4通りのうち 2通り → [2/4]＝[1/2]', { col: C.yel, a: sm(.55, .7, t), size: s, maxW: L.w });
-          var G = CH.rect(Q.x0 + Q.w * .15, Q.y0 + s * 2.4, Q.x1 - Q.w * .04, Q.y1 - s * 1.8);
+          if (wide) { CH.text(D, x0, y0 - rh * .1, 'A', { col: DIM, size: s * .9 }); CH.text(D, x0 + rh, y0 - rh * .1, 'B', { col: DIM, size: s * .9 }); }
+          if (t > .55) TX(D, L.cx, wide ? y0 + rh * 5.1 : y0 + rh * 2.9, '4通りのうち 2通り → [2/4]＝[1/2]', { col: C.yel, a: sm(.55, .7, t), size: s, maxW: L.w });
+          var G = CH.rect(Q.x0 + Q.w * .15, Q.y0 + s * 3.2, Q.x1 - Q.w * .04, Q.y1 - s * 1.8);
           var Ax = CH.axes(D, G, { x: [0, 2000], y: [0, 1], xt: [0, 1000, 2000], yt: [0, .5, 1], yf: function (v) { return v.toFixed(1); }, xl: '（回）', yl: '1枚ずつの相対度数' });
-          CH.text(D, Q.cx, Q.y0 + s * .5, '2000回 投げてみると', { col: C.blue, size: s * .95 });
+          CH.text(D, Q.cx + Q.w * .1, Q.y0 + s * .4, '2000回 投げてみると', { col: C.blue, size: s * .95 });
           var a2 = sm(.5, .62, t);
           if (a2 > 0) {
             CH.line(D, Ax.X(0), Ax.Y(1 / 3), Ax.X(2000), Ax.Y(1 / 3), { col: C.pink, dash: true, a: a2 }); TX(D, Ax.X(2000), Ax.Y(1 / 3) + Ax.s * 1.7, '3通りなら [1/3]？', { col: C.pink, a: a2, align: 'right', size: Ax.s, outline: OUT });
@@ -302,7 +317,7 @@
         draw: function (D) {
           var Rb = CH.box(D, { l: .05, r: .05, t: .06, b: .08 }), s = CH.fs(D), t = D.ph ? D.t : 0, P = CH.cols(Rb, 2, .1);
           [['A', 3, 4, '[3/7]', '[33/77]', 33], ['B', 5, 6, '[5/11]', '[35/77]', 35]].forEach(function (b, i) {
-            var Q = P[i], n = b[1] + b[2], cols = 4, cw = Math.min(Q.w / 4.6, Q.h * .13), r = cw * .38, bh = cw * Math.ceil(n / cols), bx = Q.cx - cw * 2, by = Q.y0 + s * 1.8;
+            var Q = P[i], n = b[1] + b[2], cols = 4, cw = Math.min(Q.w / 4.6, Q.h * .13), r = cw * .38, bh = cw * 3, bx = Q.cx - cw * 2, by = Q.y0 + s * 1.8;
             CH.text(D, Q.cx, Q.y0 + s * .6, b[0] + ' の袋', { col: C.chalk });
             CH.fillRect(D, bx - cw * .3, by - cw * .3, bx + cw * 4.3, by + bh + cw * .3, { stroke: 'rgba(242,240,230,.6)', sw: 2 });
             for (var k = 0; k < n; k++) ball(D, bx + (k % cols + .5) * cw, by + (Math.floor(k / cols) + .5) * cw, r, k < b[1] ? C.pink : C.chalk, '', { glow: t > .05 && k < b[1] ? C.yel : null });
@@ -327,12 +342,12 @@
         sub: '[3/20] → n の倍数のカードが 3枚になればよい。n＝5 … 5・10・15・20 の 4枚、n＝6 … 6・12・18 の 3枚、n＝7 … 7・14 の 2枚',
         b: { t: '[3/20] → 倍数のカードが 3枚 → <b>n＝6</b>（6・12・18）', col: C.orange },
         draw: function (D) {
-          var Rb = CH.box(D, { l: .04, r: .04, t: .06, b: .08 }), s = CH.fs(D), t = D.ph ? D.t : 0, wide = D.W > D.H * .9, k = D.ph ? Math.min(2, Math.floor(t * 3)) : -1, n = 5 + k;
-          var CR = CH.rect(Rb.x0, Rb.y0, Rb.x1, Rb.y0 + Rb.h * (wide ? .42 : .55)), cols = ['', C.pink, C.yel, C.blue];
-          cards(D, CR, 20, wide ? 10 : 5, { on: function (c) { return k >= 0 && c % n === 0 && t * 3 - k > .1 ? (n === 6 ? C.yel : C.pink) : null; } });
-          var y0 = CR.y1 + s * 1.6, lh = Math.min(s * 2.2, (Rb.y1 - y0) / 3.6);
+          var Rb = CH.box(D, { l: .04, r: .04, t: .06, b: .08 }), s = CH.fs(D), t = D.ph ? D.t : 0, wide = D.W > D.H * .9, k = D.ph ? (t > .86 ? 1 : Math.min(2, Math.floor(t / .28))) : -1, n = 5 + k;
+          var CR = CH.rect(Rb.x0, Rb.y0, Rb.x1, Rb.y0 + Rb.h * (wide ? .42 : .6));
+          cards(D, CR, 20, wide ? 10 : 5, { on: function (c) { return k >= 0 && c % n === 0 && (t > .86 || t / .28 - k > .1) ? (n === 6 ? C.yel : C.pink) : null; } });
+          var y0 = CR.y1 + s * 1.6, lh = Math.min(s * 2.2, (Rb.y1 - y0) / 3.4);
           [5, 6, 7].forEach(function (m, i) {
-            var a = D.ph ? sm(i / 3 + .12, i / 3 + .22, t) : 0; if (a <= 0) return;
+            var a = D.ph ? sm(i * .28 + .04, i * .28 + .12, t) : 0; if (a <= 0) return;
             CH.text(D, Rb.cx, y0 + i * lh, 'n＝' + m + ' … ' + MUL(m).length + '枚' + (m === 6 ? '　○' : '　✕'), { col: m === 6 ? C.yel : C.pink, a: a, size: s });
           });
           if (!D.ph) TX(D, Rb.cx, y0 + lh, '確率 [3/20] → n の倍数のカードは 何枚？', { col: DIM, size: s, maxW: Rb.w });

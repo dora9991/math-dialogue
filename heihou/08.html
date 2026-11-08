@@ -221,7 +221,7 @@
   var EX = [['[1/√3]', '[1×√3/√3×√3]', '[√3/3]'], ['[6/√3]', '[6×√3/√3×√3]', '[6√3/3]', '2√3'], ['[√5/√7]', '[√5×√7/√7×√7]', '[√35/7]'], ['[3/2√6]', '[3×√6/2√6×√6]', '[3√6/12]', '[√6/4]']];
   CH.check(EX.every(function (r) { return eqok(r.join('＝')); }) && CH.root(12) === '2√3' && CH.root(35) === '√35' && CH.root(6) === '√6', '例題（4つの有理化）');
   var WA = ['[3/2√6]', '[3×2√6/2√6×2√6]', '[6√6/24]', '[√6/4]'], WB = ['[3/2√6]', '[3×√6/2√6×√6]', '[3√6/12]', '[√6/4]'];
-  CH.check(eqok(WA.join('＝')) && eqok(WB.join('＝')) && val('2√6×2√6') === 24 && near(val('2√6×√6'), 12), 'くふう（2√6 と √6）');
+  CH.check(eqok(WA.join('＝')) && eqok(WB.join('＝')) && near(val('2√6×2√6'), 24) && near(val('2√6×√6'), 12), 'くふう（2√6 と √6）');
   CH.check(Math.abs(1 / 1.414 - 1 / Math.SQRT2) < 1e-3 && near(1.414 / 2, .707) && Math.abs(1.732 / 3 - 1 / Math.sqrt(3)) < 1e-3, '考えよう（ここで確かめるだけ）');
   var CHV = [val('[2/√3]'), val('[3/√5]'), val('√2')], CHQ = [val('([2/√3])^2'), val('([3/√5])^2'), val('(√2)^2')];
   CH.check(near(CHQ[0], 4 / 3) && near(CHQ[1], 9 / 5) && near(CHQ[2], 2) && CHQ[0] < CHQ[1] && CHQ[1] < CHQ[2] && CHV[0] < CHV[1] && CHV[1] < CHV[2], 'チャレンジ（2乗して 4/3、9/5、2）');
@@ -245,7 +245,7 @@
     if (dr > 0) {
       var yy = CH.lerp(yl - lz * 6, yl, CH.ease(dr));
       CH.circle(D, X2, yy, s * .24, { fill: C.pink, stroke: OUT, sw: 1.2, a: dr < .99 ? 1 : .9 });
-      EQ(D, px + lz * 2.6, yl - lz * 2.1, '＝[√2/2]', lz, { col: C.pink, a: CH.smooth(.85, .97, t), align: 'left' });
+      EQ(D, px + eqW(D, '[1/√2]', lz) / 2 + lz * .2, yl - lz * 2.1, '＝[√2/2]', lz, { col: C.pink, a: CH.smooth(.85, .97, t), align: 'left' });
       say(D, px, yl - lz * 4.1, '1.414÷2＝0.707 も同じ点', { size: s * .8, col: C.pink, a: CH.smooth(.9, 1, t) });
     } else say(D, px, yl - lz * 4.1, '約 0.707', { size: s * .85, col: C.yel });
   }
@@ -304,7 +304,7 @@
             var P = rs[i], k = D.ph ? CH.clamp((t - .04 - i * .42) / .4, 0, 1) : 0, prog = e[0].map(function (_, j) { return e[0].slice(0, j + 1).join('＝'); });
             chip(D, P.x0, P.y0 + s * .9, e[1], e[2], 1, s * .85, 'left');
             CHAIN(D, P.x0 + s * .3, P.cy + s * .6, prog, k, z, { align: 'left', hold: .2 });
-            if (k >= 1) { var w = eqW(D, prog[3], z), w3 = eqW(D, prog[2] + '＝', z); rbox(D, P.x0 + s * .3 + w3 - z * .25, P.cy + s * .6 - z * 1.25, P.x0 + s * .3 + w + z * .25, P.cy + s * .6 + z * 1.25, C.yel, 1, { fa: .06, w: 2 }); }
+            if (k >= 1) { var w = eqW(D, prog[3], z), w3 = eqW(D, prog[2] + '＝', z); rbox(D, P.x0 + s * .3 + w3 - z * .02, P.cy + s * .6 - z * 1.25, P.x0 + s * .3 + w + z * .25, P.cy + s * .6 + z * 1.25, C.yel, 1, { fa: .06, w: 2 }); }
           });
           if (t > .9) say(D, R.cx, R.y1 - s * .4, '答えは同じ。√6 だけのほうが、数が小さい', { col: C.yel, a: CH.smooth(.9, 1, t), size: s * .9, maxW: R.w });
         } },
@@ -314,8 +314,17 @@
         draw: function (D) {
           var R = box(D), s = CH.fs(D), k = D.V.k, n = k ? 3 : 2, r = k ? '1.732' : '1.414', cs = CH.split(D, R, 2, .08);
           [['[1/√' + n + ']', '1÷' + r, r, '1', C.blue], ['[√' + n + '/' + n + ']', r + '÷' + n, String(n), r, C.orange]].forEach(function (e, i) {
-            var P = cs[i], z = Math.min(s * 2.2, P.h * .14, P.w / 5), y1 = P.y0 + P.h * .2, y2 = P.y0 + P.h * .45, y3 = P.y0 + P.h * .75;
+            var P = cs[i];
             rbox(D, P.x0, P.y0, P.x1, P.y1, e[4], 1, { fa: .05, w: 1.6 });
+            if (P.w > P.h * 1.4) {  /* 横長のわく（せまい画面）：左から右へ */
+              var zz = Math.min(s * 1.5, P.h * .2), x1 = P.x0 + P.w * .14, x2 = P.x0 + P.w * .42, x3 = P.x0 + P.w * .76, yc = P.cy + zz * .2;
+              EQ(D, x1, yc, e[0], zz, { col: e[4] });
+              CH.arrow(D, x1 + zz * 1.1, yc, x2 - P.w * .13, yc, { col: 'rgba(242,240,230,.6)', w: 2, head: 7 });
+              CH.text(D, x2, yc, e[1], { size: Math.min(s * 1.1, CH.fitSize(D, e[1], P.w * .22, s * 1.1, { num: true })), num: true });
+              hissan(D, x3, yc, e[2], e[3], Math.min(s * 1.1, P.w / 10), e[4]);
+              return;
+            }
+            var z = Math.min(s * 2.2, P.h * .14, P.w / 5), y1 = P.y0 + P.h * .2, y2 = P.y0 + P.h * .45, y3 = P.y0 + P.h * .75;
             EQ(D, P.cx, y1, e[0], z, { col: e[4] });
             CH.arrow(D, P.cx, y1 + z * 1.1, P.cx, y2 - s * 1, { col: 'rgba(242,240,230,.6)', w: 2, head: 8 });
             CH.text(D, P.cx, y2, e[1], { size: Math.min(s * 1.3, CH.fitSize(D, e[1], P.w * .85, s * 1.3, { num: true })), num: true });

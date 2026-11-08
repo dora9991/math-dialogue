@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>平方根の大小</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 平方根 第3時：平方根の大小をくらべよう（ikkan の lesson_heihou_03 と同じ流れ）。
+   図の数値は ikkan のデータ（自作）と同じ（今日の問い 面積 5・8・9 の正方形、例題 √6・√11／4・√13／−√7・−√5、例題2 は演習プリントの（5）√20・√50、
+   考えようの「√a が n と n＋1 の間」、チャレンジ √(20−n)）。
+   方眼の上のかたむいた正方形が、まっすぐに回って下にそろい、1辺（下の辺）が 0 からならぶ棒になる（面積が大きいほど1辺が長い）。
+   面積の数直線と1辺の数直線を線で結ぶと、線が交わらない（a＜b なら √a＜√b）。答えは、2乗した数でくらべ直して確かめる（CH.check）。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)', M = CH.mnum;
+  /* ---- このページの道具 ---- */
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D); if (o.maxW) size = CH.fitSize(D, s, o.maxW, size, { num: o.num }); CH.text(D, x, y, s, { col: o.col, a: o.a, size: size, num: o.num, align: o.align, outline: o.outline === false ? null : OUT }); }
+  function top(D, s, col, a, row) { var B = CH.box(D, { t: 0, l: .03, r: .03 }), f = CH.fs(D, 1); say(D, B.cx, B.y0 + f * (.8 + (row || 0) * 1.35), s, { col: col || C.yel, a: a, size: f, maxW: B.w }); }
+  function fr(D, R, bx, u) { var cx = (bx[0] + bx[2]) / 2, cy = (bx[1] + bx[3]) / 2; if (!u) u = Math.min(R.w / (bx[2] - bx[0]), R.h / (bx[3] - bx[1])); return { X: function (p) { return [R.cx + (p[0] - cx) * u, R.cy - (p[1] - cy) * u]; }, u: u, D: D, R: R, s: CH.fs(D, 1) }; }
+  function poly(F, ps, o) { CH.poly(F.D, ps.map(function (p) { return F.X(p); }), o); }
+  function grid(F, x0, y0, x1, y1, a) {
+    var g = F.D.ctx, x, y, p, q; g.save(); g.globalAlpha = F.D.ga * (a == null ? 1 : a); g.strokeStyle = 'rgba(242,240,230,.2)'; g.lineWidth = 1; g.beginPath();
+    for (x = x0; x <= x1 + 1e-9; x++) { p = F.X([x, y0]); q = F.X([x, y1]); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); }
+    for (y = y0; y <= y1 + 1e-9; y++) { p = F.X([x0, y]); q = F.X([x1, y]); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); }
+    g.stroke(); g.restore();
+  }
+  /* √ の字（この時間は、√ の中をそのまま）：2乗の数なら整数 */
+  function rt(n) { var r = Math.round(Math.sqrt(n)); return r * r === n ? String(r) : '√' + n; }
+  /* 数直線（よこ）：lo〜hi、step ごとに目もり。labs の値に字（fmt） */
+  function NL(D, x0, x1, y, lo, hi, step, o) {
+    o = o || {}; var s = o.s || CH.fs(D, .75), n = Math.round((hi - lo) / step), a = o.a == null ? 1 : o.a, X = function (v) { return x0 + (v - lo) / (hi - lo) * (x1 - x0); };
+    CH.line(D, x0 - s * .5, y, x1 + s * .5, y, { w: 2, a: a });
+    for (var i = 0; i <= n; i++) { var v = lo + i * step, big = Math.abs(v) < 1e-9 || i === 0 || i === n || (o.big && i % o.big === 0), xx = X(v); CH.line(D, xx, y - (big ? 8 : 4), xx, y + (big ? 8 : 4), { w: Math.abs(v) < 1e-9 ? 2.6 : big ? 2 : 1.2, a: a }); }
+    (o.labs || [lo, hi]).forEach(function (v) { CH.text(D, X(v), y + s * 1.3, o.fmt ? o.fmt(v) : M(v), { size: s, num: true, a: a * (o.la ? o.la(v) : 1), col: o.lc ? o.lc(v) : null }); });
+    return { X: X, y: y, s: s };
+  }
+  function dot(D, x, y, r, col, a) { CH.circle(D, x, y, r, { fill: col, stroke: 'rgba(20,30,24,.8)', sw: 1.2, a: a }); }
+  function shoe(p) { var s = 0; p.forEach(function (q, i) { var r = p[(i + 1) % p.length]; s += q[0] * r[1] - r[0] * q[1]; }); return Math.abs(s) / 2; }
+  /* √ をふくむ数の値（'−√7' や '4'）と、その2乗の符号つき（大小をくらべ直す） */
+  function val(s) { var m = /^(−?)(√?)(\d+)$/.exec(s), v = m[2] ? Math.sqrt(+m[3]) : +m[3]; return m[1] ? -v : v; }
+  function sqv(s) { var m = /^(−?)(√?)(\d+)$/.exec(s), q = m[2] ? +m[3] : +m[3] * +m[3]; return m[1] ? -q : q; }
+
+  /* ---- 数と検算 ---- */
+  /* 今日の問い：面積 5・8・9 の正方形（それぞれの方眼の上）。[頂点, 方眼の左はし, 方眼の大きさ, 面積, 色] */
+  var SQS = [[[[1, 0], [3, 1], [2, 3], [0, 2]], 0, 3, 5, C.blue], [[[2, 0], [4, 2], [2, 4], [0, 2]], 3.6, 4, 8, C.green], [[[0, 0], [3, 0], [3, 3], [0, 3]], 8.2, 3, 9, C.orange]];
+  CH.check(SQS.every(function (q) { return shoe(q[0]) === q[3]; }) && rt(5) === '√5' && rt(8) === '√8' && rt(9) === '3' && 5 < 8 && 8 < 9 && Math.sqrt(5) < Math.sqrt(8) && Math.sqrt(8) < 3, '今日の問い（面積 5・8・9 → √5＜√8＜3）');
+  /* 例題：[左, 右, 不等号] */
+  var EX = [['√6', '√11', '＜'], ['4', '√13', '＞'], ['−√7', '−√5', '＜']];
+  CH.check(EX.every(function (e) { var a = val(e[0]), b = val(e[1]), sg = a < b ? '＜' : '＞', sq = sqv(e[0]) < sqv(e[1]) ? '＜' : '＞'; return sg === e[2] && sq === e[2]; }), '例題（不等号）');
+  /* 例題2：√20、√50 をはさむ整数 */
+  var EX2 = [[20, 4], [50, 7]];
+  CH.check(EX2.every(function (e) { var n = e[1]; return n * n < e[0] && e[0] < (n + 1) * (n + 1) && n < Math.sqrt(e[0]) && Math.sqrt(e[0]) < n + 1; }), '例題2（4＜√20＜5、7＜√50＜8）');
+  /* チャレンジ：√(20−n) が整数 → n＝19・16・11・4 */
+  var CHN = []; for (var n = 1; n <= 19; n++) { var r = Math.round(Math.sqrt(20 - n)); if (r * r === 20 - n) CHN.push(n); }
+  CH.check(CHN.slice().sort(function (a, b) { return b - a; }).join() === '19,16,11,4', 'チャレンジ（n＝19、16、11、4）');
+
+  /* ---- 今日の問い：3つの正方形 → まっすぐにして、1辺をならべる ---- */
+  function squares(D, t) {
+    var R = CH.box(D, { l: .03, r: .03, t: .14, b: .04 }), F = fr(D, R, [-.3, -2.7, 11.5, 4.3]), s = F.s, k0 = CH.smooth(0, .1, t), km = CH.ease(CH.smooth(.08, .45, t)), kr = CH.smooth(.5, .62, t), kd = CH.ease(CH.smooth(.62, .85, t)), kt = CH.smooth(.88, 1, t);
+    SQS.forEach(function (q, i) {
+      var g0 = q[1], n = q[2]; grid(F, g0, 0, g0 + n, n, 1 - k0);
+      var P = q[0].map(function (p) { return [p[0] + g0, p[1]]; }), L = Math.sqrt(q[3]), c0 = [g0 + n / 2, n / 2], c1 = [g0 + n / 2, L / 2];
+      var th0 = Math.atan2(P[1][1] - P[0][1], P[1][0] - P[0][0]), th = th0 * (1 - km), c = [CH.lerp(c0[0], c1[0], km), CH.lerp(c0[1], c1[1], km)];
+      var V = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(function (d) { var x = d[0] * L / 2, y = d[1] * L / 2; return [c[0] + x * Math.cos(th) - y * Math.sin(th), c[1] + x * Math.sin(th) + y * Math.cos(th)]; });
+      poly(F, V, { fill: hexA(q[4], .22), stroke: q[4], sw: 2.6 });
+      var cc = F.X(c); say(D, cc[0], cc[1], q[3] + 'cm²', { size: Math.min(s, L * F.u * .3), col: q[4], num: true });
+      /* 下の辺（1辺）を棒にして、0 からならべる */
+      if (kr > 0) {
+        var b0 = [c1[0] - L / 2, 0], b1 = [c1[0] + L / 2, 0], y = -.75 - i * .6, x0 = CH.lerp(b0[0], 0, kd), yy = CH.lerp(0, y, kd), A = F.X([x0, yy]), B = F.X([x0 + L, yy]);
+        CH.line(D, A[0], A[1], B[0], B[1], { col: q[4], w: 5, a: kr, glow: true });
+        if (kd > .9) say(D, B[0] + s * .3, B[1], rt(q[3]), { col: q[4], size: s * .9, align: 'left', num: true, a: CH.smooth(.9, 1, kd) });
+      }
+    });
+    if (kd > 0) { var z0 = F.X([0, -.4]), z1 = F.X([0, -2.25]); CH.line(D, z0[0], z0[1], z1[0], z1[1], { dash: true, w: 1.6, a: kd }); var zl = F.X([0, -2.55]); say(D, zl[0], zl[1], '0', { size: s * .8, num: true, a: kd }); }
+    if (t > 0) top(D, kt > 0 ? '1辺の長い順　3、√8、√5' : km < 1 ? 'まっすぐにして、下にそろえると…' : '面積が大きいほど、1辺が長い', kt > 0 ? C.yel : C.chalk, kt > 0 ? kt : k0, 0);
+  }
+
+  /* ---- ことば：√1〜√16 と、−√1〜−√16 ---- */
+  function order(D, t) {
+    var R = CH.box(D, { l: .05, r: .05, t: .2, b: .1 }), s = CH.fs(D, .85), y = R.cy, L = NL(D, R.x0, R.x1, y, -4.5, 4.5, .5, { big: 2, labs: [], s: s });
+    var k1 = CH.smooth(0, .4, t), k2 = CH.smooth(.42, .55, t), k3 = CH.smooth(.6, .85, t), k4 = CH.smooth(.85, 1, t);
+    for (var a = 1; a <= 16; a++) {
+      var ka = CH.smooth((a - 1) / 16, a / 16, k1), r = Math.sqrt(a), sq = Math.round(r) * Math.round(r) === a, col = sq ? C.yel : C.blue;
+      if (ka > 0) dot(D, L.X(r), y, s * (sq ? .32 : .22), col, ka);
+      if (k3 > 0) dot(D, L.X(-r), y, s * (sq ? .32 : .22), sq ? C.pink : hexA(C.pink, .7), CH.smooth((a - 1) / 16, a / 16, k3));
+      if (sq && k2 > 0) { say(D, L.X(r), y - s * 1.4, '√' + a, { col: C.yel, size: s, num: true, a: k2 }); say(D, L.X(r), y + s * 1.4, String(r), { col: C.yel, size: s, num: true, a: k2 }); }
+      if (sq && k3 > .9) { say(D, L.X(-r), y - s * 1.4, '−√' + a, { col: C.pink, size: s * .9, num: true, a: CH.smooth(.9, 1, k3) }); say(D, L.X(-r), y + s * 1.4, '−' + r, { col: C.pink, size: s * .9, num: true, a: CH.smooth(.9, 1, k3) }); }
+    }
+    say(D, L.X(0), y + s * 1.4, '0', { size: s, num: true });
+    if (k1 > 0) { var ay = y - s * 3; CH.arrow(D, L.X(.5), ay, L.X(.5) + (L.X(4.2) - L.X(.5)) * k1, ay, { col: C.blue, w: 3, a: k1 }); say(D, L.X(2.3), ay - s * 1.1, '根号の中が大きいほど 大きい', { col: C.blue, a: k1, size: s * .9, maxW: L.X(4.4) - L.X(.2) }); }
+    if (k4 > 0) { var by = y + s * 3.2; CH.arrow(D, L.X(-.5), by, L.X(-4.2), by, { col: C.pink, w: 3, a: k4 }); say(D, L.X(-2.3), by + s * 1.1, '絶対値が大きいほど 小さい', { col: C.pink, a: k4, size: s * .9, maxW: L.X(-.2) - L.X(-4.4) }); }
+  }
+
+  /* ---- 例題：3つの数直線 ---- */
+  function exRows(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .05, b: .05 }), rs = CH.rows(R, 3, .12), s = CH.fs(D, .9);
+    rs.forEach(function (r, i) {
+      var e = EX[i], k = i === 0 ? 1 : D.ph ? CH.smooth(.05 + (i - 1) * .45, .3 + (i - 1) * .45, t) : 0, kh = i === 1 && D.ph ? CH.smooth(.05, .2, t) : 0, y = r.y0 + r.h * .6, rw = r.w * .26;
+      say(D, r.x0, r.y0 + s * .4, '(' + (i + 1) + ')　' + e[0] + '、' + e[1] + (i === 0 ? '（見本）' : ''), { size: s, align: 'left', num: false });
+      var g = [[2, 4], [3, 4.2], [-3, -2]][i], L = NL(D, r.x0 + s * .5, r.x1 - rw - s * .5, y, g[0], g[1], .1, { big: 10, labs: [g[0], Math.round(g[1] - .4)], s: CH.fs(D, .68) });
+      [e[0], e[1]].forEach(function (lab, j) { var px = L.X(val(lab)), col = j ? C.pink : C.blue; dot(D, px, y, s * .3, col); say(D, px, y - s * (1.2 + (i === 1 && j === 0 ? 0 : 0)), lab, { size: s * .85, col: col, num: true }); });
+      if (i === 1) { say(D, L.X(4), y - s * 2.4, '4＝√16', { size: s * .8, col: C.yel, a: kh, num: true }); }
+      if (k > 0) say(D, r.x1 - rw / 2, y, e[0] + ' ' + e[2] + ' ' + e[1], { size: s * 1.1, col: C.yel, a: k, num: true, maxW: rw });
+    });
+  }
+
+  /* ---- 2本の数直線（上：面積 a、下：1辺 √a） ---- */
+  function twoLines(D, R, a0, a1, o) {
+    o = o || {}; var s = CH.fs(D, .8), x0 = R.x0 + s * 1.2, x1 = R.x1 - s * 1.2, y1 = R.y0 + R.h * (o.ya || .25), y2 = R.y0 + R.h * (o.yb || .8), r0 = Math.sqrt(a0), r1 = Math.sqrt(a1);
+    var A = NL(D, x0, x1, y1, a0, a1, 1, { labs: o.alabs || [a0, a1], s: s, big: o.abig, fmt: function (v) { return String(v); } });
+    var B = NL(D, x0, x1, y2, r0, r1, o.bstep || .1, { labs: o.blabs || [r0, r1], s: s, big: o.bbig || 10, fmt: function (v) { return String(Math.round(v * 100) / 100); } });
+    if (o.an) say(D, R.x0, y1 - s * 2.5, o.an, { size: s, align: 'left', col: 'rgba(242,240,230,.8)' });
+    if (o.bn) say(D, R.x0, y2 - s * 2.5, o.bn, { size: s, align: 'left', col: 'rgba(242,240,230,.8)' });
+    return { A: A, B: B, y1: y1, y2: y2, s: s };
+  }
+  function link(D, T, a, col, w, al) { CH.line(D, T.A.X(a), T.y1 + 9, T.B.X(Math.sqrt(a)), T.y2 - 9, { col: col, w: w || 2, a: al }); }
+
+  /* ---- 例題2：√20、√50 ---- */
+  function ex2(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .05, b: .05 }), rs = CH.rows(R, 2, .14), s = CH.fs(D, .9);
+    EX2.forEach(function (e, i) {
+      var r = rs[i], n = e[1], k = D.ph ? CH.smooth(.05 + i * .45, .3 + i * .45, t) : 0, kt = D.ph ? CH.smooth(.3 + i * .45, .45 + i * .45, t) : 0;
+      say(D, r.x0, r.y0 + s * .4, '√' + e[0] + ' は、どの整数の間？', { size: s, align: 'left' });
+      var T = twoLines(D, CH.rect(r.x0, r.y0 + s * 1.2, r.x1, r.y1), n * n, (n + 1) * (n + 1), { ya: .22, yb: .72, blabs: [n, n + 1] });
+      link(D, T, n * n, C.chalk, 1.6, .5); link(D, T, (n + 1) * (n + 1), C.chalk, 1.6, .5);
+      dot(D, T.A.X(e[0]), T.y1, s * .3, C.yel); say(D, T.A.X(e[0]), T.y1 - s * 1.2, String(e[0]), { col: C.yel, size: s * .85, num: true });
+      if (k > 0) { var bx = T.B.X(Math.sqrt(e[0])); CH.arrow(D, T.A.X(e[0]), T.y1 + 9, CH.lerp(T.A.X(e[0]), bx, CH.ease(k)), CH.lerp(T.y1 + 9, T.y2 - 9, CH.ease(k)), { col: C.yel, w: 2.6, a: Math.min(1, k * 3) }); if (k >= 1) { dot(D, bx, T.y2, s * .3, C.yel); say(D, bx, T.y2 - s * 1.2, '√' + e[0], { col: C.yel, size: s * .85, num: true }); } }
+      if (kt > 0) say(D, r.cx, r.y1 - s * .2, n + '² ＝ ' + n * n + ' ＜ ' + e[0] + ' ＜ ' + (n + 1) * (n + 1) + ' ＝ ' + (n + 1) + '²　→　' + n + ' ＜ √' + e[0] + ' ＜ ' + (n + 1), { col: C.yel, a: kt, size: s, maxW: r.w, num: true });
+    });
+  }
+
+  /* ---- 考えよう：a と √a を結ぶ道具 ---- */
+  function tool(D, a) {
+    var R = CH.box(D, { l: .04, r: .04, t: .12, b: .06 }), T = twoLines(D, R, 0, 36, { ya: .2, yb: .78, abig: 4, alabs: [0, 1, 4, 9, 16, 25, 36], blabs: [0, 1, 2, 3, 4, 5, 6], bstep: .5, bbig: 2, an: '面積 a', bn: '1辺 √a' });
+    for (var n = 0; n <= 6; n++) link(D, T, n * n, C.chalk, 1.4, .35);
+    link(D, T, a, C.yel, 3, 1); dot(D, T.A.X(a), T.y1, T.s * .32, C.yel); dot(D, T.B.X(Math.sqrt(a)), T.y2, T.s * .32, C.yel);
+    say(D, T.A.X(a), T.y1 - T.s * 1.3, String(a), { col: C.yel, size: T.s * 1.05, num: true });
+    say(D, T.B.X(Math.sqrt(a)), T.y2 - T.s * 1.3, rt(a), { col: C.yel, size: T.s * 1.05, num: true });
+    top(D, 'a ＝ ' + a + '　→　√a ＝ ' + rt(a), C.yel, 1, 0);
+  }
+
+  /* ---- チャレンジ：20−n と n ---- */
+  function chal(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .16, b: .06 }), s = CH.fs(D, .8), x0 = R.x0 + s * 1.5, x1 = R.x1 - s, y1 = R.y0 + R.h * .25, y2 = R.y0 + R.h * .8;
+    var k1 = CH.smooth(.02, .3, t), k2 = CH.smooth(.35, .75, t), k3 = CH.smooth(.8, .95, t);
+    var A = NL(D, x0, x1, y1, 0, 20, 1, { big: 5, labs: [0, 5, 10, 15, 20], s: s, la: function () { return 1 - k1; } });
+    var B = NL(D, x0, x1, y2, 0, 20, 1, { big: 5, labs: [0, 5, 10, 15, 20], s: s, la: function () { return 1 - k3; } });
+    say(D, R.x0, y1 - s * 1.6, '20−n', { size: s, align: 'left', col: 'rgba(242,240,230,.8)' }); say(D, R.x0, y2 - s * 1.6, 'n', { size: s, align: 'left', col: 'rgba(242,240,230,.8)' });
+    for (var n = 1; n <= 19; n++) {
+      var v = 20 - n, rr = Math.round(Math.sqrt(v)), ok = rr * rr === v;
+      dot(D, B.X(n), y2, s * .22, ok && k3 > 0 ? C.yel : 'rgba(242,240,230,.6)');
+      dot(D, A.X(v), y1, s * (ok ? .3 : .22), ok && k1 > 0 ? C.yel : 'rgba(242,240,230,.6)');
+      if (ok && k1 > 0) { say(D, A.X(v), y1 - s * 1.3, rr + '²', { col: C.yel, size: s, num: true, a: k1 }); say(D, A.X(v), y1 + s * 1.3, String(v), { col: C.yel, size: s, num: true, a: k1 }); }
+      if (ok && k2 > 0) { var e = CH.ease(CH.smooth((rr - 1) * .2, (rr - 1) * .2 + .4, k2)); if (e > 0) CH.arrow(D, A.X(v), y1 + s * 2, CH.lerp(A.X(v), B.X(n), e), CH.lerp(y1 + s * 2, y2 - 9, e), { col: C.yel, w: 2.4, a: Math.min(1, e * 3) }); }
+      if (ok && k3 > 0) say(D, B.X(n), y2 + s * 1.3, String(n), { col: C.yel, size: s, num: true, a: k3 });
+    }
+    if (D.ph) top(D, k3 > 0 ? 'n ＝ 4、11、16、19' : '20−n が 1、4、9、16（2乗の数）のとき', C.yel, k3 > 0 ? k3 : k1, 0);
+  }
+
+  K3.run({
+    no: '第3時', title: '平方根の大小をくらべよう', flat: true, hint: '', alt: '正方形と数直線の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '◀ 第2時' }, { href: '04.html', label: '第4時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '面積 5・8・9（cm²）の正方形', q: '図の正方形の1辺の長さ √5 cm、√8 cm、3cm を、電卓を使わずに、長い順にならべるには、どう考えればよいだろう。',
+        notes: ['① 自分の考え（3分）　長い順と、そう考えたわけを書こう。', '② ペアの考え（3分）　自分とちがう考え方は？'],
+        draw: function (D) { squares(D, 0); } },
+      { tag: '今日の問い', q: '1辺の長い順は？ どう考えた？', a: '3、√8、√5', sub: '面積が大きい正方形ほど、1辺が長い。面積は 5＜8＜9 だから、1辺は √5＜√8＜3', dur: 7,
+        b: { t: '面積 5＜8＜9 → 1辺 <b>√5＜√8＜3</b>（面積が大きいほど1辺が長い）', col: C.yel },
+        draw: function (D) { squares(D, D.ph ? D.t : 0); } },
+      { tag: 'ことば', bh: 'ことば', q: '正の数 a、b で a＜b なら、√a と √b の大小は？ 整数と √ の数、負の数どうしは、どうくらべる？', a: 'a＜b なら √a＜√b', sub: '整数は 3＝√9 のように √ の形に直してくらべる。負の数どうしは、絶対値が大きいほど小さい', dur: 6,
+        b: [{ t: 'a＜b なら <b>√a＜√b</b>（根号の中が大きいほど大きい）', col: C.green }, { t: '整数は <b>3＝√9</b> のように直す　負の数は、絶対値が大きいほど <b>小さい</b>', col: C.green }],
+        draw: function (D) { order(D, D.ph ? D.t : 0); } },
+      { tag: '例題', bh: '例題　大小を不等号で', q: '次の2つの数の大小を、不等号を使って表そう。(1) √6、√11（見本）　(2) 4、√13　(3) −√7、−√5', a: '(1) √6＜√11　(2) 4＞√13　(3) −√7＜−√5', sub: '(2) 4＝√16、16＞13 だから 4＞√13　(3) √5＜√7。負の数は、絶対値が大きいほど小さいから −√7＜−√5', dur: 5,
+        b: { t: '(2) 4＝√16 → <b>4＞√13</b>　(3) √5＜√7 → <b>−√7＜−√5</b>', col: C.pink },
+        draw: function (D) { exRows(D, D.ph ? D.t : 0); } },
+      { tag: '例題', bh: '例題2　整数ではさむ', q: '√20、√50 は、それぞれ、どの連続する2つの整数の間にある？', a: '4＜√20＜5、7＜√50＜8', sub: '4²＝16＜20＜25＝5²、7²＝49＜50＜64＝8²。2乗の数ではさむ', dur: 5,
+        b: { t: '16＜20＜25 → <b>4＜√20＜5</b>　49＜50＜64 → <b>7＜√50＜8</b>', col: C.pink },
+        draw: function (D) { ex2(D, D.ph ? D.t : 0); } },
+      { tag: '考えよう', q: '√a が、1と2の間、2と3の間、3と4の間、4と5の間にあるとき、自然数 a は、それぞれ何個あるだろう。',
+        notes: ['a を書き出して、数えよう。気づいたことを書こう。', '個数のきまりを使って、5と6の間の個数を予想しよう。', 'スライダーで a を動かすと、√a の場所がわかります。'],
+        sliders: [{ key: 'a', label: 'a', min: 1, max: 36, step: 1, val: 2, fmt: function (v) { return v; } }],
+        draw: function (D) { tool(D, D.V.a); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'n は 19 以下の自然数とする。√(20−n) が整数になる n を、すべて求めよう。',
+        notes: ['ヒント① √ の中の数が、どんな数のとき、√ が整数になるかな。', 'ヒント② 20−n は、いくつからいくつまでの数になるかな。'],
+        a: 'n＝4、11、16、19', sub: '√(20−n) が整数になるのは、20−n が 2乗の数のとき。20−n＝1、4、9、16 より n＝19、16、11、4', dur: 6,
+        b: { t: '20−n＝1、4、9、16 → n＝<b>19、16、11、4</b>', col: C.orange },
+        draw: function (D) { chal(D, D.ph ? D.t : 0); } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>
