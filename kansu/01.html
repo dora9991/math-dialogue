@@ -139,8 +139,8 @@
           var cS = 1.6 * (s * .5 + (r2.cy - r1.cy) * .28), cB = 1.6 * (s * .5 + (r3.cy - r1.cy) * .28), lo = cB * .375 + s * .45;
           vhop(D, r1.x0, r1.cy, r2.cy, -1, C.yel, '×2', { a: a1, c: cS, lo: lo, ly: (r1.cy + r2.cy) / 2 });
           vhop(D, q1.x1, q1.cy, q2.cy, 1, C.yel, '×4', { a: CH.smooth(.22, .38, t), c: cS, lo: lo, ly: (q1.cy + q2.cy) / 2 });
-          vhop(D, r1.x0, r1.cy, r3.cy, -1, C.pink, '×3', { a: a2, c: cB });
-          vhop(D, q1.x1, q1.cy, q3.cy, 1, C.pink, '×9', { a: CH.smooth(.7, .86, t), c: cB });
+          vhop(D, r1.x0, r1.cy, r3.cy, -1, C.pink, '×3', { a: a2, c: cB, ly: r2.cy + (r3.cy - r2.cy) * .3 });
+          vhop(D, q1.x1, q1.cy, q3.cy, 1, C.pink, '×9', { a: CH.smooth(.7, .86, t), c: cB, ly: r2.cy + (r3.cy - r2.cy) * .3 });
         } },
       { tag: '今日の問い', q: 'y を x の式で表そう。', a: 'y＝5x²', sub: 'x² の値（0、1、4、9、16）の 5倍が y。y÷x² は、どれも 5。5m のテープが x² 本', dur: 6,
         b: { t: 'y は x² の 5倍 → <b>y＝5x²</b>', col: C.yel },
@@ -200,7 +200,7 @@
             show: function (r, c) { if (r === 0 || c === 0) return 1; if (r === 3) return D.ph ? CH.smooth(.82 + c * .02, .9 + c * .02, t) : 0; return c === 1 ? 1 : D.ph ? CH.smooth(c - 1.15, c - .95, xv) : 0; },
             hl: function (r, c) { return D.ph && c > 0 && r > 0 && Math.abs(xv - c) < .5 ? C.yel : r === 3 && c > 0 && t > .85 ? C.pink : null; } });
         } },
-      { tag: '例題', q: 'y が x の 2乗に比例するものは？　ア 正方形の 1辺 x と面積 y　イ 正方形の 1辺 x と周の長さ y　ウ 円の半径 x と面積 y', a: 'ア、ウ',
+      { tag: '例題', q: 'y が x の 2乗に比例するものは？<br>ア 正方形の 1辺 x と面積 y<br>イ 正方形の 1辺 x と周の長さ y<br>ウ 円の半径 x と面積 y', a: 'ア、ウ',
         sub: 'x を 2倍にすると、ア・ウ は y が 4倍、イ は 2倍。式は ア y＝x²、イ y＝4x、ウ y＝πx²', dur: 5,
         b: { t: '2乗に比例 … <b>ア</b> 正方形の面積、<b>ウ</b> 円の面積（x が 2倍 → y は 4倍）', col: C.pink },
         draw: function (D) {

@@ -92,6 +92,16 @@ GE.arc = function (F, s, o) {
   g.restore();
   if (o.lab) { var mid = a1 + d / 2, rr = r + F.s * (o.n > 1 ? .9 : .75); CH.text(F.D, V[0] + Math.cos(mid) * rr, V[1] + Math.sin(mid) * rr, o.lab, { col: col, size: F.s * .8, a: o.a, outline: 'rgba(20,40,30,.9)' }); }
 };
+/* 向きで描く角の印：頂点 v（名前か座標）から、数学の向き d1°→d2°（反時計まわり）。180° 以上の角や、動いている角にも使える。o は GE.arc と同じ */
+GE.arcDir = function (F, v, d1, d2, o) {
+  o = o || {}; var g = F.D.ctx, V = F.X(v), r = o.r || F.s * 1.05, col = o.col || C.chalk, a1 = -d1 * Math.PI / 180, a2 = -d2 * Math.PI / 180;
+  g.save(); g.globalAlpha = A(F.D, o.a);
+  if (o.fill) { g.fillStyle = hexA(col, o.fill === true ? .35 : o.fill); g.beginPath(); g.moveTo(V[0], V[1]); g.arc(V[0], V[1], r, a1, a2, true); g.closePath(); g.fill(); }
+  g.strokeStyle = col; g.lineWidth = o.w || 2.2;
+  for (var i = 0; i < (o.n || 1); i++) { g.beginPath(); g.arc(V[0], V[1], r + i * F.s * .22, a1, a2, true); g.stroke(); }
+  g.restore();
+  if (o.lab) { var mid = (a1 + a2) / 2, rr = r + F.s * (o.n > 1 ? .9 : .75); CH.text(F.D, V[0] + Math.cos(mid) * rr, V[1] + Math.sin(mid) * rr, o.lab, { col: col, size: F.s * .8, a: o.a, outline: 'rgba(20,40,30,.9)' }); }
+};
 /* 直角の印：'ABC'（B が頂点） */
 GE.right = function (F, s, o) {
   o = o || {}; s = s.replace('∠', ''); var V = F.X(s[1]), a = F.X(s[0]), b = F.X(s[2]), h = o.r || F.s * .6;
