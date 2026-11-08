@@ -45,7 +45,7 @@ GE.reflect = function (p, a, b) { var f = GE.foot(p, a, b); return [2 * f[0] - p
 /* F：X(点の名前か [x, y]) → 画面の [x, y]、u（1 の長さ）、D、P、R、s（字の大きさ） */
 GE.fit = function (D, R, P, o) {
   o = o || {}; var ks = o.keys || Object.keys(P), x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-  ks.forEach(function (k) { var p = P[k]; x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); });
+  ks.map(function (k) { return P[k]; }).concat(o.bounds || []).forEach(function (p) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); });
   var pad = o.pad == null ? .12 : o.pad, w = (x1 - x0) || 1, h = (y1 - y0) || 1, u = Math.min(R.w / (w * (1 + pad * 2)), R.h / (h * (1 + pad * 2)));
   var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
   function X(p) { p = pt(P, p); return [R.cx + (p[0] - cx) * u, R.cy - (p[1] - cy) * u]; }
@@ -99,6 +99,13 @@ GE.right = function (F, s, o) {
   var p = u(a), q = u(b);
   CH.poly(F.D, [[V[0] + p[0], V[1] + p[1]], [V[0] + p[0] + q[0], V[1] + p[1] + q[1]], [V[0] + q[0], V[1] + q[1]]], { stroke: o.col || C.chalk, sw: o.w || 2, a: o.a, close: false, fill: o.fill ? hexA(o.col || C.chalk, .3) : null });
 };
+/* 円：中心 c（名前か座標）、r（長さ、または円の上の点の名前） */
+GE.circ = function (F, c, r, o) {
+  o = o || {}; var cc = F.X(c), rr = (typeof r === 'string' ? GE.len(F.P, [pt(F.P, c), F.P[r]]) : r) * F.u;
+  CH.circle(F.D, cc[0], cc[1], rr, { stroke: o.col || C.chalk, sw: o.w || 2.4, fill: o.fill || null, a: o.a });
+};
+/* 円をふくむ図の四角：中心と半径から、fit に渡す bounds */
+GE.circBounds = function (c, r) { return [[c[0] - r, c[1] - r], [c[0] + r, c[1] + r]]; };
 GE.dot = function (F, k, o) { o = o || {}; var p = F.X(k); CH.circle(F.D, p[0], p[1], o.r || F.s * .16, { fill: o.col || C.chalk, a: o.a }); };
 /* 点の名前。o.dir：{A: 'n'} のように向きを決める（なければ、図のまん中から外向き） */
 GE.labels = function (F, ks, o) {
@@ -112,6 +119,7 @@ GE.labels = function (F, ks, o) {
 /* 図の全体。fig：segs・lines（のばす）・dash（点線）・ticks [['AB', 1]]・angs [['ABC', 1]]（[名前, 弧の数, 字]）・rights・pars [['AB', 1]]・dots・labels（点の名前。省略は全部）・dir */
 GE.figure = function (F, fig, o) {
   o = o || {}; fig = fig || {}; var a = o.a, col = o.col;
+  (fig.circles || []).forEach(function (c) { GE.circ(F, c[0], c[1], { a: a }); });
   (fig.lines || []).forEach(function (s) { GE.line(F, s, { a: a, col: 'rgba(242,240,230,.55)', w: 1.8 }); });
   (fig.dash || []).forEach(function (s) { GE.seg(F, s, { a: a, dash: true, w: 2, col: 'rgba(242,240,230,.8)' }); });
   (fig.segs || []).forEach(function (s) { GE.seg(F, s, { a: a, col: col }); });
@@ -126,7 +134,7 @@ GE.figure = function (F, fig, o) {
 /* ---------------- 合同な三角形を重ねる（ずらす・回す・裏返す） ---------------- */
 function cen(p) { return [(p[0][0] + p[1][0] + p[2][0]) / 3, (p[0][1] + p[1][1] + p[2][1]) / 3]; }
 function orient(p) { return (p[1][0] - p[0][0]) * (p[2][1] - p[0][1]) - (p[1][1] - p[0][1]) * (p[2][0] - p[0][0]); }
-/* △t1 を、△t2 の上へ k（0〜1）だけ動かした3点（頂点は対応する順） */
+/* △t1 を、△t2 の上へ k（0〜1）だけ動かした3点（頂点は対応する順）。相似なら、大きさも変えながら重ねる */
 GE.moveTri = function (P, t1, t2, k) {
   var p = t1.split('').map(function (c) { return P[c]; }), q = t2.split('').map(function (c) { return P[c]; }), f = 0;
   if (orient(p) * orient(q) < 0) {
@@ -135,13 +143,16 @@ GE.moveTri = function (P, t1, t2, k) {
   }
   var cp = cen(p), cq = cen(q), th = Math.atan2(q[1][1] - q[0][1], q[1][0] - q[0][0]) - Math.atan2(p[1][1] - p[0][1], p[1][0] - p[0][0]);
   while (th > Math.PI) th -= TAU; while (th <= -Math.PI) th += TAU;
-  var e = CH.ease(k), deg = th * e * 180 / Math.PI, tr = GE.lerpP(cp, cq, e);
-  return p.map(function (x) { var y = GE.rot(x, cp, deg); return [y[0] - cp[0] + tr[0], y[1] - cp[1] + tr[1]]; });
+  var sc = Math.hypot(q[1][0] - q[0][0], q[1][1] - q[0][1]) / Math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1]);
+  var e = CH.ease(k), deg = th * e * 180 / Math.PI, tr = GE.lerpP(cp, cq, e), z = 1 + (sc - 1) * e;
+  return p.map(function (x) { var y = GE.rot(x, cp, deg); return [(y[0] - cp[0]) * z + tr[0], (y[1] - cp[1]) * z + tr[1]]; });
 };
 
 /* ---------------- 証明の行を読む ---------------- */
-var T = '(?:∠[A-Z]{3}|∠[A-Za-z]|[A-Z]{2}|\\d+(?:\\.\\d+)?°?)', E = T + '(?:[＋−]' + T + ')*';
+var T = '(?:(?:\\d+(?:/\\d+)?)?(?:∠[A-Z]{3}|∠[A-Za-z]|[A-Z]{2})|\\d+(?:\\.\\d+)?°?)', E = T + '(?:[＋−]' + T + ')*';
 var CHAIN = new RegExp(E + '(?:＝' + E + ')+', 'g'), TERM = new RegExp('([＋−]?)(' + T + ')', 'g');
+/* 比の式（AB：DE＝BC：EF、AD：DB＝2：3 など） */
+var RAT = E + '：' + E, RCHAIN = new RegExp(RAT + '(?:＝' + RAT + ')+', 'g');
 var POLY = /(四角形|平行四辺形|長方形|ひし形|正方形|台形|五角形|六角形|多角形)[A-Z]{3,}/g;
 /* 行に出てくる 三角形・角・辺。alias：{ x: 'ABC' }（∠x のような名前） */
 GE.tokens = function (txt, alias) {
@@ -152,23 +163,32 @@ GE.tokens = function (txt, alias) {
   return out;
 };
 function termVal(P, t, alias) {
+  var m = /^(\d+)(?:\/(\d+))?([∠A-Z].*)$/.exec(t); if (m) return (+m[1] / (m[2] ? +m[2] : 1)) * termVal(P, m[3], alias);
   if (t[0] === '∠') { var v = t.length === 4 ? t.slice(1) : alias && alias[t.slice(1)]; return v ? GE.ang(P, v) : NaN; }
   if (/^\d/.test(t)) return parseFloat(t);
   return GE.len(P, t);
 }
 /* 行の主張を、座標で確かめる（ちがえば false と、コンソールに出す） */
+function exprVal(P, e, alias) { var s = 0; e.replace(TERM, function (m, sg, t) { s += (sg === '−' ? -1 : 1) * termVal(P, t, alias); return m; }); return s; }
 GE.verify = function (P, txt, alias, what) {
   var ok = true, bad = [];
-  (txt.match(CHAIN) || []).forEach(function (ch) {
-    var vals = ch.split('＝').map(function (e) { var s = 0; e.replace(TERM, function (m, sg, t) { s += (sg === '−' ? -1 : 1) * termVal(P, t, alias); return m; }); return s; });
-    if (!vals.every(function (v) { return isFinite(v) && GE.near(v, vals[0], 1e-5); })) { ok = false; bad.push(ch + '（' + vals.map(function (v) { return Math.round(v * 1000) / 1000; }).join(' / ') + '）'); }
-  });
+  function same(ch, vals) { if (!vals.every(function (v) { return isFinite(v) && GE.near(v, vals[0], 1e-5); })) { ok = false; bad.push(ch + '（' + vals.map(function (v) { return Math.round(v * 1000) / 1000; }).join(' / ') + '）'); } }
+  var rest = txt.replace(RCHAIN, function (ch) { same(ch, ch.split('＝').map(function (r) { var ab = r.split('：'); return exprVal(P, ab[0], alias) / exprVal(P, ab[1], alias); })); return ' '; });
+  (rest.match(CHAIN) || []).forEach(function (ch) { same(ch, ch.split('＝').map(function (e) { return exprVal(P, e, alias); })); });
   txt.replace(/([A-Z]{2})∥([A-Z]{2})/g, function (m, s, t) { if (!GE.isPar(P, s, t)) { ok = false; bad.push(m); } return m; });
   txt.replace(/([A-Z]{2})⊥([A-Z]{2})/g, function (m, s, t) { if (!GE.isPerp(P, s, t)) { ok = false; bad.push(m); } return m; });
   txt.replace(/△([A-Z]{3})≡△([A-Z]{3})/g, function (m, s, t) {
     for (var i = 0; i < 3; i++) {
       var j = (i + 1) % 3, l = (i + 2) % 3;
       if (!GE.near(GE.len(P, s[i] + s[j]), GE.len(P, t[i] + t[j]), 1e-5) || !GE.near(GE.ang(P, s[l] + s[i] + s[j]), GE.ang(P, t[l] + t[i] + t[j]), 1e-5)) { ok = false; bad.push(m); return m; }
+    }
+    return m;
+  });
+  txt.replace(/△([A-Z]{3})∽△([A-Z]{3})/g, function (m, s, t) {
+    var k = GE.len(P, t[0] + t[1]) / GE.len(P, s[0] + s[1]);
+    for (var i = 0; i < 3; i++) {
+      var j = (i + 1) % 3, l = (i + 2) % 3;
+      if (!GE.near(GE.len(P, s[i] + s[j]) * k, GE.len(P, t[i] + t[j]), 1e-5) || !GE.near(GE.ang(P, s[l] + s[i] + s[j]), GE.ang(P, t[l] + t[i] + t[j]), 1e-5)) { ok = false; bad.push(m); return m; }
     }
     return m;
   });
@@ -200,6 +220,7 @@ GE.glow = function (F, txt, alias, o) {
 };
 GE.CIRC = '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫';
 GE.COND = { SSS: '3組の辺が、それぞれ等しい', SAS: '2組の辺とその間の角が、それぞれ等しい', ASA: '1組の辺とその両端の角が、それぞれ等しい',
+  S3: '3組の辺の比が、すべて等しい', S2A: '2組の辺の比とその間の角が、それぞれ等しい', AA: '2組の角が、それぞれ等しい',
   HA: '直角三角形の斜辺と1つの鋭角が、それぞれ等しい', HL: '直角三角形の斜辺と他の1辺が、それぞれ等しい' };
 
 /* ---------------- 証明を、K3 のステップの列にする ----------------
@@ -241,19 +262,19 @@ GE.proof = function (def, o) {
   /* 証明の行 */
   L.forEach(function (l, k) {
     var ask = l.ask != null ? l.ask : (l.c ? 'c' : l.r ? ((def.lv || 1) <= 1 ? 'r' : 't') : false);
-    var bt = l.t + (l.r ? '（' + l.r + '）' : '') + (l.n ? '…' + circ(l.n) : ''), isCong = /≡/.test(l.t);
+    var bt = l.t + (l.r ? '（' + l.r + '）' : '') + (l.n ? '…' + circ(l.n) : ''), isCong = /[≡∽]/.test(l.t), isSim = /∽/.test(l.t);
     var st = { tag: tag, b: { t: bt, col: isCong ? C.yel : l.n ? C.chalk : C.green } };
     if (ask === 'r') { st.q = l.t + (l.n ? '　…' + circ(l.n) : '') + '　この根拠は？'; st.a = l.r; }
     else if (ask === 't') { st.q = (l.n ? circ(l.n) + ' ' : '') + (l.hint || 'つぎに、等しいといえる辺や角は？　根拠も。'); st.a = l.t + '（' + l.r + '）'; }
-    else if (ask === 'c') { st.q = 'どの合同条件が使える？'; st.a = GE.COND[l.c] || l.c; st.sub = l.t; st.b = { t: l.t, col: C.green }; }
+    else if (ask === 'c') { st.q = /^(S3|S2A|AA)$/.test(l.c) ? 'どの相似条件が使える？' : 'どの合同条件が使える？'; st.a = GE.COND[l.c] || l.c; st.sub = l.t; st.b = { t: l.t, col: C.green }; }
     else { st.q = l.q || l.t; if (l.a) { st.a = l.a; } }
-    if (isCong && !st.a) { st.q = l.q || 'だから、どの三角形が合同？（頂点の順に注意）'; st.a = l.t; }
+    if (isCong && !st.a) { st.q = l.q || (isSim ? 'だから、どの三角形が相似？（頂点の順に注意）' : 'だから、どの三角形が合同？（頂点の順に注意）'); st.a = l.t; }
     st.dur = isCong ? 2.6 : 1;
     st.draw = function (D) {
       var F = mkF(D), t = D.ph ? D.t : (st.a ? 0 : 1), show = !st.a || D.ph || ask === 'r' || ask === 'c';
       base(D, F, 1, D.ph, t);
-      if (isCong && (D.ph || !st.a)) { var m = /△([A-Z]{3})≡△([A-Z]{3})/.exec(l.t), pts = GE.moveTri(P, m[1], m[2], CH.smooth(.1, .9, t)); GE.polyP(F, pts, { col: C.yel, fa: .25 }); }
-      else if (ask === 'c' || l.c) { var j0 = 0; L.slice(0, k).forEach(function (m, j) { if (/≡/.test(m.t)) j0 = j + 1; }); L.slice(j0, k).forEach(function (m) { if (m.n) GE.glow(F, m.t, alias, { col: C.yel, a: .85 }); }); }
+      if (isCong && (D.ph || !st.a)) { var m = /△([A-Z]{3})[≡∽]△([A-Z]{3})/.exec(l.t), pts = GE.moveTri(P, m[1], m[2], CH.smooth(.1, .9, t)); GE.polyP(F, pts, { col: C.yel, fa: .25 }); }
+      else if (ask === 'c' || l.c) { var j0 = 0; L.slice(0, k).forEach(function (m, j) { if (/[≡∽]/.test(m.t)) j0 = j + 1; }); L.slice(j0, k).forEach(function (m) { if (m.n) GE.glow(F, m.t, alias, { col: C.yel, a: .85 }); }); }
       else if (show) GE.glow(F, l.t, alias, { col: C.yel, a: D.ph ? CH.smooth(0, .3, D.t) : 1 });
     };
     steps.push(st);
