@@ -113,12 +113,12 @@
   var PAIRS = [['AB', 'DE', C.yel], ['BC', 'EF', C.pink], ['CA', 'FD', C.green]];
 
   /* ---- ことば：相似の位置（中心 O から k 倍の位置に D・E・F） ---- */
-  var HO = { O: [0, 0], A: [1.7, 1.9], B: [1.1, .5], C: [3.1, .9] };
+  var HO = { O: [0, 0], A: [1.5, 1.7], B: [1.4, .55], C: [2.5, 1.0] };
   function homP(k) { var P = Object.assign({}, HO); ['A', 'B', 'C'].forEach(function (n, i) { P['DEF'[i]] = GE.lerpP(HO.O, HO[n], k); }); return P; }
-  [.5, .8, 1.5, 2, 2.6, 3].forEach(function (k) { var P = homP(k); CH.check(GE.verify(P, '△ABC∽△DEF') && GE.verify(P, 'OA：OD＝OB：OE＝OC：OF＝AB：DE＝BC：EF＝CA：FD') && GE.verify(P, 'AB∥DE') && GE.verify(P, 'BC∥EF') && GE.near(GE.len(P, 'DE') / GE.len(P, 'AB'), k), '相似の位置（k＝' + k + '）'); });
+  [.5, .8, 1.5, 2, 2.5].forEach(function (k) { var P = homP(k); CH.check(GE.verify(P, '△ABC∽△DEF') && GE.verify(P, 'OA：OD＝OB：OE＝OC：OF＝AB：DE＝BC：EF＝CA：FD') && GE.verify(P, 'AB∥DE') && GE.verify(P, 'BC∥EF') && GE.near(GE.len(P, 'DE') / GE.len(P, 'AB'), k), '相似の位置（k＝' + k + '）'); });
 
   /* ---- 例題：△ABC（AB＝8、BC＝12、CA＝10）と、1.5倍して 180° 回した △DEF ---- */
-  var E1 = tri(8, 12, 10), E2 = xf(E1, 'ABC', 'DEF', { s: 1.5, rot: 180 }), EP = [beside(E1, E2, true, 2.5), beside(E1, E2, false, 2.2)];
+  var E1 = tri(8, 12, 10), E2 = xf(E1, 'ABC', 'DEF', { s: 1.5, rot: 180 }), EP = [beside(E1, E2, true, 2.5), beside(E1, E2, false, 3.6)];
   EP.forEach(function (P) { CH.check(GE.verify(P, '△ABC∽△DEF') && GE.verify(P, 'AB＝8、BC＝12、CA＝10、DE＝12、EF＝18、FD＝15') && GE.verify(P, 'AB：DE＝2：3') && GE.verify(P, '∠ACB＝∠DFE'), '例題（相似比 2：3）'); });
   var ELAB = { AB: '8cm', BC: '12cm', CA: '10cm', DE: '12cm', EF: '18cm', FD: '15cm' };
 
@@ -135,7 +135,7 @@
     return { q: q.map(function (v) { return [v[0] * s, v[1] * s]; }) };
   }
   CH.check(GE.near(angs(shape(3, .2, 1).q)[0], 60) && GE.near(angs(shape(4, 1 / 9, 1).q)[2], 40) && GE.near(lens(shape(1, .5, 1).q)[1], 1), '考えよう：ア の形（ひし形 60°・二等辺三角形 40°・長方形 2×1）');
-  var KL = { w: { A: [0, 0], I: [3.6, 0], b: [[-.7, -.9], [10.6, 4.7]] }, n: { A: [0, 5.3], I: [0, 0], b: [[-.7, -.9], [6.9, 7.9]] } };
+  var KL = { w: { A: [0, 0], I: [3.7, 0], b: [[-1.3, -.7], [9.5, 3.9]] }, n: { A: [0, 4.3], I: [0, 0], b: [[-1.3, -.7], [5.9, 7.1]] } };
   function drawShape(F, sh, o, col, lab) {
     var s = F.s * .7;
     if (sh.c) {
@@ -151,12 +151,12 @@
         else markP(F, a, Q[i], b, col, { r: F.s * .7, size: s * .95, fill: .2 });
       });
     }
-    var tl = F.X([o[0] - .5, o[1] + (lab === 'ア' ? 2.6 : 4.4)]);
-    CH.text(F.D, tl[0], tl[1], lab, { size: F.s * 1.05, col: col, outline: OUT, align: 'left' });
+    var top = sh.c ? 2 * sh.r : Math.max.apply(null, sh.q.map(function (p) { return p[1]; })), tl = F.X([o[0] - .55, o[1] + top / 2]);
+    CH.text(F.D, tl[0], tl[1], lab, { size: F.s * 1.05, col: col, outline: OUT, align: 'right' });
   }
 
   /* ---- チャレンジ：周の長さ。△ABC（AB＝5、BC＝6、CA＝3：周 14）と 5/2 倍の △DEF（周 35） ---- */
-  var T1 = tri(5, 6, 3), T2 = xf(T1, 'ABC', 'DEF', { s: 2.5 }), TP = [beside(T1, T2, true, 2.4), beside(T1, T2, false, 1.8)];
+  var T1 = tri(5, 6, 3), T2 = xf(T1, 'ABC', 'DEF', { s: 2.5 }), TP = [beside(T1, T2, true, 3.4), beside(T1, T2, false, 2.2)];
   function per(P, s) { return GE.len(P, s[0] + s[1]) + GE.len(P, s[1] + s[2]) + GE.len(P, s[2] + s[0]); }
   TP.forEach(function (P) { CH.check(GE.near(per(P, 'ABC'), 14) && GE.near(per(P, 'DEF'), 35) && GE.near(14 * 5 / 2, 35) && GE.verify(P, '△ABC∽△DEF') && GE.verify(P, 'AB：DE＝2：5'), 'チャレンジ（周 14cm → 35cm）'); });
 
@@ -201,17 +201,17 @@
       } },
     { tag: 'ことば', q: '点 O から、A・B・C までの長さを k 倍にのばした点を D・E・F とする。△DEF は △ABC と相似だろうか。', a: '相似（相似比 1：k）。このような2つの図形は「相似の位置」にあるといい、O を「相似の中心」という', sub: '対応する辺は平行（AB∥DE）。k を 1 より小さくすると、縮小した図形になる', dur: 3,
       notes: ['スライダーで、k（何倍にのばすか）を変えられます。'],
-      sliders: [{ key: 'k', label: 'k（倍）', min: .5, max: 3, step: .1, val: 2, anim: [1, 2], fmt: function (x) { return f1(x) + '倍'; } }],
+      sliders: [{ key: 'k', label: 'k（倍）', min: .5, max: 2.5, step: .1, val: 2, anim: [1, 2], fmt: function (x) { return f1(x) + '倍'; } }],
       b: { t: '<b>相似の位置</b> … 対応する点を結ぶ直線が1点 O に集まり、O からの長さの比がすべて等しい（O は<b>相似の中心</b>）', col: C.green },
       draw: function (D) {
-        var L = lay(D, .38), k = D.V.k, P = homP(k), F = ext(GE.fit(D, L.fig, { p: [-.2, -.2], q: [9.5, 5.9] }, { pad: .04 }), P);
+        var L = lay(D, .4), k = D.V.k, P = homP(k), F = ext(GE.fit(D, L.fig, { p: [-.3, -.3], q: [6.6, 4.5] }, { pad: .04 }), P);
         ['A', 'B', 'C'].forEach(function (n, i) { GE.seg(F, ['O', k > 1 ? 'DEF'[i] : n], { col: 'rgba(242,240,230,.6)', w: 1.6, dash: [6, 6] }); });
         GE.poly(F, 'ABC', { col: C.blue, fa: .18 }); GE.poly(F, 'DEF', { col: C.yel, fa: .16 });
         GE.dot(F, 'O'); ['A', 'B', 'C', 'D', 'E', 'F'].forEach(function (n) { GE.dot(F, n, { r: F.s * .12 }); });
         GE.labels(F, ['O', 'A', 'B', 'C', 'D', 'E', 'F'], { dir: { O: 'sw', A: 'nw', B: 's', C: 'se', D: 'nw', E: 's', F: 'se' }, col: { D: C.yel, E: C.yel, F: C.yel } });
         var rt = function (a, b) { return f2(GE.len(P, b) / GE.len(P, a)); };
-        rows(D, L.side, [{ t: 'OD÷OA＝' + rt('OA', 'OD') + '　OE÷OB＝' + rt('OB', 'OE') }, { t: 'OF÷OC＝' + rt('OC', 'OF') }, { t: 'DE÷AB＝' + rt('AB', 'DE') + '　EF÷BC＝' + rt('BC', 'EF'), col: C.yel },
-          { t: 'FD÷CA＝' + rt('CA', 'FD'), col: C.yel }, { t: '∠ABC＝' + Math.round(GE.ang(P, 'ABC')) + '°　∠DEF＝' + Math.round(GE.ang(P, 'DEF')) + '°', col: C.pink }]);
+        rows(D, L.side, [{ t: 'OA：OD＝1：' + rt('OA', 'OD') }, { t: 'OB：OE＝1：' + rt('OB', 'OE') }, { t: 'OC：OF＝1：' + rt('OC', 'OF') }, { t: 'AB：DE＝1：' + rt('AB', 'DE'), col: C.yel },
+          { t: 'BC：EF＝1：' + rt('BC', 'EF'), col: C.yel }, { t: 'CA：FD＝1：' + rt('CA', 'FD'), col: C.yel }, { t: '∠ABC＝' + Math.round(GE.ang(P, 'ABC')) + '°　∠DEF＝' + Math.round(GE.ang(P, 'DEF')) + '°', col: C.pink }]);
       } },
     { tag: '例題', bh: '例題　対応する辺・角と相似比', q: '△ABC∽△DEF である。① 辺 AB に対応する辺は？ ② ∠C に対応する角は？ ③ 相似比 AB：DE は？', a: '① 辺 DE　② ∠F　③ 2：3', sub: '∽ の左右で、頂点の順がそろっている（A と D、B と E、C と F）。AB：DE＝8：12＝2：3', dur: 5,
       b: { t: '辺 AB ↔ 辺 DE、∠C ↔ ∠F、相似比 AB：DE＝8：12＝<b>2：3</b>', col: C.pink },
@@ -231,7 +231,7 @@
       notes: ['辺の比と、角の大きさに目をつけよう。', 'スライダーで、図形の種類・イ の形・イ の大きさを変えられます。（ア は形をきめてある）'],
       sliders: [{ key: 'kind', label: '図形', min: 0, max: 5, step: 1, val: 1, fmt: function (x) { return KINDS[x]; } },
         { key: 'p', label: 'イ の形', min: 0, max: 1, step: .05, val: .75, fmt: function () { return ''; } },
-        { key: 's', label: 'イ の大きさ', min: .5, max: 2, step: .1, val: 1.5, fmt: function (x) { return f1(x) + '倍'; } }],
+        { key: 's', label: 'イ の大きさ', min: .5, max: 1.6, step: .1, val: 1.4, fmt: function (x) { return f1(x) + '倍'; } }],
       draw: function (D) {
         var Rr = box(D, { l: .05, r: .05, t: .06, b: .06 }), best = null;
         ['w', 'n'].forEach(function (k) { var F = GE.fit(D, Rr, { p: KL[k].b[0], q: KL[k].b[1] }, { pad: .02 }); F.k = KL[k]; if (!best || F.u > best.u * 1.05) best = F; });

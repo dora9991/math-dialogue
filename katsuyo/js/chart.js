@@ -220,6 +220,7 @@ CH.stacks = function (D, Ax, vals, edges, o) {
 CH.mnum = function (v) { var r = Math.round(v * 1000) / 1000; return (r < 0 ? '−' : '') + String(Math.abs(r)); };
 CH.plane = function (D, R, o) {
   o = o || {}; var xr = o.x || [-5, 5], yr = o.y || [-5, 5], st = o.step || 1, lab = o.lab || st, s = o.size || CH.fs(D, .72), g = D.ctx, a = o.a;
+  var stx = o.stepX || st, sty = o.stepY || st, lbx = o.labX || (o.stepX ? stx : lab), lby = o.labY || (o.stepY ? sty : lab);
   if (o.fit !== false) {
     var u = Math.min(R.w / (xr[1] - xr[0]), R.h / (yr[1] - yr[0])), w = u * (xr[1] - xr[0]), h = u * (yr[1] - yr[0]);
     R = rect(R.cx - w / 2, R.cy - h / 2, R.cx + w / 2, R.cy + h / 2);
@@ -230,8 +231,8 @@ CH.plane = function (D, R, o) {
   g.save(); g.globalAlpha = A(D, a);
   if (o.grid !== false) {
     g.strokeStyle = 'rgba(242,240,230,.12)'; g.lineWidth = 1; g.beginPath();
-    for (x = Math.ceil(xr[0] / st) * st; x <= xr[1] + 1e-9; x += st) { g.moveTo(X(x), R.y0); g.lineTo(X(x), R.y1); }
-    for (y = Math.ceil(yr[0] / st) * st; y <= yr[1] + 1e-9; y += st) { g.moveTo(R.x0, Y(y)); g.lineTo(R.x1, Y(y)); }
+    for (x = Math.ceil(xr[0] / stx) * stx; x <= xr[1] + 1e-9; x += stx) { g.moveTo(X(x), R.y0); g.lineTo(X(x), R.y1); }
+    for (y = Math.ceil(yr[0] / sty) * sty; y <= yr[1] + 1e-9; y += sty) { g.moveTo(R.x0, Y(y)); g.lineTo(R.x1, Y(y)); }
     g.stroke();
   }
   g.restore();
@@ -241,10 +242,22 @@ CH.plane = function (D, R, o) {
   CH.text(D, X(ox) + s * .9, R.y0 - s * .8, o.yn || 'y', { size: s * 1.2, a: a, col: 'rgba(242,240,230,.85)', w: 400 });
   if (ox === 0 && oy === 0) CH.text(D, X(0) - s * .7, Y(0) + s * .8, 'O', { size: s, a: a, num: true });
   if (o.nums !== false) {
-    for (x = Math.ceil(xr[0] / lab) * lab; x <= xr[1] + 1e-9; x += lab) if (Math.abs(x) > 1e-9) { CH.line(D, X(x), Y(oy) - 4, X(x), Y(oy) + 4, { w: 1.4, a: a }); CH.text(D, X(x), Y(oy) + s * 1, CH.mnum(x), { size: s, num: true, a: a }); }
-    for (y = Math.ceil(yr[0] / lab) * lab; y <= yr[1] + 1e-9; y += lab) if (Math.abs(y) > 1e-9) { CH.line(D, X(ox) - 4, Y(y), X(ox) + 4, Y(y), { w: 1.4, a: a }); CH.text(D, X(ox) - s * .6, Y(y), CH.mnum(y), { size: s, num: true, align: 'right', a: a }); }
+    for (x = Math.ceil(xr[0] / lbx) * lbx; x <= xr[1] + 1e-9; x += lbx) if (Math.abs(x) > 1e-9) { CH.line(D, X(x), Y(oy) - 4, X(x), Y(oy) + 4, { w: 1.4, a: a }); CH.text(D, X(x), Y(oy) + s * 1, CH.mnum(x), { size: s, num: true, a: a }); }
+    for (y = Math.ceil(yr[0] / lby) * lby; y <= yr[1] + 1e-9; y += lby) if (Math.abs(y) > 1e-9) { CH.line(D, X(ox) - 4, Y(y), X(ox) + 4, Y(y), { w: 1.4, a: a }); CH.text(D, X(ox) - s * .6, Y(y), CH.mnum(y), { size: s, num: true, align: 'right', a: a }); }
   }
   return { X: X, Y: Y, R: R, u: ux, xr: xr, yr: yr, s: s };
+};
+/* 分数：問い・答え・板書の字（HTML）の中の [1/2] を、たての分数にする */
+CH.fr = function (s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); };
+/* 図の中のたての分数。(x, y) がまん中。o：size、col、sign（前につける字。'−' など）、a */
+CH.frac = function (D, x, y, num, den, o) {
+  o = o || {}; var s = o.size || CH.fs(D), g = D.ctx, w;
+  g.save(); g.font = '700 ' + s * .8 + 'px ' + NUM; w = Math.max(g.measureText(String(num)).width, g.measureText(String(den)).width) + s * .2; g.restore();
+  var sx = o.sign ? s * .55 : 0;
+  if (o.sign) CH.text(D, x - w / 2 - sx * .4, y, o.sign, { size: s, num: true, col: o.col, a: o.a });
+  CH.text(D, x + sx * .3, y - s * .45, String(num), { size: s * .8, num: true, col: o.col, a: o.a, w: 700 });
+  CH.line(D, x + sx * .3 - w / 2, y, x + sx * .3 + w / 2, y, { col: o.col || C.chalk, w: Math.max(1.6, s * .07), a: o.a });
+  CH.text(D, x + sx * .3, y + s * .5, String(den), { size: s * .8, num: true, col: o.col, a: o.a, w: 700 });
 };
 /* 関数のグラフ。f(x) を、平面の中だけ描く。o：x0・x1（変域）、t（0〜1 で途中まで）、col、w、dash、a */
 CH.fn = function (D, Pl, f, o) {
