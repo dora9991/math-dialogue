@@ -77,17 +77,17 @@
         draw: function (D) { drawToday(D, D.ph ? D.t : 0); } },
       { tag: 'ことば', bh: 'ことば', q: '直角二等辺三角形と、30°・60°・90° の直角三角形の、3辺の比は？', a: '1：1：√2　と　1：2：√3', sub: '1：2：√3 は「短い辺：斜辺：残りの辺」の順。大きさが変わっても、比は変わらない', dur: 3,
         notes: ['スライダーで、三角形の大きさを変えられます。比は？'],
-        sliders: [{ key: 'k', label: 'いちばん短い辺', min: 1, max: 6, step: 1, val: 1, fmt: function (v) { return v; } }],
+        sliders: [{ key: 'k', label: 'いちばん短い辺', min: 1, max: 5, step: 1, val: 2, fmt: function (v) { return v; } }],
         b: [{ t: '直角二等辺三角形 … <b>1：1：√2</b>', col: C.green }, { t: '30°・60°・90° … 短い辺：斜辺：残り＝<b>1：2：√3</b>', col: C.green }, { t: '正方形の対角線は、1辺の <b>√2倍</b>', col: C.green }],
         draw: function (D) {
           var k = D.V.k, t = D.ph ? D.t : 0, B = CH.box(D, { l: .03, r: .03, t: .06, b: .04 }), cs = CH.split(D, B, 2, .1), s = CH.fs(D, .9);
-          var u = Math.min(cs[0].w / (6 * S3 + 3), cs[0].h * .6 / (6 + 2), cs[1].w / (6 * S3 + 3), cs[1].h * .6 / (6 + 2));
+          var u = Math.min(cs[0].w / (5 * S3 + 1.6), cs[0].h * .62 / (5 + 2), cs[1].w / (5 * S3 + 1.6), cs[1].h * .62 / (5 + 2));
           [[rtri(k, k), [String(k), String(k), kr(k, 2)], ['1', '1', '√2'], '45°', '45°'], [rtri(k * S3, k), [kr(k, 3), String(k), String(2 * k)], ['√3', '1', '2'], '30°', '60°']].forEach(function (e, i) {
-            var c = cs[i], P = e[0], w = P.B[0], h = P.A[1], F = { X: function (p) { p = typeof p === 'string' ? P[p] : p; return [c.cx + (p[0] - w / 2) * u, c.y0 + s * 1.5 + 8 * u - (p[1] + 1) * u]; }, u: u, D: D, P: P, R: c, s: CH.fs(D, 1), c: [w / 3, h / 3] };
+            var c = cs[i], P = e[0], w = P.B[0], h = P.A[1], F = { X: function (p) { p = typeof p === 'string' ? P[p] : p; return [c.cx + (p[0] - w / 2) * u, c.y0 + s * 1.5 + 7 * u - (p[1] + 1) * u]; }, u: u, D: D, P: P, R: c, s: CH.fs(D, 1), c: [w / 3, h / 3] };
             GE.poly(F, 'ABC', { col: i ? C.orange : C.blue, fa: .2, stroke: C.chalk }); GE.right(F, 'BCA', { r: Math.min(F.s * .5, u * .4) });
             sideLab(F, 'C', 'B', 'A', e[1][0], { size: s }); sideLab(F, 'C', 'A', 'B', e[1][1], { size: s }); sideLab(F, 'A', 'B', 'C', e[1][2], { size: s, col: C.yel });
             say(D, c.cx, c.y0 + s * .5, i ? '30°・60°・90°' : '直角二等辺三角形', { size: s, maxW: c.w, col: i ? C.orange : C.blue });
-            var y = c.y0 + s * 1.5 + 8 * u + s * 1.4;
+            var y = c.y0 + s * 1.5 + 7 * u + s * 1.4;
             ratio(D, c.cx, y, i ? ['1', '2', '√3'] : ['1', '1', '√2'], i ? [String(k), String(2 * k), kr(k, 3)] : [String(k), String(k), kr(k, 2)], { a1: D.ph ? CH.smooth(.2 + i * .3, .45 + i * .3, t) : 0, a2: 1, size: s, dx: Math.min(s * 3, c.w / 3.4) });
           });
         } },
@@ -154,7 +154,7 @@
   /* 今日の問い：ア（正方形の半分）・イ（正三角形の半分）。t：答えの動き（全体から半分を切りとる） */
   function drawToday(D, t) {
     var B = CH.box(D, { l: .03, r: .03, t: .14, b: .04 }), cs = CH.split(D, B, 2, .1), s = CH.fs(D, .95);
-    var u = Math.min(cs[0].w / 2.4, cs[0].h / 2.6, cs[1].w / 2.6, cs[1].h / 2.6);
+    var u = Math.min(cs[0].w / 2.2, cs[0].h / 2.8, cs[1].w / 2.3, cs[1].h / 2.7);
     var k0 = CH.smooth(0, .1, t) * (1 - CH.smooth(.32, .45, t)), kc = CH.smooth(.12, .22, t), km = CH.ease(CH.smooth(.25, .45, t)), k1 = CH.smooth(.5, .62, t), k2 = CH.smooth(.7, .82, t);
     [['ア', TA, [[1, 1]], [.6, .6], C.blue], ['イ', TI, [Ai], [0, -.9], C.orange]].forEach(function (e, i) {
       var c = cs[i], P = e[1], w = P.B[0], F = { X: function (p) { p = typeof p === 'string' ? P[p] : p; return [c.cx + (p[0] - w / 2) * u, c.cy - (p[1] - (i ? 0 : .5)) * u]; }, u: u, D: D, P: P, R: c, s: CH.fs(D, 1), c: [w / 3, 1 / 3] };

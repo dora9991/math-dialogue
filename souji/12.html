@@ -89,7 +89,7 @@
   var XR = [-11, 10.6];
   function fit1(D, R) { return GE.fit(D, R, PW, { bounds: [[XR[0], 0], [XR[1], 8]], pad: .06 }); }
   function lens1(F, a) { len(F, 'A', 'B', '4cm', { ref: 'D', a: a }); len(F, 'B', 'C', '6cm', { ref: 'E', a: a }); len(F, 'D', 'E', '5cm', { ref: 'A', a: a }); len(F, 'E', 'F', '7.5cm', { ref: 'B', a: a }); }
-  var DIRW = { A: 'nw', B: 'nw', C: 'nw', D: 'ne', E: 'ne', F: 'ne' };
+  var DIRW = { A: 'nw', B: 'se', C: 'nw', D: 'ne', E: 'ne', F: 'ne' };
   var def1 = {
     id: '第12時 今日の問い', lv: 1, ttl: '平行線と線分の比の証明', P: PW,
     q: 'ℓ∥m∥n のとき、AB：BC＝DE：EF であることを証明しよう。',
