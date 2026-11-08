@@ -77,12 +77,13 @@
     g.restore();
   }
   /* カードと記号のならび。items：[{s, op（記号なら true）, col, sx, a, dy, glow}]。それぞれの位置を返す */
-  function crowW(D, items, h) { var sz = h * .5, gap = h * .14; return items.reduce(function (w, it, i) { return w + (i ? gap : 0) + (it.op ? Math.max(h * .5, TW(D, it.s, sz * 1.1) + h * .08) : Math.max(h * .95, TW(D, it.s, sz) + h * .45)); }, 0); }
+  function itemW(D, it, h) { var sz = h * .5; return it.op ? Math.max(h * .5, TW(D, it.s, sz * 1.1) + h * .08) : Math.max(h * (it.minW || .95), TW(D, it.s, sz) + h * .45); }
+  function crowW(D, items, h) { var gap = h * .14; return items.reduce(function (w, it, i) { return w + (i ? gap : 0) + itemW(D, it, h); }, 0); }
   function crow(D, cx, y, items, h, o) {
     o = o || {}; if (o.maxW) { var w0 = crowW(D, items, h); if (w0 > o.maxW) h *= o.maxW / w0; }
     var sz = h * .5, gap = h * .14, out = [], x = (o.align === 'left' ? cx : cx - crowW(D, items, h) / 2);
     items.forEach(function (it) {
-      var w = it.op ? Math.max(h * .5, TW(D, it.s, sz * 1.1) + h * .08) : Math.max(h * .95, TW(D, it.s, sz) + h * .45), xc = x + w / 2;
+      var w = itemW(D, it, h), xc = x + w / 2;
       if (it.op) { if (it.a == null || it.a > 0) TX(D, xc, y + (it.dy || 0), it.s, { size: sz * 1.1, col: it.col || C.chalk, a: it.a }); }
       else card(D, xc, y, w, h, it.s, { col: it.col || scol(it.s), sx: it.sx, a: it.a, dy: it.dy, glow: it.glow, tcol: it.tcol, size: sz });
       out.push({ x0: x, x1: x + w, cx: xc, w: w }); x += w + gap;
@@ -96,7 +97,7 @@
     for (var k = 0; k <= n; k++) {
       var v = min + k * st, q = v / mj, big = Math.abs(q - Math.round(q)) < 1e-6;
       CH.line(D, X(v), y - (big ? 7 : 4), X(v), y + (big ? 7 : 4), { w: big ? 1.8 : 1.2, a: o.a });
-      if (big && o.lab !== false) { var L = o.fmt ? o.fmt(v) : S(Math.round(v * 1e6) / 1e6); if (L != null && L !== '') TX(D, X(v), y + s * (hasFr(L) ? 1.7 : 1.25), L, { size: s, a: o.a, col: Math.abs(v) < 1e-9 ? C.yel : C.chalk }); }
+      if (big && o.lab !== false) { var L = o.fmt ? o.fmt(v) : S(Math.round(v * 1e6) / 1e6); if (L != null && L !== '') TX(D, X(v), y + (hasFr(L) ? Math.max(s * 1.7, 7 + s * 1.25) : Math.max(s * 1.25, 7 + s * .75)), L, { size: s, a: o.a, col: Math.abs(v) < 1e-9 ? C.yel : C.chalk }); }
     }
     return X;
   }
@@ -106,6 +107,16 @@
     CH.circle(D, x0, y, 3.4, { fill: col, a: o.a });
     if (Math.abs(x1 - x0) > 2) CH.arrow(D, x0, y, x1, y, { col: col, w: o.w || 3, head: Math.min(11, Math.abs(x1 - x0) * .6), a: o.a });
     if (lab && k >= 1) TX(D, (x0 + x1) / 2, y - s * (hasFr(lab) ? 1.35 : .95), lab, { size: s, col: col, a: o.a, outline: 'rgba(20,40,30,.9)' });
+  }
+  /* 弧の矢印（x0 から x1 へ。o.h：高さ（負なら下へ）、o.lab：字、k：0〜1 ののび） */
+  function arc(D, x0, x1, y, col, k, o) {
+    o = o || {}; k = CH.clamp(k == null ? 1 : k, 0, 1); if (k <= 0) return; var g = D.ctx, s = o.size || CH.fs(D, .8), h = o.h == null ? Math.min(Math.abs(x1 - x0) * .4, s * 1.8) : o.h, mx = (x0 + x1) / 2, N = 30, m = Math.max(1, Math.round(N * k));
+    function P(u) { return [(1 - u) * (1 - u) * x0 + 2 * (1 - u) * u * mx + u * u * x1, y - 2 * (1 - u) * u * h * 2]; }
+    g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = col; g.lineWidth = o.w || 2.4; g.lineCap = 'round'; g.beginPath();
+    for (var i = 0; i <= m; i++) { var p = P(i / N); if (i) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); }
+    g.stroke(); g.restore();
+    if (k >= 1 && o.head !== false) { var p1 = P(.84), hd = o.hd || Math.min(10, Math.abs(x1 - x0) * .3 + 4); CH.arrow(D, p1[0], p1[1], x1, y, { col: col, w: o.w || 2.4, head: hd, a: o.a }); }
+    if (o.lab && k >= 1) TX(D, mx, y - h - (h >= 0 ? 1 : -1) * s * (hasFr(o.lab) ? 1.1 : .75), o.lab, { size: s, col: o.tcol || col, a: o.a, outline: 'rgba(20,40,30,.9)' });
   }
   /* 数直線の上の点 */
   function dot(D, x, y, col, lab, o) {
@@ -165,7 +176,7 @@
     { k: 'ウ', e: '−[1/2]＋[1/3]', a: -3 / 6, b: 2 / 6, min: -1, max: 2 / 6, step: 1 / 6, la: '−[3/6]', lb: '＋[2/6]', r: '−[1/6]', e2: '＝−[3/6]＋[2/6]', fmt: sixth }
   ];
   /* 字が重ならない、目もりの字の間かく */
-  function major(D, x0, x1, e, s) { var u = (x1 - x0) / ((e.max - e.min) / e.step), w = TW(D, e.fmt ? '−[5/6]' : S(e.min), s) * 1.3; return u >= w ? e.step : e.step * Math.ceil(w / u); }
+  function major(D, x0, x1, e, s) { var u = (x1 - x0) / ((e.max - e.min) / e.step), w = Math.max(TW(D, e.fmt ? '−[5/6]' : S(e.min), s), TW(D, S(Math.round((e.min + e.step) * 1e6) / 1e6), s)) * 1.25; return u >= w ? e.step : e.step * Math.ceil(w / u); }
   function trio(D, t) {
     var R = CH.box(D, { l: .04, r: .04, t: .03, b: .05 }), rs = CH.rows(R, 3, .04);
     E.forEach(function (e, k) {
@@ -174,9 +185,10 @@
       var w = TX(D, r.x0, ly, e.k + '　' + e.e, { size: s * 1.2, align: 'left' });
       if (kr > 0) TX(D, r.x0 + w, ly, (e.e2 || '') + '＝' + e.r, { size: s * 1.2, align: 'left', col: C.yel, a: kr });
       var X = NL(D, x0, x1, y, e.min, e.max, { step: e.step, major: major(D, x0, x1, e, s), size: s, fmt: e.fmt });
+      if (kr > 0) CH.line(D, X(e.a + e.b), y - s * 3.3, X(e.a + e.b), y, { col: C.yel, dash: [4, 4], a: kr });
       arw(D, X, y - s * 1.3, 0, e.a, NEG, ka, e.la, { size: s });
       arw(D, X, y - s * 3.3, e.a, e.a + e.b, POS, kb, e.lb, { size: s });
-      if (kr > 0) { CH.line(D, X(e.a + e.b), y - s * 3.3, X(e.a + e.b), y, { col: C.yel, dash: [4, 4], a: kr }); dot(D, X(e.a + e.b), y, C.yel, null, { a: kr, size: s }); }
+      if (kr > 0) dot(D, X(e.a + e.b), y, C.yel, null, { a: kr, size: s });
     });
   }
 
@@ -212,10 +224,11 @@
     });
     var sn = CH.fs(D, .8), y = R.y1 - sn * 2.2, x0 = R.x0 + sn, x1 = R.x1 - sn * 1.8, nl = o.nl;
     var X = NL(D, x0, x1, y, nl.min, nl.max, { step: nl.step, major: nl.major, fmt: nl.fmt, size: sn });
+    var kr = CH.smooth(.9, 1, t);
+    if (kr > 0) CH.line(D, X(o.a + o.b), y - sn * 3.4, X(o.a + o.b), y, { col: C.yel, dash: [4, 4], a: kr });
     arw(D, X, y - sn * 1.3, 0, o.a, vcol(o.a), CH.smooth(.6, .75, t), o.la, { size: sn });
     arw(D, X, y - sn * 3.4, o.a, o.a + o.b, vcol(o.b), CH.smooth(.77, .9, t), o.lb, { size: sn });
-    var kr = CH.smooth(.9, 1, t);
-    if (kr > 0) { CH.line(D, X(o.a + o.b), y - sn * 3.4, X(o.a + o.b), y, { col: C.yel, dash: [4, 4], a: kr }); dot(D, X(o.a + o.b), y, C.yel, o.dl, { a: kr, size: sn }); }
+    if (kr > 0) dot(D, X(o.a + o.b), y, C.yel, o.dl, { a: kr, size: sn });
   }
   var EX1 = { lines: [['−2.4＋0.9'], ['① 符号 … 絶対値は 2.4 ＞ 0.9 → −', C.pink], ['② 絶対値 … 2.4−0.9＝1.5', C.orange], ['③ 答え … −1.5', C.yel]], at: [.05, .25, .45],
     a: -2.4, b: .9, la: '−2.4', lb: '＋0.9', nl: { min: -3, max: 1, step: .1, major: .5 } };
@@ -229,8 +242,8 @@
     cs.forEach(function (c, i) {
       var cx = R.cx + (i - .5) * (cw + R.w * .04);
       rr(D, cx - cw / 2, R.y0, cx + cw / 2, R.y0 + h, { fill: 'rgba(242,240,230,.06)', stroke: C.chalk, sw: 1.6 });
-      TX(D, cx, R.y0 + h / 2, c[0], { size: fit(D, c[0], cw * .8, s * 1.05) });
-      TX(D, cx + cw / 2 - s * .2, R.y0 + s * .2, '？', { size: s * 1.1, col: C.pink, align: 'right' });
+      TX(D, cx - s * .4, R.y0 + h / 2, c[0], { size: fit(D, c[0], cw * .72, s * 1.05) });
+      TX(D, cx + cw / 2 - s * .35, R.y0 + h / 2, '？', { size: s * 1.1, col: C.pink, align: 'right' });
     });
     var sn = CH.fs(D, .78), y = R.y1 - sn * 2, x0 = R.x0 + sn, x1 = R.x1 - sn * 1.8, e = { min: -12, max: 12, step: 1 };
     var X = NL(D, x0, x1, y, -12, 12, { step: 1, major: major(D, x0, x1, e, sn), size: sn });

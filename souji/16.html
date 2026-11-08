@@ -27,6 +27,9 @@
   /* 体積（面ごとに、原点との四面体の体積をたす） */
   function vol(m) { var s = 0; m.F.forEach(function (f) { var P = f.v.map(function (k) { return m.V[k]; }); for (var i = 1; i < P.length - 1; i++) s += v.dot(P[0], v.cross(P[i], P[i + 1])) / 6; }); return Math.abs(s); }
   function box(a, b, c) { return K.prism([[0, 0], [a, 0], [a, b], [0, b]], c); }
+  /* 立体の字（D.label）を、黒板の字の大きさにそろえる（広い画面で小さくなりすぎない） */
+  function big(D) { var k = Math.max(1, CH.fs(D) * .85 / D.fs), L = D.label; D.label = function (p, t, o) { o = Object.assign({}, o); o.size = (o.size || 1) * k; L(p, t, o); }; return D; }
+  function wrap(ss) { ss.forEach(function (st) { var d = st.draw; st.draw = function (D) { d(big(D)); }; }); return ss; }
   function depth(D, p) { return v.dot(v.sub(p, D.C.pos), D.C.f); }
   /* 小さい立方体の列 list [{p, s, col, a}] を、遠いものから描く */
   function cubes(D, list) {
@@ -93,7 +96,7 @@
   K.run({
     no: '第16時', title: '相似な立体の表面積と体積は、何倍になるだろう', model: FR1, view: function () { return { th: -70, ps: 22, R: 3.7 * far() }; },
     links: [{ href: 'index.html', label: '目次' }, { href: '15.html', label: '◀ 第15時' }, { href: '17.html', label: '第17時 ▶' }],
-    steps: [
+    steps: wrap([
       { tag: '今日の問い', bh: '立方体 ア（1辺 1cm）・イ（2倍）・ウ（3倍）', q: '立方体 ア（1辺 1cm）を 2倍、3倍に拡大すると、イ、ウ になる。表面積と体積は、それぞれ ア の何倍になるだろう。',
         notes: ['① 自分の考え（3分）　予想を書いてから、調べよう。', '② ペアの考え（3分）　ほかの立体（直方体など）でも調べよう。'],
         draw: function (D) { bigCubes(D); } },
@@ -109,9 +112,9 @@
               var s = t0 + (t1 - t0) * m / Math.max(1, n - 1); m++; var a = v.smooth(s, s + .04, t); if (a <= 0) continue;
               D.poly([[CX[i] + x, 0, j], [CX[i] + x + 1, 0, j], [CX[i] + x + 1, 0, j + 1], [CX[i] + x, 0, j + 1]], { col: C.yel, a: .55 * a, stroke: '#3a2a10', sa: .8 * a });
             }
-            if (t > t1) D.label([CX[i] + k / 2, 0, k / 2], n + 'こ', { col: '#3a2a10', plain: true, size: 1.7 });
+            if (t > t1) D.label([CX[i] + k / 2, 0, k / 2], n + 'こ', { col: '#3a2a10', plain: true, size: 1.2 });
             if (t > .78) D.mesh(CUBES[i], { at: [CX[i], 0, 0], col: C.yel, a: .35 * v.smooth(.78, .9, t), edges: false });
-            if (t > .85) D.label([CX[i] + k / 2, 0, 0], [6, 24, 54][i] + 'cm²', { col: C.yel, dy: 2.3, size: 1.1, a: v.smooth(.85, .95, t) });
+            if (t > .85) D.label([CX[i] + k / 2, 0, 0], [6, 24, 54][i] + 'cm²', { col: C.yel, dy: 2.9, size: 1.1, a: v.smooth(.85, .95, t) });
           } });
         } },
       { tag: '今日の問い', q: '体積は、ア の何倍？', a: 'イ は 8倍、ウ は 27倍', sub: 'ア が、イ には 2×2×2＝8こ、ウ には 3×3×3＝27こ 積み上がる。体積は ア 1、イ 8、ウ 27（cm³）', dur: 9,
@@ -125,7 +128,7 @@
           [1, 2].forEach(function (i) { D.mesh(CUBES[i], { at: [CX[i], 0, 0], fill: false, hidden: 'none', edgeCol: 'rgba(242,240,230,.35)' }); });
           cubes(D, l1.concat(l2));
           var n1 = l1.filter(function (q) { return q.done; }).length, n2 = l2.filter(function (q) { return q.done; }).length;
-          if (n1) D.label([CX[1] + 1, 1, 2.9], n1 + 'こ', { col: C.yel, size: 1.4 }); if (n2) D.label([CX[2] + 1.5, 1.5, 3.9], n2 + 'こ', { col: C.yel, size: 1.4 });
+          if (n1) D.label([CX[1] + 1, 1, 2.9], n1 + 'こ', { col: C.yel, size: 1.1 }); if (n2) D.label([CX[2] + 1.5, 1.5, 3.9], n2 + 'こ', { col: C.yel, size: 1.1 });
         } },
       { tag: 'ことば', bh: 'ことば', q: '形が同じで、一方を拡大・縮小すると もう一方に重なる立体を何という？ 相似比が m：n のとき、表面積の比・体積の比は？', a: '相似な立体。表面積の比 m²：n²、体積の比 m³：n³',
         sub: '立体でも、対応する長さの比を相似比という。1辺を k倍にすると、表面積は k²倍、体積は k³倍', dur: 1, model: K.frame([3.5, 1.6, 1.8], 3.5), view: { th: -66, ps: 24 },
@@ -138,7 +141,7 @@
           for (var z = 0; z < k; z++) for (var y = 0; y < k; y++) for (var x = 0; x < k; x++) list.push({ p: [2 + x, y, z], col: (x + y + z) % 2 ? C.orange : '#f0c896' });
           cubes(D, [{ p: [0, 0, 0], col: C.blue }].concat(list));
           D.label([.5, 0, 0], 'もとの立方体', { dy: 1.1, size: 1, col: C.blue }); D.label([2 + k / 2, 0, 0], k + '倍に拡大', { dy: 1.1, size: 1, col: C.orange });
-          if (D.ph) D.label([2 + k / 2, k / 2, k + .8], k * k * k + 'こ分', { col: C.yel, size: 1.4 });
+          if (D.ph) D.label([2 + k / 2, k / 2, k + .8], k * k * k + 'こ分', { col: C.yel, size: 1.1 });
         } },
       { tag: '例題', bh: '例題　相似な円錐 P、Q', model: K.frame([1, 0, 16], 21), view: function () { return { th: -80, ps: 12, R: 22 * far() }; },
         q: '相似な円錐 P、Q があり、高さは 24cm と 36cm である。P の表面積は 360π cm²、体積は 800π cm³ である。Q の表面積と体積は？',
@@ -186,7 +189,7 @@
           CH.text(D, x0 + w * 8 / 27 / 2, y0 + h * 3.2, a3 > 0 ? 'P＝8×5＝40' : '8', { col: a3 > 0 ? C.yel : C.pink, a: a1, size: fs });
           if (a2 > 0) CH.text(D, x0 + w * (8 + 27) / 54, y0 + h * 3.2, '27−8＝19 が 95cm³', { col: C.yel, a: a2, size: fs });
         } }
-    ]
+    ])
   });
 })();
 </script>

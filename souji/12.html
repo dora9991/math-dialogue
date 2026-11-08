@@ -87,7 +87,7 @@
   function line2(dx, fx) { var P = { A: PW.A, B: PW.B, C: PW.C, D: [dx, 8], F: [fx, 0] }; P.E = GE.meet(P.D, P.F, [0, 4.8], [1, 4.8]); return P; }
   [[8, -1.6], [4, 9], [12, 2], [3, -1], [10, 10]].forEach(function (q) { GE.verify(line2(q[0], q[1]), 'AB：BC＝DE：EF＝2：3、AB：AC＝DE：DF', null, '直線 DF を動かした図（' + q + '）'); });
   var XR = [-11, 10.6];
-  function fit1(D, R) { return GE.fit(D, R, PW, { bounds: [[XR[0], 0], [XR[1], 8]], pad: .06 }); }
+  function fit1(D, R) { return GE.fit(D, R, PW, { keys: ['A', 'B', 'C', 'D', 'E', 'F'], bounds: [[-8, 0], [XR[1], 8]], pad: .06 }); }
   function lens1(F, a) { len(F, 'A', 'B', '4cm', { ref: 'D', a: a }); len(F, 'B', 'C', '6cm', { ref: 'E', a: a }); len(F, 'D', 'E', '5cm', { ref: 'A', a: a }); len(F, 'E', 'F', '7.5cm', { ref: 'B', a: a }); }
   var DIRW = { A: 'nw', B: 'se', C: 'nw', D: 'ne', E: 'ne', F: 'ne' };
   var def1 = {
@@ -128,7 +128,7 @@
     { tag: '今日の問い', bh: '平行な 3本の直線 ℓ、m、n', q: 'ℓ∥m∥n である。2つの直線が、図のように ℓ、m、n と交わっている。AB：BC と DE：EF には、どんな関係があるだろう。わけも考えよう。',
       notes: ['① 自分の考え（3分）　見つけた関係と、そのわけを書こう。', '② ペアの考え（3分）　自分とちがう考え方は？'],
       b: { t: 'ℓ∥m∥n　AB＝4cm、BC＝6cm、DE＝5cm、EF＝7.5cm', col: C.blue },
-      draw: function (D) { var F = fit1(D, CH.box(D, { l: .05, r: .07, t: .08, b: .1 })); rules(F, YS, XR, NM); GE.figure(F, def1.fig); lens1(F); } },
+      draw: function (D) { var F = fit1(D, CH.box(D, { l: .05, r: .07, t: .08, b: .1 })); rules(F, YS, [-8, XR[1]], NM); GE.figure(F, def1.fig); lens1(F); } },
     { tag: '今日の問い', q: 'AB：BC と DE：EF には、どんな関係がありそう？ 直線 DF を動かして調べよう。', a: 'AB：BC＝DE：EF（どちらも 2：3）',
       sub: '4：6＝2：3、5：7.5＝2：3。直線 DF の向きや位置を変えても、DE：EF は 2：3 のまま', dur: 5,
       notes: ['スライダーで、D と F の位置を変えられます（長さは小数第1位まで）。'],

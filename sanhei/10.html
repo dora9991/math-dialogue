@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>表面を通る最短の道のり</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三平方の定理 第10時：立体の表面を通る、いちばん短い道のりを求めよう（ikkan の lesson_sanhei_10 と同じ流れ）。
+   直方体の表面にかけたひもは、となりの面を辺のまわりに開く（kukan/07 の考えようと同じく、面を辺のまわりに回す）と、一直線になる。
+   辺 BF・BC・EF を通る 3通りの開き方をくらべる。円柱の側面は K3.cylNet、円錐の側面は K3.coneNet で開き、ひもは開いた面といっしょに動く。
+   数値は ikkan のまま（自作）。ひもの長さは、開いた図の座標から計算し直して、2乗で照らし合わせる（CH.check）。 */
+(function () {
+  var C = K3.COL, v = K3.v, K = K3, PI = Math.PI, DEG = v.DEG, sq = Math.sqrt;
+
+  /* ---- 直方体の面を、辺のまわりに開く ---- */
+  /* 通り方：開く面・ちょうつがいの辺・動く点・動かない点・動かない点のある面 */
+  var RT = {
+    BF: { face: 'BCGF', hinge: 'BF', mv: 'G', fix: 'A', root: 'ABFE', th: -90 },
+    BC: { face: 'ABCD', hinge: 'BC', mv: 'A', fix: 'G', root: 'BCGF', th: 0 },
+    EF: { face: 'EFGH', hinge: 'EF', mv: 'G', fix: 'A', root: 'ABFE', th: -90 }
+  };
+  /* 面 face を辺 hinge のまわりに、外側へ 90° × t 回す関数 */
+  function flap(M, rk) {
+    var r = RT[rk], a = M.P[r.hinge[0]], u = v.nrm(v.sub(M.P[r.hinge[1]], a)), c = v.centroid(r.face.split('').map(function (k) { return M.P[k]; })), sg = 1, best = -1;
+    [1, -1].forEach(function (s) { var d = v.len(v.sub(v.add(a, v.rotAxis(v.sub(c, a), u, s * PI / 2)), M.ctr)); if (d > best) { best = d; sg = s; } });
+    return { p: function (p, t) { return v.add(a, v.rotAxis(v.sub(p, a), u, sg * t * PI / 2)); }, n: function (n, t) { return v.rotAxis(n, u, sg * t * PI / 2); } };
+  }
+  function meet(p, p2, q, q2) { var r = v.sub(p2, p), s = v.sub(q2, q), rs = v.cross(r, s), k = v.dot(v.cross(v.sub(q, p), s), rs) / v.dot(rs, rs); return v.add(p, v.mul(r, k)); }
+  /* 通り方 rk の、開きぐあい t のときの ひも（fix → P → 動く点） */
+  function route(M, rk, t) {
+    var r = RT[rk], F = flap(M, rk), e1 = F.p(M.P[r.mv], 1), fix = M.P[r.fix], P = meet(fix, e1, M.P[r.hinge[0]], M.P[r.hinge[1]]);
+    var corner = [e1[0], e1[1], fix[2]];
+    return { F: F, fix: fix, P: P, e: F.p(M.P[r.mv], t), e1: e1, L2: v.dot(v.sub(e1, fix), v.sub(e1, fix)), corner: corner };
+  }
+  function legTxt(M, rk) { var w = M.w, d = M.d, h = M.h; return { BF: [w + '＋' + d, '' + h], BC: ['' + d, h + '＋' + w], EF: ['' + w, h + '＋' + d] }[rk]; }
+  /* 見えるか（面の外向きの向き n、点 p） */
+  function seen(D, n, p) { return v.dot(n, v.sub(D.C.pos, p)) > 0; }
+  function string(D, p, q, n, o) { o = o || {}; var vis = seen(D, n, v.lerp3(p, q, .5)); D.seg(p, q, { col: o.col || C.yel, w: D.lw * (vis ? 2.8 : 1.8), glow: vis, dash: !vis, a: vis ? 1 : .75 }); }
+  /* 直方体と、開いた面と、ひも。o.k：ひもを引く進み（0〜1）、o.t：開く進み、o.legs：直角三角形の2辺 */
+  function boxRoute(D, M, rk, o) {
+    o = o || {}; var r = RT[rk], R = route(M, rk, o.t || 0), t = o.t || 0, col = o.col || C.yel;
+    var fc = {}; fc[r.root] = { col: C.blue, a: .2 };
+    D.box(M, { dim: .75, faces: fc, labels: o.labels !== false && t < .3 });
+    var pts = r.face.split('').map(function (k) { return R.F.p(M.P[k], t); });
+    D.poly(pts, { col: C.lav, a: .34, stroke: C.lav, sa: .95, sw: D.lw * 1.5 });
+    if (t >= .3 && o.labels !== false) {
+      var ctr = v.centroid(r.root.split('').map(function (k) { return M.P[k]; }).concat(pts)), al = v.smooth(.3, .45, t);
+      outLab(D, R.fix, r.fix, ctr, { a: al }); outLab(D, R.e, r.mv + '′', ctr, { col: C.lav, a: al });
+      outLab(D, M.P[r.hinge[0]], r.hinge[0], ctr, { a: al }); outLab(D, M.P[r.hinge[1]], r.hinge[1], ctr, { a: al });
+    }
+    var nf = K.face(M, r.root).n, nm = R.F.n(K.face(M, r.face).n, t), k = o.k == null ? 1 : o.k;
+    if (k > 0) {
+      var k1 = Math.min(1, k * 2), k2 = Math.max(0, k * 2 - 1);
+      string(D, R.fix, v.lerp3(R.fix, R.P, k1), nf, { col: col });
+      if (k2 > 0) string(D, R.P, v.lerp3(R.P, R.e, k2), nm, { col: col });
+      D.dot(R.fix, { col: col }); if (k2 >= 1) D.dot(R.e, { col: col });
+    }
+    if (o.legs > 0) {
+      var lt = legTxt(M, rk), a = o.legs;
+      D.seg(R.fix, R.corner, { col: C.chalk, w: D.lw * 1.2, dash: true, a: a }); D.seg(R.corner, R.e1, { col: C.chalk, w: D.lw * 1.2, dash: true, a: a });
+      D.label(v.lerp3(R.fix, R.corner, .5), lt[0], { dy: rk === 'BC' ? -.9 : 1.9, a: a, size: 1.1 });
+      D.label(v.lerp3(R.corner, R.e1, .5), lt[1], { dx: rk === 'BC' ? -1.6 : 1.6, a: a, size: 1.1 });
+    }
+    return R;
+  }
+  /* 点の名前を、図のまん中 ctr から外向きに（画面の上で） */
+  function outLab(D, p, txt, ctr, o) {
+    o = o || {}; var P = D.p2(p), c = D.p2(ctr), dx = P[0] - c[0], dy = P[1] - c[1], l = Math.hypot(dx, dy) || 1;
+    D.text(P[0] + dx / l * D.fs * .9, P[1] + dy / l * D.fs * .9, txt, { col: o.col || C.chalk, size: o.size || .95, a: o.a });
+  }
+  function lerpView(a, b, t) { return { th: v.lerp(a.th, b.th, t), ps: v.lerp(a.ps, b.ps, t), fov: v.lerp(a.fov || 30, b.fov || 30, t), R: v.lerp(a.R, b.R, t), target: v.lerp3(a.target, b.target, t) }; }
+  /* 開いた図を正面から見る向き */
+  function flatView(M, rk) {
+    var r = RT[rk], F = flap(M, rk), P = r.root.split('').map(function (k) { return M.P[k]; }).concat(r.face.split('').map(function (k) { return F.p(M.P[k], 1); }));
+    var lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9]; P.forEach(function (p) { for (var i = 0; i < 3; i++) { lo[i] = Math.min(lo[i], p[i]); hi[i] = Math.max(hi[i], p[i]); } });
+    /* 画面の横は たての 1.25 倍くらいまで使える */
+    var horiz = r.th === 0 ? hi[1] - lo[1] : hi[0] - lo[0], ext = Math.max(horiz / 1.25, hi[2] - lo[2]);
+    return { th: r.th, ps: 0, fov: 12, R: ext * .5 + .7, target: v.lerp3(lo, hi, .5) };
+  }
+  function boxView(M) { return { th: -55, ps: 24, R: M.R * 1.18, target: M.ctr }; }
+
+  /* ---- 今日の問い：AB 6・BC 4・AE 2 ---- */
+  var BX = K.cuboid(6, 4, 2), V0 = boxView(BX), FV = { BF: flatView(BX, 'BF'), BC: flatView(BX, 'BC'), EF: flatView(BX, 'EF') };
+  var L2 = { BF: route(BX, 'BF', 1).L2, BC: route(BX, 'BC', 1).L2, EF: route(BX, 'EF', 1).L2 };
+  CH.check(CH.near(L2.BF, 104) && CH.near(Math.pow(2 * sq(26), 2), 104) && CH.near(L2.BC, 80) && CH.near(Math.pow(4 * sq(5), 2), 80) && CH.near(L2.EF, 72) && CH.near(Math.pow(6 * sq(2), 2), 72) && L2.EF < L2.BC && L2.BC < L2.BF, '今日の問い（√104・√80・√72）');
+  /* 開いても、ひもの通る点 P は辺の上（0〜1 の間） */
+  ['BF', 'BC', 'EF'].forEach(function (rk) { var R = route(BX, rk, 1), r = RT[rk], h0 = BX.P[r.hinge[0]], h1 = BX.P[r.hinge[1]], s = v.dot(v.sub(R.P, h0), v.sub(h1, h0)) / v.dot(v.sub(h1, h0), v.sub(h1, h0)); CH.check(s > 0 && s < 1, 'ひもが辺 ' + rk + ' を通る'); });
+
+  /* ---- ことば：円柱の側面を 1周するひも ---- */
+  var CY = { r: 1.5, h: 6 };
+  /* cylNet と同じ式で、側面の上の点（s：手前の線からの弧の長さ、z：高さ）が、開きぐあい t1 のとき どこにあるか */
+  function cylPt(r, t1, s, z) { if (t1 > .999) return [s, -r, z]; var rho = r / (1 - t1), a = s / rho; return [rho * Math.sin(a), -r + rho * (1 - Math.cos(a)), z]; }
+  function cylNrm(r, t1, s) { if (t1 > .999) return [0, -1, 0]; var a = s / (r / (1 - t1)); return [Math.sin(a), -Math.cos(a), 0]; }
+
+  /* ---- 例題：円錐（半径 2・母線 8） ---- */
+  var CN = { r: 2, l: 8 }; CN.h = sq(CN.l * CN.l - CN.r * CN.r);
+  var PHI = 2 * PI * CN.r / CN.l;
+  CH.check(CH.near(PHI, PI / 2) && CH.near(Math.pow(2 * CN.l * Math.sin(PHI / 2), 2), 128) && CH.near(Math.pow(8 * sq(2), 2), 128), '例題（中心角 90°、AA′＝8√2）');
+  function camOf(m) { var w = v.mul(m, -1); return { th: Math.atan2(w[1], w[0]) / DEG, ps: Math.asin(w[2]) / DEG }; }
+  var CFIN = K.coneNet(CN.r, CN.h, 1, 0), CC = camOf(CFIN.m), CAP = [0, 0, CN.h];
+  var CVA = { th: -62, ps: 16, R: CN.l * .62, target: [0, 0, CN.h * .42] };
+  var CVB = { th: CC.th, ps: CC.ps, fov: 8, R: CN.l * .78, target: v.lerp3(CAP, v.centroid(CFIN.side.V), .9) };
+  /* 開いた側面（おうぎ形）の上で、極座標 (ρ, u)（u は 0〜1 で、A から A′ まで）の点を、いまの側面の上に置く */
+  function onFan(n, rho, u) {
+    var V = n.side.V, N = V.length - 2, x = Math.max(0, Math.min(N - 1e-9, u * N)), j = Math.floor(x), f = x - j;
+    var p = v.lerp3(V[j + 1], V[j + 2], f); return { p: v.add(V[0], v.mul(v.sub(p, V[0]), rho / CN.l)), n: n.side.F[Math.min(N - 1, j)].n };
+  }
+  /* ひも AA′（開いた図で、まっすぐな弦）。k：引く進み */
+  function coneString(D, n, k, col) {
+    var M = 60, last = null;
+    for (var i = 0; i <= M * k; i++) {
+      var u = i / M, psi = (u - .5) * PHI, rho = CN.l * Math.cos(PHI / 2) / Math.cos(psi), q = onFan(n, rho, u);
+      if (last) { var vis = seen(D, q.n, q.p); D.seg(last, q.p, { col: col, w: D.lw * (vis ? 2.8 : 1.6), dash: !vis, a: vis ? 1 : .7, glow: vis }); }
+      last = q.p;
+    }
+  }
+
+  /* ---- 考えよう：3つの直方体 ---- */
+  var KB = [K.cuboid(2, 3, 6), K.cuboid(3, 6, 2), K.cuboid(6, 3, 2)];
+  /* ---- チャレンジ：AB 4・AD 2・AE 3、辺 BF 上の点 P ---- */
+  var CB = K.cuboid(4, 2, 3), CR = route(CB, 'BF', 1);
+  CH.check(CH.near(CR.L2, 45) && CH.near(Math.pow(3 * sq(5), 2), 45) && CH.near(CR.P[2], 2), 'チャレンジ（3√5、BP＝2）');
+
+  K.run({
+    no: '第10時', title: '立体の表面を通る、いちばん短い道のりを求めよう',
+    model: K.frame(BX.ctr, 4), view: V0,
+    links: [{ href: 'index.html', label: '目次' }, { href: '09.html', label: '◀ 第9時' }, { href: '11.html', label: '第11時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '直方体（AB 6cm・BC 4cm・AE 2cm）', view: V0,
+        q: '直方体で、A から G まで、表面にそってひもをかける。いちばん短いのは、辺 BF・BC・EF のどれを通るときだろう。予想して、確かめよう。',
+        notes: ['① 自分の考え（3分）　予想と、確かめ方を。', '② ペアの考え（3分）'],
+        draw: function (D) {
+          var P = BX.P;
+          D.box(BX, { dim: .8, edges: { BF: { col: C.yel }, BC: { col: C.blue }, EF: { col: C.pink } } });
+          D.dot(P.A, { col: C.yel }); D.dot(P.G, { col: C.yel });
+          D.label(v.lerp3(P.A, P.B, .5), '6cm', { dy: 1.05 }); D.label(v.lerp3(P.B, P.C, .5), '4cm', { dx: 1.3, dy: .55 }); D.label(v.lerp3(P.A, P.E, .5), '2cm', { dx: -1.5 });
+        } },
+
+      { tag: '今日の問い', q: '辺 BF を通るとき、いちばん短いひもの長さは？', a: '2√26&nbsp;cm（√104）',
+        sub: '面 BCGF を開くと、ひもは一直線。横 6＋4＝10、たて 2 の直角三角形の斜辺　√(10² ＋ 2²) ＝ √104 ＝ 2√26', dur: 6,
+        view: function (s) { return s.ph ? lerpView(V0, FV.BF, v.smooth(.25, .7, s.t)) : V0; },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .25 ? 'ひもをかけて…' : s.t < .75 ? '面 BCGF を開くと…' : '一直線になる'; },
+        b: { t: '辺 BF … √(10² ＋ 2²) ＝ √104 ＝ <b>2√26</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0;
+          boxRoute(D, BX, 'BF', { k: D.ph ? v.smooth(0, .22, t) : 0, t: v.ease(v.smooth(.25, .7, t)), legs: v.smooth(.75, .9, t) });
+          if (t > .85) { var R = route(BX, 'BF', 1); D.label(v.lerp3(R.fix, R.e1, .55), '√104', { col: C.yel, dy: -1, size: 1.2, a: v.smooth(.85, .95, t) }); }
+        } },
+
+      { tag: '今日の問い', q: '辺 BC を通るときは？', a: '4√5&nbsp;cm（√80）',
+        sub: '底面 ABCD を開くと、横 4、たて 2＋6＝8 の直角三角形の斜辺　√(4² ＋ 8²) ＝ √80 ＝ 4√5', dur: 6,
+        view: function (s) { return s.ph ? lerpView(V0, FV.BC, v.smooth(.25, .7, s.t)) : V0; },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .25 ? 'ひもをかけて…' : s.t < .75 ? '底面 ABCD を開くと…' : '一直線になる'; },
+        b: { t: '辺 BC … √(4² ＋ 8²) ＝ √80 ＝ <b>4√5</b>', col: C.blue },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0;
+          boxRoute(D, BX, 'BC', { col: C.blue, k: D.ph ? v.smooth(0, .22, t) : 0, t: v.ease(v.smooth(.25, .7, t)), legs: v.smooth(.75, .9, t) });
+          if (t > .85) { var R = route(BX, 'BC', 1); D.label(v.lerp3(R.fix, R.e1, .5), '√80', { col: C.blue, dx: 1.6, size: 1.2, a: v.smooth(.85, .95, t) }); }
+        } },
+
+      { tag: '今日の問い', q: '辺 EF を通るときは？ 3つのうち、いちばん短いのは？', a: '6√2&nbsp;cm（√72）。辺 EF を通るときが、いちばん短い',
+        sub: '上の面 EFGH を開くと、横 6、たて 2＋4＝6　√(6² ＋ 6²) ＝ √72 ＝ 6√2。√72 ＜ √80 ＜ √104', dur: 6,
+        view: function (s) { return s.ph ? lerpView(V0, FV.EF, v.smooth(.25, .7, s.t)) : V0; },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .25 ? 'ひもをかけて…' : s.t < .75 ? '上の面 EFGH を開くと…' : '√72 ＜ √80 ＜ √104'; },
+        b: { t: '辺 EF … √(6² ＋ 6²) ＝ √72 ＝ <b>6√2</b> → いちばん短い', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0;
+          boxRoute(D, BX, 'EF', { col: C.pink, k: D.ph ? v.smooth(0, .22, t) : 0, t: v.ease(v.smooth(.25, .7, t)), legs: v.smooth(.75, .9, t) });
+          if (t > .85) { var R = route(BX, 'EF', 1); D.label(v.lerp3(R.fix, R.e1, .5), '√72', { col: C.pink, dx: -1.4, dy: -.4, size: 1.2, a: v.smooth(.85, .95, t) }); }
+        } },
+
+      { tag: 'ことば', bh: 'ことば', model: K.frame([0, 0, 3], 4.4),
+        view: function (s) { var a = { th: -62, ps: 18, R: 4.6, target: [0, 0, 3] }, b = { th: -90, ps: 0, fov: 12, R: 5.6, target: [0, -1.5, 3] }; return s.ph ? lerpView(a, b, v.smooth(.35, .8, s.t)) : a; },
+        q: '立体の面を平らに広げた図を何という？ 表面を通る いちばん短い道のりは、その図の上で どんな線？', a: '展開図。2点を結ぶ線分',
+        sub: '円柱の側面に 1周かけたひもも、開くと長方形の対角線（線分）になる', dur: 6,
+        b: [{ t: '面を平らに広げた図 … <b>展開図</b>', col: C.green }, { t: '表面を通る最短の道のり … 展開図で 2点を結ぶ <b>線分</b>', col: C.green }, { t: '円柱の側面 … 長方形（横 ＝ 底面の円周）　円錐の側面 … おうぎ形（弧 ＝ 底面の円周）', col: C.green }],
+        banner: function (s) { if (!s.ph) return ''; return s.t < .35 ? '円柱の側面に、1周 ひもをかける' : s.t < .85 ? '側面を開くと…' : '長方形の対角線（線分）'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, t1 = v.ease(v.smooth(.35, .8, t)), k = D.ph ? v.smooth(0, .3, t) : 0, r = CY.r, h = CY.h, n = K.cylNet(r, h, t1, 0);
+          D.mesh(K.cylinder(r * .995, h), { col: '#c8ccd0', a: .9 * (1 - v.smooth(0, .25, t1)) });
+          D.mesh(n.side, { col: C.orange, two: true, a: .9 });
+          if (t1 < .3) { D.mesh(n.top, { col: C.blue, two: true, a: 1 - t1 / .3 }); }
+          var M = 80, last = null;
+          for (var i = 0; i <= M * k; i++) {
+            var u = i / M, s = -PI * r + 2 * PI * r * u, p = cylPt(r, t1, s, h * u);
+            if (last) { var vis = seen(D, cylNrm(r, t1, s), p); D.seg(last, p, { col: C.yel, w: D.lw * (vis ? 2.8 : 1.6), dash: !vis, a: vis ? 1 : .7, glow: vis }); }
+            last = p;
+          }
+          if (k > 0) { D.dot(cylPt(r, t1, -PI * r, 0), { col: C.yel }); D.label(cylPt(r, t1, -PI * r, 0), 'A', { dx: -.8, dy: .5 }); }
+          if (k >= 1) { D.dot(cylPt(r, t1, PI * r, h), { col: C.yel }); D.label(cylPt(r, t1, PI * r, h), 'B', { dx: .8, dy: -.5 }); }
+        } },
+
+      { tag: '例題', bh: '例題　円錐（底面の半径 2cm・母線 8cm）', model: K.frame([0, 0, 3.5], 8),
+        view: function (s) { return s.ph ? lerpView(CVA, CVB, v.smooth(.1, .55, s.t)) : CVA; },
+        q: '底面の半径 2cm、母線 8cm の円錐。底面の円周上の点 A から、側面を 1周して A にもどる いちばん短いひもを考える。側面のおうぎ形の中心角は？', a: '90°',
+        sub: '弧の長さ ＝ 底面の円周 2π × 2 ＝ 4π。半径 8cm の円周 16π の 4π/16π ＝ 1/4 → 360° × 1/4 ＝ 90°', dur: 7,
+        banner: function (s) { if (!s.ph) return ''; return s.t < .55 ? '側面を開くと…' : s.t < .75 ? '弧の長さ ＝ 底面の円周 ＝ 4π' : '半径 8cm の円の 1/4 → 90°'; },
+        b: { t: '弧 4π ÷ 円周 16π ＝ 1/4 → 中心角 <b>90°</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, t1 = v.ease(v.smooth(.1, .55, t)), n = K.coneNet(CN.r, CN.h, t1, 0);
+          D.mesh(n.side, { col: C.pink, two: true });
+          if (t1 < .99) D.mesh(n.base, { col: C.blue, two: true, a: 1 - t1 });
+          coneString(D, n, D.ph ? 1 : 0, C.yel);
+          var A = onFan(n, CN.l, 0).p, A2 = onFan(n, CN.l, 1).p;
+          var mid0 = v.lerp3(n.side.V[0], onFan(n, CN.l, .5).p, .5);
+          D.dot(A, { col: C.yel }); outLab(D, A, 'A', t1 > .5 ? mid0 : [0, 0, 0]);
+          if (t1 > .5) { D.dot(A2, { col: C.yel }); outLab(D, A2, 'A′', mid0); }
+          if (!D.ph) { D.label([0, 0, 0], '2cm', { dy: .9, dx: .4 }); D.seg([0, 0, 0], [CN.r, 0, 0], { col: C.chalk, w: D.lw }); D.label(v.lerp3(CAP, [-CN.r * .7, -CN.r * .7, 0], .5), '8cm', { dx: -1.4 }); }
+          if (t > .55) {
+            var a = v.smooth(.55, .65, t), V = n.side.V, g = v.nrm(v.sub(V[1], V[0])), e = v.nrm(v.sub(V[V.length - 1], V[0])), w = v.nrm(v.sub(e, v.mul(g, v.dot(e, g))));
+            for (var j = 1; j < V.length - 1; j++) D.seg(V[j], V[j + 1], { col: C.orange, w: D.lw * 2.4, a: a });
+            if (t > .75) { var b2 = v.smooth(.75, .85, t); D.circle(V[0], g, w, CN.l, { stroke: C.chalk, sa: .6 * b2, sw: D.lw, dash: true }); D.arc(V[0], g, w, 1.4, 0, PHI, { col: C.yel, a: b2, w: 2 }); D.label(v.add(V[0], v.mul(v.nrm(v.add(g, e)), 2.4)), '90°', { col: C.yel, a: b2, size: 1.2 }); }
+          }
+        } },
+
+      { tag: '例題', model: K.frame([0, 0, 3.5], 8), view: CVB,
+        q: 'ひも AA′ の長さは？', a: '8√2&nbsp;cm', sub: '△OAA′ は、OA ＝ OA′ ＝ 8 の直角二等辺三角形　AA′² ＝ 8² ＋ 8² ＝ 128、AA′ ＝ 8√2', dur: 2.5,
+        b: { t: '△OAA′ は直角二等辺三角形　AA′ ＝ <b>8√2 cm</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, n = K.coneNet(CN.r, CN.h, 1, 0), V = n.side.V, O = V[0], A = V[1], A2 = V[V.length - 1];
+          D.mesh(n.side, { col: C.pink, two: true });
+          var a = v.smooth(0, .4, t);
+          D.poly([O, A, A2], { col: C.yel, a: .3 * a, stroke: C.yel, sa: a, sw: D.lw * 1.4 });
+          D.right(O, v.sub(A, O), v.sub(A2, O), { s: .9, col: C.yel });
+          coneString(D, n, 1, C.yel);
+          var mid0 = v.centroid([O, A, A2]); outLab(D, O, 'O', mid0); outLab(D, A, 'A', mid0); outLab(D, A2, 'A′', mid0);
+          D.label(v.lerp3(O, A, .5), '8', { dx: -.9, size: 1.2 }); D.label(v.lerp3(O, A2, .5), '8', { dx: .9, size: 1.2 });
+          if (t > .5) D.label(v.lerp3(A, A2, .5), '8√2', { col: C.yel, dy: 1.1, size: 1.3, a: v.smooth(.5, .7, t) });
+        } },
+
+      { tag: '考えよう', bh: '考えよう', model: K.frame([3, 2, 3], 7),
+        view: function (s) { var M = KB[s.V.b || 0], rk = ['BF', 'BC', 'EF'][s.V.e || 0]; return lerpView(boxView(M), flatView(M, rk), v.smooth(0, 1, s.V.o || 0)); },
+        q: '3つの直方体 ア〜ウ で、A から G まで、辺 BF・BC・EF を通るときの、ひもの長さの2乗を求めよう。どんなことに気づくだろう。',
+        notes: ['ア AB 2・BC 3・AE 6　イ AB 3・BC 6・AE 2　ウ AB 6・BC 3・AE 2（cm）', '（長さ）² の表と、気づいたこと。ほかの直方体でも確かめよう。', 'スライダーで、直方体・通る辺を選んで、面を開けます。'],
+        sliders: [
+          { key: 'b', label: '直方体', min: 0, max: 2, step: 1, val: 0, fmt: function (x) { return 'アイウ'[x]; } },
+          { key: 'e', label: '通る辺', min: 0, max: 2, step: 1, val: 0, fmt: function (x) { return ['辺 BF', '辺 BC', '辺 EF'][x]; } },
+          { key: 'o', label: '面を開く', min: 0, max: 1, val: 0, fmt: function () { return ''; } }
+        ],
+        draw: function (D) {
+          var M = KB[D.V.b], rk = ['BF', 'BC', 'EF'][D.V.e], o = D.V.o;
+          boxRoute(D, M, rk, { col: [C.yel, C.blue, C.pink][D.V.e], t: o, legs: v.smooth(.9, 1, o) });
+          if (o < .5) { var P = M.P; D.label(v.lerp3(P.A, P.B, .5), M.w + 'cm', { dy: 1.05 }); D.label(v.lerp3(P.B, P.C, .5), M.d + 'cm', { dx: 1.3, dy: .55 }); D.label(v.lerp3(P.A, P.E, .5), M.h + 'cm', { dx: -1.5 }); }
+          D.text(18, D.info.top + 16, 'アイウ'[D.V.b], { size: 1.4, col: C.chalk, align: 'left' });
+        } },
+
+      { tag: 'チャレンジ', bh: 'チャレンジ', model: K.frame(CB.ctr, 4),
+        view: function (s) { return s.ph ? lerpView(boxView(CB), flatView(CB, 'BF'), v.smooth(.35, .7, s.t)) : boxView(CB); },
+        q: 'AB＝4cm、AD＝2cm、AE＝3cm の直方体で、辺 BF 上に点 P をとる。AP＋PG がいちばん短くなるとき、AP＋PG と BP の長さは？',
+        a: 'AP＋PG ＝ 3√5&nbsp;cm、BP ＝ 2cm', sub: '面 ABFE と面 BCGF を広げると、横 4＋2＝6、たて 3。A、P、G が一直線のとき最短　√(6² ＋ 3²) ＝ 3√5。BP ＝ 3 × 4/6 ＝ 2', dur: 8,
+        banner: function (s) { if (!s.ph) return ''; return s.t < .32 ? 'P を動かすと、AP＋PG が変わる' : s.t < .72 ? '面 BCGF を開くと…' : 'A、P、G が一直線のとき、いちばん短い'; },
+        b: { t: 'A、P、G が一直線のとき　AP＋PG ＝ √(6² ＋ 3²) ＝ <b>3√5 cm</b>、BP ＝ <b>2cm</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = CB.P, F = flap(CB, 'BF'), to = v.ease(v.smooth(.35, .7, t));
+          var z = D.ph ? (t < .3 ? 1.5 + 1.2 * Math.sin(t / .3 * PI * 1.5) : v.lerp(0.3, 2, v.smooth(.3, .35, t))) : 1.2;
+          z = D.ph && t >= .35 ? 2 : z;
+          var Pp = [4, 0, z], G = F.p(P.G, to);
+          D.box(CB, { dim: .75, faces: { ABFE: { col: C.blue, a: .2 } }, labels: to < .3 });
+          D.poly('BCGF'.split('').map(function (k) { return F.p(P[k], to); }), { col: C.lav, a: .34, stroke: C.lav, sa: .95, sw: D.lw * 1.5 });
+          if (to >= .3) { var cc = [4, 0, 1.5], al = v.smooth(.3, .45, to); outLab(D, P.A, 'A', cc, { a: al }); outLab(D, P.B, 'B', cc, { a: al }); outLab(D, P.F, 'F', cc, { a: al }); outLab(D, P.E, 'E', cc, { a: al }); }
+          string(D, P.A, Pp, K.face(CB, 'ABFE').n, { col: C.orange }); string(D, Pp, G, F.n(K.face(CB, 'BCGF').n, to), { col: C.orange });
+          D.dot(P.A, { col: C.orange }); D.dot(G, { col: C.orange }); D.dot(Pp, { col: C.yel }); D.label(Pp, 'P', { dx: .2, dy: -.9, col: C.yel });
+          if (to >= .3) outLab(D, G, 'G′', [4, 0, 1.5], { col: C.lav }); else D.label(G, 'G', { col: C.lav, dx: .8, dy: -.5, a: to > .02 ? 1 : 0 });
+          D.label(v.lerp3(P.A, P.B, .5), '4cm', { dy: 1.05 }); if (to < .5) D.label(v.lerp3(P.B, P.C, .5), '2cm', { dx: 1.3, dy: .55 }); D.label(v.lerp3(P.A, P.E, .5), '3cm', { dx: -1.5 });
+          if (t > .75) { var a = v.smooth(.75, .9, t); D.seg([4, 0, 0], Pp, { col: C.yel, w: D.lw * 2.6, a: a, glow: true }); D.label([4, 0, 1], 'BP ＝ 2', { col: C.yel, dx: 2.6, a: a, size: 1.1 }); D.label(v.lerp3(P.A, G, .45), '3√5', { col: C.orange, dy: -1.1, size: 1.2, a: a }); }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

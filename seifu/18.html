@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>数の範囲と四則</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 正の数・負の数 第18時：数の範囲を広げると、いつでもできる計算が、どう変わるか調べよう（ikkan の lesson_seifu_18 と同じ流れ）。
+   自然数・整数・数全体の集合を入れ子の円で。計算の答えのカードが、どの円に入るかへ飛ぶ。4つの計算 × 3つの範囲の表に ○× が入る。
+   数値は ikkan のまま（3と5の四則、(−3)÷2、[3/5] と [1/2] の四則、分類の 7つの数、考えようの負の数、チャレンジ ア〜エ）。
+   ○× の表は、自然数（1〜20）・整数（−20〜20）・分数（分子 −6〜6、分母 1〜6）の組を全部ためして、ページの中で作っている（0でわる組はのぞく）。 */
+(function () {
+  var C = CH.C, RED = '#ff7b7b', FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  /* ---- 図の中の式：a^2（指数）・[1/2]（たての分数）・{…}（印をつける場所。字にはならない）。
+     o：size・col・a・align・measure（描かずにはかるだけ）。返すもの：w（幅）・x0（左はし）・sp（{…} の [左, 右]） ---- */
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, ez = size * .6, segs = [], sp = [], open = [], w = 0, m;
+    var re = /\[([^\/\]]+)\/([^\]]+)\]|\^(\d+)|([{}])|([^\[\^{}]+|[\[\^])/g;
+    g.save();
+    while ((m = re.exec(String(s)))) {
+      if (m[1] != null) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(m[1]).width, g.measureText(m[2]).width) + fz * .4; segs.push({ n: m[1], d: m[2], x: w, w: fw }); w += fw; }
+      else if (m[3] != null) { g.font = '600 ' + ez + 'px ' + FONT; var ew = g.measureText(m[3]).width + size * .2; segs.push({ e: m[3], x: w, w: ew }); w += ew; }
+      else if (m[4] === '{') { open.push(sp.length); sp.push([w, w]); }
+      else if (m[4] === '}') sp[open.pop()][1] = w;
+      else { g.font = '600 ' + size + 'px ' + FONT; var tw = g.measureText(m[5]).width; segs.push({ t: m[5], x: w, w: tw }); w += tw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    if (!o.measure) segs.forEach(function (q) {
+      var X = x0 + q.x;
+      if (q.t != null) CH.text(D, X, y, q.t, Object.assign({ size: size, align: 'left' }, oo));
+      else if (q.e != null) CH.text(D, X + size * .15, y - size * .38, q.e, Object.assign({ size: ez, align: 'left' }, oo));
+      else { var cx = X + q.w / 2; CH.text(D, cx, y - fz * .62, q.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .68, q.d, Object.assign({ size: fz }, oo)); CH.line(D, X + fz * .15, y + fz * .04, X + q.w - fz * .15, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a }); }
+    });
+    return { w: w, x0: x0, sp: sp.map(function (p) { return [x0 + p[0], x0 + p[1]]; }) };
+  }
+  function fit(D, s, maxW, size) { var w = TX(D, 0, 0, s, { size: size, measure: true }).w; return w > maxW ? size * maxW / w : size; }
+  /* 右の板書（HTML）：[1/2] はたての分数、^2 は上つき、{ } はとる */
+  function H(s) { return CH.fr(String(s)).replace(/\^(\d+)/g, '<sup>$1</sup>').replace(/[{}]/g, ''); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = H(s[k]); }); if (s.notes) s.notes = s.notes.map(H); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = H(b.t); }); }); return st; }
+  function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function rbox(D, x0, y0, x1, y1, col, a, o) {
+    o = o || {}; var g = D.ctx, r = Math.min(10, (y1 - y0) * .3); if (a <= 0) return;
+    g.save(); g.globalAlpha = D.ga * a; g.beginPath(); g.moveTo(x0 + r, y0); g.arcTo(x1, y0, x1, y1, r); g.arcTo(x1, y1, x0, y1, r); g.arcTo(x0, y1, x0, y0, r); g.arcTo(x0, y0, x1, y0, r); g.closePath();
+    g.fillStyle = hexA(col, o.fa == null ? .16 : o.fa); g.fill(); g.strokeStyle = col; g.lineWidth = o.w || 2.6; if (o.dash) g.setLineDash([7, 5]); g.stroke(); g.restore();
+  }
+  /* ✗ と ○ と ①（丸の中の番号） */
+  function ng(D, x, y, z, a) { if (a <= 0) return; var d = z * .32; CH.line(D, x - d, y - d, x + d, y + d, { col: RED, w: Math.max(3, z * .13), a: a }); CH.line(D, x + d, y - d, x - d, y + d, { col: RED, w: Math.max(3, z * .13), a: a }); }
+  function okm(D, x, y, z, a, col) { if (a > 0) CH.circle(D, x, y, z * .36, { stroke: col || C.green, sw: Math.max(2.6, z * .11), a: a }); }
+  function num(D, x, y, n, z, col, a) { if (a <= 0) return; CH.circle(D, x, y, z * .42, { fill: 'rgba(23,56,41,.9)', stroke: col, sw: 2, a: a }); CH.text(D, x, y + 1, String(n), { size: z * .55, col: col, a: a, num: true, w: 700 }); }
+  /* 数のカード（まん中が x, y）。txt は TX の字（[1/2] も） */
+  function ncard(D, x, y, w, h, txt, col, a, o) {
+    o = o || {}; if (a != null && a <= 0) return; rbox(D, x - w / 2, y - h / 2, x + w / 2, y + h / 2, col || C.blue, a == null ? 1 : a, { fa: o.fa == null ? .22 : o.fa, w: o.sw || 2 });
+    var z = o.size || h * (String(txt).indexOf('[') >= 0 ? .44 : .56); z = fit(D, txt, w * .86, z);
+    TX(D, x, y + 1, txt, { size: z, col: o.tcol || C.chalk, a: a });
+  }
+  function S(v) { return CH.mnum(v); }
+  /* ---- 数の検算：自然数・整数の組を全部ためす。分数は [分子, 分母] で正確に ---- */
+  var N = [], Z = [], i, j; for (i = 1; i <= 20; i++) N.push(i); for (i = -20; i <= 20; i++) Z.push(i);
+  var isNat = function (v) { return Number.isInteger(v) && v >= 1; }, isInt = function (v) { return Number.isInteger(v); };
+  var OPS = [function (a, b) { return a + b; }, function (a, b) { return a - b; }, function (a, b) { return a * b; }, function (a, b) { return a / b; }];
+  function closed(Sx, k, ok) { return Sx.every(function (a) { return Sx.every(function (b) { return (k === 3 && b === 0) || ok(OPS[k](a, b)); }); }); }
+  function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var r = a % b; a = b; b = r; } return a; }
+  function Q(n, d) { var g = gcd(n, d) * (d < 0 ? -1 : 1); return [n / g, d / g]; }
+  var QOP = [function (p, q) { return Q(p[0] * q[1] + q[0] * p[1], p[1] * q[1]); }, function (p, q) { return Q(p[0] * q[1] - q[0] * p[1], p[1] * q[1]); }, function (p, q) { return Q(p[0] * q[0], p[1] * q[1]); }, function (p, q) { return Q(p[0] * q[1], p[1] * q[0]); }];
+  function qs(q) { return q[1] === 1 ? S(q[0]) : (q[0] < 0 ? '−' : '') + '[' + Math.abs(q[0]) + '/' + q[1] + ']'; }
+  var FR = []; for (i = -6; i <= 6; i++) for (j = 1; j <= 6; j++) FR.push(Q(i, j));
+  var frOK = [0, 1, 2, 3].map(function (k) { return FR.every(function (p) { return FR.every(function (q) { if (k === 3 && q[0] === 0) return true; var r = QOP[k](p, q); return isInt(r[0]) && isInt(r[1]) && r[1] > 0; }); }); });
+  var TAB = [[N, isNat], [Z, isInt]].map(function (g) { return [0, 1, 2, 3].map(function (k) { return closed(g[0], k, g[1]) ? '○' : '×'; }); });
+  TAB.push(frOK.map(function (x) { return x ? '○' : '×'; }));
+  CH.check(TAB[0].join('') === '○×○×' && TAB[1].join('') === '○○○×' && TAB[2].join('') === '○○○○', '○×の表');
+  CH.check(3 + 5 === 8 && isNat(8) && 3 - 5 === -2 && !isNat(-2) && 3 * 5 === 15 && !isInt(3 / 5) && qs(Q(3, 5)) === '[3/5]', '今日の問いの例');
+  CH.check(!isInt(-3 / 2) && qs(Q(-3, 2)) === '−[3/2]' && isInt(3 - 5), '整数の例');
+  var F35 = [3, 5], F12 = [1, 2], FX = QOP.map(function (f) { return qs(f(F35, F12)); });
+  CH.check(FX.join() === '[11/10],[1/10],[3/10],[6/5]', '分数の四則');
+  /* 分類（1）：自然数 6、15／自然数でない整数 −2、0、−9／整数でない数 [5/2]、−0.3 */
+  var CL = [['6', 6], ['−2', -2], ['0', 0], ['[5/2]', 2.5], ['−0.3', -0.3], ['15', 15], ['−9', -9]].map(function (x) { return { t: x[0], v: x[1], k: isNat(x[1]) ? 0 : isInt(x[1]) ? 1 : 2 }; });
+  CH.check(CL.filter(function (c) { return c.k === 0; }).map(function (c) { return c.t; }).join() === '6,15' && CL.filter(function (c) { return c.k === 1; }).map(function (c) { return c.t; }).join() === '−2,0,−9' && CL.filter(function (c) { return c.k === 2; }).map(function (c) { return c.t; }).join() === '[5/2],−0.3', '分類');
+  /* 考えよう（答えはページに出さない）：負の数どうしの和はいつも負、差はそうとは限らない */
+  var P = []; for (i = 1; i <= 40; i++) P.push(-i / 2);
+  CH.check(P.every(function (a) { return P.every(function (b) { return a + b < 0; }); }) && !P.every(function (a) { return P.every(function (b) { return a - b < 0; }); }), '考えよう（ここで確かめるだけ）');
+  /* チャレンジ：ア ○、イ ○、ウ ×（[1/2]＋[1/2]＝1）、エ ×（3＋(−2)＝1） */
+  var CHL = [closed(Z, 2, isInt), N.every(function (a) { return N.every(function (b) { return isInt(a - b); }); }), !isInt(QOP[0](F12, F12)[0] / QOP[0](F12, F12)[1]) , 3 + (-2) > 3 && 3 + (-2) > -2];
+  CH.check(CHL.join() === 'true,true,false,false' && qs(QOP[0](F12, F12)) === '1' && 3 + (-2) === 1, 'チャレンジ');
+
+  var CN = C.green, CI = C.blue, CA = C.lav, KC = [CN, CI, CA];
+  /* ---- 場所：集合の図（A）、上の帯（band）、表（T） ---- */
+  function lay(D) {
+    var R = CH.box(D, { l: .03, r: .03, t: .04, b: .05 }), s = CH.fs(D), wide = R.w > R.h * 1.15 && R.w > 560;
+    var A = wide ? CH.rect(R.x0, R.y0, R.x0 + R.w * .55, R.y1) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .7);
+    var T = wide ? CH.rect(R.x0 + R.w * .58, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .73, R.x1, R.y1);
+    var band = CH.rect(A.x0, A.y0, A.x1, A.y0 + Math.min(A.h * .22, s * 3.6));
+    var B = CH.rect(A.x0, band.y1 + s * .3, A.x1, A.y1), k = CH.clamp(B.w / B.h, 1.2, 1.8), w = Math.min(B.w, B.h * k), h = w / k;
+    return { R: R, A: A, T: T, band: band, S: CH.rect(B.cx - w / 2, B.cy - h / 2, B.cx + w / 2, B.cy + h / 2), wide: wide, s: s };
+  }
+  function ell(D, e, col, a) { if (a <= 0) return; var g = D.ctx; g.save(); g.globalAlpha = D.ga * a; g.beginPath(); g.ellipse(e.cx, e.cy, Math.max(1, e.rx), Math.max(1, e.ry), 0, 0, Math.PI * 2); g.fillStyle = hexA(col, .07); g.fill(); g.strokeStyle = col; g.lineWidth = 2.6; g.stroke(); g.restore(); }
+  function le(a, b, k) { return { cx: CH.lerp(a.cx, b.cx, k), cy: CH.lerp(a.cy, b.cy, k), rx: CH.lerp(a.rx, b.rx, k), ry: CH.lerp(a.ry, b.ry, k) }; }
+  /* 入れ子の円。k1：整数の円が広がる 0→1、k2：数全体の円。slots：カードを置く場所（0 自然数・1 整数だけ・2 数全体だけ） */
+  function sets(D, Sx, k1, k2) {
+    var s = CH.fs(D), W = Sx.w, Hh = Sx.h, x = function (f) { return Sx.x0 + W * f; }, y = function (f) { return Sx.y0 + Hh * f; };
+    var E3 = { cx: Sx.cx, cy: Sx.cy, rx: W / 2, ry: Hh / 2 }, E2 = { cx: x(.4), cy: y(.54), rx: W * .335, ry: Hh * .4 }, E1 = { cx: x(.29), cy: y(.585), rx: W * .175, ry: Hh * .27 };
+    var z = Math.min(s * 1.05, Hh * .075);
+    ell(D, le(E2, E3, CH.ease(k2)), CA, CH.smooth(0, .2, k2)); ell(D, le(E1, E2, CH.ease(k1)), CI, CH.smooth(0, .2, k1)); ell(D, E1, CN, 1);
+    CH.text(D, E1.cx, E1.cy - E1.ry * .64, '自然数', { size: z, col: CN });
+    CH.text(D, E1.cx, y(.225), '整数', { size: z, col: CI, a: CH.smooth(.6, 1, k1) });
+    CH.text(D, x(.5), y(.075), '数全体', { size: z, col: CA, a: CH.smooth(.6, 1, k2) });
+    var cw = W * .14, ch = Math.min(Hh * .12, cw * .66);
+    return { cw: cw, ch: ch, slots: [
+      [[-.42, -.12], [.42, -.12], [-.42, .42], [.42, .42], [0, .15]].map(function (p) { return [E1.cx + p[0] * E1.rx, E1.cy + p[1] * E1.ry]; }),
+      [.33, .51, .69].map(function (f) { return [x(.6), y(f)]; }),
+      [.27, .43, .59, .75].map(function (f) { return [x(.8675), y(f)]; })] };
+  }
+  /* カードを、はじめの場所 p0 から、場所 p1 へ（k：0→1） */
+  function fly(D, G, p0, p1, k, txt, col) {
+    if (k <= 0) return; var e = CH.ease(k), x = CH.lerp(p0[0], p1[0], e), y = CH.lerp(p0[1], p1[1], e) - Math.sin(Math.PI * e) * G.ch * 1.2;
+    ncard(D, x, y, G.cw, G.ch, txt, col, CH.smooth(0, .15, k));
+  }
+  /* 上の帯に、式のふだ（「3＋5＝」）をならべる。返すもの：答えのカードの、はじめの場所 */
+  function chips(D, L, list, a) {
+    var b = L.band, n = list.length, s = L.s, cols = n <= 2 || b.w / n > s * 7.5 ? n : Math.ceil(n / 2), nr = Math.ceil(n / cols), cw = b.w / cols, rh = b.h / nr, out = [];
+    list.forEach(function (c, k) {
+      var cx = b.x0 + (k % cols + .5) * cw, cy = b.y0 + (Math.floor(k / cols) + .5) * rh, z = Math.min(s * 1.05, rh * (c.eq.indexOf('[') >= 0 ? .4 : .55)), gw = Math.min(rh * 1.5, cw * .3);
+      z = fit(D, c.eq, cw * .9 - gw - s * .3, z);
+      var w = TX(D, 0, 0, c.eq, { size: z, measure: true }).w, x0 = cx - (w + gw + s * .3) / 2;
+      TX(D, x0, cy, c.eq, { size: z, align: 'left', a: a ? a(k) : 1 });
+      out.push([x0 + w + s * .3 + gw / 2, cy]);
+    });
+    return out;
+  }
+  function table(D, L, rows, o) {
+    o = o || {}; var s = L.s, T = L.T, head = ['', '加法', '減法', '乗法', '除法'], body = ['自然数', '整数', '数全体'].map(function (nm, r) { return [nm].concat(rows[r] || ['', '', '', '']); });
+    var t = CH.table(D, T, head, body, { fw: .26, size: Math.min(s * .95, T.w * .065), rh: s * 2.4, show: o.show, hl: function (r, c) { if (r === 0 || c === 0) return r > 0 && o.row === r - 1 ? KC[r - 1] : null; var v = body[r - 1][c]; return v === '○' ? C.green : v === '×' ? RED : null; } });
+    if (o.cap) CH.text(D, T.cx, t.y0 - s * 1.1, o.cap, { size: s * .85, col: 'rgba(242,240,230,.75)' });
+    return t;
+  }
+  function row(r, ph, t, t0) { return [0, 1, 2, 3].map(function (c) { return ph && t >= t0 + c * .06 ? TAB[r][c] : ''; }); }
+  var E2Q = [{ eq: '3＋5＝', r: '8', k: 0, s: 0 }, { eq: '3−5＝', r: '−2', k: 1, s: 0 }, { eq: '3×5＝', r: '15', k: 0, s: 1 }, { eq: '3÷5＝', r: '[3/5]', k: 2, s: 0 }];
+
+  K3.run({
+    no: '第18時', title: '数の範囲を広げると、いつでもできる計算が、どう変わるか調べよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '17.html', label: '◀ 第17時' }, { href: '19.html', label: '第19時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '自然数どうしの四則', q: '自然数どうしで、加法・減法・乗法・除法をすると、答えは、いつも自然数になるだろうか。計算ごとに考えよう。（0でわることは考えない）',
+        notes: ['① 自分の考え（3分）　計算ごとに、○か×かと、×の例を書こう。', '② ペアの考え（3分）　自分とちがう例や、気づきを書こう。'],
+        draw: function (D) {
+          var L = lay(D), G = sets(D, L.S, 0, 0); ['1', '2', '3', '4', '5'].forEach(function (v, k) { ncard(D, G.slots[0][k][0], G.slots[0][k][1], G.cw, G.ch, v, CN, 1); });
+          CH.text(D, L.band.cx, L.band.cy, '1、2、3、4、5、…', { size: L.s * 1.1, col: 'rgba(242,240,230,.8)' });
+          table(D, L, [['？', '？', '？', '？']], { show: function (r, c) { return r === 1 && c > 0 ? .45 : r > 1 ? (c === 0 ? .3 : 0) : 1; } });
+        } },
+      { tag: '今日の問い', q: '答えは、いつも自然数になる？ ならない計算は、例をあげよう。', a: '加法・乗法は いつも自然数。減法・除法は そうとは限らない', sub: '× の例　3−5＝−2、3÷5＝[3/5]。「いつでも」は、成り立たない例が1つあれば言えない', dur: 6,
+        b: { t: '自然数どうし … 加法 ○　減法 ×（3−5＝−2）　乗法 ○　除法 ×（3÷5＝[3/5]）', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), G = sets(D, L.S, 0, 0), t = D.ph ? D.t : 0, used = [0, 0, 0];
+          var P0 = chips(D, L, E2Q.map(function (c) { return { eq: c.eq }; }));
+          E2Q.forEach(function (c, k) {
+            var p1 = G.slots[c.k][c.s], kk = CH.clamp((t - .05 - k * .13) / .14, 0, 1);
+            if (kk <= 0) { if (!D.ph) TX(D, P0[k][0], P0[k][1], '？', { size: G.ch * .6, a: .5 }); return; }
+            fly(D, G, P0[k], p1, kk, c.r, c.k ? RED : CN);
+            if (kk >= 1) TX(D, P0[k][0], P0[k][1], c.r, { size: G.ch * .62, col: c.k ? RED : CN, a: .7 });
+          });
+          if (t > .55) CH.text(D, L.S.x0 + L.S.w * .74, L.S.y0 + L.S.h * .5, '自然数でない', { size: Math.min(L.s * .9, L.S.w * .05), col: RED, a: CH.smooth(.55, .65, t) });
+          table(D, L, [row(0, D.ph, t, .65)], { row: 0 });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '1、2、3、… のような正の整数を何という？ その全体の集まりを何という？', a: '自然数。自然数の集合', sub: '自然数の集合は、整数の集合にふくまれる。整数の集合は、数全体の集合にふくまれる', dur: 5,
+        b: [{ t: '正の整数 1、2、3、… … <b>自然数</b>　全体の集まり … 自然数の <b>集合</b>', col: C.green }, { t: '自然数の集合 ⊂ <b>整数</b>の集合 ⊂ <b>数全体</b>の集合', col: C.green }],
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, k1 = CH.smooth(.15, .45, t), k2 = CH.smooth(.5, .8, t), G = sets(D, L.S, k1, k2);
+          ['1', '2', '3', '4', '5'].forEach(function (v, k) { ncard(D, G.slots[0][k][0], G.slots[0][k][1], G.cw, G.ch, v, CN, 1); });
+          ['0', '−1', '−2'].forEach(function (v, k) { ncard(D, G.slots[1][k][0], G.slots[1][k][1], G.cw, G.ch, v, CI, CH.smooth(.45 + k * .04, .5 + k * .04, t)); });
+          ['[1/2]', '−0.3', '2.5', '−[4/3]'].forEach(function (v, k) { ncard(D, G.slots[2][k][0], G.slots[2][k][1], G.cw, G.ch, v, CA, CH.smooth(.8 + k * .04, .85 + k * .04, t)); });
+          TX(D, L.band.cx, L.band.cy, '自然数 ⊂ 整数 ⊂ 数全体', { size: fit(D, '自然数 ⊂ 整数 ⊂ 数全体', L.band.w * .9, L.s * 1.15), col: C.yel, a: CH.smooth(.85, 1, t) });
+          table(D, L, [TAB[0]], { show: function (r, c) { return r > 1 && c === 0 ? .4 : 1; } });
+        } },
+      { tag: '例題', bh: '例題', q: '（1）6、−2、0、[5/2]、−0.3、15、−9 を、「自然数」「自然数でない整数」「整数でない数」に分けよう。', a: '自然数 6、15　自然数でない整数 −2、0、−9　整数でない数 [5/2]、−0.3', sub: '0 は自然数でない（正の整数ではない）。負の整数も自然数でない', dur: 6,
+        b: { t: '（1）自然数 <b>6、15</b>　自然数でない整数 <b>−2、0、−9</b>　整数でない数 <b>[5/2]、−0.3</b>', col: C.pink },
+        draw: function (D) {
+          var L = lay(D), G = sets(D, L.S, 1, 1), t = D.ph ? D.t : 0, used = [0, 0, 0], s = L.s, b = L.band, n = CL.length, cw = Math.min(G.cw, b.w / (n + .6));
+          var lists = [[], [], []];
+          CL.forEach(function (c, k) {
+            var p0 = [b.x0 + (k + .5) * b.w / n, b.cy], p1 = G.slots[c.k][used[c.k]++], kk = CH.clamp((t - .04 - k * .11) / .13, 0, 1);
+            if (kk <= 0) ncard(D, p0[0], p0[1], cw * .92, G.ch, c.t, '#f2f0e6', 1, { fa: .08 });
+            else fly(D, G, p0, p1, kk, c.t, KC[c.k]);
+            if (kk >= 1) lists[c.k].push(c.t);
+          });
+          var T = L.T, bh = Math.min(T.h / 3, s * (L.wide ? 4 : 3)), y0 = T.cy - bh * 1.5;
+          ['自然数', '自然数でない整数', '整数でない数'].forEach(function (h, k) {
+            var y = y0 + k * bh, v = lists[k].join('、');
+            rbox(D, T.x0, y + 3, T.x1, y + bh - 3, KC[k], .8, { fa: .06, w: 1.6 });
+            if (L.wide) { CH.text(D, T.x0 + s * .5, y + bh * .3, h, { size: s * .9, col: KC[k], align: 'left' }); if (v) TX(D, T.cx, y + bh * .66, v, { size: fit(D, v, T.w * .9, s * 1.25) }); }
+            else { var z = Math.min(s * .85, (bh - 6) * .45); CH.text(D, T.x0 + s * .4, y + bh / 2, h, { size: z, col: KC[k], align: 'left' }); if (v) TX(D, T.x0 + T.w * .5, y + bh / 2, v, { size: fit(D, v, T.w * .48, z * 1.1), align: 'left' }); }
+          });
+        } },
+      { tag: '例題', q: '（2）数の範囲を、整数に広げると、いつでもできる計算は、どう変わる？', a: '減法も いつでもできる。除法は できないことがある', sub: '3−5＝−2 は整数。(−3)÷2＝−[3/2] は整数でない（0でわることは考えない）', dur: 5,
+        b: { t: '（2）整数どうし … 加法 ○　減法 <b>○</b>　乗法 ○　除法 ×（(−3)÷2＝−[3/2]）', col: C.pink },
+        draw: function (D) {
+          var L = lay(D), G = sets(D, L.S, 1, 1), t = D.ph ? D.t : 0, list = [{ eq: '3−5＝', r: '−2', k: 1, s: 0 }, { eq: '(−3)÷2＝', r: '−[3/2]', k: 2, s: 0 }];
+          ['8', '15'].forEach(function (v, k) { ncard(D, G.slots[0][k][0], G.slots[0][k][1], G.cw, G.ch, v, CN, 1); });
+          var P0 = chips(D, L, list.map(function (c) { return { eq: c.eq }; }));
+          list.forEach(function (c, k) {
+            var kk = CH.clamp((t - .05 - k * .2) / .2, 0, 1); if (kk <= 0) { if (!D.ph) TX(D, P0[k][0], P0[k][1], '？', { size: G.ch * .6, a: .5 }); return; }
+            fly(D, G, P0[k], G.slots[c.k][c.s], kk, c.r, KC[c.k]); if (kk >= 1) TX(D, P0[k][0], P0[k][1], c.r, { size: G.ch * .62, col: KC[c.k], a: .7 });
+          });
+          table(D, L, [TAB[0], row(1, D.ph, t, .55)], { row: 1 });
+        } },
+      { tag: '例題', q: '（3）数の範囲を、数全体（分数・小数もふくむ）に広げると？ [3/5] と [1/2] で調べよう。', a: '加法・減法・乗法・除法が、いつでもできる', sub: '[3/5]＋[1/2]＝[11/10]、[3/5]−[1/2]＝[1/10]、[3/5]×[1/2]＝[3/10]、[3/5]÷[1/2]＝[6/5]（0でわることはのぞく）', dur: 6,
+        b: { t: '（3）数全体 … 加法・減法・乗法・除法が <b>いつでもできる</b>（0でわることはのぞく）', col: C.pink },
+        draw: function (D) {
+          var L = lay(D), G = sets(D, L.S, 1, 1), t = D.ph ? D.t : 0, sg = ['＋', '−', '×', '÷'];
+          ['8', '15'].forEach(function (v, k) { ncard(D, G.slots[0][k][0], G.slots[0][k][1], G.cw, G.ch, v, CN, 1); });
+          ncard(D, G.slots[1][0][0], G.slots[1][0][1], G.cw, G.ch, '−2', CI, 1);
+          var P0 = chips(D, L, sg.map(function (o) { return { eq: '[3/5]' + o + '[1/2]＝' }; }));
+          FX.forEach(function (r, k) {
+            var kk = CH.clamp((t - .05 - k * .12) / .14, 0, 1); if (kk <= 0) { if (!D.ph) TX(D, P0[k][0], P0[k][1], '？', { size: G.ch * .6, a: .5 }); return; }
+            fly(D, G, P0[k], G.slots[2][k], kk, r, CA); if (kk >= 1) TX(D, P0[k][0], P0[k][1], r, { size: G.ch * .62, col: CA, a: .7 });
+          });
+          table(D, L, [TAB[0], TAB[1], row(2, D.ph, t, .7)], { row: 2 });
+        } },
+      { tag: '考えよう', q: '「負の数どうしの和は、いつも負の数である」「負の数どうしの差は、いつも負の数である」は、正しいだろうか。',
+        notes: ['−2 と −7、−3 と −3、−1.5 と −4、−5 と −2 の 和 と 差（左−右）を調べよう。', 'ほかの2つの負の数でも確かめて、「いつも」と言えるか書こう。', 'スライダーで、2つの負の数を変えられます。数直線に、和と差の場所が出ます。'],
+        sliders: [{ key: 'a', label: '左の数', min: -10, max: -0.5, step: .5, val: -2, fmt: S }, { key: 'b', label: '右の数', min: -10, max: -0.5, step: .5, val: -7, fmt: S }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .1, b: .1 }), s = CH.fs(D), a = D.V.a, b = D.V.b, X = CH.numline(D, CH.rect(R.x0, R.y0, R.x1, R.cy + s), -20, 10, 1, { lab: 5, fmt: S });
+          var y = R.cy + s, z = Math.min(s * 1.05, R.w / 26);
+          CH.fillRect(D, X(-20), y - s * .25, X(0), y + s * .25, { fill: 'rgba(154,216,255,.12)' }); CH.text(D, X(-10), y + s * 2.6, '負の数', { size: s * .85, col: 'rgba(242,240,230,.6)' }); CH.text(D, X(5), y + s * 2.6, '正の数', { size: s * .85, col: 'rgba(242,240,230,.6)' });
+          [[a, '左の数', C.blue, 1], [b, '右の数', C.orange, 2], [a + b, '和', C.yel, 3], [a - b, '差（左−右）', C.pink, 4]].forEach(function (p, k) {
+            var yy = y - s * (1.2 + k * 1.75); CH.line(D, X(p[0]), y, X(p[0]), yy + s * .6, { col: p[2], w: 1.6, dash: [3, 4] }); CH.circle(D, X(p[0]), y, s * .3, { fill: p[2] });
+            TX(D, X(p[0]), yy, p[1] + ' ' + S(p[0]), { size: z, col: p[2], outline: 'rgba(23,56,41,.9)' });
+          });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'いつでも正しいものを、すべて選ぼう。正しくないものには、正しくない例を書こう。（0でわることは考えない）', a: 'ア、イ', sub: 'ウ … [1/2]＋[1/2]＝1 は整数。エ … 3＋(−2)＝1 は 3 より小さい', dur: 5,
+        b: { t: '正しい … <b>ア・イ</b>　ウ：[1/2]＋[1/2]＝1　エ：3＋(−2)＝1', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .08, b: .08 }), s = CH.fs(D), t = D.ph ? D.t : 0, rs = CH.rows(R, 4, .12);
+          [['ア', '整数どうしの積は、整数', ''], ['イ', '自然数どうしの差は、整数', ''], ['ウ', '整数でない数どうしの和は、整数でない数', '[1/2]＋[1/2]＝1'], ['エ', '2つの数の和は、どちらの数よりも大きい', '3＋(−2)＝1']].forEach(function (st, k) {
+            var r = rs[k], ok = CHL[k], a = CH.smooth(.1 + k * .2, .2 + k * .2, t), z = fit(D, st[0] + '　' + st[1], r.w * .8, Math.min(s * 1.15, r.h * .4));
+            rbox(D, r.x0, r.y0, r.x1, r.y1, '#f2f0e6', .3, { fa: .03, w: 1.4 });
+            TX(D, r.x0 + s * .6, r.y0 + r.h * (st[2] && t > 0 ? .32 : .5), st[0] + '　' + st[1], { size: z, align: 'left' });
+            if (a > 0) {
+              if (ok) okm(D, r.x1 - r.h * .55, r.cy, r.h * .9, a); else ng(D, r.x1 - r.h * .55, r.cy, r.h * .9, a);
+              if (st[2]) TX(D, r.x0 + s * 2.4, r.y0 + r.h * .74, '例　' + st[2], { size: Math.min(z, r.h * .3), align: 'left', col: RED, a: a });
+            }
+          });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>
