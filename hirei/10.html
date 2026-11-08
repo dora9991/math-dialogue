@@ -184,28 +184,28 @@
           var R = CH.box(D, { l: .1, r: .1, t: .02, b: .02 }), t = D.ph ? D.t : 0, s = CH.fs(D), Pl = base(D, R);
           hyp(D, Pl, 6, { col: C.yel, w: 3.2 });
           if (!D.ph) return;
-          var a1 = CH.smooth(0, .15, t); lab(D, Pl, 3.6, 3.4, '双曲線', { col: C.yel, a: a1, size: s * 1.15 }); lab(D, Pl, -6.6, -2.6, '双曲線', { col: C.yel, a: a1, size: s * 1.15 });
+          var a1 = CH.smooth(0, .15, t); lab(D, Pl, 3.6, 3.4, '双曲線', { col: C.yel, a: a1, size: s * 1.15 }); lab(D, Pl, -6.8, -4.2, '双曲線', { col: C.yel, a: a1, size: s * 1.15 });
           var x = null;
           if (t > .18 && t < .6) x = Math.pow(6, CH.ease(CH.smooth(.2, .56, t)));
           else if (t >= .6) x = -2 - CH.ease(CH.smooth(.66, .9, t));
           if (x === null) return;
-          var y = 6 / x, a2 = t < .6 ? CH.smooth(.18, .24, t) : CH.smooth(.6, .66, t);
+          var y = 6 / x, a2 = t < .6 ? CH.smooth(.18, .24, t) : CH.smooth(.6, .66, t), stop = (t > .56 && t < .6) || t > .9;
           CH.fillRect(D, Pl.X(0), Pl.Y(0), Pl.X(x), Pl.Y(y), { fill: 'rgba(255,157,178,.22)', stroke: C.pink, sw: 2.2, a: a2 });
-          CH.pt(D, Pl, x, y, { col: C.pink, r: CH.fs(D, .32), lab: 'P(' + f1(x) + ', ' + f1(y) + ')', dir: x > 0 ? 'ne' : 'sw', a: a2 });
+          CH.pt(D, Pl, x, y, { col: C.pink, r: CH.fs(D, .32), lab: stop ? 'P(' + f1(x) + ', ' + f1(y) + ')' : 'P', dir: x > 0 ? 'ne' : 's', a: a2 });
           lab(D, Pl, x / 2, y / 2, x > 0 ? 'xy＝6' : '(−)×(−)＝6', { col: C.pink, align: 'center', a: a2, size: s * .8 });
         } },
       { tag: '例題', bh: '例題　y＝−[6/x] のグラフ', q: 'y＝−[6/x] の表をうめて、点をとり、グラフをかこう。y＝[6/x] のグラフ（うすい線）と、くらべよう。', a: '1、2、3、6、−6、−3、−2、−1。グラフは 左上と右下',
         sub: 'y＝−[6/x] のグラフは、y＝[6/x] のグラフを x 軸で折り返した形。a＜0 なので、左上と右下にある', dur: 9,
         b: { t: 'y＝−[6/x] … <b>左上と右下</b>（y＝[6/x] を x 軸で折り返した形）', col: C.pink },
         draw: function (D) {
-          var L = lay(D), t = D.ph ? D.t : 0;
+          var L = lay(D), t = D.ph ? D.t : 0, s = CH.fs(D);
           function k(i) { return CH.clamp((t - .04 - i * .045) / .08, 0, 1); }
           table(D, L, 'y＝−[6/x]', YN, { show: function (i) { return D.ph ? k(i) : 0; }, hl: function (i, c) { return D.ph && c === 1 && k(i) > 0 && k(i) < 1 ? C.pink : null; } });
           var Pl = base(D, L.P), kf = CH.ease(CH.smooth(.72, .94, t)), c = Math.cos(Math.PI * kf);
           fold(D, Pl, c, { col: C.yel, w: 2.4, a: t > .72 ? .9 : .4 });
           if (D.ph) X8.forEach(function (x, i) { if (k(i) > .5) CH.pt(D, Pl, x, YN[i], { col: C.pink, r: CH.fs(D, .26), a: CH.smooth(.5, 1, k(i)) }); });
           if (t > .45) hyp(D, Pl, -6, { col: C.pink, w: 3.2, t: CH.smooth(.45, .66, t) });
-          if (t > .72) cap(D, Pl, kf < .98 ? 'x 軸で折り返す' : 'x 軸で折り返すと 重なる', C.yel);
+          if (t > .72) TX(D, Pl.R.x0 + s * .3, Pl.R.y1 - s * .9, kf < .98 ? 'x 軸で折り返す' : 'x 軸で折り返すと 重なる', { col: C.yel, size: s, align: 'left', outline: OUT });
           else { lab(D, Pl, 1.5, 5.6, 'y＝[6/x]', { col: C.yel, a: .6 }); if (t > .6) lab(D, Pl, -6.5, 4.6, 'y＝−[6/x]', { col: C.pink, a: CH.smooth(.6, .68, t) }); }
         } },
       { tag: 'ことば', q: 'a の値を変えると、グラフはどう変わる？ a＞0 のとき、a＜0 のときは？', a: 'a＞0 … 右上と左下、a＜0 … 左上と右下',
@@ -234,12 +234,12 @@
         sub: 'y が整数になるのは、x が 12 の約数のとき。正の x … 1、2、3、4、6、12 の 6個。負の x も同じ数だけある → 6×2＝12', dur: 9,
         b: { t: 'x が 12 の約数 … 正の x 6個、負の x 6個 → <b>12個</b>', col: C.orange },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, Rs = two(D, .56, .6), s = CH.fs(D, .7), Pl = PL(D, Rs[0], { x: [-13, 13], y: [-13, 13], lab: D.W < 700 ? 4 : 2 });
+          var t = D.ph ? D.t : 0, Rs = two(D, .6, .62), s = CH.fs(D, .7), Pl = PL(D, Rs[0], { x: [-13, 13], y: [-13, 13], lab: 4 });
           hyp(D, Pl, 12, { col: C.yel, w: 2.6 });
           LAT.forEach(function (p, i) {
             var a = D.ph ? CH.smooth(.05 + i * .06, .1 + i * .06, t) : 0; if (a <= 0) return;
             CH.pt(D, Pl, p[0], p[1], { col: p[0] > 0 ? C.orange : C.blue, r: CH.fs(D, .3), a: a });
-            TX(D, Pl.X(p[0]) + (p[0] > 0 ? 1 : -1) * s * .7, Pl.Y(p[1]) - s * .7, String(i + 1), { size: s, col: p[0] > 0 ? C.orange : C.blue, align: p[0] > 0 ? 'left' : 'right', outline: OUT, a: a });
+            TX(D, Pl.X(p[0]) + (p[0] > 0 ? 1 : -1) * s * .7, Pl.Y(p[1]) + (p[0] > 0 ? -1 : 1) * s * .8, String(i + 1), { size: s, col: p[0] > 0 ? C.orange : C.blue, align: p[0] > 0 ? 'left' : 'right', outline: OUT, a: a });
           });
           lines(D, Rs[1], [{ t: 'y＝[12/x] の y が整数', a: D.ph ? CH.smooth(0, .05, t) : 0 }, { t: '→ x が 12 の約数', a: CH.smooth(.02, .06, t) }, { t: '正の x … 1、2、3、4、6、12', col: C.orange, a: CH.smooth(.38, .42, t) }, { t: '　6個', col: C.orange, a: CH.smooth(.38, .42, t) },
             { t: '負の x … −1、−2、−3、−4、−6、−12', col: C.blue, a: CH.smooth(.74, .78, t) }, { t: '　6個', col: C.blue, a: CH.smooth(.74, .78, t) }, { t: '6×2＝12（個）', col: C.yel, a: CH.smooth(.82, .9, t) }]);
