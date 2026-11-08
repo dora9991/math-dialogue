@@ -49,7 +49,7 @@ body{margin:0;background:var(--wall);color:var(--chalk);font-family:var(--f-ui);
 .stage{position:relative;min-width:0;min-height:0}
 .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
 .stage canvas:active{cursor:grabbing}
-.banner{position:absolute;left:50%;top:.8rem;transform:translateX(-50%);box-sizing:border-box;max-width:calc(100% - 2rem);
+.banner{position:absolute;left:50%;top:.8rem;transform:translateX(-50%);box-sizing:border-box;width:max-content;max-width:calc(100% - 2rem);
   font-family:var(--f-chalk);font-weight:600;font-size:1.8rem;line-height:1.25;text-align:center;font-variant-numeric:tabular-nums;
   padding:.2rem 1.1rem .3rem;border-radius:12px;background:var(--board-veil);color:var(--yel);pointer-events:none}
 .scrub{position:absolute;left:1rem;right:1rem;bottom:.7rem;display:flex;align-items:flex-end;gap:.4rem .8rem;flex-wrap:wrap;pointer-events:none}

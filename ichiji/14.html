@@ -112,7 +112,7 @@
           CH.lin(D, Pl, 2, 4, { col: C.yel, w: 2.6, x0: 0, x1: 9 });
           sticks(D, Pl, SP, SPL, CH.smooth(.05, .2, t));
           dots(D, Pl, SP);
-          if (t > .1) lab(D, Pl, 4.5, 5.2, 'ずれは小さい → 一次関数とみなす', { col: C.pink, a: CH.smooth(.1, .25, t), align: 'left' });
+          if (t > .1) lab(D, Pl, 3.0, 3.6, 'ずれは小さい → 一次関数とみなす', { col: C.pink, a: CH.smooth(.1, .25, t), align: 'left' });
           if (t > .4) { var a1 = CH.smooth(.4, .55, t); [[2, 8], [6, 16]].forEach(function (p) { CH.pt(D, Pl, p[0], p[1], { col: C.blue, r: CH.fs(D, .34), a: a1 }); glow(D, Pl, p, C.blue, a1); }); lab(D, Pl, .4, 17.5, '整数の点 (2, 8)、(6, 16)', { col: C.blue, a: a1 }); }
           if (t > .7) { var a2 = CH.smooth(.7, .85, t); CH.pt(D, Pl, 8, 20, { col: C.orange, r: CH.fs(D, .34), lab: '予測', dir: 'w', a: a2 }); }
         } },
@@ -128,7 +128,7 @@
           if (t > .55) CH.lin(D, Pl, -2, 16, { col: C.yel, w: 2.6, dash: true, x0: 6.5, x1: xe });
           if (t > .75) { var a2 = CH.smooth(.75, .85, t); CH.pt(D, Pl, 8, 0, { col: C.orange, r: CH.fs(D, .36), lab: '8時間後', dir: 'n', a: a2 }); glow(D, Pl, [8, 0], C.orange, a2); }
           if (t > .85) lab(D, Pl, 4.2, 14.5, 'y＝−2x＋16', { col: C.yel, a: CH.smooth(.85, 1, t), size: CH.fs(D, 1.05) });
-          if (wide) { var hx = t > .55 ? xe : 6, u = Pl.R.h / 17; candle(D, L.Rs.cx, Pl.Y(0), Math.max(0, -2 * hx + 16) * u); CH.text(D, L.Rs.cx, Pl.Y(0) + CH.fs(D, .9), CH.f1(hx) + '時間後', { size: CH.fs(D, .8), col: C.yel }); }
+          if (wide) { var hx = t > .55 ? xe : 6, u = Pl.R.h / 17; candle(D, L.Rs.cx, Pl.Y(0), Math.max(0, -2 * hx + 16) * u); CH.text(D, L.Rs.cx, Pl.Y(0) + CH.fs(D, .9), CH.f1(hx).replace(/\.0$/, '') + '時間後', { size: CH.fs(D, .8), col: C.yel }); }
         } },
       { tag: '考えよう', q: '実験の結果から、y＝2x＋4 を求めた。x にどんな値を入れても、長さは計算できる。計算した長さは、どこまで信じてよいだろう。',
         notes: ['x＝7、10、20、50、100 のときの y を求めて、信じてよいものに ○、あやしいものに △ をつけよう。', '○と△をつけたわけ、信じてよい x の範囲と、決めたわけを書こう。', 'スライダーで、おもりの数を変えられます（グラフの目もりも変わります）。'],

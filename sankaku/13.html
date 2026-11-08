@@ -159,7 +159,7 @@
         say(D, R0.cx, R0.y0 + s * .4, 'カード ' + CARDS[k], { col: C.orange, size: s * 1.1, maxW: R0.w });
         four(D, {
           alpha: function (i) { return D.ph && !on(i) ? .35 : 1; },
-          over: function (g, i, F, r) { if (!D.ph) return; if (on(i)) mark(F, k, C.yel, 1); say(D, r.cx, r.y1 - F.s * .8, on(i) ? '○' : '×', { col: on(i) ? C.green : C.pink, size: F.s * 1.2 }); }
+          over: function (g, i, F, r) { if (!D.ph) return; if (on(i)) mark(F, k, C.yel, 1); say(D, r.cx + F.s * 3.8, r.y0 + F.s * .8, on(i) ? '○' : '×', { col: on(i) ? C.green : C.pink, size: F.s * 1.3 }); }
         }, { top: .1 });
       } },
     { tag: 'ことば', bh: 'ことば', q: '4つの四角形の定義を確かめよう。4つの角も、4つの辺も等しい四角形を何という？', a: '正方形', sub: '長方形の定義（4つの角）と、ひし形の定義（4つの辺）を、両方みたしている', dur: 2,

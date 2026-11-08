@@ -91,7 +91,7 @@
         var t = D.ph ? D.t : 0, k1 = CH.smooth(0, .25, t), k2 = CH.smooth(.3, .75, t), D1b = { D: [6.2, 3], E: [10.2, 0], F: [6.2, 0] };
         var P = Object.assign({}, T1, lerpObj(D0, D1b, k1));
         if (k2 > 0) { var Q = Object.assign({}, T1, D1b, { X: D2.D, Y: D2.E, Z: D2.F }), m = GE.moveTri(Q, 'DEF', 'XYZ', k2); P.D = m[0]; P.E = m[1]; P.F = m[2]; }
-        var fr = { p: [-.4, CH.lerp(-.4, -3.4, CH.smooth(.3, .6, t))], q: [10.6, 4.4] };
+        var zk = CH.smooth(.3, .75, t), fr = { p: [CH.lerp(-.4, -1.6, zk), CH.lerp(-.4, -3.4, zk)], q: [CH.lerp(10.6, 8.6, zk), 4.4] };
         var F = two(D, P, { fr: fr, dir: k2 >= 1 ? { D: 's', E: 'e', F: 'w' } : null, a2: k2 >= 1 ? 0 : 1 });
         GE.tick(F, 'BC', 2, { col: C.yel }); GE.tick(F, 'EF', 2, { col: C.yel, a: k2 >= 1 ? 0 : 1 });
         if (k2 >= 1) {
@@ -100,7 +100,7 @@
           GE.seg(F, 'AB', { col: C.yel, w: 4, a: a3, glow: true }); GE.seg(F, 'DB', { col: C.yel, w: 4, a: a3, glow: true });
           GE.arc(F, 'BAC', { col: C.pink, fill: .45, r: F.s * 1.3, a: a3 }); GE.arc(F, 'BDC', { col: C.pink, fill: .45, r: F.s * 1.3, a: a3 });
           var pD = F.X(D2.D); say(D, pD[0], pD[1] + F.s * 1.1, 'D', { size: F.s, a: 1 });
-          say(D, F.X([7, 0])[0], F.X([0, -1.6])[1], '二等辺三角形 ABD', { col: C.yel, a: a3, size: F.s });
+          say(D, F.X([6.4, 0])[0], F.X([0, -1.6])[1], '二等辺三角形 ABD', { col: C.yel, a: a3, size: F.s, maxW: F.X([8.6, 0])[0] - F.X([4.6, 0])[0] });
         }
       } },
     { tag: 'ことば', bh: 'ことば', q: '直角三角形で、直角に対する辺を何という？ 直角三角形が合同になる条件は？', a: '斜辺。① 斜辺と1つの鋭角　② 斜辺と他の1辺', sub: 'どちらも「それぞれ等しい」。等しい辺が、どちらも斜辺であることを確かめる', dur: 2.5,

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>動く点と面積</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 一次関数 第16時：図形の中を動く点がつくる面積を調べよう（ikkan の lesson_ichiji_new_16 と同じ流れ）。
+   長方形 ABCD（AB＝6cm、BC＝4cm。A 左下・B 右下・C 右上・D 左上）の辺 AB、BC の上を、点 P が A から C まで毎秒 1cm で動く。
+   P が動くと、三角形 APC の面積が、となりの座標平面のグラフとして同時にかかれていく（折れ線）。ことばでは、スライダーで x を動かせる。
+   考えようは、速さと時間を変える道具（「グラフがどう変わるか」は書かない）。チャレンジは、グラフから AB、BC を読む（ikkan と同じ数）。
+   面積は、点の座標から（外積で）計算し直して、答えの式と照らし合わせている。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)';
+  function tri(a, b, c) { return Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])) / 2; }
+  /* 長方形（横 w、縦 h）の A→B→C を、道のり d だけ進んだ点（C で止まる） */
+  function walk(w, h, d) { d = CH.clamp(d, 0, w + h); return d <= w ? [d, 0] : [w, d - w]; }
+  function Y1(x) { return x <= 6 ? 2 * x : -3 * x + 30; }
+  (function () {
+    var ok = true; for (var i = 0; i <= 40; i++) { var x = i / 4; ok = ok && CH.near(tri([0, 0], walk(6, 4, x), [6, 4]), Y1(x)); }
+    CH.check(ok && Y1(3) === 6 && Y1(8) === 6 && 10 - 8 === 2, '今日の問い（y＝2x、y＝−3x＋30、x＝3・8 で 6）');
+    CH.check(CH.near(tri([0, 0], walk(6, 4, 4.5), [6, 4]), 9) && CH.near(tri([0, 0], walk(6, 4, 7), [6, 4]), 9) && 2 * 4.5 === 9 && -3 * 7 + 30 === 9, '例題（9/2秒後、7秒後）');
+    var ok2 = true; for (var j = 0; j <= 50; j++) { var x2 = j / 10; ok2 = ok2 && CH.near(tri([0, 0], walk(6, 4, 2 * x2), [6, 4]), x2 <= 3 ? 4 * x2 : -6 * x2 + 30); }
+    CH.check(ok2, '考えよう（毎秒 2cm のときの面積。答えは画面に書かない）');
+    var ok3 = true; for (var k = 0; k <= 36; k++) { var x3 = k / 4; ok3 = ok3 && CH.near(tri([0, 0], walk(5, 4, x3), [5, 4]), x3 <= 5 ? 2 * x3 : -2.5 * x3 + 22.5); }
+    CH.check(ok3 && CH.near(tri([0, 0], [5, 0], [5, 4]), 10) && CH.near(-2.5 * 6.6 + 22.5, 6) && 2 * 3 === 6, 'チャレンジ（AB＝5、BC＝4、y＝6 は 3秒後と 33/5秒後）');
+  })();
+
+  function full(D) { return CH.box(D, { l: 0, r: 0, t: 0, b: 0 }); }
+  function lab(D, Pl, x, y, t, o) { o = o || {}; CH.text(D, Pl.X(x), Pl.Y(y), t, { col: o.col || C.chalk, size: o.size || CH.fs(D, .85), align: o.align || 'left', a: o.a, outline: OUT }); }
+  function glow(D, Pl, p, col, a) { var r = CH.fs(D, .3); CH.circle(D, Pl.X(p[0]), Pl.Y(p[1]), r * (2.1 + .4 * Math.sin(D.now * 5)), { stroke: col, sw: 2.6, a: (a == null ? 1 : a) * .7 }); }
+  function two(D, k, kn) {
+    var R = full(D);
+    if (D.W > D.H * .9) { var x = R.x0 + R.w * k; return [CH.rect(R.x0, R.y0, x, R.y1), CH.rect(x + R.w * .03, R.y0, R.x1, R.y1)]; }
+    var y = R.y0 + R.h * (kn || k); return [CH.rect(R.x0, R.y0, R.x1, y), CH.rect(R.x0, y + 4, R.x1, R.y1)];
+  }
+  /* 長方形と点 P の図。o：w・h（cm）、d（P の道のり）、wl・hl（辺の長さの字）、show（底辺・高さの色）、ghost（ほかの P）、cap（見出し） */
+  function fig(D, R, o) {
+    var s = CH.fs(D, .85), w = o.w || 6, h = o.h || 4, top = o.cap ? s * 2.2 : s * 1.4, k = Math.min((R.w - s * 6) / w, (R.h - top - s * 2) / h);
+    var ox = R.x0 + s * 3.6 + (R.w - s * 6 - w * k) / 2, oy = R.y0 + top + (R.h - top - s * 1.6 - h * k) / 2 + h * k;
+    function X(p) { return [ox + p[0] * k, oy - p[1] * k]; }
+    var A = [0, 0], B = [w, 0], Cc = [w, h], Dd = [0, h], P = walk(w, h, o.d);
+    if (o.cap) CH.text(D, R.cx, R.y0 + s * .8, o.cap, { col: C.yel, size: s });
+    if (o.d > 0 && !(P[0] === w && P[1] === h)) CH.poly(D, [X(A), X(P), X(Cc)], { fill: 'rgba(255,157,178,.28)', stroke: C.pink, sw: 2 });
+    CH.poly(D, [X(A), X(B), X(Cc), X(Dd)], { stroke: C.chalk, sw: 2.6 });
+    if (o.show) {
+      var a = o.show, onAB = o.d <= w;
+      if (onAB) { CH.line(D, X(A)[0], X(A)[1], X(P)[0], X(P)[1], { col: C.yel, w: 6, a: a }); CH.line(D, X(B)[0], X(B)[1], X(Cc)[0], X(Cc)[1], { col: C.blue, w: 6, a: a }); }
+      else { CH.line(D, X(P)[0], X(P)[1], X(Cc)[0], X(Cc)[1], { col: C.yel, w: 6, a: a }); CH.line(D, X(A)[0], X(A)[1], X(B)[0], X(B)[1], { col: C.blue, w: 6, a: a }); }
+      if (o.showT) {
+        if (onAB) { CH.text(D, (X(A)[0] + X(P)[0]) / 2, X(A)[1] + s * 1.1, o.showT[0], { col: C.yel, size: s, a: a }); CH.text(D, X(B)[0] + s * .5, (X(B)[1] + X(Cc)[1]) / 2, o.showT[1], { col: C.blue, size: s, a: a, align: 'left' }); }
+        else if (o.d < w + h) { CH.text(D, X(P)[0] + s * .5, (X(P)[1] + X(Cc)[1]) / 2, o.showT[0], { col: C.yel, size: s, a: a, align: 'left' }); CH.text(D, (X(A)[0] + X(B)[0]) / 2, X(A)[1] + s * 1.1, o.showT[1], { col: C.blue, size: s, a: a }); }
+      }
+    }
+    (o.ghost || []).forEach(function (d) { var q = X(walk(w, h, d)); CH.circle(D, q[0], q[1], s * .32, { fill: 'rgba(255,192,120,.5)' }); });
+    [['A', A, -1, 1], ['B', B, 1, 1], ['C', Cc, 1, -1], ['D', Dd, -1, -1]].forEach(function (v) { var q = X(v[1]); CH.text(D, q[0] + v[2] * s * .8, q[1] + v[3] * s * .7, v[0], { size: s }); });
+    if (o.wl !== false) CH.text(D, (X(Dd)[0] + X(Cc)[0]) / 2, X(Dd)[1] - s * .8, o.wl || w + 'cm', { size: s * .9, col: 'rgba(242,240,230,.85)' });
+    if (o.hl !== false) CH.text(D, X(A)[0] - s * .5, (X(A)[1] + X(Dd)[1]) / 2, o.hl || h + 'cm', { size: s * .9, col: 'rgba(242,240,230,.85)', align: 'right' });
+    var p = X(P), pl = o.d <= w ? [0, s * 1.1, 'center'] : [s * .6, 0, 'left'];
+    CH.circle(D, p[0], p[1], s * .38, { fill: C.orange, stroke: 'rgba(20,30,24,.8)', sw: 1.4 });
+    if (!(o.d <= 0 && pl[2] === 'center')) CH.text(D, p[0] + pl[0], p[1] + pl[1], 'P', { col: C.orange, size: s, align: pl[2] });
+    return { X: X, P: P, y1: oy, cx: ox + w * k / 2 };
+  }
+  /* 面積のグラフ（x 0〜10、y 0〜12） */
+  function gplane(D, R) { var s = CH.fs(D, .72); return CH.plane(D, CH.rect(R.x0 + s * 1.4, R.y0 + s * 1.9, R.x1 - s * 2.4, R.y1 - s * 1), { x: [0, 10], y: [0, 12], lab: 2 }); }
+  /* 折れ線を x0 から x1 まで（f は面積の式） */
+  function trace(D, Pl, f, x1, o) { o = o || {}; CH.fn(D, Pl, f, { col: o.col || C.yel, w: o.w || 3.2, x0: 0, x1: Math.max(1e-6, x1), n: 400, a: o.a, dash: o.dash }); }
+  function now(D, Pl, x, y, col) { CH.pseg(D, Pl, [x, 0], [x, y], { col: 'rgba(242,240,230,.55)', dash: true }); CH.pt(D, Pl, x, y, { col: col || C.orange, r: CH.fs(D, .36) }); }
+  /* 動く点と、グラフを同時に */
+  function both(D, x, o) {
+    o = o || {}; var Rs = two(D, .46, .46), F = fig(D, Rs[0], { d: x, show: o.show, showT: o.showT }), Pl = gplane(D, Rs[1]);
+    if (o.faint) trace(D, Pl, Y1, 10, { col: C.chalk, w: 2, a: .35 });
+    trace(D, Pl, function (u) { return Y1(u); }, x, { col: x <= 6 ? C.yel : C.yel });
+    if (x > 6) CH.fn(D, Pl, Y1, { col: C.blue, w: 3.2, x0: 6, x1: x, n: 200 });
+    now(D, Pl, x, Y1(x));
+    return { Pl: Pl, F: F, R: Rs };
+  }
+
+  K3.run({
+    no: '第16時', title: '図形の中を動く点がつくる面積を調べよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '15.html', label: '◀ 第15時' }, { href: '17.html', label: '第17時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '長方形 ABCD（AB＝6cm、BC＝4cm）と、動く点 P', q: '長方形 ABCD の辺 AB、BC の上を、点 P が A から C まで毎秒 1cm で動く。x秒後の三角形 APC の面積 y cm² は、x の式でどう表せるだろう。',
+        notes: ['① 自分の考え（3分）　x＝3、x＝8 のときの y を求め、y を x の式で表そう。変域も書こう。', '② ペアの考え（3分）　ペアの式・変域と、自分のをくらべよう。'],
+        draw: function (D) { var rs = CH.cols(full(D), 2, .06); fig(D, rs[0], { d: 3, cap: 'x＝3 のとき' }); fig(D, rs[1], { d: 8, cap: 'x＝8 のとき' }); } },
+      { tag: '今日の問い', q: 'x＝3、x＝8 のときの y は？', a: 'どちらも 6cm²', sub: 'x＝3　底辺 AP＝3、高さ BC＝4 → 1/2×3×4＝6。x＝8　底辺 PC＝10−8＝2、高さ AB＝6 → 1/2×2×6＝6', dur: 4,
+        b: { t: 'x＝3 … 1/2×3×4＝6　x＝8 … PC＝10−8＝2、1/2×2×6＝6', col: C.yel },
+        draw: function (D) {
+          var rs = CH.cols(full(D), 2, .06), t = D.ph ? D.t : 0, a1 = CH.smooth(.05, .3, t), a2 = CH.smooth(.45, .7, t), s = CH.fs(D, .9);
+          fig(D, rs[0], { d: 3, cap: 'x＝3 のとき', show: a1, showT: ['AP＝3', '4'] }); fig(D, rs[1], { d: 8, cap: 'x＝8 のとき', show: a2, showT: ['PC＝2', '6'] });
+          if (t > .3) CH.text(D, rs[0].cx, rs[0].y1 - s * .6, '1/2×3×4＝6', { col: C.pink, size: s, a: CH.smooth(.3, .42, t) });
+          if (t > .72) CH.text(D, rs[1].cx, rs[1].y1 - s * .6, '1/2×2×6＝6', { col: C.pink, size: s, a: CH.smooth(.72, .85, t) });
+        } },
+      { tag: '今日の問い', q: 'y を x の式で表すと？ 変域も。', a: 'AB 上 y＝2x（0≦x≦6）、BC 上 y＝−3x＋30（6≦x≦10）', sub: 'AB 上は 底辺 AP＝x、高さ 4 → 1/2×x×4＝2x。BC 上は 底辺 PC＝10−x、高さ 6 → 1/2×(10−x)×6＝−3x＋30', dur: 9,
+        b: [{ t: '辺 AB 上 … <b>y＝2x</b>（0≦x≦6）', col: C.yel }, { t: '辺 BC 上 … PC＝10−x → <b>y＝−3x＋30</b>（6≦x≦10）', col: C.yel }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, x = D.ph ? 10 * CH.smooth(.02, .85, t) : 0, G = both(D, x, { show: D.ph ? 1 : 0, showT: x <= 6 ? ['x', '4'] : ['10−x', '6'] }), Pl = G.Pl, s = CH.fs(D, .82);
+          if (D.ph) { var F = G.F, yy = Math.min(F.y1 + s * 3.2, G.R[0].y1 - s * 2.2); CH.text(D, F.cx, yy, x <= 6 ? 'AB 上　y＝1/2×x×4＝2x' : 'BC 上　y＝1/2×(10−x)×6', { col: x <= 6 ? C.yel : C.blue, size: s }); if (x > 6) CH.text(D, F.cx, yy + s * 1.5, '＝−3x＋30', { col: C.blue, size: s }); }
+          if (t > .9) { var a = CH.smooth(.9, 1, t); lab(D, Pl, 3, 1.2, '0≦x≦6', { col: C.yel, a: a, align: 'center', size: s }); lab(D, Pl, 8, 1.2, '6≦x≦10', { col: C.blue, a: a, align: 'center', size: s }); }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '点がどの辺の上にあるかで、どう考える？ x のとる値の範囲を、何という？', a: '場合を分ける・変域', sub: '三角形の面積＝1/2×底辺×高さ。辺ごとに式がちがうとき、グラフは線分をつないだ折れ線になる', dur: 5,
+        b: [{ t: '点がどの辺の上にあるかで <b>場合を分ける</b>', col: C.green }, { t: 'x のとる値の範囲 … x の<b>変域</b>（0≦x≦6 など）', col: C.green }, { t: 'グラフは、線分をつないだ<b>折れ線</b>', col: C.green }],
+        notes: ['スライダーで、P を動かせます。'],
+        sliders: [{ key: 'x', label: 'x（秒後）', min: 0, max: 10, step: .5, val: 6, anim: [0, 10], fmt: function (v) { return (Math.round(v * 2) / 2) + '秒後'; } }],
+        draw: function (D) {
+          var x = D.V.x, G = both(D, x, { show: 1, showT: x <= 6 ? ['x', '4'] : ['10−x', '6'], faint: true }), Pl = G.Pl, s = CH.fs(D, .8);
+          lab(D, Pl, Math.min(x, 6) / 2, Y1(Math.min(x, 6) / 2) + 1.6, 'y＝2x', { col: C.yel, size: s, align: 'right' });
+          if (x > 6) lab(D, Pl, 9.8, 11.3, 'y＝−3x＋30', { col: C.blue, size: s, align: 'right' });
+        } },
+      { tag: '例題', bh: '例題　y＝9 になる時刻', q: '三角形 APC の面積が 9cm² になるのは、何秒後か。グラフも使って考えよう。', a: '9/2 秒後と、7秒後', sub: '辺 AB 上　2x＝9　x＝9/2（0≦x≦6 に合う）。辺 BC 上　−3x＋30＝9　x＝7（6≦x≦10 に合う）', dur: 6,
+        b: { t: 'y＝9 … 2x＝9 → <b>9/2秒後</b>、−3x＋30＝9 → <b>7秒後</b>（どちらも変域に合う）', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Rs = two(D, .46, .46), x = t < .5 ? 4.5 * CH.smooth(.05, .35, t) : 4.5 + 2.5 * CH.smooth(.55, .8, t), s = CH.fs(D, .82);
+          fig(D, Rs[0], { d: D.ph ? x : 0, ghost: t > .4 ? [4.5] : [] });
+          var Pl = gplane(D, Rs[1]);
+          trace(D, Pl, Y1, 6); CH.fn(D, Pl, Y1, { col: C.blue, w: 3.2, x0: 6, x1: 10 });
+          CH.lin(D, Pl, 0, 9, { col: C.pink, dash: true, w: 2.2 }); lab(D, Pl, 10, 9.6, 'y＝9', { col: C.pink, align: 'right', size: s });
+          if (D.ph) now(D, Pl, x, Y1(x));
+          if (t > .35) { var a1 = CH.smooth(.35, .45, t); CH.pt(D, Pl, 4.5, 9, { col: C.pink, a: a1 }); lab(D, Pl, 4.3, 10.4, '9/2秒後', { col: C.pink, a: a1, align: 'right', size: s }); }
+          if (t > .8) { var a2 = CH.smooth(.8, .9, t); CH.pt(D, Pl, 7, 9, { col: C.pink, a: a2 }); lab(D, Pl, 7.3, 10.4, '7秒後', { col: C.pink, a: a2, size: s }); }
+        } },
+      { tag: '考えよう', q: 'P の速さを毎秒 2cm にすると、グラフはどう変わるだろう。表（x＝0〜5）をうめて、グラフをかき、毎秒 1cm のグラフ（白い線）とくらべよう。',
+        notes: ['気づいたことを書こう。', 'ほかの速さ（毎秒 3cm など）でも、確かめよう。', 'スライダーで、P の速さと、時間を変えられます。'],
+        sliders: [{ key: 'v', label: '速さ（毎秒）', min: 1, max: 3, step: 1, val: 2, fmt: function (v) { return v + 'cm'; } },
+          { key: 'x', label: 'x（秒後）', min: 0, max: 10, step: .5, val: 0, fmt: function (v) { return v + '秒後'; } }],
+        draw: function (D) {
+          var v = D.V.v, x = Math.min(D.V.x, 10 / v), Rs = two(D, .46, .46), f = function (u) { return tri([0, 0], walk(6, 4, v * u), [6, 4]); };
+          fig(D, Rs[0], { d: v * x });
+          var Pl = gplane(D, Rs[1]);
+          trace(D, Pl, Y1, 10, { col: C.chalk, w: 2.2, a: .7 });
+          if (x > 0) CH.fn(D, Pl, f, { col: C.orange, w: 3.4, x0: 0, x1: x, n: 400 });
+          now(D, Pl, x, f(x));
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ　グラフから長さを読む', q: '長方形 ABCD の辺上を、点 P が A から B を通って C まで、毎秒 1cm で動く。x秒後の三角形 APC の面積 y cm² は、グラフのようになった。① AB、BC の長さ　② y＝6 になる時刻',
+        a: '① AB＝5cm、BC＝4cm　② 3秒後と 33/5秒後', sub: '① 5秒後に B（グラフの頂点 (5, 10)）→ AB＝5。9秒後に C → BC＝9−5＝4。② y＝2x、y＝−5/2 x＋45/2 に y＝6 → x＝3、x＝33/5', dur: 8,
+        b: { t: '① 頂点 (5, 10) → <b>AB＝5cm</b>、9秒後に C → <b>BC＝4cm</b>　② <b>3秒後、33/5秒後</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Rs = two(D, .46, .46), x = 9 * CH.smooth(.02, .6, t), s = CH.fs(D, .82), f = function (u) { return u <= 5 ? 2 * u : -2.5 * u + 22.5; };
+          fig(D, Rs[0], { w: 5, h: 4, d: D.ph ? x : 0, wl: x >= 5 ? '5cm' : '？cm', hl: x >= 9 ? '4cm' : '？cm' });
+          var Pl = gplane(D, Rs[1]);
+          CH.fn(D, Pl, f, { col: C.chalk, w: 3, x0: 0, x1: 9 }); CH.pt(D, Pl, 5, 10, { col: C.chalk, lab: '(5, 10)', dir: 'ne' }); CH.pt(D, Pl, 9, 0, { col: C.chalk });
+          if (D.ph && t < .62) { CH.fn(D, Pl, f, { col: C.orange, w: 4, x0: 0, x1: Math.max(1e-6, x) }); now(D, Pl, x, f(x)); }
+          if (t > .3 && t < .62) lab(D, Pl, 5.2, 11.4, 'B に着いた', { col: C.orange, a: CH.smooth(.3, .36, t), size: s });
+          if (t > .64) { var a = CH.smooth(.64, .74, t); CH.lin(D, Pl, 0, 6, { col: C.pink, dash: true, w: 2.2, a: a }); CH.pt(D, Pl, 3, 6, { col: C.pink, a: a }); CH.pt(D, Pl, 6.6, 6, { col: C.pink, a: a }); lab(D, Pl, 2.8, 7.1, '3秒後', { col: C.pink, a: a, align: 'right', size: s }); lab(D, Pl, 6.9, 7.1, '33/5秒後', { col: C.pink, a: CH.smooth(.8, .9, t), size: s }); }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

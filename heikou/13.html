@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>合同を使って証明する</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="js/geo.js"></script>
+<script>
+/* 平行と合同 第13時：合同を使って、線分や角が等しいことを証明しよう（ikkan の lesson_heikou_new_13 と同じ流れ）。
+   図の座標は ikkan と同じ（四角形 ABCD は AB＝DC＝2.9・∠ABC＝∠DCB＝66°・BC＝4.6、M は AB の中点で PM⊥AB、AD は ∠BAC の二等分線、正方形と BE＝CF）。座標はページの中で作った自作のデータ。
+   今日の問い（AC＝DB）と例題（PA＝PB）は GE.proof で、1行ずつ図が光る。行の主張は座標で検算される。
+   根拠にするのは、仮定・共通・合同条件（3つ）・合同な図形の性質・内角の和・正方形の辺と角だけ（二等辺三角形の性質・直角三角形の合同条件は使わない）。考えよう（ア〜ウの証明は正しいか）の答えは出さない。 */
+(function () {
+  var C = CH.C, FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', OUT = 'rgba(20,40,30,.9)';
+  function rad(d) { return d * Math.PI / 180; }
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  function wrap(D, x, y, w, txt, o) {
+    o = o || {}; var s = o.size || CH.fs(D), lh = s * 1.5, g = D.ctx, lines = [];
+    g.save(); g.font = '600 ' + s + 'px ' + FONT;
+    txt.split('\n').forEach(function (para) { var cur = '', tk = para.match(/[△∠]?[A-Za-z0-9]+(?:[≡＝+−×÷()][△∠]?[A-Za-z0-9()]+)*|./g) || []; tk.forEach(function (ch) { if (cur && g.measureText(cur + ch).width > w && '、。」）…'.indexOf(ch) < 0) { lines.push(cur); cur = ch; } else cur += ch; }); lines.push(cur); });   // 記号の式（△ABD≡△ACD など）は、とちゅうで折り返さない
+    g.restore();
+    if (!o.dry) lines.forEach(function (l, i) { CH.text(D, x, y + lh * (i + .5), l, { size: s, col: o.col, align: 'left', a: o.a }); });
+    return lines.length * lh;
+  }
+
+  /* ---------- 今日の問い：四角形 ABCD（AB＝DC、∠ABC＝∠DCB）→ AC＝DB ---------- */
+  var L0 = 2.9, T0 = rad(66), W0 = 4.6, PT = { A: [L0 * Math.cos(T0), L0 * Math.sin(T0)], B: [0, 0], C: [W0, 0], D: [W0 - L0 * Math.cos(T0), L0 * Math.sin(T0)] };
+  var DEF1 = { id: '第13時 今日の問い', lv: 2, ttl: '今日の問い　AC＝DB の証明', P: PT,
+    q: '四角形 ABCD で、AB＝DC、∠ABC＝∠DCB ならば、AC＝DB である。このことを証明しよう。',
+    fig: { segs: ['AB', 'BC', 'CD', 'DA', 'AC', 'DB'], ticks: [['AB', 1], ['DC', 1]], angs: [['ABC', 1], ['DCB', 1]], dir: { A: 'nw', B: 'sw', C: 'se', D: 'ne' } },
+    hyp: 'AB＝DC、∠ABC＝∠DCB', goal: 'AC＝DB', tri: ['ABC', 'DCB'],
+    notes: ['① 自分の考え（3分）　目をつける三角形を決めて、証明を書こう。', '② ペアの考え（3分）　友だちの証明と、ちがうところを書こう。'],
+    L: [{ t: '△ABC と △DCB で' }, { t: 'AB＝DC', r: '仮定', n: 1, hint: 'まず、等しい辺は？ 根拠も。' }, { t: '∠ABC＝∠DCB', r: '仮定', n: 2, hint: '等しい角は？ 根拠も。' },
+      { t: 'BC は共通', n: 3, ask: false, q: '③ もう1組、等しい辺は？', a: 'BC は共通' }, { t: '①②③より、2組の辺とその間の角が、それぞれ等しいので', c: 'SAS' }, { t: '△ABC≡△DCB' },
+      { t: 'AC＝DB', r: '合同な図形の対応する辺は等しい', hint: 'だから、AC と DB は？ 根拠も。' }] };
+  var PROOF1 = GE.proof(DEF1, { tag: '今日の問い' });
+  GE.verify(PT, '∠ABC＝∠DCB＝66°、BC＝4.6', null, '今日の問い 図');
+  /* ほかの図でも：AB＝DC、∠ABC＝∠DCB の四角形を 20個つくって、△ABC≡△DCB と AC＝DB */
+  (function () { for (var i = 0; i < 20; i++) { var w = 3 + (i % 7) * .5, L = 1.5 + (i % 5) * .6, t = rad(40 + (i * 13) % 100); GE.verify({ A: [L * Math.cos(t), L * Math.sin(t)], B: [0, 0], C: [w, 0], D: [w - L * Math.cos(t), L * Math.sin(t)] }, 'AB＝DC、∠ABC＝∠DCB、△ABC≡△DCB、AC＝DB', null, '今日の問い（ほかの図 ' + i + '）'); } })();
+
+  /* ---------- ことば：合同を使う証明の流れ ---------- */
+  var FLOW = [['目をつける三角形　△ABC と △DCB', C.blue], ['① AB＝DC　② ∠ABC＝∠DCB　③ BC は共通', C.chalk], ['△ABC≡△DCB', C.yel], ['AC＝DB（結論）', C.pink]];
+  var WHY = ['等しいものを3つ（根拠つき）', '合同条件（2組の辺とその間の角）', '対応する辺は等しい'];
+  function flow(D, o) {
+    var R = CH.box(D, { l: .04, r: .04, t: .08, b: .08 }), n = FLOW.length, s = Math.min(CH.fs(D, 1), (R.w * .92) / 24), bh = s * 2.1, gap = Math.min((R.h - bh * n) / (n - 1), s * 4.5), y0 = R.cy - (bh * n + gap * (n - 1)) / 2, g = D.ctx;
+    FLOW.forEach(function (f, i) {
+      var y = y0 + i * (bh + gap), w = tw(D, f[0], s) + s * 1.6;
+      g.save(); g.globalAlpha = D.ga; g.strokeStyle = f[1]; g.lineWidth = 2.2; g.fillStyle = 'rgba(242,240,230,.06)'; g.beginPath(); g.rect(R.cx - w / 2, y, w, bh); g.fill(); g.stroke(); g.restore();
+      CH.text(D, R.cx, y + bh / 2, f[0], { size: s, col: f[1] });
+      if (i < n - 1) {
+        var ya = y + bh + 4, yb = y + bh + gap - 4, b = o.why(i);
+        CH.arrow(D, R.cx, ya, R.cx, yb, { col: 'rgba(242,240,230,.7)', w: 2.2, head: 9 });
+        if (b > 0) CH.text(D, R.cx + s * .7, (ya + yb) / 2, WHY[i], { size: s * .92, col: C.green, align: 'left', a: b, outline: OUT });
+      }
+    });
+  }
+
+  /* ---------- 例題：M は AB の中点、PM⊥AB → PA＝PB ---------- */
+  var PM = { A: [-2.4, 0], B: [2.4, 0], M: [0, 0], P: [0, 2.9] };
+  GE.verify(PM, 'PM⊥AB、AM＝MB', null, '例題 図');
+  var DEF2 = { id: '第13時 例題', lv: 1, ttl: '例題　PA＝PB の証明', P: PM,
+    q: '点 M は線分 AB の中点で、PM⊥AB である。PA＝PB を証明しよう。',
+    fig: { segs: ['PA', 'PB', 'AB', 'PM'], ticks: [['AM', 1], ['MB', 1]], rights: ['PMB'], dir: { P: 'n', A: 'sw', B: 'se', M: 's' } },
+    hyp: 'M は AB の中点、PM⊥AB', goal: 'PA＝PB', tri: ['PAM', 'PBM'],
+    L: [{ t: '△PAM と △PBM で' }, { t: 'AM＝BM', r: '仮定（M は AB の中点）', n: 1 }, { t: '∠PMA＝∠PMB＝90°', r: '仮定（PM⊥AB）', n: 2 },
+      { t: 'PM は共通', n: 3, ask: false, q: '③ もう1組、等しい辺は？', a: 'PM は共通' },
+      { t: '①②③より、2組の辺とその間の角が、それぞれ等しいので △PAM≡△PBM', c: 'SAS' }, { t: 'PA＝PB', r: '合同な図形の対応する辺は等しい' }] };
+  var PROOF2 = GE.proof(DEF2, { tag: '例題' });
+
+  /* ---------- 考えよう：AB＝AC、AD は ∠BAC の二等分線（D は BC 上）。「BD＝CD」の証明の、合同を示す部分（ア〜ウ） ---------- */
+  var PI = { A: [0, 3.4], B: [-2, 0], C: [2, 0], D: [0, 0] }, IFIG = { segs: ['AB', 'BC', 'CA', 'AD'], ticks: [['AB', 1], ['AC', 1]], angs: [['BAD', 1], ['DAC', 1]], dir: { A: 'n', B: 'sw', C: 'se', D: 's' } };
+  var THREE = [['ア', 'AB＝AC、∠BAD＝∠CAD だから、△ABD≡△ACD'],
+    ['イ', '仮定より　AB＝AC …①　BD＝CD …②\nAD は共通 …③\n①、②、③より、3組の辺が、それぞれ等しいから　△ABD≡△ACD'],
+    ['ウ', '仮定より　AB＝AC …①　∠BAD＝∠CAD …②\nAD は共通 …③\n①、②、③より、2組の辺とその間の角が、それぞれ等しいから　△ABD≡△ACD']];
+  GE.checkFig(PI, IFIG, '考えよう 図');
+  THREE.forEach(function (x) { GE.verify(PI, x[1], null, '考えよう ' + x[0]); });
+
+  /* ---------- チャレンジ：正方形 ABCD（A が左上、B が左下）。E は BC 上、F は CD 上で BE＝CF。G は AE と BF の交点 ---------- */
+  var SQ = { A: [0, 4], B: [0, 0], C: [4, 0], D: [4, 4], E: [1.5, 0], F: [4, 1.5] };
+  SQ.G = GE.meet(SQ.A, SQ.E, SQ.B, SQ.F);
+  var SFIG = { segs: ['AB', 'BC', 'CD', 'DA', 'AE', 'BF'], ticks: [['BE', 1], ['CF', 1]], rights: ['DAB', 'ABC', 'BCD', 'CDA'], labels: false };
+  GE.checkFig(SQ, SFIG, 'チャレンジ 正方形');
+  GE.verify(SQ, 'AB＝BC、BE＝CF、∠ABE＝∠BCF＝90°、△ABE≡△BCF、AE＝BF、∠BAE＝∠CBF、∠ABG＋∠CBF＝90°、∠ABG＋∠BAG＝90°、∠AGB＝90°', null, 'チャレンジ 正方形');
+  CH.check(180 - 90 === 90, 'チャレンジの計算');
+
+  K3.run({
+    no: '第13時', title: '合同を使って、線分や角が等しいことを証明しよう', flat: true, hint: '', alt: '証明の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '12.html', label: '◀ 第12時' }, { href: '14.html', label: '第14時 ▶' }],
+    steps: PROOF1.concat([
+      { tag: 'ことば', bh: 'ことば', q: '2つの三角形が同じ辺（角）をもつとき、その辺（角）を何という？ 合同な図形で、重なり合う辺や角は？', a: '共通・対応',
+        sub: '合同を使う証明の流れ：目をつける三角形を決める → 等しいものを3つ（根拠つき）→ 合同条件で合同 → 対応する辺や角 → 結論', dur: 4,
+        b: [{ t: '2つの三角形が同じ辺（角）をもつ … その辺（角）は<b>共通</b>', col: C.green }, { t: '合同な図形の<b>対応</b>する辺や角は等しい', col: C.green }, { t: '流れ：三角形を決める → 等しい3つ（根拠）→ <b>合同条件</b> → 合同 → 結論', col: C.green }],
+        draw: function (D) { var t = D.ph ? D.t : 0; flow(D, { why: function (i) { return D.ph ? CH.smooth(i * .3 + .05, i * .3 + .25, t) : 0; } }); } }
+    ], PROOF2, [
+      { tag: '考えよう', q: 'AB＝AC、AD は ∠BAC の二等分線である。「BD＝CD」の証明の、合同を示す部分を、3人が書いた（ア〜ウ）。それぞれ正しいだろうか。',
+        notes: ['① ア〜ウは正しいか。○×と、わけを書こう。', '② 証明を書くときに、大切なことをまとめよう。', 'スライダーで、ア〜ウを切りかえると、使っている辺や角が光ります。'],
+        sliders: [{ key: 'i', label: '証明', min: 0, max: 2, step: 1, val: 0, fmt: function (x) { return THREE[x][0]; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .05, b: .06 }), wide = D.W > D.H * 1.05, i = D.V.i, s = Math.min(CH.fs(D, wide ? .9 : 1), D.W / 26);
+          var cr = wide ? CH.rect(R.x0 + R.w * .44, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .42), fr = wide ? CH.rect(R.x0, R.y0, R.x0 + R.w * .42, R.y1) : CH.rect(R.x0, R.y0 + R.h * .46, R.x1, R.y1);
+          var F = GE.fit(D, fr, PI, { pad: .14 }), pad = s * .9, txt = THREE[i][1], h = wrap(D, 0, 0, cr.w - pad * 2, txt, { size: s, dry: true }) + s * 1.6 + pad * 2, c = CH.rect(cr.x0, cr.cy - h / 2, cr.x1, cr.cy + h / 2);
+          GE.poly(F, 'ABD', { col: C.blue, fa: .15, stroke: false }); GE.poly(F, 'ACD', { col: C.orange, fa: .15, stroke: false });
+          GE.figure(F, IFIG);
+          GE.glow(F, txt.replace(/△[A-Z]{3}≡△[A-Z]{3}/g, ''), null, { col: C.yel });
+          CH.card(D, c.cx, c.cy, c.w, c.h, '', { col: C.yel, fill: 'rgba(255,226,122,.07)', sw: 2 });
+          CH.text(D, c.x0 + pad, c.y0 + pad + s * .3, THREE[i][0], { size: s * 1.15, col: C.yel, align: 'left' });
+          wrap(D, c.x0 + pad, c.y0 + pad + s * 1.3, c.w - pad * 2, txt, { size: s });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ　正方形', q: '正方形 ABCD の辺 BC 上に E、辺 CD 上に F を、BE＝CF となるようにとり、AE と BF の交点を G とする。① AE＝BF を証明しよう。② ∠AGB の大きさを求めよう。',
+        a: '① AE＝BF　② ∠AGB＝90°', sub: '① △ABE と △BCF で、AB＝BC、BE＝CF、∠ABE＝∠BCF＝90°（正方形の辺と角・仮定）。2組の辺とその間の角が、それぞれ等しいから △ABE≡△BCF。対応する辺だから AE＝BF　② ∠BAE＝∠CBF だから、∠ABG＋∠BAG＝∠ABG＋∠CBF＝90°。∠AGB＝180°−90°＝90°', dur: 7,
+        b: { t: '<b>△ABE≡△BCF</b>（2組の辺とその間の角）→ <b>AE＝BF</b>、∠BAE＝∠CBF → <b>∠AGB＝90°</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .1, r: .1, t: .08, b: .1 }), F = GE.fit(D, R, SQ, { pad: .14, keys: ['A', 'B', 'C', 'D'] }), t = D.ph ? D.t : 0, k = CH.smooth(.03, .42, t), a1 = CH.smooth(.48, .62, t), a2 = CH.smooth(.68, .8, t), a3 = CH.smooth(.86, .97, t);
+          GE.poly(F, 'ABE', { col: C.blue, fa: .16, stroke: false }); GE.poly(F, 'BCF', { col: C.orange, fa: .16, stroke: false });
+          GE.figure(F, SFIG);
+          if (k > 0) GE.polyP(F, ['A', 'B', 'E'].map(function (v) { return GE.rot(SQ[v], [2, 2], 90 * CH.ease(k)); }), { col: C.yel, fa: .22 });
+          if (a1 > 0) { GE.seg(F, 'AE', { col: C.pink, w: 5, glow: true, a: a1 }); GE.seg(F, 'BF', { col: C.pink, w: 5, glow: true, a: a1 }); }
+          if (a2 > 0) { GE.arc(F, 'BAE', { col: C.green, fill: .4, r: F.s * 1.6, a: a2 }); GE.arc(F, 'CBF', { col: C.green, fill: .4, r: F.s * 1.6, a: a2 }); }
+          if (a3 > 0) { GE.right(F, 'AGB', { col: C.yel, fill: true, a: a3 }); var g = F.X('G'); CH.text(D, g[0] + F.s * 1.5, g[1] + F.s * .9, '90°', { col: C.yel, a: a3, size: F.s * .9, outline: OUT }); }
+          GE.labels(F, ['A', 'B', 'C', 'D', 'E', 'F', 'G'], { dir: { A: 'nw', B: 'sw', C: 'se', D: 'ne', E: 's', F: 'e', G: 'n' } });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

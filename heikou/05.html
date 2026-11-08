@@ -121,7 +121,7 @@
         sliders: [{ key: 'n', label: 'n（頂点の数）', min: 3, max: 12, step: 1, val: 5, anim: [4, 12], fmt: function (v) { return KN[Math.round(v)]; } }],
         b: [{ t: '<b>対角線</b> … となりあわない2つの頂点を結ぶ線分', col: C.green }, { t: 'n角形の内角の和 … <b>180°×(n−2)</b>', col: C.green }, { t: '<b>正多角形</b> … 辺も角もすべて等しい多角形', col: C.green }],
         draw: function (D) {
-          var n = Math.round(D.V.n), P = reg(n, 3), F = fitP(D, CH.box(D, { l: .04, r: .04, t: .16, b: .04 }), P, .06);
+          var n = Math.round(D.V.n), P = reg(n, 3), F = fitP(D, CH.box(D, { l: .04, r: .04, t: .16, b: .07 }), P, .06);
           outline(F, P, { fa: 0 }); fan(F, P, n);
           for (var k = 0; k < n; k++) iArc(F, P, k, C.chalk, { fill: .1, r: F.s * .9 });
           GE.labels(F, ['A']);
@@ -131,7 +131,7 @@
       { tag: '例題', bh: '例題　内角の和を使う', q: '（1）八角形の内角の和を求めよう。（2）正八角形の1つの内角を求めよう。（3）内角の和が 1440° の多角形は、何角形だろう。', a: '（1）1080°（2）135°（3）十角形', sub: '（1）180°×(8−2)＝1080°（2）1080°÷8＝135°（3）180°×(n−2)＝1440° → n−2＝8 → n＝10', dur: 9,
         b: [{ t: '（1）180°×(8−2)＝<b>1080°</b>　（2）1080°÷8＝<b>135°</b>', col: C.pink }, { t: '（3）180°×(n−2)＝1440° → n−2＝8 → <b>十角形</b>', col: C.pink }],
         draw: function (D) {
-          var t = D.ph ? D.t : 0, ten = t >= .66, P = ten ? R10 : R8, F = fitP(D, CH.box(D, { l: .04, r: .04, t: .16, b: .04 }), P, .1), n = P.n;
+          var t = D.ph ? D.t : 0, ten = t >= .66, P = ten ? R10 : R8, F = fitP(D, CH.box(D, { l: .04, r: .04, t: .16, b: .07 }), P, .1), n = P.n;
           var a = ten ? CH.smooth(.66, .72, t) : 1 - (t > .6 ? CH.smooth(.6, .66, t) : 0);
           outline(F, P, { fa: .06, a: a });
           if (D.ph) fan(F, P, ten ? CH.smooth(.7, .9, t) * (n - 2) : CH.smooth(.02, .25, t) * (n - 2));
@@ -145,7 +145,7 @@
       { tag: '例題', bh: '例題2　∠x を求める', q: '図の五角形で、∠x の大きさを求めよう。', a: '105°', sub: '五角形の内角の和は 180°×(5−2)＝540°。∠x＝540°−(120°＋90°＋130°＋95°)＝105°', dur: 5,
         b: { t: '540°−(120°＋90°＋130°＋95°)＝<b>105°</b>', col: C.pink },
         draw: function (D) {
-          var P = P5, F = fitP(D, CH.box(D, { l: .04, r: .04, t: .16, b: .04 }), P, .12), t = D.ph ? D.t : 0, lb = ['x', '120°', '90°', '130°', '95°'];
+          var P = P5, F = fitP(D, CH.box(D, { l: .04, r: .04, t: .16, b: .07 }), P, .12), t = D.ph ? D.t : 0, lb = ['x', '120°', '90°', '130°', '95°'];
           outline(F, P); if (D.ph) fan(F, P, CH.smooth(.02, .35, t) * 3);
           for (var k = 0; k < 5; k++) { iArc(F, P, k, k ? C.chalk : C.orange, { fill: k ? .12 : .3 }); iLab(F, P, k, k ? lb[k] : (D.ph && t > .8 ? '105°' : 'x'), { col: k ? C.chalk : C.orange, size: .85 }); }
           GE.labels(F, keys(P), { a: .9 });
@@ -175,7 +175,7 @@
         sliders: [{ key: 'c', label: '∠C の大きさ', min: 50, max: 105, step: 1, val: 70, fmt: function (v) { return v + '°'; } }],
         b: { t: '∠C＋∠D＝160° → ∠PCD＋∠PDC＝80° → ∠x＝<b>100°</b>', col: C.orange },
         draw: function (D) {
-          var P = chQ(D.V.c), F = GE.fit(D, CH.box(D, { l: .04, r: .04, t: .16, b: .04 }), P, { keys: ['A', 'B', 'C', 'D'], pad: .1 }), t = D.ph ? D.t : 0, s2 = ispan(P, 2), s3 = ispan(P, 3), dCP = dir(P.C, P.P), dDP = dir(P.D, P.P);
+          var P = chQ(D.V.c), F = GE.fit(D, CH.box(D, { l: .04, r: .04, t: .16, b: .07 }), P, { keys: ['A', 'B', 'C', 'D'], pad: .1 }), t = D.ph ? D.t : 0, s2 = ispan(P, 2), s3 = ispan(P, 3), dCP = dir(P.C, P.P), dDP = dir(P.D, P.P);
           var h = D.ph ? CH.smooth(.4, .5, t) : 0;
           if (h > 0) GE.poly(F, 'PCD', { col: C.orange, fa: .25 * h, stroke: false });
           outline(F, P); GE.seg(F, ['C', 'P'], { w: 2.4 }); GE.seg(F, ['D', 'P'], { w: 2.4 });

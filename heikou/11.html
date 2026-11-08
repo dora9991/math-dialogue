@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>仮定と結論・証明</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="js/geo.js"></script>
+<script>
+/* 平行と合同 第11時：「正しい」ことを、だれもが納得できるように伝えるには（ikkan の lesson_heikou_new_11 と同じ流れ）。
+   今日の問いの図は ikkan と同じ（AO＝BO＝2.8、CO＝DO＝2.0、∠AOC＝65°）。座標はページの中で作った自作のデータ。
+   「はかる」のステップでは、図の形を動かし続けて AC・BD を測って見せ、証明は GE.proof（1行ずつ図が光る）で示す。行の主張は座標で検算される。
+   考えよう（連続する3つの整数の和の、4人の説明）は、説明を切りかえる道具だけで、どれが正しいかは出さない。チャレンジは ikkan の（8）（四角形の角）。 */
+(function () {
+  var C = CH.C, FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', OUT = 'rgba(20,40,30,.9)';
+  function rad(d) { return d * Math.PI / 180; }
+  function pol(r, d) { return [r * Math.cos(rad(d)), r * Math.sin(rad(d))]; }
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  function topY(D, R) { return (CH.box(D, { t: 0, b: 0 }).y0 + R.y0) / 2; }
+  /* 文を、部分ごとに色と枠をつけて書く。parts：[[字, 色, 下に書く札]]（札があると、うすい枠でかこむ）。k：枠の濃さ */
+  function sentence(D, x, y, parts, o) {
+    o = o || {}; var s = o.size || CH.fs(D, 1), W = 0, g = D.ctx;
+    parts.forEach(function (p) { W += tw(D, p[0], s); });
+    var xx = x - W / 2;
+    parts.forEach(function (p) {
+      var w = tw(D, p[0], s), k = p[2] ? (o.k == null ? 1 : o.k) : 0;
+      if (k > 0) {
+        g.save(); g.globalAlpha = D.ga * k; g.fillStyle = p[1] === C.pink ? 'rgba(255,157,178,.22)' : 'rgba(154,216,255,.22)'; g.strokeStyle = p[1]; g.lineWidth = 2;
+        g.beginPath(); g.rect(xx - s * .15, y - s * .75, w + s * .3, s * 1.5); g.fill(); g.stroke(); g.restore();
+        CH.text(D, xx + w / 2, y + s * 1.35, p[2], { size: s * .78, col: p[1], a: k });
+      }
+      CH.text(D, xx, y, p[0], { size: s, col: k > 0 ? p[1] : C.chalk, align: 'left', outline: OUT }); xx += w;
+    });
+    return W;
+  }
+  /* 左上 (x, y) から、幅 w で折り返して書く。返すのは高さ */
+  function wrap(D, x, y, w, txt, o) {
+    o = o || {}; var s = o.size || CH.fs(D), lh = s * 1.5, g = D.ctx, lines = [];
+    g.save(); g.font = '600 ' + s + 'px ' + FONT;
+    txt.split('\n').forEach(function (para) { var cur = '', tk = para.match(/[△∠]?[A-Za-z0-9]+(?:[≡＝+−×÷()][△∠]?[A-Za-z0-9()]+)*|./g) || []; tk.forEach(function (ch) { if (cur && g.measureText(cur + ch).width > w && '、。」）…'.indexOf(ch) < 0) { lines.push(cur); cur = ch; } else cur += ch; }); lines.push(cur); });   // 記号の式（△ABD≡△ACD など）は、とちゅうで折り返さない
+    g.restore();
+    if (!o.dry) lines.forEach(function (l, i) { CH.text(D, x, y + lh * (i + .5), l, { size: s, col: o.col, align: 'left', a: o.a }); });
+    return lines.length * lh;
+  }
+
+  /* ---------- 今日の問い：線分 AB と CD が点 O で交わる。AO＝BO＝2.8、CO＝DO＝2.0（∠AOC＝65°） ---------- */
+  var P11 = { A: pol(2.8, 150), B: pol(2.8, 330), C: pol(2, 215), D: pol(2, 35), O: [0, 0] };
+  var FIG11 = { segs: ['AB', 'CD', 'AC', 'BD'], ticks: [['AO', 1], ['BO', 1], ['CO', 2], ['DO', 2]], dots: ['O'], dir: { O: 'n' } };
+  GE.verify(P11, '∠AOC＝∠BOD＝65°、AC＝BD', null, '今日の問い 図');
+  /* 「はかる」：形を変えた図（AO＝BO、CO＝DO はそのまま） */
+  function morph(tm) { var a = 2.8 + .9 * Math.sin(tm * .7), c = 2 + .6 * Math.sin(tm * 1.1 + 1), th = 150 + 25 * Math.sin(tm * .45), an = 65 + 40 * Math.sin(tm * .8 + .5), A = pol(a, th), Cc = pol(c, th + an); return { A: A, B: [-A[0], -A[1]], C: Cc, D: [-Cc[0], -Cc[1]], O: [0, 0] }; }
+  (function () { for (var i = 0; i < 40; i++) GE.verify(morph(i * .37), 'AO＝BO、CO＝DO、AC＝BD、△AOC≡△BOD', null, 'はかる（形を変えた図 ' + i + '）'); })();
+  var BOX = { U: [-3.9, 2.9], V: [3.9, -2.9] };
+
+  var DEF11 = { id: '第11時 今日の問い', lv: 2, ttl: '今日の問い　AC＝BD の証明', q: '線分 AB と CD は点 O で交わり、AO＝BO、CO＝DO である。AC＝BD であることを証明しよう。',
+    P: P11, fig: FIG11, hyp: 'AO＝BO、CO＝DO', goal: 'AC＝BD', tri: ['AOC', 'BOD'],
+    L: [{ t: '△AOC と △BOD で' }, { t: 'AO＝BO', r: '仮定', n: 1, hint: 'まず、等しい辺は？ 根拠も。' }, { t: 'CO＝DO', r: '仮定', n: 2, hint: 'もう1組、等しい辺は？ 根拠も。' },
+      { t: '∠AOC＝∠BOD', r: '対頂角は等しい', n: 3, hint: '等しい角は？ 根拠も。' }, { t: '①②③より、2組の辺とその間の角が、それぞれ等しいので', c: 'SAS' }, { t: '△AOC≡△BOD' },
+      { t: 'AC＝BD', r: '合同な図形の対応する辺は等しい', hint: 'だから、AC と BD は？ 根拠も。' }] };
+  var PROOF = GE.proof(DEF11, { tag: '今日の問い' }).slice(1);   // 問題のステップは、自分で書いた 1・2 を使う
+
+  /* ---------- 例題：3つのことがら（ならばの前が仮定、後ろが結論） ---------- */
+  var ST = [
+    { no: '（1）', p: [['AO＝BO、CO＝DO', C.blue, '仮定'], [' ならば、', C.chalk], ['AC＝BD', C.pink, '結論'], [' である。', C.chalk]] },
+    { no: '（2）', p: [['x が 6 の倍数', C.blue, '仮定'], [' ならば、', C.chalk], ['x は 3 の倍数', C.pink, '結論'], [' である。', C.chalk]] },
+    { no: '（3）', p: [['2直線が平行', C.blue, '仮定'], [' ならば、', C.chalk], ['同位角は等しい', C.pink, '結論'], ['。', C.chalk]] }
+  ];
+  CH.check(ST.every(function (s) { return s.p[1][0].indexOf('ならば') >= 0 && s.p[0][2] === '仮定' && s.p[2][2] === '結論'; }), '例題：ならばの前が仮定、後ろが結論');
+  CH.check((function () { for (var x = 6; x <= 600; x += 6) if (x % 3) return false; return true; })(), '例題（2）6 の倍数は 3 の倍数');
+
+  /* ---------- 考えよう：4人の説明（どれが正しいかは出さない） ---------- */
+  var EXP = [['ア', 'ゆうさん', '1+2+3＝6、2+3+4＝9、3+4+5＝12、4+5+6＝15、5+6+7＝18。どれも 3 の倍数だから、いつでも 3 の倍数である。'],
+    ['イ', 'かなさん', '連続する3つの整数の和は、いつも 3 の倍数になりそうに見える。だから、3 の倍数である。'],
+    ['ウ', 'そうたさん', '真ん中の整数を n とすると、3つの整数は n−1、n、n+1。その和は (n−1)+n+(n+1)＝3n。n は整数だから、3n は 3 の倍数である。'],
+    ['エ', 'りんさん', '和は 3 の倍数だから、3n と表せる。3n÷3＝n だから、真ん中の整数は n。3つの整数は n−1、n、n+1 で、和は 3n になる。']];
+  CH.check([1, 2, 3, 4, 5].map(function (k) { return k + (k + 1) + (k + 2); }).join() === '6,9,12,15,18' && (function () { for (var n = -40; n <= 40; n++) if ((n - 1) + n + (n + 1) !== 3 * n) return false; return true; })(), '考えよう：ア・ウの式');
+
+  /* ---------- チャレンジ：四角形 ABCD（∠A＝∠C、∠B＝∠D）→ ∠A＋∠B＝180° ---------- */
+  var PQ = { A: [0, 0], B: [4, 0], C: [5.5, 3], D: [1.5, 3] }, QFIG = { segs: ['AB', 'BC', 'CD', 'DA'], angs: [['DAB', 1], ['BCD', 1], ['ABC', 2], ['CDA', 2]], dir: { A: 'sw', B: 'se', C: 'ne', D: 'nw' } };
+  GE.checkFig(PQ, QFIG, 'チャレンジ 四角形');
+  GE.verify(PQ, '∠DAB＝∠BCD、∠ABC＝∠CDA、∠DAB＋∠ABC＋∠BCD＋∠CDA＝360°、∠DAB＋∠ABC＝180°', null, 'チャレンジ 四角形');
+
+  K3.run({
+    no: '第11時', title: '「正しい」ことを、だれもが納得できるように伝えるには', flat: true, hint: '', alt: '証明の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '10.html', label: '◀ 第10時' }, { href: '12.html', label: '第12時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '今日の問い　AC と BD', q: '線分 AB と CD は点 O で交わり、AO＝BO、CO＝DO である。AC と BD は、いつでも等しいといえるだろうか。はからずに、だれもが納得できるように説明しよう。',
+        notes: ['① 自分の考え（3分）　わけを、順に書こう。', '② ペアの考え（3分）　自分とちがう説明を書こう。'],
+        draw: function (D) { var R = CH.box(D, { l: .08, r: .08, t: .08, b: .1 }), F = GE.fit(D, R, P11, { pad: .12 }); GE.figure(F, FIG11); } },
+      { tag: '今日の問い', q: 'AO＝BO、CO＝DO の図を、形を変えて何個もかいて、AC と BD をはかったら、どれも等しかった。これで「いつでも等しい」といえる？', a: 'いえない',
+        sub: 'かける図は、かぎりなくある。はかって確かめるのではなく、正しいとわかっていることを根拠にして、筋道を立てて説明する', dur: 1,
+        b: { t: 'はかっても、すべての図は調べられない → <b>根拠</b>をもとに、筋道を立てて説明する', col: C.yel },
+        draw: function (D) {
+          var P = morph(D.now), R = CH.box(D, { l: .08, r: .08, t: .24, b: .06 }), F = GE.fit(D, R, Object.assign({}, BOX, P), { pad: .04, keys: ['U', 'V'] }), s = CH.fs(D, 1.05), y0 = CH.box(D, { t: .05 }).y0;
+          GE.figure(F, Object.assign({}, FIG11, { labels: ['A', 'B', 'C', 'D', 'O'] }));
+          GE.seg(F, 'AC', { col: C.pink, w: 4, glow: true }); GE.seg(F, 'BD', { col: C.pink, w: 4, glow: true });
+          CH.text(D, R.cx, y0, 'AC ＝ ' + GE.len(P, 'AC').toFixed(2) + '　　BD ＝ ' + GE.len(P, 'BD').toFixed(2), { col: C.pink, size: s, num: true, outline: OUT });
+          if (D.ph) CH.text(D, R.cx, y0 + s * 1.6, '図は かぎりなくある', { col: C.yel, size: s, outline: OUT });
+        } }
+    ].concat(PROOF, [
+      { tag: 'ことば', bh: 'ことば', q: '「AO＝BO、CO＝DO ならば、AC＝BD」の、「ならば」の前と後ろを、それぞれ何という？ 根拠をもとに、前から後ろを示すことを何という？', a: '仮定・結論・証明',
+        sub: '〇〇〇 ならば △△△ … 〇〇〇 が仮定、△△△ が結論。証明のもとになる、正しいと認められたことがら（対頂角は等しい、合同条件 など）を根拠という', dur: 3,
+        b: [{ t: '「〇〇〇 ならば △△△」… 〇〇〇 が<b>仮定</b>、△△△ が<b>結論</b>', col: C.green }, { t: '正しいと認められた、証明のもとになることがら … <b>根拠</b>', col: C.green }, { t: '根拠をもとに、仮定から結論を示すこと … <b>証明</b>', col: C.green }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, k = CH.smooth(.05, .4, t), g = CH.smooth(.45, .8, t), R = CH.box(D, { l: .1, r: .1, t: .28, b: .08 }), F = GE.fit(D, R, P11, { pad: .1 });
+          sentence(D, R.cx, CH.box(D, { t: .1 }).y0, ST[0].p, { k: k, size: Math.min(CH.fs(D, 1.15), D.W * .045) });
+          GE.figure(F, FIG11);
+          if (g > 0) { ['AO', 'BO', 'CO', 'DO'].forEach(function (s, i) { GE.seg(F, s, { col: C.blue, w: 4.5, glow: true, a: g }); GE.tick(F, s, i < 2 ? 1 : 2, { col: C.blue, a: g }); }); GE.seg(F, 'AC', { col: C.pink, w: 4.5, glow: true, a: g }); GE.seg(F, 'BD', { col: C.pink, w: 4.5, glow: true, a: g }); }
+        } },
+      { tag: '例題', bh: '例題　仮定と結論', q: '次のことがらの、仮定と結論を答えよう。（1）は見本。', a: '「ならば」の前が仮定、後ろが結論', sub: '（2）仮定 … x が 6 の倍数、結論 … x は 3 の倍数　（3）仮定 … 2直線が平行、結論 … 同位角は等しい', dur: 3,
+        b: [{ t: '（2）仮定 x が 6 の倍数　結論 x は 3 の倍数', col: C.pink }, { t: '（3）仮定 2直線が平行　結論 同位角は等しい', col: C.pink }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .04, r: .04, t: .1, b: .1 }), s = Math.min(CH.fs(D, 1.05), D.W * .042), rows = CH.rows(R, 3, .1);
+          ST.forEach(function (st, i) {
+            var k = i === 0 ? 1 : CH.smooth((i - 1) * .45 + .05, (i - 1) * .45 + .35, t), y = rows[i].cy - s * .4;
+            CH.text(D, R.x0, y - s * 1.6, st.no + (i === 0 ? '見本' : ''), { size: s * .85, col: C.yel, align: 'left' });
+            sentence(D, R.cx, y, st.p, { k: k, size: s });
+          });
+        } },
+      { tag: '考えよう', q: '「連続する3つの整数の和は、3 の倍数である」わけを、4人が説明した（ア〜エ）。だれもが納得できる説明は、どれだろう。',
+        notes: ['① ア〜エを、納得できるものは ○、できないものは × にして、わけも書こう。', '② 「だれもが納得できる説明」には、何が必要だろう。自分のことばでまとめよう。', 'スライダーで、見る説明を切りかえられます。'],
+        sliders: [{ key: 'i', label: '説明', min: 0, max: 3, step: 1, val: 0, fmt: function (x) { return EXP[x][0] + ' ' + EXP[x][1]; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .05, b: .06 }), wide = D.W > D.H * 1.05, sel = D.V.i, s = CH.fs(D, wide ? .9 : 1.05);
+          var cells = wide ? [].concat.apply([], CH.rows(R, 2, .06).map(function (r) { return CH.cols(r, 2, .04); })) : [R];
+          (wide ? [0, 1, 2, 3] : [sel]).forEach(function (j, n) {
+            var c = cells[n], on = j === sel, pad = s * .9;
+            if (!wide) { var h = wrap(D, 0, 0, c.w - pad * 2, '「' + EXP[j][2] + '」', { size: s, dry: true }) + s * 1.5 + pad * 2; c = CH.rect(c.x0, c.cy - h / 2, c.x1, c.cy + h / 2); }
+            CH.card(D, c.cx, c.cy, c.w, c.h, '', { col: on ? C.yel : 'rgba(242,240,230,.35)', fill: on ? 'rgba(255,226,122,.08)' : 'rgba(242,240,230,.04)', sw: on ? 2.6 : 1.4 });
+            CH.text(D, c.x0 + pad, c.y0 + pad + s * .3, EXP[j][0] + '　' + EXP[j][1], { size: s * 1.05, col: C.yel, align: 'left' });
+            wrap(D, c.x0 + pad, c.y0 + pad + s * 1.2, c.w - pad * 2, '「' + EXP[j][2] + '」', { size: s, a: on || !wide ? 1 : .75 });
+          });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '「四角形 ABCD で、∠A＝∠C、∠B＝∠D ならば、∠A＋∠B＝180° である。」を証明しよう。',
+        a: '2∠A＋2∠B＝360° だから ∠A＋∠B＝180°', sub: '四角形の内角の和は 360° だから ∠A＋∠B＋∠C＋∠D＝360°。仮定より ∠C＝∠A、∠D＝∠B だから、∠A＋∠B＋∠A＋∠B＝360°', dur: 6,
+        b: { t: '∠A＋∠B＋∠C＋∠D＝360°（四角形の内角の和）、仮定 ∠C＝∠A・∠D＝∠B → <b>∠A＋∠B＝180°</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .1, r: .1, t: .22, b: .08 }), F = GE.fit(D, R, PQ, { pad: .1 }), k1 = CH.smooth(.02, .2, t), k2 = CH.smooth(.36, .54, t), k3 = CH.smooth(.7, .88, t), s = CH.fs(D, 1);
+          GE.poly(F, 'ABCD', { col: C.blue, fa: .1 });
+          GE.figure(F, QFIG);
+          var cA = C.blue, cB = C.pink, cC = k2 > .5 ? C.blue : C.green, cD = k2 > .5 ? C.pink : C.orange, dim = k3 > 0 ? 1 - k3 * .75 : 1;
+          if (k1 > 0) {
+            GE.arc(F, 'DAB', { col: cA, fill: .4, r: F.s * 1.6, a: k1, lab: '∠A' }); GE.arc(F, 'ABC', { col: cB, fill: .4, r: F.s * 1.6, a: k1, lab: '∠B' });
+            GE.arc(F, 'BCD', { col: cC, fill: .4, r: F.s * 1.6, a: k1 * dim, lab: k2 > .5 ? '∠A' : '∠C' }); GE.arc(F, 'CDA', { col: cD, fill: .4, r: F.s * 1.6, a: k1 * dim, lab: k2 > .5 ? '∠B' : '∠D' });
+          }
+          var y = topY(D, R), line = k3 > 0 ? ['∠A＋∠B＝180°', C.yel, k3] : k2 > 0 ? ['∠A＋∠B＋∠A＋∠B＝360°', C.chalk, k2] : k1 > 0 ? ['∠A＋∠B＋∠C＋∠D＝360°', C.chalk, k1] : null;
+          if (line) CH.text(D, R.cx, y, line[0], { col: line[1], a: line[2], size: s * 1.1, outline: OUT });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

@@ -28,7 +28,7 @@
   /* 図の四角（fig）と、字を書く四角（side）。よこ長ならみぎ、たて長なら下 */
   function lay(D, k) {
     var B = CH.box(D, { l: .03, r: .03, t: .04, b: .04 });
-    if (B.w > B.h * 1.25) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .08, B.x1, B.y1), wide: true }; }
+    if (B.w > B.h * 1.25 && B.w > 560) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .08, B.x1, B.y1), wide: true }; }
     var h = B.h * .25; return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .04, B.y1 - h + 4, B.x1, B.y1), wide: false };
   }
   /* 円をふくめて、四角に入れる（円の大きさは、点が動いても変わらない） */
@@ -64,11 +64,12 @@
   /* 字の行（四角の幅に入るよう、字を小さくする） */
   function say(D, Rr, rows, o) {
     o = o || {}; rows = rows.filter(Boolean); if (!rows.length) return;
-    var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (rows.length * 1.6)), g = D.ctx;
+    var nc = Rr.w > Rr.h * 2.5 && rows.length > 3 ? 2 : 1, per = Math.ceil(rows.length / nc), cw = Rr.w / nc;   // 下の帯では 2列
+    var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (per * 1.6)), g = D.ctx;
     rows.forEach(function (r, i) {
       g.save(); g.font = '600 ' + s + 'px ' + FONT; var w = g.measureText(r.t).width; g.restore();
-      var sz = w > Rr.w ? s * Rr.w / w : s;
-      CH.text(D, Rr.x0, Rr.y0 + s * .8 + i * s * 1.6, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left' });
+      var sz = w > cw - 6 ? s * (cw - 6) / w : s, c = Math.floor(i / per), j = i % per;
+      CH.text(D, Rr.x0 + c * cw, Rr.y0 + s * .8 + j * s * 1.6, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left' });
     });
   }
   function panels(D, n) { var B = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }); return CH.split(D, B, n, .06); }
@@ -97,8 +98,8 @@
     o = o || {}; var L = lay(D), F = fitC(D, L.fig, P6), ks = ['C', 'D', 'E'];
     ks.forEach(function (k, i) { var a = o.show ? o.show(i) : 0; if (a) arcOn(F, S6[k], S6.B, { col: HC[i], a: a * .9, w: 7 - i * .5 }); });
     circle(F); segs(F, 'AB AC AD AE');
-    ks.forEach(function (k, i) { var a = o.show ? o.show(i) : 0; if (a) mark(F, 'BA' + k, HC[i], { a: a, r: F.s * (1.2 + i * .75), fill: .18 }); });
-    if (o.eq) ['BAC', 'CAD', 'DAE'].forEach(function (s, i) { var a = o.eq(i); if (a) { arcOn(F, S6[s[2]], S6[s[0]], { col: HC[i], a: a * .9 }); mark(F, s, HC[i], { a: a, r: F.s * 2.2, fill: .25 }); } });
+    ks.forEach(function (k, i) { var a = o.show ? o.show(i) : 0; if (a) mark(F, 'BA' + k, HC[i], { a: a, r: F.s * (1.2 + i * .75), fill: .18, t: false }); });   // 角の大きさは、よこの字で
+    if (o.eq) ['BAC', 'CAD', 'DAE'].forEach(function (s, i) { var a = o.eq(i); if (a) { arcOn(F, S6[s[2]], S6[s[0]], { col: HC[i], a: a * .9 }); mark(F, s, HC[i], { a: a, r: F.s * 2.6, fill: .25 }); } });
     dots(F, 'ABCDEF'); var m = {}; Object.keys(S6).forEach(function (k) { m[k] = S6[k]; }); nm(F, m);
     return { F: F, L: L };
   }

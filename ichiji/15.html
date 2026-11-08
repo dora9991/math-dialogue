@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>料金プランをくらべる</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 一次関数 第15時：3つの料金プランを、グラフでくらべよう（ikkan の lesson_ichiji_new_15 と同じ流れ）。
+   市民プール A：1回 300円、B：月会費 600円＋1回 100円、C：月会費 1400円。縦の 1目もり＝100円（ikkan と同じ）。
+   回数の線が左から右へ動き、いちばん下のグラフ（いちばん安いプラン）が光る。交点 3回・8回 で入れかわる。
+   考えようは、B の月会費と回数を変える道具（「B のグラフが上へ動く」「B は 5回だけ」は書かない。ikkan と同じ）。チャレンジは追いかけ（弟 分速 60m、兄 分速 180m）。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)';
+  var PL = [{ n: 'A', f: function (x) { return 300 * x; }, col: C.yel, eq: 'y＝300x' }, { n: 'B', f: function (x, fee) { return 100 * x + (fee == null ? 600 : fee); }, col: C.blue, eq: 'y＝100x＋600' }, { n: 'C', f: function () { return 1400; }, col: C.pink, eq: 'y＝1400' }];
+  /* 回数 x のとき、いちばん安いプラン（同じなら「＝」でつなぐ） */
+  function best(x, fee) { var v = PL.map(function (p) { return p.f(x, fee); }), m = Math.min.apply(null, v); return PL.filter(function (p, i) { return v[i] === m; }).map(function (p) { return p.n; }).join('＝'); }
+  (function () {
+    var s = []; for (var x = 1; x <= 10; x++) s.push(x + best(x));
+    CH.check(s.join(' ') === '1A 2A 3A＝B 4B 5B 6B 7B 8B＝C 9C 10C', '今日の問い（回数ごとの安いプラン）');
+    CH.check(300 * 3 === 100 * 3 + 600 && 100 * 8 + 600 === 1400 && 300 * 3 === 900, '交点 (3, 900)、(8, 1400)');
+    CH.check([2, 5, 10].map(function (x) { return PL.map(function (p) { return p.f(x); }).join('/') + best(x); }).join(' ') === '600/800/1400A 1500/1100/1400B 3000/1600/1400C', '例題の表');
+    CH.check(60 * 6 === 180 * (6 - 4) && 60 * 6 === 360 && (180 * 4) / (180 - 60) === 6, 'チャレンジ（6分後、360m）');
+  })();
+
+  function full(D) { return CH.box(D, { l: 0, r: 0, t: 0, b: 0 }); }
+  function lab(D, Pl, x, y, t, o) { o = o || {}; CH.text(D, Pl.X(x), Pl.Y(y), t, { col: o.col || C.chalk, size: o.size || CH.fs(D, .85), align: o.align || 'left', a: o.a, outline: OUT }); }
+  function glow(D, Pl, p, col, a) { var r = CH.fs(D, .3); CH.circle(D, Pl.X(p[0]), Pl.Y(p[1]), r * (2.1 + .4 * Math.sin(D.now * 5)), { stroke: col, sw: 2.6, a: (a == null ? 1 : a) * .7 }); }
+  function lines(D, R, L, size) {
+    var n = Math.max.apply(null, L.map(function (l) { return l.t.length; })), s = Math.min(size || CH.fs(D, .95), R.w / (n + .5), R.h / (L.length * 1.7 + .3));
+    L.forEach(function (l, i) { if (l.a === 0) return; CH.text(D, R.x0, R.y0 + s * (1.1 + i * 1.7), l.t, { col: l.col || C.chalk, size: s, align: 'left', a: l.a }); });
+  }
+  /* 第1象限のグラフ（縦と横の 1目もりはちがう）。y は「100円」などの単位で描き、字は yf で */
+  function graph(D, R, o) {
+    var s = CH.fs(D, .72), Rp = CH.rect(R.x0 + s * 3, R.y0 + s * 1.9, R.x1 - s * 2.2, R.y1 - s * 1.5);
+    var Pl = CH.plane(D, Rp, { x: o.x, y: o.y, fit: false, step: 1, nums: false }), x, y;
+    for (x = o.lx || 1; x <= o.x[1] + 1e-9; x += o.lx || 1) { CH.line(D, Pl.X(x), Pl.Y(0) - 4, Pl.X(x), Pl.Y(0) + 4, { w: 1.4 }); CH.text(D, Pl.X(x), Pl.Y(0) + s, String(x), { size: s, num: true }); }
+    for (y = o.ly || 1; y <= o.y[1] + 1e-9; y += o.ly || 1) { CH.line(D, Pl.X(0) - 4, Pl.Y(y), Pl.X(0) + 4, Pl.Y(y), { w: 1.4 }); CH.text(D, Pl.X(0) - s * .6, Pl.Y(y), o.yf ? o.yf(y) : String(y), { size: s, num: true, align: 'right' }); }
+    if (o.ux) CH.text(D, Pl.R.x1 + s * 1.2, Pl.Y(0) + s * 2.1, o.ux, { size: s, col: 'rgba(242,240,230,.75)', align: 'right' });
+    if (o.uy) CH.text(D, Pl.X(0) + s * 1.6, Pl.R.y0 - s * .8, o.uy, { size: s, col: 'rgba(242,240,230,.75)', align: 'left' });
+    return Pl;
+  }
+  /* プールの 3本のグラフ（y は 100円 単位）。fee：B の月会費 */
+  function pool(D, R, o) {
+    o = o || {}; var Pl = graph(D, R, { x: [0, 10], y: [0, 16], lx: 1, ly: 2, yf: function (v) { return String(v * 100); }, ux: '（回）', uy: '（円）' }), fee = o.fee == null ? 600 : o.fee;
+    PL.forEach(function (p) { CH.fn(D, Pl, function (x) { return p.f(x, fee) / 100; }, { col: p.col, w: 2.6, a: o.dim ? .45 : 1 }); });
+    lab(D, Pl, 4.6, 14.6, 'A', { col: C.yel, size: CH.fs(D, 1) }); lab(D, Pl, 9.3, (1000 + fee) / 100 + .9, 'B', { col: C.blue, size: CH.fs(D, 1) }); lab(D, Pl, 9.3, 13.1, 'C', { col: C.pink, size: CH.fs(D, 1) });
+    return Pl;
+  }
+  /* いちばん下のグラフ（安いプラン）を、0 から x1 まで太く */
+  function lower(D, Pl, x1, fee) {
+    var g = D.ctx, n = 200, i, x, v, k;
+    for (i = 0; i < n; i++) {
+      x = x1 * i / n; var x2 = x1 * (i + 1) / n, xm = (x + x2) / 2;
+      v = PL.map(function (p) { return p.f(xm, fee); }); k = v.indexOf(Math.min.apply(null, v));
+      CH.line(D, Pl.X(x), Pl.Y(PL[k].f(x, fee) / 100), Pl.X(x2), Pl.Y(PL[k].f(x2, fee) / 100), { col: PL[k].col, w: 7, a: .55 });
+    }
+  }
+  /* 回数 n の線と、3つの料金の点。いちばん安いプランを光らせる */
+  function probe(D, Pl, n, fee) {
+    CH.pseg(D, Pl, [n, 0], [n, 16], { col: 'rgba(242,240,230,.7)', dash: true });
+    var b = best(Math.round(n * 1000) / 1000, fee);
+    PL.forEach(function (p) { var y = p.f(n, fee) / 100; if (y > 16) return; var on = b.indexOf(p.n) >= 0; CH.pt(D, Pl, n, y, { col: p.col, r: CH.fs(D, on ? .4 : .26) }); if (on) glow(D, Pl, [n, y], p.col); });
+    return b;
+  }
+  function fit2(D, k, kn) {
+    var R = full(D);
+    if (D.W > D.H * .9) { var x = R.x0 + R.w * k; return [CH.rect(R.x0, R.y0, x, R.y1), CH.rect(x + R.w * .02, R.y0, R.x1 - R.w * .01, R.y1)]; }
+    var y = R.y0 + R.h * kn; return [CH.rect(R.x0, R.y0, R.x1, y), CH.rect(R.x0 + 6, y + 4, R.x1 - 6, R.y1)];
+  }
+  function planTable(D, R) {
+    var s = CH.fs(D), w = Math.min(R.w, s * 16), rh = Math.min(s * 1.8, R.h / 3);
+    CH.table(D, CH.rect(R.cx - w / 2, R.y0 + 2, R.cx + w / 2, R.y0 + 2 + rh * 3), ['プラン', 'A', 'B', 'C'], [['月会費', 'なし', '600円', '1400円'], ['1回ごと', '300円', '100円', 'なし']], { fw: .28, top: true, rh: rh, hl: function (r, c) { return r === 0 && c > 0 ? PL[c - 1].col : null; } });
+    return rh * 3 + 6;
+  }
+  function task(D) { var R = full(D), h = planTable(D, R); return pool(D, CH.rect(R.x0, R.y0 + h, R.x1, R.y1)); }
+
+  K3.run({
+    no: '第15時', title: '3つの料金プランを、グラフでくらべよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '14.html', label: '◀ 第14時' }, { href: '16.html', label: '第16時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '市民プールの 3つのプラン（x回で y円）', q: '市民プールの 3つのプランで、1か月に x回利用したときの料金を y円とする。月に何回利用するなら、どのプランがいちばん得だろう。',
+        notes: ['① 自分の考え（3分）　3つの式と、回数ごとに安いプランを書こう。', '② ペアの考え（3分）　安いプランの決め方を、見くらべよう。'],
+        draw: function (D) { task(D); } },
+      { tag: '今日の問い', q: '3つの式は？ 回数ごとに、いちばん安いプランは？', a: '1〜2回 A、4〜7回 B、9回以上 C', sub: 'A y＝300x、B y＝100x＋600、C y＝1400。3回は A と B が同じ（900円）、8回は B と C が同じ（1400円）', dur: 8,
+        b: [{ t: 'A <b>y＝300x</b>　B <b>y＝100x＋600</b>　C <b>y＝1400</b>', col: C.yel }, { t: '1〜2回 <b>A</b>　3回 A＝B　4〜7回 <b>B</b>　8回 B＝C　9回以上 <b>C</b>', col: C.yel }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Pl = task(D), n = 10 * CH.smooth(.05, .8, t);
+          if (t > 0) { lower(D, Pl, n); probe(D, Pl, n); }
+          if (n >= 3) { CH.pt(D, Pl, 3, 9, { col: C.chalk, lab: '3回 900円', dir: 'nw' }); }
+          if (n >= 8) { CH.pt(D, Pl, 8, 14, { col: C.chalk, lab: '8回 1400円', dir: 'nw' }); }
+          if (t > .82) { var a = CH.smooth(.82, .95, t), s = CH.fs(D, .85); [['A', 1.5, C.yel], ['B', 5.5, C.blue], ['C', 9.4, C.pink]].forEach(function (z) { lab(D, Pl, z[1], 1, z[0] + ' が安い', { col: z[2], a: a, align: 'center', size: s }); }); }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'グラフのどこを見れば、安いプランがわかる？ 2つのグラフの交点は、何を表している？', a: '下にあるグラフほど安い。交点では、料金が同じ',
+        sub: '交点は、連立方程式を解いても求められる。300x＝100x＋600 → x＝3、100x＋600＝1400 → x＝8', dur: 4,
+        b: [{ t: 'グラフが<b>下</b>にあるプランほど、料金は安い', col: C.green }, { t: '2つのグラフの<b>交点</b> … 料金が<b>同じ</b>', col: C.green }, { t: '交点は<b>連立方程式</b>を解いても求められる', col: C.green }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Pl = task(D);
+          if (t > 0) lower(D, Pl, 10 * CH.smooth(0, .4, t));
+          if (t > .45) { var a = CH.smooth(.45, .6, t); CH.pt(D, Pl, 3, 9, { col: C.chalk, a: a }); glow(D, Pl, [3, 9], C.chalk, a); lab(D, Pl, 3.3, 8.2, '300x＝100x＋600 → x＝3', { a: a, size: CH.fs(D, .8) }); }
+          if (t > .7) { var a2 = CH.smooth(.7, .85, t); CH.pt(D, Pl, 8, 14, { col: C.chalk, a: a2 }); glow(D, Pl, [8, 14], C.chalk, a2); lab(D, Pl, 7.7, 15.3, '100x＋600＝1400 → x＝8', { a: a2, size: CH.fs(D, .8), align: 'right' }); }
+        } },
+      { tag: '例題', bh: '例題　2回・5回・10回の月', q: 'ゆうきさんは、月に 2回、5回、10回、プールを利用する月がある。それぞれ、どのプランが得だろう。式で料金を求めて、表にまとめよう。',
+        a: '2回 A（600円）、5回 B（1100円）、10回 C（1400円）', sub: 'A は 600円・1500円・3000円、B は 800円・1100円・1600円、C は いつも 1400円。グラフでいちばん下の線のプランと同じ', dur: 6,
+        b: { t: '2回 <b>A</b> 600円　5回 <b>B</b> 1100円　10回 <b>C</b> 1400円', col: C.pink },
+        sliders: [{ key: 'n', label: '利用する回数', min: 0, max: 10, step: 1, val: 0, anim: [0, 10], fmt: function (v) { return Math.round(v) + '回'; } }],
+        draw: function (D) {
+          var Rs = fit2(D, .55, .55), Pl = pool(D, Rs[0], { dim: true }), n = D.V.n, s = CH.fs(D);
+          probe(D, Pl, n);
+          var fill = function (x) { return D.ph && (D.t >= 1 || n >= x - 1e-9); }, X = [2, 5, 10];
+          var w = Rs[1].w, rh = Math.min(s * 1.9, Rs[1].h / 6.5);
+          CH.table(D, CH.rect(Rs[1].x0, Rs[1].y0 + 4, Rs[1].x1, Rs[1].y0 + 4 + rh * 5), ['', '2回', '5回', '10回'], [['A y＝300x'].concat(X.map(function (x) { return 300 * x; })), ['B y＝100x＋600'].concat(X.map(function (x) { return 100 * x + 600; })), ['C y＝1400', 1400, 1400, 1400], ['安いプラン'].concat(X.map(function (x) { return best(x); }))],
+            { fw: .42, top: true, rh: rh, size: Math.min(s * .8, w * .045), show: function (r, c) { return r > 0 && c > 0 ? (fill(X[c - 1]) ? 1 : 0) : 1; }, hl: function (r, c) { return r === 4 && c > 0 && fill(X[c - 1]) ? C.pink : null; } });
+          var r = Math.round(n), y0 = Rs[1].y0 + rh * 5.8;
+          lines(D, CH.rect(Rs[1].x0, y0, Rs[1].x1, Rs[1].y1), [{ t: r + '回のとき', col: C.chalk }, { t: 'A ' + 300 * r + '円　B ' + (100 * r + 600) + '円　C 1400円', col: 'rgba(242,240,230,.85)' }], s * .85);
+        } },
+      { tag: '考えよう', q: 'プールの B の月会費が、600円から 800円に上がった。B のグラフは、どう動くだろう。B がいちばん安い回数は、どう変わるだろう。',
+        notes: ['新しい B の式を書き、B がいちばん安い回数の変わり方を、予想しよう。', '式や表を使って、予想を確かめよう。', 'スライダーで、B の月会費と、利用する回数を変えられます。'],
+        sliders: [{ key: 'fee', label: 'B の月会費', min: 400, max: 1000, step: 100, val: 600, fmt: function (v) { return v + '円'; } },
+          { key: 'n', label: '利用する回数', min: 0, max: 10, step: 1, val: 5, fmt: function (v) { return v + '回'; } }],
+        draw: function (D) {
+          var Pl = pool(D, full(D), { fee: D.V.fee, dim: true });
+          probe(D, Pl, D.V.n, D.V.fee);
+          lab(D, Pl, .3, 15.2, 'B　y＝100x＋' + D.V.fee, { col: C.blue });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ　追いかける', q: '弟が分速 60m で歩いて家を出た 4分後に、兄が自転車で分速 180m で追いかけた。弟が出発して x分後の、家からの道のりを y m とする。兄が追いつくのは、何分後か。家から何 m の地点か。',
+        a: '6分後、360m の地点', sub: '弟 y＝60x、兄 y＝180(x−4)。60x＝180(x−4) → 120x＝720 → x＝6、y＝60×6＝360', dur: 7,
+        b: { t: '弟 y＝60x、兄 y＝180(x−4) → 交点 (6, 360) → <b>6分後、360m</b>', col: C.orange },
+        draw: function (D) {
+          var R = full(D), s = CH.fs(D), t = D.ph ? D.t : 0, T = 6 * CH.smooth(0, .75, t), hr = Math.min(s * 2.6, R.h * .16);
+          /* 上：道（家から 500m まで） */
+          var x0 = R.x0 + s * 3.2, x1 = R.x1 - s * 2.4, yr = R.y0 + hr * .75, Xr = function (m) { return x0 + (x1 - x0) * m / 500; };
+          CH.line(D, x0, yr, x1, yr, { w: 3 }); CH.text(D, x0 - s * .4, yr, '家', { align: 'right', size: s * .9 });
+          [100, 200, 300, 400, 500].forEach(function (m) { CH.line(D, Xr(m), yr - 4, Xr(m), yr + 4, { w: 1.4 }); CH.text(D, Xr(m), yr + s * .9, m + 'm', { size: s * .62, num: true, col: 'rgba(242,240,230,.75)' }); });
+          var dy = 60 * T, by = T > 4 ? Math.min(180 * (T - 4), 500) : 0;
+          CH.circle(D, Xr(dy), yr - s * .55, s * .4, { fill: C.yel }); CH.text(D, Xr(dy), yr - s * 1.4, '弟', { col: C.yel, size: s * .75 });
+          CH.circle(D, Xr(by), yr - s * .55, s * .4, { fill: C.blue, a: T > 4 ? 1 : .6 }); CH.text(D, Xr(by), yr - s * 1.4 - (Math.abs(Xr(by) - Xr(dy)) < s * 1.6 ? s * 1 : 0), '兄', { col: C.blue, size: s * .75 });
+          /* 下：グラフ（y は 100m 単位） */
+          var Pl = graph(D, CH.rect(R.x0, yr + s * 1.6, R.x1, R.y1), { x: [0, 8], y: [0, 5], lx: 1, ly: 1, yf: function (v) { return String(v * 100); }, ux: '（分）', uy: '（m）' });
+          if (T > 0) CH.lin(D, Pl, .6, 0, { col: C.yel, w: 3, x0: 0, x1: T });
+          if (T > 4) CH.lin(D, Pl, 1.8, -7.2, { col: C.blue, w: 3, x0: 4, x1: T });
+          if (t > .78) { var a0 = .5 * CH.smooth(.78, .9, t); CH.lin(D, Pl, .6, 0, { col: C.yel, w: 2.4, x0: 6, x1: 8, dash: true, a: a0 }); CH.lin(D, Pl, 1.8, -7.2, { col: C.blue, w: 2.4, x0: 6, x1: 4 + 5 / 1.8, dash: true, a: a0 }); }
+          if (T >= 6) CH.text(D, Xr(360) + s * 1.1, yr - s * 1.3, '追いついた！', { col: C.orange, size: s * .8, align: 'left', a: CH.smooth(.75, .85, t) });
+          if (T > 0) CH.text(D, Pl.X(T) + s * .3, Pl.Y(.6 * T) + s * .7, '弟', { col: C.yel, size: s * .8, align: 'left', outline: OUT });
+          if (T > 4.3) CH.text(D, Pl.X(Math.min(T, 5.3)) - s * .4, Pl.Y(1.8 * (Math.min(T, 5.3) - 4)) - s * .3, '兄', { col: C.blue, size: s * .8, align: 'right', outline: OUT });
+          if (T >= 6) { var a = CH.smooth(.75, .85, t); CH.pseg(D, Pl, [6, 0], [6, 3.6], { col: C.orange, dash: true, a: a }); CH.pseg(D, Pl, [0, 3.6], [6, 3.6], { col: C.orange, dash: true, a: a }); CH.pt(D, Pl, 6, 3.6, { col: C.orange, r: CH.fs(D, .36), lab: '(6, 360)', dir: 'nw', a: a }); glow(D, Pl, [6, 3.6], C.orange, a); }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>
