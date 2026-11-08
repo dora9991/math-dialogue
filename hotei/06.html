@@ -278,7 +278,7 @@
     var R = CH.box(D, { l: .04, r: .04, t: .03, b: .03 }), s = CH.fs(D), x = D.V.x;
     TS(D, R.cx, R.y0 + s * .8, [['x＝', C.chalk], [String(x), C.yel], [' を入れると', C.chalk]], { size: s * 1.15 });
     var B = CH.rect(R.x0, R.y0 + s * 2, R.x1, R.y1), recs = [{ s: LM[0], role: '問題' }].concat(LM.slice(1).map(function (q, i) { return { s: q, role: (i + 1) + '人目' }; }));
-    var n = recs.length + 1, rh = B.h / n, z = Math.min(s * 1.2, rh * .4), c1 = B.x0 + B.w * .5, c2 = B.x0 + B.w * .8, c3 = B.x1 - s * .8;
+    var n = recs.length + 2, rh = B.h / n, z = Math.min(s * 1.2, rh * .4), c1 = B.x0 + B.w * .5, c2 = B.x0 + B.w * .8, c3 = B.x1 - s * .8;
     TX(D, c1, B.y0 + rh * .5, '左辺', { size: s * .8, col: C.blue }); TX(D, c2, B.y0 + rh * .5, '右辺', { size: s * .8, col: C.orange });
     recs.forEach(function (r, i) {
       var y = B.y0 + rh * (i + 1.5), p = r.s.split('＝'), lv = val(p[0], x), rv = val(p[1], x), ok = near(lv, rv);
@@ -288,7 +288,7 @@
       TX(D, c1, y, S(lv), { size: z, col: C.chalk }); TX(D, c2, y, S(rv), { size: z, col: C.chalk });
       TX(D, c3, y, ok ? '○' : '×', { size: z * 1.1, col: ok ? C.yel : C.pink });
     });
-    TX(D, R.cx, B.y0 + rh * (n - .5) + rh * .15, '4人目の記録：左辺 10、右辺 18', { size: fit(D, '4人目の記録：左辺 10、右辺 18', R.w, s * .95), col: C.pink });
+    TX(D, R.cx, B.y0 + rh * (n - .45), '4人目の記録：左辺 10、右辺 18', { size: fit(D, '4人目の記録：左辺 10、右辺 18', R.w, s * .95), col: C.pink });
   }
 
   /* ---- チャレンジ ---- */
@@ -307,7 +307,7 @@
       { tag: '今日の問い', q: '1人目〜4人目は、それぞれ何を書く？', a: '4x＋8＝7x−10 → −3x＝−18 → x＝6 → 確かめ', sub: '4人目は、x＝6 を代入して 左辺 4(6＋2)＝32、右辺 7×6−10＝32。等しいので、x＝6 は解', dur: 9,
         b: { t: '4x＋8＝7x−10 → −3x＝−18 → <b>x＝6</b> → 確かめ（32 と 32）', col: C.yel },
         draw: function (D) { q1(D, D.ph ? D.t : 0); } },
-      { tag: 'ことば', bh: 'ことば', q: 'リレーの4人の役わりから、方程式を解く手順を まとめよう。', a: '① かっこ・分母をなくす ② 移項して ax＝b ③ 係数でわる ④ 代入して確かめる', sub: '解を方程式に代入して、左辺と右辺が等しいか調べることを、確かめ（検算）という', dur: 7,
+      { tag: 'ことば', bh: 'ことば', q: 'リレーの4人の役わりから、方程式を解く手順を まとめよう。', a: 'かっこ・分母 → 移項 → 係数でわる → 確かめ', sub: '解を方程式に代入して、左辺と右辺が等しいか調べることを、確かめ（検算）という', dur: 7,
         b: [{ t: '① かっこ・分母をなくす　② <b>移項</b>して ax＝b', col: C.green }, { t: '③ 両辺を<b>係数</b>でわる　④ <b>代入</b>して確かめる', col: C.green }],
         draw: function (D) { words(D, D.ph ? D.t : 0); } },
       { tag: '例題', bh: '例題　リレーで解く', q: '方程式 3(x−2)＝[x＋8/2] をリレーで解く。1人目の式は見本（6x−12＝x＋8）。2〜4人目が書く式は？', a: '5x＝20 → x＝4 → 左辺 6、右辺 6', sub: '2人目は、1人目の式を見て移項する 6x−x＝8＋12 → 5x＝20', dur: 8,

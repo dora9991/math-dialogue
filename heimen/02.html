@@ -137,14 +137,14 @@
 
   /* ---- ことば：△ABC を動かす（同じ形の三角形）。T 平行移動、R 回転移動、S 対称移動 ---- */
   var SH = [[0, 3], [-1, 0], [2, 1]];
-  var MT = { p: mv(SH, [1, 1], 1), v: [5, 1] }, MR = { p: mv(SH, [7, 1], 1), O: [4, 0], deg: 90 }, MS = { p: mv(SH, [2, 1], 1), l: [[5, -1], [5, 6]] };
+  var MT = { p: mv(SH, [1, 1], 1), v: [5, 1] }, MR = { p: mv(SH, [7, 1], 1), O: [4, 0], deg: 90 }, MS = { p: mv(SH, [2, 1], 1), l: [[5, -.4], [5, 5.4]] };
   MT.q = mv(MT.p, MT.v, 1); MR.q = rotP(MR.p, MR.O, 90); MS.q = refP(MS.p, MS.l[0], MS.l[1]);
   var NM = ['A', 'B', 'C'], NM2 = ['A' + PR, 'B' + PR, 'C' + PR];
   CH.check(same(MR.q, [[0, 3], [3, 2], [2, 5]]) && same(MS.q, [[8, 4], [9, 1], [6, 2]]) && same(MT.q, [[6, 5], [5, 2], [8, 3]]), 'ことば：移動したあとの頂点');
   var PRot = named(['O', 'A', 'B', 'C', 'E'], [MR.O].concat(MR.p, [MR.q[0]]));
   GE.verify(PRot, 'OA＝OE、∠AOE＝90°', null, 'ことば 回転移動');
   function moveDemo(D, kind, k, o) {
-    o = o || {}; var R = CH.box(D, { l: .04, r: .04, t: .1, b: .06 }), m = kind === 'T' ? MT : kind === 'R' ? MR : MS;
+    o = o || {}; var R = CH.box(D, { l: .04, r: .04, t: .13, b: .05 }), m = kind === 'T' ? MT : kind === 'R' ? MR : MS;
     var bx = kind === 'T' ? [[-1, -1], [9, 6]] : kind === 'R' ? [[-1, -1], [10, 6]] : [[0, 0], [10, 5]], F = GE.fit(D, R, { a: bx[0], b: bx[1] }, { pad: .02 });
     grid(F, bx[0][0], bx[0][1], bx[1][0], bx[1][1]);
     poly(F, m.p, C.blue, { fa: .25 }); vlab(F, m.p, NM);
@@ -179,9 +179,10 @@
     cs.forEach(function (c, i) {
       var k = ans ? CH.ease(CH.smooth(.02 + i * .245, .2 + i * .245, t)) : 0, s = Math.min(CH.fs(D, .95), c.w * .085), col = LIFE[i][2];
       CH.fillRect(D, c.x0, c.y0, c.x1, c.y1, { stroke: 'rgba(242,240,230,.25)', sw: 1.5 });
+      var nar = tw(D, LIFE[i][0], s) + tw(D, LIFE[i][1], s * 1.1) > c.w - s * 1.6;
       CH.text(D, c.x0 + s * .5, c.y0 + s * .9, LIFE[i][0], { size: s, align: 'left', col: C.chalk });
-      if (ans && k > .3) CH.text(D, c.x1 - s * .5, c.y0 + s * .9, LIFE[i][1], { size: s * 1.1, align: 'right', col: col, a: CH.smooth(.3, .7, k), outline: OUT });
-      var b = CH.rect(c.x0 + c.w * .08, c.y0 + s * 2, c.x1 - c.w * .08, c.y1 - s * .6), u = Math.min(b.w, b.h);
+      if (ans && k > .3) CH.text(D, nar ? c.x0 + s * .5 : c.x1 - s * .5, c.y0 + s * (nar ? 2.2 : .9), LIFE[i][1], { size: s * 1.1, align: nar ? 'left' : 'right', col: col, a: CH.smooth(.3, .7, k), outline: OUT });
+      var b = CH.rect(c.x0 + c.w * .08, c.y0 + s * (nar ? 3.1 : 2), c.x1 - c.w * .08, c.y1 - s * .6), u = Math.min(b.w, b.h);
       if (i === 0) {
         var p0 = [b.x0 + b.w * .12, b.y1 - b.h * .12], p1 = [b.x1 - b.w * .12, b.y0 + b.h * .3];
         CH.line(D, p0[0], p0[1] + u * .08, p1[0], p1[1] + u * .08, { col: 'rgba(242,240,230,.6)', w: 3 });
@@ -205,7 +206,7 @@
         face(D, mx - b.w * .27, b.cy, fr, 1, C.chalk);
         if (ans && k > 0) face(D, mx + (-b.w * .27) * (1 - 2 * k), b.cy, fr, 1 - 2 * k, col, .95);
       } else {
-        var hg = [b.x0 + b.w * .25, b.cy + b.h * .1], dl = b.w * .5, ad = 80 * k * RAD;
+        var hg = [b.x0 + b.w * .25, b.cy + b.h * .25], dl = Math.min(b.w * .5, b.h * .7), ad = 80 * k * RAD;
         CH.line(D, b.x0, hg[1], hg[0], hg[1], { w: 6, col: 'rgba(242,240,230,.7)' }); CH.line(D, hg[0] + dl, hg[1], b.x1, hg[1], { w: 6, col: 'rgba(242,240,230,.7)' });
         if (ans && k > 0) { var g2 = D.ctx; g2.save(); g2.globalAlpha = D.ga * .3; g2.fillStyle = col; g2.beginPath(); g2.moveTo(hg[0], hg[1]); g2.arc(hg[0], hg[1], dl, 0, -ad, true); g2.closePath(); g2.fill(); g2.restore(); }
         CH.line(D, hg[0], hg[1], hg[0] + Math.cos(ad) * dl, hg[1] - Math.sin(ad) * dl, { w: 7, col: ans ? col : C.orange });
@@ -286,7 +287,7 @@
         notes: ['折り目を どこにすればよいか、いろいろためそう。', 'ほかの三角形に重ねるときも、同じことができるか確かめよう。', 'スライダーで、1回目・2回目の折り目（縦の直線）の位置を変えられます。'],
         sliders: [{ key: 'a', label: '1回目の折り目', min: 0, max: 6, step: 1, val: 1, fmt: function (x) { return '左から ' + x; } }, { key: 'b', label: '2回目の折り目', min: 0, max: 6, step: 1, val: 5, fmt: function (x) { return '左から ' + x; } }],
         draw: function (D) {
-          var R = CH.box(D, { l: .02, r: .02, t: .1, b: .04 }), F = tile(D, R, { pad: 0, bounds: [[-3.2, -1.2], [9.2, 3.2]] }), a = D.V.a, b = D.V.b, q1 = refP(TA, [a, 0], [a, 2]), q2 = refP(q1, [b, 0], [b, 2]);
+          var R = CH.box(D, { l: .02, r: .02, t: .1, b: .04 }), F = tile(D, R, { pad: 0, bounds: [[-2.2, -1.2], [8.2, 3.2]] }), a = D.V.a, b = D.V.b, q1 = refP(TA, [a, 0], [a, 2]), q2 = refP(q1, [b, 0], [b, 2]);
           clip(F, function () {
             GE.seg(F, [[a, -1], [a, 3]], { col: C.pink, w: 3, dash: [8, 6] }); GE.seg(F, [[b, -1], [b, 3]], { col: C.yel, w: 3, dash: [8, 6] });
             poly(F, q1, C.pink, { fa: .15, sw: 2.4 }); poly(F, q2, C.yel, { fa: .35, sw: 3.4 });
@@ -305,7 +306,7 @@
             if (k1 > 0) { GE.seg(F, 'AD', { col: C.yel, w: 4, a: 1 - k2 * .6 }); poly(F, foldP(HT['①'], HX.A, HX.D, k1), C.yel, { fa: .35, sw: 3, a: 1 - k3 * .6 }); }
             if (k2 > 0) { GE.seg(F, 'BE', { col: C.pink, w: 4 }); poly(F, foldP(H1a, HX.B, HX.E, k2), C.pink, { fa: .4, sw: 3 }); }
             if (k2 > .98) { GE.arcDir(F, 'O', 0, 60, { col: C.green, r: F.s * 1.4, lab: '60°' }); }
-            if (k3 > 0) { GE.arcDir(F, 'O', 30, 30 + 120 * CH.ease(k3), { col: C.orange, r: F.s * 3.2, w: 3 }); poly(F, rotP(HT['①'], [0, 0], 120 * CH.ease(k3)), C.orange, { fa: .15, sw: 2.6 }); if (k3 > .98) lab(F, [0, 0], 90, 4, '120°', { col: C.orange }); }
+            if (k3 > 0) { GE.arcDir(F, 'O', 30, 30 + 120 * CH.ease(k3), { col: C.orange, r: F.s * 2.1, w: 3 }); poly(F, rotP(HT['①'], [0, 0], 120 * CH.ease(k3)), C.orange, { fa: .15, sw: 2.6 }); if (k3 > .98) lab(F, [0, 0], 90, 2.85, '120°', { col: C.orange }); }
           }
           HN.split('').forEach(function (n) { var c = F.X(cen(HT[n])); CH.text(D, c[0], c[1], n, { size: F.s, col: C.chalk, outline: OUT }); });
           dots(F, 'ABCDEFO'); nm(F, { A: 0, B: 60, C: 120, D: 180, E: 240, F: 300 }); lab(F, [0, 0], 250, .9, 'O', { size: .9 });

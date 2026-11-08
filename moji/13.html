@@ -37,17 +37,20 @@
     var out = [], re = /\[([^\/\]]+)\/([^\]]+)\]|\^(\d+)/g, m, i = 0; s = String(s);
     while ((m = re.exec(s))) { if (m.index > i) out.push({ t: s.slice(i, m.index) }); out.push(m[3] ? { p: m[3] } : { n: m[1], d: m[2] }); i = re.lastIndex; }
     if (i < s.length) out.push({ t: s.slice(i) });
-    return out;
+    /* × と ÷ は、文字の x とまぎれないよう、ゴシックの字で */
+    var o2 = []; out.forEach(function (p) { if (p.t == null) { o2.push(p); return; } p.t.split(/([×÷])/).forEach(function (q) { if (q === '×' || q === '÷') o2.push({ t: q, g: 1 }); else if (q) o2.push({ t: q }); }); });
+    return o2;
   }
-  function mw(D, t, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(t).width; g.restore(); return w; }
-  function segW(D, p, size) { var fz = size * .72; return p.t != null ? mw(D, p.t, size) : p.p ? mw(D, p.p, size * .6) + size * .1 : Math.max(mw(D, p.n, fz), mw(D, p.d, fz)) + fz * .4; }
+  var NUMF = '"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif';
+  function mw(D, t, size, num) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + (num ? NUMF : FONT); var w = g.measureText(t).width; g.restore(); return w; }
+  function segW(D, p, size) { var fz = size * .72; return p.t != null ? mw(D, p.t, size, p.g) : p.p ? mw(D, p.p, size * .6) + size * .1 : Math.max(mw(D, p.n, fz), mw(D, p.d, fz)) + fz * .4; }
   function TW(D, s, size) { return parse(s).reduce(function (w, p) { return w + segW(D, p, size); }, 0); }
   function hasFr(s) { return /\[[^\/\]]+\/[^\]]+\]/.test(String(s)); }
   function TX(D, x, y, s, o) {
     o = o || {}; var size = o.size || CH.fs(D), fz = size * .72, w = TW(D, s, size), x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
     parse(s).forEach(function (p) {
       var pw = segW(D, p, size);
-      if (p.t != null) CH.text(D, x0, y, p.t, ext({ size: size, align: 'left' }, oo));
+      if (p.t != null) CH.text(D, x0, y, p.t, ext({ size: size, align: 'left', num: !!p.g }, oo));
       else if (p.p) CH.text(D, x0 + size * .05, y - size * .42, p.p, ext({ size: size * .6, align: 'left' }, oo));
       else {
         var cx = x0 + pw / 2; CH.text(D, cx, y - fz * .64, p.n, ext({ size: fz }, oo)); CH.text(D, cx, y + fz * .7, p.d, ext({ size: fz }, oo));
@@ -199,7 +202,7 @@
       CH.line(D, X(v), y - (big ? 7 : 4), X(v), y + (big ? 7 : 4), { w: big ? 1.8 : 1.2, a: o.a });
       if (big && o.lab !== false) { var L = o.fmt ? o.fmt(v) : S(Math.round(v * 1e6) / 1e6); if (L != null && L !== '') TX(D, X(v), y + Math.max(s * 1.25, 7 + s * .75), L, { size: s, a: o.a, col: C.chalk }); }
     }
-    if (o.unit) TX(D, x1 + s * 1.3, y + Math.max(s * 1.25, 7 + s * .75), o.unit, { size: s * .85, a: o.a, col: 'rgba(242,240,230,.75)', align: 'right' });
+    if (o.unit) TX(D, x1 + s * 1.3, y + Math.max(s * 2.5, 7 + s * 2), o.unit, { size: s * .85, a: o.a, col: 'rgba(242,240,230,.75)', align: 'right' });
     return X;
   }
   /* 範囲：v から dir（1 で右、−1 で左）へ、太い線をのばす（k：0〜1）。closed なら ●（その数をふくむ）、でなければ ○ */
@@ -269,11 +272,11 @@
   }
 
   /* ---- ことば：天びんがかたむく・4本の数直線 ---- */
-  var KT = [{ s: 'x＞3', w: '3 より大きい', dir: 1, cl: false }, { s: 'x≧3', w: '3 以上', dir: 1, cl: true }, { s: 'x＜3', w: '3 未満（3 より小さい）', dir: -1, cl: false }, { s: 'x≦3', w: '3 以下', dir: -1, cl: true }];
+  var KT = [{ s: 'x＞3', w: '3 より大きい', dir: 1, cl: false }, { s: 'x≧3', w: '3 以上', dir: 1, cl: true }, { s: 'x＜3', w: '3 未満', dir: -1, cl: false }, { s: 'x≦3', w: '3 以下', dir: -1, cl: true }];
   function kotoba(D, t) {
     var R = CH.box(D, { l: .04, r: .04, t: .04, b: .04 }), s = CH.fs(D), wide = D.W > D.H * 1.05;
     var A = wide ? CH.rect(R.x0, R.y0, R.x0 + R.w * .36, R.y1) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .3), B = wide ? CH.rect(R.x0 + R.w * .4, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .33, R.x1, R.y1);
-    var bw = Math.min(A.w * .9, A.h * (wide ? .8 : 1.5)), ang = -.2;
+    var bw = Math.min(A.w * .74, A.h * (wide ? .7 : 1.4)), ang = -.2;
     balance(D, A.cx, A.y0 + (wide ? A.h * .25 : A.h * .2), bw, ang, 'a', 'b', { base: A.y0 + (wide ? A.h * .25 + bw * .5 : A.h * .85), hang: bw * .18, pw: bw * .38, ch: s * 1.8 });
     if (wide) TX(D, A.cx, A.y0 + A.h * .25 + bw * .5 + s * 1.6, 'a が重い … a＞b（b＜a）', { size: fit(D, 'a が重い … a＞b（b＜a）', A.w, s * 1.05), col: C.yel });
     var rs = CH.rows(B, 4, .08), lw = Math.min(B.w * .42, s * 9);
@@ -303,7 +306,7 @@
   /* ---- 考えよう：3x＋2 と 14 の天びん ---- */
   function tool(D) {
     var x = D.V.x, R = CH.box(D, { l: .05, r: .05, t: .05, b: .04 }), s = CH.fs(D), L = 3 * x + 2, d = L - 14;
-    var ang = d === 0 ? 0 : -Math.sign(d) * Math.min(.22, .05 + Math.abs(d) * .02), bw = Math.min(R.w * .7, R.h * 1.05), cy = R.y0 + R.h * .2;
+    var ang = d === 0 ? 0 : -Math.sign(d) * Math.min(.22, .05 + Math.abs(d) * .02), bw = Math.min(R.w * .62, R.h * .95), cy = R.y0 + R.h * .22;
     balance(D, R.cx, cy, bw, ang, '3x＋2', '14', { base: R.y0 + R.h * .72, hang: bw * .2, pw: bw * .36 });
     TX(D, R.cx, R.y0 + R.h * .84, 'x＝' + x + ' のとき　3x＋2 ＝ 3×' + x + '＋2 ＝ ' + L, { size: fit(D, 'x＝' + x + ' のとき　3x＋2 ＝ 3×' + x + '＋2 ＝ ' + L, R.w, s * 1.1), col: C.yel });
     TX(D, R.cx, R.y0 + R.h * .95, '右の皿は 14', { size: s * .95, col: ONE });

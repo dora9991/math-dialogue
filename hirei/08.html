@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>反比例</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 比例と反比例 第8時：一方が2倍、3倍になると、もう一方が半分、3分の1になる関係を調べよう（ikkan の lesson_hirei_08 と同じ流れ）。
+   36 m のリボンを、1本 x m に切り分ける（スライダー）。x が 2倍になると本数 y は半分。3本のリボンをならべて 36本・18本・12本。xy はいつも 36。
+   例題は y＝18/x の、x が負の数のとき。考えようは、縦 x の長方形を2つ：縦＋横＝12（y＝12−x）と、面積 12（y＝12/x）。横を見くらべる。
+   数値は ikkan のまま（36 m、例題 y＝18/x、考えよう y＝12−x と y＝12/x、チャレンジ x が 3 から 9 で y が 8 へる）。
+   考えようの「縦＋横＝12 の長方形」は、y＝12−x を図にするための自作の場面。表・答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum, OUT = 'rgba(20,40,30,.92)';
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  /* ---- 分数入りの字（[36/x] をたての分数に）。canvas 用 ---- */
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = CH.fr(s[k]); }); if (s.notes) s.notes = s.notes.map(CH.fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = CH.fr(b.t); }); }); return st; }
+  function nf(v) { return S(Math.round(v * 100) / 100); }
+
+  /* ---- 数と検算 ---- */
+  var LEN = 36, XS = [1, 2, 3, 4, 6, 9], YS = XS.map(function (x) { return LEN / x; });
+  CH.check(YS.join() === '36,18,12,9,6,4' && XS.every(function (x, i) { return x * YS[i] === 36; }), '今日の問いの表（xy＝36）');
+  CH.check(YS[1] === YS[0] / 2 && YS[2] === YS[0] / 3, 'x が 2倍・3倍で y は 1/2倍・1/3倍');
+  var EX = [-9, -6, -3, -2, -1, 1, 2, 3, 6, 9], EY = EX.map(function (x) { return 18 / x; });
+  CH.check(EY.join() === '-2,-3,-6,-9,-18,18,9,6,3,2' && EX.every(function (x, i) { return x * EY[i] === 18; }), '例題（y＝18/x）');
+  var KX = [1, 2, 3, 4, 6];
+  CH.check(KX.map(function (x) { return 12 - x; }).join() === '11,10,9,8,6' && KX.map(function (x) { return 12 / x; }).join() === '12,6,4,3,2' && (12 - 2) !== (12 - 1) / 2, '考えよう（ここで確かめるだけ）');
+  var CA = 8 / (1 / 3 - 1 / 9);
+  CH.check(CH.near(CA, 36) && CH.near(36 / 3 - 36 / 9, 8), 'チャレンジ（a＝36）');
+
+  /* ---- リボン（36 m を x m ずつ） ---- */
+  function ribbon(D, x0, y0, w, h, x, o) {
+    o = o || {}; var n = Math.round(LEN / x), pw = w / n;
+    for (var i = 0; i < n; i++) CH.fillRect(D, x0 + i * pw, y0, x0 + (i + 1) * pw, y0 + h, { fill: i % 2 ? 'rgba(255,157,178,.55)' : 'rgba(255,157,178,.32)', a: o.a });
+    CH.fillRect(D, x0, y0, x0 + w, y0 + h, { stroke: C.pink, sw: 2, a: o.a });
+    for (var j = 1; j < n; j++) CH.line(D, x0 + j * pw, y0 - 3, x0 + j * pw, y0 + h + 3, { col: C.chalk, w: 1.2, a: o.a });
+    return n;
+  }
+  function scale36(D, x0, y, w) {
+    var s = CH.fs(D, .72), X = function (v) { return x0 + w * v / LEN; };
+    CH.line(D, x0, y, x0 + w, y, { w: 1.4, col: 'rgba(242,240,230,.6)' });
+    for (var v = 0; v <= LEN; v += 3) { var big = v % 9 === 0; CH.line(D, X(v), y - (big ? 5 : 3), X(v), y + (big ? 5 : 3), { w: 1.2, col: 'rgba(242,240,230,.6)' }); if (big) CH.text(D, X(v), y + s * 1, String(v), { size: s, num: true, col: 'rgba(242,240,230,.8)' }); }
+    CH.text(D, x0 + w, y + s * 2.2, '（m）', { size: s, align: 'right', col: 'rgba(242,240,230,.7)' });
+  }
+  function lay(D) { var R = CH.box(D, { l: .04, r: .04, t: .04, b: .04 }); return { T: CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .55), B: CH.rect(R.x0, R.y0 + R.h * .6, R.x1, R.y1), R: R }; }
+  function table(D, R, extra, o) {
+    o = o || {};
+    return CH.table(D, R, ['x（m）'].concat(XS.map(String)), [['y（本）'].concat(XS.map(function (x, i) { return o.ys ? o.ys(i) : String(YS[i]); }))].concat(extra || []), { fw: .2, size: CH.fs(D, .9), rh: CH.fs(D) * 2.3, show: o.show, hl: o.hl });
+  }
+  function arc(D, x0, x1, y, up, col, a, txt, hk) {
+    var s = CH.fs(D), g = D.ctx, h = s * 1.3 * (up ? -1 : 1) * (hk || 1);
+    g.save(); g.globalAlpha = D.ga * a; g.strokeStyle = col; g.lineWidth = 2.4; g.beginPath(); g.moveTo(x0, y); g.quadraticCurveTo((x0 + x1) / 2, y + h, x1, y); g.stroke(); g.restore();
+    CH.arrow(D, x1 + (x1 > x0 ? -4 : 4), y + h * .22, x1, y, { col: col, a: a, head: 8, w: 2.4 });
+    TX(D, (x0 + x1) / 2, y + h * .5 + (up ? -1 : 1) * s * .8, txt, { col: col, size: s * .9, a: a, outline: OUT });
+  }
+  /* 考えようの長方形：縦 x、横 y。P の中に（u は 1 cm の長さ） */
+  function rectXY(D, P, x, y, u, col, title, ylab) {
+    var s = CH.fs(D), x0 = P.x0 + s * 1.6, y0 = P.y0 + s * 2.2;
+    TX(D, P.cx, P.y0 + s * .7, title, { size: CH.fitSize(D, title.replace(/[\[\]\/]/g, ''), P.w * .95, s * .85), col: col });
+    CH.fillRect(D, x0, y0, x0 + y * u, y0 + x * u, { fill: col === C.blue ? 'rgba(154,216,255,.25)' : 'rgba(255,192,120,.25)', stroke: col, sw: 2.4 });
+    CH.text(D, x0 - s * .4, y0 + x * u / 2, 'x', { size: s * .9, align: 'right' });
+    CH.text(D, x0 + y * u / 2, y0 + x * u + s * .8, ylab + nf(y), { size: s * .85, col: col });
+  }
+
+  K3.run({
+    no: '第8時', title: '一方が2倍、3倍になると、もう一方が半分、3分の1になる関係を調べよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '07.html', label: '◀ 第7時' }, { href: '09.html', label: '第9時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '36 m のリボンを切り分ける', q: '長さ 36 m のリボンを、同じ長さに切り分ける。1本の長さを x m、本数を y本として、x と y の関係を調べ、きまりを見つけよう。',
+        notes: ['① 自分の考え（3分）　見つけたきまりを、できるだけたくさん書こう。', '② ペアの考え（3分）', 'スライダーで、1本の長さ x を変えられます。'],
+        sliders: [{ key: 'k', label: '1本の長さ x', min: 0, max: 5, step: 1, val: 0, fmt: function (v) { return XS[v] + ' m'; } }],
+        draw: function (D) {
+          var L = lay(D), s = CH.fs(D), k = D.V.k, x = XS[k], w = L.T.w - s, x0 = L.T.x0 + s * .5, h = Math.min(L.T.h * .22, s * 2.2), y0 = L.T.y0 + L.T.h * .32;
+          var n = ribbon(D, x0, y0, w, h, x); scale36(D, x0, y0 + h + s * .5, w);
+          CH.text(D, L.T.cx, L.T.y0 + s * .9, '1本 ' + x + ' m → ' + n + ' 本', { size: s * 1.2, col: C.pink });
+          table(D, L.B, null, { hl: function (r, c) { return c === k + 1 ? C.yel : null; } });
+        } },
+      { tag: '今日の問い', q: 'x が 2倍、3倍になると、y はどうなる？', a: 'y は [1/2]倍、[1/3]倍になる', sub: 'x が 1 → 2 → 3 のとき、y は 36 → 18 → 12', dur: 6,
+        b: { t: 'x が 2倍・3倍 → y は <b>[1/2]倍・[1/3]倍</b>（36 → 18 → 12）', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), s = CH.fs(D), t = D.ph ? D.t : 0, x0 = L.T.x0 + s * 4.2, w = L.T.x1 - x0 - s * .5, h = Math.min(L.T.h * .16, s * 1.6);
+          [0, 1, 2].forEach(function (i) { var y0 = L.T.y0 + s * .5 + i * h * 2.1, a = i === 0 ? 1 : D.ph ? CH.smooth(.05 + (i - 1) * .2, .2 + (i - 1) * .2, t) : .25; ribbon(D, x0, y0, w, h, XS[i], { a: a }); CH.text(D, x0 - s * .4, y0 + h / 2, XS[i] + ' m', { size: s * .85, align: 'right', a: a }); CH.text(D, x0 - s * 2.6, y0 + h / 2, YS[i] + '本', { size: s * .85, align: 'right', col: C.pink, a: a }); });
+          var T = table(D, CH.rect(L.B.x0, L.B.y0 + s * 1.4, L.B.x1, L.B.y1 - s * 1.4), null, { hl: function (r, c) { return D.ph && c >= 1 && c <= 3 ? (r === 0 ? C.blue : C.pink) : null; } });
+          if (D.ph) {
+            var a1 = CH.smooth(.45, .6, t), a2 = CH.smooth(.55, .7, t), a3 = CH.smooth(.7, .85, t), a4 = CH.smooth(.8, .95, t);
+            arc(D, T.cell(0, 1).cx, T.cell(0, 2).cx, T.cell(0, 1).y0, true, C.blue, a1, '×2'); arc(D, T.cell(0, 1).cx, T.cell(0, 3).cx, T.cell(0, 1).y0, true, C.blue, a2, '×3', 2.2);
+            arc(D, T.cell(1, 1).cx, T.cell(1, 2).cx, T.cell(1, 1).y1, false, C.pink, a3, '×[1/2]'); arc(D, T.cell(1, 1).cx, T.cell(1, 3).cx, T.cell(1, 1).y1, false, C.pink, a4, '×[1/3]', 2.2);
+          }
+        } },
+      { tag: '今日の問い', q: 'x と y の積 xy は？ y を x の式で表すと？', a: 'xy はいつも 36。y＝[36/x]', sub: '1×36、2×18、3×12、4×9、6×6、9×4。どれもリボン全体の長さ 36 m', dur: 6,
+        b: { t: 'xy は いつも <b>36</b>（全体の長さ）→ <b>y＝[36/x]</b>', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), s = CH.fs(D), t = D.ph ? D.t : 0, k = D.ph ? Math.min(5, Math.floor(t * 6.5)) : 0, x0 = L.T.x0 + s * .5, w = L.T.w - s, h = Math.min(L.T.h * .22, s * 2.2), y0 = L.T.y0 + L.T.h * .32;
+          var n = ribbon(D, x0, y0, w, h, XS[k]); scale36(D, x0, y0 + h + s * .5, w);
+          CH.text(D, L.T.cx, L.T.y0 + s * .9, XS[k] + ' m × ' + n + ' 本 ＝ 36 m', { size: s * 1.2, col: D.ph ? C.yel : C.pink });
+          table(D, L.B, [['xy'].concat(XS.map(function () { return '36'; }))], { show: function (r, c) { return r === 2 && c > 0 ? (D.ph && c - 1 <= k ? 1 : 0) : 1; }, hl: function (r, c) { return D.ph && c === k + 1 ? C.yel : null; } });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'y＝[a/x]（a は 0 でない定数）と表されるとき、y は x に何する？ a を何という？', a: '反比例する。a は比例定数', sub: '反比例では、積 xy が一定で、a に等しい。y＝[36/x] の比例定数は 36', dur: 4,
+        b: [{ t: 'y＝[a/x]（a は 0 でない定数）のとき、y は x に <b>反比例</b> する', col: C.green }, { t: 'a を <b>比例定数</b> という。反比例では <b>xy＝a</b>（一定）', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .1, b: .12 }), s = CH.fs(D), t = D.ph ? D.t : 0, big = Math.min(s * 2.4, R.w / 7), y1 = R.y0 + R.h * .22, y2 = R.y0 + R.h * .66;
+          TX(D, R.cx, y1, 'y＝[a/x]', { size: big, col: C.chalk });
+          CH.text(D, R.cx, y1 + big * 1.25, 'a は 0 でない定数', { size: s * .9, col: 'rgba(242,240,230,.8)' });
+          if (t > 0) {
+            var a = CH.smooth(.15, .5, t);
+            CH.arrow(D, R.cx, y1 + big * 1.7, R.cx, y2 - big * 1.05, { col: C.green, a: a, w: 2.4 });
+            TX(D, R.cx, y2, 'y＝[36/x]', { size: big, col: C.green, a: a });
+            CH.text(D, R.cx, y2 + big * 1.3, '比例定数 36（xy＝36）', { col: C.green, size: s * 1.05, a: CH.smooth(.5, .8, t) });
+          }
+        } },
+      { tag: '例題', bh: '例題　y＝[18/x]', q: 'y＝[18/x] で、x が負の数のときの y の値も調べよう。x＝−9、−6、−3、−2、−1 のとき、y は？', a: '−2、−3、−6、−9、−18', sub: 'x が負の数のとき、y も負の数。xy はいつも 18。x＝0 に対応する y の値はない', dur: 7,
+        b: { t: 'x が負 → y も負（−2・−3・−6・−9・−18）　xy は いつも <b>18</b>　x＝0 のときの y はない', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .03, r: .03, t: .08, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0;
+          function k(i) { return i >= 5 ? 1 : D.ph ? CH.smooth(.05 + (4 - i) * .1, .12 + (4 - i) * .1, t) : 0; }
+          var T = CH.table(D, CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .55), ['x'].concat(EX.map(S)), [['y'].concat(EY.map(S)), ['xy'].concat(EX.map(function () { return '18'; }))],
+            { fw: .1, size: CH.fs(D, .85), rh: s * 2.4, show: function (r, c) { if (r === 0 || c === 0) return 1; if (r === 1) return k(c - 1); return D.ph ? CH.smooth(.6, .75, t) : 0; }, hl: function (r, c) { return c > 0 && c <= 5 && r > 0 && k(c - 1) > 0 ? C.pink : null; } });
+          var y0 = T.y1 + s * 2;
+          if (t > .78) {
+            var a = CH.smooth(.78, .92, t);
+            CH.text(D, R.cx, y0, '(−9)×(−2)＝18、(−1)×(−18)＝18', { col: C.pink, size: CH.fitSize(D, '(−9)×(−2)＝18、(−1)×(−18)＝18', R.w, s * 1.05), a: a });
+            CH.text(D, R.cx, y0 + s * 2, 'x＝0 のとき、18÷0 は計算できない → y の値はない', { col: C.chalk, size: CH.fitSize(D, 'x＝0 のとき、18÷0 は計算できない → y の値はない', R.w, s * .9), a: a });
+          }
+        } },
+      { tag: '考えよう', bh: '考えよう', q: '「x がふえると、y がへる」関係は、いつも反比例といえるだろうか。y＝12−x と y＝[12/x] を、表でくらべて調べよう。',
+        notes: ['表から、気づいたことを書こう（x が 2倍になると、y は？）。', '「ふえるとへる」だけで、反比例といえるか。理由も書こう。', '図は、縦 x の長方形。左は縦＋横＝12、右は面積 12。スライダーで、縦 x を変えられます。'],
+        sliders: [{ key: 'x', label: '縦 x', min: 1, max: 6, step: 1, val: 1, fmt: function (v) { return v + ' cm'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), s = CH.fs(D), x = D.V.x, top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .6), ps = CH.cols(top, 2, .06);
+          var u = Math.min((ps[0].w - s * 2.2) / 12, (top.h - s * 4.2) / 6.2);
+          rectXY(D, ps[0], x, 12 - x, u, C.blue, '縦＋横＝12', '横 y＝');
+          rectXY(D, ps[1], x, 12 / x, u, C.orange, '面積 12 cm²', '横 y＝');
+          var T = CH.table(D, CH.rect(R.x0, R.y0 + R.h * .66, R.x1, R.y1), ['x'].concat(KX.map(String)), [[''].concat(KX.map(function (v) { return S(12 - v); })), [''].concat(KX.map(function (v) { return S(12 / v); }))],
+            { fw: .26, size: CH.fs(D, .9), rh: s * 2.3, show: function (r, c) { return r > 0 && c > 0 && KX[c - 1] > x ? 0 : 1; }, hl: function (r, c) { return c > 0 && KX[c - 1] === x ? C.yel : null; } });
+          TX(D, T.cell(1, 0).cx, T.cell(1, 0).cy, 'y＝12−x', { size: CH.fs(D, .8), col: C.blue }); TX(D, T.cell(2, 0).cx, T.cell(2, 0).cy, 'y＝[12/x]', { size: CH.fs(D, .8), col: C.orange });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'y は x に反比例している。x の値が 3 から 9 にふえると、y の値は 8 へる。y を x の式で表そう。',
+        a: 'y＝[36/x]', sub: 'y＝[a/x] とおくと、x＝3 のとき [a/3]、x＝9 のとき [a/9]。[a/3]−[a/9]＝8 から [2a/9]＝8、a＝36', dur: 8,
+        b: { t: '[a/3]−[a/9]＝8 → [2a/9]＝8 → a＝36 → <b>y＝[36/x]</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .1, b: .08 }), s = CH.fs(D), t = D.ph ? D.t : 0;
+          var T = CH.table(D, CH.rect(R.x0 + R.w * .12, R.y0 + s * 2.6, R.x1 - R.w * .12, R.y0 + s * 2.6 + s * 5.2), ['x', '3', '9'], [['y', '', '']], { fw: .22, size: CH.fs(D, 1), rh: s * 2.6, hl: function (r, c) { return r === 1 && c > 0 && t > .8 ? C.orange : null; } });
+          [[1, '[a/3]', '12'], [2, '[a/9]', '4']].forEach(function (q) { var c = T.cell(1, q[0]); TX(D, c.cx, c.cy, t > .8 ? q[2] : q[1], { size: s * 1.05, col: t > .8 ? C.orange : C.chalk }); });
+          arc(D, T.cell(0, 1).cx, T.cell(0, 2).cx, T.cell(0, 1).y0, true, C.blue, 1, '3倍');
+          arc(D, T.cell(1, 1).cx, T.cell(1, 2).cx, T.cell(1, 1).y1, false, C.pink, 1, '8 へる');
+          var y0 = T.y1 + s * 4.6, sz = s * 1.15;
+          if (t > .1) TX(D, R.cx, y0, '[a/3]−[a/9]＝8', { col: C.yel, size: sz, a: CH.smooth(.1, .25, t) });
+          if (t > .3) TX(D, R.cx, y0 + s * 2.4, '[3a/9]−[a/9]＝[2a/9]＝8　→　a＝36', { col: C.yel, size: CH.fitSize(D, '3a9−a9＝2a9＝8　→　a＝36', R.w * 1.1, sz), a: CH.smooth(.3, .5, t) });
+          if (t > .6) TX(D, R.cx, y0 + s * 4.8, 'y＝[36/x]（たしかめ：12−4＝8）', { col: C.orange, size: CH.fitSize(D, 'y＝36x（たしかめ：12−4＝8）', R.w * 1.1, sz), a: CH.smooth(.6, .8, t) });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

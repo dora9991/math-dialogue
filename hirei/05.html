@@ -79,7 +79,7 @@
             CH.pseg(D, Pl, [0, 0], [h, 0], { col: C.orange, w: 4, arrow: h > .3, head: 11 });
             if (h > 2) CH.text(D, Pl.X(2), Pl.Y(0) + s * 1.7, '右へ 4', { col: C.orange, size: s, outline: OUT, a: CH.smooth(.15, .3, t) });
             if (v > 0) { CH.pseg(D, Pl, [4, 0], [4, v], { col: C.orange, w: 4, arrow: v > .3, head: 11 }); CH.text(D, Pl.X(4) + s * .5, Pl.Y(.5), '上へ 1', { col: C.orange, size: s, outline: OUT, align: 'left', a: CH.smooth(.45, .55, t) }); }
-            if (t > .58) CH.text(D, Pl.X(4), Pl.Y(1) - s * 1.6, '(4, 1)', { col: C.yel, size: s * 1.3, outline: OUT, a: CH.smooth(.58, .7, t) });
+            if (t > .58) CH.text(D, Pl.X(3.6), Pl.Y(1) - s * 1.4, '(4, 1)', { col: C.yel, size: s * 1.3, outline: OUT, align: 'right', a: CH.smooth(.58, .7, t) });
             if (t > .75) { var a2 = CH.smooth(.75, .9, t); CH.pt(D, Pl, 1, 4, { col: C.pink, open: true, r: CH.fs(D, .3), a: a2 }); CH.text(D, Pl.X(1) + s * .6, Pl.Y(4) - s * .9, '(1, 4) は別の場所', { col: C.pink, size: s * .9, align: 'left', outline: OUT, a: a2 }); }
           }
         } },
@@ -117,9 +117,9 @@
           dot(D, Pl, PTS.A, 'A', C.yel);
           if (!D.ph) return;
           var a1 = CH.smooth(.02, .18, t), a2 = CH.smooth(.2, .36, t), a3 = CH.smooth(.38, .52, t), a4 = CH.smooth(.56, .75, t), a5 = CH.smooth(.75, .92, t);
-          CH.pseg(D, Pl, [-5, 0], [5, 0], { col: C.blue, w: 5, glow: true, a: a1 * .8 }); CH.text(D, Pl.X(4.2), Pl.Y(0) - s * 1.1, 'x 軸', { col: C.blue, size: s * 1.1, outline: OUT, a: a1 });
+          CH.pseg(D, Pl, [-5, 0], [5, 0], { col: C.blue, w: 5, glow: true, a: a1 * .8 }); CH.text(D, Pl.X(-4), Pl.Y(0) - s * 1.1, 'x 軸', { col: C.blue, size: s * 1.1, outline: OUT, a: a1 });
           CH.pseg(D, Pl, [0, -5], [0, 5], { col: C.pink, w: 5, glow: true, a: a2 * .8 }); CH.text(D, Pl.X(0) - s * .7, Pl.Y(4.4), 'y 軸', { col: C.pink, size: s * 1.1, outline: OUT, align: 'right', a: a2 });
-          CH.circle(D, Pl.X(0), Pl.Y(0), s * .55, { stroke: C.green, sw: 3, a: a3 }); CH.text(D, Pl.X(0) - s * 1.4, Pl.Y(0) + s * 1.7, '原点 O (0, 0)', { col: C.green, size: s * .95, outline: OUT, align: 'right', a: a3 });
+          CH.circle(D, Pl.X(0), Pl.Y(0), s * .55, { stroke: C.green, sw: 3, a: a3 }); CH.text(D, Pl.X(-.9), Pl.Y(-1.6), '原点 O (0, 0)', { col: C.green, size: s * .95, outline: OUT, align: 'right', a: a3 });
           guide(D, Pl, PTS.A, C.yel, a4);
           CH.text(D, Pl.X(4), Pl.Y(0) + s * 1.2, '4', { col: C.blue, size: s * 1.15, outline: OUT, a: a4 }); CH.text(D, Pl.X(0) - s * .6, Pl.Y(1), '1', { col: C.pink, size: s * 1.15, outline: OUT, align: 'right', a: a4 });
           CH.text(D, Pl.X(4), Pl.Y(1) - s * 1.5, 'A(4, 1)', { col: C.yel, size: s * 1.15, outline: OUT, a: a5 });
@@ -129,7 +129,7 @@
         b: { t: 'B(−3, 3)　C(−4, −2)　D(2, −4)　E(<b>0</b>, 3)　F(−2, <b>0</b>)（軸の上の点は、片方が 0）', col: C.pink },
         draw: function (D) {
           var Pl = full(D), t = D.ph ? D.t : 0, s = CH.fs(D);
-          if (t > .85) { var aq = CH.smooth(.85, 1, t); [[3.5, 4.6, '(＋, ＋)'], [-3.5, 4.6, '(−, ＋)'], [-3.5, -4.6, '(−, −)'], [3.5, -4.6, '(＋, −)']].forEach(function (q) { CH.text(D, Pl.X(q[0]), Pl.Y(q[1]), q[2], { col: C.lav, size: s * .85, a: aq, outline: OUT }); }); }
+          if (t > .85) { var aq = CH.smooth(.85, 1, t); [[3.5, 4.4, '(＋, ＋)'], [-3.5, 4.4, '(−, ＋)'], [-3.5, -4.4, '(−, −)'], [4, -2.6, '(＋, −)']].forEach(function (q) { CH.text(D, Pl.X(q[0]), Pl.Y(q[1]), q[2], { col: C.lav, size: s * .85, a: aq, outline: OUT }); }); }
           NAMES.forEach(function (n, i) {
             var p = PTS[n], a = i === 0 ? 1 : D.ph ? CH.smooth(.02 + (i - 1) * .16, .14 + (i - 1) * .16, t) : 0;
             if (a > 0) guide(D, Pl, p, n === 'E' || n === 'F' ? C.orange : C.yel, a * .9);
@@ -158,7 +158,7 @@
             CH.pseg(D, Pl, CB, [CB[0] + 3 * h1, CB[1]], { col: C.pink, w: 3, arrow: h1 > .2, head: 9 });
             if (v1 > 0) CH.pseg(D, Pl, [CC[0], CB[1]], [CC[0], CB[1] + 5 * v1], { col: C.pink, w: 3, arrow: v1 > .1, head: 9 });
             if (t > .2) CH.text(D, Pl.X(2.5), Pl.Y(CB[1]) + s * 1, '右へ 3', { col: C.pink, size: s * .9, outline: OUT });
-            if (t > .38) CH.text(D, Pl.X(CC[0]) + s * .5, Pl.Y(-.5), '上へ 5', { col: C.pink, size: s * .9, outline: OUT, align: 'left' });
+            if (t > .38) CH.text(D, Pl.X(CC[0]) + s * .5, Pl.Y(-1.6), '上へ 5', { col: C.pink, size: s * .9, outline: OUT, align: 'left' });
             if (h2 > 0) CH.pseg(D, Pl, CA, [CA[0] + 3 * h2, CA[1]], { col: C.yel, w: 3, arrow: h2 > .2, head: 9 });
             if (v2 > 0) CH.pseg(D, Pl, [CD[0], CA[1]], [CD[0], CA[1] + 5 * v2], { col: C.yel, w: 3, arrow: v2 > .1, head: 9 });
           }
