@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>直線・線分・半直線と記号</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 平面図形 第1時：直線や角を、記号を使って表そう（ikkan の lesson_heimen_01 と同じ流れ）。
+   今日の問いは、点 A、B を通る3つの線が、両方向にのびる（直線）・A から B でとまる（線分）・B の先へのびる（半直線）動きで、ちがいが見える。
+   ことばでは、半直線 AB と半直線 BA のちがい、∠ABC・AB⊥CD・AB∥CD の記号が図の上に出る。直線の上の点 Q を動かすと、垂線 PH がいちばん短い（点と直線のきょり）。
+   例題は ikkan と同じ長方形 ABCD（AB＝3cm、BC＝5cm、対角線 AC）。考えようは、平行な2直線の間のきょりを調べる道具（答えは出さない）。チャレンジは 5点の線分 10本・半直線 20本。
+   図の座標・数値はページの中で作った自作のデータ。長さ・角・垂直・平行・本数は、座標と数えあげで計算し直している（GE.verify・CH.check）。 */
+(function () {
+  /* ---- 平面図形の図の道具（このページの中だけで使う。heimen/ の各ページに同じものが入っている） ---- */
+  var C = CH.C, RAD = Math.PI / 180, PR = '′', OUT = 'rgba(20,40,30,.9)', FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function dg(x) { var r = Math.round(x * 10) / 10; return (Math.abs(r - Math.round(r)) < .05 ? String(Math.round(r)) : r.toFixed(1)) + '°'; }
+  function f1(x) { return CH.f1(x); }
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  /* 図の四角（fig）と、字を書く四角（side）。よこ長なら右、たて長なら下 */
+  function lay(D, k, o) {
+    o = o || {}; var B = CH.box(D, { l: .03, r: .03, t: o.t == null ? .04 : o.t, b: .04 });
+    if (B.w > B.h * 1.25 && B.w > 560) { var w = B.w * (k || .34); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .06, B.x1, B.y1), wide: true }; }
+    var h = B.h * (o.hk || .25); return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .03, B.y1 - h + 4, B.x1, B.y1), wide: false };
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする）。rows：[{ t, col, a }] */
+  function say(D, Rr, rows, o) {
+    o = o || {}; rows = rows.filter(Boolean); if (!rows.length) return;
+    var nc = Rr.w > Rr.h * 2.5 && rows.length > 3 ? 2 : 1, per = Math.ceil(rows.length / nc), cw = Rr.w / nc;
+    var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (per * 1.6));
+    rows.forEach(function (r, i) {
+      var w = tw(D, r.t, s), sz = w > cw - 6 ? s * (cw - 6) / w : s, c = Math.floor(i / per), j = i % per;
+      CH.text(D, Rr.x0 + c * cw, Rr.y0 + s * .8 + j * s * 1.6, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left' });
+    });
+  }
+  /* 図の上の1行（はばに入らなければ、字を小さくする） */
+  function top(D, s, col, a) {
+    var B = CH.box(D, { t: 0, l: .02, r: .02 }), fs = CH.fitSize(D, s, B.w, CH.fs(D, 1.02));
+    CH.text(D, B.cx, B.y0 + CH.fs(D, 1.02) * .7, s, { col: col || C.yel, a: a, size: fs, outline: OUT });
+  }
+  /* 点の名前：{ A: 向き（度） }。o.name で字をかえる */
+  function nm(F, m, o) {
+    o = o || {}; Object.keys(m).forEach(function (k) {
+      if (m[k] == null || !F.P[k]) return; var p = F.X(k), r = F.s * (o.k || .95);
+      CH.text(F.D, p[0] + Math.cos(m[k] * RAD) * r, p[1] - Math.sin(m[k] * RAD) * r, (o.name && o.name[k]) || k, { size: F.s * (o.size || 1), col: (o.col && o.col[k]) || o.c || C.chalk, a: o.a, outline: OUT });
+    });
+  }
+  function dots(F, ks, o) { o = o || {}; (Array.isArray(ks) ? ks : ks.split('')).forEach(function (k) { if (typeof k !== 'string' || F.P[k]) GE.dot(F, k, o); }); }
+  /* 字（座標 p から、向き deg に k（字の大きさの倍）だけはなれたところ） */
+  function lab(F, p, deg, k, t, o) {
+    o = o || {}; var q = F.X(p);
+    CH.text(F.D, q[0] + Math.cos(deg * RAD) * F.s * k, q[1] - Math.sin(deg * RAD) * F.s * k, t, { col: o.col || C.chalk, size: F.s * (o.size || .85), a: o.a, outline: OUT, num: o.num });
+  }
+  /* 図の四角の中だけに描く */
+  function clip(F, fn) { var g = F.D.ctx, r = F.R; g.save(); g.beginPath(); g.rect(r.x0, r.y0, r.w, r.h); g.clip(); fn(); g.restore(); }
+  /* 直線（四角のはしまで）・半直線（a から b の向きに、四角のはしまで） */
+  function full(F, a, b, o) { clip(F, function () { GE.line(F, [a, b], o || {}); }); }
+  function ray(F, a, b, o) { var pa = F.X(a), pb = F.X(b), L = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]) || 1, k = (F.R.w + F.R.h) * 2 / L; clip(F, function () { GE.seg(F, [a, GE.lerpP(F.P[a] || a, F.P[b] || b, 1 + k)], o || {}); }); }
+  function arrowW(F, a, b, o) { o = o || {}; var p = F.X(a), q = F.X(b); CH.arrow(F.D, p[0], p[1], q[0], q[1], { col: o.col || C.chalk, w: o.w || 2.8, a: o.a, head: o.head || F.s * .6, dash: o.dash }); }
+  /* 中心 c・半径 r（座標の長さ）の円の、a0 → a1（反時計まわり、度）の弧 */
+  function arcAt(F, c, r, a0, a1, o) {
+    o = o || {}; if (a1 < a0) { var z = a0; a0 = a1; a1 = z; } var g = F.D.ctx, p = F.X(c);
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.w || 2.2; g.lineCap = 'round';
+    if (o.dash) g.setLineDash(o.dash === true ? [8, 7] : o.dash); g.beginPath(); g.arc(p[0], p[1], r * F.u, -a0 * RAD, -a1 * RAD, true); g.stroke(); g.restore();
+  }
+  /* コンパスで弧をかく：a0 → a1 を k（0〜1）だけ。かいている途中は、コンパスの2本の足も見せる */
+  function comp(F, c, r, a0, a1, k, o) {
+    o = o || {}; if (k <= 0) return; var a = a0 + (a1 - a0) * Math.min(1, k), col = o.col || C.blue;
+    arcAt(F, c, r, a0, a, { col: col, w: o.w || 2.2, a: o.a });
+    if (k < 1 && !o.noLeg) {
+      var p = F.X(GE.polar(c, r, a)), q = F.X(c), m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], d = [p[0] - q[0], p[1] - q[1]], L = Math.hypot(d[0], d[1]) || 1, n = [d[1] / L, -d[0] / L];
+      if (n[1] > 0) n = [-n[0], -n[1]];
+      var hh = [m[0] + n[0] * Math.min(L * .55, F.s * 5), m[1] + n[1] * Math.min(L * .55, F.s * 5)];
+      CH.line(F.D, q[0], q[1], hh[0], hh[1], { col: 'rgba(242,240,230,.75)', w: 2.6 }); CH.line(F.D, hh[0], hh[1], p[0], p[1], { col: 'rgba(242,240,230,.75)', w: 2.6 });
+      CH.circle(F.D, hh[0], hh[1], F.s * .22, { fill: 'rgba(242,240,230,.85)' }); CH.circle(F.D, p[0], p[1], F.s * .17, { fill: col });
+    }
+  }
+  /* 点の列を動かす（数学の座標） */
+  function mv(ps, v, k) { return ps.map(function (p) { return [p[0] + v[0] * k, p[1] + v[1] * k]; }); }
+  function rotP(ps, c, deg) { return ps.map(function (p) { return GE.rot(p, c, deg); }); }
+  function refP(ps, a, b) { return ps.map(function (p) { return GE.reflect(p, a, b); }); }
+  /* 直線 ab で折る途中（k＝0 で もと、.5 で 線の上、1 で 折り返したところ） */
+  function foldP(ps, a, b, k) { return ps.map(function (p) { var f = GE.foot(p, a, b); return GE.lerpP(p, [2 * f[0] - p[0], 2 * f[1] - p[1]], CH.ease(k)); }); }
+  /* 点の集まりが同じか（順番は問わない） */
+  function key(ps) { return ps.map(function (p) { return p.map(function (x) { return Math.round(x * 1000) / 1000 + 0; }).join(','); }).sort().join('|'); }
+  function same(ps, qs) { return key(ps) === key(qs); }
+  function named(names, ps, P) { P = P || {}; (Array.isArray(names) ? names : names.split('')).forEach(function (k, i) { P[k] = ps[i]; }); return P; }
+  function cen(ps) { var c = [0, 0]; ps.forEach(function (p) { c[0] += p[0] / ps.length; c[1] += p[1] / ps.length; }); return c; }
+  function poly(F, ps, col, o) { o = o || {}; GE.polyP(F, ps, { col: col || C.blue, fa: o.fa == null ? .22 : o.fa, a: o.a, sw: o.sw }); }
+  /* 方眼（x0〜x1、y0〜y1） */
+  function grid(F, x0, y0, x1, y1, o) {
+    o = o || {}; for (var x = x0; x <= x1 + 1e-9; x++) GE.seg(F, [[x, y0], [x, y1]], { col: 'rgba(242,240,230,.16)', w: 1, a: o.a });
+    for (var y = y0; y <= y1 + 1e-9; y++) GE.seg(F, [[x0, y], [x1, y]], { col: 'rgba(242,240,230,.16)', w: 1, a: o.a });
+  }
+  /* 三角形の頂点の名前（中心から外向き） */
+  function vlab(F, ps, names, o) {
+    o = o || {}; var c = F.X(cen(ps));
+    ps.forEach(function (p, i) { var q = F.X(p), d = [q[0] - c[0], q[1] - c[1]], L = Math.hypot(d[0], d[1]) || 1, r = F.s * (o.k || .85); CH.text(F.D, q[0] + d[0] / L * r, q[1] + d[1] / L * r, names[i], { size: F.s * (o.size || .95), col: o.col || C.chalk, a: o.a, outline: OUT }); });
+  }
+  /* 色ちがいの字を1行にならべる（parts：[[字, 色], …]）。はばに入らなければ小さくする */
+  function rich(D, x, y, parts, o) {
+    o = o || {}; var s = o.size || CH.fs(D, 1.02), W = 0; parts.forEach(function (p) { W += tw(D, p[0], s); });
+    if (o.maxW && W > o.maxW) { s *= o.maxW / W; W = o.maxW; }
+    var xx = x - W / 2; parts.forEach(function (p) { CH.text(D, xx, y, p[0], { size: s, col: p[1] || C.chalk, align: 'left', a: o.a, outline: OUT }); xx += tw(D, p[0], s); });
+  }
+  /* 図の上の1行（色ちがい） */
+  function topRich(D, parts, a, row) { var B = CH.box(D, { t: 0, l: .02, r: .02 }), s = CH.fs(D, 1.02); rich(D, B.cx, B.y0 + s * (.7 + (row || 0) * 1.45), parts.filter(Boolean), { a: a, maxW: B.w, size: s }); }
+  /* ---- 今日の問い：点 A、B を通る3つの線（1段ずつ） ---- */
+  var KANA = ['ア', 'イ', 'ウ'], KIND = ['直線', '線分', '半直線'];
+  /* 1段の線。sp：{ x0, x1（のびたところ）, L, R（はしの矢じり）, col }。xa・xb は A、B の位置 */
+  function rowLine(D, r, xa, xb, sp, o) {
+    o = o || {}; var y = r.cy, s = Math.min(CH.fs(D, 1), r.h * .32), col = sp.col || C.chalk, hd = s * .62;
+    if (sp.x1 - sp.x0 > 1) CH.line(D, sp.x0, y, sp.x1, y, { col: col, w: 3.2, a: sp.a });
+    if (sp.L) CH.arrow(D, sp.x0 + hd, y, sp.x0, y, { col: col, w: 3.2, head: hd, a: sp.a });
+    if (sp.R) CH.arrow(D, sp.x1 - hd, y, sp.x1, y, { col: col, w: 3.2, head: hd, a: sp.a });
+    /* のびつづける感じ：はしの先へ流れる点 */
+    if (sp.flowL || sp.flowR) for (var j = 0; j < 3; j++) {
+      var ph = ((D.now * .45 + j / 3) % 1);
+      if (sp.flowR) CH.circle(D, CH.lerp(xb + s, sp.x1 - hd, ph), y, s * .13, { fill: col, a: .8 * Math.sin(ph * Math.PI) });
+      if (sp.flowL) CH.circle(D, CH.lerp(xa - s, sp.x0 + hd, ph), y, s * .13, { fill: col, a: .8 * Math.sin(ph * Math.PI) });
+    }
+    [[xa, 'A'], [xb, 'B']].forEach(function (p) { CH.circle(D, p[0], y, s * .2, { fill: C.chalk }); CH.text(D, p[0], y + s * 1.05, p[1], { size: s, outline: OUT }); });
+    if (o.kana) CH.text(D, r.x0 + s * .6, y, o.kana, { size: s * 1.15, col: C.yel });
+    if (o.name) CH.text(D, o.nx || (xa + xb) / 2, y - s * 1.1, o.name, { size: s * .95, col: o.ncol || C.yel, a: o.na, outline: OUT });
+  }
+  /* ア〜ウ。g：それぞれの段の進み（0〜1）。names：名前の濃さ */
+  function threeLines(D, g, o) {
+    o = o || {}; var R = CH.box(D, { l: .03, r: .03, t: .05, b: .05 }), rows = CH.rows(R, 3, .08);
+    rows.forEach(function (r, i) {
+      var xa = r.x0 + r.w * .34, xb = r.x0 + r.w * .58, xl = r.x0 + r.w * .1, xr = r.x1 - r.w * .01, k = g ? g[i] : 1, sp;
+      if (i === 0) sp = { x0: CH.lerp(xa, xl, k), x1: CH.lerp(xb, xr, k), L: k > .98, R: k > .98, flowL: o.flow && k > .98, flowR: o.flow && k > .98 };
+      else if (i === 1) sp = { x0: xa, x1: CH.lerp(xa, xb, k) };
+      else sp = { x0: xa, x1: CH.lerp(xa, xr, k), R: k > .98, flowR: o.flow && k > .98 };
+      if (o.hl) sp.col = o.hl[i];
+      rowLine(D, r, xa, xb, sp, { kana: KANA[i], name: o.na && o.na[i] > 0 ? KIND[i] + ' AB' : null, na: o.na ? o.na[i] : 0, ncol: o.hl ? o.hl[i] : C.yel, nx: i === 1 ? (xa + xb) / 2 : (xb + xr) / 2 });
+    });
+  }
+
+  /* ---- ことば：∠ABC・AB⊥CD・AB∥CD（3つの小さな図） ---- */
+  var PA = { A: [1.6, 2.6], B: [0, 0], C: [3.4, 0] };
+  var PP0 = { A: [0, 1.5], B: [3.4, 1.5], C: [2.1, -.2], D: [2.1, 3.2] }, PP = {}, PPm = GE.rot([2.1, 1.5], [0, 0], 12);
+  Object.keys(PP0).forEach(function (k) { PP[k] = GE.rot(PP0[k], [0, 0], 12); }); PP.M = PPm;
+  var PL = { A: [0, 2.6], B: [3.4, 3.3], C: [.3, .5], D: [3.7, 1.2] };
+  GE.verify(PP, 'AB⊥CD、AM⊥CM', null, 'ことば AB⊥CD');
+  GE.verify(PL, 'AB∥CD', null, 'ことば AB∥CD');
+  CH.check(GE.near(GE.len(PP, 'AM') + GE.len(PP, 'MB'), GE.len(PP, 'AB')) && GE.near(GE.len(PP, 'CM') + GE.len(PP, 'MD'), GE.len(PP, 'CD')), 'ことば：AB と CD は M で交わる');
+  function symbols(D, t, ans) {
+    var R = CH.box(D, { l: .03, r: .03, t: .05, b: .05 }), cs = CH.split(D, R, 3, .06);
+    [PA, PP, PL].forEach(function (P, i) {
+      var c = cs[i], s = Math.min(CH.fs(D, 1.25), c.w * .16), side = Math.max(40, Math.min(c.w, c.h - s * 2.8)), y0 = c.cy - (side + s * 2.6) / 2;
+      var F = GE.fit(D, CH.rect(c.x0, y0 + s * 2.4, c.x1, y0 + s * 2.4 + side), P, { pad: .14, keys: i === 1 ? ['A', 'B', 'C', 'D'] : null, size: Math.min(CH.fs(D, .95), c.w * .09) });
+      var k = ans ? CH.smooth(i / 3 + .02, i / 3 + .2, t) : 0, col = [C.yel, C.pink, C.green][i];
+      if (i === 0) {
+        GE.seg(F, 'BA', { w: 3, col: k > 0 ? col : null }); GE.seg(F, 'BC', { w: 3, col: k > 0 ? col : null }); dots(F, 'ABC');
+        GE.arc(F, 'ABC', { col: k > 0 ? col : C.chalk, fill: k * .35 });
+        nm(F, { A: 90, B: 225, C: 315 }, { col: k > 0 ? { B: col } : null });
+      } else if (i === 1) {
+        GE.seg(F, 'AB', { w: 3, col: k > 0 ? col : null }); GE.seg(F, 'CD', { w: 3, col: k > 0 ? col : null }); dots(F, 'ABCD');
+        GE.right(F, 'BMD', { col: k > 0 ? col : C.chalk, fill: k > 0 });
+        nm(F, { A: 180, B: 0, C: 270, D: 90 });
+      } else {
+        GE.seg(F, 'AB', { w: 3, col: k > 0 ? col : null }); GE.seg(F, 'CD', { w: 3, col: k > 0 ? col : null }); dots(F, 'ABCD');
+        GE.par(F, 'AB', 1, { col: k > 0 ? col : C.chalk }); GE.par(F, 'CD', 1, { col: k > 0 ? col : C.chalk });
+        nm(F, { A: 180, B: 0, C: 180, D: 0 });
+      }
+      var tx = ['∠ABC', 'AB⊥CD', 'AB∥CD'][i], sub = ['角（頂点 B を まん中に）', '垂直', '平行'][i];
+      if (ans) CH.text(D, c.cx, y0 + s * .55, tx, { size: s, col: col, a: k, outline: OUT });
+      CH.text(D, c.cx, y0 + s * (ans ? 1.6 : 1.1), sub, { size: CH.fitSize(D, sub, c.w * .95, s * (ans ? .62 : .8)), col: ans ? col : 'rgba(242,240,230,.8)', a: ans ? k : 1, outline: OUT });
+    });
+  }
+
+  /* ---- ことば：点と直線のきょり（P から ℓ へ。Q を ℓ の上で動かす） ---- */
+  var PD = { P: [0, 3], H: [0, 0], L1: [-7, 0], L2: [7, 0] };
+  CH.check([-6, -3, -1, 1, 3, 6].every(function (x) { return Math.hypot(x, 3) > GE.len(PD, 'PH'); }) && GE.near(GE.len(PD, 'PH'), 3), '垂線 PH がいちばん短い');
+
+  /* ---- 例題：長方形 ABCD（AB＝3cm、BC＝5cm）と対角線 AC ---- */
+  var PR4 = { A: [0, 3], B: [0, 0], C: [5, 0], D: [5, 3] };
+  GE.verify(PR4, 'AB⊥BC、AB∥DC、AB＝DC＝3、BC＝AD＝5、∠ABC＝90°', null, '例題 長方形');
+  CH.check(GE.near(GE.ang(PR4, 'BAC'), Math.atan(5 / 3) / RAD) && GE.near(GE.len(PR4, 'AC'), Math.sqrt(34)) && f1(Math.sqrt(34)) === '5.8', '例題：∠a＝∠BAC、AC は約 5.8cm');
+  function rect4(D, o) {
+    o = o || {}; var L = lay(D, .36), F = GE.fit(D, L.fig, PR4, { pad: .18 });
+    GE.poly(F, 'ABCD', { col: C.blue, fa: .1 }); GE.seg(F, 'AC', { a: o.acA == null ? 1 : o.acA });
+    GE.arc(F, 'BAC', { col: o.aCol || C.chalk, fill: o.aFill || 0, lab: 'a', r: F.s * 1.5 });
+    if (!o.noRight) GE.right(F, 'ABC');
+    lab(F, GE.mid(PR4.A, PR4.B), 180, 1.6, '3cm'); lab(F, GE.mid(PR4.B, PR4.C), 270, 1.1, '5cm');
+    dots(F, 'ABCD'); nm(F, { A: 135, B: 225, C: 315, D: 45 });
+    return { F: F, L: L };
+  }
+
+  /* ---- 考えよう：平行な2直線 ℓ、m（間は 3） ---- */
+  function parLines(th) { var u = GE.polar([0, 0], 1, th), n = [-u[1], u[0]]; return { u: u, n: n, l0: [n[0] * 1.5, n[1] * 1.5], m0: [-n[0] * 1.5, -n[1] * 1.5] }; }
+  [-30, -10, 0, 20, 30].forEach(function (th) { var Q = parLines(th); [-4, 0, 3.5].forEach(function (x) { var p = GE.add(Q.l0, [Q.u[0] * x, Q.u[1] * x]), h = GE.foot(p, Q.m0, GE.add(Q.m0, Q.u)); CH.check(GE.near(Math.hypot(p[0] - h[0], p[1] - h[1]), 3), '考えよう：平行な2直線の間 3（' + th + '°）'); }); });
+
+  /* ---- チャレンジ：どの3点も一直線上にない 5点 ---- */
+  var P5 = {}; 'ABCDE'.split('').forEach(function (k, i) { P5[k] = GE.polar([0, 0], 3, 90 - 72 * i + (i === 2 ? 8 : 0)); });
+  var SEGS = [], RAYS = [];
+  'ABCDE'.split('').forEach(function (a, i) { 'ABCDE'.split('').forEach(function (b, j) { if (i < j) SEGS.push(a + b); if (i !== j) RAYS.push(a + b); }); });
+  var no3 = true; 'ABCDE'.split('').forEach(function (a) { 'ABCDE'.split('').forEach(function (b) { 'ABCDE'.split('').forEach(function (c) { if (a < b && b < c) { var p = P5[a], q = P5[b], r = P5[c]; if (Math.abs((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])) < 1e-6) no3 = false; } }); }); });
+  CH.check(no3 && SEGS.length === 10 && RAYS.length === 20 && 5 * 4 / 2 === 10 && 5 * 4 === 20, 'チャレンジ：線分 10本・半直線 20本');
+
+  K3.run({
+    no: '第1時', title: '直線や角を、記号を使って表そう', flat: true, hint: '', alt: '直線・線分・半直線の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '第2時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '点 A、B を通る3つの線', q: 'ア〜ウは、どれも点 A、B を通る線である。3つのちがいがわかるように、それぞれの名前と、書き表し方を考えよう。',
+        notes: ['① 自分の考え（3分）　ア〜ウのちがいと、書き表し方を。', '② ペアの考え（3分）　自分とちがう書き表し方・気づき。'],
+        draw: function (D) { threeLines(D); } },
+      { tag: '今日の問い', q: 'ア〜ウは、どこがちがう？ それぞれ、どう書き表す？', a: 'ア 直線 AB、イ 線分 AB、ウ 半直線 AB', sub: 'ア は両方向に限りなくのびる。イ は A から B までの部分。ウ は A から B の方向に限りなくのびる', dur: 6,
+        b: { t: 'ア <b>直線 AB</b>（両方向にのびる）　イ <b>線分 AB</b>（A から B まで）　ウ <b>半直線 AB</b>（A から B の方向にのびる）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 1, g = D.ph ? [CH.smooth(.02, .28, t), CH.smooth(.36, .58, t), CH.smooth(.68, .94, t)] : [1, 1, 1];
+          threeLines(D, g, { flow: D.ph && t >= 1, na: D.ph ? [CH.smooth(.2, .3, t), CH.smooth(.52, .62, t), CH.smooth(.86, .96, t)] : null });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '半直線 AB と半直線 BA は、同じだろうか。線分 AB と線分 BA は、どうだろう。', a: '半直線 AB と BA はちがう。線分 AB と BA は同じ', sub: '半直線は、はしの点と のびる向きで決まる。半直線 AB は A がはしで B の方へ、半直線 BA は B がはしで A の方へ', dur: 5,
+        b: [{ t: '<b>直線</b> … 両方向に限りなくのびる線', col: C.green }, { t: '<b>線分</b> … 直線の一部で、2点を両はしとするもの', col: C.green }, { t: '<b>半直線</b> … 1点をはしとして、1方向にのびるもの（半直線 AB と BA はちがう）', col: C.green }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .03, r: .03, t: .05, b: .05 }), rows = CH.rows(R, 3, .08), k1 = D.ph ? CH.smooth(.02, .35, t) : 0, k2 = D.ph ? CH.smooth(.4, .72, t) : 0, k3 = D.ph ? CH.smooth(.78, .95, t) : 0;
+          var specs = [
+            function (xa, xb, xl, xr) { return [{ x0: xa, x1: CH.lerp(xa, xr, k1), R: k1 > .98, col: C.yel }, '半直線 AB', C.yel, (xb + xr) / 2, k1]; },
+            function (xa, xb, xl, xr) { return [{ x0: CH.lerp(xb, xl, k2), x1: xb, L: k2 > .98, col: C.pink }, '半直線 BA', C.pink, (xl + xa) / 2, k2]; },
+            function (xa, xb) { return [{ x0: xa, x1: CH.lerp(xa, xb, k3), col: C.green }, '線分 AB＝線分 BA', C.green, (xa + xb) / 2, k3]; }
+          ];
+          rows.forEach(function (r, i) {
+            var xa = r.x0 + r.w * .36, xb = r.x0 + r.w * .62, xl = r.x0 + r.w * .03, xr = r.x1 - r.w * .01, sp = specs[i](xa, xb, xl, xr);
+            rowLine(D, r, xa, xb, sp[0], { name: sp[4] > 0 ? sp[1] : (D.ph ? null : sp[1].replace(/＝.*/, '') + ' ？'), na: D.ph ? sp[4] : .8, ncol: D.ph ? sp[2] : C.chalk, nx: sp[3] });
+          });
+        } },
+      { tag: 'ことば', q: '角・垂直・平行は、記号を使って、どう書き表す？', a: '∠ABC、AB⊥CD、AB∥CD', sub: '角は、頂点の文字をまん中に書く（∠CBA と書いてもよい）。⊥ は「垂直」、∥ は「平行」と読む', dur: 4.5,
+        b: [{ t: '<b>∠ABC</b> … 頂点 B を まん中に書く角', col: C.green }, { t: '<b>AB⊥CD</b> … AB と CD は 垂直　　<b>AB∥CD</b> … AB と CD は 平行', col: C.green }],
+        draw: function (D) { symbols(D, D.ph ? D.t : 0, !!D.ph); } },
+      { tag: 'ことば', q: '点 P から直線 ℓ に線をひく。ℓ 上の点 Q をどこにとると、PQ がいちばん短くなるだろう。', a: 'PQ⊥ℓ になる点（垂線 PH）', sub: '点 P から直線 ℓ にひいた垂線 PH の長さを、点 P と直線 ℓ の きょり という', dur: 3,
+        notes: ['スライダーで、ℓ 上の点 Q を動かせます。'],
+        sliders: [{ key: 'q', label: 'Q の位置', min: -6, max: 6, step: .5, val: 4, anim: [4, 0], fmt: function (x) { return CH.mnum(x); } }],
+        b: { t: '点 P から ℓ にひいた <b>垂線</b> PH の長さ … 点 P と直線 ℓ の <b>きょり</b>（いちばん短い）', col: C.green },
+        draw: function (D) {
+          var Pq = Object.assign({ Q: [D.V.q, 0] }, PD), F = GE.fit(D, CH.box(D, { l: .03, r: .03, t: .17, b: .05 }), Pq, { keys: ['P', 'L1', 'L2'], pad: .04, bounds: [[-6.6, -1.2], [6.6, 3.8]] }), on = Math.abs(D.V.q) < 1e-9;
+          full(F, 'L1', 'L2', { w: 2.6 }); lab(F, [6.4, 0], 90, .9, 'ℓ', { size: 1.1 });
+          if (D.ph) { GE.seg(F, 'PH', { col: C.yel, dash: on ? null : [6, 6], w: on ? 4 : 2.2 }); GE.right(F, ['P', 'H', 'L2'], { col: C.yel, fill: on }); }
+          if (!on || !D.ph) GE.seg(F, 'PQ', { col: C.blue, w: 3 });
+          dots(F, D.ph ? 'PQH' : 'PQ'); nm(F, { P: 90, Q: 270 }); if (D.ph && !on) nm(F, { H: 270 }, { c: C.yel });
+          topRich(D, [['PQ＝' + f1(GE.len(Pq, 'PQ')), C.blue], D.ph ? ['　　PH＝3.0（いちばん短い）　PH⊥ℓ', C.yel] : null]);
+        } },
+      { tag: '例題', bh: '例題　長方形 ABCD と対角線 AC', q: '長方形 ABCD に、対角線 AC をひいた。（1）∠a を、A、B、C を使って表そう。（2）辺 AB と辺 BC、（3）辺 AB と辺 DC の関係を、記号で表そう。', a: '（1）∠BAC　（2）AB⊥BC　（3）AB∥DC', sub: '（1）は ∠CAB と書いてもよい。頂点 A を まん中に書く', dur: 6,
+        b: { t: '（1）∠a＝<b>∠BAC</b>　（2）<b>AB⊥BC</b>　（3）<b>AB∥DC</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, k1 = D.ph ? CH.smooth(.02, .2, t) : 0, k2 = D.ph ? CH.smooth(.36, .54, t) : 0, k3 = D.ph ? CH.smooth(.7, .88, t) : 0;
+          var m = rect4(D, { aCol: k1 > 0 ? C.yel : C.chalk, aFill: k1 * .4, noRight: true }), F = m.F;
+          if (k1 > 0) { GE.seg(F, 'AB', { col: C.yel, w: 4, a: k1 * (1 - k2) }); GE.seg(F, 'AC', { col: C.yel, w: 4, a: k1 * (1 - k2) }); }
+          if (k2 > 0) { GE.seg(F, 'AB', { col: C.pink, w: 5, a: k2 * (1 - k3), glow: true }); GE.seg(F, 'BC', { col: C.pink, w: 5, a: k2 * (1 - k3), glow: true }); }
+          GE.right(F, 'ABC', { col: k2 > 0 ? C.pink : C.chalk, fill: k2 > 0 });
+          if (k3 > 0) { GE.seg(F, 'AB', { col: C.green, w: 5, a: k3, glow: true }); GE.seg(F, 'DC', { col: C.green, w: 5, a: k3, glow: true }); GE.par(F, 'BA', 1, { col: C.green, a: k3 }); GE.par(F, 'CD', 1, { col: C.green, a: k3 }); }
+          dots(F, 'ABCD');
+          say(D, m.L.side, [{ t: '（1）∠a＝∠BAC', col: C.yel, a: k1 }, { t: '（2）AB⊥BC', col: C.pink, a: k2 }, { t: '（3）AB∥DC', col: C.green, a: k3 }].filter(function (r) { return r.a > 0; }));
+        } },
+      { tag: '例題', q: '（4）点 A と辺 BC のきょりは、何 cm だろう。線分 AC の長さではないのは、なぜだろう。', a: '3cm（AB の長さ）', sub: 'きょりは、点から直線にひいた垂線の長さ。AB⊥BC だから AB がきょり。AC（約 5.8cm）は、それより長い', dur: 5,
+        b: { t: '（4）点 A と辺 BC のきょり … 垂線 AB の長さ <b>3cm</b>（AC ではない）', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, k = D.ph ? CH.ease(CH.smooth(.05, .75, t)) : 0, m = rect4(D, { acA: D.ph ? .5 : 1 }), F = m.F, Q = [5 * (1 - k), 0], P = Object.assign({ Q: Q }, PR4);
+          if (D.ph && k < 1) { GE.seg(F, [PR4.A, Q], { col: C.blue, w: 3.4 }); GE.dot(F, Q, { col: C.blue, r: F.s * .22 }); }
+          if (D.ph && t > .75) GE.seg(F, 'AB', { col: C.yel, w: 5, glow: true, a: CH.smooth(.75, .9, t) });
+          if (!D.ph) GE.seg(F, 'AC', { col: C.blue, w: 3.4 });
+          say(D, m.L.side, [{ t: 'AC＝約 5.8cm', col: C.blue, a: D.ph ? .6 : 1 }, D.ph && k > 0 && k < 1 ? { t: 'AQ＝' + f1(GE.len(P, 'AQ')) + 'cm', col: C.blue } : null, D.ph && t > .75 ? { t: 'AB＝3cm ← いちばん短い', col: C.yel, a: CH.smooth(.75, .9, t) } : null, D.ph && t > .75 ? { t: 'AB⊥BC（垂線）', col: C.yel, a: CH.smooth(.8, .95, t) } : null]);
+        } },
+      { tag: '考えよう', q: '直線 ℓ と m は平行である。ℓ 上のいろいろな点から m に垂線をひくと、その長さは、どうなるだろう。なぜ、そうなるのだろう。',
+        notes: ['ℓ 上の点 P から m にひいた垂線 PH の長さを、いろいろな P で くらべよう。', 'なぜそうなるのか、図に線をかき入れて説明しよう。', 'スライダーで、P の位置と、2直線の向きを変えられます。'],
+        sliders: [{ key: 'x', label: 'P の位置', min: -4, max: 4, step: .5, val: -2, fmt: function (x) { return CH.mnum(x); } }, { key: 'th', label: '2直線の向き', min: -30, max: 30, step: 5, val: 0, fmt: function (x) { return CH.mnum(x) + '°'; } }],
+        draw: function (D) {
+          var Q = parLines(D.V.th), p = GE.add(Q.l0, [Q.u[0] * D.V.x, Q.u[1] * D.V.x]), h = GE.foot(p, Q.m0, GE.add(Q.m0, Q.u));
+          var P = { P: p, H: h, l0: Q.l0, l1: GE.add(Q.l0, Q.u), m0: Q.m0, m1: GE.add(Q.m0, Q.u) }, F = GE.fit(D, CH.box(D, { l: .03, r: .03, t: .14, b: .05 }), P, { keys: ['l0', 'm0'], pad: 0, bounds: [[-6.4, -3.3], [6.4, 3.3]] });
+          full(F, 'l0', 'l1', { w: 2.6 }); full(F, 'm0', 'm1', { w: 2.6 });
+          lab(F, GE.add(Q.l0, [Q.u[0] * 5.6, Q.u[1] * 5.6]), 90 + D.V.th, .9, 'ℓ', { size: 1.1 }); lab(F, GE.add(Q.m0, [Q.u[0] * 5.6, Q.u[1] * 5.6]), 90 + D.V.th, .9, 'm', { size: 1.1 });
+          GE.seg(F, 'PH', { col: C.yel, w: 3.4 }); GE.right(F, ['P', 'H', 'm1'], { col: C.yel });
+          dots(F, 'PH'); nm(F, { P: 90 + D.V.th, H: 270 + D.V.th });
+          topRich(D, [['PH＝' + f1(GE.len(P, 'PH')), C.yel]]);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'どの3点も一直線上にない 5つの点 A、B、C、D、E がある。① 2点を結ぶ線分は、全部で何本ひけるだろう。② 一方の点から、もう一方の点の方向にのびる半直線は、全部で何本？（半直線 AB と BA は別のもの）',
+        notes: ['ヒント① 線分 AB と線分 BA は、同じかな。半直線 AB と半直線 BA は、どうかな。', 'ヒント② 点 A を はしの点にする半直線は、何本あるかな。'],
+        a: '① 10本　② 20本', sub: '① 2点の組は 5×4÷2＝10。② どの点からも、ほかの 4点の方向に 4本ずつ → 5×4＝20', dur: 8,
+        b: { t: '① 線分 5×4÷2＝<b>10本</b>　② 半直線 5×4＝<b>20本</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, L = lay(D, .34), F = GE.fit(D, L.fig, P5, { pad: .5 }), ns = D.ph ? Math.min(10, Math.floor(CH.smooth(0, .44, t) * 10.999)) : 0;
+          var pi = D.ph && t > .5 ? Math.min(4, Math.floor((t - .5) / .1)) : -1;
+          if (pi >= 0) { var v = 'ABCDE'[pi]; RAYS.filter(function (r) { return r[0] === v; }).forEach(function (r) { ray(F, r[0], r[1], { col: C.pink, w: 2.4 }); }); }
+          SEGS.slice(0, ns).forEach(function (s, i) { GE.seg(F, s, { col: i === ns - 1 && t < .46 ? C.yel : 'rgba(255,226,122,.75)', w: i === ns - 1 && t < .46 ? 4 : 2.6, a: pi >= 0 ? .35 : 1 }); });
+          dots(F, 'ABCDE', { r: F.s * .2 }); nm(F, { A: 90, B: 18, C: -40, D: 234, E: 162 }, { col: pi >= 0 ? (function () { var c = {}; c['ABCDE'[pi]] = C.pink; return c; })() : null });
+          say(D, L.side, [D.ph ? { t: '線分 … ' + ns + '本', col: C.yel } : null, pi >= 0 ? { t: '半直線 … ' + 'ABCDE'[pi] + ' から 4本', col: C.pink } : null, pi >= 0 ? { t: '4×' + (pi + 1) + '＝' + 4 * (pi + 1) + '本', col: C.pink } : null]);
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

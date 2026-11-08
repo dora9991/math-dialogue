@@ -153,6 +153,17 @@
     return out;
   }
 
+  /* いくつかの段階を、順に動かす（1回に1つずつ動かすと、カードが重ならない）。Ls：[A, M, B, …]、ts：[[t0, t1], …] 段階のあいだの動きの時。
+     大きさと '＝' の位置は、すべての段階で同じ */
+  function seq(D, R, y, Ls, ts, k, o) {
+    o = o || {}; var h = o.h || CH.fs(D, 2.3);
+    function sp(hh) { var mn = 1e9, mx = -1e9; Ls.forEach(function (L) { var p = place(D, L, hh, 0); mn = Math.min(mn, p.x0); mx = Math.max(mx, p.x1); }); return [mn, mx]; }
+    var s = sp(h); if (s[1] - s[0] > R.w) { h *= R.w / (s[1] - s[0]); s = sp(h); }
+    var oo = ext(ext({}, o), { h: h, eqX: R.cx - (s[0] + s[1]) / 2 });
+    for (var i = 0; i < ts.length; i++) { if (k < ts[i][0]) return morph(D, R, y, Ls[i], null, 0, oo); if (k <= ts[i][1]) return morph(D, R, y, Ls[i], Ls[i + 1], (k - ts[i][0]) / (ts[i][1] - ts[i][0]), oo); }
+    return morph(D, R, y, Ls[Ls.length - 1], null, 0, oo);
+  }
+
   /* ---- 式の行（板書の形。'＝' をそろえる） ----
      L：[{s, lab, col, lc, hc, txt}]（txt：'＝' でそろえない字の行。s の {…} は hc の色）。t：0〜1 で、行が順に出る。o：at（各行の出る時）、size、align、top、mark {行: ['×', 色]} */
   function eqs(D, R, L, t, o) {
@@ -188,7 +199,7 @@
   var LM = ['3x−4＝x＋10', '3x−x＝10＋4', '2x＝14', 'x＝7'];
   CH.check(same(LM, 7) && !near(root('3x＋x＝10−4'), 7), '例題（まちがい探し）');
   var TE = [['ア', 'x|＋3|＝|10', 'x＋3＝10', '＋3'], ['イ', 'x|×3|＝|15', '3x＝15', '×3'], ['ウ', 'x|÷3|＝|2', '[x/3]＝2', '÷3']];
-  CH.check(TE.map(function (e) { return root(e[2]); }).join() === '7,5,6', '考えよう（ここで確かめるだけ）');
+  CH.check([7, 5, 6].every(function (r, i) { return near(root(TE[i][2]), r); }), '考えよう（ここで確かめるだけ）');
   var LC1 = ['x＋4＝−2', 'x＝−6'], LC2 = ['2x−a＝5x＋6', '2×(−6)−a＝5×(−6)＋6', '−12−a＝−24', '−a＝−12', 'a＝12'];
   CH.check(same(LC1, -6) && same(LC2, 12, -6, true) && val('2x−a', -6, 12) === val('5x＋6', -6, 12), 'チャレンジ（a＝12）');
 
@@ -208,7 +219,7 @@
     if (!D.ph) {
       TX(D, top.x0, top.y0 + s * .6, 'Bさんの解き方', { size: s * .9, align: 'left', col: 'rgba(242,240,230,.75)' });
       var E = eqs(D, CH.rect(top.x0, top.y0 + s * 1.4, top.x1, top.y1), [{ s: '2x{＋3}＝13', hc: C.pink }, { s: '2x＝13{−3}', hc: C.pink }, { s: '2x＝10' }, { s: 'x＝5' }], 1, { size: s * 1.5 });
-      TX(D, E.ex + E.w * .5, (E.ys[0] + E.ys[1]) / 2, '？', { size: s * 2, col: C.pink });
+      TX(D, E.x0 + E.w + s * 1.6, (E.ys[0] + E.ys[1]) / 2, '？', { size: s * 2, col: C.pink });
       morph(D, bot, bot.cy, mk('2x|＋3|＝|13', ['a', 'b', '=', 'c']), null, 0, {});
       return;
     }
@@ -222,8 +233,8 @@
   /* ---- ことば：3x−4＝x＋6 の移項 ---- */
   function iko(D, k) {
     var R = CH.box(D, { l: .04, r: .04, t: .06, b: .04 }), s = CH.fs(D), y = R.y0 + R.h * .3;
-    var A = mk('3x|−4|＝|x|＋6', ['a', 'b', '=', 'c', 'd']), B = mk('3x|−x|＝|6|＋4', ['a', 'c', '=', 'd', 'b'], { b: { jump: true, at: [.05, .4] }, c: { jump: true, at: [.45, .8] }, d: { at: [.45, .8] } });
-    var P = morph(D, R, y, A, B, D.ph ? k : 0, {});
+    var A = mk('3x|−4|＝|x|＋6', ['a', 'b', '=', 'c', 'd']), M = mk('3x|＝|x|＋6|＋4', ['a', '=', 'c', 'd', 'b'], { b: { jump: true } }), B = mk('3x|−x|＝|6|＋4', ['a', 'c', '=', 'd', 'b'], { c: { jump: true }, d: { flip: false } });
+    var P = seq(D, R, y, [A, M, B], [[.05, .38], [.47, .8]], D.ph ? k : 0, {});
     var a1 = D.ph ? CH.smooth(.02, .1, k) * (1 - CH.smooth(.35, .45, k)) : 0, a2 = D.ph ? CH.smooth(.42, .5, k) * (1 - CH.smooth(.78, .88, k)) : 0;
     if (a1 > 0) TX(D, R.cx, y - P.h * 2.3, '−4 → 右辺へ移すと ＋4', { size: fit(D, '−4 → 右辺へ移すと ＋4', R.w, s * 1.05), col: C.pink, a: a1 });
     if (a2 > 0) TX(D, R.cx, y - P.h * 2.3, '＋x → 左辺へ移すと −x', { size: fit(D, '＋x → 左辺へ移すと −x', R.w, s * 1.05), col: C.pink, a: a2 });
@@ -235,8 +246,8 @@
   /* ---- 例題：5x＋3＝2x−9 ---- */
   function ex1(D, k) {
     var R = CH.box(D, { l: .04, r: .04, t: .1, b: .04 }), s = CH.fs(D), y = R.y0 + R.h * .14;
-    var A = mk('5x|＋3|＝|2x|−9', ['a', 'b', '=', 'c', 'd']), B = mk('5x|−2x|＝|−9|−3', ['a', 'c', '=', 'd', 'b'], { b: { jump: true, at: [.02, .2] }, c: { jump: true, at: [.24, .42] }, d: { at: [.24, .42] } });
-    var P = morph(D, R, y, A, B, D.ph ? k : 0, {});
+    var A = mk('5x|＋3|＝|2x|−9', ['a', 'b', '=', 'c', 'd']), M = mk('5x|＝|2x|−9|−3', ['a', '=', 'c', 'd', 'b'], { b: { jump: true } }), B = mk('5x|−2x|＝|−9|−3', ['a', 'c', '=', 'd', 'b'], { c: { jump: true } });
+    var P = seq(D, R, y, [A, M, B], [[.02, .2], [.25, .43]], D.ph ? k : 0, {});
     eqs(D, CH.rect(R.x0, y + P.h * .9, R.x1, R.y1 - s * 2.6), [{ s: '5x−2x＝−9−3', lab: '移項' }, { s: '3x＝−12', lab: 'まとめる' }, { s: 'x＝−4', lab: '係数 3 でわる', col: C.yel }], D.ph ? k : 0, { size: s * 1.4, at: [.6, .75], a: D.ph ? CH.smooth(.44, .5, k) : 0 });
     var ck = '確かめ　左辺 5×(−4)＋3＝−17、右辺 2×(−4)−9＝−17';
     if (D.ph) TX(D, R.cx, R.y1 - s * 1, ck, { size: fit(D, ck, R.w, s), col: C.green, a: CH.smooth(.88, .97, k) });
@@ -247,8 +258,8 @@
     var R = CH.box(D, { l: .04, r: .04, t: .05, b: .05 }), s = CH.fs(D), top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .42), m = D.ph ? CH.smooth(.06, .2, k) : 0;
     eqs(D, top, [{ s: '3x−4＝x＋10' }, { s: '3x{＋x}＝10{−4}', hc: C.pink }], 1, { size: s * 1.5, mark: m > 0 ? { 1: ['×', C.pink, m] } : null });
     if (!D.ph) return;
-    var y = R.y0 + R.h * .58, A = mk('3x|−4|＝|x|＋10', ['a', 'b', '=', 'c', 'd']), B = mk('3x|−x|＝|10|＋4', ['a', 'c', '=', 'd', 'b'], { b: { jump: true, at: [.22, .42] }, c: { jump: true, at: [.44, .64] }, d: { at: [.44, .64] } });
-    var P = morph(D, R, y, A, B, k, {});
+    var y = R.y0 + R.h * .58, A = mk('3x|−4|＝|x|＋10', ['a', 'b', '=', 'c', 'd']), M = mk('3x|＝|x|＋10|＋4', ['a', '=', 'c', 'd', 'b'], { b: { jump: true } }), B = mk('3x|−x|＝|10|＋4', ['a', 'c', '=', 'd', 'b'], { c: { jump: true }, d: { flip: false } });
+    var P = seq(D, R, y, [A, M, B], [[.22, .42], [.46, .66]], k, {});
     TX(D, R.cx, y - P.h * 1.9, '符号を変えて移す', { size: s, col: C.yel, a: CH.smooth(.2, .28, k) });
     eqs(D, CH.rect(R.x0, y + P.h * .8, R.x1, R.y1), [{ s: '2x＝14' }, { s: 'x＝7', col: C.yel }], k, { size: s * 1.3, at: [.85], a: CH.smooth(.7, .78, k) });
   }

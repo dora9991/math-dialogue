@@ -153,6 +153,17 @@
     return out;
   }
 
+  /* いくつかの段階を、順に動かす（1回に1つずつ動かすと、カードが重ならない）。Ls：[A, M, B, …]、ts：[[t0, t1], …] 段階のあいだの動きの時。
+     大きさと '＝' の位置は、すべての段階で同じ */
+  function seq(D, R, y, Ls, ts, k, o) {
+    o = o || {}; var h = o.h || CH.fs(D, 2.3);
+    function sp(hh) { var mn = 1e9, mx = -1e9; Ls.forEach(function (L) { var p = place(D, L, hh, 0); mn = Math.min(mn, p.x0); mx = Math.max(mx, p.x1); }); return [mn, mx]; }
+    var s = sp(h); if (s[1] - s[0] > R.w) { h *= R.w / (s[1] - s[0]); s = sp(h); }
+    var oo = ext(ext({}, o), { h: h, eqX: R.cx - (s[0] + s[1]) / 2 });
+    for (var i = 0; i < ts.length; i++) { if (k < ts[i][0]) return morph(D, R, y, Ls[i], null, 0, oo); if (k <= ts[i][1]) return morph(D, R, y, Ls[i], Ls[i + 1], (k - ts[i][0]) / (ts[i][1] - ts[i][0]), oo); }
+    return morph(D, R, y, Ls[Ls.length - 1], null, 0, oo);
+  }
+
   /* ---- 式の行（板書の形。'＝' をそろえる） ----
      L：[{s, lab, col, lc, hc, txt}]（txt：'＝' でそろえない字の行。s の {…} は hc の色）。t：0〜1 で、行が順に出る。o：at（各行の出る時）、size、align、top、mark {行: ['×', 色]} */
   function eqs(D, R, L, t, o) {
@@ -185,7 +196,7 @@
   CH.check(EX.join() === '1,4,7,10,13' && [1, 2, 3, 4, 5].filter(function (x) { return val('3x−2', x) === 10; }).join() === '4', '例題（解は 4）');
   CH.check(val('5x−3', 4) === 17 && val('2x＋9', 4) === 17, '例題（x＝4 は解）');
   var TE = [['ア', '3x＋4＝19'], ['イ', '2x−5＝9'], ['ウ', '6x＋1＝25']];
-  CH.check(TE.map(function (e) { return root(e[1]); }).join() === '5,7,4', '考えよう（ここで確かめるだけ）');
+  CH.check([5, 7, 4].every(function (r, i) { return near(root(TE[i][1]), r); }), '考えよう（ここで確かめるだけ）');
   var CA = ['2x＋a＝10', '2×3＋a＝10', '6＋a＝10', 'a＝4'], CB = ['3x−a＝5', '3×3−a＝5', '9−a＝5', 'a＝4'];
   CH.check(same(CA, 4, 3, true) && same(CB, 4, 3, true) && val('2x＋a', 3, 4) === 10 && val('3x−a', 3, 4) === 5, 'チャレンジ（a＝4）');
 

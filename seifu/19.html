@@ -162,6 +162,7 @@
           TX(D, x, y, '12＝', { size: z * 1.1, align: 'left' });
           var x1 = x + TX(D, 0, 0, '12＝', { size: z * 1.1, measure: true }).w + z * .55;
           [2, 2, 3].forEach(function (p, k) { pcard(D, x1 + k * z * 2.4, y, z * 1.1, p, a1); if (k < 2) CH.text(D, x1 + k * z * 2.4 + z * 1.2, y, '×', { size: z, a: a1 }); });
+          if (!D.ph) TX(D, x1, y, '？', { size: z * 1.1, align: 'left', a: .5 });
           TX(D, x1 + 2 * z * 2.4 + z * 1.1, y, '＝2^2×3', { size: z * 1.1, align: 'left', col: C.yel, a: a2 });
           CH.text(D, R.cx, y + z * 1.7, '1 は約数が1個なので、素数にふくめない', { size: Math.min(s * .9, CH.fitSize(D, '1 は約数が1個なので、素数にふくめない', R.w * .9, s * .9)), col: C.orange, a: CH.smooth(.8, .95, t) });
         } },

@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>「追いつく」「出会う」の問題</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 方程式 第9時：「追いつく」「出会う」の問題を、図に整理して解こう（ikkan の lesson_hotei_09 と同じ流れ）。
+   追いつく問い：道の上を、弟（分速 60m）と、14分おくれて出た兄（分速 200m）が動く（時間のスライダー）。下の線分図で、2人の道のりが等しくなる。
+   解くところでは、道のりと時間のグラフ（2本の線が 弟の出発から 20分・1200m で交わる）。ことばは、道のり＝速さ×時間と、追いつく・出会う の線分図。
+   例題は、1周 1350m の池を反対向きに歩く2人（円の上の弧と、まっすぐにのばした線分図。9分後・A は 720m で出会う）。
+   考えようは、妹（分速 50m）と 8分おくれた姉（分速 130m）。駅がア 520m・イ 780m のとき、追いつけるか（道とグラフ。答えは出さない）。
+   チャレンジは、A町〜C町 16km（自転車 時速 12km・歩き 時速 4km・1時間40分 → 14km）。
+   数値は ikkan のまま。答えはページの中で計算し直している（CH.check）。 */
+(function () {
+  /* ======== 式を描く道具（文字と式の黒板 moji/ と同じ） ======== */
+  var C = CH.C, S = CH.mnum, FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', OUT = 'rgba(20,40,30,.9)';
+  var NUM = '"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif', OPS = '×÷';  /* × と ÷ は、文字の x とまぎれないよう、ゴシックの字で */
+  var CC = { y: C.yel, p: C.pink, b: C.blue, g: C.green, o: C.orange, l: C.lav, w: C.chalk };
+  function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function mix(c1, c2, t) {
+    if (c1 === c2 || t <= 0) return c1; if (t >= 1) return c2; if (c1.charAt(0) !== '#' || c2.charAt(0) !== '#') return t < .5 ? c1 : c2;
+    var a = parseInt(c1.slice(1), 16), b = parseInt(c2.slice(1), 16);
+    return 'rgb(' + [16, 8, 0].map(function (s) { return Math.round(CH.lerp(a >> s & 255, b >> s & 255, t)); }).join(',') + ')';
+  }
+  /* 図の中の式。書き方：[分子/分母]（たての分数）・^2（指数）・{y|…}（色のまとまり。y 黄・p ピンク・b 青・g 緑・o だいだい・l むらさき・w 白）。
+     1字ずつ「字#何こめ」の名前がつく（MORPH で、同じ名前の字が動いて移る）。返すもの：w（幅）・items（字）・top・bot */
+  function lay(D, str, size) {
+    var g = D.ctx, cnt = {}, sn = 0;
+    function nid(t) { cnt[t] = (cnt[t] || 0) + 1; return t + '#' + cnt[t]; }
+    function close(src, i, op, cl) { var d = 0; for (var j = i; j < src.length; j++) { if (src[j] === op) d++; else if (src[j] === cl) { d--; if (d === 0) return j; } } return src.length; }
+    function run(src, s, col) {
+      var items = [], x = 0, i = 0, top = s * .55, bot = s * .55;
+      function add(R, dx, dy) { R.items.forEach(function (it) { it.x += dx; it.y += dy; items.push(it); }); }
+      while (i < src.length) {
+        var ch = src[i];
+        if (ch === '[') {
+          var j = close(src, i, '[', ']'), inner = src.slice(i + 1, j), d = 0, sl = -1;
+          for (var q = 0; q < inner.length; q++) { var c2 = inner[q]; if (c2 === '[' || c2 === '{') d++; else if (c2 === ']' || c2 === '}') d--; else if (c2 === '/' && d === 0) { sl = q; break; } }
+          var N = run(inner.slice(0, sl), s * .8, col), M = run(inner.slice(sl + 1), s * .8, col), fw = Math.max(N.w, M.w) + s * .34, gp = s * .1;
+          add(N, x + (fw - N.w) / 2, -gp - N.bot); add(M, x + (fw - M.w) / 2, gp + M.top);
+          items.push({ id: nid('bar'), bar: fw - s * .14, x: x + fw / 2, y: 0, s: s, col: col });
+          top = Math.max(top, gp + N.bot + N.top); bot = Math.max(bot, gp + M.top + M.bot); x += fw; i = j + 1; continue;
+        }
+        if (ch === '^') {
+          var k = i + 1; while (k < src.length && /[0-9]/.test(src[k])) k++;
+          var E = run(src.slice(i + 1, k), s * .6, col); add(E, x + s * .02, -s * .4); x += E.w + s * .06; top = Math.max(top, s * .4 + E.top); i = k; continue;
+        }
+        if (ch === '{' && src[i + 2] === '|') {
+          var j2 = close(src, i, '{', '}'), cc = CC[src[i + 1]] || col, G = run(src.slice(i + 3, j2), s, cc);
+          add(G, x, 0); items.push({ span: sn++, x: x + G.w / 2, w: G.w, y: 0, top: G.top, bot: G.bot, s: s, col: cc });
+          top = Math.max(top, G.top); bot = Math.max(bot, G.bot); x += G.w; i = j2 + 1; continue;
+        }
+        var op = OPS.indexOf(ch) >= 0; g.font = (op ? '400 ' : '600 ') + s + 'px ' + (op ? NUM : FONT); var w = g.measureText(ch).width * (op ? 1.08 : 1);
+        items.push({ id: nid(ch), t: ch, x: x + w / 2, y: 0, s: s, col: col, op: op }); x += w; i++;
+      }
+      return { w: x, items: items, top: top, bot: bot };
+    }
+    g.save(); var R = run(String(str), size, C.chalk); g.restore(); return R;
+  }
+  /* 置く。al：'left'・'right'（なければまん中）。spans は {…} のまとまりの四角 */
+  function put(L, cx, cy, al) {
+    var x0 = al === 'left' ? cx : al === 'right' ? cx - L.w : cx - L.w / 2, P = { w: L.w, x0: x0, x1: x0 + L.w, y0: cy - L.top, y1: cy + L.bot, items: [], spans: [], at: {} };
+    L.items.forEach(function (it) {
+      var q = {}; for (var k in it) q[k] = it[k]; q.x = it.x + x0; q.y = it.y + cy;
+      if (it.span != null) P.spans[it.span] = { x0: q.x - it.w / 2, x1: q.x + it.w / 2, cx: q.x, y0: q.y - it.top, y1: q.y + it.bot, col: it.col };
+      else { P.items.push(q); P.at[q.id] = q; }
+    });
+    return P;
+  }
+  function drawIt(D, it, a, col) {
+    if (a <= .004) return; col = col || it.col;
+    if (it.bar) CH.line(D, it.x - it.bar / 2, it.y, it.x + it.bar / 2, it.y, { col: col, w: Math.max(1.6, it.s * .075), a: a });
+    else if (it.t !== ' ' && it.t !== '　') CH.text(D, it.x, it.y, it.t, { size: it.s, col: col, a: a, num: it.op, w: it.op ? 400 : 600 });
+  }
+  /* 式を描く。o：align、a、col（白い字の色をかえる） */
+  function EQ(D, cx, cy, str, size, o) {
+    o = o || {}; var P = put(lay(D, str, size), cx, cy, o.align), al = o.a == null ? 1 : o.a;
+    P.items.forEach(function (it) { drawIt(D, it, al, o.col && it.col === C.chalk ? o.col : null); });
+    return P;
+  }
+  function eqW(D, str, size) { return lay(D, str, size).w; }
+  function fitEq(D, str, maxW, size) { var w = eqW(D, str, size); return w > maxW ? size * maxW / w : size; }
+  /* 式 A が 式 B に変わる（k：0→1）。同じ名前の字は動き、なくなる字は消え、新しい字は出てくる。o.map：{A の名前: B の名前}（ちがう字に移る・重なる） */
+  function MORPH(D, cx, cy, A, B, k, size, o) {
+    o = o || {}; var PA = put(lay(D, A, size), cx, cy, o.align), PB = put(lay(D, B, size), cx, cy, o.align), map = o.map || {}, src = {}, al = o.a == null ? 1 : o.a;
+    var kOut = 1 - CH.smooth(0, .4, k), kMv = CH.ease(CH.clamp((k - .2) / .6, 0, 1)), kIn = CH.smooth(.6, 1, k);
+    PA.items.forEach(function (a) { var b = PB.at[map[a.id] || a.id]; if (b) { a.to = b; (src[b.id] = src[b.id] || []).push(a); } });
+    function same(a, b) { return a.t === b.t && !a.bar === !b.bar; }
+    function mid(a, b, e) { return { x: CH.lerp(a.x, b.x, e), y: CH.lerp(a.y, b.y, e), s: CH.lerp(a.s, b.s, e), t: a.t, op: a.op, bar: a.bar && b.bar ? CH.lerp(a.bar, b.bar, e) : a.bar, col: mix(a.col, b.col, e) }; }
+    PA.items.forEach(function (a) {
+      var b = a.to; if (!b) { drawIt(D, a, al * kOut); return; }
+      var m = mid(a, b, kMv); drawIt(D, m, src[b.id].length === 1 && same(a, b) ? al : al * (1 - kMv));
+    });
+    PB.items.forEach(function (b) {
+      var s = src[b.id]; if (!s) { drawIt(D, b, al * kIn); return; }
+      if (s.length === 1 && same(s[0], b)) return;
+      var m = mid(s[0], b, kMv); m.t = b.t; m.op = b.op; m.bar = b.bar ? (s[0].bar ? m.bar : b.bar * kMv) : null; drawIt(D, m, al * kMv);
+    });
+    return { A: PA, B: PB, P: k < .5 ? PA : PB, kMv: kMv };
+  }
+  /* 式が、list の順に変わっていく（k：0→1）。o：maps（変わるごとの map）、hold（とまっている割合）、maxW（入る幅） */
+  function CHAIN(D, cx, cy, list, k, size, o) {
+    o = o || {}; var n = list.length - 1;
+    if (o.maxW) list.forEach(function (s) { size = Math.min(size, fitEq(D, s, o.maxW, size)); });
+    if (n < 1) return { seg: 0, loc: 1, size: size, P: EQ(D, cx, cy, list[0], size, o) };
+    var kk = CH.clamp(k, 0, 1) * n, seg = Math.min(n - 1, Math.floor(kk)), loc = CH.clamp((kk - seg) / (1 - (o.hold == null ? .3 : o.hold)), 0, 1);
+    var r = MORPH(D, cx, cy, list[seg], list[seg + 1], loc, size, { map: (o.maps || [])[seg], align: o.align, a: o.a });
+    r.seg = seg; r.loc = loc; r.size = size; return r;
+  }
+  /* 右の板書・問い（HTML）：[1/2] はたての分数、^2 は上つき、{y|…} は色 */
+  function H(s) { return CH.fr(String(s)).replace(/\^(\d+)/g, '<sup>$1</sup>').replace(/\{([ypbgolw])\|([^{}]*)\}/g, function (m, c, t) { return '<span style="color:' + CC[c] + '">' + t + '</span>'; }).replace(/[×÷]/g, '<span style="font-family:' + NUM.replace(/"/g, "'") + ';font-weight:400">$&</span>'); }
+  /* 表のマスに入る字の大きさ（num：ゴシックの字） */
+  function cellSize(D, R, fw, nC, texts, base) { var cw = (R.w - R.w * fw) / (nC - 1), z = base; texts.forEach(function (t) { z = Math.min(z, CH.fitSize(D, t, cw * .86, base, { num: true })); }); return z; }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = H(s[k]); }); if (s.notes) s.notes = s.notes.map(H); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = H(b.t); }); }); return st; }
+  /* 角の丸い四角（カード・わく） */
+  function rbox(D, x0, y0, x1, y1, col, a, o) {
+    o = o || {}; var g = D.ctx, r = Math.min(o.r || 10, (y1 - y0) * .3, (x1 - x0) * .3); if (a <= 0) return;
+    g.save(); g.globalAlpha = D.ga * a; g.beginPath(); g.moveTo(x0 + r, y0); g.arcTo(x1, y0, x1, y1, r); g.arcTo(x1, y1, x0, y1, r); g.arcTo(x0, y1, x0, y0, r); g.arcTo(x0, y0, x1, y0, r); g.closePath();
+    g.fillStyle = o.fill || hexA(col, o.fa == null ? .14 : o.fa); g.fill(); g.strokeStyle = col; g.lineWidth = o.w || 2.2; if (o.dash) g.setLineDash([7, 5]); g.stroke(); g.restore();
+  }
+  /* 横のかっこ（下向き。up で上向き）。h：ふくらみ */
+  function brace(D, x0, x1, y, col, a, up, h) {
+    if (a <= 0 || x1 - x0 < 4) return; var g = D.ctx, hh = (h || Math.min(12, (x1 - x0) * .25)) * (up ? -1 : 1), m = (x0 + x1) / 2, r = Math.min(Math.abs(hh), (x1 - x0) / 4);
+    g.save(); g.globalAlpha = D.ga * a; g.strokeStyle = col; g.lineWidth = 2; g.lineCap = 'round'; g.beginPath();
+    g.moveTo(x0, y); g.quadraticCurveTo(x0, y + hh / 2, x0 + r, y + hh / 2); g.lineTo(m - r, y + hh / 2); g.quadraticCurveTo(m, y + hh / 2, m, y + hh);
+    g.quadraticCurveTo(m, y + hh / 2, m + r, y + hh / 2); g.lineTo(x1 - r, y + hh / 2); g.quadraticCurveTo(x1, y + hh / 2, x1, y); g.stroke(); g.restore();
+  }
+  /* 字の札（きまりの名前など）。返すもの：幅 */
+  function chip(D, x, y, txt, col, a, size, al) {
+    var s = size || CH.fs(D, .8), g = D.ctx; g.save(); g.font = '600 ' + s + 'px ' + FONT; var w = g.measureText(txt).width + s * 1.1; g.restore();
+    var x0 = al === 'left' ? x : al === 'right' ? x - w : x - w / 2;
+    rbox(D, x0, y - s * .8, x0 + w, y + s * .8, col, a, { r: s * .8, w: 1.8, fa: .18 }); CH.text(D, x0 + w / 2, y + 1, txt, { size: s, col: col, a: a });
+    return w;
+  }
+  /* まがった矢印（上にふくらむ。down で下） */
+  function arcArrow(D, x0, y0, x1, y1, col, a, h, down) {
+    if (a <= 0) return; var g = D.ctx, mx = (x0 + x1) / 2, my = Math.min(y0, y1) + (down ? h : -h);
+    g.save(); g.globalAlpha = D.ga * a; g.strokeStyle = col; g.lineWidth = 2.2; g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(mx, my, x1, y1); g.stroke(); g.restore();
+    var ang = Math.atan2(y1 - my, x1 - mx); CH.arrow(D, x1 - Math.cos(ang) * 8, y1 - Math.sin(ang) * 8, x1, y1, { col: col, a: a, head: 9, w: 2.2 });
+  }
+  function wide(R) { return R.w > R.h * 1.15; }
+  /* ---- 方程式の黒板（第8〜14時）で使う道具 ---- */
+  function root(f) { return -f(0) / (f(1) - f(0)); }            /* 1次式 f(x)＝0 の解（x＝0 と x＝1 の値から） */
+  function near(a, b) { return Math.abs(a - b) < 1e-9; }
+  function same2(f, g, x) { return near(f(x), g(x)); }            /* x を入れると、左辺と右辺が等しいか */
+  function BOX(D, o) { return CH.box(D, Object.assign({ l: .04, r: .04, t: .03, b: .04 }, o || {})); }
+  /* 字（幅 maxW に入るまで小さくする）。返すもの：使った大きさ */
+  function say(D, x, y, txt, o) {
+    o = o || {}; var s = o.size || CH.fs(D); if (o.maxW) s = CH.fitSize(D, txt, o.maxW, s, o);
+    var q = {}; for (var k in o) q[k] = o[k]; q.size = s; CH.text(D, x, y, txt, q); return s;
+  }
+  /* 式を、幅 maxW に入る大きさで（大きさ size が上限） */
+  function EQF(D, cx, cy, str, size, maxW, o) { return EQ(D, cx, cy, str, fitEq(D, str, maxW, size), o); }
+  /* 人（足もとが y、高さ h） */
+  function kid(D, x, y, h, col, a) {
+    if (a <= 0) return; var g = D.ctx, w = h * .46, r = h * .17;
+    g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.fillStyle = hexA(col, .35); g.strokeStyle = col; g.lineWidth = Math.max(1.2, h * .045);
+    g.beginPath(); g.arc(x, y - h + r, r, 0, Math.PI * 2); g.fill(); g.stroke();
+    var top = y - h + r * 2 + h * .06; g.beginPath(); g.moveTo(x - w / 2, y); g.lineTo(x - w / 2, top + w * .35); g.quadraticCurveTo(x - w / 2, top, x, top); g.quadraticCurveTo(x + w / 2, top, x + w / 2, top + w * .35); g.lineTo(x + w / 2, y); g.closePath(); g.fill(); g.stroke();
+    g.restore();
+  }
+  /* あめ（つつみ紙の両はしつき）。dash：たりない分（点線の まる） */
+  function candy(D, x, y, r, col, a, dash) {
+    if (a <= 0) return; var g = D.ctx;
+    g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.lineWidth = Math.max(1, r * .22);
+    if (dash) { g.setLineDash([Math.max(2, r * .5), Math.max(2, r * .4)]); g.strokeStyle = C.pink; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.stroke(); g.restore(); return; }
+    g.fillStyle = hexA(col, .85); g.strokeStyle = 'rgba(20,30,24,.7)';
+    [-1, 1].forEach(function (sd) { g.beginPath(); g.moveTo(x + sd * r * .8, y); g.lineTo(x + sd * r * 1.55, y - r * .6); g.lineTo(x + sd * r * 1.55, y + r * .6); g.closePath(); g.fill(); });
+    g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.stroke(); g.restore();
+  }
+  /* ○（合う）・✕（合わない）の印 */
+  function mark(D, x, y, s, ok, a) {
+    if (a <= 0) return; var col = ok ? C.green : C.pink, k = CH.easeOut(a);
+    if (ok) CH.circle(D, x, y, s * .5 * (.6 + .4 * k), { stroke: col, sw: Math.max(2.4, s * .12), a: a });
+    else { var d = s * .4 * (.6 + .4 * k); CH.line(D, x - d, y - d, x + d, y + d, { col: col, w: Math.max(2.6, s * .13), a: a }); CH.line(D, x + d, y - d, x - d, y + d, { col: col, w: Math.max(2.6, s * .13), a: a }); }
+  }
+  /* 帯（テープ図）の1本。parts：[{v, col, txt, dash, a}]。total の長さが w。返すもの：各部分の左右 */
+  function tape(D, x0, y0, w, h, parts, total, o) {
+    o = o || {}; var x = x0, out = [], al = o.a == null ? 1 : o.a;
+    parts.forEach(function (p) {
+      var pw = w * p.v / total, a = al * (p.a == null ? 1 : p.a);
+      if (pw > .5 && a > 0) {
+        CH.fillRect(D, x, y0, x + pw, y0 + h, { fill: p.dash ? 'rgba(255,157,178,.08)' : hexA(p.col || C.blue, .4), stroke: p.dash ? C.pink : (p.col || C.blue), dash: p.dash, sw: 2, a: a });
+        if (p.txt) { var sz = CH.fitSize(D, p.txt, pw * .9, Math.min(h * .52, CH.fs(D, .9))); if (sz > 7) CH.text(D, x + pw / 2, y0 + h / 2 + 1, p.txt, { size: sz, a: a, col: p.tcol || C.chalk }); }
+      }
+      out.push({ x0: x, x1: x + pw }); x += pw;
+    });
+    return out;
+  }
+  /* 横長か（図を横にならべるか、縦にならべるか） */
+  function landscape(D) { return D.W > D.H * 1.05; }
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  /* 式を、上から1行ずつ書く（＝ の位置をそろえる）。k：0→1 で、from 行めから1行ずつ出る（from より前の行は、はじめから出ている）。
+     o：from、maxW・maxH（入る幅・高さ）、gap（行の間。字の大きさの何倍）、tags（行の右の札 [字, 色]）、cols（行の白い字の色）、a
+     返すもの：{ y1（いちばん下）, size, rows（各行の置き場所）, x1（式の右はし） } */
+  function STEPS(D, cx, y0, list, k, size, o) {
+    o = o || {}; var tags = o.tags || [], n = list.length, from = o.from || 0, gp = o.gap || 1.85;
+    function meas(z) {
+      var Ls = list.map(function (s) { return lay(D, s, z); }), lw = 0, rw = 0, tg = 0;
+      Ls.forEach(function (L, i) {
+        var e = L.w / 2; for (var j = 0; j < L.items.length; j++) if (L.items[j].id === '＝#1') { e = L.items[j].x; break; }
+        L.e = e; lw = Math.max(lw, e); rw = Math.max(rw, L.w - e); if (tags[i]) tg = Math.max(tg, tw(D, tags[i][0], z * .6) + z * 1.5);
+      });
+      return { Ls: Ls, lw: lw, rw: rw, tg: tg, w: lw + rw + tg };
+    }
+    var M = meas(size), sc = 1;
+    if (o.maxW && M.w > o.maxW) sc = o.maxW / M.w;
+    if (o.maxH && n * size * gp > o.maxH) sc = Math.min(sc, o.maxH / (n * size * gp));
+    if (sc < 1) { size *= sc; M = meas(size); }
+    var gap = size * gp, ex = cx - M.w / 2 + M.lw, kk = CH.clamp(k, 0, 1) * Math.max(1, n - from), rows = [], al = o.a == null ? 1 : o.a;
+    M.Ls.forEach(function (L, i) {
+      var a = i < from ? 1 : CH.clamp((kk - (i - from)) * 2.2, 0, 1), y = y0 + gap * (i + .5), P = put(L, ex - L.e, y, 'left');
+      var col = o.cols && o.cols[i];
+      P.items.forEach(function (it) { drawIt(D, it, a * al, col && it.col === C.chalk ? col : null); });
+      if (tags[i] && a > 0) chip(D, ex + M.rw + size * .55, y, tags[i][0], tags[i][1] || C.green, a * al, size * .6, 'left');
+      P.a = a; rows.push(P);
+    });
+    return { y1: y0 + gap * n, size: size, rows: rows, x1: ex + M.rw, x0: ex - M.lw };
+  }
+  /* ======== ここまで道具 ======== */
+  /* ---- 数と検算 ---- */
+  var V1 = 60, V2 = 200, LAG = 14, XA = root(function (x) { return V1 * (x + LAG) - V2 * x; });
+  CH.check(near(XA, 6) && V1 * (6 + LAG) === 1200 && V2 * 6 === 1200, '今日の問い（6分後・1200m）');
+  var POND = 1350, VA = 80, VB = 70, XP = root(function (x) { return VA * x + VB * x - POND; });
+  CH.check(near(XP, 9) && VA * 9 === 720 && VB * 9 === 630 && near(720 / 1350 * 360, 192), '例題（9分後・720m）');
+  CH.check(near(root(function (x) { return 50 * (x + 8) - 130 * x; }), 5) && 130 * 5 === 650 && 520 < 650 && 780 > 650, '考えよう（図のもと：650m で追いつく）');
+  var XC = root(function (x) { return x / 12 + (16 - x) / 4 - 5 / 3; });
+  CH.check(near(XC, 14) && near(14 / 12 * 60 + 2 / 4 * 60, 100) && near(root(function (x) { return x + 3 * (16 - x) - 20; }), 14), 'チャレンジ（14km）');
+
+  var KO = C.orange, AN = C.blue;   /* 弟・妹・B さん：だいだい　兄・姉・A さん：青 */
+  /* ---- 道（家から右へ）。R の下のほうに線。max（m）、step（目もり）。X（道のり → 画面）を返す ---- */
+  function road(D, R, max, step, o) {
+    o = o || {}; var s = CH.fs(D), x0 = R.x0 + s * 3, x1 = R.x1 - s * .8, y = R.y1 - s * 1.5, X = function (d) { return x0 + d / max * (x1 - x0); };
+    CH.line(D, x0 - s * .6, y, x1 + s * .4, y, { w: 3, col: 'rgba(242,240,230,.8)' });
+    for (var d = 0; d <= max + 1e-9; d += step) { CH.line(D, X(d), y - 4, X(d), y + 4, { w: 1.4 }); CH.text(D, X(d), y + s * .85, String(d), { size: s * .62, num: true, col: 'rgba(242,240,230,.75)' }); }
+    CH.text(D, x1 + s * .4, y + s * 1.7, '（m）', { size: s * .62, align: 'right', col: 'rgba(242,240,230,.75)' });
+    var hs = Math.min(s * 1.6, R.h * .2), hx = X(0) - s * 1.9;
+    CH.poly(D, [[hx - hs * .5, y - 2], [hx - hs * .5, y - hs * .6], [hx, y - hs], [hx + hs * .5, y - hs * .6], [hx + hs * .5, y - 2]], { fill: 'rgba(242,240,230,.12)', stroke: C.chalk, sw: 1.6 });
+    CH.text(D, hx, y - hs - s * .55, '家', { size: s * .8 });
+    return { X: X, y: y };
+  }
+  /* 道の上の人。lv：名前を書く高さ（0・1） */
+  function walker(D, Rd, d, col, name, lv, a) {
+    var s = CH.fs(D), kh = s * 2.6, x = Rd.X(d); kid(D, x, Rd.y - 2, kh, col, a == null ? 1 : a);
+    say(D, x, Rd.y - kh - s * (.6 + lv * 1.1), name, { col: col, size: s * .78, a: a, outline: OUT });
+  }
+  /* 線分図の矢印（家から d まで） */
+  function segArrow(D, Rd, d, y, col, lab, a) {
+    if (d <= 0) return; var s = CH.fs(D);
+    CH.line(D, Rd.X(0), y - 5, Rd.X(0), y + 5, { col: col, a: a, w: 1.6 }); CH.arrow(D, Rd.X(0), y, Rd.X(d), y, { col: col, a: a, w: 2.4 });
+    if (lab) EQ(D, (Rd.X(0) + Rd.X(d)) / 2, y - s * .75, lab, s * .85, { a: a, col: col });
+  }
+
+  /* ---- 今日の問い：弟と兄（tau：兄が家を出てからの時間・分）。lab：線分図に式を書く ---- */
+  function chase(D, tau, lab) {
+    var R = BOX(D), s = CH.fs(D), top = CH.rect(R.x0, R.y0 + s * 2.2, R.x1, R.y0 + R.h * .58);
+    var Rd = road(D, top, 1600, 200), dO = V1 * (LAG + tau), dA = V2 * tau;
+    say(D, R.x0, R.y0 + s * .7, tau > 0 ? '兄が家を出てから ' + CH.f1(tau).replace(/\.0$/, '') + '分後' : '弟が家を出てから 14分後（兄が出発）', { align: 'left', size: s * .9, col: C.yel, maxW: R.w });
+    walker(D, Rd, dO, KO, '弟（分速 60m）', 0); walker(D, Rd, dA, AN, '兄（分速 200m）', Math.abs(Rd.X(dO) - Rd.X(dA)) < s * 6 ? 1 : 0);
+    var y1 = top.y1 + s * 1.6, y2 = y1 + s * 2.4;
+    segArrow(D, Rd, dO, y1, KO, lab ? '弟　60(x＋14)' : '弟', 1);
+    segArrow(D, Rd, dA, y2, AN, lab ? '兄　200x' : '兄', 1);
+    if (Math.abs(dO - dA) < 1) {
+      CH.line(D, Rd.X(dO), Rd.y + 4, Rd.X(dO), y2 + s * .6, { col: C.yel, dash: [6, 5], w: 2.2 });
+      say(D, Rd.X(dO) + s * .4, y2 + s * 1.3, lab ? '追いついた！ 道のりが等しい' : '追いついた！', { col: C.yel, align: Rd.X(dO) > R.cx ? 'right' : 'left', size: s * .9 });
+    }
+  }
+  /* ---- 道のりと時間のグラフ（弟が家を出てからの時間） ---- */
+  function chaseGraph(D, R, k) {
+    var Pl = CH.plane(D, R, { x: [0, 24], y: [0, 1600], stepX: 2, stepY: 200, labX: 4, labY: 400, fit: false, xn: '分', yn: 'm' });
+    var kt = CH.clamp(k, 0, 1) * 24;
+    CH.fn(D, Pl, function (t) { return V1 * t; }, { x0: 0, x1: kt, col: KO, w: 3 });
+    if (kt > LAG) CH.fn(D, Pl, function (t) { return V2 * (t - LAG); }, { x0: LAG, x1: Math.min(kt, 22), col: AN, w: 3 });
+    CH.text(D, Pl.X(9) - Pl.s, Pl.Y(540) - Pl.s, '弟', { col: KO, size: Pl.s * 1.2 });
+    if (kt > 17) CH.text(D, Pl.X(16) + Pl.s * 1.3, Pl.Y(400), '兄', { col: AN, size: Pl.s * 1.2 });
+    if (kt >= 20) {
+      CH.pseg(D, Pl, [20, 0], [20, 1200], { col: C.yel, dash: true, w: 1.6 }); CH.pseg(D, Pl, [0, 1200], [20, 1200], { col: C.yel, dash: true, w: 1.6 });
+      CH.pt(D, Pl, 20, 1200, { col: C.yel, lab: '20分・1200m', dir: 'nw' });
+      var a = CH.smooth(.85, 1, k); if (a > 0) { CH.line(D, Pl.X(14), Pl.Y(0) - Pl.s * 1.9, Pl.X(20), Pl.Y(0) - Pl.s * 1.9, { col: AN, a: a, w: 2 }); CH.text(D, Pl.X(17), Pl.Y(0) - Pl.s * 2.9, 'x＝6', { col: AN, a: a, size: Pl.s }); }
+    }
+    return Pl;
+  }
+
+  /* ---- ことば：道のり＝速さ×時間、追いつく・出会う の線分図 ---- */
+  function words(D, t) {
+    var R = BOX(D), s = CH.fs(D), L = landscape(D), k1 = CH.smooth(.05, .35, t), k2 = CH.smooth(.4, .7, t), k3 = CH.smooth(.72, 1, t);
+    var big = Math.min(s * 1.5, R.w / 12);
+    EQ(D, R.cx, R.y0 + big * .9, '道のり＝速さ{y|×}時間', big);
+    var x0 = R.x0 + R.w * .08, x1 = R.x1 - R.w * .08, w = x1 - x0, y1 = R.y0 + R.h * .3, y2 = R.y0 + R.h * .66;
+    say(D, R.x0, y1 - s * 1.1, '追いつく', { align: 'left', col: C.yel, size: s * .95 });
+    if (k1 > 0) {
+      var e = x0 + w * .8 * k1; CH.arrow(D, x0, y1 + s * .9, e, y1 + s * .9, { col: KO, w: 2.6 }); CH.arrow(D, x0, y1 + s * 2.6, e, y1 + s * 2.6, { col: AN, w: 2.6 });
+      say(D, x0 + w * .03, y1 + s * .9 - s * .7, '先に出た人', { align: 'left', col: KO, size: s * .75 }); say(D, x0 + w * .03, y1 + s * 2.6 - s * .7, 'あとから出た人', { align: 'left', col: AN, size: s * .75 });
+      if (k1 >= 1) { CH.line(D, e, y1 + s * .2, e, y1 + s * 3.2, { col: C.yel, dash: [6, 5], w: 2 }); say(D, e + s * .5, y1 + s * 1.75, '道のりが 等しい', { align: 'left', col: C.yel, size: s * .85, maxW: x1 + w * .08 - e - s * .5 }); }
+    }
+    say(D, R.x0, y2 - s * 1.1, '出会う', { align: 'left', col: C.yel, size: s * .95, a: k2 > 0 ? 1 : .35 });
+    if (k2 > 0) {
+      var m = x0 + w * .55; CH.arrow(D, x0, y2 + s * .9, CH.lerp(x0, m, k2), y2 + s * .9, { col: AN, w: 2.6 }); CH.arrow(D, x1, y2 + s * .9, CH.lerp(x1, m, k2), y2 + s * .9, { col: KO, w: 2.6 });
+      CH.circle(D, x0, y2 + s * .9, 4, { fill: AN }); CH.circle(D, x1, y2 + s * .9, 4, { fill: KO });
+      if (k2 >= 1) CH.circle(D, m, y2 + s * .9, 5, { fill: C.yel });
+    }
+    if (k3 > 0) { brace(D, x0, x1, y2 + s * 1.5, C.yel, k3, false, 10); say(D, (x0 + x1) / 2, y2 + s * 3.1, '2人の道のりの和 ＝ 全体の道のり', { col: C.yel, a: k3, size: s * .9, maxW: w }); }
+  }
+
+  /* ---- 例題：池のまわり（tau 分後）。上に円、下に まっすぐにのばした線分図 ---- */
+  function pond(D, tau, lab) {
+    var R = BOX(D), s = CH.fs(D), L = landscape(D);
+    var cR = L ? CH.rect(R.x0, R.y0, R.x0 + R.w * .5, R.y0 + R.h * .62) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .5);
+    var cx = cR.cx, cy = cR.cy + s * .3, rr = Math.min(cR.w, cR.h) * .36, dl = s * .28, g = D.ctx;
+    CH.circle(D, cx, cy, rr, { stroke: 'rgba(242,240,230,.6)', sw: 2, fill: 'rgba(154,216,255,.06)' });
+    CH.circle(D, cx, cy - rr, 5, { fill: C.chalk }); say(D, cx, cy - rr - s * .8, '出発点', { size: s * .75 });
+    var thA = VA * tau / POND * Math.PI * 2, thB = -VB * tau / POND * Math.PI * 2;
+    function arc(r, th, col) { if (Math.abs(th) < 1e-3) return; g.save(); g.globalAlpha = D.ga; g.strokeStyle = col; g.lineWidth = 4; g.lineCap = 'round'; g.beginPath(); g.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + th, th < 0); g.stroke(); g.restore(); }
+    function P(th, r) { return [cx + r * Math.sin(th), cy - r * Math.cos(th)]; }
+    arc(rr + dl, Math.min(thA, Math.PI * 2), AN); arc(rr - dl, Math.max(thB, -Math.PI * 2), KO);
+    var pa = P(thA, rr), pb = P(thB, rr);
+    CH.circle(D, pa[0], pa[1], s * .38, { fill: AN, stroke: 'rgba(20,30,24,.8)', sw: 1.2 }); CH.circle(D, pb[0], pb[1], s * .38, { fill: KO, stroke: 'rgba(20,30,24,.8)', sw: 1.2 });
+    var la = P(thA / 2, rr + s * 1.7), lb = P(thB / 2, rr + s * 1.7);
+    if (tau > .5) { EQ(D, la[0], la[1], lab ? 'A　80x' : 'A', s * .85, { col: AN }); EQ(D, lb[0], lb[1], lab ? 'B　70x' : 'B', s * .85, { col: KO }); }
+    else { say(D, cx + s * 1.6, cy - rr + s * 1.2, 'A →', { col: AN, size: s * .8 }); say(D, cx - s * 1.6, cy - rr + s * 1.2, '← B', { col: KO, size: s * .8 }); }
+    say(D, cx, cy, '池　1周 1350m', { size: s * .8, col: 'rgba(242,240,230,.7)' });
+    /* まっすぐにのばす */
+    var tR = L ? CH.rect(R.x0 + R.w * .52, R.y0 + R.h * .1, R.x1, R.y0 + R.h * .4) : CH.rect(R.x0, R.y0 + R.h * .5, R.x1, R.y0 + R.h * .76);
+    var tx0 = tR.x0 + s * .4, tw0 = tR.w - s * .8, th = Math.min(s * 1.5, tR.h * .3), ty = tR.y0 + s * 2.3, da = Math.min(VA * tau, POND), db = Math.min(VB * tau, POND);
+    say(D, tR.cx, tR.y0 + s * .3, '1周を まっすぐにのばすと', { size: s * .8, col: 'rgba(242,240,230,.8)', maxW: tR.w });
+    CH.fillRect(D, tx0, ty, tx0 + tw0, ty + th, { stroke: 'rgba(242,240,230,.6)', fill: 'rgba(242,240,230,.05)' });
+    if (da > 0) CH.fillRect(D, tx0, ty, tx0 + tw0 * da / POND, ty + th * .5, { fill: hexA(AN, .45), stroke: AN });
+    if (db > 0) CH.fillRect(D, tx0 + tw0 * (1 - db / POND), ty + th * .5, tx0 + tw0, ty + th, { fill: hexA(KO, .45), stroke: KO });
+    brace(D, tx0, tx0 + tw0, ty + th + 3, C.chalk, 1, false, 8); say(D, tx0 + tw0 / 2, ty + th + s * 1.3, '1350m', { size: s * .8 });
+    if (Math.abs(da + db - POND) < 1) { CH.line(D, tx0 + tw0 * da / POND, ty - 6, tx0 + tw0 * da / POND, ty + th + 6, { col: C.yel, w: 2.4 }); say(D, tx0 + tw0 * da / POND, ty - s * .6, '出会う', { col: C.yel, size: s * .8 }); }
+    return { L: L, R: R, s: s, sR: L ? CH.rect(R.x0 + R.w * .52, R.y0 + R.h * .44, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .79, R.x1, R.y1) };
+  }
+
+  /* ---- 考えよう：妹と姉、駅まで（tau：妹が出てからの時間） ---- */
+  function station(D, st, tau) {
+    var R = BOX(D), s = CH.fs(D), E = st ? 780 : 520, dI = Math.min(50 * tau, E), dN = Math.min(Math.max(0, 130 * (tau - 8)), E);
+    var top = CH.rect(R.x0, R.y0 + s * 2, R.x1, R.y0 + R.h * .42), Rd = road(D, top, 900, 100);
+    var ex = Rd.X(E); CH.fillRect(D, ex - s * .9, Rd.y - s * 2.6, ex + s * .9, Rd.y - 2, { fill: 'rgba(255,226,122,.15)', stroke: C.yel });
+    say(D, ex, Rd.y - s * 3.2, (st ? 'イ' : 'ア') + '　駅 ' + E + 'm', { col: C.yel, size: s * .8 });
+    walker(D, Rd, dI, KO, '妹' + (dI >= E ? '（着いた）' : ''), 0); if (tau >= 8) walker(D, Rd, dN, AN, '姉' + (dN >= E ? '（着いた）' : ''), Math.abs(Rd.X(dI) - Rd.X(dN)) < s * 5 ? 1 : 0);
+    say(D, R.x0, R.y0 + s * .7, '妹が家を出てから ' + CH.f1(tau).replace(/\.0$/, '') + '分後' + (tau < 8 ? '（姉は 8分後に出る）' : ''), { align: 'left', size: s * .85, col: C.chalk, maxW: R.w });
+    var Pl = CH.plane(D, CH.rect(R.x0 + s * 2.6, R.y0 + R.h * .5 + s * .6, R.x1 - s * 1.4, R.y1 - s * 1.4), { x: [0, 20], y: [0, 900], stepX: 1, stepY: 100, labX: 4, labY: 300, fit: false, xn: '分', yn: 'm' });
+    CH.pseg(D, Pl, [0, E], [20, E], { col: C.yel, dash: true, w: 1.6 }); CH.text(D, Pl.X(20), Pl.Y(E) - Pl.s * .9, '駅', { col: C.yel, size: Pl.s, align: 'right' });
+    CH.fn(D, Pl, function (t) { return Math.min(50 * t, E); }, { x0: 0, x1: tau, col: KO, w: 2.6 });
+    if (tau > 8) CH.fn(D, Pl, function (t) { return Math.min(130 * (t - 8), E); }, { x0: 8, x1: tau, col: AN, w: 2.6 });
+    CH.pt(D, Pl, tau, dI, { col: KO, r: 4 }); if (tau >= 8) CH.pt(D, Pl, tau, dN, { col: AN, r: 4 });
+  }
+
+  /* ---- チャレンジ：A町・B町・C町（kb：B町が本当の位置へ動く） ---- */
+  function towns(D, R, kb, lab) {
+    var s = CH.fs(D), x0 = R.x0 + s, x1 = R.x1 - s, y = R.y0 + R.h * .55, xb = CH.lerp(x0 + (x1 - x0) * .5, x0 + (x1 - x0) * 14 / 16, CH.ease(kb));
+    CH.line(D, x0, y, xb, y, { col: AN, w: 4 }); CH.line(D, xb, y, x1, y, { col: KO, w: 4 });
+    [[x0, 'A町'], [xb, 'B町'], [x1, 'C町']].forEach(function (p) { CH.circle(D, p[0], y, 5, { fill: C.chalk }); say(D, p[0], y + s * .9, p[1], { size: s * .8 }); });
+    say(D, (x0 + xb) / 2, y - s * .8, '自転車 時速 12km', { col: AN, size: s * .78, maxW: xb - x0 });
+    var ww = tw(D, '歩く 時速 4km', s * .78); say(D, x1 - xb > ww * 1.1 ? (xb + x1) / 2 : x1, y - s * .8, '歩く 時速 4km', { col: KO, size: s * .78, align: x1 - xb > ww * 1.1 ? 'center' : 'right' });
+    if (lab) { EQ(D, (x0 + xb) / 2, y + s * 2, kb >= 1 ? '14km' : 'x km', s * .85, { col: AN }); EQ(D, (xb + x1) / 2, y + s * 2, kb >= 1 ? '2km' : '(16−x)km', s * .85, { col: KO }); }
+    brace(D, x0, x1, y - s * 1.6, C.chalk, 1, true, 8); say(D, (x0 + x1) / 2, y - s * 2.9, '全部で 16km　1時間40分', { size: s * .85 });
+  }
+
+  K3.run({
+    no: '第9時', title: '「追いつく」「出会う」の問題を、図に整理して解こう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '08.html', label: '◀ 第8時' }, { href: '10.html', label: '第10時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '弟に追いつく', q: '弟が分速 60m で家を出た。その 14分後に、兄が分速 200m の自転車で、同じ道を追いかけた。兄は、家を出てから何分後に弟に追いつくだろう。',
+        notes: ['① 自分の考え（3分）　図や表に整理して、式をつくろう。', '② ペアの考え（3分）　自分とちがう整理のしかたを書こう。'],
+        draw: function (D) { chase(D, 0, false); } },
+      { tag: '今日の問い', q: '兄が家を出てから x分後に追いつくとする。2人の道のりを x で表すと？ 何が等しい？', a: '弟 60(x＋14)m、兄 200x m が等しい', sub: '弟は 兄より 14分長く歩いている。追いつく → 2人の道のりが等しい → 60(x＋14)＝200x', dur: 6,
+        sliders: [{ key: 'tau', label: '兄が出てからの時間', min: 0, max: 8, step: .5, val: 0, anim: [0, 6], fmt: function (v) { return v + '分'; } }],
+        b: { t: '追いつく → 道のりが等しい　<b>60(x＋14)＝200x</b>', col: C.yel },
+        draw: function (D) { chase(D, D.V.tau, D.ph === 1); } },
+      { tag: '今日の問い', q: '方程式 60(x＋14)＝200x を解いて、何分後に追いつくか求めよう。', a: '6分後（家から 1200m）', sub: '60x＋840＝200x → −140x＝−840 → x＝6。弟 60×20＝1200、兄 200×6＝1200 で等しい', dur: 6,
+        b: { t: 'x＝6 → <b>6分後</b>（家から 1200m）', col: C.yel },
+        draw: function (D) {
+          var R = BOX(D), s = CH.fs(D), t = D.ph ? D.t : 0, L = landscape(D);
+          var gR = L ? CH.rect(R.x0 + s * 2.4, R.y0 + s * 1.6, R.x0 + R.w * .52, R.y1 - s * 1.6) : CH.rect(R.x0 + s * 2.4, R.y0 + s * 1.4, R.x1 - s * 1.6, R.y0 + R.h * .52);
+          chaseGraph(D, gR, D.ph ? CH.smooth(0, .55, t) : .58);
+          if (!D.ph) say(D, gR.x0, R.y0 + s * .3, '道のりと時間（弟が家を出てから）', { align: 'left', size: s * .8, col: 'rgba(242,240,230,.8)', maxW: gR.w });
+          var sx = L ? R.x0 + R.w * .78 : R.cx, sy = L ? R.y0 + R.h * .12 : R.y0 + R.h * .6, sw = L ? R.w * .42 : R.w * .95, sh = L ? R.h * .76 : R.h * .38;
+          STEPS(D, sx, sy, ['60(x＋14)＝200x', '60x＋840＝200x', '60x−200x＝−840', '−140x＝−840', 'x＝6'], CH.smooth(.15, .95, t), Math.min(s * 1.3, R.w / 12),
+            { from: 1, maxW: sw, maxH: sh, tags: [null, ['かっこをはずす', C.green], ['移項', C.green], null, null], cols: [null, null, null, null, C.yel] });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '道のり・速さ・時間の関係は？ 「追いつく」「出会う」とき、2人の道のりは どうなっている？', a: '道のり＝速さ×時間。追いつく … 道のりが等しい、出会う … 道のりの和が全体', sub: '速さ＝道のり÷時間、時間＝道のり÷速さ。図や表に整理すると、等しい数量が見つけやすい', dur: 5,
+        b: [{ t: '道のり ＝ <b>速さ×時間</b>（速さ＝道のり÷時間、時間＝道のり÷速さ）', col: C.green }, { t: '追いつく … 2人の道のりが <b>等しい</b>', col: C.green }, { t: '出会う … 2人の道のりの <b>和</b> が全体', col: C.green }],
+        draw: function (D) { words(D, D.ph ? D.t : 0); } },
+      { tag: '例題', bh: '例題　池のまわり', q: '1周 1350m の池のまわりを、A さんは分速 80m、B さんは分速 70m で、同じ地点から反対向きに同時に歩きはじめた。2人がはじめて出会うのは、何分後だろう。', a: '9分後', sub: '出会う → 道のりの和が 1周。80x＋70x＝1350 → 150x＝1350 → x＝9（A 720m、B 630m）', dur: 6,
+        sliders: [{ key: 'tau', label: '歩いた時間', min: 0, max: 12, step: .5, val: 0, anim: [0, 9], fmt: function (v) { return v + '分'; } }],
+        b: { t: '80x＋70x＝1350 → x＝9　<b>9分後</b>', col: C.pink },
+        draw: function (D) {
+          var P = pond(D, D.V.tau, D.ph === 1), R = P.sR, s = P.s;
+          if (D.ph) STEPS(D, R.cx, R.y0, ['80x＋70x＝1350', '150x＝1350', 'x＝9'], CH.smooth(.55, 1, D.t), Math.min(s * 1.3, R.w / 9), { from: 0, maxW: R.w * .95, maxH: R.h * .95, cols: [null, null, C.yel] });
+        } },
+      { tag: '考えよう', q: '妹が分速 50m で家を出た。その 8分後に、姉が分速 130m で追いかけた。家から駅までが ア 520m・イ 780m のとき、姉は、妹が駅に着くまでに追いつけるだろうか。',
+        notes: ['ア・イ それぞれ、追いつけるか（○か×）と、そのわけを書こう。', '駅までの道のりが何 m より長ければ、追いつけるだろう。', 'スライダーで、駅（ア・イ）と、妹が出てからの時間を変えられます。駅に着いた人は、そこで止まります。'],
+        sliders: [{ key: 'st', label: '駅', min: 0, max: 1, step: 1, val: 0, fmt: function (v) { return v ? 'イ 780m' : 'ア 520m'; } }, { key: 'tau', label: '時間', min: 0, max: 20, step: .5, val: 0, fmt: function (v) { return v + '分'; } }],
+        draw: function (D) { station(D, D.V.st, D.V.tau); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'A町から 16km はなれた C町まで行く。はじめは時速 12km の自転車で B町まで行き、B町から C町までは時速 4km で歩いたら、全部で 1時間40分かかった。A町から B町までの道のりは？', a: '14km', sub: 'A町〜B町を x km → [x/12]＋[16−x/4]＝[5/3]（1時間40分＝[5/3]時間）→ 両辺に 12 をかけて x＋3(16−x)＝20 → x＝14', dur: 7,
+        b: { t: '[x/12]＋[16−x/4]＝[5/3] → <b>14km</b>（自転車 70分＋歩き 30分）', col: C.orange },
+        draw: function (D) {
+          var R = BOX(D), s = CH.fs(D), t = D.ph ? D.t : 0;
+          towns(D, CH.rect(R.x0, R.y0 + s * 1.2, R.x1, R.y0 + R.h * .36), CH.smooth(.85, 1, t), D.ph === 1);
+          if (!D.ph) return;
+          STEPS(D, R.cx, R.y0 + R.h * .4, ['[x/12]＋[16−x/4]＝[5/3]', 'x＋3(16−x)＝20', 'x＋48−3x＝20', '−2x＝−28', 'x＝14'], CH.smooth(0, .8, t), Math.min(s * 1.3, R.w / 12),
+            { gap: 2, maxW: R.w * .96, maxH: R.h * .58, tags: [null, ['両辺に 12 をかける', C.green], ['かっこをはずす', C.green], ['移項', C.green], null], cols: [null, null, null, null, C.yel] });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

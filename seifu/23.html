@@ -105,7 +105,7 @@
   var CITY = [['東京', 0], ['北京', -1], ['ニューヨーク', -14], ['ホノルル', -19]], NY = 8 + (-14);
   CH.check(-1 - (-19) === 18 && NY === -6 && 24 + NY === 18, 'チャレンジ 時差');
 
-  function lay2(D, R) { return R.w > R.h * 1.1 ? CH.cols(R, 2, .05) : CH.rows(R, 2, .06); }
+  function lay2(D, R) { return R.w > R.h * 1.1 && R.w > 560 ? CH.cols(R, 2, .05) : CH.rows(R, 2, .08); }
   /* 字の行を、四角に入るように */
   function para(D, r, L, o) {
     o = o || {}; var s = CH.fs(D), n = L.length, lh = Math.min(r.h / (n + .4), s * 1.9);
@@ -141,7 +141,7 @@
       { tag: 'ことば', bh: 'ことば（ふり返り）', q: '加法・減法・乗法・除法の、符号のきまりは？ 計算の順序は？', a: '加法：同符号は絶対値の和、異符号は差。減法：ひく数の符号を変えてたす。乗除：同符号は正、異符号は負', sub: '計算の順序：累乗・かっこ → 乗除 → 加減', dur: 6,
         b: [{ t: '0 より小さい数 … <b>負の数</b>　0 からのきょり … <b>絶対値</b>', col: C.green }, { t: '加法：同符号は絶対値の<b>和</b>、異符号は<b>差</b>　減法：ひく数の符号を変えて<b>たす</b>', col: C.green }, { t: '乗除：同符号は<b>正</b>、異符号は<b>負</b>　順序：累乗・かっこ → <b>乗除</b> → <b>加減</b>', col: C.green }],
         draw: function (D) {
-          var R = CH.box(D, { l: .03, r: .03, t: .04, b: .05 }), s = CH.fs(D), t = D.ph ? D.t : 0, wide = R.w > R.h * 1.1, nc = wide ? 4 : 2, nr = 8 / nc, gw = R.w * .03, gh = R.h * .05, bw = (R.w - gw * (nc - 1)) / nc, bh = (R.h - gh * (nr - 1)) / nr;
+          var R = CH.box(D, { l: .03, r: .03, t: .04, b: .05 }), s = CH.fs(D), t = D.ph ? D.t : 0, wide = R.w > R.h * 1.1 && R.w > 560, nc = wide ? 4 : 2, nr = 8 / nc, gw = R.w * .03, gh = R.h * .05, bw = (R.w - gw * (nc - 1)) / nc, bh = (R.h - gh * (nr - 1)) / nr;
           MAP.forEach(function (m, i) {
             var c = i % nc, r = Math.floor(i / nc), x0 = R.x0 + c * (bw + gw), y0 = R.y0 + r * (bh + gh), q = CH.rect(x0, y0, x0 + bw, y0 + bh), a = D.ph ? CH.smooth(i * .08, i * .08 + .1, t) : (i < 2 ? 1 : .25), hl = D.ph && m[2] === C.yel && t > .75;
             rbox(D, q.x0, q.y0, q.x1, q.y1, m[2], hl ? 1 : .6 * a, { fa: hl ? .16 : .05, w: hl ? 3 : 1.8 });
