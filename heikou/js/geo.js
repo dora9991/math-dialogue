@@ -183,7 +183,9 @@ function exprVal(P, e, alias) { var s = 0; e.replace(TERM, function (m, sg, t) {
 GE.verify = function (P, txt, alias, what) {
   var ok = true, bad = [];
   function same(ch, vals) { if (!vals.every(function (v) { return isFinite(v) && GE.near(v, vals[0], 1e-5); })) { ok = false; bad.push(ch + '（' + vals.map(function (v) { return Math.round(v * 1000) / 1000; }).join(' / ') + '）'); } }
-  var rest = txt.replace(RCHAIN, function (ch) { same(ch, ch.split('＝').map(function (r) { var ab = r.split('：'); return exprVal(P, ab[0], alias) / exprVal(P, ab[1], alias); })); return ' '; });
+  /* 面積の △ABC・かけ算わり算の項（AC×BC÷2 など）は、＝の検算に入れない */
+  var rest = txt.replace(/△[A-Z]{3}/g, '△').replace(/[^\s＝＋−：（）]*[×÷][^\s＝＋−：（）]*/g, ' ');
+  rest = rest.replace(RCHAIN, function (ch) { same(ch, ch.split('＝').map(function (r) { var ab = r.split('：'); return exprVal(P, ab[0], alias) / exprVal(P, ab[1], alias); })); return ' '; });
   (rest.match(CHAIN) || []).forEach(function (ch) { same(ch, ch.split('＝').map(function (e) { return exprVal(P, e, alias); })); });
   txt.replace(/([A-Z]{2})∥([A-Z]{2})/g, function (m, s, t) { if (!GE.isPar(P, s, t)) { ok = false; bad.push(m); } return m; });
   txt.replace(/([A-Z]{2})⊥([A-Z]{2})/g, function (m, s, t) { if (!GE.isPerp(P, s, t)) { ok = false; bad.push(m); } return m; });
