@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>代表値と範囲</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="js/chart.js"></script>
+<script>
+/* データの活用 第3時：データを、1つの数で代表させよう（ikkan の lesson_data_new_03 と同じ流れ）。
+   平均値は「ならす」、中央値は「まん中」、最頻値は「いちばん高い山」として見せる。 */
+(function () {
+  var C = CH.C, R9 = [1, 2, 2, 3, 3, 3, 5, 6, 11];
+  CH.check(CH.mean(R9) === 4 && CH.median(R9) === 3 && CH.mode(R9) === 3, '代表値');
+  var E5 = [0, 5, 10, 15, 20, 25, 30, 35, 40], CA = [1, 4, 6, 8, 5, 3, 2, 1];
+  var S = CA.reduce(function (s, n, i) { return s + n * (E5[i] + 2.5); }, 0); CH.check(S === 545 && CH.f1(S / 30) === '18.2', '平均値（度数分布表）');
+  var RUN = [4, 9, 13, 10, 4], RE = [7.0, 7.5, 8.0, 8.5, 9.0, 9.5];
+  var RS = RUN.reduce(function (s, n, i) { return s + n * (RE[i] + .25); }, 0); CH.check(CH.near(RS, 330.5) && CH.f1(RS / 40) === '8.3', '50m走');
+  function dotplot(D, vals, o) {
+    o = o || {}; var R = o.R || CH.box(D, { l: .08, r: .08, t: .3, b: .22 }), X = CH.numline(D, R, 0, o.max || 12, 1, { unit: '（時間）', lab: o.lab || 1 });
+    var P = CH.dots(D, X, R.y1, vals, { col: o.col || function () { return C.blue; }, r: CH.fs(D, .55) });
+    return { X: X, R: R, P: P };
+  }
+  function marker(D, X, y, val, txt, col, a, up) { var s = CH.fs(D); CH.line(D, X(val), y + 4, X(val), y + s * (up ? -6 : 2.7), { col: col, w: 2.4, dash: true, a: a }); CH.text(D, X(val), y + s * (up ? -6.6 : 3.4), txt, { col: col, a: a, size: s * .9 }); }
+
+  K3.run({
+    no: '第3時', title: 'データを、1つの数で代表させよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '◀ 第2時' }, { href: '04.html', label: '第4時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '9人の、1週間の読書時間（時間）', q: '9人の 1週間の読書時間（1・2・2・3・3・3・5・6・11 時間）。このデータを 1つの数で代表させるなら、どんな数が考えられるだろう。',
+        notes: ['① 自分の考え（3分）　どの数にするか、わけも。', '② ペアの考え（3分）'],
+        draw: function (D) { dotplot(D, R9); } },
+      { tag: '今日の問い', q: '全部たして、人数でわると？', a: '36 ÷ 9 ＝ 4（時間）', sub: '多い人から少ない人へ分けて、みんな同じにする（ならす）と 4時間', dur: 3.5,
+        b: { t: '全部たして 人数でわる … 36÷9＝<b>4時間</b>', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .12, r: .08, t: .1, b: .16 }), Ax = CH.axes(D, R, { x: [0, 9], y: [0, 12], xt: [], yt: [0, 2, 4, 6, 8, 10, 12], yl: '（時間）' }), t = D.ph ? CH.ease(D.t) : 0;
+          R9.forEach(function (h, i) { var y = CH.lerp(h, 4, t); CH.fillRect(D, Ax.X(i + .15), Ax.Y(y), Ax.X(i + .85), Ax.Y(0), { fill: 'rgba(154,216,255,.5)', stroke: C.blue }); CH.text(D, Ax.X(i + .5), Ax.R.y1 + Ax.s, String(h), { size: Ax.s, num: true, a: 1 - t * .6 }); });
+          if (t > .02) { CH.line(D, Ax.X(0), Ax.Y(4), Ax.X(9), Ax.Y(4), { col: C.yel, w: 2.6, dash: true, a: t }); CH.text(D, Ax.X(9), Ax.Y(4) - Ax.s, '4時間', { col: C.yel, align: 'right', a: t }); }
+        } },
+      { tag: '今日の問い', q: '小さい順に並べた、まん中の値は？', a: '3時間（5番目）', sub: '9人なので、まん中は 前からも後ろからも 5番目', dur: 3,
+        b: { t: '小さい順に並べた まん中 … 5番目の <b>3時間</b>', col: C.blue },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .3, b: .3 }), n = 9, cw = R.w / n, t = D.ph ? D.t : 0;
+          R9.forEach(function (x, i) {
+            var k = Math.min(i, n - 1 - i), on = t * 5 > k + .5, mid = i === 4 && t > .9;
+            CH.card(D, R.x0 + (i + .5) * cw, R.cy, cw * .8, Math.min(cw * .9, R.h * .5), x, { col: mid ? C.yel : on ? 'rgba(242,240,230,.5)' : C.blue, fill: mid ? 'rgba(255,226,122,.3)' : null, a: mid || !on ? 1 : .55 });
+            CH.text(D, R.x0 + (i + .5) * cw, R.cy + Math.min(cw * .9, R.h * .5) * .5 + CH.fs(D), (i + 1) + '番目', { size: CH.fs(D, .7), col: 'rgba(242,240,230,.6)' });
+          });
+        } },
+      { tag: '今日の問い', q: 'いちばん多く出てくる値は？', a: '3時間（3回）', dur: 1.5,
+        b: { t: 'いちばん多く出てくる値 … <b>3時間</b>（3回）', col: C.pink },
+        draw: function (D) { dotplot(D, R9, { col: function (i, x) { return D.ph && x === 3 ? C.pink : C.blue; } }); } },
+      { tag: 'ことば', bh: 'ことば', q: 'それぞれの値を、何という？ 最大値と最小値の差は？', a: '平均値・中央値・最頻値（まとめて代表値）、範囲 ＝ 11 − 1 ＝ 10', dur: 3,
+        b: [{ t: '<b>平均値</b> ＝ 合計÷個数　<b>中央値</b> … まん中の値　<b>最頻値</b> … いちばん多い値', col: C.green }, { t: '<b>範囲</b> ＝ 最大値 − 最小値（11−1＝10時間）', col: C.green }],
+        draw: function (D) {
+          var o = dotplot(D, R9), y = o.R.y1, a1 = D.ph ? CH.smooth(0, .3, D.t) : 0, a2 = D.ph ? CH.smooth(.3, .6, D.t) : 0, a3 = D.ph ? CH.smooth(.6, .9, D.t) : 0, s = CH.fs(D);
+          marker(D, o.X, y, 4, '平均値 4', C.yel, a1, true); marker(D, o.X, y, 3, '中央値・最頻値 3', C.pink, a2, false);
+          if (a3 > 0) { var yy = y - s * 7.6; CH.arrow(D, o.X(1), yy, o.X(11), yy, { col: C.green, a: a3, w: 2.4 }); CH.arrow(D, o.X(11), yy, o.X(1), yy, { col: C.green, a: a3, w: 2.4 }); CH.text(D, o.X(6), yy - s * .9, '範囲 10', { col: C.green, a: a3 }); }
+        } },
+      { tag: '例題', bh: '例題　A組30人の度数分布表から', q: '度数分布表から 平均値と最頻値を求めると？（平均値は 小数第1位まで）', a: '平均値 およそ 18.2分、最頻値 17.5分',
+        sub: '階級のまん中の値（階級値）に、その階級の人が みな いるとみなす。階級値×度数 の合計 545 ÷ 30 ＝ 18.16…', dur: 4,
+        b: [{ t: '階級値 × 度数 の合計 545 → 545÷30 ≒ <b>18.2分</b>（およその値）', col: C.yel }, { t: '最頻値 … 度数が いちばん多い階級の 階級値 <b>17.5分</b>', col: C.pink }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .1, t: .1, b: .16 }), Ax = CH.axes(D, R, { x: [0, 40], y: [0, 10], xt: E5, yt: [0, 2, 4, 6, 8, 10], xl: '（分）', yl: '（人）' }), t = D.ph ? D.t : 0;
+          CH.bars(D, Ax, E5, CA, { col: C.blue, a: 1 - CH.smooth(0, .3, t) * .6, hl: function (i) { return t > .6 && i === 3 ? C.pink : null; } });
+          if (t > 0) CA.forEach(function (n, i) { for (var k = 0; k < n; k++) CH.circle(D, Ax.X(E5[i] + 2.5), Ax.Y(k + .5), Math.min(Ax.R.w / 40, (Ax.Y(0) - Ax.Y(1)) * .4), { fill: C.yel, a: CH.smooth(.05, .35, t) }); });
+          if (t > .4) { var m = 545 / 30, a = CH.smooth(.4, .6, t); CH.poly(D, [[Ax.X(m), Ax.Y(0) + 4], [Ax.X(m) - 12, Ax.Y(0) + 24], [Ax.X(m) + 12, Ax.Y(0) + 24]], { fill: C.yel, a: a }); CH.text(D, Ax.X(m), Ax.Y(0) + 24 + Ax.s * 1.2, '18.2', { col: C.yel, a: a, num: true }); }
+          if (t > .7) CH.text(D, Ax.X(17.5), Ax.Y(8) - Ax.s * 1.2, '17.5', { col: C.pink, num: true, a: CH.smooth(.7, .9, t) });
+        } },
+      { tag: '考えよう', q: '読書時間の 11 を 21 に変えたとする。平均値・中央値・最頻値は、それぞれ どうなるだろう。',
+        notes: ['表に書いて、気づいたことを。', 'なぜ、そうなるのだろう。説明しよう。', 'スライダーで、いちばん右の人の値を動かせます。'],
+        sliders: [{ key: 'x', label: 'いちばん長い人', min: 6, max: 24, step: 1, val: 11, fmt: function (x) { return x + '時間'; } }],
+        draw: function (D) { dotplot(D, R9.slice(0, 8).concat([D.V.x]), { max: 24, lab: 2, col: function (i) { return i === 8 ? C.orange : C.blue; } }); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '40人の 50m走（7.0〜7.5秒 4人、7.5〜8.0秒 9人、8.0〜8.5秒 13人、8.5〜9.0秒 10人、9.0〜9.5秒 4人）。① 最頻値 ② 中央値がふくまれる階級 ③ 平均値（小数第1位まで）',
+        a: '① 8.25秒 ② 8.0〜8.5秒 ③ 8.3秒', sub: '② 20・21番目。4＋9＝13、13＋13＝26 → 8.0〜8.5　③ 階級値×度数 の合計 330.5 ÷ 40 ＝ 8.26…', dur: 3,
+        b: { t: '① 8.25秒　② 8.0〜8.5秒（20・21番目）　③ 330.5÷40 ≒ <b>8.3秒</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .1, t: .1, b: .16 }), Ax = CH.axes(D, R, { x: [7, 9.5], y: [0, 14], xt: RE, yt: [0, 2, 4, 6, 8, 10, 12, 14], xf: function (x) { return x.toFixed(1); }, xl: '（秒）', yl: '（人）' }), t = D.ph ? D.t : 0;
+          CH.bars(D, Ax, RE, RUN, { col: C.lav, labels: true, hl: function (i) { return t > .3 && i === 2 ? C.yel : null; } });
+          if (t > .6) { var m = RS / 40, a = CH.smooth(.6, .8, t); CH.poly(D, [[Ax.X(m), Ax.Y(0) + 4], [Ax.X(m) - 12, Ax.Y(0) + 24], [Ax.X(m) + 12, Ax.Y(0) + 24]], { fill: C.orange, a: a }); CH.text(D, Ax.X(m), Ax.Y(0) + 24 + Ax.s * 1.2, '8.26…', { col: C.orange, a: a, num: true }); }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>
