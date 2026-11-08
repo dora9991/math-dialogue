@@ -147,7 +147,7 @@
         draw: function (D) {
           var t = D.ph ? D.t : 0, P = pairRows(D, { k: CH.smooth(.05, .25, t), dim: CH.smooth(.25, .35, t) }), z = P.z, y3 = P.ys[2];
           P.comA.forEach(function (ia, j) { var k = CH.clamp((t - .35 - j * .06) / .2, 0, 1); if (k <= 0) return; var e = CH.ease(k), x1 = P.x0 + j * P.st + P.st / 2; pc(D, CH.lerp(P.XA[ia], x1, e), CH.lerp(P.ys[0], y3, e), z, F54[ia], 1); });
-          var a = CH.smooth(.6, .7, t); if (a > 0) { TX(D, P.x0 - z * .3, y3, '最大公約数', { size: Math.min(z * .8, P.x0 - P.R.x0 - z * .5) / 1, align: 'right', col: C.yel, a: a }); TX(D, P.x0 + 3 * P.st + z * .2, y3, '＝18', { size: z * 1.1, align: 'left', col: C.yel, a: CH.smooth(.7, .8, t) }); }
+          var a = CH.smooth(.6, .7, t); if (a > 0) { TX(D, P.x0 - z * .3, y3, '最大公約数', { size: fit(D, '最大公約数', P.x0 - P.R.x0 - z * .4, z * .8), align: 'right', col: C.yel, a: a }); TX(D, P.x0 + 3 * P.st + z * .2, y3, '＝18', { size: z * 1.1, align: 'left', col: C.yel, a: CH.smooth(.7, .8, t) }); }
           var a2 = CH.smooth(.82, .95, t); if (a2 > 0) TX(D, P.R.cx, P.ys[3], '54＝18×3　90＝18×5', { size: fit(D, '54＝18×3　90＝18×5', P.R.w * .9, z), col: C.chalk, a: a2 });
         } },
       { tag: 'ことば', bh: 'ことば', q: '自然数をわり切れる数を何という？ 2つの数に共通な約数は？ そのうち最大のものは？ ある自然数の2乗になる数は？', a: '約数・公約数・最大公約数・平方数', sub: '54 と 90 の公約数 1、2、3、6、9、18 は、最大公約数 18 の約数になっている', dur: 5,
@@ -165,16 +165,16 @@
       { tag: '例題', bh: '例題', q: '（1）36＝2^2×3^2、100＝2^2×5^2、144＝2^4×3^2、90＝2×3^2×5 のうち、ある自然数の2乗になる数は？', a: '36（6^2）、100（10^2）、144（12^2）。90 はならない', sub: '指数がすべて偶数なら、素因数のカードを同じ2組に分けられる。144＝(2^2×3)×(2^2×3)＝12^2', dur: 6,
         b: { t: '（1）指数がすべて <b>偶数</b> → 同じ2組に分かれる → 平方数（36＝6^2、100＝10^2、144＝12^2）', col: C.pink },
         draw: function (D) {
-          var Q = L(D), R = Q.R, s = Q.s, t = D.ph ? D.t : 0, rs = CH.rows(R, 4, .1), z = Math.min(s * 1.3, rs[0].h * .5, R.w / 17), st = z * 1.55;
+          var Q = L(D), R = Q.R, s = Q.s, t = D.ph ? D.t : 0, rs = CH.rows(R, 4, .1), z = Math.min(s * 1.3, rs[0].h * .5, R.w / 19), st = z * 1.55;
           SQ.forEach(function (h, k) {
             var r = rs[k], y = r.cy, lw = z * 3.2, x0 = r.x0 + lw, kk = CH.ease(CH.clamp((t - .05 - k * .14) / .3, 0, 1)), nA = h.A.length;
             TX(D, x0 - z * .2, y, h.n + '＝', { size: z, align: 'right' });
             h.f.forEach(function (p, i) {
-              var to = h.to[i], fx = to[0] === 'A' ? to[1] : to[0] === 'B' ? nA + .7 + to[1] : nA * 2 + 1.6 + to[1], x = x0 + CH.lerp(i, fx, kk) * st + st / 2;
+              var to = h.to[i], fx = to[0] === 'A' ? to[1] : to[0] === 'B' ? nA + 1 + to[1] : nA * 2 + 2.2 + to[1], x = x0 + CH.lerp(i, fx, kk) * st + st / 2;
               pc(D, x, y, z, p, 1, to[0] === 'L' && kk > .9 ? { col: RED } : {});
             });
-            if (kk > .5) { var xm = x0 + (nA + .35) * st + st / 2; if (nA) CH.text(D, xm, y, '×', { size: z * .9, a: CH.smooth(.5, 1, kk) }); }
-            var xe = x0 + (h.L.length ? nA * 2 + 1.6 + h.L.length : nA * 2 + .9) * st + z * .3, a = CH.smooth(.85, 1, kk);
+            if (kk > .5) { var xm = x0 + nA * st + st / 2; if (nA) CH.text(D, xm, y, '×', { size: z * .9, a: CH.smooth(.5, 1, kk) }); }
+            var xe = x0 + ((h.L.length ? nA * 2 + 1.2 + h.L.length : nA * 2) + 1) * st + z * .1, a = CH.smooth(.85, 1, kk);
             if (a > 0) TX(D, xe, y, h.L.length ? '同じ2組にならない' : '＝' + prod(h.A) + '^2', { size: h.L.length ? Math.min(z * .75, fit(D, '同じ2組にならない', r.x1 - xe, z * .75)) : z * 1.05, align: 'left', col: h.L.length ? RED : C.yel, a: a });
             else if (!D.ph) TX(D, x0 + h.f.length * st + z * .5, y, '？', { size: z, align: 'left', a: .45 });
           });
@@ -182,7 +182,7 @@
       { tag: '例題', q: '（2）300 に、できるだけ小さい自然数をかけて、ある自然数の2乗にしたい。何をかければよい？', a: '3', sub: '300＝2^2×3×5^2。3 の指数だけが奇数なので、3 をかける。300×3＝900＝30^2', dur: 6,
         b: { t: '（2）300＝2^2×3×5^2 … 3 が1つあまる → <b>3</b> をかける（900＝30^2）', col: C.pink },
         draw: function (D) {
-          var Q = L(D), R = Q.R, s = Q.s, t = D.ph ? D.t : 0, z = Math.min(s * 1.6, R.w / 14, R.h / 7), st = z * 1.6, y = R.y0 + R.h * .35, x0 = R.cx - st * 4, k1 = CH.ease(CH.smooth(.05, .3, t)), k2 = CH.ease(CH.smooth(.45, .7, t));
+          var Q = L(D), R = Q.R, s = Q.s, t = D.ph ? D.t : 0, z = Math.min(s * 1.6, R.w / 17.5, R.h / 7), st = z * 1.6, y = R.y0 + R.h * .35, x0 = R.cx - st * 3, k1 = CH.ease(CH.smooth(.05, .3, t)), k2 = CH.ease(CH.smooth(.45, .7, t));
           TX(D, x0 - z * .2, y, '300＝', { size: z, align: 'right' });
           H300.f.forEach(function (p, i) {
             var to = H300.to[i], fx = to[0] === 'A' ? [0, 2][to[1]] : to[0] === 'B' ? [3.6, 5.6][to[1]] : CH.lerp(7, 1, k2);
@@ -202,7 +202,7 @@
             var ia = M.ia.indexOf(j), src = ia >= 0 ? [P.XA[ia], P.ys[0]] : [P.XB[M.ib.indexOf(j)], P.ys[1]], k = CH.clamp((t - .25 - j * .07) / .2, 0, 1); if (k <= 0) return;
             var e = CH.ease(k); pc(D, CH.lerp(src[0], P.x0 + j * P.st + P.st / 2, e), CH.lerp(src[1], y3, e), z, p, 1);
           });
-          var a = CH.smooth(.65, .75, t); if (a > 0) { TX(D, P.x0 - z * .3, y3, '最小公倍数', { size: Math.min(z * .8, P.x0 - P.R.x0 - z * .5), align: 'right', col: C.yel, a: a }); TX(D, P.x0 + M.slots.length * P.st + z * .2, y3, '＝270', { size: z * 1.1, align: 'left', col: C.yel, a: CH.smooth(.75, .85, t) }); }
+          var a = CH.smooth(.65, .75, t); if (a > 0) { TX(D, P.x0 - z * .3, y3, '最小公倍数', { size: fit(D, '最小公倍数', P.x0 - P.R.x0 - z * .4, z * .8), align: 'right', col: C.yel, a: a }); TX(D, P.x0 + M.slots.length * P.st + z * .2, y3, '＝270', { size: z * 1.1, align: 'left', col: C.yel, a: CH.smooth(.75, .85, t) }); }
           var a2 = CH.smooth(.85, .97, t); if (a2 > 0) TX(D, P.R.cx, P.ys[3], '270＝54×5＝90×3', { size: fit(D, '270＝54×5＝90×3', P.R.w * .9, z), a: a2 });
         } },
       { tag: '考えよう', q: '84＝2^2×3×7 の約数は、全部で何個あるだろう。まず、12、18、30、36 の約数の個数を調べて、きまりを見つけよう。',

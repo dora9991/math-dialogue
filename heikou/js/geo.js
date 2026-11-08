@@ -81,7 +81,7 @@ GE.par = function (F, s, n, o) {
 };
 /* 角の印：'ABC'（B が頂点）。o：n（弧の数）、r（半径 px）、fill（扇形をぬる）、col */
 GE.arc = function (F, s, o) {
-  o = o || {}; s = s.replace('∠', ''); var g = F.D.ctx, A1 = F.X(s[0]), V = F.X(s[1]), B1 = F.X(s[2]);
+  o = o || {}; if (typeof s === 'string') s = s.replace('∠', ''); var g = F.D.ctx, A1 = F.X(s[0]), V = F.X(s[1]), B1 = F.X(s[2]);
   var a1 = Math.atan2(A1[1] - V[1], A1[0] - V[0]), a2 = Math.atan2(B1[1] - V[1], B1[0] - V[0]), d = a2 - a1;
   while (d > Math.PI) d -= TAU; while (d <= -Math.PI) d += TAU;
   var r = o.r || F.s * 1.05, col = o.col || C.chalk;
@@ -106,7 +106,7 @@ GE.arcDir = function (F, v, d1, d2, o) {
 };
 /* 直角の印：'ABC'（B が頂点） */
 GE.right = function (F, s, o) {
-  o = o || {}; s = s.replace('∠', ''); var V = F.X(s[1]), a = F.X(s[0]), b = F.X(s[2]), h = o.r || F.s * .6;
+  o = o || {}; if (typeof s === 'string') s = s.replace('∠', ''); var V = F.X(s[1]), a = F.X(s[0]), b = F.X(s[2]), h = o.r || F.s * .6;
   function u(p) { var d = [p[0] - V[0], p[1] - V[1]], L = Math.hypot(d[0], d[1]); return [d[0] / L * h, d[1] / L * h]; }
   var p = u(a), q = u(b);
   CH.poly(F.D, [[V[0] + p[0], V[1] + p[1]], [V[0] + p[0] + q[0], V[1] + p[1] + q[1]], [V[0] + q[0], V[1] + q[1]]], { stroke: o.col || C.chalk, sw: o.w || 2, a: o.a, close: false, fill: o.fill ? hexA(o.col || C.chalk, .3) : null });

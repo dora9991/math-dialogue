@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ひき算をたし算に直す</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 正の数・負の数 第7時：ひき算は、たし算に直せるだろうか（ikkan の lesson_seifu_07 と同じ流れ）。
+   温度計で −2℃ から ＋4℃ まで 2＋4＝6。黒の玉4こから赤の玉2こをとるために、0 になる組（黒と赤）を2組たしてから赤2こをとると、黒6こ。
+   「−(−2)」の矢印が向きを変えて「＋(＋2)」になる。例題・考えようは、ひく数の矢印（点線）が反対向きになって、ひかれる数の先につながる。
+   数値は ikkan のまま（昨日 −2℃・今日 ＋4℃、例題 (＋5)−(＋8) ほか、考えよう (＋2) からひく、チャレンジ −7・−1・＋4・＋9）。答えはページの中で、□＋ひく数＝ひかれる数 でも確かめている。 */
+(function () {
+  var C = CH.C, S = CH.mnum, POS = C.blue, NEG = C.pink, OUT = 'rgba(20,40,30,.9)';
+  function sg(v) { return v > 0 ? '＋' + S(v) : S(v); }
+  function pr(v) { return '(' + (v === 0 ? '0' : sg(v)) + ')'; }
+  function sc(v) { return v > 0 ? POS : v < 0 ? NEG : C.yel; }
+  function NL(D, x0, x1, y, min, max, o) {
+    o = o || {}; var s = o.s || CH.fs(D, .8), u = (x1 - x0) / (max - min), X = function (v) { return x0 + (v - min) * u; };
+    var lab = o.lab || [1, 2, 5, 10, 20, 50].filter(function (q) { return q * u >= s * 2.1; })[0] || 100, st = u < 8 ? lab : 1;
+    CH.arrow(D, x0 - s * .5, y, x1 + s * 1.1, y, { w: 2, head: 9 });
+    for (var v = Math.ceil(min / st) * st; v <= max + 1e-9; v += st) {
+      var isL = v % lab === 0, h = v === 0 ? 9 : isL ? 7 : 4;
+      CH.line(D, X(v), y - h, X(v), y + h, { w: v === 0 ? 2.4 : 1.4 });
+      if (isL) CH.text(D, X(v), y + s * 1.25, S(v), { size: s, num: true, col: v < 0 ? 'rgba(255,157,178,.95)' : v === 0 ? C.yel : C.chalk });
+    }
+    return { X: X, y: y, s: s, u: u };
+  }
+  /* 矢印（from → to）。o：lev、h、k、txt、col、dash、drop */
+  function jump(D, L, from, to, o) {
+    o = o || {}; var k = o.k == null ? 1 : o.k; if (k <= 0) return;
+    var y = L.y - L.s * (o.h || 1.6) * (o.lev || 1), col = o.col || sc(to - from), a = o.a == null ? 1 : o.a, x0 = L.X(from), x1 = CH.lerp(x0, L.X(to), k);
+    if (!o.nodrop) CH.line(D, x0, L.y - 3, x0, y, { col: col, dash: [3, 4], w: 1.2, a: a * .55 });
+    if (Math.abs(x1 - x0) > 2) CH.arrow(D, x0, y, x1, y, { col: col, w: o.w || 3, head: Math.min(11, Math.abs(x1 - x0) * .8), a: a, dash: o.dash });
+    if (k >= 1 && o.drop) CH.line(D, x1, y, x1, L.y - 3, { col: col, dash: [3, 4], w: 1.2, a: a * .55 });
+    if (o.txt) CH.text(D, (x0 + x1) / 2, y - L.s * .75, o.txt, { col: col, size: o.ts || L.s * .95, a: a * CH.smooth(.3, .8, k), outline: OUT, num: true });
+  }
+  function chip(D, x, y, r, pos, a) {
+    if (r < .5 || a <= 0) return;
+    CH.circle(D, x, y, r, { fill: pos ? '#0d120f' : '#d94a4a', stroke: pos ? 'rgba(242,240,230,.85)' : '#ffc0c0', sw: 1.6, a: a });
+    if (r >= 7) CH.text(D, x, y + .5, pos ? '＋' : '−', { size: r * 1.25, col: pos ? C.chalk : '#fff', a: a, num: true, w: 700 });
+  }
+
+  /* ---- 数と検算（ひき算 a−b は、□＋b＝a の □） ---- */
+  function solve(a, b) { for (var x = -30; x <= 30; x++) if (x + b === a) return x; return null; }
+  CH.check(4 - (-2) === 6 && 4 + 2 === 6 && solve(4, -2) === 6 && (4 - 0) + (0 - (-2)) === 6, '今日の問い');
+  var EX = [[5, 8], [3, 9], [-4, 6], [7, -5]], EXR = EX.map(function (p) { return p[0] + (-p[1]); });
+  CH.check(EXR.join() === '-3,-6,-10,12' && EX.every(function (p, i) { return solve(p[0], p[1]) === EXR[i] && p[0] - p[1] === EXR[i]; }), '例題');
+  CH.check([5, 2, 0, -2, -5].map(function (b) { return 2 - b; }).join() === '-3,0,2,4,7', '考えよう（ここで確かめるだけ）');
+  var NS = [-7, -1, 4, 9], best = null, five = [];
+  NS.forEach(function (a) { NS.forEach(function (b) { if (a === b) return; var d = a - b; if (!best || d > best[2]) best = [a, b, d]; if (d === 5) five.push(a + '/' + b); }); });
+  CH.check(best.join() === '9,-7,16' && five.join() === '4/-1,9/4', 'チャレンジ');
+
+  /* ---- 今日の問い：温度計（たて） ---- */
+  function thermo(D, k) {
+    var R = CH.box(D, { l: .05, r: .05, t: .08, b: .06 }), s = CH.fs(D), x = R.x0 + R.w * .32, min = -5, max = 7, Y = function (v) { return R.y1 - (v - min) / (max - min) * R.h; };
+    var tw = Math.max(10, s * .7);
+    CH.fillRect(D, x - tw / 2, Y(max), x + tw / 2, Y(min), { stroke: C.chalk, sw: 1.6, fill: 'rgba(242,240,230,.06)' });
+    for (var v = min; v <= max; v++) { CH.line(D, x - tw / 2 - (v % 2 ? 4 : 8), Y(v), x - tw / 2, Y(v), { w: v === 0 ? 2.4 : 1.3, col: v === 0 ? C.yel : C.chalk }); if (v % 2 === 0 || v === -5) CH.text(D, x - tw / 2 - s * .7, Y(v), v === 0 ? '0' : sg(v), { size: s * .8, num: true, align: 'right', col: v === 0 ? C.yel : v < 0 ? 'rgba(255,157,178,.95)' : C.chalk }); }
+    CH.text(D, x, Y(max) - s * .7, '（℃）', { size: s * .75, col: 'rgba(242,240,230,.75)' });
+    [[-2, '昨日 −2℃', NEG], [4, '今日 ＋4℃', POS]].forEach(function (p) { CH.line(D, x + tw / 2, Y(p[0]), x + tw / 2 + s * 1.2, Y(p[0]), { col: p[2], w: 2 }); CH.circle(D, x, Y(p[0]), tw * .32, { fill: p[2] }); CH.text(D, x + tw / 2 + s * 1.5, Y(p[0]), p[1], { col: p[2], size: s, align: 'left', w: 700 }); });
+    if (k > 0) {
+      var ax = x + tw / 2 + s * 7.5, k1 = CH.smooth(0, .3, k), k2 = CH.smooth(.3, .6, k), k3 = CH.smooth(.65, .85, k);
+      CH.arrow(D, ax, Y(-2), ax, CH.lerp(Y(-2), Y(0), k1), { col: C.green, w: 3.2, head: 11 });
+      if (k1 >= 1) CH.text(D, ax + s * .6, Y(-1), '2', { col: C.green, size: s, align: 'left', w: 700 });
+      if (k2 > 0) { CH.arrow(D, ax, Y(0), ax, CH.lerp(Y(0), Y(4), k2), { col: C.green, w: 3.2, head: 11 }); if (k2 >= 1) CH.text(D, ax + s * .6, Y(2), '4', { col: C.green, size: s, align: 'left', w: 700 }); }
+      CH.line(D, x + tw / 2, Y(0), ax + s * .4, Y(0), { col: C.yel, dash: [4, 4], w: 1.4, a: k1 });
+      if (k3 > 0) { var bx = ax + s * 2.4; CH.line(D, bx, Y(-2), bx, Y(4), { col: C.yel, w: 2, a: k3 }); CH.line(D, bx - 6, Y(-2), bx, Y(-2), { col: C.yel, w: 2, a: k3 }); CH.line(D, bx - 6, Y(4), bx, Y(4), { col: C.yel, w: 2, a: k3 }); CH.text(D, bx + s * .6, Y(1), '2＋4＝6', { col: C.yel, size: CH.fitSize(D, '2＋4＝6', R.x1 - bx - s, s * 1.1), align: 'left', a: k3, w: 700 }); }
+      CH.text(D, R.x1, Y(6.4), '(＋4)−(−2)＝＋6', { col: C.yel, size: CH.fitSize(D, '(＋4)−(−2)＝＋6', R.x1 - x - s * 2, s * 1.1), align: 'right', a: CH.smooth(.85, 1, k), w: 700, num: true });
+    }
+  }
+
+  /* ---- 今日の問い：玉で考える（0 になる組をたしてから、赤をとる） ---- */
+  function takeAway(D, k) {
+    var R = CH.box(D, { l: .05, r: .05, t: .07, b: .06 }), s = CH.fs(D), r = Math.min(R.w / 18, s * .9, R.h * .07), gx = r * 2.6, x0 = R.cx - 2.5 * gx, y1 = R.y0 + R.h * .36, y2 = y1 + r * 3;
+    var k1 = CH.smooth(.12, .4, k), k2 = CH.smooth(.45, .72, k), k3 = CH.smooth(.76, .95, k);
+    CH.text(D, R.cx, R.y0 + s * .6, '(＋4)−(−2) … 黒4 から 赤2 をとる', { size: CH.fitSize(D, '(＋4)−(−2) … 黒4 から 赤2 をとる', R.w * .95, s), num: true });
+    for (var i = 0; i < 4; i++) chip(D, x0 + i * gx, y1, r, true, 1);
+    for (var j = 0; j < 2; j++) {
+      var x = x0 + (4 + j) * gx;
+      chip(D, x, y1, r * k1, true, k1);
+      chip(D, x, CH.lerp(y2, y2 + R.h * .35, CH.ease(k2)), r * k1, false, k1 * (1 - CH.smooth(.75, 1, k2)));
+      if (k1 > 0 && k2 <= 0) CH.line(D, x, y1 + r, x, y2 - r, { col: C.yel, w: 2, a: k1 * .7 });
+    }
+    var ty = y2 + r * 2.4 + s;
+    if (k1 > 0) CH.text(D, R.cx, ty, '0 になる組（黒と赤）を 2組 たす → まだ ＋4', { col: C.yel, size: CH.fitSize(D, '0 になる組（黒と赤）を 2組 たす → まだ ＋4', R.w * .95, s * .85), a: k1 * (1 - CH.smooth(.45, .55, k)) });
+    if (k2 > 0) CH.text(D, R.cx, ty, '赤2 をとる', { col: NEG, size: s * .95, a: CH.smooth(.45, .55, k) * (1 - k3) });
+    if (k3 > 0) {
+      CH.text(D, R.cx, ty, '黒6 が残る → ＋6', { col: C.chalk, size: s, a: k3, w: 700 });
+      CH.text(D, R.cx, ty + s * 1.9, '(＋4)−(−2)＝(＋4)＋(＋2)＝＋6', { col: C.yel, size: CH.fitSize(D, '(＋4)−(−2)＝(＋4)＋(＋2)＝＋6', R.w * .95, s * 1.1), a: k3, w: 700, num: true });
+    }
+  }
+
+  /* ---- ことば：式の2か所を変える・矢印の向きが反対に ---- */
+  function flip(D, k) {
+    var R = CH.box(D, { l: .05, r: .06, t: .06, b: .06 }), s = CH.fs(D), big = Math.min(s * 1.6, R.w / 12), y1 = R.y0 + big, y2 = y1 + big * 2.1;
+    var k1 = CH.smooth(0, .3, k), k2 = CH.smooth(.35, .75, k), k3 = CH.smooth(.75, .95, k), g = D.ctx;
+    function row(y, parts, a) { g.save(); g.font = '700 ' + big + 'px "BIZ UDPGothic",sans-serif'; var ws = parts.map(function (p) { return g.measureText(p[0]).width + big * .25; }), W = ws.reduce(function (p, q) { return p + q; }, 0); g.restore(); var x = R.cx - W / 2, out = []; parts.forEach(function (p, i) { CH.text(D, x + ws[i] / 2, y, p[0], { size: big, col: p[1], num: true, w: 700, a: a }); out.push([x + ws[i] / 2, ws[i]]); x += ws[i]; }); return out; }
+    var A = row(y1, [['(＋4)', C.chalk], ['−', NEG], ['(−2)', NEG]], 1);
+    if (k1 > 0) { CH.arrow(D, R.cx, y1 + big * .6, R.cx, y2 - big * .65, { col: C.yel, w: 2, a: k1 }); }
+    var B = row(y2, [['(＋4)', C.chalk], ['＋', POS], ['(＋2)', POS]], k1);
+    if (k1 > 0) [1, 2].forEach(function (i) { CH.fillRect(D, B[i][0] - B[i][1] / 2, y2 - big * .7, B[i][0] + B[i][1] / 2, y2 + big * .7, { stroke: C.yel, sw: 2, a: k1 }); });
+    if (k1 > 0) CH.text(D, R.x1, y2 + big * 1.3, '2か所を変える', { col: C.yel, size: s * .9, a: k1, align: 'right' });
+    var L = NL(D, R.x0 + s * .5, R.x1 - s, R.y1 - s * 1.5, -4, 8, { s: CH.fs(D, .8) }), lev = Math.min(1.7, (L.y - y2 - big * 2) / (2.4 * L.s));
+    jump(D, L, 0, 4, { lev: 1, h: lev, txt: '＋4' });
+    var dx = CH.lerp(-2, 2, CH.ease(k2)), ya = L.y - L.s * lev * 2;
+    CH.line(D, L.X(4), L.y - 3, L.X(4), ya, { col: C.chalk, dash: [3, 4], w: 1.2, a: .5 });
+    CH.arrow(D, L.X(4), ya, L.X(4 - 2), ya, { col: NEG, w: 2, dash: [5, 5], a: k2 > 0 ? .45 : 1 });
+    if (k2 <= 0) CH.text(D, L.X(3), ya - L.s * .75, '−2', { col: NEG, size: L.s, outline: OUT });
+    if (k2 > 0 && Math.abs(dx) > .1) CH.arrow(D, L.X(4), ya, L.X(4 + dx), ya, { col: dx > 0 ? POS : NEG, w: 3.2, head: 11 });
+    if (k2 >= 1) { CH.text(D, L.X(5), ya - L.s * .75, '−(−2) は ＋2', { col: POS, size: L.s, outline: OUT }); CH.line(D, L.X(6), ya, L.X(6), L.y - 3, { col: POS, dash: [3, 4], w: 1.2, a: .6 }); CH.circle(D, L.X(6), L.y, L.s * .4, { fill: C.yel }); }
+    if (k3 > 0) CH.text(D, L.X(-2), ya, '向きが反対', { col: C.yel, size: CH.fitSize(D, '向きが反対', L.X(3) - L.X(-4), s * .9), a: k3 });
+  }
+
+  /* ---- 例題：ひく数の矢印を反対向きに ---- */
+  function exRows(D, k) {
+    var R = CH.box(D, { l: .04, r: .06, t: .04, b: .05 }), rs = CH.rows(R, 4, .1), s = CH.fs(D, .85);
+    EX.forEach(function (p, i) {
+      var r = rs[i], ki = i === 0 ? 1 : CH.clamp((k - (i - 1) * .32) / .3, 0, 1), a = p[0], b = p[1], t = EXR[i];
+      var L = NL(D, r.x0 + s * .3, r.x1 - s, r.y1 - s * 1.4, -12, 14, { s: CH.fs(D, .64) }), h = Math.min(1.5, (L.y - r.y0 - s * 1.2) / (2.3 * L.s));
+      var head = pr(a) + '−' + pr(b) + '＝' + pr(a) + '＋' + pr(-b), full = head + '＝' + sg(t);
+      CH.text(D, r.x0, r.y0 + s * .5, ki >= 1 ? full : pr(a) + '−' + pr(b), { align: 'left', size: CH.fitSize(D, full, r.w * .8, s), num: true, col: C.chalk });
+      if (i === 0) CH.text(D, r.x1, r.y0 + s * .5, '見本', { align: 'right', size: s * .8, col: C.yel });
+      jump(D, L, 0, a, { lev: 1, h: h, txt: sg(a), ts: L.s * .9 });
+      var k1 = CH.smooth(0, .35, ki), k2 = CH.smooth(.35, .8, ki), ya = L.y - L.s * h * 2;
+      if (k1 > 0) CH.arrow(D, L.X(a), ya, L.X(a + b), ya, { col: sc(b), w: 1.8, dash: [5, 5], a: .5 * k1 });
+      if (k2 > 0) { CH.arrow(D, L.X(a), ya, CH.lerp(L.X(a), L.X(t), k2), ya, { col: sc(-b), w: 3, head: 10 }); if (k2 >= 1) { CH.line(D, L.X(t), ya, L.X(t), L.y - 3, { col: sc(-b), dash: [3, 4], w: 1.2, a: .6 }); CH.circle(D, L.X(t), L.y, L.s * .4, { fill: C.yel }); CH.text(D, (L.X(a) + L.X(t)) / 2, ya - L.s * .75, sg(-b), { col: sc(-b), size: L.s * .9, outline: OUT, num: true }); } }
+    });
+  }
+
+  /* ---- 考えよう ---- */
+  function trySub(D, V) {
+    var R = CH.box(D, { l: .05, r: .06, t: .12, b: .08 }), s = CH.fs(D), L = NL(D, R.x0, R.x1, R.y0 + R.h * .7, -12, 12, { s: CH.fs(D, .8) }), a = V.a, b = V.b;
+    CH.line(D, L.X(a), L.y + s * .3, L.X(a), R.y0 + s * .3, { col: C.green, dash: [5, 5], w: 1.6 });
+    CH.text(D, L.X(a), R.y0 - s * .5, 'はじめの数 ' + (a === 0 ? '0' : sg(a)), { col: C.green, size: s * .85 });
+    jump(D, L, 0, a, { lev: 1, h: 1.9, txt: a ? sg(a) : '' });
+    var ya = L.y - L.s * 1.9 * 2;
+    if (b) {
+      CH.arrow(D, L.X(a), ya, L.X(a + b), ya, { col: sc(b), w: 1.8, dash: [5, 5], a: .5 });
+      CH.text(D, L.X(a + b / 2), ya + L.s * .9, 'ひく数 ' + sg(b), { col: sc(b), size: L.s * .85, a: .7 });
+      jump(D, L, a, a - b, { lev: 2, h: 1.9, drop: true, nodrop: true });
+    }
+    CH.circle(D, L.X(a - b), L.y, L.s * .4, { fill: C.yel });
+    CH.text(D, R.cx, L.y + s * 3.3, pr(a) + '−' + pr(b), { col: C.yel, size: s * 1.2, w: 700, num: true });
+  }
+
+  /* ---- チャレンジ ---- */
+  function chal(D, k) {
+    var R = CH.box(D, { l: .05, r: .07, t: .1, b: .1 }), s = CH.fs(D), L = NL(D, R.x0, R.x1, R.y0 + R.h * .55, -9, 11, { s: CH.fs(D, .8) });
+    NS.forEach(function (v) { CH.circle(D, L.X(v), L.y, L.s * .42, { fill: sc(v), stroke: 'rgba(20,30,24,.8)', sw: 1.2 }); CH.text(D, L.X(v), L.y - L.s * 1.2, sg(v), { col: sc(v), size: L.s * 1.05, outline: OUT, num: true, w: 700 }); });
+    var k1 = CH.smooth(0, .3, k), k2 = CH.smooth(.4, .6, k), k3 = CH.smooth(.62, .82, k);
+    if (k1 > 0) { var y1 = L.y - L.s * 4; CH.arrow(D, L.X(-7), y1, CH.lerp(L.X(-7), L.X(9), k1), y1, { col: C.yel, w: 3.2 }); if (k1 >= 1) CH.text(D, L.X(1), y1 - L.s * 1, '① (＋9)−(−7)＝＋16', { col: C.yel, size: CH.fitSize(D, '① (＋9)−(−7)＝＋16', R.w * .6, s), w: 700, num: true }); }
+    var y2 = L.y + L.s * 3.2;
+    if (k2 > 0) { CH.arrow(D, L.X(-1), y2, CH.lerp(L.X(-1), L.X(4), k2), y2, { col: C.green, w: 3 }); CH.text(D, L.X(1.5), y2 + L.s * 1.1, '(＋4)−(−1)＝＋5', { col: C.green, size: CH.fitSize(D, '(＋4)−(−1)＝＋5', L.X(4.5) - L.X(-1.5), s * .85), a: k2, num: true }); }
+    if (k3 > 0) { CH.arrow(D, L.X(4), y2 + L.s * 2.6, CH.lerp(L.X(4), L.X(9), k3), y2 + L.s * 2.6, { col: C.green, w: 3 }); CH.text(D, L.X(6.5), y2 + L.s * 3.7, '(＋9)−(＋4)＝＋5', { col: C.green, size: CH.fitSize(D, '(＋9)−(＋4)＝＋5', L.X(9.5) - L.X(3.5), s * .85), a: k3, num: true }); }
+    if (k > .85) CH.text(D, R.cx, R.y1 - s * .2, '② 差が ＋5 … ひかれる数が 5 だけ右', { col: C.green, size: CH.fitSize(D, '② 差が ＋5 … ひかれる数が 5 だけ右', R.w * .9, s * .9), a: CH.smooth(.85, 1, k) });
+  }
+
+  K3.run({
+    no: '第7時', title: 'ひき算は、たし算に直せるだろうか', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '06.html', label: '◀ 第6時' }, { href: '08.html', label: '第8時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '昨日と今日の気温', q: '昨日の最高気温は −2℃、今日は ＋4℃ だった。今日は昨日より何℃高いだろう。式 (＋4)−(−2) の答えを、数直線で調べよう。',
+        notes: ['① 自分の考え（3分）　答えと、気づいたことを書こう。', '② ペアの考え（3分）　ほかの数でも、ひき算がたし算に直せるか、ためそう。'],
+        draw: function (D) { thermo(D, 0); } },
+      { tag: '今日の問い', q: '今日は昨日より何℃高い？', a: '6℃ 高い。(＋4)−(−2)＝＋6', sub: '−2℃ から 0℃ まで 2、0℃ から ＋4℃ まで 4。あわせて 6', dur: 5,
+        b: { t: '−2 から ＋4 まで 2＋4＝6 → (＋4)−(−2)＝<b>＋6</b>', col: C.yel },
+        draw: function (D) { thermo(D, D.ph ? D.t : 0); } },
+      { tag: '今日の問い', q: '(＋4)−(−2) と答えが同じになる たし算は？ 黒と赤の玉で考えよう。', a: '(＋4)＋(＋2)＝＋6', sub: '赤の玉がないので、0 になる組（黒と赤）を2組たしてから、赤2こをとる。黒が 2こふえたのと同じ。−2 をひくことは、＋2 をたすことと同じ', dur: 7,
+        b: { t: '(−2) をひく ＝ (＋2) をたす　(＋4)−(−2)＝(＋4)＋(＋2)', col: C.yel },
+        draw: function (D) { takeAway(D, D.ph ? D.t : 0); } },
+      { tag: 'ことば', bh: 'ことば', q: 'ひき算のことを何という？ ひき算は、どう直して計算できる？', a: '減法（答えは差）。ひく数の符号を変えて、加法に直せる', sub: '減法は、加法の逆の計算。「−」を「＋」に、ひく数の符号を反対にする（2か所）。数直線では、ひく数の矢印の向きが反対になる', dur: 5,
+        b: [{ t: 'ひき算 … <b>減法</b>　答え … <b>差</b>（加法の逆の計算）', col: C.green }, { t: 'ひく数の<b>符号を変えて</b>たす → 減法は すべて<b>加法</b>に直せる', col: C.green }],
+        draw: function (D) { flip(D, D.ph ? D.t : 0); } },
+      { tag: '例題', bh: '例題　たし算に直す', q: '(＋5)−(＋8) の答えは、□＋(＋8)＝＋5 の □。ひき算をたし算に直して計算しよう。(＋3)−(＋9)、(−4)−(＋6)、(＋7)−(−5)', a: '−6、−10、＋12', sub: '(＋3)＋(−9)＝−6　(−4)＋(−6)＝−10　(＋7)＋(＋5)＝＋12（見本 (＋5)＋(−8)＝−3）', dur: 6,
+        b: { t: '(＋3)−(＋9)＝<b>−6</b>　(−4)−(＋6)＝<b>−10</b>　(＋7)−(−5)＝<b>＋12</b>', col: C.pink },
+        draw: function (D) { exRows(D, D.ph ? D.t : 0); } },
+      { tag: '考えよう', bh: '考えよう', q: '(＋2) から、いろいろな数をひく。差は (＋2) より大きくなるだろうか、小さくなるだろうか。',
+        notes: ['ひく数を ＋5、＋2、0、−2、−5 にして、表にまとめよう。気づいたことは？', '(−3) など、ほかの数からひいても確かめよう。', 'スライダーで、はじめの数とひく数を変えられます（点線は、ひく数の矢印）。'],
+        sliders: [{ key: 'a', label: 'はじめの数', min: -6, max: 6, step: 1, val: 2, fmt: function (x) { return x ? sg(x) : '0'; } }, { key: 'b', label: 'ひく数', min: -6, max: 6, step: 1, val: 5, fmt: function (x) { return x ? sg(x) : '0'; } }],
+        draw: function (D) { trySub(D, D.V); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '−7、−1、＋4、＋9 の4つの数から2つを選んで、一方からもう一方をひく。① 答えがいちばん大きくなる式と答えは？ ② 答えが ＋5 になる式を、すべて書こう。',
+        a: '① (＋9)−(−7)＝＋16　② (＋4)−(−1)、(＋9)−(＋4)', sub: '① いちばん大きい数から、いちばん小さい数をひく。数直線で −7 から ＋9 まで 16　② ひかれる数が、ひく数より 5 だけ右にある組', dur: 6,
+        b: { t: '① (＋9)−(−7)＝<b>＋16</b>　② <b>(＋4)−(−1)</b>、<b>(＋9)−(＋4)</b>', col: C.orange },
+        draw: function (D) { chal(D, D.ph ? D.t : 0); } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

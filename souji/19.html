@@ -52,6 +52,8 @@
     if (t > .65) CH.text(D, R.cx, R.y0 + h * 3.55, it.why, { size: Math.min(fs * 1.05, CH.fitSize(D, it.why, R.w * .98, fs * 1.05)), col: C.yel, a: CH.smooth(.65, .78, t) });
   }
   function rows2(D, k) { var B = CH.box(D, { l: .04, r: .04, t: .1, b: .04 }); return { top: CH.rect(B.x0, B.y0, B.x1, B.y0 + B.h * (k || .56)), bot: CH.rect(B.x0 + B.w * .02, B.y0 + B.h * ((k || .56) + .08), B.x1, B.y1) }; }
+  /* 立体の字（label）を、黒板の字の大きさにそろえる */
+  function big(D) { var k = Math.max(1, CH.fs(D) * .85 / D.fs), L = D.label; D.label = function (p, t, o) { o = Object.assign({}, o); o.size = (o.size || 1) * k; L(p, t, o); }; return D; }
   function depth(D, p) { return v.dot(v.sub(p, D.C.pos), D.C.f); }
 
   /* ---- 今日の問い：ピザ M（直径 20・1000円）、L（直径 30・2000円） ---- */
@@ -101,7 +103,7 @@
         b: { t: '体積の比 8：27 → 大の量は <b>3.375倍</b> ＞ 値段 3倍 → <b>大が得</b>', col: C.blue },
         banner: function (s) { return s.ph && s.t < .45 ? '1.5倍に拡大すると、体積は 1.5×1.5×1.5＝3.375倍' : ''; },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, L = rows2(D, D.ph ? .56 : .9), fs = CH.fs(D), S = D.sub(L.top.cx, L.top.cy, Math.min(L.top.w * .62, L.top.h) / 2, K.frame([-.5, 0, 0], 6.6));
+          var t = D.ph ? D.t : 0, L = rows2(D, D.ph ? .56 : .9), fs = CH.fs(D), S = big(D.sub(L.top.cx, L.top.cy, Math.min(L.top.w * .62, L.top.h) / 2, K.frame([-.5, 0, 0], 6.6)));
           var balls = [[-6, 4, '小　120円'], [5, 6, '大　360円']];
           balls.map(function (b, i) { return { i: i, z: depth(S, [b[0], 0, 0]) }; }).sort(function (a, b) { return b.z - a.z; }).forEach(function (o) { var b = balls[o.i]; S.mesh(K.sphere(b[1]), { at: [b[0], 0, 0], col: BREAD }); });
           if (t > .02 && t < .5) { var e = CH.ease(CH.smooth(.05, .42, t)); S.mesh(K.sphere(4), { at: [v.lerp(-6, 5, e), 0, 0], s: 1 + .5 * e, col: C.yel, a: .35 }); }
@@ -129,7 +131,7 @@
         a: '① 3.375倍　② A', sub: '相似比 8：12＝2：3、体積の比 8：27 → B の量は 27/8＝3.375倍。値段は 450÷120＝3.75倍。3.375 ＜ 3.75 だから A のほうが得', dur: 6,
         b: { t: '① 体積の比 8：27 → <b>3.375倍</b>　② 値段 3.75倍 ＞ 量 3.375倍 → <b>A が得</b>', col: C.orange },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, L = rows2(D, D.ph ? .56 : .9), S = D.sub(L.top.cx, L.top.cy, Math.min(L.top.w * .62, L.top.h) / 2, K.frame([0, 0, 6], 7.2));
+          var t = D.ph ? D.t : 0, L = rows2(D, D.ph ? .56 : .9), S = big(D.sub(L.top.cx, L.top.cy, Math.min(L.top.w * .62, L.top.h) / 2, K.frame([0, 0, 6], 7.2)));
           var cs = [[-5.5, 1, 'A　120円', '8cm'], [5, 1.5, 'B　450円', '12cm']];
           cs.map(function (c, i) { return { i: i, z: depth(S, [c[0], 0, 4 * c[1]]) }; }).sort(function (a, b) { return b.z - a.z; }).forEach(function (o) {
             var c = cs[o.i]; S.mesh(cup(2 * c[1] * .97, 3 * c[1] * .97, 8 * c[1] * .94), { at: [c[0], 0, .05], col: JUICE, a: .85, edges: false });

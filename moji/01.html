@@ -22,6 +22,7 @@
 (function () {
   /* ======== 式を描く道具（文字と式のページで共通） ======== */
   var C = CH.C, S = CH.mnum, FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', OUT = 'rgba(20,40,30,.9)';
+  var NUM = '"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif', OPS = '×÷';  /* × と ÷ は、文字の x とまぎれないよう、ゴシックの字で */
   var CC = { y: C.yel, p: C.pink, b: C.blue, g: C.green, o: C.orange, l: C.lav, w: C.chalk };
   function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
   function mix(c1, c2, t) {
@@ -57,8 +58,8 @@
           add(G, x, 0); items.push({ span: sn++, x: x + G.w / 2, w: G.w, y: 0, top: G.top, bot: G.bot, s: s, col: cc });
           top = Math.max(top, G.top); bot = Math.max(bot, G.bot); x += G.w; i = j2 + 1; continue;
         }
-        g.font = '600 ' + s + 'px ' + FONT; var w = g.measureText(ch).width;
-        items.push({ id: nid(ch), t: ch, x: x + w / 2, y: 0, s: s, col: col }); x += w; i++;
+        var op = OPS.indexOf(ch) >= 0; g.font = (op ? '400 ' : '600 ') + s + 'px ' + (op ? NUM : FONT); var w = g.measureText(ch).width * (op ? 1.08 : 1);
+        items.push({ id: nid(ch), t: ch, x: x + w / 2, y: 0, s: s, col: col, op: op }); x += w; i++;
       }
       return { w: x, items: items, top: top, bot: bot };
     }
@@ -77,7 +78,7 @@
   function drawIt(D, it, a, col) {
     if (a <= .004) return; col = col || it.col;
     if (it.bar) CH.line(D, it.x - it.bar / 2, it.y, it.x + it.bar / 2, it.y, { col: col, w: Math.max(1.6, it.s * .075), a: a });
-    else if (it.t !== ' ' && it.t !== '　') CH.text(D, it.x, it.y, it.t, { size: it.s, col: col, a: a });
+    else if (it.t !== ' ' && it.t !== '　') CH.text(D, it.x, it.y, it.t, { size: it.s, col: col, a: a, num: it.op, w: it.op ? 400 : 600 });
   }
   /* 式を描く。o：align、a、col（白い字の色をかえる） */
   function EQ(D, cx, cy, str, size, o) {
@@ -93,7 +94,7 @@
     var kOut = 1 - CH.smooth(0, .4, k), kMv = CH.ease(CH.clamp((k - .2) / .6, 0, 1)), kIn = CH.smooth(.6, 1, k);
     PA.items.forEach(function (a) { var b = PB.at[map[a.id] || a.id]; if (b) { a.to = b; (src[b.id] = src[b.id] || []).push(a); } });
     function same(a, b) { return a.t === b.t && !a.bar === !b.bar; }
-    function mid(a, b, e) { return { x: CH.lerp(a.x, b.x, e), y: CH.lerp(a.y, b.y, e), s: CH.lerp(a.s, b.s, e), t: a.t, bar: a.bar && b.bar ? CH.lerp(a.bar, b.bar, e) : a.bar, col: mix(a.col, b.col, e) }; }
+    function mid(a, b, e) { return { x: CH.lerp(a.x, b.x, e), y: CH.lerp(a.y, b.y, e), s: CH.lerp(a.s, b.s, e), t: a.t, op: a.op, bar: a.bar && b.bar ? CH.lerp(a.bar, b.bar, e) : a.bar, col: mix(a.col, b.col, e) }; }
     PA.items.forEach(function (a) {
       var b = a.to; if (!b) { drawIt(D, a, al * kOut); return; }
       var m = mid(a, b, kMv); drawIt(D, m, src[b.id].length === 1 && same(a, b) ? al : al * (1 - kMv));
@@ -101,7 +102,7 @@
     PB.items.forEach(function (b) {
       var s = src[b.id]; if (!s) { drawIt(D, b, al * kIn); return; }
       if (s.length === 1 && same(s[0], b)) return;
-      var m = mid(s[0], b, kMv); m.t = b.t; m.bar = b.bar ? (s[0].bar ? m.bar : b.bar * kMv) : null; drawIt(D, m, al * kMv);
+      var m = mid(s[0], b, kMv); m.t = b.t; m.op = b.op; m.bar = b.bar ? (s[0].bar ? m.bar : b.bar * kMv) : null; drawIt(D, m, al * kMv);
     });
     return { A: PA, B: PB, P: k < .5 ? PA : PB, kMv: kMv };
   }
@@ -115,7 +116,9 @@
     r.seg = seg; r.loc = loc; r.size = size; return r;
   }
   /* 右の板書・問い（HTML）：[1/2] はたての分数、^2 は上つき、{y|…} は色 */
-  function H(s) { return CH.fr(String(s)).replace(/\^(\d+)/g, '<sup>$1</sup>').replace(/\{([ypbgolw])\|([^{}]*)\}/g, function (m, c, t) { return '<span style="color:' + CC[c] + '">' + t + '</span>'; }); }
+  function H(s) { return CH.fr(String(s)).replace(/\^(\d+)/g, '<sup>$1</sup>').replace(/\{([ypbgolw])\|([^{}]*)\}/g, function (m, c, t) { return '<span style="color:' + CC[c] + '">' + t + '</span>'; }).replace(/[×÷]/g, '<span style="font-family:' + NUM.replace(/"/g, "'") + ';font-weight:400">$&</span>'); }
+  /* 表のマスに入る字の大きさ（num：ゴシックの字） */
+  function cellSize(D, R, fw, nC, texts, base) { var cw = (R.w - R.w * fw) / (nC - 1), z = base; texts.forEach(function (t) { z = Math.min(z, CH.fitSize(D, t, cw * .86, base, { num: true })); }); return z; }
   function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = H(s[k]); }); if (s.notes) s.notes = s.notes.map(H); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = H(b.t); }); }); return st; }
   /* 角の丸い四角（カード・わく） */
   function rbox(D, x0, y0, x1, y1, col, a, o) {
@@ -186,7 +189,7 @@
   function split2(D, k) { var R = CH.box(D, { l: .04, r: .04, t: .04, b: .04 }); return { top: CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * k), bot: CH.rect(R.x0, R.y0 + R.h * (k + .04), R.x1, R.y1) }; }
   function chairTable(D, R, show) {
     return CH.table(D, R, ['列の数（列）', '1', '2', '3'], [['いすの数を求める式'].concat([1, 2, 3].map(function (n) { return '9×' + n + '＋4'; })), ['いすの数（脚）'].concat([1, 2, 3].map(chairs).map(String))],
-      { fw: .33, size: CH.fs(D, .85), show: show, rh: CH.fs(D) * 2.3 });
+      { fw: .33, size: cellSize(D, R, .33, 4, ['9×3＋4'], CH.fs(D, .85)), show: show, rh: CH.fs(D) * 2.3 });
   }
 
   /* ---- 変わる数・変わらない数 → □ → a ---- */
@@ -214,7 +217,7 @@
 
   /* ---- パンのおつり：500円のテープから 70円ずつ ---- */
   function panTape(D, R, n, o) {
-    o = o || {}; var s = CH.fs(D, .85), h = Math.min(R.h * .32, s * 2.4), y = R.y0 + s * 1.5, x0 = R.x0, W = R.w, u = W * 70 / 500, k = n === 'x' ? 4.4 : n, a = o.a == null ? 1 : o.a;
+    o = o || {}; var s = CH.fs(D, .95), h = Math.min(R.h * .32, s * 2.4), y = R.y0 + s * 1.5, x0 = R.x0, W = R.w, u = W * 70 / 500, k = n === 'x' ? 4.4 : n, a = o.a == null ? 1 : o.a;
     CH.text(D, x0, R.y0 + s * .45, '持っているお金　500円', { size: s, align: 'left', col: 'rgba(242,240,230,.85)' });
     CH.fillRect(D, x0, y, x0 + W, y + h, { fill: 'rgba(242,240,230,.06)', stroke: C.chalk, sw: 1.6 });
     for (var i = 0; i < Math.ceil(k - 1e-9); i++) {
@@ -226,14 +229,14 @@
     }
     var px = x0 + u * k;
     brace(D, x0 + 2, px - 2, y + h + 4, C.orange, a);
-    CH.text(D, (x0 + px) / 2, y + h + s * 1.5, '70×' + (n === 'x' ? 'x' : n) + '（パン代）', { size: s * .9, col: C.orange, a: a });
+    EQ(D, (x0 + px) / 2, y + h + s * 1.5, '70×' + (n === 'x' ? 'x' : n) + '（パン代）', s * .9, { col: C.orange, a: a });
     if (W - u * k > s * 2) { CH.text(D, (px + x0 + W) / 2, y + h / 2, 'おつり', { size: Math.min(s, (x0 + W - px) * .28), col: C.yel, a: a }); }
     return { y1: y + h + s * 2.2, px: px };
   }
   function panTable(D, R, upto) {
     var cols = [1, 2, 3, 5, 'x'], ex = cols.map(function (n) { return '500−70×' + n; });
-    if (wide(R) || R.w > 520) return CH.table(D, R, ['パンの個数（個）'].concat(cols.map(String)), [['おつりの式（円）'].concat(ex)], { fw: .22, size: CH.fs(D, .8), rh: CH.fs(D) * 2.3, show: function (r, c) { return r === 1 && c > 0 ? CH.clamp(upto - (c - 1), 0, 1) : 1; }, hl: function (r, c) { return r === 1 && c === 5 && upto > 4 ? C.yel : null; } });
-    return CH.table(D, R, ['パンの個数（個）', 'おつりの式（円）'], cols.map(function (n, i) { return [String(n), ex[i]]; }), { fw: .45, size: CH.fs(D, .85), rh: CH.fs(D) * 2, show: function (r, c) { return c === 1 && r > 0 ? CH.clamp(upto - (r - 1), 0, 1) : 1; }, hl: function (r, c) { return r === 5 && c === 1 && upto > 4 ? C.yel : null; } });
+    if (R.w > 520) return CH.table(D, R, ['パンの個数（個）'].concat(cols.map(String)), [['おつりの式（円）'].concat(ex)], { fw: .22, size: cellSize(D, R, .22, 6, ex, CH.fs(D, .8)), rh: CH.fs(D) * 2.3, show: function (r, c) { return r === 1 && c > 0 ? CH.clamp(upto - (c - 1), 0, 1) : 1; }, hl: function (r, c) { return r === 1 && c === 5 && upto > 4 ? C.yel : null; } });
+    return CH.table(D, R, ['パンの個数（個）', 'おつりの式（円）'], cols.map(function (n, i) { return [String(n), ex[i]]; }), { fw: .45, size: cellSize(D, R, .45, 2, ex, CH.fs(D, .85)), rh: CH.fs(D) * 2, show: function (r, c) { return c === 1 && r > 0 ? CH.clamp(upto - (r - 1), 0, 1) : 1; }, hl: function (r, c) { return r === 5 && c === 1 && upto > 4 ? C.yel : null; } });
   }
 
   /* ---- ストロー ---- */
@@ -268,7 +271,7 @@
           var P = EQ(D, R.cx, yE, '9×{y|a}＋4', big), ax = P.at['a#1'].x, a1 = CH.smooth(0, .2, t);
           brace(D, P.x0 - 4, P.x1 + 4, P.y0 - 4, C.green, a1, true); CH.text(D, R.cx, P.y0 - s * 1.7, '文字式', { col: C.green, a: a1 });
           var cy = P.y1 + s * 1.1; chip(D, ax, cy, '文字', C.yel, a1, s * .85);
-          var vals = [1, 2, 10, 50], w2 = R.w > R.h * .9, cw = w2 ? R.w / 4 : R.w / 2, ch = s * 3.4, ty = R.y1 - (w2 ? ch : ch * 2.2);
+          var vals = [1, 2, 10, 50], w2 = R.w > R.h * .9 && R.w > 480, cw = w2 ? R.w / 4 : R.w / 2, ch = s * 3.4, ty = R.y1 - (w2 ? ch : ch * 2.2);
           vals.forEach(function (v, i) {
             var ai = D.ph ? CH.smooth(.22 + i * .18, .34 + i * .18, t) : 0; if (ai <= 0) return;
             var x = w2 ? R.x0 + cw * (i + .5) : R.x0 + cw * (i % 2 + .5), y = w2 ? ty + ch / 2 : ty + ch / 2 + Math.floor(i / 2) * ch * 1.2;

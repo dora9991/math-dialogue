@@ -177,7 +177,7 @@
         banner: function (s) { if (!s.ph) return ''; return s.t < .25 ? '表面積の比 4：9 → 相似比 2：3' : s.t < .5 ? '体積の比 8：27' : s.t < .78 ? '差 27−8＝19 が 95cm³ → 1 は 5cm³' : 'P＝8×5＝40cm³'; },
         draw: function (D) {
           var t = D.ph ? D.t : 0, R = CH.box(D, { l: .06, r: .06, t: .06, b: .04 }), up = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .58);
-          var S = D.sub(up.cx, up.cy, Math.min(up.w, up.h) / 2, K.frame([3.3, 3, 3.75], 4.6));
+          var S = big(D.sub(up.cx, up.cy, Math.min(up.w, up.h) / 2, K.frame([3.3, 3, 3.75], 4.6)));
           order(S, [[1, 2, 2.5], [5, 3, 3.75]]).forEach(function (i) { if (i) S.mesh(BQ, { at: [3.5, 0, 0], col: C.blue }); else S.mesh(BP, { at: [0, 0, 0], col: C.pink }); });
           S.label([1, 0, 0], 'P', { dy: 1, col: C.pink, size: 1.2 }); S.label([5, 0, 0], 'Q', { dy: 1, col: C.blue, size: 1.2 });
           var y0 = R.y0 + R.h * .66, h = Math.min(R.h * .1, 40), w = R.w * .86, x0 = R.x0 + R.w * .1, fs = CH.fs(D, .85), a1 = v.smooth(.25, .35, t), a2 = v.smooth(.5, .6, t), a3 = v.smooth(.78, .88, t);
