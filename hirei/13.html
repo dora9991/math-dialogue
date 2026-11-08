@@ -240,7 +240,7 @@
           CH.fn(D, Pl, ane4, { x0: 0, x1: 32, col: C.pink, w: 3, n: 640 }); CH.fn(D, Pl, imo3, { x0: 0, x1: 30, col: C.blue, w: 3 });
           lab(D, Pl, 13, 1300, '姉', { col: C.pink, align: 'right' }); lab(D, Pl, 28, 1780, '妹', { col: C.blue, align: 'right' }); lab(D, Pl, 20, 1800, '駅で引き返す', { col: C.pink, align: 'center', dy: -CH.fs(D, .8) * .9, size: CH.fs(D, .8) });
           if (D.ph) { CH.pt(D, Pl, x, ane4(x), { col: C.pink, r: CH.fs(D, .32) }); CH.pt(D, Pl, x, imo3(x), { col: C.blue, r: CH.fs(D, .32) }); tlab(D, Pl, x); }
-          if (met) { var a = CH.smooth(.7, .78, t); CH.pseg(D, Pl, [24, 0], [24, 1440], { col: C.yel, dash: true, a: a }); CH.pt(D, Pl, 24, 1440, { col: C.yel, a: a }); lab(D, Pl, 24.3, 320, '(24, 1440)', { col: C.yel, a: a }); glow(D, Pl, [24, 1440], C.yel, a); }
+          if (met) { var a = CH.smooth(.7, .78, t); CH.pseg(D, Pl, [24, 0], [24, 1440], { col: C.yel, dash: true, a: a }); CH.pt(D, Pl, 24, 1440, { col: C.yel, a: a }); lab(D, Pl, 23.7, 320, '(24, 1440)', { col: C.yel, a: a, align: 'right' }); glow(D, Pl, [24, 1440], C.yel, a); }
           road(D, L.road, 1800, '駅', [{ d: ane4(D.ph ? x : 0), name: '姉', col: C.pink, up: true, note: met ? '出会った！' : '' }, { d: imo3(D.ph ? x : 0), name: '妹', col: C.blue }]);
           lines(D, zone(Pl, .4, 1780, 11, 1150), [{ t: '2人の道のりの和', a: CH.smooth(.72, .78, t) }, { t: '　1800×2＝3600（m）', a: CH.smooth(.72, .78, t) }, { t: '1分に 90＋60＝150m', a: CH.smooth(.78, .84, t) }, { t: '3600÷150＝24（分後）', col: C.yel, a: CH.smooth(.86, .94, t) }]);
         } }
