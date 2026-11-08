@@ -39,6 +39,12 @@
   CH.check(fee(9) === 1300 && fee(15) === 1720 && X3 === 17 && fee(17) === 2000, 'チャレンジ（水道料金）');
 
   /* ---- 道と、歩く人 ---- */
+  /* ○・× の印（字ではなく線で） */
+  function mark(D, x, y, r, ok, a) {
+    var w = Math.max(2.6, r * .2);
+    if (ok) CH.circle(D, x, y, r, { stroke: C.green, sw: w, a: a });
+    else { CH.line(D, x - r * .75, y - r * .75, x + r * .75, y + r * .75, { col: C.pink, w: w, a: a }); CH.line(D, x + r * .75, y - r * .75, x - r * .75, y + r * .75, { col: C.pink, w: w, a: a }); }
+  }
   function person(D, x, y, s, col, a) {
     var h = s * 1.75;
     CH.poly(D, [[x - s * .38, y], [x - s * .26, y - h + s * .5], [x + s * .26, y - h + s * .5], [x + s * .38, y]], { fill: col, stroke: OUT, sw: 1.4, a: a });
@@ -58,7 +64,7 @@
     CH.text(D, (x0 + x1) / 2, yd, '2 km', { size: s * .9 });
     if (o.split && d > 60) CH.text(D, (x0 + X(d)) / 2, y + s * .9, walked(m) + ' m', { col: C.yel, size: s * .78, outline: OUT, a: o.la });
     if (o.split && LEN - d > 60) CH.text(D, (X(d) + x1) / 2, y + s * .9, (LEN - walked(m)) + ' m', { col: C.blue, size: s * .78, outline: OUT, a: o.la });
-    person(D, X(d), y - s * .2, s, C.orange);
+    person(D, X(d), y - s * .2, s * 1.35, C.orange);
     return X;
   }
   /* 数量の行（名前と値）。rows：[{ n, v, col, a, bar }] */
@@ -132,7 +138,7 @@
     var vx = P.x0 + P.w * .8;
     if (ka > 0) {
       var ok = e[3] === '○', ans = k === 0 ? '12 cm' : k === 1 ? '1つに決まらない' : k === 2 ? '4 cm' : '4つある';
-      CH.text(D, vx, cy - ts * .9, e[3], { size: ts * 2.2, col: ok ? C.green : C.pink, a: ka });
+      mark(D, vx, cy - ts * .9, ts * .85, ok, ka);
       var lines = CH.wrap(D, ans, P.w * .36, ts * .78);
       lines.forEach(function (ln, i) { CH.text(D, vx, cy + ts * (.9 + i * 1), ln, { size: ts * .78, col: ok ? C.green : C.pink, a: ka }); });
     }
@@ -140,13 +146,15 @@
 
   /* ---- 考えよう：4 でわった余り ---- */
   function remDots(D, R, x) {
-    var s = CH.fs(D), q = Math.floor(x / 4), r = x % 4, cols = 4, rmax = 3, d = Math.min(R.w / 10, R.h / (rmax + 1.4)), r0 = d * .34, x0 = R.cx - d * 2;
+    var s = CH.fs(D), q = Math.floor(x / 4), r = x % 4, cols = 4, rmax = 3, d = Math.min(R.w / 7.5, R.h / (rmax + .9)), r0 = d * .36, x0 = R.cx - d * 2.6;
     for (var i = 0; i < 12; i++) {
       var row = Math.floor(i / cols), c = i % cols, px = x0 + (c + .5) * d, py = R.y0 + (row + .5) * d, on = i < x, isR = on && row === q;
       CH.circle(D, px, py, r0, on ? { fill: isR ? C.pink : 'rgba(154,216,255,.8)', stroke: OUT, sw: 1.2 } : { stroke: 'rgba(242,240,230,.18)', sw: 1.2 });
     }
-    for (var j = 0; j < q; j++) CH.text(D, x0 + d * 4.2, R.y0 + (j + .5) * d, '4こ', { size: s * .75, align: 'left', col: C.blue });
-    if (r) CH.text(D, x0 + d * 4.2, R.y0 + (q + .5) * d, 'あまり ' + r, { size: s * .75, align: 'left', col: C.pink });
+    for (var j = 0; j < q; j++) CH.text(D, x0 + d * 4.2, R.y0 + (j + .5) * d, '4 こ', { size: s * .85, align: 'left', col: C.blue });
+    if (r) CH.text(D, x0 + d * 4.2, R.y0 + (q + .5) * d, 'あまり ' + r, { size: s * .85, align: 'left', col: C.pink });
+    var msg = x + ' を 4 こずつ分けると、' + (q ? q + ' 組と ' : '') + 'あまり ' + r;
+    CH.text(D, R.cx, R.y0 + 3 * d + s * .5, msg, { size: CH.fitSize(D, msg, R.w * .95, s * .85), col: C.chalk });
     return R.y0 + 3 * d;
   }
 
@@ -200,7 +208,7 @@
         draw: function (D) {
           var L = lay(D), t = D.ph ? D.t : 0, s = CH.fs(D);
           road(D, CH.rect(L.road.x0, L.road.y0, L.road.x1, L.road.y1 - L.road.h * .05), 10, { split: true });
-          var rows = [0, 1, 2].map(function (k) { return [(k + 1) + '日め', '800 m', '1200 m', '']; }).concat([['1つに決まる？', '○', '○', '×']]);
+          var rows = [0, 1, 2].map(function (k) { return [(k + 1) + '日め', '800 m', '1200 m', '']; }).concat([['1つに決まる？', '', '', '']]);
           var T = CH.table(D, CH.rect(L.info.x0, L.info.y0 - L.road.h * .1, L.info.x1, L.info.y1), ['10分のとき', '歩いた道のり', '残りの道のり', 'つかれぐあい'], rows, { fw: .25, size: CH.fs(D, .82), rh: s * 2,
             show: function (r, c) { if (r === 0 || c === 0) return 1; if (!D.ph) return 0; return r < 4 ? CH.smooth(.05 + (r - 1) * .18, .15 + (r - 1) * .18, t) : CH.smooth(.65 + (c - 1) * .1, .75 + (c - 1) * .1, t); },
             hl: function (r, c) { return r === 4 && t > .65 ? (c === 3 ? C.pink : c > 0 ? C.green : null) : null; } });
@@ -209,6 +217,7 @@
             CH.fillRect(D, q.x0 + q.w * .11, q.cy - bh / 2, q.x0 + q.w * .11 + bw, q.cy + bh / 2, { stroke: 'rgba(242,240,230,.35)', sw: 1.2, a: a });
             CH.fillRect(D, q.x0 + q.w * .11, q.cy - bh / 2, q.x0 + q.w * .11 + bw * TIRED[r - 1], q.cy + bh / 2, { fill: 'rgba(255,157,178,.6)', a: a });
           });
+          if (D.ph) [1, 2, 3].forEach(function (c) { var q = T.cell(4, c); mark(D, q.cx, q.cy, q.h * .3, c < 3, CH.smooth(.65 + (c - 1) * .1, .75 + (c - 1) * .1, t)); });
         } },
       { tag: 'ことば', bh: 'ことば', q: 'x、y のように、いろいろな値をとる文字を何という？ x の値を決めると、y の値がただ1つに決まるとき、y は x の何という？', a: '変数・関数', sub: '歩いた時間を x 分、歩いた道のりを y m とすると、y は x の関数', dur: 6,
         b: [{ t: 'いろいろな値をとる文字 x、y … <b>変数</b>', col: C.green }, { t: 'x の値を決めると y の値が<b>ただ1つ</b>に決まるとき、y は x の <b>関数</b>', col: C.green }],
@@ -227,8 +236,9 @@
         notes: ['表をつくって、x を決めたとき、y を決めたときを調べよう。', 'わかったことと、ほかの例を書こう。', 'スライダーで、x を変えられます。'],
         sliders: [{ key: 'x', label: 'x', min: 1, max: 12, step: 1, val: 1, fmt: function (v) { return String(v); } }],
         draw: function (D) {
-          var R = CH.box(D, { l: .05, r: .05, t: .05, b: .05 }), x = D.V.x, s = CH.fs(D), rs = CH.rows(R, 2, .08);
-          remDots(D, CH.rect(rs[0].x0, rs[0].y0, rs[0].x1, rs[0].y1), x);
+          var R = CH.box(D, { l: .05, r: .05, t: .05, b: .05 }), x = D.V.x, s = CH.fs(D), rs = CH.rows(R, 2, .04);
+          remDots(D, CH.rect(rs[0].x0, rs[0].y0, rs[0].x1, rs[0].y1 + rs[0].h * .15), x);
+          rs[1] = CH.rect(rs[1].x0, rs[1].y0 + rs[1].h * .2, rs[1].x1, rs[1].y1);
           var head = ['x'], row = ['y（余り）'];
           for (var i = 1; i <= 12; i++) { head.push(String(i)); row.push(String(rem4(i))); }
           CH.table(D, rs[1], head, [row], { fw: .18, size: CH.fs(D, .8), rh: s * 2.2, show: function (r, c) { return r === 1 && c > 0 && c > x ? 0 : 1; }, hl: function (r, c) { return c === x ? C.yel : null; } });
@@ -237,10 +247,10 @@
         a: '① 関数である　② 1300円、1720円　③ 17 m³', sub: '② 1300＋140×3＝1720　③ 2000−1300＝700、700÷140＝5 だから 12＋5＝17', dur: 8,
         b: { t: '① 関数　② x＝9 → <b>1300円</b>、x＝15 → <b>1720円</b>　③ 700÷140＝5 → <b>17 m³</b>', col: C.orange },
         draw: function (D) {
-          var R = CH.box(D, { l: .04, r: .04, t: .04, b: .16 }), t = D.ph ? D.t : 0, s = CH.fs(D);
+          var R = CH.box(D, { l: .04, r: .04, t: .02, b: .2 }), t = D.ph ? D.t : 0, s = CH.fs(D);
           var x = !D.ph ? 0 : t < .3 ? 9 * CH.ease(t / .3) : t < .62 ? 9 + 6 * CH.ease(CH.smooth(.35, .6, t)) : 15 + 2 * CH.ease(CH.smooth(.65, .88, t));
           bill(D, R, x);
-          var y0 = R.y1 + s * 1.1, sz = CH.fs(D, .85), msgs = [['9 m³ → 1300円', .28, C.yel], ['15 m³ → 1720円', .6, C.green], ['2000円 → 17 m³', .88, C.orange]];
+          var y0 = R.y1 + s * 3.2, sz = CH.fs(D, .9), msgs = [['9 m³ → 1300円', .28, C.yel], ['15 m³ → 1720円', .6, C.green], ['2000円 → 17 m³', .88, C.orange]];
           msgs.forEach(function (m, i) { if (t > m[1]) CH.text(D, R.x0 + R.w * (i + .5) / 3, y0, m[0], { col: m[2], size: CH.fitSize(D, m[0], R.w / 3 * .95, sz), a: CH.smooth(m[1], m[1] + .06, t) }); });
         } }
     ])

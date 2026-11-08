@@ -96,7 +96,7 @@
   }
   /* 項の色：x の項は青、数の項はオレンジ、負の項はピンクのふち */
   function tcol(s) { return /^[＋+]?\(?[−-]/.test(String(s)) ? NEG : /[a-z]/.test(String(s)) ? POS : ONE; }
-  /* カードと記号のならび。items：[{s, op（記号なら true）, col, sx, a, dy, glow}]。それぞれの位置を返す */
+  /* カードと記号のならび。items：[{s, op（記号なら true）, col, sx, a, dy, glow}]。それぞれの位置を返す（o.dry なら かかずに位置だけ） */
   function itemW(D, it, h) { var sz = h * .5; return it.op ? Math.max(h * .5, TW(D, it.s, sz * 1.1) + h * .08) : Math.max(h * (it.minW || .95), TW(D, it.s, sz) + h * .45); }
   function crowW(D, items, h) { var gap = h * .14; return items.reduce(function (w, it, i) { return w + (i ? gap : 0) + itemW(D, it, h); }, 0); }
   function crow(D, cx, y, items, h, o) {
@@ -104,7 +104,8 @@
     var sz = h * .5, gap = h * .14, out = [], x = (o.align === 'left' ? cx : cx - crowW(D, items, h) / 2);
     items.forEach(function (it) {
       var w = itemW(D, it, h), xc = x + w / 2;
-      if (it.op) { if (it.a == null || it.a > 0) TX(D, xc, y + (it.dy || 0), it.s, { size: sz * 1.1, col: it.col || C.chalk, a: it.a }); }
+      if (o.dry) { /* ならびだけ */ }
+      else if (it.op) { if (it.a == null || it.a > 0) TX(D, xc, y + (it.dy || 0), it.s, { size: sz * 1.1, col: it.col || C.chalk, a: it.a }); }
       else card(D, xc, y, w, h, it.s, { col: it.col || tcol(it.s), sx: it.sx, a: it.a, dy: it.dy, glow: it.glow, tcol: it.tcol, size: sz });
       out.push({ x0: x, x1: x + w, cx: xc, w: w }); x += w + gap;
     });
@@ -270,7 +271,7 @@
   /* ---- 例題（1）（2）：4x を 3つ、裏返す ／ 20a を 5つに分けて、1つ分を裏返す ---- */
   function ex12(D, t) {
     var R = CH.box(D, { l: .04, r: .04, t: .03, b: .03 }), s = CH.fs(D), wide = D.W > D.H * 1.05, P = wide ? CH.cols(R, 2, .08) : CH.rows(R, 2, .06);
-    var Ar = P.map(function (p) { return { top: CH.rect(p.x0, p.y0, p.x1, p.y0 + p.h * .4), bot: CH.rect(p.x0, p.y0 + p.h * .44, p.x1, p.y1) }; });
+    var Ar = P.map(function (p) { return wide ? { top: CH.rect(p.x0, p.y0, p.x1, p.y0 + p.h * .4), bot: CH.rect(p.x0, p.y0 + p.h * .44, p.x1, p.y1) } : { top: CH.rect(p.x0, p.y0, p.x0 + p.w * .5, p.y1), bot: CH.rect(p.x0 + p.w * .53, p.y0, p.x1, p.y1) }; });
     var g = .16, rw = rowW(tilesOf(4, 0), 1, g), u = Math.min(Ar[0].bot.w * .9 / rw, (Ar[0].bot.h - s * 2.2) / 7.5, s * 1.6);
     chain(D, Ar[0].top, ['（1）4x×(−3)', '＝【4×(−3)】×x', '＝−12x'], t, { labs: ['', '数どうしをかける', ''], last: C.yel, size: s * 1.1 });
     chain(D, Ar[1].top, ['（2）20a÷(−5)', '＝20a×【(−[1/5])】', '＝−4a'], t, { labs: ['', '逆数をかける', ''], last: C.yel, size: s * 1.1 });

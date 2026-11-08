@@ -146,6 +146,26 @@
     g.save(); g.globalAlpha = D.ga * a; g.strokeStyle = col; g.lineWidth = 2.2; g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(mx, my, x1, y1); g.stroke(); g.restore();
     var ang = Math.atan2(y1 - my, x1 - mx); CH.arrow(D, x1 - Math.cos(ang) * 8, y1 - Math.sin(ang) * 8, x1, y1, { col: col, a: a, head: 9, w: 2.2 });
   }
+  /* 書き直しの行。list：[{a（もとの式）, b（書き直した式）, ch（変わっていく式）, r（きまりの番号）, maps, cnt（数える文字）}]。k(i)：i 行めの進み（null なら答えを出さない）。o：rn・rc（きまりの名前と色）、q（答えの前は ？） */
+  function rows(D, R, list, k, o) {
+    o = o || {}; var n = list.length, w = R.w > 560, rh = R.h / n, s = CH.fs(D), cs = Math.max(11, s * .72);
+    var big = Math.min(s * 1.6, rh * (w ? .48 : .3)); list.forEach(function (it) { big = Math.min(big, fitEq(D, it.a, R.w * (w ? .26 : .4), big)); });
+    list.forEach(function (it, i) {
+      var y = R.y0 + rh * (i + .5), yy = w ? y : y - rh * .17, lx = R.x0 + R.w * (w ? .15 : .22), cx = R.x0 + R.w * (w ? .47 : .7), ki = k ? k(i) : null, big0 = big;
+      (it.ch || []).forEach(function (st) { big = Math.min(big, fitEq(D, st, R.w * (w ? .28 : .34), big)); });
+      var aw = Math.max(eqW(D, it.a, big) + big * .9, R.w * (w ? .22 : .3)) / 2; rbox(D, lx - aw, yy - big * .85, lx + aw, yy + big * .85, C.chalk, .45, { fa: .04, w: 1.4 });
+      EQ(D, lx, yy, it.a, big);
+      CH.arrow(D, lx + R.w * (w ? .16 : .23), yy, lx + R.w * (w ? .2 : .27), yy, { w: 2, head: 8, col: 'rgba(242,240,230,.7)' });
+      if (ki == null) { EQ(D, cx, yy, o.q ? '？' : it.b, big, { col: C.yel, a: o.q ? .6 : 1 }); big = big0; return; }
+      var r = CHAIN(D, cx, yy, it.ch, ki, big, { maps: it.maps, hold: .25 });
+      if (it.cnt && r.seg === 0 && r.kMv < 1) { var c = 0; r.A.items.forEach(function (q) { if (q.t === it.cnt) CH.text(D, q.x, q.y + big * .85, String(++c), { size: big * .45, col: C.green, a: 1 - r.kMv }); }); }
+      var m = it.r.length, x = w ? R.x0 + R.w * .64 : R.x0 + R.w * .02, cyy = w ? y : y + rh * .24, tw = it.r.reduce(function (sum, j) { return sum + chipW(D, o.rn[j], cs) + 6; }, 0);
+      var c2 = cs * Math.min(1, (w ? R.x1 - x : R.w) / tw); if (!w) x = R.cx - tw * c2 / cs / 2;
+      it.r.forEach(function (j, q) { var a = CH.smooth(q / m, q / m + .1, ki); var wd = chip(D, x, cyy, o.rn[j], o.rc[j], a, c2, 'left'); x += wd + 6 * c2 / cs; });
+      big = big0;
+    });
+  }
+  function chipW(D, txt, s) { var g = D.ctx; g.save(); g.font = '600 ' + s + 'px ' + FONT; var w = g.measureText(txt).width + s * 1.1; g.restore(); return w; }
   function wide(R) { return R.w > R.h * 1.15; }
   /* ======== ここまで共通 ======== */
   /* ---- 検算（書き直した式と、もとの式が、いろいろな数で同じ値か） ---- */
@@ -158,24 +178,7 @@
   CH.check(3 * 4 * 5 === 5 * 3 * 4 && 4 * 3 + 4 * 4 + 4 * 5 === 4 * (3 + 4 + 5) && 4 * (3 + 4 + 5) === 48, 'チャレンジ（a＝3、b＝4 で）');
 
   /* ---- きまりの札 ---- */
-  var RC = [C.pink, C.blue, C.green, C.orange], RN = ['× をはぶく', '数を前に', 'アルファベットの順', '1 をはぶく'];
-  /* 書き直しの行。list：[{a（もとの式）, b（書き直した式）, ch（変わっていく式）, r（きまりの番号）, maps}]。k(i)：i 行めの進み（null なら答えを出さない） */
-  function rows(D, R, list, k, o) {
-    o = o || {}; var n = list.length, w = R.w > 560, rh = R.h / n, s = CH.fs(D), cs = Math.max(11, s * .72);
-    var big = Math.min(s * 1.6, rh * (w ? .48 : .3)); list.forEach(function (it) { big = Math.min(big, fitEq(D, it.a, R.w * (w ? .26 : .4), big)); });
-    list.forEach(function (it, i) {
-      var y = R.y0 + rh * (i + .5), yy = w ? y : y - rh * .17, lx = R.x0 + R.w * (w ? .15 : .22), cx = R.x0 + R.w * (w ? .47 : .7), ki = k ? k(i) : null;
-      rbox(D, lx - R.w * (w ? .14 : .21), yy - big * .85, lx + R.w * (w ? .14 : .21), yy + big * .85, C.chalk, .45, { fa: .04, w: 1.4 });
-      EQ(D, lx, yy, it.a, big);
-      CH.arrow(D, lx + R.w * (w ? .16 : .23), yy, lx + R.w * (w ? .2 : .27), yy, { w: 2, head: 8, col: 'rgba(242,240,230,.7)' });
-      if (ki == null) { EQ(D, cx, yy, o.q ? '？' : it.b, big, { col: C.yel, a: o.q ? .6 : 1 }); return; }
-      CHAIN(D, cx, yy, it.ch, ki, big, { maps: it.maps, hold: .25 });
-      var m = it.r.length, x = w ? R.x0 + R.w * .64 : R.x0 + R.w * .02, cyy = w ? y : y + rh * .24;
-      if (!w) x = R.cx - it.r.reduce(function (sum, j) { return sum + chipW(D, RN[j], cs) + 6; }, 0) / 2;
-      it.r.forEach(function (j, q) { var a = CH.smooth(q / m, q / m + .1, ki); var wd = chip(D, x, cyy, RN[j], RC[j], a, cs, 'left'); x += wd + 6; });
-    });
-  }
-  function chipW(D, txt, s) { var g = D.ctx; g.save(); g.font = '600 ' + s + 'px ' + FONT; var w = g.measureText(txt).width + s * 1.1; g.restore(); return w; }
+  var RC = [C.pink, C.blue, C.green, C.orange], RN = ['× をはぶく', '数を前に', 'アルファベットの順', '1 をはぶく'], RO = { rn: RN, rc: RC };
   var Q1 = [
     { a: 'a×5', b: '5a', ch: ['a{p|×}5', 'a5', '{b|5}a'], r: [0, 1] },
     { a: 'y×x×3', b: '3xy', ch: ['y{p|×}x{p|×}3', 'yx3', '{b|3}yx', '3{g|xy}'], r: [0, 1, 2] },
@@ -211,10 +214,10 @@
     steps: fixSteps([
       { tag: '今日の問い', bh: '× の記号を使った式を、書き直す', q: '× の記号を使った式を、右のように書き直した。どんなきまりで書き直したのか、見つけよう。',
         notes: ['① 自分の考え（3分）　気づいたきまりを、すべて書こう。', '② ペアの考え（3分）　自分が見つけなかったきまりを書こう。'],
-        draw: function (D) { rows(D, box(D), Q1, null); } },
+        draw: function (D) { rows(D, box(D), Q1, null, RO); } },
       { tag: '今日の問い', q: 'どんなきまりで、書き直している？', a: '× をはぶく・数を前に・アルファベットの順・1 をはぶく', sub: 'a×5 → 5a、y×x×3 → 3xy、b×a → ab、1×x → x', dur: 10,
         b: { t: 'きまり … <b>× をはぶく</b>・<b>数を前に</b>・<b>アルファベットの順</b>・<b>1 をはぶく</b>', col: C.yel },
-        draw: function (D) { var t = D.ph ? D.t : 0; rows(D, box(D), Q1, D.ph ? function (i) { return CH.clamp(t * 4 - i, 0, 1); } : null); } },
+        draw: function (D) { var t = D.ph ? D.t : 0; rows(D, box(D), Q1, D.ph ? function (i) { return CH.clamp(t * 4 - i, 0, 1); } : null, RO); } },
       { tag: 'ことば', bh: 'ことば　積の表し方', q: '積の表し方のきまりを、まとめよう。(−1)×a は、どう書く？', a: '−a', sub: '1×a は a と書く。(−1)×a は、1 をはぶいて −a（− はのこす）', dur: 4,
         b: [{ t: '① かけ算の記号 × は <b>はぶく</b>　② 数は文字の <b>前</b> に書く', col: C.green }, { t: '③ 文字どうしは <b>アルファベットの順</b>　④ 1×a は <b>a</b>、(−1)×a は <b>−a</b>', col: C.green }],
         draw: function (D) {
@@ -232,7 +235,7 @@
         } },
       { tag: '例題', bh: '例題', q: '文字式の表し方にしたがって表そう。　c×4×b　　(a＋b)×(−3)　　y×(−1)', a: '4bc　　−3(a＋b)　　−y', sub: '(a＋b) は ひとまとまりなので、かっこはそのまま。(−1)×y は 1 をはぶいて −y', dur: 8,
         b: { t: 'c×4×b＝<b>4bc</b>　(a＋b)×(−3)＝<b>−3(a＋b)</b>　y×(−1)＝<b>−y</b>', col: C.pink },
-        draw: function (D) { var t = D.ph ? D.t : 0; rows(D, box(D), EX, D.ph ? function (i) { return CH.clamp(t * 3 - i, 0, 1); } : null, { q: true }); } },
+        draw: function (D) { var t = D.ph ? D.t : 0; rows(D, box(D), EX, D.ph ? function (i) { return CH.clamp(t * 3 - i, 0, 1); } : null, { q: true, rn: RN, rc: RC }); } },
       { tag: '例題', q: '(a＋b)×(−3) を、−3a＋b と書いてはいけないのは なぜ？', a: '−3 は a＋b の全体にかかるから', sub: '−3a＋b は (−3)×a＋b のことで、b に −3 がかからない。a＝2、b＝5 なら −3(a＋b)＝−21、−3a＋b＝−1', dur: 5,
         b: { t: 'a＋b は ひとまとまり → かっこのまま。−3a＋b では b に −3 がかからない（a＝2、b＝5 で −21 と −1）', col: C.pink },
         draw: function (D) {
@@ -265,21 +268,19 @@
         a: '① 5ab（cm³）　② 4(a＋b＋5)（cm）', sub: '① a×b×5＝5ab　② 縦・横・高さの辺が 4本ずつ → (a＋b＋5)×4＝4(a＋b＋5)。4a＋4b＋20 でもよい', dur: 7,
         b: { t: '① a×b×5＝<b>5ab</b>（cm³）　② 辺は 4本ずつ → <b>4(a＋b＋5)</b>（cm）', col: C.orange },
         draw: function (D) {
-          var R = box(D), s = CH.fs(D), t = D.ph ? D.t : 0, w = R.w > R.h * 1.05, CR = w ? CH.rect(R.x0, R.y0, R.x0 + R.w * .52, R.y1) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .55);
+          var R = box(D), s = CH.fs(D), t = D.ph ? D.t : 0, w = R.w > R.h * 1.05 && R.w > 520, CR = w ? CH.rect(R.x0, R.y0, R.x0 + R.w * .52, R.y1) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .55);
           var T = w ? CH.rect(R.x0 + R.w * .55, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .58, R.x1, R.y1);
           var GC = { b: C.blue, a: C.green, h: C.orange }, on = { b: CH.smooth(.38, .48, t), a: CH.smooth(.52, .62, t), h: CH.smooth(.66, .76, t) };
           cuboid(D, CR, { col: D.ph ? function (e) { return on[e] > .5 ? GC[e] : null; } : null });
           if (!D.ph) return;
-          var big = Math.min(s * 1.5, T.w / 8), y1 = T.y0 + T.h * .22, y2 = T.y0 + T.h * .62;
-          CH.text(D, T.cx, y1 - big * 1.4, '① 体積 ＝ 縦×横×高さ', { size: s * .85, a: CH.smooth(0, .1, t), col: 'rgba(242,240,230,.85)' });
-          CHAIN(D, T.cx, y1, ['a{p|×}b{p|×}{b|5}', '{b|5}ab'], CH.clamp(t / .3, 0, 1), big, { hold: .1 });
-          if (t > .28) EQ(D, T.cx, y1 + big * 1.2, '（cm³）', s * .8, { a: CH.smooth(.28, .34, t) });
+          var big = Math.min(s * 1.5, T.w / 9), y1 = T.y0 + T.h * (w ? .22 : .16), y2 = T.y0 + T.h * (w ? .6 : .5), y3 = T.y0 + T.h * (w ? .78 : .86);
+          if (w) CH.text(D, T.cx, y1 - big * 1.4, '① 体積 ＝ 縦×横×高さ', { size: s * .85, a: CH.smooth(0, .1, t), col: 'rgba(242,240,230,.85)' });
+          CHAIN(D, T.cx, y1, ['①　a{p|×}b{p|×}{b|5}', '①　{b|5}ab（cm³）'], CH.clamp(t / .3, 0, 1), big, { hold: .1, maxW: T.w * .95 });
           if (t > .36) {
-            CH.text(D, T.cx, y2 - big * 1.6, '② 同じ長さの辺が 4本ずつ', { size: s * .85, a: CH.smooth(.36, .42, t), col: 'rgba(242,240,230,.85)' });
+            if (w) CH.text(D, T.cx, y2 - big * 1.5, '② 同じ長さの辺が 4本ずつ', { size: s * .85, a: CH.smooth(.36, .42, t), col: 'rgba(242,240,230,.85)' });
             var cl = '{b|b}が4本' + (on.a > .5 ? '、{g|a}が4本' : '') + (on.h > .5 ? '、{o|5}が4本' : '');
-            EQ(D, T.cx, y2 - big * .2, cl, fitEq(D, '{b|b}が4本、{g|a}が4本、{o|5}が4本', T.w * .95, big * .75), { a: on.b });
-            if (t > .8) CHAIN(D, T.cx, y2 + big * 1.1, ['4×({g|a}＋{b|b}＋{o|5})', '4({g|a}＋{b|b}＋{o|5})'], CH.clamp((t - .8) / .14, 0, 1), big * .9, { hold: .1, maxW: T.w * .95 });
-            if (t > .9) EQ(D, T.cx, y2 + big * 2.2, '（cm）', s * .8, { a: CH.smooth(.9, .96, t) });
+            EQ(D, T.cx, y2, cl, fitEq(D, '{b|b}が4本、{g|a}が4本、{o|5}が4本', T.w * .95, big * .8), { a: on.b });
+            if (t > .8) CHAIN(D, T.cx, y3, ['②　4×({g|a}＋{b|b}＋{o|5})', '②　4({g|a}＋{b|b}＋{o|5})（cm）'], CH.clamp((t - .8) / .16, 0, 1), big, { hold: .1, maxW: T.w * .95 });
           }
         } }
     ])

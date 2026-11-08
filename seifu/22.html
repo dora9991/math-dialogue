@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>変化のようすを説明する</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 正の数・負の数 第22時：正負の数を使って、変化のようすを説明しよう（ikkan の lesson_seifu_22 と同じ流れ）。
+   「前の日とのちがい」を、グラフの上で上向き（正・青）・下向き（負・ピンク）の矢印にして、1日ずつつなぐ。
+   月曜日から金曜日までの矢印をまとめると、はじめとのちがい（1本の黄色い矢印）になる。
+   数値は ikkan のまま（図書館 130人、最高気温 16℃、体重 52.0kg、8%へって8%ふえる、さいころのこま）。 */
+(function () {
+  var C = CH.C, RED = '#ff7b7b', FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  /* ---- 図の中の式：a^2（指数）・[1/2]（たての分数）・{…}（印をつける場所。字にはならない）。
+     o：size・col・a・align・measure（描かずにはかるだけ）。返すもの：w（幅）・x0（左はし）・sp（{…} の [左, 右]） ---- */
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, ez = size * .6, segs = [], sp = [], open = [], w = 0, m;
+    var re = /\[([^\/\]]+)\/([^\]]+)\]|\^(\d+)|([{}])|([^\[\^{}]+|[\[\^])/g;
+    g.save();
+    while ((m = re.exec(String(s)))) {
+      if (m[1] != null) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(m[1]).width, g.measureText(m[2]).width) + fz * .4; segs.push({ n: m[1], d: m[2], x: w, w: fw }); w += fw; }
+      else if (m[3] != null) { g.font = '600 ' + ez + 'px ' + FONT; var ew = g.measureText(m[3]).width + size * .2; segs.push({ e: m[3], x: w, w: ew }); w += ew; }
+      else if (m[4] === '{') { open.push(sp.length); sp.push([w, w]); }
+      else if (m[4] === '}') sp[open.pop()][1] = w;
+      else { g.font = '600 ' + size + 'px ' + FONT; var tw = g.measureText(m[5]).width; segs.push({ t: m[5], x: w, w: tw }); w += tw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    if (!o.measure) segs.forEach(function (q) {
+      var X = x0 + q.x;
+      if (q.t != null) CH.text(D, X, y, q.t, Object.assign({ size: size, align: 'left' }, oo));
+      else if (q.e != null) CH.text(D, X + size * .15, y - size * .38, q.e, Object.assign({ size: ez, align: 'left' }, oo));
+      else { var cx = X + q.w / 2; CH.text(D, cx, y - fz * .62, q.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .68, q.d, Object.assign({ size: fz }, oo)); CH.line(D, X + fz * .15, y + fz * .04, X + q.w - fz * .15, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a }); }
+    });
+    return { w: w, x0: x0, sp: sp.map(function (p) { return [x0 + p[0], x0 + p[1]]; }) };
+  }
+  function fit(D, s, maxW, size) { var w = TX(D, 0, 0, s, { size: size, measure: true }).w; return w > maxW ? size * maxW / w : size; }
+  /* 右の板書（HTML）：[1/2] はたての分数、^2 は上つき、{ } はとる */
+  function H(s) { return CH.fr(String(s)).replace(/\^(\d+)/g, '<sup>$1</sup>').replace(/[{}]/g, ''); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = H(s[k]); }); if (s.notes) s.notes = s.notes.map(H); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = H(b.t); }); }); return st; }
+  function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function rbox(D, x0, y0, x1, y1, col, a, o) {
+    o = o || {}; var g = D.ctx, r = Math.min(10, (y1 - y0) * .3); if (a <= 0) return;
+    g.save(); g.globalAlpha = D.ga * a; g.beginPath(); g.moveTo(x0 + r, y0); g.arcTo(x1, y0, x1, y1, r); g.arcTo(x1, y1, x0, y1, r); g.arcTo(x0, y1, x0, y0, r); g.arcTo(x0, y0, x1, y0, r); g.closePath();
+    g.fillStyle = hexA(col, o.fa == null ? .16 : o.fa); g.fill(); g.strokeStyle = col; g.lineWidth = o.w || 2.6; if (o.dash) g.setLineDash([7, 5]); g.stroke(); g.restore();
+  }
+  /* ✗ と ○ と ①（丸の中の番号） */
+  function ng(D, x, y, z, a) { if (a <= 0) return; var d = z * .32; CH.line(D, x - d, y - d, x + d, y + d, { col: RED, w: Math.max(3, z * .13), a: a }); CH.line(D, x + d, y - d, x - d, y + d, { col: RED, w: Math.max(3, z * .13), a: a }); }
+  function okm(D, x, y, z, a, col) { if (a > 0) CH.circle(D, x, y, z * .36, { stroke: col || C.green, sw: Math.max(2.6, z * .11), a: a }); }
+  function num(D, x, y, n, z, col, a) { if (a <= 0) return; CH.circle(D, x, y, z * .42, { fill: 'rgba(23,56,41,.9)', stroke: col, sw: 2, a: a }); CH.text(D, x, y + 1, String(n), { size: z * .55, col: col, a: a, num: true, w: 700 }); }
+  /* 数のカード（まん中が x, y）。txt は TX の字（[1/2] も） */
+  function ncard(D, x, y, w, h, txt, col, a, o) {
+    o = o || {}; if (a != null && a <= 0) return; rbox(D, x - w / 2, y - h / 2, x + w / 2, y + h / 2, col || C.blue, a == null ? 1 : a, { fa: o.fa == null ? .22 : o.fa, w: o.sw || 2 });
+    var z = o.size || h * (String(txt).indexOf('[') >= 0 ? .44 : .56); z = fit(D, txt, w * .86, z);
+    TX(D, x, y + 1, txt, { size: z, col: o.tcol || C.chalk, a: a });
+  }
+  function S(v) { return CH.mnum(v); }
+  /* ---- 数直線（第2時などと同じ形。右に矢印、正は青・負はピンク） ---- */
+  var POS = C.blue, NEG = C.pink, OUT = 'rgba(20,40,30,.9)';
+  function sg(v) { return v > 0 ? '＋' + S(v) : S(v); }
+  function sc(v) { return v > 0 ? POS : v < 0 ? NEG : C.yel; }
+  function NL(D, x0, x1, y, min, max, o) {
+    o = o || {}; var s = o.s || CH.fs(D, .8), u = (x1 - x0) / (max - min), X = function (v) { return x0 + (v - min) * u; }, a = o.a == null ? 1 : o.a;
+    var lab = o.lab || [1, 2, 5, 10, 20, 50].filter(function (q) { return q * u >= s * 2.1; })[0] || 100, st = o.st || (u < 6 ? lab : 1);
+    CH.arrow(D, x0 - s * .5, y, x1 + s * 1.1, y, { w: 2, head: 9, a: a });
+    for (var v = Math.ceil(min / st) * st; v <= max + 1e-9; v += st) {
+      var isL = Math.abs(v / lab - Math.round(v / lab)) < 1e-9, h = v === 0 ? 9 : isL ? 7 : 4, la = a * (o.la ? o.la(v) : 1);
+      CH.line(D, X(v), y - h, X(v), y + h, { w: v === 0 ? 2.4 : 1.5, a: a });
+      if (isL && la > 0) CH.text(D, X(v), y + s * 1.25, o.fmt ? o.fmt(v) : S(v), { size: s, num: true, a: la, col: o.lc ? o.lc(v) : C.chalk });
+    }
+    return { X: X, y: y, s: s, u: u, x0: x0, x1: x1 };
+  }
+  function pt(D, L, v, col, lab, o) {
+    o = o || {}; CH.circle(D, L.X(v), L.y, o.r || L.s * .36, { fill: col, stroke: 'rgba(20,30,24,.8)', sw: 1.2, a: o.a });
+    if (lab) TX(D, L.X(v), L.y - L.s * (o.up || 1.15), lab, { col: o.tc || col, size: o.size || L.s, a: o.a, outline: OUT });
+  }
+  function sum(a) { return a.reduce(function (x, y) { return x + y; }, 0); }
+  function r1(x) { return Math.round(x * 1000) / 1000; }
+  function walk(v0, d) { var r = [v0]; d.forEach(function (x) { r.push(r1(r[r.length - 1] + x)); }); return r; }
+  var DAY = ['月', '火', '水', '木', '金'];
+  var LB = [18, -25, 14, -3], LV = walk(130, LB);
+  CH.check(LV.join() === '130,148,123,137,134' && sum(LB) === 4 && LV[4] - LV[0] === 4, '今日の問い（4人多い）');
+  var KD = [3, -5, 2, -4], KV = walk(16, KD);
+  CH.check(KV.join() === '16,19,14,16,12' && Math.max.apply(null, KV) - Math.min.apply(null, KV) === 7 && 16 + sum(KD) === 12, '例題（1）気温');
+  var WD = [0.4, -0.7, 0.2, -0.3], WS = r1(sum(WD)), W0 = r1(52.0 - WS), WV = walk(W0, WD);
+  CH.check(WS === -0.4 && W0 === 52.4 && WV.join() === '52.4,52.8,52.1,52.3,52', '例題（2）体重');
+  /* 考えよう（答えはページに出さない） */
+  CH.check(CH.near(100 * 0.92, 92) && CH.near(92 * 1.08, 99.36) && CH.near(100 * 0.9 * 1.1, 99), '考えよう（ここで確かめるだけ）');
+  /* チャレンジ：偶数の目は正の向き、奇数の目は負の向き */
+  var DICE = [6, 3, 2, 5, 4], MV = DICE.map(function (d) { return d % 2 ? -d : d; }), POSN = walk(0, MV), NEXT = [1, 2, 3, 4, 5, 6].map(function (d) { return POSN[5] + (d % 2 ? -d : d); });
+  CH.check(MV.join() === '6,-3,2,-5,4' && POSN[5] === 4 && NEXT.indexOf(0) < 0 && NEXT.join() === '3,6,1,8,-1,10', 'チャレンジ');
+
+  /* ---- 表（上）とグラフ（まん中）と式（下） ---- */
+  function lay(D, nt) {
+    var R = CH.box(D, { l: .03, r: .03, t: .03, b: .04 }), s = CH.fs(D), th = Math.min(R.h * .26, s * 2.1 * nt);
+    return { R: R, s: s, T: CH.rect(R.x0, R.y0, R.x1, R.y0 + th), G: CH.rect(R.x0, R.y0 + th + s * .6, R.x1, R.y1 - s * 3.6), B: CH.rect(R.x0, R.y1 - s * 3.3, R.x1, R.y1) };
+  }
+  function table(D, T, rows, o) {
+    o = o || {}; var s = CH.fs(D);
+    CH.table(D, T, ['曜日'].concat(DAY), rows, { fw: .3, size: Math.min(s * .95, T.h / (rows.length + 1) * .45), rh: s * 2.1, top: true, show: o.show, hl: o.hl });
+  }
+  /* 階段のグラフ：v（その日の値）、d（ちがい）。o：y、yt、unit、kd(i)（i 番目の矢印 0→1）、net（はじめとのちがいの矢印）、fmt、from（はじめの日の点を出すか） */
+  function stairs(D, G, v, o) {
+    var s = CH.fs(D), n = v.length, Ax = CH.axes(D, CH.rect(G.x0 + s * 2.6, G.y0 + s * 1.2, G.x1 - s * 4.5, G.y1 - s * 1.5), { x: [0, n], y: o.y, xt: [], yt: o.yt, cut: o.y[0] > 0, yl: o.unit, yf: o.yf, size: CH.fs(D, .72) });
+    var X = function (i) { return Ax.X(i + .5); }, z = Math.min(s, Ax.R.w / n * .3), f = o.fmt || S;
+    DAY.forEach(function (d, i) { CH.text(D, X(i), Ax.R.y1 + z * 1.05, d, { size: z }); });
+    var shown = [o.from === false ? 0 : 1];
+    for (var i = 1; i < n; i++) {
+      var k = o.kd ? o.kd(i - 1) : 1; shown.push(k >= 1 ? 1 : 0); if (k <= 0) continue;
+      var dv = v[i] - v[i - 1], col = sc(dv), yA = Ax.Y(v[i - 1]), yB = Ax.Y(CH.lerp(v[i - 1], v[i], CH.ease(k)));
+      CH.line(D, X(i - 1), yA, X(i), yA, { col: 'rgba(242,240,230,.45)', w: 1.6, dash: [4, 5] });
+      CH.arrow(D, X(i), yA, X(i), yB, { col: col, w: 3.4, head: Math.min(12, Math.abs(yB - yA) * .6 + 2) });
+      TX(D, X(i) + z * .35, (yA + yB) / 2, sg(r1(dv)), { size: z * 1.05, col: col, align: 'left', a: CH.smooth(.3, .8, k), outline: OUT });
+    }
+    v.forEach(function (val, i) { if (!shown[i]) return; CH.circle(D, X(i), Ax.Y(val), z * .28, { fill: C.chalk, stroke: 'rgba(20,30,24,.8)', sw: 1.2 }); if (o.vals !== false) TX(D, X(i) - z * .3, Ax.Y(val) - z * .75, f(val), { size: z * .85, align: 'right', outline: OUT, a: o.va ? o.va(i) : 1 }); });
+    if (o.net > 0) {
+      var x = Ax.R.x1 + s * 1.6; CH.line(D, X(0), Ax.Y(v[0]), x, Ax.Y(v[0]), { col: C.yel, w: 1.6, dash: [6, 5], a: o.net });
+      CH.arrow(D, x, Ax.Y(v[0]), x, Ax.Y(v[n - 1]), { col: C.yel, w: 3.6, a: o.net, head: 10 });
+      TX(D, x + s * .3, (Ax.Y(v[0]) + Ax.Y(v[n - 1])) / 2, sg(r1(v[n - 1] - v[0])), { size: s * 1.05, col: C.yel, align: 'left', a: o.net, outline: OUT });
+    }
+    return { Ax: Ax, X: X, z: z };
+  }
+  function lines(D, B, L, t) {
+    var s = CH.fs(D), lh = Math.min(B.h / L.length, s * 1.7);
+    L.forEach(function (l, i) { var a = l.t0 == null ? 1 : CH.smooth(l.t0, l.t0 + .08, t); if (a > 0) TX(D, B.cx, B.y0 + lh * (i + .5), l.s, { size: fit(D, l.s, B.w * .96, Math.min(s * 1.05, lh * .64)), col: l.col || C.chalk, a: a }); });
+  }
+  function kdf(t, a, b, n) { return function (i) { return CH.clamp((t - a - (b - a) * i / n) / ((b - a) / n * .8), 0, 1); }; }
+  var LBrow = ['前の日とのちがい（人）', '—'].concat(LB.map(sg));
+
+  K3.run({
+    no: '第22時', title: '正負の数を使って、変化のようすを説明しよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '21.html', label: '◀ 第21時' }, { href: '23.html', label: '第23時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '図書館で本を借りた人（月曜日 130人）', q: '図書館で本を借りた人は、月曜日が 130人。表は、火曜日からの「前の日とのちがい」。金曜日は、月曜日より多いだろうか、少ないだろうか。式を使って説明しよう。',
+        notes: ['① 自分の説明（3分）　式と結論を、書こう。', '② ペアの説明（3分）　自分とちがう求め方を書こう。'],
+        draw: function (D) { var P = lay(D, 2); table(D, P.T, [LBrow]); stairs(D, P.G, LV, { y: [100, 160], yt: [100, 110, 120, 130, 140, 150, 160], unit: '（人）', kd: function () { return 0; } }); } },
+      { tag: '今日の問い', q: '金曜日は、月曜日より多い？ 少ない？', a: '4人多い（134人）', sub: '(＋18)＋(−25)＋(＋14)＋(−3)＝＋4。金曜日は 130＋4＝134（人）', dur: 7,
+        b: { t: '(＋18)＋(−25)＋(＋14)＋(−3)＝＋4 → 金曜日は月曜日より <b>4人多い</b>（134人）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = lay(D, 2), kd = kdf(t, .03, .55, 4);
+          table(D, P.T, [LBrow], { hl: function (r, c) { return r === 1 && c >= 2 && kd(c - 2) > 0 && kd(c - 2) < 1 ? sc(LB[c - 2]) : null; } });
+          stairs(D, P.G, LV, { y: [100, 160], yt: [100, 110, 120, 130, 140, 150, 160], unit: '（人）', kd: kd, net: CH.smooth(.6, .75, t) });
+          lines(D, P.B, [{ s: '(＋18)＋(−25)＋(＋14)＋(−3)＝＋4', t0: .62 }, { s: '金曜日は、月曜日より 4人多い（130＋4＝134人）', t0: .78, col: C.yel }], t);
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'ふえたこと・へったことは、どう表す？ 「前の日とのちがい」を順にたすと、何がわかる？', a: 'ふえた … 正の数、へった … 負の数。はじめの日とのちがいがわかる', sub: '説明は、式と結論をそろえて書く', dur: 6,
+        b: [{ t: 'ふえた … <b>正の数</b>、へった … <b>負の数</b>', col: C.green }, { t: 'ちがいを順にたす → <b>はじめ</b>とのちがい　説明は <b>式</b> と結論をそろえる', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .08, t: .06, b: .08 }), s = CH.fs(D), t = D.ph ? D.t : 0, y = R.y0 + R.h * .78, L = NL(D, R.x0, R.x1, y, -10, 25, { s: CH.fs(D, .8), lab: 5, lc: function (v) { return v < 0 ? NEG : C.chalk; } });
+          CH.text(D, L.X(0), y + s * 2.6, '月曜日（はじめ）', { size: s * .8, col: 'rgba(242,240,230,.75)' });
+          var acc = 0, rh = Math.min((y - R.y0) / 5.4, s * 2.1);
+          LB.forEach(function (d, i) {
+            var k = CH.clamp((t - .05 - i * .14) / .12, 0, 1), yy = R.y0 + rh * (i + .8), col = sc(d); if (k > 0) {
+              CH.line(D, L.X(acc), yy, L.X(acc), y, { col: 'rgba(242,240,230,.3)', w: 1, dash: [3, 4] });
+              CH.arrow(D, L.X(acc), yy, L.X(acc + d * CH.ease(k)), yy, { col: col, w: 3.2, head: 10 });
+              TX(D, L.X(acc + d / 2), yy - s * .75, (DAY[i + 1]) + ' ' + sg(d), { size: s * .9, col: col, a: CH.smooth(.4, 1, k), outline: OUT });
+            }
+            acc += d;
+          });
+          var kn = CH.smooth(.65, .8, t); if (kn > 0) { var yn = R.y0 + rh * 4.8; CH.arrow(D, L.X(0), yn, L.X(4 * kn), yn, { col: C.yel, w: 4, head: 10, a: kn }); TX(D, L.X(4) + s * .5, yn, '金曜日は ＋4', { size: s * .95, col: C.yel, align: 'left', a: kn, outline: OUT }); pt(D, L, 4, C.yel, null, { a: kn }); }
+          pt(D, L, 0, C.chalk, null);
+        } },
+      { tag: '例題', bh: '例題', q: '（1）最高気温は、月曜日が 16℃。前の日とのちがいは、火 ＋3、水 −5、木 ＋2、金 −4（℃）。表を完成させて、いちばん高い日と低い日の気温の差を求めよう。', a: '19、14、16、12℃。差は 7℃', sub: '金曜日は 16＋(＋3)＋(−5)＋(＋2)＋(−4)＝12。いちばん高い 火 19℃、いちばん低い 金 12℃ → 19−12＝7', dur: 7,
+        b: { t: '（1）19、14、16、12℃　いちばん高い 19℃、低い 12℃ → 差 <b>7℃</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = lay(D, 3), kd = kdf(t, .03, .5, 4);
+          table(D, P.T, [['前の日とのちがい（℃）', '—'].concat(KD.map(sg)), ['最高気温（℃）', '16'].concat(KD.map(function (_, i) { return kd(i) >= 1 ? String(KV[i + 1]) : ''; }))], { hl: function (r, c) { return t > .6 && r === 2 && c > 0 && (KV[c - 1] === 19 || KV[c - 1] === 12) ? (KV[c - 1] === 19 ? C.orange : C.blue) : null; } });
+          var G = stairs(D, P.G, KV, { y: [10, 20], yt: [10, 12, 14, 16, 18, 20], unit: '（℃）', kd: kd });
+          var a = CH.smooth(.6, .72, t); if (a > 0) {
+            var Ax = G.Ax, x = Ax.R.x1 + CH.fs(D) * 1.2; [19, 12].forEach(function (v) { CH.line(D, Ax.R.x0, Ax.Y(v), x, Ax.Y(v), { col: C.yel, w: 1.6, dash: [6, 5], a: a }); });
+            CH.arrow(D, x, Ax.Y(12), x, Ax.Y(19), { col: C.yel, w: 3, a: a }); CH.arrow(D, x, Ax.Y(19), x, Ax.Y(12), { col: C.yel, w: 3, a: a }); TX(D, x + CH.fs(D) * .3, Ax.Y(15.5), '7℃', { size: CH.fs(D), col: C.yel, align: 'left', a: a, outline: OUT });
+          }
+          lines(D, P.B, [{ s: '金曜日　16＋(＋3)＋(−5)＋(＋2)＋(−4)＝12（℃）', t0: .52 }, { s: 'いちばん高い 19℃、いちばん低い 12℃　差 19−12＝7（℃）', t0: .72, col: C.yel }], t);
+        } },
+      { tag: '例題', q: '（2）金曜日の体重は 52.0kg。前の日とのちがいは、火 ＋0.4、水 −0.7、木 ＋0.2、金 −0.3（kg）。月曜日の体重は？', a: '52.4kg', sub: '月曜日から金曜日までのちがいは (＋0.4)＋(−0.7)＋(＋0.2)＋(−0.3)＝−0.4。52.0−(−0.4)＝52.4（kg）', dur: 7,
+        b: { t: '（2）月→金のちがい −0.4 → 月曜日は 52.0−(−0.4)＝<b>52.4</b>kg', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = lay(D, 2), kn = CH.smooth(.05, .3, t), k0 = CH.smooth(.35, .5, t), kd = kdf(t, .5, .95, 4), s = CH.fs(D);
+          table(D, P.T, [['前の日とのちがい（kg）', '—'].concat(WD.map(sg))]);
+          var G = stairs(D, P.G, WV, { y: [51.5, 53], yt: [51.5, 52, 52.5, 53], yf: function (v) { return v.toFixed(1); }, unit: '（kg）', kd: kd, from: false, vals: false, fmt: function (v) { return v.toFixed(1); } });
+          var Ax = G.Ax, X = G.X;
+          CH.circle(D, X(4), Ax.Y(52), G.z * .3, { fill: C.yel }); TX(D, X(4) + G.z * .4, Ax.Y(52) + G.z * .8, '52.0', { size: G.z * .9, col: C.yel, align: 'left', outline: OUT });
+          if (kn > 0) { var x = Ax.R.x1 + s * 1.4; CH.line(D, X(4), Ax.Y(52), x, Ax.Y(52), { col: C.yel, w: 1.4, dash: [5, 5], a: kn }); CH.line(D, X(0), Ax.Y(W0), x, Ax.Y(W0), { col: C.yel, w: 1.4, dash: [5, 5], a: k0 }); CH.arrow(D, x, Ax.Y(W0), x, Ax.Y(CH.lerp(W0, 52, kn)), { col: C.yel, w: 3.4, a: kn }); TX(D, x + s * .3, Ax.Y(52.2), '−0.4', { size: s, col: C.yel, align: 'left', a: kn, outline: OUT }); }
+          if (k0 > 0) { CH.circle(D, X(0), Ax.Y(W0), G.z * .3, { fill: C.orange, a: k0 }); TX(D, X(0) - G.z * .4, Ax.Y(W0) - G.z * .8, '52.4', { size: G.z * .95, col: C.orange, align: 'right', a: k0, outline: OUT }); }
+          else if (!D.ph) TX(D, X(0), Ax.Y(52.4), '？', { size: G.z * 1.4, a: .5 });
+          lines(D, P.B, [{ s: '月→金のちがい　(＋0.4)＋(−0.7)＋(＋0.2)＋(−0.3)＝−0.4', t0: .05 }, { s: '月曜日　52.0−(−0.4)＝52.4（kg）', t0: .35, col: C.yel }], t);
+        } },
+      { tag: '考えよう', q: 'ある店の売り上げが、先月は前の月より 8%へり、今月は先月より 8%ふえた。売り上げは、2か月前と同じにもどっただろうか。2か月前を 100 として確かめよう。',
+        notes: ['先月・今月の売り上げを、計算して表にしよう。気づいたことを書こう。', '10%ずつへって、ふえたときも、確かめよう。', 'スライダーで、へる・ふえる割合を変えられます。点線は 100 の高さです。'],
+        sliders: [{ key: 'p', label: '割合', min: 1, max: 30, step: 1, val: 8, fmt: function (x) { return x + '%'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .06, t: .08, b: .1 }), s = CH.fs(D), p = D.V.p / 100, v = [100, 100 * (1 - p), 100 * (1 - p) * (1 + p)];
+          var Ax = CH.axes(D, CH.rect(R.x0 + s * 2.4, R.y0 + s, R.x1, R.y1 - s * 1.4), { x: [0, 3], y: [0, 110], xt: [], yt: [0, 20, 40, 60, 80, 100], yl: '売り上げ', size: CH.fs(D, .72) });
+          CH.line(D, Ax.R.x0, Ax.Y(100), Ax.R.x1, Ax.Y(100), { col: C.yel, w: 2, dash: [7, 6] });
+          ['2か月前', '先月', '今月'].forEach(function (nm, i) {
+            var x0 = Ax.X(i + .25), x1 = Ax.X(i + .75); CH.fillRect(D, x0, Ax.Y(v[i]), x1, Ax.Y(0), { fill: 'rgba(242,240,230,.15)', stroke: C.chalk, sw: 1.8 });
+            CH.text(D, (x0 + x1) / 2, Ax.R.y1 + s, nm, { size: s * .95 });
+            if (i === 0) CH.text(D, (x0 + x1) / 2, Ax.Y(100) - s * .8, '100', { size: s, num: true });
+            if (i) { var xa = Ax.X(i - .2), xb = Ax.X(i + .2), ya = Ax.Y(55); CH.arrow(D, xa, ya, xb, ya, { col: i === 1 ? NEG : POS, w: 3 }); CH.text(D, (xa + xb) / 2, ya - s * .9, (i === 1 ? '−' : '＋') + D.V.p + '%', { size: s, col: i === 1 ? NEG : POS, outline: OUT }); }
+          });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '原点にこまを置く。さいころの偶数の目なら正の方向、奇数の目なら負の方向へ、出た目の数だけ進む。目は順に 6、3、2、5、4 だった。5回目のあとの位置は？ 6回目で原点にもどることはある？', a: '＋4。もどることはない', sub: '(＋6)＋(−3)＋(＋2)＋(−5)＋(＋4)＝＋4。もどるには −4 進む必要があるが、負の方向は奇数の目（−1、−3、−5）だけなので、−4 は出せない', dur: 8,
+        b: { t: '(＋6)＋(−3)＋(＋2)＋(−5)＋(＋4)＝<b>＋4</b>　−4 は出せない → <b>もどらない</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .08, t: .04, b: .06 }), s = CH.fs(D), t = D.ph ? D.t : 0, y = R.y0 + R.h * .66, L = NL(D, R.x0, R.x1, y, -6, 11, { s: CH.fs(D, .85), lab: 1, lc: function (v) { return v < 0 ? NEG : C.chalk; } });
+          var acc = 0, rh = Math.min((y - R.y0) / 6, s * 2.2);
+          MV.forEach(function (m, i) {
+            var k = CH.clamp((t - .03 - i * .1) / .09, 0, 1), yy = R.y0 + rh * (i + .8), col = sc(m); if (k > 0) {
+              CH.line(D, L.X(acc), yy, L.X(acc), y, { col: 'rgba(242,240,230,.3)', w: 1, dash: [3, 4] });
+              CH.arrow(D, L.X(acc), yy, L.X(acc + m * CH.ease(k)), yy, { col: col, w: 3.2, head: 10 });
+              TX(D, L.X(acc + m) + (m > 0 ? s * .5 : -s * .5), yy, (i + 1) + '回目 ' + DICE[i] + ' → ' + sg(m), { size: s * .85, col: col, align: m > 0 ? 'left' : 'right', a: CH.smooth(.4, 1, k), outline: OUT });
+            }
+            acc += m;
+          });
+          if (!D.ph) MV.forEach(function (m, i) { TX(D, R.x0 + (i + .5) * R.w / 5, R.y0 + rh * 2.5, (i + 1) + '回目 ' + DICE[i], { size: s, a: .55 }); });
+          pt(D, L, 0, C.chalk, null);
+          var a5 = CH.smooth(.52, .6, t); if (a5 > 0) { CH.line(D, L.X(4), R.y0 + rh * 4.8, L.X(4), y, { col: C.yel, w: 1.6, dash: [3, 4], a: a5 }); pt(D, L, 4, C.yel, null, { a: a5 }); }
+          var a6 = CH.smooth(.65, .78, t); if (a6 > 0) {
+            var y2 = y + s * 3.4; CH.text(D, R.x0, y2, '6回目', { size: s * .85, align: 'left', col: 'rgba(242,240,230,.75)', a: a6 });
+            NEXT.forEach(function (q) { var m = q - 4; CH.line(D, L.X(4), y2, L.X(q), y2, { col: sc(m), w: 1.6, a: a6 * .5 }); CH.circle(D, L.X(q), y2, s * .22, { fill: sc(m), a: a6 }); TX(D, L.X(q), y2 + s * (m % 2 ? 1.2 : -1.0), sg(m), { size: s * .8, col: sc(m), a: a6, outline: OUT }); });
+            var a7 = CH.smooth(.85, .95, t); ng(D, L.X(0), y2, s * 1.3, a7); CH.text(D, L.X(0), y2 + s * 2.3, '−4 は出せない → 0 には とどかない', { size: CH.fitSize(D, '−4 は出せない → 0 には とどかない', R.w * .8, s * .9), col: RED, a: a7 });
+          }
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

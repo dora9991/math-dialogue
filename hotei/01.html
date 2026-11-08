@@ -60,6 +60,13 @@
     segs.forEach(function (g) { x0 += TX(D, x0, y, g[0], { size: size, col: g[1] || o.col, a: o.a, align: 'left', outline: o.outline }); });
     return w;
   }
+  /* {…} の中を、ちがう色（o.hc）で */
+  function strip(s) { return String(s).replace(/[{}]/g, ''); }
+  function TM(D, x, y, s, o) {
+    o = o || {}; var size = o.size || CH.fs(D), w = TW(D, strip(s), size), x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2;
+    String(s).split(/[{}]/).forEach(function (g, i) { if (g) x0 += TX(D, x0, y, g, { size: size, col: i % 2 ? (o.hc || C.yel) : o.col, a: o.a, align: 'left', outline: o.outline }); });
+    return w;
+  }
   function fit(D, s, maxW, size) { var w = TW(D, s, size); return w > maxW ? size * maxW / w : size; }
   /* 角の丸い四角 */
   function rr(D, x0, y0, x1, y1, o) {
@@ -82,7 +89,7 @@
 
   /* ---- 式の値（検算用）。'5x＋3'・'[x＋5/3]'・'2(x−1)' を、x と a の関数に ---- */
   function fn(s) {
-    var e = String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '(($1)/($2))').replace(/＋/g, '+').replace(/−/g, '-').replace(/×/g, '*').replace(/÷/g, '/').replace(/\s/g, '')
+    var e = strip(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '(($1)/($2))').replace(/＋/g, '+').replace(/−/g, '-').replace(/×/g, '*').replace(/÷/g, '/').replace(/\s/g, '')
       .replace(/(\d|\)|x|a)(?=[xa(])/g, '$1*').replace(/\)(?=[\d.])/g, ')*');
     return new Function('x', 'a', 'return (' + e + ');');
   }
@@ -147,14 +154,14 @@
   }
 
   /* ---- 式の行（板書の形。'＝' をそろえる） ----
-     L：[{s, lab, col, lc, txt}]（txt：'＝' でそろえない字の行）。t：0〜1 で、行が順に出る。o：at（各行の出る時）、size、align、top、mark {行: ['×', 色]} */
+     L：[{s, lab, col, lc, hc, txt}]（txt：'＝' でそろえない字の行。s の {…} は hc の色）。t：0〜1 で、行が順に出る。o：at（各行の出る時）、size、align、top、mark {行: ['×', 色]} */
   function eqs(D, R, L, t, o) {
     o = o || {}; var n = L.length, at = o.at ? [-1].concat(o.at) : L.map(function (_, i) { return i === 0 ? -1 : .04 + (i - 1) / Math.max(1, n - 1) * .86; });
     var frc = L.some(function (l) { return hasFr(l.s); });
     function parts(l) { if (l.txt) return null; var i = l.s.indexOf('＝'); return i < 0 ? null : [l.s.slice(0, i), l.s.slice(i + 1)]; }
     function dims(z) {
       var lw = 0, rw = 0, xw = 0, eq = mw(D, '＝', z);
-      L.forEach(function (l) { var p = parts(l), lb = l.lab ? TW(D, l.lab, z * .62) + z * .7 : 0, mk = o.mark && o.mark[L.indexOf(l)] ? z * 1.4 : 0; if (p) { lw = Math.max(lw, TW(D, p[0], z)); rw = Math.max(rw, TW(D, p[1], z) + lb + mk); } else xw = Math.max(xw, TW(D, l.s, z) + lb + mk); });
+      L.forEach(function (l) { var p = parts(l), lb = l.lab ? TW(D, l.lab, z * .62) + z * .7 : 0, mk = o.mark && o.mark[L.indexOf(l)] ? z * 1.4 : 0; if (p) { lw = Math.max(lw, TW(D, strip(p[0]), z)); rw = Math.max(rw, TW(D, strip(p[1]), z) + lb + mk); } else xw = Math.max(xw, TW(D, strip(l.s), z) + lb + mk); });
       return { lw: lw, rw: rw, eq: eq, w: Math.max(lw + eq + rw, xw) };
     }
     var z = o.size || CH.fs(D, 1.2), d = dims(z); if (d.w > R.w) { z *= R.w / d.w; d = dims(z); }
@@ -163,8 +170,8 @@
     L.forEach(function (l, i) {
       var y = y0 + i * lh, a = at[i] < 0 ? 1 : CH.smooth(at[i], at[i] + .1, t), p = parts(l), col = l.col || C.chalk, x1; ys.push(y);
       if (a <= 0) { xe.push(null); return; } a *= (o.a == null ? 1 : o.a);
-      if (p) { if (p[0]) TX(D, ex, y, p[0], { size: z, col: col, a: a, align: 'right' }); TX(D, ex, y, '＝', { size: z, col: col, a: a, align: 'left' }); x1 = ex + d.eq + TX(D, ex + d.eq, y, p[1], { size: z, col: col, a: a, align: 'left' }); }
-      else x1 = x0 + TX(D, x0, y, l.s, { size: z, col: col, a: a, align: 'left' });
+      if (p) { if (p[0]) TM(D, ex, y, p[0], { size: z, col: col, a: a, align: 'right', hc: l.hc }); TX(D, ex, y, '＝', { size: z, col: col, a: a, align: 'left' }); x1 = ex + d.eq + TM(D, ex + d.eq, y, p[1], { size: z, col: col, a: a, align: 'left', hc: l.hc }); }
+      else x1 = x0 + TM(D, x0, y, l.s, { size: z, col: col, a: a, align: 'left', hc: l.hc });
       if (o.mark && o.mark[i]) { var mk = o.mark[i]; TX(D, x1 + z * .7, y, mk[0], { size: z * 1.05, col: mk[1] || C.pink, a: a * (mk[2] == null ? 1 : mk[2]) }); x1 += z * 1.4; }
       if (l.lab) TX(D, x1 + z * .7, y, l.lab, { size: z * .62, col: l.lc || C.green, a: a, align: 'left' });
       xe.push(x1);
@@ -196,16 +203,17 @@
     TX(D, x, y - h / 2 - u * .45, '12本', { size: u * .52, col: '#e9cfa9', a: o.a });
   }
   function pic(D) {
-    var R = CH.box(D, { l: .03, r: .03, t: .1, b: .1 }), u = Math.min(R.w / 17.4, R.h / 4.6), y = R.cy - u * .3, x = R.cx - u * 7.6;
-    [0, 1, 2].forEach(function (i) { crate(D, x + i * u * 2.35, y, u); });
-    TX(D, x + u * 6.1, y, '…', { size: u * .8 });
-    crate(D, x + u * 7.5, y, u, { q: true });
-    brace(D, x - u * 1.05, x + u * 8.55, y + u * 1.05, 1, { h: u * .25, lab: '何箱？', size: u * .62, col: C.yel });
-    TX(D, x + u * 9.35, y, '＋', { size: u * .9 });
-    for (var j = 0; j < 5; j++) bottle(D, x + u * 10.1 + j * u * .55, y + u * .62, u);
-    brace(D, x + u * 9.8, x + u * 12.5, y + u * 1.05, 1, { h: u * .25, lab: 'ばら 5本', size: u * .62, col: C.blue });
-    TX(D, x + u * 13.35, y - u * .05, '＝', { size: u * .9 });
-    TX(D, x + u * 13.85, y - u * .05, '113本', { size: u * .75, col: C.yel, align: 'left' });
+    var R = CH.box(D, { l: .03, r: .03, t: .06, b: .06 }), u = Math.min(R.w / 10.4, R.h / 6.6), y1 = R.y0 + R.h * .3, y2 = R.y0 + R.h * .76, x = R.cx - u * 4.4;
+    [0, 1, 2].forEach(function (i) { crate(D, x + i * u * 2.35, y1, u); });
+    TX(D, x + u * 6.1, y1, '…', { size: u * .8 });
+    crate(D, x + u * 7.6, y1, u, { q: true });
+    brace(D, x - u * 1.05, x + u * 8.65, y1 + u * 1.05, 1, { h: u * .25, lab: '何箱？', size: u * .62, col: C.yel });
+    var x2 = R.cx - u * 4.3;
+    TX(D, x2, y2, '＋', { size: u * .9 });
+    for (var j = 0; j < 5; j++) bottle(D, x2 + u * .85 + j * u * .6, y2 + u * .62, u);
+    brace(D, x2 + u * .55, x2 + u * 3.55, y2 + u * 1.05, 1, { h: u * .25, lab: 'ばら 5本', size: u * .62, col: C.blue });
+    TX(D, x2 + u * 4.6, y2 - u * .05, '＝', { size: u * .9 });
+    TX(D, x2 + u * 5.3, y2 - u * .05, '全部で 113本', { size: u * .7, col: C.yel, align: 'left' });
   }
 
   /* ---- 今日の問い（答え）：x に 1、2、3、… を入れると、帯が 12 ずつのびる ---- */
