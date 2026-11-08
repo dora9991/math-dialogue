@@ -69,7 +69,7 @@
     }
     vals.forEach(function (v, i) {
       var m = cardOf[i], on = m && m.t > .5, col = on ? QCOL[m.k] : (o.colf && o.colf(i)) || o.col || C.blue;
-      CH.card(D, xc(i), cy, cw * .84, ch, o.txt ? o.txt(i) : v, { col: col, fill: on ? hexA(QCOL[m.k], .3) : null, size: Math.min(ch * .55, cw * .5) });
+      CH.card(D, xc(i), cy, cw * .84, ch, o.txt ? o.txt(i) : v, { col: col, fill: on ? hexA(QCOL[m.k], .32) : null, sw: on ? 2.6 : 1.6, a: on || o.dim === false ? 1 : 1 - .45 * CH.smooth(.5, 1, t2), size: Math.min(ch * .55, cw * .5) });
       if (o.ord) CH.text(D, xc(i), yb + s * .65, (i + 1) + (cw > s * 2.7 ? '番目' : ''), { size: Math.max(11, s * .55), col: 'rgba(242,240,230,.55)' });
     });
     var out = [];
@@ -92,7 +92,7 @@
   function brace(D, x0, x1, y, txt, col, a, o) {
     o = o || {}; var s = CH.fs(D), d = o.down ? -1 : 1, lo = { col: col, w: 2.2, a: a };
     CH.line(D, x0, y, x1, y, lo); CH.line(D, x0, y, x0, y + 7 * d, lo); CH.line(D, x1, y, x1, y + 7 * d, lo);
-    if (txt) CH.text(D, (x0 + x1) / 2, y - s * .72 * d, txt, { col: col, a: a, size: o.size || s * .85 });
+    if (txt) CH.text(D, (x0 + x1) / 2, y - s * .72 * d, txt, { col: col, a: a, size: o.size || s * .85, outline: 'rgba(24,52,38,.9)' });
   }
   /* ドットプロットを上下に。G：[{ v, n, c }]。o：max、lab、col(k, i, x) */
   function dotRows(D, R, G, o) {
@@ -109,7 +109,6 @@
   /* 上にカード・下に数直線 */
   function twoParts(D, k) { var R = CH.box(D, { l: .05, r: .05, t: .02, b: .12 }); return { R: R, top: CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * (k || .5)), bot: CH.rect(R.x0 + R.w * .05, R.y0 + R.h * ((k || .5) + .12), R.x1 - R.w * .05, R.y1) }; }
 
-  var maxA = 27;
   K3.run({
     no: '第1時', title: 'データの散らばりを、四分位数でくらべよう', flat: true, hint: '',
     links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '第2時 ▶' }],
@@ -148,7 +147,7 @@
           var P = twoParts(D, .44), s = CH.fs(D), t = D.ph ? D.t : 0, na = CH.smooth(0, .25, t), dl = CH.smooth(.25, .6, t), ab = CH.smooth(.65, .9, t);
           var X = CH.numline(D, P.bot, 0, 30, 1, { lab: 5, unit: '（点）' }), r = Math.min(CH.fs(D, .42), P.bot.w / 30 * .46);
           var M = split(D, P.top, A, { t1: 1, t2: 1, col: C.blue, cy: P.top.y1 - s * 1.6, names: D.ph ? ['第1四分位数', ['第2四分位数', '（中央値）'], '第3四分位数'] : null, na: na });
-          if (dl > 0) M.forEach(function (m) { var x1 = X(m.v), y1 = P.bot.y1; CH.line(D, m.x, m.y1 + 4, CH.lerp(m.x, x1, dl), CH.lerp(m.y1 + 4, y1, dl), { col: QCOL[m.k], w: 2, dash: [5, 5], a: .85 }); });
+          if (dl > 0) M.forEach(function (m) { var x1 = X(m.v), y1 = P.bot.y1; CH.line(D, m.x, m.y1 + 4, CH.lerp(m.x, x1, dl), CH.lerp(m.y1 + 4, y1, dl), { col: QCOL[m.k], w: 2, dash: [5, 5], a: .85 - .45 * ab }); });
           CH.dots(D, X, P.bot.y1, A, { col: function () { return C.blue; }, r: r });
           if (dl >= 1) M.forEach(function (m) { CH.poly(D, [[X(m.v), P.bot.y1 + 3], [X(m.v) - 6, P.bot.y1 + 13], [X(m.v) + 6, P.bot.y1 + 13]], { fill: QCOL[m.k] }); });
           if (ab > 0) brace(D, X(10), X(15), P.bot.y1 - r * 5.6, '四分位範囲 15 − 10 ＝ 5', C.orange, ab);
@@ -179,9 +178,9 @@
         notes: ['表に書こう（最大値 27・40・60 のときの 範囲と四分位範囲）。', '気づいたこと。なぜ、そうなるのだろう。説明しよう。', 'スライダーで、最大値を動かせます。'],
         sliders: [{ key: 'm', label: 'A さんの最大値', min: 17, max: 60, step: 1, val: 27, fmt: function (x) { return x + '点'; } }],
         draw: function (D) {
-          var P = twoParts(D, .42), s = CH.fs(D), v = A.slice(0, 10).concat([D.V.m]);
+          var P = twoParts(D, .56), v = A.slice(0, 10).concat([D.V.m]);
           split(D, P.top, v, { col: C.blue, colf: function (i) { return i === 10 ? C.orange : null; }, ord: true });
-          var X = CH.numline(D, P.bot, 0, 60, 1, { lab: 10, unit: '（点）' }), r = Math.min(CH.fs(D, .42), P.bot.w / 60 * .48);
+          var X = CH.numline(D, P.bot, 0, 60, 1, { lab: 10, unit: '（点）' }), r = Math.max(3.5, Math.min(CH.fs(D, .42), P.bot.w / 60 * .5));
           CH.dots(D, X, P.bot.y1, v, { col: function (i) { return i === 10 ? C.orange : C.blue; }, r: r });
         } },
       { tag: 'チャレンジ', bh: 'チャレンジ', q: '小さい順にならんだ 10個のデータ　8　11　a　16　19　22　24　b　30　35。平均値が 20.4、四分位範囲が 15 のとき、a と b の値は？', a: 'a ＝ 12、b ＝ 27',
