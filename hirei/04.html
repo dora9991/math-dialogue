@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>比例の式を求める</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 比例と反比例 第4時：1組の x、y の値から、比例の式を求めよう（ikkan の lesson_hirei_04 と同じ流れ）。
+   表の x＝4、y＝20 の数が、y＝ax の式へ飛んでいって代入される（20＝4a）。a＝5 がわかると、表の y が右から順にうまって、x＝−3 のとき −15。
+   求め方の4つの手順（式をおく → 代入 → a を求める → 式を書く）。例題は x＝−10、y＝4（a が分数）と、y から x を求める問題。
+   考えようは、比例定数 a のスライダーで、x＝3 のとき y＝6 になる a をさがす。
+   数値は ikkan のまま（x＝4・y＝20、例題 x＝−10・y＝4、例題② は演習プリント（4）の x＝15・y＝−6、考えよう x＝3・y＝6、チャレンジ x＝p・p＋3）。答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum, OUT = 'rgba(20,40,30,.92)';
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  /* ---- 分数入りの字（[2/5] をたての分数に）。canvas 用 ---- */
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = CH.fr(s[k]); }); if (s.notes) s.notes = s.notes.map(CH.fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = CH.fr(b.t); }); }); return st; }
+  function nf(v) { return S(Math.round(v * 100) / 100); }
+
+  /* ---- 数と検算 ---- */
+  var A1 = 20 / 4, XS = [-3, -2, -1, 0, 1, 2, 3, 4];
+  CH.check(A1 === 5 && A1 * 4 === 20 && A1 * -3 === -15 && CH.near(20 * (-3 / 4), -15), '今日の問い（a＝5、y＝−15）');
+  var A2 = 4 / -10;
+  CH.check(CH.near(A2, -2 / 5) && CH.near(A2 * -10, 4) && CH.near(A2 * 5, -2), '例題（a＝−2/5、y＝−2）');
+  var A3 = -6 / 15;
+  CH.check(CH.near(A3, -2 / 5) && CH.near(4 / A3, -10) && CH.near(A3 * -10, 4), '例題②（x＝−10）');
+  CH.check(6 / 3 === 2 && [1, 2, 3, 4, 5].map(function (x) { return 2 * x; }).join() === '2,4,6,8,10', '考えよう（ここで確かめるだけ）');
+  var CA = (-16 - -10) / 3, CP = -10 / CA;
+  CH.check(CA === -2 && CP === 5 && CA * (CP + 3) === -16, 'チャレンジ（a＝−2、p＝5）');
+
+  /* ---- 字のならび（ひとつずつの位置を返す） ---- */
+  function toks(D, cx, y, list, size) {
+    var g = D.ctx, ws = [], w = 0; g.save(); g.font = '600 ' + size + 'px ' + FONT;
+    list.forEach(function (t) { var ww = g.measureText(t.t).width + size * .1; ws.push(ww); w += ww; }); g.restore();
+    var x = cx - w / 2, out = [];
+    list.forEach(function (t, i) { if (t.a == null || t.a > 0) CH.text(D, x + ws[i] / 2, y, t.t, { size: size, col: t.col, a: t.a }); out.push({ x0: x, x1: x + ws[i], cx: x + ws[i] / 2 }); x += ws[i]; });
+    return out;
+  }
+  function arc(D, x0, x1, y, up, col, a, txt) {
+    var s = CH.fs(D), g = D.ctx, h = s * 1.3 * (up ? -1 : 1);
+    g.save(); g.globalAlpha = D.ga * a; g.strokeStyle = col; g.lineWidth = 2.4; g.beginPath(); g.moveTo(x0, y); g.quadraticCurveTo((x0 + x1) / 2, y + h, x1, y); g.stroke(); g.restore();
+    CH.arrow(D, x1 + (x1 > x0 ? -4 : 4), y + h * .22, x1, y, { col: col, a: a, head: 8, w: 2.4 });
+    CH.text(D, (x0 + x1) / 2, y + h * .5 + (up ? -1 : 1) * s * .7, txt, { col: col, size: s * .9, a: a, outline: OUT });
+  }
+
+  /* ---- 今日の問いの表 ---- */
+  function lay(D) { var R = CH.box(D, { l: .04, r: .04, t: .05, b: .05 }); return { T: CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .3), E: CH.rect(R.x0, R.y0 + R.h * .36, R.x1, R.y1), R: R }; }
+  function table1(D, R, yval, o) {
+    o = o || {};
+    return CH.table(D, R, ['x'].concat(XS.map(S)), [['y'].concat(XS.map(yval))], { fw: .12, size: CH.fs(D, .9), rh: CH.fs(D) * 2.4, hl: o.hl, show: o.show });
+  }
+  function given(x) { return x === 4 ? '20' : x === -3 ? '？' : ''; }
+
+  /* ---- 手順の行。lines：[[見出し, 式], …]、k（何行目まで）、P（四角） ---- */
+  function stepsList(D, P, lines, t, t0, dt) {
+    var s = CH.fs(D), rh = Math.min(P.h / lines.length, s * 2.6), lw = P.w * .42;
+    lines.forEach(function (ln, i) {
+      var a = CH.smooth(t0 + i * dt, t0 + i * dt + dt * .6, t); if (a <= 0) return;
+      var y = P.y0 + rh * (i + .5);
+      CH.text(D, P.x0, y, ln[0], { align: 'left', size: CH.fitSize(D, ln[0], lw - s * .5, s * .85), col: 'rgba(242,240,230,.8)', a: a });
+      TX(D, P.x0 + lw, y, ln[1], { align: 'left', size: s * 1.15, col: ln[2] || C.chalk, a: a });
+    });
+  }
+
+  K3.run({
+    no: '第4時', title: '1組の x、y の値から、比例の式を求めよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '03.html', label: '◀ 第3時' }, { href: '05.html', label: '第5時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: 'x＝4 のとき y＝20', q: 'y は x に比例し、x＝4 のとき y＝20 である。x＝−3 のときの y の値を、どうすれば求められるだろう。',
+        notes: ['① 自分の考え（3分）　求め方と、そのわけを書こう。', '② ペアの考え（3分）　自分とちがう求め方があれば書こう。'],
+        draw: function (D) {
+          var L = lay(D), s = CH.fs(D); table1(D, L.T, given, { hl: function (r, c) { return XS[c - 1] === 4 ? C.yel : XS[c - 1] === -3 ? C.orange : null; } });
+          var big = Math.min(s * 2.4, L.E.w / 7);
+          toks(D, L.E.cx, L.E.y0 + L.E.h * .3, [{ t: 'y' }, { t: '＝' }, { t: 'a', col: C.green }, { t: 'x' }], big);
+          CH.text(D, L.E.cx, L.E.y0 + L.E.h * .3 + big * 1.1, '比例の式（a は比例定数）', { size: s * .9, col: 'rgba(242,240,230,.8)' });
+        } },
+      { tag: '今日の問い', q: '比例定数 a は、いくつ？', a: 'a＝5', sub: 'y＝ax に x＝4、y＝20 を代入すると 20＝4a。a＝20÷4＝5', dur: 6,
+        b: { t: 'y＝ax に x＝4、y＝20 を代入 → 20＝4a → <b>a＝5</b>', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), s = CH.fs(D), t = D.ph ? D.t : 0, big = Math.min(s * 2.2, L.E.w / 8);
+          var T = table1(D, L.T, given, { hl: function (r, c) { return XS[c - 1] === 4 ? (r === 0 ? C.blue : C.yel) : null; } });
+          var y1 = L.E.y0 + L.E.h * .15, y2 = L.E.y0 + L.E.h * .45, y3 = L.E.y0 + L.E.h * .75;
+          var A = toks(D, L.E.cx, y1, [{ t: 'y', col: C.yel }, { t: '＝' }, { t: 'a', col: C.green }, { t: 'x', col: C.blue }], big);
+          if (D.ph) {
+            var f = CH.ease(CH.smooth(.05, .35, t)), arrived = f >= .999;
+            var B = toks(D, L.E.cx, y2, [{ t: '20', col: C.yel, a: arrived ? 1 : 0 }, { t: '＝' , a: CH.smooth(.05, .2, t) }, { t: '4', col: C.blue, a: arrived ? 1 : 0 }, { t: 'a', col: C.green, a: CH.smooth(.05, .2, t) }], big);
+            if (!arrived) {
+              var cy = T.cell(1, 8), cx = T.cell(0, 8);
+              CH.text(D, CH.lerp(cy.cx, B[0].cx, f), CH.lerp(cy.cy, y2, f), '20', { size: CH.lerp(s * .9, big, f), col: C.yel, outline: OUT });
+              CH.text(D, CH.lerp(cx.cx, B[2].cx, f), CH.lerp(cx.cy, y2, f), '4', { size: CH.lerp(s * .9, big, f), col: C.blue, outline: OUT });
+            }
+            if (t > .5) toks(D, L.E.cx, y3, [{ t: 'a', col: C.green, a: CH.smooth(.5, .65, t) }, { t: '＝', a: CH.smooth(.5, .65, t) }, { t: '20÷4', a: CH.smooth(.5, .65, t) }, { t: '＝', a: CH.smooth(.5, .65, t) }, { t: '5', col: C.green, a: CH.smooth(.5, .65, t) }], big);
+            if (t > .8) CH.text(D, L.E.cx, y3 + big * 1, 'だから　y＝5x', { col: C.green, size: s * 1.1, a: CH.smooth(.8, .95, t) });
+            if (t > .38) CH.text(D, L.E.x0 + s * .4, y2, '代入', { col: C.orange, size: s * .9, align: 'left', a: CH.smooth(.38, .5, t) });
+          }
+        } },
+      { tag: '今日の問い', q: 'x＝−3 のときの y の値は？', a: 'y＝−15', sub: 'y＝5x に x＝−3 を代入して、5×(−3)＝−15', dur: 6,
+        b: { t: 'y＝5x → x＝−3 のとき y＝5×(−3)＝<b>−15</b>', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), s = CH.fs(D), t = D.ph ? D.t : 0, big = Math.min(s * 2, L.E.w / 10), k = D.ph ? 7 * CH.smooth(.05, .7, t) : 0;
+          table1(D, L.T, function (x) { return x === 4 ? '20' : D.ph && 4 - x <= k + 1e-9 ? S(5 * x) : x === -3 ? '？' : ''; }, { hl: function (r, c) { var x = XS[c - 1]; return x === 4 ? C.yel : D.ph && 4 - x <= k + 1e-9 && 4 - x > k - 1 ? C.green : x === -3 && t > .7 ? C.orange : null; } });
+          toks(D, L.E.cx, L.E.y0 + L.E.h * .2, [{ t: 'y' }, { t: '＝' }, { t: '5', col: C.green }, { t: 'x' }], big * 1.1);
+          if (t > .72) TX(D, L.E.cx, L.E.y0 + L.E.h * .55, 'x＝−3 のとき　y＝5×(−3)＝−15', { size: CH.fitSize(D, 'x＝−3 のとき　y＝5×(−3)＝−15', L.E.w, s * 1.3), col: C.orange, a: CH.smooth(.72, .9, t) });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '1組の x、y の値から、比例の式を求めるには、どうする？', a: 'y＝ax とおいて、x、y の値を代入し、比例定数 a を求める', sub: '式の文字に数を入れることを「代入する」という。y の値から x を求めるときも、式に y を代入して方程式を解く', dur: 5,
+        b: [{ t: '比例の式は <b>y＝ax</b> とおく → 1組の x、y を <b>代入</b> → <b>比例定数 a</b> を求める → 式を書く', col: C.green }, { t: 'y から x を求めるときは、式に y を代入して <b>方程式</b> を解く', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .06, b: .06 }), s = CH.fs(D), t = D.ph ? D.t : 0, rs = CH.rows(R, 2, .2), k = 0;
+          var BX = [['① 式をおく', 'y＝ax'], ['② 代入する', '20＝4a'], ['③ a を求める', 'a＝5'], ['④ 式を書く', 'y＝5x']], cs = [];
+          rs.forEach(function (row) { CH.cols(row, 2, .22).forEach(function (P) { cs.push(P); }); });
+          cs.forEach(function (P, i) {
+            var a = D.ph ? CH.smooth(i * .22, i * .22 + .15, t) : (i === 0 ? 1 : .25);
+            CH.fillRect(D, P.x0, P.y0, P.x1, P.y1, { fill: 'rgba(169,240,176,.08)', stroke: C.green, sw: 2, a: a });
+            CH.text(D, P.cx, P.y0 + P.h * .3, BX[i][0], { size: CH.fitSize(D, BX[i][0], P.w * .9, s * .95), col: C.green, a: a });
+            CH.text(D, P.cx, P.y0 + P.h * .68, BX[i][1], { size: CH.fitSize(D, BX[i][1], P.w * .9, s * 1.4), col: C.chalk, a: a });
+          });
+          var g = s * .4, ar = function (p, q, al) { CH.arrow(D, p[0], p[1], q[0], q[1], { col: C.chalk, w: 2.2, a: al, head: 9 }); };
+          ar([cs[0].x1 + g, cs[0].cy], [cs[1].x0 - g, cs[1].cy], D.ph ? CH.smooth(.15, .22, t) : .25);
+          ar([cs[1].x0 - g, cs[1].y1 + g], [cs[2].x1 + g, cs[2].y0 - g], D.ph ? CH.smooth(.37, .44, t) : .25);
+          ar([cs[2].x1 + g, cs[2].cy], [cs[3].x0 - g, cs[3].cy], D.ph ? CH.smooth(.59, .66, t) : .25);
+        } },
+      { tag: '例題', bh: '例題　x＝−10 のとき y＝4', q: 'y は x に比例し、x＝−10 のとき y＝4 である。y を x の式で表し、x＝5 のときの y の値を求めよう。', a: 'y＝−[2/5]x　x＝5 のとき y＝−2', sub: '4＝−10a から a＝−[2/5]。たしかめ：−[2/5]×(−10)＝4 で、もとの値になる', dur: 6,
+        b: { t: '4＝−10a → a＝−[2/5] → <b>y＝−[2/5]x</b>　x＝5 のとき <b>y＝−2</b>', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .05, b: .05 }), s = CH.fs(D), t = D.ph ? D.t : 0;
+          CH.table(D, CH.rect(R.x0 + R.w * .15, R.y0, R.x1 - R.w * .15, R.y0 + s * 5), ['x', '−10', '5'], [['y', '4', t > .8 ? '−2' : '？']], { fw: .25, size: CH.fs(D, 1), rh: s * 2.4, hl: function (r, c) { return c === 1 ? C.yel : c === 2 && t > .8 ? C.pink : null; } });
+          stepsList(D, CH.rect(R.x0 + R.w * .04, R.y0 + s * 6.4, R.x1, R.y1), [['① 式をおく', 'y＝ax'], ['② 代入する', '4＝−10a'], ['③ a を求める', 'a＝4÷(−10)＝−[2/5]'], ['④ 式を書く', 'y＝−[2/5]x', C.pink], ['⑤ x＝5 のとき', 'y＝−[2/5]×5＝−2', C.pink]], D.ph ? t : 0, -.02, .19);
+        } },
+      { tag: '例題', bh: '例題②　y から x を求める', q: 'y は x に比例し、x＝15 のとき y＝−6 である。y＝4 となる x の値を求めよう。', a: 'x＝−10', sub: 'a＝−6÷15＝−[2/5]。y＝−[2/5]x に y＝4 を代入して、4＝−[2/5]x を解く', dur: 6,
+        b: { t: 'a＝−[2/5]　4＝−[2/5]x を解いて <b>x＝−10</b>', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .05, b: .05 }), s = CH.fs(D), t = D.ph ? D.t : 0;
+          CH.table(D, CH.rect(R.x0 + R.w * .15, R.y0, R.x1 - R.w * .15, R.y0 + s * 5), ['x', '15', t > .8 ? '−10' : '？'], [['y', '−6', '4']], { fw: .25, size: CH.fs(D, 1), rh: s * 2.4, hl: function (r, c) { return c === 1 ? C.yel : c === 2 && t > .8 ? C.pink : null; } });
+          stepsList(D, CH.rect(R.x0 + R.w * .04, R.y0 + s * 6.4, R.x1, R.y1), [['① 代入する', '−6＝15a'], ['② a を求める', 'a＝−[2/5]'], ['③ 式を書く', 'y＝−[2/5]x'], ['④ y＝4 を代入', '4＝−[2/5]x', C.pink], ['⑤ 方程式を解く', 'x＝−10', C.pink]], D.ph ? t : 0, -.02, .19);
+        } },
+      { tag: '考えよう', bh: '考えよう', q: '比例の式は、1組の x、y の値がわかれば決まる。それは、なぜだろう。x＝3 のとき y＝6 の比例で、ほかの x のときの y の値を、表にして調べよう。',
+        notes: ['x＝3 のとき y＝6 になる比例定数 a は、いくつあるだろう。', 'y の値をどう求めたか、わかったことを書こう。', 'スライダーで、比例定数 a を変えられます。'],
+        sliders: [{ key: 'a', label: '比例定数 a', min: .5, max: 4, step: .5, val: 1, fmt: function (v) { return nf(v); } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .06, b: .06 }), s = CH.fs(D), a = D.V.a, X5 = [1, 2, 3, 4, 5], hit = CH.near(a * 3, 6);
+          var big = Math.min(s * 2, R.w / 8);
+          toks(D, R.cx, R.y0 + big * .6, [{ t: 'y' }, { t: '＝' }, { t: nf(a), col: C.green }, { t: 'x' }], big);
+          CH.table(D, CH.rect(R.x0, R.y0 + R.h * .25, R.x1, R.y0 + R.h * .62), ['x'].concat(X5.map(String)), [['y'].concat(X5.map(function (x) { return nf(a * x); }))],
+            { fw: .16, size: CH.fs(D, 1), rh: s * 2.5, hl: function (r, c) { return c === 3 ? (hit ? C.yel : C.blue) : null; } });
+          CH.text(D, R.cx, R.y0 + R.h * .78, 'x＝3 のとき　y＝' + nf(3 * a), { size: s * 1.2, col: hit ? C.yel : C.chalk });
+          CH.text(D, R.cx, R.y0 + R.h * .9, '（さがしている組：x＝3 のとき y＝6）', { size: CH.fitSize(D, '（さがしている組：x＝3 のとき y＝6）', R.w, s * .85), col: 'rgba(242,240,230,.75)' });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'y は x に比例している。x＝p のとき y＝−10、x＝p＋3 のとき y＝−16 である。比例定数 a と、p の値を求めよう。',
+        a: 'a＝−2、p＝5', sub: 'x が 3 増えると、y は 6 減る → 3a＝−6、a＝−2。−10＝−2p から p＝5', dur: 7,
+        b: { t: 'x が 3 増えて y が 6 減る → 3a＝−6 → <b>a＝−2</b>　−10＝−2p → <b>p＝5</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .1, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0;
+          var T = CH.table(D, CH.rect(R.x0 + R.w * .1, R.y0 + s * 2.6, R.x1 - R.w * .1, R.y0 + s * 2.6 + s * 5), ['x', t > .75 ? 'p（＝5）' : 'p', t > .75 ? 'p＋3（＝8）' : 'p＋3'], [['y', '−10', '−16']], { fw: .22, size: CH.fs(D, 1), rh: s * 2.5, hl: function (r, c) { return r === 0 && c > 0 && t > .75 ? C.orange : null; } });
+          arc(D, T.cell(0, 1).cx, T.cell(0, 2).cx, T.cell(0, 1).y0, true, C.blue, 1, '3 増える');
+          arc(D, T.cell(1, 1).cx, T.cell(1, 2).cx, T.cell(1, 1).y1, false, C.pink, D.ph ? CH.smooth(.02, .15, t) : 0, '6 減る（−6）');
+          var y0 = T.y1 + s * 4.4;
+          if (t > .2) CH.text(D, R.cx, y0, '3×a＝−6　→　a＝−2', { col: C.yel, size: s * 1.2, a: CH.smooth(.2, .4, t) });
+          if (t > .5) CH.text(D, R.cx, y0 + s * 2.1, 'y＝−2x に x＝p、y＝−10 を代入', { col: C.chalk, size: CH.fitSize(D, 'y＝−2x に x＝p、y＝−10 を代入', R.w, s), a: CH.smooth(.5, .62, t) });
+          if (t > .62) CH.text(D, R.cx, y0 + s * 4, '−10＝−2p　→　p＝5', { col: C.orange, size: s * 1.2, a: CH.smooth(.62, .75, t) });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>
