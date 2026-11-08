@@ -100,7 +100,7 @@ function text(txt, x, y, fs, color, outline, align) {
 function makeD(C, M, info) {
   var lw = clamp(C.sc * .02, 1.6, 3.4), fs = clamp(C.sc * .21, 14, 30);
   var D = {
-    C: C, M: M, lw: lw, fs: fs, t: info.t, ph: info.ph, V: info.V, now: info.now, done: info.done,
+    C: C, M: M, lw: lw, fs: fs, t: info.t, ph: info.ph, V: info.V, now: info.now, done: info.done, ctx: ctx, ga: gA,
     COL: COL, v: V3, W: info.W, H: info.H,
     /* 点：'A' のような頂点の名前でも、[x, y, z] でもよい */
     pt: function (p) { return typeof p === 'string' ? D.M.P[p] : p; },
@@ -501,10 +501,10 @@ function buildDom(cfg) {
     '<button class="btn primary" id="next" type="button" aria-label="つぎへ（→キー）">つぎへ ▶</button>' +
     '<button class="btn" id="fs" type="button" aria-label="全画面にする（Fキー）">全画面</button></div></header>' +
     '<div class="track" aria-hidden="true"><i id="pbar"></i></div>' +
-    '<div class="main"><div class="stage" id="stage"><canvas id="cv" role="img" aria-label="立体の図"></canvas>' +
+    '<div class="main"><div class="stage" id="stage"><canvas id="cv" role="img" aria-label="' + esc(cfg.alt || (cfg.flat ? 'グラフや表の図' : '立体の図')) + '"></canvas>' +
     '<div class="banner" id="banner" hidden></div>' +
     '<div class="scrub"><div class="sls" id="sls"></div><button class="btn" id="replay" type="button" aria-label="もう一度動かす（Rキー）">↻ もう一度</button>' +
-    '<span class="hint">ドラッグで回せます（ダブルクリックでもどす）</span></div></div>' +
+    '<span class="hint">' + esc(cfg.hint != null ? cfg.hint : 'ドラッグで回せます（ダブルクリックでもどす）') + '</span></div></div>' +
     '<section class="panel" id="panel" aria-live="polite"><span class="tag" id="tag"></span><h2 class="q" id="q"></h2>' +
     '<div class="ansbox" id="ansbox"><p class="ans later" id="ans"></p><p class="sub later" id="sub"></p><p class="wait" id="wait">考えてから、つぎへ ▶ で答え</p></div>' +
     '<div class="notes" id="notes"></div><div class="blist" id="blist"></div></section></div></div></div>';
@@ -514,7 +514,8 @@ function run(cfg) {
   buildDom(cfg);
   var $ = function (id) { return document.getElementById(id); };
   var cv = $('cv'), stage = $('stage'), panel = $('panel'); ctx = cv.getContext('2d');
-  var W = 0, H = 0, steps = cfg.steps, M0 = cfg.model;
+  if (cfg.flat) cv.style.cursor = 'default';
+  var W = 0, H = 0, steps = cfg.steps, M0 = cfg.model || { ctr: [0, 0, 0], R: 1 };
   var VIEW0 = cfg.view || { th: -60, ps: 24 };
   var state = { idx: 0, phase: 0, t: 1, playing: false, done: true, t0: 0, V: {} };
   var cam = null, dragT = 0, dragP = 0, drag = null, fadeT = 0, spinT = 0;
@@ -673,7 +674,7 @@ function run(cfg) {
     requestAnimationFrame(frame);
   }
 
-  cv.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY }; try { cv.setPointerCapture(e.pointerId); } catch (_) { } });
+  cv.addEventListener('pointerdown', function (e) { if (cfg.flat) return; drag = { x: e.clientX, y: e.clientY }; try { cv.setPointerCapture(e.pointerId); } catch (_) { } });
   cv.addEventListener('pointermove', function (e) { if (!drag) return; dragT -= (e.clientX - drag.x) * .009; dragP += (e.clientY - drag.y) * .009; drag.x = e.clientX; drag.y = e.clientY; });
   function endDrag() { drag = null; }
   cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);

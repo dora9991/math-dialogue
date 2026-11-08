@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>確率を根拠に判断する</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="js/chart.js"></script>
+<script>
+/* データの活用 第10時：確率を根拠にして、判断しよう（ikkan の lesson_data_new_10 と同じ流れ）。
+   「売り切れる」＝仕入れた個数以上売れること。階級は「以上〜未満」。データはすべて自作。 */
+(function () {
+  var C = CH.C, E = [40, 50, 60, 70, 80, 90], ONI = [8, 22, 40, 24, 6], SUN = [2, 10, 28, 24, 6], RAIN = [6, 12, 12, 0, 0];
+  var R100 = ONI.map(function (c) { return c / 100; }), UP = ONI.map(function (_, i) { return CH.sum(ONI.slice(i)) / 100; });
+  CH.check(CH.sum(ONI) === 100 && CH.sum(SUN) === 70 && CH.sum(RAIN) === 30 && ONI.every(function (c, i) { return SUN[i] + RAIN[i] === c; }), 'おにぎりの日数');
+  CH.check(UP.map(CH.f2).join() === '1.00,0.92,0.70,0.30,0.06', '以上の確率');
+  CH.check(CH.f2(UP[3]) === '0.30' && CH.f2(UP[4]) === '0.06' && UP[3] > .1 && UP[4] <= .1 && CH.f2(R100[0] + R100[1]) === '0.30', 'チャレンジ');
+  var RAINY = (function () { var r = CH.rng(30), idx = []; for (var i = 0; i < 100; i++) idx.push(i); for (var j = 99; j > 0; j--) { var k = Math.floor(r() * (j + 1)), x = idx[j]; idx[j] = idx[k]; idx[k] = x; } return idx.slice(0, 30); })();
+
+  function hist(D, vals, o) {
+    o = o || {}; var R = CH.box(D, { l: .12, r: .06, t: .12, b: .16 }), rel = o.rel;
+    var Ax = CH.axes(D, R, { x: [40, 90], y: [0, rel ? .5 : 50], xt: E, yt: rel ? [0, .1, .2, .3, .4, .5] : [0, 10, 20, 30, 40, 50], yf: rel ? function (v) { return v.toFixed(1); } : null, xl: '（個）', yl: rel ? '相対度数' : '（日）' });
+    CH.bars(D, Ax, E, vals, { col: o.col || C.blue, labels: true, fmt: rel ? function (v) { return CH.f2(v); } : null, hl: o.hl, alpha: o.alpha });
+    return Ax;
+  }
+  function stock(D, Ax, x, txt, col, a) {
+    CH.line(D, Ax.X(x), Ax.R.y0 - Ax.s * .4, Ax.X(x), Ax.R.y1, { col: col, w: 2.6, a: a });
+    CH.text(D, Ax.X(x), Ax.R.y0 - Ax.s * 1.2, txt, { col: col, a: a, size: Ax.s });
+  }
+
+  K3.run({
+    no: '第10時', title: '確率を根拠にして、判断しよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '09.html', label: '◀ 第9時' }, { href: '11.html', label: '第11時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '売店のおにぎり（過去100日）', q: '売店では、毎日おにぎりを仕入れる。過去100日の、売れた個数の記録から、何個仕入れるとよいか 考えよう。',
+        notes: ['① 自分の考え（3分）　何個にするか。根拠となる数も。', '② ペアの考え（3分）'],
+        draw: function (D) { hist(D, ONI); } },
+      { tag: '今日の問い', q: '70個 仕入れると、売り切れる確率は？ 80個なら？', a: '70個 … 0.30、80個 … 0.06', sub: '売り切れる＝仕入れた個数以上 売れる。70個以上 24＋6＝30日 → 0.30、80個以上 6日 → 0.06', dur: 4,
+        b: { t: '売り切れる確率　70個 … <b>0.30</b>、80個 … <b>0.06</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, k = t < .5 ? 3 : 4, col = t < .5 ? C.yel : C.pink;
+          var Ax = hist(D, ONI, { hl: function (i) { return t > 0 && i >= k ? col : null; }, alpha: function (i) { return t > 0 && i < k ? .3 : 1; } });
+          if (t > 0) {
+            var a = t < .5 ? CH.smooth(0, .15, t) : CH.smooth(.5, .65, t);
+            stock(D, Ax, E[k], (k === 3 ? 70 : 80) + '個 仕入れる', col, a);
+            CH.text(D, Ax.X(90), Ax.Y(44), k === 3 ? '70個以上 30日 → 0.30' : '80個以上 6日 → 0.06', { col: col, a: a, size: Ax.s * 1.15, align: 'right' });
+          }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '過去の記録の相対度数を、何とみて判断に使う？ 「○個以上売れる確率」は、どう求める？', a: '確率とみる。上の階級の相対度数をたす', sub: '70個以上 … 0.24＋0.06＝0.30。「○個未満」の確率は、累積相対度数で求められる', dur: 4,
+        b: [{ t: '相対度数を、その階級になる <b>確率</b> とみなす', col: C.green }, { t: '「以上」の確率 … 上の階級の相対度数を <b>たす</b>', col: C.green }, { t: '判断は、何を大事にするか（<b>目的</b>）で変わってよい', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .14, b: .2 }), t = D.ph ? D.t : 0, shown = D.ph ? Math.floor(t * 5.99) : -1;
+          CH.table(D, R, ['売れた個数', '40〜50', '50〜60', '60〜70', '70〜80', '80〜90'], [
+            ['日数'].concat(ONI), ['相対度数'].concat(R100.map(CH.f2)), ['○個以上 売れる確率'].concat(UP.map(function (u, i) { return (E[i]) + '個以上 ' + CH.f2(u); }))
+          ], { fw: .24, show: function (r, c) { return r === 3 && c > 0 ? (6 - c <= shown ? 1 : 0) : 1; }, hl: function (r, c) { return D.ph && (r === 3 || r === 2) && c >= 4 ? (r === 3 && c === 4 ? C.yel : (r === 2 ? C.yel : null)) : null; }, size: CH.fs(D, .7) });
+        } },
+      { tag: '例題', bh: '例題　降水確率', q: '「明日の降水確率は 30%」。正しいのは？　ア 明日は 1日のうち 30%の時間、雨がふる　イ 明日は 30%の地域で 雨がふる　ウ 同じ予報が出た日が 100日あると、そのうち 30日くらいは 雨がふる',
+        a: 'ウ', sub: '降水確率は、同じような予報が出た日のうち、雨（1mm以上）がふった日の割合をもとにしている', dur: 3,
+        b: { t: '降水確率 30% … 同じ予報の 100日のうち <b>30日くらい</b> 雨（<b>ウ</b>）', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .2, r: .2, t: .16, b: .14 }), s = CH.fs(D), t = D.ph ? D.t : 0, k = Math.round(30 * CH.smooth(.1, .8, t));
+          var on = {}; RAINY.slice(0, k).forEach(function (i) { on[i] = 1; });
+          CH.text(D, R.cx, R.y0 - s * 1.3, '同じ予報が出た 100日', { col: C.chalk });
+          CH.grid(D, R, 100, { cols: 10, k: .38, on: function (i) { return on[i] ? C.blue : null; } });
+          if (t > .8) CH.text(D, R.cx, R.y1 + s * 1.2, '雨がふった日 30日 → 0.30', { col: C.blue, a: CH.smooth(.8, 1, t), size: s * 1.1 });
+        } },
+      { tag: '考えよう', q: '明日は雨の予報。過去100日の記録（70個以上 売れる確率 0.30）を、そのまま使って 仕入れる個数を決めてよいだろうか。',
+        notes: ['晴れの日 70日・雨の日 30日に分けた記録を見て、70個以上の割合をくらべよう。', '確率を根拠にするとき、どんなことに気をつけるとよいだろう。', 'スライダーで、全部・晴れの日・雨の日を切りかえられます。'],
+        sliders: [{ key: 'k', label: '記録', min: 0, max: 2, step: 1, val: 0, fmt: function (x) { return ['全部', '晴れの日', '雨の日'][x]; } }],
+        draw: function (D) {
+          var k = D.V.k, vals = [ONI, SUN, RAIN][k], col = [C.blue, C.orange, C.green][k];
+          var Ax = hist(D, vals, { col: col });
+          CH.text(D, Ax.X(83), Ax.Y(46), ['全部（100日）', '晴れの日（70日）', '雨の日（30日）'][k], { col: col, size: Ax.s * 1.2 });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '売り切れる確率を 0.10 以下にしたい。何個 仕入れればよいか（10個ごとに考える）。そのとき、売れ残りが 20個より多くなる確率は？',
+        a: '80個、0.30', sub: '80個以上 売れる 0.06（70個なら 0.30 で大きすぎる）。80個仕入れて 20個より多く残る＝売れた個数が 60個未満 → 0.08＋0.22＝0.30', dur: 5,
+        b: { t: '<b>80個</b>（売り切れ 0.06）　売れ残り 20個より多い … 60個未満 0.08＋0.22＝<b>0.30</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, A1 = CH.smooth(.05, .25, t), A2 = CH.smooth(.55, .75, t);
+          var Ax = hist(D, R100, { rel: true, hl: function (i) { return t > .05 && t < .55 && i >= 4 ? C.pink : t >= .55 && i < 2 ? C.blue : null; }, alpha: function (i) { return t >= .55 && i >= 2 ? .35 : 1; } });
+          if (t > .05) { stock(D, Ax, 80, '80個 仕入れる', C.pink, A1); if (t < .55) CH.text(D, Ax.X(72), Ax.Y(.45), '売り切れ 0.06 ≦ 0.10', { col: C.pink, a: A1, size: Ax.s * 1.1 }); }
+          if (t >= .55) {
+            var y = Ax.Y(.46); CH.arrow(D, Ax.X(60), y, Ax.X(80), y, { col: C.blue, a: A2, w: 2.4 }); CH.arrow(D, Ax.X(80), y, Ax.X(60), y, { col: C.blue, a: A2, w: 2.4 });
+            CH.text(D, Ax.X(70), y - Ax.s * 1, '20個', { col: C.blue, a: A2, size: Ax.s });
+            CH.line(D, Ax.X(60), y, Ax.X(60), Ax.R.y1, { col: C.blue, dash: true, a: A2 });
+            CH.text(D, Ax.X(50), Ax.Y(.34), '60個未満', { col: C.blue, a: A2, size: Ax.s * 1.05 });
+            CH.text(D, Ax.X(50), Ax.Y(.34) + Ax.s * 1.4, '0.08＋0.22＝0.30', { col: C.blue, a: A2, size: Ax.s * 1.05 });
+          }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>
