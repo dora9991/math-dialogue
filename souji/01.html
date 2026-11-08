@@ -36,10 +36,11 @@
   /* 字の行（四角の幅に入るように、字を小さくする） */
   function rows(D, Rr, list, o) {
     o = o || {}; list = list.filter(Boolean); if (!list.length) return;
-    var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (list.length * 1.6));
+    var nc = Rr.w > Rr.h * 2.2 && list.length > 3 ? 2 : 1, per = Math.ceil(list.length / nc), cw = Rr.w / nc;   /* 下の帯では 2列 */
+    var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (per * 1.6));
     list.forEach(function (r, i) {
-      var w = tw(D, r.t, s), sz = w > Rr.w - 4 ? s * (Rr.w - 4) / w : s;
-      CH.text(D, Rr.x0, Rr.y0 + s * .8 + i * s * 1.6, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left', outline: OUT });
+      var c = Math.floor(i / per), j = i % per, w = tw(D, r.t, s), sz = w > cw - 8 ? s * (cw - 8) / w : s;
+      CH.text(D, Rr.x0 + c * cw, Rr.y0 + s * .8 + j * s * 1.6, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left', outline: OUT });
     });
   }
   function f1(x) { return String(Math.round(x * 10) / 10); }
@@ -113,7 +114,7 @@
   var PAIRS = [['AB', 'DE', C.yel], ['BC', 'EF', C.pink], ['CA', 'FD', C.green]];
 
   /* ---- ことば：相似の位置（中心 O から k 倍の位置に D・E・F） ---- */
-  var HO = { O: [0, 0], A: [1.5, 1.7], B: [1.4, .55], C: [2.5, 1.0] };
+  var HO = { O: [0, 0], A: [1.6, 1.1], B: [1.5, -.6], C: [2.6, .2] };
   function homP(k) { var P = Object.assign({}, HO); ['A', 'B', 'C'].forEach(function (n, i) { P['DEF'[i]] = GE.lerpP(HO.O, HO[n], k); }); return P; }
   [.5, .8, 1.5, 2, 2.5].forEach(function (k) { var P = homP(k); CH.check(GE.verify(P, '△ABC∽△DEF') && GE.verify(P, 'OA：OD＝OB：OE＝OC：OF＝AB：DE＝BC：EF＝CA：FD') && GE.verify(P, 'AB∥DE') && GE.verify(P, 'BC∥EF') && GE.near(GE.len(P, 'DE') / GE.len(P, 'AB'), k), '相似の位置（k＝' + k + '）'); });
 
@@ -156,7 +157,7 @@
   }
 
   /* ---- チャレンジ：周の長さ。△ABC（AB＝5、BC＝6、CA＝3：周 14）と 5/2 倍の △DEF（周 35） ---- */
-  var T1 = tri(5, 6, 3), T2 = xf(T1, 'ABC', 'DEF', { s: 2.5 }), TP = [beside(T1, T2, true, 3.4), beside(T1, T2, false, 2.2)];
+  var T1 = tri(5, 6, 3), T2 = xf(T1, 'ABC', 'DEF', { s: 2.5 }), TP = [beside(T1, T2, true, 3.4), beside(T1, T2, false, 4.6)];
   function per(P, s) { return GE.len(P, s[0] + s[1]) + GE.len(P, s[1] + s[2]) + GE.len(P, s[2] + s[0]); }
   TP.forEach(function (P) { CH.check(GE.near(per(P, 'ABC'), 14) && GE.near(per(P, 'DEF'), 35) && GE.near(14 * 5 / 2, 35) && GE.verify(P, '△ABC∽△DEF') && GE.verify(P, 'AB：DE＝2：5'), 'チャレンジ（周 14cm → 35cm）'); });
 
@@ -204,11 +205,11 @@
       sliders: [{ key: 'k', label: 'k（倍）', min: .5, max: 2.5, step: .1, val: 2, anim: [1, 2], fmt: function (x) { return f1(x) + '倍'; } }],
       b: { t: '<b>相似の位置</b> … 対応する点を結ぶ直線が1点 O に集まり、O からの長さの比がすべて等しい（O は<b>相似の中心</b>）', col: C.green },
       draw: function (D) {
-        var L = lay(D, .4), k = D.V.k, P = homP(k), F = ext(GE.fit(D, L.fig, { p: [-.3, -.3], q: [6.6, 4.5] }, { pad: .04 }), P);
+        var L = lay(D, .4), k = D.V.k, P = homP(k), F = ext(GE.fit(D, L.fig, { p: [-.4, -1.8], q: [6.9, 3.1] }, { pad: .04 }), P);
         ['A', 'B', 'C'].forEach(function (n, i) { GE.seg(F, ['O', k > 1 ? 'DEF'[i] : n], { col: 'rgba(242,240,230,.6)', w: 1.6, dash: [6, 6] }); });
         GE.poly(F, 'ABC', { col: C.blue, fa: .18 }); GE.poly(F, 'DEF', { col: C.yel, fa: .16 });
         GE.dot(F, 'O'); ['A', 'B', 'C', 'D', 'E', 'F'].forEach(function (n) { GE.dot(F, n, { r: F.s * .12 }); });
-        GE.labels(F, ['O', 'A', 'B', 'C', 'D', 'E', 'F'], { dir: { O: 'sw', A: 'nw', B: 's', C: 'se', D: 'nw', E: 's', F: 'se' }, col: { D: C.yel, E: C.yel, F: C.yel } });
+        GE.labels(F, ['O', 'A', 'B', 'C', 'D', 'E', 'F'], { dir: { O: 'w', A: 'n', B: 's', C: 'e', D: 'n', E: 's', F: 'e' }, col: { D: C.yel, E: C.yel, F: C.yel } });
         var rt = function (a, b) { return f2(GE.len(P, b) / GE.len(P, a)); };
         rows(D, L.side, [{ t: 'OA：OD＝1：' + rt('OA', 'OD') }, { t: 'OB：OE＝1：' + rt('OB', 'OE') }, { t: 'OC：OF＝1：' + rt('OC', 'OF') }, { t: 'AB：DE＝1：' + rt('AB', 'DE'), col: C.yel },
           { t: 'BC：EF＝1：' + rt('BC', 'EF'), col: C.yel }, { t: 'CA：FD＝1：' + rt('CA', 'FD'), col: C.yel }, { t: '∠ABC＝' + Math.round(GE.ang(P, 'ABC')) + '°　∠DEF＝' + Math.round(GE.ang(P, 'DEF')) + '°', col: C.pink }]);

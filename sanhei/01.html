@@ -90,9 +90,11 @@
 
   /* ア・イ・ウ を、同じ目もりで並べる。t：答えの動き */
   function three(D, t) {
-    var R = CH.box(D, { l: .02, r: .02, t: .13, b: .03 }), cs = CH.cols(R, 3, .05);
+    var R = CH.box(D, { l: .02, r: .02, t: .13, b: .03 }), gap = R.w * .03, cs = [], x = 0;
     var bx = TODAY.map(function (g) { var a = g[0], b = g[1]; return [-b - 1.5, -a - 1.6, a + b + .3, a + b + .4]; });
-    var u = Math.min.apply(null, bx.map(function (b, i) { return Math.min(cs[i].w / (b[2] - b[0]), cs[i].h / (b[3] - b[1])); }));
+    var ws = bx.map(function (b) { return b[2] - b[0]; }), u = Math.min((R.w - gap * 2) / (ws[0] + ws[1] + ws[2]), Math.min.apply(null, bx.map(function (b) { return R.h / (b[3] - b[1]); })));
+    x = R.cx - (u * (ws[0] + ws[1] + ws[2]) + gap * 2) / 2;
+    ws.forEach(function (w) { cs.push(CH.rect(x, R.y0, x + w * u, R.y1)); x += w * u + gap; });
     TODAY.forEach(function (g, i) {
       var a = g[0], b = g[1], s = a + b, T = tri(a, b), S = sqs(T), F = frame(D, cs[i], T, bx[i], u), v = AR[i];
       grid(F, -b, -a, s, s);
@@ -108,7 +110,7 @@
       sqName(F, S.P, 'P', va > 0 ? String(v[0]) : null, C.blue, { va: va, out: 1 });
       sqName(F, S.Q, 'Q', va > 0 ? String(v[1]) : null, C.blue, { va: va, out: -1 });
       sqName(F, S.R, 'R', va > 0 ? String(v[2]) : null, C.orange, { va: va });
-      say(D, cs[i].x0 + F.s * .5, cs[i].y0 + F.s * .5, g[2], { size: F.s * 1.15 });
+      say(D, cs[i].x0 + F.s * .5, F.X([0, s])[1], g[2], { size: F.s * 1.15 });
     });
     if (t > 0) top(D, t < .5 ? 'R ＝ まわりの正方形 − 直角三角形 4つ' : 'ア 4＋1＝5　イ 9＋1＝10　ウ 9＋4＝13 → P＋Q＝R', t < .5 ? C.yel : C.yel, CH.smooth(0, .06, t) * (t < .5 ? 1 - CH.smooth(.44, .5, t) : CH.smooth(.5, .56, t)));
   }
@@ -139,14 +141,16 @@
         b: [{ t: '直角の向かいの辺 … <b>斜辺</b>（いちばん長い）', col: C.green }, { t: '<b>三平方の定理</b>　a²＋b²＝c²（c は斜辺）', col: C.green }],
         draw: function (D) {
           var p = PAIRS[D.V.k], a = p[0], b = p[1], deg = D.V.c, right = deg === 90, T = tri(a, b, deg);
-          var O = one(D, CH.box(D, { l: .05, r: .05, t: .2, b: .04 }), T, { grid: right ? 1 : .45 }), F = O.F, S = O.S, t = D.ph ? D.t : 0;
+          var O = one(D, CH.box(D, { l: .05, r: .05, t: .25, b: .03 }), T, { grid: right ? 1 : .45 }), F = O.F, S = O.S, t = D.ph ? D.t : 0;
           var vP = area(S.P), vQ = area(S.Q), vR = area(S.R);
           if (right) GE.right(F, 'BCA'); else GE.arc(F, 'BCA', { col: C.pink, lab: deg + '°', r: F.s * .9 });
           if (D.ph) GE.seg(F, 'AB', { col: C.yel, w: 5, glow: true, a: CH.smooth(0, .3, t) });
-          inLab(F, T.C, T.B, O.G, 'a', { col: C.blue }); inLab(F, T.C, T.A, O.G, 'b', { col: C.blue }); inLab(F, T.A, T.B, O.G, right && D.ph && t > .3 ? 'c（斜辺）' : 'c', { col: D.ph ? C.yel : C.orange });
+          inLab(F, T.C, T.B, O.G, 'a', { col: C.blue }); inLab(F, T.C, T.A, O.G, 'b', { col: C.blue }); inLab(F, T.A, T.B, O.G, 'c', { col: D.ph ? C.yel : C.orange });
           sqName(F, S.P, 'P', nf(vP), C.blue, { out: 1 }); sqName(F, S.Q, 'Q', nf(vQ), C.blue, { out: -1 }); sqName(F, S.R, 'R', nf(vR), C.orange);
-          if (right) { top(D, 'P＋Q＝R　' + nf(vP) + '＋' + nf(vQ) + '＝' + nf(vR), C.yel, 1, 0); if (D.ph) top(D, 'a²＋b²＝c²（三平方の定理）', C.green, CH.smooth(.45, .6, t), 1); }
-          else { top(D, '∠C が直角でないと…', C.pink, 1, 0); top(D, 'P＋Q＝' + nf(vP + vQ) + '、R＝' + nf(vR) + '（等しくない）', C.pink, 1, 1); }
+          if (right) {
+            top(D, 'P＋Q＝R　' + nf(vP) + '＋' + nf(vQ) + '＝' + nf(vR), C.yel, 1, 0);
+            if (D.ph) { top(D, '斜辺 c … 直角の向かいの辺', C.yel, CH.smooth(.1, .3, t), 1); top(D, 'a²＋b²＝c²（三平方の定理）', C.green, CH.smooth(.5, .7, t), 2); }
+          } else { top(D, '∠C が直角でないと…', C.pink, 1, 0); top(D, 'P＋Q＝' + nf(vP + vQ) + '、R＝' + nf(vR) + '（等しくない）', C.pink, 1, 1); }
         } },
       { tag: '例題', bh: '例題　斜辺の長さ', q: '直角をはさむ2辺が 6cm と 8cm、2cm と 4cm のとき、斜辺の上の正方形の面積 R と、斜辺の長さ c を求めよう。（3cm と 4cm は見本）', a: '6・8 … R＝100、c＝10　　2・4 … R＝20、c＝2√5', sub: 'c²＝R だから、c は R の平方根（c＞0）。√20＝√(4×5)＝2√5', dur: 4,
         b: [{ t: 'c²＝R → c＝√R（c＞0）', col: C.pink }, { t: '6・8 → R＝100、c＝10　2・4 → R＝20、c＝<b>√20＝2√5</b>', col: C.pink }],
@@ -209,13 +213,12 @@
           var t = D.ph ? D.t : 0, B = CH.box(D, { l: .03, r: .03, t: .06, b: .04 }), sp = CH.split(D, B, 2, .06), k1 = CH.smooth(.05, .3, t), k2 = CH.smooth(.38, .55, t), k3 = CH.smooth(.62, .85, t);
           var O = one(D, sp[0], CHL), F = O.F, S = O.S; GE.right(F, 'BCA');
           sqName(F, S.Q, 'Q', '36', C.blue); sqName(F, S.P, 'P', k3 > .5 ? '64' : '?', k3 > .5 ? C.pink : C.blue); sqName(F, S.R, 'R', k2 > .5 ? '100' : '?', k2 > .5 ? C.yel : C.orange);
-          inLab(F, CHL.C, CHL.A, O.G, '6cm', { size: F.s * .75, k: 1.2 });
           if (k3 > .5) inLab(F, CHL.C, CHL.B, O.G, '8cm', { col: C.pink, size: F.s * .8 });
-          if (k2 > .5) inLab(F, CHL.A, CHL.B, O.G, '10cm', { col: C.yel, size: F.s * .8, k: 1 });
+          if (k2 > .5) outLab(F, CHL.A, CHL.B, CHL.C, '10cm', { col: C.yel, size: F.s * .8, k: .9 });
           var R = sp[1], h = Math.min(R.h * .13, CH.fs(D) * 2), x0 = R.x0, w = R.w, y = R.y0 + h * .4, s = CH.fs(D, .85);
           say(D, R.cx, y, '3つの面積の和 200cm²', { size: s, maxW: w }); y += h * .6;
-          CH.tape(D, x0, y, w, h, [{ v: 100, col: C.blue, txt: k1 > .5 ? 'P＋Q' : '' }, { v: 100, col: C.orange, txt: k1 > .5 ? 'R' : '' }], 200, {});
-          if (!D.ph) CH.text(D, R.cx, y + h / 2, 'P＋Q＋R', { size: s });
+          if (k1 > .5) CH.tape(D, x0, y, w, h, [{ v: 100, col: C.blue, txt: 'P＋Q' }, { v: 100, col: C.orange, txt: 'R' }], 200, {});
+          else CH.tape(D, x0, y, w, h, [{ v: 200, col: C.lav, txt: 'P＋Q＋R' }], 200, {});
           if (k1 > 0) { say(D, R.cx, y + h * 1.6, 'P＋Q＝R → 2R＝200', { col: C.yel, size: s, maxW: w, a: k1 }); }
           if (k2 > 0) { say(D, R.cx, y + h * 2.5, 'R＝100 → 斜辺 √100＝10', { col: C.yel, size: s, maxW: w, a: k2 }); }
           if (k3 > 0) {

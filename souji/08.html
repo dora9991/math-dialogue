@@ -33,10 +33,11 @@
   /* 字の行（四角の幅に入るよう、字を小さくする）。list：[{ t, col, a }] */
   function rows(D, R, list, o) {
     o = o || {}; list = list.filter(Boolean); if (!list.length) return;
-    var s = Math.min(o.size || CH.fs(D, .92), R.h / (list.length * 1.55));
+    var nc = R.w > R.h * 2.2 && list.length > 3 ? 2 : 1, per = Math.ceil(list.length / nc), cw = R.w / nc;   // 下の帯では 2列
+    var s = Math.min(o.size || CH.fs(D, .92), R.h / (per * 1.55));
     list.forEach(function (r, i) {
-      if (r.a === 0) return; var w = tw(D, r.t, s), sz = w > R.w - 4 ? s * (R.w - 4) / w : s;
-      CH.text(D, R.x0, R.y0 + s * .8 + i * s * 1.55, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left', outline: OUT });
+      if (r.a === 0) return; var c = Math.floor(i / per), j = i % per, w = tw(D, r.t, s), sz = w > cw - 8 ? s * (cw - 8) / w : s;
+      CH.text(D, R.x0 + c * cw, R.y0 + s * .8 + j * s * 1.55, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left', outline: OUT });
     });
   }
   /* 辺 ab のそばの字（ref から遠ざかる向き。ref がなければ図の中心から）。pos：a からの位置（0〜1） */
@@ -71,7 +72,7 @@
   GE.verify(P1, 'AD＝8、DB＝4、AE＝10、EC＝5、DE＝12、BC＝18、DE∥BC、AD：DB＝AE：EC＝8：4、AD：AB＝DE：BC＝8：12、△ADE∽△ABC', null, '今日の問いの図');
   CH.check(8 * 5 === 4 * 10 && 8 + 4 === 12 && 12 * 12 === 8 * 18 && 8 * 18 / 4 === 36, '今日の問いの計算（x＝5、y＝12。8：4＝y：18 だと y＝36 になってしまう）');
   var DIR = { A: 'n', B: 'sw', C: 'se', D: 'w', E: 'e' };
-  function fit1(D, R) { return GE.fit(D, R, P1, { pad: .16 }); }
+  function fit1(D, R) { return GE.fit(D, R, P1, { pad: .13 }); }
   function paraFig(F, lab) {
     GE.figure(F, { segs: ['AB', 'BC', 'CA', 'DE'], pars: [['DE', 1], ['BC', 1]], dots: ['D', 'E'], labels: ['A', 'B', 'C', 'D', 'E'], dir: DIR });
     var mBC = GE.mid(F.P.B, F.P.C);
@@ -105,7 +106,7 @@
 
   /* ---- チャレンジ：柱 AB（6m）、CD（4m）が w m はなれて立つ。ロープ AD、BC の交点 E、垂線 EF（2.4m） ---- */
   function poles(w) { var P = { A: [0, 6], B: [0, 0], C: [w, 4], D: [w, 0] }; P.E = GE.meet(P.A, P.D, P.B, P.C); P.F = [P.E[0], 0]; return P; }
-  [6, 10, 14].forEach(function (w) { GE.verify(poles(w), 'AB＝6、CD＝4、EF＝2.4、AB∥CD、EF∥CD、△EAB∽△EDC、BE：EC＝AB：DC＝3：2、EF：CD＝BE：BC＝3：5', null, 'チャレンジ（きょり ' + w + 'm）'); });
+  [6, 10, 12].forEach(function (w) { GE.verify(poles(w), 'AB＝6、CD＝4、EF＝2.4、AB∥CD、EF∥CD、△EAB∽△EDC、BE：EC＝AB：DC＝3：2、EF：CD＝BE：BC＝3：5', null, 'チャレンジ（きょり ' + w + 'm）'); });
   CH.check(GE.near(4 * 3 / 5, 2.4) && GE.near(6 * 4 / (6 + 4), 2.4), 'チャレンジの計算（EF＝4×3/5＝2.4）');
 
   var steps = [
@@ -179,18 +180,18 @@
         { key: 'f', label: 'FG の位置（AF）', min: 2, max: 8.5, step: .5, val: 6, fmt: function (v) { return v + 'cm'; } }],
       draw: function (D) {
         var d = D.V.d, f = Math.max(D.V.f, d + .5), P = two(d, f), F = GE.fit(D, CH.box(D, { l: .04, r: .04, t: .06, b: .06 }), P, { keys: ['A', 'B', 'C'], pad: .12 });
-        GE.figure(F, { segs: ['AB', 'BC', 'CA', 'DE', 'FG'], dots: ['D', 'E', 'F', 'G'], labels: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], dir: { A: 'n', B: 'sw', C: 'se', D: 'e', F: 'e', E: 'ne', G: 'ne' } });
+        GE.figure(F, { segs: ['AB', 'BC', 'CA', 'DE', 'FG'], dots: ['D', 'E', 'F', 'G'], labels: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], dir: { A: 'n', B: 'sw', C: 'se', D: 'w', F: 'w', E: 'ne', G: 'ne' } });
         GE.par(F, 'DE', 1); GE.par(F, 'FG', 1); GE.par(F, 'BC', 1);
         [['AD', d, C.yel], ['DF', f - d, C.pink], ['FB', 9 - f, C.blue]].forEach(function (x) { len(F, x[0][0], x[0][1], nf(x[1]) + 'cm', { col: x[2] }); });
         [['AE', 2 * d, C.yel], ['EG', 2 * (f - d), C.pink], ['GC', 18 - 2 * f, C.blue]].forEach(function (x) { len(F, x[0][0], x[0][1], nf(x[1]) + 'cm', { col: x[2] }); });
       } },
     { tag: 'チャレンジ', bh: 'チャレンジ', q: '地面に垂直に立つ 2本の柱 AB（6m）、CD（4m）が、10m はなれている。A と D、B と C をロープで結び、交点を E とする。E から地面にひいた垂線 EF の長さを求めよう。',
       notes: ['ヒント① △EAB と △EDC は相似かな。BE：EC は？', 'ヒント② 10m は、答えに関係するかな。', 'スライダーで、柱の間のきょりを変えられます。'],
-      sliders: [{ key: 'w', label: '柱の間のきょり', min: 6, max: 14, step: 1, val: 10, fmt: function (v) { return v + 'm'; } }],
+      sliders: [{ key: 'w', label: '柱の間のきょり', min: 6, max: 12, step: 1, val: 10, fmt: function (v) { return v + 'm'; } }],
       a: 'EF＝2.4m', sub: '△EAB∽△EDC（AB∥CD の錯角）より BE：EC＝6：4＝3：2。EF∥CD より EF：CD＝BE：BC＝3：5、EF＝4×3/5＝2.4。柱の間のきょりには関係しない', dur: 7,
       b: { t: 'BE：EC＝3：2 → EF：CD＝BE：BC＝3：5 → EF＝4×3/5＝<b>2.4m</b>（きょりに関係しない）', col: C.orange },
       draw: function (D) {
-        var w = D.V.w, P = poles(w), L = lay(D, .4, .32), F = GE.fit(D, L.fig, P, { keys: ['A', 'B'], bounds: [[-1.2, -.6], [15.2, 6.6]], pad: .04 }), t = D.ph ? D.t : 0;
+        var w = D.V.w, P = poles(w), L = lay(D, .4, .32), F = GE.fit(D, L.fig, P, { keys: ['A', 'B'], bounds: [[-1.2, -.6], [13.2, 6.6]], pad: .04 }), t = D.ph ? D.t : 0;
         var k1 = CH.smooth(.03, .25, t), k2 = CH.smooth(.3, .5, t), k3 = CH.smooth(.55, .75, t), k4 = CH.smooth(.8, .95, t);
         if (k1) { GE.poly(F, 'EAB', { col: C.blue, fa: .25 * k1 * (1 - .7 * k3), stroke: false }); GE.poly(F, 'EDC', { col: C.orange, fa: .25 * k1 * (1 - .7 * k3), stroke: false }); }
         if (k3) GE.poly(F, 'BEF', { col: C.yel, fa: .2 * k3, stroke: false });

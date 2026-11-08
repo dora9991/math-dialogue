@@ -294,8 +294,9 @@ CH.slopeTri = function (D, Pl, a, b, x0, dx, o) {
   o = o || {}; var y0 = a * x0 + b, col = o.col || C.pink, s = CH.fs(D, .8), dy = a * dx;
   CH.pseg(D, Pl, [x0, y0], [x0 + dx, y0], { col: col, w: 2.4, dash: true, a: o.a });
   CH.pseg(D, Pl, [x0 + dx, y0], [x0 + dx, y0 + dy], { col: col, w: 2.4, dash: true, a: o.a });
-  CH.text(D, Pl.X(x0 + dx / 2), Pl.Y(y0) + (dy >= 0 ? s : -s), o.lx || ('＋' + CH.mnum(dx)), { col: col, size: s, a: o.a, outline: 'rgba(20,40,30,.9)' });
-  CH.text(D, Pl.X(x0 + dx) + s * .5, Pl.Y(y0 + dy / 2), o.ly || ((dy >= 0 ? '＋' : '') + CH.mnum(dy)), { col: col, size: s, a: o.a, align: 'left', outline: 'rgba(20,40,30,.9)' });
+  var lx = o.lx != null ? o.lx : '＋' + CH.mnum(dx), ly = o.ly != null ? o.ly : (dy >= 0 ? '＋' : '') + CH.mnum(dy);
+  if (lx) CH.text(D, Pl.X(x0 + dx / 2), Pl.Y(y0) + (dy >= 0 ? s : -s), lx, { col: col, size: s, a: o.a, outline: 'rgba(20,40,30,.9)' });
+  if (ly) CH.text(D, Pl.X(x0 + dx) + s * .5, Pl.Y(y0 + dy / 2), ly, { col: col, size: s, a: o.a, align: 'left', outline: 'rgba(20,40,30,.9)' });
 };
 
 /* ---- 数の道具 ---- */
