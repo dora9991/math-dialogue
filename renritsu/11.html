@@ -498,7 +498,6 @@
       return;
     }
     if (k > .35) plab(D, Pl, p[0] + .25, p[1] + .7, '(' + frs(p[0]) + ', ' + frs(p[1]) + ')', { col: C.pink, a: CH.smooth(.36, .44, k) });
-    if (k > .8) TX(D, Pl.X(p[0]), Pl.Y(p[1]) + s * 1.6, '白い点からはずれる', { size: s * .8, col: C.pink, a: CH.smooth(.8, .9, k), outline: OUT });
     side(D, Rs[1], [{ s: E1, lab: '…①' }, { s: '3x＋5y＝{' + kk + '}', lab: '…②', hc: C.pink, at: 0 }, { s: '2y＝3', lab: '②−①×3', at: .45 }, { s: 'y＝[3/2]、x＝[17/2]', txt: true, col: C.pink, at: .58 }, { s: '回数が整数でない → ×', txt: true, col: C.pink, at: .72 }], k);
   }
 
