@@ -315,7 +315,7 @@
   /* ---- 例題：池のまわり（tau 分後）。上に円、下に まっすぐにのばした線分図 ---- */
   function pond(D, tau, lab) {
     var R = BOX(D), s = CH.fs(D), L = landscape(D);
-    var cR = L ? CH.rect(R.x0, R.y0, R.x0 + R.w * .5, R.y0 + R.h * .62) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .5);
+    var cR = L ? CH.rect(R.x0, R.y0, R.x0 + R.w * .5, R.y0 + R.h * .62) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .46);
     var cx = cR.cx, cy = cR.cy + s * .3, rr = Math.min(cR.w, cR.h) * .36, dl = s * .28, g = D.ctx;
     CH.circle(D, cx, cy, rr, { stroke: 'rgba(242,240,230,.6)', sw: 2, fill: 'rgba(154,216,255,.06)' });
     CH.circle(D, cx, cy - rr, 5, { fill: C.chalk }); say(D, cx, cy - rr - s * .8, '出発点', { size: s * .75 });
@@ -330,7 +330,7 @@
     else { say(D, cx + s * 1.6, cy - rr + s * 1.2, 'A →', { col: AN, size: s * .8 }); say(D, cx - s * 1.6, cy - rr + s * 1.2, '← B', { col: KO, size: s * .8 }); }
     say(D, cx, cy, '池　1周 1350m', { size: s * .8, col: 'rgba(242,240,230,.7)' });
     /* まっすぐにのばす */
-    var tR = L ? CH.rect(R.x0 + R.w * .52, R.y0 + R.h * .1, R.x1, R.y0 + R.h * .4) : CH.rect(R.x0, R.y0 + R.h * .5, R.x1, R.y0 + R.h * .76);
+    var tR = L ? CH.rect(R.x0 + R.w * .52, R.y0 + R.h * .1, R.x1, R.y0 + R.h * .4) : CH.rect(R.x0, R.y0 + R.h * .45, R.x1, R.y0 + R.h * .69);
     var tx0 = tR.x0 + s * .4, tw0 = tR.w - s * .8, th = Math.min(s * 1.5, tR.h * .3), ty = tR.y0 + s * 2.3, da = Math.min(VA * tau, POND), db = Math.min(VB * tau, POND);
     say(D, tR.cx, tR.y0 + s * .3, '1周を まっすぐにのばすと', { size: s * .8, col: 'rgba(242,240,230,.8)', maxW: tR.w });
     CH.fillRect(D, tx0, ty, tx0 + tw0, ty + th, { stroke: 'rgba(242,240,230,.6)', fill: 'rgba(242,240,230,.05)' });
@@ -338,7 +338,7 @@
     if (db > 0) CH.fillRect(D, tx0 + tw0 * (1 - db / POND), ty + th * .5, tx0 + tw0, ty + th, { fill: hexA(KO, .45), stroke: KO });
     brace(D, tx0, tx0 + tw0, ty + th + 3, C.chalk, 1, false, 8); say(D, tx0 + tw0 / 2, ty + th + s * 1.3, '1350m', { size: s * .8 });
     if (Math.abs(da + db - POND) < 1) { CH.line(D, tx0 + tw0 * da / POND, ty - 6, tx0 + tw0 * da / POND, ty + th + 6, { col: C.yel, w: 2.4 }); say(D, tx0 + tw0 * da / POND, ty - s * .6, '出会う', { col: C.yel, size: s * .8 }); }
-    return { L: L, R: R, s: s, sR: L ? CH.rect(R.x0 + R.w * .52, R.y0 + R.h * .44, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .79, R.x1, R.y1) };
+    return { L: L, R: R, s: s, sR: L ? CH.rect(R.x0 + R.w * .52, R.y0 + R.h * .44, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .71, R.x1, R.y1) };
   }
 
   /* ---- 考えよう：妹と姉、駅まで（tau：妹が出てからの時間） ---- */

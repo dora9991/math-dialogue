@@ -265,7 +265,7 @@
     GE.circ(F, O, 5, { col: 'rgba(242,240,230,.7)' });
     if (k === 1) { sector(F, O, 5, 0, 360, { col: C.blue, fa: .3, stroke: false }); lab(F, O, 90, 1.2, '25π', { col: C.blue, size: 1 }); }
     if (k >= 2) for (var i = 0; i < 5; i++) { GE.seg(F, [O, GE.polar(O, 5, i * 72)], { col: 'rgba(242,240,230,.5)', w: 1.4, dash: [6, 6] }); if (i < 2) sector(F, O, 5, i * 72, i * 72 + 72, { col: cols[i], fa: .35, w: 2 }); lab(F, GE.polar(O, 3.3, i * 72 + 36), 0, 0, '5π', { col: i < 2 ? cols[i] : 'rgba(242,240,230,.7)', size: .85 }); }
-    if (k === 3) markDir(F, O, 0, 144, C.orange, { r: F.s * 1.1, t: '144°', k: 2.4, at: 100 });
+    if (k === 3) markDir(F, O, 0, 144, C.orange, { r: F.s * 1.1, t: '144°', k: 2.1, at: 72 });
     if (k === 0) { sector(F, O, 5, 0, 144, { col: C.yel, fa: .25, w: 2 }); lab(F, GE.polar(O, 3, 72), 0, 0, '10π', { col: C.yel, size: .95 }); markDir(F, O, 0, 144, C.pink, { r: F.s * 1.1, t: '？°' }); }
     GE.dot(F, O);
     function sh(c) { return ans && c <= k; }
@@ -312,10 +312,10 @@
         } },
       { tag: '考えよう', q: '中心角が 90°、弧の長さが 3π cm のおうぎ形がある。半径を求める方法を考えよう。弧の長さ・半径・中心角のうち、2つがわかれば、残りの1つは 求められるだろうか。',
         notes: ['半径を求める式と、気づいたことを書こう。数を変えて確かめよう。', 'スライダーで、半径と中心角を変えられます。弧の長さが、π を使った字で出ます。'],
-        sliders: [{ key: 'r', label: '半径', min: 1, max: 12, step: 1, val: 4, fmt: function (x) { return x + 'cm'; } }, { key: 'a', label: '中心角', min: 15, max: 360, step: 15, val: 90, fmt: function (x) { return x + '°'; } }],
+        sliders: [{ key: 'r', label: '半径', min: 1, max: 10, step: 1, val: 4, fmt: function (x) { return x + 'cm'; } }, { key: 'a', label: '中心角', min: 15, max: 360, step: 15, val: 90, fmt: function (x) { return x + '°'; } }],
         draw: function (D) {
           var r = D.V.r, a = D.V.a, L = lay(D, .32), xs = [0], ys = [0];
-          arcPts(O, 12, 0, a, 48).forEach(function (p) { xs.push(p[0]); ys.push(p[1]); });
+          arcPts(O, 10, 0, a, 48).forEach(function (p) { xs.push(p[0]); ys.push(p[1]); });
           var F = fitB(D, L.fig, { O: O }, [[Math.min.apply(null, xs) - 1, Math.min.apply(null, ys) - 1.4], [Math.max.apply(null, xs) + 1, Math.max.apply(null, ys) + 1]], .03);
           sector(F, O, r, 0, a, { col: C.blue, fa: .28, w: 2.4 }); arcAt(F, O, r, 0, a, { col: C.yel, w: 5 });
           markDir(F, O, 0, a, C.pink, { r: Math.min(F.s * 1.1, r * F.u * .5), t: a + '°', at: a >= 300 ? 200 : null }); lab(F, [r / 2, 0], 270, .8, r + 'cm', { size: .85 }); GE.dot(F, O);

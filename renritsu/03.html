@@ -416,7 +416,7 @@
   }
   /* ---- チャレンジ：解を代入して、a、b の連立方程式 ---- */
   function chal(D, k) {
-    var R = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), s = CH.fs(D), t = D.ph ? k : 0, rs = CH.split(D, CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .3), 2, .06);
+    var R = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), s = CH.fs(D), t = D.ph ? k : 0, rs = CH.cols(CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .3), 2, .06);
     [[rs[0], ['ax＋by＝−1', 'a×1＋b×(−2)＝−1', 'a−2b＝−1 …①']], [rs[1], ['bx−ay＝8', 'b×1−a×(−2)＝8', '2a＋b＝8 …②']]].forEach(function (p, j) {
       eqs(D, p[0], p[1].map(function (q, i) { return { s: q, col: i === 2 ? C.yel : i === 1 ? C.green : null }; }), t, { size: s * 1.1, at: [.04 + j * .08, .14 + j * .08] });
     });
