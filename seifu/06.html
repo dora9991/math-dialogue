@@ -61,7 +61,7 @@
   /* ---- 数直線（よこ）と矢印 ---- */
   function NL(D, x0, x1, y, min, max, o) {
     o = o || {}; var s = o.s || CH.fs(D, .8), u = (x1 - x0) / (max - min), X = function (v) { return x0 + (v - min) * u; };
-    var lab = o.lab || [1, 2, 5, 10, 20, 50].filter(function (q) { return q * u >= s * 2.1; })[0] || 100, st = u < 6 ? lab : 1;
+    var lab = o.lab || [1, 2, 5, 10, 20, 50].filter(function (q) { return q * u >= s * 2.1; })[0] || 100, st = u < 8 ? lab : 1;
     CH.arrow(D, x0 - s * .5, y, x1 + s * 1.1, y, { w: 2, head: 9 });
     for (var v = Math.ceil(min / st) * st; v <= max + 1e-9; v += st) {
       var isL = v % lab === 0, h = v === 0 ? 9 : isL ? 7 : 4;
@@ -156,13 +156,13 @@
     var R = CH.box(D, { l: .05, r: .06, t: .04, b: .06 }), s = CH.fs(D), o = ORD[V.o], n = V.n, z = size(D, R, 5.2);
     var ty = R.y0 + z.th * .8, cx = R.cx, W = 5 * z.tw + 4 * z.tw * .5, x0 = cx - W / 2 + z.tw / 2;
     o.forEach(function (v, i) { var x = x0 + i * z.tw * 1.5; tile(D, x, ty, z.tw, z.th, v, { a: i < n ? 1 : .3 }); if (i) CH.text(D, x - z.tw * .75, ty, '＋', { size: z.th * .5, num: true, a: i < n ? 1 : .3 }); });
-    var L = NL(D, R.x0 + s * .5, R.x1 - s, R.y1 - s * 1.4, -20, 28, { s: CH.fs(D, .75) }), acc = 0, h = Math.min(1.5, (L.y - ty - z.th) / (6.2 * L.s));
+    var L = NL(D, R.x0 + s * .5, R.x1 - s, R.y1 - s * 1.4, -20, 28, { s: CH.fs(D, .75) }), acc = 0, h = Math.min(2.2, (L.y - ty - z.th) / (6.2 * L.s));
     for (var i = 0; i < n; i++) { jump(D, L, acc, acc + o[i], i + 1, { h: h, drop: i === n - 1 }); acc += o[i]; }
     CH.circle(D, L.X(acc), L.y, L.s * .4, { fill: C.yel });
   }
   /* ---- チャレンジ：3×3 の表 ---- */
   function magic(D, k) {
-    var R = CH.box(D, { l: .04, r: .04, t: .05, b: .06 }), s = CH.fs(D), wide = R.w > R.h * 1.2, gs = Math.min(wide ? R.w * .46 : R.w * .8, (wide ? R.h : R.h * .66) * .95), cs = gs / 3;
+    var R = CH.box(D, { l: .04, r: .04, t: .05, b: .06 }), s = CH.fs(D), wide = R.w > R.h * 1.2, gs = Math.min(wide ? R.w * .46 : R.w * .8, wide ? R.h * .95 : R.h * .56), cs = gs / 3;
     var gx = wide ? R.x0 + s : R.cx - gs / 2, gy = wide ? R.cy - gs / 2 : R.y0;
     var k1 = CH.smooth(0, .25, k), k2 = CH.smooth(.3, .55, k), k3 = CH.smooth(.6, .82, k), k4 = CH.smooth(.86, 1, k);
     function cell(r, c) { return CH.rect(gx + c * cs, gy + r * cs, gx + (c + 1) * cs, gy + (r + 1) * cs); }
@@ -177,7 +177,7 @@
         if (shown) CH.text(D, q.cx, q.cy, sg(val), { size: cs * .3, num: true, col: C.yel, w: 700 });
       }
     }
-    var tx = wide ? gx + gs + s * 1.2 : R.x0, ty = wide ? gy + s * .6 : gy + gs + s * 1.2, tw = wide ? R.x1 - tx : R.w, sz = CH.fitSize(D, 'ア … (＋1)＋(−6)＋ア＝−6', tw, s * .95), lh = sz * 1.7;
+    var tx = wide ? gx + gs + s * 1.2 : R.x0, ty = wide ? gy + s * .6 : gy + gs + s * 1.2, tw = wide ? R.x1 - tx : R.w, sz = CH.fitSize(D, 'ア … (＋1)＋(−6)＋ア＝−6', tw, s * .95), lh = Math.min(sz * 1.7, (R.y1 - ty) / 5.6);
     [['まん中の横 (−4)＋(−2)＋0＝−6', k1, C.yel], ['ア … (＋1)＋(−6)＋ア＝−6', k2, C.chalk], ['　→ ア＝−1', k2, C.yel], ['イ … (−3)＋イ＋(−5)＝−6', k3, C.chalk], ['　→ イ＝＋2', k3, C.yel], ['たて・横・ななめ、どれも −6', k4, C.green]].forEach(function (q, i) {
       if (q[1] > 0) CH.text(D, tx, ty + i * lh, q[0], { align: 'left', size: sz, col: q[2], a: q[1], num: true });
     });

@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>素因数分解から読む</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 正の数・負の数 第20時：素因数分解から、数のひみつを読み取ろう（ikkan の lesson_seifu_20 と同じ流れ）。
+   素因数を、素数ごとに色のちがうカードで見せる。共通なカードが下におりて最大公約数、どちらかにあるカードを全部集めて最小公倍数、
+   カードが同じ2組に分かれれば平方数（指数がすべて偶数）。
+   数値は ikkan のまま（54 と 90、36・100・144・90、300、考えようの 12・18・30・36・84、チャレンジ 90cm×126cm）。
+   最小公倍数（54 と 90）は、図のために足した例（小学校で学んだことば。検算ずみ）。 */
+(function () {
+  var C = CH.C, RED = '#ff7b7b', FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  /* ---- 図の中の式：a^2（指数）・[1/2]（たての分数）・{…}（印をつける場所。字にはならない）。
+     o：size・col・a・align・measure（描かずにはかるだけ）。返すもの：w（幅）・x0（左はし）・sp（{…} の [左, 右]） ---- */
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, ez = size * .6, segs = [], sp = [], open = [], w = 0, m;
+    var re = /\[([^\/\]]+)\/([^\]]+)\]|\^(\d+)|([{}])|([^\[\^{}]+|[\[\^])/g;
+    g.save();
+    while ((m = re.exec(String(s)))) {
+      if (m[1] != null) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(m[1]).width, g.measureText(m[2]).width) + fz * .4; segs.push({ n: m[1], d: m[2], x: w, w: fw }); w += fw; }
+      else if (m[3] != null) { g.font = '600 ' + ez + 'px ' + FONT; var ew = g.measureText(m[3]).width + size * .2; segs.push({ e: m[3], x: w, w: ew }); w += ew; }
+      else if (m[4] === '{') { open.push(sp.length); sp.push([w, w]); }
+      else if (m[4] === '}') sp[open.pop()][1] = w;
+      else { g.font = '600 ' + size + 'px ' + FONT; var tw = g.measureText(m[5]).width; segs.push({ t: m[5], x: w, w: tw }); w += tw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    if (!o.measure) segs.forEach(function (q) {
+      var X = x0 + q.x;
+      if (q.t != null) CH.text(D, X, y, q.t, Object.assign({ size: size, align: 'left' }, oo));
+      else if (q.e != null) CH.text(D, X + size * .15, y - size * .38, q.e, Object.assign({ size: ez, align: 'left' }, oo));
+      else { var cx = X + q.w / 2; CH.text(D, cx, y - fz * .62, q.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .68, q.d, Object.assign({ size: fz }, oo)); CH.line(D, X + fz * .15, y + fz * .04, X + q.w - fz * .15, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a }); }
+    });
+    return { w: w, x0: x0, sp: sp.map(function (p) { return [x0 + p[0], x0 + p[1]]; }) };
+  }
+  function fit(D, s, maxW, size) { var w = TX(D, 0, 0, s, { size: size, measure: true }).w; return w > maxW ? size * maxW / w : size; }
+  /* 右の板書（HTML）：[1/2] はたての分数、^2 は上つき、{ } はとる */
+  function H(s) { return CH.fr(String(s)).replace(/\^(\d+)/g, '<sup>$1</sup>').replace(/[{}]/g, ''); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = H(s[k]); }); if (s.notes) s.notes = s.notes.map(H); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = H(b.t); }); }); return st; }
+  function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function rbox(D, x0, y0, x1, y1, col, a, o) {
+    o = o || {}; var g = D.ctx, r = Math.min(10, (y1 - y0) * .3); if (a <= 0) return;
+    g.save(); g.globalAlpha = D.ga * a; g.beginPath(); g.moveTo(x0 + r, y0); g.arcTo(x1, y0, x1, y1, r); g.arcTo(x1, y1, x0, y1, r); g.arcTo(x0, y1, x0, y0, r); g.arcTo(x0, y0, x1, y0, r); g.closePath();
+    g.fillStyle = hexA(col, o.fa == null ? .16 : o.fa); g.fill(); g.strokeStyle = col; g.lineWidth = o.w || 2.6; if (o.dash) g.setLineDash([7, 5]); g.stroke(); g.restore();
+  }
+  /* ✗ と ○ と ①（丸の中の番号） */
+  function ng(D, x, y, z, a) { if (a <= 0) return; var d = z * .32; CH.line(D, x - d, y - d, x + d, y + d, { col: RED, w: Math.max(3, z * .13), a: a }); CH.line(D, x + d, y - d, x - d, y + d, { col: RED, w: Math.max(3, z * .13), a: a }); }
+  function okm(D, x, y, z, a, col) { if (a > 0) CH.circle(D, x, y, z * .36, { stroke: col || C.green, sw: Math.max(2.6, z * .11), a: a }); }
+  function num(D, x, y, n, z, col, a) { if (a <= 0) return; CH.circle(D, x, y, z * .42, { fill: 'rgba(23,56,41,.9)', stroke: col, sw: 2, a: a }); CH.text(D, x, y + 1, String(n), { size: z * .55, col: col, a: a, num: true, w: 700 }); }
+  /* 数のカード（まん中が x, y）。txt は TX の字（[1/2] も） */
+  function ncard(D, x, y, w, h, txt, col, a, o) {
+    o = o || {}; if (a != null && a <= 0) return; rbox(D, x - w / 2, y - h / 2, x + w / 2, y + h / 2, col || C.blue, a == null ? 1 : a, { fa: o.fa == null ? .22 : o.fa, w: o.sw || 2 });
+    var z = o.size || h * (String(txt).indexOf('[') >= 0 ? .44 : .56); z = fit(D, txt, w * .86, z);
+    TX(D, x, y + 1, txt, { size: z, col: o.tcol || C.chalk, a: a });
+  }
+  function S(v) { return CH.mnum(v); }
+  /* ---- 数直線（第2時などと同じ形。右に矢印、正は青・負はピンク） ---- */
+  var POS = C.blue, NEG = C.pink, OUT = 'rgba(20,40,30,.9)';
+  function sg(v) { return v > 0 ? '＋' + S(v) : S(v); }
+  function sc(v) { return v > 0 ? POS : v < 0 ? NEG : C.yel; }
+  function NL(D, x0, x1, y, min, max, o) {
+    o = o || {}; var s = o.s || CH.fs(D, .8), u = (x1 - x0) / (max - min), X = function (v) { return x0 + (v - min) * u; }, a = o.a == null ? 1 : o.a;
+    var lab = o.lab || [1, 2, 5, 10, 20, 50].filter(function (q) { return q * u >= s * 2.1; })[0] || 100, st = o.st || (u < 6 ? lab : 1);
+    CH.arrow(D, x0 - s * .5, y, x1 + s * 1.1, y, { w: 2, head: 9, a: a });
+    for (var v = Math.ceil(min / st) * st; v <= max + 1e-9; v += st) {
+      var isL = Math.abs(v / lab - Math.round(v / lab)) < 1e-9, h = v === 0 ? 9 : isL ? 7 : 4, la = a * (o.la ? o.la(v) : 1);
+      CH.line(D, X(v), y - h, X(v), y + h, { w: v === 0 ? 2.4 : 1.5, a: a });
+      if (isL && la > 0) CH.text(D, X(v), y + s * 1.25, o.fmt ? o.fmt(v) : S(v), { size: s, num: true, a: la, col: o.lc ? o.lc(v) : C.chalk });
+    }
+    return { X: X, y: y, s: s, u: u, x0: x0, x1: x1 };
+  }
+  function pt(D, L, v, col, lab, o) {
+    o = o || {}; CH.circle(D, L.X(v), L.y, o.r || L.s * .36, { fill: col, stroke: 'rgba(20,30,24,.8)', sw: 1.2, a: o.a });
+    if (lab) TX(D, L.X(v), L.y - L.s * (o.up || 1.15), lab, { col: o.tc || col, size: o.size || L.s, a: o.a, outline: OUT });
+  }
+  /* ---- 数の検算 ---- */
+  function fac(n) { var r = []; for (var p = 2; n > 1; p++) while (n % p === 0) { r.push(p); n /= p; } return r; }
+  function dv(n) { var r = []; for (var d = 1; d <= n; d++) if (n % d === 0) r.push(d); return r; }
+  function prod(a) { return a.reduce(function (x, y) { return x * y; }, 1); }
+  function gcdL(a, b) { return dv(a).filter(function (d) { return b % d === 0; }).pop(); }
+  function isSq(n) { return Number.isInteger(Math.sqrt(n)); }
+  /* 2つのカードの列の、共通な部分（最大公約数）と、全部を集めた列（最小公倍数）。slots：そろえて並べるための列 */
+  function merge(A, B) {
+    var ps = A.concat(B).filter(function (p, i, a) { return a.indexOf(p) === i; }).sort(function (x, y) { return x - y; }), slots = [], ia = [], ib = [], com = [];
+    ps.forEach(function (p) { var ea = A.filter(function (x) { return x === p; }).length, eb = B.filter(function (x) { return x === p; }).length; for (var j = 0; j < Math.max(ea, eb); j++) { if (j < ea) ia.push(slots.length); if (j < eb) ib.push(slots.length); if (j < ea && j < eb) com.push(slots.length); slots.push(p); } });
+    return { slots: slots, ia: ia, ib: ib, com: com };
+  }
+  var F54 = fac(54), F90 = fac(90), M = merge(F54, F90), GCD = M.com.map(function (i) { return M.slots[i]; });
+  CH.check(F54.join() === '2,3,3,3' && F90.join() === '2,3,3,5' && prod(GCD) === 18 && gcdL(54, 90) === 18 && 54 / 18 === 3 && 90 / 18 === 5, '今日の問い 最大公約数 18');
+  CH.check(prod(M.slots) === 270 && dv(54 * 90).filter(function (m) { return m % 54 === 0 && m % 90 === 0; })[0] === 270, '最小公倍数 270');
+  var D54 = dv(54), D90 = dv(90), CD = D54.filter(function (d) { return 90 % d === 0; });
+  CH.check(CD.join() === '1,2,3,6,9,18' && CD.join() === dv(18).join(), '公約数は 18 の約数');
+  /* 平方数：カードを同じ2組に分ける */
+  function halves(n) {
+    var f = fac(n), cnt = {}, out = { f: f, to: [], A: [], B: [], L: [] };
+    f.forEach(function (p) { cnt[p] = (cnt[p] || 0) + 1; }); var seen = {};
+    f.forEach(function (p) { var j = seen[p] = (seen[p] || 0) + 1; j--; if (j < cnt[p] - cnt[p] % 2) { if (j % 2 === 0) { out.to.push(['A', out.A.length]); out.A.push(p); } else { out.to.push(['B', out.B.length]); out.B.push(p); } } else { out.to.push(['L', out.L.length]); out.L.push(p); } });
+    return out;
+  }
+  var SQ = [36, 100, 144, 90].map(function (n) { var h = halves(n); h.n = n; return h; });
+  CH.check(SQ.map(function (h) { return h.L.length ? '×' : prod(h.A); }).join() === '6,10,12,×' && SQ.map(function (h) { return isSq(h.n); }).join() === 'true,true,true,false' && prod(SQ[2].A) === 12 && 12 * 12 === 144, '例題 平方数');
+  var H300 = halves(300), H900 = halves(900);
+  CH.check(fac(300).join() === '2,2,3,5,5' && H300.L.join() === '3' && 300 * 3 === 900 && !H900.L.length && prod(H900.A) === 30 && 30 * 30 === 900, '300×3＝30^2');
+  /* 考えよう（答えはページに出さない）：約数の個数 12→6、18→6、30→8、36→9、84→12 */
+  var KN = [12, 18, 30, 36, 84];
+  CH.check(KN.map(function (n) { return dv(n).length; }).join() === '6,6,8,9,12', '考えよう（ここで確かめるだけ）');
+  /* チャレンジ：90＝2×3^2×5、126＝2×3^2×7、最大公約数 18、5×7＝35 枚、公約数 1,2,3,6,9,18 */
+  var M2 = merge(fac(90), fac(126)), G2 = prod(M2.com.map(function (i) { return M2.slots[i]; }));
+  CH.check(G2 === 18 && gcdL(90, 126) === 18 && (90 / 18) * (126 / 18) === 35 && dv(90).filter(function (d) { return 126 % d === 0; }).join() === '1,2,3,6,9,18', 'チャレンジ');
+
+  var PC = { 2: C.blue, 3: C.green, 5: C.orange, 7: C.lav, 11: C.pink };
+  function pc(D, x, y, z, p, a, o) { o = o || {}; ncard(D, x, y, z * 1.3, z * 1.3, String(p), o.col || PC[p] || C.yel, a, { size: z * .8, fa: o.fa }); }
+  function L(D, o) { var R = CH.box(D, o || { l: .04, r: .04, t: .06, b: .06 }); return { R: R, s: CH.fs(D) }; }
+  /* 54・90 の行（そろえた列）と、下の行。o.k：共通な線、o.g：最大公約数がおりる、o.l：最小公倍数が集まる、o.al（そろえる 0→1） */
+  function pairRows(D, o) {
+    var Q = L(D), R = Q.R, s = Q.s, n = M.slots.length, z = Math.min(s * 1.5, R.w / (n * 1.7 + 7), R.h / 9), st = z * 1.7, lw = z * 3.6;
+    var x0 = R.cx - (lw + n * st + z * 5) / 2 + lw, ys = [R.y0 + R.h * .14, R.y0 + R.h * .34, R.y0 + R.h * .64, R.y0 + R.h * .84], al = o.al || 0;
+    var XA = F54.map(function (p, i) { return x0 + CH.lerp(i, M.ia[i], al) * st + st / 2; }), XB = F90.map(function (p, i) { return x0 + CH.lerp(i, M.ib[i], al) * st + st / 2; });
+    TX(D, x0 - z * .3, ys[0], '54＝', { size: z, align: 'right' }); TX(D, x0 - z * .3, ys[1], '90＝', { size: z, align: 'right' });
+    var comA = [], comB = []; M.com.forEach(function (sl) { comA.push(M.ia.indexOf(sl)); comB.push(M.ib.indexOf(sl)); });
+    if (o.k) comA.forEach(function (ia, j) { CH.line(D, XA[ia], ys[0] + z * .7, XB[comB[j]], ys[1] - z * .7, { col: C.yel, w: 3, a: o.k }); });
+    F54.forEach(function (p, i) { pc(D, XA[i], ys[0], z, p, o.dim && comA.indexOf(i) < 0 ? 1 - .55 * o.dim : 1); });
+    F90.forEach(function (p, i) { pc(D, XB[i], ys[1], z, p, o.dim && comB.indexOf(i) < 0 ? 1 - .55 * o.dim : 1); });
+    return { z: z, st: st, x0: x0, ys: ys, XA: XA, XB: XB, comA: comA, comB: comB, R: R, s: s };
+  }
+
+  K3.run({
+    no: '第20時', title: '素因数分解から、数のひみつを読み取ろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '19.html', label: '◀ 第19時' }, { href: '21.html', label: '第21時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '54＝2×3^3、90＝2×3^2×5', q: '54＝2×3^3 と 90＝2×3^2×5 を見くらべて、2つの数の最大公約数を、式から見つける方法を考えよう。',
+        notes: ['① 自分の考え（3分）　どこに目をつけたか、書こう。', '② ペアの考え（3分）　自分とちがう見方を書こう。'],
+        draw: function (D) { pairRows(D, {}); } },
+      { tag: '今日の問い', q: '2つの式に共通な素因数は？ 最大公約数は？', a: '2 が1個、3 が2個 → 2×3^2＝18', sub: '共通な素因数を全部かける。54＝18×3、90＝18×5 で確かめられる', dur: 6,
+        b: { t: '共通な素因数 2・3・3 → 最大公約数 2×3^2＝<b>18</b>（54＝18×3、90＝18×5）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = pairRows(D, { k: CH.smooth(.05, .25, t), dim: CH.smooth(.25, .35, t) }), z = P.z, y3 = P.ys[2];
+          P.comA.forEach(function (ia, j) { var k = CH.clamp((t - .35 - j * .06) / .2, 0, 1); if (k <= 0) return; var e = CH.ease(k), x1 = P.x0 + j * P.st + P.st / 2; pc(D, CH.lerp(P.XA[ia], x1, e), CH.lerp(P.ys[0], y3, e), z, F54[ia], 1); });
+          var a = CH.smooth(.6, .7, t); if (a > 0) { TX(D, P.x0 - z * .3, y3, '最大公約数', { size: Math.min(z * .8, P.x0 - P.R.x0 - z * .5) / 1, align: 'right', col: C.yel, a: a }); TX(D, P.x0 + 3 * P.st + z * .2, y3, '＝18', { size: z * 1.1, align: 'left', col: C.yel, a: CH.smooth(.7, .8, t) }); }
+          var a2 = CH.smooth(.82, .95, t); if (a2 > 0) TX(D, P.R.cx, P.ys[3], '54＝18×3　90＝18×5', { size: fit(D, '54＝18×3　90＝18×5', P.R.w * .9, z), col: C.chalk, a: a2 });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '自然数をわり切れる数を何という？ 2つの数に共通な約数は？ そのうち最大のものは？ ある自然数の2乗になる数は？', a: '約数・公約数・最大公約数・平方数', sub: '54 と 90 の公約数 1、2、3、6、9、18 は、最大公約数 18 の約数になっている', dur: 5,
+        b: [{ t: 'わり切れる数 … <b>約数</b>　共通な約数 … <b>公約数</b>　最大のもの … <b>最大公約数</b>', col: C.green }, { t: 'ある自然数の2乗になる数 … <b>平方数</b>（1、4、9、16、25、36、…）', col: C.green }],
+        draw: function (D) {
+          var Q = L(D), R = Q.R, s = Q.s, t = D.ph ? D.t : 0, rs = CH.rows(CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .7), 2, .2);
+          [[D54, '54 の約数'], [D90, '90 の約数']].forEach(function (g, k) {
+            var r = rs[k], n = g[0].length, lw = Math.min(r.w * .2, s * 5), cw = Math.min((r.w - lw) / n, s * 2.6), z = Math.min(cw * .9, r.h * .55);
+            CH.text(D, r.x0, r.cy, g[1], { size: CH.fitSize(D, g[1], lw * .95, s), align: 'left', col: 'rgba(242,240,230,.8)' });
+            g[0].forEach(function (d, i) { var on = CD.indexOf(d) >= 0, a = CH.smooth(.1 + i * .02, .2 + i * .02, t); ncard(D, r.x0 + lw + (i + .5) * cw, r.cy, cw * .9, z, String(d), on && a > 0 ? (d === 18 && t > .5 ? C.yel : C.green) : '#f2f0e6', on ? Math.max(.6, a) : .6, { fa: on && a > 0 ? .25 : .06, sw: d === 18 && t > .5 ? 3 : 1.6 }); });
+          });
+          var a = CH.smooth(.45, .6, t); if (a > 0) TX(D, R.cx, R.y0 + R.h * .79, '公約数 1、2、3、6、9、18　最大公約数 18', { size: fit(D, '公約数 1、2、3、6、9、18　最大公約数 18', R.w * .92, s * 1.1), col: C.green, a: a });
+          var a2 = CH.smooth(.75, .9, t); if (a2 > 0) TX(D, R.cx, R.y0 + R.h * .93, '平方数 … 1^2＝1、2^2＝4、3^2＝9、…、6^2＝36', { size: fit(D, '平方数 … 1^2＝1、2^2＝4、3^2＝9、…、6^2＝36', R.w * .92, s), col: C.yel, a: a2 });
+        } },
+      { tag: '例題', bh: '例題', q: '（1）36＝2^2×3^2、100＝2^2×5^2、144＝2^4×3^2、90＝2×3^2×5 のうち、ある自然数の2乗になる数は？', a: '36（6^2）、100（10^2）、144（12^2）。90 はならない', sub: '指数がすべて偶数なら、素因数のカードを同じ2組に分けられる。144＝(2^2×3)×(2^2×3)＝12^2', dur: 6,
+        b: { t: '（1）指数がすべて <b>偶数</b> → 同じ2組に分かれる → 平方数（36＝6^2、100＝10^2、144＝12^2）', col: C.pink },
+        draw: function (D) {
+          var Q = L(D), R = Q.R, s = Q.s, t = D.ph ? D.t : 0, rs = CH.rows(R, 4, .1), z = Math.min(s * 1.3, rs[0].h * .5, R.w / 17), st = z * 1.55;
+          SQ.forEach(function (h, k) {
+            var r = rs[k], y = r.cy, lw = z * 3.2, x0 = r.x0 + lw, kk = CH.ease(CH.clamp((t - .05 - k * .14) / .3, 0, 1)), nA = h.A.length;
+            TX(D, x0 - z * .2, y, h.n + '＝', { size: z, align: 'right' });
+            h.f.forEach(function (p, i) {
+              var to = h.to[i], fx = to[0] === 'A' ? to[1] : to[0] === 'B' ? nA + .7 + to[1] : nA * 2 + 1.6 + to[1], x = x0 + CH.lerp(i, fx, kk) * st + st / 2;
+              pc(D, x, y, z, p, 1, to[0] === 'L' && kk > .9 ? { col: RED } : {});
+            });
+            if (kk > .5) { var xm = x0 + (nA + .35) * st + st / 2; if (nA) CH.text(D, xm, y, '×', { size: z * .9, a: CH.smooth(.5, 1, kk) }); }
+            var xe = x0 + (h.L.length ? nA * 2 + 1.6 + h.L.length : nA * 2 + .9) * st + z * .3, a = CH.smooth(.85, 1, kk);
+            if (a > 0) TX(D, xe, y, h.L.length ? '同じ2組にならない' : '＝' + prod(h.A) + '^2', { size: h.L.length ? Math.min(z * .75, fit(D, '同じ2組にならない', r.x1 - xe, z * .75)) : z * 1.05, align: 'left', col: h.L.length ? RED : C.yel, a: a });
+            else if (!D.ph) TX(D, x0 + h.f.length * st + z * .5, y, '？', { size: z, align: 'left', a: .45 });
+          });
+        } },
+      { tag: '例題', q: '（2）300 に、できるだけ小さい自然数をかけて、ある自然数の2乗にしたい。何をかければよい？', a: '3', sub: '300＝2^2×3×5^2。3 の指数だけが奇数なので、3 をかける。300×3＝900＝30^2', dur: 6,
+        b: { t: '（2）300＝2^2×3×5^2 … 3 が1つあまる → <b>3</b> をかける（900＝30^2）', col: C.pink },
+        draw: function (D) {
+          var Q = L(D), R = Q.R, s = Q.s, t = D.ph ? D.t : 0, z = Math.min(s * 1.6, R.w / 14, R.h / 7), st = z * 1.6, y = R.y0 + R.h * .35, x0 = R.cx - st * 4, k1 = CH.ease(CH.smooth(.05, .3, t)), k2 = CH.ease(CH.smooth(.45, .7, t));
+          TX(D, x0 - z * .2, y, '300＝', { size: z, align: 'right' });
+          H300.f.forEach(function (p, i) {
+            var to = H300.to[i], fx = to[0] === 'A' ? [0, 2][to[1]] : to[0] === 'B' ? [3.6, 5.6][to[1]] : CH.lerp(7, 1, k2);
+            pc(D, x0 + CH.lerp(i, fx, k1) * st + st / 2, y, z, p, 1, to[0] === 'L' && k1 > .9 && k2 < .1 ? { col: RED } : {});
+          });
+          if (k2 > 0) pc(D, x0 + CH.lerp(8.5, 4.6, k2) * st + st / 2, CH.lerp(y + z * 2.6, y, k2), z, 3, 1, { col: C.yel });
+          if (k1 > .9) CH.text(D, x0 + 2.8 * st + st / 2, y, '×', { size: z * .9, a: CH.smooth(.3, .4, t) });
+          if (t > .3 && t < .45) TX(D, x0 + 7.5 * st, y + z * 1.6, '3 があまる', { size: z * .7, col: RED, a: CH.smooth(.3, .35, t) });
+          var a = CH.smooth(.75, .9, t); if (a > 0) TX(D, R.cx, R.y0 + R.h * .72, '300×3＝900＝30×30＝30^2', { size: fit(D, '300×3＝900＝30×30＝30^2', R.w * .9, z), col: C.yel, a: a });
+          if (!D.ph) TX(D, R.cx, R.y0 + R.h * .72, '300×□＝（ある自然数）^2', { size: fit(D, '300×□＝（ある自然数）^2', R.w * .9, z * .9), a: .6 });
+        } },
+      { tag: '例題', q: '（3）54 と 90 の最小公倍数を、素因数のカードで求めよう。', a: '270＝2×3^3×5', sub: '54 のカードも 90 のカードも、すべてふくむ いちばん少ない組。最大公約数は「共通なカード」、最小公倍数は「どちらかにあるカード全部」', dur: 6,
+        b: { t: '（3）最小公倍数 … どちらかにあるカード全部 2×3^3×5＝<b>270</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = pairRows(D, { al: CH.ease(CH.smooth(.02, .2, t)) }), z = P.z, y3 = P.ys[2];
+          M.slots.forEach(function (p, j) {
+            var ia = M.ia.indexOf(j), src = ia >= 0 ? [P.XA[ia], P.ys[0]] : [P.XB[M.ib.indexOf(j)], P.ys[1]], k = CH.clamp((t - .25 - j * .07) / .2, 0, 1); if (k <= 0) return;
+            var e = CH.ease(k); pc(D, CH.lerp(src[0], P.x0 + j * P.st + P.st / 2, e), CH.lerp(src[1], y3, e), z, p, 1);
+          });
+          var a = CH.smooth(.65, .75, t); if (a > 0) { TX(D, P.x0 - z * .3, y3, '最小公倍数', { size: Math.min(z * .8, P.x0 - P.R.x0 - z * .5), align: 'right', col: C.yel, a: a }); TX(D, P.x0 + M.slots.length * P.st + z * .2, y3, '＝270', { size: z * 1.1, align: 'left', col: C.yel, a: CH.smooth(.75, .85, t) }); }
+          var a2 = CH.smooth(.85, .97, t); if (a2 > 0) TX(D, P.R.cx, P.ys[3], '270＝54×5＝90×3', { size: fit(D, '270＝54×5＝90×3', P.R.w * .9, z), a: a2 });
+        } },
+      { tag: '考えよう', q: '84＝2^2×3×7 の約数は、全部で何個あるだろう。まず、12、18、30、36 の約数の個数を調べて、きまりを見つけよう。',
+        notes: ['12＝2^2×3、18＝2×3^2、30＝2×3×5、36＝2^2×3^2', '約数の個数と、素因数分解の指数を見くらべて、気づいたことを書こう。', 'スライダーで、数と、約数の見せ方（かくす・小さい順・表）を変えられます。84 は、きまりを使って考えよう。'],
+        sliders: [{ key: 'n', label: '数', min: 0, max: 4, step: 1, val: 0, fmt: function (x) { return KN[x]; } }, { key: 'v', label: '約数', min: 0, max: 2, step: 1, val: 0, fmt: function (x) { return ['かくす', '小さい順', '表'][x]; } }],
+        draw: function (D) {
+          var Q = L(D, { l: .04, r: .04, t: .06, b: .08 }), R = Q.R, s = Q.s, n = KN[D.V.n], f = fac(n), v = D.V.v, z = Math.min(s * 1.4, R.w / 14), y = R.y0 + z * 1.2;
+          var x0 = R.cx - (f.length * z * 1.6 + z * 3) / 2 + z * 3;
+          TX(D, x0 - z * .2, y, n + '＝', { size: z, align: 'right' }); f.forEach(function (p, i) { pc(D, x0 + i * z * 1.6 + z * .8, y, z * .9, p, 1); });
+          var B = CH.rect(R.x0, y + z * 1.6, R.x1, R.y1);
+          if (n === 84 && v > 0) { CH.text(D, B.cx, B.cy, '84 は、きまりを使って考えよう', { size: s * 1.1, col: C.orange }); return; }
+          if (v === 0) { CH.text(D, B.cx, B.cy, '約数は？', { size: s * 1.3, a: .5 }); return; }
+          var ds = dv(n);
+          if (v === 1) { var cw = Math.min(B.w / ds.length, s * 3); ds.forEach(function (d, i) { ncard(D, B.cx + (i - (ds.length - 1) / 2) * cw, B.cy, cw * .86, Math.min(cw * .8, s * 2.2), String(d), '#f2f0e6', 1, { fa: .06 }); }); return; }
+          var p = f[0], e = f.filter(function (x) { return x === p; }).length, rest = n / Math.pow(p, e), rd = dv(rest), rows = [], i;
+          for (i = 0; i <= e; i++) rows.push(Math.pow(p, i));
+          var tw = Math.min(B.w * .9, (rd.length + 1) * s * 3.4), th = Math.min(B.h * .95, (rows.length + 1) * s * 2.2), T = CH.rect(B.cx - tw / 2, B.cy - th / 2, B.cx + tw / 2, B.cy + th / 2);
+          CH.table(D, T, ['×'].concat(rd.map(String)), rows.map(function (r) { return [String(r)].concat(rd.map(function (c) { return String(r * c); })); }), { fw: 1 / (rd.length + 1), size: Math.min(s * 1.05, T.w / (rd.length + 1) * .3), rh: s * 2.2, hl: function (r, c) { return r === 0 && c > 0 ? C.green : c === 0 && r > 0 ? PC[p] : null; } });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '縦 90cm、横 126cm の長方形の紙を、余りが出ないように、同じ大きさの正方形に切り分ける。できるだけ大きい正方形の1辺と枚数は？ ほかに切り分けられる1辺の長さ（整数cm）は？', a: '18cm・35枚。ほかに 1、2、3、6、9cm', sub: '90＝2×3^2×5、126＝2×3^2×7 → 最大公約数 2×3^2＝18。90÷18＝5、126÷18＝7 → 5×7＝35（枚）。公約数は 18 の約数', dur: 7,
+        b: { t: '1辺 <b>18cm</b>（90 と 126 の最大公約数）、<b>35枚</b>　ほかに 1、2、3、6、9cm', col: C.orange },
+        draw: function (D) {
+          var Q = L(D), R = Q.R, s = Q.s, t = D.ph ? D.t : 0, wide = R.w > R.h * 1.2;
+          var A = wide ? CH.rect(R.x0, R.y0, R.x0 + R.w * .44, R.y1) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .4), B = wide ? CH.rect(R.x0 + R.w * .48, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .44, R.x1, R.y1);
+          var z = Math.min(s * 1.2, A.w / 8.5, A.h / (wide ? 9 : 6)), st = z * 1.5, x0 = A.x0 + z * 3.4, ys = wide ? [A.y0 + A.h * .25, A.y0 + A.h * .4, A.y0 + A.h * .6] : [A.y0 + A.h * .18, A.y0 + A.h * .5, A.y0 + A.h * .82];
+          var f1 = fac(90), f2 = fac(126), k = CH.smooth(.05, .2, t);
+          TX(D, x0 - z * .2, ys[0], '90＝', { size: z, align: 'right' }); TX(D, x0 - z * .2, ys[1], '126＝', { size: z, align: 'right' });
+          f1.forEach(function (p, i) { pc(D, x0 + i * st + st / 2, ys[0], z * .85, p, i < 3 || !k ? 1 : 1 - .5 * k); }); f2.forEach(function (p, i) { pc(D, x0 + i * st + st / 2, ys[1], z * .85, p, i < 3 || !k ? 1 : 1 - .5 * k); });
+          if (k > 0) { rbox(D, x0 + 2, ys[0] - z * .8, x0 + 3 * st - 2, ys[1] + z * .8, C.yel, k, { fa: .06 }); TX(D, A.x0 + (wide ? A.w * .5 : z * .2), ys[2], '最大公約数 2×3^2＝18', { size: fit(D, '最大公約数 2×3^2＝18', A.w * .95, z * .9), col: C.yel, a: CH.smooth(.15, .25, t), align: wide ? 'center' : 'left' }); }
+          var sc = Math.min(B.w * .86 / 126, B.h * .8 / 90), w = 126 * sc, h = 90 * sc, X0 = B.cx - w / 2 + s * .6, Y0 = B.cy - h / 2;
+          CH.fillRect(D, X0, Y0, X0 + w, Y0 + h, { fill: 'rgba(242,240,230,.06)', stroke: C.chalk, sw: 2 });
+          CH.text(D, X0 + w / 2, Y0 - s * .8, '126cm', { size: s * .85, num: true }); CH.text(D, X0 - s * .4, Y0 + h / 2, '90cm', { size: s * .85, num: true, align: 'right' });
+          var kk = CH.smooth(.3, .8, t), cnt = 0;
+          for (var r = 0; r < 5; r++) for (var c = 0; c < 7; c++) { var q = r * 7 + c; if (q >= Math.floor(kk * 35.99)) continue; cnt++; CH.fillRect(D, X0 + c * 18 * sc + 1.5, Y0 + r * 18 * sc + 1.5, X0 + (c + 1) * 18 * sc - 1.5, Y0 + (r + 1) * 18 * sc - 1.5, { fill: 'rgba(255,226,122,.18)', stroke: C.yel, sw: 1.4 }); }
+          if (t > .3) CH.text(D, X0 + 9 * sc, Y0 + h + s * .9, '18cm', { size: s * .8, col: C.yel, num: true });
+          var a = CH.smooth(.82, .92, t); if (a > 0) TX(D, X0 + w / 2, Y0 + h + s * 2.2, '5×7＝35（枚）', { size: s * 1.1, col: C.yel, a: a });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>
