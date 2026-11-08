@@ -101,7 +101,7 @@
 
   /* ---- ことば：式の2か所を変える・矢印の向きが反対に ---- */
   function flip(D, k) {
-    var R = CH.box(D, { l: .05, r: .06, t: .06, b: .06 }), s = CH.fs(D), big = Math.min(s * 1.6, R.w / 12), y1 = R.y0 + big, y2 = y1 + big * 2.1;
+    var R = CH.box(D, { l: .05, r: .06, t: .06, b: .06 }), s = CH.fs(D), big = Math.min(s * 1.6, R.w / 12), y1 = R.y0 + Math.max(big, R.h * .1), y2 = y1 + Math.max(big * 2.1, R.h * .22);
     var k1 = CH.smooth(0, .3, k), k2 = CH.smooth(.35, .75, k), k3 = CH.smooth(.75, .95, k), g = D.ctx;
     function row(y, parts, a) { g.save(); g.font = '700 ' + big + 'px "BIZ UDPGothic",sans-serif'; var ws = parts.map(function (p) { return g.measureText(p[0]).width + big * .25; }), W = ws.reduce(function (p, q) { return p + q; }, 0); g.restore(); var x = R.cx - W / 2, out = []; parts.forEach(function (p, i) { CH.text(D, x + ws[i] / 2, y, p[0], { size: big, col: p[1], num: true, w: 700, a: a }); out.push([x + ws[i] / 2, ws[i]]); x += ws[i]; }); return out; }
     var A = row(y1, [['(＋4)', C.chalk], ['−', NEG], ['(−2)', NEG]], 1);
@@ -125,7 +125,7 @@
     var R = CH.box(D, { l: .04, r: .06, t: .04, b: .05 }), rs = CH.rows(R, 4, .1), s = CH.fs(D, .85);
     EX.forEach(function (p, i) {
       var r = rs[i], ki = i === 0 ? 1 : CH.clamp((k - (i - 1) * .32) / .3, 0, 1), a = p[0], b = p[1], t = EXR[i];
-      var L = NL(D, r.x0 + s * .3, r.x1 - s, r.y1 - s * 1.4, -12, 14, { s: CH.fs(D, .64) }), h = Math.min(1.5, (L.y - r.y0 - s * 1.2) / (2.3 * L.s));
+      var L = NL(D, r.x0 + s * .3, r.x1 - s, r.y1 - s * 1.4, -12, 14, { s: CH.fs(D, .64) }), h = Math.min(1.5, (L.y - r.y0 - s * 1.9) / (2.4 * L.s));
       var head = pr(a) + '−' + pr(b) + '＝' + pr(a) + '＋' + pr(-b), full = head + '＝' + sg(t);
       CH.text(D, r.x0, r.y0 + s * .5, ki >= 1 ? full : pr(a) + '−' + pr(b), { align: 'left', size: CH.fitSize(D, full, r.w * .8, s), num: true, col: C.chalk });
       if (i === 0) CH.text(D, r.x1, r.y0 + s * .5, '見本', { align: 'right', size: s * .8, col: C.yel });
