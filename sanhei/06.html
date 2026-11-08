@@ -118,14 +118,14 @@
           if (D.V.c) { g.save(); g.beginPath(); g.rect(Pl.R.x0, Pl.R.y0, Pl.R.w, Pl.R.h); g.clip(); CH.circle(D, Pl.X(p), Pl.Y(0), dist(P, KA) * Pl.u, { stroke: C.blue, sw: 2 }); CH.circle(D, Pl.X(p), Pl.Y(0), dist(P, KB) * Pl.u, { stroke: C.pink, sw: 2 }); g.restore(); }
           legs(D, Pl, P, KA, { col: C.blue, lx: false, ly: false }); legs(D, Pl, P, KB, { col: C.pink, lx: false, ly: false });
           CH.pseg(D, Pl, P, KA, { col: C.blue, w: 3.4 }); CH.pseg(D, Pl, P, KB, { col: C.pink, w: 3.4 });
-          CH.pt(D, Pl, 0, 3, { lab: 'A(0, 3)', dir: 'nw', col: C.blue }); CH.pt(D, Pl, 6, 1, { lab: 'B(6, 1)', dir: 'ne', col: C.pink }); CH.pt(D, Pl, p, 0, { lab: 'P', dir: 's', col: C.yel });
+          CH.pt(D, Pl, 0, 3, { lab: 'A(0, 3)', dir: 'nw', col: C.blue }); CH.pt(D, Pl, 6, 1, { lab: 'B(6, 1)', dir: 'ne', col: C.pink }); CH.pt(D, Pl, p, 0, { lab: 'P', dir: p === 0 ? 'se' : 's', col: C.yel });
         } },
       { tag: 'チャレンジ', bh: 'チャレンジ', q: '関数 y＝1/3x² のグラフ上に、x 座標が −3、6 である点 A、B をとる。① 線分 AB の長さを求めよう。② △OAB は、どんな三角形か。理由もつけて答えよう。（O は原点）',
         notes: ['ヒント① A、B の y 座標は、y＝1/3x² に x の値を入れると求められる。', 'ヒント② 3辺の長さを、2乗のままくらべてみよう。'],
         a: '① AB＝9√2　② ∠A＝90° の直角三角形', sub: 'A(−3, 3)、B(6, 12)。AB²＝9²＋9²＝162。OA²＝18、OB²＝180。OA²＋AB²＝18＋162＝180＝OB² だから、∠A＝90°', dur: 9,
         b: { t: 'A(−3, 3)、B(6, 12) → AB＝<b>9√2</b>。OA²＋AB²＝OB² → <b>∠A＝90°</b> の直角三角形', col: C.orange },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, sp = split(D), Pl = CH.plane(D, sp[0], { x: [-5, 8], y: [-1, 13], lab: 2, size: CH.fs(D, .62) }), O = [0, 0], k1 = CH.smooth(.04, .25, t), k2 = CH.smooth(.32, .5, t), k3 = CH.smooth(.56, .72, t), k4 = CH.smooth(.78, .92, t);
+          var t = D.ph ? D.t : 0, sp = split(D), Pl = CH.plane(D, sp[0], { x: [-6, 8], y: [-1, 13], lab: 2, size: CH.fs(D, .62) }), O = [0, 0], k1 = CH.smooth(.04, .25, t), k2 = CH.smooth(.32, .5, t), k3 = CH.smooth(.56, .72, t), k4 = CH.smooth(.78, .92, t);
           CH.fn(D, Pl, f, { col: C.green, w: 2.6 });
           CH.poly(D, [O, QA, QB].map(function (p) { return [Pl.X(p[0]), Pl.Y(p[1])]; }), { fill: 'rgba(154,216,255,.15)', stroke: C.chalk, sw: 2.4 });
           if (D.ph) { legs(D, Pl, QA, QB, { col: C.yel, a: k1 * (1 - k3 * .7), size: CH.fs(D, .75) }); legs(D, Pl, O, QA, { col: C.pink, a: k2 * (1 - k3 * .7), size: CH.fs(D, .7) }); legs(D, Pl, O, QB, { col: C.blue, a: k2 * (1 - k3 * .7), size: CH.fs(D, .7) }); }

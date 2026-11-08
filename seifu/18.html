@@ -152,7 +152,7 @@
       { tag: '今日の問い', bh: '自然数どうしの四則', q: '自然数どうしで、加法・減法・乗法・除法をすると、答えは、いつも自然数になるだろうか。計算ごとに考えよう。（0でわることは考えない）',
         notes: ['① 自分の考え（3分）　計算ごとに、○か×かと、×の例を書こう。', '② ペアの考え（3分）　自分とちがう例や、気づきを書こう。'],
         draw: function (D) {
-          var L = lay(D), G = sets(D, L.S, 0, 0); ['1', '2', '3', '4', '5'].forEach(function (v, k) { ncard(D, G.slots[0][k][0], G.slots[0][k][1], G.cw, G.ch, v, CN, 1); });
+          var L = lay(D), G = sets(D, L.S, 0, 0); ['1', '2', '3', '4'].forEach(function (v, k) { ncard(D, G.slots[0][k][0], G.slots[0][k][1], G.cw, G.ch, v, CN, 1); });
           CH.text(D, L.band.cx, L.band.cy, '1、2、3、4、5、…', { size: L.s * 1.1, col: 'rgba(242,240,230,.8)' });
           table(D, L, [['？', '？', '？', '？']], { show: function (r, c) { return r === 1 && c > 0 ? .45 : r > 1 ? (c === 0 ? .3 : 0) : 1; } });
         } },
@@ -174,7 +174,7 @@
         b: [{ t: '正の整数 1、2、3、… … <b>自然数</b>　全体の集まり … 自然数の <b>集合</b>', col: C.green }, { t: '自然数の集合 ⊂ <b>整数</b>の集合 ⊂ <b>数全体</b>の集合', col: C.green }],
         draw: function (D) {
           var L = lay(D), t = D.ph ? D.t : 0, k1 = CH.smooth(.15, .45, t), k2 = CH.smooth(.5, .8, t), G = sets(D, L.S, k1, k2);
-          ['1', '2', '3', '4', '5'].forEach(function (v, k) { ncard(D, G.slots[0][k][0], G.slots[0][k][1], G.cw, G.ch, v, CN, 1); });
+          ['1', '2', '3', '4'].forEach(function (v, k) { ncard(D, G.slots[0][k][0], G.slots[0][k][1], G.cw, G.ch, v, CN, 1); });
           ['0', '−1', '−2'].forEach(function (v, k) { ncard(D, G.slots[1][k][0], G.slots[1][k][1], G.cw, G.ch, v, CI, CH.smooth(.45 + k * .04, .5 + k * .04, t)); });
           ['[1/2]', '−0.3', '2.5', '−[4/3]'].forEach(function (v, k) { ncard(D, G.slots[2][k][0], G.slots[2][k][1], G.cw, G.ch, v, CA, CH.smooth(.8 + k * .04, .85 + k * .04, t)); });
           TX(D, L.band.cx, L.band.cy, '自然数 ⊂ 整数 ⊂ 数全体', { size: fit(D, '自然数 ⊂ 整数 ⊂ 数全体', L.band.w * .9, L.s * 1.15), col: C.yel, a: CH.smooth(.85, 1, t) });

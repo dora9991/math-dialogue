@@ -94,9 +94,12 @@
   function arcAt(F, c, r, a0, a1, o) { o = o || {}; var g = F.D.ctx, p = F.X(c); g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.w || 2; g.beginPath(); g.arc(p[0], p[1], r * F.u, -a0 * R, -a1 * R, true); g.stroke(); g.restore(); }
   function tn(d) { return Math.tan(d * R); }
   /* 場面・ノート（縮図）・字の3つの四角。横長なら 左＝場面、右上＝ノート、右下＝字 */
-  function lay3(D, k) {
+  function lay3(D, mode) {
     var B = CH.box(D, { l: .03, r: .03, t: .04, b: .04 });
-    if (B.w > B.h * 1.2 && B.w > 520) { var w = B.w * (k || .44), x = B.x1 - w + 10; return { scene: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), note: CH.rect(x, B.y0 + 4, B.x1, B.y0 + B.h * .56), text: CH.rect(x, B.y0 + B.h * .6, B.x1, B.y1), wide: true }; }
+    if (B.w > B.h * 1.2 && B.w > 520) {
+      if (mode === 'side') { var w = B.w * .44, x = B.x1 - w + 10; return { scene: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), note: CH.rect(x, B.y0 + 4, B.x1, B.y0 + B.h * .56), text: CH.rect(x, B.y0 + B.h * .6, B.x1, B.y1), wide: true }; }
+      var y = B.y0 + B.h * .56; return { scene: CH.rect(B.x0, B.y0, B.x1, y), note: CH.rect(B.x0, y + 8, B.cx - 6, B.y1), text: CH.rect(B.cx + 10, y + 14, B.x1, B.y1), wide: true };
+    }
     return { scene: CH.rect(B.x0, B.y0, B.x1, B.y0 + B.h * .5), note: CH.rect(B.x0 + 4, B.y0 + B.h * .52, B.x1 - 4, B.y0 + B.h * .78), text: CH.rect(B.x0 + 6, B.y0 + B.h * .8, B.x1, B.y1), wide: false };
   }
   /* ノートの方眼（1目もり 1cm） */
@@ -145,10 +148,10 @@
     person(F, 0, EY + .3);
     GE.seg(F, [SE[0], SE[1]], { dash: [6, 5], w: 1.8, col: g }); GE.seg(F, [SE[0], SE[2]], { w: 2.2, col: o.sight || C.chalk });
     arcAt(F, SE[0], 5, 0, A0); var al = F.X(GE.polar(SE[0], 6.6, 13)); CH.text(D, al[0], al[1], '30°', { size: F.s * .8, outline: OUT });
-    dim(F, [0, -.9], [D0, -.9], '25m', -1, { size: F.s * .8 }); dim(F, [-1.6, 0], [-1.6, EY], '1.5m', 1, { size: F.s * .75 });
-    dim(F, [33, 0], [33, TOP], o.h || '高さ ?m', -1, { size: F.s * .8, tcol: o.hc });
+    dim(F, [0, -.9], [D0, -.9], '25m', 1, { size: F.s * .8 }); dim(F, [-1.6, 0], [-1.6, EY], '1.5m', -1, { size: F.s * .75 });
+    dim(F, [33, 0], [33, TOP], o.h || '高さ ?m', 1, { size: F.s * .8, tcol: o.hc });
   }
-  var SFR = { p: [-5.5, -2.6], q: [38, 17.4] };
+  var SFR = { p: [-5.5, -3.2], q: [39, 17.4] };
 
   /* ---- 例題：棒 1.2m の影 1.6m、木の影 12m → 木の高さ 9m ---- */
   var SH = { P: [0, 1.2], Q: [0, 0], R: [1.6, 0], S: [5, 9], U: [5, 0], V: [17, 0] };
@@ -161,8 +164,8 @@
     GE.seg(F, 'QP', { w: 4 }); GE.seg(F, [SH.U, [5, 7.4]], { w: 5, col: '#c9a27a' });
     var c = F.X([5, 7.6]); CH.circle(D, c[0], c[1], 1.4 * F.u, { fill: 'rgba(169,240,176,.35)', stroke: C.green, sw: 2 });
     GE.seg(F, [SH.Q, SH.R], { col: C.blue, w: 3.5 }); GE.seg(F, [SH.U, SH.V], { col: C.blue, w: 3.5 });
-    dim(F, [-.7, 0], [-.7, 1.2], '1.2m', 1, { size: F.s * .72 }); dim(F, [0, -.8], [1.6, -.8], '1.6m', -1, { size: F.s * .72 });
-    dim(F, [5, -.8], [17, -.8], '12m', -1, { size: F.s * .8 }); dim(F, [3.2, 0], [3.2, 9], o.h || 'x m', 1, { size: F.s * .8, tcol: o.hc });
+    dim(F, [-.7, 0], [-.7, 1.2], '1.2m', -1, { size: F.s * .72 }); dim(F, [0, -.8], [1.6, -.8], '1.6m', 1, { size: F.s * .72 });
+    dim(F, [5, -.8], [17, -.8], '12m', 1, { size: F.s * .8 }); dim(F, [3.2, 0], [3.2, 9], o.h || 'x m', -1, { size: F.s * .8, tcol: o.hc });
     var sun = F.X([-.4, 9.4]); CH.circle(D, sun[0], sun[1], F.s * .9, { fill: 'rgba(255,226,122,.5)', stroke: C.yel, sw: 2 }); CH.text(D, sun[0] + F.s * 1.4, sun[1], '太陽の光', { size: F.s * .7, col: C.yel, align: 'left', outline: OUT });
   }
 
@@ -180,10 +183,10 @@
     GE.dot(F, 'A'); GE.dot(F, 'B'); GE.dot(F, 'P');
     GE.labels(F, ['A', 'B', 'P'], { dir: { A: 'sw', B: 'se', P: 'w' } }); GE.right(F, 'BAP');
     mark(F, 'ABP', C.chalk, { t: '40°', r: F.s * 1.4, fill: .2 });
-    dim(F, [0, -2.2], [30, -2.2], '30m', -1, { size: F.s * .8 });
+    dim(F, [0, -2.2], [30, -2.2], '30m', 1, { size: F.s * .8 });
     sideLab(F, 'AP', o.h || '川はば ?m', { ref: 'B', col: o.hc });
   }
-  var RFR = { p: [-6, -4.8], q: [35, 27.5] };
+  var RFR = { p: [-11, -5.4], q: [35, 27.5] };
 
   /* ---- 考えよう：縮尺を変えて校舎の縮図をかく（1/250・1/500・1/1000） ---- */
   var SCL = [250, 500, 1000];
@@ -199,8 +202,8 @@
     var l = F.X([0, 4.5]); CH.circle(D, l[0], l[1], F.s * .45, { fill: C.yel, stroke: C.orange, sw: 1.5 });
     GE.seg(F, 'LS', { col: 'rgba(255,226,122,.7)', w: 1.6, dash: [6, 5] });
     person(F, 6, 1.5); GE.seg(F, 'QS', { col: C.blue, w: 4 });
-    dim(F, [0, -.6], [6, -.6], '6m', -1, { size: F.s * .8 }); dim(F, [6, -.6], [9, -.6], '3m', -1, { size: F.s * .8 });
-    dim(F, [6.5, 0], [6.5, 1.5], '1.5m', -1, { size: F.s * .72 }); dim(F, [-.7, 0], [-.7, 4.5], o.h || '? m', 1, { size: F.s * .8, tcol: o.hc });
+    dim(F, [0, -.6], [6, -.6], '6m', 1, { size: F.s * .8 }); dim(F, [6, -.6], [9, -.6], '3m', 1, { size: F.s * .8 });
+    dim(F, [6.5, 0], [6.5, 1.5], '1.5m', 1, { size: F.s * .72 }); dim(F, [-.7, 0], [-.7, 4.5], o.h || '? m', -1, { size: F.s * .8, tcol: o.hc });
   }
 
   var steps = [
@@ -246,7 +249,7 @@
     { tag: '例題', bh: '例題　影で木の高さ', q: '高さ 1.2m の棒の影の長さは 1.6m だった。同じときに、木の影の長さは 12m だった。木の高さは何 m だろう。', a: '9m', sub: '太陽の光は平行だから、棒と影の三角形と、木と影の三角形は、2組の角が等しく相似。1.2：x＝1.6：12 → 1.6x＝14.4 → x＝9', dur: 7,
       b: { t: '光は平行 → 2組の角が等しく相似　1.2：x＝1.6：12 → <b>x＝9</b>　木の高さ 9m', col: C.pink },
       draw: function (D) {
-        var L = lay(D, .36), t = D.ph ? D.t : 0, F = GE.fit(D, L.fig, { p: [-2.4, -2], q: [18.4, 10.6] }, { pad: .02 }), done = t > .86, P = Object.assign({}, SH);
+        var L = lay(D, .36), t = D.ph ? D.t : 0, F = GE.fit(D, L.fig, { p: [-3.2, -2.4], q: [18.4, 10.6] }, { pad: .02 }), done = t > .86, P = Object.assign({}, SH);
         F = ext(F, P);
         if (D.ph) { GE.poly(F, 'PQR', { col: C.yel, fa: .35 * CH.smooth(0, .1, t), stroke: false }); GE.poly(F, 'SUV', { col: C.yel, fa: .22 * CH.smooth(.12, .22, t), stroke: false }); }
         shadow(D, F, { h: done ? '9m' : 'x m', hc: done ? C.pink : null });
@@ -259,7 +262,7 @@
     { tag: '例題', bh: '例題2　川はば', q: '川の向こう岸の木 P の真向かいに A をとり、岸にそって 30m はなれた B で、∠PBA をはかると 40° だった（∠PAB＝90°）。縮尺 1/1000 の縮図をかいて、川はば AP を求めよう。', a: '約 25m', sub: '30m＝3000cm → 縮図では 3cm。∠B＝40°、∠A＝90° の直角三角形をかき、AP をはかると 約2.5cm → 2.5×1000＝2500（cm）＝25m', dur: 9,
       b: { t: '縮尺 1/1000：AB 3cm、∠B＝40° → 縮図の AP 約2.5cm → 2.5×1000＝2500cm　川はば <b>約25m</b>', col: C.pink },
       draw: function (D) {
-        var L = lay3(D), t = D.ph ? D.t : 0, Fs = GE.fit(D, L.scene, RFR, { pad: .02 }), F2 = ext(Fs, RV), done = t > .86, S3 = [RV.A, RV.B, RV.P];
+        var L = lay3(D, 'side'), t = D.ph ? D.t : 0, Fs = GE.fit(D, L.scene, RFR, { pad: .02 }), F2 = ext(Fs, RV), done = t > .86, S3 = [RV.A, RV.B, RV.P];
         if (D.ph) GE.polyP(Fs, S3, { col: C.yel, fa: .25 * CH.smooth(0, .1, t), stroke: false });
         river(D, F2, { ap: D.ph ? C.yel : null, h: done ? '約25m' : '川はば ?m', hc: done ? C.pink : null });
         var Fn = note(D, L.note, 4, 3, '縮尺 1/1000 の縮図（1目もり 1cm）'), off = function (Q) { return Q.map(function (p) { return [p[0] + .2, p[1]]; }); }, NQ = off(NR);
@@ -289,7 +292,7 @@
       notes: ['ヒント：街灯・人・地面でできる、2つの直角三角形を見つけよう。影の先から街灯の真下までは、何 m かな。'],
       b: { t: '影の先を頂点とする2つの直角三角形は相似　1.5：x＝3：9 → 3x＝13.5 → <b>x＝4.5</b>　4.5m', col: C.orange },
       draw: function (D) {
-        var L = lay(D, .36), t = D.ph ? D.t : 0, F = ext(GE.fit(D, L.fig, { p: [-2.4, -1.8], q: [11, 5.6] }, { pad: .03 }), LP), done = t > .88;
+        var L = lay(D, .36), t = D.ph ? D.t : 0, F = ext(GE.fit(D, L.fig, { p: [-3.2, -2.2], q: [11.4, 5.6] }, { pad: .03 }), LP), done = t > .88;
         if (D.ph) { GE.poly(F, 'SQH', { col: C.blue, fa: .3 * CH.smooth(0, .1, t), stroke: false }); GE.poly(F, 'SOL', { col: C.orange, fa: .18 * CH.smooth(.1, .2, t), stroke: false }); }
         lamp(D, F, 0, { h: done ? '4.5m' : '? m', hc: done ? C.orange : null });
         if (!D.ph) return;
