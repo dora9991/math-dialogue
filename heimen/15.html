@@ -229,7 +229,7 @@
       compAt(F, TB, 4.2, J1, 13, q1); compAt(F, TB, 4.2, J2, 13, q1); compAt(F, TC, 4.2, J1, 13, q2); compAt(F, TC, 4.2, J2, 13, q2);
       var g2 = CH.smooth(.58, .66, t); if (g2 > 0) GE.seg(F, [[4, -2], [4, -2 + 5.6 * g2]], { col: C.pink, w: 3 });
       if (t > .1) dots(F, [TD, TE], { col: C.blue });
-      var g3 = CH.smooth(.68, .76, t); if (g3 > 0) { GE.dot(F, TP, { col: C.yel, r: F.s * .26, a: g3 }); lab(F, TP, 160, 1.1, 'P', { col: C.yel, a: g3, size: 1 }); }
+      var g3 = CH.smooth(.68, .76, t); if (g3 > 0) { GE.dot(F, TP, { col: C.yel, r: F.s * .26, a: g3 }); lab(F, TP, 22, 1.25, 'P', { col: C.yel, a: g3, size: 1 }); }
       var g4 = CH.smooth(.78, .88, t); if (g4 > 0) { [TH, TK].forEach(function (h) { GE.seg(F, [TP, h], { col: C.yel, w: 2.2, dash: [6, 5], a: g4 }); GE.tick(F, [TP, h], 1, { col: C.yel, a: g4 }); }); GE.right(F, [TA, TH, TP], { col: C.yel, a: g4, r: F.s * .45 }); GE.right(F, [TP, TK, TC], { col: C.yel, a: g4, r: F.s * .45 }); }
       var g5 = CH.smooth(.9, 1, t); if (g5 > 0) { [TB, TC].forEach(function (v) { GE.seg(F, [TP, v], { col: C.orange, w: 2.2, a: g5 }); GE.tick(F, [TP, v], 2, { col: C.orange, a: g5 }); }); }
     }
@@ -345,16 +345,16 @@
         a: '8cm。ℓ に垂直な向きに 8cm の平行移動と同じ', sub: 'A から ℓ までを a cm とすると、A′ は ℓ の右 a cm、m までは 4−a cm、A″ は m の右 4−a cm。動いたのは 2a＋2(4−a)＝8（cm）', dur: 10,
         b: { t: '2回の対称移動（ℓ∥m、4cm）→ ℓ に垂直な向きに <b>8cm</b> の <b>平行移動</b>', col: C.orange },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, L = lay(D, .38), F = fitB(D, L.fig, { O: O }, [[-4.8, -1.9], [8.4, 5.2]]);
+          var t = D.ph ? D.t : 0, L = lay(D, .3), F = fitB(D, L.fig, { O: O }, [[-4.8, -1.9], [8.4, 6.3]]);
           var k1 = D.ph ? CH.ease(CH.smooth(.03, .33, t)) : 0, k2 = D.ph ? CH.ease(CH.smooth(.38, .68, t)) : 0, g = D.ph ? CH.smooth(.72, .9, t) : 0;
-          [[0, 'ℓ'], [4, 'm']].forEach(function (z) { GE.seg(F, [[z[0], -.7], [z[0], 4.5]], { w: 2.6 }); lab(F, [z[0], 4.5], 90, .8, z[1], { size: 1 }); });
+          [[0, 'ℓ'], [4, 'm']].forEach(function (z) { GE.seg(F, [[z[0], -.7], [z[0], 5.4]], { w: 2.6 }); lab(F, [z[0], 5.4], 90, .8, z[1], { size: 1 }); });
           dimLine(F, [0, -1.25], [4, -1.25], '4cm', { side: -1 });
           GE.polyP(F, S0, { col: C.blue, fa: D.ph ? .15 : .35, sw: 2.4 });
           var cur = k2 > 0 ? lerpPts(S1, S2, k2) : lerpPts(S0, S1, k1);
           if (k1 > 0) { if (k2 > 0) GE.polyP(F, S1, { col: C.pink, fa: .12, sw: 1.8, a: .8 }); GE.polyP(F, cur, { col: k2 > 0 ? C.yel : C.pink, fa: .35, sw: 2.4 }); }
-          lab(F, S0[0], 90, .9, 'A', { size: .95 }); if (k1 >= 1) lab(F, S1[0], 90, .9, 'A′', { size: .95, col: C.pink }); if (k2 >= 1) lab(F, S2[0], 90, .9, 'A″', { size: .95, col: C.yel });
-          if (g > 0) { var p = F.X([S0[0][0], 3.9]), q = F.X([S2[0][0], 3.9]); CH.arrow(D, p[0], p[1], q[0], q[1], { col: C.orange, w: 2.6, head: F.s * .55, a: g }); lab(F, [2, 3.9], 90, .8, '8cm', { col: C.orange, a: g, size: 1 });
-            dimLine(F, [-2, 2.2], [0, 2.2], 'a', { col: C.pink, a: g, h: .2, size: .8 }); dimLine(F, [0, 2.2], [2, 2.2], 'a', { col: C.pink, a: g, h: .2, size: .8 }); dimLine(F, [2, 2.2], [4, 2.2], '4−a', { col: C.yel, a: g, h: .2, size: .8 }); dimLine(F, [4, 2.2], [6, 2.2], '4−a', { col: C.yel, a: g, h: .2, size: .8 }); }
+          lab(F, S0[0], 180, .9, 'A', { size: .95 }); if (k1 >= 1) lab(F, S1[0], 0, 1, 'A′', { size: .95, col: C.pink }); if (k2 >= 1) lab(F, S2[0], 0, 1, 'A″', { size: .95, col: C.yel });
+          if (g > 0) { var p = F.X([S0[0][0], 4.55]), q = F.X([S2[0][0], 4.55]); CH.arrow(D, p[0], p[1], q[0], q[1], { col: C.orange, w: 2.6, head: F.s * .55, a: g }); lab(F, [2, 4.55], 90, .7, '8cm', { col: C.orange, a: g, size: 1 });
+            dimLine(F, [-2, 3.75], [0, 3.75], 'a', { col: C.pink, a: g, h: .2, size: .8 }); dimLine(F, [0, 3.75], [2, 3.75], 'a', { col: C.pink, a: g, h: .2, size: .8 }); dimLine(F, [2, 3.75], [4, 3.75], '4−a', { col: C.yel, a: g, h: .2, size: .8 }); dimLine(F, [4, 3.75], [6, 3.75], '4−a', { col: C.yel, a: g, h: .2, size: .8 }); }
           say(D, L.side, [{ t: 'ℓ∥m、ℓ と m は 4cm' }, D.ph ? { t: '① ℓ で対称移動 → A′', col: C.pink, a: CH.smooth(0, .1, t) } : null, D.ph && t > .38 ? { t: '② m で対称移動 → A″', col: C.yel, a: CH.smooth(.38, .48, t) } : null,
             D.ph && t > .72 ? { t: 'AA″＝2a＋2(4−a)＝8（cm）', col: C.orange, a: g } : null, D.ph && t > .85 ? { t: '→ 8cm の平行移動と同じ', col: C.orange, a: CH.smooth(.85, .95, t) } : null]);
         } }

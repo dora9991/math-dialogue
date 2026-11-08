@@ -485,10 +485,10 @@
       brace(D, x0 - uc * .45, x0 + 7.45 * uc, by, 1, { h: uc * .16, lab: '鉛筆 8本', col: XC, size: s * .9, a: fl });
       brace(D, x0 + 7.55 * uc, x0 + 13.45 * uc, by, 1, { h: uc * .16, lab: 'ボールペン 6本', col: YC, size: s * .9, a: fl });
     }
-    var Rest = CH.rect(R.x0, by + s * 2.1, R.x1, R.y1), Rs = two(D, .5, .43, Rest);
+    var Rest = CH.rect(R.x0, by + s * 2.1, R.x1, R.y1), Rs = two(D, .58, .43, Rest);
     var sh = { '2,1': [.02, .08], '2,2': [.06, .12], '3,1': [.13, .19], '3,2': [.17, .23] };
     var T = tableF(D, Rs[0], ['', '鉛筆', 'ボールペン', '合計'], [['1本のねだん（円）', '60', '110', '—'], ['本数（本）', 'x', 'y', '14'], ['代金（円）', '60x', '110y', '1140']], {
-      fw: .36, top: true, rh: s * 2.1,
+      fw: .34, top: true, rh: s * 2.5,
       show: function (r, c) { var q = sh[r + ',' + c]; return q ? (ph ? CH.smooth(q[0], q[1], k) : 0) : 1; },
       col: function (r, c) { return r >= 2 && (c === 1 || c === 2) ? (c === 1 ? XC : YC) : null; },
       hl: function (r, c) { return ph && ((r === 2 && k > .26 && k < .4) || (r === 3 && k > .36 && k < .5)) ? C.yel : null; }
@@ -527,7 +527,7 @@
     return u;
   }
   function ex(D, k) {
-    var R = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), s = CH.fs(D), W = wide(D), Rs = two(D, .56, .44, R);
+    var R = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), s = CH.fs(D), W = wide(D), Rs = two(D, .6, .44, R);
     var top = W ? CH.rect(Rs[0].x0, Rs[0].y0 + s * 2.4, Rs[0].x1, Rs[0].y1) : Rs[0];
     if (W) { var iu = s * 1.4; icon(D, 'fruitA', Rs[0].x0 + iu * .4, Rs[0].y0 + s * .8, iu, { col: XC }); TX(D, Rs[0].x0 + iu, Rs[0].y0 + s * .8, 'りんご x円', { size: s, col: XC, align: 'left' }); icon(D, 'fruitB', Rs[0].cx + iu * .4, Rs[0].y0 + s * .8, iu, { col: YC }); TX(D, Rs[0].cx + iu, Rs[0].y0 + s * .8, 'なし y円', { size: s, col: YC, align: 'left' }); }
     fruitRows(D, top, k);
@@ -560,8 +560,6 @@
     TX(D, T.x0, y2 + h / 2, '5個ずつ', { size: fit(D, '5個ずつ', lw * .9, s), col: XC, align: 'left' });
     TX(D, T.x0, y3 + h / 2, '4個ずつ', { size: fit(D, '5個ずつ', lw * .9, s), col: XC, align: 'left' });
     band(D, x0, y1, U, h, [{ v: 67, col: YC, txt: ph && k > .6 ? '67個' : 'y個' }]);
-    brace(D, x0, x0 + 67 * U, y1 - s * .15, -1, { h: s * .3, col: YC, a: 0 });
-    var c5 = []; for (var i = 0; i < 15; i++) c5.push({ v: 5, col: XC, txt: '', a: 1 });
     band(D, x0, y2, U, h, [{ v: 67, col: XC, txt: cut > .5 ? '' : '5×x' }, { v: 8, col: C.pink, kind: 'down', txt: '' }]);
     CH.line(D, x0 + 67 * U, y1 + h, x0 + 67 * U, y2 + h + s * .2, { col: C.pink, dash: [4, 4], w: 1.6 });
     TX(D, x0 + 71 * U, y2 + h + s * .75, '8個たりない', { size: fit(D, '8個たりない', 24 * U, z), col: C.pink });

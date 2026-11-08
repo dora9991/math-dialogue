@@ -241,7 +241,7 @@ CH.plane = function (D, R, o) {
   CH.arrow(D, X(ox), R.y1 + 4, X(ox), R.y0 - s * .9, { w: 2, a: a, head: 9 });
   CH.text(D, R.x1 + s * 1.3, Y(oy) + s * .1, o.xn || 'x', { size: s * 1.2, a: a, col: 'rgba(242,240,230,.85)', w: 400 });
   CH.text(D, X(ox) + s * .9, R.y0 - s * .8, o.yn || 'y', { size: s * 1.2, a: a, col: 'rgba(242,240,230,.85)', w: 400 });
-  if (ox === 0 && oy === 0) CH.text(D, X(0) - s * .7, Y(0) + s * .8, 'O', { size: s, a: a, num: true });
+  if (ox === 0 && oy === 0 && (o.origin != null ? o.origin : o.nums !== false)) CH.text(D, X(0) - s * .7, Y(0) + s * .8, 'O', { size: s, a: a, num: true });
   if (o.nums !== false) {
     for (x = Math.ceil(xr[0] / lbx) * lbx; x <= xr[1] + 1e-9; x += lbx) if (Math.abs(x) > 1e-9) { CH.line(D, X(x), Y(oy) - 4, X(x), Y(oy) + 4, { w: 1.4, a: a }); CH.text(D, X(x), Y(oy) + s * 1, CH.mnum(x), { size: s, num: true, a: a }); }
     for (y = Math.ceil(yr[0] / lby) * lby; y <= yr[1] + 1e-9; y += lby) if (Math.abs(y) > 1e-9) { CH.line(D, X(ox) - 4, Y(y), X(ox) + 4, Y(y), { w: 1.4, a: a }); CH.text(D, X(ox) - s * .6, Y(y), CH.mnum(y), { size: s, num: true, align: 'right', a: a }); }
@@ -273,6 +273,13 @@ CH.fn = function (D, Pl, f, o) {
     if (y >= y0 && y <= y1 && isFinite(y)) { if (on) g.lineTo(Pl.X(x), Pl.Y(y)); else g.moveTo(Pl.X(x), Pl.Y(y)); on = true; } else on = false;
   }
   g.stroke(); g.restore();
+};
+/* 反比例 y＝a/x のグラフ（双曲線）。x＝0 をはさんだ2本を、平面のふちまで描く。o は CH.fn と同じ（x0・x1 で変域） */
+CH.hyp = function (D, Pl, a, o) {
+  o = o || {}; var ymax = Math.max(Math.abs(Pl.yr[0]), Math.abs(Pl.yr[1])), xm = Math.abs(a) / ymax * .98;
+  var lo = o.x0 == null ? Pl.xr[0] : o.x0, hi = o.x1 == null ? Pl.xr[1] : o.x1, f = function (x) { return a / x; };
+  if (hi > xm) CH.fn(D, Pl, f, Object.assign({}, o, { x0: Math.max(lo, xm), x1: hi, n: 400 }));
+  if (lo < -xm) CH.fn(D, Pl, f, Object.assign({}, o, { x0: lo, x1: Math.min(hi, -xm), n: 400 }));
 };
 /* 直線 y＝ax＋b（変域つきでも）。端を ●（ふくむ）・○（ふくまない）にできる：o.ends ['in'|'out'|null, …] */
 CH.lin = function (D, Pl, a, b, o) {
