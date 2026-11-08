@@ -28,7 +28,7 @@
   function wrap(D, x, y, w, txt, o) {
     o = o || {}; var s = o.size || CH.fs(D), lh = s * 1.5, g = D.ctx, lines = [];
     g.save(); g.font = '600 ' + s + 'px ' + FONT;
-    txt.split('\n').forEach(function (para) { var cur = '', tk = para.match(/[△∠]?[A-Za-z0-9]+(?:[≡＝+−×÷()][△∠]?[A-Za-z0-9()]+)*|./g) || []; tk.forEach(function (ch) { if (cur && g.measureText(cur + ch).width > w && '、。」）…°'.indexOf(ch) < 0) { lines.push(cur); cur = ch; } else cur += ch; }); lines.push(cur); });
+    txt.split('\n').forEach(function (para) { var cur = '', tk = para.match(/[△∠(]?[A-Za-z0-9°]+(?:[≡＝+−×÷()]+[△∠]?[A-Za-z0-9°()]*)*|./g) || []; tk.forEach(function (ch) { if (cur && g.measureText(cur + ch).width > w && '、。」）…°'.indexOf(ch) < 0) { lines.push(cur); cur = ch; } else cur += ch; }); lines.push(cur); });
     g.restore();
     if (!o.dry) lines.forEach(function (l, i) { CH.text(D, x, y + lh * (i + .5), l, { size: s, col: o.col, align: 'left', a: o.a }); });
     return lines.length * lh;
@@ -90,8 +90,8 @@
   var PROOF = GE.proof(DEF, { tag: '例題' });
 
   /* ---------- 考えよう：ア〜エ（○×は出さない） ---------- */
-  var KA = parP(65, 2), KU = triP(60, 70, 4.4), KE = (function () { var A = [0, 0], B = [4.6, 0], Cc = [1.3, 2.9], R = function (p) { var q = GE.rot(p, [0, 0], 40); return [q[0] + 6, q[1] + 1]; }; return { A: A, B: B, C: Cc, D: R(A), E: R(B), F: R(Cc) }; })();
-  var OCT = {}; for (var j = 0; j < 8; j++) OCT['ABCDEFGH'[j]] = pol([0, 0], 2, -112.5 + 45 * j); OCT.X = GE.lerpP(OCT.A, OCT.B, 1.7);
+  var KA = parP(65, 2), KU = triP(60, 70, 4.4), KE = (function () { var A = [0, 0], B = [4.6, 0], Cc = [1.3, 2.9], R = function (p) { var q = GE.rot(p, [0, 0], 40); return [q[0] + 1.5, q[1] - 5]; }; return { A: A, B: B, C: Cc, D: R(A), E: R(B), F: R(Cc) }; })();
+  var OCT = {}; for (var j = 0; j < 8; j++) OCT['ABCDEFGH'[j]] = pol([0, 0], 2, -112.5 + 45 * j); OCT.X = GE.lerpP(OCT.A, OCT.B, 2);
   GE.verify(KA, 'HI∥JK、∠IPU＝∠KQP＝65°', null, '考えよう ア');
   GE.verify(KU, '∠BAC＝50°、∠ABC＝60°、∠ACD＝110°', null, '考えよう ウ');
   GE.verify(KE, '△ABC≡△DEF、AC＝DF、AB＝DE', null, '考えよう エ');
@@ -103,7 +103,7 @@
     ['エ', '△ABC≡△DEF のとき、辺 AC に対応する辺は、辺 DE である。']];
   function drawFour(D, F, i) {
     if (i === 0) { drawPar(F, false); GE.arc(F, 'IPU', { lab: '∠a' }); GE.arc(F, 'KQP', { lab: '∠x' }); }
-    if (i === 1) { GE.poly(F, 'ABCDEFGH', { col: C.blue, fa: .12 }); GE.seg(F, 'BX', { dash: [6, 5] }); GE.arc(F, 'CBX', { lab: '外角', col: C.yel, fill: .3, r: F.s * 1.2 }); }
+    if (i === 1) { GE.poly(F, 'ABCDEFGH', { col: C.blue, fa: .12 }); GE.seg(F, 'BX', { dash: [6, 5] }); GE.arc(F, 'CBX', { col: C.yel, fill: .35, r: F.s * 1.9 }); var xb = F.X(GE.lerpP(OCT.B, OCT.X, .55)); CH.text(D, xb[0], xb[1] + F.s * .95, '外角', { col: C.yel, size: F.s * .9, outline: OUT }); }
     if (i === 2) { GE.poly(F, 'ABC', { col: C.blue, fa: .12 }); GE.seg(F, 'CD'); GE.arc(F, 'BAC', { lab: '50°' }); GE.arc(F, 'CBA', { lab: '60°' }); GE.arc(F, 'ACD', { r: F.s * 1.1 }); GE.labels(F, ['A', 'B', 'C', 'D'], { dir: { A: 'n', B: 'sw', C: 's', D: 'se' } }); }
     if (i === 3) { GE.poly(F, 'ABC', { col: C.blue, fa: .14 }); GE.poly(F, 'DEF', { col: C.orange, fa: .14 }); GE.labels(Object.assign({}, F, { c: cen([KE.A, KE.B, KE.C]) }), ['A', 'B', 'C']); GE.labels(Object.assign({}, F, { c: cen([KE.D, KE.E, KE.F]) }), ['D', 'E', 'F']); }
   }
@@ -120,7 +120,8 @@
       { tag: '今日の問い', bh: '今日の問い　∠x を求める', q: '①〜③の図で、∠x の大きさを求めよう。また、使った性質も答えよう。（①は ℓ∥m である。）',
         notes: ['① 自分の考え（3分）　∠x と、使った性質を書こう。', '② ペアの考え（3分）　ちがう求め方や、性質のことばを書こう。'],
         draw: function (D) {
-          var R = CH.box(D, { l: .03, r: .03, t: .05, b: .06 }), rs = CH.split(D, R, 3, .06);
+          var R = CH.box(D, { l: .03, r: .03, t: .05, b: .06 }), rs;
+          var rw = CH.rows(R, 2, .06), top = CH.cols(rw[0], 2, .06); rs = top.concat([CH.rect(R.cx - top[0].w / 2, rw[1].y0, R.cx + top[0].w / 2, rw[1].y1)]);   // 上に①②、下に③
           rs.forEach(function (r, i) { CH.text(D, r.x0 + CH.fs(D, .8), r.y0 + CH.fs(D, .8), '①②③'[i], { col: C.yel, size: CH.fs(D, 1.2) }); one(D, i, CH.rect(r.x0, r.y0 + CH.fs(D, .6), r.x1, r.y1)); });
         } },
       { tag: '今日の問い', q: '① ℓ∥m のとき、∠x は？ 使った性質は？', a: '∠x＝55°', sub: '平行線の同位角は等しいから、n と m の交点の上の右の角も 125°。一直線の角だから x＝180°−125°＝55°', dur: 5,
@@ -136,7 +137,7 @@
         b: { t: '② 外角の性質 → <b>x＝52°＋61°＝113°</b>', col: C.yel },
         draw: function (D) {
           var R = CH.box(D, { l: .08, r: .08, t: .16, b: .1 }), t = D.ph ? D.t : 0, k1 = CH.smooth(.04, .4, t), k2 = CH.smooth(.46, .86, t), k3 = CH.smooth(.88, .98, t);
-          var F = one(D, 1, R, { x: k3 > .5 ? '113°' : 'x' }), r = F.s * 1.5;
+          var F = one(D, 1, R, { x: k3 > 0 ? '' : 'x', xc: k3 > 0 ? C.yel : null }), r = F.s * 2.2;
           if (k1 > 0) { GE.seg(F, [P2.C, pol(P2.C, 2.2, 61)], { dash: [6, 5], a: k1, col: 'rgba(242,240,230,.7)' }); sector(F, GE.lerpP(P2.B, P2.C, CH.ease(k1)), 0, 61, r, { fill: 'rgba(154,216,255,.35)', col: C.blue, lab: k1 >= 1 ? '61°' : null }); }
           if (k2 > 0) { var e = CH.ease(k2); sector(F, GE.lerpP(P2.A, P2.C, e), 241 - 180 * e, 293 - 180 * e, r, { fill: 'rgba(255,157,178,.35)', col: C.pink, lab: k2 >= 1 ? '52°' : null }); }
           if (k3 > 0) CH.text(D, R.cx, topY(D, R), 'x ＝ 52° ＋ 61° ＝ 113°', { col: C.yel, a: k3, size: CH.fs(D, 1.15), outline: OUT });
@@ -180,7 +181,7 @@
         draw: function (D) {
           var R = CH.box(D, { l: .1, r: .1, t: .18, b: .08 }), F = GE.fit(D, R, PI, { pad: .12 }), t = D.ph ? D.t : 0, k1 = CH.smooth(.04, .3, t), k2 = CH.smooth(.4, .6, t), k3 = CH.smooth(.7, .9, t);
           GE.poly(F, 'ABC', { col: C.blue, fa: .12 }); GE.seg(F, 'BI'); GE.seg(F, 'CI');
-          GE.arc(F, 'BAC', { lab: '56°' }); GE.arc(F, 'CBI', { n: 1, r: F.s * 1.3 }); GE.arc(F, 'IBA', { n: 1, r: F.s * 1.3 }); GE.arc(F, 'BCI', { n: 2, r: F.s * 1.3 }); GE.arc(F, 'ICA', { n: 2, r: F.s * 1.3 });
+          GE.arc(F, 'BAC', { lab: '56°' }); GE.arc(F, 'CBI', { n: 1, r: F.s * 1.3, col: C.blue, fill: .25 }); GE.arc(F, 'IBA', { n: 1, r: F.s * 1.3, col: C.blue, fill: .25 }); GE.arc(F, 'BCI', { n: 2, r: F.s * 1.3, col: C.green, fill: .25 }); GE.arc(F, 'ICA', { n: 2, r: F.s * 1.3, col: C.green, fill: .25 });
           if (k1 > 0) { GE.arc(F, 'CBI', { col: C.yel, fill: .45, r: F.s * 1.3, a: k1 }); GE.arc(F, 'BCI', { col: C.yel, fill: .45, r: F.s * 1.3, a: k1 }); GE.poly(F, 'IBC', { col: C.yel, fa: .15 * k1, stroke: false }); }
           GE.arc(F, 'BIC', { lab: k3 > .5 ? '118°' : 'x', col: k3 > 0 ? C.pink : null, fill: k3 > 0 ? .35 : 0, r: F.s * .9 });
           GE.labels(F, ['A', 'B', 'C', 'I'], { dir: { A: 'n', B: 'sw', C: 'se', I: 'n' } });

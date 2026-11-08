@@ -254,7 +254,7 @@ GE.proof = function (def, o) {
     if (o.draw) o.draw(D, F, { i: i, ph: ph, t: t });
   }
   function box(D) { return CH.box(D, o.box || { l: .06, r: .06, t: .1, b: .12 }); }
-  function mkF(D) { return GE.fit(D, box(D), P, { pad: def.pad }); }
+  function mkF(D) { return GE.fit(D, box(D), P, { pad: def.pad, bounds: o.bounds || def.bounds }); }
   var circ = function (n) { return n ? GE.CIRC.charAt(n) : ''; };
   /* 問題 */
   steps.push({ tag: tag, bh: (def.no ? def.no + '　' : '') + (def.ttl || '証明'), q: def.q,

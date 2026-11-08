@@ -91,6 +91,8 @@
     if (o.lx !== false) CH.text(D, Pl.X((p + q) / 2), Pl.Y(fp) + (up ? s * .9 : -s * .9), o.lx || sg(q - p), { col: col, size: s, a: a, outline: OUT });
     if (o.ly !== false) CH.text(D, Pl.X(q) + (o.left ? -s * .45 : s * .45), Pl.Y((fp + fq) / 2), o.ly || sg(fq - fp), { col: col, size: s, a: a, align: o.left ? 'right' : 'left', outline: OUT });
   }
+  /* x 軸の上の帯（x の増加量）と、点からおろした点線 */
+  function band(D, Pl, p, q, a) { CH.pseg(D, Pl, [p, 0], [q, 0], { col: C.yel, w: 7, a: (a == null ? 1 : a) * .55 }); }
   /* 表の下の矢印（セルの中心から中心へ） */
   function hop(D, x0, x1, y, col, txt, a, sz) {
     var g = D.ctx, s = sz || CH.fs(D), h = s * 1.05, d = Math.abs(x1 - x0);
@@ -127,7 +129,7 @@
     o = o || {}; var r = CH.fs(D, .22);
     CH.fn(D, Pl, F1, { col: C.orange, w: 3, a: o.a1 }); CH.lin(D, Pl, 2, 1, { col: C.blue, w: 3, a: o.a2 });
     if (o.dots !== false) XS.forEach(function (x) { CH.pt(D, Pl, x, F1(x), { col: C.orange, r: r, a: o.a1 }); CH.pt(D, Pl, x, F2(x), { col: C.blue, r: r, a: o.a2 }); });
-    lab(D, Pl, 3.55, 14.6, 'y＝x²', C.orange, { align: 'right', a: o.a1 }); lab(D, Pl, 4.55, 6.6, 'y＝2x＋1', C.blue, { align: 'right', a: o.a2 });
+    lab(D, Pl, 3.55, 14.6, 'y＝x²', C.orange, { align: 'right', a: o.a1 }); lab(D, Pl, -.5, 4.3, 'y＝2x＋1', C.blue, { a: o.a2 });
   }
   function base1(D, L) { return plane(D, L.P, { x: [-.6, 4.6], y: [-1, 17], ly: 2, asp: 1.3 }); }
 
@@ -162,7 +164,7 @@
           if (!D.ph) return;
           var q = 1 + 2 * CH.ease(CH.smooth(.4, .7, t)), a = CH.smooth(0, .15, t);
           sec(D, Pl, F2, 0, q, C.blue, { a: a, ext: false }); tri(D, Pl, F2, 0, q, C.blue, { a: a * CH.smooth(.1, .2, t), lx: false, ly: q < 1.05 ? '＋2' : q > 2.95 ? '＋6' : ' ', left: true });
-          sec(D, Pl, F1, 0, q, C.yel, { a: a }); tri(D, Pl, F1, 0, q, C.pink, { a: a * CH.smooth(.1, .2, t), lx: q < 1.05 ? '＋1' : q > 2.95 ? '＋3' : ' ', ly: q < 1.05 ? '＋1' : q > 2.95 ? '＋9' : ' ' });
+          sec(D, Pl, F1, 0, q, C.yel, { a: a }); band(D, Pl, 0, q, a); tri(D, Pl, F1, 0, q, C.pink, { a: a * CH.smooth(.1, .2, t), lx: false, ly: q < 1.05 ? '＋1' : q > 2.95 ? '＋9' : ' ' });
         } },
       { tag: '例題', bh: '例題　y＝[1/2]x² の変化の割合', q: '（1）y＝[1/2]x² で、x の値が 2 から 6 まで増加するときの、変化の割合を求めよう。', a: '4',
         sub: 'x＝2 のとき y＝2、x＝6 のとき y＝18。x の増加量 6−2＝4、y の増加量 18−2＝16。[16/4]＝4', dur: 6,
@@ -183,7 +185,7 @@
           lab(D, Pl, -xo - .15, top * .93, 'y＝x²', C.orange, { align: 'right' }); lab(D, Pl, xp + .2, top * .93, 'y＝2x²', C.pink);
           if (q <= p) { lines(D, L.T, [{ t: 'x：' + S(p) + ' → ' + S(q) }, { t: 'おわりの x を、はじめの x より大きくしよう', col: C.pink }, { t: '' }]); return; }
           sec(D, Pl, F1, p, q, C.orange); sec(D, Pl, G2, p, q, C.pink);
-          var y0 = Pl.Y(0) + CH.fs(D, .45); CH.arrow(D, Pl.X(p), y0, Pl.X(q), y0, { col: C.yel, w: 2.6, head: 8 });
+          band(D, Pl, p, q);
           lines(D, L.T, [{ t: 'x：' + S(p) + ' → ' + S(q) + '（x の増加量 ' + S(q - p) + '）', col: C.yel },
             { t: 'y＝x²　 y：' + S(F1(p)) + ' → ' + S(F1(q)) + '　変化の割合 [' + S(F1(q) - F1(p)) + '/' + S(q - p) + ']＝' + S(RT(F1, p, q)), col: C.orange },
             { t: 'y＝2x²　y：' + S(G2(p)) + ' → ' + S(G2(q)) + '　変化の割合 [' + S(G2(q) - G2(p)) + '/' + S(q - p) + ']＝' + S(RT(G2, p, q)), col: C.pink }]);
@@ -196,7 +198,7 @@
           CH.fn(D, Pl, G2, { col: C.pink, w: 3 }); lab(D, Pl, -3.2, 60, 'y＝2x²', C.pink);
           var a = D.ph ? CH.lerp(-3, 3, CH.ease(CH.smooth(.05, .6, t))) : 0, a1 = Math.round(a * 10) / 10;
           sec(D, Pl, G2, a, a + 4, C.yel);
-          var y0 = Pl.Y(0) + CH.fs(D, .45); CH.arrow(D, Pl.X(a), y0, Pl.X(a + 4), y0, { col: C.yel, w: 2.6, head: 8 }); CH.text(D, Pl.X(a + 2), y0 + CH.fs(D, .8), '＋4', { col: C.yel, size: CH.fs(D, .8), outline: OUT });
+          band(D, Pl, a, a + 4); CH.text(D, Pl.X(a + 2), Pl.Y(0) - CH.fs(D, .75), '＋4', { col: C.yel, size: CH.fs(D, .8), outline: OUT });
           if (t > .62) tri(D, Pl, G2, 3, 7, C.orange, { a: CH.smooth(.62, .72, t), lx: false, left: true });
           lines(D, L.T, [{ t: D.ph ? 'a＝' + S(a1) + ' のとき、変化の割合 ' + S(Math.round((4 * a1 + 8) * 10) / 10) : 'x：a → a＋4（x の増加量 4）', col: C.yel },
             { t: 'y の増加量　2(a＋4)²−2a²＝16a＋32', a: CH.smooth(.66, .76, t) },

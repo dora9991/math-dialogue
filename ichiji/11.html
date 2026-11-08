@@ -19,6 +19,30 @@
    考えようは、ax＋y＝6 の a と、2x＋y＝c の c を変える道具（気づいたことは書かない）。数値は ikkan と同じ。 */
 (function () {
   var C = CH.C, M = CH.mnum, OUT = 'rgba(20,40,30,.9)';
+  /* ---- 分数入りの字（[2/3] をたての分数に。第8時のページと同じ形）。canvas 用（TX・T）と、右の板書（HTML）用（fr・fixSteps） ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', FR = /\[([^\/\]]+)\/([^\]]+)\]/;
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function T(D, x, y, s, o) { return FR.test(s) ? TX(D, x, y, s, o) : CH.text(D, x, y, s, o); }
+  function fr(s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fr(s[k]); }); if (s.notes) s.notes = s.notes.map(fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
   /* 方程式 ax＋by＝c の解 y（x を決めたとき）と、y について解いた [傾き, 切片] */
   function yOf(e, x) { return (e[2] - e[0] * x) / e[1]; }
   function yf(e) { return [-e[0] / e[1], e[2] / e[1]]; }
@@ -43,9 +67,9 @@
   }
   function lines(D, R, L, size) {
     var n = Math.max.apply(null, L.map(function (l) { return l.t.length; })), s = Math.min(size || CH.fs(D, .95), R.w / (n + .5), R.h / (L.length * 1.7 + .3));
-    L.forEach(function (l, i) { if (l.a === 0) return; CH.text(D, R.x0, R.y0 + s * (1.1 + i * 1.7), l.t, { col: l.col || C.chalk, size: s, align: 'left', a: l.a }); });
+    L.forEach(function (l, i) { if (l.a === 0) return; T(D, R.x0, R.y0 + s * (1.1 + i * 1.7), l.t, { col: l.col || C.chalk, size: s, align: 'left', a: l.a }); });
   }
-  function lab(D, Pl, x, y, t, o) { o = o || {}; CH.text(D, Pl.X(x), Pl.Y(y), t, { col: o.col || C.chalk, size: o.size || CH.fs(D, .85), align: o.align || 'left', a: o.a, outline: OUT }); }
+  function lab(D, Pl, x, y, t, o) { o = o || {}; T(D, Pl.X(x), Pl.Y(y), t, { col: o.col || C.chalk, size: o.size || CH.fs(D, .85), align: o.align || 'left', a: o.a, outline: OUT }); }
   function part(D, Pl, p, q, k, o) { if (k <= 0) return; CH.pseg(D, Pl, p, [CH.lerp(p[0], q[0], k), CH.lerp(p[1], q[1], k)], o); }
   function glow(D, Pl, p, col, a) { var r = CH.fs(D, .3); CH.circle(D, Pl.X(p[0]), Pl.Y(p[1]), r * (2.1 + .4 * Math.sin(D.now * 5)), { stroke: col, sw: 2.6, a: (a == null ? 1 : a) * .7 }); }
   /* 方程式の字：ax＋by＝c */
@@ -73,7 +97,7 @@
   K3.run({
     no: '第11時', title: '2元1次方程式の解を、グラフに表そう', flat: true, hint: '',
     links: [{ href: 'index.html', label: '目次' }, { href: '10.html', label: '◀ 第10時' }, { href: '12.html', label: '第12時 ▶' }],
-    steps: [
+    steps: fixSteps([
       { tag: '今日の問い', bh: '2元1次方程式 2x＋y＝6 の解', q: '2元1次方程式 2x＋y＝6 の解 (x, y) を、座標とする点を、座標平面にとろう。点は、どのようにならぶだろう。',
         notes: ['① 自分の考え（3分）　表をうめ、点をとって、気づいたことを書こう。', '② ペアの考え（3分）　ちがう気づきを書こう。'],
         draw: function (D) { task(D); } },
@@ -112,8 +136,8 @@
           lines(D, Rs[1], [{ t: 'x 軸との交点', col: C.blue, a: a1 }, { t: '　y＝0 とおく　2x＝6', a: CH.smooth(.2, .35, t) }, { t: '　x＝3　→ (3, 0)', a: CH.smooth(.3, .45, t) },
             { t: 'y 軸との交点', col: C.pink, a: a2 }, { t: '　x＝0 とおく　y＝6', a: CH.smooth(.6, .75, t) }, { t: '　→ (0, 6)', a: CH.smooth(.7, .85, t) }]);
         } },
-      { tag: '例題', bh: '例題　3x−2y＝6 のグラフ', q: '方程式 3x−2y＝6 のグラフをかこう。', a: '(0, −3) から 右へ 2、上へ 3 の直線', sub: '−2y＝−3x＋6　y＝3/2 x−3。（別の方法）x 軸との交点 (2, 0)、y 軸との交点 (0, −3) を結ぶ', dur: 6,
-        b: { t: '3x−2y＝6 → <b>y＝3/2 x−3</b>　(0, −3) から右へ 2・上へ 3（(2, 0) と (0, −3) を結んでも）', col: C.pink },
+      { tag: '例題', bh: '例題　3x−2y＝6 のグラフ', q: '方程式 3x−2y＝6 のグラフをかこう。', a: '(0, −3) から 右へ 2、上へ 3 の直線', sub: '−2y＝−3x＋6　y＝[3/2]x−3。（別の方法）x 軸との交点 (2, 0)、y 軸との交点 (0, −3) を結ぶ', dur: 6,
+        b: { t: '3x−2y＝6 → <b>y＝[3/2]x−3</b>　(0, −3) から右へ 2・上へ 3（(2, 0) と (0, −3) を結んでも）', col: C.pink },
         draw: function (D) {
           var Rs = two(D, .56, .6), Pl = plane(D, [-3, 6], [-5, 4], Rs[0]), t = D.ph ? D.t : 0;
           var k1 = CH.smooth(.3, .5, t), k2 = CH.smooth(.5, .65, t);
@@ -124,7 +148,7 @@
           if (k2 >= 1) CH.pt(D, Pl, 4, 3, { col: C.yel });
           if (t > .65) CH.lin(D, Pl, 1.5, -3, { col: C.yel, w: 2.8, t: CH.smooth(.65, .85, t) });
           if (t > .85) lab(D, Pl, 4.3, 2.4, '3x−2y＝6', { col: C.yel, a: CH.smooth(.85, 1, t) });
-          lines(D, Rs[1], [{ t: '3x−2y＝6', col: C.yel }, { t: '−2y＝−3x＋6', a: CH.smooth(0, .1, t) }, { t: 'y＝3/2 x−3', col: C.yel, a: CH.smooth(.1, .22, t) }, { t: '傾き 3/2、切片 −3', a: CH.smooth(.18, .3, t) },
+          lines(D, Rs[1], [{ t: '3x−2y＝6', col: C.yel }, { t: '−2y＝−3x＋6', a: CH.smooth(0, .1, t) }, { t: 'y＝[3/2]x−3', col: C.yel, a: CH.smooth(.1, .22, t) }, { t: '傾き [3/2]、切片 −3', a: CH.smooth(.18, .3, t) },
             { t: '確かめ (2, 0)：3×2−0＝6', a: CH.smooth(.88, 1, t) }]);
         } },
       { tag: '考えよう', q: '方程式の数を変えると、グラフはどう変わるだろう。左に x＋y＝6、2x＋y＝6、3x＋y＝6、右に 2x＋y＝2、2x＋y＝4、2x＋y＝6 をかいて、くらべよう。',
@@ -140,7 +164,7 @@
           });
         } },
       { tag: 'チャレンジ', bh: 'チャレンジ', q: '方程式 x＋2y＝8 のグラフ上の点で、x 座標、y 座標が、どちらも自然数である点を、すべて求めよう。', a: '(2, 3)、(4, 2)、(6, 1)',
-        sub: 'y について解くと y＝−1/2 x＋4。x が偶数のとき、y は整数。x＝8 では y＝0 で、自然数でない', dur: 6,
+        sub: 'y について解くと y＝−[1/2]x＋4。x が偶数のとき、y は整数。x＝8 では y＝0 で、自然数でない', dur: 6,
         b: { t: 'x＋2y＝8 … x、y が自然数の点は <b>(2, 3)、(4, 2)、(6, 1)</b>', col: C.orange },
         draw: function (D) {
           var Pl = plane(D, [-1, 9], [-1, 5]), t = D.ph ? D.t : 0, s = CH.fs(D, .7);
@@ -154,7 +178,7 @@
           }
           if (t > .85) [[2, 3], [4, 2], [6, 1]].forEach(function (p) { glow(D, Pl, p, C.yel, CH.smooth(.85, .95, t)); });
         } }
-    ]
+    ])
   });
 })();
 </script>

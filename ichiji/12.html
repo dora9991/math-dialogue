@@ -20,6 +20,30 @@
    2つめの例題（4直線で囲まれた長方形）は、ikkan の演習（5）の数。 */
 (function () {
   var C = CH.C, M = CH.mnum, OUT = 'rgba(20,40,30,.9)';
+  /* ---- 分数入りの字（[2/3] をたての分数に。第8時のページと同じ形）。canvas 用（TX・T）と、右の板書（HTML）用（fr・fixSteps） ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', FR = /\[([^\/\]]+)\/([^\]]+)\]/;
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function T(D, x, y, s, o) { return FR.test(s) ? TX(D, x, y, s, o) : CH.text(D, x, y, s, o); }
+  function fr(s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fr(s[k]); }); if (s.notes) s.notes = s.notes.map(fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
   /* 文字が 1つの 1次方程式「p・v＋q＝0」を、式の値の変化から解く */
   function solve1(f) { return -f(0) / (f(1) - f(0)); }
   /* 多角形の面積（座標から） */
@@ -39,7 +63,7 @@
     if (D.W > D.H * .9) { var x = R.x0 + R.w * k; return [CH.rect(R.x0, R.y0, x, R.y1), CH.rect(x + R.w * .02, R.y0, R.x1 - R.w * .02, R.y1)]; }
     var y = R.y0 + R.h * (kn || k); return [CH.rect(R.x0, R.y0, R.x1, y), CH.rect(R.x0 + 8, y + 4, R.x1 - 8, R.y1)];
   }
-  function lab(D, Pl, x, y, t, o) { o = o || {}; CH.text(D, Pl.X(x), Pl.Y(y), t, { col: o.col || C.chalk, size: o.size || CH.fs(D, .85), align: o.align || 'left', a: o.a, outline: OUT }); }
+  function lab(D, Pl, x, y, t, o) { o = o || {}; T(D, Pl.X(x), Pl.Y(y), t, { col: o.col || C.chalk, size: o.size || CH.fs(D, .85), align: o.align || 'left', a: o.a, outline: OUT }); }
   function glow(D, Pl, p, col, a) { var r = CH.fs(D, .3); CH.circle(D, Pl.X(p[0]), Pl.Y(p[1]), r * (2.1 + .4 * Math.sin(D.now * 5)), { stroke: col, sw: 2.6, a: (a == null ? 1 : a) * .7 }); }
   /* 縦の直線 x＝h（平面の中だけ）。k：0〜1 で下からのびる */
   function vline(D, Pl, h, o) { o = o || {}; var k = o.t == null ? 1 : o.t; if (k <= 0) return; CH.pseg(D, Pl, [h, Pl.yr[0]], [h, CH.lerp(Pl.yr[0], Pl.yr[1], k)], { col: o.col || C.blue, w: o.w || 3, a: o.a, dash: o.dash }); }
@@ -63,7 +87,7 @@
   K3.run({
     no: '第12時', title: 'y＝k、x＝h のグラフをかこう', flat: true, hint: '',
     links: [{ href: 'index.html', label: '目次' }, { href: '11.html', label: '◀ 第11時' }, { href: '13.html', label: '第13時 ▶' }],
-    steps: [
+    steps: fixSteps([
       { tag: '今日の問い', bh: 'y＝3 のグラフ', q: 'y＝3 のグラフは、どんな形になるだろう。表の x の値に対する y の値を調べ、座標平面に点をとって、考えよう。',
         notes: ['① 自分の考え（3分）　表をうめて、点をとって、気づいたことを書こう。', '② ペアの考え（3分）　ちがう考えを書こう。'],
         draw: function (D) { task(D, 0); } },
@@ -123,22 +147,22 @@
           CH.text(D, Pl.X(B[0]) + s * .5, Pl.Y(3), 'y の増加量 4', { col: C.pink, size: s, align: 'left', outline: OUT });
           CH.pt(D, Pl, A[0], A[1], { lab: 'A(3, 1)', dir: 'w' }); CH.pt(D, Pl, B[0], B[1], { lab: 'B(' + B[0] + ', 5)', dir: 'w' });
         } },
-      { tag: 'チャレンジ', bh: 'チャレンジ', q: '3つの直線 y＝3/2 x、y＝6、x＝0 で囲まれた三角形の面積を求めよう。（1目もり 1cm）', a: '12cm²', sub: '6＝3/2 x → x＝4。頂点は (0, 0)、(0, 6)、(4, 6)。底辺 6、高さ 4 → 1/2×6×4＝12', dur: 6,
-        b: { t: 'y＝3/2 x と y＝6 の交点 (4, 6) → 1/2×6×4＝<b>12</b>cm²', col: C.orange },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '3つの直線 y＝[3/2]x、y＝6、x＝0 で囲まれた三角形の面積を求めよう。（1目もり 1cm）', a: '12cm²', sub: '6＝[3/2]x → x＝4。頂点は (0, 0)、(0, 6)、(4, 6)。底辺 6、高さ 4 → [1/2]×6×4＝12', dur: 6,
+        b: { t: 'y＝[3/2]x と y＝6 の交点 (4, 6) → [1/2]×6×4＝<b>12</b>cm²', col: C.orange },
         draw: function (D) {
           var Pl = plane(D, [-2, 7], [-2, 8]), t = D.ph ? D.t : 0, s = CH.fs(D, .85);
           var a1 = CH.smooth(0, .15, t), a2 = CH.smooth(.15, .3, t), a3 = CH.smooth(.3, .42, t);
           if (t > .55) CH.poly(D, TRI.map(function (p) { return [Pl.X(p[0]), Pl.Y(p[1])]; }), { fill: 'rgba(255,192,120,.25)', a: CH.smooth(.55, .65, t) });
           if (t > 0) CH.lin(D, Pl, 1.5, 0, { col: C.yel, w: 3, t: a1 }); if (t > .15) CH.lin(D, Pl, 0, 6, { col: C.blue, w: 3, t: a2 });
           if (t > .3) vline(D, Pl, 0, { col: C.pink, w: 4, t: a3 });
-          if (t > .1) lab(D, Pl, 4.6, 7.6, 'y＝3/2 x', { col: C.yel, a: a1 });
+          if (t > .1) lab(D, Pl, 4.6, 7.6, 'y＝[3/2]x', { col: C.yel, a: a1 });
           if (t > .25) lab(D, Pl, 7, 6.5, 'y＝6', { col: C.blue, a: a2, align: 'right' });
           if (t > .38) lab(D, Pl, -.25, 7.5, 'x＝0', { col: C.pink, a: a3, align: 'right' });
           if (t > .42) { var a4 = CH.smooth(.42, .52, t); CH.pt(D, Pl, 4, 6, { col: C.orange, lab: '(4, 6)', dir: 'se', a: a4 }); if (t < 1) glow(D, Pl, [4, 6], C.orange, a4); }
           if (t > .68) { var a5 = CH.smooth(.68, .8, t); lab(D, Pl, .25, 4.6, '底辺 6', { col: C.orange, a: a5 }); lab(D, Pl, 2, 6.45, '高さ 4', { col: C.orange, a: a5, align: 'center' }); }
-          if (t > .85) lab(D, Pl, 1.2, -1.2, '1/2×6×4＝12', { col: C.orange, a: CH.smooth(.85, 1, t), size: s * 1.15 });
+          if (t > .85) lab(D, Pl, 1.2, -1.2, '[1/2]×6×4＝12', { col: C.orange, a: CH.smooth(.85, 1, t), size: s * 1.15 });
         } }
-    ]
+    ])
   });
 })();
 </script>

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>傾きと1点から式を求める</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 一次関数 第9時：傾きと1点から、一次関数の式を求めよう（ikkan の lesson_ichiji_new_09 と同じ流れ）。
+   点 (2, 4) を通る直線は、いくらでもある。傾き 3 に決めると、1本に決まる。点の座標の 2 と 4 が、式 y＝3x＋b の x と y に飛んで入り、b が求まる。
+   数値は ikkan のまま（傾き 3・点 (2, 4)、例題 変化の割合 −2・x＝3 のとき y＝1、考えよう 傾き 2・P(3, 1)、チャレンジ y＝−2x＋5 に平行）。
+   答えの式は、通る点を代入して成り立つか・傾きが合うかを、ページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum;
+  /* ---- 分数入りの字（[2/3] をたての分数に）。canvas 用と、右の板書（HTML）用 ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fr(s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fr(s[k]); }); if (s.notes) s.notes = s.notes.map(fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
+  var OUT = 'rgba(20,40,30,.92)';
+  function plane(D, P, xr, yr, o) { var s = CH.fs(D, .72); return CH.plane(D, CH.rect(P.x0 + s * .4, P.y0 + s * 1.6, P.x1 - s * 1.8, P.y1 - s * .4), Object.assign({ x: xr, y: yr }, o || {})); }
+  function lab(D, Pl, x, y, txt, col, o) { o = o || {}; TX(D, Pl.X(x) + (o.dx || 0), Pl.Y(y) + (o.dy || 0), txt, { col: col, size: o.size || CH.fs(D, .9), align: o.align || 'left', outline: OUT, a: o.a }); }
+  function stair(D, Pl, x0, y0, dx, dy, o) {
+    o = o || {}; var col = o.col || C.pink, s = CH.fs(D, o.k || .85), a = o.a;
+    CH.pseg(D, Pl, [x0, y0], [x0 + dx, y0], { col: col, w: 2.6, a: a }); CH.pseg(D, Pl, [x0 + dx, y0], [x0 + dx, y0 + dy], { col: col, w: 2.6, a: a, arrow: true, head: 8 });
+    if (o.lx) TX(D, Pl.X(x0 + dx / 2), Pl.Y(y0) + (dy >= 0 ? s * .95 : -s * .95), o.lx, { col: col, size: s, outline: OUT, a: a });
+    if (o.ly) TX(D, Pl.X(x0 + dx) + (dx > 0 ? s * .4 : -s * .4), Pl.Y(y0 + dy / 2), o.ly, { col: col, size: s, align: dx > 0 ? 'left' : 'right', outline: OUT, a: a });
+  }
+  /* 字の中の、i 番目の文字の x（左ぞろえで x0 から書いたとき） */
+  function charX(D, x0, str, i, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var a = g.measureText(str.slice(0, i)).width, w = g.measureText(str.charAt(i)).width; g.restore(); return x0 + a + w / 2; }
+
+  /* ---- 数（ikkan と同じ）と検算 ---- */
+  function solveB(a, p, q) { return q - a * p; }
+  function ok(a, b, p, q) { return CH.near(a * p + b, q) && CH.near((a * (p + 1) + b) - (a * p + b), a); }
+  CH.check(solveB(3, 2, 4) === -2 && ok(3, -2, 2, 4), '今日の問い（y＝3x−2）');
+  CH.check(solveB(-2, 3, 1) === 7 && ok(-2, 7, 3, 1), '例題（y＝−2x＋7）');
+  CH.check(solveB(2, 3, 1) === -5 && [3, 2, 1, 0].map(function (x) { return 2 * x - 5; }).join() === '1,-1,-3,-5', '考えよう（ここで確かめるだけ）');
+  CH.check(solveB(-2, 3, 1) === 7 && (7 - -3) / 2 === 5 && ok(-2, 7, 5, -3), 'チャレンジ（m は y＝−2x＋7、a＝5）');
+
+  /* ---- 配置：式の流れは、広い画面では座標平面の左、せまい画面では上 ---- */
+  function lay(D, n) {
+    var R = CH.box(D, { l: .03, r: .04, t: .02, b: .03 }), s = CH.fs(D), wide = D.W > D.H * .9;
+    if (wide) return { P: CH.rect(R.x0 + R.w * .42, R.y0, R.x1, R.y1), tx: R.x0 + s * .3, ty: R.y0 + R.h * .14, dy: s * 2, k: 1.15 };
+    return { P: CH.rect(R.x0, R.y0 + s * 1.25 * (n || 5) + s * .4, R.x1, R.y1), tx: R.x0 + s * .3, ty: R.y0 + s * .6, dy: s * 1.25, k: .95 };
+  }
+  function line(D, L, i, txt, col, a) { TX(D, L.tx, L.ty + i * L.dy, txt, { col: col, size: CH.fs(D) * L.k, align: 'left', a: a }); }
+  /* 代入：点のラベルの数字が、式の x・y の場所へ飛ぶ。pl：点のラベル（x0, y, 字）、row：式の行、t：0〜1 */
+  function fly(D, L, i, eqs, pts, t) {
+    var size = CH.fs(D) * L.k, y1 = L.ty + i * L.dy;
+    pts.forEach(function (z) {
+      var e = CH.ease(CH.clamp(t, 0, 1)), x1 = charX(D, L.tx, eqs, z.to, size);
+      if (t >= 1) return;
+      CH.text(D, CH.lerp(z.x, x1, e), CH.lerp(z.y, y1, e) - Math.sin(e * Math.PI) * size * 1.5, z.t, { col: z.col, size: CH.lerp(z.size, size, e), outline: OUT });
+    });
+  }
+
+  K3.run({
+    no: '第9時', title: '傾きと1点から、一次関数の式を求めよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '08.html', label: '◀ 第8時' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '傾き 3、点 (2, 4) を通る', q: 'グラフの傾きが 3 で、点 (2, 4) を通る一次関数の式を求めよう。式のどこまでがわかっていて、あと何を求めればよいだろう。',
+        notes: ['① 自分の考え（3分）　式の求め方を書こう。', '② ペアの考え（3分）'],
+        draw: function (D) {
+          var L = lay(D, 2), Pl = plane(D, L.P, [-3, 5], [-4, 8]), s = CH.fs(D);
+          CH.pt(D, Pl, 2, 4, { col: C.yel, r: CH.fs(D, .36) }); lab(D, Pl, 2, 4, '(2, 4)', C.yel, { dx: -s * .5, dy: -s * .2, align: 'right' });
+          line(D, L, 0, '傾き 3', C.orange); line(D, L, 1, '点 (2, 4) を通る', C.yel);
+        } },
+      { tag: '今日の問い', q: 'わかっていることは？ あと何を求めればよい？', a: '傾き 3 だから y＝3x＋b。あとは b', sub: '点 (2, 4) を通る直線は、たくさんある。傾き 3 で 1本に決まる。b は切片', dur: 7,
+        b: { t: '傾き 3 → <b>y＝3x＋b</b>　あとは <b>b</b> を求める', col: C.yel },
+        draw: function (D) {
+          var L = lay(D, 3), Pl = plane(D, L.P, [-3, 5], [-4, 8]), t = D.ph ? D.t : 0, s = CH.fs(D);
+          if (D.ph) {
+            var k = CH.smooth(0, .5, t), a = t < .5 ? Math.tan(CH.lerp(-1.2, 1.249, k) + Math.sin(k * Math.PI * 3) * .35) : 3;
+            if (t < .5) [-2, -.5, .5, 1].forEach(function (aa, i) { CH.lin(D, Pl, aa, 4 - 2 * aa, { col: C.chalk, w: 1.6, a: .25 * CH.smooth(0, .1, t) * (1 - CH.smooth(.4, .5, t)) }); });
+            CH.lin(D, Pl, a, 4 - 2 * a, { col: C.orange, w: 3, glow: t >= .5 });
+            if (t > .55) stair(D, Pl, 2, 4, 1, 3, { col: C.pink, a: CH.smooth(.55, .7, t), lx: '1', ly: '3' });
+            if (t > .7) { var b2 = CH.smooth(.7, .85, t); CH.circle(D, Pl.X(0), Pl.Y(-2), s * .75, { stroke: C.yel, sw: 3, a: b2 }); lab(D, Pl, 0, -2, '(0, b)', C.yel, { dx: s * 1.1, dy: s * .2, a: b2 }); }
+          }
+          CH.pt(D, Pl, 2, 4, { col: C.yel, r: CH.fs(D, .36) }); lab(D, Pl, 2, 4, '(2, 4)', C.yel, { dx: -s * .5, dy: -s * .2, align: 'right' });
+          line(D, L, 0, '傾き 3', C.orange); line(D, L, 1, '点 (2, 4) を通る', C.yel);
+          if (t > .55) line(D, L, 2, 'y＝3x＋b　b は？', C.pink, CH.smooth(.55, .7, t));
+        } },
+      { tag: '今日の問い', q: 'b を求めて、式を書こう。', a: 'y＝3x−2', sub: 'x＝2、y＝4 を代入して 4＝3×2＋b、b＝−2。確かめ：x＝2 のとき 3×2−2＝4', dur: 8,
+        b: { t: '4＝3×2＋b → b＝<b>−2</b>　<b>y＝3x−2</b>', col: C.yel },
+        draw: function (D) {
+          var L = lay(D, 5), Pl = plane(D, L.P, [-3, 5], [-4, 8]), t = D.ph ? D.t : 0, s = CH.fs(D), ls = CH.fs(D, .9);
+          CH.lin(D, Pl, 3, -2, { col: C.orange, w: 3 });
+          var px = Pl.X(2) - s * .5, py = Pl.Y(4) - s * .2, ltxt = '(2, 4)', lw = (function () { var g = D.ctx; g.save(); g.font = '600 ' + ls + 'px ' + FONT; var w = g.measureText(ltxt).width; g.restore(); return w; })();
+          CH.pt(D, Pl, 2, 4, { col: C.yel, r: CH.fs(D, .36) }); CH.text(D, px - lw, py, ltxt, { col: C.yel, size: ls, align: 'left', outline: OUT });
+          line(D, L, 0, 'y＝3x＋b', C.chalk);
+          var eq = '4＝3×2＋b';
+          if (D.ph) {
+            var f = CH.clamp((t - .05) / .3, 0, 1);
+            fly(D, L, 1, eq, [{ t: '2', x: charX(D, px - lw, ltxt, 1, ls), y: py, size: ls, col: C.blue, to: 4 }, { t: '4', x: charX(D, px - lw, ltxt, 4, ls), y: py, size: ls, col: C.green, to: 0 }], f);
+            if (f >= 1) { line(D, L, 1, eq, C.chalk); var sz = CH.fs(D) * L.k, yy = L.ty + L.dy; CH.text(D, charX(D, L.tx, eq, 0, sz), yy, '4', { col: C.green, size: sz }); CH.text(D, charX(D, L.tx, eq, 4, sz), yy, '2', { col: C.blue, size: sz }); }
+            if (t > .42) line(D, L, 2, '4＝6＋b', C.chalk, CH.smooth(.42, .5, t));
+            if (t > .55) line(D, L, 3, 'b＝−2', C.pink, CH.smooth(.55, .63, t));
+            if (t > .68) { var a4 = CH.smooth(.68, .78, t); line(D, L, 4, 'y＝3x−2', C.yel, a4); CH.pt(D, Pl, 0, -2, { col: C.pink, r: CH.fs(D, .34), a: a4 }); lab(D, Pl, 0, -2, '切片 −2', C.pink, { dx: s * .6, dy: s * .1, a: a4 }); }
+          } else line(D, L, 1, '?＝3×?＋b', 'rgba(242,240,230,.5)');
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '変化の割合と、グラフの傾きの関係は？ 点 (p, q) を通るとき、どうする？', a: '変化の割合＝傾き。x＝p、y＝q を代入', sub: '傾き a がわかれば y＝ax＋b と表せる。通る点の座標を代入して b を求め、最後に y＝ax＋b の形で式を書く', dur: 4,
+        b: [{ t: '変化の割合は、グラフの <b>傾き</b> と等しい', col: C.green }, { t: '点 (p, q) を通る → x＝p、y＝q を <b>代入</b> して b を求める', col: C.green }, { t: '最後に y＝ax＋b の形で <b>式</b> を書く', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .12, r: .12, t: .06, b: .08 }), t = D.ph ? D.t : 0, s = CH.fs(D), items = [['傾き（変化の割合）a', C.orange], ['y＝ax＋b と書く', C.chalk], ['x＝p、y＝q を代入', C.blue], ['b を求める', C.pink], ['y＝ax＋b の形で式を書く', C.yel]];
+          var h = R.h / items.length, w = Math.min(R.w, s * 13);
+          items.forEach(function (it, i) {
+            var a = D.ph ? CH.smooth(i * .17, i * .17 + .15, t) : (i === 0 ? 1 : .25), y = R.y0 + (i + .5) * h;
+            CH.card(D, R.cx, y, w, Math.min(h * .62, s * 2.4), '', { col: it[1], fill: 'rgba(31,58,44,.92)', a: a });
+            CH.text(D, R.cx, y, it[0], { col: it[1], size: Math.min(s * 1.05, h * .3), a: a });
+            if (i) CH.arrow(D, R.cx, y - h * .5 - Math.min(h * .62, s * 2.4) * .0 - h * .19, R.cx, y - Math.min(h * .62, s * 2.4) / 2 - 2, { col: C.chalk, a: a, w: 2, head: 7 });
+          });
+        } },
+      { tag: '例題', bh: '例題', q: '変化の割合が −2 で、x＝3 のとき y＝1 である一次関数の式を求めよう。', a: 'y＝−2x＋7', sub: '傾き −2 だから y＝−2x＋b。x＝3、y＝1 を代入して 1＝−2×3＋b、b＝7。確かめ：−2×3＋7＝1', dur: 8,
+        b: { t: '1＝−2×3＋b → b＝<b>7</b>　<b>y＝−2x＋7</b>', col: C.pink },
+        draw: function (D) {
+          var L = lay(D, 5), Pl = plane(D, L.P, [-2, 6], [-4, 8]), t = D.ph ? D.t : 0, s = CH.fs(D), ls = CH.fs(D, .9);
+          var ltxt = '(3, 1)', lw = (function () { var g = D.ctx; g.save(); g.font = '600 ' + ls + 'px ' + FONT; var w = g.measureText(ltxt).width; g.restore(); return w; })(), px = Pl.X(3) - s * .5 - lw, py = Pl.Y(1) + s * .1;
+          CH.pt(D, Pl, 3, 1, { col: C.yel, r: CH.fs(D, .36) }); CH.text(D, px, py, ltxt, { col: C.yel, size: ls, align: 'left', outline: OUT });
+          line(D, L, 0, 'y＝−2x＋b', C.chalk);
+          var eq = '1＝−2×3＋b';
+          if (!D.ph) return;
+          var f = CH.clamp((t - .05) / .3, 0, 1);
+          fly(D, L, 1, eq, [{ t: '3', x: charX(D, px, ltxt, 1, ls), y: py, size: ls, col: C.blue, to: 5 }, { t: '1', x: charX(D, px, ltxt, 4, ls), y: py, size: ls, col: C.green, to: 0 }], f);
+          if (f >= 1) { line(D, L, 1, eq, C.chalk); var sz = CH.fs(D) * L.k, yy = L.ty + L.dy; CH.text(D, charX(D, L.tx, eq, 0, sz), yy, '1', { col: C.green, size: sz }); CH.text(D, charX(D, L.tx, eq, 5, sz), yy, '3', { col: C.blue, size: sz }); }
+          if (t > .42) line(D, L, 2, '1＝−6＋b', C.chalk, CH.smooth(.42, .5, t));
+          if (t > .55) line(D, L, 3, 'b＝7', C.pink, CH.smooth(.55, .63, t));
+          if (t > .68) { var a4 = CH.smooth(.68, .8, t); line(D, L, 4, 'y＝−2x＋7', C.yel, a4); CH.lin(D, Pl, -2, 7, { col: C.orange, w: 3, a: a4 }); CH.pt(D, Pl, 0, 7, { col: C.pink, r: CH.fs(D, .34), a: a4 }); lab(D, Pl, 0, 7, '切片 7', C.pink, { dx: s * .6, dy: s * .1, a: a4 }); stair(D, Pl, 3, 1, 1, -2, { col: C.pink, a: a4, lx: '1', ly: '2' }); }
+        } },
+      { tag: '考えよう', bh: '考えよう', q: '傾きが 2 で、点 P(3, 1) を通る直線の切片は、いくつだろう。式を使わずに、図や表で調べよう。',
+        notes: ['【図】P から傾き 2 を使って、直線をかこう。　【表】x を 3 から 1 ずつ減らすと、y はどう変わるだろう。', '気づいたことと、式で求める方法とくらべて、書こう。', 'スライダー：「もどる」で P から左へ 1、下へ 2 ずつもどる。「直線」で、傾き 2 の直線を上下に動かせる。'],
+        sliders: [{ key: 'k', label: 'もどる', min: 0, max: 3, step: 1, val: 0, fmt: function (k) { return k + '回'; } }, { key: 'b', label: '直線', min: -8, max: 3, step: 1, val: 1, fmt: function (b) { return 'y＝2x' + (b ? (b > 0 ? '＋' : '−') + Math.abs(b) : ''); } }],
+        draw: function (D) {
+          var Pl = plane(D, CH.box(D, { l: .1, r: .08, t: .02, b: .03 }), [-3, 6], [-9, 5]), s = CH.fs(D), k = D.V.k, b = D.V.b;
+          CH.lin(D, Pl, 2, b, { col: C.orange, w: 3, a: .9 });
+          for (var i = 0; i < k; i++) stair(D, Pl, 3 - i, 1 - 2 * i, -1, -2, { col: C.pink, lx: i === k - 1 ? '1' : '', ly: i === k - 1 ? '2' : '' });
+          for (var j = 1; j <= k; j++) CH.pt(D, Pl, 3 - j, 1 - 2 * j, { col: C.pink, r: CH.fs(D, .26) });
+          CH.pt(D, Pl, 3, 1, { col: C.yel, r: CH.fs(D, .36), lab: 'P(3, 1)', dir: 'se' });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '直線 y＝−2x＋5 に平行で、点 (3, 1) を通る直線を m とする。点 (a, −3) が m 上にあるとき、a の値を求めよう。', a: 'a＝5', sub: '平行だから m の傾きは −2。1＝−2×3＋b で b＝7、m は y＝−2x＋7。−3＝−2a＋7 で a＝5', dur: 8,
+        b: { t: 'm：y＝−2x＋7（b＝7）　−3＝−2a＋7 → <b>a＝5</b>', col: C.orange },
+        draw: function (D) {
+          var L = lay(D, 4), Pl = plane(D, L.P, [-1, 6], [-4, 8]), t = D.ph ? D.t : 0, s = CH.fs(D);
+          CH.lin(D, Pl, -2, 5, { col: C.blue, w: 2.4, dash: true });
+          CH.pt(D, Pl, 3, 1, { col: C.yel, r: CH.fs(D, .34), lab: '(3, 1)', dir: 'ne' });
+          line(D, L, 0, 'y＝−2x＋5 に平行 → 傾き −2', C.blue);
+          if (!D.ph) return;
+          var bb = CH.lerp(5, 7, CH.ease(CH.smooth(.05, .35, t)));
+          CH.lin(D, Pl, -2, bb, { col: C.orange, w: 3, glow: t > .35 });
+          if (t > .35) { line(D, L, 1, '1＝−6＋b　b＝7', C.chalk, CH.smooth(.35, .45, t)); line(D, L, 2, 'm：y＝−2x＋7', C.orange, CH.smooth(.42, .52, t)); lab(D, Pl, 1.1, 5.2, 'm', C.orange, { a: CH.smooth(.4, .5, t) }); }
+          if (t > .55) {
+            var xa = CH.lerp(3, 5, CH.ease(CH.smooth(.55, .85, t))), ya = -2 * xa + 7, a3 = CH.smooth(.55, .6, t);
+            CH.pseg(D, Pl, [-1, -3], [6, -3], { col: C.pink, w: 1.6, dash: true, a: a3 });
+            CH.pt(D, Pl, xa, ya, { col: C.pink, r: CH.fs(D, .34), a: a3, lab: t > .85 ? '(5, −3)' : '', dir: 'e' });
+            if (t > .85) line(D, L, 3, '−3＝−2a＋7　a＝5', C.yel, CH.smooth(.85, .95, t));
+          }
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

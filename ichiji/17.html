@@ -51,7 +51,7 @@
   /* 字数 n ごとに折り返す（数字のまとまりは切らない。、。）は行の頭にしない） */
   function wrap(txt, n) {
     var out = [], line = '', a = txt.match(/[0-9A-Za-z.]+|./g);
-    a.forEach(function (tk, i) { var nx = a[i + 1]; if (line.length + tk.length > n && line && '、。）」'.indexOf(tk) < 0) { out.push(line); line = ''; } line += tk; if (!nx) out.push(line); });
+    a.forEach(function (tk, i) { var nx = a[i + 1]; if (line.length + tk.length > n && line && '、。）」),'.indexOf(tk) < 0) { out.push(line); line = ''; } line += tk; if (!nx) out.push(line); });
     return out;
   }
   function box2(D, x, y, w, h, t1, t2, col, a) {
@@ -76,7 +76,7 @@
         notes: ['① 自分の考え（3分）　使いやすい表し方で、ℓ を表そう。', '② ペアの考え（3分）　ペアの表し方と、自分のをくらべよう。'],
         draw: function (D) {
           var G = base(D), Pl = G.Pl;
-          CH.pt(D, Pl, PA[0], PA[1], { lab: 'A(−1, 5)', dir: 'e' }); CH.pt(D, Pl, PB[0], PB[1], { lab: 'B(2, −1)', dir: 'e' });
+          CH.pt(D, Pl, PA[0], PA[1], { lab: 'A(−1, 5)', dir: 'w' }); CH.pt(D, Pl, PB[0], PB[1], { lab: 'B(2, −1)', dir: 'e' });
           lines(D, G.R, [{ t: '表　？', col: C.blue }, { t: '式　？', col: C.yel }, { t: 'グラフ　？', col: C.pink }], CH.fs(D, 1));
         } },
       { tag: '今日の問い', q: 'ℓ を、表・式・グラフで表すと？', a: '式 y＝−2x＋3', sub: '傾き (−1−5)÷(2−(−1))＝−6÷3＝−2、切片 3。表 x が −1、0、1、2 のとき y は 5、3、1、−1。グラフは (0, 3) を通り、右へ 1 進むと 下へ 2', dur: 8,
@@ -100,7 +100,7 @@
           [[0, 1], [1, 2], [2, 0]].forEach(function (e) { CH.line(D, K[e[0]][3], K[e[0]][4], K[e[1]][3], K[e[1]][4], { col: 'rgba(242,240,230,.35)', w: 2 }); });
           K.forEach(function (k) { box2(D, k[3], k[4], w, h, k[0], k[1], k[2]); });
           var s = CH.fs(D, .85), a3 = D.ph ? CH.smooth(.6, .75, t) : 0, a4 = D.ph ? CH.smooth(.8, .95, t) : 0;
-          if (a3 > 0) CH.text(D, R.cx, R.y0 + R.h * .43, '式は、傾きと 1点、または 2点から', { col: C.green, size: s, a: a3 });
+          if (a3 > 0) CH.text(D, R.cx, R.y0 + R.h * .43, '式は、傾きと 1点、または 2点から', { col: C.green, size: s, a: a3, outline: OUT });
           if (a4 > 0) CH.text(D, R.cx, R.y0 + R.h * .93, '2直線の交点 ＝ 連立方程式の解', { col: C.green, size: s, a: a4 });
         } },
       { tag: '例題', bh: '例題　直線 m：y＝2x−1', q: '直線 m：y＝2x−1 について、表をうめ、グラフをかこう。また、ℓ と m の交点の座標を、式で求めよう。', a: '交点 (1, 1)',

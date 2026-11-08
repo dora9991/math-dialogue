@@ -26,7 +26,7 @@
   function wrap(D, x, y, w, txt, o) {
     o = o || {}; var s = o.size || CH.fs(D), lh = s * 1.5, g = D.ctx, lines = [];
     g.save(); g.font = '600 ' + s + 'px ' + FONT;
-    txt.split('\n').forEach(function (para) { var cur = '', tk = para.match(/[△∠]?[A-Za-z0-9]+(?:[≡＝+−×÷()][△∠]?[A-Za-z0-9()]+)*|./g) || []; tk.forEach(function (ch) { if (cur && g.measureText(cur + ch).width > w && '、。」）…'.indexOf(ch) < 0) { lines.push(cur); cur = ch; } else cur += ch; }); lines.push(cur); });   // 記号の式（△ABD≡△ACD など）は、とちゅうで折り返さない
+    txt.split('\n').forEach(function (para) { var cur = '', tk = para.match(/[△∠(]?[A-Za-z0-9°]+(?:[≡＝+−×÷()]+[△∠]?[A-Za-z0-9°()]*)*|./g) || []; tk.forEach(function (ch) { if (cur && g.measureText(cur + ch).width > w && '、。」）…'.indexOf(ch) < 0) { lines.push(cur); cur = ch; } else cur += ch; }); lines.push(cur); });   // 記号の式（△ABD≡△ACD など）は、とちゅうで折り返さない
     g.restore();
     if (!o.dry) lines.forEach(function (l, i) { CH.text(D, x, y + lh * (i + .5), l, { size: s, col: o.col, align: 'left', a: o.a }); });
     return lines.length * lh;
