@@ -288,9 +288,9 @@
   }
   /* 奇数 2n＋1 の碁石：上の列 n＋1 こ（さいごの 1こが ＋1）、下の列 n こ */
   function q2(D, t) {
-    var P = two(D, .56, .52), s = CH.fs(D), A = P[0], B = P[1], n = 4, r = Math.min(A.w / 32, A.h / 22, s * .7), g = r * 2.5;
+    var P = two(D, .56, .52), s = CH.fs(D), A = P[0], B = P[1], n = 4, r = Math.min(A.w / 28, A.h / 15, s * .8), g = r * 2.5;
     var e1 = CH.ease(sm(.08, .35, t)), e2 = CH.ease(sm(.42, .6, t)), la = sm(.62, .75, t);
-    var xa = A.x0 + r * 4, ya = A.y0 + A.h * .25, xb0 = xa + (n + 2.2) * g, yb0 = ya, xb = CH.lerp(xb0, xa, e1), yb = CH.lerp(yb0, ya + g * 2.2, e1);
+    var xa = A.cx - (2 * n + 4.2) * g / 2, ya = A.cy - g * 1.8, xb0 = xa + (n + 2.2) * g, yb0 = ya, xb = CH.lerp(xb0, xa, e1), yb = CH.lerp(yb0, ya + g * 2.2, e1);
     TX(D, xa - r * 2.4, ya + g / 2, '2n＋1', { size: Math.min(s, r * 2.2), align: 'right', col: C.blue, a: 1 - e1 });
     rows2(D, xa, ya, n + 1, n, r, C.blue, { col1: function (rw, i) { return rw === 0 && i === n ? C.yel : null; } });
     rows2(D, xb, yb, n + 2, n + 1, r, C.green, { col1: function (rw, i) { return rw === 0 && i === n + 1 ? C.yel : null; }, skip: function (rw, i) { return rw === 0 && i === n + 1; } });
@@ -334,7 +334,7 @@
   /* ---- 例題：35＋53。十のたば 1本と ばら 1こで、11 の組が 8つ ---- */
   function ex(D, t) {
     var P = two(D, .55, .54), s = CH.fs(D), A = P[0], B = P[1], q = Math.min(A.w / 17, (A.h - s * 3) / 12.6), y1 = A.y1 - s * 2.2, e = CH.ease(sm(.1, .45, t)), la = sm(.48, .6, t), sp = q * 1.55;
-    var x0 = A.cx - 7.5 * sp;
+    var x0 = A.cx - 5 * sp;
     /* はじめ：35 は 十のたば 3本（0〜2）とばら 5こ（3の列）、53 は 十のたば 5本（5〜9）とばら 3こ（10の列） */
     function oneAt(col, k) { return [x0 + col * sp, y1 - q / 2 - k * q * 1.15]; }
     var gx = function (gi) { return A.cx - 3.5 * sp * 1.25 + gi * sp * 1.25; };
