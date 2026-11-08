@@ -109,7 +109,7 @@
   function quadLabs(F, Q, col, a) { var c = cen({ a: Q[0], b: Q[1], c: Q[2], d: Q[3] }, 'abcd'); lens(Q).forEach(function (v, i) { sideLab(F, [Q[i], Q[(i + 1) % 4]], about(v), { ref: c, col: col, a: a, size: F.s * .72 }); }); }
 
   /* ---- ことば：△ABC（AB＝4、BC＝6、CA＝5）と、2倍の △DEF ---- */
-  var S1 = tri(4, 6, 5), S2 = xf(S1, 'ABC', 'DEF', { s: 2 }), SP = [beside(S1, S2, true, 2.2), beside(S1, S2, false, 2)];
+  var S1 = tri(4, 6, 5), S2 = xf(S1, 'ABC', 'DEF', { s: 2 }), SP = [beside(S1, S2, true, 4), beside(S1, S2, false, 2)];
   SP.forEach(function (P) { CH.check(GE.verify(P, '△ABC∽△DEF') && GE.verify(P, 'AB：DE＝BC：EF＝CA：FD＝1：2') && GE.verify(P, 'AB＝4、BC＝6、CA＝5、DE＝8、EF＝12、FD＝10'), 'ことばの図（相似比 1：2）'); });
   var PAIRS = [['AB', 'DE', C.yel], ['BC', 'EF', C.pink], ['CA', 'FD', C.green]];
 
@@ -119,7 +119,7 @@
   [.5, .8, 1.5, 2, 2.5].forEach(function (k) { var P = homP(k); CH.check(GE.verify(P, '△ABC∽△DEF') && GE.verify(P, 'OA：OD＝OB：OE＝OC：OF＝AB：DE＝BC：EF＝CA：FD') && GE.verify(P, 'AB∥DE') && GE.verify(P, 'BC∥EF') && GE.near(GE.len(P, 'DE') / GE.len(P, 'AB'), k), '相似の位置（k＝' + k + '）'); });
 
   /* ---- 例題：△ABC（AB＝8、BC＝12、CA＝10）と、1.5倍して 180° 回した △DEF ---- */
-  var E1 = tri(8, 12, 10), E2 = xf(E1, 'ABC', 'DEF', { s: 1.5, rot: 180 }), EP = [beside(E1, E2, true, 2.5), beside(E1, E2, false, 3.6)];
+  var E1 = tri(8, 12, 10), E2 = xf(E1, 'ABC', 'DEF', { s: 1.5, rot: 180 }), EP = [beside(E1, E2, true, 4.5), beside(E1, E2, false, 3.6)];
   EP.forEach(function (P) { CH.check(GE.verify(P, '△ABC∽△DEF') && GE.verify(P, 'AB＝8、BC＝12、CA＝10、DE＝12、EF＝18、FD＝15') && GE.verify(P, 'AB：DE＝2：3') && GE.verify(P, '∠ACB＝∠DFE'), '例題（相似比 2：3）'); });
   var ELAB = { AB: '8cm', BC: '12cm', CA: '10cm', DE: '12cm', EF: '18cm', FD: '15cm' };
 
@@ -157,7 +157,7 @@
   }
 
   /* ---- チャレンジ：周の長さ。△ABC（AB＝5、BC＝6、CA＝3：周 14）と 5/2 倍の △DEF（周 35） ---- */
-  var T1 = tri(5, 6, 3), T2 = xf(T1, 'ABC', 'DEF', { s: 2.5 }), TP = [beside(T1, T2, true, 3.4), beside(T1, T2, false, 4.6)];
+  var T1 = tri(5, 6, 3), T2 = xf(T1, 'ABC', 'DEF', { s: 2.5 }), TP = [beside(T1, T2, true, 5), beside(T1, T2, false, 4.6)];
   function per(P, s) { return GE.len(P, s[0] + s[1]) + GE.len(P, s[1] + s[2]) + GE.len(P, s[2] + s[0]); }
   TP.forEach(function (P) { CH.check(GE.near(per(P, 'ABC'), 14) && GE.near(per(P, 'DEF'), 35) && GE.near(14 * 5 / 2, 35) && GE.verify(P, '△ABC∽△DEF') && GE.verify(P, 'AB：DE＝2：5'), 'チャレンジ（周 14cm → 35cm）'); });
 

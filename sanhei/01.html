@@ -214,7 +214,7 @@
           var O = one(D, sp[0], CHL), F = O.F, S = O.S; GE.right(F, 'BCA');
           sqName(F, S.Q, 'Q', '36', C.blue); sqName(F, S.P, 'P', k3 > .5 ? '64' : '?', k3 > .5 ? C.pink : C.blue); sqName(F, S.R, 'R', k2 > .5 ? '100' : '?', k2 > .5 ? C.yel : C.orange);
           if (k3 > .5) inLab(F, CHL.C, CHL.B, O.G, '8cm', { col: C.pink, size: F.s * .8 });
-          if (k2 > .5) outLab(F, CHL.A, CHL.B, CHL.C, '10cm', { col: C.yel, size: F.s * .8, k: .9 });
+          if (k2 > .5 && F.u * 10 > F.s * 6) outLab(F, CHL.A, CHL.B, CHL.C, '10cm', { col: C.yel, size: F.s * .8, k: .9 });
           var R = sp[1], h = Math.min(R.h * .13, CH.fs(D) * 2), x0 = R.x0, w = R.w, y = R.y0 + h * .4, s = CH.fs(D, .85);
           say(D, R.cx, y, '3つの面積の和 200cm²', { size: s, maxW: w }); y += h * .6;
           if (k1 > .5) CH.tape(D, x0, y, w, h, [{ v: 100, col: C.blue, txt: 'P＋Q' }, { v: 100, col: C.orange, txt: 'R' }], 200, {});

@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>錐体の高さ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三平方の定理 第9時：円錐や角錐の高さを、直角三角形を使って求めよう（ikkan の lesson_sanhei_09 と同じ流れ）。
+   円錐は、頂点と底面の中心を通る面で切って、手前の半分をどける。切り口の中に、高さ・半径・母線の直角三角形が光る。
+   正四角錐は、底面の対角線 AC をふくむ面で切る。切り口の △OAC の中に、高さ・対角線の半分・辺の直角三角形 △OAH が光る。
+   数値は ikkan のまま（自作）。長さ・体積は、頂点の座標から計算し直して、2乗で照らし合わせる（CH.check）。 */
+(function () {
+  var C = K3.COL, v = K3.v, K = K3, PI = Math.PI, sq = Math.sqrt;
+  function D2(p, q) { return Math.pow(p[0] - q[0], 2) + Math.pow(p[1] - q[1], 2) + Math.pow(p[2] - q[2], 2); }
+  /* 円錐（半径 3・母線 6） */
+  var CR = 3, CL = 6, CH_ = sq(CL * CL - CR * CR), AP = [0, 0, CH_], O0 = [0, 0, 0], Q = [CR, 0, 0];
+  /* 正四角錐 O−ABCD（底面 1辺 12・側面の辺 10）。H は底面の中心 */
+  var PH = 2 * sq(7), PP = { A: [-6, -6, 0], B: [6, -6, 0], C: [6, 6, 0], D: [-6, 6, 0], O: [0, 0, PH], H: [0, 0, 0] };
+  /* 考えよう（底面 1辺 8・側面の辺 9） */
+  var KP = { A: [-4, -4, 0], B: [4, -4, 0], C: [4, 4, 0], D: [-4, 4, 0], O: [0, 0, 7], H: [0, 0, 0], M: [0, -4, 0], N: [0, 4, 0] };   /* N は辺 CD の中点（M をふくむ切り口の、もう一方のはし） */
+  /* チャレンジ：正四面体（1辺 6）。底面 BCD の重心 H が原点 */
+  var S3 = sq(3), TT = { B: [-3, -S3, 0], C: [3, -S3, 0], D: [0, 2 * S3, 0], A: [0, 0, 2 * sq(6)], H: [0, 0, 0] };
+  TT.M = v.lerp3(TT.C, TT.D, .5);
+
+  CH.check(CH.near(D2(AP, Q), 36) && CH.near(CH_ * CH_, 27) && CH.near(Math.pow(3 * S3, 2), 27) && CH.near(PI * 9 * CH_ / 3, 9 * S3 * PI), '今日の問い（h＝3√3、体積 9√3π）');
+  CH.check(['A', 'B', 'C', 'D'].every(function (k) { return CH.near(D2(PP[k], PP.O), 100); }) && CH.near(D2(PP.A, PP.C), 288) && CH.near(Math.pow(12 * sq(2), 2), 288) && CH.near(D2(PP.A, PP.H), 72) && CH.near(PH * PH, 28) && CH.near(144 * PH / 3, 96 * sq(7)), '例題（AH＝6√2、OH＝2√7、体積 96√7）');
+  CH.check(['A', 'B', 'C', 'D'].every(function (k) { return CH.near(D2(KP[k], KP.O), 81); }), '考えようの図（側面の辺 9）');
+  CH.check([['B', 'C'], ['C', 'D'], ['D', 'B'], ['A', 'B'], ['A', 'C'], ['A', 'D']].every(function (e) { return CH.near(D2(TT[e[0]], TT[e[1]]), 36); }) &&
+    CH.near(D2(TT.B, TT.M), 27) && CH.near(D2(TT.B, TT.H), 12) && CH.near(D2(TT.H, TT.M) * 4, D2(TT.B, TT.H)) && CH.near(D2(TT.A, TT.H), 24) &&
+    CH.near(Math.pow(9 * S3 * 2 * sq(6) / 3, 2), Math.pow(18 * sq(2), 2)), 'チャレンジ（正四面体：AH＝2√6、体積 18√2）');
+
+  /* ---- このページの道具 ---- */
+  var PROF = [[0, 0, 'bot'], [CR, 0, 'side'], [0, CH_]];
+  var CONE = K.cone(CR, CH_), BACK = K.revolve(PROF, { sweep: PI, from: 0 }), FRONT = K.revolve(PROF, { sweep: PI, from: PI });
+  var CUT = [[-CR, 0, 0], [CR, 0, 0], AP];
+  function seg(D, p, q, col, w, o) { o = o || {}; D.seg(p, q, { col: col, w: D.lw * (w || 1), glow: !!o.glow, dash: !!o.dash, a: o.a }); }
+  function grow(D, p, q, k, col) { if (k > 0) D.seg(p, v.lerp3(p, q, Math.min(1, k)), { col: col, w: D.lw * 2.6, glow: true }); }
+  function tri(D, pts, col, a) { if (a > 0) D.poly(pts, { col: col, a: .32 * a, stroke: col, sa: .9 * a, sw: D.lw * 1.4 }); }
+  function rt(D, o3, a, b, s, col, al) { if (al > 0) D.right(o3, v.sub(a, o3), v.sub(b, o3), { s: s, col: col, a: al }); }
+  /* 点の名前（図のまん中 ctr から外向き） */
+  function names(D, P, ks, ctr, o) {
+    o = o || {}; var c = D.p2(ctr);
+    ks.split('').forEach(function (k) {
+      var p = D.p2(P[k]), dx = p[0] - c[0], dy = p[1] - c[1], l = Math.hypot(dx, dy) || 1;
+      if (o.dir && o.dir[k]) { dx = o.dir[k][0]; dy = o.dir[k][1]; l = Math.hypot(dx, dy); }
+      D.text(p[0] + dx / l * D.fs * .9, p[1] + dy / l * D.fs * .9, k, { size: .95, col: (o.col && o.col[k]) || C.chalk });
+    });
+  }
+  /* 円錐の線（ah：高さを光らせる濃さ） */
+  function coneLines(D, o) {
+    o = o || {};
+    seg(D, O0, Q, o.hl ? C.yel : C.chalk, o.hl ? 2.4 : 1.3, { glow: o.hl });
+    seg(D, AP, Q, o.hl ? C.yel : C.chalk, o.hl ? 2.4 : 1.3, { glow: o.hl });
+    D.dot(O0, { r: 1.8 }); D.dot(AP, { r: 1.8 }); D.dot(Q, { r: 1.8 });
+    D.label(v.lerp3(O0, Q, .5), '3cm', { dy: .95, col: o.hl ? C.yel : C.chalk });
+    D.label(v.lerp3(AP, Q, .5), '6cm', { dx: 1.4, dy: -.2, col: o.hl ? C.yel : C.chalk });
+  }
+  /* 正四角錐の図（例題） */
+  var PYR = K.pyramid([PP.A, PP.B, PP.C, PP.D].map(function (p) { return [p[0], p[1]]; }), PP.O);
+  function poly3(P, ks, faces) { return K.polyhedron(ks.split('').map(function (k) { return P[k]; }), faces); }
+  var HALF_B = poly3(PP, 'ABCO', [[0, 1, 2], [0, 1, 3], [1, 2, 3], [2, 0, 3]]), HALF_D = poly3(PP, 'ACDO', [[0, 1, 2], [0, 1, 3], [1, 2, 3], [2, 0, 3]]);
+  var KPYR = K.pyramid([KP.A, KP.B, KP.C, KP.D].map(function (p) { return [p[0], p[1]]; }), KP.O);
+  var K_AC = { keep: poly3(KP, 'ACDO', [[0, 1, 2], [0, 1, 3], [1, 2, 3], [2, 0, 3]]), go: poly3(KP, 'ABCO', [[0, 1, 2], [0, 1, 3], [1, 2, 3], [2, 0, 3]]), away: v.nrm([1, -1, 0]) };
+  var K_MN = { keep: poly3(KP, 'AMNDO', [[0, 1, 2, 3], [0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]]), go: poly3(KP, 'MBCNO', [[0, 1, 2, 3], [0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]]), away: [1, 0, 0] };
+  var TET = poly3(TT, 'BCDA', [[0, 1, 2], [0, 1, 3], [1, 2, 3], [2, 0, 3]]);
+
+  var CF = K.frame([0, 0, 2.5], 4.3), CV = { th: -62, ps: 16 };
+  function lv(a, b, t) { return { th: v.lerp(a.th, b.th, t), ps: v.lerp(a.ps, b.ps, t) }; }
+  /* ことばの正四角錐（形を見るだけ） */
+  var GP = { A: [-3, -3, 0], B: [3, -3, 0], C: [3, 3, 0], D: [-3, 3, 0], O: [0, 0, 5], H: [0, 0, 0] }, GPYR = K.pyramid([[-3, -3], [3, -3], [3, 3], [-3, 3]], GP.O);
+  var PF = K.frame([0, 0, 1.6], 8.8), PV = { th: -62, ps: 22 };
+
+  K.run({
+    no: '第9時', title: '円錐や角錐の高さを、直角三角形を使って求めよう',
+    model: CF, view: CV,
+    links: [{ href: 'index.html', label: '目次' }, { href: '08.html', label: '◀ 第8時' }, { href: '10.html', label: '第10時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '円錐（底面の半径 3cm・母線 6cm）',
+        q: '底面の半径が 3cm、母線の長さが 6cm の円錐がある。体積を求めるには、何がわかればよいだろう。その長さを求める方法を考えよう。',
+        notes: ['① 自分の考え（3分）　求め方と、そう考えたわけを。', '② ペアの考え（3分）'],
+        draw: function (D) { D.mesh(CONE, { col: C.pink, a: .5 }); coneLines(D); } },
+
+      { tag: '今日の問い', q: '体積を求めるのに、足りない長さは？', a: '高さ h', sub: '円錐の体積 ＝ 1/3 × 底面積 × 高さ。底面積 π × 3² は わかる', dur: 2.5,
+        b: { t: '体積 ＝ 1/3 × 底面積 × <b>高さ</b> → 高さ h がいる', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0;
+          D.mesh(CONE, { col: C.pink, a: .5 });
+          if (D.ph) D.circle(O0, [1, 0, 0], [0, 1, 0], CR, { col: C.blue, a: .3 * v.smooth(0, .3, t), stroke: C.blue, sa: v.smooth(0, .3, t), sw: D.lw * 1.4 });
+          coneLines(D);
+          if (D.ph) { grow(D, AP, O0, v.smooth(.3, .8, t), C.yel); if (t > .8) D.label(v.lerp3(AP, O0, .5), 'h', { col: C.yel, dx: -.8, size: 1.3 }); }
+          else seg(D, AP, O0, C.chalk, 1, { dash: true, a: .6 });
+        } },
+
+      { tag: '今日の問い', q: '高さ h は、どこの直角三角形でわかる？ h は？', a: 'h ＝ 3√3&nbsp;cm',
+        sub: '頂点・底面の中心・円周上の点を結ぶ直角三角形（母線が斜辺）　h² ＝ 6² − 3² ＝ 27、h ＝ √27 ＝ 3√3', dur: 5.5,
+        b: { t: '高さ・半径・母線 → 直角三角形　h² ＝ 6² − 3² ＝ 27　h ＝ <b>3√3 cm</b>', col: C.yel },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .4 ? '頂点と底面の中心を通る面で、切ると…' : s.t < .75 ? '切り口に、直角三角形' : '母線が斜辺'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, k = v.smooth(.05, .4, t);
+          if (!D.ph) { D.mesh(CONE, { col: C.pink, a: .5 }); coneLines(D); seg(D, AP, O0, C.yel, 2.2, { glow: true }); D.label(v.lerp3(AP, O0, .5), 'h', { col: C.yel, dx: -.8, size: 1.3 }); return; }
+          D.mesh(BACK, { col: C.pink });
+          D.poly(CUT, { col: '#e7b8c4', a: .97 * v.smooth(.1, .3, t), stroke: '#2a2017', sa: .5, sw: 1 });
+          var k2 = v.smooth(.4, .6, t);
+          tri(D, [AP, O0, Q], C.yel, k2); rt(D, O0, AP, Q, .5, C.yel, k2);
+          seg(D, AP, O0, C.yel, 2.4, { glow: true }); seg(D, O0, Q, C.yel, 2, { a: Math.max(.5, k2) }); seg(D, AP, Q, C.yel, 2, { a: Math.max(.5, k2) });
+          D.label(v.lerp3(O0, Q, .5), '3', { dy: .95, col: C.yel, size: 1.2, a: k2 }); D.label(v.lerp3(AP, Q, .5), '6', { dx: .9, dy: -.4, col: C.yel, size: 1.2, a: k2 });
+          D.label(v.lerp3(AP, O0, .5), t > .75 ? 'h ＝ 3√3' : 'h', { col: C.yel, dx: t > .75 ? -2.2 : -.8, size: 1.2 });
+          var kf = v.smooth(.05, .3, t); if (kf < 1) D.mesh(FRONT, { col: C.pink, a: 1 - kf, at: v.mul([-.8, -.6, 0], 2 * k) });
+        } },
+
+      { tag: '今日の問い', q: 'この円錐の体積は？', a: '9√3π&nbsp;cm³', sub: '1/3 × π × 3² × 3√3 ＝ 9√3π', dur: 2,
+        b: { t: '体積 1/3 × π × 3² × 3√3 ＝ <b>9√3π cm³</b>', col: C.yel },
+        draw: function (D) {
+          var a = D.ph ? v.smooth(0, .5, D.t) : 0;
+          D.mesh(CONE, { col: C.pink, a: .5 });
+          D.circle(O0, [1, 0, 0], [0, 1, 0], CR, { col: C.blue, a: .35, stroke: C.blue, sa: .9, sw: D.lw * 1.4 });
+          seg(D, AP, O0, C.yel, 2.4, { glow: true }); D.label(v.lerp3(AP, O0, .5), '3√3', { col: C.yel, dx: -1.6, size: 1.15 });
+          D.label(O0, '9π', { col: C.blue, dy: .9, dx: -1.6, size: 1.1 });
+          if (a > 0) D.label(v.lerp3(AP, O0, .35), '9√3π', { col: C.chalk, dx: 2.4, size: 1.4, a: a });
+        } },
+
+      { tag: 'ことば', bh: 'ことば', q: '円錐の高さ・母線・半径の関係は？ 正四角錐の頂点の真下は、底面のどこ？', a: '高さ² ＋ 半径² ＝ 母線²。正四角錐の頂点の真下は、底面の対角線の交点',
+        sub: '頂点と底面の中心を結ぶ長さが 高さ。錐体の体積 ＝ 1/3 × 底面積 × 高さ', dur: 1.2, spin: true,
+        b: [{ t: '円錐 … <b>高さ² ＋ 半径² ＝ 母線²</b>（母線が斜辺）', col: C.green }, { t: '正四角錐の頂点の真下 … 底面の<b>対角線の交点</b>', col: C.green }, { t: '錐体の体積 ＝ 1/3 × 底面積 × 高さ', col: C.green }],
+        draw: function (D) {
+          var g = D.grid(2, { cols: [2, 1] });
+          var p = g.pos[0], S = D.sub(p.cx, p.cy, g.size / 2, CF);
+          S.mesh(CONE, { col: C.pink, a: .45 });
+          tri(S, [AP, O0, Q], C.yel, 1); rt(S, O0, AP, Q, .5, C.yel, 1);
+          S.label(v.lerp3(AP, O0, .5), '高さ', { col: C.yel, dx: -1.4, size: .9 }); S.label(v.lerp3(O0, Q, .5), '半径', { col: C.yel, dy: .9, size: .9 }); S.label(v.lerp3(AP, Q, .5), '母線', { col: C.yel, dx: 1.4, size: .9 });
+          D.text(p.cx, p.ly, '円錐');
+          var q = g.pos[1], S2 = D.sub(q.cx, q.cy, g.size / 2, K.frame([0, 0, 2.2], 4.4));
+          S2.mesh(GPYR, { col: C.lav, a: .45 });
+          S2.seg(GP.A, GP.C, { col: C.yel, w: S2.lw * 1.4, a: .9 }); S2.seg(GP.B, GP.D, { col: C.yel, w: S2.lw * 1.4, a: .9 });
+          S2.seg(GP.O, GP.H, { col: C.yel, w: S2.lw * 2.4, glow: true }); S2.dot(GP.H, { col: C.yel }); rt(S2, GP.H, GP.O, GP.A, .6, C.yel, 1);
+          S2.label(GP.H, '対角線の交点', { col: C.yel, dy: 1.1, size: .9 });
+          D.text(q.cx, q.ly, '正四角錐');
+        } },
+
+      { tag: '例題', bh: '例題　正四角錐 O−ABCD（底面 1辺 12cm・側面の辺 10cm）', model: PF, view: PV,
+        q: '底面が 1辺 12cm の正方形で、側面の辺が 10cm の正四角錐 O−ABCD。H は 底面の対角線の交点。AH の長さは？', a: 'AH ＝ 6√2&nbsp;cm',
+        sub: '底面の対角線 AC ＝ 12√2（1辺 12 の正方形）。H は AC のまん中', dur: 3.5,
+        b: { t: 'AC ＝ 12√2　AH ＝ <b>6√2 cm</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0;
+          D.mesh(PYR, { col: C.lav, a: .45 });
+          var k1 = v.smooth(0, .4, t), k2 = v.smooth(.45, .75, t);
+          if (D.ph) { grow(D, PP.A, PP.C, k1, C.yel); D.seg(PP.B, PP.D, { col: C.chalk, a: .7 * k1, w: D.lw }); }
+          seg(D, PP.O, PP.H, C.chalk, 1.1, { dash: true, a: .8 });
+          D.dot(PP.H, { col: D.ph ? C.yel : C.chalk });
+          if (k2 > 0) { D.seg(PP.A, v.lerp3(PP.A, PP.H, k2), { col: C.pink, w: D.lw * 3, glow: true }); D.label(v.lerp3(PP.A, PP.H, .5), '6√2', { col: C.pink, dy: 1, size: 1.15, a: k2 }); D.label(v.lerp3(PP.H, PP.C, .6), 'AC ＝ 12√2', { col: C.yel, dy: -1, a: k2 }); }
+          D.label(v.lerp3(PP.A, PP.B, .5), '12cm', { dy: 1.05 }); D.label(v.lerp3(PP.O, PP.C, .5), '10cm', { dx: 1.5 });
+          names(D, PP, 'ABCDOH', [0, 0, 1.5], { dir: { H: [.2, -1] } });
+        } },
+
+      { tag: '例題', model: PF, view: function (s) { return s.ph ? lv(PV, { th: -45, ps: 9 }, v.smooth(.1, .5, s.t)) : PV; },
+        q: '高さ OH と、体積は？', a: 'OH ＝ 2√7&nbsp;cm、体積 96√7&nbsp;cm³',
+        sub: '△OAH は ∠OHA＝90°　OH² ＝ 10² − (6√2)² ＝ 100 − 72 ＝ 28、体積 1/3 × 12² × 2√7 ＝ 96√7', dur: 6,
+        b: { t: '△OAH で OH² ＝ 10² − (6√2)² ＝ 28　OH ＝ <b>2√7 cm</b>、体積 <b>96√7 cm³</b>', col: C.pink },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .4 ? '対角線 AC をふくむ面で、切ると…' : '切り口の △OAC の中に、直角三角形'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, k = v.smooth(.05, .4, t), k2 = v.smooth(.42, .65, t);
+          if (!D.ph) {
+            D.mesh(PYR, { col: C.lav, a: .45 }); D.seg(PP.A, PP.C, { col: C.yel, w: D.lw * 1.6 });
+            D.seg(PP.A, PP.H, { col: C.pink, w: D.lw * 3, glow: true }); seg(D, PP.O, PP.H, C.chalk, 1.1, { dash: true, a: .8 });
+          } else {
+            D.mesh(HALF_D, { col: C.lav, faceCol: function (f, i) { return i === 1 ? '#e4dcff' : null; } });
+            tri(D, [PP.O, PP.A, PP.H], C.yel, k2); rt(D, PP.H, PP.O, PP.A, .9, C.yel, k2);
+            D.seg(PP.A, PP.H, { col: C.pink, w: D.lw * 3, glow: true }); seg(D, PP.O, PP.A, C.yel, 2.4, { glow: true, a: Math.max(.4, k2) });
+            grow(D, PP.O, PP.H, v.smooth(.6, .85, t), C.yel);
+            var kf = v.smooth(.05, .28, t); if (kf < 1) D.mesh(HALF_B, { col: C.lav, a: 1 - kf, at: v.mul(K_AC.away, 3 * k) });
+            if (k2 > 0) { D.label(v.lerp3(PP.O, PP.A, .5), '10', { col: C.yel, dx: -1, dy: -.5, size: 1.15, a: k2 }); }
+            if (t > .85) D.label(v.lerp3(PP.O, PP.H, .5), '2√7', { col: C.yel, dx: 1.2, size: 1.15, a: v.smooth(.85, .95, t) });
+          }
+          D.label(v.lerp3(PP.A, PP.H, .5), '6√2', { col: C.pink, dy: 1, size: 1.15 });
+          D.dot(PP.H, { col: C.yel });
+          names(D, PP, D.ph ? 'ACOH' : 'ABCDOH', [0, 0, 1.5], { dir: { H: [.6, 1] } });
+        } },
+
+      { tag: '考えよう', bh: '考えよう', model: K.frame([0, 0, 2.6], 7.2),
+        view: function (s) { return [{ th: -62, ps: 22 }, { th: -45, ps: 14 }, { th: -12, ps: 14 }][s.V.c || 0]; },
+        q: '底面が 1辺 8cm の正方形で、側面の辺が 9cm の正四角錐。H は底面の対角線の交点、M は辺 AB の中点。OH と OM は、どちらが長いだろう。',
+        notes: ['OH と OM の長さの求め方を書こう（直角三角形を見つけて）。', '気づいたこと', 'スライダーで、立体を切る面を変えられます。'],
+        sliders: [{ key: 'c', label: '切る面', min: 0, max: 2, step: 1, val: 0, fmt: function (x) { return ['切らない', '対角線 AC をふくむ面', '辺 AB の中点 M をふくむ面'][x]; } }],
+        draw: function (D) {
+          var c = D.V.c, P = KP;
+          if (c === 0) { D.mesh(KPYR, { col: C.lav, a: .45 }); D.seg(P.A, P.C, { col: C.chalk, w: D.lw, a: .6 }); D.seg(P.B, P.D, { col: C.chalk, w: D.lw, a: .6 }); }
+          else D.mesh((c === 1 ? K_AC : K_MN).keep, { col: C.lav, faceCol: function (f, i) { return i === (c === 1 ? 1 : 2) ? '#e4dcff' : null; } });
+          /* M は、対角線 AC で切ると、とりのぞいた側にある */
+          D.seg(P.O, P.H, { col: C.yel, w: D.lw * 2.4, glow: true }); D.dot(P.H, { col: C.yel });
+          if (c !== 1) { D.seg(P.O, P.M, { col: C.pink, w: D.lw * 2.4, glow: true }); D.dot(P.M, { col: C.pink }); }
+          if (c === 0) D.label(v.lerp3(P.A, P.B, .25), '8cm', { dy: 1 });
+          if (c !== 2) D.label(v.lerp3(P.O, P.A, .5), '9cm', { dx: -1.4 });
+          names(D, P, c === 0 ? 'ABCDOHM' : c === 1 ? 'ACOH' : 'OHM', [0, 0, 2], { dir: { H: [.7, 1], M: [0, 1] }, col: { H: C.yel, M: C.pink } });
+        } },
+
+      { tag: 'チャレンジ', bh: 'チャレンジ', model: K.frame([0, 0, 1.7], 4.6), view: { th: -70, ps: 18 },
+        q: '1辺が 6cm の正四面体 ABCD。頂点 A から底面 BCD にひいた垂線の足 H は、B から辺 CD にひいた垂線 BM を 2：1 に分ける点である。高さ AH と、体積は？',
+        a: 'AH ＝ 2√6&nbsp;cm、体積 18√2&nbsp;cm³', sub: 'BM ＝ 3√3、BH ＝ 2√3、AH² ＝ 6² − (2√3)² ＝ 24。底面積 1/2 × 6 × 3√3 ＝ 9√3、体積 1/3 × 9√3 × 2√6 ＝ 18√2', dur: 6,
+        b: { t: 'BH ＝ 2√3、AH² ＝ 36 − 12 ＝ 24 → AH ＝ <b>2√6 cm</b>、体積 <b>18√2 cm³</b>', col: C.orange },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .35 ? 'BM ＝ 3√3（正三角形の高さ）' : s.t < .65 ? 'BH ＝ 3√3 × 2/3 ＝ 2√3' : '△ABH で　AH² ＝ 6² − (2√3)²'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = TT;
+          D.mesh(TET, { col: C.blue, a: .4 });
+          var k1 = v.smooth(0, .3, t), k2 = v.smooth(.35, .6, t), k3 = v.smooth(.62, .85, t);
+          tri(D, [P.B, P.C, P.D], C.blue, D.ph ? .5 : 0);
+          if (D.ph) { grow(D, P.B, P.M, k1, C.yel); if (k1 >= 1) rt(D, P.M, P.B, P.D, .45, C.yel, 1); }
+          else seg(D, P.B, P.M, C.chalk, 1.1, { dash: true, a: .8 });
+          seg(D, P.A, P.H, C.chalk, 1.1, { dash: true, a: .8 });
+          D.dot(P.M, { col: D.ph ? C.yel : C.chalk }); D.dot(P.H);
+          if (k2 > 0) { D.seg(P.B, P.H, { col: C.pink, w: D.lw * 3, glow: true, a: k2 }); D.label(v.lerp3(P.B, P.H, .5), '2√3', { col: C.pink, dy: 1, size: 1.1, a: k2 }); }
+          if (k3 > 0) { tri(D, [P.A, P.B, P.H], C.yel, k3); rt(D, P.H, P.A, P.B, .45, C.yel, k3); grow(D, P.A, P.H, k3, C.yel); D.label(v.lerp3(P.A, P.B, .5), '6', { col: C.yel, dx: -.8, size: 1.15, a: k3 }); }
+          if (t > .88) D.label(v.lerp3(P.A, P.H, .5), '2√6', { col: C.yel, dx: 1.1, size: 1.15, a: v.smooth(.88, .96, t) });
+          names(D, P, 'ABCDHM', [0, 0, 1.2], { dir: { H: [.9, .6], M: [1, -.2] } });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

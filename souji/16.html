@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>相似な立体の表面積と体積</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 相似な図形 第16時：相似な立体の表面積と体積は、何倍になるだろう（ikkan の lesson_souji_16 と同じ流れ）。
+   立方体 ア（1辺 1cm）・イ（2cm）・ウ（3cm）。イ・ウ の 1つの面に ア の面が 4こ・9こ、イ・ウ に ア が 8こ・27こ 積み上がる（3D）。
+   例題は相似な円錐 P（半径 10cm・高さ 24cm）と Q（半径 15cm・高さ 36cm）。数値は ikkan のまま、立体のデータはこのページの自作。
+   表面積・体積は、立体の頂点・面から計算し直して（相似比を使わずに）照らし合わせる（CH.check）。考えようは、立方体を切り分ける道具だけ。 */
+(function () {
+  var C = K3.COL, v = K3.v, K = K3, PI = Math.PI;
+  /* ---- 立体の道具（このページの中だけ） ---- */
+  var UNIT = K.prism([[0, 0], [1, 0], [1, 1], [0, 1]], 1);
+  function faceArea(m, f) { var P = f.v.map(function (k) { return m.V[k]; }), n = [0, 0, 0]; for (var i = 0; i < P.length; i++) n = v.add(n, v.cross(P[i], P[(i + 1) % P.length])); return v.len(n) / 2; }
+  function surf(m) { return CH.sum(m.F.map(function (f) { return faceArea(m, f); })); }
+  /* 体積（面ごとに、原点との四面体の体積をたす） */
+  function vol(m) { var s = 0; m.F.forEach(function (f) { var P = f.v.map(function (k) { return m.V[k]; }); for (var i = 1; i < P.length - 1; i++) s += v.dot(P[0], v.cross(P[i], P[i + 1])) / 6; }); return Math.abs(s); }
+  function box(a, b, c) { return K.prism([[0, 0], [a, 0], [a, b], [0, b]], c); }
+  function depth(D, p) { return v.dot(v.sub(p, D.C.pos), D.C.f); }
+  /* 小さい立方体の列 list [{p, s, col, a}] を、遠いものから描く */
+  function cubes(D, list) {
+    list.map(function (q) { var s = q.s || 1; return { q: q, z: depth(D, v.add(q.p, [s / 2, s / 2, s / 2])) }; })
+      .sort(function (a, b) { return b.z - a.z; })
+      .forEach(function (x) { D.mesh(UNIT, { at: x.q.p, s: x.q.s || 1, col: x.q.col || C.orange, a: x.q.a == null ? 1 : x.q.a, hidden: 'none', ew: .7 }); });
+  }
+  /* 1辺 k の立方体（左下手前 o）の、見えている面に 1cm ごとの線 */
+  function gridFaces(D, o, k, a) {
+    for (var ax = 0; ax < 3; ax++) for (var sd = 0; sd < 2; sd++) {
+      var n = [0, 0, 0]; n[ax] = sd ? 1 : -1; var c = v.add(o, [k / 2, k / 2, k / 2]); c[ax] = o[ax] + sd * k;
+      if (v.dot(n, v.sub(D.C.pos, c)) <= 0) continue;
+      var b1 = (ax + 1) % 3, b2 = (ax + 2) % 3;
+      for (var i = 1; i < k; i++) [[b1, b2], [b2, b1]].forEach(function (bb) {
+        var p = o.slice(), q = o.slice(); p[ax] = q[ax] = o[ax] + sd * k; p[bb[0]] += i; q[bb[0]] += i; q[bb[1]] += k;
+        D.seg(p, q, { col: 'rgba(32,24,16,.7)', w: D.lw * .7, a: a });
+      });
+    }
+  }
+  /* 立方体 ア・イ・ウ（1辺 1・2・3cm）。x のはし */
+  var CX = [0, 2.2, 5.6], CK = [1, 2, 3], CN = ['ア', 'イ', 'ウ'], CC = [C.blue, C.green, C.orange];
+  var CUBES = CK.map(function (k) { return box(k, k, k); });
+  CH.check(CUBES.map(surf).join() === '6,24,54' && CUBES.map(vol).map(function (x) { return Math.round(x * 1e6) / 1e6; }).join() === '1,8,27', '今日の問い：立方体の表面積と体積');
+  /* 遠いものから順に（ドラッグで回しても、手前の立体が前に出る） */
+  function order(D, cs) { return cs.map(function (c, i) { return { i: i, z: depth(D, c) }; }).sort(function (a, b) { return b.z - a.z; }).map(function (x) { return x.i; }); }
+  /* o.each(i, k)：立方体を描いたすぐあとに、その立方体に足して描く */
+  function bigCubes(D, o) {
+    o = o || {};
+    order(D, CK.map(function (k, i) { return [CX[i] + k / 2, k / 2, k / 2]; })).forEach(function (i) {
+      var k = CK[i];
+      if (!(o.skip && o.skip[i])) { D.mesh(CUBES[i], { at: [CX[i], 0, 0], col: CC[i], hidden: 'none' }); if (o.grid !== false) gridFaces(D, [CX[i], 0, 0], k, 1); }
+      if (o.each) o.each(i, k);
+    });
+    CK.forEach(function (k, i) { D.label([CX[i] + k / 2, 0, 0], CN[i] + '　1辺 ' + k + 'cm', { dy: 1.1, size: 1.05, col: CC[i] }); });
+  }
+  function stackList(k, x0, t, t0, t1, col) {
+    var out = [], n = k * k * k, d = Math.min(.08, (t1 - t0) / 3), c = 0;
+    for (var z = 0; z < k; z++) for (var y = k - 1; y >= 0; y--) for (var x = 0; x < k; x++) {
+      var s = t0 + (t1 - t0 - d) * c / Math.max(1, n - 1); c++;
+      if (t < s) continue; var e = v.ease(v.clamp((t - s) / d, 0, 1));
+      out.push({ p: [x0 + x, y, z + 2.2 * (1 - e)], col: col, a: .4 + .6 * e, done: e >= 1 });
+    }
+    return out;
+  }
+  var FR1 = K.frame([4.3, 1.5, 1.1], 3.5);
+  /* たて長の画面（スマホ）では、カメラを少しはなす */
+  function far() { var c = document.getElementById('cv'); return c && c.clientWidth < c.clientHeight * 1.1 ? 1.25 : 1; }
+
+  /* ---- 例題：相似な円錐 P（r＝10、h＝24）・Q（r＝15、h＝36）。π の係数で比べる ---- */
+  function coneS(r, h) { return r * r + r * Math.hypot(r, h); }
+  function coneV(r, h) { return r * r * h / 3; }
+  var CP = K.cone(10, 24), CQ = K.cone(15, 36), XP = -14, XQ = 16;
+  CH.check(Math.hypot(10, 24) === 26 && Math.hypot(15, 36) === 39 && coneS(10, 24) === 360 && coneV(10, 24) === 800 && coneS(15, 36) === 810 && coneV(15, 36) === 2700 && CH.near(360 * 9 / 4, 810) && CH.near(800 * 27 / 8, 2700), '例題：円錐の表面積と体積');
+  /* メッシュでも確かめる（円の 96角形で近い値） */
+  CH.check(Math.abs(vol(K.revolve([[0, 0, 'b'], [15, 0, 's'], [0, 36]], { seg: 96 })) / vol(K.revolve([[0, 0, 'b'], [10, 0, 's'], [0, 24]], { seg: 96 })) - 27 / 8) < 1e-9, '例題：体積の比 27/8（メッシュ）');
+
+  /* ---- 考えよう：1辺 L の立方体を 1cm の立方体に切り分ける（答えは出さない） ---- */
+  CH.check([2, 3, 4].every(function (L) { return CH.near(Math.pow(L, 3) * surf(UNIT) / surf(box(L, L, L)), L); }), '考えよう（ここで確かめるだけ）');
+
+  /* ---- チャレンジ：表面積の比 4：9、体積の差 95 → P＝40（直方体 2×4×5 と 3×6×7.5） ---- */
+  var BP = box(2, 4, 5), BQ = box(3, 6, 7.5);
+  CH.check(CH.near(surf(BQ) / surf(BP), 9 / 4) && CH.near(vol(BP), 40) && CH.near(vol(BQ), 135) && CH.near(vol(BQ) - vol(BP), 95) && 95 / 19 === 5 && 8 * 5 === 40, 'チャレンジ：P＝40');
+
+  K.run({
+    no: '第16時', title: '相似な立体の表面積と体積は、何倍になるだろう', model: FR1, view: function () { return { th: -70, ps: 22, R: 3.7 * far() }; },
+    links: [{ href: 'index.html', label: '目次' }, { href: '15.html', label: '◀ 第15時' }, { href: '17.html', label: '第17時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '立方体 ア（1辺 1cm）・イ（2倍）・ウ（3倍）', q: '立方体 ア（1辺 1cm）を 2倍、3倍に拡大すると、イ、ウ になる。表面積と体積は、それぞれ ア の何倍になるだろう。',
+        notes: ['① 自分の考え（3分）　予想を書いてから、調べよう。', '② ペアの考え（3分）　ほかの立体（直方体など）でも調べよう。'],
+        draw: function (D) { bigCubes(D); } },
+      { tag: '今日の問い', q: '表面積は、ア の何倍？', a: 'イ は 4倍、ウ は 9倍', sub: '1つの面に、ア の面（1cm²）が 2×2＝4こ、3×3＝9こ。6面とも同じだから、表面積は ア 6、イ 24、ウ 54（cm²）', dur: 6,
+        b: { t: '表面積　6・24・54（cm²）→ <b>4倍・9倍</b>（2²、3²）', col: C.yel },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .75 ? '1つの面に ア の面が いくつ？' : '6面とも同じ → 表面積は 4倍・9倍'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0;
+          bigCubes(D, { each: function (i, k) {
+            if (v.dot([0, -1, 0], v.sub(D.C.pos, [CX[i] + k / 2, 0, k / 2])) <= 0) return;
+            var t0 = [.02, .1, .36][i], t1 = [.08, .32, .7][i], n = k * k, m = 0;
+            for (var j = 0; j < k; j++) for (var x = 0; x < k; x++) {
+              var s = t0 + (t1 - t0) * m / Math.max(1, n - 1); m++; var a = v.smooth(s, s + .04, t); if (a <= 0) continue;
+              D.poly([[CX[i] + x, 0, j], [CX[i] + x + 1, 0, j], [CX[i] + x + 1, 0, j + 1], [CX[i] + x, 0, j + 1]], { col: C.yel, a: .55 * a, stroke: '#3a2a10', sa: .8 * a });
+            }
+            if (t > t1) D.label([CX[i] + k / 2, 0, k / 2], n + 'こ', { col: '#3a2a10', plain: true, size: 1.7 });
+            if (t > .78) D.mesh(CUBES[i], { at: [CX[i], 0, 0], col: C.yel, a: .35 * v.smooth(.78, .9, t), edges: false });
+            if (t > .85) D.label([CX[i] + k / 2, 0, 0], [6, 24, 54][i] + 'cm²', { col: C.yel, dy: 2.3, size: 1.1, a: v.smooth(.85, .95, t) });
+          } });
+        } },
+      { tag: '今日の問い', q: '体積は、ア の何倍？', a: 'イ は 8倍、ウ は 27倍', sub: 'ア が、イ には 2×2×2＝8こ、ウ には 3×3×3＝27こ 積み上がる。体積は ア 1、イ 8、ウ 27（cm³）', dur: 9,
+        b: { t: '体積　1・8・27（cm³）→ <b>8倍・27倍</b>（2³、3³）', col: C.yel },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .3 ? 'イ に ア を積むと…' : s.t < 1 ? 'ウ に ア を積むと…' : 'イ は 8こ、ウ は 27こ'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0;
+          if (!D.ph) { bigCubes(D); return; }
+          bigCubes(D, { skip: [false, true, true] });
+          var l1 = stackList(2, CX[1], t, .02, .3, C.green), l2 = stackList(3, CX[2], t, .34, .94, C.orange);
+          [1, 2].forEach(function (i) { D.mesh(CUBES[i], { at: [CX[i], 0, 0], fill: false, hidden: 'none', edgeCol: 'rgba(242,240,230,.35)' }); });
+          cubes(D, l1.concat(l2));
+          var n1 = l1.filter(function (q) { return q.done; }).length, n2 = l2.filter(function (q) { return q.done; }).length;
+          if (n1) D.label([CX[1] + 1, 1, 2.9], n1 + 'こ', { col: C.yel, size: 1.4 }); if (n2) D.label([CX[2] + 1.5, 1.5, 3.9], n2 + 'こ', { col: C.yel, size: 1.4 });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '形が同じで、一方を拡大・縮小すると もう一方に重なる立体を何という？ 相似比が m：n のとき、表面積の比・体積の比は？', a: '相似な立体。表面積の比 m²：n²、体積の比 m³：n³',
+        sub: '立体でも、対応する長さの比を相似比という。1辺を k倍にすると、表面積は k²倍、体積は k³倍', dur: 1, model: K.frame([3.5, 1.6, 1.8], 3.5), view: { th: -66, ps: 24 },
+        notes: ['スライダーで、何倍に拡大するかを変えられます。'],
+        sliders: [{ key: 'k', label: '拡大', min: 1, max: 4, step: 1, val: 2, fmt: function (x) { return x + '倍'; } }],
+        b: [{ t: '拡大・縮小すると重なる立体 … <b>相似</b>な立体', col: C.green }, { t: '相似比 m：n → 表面積の比 <b>m²：n²</b>、体積の比 <b>m³：n³</b>', col: C.green }],
+        banner: function (s) { var k = s.V.k; return s.ph ? '表面積 ' + k * k + '倍、体積 ' + k * k * k + '倍' : ''; },
+        draw: function (D) {
+          var k = D.V.k, list = [];
+          for (var z = 0; z < k; z++) for (var y = 0; y < k; y++) for (var x = 0; x < k; x++) list.push({ p: [2 + x, y, z], col: (x + y + z) % 2 ? C.orange : '#f0c896' });
+          cubes(D, [{ p: [0, 0, 0], col: C.blue }].concat(list));
+          D.label([.5, 0, 0], 'もとの立方体', { dy: 1.1, size: 1, col: C.blue }); D.label([2 + k / 2, 0, 0], k + '倍に拡大', { dy: 1.1, size: 1, col: C.orange });
+          if (D.ph) D.label([2 + k / 2, k / 2, k + .8], k * k * k + 'こ分', { col: C.yel, size: 1.4 });
+        } },
+      { tag: '例題', bh: '例題　相似な円錐 P、Q', model: K.frame([1, 0, 16], 21), view: function () { return { th: -80, ps: 12, R: 22 * far() }; },
+        q: '相似な円錐 P、Q があり、高さは 24cm と 36cm である。P の表面積は 360π cm²、体積は 800π cm³ である。Q の表面積と体積は？',
+        a: '表面積 810π cm²、体積 2700π cm³', sub: '相似比 24：36＝2：3。表面積の比 4：9 → 360π×9/4＝810π。体積の比 8：27 → 800π×27/8＝2700π', dur: 6,
+        b: { t: '相似比 2：3 → 表面積 4：9 → <b>810π cm²</b>　体積 8：27 → <b>2700π cm³</b>', col: C.blue },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .5 ? 'P を 1.5倍に拡大すると、Q に重なる' : s.t < .78 ? '表面積は 1.5×1.5＝2.25倍（4：9）' : '体積は 1.5×1.5×1.5＝3.375倍（8：27）'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0;
+          order(D, [[XP, 0, 12], [XQ, 0, 18]]).forEach(function (i) { if (i) D.mesh(CQ, { at: [XQ, 0, 0], col: C.blue, a: t > .05 && t < .5 ? .55 : 1 }); else D.mesh(CP, { at: [XP, 0, 0], col: C.pink }); });
+          if (t > .05 && t < .55) { var e = v.ease(v.smooth(.08, .45, t)); D.mesh(CP, { at: [v.lerp(XP, XQ, e), 0, 0], s: 1 + .5 * e, col: C.yel, a: .45 }); }
+          D.seg([XP, 0, 24], [XP, 0, 0], { col: C.yel, dash: true }); D.seg([XQ, 0, 36], [XQ, 0, 0], { col: C.yel, dash: true });
+          D.label([XP, 0, 12], '24cm', { col: C.yel, dx: 1.4 }); D.label([XQ, 0, 18], '36cm', { col: C.yel, dx: 1.4 });
+          D.label([XP, -10, 0], 'P', { dy: 1.2, size: 1.2, col: C.pink }); D.label([XQ, -15, 0], 'Q', { dy: 1.2, size: 1.2, col: C.blue });
+          D.label([XP, 0, 24], '表面積 360π', { dy: -2.3 }); D.label([XP, 0, 24], '体積 800π', { dy: -1.1 });
+          if (t > .55) { var a = v.smooth(.55, .65, t); D.label([XQ, 0, 36], '表面積 810π', { dy: -2.3, col: C.yel, a: a }); if (t > .8) D.label([XQ, 0, 36], '体積 2700π', { dy: -1.1, col: C.yel, a: v.smooth(.8, .9, t) }); }
+        } },
+      { tag: '考えよう', model: K.frame([3, 3, 3], 5), view: function (s) { var z = s.V.L + (s.V.L - 1) * s.V.g * .7; return { th: -62, ps: 24, R: 1.1 * z + 1, target: [3, 3, z / 2] }; },
+        q: '1辺 2cm の立方体を、1辺 1cm の立方体に切り分ける。切ったあとの表面積の合計は、切る前の何倍になるだろう。1辺 3cm、4cm の立方体でも調べよう。',
+        notes: ['1cm の立方体の個数・切る前の表面積・切ったあとの表面積の合計を、表にまとめよう。', '気づいたことと、そのわけ。1辺 4cm を、1辺 2cm の立方体に切り分けたときは？', 'スライダーで、もとの立方体の大きさと、切り分けるようすを変えられます。'],
+        sliders: [{ key: 'L', label: 'もとの1辺', min: 2, max: 4, step: 1, val: 2, fmt: function (x) { return x + 'cm'; } },
+          { key: 'g', label: '切り分ける', min: 0, max: 1, step: .05, val: 0, fmt: function (x) { return x ? 'はなす' : '切る前'; } }],
+        draw: function (D) {
+          var L = D.V.L, g = D.V.g * .7, list = [], off = (6 - (L + (L - 1) * g)) / 2;
+          for (var z = 0; z < L; z++) for (var y = 0; y < L; y++) for (var x = 0; x < L; x++) list.push({ p: [off + x * (1 + g), off + y * (1 + g), z * (1 + g)], col: (x + y + z) % 2 ? C.orange : '#f0c896' });
+          if (D.V.g === 0) { D.mesh(box(L, L, L), { at: [off, off, 0], col: C.orange, hidden: 'none' }); gridFaces(D, [off, off, 0], L, 1); }
+          else cubes(D, list);
+          D.label([off + L / 2, off, 0], '1辺 ' + L + 'cm', { dy: 1.2, size: 1.1 });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', model: K.frame([3.5, 3, 3.75], 6.2), view: { th: -64, ps: 18 },
+        q: '相似な 2つの立体 P、Q の表面積の比は 4：9 で、Q の体積は P の体積より 95cm³ 大きい。P の体積は？',
+        a: '40cm³', sub: '表面積の比 4：9 → 相似比 2：3 → 体積の比 8：27。差 27−8＝19 が 95cm³ → 1 にあたる量は 5cm³ → P＝8×5＝40', dur: 7,
+        b: { t: '相似比 2：3 → 体積 8：27 → 19 が 95 → 1 は 5 → P＝<b>40cm³</b>', col: C.orange },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .25 ? '表面積の比 4：9 → 相似比 2：3' : s.t < .5 ? '体積の比 8：27' : s.t < .78 ? '差 27−8＝19 が 95cm³ → 1 は 5cm³' : 'P＝8×5＝40cm³'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .06, r: .06, t: .06, b: .04 }), up = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .58);
+          var S = D.sub(up.cx, up.cy, Math.min(up.w, up.h) / 2, K.frame([3.3, 3, 3.75], 4.6));
+          order(S, [[1, 2, 2.5], [5, 3, 3.75]]).forEach(function (i) { if (i) S.mesh(BQ, { at: [3.5, 0, 0], col: C.blue }); else S.mesh(BP, { at: [0, 0, 0], col: C.pink }); });
+          S.label([1, 0, 0], 'P', { dy: 1, col: C.pink, size: 1.2 }); S.label([5, 0, 0], 'Q', { dy: 1, col: C.blue, size: 1.2 });
+          var y0 = R.y0 + R.h * .66, h = Math.min(R.h * .1, 40), w = R.w * .86, x0 = R.x0 + R.w * .1, fs = CH.fs(D, .85), a1 = v.smooth(.25, .35, t), a2 = v.smooth(.5, .6, t), a3 = v.smooth(.78, .88, t);
+          if (a1 <= 0) return;
+          var pp = [], qq = [];
+          for (var i = 0; i < 27; i++) { if (i < 8) pp.push({ v: 1, col: C.pink, txt: a2 > 0 ? '5' : '' }); qq.push({ v: 1, col: i < 8 ? C.blue : (a2 > 0 ? C.yel : C.blue), txt: a2 > 0 ? '5' : '' }); }
+          CH.tape(D, x0, y0, w, h, pp, 27, { a: a1 }); CH.tape(D, x0, y0 + h * 1.5, w, h, qq, 27, { a: a1 });
+          CH.text(D, x0 - fs * .6, y0 + h / 2, 'P', { col: C.pink, a: a1, align: 'right' }); CH.text(D, x0 - fs * .6, y0 + h * 2, 'Q', { col: C.blue, a: a1, align: 'right' });
+          CH.text(D, x0 + w * 8 / 27 / 2, y0 + h * 3.2, a3 > 0 ? 'P＝8×5＝40' : '8', { col: a3 > 0 ? C.yel : C.pink, a: a1, size: fs });
+          if (a2 > 0) CH.text(D, x0 + w * (8 + 27) / 54, y0 + h * 3.2, '27−8＝19 が 95cm³', { col: C.yel, a: a2, size: fs });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

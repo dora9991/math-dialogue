@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>三平方の定理の逆</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三平方の定理 第3時：辺の長さを求め、直角三角形かどうかを判断しよう（ikkan の lesson_sanhei_03 と同じ流れ）。
+   図の数値は ikkan のデータ（自作）と同じ（今日の問い ア 4・5・6、イ 8・15・17、ウ 2・√3・√7、例題 6・4・x／7・5・x、例題2 9・12・15、
+   考えよう x・x＋7・x＋8、チャレンジ 4cm と 6cm）。三角形は3辺の長さから座標を計算して描き（余弦定理）、
+   角の大きさ・辺の長さは座標から測り直して確かめる（GE.verify・CH.check。√ をふくむ長さは、2乗して整数になるかで確かめる）。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)';
+  /* ---- このページの道具 ---- */
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function rt(n) { n = Math.round(n); var a = 1, b = n; for (var k = 2; k * k <= b; k++) while (b % (k * k) === 0) { a *= k; b /= k * k; } return b === 1 ? String(a) : (a === 1 ? '' : a) + '√' + b; }
+  function sq(s) { var m = /^(\d*)√(\d+)$/.exec(s); if (m) { var a = m[1] ? +m[1] : 1; return a * a * +m[2]; } return +s * +s; }
+  function isLen(L, s) { var q = L * L; return Math.abs(q - Math.round(q)) < 1e-7 && Math.round(q) === sq(s); }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D); if (o.maxW) size = CH.fitSize(D, s, o.maxW, size, { num: o.num }); CH.text(D, x, y, s, { col: o.col, a: o.a, size: size, num: o.num, align: o.align, outline: o.outline === false ? null : OUT }); }
+  function top(D, s, col, a, row) { var B = CH.box(D, { t: 0, l: .03, r: .03 }), f = CH.fs(D, 1); say(D, B.cx, B.y0 + f * (.8 + (row || 0) * 1.35), s, { col: col || C.yel, a: a, size: f, maxW: B.w }); }
+  /* 辺 pq の外がわ（点 r の反対がわ）に字。inside なら内がわ */
+  function sideLab(F, p, q, r, txt, o) {
+    o = o || {}; var a = F.X(p), b = F.X(q), c = F.X(r), m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], n = [a[1] - b[1], b[0] - a[0]], L = Math.hypot(n[0], n[1]) || 1;
+    var sg = (n[0] * (c[0] - m[0]) + n[1] * (c[1] - m[1]) > 0) === !!o.inside ? 1 : -1, k = F.s * (o.k || .85) * sg, sz = o.size || F.s * .85;
+    var nx = n[0] / L, ny = n[1] / L, g = F.D.ctx, w;
+    /* 字の幅の分だけ、たての辺からははなす */
+    g.save(); g.font = '600 ' + sz + 'px "Klee One",sans-serif'; w = g.measureText(txt).width; g.restore();
+    var kk = k + sg * Math.abs(nx) * w * .45;
+    say(F.D, m[0] + nx * kk, m[1] + ny * kk, txt, { col: o.col, size: sz, a: o.a, num: o.num });
+  }
+  /* 3辺から三角形：AB＝c（下の辺）、BC＝a、CA＝b。A(0, 0)、B(c, 0)、C は上 */
+  function tri3(a, b, c) { var x = (b * b + c * c - a * a) / (2 * c), y2 = b * b - x * x; return y2 <= 1e-12 ? null : { A: [0, 0], B: [c, 0], C: [x, Math.sqrt(y2)] }; }
+  /* 直角三角形（直角は C）：C(0, 0)、B(a, 0)、A(0, b) */
+  function rtri(a, b) { return { C: [0, 0], B: [a, 0], A: [0, b] }; }
+  function nf(v) { return Math.abs(v - Math.round(v)) < 1e-9 ? String(Math.round(v)) : CH.f1(v); }
+
+  /* ---- 今日の問い：ア 4・5・6、イ 8・15・17、ウ √3・2・√7（いちばん長い辺を AB にする） ---- */
+  var S3 = Math.sqrt(3), S7 = Math.sqrt(7);
+  var TODAY = [
+    { n: 'ア', s: [4, 5, 6], t: ['4cm', '5cm', '6cm'], ab: '16＋25＝41', c2: '36', ok: false },
+    { n: 'イ', s: [8, 15, 17], t: ['8cm', '15cm', '17cm'], ab: '64＋225＝289', c2: '289', ok: true },
+    { n: 'ウ', s: [S3, 2, S7], t: ['√3cm', '2cm', '√7cm'], ab: '3＋4＝7', c2: '7', ok: true }];
+  TODAY.forEach(function (g) {
+    var P = tri3(g.s[0], g.s[1], g.s[2]); g.P = P;
+    GE.verify(P, 'BC＝' + g.s[0] + '、CA＝' + g.s[1] + '、AB＝' + g.s[2], null, '今日の問い ' + g.n + ' の図');
+    var a2 = Math.round(g.s[0] * g.s[0]), b2 = Math.round(g.s[1] * g.s[1]), c2 = Math.round(g.s[2] * g.s[2]);
+    CH.check(g.ab === a2 + '＋' + b2 + '＝' + (a2 + b2) && g.c2 === String(c2) && g.ok === (a2 + b2 === c2) && g.ok === GE.near(GE.ang(P, 'ACB'), 90), '今日の問い ' + g.n);
+  });
+  /* 例題：(1) 直角をはさむ辺 6・4 → 斜辺 x＝2√13、(2) 斜辺 7・1辺 5 → x＝2√6 */
+  var E1 = rtri(6, 4), E2 = rtri(Math.sqrt(24), 5);
+  CH.check(isLen(GE.len(E1, 'AB'), '2√13') && rt(36 + 16) === '2√13' && isLen(GE.len(E2, 'CB'), '2√6') && CH.near(GE.len(E2, 'AB'), 7) && rt(49 - 25) === '2√6', '例題');
+  /* 例題2：9・12・15 → 直角三角形、面積 54 */
+  var T9 = tri3(9, 12, 15);
+  CH.check(81 + 144 === 225 && GE.near(GE.ang(T9, 'ACB'), 90) && CH.near(9 * 12 / 2, 54) && Math.abs(15 * T9.C[1] / 2 - 54) < 1e-9, '例題2');
+  /* チャレンジ：4 と 6 → 6 が斜辺なら 2√5、4・6 が直角をはさむなら 2√13 */
+  var H1 = rtri(Math.sqrt(20), 4), H2 = rtri(6, 4);
+  CH.check(CH.near(GE.len(H1, 'AB'), 6) && isLen(GE.len(H1, 'CB'), '2√5') && isLen(GE.len(H2, 'AB'), '2√13') && rt(36 - 16) === '2√5' && rt(16 + 36) === '2√13', 'チャレンジ');
+
+  /* ア・イ・ウ を並べる（それぞれの大きさで）。t：答えの動き */
+  function three(D, t) {
+    var B = CH.box(D, { l: .02, r: .02, t: .1, b: .03 }), cs = CH.cols(B, 3, .06), s = CH.fs(D, .85);
+    TODAY.forEach(function (g, i) {
+      var c = cs[i], R = CH.rect(c.x0, c.y0 + s * 1.2, c.x1, c.y0 + c.h * .62), P = g.P, F = GE.fit(D, R, P, { pad: .2 }), k = CH.smooth(.12 + i * .2, .27 + i * .2, t), kr = CH.smooth(.75, .9, t);
+      GE.poly(F, 'ABC', { col: C.blue, fa: .14, stroke: C.chalk });
+      if (t > 0) GE.seg(F, 'AB', { col: C.yel, w: 5, glow: true, a: CH.smooth(0, .1, t) });
+      sideLab(F, 'B', 'C', 'A', g.t[0], { size: s }); sideLab(F, 'C', 'A', 'B', g.t[1], { size: s }); sideLab(F, 'A', 'B', 'C', g.t[2], { size: s, col: t > 0 ? C.yel : C.chalk });
+      if (kr > 0) { if (g.ok) GE.right(F, 'ACB', { col: C.yel, a: kr, r: F.s * .6 }); else GE.arc(F, 'ACB', { col: C.pink, a: kr, lab: Math.round(GE.ang(P, 'ACB')) + '°', r: F.s * .7 }); }
+      say(D, c.x0 + s * .5, c.y0 + s * .5, g.n, { size: s * 1.3, align: 'left' });
+      var y = c.y0 + c.h * .7;
+      if (k > 0) { say(D, c.cx, y, 'a²＋b²＝' + g.ab, { size: s * .9, maxW: c.w, a: k, num: true }); say(D, c.cx, y + s * 1.4, 'c²＝' + g.c2, { size: s * .9, maxW: c.w, a: k, num: true, col: C.yel }); }
+      if (kr > 0) say(D, c.cx, y + s * 3, g.ok ? '○ 等しい' : '× 等しくない', { size: s * 1.1, a: kr, col: g.ok ? C.yel : C.pink });
+    });
+  }
+
+  var SL3 = [{ key: 'a', label: 'a（BC）', min: 1, max: 13, step: 1, val: 3, fmt: function (v) { return v; } }, { key: 'b', label: 'b（CA）', min: 1, max: 13, step: 1, val: 4, fmt: function (v) { return v; } }, { key: 'c', label: 'c（AB）', min: 1, max: 15, step: 1, val: 5, fmt: function (v) { return v; } }];
+
+  K3.run({
+    no: '第3時', title: '辺の長さを求め、直角三角形かどうかを判断しよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '◀ 第2時' }, { href: '04.html', label: '第4時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '3辺の長さと直角三角形', q: '3辺の長さが、ア 4cm・5cm・6cm、イ 8cm・15cm・17cm、ウ 2cm・√3cm・√7cm の三角形がある。この中に、直角三角形はあるだろうか。調べ方を自分で決めて、調べよう。',
+        notes: ['① 自分の考え（3分）　調べ方と、わかったことを書こう。', '② ペアの考え（3分）　自分とちがう調べ方は？'],
+        draw: function (D) { three(D, 0); } },
+      { tag: '今日の問い', q: 'どう調べる？ 直角三角形はどれ？', a: 'イ と ウ', sub: 'いちばん長い辺を c として、a²＋b² と c² をくらべる。ア 41 と 36、イ 289 と 289、ウ 7 と 7', dur: 6,
+        b: [{ t: 'いちばん長い辺を c → a²＋b² と c² をくらべる', col: C.yel }, { t: 'ア 41・36 ×　イ 289・289 ○　ウ 7・7 ○ → <b>イ、ウ</b>', col: C.yel }],
+        draw: function (D) { three(D, D.ph ? D.t : 0); } },
+      { tag: 'ことば', bh: 'ことば', q: '3辺 a、b、c の間に a²＋b²＝c² が成り立つと、どんな三角形といえる？ これを何という？', a: 'c を斜辺とする直角三角形。三平方の定理の逆', sub: '直角三角形かどうかは、いちばん長い辺を c として調べる', dur: 3,
+        notes: ['スライダーで、3辺の長さを変えられます。a²＋b²＝c² のとき、∠C は？（3・4・5、5・12・13、6・8・10 なども）'], sliders: SL3,
+        b: [{ t: 'a²＋b²＝c² → c を斜辺とする<b>直角三角形</b>', col: C.green }, { t: '<b>三平方の定理の逆</b>（いちばん長い辺を c として調べる）', col: C.green }],
+        draw: function (D) {
+          var a = D.V.a, b = D.V.b, c = D.V.c, P = tri3(a, b, c), t = D.ph ? D.t : 0, a2 = a * a, b2 = b * b, c2 = c * c;
+          top(D, 'a²＋b²＝' + a2 + '＋' + b2 + '＝' + (a2 + b2) + '　c²＝' + c2, a2 + b2 === c2 ? C.yel : C.chalk, 1, 0);
+          if (!P || a + b <= c || b + c <= a || c + a <= b) { var B0 = CH.box(D); say(D, B0.cx, B0.cy, 'この3辺では、三角形ができない', { col: C.pink, maxW: B0.w }); return; }
+          var F = GE.fit(D, CH.box(D, { l: .06, r: .06, t: .2, b: .04 }), P, { pad: .14 }), ang = GE.ang(P, 'ACB'), right = a2 + b2 === c2;
+          GE.poly(F, 'ABC', { col: right ? C.yel : C.blue, fa: .14, stroke: C.chalk });
+          if (right) GE.right(F, 'ACB', { col: C.yel }); else GE.arc(F, 'ACB', { col: C.pink, lab: Math.round(ang) + '°', r: F.s * .8 });
+          if (D.ph) GE.seg(F, 'AB', { col: C.yel, w: 5, glow: true, a: CH.smooth(0, .3, t) });
+          sideLab(F, 'B', 'C', 'A', 'a＝' + a, { col: C.blue }); sideLab(F, 'C', 'A', 'B', 'b＝' + b, { col: C.blue }); sideLab(F, 'A', 'B', 'C', 'c＝' + c, { col: C.orange });
+          GE.labels(F, ['A', 'B', 'C'], { dir: { A: 'sw', B: 'se', C: 'n' } });
+          top(D, right ? '∠C＝90°（直角三角形）' : a2 + b2 > c2 ? '∠C は 90° より小さい' : '∠C は 90° より大きい', right ? C.yel : C.pink, 1, 1);
+          if (D.ph && right) top(D, 'c が斜辺の直角三角形', C.green, CH.smooth(.4, .6, t), 2);
+        } },
+      { tag: '例題', bh: '例題　斜辺をさがして求める', q: '直角三角形で、x の値を求めよう。まず、斜辺はどれ？', a: '(1) x＝2√13　(2) x＝2√6', sub: '(1) 斜辺は x … x²＝6²＋4²＝52　(2) 斜辺は 7cm … x²＋5²＝7²、x²＝24', dur: 5,
+        b: [{ t: '(1) 斜辺は x … x²＝6²＋4²＝52 → x＝<b>2√13</b>', col: C.pink }, { t: '(2) 斜辺は 7cm … x²＋5²＝7² → x²＝24 → x＝<b>2√6</b>', col: C.pink }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, B = CH.box(D, { l: .03, r: .03, t: .06, b: .04 }), cs = CH.split(D, B, 2, .08), s = CH.fs(D, .9);
+          [[E1, ['6cm', '4cm', 'x'], 'AB', ['x²＝6²＋4²＝52', 'x＝√52＝2√13'], '(1)'], [E2, ['x', '5cm', '7cm'], 'AB', ['x²＋5²＝7²', 'x²＝24　x＝2√6'], '(2)']].forEach(function (e, i) {
+            var c = cs[i], R = CH.rect(c.x0, c.y0 + s, c.x1, c.y0 + c.h * .66), P = e[0], F = GE.fit(D, R, P, { pad: .16 }), k1 = CH.smooth(.05 + i * .45, .2 + i * .45, t), k2 = CH.smooth(.22 + i * .45, .4 + i * .45, t);
+            GE.poly(F, 'ABC', { col: C.blue, fa: .14, stroke: C.chalk }); GE.right(F, 'BCA');
+            if (D.ph) GE.seg(F, 'AB', { col: C.yel, w: 5, glow: true, a: k1 });
+            sideLab(F, 'C', 'B', 'A', e[1][0], { col: e[1][0] === 'x' ? C.pink : C.chalk }); sideLab(F, 'C', 'A', 'B', e[1][1], { col: e[1][1] === 'x' ? C.pink : C.chalk }); sideLab(F, 'A', 'B', 'C', e[1][2], { col: e[1][2] === 'x' ? C.pink : C.chalk });
+            say(D, c.x0 + s * .4, c.y0 + s * .4, e[4], { size: s * 1.1, align: 'left' });
+            if (k1 > 0) say(D, c.cx, c.y0 + c.h * .72, '斜辺は ' + (i ? '7cm' : 'x'), { col: C.yel, a: k1, size: s, maxW: c.w });
+            if (k2 > 0) { say(D, c.cx, c.y0 + c.h * .72 + s * 1.5, e[3][0], { a: k2, size: s, maxW: c.w, num: true }); say(D, c.cx, c.y0 + c.h * .72 + s * 3, e[3][1], { col: C.pink, a: k2, size: s, maxW: c.w, num: true }); }
+          });
+        } },
+      { tag: '例題', bh: '例題2　直角三角形を見ぬく', q: '3辺が 9cm、12cm、15cm の三角形の面積を求めよう。', a: '54cm²', sub: '9²＋12²＝81＋144＝225＝15² だから、15cm の辺を斜辺とする直角三角形。面積は 1/2×9×12＝54', dur: 6,
+        b: { t: '9²＋12²＝15² → 直角三角形 → 1/2×9×12＝<b>54</b>（cm²）', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, k1 = CH.smooth(.05, .25, t), kr = CH.ease(CH.smooth(.35, .7, t)), k3 = CH.smooth(.75, .9, t), P = T9;
+          /* 答え：C のまわりに回して、直角を右下に（CB が横、CA がたて） */
+          var th0 = 90 - Math.atan2(P.A[1] - P.C[1], P.A[0] - P.C[0]) * 180 / Math.PI; while (th0 > 180) th0 -= 360; while (th0 <= -180) th0 += 360;
+          var Q = {}, all = { A: P.A, B: P.B, C: P.C, D: GE.rot(P.A, P.C, th0), E: GE.rot(P.B, P.C, th0) };
+          ['A', 'B', 'C'].forEach(function (k) { Q[k] = GE.rot(P[k], P.C, th0 * kr); });
+          var F0 = GE.fit(D, CH.box(D, { l: .06, r: .06, t: .2, b: .05 }), all, { pad: .1 }), F = { X: function (p) { return F0.X(typeof p === 'string' ? Q[p] : p); }, u: F0.u, D: D, P: Q, R: F0.R, s: F0.s, c: F0.c };
+          GE.poly(F, 'ABC', { col: k3 > 0 ? C.yel : C.blue, fa: .14 + .12 * k3, stroke: C.chalk });
+          sideLab(F, 'B', 'C', 'A', '9cm'); sideLab(F, 'C', 'A', 'B', '12cm'); sideLab(F, 'A', 'B', 'C', '15cm', { col: k1 > 0 ? C.yel : C.chalk });
+          if (k1 > .5) GE.right(F, 'ACB', { col: C.yel, a: CH.smooth(.25, .35, t) });
+          if (D.ph) { top(D, '9²＋12²＝81＋144＝225＝15²', C.yel, k1, 0); top(D, '→ 15cm を斜辺とする直角三角形', C.yel, CH.smooth(.2, .3, t), 1); top(D, '面積 1/2×9×12＝54（cm²）', C.pink, k3, 2); }
+        } },
+      { tag: '考えよう', q: '3辺の長さが x cm、(x＋7) cm、(x＋8) cm の三角形が、直角三角形になるのは、x がいくつのときだろう。x に数をあてはめて、表で調べよう。',
+        notes: ['x＝2、3、4、5、6 のとき、x²＋(x＋7)² と (x＋8)² を計算して、表にしよう。', '式を立てて、x を求めると？', 'スライダーで x を変えると、三角形の形が変わります。直角の定規をあてて、くらべられます。'],
+        sliders: [{ key: 'x', label: 'x', min: 1, max: 10, step: 1, val: 2, fmt: function (v) { return v; } }, { key: 'g', label: '直角の定規', min: 0, max: 1, step: 1, val: 0, fmt: function (v) { return v ? 'あてる' : '—'; } }],
+        draw: function (D) {
+          var x = D.V.x, P = tri3(x, x + 7, x + 8), F = GE.fit(D, CH.box(D, { l: .06, r: .06, t: .08, b: .05 }), P, { pad: .16 });
+          GE.poly(F, 'ABC', { col: C.blue, fa: .14, stroke: C.chalk }); GE.arc(F, 'ACB', { col: C.pink, r: F.s * .9 });
+          if (D.V.g) { var d = GE.sub(P.A, P.C), L = Math.hypot(d[0], d[1]), u = [d[0] / L, d[1] / L], v = GE.rot(u, [0, 0], -90), len = Math.min(L, GE.len(P, 'BC')) * .8; GE.seg(F, [P.C, GE.add(P.C, [u[0] * len, u[1] * len])], { col: C.yel, w: 3, dash: [8, 6] }); GE.seg(F, [P.C, GE.add(P.C, [v[0] * len, v[1] * len])], { col: C.yel, w: 3, dash: [8, 6] }); }
+          sideLab(F, 'B', 'C', 'A', x + 'cm（x）', { col: C.blue }); sideLab(F, 'C', 'A', 'B', (x + 7) + 'cm（x＋7）', { col: C.blue }); sideLab(F, 'A', 'B', 'C', (x + 8) + 'cm（x＋8）', { col: C.orange });
+          GE.labels(F, ['A', 'B', 'C'], { dir: { A: 'sw', B: 'se', C: 'n' } });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '直角三角形の2辺の長さが 4cm と 6cm のとき、残りの辺の長さを、すべて求めよう。', a: '2√5cm と 2√13cm', sub: '6cm が斜辺のとき x²＝6²−4²＝20、x＝2√5。4cm と 6cm が直角をはさむとき x²＝4²＋6²＝52、x＝2√13', dur: 6,
+        notes: ['ヒント 6cm は、斜辺になるかな。4cm は？'],
+        b: { t: '6cm が斜辺 → <b>2√5cm</b>、4cm・6cm が直角をはさむ → <b>2√13cm</b>（2つある）', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, B = CH.box(D, { l: .03, r: .03, t: .06, b: .04 }), s = CH.fs(D, .9);
+          if (!D.ph) {
+            var R0 = CH.box(D, { l: .2, r: .2, t: .3, b: .3 }), u = R0.w / 6.5;
+            CH.line(D, R0.x0, R0.cy - s * 1.5, R0.x0 + 4 * u, R0.cy - s * 1.5, { w: 5, col: C.blue }); say(D, R0.x0 + 2 * u, R0.cy - s * 2.6, '4cm', { col: C.blue, size: s });
+            CH.line(D, R0.x0, R0.cy + s * 1.8, R0.x0 + 6 * u, R0.cy + s * 1.8, { w: 5, col: C.green }); say(D, R0.x0 + 3 * u, R0.cy + s * .7, '6cm', { col: C.green, size: s });
+            say(D, R0.cx, R0.cy + s * 4, '残りの辺は？', { size: s }); return;
+          }
+          var cs = CH.split(D, B, 2, .08), u2 = Math.min.apply(null, cs.map(function (c) { return Math.min(c.w / 8.6, c.h * .62 / 6.4); }));
+          [[H1, ['x', '4cm', '6cm'], '6cm が斜辺', ['x²＝6²−4²＝20', 'x＝2√5'], [C.pink, C.blue, C.green]], [H2, ['6cm', '4cm', 'x'], '4cm・6cm が直角をはさむ', ['x²＝4²＋6²＝52', 'x＝2√13'], [C.green, C.blue, C.pink]]].forEach(function (e, i) {
+            var c = cs[i], k = CH.smooth(.05 + i * .45, .25 + i * .45, t), k2 = CH.smooth(.25 + i * .45, .42 + i * .45, t), P = e[0], bx = GE.len(P, 'CB');
+            var F = { X: function (p) { p = typeof p === 'string' ? P[p] : p; return [c.cx + (p[0] - bx / 2) * u2, c.y0 + s * 2 + (5 - p[1]) * u2]; }, u: u2, D: D, P: P, R: c, s: CH.fs(D, 1), c: [bx / 3, 4 / 3] };
+            GE.poly(F, 'ABC', { col: C.blue, fa: .14, stroke: C.chalk, a: k }); GE.right(F, 'BCA', { a: k });
+            sideLab(F, 'C', 'B', 'A', e[1][0], { col: e[4][0], a: k }); sideLab(F, 'C', 'A', 'B', e[1][1], { col: e[4][1], a: k }); sideLab(F, 'A', 'B', 'C', e[1][2], { col: e[4][2], a: k });
+            say(D, c.cx, c.y0 + s * .6, e[2], { col: C.yel, a: k, size: s, maxW: c.w });
+            say(D, c.cx, c.y0 + s * 2 + 6.4 * u2 + s * .4, e[3][0], { a: k2, size: s, maxW: c.w, num: true }); say(D, c.cx, c.y0 + s * 2 + 6.4 * u2 + s * 1.9, e[3][1], { a: k2, size: s * 1.1, maxW: c.w, num: true, col: C.pink });
+          });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>
