@@ -280,7 +280,7 @@
   /* ---- n のたば：n の棒＋1 のブロック。offs：n からのずれ。moves：[[から列, 段], [へ列, 段]]。k：そろえる動き（0〜1） ---- */
   function towers(D, R, offs, k, o) {
     var s = CH.fs(D), nC = offs.length, cw = Math.min(R.w / (nC * 1.45), s * 3.6), gap = cw * .45, tot = nC * cw + (nC - 1) * gap, x0 = R.cx - tot / 2;
-    var hn = 3.2, mx = Math.max.apply(null, offs.map(function (d) { return Math.max(d, 0); })), u = Math.min((R.h - s * 3) / (hn + mx + .3), cw * .95), Hn = hn * u, base = R.y1 - s * 2.4;
+    var hn = 3.2, mx = Math.max.apply(null, offs.map(function (d) { return Math.max(d, 0); })), u = Math.min((R.h - s * 3) / (hn + mx + .3), s * 2.4), Hn = hn * u, base = R.y1 - s * 2.4;
     function cx(i) { return x0 + i * (cw + gap) + cw / 2; }
     function ly(L) { return base - Hn - L * u + u / 2; }   /* 段 L のまん中の y（L＝1 が棒のすぐ上。0 以下は棒の中） */
     var mv = (o.moves || []).map(function (m, j) { var n = o.moves.length, kk = CH.ease(CH.clamp(k * n - j, 0, 1)); return { m: m, k: kk }; });
@@ -354,6 +354,7 @@
     var z = Math.min(s * 1.05, B.h / 11);
     st.forEach(function (q, i) {
       var a = D.ph ? sm(q[2], q[2] + .1, t) : (i === 0 ? 1 : 0), y = B.y0 + B.h * (.1 + i * .2);
+      if (!wideOf(D)) { var tq = q[0] + '　' + q[1]; TX(D, B.x0, B.y0 + B.h * (.1 + i * .2), tq, { size: fit(D, tq, B.w, s * .95), align: 'left', a: a, col: [C.blue, C.green, C.orange, C.pink, C.yel][i] }); return; }
       var w = chip(D, B.x0, y - z * .2, q[0], [C.blue, C.green, C.orange, C.pink, C.yel][i], a, z * .85, 'left');
       TX(D, B.x0 + z * .3, y + z * 1.5, q[1], { size: fit(D, q[1], B.w - z * .3, z), align: 'left', a: a, col: i === 3 ? C.yel : C.chalk });
     });

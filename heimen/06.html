@@ -32,7 +32,7 @@
   function lay(D, k, o) {
     o = o || {}; var B = CH.box(D, { l: .03, r: .03, t: o.t == null ? .04 : o.t, b: .04 });
     if (B.w > B.h * 1.25 && B.w > 560) { var w = B.w * (k || .34); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .06, B.x1, B.y1), wide: true }; }
-    var h = B.h * (o.hk || .25); return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .03, B.y1 - h + 4, B.x1, B.y1), wide: false };
+    var h = B.h * (o.hk || .3); return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .03, B.y1 - h + 4, B.x1, B.y1), wide: false };
   }
   /* 字の行（四角の幅に入るよう、字を小さくする）。rows：[{ t, col, a }] */
   function say(D, Rr, rows, o) {

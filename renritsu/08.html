@@ -324,7 +324,7 @@
   function tableF(D, R, head, rows, o) {
     o = o || {}; var nC = head.length, nR = rows.length + 1, fw = o.fw == null ? .26 : o.fw, w0 = R.w * fw, cw = (R.w - w0) / (nC - 1), all = [head].concat(rows);
     var frc = all.some(function (r) { return r.some(function (t) { return hasFr(t); }); });
-    var rh = Math.min(R.h / nR, o.rh || CH.fs(D) * (frc ? 2.7 : 2.2)), H = rh * nR, y0 = o.top ? R.y0 : R.cy - H / 2, s = o.size || Math.min(CH.fs(D, .9), rh * (frc ? .4 : .46));
+    var rh = Math.min(R.h / nR, o.rh || CH.fs(D) * (frc ? 2.7 : 2.2)), H = rh * nR, y0 = o.top ? R.y0 : R.cy - H / 2, s = o.size || Math.min(CH.fs(D, .92), rh * (frc ? .44 : .46));
     function cell(r, c) { var x0 = c === 0 ? R.x0 : R.x0 + w0 + (c - 1) * cw, x1 = c === 0 ? R.x0 + w0 : x0 + cw; return CH.rect(x0, y0 + r * rh, x1, y0 + (r + 1) * rh); }
     for (var r = 0; r < nR; r++) for (var c = 0; c < nC; c++) {
       var q = cell(r, c), hl = o.hl ? o.hl(r, c) : null;
@@ -451,6 +451,8 @@
   function plab(D, Pl, x, y, t, o) { o = o || {}; TX(D, Pl.X(x), Pl.Y(y), t, { col: o.col || C.chalk, size: o.size || CH.fs(D, .85), align: o.align || 'left', a: o.a, outline: OUT }); }
   /* 数の字：分数なら [a/b]（帯分数にしない）。小さい分母（〜12）だけ */
   function frs(v) { if (Math.abs(v - Math.round(v)) < 1e-9) return S(Math.round(v)); for (var d = 2; d <= 12; d++) { var n = v * d; if (Math.abs(n - Math.round(n)) < 1e-9) return (v < 0 ? '−' : '') + '[' + Math.abs(Math.round(n)) + '/' + d + ']'; } return S(Math.round(v * 100) / 100); }
+  /* 式の行（eqs と同じ）。行ごとに at（出る時）。mid の行は、せまい画面では書かない（右の答えの欄にある） */
+  function eqsW(D, R, L, k, o) { var W = wide(D), M = L.filter(function (l, i) { return i === 0 || W || !l.mid; }); return eqs(D, R, M, k, ext({ at: M.slice(1).map(function (l) { return l.at; }) }, o || {})); }
 
   /* ---- 数と検算 ---- */
   var P0 = ['x＋y＝14', '60x＋110y＝1140'];

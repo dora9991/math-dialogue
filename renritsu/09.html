@@ -325,7 +325,7 @@
   function tableF(D, R, head, rows, o) {
     o = o || {}; var nC = head.length, nR = rows.length + 1, fw = o.fw == null ? .26 : o.fw, w0 = R.w * fw, cw = (R.w - w0) / (nC - 1), all = [head].concat(rows);
     var frc = all.some(function (r) { return r.some(function (t) { return hasFr(t); }); });
-    var rh = Math.min(R.h / nR, o.rh || CH.fs(D) * (frc ? 2.7 : 2.2)), H = rh * nR, y0 = o.top ? R.y0 : R.cy - H / 2, s = o.size || Math.min(CH.fs(D, .9), rh * (frc ? .4 : .46));
+    var rh = Math.min(R.h / nR, o.rh || CH.fs(D) * (frc ? 2.7 : 2.2)), H = rh * nR, y0 = o.top ? R.y0 : R.cy - H / 2, s = o.size || Math.min(CH.fs(D, .92), rh * (frc ? .44 : .46));
     function cell(r, c) { var x0 = c === 0 ? R.x0 : R.x0 + w0 + (c - 1) * cw, x1 = c === 0 ? R.x0 + w0 : x0 + cw; return CH.rect(x0, y0 + r * rh, x1, y0 + (r + 1) * rh); }
     for (var r = 0; r < nR; r++) for (var c = 0; c < nC; c++) {
       var q = cell(r, c), hl = o.hl ? o.hl(r, c) : null;
@@ -452,6 +452,8 @@
   function plab(D, Pl, x, y, t, o) { o = o || {}; TX(D, Pl.X(x), Pl.Y(y), t, { col: o.col || C.chalk, size: o.size || CH.fs(D, .85), align: o.align || 'left', a: o.a, outline: OUT }); }
   /* 数の字：分数なら [a/b]（帯分数にしない）。小さい分母（〜12）だけ */
   function frs(v) { if (Math.abs(v - Math.round(v)) < 1e-9) return S(Math.round(v)); for (var d = 2; d <= 12; d++) { var n = v * d; if (Math.abs(n - Math.round(n)) < 1e-9) return (v < 0 ? '−' : '') + '[' + Math.abs(Math.round(n)) + '/' + d + ']'; } return S(Math.round(v * 100) / 100); }
+  /* 式の行（eqs と同じ）。行ごとに at（出る時）。mid の行は、せまい画面では書かない（右の答えの欄にある） */
+  function eqsW(D, R, L, k, o) { var W = wide(D), M = L.filter(function (l, i) { return i === 0 || W || !l.mid; }); return eqs(D, R, M, k, ext({ at: M.slice(1).map(function (l) { return l.at; }) }, o || {})); }
 
   /* ---- 数と検算 ---- */
   var P0 = ['x＋y＝1960', '[x/70]＋[y/140]＝20'], L0 = ['2x＋y＝2800', 'x＝840'];
@@ -490,7 +492,7 @@
   var TH0 = ['', '歩いたとき', '走ったとき', '合計'], TR0 = [['道のり（m）', 'x', 'y', '1960'], ['速さ（m/分）', '70', '140', ''], ['時間（分）', '[x/70]', '[y/140]', '20']];
   function today(D, k) {
     var R = CH.box(D, { l: .03, r: .03, t: .02, b: .03 }), s = CH.fs(D), W = wide(D), ph = !!D.ph;
-    var top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * (W ? .3 : .3)), G = road(D, top, 1960, 1960), u = Math.min(s * 2.4, top.h * .36);
+    var top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * (W ? .3 : .27)), G = road(D, top, 1960, 1960), u = Math.min(s * 2.4, top.h * .36);
     brace(D, G.x0, G.x1, G.y - u * 1.25, -1, { h: s * .3, lab: '1960 m・20分', col: C.yel, size: s * .9 });
     var m = ph ? 20 * CH.smooth(.62, .95, k) : 0, d = m <= 12 ? 70 * m : 840 + 140 * (m - 12), fin = ph ? CH.smooth(.94, 1, k) : 0;
     if (!ph || k < .6) {
@@ -508,7 +510,7 @@
       clock(D, top.x1 - s * 1.2, top.y0 + s * 1.1, s * 1.05, m, d > 840 ? YC : XC);
       TX(D, top.x1 - s * 2.6, top.y0 + s * 1.1, Math.round(m) + '分', { size: s * .9, col: C.yel, align: 'right' });
     }
-    var Rs = two(D, .6, .44, CH.rect(R.x0, top.y1 + s * 1.2, R.x1, R.y1)), sh = { '1,1': [.02, .07], '1,2': [.05, .1], '3,1': [.1, .16], '3,2': [.14, .2] };
+    var Rs = two(D, .6, .54, CH.rect(R.x0, top.y1 + s * 1.2, R.x1, R.y1)), sh = { '1,1': [.02, .07], '1,2': [.05, .1], '3,1': [.1, .16], '3,2': [.14, .2] };
     tableF(D, Rs[0], TH0, TR0, {
       fw: .3, top: true, rh: s * 2.4,
       show: function (r, c) { var q = sh[r + ',' + c]; return q ? (ph ? CH.smooth(q[0], q[1], k) : 0) : 1; },
@@ -516,8 +518,8 @@
       hl: function (r, c) { return ph && ((r === 1 && k > .2 && k < .3) || (r === 3 && k > .28 && k < .38)) ? C.yel : null; }
     });
     if (!ph) return;
-    eqs(D, Rs[1], [{ s: P0[0], lab: '…① 道のり' }, { s: P0[1], lab: '…② 時間' }, { s: L0[0], lab: '②×140' }, { s: L0[1], lab: 'ひく' }, { s: 'y＝1120', col: C.yel }],
-      k, { size: s * 1.15, at: [.3, .4, .5, .57], a: CH.smooth(.2, .26, k), top: !W });
+    eqsW(D, Rs[1], [{ s: P0[0], lab: '…① 道のり' }, { s: P0[1], lab: '…② 時間', at: .3 }, { s: L0[0], lab: '②×140', at: .4, mid: 1 }, { s: L0[1], lab: 'ひく', at: .5, mid: 1 }, { s: 'y＝1120', col: C.yel, at: .57, mid: 1 }, { s: 'x＝840、y＝1120', txt: true, col: C.yel, at: .5, wide: 0 }].filter(function (l) { return l.wide !== 0 || !W; }),
+      k, { size: s * 1.15, a: CH.smooth(.2, .26, k), top: !W });
   }
 
   /* ---- ことば：840m を 12分で歩く ---- */
@@ -556,7 +558,7 @@
     var hr = ph ? 4 * CH.smooth(.72, .97, k) : 0, dd = hr <= 3 ? 2 * hr : 6 + 3 * (hr - 3), p = M.at(Math.min(9, ph && k > .7 ? dd : 0));
     walker(D, p[0], p[1] - 2, Math.min(s * 2, L * 1.1), dd > 6 ? YC : XC, dd * 3, false);
     if (ph && k > .7) TX(D, top.x1, top.y0 + s * .6, CH.f1(hr) + '時間', { size: s * .9, col: C.yel, align: 'right' });
-    var Rs = two(D, .6, .44, CH.rect(R.x0, top.y1 + s * .8, R.x1, R.y1)), sh = { '1,1': [.02, .07], '1,2': [.05, .1], '3,1': [.1, .16], '3,2': [.14, .2] };
+    var Rs = two(D, .6, .54, CH.rect(R.x0, top.y1 + s * .8, R.x1, R.y1)), sh = { '1,1': [.02, .07], '1,2': [.05, .1], '3,1': [.1, .16], '3,2': [.14, .2] };
     tableF(D, Rs[0], ['', '上り', '下り', '合計'], [['道のり（km）', 'x', 'y', '9'], ['速さ（km/時）', '2', '3', ''], ['時間（時間）', '[x/2]', '[y/3]', '4']], {
       fw: .3, top: true, rh: s * 2.4,
       show: function (r, c) { var q = sh[r + ',' + c]; return q ? (ph ? CH.smooth(q[0], q[1], k) : 0) : 1; },
@@ -564,8 +566,8 @@
       hl: function (r, c) { return ph && ((r === 1 && k > .2 && k < .3) || (r === 3 && k > .28 && k < .38)) ? C.yel : null; }
     });
     if (!ph) return;
-    eqs(D, Rs[1], [{ s: P1[0], lab: '…①' }, { s: P1[1], lab: '…②' }, { s: L1[0], lab: '②×6' }, { s: L1[1], lab: '−①×2' }, { s: 'y＝3', col: C.yel }],
-      k, { size: s * 1.15, at: [.3, .4, .5, .57], a: CH.smooth(.2, .26, k), top: !W });
+    eqsW(D, Rs[1], [{ s: P1[0], lab: '…①' }, { s: P1[1], lab: '…②', at: .3 }, { s: L1[0], lab: '②×6', at: .4, mid: 1 }, { s: L1[1], lab: '−①×2', at: .5, mid: 1 }, { s: 'y＝3', col: C.yel, at: .57, mid: 1 }, { s: 'x＝6、y＝3', txt: true, col: C.yel, at: .5, wide: 0 }].filter(function (l) { return l.wide !== 0 || !W; }),
+      k, { size: s * 1.15, a: CH.smooth(.2, .26, k), top: !W });
   }
 
   /* ---- 考えよう：歩いた時間と、出発してからの時間 ---- */
@@ -597,8 +599,8 @@
     CH.arrow(D, M.B[0] - L, yA + s * .85, M.A[0] + L, yA + s * .85, { col: C.orange, w: 1.6, head: 7 });
     TX(D, top.cx, yA + s * 1.2, '帰り（5時間30分）：y が上り、x が下り', { size: fit(D, '帰り（5時間30分）：y が上り、x が下り', top.w * .98, s * .8), col: C.orange });
     if (!ph) return;
-    eqs(D, CH.rect(R.x0, yA + s * 2.2, R.x1, R.y1), [{ s: PC[0], lab: '…① 行き' }, { s: PC[1], lab: '…② 帰り' }, { s: LC[0], lab: '①×4 …③' }, { s: LC[1], lab: '②×4 …④' }, { s: LC[2], lab: '③×2−④' }, { s: 'x＝6、y＝8', txt: true, col: C.yel }],
-      k, { size: s * 1.1, at: [.18, .34, .46, .6, .74], a: CH.smooth(.04, .1, k) });
+    eqsW(D, CH.rect(R.x0, yA + s * 2.2, R.x1, R.y1), [{ s: PC[0], lab: '…① 行き' }, { s: PC[1], lab: '…② 帰り', at: .18 }, { s: LC[0], lab: '①×4 …③', at: .34 }, { s: LC[1], lab: '②×4 …④', at: .46 }, { s: LC[2], lab: '③×2−④', at: .6, mid: 1 }, { s: 'x＝6、y＝8', txt: true, col: C.yel, at: .74 }],
+      k, { size: s * 1.1, a: CH.smooth(.04, .1, k) });
   }
 
   K3.run({
