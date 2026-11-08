@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>មេរៀនគណិតវិទ្យារបស់គ្រូហូ និងពីយ៉ូ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@500;700;900&display=swap">
+<link rel="stylesheet" href="css/sho.css">
+</head>
+<body class="play">
+<div id="stage">
+  <div id="sky"><i class="cloud c1"></i><i class="cloud c2"></i><i class="cloud c3"></i></div>
+  <div id="hill"></div>
+  <header id="hd">
+    <a id="bMenu" href="menu.html" title="ត្រឡប់ទៅមាតិកា">☰</a>
+    <div class="unit"></div>
+    <div class="ttl"></div>
+    <div id="map"></div>
+    <div id="stars" title="ផ្កាយដែលប្រមូលបាន"><svg viewBox="0 0 24 24"><path d="M12 2.2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.1l-6.1 3.5 1.5-6.8L2.2 9.2l6.9-.7z"/></svg><b>0</b></div>
+    <button id="bSet" type="button" title="ការកំណត់">⚙</button>
+  </header>
+  <div id="board">
+    <svg id="bsvg" width="1240" height="392" viewBox="0 0 1240 392"></svg>
+    <div id="bhtml"></div>
+    <div id="panel" class="hidden"></div>
+  </div>
+  <div class="ch" id="chHo" data-who="ho"><div class="body"><img alt="គ្រូហូ"></div><div class="marks"></div></div>
+  <div class="ch" id="chPiyo" data-who="piyo"><div class="body"><img alt="ពីយ៉ូ"></div><div class="marks"></div></div>
+  <div id="bubble" class="ho">
+    <div class="nm"></div>
+    <div class="txt"></div>
+    <div id="ctl"><button id="bBack" type="button" title="ត្រឡប់ក្រោយមួយ (ប៊ូតុង ←)">◀ ត្រឡប់</button><button id="bAgain" type="button" title="ម្តងទៀត (ប៊ូតុង R)">↻ ម្តងទៀត</button><button id="bAuto" type="button" title="បន្តដោយស្វ័យប្រវត្តិពេលអានចប់ (ប៊ូតុង A)">ស្វ័យប្រវត្តិ OFF</button></div>
+    <button id="bNext" type="button">បន្ទាប់ ▶</button>
+  </div>
+  <canvas id="fx" width="1280" height="720"></canvas>
+  <div id="banner" class="hidden"></div>
+  <div id="toast" class="hidden"></div>
+  <div id="ov" class="hidden"></div>
+</div>
+<div id="rotate">📱↻　សូមបង្វិលទូរស័ព្ទផ្ដេក ដើម្បីមើលឱ្យធំជាង</div>
+<script>window.HS_LID = "ikutsu-03";</script>
+<script src="js/kanji-grade.js"></script>
+<script src="js/ruby.js"></script>
+<script src="js/yomi.js"></script>
+<script src="js/script.js"></script>
+<script src="assets/chars/manifest.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/chars.js"></script>
+<script src="js/board.js"></script>
+<script src="js/figlib.js"></script>
+<script src="lessons/index.js"></script>
+<script src="js/player.js"></script>
+</body>
+</html>

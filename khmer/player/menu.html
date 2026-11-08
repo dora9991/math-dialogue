@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>មេរៀនគណិតវិទ្យារបស់គ្រូហូ និងពីយ៉ូ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@500;700;900&display=swap">
+<style>
+  :root { --ink: #3b2a1e; --ink2: #6b5646; --or: #ff8c2e; --ye: #ffd23f; --gr: #3fbf6a; --bl: #3d9df2; --font: "Hiragino Maru Gothic ProN", "Zen Maru Gothic", "BIZ UDPGothic", sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--font); color: var(--ink); background: linear-gradient(#a9dcff, #e6f6ff 420px, #f4fbff); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+  button { font-family: inherit; cursor: pointer; }
+  rt { font-size: .5em; font-weight: 700; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 18px 16px 60px; }
+  header { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+  header .ttlbox { flex: 1 1 300px; min-width: 0; }
+  header .chars { display: flex; align-items: flex-end; gap: 4px; flex: none; }
+  header .chars img { height: 120px; animation: breathe 2.6s ease-in-out infinite; transform-origin: 50% 100%; }
+  header .chars img + img { height: 100px; animation-duration: 1.9s; }
+  @keyframes breathe { 50% { transform: scale(1.015, .98); } }
+  header h1, .stone .tt, .unit h2 { word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }   /* ことばの まんなかで 折りかえさない */
+  header h1 { margin: 0; font-size: clamp(24px, 4.2vw, 40px); font-weight: 900; line-height: 1.5; text-shadow: 0 3px 0 #fff; }
+  header p { margin: 2px 0 10px; font-size: 16px; color: var(--ink2); line-height: 1.8; }
+  header .sp { flex: 1; }
+  #bSet { border: 0; background: #fff; border-radius: 99px; padding: 10px 18px; font-size: 16px; font-weight: 900; box-shadow: 0 3px 0 #9cc7e6; margin-bottom: 14px; white-space: nowrap; }
+  .tabs { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .tabs button { border: 0; border-radius: 16px 16px 0 0; padding: 10px 18px 8px; font-size: 20px; font-weight: 900; background: rgba(255,255,255,.6); color: var(--ink2); box-shadow: 0 -2px 0 rgba(0,0,0,.04) inset; line-height: 1.5; }
+  .tabs button.on { background: #fff; color: #fff; background: var(--tc); }
+  .tabs button .n { font-size: 13px; display: block; font-weight: 700; opacity: .85; }
+  .tabs button.empty { opacity: .5; }
+  .unit { background: #fff; border-radius: 26px; padding: 20px 22px 26px; margin-top: 16px; box-shadow: 0 6px 0 #b8d3e8, 0 14px 30px rgba(40,90,140,.12); }
+  .unit h2 { margin: 0; font-size: 26px; font-weight: 900; line-height: 1.8; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .unit h2 .g { background: var(--or); color: #fff; font-size: 16px; padding: 2px 12px; border-radius: 99px; }
+  .unit .lead { margin: 0 0 8px; color: var(--ink2); font-size: 16px; line-height: 1.9; }
+  .prog { height: 14px; background: #eef3f8; border-radius: 99px; overflow: hidden; margin: 6px 0 14px; }
+  .prog i { display: block; height: 100%; background: linear-gradient(90deg, #ffd23f, #ff8c2e); border-radius: 99px; transition: width .8s; }
+  .path { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+  .stone { position: relative; border: 0; text-align: left; background: #f7fbff; border-radius: 20px; padding: 14px 14px 12px; box-shadow: 0 5px 0 #c8dced; transition: transform .15s; color: var(--ink); display: flex; flex-direction: column; gap: 4px; min-height: 150px; text-decoration: none; }
+  .stone:hover { transform: translateY(-3px); }
+  .stone .no { width: 40px; height: 40px; border-radius: 50%; background: #dfeaf4; display: grid; place-items: center; font-weight: 900; font-size: 20px; color: #7a93a8; }
+  .stone.done { background: #fffaf0; box-shadow: 0 5px 0 #f3d9a6; }
+  .stone.done .no { background: var(--gr); color: #fff; }
+  .stone.next .no { background: var(--or); color: #fff; animation: beat 1.2s infinite; }
+  @keyframes beat { 50% { transform: scale(1.12); } }
+  .stone .tt { font-size: 18px; font-weight: 900; line-height: 1.75; }
+  .stone .meta { font-size: 13px; color: var(--ink2); margin-top: auto; }
+  .stone .st { font-size: 15px; font-weight: 900; color: #d9a400; }
+  .stone .stk { position: absolute; right: 10px; top: 8px; font-size: 38px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.15)); }
+  .stone .badge { position: absolute; right: 10px; top: 12px; background: var(--bl); color: #fff; font-size: 12px; font-weight: 900; padding: 2px 8px; border-radius: 99px; }
+  .book { margin-top: 22px; background: #fff; border-radius: 26px; padding: 18px 22px; box-shadow: 0 6px 0 #b8d3e8; }
+  .book h3 { margin: 0 0 10px; font-size: 22px; font-weight: 900; line-height: 1.8; }
+  .slots { display: flex; flex-wrap: wrap; gap: 14px; }
+  .slot { width: 92px; height: 92px; border-radius: 50%; background: #f1f4f7; border: 3px dashed #cfd9e2; display: grid; place-items: center; font-size: 30px; color: #c3ced8; font-weight: 900; }
+  .slot.got { background: #fff; border: 0; box-shadow: 0 0 0 5px #fff, 0 0 0 8px #ffd8a8, 0 5px 12px rgba(0,0,0,.15); font-size: 54px; }
+  .teach { margin-top: 22px; font-size: 14px; color: var(--ink2); line-height: 1.9; background: rgba(255,255,255,.7); border-radius: 16px; padding: 12px 18px; }
+  @media (max-width: 640px) { header .chars img { height: 84px; } header .chars img + img { height: 70px; } #bSet { margin-bottom: 0; } .unit { padding: 16px 14px 20px; } .path { grid-template-columns: 1fr 1fr; gap: 10px; } .slot { width: 72px; height: 72px; } .slot.got { font-size: 42px; } }
+  .teach code { background: #eef3f8; padding: 0 6px; border-radius: 6px; }
+  /* せってい */
+  #ov { position: fixed; inset: 0; background: rgba(30,60,90,.35); display: grid; place-items: center; z-index: 9; padding: 16px; }
+  #ov.hidden { display: none; }
+  .card { background: #fff; border-radius: 24px; padding: 22px 26px; max-width: 860px; width: 100%; box-shadow: 0 10px 0 #b8d3e8; }
+  .card h2 { margin: 0 0 8px; text-align: center; font-size: 28px; }
+  .row { display: flex; align-items: center; gap: 12px; margin: 10px 0; flex-wrap: wrap; }
+  .row .k { width: 200px; font-weight: 900; font-size: 17px; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .seg button { border: 0; background: #eef6fd; border-radius: 12px; padding: 8px 12px; font-size: 16px; font-weight: 700; box-shadow: 0 3px 0 #b9d5ec; color: var(--ink); }
+  .seg button.on { background: var(--bl); color: #fff; box-shadow: 0 3px 0 #2272bd; }
+  .preview { background: #fffdf6; border: 3px solid #c4dcf0; border-radius: 14px; padding: 8px 16px; font-size: 24px; font-weight: 700; line-height: 2.1; }
+  .ok { display: block; margin: 14px auto 0; border: 0; background: var(--gr); color: #fff; font-size: 22px; font-weight: 900; padding: 10px 40px; border-radius: 99px; box-shadow: 0 5px 0 #2c9c52; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="chars" id="chars"></div>
+    <div class="ttlbox"><h1 id="h1"></h1><p id="sub"></p></div>
+    <button id="bSet" type="button" style="display:none">⚙</button>
+  </header>
+  <div class="tabs" id="tabs"></div>
+  <div id="units"></div>
+  <div class="book"><h3 id="bookH"></h3><div class="slots" id="slots"></div></div>
+  <div class="teach" id="teach"></div>
+</div>
+<div id="ov" class="hidden"></div>
+<script src="js/kanji-grade.js"></script>
+<script src="js/ruby.js"></script>
+<script src="js/yomi.js"></script>
+<script src="assets/chars/manifest.js"></script>
+<script src="lessons/index.js"></script>
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const store = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 保存できない */ } } };
+  const qs = new URLSearchParams(location.search);
+  let GRADE = +(qs.get('g') || store.get('hosho.tab', 0)) || Math.min(...HS_UNITS.map(u => u.grade));
+  const SET = Object.assign({ furi: 'new', mi: 'kana', voice: true, auto: false }, store.get('hosho.set', {}));
+  if (qs.get('kg')) SET.kg = +qs.get('kg'); if (qs.get('furi')) SET.furi = qs.get('furi'); if (qs.get('mi')) SET.mi = qs.get('mi');
+  const R = t => RUBY.html(t);
+  const SP = window.SPRITES || {};
+  function draw() {
+    SET.kg = store.get('hosho.kg.g' + GRADE, GRADE); RUBY.setSettings(SET);
+    $('#chars').innerHTML = (SP.ho ? `<img src="${SP.ho.happy.c}" alt="គ្រូហូ">` : '') + (SP.piyo ? `<img src="${(SP.piyo.happy || SP.piyo.normal).c}" alt="ពីយ៉ូ">` : '');
+    $('#h1').innerHTML = R('មេរៀនគណិតវិទ្យារបស់គ្រូហូ និងពីយ៉ូ');
+    $('#sub').innerHTML = R('រៀនគណិតវិទ្យាដោយសប្បាយរីករាយជាមួយគ្រូហូ និងពីយ៉ូ!');
+    const prog = store.get('hosho.prog', {});
+    const COLORS = { 1: '#ff6fa5', 2: '#23ad63', 3: '#1597d4', 4: '#f06a1c', 5: '#8455e6', 6: '#ff8c2e' };
+    $('#tabs').innerHTML = [1, 2, 3, 4, 5, 6].map(g => { const us = HS_UNITS.filter(u => u.grade === g); return `<button type="button" data-g="${g}" class="${g === GRADE ? 'on' : ''} ${us.length ? '' : 'empty'}" style="--tc:${COLORS[g]}">ថ្នាក់ទី ${g}<span class="n">${us.length ? us.length + ' ជំពូក' : 'កំពុងរៀបចំ'}</span></button>`; }).join('');
+    $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => { GRADE = +b.dataset.g; store.set('hosho.tab', GRADE); draw(); });
+    let html = '';
+    const units = HS_UNITS.filter(u => u.grade === GRADE);
+    if (!units.length) html = `<section class="unit"><p class="lead">${R('មេរៀនសម្រាប់ថ្នាក់នេះកំពុងរៀបចំ។')}</p></section>`;
+    for (const u of units) {
+      const ls = HS_LESSONS.filter(l => l.unit === u.id), done = ls.filter(l => prog[l.id] && prog[l.id].done).length;
+      const nextId = (ls.find(l => !(prog[l.id] && prog[l.id].done)) || {}).id;
+      html += `<section class="unit" style="border-top:8px solid ${COLORS[u.grade]}"><h2><span class="g" style="background:${COLORS[u.grade]}">${R('ថ្នាក់ទី ' + u.grade)}</span>${R(u.title)}</h2><p class="lead">${R(u.lead)}</p>
+        <div class="prog"><i style="width:${Math.round(done / ls.length * 100)}%"></i></div><div class="path">` +
+        ls.map(l => {
+          const p = prog[l.id], pos = store.get('hosho.pos.' + l.id, null);
+          const cls = p && p.done ? 'done' : l.id === nextId ? 'next' : '';
+          return `<a class="stone ${cls}" href="play-${l.id}.html"><span class="no">${l.no}</span><span class="tt">${R(l.title)}</span>
+            <span class="meta">${R('ប្រហែល ' + l.min + ' នាទី')}</span>${p && p.done ? `<span class="st">★ ${p.stars} / ${p.total}</span><span class="stk">${l.sticker}</span>` : pos && pos.i ? `<span class="badge">${R('បន្តពីកន្លែងចាស់')}</span>` : ''}</a>`;
+        }).join('') + '</div></section>';
+    }
+    $('#units').innerHTML = html;
+    $('#bookH').innerHTML = R('សៀវភៅត្រា') + `<span style="font-size:15px;color:#6b5646;margin-left:10px">${R('រៀនមេរៀនឱ្យចប់ នឹងបានត្រា')}</span>`;
+    $('#slots').innerHTML = HS_LESSONS.filter(l => (HS_UNITS.find(u => u.id === l.unit) || {}).grade === GRADE).map(l => prog[l.id] && prog[l.id].done ? `<div class="slot got" title="${l.title}">${l.sticker}</div>` : `<div class="slot">?</div>`).join('');
+    $('#teach').innerHTML = '<b>សម្រាប់គ្រូ និងមាតាបិតា</b>　នេះជាសេចក្តីព្រាងបកប្រែជាភាសាខ្មែរ (សាកល្បង)។ ការកត់ត្រាការរៀន (ផ្កាយ·ត្រា) រក្សាទុកក្នុងកម្មវិធីរុករកនៃឧបករណ៍នេះ។';
+  }
+  function openSet() {
+    const ov = $('#ov'); ov.classList.remove('hidden');
+    const seg = (key, items) => `<div class="seg" data-key="${key}">${items.map(([v, t]) => `<button type="button" data-v="${v}" class="${String(SET[key]) === String(v) ? 'on' : ''}">${t}</button>`).join('')}</div>`;
+    const d = () => {
+      RUBY.setSettings(SET);
+      ov.innerHTML = `<div class="card"><h2>⚙ 漢字・ふりがな（${GRADE}年の授業）</h2>
+        <div class="row"><div class="k">何年生の漢字まで？</div>${seg('kg', [1, 2, 3, 4, 5, 6].map(g => [g, g + '年']))}</div>
+        <div class="row"><div class="k">ふりがな</div>${seg('furi', [['all', 'ぜんぶの漢字'], ['new', 'その学年で習う漢字だけ'], ['none', 'なし']])}</div>
+        <div class="row"><div class="k">まだ習っていない漢字</div>${seg('mi', [['kana', 'ひらがなで書く'], ['ruby', 'ふりがなをつけて漢字で']])}</div>
+        <div class="preview">${R('円の面積は、半径×半径×円周率で求めます。')}</div><button class="ok" type="button">OK</button></div>`;
+      ov.querySelectorAll('.seg').forEach(sg => sg.querySelectorAll('button').forEach(b => b.onclick = () => { let v = b.dataset.v; if (sg.dataset.key === 'kg') { v = +v; store.set('hosho.kg.g' + GRADE, v); } SET[sg.dataset.key] = v; const { kg, ...rest } = SET; store.set('hosho.set', Object.assign(store.get('hosho.set', {}), rest)); d(); }));
+      ov.querySelector('.ok').onclick = () => { ov.classList.add('hidden'); draw(); };
+    };
+    d();
+  }
+  $('#bSet').onclick = openSet;
+  draw();
+})();
+</script>
+</body>
+</html>

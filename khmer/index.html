@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>コツコツくん クメール語 試訳</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+Khmer:wght@400;700&display=swap">
+<style>
+/* 入口ページ：いちばん上に「授業を動かす」、その下に対訳の2ページ。上に状態、下に確認してほしい点。 */
+:root {
+  --bg: #f5f8f6;
+  --surface: #ffffff;
+  --ink: #1b2a24;
+  --ink2: #55655e;
+  --line: #dbe5e0;
+  --accent: #0f8a6e;
+  --accent-soft: #e1f4ee;
+  --play: #ff8c2e;
+  --play-ink: #7a3d00;
+  --warn-bg: #fff3d6;
+  --warn-ink: #6e4b00;
+  --font-jp: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --font-km: "Noto Sans Khmer", "Khmer Sangam MN", "Leelawadee UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101814; --surface: #19241f; --ink: #e5eee9; --ink2: #9fb1a8; --line: #2a3a33;
+    --accent: #44c9a5; --accent-soft: #17362d; --play: #ffa24d; --play-ink: #ffd9b0; --warn-bg: #38300f; --warn-ink: #f0d58b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101814; --surface: #19241f; --ink: #e5eee9; --ink2: #9fb1a8; --line: #2a3a33;
+  --accent: #44c9a5; --accent-soft: #17362d; --play: #ffa24d; --play-ink: #ffd9b0; --warn-bg: #38300f; --warn-ink: #f0d58b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.75 var(--font-jp);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+main { max-width: 860px; margin: 0 auto; }
+[lang="km"] { font-family: var(--font-km); line-height: 1.9; }
+h1 { font-size: 26px; line-height: 1.35; margin: 4px 0 6px; text-wrap: balance; }
+h2 { font-size: 17px; margin: 32px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--accent); }
+.lead { color: var(--ink2); margin: 0 0 14px; }
+.status { background: var(--warn-bg); color: var(--warn-ink); border-radius: 12px; padding: 10px 14px; font-size: 14px; margin: 0 0 20px; }
+.play { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 20px; align-items: center; background: var(--surface); border: 2px solid var(--play); border-radius: 16px; padding: 18px; margin: 0 0 14px; }
+.play h2 { grid-column: 1 / -1; margin: 0; padding: 0; border: 0; font-size: 20px; }
+.play p { margin: 0; color: var(--ink2); font-size: 14px; }
+.play .sample { grid-column: 1 / -1; background: var(--accent-soft); border-radius: 8px; padding: 6px 10px; font-size: 15px; }
+.btn { display: inline-block; background: var(--play); color: #3a1c00; font-weight: 700; text-decoration: none; padding: 12px 22px; border-radius: 999px; white-space: nowrap; }
+.btn:hover, .btn:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; filter: brightness(1.05); }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 14px; }
+.card { display: flex; flex-direction: column; gap: 8px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; color: inherit; text-decoration: none; }
+.card:hover, .card:focus-visible { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.card h3 { margin: 0; font-size: 18px; }
+.card .sample { background: var(--accent-soft); border-radius: 8px; padding: 6px 10px; font-size: 15px; }
+.card .sample small { display: block; color: var(--ink2); font-size: 12px; }
+.card dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 4px 0 0; font-size: 14px; }
+.card dt { color: var(--ink2); }
+.card dd { margin: 0; font-variant-numeric: tabular-nums; }
+.go { margin-top: auto; padding-top: 6px; color: var(--accent); font-weight: 700; font-size: 14px; }
+ul { padding-left: 20px; margin: 0; }
+li { margin: 6px 0; }
+.foot { margin-top: 32px; color: var(--ink2); font-size: 13px; }
+@media (max-width: 520px) { .play { grid-template-columns: 1fr; } .btn { text-align: center; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>コツコツくん クメール語 試訳</h1>
+  <p class="lead">小学1年の最初の単元「10までのかず」を、クメール語にした試し訳です。現地の先生に、言葉づかいと内容を見てもらうためのものです。</p>
+  <p class="status"><b>機械訳で、現地の先生の確認はまだです。</b>試作の公開ページです。ホー先生とピヨの授業の本番（ho-sansu）とは別のものです。</p>
+
+  <section class="play">
+    <h2>授業を動かして見る</h2>
+    <p>ホー先生とピヨの授業9回を、実際のプレーヤーで、クメール語のまま再生できます。黒板に図が出て、ピヨが話し、問題に答えられます。音声はなく、文字だけで進みます。タブレットやスマホは横向きにしてください。</p>
+    <a class="btn" href="player/menu.html">授業の目次を開く →</a>
+    <div class="sample"><span lang="km">សួស្តីកូនៗទាំងអស់គ្នា! ថ្ងៃនេះយើងរាប់ចំនួនរបស់ផ្សេងៗ។</span></div>
+  </section>
+
+  <h2>日本語と並べて読む</h2>
+  <div class="cards">
+    <a class="card" href="problems.html">
+      <h3>問題の対訳</h3>
+      <div class="sample"><small>日本語</small><span lang="ja">10は 8と いくつですか。</span><br><small>クメール語</small><span lang="km">10 បំបែកជា 8 និងប៉ុន្មាន?</span></div>
+      <dl>
+        <dt>中身</dt><dd>数字が毎回変わる問題 9本＋固定問題 24問</dd>
+        <dt>字数</dt><dd>日本語 2,827字 → クメール語 5,157文字</dd>
+        <dt>検査</dt><dd>27,000通りで日本語版と答え・数字が一致</dd>
+      </dl>
+      <span class="go">問題の対訳を見る →</span>
+    </a>
+    <a class="card" href="lessons.html">
+      <h3>授業の対訳</h3>
+      <div class="sample"><small>日本語</small><span lang="ja">ゆびで 1こずつ さわって、 かぞえて みよう。</span><br><small>クメール語</small><span lang="km">ចូរប្រើម្រាមដៃប៉ះម្តងមួយផ្លែ ហើយរាប់មើល។</span></div>
+      <dl>
+        <dt>中身</dt><dd>授業9回（かずを かぞえよう ～ 10は いくつと いくつ）</dd>
+        <dt>字数</dt><dd>日本語 9,035字 → クメール語 17,314文字</dd>
+        <dt>検査</dt><dd>9回とも、コード不変・構文・訳し漏れ・数字を確認</dd>
+      </dl>
+      <span class="go">授業の対訳を見る →</span>
+    </a>
+  </div>
+
+  <h2>見てほしいこと</h2>
+  <ul>
+    <li>「5 បំបែកជា 2 និង 3」は、「5は 2と 3」の言い方として自然ですか。教科書の決まった言い方がありますか。</li>
+    <li>「ទី 3」（順番）と「3 ក្បាល」（数）の区別は、小1に伝わりますか。</li>
+    <li>「មិត្តរបស់ 10」（10のともだち）は通じる言い方ですか。</li>
+    <li>先生とピヨの話し方は、1年生に合っていますか。</li>
+    <li>数字は半角（0 1 2）のままです。クメール数字（០ ១ ២）にしたほうがよいですか。</li>
+    <li>ボタンや案内（「ចាប់ផ្តើម!」「តម្រុយ」「ត្រា」など）の言葉は自然ですか。</li>
+  </ul>
+
+  <h2>まだ入っていないもの</h2>
+  <ul>
+    <li>授業の音声（日本語の録音はありますが、クメール語の音声はありません）</li>
+    <li>タブレットやスマホの実機での確認（手元のブラウザで、9回すべてを最後まで再生して確認しました）</li>
+    <li>小1の残り53回の授業</li>
+  </ul>
+
+  <p class="foot">コツコツくん・ホー先生とピヨの さんすう教室（小1）の公開版から作成。</p>
+</main>
+</body>
+</html>
