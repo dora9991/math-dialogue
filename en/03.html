@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>円周角の定理を使う</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 円 第3時：円周角の定理を使って、角の大きさを求めよう（ikkan の lesson_en_03 と同じ流れ）。
+   AB が直径なら、P がどこへ動いても ∠APB＝90°（中心角 180° の半分）。例題はア〜ウの 3つの図（中心角の半分・同じ弧・半円の弧）。
+   考えようは、円形のおぼんに三角定規の直角のかどをあてて、2辺が円とまじわる点に しるしを残す道具（答えは出さない）。
+   図の点は、中心 O・半径 3・向き（度）で決める。数値は ikkan のまま（自作）。図の角の字は、すべて座標から計算した値。 */
+(function () {
+  var C = CH.C, RAD = Math.PI / 180, O = [0, 0], R = 3;
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  /* ---- 円の図の道具（このページの中だけで使う） ---- */
+  function on(a) { return GE.polar(O, R, a); }                                         // 円周上の点（向き a 度）
+  function dg(x) { var r = Math.round(x * 10) / 10; return (Math.abs(r - Math.round(r)) < .05 ? String(Math.round(r)) : r.toFixed(1)) + '°'; }
+  /* 図の四角（fig）と、字を書く四角（side）。よこ長ならみぎ、たて長なら下 */
+  function lay(D, k) {
+    var B = CH.box(D, { l: .03, r: .03, t: .04, b: .04 });
+    if (B.w > B.h * 1.25) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .08, B.x1, B.y1), wide: true }; }
+    var h = B.h * .25; return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .04, B.y1 - h + 4, B.x1, B.y1), wide: false };
+  }
+  /* 円をふくめて、四角に入れる（円の大きさは、点が動いても変わらない） */
+  function fitC(D, Rr, P, o) { o = o || {}; return GE.fit(D, Rr, P, { keys: ['O'], bounds: GE.circBounds(O, R).concat(o.bounds || []), pad: o.pad == null ? .07 : o.pad }); }
+  function circle(F, o) { GE.circ(F, O, R, o); }
+  /* 円周の一部を太く（a0 → a1 は反時計まわり、度） */
+  function arcOn(F, a0, a1, o) {
+    o = o || {}; var g = F.D.ctx, p = F.X(O);
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.yel; g.lineWidth = o.w || 6; g.lineCap = 'round';
+    g.shadowColor = o.col || C.yel; g.shadowBlur = 8;
+    g.beginPath(); g.arc(p[0], p[1], R * F.u, -a0 * RAD, -a1 * RAD, true); g.stroke(); g.restore();
+  }
+  function segs(F, ss, o) { ss.split(' ').forEach(function (s) { GE.seg(F, s, o); }); }
+  function dots(F, ks, o) { ks.split('').forEach(function (k) { if (F.P[k]) GE.dot(F, k, o); }); }
+  /* 点の名前：{A: 向き（度）} */
+  function nm(F, m, o) {
+    o = o || {}; Object.keys(m).forEach(function (k) {
+      if (m[k] == null || !F.P[k]) return; var p = F.X(k), r = F.s * .95;
+      CH.text(F.D, p[0] + Math.cos(m[k] * RAD) * r, p[1] - Math.sin(m[k] * RAD) * r, k, { size: F.s, col: (o.col && o.col[k]) || C.chalk, a: o.a, outline: 'rgba(20,40,30,.9)' });
+    });
+  }
+  /* 角のしるし。字（座標から計算した大きさ、または o.t）は、二等分線の上の、2辺にふれないところに置く */
+  function mark(F, s, col, o) {
+    o = o || {}; var r = o.r || F.s * 1.05;
+    GE.arc(F, s, { col: col, fill: o.fill == null ? .3 : o.fill, a: o.a, r: r, n: o.n });
+    var t = o.t === false ? null : (o.t || dg(GE.ang(F.P, s))); if (!t) return;
+    var A = F.X(s[0]), V = F.X(s[1]), B = F.X(s[2]), a1 = Math.atan2(A[1] - V[1], A[0] - V[0]), d = Math.atan2(B[1] - V[1], B[0] - V[0]) - a1;
+    while (d > Math.PI) d -= 2 * Math.PI; while (d <= -Math.PI) d += 2 * Math.PI;
+    var sz = F.s * .82, g = F.D.ctx; g.save(); g.font = '600 ' + sz + 'px ' + FONT; var w = g.measureText(t).width; g.restore();
+    var m = a1 + d / 2, need = (Math.max(w, sz) / 2 + 3) / Math.sin(Math.abs(d) / 2), dd = CH.clamp(Math.max(r + sz * .9, need), 0, o.max || F.s * 4.2);
+    CH.text(F.D, V[0] + Math.cos(m) * dd, V[1] + Math.sin(m) * dd, t, { col: col, size: sz, a: o.a, outline: 'rgba(20,40,30,.9)' });
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする） */
+  function say(D, Rr, rows, o) {
+    o = o || {}; rows = rows.filter(Boolean); if (!rows.length) return;
+    var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (rows.length * 1.6)), g = D.ctx;
+    rows.forEach(function (r, i) {
+      g.save(); g.font = '600 ' + s + 'px ' + FONT; var w = g.measureText(r.t).width; g.restore();
+      var sz = w > Rr.w ? s * Rr.w / w : s;
+      CH.text(D, Rr.x0, Rr.y0 + s * .8 + i * s * 1.6, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left' });
+    });
+  }
+  /* 直角のしるしと字 */
+  function rmark(F, s, col, o) {
+    o = o || {}; GE.right(F, s, { col: col, a: o.a, fill: true, r: F.s * .7 }); if (o.t === false) return;
+    var A = F.X(s[0]), V = F.X(s[1]), B = F.X(s[2]), m = Math.atan2((A[1] - V[1]) / Math.hypot(A[0] - V[0], A[1] - V[1]) + (B[1] - V[1]) / Math.hypot(B[0] - V[0], B[1] - V[1]), (A[0] - V[0]) / Math.hypot(A[0] - V[0], A[1] - V[1]) + (B[0] - V[0]) / Math.hypot(B[0] - V[0], B[1] - V[1]));
+    CH.text(F.D, V[0] + Math.cos(m) * F.s * 1.75, V[1] + Math.sin(m) * F.s * 1.75, o.t || '90°', { col: col, size: F.s * .82, a: o.a, outline: 'rgba(20,40,30,.9)' });
+  }
+  /* 中心 O の扇形（a0 → a1 反時計まわり、度。r は画面の長さ） */
+  function sector(F, a0, a1, r, col, al) {
+    var g = F.D.ctx, p = F.X(O); g.save(); g.globalAlpha = F.D.ga * (al == null ? 1 : al);
+    g.beginPath(); g.moveTo(p[0], p[1]); g.arc(p[0], p[1], r, -a0 * RAD, -a1 * RAD, true); g.closePath();
+    g.fillStyle = 'rgba(255,157,178,.3)'; g.fill(); g.strokeStyle = col; g.lineWidth = 2.2; g.stroke(); g.restore();
+  }
+  /* キーフレーム（k：0〜1、xs を等しい間かくで） */
+  function kf(k, xs) { var n = xs.length - 1, i = Math.min(n - 1, Math.floor(k * n)), f = CH.ease(k * n - i); return xs[i] + (xs[i + 1] - xs[i]) * f; }
+  /* 図の四角を n こ に（よこ長なら横に、たて長なら 2段に） */
+  function panels(D, n) {
+    var B = CH.box(D, { l: .03, r: .03, t: .03, b: .03 });
+    if (B.w > B.h * 1.25 || n < 3) return CH.split(D, B, n, .06);
+    var rs = CH.rows(B, 2, .04), top = CH.cols(rs[0], 2, .06), w = top[0].w;
+    return [top[0], top[1], CH.rect(B.cx - w / 2, rs[1].y0, B.cx + w / 2, rs[1].y1)];
+  }
+
+  /* ---- 数と検算 ---- */
+  function pts(pa, qa) { var P = { O: O, A: on(180), B: on(0), P: on(pa) }; if (qa != null) P.Q = on(qa); return P; }
+  GE.verify(pts(60, 120), 'AB＝6、∠APB＝∠AQB＝90°、∠APB＝1/2∠AOB', null, '今日の問い');
+  CH.check([20, 75, 140, 165, 250, 300].every(function (a) { return GE.near(GE.ang(pts(a), 'APB'), 90, 1e-9); }), 'P を動かしても 90°');
+  var EX = [
+    { P: { O: O, A: on(215), B: on(325), P: on(90) }, t: 'ア', x: 'APB', g: 'AOB', ans: 55, use: '中心角の半分', nm: { A: 215, B: 325, P: 90, O: 90 }, segs: 'OA OB PA PB' },
+    { P: { O: O, A: on(206), B: on(334), P: on(90), Q: on(350) }, t: 'イ', x: 'AQB', g: 'APB', ans: 64, use: '同じ弧の円周角', nm: { A: 206, B: 334, P: 90, Q: 350 }, segs: 'PA PB QA QB' },
+    { P: { O: O, A: on(180), B: on(0), P: on(100) }, t: 'ウ', x: 'ABP', g: 'BAP', ans: 40, use: '半円の弧は 90°', nm: { A: 180, B: 0, P: 100, O: 270 }, segs: 'AB PA PB' }
+  ];
+  GE.verify(EX[0].P, '∠AOB＝110°、∠APB＝1/2∠AOB＝55°', null, '例題ア');
+  GE.verify(EX[1].P, '∠APB＝∠AQB＝64°', null, '例題イ');
+  GE.verify(EX[2].P, '∠BAP＝50°、∠APB＝90°、∠ABP＝40°', null, '例題ウ');
+  CH.check(180 - 90 - 50 === 40 && 110 / 2 === 55, '例題の計算');
+  var P5 = { O: O, B: on(180), D: on(0), A: on(56), C: on(300) };   // 例題2：BD が直径
+  GE.verify(P5, 'BD＝6、∠ABD＝28°、∠BAD＝90°、∠ADB＝62°、∠ACB＝∠ADB', null, '例題2');
+  CH.check(90 - 28 === 62, '例題2の計算');
+  var P8 = { O: O, A: on(180), C: on(0), B: on(248), D: on(76) };   // チャレンジ：AC が直径
+  GE.verify(P8, 'AC＝6、∠ACB＝34°、∠CAD＝38°、∠ABC＝90°、∠BAC＝56°、∠ADB＝∠ACB＝34°、∠ADC＝90°、∠ACD＝52°', null, 'チャレンジ');
+  CH.check(180 - 90 - 34 === 56 && 180 - 90 - 38 === 52, 'チャレンジの計算');
+
+  /* 今日の問いの図。o：q（Q の向き）、half（∠AOB＝180° を見せる濃さ）、lab（90° の字）、tri（△APB をぬる） */
+  function main(D, pa, o) {
+    o = o || {}; var P = pts(pa, o.q), L = lay(D), F = fitC(D, L.fig, P);
+    if (o.arc) arcOn(F, pa < 180 ? 180 : 0, pa < 180 ? 360 : 180, { a: o.arc });
+    if (o.tri) GE.poly(F, 'APB', { col: C.blue, fa: .2 * o.tri, stroke: false });
+    circle(F); segs(F, 'AB'); segs(F, 'PA PB'); if (P.Q) segs(F, 'QA QB');
+    if (o.half) { sector(F, pa < 180 ? 180 : 0, pa < 180 ? 360 : 180, F.s * 1.1, C.pink, o.half); CH.text(D, F.X(O)[0], F.X(O)[1] + (pa < 180 ? F.s * 2.3 : -F.s * 2.3), '180°', { col: C.pink, a: o.half, size: F.s * .82, outline: 'rgba(20,40,30,.9)' }); }
+    rmark(F, 'APB', C.yel, { t: o.lab ? null : false }); if (P.Q) rmark(F, 'AQB', C.yel, { t: o.lab ? null : false });
+    dots(F, 'OABPQ'); nm(F, { A: 180, B: 0, P: pa, Q: o.q, O: pa < 180 ? 270 : 90 });
+    return { F: F, L: L, P: P };
+  }
+
+  /* 考えよう：おぼんと三角定規（かどの位置 pos、かたむき tilt）。のこした しるし */
+  var marks = {};
+  function tray(D, pos, keep) {
+    var tilt = [-10, 20, -25, 10, 25, -20, 0, -15, 15][Math.round(pos / 10) % 9];      // かたむきは、位置ごとに少しずつ変える
+    var Cp = on(pos), d1 = pos + 180 - 45 + tilt, d2 = d1 + 90, u1 = [Math.cos(d1 * RAD), Math.sin(d1 * RAD)], u2 = [Math.cos(d2 * RAD), Math.sin(d2 * RAD)];
+    var L1 = -2 * (Cp[0] * u1[0] + Cp[1] * u1[1]), L2 = -2 * (Cp[0] * u2[0] + Cp[1] * u2[1]);
+    var X = GE.add(Cp, [u1[0] * L1, u1[1] * L1]), Y = GE.add(Cp, [u2[0] * L2, u2[1] * L2]);
+    var E1 = GE.add(Cp, [u1[0] * (L1 + .6), u1[1] * (L1 + .6)]), E2 = GE.add(Cp, [u2[0] * (L2 + .6), u2[1] * (L2 + .6)]);
+    var P = { O: O, C: Cp, X: E1, Y: E2 }, L = lay(D), F = fitC(D, L.fig, P, { bounds: GE.circBounds(O, 3.75) });
+    if (keep) marks[pos] = [X, Y]; else marks = {};
+    GE.circ(F, O, R, { col: 'rgba(255,192,120,.9)', w: 3, fill: 'rgba(255,192,120,.07)' });
+    Object.keys(marks).forEach(function (k) {
+      var q = marks[k]; if (keep === 2) GE.seg(F, q, { dash: true, w: 1.8, col: 'rgba(242,240,230,.7)' });
+      GE.dot(F, q[0], { col: C.yel, r: F.s * .2 }); GE.dot(F, q[1], { col: C.yel, r: F.s * .2 });
+    });
+    GE.polyP(F, [Cp, E1, E2], { col: C.blue, fa: .16 });
+    segs(F, 'CX CY', { col: C.blue, w: 3 }); GE.right(F, 'XCY', { col: C.blue, r: F.s * .8, fill: true });
+    [X, Y].forEach(function (Z) { var z = F.X(Z); CH.circle(D, z[0], z[1], F.s * .42, { stroke: C.yel, sw: 2.4 }); GE.dot(F, Z, { col: C.yel, r: F.s * .22 }); });
+    say(D, L.side, [{ t: '三角定規の直角のかど', col: C.blue }, { t: '● … 辺が おぼんのふちと', col: C.yel }, { t: '　　まじわるところ', col: C.yel }, { t: 'のこした しるし … ' + Object.keys(marks).length + 'か所' }]);
+  }
+
+  K3.run({
+    no: '第3時', title: '円周角の定理を使って、角の大きさを求めよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '◀ 第2時' }, { href: '04.html', label: '第4時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '直径 AB と円周上の点 P', q: '線分 AB は円 O の直径で、点 P は円周上を動く。P を動かすと、∠APB は、どうなるだろう。そのわけも考えよう。',
+        notes: ['① 自分の考え（3分）　図の P、Q で ∠APB、∠AQB をはかって、わけも。', '② ペアの考え（3分）'],
+        draw: function (D) { main(D, 60, { q: 120 }); } },
+      { tag: '今日の問い', q: 'P を動かすと、∠APB は？ そのわけは？', a: 'いつも 90°', sub: 'AB は直径だから、中心角 ∠AOB＝180°。円周角は、その半分', dur: 6,
+        b: { t: '直径 AB → ∠APB＝<b>90°</b>（中心角 180° の半分）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, pa = D.ph ? kf(CH.smooth(0, .7, t), [60, 160, 20, 60]) : 60, h = D.ph ? CH.smooth(.75, .9, t) : 0, m = main(D, pa, { lab: true, half: h });
+          say(D, m.L.side, [{ t: '∠APB＝' + dg(GE.ang(m.P, 'APB')), col: C.yel }, h ? { t: '∠AOB＝180°（一直線）', col: C.pink, a: h } : null, D.ph && t > .9 ? { t: '180° の半分 → 90°', a: CH.smooth(.9, 1, t) } : null]);
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '半円の弧に対する円周角は、何度？', a: '90°', sub: 'AB が直径のとき、円周上の点 P について、△APB は直角三角形', dur: 2,
+        b: [{ t: '<b>半円の弧</b> に対する円周角は <b>90°</b>', col: C.green }, { t: '円周角は中心角の半分。同じ弧に対する円周角は等しい', col: C.green }],
+        draw: function (D) { var t = D.ph ? D.t : 0, m = main(D, 60, { lab: D.ph, arc: D.ph ? CH.smooth(0, .4, t) : 0, tri: D.ph ? CH.smooth(.4, .8, t) : 0 }); if (D.ph) say(D, m.L.side, [{ t: '半円の弧', col: C.yel, a: CH.smooth(0, .4, t) }, { t: '△APB は直角三角形', col: C.blue, a: CH.smooth(.5, .9, t) }]); } },
+      { tag: '例題', bh: '例題　∠x を求める', q: 'ア〜ウの図で、∠x の大きさを求めよう。使う性質も答えよう。', a: 'ア 55°　イ 64°　ウ 40°', sub: 'ア 中心角 110° の半分　イ 同じ弧 AB に対する円周角　ウ 半円の弧で ∠APB＝90° → 180°−90°−50°', dur: 6,
+        b: { t: 'ア 55°（中心角の半分）　イ 64°（同じ弧）　ウ 40°（半円の弧は 90°）', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, rs = panels(D, 3), s = CH.fs(D, .9);
+          EX.forEach(function (e, i) {
+            var r = rs[i], a = D.ph ? CH.smooth(i / 3 + .05, i / 3 + .25, t) : 0, sq = Math.min(r.w, r.h - s * 3), y0 = r.cy - (sq + s * 3) / 2;
+            var F = fitC(D, CH.rect(r.cx - sq / 2, y0 + s * 1.3, r.cx + sq / 2, y0 + s * 1.3 + sq), e.P, { pad: .1 });
+            circle(F); segs(F, e.segs);
+            if (i === 2 && a) rmark(F, 'APB', C.green, { a: a });
+            mark(F, e.g, i === 0 ? C.pink : C.blue);
+            mark(F, e.x, C.yel, { t: a > .5 ? null : 'x' });
+            dots(F, 'OABPQ'); nm(F, e.nm);
+            CH.text(D, r.cx - sq / 2 + s * .5, y0 + s * .5, e.t, { col: C.orange, size: s * 1.1 });
+            CH.text(D, r.cx, y0 + s * 2.1 + sq, e.use, { col: C.yel, a: a, size: s * .9 });
+          });
+        } },
+      { tag: '例題', bh: '例題2　直径と同じ弧', q: 'BD は円 O の直径で、∠ABD＝28° である。∠ACB の大きさは？', a: '62°', sub: '∠BAD＝90°（半円の弧）→ ∠ADB＝90°−28°＝62° → ∠ACB＝∠ADB（同じ弧 AB に対する円周角）', dur: 4.5,
+        b: { t: '∠BAD＝90° → ∠ADB＝62° → ∠ACB＝∠ADB＝<b>62°</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, a1 = D.ph ? CH.smooth(0, .3, t) : 0, a2 = D.ph ? CH.smooth(.35, .6, t) : 0, a3 = D.ph ? CH.smooth(.68, .95, t) : 0;
+          var L = lay(D), F = fitC(D, L.fig, P5);
+          if (a3) arcOn(F, 56, 180, { a: a3 * .85 });
+          circle(F); segs(F, 'BD AB AD CA CB');
+          mark(F, 'ABD', C.blue, { t: '28°' });
+          if (a1) rmark(F, 'BAD', C.green, { a: a1 });
+          if (a2) mark(F, 'ADB', C.pink, { a: a2 });
+          mark(F, 'ACB', C.yel, { t: a3 > .5 ? null : 'x', a: D.ph ? 1 : .8 });
+          dots(F, 'OABCD'); nm(F, { A: 56, B: 180, C: 300, D: 0, O: 270 });
+          if (D.ph) say(D, L.side, [{ t: '∠BAD＝90°（半円の弧）', col: C.green, a: a1 }, { t: '∠ADB＝90°−28°＝62°', col: C.pink, a: a2 }, { t: '∠ACB＝∠ADB＝62°', col: C.yel, a: a3 }, { t: '（同じ弧 AB）', col: C.yel, a: a3 }]);
+        } },
+      { tag: '考えよう', q: '円形のおぼんの中心を見つけたい。使えるのは、直角のかどのある三角定規と、えんぴつだけ。どうすれば、中心が見つかるだろう。',
+        notes: ['見つけ方と、そうすれば見つかるわけを書こう。', 'スライダーで、三角定規の直角のかどを、おぼんのふちにそって動かせます。「のこす」で、しるしや線が残ります。'],
+        sliders: [{ key: 'pos', label: 'かどの位置', min: 0, max: 350, step: 10, val: 240, fmt: function (x) { return x + '°'; } },
+          { key: 'keep', label: 'のこす', min: 0, max: 2, step: 1, val: 0, fmt: function (x) { return ['—', '点', '点と線'][x]; } }],
+        draw: function (D) { tray(D, D.V.pos, D.V.keep); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'AC は円 O の直径で、∠ACB＝34°、∠CAD＝38° である。① ∠ABC　② ∠BAC　③ ∠ADB　④ ∠ACD の大きさを求めよう。',
+        notes: ['ヒント① 直径を見つけたら、どんな角ができる？', 'ヒント② ∠ADB は、どの弧に対する円周角？'],
+        a: '① 90°　② 56°　③ 34°　④ 52°', sub: '① 半円の弧　② 180°−90°−34°　③ 弧 AB に対する円周角（∠ACB と同じ）　④ ∠ADC＝90° だから 180°−90°−38°', dur: 6,
+        b: { t: '① 90°　② 56°　③ 34°（同じ弧 AB）　④ 52°（∠ADC＝90°）', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, A = [0, 1, 2, 3].map(function (i) { return D.ph ? CH.smooth(i * .25 + .02, i * .25 + .2, t) : 0; });
+          var L = lay(D), F = fitC(D, L.fig, P8);
+          if (A[2]) arcOn(F, 180, 248, { a: A[2] * .85 });
+          circle(F); segs(F, 'AC AB BC AD CD BD');
+          mark(F, 'ACB', C.blue, { t: '34°' }); mark(F, 'CAD', C.blue, { t: '38°' });
+          if (A[0]) rmark(F, 'ABC', C.yel, { a: A[0] });
+          if (A[1]) mark(F, 'BAC', C.yel, { a: A[1] });
+          if (A[2]) mark(F, 'ADB', C.yel, { a: A[2] });
+          if (A[3]) { rmark(F, 'ADC', C.green, { a: A[3], t: false }); mark(F, 'ACD', C.yel, { a: A[3] }); }
+          dots(F, 'OABCD'); nm(F, { A: 180, B: 248, C: 0, D: 76, O: 300 });
+          if (D.ph) say(D, L.side, [{ t: '① ∠ABC＝90°（半円の弧）', col: C.yel, a: A[0] }, { t: '② ∠BAC＝180°−90°−34°＝56°', col: C.yel, a: A[1] }, { t: '③ ∠ADB＝∠ACB＝34°', col: C.yel, a: A[2] }, { t: '④ ∠ACD＝180°−90°−38°＝52°', col: C.yel, a: A[3] }]);
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>変化の割合</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 一次関数 第3時：x が増えると、y はどんな割合で変わるだろう（ikkan の lesson_ichiji_new_03 と同じ流れ）。
+   表の上に「＋1」「＋3」の矢印、下に y の増加量。矢印をずらしても、増え方は同じ。変化の割合＝y の増加量÷x の増加量。
+   数値は ikkan のまま（① y＝3x＋2、② y＝−2x＋5、例題 y＝4x−3・y＝−5x＋2、考えよう y＝2x−3、チャレンジ）。表・答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum;
+  /* ---- 分数入りの字（[2/3] をたての分数に）。canvas 用と、右の板書（HTML）用 ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fr(s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fr(s[k]); }); if (s.notes) s.notes = s.notes.map(fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
+  function sg(v) { return (v >= 0 ? '＋' : '') + S(v); }
+
+  /* ---- 数（ikkan と同じ）と検算 ---- */
+  var XS = [-2, -1, 0, 1, 2, 3], F1 = function (x) { return 3 * x + 2; }, F2 = function (x) { return -2 * x + 5; };
+  var Y1 = XS.map(F1), Y2 = XS.map(F2);
+  CH.check(Y1.join() === '-4,-1,2,5,8,11' && Y2.join() === '9,7,5,3,1,-1', '今日の問いの表');
+  CH.check(Y1.every(function (y, i) { return !i || y - Y1[i - 1] === 3; }) && Y2.every(function (y, i) { return !i || y - Y2[i - 1] === -2; }), 'x が 1 増えるとき');
+  CH.check([0, 1, 2].every(function (i) { return Y1[i + 3] - Y1[i] === 9 && Y2[i + 3] - Y2[i] === -6; }), 'x が 3 増えるとき（どこでも）');
+  var E1 = function (x) { return 4 * x - 3; }, E2 = function (x) { return -5 * x + 2; };
+  CH.check(E1(4) - E1(1) === 12 && E1(1) === 1 && E1(4) === 13 && 12 / 3 === 4, '例題（1）');
+  CH.check([-3, 0, 1, 7].every(function (p) { return E2(p + 3) - E2(p) === -15; }), '例題（2）');
+  var TH = function (x) { return 2 * x - 3; };
+  CH.check([[-2, 1], [0, 4], [1, 5]].every(function (r) { return (TH(r[1]) - TH(r[0])) / (r[1] - r[0]) === 2; }), '考えよう（ここで確かめるだけ）');
+  var CA = 8 / (6 - 2), CB = 3 - CA * 2;
+  CH.check(CA === 2 && CB === -1 && CA * 6 + CB === 3 + 8, 'チャレンジ');
+
+  /* ---- 表の上・下の矢印（セルの中心から中心へ） ---- */
+  function hop(D, x0, x1, y, up, col, txt, a, sz) {
+    var g = D.ctx, s = sz || CH.fs(D), h = s * 1.05 * (up ? -1 : 1), d = Math.abs(x1 - x0);
+    g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.strokeStyle = col; g.lineWidth = 2.2; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x0, y); g.quadraticCurveTo((x0 + x1) / 2, y + h * 1.6, x1, y); g.stroke(); g.restore();
+    var ang = Math.atan2(-h * 1.6, (x1 - x0) / 2) , hd = Math.min(9, d * .25);
+    CH.arrow(D, x1 - Math.cos(ang) * hd * 1.2, y - Math.sin(ang) * hd * 1.2, x1, y, { col: col, a: a, head: hd, w: 2.2 });
+    CH.text(D, (x0 + x1) / 2, y + h * 1.25, txt, { col: col, size: s * .85, a: a, outline: 'rgba(20,40,30,.9)' });
+  }
+  function tab(D, R, xs, ys, name, o) {
+    o = o || {}; var s = CH.fs(D);
+    return CH.table(D, R, ['x'].concat(xs.map(S)), [[name].concat(ys.map(function (y) { return y == null ? '' : S(y); }))], { fw: o.fw || .27, size: CH.fs(D, .88), rh: s * 2.1, show: o.show, hl: o.hl });
+  }
+  function pair(D) { var R = CH.box(D, { l: .05, r: .05, t: .1, b: .08 }); return CH.rows(R, 2, .12); }
+
+  K3.run({
+    no: '第3時', title: 'x が増えると、y はどんな割合で変わるだろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '◀ 第2時' }, { href: '04.html', label: '第4時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '① y＝3x＋2　② y＝−2x＋5', q: '2つの一次関数 ① y＝3x＋2、② y＝−2x＋5 がある。x の値が増えるとき、y の値は、どれだけ増えるだろうか。表を完成させて、きまりを見つけよう。',
+        notes: ['① 自分の考え（3分）　x が 1 増えるとき、3 増えるときの、y の増え方を書こう。', '② ペアの考え（3分）'],
+        draw: function (D) { var rs = pair(D); tab(D, rs[0], XS, XS.map(function () { return null; }), '① y＝3x＋2'); tab(D, rs[1], XS, XS.map(function () { return null; }), '② y＝−2x＋5'); } },
+      { tag: '今日の問い', q: '表を完成させよう。x が 1 増えると、y はどれだけ増える？', a: '① 3 増える　② 2 減る', sub: '① −4、−1、2、5、8、11　② 9、7、5、3、1、−1。② は「−2 増える」ともいえる', dur: 6,
+        b: { t: 'x が 1 増えると … ① y は <b>3</b> 増える　② y は <b>2</b> 減る（−2 増える）', col: C.yel },
+        draw: function (D) {
+          var rs = pair(D), t = D.ph ? D.t : 0, s = CH.fs(D);
+          [[Y1, '① y＝3x＋2', C.orange], [Y2, '② y＝−2x＋5', C.pink]].forEach(function (g, k) {
+            var T = tab(D, rs[k], XS, g[0], g[1], { show: function (r, c) { return r === 1 && c > 0 ? (D.ph ? CH.smooth(c * .07 - .05, c * .07 + .02, t) : 0) : 1; } });
+            for (var i = 1; i < 6; i++) {
+              var a = CH.smooth(.45 + i * .08, .52 + i * .08, t); if (a <= 0) continue;
+              var c0 = T.cell(0, i), c1 = T.cell(0, i + 1), d0 = T.cell(1, i), d1 = T.cell(1, i + 1);
+              hop(D, c0.cx, c1.cx, c0.y0, true, C.blue, '＋1', a); hop(D, d0.cx, d1.cx, d0.y1, false, g[2], sg(g[0][i] - g[0][i - 1]), a);
+            }
+          });
+        } },
+      { tag: '今日の問い', q: 'x が 3 増えると、y はどれだけ増える？', a: '① 9 増える　② 6 減る', sub: 'どこから 3 増やしても同じ。y の増え方は、x の係数（3 と −2）の 3倍', dur: 6,
+        b: { t: 'x が 3 増えると … ① <b>9</b> 増える　② <b>6</b> 減る（どこでも同じ）', col: C.yel },
+        draw: function (D) {
+          var rs = pair(D), t = D.ph ? D.t : 0, st = D.ph ? Math.min(2, Math.floor(t * 3)) : 0, a = D.ph ? CH.smooth(st / 3, st / 3 + .08, t) : 0;
+          [[Y1, '① y＝3x＋2', C.orange], [Y2, '② y＝−2x＋5', C.pink]].forEach(function (g, k) {
+            var T = tab(D, rs[k], XS, g[0], g[1], { hl: function (r, c) { return D.ph && (c === st + 1 || c === st + 4) && c > 0 ? (r ? g[2] : C.blue) : null; } });
+            if (!D.ph) return;
+            var c0 = T.cell(0, st + 1), c1 = T.cell(0, st + 4), d0 = T.cell(1, st + 1), d1 = T.cell(1, st + 4);
+            hop(D, c0.cx, c1.cx, c0.y0, true, C.blue, '＋3', a); hop(D, d0.cx, d1.cx, d0.y1, false, g[2], sg(g[0][st + 3] - g[0][st]), a);
+          });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'x の値が増加した量を x の何という？ (y の増加量)÷(x の増加量) を何という？', a: '増加量・変化の割合', sub: '一次関数 y＝ax＋b の変化の割合は、いつも一定で、a に等しい', dur: 4,
+        b: [{ t: 'x、y の値が増加した量 … x の <b>増加量</b>、y の <b>増加量</b>', col: C.green }, { t: '<b>変化の割合</b> ＝ [y の増加量/x の増加量]', col: C.green }, { t: 'y＝ax＋b の変化の割合は <b>一定</b> で、<b>a</b> に等しい', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .12, b: .12 }), s = CH.fs(D), t = D.ph ? D.t : 0, fz = Math.min(s * 1.5, R.w / 13);
+          TX(D, R.cx, R.y0 + R.h * .14, '変化の割合＝[y の増加量/x の増加量]', { size: fz, col: t > 0 ? C.green : C.chalk });
+          if (t > 0) {
+            TX(D, R.cx, R.y0 + R.h * .45, '① y＝3x＋2 … [9/3]＝3', { size: fz * .85, col: C.orange, a: CH.smooth(.15, .35, t) });
+            TX(D, R.cx, R.y0 + R.h * .66, '② y＝−2x＋5 … [−6/3]＝−2', { size: fz * .85, col: C.pink, a: CH.smooth(.35, .55, t) });
+            CH.text(D, R.cx, R.y0 + R.h * .9, 'いつも一定で、x の係数 a に等しい', { size: fz * .75, col: C.yel, a: CH.smooth(.65, .85, t) });
+          }
+        } },
+      { tag: '例題', bh: '例題', q: '（1）一次関数 y＝4x−3 で、x の値が 1 から 4 まで増加するとき、変化の割合を求めよう。', a: '4', sub: 'x の増加量 4−1＝3、y の増加量 13−1＝12（x＝1 で y＝1、x＝4 で y＝13）。変化の割合 [12/3]＝4（x の係数と同じ）', dur: 4,
+        b: { t: '（1）[12/3]＝<b>4</b>（x の増加量 3、y の増加量 12）', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .08, r: .08, t: .1, b: .1 }), rs = CH.rows(R, 2, .05), t = D.ph ? D.t : 0, s = CH.fs(D), xs = [1, 2, 3, 4];
+          var T = tab(D, CH.rect(rs[0].x0 + rs[0].w * .1, rs[0].y0 + s * 1.5, rs[0].x1 - rs[0].w * .1, rs[0].y1), xs, xs.map(E1), 'y＝4x−3', { fw: .3, hl: function (r, c) { return D.ph && (c === 1 || c === 4) ? (r ? C.pink : C.blue) : null; } });
+          if (t > 0) {
+            var a = CH.smooth(0, .25, t), c0 = T.cell(0, 1), c1 = T.cell(0, 4), d0 = T.cell(1, 1), d1 = T.cell(1, 4);
+            hop(D, c0.cx, c1.cx, c0.y0, true, C.blue, '＋3', a); hop(D, d0.cx, d1.cx, d0.y1, false, C.pink, '＋12', a);
+            var fz = Math.min(s * 1.3, rs[1].w / 12);
+            TX(D, rs[1].cx, rs[1].y0 + rs[1].h * .45, '変化の割合＝[12/3]＝4', { size: fz, col: C.yel, a: CH.smooth(.4, .6, t) });
+            CH.text(D, rs[1].cx, rs[1].y0 + rs[1].h * .8, 'x の係数 4 と同じ', { size: fz * .7, col: C.green, a: CH.smooth(.7, .9, t) });
+          }
+        } },
+      { tag: '例題', q: '（2）一次関数 y＝−5x＋2 で、x の値が 3 増加するとき、y の増加量を求めよう。', a: '−15', sub: '変化の割合は −5。y の増加量＝（変化の割合）×（x の増加量）＝−5×3＝−15', dur: 4,
+        b: { t: '（2）y の増加量＝−5×3＝<b>−15</b>', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .08, r: .08, t: .1, b: .1 }), rs = CH.rows(R, 2, .05), t = D.ph ? D.t : 0, s = CH.fs(D), xs = [0, 1, 2, 3];
+          var T = tab(D, CH.rect(rs[0].x0 + rs[0].w * .1, rs[0].y0 + s * 1.5, rs[0].x1 - rs[0].w * .1, rs[0].y1), xs, xs.map(E2), 'y＝−5x＋2', { fw: .3, hl: function (r, c) { return D.ph && (c === 1 || c === 4) ? (r ? C.pink : C.blue) : null; } });
+          var c0 = T.cell(0, 1), c1 = T.cell(0, 4), d0 = T.cell(1, 1), d1 = T.cell(1, 4), fz = Math.min(s * 1.3, rs[1].w / 14);
+          hop(D, c0.cx, c1.cx, c0.y0, true, C.blue, '＋3', 1);
+          if (t > 0) {
+            hop(D, d0.cx, d1.cx, d0.y1, false, C.pink, '−15', CH.smooth(.55, .75, t));
+            TX(D, rs[1].cx, rs[1].y0 + rs[1].h * .4, 'y の増加量＝（変化の割合）×（x の増加量）', { size: fz * .75, a: CH.smooth(0, .25, t) });
+            TX(D, rs[1].cx, rs[1].y0 + rs[1].h * .75, '＝−5×3＝−15', { size: fz, col: C.yel, a: CH.smooth(.3, .5, t) });
+          }
+        } },
+      { tag: '考えよう', bh: '考えよう', q: '一次関数 y＝2x−3 で、x の値が −2 から 1、0 から 4、1 から 5 まで増加するときの、変化の割合を調べよう。一般の y＝ax＋b でも、同じことがいえるだろうか。',
+        notes: ['気づいたことを書こう。', 'x が p から q まで増加するとき、p、q、a、b を使って説明しよう。', 'スライダーで、x がどこからどこまで増えるかを変えられます。'],
+        sliders: [{ key: 'p', label: 'はじめの x', min: -3, max: 5, step: 1, val: -2, fmt: S }, { key: 'q', label: 'おわりの x', min: -2, max: 6, step: 1, val: 1, fmt: S }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .14, b: .14 }), s = CH.fs(D), xs = [], p = D.V.p, q = D.V.q; for (var x = -3; x <= 6; x++) xs.push(x);
+          var T = tab(D, R, xs, xs.map(TH), 'y＝2x−3', { fw: .2, hl: function (r, c) { var x = xs[c - 1]; return c > 0 && (x === p || x === q) ? (r ? C.orange : C.blue) : null; } });
+          if (q > p) {
+            var c0 = T.cell(0, p + 4), c1 = T.cell(0, q + 4), d0 = T.cell(1, p + 4), d1 = T.cell(1, q + 4);
+            hop(D, c0.cx, c1.cx, c0.y0, true, C.blue, 'x の増加量', 1); hop(D, d0.cx, d1.cx, d0.y1, false, C.orange, 'y の増加量', 1);
+          } else CH.text(D, R.cx, T.y1 + s * 1.6, 'おわりの x を、はじめの x より大きくしよう', { col: C.pink, size: s * .9 });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '一次関数 y＝ax＋b は、x の値が 2 から 6 まで増加すると、y の値が 8 増加する。また、x＝2 のとき y＝3 である。a、b の値を求めよう。', a: 'a＝2、b＝−1', sub: 'a は変化の割合 [8/6−2]＝[8/4]＝2。y＝2x＋b に x＝2、y＝3 を代入して 3＝4＋b、b＝−1', dur: 5,
+        b: { t: 'a＝[8/4]＝<b>2</b>　3＝2×2＋b → b＝<b>−1</b>（y＝2x−1）', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .08, r: .08, t: .1, b: .1 }), rs = CH.rows(R, 2, .05), t = D.ph ? D.t : 0, s = CH.fs(D);
+          var T = tab(D, CH.rect(rs[0].cx - rs[0].w * .28, rs[0].y0 + s * 1.5, rs[0].cx + rs[0].w * .28, rs[0].y1), [2, 6], [3, D.ph && t > .2 ? 11 : null], 'y＝ax＋b', { fw: .4 });
+          var c0 = T.cell(0, 1), c1 = T.cell(0, 2), d0 = T.cell(1, 1), d1 = T.cell(1, 2), fz = Math.min(s * 1.2, rs[1].w / 13);
+          hop(D, c0.cx, c1.cx, c0.y0, true, C.blue, '＋4', 1); hop(D, d0.cx, d1.cx, d0.y1, false, C.orange, '＋8', 1);
+          if (t > 0) {
+            TX(D, rs[1].cx, rs[1].y0 + rs[1].h * .2, 'a＝[8/4]＝2', { size: fz, col: C.yel, a: CH.smooth(.05, .25, t) });
+            TX(D, rs[1].cx, rs[1].y0 + rs[1].h * .52, '3＝2×2＋b　　b＝−1', { size: fz, col: C.yel, a: CH.smooth(.4, .6, t) });
+            TX(D, rs[1].cx, rs[1].y0 + rs[1].h * .82, 'y＝2x−1', { size: fz * 1.1, col: C.orange, a: CH.smooth(.75, .95, t) });
+          }
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>比例ではない関係</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 一次関数 第1時：比例に似ているけれど、比例ではない関係を調べよう（ikkan の lesson_ichiji_new_01 と同じ流れ）。
+   まいさんが道を歩くと、1分ごとの道のりが表に入る。x が 2倍でも y は 2倍にならない。y＝70x＋200 の 70 と 200 が a と b に。
+   数値は ikkan のまま（まいさん 200 m・分速 70 m、例題 ア〜ウ、チャレンジ y＝(a−3)x＋(a＋2)）。表・答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum;
+  /* ---- 分数入りの字（[2/3] をたての分数に）。canvas 用と、右の板書（HTML）用 ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fr(s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fr(s[k]); }); if (s.notes) s.notes = s.notes.map(fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
+
+  /* ---- 数（ikkan と同じ）と検算 ---- */
+  var XS = [0, 1, 2, 3, 4, 5], MAI = XS.map(function (x) { return 70 * x + 200; }), RIKU = XS.map(function (x) { return 70 * x; });
+  var walk = []; for (var k = 0, p = 200; k <= 5; k++, p += 70) walk.push(p);
+  CH.check(walk.join() === MAI.join() && MAI.join() === '200,270,340,410,480,550', 'まいさんの表');
+  CH.check(MAI[2] !== 2 * MAI[1] && MAI[1] === 270 && MAI[2] === 340, '2倍にならない');
+  CH.check(RIKU.every(function (y, i) { return MAI[i] - y === 200; }), '考えようの表（ここで確かめるだけ）');
+  var EXF = [function (x) { return 50 * x + 100; }, function (x) { return 24 / x; }, function (x) { return 4 * x; }];
+  function isLin(f) { var a = f(2) - f(1), b = f(1) - a; return a !== 0 && [1, 3, 4, 6, 8].every(function (x) { return CH.near(f(x), a * x + b); }); }
+  CH.check(EXF.map(function (f) { return isLin(f) ? '○' : '×'; }).join('') === '○×○' && CH.near(EXF[2](0), 0), '例題 ア〜ウ');
+  function chA(a) { return { s: a - 3, c: a + 2 }; }
+  var CHA = [1, 3, -2, 5];
+  CH.check(chA(3).s === 0 && chA(-2).c === 0 && chA(-2).s === -5 && [-10, -5, -2, 0, 1, 3, 4, 7].filter(function (a) { return chA(a).s !== 0 && chA(a).c === 0; }).join() === '-2', 'チャレンジ');
+
+  /* ---- 道（家からの道のり）。walkers：[{d, col, name}] ---- */
+  function road(D, R, walkers, o) {
+    o = o || {}; var s = CH.fs(D, 1.1), X = CH.numline(D, R, 0, 600, 50, { lab: 100, unit: '（m）', size: CH.fs(D, .85) }), y = R.y1;
+    var hs = s * .8, hx = X(0) - hs * 1.3, hy = y + hs * .35;
+    CH.poly(D, [[hx - hs * .6, hy], [hx - hs * .6, hy - hs * .7], [hx, hy - hs * 1.25], [hx + hs * .6, hy - hs * .7], [hx + hs * .6, hy]], { stroke: C.chalk, sw: 2, fill: 'rgba(31,58,44,.95)' });
+    CH.text(D, hx, hy - hs * .36, '家', { size: hs * .62 });
+    if (o.flag) { CH.line(D, X(200), y, X(200), y - s * 2.6, { col: C.orange, w: 2 }); CH.poly(D, [[X(200), y - s * 2.6], [X(200) + s * .9, y - s * 2.3], [X(200), y - s * 2]], { fill: C.orange }); CH.text(D, X(200) + s, y - s * 3.1, '200 m の地点', { col: C.orange, size: s * .78, align: 'left' }); }
+    (o.marks || []).forEach(function (m) { CH.circle(D, X(m.d), y, s * .16, { fill: m.col, a: m.a }); });
+    (o.arcs || []).forEach(function (m) {
+      var x0 = X(m.d0), x1 = X(m.d1), g = D.ctx, h = s * 1.1;
+      g.save(); g.globalAlpha = D.ga * (m.a == null ? 1 : m.a); g.strokeStyle = m.col; g.lineWidth = 2; g.beginPath(); g.moveTo(x0, y - 4); g.quadraticCurveTo((x0 + x1) / 2, y - h * 2, x1, y - 4); g.stroke(); g.restore();
+      CH.text(D, (x0 + x1) / 2, y - h * 1.45, m.txt, { col: m.col, size: s * .72, a: m.a });
+    });
+    walkers.forEach(function (w, i) {
+      var x = X(w.d), r = s * .5, yy = y - r - 2 - (w.lift || 0);
+      CH.circle(D, x, yy, r, { fill: w.col, stroke: 'rgba(20,30,24,.8)', sw: 1.4 });
+      CH.text(D, x, yy - r - s * .6, w.name, { col: w.col, size: s * .82, outline: 'rgba(20,40,30,.9)' });
+    });
+    return X;
+  }
+  function layout(D) { var R = CH.box(D, { l: .08, r: .07, t: .1, b: .1 }), rs = CH.rows(R, 2, .12); return { road: CH.rect(rs[0].x0, rs[0].y0, rs[0].x1, rs[0].y1 - rs[0].h * .12), tab: rs[1] }; }
+  function maiTable(D, R, o) {
+    o = o || {};
+    return CH.table(D, R, ['x（分）'].concat(XS.map(String)), [['y（m）'].concat(MAI.map(String))], { fw: .2, size: CH.fs(D, .9), show: o.show, hl: o.hl, rh: CH.fs(D) * 2.4 });
+  }
+
+  /* ---- 式を字のならびで（文字ごとの位置を返す） ---- */
+  function toks(D, cx, y, list, size) {
+    var g = D.ctx, ws = [], w = 0; g.save(); g.font = '600 ' + size + 'px ' + FONT;
+    list.forEach(function (t) { var ww = g.measureText(t.t).width + size * .08; ws.push(ww); w += ww; }); g.restore();
+    var x = cx - w / 2, out = [];
+    list.forEach(function (t, i) { CH.text(D, x + ws[i] / 2, y, t.t, { size: size, col: t.col, a: t.a }); out.push({ x0: x, x1: x + ws[i], cx: x + ws[i] / 2 }); x += ws[i]; });
+    return out;
+  }
+
+  /* ---- 例題の絵 ---- */
+  function exPanel(D, R, k, t) {
+    var s = CH.fs(D), wide = R.w > R.h * 1.15, P = wide ? CH.rect(R.x0, R.y0 + s * 1.6, R.x0 + R.w * .5, R.y1) : CH.rect(R.x0, R.y0 + s * 1.6, R.x1, R.y0 + R.h * .62);
+    var T = wide ? CH.rect(R.x0 + R.w * .52, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .62, R.x1, R.y1);
+    CH.fillRect(D, R.x0, R.y0, R.x1, R.y1, { stroke: 'rgba(242,240,230,.25)', sw: 1.5 });
+    CH.text(D, R.x0 + s * .7, R.y0 + s * .8, ['ア', 'イ', 'ウ'][k], { col: C.yel, size: s * 1.05 });
+    var u = Math.min(P.w, P.h);
+    if (k === 0) {
+      var nb = CH.rect(P.cx - u * .42, P.cy - u * .3, P.cx - u * .08, P.cy + u * .15);
+      CH.fillRect(D, nb.x0, nb.y0, nb.x1, nb.y1, { fill: 'rgba(154,216,255,.25)', stroke: C.blue });
+      CH.text(D, nb.cx, nb.cy, '100円', { size: s * .7, col: C.blue });
+      for (var i = 0; i < 3; i++) { var px = P.cx + u * (.02 + i * .13); CH.poly(D, [[px, P.cy + u * .15], [px, P.cy - u * .22], [px + u * .04, P.cy - u * .3], [px + u * .08, P.cy - u * .22], [px + u * .08, P.cy + u * .15]], { stroke: C.orange, fill: 'rgba(255,192,120,.25)' }); }
+      CH.text(D, P.cx + u * .2, P.cy + u * .3, '50円 × x本', { size: s * .72, col: C.orange });
+    } else if (k === 1) {
+      var xx = CH.lerp(3, 6, CH.smooth(0, .5, t)), yy = 24 / xx, sc = u * .11, w = yy * sc, h = xx * sc;
+      CH.fillRect(D, P.cx - w / 2, P.cy - h / 2, P.cx + w / 2, P.cy + h / 2, { fill: 'rgba(169,240,176,.2)', stroke: C.green });
+      CH.text(D, P.cx, P.cy, '24 cm²', { size: s * .72, col: C.green });
+      CH.text(D, P.cx - w / 2 - s * .3, P.cy, 'x', { size: s * .8, align: 'right' }); CH.text(D, P.cx, P.cy + h / 2 + s * .7, 'y', { size: s * .8 });
+    } else {
+      var q = u * .5; CH.fillRect(D, P.cx - q / 2, P.cy - q / 2, P.cx + q / 2, P.cy + q / 2, { fill: 'rgba(201,176,255,.2)', stroke: C.lav, sw: 2.4 });
+      CH.text(D, P.cx - q / 2 - s * .3, P.cy, 'x', { size: s * .8, align: 'right' }); CH.text(D, P.cx, P.cy + q / 2 + s * .7, 'x', { size: s * .8 });
+      CH.text(D, P.cx, P.cy, '周 y', { size: s * .72, col: C.lav });
+    }
+    var ka = CH.smooth(.15 + k * .22, .3 + k * .22, t), eq = ['y＝50x＋100', 'y＝[24/x]', 'y＝4x'][k], ok = ['○', '×', '○'][k];
+    var ty = wide ? T.cy - s * 1 : T.y0 + T.h * .3, tx = T.cx;
+    if (ka > 0) TX(D, tx, ty, eq, { size: s * 1.05, col: C.yel, a: ka });
+    if (ka > 0) CH.text(D, tx, ty + s * 1.9, ok, { size: s * 2, col: ok === '○' ? C.green : C.pink, a: ka });
+    if (ka > 0 && k === 1) CH.text(D, tx, ty + s * 3.4, 'x が分母', { size: s * .72, col: C.pink, a: ka });
+    if (ka > 0 && k === 2) CH.text(D, tx, ty + s * 3.4, '4x＋0 と見る', { size: s * .72, col: C.green, a: ka });
+  }
+
+  K3.run({
+    no: '第1時', title: '比例に似ているけれど、比例ではない関係を調べよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '第2時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: 'まいさんの道のり', q: 'まいさんは、家から 200 m の地点を通ってから、分速 70 m で歩き続けた。この地点を通ってから x 分後の、家からの道のりを y m とする。y は x に比例するといえるだろうか。',
+        notes: ['① 自分の考え（3分）　表をうめて、比例といえるか調べよう。式にも表そう。', '② ペアの考え（3分）'],
+        draw: function (D) { var L = layout(D); road(D, L.road, [{ d: 200, col: C.orange, name: 'まい' }], { flag: true }); maiTable(D, L.tab, { show: function (r, c) { return r === 1 && c > 0 ? 0 : 1; } }); } },
+      { tag: '今日の問い', q: '1分ごとの道のり y を、表にしよう。', a: '200、270、340、410、480、550', sub: 'x＝0 のとき 200。そこから 1分に 70 m ずつふえる', dur: 6,
+        b: { t: '表　200・270・340・410・480・550（1分に <b>70</b> ずつふえる）', col: C.yel },
+        draw: function (D) {
+          var L = layout(D), t = D.ph ? D.t : 0, xr = D.ph ? t * 5.8 : 0, x = Math.min(5, xr), arcs = [], marks = [];
+          for (var i = 0; i < 5; i++) if (x >= i + 1) arcs.push({ d0: MAI[i], d1: MAI[i + 1], col: C.yel, txt: '＋70', a: CH.smooth(i + 1, i + 1.3, x) });
+          for (var j = 0; j <= 5; j++) if (x >= j) marks.push({ d: MAI[j], col: C.yel });
+          road(D, L.road, [{ d: 200 + 70 * x, col: C.orange, name: 'まい' }], { flag: true, arcs: arcs, marks: marks });
+          maiTable(D, L.tab, { show: function (r, c) { return r === 1 && c > 0 ? (D.ph ? CH.smooth(c - 1, c - .75, xr) : 0) : 1; }, hl: function (r, c) { return D.ph && r === 1 && c > 0 && xr >= c - 1 && xr < c - .4 ? C.yel : null; } });
+        } },
+      { tag: '今日の問い', q: 'y は x に比例するといえる？', a: 'いえない', sub: 'x が 1 から 2 に 2倍になっても、y は 270 から 340 で、2倍（540）にならない。式は y＝70x＋200', dur: 3,
+        b: { t: 'x が 2倍 → y は 2倍にならない → <b>比例ではない</b>　式 y＝70x＋200', col: C.yel },
+        draw: function (D) {
+          var L = layout(D), t = D.ph ? D.t : 0, s = CH.fs(D);
+          road(D, L.road, [{ d: 550, col: C.orange, name: 'まい' }], { flag: true, marks: MAI.map(function (d) { return { d: d, col: C.yel }; }) });
+          var Tb = maiTable(D, L.tab, { hl: function (r, c) { return t > .05 && (c === 2 || c === 3) ? (r === 0 ? C.blue : C.pink) : null; } });
+          if (t > .05) {
+            var a1 = CH.smooth(.05, .35, t), a2 = CH.smooth(.4, .7, t), c1 = Tb.cell(0, 2), c2 = Tb.cell(0, 3), d1 = Tb.cell(1, 2), d2 = Tb.cell(1, 3), g = D.ctx;
+            function arc(x0, x1, y, up, col, a) { g.save(); g.globalAlpha = D.ga * a; g.strokeStyle = col; g.lineWidth = 2.4; g.beginPath(); g.moveTo(x0, y); g.quadraticCurveTo((x0 + x1) / 2, y + (up ? -1 : 1) * s * 1.6, x1, y); g.stroke(); g.restore(); CH.arrow(D, x1 - 6, y + (up ? -1 : 1) * s * .35, x1, y, { col: col, a: a, head: 8 }); }
+            arc(c1.cx, c2.cx, c1.y0, true, C.blue, a1); CH.text(D, (c1.cx + c2.cx) / 2, c1.y0 - s * 1.2, '×2', { col: C.blue, a: a1 });
+            arc(d1.cx, d2.cx, d1.y1, false, C.pink, a2); CH.text(D, (d1.cx + d2.cx) / 2, d1.y1 + s * 1.3, '×2 ではない（270×2＝540）', { col: C.pink, a: a2, size: s * .85 });
+          }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'y＝70x＋200 のように、y が x の1次式で表されるとき、y は x の何という？', a: '一次関数', sub: 'y＝ax＋b（a、b は定数。a は 0 でない）。x の値が決まると y の値がただ1つ決まるので、一次関数は関数の1つ', dur: 4,
+        b: [{ t: 'y が x の <b>1次式</b> y＝ax＋b で表されるとき、y は x の <b>一次関数</b>', col: C.green }, { t: 'a、b は <b>定数</b>（決まった数）。a は 0 でない', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .12, b: .14 }), s = CH.fs(D), t = D.ph ? D.t : 0, big = Math.min(s * 2.3, R.w / 9), y1 = R.y0 + R.h * .28, y2 = R.y0 + R.h * .72;
+          var A = toks(D, R.cx, y1, [{ t: 'y' }, { t: '＝' }, { t: '70', col: C.orange }, { t: 'x' }, { t: '＋' }, { t: '200', col: C.blue }], big);
+          CH.line(D, A[2].x0, y1 + big * .7, A[3].x1, y1 + big * .7, { col: C.orange, w: 2 }); CH.text(D, (A[2].x0 + A[3].x1) / 2, y1 + big * .7 + s * .9, '1分に 70 m', { col: C.orange, size: s * .78 });
+          CH.line(D, A[5].x0, y1 + big * .7, A[5].x1, y1 + big * .7, { col: C.blue, w: 2 }); CH.text(D, A[5].cx, y1 + big * .7 + s * .9, 'はじめの 200 m', { col: C.blue, size: s * .78 });
+          if (t > 0) {
+            var a = CH.smooth(.2, .6, t), B = toks(D, R.cx, y2, [{ t: 'y' }, { t: '＝' }, { t: 'a', col: C.orange }, { t: 'x' }, { t: '＋' }, { t: 'b', col: C.blue }], big);
+            CH.arrow(D, A[2].cx, y1 + big * .7 + s * 1.6, B[2].cx, y2 - big * .65, { col: C.orange, a: a, w: 2.2 }); CH.arrow(D, A[5].cx, y1 + big * .7 + s * 1.6, B[5].cx, y2 - big * .65, { col: C.blue, a: a, w: 2.2 });
+            CH.text(D, R.cx, y2 + big * .95, 'a、b は定数（a は 0 でない）', { col: C.green, a: CH.smooth(.6, .9, t), size: s * .95 });
+          }
+        } },
+      { tag: '例題', bh: '例題　一次関数かどうか', q: 'y を x の式で表して、一次関数かどうか判断しよう。ア 1本 50円の鉛筆を x本と、100円のノートを1冊買ったときの代金 y円　イ 面積が 24 cm² の長方形の、縦 x cm と横 y cm　ウ 1辺 x cm の正方形の、周の長さ y cm',
+        a: 'ア ○　イ ×　ウ ○', sub: 'ア y＝50x＋100　イ y＝[24/x]（x が分母。反比例）　ウ y＝4x は y＝4x＋0 と見る（比例も一次関数）', dur: 4.5,
+        b: { t: 'ア y＝50x＋100 ○　イ y＝[24/x] ×　ウ y＝4x ○（<b>比例も一次関数</b>）', col: C.pink },
+        draw: function (D) { var R = CH.box(D, { l: .04, r: .04, t: .06, b: .08 }), rs = D.W > D.H * .9 ? CH.cols(R, 3, .05) : CH.rows(R, 3, .06); rs.forEach(function (r, k) { exPanel(D, r, k, D.ph ? D.t : 0); }); } },
+      { tag: '考えよう', bh: '考えよう', q: 'りくさんは、まいさんが 200 m の地点を通ったとき、家を出発して、分速 70 m で同じ道を歩いた。x 分後の道のりは、りくさん y＝70x、まいさん y＝70x＋200。表にまとめて、くらべよう。',
+        notes: ['気づいたこと（同じところ・ちがうところ）を書こう。', 'なぜ、そうなるのだろう。場面や式にもどって、説明しよう。', 'スライダーで、時間（x 分）を進められます。'],
+        sliders: [{ key: 'x', label: 'x（分）', min: 0, max: 5, step: 1, val: 0, fmt: function (x) { return x + '分後'; } }],
+        draw: function (D) {
+          var L = layout(D), x = D.V.x;
+          road(D, L.road, [{ d: 70 * x, col: C.blue, name: 'りく' }, { d: 70 * x + 200, col: C.orange, name: 'まい', lift: 0 }]);
+          CH.table(D, L.tab, ['x（分）'].concat(XS.map(String)), [['りく y＝70x'].concat(RIKU.map(String)), ['まい y＝70x＋200'].concat(MAI.map(String))],
+            { fw: .3, size: CH.fs(D, .85), show: function (r, c) { return r > 0 && c > 0 && c - 1 > x ? 0 : 1; }, hl: function (r, c) { return r > 0 && c - 1 === x ? (r === 1 ? C.blue : C.orange) : null; }, rh: CH.fs(D) * 2.2 });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'a を定数とする。y＝(a−3)x＋(a＋2) について。① y が x の一次関数であるとき、a についてどんなことがいえる？ ② y が x に比例するとき、a の値は？',
+        a: '① a は 3 でない　② a＝−2', sub: '① a＝3 だと y＝0x＋5＝5 で、x の項がなくなる　② 比例は y＝ax＋b の b が 0。a＋2＝0 から a＝−2（y＝−5x）', dur: 5,
+        b: { t: '① a−3 が 0 でない → <b>a は 3 でない</b>　② a＋2＝0 → <b>a＝−2</b>（y＝−5x）', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .1, b: .2 }), t = D.ph ? D.t : 0, s = CH.fs(D);
+          var rows = CHA.map(function (a) { var v = chA(a), eq = v.s === 0 ? 'y＝' + v.c : 'y＝' + (v.s === 1 ? '' : v.s === -1 ? '−' : S(v.s)) + 'x' + (v.c === 0 ? '' : '＋' + v.c); return ['a＝' + S(a), S(v.s), S(v.c), eq, v.s === 0 ? '×（x がない）' : v.c === 0 ? '○（比例）' : '○']; });
+          CH.table(D, R, ['a の値', 'x の係数 a−3', '定数 a＋2', '式', '一次関数か'], rows, { fw: .16, size: CH.fs(D, .8), rh: s * 2.4,
+            show: function (r, c) { return r === 0 || c === 0 ? 1 : D.ph ? CH.smooth(.12 + r * .17, .22 + r * .17, t) : 0; },
+            hl: function (r, c) { return r === 2 && t > .5 ? C.pink : r === 3 && t > .67 ? C.yel : null; } });
+          if (t > .85) CH.text(D, R.cx, R.y1 + s * 1.2, '比例 … 定数の項が 0　　一次関数 … x の係数が 0 でない', { col: C.orange, a: CH.smooth(.85, 1, t), size: s * .9 });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

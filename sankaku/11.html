@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>平行四辺形になる条件を使う証明</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三角形と四角形 第11時：平行四辺形になる条件を使って、証明しよう（ikkan の lesson_sankaku_11 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。証明の行は GE.proof が座標で確かめ、そのほかの答えは CH.check で計算し直す。
+   今日の問い：平行四辺形 ABCD の辺 AD、BC の中点 M、N。平行四辺形の形を変えても、四角形 MBND はいつも平行四辺形。
+   考えよう：対角線 AC 上に AE＝CF。E、F を動かしたり、三角形に色をぬったりして、合同な三角形をさがす道具。 */
+(function () {
+  var C = CH.C;
+  /* ---- このページの道具 ---- */
+  function box(D, o) { return CH.box(D, o || { l: .06, r: .06, t: .1, b: .12 }); }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), g = D.ctx; g.save(); g.font = '600 ' + size + 'px "Klee One",sans-serif'; var w = g.measureText(s).width; g.restore(); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({}, o, { size: size })); }
+  function isPg(P, a, b, c, d) { return GE.isPar(P, a + b, d + c) && GE.isPar(P, a + d, b + c); }
+  /* GE.proof に、行ごとの色分けを足す（L の行の hl: ['…', '…'] を、黄・ピンク…で光らせる。△ はうすくぬる） */
+  function proof(def, o) {
+    o = o || {}; var st = GE.proof(def, o), L = (def.L || []).slice();
+    if (L.length && !L[0].r && /で$|で、?$/.test(L[0].t)) L.shift();
+    var off = st.length - L.length - (def.point ? 1 : 0);
+    L.forEach(function (l, k) {
+      if (!l.hl) return;
+      var s = st[off + k], ask = l.ask != null ? l.ask : (l.c ? 'c' : l.r ? ((def.lv || 1) <= 1 ? 'r' : 't') : false);
+      s.draw = function (D) {
+        var F = GE.fit(D, CH.box(D, o.box || { l: .06, r: .06, t: .1, b: .12 }), def.P, { pad: def.pad });
+        (def.tri || []).forEach(function (t, j) { GE.poly(F, t, { col: j ? C.orange : C.blue, fa: .2, stroke: false }); });
+        GE.figure(F, def.fig);
+        if (o.draw) o.draw(D, F, { i: 1, ph: D.ph, t: D.ph ? D.t : (s.a ? 0 : 1) });
+        if (s.a && !D.ph && ask !== 'r') return;
+        var a = D.ph ? CH.smooth(0, .3, D.t) : 1;
+        l.hl.forEach(function (h, j) {
+          var col = GE.HL[j % GE.HL.length];
+          h.replace(/△([A-Z]{3})/g, function (m, t) { GE.poly(F, t, { col: col, fa: .3, sw: 3, a: a }); return m; });
+          GE.glow(F, h, def.alias, { col: col, a: a });
+        });
+      };
+    });
+    return st;
+  }
+  var SQ = ['AB', 'BC', 'CD', 'DA'];
+
+  /* ---- 今日の問い・例題：平行四辺形 ABCD（BC＝5、高さ 3）。A の位置（ax）を変えて形を変える。M、N は AD、BC の中点 ---- */
+  function para(ax) { var P = { A: [ax, 3], B: [0, 0], C: [5, 0], D: [ax + 5, 3] }; P.M = GE.mid(P.A, P.D); P.N = GE.mid(P.B, P.C); P.f0 = [-1.7, -0.2]; P.f1 = [8.2, 3.2]; return P; }
+  [-1.5, -.5, 0, 1.2, 2, 3].forEach(function (ax) {
+    var P = para(ax);
+    CH.check(isPg(P, 'A', 'B', 'C', 'D') && isPg(P, 'M', 'B', 'N', 'D') && GE.isPar(P, 'MD', 'BN') && GE.near(GE.len(P, 'MD'), GE.len(P, 'AD') / 2) && GE.near(GE.len(P, 'BN'), GE.len(P, 'BC') / 2), '今日の問い：MBND は平行四辺形（A＝' + ax + '）');
+  });
+  var PA = para(1.2); delete PA.f0; delete PA.f1;
+  var FIG0 = { segs: SQ.concat(['MB', 'ND']), ticks: [['AM', 1], ['MD', 1], ['BN', 2], ['NC', 2]], dots: ['M', 'N'], dir: { A: 'nw', B: 'sw', C: 'se', D: 'ne', M: 'n', N: 's' } };
+  function today(D, ax, after) {
+    var P = para(ax), F = GE.fit(D, box(D, { l: .06, r: .06, t: .12, b: .12 }), P, { keys: ['f0', 'f1'], pad: .05 });
+    if (after) after(F, 0);
+    GE.figure(F, Object.assign({ labels: ['A', 'B', 'C', 'D', 'M', 'N'] }, FIG0));
+    if (after) after(F, 1);
+    return F;
+  }
+
+  /* ---- 例題：四角形 MBND は平行四辺形 ---- */
+  var DEF_EX = {
+    id: '第11時 例題', lv: 1, ttl: '例題　中点を結んでできる四角形',
+    q: '平行四辺形 ABCD の辺 AD、BC の中点を、それぞれ M、N とする。四角形 MBND が平行四辺形であることを証明しよう。', P: PA,
+    fig: FIG0, hyp: '平行四辺形 ABCD、M は AD の中点、N は BC の中点', goal: '四角形 MBND は平行四辺形',
+    plan: { q: 'どの辺に目をつけると、平行四辺形になる条件が使えそう？', a: 'MD と BN（AD、BC の一部）', b: 'MD と BN に目をつける' },
+    L: [{ t: 'MD∥BN', r: '平行四辺形の対辺は平行（AD∥BC）', n: 1 },
+      { t: 'MD＝BN', r: 'AD＝BC（平行四辺形の対辺）で、M、N はその中点', n: 2 },
+      { t: '①②より、1組の対辺が平行で等しいから、四角形 MBND は平行四辺形', ask: false, c: 1, q: 'どの条件で、平行四辺形といえる？', a: '1組の対辺が平行で等しい' }]
+  };
+
+  /* ---- 考えよう：対角線 AC 上に AE＝CF（AC の t と 1−t の位置） ---- */
+  function think(t) { var P = para(1.2); P.E = GE.lerpP(P.A, P.C, t); P.F = GE.lerpP(P.A, P.C, 1 - t); P.O = GE.mid(P.A, P.C); return P; }
+  [.08, .2, .3, .42].forEach(function (t) {
+    var P = think(t);
+    CH.check(GE.verify(P, 'AE＝CF') && isPg(P, 'E', 'B', 'F', 'D') && GE.verify(P, '△ABE≡△CDF') && GE.verify(P, '△ADE≡△CBF') && GE.verify(P, 'BE∥DF') && GE.verify(P, 'OE＝OF') && GE.verify(P, 'OB＝OD'), '考えよう（t＝' + t + '）');
+  });
+
+  /* ---- チャレンジ：A、C から対角線 BD への垂線の足 E、F。四角形 AECF は平行四辺形 ---- */
+  var P8 = Object.assign({}, PA); delete P8.M; delete P8.N; P8.E = GE.foot(P8.A, P8.B, P8.D); P8.F = GE.foot(P8.C, P8.B, P8.D);
+  CH.check(GE.len(P8, 'BE') < GE.len(P8, 'BF') && GE.len(P8, 'BF') < GE.len(P8, 'BD') && GE.near(GE.len(P8, 'BE') + GE.len(P8, 'ED'), GE.len(P8, 'BD')), 'チャレンジ：E、F は BD の上');
+  var DEF_CH = {
+    id: '第11時 チャレンジ', lv: 2, ttl: 'チャレンジ　対角線への垂線',
+    q: '平行四辺形 ABCD の頂点 A、C から、対角線 BD に垂線 AE、CF をひく。四角形 AECF は平行四辺形であることを証明しよう。', P: P8,
+    fig: { segs: SQ.concat(['BD', 'AE', 'CF']), dash: ['EC', 'AF'], rights: ['AEB', 'CFD'], dots: ['E', 'F'], dir: { E: 's', F: 'n' } },
+    hyp: '平行四辺形 ABCD、AE⊥BD、CF⊥BD', goal: '四角形 AECF は平行四辺形', tri: ['ABE', 'CDF'],
+    plan: { q: '四角形 AECF の辺 AE、CF に目をつける。AE＝CF をいうには、どの三角形の合同を示す？', a: '△ABE と △CDF' },
+    L: [{ t: '△ABE と △CDF で' },
+      { t: '∠AEB＝∠CFD＝90°', r: '仮定', n: 1 },
+      { t: 'AB＝CD', r: '平行四辺形の対辺は等しい', n: 2 },
+      { t: '∠ABE＝∠CDF', r: 'AB∥DC の錯角', n: 3 },
+      { t: '①②③より、直角三角形の斜辺と1つの鋭角が、それぞれ等しいので', c: 'HA' },
+      { t: '△ABE≡△CDF' },
+      { t: 'AE＝CF', r: '合同な図形の対応する辺は等しい', n: 4, hint: '合同から、何がいえる？　根拠も。' },
+      { t: 'AE∥CF', r: 'どちらも BD に垂直', n: 5, hint: 'AE と CF の位置の関係は？　根拠も。' },
+      { t: '④⑤より、1組の対辺が平行で等しいから、四角形 AECF は平行四辺形', ask: false, c: 1, q: 'どの条件で、平行四辺形といえる？', a: '1組の対辺が平行で等しい', hl: ['AE CF', 'EC AF'] }]
+  };
+
+  var steps = [
+    { tag: '今日の問い', bh: '今日の問い　中点を結ぶ四角形', q: '平行四辺形 ABCD の辺 AD、BC の中点を、それぞれ M、N とし、M と B、N と D を結ぶ。四角形 MBND は、どんな四角形といえるだろう。わけも考えよう。',
+      notes: ['① 自分の考え（3分）　予想と、わけ。', '② ペアの考え（3分）　自分とちがう見方や、わけ。'],
+      draw: function (D) { today(D, 1.2); } },
+    { tag: '今日の問い', q: '四角形 MBND は、どんな四角形といえそう？', a: '平行四辺形', sub: 'MD と BN は平行で、長さも等しい（どちらも AD、BC の半分）。平行四辺形の形を変えても、いつも平行四辺形', dur: 3.5,
+      sliders: [{ key: 'ax', label: '平行四辺形の形を変える', min: -1.5, max: 3, step: .05, val: 1.2, anim: [1.2, -.8], fmt: function () { return ''; } }],
+      b: { t: '四角形 MBND は<b>平行四辺形</b>になりそう（MD∥BN、MD＝BN）', col: C.yel },
+      draw: function (D) {
+        var a = D.ph ? CH.smooth(0, .35, D.t) : 0;
+        today(D, D.V.ax, function (F, z) {
+          if (!z) { GE.poly(F, 'MBND', { col: C.yel, fa: .14 * a, stroke: false }); return; }
+          if (!D.ph) return;
+          GE.seg(F, 'MD', { col: C.yel, w: 4, a: a, glow: true }); GE.seg(F, 'BN', { col: C.yel, w: 4, a: a, glow: true });
+          GE.par(F, 'MD', 1, { col: C.yel, a: a, shift: .9 }); GE.par(F, 'BN', 1, { col: C.yel, a: a, shift: .9 });
+          GE.par(F, 'MB', 2, { col: C.pink, a: a }); GE.par(F, 'ND', 2, { col: C.pink, a: a });
+        });
+      } },
+    { tag: 'ことば', bh: 'ことば', q: '線分を2等分する点を何という？　四角形 MBND が平行四辺形だといえるのは、どの条件が使えるから？', a: '中点。1組の対辺が平行で等しい', sub: 'MD∥BN（AD∥BC の一部）、MD＝BN（AD＝BC の半分ずつ）。使う条件は、図でわかっていることから選ぶ', dur: 2,
+      b: [{ t: '<b>中点</b> … 線分を2等分する点', col: C.green }, { t: '1組の対辺が<b>平行</b>で<b>等しい</b>四角形は、平行四辺形', col: C.green }, { t: 'どの条件を使うかは、図でわかっていることから選ぶ', col: C.green }],
+      draw: function (D) {
+        var t = D.ph ? D.t : 0;
+        today(D, 1.2, function (F, z) {
+          if (!z || !D.ph) return;
+          var a1 = CH.smooth(0, .4, t), a2 = CH.smooth(.5, .9, t);
+          ['AM', 'MD', 'BN', 'NC'].forEach(function (s, i) { GE.seg(F, s, { col: i < 2 ? C.blue : C.green, w: 4, a: a1 * (1 - a2 * .7), glow: true }); });
+          GE.seg(F, 'MD', { col: C.yel, w: 4, a: a2, glow: true }); GE.seg(F, 'BN', { col: C.yel, w: 4, a: a2, glow: true });
+          GE.par(F, 'MD', 1, { col: C.yel, a: a2, shift: .9 }); GE.par(F, 'BN', 1, { col: C.yel, a: a2, shift: .9 });
+        });
+      } }
+  ].concat(proof(DEF_EX, { tag: '例題' })).concat([
+    { tag: '考えよう', q: '平行四辺形 ABCD の対角線 AC 上に、AE＝CF となる点 E、F をとる。四角形 EBFD が平行四辺形であることを、「1組の対辺が平行で等しい」を使って証明するには、どの三角形の合同を示せばよいだろう。',
+      notes: ['対角線 BD をひいて「対角線が、それぞれの中点で交わる」を使う証明とも、くらべよう。', 'スライダーで、E、F を動かしたり、三角形に色をぬったりできます。'],
+      sliders: [{ key: 't', label: 'E、F を動かす', min: .06, max: .44, step: .01, val: .25, fmt: function () { return ''; } },
+        { key: 'k', label: '色をぬる', min: 0, max: 3, step: 1, val: 0, fmt: function (x) { return ['—', '△ABE・△CDF', '△ADE・△CBF', '対角線 BD'][x]; } }],
+      draw: function (D) {
+        var P = think(D.V.t), k = D.V.k, F = GE.fit(D, box(D, { l: .06, r: .06, t: .1, b: .12 }), P, { keys: ['A', 'B', 'C', 'D'], pad: .1 });
+        if (k === 1) { GE.poly(F, 'ABE', { col: C.blue, fa: .35 }); GE.poly(F, 'CDF', { col: C.orange, fa: .35 }); }
+        if (k === 2) { GE.poly(F, 'ADE', { col: C.blue, fa: .35 }); GE.poly(F, 'CBF', { col: C.orange, fa: .35 }); }
+        if (k === 3) GE.seg(F, 'BD', { dash: true, col: C.yel, w: 2.4 });
+        GE.figure(F, { segs: SQ.concat(['AC', 'EB', 'BF', 'FD', 'DE']), ticks: [['AE', 1], ['FC', 1]], dots: ['E', 'F'].concat(k === 3 ? ['O'] : []),
+          labels: ['A', 'B', 'C', 'D', 'E', 'F'].concat(k === 3 ? ['O'] : []), dir: { A: 'nw', B: 'sw', C: 'se', D: 'ne', E: 'n', F: 's', O: 'w' } });
+      } }
+  ]).concat(proof(DEF_CH, { tag: 'チャレンジ' }));
+
+  K3.run({
+    no: '第11時', title: '平行四辺形になる条件を使って、証明しよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '10.html', label: '◀ 第10時' }, { href: '12.html', label: '第12時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>軸に平行な直線</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 一次関数 第12時：y＝k、x＝h のグラフをかこう（ikkan の lesson_ichiji_new_12 と同じ流れ）。
+   y＝3 の表から点が飛んで、横にならぶ。ことばでは、スライダーで k・h を動かす（y＝k は横、x＝h は縦）。
+   考えようは、2点 A(3, 1)、B(3, 5) で B を横に動かす道具（「傾きが求められない」「x＝3」は書かない）。数値は ikkan と同じ。
+   2つめの例題（4直線で囲まれた長方形）は、ikkan の演習（5）の数。 */
+(function () {
+  var C = CH.C, M = CH.mnum, OUT = 'rgba(20,40,30,.9)';
+  /* 文字が 1つの 1次方程式「p・v＋q＝0」を、式の値の変化から解く */
+  function solve1(f) { return -f(0) / (f(1) - f(0)); }
+  /* 多角形の面積（座標から） */
+  function area(P) { return Math.abs(P.reduce(function (s, p, i) { var q = P[(i + 1) % P.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2; }
+  var XS = [-3, -1, 0, 2, 4];
+  CH.check(solve1(function (y) { return 2 * y + 6; }) === -3, '例題（2）2y＋6＝0 → y＝−3');
+  var RECT = [[-2, -1], [3, -1], [3, 2], [-2, 2]];
+  CH.check(area(RECT) === 15 && (3 - (-2)) * (2 - (-1)) === 15, '例題2（長方形 15）');
+  var TRI = [[0, 0], [0, 6], [6 / 1.5, 6]];
+  CH.check(TRI[2][0] === 4 && area(TRI) === 12 && 6 * 4 / 2 === 12, 'チャレンジ（三角形 12）');
+  CH.check(3 - 3 === 0 && [4, 5, 6, 7].every(function (bx) { var a = 4 / (bx - 3), b = 1 - a * 3; return CH.near(a * 3 + b, 1) && CH.near(a * bx + b, 5); }), '考えよう（B を動かした直線が A・B を通る）');
+
+  function full(D) { return CH.box(D, { l: 0, r: 0, t: 0, b: 0 }); }
+  function plane(D, x, y, R) { var s = CH.fs(D, .72); R = R || full(D); return CH.plane(D, CH.rect(R.x0 + s * 1.2, R.y0 + s * 1.8, R.x1 - s * 2.4, R.y1 - s * .8), { x: x, y: y }); }
+  function two(D, k, kn) {
+    var R = full(D);
+    if (D.W > D.H * .9) { var x = R.x0 + R.w * k; return [CH.rect(R.x0, R.y0, x, R.y1), CH.rect(x + R.w * .02, R.y0, R.x1 - R.w * .02, R.y1)]; }
+    var y = R.y0 + R.h * (kn || k); return [CH.rect(R.x0, R.y0, R.x1, y), CH.rect(R.x0 + 8, y + 4, R.x1 - 8, R.y1)];
+  }
+  function lab(D, Pl, x, y, t, o) { o = o || {}; CH.text(D, Pl.X(x), Pl.Y(y), t, { col: o.col || C.chalk, size: o.size || CH.fs(D, .85), align: o.align || 'left', a: o.a, outline: OUT }); }
+  function glow(D, Pl, p, col, a) { var r = CH.fs(D, .3); CH.circle(D, Pl.X(p[0]), Pl.Y(p[1]), r * (2.1 + .4 * Math.sin(D.now * 5)), { stroke: col, sw: 2.6, a: (a == null ? 1 : a) * .7 }); }
+  /* 縦の直線 x＝h（平面の中だけ）。k：0〜1 で下からのびる */
+  function vline(D, Pl, h, o) { o = o || {}; var k = o.t == null ? 1 : o.t; if (k <= 0) return; CH.pseg(D, Pl, [h, Pl.yr[0]], [h, CH.lerp(Pl.yr[0], Pl.yr[1], k)], { col: o.col || C.blue, w: o.w || 3, a: o.a, dash: o.dash }); }
+
+  /* 今日の問い：表と座標平面。k：何列目まで y を出すか */
+  function task(D, k) {
+    var Rs = two(D, .4, .22), s = CH.fs(D), wide = D.W > D.H * .9;
+    var Rt = wide ? CH.rect(Rs[0].x0 + s * .6, Rs[0].cy - s * 3.2, Rs[0].x1, Rs[0].cy + s * 1.2) : Rs[0];
+    if (wide) CH.text(D, Rt.cx, Rt.y0 - s * 1.2, 'y＝3', { col: C.yel, size: s * 1.2 });
+    var T = CH.table(D, Rt, ['x'].concat(XS.map(M)), [['y'].concat(XS.map(function () { return '3'; }))], { fw: .16, show: function (r, c) { return r === 1 && c > 0 ? CH.clamp(k - (c - 1), 0, 1) : 1; }, hl: function (r, c) { return r === 1 && c > 0 && k > c - 1 ? C.yel : null; } });
+    var Pl = plane(D, [-4, 5], [-3, 5], Rs[1]);
+    if (!wide) lab(D, Pl, -3.8, 4.4, 'y＝3', { col: C.yel });
+    XS.forEach(function (x, i) {
+      var f = CH.clamp(k - i, 0, 1); if (f <= 0) return;
+      var c = T.cell(1, i + 1), e = CH.easeOut(CH.clamp(f * 1.6 - .6, 0, 1));
+      CH.circle(D, CH.lerp(c.cx, Pl.X(x), e), CH.lerp(c.cy, Pl.Y(3), e), CH.fs(D, .3), { fill: C.yel, stroke: 'rgba(20,30,24,.8)', sw: 1.2 });
+    });
+    return Pl;
+  }
+
+  K3.run({
+    no: '第12時', title: 'y＝k、x＝h のグラフをかこう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '11.html', label: '◀ 第11時' }, { href: '13.html', label: '第13時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: 'y＝3 のグラフ', q: 'y＝3 のグラフは、どんな形になるだろう。表の x の値に対する y の値を調べ、座標平面に点をとって、考えよう。',
+        notes: ['① 自分の考え（3分）　表をうめて、点をとって、気づいたことを書こう。', '② ペアの考え（3分）　ちがう考えを書こう。'],
+        draw: function (D) { task(D, 0); } },
+      { tag: '今日の問い', q: '表をうめて、点をとると？', a: 'x 軸に平行な直線', sub: 'x がどんな値でも y＝3。点 (−3, 3)、(0, 3)、(4, 3) … が横にならぶ', dur: 6,
+        b: { t: 'y＝3 … x がどんな値でも y＝3 → <b>x 軸に平行</b>な直線', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Pl = task(D, CH.clamp(t / .6 * 5, 0, 5));
+          if (t > .62) CH.lin(D, Pl, 0, 3, { col: C.yel, w: 3, t: CH.smooth(.62, .8, t) });
+          if (t > .8) for (var x = -3.5; x <= 4.51; x += .5) if (XS.indexOf(x) < 0) CH.circle(D, Pl.X(x), Pl.Y(3), CH.fs(D, .18), { fill: C.blue, a: CH.smooth(.8, .9, t) });
+          if (t > .9) lab(D, Pl, .3, 3.6, 'y 座標は、どこも 3', { col: C.yel, a: CH.smooth(.9, 1, t) });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'y＝k のグラフは x 軸に平行、x＝h のグラフは y 軸に平行な直線。スライダーで k、h を動かして、確かめよう。', dur: 3,
+        notes: ['y＝0 は どの線？ x＝0 は？'],
+        b: [{ t: '<b>y＝k</b> … 点 (0, k) を通り、<b>x 軸に平行</b>な直線', col: C.green }, { t: '<b>x＝h</b> … 点 (h, 0) を通り、<b>y 軸に平行</b>な直線', col: C.green }, { t: 'y＝0 は <b>x 軸</b>、x＝0 は <b>y 軸</b>', col: C.green }],
+        sliders: [{ key: 'k', label: 'y＝k の k', min: -4, max: 4, step: 1, val: 3, anim: [0, 3], fmt: function (v) { return 'y＝' + M(Math.round(v)); } },
+          { key: 'h', label: 'x＝h の h', min: -5, max: 5, step: 1, val: -2, anim: [0, -2], fmt: function (v) { return 'x＝' + M(Math.round(v)); } }],
+        draw: function (D) {
+          var Pl = plane(D, [-5, 5], [-4, 4]), k = D.V.k, h = D.V.h, s = CH.fs(D, .85);
+          CH.lin(D, Pl, 0, k, { col: C.yel, w: 3.4 });
+          vline(D, Pl, h, { col: C.blue, w: 3.4 });
+          CH.pt(D, Pl, 0, k, { col: C.yel }); CH.pt(D, Pl, h, 0, { col: C.blue });
+          lab(D, Pl, 5, k + .45, 'y＝' + M(Math.round(k)), { col: C.yel, align: 'right', size: s * 1.1 });
+          lab(D, Pl, h + .25, 3.5, 'x＝' + M(Math.round(h)), { col: C.blue, size: s * 1.1 });
+        } },
+      { tag: '例題', bh: '例題', q: '次の方程式のグラフをかこう。（1）x＝−2　（2）2y＋6＝0', a: '（1）y 軸に平行な直線　（2）y＝−3、x 軸に平行な直線', sub: '（1）どの点も x 座標が −2。点 (−2, 0) を通る。（2）2y＝−6、y＝−3。点 (0, −3) を通る', dur: 6,
+        b: { t: '（1）x＝−2 … 点 (−2, 0) を通り <b>y 軸に平行</b>　（2）2y＋6＝0 → <b>y＝−3</b> … <b>x 軸に平行</b>', col: C.pink },
+        draw: function (D) {
+          var Pl = plane(D, [-5, 4], [-5, 4]), t = D.ph ? D.t : 0, s = CH.fs(D, .85);
+          for (var y = -4; y <= 3; y++) { var a = CH.smooth(.04 + (y + 4) * .035, .08 + (y + 4) * .035, t); if (a > 0) CH.pt(D, Pl, -2, y, { col: C.blue, a: a }); }
+          if (t > .32) { vline(D, Pl, -2, { col: C.blue, t: CH.smooth(.32, .45, t) }); }
+          if (t > .45) lab(D, Pl, -1.8, 3.5, '（1）x＝−2', { col: C.blue, a: CH.smooth(.45, .55, t) });
+          if (t > .55) lab(D, Pl, .3, -1.2, '2y＋6＝0 → 2y＝−6 → y＝−3', { col: C.yel, a: CH.smooth(.55, .65, t), size: s * .9 });
+          if (t > .68) CH.lin(D, Pl, 0, -3, { col: C.yel, w: 3, t: CH.smooth(.68, .85, t) });
+          if (t > .85) { CH.pt(D, Pl, 0, -3, { col: C.yel }); lab(D, Pl, 4, -3.55, '（2）y＝−3', { col: C.yel, align: 'right', a: CH.smooth(.85, .95, t) }); }
+        } },
+      { tag: '例題', bh: '例題2　4つの直線で囲まれた長方形', q: '4つの直線 x＝−2、x＝3、y＝−1、y＝2 で囲まれた長方形の面積を求めよう。（1目もり 1cm）', a: '15cm²', sub: '横 3−(−2)＝5、縦 2−(−1)＝3、5×3＝15', dur: 5,
+        b: { t: '横 3−(−2)＝5、縦 2−(−1)＝3 → 5×3＝<b>15</b>cm²', col: C.pink },
+        draw: function (D) {
+          var Pl = plane(D, [-4, 5], [-3, 4]), t = D.ph ? D.t : 0, s = CH.fs(D, .85);
+          var a1 = CH.smooth(0, .15, t), a2 = CH.smooth(.15, .3, t), a3 = CH.smooth(.3, .45, t), a4 = CH.smooth(.45, .6, t);
+          if (t > .6) CH.fillRect(D, Pl.X(-2), Pl.Y(2), Pl.X(3), Pl.Y(-1), { fill: 'rgba(255,157,178,.22)', a: CH.smooth(.6, .7, t) });
+          vline(D, Pl, -2, { col: C.blue, t: a1 }); vline(D, Pl, 3, { col: C.blue, t: a2 });
+          if (t > .3) CH.lin(D, Pl, 0, -1, { col: C.yel, w: 3, t: a3 }); if (t > .45) CH.lin(D, Pl, 0, 2, { col: C.yel, w: 3, t: a4 });
+          if (t > 0) { lab(D, Pl, -1.85, 3.5, 'x＝−2', { col: C.blue, a: a1 }); lab(D, Pl, 3.15, 3.5, 'x＝3', { col: C.blue, a: a2 }); }
+          if (t > .3) { lab(D, Pl, 5, -1.45, 'y＝−1', { col: C.yel, align: 'right', a: a3 }); lab(D, Pl, 5, 2.45, 'y＝2', { col: C.yel, align: 'right', a: a4 }); }
+          if (t > .72) { var a5 = CH.smooth(.72, .85, t); lab(D, Pl, .5, 1.5, '横 5', { col: C.pink, a: a5, align: 'center' }); lab(D, Pl, 2.75, .5, '縦 3', { col: C.pink, a: a5, align: 'right' }); }
+          if (t > .88) lab(D, Pl, .5, .5, '5×3＝15', { col: C.pink, a: CH.smooth(.88, 1, t), align: 'center', size: s * 1.15 });
+        } },
+      { tag: '考えよう', q: '2点 A(3, 1)、B(3, 5) を通る直線の式を求めよう。前の時間の方法で、うまくいくだろうか。',
+        notes: ['【計算】2点から、傾きを求めてみよう。どうなっただろう。', 'この直線の式と、y＝ax＋b の形で表せるかどうか。', 'スライダーで、B を横に動かせます（問題の B は (3, 5)）。'],
+        sliders: [{ key: 'bx', label: 'B の x 座標', min: 3, max: 7, step: 1, val: 3, fmt: function (v) { return 'B(' + v + ', 5)'; } }],
+        draw: function (D) {
+          var Pl = plane(D, [-2, 8], [-1, 7]), A = [3, 1], B = [D.V.bx, 5], dx = B[0] - A[0], s = CH.fs(D, .8);
+          if (dx) CH.lin(D, Pl, 4 / dx, 1 - 4 / dx * 3, { col: C.chalk, a: .7 }); else vline(D, Pl, 3, { col: C.chalk, a: .7, w: 2 });
+          CH.pseg(D, Pl, A, [B[0], 1], { col: C.pink, w: 2.6, dash: true }); CH.pseg(D, Pl, [B[0], 1], B, { col: C.pink, w: 2.6, dash: true });
+          CH.text(D, Pl.X((A[0] + B[0]) / 2), Pl.Y(1) + s * 1.4, 'x の増加量 ' + dx, { col: C.pink, size: s, outline: OUT });
+          CH.text(D, Pl.X(B[0]) + s * .5, Pl.Y(3), 'y の増加量 4', { col: C.pink, size: s, align: 'left', outline: OUT });
+          CH.pt(D, Pl, A[0], A[1], { lab: 'A(3, 1)', dir: 'w' }); CH.pt(D, Pl, B[0], B[1], { lab: 'B(' + B[0] + ', 5)', dir: 'w' });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '3つの直線 y＝3/2 x、y＝6、x＝0 で囲まれた三角形の面積を求めよう。（1目もり 1cm）', a: '12cm²', sub: '6＝3/2 x → x＝4。頂点は (0, 0)、(0, 6)、(4, 6)。底辺 6、高さ 4 → 1/2×6×4＝12', dur: 6,
+        b: { t: 'y＝3/2 x と y＝6 の交点 (4, 6) → 1/2×6×4＝<b>12</b>cm²', col: C.orange },
+        draw: function (D) {
+          var Pl = plane(D, [-2, 7], [-2, 8]), t = D.ph ? D.t : 0, s = CH.fs(D, .85);
+          var a1 = CH.smooth(0, .15, t), a2 = CH.smooth(.15, .3, t), a3 = CH.smooth(.3, .42, t);
+          if (t > .55) CH.poly(D, TRI.map(function (p) { return [Pl.X(p[0]), Pl.Y(p[1])]; }), { fill: 'rgba(255,192,120,.25)', a: CH.smooth(.55, .65, t) });
+          if (t > 0) CH.lin(D, Pl, 1.5, 0, { col: C.yel, w: 3, t: a1 }); if (t > .15) CH.lin(D, Pl, 0, 6, { col: C.blue, w: 3, t: a2 });
+          if (t > .3) vline(D, Pl, 0, { col: C.pink, w: 4, t: a3 });
+          if (t > .1) lab(D, Pl, 4.6, 7.6, 'y＝3/2 x', { col: C.yel, a: a1 });
+          if (t > .25) lab(D, Pl, 7, 6.5, 'y＝6', { col: C.blue, a: a2, align: 'right' });
+          if (t > .38) lab(D, Pl, -.25, 7.5, 'x＝0', { col: C.pink, a: a3, align: 'right' });
+          if (t > .42) { var a4 = CH.smooth(.42, .52, t); CH.pt(D, Pl, 4, 6, { col: C.orange, lab: '(4, 6)', dir: 'se', a: a4 }); if (t < 1) glow(D, Pl, [4, 6], C.orange, a4); }
+          if (t > .68) { var a5 = CH.smooth(.68, .8, t); lab(D, Pl, .25, 4.6, '底辺 6', { col: C.orange, a: a5 }); lab(D, Pl, 2, 6.45, '高さ 4', { col: C.orange, a: a5, align: 'center' }); }
+          if (t > .85) lab(D, Pl, 1.2, -1.2, '1/2×6×4＝12', { col: C.orange, a: CH.smooth(.85, 1, t), size: s * 1.15 });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>一次関数とみなして予測</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 一次関数 第14時：実験の結果を一次関数とみなして、予測しよう（ikkan の lesson_ichiji_new_14 と同じ流れ）。
+   ばね・ろうそく・音の速さの数値は ikkan と同じ。点のちらばりに定規の直線が回ってきて重なり、通る整数の点から式、のばして予測の点。
+   考えようは、おもりの数をスライダーで大きくしていく道具（「どこまで信じてよいか」の答えは書かない）。 */
+(function () {
+  var C = CH.C, M = CH.mnum, OUT = 'rgba(20,40,30,.9)';
+  function two2(p, q) { var a = (q[1] - p[1]) / (q[0] - p[0]); return [a, p[1] - a * p[0]]; }
+  /* 最小二乗法の直線（ページに書いた直線と、ほぼ同じか確かめるのに使う） */
+  function ls(P) { var n = P.length, mx = CH.sum(P.map(function (p) { return p[0]; })) / n, my = CH.sum(P.map(function (p) { return p[1]; })) / n, sxy = 0, sxx = 0; P.forEach(function (p) { sxy += (p[0] - mx) * (p[1] - my); sxx += (p[0] - mx) * (p[0] - mx); }); var a = sxy / sxx; return [a, my - a * mx]; }
+  function near1(L, P, t) { return P.every(function (p) { return Math.abs(L[0] * p[0] + L[1] - p[1]) <= t + 1e-9; }); }
+  var SP = [[1, 6.2], [2, 7.8], [3, 10.1], [4, 12.1], [5, 13.8], [6, 16.2]], SPL = two2([2, 8], [6, 16]);
+  var CD = [[1, 14.2], [2, 11.9], [3, 10.1], [4, 7.8], [5, 6.1], [6, 3.9]], CDL = two2([2, 12], [6, 4]);
+  var SD = [[0, 331], [10, 337], [20, 343], [30, 349]], SDL = two2(SD[0], SD[3]);
+  (function () {
+    var f = ls(SP), g = ls(CD);
+    CH.check(SPL.join() === '2,4' && near1(SPL, SP, .3) && Math.abs(f[0] - 2) < .1 && Math.abs(f[1] - 4) < .2 && 2 * 8 + 4 === 20, '今日の問い（ばね y＝2x＋4、8個で 20cm）');
+    CH.check(CDL.join() === '-2,16' && near1(CDL, CD, .3) && Math.abs(g[0] + 2) < .1 && Math.abs(g[1] - 16) < .2 && -2 * 8 + 16 === 0, '例題（ろうそく y＝−2x＋16、8時間後）');
+    CH.check(CH.near(SDL[0], .6) && SDL[1] === 331 && near1(SDL, SD, .01) && CH.near(.6 * 25 + 331, 346) && 346 * 3 === 1038, 'チャレンジ（音の速さ）');
+  })();
+
+  function full(D) { return CH.box(D, { l: 0, r: 0, t: 0, b: 0 }); }
+  function lab(D, Pl, x, y, t, o) { o = o || {}; CH.text(D, Pl.X(x), Pl.Y(y), t, { col: o.col || C.chalk, size: o.size || CH.fs(D, .85), align: o.align || 'left', a: o.a, outline: OUT }); }
+  function glow(D, Pl, p, col, a) { var r = CH.fs(D, .3); CH.circle(D, Pl.X(p[0]), Pl.Y(p[1]), r * (2.1 + .4 * Math.sin(D.now * 5)), { stroke: col, sw: 2.6, a: (a == null ? 1 : a) * .7 }); }
+  function lines(D, R, L, size) {
+    var n = Math.max.apply(null, L.map(function (l) { return l.t.length; })), s = Math.min(size || CH.fs(D, .95), R.w / (n + .5), R.h / (L.length * 1.7 + .3));
+    L.forEach(function (l, i) { if (l.a === 0) return; CH.text(D, R.x0, R.y0 + s * (1.1 + i * 1.7), l.t, { col: l.col || C.chalk, size: s, align: 'left', a: l.a }); });
+  }
+  /* 実験のグラフ（第1象限。縦と横の 1目もりはちがう）。o：x・y（範囲）、st（方眼）、lx・ly（字の間かく）、ux・uy（単位）、yf（縦の字） */
+  function graph(D, R, o) {
+    var s = CH.fs(D, .72), Rp = CH.rect(R.x0 + s * 2.6, R.y0 + s * 1.9, R.x1 - s * 2.2, R.y1 - s * 1.5);
+    var Pl = CH.plane(D, Rp, { x: o.x, y: o.y, fit: false, step: o.st || 1, nums: false });
+    var x, y, oy = o.y[0];
+    for (x = o.x[0] + (o.lx || 1); x <= o.x[1] + 1e-9; x += o.lx || 1) { CH.line(D, Pl.X(x), Pl.Y(oy) - 4, Pl.X(x), Pl.Y(oy) + 4, { w: 1.4 }); CH.text(D, Pl.X(x), Pl.Y(oy) + s, String(x), { size: s, num: true }); }
+    for (y = Math.ceil(o.y[0] / (o.ly || 1)) * (o.ly || 1); y <= o.y[1] + 1e-9; y += o.ly || 1) { if (y === 0 || y === o.y[0]) continue; CH.line(D, Pl.X(0) - 4, Pl.Y(y), Pl.X(0) + 4, Pl.Y(y), { w: 1.4 }); CH.text(D, Pl.X(0) - s * .6, Pl.Y(y), o.yf ? o.yf(y) : String(y), { size: s, num: true, align: 'right' }); }
+    if (o.y[0] !== 0) CH.text(D, Pl.X(0), Pl.Y(oy) + s, '0', { size: s, num: true });
+    if (o.ux) CH.text(D, Pl.R.x1 + s * 1.2, Pl.Y(oy) + s * 2.1, o.ux, { size: s, col: 'rgba(242,240,230,.75)', align: 'right' });
+    if (o.uy) CH.text(D, Pl.X(0) + s * 1.6, Pl.R.y0 - s * .8, o.uy, { size: s, col: 'rgba(242,240,230,.75)', align: 'left' });
+    if (o.cut) { var yy = Pl.Y(oy) - s * .9, g = D.ctx; g.save(); g.globalAlpha = D.ga; g.strokeStyle = C.chalk; g.lineWidth = 1.6; g.beginPath(); g.moveTo(Pl.X(0) - 6, yy + 3); g.lineTo(Pl.X(0) + 6, yy - 1); g.moveTo(Pl.X(0) - 6, yy + 8); g.lineTo(Pl.X(0) + 6, yy + 4); g.stroke(); g.restore(); }
+    return Pl;
+  }
+  /* 表を上に、グラフを下に。表の幅は、舞台の幅に合わせて */
+  function layout(D, head, row, k) {
+    var R = full(D), s = CH.fs(D), w = Math.min(R.w, s * 2.4 * head.length + s * 3), rh = Math.min(s * 1.9, R.h * .09);
+    var Rt = CH.rect(R.cx - w / 2, R.y0 + 4, R.cx + w / 2, R.y0 + 4 + rh * 2);
+    CH.table(D, Rt, head, [row], { fw: .2, top: true, rh: rh });
+    var Rg = CH.rect(R.x0, Rt.y1 + s * .4, R.x0 + R.w * (k || 1), R.y1);
+    return { Rg: Rg, Rs: CH.rect(R.x0 + R.w * (k || 1), Rt.y1 + s * .4, R.x1, R.y1) };
+  }
+  function dots(D, Pl, P, col) { P.forEach(function (p) { CH.circle(D, Pl.X(p[0]), Pl.Y(p[1]), CH.fs(D, .28), { fill: col || C.chalk, stroke: 'rgba(20,30,24,.8)', sw: 1.2 }); }); }
+  /* 点から直線までの、たての ずれ */
+  function sticks(D, Pl, P, L, a) { P.forEach(function (p) { CH.line(D, Pl.X(p[0]), Pl.Y(p[1]), Pl.X(p[0]), Pl.Y(L[0] * p[0] + L[1]), { col: C.pink, w: 2.2, a: a }); }); }
+  /* 定規の直線：中心 c のまわりに、傾き a0 から a1 へ回る（k：0〜1） */
+  function ruler(D, Pl, c, a0, a1, k, o) { var a = CH.lerp(a0, a1, CH.ease(k)); CH.lin(D, Pl, a, c[1] - a * c[0], o); return [a, c[1] - a * c[0]]; }
+  /* ばね（天じょうから下へ、長さ L px）と、おもり n 個 */
+  function spring(D, x, y0, L, n, a) {
+    var g = D.ctx, w = CH.fs(D, .7), k = 14, i;
+    CH.line(D, x - w * 1.8, y0, x + w * 1.8, y0, { w: 3, a: a });
+    g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.strokeStyle = C.blue; g.lineWidth = 2.2; g.beginPath(); g.moveTo(x, y0);
+    for (i = 1; i < k; i++) g.lineTo(x + (i % 2 ? -w : w), y0 + L * i / k); g.lineTo(x, y0 + L); g.stroke(); g.restore();
+    var bw = w * 1.6, bh = w * .55;
+    for (i = 0; i < Math.min(n, 8); i++) CH.fillRect(D, x - bw / 2, y0 + L + i * bh, x + bw / 2, y0 + L + (i + 1) * bh - 2, { fill: 'rgba(255,226,122,.5)', stroke: C.yel, sw: 1.4, a: a });
+  }
+  function candle(D, x, yb, H, a) {
+    var w = CH.fs(D, 1.1);
+    if (H > 1) { CH.fillRect(D, x - w / 2, yb - H, x + w / 2, yb, { fill: 'rgba(242,240,230,.75)', stroke: C.chalk, a: a }); CH.line(D, x, yb - H, x, yb - H - w * .35, { w: 2, a: a }); CH.circle(D, x, yb - H - w * .6, w * .28, { fill: 'rgba(255,192,120,.9)', a: a }); }
+    CH.line(D, x - w, yb, x + w, yb, { w: 3, a: a });
+  }
+
+  var HSP = ['x（個）', '1', '2', '3', '4', '5', '6'], RSP = ['y（cm）'].concat(SP.map(function (p) { return p[1].toFixed(1); }));
+  var HCD = ['x（時間）', '1', '2', '3', '4', '5', '6'], RCD = ['y（cm）'].concat(CD.map(function (p) { return p[1].toFixed(1); }));
+  function springG(D, k) { var L = layout(D, HSP, RSP, k); return { Pl: graph(D, L.Rg, { x: [0, 9], y: [0, 22], lx: 1, ly: 2, ux: '（個）', uy: '（cm）' }), Rs: L.Rs }; }
+
+  K3.run({
+    no: '第14時', title: '実験の結果を一次関数とみなして、予測しよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '13.html', label: '◀ 第13時' }, { href: '15.html', label: '第15時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: 'ばねの実験（おもり x個、長さ y cm）', q: 'ばねに同じおもりを x個つるして、長さ y cm を調べた。おもり 8個のときの長さを、はかる前に予測しよう。',
+        notes: ['① 自分の考え（3分）　点の近くに直線をひいて式を求め、8個のときの長さを予測しよう。', '② ペアの考え（3分）　ペアの直線・式・予測と、自分のをくらべよう。'],
+        draw: function (D) { var G = springG(D); dots(D, G.Pl, SP); } },
+      { tag: '今日の問い', q: '点の近くに直線をひくと？ 8個のときの長さは？', a: 'y＝2x＋4　およそ 20cm', sub: '点はほぼ一直線 → 一次関数とみなす。直線が通る整数の点 (2, 8)、(6, 16) から、傾き 2、切片 4。x＝8 のとき y＝20', dur: 7,
+        b: { t: 'ほぼ一直線 → 一次関数と<b>みなす</b>　(2, 8)、(6, 16) を通る <b>y＝2x＋4</b> → 8個で <b>およそ 20cm</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, wide = D.W > D.H * .9, G = springG(D, wide ? .8 : 1), Pl = G.Pl;
+          if (t > 0) { var L = ruler(D, Pl, [3.5, 11], .6, 2, CH.smooth(0, .3, t), { col: C.yel, w: 2.6, x0: 0, x1: 6.5 }); sticks(D, Pl, SP, L, .8 * CH.smooth(.05, .15, t) * (1 - CH.smooth(.32, .4, t))); }
+          dots(D, Pl, SP);
+          if (t > .35) { var a1 = CH.smooth(.35, .45, t); [[2, 8], [6, 16]].forEach(function (p) { CH.pt(D, Pl, p[0], p[1], { col: C.pink, lab: '(' + p[0] + ', ' + p[1] + ')', dir: 'nw', a: a1 }); if (t < .6) glow(D, Pl, p, C.pink, a1); }); }
+          if (t > .55) { CH.lin(D, Pl, 2, 4, { col: C.yel, w: 2.6, dash: true, x0: 6.5, x1: 6.5 + 1.5 * CH.smooth(.55, .7, t) }); }
+          if (t > .7) { var a2 = CH.smooth(.7, .8, t); CH.pseg(D, Pl, [8, 0], [8, 20], { col: C.orange, dash: true, a: a2 }); CH.pt(D, Pl, 8, 20, { col: C.orange, r: CH.fs(D, .36), lab: '予測 (8, 20)', dir: 'w', a: a2 }); glow(D, Pl, [8, 20], C.orange, a2); }
+          if (t > .85) lab(D, Pl, .4, 19.5, 'y＝2x＋4', { col: C.yel, a: CH.smooth(.85, 1, t), size: CH.fs(D, 1.05) });
+          if (wide) { var u = Pl.R.h / 22, n = t > .7 ? 8 : 6, yy = n * 2 + 4; spring(D, G.Rs.cx, Pl.R.y0 - CH.fs(D, .6), yy * u * .7, n); CH.text(D, G.Rs.cx, Pl.R.y1 + CH.fs(D, .8), 'おもり ' + n + '個', { size: CH.fs(D, .8), col: C.yel }); }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '点がほぼ一直線にならぶとき、どう考える？ 調べていない値を、式を使って求めることを、何という？', a: '一次関数とみなす・予測',
+        sub: '直線の式は、直線が通る整数の点を 2つ選んで求める。点と直線のずれは、はかるときのずれと考える', dur: 4,
+        b: [{ t: '点がほぼ一直線 → 一次関数と<b>みなす</b>', col: C.green }, { t: '調べていない値を、式を使って求める … <b>予測</b>', col: C.green }, { t: '式は、直線が通る<b>整数の点</b>を 2つ選んで求める', col: C.green }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, G = springG(D), Pl = G.Pl;
+          CH.lin(D, Pl, 2, 4, { col: C.yel, w: 2.6, x0: 0, x1: 9 });
+          sticks(D, Pl, SP, SPL, CH.smooth(.05, .2, t));
+          dots(D, Pl, SP);
+          if (t > .1) lab(D, Pl, 4.5, 5.2, 'ずれは小さい → 一次関数とみなす', { col: C.pink, a: CH.smooth(.1, .25, t), align: 'left' });
+          if (t > .4) { var a1 = CH.smooth(.4, .55, t); [[2, 8], [6, 16]].forEach(function (p) { CH.pt(D, Pl, p[0], p[1], { col: C.blue, r: CH.fs(D, .34), a: a1 }); glow(D, Pl, p, C.blue, a1); }); lab(D, Pl, .4, 17.5, '整数の点 (2, 8)、(6, 16)', { col: C.blue, a: a1 }); }
+          if (t > .7) { var a2 = CH.smooth(.7, .85, t); CH.pt(D, Pl, 8, 20, { col: C.orange, r: CH.fs(D, .34), lab: '予測', dir: 'w', a: a2 }); }
+        } },
+      { tag: '例題', bh: '例題　ろうそくの長さ', q: 'ろうそくに火をつけて、1時間ごとに長さを調べた。燃えつきる（y＝0）のは、何時間後と予測できるか。', a: '8時間後',
+        sub: '直線が通る (2, 12)、(6, 4) から、傾き (4−12)÷(6−2)＝−2、切片 16。y＝−2x＋16。0＝−2x＋16、x＝8', dur: 7,
+        b: { t: 'ろうそく … (2, 12)、(6, 4) → <b>y＝−2x＋16</b>　y＝0 のとき x＝8 → <b>8時間後</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, wide = D.W > D.H * .9, L = layout(D, HCD, RCD, wide ? .8 : 1), Pl = graph(D, L.Rg, { x: [0, 9], y: [0, 17], lx: 1, ly: 2, ux: '（時間）', uy: '（cm）' });
+          if (t > 0) { var Lr = ruler(D, Pl, [3.5, 9], -.7, -2, CH.smooth(0, .3, t), { col: C.yel, w: 2.6, x0: 0, x1: 6.5 }); sticks(D, Pl, CD, Lr, .8 * CH.smooth(.05, .15, t) * (1 - CH.smooth(.32, .4, t))); }
+          dots(D, Pl, CD);
+          if (t > .35) { var a1 = CH.smooth(.35, .45, t); [[2, 12], [6, 4]].forEach(function (p) { CH.pt(D, Pl, p[0], p[1], { col: C.pink, lab: '(' + p[0] + ', ' + p[1] + ')', dir: 'ne', a: a1 }); if (t < .6) glow(D, Pl, p, C.pink, a1); }); }
+          var xe = 6.5 + 1.5 * CH.smooth(.55, .75, t);
+          if (t > .55) CH.lin(D, Pl, -2, 16, { col: C.yel, w: 2.6, dash: true, x0: 6.5, x1: xe });
+          if (t > .75) { var a2 = CH.smooth(.75, .85, t); CH.pt(D, Pl, 8, 0, { col: C.orange, r: CH.fs(D, .36), lab: '8時間後', dir: 'n', a: a2 }); glow(D, Pl, [8, 0], C.orange, a2); }
+          if (t > .85) lab(D, Pl, 4.2, 14.5, 'y＝−2x＋16', { col: C.yel, a: CH.smooth(.85, 1, t), size: CH.fs(D, 1.05) });
+          if (wide) { var hx = t > .55 ? xe : 6, u = Pl.R.h / 17; candle(D, L.Rs.cx, Pl.Y(0), Math.max(0, -2 * hx + 16) * u); CH.text(D, L.Rs.cx, Pl.Y(0) + CH.fs(D, .9), CH.f1(hx) + '時間後', { size: CH.fs(D, .8), col: C.yel }); }
+        } },
+      { tag: '考えよう', q: '実験の結果から、y＝2x＋4 を求めた。x にどんな値を入れても、長さは計算できる。計算した長さは、どこまで信じてよいだろう。',
+        notes: ['x＝7、10、20、50、100 のときの y を求めて、信じてよいものに ○、あやしいものに △ をつけよう。', '○と△をつけたわけ、信じてよい x の範囲と、決めたわけを書こう。', 'スライダーで、おもりの数を変えられます（グラフの目もりも変わります）。'],
+        sliders: [{ key: 'x', label: 'おもりの数', min: 0, max: 100, step: 1, val: 7, fmt: function (v) { return v + '個'; } }],
+        draw: function (D) {
+          var x = D.V.x, xm = x <= 8 ? 9 : x <= 18 ? 20 : x <= 45 ? 50 : 110, st = xm === 9 ? 1 : xm === 20 ? 2 : xm === 50 ? 5 : 10;
+          var Pl = graph(D, full(D), { x: [0, xm], y: [0, 2 * xm + 4], st: st, lx: xm === 9 ? 1 : st * 2, ly: st * 4, ux: '（個）', uy: '（cm）' });
+          CH.lin(D, Pl, 2, 4, { col: C.yel, w: 2.4, x0: 0, x1: 6.5 }); CH.lin(D, Pl, 2, 4, { col: C.yel, w: 2.4, dash: true, x0: 6.5, x1: xm });
+          dots(D, Pl, SP);
+          CH.pseg(D, Pl, [x, 0], [x, 2 * x + 4], { col: C.orange, dash: true });
+          CH.pt(D, Pl, x, 2 * x + 4, { col: C.orange, r: CH.fs(D, .36) });
+          CH.text(D, Pl.X(x), Pl.Y(0) - CH.fs(D, .9), 'x＝' + x, { col: C.orange, size: CH.fs(D, .85), outline: OUT, align: x > xm * .8 ? 'right' : 'left' });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ　音の速さ', q: '空気中を伝わる音の速さ y m/秒を、気温 x℃ のときに調べた。① 直線の式　② 気温 25℃ の音の速さ　③ 25℃ の日、花火が光って 3秒後に音が聞こえた。花火まで、およそ何 m か。',
+        a: '① y＝0.6x＋331　② 346 m/秒　③ およそ 1038 m', sub: '① 傾き (349−331)÷(30−0)＝0.6、切片 331　② 0.6×25＋331＝346　③ 346×3＝1038', dur: 6,
+        b: { t: '① <b>y＝0.6x＋331</b>　② 0.6×25＋331＝<b>346</b> m/秒　③ 346×3＝<b>1038</b> m', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, L = layout(D, ['x（℃）', '0', '10', '20', '30'], ['y（m/秒）', '331', '337', '343', '349'], D.W > D.H * .9 ? .62 : 1);
+          var Pl = graph(D, L.Rg, { x: [0, 35], y: [325, 355], st: 5, lx: 5, ly: 5, ux: '（℃）', uy: '（m/秒）', cut: true });
+          if (t > 0) CH.lin(D, Pl, .6, 331, { col: C.yel, w: 2.6, t: CH.smooth(0, .25, t) });
+          dots(D, Pl, SD);
+          if (t > .3) { var a = CH.smooth(.3, .45, t); CH.pseg(D, Pl, [25, 325], [25, 346], { col: C.orange, dash: true, a: a }); CH.pseg(D, Pl, [0, 346], [25, 346], { col: C.orange, dash: true, a: a }); CH.pt(D, Pl, 25, 346, { col: C.orange, r: CH.fs(D, .34), lab: '(25, 346)', dir: 'nw', a: a }); }
+          if (t > .2) lab(D, Pl, 1, 352, 'y＝0.6x＋331', { col: C.yel, a: CH.smooth(.2, .3, t) });
+          var R2 = D.W > D.H * .9 ? L.Rs : CH.rect(Pl.X(14), Pl.Y(338), Pl.R.x1, Pl.Y(326));
+          lines(D, R2, [{ t: '③ 花火まで', col: C.orange, a: CH.smooth(.55, .65, t) }, { t: '1秒に 346m', a: CH.smooth(.6, .7, t) }, { t: '3秒で', a: CH.smooth(.7, .8, t) }, { t: '346×3＝1038', col: C.orange, a: CH.smooth(.8, .92, t) }], CH.fs(D, .9));
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

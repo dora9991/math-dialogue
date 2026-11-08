@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>円周角の定理のわけ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 円 第2時：円周角が中心角の半分になるわけを説明しよう（ikkan の lesson_en_02 と同じ流れ）。
+   PB が直径のとき：OP＝OA で △OPA は二等辺三角形。底角 2つが、外角 ∠AOB へ動いて重なる（∠AOB＝2∠APB）。
+   例題は、中心 O が角の内側（直径 PK で 2つに分ける）。考えようは、O が辺上・内側・外側の 3つの場合を切りかえる道具。
+   図の点は、中心 O・半径 3・向き（度）で決める。数値は ikkan のまま（自作）。図の角の字は、すべて座標から計算した値。 */
+(function () {
+  var C = CH.C, RAD = Math.PI / 180, O = [0, 0], R = 3;
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  /* ---- 円の図の道具（このページの中だけで使う） ---- */
+  function on(a) { return GE.polar(O, R, a); }                                         // 円周上の点（向き a 度）
+  function dg(x) { var r = Math.round(x * 10) / 10; return (Math.abs(r - Math.round(r)) < .05 ? String(Math.round(r)) : r.toFixed(1)) + '°'; }
+  /* 図の四角（fig）と、字を書く四角（side）。よこ長ならみぎ、たて長なら下 */
+  function lay(D, k) {
+    var B = CH.box(D, { l: .03, r: .03, t: .04, b: .04 });
+    if (B.w > B.h * 1.25) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .08, B.x1, B.y1), wide: true }; }
+    var h = B.h * .25; return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .04, B.y1 - h + 4, B.x1, B.y1), wide: false };
+  }
+  /* 円をふくめて、四角に入れる（円の大きさは、点が動いても変わらない） */
+  function fitC(D, Rr, P, o) { o = o || {}; return GE.fit(D, Rr, P, { keys: ['O'], bounds: GE.circBounds(O, R).concat(o.bounds || []), pad: o.pad == null ? .07 : o.pad }); }
+  function circle(F, o) { GE.circ(F, O, R, o); }
+  /* 円周の一部を太く（a0 → a1 は反時計まわり、度） */
+  function arcOn(F, a0, a1, o) {
+    o = o || {}; var g = F.D.ctx, p = F.X(O);
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.yel; g.lineWidth = o.w || 6; g.lineCap = 'round';
+    g.shadowColor = o.col || C.yel; g.shadowBlur = 8;
+    g.beginPath(); g.arc(p[0], p[1], R * F.u, -a0 * RAD, -a1 * RAD, true); g.stroke(); g.restore();
+  }
+  function segs(F, ss, o) { ss.split(' ').forEach(function (s) { GE.seg(F, s, o); }); }
+  function dots(F, ks, o) { ks.split('').forEach(function (k) { if (F.P[k]) GE.dot(F, k, o); }); }
+  /* 点の名前：{A: 向き（度）} */
+  function nm(F, m, o) {
+    o = o || {}; Object.keys(m).forEach(function (k) {
+      if (m[k] == null || !F.P[k]) return; var p = F.X(k), r = F.s * .95;
+      CH.text(F.D, p[0] + Math.cos(m[k] * RAD) * r, p[1] - Math.sin(m[k] * RAD) * r, k, { size: F.s, col: (o.col && o.col[k]) || C.chalk, a: o.a, outline: 'rgba(20,40,30,.9)' });
+    });
+  }
+  /* 角のしるし。字（座標から計算した大きさ、または o.t）は、二等分線の上の、2辺にふれないところに置く */
+  function mark(F, s, col, o) {
+    o = o || {}; var r = o.r || F.s * 1.05;
+    GE.arc(F, s, { col: col, fill: o.fill == null ? .3 : o.fill, a: o.a, r: r, n: o.n });
+    var t = o.t === false ? null : (o.t || dg(GE.ang(F.P, s))); if (!t) return;
+    var A = F.X(s[0]), V = F.X(s[1]), B = F.X(s[2]), a1 = Math.atan2(A[1] - V[1], A[0] - V[0]), d = Math.atan2(B[1] - V[1], B[0] - V[0]) - a1;
+    while (d > Math.PI) d -= 2 * Math.PI; while (d <= -Math.PI) d += 2 * Math.PI;
+    var sz = F.s * .82, g = F.D.ctx; g.save(); g.font = '600 ' + sz + 'px ' + FONT; var w = g.measureText(t).width; g.restore();
+    var m = a1 + d / 2, need = (Math.max(w, sz) / 2 + 3) / Math.sin(Math.abs(d) / 2), dd = CH.clamp(Math.max(r + sz * .9, need), 0, o.max || F.s * 4.2);
+    CH.text(F.D, V[0] + Math.cos(m) * dd, V[1] + Math.sin(m) * dd, t, { col: col, size: sz, a: o.a, outline: 'rgba(20,40,30,.9)' });
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする） */
+  function say(D, Rr, rows, o) {
+    o = o || {}; rows = rows.filter(Boolean); if (!rows.length) return;
+    var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (rows.length * 1.6)), g = D.ctx;
+    rows.forEach(function (r, i) {
+      g.save(); g.font = '600 ' + s + 'px ' + FONT; var w = g.measureText(r.t).width; g.restore();
+      var sz = w > Rr.w ? s * Rr.w / w : s;
+      CH.text(D, Rr.x0, Rr.y0 + s * .8 + i * s * 1.6, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left' });
+    });
+  }
+  function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function dir(V, Q) { return Math.atan2(Q[1] - V[1], Q[0] - V[0]) / RAD; }
+  function turn(V, A, B) { var d = dir(V, B) - dir(V, A); while (d > 180) d -= 360; while (d <= -180) d += 360; return d; }
+  /* 扇形：V（座標）を頂点に、向き a0 から sw 度（正は反時計まわり）。半径 r は画面の長さ */
+  function wedge(F, V, a0, sw, r, col, al) {
+    var g = F.D.ctx, p = F.X(V); g.save(); g.globalAlpha = F.D.ga * (al == null ? 1 : al);
+    g.beginPath(); g.moveTo(p[0], p[1]); g.arc(p[0], p[1], r, -a0 * RAD, -(a0 + sw) * RAD, sw > 0); g.closePath();
+    g.fillStyle = hexA(col, .5); g.fill(); g.strokeStyle = col; g.lineWidth = 2.2; g.stroke(); g.restore();
+  }
+
+  /* ---- 数と検算 ---- */
+  var P1 = { O: O, P: on(150), B: on(330), A: on(260) };                    // 今日の問い：PB が直径
+  GE.verify(P1, 'OP＝OA、∠OPA＝∠OAP、∠AOB＝∠OPA＋∠OAP、∠AOB＝2∠APB、∠APB＝1/2∠AOB、∠AOB＝70°、∠APB＝35°、PB＝6', null, '今日の問い');
+  var PI = { O: O, P: on(90), K: on(270), A: on(214), B: on(334) };        // 例題：O が ∠APB の内側
+  GE.verify(PI, 'PK＝6、∠APK＝1/2∠AOK＝28°、∠BPK＝1/2∠BOK＝32°、∠APB＝∠APK＋∠BPK＝60°、∠AOB＝∠AOK＋∠KOB＝120°、∠APB＝1/2∠AOB', null, '例題');
+  var CASE = [[200, 270], [215, 335], [150, 230]].map(function (q) { return { O: O, P: on(90), K: on(270), A: on(q[0]), B: on(q[1]) }; });   // 考えよう：ア 辺の上・イ 内側・ウ 外側
+  CH.check(CASE.every(function (q) { return GE.near(GE.ang(q, 'APB') * 2, GE.ang(q, 'AOB')); }) && [35, 60, 40].every(function (v, i) { return GE.near(GE.ang(CASE[i], 'APB'), v); }), '考えよう（ここで確かめるだけ）');
+  var P8 = { O: O, P: on(90), A: on(214), B: on(334) };                    // チャレンジ：∠OAP＝28°、∠OBP＝32°
+  GE.verify(P8, '∠OAP＝∠OPA＝28°、∠OBP＝∠OPB＝32°、∠APB＝∠OAP＋∠OBP、∠AOB＝2∠APB＝120°', null, 'チャレンジ');
+  CH.check(2 * (28 + 32) === 120, 'チャレンジの計算');
+
+  /* 今日の問いの図。o：tri（△OPA の濃さ）、base（底角の濃さ）、move（底角が O へ動く 0〜1）、lab（角の字） */
+  function main(D, o) {
+    o = o || {}; var P = P1, L = lay(D), F = fitC(D, L.fig, P), r = F.s * 2;
+    if (o.tri) GE.poly(F, 'OPA', { col: C.blue, fa: .22 * o.tri, stroke: false });
+    circle(F); segs(F, 'PB PA'); segs(F, 'OA', { col: C.pink });
+    mark(F, 'AOB', C.pink, { r: o.move ? F.s * 2.1 : F.s * 1.05, t: o.lab ? null : false, fill: o.move ? .08 : .3 });
+    mark(F, 'APB', C.yel, { t: o.lab ? null : false, r: F.s * 1.3 });
+    if (o.base) {
+      GE.tick(F, 'OP', 1, { col: C.green, a: o.base }); GE.tick(F, 'OA', 1, { col: C.green, a: o.base });
+      var e = CH.ease(o.move || 0);
+      wedge(F, GE.lerpP(P.P, O, e), dir(P.P, P.B), turn(P.P, P.B, P.A), r, C.yel, o.base);
+      wedge(F, GE.lerpP(P.A, O, e), dir(P.A, O) + 180 * e, turn(P.A, O, P.P), r, C.orange, o.base);
+    }
+    dots(F, 'OPAB'); nm(F, { P: 150, B: 330, A: 260, O: 50 });
+    return { F: F, L: L };
+  }
+  /* 3つの場合の図（例題・考えよう） */
+  function cases(D, P, o) {
+    o = o || {}; var L = lay(D), F = fitC(D, L.fig, P);
+    if (o.halves) { GE.poly(F, 'OPA', { col: C.blue, fa: .2 * o.halves[0], stroke: false }); GE.poly(F, 'OPB', { col: C.orange, fa: .2 * o.halves[1], stroke: false }); }
+    circle(F);
+    if (o.pk) GE.seg(F, 'PK', { dash: true, w: 2, col: 'rgba(242,240,230,.85)', a: o.pk });
+    segs(F, 'OA OB', { col: C.pink }); segs(F, 'PA PB');
+    return { F: F, L: L };
+  }
+
+  K3.run({
+    no: '第2時', title: '円周角が中心角の半分になるわけを説明しよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '01.html', label: '◀ 第1時' }, { href: '03.html', label: '第3時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: 'PB が直径のとき', q: 'PB が円 O の直径のとき、∠APB は ∠AOB の半分になる。そのわけを、説明しよう。',
+        notes: ['① 自分の考え（3分）　わけを、順に書こう。', '② ペアの考え（3分）'],
+        draw: function (D) { main(D); } },
+      { tag: '今日の問い', q: 'どの三角形に目をつけると、わけが説明できる？', a: '△OPA（二等辺三角形）', sub: 'OP と OA は、どちらも円の半径。だから ∠OPA＝∠OAP', dur: 2.5,
+        b: { t: 'OP＝OA（半径）→ △OPA は <b>二等辺三角形</b> → ∠OPA＝∠OAP', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, m = main(D, { tri: D.ph ? CH.smooth(0, .4, t) : 0, base: D.ph ? CH.smooth(.4, .8, t) : 0 });
+          if (D.ph) say(D, m.L.side, [{ t: 'OP＝OA（半径）', col: C.green, a: CH.smooth(.2, .5, t) }, { t: '∠OPA＝∠OAP', col: C.yel, a: CH.smooth(.6, .9, t) }]);
+        } },
+      { tag: '今日の問い', q: '∠AOB は、△OPA のどんな角？ ∠APB とくらべると？', a: '外角。∠AOB＝∠OPA＋∠OAP＝2∠APB', sub: 'だから ∠APB＝1/2∠AOB（円周角は、中心角の半分）', dur: 4.5,
+        b: { t: '∠AOB は △OPA の <b>外角</b> → ∠AOB＝∠OPA＋∠OAP＝2∠APB', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, m = main(D, { tri: 1, base: 1, move: D.ph ? CH.smooth(.1, .75, t) : 0, lab: D.ph && t > .8 });
+          say(D, m.L.side, [{ t: '∠OPA＝∠OAP', col: C.yel }, D.ph ? { t: '外角 ∠AOB＝∠OPA＋∠OAP', col: C.pink, a: CH.smooth(.6, .8, t) } : null, D.ph ? { t: '＝2∠APB', col: C.pink, a: CH.smooth(.75, .9, t) } : null, D.ph ? { t: 'だから ∠APB＝1/2∠AOB', a: CH.smooth(.88, 1, t) } : null]);
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '三角形の外角は、内角とどんな関係？ 「円周角は、中心角の半分」のことを、何という？', a: 'となり合わない2つの内角の和。円周角の定理', sub: '円周角の定理：円周角は、同じ弧に対する中心角の半分。同じ弧に対する円周角は等しい', dur: 1.5,
+        b: [{ t: '円の半径は <b>等しい</b> → 二等辺三角形ができる', col: C.green }, { t: '三角形の <b>外角</b> ＝ となり合わない 2つの内角の和', col: C.green }, { t: '<b>円周角の定理</b> … 円周角は、同じ弧に対する中心角の半分', col: C.green }],
+        draw: function (D) { var m = main(D, { tri: 1, base: 1, move: 1, lab: true }); if (D.ph) say(D, m.L.side, [{ t: '円周角の定理', col: C.yel, a: CH.smooth(0, .6, D.t) }, { t: '∠APB＝1/2∠AOB', a: CH.smooth(.3, .9, D.t) }]); } },
+      { tag: '例題', bh: '例題　O が角の内側にあるとき', q: '中心 O が ∠APB の内側にあるときも、∠APB＝1/2∠AOB を説明しよう。直径 PK をひいて、今日の問いの結果を使う。',
+        a: '∠APB＝1/2∠AOK＋1/2∠BOK＝1/2∠AOB', sub: '∠APK＝1/2∠AOK …①　∠BPK＝1/2∠BOK …②　①＋② で ∠APB＝1/2（∠AOK＋∠BOK）＝1/2∠AOB', dur: 6,
+        b: [{ t: '直径 PK で 2つに分ける：∠APK＝1/2∠AOK …①、∠BPK＝1/2∠BOK …②', col: C.pink }, { t: '①＋② → ∠APB＝1/2（∠AOK＋∠BOK）＝<b>1/2∠AOB</b>', col: C.pink }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, a0 = D.ph ? CH.smooth(0, .15, t) : 0, a1 = D.ph ? CH.smooth(.18, .4, t) : 0, a2 = D.ph ? CH.smooth(.45, .67, t) : 0, a3 = D.ph ? CH.smooth(.75, .95, t) : 0;
+          var m = cases(D, PI, { pk: a0, halves: [a1, a2] }), F = m.F;
+          if (a1) { GE.tick(F, 'OP', 1, { col: C.green, a: Math.max(a1, a2) }); GE.tick(F, 'OA', 1, { col: C.green, a: a1 }); mark(F, 'APK', C.blue, { a: a1, r: F.s * 1.6 }); mark(F, 'AOK', C.blue, { a: a1 }); }
+          if (a2) { GE.tick(F, 'OB', 1, { col: C.green, a: a2 }); mark(F, 'BPK', C.orange, { a: a2, r: F.s * 1.6 }); mark(F, 'BOK', C.orange, { a: a2 }); }
+          mark(F, 'APB', C.yel, { a: D.ph ? 1 : .8, t: false, r: F.s * 1.05 });
+          dots(F, 'OPABK'); nm(F, { P: 90, K: 270, A: 214, B: 334, O: 0 });
+          if (D.ph) say(D, m.L.side, [{ t: '∠APK＝1/2∠AOK（28°＝56°÷2）', col: C.blue, a: a1 }, { t: '∠BPK＝1/2∠BOK（32°＝64°÷2）', col: C.orange, a: a2 }, { t: '∠APB＝1/2（∠AOK＋∠BOK）', col: C.yel, a: a3 }, { t: '＝1/2∠AOB（60°＝120°÷2）', col: C.yel, a: a3 }]);
+        } },
+      { tag: '考えよう', q: '点 P の位置によって、中心 O は ∠APB の 辺の上（ア）・内側（イ）・外側（ウ）になる。ウの図で ∠APB と ∠AOB を調べよう。なぜ、場合を分けて考えるのだろう。',
+        notes: ['ウの図で、気づいたことを書こう。', 'ウのときも、∠APB＝1/2∠AOB を説明できるだろうか。', 'スライダーで、ア・イ・ウを切りかえたり、直径 PK をひいたりできます。'],
+        sliders: [{ key: 'k', label: '場合', min: 0, max: 2, step: 1, val: 2, fmt: function (x) { return ['ア 辺の上', 'イ 内側', 'ウ 外側'][x]; } },
+          { key: 'pk', label: '直径 PK', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? 'ひく' : '—'; } }],
+        draw: function (D) {
+          var q = CASE[D.V.k], m = cases(D, q, { pk: D.V.pk }), F = m.F, A = [200, 215, 150][D.V.k], B = [270, 335, 230][D.V.k];
+          mark(F, 'AOB', C.pink); mark(F, 'APB', C.yel, { r: F.s * 1.3 });
+          dots(F, D.V.pk || D.V.k === 0 ? 'OPABK' : 'OPAB');
+          var lab = { P: 90, A: A, B: B, O: D.V.k === 0 ? 0 : 20 }; if (D.V.pk && D.V.k !== 0) lab.K = 270; nm(F, lab);
+          say(D, m.L.side, [{ t: ['ア　O が辺 PB の上', 'イ　O が角の内側', 'ウ　O が角の外側'][D.V.k], col: C.orange }, { t: '∠APB＝' + dg(GE.ang(q, 'APB')), col: C.yel }, { t: '∠AOB＝' + dg(GE.ang(q, 'AOB')), col: C.pink }]);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '円 O の周上に 3点 A、B、P があり、O は ∠APB の内側にある。∠OAP＝a°、∠OBP＝b° のとき、∠AOB を a、b で表そう。a＝28、b＝32 のときは何度？',
+        notes: ['ヒント① OP をひくと、どんな三角形ができる？', 'ヒント② ∠APB は、∠OPA と ∠OPB で表せる？'],
+        a: '∠AOB＝2（a＋b）°、120°', sub: '△OPA、△OPB は二等辺三角形だから ∠OPA＝a°、∠OPB＝b°。∠APB＝（a＋b）°、∠AOB＝2（a＋b）°＝2×60＝120°', dur: 5,
+        b: { t: '∠APB＝（a＋b）° → ∠AOB＝<b>2（a＋b）°</b>、a＝28、b＝32 で <b>120°</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, a1 = D.ph ? CH.smooth(0, .3, t) : 0, a2 = D.ph ? CH.smooth(.35, .6, t) : 0, a3 = D.ph ? CH.smooth(.7, .95, t) : 0;
+          var L = lay(D), F = fitC(D, L.fig, P8);
+          circle(F); segs(F, 'OA OB', { col: C.pink }); segs(F, 'PA PB');
+          if (a1) { GE.seg(F, 'OP', { col: C.green, a: a1 }); [['OP', a1], ['OA', a1], ['OB', a1]].forEach(function (q) { GE.tick(F, q[0], 1, { col: C.green, a: q[1] }); }); }
+          mark(F, 'OAP', C.blue, { t: 'a°' }); mark(F, 'OBP', C.orange, { t: 'b°' });
+          if (a1) { mark(F, 'OPA', C.blue, { a: a1, t: 'a°', r: F.s * 1.5 }); mark(F, 'OPB', C.orange, { a: a1, t: 'b°', r: F.s * 1.5 }); }
+          if (a3) mark(F, 'AOB', C.pink, { a: a3, t: '2（a＋b）°' });
+          dots(F, 'OPAB'); nm(F, { P: 90, A: 214, B: 334, O: 0 });
+          if (D.ph) say(D, L.side, [{ t: 'OP＝OA＝OB（半径）', col: C.green, a: a1 }, { t: '∠APB＝（a＋b）°', col: C.yel, a: a2 }, { t: '∠AOB＝2（a＋b）°', col: C.pink, a: a3 }, { t: '2×（28＋32）＝120（°）', col: C.pink, a: a3 }]);
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

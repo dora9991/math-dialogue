@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>逆と反例</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三角形と四角形 第4時：「逆」が正しいかどうかを調べよう（ikkan の lesson_sankaku_04 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。証明の行は GE.proof が座標で確かめ、反例は座標で測り直して CH.check で照らし合わせる。
+   仮定と結論のカードが入れかわり、合同な2つの三角形が「大きさのちがう正三角形」（反例）に変わる。 */
+(function () {
+  var C = CH.C;
+  /* ---- このページの道具 ---- */
+  function box(D, o) { return CH.box(D, o || { l: .06, r: .06, t: .1, b: .12 }); }
+  function ext(F, Q) { return Object.assign({}, F, { P: Object.assign({}, F.P, Q), X: function (p) { return F.X(typeof p === 'string' && Q[p] ? Q[p] : p); } }); }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), g = D.ctx; g.save(); g.font = '600 ' + size + 'px "Klee One",sans-serif'; var w = g.measureText(s).width; g.restore(); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({}, o, { size: size })); }
+  function card(D, x, y, w, h, s, o) { o = o || {}; CH.card(D, x, y, w, h, '', { col: o.col || C.blue, a: o.a, sw: 2 }); say(D, x, y + 1, s, { col: o.tcol || C.chalk, a: o.a, size: o.size || h * .48, maxW: w * .9 }); }
+  /* 「仮定 ならば 結論」の2枚のカード。k（0〜1）で入れかわる */
+  function rule(D, R, y, p, q, k, o) {
+    o = o || {}; var s = CH.fs(D), w = Math.min(R.w * .38, s * 9.5), h = s * 2.1, xL = R.x0 + R.w * .21, xR = R.x1 - R.w * .21, e = CH.ease(k), lift = Math.sin(Math.PI * e) * h * .8;
+    card(D, CH.lerp(xL, xR, e), y + lift, w, h, p, { col: C.blue, a: o.a }); card(D, CH.lerp(xR, xL, e), y - lift, w, h, q, { col: C.pink, a: o.a });
+    say(D, R.cx, y, 'ならば', { size: s * .85, a: o.a, maxW: xR - xL - w });
+    if (o.lab !== false) { say(D, xL, y + h * .85, '仮定', { col: e < .5 ? C.blue : C.pink, size: s * .7, a: o.a }); say(D, xR, y + h * .85, '結論', { col: e < .5 ? C.pink : C.blue, size: s * .7, a: o.a }); }
+  }
+
+  /* ---- 今日の問い：合同な2つの三角形 → 反例（1辺 3 と 5 の正三角形） ---- */
+  var PW = { A: [0, 0], B: [3, 0], C: [1, 2], D: [5, 0], E: [8, 0], F: [6, 2] };
+  var PQ = { A: [0, 0], B: [3, 0], C: [1.5, 1.5 * Math.sqrt(3)], D: [4.5, 0], E: [9.5, 0], F: [7, 2.5 * Math.sqrt(3)] };
+  CH.check(GE.verify(PW, '△ABC≡△DEF') && GE.verify(PW, '∠BAC＝∠EDF'), '今日の問い：合同な2つの三角形');
+  CH.check(GE.verify(PQ, '∠BAC＝∠EDF＝60°') && GE.verify(PQ, 'AB＝BC＝CA') && GE.verify(PQ, 'DE＝EF＝FD') && !GE.near(GE.len(PQ, 'AB'), GE.len(PQ, 'DE')), '反例：大きさのちがう正三角形');
+  var FR = { p: [-.2, -.2], q: [9.7, 4.5] };
+  function pair(D, k, o) {
+    o = o || {}; var Rb = box(D, { l: .06, r: .06, t: .34, b: .1 }), P = {};
+    Object.keys(PW).forEach(function (n) { P[n] = GE.lerpP(PW[n], PQ[n], CH.ease(k)); });
+    var F = ext(GE.fit(D, Rb, FR, { pad: .06 }), P);
+    GE.poly(F, 'ABC', { col: C.blue, fa: .18 }); GE.poly(F, 'DEF', { col: C.orange, fa: .18 });
+    GE.labels(F, ['A', 'B', 'C', 'D', 'E', 'F'], { dir: { A: 'sw', B: 'se', C: 'n', D: 'sw', E: 'se', F: 'n' } });
+    GE.arc(F, 'BAC', { col: C.yel, fill: .4, r: F.s * 1.3, lab: k > .99 ? '60°' : '' }); GE.arc(F, 'EDF', { col: C.yel, fill: .4, r: F.s * 1.3, lab: k > .99 ? '60°' : '' });
+    if (k > .99) { [['AB', 'BC', 'CA'], ['DE', 'EF', 'FD']].forEach(function (g, i) { g.forEach(function (sg) { GE.tick(F, sg, i + 1, { a: o.a }); }); }); }
+    return F;
+  }
+
+  /* ---- 例題：正三角形の3つの角 ---- */
+  var PE = { A: [2, 2 * Math.sqrt(3)], B: [0, 0], C: [4, 0] };
+  var defE = {
+    id: '第4時 例題', lv: 1, ttl: '例題　正三角形の3つの角', q: '正三角形 ABC の3つの角が等しいことを証明しよう。', P: PE,
+    fig: { segs: ['AB', 'BC', 'CA'], ticks: [['AB', 1], ['BC', 1], ['CA', 1]] },
+    alias: { A: 'BAC', B: 'ABC', C: 'ACB' }, hyp: 'AB＝BC＝CA', goal: '∠A＝∠B＝∠C',
+    notes: ['ヒント：どの2辺に目をつけると、二等辺三角形の性質が使える？'],
+    L: [{ t: 'AB＝AC だから　∠B＝∠C', r: '二等辺三角形の底角は等しい', n: 1 },
+      { t: 'BA＝BC だから　∠A＝∠C', r: '二等辺三角形の底角は等しい', n: 2 },
+      { t: '①②より　∠A＝∠B＝∠C', q: '①② から、何がいえる？', a: '∠A＝∠B＝∠C' }],
+    point: { a: '正三角形は、どの2辺を選んでも二等辺三角形', sub: '正三角形の3つの角は等しい（定理）。1つの角は 180°÷3＝60°' }
+  };
+  CH.check(GE.verify(PE, '∠BAC＝60°') && 180 / 3 === 60, '正三角形の角');
+
+  /* ---- 考えよう：もとのことがらと逆 ---- */
+  var KG = [['ア', '2直線が平行', '同位角は等しい'], ['イ', 'x＞2', 'x＞0'], ['ウ', '△ABC で AB＝AC', '∠B＝∠C'], ['エ', '6の倍数', '3の倍数']];
+
+  /* ---- チャレンジ：正三角形 ABC と CDE（B、C、E は一直線上） ---- */
+  var e = 2.2, PC = { A: [1.5, 1.5 * Math.sqrt(3)], B: [0, 0], C: [3, 0], D: [3 + e / 2, e * Math.sqrt(3) / 2], E: [3 + e, 0] };
+  CH.check(GE.verify(PC, 'AB＝BC＝CA') && GE.verify(PC, 'CD＝DE＝EC') && GE.verify(PC, '∠ACE＝∠ACD＋∠DCE') && GE.verify(PC, '∠BCD＝∠BCA＋∠ACD') && GE.verify(PC, '∠DCE＝∠BCA＝60°'), 'チャレンジ：∠ACE＝∠BCD のわけ');
+  var defC = {
+    id: '第4時 チャレンジ', lv: 2, ttl: 'チャレンジ　AE＝BD の証明',
+    q: '△ABC と △CDE は、どちらも正三角形で、3点 B、C、E は一直線上にある。AE＝BD であることを証明しよう。', P: PC,
+    fig: { segs: ['AB', 'BC', 'CA', 'CD', 'DE', 'CE', 'AE', 'BD'], ticks: [['AB', 1], ['BC', 1], ['CA', 1], ['CD', 2], ['DE', 2], ['EC', 2]], dir: { C: 's', A: 'n', D: 'n' } },
+    hyp: '△ABC、△CDE は正三角形', goal: 'AE＝BD', tri: ['ACE', 'BCD'],
+    notes: ['ヒント：正三角形の角は 60°。∠ACE と ∠BCD を、∠ACD を使って表そう。'],
+    L: [{ t: '△ACE と △BCD で' },
+      { t: 'AC＝BC', r: '△ABC は正三角形', n: 1 },
+      { t: 'CE＝CD', r: '△CDE は正三角形', n: 2 },
+      { t: '∠ACE＝∠BCD', r: 'どちらも 60°＋∠ACD', n: 3, hint: '∠ACE と ∠BCD は等しい？ わけは？' },
+      { t: '①②③より、2組の辺とその間の角が、それぞれ等しいので', c: 'SAS' },
+      { t: '△ACE≡△BCD' },
+      { t: 'AE＝BD', r: '合同な図形の対応する辺は等しい', ask: 'r' }]
+  };
+
+  var steps = [
+    { tag: '今日の問い', bh: '合同な2つの三角形', q: '「△ABC≡△DEF ならば、∠A＝∠D である」は正しい。この逆は、正しいといえるだろうか。逆を書いて、調べよう。',
+      notes: ['① 自分の考え（3分）　逆と、正しいかどうかを書こう。', '② ペアの考え（3分）　自分とちがう例は？'],
+      draw: function (D) { var Rt = box(D, { l: .04, r: .04, t: .06, b: .7 }); rule(D, Rt, Rt.cy, '△ABC≡△DEF', '∠A＝∠D', 0); pair(D, 0); } },
+    { tag: '今日の問い', q: 'この逆を書こう。', a: '∠A＝∠D ならば、△ABC≡△DEF', sub: '仮定と結論を入れかえる', dur: 2,
+      b: { t: '逆 … ∠A＝∠D ならば、△ABC≡△DEF', col: C.yel },
+      draw: function (D) { var Rt = box(D, { l: .04, r: .04, t: .06, b: .7 }); rule(D, Rt, Rt.cy, '△ABC≡△DEF', '∠A＝∠D', D.ph ? CH.smooth(.1, .9, D.t) : 0); pair(D, 0); } },
+    { tag: '今日の問い', q: 'この逆は、正しいといえる？', a: '正しくない', sub: '反例 … ∠A＝∠D＝60° の、大きさがちがう2つの正三角形。仮定は成り立つが、結論は成り立たない', dur: 3,
+      b: { t: '正しくない　反例 … 1辺 3 と 5 の正三角形（∠A＝∠D＝60° だが、合同ではない）', col: C.pink },
+      draw: function (D) {
+        var Rt = box(D, { l: .04, r: .04, t: .06, b: .7 }), t = D.ph ? D.t : 0;
+        rule(D, Rt, Rt.cy, '△ABC≡△DEF', '∠A＝∠D', 1); var F = pair(D, CH.smooth(.05, .8, t));
+        if (t > .85) { var p = F.X([.2, 4.2]); say(D, p[0], p[1], '∠A＝∠D でも、合同ではない', { col: C.pink, a: CH.smooth(.85, 1, t), size: F.s * .95, align: 'left', maxW: F.X([4.6, 0])[0] - p[0] }); }
+      } },
+    { tag: 'ことば', bh: 'ことば', q: '仮定は成り立つが、結論は成り立たない例を、何という？ 正しいことがらの逆は、いつも正しい？', a: '反例。逆は、正しいとはかぎらない', sub: '「x＝−3 ならば x²＝9」は正しい。逆「x²＝9 ならば x＝−3」は、x＝3 が反例', dur: 2.5,
+      b: [{ t: '正しいことがらの逆は、正しいとは <b>かぎらない</b>', col: C.green }, { t: '仮定は成り立つが、結論は成り立たない例 … <b>反例</b>', col: C.green }, { t: '正三角形（定義）… 3つの辺が等しい三角形', col: C.green }],
+      draw: function (D) {
+        var Rb = box(D, { l: .04, r: .04, t: .08, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0, y1 = Rb.y0 + Rb.h * .26, y2 = Rb.y0 + Rb.h * .66;
+        say(D, Rb.cx, y1 - s * 2.2, 'もとのことがら　… 正しい', { col: C.chalk, size: s * .9, maxW: Rb.w });
+        rule(D, Rb, y1, 'x＝−3', 'x²＝9', 0);
+        if (!D.ph) return;
+        var a2 = CH.smooth(.55, .75, t);
+        rule(D, Rb, y2, 'x＝−3', 'x²＝9', CH.smooth(.05, .5, t));
+        say(D, Rb.cx, y2 - s * 2.2, '逆　… 正しくない', { col: C.yel, size: s * .9, a: a2, maxW: Rb.w });
+        say(D, Rb.cx, y2 + s * 3, '反例　x＝3（3²＝9 だが、x＝−3 ではない）', { col: C.pink, a: CH.smooth(.75, .95, t), maxW: Rb.w });
+      } }
+  ].concat(GE.proof(defE, { tag: '例題' })).concat([
+    { tag: '考えよう', q: 'ア〜エについて、もとのことがらと、その逆が、それぞれ正しいかどうかを調べよう。もとのことがらも逆も正しいものには、どんな特ちょうがあるだろう。',
+      notes: ['ア 2直線が平行ならば、同位角は等しい。　イ x＞2 ならば、x＞0 である。', 'ウ △ABC で、AB＝AC ならば、∠B＝∠C である。　エ 6の倍数ならば、3の倍数である。', '表に ○ か × を書こう。正しくないときは、反例も。', 'スライダーで、ことがらを選んだり、逆にしたりできます。'],
+      sliders: [{ key: 'k', label: 'ことがら', min: 0, max: 3, step: 1, val: 0, fmt: function (x) { return KG[x][0]; } }, { key: 'r', label: '逆にする', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? '逆' : 'もと'; } }],
+      draw: function (D) {
+        var Rb = box(D, { l: .04, r: .04, t: .06, b: .06 }), s = CH.fs(D), g = KG[D.V.k], y = Rb.y0 + Rb.h * .22;
+        say(D, Rb.cx, y - s * 2.3, g[0] + '　' + (D.V.r ? 'その逆' : 'もとのことがら'), { col: C.yel, maxW: Rb.w });
+        rule(D, Rb, y, g[1], g[2], D.V.r);
+        var R2 = CH.box(D, { l: .22, r: .22, t: .48, b: .06 });
+        CH.table(D, R2, ['', 'もとのことがら', 'その逆'], KG.map(function (r) { return [r[0], '', '']; }), { fw: .2, size: CH.fs(D, .8), hl: function (rr, c) { return rr - 1 === D.V.k && c > 0 && c - 1 === D.V.r ? C.yel : null; } });
+      } }
+  ]).concat(GE.proof(defC, { tag: 'チャレンジ' }));
+
+  K3.run({
+    no: '第4時', title: '「逆」が正しいかどうかを調べよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '03.html', label: '◀ 第3時' }, { href: '05.html', label: '第5時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

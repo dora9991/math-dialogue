@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>袋の中の玉を当てる</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 標本調査 第2時：袋の中の玉の数を、取り出した玉から当てよう（ikkan の lesson_hyouhon_02 と同じ流れ）。
+   袋には 白玉と黒玉が 合わせて 200個（黒玉は 60個。先生だけが知っている）。20個取り出して 7個なら およそ 70個。
+   考えようは、取り出す数（5〜100個）と 回数を変えて、推定のちらばりを見る（たねつきの乱数で、毎回同じ結果）。データはすべて自作。 */
+(function () {
+  var C = CH.C, FF = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', NF = '"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif';
+  var DIM = 'rgba(242,240,230,.75)', BLK = '#161b18', WHT = '#f2f0e6';
+  function ft(D, x, y, s, o, mw) {
+    o = o || {}; var g = D.ctx, z = o.size || CH.fs(D), p = {}, k;
+    g.save(); g.font = (o.w || 600) + ' ' + z + 'px ' + (o.num ? NF : FF); var w = g.measureText(s).width; g.restore();
+    for (k in o) p[k] = o[k]; p.size = w > mw ? z * mw / w : z; CH.text(D, x, y, s, p); return p.size;
+  }
+  function wide(D) { return D.W > D.H * .9; }
+  function pick(seed, n, k) { var r = CH.rng(seed), a = []; for (var i = 0; i < n; i++) a.push(i); for (var j = 0; j < k; j++) { var m = j + Math.floor(r() * (n - j)), x = a[j]; a[j] = a[m]; a[m] = x; } return a.slice(0, k); }
+  function set(a) { var o = {}; a.forEach(function (i) { o[i] = 1; }); return o; }
+
+  var N = 200, B = 60;
+  /* 例題：20個ずつ 5回 */
+  var EX = [7, 5, 6, 8, 4];
+  CH.check(CH.sum(EX) === 30 && 20 * 5 === 100 && CH.near(30 / 100, .3) && CH.near(200 * .3, 60), '例題　およそ 60個');
+  CH.check(200 * 7 / 20 === 70 && 200 - 70 === 130, '今日の問い　およそ 70個');
+  CH.check(600 * 8 / 30 === 160 && 600 * 12 / 30 === 240 && 600 * 10 / 30 === 200 && 240 - 200 === 40 && 160 + 240 + 200 === 600, 'チャレンジ');
+  /* 考えよう：取り出す数ごとに 30回（1回ごとに玉をもどす。たねつきの乱数） */
+  var NS = [5, 10, 20, 50, 100];
+  var SIM = NS.map(function (n, k) {
+    var r = CH.rng(100 + k), out = []; for (var w = 0; w < 10; w++) r();
+    for (var j = 0; j < 30; j++) {
+      var a = [], c = 0, got = []; for (var i = 0; i < N; i++) a.push(i);
+      for (var q = 0; q < n; q++) { var m = q + Math.floor(r() * (N - q)), x = a[q]; a[q] = a[m]; a[m] = x; if (a[q] < B) c++; got.push(a[q] < B ? 1 : 0); }
+      out.push({ c: c, e: N * c / n, got: got });
+    }
+    return out;
+  });
+  var RG = SIM.map(function (s) { var e = s.map(function (o) { return o.e; }); return [Math.min.apply(null, e), Math.max.apply(null, e)]; });
+  CH.check(JSON.stringify(RG) === '[[0,120],[20,120],[20,100],[28,84],[50,72]]', '考えよう　たねつきの乱数');
+  CH.check(RG.every(function (r, i) { return i === 0 || r[1] - r[0] < RG[i - 1][1] - RG[i - 1][0]; }), '考えよう　取り出す数が多いほど、ちらばりが小さい');
+
+  /* ---- 袋と玉 ---- */
+  function bagPath(g, x, y, R) {
+    g.beginPath(); g.moveTo(x - .42 * R, y - .95 * R);
+    g.quadraticCurveTo(x - 1.15 * R, y - .55 * R, x - 1.0 * R, y + .35 * R); g.quadraticCurveTo(x - .85 * R, y + 1.0 * R, x, y + 1.0 * R);
+    g.quadraticCurveTo(x + .85 * R, y + 1.0 * R, x + 1.0 * R, y + .35 * R); g.quadraticCurveTo(x + 1.15 * R, y - .55 * R, x + .42 * R, y - .95 * R); g.closePath();
+  }
+  function bag(D, x, y, R, o) {
+    o = o || {}; var g = D.ctx; g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a);
+    bagPath(g, x, y, R); g.fillStyle = o.fill || 'rgba(120,96,70,.95)'; g.fill(); g.strokeStyle = C.chalk; g.lineWidth = 2.4; g.lineJoin = 'round'; g.stroke();
+    g.beginPath(); g.moveTo(x - .42 * R, y - .95 * R); g.lineTo(x - .62 * R, y - 1.2 * R); g.moveTo(x + .42 * R, y - .95 * R); g.lineTo(x + .62 * R, y - 1.2 * R); g.stroke(); g.restore();
+  }
+  function ball(D, x, y, r, k, a) {
+    if (k === 1) CH.circle(D, x, y, r, { fill: BLK, stroke: 'rgba(242,240,230,.85)', sw: Math.max(1, r * .16), a: a });
+    else if (k === 0) CH.circle(D, x, y, r, { fill: WHT, stroke: 'rgba(20,30,24,.5)', sw: 1, a: a });
+    else CH.circle(D, x, y, r, { fill: k, stroke: 'rgba(20,30,24,.5)', sw: 1, a: a });
+  }
+  /* 袋の中の 200 この場所（下から順。0〜1 の座標） */
+  var SLOT = (function () {
+    function grid(d) { var out = [], row = 0; for (var y = .92; y > -.66; y -= d * .87, row++) for (var x = -1 + (row % 2) * d / 2; x <= 1; x += d) { if (x * x / .74 + (y - .12) * (y - .12) / .64 < 1) out.push([x, y]); } return out; }
+    var d = .2, p = grid(d); while (p.length < N) { d *= .985; p = grid(d); }
+    p.sort(function (a, b) { return b[1] - a[1] || a[0] - b[0]; }); var o = p.slice(0, N); o.d = d; return o;
+  })();
+  var PERM = pick(4, N, N), INV = []; PERM.forEach(function (b, i) { INV[b] = i; });
+  var TOP = []; for (var i = N - 20; i < N; i++) TOP.push(i);
+  CH.check(TOP.filter(function (s) { return PERM[s] < B; }).length === 6 && TOP.filter(function (s) { return s < B; }).length === 0, 'ことば　上の 20個');
+  /* 今日の問い：取り出した 20個（黒 7個） */
+  var T20 = set(pick(8, 20, 7));
+  /* チャレンジ：30個（赤 12・白 10・青 8） */
+  var C30 = (function () { var a = []; pick(9, 30, 30).forEach(function (i) { a.push(i < 12 ? 0 : i < 22 ? 1 : 2); }); return a; })();
+  CH.check(C30.filter(function (k) { return k === 0; }).length === 12 && C30.filter(function (k) { return k === 2; }).length === 8, 'チャレンジ 30個');
+
+  function inBag(D, x, y, R, col, o) {
+    o = o || {}; var r = SLOT.d * R * .42;
+    for (var b = 0; b < N; b++) {
+      var s0 = SLOT[b], s1 = SLOT[INV[b]], k = o.mix || 0, p = [CH.lerp(s0[0], s1[0], k) + Math.sin(k * Math.PI) * .1 * Math.cos(b * 2.3), CH.lerp(s0[1], s1[1], k) - Math.sin(k * Math.PI) * .12 * Math.sin(b * 1.7)];
+      ball(D, x + p[0] * R, y + p[1] * R, r, b < B ? 1 : 0, col);
+    }
+    return r;
+  }
+  function tape(D, x, y, w, h, parts, total, o) { CH.tape(D, x, y, w, h, parts, total, o); }
+
+  K3.run({
+    no: '第2時', title: '袋の中の玉の数を、取り出した玉から当てよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '01.html', label: '◀ 第1時' }, { href: '03.html', label: '第3時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '袋の中の玉（白玉と黒玉が 合わせて 200個）', q: '袋の中に、白玉と黒玉が 合わせて 200個 入っている。黒玉の個数を、玉を全部は出さずに当てたい。どんな実験をして、どう考えればよいだろう。',
+        notes: ['① 自分の考え（3分）　予想と、当て方を書こう。', '② ペアの考え（3分）　取り出し方で、気をつけることは？', '正解にいちばん近い数を当てた班の勝ち！'],
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .12, b: .1 }), s = CH.fs(D), w = wide(D), BR = Math.min(R.w * (w ? .2 : .3), R.h * (w ? .36 : .28)), bx = w ? R.x0 + R.w * .26 : R.cx, by = R.y0 + BR * 1.25;
+          bag(D, bx, by, BR); CH.text(D, bx, by + BR * .15, '？', { size: BR * .7, col: C.chalk });
+          var tx = w ? R.x0 + R.w * .76 : R.cx, ty = w ? R.y0 + R.h * .25 : by + BR * 1.3, mw = w ? R.w * .44 : R.w;
+          ft(D, tx, ty, '白玉と黒玉 合わせて 200個', { col: C.chalk }, mw);
+          ball(D, tx - s * 3.4, ty + s * 1.8, s * .55, 0); CH.text(D, tx - s * 2.5, ty + s * 1.8, '白玉', { align: 'left', size: s * .9 });
+          ball(D, tx + s * 1.2, ty + s * 1.8, s * .55, 1); CH.text(D, tx + s * 2.1, ty + s * 1.8, '黒玉', { align: 'left', size: s * .9 });
+          ft(D, tx, ty + s * 3.8, '黒玉は 何個？', { col: C.yel, size: s * 1.2 }, mw);
+        } },
+      { tag: '今日の問い', q: 'よくかき混ぜて、中を見ずに 20個 取り出したら、黒玉が 7個 だった。袋の中の黒玉は、およそ何個と考えられる？', a: 'およそ 70個', sub: '20個のうち 7個 → 黒玉の割合は 7/20。袋の 200個でも 同じ割合と考えて 200 × 7/20 ＝ 70。本当の数は、袋をあけるまで わからない', dur: 5,
+        b: { t: '20個中 7個 → 200 × 7/20 ＝ 70 → <b>およそ 70個</b>', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .1, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0, w = wide(D);
+          var BR = Math.min(R.w * (w ? .12 : .17), R.h * .2), bx = R.x0 + BR * 1.15, by = R.y0 + BR * 1.3;
+          bag(D, bx, by, BR);
+          var TR = CH.rect(R.x0 + BR * 2.7, R.y0 + BR * .2, R.x1, R.y0 + BR * 2.3), cw = Math.min(TR.w / 10.4, TR.h / 2.6), tx0 = TR.cx - cw * 5, ty0 = TR.cy - cw;
+          CH.fillRect(D, tx0 - cw * .2, ty0 - cw * .2, tx0 + cw * 10.2, ty0 + cw * 2.2, { stroke: 'rgba(242,240,230,.4)', sw: 1.4, fill: 'rgba(242,240,230,.05)' });
+          if (t > .02) for (var j = 0; j < 20; j++) {
+            var t0 = .02 + j * .022, k = CH.ease(CH.smooth(t0, t0 + .14, t)); if (k <= 0) continue;
+            var x1 = tx0 + (j % 10 + .5) * cw, y1 = ty0 + (Math.floor(j / 10) + .5) * cw, x = CH.lerp(bx, x1, k), y = CH.lerp(by - BR * .95, y1, k) - Math.sin(k * Math.PI) * BR * .5;
+            ball(D, x, y, cw * .4, T20[j] ? 1 : 0);
+          }
+          var y2 = R.y0 + BR * 2.4 + s * 1.2;
+          if (t > .55) ft(D, R.cx, y2, '20個のうち 黒玉 7個 → 割合 7/20', { col: C.chalk, a: CH.smooth(.55, .7, t) }, R.w);
+          if (t > .65) {
+            var a = CH.smooth(.65, .85, t), h = Math.min(s * 1.6, R.h * .09), tw = R.w * .78, xx = R.x1 - tw, lab = function (y, txt) { ft(D, xx - s * .4, y + h / 2, txt, { align: 'right', size: s * .8, col: DIM, a: a }, R.w - tw - s * .6); };
+            var ya = y2 + s * 1.1; lab(ya, '取り出した 20個'); tape(D, xx, ya, tw, h, [{ v: 7, col: '#55605a', txt: '7' }, { v: 13, col: C.chalk, txt: '13' }], 20, { a: a });
+            var yb = ya + h * 1.5; lab(yb, '袋の 200個'); tape(D, xx, yb, tw, h, [{ v: 70, col: '#55605a', txt: t > .85 ? '70' : '？' }, { v: 130, col: C.chalk, txt: '' }], 200, { a: a });
+            CH.line(D, xx + tw * .35, ya + h, xx + tw * .35, yb, { col: C.yel, dash: true, a: a });
+          }
+          if (t > .85) ft(D, R.cx, R.y1 - s * .2, '200 × 7/20 ＝ 70　→　およそ 70個', { col: C.yel, a: CH.smooth(.85, 1, t), size: s * 1.1 }, R.w);
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '取り出す前に、袋の中を よくかき混ぜるのは なぜ？ どの玉も同じように選ばれるように、かたよりなく取り出すことを 何という？', a: '無作為に抽出する',
+        sub: 'かき混ぜないと、上のほうの玉ばかり出てしまう。くじ・さいころ・乱数表・コンピュータの乱数で選ぶのも、無作為に抽出する方法', dur: 4,
+        b: [{ t: 'かたよりなく取り出す … <b>無作為に抽出する</b>', col: C.green }, { t: 'くじ・さいころなどで出る、でたらめな数 … <b>乱数</b>', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .1, b: .08 }), s = CH.fs(D), t = D.ph ? D.t : 0, w = wide(D), mix = CH.ease(CH.smooth(.05, .6, t));
+          var BR = w ? Math.min(R.w * .26, R.h * .4) : Math.min(R.w * .42, R.h * .3), bx = w ? R.x0 + R.w * .3 : R.cx, by = R.y0 + BR * 1.2;
+          bag(D, bx, by, BR, { fill: 'rgba(120,96,70,.4)' });
+          var r = inBag(D, bx, by, BR, 1, { mix: mix });
+          ft(D, bx, by - BR * 1.33, 'もし、袋の中が見えたら…', { col: DIM, size: s * .8 }, BR * 2.6);
+          var show = t < .02 || t > .65, aa = t < .02 ? 1 : CH.smooth(.65, .8, t);
+          if (show) TOP.forEach(function (sl) { var p = SLOT[sl]; CH.circle(D, bx + p[0] * BR, by + p[1] * BR, r * 1.45, { stroke: C.yel, sw: 2, a: aa }); });
+          var tx = w ? R.x0 + R.w * .79 : R.cx, ty = w ? R.y0 + R.h * .3 : by + BR * 1.25, mw = w ? R.w * .38 : R.w, mixed = t > .65;
+          if (show) {
+            ft(D, tx, ty, mixed ? 'よくかき混ぜて 上から 20個' : 'かき混ぜないで 上から 20個', { col: C.yel, a: aa }, mw);
+            ft(D, tx, ty + s * 1.5, '→ 黒玉 ' + (mixed ? 6 : 0) + '個', { col: mixed ? C.green : C.pink, a: aa, size: s * 1.15 }, mw);
+            if (!mixed) ft(D, tx, ty + s * 2.9, '（黒玉は 下にしずんでいる）', { col: DIM, size: s * .8 }, mw);
+            else ft(D, tx, ty + s * 2.9, '（どの玉も 同じように出やすい）', { col: DIM, size: s * .8, a: aa }, mw);
+          } else ft(D, tx, ty, 'かき混ぜる…', { col: C.chalk }, mw);
+        } },
+      { tag: 'ことば', q: '無作為に抽出した標本（取り出した玉）での割合と、母集団（袋の玉 全部）での割合は、どんな関係だと考えられる？', a: 'ほぼ等しい',
+        sub: 'だから 母集団の数 ≒ 母集団の大きさ × 標本での割合。標本から 全体のようすや数を推しはかることを、推定するという', dur: 3.5,
+        b: [{ t: '標本での割合 ≒ 母集団での割合', col: C.green }, { t: '母集団の大きさ × 標本での割合 で、全体の数を <b>推定</b> する', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .14, b: .12 }), s = CH.fs(D), t = D.ph ? D.t : 0, w = wide(D), lw = w ? R.w * .26 : 0, tw = R.w - lw, h = Math.min(s * 2.2, R.h * .14), x = R.x0 + lw;
+          var lab = function (y, a, b) { if (w) { ft(D, x - s * .5, y + h * .32, a, { align: 'right', size: s * .9 }, lw - s * .6); ft(D, x - s * .5, y + h * .82, b, { align: 'right', size: s * .72, col: DIM }, lw - s * .6); } else ft(D, R.x0, y - s * .7, a + '　' + b, { align: 'left', size: s * .85 }, R.w); };
+          var ya = R.y0 + (w ? 0 : s * 1.2), yb = ya + h * (w ? 2.4 : 3), k = CH.smooth(.1, .5, t);
+          lab(ya, '標本', '取り出した 20個'); tape(D, x, ya, tw, h, [{ v: 7, col: '#55605a', txt: '黒 7' }, { v: 13, col: C.chalk, txt: '白 13' }], 20);
+          lab(yb, '母集団', '袋の玉 200個');
+          if (t <= .1) tape(D, x, yb, tw, h, [{ v: 1, col: '#7d8a84', txt: '黒玉と白玉の割合は？', a: .5 }], 1);
+          else tape(D, x, yb, tw, h, [{ v: 70, col: '#55605a', txt: t > .6 ? '黒 およそ 70' : '' }, { v: 130, col: C.chalk, txt: t > .6 ? '白 およそ 130' : '' }], 200, { a: k });
+          if (t > .1) { CH.line(D, x + tw * .35, ya - s * .3, x + tw * .35, yb + h + s * .3, { col: C.yel, dash: true, a: k, w: 2.4 }); ft(D, x + tw * .35 + s * .4, (ya + h + yb) / 2, '割合が ほぼ等しい（7/20 ＝ 0.35）', { align: 'left', col: C.yel, a: k, size: s * .9 }, tw * .65 - s * .4); }
+          if (t > .6) {
+            var a = CH.smooth(.6, .85, t), y = yb + h + s * 2.2;
+            ft(D, R.cx, y, '母集団の数 ≒ 母集団の大きさ × 標本での割合', { col: C.green, a: a }, R.w);
+            ft(D, R.cx, y + s * 1.6, '200 × 7/20 ＝ 70（推定）', { col: C.green, a: a, size: s * 1.05 }, R.w);
+          }
+        } },
+      { tag: '例題', bh: '例題　ある班の記録', q: 'ある班が、20個ずつ 5回 取り出した（取り出した玉は、毎回 袋にもどして かき混ぜる）。黒玉は 7・5・6・8・4個。袋の中の黒玉の個数を推定しよう。',
+        a: 'およそ 60個', sub: '黒玉 7＋5＋6＋8＋4＝30（個）、取り出した玉 20×5＝100（個）→ 割合 30/100＝0.3 → 200×0.3＝60', dur: 4,
+        b: [{ t: '黒玉 30個／取り出した 100個 → 割合 <b>0.3</b>', col: C.yel }, { t: '200 × 0.3 ＝ 60 → <b>およそ 60個</b>', col: C.yel }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .06, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0;
+          var tot = t > .15, Tb = CH.table(D, CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .36), ['回', '1', '2', '3', '4', '5', '合計'], [['取り出した個数', 20, 20, 20, 20, 20, tot ? 100 : '？'], ['黒玉の個数'].concat(EX).concat([tot ? 30 : '？'])],
+            { fw: .24, top: true, hl: function (r, c) { return c === 6 && r > 0 && tot ? C.yel : null; } });
+          var h = Math.min(s * 1.9, R.h * .11), lw = Math.min(R.w * .22, s * 6), tw = R.w - lw, x = R.x0 + lw, ya = Tb.y1 + s * 1.6, yb = ya + h * 1.7;
+          if (t > .3) {
+            var a = CH.smooth(.3, .5, t);
+            ft(D, x - s * .4, ya + h / 2, '取り出した 100個', { align: 'right', size: s * .78, col: DIM, a: a }, lw - s * .5);
+            tape(D, x, ya, tw, h, [{ v: 30, col: '#55605a', txt: '黒 30' }, { v: 70, col: C.chalk, txt: '白 70' }], 100, { a: a });
+            ft(D, x - s * .4, yb + h / 2, '袋の 200個', { align: 'right', size: s * .78, col: DIM, a: a }, lw - s * .5);
+            tape(D, x, yb, tw, h, [{ v: 60, col: '#55605a', txt: t > .75 ? '黒 およそ 60' : '？' }, { v: 140, col: C.chalk, txt: '' }], 200, { a: CH.smooth(.45, .65, t) });
+            CH.line(D, x + tw * .3, ya + h, x + tw * .3, yb, { col: C.yel, dash: true, a: a });
+          }
+          if (t > .55) ft(D, R.cx, yb + h + s * 1.5, '割合 30/100 ＝ 0.3　→　200 × 0.3 ＝ 60', { col: C.yel, a: CH.smooth(.55, .75, t), size: s * 1.05 }, R.w);
+        } },
+      { tag: '考えよう', q: '取り出す玉の数を変えると、推定した黒玉の個数は どうなるだろうか。5個ずつ・20個ずつ・50個ずつ取り出したときを くらべよう。',
+        notes: ['① 取り出す数ごとに、いちばん小さい推定と いちばん大きい推定を くらべよう。', '② 100個ずつ取り出したら、推定は どうなると思う？', 'スライダーで、取り出す数と 実験の回数を変えられます（たねつきの乱数で、毎回同じ結果）。'],
+        sliders: [{ key: 'n', label: '取り出す数', min: 0, max: 4, step: 1, val: 0, fmt: function (x) { return NS[x] + '個ずつ'; } },
+          { key: 'r', label: '実験の回数', min: 1, max: 30, step: 1, val: 6, fmt: function (x) { return x + '回'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .06, b: .06 }), s = CH.fs(D), n = NS[D.V.n], rr = D.V.r, sim = SIM[D.V.n], last = sim[rr - 1];
+          /* 最後の回の玉 */
+          var cols = n <= 20 ? 10 : 25, rows = Math.ceil(n / cols), TR = CH.rect(R.x0, R.y0 + s * 1.4, R.x1, R.y0 + R.h * .3), cw = Math.min(TR.w / cols, TR.h / Math.max(rows, 2), s * 1.6), x0 = TR.cx - cw * cols / 2;
+          ft(D, R.cx, R.y0 + s * .4, rr + '回目：' + n + '個のうち 黒玉 ' + last.c + '個 → 200 × ' + last.c + '/' + n + ' ＝ ' + CH.mnum(last.e) + '個', { col: C.chalk, size: s * .95 }, R.w);
+          last.got.forEach(function (k, i) { ball(D, x0 + (i % cols + .5) * cw, TR.y0 + (Math.floor(i / cols) + .5) * cw, cw * .4, k); });
+          /* 推定の点（10個ごとに まとめて積む） */
+          var NL = CH.rect(R.x0 + s * .6, TR.y0 + cw * Math.max(rows, 2) + s * 1.6, R.x1 - s * .6, R.y1 - s * 3.2), X = CH.numline(D, NL, 0, 200, 10, { lab: 20, unit: '（個）' });
+          ft(D, NL.x0, NL.y0 - s * .2, '推定した黒玉の個数（' + rr + '回分。10個ごとに まとめて積む）', { align: 'left', size: s * .78, col: DIM }, R.w);
+          var vals = sim.slice(0, rr).map(function (o) { return Math.round(o.e / 10) * 10; }), cnt = {}, mx = 1; vals.forEach(function (v) { cnt[v] = (cnt[v] || 0) + 1; mx = Math.max(mx, cnt[v]); });
+          var dr = Math.min(s * .42, (NL.h - s * 1.4) / (mx * 2.2 + .3), (X(10) - X(0)) * .46);
+          CH.dots(D, X, NL.y1, vals, { r: dr, col: function (i) { return i === rr - 1 ? C.yel : C.blue; } });
+          var es = sim.slice(0, rr).map(function (o) { return o.e; }), lo = Math.min.apply(null, es), hi = Math.max.apply(null, es);
+          ft(D, R.cx, R.y1 - s * .3, 'いちばん小さい推定 ' + CH.mnum(lo) + '個　いちばん大きい推定 ' + CH.mnum(hi) + '個', { col: C.pink, size: s * .9 }, R.w);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '600個入りの袋に、赤玉・白玉・青玉が入っている。よくかき混ぜて 30個 取り出すと、赤 12個、白 10個、青 8個だった。① 青玉は、およそ何個？　② 赤玉は、白玉より およそ何個多い？',
+        a: '① およそ 160個　② およそ 40個多い', sub: '青 600×8/30＝160　赤 600×12/30＝240、白 600×10/30＝200 → 240−200＝40', dur: 5,
+        b: { t: '青 600×8/30＝<b>160個</b>　赤 240 − 白 200 ＝ <b>40個多い</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .07, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0, COLS = [C.pink, WHT, C.blue], NM = ['赤', '白', '青'];
+          var k = CH.ease(CH.smooth(.02, .3, t)), cw = Math.min(R.w / 31, R.h * .1), x0 = R.cx - cw * 15, y0 = R.y0 + s * 1.2;
+          ft(D, R.cx, R.y0 + s * .2, '取り出した 30個', { col: DIM, size: s * .85 }, R.w);
+          var ord = C30.map(function (c, i) { return [c, i]; }).sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; }), at = {}; ord.forEach(function (o, j) { at[o[1]] = j; });
+          C30.forEach(function (c, i) { var x = x0 + (CH.lerp(i, at[i], k) + .5) * cw; ball(D, x, y0 + cw / 2, cw * .42, COLS[c]); });
+          var h = Math.min(s * 1.8, R.h * .1), lw = Math.min(R.w * .2, s * 5), tw = R.w - lw, x = R.x0 + lw, ya = y0 + cw + s * 1.4, yb = ya + h * 1.8;
+          var lab = function (y, txt, a) { ft(D, x - s * .4, y + h / 2, txt, { align: 'right', size: s * .8, col: DIM, a: a }, lw - s * .5); };
+          if (t > .25) { var a = CH.smooth(.25, .45, t); lab(ya, '30個', a); tape(D, x, ya, tw, h, [12, 10, 8].map(function (v, i) { return { v: v, col: COLS[i], txt: NM[i] + ' ' + v }; }), 30, { a: a }); }
+          if (t > .45) {
+            var a2 = CH.smooth(.45, .65, t), V = [240, 200, 160]; lab(yb, '袋の 600個', a2);
+            tape(D, x, yb, tw, h, V.map(function (v, i) { return { v: v, col: COLS[i], txt: t > .6 ? NM[i] + ' ' + v : '' }; }), 600, { a: a2 });
+            [12, 22].forEach(function (c) { CH.line(D, x + tw * c / 30, ya + h, x + tw * c / 30, yb, { col: C.yel, dash: true, a: a2 }); });
+          }
+          if (t > .7) {
+            /* 赤と白を、左をそろえてくらべる */
+            var a3 = CH.smooth(.7, .9, t), hh = h * .6, yr = yb + h + s * .9, yw = yr + hh * 1.4, xd = x + tw * 200 / 600, xe = x + tw * 240 / 600;
+            lab(yr - hh * .2, '赤 240', a3); CH.fillRect(D, x, yr, xe, yr + hh, { fill: 'rgba(255,157,178,.45)', stroke: C.pink, a: a3 });
+            lab(yw - hh * .2, '白 200', a3); CH.fillRect(D, x, yw, xd, yw + hh, { fill: 'rgba(242,240,230,.35)', stroke: WHT, a: a3 });
+            CH.fillRect(D, xd, yr - 3, xe, yr + hh + 3, { stroke: C.orange, sw: 2.6, a: a3 }); CH.line(D, xd, yr + hh, xd, yw + hh, { col: C.orange, dash: true, a: a3 });
+            ft(D, xe + s * .5, yr + hh / 2, '240 − 200 ＝ 40（赤のほうが多い）', { align: 'left', col: C.orange, a: a3, size: s * .9 }, R.x1 - xe - s * .6);
+            ft(D, R.cx, yw + hh + s * 1.5, '青 600 × 8/30 ＝ 160（個）', { col: C.yel, a: a3 }, R.w);
+          }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

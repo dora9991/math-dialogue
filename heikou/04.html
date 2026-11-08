@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>内角と外角の性質</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="js/geo.js"></script>
+<script>
+/* 平行と合同 第4時：三角形の内角・外角の性質を使って、角の大きさを求めよう（ikkan の lesson_heikou_new_04 と同じ流れ）。
+   図の角度・数値は ikkan のワークシートと同じ（図1 55°・40°、図2 95°・45°、例題 40°・30°・35°、演習（5）外角 125°・115°、
+   考えよう＝内角の鋭・直・鈍の組み合わせ、チャレンジ ∠A＝70° → 35°）。図は角度から座標を計算して描き、座標から測り直して確かめる。 */
+(function () {
+  /* ---- このページの図の道具（角の印を、向きで描く・動かす） ---- */
+  var C = CH.C, RD = Math.PI / 180, OUT = 'rgba(20,40,30,.9)';
+  function nd(a) { return ((a % 360) + 360) % 360; }
+  function dir(p, q) { return Math.atan2(q[1] - p[1], q[0] - p[0]) / RD; }
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  /* 角の印：頂点 V（座標）で、向き a1 から a2 まで左まわり（度）。o：r（px）、col、fill、a、w、dash */
+  function wedge(F, V, a1, a2, o) {
+    o = o || {}; var g = F.D.ctx, p = F.X(V), r = o.r || F.s * 1.1, col = o.col || C.chalk, d = nd(a2 - a1);
+    if (o.a === 0) return;
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a);
+    if (o.fill) { g.fillStyle = hexA(col, o.fill === true ? .35 : o.fill); g.beginPath(); g.moveTo(p[0], p[1]); g.arc(p[0], p[1], r, -a1 * RD, -(a1 + d) * RD, true); g.closePath(); g.fill(); }
+    g.strokeStyle = col; g.lineWidth = o.w || 2.4; if (o.dash) g.setLineDash([5, 4]); g.beginPath(); g.arc(p[0], p[1], r, -a1 * RD, -(a1 + d) * RD, true); g.stroke(); g.restore();
+  }
+  /* 字：座標 p から、向き deg に k（字の大きさの倍）だけはなれたところ。t2 があれば2行（上に名前、下に大きさ） */
+  function lab(F, p, deg, k, t, o) {
+    o = o || {}; var q = F.X(p), x = q[0] + Math.cos(deg * RD) * F.s * k, y = q[1] - Math.sin(deg * RD) * F.s * k, s = F.s * (o.size || .95);
+    if (o.t2 != null) { CH.text(F.D, x, y - s * .5, t, { col: o.col, size: s, a: o.a, outline: OUT }); CH.text(F.D, x, y + s * .55, o.t2, { col: o.col2 || o.col, size: s * .9, a: o.a, outline: OUT, num: true }); }
+    else CH.text(F.D, x, y, t, { col: o.col, size: s, a: o.a, outline: OUT, num: o.num });
+  }
+  /* 頂点 V の角（向き a1→a2）を、k だけ動かしたもの。mv：{ to: 点 }（平行移動）か { c: 中心, deg: 回す角 } */
+  function moved(V, a1, a2, mv, k) {
+    if (mv.to) return [GE.lerpP(V, mv.to, k), a1, a2];
+    return [GE.rot(V, mv.c, mv.deg * k), a1 + mv.deg * k, a2 + mv.deg * k];
+  }
+  /* 図の上の1行（はばに入らなければ、字を小さくする） */
+  function top(D, s, col, a, row) {
+    var B = CH.box(D, { t: 0, l: .02, r: .02 }), g = D.ctx, f0 = CH.fs(D, 1.05), fs = f0, w;
+    g.save(); g.font = '600 ' + fs + 'px "Klee One", sans-serif'; w = g.measureText(s).width; g.restore();
+    if (w > B.w) fs *= B.w / w;
+    CH.text(D, B.cx, B.y0 + f0 * (.75 + (row || 0) * 1.3), s, { col: col || C.yel, a: a, size: fs, outline: OUT });
+  }
+  function textIn(D, R, x, y, s, o) { var g = D.ctx, fs = o.size, w; g.save(); g.font = '600 ' + fs + 'px "Klee One", sans-serif'; w = g.measureText(s).width; g.restore(); if (w > R.w * .98) fs *= R.w * .98 / w; CH.text(D, x, y, s, Object.assign({}, o, { size: fs, outline: OUT })); }
+
+  /* ---- 三角形：B＝(0, 0)、C＝(w, 0)、∠B・∠C から A を決める ---- */
+  function tri(w, Bd, Cd) { var AB = w * Math.sin(Cd * RD) / Math.sin((Bd + Cd) * RD); return { A: GE.polar([0, 0], AB, Bd), B: [0, 0], C: [w, 0] }; }
+  function spans(P) { return { a: [dir(P.A, P.B), dir(P.A, P.C)], b: [0, dir(P.B, P.A)], c: [dir(P.C, P.A), 180] }; }
+  function vtx(P, k) { return P[k.toUpperCase()]; }
+  function size(sp) { return nd(sp[1] - sp[0]); }
+  function angLab(F, P, k, t, o) { o = o || {}; var sp = spans(P)[k], w = size(sp), r = (o.k || 1) * (w < 40 ? 3.6 : w < 65 ? 2.9 : 2.4) + (o.t2 ? .4 : 0); lab(F, vtx(P, k), sp[0] + w / 2, r, t, { t2: o.t2, col: o.col, a: o.a, size: o.size }); }
+  function angArc(F, P, k, col, o) { o = o || {}; var sp = spans(P)[k]; wedge(F, vtx(P, k), sp[0], sp[1], { col: col, fill: o.fill == null ? .3 : o.fill, r: o.r || F.s * 1.5, a: o.a, w: o.w }); }
+  function triLines(F, P, o) { o = o || {}; GE.poly(F, 'ABC', { col: o.col || C.blue, fa: o.fa == null ? .12 : o.fa, sw: 2.8, stroke: C.chalk, a: o.a }); }
+  function fitIn(D, R, P, ks, pad) { return GE.fit(D, R, P, { keys: ks, pad: pad == null ? .1 : pad }); }
+  var AC3 = { a: C.yel, b: C.pink, c: C.blue };
+
+  /* 外角の図（BC を C の先の D までのばす）。x：外角 ∠ACD */
+  function extFig(w, Bd, Cd) { var P = tri(w, Bd, Cd); P.D = [w + 2.6, 0]; return P; }
+  /* ∠A・∠B が外角 ∠ACD へ集まる（A は AC の中点のまわりに回して錯角の位置へ、B は BC にそってずらして同位角の位置へ） */
+  function gather(F, P, t, t0, t1) {
+    var sp = spans(P), mid = (t0 + t1) / 2;
+    if (t > t0) { var m1 = moved(P.A, sp.a[0], sp.a[1], { c: GE.mid(P.A, P.C), deg: 180 }, CH.ease(CH.smooth(t0, mid, t))); wedge(F, m1[0], m1[1], m1[2], { col: C.yel, fill: .5, r: F.s * 1.5, w: 2.6 }); }
+    if (t > mid) { var m2 = moved(P.B, sp.b[0], sp.b[1], { to: P.C }, CH.ease(CH.smooth(mid, t1, t))); wedge(F, m2[0], m2[1], m2[2], { col: C.pink, fill: .5, r: F.s * 1.5, w: 2.6 }); }
+  }
+
+  /* ---- 今日の問い：図1 ∠A＝55°・∠B＝40°（∠ACB＝85°、∠x＝95°）、図2 ∠A＝95°・∠B＝45°（∠ACB＝40°、∠x＝140°） ---- */
+  var F1 = extFig(6, 40, 85), F2 = extFig(6, 45, 40);
+  GE.verify(F1, '∠BAC＝55°、∠ABC＝40°、∠ACB＝85°、∠ACD＝95°、∠ACD＝∠BAC＋∠ABC', null, '図1');
+  GE.verify(F2, '∠BAC＝95°、∠ABC＝45°、∠ACB＝40°、∠ACD＝140°、∠ACD＝∠BAC＋∠ABC', null, '図2');
+  CH.check(180 - 55 - 40 === 85 && 180 - 85 === 95 && 180 - 95 - 45 === 40 && 180 - 40 === 140, '今日の問いの式');
+  /* ことば：A を動かしても、外角＝となりあわない2つの内角の和 */
+  function extA(ax) { var P = { A: [ax, 3.6], B: [0, 0], C: [6, 0], D: [8.6, 0] }; return P; }
+  for (var ax = .4; ax <= 5.6; ax += .4) GE.verify(extA(ax), '∠ACD＝∠BAC＋∠ABC', null, 'ことば（A を動かす）');
+  /* 三角形の分け方：鋭角（50°・60°・70°）、直角（35°・55°・90°）、鈍角（30°・40°・110°） */
+  var KIND = [tri(5, 60, 70), tri(5, 35, 55), tri(5, 30, 40)];
+  GE.verify(KIND[0], '∠BAC＝50°', null, '鋭角三角形'); GE.verify(KIND[1], '∠BAC＝90°', null, '直角三角形'); GE.verify(KIND[2], '∠BAC＝110°', null, '鈍角三角形');
+  /* ---- 例題：D は BC 上。∠B＝40°、∠BAD＝30°、∠DAC＝35° → ∠x＝∠ADC＝70°、∠y＝∠ACB＝75° ---- */
+  var TE = (function () { var P = tri(6.4, 40, 75); P.D = GE.meet(P.A, GE.polar(P.A, 1, dir(P.A, P.B) + 30), P.B, P.C); return P; })();
+  GE.verify(TE, '∠ABC＝40°、∠BAD＝30°、∠DAC＝35°、∠ADC＝∠ABC＋∠BAD＝70°、∠ACB＝75°、∠ADC＋∠DAC＋∠ACD＝180°', null, '例題');
+  CH.check(40 + 30 === 70 && 180 - 70 - 35 === 75 && 40 + 30 + 35 + 75 === 180, '例題の式');
+  /* ---- 例題2：頂点 A の外角 125°（BA を A の先の E へ）、頂点 B の外角 115°（CB を B の先の F へ） → ∠C＝60° ---- */
+  var T2 = (function () { var P = tri(6, 65, 60); P.E = GE.lerpP(P.B, P.A, 1.45); P.F = [-2.4, 0]; return P; })();
+  GE.verify(T2, '∠EAC＝125°、∠FBA＝115°、∠BAC＝55°、∠ABC＝65°、∠ACB＝60°、∠EAC＋∠BAC＝180°、∠FBA＋∠ABC＝180°', null, '例題2');
+  CH.check(180 - 125 === 55 && 180 - 115 === 65 && 180 - 55 - 65 === 60, '例題2の式');
+  /* ---- チャレンジ：∠A＝70°。P は ∠B の二等分線と、外角 ∠ACD の二等分線の交点 → ∠BPC＝35° ---- */
+  function chP(Bd) { var P = tri(6, Bd, 110 - Bd); P.D = [9.6, 0]; P.P = GE.meet(P.B, GE.polar(P.B, 1, Bd / 2), P.C, GE.polar(P.C, 1, dir(P.C, P.A) / 2)); return P; }
+  var TC = chP(50);
+  GE.verify(TC, '∠BAC＝70°、∠ABP＝∠PBC＝25°、∠ACP＝∠PCD＝60°、∠ACD＝∠BAC＋∠ABC、∠PCD＝∠PBC＋∠BPC、∠BPC＝35°', null, 'チャレンジ');
+  for (var bb = 30; bb <= 90; bb += 5) GE.verify(chP(bb), '∠BAC＝70°、∠ABP＝∠PBC、∠ACP＝∠PCD、∠BPC＝35°', null, 'チャレンジ（∠B を動かす）');
+
+  K3.run({
+    no: '第4時', title: '三角形の内角・外角の性質を使って、角の大きさを求めよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '03.html', label: '◀ 第3時' }, { href: '05.html', label: '第5時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '三角形の外角', q: '図1、図2で、辺 BC を C の方へのばした先を D とする。∠x（∠ACD）を求めて、∠A・∠B とくらべ、気づいたことを書こう。',
+        notes: ['① 自分の考え（3分）　求め方と、気づいたことを。', '② ペアの考え（3分）'],
+        draw: function (D) { pair(D, 0, false); } },
+      { tag: '今日の問い', q: '∠x は何度？ ∠A・∠B とくらべると？', a: '図1 95°、図2 140°。∠x＝∠A＋∠B', sub: '図1 ∠ACB＝180°−55°−40°＝85°、∠x＝180°−85°＝95°。図2 ∠ACB＝180°−95°−45°＝40°、∠x＝180°−40°＝140°', dur: 7,
+        b: { t: '図1 ∠x＝<b>95°</b>（55°＋40°）、図2 ∠x＝<b>140°</b>（95°＋45°） → ∠x＝∠A＋∠B？', col: C.yel },
+        draw: function (D) { pair(D, D.ph ? D.t : 0, true); } },
+      { tag: 'ことば', bh: 'ことば', q: '1つの辺をのばしたとき、のばした辺と、となりの辺がつくる角を何という？ その大きさは？', a: '外角。外角は、となりあわない 2つの内角の和に等しい', sub: '∠ACD＝∠A＋∠B（どんな三角形でも）', dur: 5,
+        notes: ['スライダーで、頂点 A を動かせます。'],
+        sliders: [{ key: 'ax', label: 'A を動かす', min: .4, max: 5.6, step: .05, val: 1.6, anim: [1.6, 5.2], fmt: function () { return ''; } }],
+        b: [{ t: '<b>外角</b> … のばした辺と、となりの辺がつくる角', col: C.green }, { t: '外角は、となりあわない 2つの <b>内角の和</b> に等しい', col: C.green }],
+        draw: function (D) {
+          var P = extA(D.V.ax), F = fitIn(D, CH.box(D, { l: .04, r: .04, t: .14, b: .06 }), Object.assign({ u: [-.4, -.4], v: [8.8, 3.9] }, P), ['u', 'v'], .04), sp = spans(P), dA = dir(P.C, P.A);
+          var va = Math.round(size(sp.a)), vb = Math.round(size(sp.b)), vx = Math.round(180 - size(sp.c));
+          GE.seg(F, [P.C, GE.add(P.C, GE.sub(P.A, P.B))], { col: C.green, dash: [7, 6], w: 2, a: .7 });
+          triLines(F, P); GE.seg(F, ['C', 'D'], { w: 2.6 });
+          angArc(F, P, 'a', C.yel); angArc(F, P, 'b', C.pink); angArc(F, P, 'c', C.chalk, { fill: .08, a: .6 });
+          wedge(F, P.C, dir(P.B, P.A), dA, { col: C.yel, fill: .45, r: F.s * 1.7 }); wedge(F, P.C, 0, dir(P.B, P.A), { col: C.pink, fill: .45, r: F.s * 1.7 });
+          wedge(F, P.C, 0, dA, { col: C.orange, r: F.s * 2.6, w: 2.6 });
+          angLab(F, P, 'a', '∠A', { col: C.yel, t2: va + '°', size: .85 }); angLab(F, P, 'b', '∠B', { col: C.pink, t2: vb + '°', size: .85 });
+          lab(F, P.C, dA / 2, 3.6, '外角', { col: C.orange, t2: vx + '°', size: .85 });
+          GE.labels(F, ['A', 'B', 'C', 'D'], { dir: { A: 'n', B: 'sw', C: 's', D: 's' } });
+          top(D, '外角 ' + vx + '°＝∠A ' + va + '°＋∠B ' + vb + '°', C.orange);
+        } },
+      { tag: 'ことば', q: '3つの内角がすべて鋭角、1つが直角、1つが鈍角の三角形を、それぞれ何という？', a: '鋭角三角形・直角三角形・鈍角三角形', sub: '鋭角は 0° より大きく 90° より小さい角、鈍角は 90° より大きく 180° より小さい角', dur: 3,
+        b: { t: '<b>鋭角三角形</b>（すべて鋭角）・<b>直角三角形</b>（1つが直角）・<b>鈍角三角形</b>（1つが鈍角）', col: C.green },
+        draw: function (D) {
+          var R = CH.box(D, { l: .02, r: .02, t: .1, b: .06 }), rs = CH.split(D, R, 3, .06), t = D.ph ? D.t : 0, s = CH.fs(D), nm = ['鋭角三角形', '直角三角形', '鈍角三角形'], cl = [C.green, C.yel, C.pink];
+          KIND.forEach(function (P, i) {
+            var r = rs[i], wide = D.W > D.H * .9, F = fitIn(D, wide ? CH.rect(r.x0, r.y0 + s * 1.6, r.x1, r.y1) : CH.rect(r.x0 + r.w * .36, r.y0, r.x1, r.y1), P, ['A', 'B', 'C'], .08), sp = spans(P), al = D.ph ? CH.smooth(i * .25, i * .25 + .2, t) : 0;
+            triLines(F, P, { col: cl[i], fa: .1 + .15 * al });
+            'abc'.split('').forEach(function (k) { var v = Math.round(size(sp[k])); if (v === 90) GE.right(F, k === 'a' ? 'BAC' : k === 'b' ? 'CBA' : 'ACB', { col: cl[i] }); else angArc(F, P, k, v > 90 ? C.pink : C.chalk, { fill: .15, r: F.s * 1.2 }); angLab(F, P, k, v + '°', { size: .75, k: .8, col: v > 90 ? C.pink : v === 90 ? C.yel : C.chalk }); });
+            if (wide) textIn(D, r, r.cx, r.y0 + s * .6, D.ph ? nm[i] : '？', { col: cl[i], a: D.ph ? al : 1, size: s * 1.05 });
+            else textIn(D, CH.rect(r.x0, r.y0, r.x0 + r.w * .34, r.y1), r.x0 + r.w * .17, r.cy, D.ph ? nm[i] : '？', { col: cl[i], a: D.ph ? al : 1, size: s * 1.05 });
+          });
+        } },
+      { tag: '例題', bh: '例題　外角を使って求める', q: '点 D は辺 BC 上にある。∠B＝40°、∠BAD＝30°、∠DAC＝35° のとき、∠x、∠y の大きさを求めよう。', a: '∠x＝70°、∠y＝75°', sub: '∠x は △ABD の外角だから 40°＋30°＝70°。△ADC の内角の和から ∠y＝180°−70°−35°＝75°', dur: 7,
+        b: { t: '△ABD の外角 ∠x＝40°＋30°＝<b>70°</b>、△ADC で ∠y＝180°−70°−35°＝<b>75°</b>', col: C.pink },
+        draw: function (D) {
+          var P = TE, F = fitIn(D, CH.box(D, { l: .04, r: .04, t: .14, b: .06 }), P, ['A', 'B', 'C', 'D'], .12), t = D.ph ? D.t : 0, dAB = dir(P.A, P.B), dAD = dir(P.A, P.D), dAC = dir(P.A, P.C), dDA = dir(P.D, P.A);
+          var h1 = D.ph ? CH.smooth(0, .1, t) * (1 - CH.smooth(.5, .58, t)) : 0, h2 = D.ph ? CH.smooth(.55, .65, t) : 0;
+          if (h1 > 0) GE.poly(F, 'ABD', { col: C.yel, fa: .25 * h1, stroke: false });
+          if (h2 > 0) GE.poly(F, 'ADC', { col: C.blue, fa: .25 * h2, stroke: false });
+          triLines(F, P, { fa: .06 }); GE.seg(F, ['A', 'D'], { w: 2.6 });
+          wedge(F, P.B, 0, dir(P.B, P.A), { col: C.pink, fill: .3, r: F.s * 1.6 }); lab(F, P.B, dir(P.B, P.A) / 2, 3.4, '40°', { col: C.pink, size: .85 });
+          wedge(F, P.A, dAB, dAD, { col: C.yel, fill: .3, r: F.s * 1.8 }); lab(F, P.A, (dAB + dAD) / 2, 3.3, '30°', { col: C.yel, size: .85 });
+          wedge(F, P.A, dAD, dAC, { col: C.green, fill: .3, r: F.s * 1.4 }); lab(F, P.A, (dAD + dAC) / 2, 3.0, '35°', { col: C.green, size: .85 });
+          wedge(F, P.D, 0, dDA, { col: C.orange, fill: .2, r: F.s * 1.3 }); lab(F, P.D, dDA / 2, 2.3, D.ph && t > .45 ? '70°' : 'x', { col: C.orange, size: .9 });
+          wedge(F, P.C, dir(P.C, P.A), 180, { col: C.blue, fill: .2, r: F.s * 1.3 }); lab(F, P.C, (dir(P.C, P.A) + 180) / 2, 2.6, D.ph && t > .9 ? '75°' : 'y', { col: C.blue, size: .9 });
+          if (D.ph && t > .1 && t < .5) {
+            var m1 = moved(P.B, 0, dir(P.B, P.A), { to: P.D }, CH.ease(CH.smooth(.12, .28, t))); wedge(F, m1[0], m1[1], m1[2], { col: C.pink, fill: .5, r: F.s * 1.3, w: 2.6 });
+            var sp = [dAB, dAD], m2 = moved(P.A, sp[0], sp[1], { c: GE.mid(P.A, P.D), deg: 180 }, CH.ease(CH.smooth(.28, .44, t))); if (t > .28) wedge(F, m2[0], m2[1], m2[2], { col: C.yel, fill: .5, r: F.s * 1.3, w: 2.6 });
+          }
+          GE.labels(F, ['A', 'B', 'C', 'D'], { dir: { A: 'n', B: 'sw', C: 'se', D: 's' } });
+          if (D.ph) { var msg = t < .55 ? ['∠x は △ABD の外角 → ∠x＝40°＋30°＝70°', C.yel] : ['△ADC の内角の和 → ∠y＝180°−70°−35°＝75°', C.blue]; top(D, msg[0], msg[1], CH.smooth(0, .06, t)); }
+        } },
+      { tag: '例題', bh: '例題2　外角から内角', q: '△ABC で、頂点 A の外角が 125°、頂点 B の外角が 115° である。∠C の大きさを求めよう。', a: '60°', sub: '∠A＝180°−125°＝55°、∠B＝180°−115°＝65°、∠C＝180°−55°−65°＝60°', dur: 6,
+        b: { t: '∠A＝180°−125°＝55°、∠B＝180°−115°＝65° → ∠C＝<b>60°</b>', col: C.pink },
+        draw: function (D) {
+          var P = T2, F = fitIn(D, CH.box(D, { l: .04, r: .04, t: .14, b: .06 }), P, ['A', 'B', 'C', 'E', 'F'], .08), t = D.ph ? D.t : 0, sp = spans(P), dAE = dir(P.A, P.E), dAC = dir(P.A, P.C), dBA = dir(P.B, P.A);
+          triLines(F, P); GE.seg(F, ['A', 'E'], { w: 2.6 }); GE.seg(F, ['B', 'F'], { w: 2.6 });
+          wedge(F, P.A, dAC, dAE, { col: C.yel, r: F.s * 1.3, fill: .2 }); lab(F, P.A, (dAC + dAE) / 2 + (dAC > dAE ? 180 : 0), 2.6, '125°', { col: C.yel, size: .85 });
+          wedge(F, P.B, dBA, 180, { col: C.pink, r: F.s * 1.3, fill: .2 }); lab(F, P.B, (dBA + 180) / 2, 2.6, '115°', { col: C.pink, size: .85 });
+          var a1 = D.ph ? CH.smooth(.05, .25, t) : 0, a2 = D.ph ? CH.smooth(.35, .55, t) : 0, a3 = D.ph ? CH.smooth(.65, .85, t) : 0;
+          angArc(F, P, 'a', C.yel, { a: a1, fill: .35 }); if (a1 > 0) angLab(F, P, 'a', '55°', { col: C.yel, a: a1, size: .85 });
+          angArc(F, P, 'b', C.pink, { a: a2, fill: .35 }); if (a2 > 0) angLab(F, P, 'b', '65°', { col: C.pink, a: a2, size: .85 });
+          angArc(F, P, 'c', C.blue, { fill: .25 + .2 * a3 }); angLab(F, P, 'c', a3 > .5 ? '60°' : '？', { col: C.blue, size: .9 });
+          GE.labels(F, ['A', 'B', 'C'], { dir: { A: 'w', B: 's', C: 'se' } });
+          if (D.ph) { var msg = t < .35 ? ['∠A＝180°−125°＝55°', C.yel] : t < .65 ? ['∠B＝180°−115°＝65°', C.pink] : ['∠C＝180°−55°−65°＝60°', C.blue]; top(D, msg[0], msg[1], CH.smooth(0, .06, t)); }
+        } },
+      { tag: '考えよう', q: '三角形の3つの内角は、鋭角・直角・鈍角の、どんな組み合わせになれるだろう。あり得ない組み合わせは、どうしてあり得ないのだろう。',
+        notes: ['（例）鋭・鋭・鋭、鋭・鋭・直、鋭・直・鈍、直・直・鈍、鈍・鈍・鈍 …　あり得るなら ○、あり得ないなら ×。', 'スライダーで、∠B と ∠C を変えられます。∠A は どうなるかな。'],
+        sliders: [{ key: 'b', label: '∠B', min: 5, max: 175, step: 1, val: 50, fmt: function (v) { return v + '°'; } }, { key: 'c', label: '∠C', min: 5, max: 175, step: 1, val: 60, fmt: function (v) { return v + '°'; } }],
+        draw: function (D) {
+          var b = D.V.b, c = D.V.c, B = [0, 0], Cp = [5, 0], R = CH.box(D, { l: .04, r: .04, t: .1, b: .04 }), g = D.ctx, ok = b + c < 180, P = ok ? tri(5, b, c) : { B: B, C: Cp }, F = GE.fit(D, R, Object.assign({ u: [-2.6, -.8], v: [7.6, 6.2] }, P), { keys: ['u', 'v'], pad: 0 });
+          function kind(v) { return v < 90 ? '鋭角' : v === 90 ? '直角' : '鈍角'; }
+          g.save(); g.beginPath(); g.rect(R.x0, R.y0, R.w, R.h); g.clip();
+          if (ok) { triLines(F, P); angArc(F, P, 'a', C.yel); }
+          else { GE.seg(F, [B, GE.polar(B, 14, b)], { w: 2.6, dash: [8, 6] }); GE.seg(F, [Cp, GE.polar(Cp, 14, 180 - c)], { w: 2.6, dash: [8, 6] }); GE.seg(F, [B, Cp], { w: 2.8 }); }
+          g.restore();
+          wedge(F, B, 0, b, { col: C.pink, fill: .3, r: F.s * 1.5 }); wedge(F, Cp, 180 - c, 180, { col: C.blue, fill: .3, r: F.s * 1.5 });
+          lab(F, B, 270, 2.2, '∠B ' + b + '°', { col: C.pink, size: .9, t2: kind(b) }); lab(F, Cp, 270, 2.2, '∠C ' + c + '°', { col: C.blue, size: .9, t2: kind(c) });
+          lab(F, B, 180, 1, 'B', { size: 1 }); lab(F, Cp, 0, 1, 'C', { size: 1 });
+          if (ok) { var a = 180 - b - c, PA = P.A, inView = PA[1] < 6 && PA[0] > -2.6 && PA[0] < 7.6; if (inView) { lab(F, PA, PA[1] > 4.6 ? 0 : 90, PA[1] > 4.6 ? 1 : 1.1, 'A', { size: 1 }); lab(F, PA, PA[1] > 4.6 ? 180 : 90, PA[1] > 4.6 ? 3 : 2.6, '∠A ' + a + '°', { col: C.yel, size: .9, t2: kind(a) }); } else top(D, '∠A ' + a + '°（' + kind(a) + '）　A は 図の外', C.yel); }
+          else top(D, '2本の辺が交わらない → 三角形ができない', C.orange);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '点 P は、∠B の二等分線と、∠C の外角 ∠ACD の二等分線の交点である。∠A＝70° のとき、∠BPC（∠x）の大きさを求めよう。', a: '35°',
+        sub: '●＝∠ABP＝∠PBC、○＝∠ACP＝∠PCD とする。△ABC の外角から 2○＝70°＋2●、△PBC の外角から ○＝●＋∠x。だから ∠x＝35°（∠A の半分）', dur: 8,
+        notes: ['ヒント① ●、○ を使うと、外角 ∠ACD は どう表せるかな。', 'ヒント② △PBC の外角 ∠PCD に目をつけると、∠x は？', 'スライダーで、∠A＝70° のまま ∠B を変えられます。'],
+        sliders: [{ key: 'b', label: '∠B の大きさ', min: 30, max: 90, step: 1, val: 50, fmt: function (v) { return v + '°'; } }],
+        b: { t: '2○＝70°＋2●、○＝●＋∠x → ∠x＝<b>35°</b>', col: C.orange },
+        draw: function (D) {
+          var P = chP(D.V.b), F = fitIn(D, CH.box(D, { l: .04, r: .04, t: .14, b: .06 }), P, ['A', 'B', 'C', 'D', 'P'], .06), t = D.ph ? D.t : 0, dBP = dir(P.B, P.P), dBA = dir(P.B, P.A), dCA = dir(P.C, P.A), dCP = dir(P.C, P.P);
+          var h2 = D.ph ? CH.smooth(.45, .55, t) : 0;
+          if (h2 > 0) GE.poly(F, 'PBC', { col: C.orange, fa: .22 * h2, stroke: false });
+          triLines(F, P); GE.seg(F, ['C', 'D'], { w: 2.6 }); GE.seg(F, ['B', 'P'], { w: 2.4 }); GE.seg(F, ['C', 'P'], { w: 2.4 });
+          angArc(F, P, 'a', C.yel); angLab(F, P, 'a', '70°', { col: C.yel, size: .85 });
+          wedge(F, P.B, 0, dBP, { col: C.pink, r: F.s * 2.2, fill: .2 }); wedge(F, P.B, dBP, dBA, { col: C.pink, r: F.s * 2.2, fill: .2 });
+          lab(F, P.B, dBP / 2, 3.1, '●', { col: C.pink, size: .8 }); lab(F, P.B, (dBP + dBA) / 2, 3.1, '●', { col: C.pink, size: .8 });
+          wedge(F, P.C, 0, dCP, { col: C.blue, r: F.s * 1.5, fill: .2 }); wedge(F, P.C, dCP, dCA, { col: C.blue, r: F.s * 1.5, fill: .2 });
+          lab(F, P.C, dCP / 2, 2.5, '○', { col: C.blue, size: 1 }); lab(F, P.C, (dCP + dCA) / 2, 2.5, '○', { col: C.blue, size: 1 });
+          var dPB = dir(P.P, P.B), dPC = dir(P.P, P.C), xv = Math.round(GE.ang(P, 'BPC'));
+          wedge(F, P.P, dPB, dPC, { col: C.orange, r: F.s * 1.6, fill: .35 }); lab(F, P.P, dPB + nd(dPC - dPB) / 2, 3.0, D.ph && t > .85 ? xv + '°' : 'x', { col: C.orange, size: .95 });
+          GE.labels(F, ['A', 'B', 'C', 'D', 'P'], { dir: { A: 'n', B: 'sw', C: 's', D: 's', P: 'ne' } });
+          if (D.ph) {
+            top(D, '△ABC の外角：2○＝70°＋2●　→　○＝35°＋●', C.blue, CH.smooth(.05, .15, t));
+            if (t > .45) top(D, '△PBC の外角：○＝●＋∠x', C.orange, CH.smooth(.45, .55, t), 1);
+            if (t > .8) top(D, 'だから ∠x＝35°', C.yel, CH.smooth(.8, .9, t), 2);
+          }
+        } }
+    ]
+  });
+
+  /* 今日の問いの2つの図（k：答えの動きの進み、ans：答えの段か） */
+  function pair(D, t, ans) {
+    var R = CH.box(D, { l: .02, r: .02, t: .12, b: .02 }), rs = CH.rows(R, 2, .04), s = CH.fs(D);
+    [[F1, '図1', '55°', '40°', '85°', '95°'], [F2, '図2', '95°', '45°', '40°', '140°']].forEach(function (z, i) {
+      var P = z[0], r = rs[i], F = fitIn(D, CH.rect(r.x0 + s * 2.4, r.y0, r.x1, r.y1), P, ['A', 'B', 'C', 'D'], .1), sp = spans(P), dA = dir(P.C, P.A);
+      CH.text(D, r.x0 + s * 1.2, r.y0 + s * 1.2, z[1], { size: s * 1.1 });
+      triLines(F, P); GE.seg(F, ['C', 'D'], { w: 2.6 });
+      angArc(F, P, 'a', C.yel); angArc(F, P, 'b', C.pink);
+      angLab(F, P, 'a', z[2], { col: C.yel, size: .85 }); angLab(F, P, 'b', z[3], { col: C.pink, size: .85 });
+      var c1 = ans ? CH.smooth(.05, .2, t) : 0;
+      if (c1 > 0) { angArc(F, P, 'c', C.blue, { a: c1 }); angLab(F, P, 'c', z[4], { col: C.blue, a: c1, size: .8 }); }
+      wedge(F, P.C, 0, dA, { col: C.orange, r: F.s * 2.4, fill: .15 });
+      lab(F, P.C, dA / 2 - 4, 3.3, ans && t > .3 ? z[5] : 'x', { col: C.orange, size: .9 });
+      if (ans) gather(F, P, t, .45, .9);
+      GE.labels(F, ['A', 'B', 'C', 'D'], { dir: { A: 'n', B: 'sw', C: 's', D: 's' } });
+    });
+    if (ans) top(D, t < .45 ? '∠ACB を求めて、∠x＝180°−∠ACB' : t < 1 ? '∠A と ∠B を、∠x のところへ集めると…' : '図1 95°＝55°＋40°　図2 140°＝95°＋45°', t < .45 ? C.blue : C.yel, CH.smooth(0, .06, t));
+  }
+})();
+</script>
+</body>
+</html>
