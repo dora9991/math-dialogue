@@ -298,25 +298,15 @@
     return { W: W, H: H };
   }
   /* 今日の問いの 2つの長方形 */
-  function two4(D, t, mode) {
+  function two4(D) {
     var R = CH.box(D, { l: .05, r: .04, t: .06, b: .04 }), s = CH.fs(D), wide = wideOf(D);
-    var Rs = wide ? CH.cols(R, 2, .14) : CH.rows(R, 2, .12), U = Math.min(Rs[0].w / (4 * LB + 1.2), (Rs[0].h - s * 3.4) / (3 * LA + .2)), out = [];
-    [['ア', 2, '2b cm', mode === 'A' ? '' : '面積？'], ['イ', 4, mode === 'B' && t > .85 ? '4b cm' : '？ cm', '面積 12ab cm²']].forEach(function (q, i) {
-      var B = Rs[i], W = q[1] * LB * U, H = 3 * U, x0 = B.cx - W / 2 + s, y0 = B.cy - H / 2 + s * .4, dim = (mode === 'A' && i === 1) || (mode === 'B' && i === 0) ? .3 : 1;
-      var g = D.ctx; g.save(); g.globalAlpha = dim;
-      var cl = i === 0 && mode === 'A' ? sm(.05, .3, t) : i === 1 && mode === 'B' ? sm(.05, .3, t) : 0, lb = i === 0 && mode === 'A' ? sm(.25, .45, t) : i === 1 && mode === 'B' ? sm(.25, .45, t) : 0;
-      rectAB(D, x0, y0, U, 3, q[1], { cells: cl, lab: lb, left: '3a cm', top: q[2], col: i ? C.orange : C.blue, hl: i === 1 && mode === 'B' && t > .5 ? function (r) { return r === 0 ? C.yel : null; } : null });
+    var Rs = wide ? CH.cols(R, 2, .14) : CH.rows(R, 2, .12), U = Math.min(Rs[0].w / (4 * LB + 1.2), (Rs[0].h - s * 3.4) / (3 * LA + .2));
+    [['ア', 2, '2b cm', '面積？'], ['イ', 4, '？ cm', '面積 12ab cm²']].forEach(function (q, i) {
+      var B = Rs[i], W = q[1] * LB * U, H = 3 * U, x0 = B.cx - W / 2 + s, y0 = B.cy - H / 2 + s * .4;
+      rectAB(D, x0, y0, U, 3, q[1], { left: '3a cm', top: q[2], col: i ? C.orange : C.blue });
       TX(D, x0 - s * 2.6, y0 - s * .9, q[0], { size: s * 1.2, col: C.yel });
-      if (q[3] && lb < .5) TX(D, x0 + W / 2, y0 + H / 2, q[3], { size: fit(D, q[3], W * .9, s), col: C.yel, a: 1 - lb * 2 });
-      if (i === 1 && mode === 'B' && t > .5) {
-        var a2 = sm(.5, .7, t); for (var c = 0; c < 4; c++) TX(D, x0 + (c + .5) * LB * U, y0 + H + s * .9, 'b', { size: s, col: C.yel, a: a2 });
-        TX(D, x0 + W + s * .4, y0 + U / 2, '← a', { size: s * .9, col: C.yel, align: 'left', a: a2 });
-      }
-      if (i === 0 && mode === 'A' && t > .5) TX(D, x0 + W / 2, y0 + H + s * 1, 'ab が 3×2＝6こ', { size: s, col: C.yel, a: sm(.5, .7, t) });
-      g.restore();
-      out.push(B);
+      TX(D, x0 + W / 2, y0 + H / 2, q[3], { size: fit(D, q[3], W * .9, s), col: C.yel });
     });
-    return out;
   }
 
   /* ---- ことば：a×a＝a^2 の正方形と、きまりの札 ---- */
@@ -337,12 +327,12 @@
   /* ---- 例題：3つの計算の行（順に） ---- */
   function ex(D, t) {
     var R = CH.box(D, { l: .03, r: .03, t: .04, b: .04 }), s = CH.fs(D), wide = wideOf(D), Rs;
-    if (wide) Rs = CH.cols(R, 3, .05); else { var h = CH.rows(R, 2, .06); Rs = CH.cols(h[0], 2, .06).concat([h[1]]); }
+    if (wide) Rs = CH.cols(R, 3, .05); else Rs = [CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .27), CH.rect(R.x0, R.y0 + R.h * .3, R.x1, R.y0 + R.h * .57), CH.rect(R.x0, R.y0 + R.h * .6, R.x1, R.y1)];
     var labs = [['', '数どうしをかける', ''], ['', '2つかける', ''], ['', '分数の形', '', '約分']];
     EX.forEach(function (L, i) {
       var k = CH.clamp(t * 3 - i, 0, 1);
       if (D.ph && k <= 0) { TX(D, Rs[i].cx, Rs[i].cy, L[0], { size: fit(D, L[0], Rs[i].w, s * 1.1), a: .5 }); return; }
-      chain(D, Rs[i], L, D.ph ? k : 0, { labs: wide ? null : labs[i], last: C.yel, size: Math.min(s * 1.2, Rs[i].w / 7) });
+      chain(D, Rs[i], L, D.ph ? k : 0, { labs: wide ? null : labs[i], last: C.yel, size: Math.min(s * 1.2, Rs[i].w / (wide ? 7 : 12)) });
     });
   }
 
@@ -383,7 +373,7 @@
     cube(D, xb, yb, L, 3, { col: C.orange, grid: k1, front: fr2 * (1 - k3) });
     TX(D, xb + L / 2, yb + s * .9, '3a', { size: s, a: k1 });
     if (fr2 > 0) TX(D, xb + L / 2, yb - L / 2, '9こ', { size: s * 1.2, col: C.yel, a: fr2 * (1 - k3), outline: 'rgba(20,40,30,.9)' });
-    if (k3 > 0) TX(D, xb + L / 2 + u * .2, yb - L - u * .9, '3×3×3＝27こ', { size: fit(D, '3×3×3＝27こ', A.x1 - xb, s * 1.05), col: C.yel, a: k3 });
+    if (k3 > 0) TX(D, xb + L / 2 + u * .2, yb - L * 1.32 - s * .9, '3×3×3＝27こ', { size: fit(D, '3×3×3＝27こ', A.x1 - xb, s * 1.05), col: C.yel, a: k3 });
     chain(D, B, CHL, sm(.2, 1, t), { last: C.yel, size: Math.min(s * 1.05, B.w / 13) });
   }
 
@@ -393,10 +383,10 @@
     steps: fixSteps([
       { tag: '今日の問い', bh: 'ア・イの長方形', q: 'ア・イの長方形で、アの面積と、イの横の長さを、式で表そう。文字どうしのかけ算・わり算は、どう計算すればよいだろう。',
         notes: ['① 自分の考え（3分）　ア・イの計算のしかたを、式で書こう。', '② ペアの考え（3分）　自分とちがう考えを書こう。'],
-        draw: function (D) { two4(D, 0, ''); } },
+        draw: function (D) { two4(D); } },
       { tag: '今日の問い', q: 'アの面積は？', a: '6ab（cm²）', sub: '3a×2b＝(3×2)×(a×b)＝6ab。係数どうし、文字どうしを、それぞれかける。a×b の長方形が 6こ', dur: 5,
         b: { t: 'ア 3a×2b＝(3×2)×(a×b)＝<b>6ab</b>（cm²）', col: C.yel },
-        draw: function (D) { var t = D.ph ? D.t : 0, P = two(D, .55, .58); var Rs = two4Sub(D, P[0], t, 'A'); chain(D, P[1], GA, t, { last: C.yel, labs: ['', '', '係数どうし・文字どうし', ''], size: Math.min(CH.fs(D) * 1.2, P[1].w / 8) }); } },
+        draw: function (D) { var t = D.ph ? D.t : 0, P = two(D, .55, .58); two4Sub(D, P[0], t, 'A'); chain(D, P[1], GA, t, { last: C.yel, labs: ['', '', '係数どうし', ''], size: Math.min(CH.fs(D) * 1.2, P[1].w / 8) }); } },
       { tag: '今日の問い', q: 'イの横の長さは？', a: '4b（cm）', sub: '12ab÷3a＝[12ab/3a]＝4b。分数の形にして約分する。a×b の長方形 12こが 3段 → 1段に 4こ', dur: 5,
         b: { t: 'イ 12ab÷3a＝[12ab/3a]＝<b>4b</b>（cm）', col: C.yel },
         draw: function (D) { var t = D.ph ? D.t : 0, P = two(D, .55, .58); two4Sub(D, P[0], t, 'B'); chain(D, P[1], GB, t, { last: C.yel, labs: ['', '分数の形', '', '約分'], size: Math.min(CH.fs(D) * 1.2, P[1].w / 8) }); } },
