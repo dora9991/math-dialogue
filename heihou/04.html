@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>有理数と無理数</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 平方根 第4時：√2 は、分数で表せるだろうか（ikkan の lesson_heihou_04 と同じ流れ）。
+   図の数値は ikkan のデータ（自作）と同じ（今日の問い 1/4・1/3・2/7・5/11、例題 0.6・√5・−3/8・√25・π・−√7・√(1/9)、考えようの 0.121212…、チャレンジ 5/7 の小数第20位）。
+   √2 が分数で表せないわけは、ikkan と同じく「分数を小数にすると、わり切れるか、同じならびがくり返す。√2 はくり返さない」まで（背理法の証明はしない）。
+   分数を小数に直す数字は、筆算と同じ「あまりに 10 をかけてわる」計算で出し直す。2÷7 の余りが 2→6→4→5→1→3→2 と円を一回りして、くり返しになる。
+   √2 の数字は、BigInt の整数の平方根で 20けたまで確かめる。数の集合の図（自然数 ⊂ 整数 ⊂ 有理数、無理数）にカードが入る。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)';
+  /* ---- このページの道具 ---- */
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D); if (o.maxW) size = CH.fitSize(D, s, o.maxW, size, { num: o.num }); CH.text(D, x, y, s, { col: o.col, a: o.a, size: size, num: o.num, align: o.align, outline: o.outline === false ? null : OUT }); }
+  function top(D, s, col, a, row) { var B = CH.box(D, { t: 0, l: .03, r: .03 }), f = CH.fs(D, 1); say(D, B.cx, B.y0 + f * (.8 + (row || 0) * 1.35), s, { col: col || C.yel, a: a, size: f, maxW: B.w }); }
+  /* 筆算と同じわり算：n÷d の小数第 k 位までの数字と、そのときの余り */
+  function longDiv(n, d, k) { var r = n % d, dg = [], rs = [r]; for (var i = 0; i < k; i++) { dg.push(Math.floor(r * 10 / d)); r = r * 10 % d; rs.push(r); } return { int: Math.floor(n / d), dg: dg, rs: rs }; }
+  /* 根号の記号を線で描く。x0：左はし、y0：上、y1：下、w：中の字の幅 */
+  function radical(D, x0, y0, y1, w, o) {
+    o = o || {}; var H = y1 - y0, g = D.ctx; g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.lw || Math.max(1.6, H * .07); g.lineJoin = 'round'; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x0, y0 + H * .62); g.lineTo(x0 + H * .12, y0 + H * .55); g.lineTo(x0 + H * .3, y1); g.lineTo(x0 + H * .48, y0); g.lineTo(x0 + H * .48 + w, y0); g.stroke(); g.restore();
+    return x0 + H * .48;
+  }
+  /* 数のカードの字：'f-3/8'（分数）、'r1/9'（√ の中が分数）、ほかはそのまま */
+  function lab(D, x, y, id, size, col, a) {
+    var m;
+    if ((m = /^f(−?)(\d+)\/(\d+)$/.exec(id))) CH.frac(D, x, y, m[2], m[3], { size: size * 1.15, col: col, a: a, sign: m[1] || null });
+    else if ((m = /^r(\d+)\/(\d+)$/.exec(id))) { var w = size * .7, x0 = x - (size * .45 + w) / 2, xi = radical(D, x0, y - size * 1.05, y + size * 1.0, w, { col: col, a: a }); CH.frac(D, xi + w / 2, y, m[1], m[2], { size: size * 1.15, col: col, a: a }); }
+    else say(D, x, y, id, { size: size, col: col, a: a, num: true });
+  }
+
+  /* ---- 数と検算 ---- */
+  var FR = [[1, 4], [1, 3], [2, 7], [5, 11]], PER = [0, 1, 6, 2];
+  var DIV = FR.map(function (f) { return longDiv(f[0], f[1], 12); });
+  CH.check(DIV.map(function (q) { return q.dg.join(''); }).join() === '250000000000,333333333333,285714285714,454545454545' && DIV[0].rs[2] === 0 &&
+    DIV.every(function (q, i) { return i === 0 || (q.rs[PER[i]] === q.rs[0] && q.rs.slice(1, PER[i]).indexOf(q.rs[0]) < 0); }), '今日の問い（0.25、0.333…、0.285714…、0.4545…）');
+  /* 2÷7 の余り：2→6→4→5→1→3→2 */
+  var R7 = DIV[2].rs.slice(0, 7);
+  CH.check(R7.join() === '2,6,4,5,1,3,2' && R7.slice(0, 6).slice().sort().join() === '1,2,3,4,5,6', '今日の問い（7 でわる余りは 1〜6 の6通り）');
+  /* √2 の数字（20けた）：BigInt の整数の平方根 */
+  var SQ2 = '1.4142135623730950488';
+  (function () { if (typeof BigInt !== 'function') return; var N = BigInt(2) * BigInt('1' + '0'.repeat(36)), x = BigInt('1' + '0'.repeat(18)), y; for (var i = 0; i < 200; i++) { y = (x + N / x) / BigInt(2); if (y === x) break; x = y; } while (x * x > N) x -= BigInt(1); CH.check('1.' + String(x).slice(1) === SQ2 && String(Math.SQRT2).slice(0, 16) === SQ2.slice(0, 16), '√2 の数字'); })();
+  /* 例題：[字, 有理数か, 根号をはずした字] */
+  var EX = [['0.6', true, ''], ['√5', false, ''], ['f−3/8', true, ''], ['√25', true, '＝5'], ['π', false, ''], ['−√7', false, ''], ['r1/9', true, '＝1/3']];
+  function isSq(n) { var r = Math.round(Math.sqrt(n)); return r * r === n; }
+  CH.check([true, isSq(5), true, isSq(25), false, isSq(7), isSq(1) && isSq(9)].join() === EX.map(function (e) { return e[1]; }).join() && CH.near(Math.sqrt(1 / 9), 1 / 3) && Math.sqrt(25) === 5 && longDiv(3, 8, 4).rs[3] === 0, '例題（有理数・無理数）');
+  /* チャレンジ：5/7 の小数第20位 */
+  var D57 = longDiv(5, 7, 24).dg;
+  CH.check(D57.slice(0, 6).join('') === '714285' && D57[19] === 1 && 20 % 6 === 2 && Math.floor(20 / 6) === 3 && '714285'.charAt(20 % 6 - 1) === '1', 'チャレンジ（小数第20位は 1）');
+
+  /* ---- 今日の問い：分数を小数に ---- */
+  var BC = [C.yel, C.pink];
+  function decRows(D, t) {
+    var R = CH.box(D, { l: .04, r: .03, t: .05, b: .05 }), rs = CH.rows(R, 5, .12), s = CH.fs(D, 1), lw = s * 3.6, cw = Math.min(s * .78, (R.w - lw) / 16.5);
+    rs.forEach(function (r, i) {
+      var y = r.cy, x0 = r.x0 + lw;
+      if (i === 4) { say(D, r.x0 + lw * .4, y, '√2', { size: s * 1.1, num: true, col: C.orange }); say(D, r.x0 + lw * .82, y, '＝', { size: s }); say(D, x0, y, SQ2.slice(0, 10) + '…', { size: s, num: true, align: 'left', col: C.orange }); return; }
+      var f = FR[i], q = DIV[i], k = D.ph ? CH.smooth(.04 + i * .2, .2 + i * .2, t) : 0, n = i === 0 ? 2 : 12, show = Math.round(k * n);
+      CH.frac(D, r.x0 + lw * .4, y, f[0], f[1], { size: s * 1.15 }); say(D, r.x0 + lw * .82, y, '＝', { size: s });
+      if (k <= 0) return;
+      var str = q.int + '.' + q.dg.slice(0, show).join('') + (i > 0 && show >= n ? '…' : '');
+      for (var j = 0; j < str.length; j++) say(D, x0 + (j + .5) * cw, y, str.charAt(j), { size: s, num: true, outline: false });
+      if (i === 0 && show >= n) say(D, x0 + 6 * cw, y, '（わり切れる）', { size: s * .8, align: 'left', col: C.green, a: CH.smooth(.15, .22, t) });
+      var kb = D.ph ? CH.smooth(.85, 1, t) : 0;
+      if (i > 0 && kb > 0) for (var b = 0; b * PER[i] < 12; b++) { var xa = x0 + (2 + b * PER[i]) * cw + 2, xb = x0 + (2 + (b + 1) * PER[i]) * cw - 2, yb = y + s * .75; CH.line(D, xa, yb, xb, yb, { col: BC[b % 2], w: 3, a: kb }); }
+    });
+    if (D.ph && t > .85) top(D, 'わり切れるか、同じならびがくり返す', C.yel, CH.smooth(.85, 1, t), 0);
+  }
+
+  /* ---- 今日の問い：2÷7 の余りの円と、√2 の数字 ---- */
+  function cycle(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .1, b: .04 }), sp = CH.split(D, R, 2, .06), c = sp[0], s = CH.fs(D, .95);
+    var rad = Math.min(c.w, c.h - s * 4) * .36, cx = c.cx, cy = c.y0 + s * 1.2 + rad + s * 1.2;
+    say(D, cx, c.y0 + s * .5, '2÷7 の余り', { size: s, col: C.chalk });
+    var kc = D.ph ? CH.smooth(.02, .5, t) : 0, nOn = Math.floor(kc * 6 + 1e-9), ang = function (j) { return -Math.PI / 2 + j * Math.PI * 2 / 6; };
+    for (var j = 0; j < 6; j++) {
+      var a0 = ang(j), a1 = ang(j + 1), on = j < nOn, p0 = [cx + rad * Math.cos(a0), cy + rad * Math.sin(a0)], p1 = [cx + rad * Math.cos(a1), cy + rad * Math.sin(a1)], rn = s * .85;
+      if (on) {
+        var dx = p1[0] - p0[0], dy = p1[1] - p0[1], L = Math.hypot(dx, dy); CH.arrow(D, p0[0] + dx / L * rn, p0[1] + dy / L * rn, p1[0] - dx / L * rn, p1[1] - dy / L * rn, { col: C.yel, w: 2.4, head: 9 });
+        var am = (a0 + a1) / 2; say(D, cx + rad * 1.28 * Math.cos(am), cy + rad * 1.28 * Math.sin(am), String(DIV[2].dg[j]), { size: s * 1.05, col: C.yel, num: true });
+      }
+      var lit = j <= nOn || (j === 0);
+      CH.circle(D, p0[0], p0[1], rn, { fill: lit && D.ph ? 'rgba(255,192,120,.3)' : 'rgba(242,240,230,.08)', stroke: lit && D.ph ? C.orange : 'rgba(242,240,230,.5)', sw: 2 });
+      say(D, p0[0], p0[1], String(R7[j]), { size: s, num: true, col: lit && D.ph ? C.orange : C.chalk });
+    }
+    if (D.ph) { var ds = '0.' + DIV[2].dg.slice(0, nOn).join(''); say(D, cx, cy, ds, { size: s * .95, num: true, col: C.yel, maxW: rad * 1.3 }); }
+    if (kc >= 1) say(D, cx, c.y1 - s * .6, '余りは 1〜6 の6通り → かならずくり返す', { size: s * .9, col: C.yel, maxW: c.w, a: CH.smooth(.5, .6, t) });
+    /* √2 の数字 */
+    var q = sp[1], k2 = D.ph ? CH.smooth(.6, .9, t) : 0, f = CH.fs(D, 1), lines = [SQ2.slice(0, 12), SQ2.slice(12)], y = q.y0 + f * 1.2;
+    say(D, q.cx, y, '√2 の小数', { size: f, col: C.orange });
+    if (k2 > 0) {
+      var all = SQ2.length, show = Math.round(k2 * all), pos = 0;
+      lines.forEach(function (ln, li) { var part = ln.slice(0, Math.max(0, show - pos)); pos += ln.length; if (part) say(D, q.x0 + f * .5, y + f * (1.8 + li * 1.5), part + (li === 1 && show >= all ? '…' : ''), { size: f, num: true, align: 'left', col: C.orange, maxW: q.w - f }); });
+      say(D, q.cx, y + f * 5.4, '同じならびの くり返しがない', { size: f * .9, col: C.pink, a: CH.smooth(.88, .95, t), maxW: q.w });
+      say(D, q.cx, y + f * 6.9, '→ 分数では表せない と考えられる', { size: f * .9, col: C.yel, a: CH.smooth(.93, 1, t), maxW: q.w });
+    }
+  }
+
+  /* ---- ことば：数の集合の図 ---- */
+  function sets(D, t, ph) {
+    var R = CH.box(D, { l: .04, r: .04, t: .05, b: .05 }), s = CH.fs(D, .9), g = D.ctx;
+    var k1 = ph ? CH.smooth(0, .2, t) : 0, k2 = ph ? CH.smooth(.25, .5, t) : 0, k3 = ph ? CH.smooth(.55, .8, t) : 0, k4 = ph ? CH.smooth(.82, 1, t) : 0;
+    function box(r, col, a, lw) { g.save(); g.globalAlpha = D.ga * a; g.strokeStyle = col; g.fillStyle = hexA(col, .08); g.lineWidth = lw || 2.2; var rr = Math.min(r.w, r.h) * .08; g.beginPath(); if (g.roundRect) g.roundRect(r.x0, r.y0, r.w, r.h, rr); else g.rect(r.x0, r.y0, r.w, r.h); g.fill(); g.stroke(); g.restore(); }
+    box(R, C.chalk, 1, 2);
+    say(D, R.x0 + s * .5, R.y0 + s * .8, '数', { size: s, align: 'left' });
+    var xm = R.x0 + R.w * .64, Q = CH.rect(R.x0 + s * .6, R.y0 + s * 1.8, xm - s * .3, R.y1 - s * .6), Ir = CH.rect(xm + s * .3, R.y0 + s * 1.8, R.x1 - s * .6, R.y1 - s * .6);
+    box(Q, C.blue, 1); box(Ir, C.pink, 1);
+    say(D, Q.x0 + s * .5, Q.y0 + s * .8, k1 > .5 ? '有理数' : '分数で表せる数', { size: s, align: 'left', col: C.blue, maxW: Q.w - s });
+    say(D, Ir.cx, Ir.y0 + s * .8, k1 > .5 ? '無理数' : '表せない数', { size: s, col: C.pink, maxW: Ir.w - s * .4 });
+    var Z = CH.rect(Q.x0 + s * .6, Q.y0 + Q.h * .42, Q.x1 - Q.w * .32, Q.y1 - s * .5), N = CH.rect(Z.x0 + s * .5, Z.y0 + Z.h * .45, Z.x1 - Z.w * .35, Z.y1 - s * .4);
+    if (k2 > 0) { box(Z, C.green, k2); box(N, C.yel, k2); say(D, Z.x0 + s * .4, Z.y0 + s * .75, '整数', { size: s * .9, align: 'left', col: C.green, a: k2 }); say(D, N.x0 + s * .4, N.y0 + s * .75, '自然数', { size: s * .85, align: 'left', col: C.yel, a: k2, maxW: N.w - s * .5 }); }
+    if (k3 > 0) {
+      var f = s * .9;
+      say(D, N.cx, N.y1 - Math.min(N.h * .3, f * .9), '1　2　3', { size: f, num: true, a: k3, maxW: N.w - 4 });
+      say(D, Z.x1 - (Z.x1 - N.x1) / 2, N.cy, '0', { size: f, num: true, a: k3 });
+      say(D, Z.x1 - (Z.x1 - N.x1) / 2, N.cy + f * 1.4, '−3', { size: f, num: true, a: k3 });
+      var qx = Z.x1 + (Q.x1 - Z.x1) / 2; CH.frac(D, qx, Z.y0 + Z.h * .25, 1, 3, { size: f * 1.1, a: k3 }); say(D, qx, Z.y0 + Z.h * .62, '0.25', { size: f, num: true, a: k3, maxW: Q.x1 - Z.x1 - 4 });
+      say(D, Q.x0 + Q.w * .3, Q.y0 + Q.h * .28, '0.333…', { size: f, num: true, a: k3 });
+      say(D, Ir.cx, Ir.y0 + Ir.h * .35, '√2', { size: f * 1.1, num: true, a: k3 }); say(D, Ir.cx, Ir.y0 + Ir.h * .55, 'π', { size: f * 1.1, num: true, a: k3 }); say(D, Ir.cx, Ir.y0 + Ir.h * .75, '−√5', { size: f * 1.1, num: true, a: k3 });
+    }
+    if (k4 > 0) { say(D, Q.x0 + Q.w * .3, Q.y0 + Q.h * .28 + s * 1.2, '循環小数', { size: s * .75, col: C.lav, a: k4 }); var qx2 = Z.x1 + (Q.x1 - Z.x1) / 2; say(D, qx2, Z.y0 + Z.h * .62 + s * 1.1, '有限小数', { size: s * .75, col: C.lav, a: k4, maxW: Q.x1 - Z.x1 - 2 }); say(D, Ir.cx, Ir.y1 - s * .9, 'くり返さない', { size: s * .75, col: C.lav, a: k4, maxW: Ir.w - 4 }); }
+  }
+
+  /* ---- 例題：カードを、有理数・無理数に分ける ---- */
+  function sortCards(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .05, b: .05 }), s = CH.fs(D, .95), n = EX.length, cw = Math.min(R.w / n * .86, s * 3.6), ch = Math.min(s * 3.2, R.h * .2);
+    var B = [CH.rect(R.x0, R.y0 + ch * 1.6, R.cx - s * .3, R.y1), CH.rect(R.cx + s * .3, R.y0 + ch * 1.6, R.x1, R.y1)];
+    [[B[0], '有理数', C.blue], [B[1], '無理数', C.pink]].forEach(function (b) { CH.fillRect(D, b[0].x0, b[0].y0, b[0].x1, b[0].y1, { fill: hexA(b[2], .07), stroke: b[2], sw: 2 }); say(D, b[0].cx, b[0].y0 + s * .9, b[1], { col: b[2], size: s }); });
+    var cnt = [0, 0];
+    EX.forEach(function (e, i) {
+      var k = i === 0 ? 1 : D.ph ? CH.ease(CH.smooth(.04 + (i - 1) * .14, .16 + (i - 1) * .14, t)) : 0, side = e[1] ? 0 : 1, j = cnt[side]++, b = B[side];
+      var cols = Math.max(1, Math.floor((b.w - s) / (cw * 1.12))), gx = b.x0 + s * .5 + (j % cols + .5) * (b.w - s) / cols, gy = b.y0 + s * 2.2 + (Math.floor(j / cols) + .5) * ch * 1.25;
+      var sx = R.x0 + (i + .5) * R.w / n, sy = R.y0 + ch * .6, x = CH.lerp(sx, gx, k), y = CH.lerp(sy, gy, k), col = k > .5 ? (e[1] ? C.blue : C.pink) : C.chalk;
+      CH.fillRect(D, x - cw / 2, y - ch / 2, x + cw / 2, y + ch / 2, { fill: 'rgba(20,40,30,.85)', stroke: col, sw: 1.8 });
+      lab(D, x, y, e[0], Math.min(s, ch * .32), col);
+      if (e[2] && k >= 1) { if (e[2] === '＝1/3') { say(D, x + cw / 2 + 4, y, '＝', { size: s * .8, align: 'left', col: C.yel }); CH.frac(D, x + cw / 2 + s * 1.3, y, 1, 3, { size: s * .9, col: C.yel }); } else say(D, x + cw / 2 + 4, y, e[2], { size: s * .8, align: 'left', col: C.yel, num: true }); }
+      if (i === 0) say(D, x, y + ch / 2 + s * .6, '（見本）', { size: s * .7, col: 'rgba(242,240,230,.7)' });
+    });
+  }
+
+  /* ---- 考えよう：x と、x の 10倍・100倍・1000倍 をならべる ---- */
+  var KS = [1, 10, 100, 1000];
+  function shiftTool(D, m) {
+    var R = CH.box(D, { l: .04, r: .04, t: .2, b: .1 }), s = CH.fs(D, 1.05), cw = Math.min(s * .85, R.w / 21), dg = '12121212121212121212', x0 = R.cx - cw * 9.5;
+    function row(y, lead, ip, dp, col) {
+      say(D, x0 - cw * .4, y, lead, { size: s, align: 'right', col: col, maxW: R.x0 + R.w * .3 > 0 ? x0 - R.x0 : 100 });
+      var ipad = ('   ' + ip).slice(-3); for (var j = 0; j < 3; j++) if (ipad.charAt(j) !== ' ') say(D, x0 + (j + .5) * cw, y, ipad.charAt(j), { size: s, num: true, col: col, outline: false });
+      say(D, x0 + 3.5 * cw, y, '.', { size: s, num: true, col: col, outline: false });
+      for (var i = 0; i < 14; i++) say(D, x0 + (4.5 + i) * cw, y, dp.charAt(i), { size: s, num: true, col: col, outline: false });
+      say(D, x0 + 18.7 * cw, y, '…', { size: s, num: true, col: col, outline: false });
+    }
+    var y1 = R.y0 + R.h * .3, y2 = R.y0 + R.h * .62;
+    row(y1, 'x ＝', '0', dg, C.chalk);
+    var k = KS[m], ip = m ? dg.slice(0, m) : '0';
+    row(y2, (k === 1 ? '' : k) + 'x ＝', ip, dg.slice(m), C.yel);
+    CH.line(D, x0 + 3.5 * cw, y1 - s * 1.2, x0 + 3.5 * cw, y2 + s * 1.2, { col: 'rgba(242,240,230,.35)', dash: [4, 4], w: 1.4 });
+    top(D, '0.121212… を x とすると', C.chalk, 1, 0);
+  }
+
+  /* ---- チャレンジ：5/7 の小数を 6けたずつ ---- */
+  function chal(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .18, b: .12 }), s = CH.fs(D, .95), lw = Math.min(R.w * .26, s * 6.5), cw = Math.min((R.w - lw) / 6, s * 2.6), rh = Math.min(R.h / 5.2, s * 2.2), gx = R.x0 + lw, gy = R.y0 + rh;
+    var kf = D.ph ? CH.smooth(.02, .5, t) : 0, kh = D.ph ? CH.smooth(.55, .7, t) : 0, kt = D.ph ? CH.smooth(.75, .95, t) : 0, shown = Math.round(kf * 24);
+    for (var c = 0; c < 6; c++) say(D, gx + (c + .5) * cw, gy - rh * .55, (c + 1) + '番目', { size: s * .7, col: 'rgba(242,240,230,.7)', maxW: cw - 2 });
+    for (var r = 0; r < 4; r++) {
+      var y = gy + (r + .5) * rh;
+      say(D, gx - s * .4, y, '第' + (r * 6 + 1) + '〜' + (r * 6 + 6) + '位', { size: s * .75, align: 'right', col: 'rgba(242,240,230,.75)', maxW: lw - s * .5 });
+      for (var c2 = 0; c2 < 6; c2++) {
+        var idx = r * 6 + c2, x = gx + (c2 + .5) * cw, hit = idx === 19;
+        CH.fillRect(D, x - cw / 2 + 2, y - rh / 2 + 2, x + cw / 2 - 2, y + rh / 2 - 2, { fill: hit && kh > 0 ? hexA(C.yel, .35 * kh) : 'rgba(242,240,230,.05)', stroke: hit && kh > 0 ? C.yel : 'rgba(242,240,230,.25)', sw: hit && kh > 0 ? 2.4 : 1 });
+        if (idx < shown) say(D, x, y, String(D57[idx]), { size: s * 1.1, num: true, col: hit && kh > 0 ? C.yel : C.chalk });
+      }
+    }
+    if (kh > 0) say(D, gx + 1.5 * cw, gy + 4 * rh + s * .7, '第20位', { size: s * .8, col: C.yel, a: kh });
+    top(D, '5÷7 ＝ 0.' + (D.ph ? D57.slice(0, Math.max(0, Math.min(12, shown))).join('') + (shown >= 12 ? '…' : '') : '□□□…'), C.chalk, 1, 0);
+    if (kt > 0) say(D, R.cx, R.y1 + s * .6, '20÷6 ＝ 3 あまり 2 → くり返しの 2番目 → 1', { size: s, col: C.yel, a: kt, maxW: R.w, num: false });
+  }
+
+  K3.run({
+    no: '第4時', title: '√2 は、分数で表せるだろうか', flat: true, hint: '', alt: '小数と数の集合の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '03.html', label: '◀ 第3時' }, { href: '05.html', label: '第5時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '分数を小数に直す', q: CH.fr('分数 [1/4]、[1/3]、[2/7]、[5/11] を、わり算で小数に直して、小数のようすの特ちょうを見つけよう。そのことから、√2＝1.41421356…（同じ数字のならびがくり返さない小数）は、分数で表せるといえるだろうか。'),
+        notes: ['① 自分の考え（3分）　小数の特ちょうと、√2 についての考えを書こう。', '② ペアの考え（3分）　自分とちがう考えや気づきは？'],
+        draw: function (D) { decRows(D, 0); } },
+      { tag: '今日の問い', q: '4つの分数を、小数に直すと？', a: CH.fr('0.25、0.333…、0.285714285714…、0.4545…'), sub: 'わり切れるか、同じ数字のならびがくり返す', dur: 6,
+        b: { t: CH.fr('[1/4]＝0.25　[1/3]＝0.333…　[2/7]＝0.285714…　[5/11]＝0.4545… → <b>わり切れるか、くり返す</b>'), col: C.yel },
+        draw: function (D) { decRows(D, D.ph ? D.t : 0); } },
+      { tag: '今日の問い', q: 'なぜ、かならずくり返すのだろう？ √2 は、分数で表せる？', a: '余りの種類が限られるから、くり返す。√2 は分数では表せないと考えられる', sub: '7 でわる余りは 1〜6 の6通り。同じ余りが出ると、そこから同じ数字がくり返す。√2 は、くり返さない小数', dur: 7,
+        b: { t: '7 でわる余りは 6通り → かならずくり返す。√2 はくり返さない → <b>分数では表せない</b>', col: C.yel },
+        draw: function (D) { cycle(D, D.ph ? D.t : 0); } },
+      { tag: 'ことば', bh: 'ことば', q: CH.fr('分数 [m/n]（m は整数、n は 0 でない整数）の形で表せる数、表せない数を、それぞれ何という？ 有理数を小数にすると、どんな小数になる？'), a: '有理数・無理数。有限小数か循環小数', sub: '終わりのある小数を有限小数、同じならびがくり返す小数を循環小数という。整数も、5＝[5/1] のように表せるので有理数', dur: 5,
+        b: [{ t: CH.fr('分数 [m/n] で表せる数 … <b>有理数</b>　表せない数 … <b>無理数</b>'), col: C.green }, { t: '有理数を小数にすると … <b>有限小数</b> か <b>循環小数</b>', col: C.green }],
+        draw: function (D) { sets(D, D.ph ? D.t : 0, D.ph); } },
+      { tag: '例題', bh: '例題　有理数と無理数', q: CH.fr('次の数を、有理数と無理数に分けよう。0.6（見本）、√5、−[3/8]、√25、π、−√7、√[1/9]'), a: CH.fr('有理数 … −[3/8]、√25、√[1/9]　無理数 … √5、π、−√7'), sub: CH.fr('√25＝5、√[1/9]＝[1/3] のように、根号をはずして分数で表せる数は有理数。√5、−√7 のように、はずせない数は無理数'), dur: 6,
+        b: { t: CH.fr('有理数 … 0.6、−[3/8]、√25（＝5）、√[1/9]（＝[1/3]）　無理数 … <b>√5、π、−√7</b>'), col: C.pink },
+        draw: function (D) { sortCards(D, D.ph ? D.t : 0); } },
+      { tag: '考えよう', q: '0.333… は [1/3] と表せる。では、0.121212… は、どんな分数で表せるだろう。（ヒント：この数を x として、100x − x を考えよう。）'.replace('[1/3]', CH.fr('[1/3]')),
+        notes: ['考え方を書こう。', 'ほかの循環小数でも、同じ方法で確かめよう。', 'スライダーで、x を 10倍・100倍・1000倍 した数をならべられます。小数点の下をそろえて見よう。'],
+        sliders: [{ key: 'm', label: 'x を', min: 0, max: 3, step: 1, val: 0, fmt: function (v) { return KS[v] + '倍'; } }],
+        draw: function (D) { shiftTool(D, D.V.m); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: CH.fr('[5/7] を小数で表したとき、小数第20位の数を求めよう。'),
+        notes: [CH.fr('ヒント① [5/7] を小数に直して、くり返す数字のならびを見つけよう。そのならびは、何個かな。'), 'ヒント② 小数第20位は、くり返しの何回めの、何番目の数字かな。'],
+        a: '1', sub: '5÷7＝0.714285714285…　714285 の6個がくり返す。20÷6＝3 あまり 2 だから、くり返しの2番目の数字で 1', dur: 6,
+        b: { t: CH.fr('[5/7]＝0.<b>714285</b>714285… → 20÷6＝3 あまり 2 → 第20位は <b>1</b>'), col: C.orange },
+        draw: function (D) { chal(D, D.ph ? D.t : 0); } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

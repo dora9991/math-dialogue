@@ -68,9 +68,11 @@
     N5.forEach(function (nm, i) {
       var cx = R.x0 + (i + .5) * cw;
       CH.card(D, cx, R.cy, cw * .92, R.h, '', { col: QC5[i], fill: hexA(QC5[i], .12) });
-      CH.text(D, cx, R.y0 + R.h * .3, nm, { size: CH.fitSize(D, nm, cw * .84, s * .7), col: 'rgba(242,240,230,.85)' });
+      var sz = CH.fitSize(D, nm, cw * .84, s * .7);
+      if (sz < 11.5 && nm.length > 4) { var L2 = [nm.slice(0, 2), nm.slice(2)], s2 = CH.fitSize(D, L2[1], cw * .86, s * .7); L2.forEach(function (tx, j) { CH.text(D, cx, R.y0 + R.h * (.2 + j * .2), tx, { size: s2, col: 'rgba(242,240,230,.85)' }); }); }
+      else CH.text(D, cx, R.y0 + R.h * .3, nm, { size: sz, col: 'rgba(242,240,230,.85)' });
       var v = f[i], a = o.a ? o.a(i) : 1;
-      CH.text(D, cx, R.y0 + R.h * .7, v == null || a <= 0 ? '？' : nf(v), { size: s, num: true, col: v == null || a <= 0 ? 'rgba(242,240,230,.4)' : QC5[i], w: 700 });
+      CH.text(D, cx, R.y0 + R.h * (R.w < 500 ? .76 : .7), v == null || a <= 0 ? '？' : nf(v), { size: s, num: true, col: v == null || a <= 0 ? 'rgba(242,240,230,.4)' : QC5[i], w: 700 });
     });
   }
   /* かっこ（はしに短い線）。o.down：字を下に */
@@ -82,7 +84,7 @@
   /* 並べ方：上に札（leg）、ドットプロット（dot）、箱ひげ図の行（box） */
   function lay(D, o) {
     o = o || {}; var R = CH.box(D, { l: o.l == null ? .07 : o.l, r: .08, t: .02, b: .1 }), s = CH.fs(D), y = R.y0, leg = null;
-    if (o.leg) { leg = CH.rect(R.x0, y, R.x1, y + s * 2.5); y = leg.y1 + s * .6; }
+    if (o.leg) { leg = CH.rect(R.x0, y, R.x1, y + s * (R.w < 500 ? 3.3 : 2.5)); y = leg.y1 + s * .6; }
     var dot = CH.rect(R.x0, y, R.x1, R.y0 + R.h * (o.k || .5)), box = CH.rect(R.x0, dot.y1 + s * 2.6, R.x1, R.y1);
     return { R: R, s: s, leg: leg, dot: dot, box: box };
   }
@@ -157,11 +159,12 @@
           { key: 'p', label: 'データの点', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? '重ねる' : 'かくす'; } }],
         draw: function (D) {
           var cfg = [[G12, 0, 50, 10, '（kg）'], [A, 0, 30, 5, '（点）'], [TM, 10, 60, 10, '（個）']][D.V.d], d = cfg[0], f = Q5(d).f, s = CH.fs(D);
-          var R = CH.box(D, { l: .08, r: .1, t: .1, b: .14 }), X = CH.numline(D, R, cfg[1], cfg[2], 1, { lab: cfg[3], unit: cfg[4] });
-          var bh = Math.min(s * 2.6, R.h * .24), cy = R.y1 - s * .9 - bh / 2;
+          var R = CH.box(D, { l: .08, r: .1, t: .1, b: .22 }), X = CH.numline(D, R, cfg[1], cfg[2], 1, { lab: cfg[3], unit: cfg[4] });
+          var bh = Math.min(s * 2.8, R.h * .26), cy = R.y1 - s * .9 - bh / 2;
           if (D.V.p) {
-            var y = cy - bh / 2 - s * 1.1, r = Math.min(CH.fs(D, .42), (X(1) - X(0)) * .46);
-            f.forEach(function (v, i) { CH.line(D, X(v), y + 4, X(v), R.y0 + s, { col: QC5[i], w: 1.6, dash: [5, 5], a: .6 }); });
+            var y = cy - bh / 2 - s * 1.1, r = Math.min(CH.fs(D, .42), (X(1) - X(0)) * .46), cnt = {}, top = 1;
+            d.forEach(function (x) { cnt[x] = (cnt[x] || 0) + 1; top = Math.max(top, cnt[x]); });
+            f.forEach(function (v, i) { CH.line(D, X(v), cy - bh / 2, X(v), y - r * (2.2 * top + .8), { col: QC5[i], w: 1.6, dash: [5, 5], a: .6 }); });
             CH.line(D, R.x0, y + 3, R.x1, y + 3, { col: 'rgba(242,240,230,.3)', w: 1.4 });
             CH.dots(D, X, y, d, { col: function () { return C.orange; }, r: r });
           }

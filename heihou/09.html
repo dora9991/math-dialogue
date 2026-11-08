@@ -250,11 +250,11 @@
     rod(D, X(0), CH.lerp(ys[2], ys[1] + h * .4, e), X(R5) - X(0), h, C.green, '√5', 1);
     if (v > 0) {
       var y5 = ys[1] + h * .4;
-      [[R2 + R3, ys[0], C.yel, '1.414＋1.732＝3.146'], [R5, y5, C.green, '2.236']].forEach(function (q) {
+      [[R2 + R3, ys[0], C.yel, '3.146'], [R5, y5, C.green, '2.236']].forEach(function (q) {
         CH.line(D, X(q[0]), q[1] + h, X(q[0]), NL.y1, { col: q[2], dash: [5, 4], w: 2, a: v });
-        say(D, X(q[0]) + s * .4, q[1] + h / 2, q[3], { col: q[2], a: v, size: s * .9, align: 'left', maxW: R.x1 - X(q[0]) - s * .5 });
+        say(D, X(q[0]) + s * .4, q[1] + h / 2, q[3], { col: q[2], a: v, size: s * .95, align: 'left', num: true });
       });
-      if (k >= 1 && X(R2 + R3) + s * 9 > R.x1) say(D, X(R2 + R3), ys[0] - s * .7, '3.146', { col: C.yel, a: v, size: s * .9 });
+      say(D, X((R2 + R3) / 2), ys[0] - s * .9, '1.414＋1.732＝3.146', { col: C.yel, a: v, size: s * .95, num: true, maxW: X(R2 + R3) - X(0) });
     }
     return X;
   }
@@ -319,8 +319,8 @@
         sub: '(3) √5 は 1√5 と見る。(4) √3 と √7 は 根号の中がちがうので、まとめられない。√3 の項だけ (2−5)√3＝−3√3', dur: 9,
         b: { t: '(2) <b>2√2</b>　(3) <b>5√5</b>　(4) <b>−3√3＋√7</b>（√3 と √7 は まとめられない）', col: C.pink },
         draw: function (D) {
-          var R = box(D, { t: .02, b: .02 }), s = CH.fs(D), t = D.ph ? D.t : 0, rs = CH.rows(R, 4, .04), lw = s * 2.2, wR = wide(R);
-          var z = Math.min(s * 1.5, rs[0].h * .32); EX.forEach(function (r) { z = Math.min(z, fitEq(D, r.join('＝'), (R.w - lw) * (wR ? .66 : .98), z)); });
+          var R = box(D, { t: .02, b: .02 }), s = CH.fs(D), t = D.ph ? D.t : 0, rs = CH.rows(R, 4, .04), lw = s * 2.2, wR = false;
+          var z = Math.min(s * 1.5, rs[0].h * .32); EX.forEach(function (r) { z = Math.min(z, fitEq(D, r.join('＝'), (R.w - lw) * .98, z)); });
           EX.forEach(function (r, i) {
             var P = rs[i], y = wR ? P.cy : P.y0 + P.h * .32, x = P.x0 + lw, prog = r.map(function (_, j) { return r.slice(0, j + 1).join('＝'); }), k = i === 0 ? 1 : D.ph ? CH.clamp((t - .03 - (i - 1) * .32) / .3, 0, 1) : 0;
             CH.text(D, P.x0 + lw * .45, y, '(' + (i + 1) + ')', { size: s * .9, col: i ? C.chalk : 'rgba(242,240,230,.6)' });
@@ -329,7 +329,7 @@
             else if (!D.ph) EQ(D, x, y, r[0] + '＝{y|？}', z, { align: 'left' });
             else CHAIN(D, x, y, prog, k, z, { align: 'left', hold: .2 });
             /* 右（せまい画面では下）に棒 */
-            var bx = wR ? P.x0 + P.w * .72 : P.x0 + lw, bw = wR ? P.w * .27 : P.w - lw, by = wR ? P.cy - P.h * .2 : P.y0 + P.h * .62, bh = wR ? P.h * .4 : P.h * .3;
+            var bx = P.x0 + lw, bw = Math.min(P.w - lw, P.h * 4.5), by = P.y0 + P.h * .6, bh = Math.min(P.h * .3, bw / 7.4 * .62);
             var spec = [[[2, 4]], [[5, -3]], [[1, 4]], [[2, -5], [1, 0, '√7']]][i], u = bw / 7.4, xx = bx;
             spec.forEach(function (q) {
               var lab = q[2] || ['√3', '√2', '√5', '√3'][i], Lr = lab === '√7' ? u * 1.53 : u, col = lab === '√7' ? C.orange : C.blue;

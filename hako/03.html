@@ -111,7 +111,7 @@
           var Ax = CH.axes(D, top, { x: [0, 60], y: [0, 8], xt: E, yt: [0, 4, 8], size: Math.max(12, s * .7) }); CH.bars(D, Ax, E, CA, { col: C.blue, a: .7 });
           CH.text(D, top.x1, top.y0 - s * .4, 'ア（20人）', { col: C.blue, align: 'right' });
           var Xb = CH.numline(D, bot, 0, 60, 1, { lab: 10, unit: '（点）' }), bh = Math.min(s * 2.2, bot.h * .24), cy = bot.y1 - s * 2.1 - bh / 2, x = FA.map(Xb);
-          var r = Math.min(CH.fs(D, .42), (Xb(1) - Xb(0)) * .5), yd = cy - bh / 2 - s * 1.5, pa = function (q) { return CH.smooth(.08 + q * .1, .2 + q * .1, t); };
+          var r = Math.min(CH.fs(D, .42), (Xb(1) - Xb(0)) * .5), yd = cy - bh / 2 - s * 1.9, pa = function (q) { return CH.smooth(.08 + q * .1, .2 + q * .1, t); };
           CH.line(D, bot.x0, yd + 2, bot.x1, yd + 2, { col: 'rgba(242,240,230,.25)', w: 1.2 });
           CH.dots(D, Xb, yd, DA, { col: function (i) { var q = Math.floor(i / 5); return pa(q) > .5 ? PC[q] : C.chalk; }, r: r });
           for (var q = 0; q < 4; q++) { var a = pa(q); if (a <= 0) continue; var hh = q === 0 || q === 3 ? bh * .3 : bh / 2; CH.fillRect(D, x[q], cy - hh, x[q + 1], cy + hh, { fill: hexA(PC[q], .4), a: a }); }

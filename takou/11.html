@@ -402,7 +402,7 @@
     });
     if (t > 0 && u < 1) {
       var p = PC[cur], my = R.y0 + R.h * .5, z2 = s * .95, cands = [cur].concat(DEC[cur]), good = AC[cur], bad = AC[DEC[cur][0]];
-      var l1 = 'かけて ' + S(p[0]) + ' … ' + cands.map(function (j) { return AL.charAt(j) + '（' + S(AC[j][0]) + '×' + (AC[j][1] < 0 ? '(' + S(AC[j][1]) + ')' : AC[j][1]) + '）'; }).join('・');
+      var l1 = 'かけて ' + S(p[0]) + ' … ' + cands.map(function (j) { return AL.charAt(j) + '（' + (AC[j][0] < 0 ? '(' + S(AC[j][0]) + ')' : AC[j][0]) + '×' + (AC[j][1] < 0 ? '(' + S(AC[j][1]) + ')' : AC[j][1]) + '）'; }).join('・');
       var l2 = 'たして ' + S(p[1]) + ' … ' + AL.charAt(cur) + ' ' + S(good[0]) + '＋' + (good[1] < 0 ? '(' + S(good[1]) + ')' : good[1]) + '＝' + S(p[1]) + ' ✓　' + AL.charAt(DEC[cur][0]) + ' は ' + S(bad[0] + bad[1]) + ' ✗';
       CH.text(D, R.cx, my - z2 * .8, l1, { size: Math.min(z2, CH.fitSize(D, l1, R.w, z2)), col: C.orange, a: sm(.05, .15, u) });
       CH.text(D, R.cx, my + z2 * .8, l2, { size: Math.min(z2, CH.fitSize(D, l2, R.w, z2)), col: C.blue, a: sm(.32, .42, u) });
@@ -410,7 +410,7 @@
   }
   /* 面積の図 (x＋3)(x＋4) */
   function rect34(D, R, t, o) {
-    o = o || {}; var s = CH.fs(D), xl = 4.6, u = Math.min(R.w * .8 / (xl + 4), R.h * .74 / (xl + 3)), x0 = R.cx - (xl + 4) * u / 2 + s * .5, y0 = R.cy - (xl + 3) * u / 2 + s * .6;
+    o = o || {}; var s = CH.fs(D), xl = 4.6, u = Math.min((R.w - s * 3) * .8 / (xl + 4), R.h * .74 / (xl + 3)), x0 = R.cx - (xl + 4) * u / 2 + s * 1.2, y0 = R.cy - (xl + 3) * u / 2 + s * .6;
     var a = [1, sm(.15, .3, t), sm(.15, .3, t), sm(.45, .6, t)];
     areaFig(D, x0, y0, u, [{ v: xl, lab: 'x' }, { v: 4, lab: '4', col: C.orange }], [{ v: xl, lab: 'x' }, { v: 3, lab: '3', col: C.orange }], { size: s * 1.1, cell: function (i, j) {
       var k = i + j * 2; return [{ col: X2, lab: 'x^2' }, { col: XC, lab: '4x', a: a[1] }, { col: XC, lab: '3x', a: a[2] }, { col: K1, lab: '12', a: a[3] }][k];
@@ -457,7 +457,7 @@
             var st = .12 + j * .6 / n, a = sm(st, st + .05, u), hit = q[0] + q[1] === e[2], col = u > st + .3 / n ? (hit ? C.green : C.chalk) : C.chalk;
             var x = F.x0 + cw * (j % per + .5), y = F.y0 + s * 1.4 + ch * .5 + Math.floor(j / per) * ch * 1.45, dim = u > .75 && !hit ? .4 : 1;
             rbox(D, x - cw * .44, y - ch * .5, x + cw * .44, y + ch * .5, col, a * dim, { fa: hit && u > st + .3 / n ? .22 : .08, w: hit ? 2.6 : 1.6 });
-            var z = Math.min(s, ch * .32, CH.fitSize(D, pq(q), cw * .8, s, { num: true }));
+            var z = Math.min(s, ch * .32, CH.fitSize(D, pq(q), cw * .8, s, { num: true }), CH.fitSize(D, 'たして −11', cw * .76, s) / .92);
             CH.text(D, x, y - ch * .2, pq(q), { size: z, num: true, a: a * dim });
             CH.text(D, x, y + ch * .23, 'たして ' + S(q[0] + q[1]), { size: z * .92, col: hit ? C.green : C.blue, a: sm(st + .03, st + .08, u) * dim });
           });

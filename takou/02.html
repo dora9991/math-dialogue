@@ -321,8 +321,8 @@
   /* ---- ことば：4つの積（①〜④の弧の矢印） ---- */
   function kotoba(D, t, ph) {
     var R = CH.box(D, { l: .05, r: .05, t: .05, b: .05 }), s = CH.fs(D), e = '(a＋b)(c＋d)', z = Math.min(s * 2.2, fit(D, e, R.w * .62, s * 2.2)), xl = R.x0 + R.w * .3;
-    var y1 = R.y0 + R.h * .3, y2 = R.y0 + R.h * .72, x0 = R.x0 + R.w * .3 + (R.w * .7 - TW(D, e, z)) / 2;
-    chip(D, R.x0, y1, '積の形', C.chalk, 1, s * .85, 'left'); chip(D, R.x0, y2, '和の形', C.yel, ph ? sm(.7, .85, t) : .6, s * .85, 'left');
+    var y1 = R.y0 + R.h * .34, y2 = R.y0 + R.h * .84, x0 = R.x0 + R.w * .3 + (R.w * .7 - TW(D, e, z)) / 2;
+    var cw = chip(D, R.x0, y1, '積の形', C.chalk, 1, s * .85, 'left'); chip(D, R.x0, y2, '和の形', C.yel, ph ? sm(.7, .85, t) : .6, s * .85, 'left');
     TX(D, x0, y1, e, { size: z, align: 'left' });
     var xa = xOf(D, e, 'a', z, x0), xb = xOf(D, e, 'b', z, x0), xc = xOf(D, e, 'c', z, x0), xd = xOf(D, e, 'd', z, x0);
     var A = [[xa, xc, 1], [xa, xd, 1], [xb, xc, -1], [xb, xd, -1]], nm = ['①', '②', '③', '④'];
@@ -335,8 +335,8 @@
     ['ac', 'ad', 'bc', 'bd'].forEach(function (q, i) { var a = sm(.1 + i * .13, .2 + i * .13, t); if (i) parts.push({ t: '＋', a: a }); parts.push({ t: q, col: QC[i], a: a }); });
     var z2 = Math.min(z, fit(D, 'ac＋ad＋bc＋bd', R.w * .66, z));
     seq(D, R.x0 + R.w * .3 + R.w * .35, y2, parts, { size: z2 });
-    var ka = sm(.6, .75, t), xm = R.x0 + R.w * .65; CH.arrow(D, xm, y1 + z * 1.55, xm, y2 - z2 * .95, { col: C.yel, w: 2.4, head: 10, a: ka });
-    TX(D, xm + s * .6, (y1 + z * 1.55 + y2 - z2 * .95) / 2, '展開', { size: s, align: 'left', col: C.yel, a: ka });
+    var ka = sm(.6, .75, t), xm = R.x0 + cw / 2; CH.arrow(D, xm, y1 + s * 1.3, xm, y2 - s * 1.3, { col: C.yel, w: 2.4, head: 10, a: ka });
+    TX(D, xm + s * .5, (y1 + y2) / 2, '展開', { size: s, align: 'left', col: C.yel, a: ka });
   }
 
   /* ---- 例題（1）（2）：面積図と、計算の行 ---- */
@@ -371,7 +371,7 @@
     var p = KP[D.V.k], s = CH.fs(D), R = CH.box(D, { l: .08, r: .08, t: .04, b: .04 }), e = p[0] + '　(' + p[1] + '＋' + p[2] + ')(' + p[3] + '＋' + p[4] + ')';
     TX(D, R.cx, R.y0 + s * .8, e, { size: fit(D, e, R.w, s * 1.4), col: C.yel });
     area(D, CH.rect(R.x0, R.y0 + s * 2.2, R.x1, R.y1), [{ t: p[3], v: len(p[3]) }, { t: p[4], v: len(p[4]) }], [{ t: p[1], v: len(p[1]) }, { t: p[2], v: len(p[2]) }], {
-      top: p[3] + '＋' + p[4], left: p[1] + '＋' + p[2], cell: function () { return { t: '□', col: C.lav, fa: .08, tcol: 'rgba(242,240,230,.4)' }; } });
+      top: p[3] + '＋' + p[4], left: p[1] + '＋' + p[2], cell: function () { return { col: C.lav, fa: .06 }; } });
   }
 
   /* ---- チャレンジ ---- */
