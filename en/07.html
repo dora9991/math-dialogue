@@ -97,6 +97,11 @@
       { t: '①②より、2組の角が、それぞれ等しいので', c: 'AA' }, { t: '△PAC∽△PDB' }] };
   var PS = GE.proof(PROOF, { tag: '例題' });
   PS[0].b = PS[0].b.concat([PS[1].b]); PS.splice(1, 1);                                     // 方針のステップは、今日の問いと同じなので はぶく（「△PAC と △PDB で」は問題の板書へ）
+  /* ∠PAC・∠PDB はせまい角なので、光らせるときは大きめの印も足す（GE.proof の図と同じ四角） */
+  PS.forEach(function (st) {
+    if (!/∠PAC＝∠PDB/.test((st.a || '') + st.q) && !/2組の角/.test(st.a || '')) return;
+    var d0 = st.draw; st.draw = function (D) { d0(D); if (!D.ph && !/2組の角/.test(st.a)) return; var F = chords(D), a = D.ph ? CH.smooth(0, .3, D.t) : 1; GE.arc(F, 'PAC', { col: C.yel, fill: .35, a: a, r: F.s * 2.8 }); GE.arc(F, 'PDB', { col: C.yel, fill: .35, a: a, r: F.s * 2.8 }); };
+  });
   /* 考えよう：円（中心 O、半径 4）。AB は y＝0.6 の横の弦、CD は P を通る（向き phi） */
   var Q4 = 4, YP = .6;
   function chordsAt(px, phi) {
@@ -126,7 +131,7 @@
       b: [{ t: '同じ弧に対する <b>円周角</b> は等しい。<b>対頂角</b> は等しい', col: C.green }, { t: '<b>2組の角</b> が、それぞれ等しい 2つの三角形は <b>相似</b>', col: C.green }, { t: '相似な三角形の、対応する辺の <b>比</b> は等しい', col: C.green }],
       draw: function (D) {
         var t = D.ph ? D.t : 0, F = chords(D), a1 = D.ph ? CH.smooth(0, .4, t) : 0, a2 = D.ph ? CH.smooth(.45, .85, t) : 0; figure(F, { tri: 1 });
-        if (a1) { GE.arc(F, 'PAC', { col: C.yel, fill: .4, a: a1, r: F.s * 1.4 }); GE.arc(F, 'PDB', { col: C.yel, fill: .4, a: a1, r: F.s * 1.4 }); }
+        if (a1) { GE.arc(F, 'PAC', { col: C.yel, fill: .4, a: a1, r: F.s * 2.8 }); GE.arc(F, 'PDB', { col: C.yel, fill: .4, a: a1, r: F.s * 2.8 }); }
         if (a2) { GE.arc(F, 'APC', { col: C.pink, fill: .4, n: 2, a: a2 }); GE.arc(F, 'DPB', { col: C.pink, fill: .4, n: 2, a: a2 }); }
       } }
   ].concat(PS).concat([
@@ -155,7 +160,7 @@
         if (a3) { GE.arc(F, 'CAH', { col: C.yel, fill: .35, a: a3 }); GE.arc(F, 'BCH', { col: C.yel, fill: .35, a: a3, r: F.s * 1.5 }); }
         dots(F, 'OABCH'); nm(F, { A: 180, B: 0, C: 100, H: 270, O: 90 });
         var hp = F.X([-9, 0]), hb = F.X([1, 0]), ch = F.X([-8, 3]);
-        CH.text(D, hp[0], hp[1] + F.s * 1.6, '2cm', { size: F.s * .8 }); CH.text(D, hb[0], hb[1] + F.s * 1.6, '18cm', { size: F.s * .8 }); CH.text(D, ch[0] + F.s * .5, ch[1], a3 ? '6cm' : '？', { size: F.s * .85, col: C.pink, align: 'left', outline: 'rgba(20,40,30,.9)' });
+        CH.text(D, hp[0], hp[1] + F.s * 2.3, '2cm', { size: F.s * .8 }); CH.text(D, hb[0], hb[1] + F.s * 1.6, '18cm', { size: F.s * .8 }); CH.text(D, ch[0] + F.s * .5, ch[1], a3 ? '6cm' : '？', { size: F.s * .85, col: C.pink, align: 'left', outline: 'rgba(20,40,30,.9)' });
         if (D.ph) say(D, L.side, [{ t: '∠ACB＝90°（半円の弧）', col: C.yel, a: a1 }, { t: '△ACH∽△CBH', col: C.yel, a: mv }, { t: 'AH：CH＝CH：HB', a: a3 }, { t: '2：CH＝CH：18', a: a3 }, { t: 'CH×CH＝36 → CH＝6', col: C.pink, a: a3 }]);
       } }
   ]);

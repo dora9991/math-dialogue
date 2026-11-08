@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>2乗に比例する関数</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 関数 y＝ax² 第1時：だんだん速くなる変化を、式で表そう（ikkan の lesson_kansu_01 と同じ流れ）。
+   ボールが落ちて、1秒ごとのしるしと表の数がふえる。5m のテープを 4本・9本 積むと 2秒・3秒のきょり（x が 2倍・3倍 → y は 4倍・9倍）。
+   表に x² の列が入って、y＝5x²。例題は四角柱が大きくなって表がうまる（y＝3x²）。正方形・円を 2倍にのばすと、面積は 4倍。
+   数値は ikkan のまま（ボール y＝5x²、例題 y＝3x²、考えよう y＝2x² と y＝2x、チャレンジ y＝3x²）。図と場面の絵は自作。表・答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum, OUT = 'rgba(20,40,30,.92)';
+  /* ---- 分数入りの字（[2/3] をたての分数に）。canvas 用と、右の板書（HTML）用 ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fr(s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fr(s[k]); }); if (s.notes) s.notes = s.notes.map(fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
+  /* 字の幅（はかるだけ） */
+  function tw(D, s, size) { return TX(D, 0, 0, s, { size: size, a: 0 }); }
+  /* ---- 表の横の矢印（ichiji と同じ形）：hop は上・下に、vhop は左・右にふくらむ ---- */
+  function hop(D, x0, x1, y, up, col, txt, a, sz) {
+    var g = D.ctx, s = sz || CH.fs(D), h = s * 1.05 * (up ? -1 : 1), d = Math.abs(x1 - x0);
+    g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.strokeStyle = col; g.lineWidth = 2.2; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x0, y); g.quadraticCurveTo((x0 + x1) / 2, y + h * 1.6, x1, y); g.stroke(); g.restore();
+    var ang = Math.atan2(-h * 1.6, (x1 - x0) / 2), hd = Math.min(9, d * .25);
+    CH.arrow(D, x1 - Math.cos(ang) * hd * 1.2, y - Math.sin(ang) * hd * 1.2, x1, y, { col: col, a: a, head: hd, w: 2.2 });
+    CH.text(D, (x0 + x1) / 2, y + h * 1.25, txt, { col: col, size: s * .85, a: a, outline: OUT });
+  }
+  function vhop(D, x, y0, y1, side, col, txt, o) {
+    o = o || {}; var g = D.ctx, s = CH.fs(D), c = (o.c || s * 1.6) * side, a = o.a == null ? 1 : o.a, my = (y0 + y1) / 2, hd = Math.min(9, Math.abs(y1 - y0) * .25);
+    if (a <= 0) return;
+    g.save(); g.globalAlpha = D.ga * a; g.strokeStyle = col; g.lineWidth = 2.2; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x, y0); g.quadraticCurveTo(x + c, my, x, y1); g.stroke(); g.restore();
+    var ang = Math.atan2(y1 - my, -c);
+    CH.arrow(D, x - Math.cos(ang) * hd * 1.2, y1 - Math.sin(ang) * hd * 1.2, x, y1, { col: col, a: a, head: hd, w: 2.2 });
+    CH.text(D, x + side * (o.lo == null ? Math.abs(c) / 2 + s * .3 : o.lo), o.ly == null ? my : o.ly, txt, { col: col, size: s * .85, a: a, align: side > 0 ? 'left' : 'right', outline: OUT });
+  }
+
+  /* ---- 数（ikkan と同じ）と検算 ---- */
+  var XS = [0, 1, 2, 3, 4], YS = XS.map(function (x) { return 5 * x * x; });
+  CH.check(YS.join() === '0,5,20,45,80', '今日の問いの表（y＝5x²）');
+  CH.check(YS[2] / YS[1] === 4 && YS[3] / YS[1] === 9 && YS[4] / YS[2] === 4 && YS[2] === 5 * 4 && YS[3] === 5 * 9, 'x が 2倍・3倍 → y は 4倍・9倍（5m のテープ 4本・9本）');
+  CH.check(XS.slice(1).every(function (x, i) { return YS[i + 1] / (x * x) === 5; }) && 5 * 16 === 80, 'y÷x²＝5（テープ 16本で 80m）');
+  var EX = [1, 2, 3, 4, 5], EX2 = EX.map(function (x) { return x * x; }), EY = EX.map(function (x) { return x * x * 3; });
+  CH.check(EX2.join() === '1,4,9,16,25' && EY.join() === '3,12,27,48,75' && EY.every(function (y, i) { return y / EX2[i] === 3; }), '例題（四角柱）');
+  CH.check([function (x) { return x * x; }, function (x) { return 4 * x; }, function (x) { return Math.PI * x * x; }].map(function (f) { return CH.near(f(2) / f(1), 4); }).join() === 'true,false,true' && 4 * 1 === 4 && 4 * 2 === 8, '例題（2）ア・ウ');
+  CH.check([1, 2, 5, 10].map(function (x) { return 2 * x * x; }).join() === '2,8,50,200' && [1, 2, 5, 10].map(function (x) { return 2 * x; }).join() === '2,4,10,20', '考えよう（ここで確かめるだけ）');
+  var CA = 12 / (2 * 2);
+  CH.check(CA === 3 && CA * 4 * 4 === 48 && Math.sqrt(75 / CA) === 5 && CA * 6 * 6 === 108, 'チャレンジ');
+
+  /* ---- ボールを落とす場面：左にビル、ボールの通り道、右に目もり（m） ----
+     tt：落ち始めてからの時間（秒）、o.tape：5m のテープを何本つむか、o.hl(i)：i 秒のしるしの色、o.lab(i)：目もりの下に書く字 */
+  function drop(D, R, tt, o) {
+    o = o || {}; var s = CH.fs(D), fs = Math.max(11, s * .8), top = R.y0 + s * 1.3, k = (R.y1 - top - s * .4) / 82, my = function (m) { return top + m * k; };
+    var bw = R.w * .25, bx = R.x0 + R.w * .4, rx = R.x0 + R.w * .63, br = CH.clamp(k * 2.2, 5, s * .45), i, m;
+    CH.fillRect(D, R.x0, top, R.x0 + bw, R.y1, { fill: 'rgba(242,240,230,.07)', stroke: 'rgba(242,240,230,.4)' });
+    for (i = 0; i < 11; i++) {
+      var wy = top + (i + .55) * (R.y1 - top) / 11, wh = (R.y1 - top) / 11 * .3;
+      CH.fillRect(D, R.x0 + bw * .2, wy - wh, R.x0 + bw * .42, wy + wh, { fill: 'rgba(154,216,255,.13)' });
+      CH.fillRect(D, R.x0 + bw * .58, wy - wh, R.x0 + bw * .8, wy + wh, { fill: 'rgba(154,216,255,.13)' });
+    }
+    CH.line(D, R.x0 - 6, R.y1, R.x1, R.y1, { col: 'rgba(242,240,230,.45)', w: 2 });
+    CH.line(D, rx, my(0), rx, my(80), { w: 2 });
+    for (m = 0; m <= 80; m += 10) CH.line(D, rx - 4, my(m), rx + 4, my(m), { w: 1.4 });
+    CH.text(D, rx + fs * .5, top - s * .75, '（m）', { size: fs * .9, align: 'left', col: 'rgba(242,240,230,.75)' });
+    var n = o.tape || 0, tw0 = Math.max(6, s * .45);
+    for (i = 0; i < Math.ceil(n - 1e-6); i++) CH.fillRect(D, rx - tw0 - 3, my(5 * i) + 1, rx - 3, my(5 * i + 5) - 1, { fill: i % 2 ? 'rgba(255,226,122,.5)' : 'rgba(255,192,120,.75)', stroke: 'rgba(20,30,24,.6)', sw: 1, a: CH.clamp(n - i, 0, 1) });
+    for (i = 0; i <= 4; i++) {
+      if (tt < i - 1e-6) continue; m = 5 * i * i; var col = (o.hl && o.hl(i)) || C.blue;
+      if (i) { CH.line(D, bx + br, my(m), rx - (n ? tw0 + 4 : 0), my(m), { col: col, w: 1.3, dash: [3, 5], a: .75 }); CH.circle(D, bx, my(m), br, { fill: 'rgba(154,216,255,.18)', stroke: col, sw: 1.5 }); }
+      CH.text(D, rx + fs * .5, my(m), m + 'm', { size: fs, align: 'left', col: col, num: true, outline: OUT });
+      if (o.lab && o.lab(i)) CH.text(D, rx + fs * .5, my(m) + fs * 1.1, o.lab(i), { size: fs * .8, align: 'left', col: C.orange, outline: OUT, a: o.la ? o.la(i) : 1 });
+      CH.text(D, bx - br - 3, my(m), i + '秒', { size: Math.max(10, fs * .8), align: 'right', col: 'rgba(242,240,230,.85)', outline: OUT });
+    }
+    var tb = CH.clamp(tt, 0, 4);
+    CH.circle(D, bx, my(5 * tb * tb), br, { fill: C.yel, stroke: 'rgba(20,30,24,.8)', sw: 1.2 });
+  }
+  function lay(D) {
+    var R = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), k = D.W > D.H * .9 ? .5 : .44;
+    return { S: CH.rect(R.x0, R.y0, R.x0 + R.w * k, R.y1), T: CH.rect(R.x0 + R.w * (k + .02), R.y0, R.x1, R.y1) };
+  }
+  /* 表（たて）。sq で x² の列も */
+  function tab(D, R, o) {
+    o = o || {}; var sq = o.sq, head = sq ? ['x（秒）', 'x²', 'y（m）'] : ['x（秒）', 'y（m）'];
+    var rows = XS.map(function (x, i) { return sq ? [String(x), String(x * x), String(YS[i])] : [String(x), String(YS[i])]; });
+    return CH.table(D, R, head, rows, { fw: sq ? .34 : .5, size: CH.fs(D, .9), rh: CH.fs(D) * 2.1, show: o.show, hl: o.hl });
+  }
+  function margin(D, R) { var m = CH.fs(D) * 3.4; return CH.rect(R.x0 + m, R.y0, R.x1 - m, R.y1); }
+
+  K3.run({
+    no: '第1時', title: 'だんだん速くなる変化を、式で表そう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '第2時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: 'ボールを落とす（x 秒間に y m）', q: 'ビルの屋上から、ボールを静かにはなして落とす。落ち始めてから x 秒間に落ちたきょりを y m とすると、表のようになった（空気のていこうは考えない）。x と y には、どんなきまりがあるだろう。y を x の式で表そう。',
+        notes: ['① 自分の考え（3分）　きまりを見つけて、式に表そう。', '② ペアの考え（3分）　自分とちがう見つけ方を書こう。'], dur: 5,
+        draw: function (D) {
+          var L = lay(D), tt = D.t * 5 - .6;
+          drop(D, L.S, tt);
+          tab(D, margin(D, L.T), { show: function (r, c) { return r === 0 || c === 0 ? 1 : CH.smooth(r - 1 - .05, r - 1 + .2, tt); } });
+        } },
+      { tag: '今日の問い', q: 'x が 2倍、3倍になると、y は何倍になる？', a: '4倍、9倍になる', sub: 'x＝1 → 2 で、y は 5 → 20（4倍）。x＝1 → 3 で、y は 5 → 45（9倍）。2倍・3倍ではないので、比例ではない', dur: 7,
+        b: { t: 'x が 2倍、3倍 → y は <b>4倍、9倍</b>（比例ではない）', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), s = CH.fs(D), t = D.ph ? D.t : 0, a1 = CH.smooth(.04, .2, t), a2 = CH.smooth(.5, .66, t);
+          var n = !D.ph ? 0 : t < .5 ? 4 * CH.smooth(.12, .42, t) : 4 + 5 * CH.smooth(.56, .9, t);
+          drop(D, L.S, 4, { tape: n, hl: function (i) { return i === 2 && a1 > 0 ? C.yel : i === 3 && a2 > 0 ? C.pink : null; },
+            lab: function (i) { return D.ph && i === 2 ? '（5m×4）' : D.ph && i === 3 ? '（5m×9）' : ''; }, la: function (i) { return i === 2 ? CH.smooth(.38, .48, t) : CH.smooth(.86, .96, t); } });
+          var T = tab(D, margin(D, L.T), { hl: function (r) { return !D.ph ? null : r === 2 ? C.blue : r === 3 && a1 > 0 ? C.yel : r === 4 && a2 > 0 ? C.pink : null; } });
+          if (!D.ph) return;
+          var r1 = T.cell(2, 0), r2 = T.cell(3, 0), r3 = T.cell(4, 0), q1 = T.cell(2, 1), q2 = T.cell(3, 1), q3 = T.cell(4, 1);
+          var cS = 1.6 * (s * .5 + (r2.cy - r1.cy) * .28), cB = 1.6 * (s * .5 + (r3.cy - r1.cy) * .28), lo = cB * .375 + s * .45;
+          vhop(D, r1.x0, r1.cy, r2.cy, -1, C.yel, '×2', { a: a1, c: cS, lo: lo, ly: (r1.cy + r2.cy) / 2 });
+          vhop(D, q1.x1, q1.cy, q2.cy, 1, C.yel, '×4', { a: CH.smooth(.22, .38, t), c: cS, lo: lo, ly: (q1.cy + q2.cy) / 2 });
+          vhop(D, r1.x0, r1.cy, r3.cy, -1, C.pink, '×3', { a: a2, c: cB });
+          vhop(D, q1.x1, q1.cy, q3.cy, 1, C.pink, '×9', { a: CH.smooth(.7, .86, t), c: cB });
+        } },
+      { tag: '今日の問い', q: 'y を x の式で表そう。', a: 'y＝5x²', sub: 'x² の値（0、1、4、9、16）の 5倍が y。y÷x² は、どれも 5。5m のテープが x² 本', dur: 6,
+        b: { t: 'y は x² の 5倍 → <b>y＝5x²</b>', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), s = CH.fs(D), t = D.ph ? D.t : 0, n = D.ph ? 16 * CH.smooth(.3, .7, t) : 9;
+          drop(D, L.S, 4, { tape: n, lab: function (i) { return i && (D.ph || i === 2 || i === 3) ? '（5m×' + i * i + '）' : ''; }, la: function (i) { return D.ph && (i === 1 || i === 4) ? CH.smooth(.3 + i * .09, .4 + i * .09, t) : 1; } });
+          if (!D.ph) { tab(D, margin(D, L.T)); return; }
+          var T = tab(D, L.T, { sq: true, show: function (r, c) { return c === 1 && r > 0 ? CH.smooth(.04 + r * .04, .14 + r * .04, t) : 1; }, hl: function (r, c) { return c === 1 && t > .05 ? C.blue : c === 2 && t > .72 ? C.yel : null; } });
+          var a = CH.smooth(.72, .86, t);
+          for (var r = 1; r <= 5; r++) { var q = T.cell(r, 1); CH.text(D, q.x1, q.cy, '×5', { size: s * .8, col: C.orange, a: a, outline: OUT }); }
+          TX(D, L.T.cx, T.y1 + s * 1.7, 'y＝5×x²', { size: s * 1.4, col: C.yel, a: CH.smooth(.86, 1, t) });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'y＝ax² で表されるとき、y は x の何という？ この a を何という？', a: '2乗に比例する・比例定数', sub: 'a は 0 でない定数。落ちるきょり y＝5x² の比例定数は 5', dur: 4,
+        b: [{ t: 'y＝ax²（a は 0 でない定数）のとき、y は x の <b>2乗に比例する</b>', col: C.green }, { t: 'この a を <b>比例定数</b> という', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .08, b: .08 }), s = CH.fs(D), t = D.ph ? D.t : 0, fz = Math.min(s * 2.8, R.w / 6);
+          var w0 = tw(D, 'y＝', fz), w1 = tw(D, 'a', fz), w2 = tw(D, 'x²', fz), x0 = R.cx - (w0 + w1 + w2) / 2, y = R.y0 + R.h * .3;
+          CH.text(D, x0, y, 'y＝', { size: fz, align: 'left' });
+          CH.text(D, x0 + w0, y, 'a', { size: fz, align: 'left', col: t > 0 ? C.green : C.chalk });
+          CH.text(D, x0 + w0 + w1, y, 'x²', { size: fz, align: 'left', col: t > 0 ? C.blue : C.chalk });
+          var ax = x0 + w0 + w1 / 2, xx = x0 + w0 + w1 + w2 / 2, fl = s * .95;
+          if (D.ph) {
+            var a1 = CH.smooth(0, .2, t), a2 = CH.smooth(.15, .35, t);
+            CH.arrow(D, ax - fz * .8, y - fz * 1.15, ax - fz * .15, y - fz * .55, { col: C.green, a: a1, w: 2.2 });
+            CH.text(D, ax - fz * .85, y - fz * 1.15 - fl * .7, '比例定数', { size: fl, col: C.green, a: a1, align: 'right' });
+            CH.arrow(D, xx + fz * .8, y - fz * 1.15, xx + fz * .15, y - fz * .55, { col: C.blue, a: a2, w: 2.2 });
+            CH.text(D, xx + fz * .85, y - fz * 1.15 - fl * .7, 'x の 2乗', { size: fl, col: C.blue, a: a2, align: 'left' });
+          }
+          var lx = R.x0 + R.w * .08, ly = R.y0 + R.h * .58, gap = s * 2.1, f2 = Math.min(s * 1.05, R.w / 22);
+          CH.text(D, lx, ly, '比例　　　 y＝ax　 … x が 2倍 → y は 2倍', { size: f2, align: 'left', col: 'rgba(242,240,230,.75)' });
+          CH.text(D, lx, ly + gap, '2乗に比例　y＝ax² … x が 2倍 → y は 4倍', { size: f2, align: 'left', col: C.yel, a: D.ph ? CH.smooth(.4, .6, t) : 0 });
+          CH.text(D, lx, ly + gap * 2, '例　y＝5x² … 比例定数は 5', { size: f2, align: 'left', col: C.green, a: D.ph ? CH.smooth(.7, .9, t) : 0 });
+        } },
+      { tag: '例題', bh: '例題　四角柱の体積', q: '底面が 1辺 x cm の正方形で、高さが 3cm の四角柱がある。体積を y cm³ として、表を完成させよう（x＝1 は見本）。y を x の式で表そう。',
+        a: 'y＝3x²', sub: 'x² は 1、4、9、16、25。y は 3、12、27、48、75。y÷x² はどれも 3 だから、y は x の 2乗に比例し、比例定数は 3', dur: 7,
+        b: { t: '四角柱の体積 … y÷x² はいつも 3 → <b>y＝3x²</b>', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .04, b: .04 }), s = CH.fs(D), t = D.ph ? D.t : 0, th = s * 2.1 * 4;
+          var xv = D.ph ? 1 + 4 * CH.smooth(.05, .78, t) : 2, B = CH.rect(R.x0, R.y0, R.x1, R.y1 - th - s * .8);
+          /* 四角柱（見取図：横＝x、おく行き＝x、高さ＝3） */
+          var u = Math.min(B.w / 8.2, B.h / 5.6), ox = B.cx - 7.5 * u / 2, oy = B.cy + 5 * u / 2;
+          function P(x, y, z) { return [ox + (x + z * .5) * u, oy - (y + z * .4) * u]; }
+          var w = xv, h = 3, i;
+          [[P(0, 0, 0), P(0, 0, w)], [P(0, 0, w), P(w, 0, w)], [P(0, 0, w), P(0, h, w)]].forEach(function (e) { CH.line(D, e[0][0], e[0][1], e[1][0], e[1][1], { col: C.blue, w: 1.4, dash: [5, 5], a: .7 }); });
+          CH.poly(D, [P(w, 0, 0), P(w, 0, w), P(w, h, w), P(w, h, 0)], { fill: 'rgba(154,216,255,.08)', stroke: C.blue, sw: 2 });
+          CH.poly(D, [P(0, h, 0), P(w, h, 0), P(w, h, w), P(0, h, w)], { fill: 'rgba(255,226,122,.16)', stroke: C.blue, sw: 2 });
+          for (i = 1; i < w - 1e-6; i++) { var p0 = P(i, h, 0), p1 = P(i, h, w), q0 = P(0, h, i), q1 = P(w, h, i); CH.line(D, p0[0], p0[1], p1[0], p1[1], { col: C.yel, w: 1, a: .55 }); CH.line(D, q0[0], q0[1], q1[0], q1[1], { col: C.yel, w: 1, a: .55 }); }
+          CH.poly(D, [P(0, 0, 0), P(w, 0, 0), P(w, h, 0), P(0, h, 0)], { fill: 'rgba(154,216,255,.16)', stroke: C.blue, sw: 2 });
+          var fl = s * .85, e1 = P(w / 2, 0, 0), e2 = P(w, 0, w / 2), e3 = P(0, h / 2, 0);
+          CH.text(D, e1[0], e1[1] + fl * .9, 'x cm', { size: fl, outline: OUT });
+          CH.text(D, e2[0] + fl * .5, e2[1] + fl * .3, 'x cm', { size: fl, align: 'left', outline: OUT });
+          CH.text(D, e3[0] - fl * .4, e3[1], '3cm', { size: fl, align: 'right', outline: OUT });
+          if (D.ph) { var e4 = P(w, h, w); CH.text(D, e4[0] + fl * .4, e4[1] - fl * .4, 'x＝' + CH.f1(xv).replace(/\.0$/, ''), { size: s, col: C.yel, align: 'left', outline: OUT }); }
+          /* 表 */
+          var heads = ['x（cm）'].concat(EX.map(String)), rows = [['x²'].concat(EX2.map(String)), ['y（cm³）'].concat(EY.map(String)), ['y÷x²'].concat(EX.map(function () { return '3'; }))];
+          CH.table(D, CH.rect(R.x0, R.y1 - th, R.x1, R.y1), heads, rows, { fw: .24, size: CH.fs(D, .9), rh: s * 2.1, top: true,
+            show: function (r, c) { if (r === 0 || c === 0) return 1; if (r === 3) return D.ph ? CH.smooth(.82 + c * .02, .9 + c * .02, t) : 0; return c === 1 ? 1 : D.ph ? CH.smooth(c - 1.15, c - .95, xv) : 0; },
+            hl: function (r, c) { return D.ph && c > 0 && r > 0 && Math.abs(xv - c) < .5 ? C.yel : r === 3 && c > 0 && t > .85 ? C.pink : null; } });
+        } },
+      { tag: '例題', q: 'y が x の 2乗に比例するものは？　ア 正方形の 1辺 x と面積 y　イ 正方形の 1辺 x と周の長さ y　ウ 円の半径 x と面積 y', a: 'ア、ウ',
+        sub: 'x を 2倍にすると、ア・ウ は y が 4倍、イ は 2倍。式は ア y＝x²、イ y＝4x、ウ y＝πx²', dur: 5,
+        b: { t: '2乗に比例 … <b>ア</b> 正方形の面積、<b>ウ</b> 円の面積（x が 2倍 → y は 4倍）', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .05, b: .05 }), rs = CH.split(D, R, 3, .08), s = CH.fs(D), t = D.ph ? D.t : 0, k = D.ph ? CH.ease(CH.smooth(.05, .45, t)) : 0;
+          var la = D.ph ? CH.smooth(.5, .65, t) : 0, lb = D.ph ? CH.smooth(.72, .88, t) : 0, wide = D.W > D.H * .9;
+          var info = [['ア 正方形の面積', '面積 1 → 4（4倍）', '○ y＝x²', C.blue], ['イ 正方形の周', '周 4 → 8（2倍）', '× y＝4x', C.orange], ['ウ 円の面積', '面積 π → 4π（4倍）', '○ y＝πx²', C.green]];
+          rs.forEach(function (q, i) {
+            var B = wide ? CH.rect(q.x0, q.y0 + s * 1.6, q.x1, q.y1 - s * 4.2) : CH.rect(q.x0, q.y0, q.x0 + Math.min(q.h * 1.1, q.w * .42), q.y1);
+            var u = Math.min(B.w, B.h) * .4, col = info[i][3], x0 = B.cx - u, y0 = B.cy + u, sd = u * (1 + k);
+            if (i < 2) {
+              CH.fillRect(D, x0, y0 - u, x0 + u, y0, { stroke: 'rgba(242,240,230,.55)', dash: true });
+              CH.fillRect(D, x0, y0 - sd, x0 + sd, y0, i === 0 ? { fill: 'rgba(154,216,255,.25)', stroke: col, sw: 2 } : { stroke: col, sw: 4 });
+              if (i === 0 && k > .5) { CH.line(D, x0 + u, y0, x0 + u, y0 - sd, { col: col, w: 1.2, a: (k - .5) * 2 }); CH.line(D, x0, y0 - u, x0 + sd, y0 - u, { col: col, w: 1.2, a: (k - .5) * 2 }); }
+              CH.text(D, x0 + sd / 2, y0 + s * .7, k > .5 ? '2' : '1', { size: s * .8, outline: OUT });
+            } else {
+              var cx = B.cx, cy = B.cy, r = u * .5 * (1 + k);
+              CH.circle(D, cx, cy, u * .5, { stroke: 'rgba(242,240,230,.55)', sw: 1.4 });
+              CH.circle(D, cx, cy, r, { fill: 'rgba(169,240,176,.2)', stroke: col, sw: 2 });
+              CH.line(D, cx, cy, cx + r, cy, { col: C.chalk, w: 1.6 }); CH.text(D, cx + r / 2, cy - s * .55, k > .5 ? '2' : '1', { size: s * .8, outline: OUT });
+            }
+            var tx = wide ? q.cx : B.x1 + s * .6, al = wide ? 'center' : 'left', ty = wide ? [q.y0 + s * .5, q.y1 - s * 3, q.y1 - s * 1.3] : [q.cy - s * 1.5, q.cy, q.cy + s * 1.5];
+            CH.text(D, tx, ty[0], info[i][0], { size: s * .95, col: col, align: al });
+            CH.text(D, tx, ty[1], la > 0 ? info[i][1] : 'x が 2倍 → y は？', { size: s * .85, align: al, a: la > 0 ? la : .7 });
+            CH.text(D, tx, ty[2], info[i][2], { size: s * .95, align: al, col: i === 1 ? C.pink : C.yel, a: lb });
+          });
+        } },
+      { tag: '考えよう', q: 'y＝2x² と y＝2x で、x の値を 1 の 2倍、5倍、10倍にすると、y の値は、それぞれ何倍になるだろう。',
+        notes: ['表をつくって、y＝2x² の y が何倍になっているか、気づいたことを書こう。', 'y＝2x のときとくらべて、ちがいを書こう。', 'スライダーで、x の値を変えられます。'],
+        sliders: [{ key: 'n', label: 'x の値', min: 1, max: 10, step: 1, val: 2, fmt: function (x) { return 'x＝' + x; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .05, b: .04 }), rs = CH.split(D, R, 2, .1), s = CH.fs(D), n = D.V.n;
+          [['y＝2x²', function (x) { return 2 * x * x; }, 200, C.blue], ['y＝2x', function (x) { return 2 * x; }, 20, C.orange]].forEach(function (g, k) {
+            var q = rs[k], th = s * 2.1 * 2, T = CH.table(D, CH.rect(q.x0 + q.w * .04, q.y0 + s * 2, q.x1 - q.w * .04, q.y0 + s * 2 + th), ['x', '1', String(n)], [[g[0], '2', String(g[1](n))]], { fw: .36, size: CH.fs(D, .95), rh: s * 2.1, top: true, hl: function (r, c) { return c === 2 ? (r ? g[3] : C.yel) : null; } });
+            var a0 = T.cell(0, 1), a1 = T.cell(0, 2), b0 = T.cell(1, 1), b1 = T.cell(1, 2);
+            if (n > 1) { hop(D, a0.cx, a1.cx, a0.y0, true, C.yel, n + '倍', 1); hop(D, b0.cx, b1.cx, b0.y1, false, g[3], '？倍', 1); }
+            /* 棒（x＝1 と x＝n の y） */
+            var B = CH.rect(q.x0 + q.w * .2, T.y1 + s * 3.4, q.x1 - q.w * .2, q.y1 - s * 1.2);
+            if (B.h > s * 2) {
+              var Ax = CH.axes(D, B, { x: [0, 2], y: [0, g[2]], xt: [], yt: [], grid: false });
+              CH.bars(D, Ax, [0, 1, 2], [g[1](1), g[1](n)], { gap: .35, labels: true, hl: function (i) { return i ? g[3] : 'rgba(242,240,230,.7)'; } });
+              CH.text(D, Ax.X(.5), B.y1 + s * .8, 'x＝1', { size: s * .8 }); CH.text(D, Ax.X(1.5), B.y1 + s * .8, 'x＝' + n, { size: s * .8, col: C.yel });
+            }
+          });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'y は x の 2乗に比例し、x と y の値は、表のようになる。ア、イ、ウ にあてはまる数を求めよう（ア は正の数）。', a: 'ア 5、イ 48、ウ 108',
+        sub: 'y÷x²＝12÷2²＝3 だから y＝3x²。イ 3×4²＝48。ア 75＝3x² → x²＝25 → x＝5。ウ 3×6²＝108', dur: 6,
+        b: { t: 'y＝3x² … ア <b>5</b>、イ <b>48</b>、ウ <b>108</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .06, b: .06 }), s = CH.fs(D), t = D.ph ? D.t : 0, fz = Math.min(s * 1.1, R.w / 19);
+          var sI = CH.smooth(.3, .4, t), sA = CH.smooth(.52, .62, t), sU = CH.smooth(.74, .84, t);
+          var T = CH.table(D, CH.rect(R.x0 + R.w * .08, R.y0 + s * .5, R.x1 - R.w * .08, R.y0 + s * .5 + s * 2.3 * 2), ['x', '2', '4', sA > .5 ? '5' : 'ア', '6'], [['y', '12', sI > .5 ? '48' : 'イ', '75', sU > .5 ? '108' : 'ウ']],
+            { fw: .2, size: CH.fs(D, 1.05), rh: s * 2.3, top: true, hl: function (r, c) { return !D.ph ? null : c === 1 && t < .3 ? C.yel : (c === 2 && sI > .5 && r === 1) || (c === 3 && sA > .5 && r === 0) || (c === 4 && sU > .5 && r === 1) ? C.orange : null; } });
+          var y0 = T.y1 + s * 2, g = s * 2.2, lx = R.x0 + R.w * .08;
+          TX(D, lx, y0, '12＝a×2²　a＝3　→　y＝3x²', { size: fz, align: 'left', col: C.yel, a: D.ph ? CH.smooth(.04, .2, t) : 0 });
+          TX(D, lx, y0 + g, 'イ　3×4²＝48', { size: fz, align: 'left', a: sI });
+          TX(D, lx, y0 + g * 2, 'ア　75＝3x²　x²＝25　x＝5', { size: fz, align: 'left', a: sA });
+          TX(D, lx, y0 + g * 3, 'ウ　3×6²＝108', { size: fz, align: 'left', a: sU });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

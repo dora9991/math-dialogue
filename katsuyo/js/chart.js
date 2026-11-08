@@ -175,12 +175,23 @@ CH.grid = function (D, R, n, o) {
   }
   return out;
 };
+/* 字の大きさを、幅 maxW に入るまで小さくする（size はもとの大きさ） */
+CH.fitSize = function (D, txt, maxW, size, o) {
+  o = o || {}; var g = D.ctx; g.save(); g.font = (o.w || 600) + ' ' + size + 'px ' + (o.num ? NUM : FONT); var w = g.measureText(String(txt)).width; g.restore();
+  return w > maxW && w > 0 ? size * maxW / w : size;
+};
+/* 幅 maxW で折り返した行の配列（日本語は1字ずつ、、。は行の頭にしない） */
+CH.wrap = function (D, txt, maxW, size, o) {
+  o = o || {}; var g = D.ctx, out = [], line = ''; g.save(); g.font = (o.w || 600) + ' ' + size + 'px ' + (o.num ? NUM : FONT);
+  String(txt).split('').forEach(function (ch) { if (line && g.measureText(line + ch).width > maxW && '、。）」'.indexOf(ch) < 0) { out.push(line); line = ''; } line += ch; });
+  if (line) out.push(line); g.restore(); return out;
+};
 /* 横にのびる帯（テープ図）。parts：[{v, col, txt}]、total、o.a */
 CH.tape = function (D, x0, y0, w, h, parts, total, o) {
   o = o || {}; var x = x0;
   parts.forEach(function (p) {
     var pw = w * p.v / total; CH.fillRect(D, x, y0, x + pw, y0 + h, { fill: hexA(p.col || C.blue, .45), stroke: p.col || C.blue, a: (o.a == null ? 1 : o.a) * (p.a == null ? 1 : p.a) });
-    if (p.txt) CH.text(D, x + pw / 2, y0 + h / 2, p.txt, { size: Math.min(h * .45, CH.fs(D, .9)), num: true, a: (o.a == null ? 1 : o.a) * (p.a == null ? 1 : p.a) });
+    if (p.txt) { var sz = Math.min(h * .45, CH.fs(D, .9)); CH.text(D, x + pw / 2, y0 + h / 2, p.txt, { size: CH.fitSize(D, p.txt, pw * .92, sz, { num: true }), num: true, a: (o.a == null ? 1 : o.a) * (p.a == null ? 1 : p.a) }); }
     x += pw;
   });
 };
