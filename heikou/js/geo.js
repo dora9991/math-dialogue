@@ -267,7 +267,7 @@ GE.proof = function (def, o) {
     if (ask === 'r') { st.q = l.t + (l.n ? '　…' + circ(l.n) : '') + '　この根拠は？'; st.a = l.r; }
     else if (ask === 't') { st.q = (l.n ? circ(l.n) + ' ' : '') + (l.hint || 'つぎに、等しいといえる辺や角は？　根拠も。'); st.a = l.t + '（' + l.r + '）'; }
     else if (ask === 'c') { st.q = /^(S3|S2A|AA)$/.test(l.c) ? 'どの相似条件が使える？' : 'どの合同条件が使える？'; st.a = GE.COND[l.c] || l.c; st.sub = l.t; st.b = { t: l.t, col: C.green }; }
-    else { st.q = l.q || l.t; if (l.a) { st.a = l.a; } }
+    else { st.q = l.q || l.t; if (l.a) { st.a = l.a; st.sub = l.sub || ''; } }
     if (isCong && !st.a) { st.q = l.q || (isSim ? 'だから、どの三角形が相似？（頂点の順に注意）' : 'だから、どの三角形が合同？（頂点の順に注意）'); st.a = l.t; }
     st.dur = isCong ? 2.6 : 1;
     st.draw = function (D) {

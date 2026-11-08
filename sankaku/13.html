@@ -92,7 +92,7 @@
   /* ---- 例題：平行四辺形に条件カードを1枚加える（ア ∠A＝90°、イ AB＝BC、ウ AC＝BD、エ AC⊥BD） ---- */
   var EXC = [{ c: 'ア ∠A＝90°', to: [4.4, 2.6, 90], n: '長方形' }, { c: 'イ AB＝BC', to: [3.5, 3.5, 62], n: 'ひし形' }, { c: 'ウ AC＝BD', to: [4.4, 2.6, 90], n: '長方形' }, { c: 'エ AC⊥BD', to: [3.5, 3.5, 62], n: 'ひし形' }];
   var EX0 = [4.4, 2.6, 62];
-  EXC.forEach(function (e) { var P = pg.apply(null, e.to); CH.check(kind(P) === e.n && GE.verify(P, e.c.slice(2)), '例題：' + e.c + ' → ' + e.n); });
+  EXC.forEach(function (e) { var P = pg.apply(null, e.to); CH.check(kind(P) === e.n && GE.verify(P, e.c.slice(2), { A: 'DAB' }), '例題：' + e.c + ' → ' + e.n); });
   [[4.4, 2.6, 62], [4, 3, 75], [4, 3, 110], [3.4, 3.4, 90]].forEach(function (v) { var P = pg(v[0], v[1], v[2]), p = props(P); CH.check(p[3] === (v[2] === 90) && p[4] === (v[0] === v[1]), '例題：対角線の条件（' + v.join(',') + '）'); });
   function exFig(D, k, t) {
     var e = EXC[k], v = EX0.map(function (x, i) { return CH.lerp(x, e.to[i], CH.ease(t)); }), P = pg(v[0], v[1], v[2]);
