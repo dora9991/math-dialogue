@@ -132,7 +132,7 @@
       comp(F, 'A', RQ, a1 - 14, a1 + 14, k3, { col: C.pink }); comp(F, 'B', RQ, a2 - 14, a2 + 14, k4, { col: C.pink });
       if (k4 > .98) { GE.dot(F, 'Q', { col: C.pink, r: F.s * .22 }); nm(F, { Q: 0 }, { c: C.pink }); }
       if (k5 > 0) GE.seg(F, [GE.lerpP(PM.P, PM.Q, -.12), GE.lerpP(PM.P, PM.Q, -.12 + 1.24 * k5)], { col: C.yel, w: 3.4 });
-      if (k6 > 0) { GE.right(F, 'PHB', { col: C.yel, a: k6, fill: true }); if (o.why) { GE.tick(F, 'QA', 2, { col: C.pink, a: k6 }); GE.tick(F, 'QB', 2, { col: C.pink, a: k6 }); GE.seg(F, 'QA', { col: C.pink, w: 2, a: k6 * .7, dash: [5, 5] }); GE.seg(F, 'QB', { col: C.pink, w: 2, a: k6 * .7, dash: [5, 5] }); } }
+      if (k6 > 0) { GE.right(F, 'PHB', { col: C.yel, a: k6, fill: true }); nm(F, { H: 135 }, { c: C.yel, a: k6 }); if (o.why) { GE.tick(F, 'QA', 2, { col: C.pink, a: k6 }); GE.tick(F, 'QB', 2, { col: C.pink, a: k6 }); GE.seg(F, 'QA', { col: C.pink, w: 2, a: k6 * .7, dash: [5, 5] }); GE.seg(F, 'QB', { col: C.pink, w: 2, a: k6 * .7, dash: [5, 5] }); } }
     }
     dots(F, 'P', { r: F.s * .22 }); nm(F, { P: 45 });
     return L;
@@ -143,7 +143,7 @@
   CH.check(GE.near(GE.len(PE, 'QA'), RE) && GE.near(GE.len(PE, 'AP') + GE.len(PE, 'PB'), GE.len(PE, 'AB')), '例題：A、P、B は一直線上、QA＝√13');
   var THL = angTo(PE.L1, PE.L2);
   function onl(D, st, t) {
-    var L = lay(D, .32), F = GE.fit(D, L.fig, PE, { keys: ['P', 'A', 'B', 'Q'], pad: .3, bounds: [[1, .5], [9, 7]] });
+    var L = lay(D, .32), F = GE.fit(D, L.fig, PE, { keys: ['P', 'A', 'B', 'Q'], pad: .12, bounds: [[1.6, .6], [8.4, 6.6]] });
     full(F, 'L1', 'L2', { w: 3 }); lab(F, GE.lerpP(PE.P, PE.B, 2.6), 90 + THL, .8, 'ℓ', { size: 1.1 });
     var k1 = st > 1 ? 1 : st < 1 ? 0 : CH.smooth(.04, .32, t), k2 = st > 1 ? 1 : st < 1 ? 0 : CH.smooth(.36, .64, t), k3 = st > 1 ? 1 : st < 1 ? 0 : CH.smooth(.7, .9, t);
     comp(F, 'P', 2, THL - 22, THL + 22, k1, { col: C.blue }); comp(F, 'P', 2, THL + 158, THL + 202, k2, { col: C.blue });
@@ -151,7 +151,7 @@
     if (st >= 2) {
       var k4 = CH.smooth(.03, .25, t), k5 = CH.smooth(.27, .5, t), k6 = CH.smooth(.55, .82, t), k7 = CH.smooth(.85, .97, t), a1 = angTo(PE.A, PE.Q), a2 = angTo(PE.B, PE.Q);
       comp(F, 'A', RE, a1 - 14, a1 + 14, k4, { col: C.pink }); comp(F, 'B', RE, a2 - 14, a2 + 14, k5, { col: C.pink });
-      if (k5 > .98) { GE.dot(F, 'Q', { col: C.pink, r: F.s * .22 }); nm(F, { Q: 30 }, { c: C.pink }); }
+      if (k5 > .98) { GE.dot(F, 'Q', { col: C.pink, r: F.s * .22 }); nm(F, { Q: 175 }, { c: C.pink, k: 1.2 }); }
       if (k6 > 0) GE.seg(F, [GE.lerpP(PE.P, PE.Q, -.5), GE.lerpP(PE.P, PE.Q, -.5 + 1.7 * k6)], { col: C.yel, w: 3.4 });
       if (k7 > 0) GE.right(F, 'QPB', { col: C.yel, a: k7, fill: true });
     }

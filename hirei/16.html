@@ -211,11 +211,11 @@
         sub: 'x 軸について対称 … y 座標の符号が変わる。y 軸について対称 … x 座標の符号が変わる。原点について対称 … 両方の符号が変わる（原点のまわりに半回転）', dur: 9,
         b: { t: '(4, −7) と対称な点 … x 軸 <b>(4, 7)</b>、y 軸 <b>(−4, −7)</b>、原点 <b>(−4, 7)</b>', col: C.pink },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, Rs = two(D, .52, .6), Pl = PL(D, Rs[0], { x: [-8, 8], y: [-8, 8] });
+          var t = D.ph ? D.t : 0, Rs = two(D, .52, .6), Pl = PL(D, Rs[0], { x: [-9, 9], y: [-9, 9], lab: 2 });
           CH.pt(D, Pl, 4, -7, { col: C.pink, lab: '(4, −7)', dir: 'e' });
           var k1 = CH.ease(CH.smooth(.05, .25, t)), k2 = CH.ease(CH.smooth(.35, .55, t)), k3 = CH.ease(CH.smooth(.65, .88, t));
           if (k1 > 0) { CH.pseg(D, Pl, [4, -7], [4, -7 + 14 * k1], { col: C.yel, dash: true }); CH.pt(D, Pl, 4, -7 + 14 * k1, { col: C.yel, lab: k1 > .99 ? 'x 軸 (4, 7)' : '', dir: 'e' }); }
-          if (k2 > 0) { CH.pseg(D, Pl, [4, -7], [4 - 8 * k2, -7], { col: C.blue, dash: true }); CH.pt(D, Pl, 4 - 8 * k2, -7, { col: C.blue, lab: k2 > .99 ? 'y 軸 (−4, −7)' : '', dir: 'n' }); }
+          if (k2 > 0) { CH.pseg(D, Pl, [4, -7], [4 - 8 * k2, -7], { col: C.blue, dash: true }); CH.pt(D, Pl, 4 - 8 * k2, -7, { col: C.blue, lab: k2 > .99 ? 'y 軸 (−4, −7)' : '', dir: 'sw' }); }
           if (k3 > 0) {
             var th = Math.PI * k3, P = []; for (var i = 0; i <= 40; i++) { var u = th * i / 40; P.push([Pl.X(4 * Math.cos(u) + 7 * Math.sin(u)), Pl.Y(4 * Math.sin(u) - 7 * Math.cos(u))]); }
             CH.poly(D, P, { close: false, stroke: C.green, dash: true, sw: 1.6 });
