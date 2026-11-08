@@ -279,7 +279,8 @@ GE.proof = function (def, o) {
     };
     steps.push(st);
   });
-  if (def.point) steps.push({ tag: tag, q: 'ふり返り：この証明のポイントは？', a: def.point.a || def.point, sub: def.point.sub || '', dur: 1, b: { t: 'ポイント：' + (def.point.a || def.point), col: C.pink },
+  var pnt = typeof def.point === 'string' ? { a: def.point } : def.point;
+  if (pnt) steps.push({ tag: tag, q: 'ふり返り：この証明のポイントは？', a: pnt.a, sub: pnt.sub || '', dur: 1, b: { t: 'ポイント：' + pnt.a, col: C.pink },
     draw: function (D) { var F = mkF(D); base(D, F, 1, D.ph, D.t); } });
   return steps;
 };
