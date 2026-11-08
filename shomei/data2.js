@@ -1,0 +1,1 @@
+window.SHOMEI = window.SHOMEI || [];
