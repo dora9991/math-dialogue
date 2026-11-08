@@ -290,8 +290,9 @@
       for (var i = 0; i < r[0] + r[1]; i++) CH.fillRect(D, x0 + i * u, r[3], x0 + (i + 1) * u, r[3] + th, { fill: hexA(i < r[0] ? OC : IC, .4), stroke: i < r[0] ? OC : IC, sw: 1 });
     });
     var top = R.y0 + s * .4 + th * 3.6, A = CH.rect(R.x0, top + s * 1.6, R.x1, R.y1 - s * .3), parts = L ? CH.cols(A, 2, .08) : CH.rows(A, 2, .16);
-    function rectGrid(Rr, rows, cols, kb, col, kdir) {
-      var cell = Math.min(Rr.w / cols, (Rr.h - s * 1.8) / rows), w = cell * cols, h = cell * rows, gx = Rr.cx - w / 2, gy = Rr.y0 + s * 1.6, g = D.ctx;
+    var cell = Math.min(parts[0].w / d, (parts[0].h - s * 1.8) / a, parts[1].w / c, (parts[1].h - s * 1.8) / b);
+    function rectGrid(Rr, rows, cols, kb, col) {
+      var w = cell * cols, h = cell * rows, gx = Rr.cx - w / 2, gy = Rr.y0 + s * 1.6, g = D.ctx;
       CH.fillRect(D, gx, gy, gx + w, gy + h, { fill: hexA(col, .25), stroke: col, sw: 2 });
       g.save(); g.globalAlpha = D.ga * .45; g.strokeStyle = C.chalk; g.lineWidth = 1; g.beginPath();
       for (var i = 1; i < cols; i++) { g.moveTo(gx + i * cell, gy); g.lineTo(gx + i * cell, gy + h); } for (var j = 1; j < rows; j++) { g.moveTo(gx, gy + j * cell); g.lineTo(gx + w, gy + j * cell); } g.stroke(); g.restore();
@@ -309,8 +310,8 @@
     brace(D, x0, x0 + W, y - 4, C.chalk, 1, true, 9); say(D, x0 + W / 2, y - s * 1.4, 'a＋b ＝ 42', { size: s * .9 });
     CH.fillRect(D, x0, y, x0 + 3 * u, y + h, { fill: hexA(OC, .35), stroke: OC }); CH.fillRect(D, x0 + 3 * u, y, x0 + W, y + h, { fill: hexA(IC, .35), stroke: IC });
     for (var i = 1; i < 7; i++) if (i !== 3) CH.line(D, x0 + i * u, y, x0 + i * u, y + h, { col: C.chalk, w: 1.2, a: ka, dash: [4, 4] });
-    say(D, x0 + 1.5 * u, y + h / 2, ka > .5 ? 'a　3つ分' : 'a', { col: C.chalk, size: Math.min(s, h * .5) });
-    say(D, x0 + 5 * u, y + h / 2, ka > .5 ? 'b　4つ分' : 'b', { col: C.chalk, size: Math.min(s, h * .5) });
+    say(D, x0 + 1.5 * u, y + h / 2, ka > .5 ? 'a　3つ分' : 'a', { col: C.chalk, size: Math.min(s, h * .5), outline: OUT });
+    say(D, x0 + 5 * u, y + h / 2, ka > .5 ? 'b　4つ分' : 'b', { col: C.chalk, size: Math.min(s, h * .5), outline: OUT });
     brace(D, x0, x0 + W, y + h + 4, C.yel, ka, false, 9); say(D, x0 + W / 2, y + h + s * 1.5, '全体は 3＋4＝7つ分', { col: C.yel, a: ka, size: s * .9 });
     var kb = CH.smooth(.85, 1, k);
     if (kb > 0) { say(D, x0 + 1.5 * u, y + h + s * 2.9, 'a＝18', { col: OC, a: kb, size: s }); say(D, x0 + 5 * u, y + h + s * 2.9, 'b＝24', { col: IC, a: kb, size: s }); }
