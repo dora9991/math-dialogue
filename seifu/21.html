@@ -106,20 +106,21 @@
   /* ---- 棒グラフ：ちがいの行・基準の線・ならす ----
      o：y（[下, 上]）、yt、unit、names、base（基準。null なら線なし）、bA（線の濃さ）、dA(i)（ちがいの色・字の濃さ）、lv（ならす 0→1）、avg、avA、tag（ちがいの行の見出し） */
   function bars(D, R, vals, o) {
-    var s = CH.fs(D), n = vals.length, top = s * 2.2, Ax = CH.axes(D, CH.rect(R.x0 + s * 2.2, R.y0 + top + s * 1.2, R.x1 - s * 4.2, R.y1 - s * 1.6), { x: [0, n], y: o.y, xt: [], yt: o.yt, cut: o.y[0] > 0, yl: o.unit, size: CH.fs(D, .75) });
+    var s = CH.fs(D), n = vals.length, top = o.base != null || o.tagRow ? s * 3.4 : s * 1.2, Ax = CH.axes(D, CH.rect(R.x0 + s * 2.2, R.y0 + top + s * 1.2, R.x1 - s * 4.2, R.y1 - s * 1.6), { x: [0, n], y: o.y, xt: [], yt: o.yt, cut: o.y[0] > 0, yl: o.unit, size: CH.fs(D, .75) });
     var lv = CH.ease(o.lv || 0), bw = Ax.R.w / n, z = Math.min(s * 1.05, bw * .42);
     vals.forEach(function (v, i) {
       var vv = CH.lerp(v, o.avg == null ? v : o.avg, lv), x0 = Ax.X(i + .18), x1 = Ax.X(i + .82), yb = Ax.Y(o.y[0]), yt = Ax.Y(vv), d = o.base == null ? 0 : r2(v - o.base), da = o.dA ? o.dA(i) : 0;
       CH.fillRect(D, x0, yt, x1, yb, { fill: 'rgba(242,240,230,.13)', stroke: 'rgba(242,240,230,.75)', sw: 1.6 });
+      if (lv > 0) CH.fillRect(D, x0, Ax.Y(v), x1, yb, { stroke: '#f2f0e6', sw: 1.4, dash: true, a: .45 * lv });
       if (o.base != null && da > 0 && Math.abs(vv - o.base) > 1e-9) { var col = vv > o.base ? POS : NEG; CH.fillRect(D, x0, Ax.Y(o.base), x1, yt, { fill: hexA(col, .45), stroke: col, sw: 2, a: da }); }
       if (lv < .05) CH.text(D, (x0 + x1) / 2, yt - z * .75, S(v), { size: z, num: true, a: 1 - lv * 20 });
       CH.text(D, (x0 + x1) / 2, Ax.R.y1 + z * .95, o.names[i], { size: z * .95 });
-      if (o.base != null && da > 0) TX(D, (x0 + x1) / 2, R.y0 + top * .5, sg(d), { size: z * 1.05, col: sc(d) === C.yel ? C.chalk : sc(d), a: da });
+      if (o.base != null && da > 0) TX(D, (x0 + x1) / 2, R.y0 + s * 2.1, sg(d), { size: z * 1.05, col: sc(d) === C.yel ? C.chalk : sc(d), a: da });
     });
     if (o.base != null) {
       var ba = o.bA == null ? 1 : o.bA; CH.line(D, Ax.R.x0, Ax.Y(o.base), Ax.R.x1 + s * .4, Ax.Y(o.base), { col: C.yel, w: 2.6, dash: [8, 6], a: ba });
       CH.text(D, Ax.R.x1 + s * .5, Ax.Y(o.base) - s * .55, '基準 ' + S(o.base), { size: s * .8, col: C.yel, align: 'left', a: ba });
-      CH.text(D, R.x0, R.y0 + top * .5, o.tag || 'ちがい', { size: Math.min(s * .8, CH.fitSize(D, o.tag || 'ちがい', Ax.R.x0 - R.x0 - 4, s * .8)), col: 'rgba(242,240,230,.75)', align: 'left', a: o.dA ? Math.max.apply(null, vals.map(function (_, i) { return o.dA(i); })) : 0 });
+      CH.text(D, Ax.R.x0, R.y0 + s * .7, o.tag || 'ちがい', { size: s * .8, col: 'rgba(242,240,230,.75)', align: 'left', a: o.dA ? Math.max.apply(null, vals.map(function (_, i) { return o.dA(i); })) : 0 });
     }
     if (o.avA > 0) { CH.line(D, Ax.R.x0, Ax.Y(o.avg), Ax.R.x1 + s * .4, Ax.Y(o.avg), { col: C.green, w: 3, a: o.avA }); CH.text(D, Ax.R.x1 + s * .5, Ax.Y(o.avg) + s * .6, '平均 ' + S(o.avg), { size: s * .85, col: C.green, align: 'left', a: o.avA }); }
     return Ax;
@@ -151,7 +152,7 @@
         b: [{ t: '基準にした値 … <b>仮の平均</b>　大きいちがい … 正の数、小さいちがい … 負の数', col: C.green }, { t: '平均 ＝ <b>基準の値</b> ＋（基準とのちがいの <b>平均</b>）', col: C.green }],
         draw: function (D) {
           var t = D.ph ? D.t : 0, P = split(D, .7), d = diffs(MP, 60), s = CH.fs(D), R = P.A;
-          var Ax = CH.axes(D, CH.rect(R.x0 + s * 2.2, R.y0 + s * 1.2, R.x1 - s * 4.2, R.y1 - s * 1.6), { x: [0, 5], y: [-8, 8], xt: [], yt: [-8, -4, 0, 4, 8], yf: sg, size: CH.fs(D, .75) });
+          var Ax = CH.axes(D, CH.rect(R.x0 + s * 2.2, R.y0 + s * 1.2, R.x1 - s * 6.5, R.y1 - s * 1.6), { x: [0, 5], y: [-8, 8], xt: [], yt: [-8, -4, 0, 4, 8], yf: sg, size: CH.fs(D, .75) });
           CH.line(D, Ax.R.x0, Ax.Y(0), Ax.R.x1 + s * .4, Ax.Y(0), { col: C.yel, w: 2.6 }); CH.text(D, Ax.R.x1 + s * .5, Ax.Y(0) - s * .6, '基準 60', { size: s * .8, col: C.yel, align: 'left' });
           var z = Math.min(s * 1.05, Ax.R.w / 5 * .4);
           d.forEach(function (v, i) {

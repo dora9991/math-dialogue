@@ -271,66 +271,62 @@
   function ex12(D, t) {
     var R = CH.box(D, { l: .04, r: .04, t: .03, b: .03 }), s = CH.fs(D), wide = D.W > D.H * 1.05, P = wide ? CH.cols(R, 2, .08) : CH.rows(R, 2, .06);
     var Ar = P.map(function (p) { return { top: CH.rect(p.x0, p.y0, p.x1, p.y0 + p.h * .4), bot: CH.rect(p.x0, p.y0 + p.h * .44, p.x1, p.y1) }; });
-    var g = .16, rw = rowW(tilesOf(4, 0), 1, g), u = Math.min(Ar[0].bot.w * .9 / rw, (Ar[0].bot.h - s * 1.6) / 6.6, s * 1.35);
+    var g = .16, rw = rowW(tilesOf(4, 0), 1, g), u = Math.min(Ar[0].bot.w * .9 / rw, (Ar[0].bot.h - s * 2.2) / 7.5, s * 1.6);
     chain(D, Ar[0].top, ['（1）4x×(−3)', '＝【4×(−3)】×x', '＝−12x'], t, { labs: ['', '数どうしをかける', ''], last: C.yel, size: s * 1.1 });
     chain(D, Ar[1].top, ['（2）20a÷(−5)', '＝20a×【(−[1/5])】', '＝−4a'], t, { labs: ['', '逆数をかける', ''], last: C.yel, size: s * 1.1 });
     /* (1) 4x の列を 3つにふやして、裏返す */
-    var b = Ar[0].bot, xs = rowPos(tilesOf(4, 0), b.cx - rw * u / 2, u, g), y0 = b.y0 + u * .6, dy = u * 1.3;
+    var b = Ar[0].bot, xs = rowPos(tilesOf(4, 0), b.cx - rw * u / 2, u, g), dy = u * 1.5, y0 = b.y0 + (b.h - 3.5 * dy - s * 2.2) / 2 + u / 2;
     var k1 = sm(.04, .3, t), f = sm(.4, .62, t), la = sm(.66, .8, t);
     for (var r = 0; r < 3; r++) xs.forEach(function (x) { if (r === 0 || k1 > 0) ftile(D, x, y0 + r * dy * k1, 'x', u, false, f, { a: r ? k1 : 1 }); });
     TX(D, b.cx, y0 + 2 * dy + u * .5 + s * .9, '4x が 3つ → 符号を変える → −12x', { size: fit(D, '4x が 3つ → 符号を変える → −12x', b.w, s * .9), col: C.yel, a: la });
     /* (2) 20a を 5つの組に分けて、1組を裏返す */
-    var b2 = Ar[1].bot, xs2 = rowPos(tilesOf(4, 0), b2.cx - rw * u / 2, u, g), gp = sm(.04, .28, t), hi = sm(.32, .44, t), f2 = sm(.46, .66, t), dy2 = u * (1.12 + .2 * gp), y02 = b2.y0 + u * .6;
-    for (r = 0; r < 5; r++) {
-      var yy = y02 + r * dy2, al = r ? 1 - hi * .65 : 1;
-      if (gp > 0) rr(D, b2.cx - rw * u / 2 - u * .2, yy - u * .6, b2.cx + rw * u / 2 + u * .2, yy + u * .6, { r: u * .25, stroke: C.lav, sw: 1.6, dash: [5, 4], a: gp * al });
-      xs2.forEach(function (x) { ftile(D, x, yy, 'x', u, false, r === 0 ? f2 : 0, { lab: 'a', a: al, glow: r === 0 && hi > .5 && f2 < 1 }); });
+    groups(D, Ar[1].bot, tilesOf(4, 0), 5, t, { lab: 'a', flip: true, max: u, foot: '5つに分けた 1つ分 → 符号を変える → −4a' });
+  }
+
+  /* ---- いくつかの組に分けたタイル（÷数）：n組の列が はなれて、1組めが光る（o.flip なら、1組めが裏返る） ---- */
+  function groups(D, B, T, n, t, o) {
+    o = o || {}; var s = CH.fs(D), g = .16, rw = rowW(T, 1, g), gp = CH.ease(sm(.03, .25, t)), hi = sm(.3, .42, t), f = o.flip ? sm(.45, .65, t) : 0;
+    var capH = o.cap ? s * 1.8 : 0, footH = s * 2.2, u = Math.min(B.w * .9 / rw, (B.h - capH - footH) / (n * 1.5), o.max || s * 1.6), dy = u * (1.14 + .36 * gp);
+    var H = capH + (n - 1) * u * 1.5 + u + footH, y0 = B.y0 + (B.h - H) / 2 + capH + u / 2, xs = rowPos(T, B.cx - rw * u / 2, u, g);
+    if (o.cap) TX(D, B.cx, y0 - u / 2 - s * 1, o.cap, { size: s * 1.05 });
+    for (var r = 0; r < n; r++) {
+      var yy = y0 + r * dy, al = r ? 1 - hi * .65 : 1;
+      if (gp > 0) rr(D, B.cx - rw * u / 2 - u * .2, yy - u * .64, B.cx + rw * u / 2 + u * .2, yy + u * .64, { r: u * .25, stroke: C.lav, sw: 1.6, dash: [5, 4], a: gp * al });
+      T.forEach(function (q, i) { ftile(D, xs[i], yy, q.k, u, q.neg, r === 0 ? f : 0, { a: al, lab: o.lab, glow: r === 0 && hi > .5 && (!o.flip || f < 1) }); });
     }
-    TX(D, b2.cx, y02 + 4 * dy2 + u * .5 + s * .9, '5つに分けた 1つ分 → 符号を変える → −4a', { size: fit(D, '5つに分けた 1つ分 → 符号を変える → −4a', b2.w, s * .9), col: C.yel, a: sm(.7, .84, t) });
+    if (o.foot) TX(D, B.cx, y0 + (n - 1) * u * 1.5 + u * .5 + s * 1.2, o.foot, { size: fit(D, o.foot, B.w, s * .95), col: C.yel, a: sm(.68, .8, t) });
   }
 
   /* ---- 例題（3）：−2(3x−5)。(3x−5) が 2つ分、裏返って −6x＋10 ---- */
   var T35 = tilesOf(3, -5);
   CH.check(countT([].concat(T35, T35)).x * -1 === -6 && countT([].concat(T35, T35)).c * -1 === 10, 'タイルの数（−6x＋10）');
   function ex3(D, t) {
-    var R = CH.box(D, { l: .04, r: .04, t: .04, b: .04 }), s = CH.fs(D), wide = D.W > D.H * 1.05;
-    var A = wide ? CH.rect(R.x0, R.y0, R.x0 + R.w * .52, R.y1) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .48), B = wide ? CH.rect(R.x0 + R.w * .56, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .52, R.x1, R.y1);
-    var z = Math.min(s * 1.35, A.w / 8), y1 = A.y0 + (wide ? A.h * .22 : z * 2.2), k1 = sm(.02, .16, t), k2 = sm(.1, .26, t);
+    var R = CH.box(D, { l: .04, r: .04, t: .03, b: .03 }), s = CH.fs(D);
+    var A = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .42), B = CH.rect(R.x0, R.y0 + R.h * .46, R.x1, R.y1);
+    var z = Math.min(s * 1.35, A.w / 8), y1 = A.y0 + z * 1.65, k1 = sm(.02, .16, t), k2 = sm(.1, .26, t);
     var P = seq(D, A.cx, y1, ['−2', '(', '3x', '−5', ')'], { size: z });
     arc(D, P[0].cx, P[2].cx, y1 - z * .7, C.pink, k1, { h: z * .4 });
     arc(D, P[0].cx, P[3].cx, y1 - z * .7, C.pink, k2, { h: z * .75 });
-    if (t > 0) chain(D, CH.rect(A.x0, y1 + z * .9, A.x1, A.y1), ['＝(−2)×3x＋【(−2)×(−5)】', '＝−6x＋10'], sm(.3, .9, t), { labs: ['', '符号に気をつける'], last: C.yel, size: z * .9, top: true, a: sm(.25, .35, t) });
+    if (t > 0) chain(D, CH.rect(A.x0, y1 + z * .8, A.x1, A.y1), ['＝(−2)×3x＋【(−2)×(−5)】', '＝−6x＋10'], sm(.3, .9, t), { labs: ['', '符号に気をつける'], last: C.yel, size: z * .9, top: true, a: sm(.25, .35, t) });
     /* タイル：(3x−5) の列 → 2つ分の列が出て、裏返る */
-    var g = .16, rw = rowW(T35, 1, g), u = Math.min(B.w * .92 / rw, (B.h - s * 4) / 4.6, s * 1.5), xs = rowPos(T35, B.cx - rw * u / 2, u, g);
-    var y0 = B.y0 + (wide ? B.h * .14 : s * .8) + u / 2, yc = y0 + u * 1.9, dy = u * 1.3, kc = sm(.05, .3, t), f = sm(.36, .62, t);
-    TX(D, B.cx, y0 - u * .5 - s * .7, '3x−5', { size: s, col: C.chalk });
+    var g = .16, rw = rowW(T35, 1, g), u = Math.min(B.w * .9 / rw, (B.h - s * 3.2) / 4.4, s * 1.55), xs = rowPos(T35, B.cx - rw * u / 2, u, g);
+    var H = u * 4.4 + s * 3.2, y0 = B.y0 + (B.h - H) / 2 + s * 1.4 + u / 2, yc = y0 + u * 1.9, dy = u * 1.3, kc = sm(.05, .3, t), f = sm(.36, .62, t);
+    TX(D, B.cx, y0 - u * .5 - s * .75, '3x−5', { size: s });
     T35.forEach(function (q, i) { tile(D, xs[i], y0, q.k, u, { neg: q.neg }); });
-    TX(D, B.cx, y0 + u * .95, '×(−2) ↓', { size: s * .85, col: C.pink, a: t > 0 ? 1 : .6 });
+    TX(D, xs[xs.length - 1] + u * .8, y0 + u * .95, '×(−2)', { size: s * .9, col: C.pink, align: 'left', a: t > 0 ? 1 : .6 });
+    CH.arrow(D, xs[xs.length - 1] + u * .4, y0 + u * .6, xs[xs.length - 1] + u * .4, y0 + u * 1.3, { col: C.pink, head: 7, a: t > 0 ? 1 : .6 });
     for (var r = 0; r < 2; r++) T35.forEach(function (q, i) { if (kc > 0) ftile(D, xs[i], CH.lerp(y0, yc + r * dy, kc), q.k, u, q.neg, f, { a: kc }); });
-    TX(D, B.cx, yc + dy + u * .5 + s * 1.1, '2つ分を裏返す → −x が 6こ、1 が 10こ', { size: fit(D, '2つ分を裏返す → −x が 6こ、1 が 10こ', B.w, s * .9), col: C.yel, a: sm(.66, .8, t) });
+    TX(D, B.cx, yc + dy + u * .5 + s * 1.1, '2つ分を裏返す → −x が 6こ、1 が 10こ', { size: fit(D, '2つ分を裏返す → −x が 6こ、1 が 10こ', B.w, s * .95), col: C.yel, a: sm(.66, .8, t) });
   }
 
   /* ---- 例題（4）：(15x−10)÷5。タイルを 5つの組に等しく分ける ---- */
-  var T4 = tilesOf(15, -10);
-  CH.check(countT(T4).x === 15 && countT(T4).c === -10 && 15 % 5 === 0 && 10 % 5 === 0, 'タイルの数（15x−10）');
+  var T4 = tilesOf(3, -2);
+  CH.check(countT(T4).x * 5 === 15 && countT(T4).c * 5 === -10, 'タイルの数（15x−10 を 5組）');
   function ex4(D, t) {
-    var R = CH.box(D, { l: .04, r: .04, t: .04, b: .04 }), s = CH.fs(D), wide = D.W > D.H * 1.05;
-    var A = wide ? CH.rect(R.x0, R.y0, R.x0 + R.w * .46, R.y1) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .4), B = wide ? CH.rect(R.x0 + R.w * .5, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .44, R.x1, R.y1);
-    chain(D, A, ['(15x−10)÷5', '＝(15x−10)×【[1/5]】', '＝[15x/5]−[10/5]', '＝3x−2'], t, { labs: ['', '逆数をかける', '', ''], last: C.yel, size: Math.min(s * 1.15, A.w / 9) });
-    /* はじめ：x のタイル 3段×5、その下に −1 のタイル 2段×5（つめて）。あと：5つの組（たての列）に分ける */
-    var g = .16, cg = CH.lerp(g, .7, CH.ease(sm(.05, .32, t))), cw = XW + cg, W1 = 5 * XW + 4 * .7;
-    var u = Math.min(B.w * .9 / W1, (B.h - s * 2.4) / 6.4, s * 1.4), x0 = B.cx - (5 * XW + 4 * cg) * u / 2, y0 = B.y0 + (B.h - s * 2.4 - 6 * u) / 2 + u / 2;
-    var hi = sm(.4, .52, t), la = sm(.6, .75, t), mv = CH.ease(sm(.05, .32, t));
-    for (var c = 0; c < 5; c++) {
-      var cx = x0 + (c * cw + XW / 2) * u, al = c ? 1 - hi * .65 : 1;
-      if (mv > 0) rr(D, cx - XW * u / 2 - u * .18, y0 - u * .68, cx + XW * u / 2 + u * .18, y0 + 4 * u * 1.18 + u * .68, { r: u * .25, stroke: C.lav, sw: 1.6, dash: [5, 4], a: mv * al });
-      for (var r = 0; r < 3; r++) tile(D, cx, y0 + r * u * 1.18, 'x', u, { a: al, glow: c === 0 && hi > .5 });
-      for (r = 0; r < 2; r++) {
-        var ux0 = B.cx - (5 + 4 * g) * u / 2 + (c * (1 + g) + .5) * u;
-        tile(D, CH.lerp(ux0, cx, mv), y0 + (3 + r) * u * 1.18, '1', u, { neg: true, a: al, glow: c === 0 && hi > .5 });
-      }
-    }
-    TX(D, B.cx, y0 + 4 * u * 1.18 + u * .7 + s * 1.1, '5つに等しく分けた 1つ分 → 3x−2', { size: fit(D, '5つに等しく分けた 1つ分 → 3x−2', B.w, s), col: C.yel, a: la });
+    var R = CH.box(D, { l: .04, r: .04, t: .03, b: .03 }), s = CH.fs(D), wide = D.W > D.H * 1.05;
+    var A = wide ? CH.rect(R.x0, R.y0, R.x0 + R.w * .44, R.y1) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .42), B = wide ? CH.rect(R.x0 + R.w * .48, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .45, R.x1, R.y1);
+    chain(D, A, ['(15x−10)÷5', '＝(15x−10)×【[1/5]】', '＝[15x/5]−[10/5]', '＝3x−2'], t, { labs: ['', '逆数をかける', '', ''], last: C.yel, size: Math.min(s * 1.2, A.w / 8.5) });
+    groups(D, B, T4, 5, t, { cap: '15x−10', foot: '5つに等しく分けた 1つ分 → 3x−2' });
   }
 
   /* ---- 考えよう：6x＋18 のタイルを、k組に分ける道具 ---- */
@@ -361,21 +357,13 @@
 
   /* ---- チャレンジ：−8x＋20 を 4つに分けて、符号を変える ---- */
   var TC = tilesOf(-2, 5);
-  CH.check(countT([].concat(TC, TC, TC, TC)).x === -8 && countT([].concat(TC, TC, TC, TC)).c === 20, 'タイルの数（−8x＋20）');
+  CH.check(countT(TC).x * 4 === -8 && countT(TC).c * 4 === 20, 'タイルの数（−8x＋20 を 4組）');
   function chal(D, t) {
-    var R = CH.box(D, { l: .04, r: .04, t: .04, b: .04 }), s = CH.fs(D), wide = D.W > D.H * 1.05;
-    var A = wide ? CH.rect(R.x0, R.y0, R.x0 + R.w * .5, R.y1) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .44), B = wide ? CH.rect(R.x0 + R.w * .54, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .48, R.x1, R.y1);
-    if (t > 0) chain(D, A, ['① (−8x＋20)÷(−4)', '＝(−8x＋20)×【(−[1/4])】', '＝2x−5', '② 3(2x−5)＝6x−15'], t, { labs: ['', '逆数をかける', '', ''], last: C.yel, size: Math.min(s * 1.1, A.w / 10) });
-    else TX(D, A.cx, A.cy, '？ × (−4) ＝ −8x＋20', { size: fit(D, '？ × (−4) ＝ −8x＋20', A.w, s * 1.3) });
-    var g = .16, rw = rowW(TC, 1, g), u = Math.min(B.w * .9 / rw, (B.h - s * 3.2) / 5.8, s * 1.45), xs = rowPos(TC, B.cx - rw * u / 2, u, g);
-    var gp = sm(.03, .22, t), hi = sm(.26, .36, t), f = sm(.38, .56, t), dy = u * (1.14 + .3 * gp), y0 = B.y0 + s * 1.6 + u / 2;
-    TX(D, B.cx, B.y0 + s * .6, '−8x＋20', { size: s * 1.05 });
-    for (var r = 0; r < 4; r++) {
-      var yy = y0 + r * dy, al = r ? 1 - hi * .65 : 1;
-      if (gp > 0) rr(D, B.cx - rw * u / 2 - u * .2, yy - u * .62, B.cx + rw * u / 2 + u * .2, yy + u * .62, { r: u * .25, stroke: C.lav, sw: 1.6, dash: [5, 4], a: gp * al });
-      TC.forEach(function (q, i) { ftile(D, xs[i], yy, q.k, u, q.neg, r === 0 ? f : 0, { a: al, glow: r === 0 && hi > .5 && f < 1 }); });
-    }
-    TX(D, B.cx, y0 + 3 * dy + u * .6 + s * 1.1, '4つに分けた 1つ分の符号を変える → 2x−5', { size: fit(D, '4つに分けた 1つ分の符号を変える → 2x−5', B.w, s * .9), col: C.yel, a: sm(.58, .7, t) });
+    var R = CH.box(D, { l: .04, r: .04, t: .03, b: .03 }), s = CH.fs(D), wide = D.W > D.H * 1.05;
+    var A = wide ? CH.rect(R.x0, R.y0, R.x0 + R.w * .46, R.y1) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .42), B = wide ? CH.rect(R.x0 + R.w * .5, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .45, R.x1, R.y1);
+    if (t > 0) chain(D, A, ['① (−8x＋20)÷(−4)', '＝(−8x＋20)×【(−[1/4])】', '＝2x−5', '② 3(2x−5)＝6x−15'], t, { labs: ['', '逆数をかける', '', ''], last: C.yel, size: Math.min(s * 1.15, A.w / 9.5) });
+    else TX(D, A.cx, A.cy, '？×(−4)＝−8x＋20', { size: fit(D, '？×(−4)＝−8x＋20', A.w, s * 1.4) });
+    groups(D, B, TC, 4, t, { flip: true, cap: '−8x＋20', foot: '4つに分けた 1つ分の符号を変える → 2x−5' });
   }
 
   K3.run({

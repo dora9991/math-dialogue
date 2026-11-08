@@ -581,7 +581,7 @@ function run(cfg) {
     if (state.idx > 0) { var p = steps[state.idx - 1]; enter(state.idx - 1, hasAns(p) ? 1 : 0, false); }
   }
   function replay() { var st = cur(); enter(state.idx, hasAns(st) ? 1 : 0, true); }
-  function setDone(b) { state.done = b; panel.classList.toggle('done', b && (state.phase === 1)); renderBanner(); }
+  function setDone(b) { state.done = b; panel.classList.toggle('done', b && (state.phase === 1)); renderBanner(); renderBoard(); }
 
   /* 板書：これまでのステップの b を、上から順に（同じ key は書きかえる） */
   function boardItems() {

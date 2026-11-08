@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>項の和とみて計算する</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 正の数・負の数 第8時：加法と減法の混じった式を、項の和とみて計算しよう（ikkan の lesson_seifu_08 と同じ流れ）。
+   式の「−(＋9)」「−(−6)」が「＋(−9)」「＋(＋6)」に変わり、正の項（青）・負の項（赤）の札が、それぞれ集まってまとまる。
+   (＋2)＋(−7)＋(＋4) のかっこと ＋ が消えて 2−7＋4 に。考えようは「2−9」を2通りに読む道具（答えの数は書かない）。
+   数値は ikkan のまま（今日の問い、ことば、例題 (1)(2)、考えよう 2−9・5−11、チャレンジ A〜D と 80点）。考えようの −3−4 は自作。
+   答えはページの中で、式をそのまま計算したものと、正の項・負の項に分けて計算したものを照らし合わせている。 */
+(function () {
+  var C = CH.C, S = CH.mnum, POS = C.blue, NEG = C.pink, OUT = 'rgba(20,40,30,.9)', NUMF = '"BIZ UDPGothic","Hiragino Kaku Gothic ProN",sans-serif';
+  function sg(v) { return v > 0 ? '＋' + S(v) : S(v); }
+  function pr(v) { return '(' + sg(v) + ')'; }
+  function sc(v) { return v > 0 ? POS : v < 0 ? NEG : C.yel; }
+  function rgba(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function sum(a) { return a.reduce(function (p, q) { return p + q; }, 0); }
+  /* 式の字をそのまま計算する（− は U+2212、＋ は全角） */
+  function ev(str) { return Function('return (' + str.replace(/−/g, '-').replace(/＋/g, '+') + ')')(); }
+
+  /* ---- 札（項）と、札の並びの動き（第6時と同じ） ---- */
+  function tile(D, x, y, w, h, v, o) {
+    o = o || {}; var str = v === 0 ? '0' : sg(v), col = sc(v), a = o.a == null ? 1 : o.a; if (a <= .01) return;
+    CH.card(D, x, y, w, h, '', { col: col, fill: rgba(col, .16), sw: 2, a: a });
+    CH.text(D, x, y + 1, str, { size: CH.fitSize(D, str, w * .84, h * .52, { num: true }), num: true, col: col, a: a, w: 700 });
+  }
+  function seq(D, cx, y, frames, k, o) {
+    var tw = o.tw, th = o.th, ow = o.ow || tw * .5, N = frames.length;
+    function lay(F) { var n = F.items.length, W = n * tw + (n - 1) * ow, x0 = cx - W / 2 + tw / 2, P = {}; F.items.forEach(function (it, i) { P[it.id] = x0 + i * (tw + ow); }); return P; }
+    var n = N < 2 ? 0 : Math.min(N - 2, Math.floor(k)), f = N < 2 ? 0 : CH.ease(CH.clamp(k - n, 0, 1)), A = frames[n], B = frames[N < 2 ? 0 : n + 1], PA = lay(A), PB = lay(B);
+    [[A, PA, 1 - f], [B, PB, f]].forEach(function (q) {
+      var F = q[0], P = q[1], al = N < 2 ? 1 : q[2]; if (al <= .01) return;
+      F.items.forEach(function (it, i) { if (i) CH.text(D, (P[F.items[i - 1].id] + P[it.id]) / 2, y, '＋', { size: th * .5, a: al, num: true }); });
+      (F.br || []).forEach(function (b) { var x0 = P[F.items[b[0]].id] - tw / 2 - th * .18, x1 = P[F.items[b[1]].id] + tw / 2 + th * .18; CH.fillRect(D, x0, y - th * .72, x1, y + th * .72, { stroke: C.yel, sw: 2.4, a: al }); });
+      if (F.note) CH.text(D, cx, y + th * 1.25, F.note, { size: CH.fitSize(D, F.note, o.w || 600, th * .42), col: C.yel, a: al });
+    });
+    A.items.forEach(function (it) {
+      if (N < 2) { tile(D, PA[it.id], y, tw, th, it.v); return; }
+      if (PB[it.id] != null) { var xa = PA[it.id], xb = PB[it.id], up = Math.abs(xb - xa) > 1 ? (xb > xa ? -1 : 1) * Math.sin(Math.PI * f) * th * .95 : 0; tile(D, CH.lerp(xa, xb, f), y + up, tw, th, it.v); }
+      else tile(D, CH.lerp(PA[it.id], it.into != null ? PB[it.into] : PA[it.id], f), y, tw, th, it.v, { a: 1 - CH.smooth(.55, 1, f) });
+    });
+    if (N > 1) B.items.forEach(function (it) { if (PA[it.id] == null) tile(D, PB[it.id], y, tw, th, it.v, { a: CH.smooth(.45, 1, f) }); });
+  }
+  function prog(t, N) { var m = N - 1; if (t >= 1) return m; var j = Math.floor(t * m), l = t * m - j; return j + CH.clamp(l / .7, 0, 1); }
+  function F(list, br, note, into) { var fr = { items: list.map(function (q) { return { id: q[0], v: q[1], into: q[2] }; }), br: br, note: note }; return fr; }
+  function size(D, R, n) { var s = CH.fs(D), tw = Math.min(s * 3.4, R.w / (n * 1.5 + .6)); return { tw: tw, th: tw * .64, w: R.w * .95 }; }
+
+  /* ---- 式の字のならび。list：[{id, t, col}]。A から B へ f で動かす（同じ id は動く、字がちがえば入れかわる） ---- */
+  function lay(D, list, size, cx) {
+    var g = D.ctx, P = {}, W = 0; g.save(); g.font = '700 ' + size + 'px ' + NUMF;
+    var ws = list.map(function (q) { return g.measureText(q.t).width + size * .06; }); g.restore();
+    W = ws.reduce(function (p, q) { return p + q; }, 0); var x = cx - W / 2;
+    list.forEach(function (q, i) { P[q.id] = { x: x + ws[i] / 2, w: ws[i], q: q }; x += ws[i]; });
+    return P;
+  }
+  function morph(D, cx, y, A, B, f, size, o) {
+    o = o || {}; var PA = lay(D, A, size, cx), PB = lay(D, B, size, cx), ids = {}; A.concat(B).forEach(function (q) { ids[q.id] = 1; });
+    Object.keys(ids).forEach(function (id) {
+      var a = PA[id], b = PB[id];
+      if (a && b) {
+        var x = CH.lerp(a.x, b.x, f);
+        if (a.q.t === b.q.t && a.q.col === b.q.col) CH.text(D, x, y, a.q.t, { size: size, num: true, w: 700, col: a.q.col || C.chalk });
+        else { CH.text(D, x, y, a.q.t, { size: size, num: true, w: 700, col: a.q.col || C.chalk, a: 1 - f }); CH.text(D, x, y, b.q.t, { size: size, num: true, w: 700, col: b.q.col || C.chalk, a: f }); if (o.ring) CH.fillRect(D, x - b.w / 2 - 2, y - size * .7, x + b.w / 2 + 2, y + size * .7, { stroke: C.yel, sw: 2, a: CH.smooth(0, .3, f) * (o.ringKeep ? 1 : 1 - CH.smooth(.8, 1, f)) }); }
+      } else if (a) CH.text(D, a.x, y, a.q.t, { size: size, num: true, w: 700, col: a.q.col || C.chalk, a: 1 - CH.smooth(0, .6, f) });
+      else CH.text(D, b.x, y, b.q.t, { size: size, num: true, w: 700, col: b.q.col || C.chalk, a: CH.smooth(.4, 1, f) });
+    });
+    return PB;
+  }
+  function T(spec) { return spec.map(function (q, i) { return { id: q[0], t: q[1], col: q[2] }; }); }
+
+  /* ---- 数直線と矢印（考えよう・チャレンジ） ---- */
+  function NL(D, x0, x1, y, min, max, o) {
+    o = o || {}; var s = o.s || CH.fs(D, .8), u = (x1 - x0) / (max - min), X = function (v) { return x0 + (v - min) * u; };
+    var lab = o.lab || [1, 2, 5, 10, 20, 50].filter(function (q) { return q * u >= s * 2.1; })[0] || 100, st = u < 8 ? lab : 1;
+    CH.arrow(D, x0 - s * .5, y, x1 + s * 1.1, y, { w: 2, head: 9 });
+    for (var v = Math.ceil(min / st) * st; v <= max + 1e-9; v += st) {
+      var isL = v % lab === 0, h = v === 0 ? 9 : isL ? 7 : 4;
+      CH.line(D, X(v), y - h, X(v), y + h, { w: v === 0 ? 2.4 : 1.4 });
+      if (isL) CH.text(D, X(v), y + s * 1.25, o.fmt ? o.fmt(v) : S(v), { size: s, num: true, col: v < 0 ? 'rgba(255,157,178,.95)' : v === 0 ? C.yel : C.chalk });
+    }
+    return { X: X, y: y, s: s, u: u };
+  }
+  function jump(D, L, from, to, o) {
+    o = o || {}; var k = o.k == null ? 1 : o.k; if (k <= 0) return;
+    var y = L.y - L.s * (o.h || 1.6) * (o.lev || 1), col = o.col || sc(to - from), a = o.a == null ? 1 : o.a, x0 = L.X(from), x1 = CH.lerp(x0, L.X(to), k);
+    if (!o.nodrop) CH.line(D, x0, L.y - 3, x0, y, { col: col, dash: [3, 4], w: 1.2, a: a * .55 });
+    if (Math.abs(x1 - x0) > 2) CH.arrow(D, x0, y, x1, y, { col: col, w: o.w || 3, head: Math.min(11, Math.abs(x1 - x0) * .8), a: a, dash: o.dash });
+    if (k >= 1 && o.drop) CH.line(D, x1, y, x1, L.y - 3, { col: col, dash: [3, 4], w: 1.2, a: a * .55 });
+    if (o.txt) CH.text(D, (x0 + x1) / 2, y - L.s * .75, o.txt, { col: col, size: o.ts || L.s * .95, a: a * CH.smooth(.3, .8, k), outline: OUT, num: true });
+  }
+
+  /* ---- 数と検算 ---- */
+  CH.check(ev('(＋5)−(＋9)＋(−3)−(−6)') === -1 && ev('(＋5)＋(−9)＋(−3)＋(＋6)') === -1 && (5 + 6) + (-9 - 3) === -1, '今日の問い');
+  CH.check(ev('(＋2)＋(−7)＋(＋4)') === ev('2−7＋4') && ev('2−7＋4') === -1, 'ことば');
+  CH.check(ev('9−14＋6−3') === -2 && 9 + 6 === 15 && -14 - 3 === -17 && 15 + -17 === -2, '例題(1)');
+  CH.check(ev('−7＋(−4)−(−12)−6') === -5 && ev('−7−4＋12−6') === -5 && -7 - 4 - 6 === -17 && 12 + -17 === -5 && ev('−(−12)') === 12 && ev('＋(−4)') === -4, '例題(2)');
+  var RD = [[2, 9], [5, 11], [-3, 4]];
+  CH.check(RD.every(function (p) { return ev(pr(p[0]) + '−' + pr(p[1])) === ev(pr(p[0]) + '＋' + pr(-p[1])) && ev(pr(p[0]) + '＋' + pr(-p[1])) === p[0] - p[1]; }), '考えよう（2通りの読み方が同じになることを、ここで確かめるだけ）');
+  var DIFF = [0, -7, -7 + 9, -7 + 9 - 5], SC = DIFF.map(function (d) { return 80 + d; });
+  CH.check(DIFF[3] === -3 && SC.join() === '80,73,82,77' && sum(SC) / 4 === 78 && 80 + sum(DIFF) / 4 === 78, 'チャレンジ');
+
+  /* ---- 式 ---- */
+  var Q0 = T([['a', '(＋5)', POS], ['o1', '−', C.chalk], ['b', '(＋9)', C.chalk], ['o2', '＋', C.chalk], ['c', '(−3)', NEG], ['o3', '−', C.chalk], ['d', '(−6)', C.chalk]]);
+  var Q1 = T([['a', '(＋5)', POS], ['o1', '＋', C.yel], ['b', '(−9)', NEG], ['o2', '＋', C.chalk], ['c', '(−3)', NEG], ['o3', '＋', C.yel], ['d', '(＋6)', POS]]);
+  var K0 = T([['p1', '('], ['t1', '＋2', POS], ['q1', ')'], ['o1', '＋'], ['p2', '('], ['t2', '−7', NEG], ['q2', ')'], ['o2', '＋'], ['p3', '('], ['t3', '＋4', POS], ['q3', ')']]);
+  var K1 = T([['t1', '2', POS], ['t2', '−7', NEG], ['t3', '＋4', POS]]);
+  var E2A = T([['a', '−7', NEG], ['o1', '＋'], ['p1', '('], ['b', '−4', NEG], ['q1', ')'], ['o2', '−'], ['p2', '('], ['c', '−12', C.chalk], ['q2', ')'], ['d', '−6', NEG]]);
+  var E2B = T([['a', '−7', NEG], ['b', '−4', NEG], ['c', '＋12', POS], ['d', '−6', NEG]]);
+
+  /* ---- 今日の問い ---- */
+  function askQ(D, k, mode) {
+    var R = CH.box(D, { l: .04, r: .04, t: .06, b: .06 }), s = CH.fs(D), big = Math.min(s * 1.7, R.w / 12), y1 = R.y0 + R.h * .14;
+    morph(D, R.cx, y1, Q0, Q0, 0, big);
+    if (mode === 0) { CH.text(D, R.cx, y1 + big * 1.6, 'ひき算と、たし算が まじっている', { size: s * .9, col: 'rgba(242,240,230,.75)' }); return; }
+    var y2 = y1 + big * 2.4, f = mode === 1 ? CH.ease(CH.smooth(.1, .7, k)) : 1;
+    CH.text(D, R.x0, y2, '＝', { size: big, num: true, align: 'left' });
+    morph(D, R.cx, y2, Q0, Q1, f, big, { ring: mode === 1, ringKeep: true });
+    if (mode === 1) { CH.text(D, R.cx, y2 + big * 1.6, '−(＋9) → ＋(−9)、−(−6) → ＋(＋6)', { size: CH.fitSize(D, '−(＋9) → ＋(−9)、−(−6) → ＋(＋6)', R.w * .9, s * .9), col: C.yel, a: CH.smooth(.7, .9, k), num: true }); return; }
+    var z = size(D, R, 4.6), fr = [F([['a', 5], ['b', -9], ['c', -3], ['d', 6]]), F([['a', 5], ['d', 6], ['b', -9], ['c', -3]], [[0, 1], [2, 3]], '正の項どうし、負の項どうし'), F([['p', 11], ['n', -12]]), F([['r', -1]])];
+    fr[1].items[0].into = 'p'; fr[1].items[1].into = 'p'; fr[1].items[2].into = 'n'; fr[1].items[3].into = 'n'; fr[2].items[0].into = 'r'; fr[2].items[1].into = 'r';
+    seq(D, R.cx, y2 + big * 1.4 + z.th * 1.6, fr, prog(k, 4), z);
+  }
+  /* ---- ことば ---- */
+  function kotoba(D, k) {
+    var R = CH.box(D, { l: .04, r: .04, t: .08, b: .06 }), s = CH.fs(D), big = Math.min(s * 1.9, R.w / 11), y1 = R.y0 + R.h * .2, y2 = R.y0 + R.h * .58;
+    morph(D, R.cx, y1, K0, K0, 0, big);
+    var f = CH.ease(CH.smooth(.1, .6, k)), PB = morph(D, R.cx, y2, K0, K1, f, big), ka = CH.smooth(.65, .85, k);
+    if (k > 0) CH.arrow(D, R.cx, y1 + big * .8, R.cx, y2 - big * .9, { col: C.yel, w: 2, a: CH.smooth(0, .1, k) });
+    if (k > 0) CH.text(D, R.cx + big * .4, (y1 + y2) / 2, '＋ とかっこを はぶく', { col: C.yel, size: CH.fitSize(D, '＋ とかっこを はぶく', R.w * .45, s * .85), align: 'left', a: CH.smooth(0, .15, k) });
+    if (ka > 0) [['t1', '正の項', POS], ['t2', '負の項', NEG], ['t3', '正の項', POS]].forEach(function (q) { var p = PB[q[0]]; CH.line(D, p.x - p.w / 2, y2 + big * .65, p.x + p.w / 2, y2 + big * .65, { col: q[2], w: 3, a: ka }); CH.text(D, p.x, y2 + big * .65 + s * 1.1, q[1], { col: q[2], size: s * .85, a: ka }); });
+    if (ka > 0) CH.text(D, R.cx, y2 + big * .65 + s * 3, '＋2、−7、＋4 … この式の 項', { col: C.yel, size: CH.fitSize(D, '＋2、−7、＋4 … この式の 項', R.w * .9, s), a: CH.smooth(.85, 1, k), num: true });
+  }
+  /* ---- 例題 ---- */
+  function ex1(D, k) {
+    var R = CH.box(D, { l: .04, r: .04, t: .06, b: .06 }), s = CH.fs(D), big = Math.min(s * 1.7, R.w / 10), y1 = R.y0 + R.h * .12;
+    morph(D, R.cx, y1, T([['a', '9', POS], ['b', '−14', NEG], ['c', '＋6', POS], ['d', '−3', NEG]]), T([['a', '9', POS], ['b', '−14', NEG], ['c', '＋6', POS], ['d', '−3', NEG]]), 0, big);
+    var z = size(D, R, 4.6), fr = [F([['a', 9], ['b', -14], ['c', 6], ['d', -3]]), F([['a', 9], ['c', 6], ['b', -14], ['d', -3]], [[0, 1], [2, 3]], '正の項 9＋6、負の項 −14−3'), F([['p', 15], ['n', -17]]), F([['r', -2]])];
+    fr[1].items[0].into = 'p'; fr[1].items[1].into = 'p'; fr[1].items[2].into = 'n'; fr[1].items[3].into = 'n'; fr[2].items[0].into = 'r'; fr[2].items[1].into = 'r';
+    seq(D, R.cx, R.y0 + R.h * .45, fr, prog(k, 4), z);
+    var lines = [['＝9＋6−14−3', .3], ['＝15−17', .6], ['＝−2', .9]], ly = R.y0 + R.h * .72;
+    lines.forEach(function (q, i) { CH.text(D, R.cx - s * 4 + i * 0, ly + i * s * 1.5, q[0], { col: i === 2 ? C.yel : C.chalk, size: s * 1.05, a: CH.smooth(q[1] - .1, q[1], k), align: 'left', num: true, w: 700 }); });
+  }
+  function ex2(D, k) {
+    var R = CH.box(D, { l: .04, r: .04, t: .06, b: .06 }), s = CH.fs(D), big = Math.min(s * 1.6, R.w / 13), y1 = R.y0 + R.h * .1, y2 = y1 + big * 2.1;
+    morph(D, R.cx, y1, E2A, E2A, 0, big);
+    var f = CH.ease(CH.smooth(0, .3, k));
+    CH.text(D, R.x0, y2, '＝', { size: big, num: true, align: 'left' });
+    morph(D, R.cx, y2, E2A, E2B, f, big, { ring: true, ringKeep: false });
+    CH.text(D, R.cx, y2 + big * 1.3, '＋(−4) は −4、−(−12) は ＋12', { col: C.yel, size: CH.fitSize(D, '＋(−4) は −4、−(−12) は ＋12', R.w * .9, s * .85), a: CH.smooth(.2, .32, k), num: true });
+    var z = size(D, R, 4.6), fr = [F([['a', -7], ['b', -4], ['c', 12], ['d', -6]]), F([['c', 12], ['a', -7], ['b', -4], ['d', -6]], [[1, 3]], '負の項をまとめる'), F([['c', 12], ['n', -17]]), F([['r', -5]])];
+    fr[1].items[1].into = 'n'; fr[1].items[2].into = 'n'; fr[1].items[3].into = 'n'; fr[2].items[0].into = 'r'; fr[2].items[1].into = 'r';
+    seq(D, R.cx, R.y0 + R.h * .62, fr, prog(CH.clamp((k - .35) / .65, 0, 1), 4), z);
+    if (k > .9) CH.text(D, R.cx, R.y1 - s * .5, '＝12−17＝−5', { col: C.yel, size: s * 1.05, a: CH.smooth(.9, 1, k), num: true, w: 700 });
+  }
+  /* ---- 考えよう：「a−b」を2通りに読む ---- */
+  function read2(D, V) {
+    var R = CH.box(D, { l: .05, r: .06, t: .06, b: .08 }), s = CH.fs(D), p = RD[V.e], a = p[0], b = p[1], r = V.r;
+    var big = Math.min(s * 1.8, R.w / 9), ex = S(a) + '−' + b;
+    CH.text(D, R.cx, R.y0 + big * .7, '「' + ex + '」', { size: big, num: true, w: 700, col: C.yel });
+    var how = r ? '「' + sg(a) + ' と −' + b + ' の和」と読む → ' + pr(a) + '＋(−' + b + ')' : '「' + S(a) + ' ひく ' + b + '」と読む → ' + pr(a) + '−(＋' + b + ')';
+    CH.text(D, R.cx, R.y0 + big * 1.9, how, { size: CH.fitSize(D, how, R.w * .95, s), num: true });
+    var L = NL(D, R.x0 + s * .5, R.x1 - s, R.y1 - s * 1.6, -14, 8, { s: CH.fs(D, .8) }), h = Math.min(1.8, (L.y - R.y0 - big * 2.6) / (2.6 * L.s));
+    jump(D, L, 0, a, { lev: 1, h: h, txt: sg(a) });
+    var ya = L.y - L.s * h * 2;
+    if (!r) { CH.arrow(D, L.X(a), ya, L.X(a + b), ya, { col: POS, w: 1.8, dash: [5, 5], a: .5 }); CH.text(D, L.X(a + b / 2), ya - L.s * .8, 'ひく ＋' + b, { col: POS, size: L.s * .85, a: .8 }); }
+    jump(D, L, a, a - b, { lev: 2, h: h, drop: true, nodrop: !r, txt: r ? '−' + b : '' });
+    CH.circle(D, L.X(a - b), L.y, L.s * .4, { fill: C.yel });
+  }
+  /* ---- チャレンジ ---- */
+  function chal(D, k) {
+    var R = CH.box(D, { l: .05, r: .07, t: .08, b: .06 }), s = CH.fs(D), L = NL(D, R.x0, R.x1, R.y0 + R.h * .45, -9, 4, { s: CH.fs(D, .8) }), h = 1.5;
+    var cols = [C.yel, NEG, POS, C.green], names = ['A', 'B', 'C', 'D'];
+    CH.circle(D, L.X(0), L.y, L.s * .42, { fill: C.yel }); CH.text(D, L.X(0), L.y + L.s * 2.6, 'A（基準）', { col: C.yel, size: L.s * .9 });
+    var ks = [CH.smooth(0, .15, k), CH.smooth(.15, .3, k), CH.smooth(.3, .45, k)], st = [[0, -7, '−7'], [-7, 2, '＋9'], [2, -3, '−5']];
+    st.forEach(function (q, i) {
+      jump(D, L, q[0], q[1], { lev: i + 1, h: h, k: ks[i], txt: q[2], drop: true });
+      if (ks[i] >= 1) { CH.circle(D, L.X(q[1]), L.y, L.s * .42, { fill: cols[i + 1] }); CH.text(D, L.X(q[1]), L.y + L.s * 2.6, names[i + 1] + ' ' + sg(q[1]), { col: cols[i + 1], size: L.s * .9, outline: OUT }); }
+    });
+    var ka = CH.smooth(.45, .55, k);
+    if (ka > 0) CH.text(D, R.cx, R.y0 + s * .3, '① −7＋9−5＝−3 → D は A より 3点低い', { col: C.yel, size: CH.fitSize(D, '① −7＋9−5＝−3 → D は A より 3点低い', R.w * .95, s), a: ka, num: true, w: 700 });
+    var kb = CH.smooth(.6, .8, k), kc = CH.smooth(.82, .97, k), ty = L.y + L.s * 4.6, sz = CH.fitSize(D, '② 80、73、82、77 → (80＋73＋82＋77)÷4＝78', R.w * .95, s * .95);
+    if (kb > 0) CH.text(D, R.cx, ty, '② 80、73、82、77 → (80＋73＋82＋77)÷4＝78', { col: C.orange, size: sz, a: kb, num: true });
+    if (kc > 0) CH.text(D, R.cx, ty + sz * 1.8, 'A からのちがいの平均 (0−7＋2−3)÷4＝−2 → 80−2＝78', { col: C.orange, size: CH.fitSize(D, 'A からのちがいの平均 (0−7＋2−3)÷4＝−2 → 80−2＝78', R.w * .95, s * .9), a: kc, num: true });
+  }
+
+  K3.run({
+    no: '第8時', title: '加法と減法の混じった式を、項の和とみて計算しよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '07.html', label: '◀ 第7時' }, { href: '09.html', label: '第9時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '加法と減法の混じった式', q: '加法と減法の混じった式 (＋5)−(＋9)＋(−3)−(−6) を、手早く、まちがえずに計算するくふうを考えよう。',
+        notes: ['① 自分の考え（3分）　計算のしかたを書こう。', '② ペアの考え（3分）　自分とちがう計算のしかたは？'],
+        draw: function (D) { askQ(D, 0, 0); } },
+      { tag: '今日の問い', q: 'ひき算を、たし算に直すと？', a: '(＋5)＋(−9)＋(−3)＋(＋6)', sub: '−(＋9) は ＋(−9)、−(−6) は ＋(＋6)。たし算だけの式になる', dur: 4,
+        b: { t: '＝(＋5)＋(−9)＋(−3)＋(＋6)（たし算だけの式に）', col: C.yel },
+        draw: function (D) { askQ(D, D.ph ? D.t : 0, D.ph ? 1 : 0); } },
+      { tag: '今日の問い', q: '正の数どうし、負の数どうしを まとめると？', a: '(＋11)＋(−12)＝−1', sub: '(＋5)＋(＋6)＝＋11、(−9)＋(−3)＝−12。たし算だけの式なら、順番を変えてまとめてよい', dur: 6,
+        b: { t: '＝(＋11)＋(−12)＝<b>−1</b>', col: C.yel },
+        draw: function (D) { askQ(D, D.ph ? D.t : 0, 2); } },
+      { tag: 'ことば', bh: 'ことば', q: '(＋2)＋(−7)＋(＋4) の ＋2、−7、＋4 を、この式の何という？', a: '項。＋2、＋4 は正の項、−7 は負の項', sub: '加法の記号 ＋ とかっこをはぶいて、2−7＋4 と書ける（式のはじめの ＋ は書かない）', dur: 5,
+        b: [{ t: '＋2、−7、＋4 … この式の<b>項</b>　＋2、＋4 … <b>正の項</b>　−7 … <b>負の項</b>', col: C.green }, { t: '(＋2)＋(−7)＋(＋4) ＝ <b>2−7＋4</b>（＋ とかっこを はぶく）', col: C.green }],
+        draw: function (D) { kotoba(D, D.ph ? D.t : 0); } },
+      { tag: '例題', bh: '例題　項に分けて計算', q: '(1) 9−14＋6−3 を、正の項どうし、負の項どうしをまとめて計算しよう。', a: '−2', sub: '正の項 9＋6＝15、負の項 −14−3＝−17。15−17＝−2', dur: 6,
+        b: { t: '(1) 9−14＋6−3＝15−17＝<b>−2</b>', col: C.pink },
+        draw: function (D) { ex1(D, D.ph ? D.t : 0); } },
+      { tag: '例題', q: '(2) −7＋(−4)−(−12)−6 を、かっこのない式に直して計算しよう。', a: '−5', sub: '−7−4＋12−6 と直す。正の項 12、負の項 −7−4−6＝−17。12−17＝−5', dur: 7,
+        b: { t: '(2) ＝−7−4＋12−6＝12−17＝<b>−5</b>（−(−12)＝＋12、＋(−4)＝−4）', col: C.pink },
+        draw: function (D) { ex2(D, D.ph ? D.t : 0); } },
+      { tag: '考えよう', bh: '考えよう', q: '「2−9」は、「2 ひく 9」とも、「＋2 と −9 の和」とも読める。どちらで読んでも答えが同じになるわけを、式を使って説明しよう。',
+        notes: ['2つの読み方の式と答えを、表に書こう。わかったことは？', '5−11 などほかの式でも、同じように確かめよう。', 'スライダーで、式と読み方を変えられます（点線は、ひく数の矢印）。'],
+        sliders: [{ key: 'e', label: '式', min: 0, max: 2, step: 1, val: 0, fmt: function (x) { return ['2−9', '5−11', '−3−4'][x]; } }, { key: 'r', label: '読み方', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? '和' : 'ひく'; } }],
+        draw: function (D) { read2(D, D.V); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'A、B、C、D の4人がテストを受けた。B は A より7点低く、C は B より9点高く、D は C より5点低かった。① D は A より何点高い（低い）？ ② A が 80点のとき、4人の平均点は？',
+        a: '① 3点低い　② 78点', sub: '① A を 0 とすると、B −7、C −7＋9＝＋2、D ＋2−5＝−3　② 80、73、82、77 の平均は 312÷4＝78。A からのちがいの平均 (0−7＋2−3)÷4＝−2 からも 80−2＝78', dur: 7,
+        b: { t: '① −7＋9−5＝−3 → <b>3点低い</b>　② (80＋73＋82＋77)÷4＝<b>78</b>（点）', col: C.orange },
+        draw: function (D) { chal(D, D.ph ? D.t : 0); } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

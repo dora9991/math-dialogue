@@ -275,7 +275,7 @@
           vals.forEach(function (v, i) {
             var ai = D.ph ? CH.smooth(.22 + i * .18, .34 + i * .18, t) : 0; if (ai <= 0) return;
             var x = w2 ? R.x0 + cw * (i + .5) : R.x0 + cw * (i % 2 + .5), y = w2 ? ty + ch / 2 : ty + ch / 2 + Math.floor(i / 2) * ch * 1.2;
-            CH.line(D, ax, cy + s * .9, x, y - ch / 2, { col: C.yel, a: ai * .7, w: 1.6, dash: [5, 5] });
+            if (w2 || i < 2) CH.line(D, ax, cy + s * .9, x, y - ch / 2, { col: C.yel, a: ai * .7, w: 1.6, dash: [5, 5] });
             rbox(D, x - cw * .44, y - ch / 2, x + cw * .44, y + ch / 2, C.yel, ai, { fa: .1 });
             var ss = Math.min(s * .95, cw * .11);
             EQ(D, x, y - ss * .75, 'a＝{y|' + v + '}', ss, { a: ai }); EQ(D, x, y + ss * .8, '9×{y|' + v + '}＋4＝' + chairs(v), ss, { a: ai });
