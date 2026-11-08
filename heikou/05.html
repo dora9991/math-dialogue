@@ -197,10 +197,10 @@
   function four(D, t, ans) {
     var R = CH.box(D, { l: .02, r: .02, t: .04, b: .02 }), cs = grid4(D, R), s = CH.fs(D);
     SH.forEach(function (P, i) {
-      var q = cs[i], n = P.n, F = fitP(D, CH.rect(q.x0, q.y0 + s * 1.3, q.x1, q.y1 - s * 1.3), P, .12);
+      var q = cs[i], n = P.n, F = fitP(D, CH.rect(q.x0, q.y0 + s * 1.3, q.x1, q.y1 - s * 2.1), P, .12);
       outline(F, P, { fa: .06 });
       if (ans) fan(F, P, CH.smooth(.05, .7, t) * (n - 2));
-      GE.labels(F, ['A'], {});
+      GE.labels(F, ['A'], { dir: { A: 'w' } });
       textIn(D, q, q.cx, q.y0 + s * .6, KN[n] + '（頂点 ' + n + '個）', { col: C.chalk, size: s * .95 });
       if (ans && t > .72) textIn(D, q, q.cx, q.y1 - s * .55, '三角形 ' + (n - 2) + '個 → 180°×' + (n - 2) + '＝' + 180 * (n - 2) + '°', { col: C.yel, a: CH.smooth(.72, .85, t), size: s * .9 });
     });
