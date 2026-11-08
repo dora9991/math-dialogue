@@ -268,9 +268,9 @@
   function tool(D) {
     var R = CH.box(D, { l: .04, r: .04, t: .06, b: .04 }), s = CH.fs(D), x = D.V.x, xs = x < 0 ? '(' + S(x) + ')' : String(x);
     var head = [['[x/2]＋1', C.blue], ['[x/3]', C.orange]], rows = [['もとの式', [frs(x + 2, 2), frs(x, 3)]], ['6 をかけた式', [S(3 * x + 6), S(2 * x)], ['3x＋6', '2x']]];
-    var c0 = R.w * .3, cw = (R.w - c0) / 2, rh = Math.min(s * 3.2, R.h * .19), y0 = R.y0 + s * 3.4;
+    var c0 = R.w * .3, cw = (R.w - c0) / 2, rh = Math.min(s * 3.2, R.h * .19), y0 = R.y0 + s * 3.9;
     TX(D, R.cx, R.y0 + s * .8, '[x/2]＋1＝[x/3]', { size: s * 1.4 });
-    TS(D, R.cx, R.y0 + s * 2.6, [['x＝', C.chalk], [S(x), C.yel], [' のときの値', C.chalk]], { size: s });
+    TS(D, R.cx, R.y0 + s * 3, [['x＝', C.chalk], [S(x), C.yel], [' のときの値', C.chalk]], { size: s });
     head.forEach(function (h, j) { var cx = R.x0 + c0 + cw * (j + .5); TX(D, cx, y0 + rh * .28, j ? '右辺' : '左辺', { size: s * .75, col: h[1] }); TX(D, cx, y0 + rh * .68, h[0], { size: s * 1.25, col: h[1] }); });
     rows.forEach(function (r, i) {
       var y = y0 + rh * (i + 1);
