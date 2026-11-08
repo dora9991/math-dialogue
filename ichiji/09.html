@@ -68,7 +68,7 @@
     var R = CH.box(D, { l: .03, r: .04, t: .02, b: .03 }), s = CH.fs(D), wide = D.W > D.H * .9;
     if (wide) return { P: CH.rect(R.x0 + R.w * .42, R.y0, R.x1, R.y1), tx: R.x0 + s * .3, ty: R.y0 + R.h * .14, dy: s * 2, k: 1.15 };
     /* せまい画面でも左右にならべる（座標平面の大きさは高さで決まるので） */
-    return { P: CH.rect(R.x0 + R.w * .4, R.y0, R.x1, R.y1), tx: R.x0, ty: R.y0 + R.h * .12, dy: s * 1.7, k: .88 };
+    return { P: CH.rect(R.x0 + R.w * .4, R.y0, R.x1, R.y1), tx: R.x0, ty: R.y0 + R.h * .12, dy: s * 1.75, k: .98 };
   }
   function line(D, L, i, txt, col, a) { TX(D, L.tx, L.ty + i * L.dy, txt, { col: col, size: CH.fs(D) * L.k, align: 'left', a: a }); }
   /* 代入：点のラベルの数字が、式の x・y の場所へ飛ぶ。pl：点のラベル（x0, y, 字）、row：式の行、t：0〜1 */

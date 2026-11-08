@@ -89,6 +89,8 @@ GE.arc = function (F, s, o) {
   if (o.fill) { g.fillStyle = hexA(col, o.fill === true ? .35 : o.fill); g.beginPath(); g.moveTo(V[0], V[1]); g.arc(V[0], V[1], r, a1, a1 + d, d < 0); g.closePath(); g.fill(); }
   g.strokeStyle = col; g.lineWidth = o.w || 2.2;
   for (var i = 0; i < (o.n || 1); i++) { g.beginPath(); g.arc(V[0], V[1], r + i * F.s * .22, a1, a1 + d, d < 0); g.stroke(); }
+  /* o.tick：弧の上の短い線の本数（等しい角の印を見分ける） */
+  for (var k = 0; k < (o.tick || 0); k++) { var am = a1 + d / 2 + (k - (o.tick - 1) / 2) * .16 * (d < 0 ? -1 : 1), r0 = r - F.s * .28, r1 = r + F.s * .28 + ((o.n || 1) - 1) * F.s * .22; g.beginPath(); g.moveTo(V[0] + Math.cos(am) * r0, V[1] + Math.sin(am) * r0); g.lineTo(V[0] + Math.cos(am) * r1, V[1] + Math.sin(am) * r1); g.stroke(); }
   g.restore();
   if (o.lab) { var mid = a1 + d / 2, rr = r + F.s * (o.n > 1 ? .9 : .75); CH.text(F.D, V[0] + Math.cos(mid) * rr, V[1] + Math.sin(mid) * rr, o.lab, { col: col, size: F.s * .8, a: o.a, outline: 'rgba(20,40,30,.9)' }); }
 };
@@ -134,7 +136,7 @@ GE.figure = function (F, fig, o) {
   (fig.dash || []).forEach(function (s) { GE.seg(F, s, { a: a, dash: true, w: 2, col: 'rgba(242,240,230,.8)' }); });
   (fig.segs || []).forEach(function (s) { GE.seg(F, s, { a: a, col: col }); });
   (fig.ticks || []).forEach(function (t) { GE.tick(F, t[0], t[1], { a: a }); });
-  (fig.angs || []).forEach(function (t) { GE.arc(F, t[0], { n: t[1], a: a, lab: t[2] }); });
+  (fig.angs || []).forEach(function (t) { GE.arc(F, t[0], { n: t[1], a: a, lab: t[2], tick: t[3] }); });
   (fig.rights || []).forEach(function (s) { GE.right(F, s, { a: a }); });
   (fig.pars || []).forEach(function (t) { GE.par(F, t[0], t[1], { a: a }); });
   (fig.dots || []).forEach(function (k) { GE.dot(F, k, { a: a }); });

@@ -121,7 +121,7 @@
           dots(D, Pl);
           if (D.ph && t > .74) par(D, Pl, 1, { col: C.yel, w: 3.2, glow: true, t: CH.smooth(.74, .95, t) });
           var cap = !D.ph ? '1 きざみ' : t < .36 ? '0.5 きざみ' : t < .74 ? '0.1 きざみ' : 'なめらかな曲線';
-          CH.text(D, Pl.X(-3.9), Pl.Y(9.6), cap, { size: s, col: !D.ph ? C.yel : t < .36 ? C.blue : t < .74 ? C.green : C.yel, align: 'left', outline: OUT });
+          CH.text(D, Pl.X(3.9), Pl.Y(1.3), cap, { size: s, col: !D.ph ? C.yel : t < .36 ? C.blue : t < .74 ? C.green : C.yel, align: 'right', outline: OUT });
         } },
       { tag: '今日の問い', q: 'y＝x² のグラフは、どんな形？ 左半分と右半分をくらべよう。', a: 'y 軸について対称な、なめらかな曲線', sub: 'x と −x で、y の値は同じ（(2, 4) と (−2, 4)）。左半分を y 軸で折り返すと、右半分にぴったり重なる。原点を通る', dur: 7,
         b: { t: 'y＝x² のグラフは、原点を通り、<b>y 軸について対称</b>', col: C.yel },
@@ -139,7 +139,7 @@
             [1, 2, 3].forEach(function (x, i) { var col = [C.blue, C.orange, C.pink][i]; CH.pseg(D, Pl, [-x, x * x], [x, x * x], { col: col, w: 1.8, dash: [6, 5], a: a }); });
             lab(D, Pl, .15, 9.6, '対称の軸（y 軸）', C.green, { a: a, size: s * .8 });
           }
-          if (D.ph && t > .05 && t < .86) CH.text(D, Pl.X(-3.9), Pl.Y(9.6), k > .02 ? 'y 軸で折り返す' : '', { size: s * .9, col: C.pink, align: 'left', outline: OUT });
+          if (D.ph && t > .05 && t < .86) CH.text(D, Pl.X(-3.9), Pl.Y(1.3), k > .02 ? 'y 軸で折り返す' : '', { size: s * .9, col: C.pink, align: 'left', outline: OUT });
         } },
       { tag: 'ことば', bh: 'ことば', q: 'y＝x² のグラフのような曲線を何という？ 対称の軸と、軸と曲線の交点を何という？', a: '放物線・軸・頂点', sub: 'y＝x² のグラフの軸は y 軸、頂点は原点', dur: 4,
         b: [{ t: '曲線 y＝x² を <b>放物線</b> という', col: C.green }, { t: '放物線の対称の軸を <b>軸</b>、軸と放物線の交点を <b>頂点</b> という（y＝x² … 軸は y 軸、頂点は原点）', col: C.green }],
@@ -148,7 +148,7 @@
           par(D, Pl, 1, { col: C.yel, w: 3.2 });
           if (!D.ph) return;
           var a1 = CH.smooth(0, .25, t), a2 = CH.smooth(.3, .55, t), a3 = CH.smooth(.6, .85, t);
-          lab(D, Pl, 2.2, 7.4, '放物線', C.yel, { a: a1, size: s * 1.15 });
+          lab(D, Pl, 2.65, 5.2, '放物線', C.yel, { a: a1, size: s * 1.15 });
           CH.pseg(D, Pl, [0, -1], [0, 10], { col: C.green, w: 3.4, glow: true, a: a2 }); lab(D, Pl, .2, 9.5, '軸', C.green, { a: a2, size: s * 1.15 });
           CH.pt(D, Pl, 0, 0, { col: C.pink, r: CH.fs(D, .36), a: a3 }); lab(D, Pl, .35, .7, '頂点', C.pink, { a: a3, size: s * 1.15 });
         } },
@@ -169,7 +169,7 @@
         b: { t: '直線で結ぶのは ×（x＝1.5 で 直線は 2.5、グラフは <b>2.25</b>）→ なめらかな曲線で結ぶ', col: C.pink },
         draw: function (D) {
           var R = CH.box(D, { l: .04, r: .04, t: .02, b: .02 }), t = D.ph ? D.t : 0, s = CH.fs(D), Pl = PL(D, R, { x: [0, 3], y: [0, 5], xs: .25, ys: .25, xl: .5, yl: 1 });
-          var a1 = CH.smooth(.04, .2, t), a2 = CH.smooth(.24, .38, t), a3 = CH.smooth(.44, .58, t), fz = Math.min(s * .95, (Pl.X(1.3) - Pl.R.x0) / 9);
+          var a1 = CH.smooth(.04, .2, t), a2 = CH.smooth(.24, .38, t), a3 = CH.smooth(.44, .58, t), fz = Math.max(10, Math.min(s * .95, (Pl.X(1.3) - Pl.R.x0) / 9));
           if (D.ph) {
             CH.pseg(D, Pl, [1, 1], [1 + CH.ease(a1), 1 + 3 * CH.ease(a1)], { col: C.pink, w: 2.6, dash: [8, 6] });
             CH.pseg(D, Pl, [1.5, 0], [1.5, 2.5], { col: 'rgba(242,240,230,.7)', w: 1.4, dash: [4, 5], a: a2 });

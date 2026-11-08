@@ -121,7 +121,7 @@
   }
   /* 道の図。rows：[{ sp（時速）, segs: [{ m0, m1, col, a, txt, dash }], q（字） }]、o.max（目もりの最大 m） */
   function road(D, R, rows, o) {
-    o = o || {}; var s = CH.fs(D, .8), n = rows.length, rh = R.h / n, lw = s * 5, cw = Math.min(s * 2.8, rh * .9), x0 = R.x0 + lw + cw, M = o.max || 40, sc = (R.x1 - s * 1.6 - x0) / M;
+    o = o || {}; var s = CH.fs(D, .8), n = rows.length, rh = R.h / n, lw = s * 5.6, cw = Math.min(s * 2.8, rh * .9), x0 = R.x0 + lw + cw + s * .2, M = o.max || 40, sc = (R.x1 - s * 1.6 - x0) / M;
     rows.forEach(function (r, i) {
       var y = R.y0 + rh * (i + .62);
       CH.text(D, R.x0, y - cw * .3, '時速 ' + r.sp + 'km', { size: s, align: 'left', col: r.col || C.chalk });
@@ -176,7 +176,7 @@
           if (D.ph) {
             var k = CH.ease(CH.smooth(.05, .65, t)), a = Math.exp(CH.lerp(Math.log(1 / 25), Math.log(A), k));
             CH.fn(D, Pl, function (x) { return a * x * x; }, { col: k > .999 ? C.yel : C.pink, w: 3 });
-            if (t > .66) { glow(D, Pl, 40, 8, C.yel); lab(D, Pl, 104, 44, 'y＝[1/200]x²', C.yel, { align: 'right', a: CH.smooth(.66, .8, t) }); }
+            if (t > .66) { glow(D, Pl, 40, 8, C.yel); lab(D, Pl, 86, 50, 'y＝[1/200]x²', C.yel, { align: 'right', a: CH.smooth(.66, .8, t) }); }
           }
           lines(D, L.T, [{ t: '時速 40km で 8m → 8＝a×40²', col: C.orange, a: D.ph ? CH.smooth(.1, .25, t) : 0 }, { t: 'a＝[8/1600]＝[1/200]　→　y＝[1/200]x²', col: C.yel, a: CH.smooth(.66, .8, t) }]);
         } },
@@ -196,7 +196,7 @@
         b: { t: '（2）40.5＝[1/200]x² → x²＝8100 → x＞0 だから <b>時速 90km</b>', col: C.pink },
         draw: function (D) {
           var L = strip(D, 2), t = D.ph ? D.t : 0, Pl = pl(D, L.P);
-          CH.fn(D, Pl, F, { col: C.orange, w: 3, x0: 0, x1: 106 }); lab(D, Pl, 104, 44, 'y＝[1/200]x²', C.orange, { align: 'right' });
+          CH.fn(D, Pl, F, { col: C.orange, w: 3, x0: 0, x1: 106 }); lab(D, Pl, 86, 50, 'y＝[1/200]x²', C.orange, { align: 'right' });
           var e1 = CH.smooth(.05, .4, t), e2 = CH.smooth(.45, .7, t);
           CH.pseg(D, Pl, [0, 40.5], [D.ph ? 90 * e1 : 0, 40.5], { col: C.yel, w: 2.4, dash: true }); CH.text(D, Pl.X(0) + CH.fs(D, .4), Pl.Y(40.5) - CH.fs(D, .7), '40.5m', { col: C.yel, size: CH.fs(D, .8), align: 'left', outline: OUT });
           if (t > .45) CH.pseg(D, Pl, [90, 40.5], [90, 40.5 * (1 - e2)], { col: C.yel, w: 2.4, dash: true });
@@ -209,10 +209,10 @@
         sliders: [{ key: 'v', label: '時速', min: 10, max: 120, step: 10, val: 40, fmt: function (v) { return v + 'km'; } }],
         draw: function (D) {
           var L = lay(D, 1, .26), v = D.V.v;
-          road(D, L.K, [{ sp: v, segs: [{ m0: 0, m1: Q(v), col: C.blue, txt: '空走', al: 'center' }, { m0: Q(v), m1: TOT(v), col: C.orange, txt: v >= 30 ? '制動' : '' }] }], { max: 110 });
+          road(D, L.K, [{ sp: v, segs: [{ m0: 0, m1: Q(v), col: C.blue }, { m0: Q(v), m1: TOT(v), col: C.orange }] }], { max: 110 });
           var Pl = pl(D, L.P, { x: [0, 125], y: [0, 112], gy: 10, ly: 20 });
           CH.lin(D, Pl, K, 0, { col: C.blue, w: 2.6 }); CH.fn(D, Pl, F, { col: C.orange, w: 2.6 }); CH.fn(D, Pl, TOT, { col: C.yel, w: 3 });
-          lab(D, Pl, 122, 26, '空走きょり', C.blue, { align: 'right' }); lab(D, Pl, 122, 64, '制動きょり', C.orange, { align: 'right', dy: CH.fs(D, .4) }); lab(D, Pl, 99, 106, '止まるまでのきょり', C.yel, { align: 'right' });
+          lab(D, Pl, 122, 21, '空走きょり', C.blue, { align: 'right' }); lab(D, Pl, 122, 64, '制動きょり', C.orange, { align: 'right', dy: CH.fs(D, .4) }); lab(D, Pl, 99, 106, '止まるまでのきょり', C.yel, { align: 'right' });
           CH.pseg(D, Pl, [v, 0], [v, TOT(v)], { col: 'rgba(242,240,230,.6)', dash: true, w: 1.6 });
           CH.pt(D, Pl, v, Q(v), { col: C.blue, r: CH.fs(D, .26) }); CH.pt(D, Pl, v, F(v), { col: C.orange, r: CH.fs(D, .26) }); CH.pt(D, Pl, v, TOT(v), { col: C.yel, r: CH.fs(D, .3) });
         } },
