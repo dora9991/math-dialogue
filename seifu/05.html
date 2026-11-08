@@ -64,7 +64,7 @@
 
   /* ---- 1本の数直線に、2本の矢印（a のあと b）。k：動き、o：sum（重なり・長さ） ---- */
   function addRow(D, R, a, b, k, o) {
-    o = o || {}; var s = CH.fs(D, .82), L = NL(D, R.x0 + s * .3, R.x1 - s * .9, R.y1 - s * 1.5, o.min || -9, o.max || 9, { s: CH.fs(D, .72) }), t = a + b;
+    o = o || {}; var s = CH.fs(D, .82), L = NL(D, R.x0 + s * .3, R.x1 - s * .9, R.y1 - s * 1.5, o.min || -9, o.max || 9, { s: CH.fs(D, .66) }), t = a + b;
     var k1 = CH.smooth(0, .35, k), k2 = CH.smooth(.38, .75, k), ka = CH.smooth(.78, .92, k), h = Math.min(1.7, (L.y - R.y0 - s * 1.8) / (2.2 * L.s));
     if (o.title) CH.text(D, R.x0, R.y0 + s * .55, o.title + (ka > 0 ? '＝' + sg(t) : ''), { align: 'left', size: s, col: C.chalk, num: true });
     if (o.sum && k >= 1) {
@@ -101,11 +101,11 @@
       show: function (r, c) { if (r < 2 || c === 0) return 1; var t0 = (r - 2) * .3 + (c - 1) * .08; return CH.smooth(t0, t0 + .07, k); },
       hl: function (r, c) { return r > 0 && c === 3 ? sc(EXR[r - 1]) : null; } });
     var c = T.cell(1, 0);
-    CH.text(D, c.x0 + s * .3, c.y0 - s * .1, '見本', { size: s * .65, col: C.yel, align: 'left' });
+    CH.text(D, c.x0 + s * .25, c.y0 + s * .45, '見本', { size: s * .6, col: C.yel, align: 'left' });
     CH.text(D, R.cx, T.y1 + s * 1.4, 'まず符号、つぎに絶対値', { size: CH.fitSize(D, 'まず符号、つぎに絶対値', R.w * .8, s * .9), col: C.yel });
     for (var i = 1; i < 4; i++) {
       var p = EX[i], same = p[0] * p[1] > 0, ka = CH.smooth((i - 1) * .3, (i - 1) * .3 + .06, k), q = T.cell(i + 1, 0);
-      if (!same && ka > 0) { var big = Math.abs(p[0]) > Math.abs(p[1]) ? 0 : 1; CH.text(D, q.x1 - s * .2, q.y0 + s * .45, (big ? '右' : '左') + 'の絶対値が大きい', { size: s * .55, col: sc(p[big]), a: ka, align: 'right' }); }
+      if (!same && ka > 0) { var big = Math.abs(p[0]) > Math.abs(p[1]) ? 0 : 1; CH.text(D, q.x1 - s * .2, q.y0 + s * .5, (big ? '右' : '左') + 'の絶対値が大きい', { size: s * .55, col: sc(p[big]), a: ka, align: 'right' }); }
     }
   }
 
@@ -131,7 +131,7 @@
     if (k1 > 0) { CH.arrow(D, L.X(4), L.y + s * 2.6, CH.lerp(L.X(4), L.X(-5), k1), L.y + s * 2.6, { col: C.green, w: 2.4 }); CH.text(D, L.X(-.5), L.y + s * 3.6, '＋4 から 9 もどる', { col: C.green, size: s * .8, a: k1 }); }
     if (k1 >= 1) pt(D, L, -5, C.green, '', {});
     jump(D, L, -5, -14, 2, { k: k2, txt: '−9（正しい）', ts: s * .8, h: 2, drop: true });
-    if (ka > 0) pt(D, L, -14, C.yel, '−14', { a: ka, dn: 2.6 });
+    if (ka > 0) pt(D, L, -14, C.yel, '② −14', { a: ka, dn: 3.2 });
   }
 
   K3.run({

@@ -129,7 +129,7 @@
       GE.seg(F, [Fp, GE.polar(Fp, 12 * k2, 180 - KF)], { col: C.pink, w: 1.6, dash: [5, 5] }); if (k2 > 0) mark(Fx, 'DFE', C.pink, { a: k2, t: '41°', size: s * .85 });
     }
     if (k3 > 0) { GE.seg(F, [E, KD], { a: k3 }); GE.seg(F, [Fp, KD], { a: k3 }); GE.dot(F, KD, { a: k3 }); }
-    labs(ext(F, { D: KD, E: E, F: Fp }), 'DEF', { a: Math.max(kb, .001) });
+    labs(ext(F, { D: KD, E: E, F: Fp }), 'EF', { a: kb, dir: { E: 'sw', F: 'se' } }); if (k3 > 0) labs(ext(F, { D: KD, E: E, F: Fp }), 'D', { a: k3, dir: { D: 'n' } });
   }
 
   /* ---- ことば：相似条件。△ABC と 1.6倍の △DEF ---- */

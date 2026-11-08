@@ -311,6 +311,9 @@ CH.f1 = function (x) { return (Math.round(x * 10 + 1e-9) / 10).toFixed(1); };
 /* ページに書いた答えと、計算した値が同じか（ちがえば、コンソールに出す） */
 CH.check = function (ok, what) { if (!ok && window.console) console.error('答えがちがう：' + what); return ok; };
 CH.near = function (a, b) { return Math.abs(a - b) < 1e-9; };
+/* √ の字：CH.root(n) → n＝18 なら '3√2'、n＝16 なら '4'。CH.isRoot(x, n)：長さ x の2乗が n か */
+CH.root = function (n) { var a = 1, b = n; for (var k = Math.floor(Math.sqrt(n)); k >= 2; k--) if (b % (k * k) === 0) { a *= k; b /= k * k; } return b === 1 ? String(a) : (a === 1 ? '' : a) + '√' + b; };
+CH.isRoot = function (x, n) { return Math.abs(x * x - n) < 1e-6 * Math.max(1, n); };
 /* くり返して同じになる乱数（キャップ投げなど） */
 CH.rng = function (seed) { var s = seed >>> 0 || 1; return function () { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; };
 
