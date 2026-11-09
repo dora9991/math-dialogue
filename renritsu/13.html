@@ -190,7 +190,7 @@
     var k = frc ? 2.25 : 1.6, lh = z * k; if (lh * n > R.h) { lh = R.h / n; z = Math.min(z, lh / k); d = dims(z); }
     var x0 = o.align === 'left' ? R.x0 : R.cx - d.w / 2, ex = x0 + d.lw, y0 = o.top ? R.y0 + lh / 2 : R.cy - lh * n / 2 + lh / 2, ys = [], xe = [];
     L.forEach(function (l, i) {
-      var y = y0 + i * lh, a = at[i] < 0 ? 1 : CH.smooth(at[i], at[i] + .1, t), p = parts(l), col = l.col || C.chalk, x1; ys.push(y);
+      var y = y0 + i * lh, a = at[i] < 0 ? 1 : CH.smooth(at[i], Math.min(at[i] + .1, 1), t), p = parts(l), col = l.col || C.chalk, x1; ys.push(y);
       if (a <= 0) { xe.push(null); return; } a *= (o.a == null ? 1 : o.a);
       if (p) { if (p[0]) TM(D, ex, y, p[0], { size: z, col: col, a: a, align: 'right', hc: l.hc }); TX(D, ex, y, '＝', { size: z, col: col, a: a, align: 'left' }); x1 = ex + d.eq + TM(D, ex + d.eq, y, p[1], { size: z, col: col, a: a, align: 'left', hc: l.hc }); }
       else x1 = x0 + TM(D, x0, y, l.s, { size: z, col: col, a: a, align: 'left', hc: l.hc });
@@ -576,17 +576,16 @@
     it.w.forEach(function (l, j) { TX(D, R.x0 + z * 2, R.y0 + z * (1 + j * 1.7), l, { size: fit(D, l, R.w - z * 2.6, z), col: C.chalk, align: 'left' }); });
     var y0 = R.y0 + nh + s * 1.2;
     TS(D, R.cx, y0, [['確かめ　x＝', C.chalk], [S(x), C.yel], ['、y＝', C.chalk], [S(y), C.yel], [' を、もとの式に入れると', C.chalk]], { size: fit(D, '確かめ　x＝−5.5、y＝−5.5 を、もとの式に入れると', R.w, s * 1.1) });
-    var ex2 = it.t === 'ウ' ? ['x＋y', '2x−y'] : null;
     it.o.forEach(function (e, j) {
       var p = e.split('＝'), lv = val(p[0], { x: x, y: y }), rv = val(p[1], { x: x, y: y }), ok = near(lv, rv), yy = y0 + s * (2.2 + j * 2);
-      var t = (it.t === 'ウ' ? (j ? '2x−y' : 'x＋y') + ' の値 ' + S(Math.round(lv * 100) / 100) + '（6？）' : p[0] + ' … ' + S(Math.round(lv * 100) / 100) + '、' + p[1] + ' … ' + S(Math.round(rv * 100) / 100));
-      TS(D, R.cx, yy, [[t + '　', C.chalk], [ok ? '成り立つ' : '成り立たない', ok ? C.yel : C.pink]], { size: fit(D, '50x＋90y … −720、600 … 600　成り立たない', R.w, s * 1.1) });
+      var f = function (v) { return S(Math.round(v * 100) / 100); }, t = /[xy]/.test(p[1]) ? p[0] + ' は ' + f(lv) + '、' + p[1] + ' は ' + f(rv) : p[0] + ' は ' + f(lv) + '（' + p[1] + ' になる？）';
+      TS(D, R.cx, yy, [[t + '　', C.chalk], [ok ? '成り立つ' : '成り立たない', ok ? C.yel : C.pink]], { size: fit(D, '50x＋90y は −720（600 になる？）　成り立たない', R.w, s * 1.1) });
     });
   }
 
   /* ---- チャレンジ：遊園地の入園者 ---- */
   function chal(D, k) {
-    var R = CH.box(D, { l: .03, r: .03, t: .02, b: .03 }), s = CH.fs(D), ph = !!D.ph, e = ph ? CH.ease(CH.smooth(.7, .8, k)) : 0, X = CH.lerp(2000, 2400, e), num = e > .5;
+    var R = CH.box(D, { l: .03, r: .03, t: .02, b: .03 }), s = CH.fs(D), ph = !!D.ph, e = ph ? CH.ease(CH.smooth(.7, .8, k)) : 0, X = CH.lerp(2000, 2400, e), num = e > .999;
     var top = CH.rect(R.x0, R.y0 + s * .4, R.x1, R.y0 + R.h * .42);
     TS(D, top.x0, top.y0, [['大人 x人', XC], ['　', C.chalk], ['子ども y人', YC]], { size: s * .85, align: 'left' });
     bands(D, CH.rect(top.x0, top.y0 + s * .6, top.x1, top.y1), X, 4000 - X, .05, -.1, { L: ['昨年', '今年'], num: num, tot: '4000人', sum: num ? '3960人（40人減）' : '40人減', max: 4300 });

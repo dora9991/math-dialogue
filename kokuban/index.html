@@ -44,13 +44,17 @@ html,body{height:auto}
     ['中3', [['式の展開と因数分解', 'takou', 17], ['平方根', 'heihou', 14], ['二次方程式', 'niji', 12], ['関数 y＝ax²', 'kansu', 14], ['相似な図形', 'souji', 20],
       ['円', 'en', 8], ['三平方の定理', 'sanhei', 12], ['標本調査', 'hyouhon', 5]]]
   ];
+  /* まだ公開していない単元（できたら、ここから消す） */
+  var SOON = ['takou', 'heihou', 'niji'];
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
   var html = '';
   G.forEach(function (g) {
     html += '<h2>' + g[0] + '</h2><ul class="list">';
     g[1].forEach(function (u) {
-      html += '<li><span class="ttl">' + esc(u[0]) + '</span><span class="no">' + (u[2] ? u[2] + '時間' : '難易度別の証明 44題') + '</span><span class="go"><a class="btn primary" href="../' + u[1] + '/index.html">ひらく ▶</a>' +
-        (u[3] || []).map(function (l) { return '<a class="btn" href="' + l[0] + '">' + esc(l[1]) + '</a>'; }).join('') + '</span></li>';
+      var soon = SOON.indexOf(u[1]) >= 0;
+      html += '<li' + (soon ? ' style="opacity:.55"' : '') + '><span class="ttl">' + esc(u[0]) + '</span><span class="no">' + (u[2] ? u[2] + '時間' : '難易度別の証明 44題') + '</span><span class="go">' +
+        (soon ? '<span class="no">準備中</span>' : '<a class="btn primary" href="../' + u[1] + '/index.html">ひらく ▶</a>' +
+        (u[3] || []).map(function (l) { return '<a class="btn" href="' + l[0] + '">' + esc(l[1]) + '</a>'; }).join('')) + '</span></li>';
     });
     html += '</ul>';
   });

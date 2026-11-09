@@ -117,33 +117,58 @@
 
   /* 樹形図（左から右へ）。spec＝[[字, [子…]], …]
      o：heads（段の見出し）、t（0〜1：枝が1本ずつのびる）、mark(path)→色（葉を光らせる）、ma（その濃さ。数か、path→数）、tail(path)→葉の右に書く字、
-        col(nd)→字の色、ecol(nd)→枝の色、hw（字の半分の幅）、dyMax、size。返すもの：{ X, leaves, fs, dy } */
+        col(nd)→字の色、ecol(nd)→枝の色、hw（字の半分の幅）、dyMax、size、vert（上から下へ。せまい画面で葉が多いとき）。返すもの：{ X, leaves, fs, dy } */
   function tree(D, R0, spec, o) {
     o = o || {};
     var norm = function (n) { return Array.isArray(n) ? { t: String(n[0]), ch: (n[1] || []).map(norm) } : { t: String(n), ch: [] }; };
-    var roots = spec.map(norm), leaves = [], Dm = 0;
+    var roots = spec.map(norm), leaves = [], Dm = 0, V = !!o.vert;
     function walk(n, d, path) { n.d = d; n.path = path.concat(n.t); Dm = Math.max(Dm, d); if (!n.ch.length) leaves.push(n); n.ch.forEach(function (c) { c.par = n; walk(c, d + 1, n.path); }); n.first = n.ch.length ? n.ch[0].first : leaves.length - 1; }
     roots.forEach(function (r) { walk(r, 0, []); });
-    var L = leaves.length, hs = CH.fs(D, .8), top = o.heads ? hs * 1.8 : 0, H = R0.h - top;
-    var dy = Math.min(H / L, o.dyMax || CH.fs(D) * 2.2), fs = o.size || Math.min(CH.fs(D, .9), dy * .8), hw = (o.hw || .7) * fs;
-    var tw = 0; if (o.tail) leaves.forEach(function (n) { tw = Math.max(tw, TW(D, String(o.tail(n.path)), fs)); });
-    var gap = fs * .9, dx = Dm ? Math.min(o.dxMax || fs * 7, (R0.w - 2 * hw - (tw ? tw + gap * 1.6 : 0)) / Dm) : 0;
-    var W = Dm * dx + 2 * hw + (tw ? tw + gap * 1.6 : 0), xl = R0.cx - W / 2 + hw, X = function (d) { return xl + d * dx; };
-    var y0 = R0.y0 + top + (H - dy * L) / 2 + dy / 2;
-    leaves.forEach(function (n, k) { n.y = y0 + k * dy; });
-    function setY(n) { if (n.ch.length) { n.ch.forEach(setY); n.y = (n.ch[0].y + n.ch[n.ch.length - 1].y) / 2; } }
-    roots.forEach(setY);
+    var L = leaves.length, hs = CH.fs(D, .8), X, Pn, dy, fs, hw, tw = 0, gap;
+    if (!V) {
+      var top = o.heads ? hs * 1.8 : 0, H = R0.h - top;
+      dy = Math.min(H / L, o.dyMax || CH.fs(D) * 2.2); fs = o.size || Math.min(CH.fs(D, .9), dy * .8); hw = (o.hw || .7) * fs; gap = fs * .9;
+      if (o.tail) leaves.forEach(function (n) { tw = Math.max(tw, TW(D, String(o.tail(n.path)), fs)); });
+      var dx = Dm ? Math.min(o.dxMax || fs * 7, (R0.w - 2 * hw - (tw ? tw + gap * 1.6 : 0)) / Dm) : 0;
+      var W = Dm * dx + 2 * hw + (tw ? tw + gap * 1.6 : 0), xl = R0.cx - W / 2 + hw;
+      X = function (d) { return xl + d * dx; };
+      var y0 = R0.y0 + top + (H - dy * L) / 2 + dy / 2;
+      leaves.forEach(function (n, k) { n.y = y0 + k * dy; });
+      roots.forEach(function setY(n) { if (n.ch.length) { n.ch.forEach(setY); n.y = (n.ch[0].y + n.ch[n.ch.length - 1].y) / 2; } });
+      roots.forEach(function setX(n) { n.x = X(n.d); n.ch.forEach(setX); });
+    } else {
+      /* たて向き（上から下へ）：字は1字ずつ縦にならべる */
+      var lw = o.heads ? Math.min(R0.w * .2, hs * 4.2) : 0, Wv = R0.w - lw, mx = 1;
+      leaves.forEach(function (n) { mx = Math.max(mx, n.t.length); });
+      dy = Wv / L; fs = o.size || Math.min(CH.fs(D, .9), dy * .78); hw = fs * mx * .55;
+      var dz = Dm ? Math.min(fs * 6, (R0.h - 2 * hw) / Dm) : 0, yt = R0.cy - Dm * dz / 2;
+      X = function (d) { return yt + d * dz; };
+      leaves.forEach(function (n, k) { n.x = R0.x0 + lw + (k + .5) * dy; });
+      roots.forEach(function setX2(n) { if (n.ch.length) { n.ch.forEach(setX2); n.x = (n.ch[0].x + n.ch[n.ch.length - 1].x) / 2; } });
+      roots.forEach(function setY2(n) { n.y = X(n.d); n.ch.forEach(setY2); });
+    }
     var p = (o.t == null ? 1 : o.t) * L, st = 1 / (Dm + 1);
     function vis(n) { var u = n.first + (n.d + 1) * st; return { e: clamp((p - (u - st)) / (st * .75), 0, 1), a: sm(u - st * .3, u, p + 1e-9) }; }
-    if (o.heads) o.heads.forEach(function (h, d) { CH.text(D, X(d), R0.y0 + hs * .7, h, { size: hs, col: DIM }); });
+    if (o.heads) o.heads.forEach(function (h, d) { if (V) CH.text(D, R0.x0, X(d), h, { size: CH.fitSize(D, h, lw * .95, hs), col: DIM, align: 'left' }); else CH.text(D, X(d), R0.y0 + hs * .7, h, { size: hs, col: DIM }); });
+    function label(n, a, col) {
+      if (!V) { CH.text(D, n.x, n.y + 1, n.t, { size: fs, col: col, a: a }); return; }
+      var cs = n.t.split(''); cs.forEach(function (c, i) { CH.text(D, n.x, n.y + (i - (cs.length - 1) / 2) * fs * 1.02 + 1, c, { size: fs, col: col, a: a, num: /[0-9A-Za-z]/.test(c) }); });
+    }
     function draw(n) {
-      var v = vis(n), x = X(n.d), y = n.y;
-      if (n.par && v.e > 0) { var px = X(n.par.d) + hw * 1.05, py = n.par.y, qx = x - hw * 1.05; CH.line(D, px, py, lerp(px, qx, v.e), lerp(py, y, v.e), { col: (o.ecol && o.ecol(n)) || 'rgba(242,240,230,.6)', w: Math.max(1.3, fs * .08) }); }
+      var v = vis(n);
+      if (n.par && v.e > 0) {
+        var hh = V ? fs * n.par.t.length * .55 : 0, hc = V ? fs * n.t.length * .55 : 0;
+        var px = V ? n.par.x : n.par.x + hw * 1.05, py = V ? n.par.y + hh : n.par.y, qx = V ? n.x : n.x - hw * 1.05, qy = V ? n.y - hc : n.y;
+        CH.line(D, px, py, lerp(px, qx, v.e), lerp(py, qy, v.e), { col: (o.ecol && o.ecol(n)) || 'rgba(242,240,230,.6)', w: Math.max(1.3, fs * .08) });
+      }
       if (v.a > 0) {
         var mk = !n.ch.length && o.mark ? o.mark(n.path) : null, ma = (typeof o.ma === 'function' ? o.ma(n.path) : o.ma == null ? 1 : o.ma) * v.a;
-        if (mk && ma > 0) CH.fillRect(D, x - hw * 1.2, y - dy * .44, x + hw * 1.1 + (tw ? gap + tw + gap * .5 : 0), y + dy * .44, { fill: ha(mk, .3), stroke: mk, sw: 1.6, a: ma });
-        CH.text(D, x, y + 1, n.t, { size: fs, col: (o.col && o.col(n)) || C.chalk, a: v.a });
-        if (!n.ch.length && o.tail) TX(D, x + hw + gap, y + 1, String(o.tail(n.path)), { size: fs, align: 'left', col: mk && ma > .5 ? mk : DIM, a: v.a });
+        if (mk && ma > 0) {
+          if (V) CH.fillRect(D, n.x - dy * .46, n.y - hw * 1.1, n.x + dy * .46, n.y + hw * 1.1, { fill: ha(mk, .3), stroke: mk, sw: 1.6, a: ma });
+          else CH.fillRect(D, n.x - hw * 1.2, n.y - dy * .44, n.x + hw * 1.1 + (tw ? gap + tw + gap * .5 : 0), n.y + dy * .44, { fill: ha(mk, .3), stroke: mk, sw: 1.6, a: ma });
+        }
+        label(n, v.a, (o.col && o.col(n)) || C.chalk);
+        if (!V && !n.ch.length && o.tail) TX(D, n.x + hw + gap, n.y + 1, String(o.tail(n.path)), { size: fs, align: 'left', col: mk && ma > .5 ? mk : DIM, a: v.a });
       }
       n.ch.forEach(draw);
     }
@@ -216,7 +241,7 @@
   }
   /* 字の四角に、行を上から（wide なら左よせ）。arr：[字, 色, 濃さ] */
   function say(D, Q, wide, arr, o) {
-    o = o || {}; var s = o.size || CH.fs(D), n = arr.length, two = !wide && n > 4, nr = two ? Math.ceil(n / 2) : n, lh = Math.min(s * 2.3, Q.h / Math.max(1, nr + .4)), y = wide ? Q.cy - lh * (n - 1) / 2 : Q.y0 + lh * .6;
+    o = o || {}; var s = o.size || CH.fs(D), n = arr.length, two = !wide && (n > 4 || (n > 2 && Q.h / (n + .4) < s * 1.9)), nr = two ? Math.ceil(n / 2) : n, lh = Math.min(s * 2.3, Q.h / Math.max(1, nr + .4)), y = wide ? Q.cy - lh * (n - 1) / 2 : Q.y0 + lh * .6;
     arr.forEach(function (r, i) {
       if (!r || (r[2] != null && r[2] <= 0)) return;
       if (two) TX(D, Q.x0 + Q.w * (i % 2 ? .75 : .25), y + Math.floor(i / 2) * lh, r[0], { col: r[1] || C.chalk, a: r[2], size: s, maxW: Q.w * .48 });

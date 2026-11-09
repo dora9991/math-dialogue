@@ -189,7 +189,14 @@
   function wide(R) { return R.w > R.h * 1.15; }
   /* ---- 数の検算：式の字（√12、[1/√2]、^2、{y|…} もそのまま）を、数として計算する ---- */
   function val(src, V) {
-    var s = String(src).replace(/\{[a-z]\|/g, '(').replace(/\{/g, '(').replace(/\}/g, ')').replace(/＋/g, '+').replace(/[−–]/g, '-').replace(/×/g, '*').replace(/÷/g, '/').replace(/[\s　]/g, ''), i = 0;
+    var s0 = String(src), st = [], s1 = '';  /* {y|…} の色のまとまりは、かっこなしで消す。√{…} の {} は、かっこにする */
+    for (var q = 0; q < s0.length; q++) {
+      var c0 = s0[q];
+      if (c0 === '{') { var col = /[a-z]/.test(s0[q + 1] || '') && s0[q + 2] === '|'; st.push(col); if (col) q += 2; else s1 += '('; }
+      else if (c0 === '}') { if (!st.pop()) s1 += ')'; }
+      else s1 += c0;
+    }
+    var s = s1.replace(/＋/g, '+').replace(/[−–]/g, '-').replace(/×/g, '*').replace(/÷/g, '/').replace(/[\s　]/g, ''), i = 0;
     function bad() { throw new Error('式が読めない：' + src); }
     function expr() { var v = term(); while (s[i] === '+' || s[i] === '-') { var op = s[i++], w = term(); v = op === '+' ? v + w : v - w; } return v; }
     function term() { var v = unary(); for (;;) { var c = s[i]; if (c === '*' || c === '/') { i++; var w = unary(); v = c === '*' ? v * w : v / w; } else if (c && /[0-9(√\[a-zπ.]/.test(c)) v *= power(); else return v; } }

@@ -341,7 +341,7 @@
     /* 式 */
     var g = '(x＋a)(x＋b)＝x^2＋{y|(a＋b)}x＋{o|ab}', n = '(x＋' + a + ')(x＋' + b + ')＝' + poly('x', a + b, a * b), z = Math.min(s * 1.25, fit(D, g, F.w, s * 1.25), fit(D, n, F.w, s * 1.25));
     var yg = w ? F.y0 + F.h * .38 : F.y0 + F.h * .3, yn = w ? F.y0 + F.h * .6 : F.y0 + F.h * .78;
-    if (ph) { chip(D, w ? F.x0 : F.cx, yg - z * 2, '乗法公式', C.green, kf, s * .8, w ? 'left' : null); TX(D, F.cx, yg, g, { size: z, a: kf }); }
+    if (ph) { if (w) chip(D, F.x0, yg - z * 2, '乗法公式', C.green, kf, s * .8, 'left'); TX(D, F.cx, yg, g, { size: z, a: kf }); }
     TX(D, F.cx, yn, ph ? n : '(x＋' + a + ')(x＋' + b + ')＝？', { size: z, col: C.yel, a: ph ? kb : .8 });
   }
 
@@ -349,8 +349,8 @@
   function ex(D, t, ph) {
     var R = CH.box(D, { l: .03, r: .03, t: .05, b: .05 }), s = CH.fs(D), g = '(x＋a)(x＋b)＝x^2＋(a＋b)x＋ab';
     TX(D, R.cx, R.y0 + s * .6, g, { size: fit(D, g, R.w, s * 1.15), col: C.green });
-    var rows = [[''].concat(EX.map(function (e) { return e[0] + '(' + lin(e[1], e[2]) + ')(' + lin(e[1], e[3]) + ')'; })), ['和 a＋b'].concat(EX.map(function (e) { return e[4]; })), ['積 ab'].concat(EX.map(function (e) { return e[5]; })), ['答え'].concat(EX.map(function (e) { return e[6]; }))];
-    tbl(D, CH.rect(R.x0, R.y0 + s * 1.8, R.x1, R.y1), rows, { cw: [.16, .28, .28, .28], rh: s * 3.2, size: s * 1.1,
+    var rows = [[''].concat(EX.map(function (e) { return (wideOf(D) ? e[0] : '') + '(' + lin(e[1], e[2]) + ')(' + lin(e[1], e[3]) + ')'; })), ['和 a＋b'].concat(EX.map(function (e) { return e[4]; })), ['積 ab'].concat(EX.map(function (e) { return e[5]; })), ['答え'].concat(EX.map(function (e) { return e[6]; }))];
+    tbl(D, CH.rect(R.x0, R.y0 + s * 1.8, R.x1, R.y1), rows, { cw: wideOf(D) ? [.16, .28, .28, .28] : [.13, .29, .29, .29], rh: s * 3.2, size: s * 1.1,
       show: function (r, c) { if (!r || !c) return 1; return ph ? sm(.15 + (c - 1) * .28 + (r - 1) * .07, .22 + (c - 1) * .28 + (r - 1) * .07, t) : 0; },
       hl: function (r, c) { return r === 3 && c && ph && t > .22 + (c - 1) * .28 + .14 ? C.yel : null; } });
   }

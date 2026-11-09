@@ -158,11 +158,11 @@
   }
   /* 字の札（きまりの名前など）。返すもの：幅 */
   function txW(D, txt, s, num) { var g = D.ctx; g.save(); g.font = '600 ' + s + 'px ' + (num ? NUM : FONT); var w = g.measureText(txt).width; g.restore(); return w; }
-  function chipW(D, txt, s) { var g = D.ctx; g.save(); g.font = '600 ' + s + 'px ' + FONT; var w = g.measureText(txt).width + s * 1.1; g.restore(); return w; }
+  function chipW(D, txt, s) { return eqW(D, txt, s) + s * 1.1; }
   function chip(D, x, y, txt, col, a, size, al) {
     var s = size || CH.fs(D, .8), w = chipW(D, txt, s);
     var x0 = al === 'left' ? x : al === 'right' ? x - w : x - w / 2;
-    rbox(D, x0, y - s * .8, x0 + w, y + s * .8, col, a, { r: s * .8, w: 1.8, fa: .18 }); CH.text(D, x0 + w / 2, y + 1, txt, { size: s, col: col, a: a });
+    if (a > 0) { rbox(D, x0, y - s * .8, x0 + w, y + s * .8, col, a, { r: s * .8, w: 1.8, fa: .18 }); EQ(D, x0 + w / 2, y + 1, txt, s, { col: col, a: a }); }
     return w;
   }
   /* まがった矢印（上にふくらむ。down で下） */
@@ -365,12 +365,12 @@
   /* 仕分け。k：0→1（.1〜.5 でカードが2つの列へとぶ、.5〜1 で結果が出る） */
   function sortFig(D, k) {
     var R = box(D), s = CH.fs(D), wd = wide(D), hy = R.y0 + s * 1.1, A = CH.rect(R.x0, hy + s * 1.2, R.x1, R.y1), cols = wd ? CH.cols(A, 2, .06) : CH.rows(A, 2, .1);
-    var rh = cols[0].h / 3, cw = wd ? cols[0].w * .46 : cols[0].w * .44, ch = Math.min(rh * .72, s * 2.6), gw = wd ? 3 : 2, gh = Math.ceil(6 / gw), hw = R.w / gw, hh = Math.min((R.h - s) / gh, s * 4.5);
+    var rh = wd ? cols[0].h / 3 : (cols[0].h - s * 1.2) / 3, cw = wd ? cols[0].w * .46 : cols[0].w * .44, ch = Math.min(rh * .72, s * 2.6), gw = wd ? 3 : 2, gh = Math.ceil(6 / gw), hw = R.w / gw, hh = Math.min((R.h - s) / gh, s * 4.5);
     var hd = sm(.02, .12, k), cnt = [0, 0], z = Math.min(s * 1.25, ch * .5);
-    E12.forEach(function (e) { z = Math.min(z, fitEq(D, e[1], cw * .72, z), fitEq(D, e[2], cw * 1.05, z)); });
+    E12.forEach(function (e) { z = Math.min(z, fitEq(D, e[1], cw * .74, z), fitEq(D, e[2], cols[0].w - cw - s * 3, z)); });
     if (hd > 0) [0, 1].forEach(function (c) { var G = cols[c], col = c ? C.green : C.blue; rbox(D, G.x0, G.y0 - s * .3, G.x1, G.y1, col, hd * .7, { dash: true, fa: .04, w: 1.8 }); CH.text(D, wd ? G.cx : G.x0 + s * .4, wd ? hy : G.y0 + s * .45, c ? '因数分解（和 → 積）' : '展開（積 → 和）', { col: col, a: hd, size: s * .95, align: wd ? 'center' : 'left' }); });
     E12.forEach(function (e, i) {
-      var c = e[3], j = cnt[c]++, G = cols[c], hx = R.x0 + hw * (i % gw + .5), hy0 = R.y0 + R.h * .14 + hh * (Math.floor(i / gw) + .5), tx = G.x0 + cw / 2 + s * .5, ty = G.y0 + rh * (j + .5) + (wd ? 0 : s * .35), f = CH.ease(cl((k - .1 - i * .05) / .25));
+      var c = e[3], j = cnt[c]++, G = cols[c], hx = R.x0 + hw * (i % gw + .5), hy0 = R.y0 + R.h * .14 + hh * (Math.floor(i / gw) + .5), tx = G.x0 + cw / 2 + s * .5, ty = wd ? G.y0 + rh * (j + .5) : G.y0 + s * 1.2 + (G.h - s * 1.2) / 3 * (j + .5), f = CH.ease(cl((k - .1 - i * .05) / .25));
       var x = CH.lerp(hx, tx, f), y = CH.lerp(hy0, ty, f), w = CH.lerp(Math.min(hw * .86, cw * 1.25), cw, f), col = f > .5 ? (c ? C.green : C.blue) : C.chalk;
       rbox(D, x - w / 2, y - ch / 2, x + w / 2, y + ch / 2, col, .9, { fa: .1, w: 1.8 });
       CH.text(D, x - w / 2 + z * .7, y, e[0], { size: z * .8, col: C.lav });
@@ -398,24 +398,25 @@
           var a1 = sm(.2, .35, t), a2 = sm(.6, .75, t), w2 = R.w * .1;
           arcArrow(D, xl + w2, y - z * .7, xr - w2, y - z * .7, C.chalk, a1, s * 1.2); CH.text(D, R.cx, y - z * .7 - s * 1.4, '展開', { size: s * .9, a: a1 });
           arcArrow(D, xr - w2, y + z * .7, xl + w2, y + z * .7, C.chalk, a2, s * 1.2, true); CH.text(D, R.cx, y + z * .7 + s * 1.5, '因数分解', { size: s * .9, a: a2 });
-          var F = CH.rect(R.x0, R.y0 + R.h * .36, R.x1, R.y1), xl2 = 3.4, u = Math.min(F.h * .75 / (xl2 + 3), F.w * .5 / (xl2 + 5)), x0 = F.cx - (xl2 + 5) * u / 2, y0 = F.y0 + s * 1.6;
-          var sp = sm(.25, .55, t) * (1 - sm(.62, .8, t));
+          var F = CH.rect(R.x0, R.y0 + R.h * .36, R.x1, R.y1), xl2 = 3.4, wd = wide(D), u = wd ? Math.min(F.h * .75 / (xl2 + 3), F.w * .5 / (xl2 + 5)) : Math.min(F.h * .55 / (xl2 + 3), F.w * .7 / (xl2 + 5)), x0 = F.cx - (xl2 + 5) * u / 2 + (wd ? 0 : s * .6), y0 = F.y0 + s * 1.6;
+          var sp = sm(.55, .75, t), tx = wd ? x0 + (xl2 + 5) * u + s * .8 : F.cx, ty = wd ? y0 + (xl2 + 3) * u / 2 : y0 + (xl2 + 3) * u + s * 2.2, z3 = Math.min(s * 1.1, fitEq(D, '面積の和 x^2＋8x＋15', wd ? R.x1 - tx : R.w * .9, s * 1.1));
           areaFig(D, x0, y0, u, [{ v: xl2, lab: 'x' }, { v: 5, lab: '5' }], [{ v: xl2, lab: 'x' }, { v: 3, lab: '3' }], { size: s, cell: function (i, j) { return { col: [[X2, XC], [XC, K1]][j][i], lab: [['x^2', '5x'], ['3x', '15']][j][i], la: sp }; } });
-          CH.text(D, x0 + (xl2 + 5) * u + s * .8, y0 + (xl2 + 3) * u / 2, sp > .5 ? '4つの面積の和' : '縦 × 横', { size: s * .9, align: 'left', col: sp > .5 ? C.blue : C.yel });
+          EQ(D, tx, ty - z3 * 1.2, '縦×横 (x＋3)(x＋5)', z3, { align: wd ? 'left' : null, col: C.yel, a: sm(.25, .4, t) });
+          EQ(D, tx, ty + z3 * 1.2, '面積の和 x^2＋8x＋15', z3, { align: wd ? 'left' : null, col: C.blue, a: sp });
         } },
       { tag: '例題', bh: '例題　まちがい直し', q: '次の計算は、まちがっている。正しく直そう。(1) (x＋6)^2＝x^2＋36　(2) x^2−16＝(x−4)^2　(3) 2x^2＋6x＝2(x^2＋3x)', a: '(1) x^2＋12x＋36　(2) (x＋4)(x−4)　(3) 2x(x＋3)',
         sub: '(1) まん中の項 12x がぬけている　(2) x^2−16 は和と差の積の公式　(3) かっこの中に、まだ共通な因数 x が残っている', dur: 12,
         b: [{ t: '(1) (x＋6)^2＝<b>x^2＋12x＋36</b>（まん中の項）　(2) x^2−16＝<b>(x＋4)(x−4)</b>', col: C.pink }, { t: '(3) 2x^2＋6x＝<b>2x(x＋3)</b>（共通な因数は残さずくくり出す）', col: C.pink }],
         draw: function (D) {
           var R = box(D), s = CH.fs(D), t = D.ph ? D.t : 0, wd = wide(D), rs = CH.rows(R, 3, .1), z = Math.min(s * 1.45, R.w / (wd ? 17 : 11));
-          W12.forEach(function (w) { z = Math.min(z, fitEq(D, w[0], R.w * (wd ? .44 : .8), z), fitEq(D, w[1], R.w * (wd ? .44 : .8), z)); });
+          W12.forEach(function (w) { z = Math.min(z, fitEq(D, w[0], R.w * (wd ? .36 : .74), z), fitEq(D, w[1], R.w * (wd ? .38 : .74), z)); });
           W12.forEach(function (w, i) {
             var G = rs[i], u = D.ph ? cl((t - i / 3) * 3) : 0, y = wd ? G.y0 + G.h * .38 : G.y0 + G.h * .2, x0 = G.x0 + s * 1.8;
             CH.text(D, G.x0, y, '(' + (i + 1) + ')', { size: s * .9, align: 'left' });
             var P = EQ(D, x0, y, w[0], z, { align: 'left' }), sp = P.spans[0], ma = sm(.05, .3, u);
             wavy(D, sp.x0, sp.x1, sp.y1 + z * .12, C.pink, ma); mark(D, sp.x1 + z * .55, y - z * .1, false, z * 1.1, ma);
             var ry = wd ? G.y0 + G.h * .86 : G.y0 + G.h * .54, cy2 = wd ? y : G.y0 + G.h * .88;
-            CH.text(D, wd ? x0 : x0, ry, w[2], { size: Math.min(s * .85, CH.fitSize(D, w[2], R.w * .9, s * .85)), col: C.pink, a: ma, align: 'left' });
+            EQ(D, x0, ry, w[2], Math.min(s * .85, fitEq(D, w[2], R.w * .9, s * .85)), { col: C.pink, a: ma, align: 'left' });
             var ca = sm(.4, .7, u); if (ca > 0) { var cx0 = wd ? R.x0 + R.w * .54 : x0; if (wd) CH.arrow(D, cx0 - s * 1.6, y, cx0 - s * .4, y, { col: C.yel, a: ca, w: 2, head: 8 }); else CH.text(D, x0 - s * .9, cy2, '→', { size: s, col: C.yel, a: ca }); EQ(D, cx0, cy2, w[1], z, { align: 'left', a: ca }); mark(D, cx0 + eqW(D, w[1], z) + z * .55, cy2 - z * .1, true, z * 1.1, sm(.65, .8, u)); }
           });
         } },

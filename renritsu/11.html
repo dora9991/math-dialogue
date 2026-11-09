@@ -191,7 +191,7 @@
     var k = frc ? 2.25 : 1.6, lh = z * k; if (lh * n > R.h) { lh = R.h / n; z = Math.min(z, lh / k); d = dims(z); }
     var x0 = o.align === 'left' ? R.x0 : R.cx - d.w / 2, ex = x0 + d.lw, y0 = o.top ? R.y0 + lh / 2 : R.cy - lh * n / 2 + lh / 2, ys = [], xe = [];
     L.forEach(function (l, i) {
-      var y = y0 + i * lh, a = at[i] < 0 ? 1 : CH.smooth(at[i], at[i] + .1, t), p = parts(l), col = l.col || C.chalk, x1; ys.push(y);
+      var y = y0 + i * lh, a = at[i] < 0 ? 1 : CH.smooth(at[i], Math.min(at[i] + .1, 1), t), p = parts(l), col = l.col || C.chalk, x1; ys.push(y);
       if (a <= 0) { xe.push(null); return; } a *= (o.a == null ? 1 : o.a);
       if (p) { if (p[0]) TM(D, ex, y, p[0], { size: z, col: col, a: a, align: 'right', hc: l.hc }); TX(D, ex, y, '＝', { size: z, col: col, a: a, align: 'left' }); x1 = ex + d.eq + TM(D, ex + d.eq, y, p[1], { size: z, col: col, a: a, align: 'left', hc: l.hc }); }
       else x1 = x0 + TM(D, x0, y, l.s, { size: z, col: col, a: a, align: 'left', hc: l.hc });
@@ -514,7 +514,7 @@
 
   /* ---- 今日の問い ---- */
   function today(D, k) {
-    var ph = !!D.ph, Rs = lay(D, .6), kk = ph ? Math.round(CH.lerp(38, 33, CH.smooth(.05, .35, k))) : 38, G = scene(D, Rs[0], kk, { cand: 1, lab: !!Rs[1] }), Pl = G.Pl, p = G.p, s = CH.fs(D), TR = over(D, G, Rs[1]);
+    var ph = !!D.ph, Rs = lay(D, .6), kk = ph ? Math.round(CH.lerp(38, 33, CH.smooth(.05, .35, k))) : 38, G = scene(D, Rs[0], kk, { cand: 1, lab: !!Rs[1], pt: !ph || k < .04 || k > .36 }), Pl = G.Pl, p = G.p, s = CH.fs(D), TR = over(D, G, Rs[1]);
     if (!ph) {
       side(D, TR, [{ s: '{x＋y}＝10', lab: '…① 回数', hc: C.yel }, { s: '3x＋5y＝{38}', lab: '…② 得点', hc: C.blue, at: 0 }, { s: 'x＝6、y＝4', txt: true, col: C.yel, at: 0 }, { s: '1回以上の整数 → ○', txt: true, col: C.yel, at: 0 }, { s: '38点でないときは？', txt: true, col: 'rgba(242,240,230,.8)', at: 0 }], 1);
       plab(D, Pl, 6.3, 4.6, '(6, 4)', { col: C.yel });
@@ -550,7 +550,7 @@
   /* ---- 例題：35点と 44点 ---- */
   function ex(D, k) {
     var ph = !!D.ph, Rs = two(D, .56, .56), e1 = ph ? CH.smooth(.05, .25, k) : 0, e2b = ph ? CH.smooth(.5, .7, k) : 0, kk = Math.round(CH.lerp(CH.lerp(38, 35, e1), 44, e2b)), s = CH.fs(D);
-    var G = scene(D, Rs[0], kk, { cand: 1, pt: ph }), Pl = G.Pl, p = G.p;
+    var G = scene(D, Rs[0], kk, { cand: 1, pt: ph && ((k > .26 && k < .49) || k > .71) }), Pl = G.Pl, p = G.p;
     if (ph && (k > .25 && k < .5 || k > .7)) plab(D, Pl, p[0] + .25, p[1] + .7, '(' + frs(p[0]) + ', ' + frs(p[1]) + ')', { col: isAns(p) ? C.yel : C.pink });
     var sh = function (r, c) { if (r === 0 || c === 0 || r === 1) return 1; if (!ph) return 0; var t0 = c === 1 ? .26 : .7; return CH.smooth(t0 + (r - 2) * .07, t0 + (r - 2) * .07 + .06, k); };
     tableF(D, Rs[1], ['', '① 35点', '② 44点'], [['得点の式', '3x＋5y＝35', '3x＋5y＝44'], ['y の値', '[5/2]', '7'], ['x の値', '[15/2]', '3'], ['答えに なるか', '×', '○']], {
