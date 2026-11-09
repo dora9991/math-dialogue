@@ -157,11 +157,11 @@
   }
   /* 字の札（きまりの名前など）。返すもの：幅 */
   function txW(D, txt, s, num) { var g = D.ctx; g.save(); g.font = '600 ' + s + 'px ' + (num ? NUM : FONT); var w = g.measureText(txt).width; g.restore(); return w; }
-  function chipW(D, txt, s) { var g = D.ctx; g.save(); g.font = '600 ' + s + 'px ' + FONT; var w = g.measureText(txt).width + s * 1.1; g.restore(); return w; }
+  function chipW(D, txt, s) { return eqW(D, txt, s) + s * 1.1; }
   function chip(D, x, y, txt, col, a, size, al) {
     var s = size || CH.fs(D, .8), w = chipW(D, txt, s);
     var x0 = al === 'left' ? x : al === 'right' ? x - w : x - w / 2;
-    rbox(D, x0, y - s * .8, x0 + w, y + s * .8, col, a, { r: s * .8, w: 1.8, fa: .18 }); CH.text(D, x0 + w / 2, y + 1, txt, { size: s, col: col, a: a });
+    if (a > 0) { rbox(D, x0, y - s * .8, x0 + w, y + s * .8, col, a, { r: s * .8, w: 1.8, fa: .18 }); EQ(D, x0 + w / 2, y + 1, txt, s, { col: col, a: a }); }
     return w;
   }
   /* まがった矢印（上にふくらむ。down で下） */
@@ -274,6 +274,28 @@
       ys.forEach(function (p, j) { if (!p.lab || sa <= 0) return; var h = Y[j + 1] - Y[j], z = Math.min(s, h * 1.1 + s * .3); vbrace(D, X[0] - 5, Y[j] + 2, Y[j + 1] - 2, p.col || C.chalk, sa, false, Math.min(9, h * .25)); EQ(D, X[0] - 10 - z * .2, (Y[j] + Y[j + 1]) / 2, p.lab, z, { a: sa, col: p.col, align: 'right' }); });
     }
     return { X: X, Y: Y, x1: X[X.length - 1], y1: Y[Y.length - 1] };
+  }
+  /* 表（マスの字は、図の中の式の書き方）。rows[0] が見出しの行、各行の [0] が見出しの列。
+     o：cw（列の幅の割合）、rh（行の高さの上限）、size、top（上につめる）、show(r, c)→濃さ、hl(r, c)→色、col(r, c)→字の色。返すもの：cell(r, c) */
+  function etable(D, R, rows, o) {
+    o = o || {}; var nR = rows.length, nC = rows[0].length, cw = o.cw || rows[0].map(function () { return 1 / nC; }), rh = Math.min(R.h / nR, o.rh || CH.fs(D) * 2.4), H = rh * nR, y0 = o.top ? R.y0 : R.cy - H / 2, s = o.size || CH.fs(D, 1.05), xs = [R.x0];
+    cw.forEach(function (w) { xs.push(xs[xs.length - 1] + w * R.w); });
+    function cell(r, c) { return CH.rect(xs[c], y0 + r * rh, xs[c + 1], y0 + (r + 1) * rh); }
+    for (var r = 0; r < nR; r++) for (var c = 0; c < nC; c++) {
+      var q = cell(r, c), hl = o.hl ? o.hl(r, c) : null;
+      if (r === 0 || c === 0) CH.fillRect(D, q.x0, q.y0, q.x1, q.y1, { fill: 'rgba(242,240,230,.06)' });
+      if (hl) CH.fillRect(D, q.x0, q.y0, q.x1, q.y1, { fill: hexA(hl, .22) });
+    }
+    for (var i = 0; i <= nR; i++) CH.line(D, R.x0, y0 + i * rh, xs[nC], y0 + i * rh, { col: 'rgba(242,240,230,.45)', w: 1.2 });
+    xs.forEach(function (x) { CH.line(D, x, y0, x, y0 + H, { col: 'rgba(242,240,230,.45)', w: 1.2 }); });
+    rows.forEach(function (row, r) {
+      row.forEach(function (txt, c) {
+        if (txt == null || txt === '') return; var q = cell(r, c), sh = o.show ? o.show(r, c) : 1; if (sh <= 0) return;
+        var z = Math.min(r === 0 || c === 0 ? s * .85 : s, fitEq(D, txt, q.w * .88, s), rh * .5), col = o.col ? o.col(r, c) : null;
+        EQ(D, q.cx, q.cy, txt, z, { a: sh, col: col || (r === 0 || c === 0 ? 'rgba(242,240,230,.8)' : null) });
+      });
+    });
+    return { cell: cell, rh: rh, y0: y0, y1: y0 + H, xs: xs };
   }
   /* 1 のタイル（正方形）。(x, y) は左上、u は1辺 */
   function tile(D, x, y, u, col, a, o) {

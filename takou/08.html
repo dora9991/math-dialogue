@@ -340,12 +340,16 @@
   function today(D, t, ph) {
     var R = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), s = CH.fs(D), w = wideOf(D), A = ph ? (w ? CH.rect(R.x0, R.y0, R.x0 + R.w * .62, R.y1) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .66)) : R;
     var B = w ? CH.rect(R.x0 + R.w * .64, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .68, R.x1, R.y1), ls = s * 1.05;
-    var u = Math.min((A.w - ls * 4) / FW, (A.h - ls * 4) / FH), ox = A.cx - FW * u / 2 + ls, oy = A.cy - FH * u / 2 + ls * 1.2;
-    var T0 = tray(), T1 = rectT(XL, 3, 2).map(function (q) { return { k: q.k, cx: q.cx + (FW - XL - 3) / 2, cy: q.cy + (FH - XL - 2) / 2, ang: q.ang }; });
-    var km = ph ? sm(.04, .55, t) : 0, T = moveT(T0, T1, km, .55);
-    drawT(D, T, ox, oy, u, XL);
+    /* ならべる前（トレイ）と、ならべたあと（長方形）は、それぞれ四角 A に入る大きさ。動きながら大きさもかわる */
+    var u0 = Math.min((A.w - ls * 2) / FW, (A.h - ls * 3) / FH), ox0 = A.cx - FW * u0 / 2, oy0 = A.cy - FH * u0 / 2 + ls * .5;
+    var u = Math.min((A.w - ls * 6) / (XL + 3), (A.h - ls * 5) / (XL + 2)), rx = A.cx - (XL + 3) * u / 2 + ls * 1.6, ry = A.cy - (XL + 2) * u / 2 + ls * 1.4, i;
+    var T0 = tray(), T1 = rectT(XL, 3, 2), km = ph ? sm(.04, .55, t) : 0, M = moveT(T0.map(function () { return { k: '', cx: 0, cy: 0, ang: 0 }; }), T1.map(function () { return { k: '', cx: 1, cy: 0, ang: 0 }; }), km, .55);
+    T0.forEach(function (a, j) {
+      var b = T1[j], e = M[j].cx, uu = CH.lerp(u0, u, e), d = tdim(a.k, XL);
+      tile(D, CH.lerp(ox0 + a.cx * u0, rx + b.cx * u, e), CH.lerp(oy0 + a.cy * u0, ry + b.cy * u, e), d[0] * uu, d[1] * uu, a.k, { ang: CH.lerp(a.ang, b.ang, e) });
+    });
     if (!ph) { TX(D, R.cx, R.y1 - s * .8, 'x^2＋5x＋6 … 1まい、5まい、6まい', { size: fit(D, 'x^2＋5x＋6 … 1まい、5まい、6まい', R.w, s), col: 'rgba(242,240,230,.75)' }); return; }
-    var kl = sm(.58, .7, t), kb = sm(.7, .82, t), rx = ox + (FW - XL - 3) / 2 * u, ry = oy + (FH - XL - 2) / 2 * u, i;
+    var kl = sm(.58, .7, t), kb = sm(.7, .82, t);
     if (kl > 0) {
       TX(D, rx + XL * u / 2, ry - ls * .8, 'x', { size: ls, a: kl }); for (i = 0; i < 3; i++) TX(D, rx + (XL + i + .5) * u, ry - ls * .8, '1', { size: ls * .9, col: C.orange, a: kl });
       TX(D, rx - ls * .5, ry + XL * u / 2, 'x', { size: ls, align: 'right', a: kl }); for (i = 0; i < 2; i++) TX(D, rx - ls * .5, ry + (XL + i + .5) * u, '1', { size: ls * .9, align: 'right', col: C.orange, a: kl });
@@ -407,9 +411,9 @@
 
   /* ---- 考えよう：x^2＋□x＋12 のタイル ---- */
   function kangae(D) {
-    var p = D.V.p, q = D.V.q, R = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), s = CH.fs(D), N = 12, M = 12, ls = s * .9;
+    var p = D.V.p, q = D.V.q, R = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), s = CH.fs(D), N = 12, ls = s * .9;
     var e = 'x^2＋' + (p + q === 1 ? '' : p + q) + 'x＋12', f = '縦 x＋' + q + '、横 x＋' + p;
-    var top = s * 2.6, u = Math.min((R.w * .74 - ls * 2) / (XL + M), (R.h - top - ls * 2) / (XL + M)), x0 = R.x0 + ls * 1.6, y0 = R.y0 + top + ls * 1.4;
+    var top = s * 2.6, MM = Math.max(4, p, q), u = Math.min((R.w * .74 - ls * 2) / (XL + MM), (R.h - top - ls * 2) / (XL + MM)), x0 = R.x0 + ls * 1.6, y0 = R.y0 + top + ls * 1.4;
     TX(D, R.x0, R.y0 + s * .7, e, { size: s * 1.25, align: 'left', col: C.yel }); TX(D, R.x0 + TW(D, e, s * 1.25) + s, R.y0 + s * .7, f, { size: fit(D, f, R.w * .45, s), align: 'left', col: 'rgba(242,240,230,.75)' });
     drawT(D, rectT(XL, p, q).filter(function (t) { return t.k !== '1'; }), x0, y0, u, XL);
     var put = Math.min(N, p * q), i;
@@ -420,7 +424,7 @@
     TX(D, ax + aw / 2, R.y0 + top, '1 のタイル', { size: fit(D, '1 のタイル', aw, s * .8), col: C.orange });
     TX(D, ax + aw / 2, R.y0 + top + s * 1.2, put + 'まい ならんだ', { size: fit(D, '12まい ならんだ', aw, s * .8) });
     if (p * q > N) TX(D, ax + aw / 2, R.y0 + top + s * 2.4, 'すきま ' + (p * q - N), { size: fit(D, 'すきま 12', aw, s * .8), col: C.pink });
-    if (left > 0) { TX(D, ax + aw / 2, R.y0 + top + s * 2.4, 'あまり ' + left, { size: fit(D, 'あまり 12', aw, s * .8), col: C.pink }); for (i = 0; i < left; i++) tile(D, ax + aw / 2 + ((i % 3) - 1) * cu * 1.15, R.y0 + top + s * 3.8 + Math.floor(i / 3) * cu * 1.15, cu, cu, '1', { lab: '' }); }
+    if (left > 0) { TX(D, ax + aw / 2, R.y0 + top + s * 2.4, 'あまり ' + left, { size: fit(D, 'あまり 12', aw, s * .8), col: C.pink }); for (i = 0; i < left; i++) tile(D, ax + aw / 2 + ((i % 3) - 1) * cu * 1.15, R.y0 + top + s * 3.2 + cu * .6 + Math.floor(i / 3) * cu * 1.15, cu, cu, '1', { lab: '' }); }
   }
 
   /* ---- チャレンジ ---- */

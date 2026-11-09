@@ -277,7 +277,7 @@
   }
   /* ---- 考えよう：長い辺 a の紙を折って、重ねてくらべる。m：0 折る前、1 折る、2 重ねる ---- */
   function tryPaper(D, R, a, m) {
-    var s = CH.fs(D), u = Math.min(R.w * .8 / 2, R.h * .62 / 1.25), W = a * u, H = u, x0 = R.cx - W / 2, y0 = R.y0 + s * 2.4;
+    var s = CH.fs(D), u = Math.min(R.w * .8 / 2, (R.h - s * 4.4) / 2), W = a * u, H = u, x0 = R.cx - W / 2, y0 = R.y0 + s * 1.2 + 2 * u - H;
     CH.fillRect(D, x0, y0, x0 + (m ? W / 2 : W), y0 + H, { fill: PAPER, stroke: C.chalk, sw: 2 });
     EQ(D, x0 - s * .4, y0 + H / 2, '1', s, { align: 'right' });
     if (m === 0) { CH.line(D, x0 + W / 2, y0 - s * .3, x0 + W / 2, y0 + H + s * .3, { col: C.yel, dash: [6, 5], w: 2 }); EQ(D, x0 + W / 2, y0 + H + s * .9, 'a', s); }

@@ -157,11 +157,11 @@
   }
   /* 字の札（きまりの名前など）。返すもの：幅 */
   function txW(D, txt, s, num) { var g = D.ctx; g.save(); g.font = '600 ' + s + 'px ' + (num ? NUM : FONT); var w = g.measureText(txt).width; g.restore(); return w; }
-  function chipW(D, txt, s) { var g = D.ctx; g.save(); g.font = '600 ' + s + 'px ' + FONT; var w = g.measureText(txt).width + s * 1.1; g.restore(); return w; }
+  function chipW(D, txt, s) { return eqW(D, txt, s) + s * 1.1; }
   function chip(D, x, y, txt, col, a, size, al) {
     var s = size || CH.fs(D, .8), w = chipW(D, txt, s);
     var x0 = al === 'left' ? x : al === 'right' ? x - w : x - w / 2;
-    rbox(D, x0, y - s * .8, x0 + w, y + s * .8, col, a, { r: s * .8, w: 1.8, fa: .18 }); CH.text(D, x0 + w / 2, y + 1, txt, { size: s, col: col, a: a });
+    if (a > 0) { rbox(D, x0, y - s * .8, x0 + w, y + s * .8, col, a, { r: s * .8, w: 1.8, fa: .18 }); EQ(D, x0 + w / 2, y + 1, txt, s, { col: col, a: a }); }
     return w;
   }
   /* まがった矢印（上にふくらむ。down で下） */

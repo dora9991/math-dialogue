@@ -61,21 +61,22 @@
     g.beginPath(); g.moveTo(x + s * .03, y + s * .1); g.lineTo(x + s * .13, y + s * .03); g.lineTo(x + s * .27, y + s * .42); g.lineTo(x + s * .47, y - s * .58); g.lineTo(x + s * .58 + w, y - s * .58); g.stroke(); g.restore();
   }
   /* «…» で色をかえながら、左から */
-  function chunk(D, x, y, t, size, o) {
-    var segs = [], cur = '', hl = false;
+  function chunk(D, x, y, t, size, o, on) {
+    var segs = [], cur = '', hl = !!on;
     String(t).split('').forEach(function (ch) { if (ch === '«' || ch === '»') { if (cur) segs.push([cur, hl]); cur = ''; hl = ch === '«'; } else cur += ch; });
     if (cur) segs.push([cur, hl]);
     segs.forEach(function (q) { CH.text(D, x, y, q[0], { size: size, align: 'left', col: q[1] ? (o.hc || C.yel) : o.col, a: o.a, outline: o.outline }); x += mw(D, q[0], size); });
+    return hl;
   }
   function TX(D, x, y, s, o) {
-    o = o || {}; var size = o.size || CH.fs(D), fz = size * .72, w = TW(D, s, size), x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline, hc: o.hc };
+    o = o || {}; var size = o.size || CH.fs(D), fz = size * .72, w = TW(D, s, size), x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline, hc: o.hc }, on = !!o.on0;
     parse(s).forEach(function (p) {
-      var pw = segW(D, p, size);
-      if (p.t != null) chunk(D, x0, y, p.t, size, oo);
-      else if (p.r != null) { rad(D, x0, y, TW(D, p.r, size), size, oo); TX(D, x0 + size * .58, y, p.r, ext({ size: size, align: 'left' }, oo)); }
+      var pw = segW(D, p, size), lc = on ? (o.hc || C.yel) : (o.col || C.chalk);
+      if (p.t != null) on = chunk(D, x0, y, p.t, size, oo, on);
+      else if (p.r != null) { rad(D, x0, y, TW(D, p.r, size), size, ext(ext({}, oo), { col: lc })); TX(D, x0 + size * .58, y, p.r, ext({ size: size, align: 'left', on0: on }, oo)); }
       else {
-        var cx = x0 + pw / 2; TX(D, cx, y - fz * .66, p.n, ext({ size: fz }, oo)); TX(D, cx, y + fz * .72, p.d, ext({ size: fz }, oo));
-        CH.line(D, x0 + fz * .14, y + fz * .03, x0 + pw - fz * .14, y + fz * .03, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+        var cx = x0 + pw / 2; TX(D, cx, y - fz * .66, p.n, ext({ size: fz, on0: on }, oo)); TX(D, cx, y + fz * .72, p.d, ext({ size: fz, on0: on }, oo));
+        CH.line(D, x0 + fz * .14, y + fz * .03, x0 + pw - fz * .14, y + fz * .03, { col: lc, w: Math.max(1.3, size * .07), a: o.a });
       }
       x0 += pw;
     });
