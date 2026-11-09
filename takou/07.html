@@ -340,7 +340,7 @@
     var y1 = B.y0 + B.h * (w ? .22 : .16), y2 = B.y0 + B.h * (w ? .5 : .5), y3 = B.y0 + B.h * (w ? .8 : .86);
     TX(D, B.x0, y1 - z * 1.1, '部分の面積の和', { size: z * .62, align: 'left', col: C.green, a: sm(.02, .12, t) });
     var parts = [{ t: 'x^2', col: C.yel, a: sm(.05, .15, t) }]; for (var i = 0; i < 4; i++) parts.push({ t: '＋x', col: C.blue, a: sm(.15 + i * .1, .25 + i * .1, t) });
-    var ps = seq(D, B.cx, y1 + z * .3, parts, { size: z }); TX(D, ps[4].x1 + z * .3, y1 + z * .3, '＝x^2＋4x', { size: z, align: 'left', a: sm(.5, .6, t) });
+    parts.push({ t: '＝x^2＋4x', a: sm(.5, .6, t) }); seq(D, B.cx, y1 + z * .3, parts, { size: fit(D, 'x^2＋x＋x＋x＋x＝x^2＋4x', B.w, z) });
     TX(D, B.x0, y2 - z * 1.1, '縦 × 横', { size: z * .62, align: 'left', col: C.green, a: sm(.58, .68, t) });
     TX(D, B.cx, y2 + z * .3, 'x(x＋4)', { size: z, a: sm(.62, .72, t) });
     var f = 'x^2＋4x＝x(x＋4)', a3 = sm(.8, .95, t);
@@ -357,7 +357,7 @@
     var xl = A.cx - TW(D, 'x^2＋4x', z) * .5 - s * 1.2, xr = A.cx + TW(D, 'x^2＋4x', z) * .5 + s * 1.2;
     CH.arrow(D, xl, yT + z * .7, xl, yB - z * .7, { col: C.blue, w: 2.4, head: 9 }); TX(D, xl - s * .4, (yT + yB) / 2, '展開', { size: s * .9, col: C.blue, align: 'right' });
     CH.arrow(D, xr, yB - z * .7, xr, yT + z * .7, { col: C.yel, w: 2.4, head: 9, a: ph ? k1 : .5 }); TX(D, xr + s * .4, (yT + yB) / 2, ph ? '因数分解' : '？', { size: s * .9, col: C.yel, align: 'left', a: ph ? k1 : .7 });
-    if (k2 > 0) { brace(D, x0 + wx - 2, yT + z * .75, x0 + 2, yT + z * .75, s * .35, C.green, k2); brace(D, x0 + wx + wp - 2, yT + z * .75, x0 + wx + 2, yT + z * .75, s * .35, C.green, k2); TX(D, A.cx, yT + z * 1.45, '因数　　因数', { size: s * .75, col: C.green, a: k2 }); }
+    if (k2 > 0) { brace(D, x0 + wx - 2, yT + z * .75, x0 + 2, yT + z * .75, s * .35, C.green, k2); brace(D, x0 + wx + wp - 2, yT + z * .75, x0 + wx + 2, yT + z * .75, s * .35, C.green, k2); TX(D, x0 + wx / 2, yT + z * 1.45, '因数', { size: s * .75, col: C.green, a: k2 }); TX(D, x0 + wx + wp / 2, yT + z * 1.45, '因数', { size: s * .75, col: C.green, a: k2 }); }
     /* ma＋mb＝m(a＋b) */
     var G = area(D, CH.rect(B.x0, B.y0, B.x1, B.y1 - s * 2.6), [{ t: 'a', v: 3 }, { t: 'b', v: 2.2 }], [{ t: 'm', v: 2, col: C.yel }], { top: 'a＋b', cell: function (r, c) { return { t: c ? 'mb' : 'ma', col: c ? C.orange : C.blue, fa: .28 }; } });
     var f = 'ma＋mb＝{y|m}(a＋b)';

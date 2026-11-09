@@ -396,7 +396,7 @@
     var z = Math.min(s, u * 2.2 + 6), fz = Math.min(s * .9, fitEq(D, '花だん', W * u * .8, s * .9));
     EQ(D, X(a + W / 2), Y(a + Hf * .38), '花だん', fz, { col: C.green });
     var py = Y(a + Hf * .72); CH.arrow(D, X(a + W / 2), py, X(a), py, { col: C.green, w: 1.6, head: 6 }); CH.arrow(D, X(a + W / 2), py, X(a + W), py, { col: C.green, w: 1.6, head: 6 }); EQ(D, X(a + W / 2), py - z * .7, o.wl || 'p', z, { col: C.green });
-    if (o.hl3) { var hy = Y(a + Hf / 2); CH.arrow(D, X(a + W * .2), Y(a), X(a + W * .2), Y(a + Hf), { col: C.green, w: 1.6, head: 6 }); EQ(D, X(a + W * .2) + z * .5, hy, o.hl3, z, { col: C.green, align: 'left' }); }
+    if (o.hl3 && Hf * u > z * 4) { var hy = Y(a + Hf / 2); CH.arrow(D, X(a + W * .2), Y(a), X(a + W * .2), Y(a + Hf), { col: C.green, w: 1.6, head: 6 }); EQ(D, X(a + W * .2) + z * .5, hy, o.hl3, z, { col: C.green, align: 'left' }); }
     /* 4つの台形 */
     P.forEach(function (q, i) {
       var th0 = i * Math.PI / 2, th = CH.lerp(th0, tgt[i], mv), cx0 = X(q.c[0]) + nrm[i][0] * ex * a * u * .5, cy0 = Y(q.c[1]) + nrm[i][1] * ex * a * u * .5;
