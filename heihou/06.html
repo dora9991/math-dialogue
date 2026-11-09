@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>根号のかけ算・わり算</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 平方根 第6時：根号をふくむ数の、かけ算・わり算のしかたを見つけよう（ikkan の lesson_heihou_06 と同じ流れ）。
+   図の数値は ikkan のデータ（自作）と同じ（今日の問い √2×√3 と電卓の値、例題 √3×√5・√2×√8・√42÷√6・√45/√5、
+   例題2 は方眼の上の 縦 √2・横 √8 の長方形（自作。演習プリントの（5）長方形の面積から）、考えようの √24、チャレンジ √a×√b＝6）。
+   (√2×√3)² のカード √2・√3・√2・√3 がならびかわって (√2×√2)×(√3×√3)＝2×3＝6 になる（2乗して確かめる）。
+   方眼の上の長方形の面積を、まわりの正方形 − 三角形4つで数えると 4（＝√16）。面積・長さは頂点の座標から計算し直して確かめる（CH.check）。
+   この時間は、根号の中を簡単にする前（第7時）なので、答えは √ の中に2乗の因数が残らない形か、整数になる形だけ。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)', NUMF = '"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif';
+  /* ---- このページの道具 ---- */
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D); if (o.maxW) size = CH.fitSize(D, s, o.maxW, size, { num: o.num }); CH.text(D, x, y, s, { col: o.col, a: o.a, size: size, num: o.num, align: o.align, outline: o.outline === false ? null : OUT }); }
+  function top(D, s, col, a, row) { var B = CH.box(D, { t: 0, l: .03, r: .03 }), f = CH.fs(D, 1); say(D, B.cx, B.y0 + f * (.8 + (row || 0) * 1.35), s, { col: col || C.yel, a: a, size: f, maxW: B.w }); }
+  function fr(D, R, bx, u) { var cx = (bx[0] + bx[2]) / 2, cy = (bx[1] + bx[3]) / 2; if (!u) u = Math.min(R.w / (bx[2] - bx[0]), R.h / (bx[3] - bx[1])); return { X: function (p) { return [R.cx + (p[0] - cx) * u, R.cy - (p[1] - cy) * u]; }, u: u, D: D, R: R, s: CH.fs(D, 1) }; }
+  function poly(F, ps, o) { CH.poly(F.D, ps.map(function (p) { return F.X(p); }), o); }
+  function grid(F, x0, y0, x1, y1, a) {
+    var g = F.D.ctx, x, y, p, q; g.save(); g.globalAlpha = F.D.ga * (a == null ? 1 : a); g.strokeStyle = 'rgba(242,240,230,.2)'; g.lineWidth = 1; g.beginPath();
+    for (x = x0; x <= x1 + 1e-9; x++) { p = F.X([x, y0]); q = F.X([x, y1]); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); }
+    for (y = y0; y <= y1 + 1e-9; y++) { p = F.X([x0, y]); q = F.X([x1, y]); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); }
+    g.stroke(); g.restore();
+  }
+  function shoe(p) { var s = 0; p.forEach(function (q, i) { var r = p[(i + 1) % p.length]; s += q[0] * r[1] - r[0] * q[1]; }); return Math.abs(s) / 2; }
+  function d2(p, q) { return (p[0] - q[0]) * (p[0] - q[0]) + (p[1] - q[1]) * (p[1] - q[1]); }
+  function isSq(n) { var r = Math.round(Math.sqrt(n)); return r * r === n; }
+  /* 字の幅 */
+  function mw(D, txt, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + NUMF; var w = g.measureText(String(txt)).width; g.restore(); return w; }
+  /* 根号の記号を線で描く（x0：左はし、y0：上、y1：下、w：中の字の幅）。中の字の左はしを返す */
+  function radical(D, x0, y0, y1, w, o) {
+    o = o || {}; var H = y1 - y0, g = D.ctx; g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = Math.max(1.6, H * .07); g.lineJoin = 'round'; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x0, y0 + H * .62); g.lineTo(x0 + H * .12, y0 + H * .55); g.lineTo(x0 + H * .3, y1); g.lineTo(x0 + H * .48, y0); g.lineTo(x0 + H * .48 + w, y0); g.stroke(); g.restore();
+    return x0 + H * .48;
+  }
+  /* √ をふくむ式：parts＝['字', ['r', '中の字'], ['rf', 分子, 分母], ['f', 分子, 分母], …] を、横にならべて描く。o.align（center・left） */
+  function expr(D, x, y, parts, o) {
+    o = o || {}; var size = o.size || CH.fs(D), col = o.col || C.chalk, a = o.a, ws = parts.map(function (p) {
+      if (typeof p === 'string') return mw(D, p, size);
+      if (p[0] === 'r') return size * .1 + size * 1.15 * .48 + mw(D, p[1], size) + size * .2;
+      if (p[0] === 'rf') return size * .1 + size * 2.1 * .48 + Math.max(mw(D, p[1], size * .8), mw(D, p[2], size * .8)) + size * .44;
+      return Math.max(mw(D, p[1], size * .8), mw(D, p[2], size * .8)) + size * .3;
+    }), W = ws.reduce(function (s, w) { return s + w; }, 0), xx = o.align === 'left' ? x : x - W / 2;
+    parts.forEach(function (p, i) {
+      if (typeof p === 'string') CH.text(D, xx, y, p, { size: size, col: col, a: a, num: true, align: 'left', outline: o.outline === false ? null : OUT });
+      else if (p[0] === 'r') { var H = size * 1.15, xi = radical(D, xx + size * .1, y - H * .55, y + H * .45, ws[i] - H * .48 - size * .14, { col: col, a: a }); CH.text(D, xi + size * .06, y + size * .04, p[1], { size: size, col: col, a: a, num: true, align: 'left' }); }
+      else if (p[0] === 'rf') { var H2 = size * 2.1, wi = ws[i] - H2 * .48 - size * .14, xi2 = radical(D, xx + size * .1, y - H2 / 2, y + H2 / 2, wi, { col: col, a: a }); CH.frac(D, xi2 + wi / 2, y, p[1], p[2], { size: size, col: col, a: a }); }
+      else CH.frac(D, xx + ws[i] / 2, y, p[1], p[2], { size: size, col: col, a: a });
+      xx += ws[i];
+    });
+    return W;
+  }
+
+  /* ---- 数と検算 ---- */
+  var V2 = '1.41421356', V3 = '1.73205080', V6 = '2.44948974';
+  function tr8(x) { var s = String(Math.floor(x * 1e8)); return s.charAt(0) + '.' + s.slice(1); }
+  CH.check(tr8(Math.sqrt(2)) === V2 && tr8(Math.sqrt(3)) === V3 && tr8(Math.sqrt(6)) === V6 && Math.abs(Math.sqrt(2) * Math.sqrt(3) - Math.sqrt(6)) < 1e-12 && 2 * 3 === 6, '今日の問い（√2×√3＝√6）');
+  /* 例題：[式, 根号の中の計算, 根号の中の数, 答え] */
+  var EX = [[3, 5, '×'], [2, 8, '×'], [42, 6, '÷'], [45, 5, '÷']].map(function (e) { var n = e[2] === '×' ? e[0] * e[1] : e[0] / e[1]; return { a: e[0], b: e[1], op: e[2], n: n, ans: isSq(n) ? '√' + n + '＝' + Math.round(Math.sqrt(n)) : '√' + n }; });
+  CH.check(EX.map(function (e) { return e.n; }).join() === '15,16,7,9' && EX.map(function (e) { return e.ans; }).join() === '√15,√16＝4,√7,√9＝3' &&
+    EX.every(function (e) { var v = e.op === '×' ? Math.sqrt(e.a) * Math.sqrt(e.b) : Math.sqrt(e.a) / Math.sqrt(e.b); return Math.abs(v - Math.sqrt(e.n)) < 1e-12; }), '例題（√15、4、√7、3）');
+  /* 例題2：方眼の上の長方形 A(0,2)・B(1,3)・C(3,1)・D(2,0)（AB＝√2、BC＝√8） */
+  var RC = [[0, 2], [1, 3], [3, 1], [2, 0]], TRI = [[[0, 2], [0, 3], [1, 3]], [[1, 3], [3, 3], [3, 1]], [[3, 1], [3, 0], [2, 0]], [[2, 0], [0, 0], [0, 2]]];
+  CH.check(d2(RC[0], RC[1]) === 2 && d2(RC[1], RC[2]) === 8 && (RC[1][0] - RC[0][0]) * (RC[2][0] - RC[1][0]) + (RC[1][1] - RC[0][1]) * (RC[2][1] - RC[1][1]) === 0 &&
+    shoe(RC) === 4 && 9 - TRI.reduce(function (s, t) { return s + shoe(t); }, 0) === 4 && Math.abs(Math.sqrt(2) * Math.sqrt(8) - 4) < 1e-12, '例題2（面積 4）');
+  /* チャレンジ：ab＝36（a≦b）で、√a も √b も整数にならない組 */
+  var PAIRS = []; for (var a = 1; a * a <= 36; a++) if (36 % a === 0) PAIRS.push([a, 36 / a]);
+  var OK = PAIRS.filter(function (p) { return !isSq(p[0]) && !isSq(p[1]); });
+  CH.check(PAIRS.length === 5 && OK.map(function (p) { return '(' + p + ')'; }).join() === '(2,18),(3,12),(6,6)' && OK.every(function (p) { return Math.abs(Math.sqrt(p[0]) * Math.sqrt(p[1]) - 6) < 1e-12; }), 'チャレンジ（(2,18)、(3,12)、(6,6)）');
+
+  /* ---- 今日の問い：電卓の値と数直線 ---- */
+  function values(D, t) {
+    var R = CH.box(D, { l: .05, r: .05, t: .08, b: .06 }), s = CH.fs(D, 1), rs = CH.rows(R, 2, .1), T = rs[0];
+    CH.table(D, CH.rect(T.x0, T.y0, T.x1, T.y0 + Math.min(T.h, s * 4.4)), ['', '√2', '√3', '√6'], [['電卓の値', V2 + '…', V3 + '…', V6 + '…']], { fw: .22, top: true, size: s * .8 });
+    var q = rs[1], y = q.y0 + q.h * .4, x0 = q.x0 + s, x1 = q.x1 - s, X = function (v) { return x0 + v / 3 * (x1 - x0); };
+    CH.line(D, x0 - 6, y, x1 + 6, y, { w: 2 });
+    for (var i = 0; i <= 30; i++) { var big = i % 10 === 0; CH.line(D, X(i / 10), y - (big ? 8 : 4), X(i / 10), y + (big ? 8 : 4), { w: big ? 2 : 1.2 }); if (big) CH.text(D, X(i / 10), y + s * 1.2, String(i / 10), { size: s * .8, num: true }); }
+    [[Math.SQRT2, '√2', C.blue], [Math.sqrt(3), '√3', C.green], [Math.sqrt(6), '√6', C.yel]].forEach(function (p) { CH.circle(D, X(p[0]), y, s * .3, { fill: p[2], stroke: 'rgba(20,30,24,.8)', sw: 1.2 }); say(D, X(p[0]), y - s * 1.3, p[1], { col: p[2], size: s, num: true }); });
+    if (t > 0) say(D, q.cx, q.y1 - s * .6, '1.414…×1.732… ＝ 2.449…（だいたい √6）', { size: s * .9, col: C.chalk, a: CH.smooth(0, .12, t) * (1 - CH.smooth(.2, .28, t)), maxW: q.w });
+  }
+  /* ---- 今日の問い：2乗して確かめる（カード） ---- */
+  function cards(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .14, b: .06 }), s = CH.fs(D, 1.05), n = 7, cw = Math.min(R.w / 7.6, s * 3.2), ch = cw * .72, gap = cw * 1.06, x0 = R.cx - gap * 3, y = R.y0 + R.h * .42;
+    var k0 = CH.smooth(0, .12, t), k1 = CH.ease(CH.smooth(.15, .3, t)), k2 = CH.ease(CH.smooth(.34, .56, t)), k3 = CH.smooth(.6, .72, t), k4 = CH.smooth(.76, .88, t), k5 = CH.smooth(.9, 1, t);
+    if (t < .15) { values(D, t); return; }
+    say(D, R.cx, R.y0 + s * .3, '2乗して確かめる', { size: s, col: C.chalk });
+    expr(D, R.cx, R.y0 + s * 2, ['(', ['r', '2'], '×', ['r', '3'], ')²'], { size: s * 1.1, col: C.yel, a: k1 });
+    /* カード：0 √2、1 √3、2 √2、3 √3 → ならびかえて √2 √2 √3 √3 */
+    var card = [['√2', 0, 0, C.blue], ['√3', 2, 4, C.green], ['√2', 4, 2, C.blue], ['√3', 6, 6, C.green]];
+    var ry = y;
+    card.forEach(function (c, i) {
+      var slot = CH.lerp(c[1], c[2], k2), x = x0 + slot * gap, lift = Math.sin(Math.PI * k2) * ch * (i === 1 ? 1 : i === 2 ? -1 : 0);
+      CH.card(D, x, ry + lift, cw, ch, c[0], { col: c[3], size: ch * .48, a: k1 });
+    });
+    [1, 3, 5].forEach(function (sl) { say(D, x0 + sl * gap, ry, '×', { size: s * 1.1, a: k1, num: true }); });
+    if (k3 > 0) {
+      [[0, 2, '2', C.blue], [4, 6, '3', C.green]].forEach(function (p) {
+        var xa = x0 + p[0] * gap - cw / 2, xb = x0 + p[1] * gap + cw / 2, yb = ry + ch * .75; CH.line(D, xa, yb, xa, yb + s * .5, { col: p[3], w: 2.4, a: k3 }); CH.line(D, xa, yb + s * .5, xb, yb + s * .5, { col: p[3], w: 2.4, a: k3 }); CH.line(D, xb, yb, xb, yb + s * .5, { col: p[3], w: 2.4, a: k3 });
+        say(D, (xa + xb) / 2, yb + s * 1.4, p[2], { size: s * 1.2, col: p[3], a: k3, num: true });
+      });
+      say(D, x0 + 3 * gap, ry + ch * .75 + s * 1.4, '×', { size: s * 1.1, a: k3, num: true });
+    }
+    if (k4 > 0) say(D, R.cx, ry + ch * .75 + s * 3, '＝ 2 × 3 ＝ 6', { size: s * 1.15, col: C.yel, a: k4, num: true });
+    if (k5 > 0) { var yy = ry + ch * .75 + s * 4.8; say(D, R.cx, yy, '2乗すると 6 になる正の数', { size: s * .95, col: C.yel, a: k5 }); expr(D, R.cx, yy + s * 1.7, [['r', '2'], '×', ['r', '3'], '＝', ['r', '6']], { size: s * 1.2, col: C.yel, a: k5 }); }
+  }
+
+  /* ---- ことば：3つのきまり ---- */
+  function rules(D, t, ph) {
+    var R = CH.box(D, { l: .04, r: .04, t: .06, b: .06 }), rs = CH.rows(R, 3, .1), s = CH.fs(D, 1.05);
+    var L = [
+      [['(', ['r', 'a'], ')²', '＝', 'a'], ['√a は、2乗すると a になる正の数']],
+      [[['r', 'a'], '×', ['r', 'b'], '＝', ['r', 'ab']], ['(', ['r', 'a'], '×', ['r', 'b'], ')²', '＝', 'a×b']],
+      [[['f', '√a', '√b'], '＝', ['rf', 'a', 'b']], ['(', ['f', '√a', '√b'], ')²', '＝', ['f', 'a', 'b']]]
+    ];
+    rs.forEach(function (r, i) {
+      var k = ph ? CH.smooth(.05 + i * .3, .3 + i * .3, t) : 0, wide = D.W > D.H * .9, y1 = wide ? r.cy : r.y0 + r.h * .32, y2 = wide ? r.cy : r.y0 + r.h * .78;
+      if (k <= 0) { say(D, wide ? r.x0 + r.w * .25 : r.cx, y1, '？', { size: s * 1.2, col: 'rgba(242,240,230,.5)' }); return; }
+      expr(D, wide ? r.x0 + r.w * .25 : r.cx, y1, L[i][0], { size: s * 1.15, col: C.green, a: k });
+      if (typeof L[i][1][0] === 'string' && L[i][1].length === 1) say(D, wide ? r.x0 + r.w * .72 : r.cx, y2, L[i][1][0], { size: s * .85, a: k, maxW: wide ? r.w * .5 : r.w });
+      else expr(D, wide ? r.x0 + r.w * .72 : r.cx, y2, L[i][1], { size: s * .9, a: k, col: 'rgba(242,240,230,.9)' });
+    });
+    if (D.W > D.H * .9) CH.line(D, R.x0 + R.w * .5, R.y0, R.x0 + R.w * .5, R.y1, { col: 'rgba(242,240,230,.25)', dash: [5, 6], w: 1.2 });
+  }
+
+  /* ---- 例題：4つの計算 ---- */
+  function exCols(D, t) {
+    var R = CH.box(D, { l: .03, r: .03, t: .08, b: .06 }), wide = D.W > D.H * .9, s = CH.fs(D, wide ? 1 : .9), cs = wide ? CH.cols(R, 4, .06) : CH.cols(R, 2, .08).map(function (c) { return CH.rows(c, 2, .08); }).reduce(function (a, b) { return a.concat(b); }, []);
+    if (!wide) cs = [cs[0], cs[2], cs[1], cs[3]];
+    cs.forEach(function (c, i) {
+      var e = EX[i], k = i === 0 ? 1 : D.ph ? CH.smooth(.05 + (i - 1) * .3, .28 + (i - 1) * .3, t) : 0, y = c.y0 + s * .7, step = Math.min(c.h / 4.2, s * 3);
+      say(D, c.cx, y, '(' + (i + 1) + ')' + (i === 0 ? '　見本' : ''), { size: s * .8, col: 'rgba(242,240,230,.75)' });
+      var yf = y + step * 1.1;
+      if (i === 3) expr(D, c.cx, yf, [['f', '√45', '√5']], { size: s * 1.05 });
+      else expr(D, c.cx, yf, [['r', String(e.a)], e.op, ['r', String(e.b)]], { size: s * 1.05 });
+      if (k > 0) {
+        expr(D, c.cx, yf + step, ['＝', ['r', e.a + e.op + e.b]], { size: s, a: k, col: C.chalk });
+        expr(D, c.cx, yf + step * 2, isSq(e.n) ? ['＝', ['r', String(e.n)], '＝' + Math.round(Math.sqrt(e.n))] : ['＝', ['r', String(e.n)]], { size: s * 1.1, a: k, col: C.yel });
+      }
+      if (wide && i < 3) CH.line(D, c.x1 + R.w * .03, c.y0, c.x1 + R.w * .03, c.y1, { col: 'rgba(242,240,230,.2)', w: 1.2 });
+    });
+  }
+
+  /* ---- 例題2：方眼の上の長方形 ---- */
+  function area(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .06, b: .05 }), wide = D.W > D.H * .9, s = CH.fs(D, .95);
+    var sp = wide ? [CH.rect(R.x0, R.y0, R.x0 + R.w * .5, R.y1), CH.rect(R.x0 + R.w * .54, R.y0, R.x1, R.y1)] : [CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .56), CH.rect(R.x0, R.y0 + R.h * .6, R.x1, R.y1)];
+    var F = fr(D, sp[0], [-.5, -.5, 3.5, 3.5]); grid(F, 0, 0, 3, 3);
+    var k1 = D.ph ? CH.smooth(.02, .3, t) : 0, k2 = D.ph ? CH.smooth(.38, .6, t) : 0, k3 = D.ph ? CH.smooth(.64, .85, t) : 0;
+    poly(F, [[0, 0], [3, 0], [3, 3], [0, 3]], { stroke: C.chalk, sw: 1.8, dash: true, a: k2 });
+    var TL = [[.24, 2.76], [2.62, 2.62], [2.76, .24], [.38, .38]];
+    TRI.forEach(function (tr, i) { poly(F, tr, { fill: hexA(C.pink, .35), stroke: C.pink, sw: 1.4, a: k2 }); var g = F.X(TL[i]); say(D, g[0], g[1], String(shoe(tr)), { size: F.s * (i % 2 ? .8 : .6), col: C.pink, a: k2, num: true }); });
+    poly(F, RC, { fill: hexA(C.blue, .25), stroke: C.blue, sw: 2.8 });
+    var la = F.X([.74, 2.26]), lb = F.X([2.2, 2.2]); say(D, la[0], la[1], '√2', { size: F.s * .85, col: C.yel, num: true }); say(D, lb[0], lb[1], '√8', { size: F.s * .85, col: C.yel, num: true });
+    var ce = F.X([1.5, 1.5]); say(D, ce[0], ce[1], k3 > .5 || k1 > .5 ? '4' : '?', { size: F.s * 1.1, col: C.yel, num: true });
+    if (!D.ph) return;
+    var q = sp[1], f = CH.fs(D, wide ? 1 : .9), y = q.y0 + q.h * .2;
+    say(D, q.cx, y, '√ の計算', { size: f * .85, col: 'rgba(242,240,230,.75)', a: k1 });
+    expr(D, q.cx, y + f * 1.6, [['r', '2'], '×', ['r', '8'], '＝', ['r', '16'], '＝4'], { size: f * 1.1, col: C.yel, a: k1 });
+    say(D, q.cx, y + f * 3.8, '方眼で数える', { size: f * .85, col: 'rgba(242,240,230,.75)', a: k2 });
+    say(D, q.cx, y + f * 5.3, '3×3 −（0.5＋2＋0.5＋2）', { size: f, a: k2, num: true, maxW: q.w });
+    say(D, q.cx, y + f * 6.7, '＝ 9 − 5 ＝ 4', { size: f * 1.1, a: k3, num: true, col: C.yel });
+  }
+
+  /* ---- 考えよう：24 枚のタイルをならべる ---- */
+  function tiles(D, a) {
+    var R = CH.box(D, { l: .06, r: .06, t: .16, b: .06 }), rows = Math.ceil(24 / a), u = Math.min(R.w / Math.max(a, 4), R.h / Math.max(rows, 4), CH.fs(D, 2.6)), x0 = R.cx - a * u / 2, y0 = R.cy - rows * u / 2, full = 24 % a === 0;
+    for (var i = 0; i < 24; i++) { var c = i % a, r = Math.floor(i / a), x = x0 + c * u, y = y0 + r * u; CH.fillRect(D, x + 2, y + 2, x + u - 2, y + u - 2, { fill: hexA(full ? C.blue : C.orange, .4), stroke: full ? C.blue : C.orange, sw: 1.4 }); }
+    top(D, '24 まいのタイルを、よこに ' + a + ' まいずつならべる', C.chalk, 1, 0);
+  }
+
+  /* ---- チャレンジ：ab＝36 ---- */
+  function chal(D, t) {
+    var R = CH.box(D, { l: .05, r: .05, t: .16, b: .05 }), rs = CH.rows(R, PAIRS.length, .12), s = CH.fs(D, 1);
+    var k1 = D.ph ? CH.smooth(.02, .3, t) : 0, k2 = D.ph ? CH.smooth(.38, .62, t) : 0, k3 = D.ph ? CH.smooth(.68, .9, t) : 0;
+    rs.forEach(function (r, i) {
+      var p = PAIRS[i], ka = D.ph ? CH.smooth(i * .05, i * .05 + .15, t) : 0, bad = isSq(p[0]) || isSq(p[1]), y = r.cy, x = r.x0 + r.w * .3;
+      if (ka <= 0) return;
+      var w = expr(D, x, y, [['r', String(p[0])], '×', ['r', String(p[1])]], { size: s, a: ka, col: !bad && k3 > 0 ? C.yel : C.chalk });
+      say(D, x + w / 2 + s * .4, y, '（a＝' + p[0] + '、b＝' + p[1] + '）', { size: s * .8, a: ka, align: 'left', col: 'rgba(242,240,230,.75)', maxW: r.x1 - x - w / 2 - s * 6 });
+      if (bad && k2 > 0) {
+        var xa = x - w / 2 - 4, xb = x + w / 2 + 4; CH.line(D, xa, y, CH.lerp(xa, xb, k2), y, { col: C.pink, w: 3 });
+        say(D, r.x1, y, isSq(p[0]) ? '√' + p[0] + '＝' + Math.sqrt(p[0]) : '√' + p[1] + '＝' + Math.sqrt(p[1]), { size: s * .85, col: C.pink, a: k2, align: 'right', num: true });
+      }
+      if (!bad && k3 > 0) say(D, r.x1, y, '○', { size: s * 1.1, col: C.yel, a: k3, align: 'right' });
+    });
+    if (D.ph) expr(D, R.cx, R.y0 - s * 1.2, [['r', 'a'], '×', ['r', 'b'], '＝', ['r', 'ab'], '＝6 → ab＝36'], { size: s, col: C.yel, a: k1 });
+  }
+
+  K3.run({
+    no: '第6時', title: '根号をふくむ数の、かけ算・わり算のしかたを見つけよう', flat: true, hint: '', alt: '根号の計算の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '05.html', label: '◀ 第5時' }, { href: '07.html', label: '第7時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '√2×√3 と √6', q: '√2×√3 は、√6 と等しいといってよいだろうか。電卓の値も見て、予想とわけを考えよう。',
+        notes: ['① 自分の考え（3分）　予想と、そう考えたわけを書こう。', '② ペアの考え（3分）　自分とちがう確かめ方は？'],
+        draw: function (D) { values(D, 0); } },
+      { tag: '今日の問い', q: '√2×√3 は √6 と等しい？ どう確かめる？', a: '等しい（2乗して確かめる）', sub: '近似値では「だいたい」しかいえない。(√2×√3)²＝(√2×√2)×(√3×√3)＝2×3＝6。正の数で、2乗すると 6 だから √6', dur: 8,
+        b: { t: '(√2×√3)²＝2×3＝6 → 2乗して 6 の正の数 → <b>√2×√3＝√6</b>', col: C.yel },
+        draw: function (D) { cards(D, D.ph ? D.t : 0); } },
+      { tag: 'ことば', bh: 'ことば', q: 'a、b が正の数のとき、(√a)²、√a×√b、√a÷√b は、どう表せる？', a: CH.fr('(√a)²＝a、√a×√b＝√ab、[√a/√b]＝√[a/b]'), sub: 'どれも、2乗して確かめられる。根号の中が 2乗の数（4、9、16、…）になったら、根号をはずす', dur: 5,
+        b: [{ t: '(√a)²＝a　<b>√a×√b＝√ab</b>', col: C.green }, { t: CH.fr('<b>[√a/√b]＝√[a/b]</b>　根号の中が 2乗の数 → 根号を<b>はずす</b>'), col: C.green }],
+        draw: function (D) { rules(D, D.ph ? D.t : 0, D.ph); } },
+      { tag: '例題', bh: '例題　かけ算・わり算', q: CH.fr('次の計算をしよう。(1) √3×√5（見本）　(2) √2×√8　(3) √42÷√6　(4) [√45/√5]'), a: '(2) 4　(3) √7　(4) 3', sub: '(2) √(2×8)＝√16＝4　(3) √(42÷6)＝√7　(4) √(45÷5)＝√9＝3。根号の中が 16 や 9 になったら、根号をはずす', dur: 5,
+        b: { t: CH.fr('(2) √16＝<b>4</b>　(3) <b>√7</b>　(4) √9＝<b>3</b>（根号の中が 2乗の数 → はずす）'), col: C.pink },
+        draw: function (D) { exCols(D, D.ph ? D.t : 0); } },
+      { tag: '例題', bh: '例題2　面積で確かめる', q: '方眼（1目もり 1cm）の上に、縦 √2cm、横 √8cm の長方形をかいた。面積を、√ の計算と、方眼の数え方の2通りで求めよう。', a: '4cm²（どちらも 4）', sub: '√2×√8＝√16＝4。方眼では、まわりの正方形 3×3＝9 から、すみの三角形 0.5＋2＋0.5＋2＝5 をひいて 4', dur: 6,
+        b: { t: '√2×√8＝√16＝<b>4</b>　方眼でも 9−5＝<b>4</b>（cm²）', col: C.pink },
+        draw: function (D) { area(D, D.ph ? D.t : 0); } },
+      { tag: '考えよう', q: '√24＝√a×√b と表すとき、a、b にあてはまる 2以上の整数の組を、a＜b で、すべて見つけよう。',
+        notes: ['見つけた組を書こう。', '見つけた組の中に、根号がはずせる数をふくむものはあるだろうか。気づいたことを書こう。', 'スライダーで、24 まいのタイルを、よこに何まいずつならべるか変えられます。'],
+        sliders: [{ key: 'a', label: 'よこに', min: 1, max: 12, step: 1, val: 5, fmt: function (v) { return v + ' まい'; } }],
+        draw: function (D) { tiles(D, D.V.a); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'a、b を自然数とする。√a×√b＝6 となる (a, b) のうち、√a も √b も整数にならないものを、a≦b で、すべて求めよう。',
+        notes: ['ヒント① √a×√b を、1つの根号にまとめると、a×b は、いくつになるかな。', 'ヒント② a×b になる 2つの自然数の組を、すべてあげてみよう。'],
+        a: '(2, 18)、(3, 12)、(6, 6)', sub: '√ab＝6 より ab＝36。(1, 36)、(4, 9) は、√1＝1、√36＝6、√4＝2、√9＝3 と根号がはずれるので、のぞく', dur: 6,
+        b: { t: 'ab＝36 → (1,36)・(4,9) をのぞいて <b>(2,18)、(3,12)、(6,6)</b>', col: C.orange },
+        draw: function (D) { chal(D, D.ph ? D.t : 0); } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

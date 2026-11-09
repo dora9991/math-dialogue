@@ -618,7 +618,7 @@ function run(cfg) {
     $('blist').hidden = !items.length;
     panel.classList.toggle('long', items.length > 7);
     $('blist').innerHTML = (cfg.boardTitle ? '<h3>' + esc(cfg.boardTitle) + '</h3>' : '') + items.map(function (b) {
-      if (b.h) return '<h3>' + b.h + '</h3>';
+      if (b.h) return '<h3>' + opsHTML(b.h) + '</h3>';
       return '<div class="bi"><i style="--c:' + (b.col || 'var(--chalk-3)') + '"></i><span>' + opsHTML(b.t) + '</span></div>';
     }).join('');
     var bl = $('blist'); bl.scrollTop = bl.scrollHeight;
