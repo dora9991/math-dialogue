@@ -431,11 +431,11 @@
           ladder(D, T, L6.map(function (e) { return { e: e }; }), cl((t - .3) / .7), { size: s * 1.5 });
         } },
       { tag: '考えよう', q: '1から順に、整数を1行に 7個ならべた表で、縦3・横3の正方形で9つの数を囲む。四すみの数について、「右上×左下」−「左上×右下」を計算して、気づいたことを書こう。そのわけも、文字を使って説明しよう。九九の表でも、囲んで調べてみよう。',
-        notes: ['気づいたことを書こう。（1行に 7個の表は、カレンダーと同じならび）', 'いつも成り立つわけを、文字を使って説明しよう。', 'スライダーで、表・わくの大きさ・場所を変えると、四すみの数が光ります（計算の答えは出ません）。'],
-        sliders: [{ key: 'k', label: '表', min: 0, max: 1, step: 1, val: 0, fmt: function (v) { return v ? '九九の表' : '1行に7個'; } }, { key: 'z', label: 'わく', min: 2, max: 3, step: 1, val: 3, fmt: function (v) { return v + '×' + v; } }, { key: 'c', label: '横の場所', min: 0, max: 7, step: 1, val: 0, fmt: function (v) { return String(v + 1); } }, { key: 'r', label: '縦の場所', min: 0, max: 7, step: 1, val: 0, fmt: function (v) { return String(v + 1); } }],
+        notes: ['気づいたことを書こう。（1行に 7個の表は、カレンダーと同じならび）', 'いつも成り立つわけを、文字を使って説明しよう。', 'スライダーで、表とわくの大きさ・わくの場所を変えると、四すみの数が光ります（計算の答えは出ません）。'],
+        sliders: [{ key: 'k', label: '表・わく', min: 0, max: 3, step: 1, val: 1, fmt: function (v) { return ['7個 2×2', '7個 3×3', '九九 2×2', '九九 3×3'][v]; } }, { key: 'p', label: '場所', min: 0, max: 63, step: 1, val: 0 }],
         draw: function (D) {
-          var R = box(D), k = D.V.k, z = D.V.z, m = k ? 9 : 7, rows = k ? 9 : 6, b = { r: Math.min(D.V.r, rows - z), c: Math.min(D.V.c, m - z), h: z, w: z };
-          numTab(D, R, m, rows, { box: b, hl: hlCorner(b), head: !!k, val: k ? kuku : null });
+          var R = box(D), k = D.V.k > 1, z = D.V.k % 2 ? 3 : 2, m = k ? 9 : 7, rows = k ? 9 : 6, nc = m - z + 1, nr = rows - z + 1, p = Math.min(D.V.p, nc * nr - 1), b = { r: Math.floor(p / nc), c: p % nc, h: z, w: z };
+          numTab(D, R, m, rows, { box: b, hl: hlCorner(b), head: k, val: k ? kuku : null });
         } },
       { tag: 'チャレンジ', bh: 'チャレンジ', q: '連続する5つの整数を、小さいほうから順に a、b、c、d、e とする。① a＝7 のとき、bd−ae の値は？ ② bd−ae の値は、a がどんな整数でも、いつも同じ数になる。このことを証明しよう。', a: '① 3　② (a＋1)(a＋3)−a(a＋4)＝3',
         sub: '① 8×10−7×11＝80−77＝3　② b＝a＋1、d＝a＋3、e＝a＋4。(a＋1)(a＋3)−a(a＋4)＝a^2＋4a＋3−a^2−4a＝3', dur: 9,

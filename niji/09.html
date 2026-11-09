@@ -320,7 +320,7 @@
     if (jn > 0) {
       var w0 = o.W - (o.nv || 1) * d, h0 = o.H - (o.nh || 1) * d;
       CH.fillRect(D, X(0), Y(0), X(w0), Y(h0), { stroke: C.yel, sw: 3, a: jn });
-      var z = Math.min(s * .9, h0 * u / 3.2);
+      var z = Math.min(s * .9, h0 * u / 4);
       say(D, X(w0 / 2), Y(0) + z * 1.1, o.jt, { col: C.yel, a: jn, size: z, maxW: w0 * u * .9 });
       say(D, X(0) + z * .4, Y(h0 / 2) + z * .5, o.js, { col: C.yel, a: jn, size: z, align: 'left', maxW: w0 * u * .45 });
       if (h0 * u > s * 4.5) say(D, X(w0 * .7), Y(h0 / 2) + z * .5, '花だん', { col: C.green, a: jn, size: s * .8 });
@@ -385,7 +385,7 @@
       { tag: '今日の問い', q: '方程式をつくって解こう。x＝2 と x＝34 の、どちらが答え？', a: '2m', sub: '(14−x)(22−x)＝240 → x^2−36x＋68＝0 → (x−2)(x−34)＝0 → x＝2、34。道のはばは 0＜x＜14 だから、x＝2', dur: 7,
         b: { t: '(14−x)(22−x)＝240 → x＝2、34 → 0＜x＜14 だから <b>2m</b>', col: C.yel },
         draw: function (D) {
-          var R = box(D), s = CH.fs(D), t = D.ph ? D.t : 0, H2 = halves(R, wide(R) ? .5 : .36, .03), F = H2[0], B = H2[1];
+          var R = box(D), s = CH.fs(D), t = D.ph ? D.t : 0, H2 = halves(R, wide(R) ? .5 : .44, .03), F = H2[0], B = H2[1];
           land(D, F, q1o(1, 2, 1));
           var nlH = s * 4.6;
           STEPS(D, B.cx, B.y0, Q3, D.ph ? CH.smooth(0, .6, t) : 0, Math.min(s * 1.15, B.w / 10), { from: 1, maxW: B.w * .98, maxH: B.h - nlH, cols: [null, null, null, null, C.yel] });
@@ -425,7 +425,7 @@
         sub: '道を はしに寄せると、畑は 縦 (12−x)m、横 (26−2x)m。(12−x)(26−2x)＝180 → x^2−25x＋66＝0 → (x−3)(x−22)＝0。0＜x＜12 だから x＝3', dur: 8,
         b: { t: '(12−x)(26−2x)＝180 → x＝3、22 → <b>3m</b>', col: C.orange },
         draw: function (D) {
-          var R = box(D), s = CH.fs(D), t = D.ph ? D.t : 0, H2 = halves(R, wide(R) ? .52 : .42, .03);
+          var R = box(D), s = CH.fs(D), t = D.ph ? D.t : 0, H2 = halves(R, wide(R) ? .52 : .48, .03);
           land(D, H2[0], { W: 26, H: 12, d: 3, nv: 2, nh: 1, k: CH.smooth(.02, .3, t), top: '26m', side: '12m', dw: 'x m', join: CH.smooth(.3, .42, t), jt: '(26−2x)m', js: '(12−x)m' });
           var B = H2[1];
           if (D.ph) {

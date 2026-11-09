@@ -272,22 +272,22 @@
       { tag: 'ことば', bh: 'ことば', q: '「平方根」で学んだことを、整理しよう。', a: '平方根・大小・有理数と無理数・根号をふくむ式の計算・利用', sub: '2乗すると a になる数が a の平方根。分数で表せる数が有理数、表せない数が無理数。計算は、かけ算・わり算は根号の中どうし、たし算・ひき算は同じ根号だけ', dur: 8,
         b: [{ t: '2乗すると a になる数 … a の<b>平方根</b>（正と負の2つ。0 は 0）', col: C.green }, { t: '分数で表せる数 … <b>有理数</b>　表せない数 … <b>無理数</b>', col: C.green }, { t: '計算 … <b>有理化</b>・a√b の形・<b>同じ</b>根号の数をまとめる', col: C.green }],
         draw: function (D) {
-          var R = box(D), s = CH.fs(D), t = D.ph ? D.t : 0, wR = wide(R), z = Math.min(s * .95, R.w / 26);
+          var R = box(D), s = CH.fs(D), t = D.ph ? D.t : 0, wR = wide(R), z = Math.min(s * 1.1, R.w / 22);
           var N = [
             ['平方根', '2乗すると a になる数　±√a', R.cx, R.y0 + R.h * .1, C.yel, 0],
             ['大小', 'a＜b なら √a＜√b', R.x0 + R.w * (wR ? .17 : .25), R.y0 + R.h * .36, C.blue, .12],
             ['有理数・無理数', '√2・π は無理数', R.x0 + R.w * (wR ? .5 : .75), R.y0 + R.h * .36, C.blue, .24],
             ['近似値', '√2＝1.414…', R.x0 + R.w * (wR ? .83 : .25), R.y0 + R.h * (wR ? .36 : .58), C.blue, .36],
             ['かけ算・わり算', '√a×√b＝√ab　a√b の形', R.x0 + R.w * .25, R.y0 + R.h * (wR ? .64 : .8), C.orange, .48],
-            ['有理化', '[a/√b]＝[a√b/b]', R.x0 + R.w * (wR ? .75 : .75), R.y0 + R.h * (wR ? .64 : .58), C.orange, .6],
+            ['有理化', '分母に根号のない形に', R.x0 + R.w * (wR ? .75 : .75), R.y0 + R.h * (wR ? .64 : .58), C.orange, .6],
             ['たし算・ひき算・展開', '同じ根号をまとめる　乗法公式', R.x0 + R.w * (wR ? .5 : .75), R.y0 + R.h * (wR ? .88 : .8), C.orange, .72]
           ];
           N.forEach(function (n, i) {
-            var a = D.ph ? CH.smooth(n[5], n[5] + .1, t) : (i === 0 ? 1 : 0); if (i) CH.line(D, N[0][2], N[0][3] + s * 1.2, n[2], n[3] - s * 1.1, { col: 'rgba(242,240,230,.3)', w: 1.4, a: a });
+            var a = D.ph ? CH.smooth(n[5], n[5] + .1, t) : (i === 0 ? 1 : 0); if (i) CH.line(D, N[0][2], N[0][3] + z * 1.35, n[2], n[3] - z * 1.25, { col: 'rgba(242,240,230,.3)', w: 1.4, a: a });
             var w = Math.min(R.w * (wR ? .3 : .47), Math.max(eqW(D, n[0], z), eqW(D, n[1], z * .85)) + s * 1.2);
-            rbox(D, n[2] - w / 2, n[3] - s * 1.1, n[2] + w / 2, n[3] + s * 1.2, n[4], a, { fa: .1, w: 1.8 });
-            CH.text(D, n[2], n[3] - s * .45, n[0], { size: Math.min(z, CH.fitSize(D, n[0], w * .92, z)), col: n[4], a: a });
-            EQ(D, n[2], n[3] + s * .55, n[1], Math.min(z * .85, fitEq(D, n[1], w * .92, z * .85)), { a: a });
+            rbox(D, n[2] - w / 2, n[3] - z * 1.25, n[2] + w / 2, n[3] + z * 1.35, n[4], a, { fa: .1, w: 1.8 });
+            CH.text(D, n[2], n[3] - z * .5, n[0], { size: Math.min(z, CH.fitSize(D, n[0], w * .92, z)), col: n[4], a: a });
+            EQ(D, n[2], n[3] + z * .62, n[1], Math.min(z * .85, fitEq(D, n[1], w * .92, z * .85)), { a: a });
           });
           if (!D.ph) say(D, R.cx, R.cy, '学んだことを、出し合おう', { size: s, col: C.chalk });
         } },
@@ -309,7 +309,7 @@
       { tag: '例題', bh: '例題2　有理数と無理数', q: '無理数を すべて選ぼう。ア √49　イ √18　ウ √0.04　エ π', a: 'イ と エ', sub: 'ア √49＝7、ウ √0.04＝0.2 は 分数で表せるので有理数。イ √18＝3√2、エ π は 無理数', dur: 8,
         b: { t: '√49＝7、√0.04＝0.2 は有理数　<b>√18＝3√2、π は無理数</b>', col: C.pink },
         draw: function (D) {
-          var R = box(D), s = CH.fs(D), t = D.ph ? D.t : 0, G = sets(D, CH.rect(R.x0, R.y0 + R.h * .28, R.x1, R.y1)), cw = R.w / 4, z = Math.min(s * 1.5, cw * .25), cnt = [0, 0];
+          var R = box(D), s = CH.fs(D), t = D.ph ? D.t : 0, G = sets(D, CH.rect(R.x0, R.y0 + R.h * .28, R.x1, R.y1)), cw = R.w / 4, z = Math.min(s * 1.5, cw * .25, G.A.w * .46 / 3.8, G.B.w * .46 / 3.8), cnt = [0, 0];
           RI.forEach(function (r, i) {
             var k = D.ph ? CH.smooth(.05 + i * .2, .2 + i * .2, t) : 0, e = CH.ease(k), T = r[2] ? G.A : G.B, j = cnt[r[2] ? 0 : 1]++;
             var tx = T.x0 + T.w * (j + .5) / 2, ty = T.cy + s, sx = R.x0 + cw * (i + .5), sy = R.y0 + R.h * .12, x = CH.lerp(sx, tx, e), y = CH.lerp(sy, ty, e);

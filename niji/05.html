@@ -272,7 +272,7 @@
   function box(D, o) { return CH.box(D, ext({ l: .03, r: .03, t: .03, b: .03 }, o || {})); }
   function halves(D, f) {
     var R = box(D); f = f || .5;
-    return D.W > D.H * .9 ? [CH.rect(R.x0, R.y0, R.x0 + R.w * f, R.y1), CH.rect(R.x0 + R.w * (f + .03), R.y0, R.x1, R.y1)] : [CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .5), CH.rect(R.x0, R.y0 + R.h * .53, R.x1, R.y1)];
+    return D.W > D.H * .9 ? [CH.rect(R.x0, R.y0, R.x0 + R.w * f, R.y1), CH.rect(R.x0 + R.w * (f + .03), R.y0, R.x1, R.y1)] : [CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .42), CH.rect(R.x0, R.y0 + R.h * .44, R.x1, R.y1)];
   }
   function hexR(D, cx, cy, w, h, ang, o) {
     var g = D.ctx; g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.translate(cx, cy); g.rotate(ang);
