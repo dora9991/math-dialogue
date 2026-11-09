@@ -288,6 +288,30 @@
   function drawT(D, T, ox, oy, u, X, o) { T.forEach(function (q, i) { var d = tdim(q.k, X), oo = o ? o(i, q) || {} : {}; tile(D, ox + q.cx * u, oy + q.cy * u, d[0] * u, d[1] * u, q.k, ext({ ang: q.ang }, oo)); }); }
   /* タイルが A の置き場所から B の置き場所へ動く（k：0→1。1まいずつ少しずつおくれて動く） */
   function moveT(A, B, k, lag) { lag = lag == null ? .5 : lag; var n = A.length; return A.map(function (a, i) { var b = B[i], e = CH.ease(CH.clamp((k - lag * i / Math.max(1, n - 1)) / (1 - lag), 0, 1)); return { k: a.k, cx: CH.lerp(a.cx, b.cx, e), cy: CH.lerp(a.cy, b.cy, e), ang: CH.lerp(a.ang, b.ang, e), e: e }; }); }
+  /* ---- 和と差の積の図 ----
+     縦 x−a・横 x＋a の長方形（k＝0）と、x^2 から a^2 をのぞいた L 字（k＝1）。はみ出た a×(x−a) の長方形が回って、下へ移る。
+     X・A：図の x・a の長さ。o：x・a（字）、cut（はみ出た部分の色 0〜1）、hole（a^2 の点線の濃さ）、L（L 字の字 'x^2−a^2' の濃さ） */
+  function lshape(D, B, X, A, k, o) {
+    o = o || {}; var s = CH.fs(D), vx = o.x || 'x', va = o.a || 'a', ls = s * 1.05, pl = TW(D, vx + '−' + va, ls) + ls * 2.4;
+    var u = Math.min((B.w - pl - ls) / (X + A), (B.h - ls * 3.6) / X), x0 = B.x0 + pl + (B.w - pl - ls - (X + A) * u) / 2, y0 = B.y0 + ls * 3.2 + (B.h - ls * 3.6 - X * u) / 2;
+    var e = CH.ease(CH.clamp(k, 0, 1)), cut = o.cut == null ? 1 : o.cut, a1 = CH.clamp(1 - e * 2, 0, 1), a2 = CH.clamp(e * 2 - 1, 0, 1);
+    var cx = CH.lerp(x0 + (X + A / 2) * u, x0 + (X - A) / 2 * u, e), cy = CH.lerp(y0 + (X - A) / 2 * u, y0 + (X - A / 2) * u, e);
+    if (a2 > 0 && o.hole) { CH.fillRect(D, x0 + (X - A) * u, y0 + (X - A) * u, x0 + X * u, y0 + X * u, { stroke: C.pink, sw: 2, dash: true, a: a2 * o.hole }); TX(D, x0 + (X - A / 2) * u, y0 + (X - A / 2) * u, va + '^2', { size: Math.min(ls, A * u * .45), col: C.pink, a: a2 * o.hole }); }
+    tile(D, x0 + X * u / 2, y0 + (X - A) * u / 2, X * u, (X - A) * u, 'x', { lab: '', col: C.blue });
+    tile(D, cx, cy, A * u, (X - A) * u, 'x', { ang: e, lab: '', col: cut > .5 ? C.green : C.blue, glow: e > 0 && e < 1 });
+    if (o.L > 0) TX(D, x0 + (X - A) * u / 2, y0 + (X - A) * u / 2, vx + '^2−' + va + '^2', { size: fit(D, vx + '^2−' + va + '^2', (X - A) * u * .8, ls * 1.3), col: C.yel, a: o.L, outline: OUT });
+    TX(D, x0 + X * u / 2, y0 - ls * .8, vx, { size: ls });
+    if (a1 > 0) {
+      TX(D, x0 + (X + A / 2) * u, y0 - ls * .8, va, { size: ls, col: C.green, a: a1 * cut });
+      brace(D, x0 + 2, y0 - ls * 1.55, x0 + (X + A) * u - 2, y0 - ls * 1.55, ls * .45, 'rgba(242,240,230,.7)', a1); TX(D, x0 + (X + A) * u / 2, y0 - ls * 2.6, vx + '＋' + va, { size: ls, a: a1 });
+      TX(D, x0 - ls * .5, y0 + (X - A) * u / 2, vx + '−' + va, { size: ls, align: 'right', a: a1 });
+    }
+    if (a2 > 0) {
+      TX(D, x0 - ls * .5, y0 + (X - A) * u / 2, vx + '−' + va, { size: ls, align: 'right', a: a2 }); TX(D, x0 - ls * .5, y0 + (X - A / 2) * u, va, { size: ls, align: 'right', col: C.green, a: a2 });
+      brace(D, x0 - pl + ls * 1.2, y0 + X * u - 2, x0 - pl + ls * 1.2, y0 + 2, ls * .45, 'rgba(242,240,230,.7)', a2); TX(D, x0 - pl + ls * .55, y0 + X * u / 2, vx, { size: ls, align: 'right', a: a2 });
+    }
+    return { x0: x0, y0: y0, u: u, x1: x0 + (X + A) * u, y1: y0 + X * u };
+  }
   /* ======== ここまで共通 ======== */
   /* ---- 検算 ---- */
   var L0 = ['(x＋3)^2', '＝(x＋3)(x＋3)', '＝x^2＋{B|3x}＋{B|3x}＋9', '＝x^2＋{b|6x}＋9'];
@@ -318,8 +342,8 @@
 
   /* ---- ことば：(x＋a)^2 と (x−a)^2 ---- */
   function kotoba(D, t, ph) {
-    var R = CH.box(D, { l: .04, r: .04, t: .03, b: .03 }), w = wideOf(D), s = CH.fs(D), P = w ? CH.cols(R, 2, .1) : CH.rows(R, 2, .06), A = P[0], B = P[1], X = 4.2, a = 1.6;
-    var f1 = '(x＋a)^2＝{y|x^2}＋{b|2ax}＋{o|a^2}', f2 = '(x−a)^2＝x^2−ax−ax＋a^2＝x^2−{b|2ax}＋{o|a^2}', z = Math.min(s * 1.25, fit(D, f1, A.w, s * 1.25), fit(D, f2, B.w, s * 1.25)), fh = z * 2.2;
+    var R = CH.box(D, { l: .04, r: .04, t: .03, b: .03 }), w = wideOf(D), s = CH.fs(D), P = CH.cols(R, 2, w ? .1 : .06), A = P[0], B = P[1], X = 4.2, a = 1.6;
+    var f1 = '(x＋a)^2＝{y|x^2}＋{b|2ax}＋{o|a^2}', f2 = '(x−a)^2＝x^2−ax−ax＋a^2＝x^2−{b|2ax}＋{o|a^2}', z = Math.min(s * 1.25, fit(D, f1, A.w, s * 1.25), fit(D, f2, B.w, s * 1.25)), fh = Math.max(z * 2.2, s * 1.6);
     /* (x＋a)^2 */
     var k1 = ph ? sm(0, .25, t) : 0, cells = [['x^2', C.yel], ['ax', C.blue], ['ax', C.blue], ['a^2', C.orange]];
     area(D, CH.rect(A.x0, A.y0, A.x1, A.y1 - fh), [{ t: 'x', v: X }, { t: 'a', v: a }], [{ t: 'x', v: X }, { t: 'a', v: a }], {

@@ -362,7 +362,7 @@
     }
   }
   function kotoba(D, t, ph) {
-    var R = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), w = wideOf(D), s = CH.fs(D), P = w ? CH.cols(R, 2, .06) : CH.rows(R, 2, .06), fh = s * 2.2, A = P[0], B = P[1];
+    var R = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), w = wideOf(D), s = CH.fs(D), P = CH.cols(R, 2, .06), fh = s * (w ? 2.2 : 3), A = P[0], B = P[1];
     squareT(D, CH.rect(A.x0, A.y0, A.x1, A.y1 - fh), ph ? sm(0, .4, t) : 0, ph ? sm(.4, .5, t) : 0);
     var f1 = 'x^2＋8x＋16＝{y|(x＋4)^2}', z1 = Math.min(s * 1.2, fit(D, f1, A.w, s * 1.2));
     TX(D, A.cx, A.y1 - fh * .45, ph ? f1 : 'x^2＋8x＋16＝？', { size: z1, a: ph ? sm(.45, .55, t) : .8, col: ph ? C.chalk : C.yel });
