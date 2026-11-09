@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>放物線と直線の交点</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 関数 y＝ax² 第11時：放物線と直線が交わる点を、式から求めよう（ikkan の lesson_kansu_11 と同じ流れ）。
+   放物線と直線の y の差（たての線）が、左から右へ動いて 0 になる所で交点が光る → x²＝x＋2 の解。
+   目もりで読めない交点 C、D も、解の公式で求まる。例題は放物線上の 2点を通る直線。考えようは、2点を選ぶ道具（傾きは書かない）。
+   チャレンジは △OAB を y 軸で 2つに分ける（9＋18＝27）。数値は ikkan と同じ（ikkan で自作したもの）。交点・面積はページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum, OUT = 'rgba(20,40,30,.92)';
+  /* ---- 分数入りの字（[2/3] をたての分数に）。canvas 用（measure で幅だけ）と、右の板書（HTML）用 ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    if (o.measure) return w;
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fr(s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fr(s[k]); }); if (s.notes) s.notes = s.notes.map(fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
+  function sg(v) { return (v >= 0 ? '＋' : '') + S(v); }
+  /* 座標平面。o：x・y（範囲）、gx・gy（方眼）、lx・ly（目もりの字の間かく）、asp（横÷縦の上限）、ux・uy（単位） */
+  function plane(D, R, o) {
+    var s = CH.fs(D, .72), xr = o.x, yr = o.y, gx = o.gx || 1, gy = o.gy || 1, lx = o.lx || gx, ly = o.ly || gy, g = D.ctx, i, v;
+    var Rp = CH.rect(R.x0 + s * (o.pl == null ? 2.4 : o.pl), R.y0 + s * 1.9, R.x1 - s * 2.1, R.y1 - s * (o.ux && yr[0] >= 0 ? 2.8 : 1.6));
+    if (o.asp && Rp.w > Rp.h * o.asp) { v = Rp.h * o.asp; Rp = CH.rect(Rp.cx - v / 2, Rp.y0, Rp.cx + v / 2, Rp.y1); }
+    var X = function (x) { return Rp.x0 + (x - xr[0]) / (xr[1] - xr[0]) * Rp.w; }, Y = function (y) { return Rp.y1 - (y - yr[0]) / (yr[1] - yr[0]) * Rp.h; };
+    g.save(); g.globalAlpha = D.ga; g.strokeStyle = 'rgba(242,240,230,.12)'; g.lineWidth = 1; g.beginPath();
+    for (i = Math.ceil(xr[0] / gx - 1e-9); i * gx <= xr[1] + 1e-9; i++) { g.moveTo(X(i * gx), Rp.y0); g.lineTo(X(i * gx), Rp.y1); }
+    for (i = Math.ceil(yr[0] / gy - 1e-9); i * gy <= yr[1] + 1e-9; i++) { g.moveTo(Rp.x0, Y(i * gy)); g.lineTo(Rp.x1, Y(i * gy)); }
+    g.stroke(); g.restore();
+    var Pl = CH.plane(D, Rp, { x: xr, y: yr, fit: false, grid: false, nums: false });
+    var ox = CH.clamp(0, xr[0], xr[1]), oy = CH.clamp(0, yr[0], yr[1]);
+    for (i = Math.ceil(xr[0] / lx - 1e-9); i * lx <= xr[1] + 1e-9; i++) { v = i * lx; if (!i) continue; CH.line(D, X(v), Y(oy) - 4, X(v), Y(oy) + 4, { w: 1.4 }); CH.text(D, X(v), Y(oy) + s, S(v), { size: s, num: true }); }
+    for (i = Math.ceil(yr[0] / ly - 1e-9); i * ly <= yr[1] + 1e-9; i++) { v = i * ly; if (!i) continue; CH.line(D, X(ox) - 4, Y(v), X(ox) + 4, Y(v), { w: 1.4 }); CH.text(D, X(ox) - s * .6, Y(v), S(v), { size: s, num: true, align: 'right' }); }
+    if (o.ux) CH.text(D, Rp.x1 + s * .3, Y(oy) + s * 2.1, o.ux, { size: s, align: 'right', col: 'rgba(242,240,230,.75)' });
+    if (o.uy) CH.text(D, X(ox) + s * 1.7, Rp.y0 - s * .9, o.uy, { size: s, align: 'left', col: 'rgba(242,240,230,.75)' });
+    return Pl;
+  }
+  function lab(D, Pl, x, y, txt, col, o) { o = o || {}; return TX(D, Pl.X(x) + (o.dx || 0), Pl.Y(y) + (o.dy || 0), txt, { col: col, size: o.size || CH.fs(D, .85), align: o.align || 'left', outline: OUT, a: o.a }); }
+  function glow(D, Pl, x, y, col, a) { var r = CH.fs(D, .3); CH.circle(D, Pl.X(x), Pl.Y(y), r * (2.1 + .4 * Math.sin(D.now * 5)), { stroke: col, sw: 2.6, a: (a == null ? 1 : a) * .7 }); }
+  /* 字の行（左そろえ）。四角 R の幅に入らないときは、ぜんぶ同じだけ小さく */
+  function lines(D, R, L, size) {
+    var s = size || CH.fs(D, .95), wm = 1, gap = 1.75;
+    L.forEach(function (l) { if (l) wm = Math.max(wm, TX(D, 0, 0, l.t, { size: s, measure: true })); });
+    s *= Math.min(1, R.w / wm, R.h / (L.length * gap * s));
+    L.forEach(function (l, i) { if (l && l.a !== 0) TX(D, R.x0, R.y0 + s * (.95 + i * gap), l.t, { size: s, col: l.col || C.chalk, a: l.a, align: 'left' }); });
+  }
+  /* 字の行（上）と、座標平面の四角（下） */
+  function strip(D, n) {
+    var R = CH.box(D, { l: .02, r: .02, t: .01, b: .02 }), s = CH.fs(D, .95), h = n * 1.75 * s;
+    return { T: CH.rect(R.x0 + R.w * .04, R.y0, R.x1 - R.w * .02, R.y0 + h), P: CH.rect(R.x0, R.y0 + h, R.x1, R.y1) };
+  }
+  /* 2点を結ぶ直線（のばした線はうすく）と、増加量の三角形 */
+  function sec(D, Pl, f, p, q, col, o) {
+    o = o || {}; var m = (f(q) - f(p)) / (q - p), a = o.a == null ? 1 : o.a;
+    if (o.ext !== false) CH.lin(D, Pl, m, f(p) - m * p, { col: col, w: 1.6, a: a * .5, dash: [7, 7] });
+    CH.pseg(D, Pl, [p, f(p)], [q, f(q)], { col: col, w: 3.2, a: a, glow: true });
+    CH.pt(D, Pl, p, f(p), { col: col, a: a, r: CH.fs(D, .27) }); CH.pt(D, Pl, q, f(q), { col: col, a: a, r: CH.fs(D, .27) });
+  }
+  function tri(D, Pl, f, p, q, col, o) {
+    o = o || {}; var fp = f(p), fq = f(q), s = CH.fs(D, o.k || .8), a = o.a, up = fq >= fp;
+    CH.pseg(D, Pl, [p, fp], [q, fp], { col: col, w: 2.2, dash: true, a: a });
+    CH.pseg(D, Pl, [q, fp], [q, fq], { col: col, w: 2.2, dash: true, a: a });
+    if (o.lx !== false) CH.text(D, Pl.X((p + q) / 2), Pl.Y(fp) + (up ? s * .9 : -s * .9), o.lx || sg(q - p), { col: col, size: s, a: a, outline: OUT });
+    if (o.ly !== false) CH.text(D, Pl.X(q) + (o.left ? -s * .45 : s * .45), Pl.Y((fp + fq) / 2), o.ly || sg(fq - fp), { col: col, size: s, a: a, align: o.left ? 'right' : 'left', outline: OUT });
+  }
+  /* x 軸の上の帯（x の増加量）と、点からおろした点線 */
+  function band(D, Pl, p, q, a) { CH.pseg(D, Pl, [p, 0], [q, 0], { col: C.yel, w: 7, a: (a == null ? 1 : a) * .55 }); }
+  /* 表の下の矢印（セルの中心から中心へ） */
+  function hop(D, x0, x1, y, col, txt, a, sz) {
+    var g = D.ctx, s = sz || CH.fs(D), h = s * 1.05, d = Math.abs(x1 - x0);
+    g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.strokeStyle = col; g.lineWidth = 2.2; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x0, y); g.quadraticCurveTo((x0 + x1) / 2, y + h * 1.6, x1, y); g.stroke(); g.restore();
+    var ang = Math.atan2(-h * 1.6, (x1 - x0) / 2), hd = Math.min(9, d * .25);
+    CH.arrow(D, x1 - Math.cos(ang) * hd * 1.2, y - Math.sin(ang) * hd * 1.2, x1, y, { col: col, a: a, head: hd, w: 2.2 });
+    CH.text(D, (x0 + x1) / 2, y + h * 1.2, txt, { col: col, size: s * .9, a: a, outline: OUT });
+  }
+
+  /* ---- 数（ikkan と同じ）と検算 ---- */
+  var F1 = function (x) { return x * x; }, s5 = Math.sqrt(5);
+  function roots(a, m, n) { var d = m * m + 4 * a * n, s = Math.sqrt(d); return d < 0 ? [] : [(m - s) / (2 * a), (m + s) / (2 * a)].sort(function (p, q) { return p - q; }); }
+  CH.check(roots(1, 1, 2).join() === '-1,2' && F1(-1) === 1 && F1(2) === 4, '今日の問い（A(−1, 1)、B(2, 4)）');
+  CH.check(roots(1, 1, 1).every(function (x) { return CH.near(x * x, x + 1) && !Number.isInteger(x); }) && CH.near(roots(1, 1, 1)[0], (1 - s5) / 2) && CH.near(roots(1, 1, 1)[1], (1 + s5) / 2), '今日の問い（C、D は整数でない）');
+  var H = function (x) { return x * x / 2; };
+  CH.check(H(-2) === 2 && H(4) === 8 && (H(4) - H(-2)) / (4 + 2) === 1 && H(4) - 1 * 4 === 4 && roots(.5, 1, 4).join() === '-2,4', '例題（y＝x＋4）');
+  CH.check([[-1, 2], [-2, 3], [1, 3], [-3, 1]].map(function (r) { return (F1(r[1]) - F1(r[0])) / (r[1] - r[0]); }).join() === '1,1,4,-2', '考えよう（ここで確かめるだけ）');
+  var AQ = 3 / 9, G = function (x) { return AQ * x * x; }, xs8 = roots(AQ, 1, 6), BB = [xs8[1], xs8[1] + 6];
+  CH.check(CH.near(xs8[0], -3) && CH.near(BB[0], 6) && CH.near(BB[1], 12) && CH.near(G(6), 12) && CH.near(.5 * 6 * 3 + .5 * 6 * 6, 27) && CH.near(Math.abs(-3 * 12 - 6 * 3) / 2, 27), 'チャレンジ（B(6, 12)、面積 27）');
+
+  function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function base1(D, L) { return plane(D, L.P, { x: [-3, 3.2], y: [-1, 6.6], asp: 6.2 / 7.6 }); }
+  function legend(D, R, items) {
+    var s = CH.fs(D, .85), x = R.x0, y = R.y0 + s * .95;
+    items.forEach(function (it) { CH.line(D, x, y, x + s * 1.4, y, { col: it[1], w: 3, dash: it[2] ? [6, 5] : null }); x += s * 1.7; x += TX(D, x, y, it[0], { col: it[1], size: s, align: 'left' }) + s * 1.2; });
+  }
+  function dropX(D, Pl, x, y, col, a, txt) { CH.pseg(D, Pl, [x, y], [x, 0], { col: col, dash: true, w: 1.8, a: a }); CH.circle(D, Pl.X(x), Pl.Y(0), CH.fs(D, .22), { fill: col, a: a }); if (txt) CH.text(D, Pl.X(x), Pl.Y(0) + CH.fs(D, .95), txt, { col: col, size: CH.fs(D, .75), a: a, outline: OUT }); }
+
+  K3.run({
+    no: '第11時', title: '放物線と直線が交わる点を、式から求めよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '10.html', label: '◀ 第10時' }, { href: '12.html', label: '第12時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '放物線と直線の交点', q: '放物線 y＝x² と直線 y＝x＋2 は、A、B で交わる。y＝x² と y＝x＋1 の交点 C、D は、目もりから座標が読みとれない。C、D の座標を求めるには、どうすればよいだろう。まず A、B で試してみよう。',
+        notes: ['① 自分の考え（3分）　交点の座標を求める方法を書こう。', '② ペアの考え（3分）　自分とちがう考えや、気づいたことを書こう。'],
+        draw: function (D) {
+          var L = strip(D, 1), Pl = base1(D, L); legend(D, L.T, [['y＝x²', C.orange], ['y＝x＋2', C.blue], ['y＝x＋1', C.pink, true]]);
+          CH.fn(D, Pl, F1, { col: C.orange, w: 3 }); CH.lin(D, Pl, 1, 2, { col: C.blue, w: 2.6 }); CH.lin(D, Pl, 1, 1, { col: C.pink, w: 2.4, dash: [8, 6] });
+          CH.pt(D, Pl, -1, 1, { col: C.blue, lab: 'A', dir: 'nw' }); CH.pt(D, Pl, 2, 4, { col: C.blue, lab: 'B', dir: 'se' });
+          roots(1, 1, 1).forEach(function (x, i) { CH.pt(D, Pl, x, x + 1, { col: C.pink, lab: i ? 'D' : 'C', dir: i ? 'se' : 'nw' }); });
+        } },
+      { tag: '今日の問い', q: 'A、B の座標は、式からどう求められる？', a: '2つの式の y が等しいとおいた方程式を解く', sub: '交点は、両方のグラフの上の点だから y が等しい。x²＝x＋2 → x²−x−2＝0 → (x＋1)(x−2)＝0 → x＝−1、2。A(−1, 1)、B(2, 4)', dur: 8,
+        b: { t: '交点では 2つの式の y が<b>等しい</b>　x²＝x＋2 → x＝−1、2 → <b>A(−1, 1)、B(2, 4)</b>', col: C.yel },
+        draw: function (D) {
+          var L = strip(D, 3), t = D.ph ? D.t : 0, Pl = base1(D, L);
+          CH.fn(D, Pl, F1, { col: C.orange, w: 3 }); CH.lin(D, Pl, 1, 2, { col: C.blue, w: 2.6 });
+          var x = -2.6 + 5.4 * CH.smooth(.04, .62, t);
+          if (D.ph && t < .66) { CH.pseg(D, Pl, [x, F1(x)], [x, x + 2], { col: C.pink, w: 4, glow: true }); CH.pt(D, Pl, x, F1(x), { col: C.orange, r: CH.fs(D, .24) }); CH.pt(D, Pl, x, x + 2, { col: C.blue, r: CH.fs(D, .24) }); }
+          [[-1, 1, 'A(−1, 1)', 'nw'], [2, 4, 'B(2, 4)', 'se']].forEach(function (p) {
+            var on = !D.ph || x >= p[0] - 1e-6 || t > .66, a = D.ph ? (t > .66 ? 1 : CH.smooth(p[0] - .05, p[0] + .2, x)) : 1;
+            CH.pt(D, Pl, p[0], p[1], { col: C.yel, r: CH.fs(D, .32), lab: D.ph && on ? p[2] : (p[0] < 0 ? 'A' : 'B'), dir: p[3] });
+            if (D.ph && on) { glow(D, Pl, p[0], p[1], C.yel, a); if (t > .7) dropX(D, Pl, p[0], p[1], C.yel, CH.smooth(.7, .8, t)); }
+          });
+          lines(D, L.T, [{ t: 'たての線（y の差）が 0 になる所が交点 → y が等しい', col: C.pink, a: D.ph ? CH.smooth(.04, .14, t) : 0 },
+            { t: 'x²＝x＋2　→　x²−x−2＝0　→　(x＋1)(x−2)＝0', col: C.yel, a: CH.smooth(.68, .78, t) },
+            { t: 'x＝−1、2　→　A(−1, 1)、B(2, 4)', col: C.yel, a: CH.smooth(.82, .92, t) }]);
+        } },
+      { tag: '今日の問い', q: 'C、D の座標は？（y＝x² と y＝x＋1 の交点）', a: 'C([1−√5/2], [3−√5/2])、D([1＋√5/2], [3＋√5/2])', sub: 'x²＝x＋1 → x²−x−1＝0。解の公式で x＝[1±√5/2]（約 −0.62 と 約 1.62）。y＝x＋1 に代入して y 座標', dur: 5,
+        b: { t: 'C、D … x²＝x＋1 → x＝[1±√5/2]（目もりで読めなくても、式で求まる）', col: C.yel },
+        draw: function (D) {
+          var L = strip(D, 2), t = D.ph ? D.t : 0, Pl = base1(D, L), rs = roots(1, 1, 1);
+          CH.fn(D, Pl, F1, { col: C.orange, w: 3 }); CH.lin(D, Pl, 1, 2, { col: C.blue, w: 2, a: .35 }); CH.lin(D, Pl, 1, 1, { col: C.pink, w: 2.6 });
+          rs.forEach(function (x, i) {
+            CH.pt(D, Pl, x, x + 1, { col: C.pink, r: CH.fs(D, .3), lab: i ? 'D' : 'C', dir: i ? 'se' : 'nw' });
+            if (D.ph) { glow(D, Pl, x, x + 1, C.pink, CH.smooth(.05, .2, t)); if (t > .45) dropX(D, Pl, x, x + 1, C.yel, CH.smooth(.45, .6, t)); }
+          });
+          lines(D, L.T, [{ t: 'x²＝x＋1　→　x²−x−1＝0', col: C.yel, a: D.ph ? CH.smooth(.1, .25, t) : 0 }, { t: '解の公式　x＝[1±√5/2]（約 −0.62、約 1.62）', col: C.yel, a: CH.smooth(.45, .6, t) }]);
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '2つのグラフが交わる点を、何という？ 交点の座標は、何の解？', a: '交点。2つの式を組にした連立方程式の解', sub: 'y を消すと、ax²＝mx＋n の形の二次方程式になる。交点の x 座標は、その解。y 座標は、どちらの式に代入してもよい', dur: 4,
+        b: [{ t: '2つのグラフが交わる点 … <b>交点</b>', col: C.green }, { t: '交点の座標 … 2つの式を組にした<b>連立方程式</b>の解', col: C.green }, { t: '交点の x 座標 … y を消した ax²＝mx＋n（<b>二次方程式</b>）の解', col: C.green }],
+        draw: function (D) {
+          var L = strip(D, 3), t = D.ph ? D.t : 0, Pl = base1(D, L);
+          CH.fn(D, Pl, F1, { col: C.orange, w: 3 }); CH.lin(D, Pl, 1, 2, { col: C.blue, w: 2.6 });
+          [[-1, 1, 'A', 'nw'], [2, 4, 'B', 'se']].forEach(function (p) { CH.pt(D, Pl, p[0], p[1], { col: C.yel, r: CH.fs(D, .32), lab: p[2], dir: p[3] }); if (D.ph) { glow(D, Pl, p[0], p[1], C.yel, CH.smooth(0, .2, t)); dropX(D, Pl, p[0], p[1], C.green, CH.smooth(.5, .7, t)); } });
+          lines(D, L.T, [{ t: '連立方程式　y＝x²、y＝x＋2', col: C.green, a: D.ph ? CH.smooth(0, .2, t) : 0 }, { t: 'y を消す → x²＝x＋2（二次方程式）', col: C.green, a: CH.smooth(.25, .45, t) }, { t: '解 x＝−1、2 が、交点の x 座標', col: C.green, a: CH.smooth(.55, .75, t) }]);
+        } },
+      { tag: '例題', bh: '例題　直線 AB の式', q: 'y＝[1/2]x² のグラフ上に、x 座標が −2、4 の 2点 A、B がある。直線 AB の式を求めよう。', a: 'y＝x＋4',
+        sub: 'A(−2, 2)、B(4, 8)。傾き [8−2/4−(−2)]＝[6/6]＝1。y＝x＋b に B を代入して 8＝4＋b、b＝4', dur: 7,
+        b: { t: 'A(−2, 2)、B(4, 8) → 傾き [6/6]＝1、8＝4＋b → <b>y＝x＋4</b>', col: C.pink },
+        draw: function (D) {
+          var L = strip(D, 3), t = D.ph ? D.t : 0, Pl = plane(D, L.P, { x: [-4.5, 5.5], y: [-1, 9.6], asp: 10 / 10.6 }), a1 = CH.smooth(.02, .2, t), a2 = CH.smooth(.25, .45, t), a3 = CH.smooth(.5, .7, t), a4 = CH.smooth(.72, .85, t);
+          CH.fn(D, Pl, H, { col: C.orange, w: 3 }); lab(D, Pl, -2.6, 9.1, 'y＝[1/2]x²', C.orange);
+          [-2, 4].forEach(function (x, i) { CH.pseg(D, Pl, [x, 0], [x, H(x)], { col: C.blue, dash: true, w: 1.6, a: D.ph ? a1 : .6 }); CH.pt(D, Pl, x, H(x), { col: C.yel, r: CH.fs(D, .3), lab: D.ph && t > .1 ? (i ? 'B(4, 8)' : 'A(−2, 2)') : (i ? 'B' : 'A'), dir: i ? 'se' : 'nw' }); });
+          if (D.ph) {
+            tri(D, Pl, H, -2, 4, C.pink, { a: a2 });
+            if (t > .5) CH.lin(D, Pl, 1, 4, { col: C.yel, w: 3, a: a3, glow: true });
+            if (t > .72) { CH.pt(D, Pl, 0, 4, { col: C.green, r: CH.fs(D, .3), a: a4 }); glow(D, Pl, 0, 4, C.green, a4); lab(D, Pl, 0, 4, '切片 4', C.green, { align: 'right', dx: -CH.fs(D, .6), dy: -CH.fs(D, .5), a: a4 }); lab(D, Pl, .4, 7.8, 'y＝x＋4', C.yel, { a: a4 }); }
+          }
+          lines(D, L.T, [{ t: 'A(−2, 2)、B(4, 8)', col: C.yel, a: D.ph ? a1 : 0 }, { t: '傾き [8−2/4−(−2)]＝[6/6]＝1', col: C.pink, a: a2 }, { t: 'y＝x＋b に B を代入 → 8＝4＋b、b＝4 → y＝x＋4', col: C.yel, a: a4 }]);
+        } },
+      { tag: '考えよう', bh: '考えよう', q: '放物線 y＝x² 上に、x 座標が ① −1 と 2、② −2 と 3、③ 1 と 3、④ −3 と 1 の 2点をとる。2点を通る直線の傾きを求めよう。どんなきまりがあるだろう。',
+        notes: ['傾きを表にまとめて、気づいたことを書こう。', 'y＝2x² でも同じようになるか、たしかめよう。', 'スライダーで、2点の x 座標を変えられます。'],
+        sliders: [{ key: 'p', label: '1つめの x', min: -3, max: 3, step: 1, val: -1, fmt: S }, { key: 'q', label: '2つめの x', min: -3, max: 3, step: 1, val: 2, fmt: S }],
+        draw: function (D) {
+          var L = strip(D, 1), p = D.V.p, q = D.V.q, Pl = plane(D, L.P, { x: [-3.5, 3.5], y: [-2, 10], ly: 2, asp: .9 });
+          CH.fn(D, Pl, F1, { col: C.orange, w: 3 }); lab(D, Pl, 3.4, 9.6, 'y＝x²', C.orange, { align: 'right', dx: CH.fs(D, 1.2) });
+          if (p === q) { lines(D, L.T, [{ t: 'ちがう 2点を選ぼう', col: C.pink }]); CH.pt(D, Pl, p, F1(p), { col: C.yel, r: CH.fs(D, .3) }); return; }
+          var m = (F1(q) - F1(p)) / (q - p); CH.lin(D, Pl, m, F1(p) - m * p, { col: C.yel, w: 2.6 });
+          [p, q].forEach(function (x) { CH.pt(D, Pl, x, F1(x), { col: C.yel, r: CH.fs(D, .3), lab: '(' + S(x) + ', ' + S(F1(x)) + ')', dir: x < 0 ? 'w' : 'e' }); });
+          lines(D, L.T, [{ t: '2点の x 座標　' + S(p) + ' と ' + S(q), col: C.yel }]);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '放物線 y＝ax² と直線 y＝x＋6 が 2点 A、B で交わり、A の x 座標は −3 である。B の座標と、原点 O をふくむ △OAB の面積を求めよう。', a: 'B(6, 12)、面積 27',
+        sub: 'A(−3, 3)、a＝3÷9＝[1/3]。[1/3]x²＝x＋6 → x²−3x−18＝0 → x＝−3、6 → B(6, 12)。直線と y 軸の交点 (0, 6) で 2つに分けて、[1/2]×6×3＋[1/2]×6×6＝27', dur: 10,
+        b: { t: 'A(−3, 3) → a＝[1/3] → B(6, 12)　△OAB＝[1/2]×6×3＋[1/2]×6×6＝<b>27</b>', col: C.orange },
+        draw: function (D) {
+          var L = strip(D, 3), t = D.ph ? D.t : 0, Pl = plane(D, L.P, { x: [-4.5, 7.2], y: [-1, 13.6], ly: 2, asp: 11.7 / 14.6 });
+          CH.lin(D, Pl, 1, 6, { col: C.blue, w: 2.6 }); lab(D, Pl, -4.4, .9, 'y＝x＋6', C.blue);
+          CH.pt(D, Pl, -3, 3, { col: C.yel, r: CH.fs(D, .3), lab: t > .05 ? 'A(−3, 3)' : 'A', dir: 'w' });
+          if (!D.ph) { lines(D, L.T, [{ t: 'A は直線 y＝x＋6 の上にもある', col: C.blue }, { t: '' }, { t: '' }]); return; }
+          var a1 = CH.smooth(.12, .3, t), a2 = CH.smooth(.32, .42, t), a3 = CH.smooth(.46, .56, t), a4 = CH.smooth(.6, .72, t), a5 = CH.smooth(.74, .86, t);
+          if (t < .2) glow(D, Pl, -3, 3, C.yel);
+          CH.fn(D, Pl, G, { col: C.orange, w: 3, t: a1 }); if (t > .3) lab(D, Pl, 3.2, 12.4, 'y＝[1/3]x²', C.orange, { align: 'right' });
+          if (t > .32) { CH.pt(D, Pl, 6, 12, { col: C.yel, r: CH.fs(D, .3), lab: 'B(6, 12)', dir: 'e', a: a2 }); if (t < .5) glow(D, Pl, 6, 12, C.yel, a2); }
+          var O = [Pl.X(0), Pl.Y(0)], PA = [Pl.X(-3), Pl.Y(3)], PB = [Pl.X(6), Pl.Y(12)], PC = [Pl.X(0), Pl.Y(6)];
+          if (t > .46 && t < .62) CH.poly(D, [O, PA, PB], { fill: hexA(C.yel, .25), stroke: C.yel, sw: 2.4, a: a3 });
+          if (t > .6) {
+            CH.poly(D, [O, PA, PC], { fill: hexA(C.blue, .3), stroke: C.blue, sw: 2.4, a: a4 }); CH.poly(D, [O, PC, PB], { fill: hexA(C.orange, .3), stroke: C.orange, sw: 2.4, a: a4 });
+            CH.pt(D, Pl, 0, 6, { col: C.green, r: CH.fs(D, .3), lab: '(0, 6)', dir: 'nw', a: a4 });
+            CH.pseg(D, Pl, [-3, 3], [0, 3], { col: C.blue, dash: true, w: 2, a: a5 }); CH.pseg(D, Pl, [6, 12], [6, 0], { col: C.orange, dash: true, w: 2, a: a5 }); CH.pseg(D, Pl, [0, 0], [6, 0], { col: C.orange, w: 2.6, a: a5 });
+            lab(D, Pl, -1.5, 3, '3', C.blue, { align: 'center', dy: CH.fs(D, .7), a: a5 }); lab(D, Pl, 3, 0, '6', C.orange, { align: 'center', dy: -CH.fs(D, .6), a: a5 });
+            lab(D, Pl, -1, 4.4, '9', C.blue, { align: 'center', a: a5, size: CH.fs(D, 1.1) }); lab(D, Pl, 2.4, 5.4, '18', C.orange, { align: 'center', a: a5, size: CH.fs(D, 1.1) });
+          }
+          lines(D, L.T, [{ t: 'A(−3, 3) → 3＝a×(−3)² → a＝[1/3]', col: C.orange, a: a1 }, { t: '[1/3]x²＝x＋6 → x²−3x−18＝0 → x＝−3、6 → B(6, 12)', col: C.yel, a: a2 },
+            { t: '△OAB＝[1/2]×6×3＋[1/2]×6×6＝9＋18＝27', col: C.green, a: a5 }]);
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

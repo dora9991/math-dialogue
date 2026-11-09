@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>基準と平均</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 正の数・負の数 第21時：基準を決めて、平均をくふうして求めよう（ikkan の lesson_seifu_21 と同じ流れ）。
+   記録の棒グラフに基準の線をひき、基準とのちがいを正（青）・負（ピンク）で色分け。ちがいをならすと、棒が平均の線にそろう。
+   数値は ikkan のまま（メロンパン 62・55・58・66・54、基準 60 と 55、最高気温、5回のテスト、通学時間、A班・B班）。
+   平均・ちがいの合計は、ページの中で計算し直して照らし合わせている。 */
+(function () {
+  var C = CH.C, RED = '#ff7b7b', FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  /* ---- 図の中の式：a^2（指数）・[1/2]（たての分数）・{…}（印をつける場所。字にはならない）。
+     o：size・col・a・align・measure（描かずにはかるだけ）。返すもの：w（幅）・x0（左はし）・sp（{…} の [左, 右]） ---- */
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, ez = size * .6, segs = [], sp = [], open = [], w = 0, m;
+    var re = /\[([^\/\]]+)\/([^\]]+)\]|\^(\d+)|([{}])|([^\[\^{}]+|[\[\^])/g;
+    g.save();
+    while ((m = re.exec(String(s)))) {
+      if (m[1] != null) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(m[1]).width, g.measureText(m[2]).width) + fz * .4; segs.push({ n: m[1], d: m[2], x: w, w: fw }); w += fw; }
+      else if (m[3] != null) { g.font = '600 ' + ez + 'px ' + FONT; var ew = g.measureText(m[3]).width + size * .2; segs.push({ e: m[3], x: w, w: ew }); w += ew; }
+      else if (m[4] === '{') { open.push(sp.length); sp.push([w, w]); }
+      else if (m[4] === '}') sp[open.pop()][1] = w;
+      else { g.font = '600 ' + size + 'px ' + FONT; var tw = g.measureText(m[5]).width; segs.push({ t: m[5], x: w, w: tw }); w += tw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    if (!o.measure) segs.forEach(function (q) {
+      var X = x0 + q.x;
+      if (q.t != null) CH.text(D, X, y, q.t, Object.assign({ size: size, align: 'left' }, oo));
+      else if (q.e != null) CH.text(D, X + size * .15, y - size * .38, q.e, Object.assign({ size: ez, align: 'left' }, oo));
+      else { var cx = X + q.w / 2; CH.text(D, cx, y - fz * .62, q.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .68, q.d, Object.assign({ size: fz }, oo)); CH.line(D, X + fz * .15, y + fz * .04, X + q.w - fz * .15, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a }); }
+    });
+    return { w: w, x0: x0, sp: sp.map(function (p) { return [x0 + p[0], x0 + p[1]]; }) };
+  }
+  function fit(D, s, maxW, size) { var w = TX(D, 0, 0, s, { size: size, measure: true }).w; return w > maxW ? size * maxW / w : size; }
+  /* 右の板書（HTML）：[1/2] はたての分数、^2 は上つき、{ } はとる */
+  function H(s) { return CH.fr(String(s)).replace(/\^(\d+)/g, '<sup>$1</sup>').replace(/[{}]/g, ''); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = H(s[k]); }); if (s.notes) s.notes = s.notes.map(H); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = H(b.t); }); }); return st; }
+  function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function rbox(D, x0, y0, x1, y1, col, a, o) {
+    o = o || {}; var g = D.ctx, r = Math.min(10, (y1 - y0) * .3); if (a <= 0) return;
+    g.save(); g.globalAlpha = D.ga * a; g.beginPath(); g.moveTo(x0 + r, y0); g.arcTo(x1, y0, x1, y1, r); g.arcTo(x1, y1, x0, y1, r); g.arcTo(x0, y1, x0, y0, r); g.arcTo(x0, y0, x1, y0, r); g.closePath();
+    g.fillStyle = hexA(col, o.fa == null ? .16 : o.fa); g.fill(); g.strokeStyle = col; g.lineWidth = o.w || 2.6; if (o.dash) g.setLineDash([7, 5]); g.stroke(); g.restore();
+  }
+  /* ✗ と ○ と ①（丸の中の番号） */
+  function ng(D, x, y, z, a) { if (a <= 0) return; var d = z * .32; CH.line(D, x - d, y - d, x + d, y + d, { col: RED, w: Math.max(3, z * .13), a: a }); CH.line(D, x + d, y - d, x - d, y + d, { col: RED, w: Math.max(3, z * .13), a: a }); }
+  function okm(D, x, y, z, a, col) { if (a > 0) CH.circle(D, x, y, z * .36, { stroke: col || C.green, sw: Math.max(2.6, z * .11), a: a }); }
+  function num(D, x, y, n, z, col, a) { if (a <= 0) return; CH.circle(D, x, y, z * .42, { fill: 'rgba(23,56,41,.9)', stroke: col, sw: 2, a: a }); CH.text(D, x, y + 1, String(n), { size: z * .55, col: col, a: a, num: true, w: 700 }); }
+  /* 数のカード（まん中が x, y）。txt は TX の字（[1/2] も） */
+  function ncard(D, x, y, w, h, txt, col, a, o) {
+    o = o || {}; if (a != null && a <= 0) return; rbox(D, x - w / 2, y - h / 2, x + w / 2, y + h / 2, col || C.blue, a == null ? 1 : a, { fa: o.fa == null ? .22 : o.fa, w: o.sw || 2 });
+    var z = o.size || h * (String(txt).indexOf('[') >= 0 ? .44 : .56); z = fit(D, txt, w * .86, z);
+    TX(D, x, y + 1, txt, { size: z, col: o.tcol || C.chalk, a: a });
+  }
+  function S(v) { return CH.mnum(v); }
+  /* ---- 数直線（第2時などと同じ形。右に矢印、正は青・負はピンク） ---- */
+  var POS = C.blue, NEG = C.pink, OUT = 'rgba(20,40,30,.9)';
+  function sg(v) { return v > 0 ? '＋' + S(v) : S(v); }
+  function sc(v) { return v > 0 ? POS : v < 0 ? NEG : C.yel; }
+  function NL(D, x0, x1, y, min, max, o) {
+    o = o || {}; var s = o.s || CH.fs(D, .8), u = (x1 - x0) / (max - min), X = function (v) { return x0 + (v - min) * u; }, a = o.a == null ? 1 : o.a;
+    var lab = o.lab || [1, 2, 5, 10, 20, 50].filter(function (q) { return q * u >= s * 2.1; })[0] || 100, st = o.st || (u < 6 ? lab : 1);
+    CH.arrow(D, x0 - s * .5, y, x1 + s * 1.1, y, { w: 2, head: 9, a: a });
+    for (var v = Math.ceil(min / st) * st; v <= max + 1e-9; v += st) {
+      var isL = Math.abs(v / lab - Math.round(v / lab)) < 1e-9, h = v === 0 ? 9 : isL ? 7 : 4, la = a * (o.la ? o.la(v) : 1);
+      CH.line(D, X(v), y - h, X(v), y + h, { w: v === 0 ? 2.4 : 1.5, a: a });
+      if (isL && la > 0) CH.text(D, X(v), y + s * 1.25, o.fmt ? o.fmt(v) : S(v), { size: s, num: true, a: la, col: o.lc ? o.lc(v) : C.chalk });
+    }
+    return { X: X, y: y, s: s, u: u, x0: x0, x1: x1 };
+  }
+  function pt(D, L, v, col, lab, o) {
+    o = o || {}; CH.circle(D, L.X(v), L.y, o.r || L.s * .36, { fill: col, stroke: 'rgba(20,30,24,.8)', sw: 1.2, a: o.a });
+    if (lab) TX(D, L.X(v), L.y - L.s * (o.up || 1.15), lab, { col: o.tc || col, size: o.size || L.s, a: o.a, outline: OUT });
+  }
+  function sum(a) { return a.reduce(function (x, y) { return x + y; }, 0); }
+  function r2(x) { return Math.round(x * 100) / 100; }
+  function diffs(v, b) { return v.map(function (x) { return r2(x - b); }); }
+  /* メロンパン */
+  var MP = [62, 55, 58, 66, 54], DAY = ['月', '火', '水', '木', '金'];
+  CH.check(CH.near(sum(MP) / 5, 59) && diffs(MP, 60).join() === '2,-5,-2,6,-6' && sum(diffs(MP, 60)) === -5 && CH.near(60 + sum(diffs(MP, 60)) / 5, 59), '今日の問い（基準 60）');
+  CH.check(diffs(MP, 55).join() === '7,0,3,11,-1' && sum(diffs(MP, 55)) === 20 && CH.near(55 + 20 / 5, 59), '例題（1）基準 55');
+  /* 最高気温（基準 25） */
+  var KI = [24, 27, 22, 25, 26];
+  CH.check(CH.near(sum(KI) / 5, 24.8) && diffs(KI, 25).join() === '-1,2,-3,0,1' && CH.near(25 + sum(diffs(KI, 25)) / 5, 24.8), '例題（2）気温');
+  /* 5回のテスト（基準 70、平均 68） */
+  var TD = [-3, 4, -8, -5], T5 = (68 - 70) * 5 - sum(TD);
+  CH.check(sum(TD) === -12 && T5 === 2 && 70 + T5 === 72 && CH.near((67 + 74 + 62 + 65 + 72) / 5, 68), '例題（3）5回目');
+  /* 考えよう（答えはページに出さない） */
+  var TU = [12, 18, 15, 21, 14];
+  CH.check(CH.near(sum(TU) / 5, 16) && CH.near(12 + sum(diffs(TU, 12)) / 5, 16) && CH.near(15 + sum(diffs(TU, 15)) / 5, 16), '考えよう（ここで確かめるだけ）');
+  /* チャレンジ：A班 66点×4人、B班 71点×6人、基準 70 */
+  var AB = [66, 66, 66, 66, 71, 71, 71, 71, 71, 71];
+  CH.check(CH.near(sum(AB) / 10, 69) && sum(diffs(AB.slice(0, 4), 70)) === -16 && sum(diffs(AB.slice(4), 70)) === 6 && CH.near(70 + sum(diffs(AB, 70)) / 10, 69), 'チャレンジ 69点');
+
+  /* ---- 棒グラフ：ちがいの行・基準の線・ならす ----
+     o：y（[下, 上]）、yt、unit、names、base（基準。null なら線なし）、bA（線の濃さ）、dA(i)（ちがいの色・字の濃さ）、lv（ならす 0→1）、avg、avA、tag（ちがいの行の見出し） */
+  function bars(D, R, vals, o) {
+    var s = CH.fs(D), n = vals.length, top = o.base != null || o.tagRow ? s * 3.4 : s * 1.2, Ax = CH.axes(D, CH.rect(R.x0 + s * 2.2, R.y0 + top + s * 1.2, R.x1 - s * 4.2, R.y1 - s * 1.6), { x: [0, n], y: o.y, xt: [], yt: o.yt, cut: o.y[0] > 0, yl: o.unit, size: CH.fs(D, .75) });
+    var lv = CH.ease(o.lv || 0), bw = Ax.R.w / n, z = Math.min(s * 1.05, bw * .42);
+    vals.forEach(function (v, i) {
+      var vv = CH.lerp(v, o.avg == null ? v : o.avg, lv), x0 = Ax.X(i + .18), x1 = Ax.X(i + .82), yb = Ax.Y(o.y[0]), yt = Ax.Y(vv), d = o.base == null ? 0 : r2(v - o.base), da = o.dA ? o.dA(i) : 0;
+      CH.fillRect(D, x0, yt, x1, yb, { fill: 'rgba(242,240,230,.13)', stroke: 'rgba(242,240,230,.75)', sw: 1.6 });
+      if (lv > 0) CH.fillRect(D, x0, Ax.Y(v), x1, yb, { stroke: '#f2f0e6', sw: 1.4, dash: true, a: .45 * lv });
+      if (o.base != null && da > 0 && Math.abs(vv - o.base) > 1e-9) { var col = vv > o.base ? POS : NEG; CH.fillRect(D, x0, Ax.Y(o.base), x1, yt, { fill: hexA(col, .45), stroke: col, sw: 2, a: da }); }
+      if (lv < .05) CH.text(D, (x0 + x1) / 2, yt - z * .75, S(v), { size: z, num: true, a: 1 - lv * 20 });
+      CH.text(D, (x0 + x1) / 2, Ax.R.y1 + z * .95, o.names[i], { size: z * .95 });
+      if (o.base != null && da > 0) TX(D, (x0 + x1) / 2, R.y0 + s * 2.1, sg(d), { size: z * 1.05, col: sc(d) === C.yel ? C.chalk : sc(d), a: da });
+    });
+    if (o.base != null) {
+      var ba = o.bA == null ? 1 : o.bA; CH.line(D, Ax.R.x0, Ax.Y(o.base), Ax.R.x1 + s * .4, Ax.Y(o.base), { col: C.yel, w: 2.6, dash: [8, 6], a: ba });
+      CH.text(D, Ax.R.x1 + s * .5, Ax.Y(o.base) - s * .55, '基準 ' + S(o.base), { size: s * .8, col: C.yel, align: 'left', a: ba });
+      CH.text(D, Ax.R.x0, R.y0 + s * .7, o.tag || 'ちがい', { size: s * .8, col: 'rgba(242,240,230,.75)', align: 'left', a: o.dA ? Math.max.apply(null, vals.map(function (_, i) { return o.dA(i); })) : 0 });
+    }
+    if (o.avA > 0) { CH.line(D, Ax.R.x0, Ax.Y(o.avg), Ax.R.x1 + s * .4, Ax.Y(o.avg), { col: C.green, w: 3, a: o.avA }); CH.text(D, Ax.R.x1 + s * .5, Ax.Y(o.avg) + s * .6, '平均 ' + S(o.avg), { size: s * .85, col: C.green, align: 'left', a: o.avA }); }
+    return Ax;
+  }
+  /* 下の式の行 */
+  function lines(D, R, L, t) {
+    var s = CH.fs(D), lh = Math.min(R.h / L.length, s * 1.9);
+    L.forEach(function (l, i) { var a = l.t0 == null ? 1 : CH.smooth(l.t0, l.t0 + .08, t); if (a <= 0) return; TX(D, R.cx, R.y0 + lh * (i + .5), l.s, { size: fit(D, l.s, R.w * .96, Math.min(s * 1.05, lh * .62)), col: l.col || C.chalk, a: a }); });
+  }
+  function split(D, k) { var R = CH.box(D, { l: .03, r: .03, t: .03, b: .04 }); return { A: CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * (k || .74)), B: CH.rect(R.x0, R.y0 + R.h * ((k || .74) + .02), R.x1, R.y1) }; }
+  function dAf(t, a, b, n) { return function (i) { return CH.smooth(a + (b - a) * i / n, a + (b - a) * (i + .6) / n, t); }; }
+  function sumStr(d) { return d.map(function (x, i) { return i ? (x < 0 ? '＋(' + S(x) + ')' : '＋(' + sg(x) + ')') : '(' + sg(x) + ')'; }).join('').replace('(0)', '0'); }
+
+  K3.run({
+    no: '第21時', title: '基準を決めて、平均をくふうして求めよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '20.html', label: '◀ 第20時' }, { href: '22.html', label: '第22時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: 'メロンパンの売れた数（個）', q: 'パン屋で売れたメロンパンの数は、月 62、火 55、水 58、木 66、金 54（個）。5日間の平均を、できるだけ簡単な計算で求める方法を考えよう。',
+        notes: ['① 自分の考え（3分）　考えた方法と、平均を書こう。', '② ペアの考え（3分）　自分とちがう方法や基準を書こう。'],
+        draw: function (D) { var P = split(D); bars(D, P.A, MP, { y: [50, 70], yt: [50, 55, 60, 65, 70], unit: '（個）', names: DAY }); } },
+      { tag: '今日の問い', q: '60個を基準にすると、それぞれのちがいは？ 平均は？', a: '＋2、−5、−2、＋6、−6　平均 59個', sub: 'ちがいの合計 −5、ちがいの平均 (−5)÷5＝−1 → 60＋(−1)＝59（個）', dur: 7,
+        b: { t: '基準 60 … ちがい ＋2、−5、−2、＋6、−6（合計 −5）→ 60＋(−5)÷5＝<b>59</b>（個）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = split(D);
+          bars(D, P.A, MP, { y: [50, 70], yt: [50, 55, 60, 65, 70], unit: '（個）', names: DAY, base: D.ph ? 60 : null, bA: CH.smooth(0, .1, t), dA: dAf(t, .1, .45, 5), lv: CH.smooth(.55, .8, t), avg: 59, avA: CH.smooth(.75, .85, t), tag: '60とのちがい' });
+          lines(D, P.B, [{ s: 'ちがいの合計　' + sumStr(diffs(MP, 60)) + '＝−5', t0: .47 }, { s: 'ちがいの平均　(−5)÷5＝−1　→　平均 60＋(−1)＝59（個）', t0: .62, col: C.yel }], t);
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '基準にした値を何という？ 平均は、基準を使って、どう求められる？', a: '仮の平均。平均＝基準の値＋（基準とのちがいの平均）', sub: '基準より大きいちがいは正の数、小さいちがいは負の数で表す', dur: 4,
+        b: [{ t: '基準にした値 … <b>仮の平均</b>　大きいちがい … 正の数、小さいちがい … 負の数', col: C.green }, { t: '平均 ＝ <b>基準の値</b> ＋（基準とのちがいの <b>平均</b>）', col: C.green }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = split(D, .7), d = diffs(MP, 60), s = CH.fs(D), R = P.A;
+          var Ax = CH.axes(D, CH.rect(R.x0 + s * 2.2, R.y0 + s * 1.2, R.x1 - s * 6.5, R.y1 - s * 1.6), { x: [0, 5], y: [-8, 8], xt: [], yt: [-8, -4, 0, 4, 8], yf: sg, size: CH.fs(D, .75) });
+          CH.line(D, Ax.R.x0, Ax.Y(0), Ax.R.x1 + s * .4, Ax.Y(0), { col: C.yel, w: 2.6 }); CH.text(D, Ax.R.x1 + s * .5, Ax.Y(0) - s * .6, '基準 60', { size: s * .8, col: C.yel, align: 'left' });
+          var z = Math.min(s * 1.05, Ax.R.w / 5 * .4);
+          d.forEach(function (v, i) {
+            var x0 = Ax.X(i + .2), x1 = Ax.X(i + .8), col = sc(v); CH.fillRect(D, x0, Ax.Y(0), x1, Ax.Y(v), { fill: hexA(col, .45), stroke: col, sw: 2 });
+            TX(D, (x0 + x1) / 2, Ax.Y(v) + (v >= 0 ? -z * .8 : z * .8), sg(v), { size: z, col: col });
+            CH.text(D, (x0 + x1) / 2, Ax.R.y1 + z * .95, DAY[i], { size: z * .95 });
+          });
+          CH.line(D, Ax.R.x0, Ax.Y(-1), Ax.R.x1 + s * .4, Ax.Y(-1), { col: C.green, w: 2.6, a: CH.smooth(.3, .45, t) }); CH.text(D, Ax.R.x1 + s * .5, Ax.Y(-1) + s * .7, 'ちがいの平均 −1', { size: s * .75, col: C.green, align: 'left', a: CH.smooth(.3, .45, t) });
+          lines(D, P.B, [{ s: '正の数 … 基準より大きい　　負の数 … 基準より小さい', t0: .05 }, { s: '平均 ＝ 基準の値 ＋（ちがいの平均）＝ 60＋(−1)＝59', t0: .55, col: C.yel }], t);
+        } },
+      { tag: '例題', bh: '例題', q: '（1）同じ記録で、基準を 55個にして、平均を求めよう。', a: '59個（基準を変えても同じ）', sub: 'ちがい ＋7、0、＋3、＋11、−1　合計 ＋20、平均 ＋4 → 55＋4＝59', dur: 7,
+        b: { t: '（1）基準 55 … 合計 ＋20、平均 ＋4 → 55＋4＝<b>59</b>（基準を変えても同じ）', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = split(D), b = Math.round(CH.lerp(60, 55, CH.ease(CH.smooth(.02, .2, t))) * 10) / 10;
+          bars(D, P.A, MP, { y: [50, 70], yt: [50, 55, 60, 65, 70], unit: '（個）', names: DAY, base: b, bA: 1, dA: D.ph ? (t < .2 ? function () { return .35; } : dAf(t, .2, .45, 5)) : function () { return 0; }, lv: CH.smooth(.55, .8, t), avg: 59, avA: CH.smooth(.75, .85, t), tag: '55とのちがい' });
+          lines(D, P.B, [{ s: 'ちがいの合計　' + sumStr(diffs(MP, 55)) + '＝＋20', t0: .47 }, { s: 'ちがいの平均　(＋20)÷5＝＋4　→　平均 55＋(＋4)＝59（個）', t0: .62, col: C.yel }], t);
+        } },
+      { tag: '例題', q: '（2）5日間の最高気温は、24、27、22、25、26（℃）だった。基準を 25℃ にして、平均を求めよう。', a: '24.8℃', sub: 'ちがい −1、＋2、−3、0、＋1　合計 −1、平均 (−1)÷5＝−0.2 → 25＋(−0.2)＝24.8', dur: 7,
+        b: { t: '（2）基準 25 … 合計 −1、平均 −0.2 → 25＋(−0.2)＝<b>24.8</b>（℃）', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = split(D);
+          bars(D, P.A, KI, { y: [20, 28], yt: [20, 22, 24, 26, 28], unit: '（℃）', names: DAY, base: 25, bA: CH.smooth(0, .1, t) * (D.ph ? 1 : 0), dA: dAf(t, .1, .45, 5), lv: CH.smooth(.55, .8, t), avg: 24.8, avA: CH.smooth(.75, .85, t), tag: '25とのちがい' });
+          lines(D, P.B, [{ s: 'ちがいの合計　' + sumStr(diffs(KI, 25)) + '＝−1', t0: .47 }, { s: 'ちがいの平均　(−1)÷5＝−0.2　→　平均 25＋(−0.2)＝24.8（℃）', t0: .62, col: C.yel }], t);
+        } },
+      { tag: '例題', q: '（3）5回のテストの平均は 68点。70点を基準にすると、1〜4回目は −3、＋4、−8、−5（点）だった。5回目の得点は？', a: '72点', sub: '平均が 70 より 2 小さい → ちがいの合計は (−2)×5＝−10。4回目までで −12 だから、5回目は ＋2 → 70＋2＝72', dur: 7,
+        b: { t: '（3）ちがいの合計 (−2)×5＝−10、4回目まで −12 → 5回目 ＋2 → <b>72</b>点', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = split(D, .7), s = CH.fs(D), R = P.A, d = TD.concat([T5]);
+          var Ax = CH.axes(D, CH.rect(R.x0 + s * 2.2, R.y0 + s * 1.2, R.x1 - s * 5.2, R.y1 - s * 1.6), { x: [0, 5], y: [-10, 6], xt: [], yt: [-10, -8, -6, -4, -2, 0, 2, 4, 6], yf: sg, size: CH.fs(D, .7) });
+          CH.line(D, Ax.R.x0, Ax.Y(0), Ax.R.x1 + s * .4, Ax.Y(0), { col: C.yel, w: 2.6 }); CH.text(D, Ax.R.x1 + s * .5, Ax.Y(0) - s * .6, '基準 70点', { size: s * .8, col: C.yel, align: 'left' });
+          CH.line(D, Ax.R.x0, Ax.Y(-2), Ax.R.x1 + s * .4, Ax.Y(-2), { col: C.green, w: 2.6 }); CH.text(D, Ax.R.x1 + s * .5, Ax.Y(-2) + s * .6, '平均 68点', { size: s * .8, col: C.green, align: 'left' });
+          var z = Math.min(s * 1.05, Ax.R.w / 5 * .4), k5 = CH.smooth(.6, .8, t);
+          d.forEach(function (v, i) {
+            var x0 = Ax.X(i + .2), x1 = Ax.X(i + .8), col = sc(v), vv = i === 4 ? v * k5 : v;
+            CH.text(D, (x0 + x1) / 2, Ax.R.y1 + z * .95, (i + 1) + '回目', { size: z * .85 });
+            if (i === 4 && k5 <= 0) { rbox(D, x0, Ax.Y(1), x1, Ax.Y(-1), '#f2f0e6', .5, { dash: true, fa: 0, w: 1.6 }); CH.text(D, (x0 + x1) / 2, Ax.Y(0), '？', { size: z * 1.2, a: .7 }); return; }
+            CH.fillRect(D, x0, Ax.Y(0), x1, Ax.Y(vv), { fill: hexA(col, .45), stroke: col, sw: 2 });
+            TX(D, (x0 + x1) / 2, Ax.Y(vv) + (v >= 0 ? -z * .8 : z * .8), sg(v), { size: z, col: col, a: i === 4 ? k5 : 1 });
+          });
+          lines(D, P.B, [{ s: '5回のちがいの合計　(−2)×5＝−10', t0: .05 }, { s: '4回目まで　(−3)＋(＋4)＋(−8)＋(−5)＝−12', t0: .25 }, { s: '5回目のちがい　(−10)−(−12)＝＋2　→　70＋2＝72（点）', t0: .5, col: C.yel }], t);
+        } },
+      { tag: '考えよう', q: '5人の通学時間は、A 12、B 18、C 15、D 21、E 14（分）。基準を 12分にした場合と、15分にした場合で、ちがいと平均を調べよう。基準は、どう選ぶとよいだろう。',
+        notes: ['それぞれの基準で、ちがいと、ちがいの合計・平均を求めよう。', '計算がかんたんになるのは、どんな基準かな。理由も書こう。', 'スライダーで、基準の線を動かせます（ちがいの数も変わります）。'],
+        sliders: [{ key: 'b', label: '基準', min: 10, max: 22, step: 1, val: 12, fmt: function (x) { return x + '分'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .03, r: .03, t: .03, b: .04 });
+          bars(D, R, TU, { y: [0, 24], yt: [0, 6, 12, 18, 24], unit: '（分）', names: ['A', 'B', 'C', 'D', 'E'], base: D.V.b, dA: function () { return 1; }, tag: D.V.b + 'とのちがい' });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'A班4人の平均点は 66点、B班6人の平均点は 71点だった。70点を基準にして、10人全体の平均点を求めよう。', a: '69点', sub: 'A班 … (−4)×4＝−16、B班 … (＋1)×6＝＋6。合計 −10、平均 (−10)÷10＝−1 → 70＋(−1)＝69', dur: 7,
+        b: { t: 'A班 (−4)×4＝−16、B班 (＋1)×6＝＋6 → 合計 −10 → 70＋(−1)＝<b>69</b>点', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = split(D);
+          bars(D, P.A, AB, { y: [60, 74], yt: [60, 62, 64, 66, 68, 70, 72, 74], unit: '（点）', names: ['A', 'A', 'A', 'A', 'B', 'B', 'B', 'B', 'B', 'B'], base: 70, bA: D.ph ? CH.smooth(0, .1, t) : 1, dA: D.ph ? dAf(t, .1, .4, 10) : function () { return 0; }, lv: CH.smooth(.55, .8, t), avg: 69, avA: CH.smooth(.75, .85, t), tag: 'ちがい' });
+          lines(D, P.B, [{ s: 'A班 (−4)×4＝−16　B班 (＋1)×6＝＋6　合計 −10', t0: .42 }, { s: 'ちがいの平均 (−10)÷10＝−1　→　70＋(−1)＝69（点）', t0: .6, col: C.yel }], t);
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

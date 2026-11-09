@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ともなって変わる数量</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 比例と反比例 第1時：ともなって変わる2つの数量をさがそう（ikkan の lesson_hirei_01 と同じ流れ）。
+   学校から 2 km の公園まで歩く。時間を進めると、歩いた道のり・残りの道のりは決まるが、つかれぐあいは日によってちがう。
+   x を入れると y がただ1つ出てくる「関数の箱」。例題 ア〜エ は、x を1つ決めて y が1つに決まるかを絵で。考えようは、4 でわった余り（スライダーで x）。
+   数値は ikkan のまま（2 km、例題 ア〜エ、考えよう x を 4 でわった余り、チャレンジ 水道料金 1300円・140円）。
+   歩く速さ（分速 80 m）・つかれぐあいの長さ・例題の 3 cm や 50 kg などは、図のために自作した値（検算ずみ）。表・答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.92)';
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = CH.fr(s[k]); }); if (s.notes) s.notes = s.notes.map(CH.fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = CH.fr(b.t); }); }); return st; }
+
+  /* ---- 数と検算 ---- */
+  var SP = 80, LEN = 2000, TMAX = LEN / SP;
+  function walked(m) { return SP * m; }
+  CH.check(TMAX === 25 && walked(10) === 800 && LEN - walked(10) === 1200, '10分のときの道のり・残り');
+  var TIRED = [.32, .7, .5];
+  CH.check(TIRED[0] !== TIRED[1] && TIRED[1] !== TIRED[2], 'つかれぐあいは日によってちがう（1つに決まらない）');
+  CH.check(3 + 3 + 3 + 3 === 4 * 3 && 2 + 2 === 2 * 2, '例題 ア・ウ（○）');
+  var DIV6 = [1, 2, 3, 4, 5, 6].filter(function (d) { return 6 % d === 0; });
+  CH.check(DIV6.join() === '1,2,3,6' && DIV6.length > 1, '例題 エ（×：約数が4つ）');
+  function rem4(x) { return x % 4; }
+  CH.check([1, 2, 3, 4, 5, 6, 7, 8].map(rem4).join() === '1,2,3,0,1,2,3,0', '考えよう（ここで確かめるだけ）');
+  function fee(x) { return x <= 12 ? 1300 : 1300 + 140 * (x - 12); }
+  var X3 = 12 + (2000 - 1300) / 140;
+  CH.check(fee(9) === 1300 && fee(15) === 1720 && X3 === 17 && fee(17) === 2000, 'チャレンジ（水道料金）');
+
+  /* ---- 道と、歩く人 ---- */
+  /* ○・× の印（字ではなく線で） */
+  function mark(D, x, y, r, ok, a) {
+    var w = Math.max(2.6, r * .2);
+    if (ok) CH.circle(D, x, y, r, { stroke: C.green, sw: w, a: a });
+    else { CH.line(D, x - r * .75, y - r * .75, x + r * .75, y + r * .75, { col: C.pink, w: w, a: a }); CH.line(D, x + r * .75, y - r * .75, x - r * .75, y + r * .75, { col: C.pink, w: w, a: a }); }
+  }
+  function person(D, x, y, s, col, a) {
+    var h = s * 1.75;
+    CH.poly(D, [[x - s * .38, y], [x - s * .26, y - h + s * .5], [x + s * .26, y - h + s * .5], [x + s * .38, y]], { fill: col, stroke: OUT, sw: 1.4, a: a });
+    CH.circle(D, x, y - h + s * .1, s * .36, { fill: col, stroke: OUT, sw: 1.4, a: a });
+  }
+  /* R の中に、学校 —— 公園 の道。m 分歩いたところに人。o.split で、歩いた（黄）・残り（青）を色分け */
+  function road(D, R, m, o) {
+    o = o || {}; var s = CH.fs(D), y = R.y0 + R.h * .66, x0 = R.x0 + s * 1.6, x1 = R.x1 - s * 1.6, d = walked(m);
+    var X = function (v) { return x0 + (x1 - x0) * v / LEN; }, yd = R.y0 + R.h * .14;
+    CH.line(D, x0, y, x1, y, { w: 6, col: 'rgba(242,240,230,.3)' });
+    if (o.split) { CH.line(D, x0, y, X(d), y, { w: 6, col: C.yel }); CH.line(D, X(d), y, x1, y, { w: 6, col: C.blue }); }
+    CH.circle(D, x0, y, s * .28, { fill: C.chalk }); CH.circle(D, x1, y, s * .28, { fill: C.chalk });
+    CH.text(D, x0, y + s * 1.25, '学校', { size: s * .9 }); CH.text(D, x1, y + s * 1.25, '公園', { size: s * .9 });
+    var lw = s * 4.2;
+    CH.line(D, x0, yd, (x0 + x1) / 2 - lw / 2, yd, { w: 1.4, col: 'rgba(242,240,230,.6)' }); CH.line(D, (x0 + x1) / 2 + lw / 2, yd, x1, yd, { w: 1.4, col: 'rgba(242,240,230,.6)' });
+    CH.line(D, x0, yd - s * .35, x0, yd + s * .35, { w: 1.4, col: 'rgba(242,240,230,.6)' }); CH.line(D, x1, yd - s * .35, x1, yd + s * .35, { w: 1.4, col: 'rgba(242,240,230,.6)' });
+    CH.text(D, (x0 + x1) / 2, yd, '2 km', { size: s * .9 });
+    if (o.split && d > 60) CH.text(D, (x0 + X(d)) / 2, y + s * .9, walked(m) + ' m', { col: C.yel, size: s * .78, outline: OUT, a: o.la });
+    if (o.split && LEN - d > 60) CH.text(D, (X(d) + x1) / 2, y + s * .9, (LEN - walked(m)) + ' m', { col: C.blue, size: s * .78, outline: OUT, a: o.la });
+    person(D, X(d), y - s * .2, s * 1.35, C.orange);
+    return X;
+  }
+  /* 数量の行（名前と値）。rows：[{ n, v, col, a, bar }] */
+  function meters(D, R, rows) {
+    var s = CH.fs(D), rh = Math.min(R.h / rows.length, s * 2.3), y0 = R.cy - rh * rows.length / 2, xn = R.x0 + R.w * .06, xv = R.x0 + R.w * .52;
+    rows.forEach(function (r, i) {
+      var y = y0 + rh * (i + .5), a = r.a == null ? 1 : r.a; if (a <= 0) return;
+      CH.text(D, xn, y, r.n, { align: 'left', col: r.col, size: CH.fitSize(D, r.n, xv - xn - s * .4, s), a: a });
+      if (r.bar != null) {
+        var bw = (R.x1 - xv) * .8, bh = rh * .36;
+        CH.fillRect(D, xv, y - bh / 2, xv + bw, y + bh / 2, { stroke: 'rgba(242,240,230,.35)', sw: 1.2, a: a });
+        CH.fillRect(D, xv, y - bh / 2, xv + bw * r.bar, y + bh / 2, { fill: 'rgba(255,157,178,.55)', a: a });
+        if (r.v) CH.text(D, xv + bw + s * .3, y, r.v, { col: r.col, size: s * .9, align: 'left', a: a });
+      } else CH.text(D, xv, y, r.v, { align: 'left', col: r.col, size: s * 1.05, a: a });
+    });
+  }
+  function lay(D) { var R = CH.box(D, { l: .04, r: .04, t: .05, b: .05 }), rs = CH.rows(R, 2, .06); return { road: rs[0], info: rs[1] }; }
+  function tiredAt(m) { return CH.clamp(m / TMAX * .85 + .04 * Math.sin(m * 1.3), 0, 1); }
+
+  /* ---- 関数の箱 ---- */
+  function machine(D, R, t, ph) {
+    var s = CH.fs(D), wide = R.w > R.h * 1.2, bw = R.w * (wide ? .3 : .36), bh = R.h * .34, bx = R.cx, by = R.y0 + R.h * .42;
+    var lx = R.x0 + R.w * .12, rx = R.x1 - R.w * .12, XS = [5, 10, 15], cw = Math.min(R.w * .2, s * 4.6), ch = Math.min(R.h * .12, s * 1.9);
+    CH.text(D, lx, R.y0 + s * .6, 'x（歩いた時間）', { size: CH.fitSize(D, 'x（歩いた時間）', R.w * .3, s * .8), col: C.blue });
+    CH.text(D, rx, R.y0 + s * .6, 'y（歩いた道のり）', { size: CH.fitSize(D, 'y（歩いた道のり）', R.w * .3, s * .8), col: C.yel });
+    CH.fillRect(D, bx - bw / 2, by - bh / 2, bx + bw / 2, by + bh / 2, { fill: 'rgba(169,240,176,.12)', stroke: C.green, sw: 2.6 });
+    CH.text(D, bx, by - bh * .17, 'x を決めると', { size: CH.fitSize(D, 'x を決めると', bw * .86, s * .85), col: C.green });
+    CH.text(D, bx, by + bh * .17, 'y がただ1つ', { size: CH.fitSize(D, 'y がただ1つ', bw * .86, s * .85), col: C.green });
+    CH.arrow(D, bx - bw / 2 - s * 2.2, by, bx - bw / 2 - 4, by, { col: C.chalk, w: 2, head: 9 }); CH.arrow(D, bx + bw / 2 + 4, by, bx + bw / 2 + s * 2.2, by, { col: C.chalk, w: 2, head: 9 });
+    XS.forEach(function (x, k) {
+      var u = ph ? CH.clamp(t * 3.3 - k * 1.05, 0, 1) : 0, sy = R.y0 + s * 2.2 + k * ch * 1.5;
+      if (sy + ch > R.y1) sy = R.y1 - ch;
+      if (u < .45) {
+        var e = CH.ease(u / .45), cx = CH.lerp(lx, bx, e), cy = CH.lerp(sy + ch / 2, by, e);
+        CH.card(D, cx, cy, cw, ch, x + ' 分', { col: C.blue, a: 1 - CH.smooth(.35, .45, u) });
+      } else {
+        CH.card(D, lx, sy + ch / 2, cw, ch, x + ' 分', { col: C.blue, a: .3 });
+        var e2 = CH.ease(CH.clamp((u - .55) / .45, 0, 1)), ox = CH.lerp(bx, rx, e2), oy = CH.lerp(by, sy + ch / 2, e2);
+        if (u >= .55) CH.card(D, ox, oy, cw, ch, walked(x) + ' m', { col: C.yel, a: CH.smooth(.55, .65, u) });
+      }
+    });
+    if (!ph) CH.text(D, rx, R.y0 + s * 2.2 + ch / 2, '？', { col: C.yel, size: s * 1.3 });
+    return { bx: bx, by: by, bh: bh };
+  }
+
+  /* ---- 例題のパネル ---- */
+  var EX = [['ア', '正方形の1辺', 'まわりの長さ', '○'], ['イ', '体重', '身長', '×'], ['ウ', '円の半径', '円の直径', '○'], ['エ', '自然数', 'その約数', '×']];
+  function exPanel(D, R, k, t, ph) {
+    var s = CH.fs(D), e = EX[k], ka = ph ? CH.smooth(.08 + k * .22, .2 + k * .22, t) : 0, ts = s * .82, g = s * .5;
+    CH.fillRect(D, R.x0, R.y0, R.x1, R.y1, { stroke: 'rgba(242,240,230,.25)', sw: 1.5 });
+    CH.text(D, R.x0 + g, R.y0 + ts * .95, e[0], { col: C.yel, size: ts * 1.15, align: 'left' });
+    var tx = R.x0 + g + ts * 1.5, tw = R.x1 - tx - g;
+    CH.text(D, tx, R.y0 + ts * .95, 'x ' + e[1], { size: CH.fitSize(D, 'x ' + e[1], tw, ts), align: 'left', col: C.blue });
+    CH.text(D, tx, R.y0 + ts * 2.2, 'y ' + e[2], { size: CH.fitSize(D, 'y ' + e[2], tw, ts), align: 'left', col: C.orange });
+    var P = CH.rect(R.x0 + g, R.y0 + ts * 3, R.x1 - g, R.y1 - g), u = Math.min(P.w * .55, P.h * .62), cx = P.x0 + P.w * .32, cy = P.cy;
+    if (k === 0) {
+      CH.fillRect(D, cx - u / 2, cy - u / 2, cx + u / 2, cy + u / 2, { stroke: C.orange, sw: ka > 0 ? 3 : 2, fill: 'rgba(255,192,120,.12)' });
+      CH.text(D, cx, cy + u / 2 + ts * .75, ka > 0 ? '3 cm' : 'x cm', { size: ts * .85, col: C.blue });
+    } else if (k === 1) {
+      [[-.22, 1, '155'], [.22, 1.15, '162']].forEach(function (p) { person(D, cx + u * p[0], cy + u * .5, u * .24 * p[1], 'rgba(242,240,230,.75)'); if (ka > 0) CH.text(D, cx + u * p[0], cy - u * .52 - ts * .1, p[2], { size: ts * .8, col: C.orange, a: ka }); });
+      CH.text(D, cx, cy + u * .5 + ts * .75, ka > 0 ? 'どちらも 50 kg' : 'x kg', { size: CH.fitSize(D, 'どちらも 50 kg', P.w * .62, ts * .8), col: C.blue });
+    } else if (k === 2) {
+      CH.circle(D, cx, cy, u * .45, { stroke: C.chalk, sw: 2, fill: 'rgba(242,240,230,.06)' });
+      CH.line(D, cx - u * .45, cy, cx + u * .45, cy, { col: C.orange, w: ka > 0 ? 3 : 2 }); CH.line(D, cx, cy, cx + u * .45, cy - 0.01, { col: C.blue, w: 3 });
+      CH.circle(D, cx, cy, 3, { fill: C.chalk });
+      CH.text(D, cx + u * .22, cy - ts * .6, ka > 0 ? '2' : 'x', { size: ts * .85, col: C.blue });
+    } else {
+      CH.card(D, cx, cy - u * .2, u * .55, u * .4, ka > 0 ? '6' : 'x', { col: C.blue, size: ts });
+      if (ka > 0) DIV6.forEach(function (d, i) { CH.card(D, cx - u * .45 + i * u * .3, cy + u * .35, u * .24, u * .3, d, { col: C.orange, a: ka, size: ts * .8 }); });
+    }
+    var vx = P.x0 + P.w * .8;
+    if (ka > 0) {
+      var ok = e[3] === '○', ans = k === 0 ? '12 cm' : k === 1 ? '1つに決まらない' : k === 2 ? '4 cm' : '4つある';
+      mark(D, vx, cy - ts * .9, ts * .85, ok, ka);
+      var lines = CH.wrap(D, ans, P.w * .36, ts * .78);
+      lines.forEach(function (ln, i) { CH.text(D, vx, cy + ts * (.9 + i * 1), ln, { size: ts * .78, col: ok ? C.green : C.pink, a: ka }); });
+    }
+  }
+
+  /* ---- 考えよう：4 でわった余り ---- */
+  function remDots(D, R, x) {
+    var s = CH.fs(D), q = Math.floor(x / 4), r = x % 4, cols = 4, rmax = 3, d = Math.min(R.w / 7.5, R.h / (rmax + .9)), r0 = d * .36, x0 = R.cx - d * 2.6;
+    for (var i = 0; i < 12; i++) {
+      var row = Math.floor(i / cols), c = i % cols, px = x0 + (c + .5) * d, py = R.y0 + (row + .5) * d, on = i < x, isR = on && row === q;
+      CH.circle(D, px, py, r0, on ? { fill: isR ? C.pink : 'rgba(154,216,255,.8)', stroke: OUT, sw: 1.2 } : { stroke: 'rgba(242,240,230,.18)', sw: 1.2 });
+    }
+    for (var j = 0; j < q; j++) CH.text(D, x0 + d * 4.2, R.y0 + (j + .5) * d, '4 こ', { size: s * .85, align: 'left', col: C.blue });
+    if (r) CH.text(D, x0 + d * 4.2, R.y0 + (q + .5) * d, 'あまり ' + r, { size: s * .85, align: 'left', col: C.pink });
+    var msg = x + ' を 4 こずつ分けると、' + (q ? q + ' 組と ' : '') + 'あまり ' + r;
+    CH.text(D, R.cx, R.y0 + 3 * d + s * .5, msg, { size: CH.fitSize(D, msg, R.w * .95, s * .85), col: C.chalk });
+    return R.y0 + 3 * d;
+  }
+
+  /* ---- チャレンジ：料金のテープ ---- */
+  function bill(D, R, x, o) {
+    o = o || {}; var s = CH.fs(D), rs = CH.rows(R, 2, .3);
+    var A = CH.rect(rs[0].x0 + s, rs[0].y0 + s * 1.2, rs[0].x1 - s * 1.5, rs[0].y1);
+    CH.text(D, A.x0, rs[0].y0 + s * .2, '使った量（m³）', { align: 'left', size: s * .85, col: C.blue });
+    var XA = CH.numline(D, A, 0, 20, 1, { lab: 2, size: s * .72 });
+    CH.fillRect(D, XA(0), A.y1 - s * .35, XA(12), A.y1 - 2, { fill: 'rgba(255,226,122,.25)' });
+    CH.text(D, (XA(0) + XA(12)) / 2, A.y1 - s * 1, '12 m³ までは 1300円', { size: CH.fitSize(D, '12 m³ までは 1300円', XA(12) - XA(0), s * .75), col: C.yel });
+    var px = XA(x); CH.poly(D, [[px, A.y1 - 3], [px - s * .45, A.y1 - s * .95], [px + s * .45, A.y1 - s * .95]], { fill: C.blue, stroke: OUT, sw: 1.2 });
+    var B = CH.rect(rs[1].x0 + s, rs[1].y0 + s * 1.2, rs[1].x1 - s * 1.5, rs[1].y1);
+    CH.text(D, B.x0, rs[1].y0 + s * .2, '料金（円）', { align: 'left', size: s * .85, col: C.yel });
+    var XB = CH.numline(D, B, 0, 2200, 100, { lab: 500, size: s * .72 }), th = Math.min(B.h * .42, s * 2), ty = B.y1 - th - 4, y = fee(x);
+    CH.fillRect(D, XB(0), ty, XB(1300), ty + th, { fill: 'rgba(255,226,122,.4)', stroke: C.yel });
+    CH.text(D, (XB(0) + XB(1300)) / 2, ty + th / 2, '1300', { size: Math.min(th * .5, s * .9), num: true });
+    for (var k = 0; 12 + k < x - 1e-9; k++) {
+      var f = Math.min(1, x - 12 - k), xa = XB(1300 + 140 * k), xb = XB(1300 + 140 * (k + f));
+      CH.fillRect(D, xa, ty, xb, ty + th, { fill: 'rgba(169,240,176,.45)', stroke: C.green });
+      if (f > .99) CH.text(D, (xa + xb) / 2, ty + th / 2, '140', { size: CH.fitSize(D, '140', (xb - xa) * .9, Math.min(th * .4, s * .7), { num: true }), num: true });
+    }
+    CH.line(D, XB(y), ty - s * .4, XB(y), B.y1, { col: C.chalk, w: 2, dash: [4, 4] });
+    CH.text(D, XB(y), ty - s * .9, Math.round(y) + '円', { size: s * .85, col: C.chalk, outline: OUT, num: true });
+    return { XA: XA, XB: XB, A: A, B: B };
+  }
+
+  K3.run({
+    no: '第1時', title: 'ともなって変わる2つの数量をさがそう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '第2時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '公園まで歩く', q: '学校から 2 km はなれた公園まで、一定の速さで歩く。歩いた時間とともに変わる数量のうち、時間を決めると1つに決まるものは、どれだろう。',
+        notes: ['① 自分の考え（3分）　変わる数量を書いて、1つに決まるかで分けよう。', '② ペアの考え（3分）', 'スライダーで、歩いた時間を進められます。'],
+        sliders: [{ key: 'm', label: '歩いた時間', min: 0, max: 25, step: 1, val: 0, fmt: function (v) { return v + ' 分'; } }],
+        draw: function (D) {
+          var L = lay(D); road(D, L.road, D.V.m);
+          meters(D, L.info, [{ n: '歩いた時間', v: D.V.m + ' 分', col: C.chalk }]);
+        } },
+      { tag: '今日の問い', q: '歩いた時間とともに変わる数量を、あげよう。', a: '歩いた道のり、残りの道のり、つかれぐあい など', sub: '時間がたつと、歩いた道のりはふえ、残りの道のりはへる。つかれぐあいも変わる', dur: 6,
+        b: { t: '時間とともに変わる … 歩いた道のり・残りの道のり・つかれぐあい など', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, m = D.ph ? Math.round(TMAX * CH.smooth(.05, .9, t)) : 0;
+          road(D, L.road, m, { split: D.ph, la: CH.smooth(.1, .25, t) });
+          meters(D, L.info, [{ n: '歩いた時間', v: m + ' 分', col: C.chalk },
+            { n: '歩いた道のり', v: walked(m) + ' m', col: C.yel, a: CH.smooth(.1, .25, t) },
+            { n: '残りの道のり', v: (LEN - walked(m)) + ' m', col: C.blue, a: CH.smooth(.3, .45, t) },
+            { n: 'つかれぐあい', bar: tiredAt(m), col: C.pink, a: CH.smooth(.5, .65, t) }]);
+        } },
+      { tag: '今日の問い', q: '時間を決めると、1つに決まるのはどれ？ 歩きはじめて 10分のときで考えよう。', a: '歩いた道のりと、残りの道のり', sub: '10分なら、いつでも 800 m と 1200 m。つかれぐあいは、日や人によってちがうので、1つに決まらない', dur: 5,
+        b: { t: '10分 → 道のり 800 m・残り 1200 m に<b>1つに決まる</b>　つかれぐあいは決まらない', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, s = CH.fs(D);
+          road(D, CH.rect(L.road.x0, L.road.y0, L.road.x1, L.road.y1 - L.road.h * .05), 10, { split: true });
+          var rows = [0, 1, 2].map(function (k) { return [(k + 1) + '日め', '800 m', '1200 m', '']; }).concat([['1つに決まる？', '', '', '']]);
+          var T = CH.table(D, CH.rect(L.info.x0, L.info.y0 - L.road.h * .1, L.info.x1, L.info.y1), ['10分のとき', '歩いた道のり', '残りの道のり', 'つかれぐあい'], rows, { fw: .25, size: CH.fs(D, .82), rh: s * 2,
+            show: function (r, c) { if (r === 0 || c === 0) return 1; if (!D.ph) return 0; return r < 4 ? CH.smooth(.05 + (r - 1) * .18, .15 + (r - 1) * .18, t) : CH.smooth(.65 + (c - 1) * .1, .75 + (c - 1) * .1, t); },
+            hl: function (r, c) { return r === 4 && t > .65 ? (c === 3 ? C.pink : c > 0 ? C.green : null) : null; } });
+          if (D.ph) [1, 2, 3].forEach(function (r) {
+            var q = T.cell(r, 3), a = CH.smooth(.05 + (r - 1) * .18, .15 + (r - 1) * .18, t), bw = q.w * .78, bh = q.h * .34;
+            CH.fillRect(D, q.x0 + q.w * .11, q.cy - bh / 2, q.x0 + q.w * .11 + bw, q.cy + bh / 2, { stroke: 'rgba(242,240,230,.35)', sw: 1.2, a: a });
+            CH.fillRect(D, q.x0 + q.w * .11, q.cy - bh / 2, q.x0 + q.w * .11 + bw * TIRED[r - 1], q.cy + bh / 2, { fill: 'rgba(255,157,178,.6)', a: a });
+          });
+          if (D.ph) [1, 2, 3].forEach(function (c) { var q = T.cell(4, c); mark(D, q.cx, q.cy, q.h * .3, c < 3, CH.smooth(.65 + (c - 1) * .1, .75 + (c - 1) * .1, t)); });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'x、y のように、いろいろな値をとる文字を何という？ x の値を決めると、y の値がただ1つに決まるとき、y は x の何という？', a: '変数・関数', sub: '歩いた時間を x 分、歩いた道のりを y m とすると、y は x の関数', dur: 6,
+        b: [{ t: 'いろいろな値をとる文字 x、y … <b>変数</b>', col: C.green }, { t: 'x の値を決めると y の値が<b>ただ1つ</b>に決まるとき、y は x の <b>関数</b>', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .06, b: .08 }), t = D.ph ? D.t : 0, s = CH.fs(D), M = machine(D, R, t, D.ph);
+          if (t > .85) CH.text(D, R.cx, R.y1 - s * .6, 'y は x の関数', { col: C.green, size: s * 1.2, a: CH.smooth(.85, 1, t) });
+        } },
+      { tag: '例題', bh: '例題　関数といえるか', q: 'y が x の関数であるものに ○、そうでないものに × をつけよう。ア 正方形の1辺 x と、まわりの長さ y　イ 体重 x と、身長 y　ウ 円の半径 x と、直径 y　エ 自然数 x と、その約数 y',
+        a: 'ア ○　イ ×　ウ ○　エ ×', sub: 'イ … 同じ体重でも、身長は人によってちがう　エ … 6 の約数は 1、2、3、6 で、1つに決まらない', dur: 5,
+        b: { t: 'ア ○　イ ×　ウ ○　エ ×（x を決めても y が<b>1つに決まらない</b>例があれば、関数ではない）', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .03, r: .03, t: .04, b: .05 }), rs = CH.rows(R, 2, .06), t = D.ph ? D.t : 0, k = 0;
+          rs.forEach(function (row) { CH.cols(row, 2, .04).forEach(function (P) { exPanel(D, P, k++, t, D.ph); }); });
+        } },
+      { tag: '考えよう', bh: '考えよう', q: '自然数 x を 4 でわった余りを y とする。y は x の関数だろうか。逆に、x は y の関数といえるだろうか。',
+        notes: ['表をつくって、x を決めたとき、y を決めたときを調べよう。', 'わかったことと、ほかの例を書こう。', 'スライダーで、x を変えられます。'],
+        sliders: [{ key: 'x', label: 'x', min: 1, max: 12, step: 1, val: 1, fmt: function (v) { return String(v); } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .05, b: .05 }), x = D.V.x, s = CH.fs(D), rs = CH.rows(R, 2, .04);
+          remDots(D, CH.rect(rs[0].x0, rs[0].y0, rs[0].x1, rs[0].y1 + rs[0].h * .15), x);
+          rs[1] = CH.rect(rs[1].x0, rs[1].y0 + rs[1].h * .2, rs[1].x1, rs[1].y1);
+          var head = ['x'], row = ['y（余り）'];
+          for (var i = 1; i <= 12; i++) { head.push(String(i)); row.push(String(rem4(i))); }
+          CH.table(D, rs[1], head, [row], { fw: .18, size: CH.fs(D, .8), rh: s * 2.2, show: function (r, c) { return r === 1 && c > 0 && c > x ? 0 : 1; }, hl: function (r, c) { return c === x ? C.yel : null; } });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '水道料金は、使った量が 12 m³ までは 1300円。12 m³ をこえると、こえた分 1 m³ につき 140円が加わる。x m³ 使ったときの料金を y円とする。① y は x の関数？ ② x＝9、x＝15 のときの y は？ ③ 料金が 2000円のとき、使った量は？',
+        a: '① 関数である　② 1300円、1720円　③ 17 m³', sub: '② 1300＋140×3＝1720　③ 2000−1300＝700、700÷140＝5 だから 12＋5＝17', dur: 8,
+        b: { t: '① 関数　② x＝9 → <b>1300円</b>、x＝15 → <b>1720円</b>　③ 700÷140＝5 → <b>17 m³</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .02, b: .2 }), t = D.ph ? D.t : 0, s = CH.fs(D);
+          var x = !D.ph ? 0 : t < .3 ? 9 * CH.ease(t / .3) : t < .62 ? 9 + 6 * CH.ease(CH.smooth(.35, .6, t)) : 15 + 2 * CH.ease(CH.smooth(.65, .88, t));
+          bill(D, R, x);
+          var y0 = R.y1 + s * 3.2, sz = CH.fs(D, .9), msgs = [['9 m³ → 1300円', .28, C.yel], ['15 m³ → 1720円', .6, C.green], ['2000円 → 17 m³', .88, C.orange]];
+          msgs.forEach(function (m, i) { if (t > m[1]) CH.text(D, R.x0 + R.w * (i + .5) / 3, y0, m[0], { col: m[2], size: CH.fitSize(D, m[0], R.w / 3 * .95, sz), a: CH.smooth(m[1], m[1] + .06, t) }); });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

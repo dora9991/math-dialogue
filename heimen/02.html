@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>平行移動・回転移動・対称移動</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 平面図形 第2時：図形を、形と大きさを変えずに動かそう（ikkan の lesson_heimen_02 と同じ流れ）。
+   今日の問いは ikkan と同じ しきつめ模様（長方形 6×2 を直角二等辺三角形に分けたもの）。ア が イ へずれ、ウ へ回り、エ へ折り返す動き。
+   ことばは、△ABC が 矢印の方向にずれる（平行移動）・点 O のまわりを回る（回転移動）・直線 ℓ で折り返す（対称移動）を1つずつ動きで。
+   例題は身のまわりの動き（エスカレーター・時計の長針・鏡・ドア）と、正方形を8つに分けた図（ikkan の演習の図1）。
+   考えようは、ア を 2本の縦の折り目で続けて対称移動する道具（答えは出さない）。チャレンジは正六角形（2回の対称移動が 120° の回転移動と同じ）。
+   図の座標は ikkan と同じ。重なる先・回す角は、座標の回転・折り返し・平行移動の計算で確かめている（CH.check・GE.verify）。 */
+(function () {
+  /* ---- 平面図形の図の道具（このページの中だけで使う。heimen/ の各ページに同じものが入っている） ---- */
+  var C = CH.C, RAD = Math.PI / 180, PR = '′', OUT = 'rgba(20,40,30,.9)', FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function dg(x) { var r = Math.round(x * 10) / 10; return (Math.abs(r - Math.round(r)) < .05 ? String(Math.round(r)) : r.toFixed(1)) + '°'; }
+  function f1(x) { return CH.f1(x); }
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  /* 図の四角（fig）と、字を書く四角（side）。よこ長なら右、たて長なら下 */
+  function lay(D, k, o) {
+    o = o || {}; var B = CH.box(D, { l: .03, r: .03, t: o.t == null ? .04 : o.t, b: .04 });
+    if (B.w > B.h * 1.25 && B.w > 560) { var w = B.w * (k || .34); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .06, B.x1, B.y1), wide: true }; }
+    var h = B.h * (o.hk || .3); return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .03, B.y1 - h + 4, B.x1, B.y1), wide: false };
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする）。rows：[{ t, col, a }] */
+  function say(D, Rr, rows, o) {
+    o = o || {}; rows = rows.filter(Boolean); if (!rows.length) return;
+    var nc = Rr.w > Rr.h * 2.5 && rows.length > 3 && Rr.h / (rows.length * 1.6) < CH.fs(D, .62) ? 2 : 1, per = Math.ceil(rows.length / nc), cw = Rr.w / nc;
+    var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (per * 1.6));
+    rows.forEach(function (r, i) {
+      var w = tw(D, r.t, s), sz = w > cw - 6 ? s * (cw - 6) / w : s, c = Math.floor(i / per), j = i % per;
+      CH.text(D, Rr.x0 + c * cw, Rr.y0 + s * .8 + j * s * 1.6, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left' });
+    });
+  }
+  /* 図の上の1行（はばに入らなければ、字を小さくする） */
+  function top(D, s, col, a) {
+    var B = CH.box(D, { t: 0, l: .02, r: .02 }), fs = CH.fitSize(D, s, B.w, CH.fs(D, 1.02));
+    CH.text(D, B.cx, B.y0 + CH.fs(D, 1.02) * .7, s, { col: col || C.yel, a: a, size: fs, outline: OUT });
+  }
+  /* 点の名前：{ A: 向き（度） }。o.name で字をかえる */
+  function nm(F, m, o) {
+    o = o || {}; Object.keys(m).forEach(function (k) {
+      if (m[k] == null || !F.P[k]) return; var p = F.X(k), r = F.s * (o.k || .95);
+      CH.text(F.D, p[0] + Math.cos(m[k] * RAD) * r, p[1] - Math.sin(m[k] * RAD) * r, (o.name && o.name[k]) || k, { size: F.s * (o.size || 1), col: (o.col && o.col[k]) || o.c || C.chalk, a: o.a, outline: OUT });
+    });
+  }
+  function dots(F, ks, o) { o = o || {}; (Array.isArray(ks) ? ks : ks.split('')).forEach(function (k) { if (typeof k !== 'string' || F.P[k]) GE.dot(F, k, o); }); }
+  /* 字（座標 p から、向き deg に k（字の大きさの倍）だけはなれたところ） */
+  function lab(F, p, deg, k, t, o) {
+    o = o || {}; var q = F.X(p);
+    CH.text(F.D, q[0] + Math.cos(deg * RAD) * F.s * k, q[1] - Math.sin(deg * RAD) * F.s * k, t, { col: o.col || C.chalk, size: F.s * (o.size || .85), a: o.a, outline: OUT, num: o.num });
+  }
+  /* 図の四角の中だけに描く */
+  function clip(F, fn) { var g = F.D.ctx, r = F.R; g.save(); g.beginPath(); g.rect(r.x0, r.y0, r.w, r.h); g.clip(); fn(); g.restore(); }
+  /* 直線（四角のはしまで）・半直線（a から b の向きに、四角のはしまで） */
+  function full(F, a, b, o) { clip(F, function () { GE.line(F, [a, b], o || {}); }); }
+  function ray(F, a, b, o) { var pa = F.X(a), pb = F.X(b), L = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]) || 1, k = (F.R.w + F.R.h) * 2 / L; clip(F, function () { GE.seg(F, [a, GE.lerpP(F.P[a] || a, F.P[b] || b, 1 + k)], o || {}); }); }
+  function arrowW(F, a, b, o) { o = o || {}; var p = F.X(a), q = F.X(b); CH.arrow(F.D, p[0], p[1], q[0], q[1], { col: o.col || C.chalk, w: o.w || 2.8, a: o.a, head: o.head || F.s * .6, dash: o.dash }); }
+  /* 中心 c・半径 r（座標の長さ）の円の、a0 → a1（反時計まわり、度）の弧 */
+  function arcAt(F, c, r, a0, a1, o) {
+    o = o || {}; if (a1 < a0) { var z = a0; a0 = a1; a1 = z; } var g = F.D.ctx, p = F.X(c);
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.w || 2.2; g.lineCap = 'round';
+    if (o.dash) g.setLineDash(o.dash === true ? [8, 7] : o.dash); g.beginPath(); g.arc(p[0], p[1], r * F.u, -a0 * RAD, -a1 * RAD, true); g.stroke(); g.restore();
+  }
+  /* コンパスで弧をかく：a0 → a1 を k（0〜1）だけ。かいている途中は、コンパスの2本の足も見せる */
+  function comp(F, c, r, a0, a1, k, o) {
+    o = o || {}; if (k <= 0) return; var a = a0 + (a1 - a0) * Math.min(1, k), col = o.col || C.blue; if (typeof c === 'string') c = F.P[c];
+    arcAt(F, c, r, a0, a, { col: col, w: o.w || 2.2, a: o.a });
+    if (k < 1 && !o.noLeg) {
+      var p = F.X(GE.polar(c, r, a)), q = F.X(c), m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], d = [p[0] - q[0], p[1] - q[1]], L = Math.hypot(d[0], d[1]) || 1, n = [d[1] / L, -d[0] / L];
+      if (n[1] > 0) n = [-n[0], -n[1]];
+      var hh = [m[0] + n[0] * Math.min(L * .55, F.s * 5), m[1] + n[1] * Math.min(L * .55, F.s * 5)];
+      CH.line(F.D, q[0], q[1], hh[0], hh[1], { col: 'rgba(242,240,230,.75)', w: 2.6 }); CH.line(F.D, hh[0], hh[1], p[0], p[1], { col: 'rgba(242,240,230,.75)', w: 2.6 });
+      CH.circle(F.D, hh[0], hh[1], F.s * .22, { fill: 'rgba(242,240,230,.85)' }); CH.circle(F.D, p[0], p[1], F.s * .17, { fill: col });
+    }
+  }
+  /* 点の列を動かす（数学の座標） */
+  function mv(ps, v, k) { return ps.map(function (p) { return [p[0] + v[0] * k, p[1] + v[1] * k]; }); }
+  function rotP(ps, c, deg) { return ps.map(function (p) { return GE.rot(p, c, deg); }); }
+  function refP(ps, a, b) { return ps.map(function (p) { return GE.reflect(p, a, b); }); }
+  /* 直線 ab で折る途中（k＝0 で もと、.5 で 線の上、1 で 折り返したところ） */
+  function foldP(ps, a, b, k) { return ps.map(function (p) { var f = GE.foot(p, a, b); return GE.lerpP(p, [2 * f[0] - p[0], 2 * f[1] - p[1]], CH.ease(k)); }); }
+  /* 点の集まりが同じか（順番は問わない） */
+  function key(ps) { return ps.map(function (p) { return p.map(function (x) { return Math.round(x * 1000) / 1000 + 0; }).join(','); }).sort().join('|'); }
+  function same(ps, qs) { return key(ps) === key(qs); }
+  function named(names, ps, P) { P = P || {}; (Array.isArray(names) ? names : names.split('')).forEach(function (k, i) { P[k] = ps[i]; }); return P; }
+  function cen(ps) { var c = [0, 0]; ps.forEach(function (p) { c[0] += p[0] / ps.length; c[1] += p[1] / ps.length; }); return c; }
+  function poly(F, ps, col, o) { o = o || {}; GE.polyP(F, ps, { col: col || C.blue, fa: o.fa == null ? .22 : o.fa, a: o.a, sw: o.sw }); }
+  /* 方眼（x0〜x1、y0〜y1） */
+  function grid(F, x0, y0, x1, y1, o) {
+    o = o || {}; for (var x = x0; x <= x1 + 1e-9; x++) GE.seg(F, [[x, y0], [x, y1]], { col: 'rgba(242,240,230,.16)', w: 1, a: o.a });
+    for (var y = y0; y <= y1 + 1e-9; y++) GE.seg(F, [[x0, y], [x1, y]], { col: 'rgba(242,240,230,.16)', w: 1, a: o.a });
+  }
+  /* 三角形の頂点の名前（中心から外向き） */
+  function vlab(F, ps, names, o) {
+    o = o || {}; var c = F.X(cen(ps));
+    ps.forEach(function (p, i) { var q = F.X(p), d = [q[0] - c[0], q[1] - c[1]], L = Math.hypot(d[0], d[1]) || 1, r = F.s * (o.k || .85); CH.text(F.D, q[0] + d[0] / L * r, q[1] + d[1] / L * r, names[i], { size: F.s * (o.size || .95), col: o.col || C.chalk, a: o.a, outline: OUT }); });
+  }
+  /* 色ちがいの字を1行にならべる（parts：[[字, 色], …]）。はばに入らなければ小さくする */
+  function rich(D, x, y, parts, o) {
+    o = o || {}; var s = o.size || CH.fs(D, 1.02), W = 0; parts.forEach(function (p) { W += tw(D, p[0], s); });
+    if (o.maxW && W > o.maxW) { s *= o.maxW / W; W = o.maxW; }
+    var xx = x - W / 2; parts.forEach(function (p) { CH.text(D, xx, y, p[0], { size: s, col: p[1] || C.chalk, align: 'left', a: o.a, outline: OUT }); xx += tw(D, p[0], s); });
+  }
+  /* 図の上の1行（色ちがい） */
+  function topRich(D, parts, a, row) { var B = CH.box(D, { t: 0, l: .02, r: .02 }), s = CH.fs(D, 1.02); rich(D, B.cx, B.y0 + s * (.7 + (row || 0) * 1.45), parts.filter(Boolean), { a: a, maxW: B.w, size: s }); }
+  /* ---- しきつめ模様（今日の問い・考えよう） ---- */
+  var TL = { 'ア': [[0, 0], [2, 0], [0, 2]], 'イ': [[4, 0], [6, 0], [4, 2]], 'ウ': [[2, 0], [2, 2], [0, 2]], 'エ': [[2, 0], [4, 0], [4, 2]], x1: [[2, 0], [4, 2], [2, 2]], x2: [[6, 0], [6, 2], [4, 2]] };
+  var TA = TL['ア'];
+  function which(ps) { return Object.keys(TL).filter(function (k) { return same(TL[k], ps); }).join(''); }
+  CH.check(which(mv(TA, [4, 0], 1)) === 'イ' && which(rotP(TA, [1, 1], 180)) === 'ウ' && which(refP(TA, [2, 0], [2, 2])) === 'エ', '今日の問い：イ は平行移動、ウ は回転移動、エ は対称移動');
+  CH.check(GE.near(GE.mid([2, 0], [0, 2])[0], 1) && GE.near(GE.mid([2, 0], [0, 2])[1], 1), '回転の中心は斜辺のまん中 (1, 1)');
+  CH.check(which(refP(refP(TA, [2, 0], [2, 2]), [4, 0], [4, 2])) === 'イ' && which(refP(refP(TA, [1, 0], [1, 2]), [3, 0], [3, 2])) === 'イ', '考えよう：縦の折り目 2回で イ に重なる組がある（答えは出さない）');
+  function tile(D, R, o) {
+    o = o || {}; var F = GE.fit(D, R, { a: [0, 0], b: [6, 2] }, { pad: o.pad == null ? .06 : o.pad, bounds: o.bounds });
+    if (o.clip) { var g = D.ctx; g.save(); g.beginPath(); g.rect(R.x0, R.y0, R.w, R.h); g.clip(); }
+    Object.keys(TL).forEach(function (k) { GE.polyP(F, TL[k], { col: C.chalk, fa: 0, sw: 2, fill: 'rgba(0,0,0,0)', a: .9 }); });
+    poly(F, TA, C.blue, { fa: .3 });
+    if (o.clip) D.ctx.restore();
+    ['ア', 'イ', 'ウ', 'エ'].forEach(function (k) { var c = F.X(cen(TL[k])); CH.text(D, c[0], c[1], k, { size: F.s * 1.15, col: k === 'ア' ? C.blue : C.chalk, outline: OUT, a: o.dimLab && k !== 'ア' ? .5 : 1 }); });
+    return F;
+  }
+  /* 動いている ア のコピー */
+  function copyA(F, ps, col, a) { poly(F, ps, col, { fa: .35, a: a, sw: 3 }); var c = F.X(cen(ps)); CH.text(F.D, c[0], c[1], 'ア', { size: F.s * 1.15, col: col, outline: OUT, a: a }); }
+
+  /* ---- ことば：△ABC を動かす（同じ形の三角形）。T 平行移動、R 回転移動、S 対称移動 ---- */
+  var SH = [[0, 3], [-1, 0], [2, 1]];
+  var MT = { p: mv(SH, [1, 1], 1), v: [5, 1] }, MR = { p: mv(SH, [7, 1], 1), O: [4, 0], deg: 90 }, MS = { p: mv(SH, [2, 1], 1), l: [[5, -.4], [5, 5.4]] };
+  MT.q = mv(MT.p, MT.v, 1); MR.q = rotP(MR.p, MR.O, 90); MS.q = refP(MS.p, MS.l[0], MS.l[1]);
+  var NM = ['A', 'B', 'C'], NM2 = ['A' + PR, 'B' + PR, 'C' + PR];
+  CH.check(same(MR.q, [[0, 3], [3, 2], [2, 5]]) && same(MS.q, [[8, 4], [9, 1], [6, 2]]) && same(MT.q, [[6, 5], [5, 2], [8, 3]]), 'ことば：移動したあとの頂点');
+  var PRot = named(['O', 'A', 'B', 'C', 'E'], [MR.O].concat(MR.p, [MR.q[0]]));
+  GE.verify(PRot, 'OA＝OE、∠AOE＝90°', null, 'ことば 回転移動');
+  function moveDemo(D, kind, k, o) {
+    o = o || {}; var R = CH.box(D, { l: .04, r: .04, t: .13, b: .05 }), m = kind === 'T' ? MT : kind === 'R' ? MR : MS;
+    var bx = kind === 'T' ? [[-1, -1], [9, 6]] : kind === 'R' ? [[-1, -1], [10, 6]] : [[0, 0], [10, 5]], F = GE.fit(D, R, { a: bx[0], b: bx[1] }, { pad: .02 });
+    grid(F, bx[0][0], bx[0][1], bx[1][0], bx[1][1]);
+    poly(F, m.p, C.blue, { fa: .25 }); vlab(F, m.p, NM);
+    var e = CH.ease(k), q, col = kind === 'T' ? C.yel : kind === 'R' ? C.pink : C.green;
+    if (kind === 'T') {
+      arrowW(F, [2, -.5], [7, .5], { col: C.yel, w: 3.4 });
+      q = mv(m.p, m.v, e); if (k > 0) m.p.forEach(function (p, i) { GE.seg(F, [p, q[i]], { col: C.yel, dash: [5, 6], w: 1.8, a: .8 }); });
+    } else if (kind === 'R') {
+      q = rotP(m.p, m.O, 90 * e); GE.dot(F, m.O, { r: F.s * .22, col: C.pink }); lab(F, m.O, 270, .9, 'O', { col: C.pink, size: 1 });
+      if (k > 0) { GE.seg(F, [m.O, m.p[0]], { col: C.pink, dash: [5, 6], w: 1.8 }); GE.seg(F, [m.O, q[0]], { col: C.pink, dash: [5, 6], w: 1.8 }); GE.arcDir(F, m.O, Math.atan2(m.p[0][1] - m.O[1], m.p[0][0] - m.O[0]) / RAD, Math.atan2(m.p[0][1] - m.O[1], m.p[0][0] - m.O[0]) / RAD + 90 * e, { col: C.pink, r: F.s * 1.6, lab: k > .98 ? '90°' : '' }); }
+    } else {
+      GE.seg(F, m.l, { col: C.green, w: 3 }); lab(F, m.l[1], 90, .7, 'ℓ', { col: C.green, size: 1.1 });
+      q = foldP(m.p, m.l[0], m.l[1], k);
+    }
+    if (k > 0) { poly(F, q, k > .5 || kind !== 'S' ? col : C.lav, { fa: .35, sw: 3 }); if (k > .98) vlab(F, q, NM2, { col: col }); }
+    return F;
+  }
+
+  /* ---- 例題：身のまわりの動き（4つの小さな絵） ---- */
+  var LIFE = [['① エスカレーター', '平行移動', C.yel], ['② 時計の長針', '回転移動', C.pink], ['③ 鏡にうつる顔', '対称移動', C.green], ['④ ドアを開ける', '回転移動', C.pink]];
+  function face(D, cx, cy, r, sx, col, a) {
+    var g = D.ctx; g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.translate(cx, cy); g.scale(sx || 1e-3, 1);
+    g.strokeStyle = col; g.lineWidth = 2.4 / Math.max(.15, Math.abs(sx)); g.fillStyle = hexA(col, .18);
+    g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.fillStyle = col; g.beginPath(); g.arc(-r * .35, -r * .15, r * .1, 0, 7); g.arc(r * .35, -r * .15, r * .1, 0, 7); g.fill();
+    g.lineWidth = 2.2 / Math.max(.15, Math.abs(sx)); g.beginPath(); g.arc(r * .12, r * .25, r * .3, .2, Math.PI - .6); g.stroke();
+    g.fillStyle = C.pink; g.beginPath(); g.moveTo(-r * .55, -r * .8); g.lineTo(-r * 1.15, -r * 1.15); g.lineTo(-r * 1.05, -r * .45); g.closePath(); g.fill();   // 左がわのリボン
+    g.restore();
+  }
+  function life(D, t, ans) {
+    var R = CH.box(D, { l: .03, r: .03, t: .04, b: .04 }), rows = CH.rows(R, 2, .06), cs = CH.cols(rows[0], 2, .05).concat(CH.cols(rows[1], 2, .05));
+    cs.forEach(function (c, i) {
+      var k = ans ? CH.ease(CH.smooth(.02 + i * .245, .2 + i * .245, t)) : 0, s = Math.min(CH.fs(D, .95), c.w * .085), col = LIFE[i][2];
+      CH.fillRect(D, c.x0, c.y0, c.x1, c.y1, { stroke: 'rgba(242,240,230,.25)', sw: 1.5 });
+      var nar = tw(D, LIFE[i][0], s) + tw(D, LIFE[i][1], s * 1.1) > c.w - s * 1.6;
+      CH.text(D, c.x0 + s * .5, c.y0 + s * .9, LIFE[i][0], { size: s, align: 'left', col: C.chalk });
+      if (ans && k > .3) CH.text(D, nar ? c.x0 + s * .5 : c.x1 - s * .5, c.y0 + s * (nar ? 2.2 : .9), LIFE[i][1], { size: s * 1.1, align: nar ? 'left' : 'right', col: col, a: CH.smooth(.3, .7, k), outline: OUT });
+      var b = CH.rect(c.x0 + c.w * .08, c.y0 + s * (nar ? 3.1 : 2), c.x1 - c.w * .08, c.y1 - s * .6), u = Math.min(b.w, b.h);
+      if (i === 0) {
+        var p0 = [b.x0 + b.w * .12, b.y1 - b.h * .12], p1 = [b.x1 - b.w * .12, b.y0 + b.h * .3];
+        CH.line(D, p0[0], p0[1] + u * .08, p1[0], p1[1] + u * .08, { col: 'rgba(242,240,230,.6)', w: 3 });
+        for (var j = 0; j <= 6; j++) { var x = CH.lerp(p0[0], p1[0], j / 6), y = CH.lerp(p0[1], p1[1], j / 6) + u * .08; CH.line(D, x, y, x, y - u * .07, { col: 'rgba(242,240,230,.45)', w: 2 }); }
+        var pp = [CH.lerp(p0[0], p1[0], .1 + .75 * k), CH.lerp(p0[1], p1[1], .1 + .75 * k)];
+        if (ans && k > 0) CH.arrow(D, CH.lerp(p0[0], p1[0], .1), CH.lerp(p0[1], p1[1], .1) - u * .38, CH.lerp(p0[0], p1[0], .85), CH.lerp(p0[1], p1[1], .85) - u * .38, { col: col, w: 2.4, dash: [5, 5], a: .8, head: s * .6 });
+        CH.fillRect(D, pp[0] - u * .05, pp[1] - u * .26, pp[0] + u * .05, pp[1], { fill: hexA(C.blue, .5), stroke: C.blue });
+        CH.circle(D, pp[0], pp[1] - u * .32, u * .055, { fill: hexA(C.blue, .5), stroke: C.blue });
+      } else if (i === 1) {
+        var cc = [b.cx, b.cy], r = u * .42;
+        CH.circle(D, cc[0], cc[1], r, { stroke: C.chalk, sw: 2.4 });
+        for (var h = 0; h < 12; h++) { var a = h * 30 * RAD; CH.line(D, cc[0] + Math.sin(a) * r * .86, cc[1] - Math.cos(a) * r * .86, cc[0] + Math.sin(a) * r * .97, cc[1] - Math.cos(a) * r * .97, { w: h % 3 ? 1.4 : 2.6 }); }
+        var am = 150 * k * RAD;
+        if (ans && k > 0) { var g = D.ctx; g.save(); g.globalAlpha = D.ga * .35; g.fillStyle = col; g.beginPath(); g.moveTo(cc[0], cc[1]); g.arc(cc[0], cc[1], r * .55, -Math.PI / 2, -Math.PI / 2 + am); g.closePath(); g.fill(); g.restore(); }
+        CH.line(D, cc[0], cc[1], cc[0] + Math.sin(120 * RAD) * r * .45, cc[1] - Math.cos(120 * RAD) * r * .45, { w: 4 });
+        CH.line(D, cc[0], cc[1], cc[0] + Math.sin(am) * r * .78, cc[1] - Math.cos(am) * r * .78, { w: 3, col: ans ? col : C.chalk });
+        CH.circle(D, cc[0], cc[1], s * .2, { fill: C.chalk });
+      } else if (i === 2) {
+        var mx = b.cx, fr = u * .25;
+        CH.line(D, mx, b.y0, mx, b.y1, { col: C.blue, w: 4 }); CH.text(D, mx, b.y1 + s * .1, '鏡', { size: s * .8, col: C.blue, base: 'top' });
+        face(D, mx - b.w * .27, b.cy, fr, 1, C.chalk);
+        if (ans && k > 0) face(D, mx + (-b.w * .27) * (1 - 2 * k), b.cy, fr, 1 - 2 * k, col, .95);
+      } else {
+        var hg = [b.x0 + b.w * .25, b.cy + b.h * .25], dl = Math.min(b.w * .5, b.h * .7), ad = 80 * k * RAD;
+        CH.line(D, b.x0, hg[1], hg[0], hg[1], { w: 6, col: 'rgba(242,240,230,.7)' }); CH.line(D, hg[0] + dl, hg[1], b.x1, hg[1], { w: 6, col: 'rgba(242,240,230,.7)' });
+        if (ans && k > 0) { var g2 = D.ctx; g2.save(); g2.globalAlpha = D.ga * .3; g2.fillStyle = col; g2.beginPath(); g2.moveTo(hg[0], hg[1]); g2.arc(hg[0], hg[1], dl, 0, -ad, true); g2.closePath(); g2.fill(); g2.restore(); }
+        CH.line(D, hg[0], hg[1], hg[0] + Math.cos(ad) * dl, hg[1] - Math.sin(ad) * dl, { w: 7, col: ans ? col : C.orange });
+        CH.circle(D, hg[0], hg[1], s * .25, { fill: C.chalk }); CH.text(D, hg[0], hg[1] + s * 1.1, 'ちょうつがい', { size: s * .75, col: 'rgba(242,240,230,.8)' });
+        CH.text(D, b.cx + b.w * .15, b.y0 + s * .3, '（上から見た図）', { size: s * .75, col: 'rgba(242,240,230,.7)' });
+      }
+    });
+  }
+
+  /* ---- 例題：正方形 PQRS を 8つの三角形 ア〜ク に分けた図（O は中心） ---- */
+  var SQV = [[4, 2], [4, 4], [2, 4], [0, 4], [0, 2], [0, 0], [2, 0], [4, 0]], SQN = 'アイウエオカキク', SO = [2, 2], SQ = {};
+  SQN.split('').forEach(function (n, i) { SQ[n] = [SO, SQV[i], SQV[(i + 1) % 8]]; });
+  function sqWhich(ps) { return SQN.split('').filter(function (n) { return same(SQ[n], ps); }).join(''); }
+  CH.check(sqWhich(rotP(SQ['ア'], SO, -90)) === 'キ' && sqWhich(refP(SQ['ア'], [0, 0], [4, 4])) === 'イ', '例題：時計回り 90° で キ、直線 PR で折り返して イ');
+  CH.check([45, 135, 225, 315].every(function (d) { return sqWhich(rotP(SQ['ア'], SO, d)) === ''; }) && [90, 180, 270].map(function (d) { return sqWhich(rotP(SQ['ア'], SO, d)); }).join('') === 'ウオキ', '例題：O のまわりに回して重なるのは ウ・オ・キ');
+  var PSQ = { P: [0, 0], Q: [4, 0], R: [4, 4], S: [0, 4], O: SO };
+  function square8(D, R) {
+    var F = GE.fit(D, R, PSQ, { pad: .12 });
+    GE.poly(F, 'PQRS', { col: C.chalk, fa: .05 }); GE.seg(F, 'PR', { w: 2 }); GE.seg(F, 'QS', { w: 2 }); GE.seg(F, [[0, 2], [4, 2]], { w: 2 }); GE.seg(F, [[2, 0], [2, 4]], { w: 2 });
+    poly(F, SQ['ア'], C.blue, { fa: .3 });
+    SQN.split('').forEach(function (n) { var c = F.X(cen(SQ[n])); CH.text(D, c[0], c[1], n, { size: F.s * .95, col: n === 'ア' ? C.blue : C.chalk, outline: OUT }); });
+    dots(F, 'O'); nm(F, { P: 225, Q: 315, R: 45, S: 135 }); lab(F, SO, 300, .75, 'O', { size: .9 });
+    return F;
+  }
+
+  /* ---- チャレンジ：正六角形 ABCDEF と 6つの正三角形 ①〜⑥ ---- */
+  var S3 = Math.sqrt(3), HXV = [[2, 0], [1, S3], [-1, S3], [-2, 0], [-1, -S3], [1, -S3]], HN = '①②③④⑤⑥', HX = { O: [0, 0] }, HT = {};
+  'ABCDEF'.split('').forEach(function (k, i) { HX[k] = HXV[i]; });
+  HN.split('').forEach(function (n, i) { HT[n] = [[0, 0], HXV[i], HXV[(i + 1) % 6]]; });
+  function hxWhich(ps) { return HN.split('').filter(function (n) { return same(HT[n], ps); }).join(''); }
+  var H1a = refP(HT['①'], HX.A, HX.D), H1b = refP(H1a, HX.B, HX.E);
+  CH.check(hxWhich(H1a) === '⑥' && hxWhich(H1b) === '③' && same(rotP(HT['①'], [0, 0], 120), H1b), 'チャレンジ：AD → ⑥、BE → ③、120° の回転と同じ');
+  CH.check([[1.3, .4], [-.7, 1.9], [.2, -1.1]].every(function (p) { var a = GE.reflect(GE.reflect(p, HX.A, HX.D), HX.B, HX.E), b = GE.rot(p, [0, 0], 120); return GE.near(a[0], b[0]) && GE.near(a[1], b[1]); }), 'チャレンジ：どの点でも 2回の対称移動＝120° の回転移動');
+  GE.verify(HX, '∠AOB＝60°、OA＝OB＝OC＝OD＝OE＝OF＝AB', null, 'チャレンジ 正六角形');
+
+  K3.run({
+    no: '第2時', title: '図形を、形と大きさを変えずに動かそう', flat: true, hint: '', alt: '図形を動かす図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '01.html', label: '◀ 第1時' }, { href: '03.html', label: '第3時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: 'しきつめ模様の三角形を動かす', q: '合同な直角二等辺三角形をしきつめた模様がある。三角形 ア を、形と大きさを変えずに動かして、イ・ウ・エ にぴったり重ねるには、それぞれ、どう動かせばよいだろう。',
+        notes: ['① 自分の考え（3分）　イ・ウ・エ への動かし方を、それぞれ。', '② ペアの考え（3分）　自分とちがう動かし方・気づき。'],
+        draw: function (D) { tile(D, CH.box(D, { l: .04, r: .04, t: .1, b: .1 })); } },
+      { tag: '今日の問い', q: 'イ・ウ・エ には、それぞれ、どう動かせば重なる？', a: 'イ … まっすぐずらす　ウ … 回す　エ … 折り返す', sub: 'イ は右へ 4目もり。ウ は斜辺のまん中を中心に 180°。エ は縦の直線を折り目に（ほかの動かし方もある）', dur: 8,
+        b: { t: 'イ … 右へ<b>ずらす</b>　ウ … 斜辺のまん中を中心に 180° <b>回す</b>　エ … 縦の直線で<b>折り返す</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .04, r: .04, t: .08, b: .36 }), F = tile(D, R, { dimLab: D.ph }), k1 = CH.smooth(.02, .28, t), k2 = CH.smooth(.36, .62, t), k3 = CH.smooth(.7, .96, t);
+          if (D.ph) {
+            if (k1 > 0) { arrowW(F, cen(TA), GE.add(cen(TA), [4 * CH.ease(k1), 0]), { col: C.yel, a: .8 }); copyA(F, mv(TA, [4, 0], CH.ease(k1)), C.yel); }
+            if (k2 > 0) { GE.dot(F, [1, 1], { col: C.pink, r: F.s * .25 }); GE.arcDir(F, [1, 1], 225, 225 + 180 * CH.ease(k2), { col: C.pink, r: F.s * 2.2, w: 2.6 }); copyA(F, rotP(TA, [1, 1], 180 * CH.ease(k2)), C.pink); }
+            if (k3 > 0) { GE.seg(F, [[2, -.5], [2, 2.5]], { col: C.green, w: 3, dash: [8, 6], a: CH.smooth(.7, .75, t) }); copyA(F, foldP(TA, [2, 0], [2, 2], k3), k3 > .5 ? C.green : C.lav); }
+          }
+          var B = CH.rect(R.x0 + R.w * .05, R.y1 + CH.fs(D) * 1.2, R.x1, CH.box(D, { b: .04 }).y1);
+          if (D.ph) say(D, B, [{ t: 'イ … 右へ まっすぐ ずらす', col: C.yel, a: CH.smooth(.2, .3, t) }, { t: 'ウ … 点を中心に 180° 回す', col: C.pink, a: CH.smooth(.55, .62, t) }, { t: 'エ … 縦の直線を折り目に 折り返す', col: C.green, a: CH.smooth(.88, .96, t) }].filter(function (r) { return r.a > 0; }), { size: CH.fs(D, 1) });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '形と大きさを変えずに、図形を動かすことを何という？ 矢印の方向に、矢印の長さだけ ずらす移動を何という？', a: '移動。平行移動', sub: '平行移動は、方向と きょり（矢印）を決めると決まる', dur: 3.5,
+        b: [{ t: '<b>移動</b> … 形と大きさを変えずに、図形を動かすこと', col: C.green }, { t: '<b>平行移動</b> … 一定の方向に、一定のきょりだけ ずらす', col: C.yel }],
+        draw: function (D) { moveDemo(D, 'T', D.ph ? CH.smooth(.05, .9, D.t) : 0); if (D.ph) top(D, '平行移動：矢印の方向に、矢印の長さだけ', C.yel, CH.smooth(.6, .9, D.t)); } },
+      { tag: 'ことば', q: '点 O を中心にして、一定の角度だけ回す移動を何という？', a: '回転移動', sub: '回転移動は、回転の中心 O と、回す角度を決めると決まる', dur: 3.5,
+        b: { t: '<b>回転移動</b> … 1つの点（回転の中心）を中心に、一定の角度だけ回す', col: C.pink },
+        draw: function (D) { moveDemo(D, 'R', D.ph ? CH.smooth(.05, .9, D.t) : 0); if (D.ph) top(D, '回転移動：中心 O のまわりに 90° 回す', C.pink, CH.smooth(.6, .9, D.t)); } },
+      { tag: 'ことば', q: '直線 ℓ を折り目として、折り返す移動を何という？', a: '対称移動（折り目の直線 ℓ を、対称の軸という）', sub: '対称移動は、対称の軸を決めると決まる。折り返すので、うら返しになる', dur: 3.5,
+        b: { t: '<b>対称移動</b> … 1つの直線（<b>対称の軸</b>）を折り目として、折り返す', col: C.green },
+        draw: function (D) { moveDemo(D, 'S', D.ph ? CH.smooth(.05, .9, D.t) : 0); if (D.ph) top(D, '対称移動：直線 ℓ を折り目に 折り返す', C.green, CH.smooth(.6, .9, D.t)); } },
+      { tag: '例題', bh: '例題　身のまわりの動き', q: '次の動きは、平行移動・回転移動・対称移動のどれだろう。① エスカレーター　② 時計の長針　③ 鏡にうつる顔　④ ドアを開ける',
+        a: '① 平行移動　② 回転移動　③ 対称移動　④ 回転移動', sub: '④ は、ちょうつがいを中心に回る（上から見ると、ドアの板が回転移動している）', dur: 8,
+        b: { t: '① エスカレーター <b>平行移動</b>　② 長針 <b>回転移動</b>　③ 鏡 <b>対称移動</b>　④ ドア <b>回転移動</b>', col: C.pink },
+        draw: function (D) { life(D, D.ph ? D.t : 0, !!D.ph); } },
+      { tag: '例題', q: '正方形 PQRS を、8つの合同な三角形に分けた。（1）ア を、点 O を中心に時計回りに 90° 回転移動すると、どれに重なる？（2）ア を対称移動して イ に重ねるとき、対称の軸は？', a: '（1）キ　（2）直線 PR',
+        sub: '（1）時計回りに 90° は、イ・ウ の向きと反対まわり。（2）P と R を結ぶ対角線で折り返す', dur: 6,
+        b: { t: '（1）O を中心に時計回りに 90° → <b>キ</b>　（2）対称の軸は <b>直線 PR</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = square8(D, CH.box(D, { l: .04, r: .04, t: .1, b: .05 })), k1 = CH.smooth(.04, .42, t), k2 = CH.smooth(.56, .94, t), a1 = D.ph ? 1 - CH.smooth(.48, .54, t) : 0;
+          if (D.ph && k1 > 0 && a1 > 0) { GE.arcDir(F, SO, -90 * CH.ease(k1), 0, { col: C.yel, r: F.s * 2.2, w: 2.6, a: a1 }); poly(F, rotP(SQ['ア'], SO, -90 * CH.ease(k1)), C.yel, { fa: .4, sw: 3, a: a1 }); if (k1 > .98) lab(F, SO, -45, 3, '90°', { col: C.yel, a: a1 }); }
+          if (D.ph && k2 > 0) { GE.seg(F, [[-.3, -.3], [4.3, 4.3]], { col: C.pink, w: 3.4, dash: [8, 6] }); poly(F, foldP(SQ['ア'], [0, 0], [4, 4], k2), k2 > .5 ? C.pink : C.lav, { fa: .4, sw: 3 }); }
+          if (D.ph) top(D, t < .5 ? '（1）時計回りに 90° → キ' : '（2）直線 PR で折り返す → イ', t < .5 ? C.yel : C.pink, t < .5 ? CH.smooth(.38, .44, t) : CH.smooth(.9, .96, t));
+        } },
+      { tag: '考えよう', q: '三角形 ア を イ に重ねる方法は、平行移動だけだろうか。対称移動を 2回使って重ねる方法を、考えてみよう。',
+        notes: ['折り目を どこにすればよいか、いろいろためそう。', 'ほかの三角形に重ねるときも、同じことができるか確かめよう。', 'スライダーで、1回目・2回目の折り目（縦の直線）の位置を変えられます。'],
+        sliders: [{ key: 'a', label: '1回目の折り目', min: 0, max: 6, step: 1, val: 1, fmt: function (x) { return '左から ' + x; } }, { key: 'b', label: '2回目の折り目', min: 0, max: 6, step: 1, val: 5, fmt: function (x) { return '左から ' + x; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .02, r: .02, t: .1, b: .04 }), F = tile(D, R, { pad: 0, bounds: [[-2.2, -1.2], [8.2, 3.2]] }), a = D.V.a, b = D.V.b, q1 = refP(TA, [a, 0], [a, 2]), q2 = refP(q1, [b, 0], [b, 2]);
+          clip(F, function () {
+            GE.seg(F, [[a, -1], [a, 3]], { col: C.pink, w: 3, dash: [8, 6] }); GE.seg(F, [[b, -1], [b, 3]], { col: C.yel, w: 3, dash: [8, 6] });
+            poly(F, q1, C.pink, { fa: .15, sw: 2.4 }); poly(F, q2, C.yel, { fa: .35, sw: 3.4 });
+          });
+          lab(F, [a, 3], 90, .7, '1回目', { col: C.pink, size: .8 }); lab(F, [b, -1], 270, .7, '2回目', { col: C.yel, size: .8 });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '正六角形 ABCDEF を、対角線で 6つの合同な正三角形 ①〜⑥ に分けた。① を、直線 AD で対称移動し、続けて直線 BE で対称移動すると、どれに重なるだろう。この2回の移動は、点 O を中心とする、反時計回りに何度の回転移動と同じだろう。',
+        notes: ['ヒント① ① が、1回目の移動でどこへ動くか、図に書きこんでみよう。', 'ヒント② 2つの折り目 AD と BE は、O でどんな角をつくっているかな。'],
+        a: '③。120° の回転移動と同じ', sub: '① → 直線 AD で ⑥ → 直線 BE で ③。AD と BE は O で 60° に交わるから、回す角は 2×60°＝120°', dur: 9,
+        b: { t: '① →（AD）⑥ →（BE）<b>③</b>　2回の対称移動＝O を中心に <b>120°</b> の回転移動（60°×2）', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, L = lay(D, .32), F = GE.fit(D, L.fig, HX, { pad: .16 }), k1 = CH.smooth(.03, .28, t), k2 = CH.smooth(.36, .62, t), k3 = CH.smooth(.7, .95, t);
+          GE.polyP(F, HXV, { col: C.chalk, fa: .06, sw: 2.6 }); GE.seg(F, 'AD', { w: 2 }); GE.seg(F, 'BE', { w: 2 }); GE.seg(F, 'CF', { w: 2 });
+          poly(F, HT['①'], C.blue, { fa: .3 });
+          if (D.ph) {
+            if (k1 > 0) { GE.seg(F, 'AD', { col: C.yel, w: 4, a: 1 - k2 * .6 }); poly(F, foldP(HT['①'], HX.A, HX.D, k1), C.yel, { fa: .35, sw: 3, a: 1 - k3 * .6 }); }
+            if (k2 > 0) { GE.seg(F, 'BE', { col: C.pink, w: 4 }); poly(F, foldP(H1a, HX.B, HX.E, k2), C.pink, { fa: .4, sw: 3 }); }
+            if (k2 > .98) { GE.arcDir(F, 'O', 0, 60, { col: C.green, r: F.s * 1.4, lab: '60°' }); }
+            if (k3 > 0) { GE.arcDir(F, 'O', 30, 30 + 120 * CH.ease(k3), { col: C.orange, r: F.s * 2.1, w: 3 }); poly(F, rotP(HT['①'], [0, 0], 120 * CH.ease(k3)), C.orange, { fa: .15, sw: 2.6 }); if (k3 > .98) lab(F, [0, 0], 90, 2.85, '120°', { col: C.orange }); }
+          }
+          HN.split('').forEach(function (n) { var c = F.X(cen(HT[n])); CH.text(D, c[0], c[1], n, { size: F.s, col: C.chalk, outline: OUT }); });
+          dots(F, 'ABCDEFO'); nm(F, { A: 0, B: 60, C: 120, D: 180, E: 240, F: 300 }); lab(F, [0, 0], 250, .9, 'O', { size: .9 });
+          if (D.ph) say(D, L.side, [{ t: '① → AD で ⑥', col: C.yel, a: CH.smooth(.25, .3, t) }, { t: '⑥ → BE で ③', col: C.pink, a: CH.smooth(.58, .64, t) }, { t: 'AD と BE の角 60°', col: C.green, a: CH.smooth(.62, .68, t) }, { t: '① → ③ は 120° の回転', col: C.orange, a: CH.smooth(.92, .98, t) }].filter(function (r) { return r.a > 0; }));
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

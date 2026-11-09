@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>実験で起こりやすさを調べる</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="js/chart.js"></script>
+<script>
+/* データの活用 第8時：実験をくり返して、起こりやすさを数で表そう（ikkan の lesson_data_new_08 と同じ流れ）。
+   10回では人によってばらつく相対度数が、回数をふやすと 0.61 くらいに落ち着く。データはすべて自作。 */
+(function () {
+  var C = CH.C;
+  /* 6人が 10回ずつ投げた結果（U 上・D 下・S 横） */
+  var P = ['UDUUSUDUUS', 'UUUDUUUSUU', 'DUSUUDUSUD', 'UUSUUDUUUD', 'SUDUDDUSUD', 'UDUUUSDUUD'];
+  var UP = P.map(function (s) { return s.split('').filter(function (c) { return c === 'U'; }).length; });
+  CH.check(UP.join() === '6,8,5,7,4,6' && CH.sum(UP) === 36, '6人の結果');
+  /* 例題：あるチームが 1000回まで投げた結果（はじめからの合計） */
+  var CAP = { n: [50, 100, 200, 400, 600, 800, 1000], c: [35, 56, 126, 245, 372, 488, 611], r: ['0.70', '0.56', '0.63', '0.61', '0.62', '0.61', '0.61'] };
+  CH.check(CAP.n.every(function (n, i) { return CH.f2(CAP.c[i] / n) === CAP.r[i]; }), '例題の相対度数');
+  CH.check(60 * .6 === 36 && CH.near(200 * .64, 128) && 128 - 36 === 92 && CH.f2(92 / 140) === '0.66', 'チャレンジ');
+  /* 考えよう：5つの班が 1000回まで（確率 0.61 の、たねつきの乱数） */
+  var SEEDS = [308, 200, 105, 141, 32], SIM = SEEDS.map(function (sd) { var r = CH.rng(sd), u = 0, a = []; for (var n = 1; n <= 1000; n++) { if (r() < .61) u++; a.push(u / n); } return a; });
+  var SC = [C.blue, C.orange, C.green, C.pink, C.yel];
+
+  function cap(D, x, y, r, k, a) {
+    if (k === 'U') { CH.circle(D, x, y, r, { fill: 'rgba(255,226,122,.3)', stroke: C.yel, sw: 2, a: a }); CH.circle(D, x, y, r * .62, { stroke: C.yel, sw: 1.3, a: a }); CH.text(D, x, y + 1, '上', { size: r * .78, col: C.yel, a: a }); }
+    else if (k === 'D') { CH.circle(D, x, y, r, { fill: 'rgba(242,240,230,.1)', stroke: 'rgba(242,240,230,.55)', sw: 2, a: a }); CH.text(D, x, y + 1, '下', { size: r * .78, col: 'rgba(242,240,230,.75)', a: a }); }
+    else { CH.fillRect(D, x - r, y - r * .5, x + r, y + r * .5, { fill: 'rgba(242,240,230,.1)', stroke: 'rgba(242,240,230,.55)', a: a }); CH.text(D, x, y + 1, '横', { size: r * .7, col: 'rgba(242,240,230,.75)', a: a }); }
+  }
+  /* 相対度数の数直線（0〜1）に、人ごとの点を置く */
+  function strip(D, R, vals, o) {
+    o = o || {}; var X = CH.numline(D, R, 0, 1, .1, { lab: .1, fmt: function (v) { return v.toFixed(1); }, unit: '（相対度数）' });
+    CH.dots(D, X, R.y1, vals, { r: CH.fs(D, .5), col: o.col || function () { return C.yel; } });
+    return X;
+  }
+  function runs(D, R, n, o) {
+    o = o || {}; var xm = n <= 100 ? 100 : n <= 200 ? 200 : n <= 500 ? 500 : 1000, st = xm / 5, xt = []; for (var x = 0; x <= xm; x += st) xt.push(x);
+    var Ax = CH.axes(D, R, { x: [0, xm], y: [0, 1], xt: xt, yt: [0, .2, .4, .6, .8, 1], yf: function (v) { return v.toFixed(1); }, xl: '（回）', yl: '上向きの相対度数' });
+    (o.which || [0, 1, 2, 3, 4]).forEach(function (k) {
+      var pts = []; for (var i = 0; i < n; i++) pts.push([i + 1, SIM[k][i]]);
+      CH.path(D, Ax, pts, { col: o.col || SC[k], dots: false, w: 2.2 });
+    });
+    return Ax;
+  }
+
+  K3.run({
+    no: '第8時', title: '実験をくり返して、起こりやすさを数で表そう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '07.html', label: '◀ 第7時' }, { href: '09.html', label: '第9時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: 'ペットボトルのキャップを投げる', q: 'キャップを投げると、上向き・下向き・横向きのどれかになる。10回投げて、上向きになる割合を調べよう。ほかの人の結果とくらべると？',
+        notes: ['① 自分の実験（3分）　結果を表に記録しよう。', '② ペアの結果とくらべる（3分）', 'スライダーで、1人ずつ結果を見られます。'],
+        sliders: [{ key: 'p', label: '何人目', min: 1, max: 6, step: 1, val: 1, fmt: function (x) { return x + '人目'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .08, b: .14 }), p = D.V.p, s = CH.fs(D), cw = Math.min(R.w * .8 / 10, R.h * .14), r = cw * .38, y = R.y0 + s * 2.4 + r;
+          CH.text(D, R.cx, R.y0 + s * .6, p + '人目の 10回', { col: C.chalk });
+          for (var i = 0; i < 10; i++) cap(D, R.cx + (i - 4.5) * cw, y, r, P[p - 1][i]);
+          CH.text(D, R.cx, y + r + s * 1.4, '上向き ' + UP[p - 1] + '回　' + UP[p - 1] + ' ÷ 10 ＝ ' + (UP[p - 1] / 10).toFixed(1), { col: C.yel });
+          strip(D, CH.rect(R.x0 + R.w * .08, R.y0 + R.h * .45, R.x1 - R.w * .08, R.y0 + R.h * .78), UP.slice(0, p).map(function (u) { return u / 10; }), { col: function (i) { return i === p - 1 ? C.yel : C.blue; } });
+        } },
+      { tag: '今日の問い', q: '10回の結果から、上向きになる割合は いくつといえる？', a: '人によってちがう（0.4〜0.8）', sub: '6人の相対度数　0.6・0.8・0.5・0.7・0.4・0.6。10回くらいでは、ばらつきが大きい', dur: 2.5,
+        b: { t: '10回では、相対度数が 人によって <b>0.4〜0.8</b> と ばらつく', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .06, b: .14 }), s = CH.fs(D), t = D.ph ? D.t : 0, rh = R.h * .58 / 6, cw = Math.min(R.w * .62 / 10, rh * 1.05), r = cw * .36;
+          P.forEach(function (sq, k) {
+            var y = R.y0 + rh * (k + .5), a = t > 0 ? 1 : .9;
+            CH.text(D, R.cx - cw * 5.6, y, (k + 1) + '人目', { size: s * .8, align: 'right', col: 'rgba(242,240,230,.8)' });
+            for (var i = 0; i < 10; i++) cap(D, R.cx + (i - 4.5) * cw, y, r, sq[i], a);
+            CH.text(D, R.cx + cw * 5.4, y, (UP[k] / 10).toFixed(1), { size: s * .9, num: true, align: 'left', col: C.yel });
+          });
+          var NR = CH.rect(R.x0 + R.w * .08, R.y0 + R.h * .66, R.x1 - R.w * .08, R.y1 - s), X = strip(D, NR, UP.map(function (u) { return u / 10; }), { col: function () { return C.yel; } });
+          if (t > .3) { var a2 = CH.smooth(.3, .7, t), yy = NR.y0 + s * .2; CH.arrow(D, X(.4), yy, X(.8), yy, { col: C.pink, a: a2, w: 2.4 }); CH.arrow(D, X(.8), yy, X(.4), yy, { col: C.pink, a: a2, w: 2.4 }); CH.text(D, X(.6), yy - s * .9, 'ばらつき 0.4〜0.8', { col: C.pink, a: a2, size: s * .9 }); }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '上向きの回数 ÷ 投げた回数 を、何という？ 投げる回数を ふやしていくと、どうなる？', a: '相対度数。一定の値に近づいていく', sub: '回数が少ないうちは大きくゆれる。多数回の実験では、ばらつきが小さくなり、ある値の近くに落ち着く', dur: 4,
+        b: [{ t: '上向きの回数 ÷ 投げた回数 … <b>相対度数</b>', col: C.green }, { t: '回数をふやすと、相対度数は <b>一定の値</b>に近づく', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .12, r: .06, t: .1, b: .16 }), t = D.ph ? D.t : 0, n = Math.max(20, Math.round(1000 * CH.ease(t)));
+          var Ax = CH.axes(D, R, { x: [0, 1000], y: [0, 1], xt: [0, 200, 400, 600, 800, 1000], yt: [0, .2, .4, .6, .8, 1], yf: function (v) { return v.toFixed(1); }, xl: '（回）', yl: '上向きの相対度数' });
+          var pts = []; for (var i = 0; i < n; i++) pts.push([i + 1, SIM[1][i]]);
+          CH.path(D, Ax, pts, { col: C.yel, dots: false, w: 2.4 });
+          CH.circle(D, Ax.X(n), Ax.Y(SIM[1][n - 1]), 5, { fill: C.yel });
+          CH.text(D, Ax.X(n), Ax.Y(SIM[1][n - 1]) - Ax.s * 1.3, n + '回 … ' + CH.f2(SIM[1][n - 1]), { col: C.yel, size: Ax.s, align: n > 800 ? 'right' : 'center' });
+          if (t > .85) { var a = CH.smooth(.85, 1, t); CH.line(D, Ax.X(0), Ax.Y(.61), Ax.X(1000), Ax.Y(.61), { col: C.green, dash: true, a: a }); CH.text(D, Ax.X(1000), Ax.Y(.61) + Ax.s * 1.1, '0.61 くらいに落ち着く', { col: C.green, a: a, align: 'right', size: Ax.s }); }
+        } },
+      { tag: '例題', bh: '例題　1000回まで投げた結果', q: 'あるチームが、キャップを 1000回まで投げた。上向きの相対度数は、どう変わっていく？', a: '0.61 の近くに落ち着く', sub: '50回 0.70、100回 0.56 と大きくゆれるが、400回から先は 0.61・0.62・0.61・0.61', dur: 4,
+        b: [{ t: '回数　50・100・200・400・600・800・1000', col: C.green }, { t: '相対度数　0.70・0.56・0.63・0.61・0.62・0.61・0.61', col: C.green }, { t: '回数がふえると <b>約 0.61</b> に落ち着く', col: C.yel }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .04, b: .14 }), t = D.ph ? D.t : 0, k = D.ph ? Math.min(7, Math.floor(t * 8)) : 0;
+          CH.table(D, CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .3), ['投げた回数'].concat(CAP.n), [['上向きの回数'].concat(CAP.c), ['相対度数'].concat(CAP.r)], { fw: .2, top: true, show: function (r, c) { return r === 2 && c > 0 && c > k ? 0 : 1; }, hl: function (r, c) { return r === 2 && c > 0 && c === k ? C.yel : null; } });
+          var G = CH.rect(R.x0 + R.w * .1, R.y0 + R.h * .44, R.x1 - R.w * .04, R.y1);
+          var Ax = CH.axes(D, G, { x: [0, 1000], y: [.5, .8], xt: [0, 200, 400, 600, 800, 1000], yt: [.5, .55, .6, .65, .7, .75, .8], yf: function (v) { return v.toFixed(2); }, xl: '（回）', yl: '相対度数', cut: true });
+          if (k > 0) CH.path(D, Ax, CAP.n.slice(0, k).map(function (n, i) { return [n, +CAP.r[i]]; }), { col: C.yel, r: 5 });
+          if (t > .9) { var a = CH.smooth(.9, 1, t); CH.line(D, Ax.X(0), Ax.Y(.61), Ax.X(1000), Ax.Y(.61), { col: C.green, dash: true, a: a }); CH.text(D, Ax.X(990), Ax.Y(.61) + Ax.s * 1.2, '約 0.61', { col: C.green, a: a, align: 'right' }); }
+        } },
+      { tag: '考えよう', q: '5つの班が、それぞれ 1000回まで投げた。投げた回数がふえると、5本の線のちらばりは どう変わるだろうか。',
+        notes: ['① 20回・100回・1000回のときの、5つの相対度数をくらべよう。', '② 「上向きになる割合は 0.61 くらい」といってよいのは、なぜだろう。', 'スライダーで、投げた回数をふやせます。'],
+        sliders: [{ key: 'n', label: '投げた回数', min: 10, max: 1000, step: 10, val: 20, fmt: function (x) { return x + '回'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .12, r: .2, t: .1, b: .16 }), n = D.V.n, Ax = runs(D, R, n);
+          CH.line(D, Ax.X(n), Ax.R.y0, Ax.X(n), Ax.R.y1, { col: 'rgba(242,240,230,.5)', dash: true, w: 1.6 });
+          var ys = SIM.map(function (a, k) { return { k: k, v: a[n - 1] }; }).sort(function (p, q) { return q.v - p.v; });
+          ys.forEach(function (o, j) { var y = Ax.R.y0 + Ax.s * (1.2 + j * 1.7); CH.text(D, R.x1 + Ax.s * 1.2, y, (o.k + 1) + '班　' + CH.f2(o.v), { col: SC[o.k], align: 'left', size: Ax.s * 1.05, num: true }); });
+          CH.text(D, R.x1 + Ax.s * 1.2, Ax.R.y0 - Ax.s * .6, n + '回のとき', { align: 'left', size: Ax.s, col: 'rgba(242,240,230,.8)' });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'Aさんは 60回投げて、上向きが 36回。Bさんの記録とあわせると、200回で 上向きの相対度数は 0.64 だった。Bさんの上向きの回数と、Bさんの相対度数は？（小数第2位まで）',
+        a: 'Bさん 92回、0.66', sub: '2人で 200×0.64＝128回 → B は 128−36＝92回。B は 200−60＝140回投げた → 92÷140＝0.657… ≒ 0.66', dur: 5,
+        b: { t: '200×0.64＝128、128−36＝<b>92回</b>　92÷140 ≒ <b>0.66</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .22, r: .06, t: .14, b: .2 }), h = Math.min(R.h * .13, 50), t = D.ph ? D.t : 0, s = CH.fs(D), W = R.w;
+          function lab(y, txt, a) { CH.text(D, R.x0 - s * .6, y + h / 2, txt, { align: 'right', size: s * .85, col: 'rgba(242,240,230,.85)', a: a }); }
+          lab(R.y0, '投げた回数', 1);
+          CH.tape(D, R.x0, R.y0, W, h, [{ v: 60, col: C.blue, txt: 'A 60回' }, { v: 140, col: C.orange, txt: 'B ' + (t > .45 ? '140回' : '？回') }], 200);
+          CH.text(D, R.x0 + W / 2, R.y0 - s * .8, '2人で 200回', { size: s * .85 });
+          var y2 = R.y0 + h * 1.9; lab(y2, '上向き 2人', 1);
+          if (t > .05) { var a = CH.smooth(.05, .3, t); CH.tape(D, R.x0, y2, W, h, [{ v: 128, col: C.yel, txt: '200 × 0.64 ＝ 128回' }, { v: 72, col: '#7d8a84', txt: '', a: .35 }], 200, { a: a }); }
+          var y3 = R.y0 + h * 3.8; lab(y3, '上向き 1人ずつ', t > .35 ? 1 : .3);
+          if (t > .35) {
+            var a3 = CH.smooth(.35, .6, t);
+            CH.tape(D, R.x0, y3, W * 60 / 200, h, [{ v: 36, col: C.blue, txt: '36' }, { v: 24, col: '#7d8a84', txt: '', a: .35 }], 60, { a: a3 });
+            CH.tape(D, R.x0 + W * 60 / 200, y3, W * 140 / 200, h, [{ v: 92, col: C.orange, txt: '128 − 36 ＝ 92' }, { v: 48, col: '#7d8a84', txt: '', a: .35 }], 140, { a: a3 });
+          }
+          if (t > .7) CH.text(D, R.x0 + W / 2, y3 + h * 2.1, 'Bさん　92 ÷ 140 ＝ 0.657… ≒ 0.66', { col: C.yel, a: CH.smooth(.7, .9, t), size: s * 1.1 });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

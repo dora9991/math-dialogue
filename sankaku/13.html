@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>条件カードで仲間分け</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三角形と四角形 第13時：条件カードで、四角形を仲間分けしよう（ikkan の lesson_sankaku_13 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。性質カードの ○× は、図の座標（長さ・平行・角）から出しなおしている（CH.check）。
+   今日の問い：カード ア〜オ を1枚ずつ出すと、あてはまる四角形に印がつく。例題：平行四辺形に条件カードを1枚加えると、形が長方形・ひし形に変わる。
+   考えよう：形を変えると、あてはまるカードが光る道具（仲間の図は自分でかく。答えは出さない）。 */
+(function () {
+  var C = CH.C;
+  /* ---- このページの道具 ---- */
+  function box(D, o) { return CH.box(D, o || { l: .06, r: .06, t: .1, b: .12 }); }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), g = D.ctx; g.save(); g.font = '600 ' + size + 'px "Klee One",sans-serif'; var w = g.measureText(s).width; g.restore(); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({}, o, { size: size })); }
+  function grid(R, n, asp) {
+    asp = asp || 1.4; var b = null;
+    for (var c = 1; c <= n; c++) { var r = Math.ceil(n / c), cw = R.w / c, ch = R.h / r, s = Math.min(cw / asp, ch); if (!b || s > b.s + 1e-9) b = { c: c, cw: cw, ch: ch, s: s }; }
+    var out = []; for (var i = 0; i < n; i++) { var row = Math.floor(i / b.c), col = i % b.c, inRow = Math.min(b.c, n - row * b.c), x0 = R.x0 + (R.w - inRow * b.cw) / 2 + col * b.cw, y0 = R.y0 + row * b.ch; out.push(CH.rect(x0, y0, x0 + b.cw, y0 + b.ch)); }
+    return out;
+  }
+  /* GE.proof に、行ごとの色分けを足す（L の行の hl: ['…', '…'] を、黄・ピンク…で光らせる。△ はうすくぬる） */
+  function proof(def, o) {
+    o = o || {}; var st = GE.proof(def, o), L = (def.L || []).slice();
+    if (L.length && !L[0].r && /で$|で、?$/.test(L[0].t)) L.shift();
+    var off = st.length - L.length - (def.point ? 1 : 0);
+    L.forEach(function (l, k) {
+      if (!l.hl) return;
+      var s = st[off + k], ask = l.ask != null ? l.ask : (l.c ? 'c' : l.r ? ((def.lv || 1) <= 1 ? 'r' : 't') : false);
+      s.draw = function (D) {
+        var F = GE.fit(D, CH.box(D, o.box || { l: .06, r: .06, t: .1, b: .12 }), def.P, { pad: def.pad });
+        (def.tri || []).forEach(function (t, j) { GE.poly(F, t, { col: j ? C.orange : C.blue, fa: .2, stroke: false }); });
+        GE.figure(F, def.fig);
+        if (o.draw) o.draw(D, F, { i: 1, ph: D.ph, t: D.ph ? D.t : (s.a ? 0 : 1) });
+        if (s.a && !D.ph && ask !== 'r') return;
+        var a = D.ph ? CH.smooth(0, .3, D.t) : 1;
+        l.hl.forEach(function (h, j) {
+          var col = GE.HL[j % GE.HL.length];
+          h.replace(/△([A-Z]{3})/g, function (m, t) { GE.poly(F, t, { col: col, fa: .3, sw: 3, a: a }); return m; });
+          GE.glow(F, h, def.alias, { col: col, a: a });
+        });
+      };
+    });
+    return st;
+  }
+  var SQ = ['AB', 'BC', 'CD', 'DA'], RT4 = ['DAB', 'ABC', 'BCD', 'CDA'], TK4 = [['AB', 1], ['BC', 1], ['CD', 1], ['DA', 1]];
+  /* 平行四辺形：BC＝a、AB＝b、∠B＝th°（O は対角線の交点） */
+  function pg(a, b, th) { var A = GE.polar([0, 0], b, th), P = { A: A, B: [0, 0], C: [a, 0], D: [A[0] + a, A[1]] }; P.O = GE.mid(P.A, P.C); return P; }
+  /* 性質カード ア〜オ（座標から調べる） */
+  var CARDS = ['ア 2組の対辺が平行', 'イ 4つの辺が等しい', 'ウ 4つの角が等しい', 'エ 対角線の長さが等しい', 'オ 対角線が垂直に交わる'];
+  function props(P) {
+    var L = SQ.map(function (s) { return GE.len(P, s); }), A = RT4.map(function (s) { return GE.ang(P, s); });
+    return [GE.isPar(P, 'AB', 'DC') && GE.isPar(P, 'AD', 'BC'), L.every(function (x) { return GE.near(x, L[0]); }), A.every(function (x) { return GE.near(x, A[0]); }), GE.near(GE.len(P, 'AC'), GE.len(P, 'BD')), GE.isPerp(P, 'AC', 'BD')];
+  }
+  function kind(P) { var p = props(P); return p[1] && p[2] ? '正方形' : p[2] ? '長方形' : p[1] ? 'ひし形' : p[0] ? '平行四辺形' : '四角形'; }
+  /* カード k の印を、図 F にかく */
+  function mark(F, k, col, a) {
+    if (k === 0) [['AD', 1], ['BC', 1], ['AB', 2], ['DC', 2]].forEach(function (p) { GE.par(F, p[0], p[1], { col: col, a: a, shift: .9 }); });
+    if (k === 1) TK4.forEach(function (t) { GE.tick(F, t[0], 1, { col: col, a: a }); });
+    if (k === 2) RT4.forEach(function (r) { GE.right(F, r, { col: col, a: a }); });
+    if (k === 3) { GE.seg(F, 'AC', { col: col, w: 4, glow: true, a: a }); GE.seg(F, 'BD', { col: col, w: 4, glow: true, a: a }); }
+    if (k === 4) GE.right(F, 'AOB', { col: col, a: a, fill: true, r: F.s * .7 });
+  }
+
+  /* ---- 4つの四角形（ikkan と同じ座標） ---- */
+  var SH = [{ n: '平行四辺形', P: pg(4.4, 2.6, 65) }, { n: '長方形', P: pg(4.4, 2.4, 90) }, { n: 'ひし形', P: pg(3, 3, 65) }, { n: '正方形', P: pg(2.6, 2.6, 90) }];
+  var WHO = CARDS.map(function (c, k) { return SH.filter(function (s) { return props(s.P)[k]; }).map(function (s) { return s.n; }).join('・'); });
+  CH.check(WHO.join('／') === '平行四辺形・長方形・ひし形・正方形／ひし形・正方形／長方形・正方形／長方形・正方形／ひし形・正方形', '今日の問い：カードの仲間分け');
+  CH.check(SH.every(function (s) { return kind(s.P) === s.n; }), '今日の問い：四角形の名前');
+  function four(D, after, o) {
+    o = o || {}; var R = box(D, { l: .03, r: .03, t: o.top || .04, b: .04 }), rs = grid(R, 4, 1.5), s = CH.fs(D, .82);
+    SH.forEach(function (g, i) {
+      var r = rs[i], a = after && after.alpha ? after.alpha(i) : 1, F = GE.fit(D, CH.rect(r.x0 + s * .4, r.y0 + s * 1.9, r.x1 - s * .4, r.y1 - s * 1.9), g.P, { size: s, pad: .12 });
+      if (after && after.under) after.under(g, i, F, r);
+      GE.figure(F, { segs: SQ.concat(o.diag === false ? [] : ['AC', 'BD']), labels: ['A', 'B', 'C', 'D'], dir: { A: 'nw', B: 'sw', C: 'se', D: 'ne' } }, { a: a });
+      say(D, r.cx, r.y0 + s * .8, g.n, { col: C.yel, size: s, a: a });
+      if (after && after.over) after.over(g, i, F, r);
+    });
+  }
+
+  /* ---- 例題：平行四辺形に条件カードを1枚加える（ア ∠A＝90°、イ AB＝BC、ウ AC＝BD、エ AC⊥BD） ---- */
+  var EXC = [{ c: 'ア ∠A＝90°', to: [4.4, 2.6, 90], n: '長方形' }, { c: 'イ AB＝BC', to: [3.5, 3.5, 62], n: 'ひし形' }, { c: 'ウ AC＝BD', to: [4.4, 2.6, 90], n: '長方形' }, { c: 'エ AC⊥BD', to: [3.5, 3.5, 62], n: 'ひし形' }];
+  var EX0 = [4.4, 2.6, 62];
+  EXC.forEach(function (e) { var P = pg.apply(null, e.to); CH.check(kind(P) === e.n && GE.verify(P, e.c.slice(2), { A: 'DAB' }), '例題：' + e.c + ' → ' + e.n); });
+  [[4.4, 2.6, 62], [4, 3, 75], [4, 3, 110], [3.4, 3.4, 90]].forEach(function (v) { var P = pg(v[0], v[1], v[2]), p = props(P); CH.check(p[3] === (v[2] === 90) && p[4] === (v[0] === v[1]), '例題：対角線の条件（' + v.join(',') + '）'); });
+  function exFig(D, k, t) {
+    var e = EXC[k], v = EX0.map(function (x, i) { return CH.lerp(x, e.to[i], CH.ease(t)); }), P = pg(v[0], v[1], v[2]);
+    P.f0 = [-0.3, -0.4]; P.f1 = [5.9, 3.6];
+    var R = box(D, { l: .06, r: .06, t: .16, b: .14 }), F = GE.fit(D, R, P, { keys: ['f0', 'f1'], pad: .04 }), s = F.s, Y = C.yel, done = t > .97;
+    GE.figure(F, { segs: SQ.concat(['AC', 'BD']), labels: ['A', 'B', 'C', 'D', 'O'], dir: { A: 'nw', B: 'sw', C: 'se', D: 'ne', O: 's' } });
+    if (k === 0) { if (done) GE.right(F, 'DAB', { col: Y, fill: true }); else GE.arc(F, 'DAB', { col: Y, fill: .4 }); }
+    if (k === 1) { GE.seg(F, 'AB', { col: Y, w: 4, glow: true }); GE.seg(F, 'BC', { col: Y, w: 4, glow: true }); if (done) { GE.tick(F, 'AB', 1, { col: Y }); GE.tick(F, 'BC', 1, { col: Y }); } }
+    if (k === 2) { GE.seg(F, 'AC', { col: Y, w: 4, glow: true }); GE.seg(F, 'BD', { col: C.pink, w: 4, glow: true }); }
+    if (k === 3) { if (done) GE.right(F, 'AOB', { col: Y, fill: true, r: s * .7 }); else GE.arc(F, 'AOB', { col: Y, fill: .4 }); }
+    say(D, R.cx, R.y0 - s * 1.4, '平行四辺形 ＋ ' + e.c, { col: Y, size: s * 1.1, maxW: R.w });
+    var info = k === 2 ? 'AC ' + GE.len(P, 'AC').toFixed(2) + '　BD ' + GE.len(P, 'BD').toFixed(2) : k === 3 ? '∠AOB ' + Math.round(GE.ang(P, 'AOB')) + '°' : k === 0 ? '∠A ' + Math.round(GE.ang(P, 'DAB')) + '°' : 'AB ' + GE.len(P, 'AB').toFixed(1) + '　BC ' + GE.len(P, 'BC').toFixed(1);
+    say(D, R.cx, R.y1 + s * .9, info + (done && t > 0 ? '　→ ' + e.n : ''), { col: done && t > 0 ? C.green : C.chalk, size: s, maxW: R.w });
+  }
+
+  /* ---- 例題（わけ）：AC＝BD の平行四辺形は長方形 ---- */
+  var PX = pg(4.4, 2.4, 90); delete PX.O;
+  var DEF_EX = {
+    id: '第13時 例題', lv: 1, ttl: '例題　AC＝BD で長方形になるわけ',
+    q: '平行四辺形 ABCD で、AC＝DB ならば、∠ABC＝90°（長方形）になるわけを説明しよう。', P: PX,
+    fig: { segs: SQ.concat(['AC', 'DB']) },
+    hyp: '平行四辺形 ABCD、AC＝DB', goal: '∠ABC＝90°', tri: ['ABC', 'DCB'],
+    L: [{ t: '△ABC と △DCB で' },
+      { t: 'AB＝DC', r: '平行四辺形の対辺', n: 1 },
+      { t: 'AC＝DB', r: '仮定', n: 2 },
+      { t: 'BC＝CB', r: '共通', n: 3 },
+      { t: '①②③より、3組の辺が、それぞれ等しいので', c: 'SSS' },
+      { t: '△ABC≡△DCB' },
+      { t: '合同な図形の対応する角は等しいので　∠ABC＝∠DCB', n: 4, q: '合同から、等しいといえる角は？', a: '∠ABC＝∠DCB' },
+      { t: 'AB∥DC より　∠ABC＋∠DCB＝180° だから、④より　∠ABC＝90°', q: 'AB∥DC を使うと、∠ABC は何度？', a: '90°（∠ABC＋∠DCB＝180° の半分）→ 長方形', hl: ['∠ABC', '∠DCB'] }]
+  };
+
+  /* ---- 考えよう：∠B と AB を変える（BC＝4）と、あてはまるカードが光る ---- */
+  [[90, 4], [90, 2.8], [70, 4], [70, 2.8]].forEach(function (v) { var p = props(pg(4, v[1], v[0])), r = v[0] === 90, h = v[1] === 4; CH.check(p[0] && p[1] === h && p[2] === r && p[3] === r && p[4] === h, '考えよう：カード（' + v.join(',') + '）'); });
+
+  /* ---- チャレンジ：平行四辺形 ABCD（∠B＝60°、AB＝3、BC＝5）の4つの角の二等分線 → 四角形 PQRS は長方形 ---- */
+  var P8 = pg(5, 3, 60); delete P8.O;
+  function bis(V, X, Y) { var u = GE.sub(X, V), w = GE.sub(Y, V), lu = Math.hypot(u[0], u[1]), lw = Math.hypot(w[0], w[1]); return [V, [V[0] + u[0] / lu + w[0] / lw, V[1] + u[1] / lu + w[1] / lw]]; }
+  var bA = bis(P8.A, P8.B, P8.D), bB = bis(P8.B, P8.A, P8.C), bC = bis(P8.C, P8.B, P8.D), bD = bis(P8.D, P8.C, P8.A);
+  P8.P = GE.meet(bA[0], bA[1], bB[0], bB[1]); P8.Q = GE.meet(bB[0], bB[1], bC[0], bC[1]); P8.R = GE.meet(bC[0], bC[1], bD[0], bD[1]); P8.S = GE.meet(bD[0], bD[1], bA[0], bA[1]);
+  CH.check(GE.verify(P8, '∠SPQ＝∠PQR＝∠QRS＝∠RSP＝90°') && GE.verify(P8, 'AP＋PS＝AS') && GE.verify(P8, 'BP＋PQ＝BQ') && GE.verify(P8, 'CR＋RQ＝CQ') && GE.verify(P8, 'DR＋RS＝DS'), 'チャレンジ：PQRS と、二等分線の上の点の並び');
+  var DEF_CH = {
+    id: '第13時 チャレンジ', lv: 2, ttl: 'チャレンジ　角の二等分線でできる四角形',
+    q: '平行四辺形 ABCD の4つの角の二等分線が、P、Q、R、S で交わっている。四角形 PQRS が長方形になることを証明しよう。', P: P8,
+    fig: { segs: SQ.concat(['AS', 'BQ', 'CQ', 'DS']), angs: [['DAS', 1], ['SAB', 1], ['BCQ', 1], ['QCD', 1], ['ABQ', 2], ['QBC', 2], ['CDS', 2], ['SDA', 2]], dots: ['P', 'Q', 'R', 'S'], dir: { P: 'w', Q: 'n', R: 'e', S: 's' } },
+    hyp: '平行四辺形 ABCD で、∠A、∠B、∠C、∠D の二等分線が P、Q、R、S で交わる', goal: '四角形 PQRS は長方形',
+    plan: { q: '∠SPQ の大きさを知りたい。どの三角形に目をつける？', a: '△PAB（∠SPQ と ∠APB は対頂角）', b: '△PAB に目をつける' },
+    L: [{ t: '∠DAB＋∠ABC＝180°', r: 'AD∥BC（平行四辺形のとなり合う角）', n: 1, hint: '∠DAB＋∠ABC は何度？　根拠も。' },
+      { t: '∠PAB＋∠PBA＝90°', r: 'AP、BP は二等分線だから、①の半分', n: 2, hint: '∠PAB＋∠PBA は何度？　根拠も。' },
+      { t: '∠APB＝180°−90°＝90°', r: '△PAB の内角の和は 180°', n: 3, hint: '△PAB で、∠APB は何度？　根拠も。' },
+      { t: '∠SPQ＝∠APB＝90°', r: '対頂角', n: 4, hint: '四角形 PQRS の角 ∠SPQ は何度？　根拠も。' },
+      { t: '同じようにして　∠PQR＝∠QRS＝∠RSP＝90°。4つの角が等しいから、四角形 PQRS は長方形', q: '残りの角も、同じようにして 90°。四角形 PQRS は？', a: '4つの角が等しいから、長方形', hl: ['∠SPQ ∠PQR ∠QRS ∠RSP'] }]
+  };
+
+  var steps = [
+    { tag: '今日の問い', bh: '今日の問い　性質カードで仲間分け', q: '平行四辺形・長方形・ひし形・正方形を、ア〜オの性質カードで仲間分けしよう。「かならず」あてはまるものだけを選ぼう。',
+      notes: ['ア 2組の対辺が平行　イ 4つの辺が等しい　ウ 4つの角が等しい', 'エ 対角線の長さが等しい　オ 対角線が垂直に交わる', '① 自分の考え（3分）　② ペアの考え（3分）'],
+      draw: function (D) { four(D); } },
+    { tag: '今日の問い', q: 'カード ア〜オ に、かならずあてはまる四角形は？（スライダーでカードを選ぶ）', a: 'ア 4つとも　イ・オ ひし形と正方形　ウ・エ 長方形と正方形', sub: '正方形は、どのカードにもあてはまる', dur: 7,
+      sliders: [{ key: 'k', label: 'カード', min: 0, max: 4, step: 1, val: 0, anim: [0, 4.4], fmt: function (x) { return CARDS[Math.min(4, Math.round(x))]; } }],
+      b: [{ t: 'ア 2組の対辺が平行 … 4つとも', col: C.yel }, { t: 'イ 4つの辺が等しい・オ 対角線が垂直 … ひし形・正方形', col: C.yel }, { t: 'ウ 4つの角が等しい・エ 対角線の長さが等しい … 長方形・正方形', col: C.yel }],
+      draw: function (D) {
+        var k = Math.min(4, Math.round(D.V.k)), on = function (i) { return props(SH[i].P)[k]; }, s = CH.fs(D, .9), R0 = box(D, { t: .0 });
+        say(D, R0.cx, R0.y0 + s * .4, 'カード ' + CARDS[k], { col: C.orange, size: s * 1.1, maxW: R0.w });
+        four(D, {
+          alpha: function (i) { return D.ph && !on(i) ? .35 : 1; },
+          over: function (g, i, F, r) { if (!D.ph) return; if (on(i)) mark(F, k, C.yel, 1); say(D, r.cx + F.s * 3.8, r.y0 + F.s * .8, on(i) ? '○' : '×', { col: on(i) ? C.green : C.pink, size: F.s * 1.3 }); }
+        }, { top: .1 });
+      } },
+    { tag: 'ことば', bh: 'ことば', q: '4つの四角形の定義を確かめよう。4つの角も、4つの辺も等しい四角形を何という？', a: '正方形', sub: '長方形の定義（4つの角）と、ひし形の定義（4つの辺）を、両方みたしている', dur: 2,
+      b: [{ t: '<b>平行四辺形</b> … 2組の対辺が、それぞれ平行', col: C.green }, { t: '<b>長方形</b> … 4つの角が等しい', col: C.green }, { t: '<b>ひし形</b> … 4つの辺が等しい', col: C.green }, { t: '<b>正方形</b> … 4つの角も辺も等しい', col: C.green }],
+      draw: function (D) {
+        var a = D.ph ? CH.smooth(0, .5, D.t) : 0;
+        four(D, { over: function (g, i, F) {
+          if (i === 0) mark(F, 0, C.blue, 1);
+          if (i === 1 || i === 3) mark(F, 2, C.blue, 1);
+          if (i === 2 || i === 3) mark(F, 1, C.pink, 1);
+          if (i === 3 && D.ph) SQ.forEach(function (sg) { GE.seg(F, sg, { col: C.yel, w: 4, glow: true, a: a }); });
+        } }, { diag: false });
+      } },
+    { tag: '例題', bh: '例題　条件カード', q: '平行四辺形 ABCD に、条件カード ア ∠A＝90°　イ AB＝BC　ウ AC＝BD　エ AC⊥BD のどれか1枚を加えると、何になる？',
+      a: 'ア・ウ … 長方形、イ・エ … ひし形', sub: 'ア は角、イ は辺、ウ・エ は対角線の条件。スライダーでカードを選び、↻ もう一度 で形が変わる', dur: 3,
+      sliders: [{ key: 'k', label: 'カード', min: 0, max: 3, step: 1, val: 0, fmt: function (x) { return EXC[x].c; } }],
+      b: [{ t: 'ア ∠A＝90°・ウ AC＝BD … <b>長方形</b>', col: C.pink }, { t: 'イ AB＝BC・エ AC⊥BD … <b>ひし形</b>', col: C.pink }],
+      draw: function (D) { exFig(D, D.V.k, D.ph ? D.t : 0); } }
+  ].concat(proof(DEF_EX, { tag: '例題' })).concat([
+    { tag: '考えよう', q: '平行四辺形・長方形・ひし形・正方形の関係がわかるように、1つの図にかこう。（輪をかさねる、など、かき方は自由）',
+      notes: ['スライダーで形を変えると、その四角形にあてはまるカード（ア〜オ）が光る。', '図から、気づいたことを書こう。'],
+      sliders: [{ key: 'th', label: '∠B', min: 50, max: 130, step: 5, val: 70, fmt: function (x) { return x + '°'; } },
+        { key: 'ab', label: 'AB の長さ', min: 2, max: 4.4, step: .2, val: 2.8, fmt: function (x) { return x.toFixed(1) + '（BC 4.0）'; } }],
+      draw: function (D) {
+        var P = pg(4, D.V.ab, D.V.th), p = props(P), R = box(D, { l: .03, r: .03, t: .04, b: .06 }), RL = CH.rect(R.x0, R.y0, R.x0 + R.w * .55, R.y1), RR = CH.rect(R.x0 + R.w * .58, R.y0, R.x1, R.y1);
+        var s = CH.fs(D, .85), F = GE.fit(D, CH.rect(RL.x0, RL.y0 + s * 2.2, RL.x1, RL.y1), P, { keys: ['A', 'B', 'C', 'D'], pad: .12, size: s });
+        GE.figure(F, { segs: SQ.concat(['AC', 'BD']), labels: ['A', 'B', 'C', 'D'], dir: { A: 'nw', B: 'sw', C: 'se', D: 'ne' } });
+        say(D, RL.cx, RL.y0 + s * .9, kind(P), { col: C.yel, size: s * 1.25 });
+        var h = Math.min(RR.h / 5, s * 2.6);
+        CARDS.forEach(function (c, k) {
+          var y = RR.cy + (k - 2) * h, w = RR.w * .98;
+          CH.card(D, RR.cx, y, w, h * .78, '', { col: p[k] ? C.yel : 'rgba(242,240,230,.3)', fill: p[k] ? 'rgba(255,226,122,.18)' : 'rgba(242,240,230,.04)' });
+          say(D, RR.cx, y, c, { col: p[k] ? C.yel : 'rgba(242,240,230,.45)', size: s * .9, maxW: w * .92 });
+        });
+      } }
+  ]).concat(proof(DEF_CH, { tag: 'チャレンジ' }));
+
+  K3.run({
+    no: '第13時', title: '条件カードで、四角形を仲間分けしよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '12.html', label: '◀ 第12時' }, { href: '14.html', label: '第14時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>条件を変えて新しい性質</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三角形と四角形 第16時：条件を変えて、新しい性質を見つけよう（ikkan の lesson_sankaku_16 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。証明の行は GE.proof が座標で確かめ、長さ・面積は CH.check で計算し直す。
+   今日の問い：AB＝AC＝5cm の二等辺三角形で、BC 上の点 P を動かしても、PQ＋PR はいつも 5cm（下のテープで、AB とくらべる）。
+   考えよう：もとの四角形（正方形・長方形・ひし形・平行四辺形）と AE＝BF＝CG＝DH の長さを変えて、四角形 EFGH を調べる道具（答えは出さない）。 */
+(function () {
+  var C = CH.C;
+  /* ---- このページの道具 ---- */
+  function box(D, o) { return CH.box(D, o || { l: .06, r: .06, t: .1, b: .12 }); }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), g = D.ctx; g.save(); g.font = '600 ' + size + 'px "Klee One",sans-serif'; var w = g.measureText(s).width; g.restore(); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({}, o, { size: size })); }
+  function grid(R, n, asp) {
+    asp = asp || 1.4; var b = null;
+    for (var c = 1; c <= n; c++) { var r = Math.ceil(n / c), cw = R.w / c, ch = R.h / r, s = Math.min(cw / asp, ch); if (!b || s > b.s + 1e-9) b = { c: c, cw: cw, ch: ch, s: s }; }
+    var out = []; for (var i = 0; i < n; i++) { var row = Math.floor(i / b.c), col = i % b.c, inRow = Math.min(b.c, n - row * b.c), x0 = R.x0 + (R.w - inRow * b.cw) / 2 + col * b.cw, y0 = R.y0 + row * b.ch; out.push(CH.rect(x0, y0, x0 + b.cw, y0 + b.ch)); }
+    return out;
+  }
+  function area(P, t) { var p = t.split('').map(function (k) { return P[k]; }), s = 0; p.forEach(function (a, i) { var b = p[(i + 1) % p.length]; s += a[0] * b[1] - b[0] * a[1]; }); return Math.abs(s) / 2; }
+  /* GE.proof に、行ごとの色分けを足す（L の行の hl: ['…', '…'] を、黄・ピンク…で光らせる。△ はうすくぬる。fa でぬりの濃さ、ex で図を足す） */
+  function proof(def, o) {
+    o = o || {}; var st = GE.proof(def, o), L = (def.L || []).slice();
+    if (L.length && !L[0].r && /で$|で、?$/.test(L[0].t)) L.shift();
+    var off = st.length - L.length - (def.point ? 1 : 0);
+    L.forEach(function (l, k) {
+      if (!l.hl) return;
+      var s = st[off + k], ask = l.ask != null ? l.ask : (l.c ? 'c' : l.r ? ((def.lv || 1) <= 1 ? 'r' : 't') : false);
+      s.draw = function (D) {
+        var F = GE.fit(D, CH.box(D, o.box || { l: .06, r: .06, t: .1, b: .12 }), def.P, { pad: def.pad });
+        (def.tri || []).forEach(function (t, j) { GE.poly(F, t, { col: j ? C.orange : C.blue, fa: .2, stroke: false }); });
+        GE.figure(F, def.fig);
+        if (o.draw) o.draw(D, F, { i: 1, ph: D.ph, t: D.ph ? D.t : (s.a ? 0 : 1) });
+        if (s.a && !D.ph && ask !== 'r') return;
+        var a = D.ph ? CH.smooth(0, .3, D.t) : 1;
+        l.hl.forEach(function (h, j) {
+          var col = GE.HL[j % GE.HL.length];
+          h.replace(/△([A-Z]{3})/g, function (m, t) { GE.poly(F, t, { col: col, fa: l.fa == null ? .3 : l.fa, sw: 3, a: a }); return m; });
+          GE.glow(F, h, def.alias, { col: col, a: a });
+        });
+        if (l.ex) l.ex(D, F, a);
+      };
+    });
+    return st;
+  }
+
+  /* ---- 今日の問い：B(0,0)・C(6,0)・A(3,4)（AB＝AC＝5cm）。P＝(6t,0)、Q＝(3t,4t)（AB 上）、R＝(3＋3t,4−4t)（AC 上） ---- */
+  function tri(t) { return { A: [3, 4], B: [0, 0], C: [6, 0], P: [6 * t, 0], Q: [3 * t, 4 * t], R: [3 + 3 * t, 4 - 4 * t] }; }
+  for (var ti = 1; ti < 20; ti++) {
+    (function (t) { var P = tri(t); CH.check(GE.isPar(P, 'PQ', 'AC') && GE.isPar(P, 'PR', 'AB') && GE.verify(P, 'AQ＋QB＝AB') && GE.verify(P, 'AR＋RC＝AC') && GE.verify(P, 'PQ＋PR＝AB') && GE.near(GE.len(P, 'AB'), 5), '今日の問い：PQ＋PR＝5（t＝' + t + '）'); })(ti / 20);
+  }
+  CH.check(GE.near(GE.len(tri(.3), 'PQ'), 1.5) && GE.near(GE.len(tri(.3), 'PR'), 3.5) && GE.near(GE.len(tri(.6), 'PQ'), 3) && GE.near(GE.len(tri(.6), 'PR'), 2), '今日の問い：ア・イの長さ');
+  var FIGT = { segs: ['AB', 'BC', 'CA', 'PQ', 'PR'], ticks: [['AB', 1], ['AC', 1]], dots: ['P', 'Q', 'R'], dir: { A: 'n', B: 'sw', C: 'se', P: 's', Q: 'w', R: 'e' } };
+  function two(D, after) {
+    var R = box(D, { l: .03, r: .03, t: .04, b: .06 }), rs = grid(R, 2, 1.3), s = CH.fs(D, .85);
+    [[.3, 'ア'], [.6, 'イ']].forEach(function (g, i) {
+      var r = rs[i], F = GE.fit(D, CH.rect(r.x0 + s * .5, r.y0 + s * 1.9, r.x1 - s * .5, r.y1 - s * .5), tri(g[0]), { size: s, pad: .12 });
+      GE.figure(F, FIGT); say(D, r.cx, Math.max(r.y0 + s * .8, F.X('A')[1] - s * 2.4), g[1], { col: C.yel, size: s * 1.1 });
+      if (after) after(F, g[0], r);
+    });
+  }
+  /* 大きな図と、PQ・PR を AB とくらべるテープ */
+  function big(D, t, o) {
+    o = o || {}; var P = tri(t); P.f0 = [-0.6, -2]; P.f1 = [6.6, 4.4];
+    var F = GE.fit(D, box(D, { l: .06, r: .06, t: .1, b: .06 }), P, { keys: ['f0', 'f1'], pad: .03 }), s = F.s, pq = GE.len(P, 'PQ'), pr = GE.len(P, 'PR');
+    GE.figure(F, Object.assign({ labels: ['A', 'B', 'C', 'P', 'Q', 'R'] }, FIGT));
+    GE.seg(F, 'PQ', { col: C.yel, w: 4, glow: true }); GE.seg(F, 'PR', { col: C.pink, w: 4, glow: true });
+    if (o.tape) {
+      var x0 = .5, y1 = -1, y2 = -1.6;
+      GE.seg(F, [[x0, y1], [x0 + pq, y1]], { col: C.yel, w: 7 }); GE.seg(F, [[x0 + pq, y1], [x0 + 5, y1]], { col: C.pink, w: 7 });
+      GE.seg(F, [[x0, y2], [x0 + 5, y2]], { col: C.chalk, w: 7 });
+      var l1 = F.X([x0 - .2, y1]), l2 = F.X([x0 - .2, y2]), m1 = F.X([x0 + pq / 2, y1]), m2 = F.X([x0 + pq + pr / 2, y1]);
+      CH.text(D, l1[0], l1[1], 'PQ＋PR', { size: s * .8, align: 'right', col: C.chalk }); CH.text(D, l2[0], l2[1], 'AB', { size: s * .8, align: 'right' });
+      if (pq > .5) CH.text(D, m1[0], m1[1] - s * .8, pq.toFixed(1), { size: s * .8, col: C.yel, num: true }); if (pr > .5) CH.text(D, m2[0], m2[1] - s * .8, pr.toFixed(1), { size: s * .8, col: C.pink, num: true });
+      var e = F.X([x0 + 5.2, (y1 + y2) / 2]); CH.text(D, e[0], e[1], '5.0', { size: s * .85, align: 'left', num: true });
+    }
+    return F;
+  }
+
+  /* ---- 例題：PQ＋PR＝AB のわけ（t＝0.3） ---- */
+  var PX = tri(.3);
+  var DEF_EX = {
+    id: '第16時 例題', lv: 1, ttl: '例題　PQ＋PR＝AB のわけ',
+    q: 'PQ＋PR＝AB となるわけを、PQ と PR を、AB の一部と等しい線分に置きかえて説明しよう。', P: PX, fig: FIGT,
+    hyp: 'AB＝AC、PQ∥AC、PR∥AB', goal: 'PQ＋PR＝AB',
+    plan: { q: 'PQ、PR と長さの等しい線分を、AB の上に見つけよう。どれとどれ？', a: 'PQ＝QB、PR＝AQ', b: '方針：PQ＝QB、PR＝AQ を示す' },
+    L: [{ t: '∠QPB＝∠ACB', r: 'PQ∥AC の同位角', n: 1 },
+      { t: '∠QBP＝∠ACB', r: '二等辺三角形の底角は等しい', n: 2 },
+      { t: '①②より　∠QBP＝∠QPB だから　PQ＝QB', n: 3, ask: false, q: '①②から、△QBP はどんな三角形？　何がいえる？', a: '2つの角が等しいので二等辺三角形 → PQ＝QB', hl: ['∠QBP ∠QPB', 'PQ QB'] },
+      { t: 'PR＝AQ', r: '四角形 AQPR は平行四辺形（2組の対辺が平行）で、対辺は等しい', n: 4, hl: ['PR AQ'], ex: function (D, F, a) { GE.poly(F, 'AQPR', { col: C.blue, fa: .18, stroke: false, a: a }); } },
+      { t: '③④より　PQ＋PR＝QB＋AQ＝AB', ask: false, q: 'PQ＋PR を、AB で表すと？', a: 'PQ＋PR＝QB＋AQ＝AB', hl: ['PQ QB', 'PR AQ'] }]
+  };
+
+  /* ---- 考えよう：もとの四角形の辺上に AE＝BF＝CG＝DH＝x ---- */
+  var BASES = [{ n: '正方形', a: 4, b: 4, th: 90 }, { n: '長方形', a: 5, b: 3.4, th: 90 }, { n: 'ひし形', a: 4, b: 4, th: 65 }, { n: '平行四辺形', a: 5, b: 3.2, th: 65 }];
+  function efgh(k, x) {
+    var g = BASES[k], A = GE.polar([0, 0], g.b, g.th), P = { A: A, B: [0, 0], C: [g.a, 0], D: [A[0] + g.a, A[1]] };
+    function at(p, q) { var d = GE.len(P, p + q); return GE.lerpP(P[p], P[q], x / d); }
+    P.E = at('A', 'B'); P.F = at('B', 'C'); P.G = at('C', 'D'); P.H = at('D', 'A'); return P;
+  }
+  /* （答えは出さない。ここで確かめるだけ）正方形 → 正方形、長方形・ひし形・平行四辺形 → 平行四辺形 */
+  [.6, 1.5, 2.4].forEach(function (x) {
+    BASES.forEach(function (g, k) { var P = efgh(k, x); CH.check(GE.isPar(P, 'EF', 'HG') && GE.isPar(P, 'EH', 'FG'), '考えよう：EFGH は平行四辺形（' + g.n + '、x＝' + x + '）'); });
+    var S = efgh(0, x); CH.check(GE.verify(S, 'EF＝FG') && GE.near(GE.ang(S, 'HEF'), 90), '考えよう：正方形なら EFGH も正方形');
+  });
+  CH.check(GE.near(area(efgh(0, 3 * .4), 'EFGH') * 100 / 16, 100 - 4 * (1.2 * 2.8 / 2) * 100 / 16), '考えよう：面積（正方形）');
+
+  /* ---- チャレンジ：AB＝AC、P は BC 上。PD⊥AB、PE⊥AC、BH⊥AC → PD＋PE＝BH ---- */
+  function feet(t) { var P = { A: [3, 4], B: [0, 0], C: [6, 0], P: [6 * t, 0] }; P.D = GE.foot(P.P, P.A, P.B); P.E = GE.foot(P.P, P.A, P.C); P.H = GE.foot(P.B, P.A, P.C); return P; }
+  [.1, .3, .5, .7, .9].forEach(function (t) { var P = feet(t); CH.check(GE.verify(P, 'PD＋PE＝BH') && GE.near(area(P, 'ABC'), area(P, 'ABP') + area(P, 'ACP')) && GE.near(area(P, 'ABP'), GE.len(P, 'AB') * GE.len(P, 'PD') / 2) && GE.near(area(P, 'ACP'), GE.len(P, 'AC') * GE.len(P, 'PE') / 2) && GE.near(area(P, 'ABC'), GE.len(P, 'AC') * GE.len(P, 'BH') / 2), 'チャレンジ：面積と PD＋PE＝BH（t＝' + t + '）'); });
+  var P8 = feet(.3);
+  CH.check(GE.near(GE.len(P8, 'PD'), 1.44) && GE.near(GE.len(P8, 'PE'), 3.36) && GE.near(GE.len(P8, 'BH'), 4.8), 'チャレンジ：1.44＋3.36＝4.8');
+  var DEF_CH = {
+    id: '第16時 チャレンジ', lv: 1, ttl: 'チャレンジ　垂線の長さの和',
+    q: 'AB＝AC の二等辺三角形 ABC で、BC 上の点 P から AB、AC に垂線 PD、PE をひき、B から AC に垂線 BH をひく。PD＋PE＝BH を証明しよう。', P: P8,
+    fig: { segs: ['AB', 'BC', 'CA', 'PD', 'PE'], dash: ['BH'], ticks: [['AB', 1], ['AC', 1]], rights: ['PDA', 'PEA', 'BHA'], dots: ['P'], dir: { A: 'n', B: 'sw', C: 'se', P: 's', D: 'nw', E: 'ne', H: 'ne' } },
+    hyp: 'AB＝AC、PD⊥AB、PE⊥AC、BH⊥AC', goal: 'PD＋PE＝BH',
+    plan: { q: 'どんな考え方を使うとよい？', a: '面積：△ABC を、AP で2つの三角形に分ける', b: '方針：面積で考える' },
+    L: [{ t: '△ABC＝△ABP＋△ACP', r: '△ABC を、線分 AP で2つに分けた', n: 1, hl: ['△ABP', '△ACP'], ex: function (D, F, a) { GE.seg(F, 'AP', { dash: true, col: C.chalk, w: 2, a: a }); } },
+      { t: '面積は　△ABC … AC×BH÷2、△ABP … AB×PD÷2、△ACP … AC×PE÷2', n: 2, ask: false, q: '3つの三角形の面積を、底辺 AB、AC と、垂線 BH、PD、PE で表すと？', a: '△ABC … AC×BH÷2、△ABP … AB×PD÷2、△ACP … AC×PE÷2', hl: ['BH', 'PD', 'PE'] },
+      { t: 'AB＝AC だから、①②より　BH＝PD＋PE', ask: false, q: 'AB＝AC を使うと、①②から何がいえる？', a: 'BH＝PD＋PE', sub: 'AC×BH÷2＝AC×PD÷2＋AC×PE÷2 の両辺を、AC÷2 でわる', hl: ['BH', 'PD PE'] }]
+  };
+
+  var steps = [
+    { tag: '今日の問い', bh: '今日の問い　PQ＋PR は？', q: 'AB＝AC＝5cm の二等辺三角形 ABC で、BC 上の点 P から、AC、AB に平行な線をひき、AB、AC との交点を Q、R とする。P の位置をかえると、PQ＋PR は、どうなるだろう。',
+      notes: ['① 自分の考え（3分）　ア、イ の PQ、PR をはかって、わかったこと。', '② ペアの考え（3分）　条件を1つ変えて、どうなるかを調べよう。'],
+      draw: function (D) { two(D); } },
+    { tag: '今日の問い', q: 'P の位置をかえると、PQ＋PR は、どうなる？', a: 'いつも 5cm（AB の長さ）', sub: 'ア PQ＝1.5cm、PR＝3.5cm　イ PQ＝3cm、PR＝2cm　どちらも和は 5cm', dur: 4,
+      sliders: [{ key: 't', label: 'P を動かす', min: .05, max: .95, step: .01, val: .3, anim: [.3, .85], fmt: function (x) { return 'BP ' + (6 * x).toFixed(1) + 'cm'; } }],
+      b: { t: 'PQ＋PR＝<b>5cm</b>（AB と同じ）… P の位置に関係なく変わらない', col: C.yel },
+      draw: function (D) {
+        if (!D.ph) { two(D); return; }
+        var F = big(D, D.V.t, { tape: true }), P = tri(D.V.t);
+        say(D, F.R.cx, F.R.y0 - F.s * .3, 'PQ ' + GE.len(P, 'PQ').toFixed(1) + ' ＋ PR ' + GE.len(P, 'PR').toFixed(1) + ' ＝ ' + (GE.len(P, 'PQ') + GE.len(P, 'PR')).toFixed(1) + '（cm）', { col: C.yel, maxW: F.R.w });
+      } },
+    { tag: 'ことば', bh: 'ことば', q: '二等辺三角形の2つの底角は？　2つの角が等しい三角形は？', a: '等しい。二等辺三角形', sub: '2組の対辺が平行な四角形は平行四辺形で、その対辺は等しい。平行線の同位角は等しい', dur: 2.5,
+      b: [{ t: '二等辺三角形の<b>底角</b>は等しい', col: C.green }, { t: '2つの角が等しい三角形は<b>二等辺三角形</b>', col: C.green }, { t: '2組の対辺が平行な四角形は<b>平行四辺形</b>、その<b>対辺</b>は等しい', col: C.green }, { t: '平行線の<b>同位角</b>は等しい', col: C.green }],
+      draw: function (D) {
+        var t = D.ph ? D.t : 0, a1 = CH.smooth(0, .3, t), a2 = CH.smooth(.35, .65, t), a3 = CH.smooth(.7, 1, t), F = big(D, .3);
+        GE.arc(F, 'ABC', { col: C.blue, fill: .4, a: a1 }); GE.arc(F, 'ACB', { col: C.blue, fill: .4, a: a1 });
+        GE.arc(F, 'QPB', { col: C.blue, fill: .4, a: a2 }); GE.par(F, 'PQ', 1, { col: C.blue, a: a2 }); GE.par(F, 'AC', 1, { col: C.blue, a: a2, shift: 1 });
+        GE.poly(F, 'AQPR', { col: C.green, fa: .2, a: a3 }); GE.par(F, 'PR', 2, { col: C.green, a: a3 }); GE.par(F, 'AB', 2, { col: C.green, a: a3, shift: 1 });
+      } }
+  ].concat(proof(DEF_EX, { tag: '例題' })).concat([
+    { tag: '考えよう', q: '正方形 ABCD の辺上に AE＝BF＝CG＝DH となる点 E、F、G、H をとると、四角形 EFGH は正方形になる。もとの四角形を、長方形・ひし形・平行四辺形にかえると、EFGH は、どんな四角形になるだろう。',
+      notes: ['予想してから、スライダーで確かめよう（EFGH の辺の長さと角が出る）。', '条件を変えても成り立つことと、成り立たなくなることを書こう。'],
+      sliders: [{ key: 'k', label: 'もとの四角形', min: 0, max: 3, step: 1, val: 1, fmt: function (x) { return BASES[x].n; } },
+        { key: 'x', label: 'AE＝BF＝CG＝DH', min: .2, max: 3, step: .1, val: 1.2, fmt: function (x) { return x.toFixed(1); } }],
+      draw: function (D) {
+        var P = efgh(D.V.k, D.V.x), R = box(D, { l: .06, r: .06, t: .12, b: .16 }), F = GE.fit(D, R, P, { keys: ['A', 'B', 'C', 'D'], pad: .12 }), s = F.s;
+        GE.poly(F, 'EFGH', { col: C.yel, fa: .2, stroke: false });
+        GE.figure(F, { segs: ['AB', 'BC', 'CD', 'DA', 'EF', 'FG', 'GH', 'HE'], ticks: [['AE', 1], ['BF', 1], ['CG', 1], ['DH', 1]], dots: ['E', 'F', 'G', 'H'], dir: { A: 'nw', B: 'sw', C: 'se', D: 'ne', E: 'w', F: 's', G: 'e', H: 'n' } });
+        ['EF', 'FG', 'GH', 'HE'].forEach(function (sg) { GE.seg(F, sg, { col: C.yel, w: 3 }); });
+        say(D, R.cx, R.y0 - s * .6, 'もとの四角形：' + BASES[D.V.k].n, { col: C.blue, maxW: R.w });
+        var L = function (k) { return GE.len(P, k).toFixed(2); }, A = function (k) { return Math.round(GE.ang(P, k)) + '°'; };
+        say(D, R.cx, R.y1 + s * .6, 'EF ' + L('EF') + '　FG ' + L('FG') + '　GH ' + L('GH') + '　HE ' + L('HE'), { col: C.yel, size: s * .9, maxW: R.w });
+        say(D, R.cx, R.y1 + s * 1.9, '∠HEF ' + A('HEF') + '　∠EFG ' + A('EFG') + '　∠FGH ' + A('FGH') + '　∠GHE ' + A('GHE'), { col: C.yel, size: s * .9, maxW: R.w });
+      } }
+  ]).concat(proof(DEF_CH, { tag: 'チャレンジ' }));
+
+  K3.run({
+    no: '第16時', title: '条件を変えて、新しい性質を見つけよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '15.html', label: '◀ 第15時' }, { href: '17.html', label: '第17時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ヒストグラムと度数折れ線</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="js/chart.js"></script>
+<script>
+/* データの活用 第2時：ヒストグラムと度数折れ線に表して、分布を読み取ろう（ikkan の lesson_data_new_02 と同じ流れ）。 */
+(function () {
+  var C = CH.C, E5 = [0, 5, 10, 15, 20, 25, 30, 35, 40], CA = [1, 4, 6, 8, 5, 3, 2, 1], CB = [0, 1, 4, 7, 9, 6, 2, 1];
+  var T = [12, 25, 8, 15, 31, 18, 6, 22, 15, 10, 17, 28, 13, 20, 4, 16, 24, 9, 38, 15, 19, 11, 27, 21, 14, 18, 34, 7, 12, 23];
+  CH.check(CH.bin(T, E5).join() === CA.join() && CH.sum(CB) === 30, '度数');
+  var HEAD = ['階級（分）', '0〜5', '5〜10', '10〜15', '15〜20', '20〜25', '25〜30', '30〜35', '35〜40'];
+  function pts(c) { var p = [[-2.5, 0]]; c.forEach(function (n, i) { p.push([E5[i] + 2.5, n]); }); p.push([42.5, 0]); return p; }
+  function ax(D, R, ymax) { var yt = []; for (var y = 0; y <= ymax; y += 2) yt.push(y); return CH.axes(D, R, { x: [-5, 45], y: [0, ymax], xt: E5, yt: yt, xl: '（分）', yl: '（人）' }); }
+  function chart(D, o) {
+    o = o || {}; var R = o.R || CH.box(D, { l: .1, t: .08, b: .14 }), Ax = ax(D, R, 10);
+    if (o.bars !== false) CH.bars(D, Ax, E5, o.c || CA, { col: o.col || C.blue, grow: o.grow, hl: o.hl, labels: o.labels, a: o.ba });
+    if (o.poly) CH.path(D, Ax, pts(o.c || CA), { t: o.poly, col: o.pcol || C.yel, glow: true });
+    return Ax;
+  }
+
+  K3.run({
+    no: '第2時', title: 'ヒストグラムと度数折れ線に表して、分布を読み取ろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '01.html', label: '◀ 第1時' }, { href: '03.html', label: '第3時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '1年A組30人の通学時間', q: 'A組30人の通学時間の度数分布表を、グラフに表したい。どうかくと、分布のようすが ひと目でわかるだろう。',
+        notes: ['① 自分の考え（3分）　軸と長方形が表すものも。', '② ペアの考え（3分）'],
+        draw: function (D) {
+          var R = CH.box(D, { t: .02, b: .1 }), rs = [CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .22), CH.rect(R.x0, R.y0 + R.h * .36, R.x1, R.y1)];
+          CH.table(D, rs[0], HEAD, [['度数（人）'].concat(CA)], { fw: .16 });
+          ax(D, rs[1], 10);
+        } },
+      { tag: '今日の問い', q: '横の軸に階級、縦の軸に度数をとって、長方形で表すと？', a: 'ヒストグラム', sub: '長方形の幅は 階級の幅、高さは 度数。長方形の間は あけない', dur: 3,
+        b: { t: '長方形の幅 … 階級の幅、高さ … 度数（間を あけない）', col: C.blue },
+        draw: function (D) { chart(D, { grow: function (i) { return D.ph ? CH.easeOut(CH.clamp(D.t * 1.6 - i * .1, 0, 1)) : 0; }, labels: D.ph }); } },
+      { tag: 'ことば', bh: 'ことば', q: '度数分布表を表したグラフ、長方形の上の辺の中点を結んだ線を、それぞれ何という？', a: 'ヒストグラム・度数折れ線',
+        sub: '折れ線の両はしは、度数 0 の階級を考えて、横の軸まで結ぶ', dur: 3,
+        b: [{ t: '度数分布表のグラフ … <b>ヒストグラム</b>', col: C.green }, { t: '上の辺の中点を結ぶ … <b>度数折れ線</b>（両はしは 横の軸まで）', col: C.green }],
+        draw: function (D) { var Ax = chart(D, { poly: D.ph ? D.t : 0, ba: .7 }); if (D.ph && D.t > .9) { CH.text(D, Ax.X(-2.5), Ax.Y(0) - Ax.s * 1.3, '度数 0', { size: Ax.s * .9, col: C.yel }); CH.text(D, Ax.X(42.5), Ax.Y(0) - Ax.s * 1.3, '度数 0', { size: Ax.s * .9, col: C.yel }); } } },
+      { tag: '例題', bh: '例題　B組30人の通学時間', q: 'B組のヒストグラムに、度数折れ線をかくと？', a: '中点を順に結ぶ', dur: 3,
+        draw: function (D) { chart(D, { c: CB, col: C.orange, poly: D.ph ? D.t : 0, pcol: C.orange, labels: true, ba: .8 }); } },
+      { tag: '例題', q: 'A組とくらべて、B組の分布は どうちがう？（山の位置・すその のび方）', a: 'B組のほうが、山が右にある', sub: 'A組の山は 15〜20分、B組の山は 20〜25分。B組は 通学時間の長い人が多い', dur: 3,
+        b: { t: 'A組の山 15〜20分、B組の山 20〜25分 → B組のほうが <b>山が右</b>', col: C.orange },
+        draw: function (D) {
+          var Ax = chart(D, { bars: false });
+          CH.path(D, Ax, pts(CA), { col: C.blue, glow: true }); CH.path(D, Ax, pts(CB), { col: C.orange, glow: true, t: D.ph ? 1 : 1 });
+          CH.text(D, Ax.X(17.5), Ax.Y(8) - Ax.s * 1.4, 'A組', { col: C.blue }); CH.text(D, Ax.X(22.5), Ax.Y(9) - Ax.s * 1.4, 'B組', { col: C.orange });
+          if (D.ph) { var a = CH.smooth(.2, .6, D.t); CH.arrow(D, Ax.X(17.5), Ax.Y(9.6), Ax.X(22.5) - 6, Ax.Y(9.6), { col: C.yel, a: a, w: 3 }); }
+        } },
+      { tag: '考えよう', q: 'ヒストグラムは、棒グラフとちがって、長方形の間を あけずにかく。なぜだろう。',
+        notes: ['2つのグラフの 横の軸は、それぞれ何を表しているだろう。', '長方形の間を あけないのは、なぜだろう。説明しよう。', 'スライダーで、ヒストグラムに すきまを入れてみられます。'],
+        sliders: [{ key: 'g', label: 'すきま', min: 0, max: .5, step: .05, val: 0, fmt: function (x) { return Math.round(x * 100) + '%'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .08, t: .1, b: .16 }), rs = CH.split(D, R, 2, .14);
+          var A1 = CH.axes(D, rs[0], { x: [0, 5], y: [0, 12], xt: [], yt: [0, 4, 8, 12], yl: '（人）' }), sub = ['国語', '数学', '英語', '理科', '社会'];
+          CH.bars(D, A1, [0, 1, 2, 3, 4, 5], [6, 9, 5, 7, 3], { col: C.lav, gap: .35 }); sub.forEach(function (s, i) { CH.text(D, A1.X(i + .5), A1.R.y1 + A1.s, s, { size: A1.s }); });
+          CH.text(D, rs[0].cx, rs[0].y0 - A1.s * 2.6, '好きな教科（棒グラフ）', { size: A1.s * 1.1 });
+          var A2 = CH.axes(D, rs[1], { x: [0, 40], y: [0, 10], xt: [0, 10, 20, 30, 40], yt: [0, 2, 4, 6, 8, 10], xl: '（分）', yl: '（人）' });
+          CH.bars(D, A2, E5, CA, { col: C.blue, gap: D.V.g });
+          CH.text(D, rs[1].cx, rs[1].y0 - A2.s * 2.6, '通学時間（ヒストグラム）', { size: A2.s * 1.1 });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'A組のヒストグラムで、① 長方形の面積の和は？（面積は「分×人」）② 度数折れ線と横の軸で囲まれた部分の面積も ① と等しい。そのわけは？',
+        a: '① 5 × 30 ＝ 150　② はみ出す三角形と へこむ三角形が 合同だから', sub: '境目の線のところで、はみ出す部分（桃）と へこむ部分（青）は 合同な三角形。入れかえても面積は変わらない', dur: 5,
+        b: { t: '① 5×30＝<b>150</b>　② はみ出す三角形 ＝ へこむ三角形（合同）', col: C.orange },
+        draw: function (D) {
+          var Ax = chart(D, { poly: 1, ba: .75 }), P = pts(CA), t = D.ph ? D.t : 0;
+          var hh = [0].concat(CA, [0]), xs = [-2.5].concat(E5.slice(0, 8).map(function (x) { return x + 2.5; }), [42.5]);
+          for (var i = 0; i < hh.length - 1; i++) {
+            var e = (xs[i] + xs[i + 1]) / 2, m = (hh[i] + hh[i + 1]) / 2;
+            if (hh[i] === hh[i + 1]) continue;
+            var tri1 = [[xs[i], hh[i]], [e, hh[i]], [e, m]], tri2 = [[e, m], [e, hh[i + 1]], [xs[i + 1], hh[i + 1]]];
+            var out = hh[i] > hh[i + 1] ? tri2 : tri1, inn = hh[i] > hh[i + 1] ? tri1 : tri2;
+            var c = [Ax.X(e), Ax.Y(m)], ang = Math.PI * CH.ease(CH.clamp((t - .15) / .6, 0, 1));
+            var Q = out.map(function (p) { var x = Ax.X(p[0]) - c[0], y = Ax.Y(p[1]) - c[1]; return [c[0] + x * Math.cos(ang) - y * Math.sin(ang), c[1] + x * Math.sin(ang) + y * Math.cos(ang)]; });
+            if (t > 0) { CH.poly(D, inn.map(function (p) { return [Ax.X(p[0]), Ax.Y(p[1])]; }), { fill: 'rgba(154,216,255,.55)', a: 1 - CH.smooth(.75, .9, t) }); CH.poly(D, Q, { fill: 'rgba(255,157,178,.75)', stroke: C.pink, sw: 1.2 }); }
+          }
+          if (t > .85) CH.text(D, Ax.X(20), Ax.Y(9.6), '面積は どちらも 5 × 30 ＝ 150', { col: C.yel, a: CH.smooth(.85, 1, t) });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>どちらが得か</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 相似な図形 第19時：どちらが得か、相似を使って判断しよう（ikkan の lesson_souji_19 と同じ流れ）。
+   ピザ M（直径 20cm・1000円）と L（直径 30cm・2000円）：量（面積）2.25倍 ＞ 値段 2倍 → L が得。
+   例題は球の形のパン（3D。体積 3.375倍 ＞ 値段 3倍 → 大が得）と、お好み焼き（面積 2.25倍 ＜ 値段 2.5倍 → 小が得）。
+   チャレンジは相似なコップ（円錐台。3D）。どの問題も「量の倍率」と「値段の倍率」の帯をならべてくらべる。
+   考えようは、ホットケーキの直径を変える道具だけ（面積の倍率は出さない）。数値は ikkan のまま。
+   量は、円の面積・球の体積・円錐台の体積を公式で直接計算し、「1円あたりの量」でもくらべて照らし合わせる（CH.check）。 */
+(function () {
+  var C = CH.C, K = K3, v = K3.v, OUT = 'rgba(20,40,30,.9)', PIZZA = '#f2c46d', BREAD = '#e0a85a', JUICE = '#ffb347';
+  /* ---- 量の道具（π は約分されるので、係数でくらべる） ---- */
+  function circ(d) { return (d / 2) * (d / 2); }
+  function ball(d) { return Math.pow(d / 2, 3) * 4 / 3; }
+  function frus(R, r, h) { return h / 3 * (R * R + R * r + r * r); }
+  function per(q, p) { return q / p; }
+  /* ---- 描く道具（このページの中だけ） ---- */
+  function pizza(D, F, c, r, o) {
+    o = o || {}; var p = F.X(c), R = r * F.u;
+    CH.circle(D, p[0], p[1], R, { fill: o.col || PIZZA, a: o.a }); CH.circle(D, p[0], p[1], R, { stroke: o.crust || '#c9863a', sw: Math.max(3, R * .08), a: o.a });
+    if (o.top !== false) for (var i = 0; i < 7; i++) { var a = i * 2.4 + .5, rr = R * (i % 2 ? .55 : .3) * (i === 6 ? 0 : 1); CH.circle(D, p[0] + rr * Math.cos(a), p[1] + rr * Math.sin(a), R * .12, { fill: '#c0503c', a: o.a == null ? .9 : o.a * .9 }); }
+    if (o.dia) { CH.line(D, p[0] - R, p[1], p[0] + R, p[1], { col: '#2a2017', w: 2, dash: [5, 4], a: o.a }); }
+  }
+  function under(F, c, r, row, s, o) { o = o || {}; var q = F.X([c[0], c[1] - r]); CH.text(F.D, q[0], q[1] + F.s * (.9 + row * 1.25), s, { size: F.s * (o.size || 1), col: o.col, a: o.a, outline: OUT }); }
+  /* 量の倍率と、値段の倍率の帯。it：{ q（量の倍率）, p（値段の倍率）, qs, ps, big（大きいほうの名前）, win（得なほう）, why } */
+  function cmp(D, R, it, t) {
+    var fs = Math.min(CH.fs(D, .9), R.h / 5.2), lw = R.w * .2, u = (R.w - lw - fs * 5.5) / Math.max(it.q, it.p), x0 = R.x0 + lw, h = Math.min(fs * 1.6, R.h / 4.5), e1 = CH.ease(CH.smooth(0, .3, t)), e2 = CH.ease(CH.smooth(.3, .6, t));
+    var rows = [[it.big + ' の量', it.q, e1, C.blue, it.qs], [it.big + ' の値段', it.p, e2, C.pink, it.ps]];
+    rows.forEach(function (r, j) {
+      var y = R.y0 + j * h * 1.55; if (r[2] <= 0) return;
+      CH.text(D, x0 - fs * .5, y + h / 2, r[0], { size: fs, align: 'right', col: r[3] });
+      CH.fillRect(D, x0, y, x0 + u * r[1] * r[2], y + h, { fill: 'rgba(' + (j ? '255,157,178' : '154,216,255') + ',.35)', stroke: r[3] });
+      for (var k = 1; k < r[1] * r[2]; k++) CH.line(D, x0 + u * k, y + 2, x0 + u * k, y + h - 2, { col: r[3], w: 1.2, dash: [3, 3] });
+      if (r[2] >= 1) CH.text(D, x0 + u * r[1] + fs * .4, y + h / 2, r[4], { size: fs, align: 'left', col: r[3] });
+    });
+    CH.line(D, x0 + u, R.y0 - fs * .4, x0 + u, R.y0 + h * 2.55 + fs * .2, { col: 'rgba(242,240,230,.6)', w: 1.4, dash: [5, 4], a: e1 });
+    CH.text(D, x0 + u, R.y0 - fs * .9, '小さいほう＝1', { size: fs * .8, col: 'rgba(242,240,230,.8)', a: e1 });
+    if (t > .65) CH.text(D, R.cx, R.y0 + h * 3.55, it.why, { size: Math.min(fs * 1.05, CH.fitSize(D, it.why, R.w * .98, fs * 1.05)), col: C.yel, a: CH.smooth(.65, .78, t) });
+  }
+  function rows2(D, k) { var B = CH.box(D, { l: .04, r: .04, t: .1, b: .04 }); return { top: CH.rect(B.x0, B.y0, B.x1, B.y0 + B.h * (k || .56)), bot: CH.rect(B.x0 + B.w * .02, B.y0 + B.h * ((k || .56) + .08), B.x1, B.y1) }; }
+  /* 立体の字（label）を、黒板の字の大きさにそろえる */
+  function big(D) { var k = Math.max(1, CH.fs(D) * .85 / D.fs), L = D.label; D.label = function (p, t, o) { o = Object.assign({}, o); o.size = (o.size || 1) * k; L(p, t, o); }; return D; }
+  function depth(D, p) { return v.dot(v.sub(p, D.C.pos), D.C.f); }
+
+  /* ---- 今日の問い：ピザ M（直径 20・1000円）、L（直径 30・2000円） ---- */
+  CH.check(circ(20) === 100 && circ(30) === 225 && circ(30) / circ(20) === 2.25 && 2000 / 1000 === 2 && per(circ(30), 2000) > per(circ(20), 1000) && CH.near(per(circ(20), 1000), .1) && CH.near(per(circ(30), 2000), .1125), '今日の問い：L が得');
+  function pizzas(D, R, o) {
+    o = o || {}; var F = GE.fit(D, CH.rect(R.x0, R.y0, R.x1, R.y1 - CH.fs(D) * 2.6), { a: [-10.5, -15.5], b: [43.5, 15.5] }, { pad: .01 });
+    pizza(D, F, [0, 0], 10, { dia: true }); pizza(D, F, [28, 0], 15, { dia: true });
+    var p1 = F.X([0, 0]), p2 = F.X([28, 0]);
+    CH.text(D, p1[0], p1[1] - F.s * .9, '20cm', { size: F.s * .85, col: '#2a2017' }); CH.text(D, p2[0], p2[1] - F.s * .9, '30cm', { size: F.s * .85, col: '#2a2017' });
+    under(F, [0, 0], 10, 0, 'M　1000円', { col: C.chalk }); under(F, [28, 0], 15, 0, 'L　2000円', { col: C.chalk });
+    return F;
+  }
+  /* ---- 例題：球のパン 小（直径 8・120円）、大（直径 12・360円） ---- */
+  CH.check(CH.near(ball(8), 256 / 3) && ball(12) === 288 && CH.near(ball(12) / ball(8), 3.375) && 360 / 120 === 3 && per(ball(12), 360) > per(ball(8), 120), '例題：大が得');
+  CH.check(Math.abs(volM(K.sphere(6)) / volM(K.sphere(4)) - 3.375) < 1e-9, '例題：体積の比（立体の面から）');
+  function volM(m) { var s = 0; m.F.forEach(function (f) { var P = f.v.map(function (k) { return m.V[k]; }); for (var i = 1; i < P.length - 1; i++) s += v.dot(P[0], v.cross(P[i], P[i + 1])) / 6; }); return Math.abs(s); }
+  /* ---- 例題（2）：お好み焼き 小（直径 12・300円）、大（直径 18・750円） ---- */
+  CH.check(circ(18) / circ(12) === 2.25 && 750 / 300 === 2.5 && per(circ(12), 300) > per(circ(18), 750) && CH.near(per(circ(12), 300), .12) && CH.near(per(circ(18), 750), .108), '例題（2）：小が得');
+  /* ---- 考えよう：ホットケーキ（答えは出さない） ---- */
+  CH.check([1.2, 1.3, 1.4, 1.5].map(function (k) { return Math.round(k * k * 100) / 100; }).join() === '1.44,1.69,1.96,2.25' && 1.4 * 1.4 < 2 && 1.5 * 1.5 > 2, '考えよう（ここで確かめるだけ）');
+  /* ---- チャレンジ：コップ A（上の半径 3・下の半径 2・高さ 8、120円）、B（1.5倍、450円） ---- */
+  CH.check(CH.near(frus(4.5, 3, 12) / frus(3, 2, 8), 3.375) && 450 / 120 === 3.75 && per(frus(3, 2, 8), 120) > per(frus(4.5, 3, 12), 450), 'チャレンジ：A が得');
+  function cup(r1, r2, h) { return K.revolve([[0, 0, 'bot'], [r1, 0, 'side'], [r2, h, 'rim'], [0, h]]); }
+  CH.check(CH.near(volM(cup(3, 4.5, 12)) / volM(cup(2, 3, 8)), 3.375), 'チャレンジ：体積の比（立体の面から）');
+
+  K3.run({
+    no: '第19時', title: 'どちらが得か、相似を使って判断しよう', model: K.frame([0, 0, 0], 10), view: { th: -78, ps: 16 }, hint: 'パン・コップの場面は、ドラッグで回せます',
+    links: [{ href: 'index.html', label: '目次' }, { href: '18.html', label: '◀ 第18時' }, { href: '20.html', label: '第20時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: 'ピザ M（直径 20cm、1000円）と L（直径 30cm、2000円）', q: '円形のピザ M（直径 20cm、1000円）と L（直径 30cm、2000円）がある。厚さは同じ。値段のわりに量が多くて「得」なのは、どちらだろう。理由も説明しよう。',
+        notes: ['① 自分の考え（3分）　判断と、その理由を書こう。', '② ペアの考え（3分）　自分とちがう考え方を書こう。'],
+        draw: function (D) { pizzas(D, CH.box(D, { l: .06, r: .06, t: .12, b: .08 })); } },
+      { tag: '今日の問い', q: 'L の量は M の何倍？ 値段は何倍？ どちらが得？', a: 'L が得（量 2.25倍 ＞ 値段 2倍）', sub: '直径の比 2：3、面積の比 4：9 → L の量は M の 9/4＝2.25倍。値段は 2倍。1円あたり M 100π÷1000＝0.1π、L 225π÷2000＝0.1125π（cm²）', dur: 5,
+        b: { t: '面積の比 4：9 → L の量は <b>2.25倍</b> ＞ 値段 2倍 → <b>L が得</b>', col: C.yel },
+        draw: function (D) { var L = rows2(D, .5); pizzas(D, L.top); cmp(D, L.bot, { q: 2.25, p: 2, qs: '2.25倍', ps: '2倍', big: 'L', why: '量 2.25倍 ＞ 値段 2倍　→　L が得' }, D.ph ? D.t : 0); } },
+      { tag: 'ことば', bh: 'ことば', q: '「どちらが得か」をくらべるとき、平らなもの（厚さが同じ）と、立体のものは、それぞれ何の比を使う？', a: '平らなもの … 面積の比、立体 … 体積の比',
+        sub: '相似比 m：n のとき、面積の比 m²：n²、体積の比 m³：n³。量の倍率と、値段の倍率をくらべる', dur: 1,
+        b: [{ t: '厚さが同じ → 量は <b>面積</b> に比例（m²：n²）', col: C.green }, { t: '立体 → 量は <b>体積</b> の比（m³：n³）', col: C.green }, { t: '量の倍率 と 値段の <b>倍率</b> をくらべる', col: C.green }],
+        draw: function (D) {
+          var B = CH.box(D, { l: .04, r: .04, t: .1, b: .06 }), cs = CH.split(D, B, 2, .08), fs = CH.fs(D);
+          var F = GE.fit(D, CH.rect(cs[0].x0, cs[0].y0, cs[0].x1, cs[0].y1 - fs * 3), { a: [-6, -6], b: [6, 6] }, { pad: .02 }); pizza(D, F, [0, 0], 5.5);
+          var S = D.sub(cs[1].cx, cs[1].cy - fs * 1.5, Math.min(cs[1].w, cs[1].h - fs * 3) / 2, K.frame([0, 0, 0], 5)); S.mesh(K.sphere(4.6), { col: BREAD });
+          [[cs[0], '平ら（ピザ）', '面積 → 2乗'], [cs[1], '立体（球のパン）', '体積 → 3乗']].forEach(function (q) { CH.text(D, q[0].cx, q[0].y1 - fs * 2, q[1], { size: fs * .95 }); if (D.ph) CH.text(D, q[0].cx, q[0].y1 - fs * .7, q[2], { size: fs, col: C.yel }); });
+        } },
+      { tag: '例題', bh: '例題　球の形のパン', q: '球の形のパンに、小（直径 8cm、120円）と大（直径 12cm、360円）がある。中身のつまり方は同じ。値段のわりに量が多いのは、どちら？',
+        a: '大（量 3.375倍 ＞ 値段 3倍）', sub: '相似比 8：12＝2：3、体積の比 8：27 → 大の量は 27÷8＝3.375倍。値段は 360÷120＝3倍', dur: 7,
+        b: { t: '体積の比 8：27 → 大の量は <b>3.375倍</b> ＞ 値段 3倍 → <b>大が得</b>', col: C.blue },
+        banner: function (s) { return s.ph && s.t < .45 ? '1.5倍に拡大すると、体積は 1.5×1.5×1.5＝3.375倍' : ''; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, L = rows2(D, D.ph ? .56 : .9), fs = CH.fs(D), S = big(D.sub(L.top.cx, L.top.cy, Math.min(L.top.w * .62, L.top.h) / 2, K.frame([-.5, 0, 0], 6.6)));
+          var balls = [[-6, 4, '小　120円'], [5, 6, '大　360円']];
+          balls.map(function (b, i) { return { i: i, z: depth(S, [b[0], 0, 0]) }; }).sort(function (a, b) { return b.z - a.z; }).forEach(function (o) { var b = balls[o.i]; S.mesh(K.sphere(b[1]), { at: [b[0], 0, 0], col: BREAD }); });
+          if (t > .02 && t < .5) { var e = CH.ease(CH.smooth(.05, .42, t)); S.mesh(K.sphere(4), { at: [v.lerp(-6, 5, e), 0, 0], s: 1 + .5 * e, col: C.yel, a: .35 }); }
+          balls.forEach(function (b) { S.label([b[0], 0, -b[1]], b[2], { dy: 1.3, size: 1.1 }); S.label([b[0], 0, 0], '直径 ' + 2 * b[1] + 'cm', { col: '#2a2017', plain: true }); });
+          if (D.ph) cmp(D, L.bot, { q: 3.375, p: 3, qs: '3.375倍', ps: '3倍', big: '大', why: '量 3.375倍 ＞ 値段 3倍　→　大が得' }, CH.smooth(.45, 1, t));
+        } },
+      { tag: '例題', bh: '例題（2）　お好み焼き', q: '（2）円形のお好み焼きに、小（直径 12cm、300円）と大（直径 18cm、750円）がある。厚さは同じ。値段のわりに量が多いのは、どちら？',
+        a: '小（量 2.25倍 ＜ 値段 2.5倍）', sub: '相似比 2：3、面積の比 4：9 → 大の量は 2.25倍。値段は 750÷300＝2.5倍。大きいほうが、いつも得とはかぎらない', dur: 5,
+        b: { t: '大の量 2.25倍 ＜ 値段 2.5倍 → <b>小が得</b>（大きいほうが得とはかぎらない）', col: C.blue },
+        draw: function (D) {
+          var L = rows2(D, D.ph ? .5 : .9), F = GE.fit(D, CH.rect(L.top.x0, L.top.y0, L.top.x1, L.top.y1 - CH.fs(D) * 2.6), { a: [-6.5, -9.5], b: [26.5, 9.5] }, { pad: .01 });
+          pizza(D, F, [0, 0], 6, { col: '#d9a35e', crust: '#8a5a2b', top: false, dia: true }); pizza(D, F, [17, 0], 9, { col: '#d9a35e', crust: '#8a5a2b', top: false, dia: true });
+          [[0, 6, '小　300円', '12cm'], [17, 9, '大　750円', '18cm']].forEach(function (q) { var p = F.X([q[0], 0]); under(F, [q[0], 0], q[1], 0, q[2]); CH.text(D, p[0], p[1] - F.s * .9, q[3], { size: F.s * .85, col: '#2a2017' }); });
+          if (D.ph) cmp(D, L.bot, { q: 2.25, p: 2.5, qs: '2.25倍', ps: '2.5倍', big: '大', why: '量 2.25倍 ＜ 値段 2.5倍　→　小が得' }, D.t);
+        } },
+      { tag: '考えよう', q: '円形のホットケーキを、厚さを変えずに、ちょうど 2倍の材料で大きく焼きたい。直径を、もとの何倍にすればよいだろう。',
+        notes: ['直径の倍率が 1.2倍・1.3倍・1.4倍・1.5倍 のとき、面積（材料）の倍率を表にまとめよう。', '表から気づいたこと。直径を何倍にすればよいか、理由もそえて。', 'スライダーで、直径の倍率を変えられます。'],
+        sliders: [{ key: 'k', label: '直径の倍率', min: 1, max: 1.6, step: .01, val: 1.2, fmt: function (x) { return x.toFixed(2) + '倍'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .1, b: .06 }), F = GE.fit(D, CH.rect(R.x0, R.y0, R.x1, R.y1 - CH.fs(D) * 2.6), { a: [-5.5, -8.5], b: [23.5, 8.5] }, { pad: .01 }), k = D.V.k;
+          pizza(D, F, [0, 0], 5, { col: '#e8b86d', crust: '#a86d2f', top: false, dia: true }); pizza(D, F, [7 + 8, 0], 5 * k, { col: '#e8b86d', crust: '#a86d2f', top: false, dia: true });
+          under(F, [0, 0], 5, 0, 'もとの大きさ'); under(F, [15, 0], 5 * k, 0, '直径 ' + k.toFixed(2) + '倍', { col: C.yel });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ　相似なコップ', q: '同じ形（相似）のコップ A、B があり、高さは 8cm と 12cm。いっぱいに入れたジュースの値段は、A が 120円、B が 450円。① B の量は A の何倍？ ② 値段のわりに量が多いのは、どちら？',
+        a: '① 3.375倍　② A', sub: '相似比 8：12＝2：3、体積の比 8：27 → B の量は 27/8＝3.375倍。値段は 450÷120＝3.75倍。3.375 ＜ 3.75 だから A のほうが得', dur: 6,
+        b: { t: '① 体積の比 8：27 → <b>3.375倍</b>　② 値段 3.75倍 ＞ 量 3.375倍 → <b>A が得</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, L = rows2(D, D.ph ? .56 : .9), S = big(D.sub(L.top.cx, L.top.cy, Math.min(L.top.w * .62, L.top.h) / 2, K.frame([0, 0, 6], 7.2)));
+          var cs = [[-5.5, 1, 'A　120円', '8cm'], [5, 1.5, 'B　450円', '12cm']];
+          cs.map(function (c, i) { return { i: i, z: depth(S, [c[0], 0, 4 * c[1]]) }; }).sort(function (a, b) { return b.z - a.z; }).forEach(function (o) {
+            var c = cs[o.i]; S.mesh(cup(2 * c[1] * .97, 3 * c[1] * .97, 8 * c[1] * .94), { at: [c[0], 0, .05], col: JUICE, a: .85, edges: false });
+            S.mesh(cup(2 * c[1], 3 * c[1], 8 * c[1]), { at: [c[0], 0, 0], col: '#d8e6ef', a: .22, edgeCol: 'rgba(242,240,230,.8)', ew: 1.2 });
+          });
+          cs.forEach(function (c) { S.label([c[0], -2 * c[1], 0], c[2], { dy: 1.2, size: 1.1 }); S.dim([c[0] + 3 * c[1], 0, 0], [c[0] + 3 * c[1], 0, 8 * c[1]], c[3], { off: [1, 0, 0], dx: 1.6 }); });
+          if (D.ph) cmp(D, L.bot, { q: 3.375, p: 3.75, qs: '3.375倍', ps: '3.75倍', big: 'B', why: '量 3.375倍 ＜ 値段 3.75倍　→　A が得' }, t);
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

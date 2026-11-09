@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>線や面を動かして立体</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/board.css">
+</head>
+<body>
+<script src="js/k3.js"></script>
+<script>
+/* 空間図形 第5時：線や面を動かして、立体をつくろう（ikkan の lesson_kukan_new_05 と同じ流れ）。
+   図形は [軸からのきょり, 高さ] の点で表し、z 軸（直線 ℓ）のまわりに回す（K3.revolve）。 */
+(function () {
+  var C = K3.COL, v = K3.v, DEG = v.DEG, K = K3;
+  var FR = K.frame([0, 0, 2.5], 3.9), TH0 = 30 * DEG;
+  var RECT = [[0, 0], [2, 0], [2, 3], [0, 3]], TRI = [[0, 0], [3, 0], [0, 4]], SEMI = K.arcPts(0, 2, 2, -Math.PI / 2, Math.PI / 2, 24, 'sph'),
+    TRAP = [[0, 0], [2, 0], [1, 3], [0, 3]], KTRI = [[0, 0], [2.4, 1.8], [0, 5]], RING = [[2, 0], [5, 0], [5, 5], [2, 5], [2, 0]];
+
+  /* 軸 ℓ と、図形 prof を deg 度まわしたところ（通ったあとの立体も） */
+  function spin(D, prof, deg, o) {
+    o = o || {}; var th = deg * DEG, ang = TH0 - th, z1 = -.6, z2 = (o.top || 5) + .8;
+    D.seg([0, 0, z1], [0, 0, z2], { col: C.chalk, dash: true, w: D.lw * .9 });
+    D.label([0, 0, z2], 'ℓ', { col: C.chalk, dy: -.6 });
+    if (th > .3 * DEG) D.mesh(K.revolve(prof, { from: ang, sweep: Math.min(th, v.TAU), seg: 72 }), { col: o.col || C.blue, a: th >= v.TAU - 1e-6 ? 1 : .82, edgeCol: 'rgba(32,24,16,.6)' });
+    var fade = 1 - v.smooth(330, 360, deg);
+    if (o.shape !== false && fade > .01) {
+      var P = D.flat(prof, ang);
+      D.poly(P, { col: o.scol || C.yel, a: (th > 0 ? .5 : .3) * fade, stroke: o.scol || C.yel, sa: fade, sw: D.lw * 1.6 });
+    }
+    return ang;
+  }
+  /* 図形の辺の長さ（図形が向き ang にあるとき） */
+  function lab(D, ang, p, q, txt, o) { var P = D.flat([p, q], ang); D.dim(P[0], P[1], txt, Object.assign({ col: C.yel }, o || {})); }
+  function coin(D, t) {
+    var N = 12, hc = 3 / N, k = t * (N + 2);
+    for (var i = 0; i < N; i++) {
+      var a = v.clamp(k - i, 0, 1); if (a <= 0) continue;
+      var z = i * hc + (1 - v.easeOut(a)) * 1.8;
+      D.mesh(K.cylinder(1.6, hc * .82), { at: [0, 0, z], col: '#f2c14e', a: Math.min(1, a * 1.5) * (1 - v.smooth(.85, 1, t) * .9) });
+    }
+    if (t > .85) D.mesh(K.cylinder(1.6, 3), { col: C.blue, a: v.smooth(.85, 1, t) });
+  }
+  function two(D, left, right, labs) {
+    var g = D.grid(2, { cols: [2, 1] });
+    [left, right].forEach(function (fn, i) {
+      var p = g.pos[i], S = D.sub(p.cx, p.cy, g.size / 2, K.frame([0, 0, 2], 3.2));
+      fn(S); D.text(p.cx, p.ly, labs[i], { size: .9 });
+    });
+  }
+
+  K.run({
+    no: '第5時', title: '線や面を動かして、立体をつくろう',
+    model: FR, view: { th: -60, ps: 16 },
+    links: [{ href: 'index.html', label: '目次' }, { href: '04.html', label: '◀ 第4時' }, { href: '06.html', label: '第6時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '動かして できる立体',
+        q: 'コインを積み重ねるとき、長方形を回すとき、どんな立体ができるだろう。',
+        notes: ['① 自分の考え（3分）　2つをくらべて、気づいたことも。', '② ペアの考え（3分）'],
+        draw: function (D) { two(D, function (S) { coin(S, .09); }, function (S) { spin(S, RECT, 0); }, ['コインを積み重ねる', '長方形を回す']); } },
+
+      { tag: '今日の問い', q: 'コインを積み重ねると、どんな立体？', a: '円柱', sub: '円を、その面に 垂直な方向に 動かしたあと', dur: 3.6,
+        b: { t: '積み重ねる … 円柱（円を、面に垂直に動かしたあと）', col: C.yel },
+        draw: function (D) { two(D, function (S) { coin(S, D.ph ? D.t : .09); }, function (S) { spin(S, RECT, 0); }, ['コインを積み重ねる', '長方形を回す']); } },
+
+      { tag: '今日の問い', q: '長方形を、辺を軸に 1回転させると？', a: '円柱', sub: '長方形が 動いたあと。動かし方がちがっても、同じ立体ができる', dur: 3.6,
+        b: { t: '回転させる … 円柱（長方形が回ったあと）', col: C.yel },
+        draw: function (D) { two(D, function (S) { coin(S, 1); }, function (S) { spin(S, RECT, D.ph ? 360 * v.ease(D.t) : 0); }, ['コインを積み重ねる', '長方形を回す']); } },
+
+      { tag: 'ことば', q: '三角形を、その面に 垂直に 動かすと？', a: '三角柱', sub: '底面を、面に垂直に動かすと、角柱・円柱ができる', dur: 2.6,
+        b: { t: '底面を 面に<b>垂直</b>に動かす → 角柱・円柱', col: C.green },
+        draw: function (D) {
+          var h = .02 + 3 * v.ease(D.ph ? D.t : 0), base = K.regPoly(3, 1.7);
+          if (h > .05) D.mesh(K.prism(base, h), { col: C.orange, a: .9 });
+          D.poly(base.map(function (p) { return [p[0], p[1], h]; }), { col: C.yel, a: .55, stroke: C.yel, sa: 1, sw: D.lw * 1.6 });
+          if (D.ph) D.seg([0, 0, h], [0, 0, h + .9], { col: C.yel, w: D.lw * 2 });
+        } },
+
+      { tag: 'ことば', q: '直線を軸に 平面図形を回してできる立体を、何という？', a: '回転体',
+        sub: '軸にした直線を <b>回転の軸</b>、円柱・円錐の側面をつくる線分を <b>母線</b> という', dur: 3.2,
+        b: { t: '平面図形を 1回転 → <b>回転体</b>（軸 … 回転の軸、側面をつくる線分 … 母線）', col: C.green },
+        draw: function (D) {
+          var deg = D.ph ? 360 * v.ease(D.t) : 0, ang = spin(D, TRI, deg, { top: 4 });
+          var P = D.flat(TRI, ang);
+          D.seg(P[1], P[2], { col: C.pink, w: D.lw * 2.6, glow: true });
+          if (D.ph) for (var k = 1; k < 8; k++) { var a2 = ang + k * 45 * DEG; if (a2 > TH0) break; var Q = D.flat(TRI, a2); D.seg(Q[1], Q[2], { col: C.pink, w: D.lw, a: .7 }); }
+          D.label(v.lerp3(P[1], P[2], .55), '母線', { col: C.pink, dx: 1.4, size: .9 });
+          D.label([0, 0, 4.8], '回転の軸', { col: C.chalk, dx: 2, size: .9 });
+        } },
+
+      { tag: '例題', bh: '例題　ℓ を軸に 1回転させる', q: '（1）この長方形を回すと、どんな立体？ 円の半径は？', a: '円柱（半径 2cm）', dur: 3.2,
+        b: { t: '（1）円柱　半径 2cm', col: C.blue },
+        draw: function (D) { var ang = spin(D, RECT, D.ph ? 360 * v.ease(D.t) : 0, { top: 3 }); lab(D, ang, [0, -.35], [2, -.35], '2cm'); lab(D, ang, [2.35, 0], [2.35, 3], '3cm', { dx: 1.2 }); } },
+
+      { tag: '例題', q: '（2）この直角三角形を回すと？', a: '円錐（半径 3cm）', sub: '3cm の辺が、底面の円の半径になる', dur: 3.2,
+        b: { t: '（2）円錐　半径 3cm', col: C.blue },
+        draw: function (D) { var ang = spin(D, TRI, D.ph ? 360 * v.ease(D.t) : 0, { top: 4 }); lab(D, ang, [0, -.35], [3, -.35], '3cm'); lab(D, ang, [-.4, 0], [-.4, 4], '4cm', { dx: -1.4 }); lab(D, ang, [3, 0], [0, 4], '5cm', { dx: 1.2, dy: -.4, off: [0, 0, 0] }); } },
+
+      { tag: '例題', q: '（3）この半円を回すと？', a: '球（半径 2cm）', dur: 3.2,
+        b: { t: '（3）球　半径 2cm', col: C.blue },
+        draw: function (D) { var ang = spin(D, SEMI, D.ph ? 360 * v.ease(D.t) : 0, { top: 4 }); lab(D, ang, [0, 2], [2, 2], '2cm', { dy: -.7 }); } },
+
+      { tag: '例題', q: '（4）この台形を回すと？', a: '円錐台（半径 1cm と 2cm）', sub: '円錐の頭を、底面に平行に切りとった形', dur: 3.2,
+        b: { t: '（4）円錐台　半径 1cm と 2cm', col: C.blue },
+        draw: function (D) { var ang = spin(D, TRAP, D.ph ? 360 * v.ease(D.t) : 0, { top: 3 }); lab(D, ang, [0, -.35], [2, -.35], '2cm'); lab(D, ang, [0, 3.35], [1, 3.35], '1cm'); lab(D, ang, [-.4, 0], [-.4, 3], '3cm', { dx: -1.4 }); } },
+
+      { tag: '例題', q: '軸に垂直な辺・ななめの辺は、回ると 何になる？', a: '垂直な辺 → 底面の円、ななめの辺 → 母線',
+        sub: '軸に平行な辺も、側面をつくる線分（母線）になる', dur: 4,
+        b: { t: '軸に垂直な辺 → 底面の円　／　平行・ななめの辺 → 母線', col: C.pink },
+        draw: function (D) {
+          var th = D.ph ? 360 * v.ease(D.t) : 0, ang = spin(D, TRAP, th, { top: 3, col: '#3f6f8f' }), P = D.flat(TRAP, ang);
+          D.seg(P[0], P[1], { col: C.yel, w: D.lw * 2.6, glow: true }); D.seg(P[2], P[3], { col: C.yel, w: D.lw * 2.6, glow: true });
+          D.seg(P[1], P[2], { col: C.pink, w: D.lw * 2.6, glow: true });
+          if (th > 0) {
+            D.arc([0, 0, 0], [Math.cos(TH0), Math.sin(TH0), 0], [-Math.sin(TH0), -Math.cos(TH0), 0], 2, 0, th * DEG, { col: C.yel, w: 2.2 });
+            D.arc([0, 0, 3], [Math.cos(TH0), Math.sin(TH0), 0], [-Math.sin(TH0), -Math.cos(TH0), 0], 1, 0, th * DEG, { col: C.yel, w: 2.2 });
+            for (var k = 1; k < 12; k++) { var a2 = TH0 - k * 30 * DEG; if (a2 < ang) break; var Q = D.flat(TRAP, a2); D.seg(Q[1], Q[2], { col: C.pink, w: D.lw * .9, a: .75 }); }
+          }
+        } },
+
+      { tag: '考えよう', q: '3辺が 3cm・4cm・5cm の直角三角形を、斜辺 AB を軸に 1回転させると、どんな立体？',
+        notes: ['見取図をかいて、説明しよう。', 'どうして、その立体になるのか、理由も。', 'ほかの辺（3cm や 4cm）を軸にしたら、どうなるだろう。', '話し合ったあと、下のスライダーで回して確かめられます。'],
+        sliders: [
+          { key: 'ax', label: '軸にする辺', min: 0, max: 2, step: 1, val: 0, fmt: function (x) { return ['斜辺 AB', 'AC（3cm）', 'BC（4cm）'][x]; } },
+          { key: 'th', label: '回す', min: 0, max: 360, step: 1, val: 0, fmt: function (x) { return Math.round(x) + '°'; } }
+        ],
+        draw: function (D) {
+          var T = [{ p: KTRI, L: [['A', [0, 0]], ['B', [0, 5]], ['C', [2.4, 1.8]]], top: 5 }, { p: [[0, 0], [4, 0], [0, 3]], L: [['C', [0, 0]], ['A', [0, 3]], ['B', [4, 0]]], top: 3 }, { p: [[0, 0], [3, 0], [0, 4]], L: [['C', [0, 0]], ['B', [0, 4]], ['A', [3, 0]]], top: 4 }][D.V.ax];
+          var ang = spin(D, T.p, D.V.th, { top: T.top, col: C.lav });
+          T.L.forEach(function (l) { var P = D.flat([l[1]], ang)[0]; D.label(P, l[0], { dx: l[1][0] > 0 ? .8 : -.8, size: .95 }); });
+        } },
+
+      { tag: 'チャレンジ', bh: 'チャレンジ', model: K.frame([0, 0, 2.5], 5.6),
+        q: '軸 ℓ から 2cm はなれた 長方形（横 3cm・たて 5cm）を、ℓ を軸に 1回転させる。<br>① できる立体は？ ② 軸に垂直な平面で切った切り口の面積は？ ③ 軸をふくむ平面で切った切り口の面積は？',
+        a: '① 円柱から円柱をくりぬいた立体　② 21π cm²　③ 30cm²', sub: '② π×5² − π×2² ＝ 21π　　③ 3 × 5 × 2 ＝ 30', dur: 7,
+        b: { t: '① まん中があいた円柱　② π×5²−π×2²＝<b>21π</b>　③ 3×5×2＝<b>30</b>', col: C.orange },
+        banner: function (s) { if (s.ph !== 1) return ''; return s.t < .45 ? '回すと…' : s.t < .72 ? '② 軸に垂直に切ると、ドーナツ形' : '③ 軸をふくむ平面で切ると、長方形 2つ'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, deg = 360 * v.ease(v.clamp(t / .4, 0, 1)), ang = spin(D, RING, deg, { top: 5, col: C.lav, shape: t < .45 });
+          if (t < .45) { lab(D, ang, [0, -.4], [2, -.4], '2cm'); lab(D, ang, [2, 5.4], [5, 5.4], '3cm'); lab(D, ang, [5.4, 0], [5.4, 5], '5cm', { dx: 1.2 }); }
+          if (t > .45 && t < .72) D.ring([0, 0, 2.5], [1, 0, 0], [0, 1, 0], 5, 2, { a: .55 });
+          if (t >= .72) [0, Math.PI].forEach(function (a) { D.poly(D.flat(RING, TH0 + a), { col: C.pink, a: .6, stroke: C.pink, sa: 1, sw: D.lw * 1.4 }); });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

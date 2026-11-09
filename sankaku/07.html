@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>証明を教え合う</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三角形と四角形 第7時：三角形の証明を、教え合って書けるようになろう（ikkan の lesson_sankaku_07 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。証明の行は GE.proof が座標で確かめる。
+   まちがった証明の ③（結論を根拠に使っている）に印がつき、正しい根拠に書きかわる。 */
+(function () {
+  var C = CH.C;
+  /* ---- このページの道具 ---- */
+  function box(D, o) { return CH.box(D, o || { l: .06, r: .06, t: .1, b: .12 }); }
+  function ext(F, Q) { return Object.assign({}, F, { P: Object.assign({}, F.P, Q), X: function (p) { return F.X(typeof p === 'string' && Q[p] ? Q[p] : p); } }); }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), g = D.ctx; g.save(); g.font = '600 ' + size + 'px "Klee One",sans-serif'; var w = g.measureText(s).width; g.restore(); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({}, o, { size: size })); return size; }
+  function bisDir(V, P, Q) { var a = GE.sub(P, V), b = GE.sub(Q, V), la = Math.hypot(a[0], a[1]), lb = Math.hypot(b[0], b[1]); return [a[0] / la + b[0] / lb, a[1] / la + b[1] / lb]; }
+
+  /* ---- 今日の問い・例題：AB＝AC、BC 上に BD＝CE（B、D、E、C の順） ---- */
+  var PD = { A: [0, 5], B: [-4, 0], C: [4, 0], D: [-1.6, 0], E: [1.6, 0] };
+  CH.check(GE.verify(PD, 'AB＝AC') && GE.verify(PD, 'BD＝CE') && GE.verify(PD, 'AD＝AE') && GE.verify(PD, '∠ABD＝∠ACE') && GE.verify(PD, '△ABD≡△ACE'), '今日の問いの図');
+  var FIG = { segs: ['AB', 'BC', 'CA', 'AD', 'AE'], ticks: [['AB', 1], ['AC', 1], ['BD', 2], ['CE', 2]], dir: { D: 's', E: 's' } };
+  var WRONG = ['△ABD と △ACE で', '仮定より　AB＝AC …①', '　　　　　BD＝CE …②', 'AD＝AE …③', '①②③より、3組の辺が、', 'それぞれ等しいので', '△ABD≡△ACE', 'したがって　AD＝AE'];
+  /* 図と、ノートに書かれた証明。k1：③ に印、k2：直した根拠 */
+  function note(D, k1, k2) {
+    var Rb = box(D, { l: .04, r: .04, t: .06, b: .08 }), wide = D.W > D.H * .9, rs = wide ? CH.cols(Rb, 2, .06) : CH.rows(Rb, 2, .06);
+    var F = GE.fit(D, rs[0], PD, { pad: .14 });
+    GE.figure(F, FIG);
+    if (k1 > 0) { GE.seg(F, 'AD', { col: C.pink, w: 4.5, a: k1, glow: true }); GE.seg(F, 'AE', { col: C.pink, w: 4.5, a: k1, glow: true }); }
+    if (k2 > 0) { GE.arc(F, 'ABD', { col: C.yel, fill: .45, r: F.s * 1.4, a: k2 }); GE.arc(F, 'ACE', { col: C.yel, fill: .45, r: F.s * 1.4, a: k2 }); }
+    var Rn = rs[1], s = Math.min(CH.fs(D, .95), Rn.h / (WRONG.length * 1.75)), lh = s * 1.7, y0 = Rn.cy - lh * (WRONG.length - 1) / 2, x0 = Rn.x0 + s * .8;
+    CH.fillRect(D, Rn.x0, y0 - lh * .9, Rn.x1, y0 + lh * (WRONG.length - .1), { fill: 'rgba(242,240,230,.05)', stroke: 'rgba(242,240,230,.35)' });
+    var fs = s;
+    WRONG.forEach(function (l, i) { fs = Math.min(fs, say(D, -9999, 0, l, { size: s, maxW: Rn.w - s * 1.6, a: 0 })); });
+    WRONG.forEach(function (l, i) {
+      var y = y0 + i * lh;
+      if (i === 3 && k2 > 0) { say(D, x0, y, '∠ABD＝∠ACE（二等辺三角形の底角）…③', { size: fs, align: 'left', col: C.yel, a: k2, maxW: Rn.w - s * 1.6 }); }
+      if (i === 4 && k2 > 0) { say(D, x0, y, '①②③より、2組の辺とその間の角が、', { size: fs, align: 'left', col: C.yel, a: k2, maxW: Rn.w - s * 1.6 }); }
+      var hide = (i === 3 || i === 4) ? 1 - k2 : 1;
+      say(D, x0, y, l, { size: fs, align: 'left', col: i === 3 && k1 > 0 ? C.pink : C.chalk, a: hide, maxW: Rn.w - s * 1.6 });
+      if (i === 3 && k1 > 0) { var g = D.ctx; g.save(); g.font = '600 ' + fs + 'px "Klee One",sans-serif'; var w = g.measureText(l).width; g.restore(); CH.fillRect(D, x0 - fs * .3, y - fs * .8, x0 + w + fs * .3, y + fs * .8, { stroke: C.pink, sw: 2.4, a: k1 * hide }); }
+    });
+  }
+
+  var defE = {
+    id: '第7時 例題', lv: 2, ttl: '例題　正しい証明', q: 'まちがいを直して、AD＝AE の正しい証明を完成させよう。', P: PD, fig: FIG,
+    hyp: 'AB＝AC、BD＝CE', goal: 'AD＝AE', tri: ['ABD', 'ACE'],
+    notes: ['ペアで、1行ずつ根拠を説明し合おう。'],
+    L: [{ t: '△ABD と △ACE で' },
+      { t: 'AB＝AC', r: '仮定', n: 1 },
+      { t: 'BD＝CE', r: '仮定', n: 2 },
+      { t: '∠ABD＝∠ACE', r: '二等辺三角形の底角は等しい', n: 3 },
+      { t: '①②③より、2組の辺とその間の角が、それぞれ等しいので', c: 'SAS' },
+      { t: '△ABD≡△ACE' },
+      { t: 'AD＝AE', r: '合同な図形の対応する辺は等しい', ask: 'r' }]
+  };
+
+  /* ---- チャレンジ：AD は ∠A の二等分線、DE⊥AB、DF⊥AC → AE＝AF ---- */
+  var PC = { A: [.5, 5], B: [-3, 0], C: [5, 0] };
+  PC.D = GE.meet(PC.A, GE.add(PC.A, bisDir(PC.A, PC.B, PC.C)), PC.B, PC.C); PC.E = GE.foot(PC.D, PC.A, PC.B); PC.F = GE.foot(PC.D, PC.A, PC.C);
+  CH.check(!GE.near(GE.len(PC, 'AB'), GE.len(PC, 'AC')) && GE.verify(PC, 'DE＝DF'), 'チャレンジの図（AB と AC は等しくない）');
+  var defC = {
+    id: '第7時 チャレンジ', lv: 2, ttl: 'チャレンジ　AE＝AF の証明',
+    q: '△ABC で、∠A の二等分線と辺 BC の交点を D とする。D から辺 AB、AC に垂線 DE、DF をひく。AE＝AF を証明しよう。', P: PC,
+    fig: { segs: ['AB', 'BC', 'CA', 'AD', 'DE', 'DF'], angs: [['BAD', 1], ['DAC', 1]], rights: ['AED', 'AFD'], dir: { D: 's', E: 'w', F: 'e' } },
+    hyp: '∠BAD＝∠CAD、DE⊥AB、DF⊥AC', goal: 'AE＝AF', tri: ['AED', 'AFD'],
+    notes: ['ヒント：AE、AF をふくむ直角三角形は？ AD は、その2つの三角形の、どんな辺？'],
+    L: [{ t: '△AED と △AFD で' },
+      { t: '∠AED＝∠AFD＝90°', r: '仮定', n: 1 },
+      { t: '∠EAD＝∠FAD', r: 'AD は ∠A の二等分線', n: 2 },
+      { t: 'AD は共通', n: 3, q: '③ もう1組、等しいものは？', a: 'AD は共通（斜辺）' },
+      { t: '①②③より、直角三角形の斜辺と1つの鋭角が、それぞれ等しいので', c: 'HA' },
+      { t: '△AED≡△AFD' },
+      { t: 'AE＝AF', r: '合同な図形の対応する辺は等しい', ask: 'r' }]
+  };
+
+  var FLOW = [['結論から、どの三角形の', '合同を示すか決める'], ['等しいものを 3つ、', '根拠をつけて書く'], ['合同条件をいって、', '合同を示す'], ['対応する辺や角は等しい', '→ 結論']];
+
+  var steps = [
+    { tag: '今日の問い', bh: 'AD＝AE の証明（まちがいさがし）', q: 'AB＝AC の二等辺三角形 ABC で、辺 BC 上に BD＝CE となる点 D、E がある。AD＝AE の証明が、図の右（下）のように書かれている。まちがいを見つけよう。',
+      notes: ['① 自分の考え（3分）　まちがいと、直し方を書こう。', '② ペアの考え（3分）　自分の考えを、友だちに説明しよう。'],
+      b: [{ t: '【仮定】AB＝AC、BD＝CE', col: C.blue }, { t: '【結論】AD＝AE', col: C.blue }],
+      draw: function (D) { note(D, 0, 0); } },
+    { tag: '今日の問い', q: 'まちがいは、どこ？', a: '③ AD＝AE', sub: 'AD＝AE は、これから証明すること（結論）。結論を、根拠に使ってはいけない', dur: 1.5,
+      b: { t: 'まちがい … ③ AD＝AE は結論。結論を根拠に使ってはいけない', col: C.pink },
+      draw: function (D) { note(D, D.ph ? CH.smooth(.1, .6, D.t) : 0, 0); } },
+    { tag: '今日の問い', q: 'どう直せばよい？', a: '③ を ∠ABD＝∠ACE にする', sub: '二等辺三角形の底角は等しい。2組の辺とその間の角が、それぞれ等しいので △ABD≡△ACE', dur: 2,
+      b: { t: '直し方 … ③ ∠ABD＝∠ACE（二等辺三角形の底角）→ 2組の辺とその間の角', col: C.yel },
+      draw: function (D) { note(D, 1, D.ph ? CH.smooth(.1, .7, D.t) : 0); } },
+    { tag: 'ことば', bh: 'ことば', q: '証明を書くとき、どんな順で考えるとよい？', a: '結論 → 三角形 → 等しいもの3つ → 合同 → 結論', sub: '結論は、さいごに出てくるもの。根拠には、仮定・定義・定理（すでに正しいとわかったこと）を使う', dur: 3,
+      b: [{ t: '証明の書き方 … ① 結論から、どの三角形の <b>合同</b> を示すか決める', col: C.green }, { t: '② 等しいものを <b>3つ</b>、<b>根拠</b> をつけて書く　③ 合同がいえたら、<b>対応</b> する辺や角は等しい', col: C.green }],
+      draw: function (D) {
+        var Rb = box(D, { l: .08, r: .08, t: .06, b: .08 }), n = FLOW.length, h = Rb.h / (n * 1.45), s = Math.min(CH.fs(D, .95), h * .3), t = D.ph ? D.t : 1;
+        FLOW.forEach(function (f, i) {
+          var y = Rb.y0 + h * (.5 + i * 1.45), on = !D.ph || t > i / n * .9, col = [C.blue, C.green, C.yel, C.pink][i];
+          CH.card(D, Rb.cx, y, Rb.w * .86, h, '', { col: col, a: on ? 1 : .25, sw: 2 });
+          say(D, Rb.x0 + Rb.w * .1, y, '①②③④'.charAt(i), { col: col, size: s * 1.2, a: on ? 1 : .3 });
+          say(D, Rb.cx + Rb.w * .04, y - s * .7, f[0], { size: s, a: on ? 1 : .3, maxW: Rb.w * .7 }); say(D, Rb.cx + Rb.w * .04, y + s * .7, f[1], { size: s, a: on ? 1 : .3, maxW: Rb.w * .7 });
+          if (i < n - 1) CH.arrow(D, Rb.cx, y + h * .52, Rb.cx, y + h * .93, { col: 'rgba(242,240,230,.6)', w: 2, head: 8, a: on ? 1 : .3 });
+        });
+      } }
+  ].concat(GE.proof(defE, { tag: '例題' })).concat([
+    { tag: '考えよう', q: '今日の証明は △ABD≡△ACE を使った。△ABE と △ACD の合同を使っても、AD＝AE を証明できるだろうか。使う合同条件を考えて、証明を書こう。',
+      notes: ['△ABE と △ACD で、等しいといえる辺や角は？ BE と CD は等しい？', '今日の証明とくらべて、気づいたことは？', 'スライダーで、目をつける三角形を変えたり、D と E を動かしたりできます。'],
+      sliders: [{ key: 'k', label: '目をつける三角形', min: 0, max: 1, step: 1, val: 1, fmt: function (x) { return x ? '△ABE と △ACD' : '△ABD と △ACE'; } }, { key: 'd', label: 'BD（＝CE）', min: .6, max: 3.4, step: .2, val: 1.6, fmt: function (x) { return x.toFixed(1); } }],
+      draw: function (D) {
+        var P = { A: [0, 5], B: [-4, 0], C: [4, 0], D: [-4 + D.V.d, 0], E: [4 - D.V.d, 0] }, F = ext(GE.fit(D, box(D, { l: .06, r: .06, t: .08, b: .1 }), PD, { pad: .14 }), P);
+        var tr = D.V.k ? ['ABE', 'ACD'] : ['ABD', 'ACE'];
+        GE.poly(F, tr[0], { col: C.blue, fa: .22, stroke: false }); GE.poly(F, tr[1], { col: C.orange, fa: .22, stroke: false });
+        GE.figure(F, FIG);
+        GE.poly(F, tr[0], { col: C.blue, fill: false, sw: 3 }); GE.poly(F, tr[1], { col: C.orange, fill: false, sw: 3 });
+      } }
+  ]).concat(GE.proof(defC, { tag: 'チャレンジ' }));
+
+  K3.run({
+    no: '第7時', title: '三角形の証明を、教え合って書けるようになろう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '06.html', label: '◀ 第6時' }, { href: '08.html', label: '第8時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

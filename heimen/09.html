@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>いろいろな角の作図</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 平面図形 第9時：定規とコンパスで、いろいろな大きさの角をつくろう（ikkan の lesson_heimen_09 と同じ流れ）。
+   今日の問いは、60°（正三角形）と 90°（垂線）をもとに、二等分と組み合わせでつくれる角が、O のまわりに1つずつ開いていく。
+   ことばは、正三角形・垂線・角の二等分線の作図が、コンパスの動きで3つならんで進む。例題は 30° の作図（手順が1つずつ動く）、
+   例題2 は 垂線 → 二等分線 で 45° と 135°。考えようは、二等分をくり返す道具（10° の点線つき。答えは出さない）。チャレンジは 75°。
+   図の点は、角度と長さ（OA＝4 など）から座標で決めた自作のデータ。角は座標から測り直して確かめている（GE.verify・CH.check）。 */
+(function () {
+  /* ---- 平面図形の図の道具（このページの中だけで使う。heimen/09〜15 の各ページに同じものが入っている） ---- */
+  var C = CH.C, RAD = Math.PI / 180, OUT = 'rgba(20,40,30,.9)', FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  var NUMF = '"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif', PI = Math.PI;
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function dg(x) { var r = Math.round(x * 100) / 100; return (Math.abs(r - Math.round(r)) < .005 ? String(Math.round(r)) : String(r)) + '°'; }
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var t = a % b; a = b; b = t; } return a || 1; }
+  /* π の係数の字：pi(6) → '6π'、pi(1) → 'π'、pi(9, 2) → '[9/2]π'（[ ] は たての分数になる） */
+  function pi(n, d) { d = d || 1; var g = gcd(n, d); n /= g; d /= g; if (d === 1) return n === 1 ? 'π' : n + 'π'; return '[' + n + '/' + d + ']π'; }
+  /* 図の四角（fig）と、字を書く四角（side）。よこ長なら右、たて長なら下（o.hk：下の帯の高さの割合） */
+  function lay(D, k, o) {
+    o = o || {}; var B = CH.box(D, { l: .03, r: .03, t: o.t == null ? .04 : o.t, b: .04 });
+    if (!o.vert && B.w > B.h * 1.25 && B.w > 560) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .06, B.x1, B.y1), wide: true }; }
+    var h = B.h * (o.hk || .27); return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .03, B.y1 - h + 4, B.x1, B.y1), wide: false };
+  }
+  /* ---- 分数をふくむ字（図の中）：'360°×[1/5]＝72°' の [1/5] を、たての分数（CH.frac）にする ---- */
+  var FR = /(\[[^\/\]]+\/[^\]]+\])/;
+  function frW(D, n, d, size) { var g = D.ctx; g.save(); g.font = '700 ' + size * .8 + 'px ' + NUMF; var w = Math.max(g.measureText(n).width, g.measureText(d).width) + size * .2; g.restore(); return w; }
+  function ftW(D, s, size) {
+    var w = 0; String(s).split(FR).forEach(function (seg) { var m = /^\[([^\/\]]+)\/([^\]]+)\]$/.exec(seg); if (m) w += frW(D, m[1], m[2], size) + size * .26; else if (seg) w += tw(D, seg, size); }); return w;
+  }
+  function hasFr(s) { return FR.test(String(s)); }
+  /* x は左はし（o.align 'center' で まん中）。o：size、col、a、outline */
+  function ftxt(D, x, y, s, o) {
+    o = o || {}; var size = o.size || CH.fs(D), w = ftW(D, s, size), xx = o.align === 'center' ? x - w / 2 : o.align === 'right' ? x - w : x;
+    String(s).split(FR).forEach(function (seg) {
+      var m = /^\[([^\/\]]+)\/([^\]]+)\]$/.exec(seg);
+      if (m) { var fw = frW(D, m[1], m[2], size); CH.frac(D, xx + size * .13 + fw / 2, y, m[1], m[2], { size: size, col: o.col, a: o.a }); xx += fw + size * .26; }
+      else if (seg) { CH.text(D, xx, y, seg, { size: size, col: o.col, a: o.a, align: 'left', outline: o.outline }); xx += tw(D, seg, size); }
+    });
+    return w;
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする）。rows：[{ t, col, a }]。分数の行は、行の間を広くとる */
+  function say(D, Rr, rows, o) {
+    o = o || {}; rows = rows.filter(Boolean); if (!rows.length) return;
+    var nc = Rr.w > Rr.h * 2.5 && rows.length > 3 ? 2 : 1, per = Math.ceil(rows.length / nc), cw = Rr.w / nc, fr = rows.some(function (r) { return hasFr(r.t); });
+    var gap = fr ? 2.05 : 1.6, s = Math.min(o.size || CH.fs(D, .92), Rr.h / (per * gap + .3));
+    rows.forEach(function (r, i) {
+      var w = ftW(D, r.t, s), sz = w > cw - 8 ? s * (cw - 8) / w : s, c = Math.floor(i / per), j = i % per;
+      ftxt(D, Rr.x0 + c * cw, Rr.y0 + s * (fr ? 1.05 : .8) + j * s * gap, r.t, { col: r.col || C.chalk, a: r.a, size: sz });
+    });
+  }
+  /* 図の上の1行（はばに入らなければ、字を小さくする） */
+  function top(D, s, col, a, row) {
+    var B = CH.box(D, { t: 0, l: .02, r: .02 }), f0 = CH.fs(D, 1.02), fs = Math.min(f0, f0 * B.w / Math.max(1, ftW(D, s, f0)));
+    ftxt(D, B.cx, B.y0 + f0 * (.75 + (row || 0) * 1.5), s, { col: col || C.yel, a: a, size: fs, outline: OUT, align: 'center' });
+  }
+  /* 点の名前：{ A: 向き（度） }。o.name で字をかえる */
+  function nm(F, m, o) {
+    o = o || {}; Object.keys(m).forEach(function (k) {
+      if (m[k] == null || !F.P[k]) return; var p = F.X(k), r = F.s * (o.k || .95);
+      CH.text(F.D, p[0] + Math.cos(m[k] * RAD) * r, p[1] - Math.sin(m[k] * RAD) * r, (o.name && o.name[k]) || k, { size: F.s * (o.size || 1), col: (o.col && o.col[k]) || o.c || C.chalk, a: o.a, outline: OUT });
+    });
+  }
+  function dots(F, ks, o) { o = o || {}; (Array.isArray(ks) ? ks : ks.split('')).forEach(function (k) { if (typeof k !== 'string' || F.P[k]) GE.dot(F, k, o); }); }
+  /* 字（座標 p から、向き deg に k（字の大きさの倍）だけはなれたところ）。分数もかける */
+  function lab(F, p, deg, k, t, o) {
+    o = o || {}; var q = F.X(p);
+    ftxt(F.D, q[0] + Math.cos(deg * RAD) * F.s * k, q[1] - Math.sin(deg * RAD) * F.s * k, t, { col: o.col || C.chalk, size: F.s * (o.size || .85), a: o.a, outline: OUT, align: 'center' });
+  }
+  /* 線分 pq の横に字（side：1 で pq の左がわ、−1 で右がわ。k は はなれぐあい） */
+  function slab(F, p, q, t, side, o) {
+    o = o || {}; var d = Math.atan2(q[1] - p[1], q[0] - p[0]) / RAD + 90 * (side || 1);
+    lab(F, GE.mid(p, q), d, o.k || .9, t, o);
+  }
+  /* 図の四角の中だけに描く */
+  function clip(F, fn) { var g = F.D.ctx, r = F.R; g.save(); g.beginPath(); g.rect(r.x0, r.y0, r.w, r.h); g.clip(); fn(); g.restore(); }
+  /* 直線（四角のはしまで） */
+  function full(F, a, b, o) { clip(F, function () { GE.line(F, [a, b], o || {}); }); }
+  /* 座標だけで、四角に入れる（bounds：[[x0, y0], [x1, y1]]） */
+  function fitB(D, R, P, bounds, pad) { return GE.fit(D, R, P, { keys: [], bounds: bounds, pad: pad == null ? .06 : pad }); }
+  /* 中心 c・半径 r（座標の長さ）の円の、a0 → a1（反時計まわり、度）の弧 */
+  function arcAt(F, c, r, a0, a1, o) {
+    o = o || {}; if (a1 < a0) { var z = a0; a0 = a1; a1 = z; } var g = F.D.ctx, p = F.X(c);
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.w || 2.2; g.lineCap = 'round';
+    if (o.glow) { g.shadowColor = o.col || C.chalk; g.shadowBlur = 8; }
+    if (o.dash) g.setLineDash(o.dash === true ? [8, 7] : o.dash); g.beginPath(); g.arc(p[0], p[1], r * F.u, -a0 * RAD, -a1 * RAD, true); g.stroke(); g.restore();
+  }
+  /* コンパスで弧をかく：a0 → a1 を k（0〜1）だけ。かいている途中は、コンパスの2本の足も見せる（第1〜8時と同じ見せ方） */
+  function comp(F, c, r, a0, a1, k, o) {
+    o = o || {}; if (k <= 0) return; var a = a0 + (a1 - a0) * Math.min(1, k), col = o.col || C.blue;
+    arcAt(F, c, r, a0, a, { col: col, w: o.w || 2.2, a: o.a });
+    if (k < 1 && !o.noLeg) {
+      var p = F.X(GE.polar(c, r, a)), q = F.X(c), m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], d = [p[0] - q[0], p[1] - q[1]], L = Math.hypot(d[0], d[1]) || 1, n = [d[1] / L, -d[0] / L];
+      if (n[1] > 0) n = [-n[0], -n[1]];
+      var hh = [m[0] + n[0] * Math.min(L * .55, F.s * 5), m[1] + n[1] * Math.min(L * .55, F.s * 5)];
+      CH.line(F.D, q[0], q[1], hh[0], hh[1], { col: 'rgba(242,240,230,.75)', w: 2.6 }); CH.line(F.D, hh[0], hh[1], p[0], p[1], { col: 'rgba(242,240,230,.75)', w: 2.6 });
+      CH.circle(F.D, hh[0], hh[1], F.s * .22, { fill: 'rgba(242,240,230,.85)' }); CH.circle(F.D, p[0], p[1], F.s * .17, { fill: col });
+    }
+  }
+  /* 点 c から見た点 p の向き（度） */
+  function dirOf(c, p) { return Math.atan2(p[1] - c[1], p[0] - c[0]) / RAD; }
+  /* 2つの円の交点（side：1 で c1→c2 の左がわ、−1 で右がわ） */
+  function cc(c1, r1, c2, r2, side) {
+    var d = Math.hypot(c2[0] - c1[0], c2[1] - c1[1]), a = (r1 * r1 - r2 * r2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, r1 * r1 - a * a)), u = [(c2[0] - c1[0]) / d, (c2[1] - c1[1]) / d];
+    return [c1[0] + u[0] * a - side * u[1] * h, c1[1] + u[1] * a + side * u[0] * h];
+  }
+  /* 交点をさす弧：中心 c、半径 r で、点 p のまわり ±w 度 を、コンパスでかく */
+  function compAt(F, c, r, p, w, k, o) { var d = dirOf(c, p); comp(F, c, r, d - w, d + w, k, o); }
+  /* 角のしるし（GE.arc）と字。字は二等分線の上の、2辺にふれないところに置く。o.t：字（false で書かない） */
+  function mark(F, s, col, o) {
+    o = o || {}; var r = o.r || F.s * 1.05;
+    GE.arc(F, s, { col: col, fill: o.fill == null ? .3 : o.fill, a: o.a, r: r, n: o.n, tick: o.tick });
+    var A0 = F.X(s[0]), V = F.X(s[1]), B0 = F.X(s[2]), a1 = Math.atan2(A0[1] - V[1], A0[0] - V[0]), d = Math.atan2(B0[1] - V[1], B0[0] - V[0]) - a1;
+    while (d > Math.PI) d -= 2 * Math.PI; while (d <= -Math.PI) d += 2 * Math.PI;
+    var P = F.P, pp = function (z) { return typeof z === 'string' ? P[z] : z; };
+    var t = o.t === false ? null : (o.t || dg(GE.ang({ a: pp(s[0]), v: pp(s[1]), b: pp(s[2]) }, 'avb'))); if (!t) return;
+    var sz = F.s * (o.size || .82), w = ftW(F.D, t, sz);
+    var m = a1 + d / 2, need = (Math.max(w, sz) / 2 + 3) / Math.sin(Math.abs(d) / 2), dd = CH.clamp(Math.max(r + sz * .9, need), 0, o.max || F.s * 4.2);
+    ftxt(F.D, V[0] + Math.cos(m) * dd, V[1] + Math.sin(m) * dd, t, { col: col, size: sz, a: o.a, outline: OUT, align: 'center' });
+  }
+  /* 向きで描く角のしるし（数学の向きで d1° → d2° 反時計まわり。180° 以上も）と字 */
+  function markDir(F, v, d1, d2, col, o) {
+    o = o || {}; var r = o.r || F.s * 1.05;
+    GE.arcDir(F, v, d1, d2, { col: col, fill: o.fill == null ? .3 : o.fill, a: o.a, r: r, n: o.n });
+    if (o.t === false) return; var t = o.t || dg(d2 - d1), sz = F.s * (o.size || .82), q = F.X(v), m = (o.at == null ? (d1 + d2) / 2 : o.at) * RAD, dd = o.k ? F.s * o.k : r + sz * 1.1;
+    ftxt(F.D, q[0] + Math.cos(m) * dd, q[1] - Math.sin(m) * dd, t, { col: col, size: sz, a: o.a, outline: OUT, align: 'center' });
+  }
+  /* おうぎ形（中心 c、半径 r、a0 → a1 反時計まわり、度）。o：col、fa（ぬりの濃さ）、stroke（false でふちなし）、w、a、glow */
+  function sector(F, c, r, a0, a1, o) {
+    o = o || {}; if (Math.abs(a1 - a0) < 1e-9) return; var g = F.D.ctx, p = F.X(c), R = r * F.u, col = o.col || C.yel, full = Math.abs(a1 - a0) > 359.999;
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.beginPath();
+    if (!full) g.moveTo(p[0], p[1]);
+    g.arc(p[0], p[1], R, -a0 * RAD, -a1 * RAD, true); g.closePath();
+    if (o.fa !== 0) { g.fillStyle = o.fill || hexA(col, o.fa == null ? .3 : o.fa); g.fill(); }
+    if (o.stroke !== false) { g.strokeStyle = o.sc || col; g.lineWidth = o.w || 2.4; g.lineJoin = 'round'; if (o.dash) g.setLineDash([8, 7]); if (o.glow) { g.shadowColor = o.sc || col; g.shadowBlur = 8; } g.stroke(); }
+    g.restore();
+  }
+  /* ふちが線分と弧の図形。subs：[[['M', p], ['L', p], ['A', 中心, 半径, a0, a1]（a1>a0 は反時計まわり）, …], …]。o.even：重なりをぬかない */
+  function shape(F, subs, o) {
+    o = o || {}; var g = F.D.ctx; g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.beginPath();
+    subs.forEach(function (sp) {
+      sp.forEach(function (cmd, i) {
+        if (cmd[0] === 'A') { var p = F.X(cmd[1]); if (i === 0) { var s0 = F.X(GE.polar(cmd[1], cmd[2], cmd[3])); g.moveTo(s0[0], s0[1]); } g.arc(p[0], p[1], cmd[2] * F.u, -cmd[3] * RAD, -cmd[4] * RAD, cmd[4] > cmd[3]); }
+        else { var q = F.X(cmd[1]); if (cmd[0] === 'M') g.moveTo(q[0], q[1]); else g.lineTo(q[0], q[1]); }
+      });
+      if (!o.open) g.closePath();
+    });
+    if (o.fill !== false && !o.open) { g.fillStyle = o.fill || hexA(o.col || C.blue, o.fa == null ? .3 : o.fa); g.fill(o.even ? 'evenodd' : 'nonzero'); }
+    if (o.stroke) { g.strokeStyle = o.stroke; g.lineWidth = o.w || 2.4; g.lineJoin = 'round'; g.lineCap = 'round'; if (o.dash) g.setLineDash(o.dash === true ? [8, 7] : o.dash); if (o.glow) { g.shadowColor = o.stroke; g.shadowBlur = 8; } g.stroke(); }
+    g.restore();
+  }
+  /* 点の列を動かす */
+  function mvS(subs, v) { return subs.map(function (sp) { return sp.map(function (c) { var q = c.slice(); q[1] = [c[1][0] + v[0], c[1][1] + v[1]]; return q; }); }); }
+  /* 弧の上の点の列（a0 → a1、n 等分） */
+  function arcPts(c, r, a0, a1, n) { var o = []; for (var i = 0; i <= n; i++) o.push(GE.polar(c, r, a0 + (a1 - a0) * i / n)); return o; }
+  function polyline(F, ps, o) { o = o || {}; if (ps.length < 2) return; CH.poly(F.D, ps.map(function (p) { return F.X(p); }), { stroke: o.col || C.yel, sw: o.w || 3, a: o.a, close: false }); }
+  function lerpPts(a, b, k) { return a.map(function (p, i) { return GE.lerpP(p, b[i], k); }); }
+  /* 点の列を、長さの割合 k（0〜1）のところまで */
+  function cutPts(ps, k) {
+    var L = [0]; for (var i = 1; i < ps.length; i++) L.push(L[i - 1] + Math.hypot(ps[i][0] - ps[i - 1][0], ps[i][1] - ps[i - 1][1]));
+    var goal = L[L.length - 1] * CH.clamp(k, 0, 1), out = [ps[0]];
+    for (var j = 1; j < ps.length; j++) { if (L[j] <= goal) out.push(ps[j]); else { var f = (goal - L[j - 1]) / (L[j] - L[j - 1] || 1); out.push(GE.lerpP(ps[j - 1], ps[j], f)); break; } }
+    return out;
+  }
+  /* 線分 ab をまっすぐに置いた、長さの印（両はしの短い線と、まん中の字） */
+  function dimLine(F, a, b, t, o) {
+    o = o || {}; var col = o.col || C.chalk, d = [b[0] - a[0], b[1] - a[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L, d[0] / L], h = (o.h || .3) * F.s / F.u;
+    GE.seg(F, [a, b], { col: col, w: 1.6, a: o.a });
+    [a, b].forEach(function (p) { GE.seg(F, [[p[0] - n[0] * h, p[1] - n[1] * h], [p[0] + n[0] * h, p[1] + n[1] * h]], { col: col, w: 1.6, a: o.a }); });
+    if (t) lab(F, GE.mid(a, b), Math.atan2(n[1], n[0]) / RAD + (o.side === -1 ? 180 : 0), o.k || .8, t, { col: col, a: o.a, size: o.size });
+  }
+  /* 円の上の方眼（1目もり＝1） */
+  function grid(F, x0, y0, x1, y1, o) {
+    o = o || {}; for (var x = Math.ceil(x0); x <= x1 + 1e-9; x++) GE.seg(F, [[x, y0], [x, y1]], { col: 'rgba(242,240,230,.13)', w: 1, a: o.a });
+    for (var y = Math.ceil(y0); y <= y1 + 1e-9; y++) GE.seg(F, [[x0, y], [x1, y]], { col: 'rgba(242,240,230,.13)', w: 1, a: o.a });
+  }
+  /* おうぎ形を n こに細かく切って、たがいちがいに並べかえる（k：0 で もとのおうぎ形、1 で 平行四辺形に近い形）。
+     もとのおうぎ形は 中心 c、半径 r、a0 → a0＋a。並べた形は、左下が base の点 */
+  function cutPieces(c, r, a0, a, n, base, k) {
+    var w = a / n, s = 2 * r * Math.sin(w / 2 * RAD), out = [], hgt = r * Math.cos(w / 2 * RAD);
+    for (var i = 0; i < n; i++) {
+      var b0 = a0 + (i + .5) * w, up = i % 2 === 0, ax = base[0] + s / 2 + i * s / 2, apex = up ? [ax, base[1] + hgt] : [ax, base[1]], b1 = up ? -90 : 90;
+      var dd = b1 - b0; while (dd > 180) dd -= 360; while (dd < -180) dd += 360;
+      var e = CH.ease(CH.clamp(k * 1.15 - i / n * .15, 0, 1));
+      out.push({ c: GE.lerpP(c, apex, e), b: b0 + dd * e, w: w, up: up });
+    }
+    return { pcs: out, width: s / 2 * (n + 1), h: hgt };
+  }
+  function drawPieces(F, pcs, r, o) {
+    o = o || {}; pcs.forEach(function (p, i) { sector(F, p.c, r, p.b - p.w / 2, p.b + p.w / 2, { col: i % 2 ? (o.c2 || C.blue) : (o.c1 || C.yel), fa: o.fa == null ? .35 : o.fa, w: 1.6, a: o.a }); });
+  }
+  /* π をふくむ式の検算：係数どうしをくらべる（「答えがちがう」をコンソールに） */
+  function chk(a, b, what) { return CH.check(Math.abs(a - b) < 1e-9, what); }
+  /* 問い・答え・板書の字の [1/2] を、たての分数にする */
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = CH.fr(s[k]); }); if (s.notes) s.notes = s.notes.map(CH.fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = CH.fr(b.t); }); }); return st; }
+  var O = [0, 0];
+  function far(ps) { return Math.hypot(ps[0][0], ps[0][1]) > Math.hypot(ps[1][0], ps[1][1]) ? ps[0] : ps[1]; }   // O から遠いほう
+  function both(c1, r1, c2, r2) { return far([cc(c1, r1, c2, r2, 1), cc(c1, r1, c2, r2, -1)]); }
+
+  /* ---- 今日の問い：60° と 90° から つくれる角（二等分・組み合わせ） ---- */
+  var LIST = [
+    { v: 30, h: 60, t: '30°＝60°÷2' }, { v: 45, h: 90, t: '45°＝90°÷2' }, { v: 15, h: 30, t: '15°＝30°÷2' },
+    { v: 120, p: [60, 60], t: '120°＝60°＋60°' }, { v: 75, p: [60, 15], t: '75°＝60°＋15°' }, { v: 135, p: [90, 45], t: '135°＝90°＋45°' },
+    { v: 150, p: [90, 60], t: '150°＝90°＋60°' }, { v: 105, p: [90, 15], t: '105°＝90°＋15°' }];
+  CH.check(LIST.every(function (it) { return it.h ? it.h / 2 === it.v : it.p[0] + it.p[1] === it.v; }) && LIST.every(function (it) { return it.t.indexOf(it.v + '°＝') === 0; }), '今日の問い：つくれる角');
+  /* 使う角は、もとの 60°・90° か、前につくった角だけ */
+  CH.check(LIST.every(function (it, i) { var have = [60, 90].concat(LIST.slice(0, i).map(function (x) { return x.v; })); return (it.h ? [it.h] : it.p).every(function (a) { return have.indexOf(a) >= 0; }); }), '今日の問い：つくる順');
+
+  function fanFig(D, t, ans) {
+    var L = lay(D, .3, { vert: true, hk: .3 }), F = fitB(D, L.fig, { O: O }, ans ? [[-6.9, -.9], [6.9, 6.9]] : [[-1.3, -.9], [5.8, 5.6]]), n = LIST.length, k = ans ? t * n : -1, cur = Math.min(n - 1, Math.floor(k)), f = k - cur;
+    GE.seg(F, [[-5, 0], [0, 0]], { col: 'rgba(242,240,230,.35)', w: 1.6 });
+    function ray(v, o) { o = o || {}; GE.seg(F, [O, GE.polar(O, 4.8 * (o.k == null ? 1 : o.k), v)], { col: o.col || C.chalk, w: o.w || 2.6, a: o.a }); }
+    function rl(v, o) { o = o || {}; lab(F, GE.polar(O, v % 30 ? 6.2 : 5.35, v), 0, 0, v + '°', { col: o.col || C.chalk, a: o.a, size: .78 }); }
+    if (ans) {
+      LIST.forEach(function (it, i) { if (i < cur || (i === cur && f >= 1)) { ray(it.v, { col: 'rgba(242,240,230,.75)', w: 2 }); rl(it.v, { col: 'rgba(242,240,230,.85)' }); } });
+      var it = LIST[cur], e = CH.ease(CH.smooth(0, .45, f)), g = CH.smooth(.45, .8, f);
+      if (it.h) { sector(F, O, 1.9, 0, it.h, { col: C.blue, fa: .12, stroke: false }); sector(F, O, 1.9, 0, it.v * Math.max(e, .02), { col: C.yel, fa: .4, w: 2 }); if (e > .98) sector(F, O, 1.9, it.v, it.h, { col: C.orange, fa: .35, w: 2 }); }
+      else { sector(F, O, 1.9, 0, it.p[0], { col: C.blue, fa: .35, w: 2 }); sector(F, O, 2.3, it.p[0], it.p[0] + it.p[1] * Math.max(e, .02), { col: C.pink, fa: .4, w: 2 }); }
+      if (g > 0) { ray(it.v, { col: C.yel, w: 3.2, k: g }); rl(it.v, { col: C.yel, a: CH.smooth(.7, .85, f) }); }
+    }
+    ray(0, { w: 2.8 }); ray(60, { col: C.blue, w: 2.8 }); ray(90, { col: C.pink, w: 2.8 });
+    if (!ans) { markDir(F, O, 0, 60, C.blue, { r: F.s * 1.6, t: '60°', fill: .2 }); GE.right(F, [[1, 0], O, [0, 1]], { col: C.pink, r: F.s * .7 }); lab(F, GE.polar(O, 1.1, 75), 0, 0, '90°', { col: C.pink, size: .78 }); }
+    else { rl(60, { col: C.blue }); rl(90, { col: C.pink }); }
+    GE.dot(F, O); lab(F, O, 270, .95, 'O', { size: .95 });
+    if (!ans) { lab(F, GE.polar(O, 4.8, 0), -40, 1, 'A', { size: .95 }); lab(F, GE.polar(O, 4.8, 60), 60, 1, 'B', { size: .95 }); lab(F, GE.polar(O, 4.8, 90), 90, 1, 'C', { size: .95 }); }
+    return { F: F, L: L, cur: cur, f: f };
+  }
+
+  /* ---- ことば：正三角形・垂線・角の二等分線（3つの作図） ---- */
+  var T60 = { O: O, A: [3, 0], B: GE.polar(O, 3, 60) }, TR = [0, Math.sqrt(2.4 * 2.4 - 1.6 * 1.6)], TD = [1.5, 0], TE = GE.polar(O, 1.5, 70), TF = both(TD, 1.3, TE, 1.3);
+  GE.verify({ O: O, A: T60.A, B: T60.B }, 'OA＝OB＝AB、∠AOB＝60°', null, 'ことば：正三角形');
+  GE.verify({ O: O, P: [-1.6, 0], Q: [1.6, 0], R: TR }, 'PR＝QR、OP＝OQ、∠ROQ＝90°', null, 'ことば：垂線');
+  GE.verify({ O: O, D: TD, E: TE, F: TF, A: [3, 0] }, 'OD＝OE、DF＝EF、∠DOF＝∠FOE＝35°', null, 'ことば：二等分線');
+  function tools(D, t, ans) {
+    var B = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), rs = CH.split(D, B, 3, .05), heads = ['60°', '90°', '半分の角'], names = ['正三角形', '垂線', '角の二等分線'], cols = [C.yel, C.pink, C.green];
+    rs.forEach(function (R, i) {
+      var wide = R.h > R.w, hd = CH.fs(D, .95), k = ans ? CH.clamp(t * 3 - i, 0, 1) : 0;
+      var fr = wide ? CH.rect(R.x0, R.y0 + hd * 1.8, R.x1, R.y1 - hd * 2.2) : CH.rect(R.x0 + R.w * .3, R.y0, R.x1, R.y1);
+      var tx = wide ? R.cx : R.x0 + R.w * .14, ty1 = wide ? R.y0 + hd * .8 : R.cy - hd * .8, ty2 = wide ? R.y1 - hd * .9 : R.cy + hd * .9;
+      CH.text(D, tx, ty1, heads[i], { size: hd * 1.1, col: cols[i] });
+      if (ans && k > .85) CH.text(D, tx, ty2, names[i], { size: CH.fitSize(D, names[i], wide ? R.w * .95 : R.w * .28, hd), col: cols[i], a: CH.smooth(.85, 1, k) });
+      else if (!ans) CH.text(D, tx, ty2, '？', { size: hd, col: 'rgba(242,240,230,.6)' });
+      var F;
+      if (i === 0) {
+        F = fitB(D, fr, T60, [[-.4, -.5], [3.4, 3.1]]);
+        GE.seg(F, [O, T60.A], { w: 2.6 });
+        if (!ans) { GE.seg(F, [O, GE.polar(O, 3.2, 60)], { w: 2.6 }); markDir(F, O, 0, 60, cols[0], { r: F.s * 1.2, t: false }); }
+        else {
+          comp(F, O, 3, 45, 75, CH.smooth(0, .4, k)); comp(F, T60.A, 3, 105, 135, CH.smooth(.4, .75, k));
+          var g = CH.smooth(.75, .9, k); if (g > 0) { GE.polyP(F, [O, T60.A, T60.B], { col: cols[0], fa: .15 * g, a: g }); markDir(F, O, 0, 60, cols[0], { r: F.s * 1.2, t: false, a: g }); }
+        }
+        dots(F, [O, T60.A].concat(ans && k > .75 ? [T60.B] : []));
+      } else if (i === 1) {
+        F = fitB(D, fr, { O: O }, [[-3, -.5], [3, 3.1]]);
+        GE.seg(F, [[-3, 0], [3, 0]], { w: 2.6 });
+        if (!ans) { GE.seg(F, [O, [0, 3]], { w: 2.6 }); GE.right(F, [[1, 0], O, [0, 1]], { col: cols[1], r: F.s * .7 }); }
+        else {
+          comp(F, O, 1.6, 0, 180, CH.smooth(0, .35, k)); compAt(F, [-1.6, 0], 2.4, TR, 14, CH.smooth(.35, .55, k)); compAt(F, [1.6, 0], 2.4, TR, 14, CH.smooth(.55, .72, k));
+          var g2 = CH.smooth(.72, .85, k); if (g2 > 0) GE.seg(F, [O, [0, 3 * g2]], { col: cols[1], w: 3 }); if (k > .85) GE.right(F, [[1, 0], O, [0, 1]], { col: cols[1], r: F.s * .7, a: CH.smooth(.85, .95, k) });
+          if (k > .35) dots(F, [[-1.6, 0], [1.6, 0]], { col: C.blue });
+        }
+        GE.dot(F, O);
+      } else {
+        F = fitB(D, fr, { O: O }, [[-.4, -.5], [3.2, 3.1]]);
+        GE.seg(F, [O, [3, 0]], { w: 2.6 }); GE.seg(F, [O, GE.polar(O, 3, 70)], { w: 2.6 });
+        if (!ans) { GE.seg(F, [O, GE.polar(O, 3, 35)], { col: cols[2], w: 2.2, dash: [6, 6] }); markDir(F, O, 0, 35, cols[2], { r: F.s * 1.2, t: false }); markDir(F, O, 35, 70, cols[2], { r: F.s * 1.2, t: false }); }
+        else {
+          comp(F, O, 1.5, -6, 76, CH.smooth(0, .35, k)); compAt(F, TD, 1.3, TF, 16, CH.smooth(.35, .55, k)); compAt(F, TE, 1.3, TF, 16, CH.smooth(.55, .72, k));
+          var g3 = CH.smooth(.72, .85, k); if (g3 > 0) GE.seg(F, [O, GE.polar(O, 3 * g3, 35)], { col: cols[2], w: 3 });
+          if (k > .85) { markDir(F, O, 0, 35, cols[2], { r: F.s * 1.2, t: false, a: CH.smooth(.85, .95, k) }); markDir(F, O, 35, 70, cols[2], { r: F.s * 1.35, t: false, a: CH.smooth(.85, .95, k) }); }
+          if (k > .35) dots(F, [TD, TE], { col: C.blue });
+        }
+        GE.dot(F, O);
+      }
+    });
+  }
+
+  /* ---- 例題：30° の作図（OA＝4。O、A を中心に半径 4 → B。A、B を中心に半径 2.4 → D） ---- */
+  var A4 = [4, 0], B60 = GE.polar(O, 4, 60), D30 = both(A4, 2.4, B60, 2.4), PX = { O: O, A: A4, B: B60, D: D30 }, RAY30 = GE.polar(O, 6, 30);
+  GE.verify(PX, 'OA＝OB＝AB＝4、AD＝BD＝2.4、∠AOB＝60°、∠AOD＝∠DOB＝30°', null, '例題');
+  CH.check(GE.near(dirOf(O, D30), 30), '例題：D は 30° の線の上');
+  var STEP = ['① 正三角形 OAB → 60°', '② A、B を中心に、同じ半径の弧 → D', '③ 半直線 OD → 30°'];
+  function cons(D, st, t) {
+    var L = lay(D, .4), F = fitB(D, L.fig, PX, [[-.9, -.9], [6.3, 4.6]]), k;
+    if (st >= 1) {
+      var k1 = st > 1 ? 1 : CH.smooth(0, .3, t), k2 = st > 1 ? 1 : CH.smooth(.3, .6, t), k3 = st > 1 ? 1 : CH.smooth(.62, .8, t), k4 = st > 1 ? 1 : CH.smooth(.82, 1, t);
+      comp(F, O, 4, 45, 75, k1); comp(F, A4, 4, 105, 135, k2);
+      if (k3 > 0) { GE.seg(F, [A4, B60], { col: 'rgba(242,240,230,.55)', w: 1.8, dash: [6, 6], a: k3 }); GE.seg(F, [O, GE.lerpP(O, GE.polar(O, 5.2, 60), k3)], { w: 2.6 }); }
+      if (k4 > 0) markDir(F, O, 0, 60, C.yel, { a: k4, r: F.s * 2.7, fill: .12, t: '60°', k: 3.6, at: 47 });
+    }
+    if (st >= 2) {
+      var k5 = st > 2 ? 1 : CH.smooth(0, .4, t), k6 = st > 2 ? 1 : CH.smooth(.4, .8, t);
+      compAt(F, A4, 2.4, D30, 20, k5); compAt(F, B60, 2.4, D30, 20, k6);
+      if (k6 >= 1) { GE.dot(F, D30, { col: C.blue, r: F.s * .2 }); lab(F, D30, 105, 1, 'D', { col: C.blue, size: .95 }); }
+    }
+    if (st >= 3) {
+      var k7 = CH.smooth(0, .45, t), k8 = CH.smooth(.5, .8, t), k9 = CH.smooth(.8, 1, t);
+      if (k7 > 0) GE.seg(F, [O, GE.lerpP(O, RAY30, k7)], { col: C.yel, w: 3.2 });
+      if (k8 > 0) markDir(F, O, 0, 30, C.pink, { a: k8, r: F.s * 1.5, fill: .35, t: '30°', k: 2.6 });
+      if (k9 > 0) markDir(F, O, 30, 60, C.pink, { a: k9, r: F.s * 1.5, fill: .2, t: false });
+    }
+    GE.seg(F, [O, A4], { w: 2.8 });
+    dots(F, [O, A4].concat(st >= 1 && (st > 1 || t > .6) ? [B60] : []));
+    lab(F, O, 225, 1, 'O', { size: .95 }); lab(F, A4, 300, 1, 'A', { size: .95 }); if (st >= 1 && (st > 1 || t > .6)) lab(F, B60, 120, 1, 'B', { size: .95 });
+    return { F: F, L: L };
+  }
+  function consStep(n, q, a, sub, b) {
+    return { tag: '例題', bh: n === 1 ? '例題　30° の作図' : null, q: q, a: a, sub: sub, dur: 4.5, b: { t: b, col: C.pink },
+      draw: function (D) { var m = cons(D, D.ph ? n : n - 1, D.ph ? D.t : 1); say(D, m.L.side, STEP.slice(0, D.ph ? n : n - 1).map(function (s, i) { return { t: s, col: i === n - 1 ? C.yel : C.chalk }; })); } };
+  }
+
+  /* ---- 例題2：直線 XY 上の点 O の垂線 OC（P、Q → R）、∠COY の二等分線 OD（Q、S → T） ---- */
+  var E2 = { X: [-4.4, 0], Y: [4.4, 0], O: O, C: [0, 4.2], D: GE.polar(O, 4.2, 45), P: [-2, 0], Q: [2, 0], R: [0, Math.sqrt(5)], S: [0, 2] };
+  E2.T = both(E2.Q, 1.6, E2.S, 1.6);
+  GE.verify(E2, 'OP＝OQ＝OS＝2、PR＝QR＝3、QT＝ST、∠COY＝90°、∠DOY＝∠COD＝45°、∠DOX＝135°、∠DOX＝∠COD＋∠COX', null, '例題2');
+  CH.check(GE.near(dirOf(O, E2.T), 45) && 90 / 2 === 45 && 90 + 45 === 135 && 180 - 45 === 135, '例題2：45° と 135°');
+  function ex2(D, t, ans) {
+    var L = lay(D, .36), F = fitB(D, L.fig, E2, [[-4.8, -.9], [4.8, 4.7]]), P = E2;
+    GE.seg(F, [P.X, P.Y], { w: 2.8 });
+    var a1 = ans ? CH.smooth(0, .13, t) : 1, a4 = ans ? CH.smooth(.38, .46, t) : 1, a7 = ans ? CH.smooth(.71, .79, t) : 1;
+    if (ans) {
+      comp(F, O, 2, 0, 180, a1); compAt(F, P.P, 3, P.R, 14, CH.smooth(.14, .26, t)); compAt(F, P.Q, 3, P.R, 14, CH.smooth(.26, .37, t));
+      compAt(F, P.Q, 1.6, P.T, 16, CH.smooth(.48, .59, t)); compAt(F, P.S, 1.6, P.T, 16, CH.smooth(.59, .7, t));
+      if (a1 >= 1) dots(F, [P.P, P.Q], { col: C.blue }); if (t > .46) GE.dot(F, P.S, { col: C.blue });
+    }
+    if (a4 > 0) { GE.seg(F, [O, GE.lerpP(O, P.C, a4)], { col: C.blue, w: 3 }); if (a4 >= 1) GE.right(F, [P.Y, O, P.C], { col: C.blue, r: F.s * .6 }); }
+    if (a7 > 0) GE.seg(F, [O, GE.lerpP(O, P.D, a7)], { col: C.yel, w: 3 });
+    var a8 = ans ? CH.smooth(.8, .9, t) : 1, a9 = ans ? CH.smooth(.9, 1, t) : 1;
+    if (a8 > 0) markDir(F, O, 0, 45, C.yel, { a: a8, r: F.s * 1.5, t: ans ? '45°' : '？', k: 2.5 });
+    if (a9 > 0) markDir(F, O, 45, 180, C.orange, { a: a9, r: F.s * 2.3, fill: .15, t: ans ? '135°' : '？', k: 4.2, at: 120 });
+    GE.dot(F, O); nm(F, { X: 90, Y: 90, O: 270 }); if (a4 >= 1) nm(F, { C: 90 }); if (a7 >= 1) nm(F, { D: 45 });
+    if (ans) top(D, t < .38 ? 'O を通る垂線（P、Q → R）' : t < .48 ? '∠COY＝90°' : t < .8 ? '∠COY の二等分線（Q、S → D）' : t < .9 ? '∠DOY＝90°÷2＝45°' : '∠DOX＝90°＋45°＝135°', t < .48 ? C.blue : t < .9 ? C.yel : C.orange, CH.smooth(0, .03, t));
+    return { F: F, L: L };
+  }
+
+  /* ---- チャレンジ：∠AOB＝60°、∠AOC＝90°、OD は ∠BOC の二等分線 → ∠AOD＝75° ---- */
+  var P9 = { O: O, A: [4.6, 0], B: GE.polar(O, 4.6, 60), C: [0, 4.6], D: GE.polar(O, 4.6, 75), U: GE.polar(O, 2.6, 60), V: GE.polar(O, 2.6, 90) };
+  P9.W = both(P9.U, 1.6, P9.V, 1.6);
+  GE.verify(P9, '∠AOB＝60°、∠AOC＝90°、∠BOC＝30°、∠BOD＝∠DOC＝15°、∠AOD＝75°、∠AOD＝∠AOB＋∠BOD、OU＝OV、UW＝VW', null, 'チャレンジ');
+  CH.check(GE.near(dirOf(O, P9.W), 75) && 90 - 60 === 30 && 30 / 2 === 15 && 60 + 15 === 75, 'チャレンジの式');
+
+  K3.run({
+    no: '第9時', title: '定規とコンパスで、いろいろな大きさの角をつくろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '08.html', label: '◀ 第8時' }, { href: '10.html', label: '第10時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '60° と 90° から、ほかの角をつくる', q: '60° と 90° の角が、かいてある。この 2つをもとにして、定規とコンパスだけで、ほかに どんな大きさの角が つくれるだろう。できるだけ多く見つけよう。',
+        notes: ['① 自分の考え（3分）　つくれる角を、つくり方といっしょに書こう。', '② ペアの考え（3分）　自分とちがう角や、つくり方を。'],
+        draw: function (D) { var m = fanFig(D, 0, false); say(D, m.L.side, [{ t: '∠AOB＝60°', col: C.blue }, { t: '∠AOC＝90°', col: C.pink }, { t: 'ほかに、どんな角？' }]); } },
+      { tag: '今日の問い', q: 'どんな角が つくれる？', a: '30°・45°・15°（半分にする）、120°・75°・135°・150°・105° など（組み合わせる）', sub: '角を 二等分すると、半分の角。2つの角を となりあわせると、たした角', dur: 12,
+        b: [{ t: '30°＝60°÷2、45°＝90°÷2、15°＝30°÷2 … <b>二等分</b>', col: C.yel }, { t: '120°＝60°＋60°、75°＝60°＋15°、135°＝90°＋45° … <b>組み合わせる</b>', col: C.yel }],
+        draw: function (D) {
+          var m = fanFig(D, D.ph ? D.t : 0, D.ph === 1);
+          if (D.ph) say(D, m.L.side, LIST.slice(0, m.cur + 1).map(function (it, i) { return { t: it.t, col: i === m.cur && m.f < 1 ? (it.h ? C.yel : C.pink) : C.chalk, a: i === m.cur ? CH.smooth(0, .2, m.f) : 1 }; }));
+          else say(D, m.L.side, [{ t: '∠AOB＝60°', col: C.blue }, { t: '∠AOC＝90°', col: C.pink }]);
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '60° の角は、何をかいて つくる？ 90° の角は？ 半分の角は？', a: '60° … 正三角形、90° … 垂線、半分 … 角の二等分線', sub: '作図に使うのは、定規（線をひく）とコンパス（円をかく・長さをうつす）だけ', dur: 9,
+        b: [{ t: '60° … <b>正三角形</b>をかいてつくる', col: C.green }, { t: '90° … <b>垂線</b>を作図してつくる', col: C.green }, { t: '半分の角 … 角の<b>二等分線</b>でつくる', col: C.green }, { t: '使うのは <b>定規</b> と <b>コンパス</b> だけ', col: C.green }],
+        draw: function (D) { tools(D, D.ph ? D.t : 0, D.ph === 1); } },
+      consStep(1, '線分 OA を1辺とし、OA の上側に ∠AOD＝30° の半直線 OD を作図しよう。① はじめに、何をつくる？', '60° の角（正三角形 OAB）', 'O、A を中心に、半径 OA の弧をかく。交点が B。△OAB は正三角形だから ∠AOB＝60°', '① O、A を中心に半径 OA の弧 → 交点 B（<b>60°</b>）'),
+      consStep(2, '② 60° を半分にするには、つぎに何をかく？', 'A、B を中心に、同じ半径の弧をかく。交点が D', 'OA＝OB だから、A、B を そのまま使って、角の二等分線を作図できる', '② A、B を中心に、同じ半径の弧 → 交点 D'),
+      consStep(3, '③ 半直線 OD をひくと、∠AOD は何度？', '∠AOD＝60°÷2＝30°', 'OD は ∠AOB の二等分線。作図に使った線は、消さずに残しておく', '③ 半直線 OD → ∠AOD＝60°÷2＝<b>30°</b>'),
+      { tag: '例題', bh: '例題2　45° と 135°', q: '直線 XY 上の点 O を通る垂線 OC を作図し、∠COY の二等分線 OD をひいた。∠DOY と ∠DOX は、それぞれ何度？', a: '∠DOY＝45°、∠DOX＝135°', sub: '垂線で 90°、その二等分で 45°。∠DOX＝90°＋45°＝135°（180°−45° でも）', dur: 11,
+        b: { t: '垂線（90°）→ 二等分 → ∠DOY＝<b>45°</b>、∠DOX＝90°＋45°＝<b>135°</b>', col: C.pink },
+        draw: function (D) {
+          var m = ex2(D, D.ph ? D.t : 1, D.ph === 1);
+          say(D, m.L.side, [{ t: 'OC … O を通る XY の垂線', col: C.blue }, { t: 'OD … ∠COY の二等分線', col: C.yel }, D.ph && D.t > .8 ? { t: '∠DOY＝90°÷2＝45°', col: C.yel } : null, D.ph && D.t > .9 ? { t: '∠DOX＝90°＋45°＝135°', col: C.orange } : null]);
+        } },
+      { tag: '考えよう', q: '60° と 90° の角を、二等分することをくり返すと、どんな角ができるだろう。表に書き出して、つくれる角のきまりを考えよう。10° の角は、つくれるだろうか。',
+        notes: ['二等分でできた角と、たしたり ひいたりしてできる角も、小さい順に書き出そう。', '10° がつくれるかどうかを、理由もそえて書こう。', 'スライダーで、もとの角と、二等分する回数を変えられます（点線は 10° の線）。'],
+        sliders: [{ key: 'b', label: 'もとの角', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? '90°' : '60°'; } },
+          { key: 'n', label: '二等分する回数', min: 0, max: 4, step: 1, val: 1, fmt: function (x) { return x + '回'; } }],
+        draw: function (D) {
+          var b = D.V.b ? 90 : 60, n = D.V.n, L = lay(D, .34), F = fitB(D, L.fig, { O: O }, [[-.8, -.8], [6.4, 6.4]]), v = b / Math.pow(2, n);
+          sector(F, O, 2.6, 0, v, { col: C.yel, fa: .35, w: 2 });
+          GE.seg(F, [O, GE.polar(O, 5.6, 10)], { col: C.orange, w: 2, dash: [7, 6] }); lab(F, GE.polar(O, 5.6, 10), 10, .9, '10°', { col: C.orange, size: .8 });
+          for (var i = 1; i <= n; i++) GE.seg(F, [O, GE.polar(O, 5.2, b / Math.pow(2, i))], { col: C.yel, w: 2.6, a: 1 - (n - i) * .15 });
+          GE.seg(F, [O, [5.6, 0]], { w: 2.8 }); GE.seg(F, [O, GE.polar(O, 5.6, b)], { col: b === 60 ? C.blue : C.pink, w: 2.8 });
+          lab(F, GE.polar(O, 5.6, b), b, .9, b + '°', { col: b === 60 ? C.blue : C.pink, size: .85 });
+          GE.dot(F, O); lab(F, O, 225, .95, 'O', { size: .95 });
+          say(D, L.side, [{ t: 'もとの角 ' + b + '°', col: b === 60 ? C.blue : C.pink }, { t: '二等分 ' + n + '回', col: C.yel }, { t: 'いちばん小さい角 … ' + dg(v), col: C.yel }, { t: '点線 … 10° の線', col: C.orange }]);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '同じ半直線 OA から、同じ側に、∠AOB＝60°、∠AOC＝90° をつくる。∠BOC の二等分線を OD とするとき、∠AOD は何度？',
+        notes: ['ヒント① ∠BOC は何度かな。', 'ヒント② ∠BOD は、∠BOC の何分のいくつ？'],
+        a: '75°', sub: '∠BOC＝90°−60°＝30°、∠BOD＝30°÷2＝15°、∠AOD＝60°＋15°＝75°（(60°＋90°)÷2 でも）', dur: 8,
+        b: { t: '∠BOC＝30° → ∠BOD＝15° → ∠AOD＝60°＋15°＝<b>75°</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, L = lay(D, .38), F = fitB(D, L.fig, P9, [[-.9, -.9], [5.6, 5.6]]), P = P9;
+          var a1 = D.ph ? CH.smooth(0, .15, t) : 0, a3 = D.ph ? CH.smooth(.56, .68, t) : 0, a4 = D.ph ? CH.smooth(.72, .9, t) : 0;
+          if (a1 > 0) { sector(F, O, 3.6, 60, 90, { col: C.pink, fa: .25 * a1, stroke: false }); lab(F, GE.polar(O, 4.1, 88), 0, 0, '30°', { col: C.pink, a: a1 * (1 - a3), size: .8 }); }
+          if (D.ph) { comp(F, O, 2.6, 52, 98, CH.smooth(.18, .3, t)); compAt(F, P.U, 1.6, P.W, 16, CH.smooth(.3, .42, t)); compAt(F, P.V, 1.6, P.W, 16, CH.smooth(.42, .54, t)); }
+          ['A', 'B', 'C'].forEach(function (k, i) { GE.seg(F, [O, P[k]], { w: 2.8, col: [C.chalk, C.blue, C.pink][i] }); });
+          GE.seg(F, [O, P.D], { w: 3, col: D.ph ? C.yel : C.chalk });
+          markDir(F, O, 0, 60, C.blue, { r: F.s * 1.3, t: '60°', fill: .2, at: 22, k: 2.4 }); GE.right(F, [P.A, O, P.C], { col: C.pink, r: F.s * .55 });
+          if (a3 > 0) { markDir(F, O, 60, 75, C.yel, { a: a3, r: F.s * 3.4, t: '15°', k: 4.3, fill: .35 }); markDir(F, O, 75, 90, C.yel, { a: a3, r: F.s * 3.4, t: false, fill: .35 }); }
+          markDir(F, O, 0, 75, C.orange, { r: F.s * 2.3, fill: a4 > 0 ? .2 : .08, t: a4 > .5 ? '75°' : '？', k: 3.1 });
+          GE.dot(F, O); nm(F, { O: 225, A: 300, B: 60, C: 90, D: 75 });
+          say(D, L.side, [{ t: '∠AOB＝60°', col: C.blue }, { t: '∠AOC＝90°', col: C.pink }, { t: 'OD は ∠BOC の二等分線', col: C.yel },
+            D.ph ? { t: '∠BOC＝90°−60°＝30°', col: C.pink, a: a1 } : null, D.ph && t > .56 ? { t: '∠BOD＝30°÷2＝15°', col: C.yel, a: a3 } : null, D.ph && t > .72 ? { t: '∠AOD＝60°＋15°＝75°', col: C.orange, a: a4 } : null]);
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>平行四辺形の性質</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三角形と四角形 第8時：平行四辺形には、どんな性質があるだろう（ikkan の lesson_sankaku_08 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。証明の行は GE.proof が座標で確かめ、性質はスライダーのどの形でも CH.check で確かめる。
+   対角線の交点 O を中心に 180° 回すと、平行四辺形がぴったり重なる（対辺・対角が等しく、対角線は中点で交わる）。 */
+(function () {
+  var C = CH.C, R = Math.PI / 180;
+  /* ---- このページの道具 ---- */
+  function box(D, o) { return CH.box(D, o || { l: .06, r: .06, t: .1, b: .12 }); }
+  function ext(F, Q) { return Object.assign({}, F, { P: Object.assign({}, F.P, Q), X: function (p) { return F.X(typeof p === 'string' && Q[p] ? Q[p] : p); } }); }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), g = D.ctx; g.save(); g.font = '600 ' + size + 'px "Klee One",sans-serif'; var w = g.measureText(s).width; g.restore(); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({}, o, { size: size })); }
+  function bisDir(V, P, Q) { var a = GE.sub(P, V), b = GE.sub(Q, V), la = Math.hypot(a[0], a[1]), lb = Math.hypot(b[0], b[1]); return [a[0] / la + b[0] / lb, a[1] / la + b[1] / lb]; }
+  /* 平行四辺形 ABCD：B が左下、BC が底辺 */
+  function pg(ab, bc, angB) { var A = [ab * Math.cos(angB * R), ab * Math.sin(angB * R)]; return { A: A, B: [0, 0], C: [bc, 0], D: [A[0] + bc, A[1]], O: GE.mid(A, [bc, 0]) }; }
+  var DIR = { A: 'nw', B: 'sw', C: 'se', D: 'ne', O: 'n' };
+
+  /* ---- 今日の問い：▱ABCD（形はスライダーで変えられる） ---- */
+  [[3, 70], [2, 50], [4, 130], [3.5, 90]].forEach(function (g) {
+    var P = pg(g[0], 5, g[1]);
+    CH.check(GE.verify(P, 'AB∥DC') && GE.verify(P, 'AD∥BC') && GE.verify(P, 'AB＝DC') && GE.verify(P, 'AD＝BC') && GE.verify(P, '∠DAB＝∠BCD') && GE.verify(P, '∠ABC＝∠CDA') && GE.verify(P, 'AO＝CO') && GE.verify(P, 'BO＝DO'), '平行四辺形の性質（AB＝' + g[0] + '、∠B＝' + g[1] + '°）');
+    CH.check(['A', 'B', 'C', 'D'].every(function (k, i) { var q = GE.rot(P[k], P.O, 180), r = P['CDAB'.charAt(i)]; return GE.near(q[0], r[0]) && GE.near(q[1], r[1]); }), 'O のまわりに 180° 回すと重なる');
+  });
+  var FR = { p: [-2.7, -.3], q: [7.7, 4.1] };
+  function para(D, V, o) {
+    o = o || {}; var P = pg(V.ab, 5, V.b), F = ext(GE.fit(D, box(D, { l: .06, r: .06, t: .1, b: .1 }), FR, { pad: .06 }), P);
+    GE.poly(F, 'ABCD', { col: C.blue, fa: .12 });
+    if (o.diag !== false) { GE.seg(F, 'AC', { w: 2 }); GE.seg(F, 'BD', { w: 2 }); GE.dot(F, 'O'); }
+    GE.labels(F, o.diag !== false ? ['A', 'B', 'C', 'D', 'O'] : ['A', 'B', 'C', 'D'], { dir: DIR });
+    return F;
+  }
+
+  /* ---- 例題：AB＝CD、BC＝DA（対角線 AC） ---- */
+  var PE = pg(3, 5, 70); delete PE.O;
+  var defE = {
+    id: '第8時 例題', lv: 1, ttl: '例題　対辺が等しいことの証明', q: '▱ABCD で、AB＝CD、BC＝DA であることを、定義（2組の対辺が、それぞれ平行）をもとに証明しよう。', P: PE,
+    fig: { segs: ['AB', 'BC', 'CD', 'DA', 'AC'], pars: [['AB', 1], ['DC', 1], ['AD', 2], ['BC', 2]], dir: DIR },
+    hyp: 'AB∥DC、AD∥BC', goal: 'AB＝CD、BC＝DA', tri: ['ABC', 'CDA'],
+    plan: { q: 'どんな線をひいて、どの三角形の合同を示す？', a: '対角線 AC。△ABC と △CDA' },
+    L: [{ t: '対角線 AC をひく。△ABC と △CDA で' },
+      { t: '∠BAC＝∠DCA', r: 'AB∥DC の錯角', n: 1 },
+      { t: '∠BCA＝∠DAC', r: 'AD∥BC の錯角', n: 2 },
+      { t: 'AC は共通', n: 3, q: '③ もう1組、等しいものは？', a: 'AC は共通' },
+      { t: '①②③より、1組の辺とその両端の角が、それぞれ等しいので', c: 'ASA' },
+      { t: '△ABC≡△CDA' },
+      { t: 'AB＝CD、BC＝DA', r: '合同な図形の対応する辺は等しい', ask: 'r' }]
+  };
+
+  /* ---- チャレンジ：∠B の二等分線と AD の交点 E、∠D の二等分線と BC の交点 F ---- */
+  var PC = pg(4, 7, 70); delete PC.O;
+  PC.E = GE.meet(PC.B, GE.add(PC.B, bisDir(PC.B, PC.A, PC.C)), PC.A, PC.D); PC.F = GE.meet(PC.D, GE.add(PC.D, bisDir(PC.D, PC.A, PC.C)), PC.B, PC.C);
+  CH.check(GE.len(PC, 'AE') < GE.len(PC, 'AD') && GE.len(PC, 'BF') < GE.len(PC, 'BC') && GE.verify(PC, 'AE＝AB'), 'チャレンジの図（E は AD 上、F は BC 上）');
+  var defC = {
+    id: '第8時 チャレンジ', lv: 2, ttl: 'チャレンジ　BE＝DF の証明',
+    q: '▱ABCD で、∠B の二等分線と辺 AD の交点を E、∠D の二等分線と辺 BC の交点を F とする。BE＝DF を証明しよう。', P: PC,
+    fig: { segs: ['AB', 'BC', 'CD', 'DA', 'BE', 'DF'], angs: [['ABE', 1], ['EBC', 1], ['CDF', 2], ['FDA', 2]], dir: { A: 'nw', B: 'sw', C: 'se', D: 'ne', E: 'n', F: 's' } },
+    hyp: '▱ABCD、∠ABE＝∠EBC、∠CDF＝∠FDA', goal: 'BE＝DF', tri: ['ABE', 'CDF'],
+    notes: ['ヒント：∠A と ∠C、∠B と ∠D の関係を使えないかな。'],
+    L: [{ t: '△ABE と △CDF で' },
+      { t: 'AB＝CD', r: '平行四辺形の対辺は等しい', n: 1 },
+      { t: '∠BAE＝∠DCF', r: '平行四辺形の対角は等しい', n: 2 },
+      { t: '∠ABE＝∠CDF', r: '等しい角 ∠B、∠D を二等分した角', n: 3 },
+      { t: '①②③より、1組の辺とその両端の角が、それぞれ等しいので', c: 'ASA' },
+      { t: '△ABE≡△CDF' },
+      { t: 'BE＝DF', r: '合同な図形の対応する辺は等しい', ask: 'r' }]
+  };
+
+  var SL = [{ key: 'b', label: '∠B', min: 50, max: 130, step: 2, val: 70, fmt: function (x) { return x + '°'; } }, { key: 'ab', label: 'AB', min: 2, max: 4, step: .1, val: 3, fmt: function (x) { return x.toFixed(1); } }];
+
+  var steps = [
+    { tag: '今日の問い', bh: '平行四辺形 ABCD', q: '平行四辺形 ABCD で、辺・角・対角線を調べよう。気づいたきまりを書こう。',
+      notes: ['① 自分の考え（3分）　定規と分度器ではかって、気づいたきまりを書こう。', '② ペアの考え（3分）　自分とちがうきまりは？'],
+      draw: function (D) { var F = para(D, { ab: 3, b: 70 }); GE.par(F, 'AB', 1); GE.par(F, 'DC', 1); GE.par(F, 'AD', 2); GE.par(F, 'BC', 2); } },
+    { tag: '今日の問い', q: '向かい合う辺・向かい合う角・対角線には、どんなきまりがある？', a: '向かい合う辺・角は等しい。対角線は、それぞれの中点で交わる', sub: '対角線の交点 O を中心に 180° 回すと、ぴったり重なる（A↔C、B↔D）。スライダーで形を変えても成り立つ', dur: 4,
+      notes: ['スライダーで、形を変えられます（↻ もう一度 で回す）。'], sliders: SL,
+      b: [{ t: '向かい合う辺は等しい（AB＝DC、AD＝BC）', col: C.yel }, { t: '向かい合う角は等しい（∠A＝∠C、∠B＝∠D）', col: C.yel }, { t: '対角線は、それぞれの中点で交わる（AO＝CO、BO＝DO）', col: C.yel }],
+      draw: function (D) {
+        var F = para(D, D.V), P = F.P, t = D.ph ? D.t : 0, k = CH.ease(CH.smooth(.05, .6, t)), a = CH.smooth(.65, .85, t);
+        if (D.ph && t < 1) { var q = ['A', 'B', 'C', 'D'].map(function (n) { return GE.rot(P[n], P.O, 180 * k); }); GE.polyP(F, q, { col: C.yel, fa: .22 }); var lab = F.X(q[0]); say(D, lab[0], lab[1] - F.s * .9, 'A', { col: C.yel, size: F.s }); }
+        if (!D.ph) return;
+        GE.tick(F, 'AB', 1, { col: C.yel, a: a }); GE.tick(F, 'DC', 1, { col: C.yel, a: a }); GE.tick(F, 'AD', 2, { col: C.yel, a: a }); GE.tick(F, 'BC', 2, { col: C.yel, a: a });
+        GE.arc(F, 'DAB', { col: C.pink, a: a }); GE.arc(F, 'BCD', { col: C.pink, a: a }); GE.arc(F, 'ABC', { col: C.green, n: 2, a: a }); GE.arc(F, 'CDA', { col: C.green, n: 2, a: a });
+        var b2 = CH.smooth(.85, 1, t); GE.seg(F, 'AO', { col: C.blue, w: 4, a: b2 }); GE.seg(F, 'OC', { col: C.blue, w: 4, a: b2 }); GE.seg(F, 'BO', { col: C.orange, w: 4, a: b2 }); GE.seg(F, 'OD', { col: C.orange, w: 4, a: b2 });
+      } },
+    { tag: 'ことば', bh: 'ことば', q: '四角形の向かい合う辺・向かい合う角を、何という？ 平行四辺形の定義は？', a: '対辺・対角。2組の対辺が、それぞれ平行な四角形', sub: '平行四辺形 ABCD を ▱ABCD と書く', dur: 3,
+      b: [{ t: '向かい合う辺 … <b>対辺</b>　向かい合う角 … <b>対角</b>', col: C.green }, { t: '平行四辺形（定義）… 2組の対辺が、それぞれ <b>平行</b> な四角形　▱ABCD と書く', col: C.green }],
+      draw: function (D) {
+        var F = para(D, { ab: 3, b: 70 }, { diag: false }), t = D.ph ? D.t : 0, k = function (x) { return D.ph ? CH.smooth(x, x + .15, t) : 0; };
+        GE.seg(F, 'AB', { col: C.yel, w: 4.5, glow: true, a: k(.05) }); GE.seg(F, 'DC', { col: C.yel, w: 4.5, glow: true, a: k(.05) });
+        var m = F.X(GE.mid(F.P.A, F.P.B)); say(D, m[0] - F.s * 1.6, m[1], '対辺', { col: C.yel, a: k(.05), size: F.s * .9 });
+        GE.arc(F, 'DAB', { col: C.pink, fill: .45, r: F.s * 1.5, a: k(.35) }); GE.arc(F, 'BCD', { col: C.pink, fill: .45, r: F.s * 1.5, a: k(.35) });
+        var c = F.X(F.P.C); say(D, c[0] - F.s * 3.4, c[1] - F.s * 1, '対角', { col: C.pink, a: k(.35), size: F.s * .9 });
+        [['AB', 1], ['DC', 1], ['AD', 2], ['BC', 2]].forEach(function (p) { GE.par(F, p[0], p[1], { col: C.green, a: k(.65), w: 2.8 }); });
+        if (D.ph) say(D, F.R.cx, F.R.y1 + F.s * .2, 'AB∥DC、AD∥BC', { col: C.green, a: k(.65) });
+      } }
+  ].concat(GE.proof(defE, { tag: '例題' })).concat([
+    { tag: '考えよう', q: '例題の △ABC≡△CDA を使って、▱ABCD の向かい合う角 ∠A と ∠C が等しいわけを、説明できるだろうか。∠B＝∠D も、同じようにいえるだろうか。',
+      notes: ['∠A と ∠C を、それぞれ2つの角に分けて考えよう。', 'スライダーで、形を変えたり、角に色をつけたりできます。'],
+      sliders: [SL[0], { key: 'c', label: '角に色', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? 'つける' : '—'; } }],
+      draw: function (D) {
+        var F = para(D, { ab: 3, b: D.V.b }, { diag: false }); GE.seg(F, 'AC');
+        if (D.V.c) { GE.arc(F, 'BAC', { col: C.pink, fill: .45, r: F.s * 1.4 }); GE.arc(F, 'DCA', { col: C.pink, fill: .45, r: F.s * 1.4 }); GE.arc(F, 'CAD', { col: C.blue, fill: .45, r: F.s * 2 }); GE.arc(F, 'ACB', { col: C.blue, fill: .45, r: F.s * 2 }); }
+        else { GE.arc(F, 'DAB', { col: C.yel, r: F.s * 1.4, lab: '?' }); GE.arc(F, 'BCD', { col: C.yel, r: F.s * 1.4, lab: '?' }); }
+      } }
+  ]).concat(GE.proof(defC, { tag: 'チャレンジ' }));
+
+  K3.run({
+    no: '第8時', title: '平行四辺形には、どんな性質があるだろう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '07.html', label: '◀ 第7時' }, { href: '09.html', label: '第9時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

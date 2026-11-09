@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>比例と反比例を見分ける</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 比例と反比例 第11時：表・式・グラフから、比例か反比例かを見分けよう（ikkan の lesson_hirei_11 と同じ流れ）。
+   ア〜エの表に、y÷x と xy の行が1つずつうまって、一定の行が光る（ア 比例・イ 反比例・ウ エ どちらでもない）。
+   ことばは、比例・反比例を 表・式・グラフ で見分ける整理表（小さなグラフつき）。例題は、直線 ① と双曲線 ② の通る点から式を求める。
+   例題②は、式・表・グラフのカード 11枚が、比例・反比例・どちらでもない の箱へ とんでいく。
+   考えようは、x のスライダーで、y＝2x・z＝3y・w＝12/y の点が数直線の上を動く道具（比例か反比例かは書かない）。チャレンジは (−2, 9) を通る双曲線と y＝ax の交点。
+   数値は ikkan のまま（ikkan で新しく作った数）。カードの組み合わせ・図と動きは自作。カードの仲間分けも、y÷x・xy を計算し直して確かめている（CH.check）。 */
+(function () {
+  var C = CH.C, M = CH.mnum, OUT = 'rgba(20,40,30,.9)';
+  /* ---- 道具（比例と反比例の黒板 第9〜16時で共通。どのページにも同じものを入れてある） ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function near(a, b) { return Math.abs(a - b) < 1e-9; }
+  function ext(a, b) { for (var k in b) if (b[k] !== undefined) a[k] = b[k]; return a; }
+  function ha(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  /* 問い・答え・板書（HTML）の字：[6/x] を たての分数に（CH.fr） */
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = CH.fr(s[k]); }); if (s.notes) s.notes = s.notes.map(function (t) { return CH.fr(t); }); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = CH.fr(b.t); }); }); return st; }
+  /* 図の中（canvas）の字：[6/x] は たての分数。TW で幅、TX でかく（返すのは幅） */
+  function parse(s) { var out = [], re = /\[([^\/\]]+)\/([^\]]+)\]/g, m, i = 0; s = String(s); while ((m = re.exec(s))) { if (m.index > i) out.push({ t: s.slice(i, m.index) }); out.push({ n: m[1], d: m[2] }); i = re.lastIndex; } if (i < s.length) out.push({ t: s.slice(i) }); return out; }
+  function mw(D, t, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(t).width; g.restore(); return w; }
+  function segW(D, p, size) { var fz = size * .72; return p.t != null ? mw(D, p.t, size) : Math.max(mw(D, p.n, fz), mw(D, p.d, fz)) + fz * .4; }
+  function TW(D, s, size) { return parse(s).reduce(function (w, p) { return w + segW(D, p, size); }, 0); }
+  function TX(D, x, y, s, o) {
+    o = o || {}; var size = o.size || CH.fs(D), fz = size * .72, w = TW(D, s, size), x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    parse(s).forEach(function (p) {
+      var pw = segW(D, p, size);
+      if (p.t != null) CH.text(D, x0, y, p.t, ext({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + pw / 2; CH.text(D, cx, y - fz * .64, p.n, ext({ size: fz }, oo)); CH.text(D, cx, y + fz * .7, p.d, ext({ size: fz }, oo));
+        CH.line(D, x0 + fz * .14, y + fz * .03, x0 + pw - fz * .14, y + fz * .03, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += pw;
+    });
+    return w;
+  }
+  /* 幅 maxW に入る字の大きさ */
+  function fitT(D, s, maxW, size) { var w = TW(D, s, size); return w > maxW && w > 0 ? size * maxW / w : size; }
+  /* 四角 R の上から、1行ずつ（l.t 字、l.col 色、l.a 濃さ）。字は R に入る大きさにそろえる。返すのは字の大きさ */
+  function lines(D, R, L, o) {
+    o = o || {}; var s = Math.min(o.size || CH.fs(D, .95), R.h / (L.length * 1.75 + .3));
+    L.forEach(function (l) { if (l.t) s = Math.min(s, fitT(D, l.t, R.w, s)); });
+    L.forEach(function (l, i) { if (l.a === 0 || !l.t) return; TX(D, R.x0, R.y0 + s * (1.1 + i * 1.75), l.t, { col: l.col || C.chalk, size: s, align: 'left', a: l.a }); });
+    return s;
+  }
+  function full(D) { return CH.box(D, { l: 0, r: 0, t: 0, b: 0 }); }
+  /* 図と字の2つの四角。横長の画面なら左右（k は左の割合）、縦長なら上下（kn は上の割合） */
+  function two(D, k, kn) {
+    var R = full(D);
+    if (D.W > D.H * .9) { var x = R.x0 + R.w * k; return [CH.rect(R.x0, R.y0, x, R.y1), CH.rect(x + R.w * .03, R.y0 + R.h * .02, R.x1 - R.w * .02, R.y1)]; }
+    var y = R.y0 + R.h * (kn || k); return [CH.rect(R.x0, R.y0, R.x1, y), CH.rect(R.x0 + 8, y + 4, R.x1 - 8, R.y1)];
+  }
+  /* 座標平面：四角 R の中に、目もりの字のすきま（o.m：l・r・t・b を字の大きさの何倍か）をとって。そのほかの o は CH.plane と同じ */
+  function PL(D, R, o) { var s = CH.fs(D, .72), m = ext({ l: 2.1, r: 2.4, t: 1.8, b: 1.2 }, o.m || {}); return CH.plane(D, CH.rect(R.x0 + s * m.l, R.y0 + s * m.t, R.x1 - s * m.r, R.y1 - s * m.b), o); }
+  /* 平面の上の字（ふちどり。分数も） */
+  function lab(D, Pl, x, y, t, o) { o = o || {}; TX(D, Pl.X(x) + (o.dx || 0), Pl.Y(y) + (o.dy || 0), t, { col: o.col || C.chalk, size: o.size || CH.fs(D, .85), align: o.align || 'left', a: o.a, outline: OUT }); }
+  /* 点のまわりの、光る輪 */
+  function glow(D, Pl, p, col, a) { var r = CH.fs(D, .3); CH.circle(D, Pl.X(p[0]), Pl.Y(p[1]), r * (2.1 + .4 * Math.sin(D.now * 5)), { stroke: col, sw: 2.6, a: (a == null ? 1 : a) * .7 }); }
+  /* 反比例 y＝a/x のグラフ（双曲線）を、平面の中だけにかく。x＝0 の近くは、平面のふち（y の最大・最小）で切る。
+     o：side（1 なら x＞0 の曲線だけ、−1 なら x＜0 だけ）、x0・x1（x の変域）、t（0〜1 で とちゅうまで）、col、w、dash、a、glow */
+  function hyp(D, Pl, a, o) {
+    o = o || {}; var g = D.ctx, n = o.n || 160, t = o.t == null ? 1 : CH.clamp(o.t, 0, 1);
+    if (!a || t <= 0) return;
+    g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.yel; g.lineWidth = o.w || 3; g.lineCap = 'round'; g.lineJoin = 'round';
+    if (o.dash) g.setLineDash(o.dash === true ? [8, 7] : o.dash);
+    if (o.glow) { g.shadowColor = ha(o.col || C.yel, .55); g.shadowBlur = 8; }
+    [1, -1].forEach(function (sg) {
+      if (o.side && o.side !== sg) return;
+      var yl = a * sg > 0 ? Pl.yr[1] : Pl.yr[0], xn = yl ? Math.abs(a / yl) : Infinity;   /* xn：曲線が平面のふちにとどくところの |x| */
+      var lo = sg > 0 ? xn : Pl.xr[0], hi = sg > 0 ? Pl.xr[1] : -xn;
+      if (o.x0 != null) lo = Math.max(lo, o.x0); if (o.x1 != null) hi = Math.min(hi, o.x1);
+      if (!(hi > lo) || !isFinite(lo) || !isFinite(hi) || (sg > 0 ? lo <= 0 : hi >= 0)) return;
+      var p = sg > 0 ? lo : -hi, q = sg > 0 ? hi : -lo;   /* |x| を p から q へ（原点に近いほうから。点は |x| の等比で とる） */
+      g.beginPath();
+      for (var i = 0; i <= n * t; i++) { var x = sg * p * Math.pow(q / p, i / n), y = a / x; if (i) g.lineTo(Pl.X(x), Pl.Y(y)); else g.moveTo(Pl.X(x), Pl.Y(y)); }
+      g.stroke();
+    });
+    g.restore();
+  }
+  /* 式の字：y＝[6/x]、y＝−[6/x] */
+  function eqInv(a) { return 'y＝' + (a < 0 ? '−' : '') + '[' + Math.abs(a) + '/x]'; }
+  /* 表（字は分数も）。rows[0] が見出しの行、各行の [0] が見出しの列。
+     o：fw（見出しの列の幅の割合）、rh（行の高さの上限）、size、top（上につめる）、hl(r, c)→色、show(r, c)→濃さ、col(r, c)→字の色、a。cell(r, c) を返す */
+  function TB(D, R, rows, o) {
+    o = o || {}; var nR = rows.length, nC = rows[0].length, fw = o.fw == null ? .26 : o.fw, w0 = R.w * fw, cw = (R.w - w0) / Math.max(1, nC - 1);
+    var rh = Math.min(R.h / nR, o.rh || CH.fs(D) * 2.3), H = rh * nR, y0 = o.top ? R.y0 : R.cy - H / 2, s0 = o.size || Math.min(CH.fs(D, .85), rh * .42), g = D.ctx, r, c;
+    function cell(r, c) { var x0 = c === 0 ? R.x0 : R.x0 + w0 + (c - 1) * cw, x1 = c === 0 ? R.x0 + w0 : x0 + cw; return CH.rect(x0, y0 + r * rh, x1, y0 + (r + 1) * rh); }
+    for (r = 0; r < nR; r++) for (c = 0; c < nC; c++) {
+      var q = cell(r, c), hl = o.hl ? o.hl(r, c) : null;
+      if (r === 0 || c === 0) CH.fillRect(D, q.x0, q.y0, q.x1, q.y1, { fill: 'rgba(242,240,230,.06)', a: o.a });
+      if (hl) CH.fillRect(D, q.x0, q.y0, q.x1, q.y1, { fill: ha(hl, .28), a: o.a });
+    }
+    g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = 'rgba(242,240,230,.45)'; g.lineWidth = 1.2; g.beginPath();
+    for (r = 0; r <= nR; r++) { g.moveTo(R.x0, y0 + r * rh); g.lineTo(R.x1, y0 + r * rh); }
+    for (c = 0; c <= nC; c++) { var x = c === 0 ? R.x0 : R.x0 + w0 + (c - 1) * cw; g.moveTo(x, y0); g.lineTo(x, y0 + H); }
+    g.stroke(); g.restore();
+    rows.forEach(function (row, r) {
+      row.forEach(function (txt, c) {
+        var q = cell(r, c), sh = o.show ? o.show(r, c) : 1; if (sh <= 0 || txt == null || txt === '') return;
+        var hl = o.hl ? o.hl(r, c) : null, col = (o.col && o.col(r, c)) || hl || (r === 0 || c === 0 ? 'rgba(242,240,230,.85)' : C.chalk);
+        TX(D, q.cx, q.cy + 1, String(txt), { size: fitT(D, String(txt), q.w * .9, s0), col: col, a: (o.a == null ? 1 : o.a) * sh });
+      });
+    });
+    return { cell: cell, rh: rh, y0: y0, y1: y0 + H };
+  }
+
+  /* ---- 数と検算 ---- */
+  var X4 = [1, 2, 3, 4], TBS = [['ア', [6, 12, 18, 24]], ['イ', [24, 12, 8, 6]], ['ウ', [9, 8, 7, 6]], ['エ', [5, 7, 9, 11]]];
+  function same(a) { return a.every(function (v) { return near(v, a[0]); }); }
+  function kind(xs, ys) { return same(xs.map(function (x, i) { return ys[i] / x; })) ? 0 : same(xs.map(function (x, i) { return x * ys[i]; })) ? 1 : 2; }
+  var KN = ['比例', '反比例', 'どちらでもない'], KC = [C.yel, C.blue, C.pink];
+  CH.check(TBS.map(function (r) { return kind(X4, r[1]); }).join() === '0,1,2,2', '今日の問い（ア 比例・イ 反比例・ウ エ どちらでもない）');
+  /* 分数・小数の字（y÷x の行） */
+  function gcd(a, b) { return b ? gcd(b, a % b) : Math.abs(a); }
+  function q(n, d) { var g = gcd(n, d); n /= g; d /= g; if (d === 1) return M(n); var v = n / d; if (near(Math.round(v * 100) / 100, v)) return M(v); return (n < 0 ? '−' : '') + '[' + Math.abs(n) + '/' + d + ']'; }
+  CH.check(q(7, 3) === '[7/3]' && q(9, 4) === '2.25' && q(12, 2) === '6' && q(11, 4) === '2.75', '分数の字');
+  CH.check(near(-2 / 1, -2) && near(2 * 3, 6) && near(6 / 3, 2) && near(-2 * 2, -4), '例題（① y＝−2x、② y＝6/x）');
+  /* カード：kind（0 比例・1 反比例・2 どちらでもない）、type（f 式・t 表・g グラフ）、f（y を x で表す関数） */
+  var CARDS = [
+    { ty: 'f', t: 'y＝[x/5]', f: function (x) { return x / 5; }, k: 0 },
+    { ty: 'f', t: 'y＝[7/x]', f: function (x) { return 7 / x; }, k: 1 },
+    { ty: 'f', t: 'y＝7−x', f: function (x) { return 7 - x; }, k: 2 },
+    { ty: 'f', t: 'xy＝−3', f: function (x) { return -3 / x; }, k: 1 },
+    { ty: 'f', t: 'y＝−4x', f: function (x) { return -4 * x; }, k: 0 },
+    { ty: 't', ys: [3, 6, 9], k: 0 },
+    { ty: 't', ys: [12, 6, 4], k: 1 },
+    { ty: 't', ys: [5, 7, 9], k: 2 },
+    { ty: 'g', f: function (x) { return 1.5 * x; }, k: 0 },
+    { ty: 'g', f: function (x) { return 4 / x; }, k: 1, hy: 4 },
+    { ty: 'g', f: function (x) { return 3 - x; }, k: 2 }
+  ];
+  CH.check(CARDS.every(function (c) { var xs = c.ty === 't' ? [1, 2, 3] : [1, 2, 3, 4, 5], ys = c.ty === 't' ? c.ys : xs.map(c.f); return kind(xs, ys) === c.k; }) &&
+    [0, 1, 2].map(function (k) { return CARDS.filter(function (c) { return c.k === k; }).length; }).join() === '4,4,3', '例題②（カードの仲間分け 4・4・3）');
+  CH.check([1, 2, 3, 4].every(function (x) { return near(3 * 2 * x / x, 6) && near(x * 12 / (2 * x), 6); }), '考えよう（ここで確かめるだけ）');
+  var CC = -2 * 9, YC = CC / 3, AC = YC / 3;
+  CH.check(CC === -18 && YC === -6 && AC === -2 && near(AC * 3, CC / 3), 'チャレンジ（c＝−18、交点 (3, −6)、a＝−2）');
+
+  /* 今日の問いの表 4つ（o.k：y÷x・xy の行がうまる進み 0〜1） */
+  function four(D, o) {
+    o = o || {}; var R = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), cols = 2, rows = 2, s = CH.fs(D, .85);
+    var cw = R.w / cols, chh = R.h / rows, show = o.show || 0;
+    TBS.forEach(function (tb, i) {
+      var c = i % cols, r = Math.floor(i / cols), Q = CH.rect(R.x0 + c * cw + cw * .04, R.y0 + r * chh + chh * .04, R.x0 + (c + 1) * cw - cw * .04, R.y0 + (r + 1) * chh - chh * .06), ys = tb[1], kd = kind(X4, ys);
+      var rws = [['x'].concat(X4.map(String)), ['y'].concat(ys.map(String)), ['y÷x'].concat(X4.map(function (x, j) { return q(ys[j], x); })), ['xy'].concat(X4.map(function (x, j) { return String(x * ys[j]); }))];
+      var top = s * 1.5, T = CH.rect(Q.x0 + Q.w * .02, Q.y0 + top, Q.x1 - Q.w * .02, Q.y1);
+      CH.text(D, Q.x0 + s * .3, Q.y0 + s * .6, tb[0], { col: C.chalk, size: s * 1.1, align: 'left' });
+      var a3 = CH.smooth(.82 + i * .03, .9 + i * .03, show);
+      if (a3 > 0) CH.text(D, Q.x1 - s * .3, Q.y0 + s * .6, '→ ' + KN[kd], { col: KC[kd], size: s, align: 'right', a: a3 });
+      TB(D, T, rws, { top: true, fw: .26, rh: CH.fs(D) * 1.9, size: s * .9,
+        show: function (r2, c2) { if (r2 < 2) return 1; var s0 = r2 === 2 ? .05 : .4, st = s0 + (c2 - 1) * .07; return c2 === 0 ? CH.smooth(s0 - .04, s0, show) : CH.smooth(st, st + .06, show); },
+        hl: function (r2, c2) { return show > .75 && ((r2 === 2 && kd === 0) || (r2 === 3 && kd === 1)) && c2 > 0 ? KC[kd] : null; } });
+    });
+  }
+  /* 小さなグラフ（カード・整理表の中）。f は関数、hy は反比例の a（双曲線） */
+  function mini(D, R, c, col, a) {
+    var Pl = CH.plane(D, R, { x: [-4, 4], y: [-4, 4], nums: false, grid: false, a: a, xn: ' ', yn: ' ', size: Math.max(6, R.w * .06) });
+    if (c.hy) hyp(D, Pl, c.hy, { col: col, w: 2.2, a: a }); else CH.fn(D, Pl, c.f, { col: col, w: 2.2, a: a });
+    return Pl;
+  }
+  /* カード 1枚（x、y がまん中） */
+  function card(D, c, x, y, w, h, o) {
+    o = o || {}; var g = D.ctx, col = o.col || C.chalk, a = o.a == null ? 1 : o.a, r = Math.min(w, h) * .14;
+    g.save(); g.globalAlpha = D.ga * a; g.beginPath(); g.moveTo(x - w / 2 + r, y - h / 2); g.arcTo(x + w / 2, y - h / 2, x + w / 2, y + h / 2, r); g.arcTo(x + w / 2, y + h / 2, x - w / 2, y + h / 2, r); g.arcTo(x - w / 2, y + h / 2, x - w / 2, y - h / 2, r); g.arcTo(x - w / 2, y - h / 2, x + w / 2, y - h / 2, r); g.closePath();
+    g.fillStyle = 'rgba(30,60,45,.92)'; g.fill(); g.strokeStyle = col; g.lineWidth = 2; g.stroke(); g.restore();
+    if (c.ty === 'f') TX(D, x, y, c.t, { size: fitT(D, c.t, w * .86, Math.min(h * .34, CH.fs(D))), col: C.chalk, a: a });
+    else if (c.ty === 't') TB(D, CH.rect(x - w * .44, y - h * .36, x + w * .44, y + h * .36), [['x', '1', '2', '3'], ['y'].concat(c.ys.map(String))], { fw: .25, size: Math.min(h * .2, CH.fs(D, .8)), a: a });
+    else mini(D, CH.rect(x - h * .38, y - h * .38, x + h * .38, y + h * .38), c, C.green, a);
+  }
+
+  K3.run({
+    no: '第11時', title: '表・式・グラフから、比例か反比例かを見分けよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '10.html', label: '◀ 第10時' }, { href: '12.html', label: '第12時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: 'ア〜エの表を見分ける', q: 'ア〜エの表で、y は x に比例しているか、反比例しているか、どちらでもないか。見分けるには、何を調べればよいだろう。',
+        notes: ['① 自分の考え（3分）　ア〜エの判断と、見分け方を書こう。', '② ペアの考え（3分）　自分とちがう見方があれば、書こう。'],
+        draw: function (D) { four(D, { show: 0 }); } },
+      { tag: '今日の問い', q: 'y÷x と xy を計算すると？ ア〜エは、どれ？', a: 'ア 比例、イ 反比例、ウ・エ どちらでもない',
+        sub: 'ア … y÷x がいつも 6。イ … xy がいつも 24。ウは「へる」けれど xy は一定でない（9、16、21、24）。エは「ふえる」けれど y÷x は一定でない', dur: 8,
+        b: { t: '<b>y÷x が一定 → 比例</b>、<b>xy が一定 → 反比例</b>（ア 比例・イ 反比例・ウ エ どちらでもない）', col: C.yel },
+        draw: function (D) { four(D, { show: D.ph ? D.t : 0 }); } },
+      { tag: 'ことば', bh: 'ことば', q: '比例と反比例は、表・式・グラフで、どこを見れば見分けられる？', a: '表は y÷x か xy、式は y＝ax か y＝[a/x]、グラフは直線か双曲線',
+        sub: '比例 … y÷x が一定・y＝ax・原点を通る直線。反比例 … xy が一定・y＝[a/x]・双曲線。どちらにもあてはまらなければ、どちらでもない', dur: 6,
+        b: [{ t: '比例 … <b>y÷x が一定</b>・y＝ax・<b>原点を通る直線</b>', col: C.green }, { t: '反比例 … <b>xy が一定</b>・y＝[a/x]・<b>双曲線</b>', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .04, b: .04 }), t = D.ph ? D.t : 0, s = CH.fs(D), w0 = R.w * .2, cw = (R.w - w0) / 2, rh = R.h / 4;
+          var heads = ['', '比例', '反比例'], rowsT = ['表', '式', 'グラフ'], cells = [['y÷x が一定', 'xy が一定'], ['y＝ax', 'y＝[a/x]']];
+          var g = D.ctx; g.save(); g.globalAlpha = D.ga; g.strokeStyle = 'rgba(242,240,230,.45)'; g.lineWidth = 1.2; g.beginPath();
+          for (var i = 0; i <= 4; i++) { g.moveTo(R.x0, R.y0 + i * rh); g.lineTo(R.x1, R.y0 + i * rh); }
+          [0, w0, w0 + cw, w0 + 2 * cw].forEach(function (x) { g.moveTo(R.x0 + x, R.y0); g.lineTo(R.x0 + x, R.y1); }); g.stroke(); g.restore();
+          heads.forEach(function (h, c) { if (h) CH.text(D, R.x0 + w0 + (c - .5) * cw, R.y0 + rh / 2, h, { col: [null, C.yel, C.blue][c], size: s * 1.1 }); });
+          rowsT.forEach(function (h, r) { CH.text(D, R.x0 + w0 / 2, R.y0 + (r + 1.5) * rh, h, { col: 'rgba(242,240,230,.85)', size: s }); });
+          [0, 1].forEach(function (c) {
+            var col = [C.yel, C.blue][c], cx = R.x0 + w0 + (c + .5) * cw;
+            [0, 1].forEach(function (r) { var a = D.ph ? CH.smooth(.05 + r * .25 + c * .1, .15 + r * .25 + c * .1, t) : 0; if (a > 0) TX(D, cx, R.y0 + (r + 1.5) * rh, cells[r][c], { col: col, size: fitT(D, cells[r][c], cw * .9, s * 1.05), a: a }); });
+            var a3 = D.ph ? CH.smooth(.6 + c * .15, .72 + c * .15, t) : 0, hh = rh * .84;
+            if (a3 > 0) {
+              var x0 = R.x0 + w0 + c * cw + s * .4, tx = x0 + hh + s * .4, tw = R.x0 + w0 + (c + 1) * cw - s * .3 - tx;
+              mini(D, CH.rect(x0, R.y0 + 3.08 * rh, x0 + hh, R.y0 + 3.08 * rh + hh), c ? { hy: 4 } : { f: function (x) { return 1.5 * x; } }, col, a3);
+              TX(D, tx + tw / 2, R.y0 + 3.5 * rh, c ? '双曲線' : '原点を通る直線', { col: col, size: fitT(D, '原点を通る直線', tw, s * 1.05), a: a3 });
+            }
+          });
+        } },
+      { tag: '例題', bh: '例題　グラフから式を求める', q: '図の ①、② は、比例または反比例のグラフである。グラフの形から見分けて、y を x の式で表そう。', a: '① y＝−2x　② y＝[6/x]',
+        sub: '① 原点を通る直線 → 比例。(1, −2) を通るから a＝y÷x＝(−2)÷1＝−2　② 双曲線 → 反比例。(2, 3) を通るから a＝xy＝2×3＝6', dur: 7,
+        b: { t: '① 直線 → 比例 <b>y＝−2x</b>　② 双曲線 → 反比例 <b>y＝[6/x]</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Rs = two(D, .56, .62), Pl = PL(D, Rs[0], { x: [-6, 6], y: [-5, 5] }), s = CH.fs(D, .85);
+          var a1 = CH.smooth(.05, .2, t), a2 = CH.smooth(.45, .6, t);
+          if (a2 > 0) CH.fillRect(D, Pl.X(0), Pl.Y(0), Pl.X(2), Pl.Y(3), { fill: 'rgba(154,216,255,.2)', stroke: C.blue, sw: 2, a: a2 });
+          CH.lin(D, Pl, -2, 0, { col: C.yel, w: 3 }); hyp(D, Pl, 6, { col: C.blue, w: 3 });
+          lab(D, Pl, -2.4, 4.3, '①', { col: C.yel, align: 'right' }); lab(D, Pl, 3.8, 2.6, '②', { col: C.blue });
+          CH.pt(D, Pl, 1, -2, { col: C.yel, lab: '(1, −2)', dir: 'e' }); CH.pt(D, Pl, 2, 3, { col: C.blue, lab: '(2, 3)', dir: 'ne' });
+          if (a1 > 0) CH.slopeTri(D, Pl, -2, 0, 0, 1, { col: C.yel, a: a1, lx: '1', ly: '−2' });
+          if (a2 > 0) lab(D, Pl, 1, 1.5, '2×3', { col: C.blue, align: 'center', a: a2, size: s * .85 });
+          lines(D, Rs[1], [{ t: '① 原点を通る直線 → 比例', col: C.yel, a: a1 }, { t: '　a＝(−2)÷1＝−2', a: CH.smooth(.15, .25, t) }, { t: '　y＝−2x', col: C.yel, a: CH.smooth(.28, .38, t) },
+            { t: '② 双曲線 → 反比例', col: C.blue, a: a2 }, { t: '　a＝2×3＝6', a: CH.smooth(.6, .7, t) }, { t: '　y＝[6/x]', col: C.blue, a: CH.smooth(.75, .85, t) }]);
+        } },
+      { tag: '例題', bh: '例題②　カードを仲間分け', q: '式・表・グラフのカードを、比例・反比例・どちらでもない に分けよう。', a: '比例 4枚、反比例 4枚、どちらでもない 3枚',
+        sub: '比例 … y＝[x/5]、y＝−4x、表（3・6・9）、原点を通る直線　反比例 … y＝[7/x]、xy＝−3、表（12・6・4）、双曲線　どちらでもない … y＝7−x、表（5・7・9）、原点を通らない直線', dur: 9,
+        b: { t: 'カード … 比例 4枚・反比例 4枚・どちらでもない 3枚（式の形・y÷x と xy・グラフの形で）', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .02, r: .02, t: .02, b: .02 }), t = D.ph ? D.t : 0, s = CH.fs(D, .9), wide = D.W > D.H * .9;
+          var nc = wide ? 6 : 4, nr = Math.ceil(CARDS.length / nc), top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .5), bot = CH.rect(R.x0, R.y0 + R.h * .53, R.x1, R.y1);
+          var cw = top.w / nc, chh = top.h / nr, w = Math.min(cw * .9, chh * 1.5), h = Math.min(chh * .86, w * .7);
+          var bins = CH.cols(bot, 3, .03), cnt = [0, 0, 0];
+          bins.forEach(function (B, k) { CH.fillRect(D, B.x0, B.y0, B.x1, B.y1, { fill: ha(KC[k], .07), stroke: KC[k], sw: 2 }); CH.text(D, B.cx, B.y0 + s * .8, KN[k], { col: KC[k], size: fitT(D, KN[k], B.w * .9, s) }); });
+          CARDS.forEach(function (c, i) {
+            var p0 = [top.x0 + (i % nc + .5) * cw, top.y0 + (Math.floor(i / nc) + .5) * chh], B = bins[c.k], j = cnt[c.k]++;
+            var bw = Math.min(B.w / 2 * .9, w * .8), bh = Math.min(bw * .62, (B.h - s * 1.8) / 2 * .88), p1 = [B.x0 + B.w * (j % 2 ? .75 : .25), B.y0 + s * 1.8 + (Math.floor(j / 2) + .5) * (B.h - s * 1.8) / 2];
+            var k = D.ph ? CH.ease(CH.smooth(.04 + i * .075, .12 + i * .075, t)) : 0;
+            card(D, c, CH.lerp(p0[0], p1[0], k), CH.lerp(p0[1], p1[1], k) - Math.sin(k * Math.PI) * s * 2, CH.lerp(w, bw, k), CH.lerp(h, bh, k), { col: k > .99 ? KC[c.k] : C.chalk });
+          });
+        } },
+      { tag: '考えよう', q: 'y＝2x のとき、z＝3y と w＝[12/y] は、それぞれ x に比例するか、反比例するか。x＝1、2、3、4 の表で調べよう。',
+        notes: ['z について、気づいたことを書こう。', 'w について、気づいたことを書こう。', 'スライダーで x を変えると、y、z、w の点が数直線の上を動きます。'],
+        sliders: [{ key: 'x', label: 'x', min: 1, max: 4, step: .5, val: 1, fmt: function (v) { return 'x＝' + v; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .14, r: .08, t: .06, b: .08 }), x = D.V.x, y = 2 * x, s = CH.fs(D, .9);
+          var L = [['x', x, 4, 1, C.chalk], ['y＝2x', y, 8, 1, C.yel], ['z＝3y', 3 * y, 24, 4, C.orange], ['w＝[12/y]', 12 / y, 8, 1, C.blue]], rs = CH.rows(R, 4, .25);
+          L.forEach(function (l, i) {
+            var Q = rs[i], X = CH.numline(D, CH.rect(Q.x0, Q.y0, Q.x1, Q.cy + s * .3), 0, l[2], l[3] / (l[3] > 1 ? 2 : 2), { lab: l[3], size: s * .8 });
+            TX(D, Q.x0 - s * .8, Q.cy + s * .3, l[0], { col: l[4], size: s, align: 'right' });
+            CH.circle(D, X(l[1]), Q.cy + s * .3, s * .42, { fill: l[4], stroke: 'rgba(20,30,24,.8)', sw: 1.4 });
+          });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'y は x に反比例し、x＝−2 のとき y＝9 である。この反比例のグラフと、比例 y＝ax のグラフが、x 座標が 3 の点で交わっている。a の値を求めよう。', a: 'a＝−2',
+        sub: '反比例の式を y＝[c/x] とおく。c＝(−2)×9＝−18。x＝3 のとき y＝−18÷3＝−6 → 交点 (3, −6)。y＝ax が (3, −6) を通るから −6＝3a、a＝−2', dur: 8,
+        b: { t: 'c＝(−2)×9＝−18、交点 (3, −6) → −6＝3a → <b>a＝−2</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Rs = two(D, .5, .62), Pl = PL(D, Rs[0], { x: [-7, 7], y: [-10, 10], lab: 2 });
+          CH.pt(D, Pl, -2, 9, { col: C.blue, lab: '(−2, 9)', dir: 'e' });
+          if (t > .1) hyp(D, Pl, -18, { col: C.blue, w: 3, t: CH.smooth(.1, .3, t) });
+          if (t > .32) { var a1 = CH.smooth(.32, .42, t); CH.pseg(D, Pl, [3, 0], [3, -6], { col: C.pink, dash: true, a: a1 }); CH.pt(D, Pl, 3, -6, { col: C.pink, lab: '(3, −6)', dir: 'e', a: a1 }); if (t < .62) glow(D, Pl, [3, -6], C.pink, a1); }
+          if (t > .6) { CH.lin(D, Pl, -2, 0, { col: C.orange, w: 3, t: CH.smooth(.6, .78, t), x0: -5, x1: 5 }); lab(D, Pl, 4.3, -8.6, 'y＝ax', { col: C.orange, a: CH.smooth(.75, .85, t) }); }
+          lines(D, Rs[1], [{ t: '反比例 y＝[c/x]', a: D.ph ? CH.smooth(0, .06, t) : 0 }, { t: 'c＝(−2)×9＝−18', col: C.blue, a: CH.smooth(.04, .12, t) }, { t: 'x＝3 のとき y＝−18÷3＝−6', a: CH.smooth(.32, .42, t) },
+            { t: '交点 (3, −6)', col: C.pink, a: CH.smooth(.42, .5, t) }, { t: 'y＝ax に代入　−6＝3a', a: CH.smooth(.62, .72, t) }, { t: 'a＝−2', col: C.orange, a: CH.smooth(.8, .9, t) }]);
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

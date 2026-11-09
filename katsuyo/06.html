@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>計画を立ててデータを整理</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="js/chart.js"></script>
+<script>
+/* データの活用 第6時：どちらの作戦がよいか、調べる計画を立てて、データを整理しよう（ikkan の lesson_data_new_06 と同じ流れ）。 */
+(function () {
+  var C = CH.C, RA = [4, 8, 11, 13, 15, 17, 19, 21, 23, 24, 26, 27, 29, 31, 33, 35, 37, 42, 44, 51], RB = [17, 19, 21, 22, 22, 23, 23, 24, 24, 24, 25, 25, 26, 26, 27, 27, 28, 31, 32, 34];
+  var E10 = [0, 10, 20, 30, 40, 50, 60], CA = CH.bin(RA, E10), CB = CH.bin(RB, E10);
+  CH.check(CA.join() === '2,5,6,4,2,1' && CH.sum(RA) === 510 && CH.mean(RA) === 25.5 && CH.median(RA) === 25 && RA[19] - RA[0] === 47, '作戦A');
+  CH.check(CH.mean(RB) === 25 && CH.median(RB) === 24.5 && RB[19] - RB[0] === 17, '作戦B');
+  CH.check(5 * 3 + 15 * 6 + 25 * 11 + 35 * 8 + 45 * 2 === 750 && 750 / 30 === 25, 'チャレンジ');
+  function cards(D, R, vals, col) { var n = vals.length, cw = R.w / n; vals.forEach(function (x, i) { CH.card(D, R.x0 + (i + .5) * cw, R.cy, cw * .84, Math.min(R.h * .8, cw * 1.1), x, { col: col }); }); }
+  function dot2(D, show) {
+    var R = CH.box(D, { l: .06, r: .08, t: .08, b: .14 }), rs = CH.rows(R, 2, .2), out = [];
+    [[RA, '作戦A', C.blue], [RB, '作戦B', C.orange]].forEach(function (g, k) {
+      var X = CH.numline(D, rs[k], 0, 55, 5, { lab: 10, unit: '（回）' }); CH.dots(D, X, rs[k].y1, g[0], { col: function () { return g[2]; }, r: CH.fs(D, .4) });
+      CH.text(D, rs[k].x0, rs[k].y0 + CH.fs(D) * .4, g[1], { col: g[2], align: 'left' }); out.push(X);
+    });
+    return { R: R, rs: rs, X: out };
+  }
+
+  K3.run({
+    no: '第6時', title: 'どちらの作戦がよいか、調べる計画を立てて、データを整理しよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '05.html', label: '◀ 第5時' }, { href: '07.html', label: '第7時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '大なわとびの記録（20回ずつ、小さい順）', q: '作戦A（なわを速く回す）と 作戦B（ゆっくり回す）を、20回ずつ試した記録。本番は1回だけ。どちらを選ぶか決めるために、何を調べればよいだろう。',
+        notes: ['① 自分の計画（3分）　何を、どうやって調べるか。', '② ペアの計画（3分）'],
+        draw: function (D) {
+          var R = CH.box(D, { l: .03, r: .03, t: .12, b: .2 }), rs = CH.rows(R, 2, .4);
+          CH.text(D, rs[0].x0, rs[0].y0 - CH.fs(D), '作戦A', { col: C.blue, align: 'left' }); cards(D, rs[0], RA, C.blue);
+          CH.text(D, rs[1].x0, rs[1].y0 - CH.fs(D), '作戦B', { col: C.orange, align: 'left' }); cards(D, rs[1], RB, C.orange);
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'データを使って判断するときは、どんな順に進める？', a: '問題 → 計画 → 整理 → 結論', sub: '平均値・中央値・最頻値を、まとめて代表値という', dur: 3,
+        b: { t: '① 問題をはっきり ② <b>計画</b>を立てる ③ データを<b>整理</b> ④ <b>結論</b>', col: C.green },
+        draw: function (D) {
+          var R = CH.box(D, { l: .14, r: .14, t: .12, b: .18 }), L = ['① 問題', '② 計画', '③ 整理', '④ 結論'], cx = R.cx, cy = R.cy, rx = R.w * .38, ry = R.h * .36, t = D.ph ? D.t : 0;
+          L.forEach(function (s, i) { var a = -Math.PI / 2 + i * Math.PI / 2, x = cx + rx * Math.cos(a), y = cy + ry * Math.sin(a), on = !D.ph || t * 4 > i; CH.card(D, x, y, R.w * .3, R.h * .2, '', { col: [C.yel, C.blue, C.green, C.pink][i], a: on ? 1 : .25 }); CH.text(D, x, y, s, { a: on ? 1 : .25, size: CH.fs(D, 1.1) });
+            var b = a + Math.PI / 2; if (i < 3 || t >= 1) { var x2 = cx + rx * Math.cos(b), y2 = cy + ry * Math.sin(b); CH.arrow(D, CH.lerp(x, x2, .3), CH.lerp(y, y2, .3), CH.lerp(x, x2, .7), CH.lerp(y, y2, .7), { a: on ? .8 : .2, w: 2.4 }); } });
+        } },
+      { tag: '例題', bh: '例題　作戦Aを整理する', q: '作戦Aの記録を、階級の幅 10回の度数分布表に整理すると？', a: '2・5・6・4・2・1（計 20）', dur: 4,
+        b: { t: '作戦Aの度数　0〜10 2・10〜20 5・20〜30 6・30〜40 4・40〜50 2・50〜60 1', col: C.blue },
+        draw: function (D) {
+          var R = CH.box(D, { l: .1, t: .02, b: .12 }), top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .14), bot = CH.rect(R.x0, R.y0 + R.h * .3, R.x1, R.y1), t = D.ph ? D.t : 0;
+          var Ax = CH.axes(D, bot, { x: [0, 60], y: [0, 7], xt: E10, yt: [0, 2, 4, 6], xl: '（回）', yl: '（回数）' }), cw = top.w / 20;
+          CH.stacks(D, Ax, RA, E10, { col: C.blue, pos: function (i, q) { var k = CH.ease(CH.clamp((t - i * .025) / .45, 0, 1)), g = [top.x0 + (i + .5) * cw, top.cy]; return [CH.lerp(g[0], q.x, k), CH.lerp(g[1], q.y, k)]; } });
+          if (t >= 1) CA.forEach(function (n, b) { CH.text(D, Ax.X(E10[b] + 5), Ax.Y(n) - Ax.s, String(n), { col: C.yel, num: true }); });
+        } },
+      { tag: '例題', q: '作戦Aの 平均値・中央値・範囲は？（記録の合計は 510回）', a: '平均値 25.5回、中央値 25回、範囲 47回', sub: '平均値 510÷20　中央値 10番目と11番目の平均（24＋26）÷2　範囲 51−4', dur: 3,
+        b: { t: '作戦A　平均値 <b>25.5回</b>・中央値 <b>25回</b>・範囲 <b>47回</b>', col: C.blue },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .08, t: .3, b: .22 }), X = CH.numline(D, R, 0, 55, 5, { lab: 10, unit: '（回）' }), t = D.ph ? D.t : 0, s = CH.fs(D);
+          CH.dots(D, X, R.y1, RA, { col: function (i) { return t > .4 && (i === 9 || i === 10) ? C.pink : C.blue; }, r: CH.fs(D, .45) });
+          if (t > .1) { var a = CH.smooth(.1, .3, t); CH.line(D, X(25.5), R.y1, X(25.5), R.y1 - s * 4, { col: C.yel, dash: true, w: 2.4, a: a }); CH.text(D, X(25.5), R.y1 - s * 4.6, '平均値 25.5', { col: C.yel, a: a }); }
+          if (t > .4) { var a2 = CH.smooth(.4, .6, t); CH.text(D, X(25), R.y1 + s * 2.6, '中央値 25（10・11番目）', { col: C.pink, a: a2 }); }
+          if (t > .7) { var a3 = CH.smooth(.7, .9, t), yy = R.y1 - s * 6.5; CH.arrow(D, X(4), yy, X(51), yy, { col: C.green, a: a3, w: 2.4 }); CH.arrow(D, X(51), yy, X(4), yy, { col: C.green, a: a3, w: 2.4 }); CH.text(D, X(27.5), yy - s * .9, '範囲 47', { col: C.green, a: a3 }); }
+        } },
+      { tag: '考えよう', q: '作戦Aと作戦Bを くらべよう。2つの作戦は、どこが同じで、どこがちがうだろう。ちがいは、何を見るとわかるだろう。',
+        notes: ['平均値・中央値・範囲の表を使って。（A 25.5・25・47／B 25.0・24.5・17）', 'ちがいは、何を見るとわかる？ わけも。', 'スライダーで、表し方を変えられます。'],
+        sliders: [{ key: 'v', label: '表し方', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? 'ヒストグラム' : 'ドットプロット'; } }],
+        draw: function (D) {
+          if (!D.V.v) { dot2(D); return; }
+          var R = CH.box(D, { l: .1, t: .1, b: .16 }), rs = CH.split(D, R, 2, .14);
+          [[CA, '作戦A', C.blue], [CB, '作戦B', C.orange]].forEach(function (g, k) { var Ax = CH.axes(D, rs[k], { x: [0, 60], y: [0, 16], xt: E10, yt: [0, 4, 8, 12, 16], xl: '（回）', yl: '（回数）' }); CH.bars(D, Ax, E10, g[0], { col: g[2], labels: true }); CH.text(D, rs[k].cx, rs[k].y0 + Ax.s * .5, g[1], { col: g[2] }); });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '30人の通学時間の度数分布表（0〜10分 3人、10〜20分 ア人、20〜30分 11人、30〜40分 イ人、40〜50分 2人）。階級値を使った平均値は 25.0分。ア・イは？',
+        a: 'ア 6、イ 8', sub: 'ア＋イ＝14。イ＝x とすると、階級値×人数 の合計 590＋20x ＝ 25.0×30 ＝ 750 → x ＝ 8', dur: 5,
+        b: { t: '590 ＋ 20x ＝ 750 → イ ＝ <b>8</b>、ア ＝ 14 − 8 ＝ <b>6</b>', col: C.orange },
+        banner: function (s) { if (!s.ph) return ''; var x = Math.round(8 * CH.ease(CH.clamp(s.t / .8, 0, 1))); return 'イ ＝ ' + x + '、ア ＝ ' + (14 - x) + '　合計 ' + (590 + 20 * x) + '（750 になればよい）'; },
+        draw: function (D) {
+          var x = D.ph ? Math.round(8 * CH.ease(CH.clamp(D.t / .8, 0, 1))) : 0, c = [3, 14 - x, 11, x, 2], E = [0, 10, 20, 30, 40, 50];
+          var R = CH.box(D, { l: .1, t: .14, b: .2 }), Ax = CH.axes(D, R, { x: [0, 50], y: [0, 16], xt: E, yt: [0, 4, 8, 12, 16], xl: '（分）', yl: '（人）' });
+          CH.bars(D, Ax, E, c, { col: C.lav, labels: true, hl: function (i) { return i === 1 || i === 3 ? C.yel : null; } });
+          var m = (5 * 3 + 15 * (14 - x) + 25 * 11 + 35 * x + 45 * 2) / 30;
+          CH.poly(D, [[Ax.X(m), Ax.Y(0) + 4], [Ax.X(m) - 12, Ax.Y(0) + 24], [Ax.X(m) + 12, Ax.Y(0) + 24]], { fill: Math.abs(m - 25) < 1e-9 ? C.yel : C.pink });
+          CH.text(D, Ax.X(m), Ax.Y(0) + 24 + Ax.s * 1.2, CH.f1(m), { num: true, col: Math.abs(m - 25) < 1e-9 ? C.yel : C.pink });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

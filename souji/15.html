@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>面積比を使う</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 相似な図形 第15時：面積比を使って、面積を求めよう（ikkan の lesson_souji_15 と同じ流れ）。
+   DE∥BC の △ABC。△ADE∽△ABC の相似比 AD：AB から面積の比を出し、比例式で面積を求める。
+   AD：AB＝m：n のとき、△ABC を相似比 1：n の小さい三角形 n² こに分けると、△ADE はそのうち m² こ（マス目の動き）。
+   座標は ikkan と同じ（今日の問い A(4,6)・B(0,0)・C(12,0)、例題 A(5,8)・B(0,0)・C(16,0)、考えよう A(4,6)…）。チャレンジの平行四辺形は、
+   △EFB がちょうど 2 になる座標を自作した。面積・比・相似・平行は、座標から計算し直して照らし合わせる（CH.check・GE.verify）。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)';
+  /* ---- 図の道具（このページの中だけ） ---- */
+  function area(P) { var s = 0; for (var i = 0; i < P.length; i++) { var q = P[(i + 1) % P.length]; s += P[i][0] * q[1] - q[0] * P[i][1]; } return Math.abs(s) / 2; }
+  function at(p, q, t) { return GE.lerpP(p, q, t); }
+  function cen(P) { var c = [0, 0]; P.forEach(function (p) { c[0] += p[0] / P.length; c[1] += p[1] / P.length; }); return c; }
+  function pts(P, s) { return s.split('').map(function (k) { return P[k]; }); }
+  /* △ABC（A は上の頂点）で、AB・AC 上に AD：AB＝AE：AC＝t の点 D、E をとる */
+  function triDE(A, B, Cc, t) { return { A: A, B: B, C: Cc, D: at(A, B, t), E: at(A, Cc, t) }; }
+  /* △ABC を、相似比 1：n の小さい三角形 n² こに分ける。lv（頂点 A からの段）・inv（さかさ）つき */
+  function cells(P, n) {
+    var u = [(P.B[0] - P.A[0]) / n, (P.B[1] - P.A[1]) / n], v = [(P.C[0] - P.A[0]) / n, (P.C[1] - P.A[1]) / n], out = [];
+    for (var i = 0; i < n; i++) for (var j = 0; i + j < n; j++) {
+      var o = [P.A[0] + i * u[0] + j * v[0], P.A[1] + i * u[1] + j * v[1]], a = [o[0] + u[0], o[1] + u[1]], b = [o[0] + v[0], o[1] + v[1]];
+      out.push({ p: [o, a, b], lv: i + j, inv: false });
+      if (i + j < n - 1) out.push({ p: [a, [a[0] + v[0], a[1] + v[1]], b], lv: i + j + 1, inv: true });
+    }
+    return out;
+  }
+  /* マス目の線（AB・AC・BC に平行） */
+  function gridLines(F, P, n, o) {
+    o = o || {}; var st = { w: 1.3, col: 'rgba(242,240,230,.55)', a: o.a };
+    for (var k = 1; k < n; k++) {
+      GE.seg(F, [at(P.A, P.B, k / n), at(P.A, P.C, k / n)], st);
+      GE.seg(F, [at(P.A, P.B, k / n), at(P.C, P.B, k / n)], st);
+      GE.seg(F, [at(P.A, P.C, k / n), at(P.B, P.C, k / n)], st);
+    }
+  }
+  function tx(F, p, s, o) { o = o || {}; var q = F.X(p); CH.text(F.D, q[0] + (o.dx || 0) * F.s, q[1] + (o.dy || 0) * F.s, s, { size: F.s * (o.size || 1), col: o.col, a: o.a, align: o.align, outline: OUT }); }
+  /* 線分 pq の外がわ（ベクトル nrm の向き）に字 */
+  function sideLab(F, p, q, s, nrm, o) { o = o || {}; var m = F.X(GE.mid(p, q)), k = F.s * (o.k || 1.1); CH.text(F.D, m[0] + nrm[0] * k, m[1] - nrm[1] * k, s, { size: F.s * (o.size || .9), col: o.col || C.chalk, a: o.a, outline: OUT }); }
+  var DIR = { dir: { A: 'n', B: 'sw', C: 'se', D: 'w', E: 'e' } };
+  /* DE∥BC の図（△ADE をぬる・平行の印・点の名前） */
+  function baseFig(D, P, o) {
+    o = o || {}; var R = CH.box(D, o.box || { l: .06, r: .06, t: .14, b: .08 }), F = GE.fit(D, R, P, { pad: .1 });
+    GE.poly(F, 'DBCE', { col: C.orange, fa: o.trap == null ? .1 : o.trap, stroke: false });
+    GE.poly(F, 'ADE', { col: C.blue, fa: o.ade == null ? .22 : o.ade, stroke: false });
+    GE.poly(F, 'ABC', { fill: false, stroke: C.chalk, sw: 2.6 }); GE.seg(F, 'DE', { w: 2.6 });
+    GE.par(F, 'DE', 1); GE.par(F, 'BC', 1);
+    GE.labels(F, ['A', 'B', 'C', 'D', 'E'], DIR);
+    return F;
+  }
+  /* マス目で、△ADE の m² こ と、台形の n²−m² こ を、順に光らせる */
+  function countCells(F, P, n, m, t, t0, t1, t2, unit) {
+    var cs = cells(P, n), inA = cs.filter(function (c) { return c.lv < m; }), inT = cs.filter(function (c) { return c.lv >= m; });
+    gridLines(F, P, n, { a: CH.smooth(t0 - .1, t0, t) });
+    [[inA, t0, t1, C.blue], [inT, t1, t2, C.orange]].forEach(function (g) {
+      g[0].forEach(function (c, i) {
+        var s = g[1] + (g[2] - g[1] - .06) * i / Math.max(1, g[0].length - 1), a = CH.smooth(s, s + .06, t); if (a <= 0) return;
+        GE.polyP(F, c.p, { col: g[3], fa: .45 * a, sw: 2.2, a: a });
+        if (unit) tx(F, cen(c.p), unit, { size: .75, a: a });
+      });
+    });
+  }
+
+  /* ---- 今日の問い：AD：DB＝2：1、△ADE＝16cm² → △ABC＝36、四角形 DBCE＝20 ---- */
+  var P0 = triDE([4, 6], [0, 0], [12, 0], 2 / 3), K0 = 16 / area(pts(P0, 'ADE'));
+  GE.verify(P0, 'DE∥BC、△ADE∽△ABC、AD：DB＝2：1、AD：AB＝2：3、DE：BC＝AD：AB', null, '今日の問い');
+  CH.check(CH.near(K0, 1) && CH.near(area(pts(P0, 'ABC')), 36) && CH.near(area(pts(P0, 'DBCE')), 20) && 16 * 9 / 4 === 36 && 36 - 16 === 20 && cells(P0, 3).filter(function (c) { return c.lv < 2; }).length === 4, '今日の問い：面積');
+  /* ---- 例題：AD：DB＝3：1、△ABC＝64 → △ADE＝36、四角形 DBCE＝28 ---- */
+  var P1 = triDE([5, 8], [0, 0], [16, 0], 3 / 4);
+  GE.verify(P1, 'DE∥BC、△ADE∽△ABC、AD：DB＝3：1、AD：AB＝3：4', null, '例題');
+  CH.check(CH.near(area(pts(P1, 'ABC')), 64) && CH.near(area(pts(P1, 'ADE')), 36) && CH.near(area(pts(P1, 'DBCE')), 28) && 64 * 9 / 16 === 36 && cells(P1, 4).filter(function (c) { return c.lv < 3; }).length === 9, '例題：面積');
+  /* ---- 考えよう：AB を n 等分（△ABC＝36cm²） ---- */
+  var P2 = { A: [4, 6], B: [0, 0], C: [12, 0] };
+  CH.check(CH.near(area(pts(P2, 'ABC')), 36), '考えよう：△ABC の面積（部分の面積はここで確かめるだけ）');
+  /* ---- チャレンジ：平行四辺形 ABCD。BE：EC＝1：2、F は AE と BD の交点。△EFB＝2 ---- */
+  var P3 = { B: [0, 0], C: [12, 0], A: [3, 4], D: [15, 4], E: [4, 0] }; P3.F = GE.meet(P3.A, P3.E, P3.B, P3.D);
+  GE.verify(P3, 'AD∥BC、AB∥DC、BE：EC＝1：2、△AFD∽△EFB、AF：FE＝3：1、AD：EB＝3：1', null, 'チャレンジ');
+  CH.check(CH.near(area(pts(P3, 'EFB')), 2) && CH.near(area(pts(P3, 'AFD')), 18) && CH.near(area(pts(P3, 'ABF')), 6) && CH.near(area(pts(P3, 'ABD')), 24) && CH.near(area(pts(P3, 'ABCD')), 48) && 2 * 9 === 18 && 2 * 3 === 6 && (18 + 6) * 2 === 48, 'チャレンジ：面積');
+
+  K3.run({
+    no: '第15時', title: '面積比を使って、面積を求めよう', flat: true, hint: '', alt: 'DE∥BC の三角形と、面積の比の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '14.html', label: '◀ 第14時' }, { href: '16.html', label: '第16時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '△ABC（DE∥BC、AD：DB＝2：1）', q: '△ABC で、DE∥BC、AD：DB＝2：1 である。△ADE の面積が 16cm² のとき、四角形 DBCE の面積は、何 cm² だろう。',
+        notes: ['① 自分の考え（3分）　求め方を考えて、書こう。', '② ペアの考え（3分）　自分とちがう考え方があれば、書こう。'],
+        draw: function (D) {
+          var F = baseFig(D, P0);
+          tx(F, cen(pts(P0, 'ADE')), '16cm²', { size: .9 }); tx(F, [6.6, 1.1], '？', { size: 1.2, col: C.orange });
+          sideLab(F, P0.A, P0.D, '2', [-.83, .55], { col: C.yel }); sideLab(F, P0.D, P0.B, '1', [-.83, .55], { col: C.yel });
+        } },
+      { tag: '今日の問い', q: '四角形 DBCE の面積は？', a: '20cm²', sub: '△ADE∽△ABC、相似比は AD：AB＝2：3、面積の比は 4：9。16：△ABC＝4：9 → △ABC＝36、36−16＝20', dur: 8,
+        b: [{ t: '△ADE∽△ABC　相似比 AD：AB＝<b>2：3</b> → 面積の比 <b>4：9</b>', col: C.yel }, { t: '16：△ABC＝4：9 → △ABC＝36　四角形 DBCE＝36−16＝<b>20cm²</b>', col: C.yel }],
+        banner: function (s) { if (!s.ph) return ''; return s.t < .2 ? '相似比は AD：AB＝2：3' : s.t < .78 ? '面積の比 4：9（小さい三角形 4こ と 9こ）' : '△ABC＝36、四角形 DBCE＝36−16＝20'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = baseFig(D, P0, { ade: t > .25 ? .08 : .22, trap: t > .25 ? .04 : .1 }), a1 = CH.smooth(.02, .12, t) * (1 - CH.smooth(.2, .26, t));
+          if (a1 > 0) { GE.seg(F, 'AD', { col: C.yel, w: 5, glow: true, a: a1 }); GE.seg(F, 'AB', { col: C.pink, w: 3, a: a1 }); sideLab(F, P0.A, P0.D, 'AD 2', [-.83, .55], { col: C.yel, a: a1 }); sideLab(F, P0.A, P0.B, 'AB 3', [-.83, .55], { col: C.pink, a: a1, k: 3.2 }); }
+          if (t > .2) countCells(F, P0, 3, 2, t, .28, .5, .74, '4');
+          if (t < .25) tx(F, cen(pts(P0, 'ADE')), '16cm²', { size: .9 });
+          if (t > .8) tx(F, [6.6, -1.1], '4 × 5 ＝ 20（cm²）', { col: C.yel, a: CH.smooth(.8, .9, t) });
+        } },
+      { tag: 'ことば', bh: 'ことば　面積を求める手順', q: '相似な図形の面積を、比を使って求める手順は？', a: '① 相似比 → ② 面積の比（2乗）→ ③ 比例式', sub: 'DE∥BC なら △ADE∽△ABC。相似比は AD：AB。四角形 DBCE＝△ABC−△ADE', dur: 3,
+        b: [{ t: '① △ADE∽△ABC の <b>相似比</b>（AD：AB）を求める', col: C.green }, { t: '② 面積の比は、相似比の <b>2乗</b> の比', col: C.green }, { t: '③ 面積の比の <b>比例式</b> をつくる　④ 四角形 DBCE＝△ABC−△ADE', col: C.green }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 1, F = baseFig(D, P0), k = CH.ease(CH.smooth(.1, .8, t)), Dk = at(P0.D, P0.B, k), Ek = at(P0.E, P0.C, k);
+          GE.polyP(F, [P0.A, Dk, Ek], { col: C.yel, fa: .12, sw: 3 });
+          if (t >= .8) { GE.seg(F, 'AD', { col: C.yel, w: 5, glow: true, a: CH.smooth(.8, .95, t) }); GE.seg(F, 'AB', { col: C.pink, w: 3, a: CH.smooth(.8, .95, t) }); }
+        } },
+      { tag: '例題', bh: '例題　AD：DB＝3：1、△ABC＝64cm²', q: '△ABC で、DE∥BC、AD：DB＝3：1 である。△ABC の面積が 64cm² のとき、△ADE と四角形 DBCE の面積は？',
+        a: '△ADE 36cm²、四角形 DBCE 28cm²', sub: '相似比 AD：AB＝3：4、面積の比 9：16。△ADE：64＝9：16 → △ADE＝36、64−36＝28', dur: 8,
+        b: { t: '相似比 3：4 → 面積の比 9：16 → △ADE＝<b>36cm²</b>、四角形 DBCE＝<b>28cm²</b>', col: C.blue },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .2 ? '相似比は AD：AB＝3：4（AD：DB ではない）' : s.t < .78 ? '面積の比 9：16（1こ ＝ 64÷16 ＝ 4cm²）' : '△ADE＝4×9＝36、四角形 DBCE＝4×7＝28'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = baseFig(D, P1, { ade: t > .25 ? .08 : .22, trap: t > .25 ? .04 : .1 }), a1 = CH.smooth(.02, .12, t) * (1 - CH.smooth(.2, .26, t));
+          if (a1 > 0) { GE.seg(F, 'AD', { col: C.yel, w: 5, glow: true, a: a1 }); GE.seg(F, 'AB', { col: C.pink, w: 3, a: a1 }); sideLab(F, P1.A, P1.D, 'AD 3', [-.85, .53], { col: C.yel, a: a1 }); sideLab(F, P1.A, P1.B, 'AB 4', [-.85, .53], { col: C.pink, a: a1, k: 3.4 }); }
+          if (!D.ph) { sideLab(F, P1.A, P1.D, '3', [-.85, .53], { col: C.yel }); sideLab(F, P1.D, P1.B, '1', [-.85, .53], { col: C.yel }); tx(F, [8, -1.1], '△ABC＝64cm²', { size: .9 }); }
+          if (t > .2) countCells(F, P1, 4, 3, t, .28, .52, .74, '4');
+        } },
+      { tag: '例題', q: '「AD：DB＝3：1 だから、面積の比は 9：1」としてはいけない。なぜだろう。', a: '△ADE と対応するのは △ABC。対応する辺は AD と AB',
+        sub: 'DB は △ADE の辺でも、△ABC の辺でもない。AB＝AD＋DB＝3＋1＝4 だから、相似比は 3：4', dur: 4,
+        b: { t: '相似比は AD：<b>AB</b>（AD：DB ではない）。AB＝3＋1＝4', col: C.pink },
+        banner: function (s) { return s.ph ? (s.t < .8 ? '△ADE を拡大すると、△ABC に重なる' : 'D → B、E → C　AD に対応するのは AB') : ''; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = baseFig(D, P1), m = GE.moveTri(P1, 'ADE', 'ABC', CH.smooth(.1, .75, t));
+          GE.seg(F, 'DB', { col: C.pink, w: 5, dash: [8, 6], a: D.ph ? 1 - CH.smooth(.1, .3, t) : 1 }); sideLab(F, P1.D, P1.B, 'DB？', [-.85, .53], { col: C.pink, a: D.ph ? 1 - CH.smooth(.1, .3, t) : 1 });
+          if (D.ph) { GE.polyP(F, m, { col: C.yel, fa: .2, sw: 3 }); if (t < .76) ['A', 'D', 'E'].forEach(function (k, i) { tx(F, m[i], k, { col: C.yel, size: .9, dx: k === 'D' ? -.9 : k === 'E' ? .9 : 0, dy: k === 'A' ? -.9 : 0 }); }); }
+          if (t > .8) { var a = CH.smooth(.8, .92, t); GE.seg(F, 'AB', { col: C.yel, w: 5, glow: true, a: a }); sideLab(F, P1.A, P1.B, 'AB＝4', [-.85, .53], { col: C.yel, a: a, k: 3.4 }); }
+        } },
+      { tag: '考えよう', q: '△ABC（面積 36cm²）の辺 AB を 3等分する点を通り、BC に平行な直線をひいて、ア・イ・ウ の 3つの部分に分けた。ア・イ・ウ の面積を求めて、気づいたことを書こう。',
+        notes: ['ア・イ・ウ の面積と、「ア の何倍か」を表にまとめよう。', 'AB を 4等分したら、どうなるか調べよう。', 'スライダーで、等分の数と、マス目（相似比 1：n の小さい三角形）を変えられます。'],
+        sliders: [{ key: 'n', label: '等分の数', min: 2, max: 5, step: 1, val: 3, fmt: function (x) { return x + '等分'; } },
+          { key: 'g', label: 'マス目', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? 'あり' : 'なし'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .08, b: .06 }), F = GE.fit(D, R, P2, { pad: .1 }), n = D.V.n, cols = [C.blue, C.green, C.orange, C.pink, C.lav];
+          for (var k = n; k >= 1; k--) GE.polyP(F, [P2.A, at(P2.A, P2.B, k / n), at(P2.A, P2.C, k / n)], { col: cols[k - 1], fa: .3, stroke: false });
+          if (D.V.g) gridLines(F, P2, n);
+          GE.poly(F, 'ABC', { fill: false, stroke: C.chalk, sw: 2.6 });
+          for (var j = 1; j < n; j++) { GE.seg(F, [at(P2.A, P2.B, j / n), at(P2.A, P2.C, j / n)], { w: 2.6 }); GE.tick(F, [at(P2.A, P2.B, (j - 1) / n), at(P2.A, P2.B, j / n)], 1); }
+          GE.tick(F, [at(P2.A, P2.B, (n - 1) / n), P2.B], 1);
+          for (var i = 1; i <= n; i++) { var y = 6 * (1 - (i - .5) / n), xm = (at(P2.A, P2.B, (i - .5) / n)[0] + at(P2.A, P2.C, (i - .5) / n)[0]) / 2; tx(F, [xm, y], 'アイウエオ'.charAt(i - 1), { col: C.chalk, size: 1 - n * .04 }); }
+          GE.labels(F, ['A', 'B', 'C'], DIR);
+          tx(F, [6, -1.2], '△ABC＝36cm²', { size: .85 });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ　平行四辺形', q: '平行四辺形 ABCD で、BE：EC＝1：2 となる辺 BC 上の点を E とし、線分 AE と対角線 BD の交点を F とする。△EFB の面積が 2cm² のとき、△AFD と平行四辺形 ABCD の面積は？',
+        a: '△AFD 18cm²、平行四辺形 48cm²', sub: '△AFD∽△EFB、相似比 AD：EB＝3：1 → 面積 9倍で 18。AF：FE＝3：1 だから △ABF＝2×3＝6。△ABD＝18＋6＝24、平行四辺形＝24×2＝48', dur: 9,
+        b: { t: '△AFD＝2×9＝<b>18</b>　△ABF＝2×3＝6　▱ABCD＝(18＋6)×2＝<b>48cm²</b>', col: C.orange },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .38 ? '△AFD∽△EFB　相似比 AD：EB＝3：1 → 面積 9倍' : s.t < .6 ? 'AF：FE＝3：1、高さが同じ → △ABF は △EFB の 3倍' : s.t < .82 ? '△ABD＝18＋6＝24' : '平行四辺形＝24×2＝48'; },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .14, b: .08 }), F = GE.fit(D, R, P3, { pad: .08 }), t = D.ph ? D.t : 0;
+          var a1 = CH.smooth(.02, .1, t), a2 = CH.smooth(.4, .5, t), a3 = CH.smooth(.62, .72, t), a4 = CH.smooth(.84, .94, t);
+          if (a4 > 0) GE.poly(F, 'BCD', { col: C.lav, fa: .3 * a4, stroke: false });
+          if (a3 > 0) GE.poly(F, 'ABD', { col: C.lav, fa: .2 * a3, stroke: false });
+          GE.poly(F, 'EFB', { col: C.blue, fa: .35, stroke: false });
+          if (t > 0) GE.poly(F, 'AFD', { col: C.orange, fa: .3 * a1, stroke: false });
+          if (a2 > 0) GE.poly(F, 'ABF', { col: C.green, fa: .35 * a2, stroke: false });
+          GE.poly(F, 'ABCD', { fill: false, stroke: C.chalk, sw: 2.6 }); GE.seg(F, 'AE'); GE.seg(F, 'BD');
+          GE.par(F, 'AD', 1); GE.par(F, 'BC', 1); GE.par(F, 'AB', 2); GE.par(F, 'DC', 2);
+          if (t > .05 && t < .4) GE.polyP(F, GE.moveTri(P3, 'EFB', 'AFD', CH.smooth(.06, .32, t)), { col: C.yel, fa: .25, sw: 3 });
+          tx(F, cen(pts(P3, 'EFB')), '2', { size: .85 });
+          if (t > .3) tx(F, cen(pts(P3, 'AFD')), '18', { col: C.yel, a: CH.smooth(.3, .38, t) });
+          if (a2 > 0) tx(F, cen(pts(P3, 'ABF')), '6', { col: C.yel, a: a2 });
+          if (a4 > 0) tx(F, cen(pts(P3, 'BCD')), '24', { col: C.yel, a: a4 });
+          if (!D.ph) { sideLab(F, P3.B, P3.E, '1', [0, -1]); sideLab(F, P3.E, P3.C, '2', [0, -1]); }
+          GE.labels(F, ['A', 'B', 'C', 'D', 'E', 'F'], { dir: { A: 'nw', B: 'sw', C: 'se', D: 'ne', E: 's', F: 'e' } });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

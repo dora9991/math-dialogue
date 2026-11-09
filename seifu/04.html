@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>赤と黒のカードの得点</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 正の数・負の数 第4時：赤と黒のカードで、得点を計算しよう（ikkan の lesson_seifu_04 と同じ流れ）。
+   カードの下に、1点ずつの玉（黒＝＋1、赤＝−1）。ちがう色は、黒と赤の玉が1組ずつ線で結ばれて消え、残った玉が答え。
+   同じ色は、玉が1列に集まる。考えようは、3枚のカードを手で選ぶ道具（合計は出さない）。
+   数値は ikkan のまま（黒3・赤8、例題 黒5・黒2／赤4・赤3／黒6・赤2／赤7・黒9、チャレンジ A・B・C の3枚ずつ）。
+   ことばの図（黒2・黒3、黒5・赤2、黒1・赤1）は自作。答えはページの中で、カードの色と数から計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum, POS = C.blue, NEG = C.pink, OUT = 'rgba(20,40,30,.9)', REDC = '#ff8080';
+  function sg(v) { return v > 0 ? '＋' + S(v) : S(v); }
+  function pr(v) { return '(' + sg(v) + ')'; }
+  function sum(a) { return a.reduce(function (p, q) { return p + q; }, 0); }
+  /* カード（黒＝正の数、赤＝負の数）。v は ＋3（黒3）や −8（赤8） */
+  function card(D, x, y, w, h, v, o) {
+    o = o || {}; if (!v) { CH.fillRect(D, x - w / 2, y - h / 2, x + w / 2, y + h / 2, { stroke: 'rgba(242,240,230,.3)', dash: true, a: o.a }); CH.text(D, x, y, 'なし', { size: Math.min(w * .3, h * .2), col: 'rgba(242,240,230,.45)', a: o.a }); return; }
+    var blk = v > 0;
+    CH.card(D, x, y, w, h, String(Math.abs(v)), { fill: blk ? '#121814' : 'rgba(230,70,70,.38)', col: blk ? 'rgba(242,240,230,.9)' : REDC, tcol: blk ? C.chalk : '#ffc0c0', size: Math.min(h * .5, w * .7), sw: 2.2, a: o.a });
+    CH.text(D, x - w / 2 + w * .2, y - h / 2 + h * .15, blk ? '黒' : '赤', { size: Math.min(w * .26, h * .17), col: blk ? 'rgba(242,240,230,.8)' : '#ffc0c0', a: o.a });
+  }
+  /* 1点の玉（黒＝＋1、赤＝−1） */
+  function chip(D, x, y, r, pos, a) {
+    if (r < .5 || a <= 0) return;
+    CH.circle(D, x, y, r, { fill: pos ? '#0d120f' : '#d94a4a', stroke: pos ? 'rgba(242,240,230,.85)' : '#ffc0c0', sw: 1.6, a: a });
+    if (r >= 7) CH.text(D, x, y + .5, pos ? '＋' : '−', { size: r * 1.25, col: pos ? C.chalk : '#fff', a: a, num: true, w: 700 });
+  }
+
+  /* ---- 2枚のカードと玉。k：動きの進み。o：sample（はじめから答え）、title ---- */
+  function pairBox(D, R, a, b, k, o) {
+    o = o || {}; var s = CH.fs(D), fs = o.big ? s * 1.15 : Math.min(s, R.w / 11), na = Math.abs(a), nb = Math.abs(b), same = a * b > 0, m = same ? 0 : Math.min(na, nb), tot = a + b;
+    var nmax = Math.max(same ? na + nb : Math.max(na, nb), 1), r = Math.min(R.w / (nmax * 2.5 + 1), R.h * .07, s * (o.big ? .95 : .62)), gx = r * 2.5;
+    var tH = o.title ? fs * 1.5 : 0, cw = Math.min(R.w * .27, R.h * (o.big ? .24 : .2)), chh = cw * 1.4, lab = true;
+    var need = function () { return tH + chh + r * 4.8 + (lab ? r * 1.6 + fs * 1.1 : r * 1.4) + fs * 1.5; };
+    if (need() > R.h) { chh = Math.max(fs * 2.2, chh - (need() - R.h)); cw = chh / 1.4; }
+    if (need() > R.h) lab = false;
+    var ty = R.y0 + (o.big ? Math.max(0, (R.h - need()) / 2) : 0), cy = ty + tH + chh / 2;
+    if (o.title) CH.text(D, R.cx, ty + fs * .6, o.title, { size: fs * .9, col: 'rgba(242,240,230,.8)' });
+    card(D, R.cx - cw * .65, cy, cw, chh, a); card(D, R.cx + cw * .65, cy, cw, chh, b);
+    var y1 = cy + chh / 2 + r * 2, y2 = y1 + r * 2.8, ly = y2 + r * 1.6 + fs * .5, ry = lab ? ly + fs * 1.3 : y2 + r * 1.4 + fs * .7;
+    var x0 = R.cx - ((same ? na + nb : Math.max(na, nb)) - 1) * gx / 2, kk = o.sample ? 1 : k, done = kk >= .78;
+    if (same) {
+      var g = CH.ease(CH.smooth(.15, .6, kk));
+      for (var i = 0; i < na; i++) chip(D, x0 + i * gx, y1, r, a > 0, 1);
+      for (var j = 0; j < nb; j++) { var xs = R.cx - (nb - 1) * gx / 2 + j * gx; chip(D, CH.lerp(xs, x0 + (na + j) * gx, g), CH.lerp(y2, y1, g), r, b > 0, 1); }
+      if (lab && kk > .6) CH.text(D, R.cx, y1 + r * 1.6 + fs * .5, (a > 0 ? '黒' : '赤') + ' ' + (na + nb) + ' こ', { size: fs * .85, col: a > 0 ? C.chalk : '#ffc0c0', a: CH.smooth(.6, .75, kk) });
+    } else {
+      for (var p = 0; p < Math.max(na, nb); p++) {
+        var t0 = .12 + p * .6 / Math.max(m, 1), q = m > 0 && p < m ? CH.clamp((kk - t0) / (.6 / m), 0, 1) : 0, x = x0 + p * gx;
+        var fade = p < m ? 1 - CH.smooth(.5, 1, q) : 1, rr = p < m ? r * (1 - CH.smooth(.55, 1, q) * .6) : r;
+        if (p < m && q > 0 && q < 1) CH.line(D, x, y1 + r, x, y2 - r, { col: C.yel, w: 2.4, a: CH.smooth(0, .3, q) * fade });
+        if (p < na) chip(D, x, y1, rr, a > 0, fade);
+        if (p < nb) chip(D, x, y2, rr, b > 0, fade);
+      }
+      if (lab && m > 0 && kk > .7) CH.text(D, R.cx, ly, m + ' 組 打ち消し合う', { size: fs * .8, col: C.yel, a: CH.smooth(.7, .8, kk) });
+    }
+    var eq = pr(a) + '＋' + pr(b) + '＝' + (tot === 0 ? '0' : sg(tot));
+    if (done) CH.text(D, R.cx, ry, eq, { size: CH.fitSize(D, eq, R.w * .96, fs * 1.05, { num: true }), col: tot > 0 ? C.chalk : tot < 0 ? '#ffc0c0' : C.yel, w: 700, a: o.sample ? 1 : CH.smooth(.78, .9, kk), num: true });
+    return { y: ry };
+  }
+
+  /* ---- 数と検算 ---- */
+  CH.check(3 + (-8) === -5 && -(8 - 3) === -5, '今日の問い');
+  var EXP = [[5, 2], [-4, -3], [6, -2], [-7, 9]], EXR = EXP.map(sum);
+  CH.check(EXR.join() === '7,-7,4,2' && 5 + 2 === 7 && 4 + 3 === 7 && 6 - 2 === 4 && 9 - 7 === 2, '例題');
+  var CHL = [['A', [6, -9, -2]], ['B', [-3, 8, -1]], ['C', [-7, 2, 4]]], CHR = CHL.map(function (p) { return sum(p[1]); });
+  var hi = Math.max.apply(null, CHR), lo = Math.min.apply(null, CHR), need = []; for (var x = -9; x <= 9; x++) if (x && CHR[2] + x === CHR[0]) need.push(x);
+  CH.check(CHR.join() === '-5,4,-1' && hi - lo === 9 && need.join() === '-4', 'チャレンジ');
+
+  /* ---- 今日の問い（問題） ---- */
+  function rule(D) {
+    var R = CH.box(D, { l: .05, r: .05, t: .08, b: .08 }), s = CH.fs(D), cw = Math.min(R.w * .2, R.h * .25), ch = cw * 1.4, cy = R.y0 + R.h * .36;
+    card(D, R.cx - cw * .7, cy, cw, ch, 3); card(D, R.cx + cw * .7, cy, cw, ch, -8);
+    var ty = cy + ch / 2 + s * 1.8, sz = CH.fitSize(D, '黒のカード … 正の数（黒5 → ＋5）', R.w * .9, s);
+    CH.text(D, R.cx, ty, '黒のカード … 正の数（黒5 → ＋5）', { size: sz });
+    CH.text(D, R.cx, ty + sz * 1.8, '赤のカード … 負の数（赤3 → −3）', { size: sz, col: '#ffc0c0' });
+    CH.text(D, R.cx, ty + sz * 3.8, '2枚の得点をたして、合計を求める', { size: sz, col: C.yel });
+  }
+
+  /* ---- 考えよう：3枚のカード ---- */
+  function three(D, V) {
+    var R = CH.box(D, { l: .05, r: .05, t: .06, b: .06 }), s = CH.fs(D), vs = [V.a, V.b, V.c], cw = Math.min(R.w * .17, R.h * .26), ch = cw * 1.4, cy = R.y0 + ch / 2 + 4;
+    vs.forEach(function (v, i) { card(D, R.cx + (i - 1) * cw * 1.3, cy, cw, ch, v); });
+    var nb = sum(vs.map(function (v) { return v > 0 ? v : 0; })), nr = sum(vs.map(function (v) { return v < 0 ? -v : 0; })), n = Math.max(nb, nr, 1), m = Math.min(nb, nr);
+    var r = Math.min(R.w / (n * 2.4 + 2), s * .6, R.h * .055), gx = r * 2.4, x0 = R.cx - (n - 1) * gx / 2, y1 = cy + ch / 2 + Math.max(s * 1.6, r * 3), y2 = y1 + r * 3.2;
+    CH.text(D, x0 - r * 1.6, y1, '黒', { size: s * .8, align: 'right' }); CH.text(D, x0 - r * 1.6, y2, '赤', { size: s * .8, align: 'right', col: '#ffc0c0' });
+    for (var i = 0; i < n; i++) {
+      var x = x0 + i * gx, pair = i < m;
+      if (pair) CH.line(D, x, y1 + r, x, y2 - r, { col: C.yel, w: 2, a: .6 });
+      if (i < nb) chip(D, x, y1, r, true, pair ? .35 : 1);
+      if (i < nr) chip(D, x, y2, r, false, pair ? .35 : 1);
+    }
+    CH.text(D, R.cx, y2 + r * 2 + s * 1.2, '線で結んだ 黒と赤の組は、打ち消し合う', { size: CH.fitSize(D, '線で結んだ 黒と赤の組は、打ち消し合う', R.w * .9, s * .85), col: C.yel, a: m ? 1 : .4 });
+  }
+
+  /* ---- チャレンジ ---- */
+  function chal(D, k) {
+    var R = CH.box(D, { l: .05, r: .07, t: .05, b: .06 }), s = CH.fs(D), top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .58), rs = CH.rows(top, 3, .12);
+    rs.forEach(function (r, i) {
+      var p = CHL[i], ch = Math.min(r.h * .92, s * 2.6), cw = ch / 1.4, x0 = r.x0 + s * 2.2;
+      CH.text(D, r.x0 + s * .6, r.cy, p[0], { size: s * 1.1, col: C.yel, w: 700 });
+      p[1].forEach(function (v, j) { card(D, x0 + cw * .6 + j * cw * 1.2, r.cy, cw, ch, v); });
+      var ka = CH.smooth(i * .12, i * .12 + .1, k), ex = x0 + cw * 3.7 + s * .4, eq = p[1].map(pr).join('＋') + '＝' + sg(CHR[i]);
+      if (ka > 0) CH.text(D, ex, r.cy, eq, { size: CH.fitSize(D, eq, r.x1 - ex, s * .95, { num: true }), align: 'left', a: ka, num: true, col: CHR[i] > 0 ? C.chalk : '#ffc0c0', w: 700 });
+    });
+    var ny = R.y1 - s * 2.4, x0 = R.x0 + s * .5, x1 = R.x1 - s * 1.2, X = function (v) { return x0 + (v + 7) / 13 * (x1 - x0); }, k2 = CH.smooth(.4, .6, k);
+    if (k2 > 0) {
+      CH.arrow(D, x0 - 6, ny, x1 + 12, ny, { w: 2, head: 9, a: k2 });
+      for (var v = -7; v <= 6; v++) { CH.line(D, X(v), ny - (v === 0 ? 8 : 5), X(v), ny + (v === 0 ? 8 : 5), { w: v === 0 ? 2.2 : 1.3, a: k2 }); CH.text(D, X(v), ny + s * 1.1, S(v), { size: CH.fs(D, .7), num: true, a: k2, col: v < 0 ? 'rgba(255,157,178,.9)' : C.chalk }); }
+      CHL.forEach(function (p, i) { CH.circle(D, X(CHR[i]), ny, s * .3, { fill: [POS, C.green, C.orange][i], a: k2 }); CH.text(D, X(CHR[i]), ny - s * .9, p[0], { col: [POS, C.green, C.orange][i], a: k2, outline: OUT }); });
+      var k3 = CH.smooth(.6, .78, k), by = ny - s * 2.4;
+      if (k3 > 0) { CH.arrow(D, X(lo), by, CH.lerp(X(lo), X(hi), k3), by, { col: C.yel, w: 3 }); CH.text(D, X((lo + hi) / 2), by - s * .8, '② 9 点', { col: C.yel, a: k3, w: 700 }); }
+      var k4 = CH.smooth(.8, .97, k), cy2 = ny - s * 4.2;
+      if (k4 > 0) { CH.arrow(D, X(CHR[2]), cy2, CH.lerp(X(CHR[2]), X(CHR[0]), k4), cy2, { col: NEG, w: 3 }); CH.text(D, X((CHR[2] + CHR[0]) / 2), cy2 - s * .8, '③ 赤の4（−4）', { col: NEG, a: k4, w: 700, outline: OUT, size: s * .9 }); }
+    }
+  }
+
+  K3.run({
+    no: '第4時', title: '赤と黒のカードで、得点を計算しよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '03.html', label: '◀ 第3時' }, { href: '05.html', label: '第5時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '赤と黒のカード', q: '黒のカードは正の数、赤のカードは負の数を表す。黒の3と赤の8をひいたとき、2枚の得点の合計は何点だろう。どう考えたか、説明しよう。',
+        notes: ['① 自分の考え（3分）　合計と、求め方を書こう。', '② ペアでゲーム（3分）　トランプ（A〜9）から2枚ひいて、式と得点を書こう。3回して、合計が大きい人の勝ち。'],
+        draw: function (D) { rule(D); } },
+      { tag: '今日の問い', q: '黒の3と赤の8。合計は何点？', a: '−5点', sub: '黒の玉3こと赤の玉3こが、1組ずつ打ち消し合う。赤の玉が 8−3＝5こ残る。式は (＋3)＋(−8)＝−5', dur: 5,
+        b: { t: '黒3と赤3が打ち消し合って、赤5が残る　(＋3)＋(−8)＝<b>−5</b>', col: C.yel },
+        draw: function (D) { pairBox(D, CH.box(D, { l: .1, r: .1, t: .06, b: .06 }), 3, -8, D.ph ? D.t : 0, { big: true }); } },
+      { tag: 'ことば', bh: 'ことば', q: 'たし算のことを何という？ たし算の答えは？', a: '加法。加法の答えを和という', sub: '同じ色の2枚は、数をたして、その色の符号。ちがう色の2枚は、同じ数のぶんが打ち消し合う。同じ数の黒と赤は、合計 0', dur: 5,
+        b: [{ t: 'たし算 … <b>加法</b>　答え … <b>和</b>', col: C.green }, { t: '同じ色 … 数を<b>たして</b>その色の符号　ちがう色 … 同じ数のぶんが<b>打ち消し合う</b>', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .03, r: .03, t: .05, b: .05 }), rs = CH.cols(R, 3, .06), k = D.ph ? D.t : 0;
+          pairBox(D, rs[0], 2, 3, k, { title: '同じ色' }); pairBox(D, rs[1], 5, -2, k, { title: 'ちがう色' }); pairBox(D, rs[2], 1, -1, k, { title: '同じ数の黒と赤' });
+        } },
+      { tag: '例題', bh: '例題　2枚の得点', q: 'カードを2枚ひいたときの得点を、式に表して求めよう。（黒5・黒2 は見本）　赤4・赤3、黒6・赤2、赤7・黒9',
+        a: '(−4)＋(−3)＝−7、(＋6)＋(−2)＝＋4、(−7)＋(＋9)＝＋2', sub: '同じ色は数をたして、その色の符号。ちがう色は、打ち消し合って残った色の符号', dur: 7,
+        b: { t: '黒5・黒2 ＋7（見本）　赤4・赤3 <b>−7</b>　黒6・赤2 <b>＋4</b>　赤7・黒9 <b>＋2</b>', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .02, r: .02, t: .04, b: .04 }), wide = D.W > D.H * 1.1, rs = wide ? CH.cols(R, 4, .04) : [].concat.apply([], CH.rows(R, 2, .06).map(function (q) { return CH.cols(q, 2, .06); })), k = D.ph ? D.t : 0;
+          EXP.forEach(function (p, i) { pairBox(D, rs[i], p[0], p[1], i === 0 ? 1 : CH.clamp((k - (i - 1) * .3) / .4, 0, 1), { sample: i === 0, title: i === 0 ? '見本' : ['', '(1)', '(2)', '(3)'][i] }); });
+        } },
+      { tag: '例題', q: 'ちがう色の2枚の合計は、どう求めればよい？ 赤7・黒9 で考えよう。', a: '大きいほうの数から小さいほうの数をひいて、大きいほうの色の符号をつける', sub: '赤7と黒7が打ち消し合って、黒が 9−7＝2 残る → ＋2', dur: 5,
+        b: { t: 'ちがう色 … 大きい数 − 小さい数、<b>大きいほうの色</b>の符号（赤7・黒9 → ＋2）', col: C.pink },
+        draw: function (D) { var R = CH.box(D, { l: .1, r: .1, t: .06, b: .06 }), k = D.ph ? D.t : 0, o = pairBox(D, CH.rect(R.x0, R.y0, R.x1, R.y1 - CH.fs(D) * 2), -7, 9, k, { big: true }), s = CH.fs(D); if (k > .9) CH.text(D, R.cx, Math.min(R.y1 - s * .4, o.y + s * 1.7), '9−7＝2、黒（＋）が残る', { col: C.yel, size: s, a: CH.smooth(.9, 1, k) }); } },
+      { tag: '考えよう', bh: '考えよう', q: '3枚ひいて、合計がちょうど −2 になる組み合わせを、できるだけたくさん見つけよう。（カードは A〜9。A＝1）',
+        notes: ['見つけた組み合わせを、表に書こう。気づいたことは？', '合計が 0 など、ほかの合計になる組み合わせも つくってみよう。', 'スライダーで、3枚のカードを選べます（− が赤、＋ が黒）。'],
+        sliders: [
+          { key: 'a', label: '1枚目', min: -9, max: 9, step: 1, val: 5, fmt: function (x) { return x > 0 ? '黒' + x : x < 0 ? '赤' + (-x) : 'なし'; } },
+          { key: 'b', label: '2枚目', min: -9, max: 9, step: 1, val: -3, fmt: function (x) { return x > 0 ? '黒' + x : x < 0 ? '赤' + (-x) : 'なし'; } },
+          { key: 'c', label: '3枚目', min: -9, max: 9, step: 1, val: 1, fmt: function (x) { return x > 0 ? '黒' + x : x < 0 ? '赤' + (-x) : 'なし'; } }],
+        draw: function (D) { three(D, D.V); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'A、B、C が、カードを3枚ずつひいた。A：黒6 赤9 赤2　B：赤3 黒8 赤1　C：赤7 黒2 黒4　① A の得点は？ ② いちばん高い人は、いちばん低い人より何点高い？ ③ C がもう1枚ひいて A と同じ得点にするには、どのカード？',
+        a: '① −5点　② 9点　③ 赤の4', sub: '① (＋6)＋(−9)＋(−2)＝−5　② B ＋4、C −1。いちばん高い B（＋4）と、いちばん低い A（−5）は、数直線で 9 はなれている　③ (−1)＋□＝−5 より □＝−4', dur: 6,
+        b: { t: '① A <b>−5</b>　② B ＋4 と A −5 の差 <b>9</b>点　③ (−1)＋□＝−5 → <b>赤の4</b>', col: C.orange },
+        draw: function (D) { chal(D, D.ph ? D.t : 0); } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>二等辺三角形になる条件</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三角形と四角形 第3時：2つの角が等しい三角形は、二等辺三角形といえるだろうか（ikkan の lesson_sankaku_03 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。三角形は「2つの角」から、2本の半直線の交点で作る（辺の長さは使わない）。
+   証明の行は GE.proof が座標で確かめ、例題の ○× は辺の長さを測り直して CH.check で照らし合わせる。
+   仮定と結論のカードが入れかわって「逆」。 */
+(function () {
+  var C = CH.C, R = Math.PI / 180;
+  /* ---- このページの道具 ---- */
+  function box(D, o) { return CH.box(D, o || { l: .06, r: .06, t: .1, b: .12 }); }
+  function fit(D, P, o) { o = o || {}; return GE.fit(D, box(D, o.box), P, { pad: o.pad, keys: o.keys }); }
+  function ext(F, Q) { return Object.assign({}, F, { P: Object.assign({}, F.P, Q), X: function (p) { return F.X(typeof p === 'string' && Q[p] ? Q[p] : p); } }); }
+  function bis(P, v, a, b, q1, q2) { var V = P[v], u = GE.sub(P[a], V), w = GE.sub(P[b], V), lu = Math.hypot(u[0], u[1]), lw = Math.hypot(w[0], w[1]); return GE.meet(V, [V[0] + u[0] / lu + w[0] / lw, V[1] + u[1] / lu + w[1] / lw], P[q1], P[q2]); }
+  /* 底辺 BC＝c、∠B＝bb°、∠C＝cc° の三角形（A は B と C から出る2本の半直線の交点） */
+  function triA(c, bb, cc) { var B = [0, 0], Cp = [c, 0]; return { A: GE.meet(B, GE.polar(B, 1, bb), Cp, GE.polar(Cp, 1, 180 - cc)), B: B, C: Cp }; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), g = D.ctx; g.save(); g.font = '600 ' + size + 'px "Klee One",sans-serif'; var w = g.measureText(s).width; g.restore(); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({}, o, { size: size })); }
+  /* 字のカード */
+  function card(D, x, y, w, h, s, o) { o = o || {}; CH.card(D, x, y, w, h, '', { col: o.col || C.blue, a: o.a, sw: 2 }); say(D, x, y + 1, s, { col: o.tcol || C.chalk, a: o.a, size: o.size || h * .48, maxW: w * .9 }); }
+
+  /* ---- 今日の問い：∠B＝∠C＝62°（2本の半直線で作る）。D は ∠A の二等分線と BC の交点 ---- */
+  var P3 = triA(4.4, 62, 62); P3.D = bis(P3, 'A', 'B', 'C', 'B', 'C');
+  CH.check(GE.verify(P3, '∠ABC＝∠ACB＝62°') && GE.verify(P3, 'AB＝AC'), '今日の問い：2つの角から作った三角形');
+  var def3 = {
+    id: '第3時 今日の問い', lv: 1, ttl: '∠B＝∠C ならば AB＝AC', q: '∠B＝∠C の △ABC で、AB＝AC を証明しよう。', P: P3,
+    fig: { segs: ['AB', 'BC', 'CA'], angs: [['ABC', 1], ['ACB', 1]], labels: ['A', 'B', 'C'] },
+    hyp: '∠B＝∠C', goal: 'AB＝AC', tri: ['ABD', 'ACD'],
+    plan: { q: 'どんな線を1本かき加えて、どの三角形の合同を示す？', a: '∠A の二等分線 AD。△ABD と △ACD', b: '∠A の二等分線をひき、BC との交点を D とする。△ABD と △ACD で' },
+    L: [{ t: '∠ABD＝∠ACD', r: '仮定', n: 1 },
+      { t: '∠BAD＝∠CAD', r: 'AD は ∠A の二等分線', n: 2 },
+      { t: '∠ADB＝∠ADC', r: '三角形の内角の和は 180°', n: 3 },
+      { t: 'AD は共通', n: 4, q: '④ もう1組、等しいものは？', a: 'AD は共通' },
+      { t: '②③④より、1組の辺とその両端の角が、それぞれ等しいので', c: 'ASA' },
+      { t: '△ABD≡△ACD' },
+      { t: 'AB＝AC', r: '合同な図形の対応する辺は等しい', ask: 'r' }]
+  };
+  var S3 = GE.proof(def3, { tag: '今日の問い', draw: function (D, F, info) {
+    if (info.i < 1) return;
+    GE.seg(F, 'AD'); GE.arc(F, 'BAD', { n: 2 }); GE.arc(F, 'DAC', { n: 2 }); GE.labels(F, ['D'], { dir: { D: 's' } });
+  } }).slice(1);
+  S3.forEach(function (st) { if (/^∠ADB＝∠ADC/.test(st.q)) st.sub = '∠ADB＝180°−∠B−∠BAD、∠ADC＝180°−∠C−∠CAD で、①② より等しい'; });
+
+  /* ---- 例題：2つの角から、二等辺三角形かどうか ---- */
+  var EX = [[50, 80], [45, 65], [30, 120], [40, 60]].map(function (ab, i) {
+    var P = triA(4, ab[0], ab[1]), rest = 180 - ab[0] - ab[1], L = [GE.len(P, 'BC'), GE.len(P, 'CA'), GE.len(P, 'AB')];
+    return { n: 'アイウエ'.charAt(i), b: ab[0], c: ab[1], a: rest, P: P, iso: GE.near(L[0], L[1], 1e-6) || GE.near(L[1], L[2], 1e-6) || GE.near(L[0], L[2], 1e-6) };
+  });
+  CH.check(EX.map(function (e) { return e.a; }).join() === '50,70,30,80' && EX.map(function (e) { return e.iso ? '○' : '×'; }).join('') === '○×○×' && EX.every(function (e) { return GE.near(GE.ang(e.P, 'BAC'), e.a); }), '例題（残りの角と ○×）');
+
+  /* ---- チャレンジ：AB＝AC、DB＝EC、P は BE と CD の交点 ---- */
+  var PC = { A: [2.2, 2.2 * Math.tan(66 * R)], B: [0, 0], C: [4.4, 0] };
+  PC.D = GE.lerpP(PC.B, PC.A, .4); PC.E = GE.lerpP(PC.C, PC.A, .4); PC.P = GE.meet(PC.B, PC.E, PC.C, PC.D);
+  var defC = {
+    id: '第3時 チャレンジ', lv: 2, ttl: 'チャレンジ　△PBC は二等辺三角形',
+    q: '二等辺三角形 ABC（AB＝AC）の辺 AB、AC 上に、DB＝EC となる点 D、E をとり、BE と CD の交点を P とする。△PBC が二等辺三角形であることを証明しよう。', P: PC,
+    fig: { segs: ['AB', 'BC', 'CA', 'DC', 'EB'], ticks: [['AB', 1], ['AC', 1], ['DB', 2], ['EC', 2]], dots: ['P'], dir: { D: 'w', E: 'e', P: 'n' } },
+    hyp: 'AB＝AC、DB＝EC', goal: '△PBC は二等辺三角形（PB＝PC）', tri: ['DBC', 'ECB'],
+    notes: ['ヒント：まず、△DBC と合同な三角形を見つけよう。'],
+    L: [{ t: '△DBC と △ECB で' },
+      { t: 'DB＝EC', r: '仮定', n: 1 },
+      { t: '∠DBC＝∠ECB', r: '二等辺三角形の底角は等しい', n: 2 },
+      { t: 'BC は共通', n: 3, q: '③ 2つの三角形に共通な辺は？', a: 'BC は共通' },
+      { t: '①②③より、2組の辺とその間の角が、それぞれ等しいので', c: 'SAS' },
+      { t: '△DBC≡△ECB' },
+      { t: '∠DCB＝∠EBC', r: '合同な図形の対応する角は等しい', ask: 'r' },
+      { t: '∠PCB＝∠PBC だから　PB＝PC', r: '2つの角が等しい三角形は、二等辺三角形', ask: 'r' }]
+  };
+
+  var steps = [
+    { tag: '今日の問い', bh: '∠B＝∠C の △ABC', q: '「AB＝AC ならば ∠B＝∠C」は証明した。では、「∠B＝∠C ならば AB＝AC」といえるだろうか。わけを考えよう。', dur: 2,
+      notes: ['① 自分の考え（3分）　かき加える線と、証明を書こう。', '② ペアの考え（3分）　自分とちがう考えは？', '前の時間とちがって、AB＝AC は結論（使えない）。'],
+      b: [{ t: '【仮定】∠B＝∠C', col: C.blue }, { t: '【結論】AB＝AC', col: C.blue }],
+      draw: function (D) {
+        var F = fit(D, P3), t = D.t, k = CH.smooth(0, .8, t);
+        GE.seg(F, 'BC'); GE.arc(F, 'ABC', {}); GE.arc(F, 'ACB', {});
+        GE.seg(F, ['B', GE.lerpP(P3.B, P3.A, k)]); GE.seg(F, ['C', GE.lerpP(P3.C, P3.A, k)]);
+        GE.labels(F, k >= 1 ? ['A', 'B', 'C'] : ['B', 'C']);
+        if (k >= 1) ['AB', 'AC'].forEach(function (s) { var m = F.X(GE.mid(P3[s[0]], P3[s[1]])), c = F.X(GE.mid(P3.B, P3.C)); say(D, m[0] + (m[0] - c[0]) * .18, m[1] - F.s * .6, '?', { col: C.pink, a: CH.smooth(.8, 1, t) }); });
+      } }
+  ].concat(S3).concat([
+    { tag: 'ことば', bh: 'ことば', q: '「AB＝AC ならば ∠B＝∠C」と「∠B＝∠C ならば AB＝AC」。このように、仮定と結論を入れかえたものを、何という？', a: '逆', sub: '「2つの角が等しい三角形は、二等辺三角形である」は、証明できたので定理', dur: 2.5,
+      b: [{ t: '仮定と結論を入れかえたもの … もとのことがらの <b>逆</b>', col: C.green }, { t: '定理　2つの <b>角</b> が等しい三角形は、<b>二等辺三角形</b> である', col: C.green }],
+      draw: function (D) {
+        var Rb = box(D, { l: .04, r: .04, t: .08, b: .12 }), s = CH.fs(D), w = Math.min(Rb.w * .36, s * 9), h = s * 2.3, t = D.ph ? D.t : 0, k = CH.ease(CH.smooth(.1, .8, t));
+        var xL = Rb.x0 + Rb.w * .2, xR = Rb.x1 - Rb.w * .2, y1 = Rb.y0 + Rb.h * .28, y2 = Rb.y0 + Rb.h * .74;
+        say(D, Rb.cx, y1 - h * 1.25, 'もとのことがら（△ABC で）', { col: C.chalk, size: s * .9, maxW: Rb.w });
+        card(D, xL, y1, w, h, 'AB＝AC', { col: C.blue }); card(D, xR, y1, w, h, '∠B＝∠C', { col: C.pink });
+        say(D, Rb.cx, y1, 'ならば', { size: s * .9, maxW: xR - xL - w }); say(D, xL, y1 + h * .85, '仮定', { col: C.blue, size: s * .75 }); say(D, xR, y1 + h * .85, '結論', { col: C.pink, size: s * .75 });
+        if (!D.ph) return;
+        var yA = CH.lerp(y1, y2, k), lift = Math.sin(Math.PI * k) * Rb.w * .1;
+        card(D, CH.lerp(xL, xR, k), yA + lift * .3, w, h, 'AB＝AC', { col: C.blue }); card(D, CH.lerp(xR, xL, k), yA - lift * .3, w, h, '∠B＝∠C', { col: C.pink });
+        var a2 = CH.smooth(.8, 1, t);
+        say(D, Rb.cx, y2 - h * 1.25, '逆', { col: C.yel, size: s * 1.1, a: a2 }); say(D, Rb.cx, y2, 'ならば', { size: s * .9, a: a2, maxW: xR - xL - w });
+        say(D, xL, y2 + h * .85, '仮定', { col: C.pink, size: s * .75, a: a2 }); say(D, xR, y2 + h * .85, '結論', { col: C.blue, size: s * .75, a: a2 });
+      } },
+    { tag: '例題', bh: '例題　二等辺三角形かどうか', q: '三角形の2つの角が、ア 50°、80°　イ 45°、65°　ウ 30°、120°　エ 40°、60° のとき、二等辺三角形といえるのはどれ？（アは見本）', a: 'ア と ウ', sub: '残りの角を 180° から引いて求める。等しい角が2つあれば、二等辺三角形（ア 50°、イ 70°、ウ 30°、エ 80°）', dur: 2,
+      b: { t: '残りの角　ア 50°・イ 70°・ウ 30°・エ 80° → 二等辺三角形は <b>ア・ウ</b>', col: C.pink },
+      draw: function (D) {
+        var t = D.ph ? D.t : 0, narrow = D.W < 640, R1 = CH.box(D, { l: .04, r: .04, t: .02, b: .36 }), s = CH.fs(D, .8), all = {}, ofs = [];
+        EX.forEach(function (e, i) { var o = narrow ? [(i % 2) * 7.6, -Math.floor(i / 2) * 6.2] : [i * 6.6, 0]; ofs.push(o); ['A', 'B', 'C'].forEach(function (k) { all[k + i] = GE.add(e.P[k], o); }); });
+        var F0 = GE.fit(D, R1, all, { pad: .06, size: s });
+        EX.forEach(function (e, i) {
+          var F = ext(F0, { A: all['A' + i], B: all['B' + i], C: all['C' + i] }), lb = F.X(GE.add([2, 0], ofs[i])), show = i === 0 || t > .3, a = CH.smooth(.3, .7, t);
+          CH.text(D, lb[0], lb[1] + s * 1.1, e.n + (show ? (e.iso ? '　○' : '　×') : ''), { col: show ? (e.iso ? C.yel : C.chalk) : C.chalk, size: s, a: i === 0 ? 1 : (show ? Math.max(a, .001) : 1) });
+          GE.figure(F, { segs: ['AB', 'BC', 'CA'], labels: false });
+          var hl = show && e.iso;
+          GE.arc(F, 'ABC', { col: hl && e.b === e.a ? C.yel : C.blue, r: s * 1.3, lab: e.b + '°' });
+          GE.arc(F, 'ACB', { col: hl && e.c === e.a ? C.yel : C.blue, r: s * 1.3, lab: e.c + '°' });
+          GE.arc(F, 'BAC', { col: hl ? C.yel : C.pink, r: s * 1.3, lab: show ? e.a + '°' : '?', a: i === 0 ? 1 : (show ? Math.max(a, .2) : 1) });
+        });
+        var R2 = CH.box(D, { l: .12, r: .06, t: .68, b: .02 }), sh = function (r, c) { return r >= 2 && c >= 2 ? (D.ph ? CH.smooth(.3, .7, t) : 0) : 1; };
+        CH.table(D, R2, ['', 'ア', 'イ', 'ウ', 'エ'], [['2つの角'].concat(EX.map(function (e) { return e.b + '°、' + e.c + '°'; })), ['残りの角'].concat(EX.map(function (e) { return e.a + '°'; })), ['二等辺三角形か'].concat(EX.map(function (e) { return e.iso ? '○' : '×'; }))],
+          { fw: .22, show: sh, size: CH.fs(D, .7), hl: function (r, c) { return D.ph && r >= 2 && c >= 2 ? C.pink : null; } });
+      } },
+    { tag: '考えよう', q: '次のア、イは、同じことをいっているだろうか。　ア 2直線が平行ならば、錯角は等しい。　イ 錯角が等しいならば、2直線は平行である。',
+      notes: ['ア、イの仮定と結論は、それぞれ何だろう。', '同じことか、ちがうことか。図や例で説明しよう。', 'スライダーで、直線 m のかたむきを変えられます。'],
+      sliders: [{ key: 'd', label: 'm のかたむき', min: -24, max: 24, step: 1, val: 12, fmt: function (x) { return (x > 0 ? '＋' : x < 0 ? '−' : '') + Math.abs(x) + '°'; } }],
+      draw: function (D) {
+        var Rb = box(D, { l: .04, r: .04, t: .04, b: .06 }), s = CH.fs(D, .85), w = Math.min(Rb.w * .34, s * 9), h = s * 1.9, xL = Rb.x0 + Rb.w * .22, xR = Rb.x1 - Rb.w * .22;
+        [['ア', '2直線が平行', '錯角が等しい'], ['イ', '錯角が等しい', '2直線が平行']].forEach(function (r, i) {
+          var y = Rb.y0 + h * (.6 + i * 1.25);
+          say(D, Rb.x0 + s * .4, y, r[0], { col: C.yel, size: s, align: 'left' });
+          card(D, xL, y, w, h * .9, r[1], { col: C.blue, size: s * .82 }); say(D, Rb.cx, y, 'ならば', { size: s * .8 }); card(D, xR, y, w, h * .9, r[2], { col: C.pink, size: s * .82 });
+        });
+        var y0 = Rb.y0 + h * 3.2, P = { A: [-4, 1.6], B: [4, 1.6], Q: [-1.2, 1.6], S: [1.2, -1.6] }, d = D.V.d;
+        var mDir = GE.polar([0, 0], 1, d), S0 = [1.2, -1.6]; P.E = GE.add(S0, GE.polar([0, 0], -5.2, d)); P.G = GE.add(S0, GE.polar([0, 0], 2.8, d));
+        P.U = GE.lerpP(P.Q, P.S, -.4); P.V = GE.lerpP(P.Q, P.S, 1.4);
+        var F = GE.fit(D, CH.rect(Rb.x0, y0, Rb.x1, Rb.y1), { a: [-4.4, 3], b: [4.4, -3] }, { pad: .04, size: s });
+        F = ext(F, P);
+        GE.seg(F, 'AB'); GE.seg(F, 'EG'); GE.seg(F, 'UV', { col: C.chalk, w: 1.8 });
+        var a1 = GE.ang(P, 'BQS'), a2 = GE.ang(P, 'ESQ');
+        GE.arc(F, 'BQS', { col: C.yel, fill: .4, r: s * 1.5, lab: Math.round(a1) + '°' }); GE.arc(F, 'ESQ', { col: C.green, fill: .4, r: s * 1.5, lab: Math.round(a2) + '°' });
+        var pL = F.X(P.A), pM = F.X(P.E); say(D, pL[0] - s * .6, pL[1], 'ℓ', { size: s, align: 'right' }); say(D, pM[0] - s * .6, pM[1], 'm', { size: s, align: 'right' });
+      } }
+  ]).concat(GE.proof(defC, { tag: 'チャレンジ' }));
+
+  K3.run({
+    no: '第3時', title: '2つの角が等しい三角形は、二等辺三角形といえるだろうか', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '◀ 第2時' }, { href: '04.html', label: '第4時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

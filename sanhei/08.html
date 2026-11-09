@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>直方体の対角線</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三平方の定理 第8時：直方体の対角線の長さを求めよう（ikkan の lesson_sanhei_08 と同じ流れ）。
+   直方体の中で、底面の直角三角形 △ABC → 立体の中の直角三角形 △ACG が順に光り、三平方の定理を2回使う。
+   △ACG を正面から見るように、図が回る（ドラッグでも回せる）。数値は ikkan のまま（自作）。
+   答えの長さは、頂点の座標から計算し直して、2乗で照らし合わせる（CH.check）。 */
+(function () {
+  var C = K3.COL, v = K3.v, K = K3, sq = Math.sqrt;
+  var BX = K.cuboid(5, 3, 2), B2 = K.cuboid(4, 5, 7), CU = K.cuboid(5, 5, 5), BIG = K.cuboid(20, 12, 15), C6 = K.cuboid(6, 6, 6);
+  function d2(M, a, b) { var p = M.P[a], q = M.P[b]; return Math.pow(p[0] - q[0], 2) + Math.pow(p[1] - q[1], 2) + Math.pow(p[2] - q[2], 2); }
+  var M6 = [6, 6, 3];
+  function d2p(p, q) { return Math.pow(p[0] - q[0], 2) + Math.pow(p[1] - q[1], 2) + Math.pow(p[2] - q[2], 2); }
+  CH.check(CH.near(d2(BX, 'A', 'C'), 34) && CH.near(d2(BX, 'A', 'G'), 38) && CH.near(34 + 2 * 2, 38), '今日の問い（AC²＝34、AG²＝38）');
+  CH.check(CH.near(d2(B2, 'A', 'C'), 41) && CH.near(d2(B2, 'A', 'G'), 90) && CH.near(Math.pow(3 * sq(10), 2), 90), '例題（4・5・7 → 3√10）');
+  CH.check(CH.near(d2(CU, 'A', 'C'), 50) && CH.near(d2(CU, 'A', 'G'), 75) && CH.near(Math.pow(5 * sq(3), 2), 75), '例題（立方体 5 → 5√3）');
+  CH.check(CH.near(d2(C6, 'A', 'C'), 72) && CH.near(d2p(C6.P.C, M6), 9) && CH.near(d2p(C6.P.A, M6), 81), 'チャレンジ①（AM＝9）');
+  (function () {
+    var A = C6.P.A, F = C6.P.F, G = C6.P.C, u = v.sub(F, A), w = v.sub(G, A), S = v.len(v.cross(u, w)) / 2;
+    CH.check(CH.near(d2(C6, 'A', 'F'), 72) && CH.near(d2(C6, 'F', 'C'), 72) && CH.near(d2(C6, 'C', 'A'), 72) && CH.near(S * S, 18 * 18 * 3) && CH.near(Math.pow(6 * sq(2) * sq(3) / 2, 2), Math.pow(3 * sq(6), 2)), 'チャレンジ②（正三角形、面積 18√3）');
+  })();
+
+  /* ---- このページの道具 ---- */
+  function lv(a, b, t) { return { th: v.lerp(a.th, b.th, t), ps: v.lerp(a.ps, b.ps, t), rho: v.lerp(a.rho || 1.05, b.rho || 1.05, t) }; }
+  function mid(M, a, b) { return v.lerp3(M.P[a], M.P[b], .5); }
+  /* 三角形をぬる（a は濃さ 0〜1） */
+  function tri(D, M, s, col, a) { if (a <= 0) return; D.poly(s.split('').map(function (k) { return M.P[k]; }), { col: col, a: .3 * a, stroke: col, sa: .9 * a, sw: D.lw * 1.4 }); }
+  /* 線分 a→b を、k（0〜1）までのばす */
+  function grow(D, M, a, b, k, col) { if (k <= 0) return; D.seg(M.P[a], v.lerp3(M.P[a], M.P[b], k), { col: col, w: D.lw * 2.6, glow: true }); }
+  /* 直角のしるし（頂点 o、となりの点 a・b） */
+  function rt(D, M, o, a, b, s, col, al) { if (al <= 0) return; D.right(M.P[o], v.sub(M.P[a], M.P[o]), v.sub(M.P[b], M.P[o]), { s: s, col: col, a: al }); }
+  /* 底面の三角形 → 立体の中の三角形 を、順に光らせる。k1・k2・k3・k4 は 0〜1 */
+  function twoTri(D, M, s, k, lab) {
+    tri(D, M, 'ABC', C.yel, k[0]); rt(D, M, 'B', 'A', 'C', s, C.yel, k[0]);
+    grow(D, M, 'A', 'C', k[1], C.yel);
+    if (lab && lab.ac && k[1] >= 1) D.label(mid(M, 'A', 'C'), lab.ac, { col: C.yel, dy: .95, size: 1.1 });
+    tri(D, M, 'ACG', C.pink, k[2]); rt(D, M, 'C', 'A', 'G', s, C.pink, k[2]);
+    grow(D, M, 'A', 'G', k[3], C.pink);
+    if (lab && lab.ag && k[3] >= 1) D.label(mid(M, 'A', 'G'), lab.ag, { col: C.pink, dx: -1.1, dy: -.7, size: 1.15 });
+  }
+  /* 3辺の長さ（AB・BC・CG） */
+  function dims(D, M, t3, o) {
+    o = o || {};
+    D.label(mid(M, 'A', 'B'), t3[0], { dy: 1.05, col: o.c0 || C.chalk });
+    D.label(mid(M, 'B', 'C'), t3[1], { dx: 1.3, dy: .55, col: o.c1 || C.chalk });
+    D.label(mid(M, 'C', 'G'), t3[2], { dx: 1.35, col: o.c2 || C.chalk });
+  }
+  var V0 = { th: -52, ps: 24 }, VF = { th: -59, ps: 7 };
+  var F1 = K.frame(BX.ctr, 3.2);
+
+  K.run({
+    no: '第8時', title: '直方体の対角線の長さを求めよう',
+    model: F1, view: V0,
+    links: [{ href: 'index.html', label: '目次' }, { href: '07.html', label: '◀ 第7時' }, { href: '09.html', label: '第9時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '直方体（AB 5cm・BC 3cm・CG 2cm）',
+        q: '直方体 ABCD−EFGH で、AB＝5cm、BC＝3cm、CG＝2cm である。対角線 AG の長さを求めたい。立体の中の、どこに直角三角形があるだろう。',
+        notes: ['① 自分の考え（3分）　図に線をかき入れて、求め方を。', '② ペアの考え（3分）'],
+        draw: function (D) {
+          D.box(BX, { dim: .8 }); D.seg(BX.P.A, BX.P.G, { col: C.yel, w: D.lw * 2.2, glow: true });
+          dims(D, BX, ['5cm', '3cm', '2cm']);
+        } },
+
+      { tag: '今日の問い', q: 'まず、底面 ABCD の対角線 AC の長さは？', a: 'AC² ＝ 5² ＋ 3² ＝ 34　AC&nbsp;＝&nbsp;√34&nbsp;cm', sub: '△ABC は ∠ABC＝90° の直角三角形（底面の長方形の中）', dur: 3.5,
+        b: { t: '① △ABC で　AC² ＝ 5² ＋ 3² ＝ <b>34</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0;
+          D.box(BX, { dim: .8 });
+          D.seg(BX.P.A, BX.P.G, { col: C.chalk, w: D.lw * 1.2, a: .5, dash: true });
+          twoTri(D, BX, .38, [v.smooth(0, .3, t), v.smooth(.25, .7, t), 0, 0], { ac: '√34' });
+          dims(D, BX, ['5cm', '3cm', '2cm'], { c0: t > 0 ? C.yel : null, c1: t > 0 ? C.yel : null });
+        } },
+
+      { tag: '今日の問い', q: 'つぎに、AG をふくむ直角三角形は？ AG の長さは？', a: '△ACG で　AG² ＝ 34 ＋ 2² ＝ 38　AG&nbsp;＝&nbsp;√38&nbsp;cm',
+        sub: 'CG は底面に垂直だから、底面の AC とも垂直（∠ACG＝90°）', dur: 4.5,
+        view: function (s) { return s.ph ? lv(V0, VF, v.smooth(.05, .45, s.t)) : V0; },
+        b: { t: '② △ACG で　AG² ＝ 34 ＋ 2² ＝ 38　AG ＝ <b>√38 cm</b>', col: C.pink },
+        banner: function (s) { return s.ph && s.done ? '三平方の定理を 2回 使う' : ''; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0;
+          D.box(BX, { dim: .7 });
+          twoTri(D, BX, .38, [.35, 1, v.smooth(.15, .45, t), v.smooth(.45, .85, t)], { ac: '√34', ag: '√38' });
+          if (!D.ph) D.seg(BX.P.A, BX.P.G, { col: C.chalk, w: D.lw * 1.2, a: .5, dash: true });
+          dims(D, BX, ['5cm', '3cm', '2cm'], { c2: t > 0 ? C.pink : null });
+        } },
+
+      { tag: 'ことば', bh: 'ことば', q: '3辺が a、b、c の直方体の、対角線の長さは？', a: '√(a² ＋ b² ＋ c²)',
+        sub: '底面の対角線の2乗 a²＋b² に、高さの2乗 c² をたす。直方体の対角線は 4本あって、どれも同じ長さ', dur: 7,
+        b: [{ t: '3辺 a、b、c の直方体の対角線 ＝ <b>√(a² ＋ b² ＋ c²)</b>', col: C.green }, { t: '底面の対角線と高さを 2辺とする、直角三角形の斜辺', col: C.green }, { t: '1辺 a の立方体の対角線 ＝ √(3a²) ＝ <b>√3 a</b>', col: C.green }],
+        banner: function (s) { if (!s.ph) return ''; return s.t < .3 ? 'AC² ＝ a² ＋ b²' : s.t < .62 ? 'AG² ＝ AC² ＋ c² ＝ a² ＋ b² ＋ c²' : '対角線は 4本。どれも同じ長さ'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = BX.P;
+          D.box(BX, { dim: .8 });
+          twoTri(D, BX, .38, [v.smooth(0, .12, t), v.smooth(.08, .28, t), v.smooth(.32, .45, t), v.smooth(.42, .6, t)], {});
+          var k = v.smooth(.65, .9, t);
+          if (k > 0) [['B', 'H'], ['C', 'E'], ['D', 'F']].forEach(function (e, i) { D.seg(P[e[0]], v.lerp3(P[e[0]], P[e[1]], k), { col: [C.blue, C.green, C.orange][i], w: D.lw * 2, a: .95, glow: true }); });
+          dims(D, BX, ['a', 'b', 'c'], { c0: C.yel, c1: C.yel, c2: C.pink });
+        } },
+
+      { tag: '例題', bh: '例題', model: K.frame(B2.ctr, 5.2), view: V0,
+        q: '3辺が 4cm、5cm、7cm の直方体の、対角線の長さは？', a: '3√10&nbsp;cm',
+        sub: '底面の対角線の2乗 4² ＋ 5² ＝ 41、対角線の2乗 41 ＋ 7² ＝ 90、√90 ＝ 3√10', dur: 5,
+        b: { t: '4cm・5cm・7cm … 41 ＋ 7² ＝ 90 → <b>3√10 cm</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0;
+          D.box(B2, { dim: .8 });
+          if (!D.ph) D.seg(B2.P.A, B2.P.G, { col: C.chalk, w: D.lw * 1.2, a: .5, dash: true });
+          twoTri(D, B2, .5, [v.smooth(0, .15, t), v.smooth(.12, .4, t), v.smooth(.45, .6, t), v.smooth(.58, .85, t)], { ac: '√41', ag: '3√10' });
+          dims(D, B2, ['4cm', '5cm', '7cm']);
+        } },
+
+      { tag: '例題', model: K.frame(CU.ctr, 4.8), view: V0,
+        q: '1辺が 5cm の立方体の、対角線の長さは？', a: '5√3&nbsp;cm', sub: '5² ＋ 5² ＝ 50、50 ＋ 5² ＝ 75、√75 ＝ 5√3（1辺 a の立方体なら √3 a）', dur: 5,
+        b: { t: '立方体 1辺 5cm … 5² × 3 ＝ 75 → <b>5√3 cm</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0;
+          D.box(CU, { dim: .8 });
+          if (!D.ph) D.seg(CU.P.A, CU.P.G, { col: C.chalk, w: D.lw * 1.2, a: .5, dash: true });
+          twoTri(D, CU, .5, [v.smooth(0, .15, t), v.smooth(.12, .4, t), v.smooth(.45, .6, t), v.smooth(.58, .85, t)], { ac: '5√2', ag: '5√3' });
+          dims(D, CU, ['5cm', '5cm', '5cm']);
+        } },
+
+      { tag: '考えよう', bh: '考えよう', model: K.frame([10, 6, 7.5], 16.5), view: { th: -50, ps: 22 },
+        q: 'たて 12cm、横 20cm、高さ 15cm の直方体の箱がある。長さ 24cm・26cm・28cm の まっすぐな棒は、この箱の中に入るだろうか。',
+        notes: ['棒の長さの2乗を求めて、箱の中の いろいろな対角線とくらべよう。入る ○・入らない × を表に。', 'この箱に入る、いちばん長い棒の長さは、どう考えれば求められるだろう。', 'スライダーで、棒の長さと、置き方を変えられます。'],
+        sliders: [
+          { key: 'L', label: '棒の長さ', min: 20, max: 30, step: 1, val: 24, fmt: function (x) { return x + 'cm'; } },
+          { key: 'w', label: '置き方', min: 0, max: 3, step: 1, val: 0, fmt: function (x) { return ['底面の対角線', '前の面の対角線', '横の面の対角線', '立体の対角線'][x]; } }
+        ],
+        draw: function (D) {
+          var P = BIG.P, ends = [['A', 'C'], ['A', 'F'], ['B', 'G'], ['A', 'G']][D.V.w], a = P[ends[0]], b = P[ends[1]], c = v.lerp3(a, b, .5), u = v.nrm(v.sub(b, a)), L = D.V.L;
+          D.box(BIG, { dim: .8, faces: D.V.w === 0 ? { ABCD: { col: C.blue, a: .18 } } : D.V.w === 1 ? { ABFE: { col: C.blue, a: .18 } } : D.V.w === 2 ? { BCGF: { col: C.blue, a: .18 } } : {} });
+          D.seg(a, b, { col: C.chalk, w: D.lw, a: .55, dash: true });
+          var p = v.add(c, v.mul(u, -L / 2)), q = v.add(c, v.mul(u, L / 2));
+          D.seg(p, q, { col: C.orange, w: D.lw * 3.4, glow: true }); D.dot(p, { col: C.orange }); D.dot(q, { col: C.orange });
+          D.label(mid(BIG, 'A', 'B'), '20cm', { dy: 1.05 }); D.label(mid(BIG, 'B', 'C'), '12cm', { dx: 1.6, dy: .6 }); D.label(mid(BIG, 'C', 'G'), '15cm', { dx: 1.7 });
+          D.text(D.W / 2, D.info.top + 14, '棒 ' + L + 'cm', { col: C.orange, size: 1.15 });
+        } },
+
+      { tag: 'チャレンジ', bh: 'チャレンジ', model: K.frame(C6.ctr, 6), view: { th: -50, ps: 22 },
+        q: '1辺が 6cm の立方体 ABCD−EFGH で、辺 CG の中点を M とする。線分 AM の長さは？', a: '9cm',
+        sub: 'AC ＝ 6√2（底面の正方形の対角線）、CM ＝ 3、∠ACM ＝ 90°　AM² ＝ 72 ＋ 9 ＝ 81', dur: 4,
+        b: { t: '① AM² ＝ (6√2)² ＋ 3² ＝ 81 → <b>AM ＝ 9cm</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = C6.P;
+          D.box(C6, { dim: .8 });
+          D.seg(P.A, M6, { col: C.orange, w: D.lw * 2.2, glow: true });
+          D.dot(M6, { col: C.orange }); D.label(M6, 'M', { dx: 1, col: C.orange });
+          var k1 = v.smooth(0, .3, t), k2 = v.smooth(.3, .6, t);
+          if (k1 > 0) { D.poly([P.A, P.C, M6], { col: C.yel, a: .3 * k2, stroke: C.yel, sa: .9 * k2, sw: D.lw * 1.4 }); D.seg(P.A, v.lerp3(P.A, P.C, k1), { col: C.yel, w: D.lw * 2.4, glow: true }); }
+          if (k2 > 0) { D.right(P.C, v.sub(P.A, P.C), v.sub(M6, P.C), { s: .6, col: C.yel, a: k2 }); D.label(v.lerp3(P.A, P.C, .5), '6√2', { col: C.yel, dy: 1, a: k2 }); D.label(v.lerp3(P.C, M6, .5), '3', { col: C.yel, dx: 1, a: k2 }); }
+          if (t > .7) D.label(v.lerp3(P.A, M6, .7), '9', { col: C.orange, dx: -.4, dy: -.95, size: 1.3, a: v.smooth(.7, .85, t) });
+          D.label(mid(C6, 'A', 'B'), '6cm', { dy: 1.05 });
+        } },
+
+      { tag: 'チャレンジ', model: K.frame(C6.ctr, 6), view: { th: -50, ps: 22 },
+        q: '同じ立方体で、△AFC は どんな三角形？ 面積は？', a: '正三角形、面積&nbsp;18√3&nbsp;cm²',
+        sub: 'AF・FC・CA は、どれも 1辺 6cm の正方形の対角線 6√2。高さ 6√2 × √3/2 ＝ 3√6、面積 1/2 × 6√2 × 3√6 ＝ 18√3', dur: 5,
+        b: { t: '② AF ＝ FC ＝ CA ＝ 6√2 → <b>正三角形</b>、面積 <b>18√3 cm²</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = C6.P, cols = [C.yel, C.blue, C.pink];
+          D.box(C6, { dim: .8, faces: D.ph ? { ABFE: { col: C.yel, a: .12 * v.smooth(0, .1, t) }, BCGF: { col: C.blue, a: .12 * v.smooth(.25, .35, t) }, ABCD: { col: C.pink, a: .12 * v.smooth(.5, .6, t) } } : {} });
+          var fa = D.ph ? v.smooth(.75, .9, t) : .35;
+          D.poly([P.A, P.F, P.C], { col: C.orange, a: .32 * fa, stroke: C.orange, sa: D.ph ? 0 : .9, sw: D.lw * 1.4 });
+          [['A', 'F'], ['F', 'C'], ['C', 'A']].forEach(function (e, i) {
+            var k = D.ph ? v.smooth(i * .25, i * .25 + .2, t) : 0;
+            if (k > 0) { D.seg(P[e[0]], v.lerp3(P[e[0]], P[e[1]], k), { col: cols[i], w: D.lw * 2.6, glow: true }); if (k >= 1) D.label(mid(C6, e[0], e[1]), '6√2', { col: cols[i], size: 1.05, dx: i === 2 ? .3 : i === 0 ? -.9 : .9, dy: i === 2 ? .9 : -.3 }); }
+          });
+          if (t > .85) D.label(v.centroid([P.A, P.F, P.C]), '正三角形', { col: C.orange, size: 1.1, a: v.smooth(.85, .95, t) });
+          D.label(mid(C6, 'A', 'B'), '6cm', { dy: 1.05 });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

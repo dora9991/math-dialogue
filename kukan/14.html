@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>立体とみなして見積もる</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/board.css">
+</head>
+<body>
+<script src="js/k3.js"></script>
+<script>
+/* 空間図形 第14時：身のまわりのものを立体とみなして、量を見積もろう（ikkan の lesson_kukan_new_14 と同じ流れ）。
+   実物（でこぼこした砂の山・くびれのあるペットボトル・紙コップ）に、モデル（円錐・円柱）を重ねて見せる。 */
+(function () {
+  var C = K3.COL, v = K3.v, K = K3, PI = Math.PI;
+  /* 砂の山：半径 2m・高さ 1.5m のまわりを、少しでこぼこにした回転体 */
+  var SAND = K.revolve([[0, 0, 'b'], [2.15, 0, 's'], [1.9, .12, 's'], [1.5, .42, 's'], [1.1, .78, 's'], [.7, 1.12, 's'], [.32, 1.4, 's'], [0, 1.52]], { seg: 56 });
+  /* ペットボトル：直径 6cm・高さ 20cm（上がすぼまる） */
+  var BOTTLE = K.revolve([[0, 0, 'b'], [2.9, 0, 's'], [3, .5, 's'], [3, 12.5, 's'], [2.8, 14, 's'], [1.8, 16.5, 's'], [1.2, 18, 's'], [1.2, 20, 't'], [0, 20]], { seg: 48 });
+  /* 紙コップ：上の直径 8・下の直径 4・高さ 9 */
+  var CUP = K.frustum(2, 4, 9);
+  var V_SAND = 1 / 3 * PI * 4 * 1.5, V_BOT = PI * 9 * 20;
+  if ((Math.abs(V_SAND - 2 * PI) > 1e-9 || Math.abs(V_BOT - 180 * PI) > 1e-9) && window.console) console.error('数がちがう');
+
+  K.run({
+    no: '第14時', title: '身のまわりのものを立体とみなして、量を見積もろう',
+    model: K.frame([0, 0, .7], 2.6), view: { th: -62, ps: 18 },
+    links: [{ href: 'index.html', label: '目次' }, { href: '13.html', label: '◀ 第13時' }, { href: '15.html', label: '第15時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '砂の山（直径 4m・高さ 1.5m）', q: '砂の山を、底面の直径 4m、高さ 1.5m の円錐とみなす。1回に 0.5m³ 運べる一輪車で、何回で運び終わるだろう。（π＝3.14）',
+        notes: ['① 自分の考え（3分）', '② ペアの考え（3分）'],
+        draw: function (D) { D.mesh(SAND, { col: '#d9b26f' }); } },
+      { tag: '今日の問い', q: '円錐とみなすと、体積は？ 何回で運べる？', a: '約 6.28m³ → 13回', sub: '半径 2m　1/3 × π × 2² × 1.5 ＝ 2π ≒ 6.28　6.28 ÷ 0.5 ＝ 12.56 → 13回', dur: 3,
+        b: { t: '1/3×π×2²×1.5＝2π≒6.28m³　6.28÷0.5＝12.56 → <b>13回</b>', col: C.yel },
+        draw: function (D) {
+          var a = D.ph ? v.smooth(.1, .6, D.t) : 0;
+          if (a > 0) D.mesh(K.cone(2, 1.5), { col: C.yel, a: .35 * a, edgeCol: 'rgba(255,226,122,.9)', only: 'back' });
+          D.mesh(SAND, { col: '#d9b26f', a: 1 - .6 * a });
+          if (a > 0) { D.mesh(K.cone(2, 1.5), { col: C.yel, a: .3 * a, edgeCol: 'rgba(255,226,122,.95)', ew: 1.6 }); D.dim([0, 0, 0], [2, 0, 0], '2m', { dy: .9, a: a, col: C.yel }); D.dim([0, 0, 0], [0, 0, 1.5], '1.5m', { off: [-.5, 0, 0], dx: -1.3, a: a, col: C.yel }); }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'ものを立体とみなして求めた値は、どんな値？', a: 'およその値', sub: '立体とみなすことを「モデルにする」という。モデルが大きいと 大きめ、小さいと 小さめ', dur: 1,
+        b: [{ t: '立体と<b>みなす</b> ＝ <b>モデル</b>にする　求めた値は <b>およそ</b>の値', col: C.green }, { t: '1L ＝ 1000cm³　1m³ ＝ 1000L', col: C.green }],
+        draw: function (D) { D.mesh(SAND, { col: '#d9b26f', a: .5 }); D.mesh(K.cone(2, 1.5), { col: C.yel, a: .35, edgeCol: 'rgba(255,226,122,.9)' }); } },
+      { tag: '例題', bh: '例題　500mL のペットボトル（直径 6cm・高さ 20cm）', model: K.frame([0, 0, 10], 11), view: { th: -62, ps: 12 },
+        q: 'ペットボトルを、底面の直径 6cm、高さ 20cm の円柱とみなして、体積を見積もろう。表示の 500mL より大きめか、小さめか。',
+        a: '約 565.2cm³。大きめ', sub: '半径 3cm　π × 3² × 20 ＝ 180π ≒ 565.2。実物は、上のほうが すぼまっているから', dur: 3,
+        b: { t: 'π×3²×20＝180π≒565.2cm³ → 500mL より<b>大きめ</b>', col: C.blue },
+        draw: function (D) {
+          var a = D.ph ? v.smooth(.1, .6, D.t) : 0;
+          D.mesh(BOTTLE, { col: '#cfe8f5', a: .8 });
+          if (a > 0) { D.mesh(K.cylinder(3, 20), { col: C.yel, a: .22 * a, edgeCol: 'rgba(255,226,122,.9)' }); D.label([3, 0, 17], '大きめ（すきま）', { col: C.yel, align: 'left', dx: .8, a: v.smooth(.6, .9, D.t) }); }
+        } },
+      { tag: '考えよう', model: K.frame([0, 0, 4.5], 6), view: { th: -62, ps: 14 },
+        q: '紙コップ（上の直径 8cm・下の直径 4cm・高さ 9cm）の容積を、円柱とみなして見積もろう。水を入れてはかると、およそ 260mL だった。実物に近い見積もりにするには、どの長さを使うとよいだろう。',
+        notes: ['使う長さごとに、式と値を。260cm³ より大きいか、小さいかも。', '実物に近い見積もりにするには、どの長さを使うとよい？ わけも。', 'スライダーで、モデルにする円柱の直径を変えられます。'],
+        sliders: [{ key: 'd', label: '円柱の直径', min: 4, max: 8, step: .5, val: 8, fmt: function (x) { return x + 'cm'; } }],
+        draw: function (D) {
+          var r = D.V.d / 2, V = PI * r * r * 9;
+          D.mesh(CUP, { col: '#f1e7d4', a: .75 });
+          D.mesh(K.cylinder(r, 9), { col: C.yel, a: .22, edgeCol: 'rgba(255,226,122,.9)' });
+          D.text(D.W / 2, D.info.top + 26, 'π × ' + r + '² × 9 ≒ ' + Math.round(V) + ' cm³', { col: C.yel, size: 1.05 });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', model: K.frame([0, 0, 0], 26), view: { th: -62, ps: 12 },
+        q: 'たらいは、円錐から、頂点をふくむ小さい円錐を切りとった形で、切りとった円錐の高さは 15cm である。（たらいの上の半径 20cm・底の半径 10cm・深さ 15cm）たらいの容積を、π のままで求めよう。',
+        a: '3500π cm³（約 10990cm³）', sub: '大きい円錐（高さ 30cm）1/3 × π × 20² × 30 ＝ 4000π から、小さい円錐 1/3 × π × 10² × 15 ＝ 500π をひく', dur: 4,
+        b: { t: '4000π − 500π ＝ <b>3500π cm³</b>（≒10990cm³）', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, a = v.smooth(.1, .5, t), cut = v.smooth(.55, .9, t);
+          D.mesh(K.revolve([[0, 0, 'b'], [10, 0, 's'], [20, 15, 'r'], [0, 15]]), { col: '#9fb6c8', a: 1 - .5 * a });
+          if (a > 0) {
+            D.mesh(K.revolve([[0, -15, 's'], [20, 15, 'r'], [0, 15]]), { col: C.yel, a: .18 * a, edgeCol: 'rgba(255,226,122,.9)' });
+            D.mesh(K.revolve([[0, -15, 's'], [10, 0, 'r'], [0, 0]]), { col: C.pink, a: .55 * a, at: [16 * cut, 0, -4 * cut] });
+            D.label([16 * cut, 0, -19 * cut - 15 * (1 - cut)], '切りとった円錐（高さ 15）', { col: C.pink, dy: 1, a: a });
+            D.label([-20, 0, 15], '大きい円錐（高さ 30）', { col: C.yel, align: 'right', dx: -.5, a: a });
+          }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

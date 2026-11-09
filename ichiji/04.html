@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>一次関数のグラフ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 一次関数 第4時：一次関数のグラフは、比例のグラフとどうちがうだろう（ikkan の lesson_ichiji_new_04 と同じ流れ）。
+   表の数が1つずつ座標平面の点になり、点がならぶと直線になる。y＝2x のグラフが、上へ 4 だけずれて y＝2x＋4 に重なる（平行移動・切片）。
+   数値は ikkan のまま（y＝2x と y＝2x＋4、例題 y＝−x−2、考えよう A(10, 24)・B(−4, −6)、チャレンジ y＝1/2x と y＝1/2x＋3）。点・答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum;
+  /* ---- 分数入りの字（[2/3] をたての分数に）。canvas 用と、右の板書（HTML）用 ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fr(s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fr(s[k]); }); if (s.notes) s.notes = s.notes.map(fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
+  var OUT = 'rgba(20,40,30,.92)';
+  /* 座標平面：四角 P の中に、軸の字のすきまをとって */
+  function plane(D, P, xr, yr, o) { var s = CH.fs(D, .72); return CH.plane(D, CH.rect(P.x0 + s * .4, P.y0 + s * 1.6, P.x1 - s * 1.8, P.y1 - s * .4), Object.assign({ x: xr, y: yr }, o || {})); }
+  function lab(D, Pl, x, y, txt, col, o) { o = o || {}; TX(D, Pl.X(x) + (o.dx || 0), Pl.Y(y) + (o.dy || 0), txt, { col: col, size: o.size || CH.fs(D, .9), align: o.align || 'left', outline: OUT, a: o.a }); }
+
+  /* ---- 数（ikkan と同じ）と検算 ---- */
+  var XS = [-3, -2, -1, 0, 1, 2, 3], Y0 = XS.map(function (x) { return 2 * x; }), Y1 = XS.map(function (x) { return 2 * x + 4; });
+  CH.check(Y1.join() === '-2,0,2,4,6,8,10' && Y1.every(function (y, i) { return y - Y0[i] === 4; }), '今日の問いの表（いつも 4 大きい）');
+  CH.check(-1 * 0 - 2 === -2 && [-3, 0, 2].every(function (x) { return (-x - 2) - (-x) === -2; }), '例題（下へ 2、切片 −2）');
+  CH.check(2 * 10 + 4 === 24 && 2 * -4 + 4 !== -6, '考えよう（ここで確かめるだけ）');
+  CH.check([-4, 0, 4, 7].every(function (x) { return (x / 2 + 3) - x / 2 === 3; }) && 4 / 2 === 2 && 4 / 2 + 3 === 5, 'チャレンジ');
+
+  function lay(D) {
+    var R = CH.box(D, { l: .03, r: .03, t: .06, b: .06 }), wide = D.W > D.H * .9;
+    /* 表はいつも たて（せまい画面でも、座標平面の大きさは高さで決まるので、横にならべる） */
+    var k = wide ? .34 : .37;
+    return { wide: true, T: CH.rect(R.x0, R.y0 + R.h * .04, R.x0 + R.w * k, R.y1 - R.h * .04), P: CH.rect(R.x0 + R.w * (k + .03), R.y0, R.x1, R.y1) };
+  }
+  /* 表（広い画面はたて、せまい画面は横）。cellOf(i, k)：x の i 番目、k＝1 で y＝2x、2 で y＝2x＋4 */
+  function table(D, L, o) {
+    o = o || {}; var sh = o.show || function () { return 1; }, hl = o.hl || function () { return null; };
+    if (L.wide) {
+      var T = CH.table(D, L.T, ['x', 'y＝2x', 'y＝2x＋4'], XS.map(function (x, i) { return [S(x), S(Y0[i]), S(Y1[i])]; }), { fw: .2, size: CH.fs(D, .85), show: function (r, c) { return r > 0 && c === 2 ? sh(r - 1) : 1; }, hl: function (r, c) { return r > 0 ? hl(r - 1, c) : null; } });
+      return function (i, k) { return T.cell(i + 1, k); };
+    }
+    var T2 = CH.table(D, L.T, ['x'].concat(XS.map(S)), [['y＝2x'].concat(Y0.map(S)), ['y＝2x＋4'].concat(Y1.map(S))], { fw: .26, size: CH.fs(D, .8), show: function (r, c) { return r === 2 && c > 0 ? sh(c - 1) : 1; }, hl: function (r, c) { return c > 0 ? hl(c - 1, r) : null; } });
+    return function (i, k) { return T2.cell(k, i + 1); };
+  }
+  function base(D, L) { return plane(D, L.P, [-4, 4], [-7, 11], { lab: D.W > D.H * .9 ? 1 : 2 }); }
+  function line0(D, Pl, o) { o = o || {}; CH.lin(D, Pl, 2, 0, { col: C.blue, w: 2.6, a: o.a }); XS.forEach(function (x, i) { CH.pt(D, Pl, x, Y0[i], { col: C.blue, r: CH.fs(D, .22), a: o.a }); }); lab(D, Pl, 3.1, 4.6, 'y＝2x', C.blue, { a: o.a }); }
+
+  K3.run({
+    no: '第4時', title: '一次関数のグラフは、比例のグラフとどうちがうだろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '03.html', label: '◀ 第3時' }, { href: '05.html', label: '第5時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: 'y＝2x と y＝2x＋4', q: '比例 y＝2x のグラフは、かいてある。一次関数 y＝2x＋4 のグラフは、y＝2x のグラフと、どこがちがうだろう。表をうめて、グラフをかいて、くらべよう。',
+        notes: ['① 自分の考え（3分）　気づいたことを書こう。', '② ペアの考え（3分）'],
+        draw: function (D) { var L = lay(D); table(D, L, { show: function () { return 0; } }); line0(D, base(D, L)); } },
+      { tag: '今日の問い', q: '表の y＝2x＋4 をうめて、点をとろう。点は、どのようにならぶ？', a: '一直線にならぶ', sub: '−2、0、2、4、6、8、10。どの x でも、y＝2x より 4 大きい。点をつなぐと直線になる', dur: 8,
+        b: { t: 'y＝2x＋4 … −2・0・2・4・6・8・10（y＝2x より、いつも <b>4</b> 大きい）', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, s = CH.fs(D);
+          function k(i) { return CH.clamp((t - .04 - i * .07) / .09, 0, 1); }
+          var cell = table(D, L, { show: function (i) { return D.ph ? CH.smooth(0, .3, k(i)) : 0; }, hl: function (i, c) { return D.ph && c === 2 && k(i) > 0 && k(i) < 1 ? C.orange : null; } });
+          var Pl = base(D, L); line0(D, Pl);
+          if (t > .62) { CH.lin(D, Pl, 2, 4, { col: C.orange, w: 3, t: CH.smooth(.62, .8, t), x0: -4, x1: 4 }); }
+          XS.forEach(function (x, i) {
+            var e = k(i); if (!D.ph || e <= 0) return;
+            var q = cell(i, 2), px = Pl.X(x), py = Pl.Y(Y1[i]), ee = CH.ease(e), cx = CH.lerp(q.cx, px, ee), cy = CH.lerp(q.cy, py, ee) - Math.sin(ee * Math.PI) * s * 2;
+            CH.circle(D, cx, cy, CH.fs(D, .26), { fill: C.orange, stroke: 'rgba(20,30,24,.8)', sw: 1.2 });
+            if (t > .82) CH.pseg(D, Pl, [x, Y0[i]], [x, Y1[i] - .25], { col: C.yel, w: 2, arrow: true, head: 7, a: CH.smooth(.82 + i * .02, .88 + i * .02, t) });
+          });
+          if (t > .9) lab(D, Pl, -3.9, 8.7, 'y＝2x＋4', C.orange, { a: CH.smooth(.9, 1, t) });
+        } },
+      { tag: '今日の問い', q: 'y＝2x＋4 のグラフは、y＝2x のグラフと、どこがちがう？', a: 'y＝2x を、上へ 4 だけずらした直線', sub: 'どの点も、上へ 4。だから y＝2x と平行。y 軸とは (0, 4) で交わる', dur: 4,
+        b: { t: 'y＝2x のグラフを <b>上へ 4</b> だけずらした直線（平行。y 軸と (0, 4) で交わる）', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, s = CH.fs(D); table(D, L, { hl: function (i, c) { return D.ph && i === 3 && c === 2 ? C.yel : null; } });
+          var Pl = base(D, L); line0(D, Pl);
+          CH.lin(D, Pl, 2, 4, { col: C.orange, w: 3, a: D.ph ? .35 : 1 }); lab(D, Pl, -3.9, 8.7, 'y＝2x＋4', C.orange, { a: D.ph ? .5 : 1 });
+          if (D.ph) {
+            var b = 4 * CH.ease(CH.smooth(.05, .6, t));
+            CH.lin(D, Pl, 2, b, { col: C.yel, w: 3, dash: [10, 7], glow: true });
+            [-2, 0, 2].forEach(function (x) { CH.pseg(D, Pl, [x, 2 * x], [x, 2 * x + b], { col: C.yel, w: 2.2, arrow: b > .4, head: 7 }); });
+            if (t > .65) { var a = CH.smooth(.65, .85, t); CH.pt(D, Pl, 0, 4, { col: C.yel, r: CH.fs(D, .34), a: a }); lab(D, Pl, 0, 4, '(0, 4)', C.yel, { dx: s * .6, dy: s * .1, a: a }); }
+          }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'y＝ax＋b のグラフは、y＝ax のグラフをどうした直線？ y 軸と交わる点 (0, b) の b を何という？', a: '平行移動した直線・切片', sub: 'y 軸の正の方向に b だけ平行移動した直線。y＝2x＋4 の切片は 4', dur: 3,
+        b: [{ t: 'y＝ax＋b のグラフは、y＝ax のグラフを、y 軸の正の方向に b だけ <b>平行移動</b> した直線', col: C.green }, { t: 'y 軸と交わる点 (0, b) の b を、グラフの <b>切片</b> という', col: C.green }],
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, s = CH.fs(D); table(D, L, { hl: function (i, c) { return i === 3 && c === 2 && D.ph ? C.green : null; } });
+          var Pl = base(D, L); line0(D, Pl, { a: .5 }); CH.lin(D, Pl, 2, 4, { col: C.orange, w: 3 }); lab(D, Pl, -3.9, 8.7, 'y＝2x＋4', C.orange);
+          if (D.ph) {
+            var a = CH.smooth(0, .4, t);
+            CH.pseg(D, Pl, [0, 0], [0, 4 * CH.ease(CH.smooth(0, .6, t))], { col: C.green, w: 4, glow: true, a: a });
+            CH.pt(D, Pl, 0, 4, { col: C.green, r: CH.fs(D, .36), a: CH.smooth(.5, .7, t) });
+            lab(D, Pl, -.9, 4, '切片 4', C.green, { align: 'right', a: CH.smooth(.55, .8, t) }); CH.pseg(D, Pl, [-.85, 4], [-.15, 4], { col: C.green, w: 2, a: CH.smooth(.55, .8, t) });
+            lab(D, Pl, 0, 2, '4 だけ平行移動', C.green, { dx: s * .5, dy: s * .4, size: CH.fs(D, .75), a: CH.smooth(.3, .6, t) });
+          }
+        } },
+      { tag: '例題', bh: '例題　y＝−x−2 のグラフ', q: '一次関数 y＝−x−2 のグラフを、y＝−x のグラフを使ってかこう。また、切片を答えよう。', a: 'y＝−x を下へ 2 だけ平行移動した直線。切片 −2', sub: 'b が負の数のときは、y 軸の負の方向（下）へ動かす。点 (0, −2) を通り、y＝−x と平行', dur: 5,
+        b: { t: 'y＝−x−2 … y＝−x を <b>下へ 2</b>　切片 <b>−2</b>', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .12, r: .12, t: .04, b: .04 }), t = D.ph ? D.t : 0, s = CH.fs(D), Pl = plane(D, R, [-5, 5], [-6, 5]);
+          CH.lin(D, Pl, -1, 0, { col: C.blue, w: 2.6 }); lab(D, Pl, -4.2, 4.2, 'y＝−x', C.blue, { dx: s * .4 });
+          if (D.ph) {
+            var b = -2 * CH.ease(CH.smooth(.05, .55, t));
+            [-3, 0, 3].forEach(function (x) { CH.pseg(D, Pl, [x, -x], [x, -x + b], { col: C.pink, w: 2.2, arrow: b < -.4, head: 7 }); });
+            CH.lin(D, Pl, -1, b, { col: C.pink, w: 3, glow: t > .55 });
+            if (t > .6) { var a = CH.smooth(.6, .8, t); CH.pt(D, Pl, 0, -2, { col: C.yel, r: CH.fs(D, .34), a: a }); lab(D, Pl, -.9, -2, '切片 −2', C.yel, { align: 'right', a: a }); CH.pseg(D, Pl, [-.85, -2], [-.15, -2], { col: C.yel, w: 2, a: a }); lab(D, Pl, 2.2, -4.6, 'y＝−x−2', C.pink, { dx: s * .5, a: a }); }
+          }
+        } },
+      { tag: '考えよう', bh: '考えよう', q: '点 A(10, 24) は、一次関数 y＝2x＋4 のグラフの上にあるだろうか。座標平面にはかききれない。図をかかずに、確かめる方法を考えよう。',
+        notes: ['確かめる方法を書こう（式・表・ことば・図など）。', '点 B(−4, −6) は、グラフの上にあるだろうか。同じ方法で確かめよう。', 'スライダーで、グラフの上の点 P を動かせます。'],
+        sliders: [{ key: 'x', label: 'P の x 座標', min: -3, max: 3, step: .5, val: 1, fmt: function (x) { return S(x); } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .08, r: .06, t: .04, b: .04 }), s = CH.fs(D), Pl = plane(D, R, [-4, 6], [-4, 12], { lab: 2 }), x = D.V.x, y = 2 * x + 4;
+          CH.lin(D, Pl, 2, 4, { col: C.orange, w: 3 }); lab(D, Pl, -3.9, 1.2, 'y＝2x＋4', C.orange, { dy: -s * .4 });
+          CH.pseg(D, Pl, [x, 0], [x, y], { col: C.yel, w: 1.6, dash: true }); CH.pseg(D, Pl, [0, y], [x, y], { col: C.yel, w: 1.6, dash: true });
+          CH.pt(D, Pl, x, y, { col: C.yel, r: CH.fs(D, .36), lab: 'P(' + S(x) + ', ' + S(y) + ')', dir: x > 0 ? 'nw' : 'se' });
+          CH.text(D, Pl.X(5.8), Pl.Y(-2.6), 'A(10, 24)、B(−4, −6) は', { col: C.pink, size: s * .78, align: 'right', outline: OUT });
+          CH.text(D, Pl.X(5.8), Pl.Y(-2.6) + s * 1.1, 'この図には かききれない', { col: C.pink, size: s * .78, align: 'right', outline: OUT });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'y＝[1/2]x のグラフの上に点 P、y＝[1/2]x＋3 のグラフの上に点 Q があり、P と Q の x 座標は等しい。① 線分 PQ の長さは？ ② P の x 座標が 4 のとき、Q の座標は？',
+        a: '① 3　② Q(4, 5)', sub: '① x 座標が同じとき、y 座標はいつも 3 ちがう　② P(4, 2)、Q の y 座標は [1/2]×4＋3＝5', dur: 6,
+        b: { t: '① PQ＝<b>3</b>（どこでも）　② P(4, 2)、<b>Q(4, 5)</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .1, r: .08, t: .04, b: .04 }), t = D.ph ? D.t : 0, s = CH.fs(D), Pl = plane(D, R, [-5, 6], [-3, 7]);
+          CH.lin(D, Pl, .5, 0, { col: C.blue, w: 2.6 }); CH.lin(D, Pl, .5, 3, { col: C.orange, w: 2.6 });
+          lab(D, Pl, -4.9, -2.45, 'y＝[1/2]x', C.blue, { dy: s * 1.1 }); lab(D, Pl, -4.9, 1.1, 'y＝[1/2]x＋3', C.orange, { dy: -s * 1.1 });
+          var x = D.ph ? (t < .6 ? CH.lerp(-4, 5, CH.smooth(0, .6, t)) : CH.lerp(5, 4, CH.smooth(.6, .8, t))) : 2;
+          var p = x / 2, q = x / 2 + 3;
+          CH.pseg(D, Pl, [x, p], [x, q], { col: C.yel, w: 3.4, glow: true });
+          CH.text(D, Pl.X(x) + s * .5, Pl.Y((p + q) / 2), '3', { col: C.yel, align: 'left', size: s * 1.1, outline: OUT, a: D.ph ? 1 : 0 });
+          CH.pt(D, Pl, x, p, { col: C.blue, r: CH.fs(D, .32), lab: t > .85 ? 'P(4, 2)' : 'P', dir: 'se' });
+          CH.pt(D, Pl, x, q, { col: C.orange, r: CH.fs(D, .32), lab: t > .85 ? 'Q(4, 5)' : 'Q', dir: 'nw' });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>
