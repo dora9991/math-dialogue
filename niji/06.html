@@ -173,12 +173,14 @@
     o = o || {}; var n = L.length, at = o.at ? [-1].concat(o.at) : L.map(function (_, i) { return i === 0 ? -1 : .04 + (i - 1) / Math.max(1, n - 1) * .86; });
     var frc = L.some(function (l) { return hasFr(l.s); });
     function parts(l) { if (l.txt) return null; var i = l.s.indexOf('＝'); return i < 0 ? null : [l.s.slice(0, i), l.s.slice(i + 1)]; }
+    var useLab = true;
     function dims(z) {
       var lw = 0, rw = 0, xw = 0, eq = mw(D, '＝', z);
-      L.forEach(function (l, i) { var p = parts(l), lb = l.lab ? TW(D, l.lab, z * .62) + z * .7 : 0, mk = o.mark && o.mark[i] ? z * 1.4 : 0; if (p) { lw = Math.max(lw, TW(D, p[0], z)); rw = Math.max(rw, TW(D, p[1], z) + lb + mk); } else xw = Math.max(xw, TW(D, l.s, z) + lb + mk); });
+      L.forEach(function (l, i) { var p = parts(l), lb = l.lab && useLab ? TW(D, l.lab, z * .62) + z * .7 : 0, mk = o.mark && o.mark[i] ? z * 1.4 : 0; if (p) { lw = Math.max(lw, TW(D, p[0], z)); rw = Math.max(rw, TW(D, p[1], z) + lb + mk); } else xw = Math.max(xw, TW(D, l.s, z) + lb + mk); });
       return { lw: lw, rw: rw, eq: eq, w: Math.max(lw + eq + rw, xw) };
     }
-    var z = o.size || CH.fs(D, 1.2), d = dims(z); if (d.w > R.w) { z *= R.w / d.w; d = dims(z); }
+    var z0 = o.size || CH.fs(D, 1.2), z = z0, d = dims(z); if (d.w > R.w) { z *= R.w / d.w; d = dims(z); }
+    if (z < z0 * .85 && L.some(function (l) { return l.lab; })) { useLab = false; z = z0; d = dims(z); if (d.w > R.w) { z *= R.w / d.w; d = dims(z); } }   /* せまいときは、横の説明の字を出さない */
     var k = frc ? 2.25 : 1.6, lh = z * k; if (lh * n > R.h) { lh = R.h / n; z = Math.min(z, lh / k); d = dims(z); }
     var x0 = o.align === 'left' ? R.x0 : R.cx - d.w / 2, ex = x0 + d.lw, y0 = o.top ? R.y0 + lh / 2 : R.cy - lh * n / 2 + lh / 2, ys = [], xe = [];
     L.forEach(function (l, i) {
@@ -187,7 +189,7 @@
       if (p) { if (p[0]) TX(D, ex, y, p[0], { size: z, col: col, a: a, align: 'right', hc: l.hc }); TX(D, ex, y, '＝', { size: z, col: col, a: a, align: 'left' }); x1 = ex + d.eq + TX(D, ex + d.eq, y, p[1], { size: z, col: col, a: a, align: 'left', hc: l.hc }); }
       else x1 = x0 + TX(D, x0, y, l.s, { size: z, col: col, a: a, align: 'left', hc: l.hc });
       if (o.mark && o.mark[i]) { var mk = o.mark[i]; TX(D, x1 + z * .7, y, mk[0], { size: z * 1.05, col: mk[1] || C.pink, a: a * (mk[2] == null ? 1 : mk[2]) }); x1 += z * 1.4; }
-      if (l.lab) TX(D, x1 + z * .7, y, l.lab, { size: z * .62, col: l.lc || C.green, a: a, align: 'left' });
+      if (l.lab && useLab) TX(D, x1 + z * .7, y, l.lab, { size: z * .62, col: l.lc || C.green, a: a, align: 'left' });
       xe.push(x1);
     });
     return { z: z, lh: lh, ys: ys, ex: ex, x0: x0, xe: xe, w: d.w };
@@ -333,14 +335,16 @@
         notes: ['気づいたことを書こう。ほかの方程式をつくって、確かめよう。', 'スライダーで a、b、c を入れると、解の公式で出した解と、y＝ax²＋bx＋c のグラフが出ます。'],
         sliders: [{ key: 'a', label: 'a の値', min: -4, max: 4, step: 1, val: 1, fmt: function (v) { return 'a＝' + S(v); } }, { key: 'b', label: 'b の値', min: -8, max: 8, step: 1, val: 4, fmt: function (v) { return 'b＝' + S(v); } }, { key: 'c', label: 'c の値', min: -8, max: 8, step: 1, val: 1, fmt: function (v) { return 'c＝' + S(v); } }],
         draw: function (D) {
-          var H2 = halves(D, .52), L = H2[0], s = CH.fs(D), a = D.V.a, b = D.V.b, c = D.V.c;
+          var H2 = D.W > D.H * .9 ? halves(D, .52) : CH.cols(box(D), 2, .04), L = H2[0], s = CH.fs(D), a = D.V.a, b = D.V.b, c = D.V.c;
           var Pl = plane(D, H2[1], { x: [-6, 6], y: [-8, 8], gx: 1, gy: 1, lx: 2, ly: 2, asp: 12 / 16 * 1.3, pl: 1.6 });
           if (a === 0) { lines(D, L, [{ t: eqStr(a, b, c), col: C.yel }, { t: 'a は 0 でない数にしよう', col: C.pink }], { size: s * 1.2, mid: true }); return; }
           var f = function (x) { return a * x * x + b * x + c; }, r = qr(a, b, c);
           CH.fn(D, Pl, f, { col: C.pink, w: 2.8 });
           r.forEach(function (x) { if (x >= -6 && x <= 6) { CH.pt(D, Pl, x, 0, { col: C.yel, r: CH.fs(D, .3) }); glow(D, Pl, x, 0, C.yel); } });
           var res = r.length === 0 ? '解なし' : r.map(function (x) { var n = Math.round(x * 1000) / 1000; return 'x' + (Math.abs(x * 100 - Math.round(x * 100)) < 1e-9 ? '＝' + S(Math.round(x * 100) / 100) : '≒' + CH.f2(x).replace('-', '−')); }).join('、');
-          lines(D, L, [{ t: eqStr(a, b, c), col: C.yel }, { t: 'x＝[−' + pn(b) + '±√{' + pn(b) + '²−4×' + pn(a) + '×' + pn(c) + '}/2×' + pn(a) + ']' }, { t: res, col: r.length ? C.yel : C.pink }], { size: s * 1.6, mid: true });
+          var LL = [{ t: eqStr(a, b, c), col: C.yel }, { t: 'x＝[−' + pn(b) + '±√{' + pn(b) + '²−4×' + pn(a) + '×' + pn(c) + '}/2×' + pn(a) + ']' }, { t: res, col: r.length ? C.yel : C.pink }];
+          if (D.W <= D.H * .9) LL.splice(1, 1);   /* せまいときは、方程式と解だけ */
+          lines(D, L, LL, { size: s * 1.6, mid: true });
         } },
       { tag: 'チャレンジ', bh: 'チャレンジ', q: 'x²＋6x＋k＝0 を、解の公式で解くと、x＝[−6±√{20}/2] になった。k の値を求めよう。また、解を、できるだけ簡単な形で表そう。', a: 'k＝4、x＝−3±√{5}', sub: '√ の中は 6²−4×1×k＝36−4k。36−4k＝20 → k＝4。x＝[−6±2√{5}/2]＝−3±√{5}', dur: 9,
         b: { t: '36−4k＝20 → <b>k＝4</b>、[−6±2√{5}/2] → <b>x＝−3±√{5}</b>', col: C.orange },
