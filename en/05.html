@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>円周角の定理の逆</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 円 第5時：同じ角度に見える場所は、どこにあるだろう（ikkan の lesson_en_05 と同じ流れ）。
+   ゴール AB を 30° で見こむ点をさがす。点 X が グラウンドを左右に走り、∠AXB が 30° になった所に しるしを残すと、A、B を通る円の弧があらわれる。
+   例題は「4点は 1つの円周上にあるか」（∠BAC と ∠BDC をくらべる）。考えようは、円の内側・外側の点 X から見る角を調べる道具（答えは出さない）。
+   図の点は、中心・半径・向き（度）で決める。数値は ikkan のまま（自作）。図の角の字は、すべて座標から計算した値。 */
+(function () {
+  var C = CH.C, RAD = Math.PI / 180, O = [0, 0], R = 3;
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  /* ---- 円の図の道具（このページの中だけで使う） ---- */
+  function on(a) { return GE.polar(O, R, a); }                                         // 円周上の点（向き a 度）
+  function dg(x) { var r = Math.round(x * 10) / 10; return (Math.abs(r - Math.round(r)) < .05 ? String(Math.round(r)) : r.toFixed(1)) + '°'; }
+  /* 図の四角（fig）と、字を書く四角（side）。よこ長ならみぎ、たて長なら下 */
+  function lay(D, k) {
+    var B = CH.box(D, { l: .03, r: .03, t: .04, b: .04 });
+    if (B.w > B.h * 1.25 && B.w > 560) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .08, B.x1, B.y1), wide: true }; }
+    var h = B.h * .25; return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .04, B.y1 - h + 4, B.x1, B.y1), wide: false };
+  }
+  /* 円をふくめて、四角に入れる（円の大きさは、点が動いても変わらない） */
+  function fitC(D, Rr, P, o) { o = o || {}; return GE.fit(D, Rr, P, { keys: ['O'], bounds: GE.circBounds(O, R).concat(o.bounds || []), pad: o.pad == null ? .07 : o.pad }); }
+  function circle(F, o) { GE.circ(F, O, R, o); }
+  /* 円周の一部を太く（a0 → a1 は反時計まわり、度） */
+  function arcOn(F, a0, a1, o) {
+    o = o || {}; var g = F.D.ctx, p = F.X(O);
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.yel; g.lineWidth = o.w || 6; g.lineCap = 'round';
+    g.shadowColor = o.col || C.yel; g.shadowBlur = 8;
+    g.beginPath(); g.arc(p[0], p[1], R * F.u, -a0 * RAD, -a1 * RAD, true); g.stroke(); g.restore();
+  }
+  function segs(F, ss, o) { ss.split(' ').forEach(function (s) { GE.seg(F, s, o); }); }
+  function dots(F, ks, o) { ks.split('').forEach(function (k) { if (F.P[k]) GE.dot(F, k, o); }); }
+  /* 点の名前：{A: 向き（度）} */
+  function nm(F, m, o) {
+    o = o || {}; Object.keys(m).forEach(function (k) {
+      if (m[k] == null || !F.P[k]) return; var p = F.X(k), r = F.s * .95;
+      CH.text(F.D, p[0] + Math.cos(m[k] * RAD) * r, p[1] - Math.sin(m[k] * RAD) * r, k, { size: F.s, col: (o.col && o.col[k]) || C.chalk, a: o.a, outline: 'rgba(20,40,30,.9)' });
+    });
+  }
+  /* 角のしるし。字（座標から計算した大きさ、または o.t）は、二等分線の上の、2辺にふれないところに置く */
+  function mark(F, s, col, o) {
+    o = o || {}; var r = o.r || F.s * 1.05;
+    GE.arc(F, s, { col: col, fill: o.fill == null ? .3 : o.fill, a: o.a, r: r, n: o.n });
+    var t = o.t === false ? null : (o.t || dg(GE.ang(F.P, s))); if (!t) return;
+    var A = F.X(s[0]), V = F.X(s[1]), B = F.X(s[2]), a1 = Math.atan2(A[1] - V[1], A[0] - V[0]), d = Math.atan2(B[1] - V[1], B[0] - V[0]) - a1;
+    while (d > Math.PI) d -= 2 * Math.PI; while (d <= -Math.PI) d += 2 * Math.PI;
+    var sz = F.s * .82, g = F.D.ctx; g.save(); g.font = '600 ' + sz + 'px ' + FONT; var w = g.measureText(t).width; g.restore();
+    var m = a1 + d / 2, need = (Math.max(w, sz) / 2 + 3) / Math.sin(Math.abs(d) / 2), dd = CH.clamp(Math.max(r + sz * .9, need), 0, o.max || F.s * 4.2);
+    CH.text(F.D, V[0] + Math.cos(m) * dd, V[1] + Math.sin(m) * dd, t, { col: col, size: sz, a: o.a, outline: 'rgba(20,40,30,.9)' });
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする） */
+  function say(D, Rr, rows, o) {
+    o = o || {}; rows = rows.filter(Boolean); if (!rows.length) return;
+    var nc = Rr.w > Rr.h * 2.5 && rows.length > 3 ? 2 : 1, per = Math.ceil(rows.length / nc), cw = Rr.w / nc;   // 下の帯では 2列
+    var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (per * 1.6)), g = D.ctx;
+    rows.forEach(function (r, i) {
+      g.save(); g.font = '600 ' + s + 'px ' + FONT; var w = g.measureText(r.t).width; g.restore();
+      var sz = w > cw - 6 ? s * (cw - 6) / w : s, c = Math.floor(i / per), j = i % per;
+      CH.text(D, Rr.x0 + c * cw, Rr.y0 + s * .8 + j * s * 1.6, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left' });
+    });
+  }
+  function panels(D, n) { var B = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }); return CH.split(D, B, n, .06); }
+  /* 線分 BC を、B から C を見て左がわから、角 th で見こむ点がのる円 {c, r} */
+  function viewCirc(Bp, Cp, th) {
+    var m = GE.mid(Bp, Cp), L = GE.len({}, [Bp, Cp]), n = [-(Cp[1] - Bp[1]) / L, (Cp[0] - Bp[0]) / L], hh = L / 2 / Math.tan(th * RAD);
+    return { c: [m[0] + n[0] * hh, m[1] + n[1] * hh], r: L / 2 / Math.sin(th * RAD) };
+  }
+  /* 外接円の中心 */
+  function circum(P, Q, S) { var d = 2 * (P[0] * (Q[1] - S[1]) + Q[0] * (S[1] - P[1]) + S[0] * (P[1] - Q[1])), q = function (p) { return p[0] * p[0] + p[1] * p[1]; }; return [(q(P) * (Q[1] - S[1]) + q(Q) * (S[1] - P[1]) + q(S) * (P[1] - Q[1])) / d, (q(P) * (S[0] - Q[0]) + q(Q) * (P[0] - S[0]) + q(S) * (Q[0] - P[0])) / d]; }
+  function onCirc(P, ks) { var c = circum(P[ks[0]], P[ks[1]], P[ks[2]]), r = GE.len(P, [c, P[ks[0]]]); return GE.near(GE.len(P, [c, P[ks[3]]]), r, 1e-9); }
+  function fitAny(D, Rr, P, c, r, o) { o = o || {}; return GE.fit(D, Rr, P, { keys: o.keys, bounds: GE.circBounds(c, r).concat(o.bounds || []), pad: o.pad == null ? .07 : o.pad }); }
+
+  /* ---- 数と検算 ---- */
+  var P1 = { O: O, A: on(240), B: on(300), P: on(95), Q: on(160), R: on(28) };          // 今日の問い：ゴール AB（中心角 60°）
+  GE.verify(P1, '∠APB＝∠AQB＝∠ARB＝30°、∠AOB＝60°、AB＝3', null, '今日の問い');
+  var NS = 12, SY = []; for (var j = 0; j < NS; j++) SY.push(2.85 - j * (2.85 + 2.3) / (NS - 1));   // 点 X が走る高さ
+  CH.check(SY.every(function (y) { var x = Math.sqrt(9 - y * y); return [x, -x].every(function (xx) { var Q = { A: P1.A, B: P1.B, X: [xx, y] }; return GE.near(GE.ang(Q, 'AXB'), 30); }); }), '30° のしるしは円の上');
+  var Bx = [0, 0], Cx = [4, 0], c70 = viewCirc(Bx, Cx, 70), c55 = viewCirc(Bx, Cx, 55);   // 例題
+  var EA = { B: Bx, C: Cx, A: GE.polar(c70.c, c70.r, 135), D: GE.polar(c70.c, c70.r, 50) }, EI = { B: Bx, C: Cx, A: GE.polar(c70.c, c70.r, 135), D: GE.polar(c55.c, c55.r, 72) };
+  GE.verify(EA, '∠BAC＝∠BDC＝70°', null, '例題ア'); GE.verify(EI, '∠BAC＝70°、∠BDC＝55°', null, '例題イ');
+  CH.check(onCirc(EA, 'ABCD') && !onCirc(EI, 'ABCD'), '例題：円周上にあるか');
+  var P3 = { O: O, A: on(100), B: on(234), C: on(304), D: on(24) };                       // 例題2
+  GE.verify(P3, '∠ABD＝∠ACD＝38°、∠BAC＝35°、∠CAD＝40°、∠BDC＝∠BAC＝35°、∠CBD＝∠CAD＝40°', null, '例題2');
+  var P4 = { O: O, A: on(230), B: on(310), P: on(125) };                                 // 考えよう：∠APB＝40°
+  GE.verify(P4, '∠APB＝40°', null, '考えよう');
+  var TB = [0, 0], TC = [12, 0], TA = [4, 9.6], P8 = { A: TA, B: TB, C: TC, D: GE.foot(TB, TA, TC), E: GE.foot(TC, TA, TB), M: [6, 0] };   // チャレンジ
+  GE.verify(P8, '∠BDC＝∠BEC＝90°、BC＝12、MB＝MC＝MD＝ME＝6', null, 'チャレンジ');
+  CH.check(GE.ang(P8, 'BAC') < 90 && GE.ang(P8, 'ABC') < 90 && GE.ang(P8, 'ACB') < 90 && P8.D[1] > 0 && P8.E[1] > 0, 'チャレンジ：鋭角三角形で、D、E は BC の同じ側');
+
+  /* 今日の問いの図。o.x：走る点 X、o.marks：のこした しるし、o.arc：弧の濃さ */
+  function goal(D, o) {
+    o = o || {}; var P = {}; Object.keys(P1).forEach(function (k) { P[k] = P1[k]; }); if (o.x) P.X = o.x;
+    var L = lay(D), F = fitC(D, L.fig, P, { bounds: [[-3.8, -2.7], [3.8, 3]] });
+    if (o.arc) arcOn(F, -60, 240, { a: o.arc, w: 5 });
+    GE.seg(F, 'AB', { col: C.chalk, w: 6 });
+    ['P', 'Q', 'R'].forEach(function (k) { segs(F, k + 'A ' + k + 'B', { col: 'rgba(242,240,230,.75)', w: 2 }); mark(F, 'A' + k + 'B', C.yel, { t: o.lab === false ? false : '30°', r: F.s * 1.1 }); });
+    (o.marks || []).forEach(function (q) { GE.dot(F, q, { col: C.yel, r: F.s * .17 }); });
+    if (o.x) { var ax = GE.ang(P, 'AXB'), ok = Math.abs(ax - 30) < .8; segs(F, 'XA XB', { col: ok ? C.yel : C.blue, w: 2 }); mark(F, 'AXB', ok ? C.yel : C.blue, { r: F.s * 1.1 }); GE.dot(F, 'X', { col: ok ? C.yel : C.blue, r: F.s * .22 }); }
+    dots(F, 'ABPQR'); nm(F, { A: 225, B: 315, P: 95, Q: 160, R: 28, X: o.x ? 90 : null });
+    return { F: F, L: L, P: P };
+  }
+
+  K3.run({
+    no: '第5時', title: '同じ角度に見える場所は、どこにあるだろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '04.html', label: '◀ 第4時' }, { href: '06.html', label: '第6時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: 'ゴールを 30° で見こむ位置', q: 'ゴールの両はしのポスト A、B を、30° の角で見こむ位置が P、Q、R である。ほかに、30° に見える位置は、どこにあるだろう。',
+        notes: ['① 自分の考え（3分）　見える位置を図にかき足して、並び方を書こう。', '② ペアの考え（3分）'],
+        draw: function (D) { goal(D); } },
+      { tag: '今日の問い', q: '30° に見える位置は、どんな線の上に並ぶ？', a: 'A、B を通る 1つの円の弧の上', sub: '点 X を走らせて、∠AXB が 30° になった所に しるしを残すと、円の弧になる（直線 AB の同じ側）', dur: 8,
+        b: { t: '30° に見える位置 … A、B を通る <b>円の弧</b> の上（直線 AB の同じ側）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, u = CH.smooth(0, .82, t) * NS, k = Math.min(NS - 1, Math.floor(u)), f = Math.min(1, u - k), dirR = k % 2 === 0;
+          var xx = dirR ? -3.7 + 7.4 * f : 3.7 - 7.4 * f, marks = [];
+          SY.forEach(function (y, j) {
+            var x = Math.sqrt(9 - y * y); [-x, x].forEach(function (cx) { var fc = j % 2 === 0 ? (cx + 3.7) / 7.4 : (3.7 - cx) / 7.4; if (j < k || (j === k && f >= fc) || u >= NS) marks.push([cx, y]); });
+          });
+          var run = D.ph && t > 0 && t < .86, m = goal(D, { x: run ? [xx, SY[k]] : null, marks: D.ph ? marks : [], arc: D.ph ? CH.smooth(.86, 1, t) : 0 });
+          if (D.ph) say(D, m.L.side, [run ? { t: '∠AXB＝' + dg(GE.ang(m.P, 'AXB')), col: Math.abs(GE.ang(m.P, 'AXB') - 30) < .8 ? C.yel : C.blue } : { t: '' }, { t: '● … 30° に見えた所', col: C.yel, a: CH.smooth(.05, .2, t) }, { t: 'A、B を通る円の弧', col: C.yel, a: CH.smooth(.86, 1, t) }]);
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '2点 P、Q が直線 AB の同じ側にあって、∠APB＝∠AQB のとき、4点 A、B、P、Q は？', a: '1つの円周上にある', sub: 'これを、円周角の定理の逆という', dur: 2,
+        b: [{ t: 'P、Q が直線 AB の <b>同じ側</b> にあり ∠APB＝∠AQB → 4点 A、B、P、Q は <b>1つの円周上</b>', col: C.green }, { t: 'これを <b>円周角の定理の逆</b> という', col: C.green }],
+        draw: function (D) { var t = D.ph ? D.t : 0, m = goal(D, { arc: D.ph ? CH.smooth(0, .6, t) : 0 }); if (D.ph) say(D, m.L.side, [{ t: '同じ側から、同じ角', col: C.yel, a: CH.smooth(0, .4, t) }, { t: '→ 1つの円周上', a: CH.smooth(.4, .9, t) }]); } },
+      { tag: '例題', bh: '例題　4点は 1つの円周上にある？', q: 'A、D は直線 BC の同じ側にある。ア・イで、4点 A、B、C、D は 1つの円周上にあるといえるか。', a: 'ア いえる　イ いえない', sub: '同じ側から BC を見こむ角 ∠BAC と ∠BDC をくらべる。ア 70°＝70°　イ 70° と 55° で等しくない', dur: 4,
+        b: { t: 'ア ∠BAC＝∠BDC → <b>ある</b>　イ 70°≠55° → <b>ない</b>（見こむ角をくらべる）', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, rs = panels(D, 2), s = CH.fs(D, .9);
+          [[EA, 'ア', 'いえる'], [EI, 'イ', 'いえない']].forEach(function (q, i) {
+            var r = rs[i], a = D.ph ? CH.smooth(i * .45, i * .45 + .4, t) : 0, sq = Math.min(r.w, r.h - s * 3), y0 = r.cy - (sq + s * 3) / 2;
+            var F = fitAny(D, CH.rect(r.cx - sq / 2, y0 + s * 1.3, r.cx + sq / 2, y0 + s * 1.3 + sq), q[0], c70.c, c70.r, { pad: .1 });
+            if (a) GE.circ(F, c70.c, c70.r, { col: C.yel, a: a, w: 2 });
+            segs(F, 'AB BC CD DA AC BD');
+            mark(F, 'BAC', C.blue, { r: F.s * 1.2 }); mark(F, 'BDC', i ? C.orange : C.blue, { r: F.s * 1.2 });
+            dots(F, 'ABCD'); nm(F, { A: 150, D: 40, B: 225, C: 315 });
+            CH.text(D, r.cx - sq / 2 + s * .5, y0 + s * .5, q[1], { col: C.orange, size: s * 1.1 });
+            CH.text(D, r.cx, y0 + s * 2.1 + sq, '1つの円周上に ' + q[2], { col: C.yel, a: a, size: s * .9 });
+          });
+        } },
+      { tag: '例題', bh: '例題2　かくれた円を見つける', q: '四角形 ABCD で、∠ABD＝∠ACD＝38°、∠BAC＝35°、∠CAD＝40° である。∠BDC と ∠CBD の大きさは？', a: '∠BDC＝35°、∠CBD＝40°', sub: 'B、C は直線 AD の同じ側で ∠ABD＝∠ACD → 4点は 1つの円周上。同じ弧に対する円周角は等しい', dur: 5,
+        b: { t: '∠ABD＝∠ACD → 4点は円周上 → ∠BDC＝∠BAC＝<b>35°</b>、∠CBD＝∠CAD＝<b>40°</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, a1 = D.ph ? CH.smooth(0, .3, t) : 0, a2 = D.ph ? CH.smooth(.4, .62, t) : 0, a3 = D.ph ? CH.smooth(.72, .95, t) : 0;
+          var L = lay(D), F = fitC(D, L.fig, P3);
+          if (a2) arcOn(F, 234, 304, { a: a2 * .85 }); if (a3) arcOn(F, 304, 384, { col: C.green, a: a3 * .85 });
+          if (a1) circle(F, { a: a1, col: 'rgba(242,240,230,.9)' });
+          segs(F, 'AB BC CD DA AC BD');
+          mark(F, 'ABD', C.blue, { t: '38°' }); mark(F, 'ACD', C.blue, { t: '38°' });
+          mark(F, 'BAC', C.yel, { r: F.s * 1.3 }); mark(F, 'CAD', C.green, { r: F.s * 1.3 });
+          if (a2) mark(F, 'BDC', C.yel, { a: a2, r: F.s * 1.3 }); if (a3) mark(F, 'CBD', C.green, { a: a3, r: F.s * 1.6 });
+          dots(F, 'ABCD'); nm(F, { A: 100, B: 234, C: 304, D: 24 });
+          if (D.ph) say(D, L.side, [{ t: '∠ABD＝∠ACD（同じ側）', col: C.blue, a: a1 }, { t: '→ 4点は 1つの円周上', a: a1 }, { t: '∠BDC＝∠BAC＝35°（弧 BC）', col: C.yel, a: a2 }, { t: '∠CBD＝∠CAD＝40°（弧 CD）', col: C.green, a: a3 }]);
+        } },
+      { tag: '考えよう', q: '∠APB＝40° の円がある。円の内側の点や、外側の点から A、B を見こむと、角の大きさはどうなるだろう。',
+        notes: ['点 X を円の内側・外側に動かして、∠AXB を調べよう。気づいたことを書こう。', 'そうなるわけも、考えよう。', 'スライダーで、点 X を動かせます。'],
+        sliders: [{ key: 'x', label: 'X よこ', min: -3.8, max: 3.8, step: .1, val: .6, fmt: function (v) { return CH.mnum(v); } },
+          { key: 'y', label: 'X たて', min: -1.8, max: 4.6, step: .1, val: .9, fmt: function (v) { return CH.mnum(v); } }],
+        draw: function (D) {
+          var P = { O: O, A: P4.A, B: P4.B, P: P4.P, X: [D.V.x, D.V.y] }, L = lay(D), F = fitC(D, L.fig, P, { bounds: [[-4, -3], [4, 4.8]] });
+          circle(F); segs(F, 'PA PB', { col: 'rgba(242,240,230,.8)' }); segs(F, 'XA XB', { col: C.blue });
+          mark(F, 'APB', C.yel); mark(F, 'AXB', C.blue);
+          dots(F, 'ABPX'); nm(F, { A: 230, B: 310, P: 125, X: 90 });
+          say(D, L.side, [{ t: '∠APB＝' + dg(GE.ang(P, 'APB')), col: C.yel }, { t: '∠AXB＝' + dg(GE.ang(P, 'AXB')), col: C.blue }]);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '鋭角三角形 ABC で、B から AC に垂線 BD、C から AB に垂線 CE をひく。4点 B、C、D、E は 1つの円周上にあるといえるか。BC＝12cm のとき、この円の半径は？',
+        notes: ['ヒント① ∠BDC と ∠BEC は、それぞれ何度？', 'ヒント② 90° の円周角は、どんな弧に対する角だった？'],
+        a: 'いえる。半径 6cm', sub: '∠BDC＝∠BEC＝90° で、D、E は直線 BC の同じ側 → 4点は 1つの円周上。90° の円周角だから BC は直径', dur: 5,
+        b: { t: '∠BDC＝∠BEC＝90°（同じ側）→ 4点は円周上、BC が直径 → 半径 <b>6cm</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, a1 = D.ph ? CH.smooth(0, .35, t) : 0, a2 = D.ph ? CH.smooth(.45, .8, t) : 0;
+          var L = lay(D), F = GE.fit(D, L.fig, P8, { bounds: GE.circBounds([6, 0], 6), pad: .07 });
+          if (a2) GE.circ(F, [6, 0], 6, { col: C.yel, a: a2, w: 2.4 });
+          segs(F, 'AB BC CA'); segs(F, 'BD CE', { col: C.blue });
+          GE.right(F, 'BDC', { col: C.blue, fill: true }); GE.right(F, 'CEB', { col: C.blue, fill: true });
+          if (a1) { GE.arc(F, 'BDC', { col: C.yel, a: a1, r: F.s * 1.2, fill: .25 }); GE.arc(F, 'BEC', { col: C.yel, a: a1, r: F.s * 1.2, fill: .25 }); }
+          if (a2) { GE.seg(F, 'MC', { col: C.yel, a: a2, w: 4 }); CH.text(D, F.X([9, 0])[0], F.X([9, 0])[1] + F.s * .9, '6cm', { col: C.yel, a: a2, size: F.s * .85 }); GE.dot(F, 'M', { col: C.yel, a: a2 }); }
+          dots(F, 'ABCDE'); nm(F, { A: 90, B: 210, C: 330, D: 20, E: 160 });
+          if (D.ph) say(D, L.side, [{ t: '∠BDC＝∠BEC＝90°', col: C.yel, a: a1 }, { t: 'D、E は BC の同じ側', a: a1 }, { t: '→ 4点は 1つの円周上', a: a2 }, { t: 'BC が直径 → 半径 6cm', col: C.yel, a: a2 }]);
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>平行四辺形になる条件</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三角形と四角形 第10時：四角形が平行四辺形になる条件を見つけよう（ikkan の lesson_sankaku_10 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。証明の行は GE.proof が座標で確かめ、そのほかの答えは CH.check で計算し直す。
+   ことば：5つの条件のどれかをみたすように点を動かすと、いつも平行四辺形になる。
+   考えよう：AB∥DC、AD＝BC の四角形（C は、B を中心に半径 AD の円と ℓ の交点。2か所ある）。 */
+(function () {
+  var C = CH.C;
+  /* ---- このページの道具 ---- */
+  function box(D, o) { return CH.box(D, o || { l: .06, r: .06, t: .1, b: .12 }); }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), g = D.ctx; g.save(); g.font = '600 ' + size + 'px "Klee One",sans-serif'; var w = g.measureText(s).width; g.restore(); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({}, o, { size: size })); }
+  /* 四角 R に n この図をならべる（図の縦横の比 asp で、いちばん大きくなる列の数） */
+  function grid(R, n, asp) {
+    asp = asp || 1.4; var b = null;
+    for (var c = 1; c <= n; c++) { var r = Math.ceil(n / c), cw = R.w / c, ch = R.h / r, s = Math.min(cw / asp, ch); if (!b || s > b.s + 1e-9) b = { c: c, cw: cw, ch: ch, s: s }; }
+    var out = []; for (var i = 0; i < n; i++) { var row = Math.floor(i / b.c), col = i % b.c, inRow = Math.min(b.c, n - row * b.c), x0 = R.x0 + (R.w - inRow * b.cw) / 2 + col * b.cw, y0 = R.y0 + row * b.ch; out.push(CH.rect(x0, y0, x0 + b.cw, y0 + b.ch)); }
+    return out;
+  }
+  /* 小さな四角 r に、見出しつきの図 */
+  function cell(D, r, P, fig, cap, o) {
+    o = o || {}; var s = o.s || CH.fs(D, .82), R = CH.rect(r.x0 + s * .4, r.y0 + s * 1.9, r.x1 - s * .4, r.y1 - s * (o.foot ? 1.9 : .5));
+    var F = GE.fit(D, R, P, { size: s, pad: o.pad == null ? .12 : o.pad });
+    GE.figure(F, fig);
+    if (cap) say(D, r.cx, r.y0 + s * .8, cap, { col: o.col || C.yel, size: s, maxW: r.w * .96 });
+    return F;
+  }
+  function isPg(P) { return GE.isPar(P, 'AB', 'DC') && GE.isPar(P, 'AD', 'BC'); }
+  /* GE.proof に、行ごとの色分けを足す。L の行に hl: ['∠BAC＝∠DCA', '∠BCA＝∠DAC'] と書くと、その行の図は
+     1つめを黄、2つめをピンク…で光らせる（△ の三角形は、その色でうすくぬる） */
+  function proof(def, o) {
+    o = o || {}; var st = GE.proof(def, o), L = (def.L || []).slice();
+    if (L.length && !L[0].r && /で$|で、?$/.test(L[0].t)) L.shift();
+    var off = st.length - L.length - (def.point ? 1 : 0);
+    L.forEach(function (l, k) {
+      if (!l.hl) return;
+      var s = st[off + k], ask = l.ask != null ? l.ask : (l.c ? 'c' : l.r ? ((def.lv || 1) <= 1 ? 'r' : 't') : false);
+      s.draw = function (D) {
+        var F = GE.fit(D, CH.box(D, o.box || { l: .06, r: .06, t: .1, b: .12 }), def.P, { pad: def.pad });
+        (def.tri || []).forEach(function (t, j) { GE.poly(F, t, { col: j ? C.orange : C.blue, fa: .2, stroke: false }); });
+        GE.figure(F, def.fig);
+        if (o.draw) o.draw(D, F, { i: 1, ph: D.ph, t: D.ph ? D.t : (s.a ? 0 : 1) });
+        if (s.a && !D.ph && ask !== 'r') return;
+        var a = D.ph ? CH.smooth(0, .3, D.t) : 1;
+        l.hl.forEach(function (h, j) {
+          var col = GE.HL[j % GE.HL.length];
+          h.replace(/△([A-Z]{3})/g, function (m, t) { GE.poly(F, t, { col: col, fa: .3, sw: 3, a: a }); return m; });
+          GE.glow(F, h, def.alias, { col: col, a: a });
+        });
+      };
+    });
+    return st;
+  }
+  var SQ = ['AB', 'BC', 'CD', 'DA'];
+
+  /* ---- 今日の問い：ア 対辺が等しい・イ となり合う辺が等しい（たこ形）・ウ 対角が等しい・エ 対角線が中点で交わる ---- */
+  var QA = { A: [0.9, 2.4], B: [0, 0], C: [3.6, 0], D: [4.5, 2.4] };
+  var QI = { A: [1.8, 3.2], B: [0, 1.4], C: [1.8, -0.4], D: [4.4, 1.4] };
+  var QU = { A: [0.5, 2.5], B: [0, 0], C: [3.4, 0], D: [3.9, 2.5] };
+  var QE = { A: [1.1, 2.5], B: [0, 0], C: [3.5, 0], D: [4.6, 2.5], O: [2.3, 1.25] };
+  var TODAY = [
+    { n: 'ア', c: 'AB＝DC、AD＝BC', P: QA, fig: { segs: SQ, ticks: [['AB', 1], ['DC', 1], ['AD', 2], ['BC', 2]] }, ok: true },
+    { n: 'イ', c: 'AB＝BC、CD＝DA', P: QI, fig: { segs: SQ, ticks: [['AB', 1], ['BC', 1], ['CD', 2], ['DA', 2]] }, ok: false },
+    { n: 'ウ', c: '∠A＝∠C、∠B＝∠D', P: QU, fig: { segs: SQ, angs: [['DAB', 1], ['BCD', 1], ['ABC', 2], ['CDA', 2]] }, ok: true },
+    { n: 'エ', c: 'OA＝OC、OB＝OD', P: QE, fig: { segs: SQ.concat(['AC', 'BD']), ticks: [['AO', 1], ['OC', 1], ['BO', 2], ['OD', 2]], dots: ['O'], dir: { O: 'n' } }, ok: true }
+  ];
+  TODAY.forEach(function (g) { CH.check(GE.checkFig(g.P, g.fig, '今日の問い ' + g.n) && isPg(g.P) === g.ok, '今日の問い ' + g.n + '（平行四辺形か）'); });
+  CH.check(GE.verify(QE, 'OA＝OC') && GE.verify(QE, 'OB＝OD') && !GE.near(GE.len(QI, 'AB'), GE.len(QI, 'CD')), '今日の問い エ・イ');
+  function four(D, after) {
+    var R = box(D, { l: .03, r: .03, t: .04, b: .04 }), rs = grid(R, 4, 1.5);
+    TODAY.forEach(function (g, i) { var F = cell(D, rs[i], g.P, g.fig, g.n + '　' + g.c, { foot: true }); if (after) after(g, i, F, rs[i]); });
+  }
+
+  /* ---- ことば：5つの条件。∠B と辺 AB を変えても、条件どおりに D を決めると、いつも平行四辺形 ---- */
+  var CONDS = ['', '2組の対辺が、それぞれ平行', '2組の対辺が、それぞれ等しい', '2組の対角が、それぞれ等しい', '対角線が、それぞれの中点で交わる', '1組の対辺が、平行で等しい'];
+  function shapeOf(m) { var b = 2.4 + .6 * m, th = 120 - 70 * m; return { A: GE.polar([0, 0], b, th), B: [0, 0], C: [4, 0], b: b, th: th }; }
+  /* 2つの円（中心 p・半径 r、中心 q・半径 s）の交点 */
+  function circ2(p, r, q, s) { var d = GE.len({ p: p, q: q }, 'pq'), a = (r * r - s * s + d * d) / (2 * d), h = Math.sqrt(Math.max(0, r * r - a * a)), u = [(q[0] - p[0]) / d, (q[1] - p[1]) / d], m = [p[0] + u[0] * a, p[1] + u[1] * a]; return [[m[0] - u[1] * h, m[1] + u[0] * h], [m[0] + u[1] * h, m[1] - u[0] * h]]; }
+  function side(p, q, x) { return (q[0] - p[0]) * (x[1] - p[1]) - (q[1] - p[1]) * (x[0] - p[0]); }
+  /* 条件 k をみたすように、点 D を決める */
+  function build(k, m) {
+    var S = shapeOf(m), A = S.A, B = S.B, Cc = S.C, Dp;
+    if (k === 1) Dp = GE.meet(A, GE.add(A, GE.sub(Cc, B)), Cc, GE.add(Cc, GE.sub(A, B)));               // A を通る BC の平行線と、C を通る AB の平行線
+    else if (k === 2) Dp = circ2(A, 4, Cc, S.b).filter(function (p) { return side(A, Cc, p) * side(A, Cc, B) < 0; })[0];   // A から BC の長さ、C から AB の長さ（AC について B と反対がわ）
+    else if (k === 3) Dp = GE.meet(A, GE.add(A, [1, 0]), Cc, GE.add(Cc, GE.polar([0, 0], 1, S.th)));    // ∠A＝180°−∠B、∠C＝∠A になる向き
+    else if (k === 4) { var O = GE.mid(A, Cc); Dp = GE.sub(GE.add(O, O), B); }                           // BO をのばして OD＝OB
+    else Dp = GE.add(A, GE.sub(Cc, B));                                                                  // A から BC と同じ向き・同じ長さ
+    var P = { A: A, B: B, C: Cc, D: Dp, O: GE.mid(A, Cc), f0: [-1.5, -0.4], f1: [6.1, 2.7] };
+    return P;
+  }
+  [0, .3, .55, .8, 1].forEach(function (m) {
+    var P1 = build(1, m);
+    [2, 3, 4, 5].forEach(function (k) { var P = build(k, m); CH.check(GE.near(P.D[0], P1.D[0]) && GE.near(P.D[1], P1.D[1]) && isPg(P), 'ことば：条件' + k + '（m＝' + m + '）'); });
+    CH.check(GE.verify(P1, 'AB＝DC') && GE.verify(P1, 'AD＝BC') && GE.verify(P1, '∠DAB＝∠BCD') && GE.verify(P1, 'OB＝OD'), 'ことば：平行四辺形の性質');
+  });
+  function condFig(D, k, m) {
+    var P = build(k, m), R = box(D, { l: .06, r: .06, t: .16, b: .2 }), F = GE.fit(D, R, P, { keys: ['f0', 'f1'], pad: .04 }), s = F.s, Y = C.yel;
+    if (k === 1) { GE.seg(F, 'AD', { col: 'rgba(242,240,230,.45)', dash: true, w: 1.5, ext: [.12, .25] }); GE.seg(F, 'CD', { col: 'rgba(242,240,230,.45)', dash: true, w: 1.5, ext: [.12, .3] }); }
+    if (k === 2) {
+      var g = D.ctx; g.save(); g.globalAlpha = D.ga * .6; g.strokeStyle = C.chalk; g.lineWidth = 1.5; g.setLineDash([5, 5]);
+      [['A', 4], ['C', GE.len(P, 'AB')]].forEach(function (c) { var o = F.X(c[0]), d = F.X('D'), a = Math.atan2(d[1] - o[1], d[0] - o[0]); g.beginPath(); g.arc(o[0], o[1], c[1] * F.u, a - .3, a + .3); g.stroke(); });
+      g.restore();
+    }
+    var segs = SQ.concat(k === 4 ? ['AC', 'BD'] : []);
+    GE.figure(F, { segs: segs, dots: k === 4 ? ['O'] : [], labels: ['A', 'B', 'C', 'D'].concat(k === 4 ? ['O'] : []), dir: { A: 'nw', B: 'sw', C: 'se', D: 'ne', O: 's' } });
+    if (k === 1) { GE.par(F, 'AD', 1, { col: Y }); GE.par(F, 'BC', 1, { col: Y }); GE.par(F, 'AB', 2, { col: Y }); GE.par(F, 'DC', 2, { col: Y }); }
+    if (k === 2) { GE.tick(F, 'AB', 1, { col: Y }); GE.tick(F, 'DC', 1, { col: Y }); GE.tick(F, 'AD', 2, { col: Y }); GE.tick(F, 'BC', 2, { col: Y }); }
+    if (k === 3) { GE.arc(F, 'DAB', { col: Y }); GE.arc(F, 'BCD', { col: Y }); GE.arc(F, 'ABC', { col: Y, n: 2 }); GE.arc(F, 'CDA', { col: Y, n: 2 }); }
+    if (k === 4) { GE.tick(F, 'AO', 1, { col: Y }); GE.tick(F, 'OC', 1, { col: Y }); GE.tick(F, 'BO', 2, { col: Y }); GE.tick(F, 'OD', 2, { col: Y }); }
+    if (k === 5) { GE.par(F, 'AD', 1, { col: Y, shift: .9 }); GE.par(F, 'BC', 1, { col: Y, shift: .9 }); GE.tick(F, 'AD', 1, { col: Y }); GE.tick(F, 'BC', 1, { col: Y }); }
+    GE.dot(F, 'D', { col: C.pink, r: s * .22 });
+    say(D, R.cx, R.y0 - s * 1.3, CONDS[k], { col: Y, maxW: R.w });
+    var ok = isPg(P);
+    say(D, R.cx, R.y1 + s * 1.6, ok ? 'D をこう決めると … AB∥DC、AD∥BC → 平行四辺形' : '', { col: C.green, size: s * .85, maxW: R.w });
+  }
+
+  /* ---- 例題：アの四角形（AB＝DC、AD＝BC）は平行四辺形 ---- */
+  var DEF_EX = {
+    id: '第10時 例題', lv: 1, ttl: '例題　2組の対辺が等しい四角形',
+    q: '四角形 ABCD で、AB＝DC、AD＝BC ならば、四角形 ABCD は平行四辺形であることを証明しよう。（対角線 AC をひく）', P: QA,
+    fig: { segs: SQ.concat(['AC']), ticks: [['AB', 1], ['DC', 1], ['AD', 2], ['BC', 2]] },
+    hyp: 'AB＝DC、AD＝BC', goal: '四角形 ABCD は平行四辺形（AB∥DC、AD∥BC）', tri: ['ABC', 'CDA'],
+    plan: { q: '平行をいうために、対角線 AC をひく。どの三角形とどの三角形の合同を示せばよい？' },
+    L: [{ t: '△ABC と △CDA で' },
+      { t: 'AB＝CD', r: '仮定', n: 1 },
+      { t: 'BC＝DA', r: '仮定', n: 2 },
+      { t: 'AC＝CA', r: '共通', n: 3 },
+      { t: '①②③より、3組の辺が、それぞれ等しいので', c: 'SSS' },
+      { t: '△ABC≡△CDA' },
+      { t: '合同な図形の対応する角は等しいので　∠BAC＝∠DCA、∠BCA＝∠DAC', q: '合同から、等しいといえる角は？（AC をはさむ角）', a: '∠BAC＝∠DCA、∠BCA＝∠DAC', hl: ['∠BAC＝∠DCA', '∠BCA＝∠DAC'] },
+      { t: '錯角が等しいので　AB∥DC、AD∥BC。2組の対辺が、それぞれ平行だから、四角形 ABCD は平行四辺形', q: 'それらの角は、どんな位置の角？　そこから何がいえる？', a: '錯角 → AB∥DC、AD∥BC → 平行四辺形', hl: ['AB∥DC ∠BAC ∠DCA', 'AD∥BC ∠BCA ∠DAC'] }]
+  };
+
+  /* ---- 考えよう：AB∥DC、AD＝BC。A(0,0)・B(4,0)、ℓ は y＝3、D(d,3)。C は B を中心に半径 AD の円と ℓ の交点（4＋d と 4−d） ---- */
+  function think(d, which) { var A = [0, 0], B = [4, 0], Dp = [d, 3], cs = [[4 + d, 3], [4 - d, 3]]; return { A: A, B: B, C: cs[which], D: Dp, X: cs[1 - which], f0: [-1.6, -0.6], f1: [6.4, 3.9] }; }
+  [-1, -.4, .6, 1.2, 1.8].forEach(function (d) { [0, 1].forEach(function (w) { var P = think(d, w); CH.check(GE.near(GE.len(P, 'AD'), GE.len(P, 'BC')) && GE.isPar(P, 'AB', 'DC'), '考えよう：AD＝BC、AB∥DC'); }); CH.check(isPg(think(d, 0)) && !isPg(think(d, 1)), '考えよう：交点のちがい'); });
+
+  /* ---- チャレンジ：∠A＝∠C、∠B＝∠D ならば平行四辺形。E は辺 BA を A のほうへのばした点 ---- */
+  var P8 = { A: [1, 2.4], B: [0, 0], C: [4.6, 0], D: [5.6, 2.4] }; P8.E = GE.lerpP(P8.B, P8.A, 1.45);
+  var DEF_CH = {
+    id: '第10時 チャレンジ', lv: 2, ttl: 'チャレンジ　2組の対角が等しい四角形',
+    q: '四角形 ABCD で、∠A＝∠C、∠B＝∠D ならば、四角形 ABCD は平行四辺形であることを証明しよう。（四角形の内角の和は 360°）', P: P8,
+    fig: { segs: SQ, dash: ['AE'], angs: [['DAB', 1], ['BCD', 1], ['ABC', 2], ['CDA', 2]], dir: { E: 'w' } },
+    alias: { A: 'DAB', B: 'ABC', C: 'BCD', D: 'CDA' }, hyp: '∠A＝∠C、∠B＝∠D', goal: '四角形 ABCD は平行四辺形（AD∥BC、AB∥DC）',
+    L: [{ t: '∠A＋∠B＋∠C＋∠D＝360° で、∠A＝∠C、∠B＝∠D だから　∠A＋∠B＝180°', n: 1, q: '四角形の内角の和を使うと、∠A＋∠B は何度？', a: '180°（360° の半分）', hl: ['∠A', '∠B'] },
+      { t: '辺 BA の延長上に点 E をとると　∠DAE＝180°−∠A＝∠B', n: 2, q: '辺 BA を A のほうへのばして、点 E をとる。∠DAE と等しい角は？', a: '∠B（∠DAE＝180°−∠A＝∠B）', hl: ['∠DAE ∠B', '∠A'] },
+      { t: '同位角が等しいので　AD∥BC', q: '②から、何がいえる？', a: '同位角が等しいので　AD∥BC', hl: ['AD∥BC ∠DAE ∠B'] },
+      { t: '同じようにして　AB∥DC。2組の対辺が、それぞれ平行だから、四角形 ABCD は平行四辺形', q: '同じようにして AB∥DC もいえる。四角形 ABCD は？', a: '2組の対辺が平行 → 平行四辺形（定義）', hl: ['AD BC', 'AB DC'] }]
+  };
+
+  var steps = [
+    { tag: '今日の問い', bh: '今日の問い　平行四辺形といえる？', q: '四角形 ABCD の辺・角・対角線が、ア〜エのようになっている。それぞれ、平行四辺形といえるだろうか。わけも考えよう。',
+      notes: ['① 自分の考え（3分）　ア〜エの予想と、わけ。', '② ペアの考え（3分）　自分とちがう予想や、わけ。'],
+      draw: function (D) { four(D); } },
+    { tag: '今日の問い', q: 'ア〜エのうち、平行四辺形といえるのは？', a: 'ア・ウ・エ', sub: 'イは、となり合う辺が等しいだけ（たこ形）。ア・ウ・エは、平行四辺形の性質の「逆」になっている', dur: 3,
+      b: { t: 'ア・ウ・エ … 平行四辺形といえる（性質の<b>逆</b>）　イ … いえない（たこ形）', col: C.yel },
+      draw: function (D) {
+        var t = D.ph ? D.t : 0;
+        four(D, function (g, i, F, r) {
+          if (!D.ph) return;
+          var a = CH.smooth(.1 + i * .18, .3 + i * .18, t), s = F.s;
+          if (g.ok) { [['AD', 1], ['BC', 1], ['AB', 2], ['DC', 2]].forEach(function (p) { GE.seg(F, p[0], { col: C.yel, w: 3.4, a: a * .8, glow: true }); GE.par(F, p[0], p[1], { col: C.yel, a: a, shift: g.n === 'ア' ? .9 : 0 }); }); }
+          else { GE.seg(F, 'AB', { col: C.pink, w: 3.4, a: a * .8, glow: true }); GE.seg(F, 'DC', { col: C.pink, w: 3.4, a: a * .8, glow: true }); }
+          say(D, r.cx, r.y1 - s * .8, g.ok ? '→ 平行四辺形' : '→ いえない（たこ形）', { col: g.ok ? C.green : C.pink, a: a, size: s * .9, maxW: r.w });
+        });
+      } },
+    { tag: 'ことば', bh: 'ことば　平行四辺形になる条件', q: '四角形は、次のどれかが成り立てば、平行四辺形になる（① は定義、②〜④ は性質の逆）。',
+      notes: ['スライダーで条件を選び、∠B を変えてみよう。', '条件どおりに点 D を決めると、形を変えても、いつも平行四辺形になる。'],
+      sliders: [{ key: 'k', label: '条件', min: 1, max: 5, step: 1, val: 1, fmt: function (x) { return '①②③④⑤'.charAt(x - 1); } },
+        { key: 'm', label: '∠B を変える', min: 0, max: 1, step: .02, val: .5, fmt: function (x) { return Math.round(120 - 70 * x) + '°'; } }],
+      b: CONDS.slice(1).map(function (c, i) { return { t: '①②③④⑤'.charAt(i) + ' ' + c + (i === 0 ? '（定義）' : ''), col: C.green }; }),
+      draw: function (D) { condFig(D, D.V.k, D.V.m); } }
+  ].concat(proof(DEF_EX, { tag: '例題' })).concat([
+    { tag: '考えよう', q: 'AB∥DC、AD＝BC の四角形 ABCD は、いつも平行四辺形になるだろうか。',
+      notes: ['線分 AB に平行な直線 ℓ の上に、D をとる。C は、B を中心に半径 AD の円（コンパス）と ℓ の交点。', '交点は2か所ある。D を動かしたり、C をかえたりして調べよう。', '気づいたことを書こう。'],
+      sliders: [{ key: 'd', label: 'D を動かす', min: -1, max: 1.8, step: .05, val: 1, fmt: function () { return ''; } },
+        { key: 'c', label: 'C の交点', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? '2つめ' : '1つめ'; } }],
+      draw: function (D) {
+        var P = think(D.V.d, D.V.c), F = GE.fit(D, box(D, { l: .06, r: .06, t: .12, b: .12 }), P, { keys: ['f0', 'f1'], pad: .04 }), s = F.s;
+        GE.line(F, [[0, 3], [1, 3]], { col: 'rgba(242,240,230,.6)', w: 1.8 }); var lx = F.X([6.2, 3]); CH.text(D, lx[0], lx[1] - s * .8, 'ℓ', { size: s * 1.1 });
+        var r = GE.len(P, 'AD'), o = F.X('B'), a0 = Math.asin(Math.min(1, 3 / r)), g = D.ctx;
+        g.save(); g.globalAlpha = D.ga * .55; g.strokeStyle = C.blue; g.lineWidth = 1.6; g.setLineDash([6, 5]); g.beginPath(); g.arc(o[0], o[1], r * F.u, -Math.PI + a0 - .35, -a0 + .35); g.stroke(); g.restore();
+        GE.dot(F, 'X', { col: C.blue, r: s * .2 });
+        GE.figure(F, { segs: SQ, ticks: [['AD', 1], ['BC', 1]], pars: [['AB', 1], ['DC', 1]], labels: ['A', 'B', 'C', 'D'], dir: { A: 'sw', B: 'se', C: 'n', D: 'n' } });
+        var L = function (k) { return GE.len(P, k).toFixed(1); };
+        say(D, F.R.cx, F.R.y1 + s * .2, 'AB ' + L('AB') + '　BC ' + L('BC') + '　CD ' + L('CD') + '　DA ' + L('DA'), { col: C.chalk, size: s * .9, maxW: F.R.w });
+      } }
+  ]).concat(proof(DEF_CH, { tag: 'チャレンジ' }));
+
+  K3.run({
+    no: '第10時', title: '四角形が平行四辺形になる条件を見つけよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '09.html', label: '◀ 第9時' }, { href: '11.html', label: '第11時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

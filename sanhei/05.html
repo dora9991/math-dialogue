@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>対角線の長さと高さ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三平方の定理 第5時：対角線の長さや、三角形の高さを求めよう（ikkan の lesson_sanhei_05 と同じ流れ）。
+   図の数値は ikkan のデータ（自作）と同じ（今日の問い 1辺 8cm の正三角形、例題 長方形 3×7・正方形 6・二等辺三角形 8・8・6、
+   例題2 台形 AD 4・BC 10・AB＝DC 7、考えよう AB＝AC＝10 の二等辺三角形、チャレンジ AB 10・BC 12・CA 14）。
+   図は座標から描き、長さは座標から測り直して確かめる（GE.verify・CH.check。√ をふくむ長さは、2乗して整数になるかで確かめる）。
+   図の中の直角三角形が光る（直角がない図形は、垂線や対角線をひいて直角三角形をつくる）。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)', S3 = Math.sqrt(3);
+  /* ---- このページの道具 ---- */
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function rt(n) { n = Math.round(n); var a = 1, b = n; for (var k = 2; k * k <= b; k++) while (b % (k * k) === 0) { a *= k; b /= k * k; } return b === 1 ? String(a) : (a === 1 ? '' : a) + '√' + b; }
+  function sq(s) { var m = /^(\d*)√(\d+)$/.exec(s); if (m) { var a = m[1] ? +m[1] : 1; return a * a * +m[2]; } return +s * +s; }
+  function isLen(L, s) { var q = L * L; return Math.abs(q - Math.round(q)) < 1e-7 && Math.round(q) === sq(s); }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D); if (o.maxW) size = CH.fitSize(D, s, o.maxW, size, { num: o.num }); CH.text(D, x, y, s, { col: o.col, a: o.a, size: size, num: o.num, align: o.align, outline: o.outline === false ? null : OUT }); }
+  function top(D, s, col, a, row) { var B = CH.box(D, { t: 0, l: .03, r: .03 }), f = CH.fs(D, 1); say(D, B.cx, B.y0 + f * (.8 + (row || 0) * 1.35), s, { col: col || C.yel, a: a, size: f, maxW: B.w }); }
+  /* 辺 pq の外がわ（点 r の反対がわ）に字。inside なら内がわ。たての辺は、字の幅の分だけはなす */
+  function sideLab(F, p, q, r, txt, o) {
+    o = o || {}; var a = F.X(p), b = F.X(q), c = F.X(r), m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], n = [a[1] - b[1], b[0] - a[0]], L = Math.hypot(n[0], n[1]) || 1, g = F.D.ctx, w;
+    var sg = (n[0] * (c[0] - m[0]) + n[1] * (c[1] - m[1]) > 0) === !!o.inside ? 1 : -1, sz = o.size || F.s * .85, nx = n[0] / L, ny = n[1] / L;
+    g.save(); g.font = '600 ' + sz + 'px "Klee One",sans-serif'; w = g.measureText(txt).width; g.restore();
+    var k = sg * (F.s * (o.k || .75) + Math.abs(nx) * w * .45);
+    say(F.D, m[0] + nx * k, m[1] + ny * k, txt, { col: o.col, size: sz, a: o.a, num: o.num });
+  }
+  /* 四角 R に、行を（{ t, col, a, k, big }）。mid：まん中にそろえる */
+  function lines(D, R, L, o) {
+    o = o || {}; var s = o.size || CH.fs(D, 1.0), h = s * 1.5, y = o.mid ? R.cy - (L.length * h) / 2 + h / 2 : R.y0 + h * .6;
+    L.forEach(function (l) { if (l && l.t && (l.a == null || l.a > 0)) say(D, R.cx, y, l.t, { col: l.col, a: l.a, size: s * (l.big ? 1.25 : l.k || 1), maxW: R.w, num: l.num }); y += h * (l && l.big ? 1.2 : 1); });
+  }
+  /* 図の枠を自分で：点 P を、四角 R の中に 1目もり u で（中心 c） */
+  function frame(D, R, P, c, u) { return { X: function (p) { p = typeof p === 'string' ? P[p] : p; return [R.cx + (p[0] - c[0]) * u, R.cy - (p[1] - c[1]) * u]; }, u: u, D: D, P: P, R: R, s: CH.fs(D, 1), c: c }; }
+
+  /* ---- 確かめ ---- */
+  var PT = { B: [0, 0], C: [8, 0], A: [4, 4 * S3], H: [4, 0] };
+  GE.verify(PT, 'AB＝BC＝CA＝8、BH＝HC＝4、∠AHB＝90°', null, '今日の問い');
+  CH.check(isLen(GE.len(PT, 'AH'), '4√3') && 64 - 16 === 48 && rt(48) === '4√3', '今日の問い（高さ 4√3）');
+  var EX = [
+    { P: { A: [0, 3], B: [0, 0], C: [7, 0], D: [7, 3] }, s: 'AC', a: '√58', f: 'x²＝3²＋7²＝58' },
+    { P: { A: [0, 6], B: [0, 0], C: [6, 0], D: [6, 6] }, s: 'AC', a: '6√2', f: 'x²＝6²＋6²＝72' },
+    { P: { A: [3, Math.sqrt(55)], B: [0, 0], C: [6, 0], H: [3, 0] }, s: 'AH', a: '√55', f: 'AH²＝8²−3²＝55' }];
+  CH.check(isLen(GE.len(EX[0].P, 'AC'), '√58') && isLen(GE.len(EX[1].P, 'AC'), '6√2') && isLen(GE.len(EX[2].P, 'AH'), '√55') && CH.near(GE.len(EX[2].P, 'AB'), 8) && CH.near(GE.len(EX[2].P, 'AC'), 8), '例題');
+  var h10 = Math.sqrt(40), PZ = { A: [3, h10], D: [7, h10], B: [0, 0], C: [10, 0], H: [3, 0], K: [7, 0] };
+  GE.verify(PZ, 'AD＝4、BC＝10、AB＝DC＝7、BH＝3、AD∥BC、∠AHB＝90°', null, '例題2');
+  CH.check(isLen(GE.len(PZ, 'AH'), '2√10') && isLen((4 + 10) * h10 / 2, '14√10') && rt(49 - 9) === '2√10', '例題2（高さ 2√10、面積 14√10）');
+  var hA = 4 * Math.sqrt(6), PC = { A: [2, hA], B: [0, 0], C: [12, 0], H: [2, 0] };
+  GE.verify(PC, 'AB＝10、BC＝12、CA＝14、BH＝2、∠AHB＝90°', null, 'チャレンジ');
+  var xs = []; for (var x = -20; x <= 20; x++) if (100 - x * x === 196 - (12 - x) * (12 - x)) xs.push(x);
+  CH.check(xs.join() === '2' && isLen(GE.len(PC, 'AH'), '4√6') && isLen(12 * hA / 2, '24√6'), 'チャレンジ（x＝2、AH＝4√6、面積 24√6）');
+  /* 考えよう：AB＝AC＝10、底辺 w（答えは出さない） */
+  function iso(w) { var h = Math.sqrt(Math.max(0, 100 - w * w / 4)); return { A: [0, h], B: [-w / 2, 0], C: [w / 2, 0], H: [0, 0] }; }
+  [4, 8, 12, 16].forEach(function (w) { GE.verify(iso(w), 'AB＝AC＝10、BH＝HC', null, '考えよう（BC＝' + w + '）'); });
+
+  /* 今日の問い・ことばの正三角形 */
+  function eqFig(D, t, o) {
+    o = o || {}; var P = PT, F = GE.fit(D, CH.box(D, { l: .06, r: .06, t: o.t || .16, b: .04 }), P, { pad: .14 }), k1 = CH.ease(CH.smooth(.05, .28, t)), k2 = CH.smooth(.3, .45, t), k3 = CH.smooth(.48, .6, t);
+    if (k2 > 0) GE.poly(F, 'ABH', { col: C.yel, fa: .28 * k2, stroke: false });
+    GE.poly(F, 'ABC', { col: C.blue, fa: .12, stroke: C.chalk });
+    if (k1 > 0) { GE.seg(F, ['A', GE.lerpP(P.A, P.H, k1)], { col: C.yel, w: 3, dash: [8, 6] }); if (k1 >= 1) GE.right(F, 'AHB', { col: C.yel }); }
+    if (k2 > 0) GE.seg(F, 'AB', { col: C.yel, w: 4.5, glow: true, a: k2 });
+    sideLab(F, 'A', 'B', 'C', '8cm'); sideLab(F, 'A', 'C', 'B', '8cm'); if (k3 <= 0) sideLab(F, 'B', 'C', 'A', '8cm');
+    if (k3 > 0) { sideLab(F, 'B', 'H', 'A', '4cm', { col: C.yel, a: k3 }); sideLab(F, 'H', 'C', 'A', '4cm', { a: k3 }); GE.tick(F, 'BH', 1, { col: C.yel, a: k3 }); GE.tick(F, 'HC', 1, { col: C.yel, a: k3 }); }
+    if (t >= .65) sideLab(F, 'A', 'H', 'C', t >= .85 ? '4√3' : '?', { col: C.yel, inside: true, k: 1 });
+    GE.labels(F, k1 >= 1 ? ['A', 'B', 'C', 'H'] : ['A', 'B', 'C'], { dir: { A: 'n', B: 'sw', C: 'se', H: 's' } });
+    return F;
+  }
+
+  K3.run({
+    no: '第5時', title: '対角線の長さや、三角形の高さを求めよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '04.html', label: '◀ 第4時' }, { href: '06.html', label: '第6時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '正三角形の高さ', q: '1辺が 8cm の正三角形 ABC の高さを、三平方の定理で求めたい。この図には、直角がない。どこに直角三角形をつくればよいだろう。',
+        notes: ['① 自分の考え（3分）　線をかき入れて、求め方を書こう。', '② ペアの考え（3分）　自分とちがう考えは？'],
+        draw: function (D) { eqFig(D, 0); } },
+      { tag: '今日の問い', q: 'どこに、どんな線をひく？ 高さは？', a: 'A から BC に垂線 AH をひく。高さ 4√3cm', sub: 'H は BC の中点だから BH＝4cm。直角三角形 ABH で AH²＝8²−4²＝48、AH＞0 だから AH＝√48＝4√3', dur: 7,
+        b: [{ t: 'A から BC に<b>垂線 AH</b> → 直角三角形 ABH（BH＝4cm）', col: C.yel }, { t: 'AH²＝8²−4²＝48 → AH＝<b>4√3</b>（cm）', col: C.yel }],
+        draw: function (D) { var t = D.ph ? D.t : 0; eqFig(D, t); if (D.ph) { top(D, t < .48 ? 'A から BC に垂線 AH → 直角三角形 ABH' : 'H は BC の中点 → BH＝4cm', C.yel, CH.smooth(0, .06, t), 0); top(D, 'AH²＝8²−4²＝48　AH＝√48＝4√3', C.yel, CH.smooth(.68, .8, t), 1); } } },
+      { tag: 'ことば', bh: 'ことば', q: '直角がない図形で、長さを求めるには、どうする？ 二等辺三角形の頂点から底辺にひいた垂線は、底辺をどうする？', a: '垂線をひいて、直角三角形をつくる。底辺を2等分する', sub: '長方形・正方形は、対角線をひくと直角三角形ができる', dur: 3,
+        b: [{ t: '直角がない図形 → <b>垂線</b>をひいて<b>直角三角形</b>をつくる', col: C.green }, { t: '二等辺三角形の頂点からの垂線は、底辺を <b>2等分</b>', col: C.green }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = EX[2].P, F = GE.fit(D, CH.box(D, { l: .06, r: .06, t: .08, b: .04 }), P, { pad: .14 }), k1 = CH.smooth(.05, .4, t), k2 = CH.smooth(.5, .8, t);
+          GE.poly(F, 'ABH', { col: C.yel, fa: .25 * k1, stroke: false }); GE.poly(F, 'AHC', { col: C.pink, fa: .25 * k1, stroke: false });
+          GE.poly(F, 'ABC', { fill: false, stroke: C.chalk }); GE.tick(F, 'AB', 2); GE.tick(F, 'AC', 2);
+          GE.seg(F, 'AH', { col: C.yel, w: 2.6, dash: [8, 6] }); GE.right(F, 'AHC', { col: C.yel });
+          if (k2 > 0) { GE.tick(F, 'BH', 1, { col: C.yel, a: k2 }); GE.tick(F, 'HC', 1, { col: C.yel, a: k2 }); sideLab(F, 'B', 'H', 'A', '2等分', { col: C.yel, a: k2, size: F.s * .8 }); }
+          GE.labels(F, ['A', 'B', 'C', 'H'], { dir: { A: 'n', B: 'sw', C: 'se', H: 's' } });
+        } },
+      { tag: '例題', bh: '例題　対角線と高さ', q: '次の長さを求めよう。(1) たて 3cm、横 7cm の長方形の対角線（見本）　(2) 1辺 6cm の正方形の対角線　(3) AB＝AC＝8cm、BC＝6cm の二等辺三角形の高さ AH', a: '(2) 6√2cm　(3) √55cm', sub: '(1) x²＝3²＋7²＝58、x＝√58　(2) x²＝6²＋6²＝72、x＝6√2　(3) BH＝3cm、AH²＝8²−3²＝55', dur: 5,
+        b: [{ t: '(1) √58cm　(2) 6²＋6²＝72 → <b>6√2</b>cm', col: C.pink }, { t: '(3) BH＝3 → AH²＝8²−3²＝55 → <b>√55</b>cm', col: C.pink }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, B = CH.box(D, { l: .02, r: .02, t: .05, b: .04 }), cs = CH.cols(B, 3, .07), s = CH.fs(D, .8), u = Math.min.apply(null, cs.map(function (c) { return Math.min((c.w - s * 3.2) / 7.4, (c.h - s * 8.5) / 8.2); }));
+          EX.forEach(function (e, i) {
+            var c = cs[i], P = e.P, isT = !!P.H, F = frame(D, CH.rect(c.x0 + s * 1.6, c.y0 + s * 1.5, c.x1, c.y0 + s * 1.5 + 8.2 * u), P, isT ? [3, 3.7] : [P.C[0] / 2, P.A[1] / 2], u);
+            var k = i === 0 ? 1 : D.ph ? CH.smooth(.05 + (i - 1) * .45, .25 + (i - 1) * .45, t) : 0, kf = i === 0 ? 1 : D.ph ? CH.smooth(.2 + (i - 1) * .45, .35 + (i - 1) * .45, t) : 0;
+            if (isT) {
+              GE.poly(F, 'ABH', { col: C.yel, fa: .3 * k, stroke: false }); GE.poly(F, 'ABC', { col: C.blue, fa: .1, stroke: C.chalk }); GE.seg(F, 'AH', { col: C.yel, w: 2.4, dash: [7, 5] }); GE.right(F, 'AHC', { col: C.yel, r: F.s * .45 });
+              sideLab(F, 'A', 'B', 'C', '8cm', { size: s }); sideLab(F, 'A', 'C', 'B', '8cm', { size: s }); sideLab(F, 'B', 'C', 'A', '6cm', { size: s, k: 1.75 });
+              GE.labels(F, ['A', 'B', 'C', 'H'], { dir: { A: 'n', B: 'sw', C: 'se', H: 's' } });
+            } else {
+              GE.poly(F, 'ABC', { col: C.yel, fa: .3 * k, stroke: false }); GE.poly(F, 'ABCD', { col: C.blue, fa: .1, stroke: C.chalk }); GE.seg(F, 'AC', { col: C.yel, w: 2.6 }); GE.right(F, 'ABC', { col: C.yel, r: F.s * .45, a: k });
+              sideLab(F, 'B', 'C', 'A', (P.C[0]) + 'cm', { size: s }); sideLab(F, 'A', 'B', 'C', (P.A[1]) + 'cm', { size: s });
+            }
+            say(D, c.x0 + s * .2, c.y0 + s * .5, '(' + (i + 1) + ') ' + ['長方形', '正方形', '二等辺三角形'][i], { size: s, align: 'left', maxW: c.w });
+            var y = c.y0 + s * 1.5 + 8.2 * u + s * 3.4;
+            if (kf > 0) { say(D, c.cx, y, e.f, { a: kf, size: s, maxW: c.w, num: true }); say(D, c.cx, y + s * 1.6, (isT ? 'AH＝' : 'x＝') + e.a + 'cm', { a: kf, size: s * 1.1, maxW: c.w, num: true, col: C.pink }); }
+          });
+        } },
+      { tag: '例題', bh: '例題2　台形の高さ', q: 'AD∥BC、AB＝DC＝7cm、AD＝4cm、BC＝10cm の台形 ABCD の、高さと面積を求めよう。', a: '高さ 2√10cm、面積 14√10cm²', sub: 'A、D から BC に垂線 AH、DK をひくと BH＝(10−4)÷2＝3。AH²＝7²−3²＝40、AH＝2√10。面積 1/2×(4＋10)×2√10＝14√10', dur: 7,
+        b: { t: 'BH＝(10−4)÷2＝3 → AH²＝7²−3²＝40 → 高さ <b>2√10</b>、面積 <b>14√10</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, P = PZ, F = GE.fit(D, CH.box(D, { l: .06, r: .06, t: .22, b: .04 }), P, { pad: .14 }), k1 = CH.smooth(.04, .22, t), k2 = CH.smooth(.26, .4, t), k3 = CH.smooth(.45, .6, t), k4 = CH.smooth(.75, .9, t);
+          GE.poly(F, 'ABH', { col: C.yel, fa: .3 * k2, stroke: false }); GE.poly(F, 'DKC', { col: C.yel, fa: .15 * k2, stroke: false });
+          GE.poly(F, 'ABCD', { col: C.blue, fa: .1, stroke: C.chalk }); GE.tick(F, 'AB', 1); GE.tick(F, 'DC', 1); GE.par(F, 'AD', 1); GE.par(F, 'BC', 1);
+          if (k1 > 0) { GE.seg(F, 'AH', { col: C.yel, w: 2.6, dash: [8, 6], a: k1 }); GE.seg(F, 'DK', { col: C.yel, w: 2.6, dash: [8, 6], a: k1 }); GE.right(F, 'AHC', { col: C.yel, a: k1 }); GE.right(F, 'DKB', { col: C.yel, a: k1 }); }
+          sideLab(F, 'A', 'D', 'B', '4cm'); sideLab(F, 'A', 'B', 'C', '7cm'); sideLab(F, 'D', 'C', 'B', '7cm');
+          if (k2 <= .5) sideLab(F, 'B', 'C', 'A', '10cm'); else { sideLab(F, 'B', 'H', 'A', '3', { col: C.yel }); sideLab(F, 'H', 'K', 'A', '4'); sideLab(F, 'K', 'C', 'A', '3'); }
+          if (k3 > .5) sideLab(F, 'A', 'H', 'B', '2√10', { col: C.yel, inside: false, k: .8 });
+          GE.labels(F, k1 > .5 ? ['A', 'B', 'C', 'D', 'H', 'K'] : ['A', 'B', 'C', 'D'], { dir: { A: 'n', B: 'sw', C: 'se', D: 'n', H: 's', K: 's' } });
+          if (D.ph) { top(D, 'BH＝(10−4)÷2＝3', C.yel, k2, 0); top(D, 'AH²＝7²−3²＝40　AH＝2√10', C.yel, k3, 1); top(D, '面積 1/2×(4＋10)×2√10＝14√10', C.pink, k4, 2); }
+        } },
+      { tag: '考えよう', q: 'AB＝AC＝10cm の二等辺三角形で、底辺 BC の長さを 4cm、8cm、12cm、16cm と変えて、高さ AH を求め、表にまとめよう。どんなきまりが見つかるだろう。',
+        notes: ['BC を 20cm にすると、どうなるだろう。', 'BH の長さと、高さ AH の関係は？', 'スライダーで、底辺 BC の長さを変えられます。'],
+        sliders: [{ key: 'w', label: '底辺 BC', min: 2, max: 20, step: 2, val: 4, fmt: function (v) { return v + 'cm'; } }],
+        draw: function (D) {
+          var w = D.V.w, P = iso(w), B = CH.box(D, { l: .06, r: .06, t: .08, b: .06 }), u = Math.min(B.w / 23, B.h / 11.6), F = frame(D, B, P, [0, 4.4], u), flat = P.A[1] < 1e-6;
+          if (!flat) { GE.poly(F, 'ABH', { col: C.yel, fa: .25, stroke: false }); GE.poly(F, 'ABC', { col: C.blue, fa: .1, stroke: C.chalk }); GE.seg(F, 'AH', { col: C.yel, w: 2.6, dash: [8, 6] }); GE.right(F, 'AHC', { col: C.yel }); sideLab(F, 'A', 'H', 'C', '?', { col: C.yel, inside: true, k: 1 }); }
+          else GE.seg(F, 'BC', { col: C.chalk, w: 3 });
+          sideLab(F, 'A', 'B', 'C', '10cm'); sideLab(F, 'A', 'C', 'B', '10cm'); GE.tick(F, 'AB', 2); GE.tick(F, 'AC', 2);
+          sideLab(F, 'B', 'C', [0, 5], w + 'cm', { k: 2.2 }); if (!flat) { GE.tick(F, 'BH', 1); GE.tick(F, 'HC', 1); }
+          GE.labels(F, ['A', 'B', 'C', 'H'], { dir: { A: 'n', B: 'sw', C: 'se', H: 's' } });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '△ABC で、AB＝10cm、BC＝12cm、CA＝14cm である。A から BC に垂線 AH をひき、BH＝x cm とする。AH² を x を使った2通りの式で表して x の値を求め、△ABC の面積を求めよう。',
+        notes: ['ヒント① AH は、△ABH と △ACH の、どちらにもふくまれているね。', 'ヒント② HC は、x を使うと、どう表せるかな。'],
+        a: 'x＝2、面積 24√6cm²', sub: 'AH²＝10²−x²、AH²＝14²−(12−x)²。100−x²＝52＋24x−x² → x＝2。AH²＝96、AH＝4√6。面積 1/2×12×4√6＝24√6', dur: 9,
+        b: { t: '10²−x²＝14²−(12−x)² → x＝2 → AH＝4√6 → 面積 <b>24√6</b>（cm²）', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, sp = CH.split(D, CH.box(D, { l: .03, r: .03, t: .05, b: .04 }), 2, .04), P = PC, F = GE.fit(D, sp[0], P, { pad: .16 });
+          var k1 = CH.smooth(.03, .15, t), k2 = CH.smooth(.2, .32, t), k3 = CH.smooth(.38, .5, t), k4 = CH.smooth(.56, .68, t), k5 = CH.smooth(.75, .87, t);
+          GE.poly(F, 'ABH', { col: C.yel, fa: .3 * k1 * (1 - k2 * .6), stroke: false }); GE.poly(F, 'AHC', { col: C.pink, fa: .3 * k2, stroke: false });
+          GE.poly(F, 'ABC', { col: C.blue, fa: .08, stroke: C.chalk }); GE.seg(F, 'AH', { col: C.yel, w: 2.6, dash: [8, 6] }); GE.right(F, 'AHC', { col: C.yel });
+          sideLab(F, 'A', 'B', 'C', '10cm'); sideLab(F, 'A', 'C', 'B', '14cm'); sideLab(F, 'B', 'C', 'A', '12cm', { k: 1.8 });
+          sideLab(F, 'B', 'H', 'A', k4 > .5 ? '2' : 'x', { col: C.yel, size: F.s * .8 }); sideLab(F, 'H', 'C', 'A', k4 > .5 ? '10' : '12−x', { col: C.pink, size: F.s * .8 });
+          if (k4 > .5) sideLab(F, 'A', 'H', 'C', '4√6', { col: C.yel, inside: true, k: 1 });
+          GE.labels(F, ['A', 'B', 'C', 'H'], { dir: { A: 'n', B: 'sw', C: 'se', H: 's' } });
+          lines(D, sp[1], [{ t: 'AH²＝10²−x²', col: C.yel, a: k1 }, { t: 'AH²＝14²−(12−x)²', col: C.pink, a: k2 }, { t: '100−x²＝52＋24x−x²', a: k3 }, { t: 'x＝2', a: k3 }, { t: 'AH²＝100−4＝96　AH＝4√6', col: C.yel, a: k4 }, { t: '面積 1/2×12×4√6', a: k5, k: .9 }, { t: '＝24√6（cm²）', col: C.orange, big: true, a: k5 }], { mid: true });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

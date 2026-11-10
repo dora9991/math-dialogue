@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>体積比を使う</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 相似な図形 第17時：体積比を使って、体積を求めよう（ikkan の lesson_souji_17 と同じ流れ）。
+   今日の問い：相似な円柱の容器 A（高さ 9cm・270mL）と B（高さ 12cm）。A の水を B にうつすと、B の 27/64 → B は 640mL。
+   例題：高さ 18cm の円錐を、頂点から 6cm で底面に平行に切る（上の円錐 P と下の立体 Q。K3.cone・K3.frustum）。
+   例題（2）：円錐の容器に、深さが半分まで水を入れると、水の量は 1/8（水の円錐を 2倍にすると容器に重なる）。
+   考えようは、水の深さを変える道具だけ（水の量の割合は出さない）。チャレンジは、高さを 3等分した ア・イ・ウ（1：7：19）。
+   数値は ikkan のまま、立体のデータはこのページの自作。体積は公式と、立体の面から計算した体積の比で照らし合わせる（CH.check）。 */
+(function () {
+  var C = K3.COL, v = K3.v, K = K3, PI = Math.PI, WATER = '#5aa9e6';
+  /* ---- 立体の道具（このページの中だけ） ---- */
+  function vol(m) { var s = 0; m.F.forEach(function (f) { var P = f.v.map(function (k) { return m.V[k]; }); for (var i = 1; i < P.length - 1; i++) s += v.dot(P[0], v.cross(P[i], P[i + 1])) / 6; }); return Math.abs(s); }
+  function coneV(r, h) { return r * r * h / 3; }           /* π の係数 */
+  function frusV(R, r, h) { return h / 3 * (R * R + R * r + r * r); }
+  /* 立体の字（D.label）を、黒板の字の大きさにそろえる（広い画面で小さくなりすぎない） */
+  function big(D) { var k = Math.max(1, CH.fs(D) * .85 / D.fs), L = D.label; D.label = function (p, t, o) { o = Object.assign({}, o); o.size = (o.size || 1) * k; L(p, t, o); }; return D; }
+  function wrap(ss) { ss.forEach(function (st) { var d = st.draw; st.draw = function (D) { d(big(D)); }; }); return ss; }
+  function depth(D, p) { return v.dot(v.sub(p, D.C.pos), D.C.f); }
+  function order(D, cs) { return cs.map(function (c, i) { return { i: i, z: depth(D, c) }; }).sort(function (a, b) { return b.z - a.z; }).map(function (x) { return x.i; }); }
+  var GLASS = { col: '#d8e6ef', a: .22, edgeCol: 'rgba(242,240,230,.8)', ew: 1.2 };
+  function glass(D, m, at) { D.mesh(m, { at: at, col: GLASS.col, a: GLASS.a, edgeCol: GLASS.edgeCol, ew: GLASS.ew }); }
+  function water(D, m, at, a) { D.mesh(m, { at: at, col: WATER, a: a == null ? .85 : a, edges: false }); }
+  /* 円錐の容器（頂点が下）：半径 r、高さ h */
+  function cupCone(r, h) { return K.revolve([[0, 0, 'side'], [r, h, 'rim'], [0, h]]); }
+  function far() { var c = document.getElementById('cv'); return c && c.clientWidth < c.clientHeight * 1.1 ? 1.25 : 1; }
+
+  /* ---- 今日の問い：相似な円柱 A（高さ 9）・B（高さ 12）。A の半径は、270mL から決める ---- */
+  var HA = 9, HB = 12, RA = Math.sqrt(270 / (PI * HA)), RB = RA * HB / HA, XA = -6, XB = 5;
+  var VA = PI * RA * RA * HA, VB = PI * RB * RB * HB, LEV = VA / VB;
+  CH.check(CH.near(VA, 270) && CH.near(VB, 640) && CH.near(LEV, 27 / 64) && !CH.near(VB, 270 * 4 / 3) && 270 * 64 / 27 === 640, '今日の問い：640mL');
+  function cups(D, o) {
+    o = o || {}; var aA = o.atA || [XA, 0, 0], fA = o.fA == null ? 1 : o.fA, fB = o.fB || 0;
+    order(D, [v.add(aA, [0, 0, HA / 2]), [XB, 0, HB / 2]]).forEach(function (i) {
+      if (i === 0) { if (fA > .003) water(D, K.cylinder(RA * .995, HA * fA), aA); glass(D, K.cylinder(RA, HA), aA); }
+      else { if (fB > .003) water(D, K.cylinder(RB * .995, HB * fB), [XB, 0, 0]); glass(D, K.cylinder(RB, HB), [XB, 0, 0]); }
+    });
+    if (o.dims !== false) {
+      D.dim([XB + RB, 0, 0], [XB + RB, 0, HB], '12cm', { off: [1, 0, 0], dx: 1.6 });
+      if (!o.atA) D.dim([XA - RA, 0, 0], [XA - RA, 0, HA], '9cm', { off: [-1, 0, 0], dx: -1.6 });
+    }
+    D.label(v.add(o.atA || [XA, 0, 0], [0, -RA, 0]), 'A', { dy: 1.2, size: 1.2 }); D.label([XB, -RB, 0], 'B', { dy: 1.2, size: 1.2 });
+  }
+
+  /* ---- 例題：円錐（半径 6・高さ 18）。頂点から 6cm で切る：P は円錐（半径 2・高さ 6）、Q は円錐台 ---- */
+  var EP = K.cone(2, 6), EQ = K.frustum(6, 2, 12), EW = K.cone(6, 18);
+  CH.check(coneV(6, 18) === 216 && coneV(2, 6) === 8 && frusV(6, 2, 12) === 208 && 216 / 27 === 8 && 216 - 8 === 208, '例題：P＝8π、Q＝208π');
+  CH.check(CH.near(vol(EW) / vol(EP), 27) && CH.near(vol(EQ) / vol(EP), 26), '例題：体積の比（立体の面から）');
+
+  /* ---- 例題（2）・考えよう：円錐の容器（半径 4・高さ 8）。深さ f のときの水は、半径 4f・高さ 8f の円錐 ---- */
+  var CR = 4, CHh = 8;
+  CH.check(CH.near(coneV(CR / 2, CHh / 2) / coneV(CR, CHh), 1 / 8) && CH.near(vol(cupCone(2, 4)) / vol(cupCone(4, 8)), 1 / 8), '例題（2）：1/8');
+  CH.check([1 / 2, 2 / 3, 3 / 4, 4 / 5].map(function (f) { return Math.round(coneV(CR * f, CHh * f) / coneV(CR, CHh) * 1e6) / 1e6; }).join() === [1 / 8, 8 / 27, 27 / 64, 64 / 125].map(function (x) { return Math.round(x * 1e6) / 1e6; }).join() && Math.cbrt(.5) > .79 && Math.cbrt(.5) < .8, '考えよう（ここで確かめるだけ）');
+  function cone(D, f, o) {
+    o = o || {};
+    if (f > .003) water(D, cupCone(CR * f, CHh * f), [0, 0, 0]);
+    glass(D, cupCone(CR, CHh), [0, 0, 0]);
+    D.dim([CR, 0, 0], [CR, 0, CHh], o.hl || '', { off: [1.2, 0, 0], dx: 1.8 });
+  }
+
+  /* ---- チャレンジ：円錐（半径 9・高さ 12）を、高さ 4・8 で切る ---- */
+  var A1 = K.cone(3, 4), A2 = K.frustum(6, 3, 4), A3 = K.frustum(9, 6, 4);
+  CH.check(coneV(3, 4) === 12 && coneV(6, 8) === 96 && coneV(9, 12) === 324 && frusV(6, 3, 4) === 84 && frusV(9, 6, 4) === 228 && 84 / 12 === 7 && 228 / 12 === 19 && CH.near(324 * 7 / 27, 84), 'チャレンジ：1：7：19、84π');
+  CH.check(CH.near(vol(A2) / vol(A1), 7) && CH.near(vol(A3) / vol(A1), 19), 'チャレンジ：体積の比（立体の面から）');
+
+  K.run({
+    no: '第17時', title: '体積比を使って、体積を求めよう', model: K.frame([0, 0, 6.5], 10), view: function () { return { th: -82, ps: 14, R: 11 * far() }; },
+    links: [{ href: 'index.html', label: '目次' }, { href: '16.html', label: '◀ 第16時' }, { href: '18.html', label: '第18時 ▶' }],
+    steps: wrap([
+      { tag: '今日の問い', bh: '相似な円柱の容器 A・B', q: '形が同じ（相似）な円柱の容器 A、B がある。高さは A が 9cm、B が 12cm で、A には水が 270mL 入る。B には、水が何 mL 入るだろう。予想して、求め方も考えよう。',
+        notes: ['① 自分の考え（3分）　予想と、求め方を書こう。', '② ペアの考え（3分）　自分とちがう求め方を書こう。'],
+        draw: function (D) { cups(D); D.label([XA, 0, HA], '270mL', { dy: -1, col: C.blue }); D.label([XB, 0, HB], '？mL', { dy: -1, col: C.yel }); } },
+      { tag: '今日の問い', q: 'A の水を B にうつしてみよう。B には、何 mL 入る？', a: '640mL', sub: '相似比 9：12＝3：4、体積の比 27：64。270：x＝27：64 → x＝640（高さは 4/3 倍でも、水の量は 360mL ではない）', dur: 7,
+        b: { t: '相似比 3：4 → 体積の比 27：64 → 270：x＝27：64 → <b>640mL</b>', col: C.yel },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .72 ? 'A の水 270mL を、B にうつすと…' : 'B の 27/64 → B いっぱいは 640mL'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, u = v.clamp((t - .02) / .66, 0, 1), sw = Math.sin(PI * v.clamp(u / .95, 0, 1)), fill = t >= .68 ? 1 : v.smooth(.25, .85, u);
+          var at = [XA + (XB - XA - RB - RA * .4) * sw * .6, 0, sw * 4.6], tilt = v.smooth(.15, .3, u) * (1 - v.smooth(.85, .98, u));
+          if (t >= .68) at = [XA, 0, 0];
+          cups(D, { atA: D.ph ? at : null, fA: 1 - fill, fB: LEV * fill, dims: !D.ph || t >= .68 });
+          if (tilt > .02) D.seg(v.add(at, [RA * .9, 0, HA]), [XB - RB * .3, 0, HB * LEV * fill + .2], { col: WATER, w: D.lw * 3 * tilt, a: .9 });
+          if (t > .72) {
+            var a = v.smooth(.72, .85, t);
+            D.label([XB, -RB, HB * LEV], '270mL', { col: C.blue, dx: -2.6, a: a });
+            D.mesh(K.cylinder(RB * .99, HB), { at: [XB, 0, 0], col: C.yel, a: .16 * a, edges: false });
+            D.label([XB, 0, HB], 'いっぱいで 640mL', { dy: -1, col: C.yel, a: a });
+          }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '相似比が m：n の立体の、表面積の比・体積の比は？ 体積は、どうやって求める？', a: '表面積 m²：n²、体積 m³：n³。比例式で求める',
+        sub: '容器の水の量は、容器の体積の比で考える。高さの比（相似比）のままではない', dur: 1,
+        b: [{ t: '相似比 m：n → 表面積の比 <b>m²：n²</b>、体積の比 <b>m³：n³</b>', col: C.green }, { t: '体積は、体積の比の <b>比例式</b> をつくって求める', col: C.green }],
+        banner: function (s) { return s.ph ? '3：4 → 3³：4³ ＝ 27：64' : ''; },
+        draw: function (D) {
+          cups(D, { fA: 1, fB: 1 });
+          D.label([XA, 0, HA], '270mL', { dy: -1, col: C.blue }); D.label([XB, 0, HB], '640mL', { dy: -1, col: C.blue });
+
+        } },
+      { tag: '例題', bh: '例題　円錐を、底面に平行に切る', model: K.frame([0, 0, 10], 11), view: function () { return { th: -70, ps: 16, R: 13 * far() }; },
+        q: '高さ 18cm の円錐を、頂点から 6cm のところで底面に平行に切り、上の円錐 P と下の立体 Q に分けた。もとの円錐の体積が 216π cm³ のとき、P、Q の体積は？',
+        a: 'P 8π cm³、Q 208π cm³', sub: 'P ともとの円錐は相似。相似比 6：18＝1：3、体積の比 1：27 → P＝216π÷27＝8π。Q は円錐と相似ではないので、Q＝216π−8π＝208π', dur: 7,
+        b: { t: '相似比 1：3 → 体積の比 1：27 → P＝<b>8π</b>　Q＝216π−8π＝<b>208π cm³</b>', col: C.blue },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .4 ? '切ると、上の円錐 P は もとの円錐と相似' : s.t < .75 ? 'P を 3倍に拡大すると、もとの円錐' : 'Q（円錐台）は、全体 − P'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, lift = 5 * v.ease(v.smooth(.05, .35, t)), g = v.smooth(.42, .7, t) * (1 - v.smooth(.72, .8, t));
+          order(D, [[0, 0, 6], [0, 0, 15 + lift]]).forEach(function (i) {
+            if (i) D.mesh(EP, { at: [0, 0, 12 + lift], col: C.pink }); else D.mesh(EQ, { col: C.blue, a: t > .76 ? 1 : .9 });
+          });
+          if (g > 0) { var k = 1 + 2 * v.ease(v.smooth(.42, .68, t)); D.mesh(EP, { at: [0, 0, 18 + lift - 6 * k], s: k, col: C.yel, a: .3 * g, edgeCol: 'rgba(255,226,122,.9)' }); }
+          if (!D.ph) D.circle([0, 0, 12], [1, 0, 0], [0, 1, 0], 2, { stroke: C.yel, sa: 1, sw: D.lw * 1.6 });
+          D.dim([6, 0, 0], [6, 0, 12], '12cm', { off: [1.6, 0, 0], dx: 1.6 }); D.dim([2, 0, 12 + lift], [2, 0, 18 + lift], '6cm', { off: [3, 0, 0], dx: 1.6, col: C.pink });
+          D.label([0, -2, 12 + lift + 1.6], 'P', { col: '#3a1a22', plain: true, size: 1.2 }); D.label([0, -6, 3], 'Q', { col: '#10283a', plain: true, size: 1.3 });
+          if (t > .75) { var a = v.smooth(.75, .88, t); D.label([-6, 0, 15 + lift], 'P＝8π', { col: C.yel, a: a }); D.label([-8, 0, 5], 'Q＝208π', { col: C.yel, a: a }); }
+        } },
+      { tag: '例題', bh: '例題（2）　円錐の容器の水', model: K.frame([0, 0, 4.4], 5.4), view: function () { return { th: -76, ps: 16, R: 6.4 * far() }; },
+        q: '（2）頂点を下にした円錐の形の容器に、深さが高さの半分になるまで水を入れた。水の量は、いっぱいの量の何分のいくつ？', a: '8分の1（1/8）',
+        sub: '水の部分の円錐と容器は相似。相似比 1：2 → 体積の比 1：8。見た目は半分くらいでも、8ぱいでやっといっぱい', dur: 7,
+        b: { t: '深さが半分 → 相似比 1：2 → 水の量は <b>1/8</b>', col: C.blue },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .4 ? '深さが半分になるまで水を入れると…' : s.t < .85 ? '水の円錐を 2倍に拡大すると、容器に重なる' : '相似比 1：2 → 体積の比 1：8'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 1, f = D.ph ? .5 * v.smooth(.05, .38, t) : .5, g = D.ph ? v.smooth(.45, .8, t) : 0;
+          cone(D, f, { hl: '' });
+          D.dim([-CR, 0, 0], [-CR, 0, CHh], '高さ', { off: [-1.2, 0, 0], dx: -1.8 });
+          if (f > .05) D.dim([CR * f, 0, 0], [CR * f, 0, CHh * f], '深さ', { off: [CR * (1 - f) + 1.2, 0, 0], dx: 1.8, col: C.blue });
+          if (g > 0 && t < 1) { var k = 1 + v.ease(g); D.mesh(cupCone(CR / 2, CHh / 2), { s: k, col: C.yel, a: .28, edgeCol: 'rgba(255,226,122,.9)' }); }
+          if (D.ph && t > .85) D.label([0, 0, CHh], '水 ＝ いっぱいの 1/8', { dy: -1, col: C.yel, a: v.smooth(.85, .95, t) });
+        } },
+      { tag: '考えよう', model: K.frame([0, 0, 4.4], 5.4), view: function () { return { th: -76, ps: 16, R: 6.4 * far() }; },
+        q: '頂点を下にした円錐の形の容器に水を入れる。水の量が、ちょうど いっぱいの量の半分になるのは、深さが高さのどれくらいのときだろう。',
+        notes: ['深さが高さの 1/2・2/3・3/4・4/5 のとき、水の量は いっぱいの何分のいくつか。表にまとめよう。', '気づいたこと。ちょうど半分になる深さは、どのあたりだろう。', 'スライダーで、水の深さ（高さの何倍か）を変えられます。'],
+        sliders: [{ key: 'f', label: '水の深さ', min: .1, max: 1, step: .01, val: .5, fmt: function (x) { return '高さ×' + x.toFixed(2); } }],
+        draw: function (D) {
+          var f = D.V.f; cone(D, f);
+          D.dim([-CR, 0, 0], [-CR, 0, CHh], '高さ', { off: [-1.2, 0, 0], dx: -1.8 });
+          D.dim([CR * f, 0, 0], [CR * f, 0, CHh * f], '深さ', { off: [CR * (1 - f) + 1.2, 0, 0], dx: 1.8, col: C.blue });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ　高さを 3等分', model: K.frame([0, 0, 7.5], 10.5), view: function () { return { th: -72, ps: 14, R: 12 * far() }; },
+        q: '円錐を、底面に平行な 2つの平面で、高さが 3等分されるように切り、上から順に ア、イ、ウ の 3つの立体に分ける。① ア：イ：ウ の体積の比は？ ② もとの円錐の体積が 324π cm³ のとき、イ の体積は？',
+        a: '① 1：7：19　② 84π cm³', sub: '頂点をふくむ円錐 ア、ア＋イ、全体 の相似比は 1：2：3、体積の比は 1：8：27。ア：イ：ウ＝1：(8−1)：(27−8)＝1：7：19。イ＝324π×7/27＝84π', dur: 9,
+        b: { t: '円錐は 1：8：27 → ア：イ：ウ＝<b>1：7：19</b>　イ＝324π×7/27＝<b>84π cm³</b>', col: C.orange },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .3 ? '3つに分けると…' : s.t < .7 ? '頂点をふくむ円錐は 1：2：3 → 体積 1：8：27' : 'ア 1、イ 8−1＝7、ウ 27−8＝19'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, e = v.ease(v.smooth(.05, .28, t)), z1 = 8 + 4 * e, z2 = 4 + 2 * e, step = t < .32 ? -1 : Math.min(2, Math.floor((t - .32) / .13));
+          order(D, [[0, 0, 2], [0, 0, z2 + 2], [0, 0, z1 + 2]]).forEach(function (i) { D.mesh([A3, A2, A1][i], { at: [0, 0, [0, z2, z1][i]], col: [C.orange, C.green, C.pink][i] }); });
+          if (step >= 0 && t < .72) { var k = step + 1, top = z1 + 4; D.mesh(K.cone(3 * k, 4 * k), { at: [0, 0, top - 4 * k], col: C.yel, a: .28, edgeCol: 'rgba(255,226,122,.95)' }); D.label([3 * k + 1, 0, top - 4 * k], ['ア', 'ア＋イ', '全体'][step] + '　' + [1, 8, 27][step], { col: C.yel, align: 'left' }); }
+          [['ア', z1 + 1.5, '1'], ['イ', z2 + 1.8, '7'], ['ウ', 1.8, '19']].forEach(function (q, i) {
+            D.label([[3, 6, 9][i] - [.9, .6, .3][i], -1, q[1]], q[0], { col: '#2a2017', plain: true, size: 1.2 });
+            if (t > .72) D.label([-[4.5, 7.5, 10.5][i], 0, q[1]], q[2], { col: C.yel, size: 1.2, a: v.smooth(.72, .82, t) });
+          });
+          if (!D.ph) { D.dim([9, 0, 0], [9, 0, 12], '', { off: [1.2, 0, 0] }); [0, 4, 8, 12].forEach(function (z) { D.seg([9 - z * .75 + .3, 0, z], [10.6, 0, z], { col: C.chalk, w: D.lw * .8, dash: true, a: .7 }); }); }
+          if (t > .85) D.label([0, 0, z1 + 4], 'イ ＝ 324π × 7/27 ＝ 84π', { dy: -1.2, col: C.yel, a: v.smooth(.85, .95, t) });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

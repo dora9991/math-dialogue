@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>平行と合同のまとめ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="js/geo.js"></script>
+<script>
+/* 平行と合同 第14時：「平行と合同」で学んだことを、整理して確かめよう（ikkan の lesson_heikou_new_14 と同じ流れ）。
+   図の座標は ikkan と同じ作り方（平行線と 125°、∠B＝61°・∠C＝67° の三角形、内角 110°・120°・95°・105°・x の五角形、AO＝DO・BO＝CO の図、∠A＝56° の三角形と二等分線の交点 I）。
+   座標はページの中で角度から計算した自作のデータ。角・合同・平行は座標から計算し直して確かめる（GE.verify・CH.check）。例題（AB∥DC）は GE.proof で、1行ずつ図が光る。
+   考えよう（ア〜エの考えや答えは正しいか）は、図と考えを切りかえる道具だけで、○×は出さない。 */
+(function () {
+  var C = CH.C, FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', OUT = 'rgba(20,40,30,.9)';
+  function rad(d) { return d * Math.PI / 180; }
+  function pol(c, r, d) { return [c[0] + r * Math.cos(rad(d)), c[1] + r * Math.sin(rad(d))]; }
+  function cen(ps) { var c = [0, 0]; ps.forEach(function (p) { c[0] += p[0] / ps.length; c[1] += p[1] / ps.length; }); return c; }
+  function topY(D, R) { return (CH.box(D, { t: 0, b: 0 }).y0 + R.y0) / 2; }
+  function wrap(D, x, y, w, txt, o) {
+    o = o || {}; var s = o.size || CH.fs(D), lh = s * 1.5, g = D.ctx, lines = [];
+    g.save(); g.font = '600 ' + s + 'px ' + FONT;
+    txt.split('\n').forEach(function (para) { var cur = '', tk = para.match(/[△∠(]?[A-Za-z0-9°]+(?:[≡＝+−×÷()]+[△∠]?[A-Za-z0-9°()]*)*|./g) || []; tk.forEach(function (ch) { if (cur && g.measureText(cur + ch).width > w && '、。」）…°'.indexOf(ch) < 0) { lines.push(cur); cur = ch; } else cur += ch; }); lines.push(cur); });
+    g.restore();
+    if (!o.dry) lines.forEach(function (l, i) { CH.text(D, x, y + lh * (i + .5), l, { size: s, col: o.col, align: 'left', a: o.a }); });
+    return lines.length * lh;
+  }
+  /* 扇形（world：頂点 v、角 d0 → d1 度、半径 r は画面の px）。lab は扇形の外に書く */
+  function sector(F, v, d0, d1, r, o) {
+    o = o || {}; var pts = [F.X(v)], V = F.X(v);
+    for (var i = 0; i <= 30; i++) { var d = rad(d0 + (d1 - d0) * i / 30); pts.push([V[0] + r * Math.cos(d), V[1] - r * Math.sin(d)]); }
+    CH.poly(F.D, pts, { fill: o.fill || 'rgba(255,226,122,.35)', stroke: o.col || C.yel, sw: 2, a: o.a });
+    if (o.lab) { var m = rad((d0 + d1) / 2), rr = r + F.s * .9; CH.text(F.D, V[0] + rr * Math.cos(m), V[1] - rr * Math.sin(m), o.lab, { col: o.col || C.yel, size: F.s * .85, a: o.a, outline: OUT }); }
+  }
+  function lineLab(F, p, txt) { var q = F.X(p); CH.text(F.D, q[0], q[1], txt, { size: F.s * 1.05, col: 'rgba(242,240,230,.85)', w: 400 }); }
+
+  /* ---------- 図の座標（ikkan と同じ作り方） ---------- */
+  /* 平行な ℓ（y＝h）、m（y＝0）と、上向きの角が al 度の直線 n。P・Q は交点、H・I は ℓ の左右、J・K は m の左右、U・W は n の上下のはし */
+  function parP(al, h) { var c = Math.cos(rad(al)), s = Math.sin(rad(al)), P = [h * c / s, h]; return { P: P, Q: [0, 0], H: [-2.9, h], I: [2.9, h], J: [-2.9, 0], K: [2.9, 0], U: [P[0] + .6 * c, h + .6 * s], W: [-.6 * c, -.6 * s] }; }
+  function drawPar(F, mark) {
+    GE.seg(F, 'HI'); GE.seg(F, 'JK'); GE.seg(F, 'UW', { ext: [.25, .25] });
+    if (mark) { GE.par(F, [[1.6, F.P.H[1]], [2.6, F.P.H[1]]], 1); GE.par(F, [[1.6, 0], [2.6, 0]], 1); }
+    lineLab(F, GE.add(F.P.I, [.35, 0]), 'ℓ'); lineLab(F, GE.add(F.P.K, [.35, 0]), 'm'); lineLab(F, GE.lerpP(F.P.W, F.P.U, 1.33), 'n');
+  }
+  /* 三角形 ABC（∠B＝b、∠C＝c、BC＝w）。D は BC を C のほうへのばした上の点 */
+  function triP(b, c, w) { var AB = w * Math.sin(rad(c)) / Math.sin(rad(b + c)); return { B: [0, 0], C: [w, 0], A: [AB * Math.cos(rad(b)), AB * Math.sin(rad(b))], D: [w + 1.7, 0] }; }
+  /* 凸多角形（A から順に、内角 angs）。はじめの辺の長さ lens、のこり 2辺は閉じるように計算 */
+  function polyP(angs, lens) {
+    var n = angs.length, head = [0], u = function (h) { return [Math.cos(rad(h)), Math.sin(rad(h))]; }, sx = 0, sy = 0, i;
+    for (i = 1; i < n; i++) head.push(head[i - 1] + 180 - angs[i]);
+    for (i = 0; i < n - 2; i++) { sx += lens[i] * u(head[i])[0]; sy += lens[i] * u(head[i])[1]; }
+    var a = u(head[n - 2]), b = u(head[n - 1]), det = a[0] * b[1] - a[1] * b[0], L = lens.slice(0, n - 2).concat([(-sx * b[1] + sy * b[0]) / det, (-a[0] * sy + a[1] * sx) / det]), pts = {}, x = 0, y = 0;
+    for (i = 0; i < n; i++) { pts['ABCDEFGH'[i]] = [x, y]; x += L[i] * u(head[i])[0]; y += L[i] * u(head[i])[1]; }
+    return pts;
+  }
+  /* △ABC（∠A＝56°、∠B＝64°、∠C＝60°）と、∠B・∠C の二等分線の交点 I */
+  function bisP(b, c, w) { var P = triP(b, c, w); P.I = GE.meet(P.B, pol(P.B, 1, b / 2), P.C, pol(P.C, 1, 180 - c / 2)); delete P.D; return P; }
+
+  var P1 = parP(125, 2), P2 = triP(61, 67, 4.4), P3 = polyP([110, 120, 95, 105, 110], [2.6, 3, 3.2]);
+  GE.verify(P1, 'HI∥JK、∠IPU＝125°、∠KQP＝125°、∠KQW＝55°', null, '今日の問い①');
+  GE.verify(P2, '∠BAC＝52°、∠ABC＝61°、∠BCA＝67°、∠ACD＝113°、∠ACD＝∠BAC＋∠ABC', null, '今日の問い②');
+  GE.verify(P3, '∠EAB＝110°、∠ABC＝120°、∠BCD＝95°、∠CDE＝105°、∠DEA＝110°、∠EAB＋∠ABC＋∠BCD＋∠CDE＋∠DEA＝540°', null, '今日の問い③');
+  CH.check(180 - 125 === 55 && 52 + 61 === 113 && 180 * (5 - 2) === 540 && 540 - (110 + 120 + 95 + 105) === 110, '今日の問いの計算');
+  function fig1(D, F, o) { o = o || {}; drawPar(F, true); GE.arc(F, 'IPU', { lab: '125°', r: F.s * 1.1 }); GE.arc(F, 'KQW', { lab: o.x || 'x', r: F.s * 1.1, col: o.xc, fill: o.xc ? .35 : 0 }); }
+  function fig2(D, F, o) { o = o || {}; GE.poly(F, 'ABC', { col: C.blue, fa: .12 }); GE.seg(F, 'CD'); GE.arc(F, 'BAC', { lab: '52°' }); GE.arc(F, 'CBA', { lab: '61°' }); GE.arc(F, 'ACD', { lab: o.x || 'x', col: o.xc, fill: o.xc ? .3 : 0 }); GE.labels(F, ['A', 'B', 'C', 'D'], { dir: { A: 'n', B: 'sw', C: 's', D: 'se' } }); }
+  function fig3(D, F, o) { o = o || {}; GE.poly(F, 'ABCDE', { col: C.blue, fa: .12 }); var t = ['110°', '120°', '95°', '105°', o.x || 'x'], ks = 'ABCDE'; ks.split('').forEach(function (k, i) { GE.arc(F, ks[(i + 4) % 5] + k + ks[(i + 1) % 5], { lab: t[i], col: i === 4 ? o.xc : null, fill: i === 4 && o.xc ? .3 : 0, r: F.s * .9 }); }); GE.labels(F, ks.split('')); }
+  var FIGS = [[P1, fig1, ['H', 'I', 'J', 'K', 'U', 'W']], [P2, fig2, null], [P3, fig3, null]];
+  function one(D, i, R, o) { var f = FIGS[i], F = GE.fit(D, R, f[0], { pad: .14, keys: f[2] || undefined }); f[1](D, F, o); return F; }
+
+  /* ---------- ことば：平行線と角（対頂角・同位角・錯角） ---------- */
+  var PK = parP(60, 2);
+  GE.verify(PK, '∠IPU＝∠HPQ、∠IPU＝∠KQP、∠HPQ＝∠KQP', null, 'ことば 平行線と角');
+
+  /* ---------- 例題：線分 AD と BC が O で交わり、AO＝DO、BO＝CO ならば AB∥DC ---------- */
+  var PB = { O: [0, 0], A: [-2.1, 1.5], B: [1.7, .8], C: [-1.7, -.8], D: [2.1, -1.5] };
+  var DEF = { id: '第14時 例題', lv: 1, ttl: '例題　AB∥DC の証明', P: PB,
+    q: '線分 AD と BC は点 O で交わり、AO＝DO、BO＝CO である。AB∥DC であることを証明しよう。',
+    fig: { segs: ['AB', 'CD', 'AD', 'BC'], ticks: [['AO', 1], ['OD', 1], ['BO', 2], ['OC', 2]], dir: { O: 's', A: 'nw', B: 'ne', C: 'sw', D: 'se' } },
+    hyp: 'AO＝DO、BO＝CO', goal: 'AB∥DC', tri: ['AOB', 'DOC'],
+    L: [{ t: '△AOB と △DOC で' }, { t: 'AO＝DO', r: '仮定', n: 1 }, { t: 'BO＝CO', r: '仮定', n: 2 }, { t: '∠AOB＝∠DOC', r: '対頂角は等しい', n: 3 },
+      { t: '①②③より、2組の辺とその間の角が、それぞれ等しいので △AOB≡△DOC', c: 'SAS' }, { t: '∠OAB＝∠ODC', r: '合同な図形の対応する角は等しい', n: 4 }, { t: 'AB∥DC', r: '錯角（∠OAB と ∠ODC）が等しい' }] };
+  var PROOF = GE.proof(DEF, { tag: '例題' });
+
+  /* ---------- 考えよう：ア〜エ（○×は出さない） ---------- */
+  var KA = parP(65, 2), KU = triP(60, 70, 4.4), KE = (function () { var A = [0, 0], B = [4.6, 0], Cc = [1.3, 2.9], R = function (p) { var q = GE.rot(p, [0, 0], 40); return [q[0] + 1.5, q[1] - 5]; }; return { A: A, B: B, C: Cc, D: R(A), E: R(B), F: R(Cc) }; })();
+  var OCT = {}; for (var j = 0; j < 8; j++) OCT['ABCDEFGH'[j]] = pol([0, 0], 2, -112.5 + 45 * j); OCT.X = GE.lerpP(OCT.A, OCT.B, 2);
+  GE.verify(KA, 'HI∥JK、∠IPU＝∠KQP＝65°', null, '考えよう ア');
+  GE.verify(KU, '∠BAC＝50°、∠ABC＝60°、∠ACD＝110°', null, '考えよう ウ');
+  GE.verify(KE, '△ABC≡△DEF、AC＝DF、AB＝DE', null, '考えよう エ');
+  GE.verify(OCT, '∠ABC＝135°、∠CBX＝45°', null, '考えよう イ（正八角形）');
+  CH.check(180 * (8 - 2) / 8 === 135 && 360 / 8 === 45 && !GE.near(GE.len(KE, 'AC'), GE.len(KE, 'DE')), '考えよう イ・エ（ここで確かめるだけ）');
+  var FOUR = [['ア', '図で、∠a＝65° である。ℓ と m は平行に見えるから、同位角は等しい。だから、∠x＝65° である。'],
+    ['イ', '正八角形の 1つの外角の大きさを、180°×(8−2)÷8＝135° と求めた。'],
+    ['ウ', '△ABC で、∠A＝50°、∠B＝60° である。辺 BC を C のほうへのばした直線上に点 D をとると、∠ACD＝50°+60°＝110° である。'],
+    ['エ', '△ABC≡△DEF のとき、辺 AC に対応する辺は、辺 DE である。']];
+  function drawFour(D, F, i) {
+    if (i === 0) { drawPar(F, false); GE.arc(F, 'IPU', { lab: '∠a' }); GE.arc(F, 'KQP', { lab: '∠x' }); }
+    if (i === 1) { GE.poly(F, 'ABCDEFGH', { col: C.blue, fa: .12 }); GE.seg(F, 'BX', { dash: [6, 5] }); GE.arc(F, 'CBX', { col: C.yel, fill: .35, r: F.s * 1.9 }); var xb = F.X(GE.lerpP(OCT.B, OCT.X, .55)); CH.text(D, xb[0], xb[1] + F.s * .95, '外角', { col: C.yel, size: F.s * .9, outline: OUT }); }
+    if (i === 2) { GE.poly(F, 'ABC', { col: C.blue, fa: .12 }); GE.seg(F, 'CD'); GE.arc(F, 'BAC', { lab: '50°' }); GE.arc(F, 'CBA', { lab: '60°' }); GE.arc(F, 'ACD', { r: F.s * 1.1 }); GE.labels(F, ['A', 'B', 'C', 'D'], { dir: { A: 'n', B: 'sw', C: 's', D: 'se' } }); }
+    if (i === 3) { GE.poly(F, 'ABC', { col: C.blue, fa: .14 }); GE.poly(F, 'DEF', { col: C.orange, fa: .14 }); GE.labels(Object.assign({}, F, { c: cen([KE.A, KE.B, KE.C]) }), ['A', 'B', 'C']); GE.labels(Object.assign({}, F, { c: cen([KE.D, KE.E, KE.F]) }), ['D', 'E', 'F']); }
+  }
+
+  /* ---------- チャレンジ：∠B・∠C の二等分線の交点 I。∠A＝56° → ∠BIC＝118°、∠A＝a° → 90°＋a°÷2 ---------- */
+  var PI = bisP(64, 60, 4.6);
+  GE.verify(PI, '∠BAC＝56°、∠IBC＝∠ABI＝32°、∠ICB＝∠ACI＝30°、∠IBC＋∠ICB＝62°、∠BIC＝118°', null, 'チャレンジ');
+  CH.check([[50, 70], [64, 60], [30, 100], [80, 55]].every(function (bc) { return GE.near(GE.ang(bisP(bc[0], bc[1], 4.6), 'BIC'), 90 + (180 - bc[0] - bc[1]) / 2); }) && (180 - 56) / 2 === 62 && 180 - 62 === 118, 'チャレンジ：∠BIC＝90°＋∠A÷2');
+
+  K3.run({
+    no: '第14時', title: '「平行と合同」で学んだことを、整理して確かめよう', flat: true, hint: '', alt: '平行線と角・多角形・合同の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '13.html', label: '◀ 第13時' }],
+    steps: [
+      { tag: '今日の問い', bh: '今日の問い　∠x を求める', q: '①〜③の図で、∠x の大きさを求めよう。また、使った性質も答えよう。（①は ℓ∥m である。）',
+        notes: ['① 自分の考え（3分）　∠x と、使った性質を書こう。', '② ペアの考え（3分）　ちがう求め方や、性質のことばを書こう。'],
+        draw: function (D) {
+          var R = CH.box(D, { l: .03, r: .03, t: .05, b: .06 }), rs;
+          var rw = CH.rows(R, 2, .06), top = CH.cols(rw[0], 2, .06); rs = top.concat([CH.rect(R.cx - top[0].w / 2, rw[1].y0, R.cx + top[0].w / 2, rw[1].y1)]);   // 上に①②、下に③
+          rs.forEach(function (r, i) { CH.text(D, r.x0 + CH.fs(D, .8), r.y0 + CH.fs(D, .8), '①②③'[i], { col: C.yel, size: CH.fs(D, 1.2) }); one(D, i, CH.rect(r.x0, r.y0 + CH.fs(D, .6), r.x1, r.y1)); });
+        } },
+      { tag: '今日の問い', q: '① ℓ∥m のとき、∠x は？ 使った性質は？', a: '∠x＝55°', sub: '平行線の同位角は等しいから、n と m の交点の上の右の角も 125°。一直線の角だから x＝180°−125°＝55°', dur: 5,
+        b: { t: '① 同位角 → 125°、一直線の角 → <b>x＝180°−125°＝55°</b>', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .1, r: .1, t: .16, b: .1 }), t = D.ph ? D.t : 0, k1 = CH.smooth(.02, .2, t), k2 = CH.smooth(.25, .6, t), k3 = CH.smooth(.66, .86, t);
+          var F = one(D, 0, R, { x: k3 > .5 ? '55°' : 'x', xc: k3 > 0 ? C.pink : null }), r = F.s * 1.6, v = GE.lerpP(P1.P, P1.Q, CH.ease(k2));
+          if (k1 > 0) sector(F, P1.P, 0, 125, r, { a: k1, lab: k2 > 0 ? null : '125°' });
+          if (k2 > 0) sector(F, v, 0, 125, r, { a: k1, lab: k2 >= 1 ? '同位角 125°' : null });
+          if (k3 > 0) CH.text(D, R.cx, topY(D, R), 'x ＝ 180° − 125° ＝ 55°', { col: C.pink, a: k3, size: CH.fs(D, 1.15), outline: OUT });
+        } },
+      { tag: '今日の問い', q: '② ∠x（∠ACD）は？ 使った性質は？', a: '∠x＝113°', sub: '三角形の外角は、それととなり合わない 2つの内角の和に等しい（外角の性質）。x＝52°＋61°＝113°', dur: 6,
+        b: { t: '② 外角の性質 → <b>x＝52°＋61°＝113°</b>', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .08, r: .08, t: .16, b: .1 }), t = D.ph ? D.t : 0, k1 = CH.smooth(.04, .4, t), k2 = CH.smooth(.46, .86, t), k3 = CH.smooth(.88, .98, t);
+          var F = one(D, 1, R, { x: k3 > 0 ? '' : 'x', xc: k3 > 0 ? C.yel : null }), r = F.s * 2.2;
+          if (k1 > 0) { GE.seg(F, [P2.C, pol(P2.C, 2.2, 61)], { dash: [6, 5], a: k1, col: 'rgba(242,240,230,.7)' }); sector(F, GE.lerpP(P2.B, P2.C, CH.ease(k1)), 0, 61, r, { fill: 'rgba(154,216,255,.35)', col: C.blue, lab: k1 >= 1 ? '61°' : null }); }
+          if (k2 > 0) { var e = CH.ease(k2); sector(F, GE.lerpP(P2.A, P2.C, e), 241 - 180 * e, 293 - 180 * e, r, { fill: 'rgba(255,157,178,.35)', col: C.pink, lab: k2 >= 1 ? '52°' : null }); }
+          if (k3 > 0) CH.text(D, R.cx, topY(D, R), 'x ＝ 52° ＋ 61° ＝ 113°', { col: C.yel, a: k3, size: CH.fs(D, 1.15), outline: OUT });
+        } },
+      { tag: '今日の問い', q: '③ 五角形の ∠x は？ 使った性質は？', a: '∠x＝110°', sub: '五角形は、1つの頂点からの対角線で 3つの三角形に分けられるから、内角の和は 180°×(5−2)＝540°。x＝540°−(110°＋120°＋95°＋105°)＝110°', dur: 5,
+        b: { t: '③ 五角形の内角の和 180°×(5−2)＝540° → <b>x＝540°−430°＝110°</b>', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .1, r: .1, t: .16, b: .08 }), t = D.ph ? D.t : 0, cols = ['rgba(154,216,255,.3)', 'rgba(255,157,178,.3)', 'rgba(169,240,176,.3)'];
+          var F = GE.fit(D, R, P3, { pad: .14 }), k3 = CH.smooth(.7, .9, t);
+          ['ABC', 'ACD', 'ADE'].forEach(function (tr, i) { var a = CH.smooth(.04 + i * .18, .18 + i * .18, t); if (a > 0) CH.poly(D, tr.split('').map(function (k) { return F.X(k); }), { fill: cols[i], a: a }); });
+          fig3(D, F, { x: k3 > .5 ? '110°' : 'x', xc: k3 > 0 ? C.yel : null });
+          var a2 = CH.smooth(.04, .3, t); if (a2 > 0) { GE.seg(F, 'AC', { dash: [6, 5], a: a2 }); GE.seg(F, 'AD', { dash: [6, 5], a: a2 }); }
+          var a4 = CH.smooth(.56, .7, t); if (a4 > 0) CH.text(D, R.cx, topY(D, R), k3 > 0 ? 'x ＝ 540° − 430° ＝ 110°' : '180° × 3 ＝ 540°', { col: C.yel, a: a4, size: CH.fs(D, 1.1), outline: OUT });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '向かい合う角を何という？ 平行線で等しくなる 2種類の角は？', a: '対頂角・同位角・錯角',
+        sub: '三角形の内角の和は 180°、n角形の内角の和は 180°×(n−2)、多角形の外角の和は 360°。三角形の合同条件は 3つ。根拠をあげて筋道を立てて示すことが証明', dur: 6,
+        b: [{ t: '<b>対頂角</b>は等しい。平行線の<b>同位角</b>・<b>錯角</b>は等しい', col: C.green }, { t: '三角形の内角の和 <b>180°</b>　n角形 <b>180°×(n−2)</b>　外角の和 <b>360°</b>', col: C.green }, { t: '三角形の<b>合同条件</b>は 3つ。<b>根拠</b>をあげて示すこと … <b>証明</b>', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .12, r: .12, t: .18, b: .1 }), F = GE.fit(D, R, PK, { pad: .14, keys: ['H', 'I', 'J', 'K', 'U', 'W'] }), t = D.ph ? D.t : 0;
+          drawPar(F, true); GE.labels(F, ['P', 'Q'], { dir: { P: 'nw', Q: 'se' } });
+          var pr = [['対頂角', 'IPU', 'HPQ', C.yel], ['同位角', 'IPU', 'KQP', C.pink], ['錯角', 'HPQ', 'KQP', C.green]], cur = D.ph ? Math.min(2, Math.floor(t * 3)) : -1;
+          pr.forEach(function (p, i) { if (i !== cur) return; var a = CH.smooth(i / 3, i / 3 + .08, t); GE.arc(F, p[1], { col: p[3], fill: .45, r: F.s * 1.5, a: a }); GE.arc(F, p[2], { col: p[3], fill: .45, r: F.s * 1.5, a: a }); CH.text(D, R.cx, topY(D, R), p[0] + 'は等しい', { col: p[3], a: a, size: CH.fs(D, 1.15), outline: OUT }); });
+        } }
+    ].concat(PROOF, [
+      { tag: '考えよう', q: 'ア〜エは、この単元の問題についての、ある生徒の考えや答えである。それぞれ「正しい」か「正しくない」か。わけも書こう。',
+        notes: ['① ア〜エを、○か×かと、わけで書こう。×は、直そう。', '② 角度をはかって確かめることと、証明することは、どこがちがうだろう。', 'スライダーで、ア〜エの考えと図を切りかえられます。'],
+        sliders: [{ key: 'i', label: '考え', min: 0, max: 3, step: 1, val: 0, fmt: function (x) { return FOUR[x][0]; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .05, b: .06 }), wide = D.W > D.H * 1.05, i = D.V.i, s = Math.min(CH.fs(D, wide ? .9 : 1), D.W / 26);
+          var cr = wide ? CH.rect(R.x0 + R.w * .5, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .4), fr = wide ? CH.rect(R.x0, R.y0, R.x0 + R.w * .48, R.y1) : CH.rect(R.x0, R.y0 + R.h * .44, R.x1, R.y1);
+          var P = [KA, OCT, KU, KE][i], keys = i === 0 ? ['H', 'I', 'J', 'K', 'U', 'W'] : undefined, F = GE.fit(D, fr, P, { pad: .14, keys: keys });
+          drawFour(D, F, i);
+          var pad = s * .9, txt = FOUR[i][1], h = wrap(D, 0, 0, cr.w - pad * 2, txt, { size: s, dry: true }) + s * 1.6 + pad * 2, c = CH.rect(cr.x0, cr.cy - h / 2, cr.x1, cr.cy + h / 2);
+          CH.card(D, c.cx, c.cy, c.w, c.h, '', { col: C.yel, fill: 'rgba(255,226,122,.07)', sw: 2 });
+          CH.text(D, c.x0 + pad, c.y0 + pad + s * .3, FOUR[i][0], { size: s * 1.15, col: C.yel, align: 'left' });
+          wrap(D, c.x0 + pad, c.y0 + pad + s * 1.3, c.w - pad * 2, txt, { size: s });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ　二等分線の交点', q: '△ABC の ∠B、∠C の二等分線の交点を I とする。① ∠A＝56° のとき、∠BIC の大きさは？ ② ∠A＝a° のとき、∠BIC を a を使って表そう。',
+        a: '① 118°　② 90°＋a°÷2', sub: '① ∠IBC＋∠ICB＝(∠B＋∠C)÷2＝(180°−56°)÷2＝62° だから ∠BIC＝180°−62°＝118°　② ∠IBC＋∠ICB＝(180°−a°)÷2 だから ∠BIC＝180°−(180°−a°)÷2＝90°＋a°÷2', dur: 6,
+        b: { t: '∠IBC＋∠ICB＝(180°−56°)÷2＝62° → <b>∠BIC＝118°</b>、一般に <b>90°＋a°÷2</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .1, r: .1, t: .18, b: .08 }), F = GE.fit(D, R, PI, { pad: .12 }), t = D.ph ? D.t : 0, k1 = CH.smooth(.04, .3, t), k2 = CH.smooth(.4, .6, t), k3 = CH.smooth(.7, .9, t);
+          GE.poly(F, 'ABC', { col: C.blue, fa: .12 }); GE.seg(F, 'BI'); GE.seg(F, 'CI');
+          GE.arc(F, 'BAC', { lab: '56°' }); GE.arc(F, 'CBI', { n: 1, r: F.s * 1.3, col: C.blue, fill: .25 }); GE.arc(F, 'IBA', { n: 1, r: F.s * 1.3, col: C.blue, fill: .25 }); GE.arc(F, 'BCI', { n: 2, r: F.s * 1.3, col: C.green, fill: .25 }); GE.arc(F, 'ICA', { n: 2, r: F.s * 1.3, col: C.green, fill: .25 });
+          if (k1 > 0) { GE.arc(F, 'CBI', { col: C.yel, fill: .45, r: F.s * 1.3, a: k1 }); GE.arc(F, 'BCI', { col: C.yel, fill: .45, r: F.s * 1.3, a: k1 }); GE.poly(F, 'IBC', { col: C.yel, fa: .15 * k1, stroke: false }); }
+          GE.arc(F, 'BIC', { lab: k3 > .5 ? '118°' : 'x', col: k3 > 0 ? C.pink : null, fill: k3 > 0 ? .35 : 0, r: F.s * .9 });
+          GE.labels(F, ['A', 'B', 'C', 'I'], { dir: { A: 'n', B: 'sw', C: 'se', I: 'n' } });
+          var line = k3 > 0 ? ['∠BIC ＝ 180° − 62° ＝ 118°', C.pink, k3] : k2 > 0 ? ['∠IBC＋∠ICB ＝ (180° − 56°) ÷ 2 ＝ 62°', C.yel, k2] : null;
+          if (line) CH.text(D, R.cx, topY(D, R), line[0], { col: line[1], a: line[2], size: Math.min(CH.fs(D, 1.05), D.W / 24), outline: OUT });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

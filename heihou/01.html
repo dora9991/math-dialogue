@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>面積が2の正方形の1辺</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 平方根 第1時：面積が2の正方形の1辺は、どんな数だろう（ikkan の lesson_heihou_01 と同じ流れ）。
+   図の数値は ikkan のデータ（自作）と同じ（今日の問い 図1〜図3、1.4²・1.5²・1.41²・1.42²、例題 面積 5（2.2・2.3・2.23・2.24）、
+   考えようの面積 2・4・5・9・0.25・0.5・1.44、チャレンジ 5×5 の方眼の面積 13）。
+   方眼の上の正方形は頂点の座標から描き、面積は座標から計算し直して確かめる（CH.check）。小数の2乗は、整数にして計算し直す。
+   2×2 の正方形のすみの三角形4つを内がわに折ると、まん中の正方形にぴったり重なる（面積 4 の半分）。
+   数直線の区間が 1〜2 → 1.4〜1.5 → 1.41〜1.42 → 1.414〜1.415 とせまくなる（はさみうち）。単位正方形の対角線をたおすと、数直線の √2 の場所。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)', S2 = Math.SQRT2;
+  /* ---- このページの道具 ---- */
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D); if (o.maxW) size = CH.fitSize(D, s, o.maxW, size, { num: o.num }); CH.text(D, x, y, s, { col: o.col, a: o.a, size: size, num: o.num, align: o.align, outline: o.outline === false ? null : OUT }); }
+  /* 図の上の1行（row 行目） */
+  function top(D, s, col, a, row) { var B = CH.box(D, { t: 0, l: .03, r: .03 }), f = CH.fs(D, 1); say(D, B.cx, B.y0 + f * (.8 + (row || 0) * 1.35), s, { col: col || C.yel, a: a, size: f, maxW: B.w }); }
+  /* 図の枠：四角 R に、座標の範囲 bx＝[x0, y0, x1, y1] を入れる */
+  function fr(D, R, bx, u) { var cx = (bx[0] + bx[2]) / 2, cy = (bx[1] + bx[3]) / 2; if (!u) u = Math.min(R.w / (bx[2] - bx[0]), R.h / (bx[3] - bx[1])); return { X: function (p) { return [R.cx + (p[0] - cx) * u, R.cy - (p[1] - cy) * u]; }, u: u, D: D, R: R, s: CH.fs(D, 1) }; }
+  function poly(F, ps, o) { CH.poly(F.D, ps.map(function (p) { return F.X(p); }), o); }
+  /* 方眼（1目もり 1） */
+  function grid(F, x0, y0, x1, y1, a) {
+    var g = F.D.ctx, x, y, p, q; g.save(); g.globalAlpha = F.D.ga * (a == null ? 1 : a); g.strokeStyle = 'rgba(242,240,230,.2)'; g.lineWidth = 1; g.beginPath();
+    for (x = x0; x <= x1 + 1e-9; x++) { p = F.X([x, y0]); q = F.X([x, y1]); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); }
+    for (y = y0; y <= y1 + 1e-9; y++) { p = F.X([x0, y]); q = F.X([x1, y]); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); }
+    g.stroke(); g.restore();
+  }
+  function mid(p, q) { return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2]; }
+  /* 小数：整数 N を 10^k でわった字（終わりの 0 はとる） */
+  function dec(N, k) { var s = String(N); while (s.length <= k) s = '0' + s; if (!k) return s; return (s.slice(0, s.length - k) + '.' + s.slice(s.length - k)).replace(/0+$/, '').replace(/\.$/, ''); }
+  /* 小数第 k 位までの x の2乗（字）。整数にして計算する */
+  function sq(x, k) { var X = Math.round(x * Math.pow(10, k)); return dec(X * X, 2 * k); }
+  function fx(v) { return String(Math.round(v * 1e6) / 1e6); }
+  /* くつ下の公式（多角形の面積）と、2点のきょりの2乗 */
+  function shoe(p) { var s = 0; p.forEach(function (q, i) { var r = p[(i + 1) % p.length]; s += q[0] * r[1] - r[0] * q[1]; }); return Math.abs(s) / 2; }
+  function d2(p, q) { return (p[0] - q[0]) * (p[0] - q[0]) + (p[1] - q[1]) * (p[1] - q[1]); }
+  /* 数直線（よこ）：lo〜hi、step ごとに目もり（big こごとに長い目もり）。labs の値に字 */
+  function NL(D, x0, x1, y, lo, hi, step, o) {
+    o = o || {}; var s = o.s || CH.fs(D, .75), n = Math.round((hi - lo) / step), a = o.a == null ? 1 : o.a, X = function (v) { return x0 + (v - lo) / (hi - lo) * (x1 - x0); };
+    CH.line(D, x0 - s * .5, y, x1 + s * .5, y, { w: 2, a: a });
+    for (var i = 0; i <= n; i++) { var big = i === 0 || i === n || (o.big && i % o.big === 0), xx = X(lo + i * step); CH.line(D, xx, y - (big ? 8 : 4), xx, y + (big ? 8 : 4), { w: big ? 2 : 1.2, a: a }); }
+    (o.labs || [lo, hi]).forEach(function (v) { CH.text(D, X(v), y + s * 1.3, fx(v), { size: s, num: true, a: a, col: o.lc }); });
+    return { X: X, y: y, s: s };
+  }
+  /* はさみうち：lv＝[{ lo, hi, step, big, a, b, txt, res }]。i 段めの濃さ k(i)、色をぬる濃さ kb(i) */
+  function squeeze(D, R, lv, k, kb) {
+    var rs = CH.rows(R, lv.length, .12), s = CH.fs(D, .85), prev = null;
+    lv.forEach(function (L, i) {
+      var r = rs[i], ki = k(i); if (ki <= 0) { prev = null; return; }
+      var y = r.y0 + Math.min(r.h * .55, s * 3), x0 = r.x0 + s * 1.2, x1 = r.x1 - s * 1.2, bi = kb ? kb(i) : ki;
+      var N = NL(D, x0, x1, y, L.lo, L.hi, L.step, { a: ki, big: L.big, s: CH.fs(D, .72) });
+      if (prev) { CH.line(D, prev[0], prev[2], x0, y - 9, { col: C.yel, dash: [5, 5], w: 1.4, a: ki * .7 }); CH.line(D, prev[1], prev[2], x1, y - 9, { col: C.yel, dash: [5, 5], w: 1.4, a: ki * .7 }); }
+      if (L.a != null && bi > 0) {
+        CH.fillRect(D, N.X(L.a), y - 7, N.X(L.b), y + 7, { fill: hexA(C.yel, .4), stroke: C.yel, sw: 2, a: bi });
+        if (L.txt) say(D, r.cx, r.y0 + s * .55, L.txt, { size: s, a: bi, maxW: r.w, num: true });
+        if (L.res) say(D, r.cx, y + s * 1.35, L.res, { size: s, a: bi, col: C.yel, maxW: r.w * .6, num: true });
+        prev = [N.X(L.a), N.X(L.b), y + 9];
+      } else prev = null;
+    });
+  }
+
+  /* ---- 数と検算 ---- */
+  var SQ1 = [[0, 0], [1, 0], [1, 1], [0, 1]], SQ4 = [[0, 0], [2, 0], [2, 2], [0, 2]], SQ2 = [[1, 0], [2, 1], [1, 2], [0, 1]];
+  var SQ5 = [[1, 0], [3, 1], [2, 3], [0, 2]], SQ13 = [[2, 0], [5, 2], [3, 5], [0, 3]];
+  CH.check(shoe(SQ1) === 1 && shoe(SQ4) === 4 && shoe(SQ2) === 2 && d2(SQ2[0], SQ2[1]) === 2 && shoe(SQ2) === shoe(SQ4) / 2, '今日の問い（図1〜図3 の面積）');
+  /* 2×2 のすみの三角形（すみ、辺の端、辺の端）。折ると、まん中 (1, 1) に重なる */
+  var CORN = [[[0, 0], [1, 0], [0, 1]], [[2, 0], [2, 1], [1, 0]], [[2, 2], [1, 2], [2, 1]], [[0, 2], [0, 1], [1, 2]]];
+  CH.check(CORN.every(function (c) { var m = mid(c[1], c[2]); return CH.near(2 * m[0] - c[0][0], 1) && CH.near(2 * m[1] - c[0][1], 1) && shoe(c) === .5; }) && 4 * .5 === shoe(SQ2), '今日の問い（すみの三角形を折る）');
+  /* はさみうち：x² が 2 をはさむ */
+  var LV2 = [[1, 2, .1, 1.4, 1.5], [1.4, 1.5, .01, 1.41, 1.42], [1.41, 1.42, .001, 1.414, 1.415]].map(function (q, i) {
+    var k = i + 1;
+    return { lo: q[0], hi: q[1], step: q[2], big: 5, a: q[3], b: q[4], txt: fx(q[3]) + '²＝' + sq(q[3], k) + '、' + fx(q[4]) + '²＝' + sq(q[4], k), res: fx(q[3]) + '＜x＜' + fx(q[4]) };
+  });
+  CH.check(LV2[0].txt === '1.4²＝1.96、1.5²＝2.25' && LV2[1].txt === '1.41²＝1.9881、1.42²＝2.0164' && LV2[2].txt === '1.414²＝1.999396、1.415²＝2.002225' &&
+    LV2.every(function (L) { return L.a * L.a < 2 && 2 < L.b * L.b && L.a < S2 && S2 < L.b; }) && Math.floor(S2 * 1e8) === 141421356, '今日の問い（1.4＜x＜1.5、1.41＜x＜1.42）');
+  /* 例題：面積 5（まわり 3×3 から 2×1÷2 の三角形4つ） */
+  var T5 = [[[0, 0], [1, 0], [0, 2]], [[1, 0], [3, 0], [3, 1]], [[3, 1], [3, 3], [2, 3]], [[2, 3], [0, 3], [0, 2]]];
+  var EXX = [2.2, 2.3, 2.23, 2.24], EXV = EXX.map(function (x, i) { return sq(x, i < 2 ? 1 : 2); });
+  CH.check(shoe(SQ5) === 5 && d2(SQ5[0], SQ5[1]) === 5 && 9 - T5.reduce(function (s, t) { return s + shoe(t); }, 0) === 5 && EXV.join() === '4.84,5.29,4.9729,5.0176' &&
+    2.23 < Math.sqrt(5) && Math.sqrt(5) < 2.24 && 2.23 * 2.23 < 5 && 2.24 * 2.24 > 5, '例題（面積 5、2.23＜x＜2.24）');
+  /* 考えよう：面積の候補（答えは出さない） */
+  var AR = [2, 4, 5, 9, 0.25, 0.5, 1.44];
+  /* チャレンジ：5×5 から 3×2÷2 の三角形4つ → 13、3.6²＝12.96、3.7²＝13.69 */
+  var T13 = [[[0, 0], [2, 0], [0, 3]], [[2, 0], [5, 0], [5, 2]], [[5, 2], [5, 5], [3, 5]], [[3, 5], [0, 5], [0, 3]]];
+  CH.check(shoe(SQ13) === 13 && d2(SQ13[0], SQ13[1]) === 13 && 25 - T13.reduce(function (s, t) { return s + shoe(t); }, 0) === 13 && T13.every(function (t) { return shoe(t) === 3; }) &&
+    sq(3.6, 1) === '12.96' && sq(3.7, 1) === '13.69' && 3.6 < Math.sqrt(13) && Math.sqrt(13) < 3.7, 'チャレンジ（13、√13、3.6＜√13＜3.7）');
+
+  /* ---- 今日の問い：図1〜図3 ---- */
+  function panel(D, c, P, cap, l1, l2, o) {
+    o = o || {}; var s = CH.fs(D, .85), u = Math.min(c.w / 2.4, (c.h - s * 4.6) / 2), gy = c.cy + u - s * .6;
+    var F = { X: function (p) { return [c.cx + (p[0] - 1) * u, gy - p[1] * u]; }, u: u, D: D, s: s };
+    grid(F, 0, 0, 2, 2);
+    poly(F, P, { fill: hexA(o.col || C.blue, .25), stroke: o.col || C.blue, sw: 2.6 });
+    say(D, c.cx, gy - 2 * u - s * 1.1, cap, { size: s });
+    say(D, c.cx, gy + s * 1.1, l1, { size: s, maxW: c.w, col: o.c1 });
+    say(D, c.cx, gy + s * 2.4, l2, { size: s, maxW: c.w, col: o.c2 });
+    return F;
+  }
+  function three(D) {
+    var R = CH.box(D, { l: .03, r: .03, t: .1, b: .06 }), cs = CH.cols(R, 3, .08);
+    panel(D, cs[0], SQ1, '図1', '1辺 1cm', '面積 1cm²');
+    panel(D, cs[1], SQ4, '図2', '1辺 2cm', '面積 4cm²');
+    panel(D, cs[2], SQ2, '図3', '1辺 x cm', '面積 2cm²', { col: C.orange, c1: C.yel });
+  }
+  /* すみの三角形を内がわに折る（t：答えの進み） */
+  function fold(D, t) {
+    var R = CH.box(D, { l: .05, r: .05, t: .18, b: .06 }), F = fr(D, R, [-.3, -.3, 2.3, 2.3]), s = F.s;
+    grid(F, 0, 0, 2, 2);
+    var k0 = CH.smooth(0, .1, t);
+    poly(F, SQ4, { stroke: C.chalk, sw: 2.2, dash: true, a: .5 + .5 * k0 });
+    poly(F, SQ2, { fill: hexA(C.orange, .22), stroke: C.orange, sw: 3 });
+    CORN.forEach(function (c, i) {
+      if (t <= 0) return;
+      var k = CH.ease(CH.smooth(.14 + i * .14, .3 + i * .14, t)), m = mid(c[1], c[2]), cs = Math.cos(Math.PI * k), p = [m[0] + (c[0][0] - m[0]) * cs, m[1] + (c[0][1] - m[1]) * cs];
+      poly(F, [c[1], c[2], p], { fill: hexA(k > .5 ? C.pink : C.blue, .4), stroke: k > .5 ? C.pink : C.blue, sw: 2, a: k0 });
+    });
+    var ce = F.X([1, 1]);
+    say(D, ce[0], ce[1], t >= .8 ? '2cm²' : '?', { size: s * 1.1, col: t >= .8 ? C.yel : C.chalk, num: true });
+    if (t <= 0) { top(D, '図3 の正方形の面積は、なぜ 2cm² といえる？', C.chalk, 1, 0); return; }
+    if (t < .14) top(D, '図2 の正方形（面積 4cm²）', C.chalk, k0, 0);
+    else if (t < .8) top(D, 'すみの三角形4つを、内がわに折ると…', C.pink, 1, 0);
+    else { top(D, 'まん中の正方形に、ぴったり重なる', C.pink, 1, 0); top(D, '図3 ＝ 図2 の半分 → 4÷2＝2（cm²）', C.yel, CH.smooth(.82, .95, t), 1); }
+  }
+  /* 単位正方形の対角線（面積 2 の正方形の1辺）を、数直線にたおす */
+  function diag(D, t) {
+    var R = CH.box(D, { l: .05, r: .05, t: .1, b: .1 }), F = fr(D, R, [-1.25, -1.05, 3.25, 2.1]), s = F.s, o = F.X([0, 0]), y = o[1];
+    grid(F, -1, 0, 3, 2, .7);
+    CH.line(D, F.X([-1.2, 0])[0], y, F.X([3.2, 0])[0], y, { w: 2.4 });
+    for (var i = -10; i <= 30; i++) { var x = F.X([i / 10, 0])[0], big = i % 10 === 0; CH.line(D, x, y - (big ? 8 : 4), x, y + (big ? 8 : 4), { w: big ? 2 : 1.1 }); if (big) say(D, x, y + s * 1.1, String(i / 10).replace('-', '−'), { size: s * .8, num: true }); }
+    poly(F, [[0, 0], [1, 1], [0, 2], [-1, 1]], { fill: hexA(C.orange, .2), stroke: C.orange, sw: 2.6 });
+    poly(F, SQ1, { stroke: C.chalk, sw: 1.6, dash: true });
+    var c = F.X([0, 1.05]); say(D, c[0], c[1], '面積 2', { size: s * .9, col: C.orange });
+    var k1 = CH.smooth(0, .2, t), k2 = CH.ease(CH.smooth(.25, .6, t)), k3 = CH.smooth(.65, 1, t), th = Math.PI / 4 * (1 - k2), e = [S2 * Math.cos(th), S2 * Math.sin(th)];
+    var lab = F.X([.62, .38]); say(D, lab[0], lab[1], k1 > .5 ? '√2' : '?', { size: s, col: k1 > .5 ? C.yel : C.chalk, num: true });
+    if (t > 0) {
+      var g = D.ctx; g.save(); g.globalAlpha = D.ga * k1; g.strokeStyle = C.yel; g.lineWidth = 1.6; g.setLineDash([5, 5]); g.beginPath(); g.arc(o[0], o[1], S2 * F.u, -Math.PI / 4, -th); g.stroke(); g.restore();
+      var E = F.X(e); CH.line(D, o[0], o[1], E[0], E[1], { col: C.yel, w: 4.5, glow: true, a: k1 });
+    }
+    if (k2 >= 1) { var P = F.X([S2, 0]); CH.circle(D, P[0], P[1], s * .3, { fill: C.yel }); say(D, P[0], P[1] - s * 1.1, '√2', { col: C.yel, size: s, num: true }); }
+    if (k3 > 0) { var dg = '1.41421356', n = Math.max(1, Math.round(k3 * dg.length)), txt = '√2 ＝ ' + dg.slice(0, n) + (n >= dg.length ? '…' : ''); say(D, R.cx, y + s * 2.7, txt, { col: C.yel, size: s * 1.1, maxW: R.w, num: true }); }
+  }
+  /* 例題：面積 5 の正方形と、x² の表 */
+  function ex5(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .05, b: .05 }), sp = CH.split(D, R, 2, .06), c = sp[0], s = CH.fs(D, .85);
+    var F = fr(D, c, [-.45, -.45, 3.45, 3.45]); grid(F, 0, 0, 3, 3);
+    poly(F, [[0, 0], [3, 0], [3, 3], [0, 3]], { stroke: C.chalk, sw: 1.6, dash: true, a: .7 });
+    poly(F, SQ5, { fill: hexA(C.orange, .22), stroke: C.orange, sw: 2.6 });
+    var ce = F.X([1.5, 1.5]); say(D, ce[0], ce[1], '5cm²', { size: F.s, col: C.orange, num: true });
+    var lx = F.X([2.2, .22]); say(D, lx[0], lx[1], 'x', { size: F.s, col: C.yel });
+    var r = sp[1], rs = CH.rows(r, 2, .12), k = [1, CH.smooth(.02, .14, t), CH.smooth(.16, .28, t), CH.smooth(.3, .42, t)], kh = CH.smooth(.48, .58, t);
+    CH.table(D, rs[0], ['x', '2.2', '2.3', '2.23', '2.24'], [['x²'].concat(EXV)], { fw: .2, show: function (rr, cc) { return rr === 1 && cc > 1 ? (D.ph ? k[cc - 1] : 0) : 1; }, hl: function (rr, cc) { return D.ph && t > .48 && cc >= 3 ? C.yel : null; } });
+    if (D.ph && t > .48) {
+      var q = rs[1], y = q.y0 + Math.min(q.h * .45, s * 2.6), N = NL(D, q.x0 + s, q.x1 - s, y, 2.2, 2.3, .01, { big: 5, s: CH.fs(D, .72), a: kh });
+      CH.fillRect(D, N.X(2.23), y - 7, N.X(2.24), y + 7, { fill: hexA(C.yel, .4), stroke: C.yel, sw: 2, a: kh });
+      say(D, N.X(2.23) - 3, y - s * 1.1, '2.23', { size: s * .85, num: true, align: 'right', col: C.yel, a: kh });
+      say(D, N.X(2.24) + 3, y - s * 1.1, '2.24', { size: s * .85, num: true, align: 'left', col: C.yel, a: kh });
+      say(D, q.cx, y + s * 2.6, '4.9729 ＜ 5 ＜ 5.0176 → 2.23 ＜ x ＜ 2.24', { size: s, num: true, col: C.yel, a: CH.smooth(.65, .8, t), maxW: q.w });
+      say(D, q.cx, y + s * 4, 'x ＝ √5', { size: s * 1.1, col: C.yel, a: CH.smooth(.85, 1, t), num: true });
+    }
+  }
+  /* 考えよう：1辺 x の正方形と、面積 a の正方形（点線）をくらべる道具 */
+  function tool(D, ai, xi) {
+    var a = AR[ai], x = xi / 100, R = CH.box(D, { l: .04, r: .04, t: .05, b: .04 }), sp = CH.split(D, R, 2, .06), c = sp[0];
+    var F = fr(D, c, [-.45, -.5, 3.4, 3.4]), s = F.s; grid(F, 0, 0, 3, 3);
+    for (var i = 0; i <= 3; i++) { var p = F.X([i, 0]); say(D, p[0], p[1] + s * .9, String(i), { size: s * .75, num: true, outline: false }); }
+    if (x > 0) poly(F, [[0, 0], [x, 0], [x, x], [0, x]], { fill: hexA(C.blue, .3), stroke: C.blue, sw: 2.4 });
+    var r = Math.sqrt(a); poly(F, [[0, 0], [r, 0], [r, r], [0, r]], { stroke: C.yel, sw: 2.4, dash: true });
+    var X2 = xi * xi, A = Math.round(a * 10000), sg = X2 < A ? '＜' : X2 > A ? '＞' : '＝', q = sp[1], f = CH.fs(D, 1.05), y0 = q.cy - f * 2.4;
+    say(D, q.cx, y0, '面積 ' + fx(a) + 'cm² の正方形（点線）', { size: f, col: C.yel, maxW: q.w });
+    say(D, q.cx, y0 + f * 1.6, '1辺 x ＝ ' + x.toFixed(2), { size: f, col: C.blue, maxW: q.w, num: true });
+    say(D, q.cx, y0 + f * 3.2, 'x² ＝ ' + dec(X2, 4), { size: f, maxW: q.w, num: true });
+    say(D, q.cx, y0 + f * 4.8, 'x² ' + sg + ' ' + fx(a), { size: f * 1.15, maxW: q.w, num: true, col: sg === '＝' ? C.green : C.chalk });
+  }
+  /* チャレンジ：5×5 の方眼の正方形 */
+  function chal(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .05, b: .05 }), sp = CH.split(D, R, 2, .06), c = sp[0], s = CH.fs(D, .9);
+    var F = fr(D, c, [-.35, -.35, 5.35, 5.35]); grid(F, 0, 0, 5, 5);
+    var k1 = CH.smooth(.02, .2, t), k2 = CH.smooth(.25, .4, t), k3 = CH.smooth(.45, .58, t), k4 = CH.smooth(.62, .8, t);
+    poly(F, [[0, 0], [5, 0], [5, 5], [0, 5]], { stroke: C.chalk, sw: 2, dash: !D.ph, a: D.ph ? .5 + .5 * k1 : .5 });
+    T13.forEach(function (tr) { poly(F, tr, { fill: hexA(C.pink, .35), stroke: C.pink, sw: 1.6, a: k1 * (1 - .6 * k2) }); var g = F.X([(tr[0][0] + tr[1][0] + tr[2][0]) / 3, (tr[0][1] + tr[1][1] + tr[2][1]) / 3]); say(D, g[0], g[1], '3', { size: F.s * .8, col: C.pink, a: k1 * (1 - k2), num: true }); });
+    poly(F, SQ13, { fill: hexA(C.orange, .22), stroke: C.orange, sw: 2.8 });
+    var ce = F.X([2.5, 2.5]); say(D, ce[0], ce[1], k2 > .5 ? '13cm²' : '?', { size: F.s, col: k2 > .5 ? C.yel : C.chalk, num: true });
+    if (k3 > 0) { var lb = F.X([4.2, 3.9]); say(D, lb[0], lb[1], '√13', { size: F.s, col: C.yel, a: k3, num: true }); }
+    if (!D.ph) return;
+    var q = sp[1], f = CH.fs(D, .95), y = q.y0 + f * .9;
+    say(D, q.cx, y, '① 5×5 − 3×2÷2×4', { size: f, a: k1, maxW: q.w, num: true }); say(D, q.cx, y + f * 1.5, '＝ 25 − 12 ＝ 13（cm²）', { size: f, a: k2, maxW: q.w, col: C.yel, num: true });
+    say(D, q.cx, y + f * 3.1, '② 1辺 ＝ √13（cm）', { size: f, a: k3, maxW: q.w, col: C.yel, num: true });
+    if (k4 > 0) {
+      say(D, q.cx, y + f * 4.7, '③ 3.6² ＝ 12.96、3.7² ＝ 13.69', { size: f, a: k4, maxW: q.w, num: true });
+      var ly = Math.min(q.y1 - f * 3, y + f * 7), N = NL(D, q.x0 + f, q.x1 - f, ly, 3, 4, .1, { big: 5, s: CH.fs(D, .72), a: k4 });
+      CH.fillRect(D, N.X(3.6), ly - 7, N.X(3.7), ly + 7, { fill: hexA(C.yel, .4), stroke: C.yel, sw: 2, a: k4 });
+      say(D, N.X(3.6) - 3, ly - f * 1.1, '3.6', { size: f * .85, num: true, align: 'right', col: C.yel, a: k4 }); say(D, N.X(3.7) + 3, ly - f * 1.1, '3.7', { size: f * .85, num: true, align: 'left', col: C.yel, a: k4 });
+      say(D, q.cx, ly + f * 2.5, '3.6 ＜ √13 ＜ 3.7', { size: f, num: true, col: C.yel, a: CH.smooth(.85, 1, t) });
+    }
+  }
+
+  K3.run({
+    no: '第1時', title: '面積が2の正方形の1辺は、どんな数だろう', flat: true, hint: '', alt: '方眼の上の正方形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '第2時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '方眼（1目もり 1cm）の上の正方形', q: '方眼の上の、面積が 2cm² の正方形（図3）の1辺 x cm は、どんな数だろう。電卓を使って、くわしく調べよう。',
+        notes: ['① 自分の考え（3分）　x を、どこまでくわしく言えるか書こう。', '② ペアの考え（3分）　自分とちがう調べ方や気づきは？'],
+        draw: function (D) { three(D); } },
+      { tag: '今日の問い', q: '図3 の正方形の面積が 2cm² といえるのは、なぜ？', a: '図2 の正方形（面積 4cm²）の半分だから', sub: 'すみの直角三角形4つを内がわに折ると、図3 の正方形にぴったり重なる。4÷2＝2', dur: 5,
+        b: { t: '図3 は、図2（4cm²）の <b>半分</b> → 面積 <b>2cm²</b>', col: C.yel },
+        draw: function (D) { fold(D, D.ph ? D.t : 0); } },
+      { tag: '今日の問い', q: '1辺 x cm は、どんな数？ x² ＝ 2 になる x を、電卓でさがそう。', a: '1.4 と 1.5 の間、1.41 と 1.42 の間、…', sub: '1.4²＝1.96、1.5²＝2.25 → 1.4＜x＜1.5。1.41²＝1.9881、1.42²＝2.0164 → 1.41＜x＜1.42。もっと調べても、ちょうど 2 になる小数は見つからない', dur: 6,
+        b: [{ t: '1.4²＝1.96、1.5²＝2.25 → 1.4＜x＜1.5', col: C.yel }, { t: '1.41²＝1.9881、1.42²＝2.0164 → <b>1.41＜x＜1.42</b>', col: C.yel }, { t: 'ちょうど 2 になる小数は、見つからない', col: C.yel }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .03, r: .03, t: .14, b: .04 }), t = D.ph ? D.t : 0;
+          squeeze(D, R, LV2, function (i) { return i === 0 ? 1 : CH.smooth(i * .3, i * .3 + .1, t); }, function (i) { return D.ph ? CH.smooth(i * .3 + .05, i * .3 + .18, t) : 0; });
+          top(D, D.ph && t > .9 ? 'ちょうど 2 になる小数は、見つからない' : 'x² ＝ 2 になる x は？', D.ph && t > .9 ? C.yel : C.chalk, 1, 0);
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '2乗すると 2 になる正の数を、記号を使って何と書く？ どう読む？', a: '√2（ルート2）', sub: '記号 √ を根号という。√2 を小数で表すと 1.41421356… のように、終わりなく続く', dur: 6,
+        b: [{ t: '2乗すると 2 になる正の数 … <b>√2</b>（ルート2）', col: C.green }, { t: '記号 √ … <b>根号</b>　√2＝1.41421356…（終わりなく続く）', col: C.green }],
+        draw: function (D) { diag(D, D.ph ? D.t : 0); } },
+      { tag: '例題', bh: '例題　面積 5cm² の正方形', q: '面積が 5cm² の正方形の1辺を x cm とする。2.3²、2.23²、2.24² を計算して、x のはんいを小数第2位まで調べよう。（2.2² は見本）', a: '2.23＜x＜2.24（x＝√5）', sub: '2.3²＝5.29、2.23²＝4.9729、2.24²＝5.0176。5 をはさむ2つの数をさがす', dur: 5,
+        b: { t: '2.23²＝4.9729、2.24²＝5.0176 → <b>2.23＜x＜2.24</b>（x＝<b>√5</b>）', col: C.pink },
+        draw: function (D) { ex5(D, D.ph ? D.t : 0); } },
+      { tag: '考えよう', q: '面積が 2、4、5、9、0.25、0.5、1.44（cm²）の正方形の1辺の長さを調べよう。整数や、終わりのある小数でぴったり表せるのは、どれだろう。',
+        notes: ['ぴったり表せる面積に ○ をつけて、その面積の特ちょうを見つけよう。', 'ほかの面積でも、確かめよう。', 'スライダーで、面積と1辺 x を選べます。x² と面積をくらべよう。'],
+        sliders: [{ key: 'a', label: '面積', min: 0, max: AR.length - 1, step: 1, val: 0, fmt: function (v) { return fx(AR[v]) + 'cm²'; } },
+          { key: 'x', label: '1辺 x', min: 0, max: 320, step: 1, val: 140, fmt: function (v) { return (v / 100).toFixed(2); } }],
+        draw: function (D) { tool(D, D.V.a, D.V.x); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '方眼（1目もり 1cm）の上の、かたむいた正方形について。① 面積は？ ② 1辺の長さを、√ を使って表そう。③ 1辺は、小数第1位まででは、どんな2つの小数の間？',
+        notes: ['ヒント① まわりの大きな正方形から、何をひくと、この正方形の面積になるかな。', 'ヒント② ひく三角形の底辺と高さは、方眼の何目もりぶんかな。'],
+        a: '① 13cm²　② √13 cm　③ 3.6 と 3.7 の間', sub: '① 5×5−3×2÷2×4＝25−12＝13　③ 3.6²＝12.96、3.7²＝13.69 だから 3.6＜√13＜3.7', dur: 6,
+        b: { t: '25−3×2÷2×4＝<b>13</b> → 1辺 <b>√13</b>、3.6²＝12.96、3.7²＝13.69 → <b>3.6＜√13＜3.7</b>', col: C.orange },
+        draw: function (D) { chal(D, D.ph ? D.t : 0); } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

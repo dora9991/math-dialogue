@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>標本調査のまとめ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 標本調査 第5時：「標本調査」で学んだことを、整理して確かめよう（ikkan の lesson_hyouhon_05 と同じ流れ）。
+   調べ方の書かれていない記事（1800人のうち およそ 1260人）を、信頼してよいか判断する → 標本調査の流れを整理 → 推定（割合・比例式）。
+   考えようは、聞く人数を 10人〜1800人（全員）に変えて、かかる時間と 推定のちらばりをくらべる道具。データ・場面はすべて自作（実際の調査ではない。たねつきの乱数で、毎回同じ）。 */
+(function () {
+  var C = CH.C, FF = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', NF = '"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif';
+  var DIM = 'rgba(242,240,230,.75)', INK = '#22302a', PAPER = 'rgba(242,240,230,.92)';
+  function ft(D, x, y, s, o, mw) {
+    o = o || {}; var g = D.ctx, z = o.size || CH.fs(D), p = {}, k;
+    g.save(); g.font = (o.w || 600) + ' ' + z + 'px ' + (o.num ? NF : FF); var w = g.measureText(s).width; g.restore();
+    for (k in o) p[k] = o[k]; p.size = w > mw ? z * mw / w : z; CH.text(D, x, y, s, p); return p.size;
+  }
+  function wrap(D, x, y, s, o, mw, lh) {
+    var g = D.ctx, z = o.size || CH.fs(D), line = '', out = []; g.save(); g.font = (o.w || 600) + ' ' + z + 'px ' + FF;
+    for (var i = 0; i < s.length; i++) { var t = line + s.charAt(i); if (g.measureText(t).width > mw && line) { out.push(line); line = s.charAt(i); } else line = t; }
+    out.push(line); g.restore();
+    out.forEach(function (l, j) { var p = {}; for (var k in o) p[k] = o[k]; p.align = 'left'; p.size = z; CH.text(D, x, y + j * lh, l, p); });
+    return out.length;
+  }
+  function wide(D) { return D.W > D.H * .9; }
+  function pick(seed, n, k) { var r = CH.rng(seed), a = []; for (var i = 0; i < n; i++) a.push(i); for (var j = 0; j < k; j++) { var m = j + Math.floor(r() * (n - j)), x = a[j]; a[j] = a[m]; a[m] = x; } return a.slice(0, k); }
+  function stream(seed) { var r = CH.rng(seed); for (var w = 0; w < 10; w++) r(); return r; }
+
+  /* 今日の問い */
+  CH.check(CH.near(1260 / 1800, .7) && CH.near(1800 * .7, 1260) && 1800 - 1260 === 540, '今日の問い　1260 ＝ 1800 × 0.7');
+  /* 例題 */
+  CH.check(CH.near(6 / 240, .025) && CH.near(7200 * .025, 180) && 7200 / 240 === 30 && 6 * 30 === 180, '例題　およそ 180個');
+  CH.check(120 * 90 / 6 === 1800 && CH.near(120 / 1800, 6 / 90) && 90 / 6 === 15 && 120 * 15 === 1800, '例題　およそ 1800ぴき');
+  /* チャレンジ */
+  CH.check(CH.near(56 / 100, .56) && CH.near(192 / 400, .48) && 5000 * 56 / 100 === 2800 && 7500 * 192 / 400 === 3600 && 3600 - 2800 === 800, 'チャレンジ　B市が およそ 800人多い');
+  /* 考えよう：A町 1800人のうち 1260人が 2時間以上（と したとき）。聞く人数ごとに 20回、無作為に選んで推定する */
+  var NS = [10, 30, 100, 300, 900, 1800], POP = 1800, YES = 1260;
+  var SIM = NS.map(function (n, k) {
+    var r = stream(10 + k), out = [];
+    for (var j = 0; j < 20; j++) { var a = [], c = 0; for (var i = 0; i < POP; i++) a.push(i); for (var q = 0; q < n; q++) { var m = q + Math.floor(r() * (POP - q)), x = a[q]; a[q] = a[m]; a[m] = x; if (a[q] < YES) c++; } out.push(POP * c / n); }
+    return out;
+  });
+  var RG = SIM.map(function (e) { return [Math.min.apply(null, e), Math.max.apply(null, e)]; });
+  CH.check(JSON.stringify(RG) === '[[720,1620],[900,1440],[1152,1404],[1212,1338],[1230,1314],[1260,1260]]', '考えよう　たねつきの乱数');
+  CH.check(RG.every(function (r, i) { return i === 0 || r[1] - r[0] < RG[i - 1][1] - RG[i - 1][0]; }), '考えよう　人数が多いほど ちらばりが小さい');
+  /* 例題の不良品の場所（240個のまとまり 30こ） */
+  var TL = []; for (var i = 0; i < 30; i++) TL.push(pick(500 + i, 240, 6));
+
+  function paper(D, R, lines) {
+    CH.fillRect(D, R.x0, R.y0, R.x1, R.y1, { fill: PAPER, stroke: 'rgba(20,30,24,.5)', sw: 1.5 });
+    var s = CH.fs(D), y = R.y0 + s * .9, pad = s * .8;
+    lines.forEach(function (L) { var z = s * (L.k || 1), n = wrap(D, R.x0 + pad, y, L.t, { col: L.col || INK, size: z, w: L.w || 600 }, R.w - pad * 2, z * 1.35); y += n * z * 1.35 + s * .3; });
+    return y;
+  }
+  var ARTICLE = [{ t: '新聞', k: .7, col: '#4b6b5a' }, { t: 'A町の中学生1800人のうち、およそ1260人が、毎日スマホを2時間以上使っている', k: 1.1, w: 700 }, { t: '（標本調査の結果。調べ方は 書かれていない）', k: .75, col: '#3b4a42' }];
+  /* 曲がった矢印 */
+  function carrow(D, x0, y0, cx, cy, x1, y1, o) {
+    o = o || {}; var g = D.ctx; g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.w || 2.4; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(cx, cy, x1, y1); g.stroke();
+    var an = Math.atan2(y1 - cy, x1 - cx), hs = 11; g.fillStyle = o.col || C.chalk; g.beginPath(); g.moveTo(x1, y1);
+    g.lineTo(x1 - hs * Math.cos(an - .45), y1 - hs * Math.sin(an - .45)); g.lineTo(x1 - hs * Math.cos(an + .45), y1 - hs * Math.sin(an + .45)); g.closePath(); g.fill(); g.restore();
+  }
+  var DOTS = (function () { var r = CH.rng(21), d = Math.sqrt(Math.PI / 140) * .86, pts = []; for (var y = -1; y <= 1; y += d) for (var x = -1; x <= 1; x += d) { var px = x + (r() - .5) * d * .5, py = y + (r() - .5) * d * .5; if (px * px + py * py < .84) pts.push([px, py]); } return pts; })();
+  var SDOT = pick(22, DOTS.length, 14);
+  /* 標本の円の中の 14 この場所 */
+  var SPOS = (function () { var r = CH.rng(23), out = []; for (var i = 0; i < 14; i++) { var a = i * 2.39996, rr = Math.sqrt((i + .5) / 14) * .78; out.push([rr * Math.cos(a) + (r() - .5) * .05, rr * Math.sin(a) + (r() - .5) * .05]); } return out; })();
+
+  K3.run({
+    no: '第5時', title: '「標本調査」で学んだことを、整理して確かめよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '04.html', label: '◀ 第4時' }],
+    steps: [
+      { tag: '今日の問い', bh: '新聞の記事', q: '新聞に「A町の中学生 1800人のうち、およそ 1260人が、毎日スマホを 2時間以上使っている」とあった。標本調査の結果だが、調べ方は書かれていない。この数が信頼できるかを判断するために、調べ方の何を確かめたいか。',
+        notes: ['① 自分の考え（3分）　確かめたいことと、わけを書こう。', '② ペアの考え（3分）　自分とちがう点があれば、書こう。', 'この単元で学んだことを、思い出そう。'],
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .1, b: .1 }), s = CH.fs(D), w = wide(D), H = Math.min(R.h * .7, s * 9);
+          paper(D, w ? CH.rect(R.x0 + R.w * .08, R.cy - H / 2, R.x1 - R.w * .08, R.cy + H / 2) : CH.rect(R.x0, R.y0, R.x1, R.y0 + Math.min(R.h * .8, s * 11)), ARTICLE);
+        } },
+      { tag: '今日の問い', q: '記事の 1260人は、どうやって出した数だろう？', a: '1800 × 0.7（標本の割合を使った推定）', sub: '1260÷1800＝0.7。標本の中で、2時間以上の人の割合が 0.7 だったと考えられる', dur: 3.5,
+        b: { t: '1260 ＝ 1800 × <b>0.7</b>（標本の割合を使った推定）', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .14, b: .14 }), s = CH.fs(D), t = D.ph ? D.t : 0, w = wide(D), h = Math.min(s * 2, R.h * .13), lw = w ? Math.min(R.w * .22, s * 6) : 0, x = R.x0 + lw, tw = R.w - lw;
+          var lab = function (y, a, b, al) { if (w) { ft(D, x - s * .4, y + h * .32, a, { align: 'right', size: s * .9, a: al }, lw - s * .5); ft(D, x - s * .4, y + h * .82, b, { align: 'right', size: s * .72, col: DIM, a: al }, lw - s * .5); } else ft(D, R.x0, y - s * .7, a + '　' + b, { align: 'left', size: s * .85, a: al }, R.w); };
+          var ya = R.y0 + (w ? 0 : s), yb = ya + h * (w ? 2.6 : 3.2);
+          lab(yb, 'A町', '中学生 1800人', 1);
+          CH.tape(D, x, yb, tw, h, [{ v: 1260, col: C.pink, txt: '2時間以上 およそ 1260' }, { v: 540, col: '#7d8a84', txt: '' }], 1800);
+          if (t > .05) {
+            var a = CH.smooth(.05, .35, t); lab(ya, '標本', '？人', a);
+            CH.tape(D, x, ya, tw, h, [{ v: .7, col: C.pink, txt: t > .4 ? '割合 0.7' : '' }, { v: .3, col: '#7d8a84', txt: t > .4 ? '0.3' : '' }], 1, { a: a });
+            CH.line(D, x + tw * .7, ya + h, x + tw * .7, yb, { col: C.yel, dash: true, a: a, w: 2.2 });
+          }
+          if (t > .55) { var a2 = CH.smooth(.55, .8, t); ft(D, R.cx, yb + h + s * 1.8, '1260 ÷ 1800 ＝ 0.7　→　1800 × 0.7 ＝ 1260', { col: C.yel, a: a2, size: s * 1.05 }, R.w); ft(D, R.cx, yb + h + s * 3.4, '標本の割合 0.7 を使って 推定した数', { col: C.chalk, a: a2, size: s * .9 }, R.w); }
+        } },
+      { tag: '今日の問い', q: 'この数が信頼できるか判断するために、調べ方の何を確かめたい？', a: '選び方（無作為か）・標本の大きさ・質問のしかた', sub: 'くじや乱数で選んだか（ゲームが好きな人だけでは、かたよる）。何人に聞いたか（少なすぎないか）。質問が、答えをみちびいていないか', dur: 3.5,
+        b: { t: '確かめる … <b>選び方</b>（無作為か）・<b>大きさ</b>・<b>質問のしかた</b>', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .1, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0, w = wide(D);
+          var P = CH.rect(R.x0, R.y0, R.x1, R.y0 + Math.min(R.h * .4, s * (w ? 5.6 : 8))), y = P.y1 + s * 1.8, lh = Math.min(s * 2.6, (R.y1 - y) / 3.1);
+          paper(D, P, ARTICLE.slice(1));
+          [['くじや乱数で、無作為に選んだか', '（選び方）'], ['何人に聞いたか', '（標本の大きさ）'], ['質問のしかたは、適切か', '（答えをみちびいていないか）']].forEach(function (c, j) {
+            var yy = y + j * lh, on = t > .1 + j * .28, a = CH.smooth(.1 + j * .28, .3 + j * .28, t), bx = R.x0 + s * .4, bs = s * 1.1;
+            CH.fillRect(D, bx, yy - bs / 2, bx + bs, yy + bs / 2, { stroke: on ? C.green : 'rgba(242,240,230,.5)', sw: 2 });
+            if (on) { CH.line(D, bx + bs * .2, yy, bx + bs * .45, yy + bs * .3, { col: C.green, w: 3, a: a }); CH.line(D, bx + bs * .45, yy + bs * .3, bx + bs * .9, yy - bs * .4, { col: C.green, w: 3, a: a }); }
+            var sz = ft(D, bx + bs * 1.6, yy, on ? c[0] : '？', { align: 'left', col: on ? C.chalk : DIM, a: on ? a : 1, size: s }, R.w * (w ? .62 : .9) - bs * 1.6);
+            if (on && w) ft(D, R.x0 + R.w * .66, yy, c[1], { align: 'left', col: C.green, a: a, size: s * .85 }, R.w * .34);
+          });
+        } },
+      { tag: 'ことば', bh: 'ことば（単元の整理）', q: '標本調査の流れを、ことばで整理しよう。母集団から 標本を取り出して、全体を推しはかるまで。', a: '母集団 →（無作為に抽出）→ 標本 →（割合）→ 推定',
+        sub: '全部を調べるのが 全数調査、一部を調べて全体を推しはかるのが 標本調査。推定した数は「およそ」の数', dur: 5,
+        b: [{ t: '全部 … <b>全数調査</b>　一部 … <b>標本調査</b>', col: C.green }, { t: '<b>母集団</b> →（<b>無作為に抽出</b>）→ <b>標本</b> →（割合）→ <b>推定</b>', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .1, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0, w = wide(D), big, sm;
+          if (w) { big = { x: R.x0 + R.w * .24, y: R.cy, r: Math.min(R.w * .2, R.h * .36) }; sm = { x: R.x0 + R.w * .78, y: R.cy, r: big.r * .45 }; }
+          else { big = { x: R.cx, r: Math.min(R.w * .3, R.h * .2) }; big.y = R.y0 + s * 1.4 + big.r; sm = { x: R.cx, r: big.r * .5 }; sm.y = R.y1 - s * 1.6 - sm.r; }
+          var k = CH.ease(CH.smooth(.08, .35, t)), A = function (a, b) { return CH.smooth(a, b, t); };
+          CH.circle(D, big.x, big.y, big.r, { stroke: C.blue, sw: 2.4, fill: 'rgba(154,216,255,.06)' });
+          var sel = {}; SDOT.forEach(function (i, j) { sel[i] = j; });
+          DOTS.forEach(function (p, i) {
+            var x = big.x + p[0] * big.r, y = big.y + p[1] * big.r, j = sel[i];
+            if (j != null) { var q = SPOS[j], x2 = sm.x + q[0] * sm.r, y2 = sm.y + q[1] * sm.r; CH.circle(D, CH.lerp(x, x2, k), CH.lerp(y, y2, k), big.r * .045, { fill: C.yel }); if (k > 0) CH.circle(D, x, y, big.r * .045, { stroke: 'rgba(255,226,122,.5)', sw: 1.2, a: k }); }
+            else CH.circle(D, x, y, big.r * .045, { fill: 'rgba(154,216,255,.7)' });
+          });
+          if (t > .05) CH.circle(D, sm.x, sm.y, sm.r, { stroke: C.yel, sw: 2.4, fill: 'rgba(255,226,122,.06)', a: A(.05, .2) });
+          var lab = function (c, txt, col, a, below) { if (w || c === big) CH.text(D, c.x, below ? c.y + c.r + s * .9 : c.y - c.r - s * .8, txt, { col: col, a: a, size: s * 1.05 }); else CH.text(D, c.x + c.r + s * .5, c.y, txt, { col: col, a: a, size: s * 1.05, align: 'left' }); };
+          lab(big, t > .15 ? '母集団' : '？', C.blue, 1);
+          if (t > .05) lab(sm, t > .4 ? '標本' : '？', C.yel, A(.05, .2));
+          /* 無作為に抽出（行き）・推定（帰り） */
+          if (w) {
+            carrow(D, big.x + big.r * .7, big.y - big.r * .75, (big.x + sm.x) / 2, big.y - big.r * 1.25, sm.x - sm.r * .8, sm.y - sm.r * .9, { col: C.yel, a: A(.15, .35) });
+            ft(D, (big.x + sm.x) / 2 + big.r * .1, big.y - big.r * 1.18, '無作為に抽出', { col: C.yel, a: A(.25, .4), size: s * .95 }, sm.x - big.x);
+            if (t > .45) { ft(D, sm.x, sm.y + sm.r + s * 1, '割合を調べる', { col: C.chalk, a: A(.45, .6), size: s * .9 }, R.x1 - sm.x + sm.r); }
+            carrow(D, sm.x - sm.r * .7, sm.y + sm.r * 1.3 + s, (big.x + sm.x) / 2, big.y + big.r * 1.15, big.x + big.r * .75, big.y + big.r * .75, { col: C.pink, a: A(.6, .8) });
+            ft(D, (big.x + sm.x) / 2 + big.r * .1, big.y + big.r * 1.02 + s * 1.1, '推定する（およそ）', { col: C.pink, a: A(.7, .85), size: s * .95 }, sm.x - big.x);
+          } else {
+            var xr = R.x0 + R.w * .86, xl = R.x0 + R.w * .14;
+            carrow(D, big.x + big.r * .9, big.y + big.r * .5, xr, (big.y + sm.y) / 2, sm.x + sm.r * 1.05, sm.y - sm.r * .5, { col: C.yel, a: A(.15, .35) });
+            ft(D, xr, (big.y + sm.y) / 2 - s * .2, '無作為に抽出', { col: C.yel, a: A(.25, .4), size: s * .8, outline: 'rgba(20,40,30,.9)' }, R.w * .3);
+            carrow(D, sm.x - sm.r * 1.05, sm.y - sm.r * .5, xl, (big.y + sm.y) / 2, big.x - big.r * .9, big.y + big.r * .5, { col: C.pink, a: A(.6, .8) });
+            ft(D, xl, (big.y + sm.y) / 2 + s * .4, '推定（およそ）', { col: C.pink, a: A(.7, .85), size: s * .8, outline: 'rgba(20,40,30,.9)' }, R.w * .3);
+          }
+        } },
+      { tag: '例題', bh: '例題　不良品の推定', q: '工場で作った部品 7200個から、240個を無作為に抽出して調べると、不良品が 6個あった。7200個の中の不良品は、およそ何個？',
+        a: 'およそ 180個', sub: '6/240＝0.025 → 7200×0.025＝180（7200 は 240 の 30倍 → 6×30＝180）。無作為に抽出した標本だから、この推定ができる', dur: 5,
+        b: [{ t: '6/240＝0.025 → 7200 × 0.025 ＝ 180 → <b>およそ 180個</b>', col: C.yel }, { t: '前提 … 標本は <b>無作為に抽出</b> したもの', col: C.yel }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .06, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0, w = wide(D);
+          var rv = function (a, v) { return t > a ? v : '？'; };
+          var Tb = CH.table(D, CH.rect(R.x0, R.y0, R.x1, R.y0 + s * 4.8), ['', '標本の中の不良品', '標本での割合', '母集団の不良品'], [['数', '6個', rv(.15, '6/240 ＝ 0.025'), rv(.85, '7200 × 0.025 ＝ 180')]],
+            { fw: .08, top: true, size: Math.min(CH.fs(D, .8), R.w * .92 / 3 / 11), hl: function (r, c) { return r === 1 && ((c === 2 && t > .15) || (c === 3 && t > .85)) ? C.yel : null; } });
+          var G = CH.rect(R.x0, Tb.y1 + s * 2, R.x1, R.y1 - s * 1.6), cols = 6, tw = Math.min(G.w / cols, G.h / 5 * 2), th = tw / 2, gx = G.cx - tw * cols / 2, n = Math.round(30 * CH.smooth(.25, .8, t));
+          ft(D, G.cx, G.y0 - s * .9, '部品 7200個 ＝ 240個のまとまりが 30こ（左上が 標本）', { col: DIM, size: s * .8 }, R.w);
+          for (var i = 0; i < 30; i++) {
+            var c = i % cols, r = Math.floor(i / cols), x = gx + c * tw, y = G.y0 + r * th, first = i === 0;
+            CH.fillRect(D, x + 2, y + 2, x + tw - 2, y + th - 2, { fill: first ? 'rgba(255,226,122,.14)' : 'rgba(154,216,255,.08)', stroke: first ? C.yel : 'rgba(154,216,255,.45)', sw: first ? 2 : 1 });
+            if (first || i < n) TL[i].forEach(function (p) { CH.circle(D, x + 4 + (p % 24 + .5) * (tw - 8) / 24, y + 4 + (Math.floor(p / 24) + .5) * (th - 8) / 10, Math.max(1.8, tw * .025), { fill: C.pink }); });
+          }
+          if (t > .25) ft(D, G.cx, G.y0 + th * 5 + s * .9, '6 × ' + Math.max(n, 1) + ' ＝ ' + 6 * Math.max(n, 1) + '個', { col: C.pink }, R.w);
+        } },
+      { tag: '例題', q: '湖のこい 120ぴきに目印をつけて放した。後で 90ぴきをつかまえると、目印のあるこいが 6ぴきいた。湖のこいは、およそ何びき？', a: 'およそ 1800ぴき', sub: '全体を x ひきとして　120/x ＝ 6/90 → 6x ＝ 120 × 90 → x ＝ 1800（6/90 ＝ 1/15 だから 120 × 15 でも同じ）', dur: 5,
+        b: { t: '120/x ＝ 6/90 → x ＝ 1800 → <b>およそ 1800ぴき</b>', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .12, b: .12 }), s = CH.fs(D), t = D.ph ? D.t : 0, w = wide(D), h = Math.min(s * 2, R.h * .13), lw = w ? Math.min(R.w * .24, s * 7) : 0, x = R.x0 + lw, tw = R.w - lw;
+          var lab = function (y, a, al) { if (w) ft(D, x - s * .4, y + h / 2, a, { align: 'right', size: s * .85, a: al }, lw - s * .5); else ft(D, R.x0, y - s * .7, a, { align: 'left', size: s * .85, a: al }, R.w); };
+          var ya = R.y0 + (w ? 0 : s * 2.4), yb = ya + h * (w ? 2.6 : 3.2);
+          lab(ya, 'つかまえた 90ぴき', 1);
+          var p1 = [{ v: 1, col: C.yel, txt: '6' }]; for (var i = 0; i < 14; i++) p1.push({ v: 1, col: '#7d8a84', txt: t > .15 ? '6' : '', a: .7 });
+          if (t <= .15) p1 = [{ v: 1, col: C.yel, txt: '6' }, { v: 14, col: '#7d8a84', txt: '84', a: .7 }];
+          ft(D, x, ya + h + s * .6, '↑ 目印のあるこい', { align: 'left', col: C.yel, size: s * .75 }, tw);
+          CH.tape(D, x, ya, tw, h, p1, 15);
+          if (t > .15) ft(D, x + tw / 2, ya - s * (w ? .7 : 2.1), '6 ひきずつ 15 こ分 → 目印の割合 6/90 ＝ 1/15', { col: C.yel, a: CH.smooth(.15, .35, t), size: s * .85 }, tw);
+          lab(yb, '湖の こい x ひき', 1);
+          var a = CH.smooth(.35, .6, t), p2 = [{ v: 1, col: C.yel, txt: '120' }]; for (var j = 0; j < 14; j++) p2.push({ v: 1, col: '#7d8a84', txt: '', a: .7 });
+          if (t <= .35) CH.tape(D, x, yb, tw, h, [{ v: 1, col: C.yel, txt: '120' }, { v: 14, col: '#7d8a84', txt: '？', a: .4 }], 15);
+          else { CH.tape(D, x, yb, tw, h, p2, 15, { a: a }); if (t > .6) for (var q2 = 1; q2 < 15; q2++) ft(D, x + tw * (q2 + .5) / 15, yb + h / 2, '120', { num: true, size: s * .75, a: CH.smooth(.6, .7, t) }, tw / 15 * .86); }
+          for (var q = 1; q <= 15; q++) CH.line(D, x + tw * q / 15, ya + h, x + tw * q / 15, yb, { col: C.yel, dash: [2, 4], a: a * .6, w: 1 });
+          if (t > .65) { var a2 = CH.smooth(.65, .85, t), yy = yb + h + s * 1.8; ft(D, R.cx, yy, '120/x ＝ 6/90　→　6x ＝ 120 × 90　→　x ＝ 1800', { col: C.yel, a: a2, size: s * 1.05 }, R.w); ft(D, R.cx, yy + s * 1.6, '（120 × 15 ＝ 1800 でも同じ）', { col: C.chalk, a: a2, size: s * .85 }, R.w); }
+        } },
+      { tag: '考えよう', q: '全数調査と標本調査の、よいところと 困るところを くらべよう。標本調査を使うほうがよいのは、どんなときだろう。',
+        notes: ['① 全数調査・標本調査の、よいところ・困るところを 表にまとめよう。', '② 標本調査を使うほうがよいのは、どんなとき？ 身のまわりの例も さがそう。', 'スライダーで、A町の中学生 1800人のうち 何人に聞くかを変えられます（1人 3分かかるとして。点は、20回 選びなおしたときの推定）。'],
+        sliders: [{ key: 'n', label: '聞く人数', min: 0, max: 5, step: 1, val: 1, fmt: function (x) { return NS[x] + '人' + (NS[x] === POP ? '（全員）' : ''); } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .06, b: .06 }), s = CH.fs(D), k = D.V.n, n = NS[k], est = SIM[k];
+          /* かかる時間 */
+          var min = n * 3, bw = R.w * .8, bx = R.x0 + R.w * .2, bh = Math.min(s * 1.3, R.h * .08), y0 = R.y0 + s * 1.6;
+          ft(D, R.x0, R.y0 + s * .4, 'かかる時間（1人 3分）', { align: 'left', col: DIM, size: s * .85 }, R.w);
+          ft(D, bx - s * .4, y0 + bh / 2, n + '人', { align: 'right', col: C.chalk, size: s * .9 }, R.w * .2 - s * .5);
+          CH.fillRect(D, bx, y0, bx + bw, y0 + bh, { stroke: 'rgba(242,240,230,.35)', sw: 1 });
+          CH.fillRect(D, bx, y0, bx + bw * n / POP, y0 + bh, { fill: 'rgba(255,192,120,.5)', stroke: C.orange });
+          var tt = min < 60 ? min + '分' : min + '分（' + CH.mnum(Math.round(min / 6) / 10) + '時間）';
+          ft(D, bx + bw * Math.max(n / POP, .02) + s * .3, y0 + bh / 2, tt, { align: n / POP > .6 ? 'right' : 'left', col: C.orange, size: s * .9, outline: n / POP > .6 ? 'rgba(20,40,30,.9)' : null }, R.w * .5);
+          /* 推定のちらばり */
+          var NR = CH.rect(R.x0 + s * .4, y0 + bh + s * 3, R.x1 - s * .4, R.y1 - s * 3.2), X = CH.numline(D, NR, 600, 1800, 100, { lab: 200, unit: '（人）' });
+          ft(D, R.x0, NR.y0 - s * .9, '2時間以上の人数の推定（20回 選びなおす。20人ごとに まとめて積む）', { align: 'left', col: DIM, size: s * .85 }, R.w);
+          var vals = est.map(function (e) { return Math.round(e / 20) * 20; }), cnt = {}, mx = 1; vals.forEach(function (v) { cnt[v] = (cnt[v] || 0) + 1; mx = Math.max(mx, cnt[v]); });
+          var dr = Math.min(s * .42, (NR.h - s) / (mx * 2.2 + .3), (X(620) - X(600)) * .48);
+          CH.dots(D, X, NR.y1, vals, { r: dr, col: function () { return n === POP ? C.yel : C.blue; } });
+          ft(D, R.cx, R.y1 - s * .3, n === POP ? '全員に聞くと、何回調べても 同じ数（' + RG[k][0] + '人）' : 'いちばん小さい推定 ' + RG[k][0] + '人　いちばん大きい推定 ' + RG[k][1] + '人', { col: C.pink, size: s * .9 }, R.w);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'A市の中学生 5000人から無作為に 100人を選ぶと、56人が「部活動に入りたい」と答えた。B市の中学生 7500人から無作為に 400人を選ぶと、192人が同じように答えた。入りたい人は、どちらの市が およそ何人多いと考えられる？',
+        a: 'B市のほうが、およそ 800人多い', sub: 'A市 5000×56/100＝2800　B市 7500×192/400＝3600。割合は A市（0.56）のほうが高いが、人数は B市が多い', dur: 5,
+        b: { t: 'A市 2800人・B市 3600人 → <b>B市が およそ 800人多い</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .08, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0, h = Math.min(s * 1.7, R.h * .09), lw = Math.min(R.w * .2, s * 5.5), x = R.x0 + lw, tw = R.w - lw;
+          var lab = function (y, txt, col, a) { ft(D, x - s * .4, y + h / 2, txt, { align: 'right', size: s * .8, col: col || DIM, a: a }, lw - s * .5); };
+          ft(D, R.x0, R.y0, '標本の割合', { align: 'left', col: DIM, size: s * .85 }, R.w);
+          var y1 = R.y0 + s * .9; lab(y1, 'A市 100人', C.blue); CH.tape(D, x, y1, tw * .6, h, [{ v: 56, col: C.blue, txt: '56（0.56）' }, { v: 44, col: '#7d8a84', txt: '' }], 100);
+          var y2 = y1 + h * 1.4; lab(y2, 'B市 400人', C.orange); CH.tape(D, x, y2, tw * .6, h, [{ v: 192, col: C.orange, txt: '192（0.48）' }, { v: 208, col: '#7d8a84', txt: '' }], 400);
+          ft(D, x + tw * .62, (y1 + y2 + h) / 2, '割合は A市が高い', { align: 'left', col: C.chalk, size: s * .85 }, tw * .38);
+          if (t > .1) {
+            var a = CH.smooth(.1, .4, t), y3 = y2 + h * 2 + s * 1.1;
+            ft(D, R.x0, y3 - s * .9, '市全体の人数（長さは 人数に比例）', { align: 'left', col: DIM, size: s * .85, a: a }, R.w);
+            lab(y3, 'A市 5000人', C.blue, a); CH.tape(D, x, y3, tw * 5000 / 7500, h, [{ v: 2800, col: C.blue, txt: t > .35 ? '2800' : '' }, { v: 2200, col: '#7d8a84', txt: '' }], 5000, { a: a });
+            var y4 = y3 + h * 1.4; lab(y4, 'B市 7500人', C.orange, a); CH.tape(D, x, y4, tw, h, [{ v: 3600, col: C.orange, txt: t > .35 ? '3600' : '' }, { v: 3900, col: '#7d8a84', txt: '' }], 7500, { a: a });
+            if (t > .35) { var a2 = CH.smooth(.35, .55, t), yy = y4 + h + s * 1.2; ft(D, R.cx, yy, 'A市 5000 × 56/100 ＝ 2800　B市 7500 × 192/400 ＝ 3600', { col: C.chalk, a: a2, size: s * .85 }, R.w); }
+            if (t > .65) {
+              var a3 = CH.smooth(.65, .85, t), xa = x + tw * 2800 / 7500, xb = x + tw * 3600 / 7500;
+              CH.line(D, xa, y3 + h, xa, y4 + h + 4, { col: C.yel, dash: [3, 4], a: a3 });
+              CH.fillRect(D, xa, y4 - 2, xb, y4 + h + 2, { stroke: C.yel, sw: 3, a: a3 });
+              ft(D, R.cx, y4 + h + s * 3, 'B市のほうが 3600 − 2800 ＝ 800（人）多い', { col: C.yel, a: a3, size: s * 1.1 }, R.w);
+            }
+          }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

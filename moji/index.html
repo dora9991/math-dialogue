@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>文字と式の黒板</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+<style>
+/* 目次：黒板に、16時間を並べる */
+html,body{height:auto}
+.app{height:auto;min-height:100%}
+.menu{padding:.4rem 1.4rem 1.4rem;display:flex;flex-direction:column;gap:.9rem}
+.menu p.lead{margin:0;font-family:var(--f-chalk);font-weight:600;color:var(--chalk-2);font-size:1.05rem;line-height:1.6}
+.list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,22rem),1fr));gap:.6rem}
+.list li{display:flex;flex-direction:column;gap:.3rem;padding:.65rem .9rem;border:2px solid var(--chalk-4);border-radius:12px;min-width:0}
+.list li.on{border-color:var(--chalk-3);background:rgba(242,240,230,.05)}
+.list .no{font-family:var(--f-chalk);font-weight:600;font-size:.9rem;color:var(--chalk-2)}
+.list .ttl{font-family:var(--f-chalk);font-weight:600;font-size:1.1rem;line-height:1.45}
+.list li:not(.on) .ttl{color:var(--chalk-2)}
+.list .go{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.15rem}
+.list .soon{font-size:.85rem;color:var(--chalk-3)}
+</style>
+</head>
+<body>
+<div class="app" lang="ja">
+  <div class="board">
+    <header class="bar"><h1><small>中1</small>文字と式の黒板（目次）</h1><a class="btn" href="../kokuban/index.html">総目次</a></header>
+    <div class="track" aria-hidden="true"></div>
+    <main class="menu">
+      <p class="lead">電子黒板に映して、図を動かしながら考える授業のページ。16時間ぶん、どの時間からでも開けます。</p>
+      <ul class="list" id="list"></ul>
+    </main>
+  </div>
+</div>
+<script>
+(function () {
+  /* 時間ごとの題名は、ikkan の文字と式と同じ */
+  var L = [
+    ['第1時', 'いくつあっても使える式を、文字を使ってつくろう', [['01.html', 'ひらく ▶']]],
+    ['第2時', '文字式の表し方のきまりを見つけて、積を表そう', [['02.html', 'ひらく ▶']]],
+    ['第3時', '商や累乗の書き方のきまりを見つけて、表そう', [['03.html', 'ひらく ▶']]],
+    ['第4時', 'ことばの式をもとに、いろいろな数量を文字で表そう', [['04.html', 'ひらく ▶']]],
+    ['第5時', '式が表しているものを、読み取って当てよう', [['05.html', 'ひらく ▶']]],
+    ['第6時', '文字に数をあてはめて、式の値を求めよう', [['06.html', 'ひらく ▶']]],
+    ['第7時', '文字の部分が同じ項は、なぜまとめられるのだろう', [['07.html', 'ひらく ▶']]],
+    ['第8時', '1次式どうしを、たしたりひいたりしよう', [['08.html', 'ひらく ▶']]],
+    ['第9時', '1次式に数をかけたり、1次式を数でわったりしよう', [['09.html', 'ひらく ▶']]],
+    ['第10時', 'かっこのある式を、分配法則を使って計算しよう', [['10.html', 'ひらく ▶']]],
+    ['第11時', '1次式の計算を、たしかなものにしよう', [['11.html', 'ひらく ▶']]],
+    ['第12時', '数量の間の関係を、等式で表そう', [['12.html', 'ひらく ▶']]],
+    ['第13時', '大小の関係を、不等号を使った式で表そう', [['13.html', 'ひらく ▶']]],
+    ['第14時', '数あてのしくみを、文字を使った式で説明しよう', [['14.html', 'ひらく ▶']]],
+    ['第15時', '2通りの数え方が同じになることを、式で確かめよう', [['15.html', 'ひらく ▶']]],
+    ['第16時', '「文字と式」で学んだことを、整理して確かめよう', [['16.html', 'ひらく ▶']]]
+  ];
+  document.getElementById('list').innerHTML = L.map(function (x) {
+    var on = !!x[2];
+    return '<li' + (on ? ' class="on"' : '') + '><span class="no">' + x[0] + '</span><span class="ttl">' + x[1] + '</span>' +
+      (on ? '<span class="go">' + x[2].map(function (l) { return '<a class="btn primary" href="' + l[0] + '">' + l[1] + '</a>'; }).join('') + '</span>' : '<span class="soon">準備中</span>') + '</li>';
+  }).join('');
+})();
+</script>
+</body>
+</html>

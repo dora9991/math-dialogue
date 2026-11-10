@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>縮図で高さときょり</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 相似な図形 第6時：縮図を使って、はかれない高さやきょりを求めよう（ikkan の lesson_souji_06 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。場面の図は実際の長さ（m）の比のままかき、縮図はノートの方眼（cm）にかく。
+   場面の直角三角形が、縮みながらノートへ飛んでいき（縮図）、ものさしで高さをはかって、縮尺でもとにもどす。
+   縮図の長さ（小数第1位）・影や街灯の比例式は、座標（tan など）から計算し直して CH.check・GE.verify で確かめる。 */
+(function () {
+  var C = CH.C, R = Math.PI / 180, FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', OUT = 'rgba(20,40,30,.9)';
+  /* ---- このページの道具 ---- */
+  function box(D, o) { return CH.box(D, o || { l: .05, r: .05, t: .08, b: .1 }); }
+  function ext(F, Q) { return Object.assign({}, F, { P: Object.assign({}, F.P, Q), X: function (p) { return F.X(typeof p === 'string' && Q[p] ? Q[p] : p); } }); }
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), w = tw(D, s, size); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({ outline: OUT }, o, { size: size })); }
+  /* 図の四角（fig）と、字を書く四角（side）。横長なら右、縦長なら下 */
+  function lay(D, k) {
+    var B = CH.box(D, { l: .03, r: .03, t: .05, b: .05 });
+    if (B.w > B.h * 1.2 && B.w > 520) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + 10, B.y0 + B.h * .08, B.x1, B.y1), wide: true }; }
+    var h = B.h * .3; return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + 8, B.y1 - h + 6, B.x1, B.y1), wide: false };
+  }
+  /* 字の行（四角の幅に入るように、字を小さくする） */
+  function rows(D, Rr, list, o) {
+    o = o || {}; list = list.filter(Boolean); if (!list.length) return;
+    var nc = Rr.w > Rr.h * 2.2 && list.length > 3 ? 2 : 1, per = Math.ceil(list.length / nc), cw = Rr.w / nc;   /* 下の帯では 2列 */
+    var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (per * 1.6));
+    list.forEach(function (r, i) {
+      var c = Math.floor(i / per), j = i % per, w = tw(D, r.t, s), sz = w > cw - 8 ? s * (cw - 8) / w : s;
+      CH.text(D, Rr.x0 + c * cw, Rr.y0 + s * .8 + j * s * 1.6, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left', outline: OUT });
+    });
+  }
+  function f1(x) { return String(Math.round(x * 10) / 10); }
+  function f2(x) { return String(Math.round(x * 100) / 100); }
+  function about(x) { return GE.near(x, Math.round(x), 1e-9) ? String(Math.round(x)) : '約' + f1(x); }
+  /* 辺 s の外がわ（ref から遠い向き）に、長さの字 */
+  function sideLab(F, s, txt, o) {
+    o = o || {}; var a = F.X(s[0]), b = F.X(s[1]), m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, n = [-(b[1] - a[1]) / L, (b[0] - a[0]) / L];
+    var rf = F.X(o.ref || F.c); if ((m[0] - rf[0]) * n[0] + (m[1] - rf[1]) * n[1] < 0) n = [-n[0], -n[1]];
+    var sz = o.size || F.s * .8, w = tw(F.D, txt, sz), off = sz * (o.k || .45) + Math.abs(n[0]) * w / 2 + Math.abs(n[1]) * sz * .5;
+    CH.text(F.D, m[0] + n[0] * off, m[1] + n[1] * off, txt, { col: o.col || C.chalk, size: sz, a: o.a, outline: OUT });
+  }
+  /* 角の印と字（字は二等分線の上の、2辺にふれないところ） */
+  function mark(F, s, col, o) {
+    o = o || {}; var r = o.r || F.s * 1.05;
+    GE.arc(F, s, { col: col, fill: o.fill == null ? .3 : o.fill, a: o.a, r: r, n: o.n });
+    var t = o.t === false ? null : (o.t || Math.round(GE.ang(F.P, s)) + '°'); if (!t) return;
+    var A = F.X(s[0]), V = F.X(s[1]), B = F.X(s[2]), a1 = Math.atan2(A[1] - V[1], A[0] - V[0]), d = Math.atan2(B[1] - V[1], B[0] - V[0]) - a1;
+    while (d > Math.PI) d -= 2 * Math.PI; while (d <= -Math.PI) d += 2 * Math.PI;
+    var sz = o.size || F.s * .78, w = tw(F.D, t, sz), m = a1 + d / 2, need = (Math.max(w, sz) / 2 + 3) / Math.sin(Math.abs(d) / 2), dd = CH.clamp(Math.max(r + sz * .9, need), 0, o.max || F.s * 4.2);
+    CH.text(F.D, V[0] + Math.cos(m) * dd, V[1] + Math.sin(m) * dd, t, { col: col, size: sz, a: o.a, outline: OUT });
+  }
+  /* 点の並び（座標）の角：頂点 v、両どなり a・b */
+  function markP(F, a, v, b, col, o) { mark(ext(F, { X: a, V: v, Y: b }), 'XVY', col, o); }
+  /* 三角形：B が原点、C が右（BC＝bc）、AB＝ab、CA＝ca */
+  function tri(ab, bc, ca) { var x = (ab * ab - ca * ca + bc * bc) / (2 * bc); return { A: [x, Math.sqrt(ab * ab - x * x)], B: [0, 0], C: [bc, 0] }; }
+  /* 図形を s 倍して rot 度回し、名前を from → to に */
+  function xf(P, from, to, o) { var out = {}, r = (o.rot || 0) * R; from.split('').forEach(function (n, i) { var x = P[n][0] * o.s, y = P[n][1] * o.s; out[to[i]] = [x * Math.cos(r) - y * Math.sin(r), x * Math.sin(r) + y * Math.cos(r)]; }); return out; }
+  function bb(P) { var b = { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity }; Object.keys(P).forEach(function (k) { var p = P[k]; b.x0 = Math.min(b.x0, p[0]); b.x1 = Math.max(b.x1, p[0]); b.y0 = Math.min(b.y0, p[1]); b.y1 = Math.max(b.y1, p[1]); }); return b; }
+  function shift(P, d) { var out = {}; Object.keys(P).forEach(function (k) { out[k] = [P[k][0] + d[0], P[k][1] + d[1]]; }); return out; }
+  /* P2 を P1 の右（wide）か下に、すきま gap をあけて置く */
+  function beside(P1, P2, wide, gap) { var a = bb(P1), b = bb(P2), d = wide ? [a.x1 + gap - b.x0, a.y0 - b.y0] : [(a.x0 + a.x1) / 2 - (b.x0 + b.x1) / 2, a.y0 - gap - b.y1]; return Object.assign({}, P1, shift(P2, d)); }
+  /* いくつかの置き方のうち、いちばん大きく描けるもの */
+  function fitBest(D, Rr, list, o) { var best = null; list.forEach(function (P) { var F = GE.fit(D, Rr, P, o); if (!best || F.u > best.u * 1.02) best = F; }); return best; }
+  function cen(P, ns) { var c = [0, 0]; ns.split('').forEach(function (n) { c[0] += P[n][0] / ns.length; c[1] += P[n][1] / ns.length; }); return c; }
+  function lens(Q) { return Q.map(function (p, i) { var q = Q[(i + 1) % Q.length]; return Math.hypot(q[0] - p[0], q[1] - p[1]); }); }
+  function angs(Q) { return Q.map(function (p, i) { return GE.ang({ X: Q[(i + Q.length - 1) % Q.length], V: p, Y: Q[(i + 1) % Q.length] }, 'XVY'); }); }
+  /* 多角形 s1 を、相似な多角形 s2 の上へ k（0〜1）だけ動かした点（回す・ずらす・大きさを変える。裏返しはしない） */
+  function movePoly(P, s1, s2, k) {
+    var p = s1.split('').map(function (n) { return P[n]; }), q = s2.split('').map(function (n) { return P[n]; }), av = function (a) { return a.reduce(function (m, x) { return [m[0] + x[0] / a.length, m[1] + x[1] / a.length]; }, [0, 0]); };
+    var cp = av(p), cq = av(q), th = Math.atan2(q[1][1] - q[0][1], q[1][0] - q[0][0]) - Math.atan2(p[1][1] - p[0][1], p[1][0] - p[0][0]);
+    while (th > Math.PI) th -= 2 * Math.PI; while (th <= -Math.PI) th += 2 * Math.PI;
+    var sc = Math.hypot(q[1][0] - q[0][0], q[1][1] - q[0][1]) / Math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1]), e = CH.ease(k), tr = GE.lerpP(cp, cq, e), z = 1 + (sc - 1) * e;
+    return p.map(function (x) { var y = GE.rot(x, cp, th * e * 180 / Math.PI); return [(y[0] - cp[0]) * z + tr[0], (y[1] - cp[1]) * z + tr[1]]; });
+  }
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  /* 点の名前：図形 ns の中心から外向きに（o.dir で向きを決めることもできる） */
+  function labs(F, ns, o) {
+    o = o || {}; var c = F.X(cen(F.P, ns)), map = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0], ne: [.75, -.75], nw: [-.75, -.75], se: [.75, .75], sw: [-.75, .75] };
+    ns.split('').forEach(function (n) { var p = F.X(n), v = o.dir && o.dir[n] ? map[o.dir[n]] : [p[0] - c[0], p[1] - c[1]], L = Math.hypot(v[0], v[1]) || 1, r = F.s * .95; CH.text(F.D, p[0] + v[0] / L * r, p[1] + v[1] / L * r, n, { size: F.s, col: (o.col && o.col[n]) || C.chalk, a: o.a, w: 600 }); });
+  }
+  function arcAt(F, c, r, a0, a1, o) { o = o || {}; var g = F.D.ctx, p = F.X(c); g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.w || 2; g.beginPath(); g.arc(p[0], p[1], r * F.u, -a0 * R, -a1 * R, true); g.stroke(); g.restore(); }
+  function tn(d) { return Math.tan(d * R); }
+  /* 場面・ノート（縮図）・字の3つの四角。横長なら 左＝場面、右上＝ノート、右下＝字 */
+  function lay3(D, mode) {
+    var B = CH.box(D, { l: .03, r: .03, t: .04, b: .04 });
+    if (B.w > B.h * 1.2 && B.w > 520) {
+      if (mode === 'side') { var w = B.w * .44, x = B.x1 - w + 10; return { scene: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), note: CH.rect(x, B.y0 + 4, B.x1, B.y0 + B.h * .56), text: CH.rect(x, B.y0 + B.h * .6, B.x1, B.y1), wide: true }; }
+      var y = B.y0 + B.h * .56; return { scene: CH.rect(B.x0, B.y0, B.x1, y), note: CH.rect(B.x0, y + 8, B.cx - 6, B.y1), text: CH.rect(B.cx + 10, y + 14, B.x1, B.y1), wide: true };
+    }
+    return { scene: CH.rect(B.x0, B.y0, B.x1, B.y0 + B.h * .44), note: CH.rect(B.x0 + 4, B.y0 + B.h * .46, B.x1 - 4, B.y0 + B.h * .79), text: CH.rect(B.x0 + 6, B.y0 + B.h * .81, B.x1, B.y1), wide: false };
+  }
+  /* ノートの方眼（1目もり 1cm） */
+  function note(D, Rn, w, h, cap) {
+    CH.fillRect(D, Rn.x0, Rn.y0, Rn.x1, Rn.y1, { fill: 'rgba(242,240,230,.04)', stroke: 'rgba(242,240,230,.35)', sw: 1.2 });
+    var cs = CH.fs(D, .72), F = GE.fit(D, CH.rect(Rn.x0 + 6, Rn.y0 + cs * 1.6, Rn.x1 - 6, Rn.y1 - 4), { p: [-.4, -.8], q: [w + .4, h + .15] }, { pad: .02, size: cs });
+    for (var i = 0; i <= w; i++) { var a = F.X([i, 0]), b = F.X([i, h]); CH.line(D, a[0], a[1], b[0], b[1], { col: 'rgba(154,216,255,.22)', w: 1 }); }
+    for (var j = 0; j <= h; j++) { var c = F.X([0, j]), d = F.X([w, j]); CH.line(D, c[0], c[1], d[0], d[1], { col: 'rgba(154,216,255,.22)', w: 1 }); }
+    say(D, Rn.x0 + 8, Rn.y0 + cs * .85, cap, { size: cs, align: 'left', col: 'rgba(242,240,230,.85)', maxW: Rn.w - 16 });
+    return F;
+  }
+  /* たてのものさし（x cm のところ、0 〜 upto cm。mm の目もり） */
+  function ruler(F, x, upto, a) {
+    var D = F.D, p0 = F.X([x, 0]), p1 = F.X([x, upto]), w = Math.max(F.u * .6, 16);
+    CH.fillRect(D, p0[0], p1[1], p0[0] + w, p0[1], { fill: 'rgba(255,226,122,.1)', stroke: 'rgba(255,226,122,.7)', sw: 1.2, a: a });
+    for (var i = 0; i <= Math.round(upto * 10); i++) {
+      var y = F.X([x, i / 10])[1], L = i % 10 === 0 ? .45 : i % 5 === 0 ? .3 : .18;
+      CH.line(D, p0[0], y, p0[0] + w * L, y, { col: C.yel, w: 1, a: a });
+      if (i % 10 === 0) CH.text(D, p0[0] + w * .72, y, String(i / 10), { size: Math.min(F.s * .7, w * .6), col: C.yel, a: a, num: true });
+    }
+  }
+  /* 場面の三角形（m）が、ノートの縮図（cm）まで飛んでいく */
+  function fly(D, Fs, Fn, s3, n3, k, col) {
+    var e = CH.ease(k), pts = s3.map(function (p, i) { var a = Fs.X(p), b = Fn.X(n3[i]); return [CH.lerp(a[0], b[0], e), CH.lerp(a[1], b[1], e)]; });
+    CH.poly(D, pts, { fill: hexA(col || C.yel, .25), stroke: col || C.yel, sw: 2.4 });
+  }
+  function person(F, x, top, o) { o = o || {}; var r = Math.min(.3, top * .16); GE.seg(F, [[x, 0], [x, top - 2 * r]], { w: 3, col: o.col, a: o.a }); var c = F.X([x, top - r]); CH.circle(F.D, c[0], c[1], r * F.u, { stroke: o.col || C.chalk, sw: 2, fill: 'rgba(20,40,30,.9)', a: o.a }); }
+  /* 寸法線（a → b、字は外がわ） */
+  function dim(F, a, b, txt, side, o) {
+    o = o || {}; var A = F.X(a), B = F.X(b), d = [B[0] - A[0], B[1] - A[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L * side, d[0] / L * side], h = F.s * .3, col = o.col || 'rgba(242,240,230,.75)';
+    CH.line(F.D, A[0], A[1], B[0], B[1], { col: col, w: 1.4, a: o.a }); CH.line(F.D, A[0] - n[0] * h, A[1] - n[1] * h, A[0] + n[0] * h, A[1] + n[1] * h, { col: col, w: 1.4, a: o.a }); CH.line(F.D, B[0] - n[0] * h, B[1] - n[1] * h, B[0] + n[0] * h, B[1] + n[1] * h, { col: col, w: 1.4, a: o.a });
+    var sz = o.size || F.s * .8, w = tw(F.D, txt, sz), off = sz * .6 + Math.abs(n[0]) * w / 2 + Math.abs(n[1]) * sz * .3;
+    CH.text(F.D, (A[0] + B[0]) / 2 + n[0] * off, (A[1] + B[1]) / 2 + n[1] * off, txt, { size: sz, col: o.tcol || C.chalk, a: o.a, outline: OUT });
+  }
+
+  /* ---- 今日の問い：校舎から 25m、見上げる角 30°、目の高さ 1.5m。縮尺 1/500 → 底辺 5cm、高さ 約2.9cm ---- */
+  var D0 = 25, A0 = 30, EY = 1.5, TOP = EY + D0 * tn(A0), SE = [[0, EY], [D0, EY], [D0, TOP]], N5 = [[0, 0], [5, 0], [5, 5 * tn(A0)]];
+  CH.check(GE.near(D0 * 100 / 500, 5) && f1(5 * tn(A0)) === '2.9' && GE.near(2.9 * 500 / 100, 14.5) && GE.near(14.5 + 1.5, 16) && Math.round(TOP) === 16 && GE.near(GE.ang({ X: SE[1], V: SE[0], Y: SE[2] }, 'XVY'), 30), '今日の問い（縮図で 2.9cm → 約16m）');
+  (function () { var P = { E: SE[0], H: SE[1], T: SE[2], e: N5[0], h: N5[1], t: N5[2] }; CH.check(GE.near(GE.len(P, 'EH') / GE.len(P, 'eh'), 5) && GE.near(GE.len(P, 'HT') / GE.len(P, 'ht'), 5), '縮図と場面の三角形は相似（m と cm で 1：500）'); })();
+  function school(D, F, o) {
+    o = o || {}; var g = 'rgba(242,240,230,.8)';
+    GE.seg(F, [[-3, 0], [34, 0]], { w: 2 });
+    GE.polyP(F, [[25, 0], [31, 0], [31, TOP], [25, TOP]], { col: C.chalk, fa: .07, sw: 2.2 });
+    for (var j = 1; j < 5; j++) for (var i = 0; i < 2; i++) { var a = F.X([25.9 + i * 2.7, j * 3.1]), b = F.X([27.4 + i * 2.7, j * 3.1 + 1.4]); CH.fillRect(D, a[0], b[1], b[0], a[1], { stroke: 'rgba(242,240,230,.35)', sw: 1 }); }
+    var lc = F.X([28, TOP + 1.2]); CH.text(D, lc[0], lc[1], '校舎', { size: F.s * .85, col: g });
+    person(F, 0, EY + .3);
+    GE.seg(F, [SE[0], SE[1]], { dash: [6, 5], w: 1.8, col: g }); GE.seg(F, [SE[0], SE[2]], { w: 2.2, col: o.sight || C.chalk });
+    arcAt(F, SE[0], 5, 0, A0); var al = F.X(GE.polar(SE[0], 6.6, 13)); CH.text(D, al[0], al[1], '30°', { size: F.s * .8, outline: OUT });
+    dim(F, [0, -.9], [D0, -.9], '25m', 1, { size: F.s * .8 }); dim(F, [-1.6, 0], [-1.6, EY], '1.5m', -1, { size: F.s * .75 });
+    dim(F, [33, 0], [33, TOP], o.h || '高さ ?m', 1, { size: F.s * .8, tcol: o.hc });
+  }
+  var SFR = { p: [-5.5, -3.2], q: [39, 17.4] };
+
+  /* ---- 例題：棒 1.2m の影 1.6m、木の影 12m → 木の高さ 9m ---- */
+  var SH = { P: [0, 1.2], Q: [0, 0], R: [1.6, 0], S: [5, 9], U: [5, 0], V: [17, 0] };
+  CH.check(GE.verify(SH, 'PR∥SV') && GE.verify(SH, '△PQR∽△SUV') && GE.verify(SH, 'PQ：SU＝QR：UV') && GE.verify(SH, 'PQ＝1.2、QR＝1.6、UV＝12、SU＝9') && GE.near(1.2 * 12 / 1.6, 9), '例題（木の高さ 9m）');
+  function shadow(D, F, o) {
+    o = o || {}; var g = 'rgba(242,240,230,.55)';
+    GE.seg(F, [[-1.5, 0], [19, 0]], { w: 2 });
+    [-2.4, -1.2, 1.2].forEach(function (d) { GE.seg(F, [[SH.S[0] + d * 3, SH.S[1] + 2.25 * d + .6], [SH.S[0] + d * 3 + 4, SH.S[1] + 2.25 * d + .6 - 3]], { col: 'rgba(255,226,122,.35)', w: 1.4, dash: [5, 5] }); });
+    GE.seg(F, 'PR', { col: 'rgba(255,226,122,.7)', w: 1.6, dash: [5, 4] }); GE.seg(F, 'SV', { col: 'rgba(255,226,122,.7)', w: 1.6, dash: [5, 4] });
+    GE.seg(F, 'QP', { w: 4 }); GE.seg(F, [SH.U, [5, 7.4]], { w: 5, col: '#c9a27a' });
+    var c = F.X([5, 7.6]); CH.circle(D, c[0], c[1], 1.4 * F.u, { fill: 'rgba(169,240,176,.35)', stroke: C.green, sw: 2 });
+    GE.seg(F, [SH.Q, SH.R], { col: C.blue, w: 3.5 }); GE.seg(F, [SH.U, SH.V], { col: C.blue, w: 3.5 });
+    dim(F, [-.7, 0], [-.7, 1.2], '1.2m', -1, { size: F.s * .72 }); dim(F, [0, -.8], [1.6, -.8], '1.6m', 1, { size: F.s * .72 });
+    dim(F, [5, -.8], [17, -.8], '12m', 1, { size: F.s * .8 }); dim(F, [3.2, 0], [3.2, 9], o.h || 'x m', -1, { size: F.s * .8, tcol: o.hc });
+    var sun = F.X([-.4, 9.4]); CH.circle(D, sun[0], sun[1], F.s * .9, { fill: 'rgba(255,226,122,.5)', stroke: C.yel, sw: 2 }); CH.text(D, sun[0] + F.s * 1.4, sun[1], '太陽の光', { size: F.s * .7, col: C.yel, align: 'left', outline: OUT });
+  }
+
+  /* ---- 例題2：川はば。A の真向かいの木 P、AB＝30m、∠PAB＝90°、∠PBA＝40°。縮尺 1/1000 → AB 3cm、AP 約2.5cm ---- */
+  var RV = { A: [0, 0], B: [30, 0] }; RV.P = [0, 30 * tn(40)];
+  var NR = [[0, 0], [3, 0], [0, 3 * tn(40)]];
+  CH.check(GE.verify(RV, '∠PAB＝90°、∠PBA＝40°、AB＝30') && f1(3 * tn(40)) === '2.5' && GE.near(2.5 * 1000 / 100, 25) && Math.round(GE.len(RV, 'AP')) === 25, '例題2（川はば 約25m）');
+  function river(D, F, o) {
+    o = o || {}; var y1 = RV.P[1], a = F.X([-4, y1]), b = F.X([35, 0]);
+    CH.fillRect(D, a[0], a[1], b[0], b[1], { fill: 'rgba(154,216,255,.16)' });
+    GE.seg(F, [[-4, 0], [35, 0]], { w: 2 }); GE.seg(F, [[-4, y1], [35, y1]], { w: 2 });
+    var w = F.X([17, y1 / 2]); CH.text(D, w[0], w[1], '川', { size: F.s * 1.1, col: 'rgba(154,216,255,.8)' });
+    GE.seg(F, 'AP', { col: o.ap || C.chalk, w: 2.4, dash: o.ap ? null : [6, 5] }); GE.seg(F, 'BP'); GE.seg(F, 'AB', { w: 3 });
+    var t = F.X(RV.P); CH.circle(D, t[0], t[1] - F.s * .6, F.s * .55, { fill: 'rgba(169,240,176,.4)', stroke: C.green, sw: 2 });
+    GE.dot(F, 'A'); GE.dot(F, 'B'); GE.dot(F, 'P');
+    GE.labels(F, ['A', 'B', 'P'], { dir: { A: 'sw', B: 'se', P: 'w' } }); GE.right(F, 'BAP');
+    mark(F, 'ABP', C.chalk, { t: '40°', r: F.s * 1.4, fill: .2 });
+    dim(F, [0, -2.2], [30, -2.2], '30m', 1, { size: F.s * .8 });
+    sideLab(F, 'AP', o.h || '川はば ?m', { ref: 'B', col: o.hc });
+  }
+  var RFR = { p: [-11, -5.4], q: [35, 27.5] };
+
+  /* ---- 考えよう：縮尺を変えて校舎の縮図をかく（1/250・1/500・1/1000） ---- */
+  var SCL = [250, 500, 1000];
+  SCL.forEach(function (n) { var b = D0 * 100 / n, h = b * tn(A0); CH.check(b <= 10 && h < 6 && GE.near(h * n / 100 + EY, TOP), '考えよう：縮尺 1/' + n + ' の縮図（底辺 ' + b + 'cm）'); });
+
+  /* ---- チャレンジ：街灯。人 1.5m、街灯の真下から 6m、影 3m → 街灯 4.5m ---- */
+  var LP = { S: [9, 0], Q: [6, 0], H: [6, 1.5], O: [0, 0], L: [0, 4.5] };
+  CH.check(GE.verify(LP, '△SQH∽△SOL') && GE.verify(LP, 'QH：OL＝SQ：SO＝1：3') && GE.verify(LP, 'OL＝4.5、QH＝1.5、SQ＝3、OQ＝6') && GE.isPar(LP, 'LH', 'HS') && GE.near(13.5 / 3, 4.5), 'チャレンジ（街灯 4.5m）');
+  function lamp(D, F, k, o) {
+    o = o || {};
+    GE.seg(F, [[-1.2, 0], [10.6, 0]], { w: 2 });
+    GE.seg(F, [[0, 0], [0, 4.5]], { w: 5, col: 'rgba(242,240,230,.85)' }); GE.seg(F, [[0, 4.5], [.6, 4.5]], { w: 4, col: 'rgba(242,240,230,.85)' });
+    var l = F.X([0, 4.5]); CH.circle(D, l[0], l[1], F.s * .45, { fill: C.yel, stroke: C.orange, sw: 1.5 });
+    GE.seg(F, 'LS', { col: 'rgba(255,226,122,.7)', w: 1.6, dash: [6, 5] });
+    person(F, 6, 1.5); GE.seg(F, 'QS', { col: C.blue, w: 4 });
+    dim(F, [0, -.6], [6, -.6], '6m', 1, { size: F.s * .8 }); dim(F, [6, -.6], [9, -.6], '3m', 1, { size: F.s * .8 });
+    dim(F, [6.5, 0], [6.5, 1.5], '1.5m', 1, { size: F.s * .72 }); dim(F, [-.7, 0], [-.7, 4.5], o.h || '? m', -1, { size: F.s * .8, tcol: o.hc });
+  }
+
+  var steps = [
+    { tag: '今日の問い', bh: '校舎の高さ', q: '校舎の高さを、屋上にのぼらずに求めたい。校舎から 25m はなれた地点から屋上のはしを見上げると、水平の方向から 30° 上に見えた。目の高さは 1.5m である。縮図をかいて、校舎の高さを求める方法を考えよう。',
+      notes: ['① 自分の考え（3分）　縮尺・縮図のかき方・求め方を書こう。', '② ペアの考え（3分）　自分とちがう縮尺や、結果は？'],
+      draw: function (D) { var F = GE.fit(D, box(D, { l: .04, r: .04, t: .06, b: .08 }), SFR, { pad: .02 }); school(D, F); } },
+    { tag: '今日の問い', q: '縮尺 1/500 の縮図をかくと、校舎の高さは、およそ何 m になる？', a: '約 16m', sub: '25m＝2500cm → 縮図では 5cm。高さの部分をはかると 約2.9cm → 2.9×500＝1450（cm）＝14.5m。目の高さ 1.5m をたして 16m', dur: 9,
+      b: [{ t: '縮尺 1/500：25m＝2500cm → 縮図で 5cm', col: C.yel }, { t: '高さの部分 約2.9cm → 2.9×500＝1450cm＝14.5m', col: C.yel }, { t: '14.5＋1.5＝16　校舎の高さ <b>約16m</b>', col: C.pink }],
+      draw: function (D) {
+        var L = lay3(D), t = D.ph ? D.t : 0, Fs = GE.fit(D, L.scene, SFR, { pad: .02 }), done = t > .86;
+        if (D.ph) GE.polyP(Fs, SE, { col: C.yel, fa: .3 * CH.smooth(0, .1, t), stroke: false });
+        school(D, Fs, { sight: D.ph ? C.yel : C.chalk, h: done ? '約16m' : '高さ ?m', hc: done ? C.pink : null });
+        var Fn = note(D, L.note, 6, 3, '縮尺 1/500 の縮図（1目もり 1cm）');
+        if (!D.ph) return;
+        var k = CH.smooth(.1, .4, t);
+        if (t > .1 && t < .42) fly(D, Fs, Fn, SE, N5, k);
+        if (t >= .42) {
+          GE.polyP(Fn, N5, { col: C.yel, fa: .25 }); GE.right(ext(Fn, { X: N5[0], V: N5[1], Y: N5[2] }), 'XVY', { r: Fn.u * .25 });
+          arcAt(Fn, N5[0], 1, 0, 30, { col: C.yel }); var al = Fn.X(GE.polar(N5[0], 1.5, 12)); CH.text(D, al[0], al[1], '30°', { size: Fn.s * .85, col: C.yel, outline: OUT });
+          sideLab(Fn, [N5[0], N5[1]], '5cm', { ref: N5[2], col: C.yel, size: Fn.s });
+          var ar = CH.smooth(.48, .56, t); ruler(Fn, 5.08, 3.2, ar);
+          var m = CH.smooth(.56, .66, t), y = Fn.X([5, N5[2][1] * m]);
+          if (m > 0) { CH.line(D, y[0], y[1], y[0] + Math.max(Fn.u * .6, 16), y[1], { col: C.pink, w: 3 }); if (m >= 1) CH.text(D, y[0] + Math.max(Fn.u * .6, 16) + 6, y[1], '約2.9cm', { size: Fn.s, col: C.pink, align: 'left', outline: OUT }); }
+        }
+        rows(D, L.text, [{ t: '25m＝2500cm → 2500÷500＝5cm', col: C.yel, a: CH.smooth(.42, .48, t) }, { t: '高さの部分は 約2.9cm', col: C.pink, a: CH.smooth(.66, .7, t) },
+          { t: '2.9×500＝1450cm＝14.5m', a: CH.smooth(.72, .78, t) }, { t: '14.5＋1.5＝16　→ 約16m', col: C.pink, a: CH.smooth(.86, .92, t) }]);
+      } },
+    { tag: 'ことば', bh: 'ことば', q: 'もとの形を縮めてかいた図を何という？ 縮図の上の長さと、実際の長さの比を何という？', a: '縮図。縮尺', sub: '縮尺 1/500 では、縮図の 1cm は実際の 500cm（5m）。縮図は、実際の図形と相似になっている', dur: 5,
+      b: [{ t: '<b>縮図</b> … もとの形を縮めてかいた図（実際の図形と<b>相似</b>）', col: C.green }, { t: '<b>縮尺</b> … 縮図の上の長さと実際の長さの比（1/500 なら 縮図の 1cm ＝ 実際の 5m）', col: C.green }],
+      draw: function (D) {
+        var L = lay3(D), t = D.ph ? D.t : 0, Fs = GE.fit(D, L.scene, SFR, { pad: .02 });
+        GE.polyP(Fs, SE, { col: C.yel, fa: .2 }); school(D, Fs, { sight: C.yel });
+        var Fn = note(D, L.note, 6, 3, '縮図（縮尺 1/500）');
+        GE.polyP(Fn, N5, { col: C.yel, fa: .25 }); sideLab(Fn, [N5[0], N5[1]], '5cm', { ref: N5[2], col: C.yel, size: Fn.s });
+        if (!D.ph) return;
+        var a1 = CH.smooth(.05, .3, t);
+        SE.forEach(function (p, i) { var a = Fs.X(p), b = Fn.X(N5[i]); CH.line(D, a[0], a[1], CH.lerp(a[0], b[0], a1), CH.lerp(a[1], b[1], a1), { col: 'rgba(255,226,122,.6)', w: 1.4, dash: [5, 5] }); });
+        var u = Math.min(L.text.w / 6.2, CH.fs(D) * 2.2), y = L.text.y0 + L.text.h * .62, x0 = L.text.x0 + 4, a2 = CH.smooth(.4, .6, t);
+        for (var i = 0; i < 5; i++) { CH.fillRect(D, x0 + i * u, y, x0 + (i + 1) * u, y + CH.fs(D, .5), { fill: i % 2 ? 'rgba(242,240,230,.15)' : 'rgba(255,226,122,.45)', stroke: C.yel, sw: 1, a: a2 }); CH.text(D, x0 + (i + 1) * u, y + CH.fs(D, 1.1), (i + 1) * 5 + 'm', { size: CH.fs(D, .6), a: a2, num: true }); }
+        CH.text(D, x0, y + CH.fs(D, 1.1), '0', { size: CH.fs(D, .6), a: a2, num: true });
+        rows(D, CH.rect(L.text.x0, L.text.y0, L.text.x1, y - 4), [{ t: '縮図 ∽ 実際の三角形（相似比 1：500）', col: C.yel, a: CH.smooth(.3, .4, t) }, { t: '縮図の 1cm ＝ 実際の 500cm＝5m', a: a2 }]);
+      } },
+    { tag: '例題', bh: '例題　影で木の高さ', q: '高さ 1.2m の棒の影の長さは 1.6m だった。同じときに、木の影の長さは 12m だった。木の高さは何 m だろう。', a: '9m', sub: '太陽の光は平行だから、棒と影の三角形と、木と影の三角形は、2組の角が等しく相似。1.2：x＝1.6：12 → 1.6x＝14.4 → x＝9', dur: 7,
+      b: { t: '光は平行 → 2組の角が等しく相似　1.2：x＝1.6：12 → <b>x＝9</b>　木の高さ 9m', col: C.pink },
+      draw: function (D) {
+        var L = lay(D, .36), t = D.ph ? D.t : 0, F = GE.fit(D, L.fig, { p: [-3.2, -2.4], q: [18.4, 10.6] }, { pad: .02 }), done = t > .86, P = Object.assign({}, SH);
+        F = ext(F, P);
+        if (D.ph) { GE.poly(F, 'PQR', { col: C.yel, fa: .35 * CH.smooth(0, .1, t), stroke: false }); GE.poly(F, 'SUV', { col: C.yel, fa: .22 * CH.smooth(.12, .22, t), stroke: false }); }
+        shadow(D, F, { h: done ? '9m' : 'x m', hc: done ? C.pink : null });
+        if (!D.ph) return;
+        GE.right(F, 'PQR', { col: C.pink, a: CH.smooth(.22, .3, t) }); GE.right(F, 'SUV', { col: C.pink, a: CH.smooth(.22, .3, t) });
+        mark(F, 'PRQ', C.pink, { t: false, a: CH.smooth(.3, .38, t), r: F.s * .8 }); mark(F, 'SVU', C.pink, { t: false, a: CH.smooth(.3, .38, t), r: F.s * 1.4 });
+        if (t > .4 && t < .8) GE.polyP(F, GE.moveTri(P, 'PQR', 'SUV', CH.smooth(.4, .78, t)), { col: C.yel, fa: .3 });
+        rows(D, L.side, [{ t: '光は平行 → 2組の角が等しい', a: CH.smooth(.22, .38, t) }, { t: '→ 2つの三角形は相似', a: CH.smooth(.38, .44, t) }, { t: '1.2：x＝1.6：12', col: C.yel, a: CH.smooth(.78, .84, t) }, { t: '1.6x＝14.4　x＝9', col: C.pink, a: CH.smooth(.86, .92, t) }]);
+      } },
+    { tag: '例題', bh: '例題2　川はば', q: '川の向こう岸の木 P の真向かいに A をとり、岸にそって 30m はなれた B で、∠PBA をはかると 40° だった（∠PAB＝90°）。縮尺 1/1000 の縮図をかいて、川はば AP を求めよう。', a: '約 25m', sub: '30m＝3000cm → 縮図では 3cm。∠B＝40°、∠A＝90° の直角三角形をかき、AP をはかると 約2.5cm → 2.5×1000＝2500（cm）＝25m', dur: 9,
+      b: { t: '縮尺 1/1000：AB 3cm、∠B＝40° → 縮図の AP 約2.5cm → 2.5×1000＝2500cm　川はば <b>約25m</b>', col: C.pink },
+      draw: function (D) {
+        var L = lay3(D, 'side'), t = D.ph ? D.t : 0, Fs = GE.fit(D, L.scene, RFR, { pad: .02 }), F2 = ext(Fs, RV), done = t > .86, S3 = [RV.A, RV.B, RV.P];
+        if (D.ph) GE.polyP(Fs, S3, { col: C.yel, fa: .25 * CH.smooth(0, .1, t), stroke: false });
+        river(D, F2, { ap: D.ph ? C.yel : null, h: done ? '約25m' : '川はば ?m', hc: done ? C.pink : null });
+        var Fn = note(D, L.note, 4, 3, '縮尺 1/1000 の縮図（1目もり 1cm）'), off = function (Q) { return Q.map(function (p) { return [p[0] + .2, p[1]]; }); }, NQ = off(NR);
+        if (!D.ph) return;
+        if (t > .1 && t < .42) fly(D, Fs, Fn, S3, NQ, CH.smooth(.1, .4, t));
+        if (t >= .42) {
+          GE.polyP(Fn, NQ, { col: C.yel, fa: .25 }); GE.right(ext(Fn, { X: NQ[1], V: NQ[0], Y: NQ[2] }), 'XVY', { r: Fn.u * .22 });
+          markP(Fn, NQ[0], NQ[1], NQ[2], C.yel, { t: '40°', r: Fn.u * .55, size: Fn.s * .85 });
+          sideLab(Fn, [NQ[0], NQ[1]], '3cm', { ref: NQ[2], col: C.yel, size: Fn.s });
+          var ar = CH.smooth(.48, .56, t), w = Math.max(Fn.u * .6, 16); ruler(Fn, .2 - w / Fn.u, 2.8, ar);
+          var m = CH.smooth(.56, .66, t), y = Fn.X([.2, NQ[2][1] * m]);
+          if (m > 0) { CH.line(D, y[0] - w, y[1], y[0], y[1], { col: C.pink, w: 3 }); if (m >= 1) CH.text(D, y[0] + 8, y[1] - Fn.s * .1, '約2.5cm', { size: Fn.s, col: C.pink, align: 'left', outline: OUT }); }
+        }
+        rows(D, L.text, [{ t: '30m＝3000cm → 3000÷1000＝3cm', col: C.yel, a: CH.smooth(.42, .48, t) }, { t: '縮図の AP は 約2.5cm', col: C.pink, a: CH.smooth(.66, .7, t) },
+          { t: '2.5×1000＝2500cm＝25m', col: C.pink, a: CH.smooth(.86, .92, t) }]);
+      } },
+    { tag: '考えよう', q: '今日の問いの校舎（25m、30°、目の高さ 1.5m）を、縮尺 1/250・1/500・1/1000 の縮図でといて、結果をくらべよう。どんなことに気づくだろう。縮尺は、どう決めるとよいだろう。',
+      notes: ['表にまとめよう：25m は縮図で何 cm？ 高さの部分は何 cm？ 校舎の高さは何 m？', 'スライダーで縮尺を変えられます。ものさしで、高さの部分をはかろう。'],
+      sliders: [{ key: 'n', label: '縮尺', min: 0, max: 2, step: 1, val: 1, fmt: function (x) { return '1/' + SCL[x]; } }],
+      draw: function (D) {
+        var Rr = box(D, { l: .03, r: .03, t: .04, b: .04 }), n = SCL[D.V.n], b = D0 * 100 / n, h = b * tn(A0), Fn = note(D, Rr, 11, 6, '縮尺 1/' + n + ' の縮図（1目もり 1cm）'), Q = [[0, 0], [b, 0], [b, h]];
+        GE.polyP(Fn, Q, { col: C.yel, fa: .22 }); GE.right(ext(Fn, { X: Q[0], V: Q[1], Y: Q[2] }), 'XVY', { r: Math.min(Fn.u * .25, b * Fn.u * .2) });
+        arcAt(Fn, Q[0], Math.min(1, b * .3), 0, 30, { col: C.yel }); var al = Fn.X(GE.polar(Q[0], Math.min(1.5, b * .45), 12)); CH.text(D, al[0], al[1], '30°', { size: Fn.s * .8, col: C.yel, outline: OUT });
+        ruler(Fn, b + .08, Math.ceil(h * 10) / 10 + .3, 1);
+      } },
+    { tag: 'チャレンジ', bh: 'チャレンジ', q: '身長 1.5m の人が、街灯の真下から 6m はなれて立つと、影の長さが 3m になった。街灯の高さは何 m だろう。', a: '4.5m', sub: '影の先を頂点とする2つの直角三角形は、2組の角が等しく相似（相似比 3：9＝1：3）。1.5：x＝3：9 → 3x＝13.5 → x＝4.5', dur: 7,
+      notes: ['ヒント：街灯・人・地面でできる、2つの直角三角形を見つけよう。影の先から街灯の真下までは、何 m かな。'],
+      b: { t: '影の先を頂点とする2つの直角三角形は相似　1.5：x＝3：9 → 3x＝13.5 → <b>x＝4.5</b>　4.5m', col: C.orange },
+      draw: function (D) {
+        var L = lay(D, .36), t = D.ph ? D.t : 0, F = ext(GE.fit(D, L.fig, { p: [-3.2, -2.2], q: [11.4, 5.6] }, { pad: .03 }), LP), done = t > .88;
+        if (D.ph) { GE.poly(F, 'SQH', { col: C.blue, fa: .3 * CH.smooth(0, .1, t), stroke: false }); GE.poly(F, 'SOL', { col: C.orange, fa: .18 * CH.smooth(.1, .2, t), stroke: false }); }
+        lamp(D, F, 0, { h: done ? '4.5m' : '? m', hc: done ? C.orange : null });
+        if (!D.ph) return;
+        var k = CH.smooth(.3, .7, t), z = 1 + 2 * CH.ease(k);
+        if (t > .3) GE.polyP(F, ['S', 'Q', 'H'].map(function (n) { return GE.lerpP(LP.S, LP[n], z); }), { col: C.yel, fa: .2 });
+        GE.labels(F, ['S'], { dir: { S: 's' } });
+        rows(D, L.side, [{ t: '影の先 S を頂点とする2つの三角形', a: CH.smooth(.05, .2, t) }, { t: '直角と ∠S が共通 → 相似', a: CH.smooth(.2, .3, t) }, { t: 'S から 3m と 9m（1：3）', col: C.yel, a: CH.smooth(.7, .76, t) },
+          { t: '1.5：x＝3：9', col: C.yel, a: CH.smooth(.76, .82, t) }, { t: '3x＝13.5　x＝4.5', col: C.orange, a: CH.smooth(.88, .94, t) }]);
+      } }
+  ];
+
+  K3.run({
+    no: '第6時', title: '縮図を使って、はかれない高さやきょりを求めよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '05.html', label: '◀ 第5時' }, { href: '07.html', label: '第7時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

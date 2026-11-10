@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>数学の黒板</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+<style>
+/* 総目次：学年ごとに、単元のカードを並べる */
+html,body{height:auto}
+.app{height:auto;min-height:100%}
+.menu{padding:.4rem 1.4rem 1.4rem;display:flex;flex-direction:column;gap:1rem}
+.menu p.lead{margin:0;font-family:var(--f-chalk);font-weight:600;color:var(--chalk-2);font-size:1.05rem;line-height:1.6}
+.menu h2{margin:.5rem 0 0;font-family:var(--f-chalk);font-size:1.35rem;color:#ffe27a}
+.list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr));gap:.6rem}
+.list li{display:flex;flex-direction:column;gap:.35rem;padding:.7rem .9rem;border:2px solid var(--chalk-3);border-radius:12px;background:rgba(242,240,230,.05);min-width:0}
+.list .ttl{font-family:var(--f-chalk);font-weight:600;font-size:1.15rem;line-height:1.4}
+.list .no{font-size:.85rem;color:var(--chalk-2)}
+.list .go{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.1rem}
+</style>
+</head>
+<body>
+<div class="app" lang="ja">
+  <div class="board">
+    <header class="bar"><h1><small>中1〜中3</small>数学の黒板（総目次）</h1></header>
+    <div class="track" aria-hidden="true"></div>
+    <main class="menu" id="menu">
+      <p class="lead">電子黒板に映して、図やグラフを動かしながら考える授業のページ。単元をえらぶと、その単元の目次がひらきます（流れは ikkan のワークシートと同じ：今日の問い → ことば → 例題 → 考えよう → チャレンジ）。</p>
+    </main>
+  </div>
+</div>
+<script>
+(function () {
+  /* [学年, [[単元名, フォルダ, 時間数, ほかのリンク], …]] */
+  var G = [
+    ['中1', [['正の数・負の数', 'seifu', 23], ['文字と式', 'moji', 16], ['方程式', 'hotei', 14], ['比例と反比例', 'hirei', 16], ['平面図形', 'heimen', 15],
+      ['空間図形', 'kukan', 15, [['../seitamentai/index.html', '正多面体']]], ['データの活用', 'katsuyo', 11, [['../katsuyo/ruidai.html', '類題5題']]]]],
+    ['中2', [['式の計算', 'shiki', 11], ['連立方程式', 'renritsu', 13], ['一次関数', 'ichiji', 17], ['平行と合同', 'heikou', 14], ['三角形と四角形', 'sankaku', 17],
+      ['証明パターン集（★〜★★★★）', 'shomei', 0], ['データの比較（箱ひげ図）', 'hako', 5], ['確率', 'kakuritsu', 8]]],
+    ['中3', [['式の展開と因数分解', 'takou', 17], ['平方根', 'heihou', 14], ['二次方程式', 'niji', 12], ['関数 y＝ax²', 'kansu', 14], ['相似な図形', 'souji', 20],
+      ['円', 'en', 8], ['三平方の定理', 'sanhei', 12], ['標本調査', 'hyouhon', 5]]]
+  ];
+  /* まだ公開していない単元（できたら、ここから消す） */
+  var SOON = [];
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  var html = '';
+  G.forEach(function (g) {
+    html += '<h2>' + g[0] + '</h2><ul class="list">';
+    g[1].forEach(function (u) {
+      var soon = SOON.indexOf(u[1]) >= 0;
+      html += '<li' + (soon ? ' style="opacity:.55"' : '') + '><span class="ttl">' + esc(u[0]) + '</span><span class="no">' + (u[2] ? u[2] + '時間' : '難易度別の証明 44題') + '</span><span class="go">' +
+        (soon ? '<span class="no">準備中</span>' : '<a class="btn primary" href="../' + u[1] + '/index.html">ひらく ▶</a>' +
+        (u[3] || []).map(function (l) { return '<a class="btn" href="' + l[0] + '">' + esc(l[1]) + '</a>'; }).join('')) + '</span></li>';
+    });
+    html += '</ul>';
+  });
+  document.getElementById('menu').insertAdjacentHTML('beforeend', html);
+})();
+</script>
+</body>
+</html>

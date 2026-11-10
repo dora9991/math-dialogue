@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>三角形と比の定理の逆</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 相似な図形 第9時：線分の比が等しければ、平行といえるだろうか（ikkan の lesson_souji_09 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。証明の行（相似 △ADE∽△ABC・比・平行）は GE.proof が座標で確かめ、表の ○× は CH.check で計算し直す。
+   D、E をスライダーで動かすと、AD：DB＝AE：EC のときだけ DE∥BC（同位角が等しい）。比が等しくないと、DE をのばした線は BC と交わる。 */
+(function () {
+  var C = CH.C, FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', OUT = 'rgba(20,40,30,.9)';
+  /* ---- このページの道具 ---- */
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), w = tw(D, s, size); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({ outline: OUT }, o, { size: size })); }
+  /* 図の四角（fig）と、字の四角（side）。よこ長ならみぎ、たて長なら下 */
+  function lay(D, k, kh) {
+    var B = CH.box(D, { l: .03, r: .03, t: .04, b: .04 });
+    if (B.w > B.h * 1.15 && B.w > 560) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .1, B.x1, B.y1 - B.h * .05), wide: true }; }
+    var h = B.h * (kh || .3); return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .04, B.y1 - h + 6, B.x1 - B.w * .02, B.y1), wide: false };
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする）。list：[{ t, col, a }] */
+  function rows(D, R, list, o) {
+    o = o || {}; list = list.filter(Boolean); if (!list.length) return;
+    var nc = R.w > R.h * 2.2 && list.length > 3 ? 2 : 1, per = Math.ceil(list.length / nc), cw = R.w / nc;   // 下の帯では 2列
+    var s = Math.min(o.size || CH.fs(D, .92), R.h / (per * 1.55));
+    list.forEach(function (r, i) {
+      if (r.a === 0) return; var c = Math.floor(i / per), j = i % per, w = tw(D, r.t, s), sz = w > cw - 8 ? s * (cw - 8) / w : s;
+      CH.text(D, R.x0 + c * cw, R.y0 + s * .8 + j * s * 1.55, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left', outline: OUT });
+    });
+  }
+  /* 辺 ab のそばの字（ref から遠ざかる向き。ref がなければ図の中心から）。pos：a からの位置（0〜1） */
+  function len(F, a, b, t, o) {
+    o = o || {}; var p = F.X(a), q = F.X(b), u = o.pos == null ? .5 : o.pos, m = [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u];
+    var d = [q[0] - p[0], q[1] - p[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L, d[0] / L], r = F.X(o.ref || F.c);
+    if ((m[0] - r[0]) * n[0] + (m[1] - r[1]) * n[1] < 0) n = [-n[0], -n[1]];
+    var sz = F.s * (o.size || .85), w = tw(F.D, t, sz), k = (o.k || .45) * F.s + Math.abs(n[0]) * w / 2 + Math.abs(n[1]) * sz / 2;
+    CH.text(F.D, m[0] + n[0] * k, m[1] + n[1] * k, t, { col: o.col || C.chalk, size: sz, a: o.a, outline: OUT });
+  }
+  /* 寸法線：線分 ab にそって、外がわへ k ずらした線（両はしに短い線）と字 */
+  function dim(F, a, b, o) {
+    o = o || {}; var p = F.X(a), q = F.X(b), d = [q[0] - p[0], q[1] - p[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L, d[0] / L], r = F.X(o.ref || F.c), m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+    if ((m[0] - r[0]) * n[0] + (m[1] - r[1]) * n[1] < 0) n = [-n[0], -n[1]];
+    var k = (o.k || 1) * F.s, h = F.s * .32, P0 = [p[0] + n[0] * k, p[1] + n[1] * k], Q0 = [q[0] + n[0] * k, q[1] + n[1] * k];
+    CH.line(F.D, P0[0], P0[1], Q0[0], Q0[1], { col: o.col, w: 3, a: o.a, glow: true });
+    [P0, Q0].forEach(function (z) { CH.line(F.D, z[0] - n[0] * h, z[1] - n[1] * h, z[0] + n[0] * h, z[1] + n[1] * h, { col: o.col, w: 2.4, a: o.a }); });
+    if (o.t) { var sz = F.s * .85, w = tw(F.D, o.t, sz), kk = k + F.s * .4 + Math.abs(n[0]) * w / 2 + Math.abs(n[1]) * sz / 2; CH.text(F.D, m[0] + n[0] * kk, m[1] + n[1] * kk, o.t, { col: o.col, size: sz, a: o.a, outline: OUT }); }
+  }
+  function glow(F, ss, col, a) { if (a > 0) ss.split(' ').forEach(function (s) { GE.seg(F, s, { col: col, w: 5, glow: true, a: a }); }); }
+  function tri(ab, ac, bc) { var x = (ab * ab - ac * ac + bc * bc) / (2 * bc); return { A: [x, Math.sqrt(ab * ab - x * x)], B: [0, 0], C: [bc, 0] }; }
+  /* D は AB 上、E は AC 上（A から t の位置。t＜0 なら A の外がわ）：DE∥BC */
+  function para(P, t) { return { A: P.A, B: P.B, C: P.C, D: GE.lerpP(P.A, P.B, t), E: GE.lerpP(P.A, P.C, t) }; }
+  /* AB∥CD で、AD と BC が O で交わる形（O が原点。D＝−k×A、C＝−k×B） */
+  /* 直線 ab（四角 F.R の少し外まで。はみ出さないように切る） */
+  function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+  function ratio(a, b) { var g = gcd(a, b); return a / g + '：' + b / g; }
+  function nf(x) { return String(Math.round(x * 10) / 10); }
+  function lineIn(F, a, b, o) { var g = F.D.ctx, R = F.R, m = F.s * 1.5; g.save(); g.beginPath(); g.rect(R.x0 - m, R.y0 - m, R.w + 2 * m, R.h + 2 * m); g.clip(); GE.line(F, [a, b], o); g.restore(); }
+  function deg(x) { return Math.round(x) + '°'; }
+
+  /* ---- 今日の問い：AB＝10、AC＝15、BC＝18。AD＝4、DB＝6、AE＝6、EC＝9（AD：DB＝AE：EC＝2：3） ---- */
+  var T1 = tri(10, 15, 18);
+  function pick(k, j) { return { A: T1.A, B: T1.B, C: T1.C, D: GE.lerpP(T1.A, T1.B, k / 10), E: GE.lerpP(T1.A, T1.C, j / 15) }; }
+  var P1 = pick(4, 6);
+  /* スライダーの全部の組で、「比が等しい ⇔ 平行」を確かめる */
+  var okAll = true; for (var k = 1; k <= 9; k++) for (var j = 1; j <= 14; j++) { var Pk = pick(k, j); if ((k * (15 - j) === j * (10 - k)) !== GE.isPar(Pk, 'DE', 'BC')) okAll = false; }
+  CH.check(okAll, '比が等しいときだけ DE∥BC（スライダーのすべての組）');
+  var DIR = { A: 'n', B: 'sw', C: 'se', D: 'w', E: 'e' };
+  function lens1(F, a) { len(F, 'A', 'D', '4cm', { a: a }); len(F, 'D', 'B', '6cm', { a: a }); len(F, 'A', 'E', '6cm', { a: a }); len(F, 'E', 'C', '9cm', { a: a }); }
+  var defW = {
+    id: '第9時 今日の問い', lv: 1, ttl: 'DE∥BC の証明', P: P1,
+    q: '△ABC の辺 AB、AC 上の点 D、E で、AD：DB＝AE：EC（4：6＝6：9）のとき、DE∥BC であることを証明しよう。',
+    fig: { segs: ['AB', 'BC', 'CA', 'DE'], dots: ['D', 'E'], dir: DIR },
+    hyp: 'AD：DB＝AE：EC', goal: 'DE∥BC', tri: ['ADE', 'ABC'],
+    plan: { q: 'DE∥BC を示すには、どの角とどの角が等しいことをいえばよい？', a: '同位角の ∠ADE と ∠ABC', sub: 'そのために、△ADE∽△ABC を示す（相似な図形の、対応する角は等しい）' },
+    L: [{ t: '△ADE と △ABC で' },
+      { t: 'AD：AB＝AE：AC＝2：5', r: 'AD：DB＝AE：EC＝2：3 だから', n: 1 },
+      { t: '∠DAE＝∠BAC', r: '共通な角', n: 2 },
+      { t: '①②より、2組の辺の比とその間の角が、それぞれ等しいので', c: 'S2A' },
+      { t: '△ADE∽△ABC' },
+      { t: '∠ADE＝∠ABC', r: '相似な図形の対応する角は等しい' },
+      { t: 'DE∥BC', r: '同位角が等しい' }]
+  };
+  var PW = GE.proof(defW, { tag: '今日の問い', draw: function (D, F) { lens1(F, .8); } }).slice(1);
+  PW[0].b = [{ t: '方針 … △ADE∽△ABC を示して、同位角 ∠ADE＝∠ABC をいう', col: C.green }, { t: '△ADE と △ABC で' }];
+
+  /* ---- 例題：○×（ア 3、6／4、8　イ 4、3／6、4　ウ 6、9／4、6） ---- */
+  var EX = [{ n: 'ア', ad: 3, db: 6, ae: 4, ec: 8 }, { n: 'イ', ad: 4, db: 3, ae: 6, ec: 4 }, { n: 'ウ', ad: 6, db: 9, ae: 4, ec: 6 }];
+  EX.forEach(function (e) {
+    var A = [0, 0], ab = e.ad + e.db, ac = e.ae + e.ec, B = GE.polar(A, ab, 245), Cc = GE.polar(A, ac, 245 + 58);
+    e.P = { A: A, B: B, C: Cc, D: GE.lerpP(A, B, e.ad / ab), E: GE.lerpP(A, Cc, e.ae / ac) };
+    e.ok = e.ad * e.ec === e.db * e.ae;
+    CH.check(e.ok === GE.isPar(e.P, 'DE', 'BC'), '例題 ' + e.n + '（比が等しい ⇔ 平行）');
+  });
+  CH.check(EX[0].ok && !EX[1].ok && EX[2].ok, '例題の答え（ア ○、イ ×、ウ ○）');
+
+  /* ---- 考えよう：実寸（mm）。AB＝50、AC＝40、BC＝40。AD＝30。AD：AB＝DE：BC となる DE は 24 ---- */
+  var T7 = tri(50, 40, 40), D7 = GE.lerpP(T7.A, T7.B, 30 / 50);
+  function e7(s) { return { A: T7.A, B: T7.B, C: T7.C, D: D7, E: GE.lerpP(T7.A, T7.C, s / 40) }; }
+  CH.check(GE.verify(e7(24), 'DE＝24、AD＝30、DE∥BC') && GE.verify(e7(13.5), 'DE＝24') && !GE.isPar(e7(13.5), 'DE', 'BC'), '考えよう（DE＝24 の E は 2つ。1つは平行でない。ここで確かめるだけ）');
+
+  /* ---- チャレンジ：AB＝9、AC＝12、BC＝15。AD：DB＝AE：EC＝1：2。P は BE と CD の交点 ---- */
+  var P8 = tri(9, 12, 15); P8.D = GE.lerpP(P8.A, P8.B, 1 / 3); P8.E = GE.lerpP(P8.A, P8.C, 1 / 3); P8.P = GE.meet(P8.B, P8.E, P8.C, P8.D);
+  GE.verify(P8, 'AD：DB＝AE：EC＝1：2、DE∥BC、DE＝5、DE：BC＝AD：AB＝1：3、PE：PB＝DE：CB＝1：3', null, 'チャレンジ');
+  var defC = {
+    id: '第9時 チャレンジ', lv: 2, ttl: 'チャレンジ　△PDE∽△PCB の証明', P: P8,
+    q: '△ABC の辺 AB、AC 上に点 D、E があり、AD：DB＝AE：EC＝1：2 である。BE と CD の交点を P とする。△PDE∽△PCB を証明しよう。',
+    fig: { segs: ['AB', 'BC', 'CA', 'DE', 'BE', 'CD'], dots: ['D', 'E', 'P'], dir: { A: 'n', B: 'sw', C: 'se', D: 'w', E: 'e', P: 's' } },
+    hyp: 'AD：DB＝AE：EC＝1：2', goal: '△PDE∽△PCB', tri: ['PDE', 'PCB'],
+    notes: ['ヒント：AD：DB と AE：EC をくらべると、DE と BC の関係がわかるよ。'],
+    plan: { q: '等しい角を見つけるために、まず、DE と BC について何がいえる？', a: 'DE∥BC', sub: 'AD：DB＝AE：EC だから、三角形と比の定理の逆。平行線があると、錯角が等しい' },
+    L: [{ t: '△PDE と △PCB で' },
+      { t: '∠PDE＝∠PCB', r: 'DE∥BC の錯角', n: 1, hint: '∠PDE と等しい角は？ 根拠も。' },
+      { t: '∠PED＝∠PBC', r: 'DE∥BC の錯角', n: 2, hint: 'もう1組、等しい角は？ 根拠も。' },
+      { t: '①②より、2組の角が、それぞれ等しいので', c: 'AA' },
+      { t: '△PDE∽△PCB' }]
+  };
+  var PC = GE.proof(defC, { tag: 'チャレンジ' });
+  PC[1].b = [{ t: 'AD：DB＝AE：EC より　DE∥BC（三角形と比の定理の逆）', col: C.green }, { t: '△PDE と △PCB で' }];
+
+  var steps = [
+    { tag: '今日の問い', bh: '△ABC と、辺の上の点 D、E', q: '△ABC の辺 AB、AC 上に点 D、E をとったら、AD：DB＝AE：EC になった。DE∥BC といえるだろうか。わけも考えよう。',
+      notes: ['① 自分の考え（3分）　いえるかどうかと、わけを書こう。', '② ペアの考え（3分）　自分とちがう考え方は？'],
+      b: [{ t: '【仮定】AD：DB＝AE：EC（4：6＝6：9）', col: C.blue }, { t: '【結論】DE∥BC といえる？', col: C.blue }],
+      draw: function (D) { var F = GE.fit(D, CH.box(D, { l: .06, r: .06, t: .1, b: .12 }), P1); GE.figure(F, { segs: ['AB', 'BC', 'CA', 'DE'], dots: ['D', 'E'], dir: DIR }); lens1(F); } },
+    { tag: '今日の問い', q: 'D、E を動かして調べよう。AD：DB と AE：EC が等しいとき・等しくないとき、DE と BC は、どうなる？',
+      a: '比が等しいときだけ、DE∥BC になりそう', sub: '比が等しいと、同位角 ∠ADE と ∠ABC が等しい。比が等しくないと、DE をのばした線は、BC をのばした線と交わる',
+      notes: ['スライダーで、D、E の位置を変えられます（AB＝10、AC＝15 を、整数の比に分ける）。'],
+      sliders: [{ key: 'k', label: 'D（AD：DB）', min: 1, max: 9, step: 1, val: 4, fmt: function (v) { return v + '：' + (10 - v); } },
+        { key: 'j', label: 'E（AE：EC）', min: 1, max: 14, step: 1, val: 6, fmt: function (v) { return v + '：' + (15 - v); } }],
+      b: { t: '予想 … AD：DB＝AE：EC のとき、DE∥BC（同位角が等しい）', col: C.yel },
+      draw: function (D) {
+        var k = D.V.k, j = D.V.j, P = pick(k, j), L = lay(D, .36), F = GE.fit(D, L.fig, P, { keys: ['A', 'B', 'C'], pad: .12 }), eq = k * (15 - j) === j * (10 - k);
+        if (!eq) { lineIn(F, 'D', 'E', { col: C.pink, dash: [7, 6], w: 2 }); lineIn(F, 'B', 'C', { col: 'rgba(242,240,230,.5)', dash: [7, 6], w: 1.6 }); }
+        GE.arc(F, 'ADE', { col: eq ? C.yel : C.pink, fill: .35, r: F.s * 1.3 }); GE.arc(F, 'ABC', { col: C.yel, fill: .35, r: F.s * 1.3 });
+        if (eq) { GE.seg(F, 'DE', { col: C.yel, w: 4.5, glow: true }); GE.par(F, 'DE', 1, { col: C.yel }); GE.par(F, 'BC', 1, { col: C.yel }); }
+        GE.figure(F, { segs: ['AB', 'BC', 'CA'].concat(eq ? [] : ['DE']), dots: ['D', 'E'], dir: DIR });
+        rows(D, L.side, [{ t: 'AD：DB＝' + k + '：' + (10 - k) + (gcd(k, 10 - k) > 1 ? '＝' + ratio(k, 10 - k) : ''), col: C.chalk }, { t: 'AE：EC＝' + j + '：' + (15 - j) + (gcd(j, 15 - j) > 1 ? '＝' + ratio(j, 15 - j) : '') },
+          { t: eq ? '比は 等しい' : '比は 等しくない', col: eq ? C.yel : C.pink }, { t: '同位角', col: C.chalk }, { t: '∠ADE＝' + deg(GE.ang(P, 'ADE')) + '　∠ABC＝' + deg(GE.ang(P, 'ABC')), col: eq ? C.yel : C.pink }]);
+      } }
+  ].concat(PW).concat([
+    { tag: 'ことば', bh: 'ことば', q: 'ある定理の、仮定と結論を入れかえたものを何という？ 三角形と比の定理について、それを言おう。',
+      a: '逆。AD：AB＝AE：AC（または AD：DB＝AE：EC）ならば、DE∥BC', sub: '三角形と比の定理の逆。平行は、同位角が等しいことからいえる', dur: 3.5,
+      b: [{ t: '<b>逆</b> … 仮定と結論を入れかえたもの', col: C.green }, { t: '<b>三角形と比の定理の逆</b>　D、E が辺 AB、AC 上の点のとき', col: C.green },
+        { t: '① AD：AB＝AE：AC ならば DE∥BC　② AD：DB＝AE：EC ならば DE∥BC', col: C.green }],
+      draw: function (D) {
+        var L = lay(D, .4), F = GE.fit(D, L.fig, P1, { pad: .12 }), t = D.ph ? D.t : 0, k1 = CH.smooth(.05, .35, t), k2 = CH.smooth(.45, .8, t);
+        GE.figure(F, { segs: ['AB', 'BC', 'CA', 'DE'], dots: ['D', 'E'], dir: DIR });
+        GE.par(F, 'DE', 1, { col: C.yel, a: k1 }); GE.par(F, 'BC', 1, { col: C.yel, a: k1 }); glow(F, 'AD AE', C.pink, k2); glow(F, 'DB EC', C.blue, k2);
+        rows(D, L.side, [{ t: '定理', col: C.chalk }, { t: 'DE∥BC ならば', col: C.yel }, { t: '　AD：DB＝AE：EC', col: C.pink }, D.ph ? { t: '逆（入れかえる）', a: k1 } : null,
+          D.ph ? { t: 'AD：DB＝AE：EC ならば', col: C.pink, a: k2 } : null, D.ph ? { t: '　DE∥BC', col: C.yel, a: k2 } : null]);
+      } },
+    { tag: '例題', bh: '例題　平行といえるか', q: 'D、E は △ABC の辺 AB、AC 上の点である。長さが表のとき、DE∥BC といえるものに ○、いえないものに × を書こう。（アは見本）',
+      a: 'イ ×、ウ ○', sub: 'ア 3：6＝1：2、4：8＝1：2（○）　イ 4：3 と 6：4（＝3：2）は等しくない（×）　ウ 6：9＝2：3、4：6＝2：3（○）', dur: 2.5,
+      b: { t: 'ア ○（1：2）　イ ×（4：3 と 3：2）　ウ ○（2：3）　… 比をかんたんにしてくらべる', col: C.pink },
+      draw: function (D) {
+        var t = D.ph ? D.t : 0, narrow = D.W < 640, R0 = CH.box(D, { l: .04, r: .04, t: .03, b: narrow ? .42 : .4 }), cells = CH.cols(R0, 3, .06);
+        EX.forEach(function (e, i) {
+          var F = GE.fit(D, cells[i], e.P, { pad: .14, size: CH.fs(D, narrow ? .62 : .8) }), show = i === 0 || t > .3 + i * .2, nd = D.ph && show && !e.ok;
+          if (nd) { lineIn(F, 'D', 'E', { col: C.pink, dash: [6, 5], w: 1.8, a: CH.smooth(.3 + i * .2, .45 + i * .2, t) }); lineIn(F, 'B', 'C', { col: 'rgba(242,240,230,.45)', dash: [6, 5], w: 1.4 }); }
+          GE.figure(F, { segs: ['AB', 'BC', 'CA', 'DE'], dots: ['D', 'E'], labels: false });
+          if (show && e.ok && (i === 0 || D.ph)) { GE.par(F, 'DE', 1, { col: C.yel }); GE.par(F, 'BC', 1, { col: C.yel }); }
+          var lb = F.X('A'); CH.text(D, lb[0], lb[1] - F.s * 1.1, e.n, { size: F.s * 1.2, col: C.chalk });
+        });
+        var R2 = CH.box(D, { l: .12, r: .08, t: narrow ? .6 : .64, b: .04 }), sh = function (r, c) { return r === 3 && c >= 2 ? (D.ph ? CH.smooth(.3 + (c - 1) * .2, .45 + (c - 1) * .2, t) : 0) : 1; };
+        var g = CH.table(D, R2, ['', 'ア', 'イ', 'ウ'], [['AD、DB（cm）'].concat(EX.map(function (e) { return e.ad + '、' + e.db; })), ['AE、EC（cm）'].concat(EX.map(function (e) { return e.ae + '、' + e.ec; })), ['DE∥BC？', '○', '×', '○']],
+          { fw: .34, show: sh, hl: function (r, c) { return r === 3 && c >= 2 ? C.pink : null; } });
+        if (!D.ph) [2, 3].forEach(function (c) { var q = g.cell(3, c); CH.text(D, q.cx, q.cy, '？', { col: C.pink }); });
+      } },
+    { tag: '考えよう', q: '△ABC で、AB＝50mm、BC＝40mm、AD＝30mm である。辺 AC 上に、AD：AB＝DE：BC となる点 E をとると、DE∥BC になるだろうか。',
+      notes: ['DE の長さは何 mm になるかな。コンパスで E をさがそう。E は 1つだけかな。', 'スライダーで、E を動かしたり、コンパス（D を中心とする円）を出したりできます。'],
+      sliders: [{ key: 's', label: 'E の位置（AE）', min: 1, max: 39, step: .5, val: 33, fmt: function (v) { return v + 'mm'; } },
+        { key: 'c', label: 'コンパス', min: 0, max: 1, step: 1, val: 0, fmt: function (v) { return v ? '半径 24mm' : 'かくす'; } }],
+      draw: function (D) {
+        var P = e7(D.V.s), L = lay(D, .3, .27), F = GE.fit(D, L.fig, P, { keys: ['A', 'B', 'C'], pad: .1 });
+        if (D.V.c) GE.circ(F, 'D', 24, { col: C.blue, w: 1.8 });
+        GE.figure(F, { segs: ['AB', 'BC', 'CA'], dots: ['D'], labels: ['A', 'B', 'C', 'D'], dir: { A: 'n', B: 'sw', C: 'se', D: 'w' } });
+        GE.seg(F, 'DE', { col: C.yel, w: 3 }); GE.dot(F, 'E', { col: C.yel }); GE.labels(F, ['E'], { dir: { E: 'e' }, col: { E: C.yel } });
+        len(F, 'A', 'D', '30mm'); len(F, 'B', 'C', '40mm');
+        rows(D, L.side, [{ t: 'AB＝50mm' }, { t: 'BC＝40mm' }, { t: 'AE＝' + nf(D.V.s) + 'mm' }, { t: 'DE＝' + nf(GE.len(P, 'DE')) + 'mm', col: C.yel }]);
+      } }
+  ]).concat(PC).concat([
+    { tag: 'チャレンジ', q: 'BC＝15cm のとき、DE の長さと、PE：PB を求めよう。', a: 'DE＝5cm、PE：PB＝1：3', sub: 'DE∥BC だから DE：BC＝AD：AB＝1：3、DE＝15×1/3＝5。△PDE∽△PCB の相似比は DE：CB＝1：3', dur: 3,
+      b: { t: 'DE：BC＝AD：AB＝1：3 → <b>DE＝5cm</b>　PE：PB＝DE：CB＝<b>1：3</b>', col: C.orange },
+      draw: function (D) {
+        var L = lay(D, .36, .26), F = GE.fit(D, L.fig, P8, { pad: .12 }), t = D.ph ? D.t : 0, k1 = CH.smooth(.05, .4, t), k2 = CH.smooth(.5, .9, t);
+        GE.poly(F, 'PDE', { col: C.blue, fa: .2, stroke: false }); GE.poly(F, 'PCB', { col: C.orange, fa: .2, stroke: false });
+        GE.figure(F, defC.fig);
+        len(F, 'B', 'C', '15cm'); len(F, 'D', 'E', k1 > .5 ? '5cm' : '？', { col: C.pink, ref: 'A' });
+        glow(F, 'AD', C.yel, k1); dim(F, 'A', 'B', { col: C.yel, a: k1 * .8, k: 1.2 }); glow(F, 'DE', C.pink, k1); glow(F, 'PE', C.pink, k2); glow(F, 'PB', C.blue, k2);
+        rows(D, L.side, [{ t: 'DE∥BC だから' }, { t: 'DE：BC＝AD：AB＝1：3', col: C.yel, a: D.ph ? k1 : 1 }, { t: 'DE＝15×1/3＝5（cm）', col: C.pink, a: k1 }, { t: '相似比は DE：CB＝1：3', a: k2 }, { t: 'PE：PB＝1：3', col: C.pink, a: k2 }]);
+      } }
+  ]);
+
+  K3.run({
+    no: '第9時', title: '線分の比が等しければ、平行といえるだろうか', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '08.html', label: '◀ 第8時' }, { href: '10.html', label: '第10時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

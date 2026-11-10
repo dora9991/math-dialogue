@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>垂線の作図</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 平面図形 第7時：直線に垂直な直線を、作図しよう（ikkan の lesson_heimen_07 と同じ流れ）。
+   今日の問いは ikkan と同じ 直線 ℓ（x 軸）の外の点 P(5,4)。P を中心とする円（半径 5）→ ℓ との交点 A(2,0)・B(8,0) → A、B を中心とする弧の交点 Q(5,−3) → 直線 PQ を、
+   コンパスの弧が1つずつかかれる動きで見せる（P も Q も A、B から等しいきょり → PQ は AB の垂直二等分線）。
+   例題は ikkan と同じ ℓ 上の点 P(5,3) を通る垂線（A(3.4,1.8)・B(6.6,4.2)・Q(3.2,5.4)）と、鈍角三角形の高さ AH（BC をのばした直線への垂線）。
+   考えようは、角の二等分線の作図で ∠XOY を 180° まで広げる道具（答えは出さない）。チャレンジは 線分 AB を1辺とする正方形の作図（ikkan と同じ座標）。
+   長さ・垂直は座標から計算し直している（GE.verify・CH.check）。 */
+(function () {
+  /* ---- 平面図形の図の道具（このページの中だけで使う。heimen/ の各ページに同じものが入っている） ---- */
+  var C = CH.C, RAD = Math.PI / 180, PR = '′', OUT = 'rgba(20,40,30,.9)', FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function dg(x) { var r = Math.round(x * 10) / 10; return (Math.abs(r - Math.round(r)) < .05 ? String(Math.round(r)) : r.toFixed(1)) + '°'; }
+  function f1(x) { return CH.f1(x); }
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  /* 図の四角（fig）と、字を書く四角（side）。よこ長なら右、たて長なら下 */
+  function lay(D, k, o) {
+    o = o || {}; var B = CH.box(D, { l: .03, r: .03, t: o.t == null ? .04 : o.t, b: .04 });
+    if (B.w > B.h * 1.25 && B.w > 560) { var w = B.w * (k || .34); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .06, B.x1, B.y1), wide: true }; }
+    var h = B.h * (o.hk || .3); return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .03, B.y1 - h + 4, B.x1, B.y1), wide: false };
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする）。rows：[{ t, col, a }] */
+  function say(D, Rr, rows, o) {
+    o = o || {}; rows = rows.filter(Boolean); if (!rows.length) return;
+    var nc = Rr.w > Rr.h * 2.5 && rows.length > 3 && Rr.h / (rows.length * 1.6) < CH.fs(D, .62) ? 2 : 1, per = Math.ceil(rows.length / nc), cw = Rr.w / nc;
+    var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (per * 1.6));
+    rows.forEach(function (r, i) {
+      var w = tw(D, r.t, s), sz = w > cw - 6 ? s * (cw - 6) / w : s, c = Math.floor(i / per), j = i % per;
+      CH.text(D, Rr.x0 + c * cw, Rr.y0 + s * .8 + j * s * 1.6, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left' });
+    });
+  }
+  /* 図の上の1行（はばに入らなければ、字を小さくする） */
+  function top(D, s, col, a) {
+    var B = CH.box(D, { t: 0, l: .02, r: .02 }), fs = CH.fitSize(D, s, B.w, CH.fs(D, 1.02));
+    CH.text(D, B.cx, B.y0 + CH.fs(D, 1.02) * .7, s, { col: col || C.yel, a: a, size: fs, outline: OUT });
+  }
+  /* 点の名前：{ A: 向き（度） }。o.name で字をかえる */
+  function nm(F, m, o) {
+    o = o || {}; Object.keys(m).forEach(function (k) {
+      if (m[k] == null || !F.P[k]) return; var p = F.X(k), r = F.s * (o.k || .95);
+      CH.text(F.D, p[0] + Math.cos(m[k] * RAD) * r, p[1] - Math.sin(m[k] * RAD) * r, (o.name && o.name[k]) || k, { size: F.s * (o.size || 1), col: (o.col && o.col[k]) || o.c || C.chalk, a: o.a, outline: OUT });
+    });
+  }
+  function dots(F, ks, o) { o = o || {}; (Array.isArray(ks) ? ks : ks.split('')).forEach(function (k) { if (typeof k !== 'string' || F.P[k]) GE.dot(F, k, o); }); }
+  /* 字（座標 p から、向き deg に k（字の大きさの倍）だけはなれたところ） */
+  function lab(F, p, deg, k, t, o) {
+    o = o || {}; var q = F.X(p);
+    CH.text(F.D, q[0] + Math.cos(deg * RAD) * F.s * k, q[1] - Math.sin(deg * RAD) * F.s * k, t, { col: o.col || C.chalk, size: F.s * (o.size || .85), a: o.a, outline: OUT, num: o.num });
+  }
+  /* 図の四角の中だけに描く */
+  function clip(F, fn) { var g = F.D.ctx, r = F.R; g.save(); g.beginPath(); g.rect(r.x0, r.y0, r.w, r.h); g.clip(); fn(); g.restore(); }
+  /* 直線（四角のはしまで）・半直線（a から b の向きに、四角のはしまで） */
+  function full(F, a, b, o) { clip(F, function () { GE.line(F, [a, b], o || {}); }); }
+  function ray(F, a, b, o) { var pa = F.X(a), pb = F.X(b), L = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]) || 1, k = (F.R.w + F.R.h) * 2 / L; clip(F, function () { GE.seg(F, [a, GE.lerpP(F.P[a] || a, F.P[b] || b, 1 + k)], o || {}); }); }
+  function arrowW(F, a, b, o) { o = o || {}; var p = F.X(a), q = F.X(b); CH.arrow(F.D, p[0], p[1], q[0], q[1], { col: o.col || C.chalk, w: o.w || 2.8, a: o.a, head: o.head || F.s * .6, dash: o.dash }); }
+  /* 中心 c・半径 r（座標の長さ）の円の、a0 → a1（反時計まわり、度）の弧 */
+  function arcAt(F, c, r, a0, a1, o) {
+    o = o || {}; if (a1 < a0) { var z = a0; a0 = a1; a1 = z; } var g = F.D.ctx, p = F.X(c);
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.w || 2.2; g.lineCap = 'round';
+    if (o.dash) g.setLineDash(o.dash === true ? [8, 7] : o.dash); g.beginPath(); g.arc(p[0], p[1], r * F.u, -a0 * RAD, -a1 * RAD, true); g.stroke(); g.restore();
+  }
+  /* コンパスで弧をかく：a0 → a1 を k（0〜1）だけ。かいている途中は、コンパスの2本の足も見せる */
+  function comp(F, c, r, a0, a1, k, o) {
+    o = o || {}; if (k <= 0) return; var a = a0 + (a1 - a0) * Math.min(1, k), col = o.col || C.blue; if (typeof c === 'string') c = F.P[c];
+    arcAt(F, c, r, a0, a, { col: col, w: o.w || 2.2, a: o.a });
+    if (k < 1 && !o.noLeg) {
+      var p = F.X(GE.polar(c, r, a)), q = F.X(c), m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], d = [p[0] - q[0], p[1] - q[1]], L = Math.hypot(d[0], d[1]) || 1, n = [d[1] / L, -d[0] / L];
+      if (n[1] > 0) n = [-n[0], -n[1]];
+      var hh = [m[0] + n[0] * Math.min(L * .55, F.s * 5), m[1] + n[1] * Math.min(L * .55, F.s * 5)];
+      CH.line(F.D, q[0], q[1], hh[0], hh[1], { col: 'rgba(242,240,230,.75)', w: 2.6 }); CH.line(F.D, hh[0], hh[1], p[0], p[1], { col: 'rgba(242,240,230,.75)', w: 2.6 });
+      CH.circle(F.D, hh[0], hh[1], F.s * .22, { fill: 'rgba(242,240,230,.85)' }); CH.circle(F.D, p[0], p[1], F.s * .17, { fill: col });
+    }
+  }
+  /* 点の列を動かす（数学の座標） */
+  function mv(ps, v, k) { return ps.map(function (p) { return [p[0] + v[0] * k, p[1] + v[1] * k]; }); }
+  function rotP(ps, c, deg) { return ps.map(function (p) { return GE.rot(p, c, deg); }); }
+  function refP(ps, a, b) { return ps.map(function (p) { return GE.reflect(p, a, b); }); }
+  /* 直線 ab で折る途中（k＝0 で もと、.5 で 線の上、1 で 折り返したところ） */
+  function foldP(ps, a, b, k) { return ps.map(function (p) { var f = GE.foot(p, a, b); return GE.lerpP(p, [2 * f[0] - p[0], 2 * f[1] - p[1]], CH.ease(k)); }); }
+  /* 点の集まりが同じか（順番は問わない） */
+  function key(ps) { return ps.map(function (p) { return p.map(function (x) { return Math.round(x * 1000) / 1000 + 0; }).join(','); }).sort().join('|'); }
+  function same(ps, qs) { return key(ps) === key(qs); }
+  function named(names, ps, P) { P = P || {}; (Array.isArray(names) ? names : names.split('')).forEach(function (k, i) { P[k] = ps[i]; }); return P; }
+  function cen(ps) { var c = [0, 0]; ps.forEach(function (p) { c[0] += p[0] / ps.length; c[1] += p[1] / ps.length; }); return c; }
+  function poly(F, ps, col, o) { o = o || {}; GE.polyP(F, ps, { col: col || C.blue, fa: o.fa == null ? .22 : o.fa, a: o.a, sw: o.sw }); }
+  /* 方眼（x0〜x1、y0〜y1） */
+  function grid(F, x0, y0, x1, y1, o) {
+    o = o || {}; for (var x = x0; x <= x1 + 1e-9; x++) GE.seg(F, [[x, y0], [x, y1]], { col: 'rgba(242,240,230,.16)', w: 1, a: o.a });
+    for (var y = y0; y <= y1 + 1e-9; y++) GE.seg(F, [[x0, y], [x1, y]], { col: 'rgba(242,240,230,.16)', w: 1, a: o.a });
+  }
+  /* 三角形の頂点の名前（中心から外向き） */
+  function vlab(F, ps, names, o) {
+    o = o || {}; var c = F.X(cen(ps));
+    ps.forEach(function (p, i) { var q = F.X(p), d = [q[0] - c[0], q[1] - c[1]], L = Math.hypot(d[0], d[1]) || 1, r = F.s * (o.k || .85); CH.text(F.D, q[0] + d[0] / L * r, q[1] + d[1] / L * r, names[i], { size: F.s * (o.size || .95), col: o.col || C.chalk, a: o.a, outline: OUT }); });
+  }
+  /* 色ちがいの字を1行にならべる（parts：[[字, 色], …]）。はばに入らなければ小さくする */
+  function rich(D, x, y, parts, o) {
+    o = o || {}; var s = o.size || CH.fs(D, 1.02), W = 0; parts.forEach(function (p) { W += tw(D, p[0], s); });
+    if (o.maxW && W > o.maxW) { s *= o.maxW / W; W = o.maxW; }
+    var xx = x - W / 2; parts.forEach(function (p) { CH.text(D, xx, y, p[0], { size: s, col: p[1] || C.chalk, align: 'left', a: o.a, outline: OUT }); xx += tw(D, p[0], s); });
+  }
+  /* 図の上の1行（色ちがい） */
+  function topRich(D, parts, a, row) { var B = CH.box(D, { t: 0, l: .02, r: .02 }), s = CH.fs(D, 1.02); rich(D, B.cx, B.y0 + s * (.7 + (row || 0) * 1.45), parts.filter(Boolean), { a: a, maxW: B.w, size: s }); }
+  function angTo(c, p) { return Math.atan2(p[1] - c[1], p[0] - c[0]) / RAD; }
+  /* ---- 今日の問い：ℓ の外の点 P ---- */
+  var PM = { P: [5, 4], A: [2, 0], B: [8, 0], Q: [5, -3], H: [5, 0], L1: [-.5, 0], L2: [10.5, 0] }, RQ = Math.sqrt(18);
+  GE.verify(PM, 'PA＝PB＝5、QA＝QB、PQ⊥AB、AH＝HB＝3、PH＝4', null, '今日の問い 垂線');
+  CH.check(GE.near(GE.len(PM, 'QA'), RQ) && RQ > 3, '今日の問い：半径 √18 は AB の半分より長い');
+  function main(D, st, t, o) {
+    o = o || {}; var L = lay(D, .32), F = GE.fit(D, L.fig, PM, { pad: .08, bounds: [[-.5, -4], [10.5, 5]] });
+    full(F, 'L1', 'L2', { w: 3 }); lab(F, [10.2, 0], 90, .7, 'ℓ', { size: 1.1 });
+    var k1 = st > 1 ? 1 : st < 1 ? 0 : CH.smooth(.04, .5, t), k2 = st > 1 ? 1 : st < 1 ? 0 : CH.smooth(.55, .8, t);
+    comp(F, 'P', 5, -142, -38, k1, { col: C.blue });
+    if (k2 > 0) { dots(F, 'AB', { col: C.blue, a: k2, r: F.s * .22 }); nm(F, { A: 225, B: 315 }, { c: C.blue, a: k2 }); if (st === 1) { GE.seg(F, 'PA', { col: C.blue, w: 2.6, a: k2 }); GE.seg(F, 'PB', { col: C.blue, w: 2.6, a: k2 }); GE.tick(F, 'PA', 1, { col: C.blue, a: k2 }); GE.tick(F, 'PB', 1, { col: C.blue, a: k2 }); } }
+    if (st >= 2) {
+      var k3 = st > 2 ? 1 : CH.smooth(.03, .25, t), k4 = st > 2 ? 1 : CH.smooth(.27, .5, t), k5 = st > 2 ? 1 : CH.smooth(.55, .8, t), k6 = st > 2 ? 1 : CH.smooth(.82, .97, t), a1 = angTo(PM.A, PM.Q), a2 = angTo(PM.B, PM.Q);
+      comp(F, 'A', RQ, a1 - 14, a1 + 14, k3, { col: C.pink }); comp(F, 'B', RQ, a2 - 14, a2 + 14, k4, { col: C.pink });
+      if (k4 > .98) { GE.dot(F, 'Q', { col: C.pink, r: F.s * .22 }); nm(F, { Q: 0 }, { c: C.pink }); }
+      if (k5 > 0) GE.seg(F, [GE.lerpP(PM.P, PM.Q, -.12), GE.lerpP(PM.P, PM.Q, -.12 + 1.24 * k5)], { col: C.yel, w: 3.4 });
+      if (k6 > 0) { GE.right(F, 'PHB', { col: C.yel, a: k6, fill: true }); nm(F, { H: 135 }, { c: C.yel, a: k6 }); if (o.why) { GE.tick(F, 'QA', 2, { col: C.pink, a: k6 }); GE.tick(F, 'QB', 2, { col: C.pink, a: k6 }); GE.seg(F, 'QA', { col: C.pink, w: 2, a: k6 * .7, dash: [5, 5] }); GE.seg(F, 'QB', { col: C.pink, w: 2, a: k6 * .7, dash: [5, 5] }); } }
+    }
+    dots(F, 'P', { r: F.s * .22 }); nm(F, { P: 45 });
+    return L;
+  }
+  /* ---- 例題：ℓ 上の点 P ---- */
+  var PE = { P: [5, 3], A: [3.4, 1.8], B: [6.6, 4.2], Q: [3.2, 5.4], L1: [-.2, -.6], L2: [10.2, 7.2] }, RE = Math.sqrt(13);
+  GE.verify(PE, 'PA＝PB＝2、QA＝QB、PQ⊥AB', null, '例題 ℓ 上の点を通る垂線');
+  CH.check(GE.near(GE.len(PE, 'QA'), RE) && GE.near(GE.len(PE, 'AP') + GE.len(PE, 'PB'), GE.len(PE, 'AB')), '例題：A、P、B は一直線上、QA＝√13');
+  var THL = angTo(PE.L1, PE.L2);
+  function onl(D, st, t) {
+    var L = lay(D, .32), F = GE.fit(D, L.fig, PE, { keys: ['P', 'A', 'B', 'Q'], pad: .12, bounds: [[1.6, .6], [8.4, 6.6]] });
+    full(F, 'L1', 'L2', { w: 3 }); lab(F, GE.lerpP(PE.P, PE.B, 2.6), 90 + THL, .8, 'ℓ', { size: 1.1 });
+    var k1 = st > 1 ? 1 : st < 1 ? 0 : CH.smooth(.04, .32, t), k2 = st > 1 ? 1 : st < 1 ? 0 : CH.smooth(.36, .64, t), k3 = st > 1 ? 1 : st < 1 ? 0 : CH.smooth(.7, .9, t);
+    comp(F, 'P', 2, THL - 22, THL + 22, k1, { col: C.blue }); comp(F, 'P', 2, THL + 158, THL + 202, k2, { col: C.blue });
+    if (k3 > 0) { dots(F, 'AB', { col: C.blue, a: k3, r: F.s * .22 }); nm(F, { A: THL - 90, B: THL - 90 }, { c: C.blue, a: k3 }); if (st === 1) { GE.tick(F, 'PA', 1, { col: C.blue, a: k3 }); GE.tick(F, 'PB', 1, { col: C.blue, a: k3 }); } }
+    if (st >= 2) {
+      var k4 = CH.smooth(.03, .25, t), k5 = CH.smooth(.27, .5, t), k6 = CH.smooth(.55, .82, t), k7 = CH.smooth(.85, .97, t), a1 = angTo(PE.A, PE.Q), a2 = angTo(PE.B, PE.Q);
+      comp(F, 'A', RE, a1 - 14, a1 + 14, k4, { col: C.pink }); comp(F, 'B', RE, a2 - 14, a2 + 14, k5, { col: C.pink });
+      if (k5 > .98) { GE.dot(F, 'Q', { col: C.pink, r: F.s * .22 }); nm(F, { Q: 175 }, { c: C.pink, k: 1.2 }); }
+      if (k6 > 0) GE.seg(F, [GE.lerpP(PE.P, PE.Q, -.5), GE.lerpP(PE.P, PE.Q, -.5 + 1.7 * k6)], { col: C.yel, w: 3.4 });
+      if (k7 > 0) GE.right(F, 'QPB', { col: C.yel, a: k7, fill: true });
+    }
+    dots(F, 'P', { r: F.s * .22 }); nm(F, { P: THL + 110 });
+    return L;
+  }
+  /* ---- 例題：鈍角三角形の高さ ---- */
+  var S8 = Math.sqrt(8), PT = { A: [7, 3.5], B: [0, 0], C: [5, 0], H: [7, 0], U: [7 - S8, 0], V: [7 + S8, 0], Q: [7, -3.5] };
+  GE.verify(PT, 'AU＝AV＝4.5、QU＝QV＝4.5、AH⊥BC、AH＝3.5、UH＝HV', null, '例題 高さ');
+  CH.check(PT.U[0] > PT.C[0] - 3 && PT.V[0] > PT.C[0], '例題：交点は BC をのばした直線の上');
+  /* ---- 考えよう：∠XOY を 180° まで広げる（OA＝OB＝3、弧の半径 4） ---- */
+  function bis(th) { var A = [3, 0], B = GE.polar([0, 0], 3, th), m = GE.mid(A, B), h = Math.sqrt(16 - Math.pow(GE.len({}, [A, B]) / 2, 2)), u = GE.polar([0, 0], 1, th / 2); return { O: [0, 0], A: A, B: B, P: GE.add(m, [u[0] * h, u[1] * h]), X: [5.5, 0], Y: GE.polar([0, 0], 5.5, th) }; }
+  [60, 120, 180].forEach(function (th) { GE.verify(bis(th), 'OA＝OB、AP＝BP＝4、∠AOP＝∠BOP', null, '考えよう（' + th + '°）'); });
+  CH.check(GE.near(GE.ang(bis(180), 'AOP'), 90), '考えよう：180° のときは垂線（答えは出さない）');
+  /* ---- チャレンジ：正方形 ABCD ---- */
+  var PS = { A: [0, 0], B: [4, 0], E: [-4, 0], D: [0, 4], T: [0, 3], C: [4, 4] };
+  GE.verify(PS, 'ET＝BT＝5、AT⊥AB、AB＝BC＝CD＝DA＝4、∠DAB＝∠ABC＝∠BCD＝∠CDA＝90°', null, 'チャレンジ 正方形');
+
+  K3.run({
+    no: '第7時', title: '直線に垂直な直線を、作図しよう', flat: true, hint: '', alt: '垂線の作図の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '06.html', label: '◀ 第6時' }, { href: '08.html', label: '第8時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '直線 ℓ の外の点 P を通る垂線', q: '直線 ℓ の外の点 P を通る ℓ の垂線を、定規とコンパスだけでひきたい。どうすればひけるだろう。垂直二等分線の作図が、使えないかな。',
+        notes: ['① 自分の考え（3分）　垂線のひき方を。', '② ペアの考え（3分）　自分とちがうひき方・気づき。'],
+        draw: function (D) { main(D, 0, 1); } },
+      { tag: '今日の問い', q: 'はじめに、P を中心に円をかき、ℓ との交点を A、B とする。P は、A、B と どんな関係にある？', a: 'PA＝PB（P は A、B から等しいきょり）', sub: 'だから P は、線分 AB の垂直二等分線の上にある', dur: 4.5,
+        b: { t: '① P を中心に円 → ℓ との交点 A、B（<b>PA＝PB</b>）', col: C.yel },
+        draw: function (D) { var L = main(D, D.ph ? 1 : 0, D.ph ? D.t : 1); if (D.ph) say(D, L.side, [{ t: '① P を中心に円 → A、B', col: C.yel }, { t: 'PA＝PB', col: C.blue, a: CH.smooth(.8, .95, D.t) }]); } },
+      { tag: '今日の問い', q: 'つぎに、どうすれば ℓ の垂線がひける？', a: 'A、B を中心に 等しい半径の弧をかき、交点 Q をとる。直線 PQ をひく', sub: 'Q も A、B から等しいきょり。P、Q を通る直線は線分 AB の垂直二等分線だから、ℓ に垂直', dur: 6,
+        b: { t: '② A、B を中心に等しい半径の弧 → 交点 Q　③ <b>直線 PQ</b>（AB の垂直二等分線 → ℓ に垂直）', col: C.yel },
+        draw: function (D) { var L = main(D, D.ph ? 2 : 1, D.ph ? D.t : 1, { why: true }); say(D, L.side, [{ t: '① P を中心に円 → A、B' }, D.ph ? { t: '② A、B から等しい弧 → Q', col: C.yel } : null, D.ph ? { t: '③ 直線 PQ', col: C.yel, a: CH.smooth(.55, .7, D.t) } : null, D.ph ? { t: 'PA＝PB、QA＝QB', col: C.pink, a: CH.smooth(.85, .97, D.t) } : null]); } },
+      { tag: 'ことば', bh: 'ことば', q: '直線 ℓ に垂直な直線を、何という？ 三角形の頂点から、向かい合う辺（またはそののばした直線）にひいた垂線の長さを、何という？', a: 'ℓ の垂線。高さ', sub: '点 P と直線 ℓ のきょりは、P から ℓ にひいた垂線 PH の長さ', dur: 3,
+        b: [{ t: '<b>垂線</b> … 直線 ℓ に垂直な直線（作図には、垂直二等分線の作図を使う）', col: C.green }, { t: '<b>高さ</b> … 頂点から、向かい合う辺にひいた垂線の長さ', col: C.green }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, L = main(D, 3, 1);
+          if (D.ph) say(D, L.side, [{ t: '直線 PQ … ℓ の垂線', col: C.yel, a: CH.smooth(.05, .4, t) }, { t: 'PH … P と ℓ のきょり', col: C.green, a: CH.smooth(.5, .9, t) }]);
+        } },
+      { tag: '例題', bh: '例題　直線 ℓ 上の点 P を通る垂線', q: '直線 ℓ 上の点 P を通る垂線を作図しよう。（作図に使った線は、消さずに残す）① はじめに、何をかく？', a: 'P を中心に円をかき、ℓ との交点を A、B とする', sub: 'P は線分 AB の中点（PA＝PB）', dur: 4.5,
+        b: { t: '① P を中心に円 → ℓ との交点 A、B（P は AB の<b>中点</b>）', col: C.pink },
+        draw: function (D) { var L = onl(D, D.ph ? 1 : 0, D.ph ? D.t : 1); if (D.ph) say(D, L.side, [{ t: '① P を中心に円 → A、B', col: C.yel }]); } },
+      { tag: '例題', q: '② つぎに、何をかく？ ③ さいごに、何をひく？', a: 'A、B を中心に 等しい半径の弧をかき、交点を Q とする。直線 PQ をひく', sub: 'P も Q も A、B から等しいきょり → 直線 PQ は AB の垂直二等分線 → ℓ に垂直', dur: 6,
+        b: { t: '② A、B を中心に 等しい半径の弧 → 交点 Q　③ <b>直線 PQ</b>', col: C.pink },
+        draw: function (D) { var L = onl(D, D.ph ? 2 : 1, D.ph ? D.t : 1); say(D, L.side, [{ t: '① P を中心に円 → A、B' }, D.ph ? { t: '② A、B から等しい弧 → Q', col: C.yel } : null, D.ph ? { t: '③ 直線 PQ', col: C.yel, a: CH.smooth(.55, .7, D.t) } : null]); } },
+      { tag: '例題', q: '△ABC で、辺 BC を底辺とするときの高さ AH を作図しよう。H は、どこにくるだろう。', a: '辺 BC をのばした直線に、A から垂線をひく。H は 三角形の外', sub: '∠C が鈍角の三角形では、高さは三角形の外にくる。BC をのばしてから、「直線の外の点を通る垂線」の作図をする', dur: 8,
+        b: { t: '高さ AH … BC を<b>のばした直線</b>に、A から垂線（H は三角形の外）', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, L = lay(D, .3), F = GE.fit(D, L.fig, PT, { pad: .08 }), k0 = CH.smooth(.02, .12, t), k1 = CH.smooth(.15, .4, t), k2 = CH.smooth(.43, .58, t), k3 = CH.smooth(.6, .72, t), k4 = CH.smooth(.75, .88, t), k5 = CH.smooth(.9, .99, t);
+          GE.poly(F, 'ABC', { col: C.blue, fa: .14 });
+          if (D.ph) {
+            if (k0 > 0) GE.seg(F, [PT.C, GE.lerpP(PT.C, [10.4, 0], k0)], { dash: [6, 6], w: 2.2 });
+            comp(F, 'A', 4.5, 222, 318, k1, { col: C.blue }); if (k1 > .98) dots(F, 'UV', { col: C.blue, r: F.s * .18 });
+            var u = angTo(PT.U, PT.Q), v = angTo(PT.V, PT.Q); comp(F, 'U', 4.5, u - 12, u + 12, k2, { col: C.pink }); comp(F, 'V', 4.5, v - 12, v + 12, k3, { col: C.pink });
+            if (k4 > 0) GE.seg(F, [PT.A, GE.lerpP(PT.A, PT.Q, 1.08 * k4)], { col: C.yel, w: 3 });
+            if (k5 > 0) { GE.seg(F, 'AH', { col: C.yel, w: 5, glow: true, a: k5 }); GE.right(F, 'AHV', { col: C.yel, fill: true, a: k5 }); GE.dot(F, 'H', { col: C.yel, a: k5 }); nm(F, { H: 300 }, { c: C.yel, a: k5 }); }
+            say(D, L.side, [{ t: 'BC をのばす', a: k0 }, { t: 'A を中心に円', col: C.blue, a: k1 }, { t: '等しい半径の弧 → 交点', col: C.pink, a: k3 }, { t: 'A から垂線 → H', col: C.yel, a: k4 }, { t: 'AH が高さ', col: C.yel, a: k5 }].filter(function (r) { return r.a > 0; }));
+          }
+          dots(F, 'ABC'); nm(F, { A: 60, B: 225, C: 250 });
+        } },
+      { tag: '考えよう', q: '∠XOY の二等分線の作図と、直線上の点を通る垂線の作図を、くらべてみよう。∠XOY を、だんだん広げて 180° にすると、二等分線の作図は、どうなるだろう。',
+        notes: ['2つの作図で、同じところ・ちがうところを見つけよう。', '180° のとき、OX と OY は どうなるかな。半直線 OP は？', 'スライダーで、∠XOY の大きさを変えられます。'],
+        sliders: [{ key: 'th', label: '∠XOY', min: 60, max: 180, step: 5, val: 90, fmt: function (x) { return x + '°'; } }],
+        draw: function (D) {
+          var P = bis(D.V.th), L = lay(D, .3), F = GE.fit(D, L.fig, P, { keys: ['O'], pad: .04, bounds: [[-6, -1], [6, 6.2]] });
+          GE.seg(F, 'OX', { w: 3 }); GE.seg(F, 'OY', { w: 3 });
+          arcAt(F, 'O', 3, -8, D.V.th + 8, { col: C.blue });
+          var a1 = angTo(P.A, P.P), a2 = angTo(P.B, P.P); arcAt(F, 'A', 4, a1 - 14, a1 + 14, { col: C.pink }); arcAt(F, 'B', 4, a2 - 14, a2 + 14, { col: C.pink });
+          GE.seg(F, ['O', GE.lerpP([0, 0], P.P, 1.4)], { col: C.yel, w: 3 });
+          dots(F, 'OABP'); nm(F, { O: 270, A: 300, B: D.V.th + 60, P: D.V.th / 2 + 40, X: 0, Y: D.V.th + 15 });
+          say(D, L.side, [{ t: '∠XOY＝' + D.V.th + '°', col: C.blue }, { t: '∠XOP＝' + Math.round(GE.ang(P, 'XOP')) + '°', col: C.yel }]);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '線分 AB を1辺とする正方形 ABCD を作図しよう。C、D は AB の上側にとる。作図の手順も、ことばで書こう。',
+        notes: ['ヒント① 正方形の 4つの角は、何度かな。90° の角は、どうやって作図したかな。', 'ヒント② 4つの辺の長さは、どうなっているかな。'],
+        a: '① A を通る AB の垂線をひき、AD＝AB となる点 D をとる　② B、D を中心に 半径 AB の円をかき、交点を C とする　③ DC、CB をひく', sub: '① は「直線上の点 A を通る垂線」の作図（BA を A の先へのばして使う）', dur: 10,
+        b: { t: '正方形 … ① A を通る AB の<b>垂線</b>、AD＝AB の点 D　② B、D を中心に半径 AB の円 → C　③ DC、CB', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, L = lay(D, .32), F = GE.fit(D, L.fig, PS, { pad: .1, bounds: [[-4.6, -1], [5, 5.2]] });
+          var k1 = CH.smooth(.02, .16, t), k2 = CH.smooth(.18, .3, t), k3 = CH.smooth(.32, .44, t), k4 = CH.smooth(.47, .58, t), k5 = CH.smooth(.6, .7, t), k6 = CH.smooth(.72, .82, t), k7 = CH.smooth(.85, .97, t);
+          if (D.ph) {
+            GE.seg(F, ['A', GE.lerpP(PS.A, PS.E, 1.1 * k1)], { dash: [6, 6], w: 2 });
+            comp(F, 'A', 4, 160, 200, k1, { col: C.blue }); comp(F, 'A', 4, 70, 110, k2, { col: C.blue });
+            var e = angTo(PS.E, PS.T), b = angTo(PS.B, PS.T); comp(F, 'E', 5, e - 12, e + 12, k3, { col: C.pink }); comp(F, 'B', 5, b - 12, b + 12, k3, { col: C.pink, noLeg: true });
+            if (k3 > .98) dots(F, 'ET', { col: C.pink, r: F.s * .18 });
+            if (k4 > 0) { GE.seg(F, [[0, -.4], [0, -.4 + 4.9 * k4]], { col: C.yel, w: 3 }); }
+            if (k4 > .98) { GE.right(F, 'DAB', { col: C.yel, fill: true }); GE.dot(F, 'D', { col: C.yel }); nm(F, { D: 135 }, { c: C.yel }); }
+            var c1 = angTo(PS.B, PS.C), c2 = angTo(PS.D, PS.C); comp(F, 'B', 4, c1 - 12, c1 + 12, k5, { col: C.green }); comp(F, 'D', 4, c2 - 12, c2 + 12, k6, { col: C.green });
+            if (k6 > .98) { GE.dot(F, 'C', { col: C.green }); nm(F, { C: 45 }, { c: C.green }); }
+            if (k7 > 0) { GE.poly(F, 'ABCD', { col: C.orange, fa: .2 * k7, stroke: false }); GE.seg(F, 'DC', { col: C.orange, w: 3.4, a: k7 }); GE.seg(F, 'CB', { col: C.orange, w: 3.4, a: k7 }); ['AB', 'BC', 'CD', 'DA'].forEach(function (s) { GE.tick(F, s, 1, { col: C.orange, a: k7 }); }); }
+            say(D, L.side, [{ t: '① A を通る垂線、AD＝AB', col: C.yel, a: k4 }, { t: '② B、D から半径 AB の円 → C', col: C.green, a: k6 }, { t: '③ DC、CB をひく', col: C.orange, a: k7 }].filter(function (r) { return r.a > 0; }));
+          }
+          GE.seg(F, 'AB', { w: 3.4 }); dots(F, 'AB'); nm(F, { A: 250, B: 315 }); if (D.ph && k1 > .98) nm(F, { E: 270 }, { name: { E: 'A′' }, c: 'rgba(242,240,230,.7)', size: .85 });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

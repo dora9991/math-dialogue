@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>弧の長さと円周角</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 円 第4時：弧の長さと円周角の関係を調べよう（ikkan の lesson_en_04 と同じ流れ）。
+   円周を 6等分。弧が 1つ分・2つ分・3つ分になると、円周角も 30°・60°・90°（2倍、3倍）。例題は 5等分（1つ分 36°）と、円周の 1/3・1/4。
+   考えようは、等分の数と弧の長さを変えて、弦の長さ（半径 3cm）を調べる道具（答えは出さない）。チャレンジは弧の比 2：3：4。
+   図の点は、中心 O・半径 3・向き（度）で決める。数値は ikkan のまま（自作）。図の角の字・弦の長さは、すべて座標から計算した値。 */
+(function () {
+  var C = CH.C, RAD = Math.PI / 180, O = [0, 0], R = 3;
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  /* ---- 円の図の道具（このページの中だけで使う） ---- */
+  function on(a) { return GE.polar(O, R, a); }                                         // 円周上の点（向き a 度）
+  function dg(x) { var r = Math.round(x * 10) / 10; return (Math.abs(r - Math.round(r)) < .05 ? String(Math.round(r)) : r.toFixed(1)) + '°'; }
+  /* 図の四角（fig）と、字を書く四角（side）。よこ長ならみぎ、たて長なら下 */
+  function lay(D, k) {
+    var B = CH.box(D, { l: .03, r: .03, t: .04, b: .04 });
+    if (B.w > B.h * 1.25 && B.w > 560) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .08, B.x1, B.y1), wide: true }; }
+    var h = B.h * .25; return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .04, B.y1 - h + 4, B.x1, B.y1), wide: false };
+  }
+  /* 円をふくめて、四角に入れる（円の大きさは、点が動いても変わらない） */
+  function fitC(D, Rr, P, o) { o = o || {}; return GE.fit(D, Rr, P, { keys: ['O'], bounds: GE.circBounds(O, R).concat(o.bounds || []), pad: o.pad == null ? .07 : o.pad }); }
+  function circle(F, o) { GE.circ(F, O, R, o); }
+  /* 円周の一部を太く（a0 → a1 は反時計まわり、度） */
+  function arcOn(F, a0, a1, o) {
+    o = o || {}; var g = F.D.ctx, p = F.X(O);
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.yel; g.lineWidth = o.w || 6; g.lineCap = 'round';
+    g.shadowColor = o.col || C.yel; g.shadowBlur = 8;
+    g.beginPath(); g.arc(p[0], p[1], R * F.u, -a0 * RAD, -a1 * RAD, true); g.stroke(); g.restore();
+  }
+  function segs(F, ss, o) { ss.split(' ').forEach(function (s) { GE.seg(F, s, o); }); }
+  function dots(F, ks, o) { ks.split('').forEach(function (k) { if (F.P[k]) GE.dot(F, k, o); }); }
+  /* 点の名前：{A: 向き（度）} */
+  function nm(F, m, o) {
+    o = o || {}; Object.keys(m).forEach(function (k) {
+      if (m[k] == null || !F.P[k]) return; var p = F.X(k), r = F.s * .95;
+      CH.text(F.D, p[0] + Math.cos(m[k] * RAD) * r, p[1] - Math.sin(m[k] * RAD) * r, k, { size: F.s, col: (o.col && o.col[k]) || C.chalk, a: o.a, outline: 'rgba(20,40,30,.9)' });
+    });
+  }
+  /* 角のしるし。字（座標から計算した大きさ、または o.t）は、二等分線の上の、2辺にふれないところに置く */
+  function mark(F, s, col, o) {
+    o = o || {}; var r = o.r || F.s * 1.05;
+    GE.arc(F, s, { col: col, fill: o.fill == null ? .3 : o.fill, a: o.a, r: r, n: o.n });
+    var t = o.t === false ? null : (o.t || dg(GE.ang(F.P, s))); if (!t) return;
+    var A = F.X(s[0]), V = F.X(s[1]), B = F.X(s[2]), a1 = Math.atan2(A[1] - V[1], A[0] - V[0]), d = Math.atan2(B[1] - V[1], B[0] - V[0]) - a1;
+    while (d > Math.PI) d -= 2 * Math.PI; while (d <= -Math.PI) d += 2 * Math.PI;
+    var sz = F.s * .82, g = F.D.ctx; g.save(); g.font = '600 ' + sz + 'px ' + FONT; var w = g.measureText(t).width; g.restore();
+    var m = a1 + d / 2, need = (Math.max(w, sz) / 2 + 3) / Math.sin(Math.abs(d) / 2), dd = CH.clamp(Math.max(r + sz * .9, need), 0, o.max || F.s * 4.2);
+    CH.text(F.D, V[0] + Math.cos(m) * dd, V[1] + Math.sin(m) * dd, t, { col: col, size: sz, a: o.a, outline: 'rgba(20,40,30,.9)' });
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする） */
+  function say(D, Rr, rows, o) {
+    o = o || {}; rows = rows.filter(Boolean); if (!rows.length) return;
+    var nc = Rr.w > Rr.h * 2.5 && rows.length > 3 ? 2 : 1, per = Math.ceil(rows.length / nc), cw = Rr.w / nc;   // 下の帯では 2列
+    var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (per * 1.6)), g = D.ctx;
+    rows.forEach(function (r, i) {
+      g.save(); g.font = '600 ' + s + 'px ' + FONT; var w = g.measureText(r.t).width; g.restore();
+      var sz = w > cw - 6 ? s * (cw - 6) / w : s, c = Math.floor(i / per), j = i % per;
+      CH.text(D, Rr.x0 + c * cw, Rr.y0 + s * .8 + j * s * 1.6, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left' });
+    });
+  }
+  function panels(D, n) { var B = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }); return CH.split(D, B, n, .06); }
+  /* 円周を n 等分する点（names の順に、a0 度から時計まわり）→ { A: 90, B: 30, … } */
+  function divPts(n, names, a0) { var o = {}; names.split('').forEach(function (c, i) { o[c] = a0 - 360 / n * i; }); return o; }
+  function ptsOf(S) { var P = { O: O }; Object.keys(S).forEach(function (k) { P[k] = on(S[k]); }); return P; }
+  var HC = [C.yel, C.pink, C.green];
+
+  /* ---- 数と検算 ---- */
+  var S6 = divPts(6, 'ABCDEF', 90), P6 = ptsOf(S6);
+  GE.verify(P6, '∠BAC＝30°、∠BAD＝60°、∠BAE＝90°、∠BAD＝2∠BAC、∠BAE＝3∠BAC、∠BAC＝∠CAD＝∠DAE', null, '今日の問い');
+  var S5 = divPts(5, 'ABCDE', 90), P5 = ptsOf(S5), EX = [['BAC', 1, 36], ['BAD', 2, 72], ['CAE', 2, 72], ['BAE', 3, 108]];
+  CH.check(EX.every(function (e) { return GE.near(GE.ang(P5, e[0]), e[2]) && e[2] === e[1] * 360 / 5 / 2; }), '例題の表');
+  var P3 = { O: O, A: on(210), B: on(330), P: on(90) }, P4 = { O: O, A: on(225), B: on(315), P: on(120) };   // 例題2：円周の 1/3、1/4
+  GE.verify(P3, '∠AOB＝120°、∠APB＝60°', null, '例題2 1/3');
+  GE.verify(P4, '∠AOB＝90°、∠APB＝45°', null, '例題2 1/4');
+  CH.check(360 / 3 / 2 === 60 && 45 * 2 / 360 === 1 / 4, '例題2の計算');
+  function chord(n, k) { return 2 * R * Math.sin(k * 180 / n * RAD); }
+  CH.check(GE.near(chord(6, 1), 3) && GE.near(chord(6, 3), 6) && !GE.near(chord(6, 2), 2 * chord(6, 1)), '考えよう（ここで確かめるだけ）');
+  var P8 = { O: O, A: on(90), B: on(10), C: on(250) };           // チャレンジ：弧 AB：BC：CA＝2：3：4
+  GE.verify(P8, '∠AOB＝80°、∠BOC＝120°、∠ACB＝40°、∠BAC＝60°、∠ABC＝80°', null, 'チャレンジ');
+  CH.check(360 / 9 / 2 === 20 && 20 * 2 === 40 && 20 * 3 === 60 && 20 * 4 === 80 && 40 + 60 + 80 === 180, 'チャレンジの計算');
+
+  /* 6等分の図。o.show(i)：弧 BC・BD・BE（i＝0, 1, 2）の濃さ */
+  function six(D, o) {
+    o = o || {}; var L = lay(D), F = fitC(D, L.fig, P6), ks = ['C', 'D', 'E'];
+    ks.forEach(function (k, i) { var a = o.show ? o.show(i) : 0; if (a) arcOn(F, S6[k], S6.B, { col: HC[i], a: a * .9, w: 7 - i * .5 }); });
+    circle(F); segs(F, 'AB AC AD AE');
+    ks.forEach(function (k, i) { var a = o.show ? o.show(i) : 0; if (a) mark(F, 'BA' + k, HC[i], { a: a, r: F.s * (1.2 + i * .75), fill: .18, t: false }); });   // 角の大きさは、よこの字で
+    if (o.eq) ['BAC', 'CAD', 'DAE'].forEach(function (s, i) { var a = o.eq(i); if (a) { arcOn(F, S6[s[2]], S6[s[0]], { col: HC[i], a: a * .9 }); mark(F, s, HC[i], { a: a, r: F.s * 2.6, fill: .25 }); } });
+    dots(F, 'ABCDEF'); var m = {}; Object.keys(S6).forEach(function (k) { m[k] = S6[k]; }); nm(F, m);
+    return { F: F, L: L };
+  }
+
+  K3.run({
+    no: '第4時', title: '弧の長さと円周角の関係を調べよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '03.html', label: '◀ 第3時' }, { href: '05.html', label: '第5時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '円周を 6等分する点', q: '円周を 6等分する点 A〜F がある。A から B、C、D、E に線をひいた。弧 BC、弧 BD、弧 BE に対する円周角をはかって、弧の長さと円周角の大きさの関係を調べよう。',
+        notes: ['① 自分の考え（3分）　はかった結果と、気づいたことを。', '② ペアの考え（3分）'],
+        draw: function (D) { six(D); } },
+      { tag: '今日の問い', q: '弧 BC・BD・BE に対する円周角は？ 弧の長さとの関係は？', a: '30°・60°・90°', sub: '弧が 2倍、3倍になると、円周角も 2倍、3倍になる', dur: 6,
+        b: { t: '弧が 1つ分・2つ分・3つ分 → 円周角 30°・60°・90°（2倍・3倍）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, sh = function (i) { return D.ph ? CH.smooth(i * .3, i * .3 + .2, t) : 0; }, m = six(D, { show: sh });
+          if (D.ph) say(D, m.L.side, [0, 1, 2].map(function (i) { return { t: '弧 B' + 'CDE'[i] + '（' + (i + 1) + 'つ分）… ' + (30 * (i + 1)) + '°', col: HC[i], a: sh(i) }; }).concat([{ t: '2倍、3倍 → 2倍、3倍', a: CH.smooth(.9, 1, t) }]));
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '等しい弧に対する円周角は？ 円周角の大きさと、弧の長さの関係は？', a: '等しい。円周角は、弧の長さに比例する', sub: '1つの円で、等しい円周角に対する弧も等しい', dur: 3,
+        b: [{ t: '等しい弧に対する円周角は <b>等しい</b>（等しい円周角に対する弧も等しい）', col: C.green }, { t: '円周角の大きさは、弧の長さに <b>比例</b> する', col: C.green }],
+        draw: function (D) { var t = D.ph ? D.t : 0, m = six(D, { eq: function (i) { return D.ph ? CH.smooth(i * .25, i * .25 + .2, t) : 0; } }); if (D.ph) say(D, m.L.side, [{ t: '弧 BC＝弧 CD＝弧 DE', col: C.yel, a: CH.smooth(.6, .8, t) }, { t: '→ 円周角も 30° ずつ', a: CH.smooth(.75, .95, t) }]); } },
+      { tag: '例題', bh: '例題　円周を 5等分', q: '円周を 5等分する点 A〜E。1つ分の弧に対する円周角は何度？ 表の空らんもうめよう。', a: '36°（∠BAC 36°、∠BAD 72°、∠CAE 72°、∠BAE 108°）', sub: '1つ分の中心角は 360°÷5＝72°、円周角はその半分。角の頂点 A をふくまない弧を数える', dur: 6,
+        b: { t: '5等分 → 1つ分の円周角 360°÷5÷2＝<b>36°</b>（頂点をふくまない弧を数える）', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, k = D.ph ? Math.min(3, Math.floor(t * 4.05)) : -1, B = CH.box(D, { l: .04, r: .04, t: .03, b: .04 });
+          var top = CH.rect(B.x0, B.y0, B.x1, B.y0 + B.h * .6), bot = CH.rect(B.x0 + B.w * .04, B.y0 + B.h * .66, B.x1 - B.w * .04, B.y1), F = fitC(D, top, P5);
+          if (k >= 0) { var e = EX[k][0]; arcOn(F, S5[e[2]], S5[e[0]] + (S5[e[0]] < S5[e[2]] ? 360 : 0), { a: .9 }); }
+          circle(F); segs(F, 'AB AC AD AE');
+          if (k >= 0) mark(F, EX[k][0], C.yel, { r: F.s * 1.4 });
+          dots(F, 'ABCDE'); nm(F, S5);
+          CH.table(D, bot, [''].concat(EX.map(function (e) { return '∠' + e[0]; })), [
+            ['弧は何つ分'].concat(EX.map(function (e, j) { return j <= k ? e[1] : '？'; })),
+            ['円周角'].concat(EX.map(function (e, j) { return j <= k ? e[2] + '°' : '？'; }))
+          ], { fw: .26, hl: function (r, c) { return r > 0 && c === k + 1 ? C.yel : null; } });
+        } },
+      { tag: '例題', bh: '例題2　円周の何分のいくつ', q: '円周の 1/3 の弧に対する円周角は、何度？ 円周角が 45° になる弧は、円周の何分のいくつ？', a: '60°、1/4', sub: '中心角 360°×1/3＝120° → 円周角 60°。円周角 45° → 中心角 90° → 90°÷360°＝1/4', dur: 4,
+        b: { t: '円周の 1/3 → 中心角 120° → 円周角 <b>60°</b>　円周角 45° → 中心角 90° → <b>1/4</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, rs = panels(D, 2), s = CH.fs(D, .9);
+          [[P3, 210, 330, '円周の 1/3', 0], [P4, 225, 315, '円周角 45°', 1]].forEach(function (q, i) {
+            var r = rs[i], a = D.ph ? CH.smooth(i * .5, i * .5 + .4, t) : 0, sq = Math.min(r.w, r.h - s * 3), y0 = r.cy - (sq + s * 3) / 2;
+            var F = fitC(D, CH.rect(r.cx - sq / 2, y0 + s * 1.3, r.cx + sq / 2, y0 + s * 1.3 + sq), q[0], { pad: .1 });
+            arcOn(F, q[1], q[2], { a: .85 }); circle(F); segs(F, 'OA OB', { col: C.pink }); segs(F, 'PA PB');
+            if (i === 0) { mark(F, 'AOB', C.pink, { a: a, t: a ? null : false }); mark(F, 'APB', C.yel, { t: a ? null : '？' }); }
+            else { mark(F, 'AOB', C.pink, { a: a, t: a ? null : false }); mark(F, 'APB', C.yel, { t: '45°' }); }
+            dots(F, 'OABP');
+            CH.text(D, r.cx, y0 + s * .5, q[3], { col: C.yel, size: s });
+            CH.text(D, r.cx, y0 + s * 2.1 + sq, i === 0 ? '360°×1/3＝120° → 60°' : '45°×2＝90° → 90°÷360°＝1/4', { col: C.chalk, a: a, size: s * .85 });
+          });
+        } },
+      { tag: '考えよう', q: '弧の長さが 2倍になると、弦の長さも 2倍になるだろうか。弧と弦の長さを調べて、気づいたことを書こう。',
+        notes: ['半径 3cm の円で調べる。弦の長さは、定規ではかった値と同じ。', 'ほかの等分（8等分・12等分）でも確かめよう。', 'スライダーで、何等分か・弧が何つ分かを変えられます。'],
+        sliders: [{ key: 'n', label: '何等分', min: 0, max: 2, step: 1, val: 0, fmt: function (x) { return [6, 8, 12][x] + '等分'; } },
+          { key: 'k', label: '弧', min: 1, max: 5, step: 1, val: 1, fmt: function (x) { return x + 'つ分'; } }],
+        draw: function (D) {
+          var n = [6, 8, 12][D.V.n], k = D.V.k, S = {}, nmz = 'ABCDEFGHIJKL';
+          for (var i = 0; i < n; i++) S[nmz[i]] = 180 - 360 / n * i;
+          var P = ptsOf(S), L = lay(D), F = fitC(D, L.fig, P), X = nmz[k];
+          arcOn(F, S[X], 180, { a: .9 }); circle(F);
+          for (var j = 1; j <= k; j++) GE.seg(F, 'A' + nmz[j], { col: j === k ? C.pink : 'rgba(242,240,230,.4)', w: j === k ? 3.4 : 1.8 });
+          dots(F, nmz.slice(0, n)); var lab = { A: 180 }; for (j = 1; j <= k; j++) lab[nmz[j]] = S[nmz[j]]; nm(F, lab);
+          var rows = [{ t: '半径 3cm、' + n + '等分', col: C.chalk }];
+          for (j = 1; j <= k; j++) rows.push({ t: '弧 ' + j + 'つ分 → 弦 A' + nmz[j] + '＝' + GE.len(P, 'A' + nmz[j]).toFixed(1) + 'cm', col: j === k ? C.pink : 'rgba(242,240,230,.8)' });
+          say(D, L.side, rows, { size: CH.fs(D, .85) });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '円周上の 3点 A、B、C が、円周を弧 AB、弧 BC、弧 CA に分けている。3つの弧の長さの比が 2：3：4 のとき、∠A、∠B、∠C の大きさを求めよう。',
+        notes: ['ヒント① 円周全体は、比の合計の何つ分？', 'ヒント② ∠A は、どの弧に対する円周角？'],
+        a: '∠A＝60°、∠B＝80°、∠C＝40°', sub: '円周を 9つに分けると、1つ分の円周角は 360°÷9÷2＝20°。∠C は弧 AB（2つ分）、∠A は弧 BC（3つ分）、∠B は弧 CA（4つ分）', dur: 6,
+        b: { t: '1つ分 20° → ∠C＝40°（弧 AB）、∠A＝60°（弧 BC）、∠B＝80°（弧 CA）', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, a0 = D.ph ? CH.smooth(0, .2, t) : 0, A = [0, 1, 2].map(function (i) { return D.ph ? CH.smooth(.28 + i * .24, .45 + i * .24, t) : 0; });
+          var L = lay(D), F = fitC(D, L.fig, P8);
+          arcOn(F, 10, 90, { col: C.yel, a: .35 + .55 * A[0], w: 5 }); arcOn(F, 250, 370, { col: C.pink, a: .35 + .55 * A[1], w: 5 }); arcOn(F, 90, 250, { col: C.green, a: .35 + .55 * A[2], w: 5 });
+          circle(F); segs(F, 'AB BC CA');
+          if (a0) for (var i = 0; i < 9; i++) { var p = F.X(GE.polar(O, R * .93, 90 - 40 * i)), q = F.X(GE.polar(O, R * 1.07, 90 - 40 * i)); CH.line(D, p[0], p[1], q[0], q[1], { col: C.chalk, w: 2.2, a: a0 }); }
+          if (A[0]) mark(F, 'ACB', C.yel, { a: A[0] });
+          if (A[1]) mark(F, 'BAC', C.pink, { a: A[1] });
+          if (A[2]) mark(F, 'ABC', C.green, { a: A[2] });
+          dots(F, 'ABC'); nm(F, { A: 90, B: 10, C: 250 });
+          var rs = [{ t: '弧 AB：BC：CA＝2：3：4' }];
+          if (D.ph) rs = rs.concat([{ t: '1つ分の円周角 360°÷9÷2＝20°', a: a0 }, { t: '∠C＝20°×2＝40°（弧 AB）', col: C.yel, a: A[0] }, { t: '∠A＝20°×3＝60°（弧 BC）', col: C.pink, a: A[1] }, { t: '∠B＝20°×4＝80°（弧 CA）', col: C.green, a: A[2] }]);
+          say(D, L.side, rs);
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>反対の性質と正負の数</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 正の数・負の数 第1時：反対の性質をもつ量を、1つの数で表そう（ikkan の lesson_seifu_01 と同じ流れ）。
+   駅ビルの案内板（地上 45 m・地下 9 m）に、地面を 0 とするたての数直線がのびて、＋45・−9 になる。
+   気温・海面からの高さ・お金の出入りも、0 を基準に上下・左右の矢印で。シュート練習は、目標の 25本の線が 0 になる。
+   数値は ikkan のまま（案内板、シュート 28・23・25・31・20 本、チャレンジ ＋9・−6・＋2 と 73点）。
+   気温 ＋5℃・−3℃、海面 ＋30 m・−20 m は自作（収入 500円・支出 300円は ikkan の演習プリントから）。答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum, POS = C.blue, NEG = C.pink, OUT = 'rgba(20,40,30,.9)';
+  function sg(v) { return v > 0 ? '＋' + S(v) : S(v); }
+  function sc(v) { return v > 0 ? POS : v < 0 ? NEG : C.yel; }
+
+  /* ---- 数と検算 ---- */
+  var DAYS = ['月', '火', '水', '木', '金'], SHOT = [28, 23, 25, 31, 20], GOAL = 25, DIF = SHOT.map(function (v) { return v - GOAL; });
+  CH.check(DIF.join() === '3,-2,0,6,-5', '例題 目標とのちがい');
+  CH.check(0 + 45 === 45 && 0 - 9 === -9, '案内板');
+  var CA = 9, CB = -6, CC = 2, CCS = 73, AVG = CCS - CC;
+  CH.check(CA - CB === 15 && CA + 6 === 15 && AVG === 71 && AVG + CA === 80 && AVG + CB === 65 && 80 - 65 === 15, 'チャレンジ');
+
+  /* ---- たての目もり（0 が基準）。R の中で min〜max。o：x（軸の位置）、lab（字の間かく）、unit、a ---- */
+  function vscale(D, R, min, max, o) {
+    o = o || {}; var s = o.s || CH.fs(D, .72), Y = function (v) { return R.y1 - (v - min) / (max - min) * R.h; }, x = o.x, a = o.a == null ? 1 : o.a;
+    CH.arrow(D, x, R.y1 + s * .4, x, R.y0 - s * .9, { w: 2, head: 9, a: a });
+    for (var v = Math.ceil(min / o.step) * o.step; v <= max + 1e-9; v += o.step) {
+      var isL = v % o.lab === 0, h = v === 0 ? 9 : isL ? 6 : 3.5;
+      CH.line(D, x - h, Y(v), x + h, Y(v), { w: v === 0 ? 2.6 : 1.4, a: a, col: v === 0 ? C.yel : C.chalk });
+      if (isL && o.nums !== false && (o.from == null || v >= o.from)) CH.text(D, x - s * .7, Y(v), v === 0 ? '0' : sg(v), { size: s, num: true, align: 'right', a: a * (v === 0 ? 1 : .8), col: v === 0 ? C.yel : C.chalk });
+    }
+    return Y;
+  }
+  /* 0 から v までの矢印（たて）。k：のびる進み */
+  function varrow(D, x, Y, v, k, o) {
+    o = o || {}; if (k <= 0) return; var col = sc(v);
+    CH.arrow(D, x, Y(0), x, CH.lerp(Y(0), Y(v), k), { col: col, w: 3.4, head: 12, a: o.a });
+  }
+  function frame(D, R, title) {
+    var s = CH.fs(D, .82);
+    CH.fillRect(D, R.x0, R.y0, R.x1, R.y1, { stroke: 'rgba(242,240,230,.22)', sw: 1.4 });
+    CH.text(D, R.x0 + s * .5, R.y0 + s * .9, title, { size: s, align: 'left', col: 'rgba(242,240,230,.85)' });
+  }
+
+  /* ---- 駅ビル（k：答えの動きの進み） ---- */
+  function tower(D, k) {
+    var R = CH.box(D, { l: .04, r: .03, t: .07, b: .05 }), s = CH.fs(D), wide = R.w > R.h * 1.1;
+    var u = R.h / 64, yg = R.y0 + 52 * u, Y = function (m) { return yg - m * u; };
+    var bx = R.x0 + R.w * (wide ? .42 : .47), bw = Math.min(R.w * .17, u * 15), g = D.ctx;
+    CH.fillRect(D, R.x0, yg, R.x1, Y(-12), { fill: 'rgba(170,130,90,.18)' });
+    CH.line(D, R.x0, yg, R.x1, yg, { col: '#e3c9a0', w: 2.6 });
+    CH.text(D, R.x1 - s * .2, yg - s * .7, '地面', { size: s * .8, align: 'right', col: '#e3c9a0' });
+    /* 塔と展望フロア */
+    CH.fillRect(D, bx - bw / 2, Y(45), bx + bw / 2, yg, { fill: 'rgba(242,240,230,.07)', stroke: C.chalk, sw: 1.8 });
+    var nr = Math.max(3, Math.floor(40 * u / Math.max(14, s * .9)));
+    for (var r = 0; r < nr; r++) for (var c = 0; c < 2; c++) {
+      var wy = Y(4 + r * 39 / nr), wx = bx - bw * .28 + c * bw * .32;
+      CH.fillRect(D, wx, wy - Math.min(9, 39 / nr * u * .45), wx + bw * .22, wy, { stroke: 'rgba(242,240,230,.4)', sw: 1 });
+    }
+    CH.fillRect(D, bx - bw * .8, Y(50), bx + bw * .8, Y(45), { fill: 'rgba(154,216,255,.2)', stroke: C.chalk, sw: 1.8 });
+    CH.poly(D, [[bx - bw * .8, Y(50)], [bx, Y(54)], [bx + bw * .8, Y(50)]], { stroke: C.chalk, sw: 1.8, fill: 'rgba(242,240,230,.06)' });
+    /* 地下駐車場と車 */
+    CH.fillRect(D, bx - bw * .9, yg, bx + bw * .9, Y(-9), { fill: 'rgba(15,25,20,.45)', stroke: C.chalk, sw: 1.8 });
+    var cw = bw * .7, ch = Math.min(4 * u, s * 1.1), cy = Y(-9) - ch * .55;
+    CH.fillRect(D, bx - cw / 2, cy - ch * .35, bx + cw / 2, cy + ch * .3, { fill: 'rgba(255,192,120,.35)', stroke: C.orange, sw: 1.6 });
+    CH.poly(D, [[bx - cw * .3, cy - ch * .35], [bx - cw * .18, cy - ch * .75], [bx + cw * .2, cy - ch * .75], [bx + cw * .32, cy - ch * .35]], { stroke: C.orange, sw: 1.6 });
+    CH.circle(D, bx - cw * .28, cy + ch * .3, ch * .2, { fill: '#1f3a2c', stroke: C.orange, sw: 1.4 }); CH.circle(D, bx + cw * .28, cy + ch * .3, ch * .2, { fill: '#1f3a2c', stroke: C.orange, sw: 1.4 });
+    /* 案内の字 */
+    var lx = bx + bw * .95 + s * .5, sz = CH.fitSize(D, '地下駐車場', R.x1 - lx - 4, s * .9), a2 = CH.smooth(.72, .95, k);
+    CH.line(D, bx + bw * .8, Y(47.5), lx - 4, Y(47.5), { w: 1.2, col: 'rgba(242,240,230,.6)' });
+    CH.text(D, lx, Y(47.5), '展望フロア', { size: sz, align: 'left' });
+    CH.line(D, bx + bw * .9, Y(-6), lx - 4, Y(-6), { w: 1.2, col: 'rgba(242,240,230,.6)' });
+    CH.text(D, lx, Y(-6) - s * .1, '地下駐車場', { size: sz, align: 'left' });
+    var l1 = Y(47.5) + sz * 1.35, l2 = Y(-6) + sz * 1.25;
+    CH.text(D, lx, l1, '地上 45 m', { size: sz, align: 'left', a: 1 - a2 });
+    CH.text(D, lx, l2, '地下 9 m', { size: sz, align: 'left', a: 1 - a2 });
+    if (a2 > 0) { CH.text(D, lx, l1, '＋45 m', { size: sz * 1.15, align: 'left', a: a2, col: POS, w: 700 }); CH.text(D, lx, l2, '−9 m', { size: sz * 1.15, align: 'left', a: a2, col: NEG, w: 700 }); }
+    /* たての数直線（地面が 0） */
+    if (k > 0) {
+      var ax = bx - bw * .9 - s * 1.2, a1 = CH.smooth(0, .2, k), sR = CH.rect(ax, Y(52), ax, Y(-11));
+      var YY = vscale(D, sR, -11, 52, { x: ax, step: 5, lab: 10, a: a1, from: 0 });
+      varrow(D, ax + s * .55, YY, 45, CH.smooth(.22, .5, k));
+      varrow(D, ax + s * .55, YY, -9, CH.smooth(.5, .7, k));
+      var b1 = CH.smooth(.45, .55, k), b2 = CH.smooth(.65, .75, k);
+      CH.line(D, ax, YY(45), bx - bw * .8, YY(45), { col: POS, dash: [4, 4], w: 1.6, a: b1 });
+      CH.line(D, ax, YY(-9), bx - bw * .9, YY(-9), { col: NEG, dash: [4, 4], w: 1.6, a: b2 });
+      CH.text(D, ax - s * .5, YY(45), '＋45', { col: POS, size: s * .9, align: 'right', a: b1, outline: OUT, num: true });
+      CH.text(D, ax - s * .5, YY(-9), '−9', { col: NEG, size: s * .9, align: 'right', a: b2, outline: OUT, num: true });
+    }
+  }
+
+  /* ---- 気温・海面・お金（k：答えの動き） ---- */
+  function threeScenes(D, k) {
+    var R = CH.box(D, { l: .03, r: .03, t: .05, b: .05 }), top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .62), bot = CH.rect(R.x0, R.y0 + R.h * .67, R.x1, R.y1);
+    var tp = CH.cols(top, 2, .05), s = CH.fs(D, .78), aw = 1 - CH.smooth(.55, .8, k), an = CH.smooth(.6, .9, k);
+    /* 気温 */
+    var P = tp[0]; frame(D, P, '気温');
+    var sR = CH.rect(P.x0, P.y0 + s * 2.6, P.x0, P.y1 - s * 1.4), x = P.x0 + P.w * .3;
+    var Y = vscale(D, sR, -6, 8, { x: x, step: 1, lab: 2, s: s * .85 });
+    CH.text(D, x - s * .9, Y(0), '', {});
+    varrow(D, x + s * .6, Y, 5, CH.smooth(.05, .3, k)); varrow(D, x + s * .6, Y, -3, CH.smooth(.3, .5, k));
+    var tx = x + s * 1.4;
+    CH.circle(D, x + s * .6, Y(5), 4, { fill: POS }); CH.circle(D, x + s * .6, Y(-3), 4, { fill: NEG });
+    CH.text(D, tx, Y(5), '0℃より 5℃ 高い', { size: CH.fitSize(D, '0℃より 5℃ 高い', P.x1 - tx - 4, s * .85), align: 'left', a: aw });
+    CH.text(D, tx, Y(-3), '0℃より 3℃ 低い', { size: CH.fitSize(D, '0℃より 3℃ 低い', P.x1 - tx - 4, s * .85), align: 'left', a: aw });
+    if (an > 0) { CH.text(D, tx, Y(5), '＋5℃', { size: s * 1.2, align: 'left', a: an, col: POS, w: 700 }); CH.text(D, tx, Y(-3), '−3℃', { size: s * 1.2, align: 'left', a: an, col: NEG, w: 700 }); }
+    /* 海面 */
+    P = tp[1]; frame(D, P, '海面からの高さ');
+    sR = CH.rect(P.x0, P.y0 + s * 2.6, P.x0, P.y1 - s * 1.4); x = P.x0 + P.w * .3;
+    Y = vscale(D, sR, -30, 40, { x: x, step: 10, lab: 10, s: s * .85 });
+    var g = D.ctx; g.save(); g.globalAlpha = D.ga; g.fillStyle = 'rgba(154,216,255,.12)'; g.fillRect(x, Y(0), P.x1 - 2 - x, Y(-30) - Y(0) + 4); g.restore();
+    for (var i = 0; i < 6; i++) { var wx = x + 4 + i * (P.x1 - x - 8) / 6, ww = (P.x1 - x - 8) / 6; g.save(); g.globalAlpha = D.ga; g.strokeStyle = C.blue; g.lineWidth = 1.6; g.beginPath(); g.moveTo(wx, Y(0)); g.quadraticCurveTo(wx + ww / 4, Y(0) - 4, wx + ww / 2, Y(0)); g.quadraticCurveTo(wx + ww * .75, Y(0) + 4, wx + ww, Y(0)); g.stroke(); g.restore(); }
+    var hx = P.x0 + P.w * .74, hu = (Y(0) - Y(30));
+    CH.poly(D, [[hx - hu * .22, Y(0)], [hx - hu * .1, Y(30)], [hx + hu * .1, Y(30)], [hx + hu * .22, Y(0)]], { stroke: C.chalk, sw: 1.6, fill: 'rgba(242,240,230,.08)' });
+    CH.fillRect(D, hx - hu * .13, Y(34), hx + hu * .13, Y(30), { fill: 'rgba(255,226,122,.45)', stroke: C.chalk, sw: 1.4 });
+    var fy = Y(-20), fr = Math.min(hu * .14, s * .9); g.save(); g.globalAlpha = D.ga; g.fillStyle = 'rgba(255,192,120,.6)'; g.strokeStyle = C.orange; g.lineWidth = 1.4; g.beginPath(); g.ellipse(hx, fy, fr * 1.3, fr * .65, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.beginPath(); g.moveTo(hx + fr * 1.2, fy); g.lineTo(hx + fr * 2, fy - fr * .6); g.lineTo(hx + fr * 2, fy + fr * .6); g.closePath(); g.fill(); g.stroke(); g.restore();
+    varrow(D, x + s * .6, Y, 30, CH.smooth(.05, .3, k)); varrow(D, x + s * .6, Y, -20, CH.smooth(.3, .5, k));
+    var t2 = x + s * 1.3, lw = hx - hu * .25 - t2;
+    CH.text(D, t2, Y(22), '30 m 高い', { size: CH.fitSize(D, '30 m 高い', lw, s * .85), align: 'left', a: aw }); CH.text(D, t2, Y(-12), '20 m 低い', { size: CH.fitSize(D, '20 m 低い', lw, s * .85), align: 'left', a: aw });
+    if (an > 0) { CH.text(D, t2, Y(22), '＋30 m', { size: CH.fitSize(D, '＋30 m', lw, s * 1.15), align: 'left', a: an, col: POS, w: 700, outline: OUT }); CH.text(D, t2, Y(-12), '−20 m', { size: CH.fitSize(D, '−20 m', lw, s * 1.15), align: 'left', a: an, col: NEG, w: 700, outline: OUT }); }
+    /* お金の出入り（よこ） */
+    frame(D, bot, 'お金の出入り');
+    var nx0 = bot.x0 + bot.w * .08, nx1 = bot.x1 - bot.w * .06, ny = bot.y1 - s * 1.9, X = function (v) { return nx0 + (v + 400) / 1000 * (nx1 - nx0); };
+    CH.arrow(D, nx0 - 6, ny, nx1 + 12, ny, { w: 2, head: 9 });
+    for (var v = -400; v <= 600; v += 100) { CH.line(D, X(v), ny - (v === 0 ? 9 : 5), X(v), ny + (v === 0 ? 9 : 5), { w: v === 0 ? 2.6 : 1.4, col: v === 0 ? C.yel : C.chalk }); if (v % 200 === 0) CH.text(D, X(v), ny + s * 1.15, v === 0 ? '0' : sg(v), { size: s * .85, num: true, col: v === 0 ? C.yel : C.chalk }); }
+    var ay = ny - Math.min(bot.h * .3, s * 2.2), k1 = CH.smooth(.05, .3, k), k2 = CH.smooth(.3, .5, k);
+    CH.circle(D, X(500), ny, 4.5, { fill: POS }); CH.circle(D, X(-300), ny, 4.5, { fill: NEG });
+    if (k1 > 0) CH.arrow(D, X(0), ay, CH.lerp(X(0), X(500), k1), ay, { col: POS, w: 3.4, head: 12 });
+    if (k2 > 0) CH.arrow(D, X(0), ay, CH.lerp(X(0), X(-300), k2), ay, { col: NEG, w: 3.4, head: 12 });
+    var my = ay - s * 1.1;
+    CH.text(D, X(250), my, '500円の収入', { size: s * .9, a: aw }); CH.text(D, X(-150), my, '300円の支出', { size: s * .9, a: aw });
+    if (an > 0) { CH.text(D, X(250), my, '＋500円', { size: s * 1.15, a: an, col: POS, w: 700 }); CH.text(D, X(-150), my, '−300円', { size: s * 1.15, a: an, col: NEG, w: 700 }); }
+  }
+
+  /* ---- 数直線（よこ）。min〜max。o：s、lab、a ---- */
+  function hline(D, x0, x1, y, min, max, o) {
+    o = o || {}; var s = o.s || CH.fs(D, .8), u = (x1 - x0) / (max - min), X = function (v) { return x0 + (v - min) * u; }, a = o.a == null ? 1 : o.a;
+    var lab = o.lab || [1, 2, 5, 10].filter(function (q) { return q * u >= s * 2; })[0] || 10;
+    CH.arrow(D, x0 - s * .5, y, x1 + s * 1.1, y, { w: 2, head: 9, a: a });
+    for (var v = Math.ceil(min); v <= max; v++) {
+      var isL = v % lab === 0, h = v === 0 ? 9 : isL ? 7 : 4;
+      CH.line(D, X(v), y - h, X(v), y + h, { w: v === 0 ? 2.4 : 1.5, a: a });
+      if (isL) CH.text(D, X(v), y + s * 1.25, S(v), { size: s, num: true, a: a * (o.la ? o.la(v) : 1), col: o.lc ? o.lc(v) : C.chalk });
+    }
+    return { X: X, y: y, s: s, u: u };
+  }
+
+  /* ---- 正の数・負の数（ことば） ---- */
+  function words(D, k) {
+    var R = CH.box(D, { l: .07, r: .08, t: .1, b: .1 }), s = CH.fs(D), y = R.y0 + R.h * .55, L = hline(D, R.x0, R.x1, y, -6, 6, { s: CH.fs(D, .85), lc: function (v) { return v > 0 && k > .85 ? C.green : C.chalk; } });
+    var bh = Math.min(R.h * .12, s * 1.8), k1 = CH.smooth(0, .35, k), k2 = CH.smooth(.35, .7, k), by = y - s * .7 - bh;
+    if (k1 > 0) { CH.fillRect(D, L.X(0), by, L.X(6 * k1), by + bh, { fill: 'rgba(154,216,255,.28)', stroke: POS }); CH.text(D, L.X(3), by - s * .8, '正の数（0 より大きい）', { col: POS, a: CH.smooth(.2, .35, k), size: CH.fitSize(D, '正の数（0 より大きい）', L.X(6) - L.X(0), s * .9) }); }
+    if (k2 > 0) { CH.fillRect(D, L.X(0), by, L.X(-6 * k2), by + bh, { fill: 'rgba(255,157,178,.28)', stroke: NEG }); CH.text(D, L.X(-3), by - s * .8, '負の数（0 より小さい）', { col: NEG, a: CH.smooth(.55, .7, k), size: CH.fitSize(D, '負の数（0 より小さい）', L.X(0) - L.X(-6), s * .9) }); }
+    var k3 = CH.smooth(.7, .85, k);
+    if (k3 > 0) {
+      CH.circle(D, L.X(0), y, s * .45, { stroke: C.yel, sw: 2.4, a: k3 });
+      CH.text(D, L.X(0), by - s * 2.3, '0 は どちらでもない', { col: C.yel, a: k3, size: s * .85 });
+      CH.line(D, L.X(0), by - s * 1.7, L.X(0), by - 2, { col: C.yel, a: k3, w: 1.6, dash: [3, 4] });
+      var ey = y + s * 3.2;
+      CH.text(D, L.X(3), ey, '＋3 の ＋ … 正の符号', { col: POS, a: k3, size: CH.fitSize(D, '＋3 の ＋ … 正の符号', L.X(6) - L.X(0), s * .85) });
+      CH.text(D, L.X(-3), ey, '−3 の − … 負の符号', { col: NEG, a: k3, size: CH.fitSize(D, '−3 の − … 負の符号', L.X(0) - L.X(-6), s * .85) });
+    }
+    var k4 = CH.smooth(.85, 1, k);
+    if (k4 > 0) {
+      for (var v = 1; v <= 6; v++) CH.circle(D, L.X(v), y, s * .22, { fill: C.green, a: k4 });
+      CH.text(D, L.X(3.5), y + s * 4.8, '1、2、3、… … 自然数（正の整数）', { col: C.green, a: k4, size: CH.fitSize(D, '1、2、3、… … 自然数（正の整数）', R.w * .6, s * .85) });
+    }
+  }
+
+  /* ---- シュート練習（例題）。k：答えの進み、goal：目標 ---- */
+  function shots(D, R, k, goal, o) {
+    o = o || {}; var s = CH.fs(D, .8), ch = CH.rect(R.x0 + s * 3.2, R.y0 + s * 1.2, R.x1 - s * 3.2, R.y0 + R.h * (o.tab === false ? .86 : .58));
+    var Y = function (v) { return ch.y1 - (v - 17) / 17 * ch.h; }, cx = function (i) { return ch.x0 + (i + .5) * ch.w / 5; };
+    CH.line(D, ch.x0, ch.y0 - s * .4, ch.x0, ch.y1, { w: 2 }); CH.line(D, ch.x0, ch.y1, ch.x1, ch.y1, { w: 2 });
+    [20, 25, 30].forEach(function (v) { CH.line(D, ch.x0 - 4, Y(v), ch.x0 + 4, Y(v), { w: 1.4 }); CH.text(D, ch.x0 - s * .5, Y(v), String(v), { size: s, num: true, align: 'right' }); });
+    CH.text(D, ch.x0 + s * .4, ch.y0 - s * .2, '（本）', { size: s * .85, col: 'rgba(242,240,230,.75)', align: 'left' });
+    var gl = CH.smooth(0, .15, k);
+    CH.line(D, ch.x0, Y(goal), ch.x1 + s * .5, Y(goal), { col: C.yel, dash: [7, 6], w: 2.2 });
+    CH.text(D, ch.x1 + s * .7, Y(goal) - s * .8, '目標', { col: C.yel, size: s * .85, align: 'left' });
+    CH.text(D, ch.x1 + s * .7, Y(goal) + s * .4, goal + '本', { col: C.yel, size: s * .85, align: 'left', a: 1 - gl });
+    if (gl > 0) {
+      CH.text(D, ch.x1 + s * .7, Y(goal) + s * .4, '→ 0', { col: C.yel, size: s, align: 'left', a: gl, w: 700 });
+      [-5, 5].forEach(function (d) { if (goal + d < 18 || goal + d > 33) return; CH.text(D, ch.x1 + s * .7, Y(goal + d), sg(d), { col: sc(d), size: s * .9, align: 'left', a: gl * .9, num: true }); });
+    }
+    SHOT.forEach(function (v, i) {
+      var d = v - goal, ki = o.all ? 1 : i === 0 ? 1 : CH.smooth(.15 + (i - 1) * .2, .3 + (i - 1) * .2, k), x = cx(i);
+      CH.text(D, x, ch.y1 + s * 1.1, DAYS[i], { size: s });
+      if (d !== 0 && ki > 0) CH.arrow(D, x, Y(goal), x, CH.lerp(Y(goal), Y(v), ki), { col: sc(d), w: 3, head: Math.min(10, Math.abs(Y(v) - Y(goal)) * .8), a: 1 });
+      CH.circle(D, x, Y(v), s * .32, { fill: d === 0 && ki >= 1 ? C.yel : C.chalk, stroke: 'rgba(20,30,24,.8)', sw: 1.2 });
+      CH.text(D, x + s * .55, Y(v) - (d === 0 ? s * .6 : 0), String(v), { size: s * .85, align: 'left', num: true, col: 'rgba(242,240,230,.85)' });
+      if (ki >= 1) CH.text(D, x - s * .5, (Y(v) + Y(goal)) / 2 - (d === 0 ? s * .9 : 0), sg(d), { size: s * 1.05, align: 'right', col: sc(d), w: 700, outline: OUT });
+    });
+    if (o.tab === false) return;
+    var T = CH.rect(R.x0, R.y0 + R.h * .7, R.x1, R.y1);
+    CH.table(D, T, ['曜日'].concat(DAYS), [['成功した本数（本）'].concat(SHOT.map(String)), ['目標とのちがい（本）'].concat(DIF.map(sg))],
+      { fw: .34, size: CH.fs(D, .85), show: function (r, c) { return r === 2 && c > 1 ? CH.smooth(.15 + (c - 2) * .2, .3 + (c - 2) * .2, k) : 1; }, hl: function (r, c) { return r === 2 && c > 0 ? sc(DIF[c - 1]) : null; } });
+  }
+
+  /* ---- 考えよう：3つの「0」 ---- */
+  function zeros(D, goal) {
+    var R = CH.box(D, { l: .03, r: .03, t: .04, b: .04 }), top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .45), bot = CH.rect(R.x0, R.y0 + R.h * .5, R.x1, R.y1), tp = CH.cols(top, 2, .05), s = CH.fs(D, .8);
+    /* ア 気温 0℃ */
+    var P = tp[0]; frame(D, P, 'ア　気温 0℃');
+    var x = P.x0 + P.w * .4, sR = CH.rect(x, P.y0 + s * 2.4, x, P.y1 - s * .8), tw = Math.max(7, s * .5);
+    var Y = vscale(D, sR, -4, 4, { x: x, step: 1, lab: 2, s: s * .8 });
+    CH.fillRect(D, x + s * .7, Y(4), x + s * .7 + tw, Y(-4), { stroke: C.chalk, sw: 1.4 }); CH.fillRect(D, x + s * .7 + 1, Y(0), x + s * .7 + tw - 1, Y(-4), { fill: 'rgba(255,120,120,.75)' });
+    CH.text(D, x + s * 1.5 + tw, Y(0), '0℃', { col: C.yel, size: s * 1.1, align: 'left', w: 700 });
+    /* イ 地上 0 m */
+    P = tp[1]; frame(D, P, 'イ　地上 0 m');
+    var gy = P.y0 + P.h * .7, bx = P.x0 + P.w * .3, bw = Math.min(P.w * .2, P.h * .25);
+    CH.fillRect(D, P.x0 + 2, gy, P.x1 - 2, P.y1 - 2, { fill: 'rgba(170,130,90,.18)' }); CH.line(D, P.x0 + 2, gy, P.x1 - 2, gy, { col: '#e3c9a0', w: 2.4 });
+    CH.fillRect(D, bx - bw / 2, P.y0 + s * 2.2, bx + bw / 2, gy, { fill: 'rgba(242,240,230,.07)', stroke: C.chalk, sw: 1.6 });
+    CH.fillRect(D, bx - bw * .2, gy - Math.min(bw * .5, P.h * .15), bx + bw * .2, gy, { stroke: C.chalk, sw: 1.4 });
+    CH.text(D, bx + bw * .6 + s * .3, gy - s * .9, '地上 0 m', { col: C.yel, size: CH.fitSize(D, '地上 0 m', P.x1 - bx - bw * .6 - s * .5, s * 1.1), align: 'left', w: 700 });
+    /* ウ 目標とのちがい 0本 */
+    frame(D, bot, 'ウ　目標とのちがい 0本');
+    shots(D, CH.rect(bot.x0, bot.y0 + s * 1.8, bot.x1, bot.y1), 1, goal, { tab: false, all: true });
+  }
+
+  /* ---- チャレンジ ---- */
+  function chal(D, k) {
+    var R = CH.box(D, { l: .07, r: .08, t: .08, b: .1 }), s = CH.fs(D), y1 = R.y0 + R.h * .42, L = hline(D, R.x0, R.x1, y1, -8, 10, { s: CH.fs(D, .8) });
+    CH.text(D, L.X(0), y1 + s * 2.3, '平均点', { col: C.yel, size: s * .8 });
+    [['A', CA, POS], ['B', CB, NEG], ['C', CC, C.green]].forEach(function (p) { CH.circle(D, L.X(p[1]), y1, s * .3, { fill: p[2], stroke: 'rgba(20,30,24,.8)', sw: 1.2 }); CH.text(D, L.X(p[1]), y1 - s * 1, p[0] + ' ' + sg(p[1]), { col: p[2], size: s * .9, outline: OUT }); });
+    var k1 = CH.smooth(0, .3, k);
+    if (k1 > 0) {
+      var ay = y1 - s * 2.6;
+      CH.arrow(D, L.X(CB), ay, CH.lerp(L.X(CB), L.X(0), Math.min(1, k1 * 2)), ay, { col: NEG, w: 3 });
+      if (k1 > .5) CH.arrow(D, L.X(0), ay, CH.lerp(L.X(0), L.X(CA), (k1 - .5) * 2), ay, { col: POS, w: 3 });
+      CH.text(D, L.X(CB / 2), ay - s * .75, '6', { col: NEG, size: s * .9, a: CH.smooth(.1, .2, k) });
+      CH.text(D, L.X(CA / 2), ay - s * .75, '9', { col: POS, size: s * .9, a: CH.smooth(.25, .3, k) });
+      CH.text(D, L.X((CA + CB) / 2), ay - s * 1.9, '6＋9＝15（点）', { col: C.yel, size: s, a: CH.smooth(.3, .4, k), w: 700 });
+    }
+    var k2 = CH.smooth(.45, .7, k);
+    if (k2 > 0) {
+      var y2 = R.y0 + R.h * .86, sx = function (v) { return L.X(v - AVG); };
+      CH.arrow(D, R.x0 - s * .5, y2, R.x1 + s * 1.1, y2, { w: 2, head: 9, a: k2 });
+      for (var v = AVG - 8; v <= AVG + 10; v++) CH.line(D, sx(v), y2 - (v % 5 === 0 ? 7 : 4), sx(v), y2 + (v % 5 === 0 ? 7 : 4), { w: 1.4, a: k2 });
+      [AVG - 6, AVG, AVG + 2, AVG + 9].forEach(function (v, i) {
+        var col = [NEG, C.yel, C.green, POS][i];
+        CH.line(D, L.X(v - AVG), y1 + s * 3, sx(v), y2 - s * 1.6, { col: col, dash: [4, 5], w: 1.4, a: k2 * .7 });
+        CH.text(D, sx(v), y2 + s * 1.2, String(v), { size: CH.fs(D, .8), num: true, col: col, a: k2 });
+      });
+      CH.text(D, sx(AVG + 2), y2 - s * 1, 'C 73点', { col: C.green, size: s * .8, a: k2 });
+      var k3 = CH.smooth(.65, .85, k), k4 = CH.smooth(.85, 1, k);
+      CH.text(D, sx(AVG), y2 - s * 1, '71', { col: C.yel, size: s * .85, a: k3, w: 700 });
+      CH.text(D, sx(AVG - 1), y2 - s * 2.2, '平均点 73−2＝71', { col: C.yel, size: s * .8, a: k3 });
+      CH.text(D, sx(AVG + 9), y2 - s * 1, 'A 80点', { col: POS, size: s * .9, a: k4, w: 700 });
+      CH.text(D, sx(AVG - 6), y2 - s * 1, 'B 65点', { col: NEG, size: s * .8, a: k4 });
+    }
+  }
+
+  K3.run({
+    no: '第1時', title: '反対の性質をもつ量を、1つの数で表そう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '第2時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '駅ビルの案内板', q: 'この案内板の「地上」「地下」ということばを使わずに、数だけで区別して表すには、どうすればよいだろう。',
+        notes: ['① 自分の考え（3分）　考えた表し方を書こう。', '② ペアの考え（3分）　自分とちがう表し方は？'],
+        draw: function (D) { tower(D, 0); } },
+      { tag: '今日の問い', q: '地面を 0 として、上を「＋」、下を「−」で表すと？', a: '展望フロア ＋45&nbsp;m、地下駐車場 −9&nbsp;m', sub: '地面（0）より上は ＋、下は − をつける。ことばを使わなくても、1つの数で区別できる', dur: 4,
+        b: { t: '地面を 0 → 展望フロア <b>＋45 m</b>、地下駐車場 <b>−9 m</b>', col: C.yel },
+        draw: function (D) { tower(D, D.ph ? D.t : 0); } },
+      { tag: '今日の問い', q: 'ほかの量でも表そう。0℃より 5℃ 高い・3℃ 低い気温、海面より 30 m 高い・20 m 低い所、500円の収入・300円の支出は？', a: '＋5℃・−3℃、＋30&nbsp;m・−20&nbsp;m、＋500円・−300円', sub: '0℃・海面・0円を基準にして、反対の性質を ＋ と − で表す', dur: 4,
+        b: { t: '気温 ＋5℃・−3℃　高さ ＋30 m・−20 m　収入 ＋500円・支出 −300円', col: C.yel },
+        draw: function (D) { threeScenes(D, D.ph ? D.t : 0); } },
+      { tag: 'ことば', bh: 'ことば', q: '0 より大きい数、0 より小さい数を、それぞれ何という？ ＋、− の記号は？', a: '正の数・負の数。＋ は正の符号、− は負の符号', sub: '0 は、正の数でも負の数でもない。1、2、3、… のような正の整数を自然数という', dur: 4,
+        b: [{ t: '0 より大きい数 … <b>正の数</b>　0 より小さい数 … <b>負の数</b>', col: C.green }, { t: '＋ … <b>正の符号</b>　− … <b>負の符号</b>　0 は どちらでもない', col: C.green }, { t: '1、2、3、…（正の整数）… <b>自然数</b>', col: C.green }],
+        draw: function (D) { words(D, D.ph ? D.t : 0); } },
+      { tag: '例題', bh: '例題　目標とのちがい', q: 'シュート練習の目標を「1日 25本」にした。目標より多いことを正の数で表して、火〜金のちがいを答えよう。（月は見本 ＋3）', a: '火 −2、水 0、木 ＋6、金 −5', sub: '目標の 25本を 0 とみる。「多い」「少ない」を、ことばで使い分けなくても、1つの数で表せる', dur: 4,
+        b: { t: '目標 25本を 0 → 月 ＋3、火 <b>−2</b>、水 <b>0</b>、木 <b>＋6</b>、金 <b>−5</b>', col: C.pink },
+        draw: function (D) { shots(D, CH.box(D, { l: .04, r: .04, t: .06, b: .06 }), D.ph ? D.t : 0, GOAL); } },
+      { tag: '考えよう', bh: '考えよう', q: '次の「0」は、それぞれ何を表しているだろう。ア 気温 0℃　イ 地上 0 m　ウ 目標とのちがい 0本',
+        notes: ['ア・イ・ウの「0」は、何を表しているか。気づいたことを書こう。', 'ほかにも「0」が出てくる場面をさがそう。', 'スライダーで、ウの目標の本数を変えられます。'],
+        sliders: [{ key: 'g', label: 'ウの目標', min: 20, max: 30, step: 1, val: 25, fmt: function (x) { return x + '本'; } }],
+        draw: function (D) { zeros(D, D.V.g); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'テストの平均点を基準にして、高いほうを正の数で表すと、A ＋9点、B −6点、C ＋2点だった。① A と B は何点ちがう？ ② C が 73点のとき、A は何点？',
+        a: '① 15点　② 80点', sub: '① 平均点（0）から B まで 6、A まで 9。6＋9＝15　② 平均点は 73−2＝71（点）。A は 71＋9＝80（点）', dur: 5,
+        b: { t: '① 6＋9＝<b>15</b>（点）　② 平均点 73−2＝71 → A は 71＋9＝<b>80</b>（点）', col: C.orange },
+        draw: function (D) { chal(D, D.ph ? D.t : 0); } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

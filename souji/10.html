@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>中点連結定理</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 相似な図形 第10時：2辺の中点を結ぶと、どんなことがいえるだろうか（ikkan の lesson_souji_10 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。証明の行（比・平行・MN＝1/2BC・相似）は GE.proof が座標で確かめ、表の数は CH.check で計算し直す。
+   三角形の形をスライダーで変えても MN∥BC、MN＝1/2BC。MN を 2本ならべると、BC にぴったり重なる。 */
+(function () {
+  var C = CH.C, FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', OUT = 'rgba(20,40,30,.9)';
+  /* ---- このページの道具 ---- */
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), w = tw(D, s, size); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({ outline: OUT }, o, { size: size })); }
+  /* 図の四角（fig）と、字の四角（side）。よこ長ならみぎ、たて長なら下 */
+  function lay(D, k, kh) {
+    var B = CH.box(D, { l: .03, r: .03, t: .04, b: .04 });
+    if (B.w > B.h * 1.15 && B.w > 560) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .1, B.x1, B.y1 - B.h * .05), wide: true }; }
+    var h = B.h * (kh || .3); return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .04, B.y1 - h + 6, B.x1 - B.w * .02, B.y1), wide: false };
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする）。list：[{ t, col, a }] */
+  function rows(D, R, list, o) {
+    o = o || {}; list = list.filter(Boolean); if (!list.length) return;
+    var nc = R.w > R.h * 2.2 && list.length > 3 ? 2 : 1, per = Math.ceil(list.length / nc), cw = R.w / nc;   // 下の帯では 2列
+    var s = Math.min(o.size || CH.fs(D, .92), R.h / (per * 1.55));
+    list.forEach(function (r, i) {
+      if (r.a === 0) return; var c = Math.floor(i / per), j = i % per, w = tw(D, r.t, s), sz = w > cw - 8 ? s * (cw - 8) / w : s;
+      CH.text(D, R.x0 + c * cw, R.y0 + s * .8 + j * s * 1.55, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left', outline: OUT });
+    });
+  }
+  /* 辺 ab のそばの字（ref から遠ざかる向き。ref がなければ図の中心から）。pos：a からの位置（0〜1） */
+  function len(F, a, b, t, o) {
+    o = o || {}; var p = F.X(a), q = F.X(b), u = o.pos == null ? .5 : o.pos, m = [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u];
+    var d = [q[0] - p[0], q[1] - p[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L, d[0] / L], r = F.X(o.ref || F.c);
+    if ((m[0] - r[0]) * n[0] + (m[1] - r[1]) * n[1] < 0) n = [-n[0], -n[1]];
+    var sz = F.s * (o.size || .85), w = tw(F.D, t, sz), k = (o.k || .45) * F.s + Math.abs(n[0]) * w / 2 + Math.abs(n[1]) * sz / 2;
+    CH.text(F.D, m[0] + n[0] * k, m[1] + n[1] * k, t, { col: o.col || C.chalk, size: sz, a: o.a, outline: OUT });
+  }
+  /* 寸法線：線分 ab にそって、外がわへ k ずらした線（両はしに短い線）と字 */
+  function dim(F, a, b, o) {
+    o = o || {}; var p = F.X(a), q = F.X(b), d = [q[0] - p[0], q[1] - p[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L, d[0] / L], r = F.X(o.ref || F.c), m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+    if ((m[0] - r[0]) * n[0] + (m[1] - r[1]) * n[1] < 0) n = [-n[0], -n[1]];
+    var k = (o.k || 1) * F.s, h = F.s * .32, P0 = [p[0] + n[0] * k, p[1] + n[1] * k], Q0 = [q[0] + n[0] * k, q[1] + n[1] * k];
+    CH.line(F.D, P0[0], P0[1], Q0[0], Q0[1], { col: o.col, w: 3, a: o.a, glow: true });
+    [P0, Q0].forEach(function (z) { CH.line(F.D, z[0] - n[0] * h, z[1] - n[1] * h, z[0] + n[0] * h, z[1] + n[1] * h, { col: o.col, w: 2.4, a: o.a }); });
+    if (o.t) { var sz = F.s * .85, w = tw(F.D, o.t, sz), kk = k + F.s * .4 + Math.abs(n[0]) * w / 2 + Math.abs(n[1]) * sz / 2; CH.text(F.D, m[0] + n[0] * kk, m[1] + n[1] * kk, o.t, { col: o.col, size: sz, a: o.a, outline: OUT }); }
+  }
+  function glow(F, ss, col, a) { if (a > 0) ss.split(' ').forEach(function (s) { GE.seg(F, s, { col: col, w: 5, glow: true, a: a }); }); }
+  function tri(ab, ac, bc) { var x = (ab * ab - ac * ac + bc * bc) / (2 * bc); return { A: [x, Math.sqrt(ab * ab - x * x)], B: [0, 0], C: [bc, 0] }; }
+  function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+  function ratio(a, b) { var g = gcd(a, b); return a / g + '：' + b / g; }
+  function nf(x) { return String(Math.round(x * 10) / 10); }
+  var TK = [['AM', 1], ['MB', 1], ['AN', 2], ['NC', 2]], DIR = { A: 'n', B: 'sw', C: 'se', M: 'w', N: 'e' };
+  function withMN(P) { P.M = GE.mid(P.A, P.B); P.N = GE.mid(P.A, P.C); return P; }
+  function deg(x) { return Math.round(x) + '°'; }
+
+  /* ---- 今日の問い：BC＝8cm、A(3, 2.6)。M、N は AB、AC の中点（MN＝4cm） ---- */
+  var P1 = withMN({ A: [3, 2.6], B: [0, 0], C: [8, 0] });
+  GE.verify(P1, 'AM＝MB、AN＝NC、MN∥BC、MN＝1/2BC、MN＝4、∠AMN＝∠ABC', null, '今日の問いの図');
+  [[-1, 1.6], [3, 5], [9, 3], [6, 1.6], [0, 4]].forEach(function (a) { GE.verify(withMN({ A: a, B: [0, 0], C: [8, 0] }), 'MN∥BC、MN＝1/2BC、MN＝4', null, '形を変えた三角形 A(' + a + ')'); });
+  var def1 = {
+    id: '第10時 今日の問い', lv: 1, ttl: '中点を結ぶ線分の証明', P: P1,
+    q: '△ABC の辺 AB、AC の中点を M、N とする。MN∥BC、MN＝1/2BC であることを証明しよう。',
+    fig: { segs: ['AB', 'BC', 'CA', 'MN'], ticks: TK, dots: ['M', 'N'], dir: DIR },
+    hyp: 'AM＝MB、AN＝NC', goal: 'MN∥BC、MN＝1/2BC',
+    plan: { q: 'MN∥BC を示すには、第9時の、どの定理が使える？', a: '三角形と比の定理の逆', sub: 'AM：AB＝AN：AC がいえれば、MN∥BC。そのあと、三角形と比の定理で MN：BC がわかる',
+      b: '方針 … 三角形と比の定理の逆で MN∥BC → 三角形と比の定理で MN：BC' },
+    L: [{ t: 'AM：AB＝AN：AC＝1：2', r: 'M、N は AB、AC の中点', n: 1 },
+      { t: 'MN∥BC', r: '①と、三角形と比の定理の逆' },
+      { t: 'MN：BC＝AM：AB＝1：2', r: 'MN∥BC だから、三角形と比の定理' },
+      { t: 'MN＝1/2BC', q: 'だから、MN の長さは？', a: 'MN＝1/2BC（BC の半分）' }]
+  };
+  var PW = GE.proof(def1, { tag: '今日の問い', draw: function (D, F) { len(F, 'B', 'C', '8cm'); } }).slice(1);
+
+  /* ---- 例題：AB＝6 として、BC と ∠ABC から三角形をつくる（ア BC 12・50°、イ 14・65°、ウ 9・72°） ---- */
+  var EX = [{ n: 'ア', bc: 12, b: 50 }, { n: 'イ', bc: 14, b: 65 }, { n: 'ウ', bc: 9, b: 72 }];
+  EX.forEach(function (e) { e.P = withMN({ A: GE.polar([0, 0], 6, e.b), B: [0, 0], C: [e.bc, 0] }); e.mn = e.bc / 2; CH.check(GE.near(GE.len(e.P, 'MN'), e.mn) && GE.near(GE.ang(e.P, 'AMN'), e.b) && GE.isPar(e.P, 'MN', 'BC'), '例題 ' + e.n); });
+  CH.check(EX[1].mn * 2 === 14 && EX[2].bc / 2 === 4.5, '例題の答え（イ BC＝14、ウ MN＝4.5）');
+
+  /* ---- 考えよう：四角形 ABCD の 4辺の中点 P、Q、R、S（D を動かす。s＝1 でへこんだ四角形） ---- */
+  var QA = { A: [0.4, 3.3], B: [0, 0], C: [4.6, 0.9] }, D0 = [4.3, 3.9], D1 = [1.8, 1.4];
+  function quad(s) { var P = { A: QA.A, B: QA.B, C: QA.C, D: GE.lerpP(D0, D1, s) }; P.P = GE.mid(P.A, P.B); P.Q = GE.mid(P.B, P.C); P.R = GE.mid(P.C, P.D); P.S = GE.mid(P.D, P.A); return P; }
+  CH.check([0, .3, .6, 1].every(function (s) { return GE.verify(quad(s), 'PQ∥SR、PQ＝SR、QR∥PS、QR＝PS'); }), '考えよう（ここで確かめるだけ）');
+
+  /* ---- チャレンジ：A(6, 18)・B(0, 0)・C(18, 0)。BN＝15。G は BN と CM の交点 ---- */
+  var P8 = withMN({ A: [6, 18], B: [0, 0], C: [18, 0] }); P8.G = GE.meet(P8.B, P8.N, P8.C, P8.M);
+  GE.verify(P8, 'BC＝18、BN＝15、MN∥BC、MN＝1/2BC、MN＝9、GN：GB＝MN：CB＝1：2、GN＝5', null, 'チャレンジ');
+  var defC = {
+    id: '第10時 チャレンジ', lv: 2, ttl: 'チャレンジ　△GMN∽△GCB の証明', P: P8,
+    q: '△ABC の辺 AB、AC の中点を M、N とし、BN と CM の交点を G とする。△GMN∽△GCB を証明しよう。',
+    fig: { segs: ['AB', 'BC', 'CA', 'MN', 'BN', 'CM'], ticks: TK, dots: ['M', 'N', 'G'], dir: { A: 'n', B: 'sw', C: 'se', M: 'w', N: 'e', G: 's' } },
+    hyp: 'AM＝MB、AN＝NC', goal: '△GMN∽△GCB', tri: ['GMN', 'GCB'],
+    plan: { q: '等しい角を見つけるために、まず、MN と BC について何がいえる？', a: 'MN∥BC（中点連結定理）', sub: '平行線があると、錯角が等しい' },
+    L: [{ t: '△GMN と △GCB で' },
+      { t: '∠GMN＝∠GCB', r: 'MN∥BC の錯角', n: 1, hint: '∠GMN と等しい角は？ 根拠も。' },
+      { t: '∠GNM＝∠GBC', r: 'MN∥BC の錯角', n: 2, hint: 'もう1組、等しい角は？ 根拠も。' },
+      { t: '①②より、2組の角が、それぞれ等しいので', c: 'AA' },
+      { t: '△GMN∽△GCB' }]
+  };
+  var PC = GE.proof(defC, { tag: 'チャレンジ' });
+  PC[1].b = [{ t: '中点連結定理より　MN∥BC、MN＝1/2BC', col: C.green }, { t: '△GMN と △GCB で' }];
+
+  var steps = [
+    { tag: '今日の問い', bh: '△ABC と、2辺の中点 M、N', q: '△ABC の辺 AB、AC の中点を M、N とする。線分 MN と辺 BC には、位置と長さについて、どんな関係があるだろう。予想して、わけも考えよう。',
+      notes: ['① 自分の考え（3分）　予想と、そのわけを書こう。', '② ペアの考え（3分）　自分とちがう考え方は？'],
+      b: { t: '【仮定】AM＝MB、AN＝NC（M、N は中点）　BC＝8cm', col: C.blue },
+      draw: function (D) { var F = GE.fit(D, CH.box(D, { l: .06, r: .06, t: .1, b: .12 }), P1); GE.figure(F, def1.fig); len(F, 'B', 'C', '8cm'); } },
+    { tag: '今日の問い', q: 'MN と BC には、位置と長さについて、どんな関係がありそう？ 三角形の形を変えて調べよう。', a: 'MN∥BC、MN＝1/2BC（BC の半分）',
+      sub: 'どんな形の三角形でも、MN は BC に平行で、MN を 2本ならべると BC にぴったり重なる', dur: 4.5,
+      notes: ['スライダーで、頂点 A を動かせます。'],
+      sliders: [{ key: 'x', label: 'A を左右に', min: -1, max: 9, step: .2, val: 3, fmt: function (v) { return CH.mnum(v); } },
+        { key: 'y', label: 'A を上下に', min: 1.6, max: 5, step: .2, val: 2.6, fmt: function (v) { return nf(v); } }],
+      b: { t: '予想 … MN∥BC、MN＝1/2BC（どんな形の三角形でも）', col: C.yel },
+      draw: function (D) {
+        var P = withMN({ A: [D.V.x, D.V.y], B: [0, 0], C: [8, 0] }), L = lay(D, .27, .24), F = GE.fit(D, L.fig, P, { keys: ['B', 'C'], bounds: [[-1, 0], [9, 5]], pad: .07 }), t = D.ph ? D.t : 0;
+        var k1 = CH.smooth(.04, .2, t), k2 = CH.smooth(.24, .5, t), k3 = CH.smooth(.56, .82, t), mBC = GE.mid(P.B, P.C);
+        if (D.ph) { GE.par(F, 'MN', 1, { col: C.yel, a: k1 }); GE.par(F, 'BC', 1, { col: C.yel, a: k1 }); GE.arc(F, 'AMN', { col: C.pink, fill: .35, a: k1 }); GE.arc(F, 'ABC', { col: C.pink, fill: .35, a: k1 }); }
+        GE.figure(F, def1.fig); len(F, 'B', 'C', '8cm'); glow(F, 'MN', C.yel, 1);
+        if (D.ph) {
+          var mv = function (k, a, b) { var e = CH.ease(k); return [GE.lerpP(P.M, a, e), GE.lerpP(P.N, b, e)]; };
+          if (k2) { var s1 = mv(k2, P.B, mBC); GE.seg(F, s1, { col: C.yel, w: 5, glow: true }); }
+          if (k3) { var s2 = mv(k3, mBC, P.C); GE.seg(F, s2, { col: C.orange, w: 5, glow: true }); }
+        }
+        rows(D, L.side, [{ t: 'MN＝' + nf(GE.len(P, 'MN')) + 'cm', col: C.yel }, { t: 'BC＝8cm' }, { t: '∠AMN＝' + deg(GE.ang(P, 'AMN')), col: C.pink }, { t: '∠ABC＝' + deg(GE.ang(P, 'ABC')), col: C.pink }]);
+      } }
+  ].concat(PW).concat([
+    { tag: 'ことば', bh: 'ことば', q: '三角形の2辺の中点を結ぶ線分について、わかったことを言おう。この定理を何という？',
+      a: '中点連結定理', sub: '三角形の2辺の中点を結ぶ線分は、残りの辺に平行で、長さはその半分である（MN∥BC、MN＝1/2BC）', dur: 3,
+      b: [{ t: '<b>中点連結定理</b>　三角形の2辺の中点を結ぶ線分は、残りの辺に <b>平行</b> で、長さはその <b>半分</b>', col: C.green }, { t: 'M、N が AB、AC の中点 → MN∥BC、MN＝1/2BC', col: C.green }],
+      draw: function (D) {
+        var L = lay(D, .34, .24), F = GE.fit(D, L.fig, P1, { pad: .12 }), t = D.ph ? D.t : 0, k1 = CH.smooth(.05, .4, t), k2 = CH.smooth(.45, .85, t);
+        GE.figure(F, def1.fig); len(F, 'B', 'C', '8cm'); glow(F, 'MN', C.yel, k1); glow(F, 'BC', C.blue, k1);
+        GE.par(F, 'MN', 1, { col: C.yel, a: k1 }); GE.par(F, 'BC', 1, { col: C.yel, a: k1 }); len(F, 'M', 'N', '4cm', { col: C.yel, a: k2, ref: 'A', pos: .5 });
+        rows(D, L.side, [{ t: 'M、N が中点ならば' }, { t: '位置　MN∥BC', col: C.yel, a: D.ph ? k1 : 0 }, { t: '長さ　MN＝1/2BC', col: C.yel, a: D.ph ? k2 : 0 }]);
+      } },
+    { tag: '例題', bh: '例題　中点連結定理', q: '△ABC で、M、N は辺 AB、AC の中点である。表の □ をうめよう。（アは見本）',
+      a: 'イ BC＝14cm、∠ABC＝65°　ウ MN＝4.5cm、∠AMN＝72°', sub: 'BC＝MN×2、MN＝BC÷2。∠AMN と ∠ABC は同位角（MN∥BC）だから等しい', dur: 2.5,
+      b: { t: 'イ BC＝7×2＝<b>14cm</b>、∠ABC＝<b>65°</b>　ウ MN＝9÷2＝<b>4.5cm</b>、∠AMN＝<b>72°</b>（同位角）', col: C.pink },
+      draw: function (D) {
+        var t = D.ph ? D.t : 0, narrow = D.W < 640, R0 = CH.box(D, { l: .04, r: .04, t: .03, b: narrow ? .5 : .46 }), cells = CH.cols(R0, 3, .06);
+        EX.forEach(function (e, i) {
+          var F = GE.fit(D, cells[i], e.P, { pad: .12, size: CH.fs(D, narrow ? .6 : .78) });
+          GE.arc(F, 'ABC', { col: C.pink, fill: .3 }); GE.arc(F, 'AMN', { col: C.pink, fill: .3 });
+          GE.figure(F, { segs: ['AB', 'BC', 'CA', 'MN'], ticks: TK, labels: false }); glow(F, 'MN', C.yel, .8);
+          var lb = F.X('A'); CH.text(D, lb[0], lb[1] - F.s * 1.1, e.n, { size: F.s * 1.2 });
+        });
+        var hide = { '1,2': 1, '3,2': 1, '2,3': 1, '4,3': 1 }, sh = function (r, c) { return hide[r + ',' + c] ? (D.ph ? CH.smooth(.3 + (c - 2) * .3, .5 + (c - 2) * .3, t) : 0) : 1; };
+        var R2 = CH.box(D, { l: .12, r: .08, t: narrow ? .52 : .56, b: .03 });
+        var g = CH.table(D, R2, ['', 'ア', 'イ', 'ウ'], [['BC（cm）'].concat(EX.map(function (e) { return String(e.bc); })), ['MN（cm）'].concat(EX.map(function (e) { return String(e.mn); })),
+          ['∠ABC'].concat(EX.map(function (e) { return e.b + '°'; })), ['∠AMN'].concat(EX.map(function (e) { return e.b + '°'; }))], { fw: .3, show: sh, hl: function (r, c) { return hide[r + ',' + c] ? C.pink : null; } });
+        if (!D.ph) Object.keys(hide).forEach(function (k) { var rc = k.split(','), q = g.cell(+rc[0], +rc[1]); CH.text(D, q.cx, q.cy, '□', { col: C.pink }); });
+      } },
+    { tag: '考えよう', q: '四角形 ABCD の辺 AB、BC、CD、DA の中点を P、Q、R、S とする。P、Q、R、S を順に結んでできる四角形は、どんな四角形だろう。',
+      notes: ['へこんだ四角形でも、同じことがいえるかな。', '中点連結定理が使えるように、線を1本ひいて考えよう。', 'スライダーで、頂点 D を動かしたり、P、Q、R、S を結んだりできます。'],
+      sliders: [{ key: 's', label: 'D を動かす', min: 0, max: 1, step: .02, val: 0, fmt: function (v) { return Math.round(v * 100) + '%'; } },
+        { key: 'j', label: 'P、Q、R、S を', min: 0, max: 1, step: 1, val: 0, fmt: function (v) { return v ? '結ぶ' : '結ばない'; } }],
+      draw: function (D) {
+        var P = quad(D.V.s), F = GE.fit(D, CH.box(D, { l: .05, r: .05, t: .07, b: .07 }), P, { keys: ['A', 'B', 'C'], bounds: [D0, D1], pad: .12 });
+        if (D.V.j) GE.poly(F, 'PQRS', { col: C.yel, fa: .2, sw: 3 });
+        GE.figure(F, { segs: ['AB', 'BC', 'CD', 'DA'], ticks: [['AP', 1], ['PB', 1], ['BQ', 2], ['QC', 2], ['CR', 3], ['RD', 3], ['DS', 4], ['SA', 4]], dots: ['P', 'Q', 'R', 'S'],
+          dir: { A: 'nw', B: 'sw', C: 'se', D: D.V.s > .6 ? 's' : 'ne', P: 'w', Q: 's', R: D.V.s > .6 ? 'se' : 'e', S: 'n' } });
+      } }
+  ]).concat(PC).concat([
+    { tag: 'チャレンジ', q: 'BC＝18cm、BN＝15cm のとき、MN と GN の長さを求めよう。', a: 'MN＝9cm、GN＝5cm', sub: 'MN＝1/2BC＝9。△GMN∽△GCB の相似比は MN：CB＝1：2 だから GN：GB＝1：2。GN＝15×1/3＝5', dur: 3.5,
+      b: { t: '<b>MN＝9cm</b>　GN：GB＝MN：CB＝1：2 → GN＝15×1/3＝<b>5cm</b>', col: C.orange },
+      draw: function (D) {
+        var L = lay(D, .36, .26), F = GE.fit(D, L.fig, P8, { pad: .1 }), t = D.ph ? D.t : 0, k1 = CH.smooth(.05, .35, t), k2 = CH.smooth(.45, .75, t), k3 = CH.smooth(.8, .95, t);
+        GE.poly(F, 'GMN', { col: C.blue, fa: .2, stroke: false }); GE.poly(F, 'GCB', { col: C.orange, fa: .2, stroke: false });
+        GE.figure(F, defC.fig);
+        len(F, 'B', 'C', '18cm'); len(F, 'M', 'N', k1 > .5 ? '9cm' : '？', { col: C.pink, ref: 'G', pos: .3 });
+        glow(F, 'MN', C.yel, k1); glow(F, 'GN', C.pink, k2); glow(F, 'GB', C.blue, k2);
+        if (D.ph && k3) len(F, 'G', 'N', '5cm', { col: C.pink, a: k3, ref: 'M' });
+        rows(D, L.side, [{ t: 'BN＝15cm' }, { t: 'MN＝1/2BC＝9（cm）', col: C.yel, a: k1 }, { t: 'GN：GB＝MN：CB＝1：2', a: k2 }, { t: 'GN＝15×1/3＝5（cm）', col: C.pink, a: k3 }]);
+      } }
+  ]);
+
+  K3.run({
+    no: '第10時', title: '2辺の中点を結ぶと、どんなことがいえるだろうか', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '09.html', label: '◀ 第9時' }, { href: '11.html', label: '第11時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

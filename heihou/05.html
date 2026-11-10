@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>近似値と有効数字</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 平方根 第5時：測定した値を、どこまで信じてよいかを表そう（ikkan の lesson_heihou_05 と同じ流れ）。
+   図の数値は ikkan のデータ（自作）と同じ（今日の問い 1mm 目もりで 25.3cm、例題 3800m（百・十・一の位まで）、例題2 は演習プリントの（6）√2 の近似値 1.41・1.414、
+   考えようの 5cm・5.0cm・5.00cm、チャレンジ 縦 9.6cm・横 5.3cm の周）。板のはしは 25.32cm の場所に描く（生徒には見えない真の値のたとえ）。
+   ものさしの 25.2〜25.4 を拡大した数直線で、25.3 と読む範囲（25.25 以上 25.35 未満）に色がのびる。誤差の範囲・有効数字のけたは、
+   1000分の1 cm ごとの整数で四捨五入をためして確かめる（CH.check）。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)', WOOD = '#c89b6a', S2 = Math.SQRT2;
+  /* ---- このページの道具 ---- */
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D); if (o.maxW) size = CH.fitSize(D, s, o.maxW, size, { num: o.num }); CH.text(D, x, y, s, { col: o.col, a: o.a, size: size, num: o.num, align: o.align, outline: o.outline === false ? null : OUT }); }
+  function top(D, s, col, a, row) { var B = CH.box(D, { t: 0, l: .03, r: .03 }), f = CH.fs(D, 1); say(D, B.cx, B.y0 + f * (.8 + (row || 0) * 1.35), s, { col: col || C.yel, a: a, size: f, maxW: B.w }); }
+  function fx(v) { return String(Math.round(v * 1e6) / 1e6); }
+  /* 数直線（よこ）：lo〜hi、step ごとに目もり（big こごとに長い）。labs の値に字 */
+  function NL(D, x0, x1, y, lo, hi, step, o) {
+    o = o || {}; var s = o.s || CH.fs(D, .75), n = Math.round((hi - lo) / step), a = o.a == null ? 1 : o.a, X = function (v) { return x0 + (v - lo) / (hi - lo) * (x1 - x0); };
+    CH.line(D, x0 - s * .5, y, x1 + s * .5, y, { w: 2, a: a });
+    for (var i = 0; i <= n; i++) { var big = i === 0 || i === n || (o.big && i % o.big === 0), xx = X(lo + i * step); CH.line(D, xx, y - (big ? 8 : 4), xx, y + (big ? 8 : 4), { w: big ? 2 : 1.2, a: a }); }
+    (o.labs || [lo, hi]).forEach(function (v) { CH.text(D, X(v), y + s * 1.3, fx(v), { size: s, num: true, a: a }); });
+    return { X: X, y: y, s: s };
+  }
+  /* ものさし：lo〜hi（cm）。1目もり step（cm）。上のふちが y */
+  function ruler(D, x0, x1, y, lo, hi, step, o) {
+    o = o || {}; var s = o.s || CH.fs(D, .72), h = o.h || s * 2.6, X = function (v) { return x0 + (v - lo) / (hi - lo) * (x1 - x0); }, sub = o.sub || 10;
+    CH.fillRect(D, x0 - 4, y, x1 + 4, y + h, { fill: 'rgba(242,240,230,.12)', stroke: 'rgba(242,240,230,.55)', sw: 1.4 });
+    for (var k = Math.ceil(lo / step - 1e-6); k <= Math.floor(hi / step + 1e-6); k++) {
+      var v = k * step, big = k % sub === 0, mid = k % (sub / 2) === 0, xx = X(v), tl = big ? h * .55 : mid ? h * .38 : h * .24;
+      CH.line(D, xx, y, xx, y + tl, { w: big ? 1.8 : 1.1 });
+      if (big && o.lab !== false) CH.text(D, xx, y + h * .78, fx(v), { size: s, num: true });
+    }
+    return X;
+  }
+  /* 板（はしが e） */
+  function board(D, x0, xe, y, h, a) { CH.fillRect(D, x0, y, xe, y + h, { fill: hexA(WOOD, .55), stroke: WOOD, sw: 2, a: a }); }
+  function dot(D, x, y, r, col, open, a) { CH.circle(D, x, y, r, open ? { fill: '#1f3a2c', stroke: col, sw: 2.4, a: a } : { fill: col, stroke: 'rgba(20,30,24,.8)', sw: 1.2, a: a }); }
+  /* m（1000分の1 の整数）を、10^k ごとに四捨五入 */
+  function rnd(m, k) { var p = Math.pow(10, k); return Math.floor((m + p / 2) / p); }
+
+  /* ---- 数と検算 ---- */
+  var TRUE = 25.32;
+  (function () { var ok = true; for (var m = 25150; m <= 25450; m++) { var in3 = rnd(m, 2) === 253; if (in3 !== (m >= 25250 && m < 25350)) ok = false; } CH.check(ok && Math.round(TRUE * 10) / 10 === 25.3, '今日の問い（25.25≦a＜25.35）'); })();
+  /* 例題：3800m を、百・十・一の位まで */
+  var EX = [['百の位まで', 2], ['十の位まで', 3], ['一の位まで', 4]];
+  CH.check(EX.map(function (e) { return (3800 / 1000).toFixed(e[1] - 1); }).join() === '3.8,3.80,3.800' && EX.every(function (e) { var p = Math.pow(10, 4 - e[1]); return (3800 - p / 2) === [3750, 3795, 3799.5][e[1] - 2] && (3800 + p / 2) === [3850, 3805, 3800.5][e[1] - 2]; }), '例題（3.8×10³・3.80×10³・3.800×10³）');
+  /* 例題2：√2 の近似値の誤差の絶対値 */
+  var E1 = Math.abs(1.41 - S2), E2 = Math.abs(1.414 - S2);
+  CH.check(E1.toFixed(4) === '0.0042' && E2.toFixed(4) === '0.0002' && E2 < E1 && 1.41 - S2 < 0, '例題2（0.0042、0.0002）');
+  /* チャレンジ：縦 9.6、横 5.3（小数第2位を四捨五入） → 周 */
+  var A0 = 9.55, A1 = 9.65, B0 = 5.25, B1 = 5.35, L0 = 2 * (A0 + B0), L1 = 2 * (A1 + B1);
+  CH.check(CH.near(L0, 29.6) && CH.near(L1, 30) && rnd(9550, 2) === 96 && rnd(9649, 2) === 96 && rnd(9650, 2) === 97 && rnd(5250, 2) === 53 && rnd(5349, 2) === 53, 'チャレンジ（29.6≦ℓ＜30）');
+
+  /* ---- 今日の問い：ものさしと板、拡大した数直線 ---- */
+  function measure(D, t) {
+    var R = CH.box(D, { l: .05, r: .05, t: .1, b: .05 }), s = CH.fs(D, .9), x0 = R.x0 + s * .5, x1 = R.x1 - s * .5, lo = 24.4, hi = 26.1;
+    var bh = s * 1.8, yb = R.y0 + s * 1.2, yr = yb + bh, X = ruler(D, x0, x1, yr, lo, hi, .1, { s: CH.fs(D, .85), h: s * 3 });
+    board(D, x0 - 4, X(TRUE), yb, bh);
+    say(D, X(24.7), yb + bh / 2, '板', { size: s * .9, col: '#3a2a1a', outline: false });
+    var ay = yr + s * 4.1; CH.arrow(D, X(25.3), ay + s * 1, X(25.3), yr + s * 3.1, { col: C.yel, w: 2.4, head: 8 }); say(D, X(25.3), ay + s * 1.8, '25.3cm と読んだ', { col: C.yel, size: s * .9 });
+    if (!D.ph) return;
+    var k0 = CH.smooth(0, .15, t), kb = CH.ease(CH.smooth(.18, .55, t)), ke = CH.smooth(.58, .72, t), kt = CH.smooth(.8, .95, t);
+    var zy = R.y0 + R.h * .72, Z = NL(D, x0 + s, x1 - s, zy, 25.2, 25.4, .01, { big: 10, labs: [25.2, 25.3, 25.4], a: k0, s: CH.fs(D, .8) });
+    CH.fillRect(D, X(25.2), yr - 2, X(25.4), yr + s * 3, { stroke: C.yel, sw: 1.6, a: k0 });
+    CH.line(D, X(25.2), yr + s * 3, Z.X(25.2), zy - 10, { col: C.yel, dash: [5, 5], w: 1.3, a: k0 * .8 }); CH.line(D, X(25.4), yr + s * 3, Z.X(25.4), zy - 10, { col: C.yel, dash: [5, 5], w: 1.3, a: k0 * .8 });
+    if (kb > 0) { var a = 25.3 - .05 * kb, b = 25.3 + .05 * kb; CH.fillRect(D, Z.X(a), zy - 8, Z.X(b), zy + 8, { fill: hexA(C.yel, .45), stroke: C.yel, sw: 2 }); }
+    if (ke > 0) {
+      dot(D, Z.X(25.25), zy, s * .32, C.yel, false, ke); dot(D, Z.X(25.35), zy, s * .32, C.yel, true, ke);
+      say(D, Z.X(25.25), zy - s * 1.4, '25.25 以上', { col: C.yel, size: s * .85, a: ke, align: 'right' }); say(D, Z.X(25.35), zy - s * 1.4, '25.35 未満', { col: C.yel, size: s * .85, a: ke, align: 'left' });
+      say(D, Z.X(25.375), zy + s * 2.6, '25.35 は 25.4 と読む', { col: C.pink, size: s * .75, a: ke, maxW: Z.X(25.4) - Z.X(25.3) });
+    }
+    if (kt > 0) say(D, R.cx, R.y1 - s * .4, '真の値 a … 25.25 ≦ a ＜ 25.35', { col: C.yel, size: s * 1.1, a: kt, maxW: R.w });
+  }
+
+  /* ---- ことば：誤差・有効数字 ---- */
+  function words(D, t, ph) {
+    var R = CH.box(D, { l: .05, r: .05, t: .06, b: .05 }), s = CH.fs(D, .9), x0 = R.x0 + s, x1 = R.x1 - s;
+    var k1 = ph ? CH.smooth(0, .3, t) : 0, k2 = ph ? CH.smooth(.35, .65, t) : 0, k3 = ph ? CH.smooth(.7, .95, t) : 0;
+    var zy = R.y0 + R.h * .3, Z = NL(D, x0, x1, zy, 25.2, 25.4, .01, { big: 10, labs: [25.2, 25.3, 25.4], s: CH.fs(D, .8) });
+    dot(D, Z.X(TRUE), zy, s * .3, C.orange); say(D, Z.X(TRUE), zy - s * 1.3, '真の値（たとえば 25.32）', { col: C.orange, size: s * .8, align: 'left' });
+    dot(D, Z.X(25.3), zy, s * .3, C.yel); say(D, Z.X(25.3), zy - s * 2.6, '近似値 25.3', { col: C.yel, size: s * .85, align: 'right' });
+    if (k1 > 0) { var ay = zy + s * 2.6; CH.arrow(D, Z.X(TRUE), ay, Z.X(25.3), ay, { col: C.pink, w: 3, a: k1, head: 8 }); say(D, Z.X(25.31), ay + s * 1.2, '誤差 ＝ 25.3 − 25.32 ＝ −0.02', { col: C.pink, size: s * .85, a: k1, maxW: R.w * .7 }); }
+    var cy = R.y0 + R.h * .72, cw = Math.min(s * 2.2, R.w / 10), dg = ['2', '5', '.', '3'], cx0 = R.x0 + R.w * .26 - cw * 2;
+    if (k2 > 0) {
+      dg.forEach(function (d, i) { var x = cx0 + i * cw; if (d === '.') { say(D, x, cy + cw * .2, '.', { size: cw * .7, num: true, a: k2 }); return; } CH.fillRect(D, x - cw * .42, cy - cw * .5, x + cw * .42, cy + cw * .5, { fill: hexA(C.green, .2), stroke: C.green, sw: 2, a: k2 }); say(D, x, cy, d, { size: cw * .6, num: true, a: k2 }); });
+      say(D, cx0 + cw * 1.5, cy + cw * 1.15, '有効数字 3けた', { col: C.green, size: s * .85, a: k2 });
+    }
+    if (k3 > 0) { var rx = R.x0 + R.w * .7; say(D, rx, cy, '25.3 ＝ 2.53 × 10', { col: C.lav, size: s * 1.05, a: k3, num: true, maxW: R.w * .5 }); say(D, rx, cy + cw * 1.15, 'a×10ⁿ（1≦a＜10）の形', { col: C.lav, size: s * .8, a: k3, maxW: R.w * .5 }); }
+  }
+
+  /* ---- 例題：3800m の有効数字 ---- */
+  function sig(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .1, b: .06 }), rs = CH.rows(R, 3, .14), s = CH.fs(D, .95);
+    top(D, '山の高さ 3800m', C.chalk, 1, 0);
+    rs.forEach(function (r, i) {
+      var e = EX[i], k = i === 0 ? 1 : D.ph ? CH.smooth(.05 + (i - 1) * .45, .3 + (i - 1) * .45, t) : 0, y = r.cy, lw = Math.min(r.w * .24, s * 5.5), cw = Math.min(r.h * .8, s * 2.2, r.w * .09);
+      say(D, r.x0, y, e[0], { size: s * .9, align: 'left', maxW: lw - 4 });
+      '3800'.split('').forEach(function (d, j) {
+        var x = r.x0 + lw + (j + .5) * cw * 1.1, on = j < e[1] && k > 0, col = on ? C.green : 'rgba(242,240,230,.5)';
+        CH.fillRect(D, x - cw * .45, y - cw * .5, x + cw * .45, y + cw * .5, { fill: on ? hexA(C.green, .22 * k) : 'rgba(242,240,230,.05)', stroke: on ? C.green : 'rgba(242,240,230,.35)', sw: on ? 2 : 1.2 });
+        say(D, x, y, d, { size: cw * .62, num: true, col: on ? C.chalk : 'rgba(242,240,230,.7)' });
+      });
+      var rx = r.x0 + lw + cw * 4.6, rw = r.x1 - rx;
+      if (k > 0) { say(D, rx + rw * .25, y, e[1] + 'けた', { size: s, col: C.green, a: k, num: false, maxW: rw * .4 }); say(D, rx + rw * .7, y, (3800 / 1000).toFixed(e[1] - 1) + '×10³', { size: s * 1.05, col: C.yel, a: k, num: true, maxW: rw * .55 }); }
+      if (i === 0) say(D, r.x0, y + s * 1.2, '（見本）', { size: s * .7, align: 'left', col: 'rgba(242,240,230,.7)' });
+    });
+  }
+
+  /* ---- 例題2：√2 の近似値と誤差 ---- */
+  function errs(D, t) {
+    var R = CH.box(D, { l: .05, r: .05, t: .06, b: .06 }), rs = CH.rows(R, 2, .16), s = CH.fs(D, .9);
+    [[1.4, 1.42, .001, 1.41, '1.41', E1, '0.0042', [1.4, 1.41, 1.42]], [1.413, 1.415, .0001, 1.414, '1.414', E2, '0.0002', [1.413, 1.414, 1.415]]].forEach(function (L, i) {
+      var r = rs[i], k = D.ph ? CH.smooth(.05 + i * .45, .35 + i * .45, t) : 0, y = r.y0 + r.h * .58, Z = NL(D, r.x0 + s, r.x1 - s, y, L[0], L[1], L[2], { big: 10, labs: L[7], s: CH.fs(D, .75) });
+      dot(D, Z.X(S2), y, s * .3, C.orange); say(D, Z.X(S2), y - s * 1.3, '√2', { col: C.orange, size: s * .9, num: true, align: L[3] < S2 ? 'left' : 'center' });
+      dot(D, Z.X(L[3]), y, s * .3, C.yel); say(D, Z.X(L[3]), y - s * 1.3, L[4], { col: C.yel, size: s * .9, num: true, align: 'right' });
+      if (k > 0) { var ay = y + s * 2.6; CH.line(D, Z.X(L[3]), ay, Z.X(L[3]) + (Z.X(S2) - Z.X(L[3])) * k, ay, { col: C.pink, w: 4 }); say(D, r.cx, ay + s * 1.3, '|' + L[4] + ' − √2| ≒ ' + L[6], { col: C.pink, size: s * .95, a: k, num: true, maxW: r.w }); }
+      say(D, r.x0, r.y0 + s * .3, i ? '拡大すると（1.413〜1.415）' : '√2＝1.41421356…', { size: s * .85, align: 'left', col: 'rgba(242,240,230,.8)' });
+    });
+  }
+
+  /* ---- 考えよう：3つのものさしで読む ---- */
+  function readTool(D, m) {
+    var R = CH.box(D, { l: .04, r: .04, t: .14, b: .04 }), rs = CH.rows(R, 3, .14), s = CH.fs(D, .85), L = m / 1000;
+    var c3 = rnd(m, 1) / 100, rows = [['1cm 目もり', 3.5, 6.5, 1, 1, rnd(m, 3) + 'cm'], ['1mm 目もり', 4.4, 5.6, .1, 10, (rnd(m, 2) / 10).toFixed(1) + 'cm'], ['0.1mm 目もり（拡大）', c3 - .06, c3 + .06, .01, 5, c3.toFixed(2) + 'cm']];
+    rows.forEach(function (q, i) {
+      var r = rs[i], x0 = r.x0 + s, x1 = r.x1 - s * 6, yb = r.y0 + s * 1.3, bh = Math.min(s * 1.2, r.h * .2), yr = yb + bh;
+      say(D, r.x0, r.y0 + s * .4, q[0], { size: s * .85, align: 'left', col: 'rgba(242,240,230,.8)' });
+      var lo = q[1], hi = q[2], g = D.ctx, X = function (v) { return x0 + (v - lo) / (hi - lo) * (x1 - x0); };
+      g.save(); g.beginPath(); g.rect(x0 - 6, r.y0, x1 - x0 + 12, r.h); g.clip();
+      board(D, x0 - 6, Math.max(x0 - 6, Math.min(x1 + 6, X(L))), yb, bh);
+      ruler(D, x0, x1, yr, lo, hi, q[3], { s: CH.fs(D, .65), h: Math.min(s * 2.2, r.h - s * 1.3 - bh - 2), sub: q[4] });
+      g.restore();
+      say(D, r.x1 - s * 2.6, yr, q[5], { size: s * 1.15, col: C.yel, num: true, maxW: s * 5.5 });
+    });
+    top(D, '棒の長さ（真の値） ' + L.toFixed(3) + 'cm', C.orange, 1, 0);
+  }
+
+  /* ---- チャレンジ：周の長さの範囲 ---- */
+  function chal(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .05, b: .05 }), wide = D.W > D.H * .9, s = CH.fs(D, .85);
+    var sp = wide ? [CH.rect(R.x0, R.y0, R.x0 + R.w * .3, R.y1), CH.rect(R.x0 + R.w * .34, R.y0, R.x1, R.y1)] : [CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .3), CH.rect(R.x0, R.y0 + R.h * .33, R.x1, R.y1)];
+    var c = sp[0], u = Math.min((c.w - s * 5) / 5.3, (c.h - s * 2.5) / 9.6), rx0 = c.cx - 5.3 * u / 2, ry0 = c.cy - 9.6 * u / 2;
+    CH.fillRect(D, rx0, ry0, rx0 + 5.3 * u, ry0 + 9.6 * u, { fill: hexA(C.blue, .18), stroke: C.blue, sw: 2.4 });
+    say(D, rx0 + 5.3 * u / 2, ry0 + 9.6 * u + s * .9, '横 5.3cm', { size: s * .9, col: C.green }); say(D, rx0 - s * .4, ry0 + 9.6 * u / 2, '縦 9.6cm', { size: s * .9, col: C.orange, align: 'right' });
+    var q = sp[1], rs = CH.rows(CH.rect(q.x0, q.y0, q.x1, q.y1 - s * 1.4), 3, .12);
+    [[9.5, 9.7, .01, A0, A1, '縦 a', C.orange, [9.5, 9.6, 9.7], .02], [5.2, 5.4, .01, B0, B1, '横 b', C.green, [5.2, 5.3, 5.4], .34], [29.4, 30.2, .05, L0, L1, '周 ℓ', C.yel, [29.5, 30], .66]].forEach(function (L, i) {
+      var r = rs[i], k = D.ph ? CH.smooth(L[8], L[8] + .26, t) : 0, y = r.y0 + r.h * .6, Z = NL(D, r.x0 + s * 3.2, r.x1 - s, y, L[0], L[1], L[2], { big: i === 2 ? 2 : 10, labs: L[7], s: CH.fs(D, .7) });
+      say(D, r.x0, y, L[5], { size: s, col: L[6], align: 'left' });
+      if (k > 0) {
+        CH.fillRect(D, Z.X(L[3]), y - 7, Z.X(L[3]) + (Z.X(L[4]) - Z.X(L[3])) * k, y + 7, { fill: hexA(L[6], .4), stroke: L[6], sw: 2 });
+        if (k >= 1) { dot(D, Z.X(L[3]), y, s * .3, L[6]); dot(D, Z.X(L[4]), y, s * .3, L[6], true); }
+        say(D, (Z.X(L[3]) + Z.X(L[4])) / 2, y - s * 1.4, fx(L[3]) + ' ≦ ' + L[5].slice(-1) + ' ＜ ' + fx(L[4]), { size: s, col: L[6], a: k, num: true, maxW: r.w * .7 });
+      }
+    });
+    if (D.ph) say(D, q.cx, q.y1 - s * .2, '2×(9.55＋5.25)＝29.6、2×(9.65＋5.35)＝30', { size: s * .85, col: C.yel, a: CH.smooth(.75, .9, t), maxW: q.w, num: true });
+  }
+
+  K3.run({
+    no: '第5時', title: '測定した値を、どこまで信じてよいかを表そう', flat: true, hint: '', alt: 'ものさしと数直線の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '04.html', label: '◀ 第4時' }, { href: '06.html', label: '第6時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '1mm 目もりのものさしで測る', q: '1mm 目もりのものさしで、板の長さを、いちばん近い目もりまで読むと、25.3cm だった。真の値は、どんな範囲にあるといえるだろう。',
+        notes: ['① 自分の考え（3分）　範囲と、そう考えたわけを書こう。', '② ペアの考え（3分）　自分とちがう考えは？'],
+        draw: function (D) { measure(D, 0); } },
+      { tag: '今日の問い', q: '25.3cm と読むのは、真の値が、どこからどこまでのとき？', a: '25.25cm 以上、25.35cm 未満', sub: '25.3 は、いちばん近い目もりを読んだ値。25.35 は四捨五入すると 25.4 になるので「未満」', dur: 6,
+        b: { t: '25.3cm と読む → 真の値 a は <b>25.25≦a＜25.35</b>', col: C.yel },
+        draw: function (D) { measure(D, D.ph ? D.t : 0); } },
+      { tag: 'ことば', bh: 'ことば', q: '測った値など、真の値に近い値を何という？ 近似値から真の値をひいた差は？ 近似値の、信頼できる数字は？', a: '近似値・誤差・有効数字', sub: '誤差 ＝（近似値）−（真の値）。有効数字をはっきり表すときは、a×10ⁿ（1≦a＜10）の形で書く', dur: 5,
+        b: [{ t: '真の値に近い値 … <b>近似値</b>　（近似値）−（真の値）… <b>誤差</b>', col: C.green }, { t: '信頼できる数字 … <b>有効数字</b>　a×10ⁿ（1≦a＜10）の形で表す', col: C.green }],
+        draw: function (D) { words(D, D.ph ? D.t : 0, D.ph); } },
+      { tag: '例題', bh: '例題　有効数字のけた', q: '山の高さを「3800m」と表した。十の位まで、一の位まで四捨五入して測った値なら、有効数字は何けた？ a×10ⁿ の形で表そう。（百の位までは見本）', a: '十の位まで … 3けた 3.80×10³　一の位まで … 4けた 3.800×10³', sub: '有効数字の 0 は、消さずに書く。百の位まで（2けた）なら 3.8×10³', dur: 5,
+        b: { t: '3800m … 2けた 3.8×10³　3けた <b>3.80×10³</b>　4けた <b>3.800×10³</b>', col: C.pink },
+        draw: function (D) { sig(D, D.ph ? D.t : 0); } },
+      { tag: '例題', bh: '例題2　√2 の近似値', q: '√2＝1.41421356… である。近似値に 1.41 を使うときと、1.414 を使うときの、誤差の絶対値を、小数第4位まで求めて、くらべよう。', a: '1.41 … 約 0.0042　1.414 … 約 0.0002', sub: '1.41421356…−1.41＝0.00421…、1.41421356…−1.414＝0.00021…。1.414 のほうが、誤差が小さい', dur: 5,
+        b: { t: '√2 の近似値　1.41 → 約 0.0042　1.414 → 約 <b>0.0002</b>（けたが多いほど誤差が小さい）', col: C.pink },
+        draw: function (D) { errs(D, D.ph ? D.t : 0); } },
+      { tag: '考えよう', q: '「5cm」「5.0cm」「5.00cm」（四捨五入した位は、1cm 未満・0.1cm 未満・0.01cm 未満）は、同じ長さを表しているといえるだろうか。',
+        notes: ['真の値 a のはんいを、それぞれ不等号で表して、気づいたことを書こう。', '「12m」と「12.0m」でも、くらべてみよう。', 'スライダーで棒の長さを変えると、3つのものさしで読んだ値が出ます。'],
+        sliders: [{ key: 'm', label: '棒の長さ', min: 4400, max: 5600, step: 1, val: 5000, fmt: function (v) { return (v / 1000).toFixed(3) + 'cm'; } }],
+        draw: function (D) { readTool(D, D.V.m); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '縦が 9.6cm、横が 5.3cm の長方形の紙がある。どちらも小数第2位を四捨五入した値である。① 縦 a と横 b の真の値のはんいは？ ② 周の長さの真の値 ℓ cm のはんいを、不等号で表そう。',
+        notes: ['ヒント① 縦も横も、いちばん小さいときと、いちばん大きいときの値は、いくつかな。', 'ヒント② 周の長さがいちばん小さくなるのは、縦と横が、どんなときかな。'],
+        a: '① 9.55≦a＜9.65、5.25≦b＜5.35　② 29.6≦ℓ＜30', sub: 'いちばん小さい周 2×(9.55＋5.25)＝29.6、いちばん大きいほうは 2×(9.65＋5.35)＝30 にはならないので「未満」', dur: 6,
+        b: { t: '9.55≦a＜9.65、5.25≦b＜5.35 → <b>29.6≦ℓ＜30</b>', col: C.orange },
+        draw: function (D) { chal(D, D.ph ? D.t : 0); } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

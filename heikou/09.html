@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>三角形が1つに決まる条件</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="js/geo.js"></script>
+<script>
+/* 平行と合同 第9時：三角形は、何がわかれば1つに決まるだろう（ikkan の lesson_heikou_new_09 と同じ流れ）。
+   数値は ikkan と同じ（今日の問いの △ABC は AB＝4・BC＝6・CA＝5cm、角は四捨五入して 83°・56°・41°。例題は AB＝4・BC＝6・∠B＝50° と BC＝6・∠B＝40°・∠C＝60°）。
+   座標はページの中で作った自作のデータ。作図（コンパス・分度器）を、座標から正確に動かして見せ、長さ・角は計算し直して確かめる（GE.verify・CH.check）。
+   考えよう（BC＝6・CA＝4・∠B＝35° は1つに決まるか）は、A を動かすスライダーと円だけ。答え（2つできる）は出さない。チャレンジは ikkan の（8）。 */
+(function () {
+  var C = CH.C, FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', OUT = 'rgba(20,40,30,.9)';
+  function rad(d) { return d * Math.PI / 180; }
+  function pol(c, r, d) { return [c[0] + r * Math.cos(rad(d)), c[1] + r * Math.sin(rad(d))]; }
+  function rigid(ps, o) { var t = rad(o.rot || 0), c = Math.cos(t), s = Math.sin(t), to = o.to || [0, 0]; return ps.map(function (p) { var x = o.flip ? -p[0] : p[0], y = p[1]; return [x * c - y * s + to[0], x * s + y * c + to[1]]; }); }
+  function bb(ps) { var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity; ps.forEach(function (p) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }); return { x0: x0, x1: x1, y0: y0, y1: y1, w: x1 - x0, h: y1 - y0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 }; }
+  function cen(ps) { var c = [0, 0]; ps.forEach(function (p) { c[0] += p[0] / ps.length; c[1] += p[1] / ps.length; }); return c; }
+  function named(names, ps, P) { P = P || {}; names.split('').forEach(function (k, i) { P[k] = ps[i]; }); return P; }
+  function pick(P, names) { return names.split('').map(function (k) { return P[k]; }); }
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  function sideTxt(F, a, b, txt, c, o) {
+    o = o || {}; var p = F.X(a), q = F.X(b), m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], cc = F.X(c), d = [q[0] - p[0], q[1] - p[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L, d[0] / L];
+    if (n[0] * (m[0] - cc[0]) + n[1] * (m[1] - cc[1]) < 0) n = [-n[0], -n[1]];
+    var s = o.size || F.s * .8, off = s * .72 + Math.abs(n[0]) * tw(F.D, txt, s) / 2;
+    CH.text(F.D, m[0] + n[0] * off, m[1] + n[1] * off, txt, { size: s, col: o.col || C.chalk, a: o.a, outline: OUT });
+  }
+  function labs(F, names, o) { var ks = names.split(''); GE.labels(Object.assign({}, F, { c: cen(ks.map(function (k) { return F.P[k]; })) }), ks, o); }
+  function pairUp(D, n1, ps1, n2, ps2, gap) {
+    var wide = D.W > D.H * 1.05, a = bb(ps1), b = bb(ps2), sh = wide ? [a.x1 + gap - b.x0, a.cy - b.cy] : [a.cx - b.cx, a.y0 - gap - b.y1];
+    return named(n1, ps1, named(n2, ps2.map(function (p) { return [p[0] + sh[0], p[1] + sh[1]]; })));
+  }
+  /* 円の一部（world：中心 c、半径 r、角 d0 → d1 度） */
+  function arcW(F, c, r, d0, d1, o) { o = o || {}; var pts = []; for (var i = 0; i <= 48; i++) pts.push(F.X(pol(c, r, d0 + (d1 - d0) * i / 48))); CH.poly(F.D, pts, { stroke: o.col || C.chalk, sw: o.w || 1.8, close: false, a: o.a, dash: o.dash }); }
+  /* 線分 ab を、a から k だけかく */
+  function grow(F, a, b, k, o) { if (k <= 0) return; var p = typeof a === 'string' ? F.P[a] : a, q = typeof b === 'string' ? F.P[b] : b; GE.seg(F, [p, GE.lerpP(p, q, Math.min(1, k))], o); }
+  function cap(D, R, txt, col, a) { CH.text(D, R.cx, R.y0 + CH.fs(D, .5), txt, { size: CH.fs(D, .85), col: col || C.chalk, a: a, outline: OUT }); }
+
+  /* ---------- 今日の問い：AB＝4、BC＝6、CA＝5 の △ABC（A は、B から 4、C から 5 の点） ---------- */
+  var A0 = [2.25, Math.sqrt(16 - 2.25 * 2.25)], P1 = { A: A0, B: [0, 0], C: [6, 0] };
+  var GA = GE.ang(P1, 'BAC'), GB = GE.ang(P1, 'ABC'), GC = GE.ang(P1, 'BCA');
+  GE.verify(P1, 'AB＝4、BC＝6、CA＝5', null, '今日の問い 辺');
+  CH.check(Math.round(GA) === 83 && Math.round(GB) === 56 && Math.round(GC) === 41 && GE.near(GA + GB + GC, 180), '今日の問い 角（四捨五入して 83°・56°・41°）');
+  function drawT(F, o) {
+    o = o || {}; var c = cen(pick(P1, 'ABC'));
+    GE.poly(F, 'ABC', { col: C.blue, fa: .14 });
+    sideTxt(F, 'A', 'B', '4cm', c); sideTxt(F, 'B', 'C', '6cm', c); sideTxt(F, 'C', 'A', '5cm', c);
+    if (o.ang !== false) { GE.arc(F, 'BAC', { lab: '83°' }); GE.arc(F, 'CBA', { lab: '56°' }); GE.arc(F, 'BCA', { lab: '41°' }); }
+    labs(F, 'ABC');
+  }
+  var PB = Object.assign({ T: [3, 4.4] }, P1);   // 作図の線（コンパスの弧・半直線）も入る大きさ
+
+  /* ---------- 例題：（1）AB＝4、BC＝6、∠B＝50°　（2）BC＝6、∠B＝40°、∠C＝60°。となりの人の三角形は、裏返して回した形 ---------- */
+  var E1 = [pol([0, 0], 4, 50), [0, 0], [6, 0]];
+  var E2 = [GE.meet([0, 0], pol([0, 0], 1, 40), [6, 0], pol([6, 0], 1, 120)), [0, 0], [6, 0]];
+  GE.verify(named('ABC', E1), 'AB＝4、BC＝6、∠ABC＝50°', null, '例題（1）');
+  GE.verify(named('ABC', E2), 'BC＝6、∠ABC＝40°、∠BCA＝60°、∠BAC＝80°', null, '例題（2）');
+  function exDraw(D, tri, o) {
+    var P = pairUp(D, 'ABC', tri, 'DEF', rigid(tri, { flip: true, rot: 200 }), 2.6), wide = D.W > D.H * 1.05;
+    var R = CH.box(D, { l: .06, r: .06, t: .16, b: .1 }), F = GE.fit(D, R, Object.assign({ T: pol(P.B, 5.4, o.rayB), U: o.rayC ? pol(P.C, 5.4, 180 - o.rayC) : P.C }, P), { pad: .08 }), t = D.ph ? D.t : 0;
+    cap(D, CH.box(D, { t: .03, b: .9 }), o.cap, C.yel);
+    var s1 = CH.smooth(.02, .18, t), s2 = CH.smooth(.2, .34, t), s3 = CH.smooth(.36, .46, t), s4 = CH.smooth(.48, .58, t), s5 = CH.smooth(.62, .95, t);
+    GE.seg(F, 'BC', { w: 2.6 }); sideTxt(F, 'B', 'C', '6cm', P.A);
+    // 分度器で ∠B（と ∠C）
+    if (s1 > 0) { grow(F, 'B', pol(P.B, 5.4, o.rayB), s1, { dash: [6, 5], col: 'rgba(242,240,230,.8)', w: 2 }); GE.arc(F, 'CBA', { lab: o.rayB + '°', a: s1 }); }
+    if (o.rayC && s1 > 0) { grow(F, 'C', pol(P.C, 5.4, 180 - o.rayC), s1, { dash: [6, 5], col: 'rgba(242,240,230,.8)', w: 2 }); GE.arc(F, 'BCA', { lab: o.rayC + '°', a: s1 }); }
+    if (s2 > 0) { if (o.ab) { grow(F, 'B', 'A', s2, { col: C.yel, w: 3.4 }); sideTxt(F, 'A', 'B', '4cm', P.C, { col: C.yel, a: s2 }); } GE.dot(F, 'A', { a: s2, col: C.yel, r: F.s * .22 }); }
+    if (s3 > 0) { if (o.ab) grow(F, 'A', 'C', s3, { w: 2.6 }); else { grow(F, 'B', 'A', s3, { w: 2.6 }); grow(F, 'C', 'A', s3, { w: 2.6 }); } }
+    if (s3 >= 1) GE.poly(F, 'ABC', { col: C.blue, fa: .16, stroke: false });
+    GE.labels(Object.assign({}, F, { c: cen(pick(P, 'ABC')) }), s2 > 0 ? ['A', 'B', 'C'] : ['B', 'C']);
+    if (s4 > 0) {
+      var pts = GE.moveTri(P, 'DEF', 'ABC', s5);
+      GE.polyP(F, pts, { col: C.pink, fa: .25, a: s4 });
+      if (s5 < .2) CH.text(D, F.X(cen(pick(P, 'DEF')))[0], F.X(cen(pick(P, 'DEF')))[1], 'となりの人', { col: C.pink, size: F.s * .9, a: s4 * (1 - s5 * 5), outline: OUT });
+      if (s5 >= 1) CH.text(D, F.X(cen(pick(P, 'ABC')))[0], F.X(cen(pick(P, 'ABC')))[1], 'ぴったり', { col: C.yel, size: F.s * 1.05, outline: OUT });
+    }
+  }
+
+  /* ---------- 考えよう：BC＝6、∠B＝35° の半直線（長さ 7.6）。A は半直線の上（AB をスライダーで）。CA＝4 になる A は、ここで確かめるだけ（答えは出さない） ---------- */
+  var KR = pol([0, 0], 7.6, 35), KP = { B: [0, 0], C: [6, 0], R: KR, T: [10, 0] };
+  (function () { var b = 6 * Math.cos(rad(35)), h = Math.sqrt(16 - 36 * Math.pow(Math.sin(rad(35)), 2)), s1 = b - h, s2 = b + h;
+    CH.check(s1 > .5 && s2 < 7.6 && Math.abs(s1 - 2.876) < 1e-3 && Math.abs(s2 - 6.954) < 1e-3 && GE.near(GE.len({ A: pol([0, 0], s1, 35), C: [6, 0] }, 'AC'), 4) && GE.near(GE.len({ A: pol([0, 0], s2, 35), C: [6, 0] }, 'AC'), 4), '考えよう：CA＝4 の点は、スライダーの範囲に 2つある（答えは出さない）'); })();
+
+  /* ---------- チャレンジ：BC＝EF、∠B＝∠E。△DEF は △ABC を回した形 ---------- */
+  var H1 = [pol([0, 0], 3.6, 55), [0, 0], [5, 0]], H2 = rigid(H1, { rot: -18 });
+  GE.verify(named('ABC', H1, named('DEF', H2)), 'BC＝EF＝5、∠ABC＝∠DEF＝55°、AB＝DE、∠BCA＝∠EFD、∠CAB＝∠FDE、△ABC≡△DEF', null, 'チャレンジ');
+
+  K3.run({
+    no: '第9時', title: '三角形は、何がわかれば1つに決まるだろう', flat: true, hint: '', alt: '三角形の作図の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '08.html', label: '◀ 第8時' }, { href: '10.html', label: '第10時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '△ABC を電話で伝える', q: 'この △ABC の形と大きさを、友達に電話で伝えたい。辺や角のうち、何を伝えれば、友達は △ABC を1つに決めてかけるだろう。',
+        notes: ['① 自分の考え（3分）　伝えるものを、2組以上。', '② ペアの考え（3分）　自分とちがう組を、確かめよう。', '角の大きさは、四捨五入した値。'],
+        draw: function (D) { var R = CH.box(D, { l: .1, r: .1, t: .1, b: .12 }); drawT(GE.fit(D, R, P1, { pad: .14 })); } },
+      { tag: '今日の問い', q: '3つの辺 AB＝4cm、BC＝6cm、CA＝5cm を伝えると、友達は △ABC を1つに決めてかける？', a: 'かける（1つに決まる）', sub: 'BC をひいて、B から 4cm、C から 5cm の点を、コンパスで見つける。その点が A', dur: 5,
+        b: { t: '<b>3つの辺</b>（AB・BC・CA）→ 1つに決まる', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .1, r: .1, t: .16, b: .1 }), F = GE.fit(D, R, PB, { pad: .1, keys: ['A', 'B', 'C', 'T'] }), t = D.ph ? D.t : 0, c = cen(pick(P1, 'ABC'));
+          cap(D, CH.box(D, { t: .03, b: .9 }), '伝える：AB＝4cm、BC＝6cm、CA＝5cm', C.yel);
+          var k1 = CH.smooth(.02, .16, t), k2 = CH.smooth(.2, .44, t), k3 = CH.smooth(.48, .72, t), k4 = CH.smooth(.76, .96, t);
+          grow(F, 'B', 'C', D.ph ? k1 : 1, { w: 2.6 }); if (k1 >= 1 || !D.ph) sideTxt(F, 'B', 'C', '6cm', c);
+          if (k2 > 0) { arcW(F, P1.B, 4, 30, 30 + 50 * k2, { col: C.pink, w: 2 }); var e1 = pol(P1.B, 4, 30 + 50 * k2); GE.seg(F, ['B', e1], { col: C.pink, w: 1.4, dash: [4, 4], a: k2 < 1 ? 1 : .5 }); CH.text(D, F.X(GE.lerpP(P1.B, e1, .5))[0] - F.s * .9, F.X(GE.lerpP(P1.B, e1, .5))[1], '4cm', { col: C.pink, size: F.s * .8, outline: OUT }); }
+          if (k3 > 0) { arcW(F, P1.C, 5, 160, 160 - 45 * k3, { col: C.green, w: 2 }); var e2 = pol(P1.C, 5, 160 - 45 * k3); GE.seg(F, ['C', e2], { col: C.green, w: 1.4, dash: [4, 4], a: k3 < 1 ? 1 : .5 }); CH.text(D, F.X(GE.lerpP(P1.C, e2, .55))[0] + F.s * .9, F.X(GE.lerpP(P1.C, e2, .55))[1], '5cm', { col: C.green, size: F.s * .8, outline: OUT }); }
+          if (k4 > 0) { GE.dot(F, 'A', { col: C.yel, r: F.s * .25, a: k4 }); grow(F, 'B', 'A', k4, { w: 2.6 }); grow(F, 'C', 'A', k4, { w: 2.6 }); }
+          if (k4 >= 1) GE.poly(F, 'ABC', { col: C.blue, fa: .16, stroke: false });
+          GE.labels(Object.assign({}, F, { c: c }), k4 > 0 ? ['A', 'B', 'C'] : ['B', 'C']);
+        } },
+      { tag: '今日の問い', q: '角も使うと、ほかにどんな伝え方がある？', a: 'AB・BC と ∠B、または BC と ∠B・∠C', sub: '2つの辺とその間の角、または 1つの辺とその両端の角がわかれば、三角形は1つに決まる', dur: 6,
+        b: { t: '<b>2つの辺とその間の角</b>（AB・BC・∠B）、<b>1つの辺とその両端の角</b>（BC・∠B・∠C）→ 1つに決まる', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .06, b: .08 }), rs = CH.split(D, R, 2, .1), t = D.ph ? D.t : 0, c = cen(pick(P1, 'ABC'));
+          [['AB・BC と ∠B', 0], ['BC と ∠B・∠C', .5]].forEach(function (g, i) {
+            var r = rs[i], inner = CH.rect(r.x0, r.y0 + CH.fs(D, 1.4), r.x1, r.y1), F = GE.fit(D, inner, PB, { pad: .1, keys: ['A', 'B', 'C', 'T'] });
+            var k = D.ph ? CH.smooth(g[1], g[1] + .45, t) : 0, s1 = CH.smooth(0, .3, k), s2 = CH.smooth(.35, .7, k), s3 = CH.smooth(.72, 1, k);
+            CH.text(D, r.cx, Math.max(r.y0 + CH.fs(D, .5), F.X(PB.T)[1] - F.s * .6), g[0], { size: CH.fs(D, .85), col: D.ph ? (i ? C.green : C.pink) : C.chalk, outline: OUT });
+            GE.seg(F, 'BC', { w: 2.6 }); sideTxt(F, 'B', 'C', '6cm', c);
+            if (s1 > 0) { grow(F, 'B', pol(P1.B, 5.2, GB), s1, { dash: [6, 5], w: 2, col: 'rgba(242,240,230,.8)' }); GE.arc(F, 'CBA', { lab: '56°', a: s1 }); }
+            if (i && s1 > 0) { grow(F, 'C', pol(P1.C, 6, 180 - GC), s1, { dash: [6, 5], w: 2, col: 'rgba(242,240,230,.8)' }); GE.arc(F, 'BCA', { lab: '41°', a: s1 }); }
+            if (!i && s2 > 0) { grow(F, 'B', 'A', s2, { col: C.pink, w: 3.4 }); sideTxt(F, 'A', 'B', '4cm', c, { col: C.pink, a: s2 }); }
+            if (s2 > 0) GE.dot(F, 'A', { col: C.yel, r: F.s * .22, a: s2 });
+            if (s3 > 0) { if (!i) grow(F, 'A', 'C', s3, { w: 2.6 }); else { grow(F, 'B', 'A', s3, { w: 2.6 }); grow(F, 'C', 'A', s3, { w: 2.6 }); } }
+            if (s3 >= 1) GE.poly(F, 'ABC', { col: C.blue, fa: .16, stroke: false });
+            GE.labels(Object.assign({}, F, { c: c }), s2 > 0 ? ['A', 'B', 'C'] : ['B', 'C']);
+          });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '2つの三角形が合同であるといえる条件を、何という？ 3つ言えるかな。', a: '三角形の合同条件', sub: '① 3組の辺が、それぞれ等しい　② 2組の辺とその間の角が、それぞれ等しい　③ 1組の辺とその両端の角が、それぞれ等しい', dur: 4,
+        b: [{ t: '三角形の<b>合同条件</b>', col: C.green }, { t: '① <b>3組の辺</b>が、それぞれ等しい', col: C.green }, { t: '② <b>2組の辺とその間の角</b>が、それぞれ等しい', col: C.green }, { t: '③ <b>1組の辺とその両端の角</b>が、それぞれ等しい', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .06, b: .08 }), rs = CH.split(D, R, 3, .08), t = D.ph ? D.t : 0;
+          [['① 3組の辺', ['AB', 'BC', 'CA'], []], ['② 2組の辺とその間の角', ['AB', 'BC'], ['CBA']], ['③ 1組の辺とその両端の角', ['BC'], ['CBA', 'BCA']]].forEach(function (g, i) {
+            var r = rs[i], F = GE.fit(D, CH.rect(r.x0, r.y0 + CH.fs(D, 2.3), r.x1, r.y1), P1, { pad: .14 }), a = D.ph ? CH.smooth(i * .3, i * .3 + .2, t) : 0;
+            CH.text(D, r.cx, Math.max(r.y0 + CH.fs(D, .5), F.X('A')[1] - F.s * 2.2), g[0], { size: CH.fs(D, .85), col: a > .5 ? C.yel : C.chalk, outline: OUT });
+            GE.poly(F, 'ABC', { col: C.blue, fa: .12 });
+            g[1].forEach(function (s, j) { GE.seg(F, s, { col: C.yel, w: 5, glow: true, a: a }); GE.tick(F, s, j + 1, { col: C.yel, a: a }); });
+            g[2].forEach(function (s, j) { GE.arc(F, s, { col: C.pink, fill: .4, n: j + 1, a: a }); });
+            labs(F, 'ABC');
+          });
+        } },
+      { tag: '例題', bh: '例題　かいて、重ねる', q: '（1）AB＝4cm、BC＝6cm、∠B＝50° の △ABC をかいて、となりの人の三角形と重ねると、どうなる？', a: 'ぴったり重なる', sub: '2組の辺とその間の角が決まると、三角形は1つに決まる', dur: 6,
+        b: { t: '（1）AB・BC・∠B（2組の辺とその間の角）→ ぴったり重なる', col: C.pink },
+        draw: function (D) { exDraw(D, E1, { cap: 'AB＝4cm、BC＝6cm、∠B＝50°', rayB: 50, ab: true }); } },
+      { tag: '例題', q: '（2）BC＝6cm、∠B＝40°、∠C＝60° の △ABC では？', a: 'ぴったり重なる', sub: '1組の辺とその両端の角が決まると、三角形は1つに決まる', dur: 6,
+        b: { t: '（2）BC・∠B・∠C（1組の辺とその両端の角）→ ぴったり重なる', col: C.pink },
+        draw: function (D) { exDraw(D, E2, { cap: 'BC＝6cm、∠B＝40°、∠C＝60°', rayB: 40, rayC: 60 }); } },
+      { tag: '考えよう', q: 'BC＝6cm、CA＝4cm、∠B＝35° の △ABC をかこう。かいた三角形は、1つに決まるだろうか。',
+        notes: ['① C を中心に半径 4cm の円（弧）をかいて、△ABC をかこう。何通りできるだろう。', '② 例題（1）のときと、何がちがうだろう。かき方をふり返って、説明しよう。', 'スライダーで、A を半直線の上で動かせます。CA の長さを見よう。'],
+        sliders: [{ key: 'ab', label: 'A の位置（AB）', min: .5, max: 7.6, step: .01, val: 5, fmt: function (x) { return x.toFixed(2) + 'cm'; } },
+          { key: 'c', label: '円をかく', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? 'かく' : '—'; } }],
+        draw: function (D) {
+          var A = pol([0, 0], D.V.ab, 35), P = Object.assign({ A: A }, KP), R = CH.box(D, { l: .08, r: .08, t: .12, b: .1 }), F = GE.fit(D, R, P, { pad: .08, keys: ['B', 'C', 'R', 'T'] }), ca = GE.len(P, 'AC'), ok = Math.abs(ca - 4) < .03;
+          if (D.V.c) arcW(F, P.C, 4, 8, 172, { col: C.green, dash: true, w: 2 });
+          GE.seg(F, 'BR', { dash: [6, 5], w: 2, col: 'rgba(242,240,230,.75)' });
+          GE.poly(F, 'ABC', { col: ok ? C.yel : C.blue, fa: .14 });
+          GE.seg(F, 'AC', { col: ok ? C.yel : C.chalk, w: 3 });
+          GE.arc(F, 'CBA', { lab: '35°' }); GE.dot(F, 'A', { col: C.yel, r: F.s * .22 });
+          sideTxt(F, 'B', 'C', '6cm', A);
+          sideTxt(F, 'A', 'C', 'CA ≒ ' + ca.toFixed(1) + 'cm', P.B, { col: ok ? C.yel : C.chalk, size: F.s * .9 });
+          GE.labels(Object.assign({}, F, { c: cen([A, P.B, P.C]) }), ['A', 'B', 'C']);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '△ABC と △DEF で、BC＝EF、∠B＝∠E がわかっている。あと1つ、何がわかれば △ABC≡△DEF といえるだろう。3通り答えよう。',
+        a: 'AB＝DE、∠C＝∠F、∠A＝∠D', sub: 'AB＝DE … 2組の辺とその間の角。∠C＝∠F … 1組の辺とその両端の角。∠A＝∠D … 三角形の内角の和から ∠C＝∠F もいえるので、1組の辺とその両端の角', dur: 6,
+        b: { t: 'あと1つ … <b>AB＝DE</b>、<b>∠C＝∠F</b>、<b>∠A＝∠D</b>（内角の和から ∠C＝∠F）', col: C.orange },
+        draw: function (D) {
+          var P = pairUp(D, 'ABC', H1, 'DEF', H2, 2.2), R = CH.box(D, { l: .06, r: .06, t: .2, b: .08 }), F = GE.fit(D, R, P, { pad: .1 }), t = D.ph ? D.t : 0;
+          ['ABC', 'DEF'].forEach(function (nm) { GE.poly(F, nm, { col: C.blue, fa: .14 }); GE.tick(F, nm.slice(1), 1); GE.arc(F, nm[2] + nm[1] + nm[0], { n: 1 }); labs(F, nm); });
+          var opts = [['AB＝DE', ['AB', 'DE'], [], C.yel], ['∠C＝∠F', [], ['BCA', 'EFD'], C.pink], ['∠A＝∠D', [], ['CAB', 'FDE'], C.green]], top = (CH.box(D, { t: 0, b: 0 }).y0 + R.y0) / 2, s = CH.fs(D, 1);
+          opts.forEach(function (o, i) {
+            var a = D.ph ? CH.smooth(i * .3 + .02, i * .3 + .14, t) : 0, cur = D.ph && t >= i * .3 && (t < (i + 1) * .3 || i === 2);
+            if (a <= 0) return;
+            o[1].forEach(function (sg) { GE.seg(F, sg, { col: o[3], w: 5, glow: true, a: cur ? a : .35 }); });
+            o[2].forEach(function (ag) { GE.arc(F, ag, { col: o[3], fill: .4, r: F.s * 1.3, a: cur ? a : .35 }); });
+            CH.text(D, R.cx + (i - 1) * Math.min(R.w / 3, s * 6), top, o[0], { col: o[3], a: a, size: s, outline: OUT });
+          });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

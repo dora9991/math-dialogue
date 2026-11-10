@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>標本の割合で推定する</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 標本調査 第3時：標本の割合から、全体の数を推定しよう（ikkan の lesson_hyouhon_03 と同じ流れ）。
+   電球 5000個から 200個で不良品 6個 → 200個のまとまりが 25こ分 → およそ 150個。池の魚は 比例式 40/x＝5/75 → およそ 600ぴき。
+   考えようは、200個ずつ 4回調べた標本（6・9・3・6個）を見て、自分で推定する（答えは出さない）。データはすべて自作。 */
+(function () {
+  var C = CH.C, FF = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', NF = '"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif';
+  var DIM = 'rgba(242,240,230,.75)', WHT = '#f2f0e6';
+  function ft(D, x, y, s, o, mw) {
+    o = o || {}; var g = D.ctx, z = o.size || CH.fs(D), p = {}, k;
+    g.save(); g.font = (o.w || 600) + ' ' + z + 'px ' + (o.num ? NF : FF); var w = g.measureText(s).width; g.restore();
+    for (k in o) p[k] = o[k]; p.size = w > mw ? z * mw / w : z; CH.text(D, x, y, s, p); return p.size;
+  }
+  function wide(D) { return D.W > D.H * .9; }
+  function pick(seed, n, k) { var r = CH.rng(seed), a = []; for (var i = 0; i < n; i++) a.push(i); for (var j = 0; j < k; j++) { var m = j + Math.floor(r() * (n - j)), x = a[j]; a[j] = a[m]; a[m] = x; } return a.slice(0, k); }
+  function set(a) { var o = {}; a.forEach(function (i) { o[i] = 1; }); return o; }
+
+  /* 今日の問い */
+  CH.check(CH.near(6 / 200, .03) && CH.near(5000 * .03, 150) && 5000 / 200 === 25 && 6 * 25 === 150, '今日の問い　およそ 150個');
+  /* 例題：池の魚 */
+  CH.check(40 * 75 / 5 === 600 && CH.near(40 / 600, 5 / 75) && 600 / 75 === 8 && 5 * 8 === 40, '例題　およそ 600ぴき');
+  /* 例題：大豆 */
+  CH.check(CH.near(9 / 30, .3) && CH.near(2400 / .3, 8000) && CH.near(2400 * 30 / 9, 8000), '例題　およそ 8000つぶ');
+  /* 考えよう（答えは出さない） */
+  var K4 = [6, 9, 3, 6];
+  CH.check(CH.sum(K4) === 24 && K4.map(function (c) { return 5000 * c / 200; }).join() === '150,225,75,150' && 5000 * 24 / 800 === 150, '考えよう（画面には出さない）');
+  /* チャレンジ */
+  CH.check(CH.near(4 / 36, 1 / 9) && 90 * 36 / 4 === 810 && CH.near(90 / 810, 4 / 36) && 810 - 90 === 720, 'チャレンジ　およそ 720個');
+
+  /* 電球：25 のまとまり（200個ずつ）の、不良品の場所（20 × 10 のマスの番号） */
+  var TILE = []; for (var i = 0; i < 25; i++) TILE.push(pick(300 + i, 200, 6));
+  var SAMP = set(TILE[0]);
+  var K4P = K4.map(function (c, j) { return set(pick(400 + j, 200, c)); });
+  /* 池の魚 600ぴき（目印 40ぴき）。2回目に 75ひき（目印 5ひき） */
+  var FISH = (function () {
+    var r = CH.rng(77), d = Math.sqrt(Math.PI * .92 / 600) * .93, pts = [];
+    for (var y = -1; y <= 1; y += d) for (var x = -1; x <= 1; x += d) { var px = x + (r() - .5) * d * .6, py = y + (r() - .5) * d * .6; if (px * px + py * py < .9) pts.push([px, py, r() < .5 ? 1 : -1]); }
+    for (var j = pts.length - 1; j > 0; j--) { var k = Math.floor(r() * (j + 1)), t = pts[j]; pts[j] = pts[k]; pts[k] = t; }
+    return pts.slice(0, 600);
+  })();
+  CH.check(FISH.length === 600, '池の魚 600ぴき');
+  /* 0〜39 が目印。2回目：目印 5ひき ＋ 目印なし 70ぴき */
+  var CATCH = pick(81, 40, 5).concat(pick(82, 560, 70).map(function (i) { return i + 40; }));
+  CATCH = (function (a) { var r = CH.rng(83); for (var j = a.length - 1; j > 0; j--) { var k = Math.floor(r() * (j + 1)), t = a[j]; a[j] = a[k]; a[k] = t; } return a; })(CATCH);
+  var CAUGHT = {}; CATCH.forEach(function (f, j) { CAUGHT[f] = j; });
+  CH.check(CATCH.length === 75 && CATCH.filter(function (f) { return f < 40; }).length === 5, '2回目 75ひき・目印 5ひき');
+  /* チャレンジ：36個のうち 赤 4個 */
+  var RED36 = set(pick(90, 36, 4));
+
+  /* ---- 図の道具 ---- */
+  function fish(D, x, y, L, dir, col, a) {
+    var g = D.ctx; g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.fillStyle = col; g.beginPath();
+    g.ellipse(x, y, L * .5, L * .22, 0, 0, Math.PI * 2); g.moveTo(x - dir * L * .42, y); g.lineTo(x - dir * L * .78, y - L * .22); g.lineTo(x - dir * L * .78, y + L * .22); g.closePath(); g.fill(); g.restore();
+  }
+  function pond(D, x, y, rx, ry, a) {
+    var g = D.ctx; g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    g.fillStyle = 'rgba(154,216,255,.12)'; g.fill(); g.strokeStyle = C.blue; g.lineWidth = 2.4; g.stroke(); g.restore();
+  }
+  /* 200個のまとまり（20 × 10）。on：不良品のマス */
+  function tile(D, x, y, w, h, on, o) {
+    o = o || {}; CH.fillRect(D, x, y, x + w, y + h, { fill: o.fill || 'rgba(242,240,230,.07)', stroke: o.stroke || 'rgba(242,240,230,.35)', sw: o.sw || 1, a: o.a });
+    var cw = w / 20, ch = h / 10, big = cw > 7;
+    if (big) for (var i = 0; i < 200; i++) { var c = i % 20, r = Math.floor(i / 20); CH.circle(D, x + (c + .5) * cw, y + (r + .5) * ch, Math.min(cw, ch) * .3, { fill: on && on[i] ? C.pink : 'rgba(242,240,230,.35)', a: o.a }); }
+    else if (on) Object.keys(on).forEach(function (k) { var i = +k, c = i % 20, r = Math.floor(i / 20); CH.circle(D, x + (c + .5) * cw, y + (r + .5) * ch, Math.max(1.6, Math.min(cw, ch) * .55), { fill: C.pink, a: (o.a == null ? 1 : o.a) * (o.da == null ? 1 : o.da) }); });
+  }
+  /* 母集団（5 × 5 のまとまり）と標本 */
+  function bulbs(D, t, ans) {
+    var R = CH.box(D, { l: .05, r: .05, t: .1, b: .1 }), s = CH.fs(D), w = wide(D);
+    var side = w ? Math.min(R.w * .48, (R.h - s * 6) * 1.6) : Math.min(R.w * .8, R.h * .55), PX = w ? R.x0 : R.cx - side / 2, PY = w ? Math.max(R.y0 + s * 1.6, R.cy - side * .36) : R.y0 + s * 1.6;
+    ft(D, PX + side / 2, PY - s * 1.2, '電球 5000個（母集団）', { col: C.blue, size: s * .95 }, side * 1.1);
+    var tw = side / 5, th = tw * .5, gap = tw * .06, n = ans ? Math.round(25 * CH.smooth(.2, .75, t)) : 0;
+    for (var i = 0; i < 25; i++) {
+      var c = i % 5, r = Math.floor(i / 5), x = PX + c * tw + gap / 2, y = PY + r * (th + gap * 2) + gap / 2;
+      tile(D, x, y, tw - gap, th, i < n || (i === 0 && ans) ? set(TILE[i]) : null, { stroke: i === 0 ? C.yel : 'rgba(154,216,255,.5)', fill: i === 0 ? 'rgba(255,226,122,.12)' : 'rgba(154,216,255,.08)', sw: i === 0 ? 2 : 1 });
+    }
+    var pb = PY + 5 * (th + gap * 2);
+    if (!ans) ft(D, PX + side / 2, pb + s * .7, '不良品は ？個', { col: C.pink, size: s * .95 }, side);
+    else if (t > .2) ft(D, PX + side / 2, pb + s * .7, '200個のまとまりが 25こ分 … 6 × ' + n + ' ＝ ' + 6 * n + '個', { col: C.pink, size: s * .9 }, side * 1.1);
+    /* 標本 */
+    var sw = Math.min(R.w * .8, (R.y1 - pb - s * 5.2) * 2), SR = w ? CH.rect(R.x0 + R.w * .58, PY + s * .6, R.x1, PY + s * .6 + R.w * .42 * .5) : CH.rect(R.cx - sw / 2, pb + s * 2.9, R.cx + sw / 2, pb + s * 2.9 + sw / 2);
+    ft(D, SR.cx, SR.y0 - s * .9, '無作為に抽出した 200個（標本）', { col: C.yel, size: s * .9 }, SR.w * 1.1);
+    tile(D, SR.x0, SR.y0, SR.w, SR.h, SAMP, { stroke: C.yel, sw: 2 });
+    ft(D, SR.cx, SR.y1 + s * .9, '不良品 6個（●）', { col: C.pink, size: s * .9 }, SR.w);
+    if (w) CH.arrow(D, PX + tw, PY + th / 2, SR.x0 - s * .3, SR.y0 + SR.h * .3, { col: C.yel, w: 2, dash: [5, 5], a: .7 });
+    return { R: R, SR: SR, pb: pb, s: s, w: w, side: side, PX: PX };
+  }
+
+  K3.run({
+    no: '第3時', title: '標本の割合から、全体の数を推定しよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '◀ 第2時' }, { href: '04.html', label: '第4時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '工場の電球（5000個）', q: 'ある工場で作った電球 5000個の中から、200個を無作為に抽出して調べると、不良品が 6個あった。5000個の中には、不良品が およそ何個 ふくまれていると考えられるだろう。',
+        notes: ['① 自分の考え（3分）　予想と、求め方を書こう。', '② ペアの考え（3分）　自分とちがう求め方があれば、書こう。'],
+        draw: function (D) { bulbs(D, 0, false); } },
+      { tag: '今日の問い', q: '5000個の中の不良品は、およそ何個？', a: 'およそ 150個', sub: '標本の不良品の割合 6/200＝0.03 → 5000×0.03＝150（5000 は 200 の 25倍 → 6×25＝150 でも同じ）', dur: 5,
+        b: { t: '6/200＝0.03 → 5000 × 0.03 ＝ 150 → <b>およそ 150個</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, L = bulbs(D, t, true), s = L.s;
+          if (t > .8) { var a = CH.smooth(.8, .95, t), y = L.w ? L.SR.y1 + s * 3 : L.SR.y1 + s * 2.1, x = L.w ? L.SR.cx : L.R.cx, mw = L.w ? L.SR.w * 1.1 : L.R.w; ft(D, x, y, '5000 × 6/200 ＝ 150', { col: C.yel, a: a, size: s * 1.15 }, mw); if (L.w) ft(D, x, y + s * 1.5, '（6/200 ＝ 0.03）', { col: C.yel, a: a, size: s * .85 }, mw); }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '標本の割合から 全体の数を求めるとき、どう考えている？ 求めた数には、何をつけて答える？', a: '標本の割合 ≒ 母集団の割合。答えは「およそ」の数',
+        sub: '母集団の数 ≒ 母集団の大きさ × 標本の割合。全体の大きさがわからないときは、x を使って比例式をつくる', dur: 4,
+        b: [{ t: '標本の割合 ≒ 母集団の割合', col: C.green }, { t: '母集団の数 ≒ 母集団の大きさ × 標本の割合（<b>およそ</b>の数）', col: C.green }, { t: '全体がわからないとき … x を使って <b>比例式</b>', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .1, b: .12 }), s = CH.fs(D), t = D.ph ? D.t : 0, w = wide(D);
+          var cx0 = R.x0 + R.w * (w ? .3 : .3), cx1 = R.x0 + R.w * (w ? .78 : .8), y0 = R.y0 + s * 2.4, y1 = R.y0 + R.h * .5, cw = Math.min(R.w * .24, s * 5.5), ch = s * 2;
+          ft(D, cx0, R.y0 + s * .5, '全体の数', { col: DIM, size: s * .85 }, cw); ft(D, cx1, R.y0 + s * .5, '不良品の数', { col: DIM, size: s * .85 }, cw);
+          ft(D, R.x0 + s * .2, y0, '標本', { align: 'left', col: C.yel, size: s * .9 }, cx0 - cw / 2 - R.x0 - s * .3); ft(D, R.x0 + s * .2, y1, '母集団', { align: 'left', col: C.blue, size: s * .9 }, cx0 - cw / 2 - R.x0 - s * .3);
+          CH.card(D, cx0, y0, cw, ch, '200個', { col: C.yel }); CH.card(D, cx1, y0, cw, ch, '6個', { col: C.pink });
+          CH.card(D, cx0, y1, cw, ch, '5000個', { col: C.blue }); CH.card(D, cx1, y1, cw, ch, t > .55 ? 'およそ 150個' : '？', { col: C.pink, size: s * (t > .55 ? .85 : 1.1) });
+          var a1 = CH.smooth(.05, .3, t), a2 = CH.smooth(.3, .55, t);
+          CH.arrow(D, cx0 + cw / 2 + 4, y0, cx1 - cw / 2 - 4, y0, { col: C.green, a: a1, w: 2.4 }); ft(D, (cx0 + cx1) / 2, y0 + s * .75, w ? '割合 6/200 ＝ 0.03' : '6/200＝0.03', { col: C.green, a: a1, size: s * .8 }, cx1 - cx0 - cw);
+          CH.arrow(D, cx0 + cw / 2 + 4, y1, cx1 - cw / 2 - 4, y1, { col: C.green, a: a2, w: 2.4 }); ft(D, (cx0 + cx1) / 2, y1 + s * .75, w ? '× 0.03（同じ割合）' : '× 0.03', { col: C.green, a: a2, size: s * .8 }, cx1 - cx0 - cw);
+          if (t > .3) { var a3 = CH.smooth(.3, .55, t); [cx0, cx1].forEach(function (cx) { CH.arrow(D, cx, y0 + ch / 2 + 4, cx, y1 - ch / 2 - 4, { col: C.orange, a: a3, w: 2.2 }); ft(D, cx + s * .4, (y0 + y1) / 2, '× 25', { align: 'left', col: C.orange, a: a3, size: s * .85 }, cw); }); }
+          if (t > .7) {
+            var a4 = CH.smooth(.7, .9, t), yy = y1 + ch + s * .8;
+            ft(D, R.cx, yy, '比例式でも　200 ： 6 ＝ 5000 ： x　→　x ＝ 150', { col: C.chalk, a: a4, size: s * .9 }, R.w);
+            ft(D, R.cx, yy + s * 1.7, '推定した数は、ちょうどではないので「およそ 150個」', { col: C.yel, a: a4, size: s * .9 }, R.w);
+          }
+        } },
+      { tag: '例題', bh: '例題　池の魚の数', q: '池の魚を 40ぴき つかまえて、目印をつけて もどした。よく混ざったころに 75ひき つかまえると、目印のある魚が 5ひき いた。池の魚は、およそ何びき？',
+        a: 'およそ 600ぴき', sub: '池全体を x ひきとすると　40/x ＝ 5/75 → 5x ＝ 40 × 75 → x ＝ 600', dur: 6,
+        b: [{ t: '目印の割合　池 40/x ≒ つかまえた 5/75', col: C.yel }, { t: '5x ＝ 40 × 75　x ＝ 600 → <b>およそ 600ぴき</b>', col: C.yel }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .08, b: .08 }), s = CH.fs(D), t = D.ph ? D.t : 0, w = wide(D);
+          var rx = w ? Math.min(R.w * .26, R.h * .5) : Math.min(R.w * .4, R.h * .26), ry = rx * .72, px = w ? R.x0 + rx + s * .3 : R.cx, py = R.y0 + s * 1.5 + ry;
+          var NR = w ? CH.rect(R.x0 + R.w * .6, R.y0 + s * 1.5, R.x1, R.y0 + s * 1.5 + R.w * .4 / 15 * 5.4) : CH.rect(R.x0 + R.w * .1, py + ry + s * 2, R.x1 - R.w * .1, py + ry + s * 2 + R.w * .8 / 15 * 5.4);
+          var nc = Math.min(NR.w / 15, NR.h / 5.4), nx0 = NR.cx - nc * 7.5, ny0 = NR.y0 + nc * .2, k = CH.ease(CH.smooth(.05, .4, t)), L = Math.min(rx * .075, s * .8);
+          pond(D, px, py, rx, ry);
+          ft(D, px, R.y0 + s * .4, '池（目印のある魚 40ぴき）', { col: C.blue, size: s * .9 }, rx * 2.2);
+          if (t > .02) { CH.fillRect(D, NR.x0, NR.y0, NR.x0 + nc * 15 + (NR.w - nc * 15), NR.y0 + nc * 5.4, { stroke: 'rgba(242,240,230,.4)', fill: 'rgba(242,240,230,.05)', a: CH.smooth(.02, .1, t) }); ft(D, NR.cx, NR.y0 - s * .7, '2回目に つかまえた 75ひき', { col: C.chalk, size: s * .85, a: CH.smooth(.02, .1, t) }, NR.w); }
+          FISH.forEach(function (f, i) {
+            var x = px + f[0] * rx, y = py + f[1] * ry, j = CAUGHT[i], col = i < 40 ? C.yel : 'rgba(242,240,230,.55)';
+            if (j != null && k > 0) { var tx = nx0 + (j % 15 + .5) * nc, ty = ny0 + (Math.floor(j / 15) + .5) * nc; x = CH.lerp(x, tx, k); y = CH.lerp(y, ty, k) - Math.sin(k * Math.PI) * s * 2; }
+            fish(D, x, y, j != null && k > 0 ? CH.lerp(L, nc * .8, k) : L, f[2], col);
+          });
+          var yb = Math.max(py + ry, NR.y1) + s * 1.2;
+          if (!w) yb = NR.y1 + s * 1.1;
+          if (t > .42 && !w && R.y1 - yb < s * 6.5) { var a0 = CH.smooth(.42, .6, t); ft(D, R.cx, yb, '目印　池 40/x ＝ つかまえた 5/75', { col: C.yel, a: a0, size: s * .9 }, R.w); if (t > .65) ft(D, R.cx, yb + s * 1.4, '5x ＝ 40 × 75　x ＝ 600', { col: C.yel, a: CH.smooth(.65, .85, t), size: s * .95 }, R.w); }
+          else if (t > .42) {
+            var a = CH.smooth(.42, .6, t), h = Math.min(s * 1.5, (R.y1 - yb) * .2), lw = Math.min(R.w * .24, s * 6), x0 = (w ? R.x0 + R.w * .6 : R.x0) + lw, tw = (w ? R.w * .4 : R.w) - lw;
+            if (w) yb = NR.y1 + s * 1.2;
+            ft(D, x0 - s * .3, yb + h / 2, 'つかまえた 75', { align: 'right', size: s * .75, col: DIM, a: a }, lw - s * .4);
+            CH.tape(D, x0, yb, tw, h, [{ v: 5, col: C.yel, txt: '5' }, { v: 70, col: '#7d8a84', txt: '70' }], 75, { a: a });
+            ft(D, x0 - s * .3, yb + h * 2.2, '池全体 x', { align: 'right', size: s * .75, col: DIM, a: a }, lw - s * .4);
+            CH.tape(D, x0, yb + h * 1.7, tw, h, [{ v: 40, col: C.yel, txt: '40' }, { v: 560, col: '#7d8a84', txt: t > .85 ? '' : '？' }], 600, { a: a });
+            CH.line(D, x0 + tw / 15, yb + h, x0 + tw / 15, yb + h * 1.7, { col: C.yel, dash: [3, 3], a: a });
+            if (t > .65) { var a2 = CH.smooth(.65, .85, t), yy = yb + h * 3.4 + s * .4; ft(D, x0 + tw / 2 - lw / 2, yy, '40/x ＝ 5/75', { col: C.yel, a: a2, size: s * .95 }, tw + lw); ft(D, x0 + tw / 2 - lw / 2, yy + s * 1.4, '5x ＝ 40 × 75　x ＝ 600', { col: C.yel, a: a2, size: s * .95 }, tw + lw); }
+          }
+        } },
+      { tag: '例題', q: '袋の大豆は、全部で 2400g。無作為に 30つぶ 取り出して重さをはかると、9g だった。袋の大豆は、およそ何つぶ？', a: 'およそ 8000つぶ', sub: '1つぶ 9÷30＝0.3（g）→ 2400÷0.3＝8000。比例式 30 ： 9 ＝ x ： 2400 でも x＝8000', dur: 4,
+        b: { t: '1つぶ 9÷30＝0.3g → 2400÷0.3＝8000 → <b>およそ 8000つぶ</b>', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .12, b: .14 }), s = CH.fs(D), t = D.ph ? D.t : 0, ps = CH.split(D, R, 3, .1), r = CH.rng(5);
+          var bean = function (x, y, L, a) { var g = D.ctx; g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.fillStyle = '#e8d38a'; g.strokeStyle = 'rgba(20,30,24,.6)'; g.lineWidth = 1; g.beginPath(); g.ellipse(x, y, L * .5, L * .38, .4, 0, Math.PI * 2); g.fill(); g.stroke(); g.restore(); };
+          var P = ps[0], L = Math.min(P.w / 8, P.h / 9);
+          for (var i = 0; i < 30; i++) bean(P.cx + (i % 6 - 2.5) * L * 1.1 + (r() - .5) * L * .2, P.cy - L * 1.2 + Math.floor(i / 6) * L * .8, L);
+          CH.line(D, P.cx - L * 4, P.cy + L * 2.6, P.cx + L * 4, P.cy + L * 2.6, { w: 3 });
+          ft(D, P.cx, P.cy - L * 3.2, '取り出した 30つぶ', { col: DIM, size: s * .85 }, P.w); ft(D, P.cx, P.cy + L * 3.6, '9g', { col: C.chalk, size: s * 1.1 }, P.w);
+          var a1 = CH.smooth(.05, .35, t), Q = ps[1];
+          if (t > .05) { bean(Q.cx, Q.cy - L * .2, L * 2.2, a1); ft(D, Q.cx, P.cy - L * 3.2 - P.cy + Q.cy, '1つぶ', { col: DIM, size: s * .85, a: a1 }, Q.w); ft(D, Q.cx, Q.cy + L * 2, '9 ÷ 30 ＝ 0.3g', { col: C.yel, a: a1, size: s }, Q.w); }
+          var a2 = CH.smooth(.45, .75, t), S = ps[2];
+          CH.fillRect(D, S.cx - L * 2.6, S.cy - L * 2.6, S.cx + L * 2.6, S.cy + L * 2, { fill: 'rgba(232,211,138,.25)', stroke: '#e8d38a', sw: 2 });
+          ft(D, S.cx, S.cy - L * .3, '2400g', { col: C.chalk, size: s * 1.1 }, L * 5);
+          ft(D, S.cx, S.cy - L * 3.2, '袋の大豆 全部', { col: DIM, size: s * .85 }, S.w);
+          if (t > .45) ft(D, S.cx, S.cy + L * 3.4, '2400 ÷ 0.3 ＝ 8000', { col: C.yel, a: a2, size: s }, S.w);
+          var wd = D.W > D.H * .9;
+          if (wd) { CH.arrow(D, P.x1 - s * .2, P.cy, Q.x0 + s * .2, P.cy, { col: C.green, a: a1, w: 2.4 }); CH.arrow(D, Q.x1 - s * .2, P.cy, S.x0 + s * .2, P.cy, { col: C.green, a: a2, w: 2.4 }); }
+          if (t > .8) ft(D, R.cx, R.y1 + s * .6, 'およそ 8000つぶ', { col: C.yel, a: CH.smooth(.8, .95, t), size: s * 1.15 }, R.w);
+        } },
+      { tag: '考えよう', q: 'もう一度 200個を無作為に抽出して調べると、結果は同じになるだろうか。4回 調べた結果から、それぞれ 5000個の中の不良品を推定しよう。',
+        notes: ['① 各回の結果から 5000個の中の不良品を推定して、表に書こう。', '② 4回分をまとめて推定すると？ 1回ごとの推定とくらべて、気づいたことは？', 'スライダーで、何回目の標本を見るか 選べます（いちばん右は 4回分）。'],
+        sliders: [{ key: 'k', label: '標本', min: 1, max: 5, step: 1, val: 1, fmt: function (x) { return x < 5 ? x + '回目' : '4回分'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .08, b: .08 }), s = CH.fs(D), k = D.V.k, w = wide(D);
+          var G = CH.rect(R.x0, R.y0 + s * 1.5, R.x1, R.y0 + R.h * .58);
+          if (k < 5) {
+            var gw = Math.min(G.w * (w ? .7 : .95), G.h * 2), gx = G.cx - gw / 2;
+            ft(D, G.cx, R.y0 + s * .4, k + '回目の標本 200個（● 不良品）', { col: C.yel, size: s * .95 }, R.w);
+            tile(D, gx, G.y0, gw, gw / 2, K4P[k - 1], { stroke: C.yel, sw: 2 });
+            ft(D, G.cx, G.y0 + gw / 2 + s * .9, '不良品 ' + K4[k - 1] + '個', { col: C.pink }, R.w);
+          } else {
+            var cs = CH.cols(CH.rect(G.x0, G.y0, G.x1, G.y1), 4, .05), gw2 = Math.min(cs[0].w, (G.h - s * 1.5) * 2);
+            ft(D, G.cx, R.y0 + s * .4, '4回分の標本 800個（● 不良品）', { col: C.yel, size: s * .95 }, R.w);
+            cs.forEach(function (c, j) { tile(D, c.cx - gw2 / 2, G.y0, gw2, gw2 / 2, K4P[j], { stroke: C.yel, sw: 1.6 }); ft(D, c.cx, G.y0 + gw2 / 2 + s * .8, K4[j] + '個', { col: C.pink, size: s * .85 }, c.w); });
+            ft(D, G.cx, G.y0 + gw2 / 2 + s * 2.3, '800個のうち 不良品 6＋9＋3＋6 ＝ 24個', { col: C.pink, size: s * .95 }, R.w);
+          }
+          CH.table(D, CH.rect(R.x0, R.y0 + R.h * .72, R.x1, R.y1), ['', '1回目', '2回目', '3回目', '4回目'], [['不良品の個数（200個中）'].concat(K4.map(function (c, j) { return k === 5 || j < k ? c : ''; })), ['推定した個数', '', '', '', '']],
+            { fw: .3, hl: function (r, c) { return k < 5 && c === k && r > 0 ? C.yel : null; } });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '箱に、白玉がたくさん入っている。同じ大きさの赤玉 90個を入れて よく混ぜ、無作為に 36個 取り出すと、赤玉が 4個ふくまれていた。① 取り出した 36個での赤玉の割合は？（分数で）　② はじめに入っていた白玉は、およそ何個？',
+        a: '① 1/9　② およそ 720個', sub: '箱全体を x 個とすると　90/x ＝ 1/9 → x ＝ 810。白玉は 810 − 90 ＝ 720（x は白玉だけの数ではない）', dur: 5,
+        b: { t: '① 4/36＝<b>1/9</b>　② 全体 90×9＝810、白玉 810−90＝<b>およそ 720個</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .08, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0, k = CH.ease(CH.smooth(.02, .3, t));
+          /* 36個を、9個ずつ 4つのまとまりに（どのまとまりにも 赤 1個） */
+          var cw = Math.min(R.w / 42, R.h * .07), y0 = R.y0 + Math.max(s * 1.3, R.h * .12), x0 = R.cx - cw * 20.5, reds = [], whites = [];
+          for (var i = 0; i < 36; i++) (RED36[i] ? reds : whites).push(i);
+          var grp = {}; reds.forEach(function (b, g) { grp[b] = g * 9; }); whites.forEach(function (b, j) { grp[b] = Math.floor(j / 8) * 9 + 1 + j % 8; });
+          ft(D, R.cx, y0 - s, '取り出した 36個', { col: DIM, size: s * .85 }, R.w);
+          for (var b = 0; b < 36; b++) {
+            var p0 = b + Math.floor(b / 9) * 0, g = grp[b], p1 = g + Math.floor(g / 9) * 1.5, x = x0 + (CH.lerp(b * (37.5 / 36), p1, k) + .5) * cw;
+            CH.circle(D, x, y0 + cw / 2, cw * .42, { fill: RED36[b] ? C.pink : WHT, stroke: 'rgba(20,30,24,.5)', sw: 1 });
+          }
+          if (t > .3) { var a = CH.smooth(.3, .45, t); for (var q = 0; q < 4; q++) { var xa = x0 + q * 10.5 * cw, xb = xa + 9 * cw; CH.line(D, xa + 2, y0 + cw * 1.3, xb - 2, y0 + cw * 1.3, { col: C.yel, a: a, w: 1.6 }); } ft(D, R.cx, y0 + cw * 1.3 + s * .9, '9個に 1個が赤 → 割合 4/36 ＝ 1/9', { col: C.yel, a: a, size: s * .95 }, R.w); }
+          if (t > .5) {
+            var a2 = CH.smooth(.5, .7, t), h = Math.min(s * 2, R.h * .12), yt = y0 + cw * 1.3 + s * 3.4;
+            ft(D, R.x0, yt - s * .7, '箱の中 全体 x 個（9つに分けると、赤玉 90個が 1つ分）', { align: 'left', col: DIM, a: a2, size: s * .8 }, R.w);
+            var parts = [{ v: 1, col: C.pink, txt: '赤 90' }]; for (var m = 0; m < 8; m++) parts.push({ v: 1, col: WHT, txt: t > .75 ? '90' : '' });
+            CH.tape(D, R.x0, yt, R.w, h, parts, 9, { a: a2 });
+            if (t > .75) {
+              var a3 = CH.smooth(.75, .92, t), yb = yt + h + s * .5, xa2 = R.x0 + R.w / 9;
+              CH.line(D, xa2, yb, R.x1, yb, { col: C.orange, a: a3, w: 2.4 }); CH.line(D, xa2, yb - 5, xa2, yb + 5, { col: C.orange, a: a3 }); CH.line(D, R.x1, yb - 5, R.x1, yb + 5, { col: C.orange, a: a3 });
+              ft(D, (xa2 + R.x1) / 2, yb + s * .9, '白玉 90 × 8 ＝ 720', { col: C.orange, a: a3 }, R.w * .8);
+              ft(D, R.cx, yb + s * 2.6, '全体 x ＝ 90 × 9 ＝ 810（白玉だけの数ではない）', { col: C.yel, a: a3, size: s * .9 }, R.w);
+            }
+          }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

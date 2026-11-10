@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>合同な図形</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="js/geo.js"></script>
+<script>
+/* 平行と合同 第8時：ぴったり重なる図形の、辺や角の関係を調べよう（ikkan の lesson_heikou_new_08 と同じ流れ）。
+   図の数値は ikkan と同じ（辺 4・6・5cm の三角形、四角形 ABCD≡四角形 EFGH、折り返しの ∠B＝70°・∠C＝48°・∠BDA′＝80°）。座標はページの中で作った自作のデータ。
+   合同な図形は、1つを裏返し・回して動かした座標から描き、対応する辺・角が等しいことを、座標から計算し直して確かめる（GE.verify・CH.check）。
+   考えよう（△ABC≡△EDF と書いたら？）の答えは出さない（ikkan と同じく、「≡ は対応する頂点を同じ順に書く」とは書かない。色で対応を見せるだけ）。 */
+(function () {
+  var C = CH.C, VC = [C.yel, C.pink, C.green, C.blue], FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', OUT = 'rgba(20,40,30,.9)';
+  function rad(d) { return d * Math.PI / 180; }
+  function triSSS(ab, bc, ca) { var x = (ab * ab + bc * bc - ca * ca) / (2 * bc); return [[x, Math.sqrt(ab * ab - x * x)], [0, 0], [bc, 0]]; }   // A・B・C
+  function rigid(ps, o) { var t = rad(o.rot || 0), c = Math.cos(t), s = Math.sin(t), to = o.to || [0, 0]; return ps.map(function (p) { var x = o.flip ? -p[0] : p[0], y = p[1]; return [x * c - y * s + to[0], x * s + y * c + to[1]]; }); }
+  function bb(ps) { var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity; ps.forEach(function (p) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }); return { x0: x0, x1: x1, y0: y0, y1: y1, w: x1 - x0, h: y1 - y0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 }; }
+  function cen(ps) { var c = [0, 0]; ps.forEach(function (p) { c[0] += p[0] / ps.length; c[1] += p[1] / ps.length; }); return c; }
+  function named(names, ps, P) { P = P || {}; names.split('').forEach(function (k, i) { P[k] = ps[i]; }); return P; }
+  function pick(P, names) { return names.split('').map(function (k) { return P[k]; }); }
+  function orient(p) { return (p[1][0] - p[0][0]) * (p[2][1] - p[0][1]) - (p[1][1] - p[0][1]) * (p[2][0] - p[0][0]); }
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  /* 画面の点（名前つき）を、GE の道具で描くための F */
+  function sF(D, pts, s) { var ks = Object.keys(pts); return { X: function (k) { return typeof k === 'string' ? pts[k] : k; }, D: D, P: pts, s: s, u: 1, c: cen(ks.map(function (k) { return pts[k]; })) }; }
+  /* 辺 ab の長さの字を、図形の外がわ（点 c から遠ざかる向き）に書く */
+  function sideTxt(F, a, b, txt, c, o) {
+    o = o || {}; var p = F.X(a), q = F.X(b), m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], cc = F.X(c), d = [q[0] - p[0], q[1] - p[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L, d[0] / L];
+    if (n[0] * (m[0] - cc[0]) + n[1] * (m[1] - cc[1]) < 0) n = [-n[0], -n[1]];
+    var s = o.size || F.s * .8, off = s * .72 + Math.abs(n[0]) * tw(F.D, txt, s) / 2;
+    CH.text(F.D, m[0] + n[0] * off, m[1] + n[1] * off, txt, { size: s, col: o.col || C.chalk, a: o.a, outline: OUT });
+  }
+  /* 点の名前（その図形のまん中から外向き） */
+  function labs(F, names, o) { var ks = names.split(''); GE.labels(Object.assign({}, F, { c: cen(ks.map(function (k) { return F.P[k]; })) }), ks, o); }
+  /* 色ちがいの字をならべる（parts：[[字, 色], …]） */
+  function rich(D, x, y, parts, o) {
+    o = o || {}; var s = o.size || CH.fs(D, 1.2), W = 0;
+    parts.forEach(function (p) { W += tw(D, p[0], s); });
+    var xx = x - W / 2;
+    parts.forEach(function (p) { CH.text(D, xx, y, p[0], { size: s, col: p[1] || C.chalk, align: 'left', a: o.a, outline: OUT }); xx += tw(D, p[0], s); });
+  }
+  /* いくつかの図形を、四角 cells に同じ縮尺で入れる（大きさがくらべられる）→ 画面の点 */
+  function place(polys, cells, fill) {
+    var u = Infinity;
+    polys.forEach(function (ps, i) { var b = bb(ps); u = Math.min(u, cells[i].w * fill / Math.max(b.w, .01), cells[i].h * fill / Math.max(b.h, .01)); });
+    return polys.map(function (ps, i) { var b = bb(ps), c = cells[i]; return ps.map(function (p) { return [c.cx + (p[0] - b.cx) * u, c.cy - (p[1] - b.cy) * u]; }); });
+  }
+  /* 2つの図形をならべる（横長なら右に、縦長なら下に）。world の点 */
+  function pairUp(D, n1, ps1, n2, ps2, gap) {
+    var wide = D.W > D.H * 1.05, a = bb(ps1), b = bb(ps2), sh = wide ? [a.x1 + gap - b.x0, a.cy - b.cy] : [a.cx - b.cx, a.y0 - gap - b.y1];
+    return named(n1, ps1, named(n2, ps2.map(function (p) { return [p[0] + sh[0], p[1] + sh[1]]; })));
+  }
+  function topY(D, R) { return (CH.box(D, { t: 0, b: 0 }).y0 + R.y0) / 2; }
+  function angName(names, i) { var n = names.length; return names[(i + n - 1) % n] + names[i] + names[(i + 1) % n]; }
+
+  /* ---------- 今日の問い：ア〜オの三角形（ア・イ・ウは辺 4・6・5cm。イは回した形、ウは裏返した形。エは辺が半分、オは 4・7・5cm） ---------- */
+  var T0 = triSSS(4, 6, 5);
+  var TRI = [T0, rigid(T0, { rot: 125 }), rigid(T0, { flip: true, rot: 20 }), triSSS(2, 3, 2.5), triSSS(4, 7, 5)];
+  var LENS = [['4cm', '6cm', '5cm'], ['4cm', '6cm', '5cm'], ['4cm', '6cm', '5cm'], ['2cm', '3cm', '2.5cm'], ['4cm', '7cm', '5cm']];   // AB・BC・CA
+  var KANA = ['ア', 'イ', 'ウ', 'エ', 'オ'];
+  var PQ = {}; ['ABC', 'DEF', 'GHI', 'JKL', 'MNQ'].forEach(function (nm, i) { named(nm, TRI[i], PQ); });
+  GE.verify(PQ, 'AB＝DE＝GH＝MN＝4、BC＝EF＝HI＝6、CA＝FD＝IG＝QM＝5、JK＝2、KL＝3、LJ＝2.5、NQ＝7、△ABC≡△DEF、△ABC≡△GHI', null, '今日の問い ア〜オ');
+  CH.check(orient(TRI[0]) * orient(TRI[1]) > 0 && orient(TRI[0]) * orient(TRI[2]) < 0, 'イは回した形、ウは裏返した形');
+  function cells5(D) {
+    var R = CH.box(D, { l: .03, r: .03, t: .05, b: .07 });
+    if (D.W < D.H * 1.15) { var rs = CH.rows(R, 3, .04), a = CH.cols(rs[0], 2, .06), b = CH.cols(rs[1], 2, .06), w2 = a[0].w; return a.concat(b, [CH.rect(R.cx - w2 / 2, rs[2].y0, R.cx + w2 / 2, rs[2].y1)]); }   // 縦長：2列
+    var rows = CH.rows(R, 2, .06), r1 = CH.cols(rows[0], 3, .05), w = r1[0].w, g = r1[1].x0 - r1[0].x1, x0 = R.cx - w - g / 2;
+    return r1.concat([CH.rect(x0, rows[1].y0, x0 + w, rows[1].y1), CH.rect(x0 + w + g, rows[1].y0, x0 + 2 * w + g, rows[1].y1)]);
+  }
+  function drawFive(D, o) {
+    o = o || {}; var cs = cells5(D), S = place(TRI, cs, .7), s = CH.fs(D, .8);
+    S.forEach(function (ps, i) {
+      var c = cs[i], ghost = o.ghost && o.ghost(i);
+      CH.text(D, c.x0 + s * .8, c.y0 + s * .8, KANA[i], { size: s * 1.4, col: C.yel });
+      if (o.cap && o.cap(i)) CH.text(D, c.cx, c.y1 - s * .3, o.cap(i)[0], { size: s * .95, col: o.cap(i)[1], outline: OUT });
+      CH.poly(D, ps, ghost ? { stroke: 'rgba(242,240,230,.4)', sw: 1.6, dash: true } : { fill: 'rgba(154,216,255,.16)', stroke: o.hl && o.hl(i) || C.chalk, sw: o.hl && o.hl(i) ? 3.4 : 2.2 });
+      if (!ghost) { var F = sF(D, named('ABC', ps), s), cc = cen(ps); ['AB', 'BC', 'CA'].forEach(function (e, j) { sideTxt(F, e[0], e[1], LENS[i][j], cc, { size: s * .9 }); }); }
+    });
+    return S;
+  }
+
+  /* ---------- ことば・考えよう：△ABC と、それを裏返して回した △DEF（ikkan と同じ動かし方） ---------- */
+  var K_DEF = rigid(T0, { flip: true, rot: 205 });
+  function kP(D) { return pairUp(D, 'ABC', T0, 'DEF', K_DEF, 2.6); }
+  GE.verify(named('ABC', T0, named('DEF', K_DEF)), '△ABC≡△DEF、AB＝DE＝4、BC＝EF＝6、CA＝FD＝5', null, 'ことば △ABC≡△DEF');
+  CH.check(!GE.near(GE.len(named('ABC', T0, named('DEF', K_DEF)), 'BC'), GE.len(named('ABC', T0, named('DEF', K_DEF)), 'DF')), '考えよう：EDF の書き方では、BC と DF の長さが合わない（答えは出さない）');
+  function drawPair(D, P, R, o) {
+    o = o || {}; var F = GE.fit(D, R, P, { pad: .1 });
+    ['ABC', 'DEF'].forEach(function (nm) { GE.poly(F, nm, { col: C.blue, fa: .14 }); var c = cen(pick(P, nm)); ['AB', 'BC', 'CA'].forEach(function (e, j) { var s = nm[j] + nm[(j + 1) % 3]; sideTxt(F, s[0], s[1], ['4cm', '6cm', '5cm'][j], c); }); });
+    return F;
+  }
+
+  /* ---------- 例題：四角形 ABCD（AB＝3、BC＝4、CD＝2.5、∠B＝90°、∠C＝70°）と、裏返して回した 四角形 EFGH ---------- */
+  var Q1 = [[0, 3], [0, 0], [4, 0], [4 + 2.5 * Math.cos(rad(110)), 2.5 * Math.sin(rad(110))]], Q2 = rigid(Q1, { flip: true, rot: -70 });
+  GE.verify(named('ABCD', Q1, named('EFGH', Q2)), 'EF＝AB＝3、FG＝BC＝4、GH＝CD＝2.5、HE＝DA、∠EFG＝∠ABC＝90°、∠FGH＝∠BCD＝70°、∠GHE＝∠CDA、∠HEF＝∠DAB', null, '例題 四角形');
+  function qP(D) { return pairUp(D, 'ABCD', Q1, 'EFGH', Q2, 2.4); }
+  /* 4つめの点は、はじめの3点との位置関係（アフィン）をたもって動かす */
+  function moveQuad(P, s, t, k) {
+    var m = GE.moveTri(P, s.slice(0, 3), t.slice(0, 3), k), a = P[s[0]], b = P[s[1]], c = P[s[2]], p = P[s[3]];
+    var d1 = GE.sub(b, a), d2 = GE.sub(c, a), q = GE.sub(p, a), det = d1[0] * d2[1] - d1[1] * d2[0], u = (q[0] * d2[1] - q[1] * d2[0]) / det, v = (d1[0] * q[1] - d1[1] * q[0]) / det;
+    return m.concat([[m[0][0] + u * (m[1][0] - m[0][0]) + v * (m[2][0] - m[0][0]), m[0][1] + u * (m[1][1] - m[0][1]) + v * (m[2][1] - m[0][1])]]);
+  }
+  function drawQuad(D, o) {
+    o = o || {}; var P = qP(D), R = CH.box(D, { l: .06, r: .06, t: .1, b: .1 }), F = GE.fit(D, R, P, { pad: .12 });
+    GE.poly(F, 'ABCD', { col: C.blue, fa: .14 }); GE.poly(F, 'EFGH', { col: C.blue, fa: .14 });
+    var c1 = cen(pick(P, 'ABCD'));
+    sideTxt(F, 'A', 'B', '3cm', c1); sideTxt(F, 'B', 'C', '4cm', c1, { col: o.hl ? C.pink : null }); sideTxt(F, 'C', 'D', '2.5cm', c1);
+    GE.right(F, 'ABC'); GE.arc(F, 'BCD', { lab: '70°', col: o.hl ? C.green : C.chalk, fill: o.hl ? .3 : 0 });
+    return F;
+  }
+
+  /* ---------- チャレンジ：折り返し。△ABC（∠B＝70°、∠C＝48°）を、A が BC 上の A′ に重なるように DE で折る。∠BDA′＝80° ---------- */
+  var FAB = 6 * Math.sin(rad(48)) / Math.sin(rad(62)), FA = [FAB * Math.cos(rad(70)), FAB * Math.sin(rad(70))];
+  var FDA = FAB / (1 + Math.sin(rad(30)) / Math.sin(rad(70)));   // △BDA′ の角は 70°・80°・30°。DA＝DA′
+  var FD = GE.lerpP(FA, [0, 0], FDA / FAB), FPt = [FDA * Math.sin(rad(80)) / Math.sin(rad(70)), 0], FM = GE.mid(FA, FPt);
+  var FE = GE.meet(FA, [6, 0], FM, GE.add(FM, [FA[1] - FPt[1], FPt[0] - FA[0]]));   // 折り目は AA′ の垂直二等分線
+  var PF = { A: FA, B: [0, 0], C: [6, 0], D: FD, E: FE, P: FPt };   // P が A′
+  GE.verify(PF, '∠ABC＝70°、∠BCA＝48°、∠BAC＝62°、∠BDP＝80°、DA＝DP、EA＝EP、△ADE≡△PDE、∠ADE＝∠PDE＝50°、∠AED＝∠PED＝68°、∠PEC＝44°', null, 'チャレンジ 折り返し');
+  CH.check(GE.near(GE.len(PF, 'AD') + GE.len(PF, 'DB'), GE.len(PF, 'AB')) && GE.near(GE.len(PF, 'AE') + GE.len(PF, 'EC'), GE.len(PF, 'AC')) && GE.near(GE.len(PF, 'BP') + GE.len(PF, 'PC'), 6), 'D は AB 上、E は AC 上、A′ は BC 上');
+  CH.check((180 - 80) / 2 === 50 && 180 - 70 - 48 === 62 && 180 - 62 - 50 === 68 && 180 - 68 - 68 === 44, 'チャレンジの計算');
+
+  K3.run({
+    no: '第8時', title: 'ぴったり重なる図形の、辺や角の関係を調べよう', flat: true, hint: '', alt: '合同な図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '07.html', label: '◀ 第7時' }, { href: '09.html', label: '第9時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: 'ぴったり重なる図形', q: 'ア〜オのうち、ぴったり重ねられる（裏返してもよい）三角形の組を見つけよう。重ならない三角形は、どこがちがうだろう。',
+        notes: ['① 自分の考え（3分）　重なる組と、ちがうところ。', '② ペアの考え（3分）　自分とちがう見つけ方。'],
+        draw: function (D) { drawFive(D); } },
+      { tag: '今日の問い', q: 'ぴったり重なるのは、どれとどれ？', a: 'ア・イ・ウ', sub: 'イは回すと、ウは裏返して回すと、アにぴったり重なる。3つの辺は、どれも 4cm・6cm・5cm', dur: 5,
+        b: { t: '<b>ア・イ・ウ</b> はぴったり重なる（イは回す、ウは裏返す）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, k1 = CH.smooth(.04, .44, t), k2 = CH.smooth(.52, .96, t);
+          var S = drawFive(D, { ghost: function (i) { return (i === 1 && k1 > 0) || (i === 2 && k2 > 0); }, hl: function (i) { return i === 0 && t > 0 ? C.yel : null; },
+            cap: function (i) { return i === 1 && k1 > 0 ? ['回すと重なる', C.pink] : i === 2 && k2 > 0 ? ['裏返すと重なる', C.green] : null; } });
+          var P = named('abc', S[0], named('def', S[1], named('ghi', S[2])));
+          if (k1 > 0) CH.poly(D, GE.moveTri(P, 'def', 'abc', k1), { fill: 'rgba(255,157,178,.3)', stroke: C.pink, sw: 2.6 });
+          if (k2 > 0) CH.poly(D, GE.moveTri(P, 'ghi', 'abc', k2), { fill: 'rgba(169,240,176,.3)', stroke: C.green, sw: 2.6 });
+        } },
+      { tag: '今日の問い', q: 'エ・オは、アとどこがちがう？', a: 'エは大きさ、オは辺の長さ', sub: 'エは形は同じだが、辺の長さがアの半分（2cm・3cm・2.5cm）。オは 7cm の辺があり、形もちがう', dur: 4,
+        b: { t: 'エ … 大きさがちがう　オ … 辺の長さ（7cm）がちがう → 重ならない', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, k1 = CH.smooth(.04, .42, t), k2 = CH.smooth(.52, .94, t);
+          var S = drawFive(D, { ghost: function (i) { return (i === 3 && k1 > 0) || (i === 4 && k2 > 0); }, hl: function (i) { return i === 0 && t > 0 ? C.yel : null; },
+            cap: function (i) { return i === 3 && k1 > 0 ? ['大きさがちがう', C.pink] : i === 4 && k2 > 0 ? ['7cm の辺がある', C.green] : null; } });
+          var P = named('abc', S[0], named('jkl', S[3], named('mnq', S[4])));
+          if (k1 > 0) CH.poly(D, GE.moveTri(P, 'jkl', 'abc', k1), { fill: 'rgba(255,157,178,.3)', stroke: C.pink, sw: 2.6 });
+          if (k2 > 0) CH.poly(D, GE.moveTri(P, 'mnq', 'abc', k2), { fill: 'rgba(169,240,176,.25)', stroke: C.green, sw: 2.6 });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '移動して、ぴったり重なる2つの図形を何という？ 重なり合う頂点・辺・角は？', a: '合同。対応する頂点・辺・角', sub: '合同な図形では、対応する辺の長さ・角の大きさは、それぞれ等しい。合同は、記号 ≡ で表す', dur: 4.5,
+        b: [{ t: '移動して重なる2つの図形 … <b>合同</b>', col: C.green }, { t: '重なり合う頂点・辺・角 … <b>対応</b>する（対応する辺・角は等しい）', col: C.green }, { t: '記号 <b>≡</b>　△ABC≡△DEF', col: C.green }],
+        draw: function (D) {
+          var P = kP(D), R = CH.box(D, { l: .06, r: .06, t: .2, b: .08 }), t = D.ph ? D.t : 0, k = CH.smooth(.04, .55, t), on = CH.smooth(.58, .8, t);
+          var F = drawPair(D, P, R);
+          if (on > 0) ['ABC', 'DEF'].forEach(function (nm) { [0, 1, 2].forEach(function (i) { GE.arc(F, angName(nm, i), { col: VC[i], fill: .3, a: on }); }); });
+          var col = on > .5 ? { A: VC[0], B: VC[1], C: VC[2], D: VC[0], E: VC[1], F: VC[2] } : null;
+          labs(F, 'ABC', { col: col }); labs(F, 'DEF', { col: col });
+          if (k > 0) GE.polyP(F, GE.moveTri(P, 'ABC', 'DEF', k), { col: C.yel, fa: .2, a: 1 - on * .6 });
+          if (on > 0) rich(D, R.cx, topY(D, R), [['△', C.chalk], ['A', VC[0]], ['B', VC[1]], ['C', VC[2]], ['≡△', C.chalk], ['D', VC[0]], ['E', VC[1]], ['F', VC[2]]], { a: on });
+        } },
+      { tag: '例題', bh: '例題　四角形 ABCD≡四角形 EFGH', q: '四角形 ABCD≡四角形 EFGH である。頂点 A・B・C・D に対応する頂点は？', a: 'A と E、B と F、C と G、D と H', sub: '四角形 ABCD を裏返して回すと、四角形 EFGH にぴったり重なる', dur: 4,
+        b: { t: '対応する頂点　A − E、B − F、C − G、D − H', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, k = CH.smooth(.04, .6, t), on = CH.smooth(.62, .85, t), F = drawQuad(D), P = F.P;
+          var col = on > .5 ? { A: VC[0], B: VC[1], C: VC[2], D: VC[3], E: VC[0], F: VC[1], G: VC[2], H: VC[3] } : null;
+          labs(F, 'ABCD', { col: col }); labs(F, 'EFGH', { col: col });
+          if (k > 0) GE.polyP(F, moveQuad(P, 'ABCD', 'EFGH', k), { col: C.yel, fa: .2, a: 1 - on * .6 });
+          if (on > 0) 'EFGH'.split('').forEach(function (v, i) { GE.dot(F, v, { col: VC[i], r: F.s * .26, a: on }); GE.dot(F, 'ABCD'[i], { col: VC[i], r: F.s * .26, a: on }); });
+        } },
+      { tag: '例題', q: 'BC＝4cm、∠C＝70° のとき、辺 FG の長さと ∠G の大きさは？', a: 'FG＝4cm、∠G＝70°', sub: '辺 FG は辺 BC に、∠G は ∠C に対応する。合同な図形の、対応する辺・角は等しい', dur: 2,
+        b: { t: 'FG は BC に対応 → <b>FG＝4cm</b>　∠G は ∠C に対応 → <b>∠G＝70°</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = drawQuad(D, { hl: true }), a = CH.smooth(.1, .6, t), P = F.P;
+          labs(F, 'ABCD'); labs(F, 'EFGH');
+          GE.seg(F, 'BC', { col: C.pink, w: 5, glow: true });
+          GE.seg(F, 'FG', { col: C.pink, w: 5, glow: true, a: Math.max(.25, a) }); GE.arc(F, 'FGH', { col: C.green, fill: .3, a: Math.max(.25, a) });
+          if (a > 0) { sideTxt(F, 'F', 'G', '4cm', cen(pick(P, 'EFGH')), { col: C.pink, a: a }); GE.arc(F, 'FGH', { col: C.green, lab: '70°', a: a }); }
+        } },
+      { tag: '考えよう', q: '△ABC と △DEF は合同で、△ABC≡△DEF と書ける。では、△ABC≡△EDF と書いたら、どうなるだろう。辺の長さをもとに調べよう。',
+        notes: ['① 頂点 A・B・C に対応する頂点を、2つの書き方でくらべよう。', '② △ABC≡△EDF と書くと、辺 BC に対応するのは、どの辺だろう。', 'スライダーで書き方を切りかえると、同じ位置に書いた頂点どうしが、同じ色の点線でつながります。'],
+        sliders: [{ key: 'w', label: '書き方', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? '△ABC≡△EDF' : '△ABC≡△DEF'; } }],
+        draw: function (D) {
+          var P = kP(D), R = CH.box(D, { l: .06, r: .06, t: .2, b: .08 }), F = drawPair(D, P, R), wr = D.V.w ? 'EDF' : 'DEF', col = {};
+          'ABC'.split('').forEach(function (v, i) { col[v] = VC[i]; col[wr[i]] = VC[i]; var a = F.X(v), b = F.X(wr[i]); CH.line(D, a[0], a[1], b[0], b[1], { col: VC[i], dash: [5, 6], w: 1.8, a: .75 }); });
+          labs(F, 'ABC', { col: col }); labs(F, 'DEF', { col: col });
+          rich(D, R.cx, topY(D, R), [['△', C.chalk], ['A', VC[0]], ['B', VC[1]], ['C', VC[2]], ['≡△', C.chalk], [wr[0], VC[0]], [wr[1], VC[1]], [wr[2], VC[2]]]);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ　折り返し', q: '△ABC を、頂点 A が辺 BC 上の点 A′ に重なるように、線分 DE で折った。∠B＝70°、∠C＝48°、∠BDA′＝80° のとき、∠x の大きさは？',
+        a: '∠x＝44°', sub: '折り返したから △ADE≡△A′DE。∠ADE＝(180°−80°)÷2＝50°、∠A＝180°−70°−48°＝62°、∠AED＝180°−62°−50°＝68°＝∠A′ED、∠x＝180°−68°−68°＝44°', dur: 6,
+        b: { t: '△ADE≡△A′DE（折り返し）→ ∠ADE＝50°、∠AED＝∠A′ED＝68° → <b>∠x＝44°</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .08, r: .08, t: .08, b: .1 }), F = GE.fit(D, R, PF, { pad: .1 }), k = D.ph ? CH.smooth(.02, .32, t) : 1;
+          var a1 = CH.smooth(.38, .52, t), a2 = CH.smooth(.58, .72, t), a3 = CH.smooth(.8, .94, t), tip = GE.lerpP(FA, FPt, k);
+          GE.poly(F, 'ABC', { col: C.blue, fa: .1, stroke: false });
+          GE.seg(F, 'DB'); GE.seg(F, 'BC'); GE.seg(F, 'CE');
+          GE.seg(F, 'AD', { a: .45, dash: [4, 5] }); GE.seg(F, 'AE', { a: .45, dash: [4, 5] });
+          GE.polyP(F, [FD, FE, tip], { col: C.lav, fa: .3 });
+          GE.seg(F, 'DE', { dash: [7, 6], col: C.chalk });
+          GE.arc(F, 'CBA', { lab: '70°' }); GE.arc(F, 'BCA', { lab: '48°' }); GE.arc(F, 'BDP', { lab: '80°', r: F.s * 1.1 });
+          GE.arc(F, 'PEC', { lab: a3 > .5 ? '44°' : 'x', col: a3 > 0 ? C.green : C.chalk, fill: a3 > 0 ? .35 * a3 : 0, r: F.s * 1.1 });
+          if (a1 > 0) { GE.arc(F, 'ADE', { col: C.yel, fill: .35, a: a1, r: F.s * 1.5, lab: '50°' }); GE.arc(F, 'PDE', { col: C.yel, fill: .35, a: a1, r: F.s * 1.5, lab: '50°' }); }
+          if (a2 > 0) { GE.arc(F, 'AED', { col: C.pink, fill: .35, a: a2, r: F.s * 1.5, lab: '68°' }); GE.arc(F, 'PED', { col: C.pink, fill: .35, a: a2, r: F.s * 1.5, lab: '68°' }); }
+          GE.labels(F, ['A', 'B', 'C', 'D', 'E', 'P'], { dir: { A: 'n', B: 'sw', C: 'se', D: 'w', E: 'ne', P: 's' }, name: { P: 'A′' } });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

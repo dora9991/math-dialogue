@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>三平方の定理の証明</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三平方の定理 第2時：三平方の定理が、いつでも成り立つわけを説明しよう（ikkan の lesson_sanhei_02 と同じ流れ）。
+   図の数値は ikkan のデータ（自作）と同じ（今日の問い a＝3.6・b＝2、考えようの台形、チャレンジ 1辺 7cm・内側 29cm² → 2cm と 5cm）。
+   1辺 a＋b の正方形の中に、合同な直角三角形4つ。内側の四角形が正方形であること・面積の関係は、座標で確かめる（GE.verify・CH.check）。
+   例題2では、4つの三角形がすべって並びかわり、白い部分が c² から a²＋b² になる（どの三角形も重ならない順に動かす）。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)', TF = '#3f6f74';
+  /* ---- このページの道具 ---- */
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D); if (o.maxW) size = CH.fitSize(D, s, o.maxW, size, { num: o.num }); CH.text(D, x, y, s, { col: o.col, a: o.a, size: size, num: o.num, align: o.align, outline: o.outline === false ? null : OUT }); }
+  function poly(F, ps, o) { CH.poly(F.D, ps.map(function (p) { return F.X(p); }), o); }
+  function area(ps) { var s = 0; ps.forEach(function (p, i) { var q = ps[(i + 1) % ps.length]; s += p[0] * q[1] - q[0] * p[1]; }); return Math.abs(s) / 2; }
+  /* 辺 pq の外がわ（点 r の反対がわ）・内がわ（点 r のほう）に字 */
+  function sideLab(F, p, q, r, txt, o) {
+    o = o || {}; var a = F.X(p), b = F.X(q), c = F.X(r), m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], n = [a[1] - b[1], b[0] - a[0]], L = Math.hypot(n[0], n[1]) || 1;
+    var sg = (n[0] * (c[0] - m[0]) + n[1] * (c[1] - m[1]) > 0) === !!o.inside ? 1 : -1, k = F.s * (o.k || .8) * sg;
+    say(F.D, m[0] + n[0] / L * k, m[1] + n[1] / L * k, txt, { col: o.col, size: o.size || F.s * .85, a: o.a, num: o.num });
+  }
+  /* 四角 R に、行を上から（{ t, col, a, size, big }） */
+  function lines(D, R, L, o) {
+    o = o || {}; var s = o.size || CH.fs(D, 1.05), h = s * 1.5, y = o.mid ? R.cy - (L.length * h) / 2 + h / 2 : R.y0 + h * .6;
+    L.forEach(function (l) { if (l && l.t && (l.a == null || l.a > 0)) { var sz = s * (l.big ? 1.25 : l.k || 1); say(D, R.cx, y, l.t, { col: l.col, a: l.a, size: sz, maxW: R.w }); } y += h * (l && l.big ? 1.2 : 1); });
+  }
+  /* 1辺 a＋b の正方形 KLMN と、内側の四角形 PQRS（直角三角形4つ：L・M・N・K のすみ） */
+  function sqP(a, b) { var s = a + b; return { K: [0, 0], L: [s, 0], M: [s, s], N: [0, s], P: [a, 0], Q: [s, a], R: [b, s], S: [0, b] }; }
+  var TRI = { L: ['P', 'L', 'Q'], M: ['Q', 'M', 'R'], N: ['R', 'N', 'S'], K: ['S', 'K', 'P'] };
+  /* 並べかえ：N のすみの三角形は (a, −b)、M は (−b, 0)、K は (0, a) だけすべる（L は動かない） */
+  function offs(a, b, mv) { return { L: [0, 0], N: [a * mv[0], -b * mv[0]], M: [-b * mv[1], 0], K: [0, a * mv[2]] }; }
+  function triPts(P, k, off) { return TRI[k].map(function (n) { return GE.add(P[n], off); }); }
+
+  /* ---- 確かめ：どんな a・b でも、内側は1辺 c の正方形、(a＋b)²＝c²＋2ab。並べかえた後は、白い部分が a²＋b² ---- */
+  [[3.6, 2], [5, 2], [7, 1], [6, 8], [4, 3], [2, 5], [1, 1]].forEach(function (g) {
+    var a = g[0], b = g[1], P = sqP(a, b), c = Math.hypot(a, b), s = a + b, nm = '（a＝' + a + '、b＝' + b + '）';
+    GE.verify(P, 'PQ＝QR＝RS＝SP＝' + c + '、∠SPQ＝90°、∠PQR＝90°、∠QRS＝90°、∠RSP＝90°、∠KPS＋∠LPQ＝90°、∠KPS＋∠SPQ＋∠QPL＝180°、KP＝LQ＝MR＝NS＝' + a + '、PL＝QM＝RN＝SK＝' + b, null, '内側の四角形' + nm);
+    GE.verify(P, '△SKP≡△PLQ、△PLQ≡△QMR、△QMR≡△RNS', null, '4つの三角形' + nm);
+    CH.check(CH.near(area([P.P, P.Q, P.R, P.S]), c * c) && Math.abs(s * s - (c * c + 4 * a * b / 2)) < 1e-9, '面積の2通りの表し方' + nm);
+    var o = offs(a, b, [1, 1, 1]), T2 = ['L', 'M', 'N', 'K'].map(function (k) { return triPts(P, k, o[k]); });
+    var inRect = function (p, x0, y0, x1, y1) { return p[0] > x0 - 1e-9 && p[0] < x1 + 1e-9 && p[1] > y0 - 1e-9 && p[1] < y1 + 1e-9; };
+    CH.check(inRect(T2[0][0], a, 0, s, a) && T2[0].concat(T2[2]).every(function (p) { return inRect(p, a, 0, s, a); }) && T2[1].concat(T2[3]).every(function (p) { return inRect(p, 0, a, a, s); }) &&
+      Math.abs(s * s - 4 * a * b / 2 - (a * a + b * b)) < 1e-9, '並べかえた後' + nm);
+  });
+  /* 考えよう：台形 KLMN（K(0,0)、P(b,0)、L(a＋b,0)、M(a＋b,b)、N(0,a)）。まん中の三角形は直角二等辺三角形 */
+  function trap(a, b) { return { K: [0, 0], P: [b, 0], L: [a + b, 0], M: [a + b, b], N: [0, a] }; }
+  [[3.6, 2], [3, 4], [5, 2]].forEach(function (g) { var P = trap(g[0], g[1]); GE.verify(P, 'NP＝PM、∠NPM＝90°、∠PKN＝90°、∠MLP＝90°', null, '考えようの台形'); });
+  /* チャレンジ：1辺 7、内側 29 → 三角形1つ 5、x(7−x)＝10 → 2 と 5 */
+  var sol = []; for (var x = 1; x < 7; x++) if (x * (7 - x) / 2 === (49 - 29) / 4 && x <= 7 - x) sol.push(x + '・' + (7 - x));
+  var PC = sqP(5, 2); CH.check(sol.join() === '2・5' && CH.near(area([PC.P, PC.Q, PC.R, PC.S]), 29) && (49 - 29) / 4 === 5, 'チャレンジ');
+
+  /* 図：正方形 KLMN と 4つの三角形。o：mv（並べかえの進み [N, M, K]）、ab（辺の字）、names（点の名前） */
+  function fig(D, R, a, b, o) {
+    o = o || {}; var P = sqP(a, b), s = a + b, mv = o.mv || [0, 0, 0], off = offs(a, b, mv), ctr = [s / 2, s / 2];
+    var F = GE.fit(D, R, P, { keys: ['K', 'L', 'M', 'N'], pad: o.pad == null ? .1 : o.pad });
+    poly(F, [P.K, P.L, P.M, P.N], { fill: hexA(C.orange, o.inner == null ? .22 : o.inner) });
+    ['L', 'M', 'N', 'K'].forEach(function (k) { poly(F, triPts(P, k, off[k]), { fill: TF, stroke: C.blue, sw: 2.2 }); });
+    poly(F, [P.K, P.L, P.M, P.N], { stroke: C.chalk, sw: 2.6 });
+    if (o.ab !== false) {
+      var aa = o.abA == null ? 1 : o.abA;
+      [['K', 'P', 'a'], ['P', 'L', 'b'], ['L', 'Q', 'a'], ['Q', 'M', 'b'], ['M', 'R', 'a'], ['R', 'N', 'b'], ['N', 'S', 'a'], ['S', 'K', 'b']].forEach(function (e) { sideLab(F, e[0], e[1], ctr, o.abT ? o.abT[e[2]] : e[2], { col: e[2] === 'a' ? C.blue : C.green, a: aa, k: .7 }); });
+      if (o.c !== false) [['P', 'Q'], ['Q', 'R'], ['R', 'S'], ['S', 'P']].forEach(function (e) { sideLab(F, e[0], e[1], ctr, 'c', { col: C.orange, a: aa * (o.cA == null ? 1 : o.cA), inside: true, k: .75 }); });
+    }
+    if (o.names) GE.labels(F, ['K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S'], { dir: { K: 'sw', L: 'se', M: 'ne', N: 'nw', P: 's', Q: 'e', R: 'n', S: 'w' } });
+    return { F: F, P: P };
+  }
+  function box(D) { return CH.box(D, { l: .03, r: .03, t: .05, b: .04 }); }
+  var SL = [{ key: 'a', label: 'a', min: 1, max: 6, step: .1, val: 3.6, fmt: function (v) { return v.toFixed(1); } }, { key: 'b', label: 'b', min: 1, max: 6, step: .1, val: 2, fmt: function (v) { return v.toFixed(1); } }];
+
+  K3.run({
+    no: '第2時', title: '三平方の定理が、いつでも成り立つわけを説明しよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '01.html', label: '◀ 第1時' }, { href: '03.html', label: '第3時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '三平方の定理の証明', q: '直角をはさむ2辺が a、b、斜辺が c の、合同な直角三角形4つを並べると、1辺が a＋b の大きい正方形ができた。a²＋b²＝c² が、いつでも成り立つわけを、この図を使って説明しよう。',
+        notes: ['① 自分の考え（3分）　大きい正方形の面積を、2通りの式で表してみよう。', '② ペアの考え（3分）　自分とちがう考えは？'],
+        draw: function (D) { fig(D, box(D), 3.6, 2); } },
+      { tag: '今日の問い', q: '大きい正方形の面積を、2通りの式で表すと？', a: '(a＋b)²＝c²＋4×1/2ab → a²＋b²＝c²', sub: '1辺 a＋b の正方形として (a＋b)²。内側の正方形 c² と三角形4つ（1/2ab×4＝2ab）の和として c²＋2ab。等しいとおいて、両辺から 2ab をひく', dur: 8,
+        notes: ['スライダーで、直角三角形の形（a・b）を変えられます。いつでも、いえるかな。'], sliders: SL,
+        b: [{ t: '大きい正方形 … (a＋b)²　内側＋三角形4つ … c²＋2ab', col: C.yel }, { t: '(a＋b)²＝c²＋2ab → a²＋2ab＋b²＝c²＋2ab → <b>a²＋b²＝c²</b>', col: C.yel }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, sp = CH.split(D, box(D), 2, .04), O = fig(D, sp[0], D.V.a, D.V.b), F = O.F, P = O.P, k1 = CH.smooth(0, .12, t), k2 = CH.smooth(.18, .3, t), k3 = CH.smooth(.32, .44, t);
+          if (D.ph) {
+            poly(F, [P.K, P.L, P.M, P.N], { stroke: C.yel, sw: 5, a: k1 * (1 - CH.smooth(.16, .2, t)) });
+            poly(F, [P.P, P.Q, P.R, P.S], { stroke: C.orange, sw: 5, a: k2 * (1 - CH.smooth(.46, .5, t)) });
+            ['L', 'M', 'N', 'K'].forEach(function (k) { poly(F, triPts(P, k, [0, 0]), { fill: hexA(C.pink, .45), a: k3 * (1 - CH.smooth(.46, .5, t)) }); });
+          }
+          lines(D, sp[1], [{ t: '大きい正方形', col: C.yel, a: k1, k: .8 }, { t: '(a＋b)²', col: C.yel, a: k1 }, { t: '内側の正方形 ＋ 三角形4つ', col: C.orange, a: k2, k: .8 }, { t: 'c² ＋ 1/2ab×4', col: C.orange, a: k2 }, { t: '＝ c² ＋ 2ab', col: C.pink, a: k3 },
+            { t: '(a＋b)²＝c²＋2ab', a: CH.smooth(.52, .62, t) }, { t: 'a²＋2ab＋b²＝c²＋2ab', a: CH.smooth(.66, .76, t) }, { t: 'a²＋b²＝c²', col: C.yel, big: true, a: CH.smooth(.82, .92, t) }], { mid: true });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '正しいことを、筋道を立てて示すことを、何という？ 三平方の定理は、別の名前で何という？', a: '証明。ピタゴラスの定理', sub: '同じ図形の面積を、2通りの式で表して、等しいとおく', dur: 3,
+        b: [{ t: '<b>証明</b> … 正しいことを、筋道を立てて示す', col: C.green }, { t: '三平方の定理 ＝ <b>ピタゴラスの定理</b>', col: C.green }, { t: '同じ図形の面積を <b>2通り</b>に表して、等しいとおく', col: C.green }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, sp = CH.split(D, box(D), 2, .04); fig(D, sp[0], 3.6, 2);
+          lines(D, sp[1], [{ t: '証明', col: C.green, big: true, a: CH.smooth(0, .25, t) }, { t: '正しいことを、筋道を立てて示す', a: CH.smooth(0, .25, t), k: .8 }, { t: 'ピタゴラスの定理', col: C.green, big: true, a: CH.smooth(.35, .6, t) }, { t: '（三平方の定理）', a: CH.smooth(.35, .6, t), k: .8 }, { t: '同じ面積を 2通りに表す', col: C.yel, a: CH.smooth(.7, .95, t), k: .9 }], { mid: true });
+        } },
+      { tag: '例題', bh: '例題　内側の四角形は正方形', q: '内側の四角形 PQRS が正方形といえるわけを説明しよう。（● と ○ は、直角三角形の直角でない2つの角）', a: '4辺がどれも c で、4つの角がどれも 90° だから', sub: '●＋○＝90°（直角三角形の、直角でない2つの角の和）。P のところは一直線（180°）だから ∠SPQ＝180°−(●＋○)＝90°', dur: 7,
+        b: [{ t: '4辺 … どれも c（合同な直角三角形の斜辺）', col: C.pink }, { t: '●＋○＝90° → ∠SPQ＝180°−90°＝90° → PQRS は<b>正方形</b>', col: C.pink }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, sp = CH.split(D, box(D), 2, .04), O = fig(D, sp[0], 3.6, 2, { names: true, ab: false }), F = O.F, P = O.P, k1 = CH.smooth(0, .15, t), k2 = CH.smooth(.25, .4, t), k3 = CH.smooth(.5, .65, t), k4 = CH.smooth(.75, .9, t);
+          [['KPS', 'LQP', 'MRQ', 'NSR'], ['KSP', 'LPQ', 'MQR', 'NRS']].forEach(function (g, j) { g.forEach(function (n) { GE.arc(F, n, { col: j ? C.blue : C.pink, fill: .3, r: F.s * .9, lab: j ? '○' : '●' }); }); });
+          if (D.ph) {
+            [['P', 'Q'], ['Q', 'R'], ['R', 'S'], ['S', 'P']].forEach(function (e) { GE.seg(F, e[0] + e[1], { col: C.orange, w: 5, glow: true, a: k1 }); sideLab(F, e[0], e[1], [2.8, 2.8], 'c', { col: C.orange, a: k1, inside: true, k: .8 }); });
+            GE.arc(F, 'KPS', { col: C.pink, fill: .6, r: F.s * .9, a: k2 }); GE.arc(F, 'LPQ', { col: C.blue, fill: .6, r: F.s * .9, a: k2 });
+            if (k3 > 0) { GE.arc(F, 'SPQ', { col: C.yel, fill: .35, r: F.s * 1.5, a: k3 }); GE.seg(F, 'KL', { col: C.yel, w: 4, a: k3 * (1 - k4) }); }
+            if (k4 > 0) ['SPQ', 'PQR', 'QRS', 'RSP'].forEach(function (n) { GE.right(F, n, { col: C.yel, a: k4, r: F.s * .7 }); });
+          }
+          lines(D, sp[1], [{ t: '4辺は、どれも c', col: C.orange, a: k1 }, { t: '●＋○＝90°', col: C.pink, a: k2 }, { t: '（直角でない2つの角の和）', a: k2, k: .75 }, { t: '∠SPQ＝180°−(●＋○)', col: C.yel, a: k3 }, { t: '＝90°', col: C.yel, a: k3 }, { t: '4つの角も直角 → 正方形', col: C.yel, a: k4 }], { mid: true });
+        } },
+      { tag: '例題', bh: '例題2　三角形を並べかえる', q: '4つの三角形を、大きい正方形の中ですべらせて、並べかえよう。三角形でおおわれていない部分（色のついた部分）の面積は、どう変わる？', a: 'c² から a²＋b²（1辺 a と 1辺 b の2つの正方形）', sub: 'どちらも「(a＋b)² − 三角形4つ」で、面積は変わらない。だから c²＝a²＋b²', dur: 9,
+        notes: ['スライダーで a・b を変えて、もう一度（↻）動かせます。'], sliders: SL,
+        b: { t: '並べかえる前 c²、後 a²＋b²（どちらも (a＋b)²−三角形4つ）→ <b>c²＝a²＋b²</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, a = D.V.a, b = D.V.b, s = a + b, sp = CH.split(D, box(D), 2, .04), mv = [CH.ease(CH.smooth(.06, .28, t)), CH.ease(CH.smooth(.33, .53, t)), CH.ease(CH.smooth(.58, .78, t))];
+          var moving = mv[0] > 0, done = mv[2] >= 1, O = fig(D, sp[0], a, b, { mv: mv, abA: moving ? 1 - CH.smooth(.06, .12, t) : 1, c: true }), F = O.F, k5 = CH.smooth(.82, .92, t);
+          if (!moving) { var m = F.X([s / 2, s / 2]); say(D, m[0], m[1], 'c²', { col: C.orange, size: F.s * 1.2 }); }
+          if (done) {
+            poly(F, [[0, 0], [a, 0], [a, a], [0, a]], { stroke: C.yel, sw: 3.5, a: k5 }); poly(F, [[a, a], [s, a], [s, s], [a, s]], { stroke: C.yel, sw: 3.5, a: k5 });
+            var p1 = F.X([a / 2, a / 2]), p2 = F.X([a + b / 2, a + b / 2]); say(D, p1[0], p1[1], 'a²', { col: C.yel, size: Math.min(F.s * 1.2, a * F.u * .45), a: k5 }); say(D, p2[0], p2[1], 'b²', { col: C.yel, size: Math.min(F.s * 1.2, b * F.u * .45), a: k5 });
+            [[[0, 0], [a, 0], [0, -1], 'a'], [[a, 0], [s, 0], [0, -1], 'b'], [[0, 0], [0, a], [-1, 0], 'a'], [[0, a], [0, s], [-1, 0], 'b']].forEach(function (e) { var mm = F.X(GE.mid(e[0], e[1])); say(D, mm[0] + e[2][0] * F.s * .7, mm[1] - e[2][1] * F.s * .7, e[3], { col: e[3] === 'a' ? C.blue : C.green, a: k5, size: F.s * .85 }); });
+          }
+          lines(D, sp[1], [{ t: '並べかえる前', a: 1, k: .8 }, { t: '色の部分 ＝ c²', col: C.orange }, { t: '並べかえた後', a: CH.smooth(.8, .88, t), k: .8 }, { t: '色の部分 ＝ a²＋b²', col: C.yel, a: CH.smooth(.8, .88, t) }, { t: 'どちらも (a＋b)²−三角形4つ', a: CH.smooth(.88, .95, t), k: .8 }, { t: 'c²＝a²＋b²', col: C.yel, big: true, a: CH.smooth(.93, 1, t) }], { mid: true });
+        } },
+      { tag: '考えよう', q: '合同な直角三角形2つと、まん中の三角形で、台形をつくった。台形の面積を2通りの式で表して、a²＋b²＝c² を証明しよう。',
+        notes: ['まん中の三角形は、どんな三角形かな。', '台形の面積の公式と、3つの三角形の面積の和で表そう。', 'スライダーで、a・b を変えたり、まん中の三角形に色をつけたりできます。'],
+        sliders: [SL[0], { key: 'm', label: 'まん中に色', min: 0, max: 1, step: 1, val: 0, fmt: function (v) { return v ? 'つける' : '—'; } }],
+        draw: function (D) {
+          var a = D.V.a, b = 2, P = trap(a, b), F = GE.fit(D, CH.box(D, { l: .06, r: .06, t: .08, b: .06 }), P, { pad: .12 }), ctr = [(a + b) / 2, (a + b) / 4];
+          GE.poly(F, 'KPN', { col: C.blue, fa: .25, stroke: C.blue }); GE.poly(F, 'PLM', { col: C.blue, fa: .25, stroke: C.blue });
+          GE.poly(F, 'NPM', { col: C.orange, fa: D.V.m ? .35 : 0, stroke: C.chalk });
+          GE.poly(F, 'KLMN', { fill: false, stroke: C.chalk });
+          GE.right(F, 'PKN'); GE.right(F, 'MLP');
+          sideLab(F, 'K', 'P', ctr, 'b', { col: C.green }); sideLab(F, 'P', 'L', ctr, 'a', { col: C.blue }); sideLab(F, 'L', 'M', ctr, 'b', { col: C.green }); sideLab(F, 'K', 'N', ctr, 'a', { col: C.blue });
+          sideLab(F, 'N', 'P', 'K', 'c', { col: C.orange }); sideLab(F, 'P', 'M', 'L', 'c', { col: C.orange });
+          GE.labels(F, ['K', 'P', 'L', 'M', 'N'], { dir: { K: 'sw', P: 's', L: 'se', M: 'ne', N: 'nw' } });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '合同な直角三角形4つで、1辺が 7cm の大きい正方形をつくったところ、内側の正方形の面積が 29cm² になった。直角をはさむ2辺の長さを、短いほうから答えよう。',
+        notes: ['ヒント① 直角三角形1つの面積は、いくつかな。', 'ヒント② 短い辺を x cm とすると、長い辺は何 cm かな。'],
+        a: '2cm と 5cm', sub: '三角形1つの面積は (49−29)÷4＝5。短い辺を x とすると 1/2x(7−x)＝5、x²−7x＋10＝0、(x−2)(x−5)＝0', dur: 7,
+        b: { t: '(49−29)÷4＝5 → 1/2x(7−x)＝5 → (x−2)(x−5)＝0 → <b>2cm と 5cm</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, sp = CH.split(D, box(D), 2, .04), k1 = CH.smooth(.02, .2, t), k2 = CH.smooth(.3, .45, t), k3 = CH.smooth(.55, .7, t), k4 = CH.smooth(.8, .92, t);
+          var O = fig(D, sp[0], 5, 2, { ab: false }), F = O.F, P = O.P, m = F.X([3.5, 3.5]);
+          if (D.ph) ['L', 'M', 'N', 'K'].forEach(function (k) { poly(F, triPts(P, k, [0, 0]), { fill: hexA(C.pink, .45), a: k1 * (1 - k4) }); });
+          say(D, m[0], m[1], '29cm²', { col: C.orange, size: F.s });
+          sideLab(F, 'K', 'L', [3.5, 3.5], '7cm', { size: F.s * .85 });
+          sideLab(F, 'L', 'Q', [3.5, 3.5], k4 > .5 ? '5cm' : '?', { col: k4 > .5 ? C.yel : C.chalk, k: .9 }); sideLab(F, 'Q', 'M', [3.5, 3.5], k4 > .5 ? '2cm' : '?', { col: k4 > .5 ? C.yel : C.chalk, k: .9 });
+          lines(D, sp[1], [{ t: '三角形1つ (49−29)÷4＝5', col: C.pink, a: k1 }, { t: '短い辺 x、長い辺 7−x', a: k2 }, { t: '1/2x(7−x)＝5', a: k2 }, { t: 'x²−7x＋10＝0', a: k3 }, { t: '(x−2)(x−5)＝0', a: k3 }, { t: '2cm と 5cm', col: C.yel, big: true, a: k4 }], { mid: true });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>
