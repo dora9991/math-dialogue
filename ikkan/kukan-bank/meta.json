@@ -1,0 +1,3602 @@
+{
+ "J1-SP-K01-L1-01": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-01.js 01d02",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K01-L1-02": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-01.js 01d03",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K01-L1-03": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-01.js 01q01",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K01-L1-04": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-01.js 01q02",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K01-L1-05": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-01.js 01d01",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K01-L2-01": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-01.js 01d06",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K01-L2-02": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-01.js 01q04",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K01-L2-03": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-01.js 01d05",
+  "distractors": [
+   "near",
+   "step",
+   "near"
+  ]
+ },
+ "J1-SP-K01-L2-04": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-01.js 01q03",
+  "distractors": [
+   "near",
+   "step",
+   "step"
+  ]
+ },
+ "J1-SP-K01-L2-05": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-01.js 01d04",
+  "distractors": [
+   "step",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K01-L3-01": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-01.js 01d07",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K01-L3-02": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-01.js 01d08",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K01-L3-03": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-01.js 01d07",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K01-L3-04": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-01.js 01d07",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K01-L3-05": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-01.js 01d07",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K01-L4-01": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-01.js 01d09",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K01-L4-02": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-01.js 01d11",
+  "distractors": [
+   "step",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K01-L4-03": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-01.js 01q05",
+  "distractors": [
+   "near",
+   "step",
+   "near"
+  ]
+ },
+ "J1-SP-K01-L4-04": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-01.js 01d10",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K01-L4-05": {
+  "lesson": "kukan-01",
+  "lessonName": "立体を仲間分けしよう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-01.js 01d09",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K02-L1-01": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-02.js 02q01a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K02-L1-02": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-02.js 02d03",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K02-L1-03": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-02.js 02d02a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K02-L1-04": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-02.js 02q01b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K02-L1-05": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-02.js 02q02",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K02-L2-01": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-02.js 02d05b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K02-L2-02": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-02.js 02q03",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K02-L2-03": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-02.js 02d06",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K02-L2-04": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-02.js 02q04",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K02-L2-05": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-02.js 02d05a",
+  "distractors": [
+   "near",
+   "step",
+   "near"
+  ]
+ },
+ "J1-SP-K02-L3-01": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-02.js 02d07",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K02-L3-02": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-02.js 02d08",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K02-L3-03": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-02.js 02d07",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K02-L3-04": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-02.js 02d07",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K02-L3-05": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-02.js 02d07",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K02-L4-01": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-02.js 02d11",
+  "distractors": [
+   "near",
+   "step",
+   "step"
+  ]
+ },
+ "J1-SP-K02-L4-02": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-02.js 02d10",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K02-L4-03": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-02.js 02d09a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K02-L4-04": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-02.js 02q05",
+  "distractors": [
+   "step",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K02-L4-05": {
+  "lesson": "kukan-02",
+  "lessonName": "正多面体をしらべよう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-02.js 02d09b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K03-L1-01": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-03.js 03q01",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K03-L1-02": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-03.js 03d02",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K03-L1-03": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-03.js 03d03",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K03-L1-04": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-03.js 03q02",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K03-L1-05": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-03.js 03d01",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K03-L2-01": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-03.js 03d05b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K03-L2-02": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-03.js 03d05a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K03-L2-03": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-03.js 03d04b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K03-L2-04": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-03.js 03q03",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K03-L2-05": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-03.js 03d04a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K03-L3-01": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-03.js 03d08b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K03-L3-02": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-03.js 03d07",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K03-L3-03": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-03.js 03d08a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K03-L3-04": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-03.js 03d08b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K03-L3-05": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-03.js 03d08a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K03-L4-01": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-03.js 03d09b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K03-L4-02": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-03.js 03q05a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K03-L4-03": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-03.js 03q05b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K03-L4-04": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-03.js 03d10",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K03-L4-05": {
+  "lesson": "kukan-03",
+  "lessonName": "2つの直線の位置関係",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-03.js 03d09a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K04-L1-01": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-04.js 04q02",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K04-L1-02": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-04.js 04d01",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K04-L1-03": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-04.js 04d03a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K04-L1-04": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-04.js 04d03b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K04-L1-05": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-04.js 04q03",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K04-L2-01": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-04.js 04q04a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K04-L2-02": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-04.js 04q04b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K04-L2-03": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-04.js 04d05c",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K04-L2-04": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-04.js 04d05a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K04-L2-05": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-04.js 04d06a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K04-L3-01": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-04.js 04d08",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K04-L3-02": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-04.js 04d07",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K04-L3-03": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-04.js 04d08",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K04-L3-04": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-04.js 04d07",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K04-L3-05": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-04.js 04d08",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K04-L4-01": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-04.js 04d10",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K04-L4-02": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-04.js 04d09",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K04-L4-03": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-04.js 04q05",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K04-L4-04": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-04.js 04d10",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K04-L4-05": {
+  "lesson": "kukan-04",
+  "lessonName": "直線と平面、平面と平面",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-04.js 04q05",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K05-L1-01": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-05.js 05q02a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K05-L1-02": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d01",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K05-L1-03": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d03",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K05-L1-04": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-05.js 05q03",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K05-L1-05": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d02a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K05-L2-01": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d05a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K05-L2-02": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d05b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K05-L2-03": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d04a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K05-L2-04": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-05.js 05q04",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K05-L2-05": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d05a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K05-L3-01": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d07b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K05-L3-02": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d07a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K05-L3-03": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d06",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K05-L3-04": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d07b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K05-L3-05": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d07a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K05-L4-01": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-05.js 05q05",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K05-L4-02": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d09c",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K05-L4-03": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d09a",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K05-L4-04": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d09b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K05-L4-05": {
+  "lesson": "kukan-05",
+  "lessonName": "線や面を動かして立体をつくろう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-05.js 05d08a",
+  "distractors": [
+   "near",
+   "step",
+   "near"
+  ]
+ },
+ "J1-SP-K06-L1-01": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-06.js 06q02",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K06-L1-02": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-06.js 06d01",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K06-L1-03": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-06.js 06q01",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K06-L1-04": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-06.js 06q04",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K06-L1-05": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-06.js 06d02",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K06-L2-01": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-06.js 06x01",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K06-L2-02": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-06.js 06q03",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K06-L2-03": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-06.js 06x01",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K06-L2-04": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-06.js 06q03",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K06-L2-05": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-06.js 06x01",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K06-L3-01": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-06.js 06d05a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K06-L3-02": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-06.js 06d04a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K06-L3-03": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-06.js 06d05b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K06-L3-04": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-06.js 06d06",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K06-L3-05": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-06.js 06d04b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K06-L4-01": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-06.js 06d07",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K06-L4-02": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-06.js 06d08b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K06-L4-03": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-06.js 06d08a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K06-L4-04": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-06.js 06d08c",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K06-L4-05": {
+  "lesson": "kukan-06",
+  "lessonName": "立体を正面と真上から見よう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-06.js 06q05",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K07-L1-01": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-07.js 07q01",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K07-L1-02": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-07.js 07d02",
+  "distractors": [
+   "near",
+   "step",
+   "near"
+  ]
+ },
+ "J1-SP-K07-L1-03": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-07.js 07d03",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K07-L1-04": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-07.js 07d01",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K07-L1-05": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-07.js 07q02",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K07-L2-01": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-07.js 07q03",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K07-L2-02": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-07.js 07d04",
+  "distractors": [
+   "near",
+   "step",
+   "near"
+  ]
+ },
+ "J1-SP-K07-L2-03": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-07.js 07q04",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K07-L2-04": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-07.js 07d05a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K07-L2-05": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-07.js 07d05b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K07-L3-01": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-07.js 07d06",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K07-L3-02": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-07.js 07d07",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K07-L3-03": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-07.js 07d08",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K07-L3-04": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-07.js 07d09a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K07-L3-05": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-07.js 07d06",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K07-L4-01": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-07.js 07d09b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K07-L4-02": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-07.js 07q05",
+  "distractors": [
+   "near",
+   "step",
+   "near"
+  ]
+ },
+ "J1-SP-K07-L4-03": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-07.js 07d10",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K07-L4-04": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-07.js 07d09c",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K07-L4-05": {
+  "lesson": "kukan-07",
+  "lessonName": "立体を切り開こう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-07.js 07d09b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K08-L1-01": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-08.js 08q01a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K08-L1-02": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-08.js 08d01a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K08-L1-03": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-08.js 08q01b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K08-L1-04": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-08.js 08d03a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K08-L1-05": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-08.js 08d03b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K08-L2-01": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-08.js 08q04",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K08-L2-02": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-08.js 08q03b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K08-L2-03": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-08.js 08d05a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K08-L2-04": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-08.js 08d05b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K08-L2-05": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-08.js 08d04",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K08-L3-01": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-08.js 08d07",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K08-L3-02": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-08.js 08d08",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K08-L3-03": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-08.js 08d06",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K08-L3-04": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-08.js 08d07",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K08-L3-05": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-08.js 08d08",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K08-L4-01": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-08.js 08d09a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K08-L4-02": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-08.js 08q05b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K08-L4-03": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-08.js 08q05a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K08-L4-04": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-08.js 08q05c",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K08-L4-05": {
+  "lesson": "kukan-08",
+  "lessonName": "立体当てクイズ",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-08.js 08d09c",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K09-L1-01": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-09.js 09d03",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K09-L1-02": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-09.js 09d01",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K09-L1-03": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-09.js 09q03a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K09-L1-04": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-09.js 09q01",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K09-L1-05": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-09.js 09q03b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K09-L2-01": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-09.js 09d05",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K09-L2-02": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-09.js 09d04",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K09-L2-03": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-09.js 09d06",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K09-L2-04": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-09.js 09d05",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K09-L2-05": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-09.js 09d04",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K09-L3-01": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-09.js 09d07b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K09-L3-02": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-09.js 09d07a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K09-L3-03": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-09.js 09d08",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K09-L3-04": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-09.js 09d07b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K09-L3-05": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-09.js 09d07a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K09-L4-01": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-09.js 09d09",
+  "distractors": [
+   "near",
+   "step",
+   "near"
+  ]
+ },
+ "J1-SP-K09-L4-02": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-09.js 09q05",
+  "distractors": [
+   "step",
+   "step",
+   "step"
+  ]
+ },
+ "J1-SP-K09-L4-03": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-09.js 09d10",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K09-L4-04": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-09.js 09d09",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K09-L4-05": {
+  "lesson": "kukan-09",
+  "lessonName": "角柱・円柱の表面積",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-09.js 09q05",
+  "distractors": [
+   "step",
+   "step",
+   "step"
+  ]
+ },
+ "J1-SP-K10-L1-01": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-10.js 10q04",
+  "distractors": [
+   "near",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K10-L1-02": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-10.js 10q03a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K10-L1-03": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-10.js 10q02",
+  "distractors": [
+   "family",
+   "family",
+   "near"
+  ]
+ },
+ "J1-SP-K10-L1-04": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-10.js 10d01",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K10-L1-05": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-10.js 10q03b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K10-L2-01": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-10.js 10d04",
+  "distractors": [
+   "near",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K10-L2-02": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-10.js 10d05",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K10-L2-03": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-10.js 10d06b",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K10-L2-04": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-10.js 10d06a",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K10-L2-05": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-10.js 10d04",
+  "distractors": [
+   "near",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K10-L3-01": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-10.js 10d08",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K10-L3-02": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-10.js 10d07",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K10-L3-03": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-10.js 10d08",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K10-L3-04": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-10.js 10d07",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K10-L3-05": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-10.js 10d08",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K10-L4-01": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-10.js 10d09b",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K10-L4-02": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-10.js 10d10",
+  "distractors": [
+   "near",
+   "step",
+   "step"
+  ]
+ },
+ "J1-SP-K10-L4-03": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-10.js 10d09c",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K10-L4-04": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-10.js 10q05b",
+  "distractors": [
+   "near",
+   "step",
+   "near"
+  ]
+ },
+ "J1-SP-K10-L4-05": {
+  "lesson": "kukan-10",
+  "lessonName": "角錐・円錐の表面積",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-10.js 10q05a",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K11-L1-01": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-11.js 11d02",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K11-L1-02": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-11.js 11d01a",
+  "distractors": [
+   "family",
+   "near",
+   "family"
+  ]
+ },
+ "J1-SP-K11-L1-03": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-11.js 11q01",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K11-L1-04": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-11.js 11q03",
+  "distractors": [
+   "near",
+   "family",
+   "near"
+  ]
+ },
+ "J1-SP-K11-L1-05": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-11.js 11d03",
+  "distractors": [
+   "near",
+   "near",
+   "family"
+  ]
+ },
+ "J1-SP-K11-L2-01": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-11.js 11d04",
+  "distractors": [
+   "family",
+   "near",
+   "family"
+  ]
+ },
+ "J1-SP-K11-L2-02": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-11.js 11q04",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K11-L2-03": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-11.js 11q02",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K11-L2-04": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-11.js 11d05",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K11-L2-05": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-11.js 11d06",
+  "distractors": [
+   "family",
+   "near",
+   "family"
+  ]
+ },
+ "J1-SP-K11-L3-01": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-11.js 11d07",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K11-L3-02": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-11.js 11d09",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K11-L3-03": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-11.js 11d08a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K11-L3-04": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-11.js 11d08b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K11-L3-05": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-11.js 11d07",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K11-L4-01": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-11.js 11d11b",
+  "distractors": [
+   "step",
+   "step",
+   "near"
+  ]
+ },
+ "J1-SP-K11-L4-02": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-11.js 11q05",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K11-L4-03": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-11.js 11d11a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K11-L4-04": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-11.js 11d10",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K11-L4-05": {
+  "lesson": "kukan-11",
+  "lessonName": "錐体の体積は柱体の何分のいくつ？",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-11.js 11d11b",
+  "distractors": [
+   "near",
+   "step",
+   "step"
+  ]
+ },
+ "J1-SP-K12-L1-01": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-12.js 12d01b",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K12-L1-02": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-12.js 12d03",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K12-L1-03": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-12.js 12q03",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K12-L1-04": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-12.js 12d01c",
+  "distractors": [
+   "family",
+   "family",
+   "near"
+  ]
+ },
+ "J1-SP-K12-L1-05": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-12.js 12q01",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K12-L2-01": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-12.js 12w01",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K12-L2-02": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-12.js 12d06a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K12-L2-03": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-12.js 12q02",
+  "distractors": [
+   "near",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K12-L2-04": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-12.js 12d04",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K12-L2-05": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-12.js 12d05",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K12-L3-01": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-12.js 12d08a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K12-L3-02": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-12.js 12d07a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K12-L3-03": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-12.js 12d07b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K12-L3-04": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-12.js 12d08b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K12-L3-05": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-12.js 12d09",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K12-L4-01": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-12.js 12d11",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K12-L4-02": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-12.js 12q05",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K12-L4-03": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-12.js 12d10a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K12-L4-04": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-12.js 12d10b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K12-L4-05": {
+  "lesson": "kukan-12",
+  "lessonName": "球の表面積と体積",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-12.js 12d11",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K13-L1-01": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-13.js 13d02",
+  "distractors": [
+   "family",
+   "family",
+   "near"
+  ]
+ },
+ "J1-SP-K13-L1-02": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-13.js 13q02",
+  "distractors": [
+   "near",
+   "family",
+   "near"
+  ]
+ },
+ "J1-SP-K13-L1-03": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-13.js 13d03a",
+  "distractors": [
+   "near",
+   "near",
+   "family"
+  ]
+ },
+ "J1-SP-K13-L1-04": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-13.js 13d03b",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K13-L1-05": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-13.js 13q01",
+  "distractors": [
+   "family",
+   "near",
+   "family"
+  ]
+ },
+ "J1-SP-K13-L2-01": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-13.js 13d04",
+  "distractors": [
+   "near",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K13-L2-02": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-13.js 13q04",
+  "distractors": [
+   "family",
+   "family",
+   "family"
+  ]
+ },
+ "J1-SP-K13-L2-03": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-13.js 13d06",
+  "distractors": [
+   "step",
+   "step",
+   "near"
+  ]
+ },
+ "J1-SP-K13-L2-04": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-13.js 13d05",
+  "distractors": [
+   "family",
+   "family",
+   "near"
+  ]
+ },
+ "J1-SP-K13-L2-05": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-13.js 13d04",
+  "distractors": [
+   "family",
+   "family",
+   "near"
+  ]
+ },
+ "J1-SP-K13-L3-01": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-13.js 13d09b",
+  "distractors": [
+   "near",
+   "step",
+   "step"
+  ]
+ },
+ "J1-SP-K13-L3-02": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-13.js 13d08",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K13-L3-03": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-13.js 13w02b",
+  "distractors": [
+   "step",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K13-L3-04": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-13.js 13w02a",
+  "distractors": [
+   "step",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K13-L3-05": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-13.js 13d09a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K13-L4-01": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-13.js 13d10a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K13-L4-02": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-13.js 13d10c",
+  "distractors": [
+   "near",
+   "step",
+   "near"
+  ]
+ },
+ "J1-SP-K13-L4-03": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-13.js 13q05",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K13-L4-04": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-13.js 13d10b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K13-L4-05": {
+  "lesson": "kukan-13",
+  "lessonName": "表面積と体積を求める練習",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-13.js 13d11",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K14-L1-01": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-14.js 14q02",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K14-L1-02": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-14.js 14q01",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K14-L1-03": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-14.js 14w02",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K14-L1-04": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-14.js 14d01",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K14-L1-05": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-14.js 14q02",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K14-L2-01": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-14.js 14q04",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K14-L2-02": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-14.js 14d05",
+  "distractors": [
+   "near",
+   "step",
+   "step"
+  ]
+ },
+ "J1-SP-K14-L2-03": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-14.js 14d03b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K14-L2-04": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-14.js 14d04",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K14-L2-05": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-14.js 14q03",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K14-L3-01": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-14.js 14d07b",
+  "distractors": [
+   "step",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K14-L3-02": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-14.js 14d06c",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K14-L3-03": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-14.js 14d07a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K14-L3-04": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-14.js 14d06b",
+  "distractors": [
+   "near",
+   "step",
+   "near"
+  ]
+ },
+ "J1-SP-K14-L3-05": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-14.js 14d06a",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K14-L4-01": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-14.js 14q05",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K14-L4-02": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-14.js 14d08b",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K14-L4-03": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-14.js 14d08a",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K14-L4-04": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-14.js 14q05",
+  "distractors": [
+   "near",
+   "step",
+   "near"
+  ]
+ },
+ "J1-SP-K14-L4-05": {
+  "lesson": "kukan-14",
+  "lessonName": "身のまわりの立体の量を見積もろう",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-14.js 14d08b",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K15-L1-01": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d01b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K15-L1-02": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-15.js 15q01b",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K15-L1-03": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d02",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K15-L1-04": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-15.js 15q01a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K15-L1-05": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 1,
+  "levelName": "簡単",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d01a",
+  "distractors": [
+   "template",
+   "template",
+   "template"
+  ]
+ },
+ "J1-SP-K15-L2-01": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-15.js 15w02a",
+  "distractors": [
+   "step",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K15-L2-02": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d03b",
+  "distractors": [
+   "step",
+   "step",
+   "near"
+  ]
+ },
+ "J1-SP-K15-L2-03": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d04b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K15-L2-04": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d03c",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K15-L2-05": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 2,
+  "levelName": "普通",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d05a",
+  "distractors": [
+   "step",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K15-L3-01": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d06b",
+  "distractors": [
+   "step",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K15-L3-02": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d06a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K15-L3-03": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d07b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K15-L3-04": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d07a",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K15-L3-05": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 3,
+  "levelName": "難しい",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d07c",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K15-L4-01": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d08b",
+  "distractors": [
+   "near",
+   "near",
+   "step"
+  ]
+ },
+ "J1-SP-K15-L4-02": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d09a",
+  "distractors": [
+   "near",
+   "family",
+   "near"
+  ]
+ },
+ "J1-SP-K15-L4-03": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-15.js 15q05",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K15-L4-04": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d08a",
+  "distractors": [
+   "step",
+   "near",
+   "near"
+  ]
+ },
+ "J1-SP-K15-L4-05": {
+  "lesson": "kukan-15",
+  "lessonName": "空間図形のまとめ",
+  "level": 4,
+  "levelName": "鬼",
+  "from": "ikkan/kotsu/content/kukan-15.js 15d09b",
+  "distractors": [
+   "near",
+   "near",
+   "near"
+  ]
+ }
+}
