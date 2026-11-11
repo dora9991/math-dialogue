@@ -3,9 +3,11 @@
 中1「空間図形」の解説（動画）15本それぞれに、**簡単・普通・難しい・入試レベル** の4段階 × 5問、合わせて **300問** の演習です。
 コツコツくんの固定問題（J1 の DB 問題）と同じ形（`{ id, u, s, d, q, c, e, h }`）で書き出してあります。
 
+- **コツコツくんへの取り込み（別セッション向け）：`IMPORT.md`**（貼りつけ用の依頼文、2つの取り込み方、取り込み後の検査つき）
 - 確認ページ：`review.html`（ブラウザで開くと、解説・段階で絞って300問を見られます）
 - 問題データ：`bank.json`（300問）／`meta.json`（各問題が、ikkan のどのテンプレートから来たか）
 - 既存の演習150問の振り分け案：`existing-redistribution.json`
+- アプリに入れる形：`import/problems.json`（300問）、`import/video-map.json`（解説ごとの一覧）
 
 ## 何をどう作ったか
 
@@ -43,6 +45,8 @@ node ikkan/kukan-bank/build.mjs          # bank.json, meta.json を書く（乱�
 node ikkan/kukan-bank/verify.mjs         # 機械検査
 node ikkan/kukan-bank/redistribute.mjs   # 既存150問の振り分け案
 node ikkan/kukan-bank/make-review.mjs    # review.html
+node ikkan/kukan-bank/export-for-app.mjs # import/problems.json, import/video-map.json（--fold-level4、--fill-m=ID の指定もできる）
+node ikkan/kukan-bank/check-import.mjs <取りこんだあとのビルド結果のフォルダ>   # 300問が入っているかの簡易検査
 DEBUG_FAILS=1 node ikkan/kukan-bank/build.mjs   # 問題にできなかったテンプレートと、その理由
 ```
 
@@ -50,7 +54,7 @@ DEBUG_FAILS=1 node ikkan/kukan-bank/build.mjs   # 問題にできなかったテ
 
 ## コツコツくんに入れるときの注意（要確認）
 
-コツコツくんの本体（ソース）はこのリポジトリに無く、公開版（gh-pages のビルド済みファイル）にしか無いので、取り込みはしていません。入れるときに確かめてほしいことです。
+コツコツくんの本体（ソース）はこのリポジトリに無く、公開版（gh-pages のビルド済みファイル）にしか無いので、取り込みはしていません。ソースを持つセッションが取り込めるように、手順と依頼文は `IMPORT.md` にまとめました。入れるときに確かめてほしいことです。
 
 1. **難易度 `d=4`（入試レベル）**：公開版で確認できたのは d=1〜3 までです。d=4 を受けつけるか、受けつけない場合は d=3 に寄せるかを決める必要があります。
 2. **解説との紐づけ（`l`）**：既存の問題には解説の番号を持つ項目がありません。`l`（または `s`）で解説に結びつける仕組みを、アプリ側に足す必要があります。
