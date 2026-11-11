@@ -78,7 +78,7 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
 </style></head><body>
 <main>
   <h1>空間図形 演習バンク</h1>
-  <p class="lead">中1「空間図形」の解説15本それぞれに、簡単・普通・難しい・鬼の4段階を5問ずつ。合わせて300問です。答えは、ikkan の問題テンプレートが計算で出したものです。</p>
+  <p class="lead">中1「空間図形」の解説15本それぞれに、簡単・普通・難しい・入試レベルの4段階を5問ずつ。合わせて300問です。答えは、ikkan の問題テンプレートが計算で出したものです。</p>
   <p class="status"><b>コツコツくんにはまだ入れていません。</b>アプリの本体（ソース）がこのリポジトリに無いため、取り込みは先生側の作業になります。</p>
   <ul class="summary">
     <li><b>300問</b><span>15解説 × 4段階 × 5問</span></li>
@@ -89,7 +89,7 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <div class="bar" role="group" aria-label="絞り込み">
     <label for="lesson-sel">解説</label>
     <select id="lesson-sel"><option value="all">15本すべて</option><option value="kukan-01">01 立体を仲間分けしよう</option><option value="kukan-02">02 正多面体をしらべよう</option><option value="kukan-03">03 2つの直線の位置関係</option><option value="kukan-04">04 直線と平面、平面と平面</option><option value="kukan-05">05 線や面を動かして立体をつくろう</option><option value="kukan-06">06 立体を正面と真上から見よう</option><option value="kukan-07">07 立体を切り開こう</option><option value="kukan-08">08 立体当てクイズ</option><option value="kukan-09">09 角柱・円柱の表面積</option><option value="kukan-10">10 角錐・円錐の表面積</option><option value="kukan-11">11 錐体の体積は柱体の何分のいくつ？</option><option value="kukan-12">12 球の表面積と体積</option><option value="kukan-13">13 表面積と体積を求める練習</option><option value="kukan-14">14 身のまわりの立体の量を見積もろう</option><option value="kukan-15">15 空間図形のまとめ</option></select>
-    <div class="chips"><button type="button" class="chip" data-d="all" aria-pressed="true">全段階</button><button type="button" class="chip" data-d="1" aria-pressed="false">簡単</button><button type="button" class="chip" data-d="2" aria-pressed="false">普通</button><button type="button" class="chip" data-d="3" aria-pressed="false">難しい</button><button type="button" class="chip" data-d="4" aria-pressed="false">鬼</button></div>
+    <div class="chips"><button type="button" class="chip" data-d="all" aria-pressed="true">全段階</button><button type="button" class="chip" data-d="1" aria-pressed="false">簡単</button><button type="button" class="chip" data-d="2" aria-pressed="false">普通</button><button type="button" class="chip" data-d="3" aria-pressed="false">難しい</button><button type="button" class="chip" data-d="4" aria-pressed="false">入試レベル</button></div>
     <label><input type="checkbox" id="show-e" checked> 解説を開く</label>
   </div>
 
@@ -186,31 +186,31 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <details><summary>解説とヒント</summary><p class="e">辺は 3n 本。3n = 18 より n = 6（六角柱）。<br>頂点は 2n = 12。</p><p class="h"><b>ヒント</b> 角柱の辺は 3n 本（n 角柱のとき）。まず、何角柱かを求めよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-01" data-d="4" id="J1-SP-K01-L4-01">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K01-L4-01</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K01-L4-01</span></header>
   <p class="q">面の数が 6、辺の数が 10 の多面体がある。頂点の数は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">2個<span class="why">途中の計算結果「2」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">6個</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">4個</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">3個</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">頂点を V とすると　V − 辺 + 面 = 2<br>V − 10 + 6 = 2<br>V = 2 + 10 − 6 = 6</p><p class="h"><b>ヒント</b> （頂点の数）−（辺の数）+（面の数）= 2 が、いつでも成り立つ。</p></details>
 </article>
 <article class="prob" data-l="kukan-01" data-d="4" id="J1-SP-K01-L4-02">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K01-L4-02</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K01-L4-02</span></header>
   <p class="q">立方体の 8つの角を、それぞれ、その角に集まる 3本の辺を 3等分する点（角に近いほうの点）を通る平面で、すべて切り落とした。できた立体の、頂点の数は？（切り口は、となり合う切り口と重ならない）</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">24個</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">14個<span class="why">途中の計算結果「14」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">23個</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">36個<span class="why">途中の計算結果「36」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">面 … もとの面 6 + 切り口 8 = 14<br>頂点 … 切り口の三角形の頂点 3×8 = 24<br>辺 … もとの辺 12 + 切り口の辺 3×8 = 36<br>確かめ　24 − 36 + 14 = 2</p><p class="h"><b>ヒント</b> もとの面・辺と、切り口でふえた面・辺に分けて数えよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-01" data-d="4" id="J1-SP-K01-L4-03">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K01-L4-03</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K01-L4-03</span></header>
   <p class="q">面がすべて三角形で、面の数が 12 の多面体がある。頂点の数は？（「頂点−辺+面＝2」を使ってよい）</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">8個</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">12個</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">18個<span class="why">途中の計算結果「18」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">6個</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">辺を面ごとに数えると 3×12 = 36。どの辺も 2つの面に使われるので 36÷2 = 18（本）<br>頂点は　V − 18 + 12 = 2　より　V = 8</p><p class="h"><b>ヒント</b> 辺を面ごとに数えると、どの辺も 2つの面に使われている。</p></details>
 </article>
 <article class="prob" data-l="kukan-01" data-d="4" id="J1-SP-K01-L4-04">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K01-L4-04</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K01-L4-04</span></header>
   <p class="q">ある角柱の、面の数と辺の数と頂点の数を、すべて合わせると 32 になった。この角柱は、□角柱。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">7</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">5</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">6</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">4</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">n 角柱の面は n+2、辺は 3n、頂点は 2n。<br>合計は (n+2) + 3n + 2n = 6n + 2<br>6n + 2 = 32 より n = 5</p><p class="h"><b>ヒント</b> n 角柱の面・辺・頂点を、n を使って表して、合計の式をつくろう。</p></details>
 </article>
 <article class="prob" data-l="kukan-01" data-d="4" id="J1-SP-K01-L4-05">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K01-L4-05</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K01-L4-05</span></header>
   <p class="q">面の数が 11、辺の数が 27 の多面体がある。頂点の数は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">17個</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">22個</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">18個</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">27個</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">頂点を V とすると　V − 辺 + 面 = 2<br>V − 27 + 11 = 2<br>V = 2 + 27 − 11 = 18</p><p class="h"><b>ヒント</b> （頂点の数）−（辺の数）+（面の数）= 2 が、いつでも成り立つ。</p></details>
@@ -309,31 +309,31 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <details><summary>解説とヒント</summary><p class="e">正十二面体の面は 12個 → 面の中心 12個が、新しい立体の頂点。<br>正十二面体の頂点は 20個。その1つにつき、新しい面が 1つできるので、面は 20個。<br>新しい立体の1つの頂点には、もとの面の形の角の数（5つ）の面が集まる。<br>面 20個、正三角形、頂点に 5つ集まる → 正二十面体。</p><p class="h"><b>ヒント</b> 新しい立体の頂点は、もとの面の中心。面は、もとの頂点1つにつき、1つできる。</p></details>
 </article>
 <article class="prob" data-l="kukan-02" data-d="4" id="J1-SP-K02-L4-01">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K02-L4-01</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K02-L4-01</span></header>
   <p class="q">正四面体の 4個の頂点を、それぞれ、その頂点に集まる辺を 3等分する点（頂点に近いほうの点）を通る平面で、すべて切り落とした。できた立体の、面の数は？（切り口は、となり合う切り口と重ならない）</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">11個</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">18個<span class="why">途中の計算結果「18」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">8個</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">12個<span class="why">途中の計算結果「12」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">面 … もとの面 4 + 切り口 4 = 8<br>頂点 … 切り口の三角形の頂点 3×4 = 12<br>辺 … もとの辺 6 + 切り口の辺 3×4 = 18<br>確かめ　12 − 18 + 8 = 2</p><p class="h"><b>ヒント</b> もとの面・辺と、切り口でふえた面・辺に分けて数えよう。切り口の形は、頂点に集まる辺の数と同じ角形になる。</p></details>
 </article>
 <article class="prob" data-l="kukan-02" data-d="4" id="J1-SP-K02-L4-02">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K02-L4-02</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K02-L4-02</span></header>
   <p class="q">面がすべて正方形の正多面体がある。辺の数が 12本のとき、頂点の数は？（頂点−辺+面＝2 を使ってよい）</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">6個<span class="why">途中の計算結果「6」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">10個</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">8個</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">11個</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">面の数を x とすると、辺は 4x÷2 = 12　より　x = 6<br>頂点−辺+面＝2 より　頂点 = 2 + 12 − 6 = 8<br>頂点の数は 8。</p><p class="h"><b>ヒント</b> 面1つに辺は 4本。面の数を x とすると、面ごとに数えて、あわせて 4x 本。1本の辺は、いくつの面に共通かな？</p></details>
 </article>
 <article class="prob" data-l="kukan-02" data-d="4" id="J1-SP-K02-L4-03">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K02-L4-03</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K02-L4-03</span></header>
   <p class="q">1つの頂点に、正三角形（1つの角は 60°）を何個か集めて、立体の頂点をつくる。集まる角の和が 360° より小さいときだけ、立体の頂点になる（360° ちょうどだと平らに、大きいと重なってしまう）。最大で、何個まで集められるか。</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">5個</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">8個</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">6個</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">7個</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">60°×5 = 300° は、360° より小さい。<br>60°×6 = 360° は、360° ちょうどで、平らになる。<br>だから、最大で 5個。</p><p class="h"><b>ヒント</b> 集める数を 3個、4個、…とふやして、角の和を計算していこう。360° ちょうどは、だめ。</p></details>
 </article>
 <article class="prob" data-l="kukan-02" data-d="4" id="J1-SP-K02-L4-04">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K02-L4-04</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K02-L4-04</span></header>
   <p class="q">正二十面体の 12個の頂点を、それぞれ、その頂点に集まる辺を 3等分する点（頂点に近いほうの点）を通る平面で、すべて切り落とした。できた立体の、面の数は？（切り口は、となり合う切り口と重ならない）</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">90個<span class="why">途中の計算結果「90」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">32個</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">48個</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">60個<span class="why">途中の計算結果「60」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">面 … もとの面 20 + 切り口 12 = 32<br>頂点 … 切り口の五角形の頂点 5×12 = 60<br>辺 … もとの辺 30 + 切り口の辺 5×12 = 90<br>確かめ　60 − 90 + 32 = 2</p><p class="h"><b>ヒント</b> もとの面・辺と、切り口でふえた面・辺に分けて数えよう。切り口の形は、頂点に集まる辺の数と同じ角形になる。</p></details>
 </article>
 <article class="prob" data-l="kukan-02" data-d="4" id="J1-SP-K02-L4-05">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K02-L4-05</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K02-L4-05</span></header>
   <p class="q">1つの頂点に、正六角形（1つの角は 120°）を 3個集める。立体の頂点になれるかどうかについて、正しい説明はどれか。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">角の和が 360° より小さいが、立体の頂点にはならない。</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">角の和が 360° にちょうどなり、平らになるので、立体の頂点にならない。</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">角の和が 360° より大きく、重なるので、立体の頂点にならない。</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">角の和が 360° より小さいので、立体の頂点になる。</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">角の和は 120°×3 = 360°。<br>360° を 360° とくらべると、ちょうど同じ。<br>角の和が 360° にちょうどなり、平らになるので、立体の頂点にならない。</p><p class="h"><b>ヒント</b> 集まる角の和を計算して、360° とくらべよう。</p></details>
@@ -432,31 +432,31 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <details><summary>解説とヒント</summary><p class="e">対角線 AE の両はし（A、E）を通る辺が、対角線と交わる。<br>AB、AC、AD、BE、DE、EF（6本）。</p><p class="h"><b>ヒント</b> 対角線 AE の両はし（A、E）を通る辺を、数えよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-03" data-d="4" id="J1-SP-K03-L4-01">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K03-L4-01</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K03-L4-01</span></header>
   <p class="q">立方体 ABCD−EFGH（面 ABCD が下の面、面 EFGH が上の面。A・B・C・D の真上が、それぞれ E・F・G・H）で、面の対角線 BG とねじれの位置にある面の対角線は、次のうちどれか。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">対角線 EG</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">対角線 AH</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">対角線 AF</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">対角線 CF</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">対角線 AH … 平行<br>対角線 EG … 交わる<br>対角線 CF … 交わる<br>対角線 AF … ねじれの位置　← これが答え</p><p class="h"><b>ヒント</b> 同じ頂点を通る対角線は、交わる。同じ面の上にある対角線も交わる。向かい合う面で同じ向きなら、平行。</p></details>
 </article>
 <article class="prob" data-l="kukan-03" data-d="4" id="J1-SP-K03-L4-02">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K03-L4-02</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K03-L4-02</span></header>
   <p class="q">直方体 ABCD−EFGH（面 ABCD が下の面、面 EFGH が上の面。A・B・C・D の真上が、それぞれ E・F・G・H）で、辺 FG ともねじれの位置にあり、辺 AB ともねじれの位置にある辺は、全部で何本あるか。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">2本</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">3本</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">5本</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">D</span><span class="txt">1本</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">辺 FG とねじれの位置 … AB、AE、CD、DH<br>辺 AB とねじれの位置 … CG、DH、EH、FG<br>どちらにもあてはまる辺 … DH（1本）。</p><p class="h"><b>ヒント</b> 辺ごとに、ねじれの位置にある辺を全部書き出して、どちらにも入っている辺をさがそう。</p></details>
 </article>
 <article class="prob" data-l="kukan-03" data-d="4" id="J1-SP-K03-L4-03">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K03-L4-03</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K03-L4-03</span></header>
   <p class="q">直方体 ABCD−EFGH（面 ABCD が下の面、面 EFGH が上の面。A・B・C・D の真上が、それぞれ E・F・G・H）で、辺 EF ともねじれの位置にあり、辺 AD ともねじれの位置にある辺は、次のうちどれか。</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">辺 CG</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">辺 GH</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">辺 EH</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">辺 DH</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">辺 DH … 辺 EF とはねじれの位置、辺 AD とは垂直に交わる<br>辺 EH … 辺 EF とは垂直に交わる、辺 AD とは平行<br>辺 GH … 辺 EF とは平行、辺 AD とはねじれの位置<br>辺 CG … 辺 EF とはねじれの位置、辺 AD とはねじれの位置　← 両方ねじれの位置</p><p class="h"><b>ヒント</b> 選択肢の辺を1つずつ、辺 EF との関係と、辺 AD との関係に分けて調べよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-03" data-d="4" id="J1-SP-K03-L4-04">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K03-L4-04</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K03-L4-04</span></header>
   <p class="q">立方体 ABCD−EFGH（面 ABCD が下の面、面 EFGH が上の面。A・B・C・D の真上が、それぞれ E・F・G・H）の 12本の辺から 2本を選ぶとき、ねじれの位置にある 2本の選び方は、何通りあるか。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">25通り</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">24通り</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">26通り</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">48通り<span class="why">途中の計算結果「48」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">どの辺も、ねじれの位置にある辺は 4本。<br>あわせて 12×4 = 48（組）<br>同じ組を 2回ずつ数えているので　48÷2 = 24（通り）</p><p class="h"><b>ヒント</b> 1本の辺について、ねじれの位置にある辺の数を数えて、全部の辺について合計する。同じ組を、2回ずつ数えていることに注意。</p></details>
 </article>
 <article class="prob" data-l="kukan-03" data-d="4" id="J1-SP-K03-L4-05">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K03-L4-05</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K03-L4-05</span></header>
   <p class="q">立方体 ABCD−EFGH（面 ABCD が下の面、面 EFGH が上の面。A・B・C・D の真上が、それぞれ E・F・G・H）で、面の対角線 FH と BE の位置関係として、正しいものはどれか。（「垂直に交わる」は、2直線が交わり、その角が 90° のときにだけ使う）</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">平行</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">ねじれの位置</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">交わる</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">垂直に交わる</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">FH は 面 EFGH の対角線、BE は 面 ABFE の対角線。<br>共通の頂点がなく（対角線は、頂点以外では交わらない）、向きもちがうので、交わらず、平行でもない。<br>同じ平面上にないので、ねじれの位置。<br>答えは「ねじれの位置」。</p><p class="h"><b>ヒント</b> 2本が同じ頂点を通るか、向かい合う面の上で同じ向きか、どちらでもないか、を調べよう。</p></details>
@@ -555,31 +555,31 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <details><summary>解説とヒント</summary><p class="e">頂点 O から底面にひいた線分 OH は、底面の中心 H で底面と交わる。<br>OH は、底面 ABCD と垂直。<br>高さ ＝ 頂点と底面とのきょり ＝ 頂点から底面にひいた垂線の長さ。だから、OH が高さといえるのは、OH が底面に垂直だから。</p><p class="h"><b>ヒント</b> 角錐の高さは、頂点と底面とのきょり。点と面のきょりは、何の長さだったかな？</p></details>
 </article>
 <article class="prob" data-l="kukan-04" data-d="4" id="J1-SP-K04-L4-01">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K04-L4-01</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K04-L4-01</span></header>
   <p class="q">三角柱 ABC−DEF（底面 ABC・DEF は合同な正三角形。D・E・F は、A・B・C の真上）の 9本の辺と 5つの面について、辺と面が平行になる組（辺が面の上にあるものは、数えない）は、全部で何組あるか。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">11組</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">9組</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">13組</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">6組</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">どの辺も、平行な面は 1つ。<br>9×1 = 9（組）</p><p class="h"><b>ヒント</b> 1本の辺について、平行な面がいくつあるか数えて、全部の辺について合計しよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-04" data-d="4" id="J1-SP-K04-L4-02">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K04-L4-02</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K04-L4-02</span></header>
   <p class="q">机の上に、ノートを開いて立てる。とじ目の直線 ℓ は、机の面と点 O で交わっている。表紙の下のふち m、n は、どちらも机の面の上にあって O を通り、ℓ と m、ℓ と n は、どちらも垂直である。ℓ が机の面に垂直だと言い切るために、じゅうぶんな理由はどれか。（どの選択肢も、事実としては正しい）</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">ℓ は、机の面と点 O で交わっているから。</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">ℓ は、机の面の上の 1本の直線 m と垂直だから。</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">m と n は、机の面の上の、O で交わる 2直線で、ℓ は、そのどちらとも垂直だから。</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">ℓ は、表紙の面の上にあるから。</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">ℓ が平面に垂直だと言い切れるのは、平面の上の、交わる 2直線に垂直なとき。<br>m、n は、机の面の上で O を通る（交わる）2直線で、ℓ は、そのどちらとも垂直。だから、ℓ は机の面に垂直。<br>「1本だけに垂直」「1点で交わっているだけ」「表紙の上にある」「表紙の1辺」は、事実でも、ℓ がまだたおれるので、言い切るには、じゅうぶんでない。</p><p class="h"><b>ヒント</b> 平面に垂直と言い切るには、平面の上の、何本の、どんな直線に垂直であればよいか。本数と、交わり方に目をつけよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-04" data-d="4" id="J1-SP-K04-L4-03">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K04-L4-03</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K04-L4-03</span></header>
   <p class="q">直方体 ABCD−EFGH（面 ABCD が下の面、面 EFGH が上の面。A・B・C・D の真上が、それぞれ E・F・G・H）で、辺 DH が 面 ABCD に垂直だと言い切るために、じゅうぶんな理由はどれか。（どの選択肢も、事実としては正しい）</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">辺 DH は、面 ABCD と点 D で交わっているから。</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">辺 DH は、面 ABCD 上の、D で交わる 2直線 CD、AD と垂直だから。</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">辺 DH は、面 ABCD 上の 1本の直線 CD と垂直だから。</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">辺 DH は、面 ABCD と垂直な 面 DCGH の上にあるから。</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">辺 DH は、面 ABCD 上の CD、AD と、D で垂直に交わっている。<br>CD と AD は、点 D で交わる 2直線。交わる 2直線に垂直だから、辺 DH は 面 ABCD に垂直。<br>1本だけに垂直、面に垂直な面の上にあるだけ、1点で交わっているだけでは、辺がたおれるので、言い切るには、じゅうぶんでない。</p><p class="h"><b>ヒント</b> 平面に垂直と言い切るには、平面の上の、何本の、どんな直線に垂直であればよいか。本数と、交わり方に目をつけよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-04" data-d="4" id="J1-SP-K04-L4-04">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K04-L4-04</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K04-L4-04</span></header>
   <p class="q">直方体 ABCD−EFGH（面 ABCD が下の面、面 EFGH が上の面。A・B・C・D の真上が、それぞれ E・F・G・H）の 12本の辺と 6つの面について、辺と面が平行になる組（辺が面の上にあるものは、数えない）は、全部で何組あるか。</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">24組</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">36組</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">26組</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">22組</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">どの辺も、平行な面は 2つ。<br>12×2 = 24（組）</p><p class="h"><b>ヒント</b> 1本の辺について、平行な面がいくつあるか数えて、全部の辺について合計しよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-04" data-d="4" id="J1-SP-K04-L4-05">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K04-L4-05</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K04-L4-05</span></header>
   <p class="q">空間に、直線 ℓ と平面 P があり、ℓ は P と点 O で交わっている。ℓ は、O を通る P 上の、別々の 2本の直線 m、n と垂直である。このことだけから、ℓ と P の関係について、いえることはどれか。</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">垂直である</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">平行である</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">垂直かどうかは、これだけでは言い切れない</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">P の上にある</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">ℓ は、O を通る P 上の、別々の 2本の直線 m、n と垂直である。<br>O を通る別々の 2本の直線 m、n は、O で交わる 2直線。交わる 2直線に垂直だから、ℓ ⊥ P と言い切れる。<br>ℓ は P と点 O で交わっているので、平行でも、P の上にあるのでもない。<br>答えは「垂直である」。</p><p class="h"><b>ヒント</b> 平面に垂直と言い切るには、平面の上の、何本の、どんな直線に垂直であればよいか。本数と、交わり方に目をつけよう。</p></details>
@@ -678,31 +678,31 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <details><summary>解説とヒント</summary><p class="e">切り口の横の長さ 8cm は、底面の直径。<br>半径は 8÷2 = 4（cm）。</p><p class="h"><b>ヒント</b> 軸をふくむ平面で切った長方形の横の長さは、底面の円の、半径か直径か。</p></details>
 </article>
 <article class="prob" data-l="kukan-05" data-d="4" id="J1-SP-K05-L4-01">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K05-L4-01</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K05-L4-01</span></header>
   <p class="q">縦 7cm、横 4cm の長方形を、直線 ℓ を軸として1回転させる。長方形の縦の辺は ℓ と平行で、ℓ から長方形までは 1cm はなれている。軸に垂直な平面で、上下の底面のあいだで切ったとき、切り口の面積は □π cm²。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">26</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">24</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">25</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">29</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">外の円の半径 1+4 = 5（cm）、中の円の半径 1cm。<br>π×5² − π×1² = 25π − π = 24π（cm²）。</p><p class="h"><b>ヒント</b> 外の円の半径は、軸から長方形のいちばん遠い辺までのきょり。中の円の半径は、軸から長方形までのはなれ。</p></details>
 </article>
 <article class="prob" data-l="kukan-05" data-d="4" id="J1-SP-K05-L4-02">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K05-L4-02</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K05-L4-02</span></header>
   <p class="q">L字形がある。横 6cm・縦 3cm の長方形（下）の上に、横 5cm・縦 4cm の長方形（上）を、左のはしをそろえてのせた形で、左のはしの辺（長さ 7cm）が直線 ℓ の上にある。これを、直線 ℓ を軸として1回転させてできる立体は、どんな形か。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">半径 3cm・高さ 6cm の円柱の上に、半径 4cm・高さ 5cm の円柱をのせた形</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">半径 6cm・高さ 3cm の円柱の上に、半径 5cm・高さ 4cm の円柱をのせた形</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">半径 6cm・高さ 4cm の円柱の上に、半径 5cm・高さ 3cm の円柱をのせた形</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">半径 5cm・高さ 3cm の円柱の上に、半径 6cm・高さ 4cm の円柱をのせた形</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">下の長方形（横 6cm・縦 3cm）を回すと、半径 6cm・高さ 3cm の円柱。<br>上の長方形（横 5cm・縦 4cm）を回すと、半径 5cm・高さ 4cm の円柱。<br>下の円柱の上に、上の円柱がのった形になる。</p><p class="h"><b>ヒント</b> 下の長方形と上の長方形を、それぞれ回すと、何になる？ 横の長さが半径、縦の長さが高さになる。</p></details>
 </article>
 <article class="prob" data-l="kukan-05" data-d="4" id="J1-SP-K05-L4-03">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K05-L4-03</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K05-L4-03</span></header>
   <p class="q">L字形がある。横 6cm・縦 2cm の長方形（下）の上に、横 4cm・縦 5cm の長方形（上）を、左のはしをそろえてのせた形で、左のはしの辺（長さ 7cm）が直線 ℓ の上にある。これを、直線 ℓ を軸として1回転させてできる立体を、軸に垂直な平面で切る。切り口の面積は、切る位置によってちがう。いちばん小さい切り口の面積は □π cm²。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">36<span class="why">途中の計算結果「36」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">16</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">8</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">18</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">下の部分で切ると、半径 6cm の円。面積は π×6² = 36π（cm²）。<br>上の部分で切ると、半径 4cm の円。面積は π×4² = 16π（cm²）。<br>いちばん小さいのは 16π（cm²）。</p><p class="h"><b>ヒント</b> 下の部分で切ったときと、上の部分で切ったときで、切り口の円の半径がちがう。</p></details>
 </article>
 <article class="prob" data-l="kukan-05" data-d="4" id="J1-SP-K05-L4-04">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K05-L4-04</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K05-L4-04</span></header>
   <p class="q">L字形がある。横 6cm・縦 3cm の長方形（下）の上に、横 3cm・縦 2cm の長方形（上）を、左のはしをそろえてのせた形で、左のはしの辺（長さ 5cm）が直線 ℓ の上にある。これを、直線 ℓ を軸として1回転させてできる立体を、軸に垂直な平面で切る。切り口の面積として考えられる値は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">6π cm² と 3π cm²</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">12π cm² と 6π cm²</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">36π cm² と 9π cm²</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">45π cm² だけ</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">下の部分：半径 6cm の円 → 36π（cm²）<br>上の部分：半径 3cm の円 → 9π（cm²）<br>考えられる値は 36π cm² と 9π cm²。</p><p class="h"><b>ヒント</b> 下の部分と上の部分で、切り口の円の半径がちがう。それぞれの面積を求めよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-05" data-d="4" id="J1-SP-K05-L4-05">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K05-L4-05</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K05-L4-05</span></header>
   <p class="q">縦 6cm、横 2cm の長方形がある。この長方形の縦の辺と平行な直線 ℓ が、長方形の外にあり、ℓ から長方形のいちばん近い辺までは 2cm はなれている。この長方形を、ℓ を軸として1回転させてできる立体を、軸に垂直な平面で、上下の底面のあいだで切ったとき、切り口の面積は □π cm²。□は？</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">12</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">13</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">4<span class="why">途中の計算結果「4」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">16</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">外の円の半径は 2+2 = 4（cm）、中の円の半径は 2cm。<br>π×4² − π×2² = 16π − 4π = 12π（cm²）。</p><p class="h"><b>ヒント</b> 切り口は、外の円から、まん中の穴の円をひいた形。外の円の半径は、軸から、いちばんはなれた辺までのきょり。</p></details>
@@ -801,31 +801,31 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <details><summary>解説とヒント</summary><p class="e">立面図が三角形、平面図が円なので、円錐。<br>底面の直径は 12cm だから、半径は 6cm。高さは 4cm。</p><p class="h"><b>ヒント</b> 立面図が三角形なら、柱かな、錐かな。立面図の底辺は、平面図の円の、半径かな、直径かな。</p></details>
 </article>
 <article class="prob" data-l="kukan-06" data-d="4" id="J1-SP-K06-L4-01">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K06-L4-01</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K06-L4-01</span></header>
   <p class="q">立面図が縦 3cm の長方形で、平面図が正六角形である立体の、面の数は？（柱や錐は、底面を下にして置いている）</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">11個</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">8個</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">5個</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">12個</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">立面図が長方形、平面図が正六角形なので、六角柱。<br>面は、底面 2 + 側面 6 = 8。</p><p class="h"><b>ヒント</b> 立面図と平面図から、どんな立体かな。その底面と側面は、それぞれ、いくつあるかな。</p></details>
 </article>
 <article class="prob" data-l="kukan-06" data-d="4" id="J1-SP-K06-L4-02">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K06-L4-02</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K06-L4-02</span></header>
   <p class="q">立面図が、上の辺 4cm、下の辺 10cm、高さ 3cm の左右対称な台形で、平面図が、同じ中心の、大きさのちがう2つの円である立体がある。上の面の円の半径は何cmか。</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">2</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">6</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">4</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">5</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">上の面の円の直径は、立面図の上の辺 4cm。<br>半径は 4÷2 = 2（cm）。</p><p class="h"><b>ヒント</b> 上の面・下の面の円の直径は、立面図の、どの長さにあたるかな。</p></details>
 </article>
 <article class="prob" data-l="kukan-06" data-d="4" id="J1-SP-K06-L4-03">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K06-L4-03</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K06-L4-03</span></header>
   <p class="q">立面図が、上の辺 4cm、下の辺 10cm、高さ 2cm の左右対称な台形で、平面図が、同じ中心の、大きさのちがう2つの円である立体の名前は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">円柱</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">円錐台</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">円錐</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">球</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">平面図が円、立面図が台形。<br>上の円と下の円の大きさがちがうので、円錐の先を切った形。<br>この立体は「円錐台」。</p><p class="h"><b>ヒント</b> 平面図が円で、立面図が台形。上の面と下の面は、同じ大きさかな。</p></details>
 </article>
 <article class="prob" data-l="kukan-06" data-d="4" id="J1-SP-K06-L4-04">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K06-L4-04</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K06-L4-04</span></header>
   <p class="q">立面図が、上の辺 2cm、下の辺 8cm、高さ 2cm の左右対称な台形で、平面図が、同じ中心の、大きさのちがう2つの円である立体は、ある平面図形を1回転させてできる。その平面図形は何か。</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">直角台形</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">直角三角形</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">二等辺三角形</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">長方形</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">立面図の台形を、真ん中の線（回転の軸）で半分に切ると、直角が2つある台形になる。<br>それを軸のまわりに1回転させると、この立体ができる。<br>平面図形は「直角台形」。</p><p class="h"><b>ヒント</b> 立面図の台形を、左右対称の真ん中の線で半分に切った形を考えよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-06" data-d="4" id="J1-SP-K06-L4-05">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K06-L4-05</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K06-L4-05</span></header>
   <p class="q">立面図が長方形で、平面図が正六角形である立体の、頂点の数は？（柱や錐は、底面を下にして置いている）</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">9個</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">15個</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">13個</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">D</span><span class="txt">12個</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">立面図が長方形、平面図が正六角形なので、六角柱。<br>頂点は、6×2 = 12。</p><p class="h"><b>ヒント</b> 立面図と平面図から、どんな立体かな。その底面と側面は、それぞれ、いくつあるかな。</p></details>
@@ -924,31 +924,31 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <details><summary>解説とヒント</summary><p class="e">母線を ℓ cm とする。おうぎ形の弧の長さは 2π ℓ × 240/360 = 4/3π ℓ<br>底面の円周は 2π×8 ＝ 16π（cm）<br>弧の長さが底面の円周に等しいから 4/3π ℓ = 16π<br>ℓ ＝ 12（cm）</p><p class="h"><b>ヒント</b> 母線を ℓ cm として、おうぎ形の弧の長さを ℓ で表そう。それが底面の円周に等しい。</p></details>
 </article>
 <article class="prob" data-l="kukan-07" data-d="4" id="J1-SP-K07-L4-01">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K07-L4-01</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K07-L4-01</span></header>
   <p class="q">底面の半径が 10cm、母線の長さが 15cm の円錐の、側面になるおうぎ形の中心角は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">288度</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">264度</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">239度</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">D</span><span class="txt">240度</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">弧の長さ ＝ 底面の円周 ＝ 2π×10 ＝ 20π（cm）<br>半径 15cm の円の周 ＝ 2π×15 ＝ 30π（cm）<br>中心角 ＝ 360° × 20π/30π ＝ 240°</p><p class="h"><b>ヒント</b> 弧の長さ（底面の円周）は、母線を半径とする円の周の、何分のいくつかな。</p></details>
 </article>
 <article class="prob" data-l="kukan-07" data-d="4" id="J1-SP-K07-L4-02">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K07-L4-02</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K07-L4-02</span></header>
   <p class="q">底面の半径が 3cm の円錐の、側面のおうぎ形の中心角が 270° である。この円錐の母線の長さは何cmか。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">5</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">6<span class="why">途中の計算結果「6」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">4</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">2</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">母線を ℓ cm とする。弧の長さは 2π ℓ × 270/360 = 3/2π ℓ<br>底面の円周 2π×3 ＝ 6π に等しいから 3/2π ℓ = 6π<br>ℓ ＝ 4（cm）</p><p class="h"><b>ヒント</b> 母線を ℓ cm として、おうぎ形の弧の長さを ℓ で表そう。それが底面の円周に等しい。</p></details>
 </article>
 <article class="prob" data-l="kukan-07" data-d="4" id="J1-SP-K07-L4-03">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K07-L4-03</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K07-L4-03</span></header>
   <p class="q">ある円錐の展開図は、半径 24cm、中心角 105° のおうぎ形と、底面の円である。底面の円の半径は何cmか。</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">7</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">14<span class="why">途中の計算結果「14」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">6</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">10</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">おうぎ形の弧の長さ ＝ 2π×24×105/360 ＝ 14π（cm）<br>底面の円周が 14π だから、2πr ＝ 14π<br>r ＝ 7（cm）</p><p class="h"><b>ヒント</b> おうぎ形の弧の長さが、底面の円周に等しい。</p></details>
 </article>
 <article class="prob" data-l="kukan-07" data-d="4" id="J1-SP-K07-L4-04">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K07-L4-04</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K07-L4-04</span></header>
   <p class="q">底面の半径が 5cm、母線の長さが 10cm の円錐の、側面になるおうぎ形の面積は □π cm²。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">25</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">55</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">49</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">D</span><span class="txt">50</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">中心角 ＝ 360° × 10π/20π ＝ 180°<br>面積 ＝ π×10²×180/360 ＝ 50π（cm²）</p><p class="h"><b>ヒント</b> おうぎ形の面積は、同じ半径の円の面積の、何分のいくつか。中心角を先に求めよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-07" data-d="4" id="J1-SP-K07-L4-05">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K07-L4-05</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K07-L4-05</span></header>
   <p class="q">底面の半径が 4cm、母線の長さが 5cm の円錐の、側面になるおうぎ形の中心角は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">286度</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">432度</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">288度</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">289度</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">弧の長さ ＝ 底面の円周 ＝ 2π×4 ＝ 8π（cm）<br>半径 5cm の円の周 ＝ 2π×5 ＝ 10π（cm）<br>中心角 ＝ 360° × 8π/10π ＝ 288°</p><p class="h"><b>ヒント</b> 弧の長さ（底面の円周）は、母線を半径とする円の周の、何分のいくつかな。</p></details>
@@ -1047,31 +1047,31 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <details><summary>解説とヒント</summary><p class="e">角柱の面の数は n+2、角錐の面の数は n+1。<br>面が 8つになるのは … 六角柱（6+2）・七角錐（7+1）・正八面体。<br>正八面体は、面が 8つ。</p><p class="h"><b>ヒント</b> n 角柱の面は「底面2つ+側面 n つ」、n 角錐の面は「底面1つ+側面 n つ」。</p></details>
 </article>
 <article class="prob" data-l="kukan-08" data-d="4" id="J1-SP-K08-L4-01">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K08-L4-01</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K08-L4-01</span></header>
   <p class="q">面が 8つあり、すべて合同な正三角形で、どの頂点にも 4つの面が集まる立体の名前は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">正十二面体</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">正四面体</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">正八面体</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">正二十面体</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">正多面体は、正四面体・立方体（正六面体）・正八面体・正十二面体・正二十面体の 5種類。<br>面が 8つ、面の形が正三角形、1つの頂点に 4つの面が集まるのは … 正八面体。</p><p class="h"><b>ヒント</b> 面の数と、面の形から、正多面体の種類をしぼろう。</p></details>
 </article>
 <article class="prob" data-l="kukan-08" data-d="4" id="J1-SP-K08-L4-02">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K08-L4-02</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K08-L4-02</span></header>
   <p class="q">面が 4つあり、すべて合同な正三角形で、どの頂点にも 3つの面が集まる多面体がある。辺の数は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">5本</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">6本</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">8本</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">7本</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">面ごとの辺の数 3×4 = 12。1本の辺は 2つの面に使われているから、12÷2 = 6（本）<br>確かめ（頂点−辺+面）… 4 − 6 + 4 = 2</p><p class="h"><b>ヒント</b> 面ごとに辺を数えると、1本の辺を、何回数えることになるかな？</p></details>
 </article>
 <article class="prob" data-l="kukan-08" data-d="4" id="J1-SP-K08-L4-03">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K08-L4-03</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K08-L4-03</span></header>
   <p class="q">面が 20あり、すべて合同な正三角形で、どの頂点にも 5つの面が集まる立体の名前は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">正十二面体</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">正四面体</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">正二十面体</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">正八面体</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">面がすべて合同な正三角形の正多面体は、正四面体・正八面体・正二十面体の 3種類。<br>面が 20、1つの頂点に 5つの面が集まるのは … 正二十面体。</p><p class="h"><b>ヒント</b> 面の数と、1つの頂点に集まる面の数から、正多面体の種類をしぼろう。</p></details>
 </article>
 <article class="prob" data-l="kukan-08" data-d="4" id="J1-SP-K08-L4-04">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K08-L4-04</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K08-L4-04</span></header>
   <p class="q">面が 20あり、すべて合同な正三角形で、どの頂点にも 5つの面が集まる多面体がある。頂点の数は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">10個</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">13個</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">12個</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">14個</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">面ごとの頂点の数 3×20 = 60。1つの頂点に 5つの面が集まるから、60÷5 = 12（個）<br>確かめ（頂点−辺+面）… 12 − 30 + 20 = 2</p><p class="h"><b>ヒント</b> 面ごとに頂点を数えると、1つの頂点を、何回数えることになるかな？</p></details>
 </article>
 <article class="prob" data-l="kukan-08" data-d="4" id="J1-SP-K08-L4-05">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K08-L4-05</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K08-L4-05</span></header>
   <p class="q">頂点が 6個、辺が 10本で、側面はすべて三角形である立体の名前は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">六角錐</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">四角錐</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">三角柱</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">D</span><span class="txt">五角錐</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">6 − 10 + 面 = 2 より、面の数は 2 − 6 + 10 = 6<br>側面がすべて三角形だから角錐。面は「底面1つ+側面 5つ」<br>側面が 5つで、底面が五角形 → 五角錐</p><p class="h"><b>ヒント</b> 「頂点−辺+面＝2」で面の数を求めよう。側面が三角形の立体は、角錐。</p></details>
@@ -1170,31 +1170,31 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <details><summary>解説とヒント</summary><p class="e">底面の半径を r cm とすると、側面積は 2π×r×7 = 14πr<br>14πr = 98π より、r = 98÷14 = 7（cm）</p><p class="h"><b>ヒント</b> 側面は長方形。横は底面の円周だから、側面積は「2π×半径×高さ」。半径を r cm として式をつくろう。</p></details>
 </article>
 <article class="prob" data-l="kukan-09" data-d="4" id="J1-SP-K09-L4-01">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K09-L4-01</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K09-L4-01</span></header>
   <p class="q">底面が、半径 4cm、中心角 90° のおうぎ形で、高さが 2cm の柱体がある。表面積を a+bπ cm²（a、b は整数）と表すとき、π の係数 b は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">13</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">4<span class="why">途中の計算結果「4」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">12</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">9</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">底面のまわりの長さ … 4+4+2π×4×90/360 = 8+2π<br>側面積 … (8+2π)×2 = 16+4π<br>底面積 … π×4²×90/360 = 4π<br>表面積 = 16+4π + 4π×2 = 16+12π　したがって b = 12</p><p class="h"><b>ヒント</b> 側面積は「底面のまわりの長さ×高さ」。底面のまわりには、おうぎ形の弧の長さもふくまれる。</p></details>
 </article>
 <article class="prob" data-l="kukan-09" data-d="4" id="J1-SP-K09-L4-02">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K09-L4-02</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K09-L4-02</span></header>
   <p class="q">底面の半径が 3cm、高さが 9cm の円柱を、底面に垂直な平面で、底面の中心を通るように、半分に切った。切ってできた 1つの立体の表面積を a+bπ cm²（a、b は整数）と表すとき、π の係数 b は？</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">36</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">54<span class="why">途中の計算結果「54」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">27<span class="why">途中の計算結果「27」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">9<span class="why">途中の計算結果「9」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">曲面 … 円柱の側面の半分 2π×3×9×1/2 = 27π<br>切り口 … 横 6cm、縦 9cm の長方形 6×9 = 54<br>底面 … 半円 2つで、円 1つぶん π×3² = 9π<br>表面積 = 27π + 54 + 9π = 54+36π　したがって b = 36</p><p class="h"><b>ヒント</b> 表面は、曲面・切り口・底面（半円）の 3種類。切り口は長方形で、横は底面の直径。</p></details>
 </article>
 <article class="prob" data-l="kukan-09" data-d="4" id="J1-SP-K09-L4-03">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K09-L4-03</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K09-L4-03</span></header>
   <p class="q">1辺 12cm の立方体に、向かい合う 2つの面の中心を通るように、面に垂直に、半径 2cm の円柱の形の穴を、まっすぐ、つらぬいた立体がある。表面積を a+bπ cm²（a、b は整数）と表すとき、整数の部分 a は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">691</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">864</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">862</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">778</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">もとの立方体の表面積 … 12×12×6 = 864<br>穴の入り口 2つ分 … π×2²×2 = 8π をひく<br>穴の内がわ … 2π×2×12 = 48π をたす<br>表面積 = 864 − 8π + 48π = 864+40π　したがって a = 864</p><p class="h"><b>ヒント</b> もとの立方体の表面積から、穴の入り口の円をひき、穴の内がわ（円柱の側面）をたそう。</p></details>
 </article>
 <article class="prob" data-l="kukan-09" data-d="4" id="J1-SP-K09-L4-04">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K09-L4-04</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K09-L4-04</span></header>
   <p class="q">底面が、半径 6cm、中心角 180° のおうぎ形で、高さが 4cm の柱体がある。表面積を a+bπ cm²（a、b は整数）と表すとき、π の係数 b は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">54</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">60</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">61</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">18<span class="why">途中の計算結果「18」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">底面のまわりの長さ … 6+6+2π×6×180/360 = 12+6π<br>側面積 … (12+6π)×4 = 48+24π<br>底面積 … π×6²×180/360 = 18π<br>表面積 = 48+24π + 18π×2 = 48+60π　したがって b = 60</p><p class="h"><b>ヒント</b> 側面積は「底面のまわりの長さ×高さ」。底面のまわりには、おうぎ形の弧の長さもふくまれる。</p></details>
 </article>
 <article class="prob" data-l="kukan-09" data-d="4" id="J1-SP-K09-L4-05">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K09-L4-05</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K09-L4-05</span></header>
   <p class="q">底面の半径が 5cm、高さが 7cm の円柱を、底面に垂直な平面で、底面の中心を通るように、半分に切った。切ってできた 1つの立体の表面積を a+bπ cm²（a、b は整数）と表すとき、π の係数 b は？</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">60</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">25<span class="why">途中の計算結果「25」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">70<span class="why">途中の計算結果「70」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">35<span class="why">途中の計算結果「35」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">曲面 … 円柱の側面の半分 2π×5×7×1/2 = 35π<br>切り口 … 横 10cm、縦 7cm の長方形 10×7 = 70<br>底面 … 半円 2つで、円 1つぶん π×5² = 25π<br>表面積 = 35π + 70 + 25π = 70+60π　したがって b = 60</p><p class="h"><b>ヒント</b> 表面は、曲面・切り口・底面（半円）の 3種類。切り口は長方形で、横は底面の直径。</p></details>
@@ -1293,31 +1293,31 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <details><summary>解説とヒント</summary><p class="e">半径を r、母線を ℓ とする。弧の長さ 2πr、母線を半径とする円の周 2πℓ<br>側面積 … π×ℓ²×(2π r)/2πℓ = πℓr　　底面積 … πr²<br>πℓr = 4×πr² より、ℓ = 4r<br>母線の長さは、底面の半径の 4倍。</p><p class="h"><b>ヒント</b> 半径を r、母線を ℓ として、側面積と底面積を、r と ℓ で表そう。</p></details>
 </article>
 <article class="prob" data-l="kukan-10" data-d="4" id="J1-SP-K10-L4-01">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K10-L4-01</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K10-L4-01</span></header>
   <p class="q">底面の半径が 3cm、母線の長さが 18cm の円錐の、側面積は □π cm²。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">52</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">55</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">54</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">36<span class="why">途中の計算結果「36」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">弧の長さ 2π×3 = 6π、母線を半径とする円の周 2π×18 = 36π<br>中心角 = 360°×6π/36π = 60°<br>側面積 … π×18²×60/360 = 54π（cm²）</p><p class="h"><b>ヒント</b> 側面は、母線を半径とするおうぎ形。弧の長さと円周の割合から、中心角か面積の割合を求めよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-10" data-d="4" id="J1-SP-K10-L4-02">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K10-L4-02</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K10-L4-02</span></header>
   <p class="q">母線が 4cm、底面の半径が 2cm の円錐がある。母線の1本が平面にぴったりつくように置き、頂点 O を動かさずに、平面の上でころがす。もとの位置にもどるまでに、円錐自身は何回転するか。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">5回転</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">4回転<span class="why">途中の計算結果「4」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">2回転</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">8回転<span class="why">途中の計算結果「8」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">底面の円周 2π×2 = 4π<br>O を中心とする円（半径は母線 4cm）の周 2π×4 = 8π<br>8π÷(4π) = 2（回転）</p><p class="h"><b>ヒント</b> 円錐の底面の円が、O を中心とする円の上を、1周する。大きい円の周が、底面の円周の何こぶんかを考えよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-10" data-d="4" id="J1-SP-K10-L4-03">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K10-L4-03</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K10-L4-03</span></header>
   <p class="q">底面の半径が 3cm、母線の長さが 15cm の円錐の、表面積は □π cm²。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">59</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">55</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">54</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">45<span class="why">途中の計算結果「45」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">中心角 = 360°×(2π × 3)/(2π × 15) = 72°<br>側面積 … π×15²×72/360 = 45π<br>底面積 … π×3² = 9π<br>表面積 = 45π + 9π = 54π（cm²）</p><p class="h"><b>ヒント</b> 表面積は、側面積と底面積の和（錐体の底面は 1つ）。</p></details>
 </article>
 <article class="prob" data-l="kukan-10" data-d="4" id="J1-SP-K10-L4-04">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K10-L4-04</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K10-L4-04</span></header>
   <p class="q">側面の展開図が、半径 15cm、中心角 240° のおうぎ形になる円錐の、表面積は □π cm²。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">251</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">250</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">100<span class="why">途中の計算結果「100」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">375</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">おうぎ形の弧の長さ … 2π×15×240/360 = 20π<br>底面の円周 2π×r が、この弧の長さに等しいから、2πr = 20π　より　r = 10（cm）<br>側面積 … π×15²×240/360 = 150π　　底面積 … π×10² = 100π<br>表面積 = 150π + 100π = 250π（cm²）</p><p class="h"><b>ヒント</b> まず、弧の長さから底面の半径を求めよう。側面積は、おうぎ形の面積。</p></details>
 </article>
 <article class="prob" data-l="kukan-10" data-d="4" id="J1-SP-K10-L4-05">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K10-L4-05</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K10-L4-05</span></header>
   <p class="q">側面の展開図が、半径 12cm、中心角 270° のおうぎ形になる円錐の、底面の半径は何 cm か。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">18cm<span class="why">途中の計算結果「18」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">10cm</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">8cm</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">D</span><span class="txt">9cm</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">おうぎ形の弧の長さ … 2π×12×270/360 = 18π<br>底面の円周 2π×r が、この弧の長さに等しいから、2πr = 18π　より　r = 9（cm）</p><p class="h"><b>ヒント</b> おうぎ形の弧の長さは、底面の円周に等しい。</p></details>
@@ -1416,31 +1416,31 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <details><summary>解説とヒント</summary><p class="e">高さを h cm とすると　1/3 × π × 3² × h = 30π<br>3π h = 30π<br>h = 30 ÷ 3 = 10（cm）</p><p class="h"><b>ヒント</b> 高さを h cm として、体積の式 V=1/3π r² h に、わかっている数を入れよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-11" data-d="4" id="J1-SP-K11-L4-01">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K11-L4-01</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K11-L4-01</span></header>
   <p class="q">AB＝8cm、BC＝3cm、∠B＝90° の直角三角形 ABC を、辺 AB、辺 BC を軸として、それぞれ1回転させる。できる 2つの立体の体積のちがい（大きいほう−小さいほう）は □π cm³。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">64<span class="why">途中の計算結果「64」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">24<span class="why">途中の計算結果「24」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">40</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">42</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">AB を軸 … 半径 3cm、高さ 8cm　1/3 × π × 3² × 8 = 24π<br>BC を軸 … 半径 8cm、高さ 3cm　1/3 × π × 8² × 3 = 64π<br>BC を軸にしたほうが大きく、ちがいは 64π - 24π = 40π（cm³）</p><p class="h"><b>ヒント</b> 三角形を、軸にした辺のまわりに回転させる様子を思いうかべよう。円錐の体積の公式に出てくる長さは、何と何だったかな。</p></details>
 </article>
 <article class="prob" data-l="kukan-11" data-d="4" id="J1-SP-K11-L4-02">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K11-L4-02</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K11-L4-02</span></header>
   <p class="q">底面の半径 8cm、深さ 8cm の円錐の形をした容器を、頂点を下にして置き、深さ 4cm のところまで水を入れた。水面の円の半径は 4cm である。水の体積は、容器いっぱいの体積の、何分のいくつか。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">3/8</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">1/8</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">1/4</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">3/4</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">水の体積 1/3 × π × 4² × 4（cm³）<br>容器の体積 1/3 × π × 8² × 8（cm³）<br>(4² × 4)/(8² × 8) = 64/512 = 1/8</p><p class="h"><b>ヒント</b> 水の部分も、円錐の形。水の体積と、容器いっぱいの体積を、それぞれ求めて比べよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-11" data-d="4" id="J1-SP-K11-L4-03">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K11-L4-03</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K11-L4-03</span></header>
   <p class="q">AB＝10cm、BC＝6cm、∠B＝90° の直角三角形 ABC を、辺 AB、辺 BC を軸として、それぞれ1回転させる。できる 2つの立体の体積をくらべて、正しいものはどれか。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">BC を軸にした立体のほうが大きく、その体積は 120π cm³</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">AB を軸にした立体のほうが大きく、その体積は 120π cm³</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">AB を軸にした立体のほうが大きく、その体積は 200π cm³</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">D</span><span class="txt">BC を軸にした立体のほうが大きく、その体積は 200π cm³</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">AB を軸 … 半径 6cm、高さ 10cm の円錐　1/3 × π × 6² × 10 = 120π<br>BC を軸 … 半径 10cm、高さ 6cm の円錐　1/3 × π × 10² × 6 = 200π<br>BC を軸にしたほうが大きく、その体積は 200π cm³。</p><p class="h"><b>ヒント</b> 三角形を、軸にした辺のまわりに回転させる様子を思いうかべよう。円錐の体積の公式に出てくる長さは、何と何だったかな。</p></details>
 </article>
 <article class="prob" data-l="kukan-11" data-d="4" id="J1-SP-K11-L4-04">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K11-L4-04</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K11-L4-04</span></header>
   <p class="q">1辺 12cm の立方体 ABCD−EFGH（面 ABCD が下の面、面 EFGH が上の面。A・B・C・D の真上が、それぞれ E・F・G・H）。4つの頂点 B、D、E、G を結んでできる三角錐 BDEG の体積は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">691cm³</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">576cm³</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">575cm³</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">288cm³<span class="why">途中の計算結果「288」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">立方体から、A・C・F・H の角の三角錐 4つを取りのぞく。<br>1つ分 1/3 × (1/2 × 12 × 12) × 12 = 288<br>12³ - 288 × 4 = 576（cm³）</p><p class="h"><b>ヒント</b> 立方体の中に、三角錐 BDEG をおいたとき、そのまわりに、どんな立体がのこるか考えよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-11" data-d="4" id="J1-SP-K11-L4-05">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K11-L4-05</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K11-L4-05</span></header>
   <p class="q">AB＝10cm、BC＝3cm、∠B＝90° の直角三角形 ABC を、辺 AB、辺 BC を軸として、それぞれ1回転させる。できる 2つの立体の体積のちがい（大きいほう−小さいほう）は □π cm³。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">84</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">30<span class="why">途中の計算結果「30」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">100<span class="why">途中の計算結果「100」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">D</span><span class="txt">70</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">AB を軸 … 半径 3cm、高さ 10cm　1/3 × π × 3² × 10 = 30π<br>BC を軸 … 半径 10cm、高さ 3cm　1/3 × π × 10² × 3 = 100π<br>BC を軸にしたほうが大きく、ちがいは 100π - 30π = 70π（cm³）</p><p class="h"><b>ヒント</b> 三角形を、軸にした辺のまわりに回転させる様子を思いうかべよう。円錐の体積の公式に出てくる長さは、何と何だったかな。</p></details>
@@ -1539,31 +1539,31 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <details><summary>解説とヒント</summary><p class="e">アイスクリーム 4/3π × 2³ = 32/3π（cm³）<br>コーン 1/3π × 2² × 8 = 32/3π（cm³）<br>体積が等しいので、ちょうどいっぱいになる。</p><p class="h"><b>ヒント</b> とけたアイスクリームの体積と、コーンの体積を、それぞれ求めて比べよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-12" data-d="4" id="J1-SP-K12-L4-01">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K12-L4-01</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K12-L4-01</span></header>
   <p class="q">底面の半径が 6cm の円柱の形の水そうに、水が入っている。この中に、半径 3cm の鉄の球を完全にしずめると、水面は何 cm 上がるか。ただし、水はあふれないものとする。</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">1cm</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">2cm</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">4cm</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">3cm</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">球の体積 4/3π × 3³ = 36π（cm³）<br>上がる高さを x cm として　π × 6² × x = 36π<br>36x = 36　より　x = 1（cm）</p><p class="h"><b>ヒント</b> 球をしずめると、水面が上がる。上がった分の水の体積は、何と等しいかな。</p></details>
 </article>
 <article class="prob" data-l="kukan-12" data-d="4" id="J1-SP-K12-L4-02">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K12-L4-02</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K12-L4-02</span></header>
   <p class="q">表面積が 36π cm² の球の、体積は □π cm³。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">54</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">29</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">36</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">40</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">半径を r cm とすると　4π r² = 36π　r² = 9　r = 3<br>V = 4/3π × 3³ = 36π（cm³）</p><p class="h"><b>ヒント</b> 半径を r cm として、表面積から r を求めよう。そのあとで、体積の公式に入れる。</p></details>
 </article>
 <article class="prob" data-l="kukan-12" data-d="4" id="J1-SP-K12-L4-03">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K12-L4-03</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K12-L4-03</span></header>
   <p class="q">半径 5cm の円柱ア（高さ 10cm）、アと同じ底面・同じ高さの円錐イ、半径 5cm の球ウがある。アの体積は、イの体積の何倍か。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">2倍</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">4倍</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">5倍</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">D</span><span class="txt">3倍</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">ア π × 5² × 10 = 250π、イ 1/3 × π × 5² × 10 = 250/3π<br>250π ÷ (250/3π) = 3（倍）</p><p class="h"><b>ヒント</b> 円柱・円錐・球の体積の公式を思い出して、2つの体積を、それぞれ □π の形で求めよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-12" data-d="4" id="J1-SP-K12-L4-04">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K12-L4-04</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K12-L4-04</span></header>
   <p class="q">半径 5cm の円柱ア（高さ 10cm）、アと同じ底面・同じ高さの円錐イ、半径 5cm の球ウがある。ア：ウ：イ の体積の比を、もっとも簡単な整数の比で表すと、どれか。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">3：1：2</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">1：3：2</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">2：1：3</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">D</span><span class="txt">3：2：1</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">ア π × 5² × 10 = 250π、イ 250/3π、ウ 500/3π<br>ア：イ：ウ ＝ 3：1：2（もっとも簡単な整数の比）だから、ア：ウ：イ ＝ 3：2：1</p><p class="h"><b>ヒント</b> ア・イ・ウの体積を、それぞれ □π の形で求めて、比べよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-12" data-d="4" id="J1-SP-K12-L4-05">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K12-L4-05</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K12-L4-05</span></header>
   <p class="q">底面の半径が 14cm の円柱の形の水そうに、水が入っている。この中に、半径 7cm の鉄の球を完全にしずめると、水面は何 cm 上がるか。ただし、水はあふれないものとする。</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">7/3 cm</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">16/7 cm</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">8/3 cm</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">2cm</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">球の体積 4/3π × 7³ = 1372/3π（cm³）<br>上がる高さを x cm として　π × 14² × x = 1372/3π<br>196x = 1372/3　より　x = 7/3（cm）</p><p class="h"><b>ヒント</b> 球をしずめると、水面が上がる。上がった分の水の体積は、何と等しいかな。</p></details>
@@ -1662,31 +1662,31 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <details><summary>解説とヒント</summary><p class="e">A π × 3² × 5 = 45π（cm³）<br>B 1/3 × π × 7² × 12 = 196π（cm³）<br>196π ＞ 45π だから、B のほうが多く入る。</p><p class="h"><b>ヒント</b> 容器に入る水の体積は、容器の体積。円柱と円錐の、どちらの式を使うかに気をつけて、2つとも求めよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-13" data-d="4" id="J1-SP-K13-L4-01">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K13-L4-01</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K13-L4-01</span></header>
   <p class="q">AB＝4cm、BC＝3cm、CA＝5cm、∠B＝90° の直角三角形 ABC を、辺 AB を軸として1回転させる。できる立体は、次のうちどれか。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">底面の半径 4cm、高さ 3cm の円錐</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">底面の半径 3cm、高さ 4cm の円柱</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">底面の半径 3cm、高さ 4cm の円錐</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">底面の半径 3cm、高さ 5cm の円錐</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">AB を軸にするので、高さは AB＝4cm、底面の半径は、もう一方の辺の 3cm、母線は CA＝5cm の円錐ができる。<br>底面の半径 3cm、高さ 4cm の円錐。</p><p class="h"><b>ヒント</b> 三角形を、辺 AB を軸に回転させる様子を思いうかべよう。回って円をつくるのは、どの辺かな。</p></details>
 </article>
 <article class="prob" data-l="kukan-13" data-d="4" id="J1-SP-K13-L4-02">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K13-L4-02</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K13-L4-02</span></header>
   <p class="q">AB＝3cm、BC＝4cm、CA＝5cm、∠B＝90° の直角三角形 ABC を、辺 AB を軸として1回転させる。できる立体の表面積は □π cm²。□は？</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">36</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">34</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">20<span class="why">途中の計算結果「20」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">37</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">AB を軸にするので、高さは AB＝3cm、底面の半径は、もう一方の辺の 4cm、母線は CA＝5cm の円錐ができる。<br>側面積 π × 5² × (2π × 4)/(2π × 5) = 20π<br>底面積 π × 4² = 16π　表面積 20π + 16π = 36π（cm²）</p><p class="h"><b>ヒント</b> 三角形を、辺 AB を軸に回転させる様子を思いうかべよう。円錐の表面積は、側面積＋底面積。おうぎ形の半径になるのは、どの長さかな。</p></details>
 </article>
 <article class="prob" data-l="kukan-13" data-d="4" id="J1-SP-K13-L4-03">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K13-L4-03</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K13-L4-03</span></header>
   <p class="q">底面の半径が 3cm、高さが 3cm の円柱から、同じ底面で同じ高さの円錐をくりぬいた。残った立体の体積は □π cm³。□は？</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">18</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">16</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">20</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">9<span class="why">途中の計算結果「9」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">円柱 π × 3² × 3 = 27π、円錐 1/3 × π × 3² × 3 = 9π<br>残り 27π - 9π = 18π（cm³）</p><p class="h"><b>ヒント</b> （円柱の体積）−（くりぬいた円錐の体積）。</p></details>
 </article>
 <article class="prob" data-l="kukan-13" data-d="4" id="J1-SP-K13-L4-04">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K13-L4-04</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K13-L4-04</span></header>
   <p class="q">AB＝5cm、BC＝12cm、CA＝13cm、∠B＝90° の直角三角形 ABC を、辺 BC を軸として1回転させる。できる立体の体積は □π cm³。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">98</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">50</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">100</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">150</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">BC を軸にするので、高さは BC＝12cm、底面の半径は、もう一方の辺の 5cm、母線は CA＝13cm の円錐ができる。<br>V = 1/3 × π × 5² × 12 = 100π（cm³）</p><p class="h"><b>ヒント</b> 三角形を、辺 BC を軸に回転させる様子を思いうかべよう。円錐の体積の公式に出てくる長さは、何と何だったかな。</p></details>
 </article>
 <article class="prob" data-l="kukan-13" data-d="4" id="J1-SP-K13-L4-05">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K13-L4-05</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K13-L4-05</span></header>
   <p class="q">底面の半径が 8cm の円柱の形の水そうに、深さ 9cm まで水が入っている。この中に、底面の半径 4cm、高さ 6cm の円錐の形のおもりを、底を下にして完全にしずめると、水面は何 cm 上がるか。ただし、水はあふれないものとする。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">0.6cm</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">0.625cm</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">0.5cm</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">0.375cm</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">円錐の体積 1/3 × π × 4² × 6 = 32π（cm³）<br>上がる高さを x cm として　π × 8² × x = 32π<br>64x = 32　より　x = 1/2（cm）</p><p class="h"><b>ヒント</b> おもりをしずめると、水面が上がる。上がった分の水の体積は、何と等しいかな。</p></details>
@@ -1785,31 +1785,31 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <details><summary>解説とヒント</summary><p class="e">半径　60÷2＝30（cm）<br>体積　π×30²×18＝16200π<br>16200×3.14＝50868（cm³）<br>たらいは上から下へまっすぐ細くなっているので、上の直径の円柱は実物より太く、大きめの見積もりになる。</p><p class="h"><b>ヒント</b> 上の直径を半分にして半径を出し、円柱の体積の公式を使う。</p></details>
 </article>
 <article class="prob" data-l="kukan-14" data-d="4" id="J1-SP-K14-L4-01">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K14-L4-01</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K14-L4-01</span></header>
   <p class="q">バケツは、円錐から、頂点をふくむ小さい円錐を切りとった形である。上の底面の直径が 36cm、下の底面の直径が 18cm、深さが 15cm で、切りとった円錐の高さは 15cm である。バケツの容積は □π cm³。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">3240<span class="why">途中の計算結果「3240」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">3119</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">2551</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">D</span><span class="txt">2835</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">上の半径 18cm、下の半径 9cm。もとの円錐の高さ　15+15＝30（cm）<br>もとの円錐　1/3×π×18²×30＝3240π<br>切りとった円錐　1/3×π×9²×15＝405π<br>容積　3240π−405π＝2835π（cm³）</p><p class="h"><b>ヒント</b> バケツを、大きい円錐から小さい円錐を切りとった形と考える。</p></details>
 </article>
 <article class="prob" data-l="kukan-14" data-d="4" id="J1-SP-K14-L4-02">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K14-L4-02</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K14-L4-02</span></header>
   <p class="q">たらいは、円錐から、頂点をふくむ小さい円錐を切りとった形である。上の底面の直径が 28cm、下の底面の直径が 14cm、深さが 18cm で、切りとった円錐の高さは 18cm である。たらいの容積を、2つの円錐の体積の差として求めよう。π＝3.14 として、小数第 1位を四捨五入して整数で答えよう。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">2058cm³<span class="why">途中の計算結果「2058」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">6460cm³</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">6462cm³</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">6461cm³</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">もとの円錐の高さ　18+18＝36（cm）<br>もとの円錐　1/3×π×14²×36＝2352π、切りとった円錐　1/3×π×7²×18＝294π<br>容積　2352π−294π＝2058π<br>2058×3.14＝6462.12　→　6462（cm³）。円柱とみなした見積もり 2769.48〜11077.92（cm³）のあいだに入っている。</p><p class="h"><b>ヒント</b> もとの円錐の体積から、切りとった円錐の体積をひく。まず π のままで求める。</p></details>
 </article>
 <article class="prob" data-l="kukan-14" data-d="4" id="J1-SP-K14-L4-03">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K14-L4-03</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K14-L4-03</span></header>
   <p class="q">たらいは、円錐から、頂点をふくむ小さい円錐を切りとった形である。上の底面の直径が 8cm、下の底面の直径が 4cm、深さが 6cm で、切りとった円錐の高さは 6cm である。たらいの容積を、2つの円錐の体積の差として求めると、□π cm³。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">64<span class="why">途中の計算結果「64」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">56</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">45</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">54</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">上の半径 4cm、下の半径 2cm。もとの円錐の高さ　6+6＝12（cm）<br>もとの円錐　1/3×π×4²×12＝64π<br>切りとった円錐　1/3×π×2²×6＝8π<br>容積　64π−8π＝56π（cm³）</p><p class="h"><b>ヒント</b> もとの円錐の高さは、（切りとった円錐の高さ）+（たらいの深さ）。</p></details>
 </article>
 <article class="prob" data-l="kukan-14" data-d="4" id="J1-SP-K14-L4-04">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K14-L4-04</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K14-L4-04</span></header>
   <p class="q">バケツは、円錐から、頂点をふくむ小さい円錐を切りとった形である。上の底面の直径が 32cm、下の底面の直径が 16cm、深さが 6cm で、切りとった円錐の高さは 6cm である。バケツの容積は □π cm³。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">1075</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">896</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">1024<span class="why">途中の計算結果「1024」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">898</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">上の半径 16cm、下の半径 8cm。もとの円錐の高さ　6+6＝12（cm）<br>もとの円錐　1/3×π×16²×12＝1024π<br>切りとった円錐　1/3×π×8²×6＝128π<br>容積　1024π−128π＝896π（cm³）</p><p class="h"><b>ヒント</b> バケツを、大きい円錐から小さい円錐を切りとった形と考える。</p></details>
 </article>
 <article class="prob" data-l="kukan-14" data-d="4" id="J1-SP-K14-L4-05">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K14-L4-05</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K14-L4-05</span></header>
   <p class="q">たらいは、円錐から、頂点をふくむ小さい円錐を切りとった形である。上の底面の直径が 36cm、下の底面の直径が 18cm、深さが 17cm で、切りとった円錐の高さは 17cm である。たらいの容積を、2つの円錐の体積の差として求めよう。π＝3.14 として、小数第 1位を四捨五入して整数で答えよう。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">3213cm³<span class="why">途中の計算結果「3213」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">B</span><span class="txt">10089cm³</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">10088cm³</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">15134cm³</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">もとの円錐の高さ　17+17＝34（cm）<br>もとの円錐　1/3×π×18²×34＝3672π、切りとった円錐　1/3×π×9²×17＝459π<br>容積　3672π−459π＝3213π<br>3213×3.14＝10088.82　→　10089（cm³）。円柱とみなした見積もり 4323.78〜17295.12（cm³）のあいだに入っている。</p><p class="h"><b>ヒント</b> もとの円錐の体積から、切りとった円錐の体積をひく。まず π のままで求める。</p></details>
@@ -1908,31 +1908,31 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
   <details><summary>解説とヒント</summary><p class="e">辺 AB を軸　底面の半径 8cm、高さ 9cm　1/3×π×8²×9＝192π<br>辺 BC を軸　底面の半径 9cm、高さ 8cm　1/3×π×9²×8＝216π<br>216π−192π＝24π（cm³）</p><p class="h"><b>ヒント</b> それぞれの体積を求めて、くらべる。大きいほうから小さいほうをひく。</p></details>
 </article>
 <article class="prob" data-l="kukan-15" data-d="4" id="J1-SP-K15-L4-01">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K15-L4-01</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K15-L4-01</span></header>
   <p class="q">立方体 ABCD−EFGH（面 ABCD が下の面、面 EFGH が上の面。A・B・C・D の真上が、それぞれ E・F・G・H）がある。この立方体の 1辺は 9cm である。4つの頂点 A、C、F、H を結んでできる三角錐 ACFH の体積は何 cm³ か。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">241cm³</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">245cm³</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">243cm³</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">729cm³<span class="why">途中の計算結果「729」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">頂点 B、D、E、G のところの、すみの三角錐を 4つ切りとる。<br>すみの三角錐 1つ　1/3×(1/2×9×9)×9＝121.5<br>立方体　9³＝729<br>729−121.5×4＝243（cm³）</p><p class="h"><b>ヒント</b> 立方体から、すみの三角錐を切りとった、のこりと考える。</p></details>
 </article>
 <article class="prob" data-l="kukan-15" data-d="4" id="J1-SP-K15-L4-02">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K15-L4-02</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K15-L4-02</span></header>
   <p class="q">底面の半径が 3cm、高さが 6cm の円柱がある。この円柱にちょうど入る球と、この円柱と底面・高さが同じ円錐を考える。円錐の体積は □π cm³。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">14</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">54<span class="why">体積の公式の「1/3」をかけ忘れた（円柱の体積のまま）</span></span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">18</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">20</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">円錐の体積　1/3×π×3²×6＝18π（cm³）</p><p class="h"><b>ヒント</b> 円錐は、円柱と底面・高さが同じ。</p></details>
 </article>
 <article class="prob" data-l="kukan-15" data-d="4" id="J1-SP-K15-L4-03">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K15-L4-03</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K15-L4-03</span></header>
   <p class="q">球がちょうど入る円柱がある。この円柱の体積が 54π cm³ のとき、球の体積は □π cm³。□は？</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">18</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">54</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">36</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">38</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">球の半径を r cm とすると、円柱は、底面の半径 r、高さ 2r。<br>円柱の体積　π×r²×2r＝2π r³＝54π　より　r³＝27、r＝3<br>球の体積　4/3π×3³＝36π（cm³）</p><p class="h"><b>ヒント</b> 球の半径を r とすると、円柱は、底面の半径 r、高さ 2r。円柱の体積から r を求めよう。</p></details>
 </article>
 <article class="prob" data-l="kukan-15" data-d="4" id="J1-SP-K15-L4-04">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K15-L4-04</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K15-L4-04</span></header>
   <p class="q">立方体 ABCD−EFGH（面 ABCD が下の面、面 EFGH が上の面。A・B・C・D の真上が、それぞれ E・F・G・H）がある。この立方体の 1辺は 6cm である。三角錐 G-CFH（4つの頂点 G、C、F、H を結んでできる立体）の体積は何 cm³ か。</p>
   <ol class="choices"><li class=""><span class="mark"></span><span class="lab">A</span><span class="txt">18cm³<span class="why">途中の計算結果「18」を、最後まで計算せずに、そのまま答えにしてしまった。</span></span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">29cm³</span></li><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">C</span><span class="txt">36cm³</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">32cm³</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">底面 △GCF（直角三角形）　1/2×6×6＝18<br>高さ GH＝6<br>体積　1/3×18×6＝36（cm³）</p><p class="h"><b>ヒント</b> 頂点 G に集まる 3つの辺は、たがいに垂直。GCF を底面、GH を高さと考える。</p></details>
 </article>
 <article class="prob" data-l="kukan-15" data-d="4" id="J1-SP-K15-L4-05">
-  <header><span class="lv lv4">鬼</span><span class="pid">J1-SP-K15-L4-05</span></header>
+  <header><span class="lv lv4">入試レベル</span><span class="pid">J1-SP-K15-L4-05</span></header>
   <p class="q">底面の半径が 3cm、高さが 6cm の円柱がある。この円柱にちょうど入る球と、この円柱と底面・高さが同じ円錐を考える。球の体積は、円錐の体積の □ 倍。□は？</p>
   <ol class="choices"><li class="right"><span class="mark ok" aria-label="正解">◎</span><span class="lab">A</span><span class="txt">2</span></li><li class=""><span class="mark"></span><span class="lab">B</span><span class="txt">5</span></li><li class=""><span class="mark"></span><span class="lab">C</span><span class="txt">6</span></li><li class=""><span class="mark"></span><span class="lab">D</span><span class="txt">4</span></li></ol>
   <details><summary>解説とヒント</summary><p class="e">円錐　1/3×π×3²×6＝18π<br>球　4/3π×3³＝36π<br>円柱　π×3²×6＝54π<br>円錐：球：円柱 ＝ 1：2：3 だから、球の体積は、円錐の体積の 2 倍。</p><p class="h"><b>ヒント</b> 半径を r、高さを 2r として、3つの体積を式にしよう。</p></details>
@@ -1946,7 +1946,7 @@ ul.notes { padding-left: 20px; margin: 0; } ul.notes li { margin: 6px 0; }
 
   <h3>見てほしいところ</h3>
   <ul class="notes">
-    <li>段階の対応：簡単＝基礎、普通＝標準、難しい＝応用、鬼＝入試レベル（ikkan の4段階）。コツコツくんの難易度は d=1〜3 までしか確認できていません。d=4 を受けつけるかは、アプリ側で確かめる必要があります。</li>
+    <li>段階は ikkan の4段階（基礎・標準・応用・入試レベル）のとおりで、簡単・普通・難しい・入試レベルの順です。コツコツくんの難易度は d=1〜3 までしか確認できていません。d=4 を受けつけるかは、アプリ側で確かめる必要があります。</li>
     <li>解説 01・06・08・12・14・15 には、振り分けられる既存の問題がありません（今の演習が、柱体・錐体の計算と位置関係に偏っているため）。</li>
     <li>「縦」「横」は ikkan の教材に合わせ、展開図の縦＝高さ、横＝底面のまわり、としています（K07-L3-03 など）。</li>
     <li>誤答の理由が付かないもの（約80%）は、答えに近い数です。理由つきにするには、問題ごとに手で書く必要があります。</li>

@@ -12,7 +12,7 @@ const meta = JSON.parse(fs.readFileSync(path.join(HERE, "meta.json"), "utf8"));
 const redis = JSON.parse(fs.readFileSync(path.join(HERE, "existing-redistribution.json"), "utf8"));
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const br = (s) => esc(s).replace(/\n/g, "<br>");
-const LEVEL = { 1: "簡単", 2: "普通", 3: "難しい", 4: "鬼" };
+const LEVEL = { 1: "簡単", 2: "普通", 3: "難しい", 4: "入試レベル" };
 
 const lessons = [];
 for (let n = 1; n <= 15; n++) {
@@ -139,7 +139,7 @@ const SCRIPT = `
 
 const BODY = `<main>
   <h1>空間図形 演習バンク</h1>
-  <p class="lead">中1「空間図形」の解説15本それぞれに、簡単・普通・難しい・鬼の4段階を5問ずつ。合わせて300問です。答えは、ikkan の問題テンプレートが計算で出したものです。</p>
+  <p class="lead">中1「空間図形」の解説15本それぞれに、簡単・普通・難しい・入試レベルの4段階を5問ずつ。合わせて300問です。答えは、ikkan の問題テンプレートが計算で出したものです。</p>
   <p class="status"><b>コツコツくんにはまだ入れていません。</b>アプリの本体（ソース）がこのリポジトリに無いため、取り込みは先生側の作業になります。</p>
   <ul class="summary">
     <li><b>300問</b><span>15解説 × 4段階 × 5問</span></li>
@@ -163,7 +163,7 @@ const BODY = `<main>
 
   <h3>見てほしいところ</h3>
   <ul class="notes">
-    <li>段階の対応：簡単＝基礎、普通＝標準、難しい＝応用、鬼＝入試レベル（ikkan の4段階）。コツコツくんの難易度は d=1〜3 までしか確認できていません。d=4 を受けつけるかは、アプリ側で確かめる必要があります。</li>
+    <li>段階は ikkan の4段階（基礎・標準・応用・入試レベル）のとおりで、簡単・普通・難しい・入試レベルの順です。コツコツくんの難易度は d=1〜3 までしか確認できていません。d=4 を受けつけるかは、アプリ側で確かめる必要があります。</li>
     <li>解説 01・06・08・12・14・15 には、振り分けられる既存の問題がありません（今の演習が、柱体・錐体の計算と位置関係に偏っているため）。</li>
     <li>「縦」「横」は ikkan の教材に合わせ、展開図の縦＝高さ、横＝底面のまわり、としています（K07-L3-03 など）。</li>
     <li>誤答の理由が付かないもの（約${Math.round(((wrongs.length - withReason) / wrongs.length) * 100)}%）は、答えに近い数です。理由つきにするには、問題ごとに手で書く必要があります。</li>

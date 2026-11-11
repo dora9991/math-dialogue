@@ -183,7 +183,7 @@
   "lesson": "kukan-01",
   "lessonName": "立体を仲間分けしよう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-01.js 01d09",
   "distractors": [
    "step",
@@ -195,7 +195,7 @@
   "lesson": "kukan-01",
   "lessonName": "立体を仲間分けしよう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-01.js 01d11",
   "distractors": [
    "step",
@@ -207,7 +207,7 @@
   "lesson": "kukan-01",
   "lessonName": "立体を仲間分けしよう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-01.js 01q05",
   "distractors": [
    "near",
@@ -219,7 +219,7 @@
   "lesson": "kukan-01",
   "lessonName": "立体を仲間分けしよう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-01.js 01d10",
   "distractors": [
    "near",
@@ -231,7 +231,7 @@
   "lesson": "kukan-01",
   "lessonName": "立体を仲間分けしよう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-01.js 01d09",
   "distractors": [
    "near",
@@ -423,7 +423,7 @@
   "lesson": "kukan-02",
   "lessonName": "正多面体をしらべよう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-02.js 02d11",
   "distractors": [
    "near",
@@ -435,7 +435,7 @@
   "lesson": "kukan-02",
   "lessonName": "正多面体をしらべよう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-02.js 02d10",
   "distractors": [
    "step",
@@ -447,7 +447,7 @@
   "lesson": "kukan-02",
   "lessonName": "正多面体をしらべよう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-02.js 02d09a",
   "distractors": [
    "near",
@@ -459,7 +459,7 @@
   "lesson": "kukan-02",
   "lessonName": "正多面体をしらべよう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-02.js 02q05",
   "distractors": [
    "step",
@@ -471,7 +471,7 @@
   "lesson": "kukan-02",
   "lessonName": "正多面体をしらべよう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-02.js 02d09b",
   "distractors": [
    "template",
@@ -663,7 +663,7 @@
   "lesson": "kukan-03",
   "lessonName": "2つの直線の位置関係",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-03.js 03d09b",
   "distractors": [
    "template",
@@ -675,7 +675,7 @@
   "lesson": "kukan-03",
   "lessonName": "2つの直線の位置関係",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-03.js 03q05a",
   "distractors": [
    "near",
@@ -687,7 +687,7 @@
   "lesson": "kukan-03",
   "lessonName": "2つの直線の位置関係",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-03.js 03q05b",
   "distractors": [
    "template",
@@ -699,7 +699,7 @@
   "lesson": "kukan-03",
   "lessonName": "2つの直線の位置関係",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-03.js 03d10",
   "distractors": [
    "near",
@@ -711,7 +711,7 @@
   "lesson": "kukan-03",
   "lessonName": "2つの直線の位置関係",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-03.js 03d09a",
   "distractors": [
    "template",
@@ -903,7 +903,7 @@
   "lesson": "kukan-04",
   "lessonName": "直線と平面、平面と平面",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-04.js 04d10",
   "distractors": [
    "near",
@@ -915,7 +915,7 @@
   "lesson": "kukan-04",
   "lessonName": "直線と平面、平面と平面",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-04.js 04d09",
   "distractors": [
    "template",
@@ -927,7 +927,7 @@
   "lesson": "kukan-04",
   "lessonName": "直線と平面、平面と平面",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-04.js 04q05",
   "distractors": [
    "template",
@@ -939,7 +939,7 @@
   "lesson": "kukan-04",
   "lessonName": "直線と平面、平面と平面",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-04.js 04d10",
   "distractors": [
    "near",
@@ -951,7 +951,7 @@
   "lesson": "kukan-04",
   "lessonName": "直線と平面、平面と平面",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-04.js 04q05",
   "distractors": [
    "template",
@@ -1143,7 +1143,7 @@
   "lesson": "kukan-05",
   "lessonName": "線や面を動かして立体をつくろう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-05.js 05q05",
   "distractors": [
    "near",
@@ -1155,7 +1155,7 @@
   "lesson": "kukan-05",
   "lessonName": "線や面を動かして立体をつくろう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-05.js 05d09c",
   "distractors": [
    "template",
@@ -1167,7 +1167,7 @@
   "lesson": "kukan-05",
   "lessonName": "線や面を動かして立体をつくろう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-05.js 05d09a",
   "distractors": [
    "step",
@@ -1179,7 +1179,7 @@
   "lesson": "kukan-05",
   "lessonName": "線や面を動かして立体をつくろう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-05.js 05d09b",
   "distractors": [
    "template",
@@ -1191,7 +1191,7 @@
   "lesson": "kukan-05",
   "lessonName": "線や面を動かして立体をつくろう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-05.js 05d08a",
   "distractors": [
    "near",
@@ -1383,7 +1383,7 @@
   "lesson": "kukan-06",
   "lessonName": "立体を正面と真上から見よう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-06.js 06d07",
   "distractors": [
    "near",
@@ -1395,7 +1395,7 @@
   "lesson": "kukan-06",
   "lessonName": "立体を正面と真上から見よう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-06.js 06d08b",
   "distractors": [
    "near",
@@ -1407,7 +1407,7 @@
   "lesson": "kukan-06",
   "lessonName": "立体を正面と真上から見よう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-06.js 06d08a",
   "distractors": [
    "template",
@@ -1419,7 +1419,7 @@
   "lesson": "kukan-06",
   "lessonName": "立体を正面と真上から見よう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-06.js 06d08c",
   "distractors": [
    "template",
@@ -1431,7 +1431,7 @@
   "lesson": "kukan-06",
   "lessonName": "立体を正面と真上から見よう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-06.js 06q05",
   "distractors": [
    "near",
@@ -1623,7 +1623,7 @@
   "lesson": "kukan-07",
   "lessonName": "立体を切り開こう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-07.js 07d09b",
   "distractors": [
    "near",
@@ -1635,7 +1635,7 @@
   "lesson": "kukan-07",
   "lessonName": "立体を切り開こう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-07.js 07q05",
   "distractors": [
    "near",
@@ -1647,7 +1647,7 @@
   "lesson": "kukan-07",
   "lessonName": "立体を切り開こう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-07.js 07d10",
   "distractors": [
    "step",
@@ -1659,7 +1659,7 @@
   "lesson": "kukan-07",
   "lessonName": "立体を切り開こう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-07.js 07d09c",
   "distractors": [
    "near",
@@ -1671,7 +1671,7 @@
   "lesson": "kukan-07",
   "lessonName": "立体を切り開こう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-07.js 07d09b",
   "distractors": [
    "near",
@@ -1863,7 +1863,7 @@
   "lesson": "kukan-08",
   "lessonName": "立体当てクイズ",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-08.js 08d09a",
   "distractors": [
    "template",
@@ -1875,7 +1875,7 @@
   "lesson": "kukan-08",
   "lessonName": "立体当てクイズ",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-08.js 08q05b",
   "distractors": [
    "near",
@@ -1887,7 +1887,7 @@
   "lesson": "kukan-08",
   "lessonName": "立体当てクイズ",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-08.js 08q05a",
   "distractors": [
    "template",
@@ -1899,7 +1899,7 @@
   "lesson": "kukan-08",
   "lessonName": "立体当てクイズ",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-08.js 08q05c",
   "distractors": [
    "near",
@@ -1911,7 +1911,7 @@
   "lesson": "kukan-08",
   "lessonName": "立体当てクイズ",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-08.js 08d09c",
   "distractors": [
    "template",
@@ -2103,7 +2103,7 @@
   "lesson": "kukan-09",
   "lessonName": "角柱・円柱の表面積",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-09.js 09d09",
   "distractors": [
    "near",
@@ -2115,7 +2115,7 @@
   "lesson": "kukan-09",
   "lessonName": "角柱・円柱の表面積",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-09.js 09q05",
   "distractors": [
    "step",
@@ -2127,7 +2127,7 @@
   "lesson": "kukan-09",
   "lessonName": "角柱・円柱の表面積",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-09.js 09d10",
   "distractors": [
    "near",
@@ -2139,7 +2139,7 @@
   "lesson": "kukan-09",
   "lessonName": "角柱・円柱の表面積",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-09.js 09d09",
   "distractors": [
    "near",
@@ -2151,7 +2151,7 @@
   "lesson": "kukan-09",
   "lessonName": "角柱・円柱の表面積",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-09.js 09q05",
   "distractors": [
    "step",
@@ -2343,7 +2343,7 @@
   "lesson": "kukan-10",
   "lessonName": "角錐・円錐の表面積",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-10.js 10d09b",
   "distractors": [
    "near",
@@ -2355,7 +2355,7 @@
   "lesson": "kukan-10",
   "lessonName": "角錐・円錐の表面積",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-10.js 10d10",
   "distractors": [
    "near",
@@ -2367,7 +2367,7 @@
   "lesson": "kukan-10",
   "lessonName": "角錐・円錐の表面積",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-10.js 10d09c",
   "distractors": [
    "near",
@@ -2379,7 +2379,7 @@
   "lesson": "kukan-10",
   "lessonName": "角錐・円錐の表面積",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-10.js 10q05b",
   "distractors": [
    "near",
@@ -2391,7 +2391,7 @@
   "lesson": "kukan-10",
   "lessonName": "角錐・円錐の表面積",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-10.js 10q05a",
   "distractors": [
    "step",
@@ -2583,7 +2583,7 @@
   "lesson": "kukan-11",
   "lessonName": "錐体の体積は柱体の何分のいくつ？",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-11.js 11d11b",
   "distractors": [
    "step",
@@ -2595,7 +2595,7 @@
   "lesson": "kukan-11",
   "lessonName": "錐体の体積は柱体の何分のいくつ？",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-11.js 11q05",
   "distractors": [
    "near",
@@ -2607,7 +2607,7 @@
   "lesson": "kukan-11",
   "lessonName": "錐体の体積は柱体の何分のいくつ？",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-11.js 11d11a",
   "distractors": [
    "template",
@@ -2619,7 +2619,7 @@
   "lesson": "kukan-11",
   "lessonName": "錐体の体積は柱体の何分のいくつ？",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-11.js 11d10",
   "distractors": [
    "near",
@@ -2631,7 +2631,7 @@
   "lesson": "kukan-11",
   "lessonName": "錐体の体積は柱体の何分のいくつ？",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-11.js 11d11b",
   "distractors": [
    "near",
@@ -2823,7 +2823,7 @@
   "lesson": "kukan-12",
   "lessonName": "球の表面積と体積",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-12.js 12d11",
   "distractors": [
    "near",
@@ -2835,7 +2835,7 @@
   "lesson": "kukan-12",
   "lessonName": "球の表面積と体積",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-12.js 12q05",
   "distractors": [
    "near",
@@ -2847,7 +2847,7 @@
   "lesson": "kukan-12",
   "lessonName": "球の表面積と体積",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-12.js 12d10a",
   "distractors": [
    "near",
@@ -2859,7 +2859,7 @@
   "lesson": "kukan-12",
   "lessonName": "球の表面積と体積",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-12.js 12d10b",
   "distractors": [
    "template",
@@ -2871,7 +2871,7 @@
   "lesson": "kukan-12",
   "lessonName": "球の表面積と体積",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-12.js 12d11",
   "distractors": [
    "near",
@@ -3063,7 +3063,7 @@
   "lesson": "kukan-13",
   "lessonName": "表面積と体積を求める練習",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-13.js 13d10a",
   "distractors": [
    "template",
@@ -3075,7 +3075,7 @@
   "lesson": "kukan-13",
   "lessonName": "表面積と体積を求める練習",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-13.js 13d10c",
   "distractors": [
    "near",
@@ -3087,7 +3087,7 @@
   "lesson": "kukan-13",
   "lessonName": "表面積と体積を求める練習",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-13.js 13q05",
   "distractors": [
    "near",
@@ -3099,7 +3099,7 @@
   "lesson": "kukan-13",
   "lessonName": "表面積と体積を求める練習",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-13.js 13d10b",
   "distractors": [
    "near",
@@ -3111,7 +3111,7 @@
   "lesson": "kukan-13",
   "lessonName": "表面積と体積を求める練習",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-13.js 13d11",
   "distractors": [
    "near",
@@ -3303,7 +3303,7 @@
   "lesson": "kukan-14",
   "lessonName": "身のまわりの立体の量を見積もろう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-14.js 14q05",
   "distractors": [
    "step",
@@ -3315,7 +3315,7 @@
   "lesson": "kukan-14",
   "lessonName": "身のまわりの立体の量を見積もろう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-14.js 14d08b",
   "distractors": [
    "step",
@@ -3327,7 +3327,7 @@
   "lesson": "kukan-14",
   "lessonName": "身のまわりの立体の量を見積もろう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-14.js 14d08a",
   "distractors": [
    "step",
@@ -3339,7 +3339,7 @@
   "lesson": "kukan-14",
   "lessonName": "身のまわりの立体の量を見積もろう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-14.js 14q05",
   "distractors": [
    "near",
@@ -3351,7 +3351,7 @@
   "lesson": "kukan-14",
   "lessonName": "身のまわりの立体の量を見積もろう",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-14.js 14d08b",
   "distractors": [
    "step",
@@ -3543,7 +3543,7 @@
   "lesson": "kukan-15",
   "lessonName": "空間図形のまとめ",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-15.js 15d08b",
   "distractors": [
    "near",
@@ -3555,7 +3555,7 @@
   "lesson": "kukan-15",
   "lessonName": "空間図形のまとめ",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-15.js 15d09a",
   "distractors": [
    "near",
@@ -3567,7 +3567,7 @@
   "lesson": "kukan-15",
   "lessonName": "空間図形のまとめ",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-15.js 15q05",
   "distractors": [
    "near",
@@ -3579,7 +3579,7 @@
   "lesson": "kukan-15",
   "lessonName": "空間図形のまとめ",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-15.js 15d08a",
   "distractors": [
    "step",
@@ -3591,7 +3591,7 @@
   "lesson": "kukan-15",
   "lessonName": "空間図形のまとめ",
   "level": 4,
-  "levelName": "鬼",
+  "levelName": "入試レベル",
   "from": "ikkan/kotsu/content/kukan-15.js 15d09b",
   "distractors": [
    "near",

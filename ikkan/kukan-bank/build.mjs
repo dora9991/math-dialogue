@@ -1,11 +1,11 @@
-// build.mjs — 中1「空間図形」の解説（動画）15本それぞれに、簡単・普通・難しい・鬼 の4段階 × 5問 の演習をつくる。
+// build.mjs — 中1「空間図形」の解説（動画）15本それぞれに、簡単・普通・難しい・入試レベル の4段階 × 5問 の演習をつくる。
 //
 //   元：ikkan/kotsu/content/kukan-01〜15.js（解説の授業ごとの、答えを計算で出す問題。全313テンプレート、4段階）
 //   先：コツコツくんの固定問題（J1 の DB 問題）と同じ形  { id, u, s, d, q, c:[{t, k|m|w}], e, h } ＋ 解説の番号 l
 //
 //   使い方：node ikkan/kukan-bank/build.mjs   → bank.json, meta.json を書く
 //
-//   段階（d）：1＝簡単（基礎）／2＝普通（標準）／3＝難しい（応用）／4＝鬼（入試レベル）。ikkan の 4段階（基礎・標準・応用・入試レベル）に対応。
+//   段階（d）：1＝簡単（基礎）／2＝普通（標準）／3＝難しい（応用）／4＝入試レベル。ikkan の 4段階（基礎・標準・応用・入試レベル）に対応。
 //   正解は、元のテンプレートが計算で出したもの（手で書いていない）。誤答は distractors.mjs で作る。
 import fs from "node:fs";
 import path from "node:path";
@@ -16,7 +16,7 @@ import { makeDistractors, parseAns, fmtRat } from "./distractors.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PER_LEVEL = 5;
-const LEVEL_NAME = { 1: "簡単", 2: "普通", 3: "難しい", 4: "鬼" };
+const LEVEL_NAME = { 1: "簡単", 2: "普通", 3: "難しい", 4: "入試レベル" };
 const NAME_OF = { "J1-kk01": "立体を仲間分けしよう", "J1-kk02": "正多面体をしらべよう", "J1-kk03": "2つの直線の位置関係", "J1-kk04": "直線と平面、平面と平面",
   "J1-kk05": "線や面を動かして立体をつくろう", "J1-kk06": "立体を正面と真上から見よう", "J1-kk07": "立体を切り開こう", "J1-kk08": "立体当てクイズ",
   "J1-kk09": "角柱・円柱の表面積", "J1-kk10": "角錐・円錐の表面積", "J1-kk11": "錐体の体積は柱体の何分のいくつ？", "J1-kk12": "球の表面積と体積",
