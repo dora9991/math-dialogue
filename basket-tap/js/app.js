@@ -86,6 +86,10 @@
     const g = S.game;
     if (!g) return;
     opts = opts || {};
+    // 場面パック（js/license.js。スイッチが off のあいだは、いつも通す）。
+    // 開くだけでは数えない：動画を付けたときに、その試合をお試しの 1 試合に数える（のぞいただけで枠が減らないように）
+    if (!BT.license.can('trim', g)) { BT.license.ui.paywall(g, () => openTrim(opts)); return; }
+    const saveTrim = () => { const T = BT.trim.state; if (T && T.vkey) BT.license.use('trim', g); save(); };
     save();
     if (camOn()) camClose();
     BT.ui.closeSheet(true);
@@ -96,7 +100,7 @@
     S.view = 'trim';
     S.L = null;
     BT.ui.keepAwake(false);
-    BT.trim.open({ game: g, save, back: () => go('game'), home: () => go('home'), file, vid: opts.vid || null });
+    BT.trim.open({ game: g, save: saveTrim, back: () => go('game'), home: () => go('home'), file, vid: opts.vid || null });
     root.scrollTo(0, 0);
   }
   function openGame(game) {
@@ -300,6 +304,8 @@
         h('button', { class: 'btn primary huge', id: 'hubTrim', onclick: () => openTrim({}) }, g.trimmed ? '🎬 場面を見る・動画にする' : '🎬 動画を選んで、場面を切り出す'),
         cams.length ? h('div', { class: 'row' }, cams.map((v) => h('button', { class: 'btn', dataset: { camvid: v.vid }, onclick: () => openTrim({ vid: v.vid }) }, `📹 撮影した動画${v.n}で切り出す（時刻あわせなし）`))) : null);
     }
+    const licLine = next.querySelector('#hubTrim') ? BT.license.ui.line(g) : null;
+    if (licLine) next.append(licLine);
     V.append(
       h('header', { class: 'hbar' },
         h('button', { class: 'btn', id: 'hubHome', onclick: () => go('home') }, '🏠 ホーム'),
@@ -2318,6 +2324,7 @@
       h('div', { class: 'row' }, [['auto', '端末に合わせる'], ['light', '明るい'], ['dark', '暗い']].map(([v, lab]) => h('button', { class: 'btn small' + (p.theme === v ? ' on' : ''), onclick: () => { p.theme = v; savePrefs(); applyTheme(); openSettings(); } }, lab)))));
     body.append(h('p', { class: 'note' }, BT.ui.wakeSupported() ? (BT.ui.awake() ? '💡 記録の途中は、画面が自動で消えないようにしています。' : '💡 記録を始めると、画面が自動で消えないようにします。') : '💡 この端末では、画面が自動で消えるのを止められません。端末の「自動ロック」を長めにしてください。'));
     function refresh() { if (S.L) buildLive(); }
+    if (BT.license.enabled()) body.append(BT.license.ui.settings(openSettings));
     BT.ui.sheet({ title: '設定', body });
   }
 

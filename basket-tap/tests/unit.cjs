@@ -280,6 +280,96 @@ section('1本にまとめた版：切り出し・クラウド');
   eq([C.normKey('ABCD'), C.normKey('ABCD-EFGH-JKMN-PQR1'), C.normKey('')], [null, null, null], '短い・使わない文字（1）・空は null');
   eq(C.showKey('ABCDEFGHJKMNPQRS'), 'ABCD-EFGH-JKMN-PQRS', '見せるときは 4 文字ずつ「-」');
 }
+(async () => {
+  // 場面パック（js/license.js）：保存場所・時計・通信をさしかえて、使えるかの判定を確かめる
+  section('場面パック（購入コード・お試し 3 試合）');
+  const ctx = { console, Math, Date, JSON, Uint8Array, Promise, setTimeout, clearTimeout, crypto: require('crypto').webcrypto };
+  ctx.globalThis = ctx;
+  vm.createContext(ctx);
+  ['core.js', 'license.js'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', f), 'utf8'), ctx, { filename: f }));
+  const mem = () => { const m = {}; return { getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: (k) => { delete m[k]; }, m }; };
+  let clock = Date.UTC(2026, 10, 12);
+  const DAYMS = 86400000;
+  let reply = { ok: true, club: 'テストクラブ', plan: 'scene', expires_at: new Date(clock + 200 * DAYMS).toISOString() }, netDown = false, calls = 0;
+  const fakeFetch = async () => { calls++; if (netDown) throw new Error('down'); return { ok: true, json: async () => reply }; };
+  const mk = (mode) => { const st = mem(); return { st, L: ctx.BT.license.make({ storage: st, now: () => clock, fetch: fakeFetch, mode, online: () => true }) }; };
+  const G = (id) => ({ id, date: '2026-11-0' + id, teams: [{ name: 'A' }, { name: 'B' }], events: [] });
 
+  { // off：いつも通す・何も数えない・何も保存しない
+    const { st, L } = mk('off');
+    ok(L.MODE === 'off' && ctx.BT.license.MODE === 'off', 'MODE の初期値は off');
+    ok([1, 2, 3, 4, 5].every((i) => L.use('trim', G(i))) && L.can('shot', G(9)), 'off：何試合でも使える');
+    eq(Object.keys(st.m), [], 'off：何も保存しない（btap:trial もなし）');
+  }
+  { // on：お試し 3 試合
+    const { st, L } = mk('on');
+    ok(L.can('trim', G(1)) && Object.keys(st.m).length === 0, 'can は何も書かない（副作用なし）');
+    ok(L.use('trim', G(1)) && L.use('trim', G(2)) && L.use('trim', G(2)), '同じ試合をもう一度使っても、枠は減らない');
+    eq([L.status().trialUsed, L.status().trialLeft], [2, 1], '2 試合数えた・あと 1');
+    ok(L.use('shot', G(3)) && L.status().trialLeft === 0, '3 試合目まで通る（機能名はどれでも同じ）');
+    ok(!L.can('trim', G(4)) && !L.use('trim', G(4)), '4 試合目は通らない');
+    ok(L.use('trim', G(1)) && L.can('trim', G(3)), '数えた試合は、これからも通る');
+    ok(JSON.parse(st.m['btap:trial']).length === 3 && JSON.parse(st.m['btap:trial'])[0].name.includes('A vs B'), 'btap:trial は 3 件・名前に日付とチーム名');
+    ok(L.use('trim', Object.assign(G(5), { demo: true })) && L.status().trialUsed === 3, 'デモの試合は、いつも通り・数えない');
+    ok(!L.use('trim', null), '試合がないと、お試しでは通さない');
+  }
+  { // 購入コード
+    const { st, L } = mk('on');
+    [1, 2, 3].forEach((i) => L.use('trim', G(i)));
+    eq((await L.enter('abc')).error, 'format', '形がちがうコードは、通信せずに format');
+    eq((await L.enter('ABCD-EFGH-JKM1')).error, 'format', '0・1・I・L・O は format');
+    const c0 = calls;
+    reply = { ok: false, error: 'none' };
+    const r1 = await L.enter('abcd efgh jkmn');
+    ok(!r1.ok && r1.error === 'none' && /見つかりません/.test(r1.message) && calls === c0 + 1, 'ないコード：やさしい日本語で none', r1);
+    reply = { ok: false, error: 'revoked' }; eq((await L.enter('ABCDEFGHJKMN')).error, 'revoked', 'revoked');
+    reply = { ok: false, error: 'expired' }; eq((await L.enter('ABCDEFGHJKMN')).error, 'expired', 'expired');
+    netDown = true; const rn = await L.enter('ABCDEFGHJKMN'); netDown = false;
+    ok(!rn.ok && rn.error === 'net' && /つながりませんでした/.test(rn.message), '通信できないとき：net');
+    ok(!L.use('trim', G(4)) && !st.m['btap:license'], 'ここまでの失敗では、何も保存されず、4 試合目は通らない');
+    reply = { ok: true, club: 'テストクラブ', plan: 'scene', expires_at: new Date(clock + 200 * DAYMS).toISOString() };
+    const r2 = await L.enter('abcd-efgh-jkmn');
+    ok(r2.ok && r2.club === 'テストクラブ' && JSON.parse(st.m['btap:license']).code === 'ABCDEFGHJKMN', 'コードが通ると、正規化して保存');
+    ok(L.use('trim', G(4)) && L.use('trim', G(5)) && L.status().trialUsed === 3, '場面パックがあれば何試合でも通る（お試しの枠は使わない）');
+    const s = L.status();
+    eq([s.licensed, s.expired, s.daysLeft, s.club], [true, false, 200, 'テストクラブ'], 'status：club・daysLeft');
+    // 期限切れ：数えた試合だけ通る
+    clock += 201 * DAYMS;
+    const s2 = L.status();
+    ok(!s2.licensed && s2.expired && !L.can('trim', G(4)) && L.can('trim', G(1)), '期限が切れると、数えた試合だけ通る');
+    reply = { ok: true, club: 'X', plan: 'scene', expires_at: new Date(clock - DAYMS).toISOString() };
+    eq((await L.enter('ABCDEFGHJKMN')).error, 'expired', 'サーバーが期限前と言っても、期限が過ぎた日付なら expired');
+    L.clear();
+    ok(!st.m['btap:license'] && !L.status().licensed, 'clear で外れる');
+  }
+  { // refresh：24 時間・通信失敗・止められたコード
+    const { st, L } = mk('on');
+    reply = { ok: true, club: 'C', plan: 'scene', expires_at: new Date(clock + 100 * DAYMS).toISOString() };
+    [1, 2, 3].forEach((i) => L.use('trim', G(i)));      // お試しで数えた 3 試合
+    await L.enter('ABCDEFGHJKMN');
+    let c0 = calls; await L.refresh();
+    eq(calls, c0, '24 時間たつまでは、確かめ直さない');
+    clock += 2 * DAYMS; netDown = true; await L.refresh(); netDown = false;
+    ok(L.status().licensed && L.use('trim', G(1)), '通信できないときは、控えのコードのまま使える');
+    reply = { ok: true, club: 'C2', plan: 'scene', expires_at: new Date(clock + 365 * DAYMS).toISOString() };
+    await L.refresh();
+    ok(L.status().club === 'C2' && L.status().daysLeft === 365, '期限が延びたら、控えも延びる');
+    clock += 2 * DAYMS; reply = { ok: false, error: 'revoked' };
+    await L.refresh();
+    const sr = L.status();
+    ok(!sr.licensed && sr.revoked && !L.can('trim', G(7)) && L.can('trim', G(1)), '止められたコードは外れる（数えた試合は通る）');
+    const { L: L2 } = mk('on');
+    const c1 = calls; await L2.refresh(); eq(calls, c1, 'コードがなければ、通信しない');
+  }
+  { // 切りかえ
+    const { st, L } = mk('off');
+    ok(L.applySearch('?lic=on') && L.enabled() && st.m['btap:licmode'] === 'on', '?lic=on でオンになり、印が残る');
+    ok(L.applySearch('?x=1&lic=off') && !L.enabled() && !('btap:licmode' in st.m), '?lic=off で印を外す');
+    ok(!L.applySearch('?x=1') && !L.applySearch('?lic=maybe'), 'ほかの値は無視');
+    st.setItem('btap:licmode', 'on'); ok(L.mode() === 'on', 'btap:licmode = on');
+    st.setItem('btap:licmode', 'zzz'); ok(L.mode() === 'off', 'こわれた印は MODE にもどる');
+  }
+})().then(() => {
 console.log(`\n${pass} ok / ${fail} fail`);
 process.exit(fail ? 1 : 0);
+});

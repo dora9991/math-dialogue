@@ -868,3 +868,20 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
 .trim.novideo { grid-template-columns: minmax(0, 720px); }
 .tstage > .reelbar { align-self: flex-start; }
 .tstage > .reelbar .btn { min-height: 32px; }
+
+/* ===== 場面パック（js/license.js）ここから ===== */
+.lic-line { margin: 2px 0 0; text-align: center; font-size: 13px; color: var(--muted); }
+.lic-line.warn { color: var(--warn); font-weight: 700; }
+.lic-body { display: flex; flex-direction: column; gap: 10px; }
+.lic-body p { margin: 0; }
+.lic-list { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+.lic-used { font-weight: 800; }
+.lic-games { margin: 0; padding: 8px 12px 8px 2em; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 2px; }
+.lic-free { color: var(--good); }
+.lic-input { width: 100%; background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 12px; font-size: 16px; letter-spacing: 0.08em; text-align: center; text-transform: uppercase; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); }
+.lic-msg { min-height: 1.2em; font-size: 13px; color: var(--muted); }
+.lic-msg.bad { color: var(--bad); font-weight: 700; }
+.lic-msg.warnc { color: var(--warn); font-weight: 700; }
+.lic-stat { margin: 0; font-size: 14px; }
+.sheet-card.lic-sheet .sheet-foot .btn { min-height: 46px; font-size: 15px; padding: 8px 16px; }
+/* ===== 場面パック ここまで ===== */
