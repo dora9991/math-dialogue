@@ -944,3 +944,10 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
 .zones tr.tot th, .zones tr.tot td { font-weight: 800; border-top: 2px solid var(--line2); }
 @media (max-width: 600px) { .shotgrid { grid-template-columns: minmax(0, 1fr); } }
 /* ---------- シュートの場所 ここまで ---------- */
+
+/* 入口（バスケ・グロウ）へ戻る：ホームのいちばん上 */
+.growbar { display: flex; align-items: baseline; gap: 8px; align-self: flex-start; max-width: 100%; padding: 4px 2px; color: var(--accent); text-decoration: none; font-size: 14px; }
+.growbar .gb-back { font-size: 20px; line-height: 1; }
+.growbar b { font-weight: 700; white-space: nowrap; }
+.growbar small { color: var(--muted); font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.growbar:active { opacity: 0.6; }

@@ -308,3 +308,6 @@ fieldset.field { border: 0; padding: 0; margin: 0; min-width: 0; }
 
 .cl-form textarea { border: 2px solid var(--line-2); border-radius: 12px; background: var(--sheet); color: var(--ink); padding: 8px 12px; width: 100%; min-width: 0; font: inherit; font-size: 1rem; line-height: 1.5; resize: vertical; }
 .cl-form textarea:focus { border-color: var(--o); outline: none; }
+
+/* 試合と 保護者会（js/links.js） */
+.cl-links-h { margin-top: 8px; }

@@ -124,6 +124,30 @@
     }
   }
 
+  /* ========== 入口（バスケ・グロウ）へ戻る ==========
+     クラブ・練習・保護者会への入口は「バスケ・グロウ」。グロウから ?from=grow-home・grow-club・grow-more で開かれたら、
+     戻り先を覚えておく（このタブのあいだだけ）。ホームの上の「‹ バスケ・グロウ」で、そこへ戻る（同じタブ）。 */
+  const GROW_URL = 'https://dora9991.github.io/math-dialogue/basket-coach/';
+  const FROM_KEY = 'btap:from';
+  const FROMS = { 'grow-home': '#home', 'grow-club': '#club', 'grow-more': '#more' };
+  function growFrom() { try { const f = sessionStorage.getItem(FROM_KEY) || ''; return FROMS[f] ? f : ''; } catch (e) { return ''; } }
+  function growHref() { return GROW_URL + (FROMS[growFrom()] || '#home'); }
+  /* はじめ：?from= を覚えて、アドレスからは消す（ほかの ? と # はそのまま） */
+  function takeFrom() {
+    const m = /[?&]from=([a-z-]+)/.exec(location.search || '');
+    if (!m) return;
+    if (FROMS[m[1]]) { try { sessionStorage.setItem(FROM_KEY, m[1]); } catch (e) { /* 保存できなくても、ふつうに開く */ } }
+    const q = location.search.replace(/([?&])from=[a-z-]+&?/, '$1').replace(/[?&]$/, '');
+    try { history.replaceState(history.state, '', location.pathname + q + location.hash); } catch (e) { /* 無視 */ }
+  }
+  function growBar() {
+    const club = growFrom() === 'grow-club';
+    return h('a', { class: 'growbar', id: 'growLink', href: growHref() },
+      h('span', { class: 'gb-back', 'aria-hidden': 'true' }, '‹'),
+      h('b', null, 'バスケ・グロウ'),
+      h('small', null, club ? 'コーチのページに戻る' : 'クラブ・練習・保護者会の入口'));
+  }
+
   /* ========== ホーム ==========
      上から：記録中の試合 → 2つの始め方（試合を見ながら／撮った動画を見ながら）→ ✂️ 切り出し待ち → これまでの試合。
      試合を押すと「試合のページ」（集計・切り出し・書き出し）。クラウドにだけある試合（ほかの端末で記録した・この端末の保存が消えた）も並べる */
@@ -146,6 +170,7 @@
         h('button', { class: 'btn icon', id: 'btnSettings', 'aria-label': '設定', onclick: openSettings }, '⚙'),
         h('button', { class: 'btn icon', id: 'btnHelp', 'aria-label': '使い方', onclick: help }, '？')),
       h('main', { class: 'home' },
+        growBar(),
         going ? h('section', { class: 'card going' },
           h('div', { class: 'going-h' }, h('span', { class: 'recdot' }), h('b', null, going.rv ? '動画を見ながら記録している試合があります' : '記録中の試合があります')),
           gameLine(going),
@@ -2517,6 +2542,7 @@
 
   /* ---------- 起動 ---------- */
   function init() {
+    takeFrom();
     applyTheme();
     if (root.matchMedia) { try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme); } catch (e) { /* 古いブラウザ */ } }
     // iPhone で :active（押している間の見た目）を効かせる
@@ -2574,7 +2600,7 @@
     }
   }
 
-  BT.app = { S, init, start, undo, redo, record, openMenu, openLog, openEdit, openStats, openExport, openSettings, openPeriod, openKeypad, endGame, reopen, newGame, go, resume, openCamera, camStart, camStop, camClose, camSplit, setUiRot, turnVideo, effRot, orientOK, setWipe,
+  BT.app = { S, init, growHref, growFrom, start, undo, redo, record, openMenu, openLog, openEdit, openStats, openExport, openSettings, openPeriod, openKeypad, endGame, reopen, newGame, go, resume, openCamera, camStart, camStop, camClose, camSplit, setUiRot, turnVideo, effRot, orientOK, setWipe,
     rvAttach, rvToggle, rvSeekTo, rvStep, rvNow, rvAdjust, openNote, openNotes, toggleRvInput, layoutLive,
     setGame, openGame, openHub, openTrim, askTrim, renderGame, renderHome, toLive, toReview, save, rvMode, rvReady, elapsed, enterKey, help, deleteGame, shotLocOn, askShotLoc };
   if (typeof document !== 'undefined') {
