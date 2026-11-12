@@ -885,6 +885,82 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
 .tstage > .reelbar { align-self: flex-start; }
 .tstage > .reelbar .btn { min-height: 32px; }
 
+/* ===== 場面パック（js/license.js）ここから ===== */
+.lic-line { margin: 2px 0 0; text-align: center; font-size: 13px; color: var(--muted); }
+.lic-line.warn { color: var(--warn); font-weight: 700; }
+.lic-body { display: flex; flex-direction: column; gap: 10px; }
+.lic-body p { margin: 0; }
+.lic-list { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+.lic-used { font-weight: 800; }
+.lic-games { margin: 0; padding: 8px 12px 8px 2em; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 2px; }
+.lic-free { color: var(--good); }
+.lic-input { width: 100%; background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 12px; font-size: 16px; letter-spacing: 0.08em; text-align: center; text-transform: uppercase; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); }
+.lic-msg { min-height: 1.2em; font-size: 13px; color: var(--muted); }
+.lic-msg.bad { color: var(--bad); font-weight: 700; }
+.lic-msg.warnc { color: var(--warn); font-weight: 700; }
+.lic-stat { margin: 0; font-size: 14px; }
+.sheet-card.lic-sheet .sheet-foot .btn { min-height: 46px; font-size: 15px; padding: 8px 16px; }
+/* ===== 場面パック ここまで ===== */
+
+/* ---------- シュートの場所（設定でオンのとき。コートの図は js/shot.js の SVG） ----------
+   場所を聞く小窓（shotsheet）は、スクロールなしで1画面に入るよう、コートの大きさを画面の高さと幅から決める。
+   横長で低い画面（スマホの横向き）は、コートの右に「あとで」 */
+:root {
+  --court-bg: #f1e2c4; --court-paint: #e6cc9c; --court-line: #6b4f2a; --court-ring: #e2572b; --court-ink: #111111; --court-halo: transparent;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --court-bg: #3a3123; --court-paint: #4a3d29; --court-line: #e3d3b0; --court-ring: #ff7a45; --court-ink: #ffffff; --court-halo: rgba(255, 255, 255, 0.85); }
+}
+:root[data-theme="dark"] { --court-bg: #3a3123; --court-paint: #4a3d29; --court-line: #e3d3b0; --court-ring: #ff7a45; --court-ink: #ffffff; --court-halo: rgba(255, 255, 255, 0.85); }
+.court { display: block; -webkit-user-select: none; user-select: none; }
+.court.tappable { cursor: crosshair; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.court .cf { fill: var(--court-bg); }
+.court .cpaint { fill: var(--court-paint); }
+.court .cl { fill: none; stroke: var(--court-line); stroke-width: 1.5; stroke-linejoin: round; }
+.court .cl.dash { stroke-dasharray: 4 3; }
+.court .cl.c3 { stroke-width: 2.4; }
+.court .cl.board { stroke-width: 3; }
+.court .ring { fill: none; stroke: var(--court-ring); stroke-width: 2; }
+.court .mk.halo { fill: var(--court-halo); }
+.court .mk.made { stroke: #111111; stroke-width: 1.6; }
+.court .mk.missu { fill: none; stroke: var(--court-ink); stroke-width: 5; stroke-linecap: round; }
+.court .mk.miss { fill: none; stroke-width: 2.6; stroke-linecap: round; }
+.sheet-card.shotsheet { max-height: 96vh; max-height: 96dvh; }
+.sheet-card.shotsheet header { padding: 6px 12px 6px 16px; }
+.sheet-card.shotsheet header .x { min-height: 34px; }
+.sheet-card.shotsheet .sheet-body { padding: 8px 16px calc(10px + env(safe-area-inset-bottom)); overflow: hidden; }
+.shotpick { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.shotcourt svg { height: min(calc(96vh - 190px), calc((100vw - 34px) * 14.5 / 15.5), 540px); height: min(calc(96dvh - 190px), calc((100vw - 34px) * 14.5 / 15.5), 540px); width: auto; aspect-ratio: 15.5 / 14.5; border-radius: 6px; }
+.shotside { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 360px; }
+.shotside .note { margin: 0; text-align: center; }
+.shotside .btn { min-height: 44px; font-size: 16px; }
+.shotwait { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.shotwait i { display: block; height: 100%; background: var(--accent); transform-origin: left center; animation: shotwait linear forwards; }
+@keyframes shotwait { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (orientation: landscape) and (max-height: 500px) {
+  .shotpick { flex-direction: row; align-items: center; justify-content: center; gap: 14px; }
+  .shotcourt svg { height: calc(96vh - 66px); height: calc(96dvh - 66px); }
+  .shotside { width: 170px; }
+}
+/* 記録を直す：場所の欄 */
+.locrow { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.loccourt svg { width: min(240px, 62vw); height: auto; border-radius: 6px; }
+/* 記録の一覧：ゾーンの名前（プレーの下に小さく） */
+.lrow .llabel { min-width: 0; }
+.lrow .lzone { display: block; font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 集計：シュートの場所 */
+.shotstats .row { margin: 6px 0; }
+.shotstats .btn .chip { margin-right: 4px; }
+.shotgrid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 14px; align-items: start; margin-top: 6px; }
+.shotchart svg { width: 100%; height: auto; max-width: 340px; margin: 0 auto; border-radius: 6px; }
+.zones th, .zones td { padding: 5px 8px; }
+.zones tbody th, .zones thead th:first-child { text-align: left; }
+.zones tbody th { font-weight: 700; }
+.zones tr.zero th, .zones tr.zero td { color: var(--muted); font-weight: 400; }
+.zones tr.tot th, .zones tr.tot td { font-weight: 800; border-top: 2px solid var(--line2); }
+@media (max-width: 600px) { .shotgrid { grid-template-columns: minmax(0, 1fr); } }
+/* ---------- シュートの場所 ここまで ---------- */
+
 </style>
 </head>
 <body>
@@ -916,6 +992,9 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
        type: 下の TYPES の id。'period' はピリオドの始まり（period: 番号。team・no はなし）
        team: 0 = 自分・1 = 相手・null = チームなし（画面の下の「パスミス」「★ あとで見る」。だれのかは決めない）
        no  : 背番号（文字列。'0' と '00' は別）| null（だれか分からない・チームなし）
+       x, y: シュートの場所（2P・3P の成功と失敗だけ。なくてよい）。ハーフコートの中の位置（0〜1・0.001 まで）。
+             x：ゴールを向いて 左のサイドライン 0 … 右のサイドライン 1 / y：ゴールの後ろのベースライン 0 … センターライン 1
+     court: 'std' | 'mini'（シュートの場所を記録したときのコート。ミニバスは 3P の線なし。なくてよい）
    }
    得点のプレー（2P・3P・FT）には、かならずチームが付く。
    ピリオドは、イベントには持たせず「その時刻より前の、いちばん新しい 'period'」で決める（periodAt）。
@@ -1399,6 +1478,75 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
   BT.hasMisses = (game) => (game.events || []).some((e) => { const d = BT.TYPE[e.type]; return d && d.shot && !d.made; });
   BT.isEmpty = (s) => STAT_KEYS.every((k) => !s[k]);
 
+  /* ---------- シュートの場所 ----------
+     ハーフコート（FIBA）：幅 15 m・奥行き 14 m。ゴールの中心はベースラインから 1.575 m（まん中）。
+     3P の線：ゴールの中心から 6.75 m の弧と、サイドラインから 0.9 m 内側のまっすぐな線（ベースラインから弧とつながる所まで）。
+     ペイント：幅 4.9 m × 奥行き 5.8 m・フリースローサークル 半径 1.8 m・ノーチャージの半円 半径 1.25 m。
+     場所は x・y（0〜1）で持ち、メートルにするときは x×15・y×14。 */
+  const CT = BT.COURT = { W: 15, D: 14, bx: 7.5, by: 1.575, r3: 6.75, c3: 0.9, pw: 4.9, pd: 5.8, ftR: 1.8, ncR: 1.25 };
+  CT.y3 = CT.by + Math.sqrt(CT.r3 * CT.r3 - (CT.bx - CT.c3) * (CT.bx - CT.c3));      // コーナーのまっすぐな線が、弧とつながる所（約 2.99 m）
+  BT.SHOT_LOC_TYPES = ['fg2', 'fg3', 'fg2x', 'fg3x'];        // 場所を記録するプレー（フリースローは、いつも同じ所なので聞かない）
+  BT.isLocShot = (type) => BT.SHOT_LOC_TYPES.includes(type);
+  BT.hasLoc = (e) => !!(e && BT.isLocShot(e.type) && okLoc(e.x) && okLoc(e.y));
+  function okLoc(v) { return typeof v === 'number' && isFinite(v) && v >= 0 && v <= 1; }
+  BT.locRound = (v) => Math.round(BT.clamp(v, 0, 1) * 1000) / 1000;
+  BT.SECTOR = 22.5;          // 「正面」の角度の幅（ゴールの真上から左右に 22.5°）。3P はさらに 67.5° より外を「コーナー」
+  /* ゾーン（表に並べる順）。court：'std'（3P の線あり）| 'mini'（ミニバス：3P がないので、6.75 m より遠くは「ロング」） */
+  BT.SHOT_ZONES = function (court) {
+    const z = [['rim', 'ゴール下'], ['paint', 'ペイント'], ['midL', 'ミドル左'], ['midC', 'ミドル正面'], ['midR', 'ミドル右']];
+    if (court === 'mini') z.push(['longL', 'ロング左'], ['longC', 'ロング正面'], ['longR', 'ロング右']);
+    else z.push(['c3L', '3P 左コーナー'], ['w3L', '3P 左ウィング'], ['t3', '3P トップ'], ['w3R', '3P 右ウィング'], ['c3R', '3P 右コーナー']);
+    return z.map(([id, label]) => ({ id, label }));
+  };
+  /* 場所 → ゾーン { id, label }。決め方（メートル。dx・dy はゴールの中心から、d はその距離、a はゴールの真上（センターの向き）からの角度。右が＋）：
+       1. d ≦ 1.25（ノーチャージの半円の中）            → ゴール下
+       2. ペイントの中（|dx| ≦ 2.45 かつ y ≦ 5.8。線の上も中） → ペイント
+       3. 3P の外（std）：y ≦ 約 2.99 なら |dx| > 6.6、それより上なら d > 6.75（線の上は 2P）
+            |a| ≦ 22.5° → 3P トップ・|a| ≦ 67.5° → 3P 左／右ウィング・それより外（ゴールより下も） → 3P 左／右コーナー
+          mini：d > 6.75 → ロング（|a| ≦ 22.5° は正面、ほかは左／右）
+       4. そのほか → ミドル（|a| ≦ 22.5° は正面、ほかは左／右） */
+  BT.shotZone = function (x, y, court) {
+    const X = BT.clamp(+x || 0, 0, 1) * CT.W, Y = BT.clamp(+y || 0, 0, 1) * CT.D;
+    const dx = X - CT.bx, dy = Y - CT.by, d = Math.hypot(dx, dy);
+    const a = Math.atan2(dx, dy) * 180 / Math.PI;          // 0：真上・+90：右のベースラインの向き
+    const side = (l, c, r) => (Math.abs(a) <= BT.SECTOR ? c : a < 0 ? l : r);
+    let id;
+    if (d <= CT.ncR) id = 'rim';
+    else if (Math.abs(dx) <= CT.pw / 2 && Y <= CT.pd) id = 'paint';
+    else if (court === 'mini') id = d > CT.r3 ? side('longL', 'longC', 'longR') : side('midL', 'midC', 'midR');
+    else if (Y <= CT.y3 ? Math.abs(dx) > CT.bx - CT.c3 : d > CT.r3) id = Math.abs(a) <= BT.SECTOR ? 't3' : Math.abs(a) <= 90 - BT.SECTOR ? (a < 0 ? 'w3L' : 'w3R') : (a < 0 ? 'c3L' : 'c3R');
+    else id = side('midL', 'midC', 'midR');
+    return BT.SHOT_ZONES(court).find((z) => z.id === id);
+  };
+  /* 試合のコート（場所を記録したときのもの。なければ 'std'） */
+  BT.courtOf = (game, court) => (court === 'mini' || court === 'std' ? court : game && game.court === 'mini' ? 'mini' : 'std');
+  /* シュートの場所の集計。opt：{ team（0・1。なければ両方）, no（背番号。なければ全員）, court }
+     → { court, zones: [{ id, label, made, att }]（表の順）, byZone: { id: 同じもの }, shots: [{ e, x, y, made, zone }]（場所のあるもの）, located, unlocated } */
+  BT.shotStats = function (game, opt) {
+    const o = opt || {};
+    const court = BT.courtOf(game, o.court);
+    const zones = BT.SHOT_ZONES(court).map((z) => ({ id: z.id, label: z.label, made: 0, att: 0 }));
+    const byZone = {};
+    zones.forEach((z) => { byZone[z.id] = z; });
+    const shots = [];
+    let unlocated = 0;
+    (game.events || []).forEach((e) => {
+      if (!BT.isLocShot(e.type)) return;
+      if ((o.team === 0 || o.team === 1) && e.team !== o.team) return;
+      if (o.no != null && e.no !== String(o.no)) return;
+      if (!BT.hasLoc(e)) { unlocated++; return; }
+      const made = !!BT.TYPE[e.type].made;
+      const zone = BT.shotZone(e.x, e.y, court);
+      const z = byZone[zone.id];
+      z.att++;
+      if (made) z.made++;
+      shots.push({ e, x: e.x, y: e.y, made, zone });
+    });
+    return { court, zones, byZone, shots, located: shots.length, unlocated };
+  };
+  /* 場所を記録したシュートがあるか（あれば、集計に「シュートの場所」・CSV に場所の列） */
+  BT.hasShotLoc = (game) => (game.events || []).some(BT.hasLoc);
+
   /* ---------- 名前 ---------- */
   /* チームの呼び名（名前がなければ「自分」「相手」。チームなし（null）は空） */
   BT.teamName = (game, tm) => { if (tm !== 0 && tm !== 1) return ''; const t = game.teams[tm] || {}; return (t.name || '').trim() || (tm ? '相手' : '自分'); };
@@ -1443,13 +1591,17 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
   /* 記録の一覧（CSV）。Excel で文字化けしないよう、先頭の BOM は呼び出し側で付ける */
   BT.eventsCSV = function (game) {
     const rows = [['No', '時刻', 'スタートからの秒', 'ピリオド', 'チーム', '背番号', '名前', 'プレー', '得点', `${BT.teamName(game, 0)}の得点`, `${BT.teamName(game, 1)}の得点`]];
+    // シュートの場所を記録した試合だけ、いちばん後ろに場所の列（前からの列の位置は変えない）
+    const loc = BT.hasShotLoc(game), court = BT.courtOf(game);
+    if (loc) rows[0].push('場所X', '場所Y', '場所（ゾーン名）');
+    const locCells = (e) => (!loc ? [] : BT.hasLoc(e) ? [e.x, e.y, BT.shotZone(e.x, e.y, court).label] : ['', '', '']);
     const s = [0, 0];
     let n = 0;
     BT.sorted(game).forEach((e) => {
-      if (e.type === 'period') { rows.push(['', BT.fmtTime(e.t), e.t, BT.periodLabel(e.period), '', '', '', `${BT.periodLabel(e.period)} 開始`, '', s[0], s[1]]); return; }
+      if (e.type === 'period') { rows.push(['', BT.fmtTime(e.t), e.t, BT.periodLabel(e.period), '', '', '', `${BT.periodLabel(e.period)} 開始`, '', s[0], s[1], ...locCells(e)]); return; }
       const d = BT.TYPE[e.type] || { label: e.type, pts: 0 };
       if (e.team != null) s[e.team] += d.pts || 0;
-      rows.push([++n, BT.fmtTime(e.t), e.t, BT.periodLabel(BT.periodAt(game, e.t)), BT.teamName(game, e.team), e.no != null ? e.no : '', e.no != null ? BT.playerName(game, e.team, e.no) : '', d.label, d.pts || '', s[0], s[1]]);
+      rows.push([++n, BT.fmtTime(e.t), e.t, BT.periodLabel(BT.periodAt(game, e.t)), BT.teamName(game, e.team), e.no != null ? e.no : '', e.no != null ? BT.playerName(game, e.team, e.no) : '', d.label, d.pts || '', s[0], s[1], ...locCells(e)]);
     });
     return csv(rows);
   };
@@ -1489,6 +1641,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     }
     const notes = BT.cleanNotes(obj.notes);
     if (notes.length) g.notes = notes;
+    if (obj.court === 'std' || obj.court === 'mini') g.court = obj.court;
     // 場面の切り出し（動画ごとの時刻あわせ・絞り込み。js/trim.js）
     if (obj.trims && typeof obj.trims === 'object' && !Array.isArray(obj.trims)) {
       const tr = {};
@@ -1505,6 +1658,8 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
       if (e.type === 'period') { if (isFinite(e.period) && e.period >= 1) ev = BT.addEvent(g, { t: e.t, type: 'period', period: Math.min(20, Math.round(e.period)) }); }
       else if (BT.TYPE[e.type]) ev = BT.addEvent(g, { t: e.t, type: e.type, team: e.team, no: e.no != null ? BT.normNo(e.no) : null });
       if (!ev) return;
+      // シュートの場所：2P・3P の成功と失敗で、0〜1 の数のときだけ残す
+      if (BT.isLocShot(ev.type) && okLoc(e.x) && okLoc(e.y)) { ev.x = BT.locRound(e.x); ev.y = BT.locRound(e.y); }
       if (okId(e.id) && !used.has(e.id)) { g.seq--; ev.id = e.id; }      // addEvent が進めた番号を戻す
       while (used.has(ev.id)) ev.id = 'e' + (++g.seq);
       used.add(ev.id);
@@ -1708,6 +1863,105 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
   }
 
   BS.notes = { STAMPS, TAGS, DUR, DURS, STAMP, STAMP_ALONE, MAX_TEXT, parseTags, cleanTag, clean, cleanAll, activeAt, nextId, stampLabel, norm, search, tagCounts, youtubeUrl, growUrl, GROW, toText, segments, draw };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/shot.js */
+/* バスケ タップ記録 — シュートの場所の、コートの図（ハーフコートの SVG・押した所の読み取り・印）
+   図の座標はメートル（幅 15・奥行き 14。ゴールが上）。場所は 0〜1 に直して記録する（形と決まりは core.js の BT.COURT）。
+   SVG にしたのは、どの大きさでも線がくっきりし、押した所を getScreenCTM でそのまま読めるから。 */
+(function (root) {
+  'use strict';
+  const BT = root.BT;
+  const NS = 'http://www.w3.org/2000/svg';
+  const C = BT.COURT;
+  const PAD = 0.25;          // 外の線が切れないよう、まわりに少しすき間（メートル）
+
+  function el(tag, attrs) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs || {}) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  const line = (cls, d) => el('path', { class: cls, d, 'vector-effect': 'non-scaling-stroke' });
+
+  /* ハーフコートの図。opt：{ court: 'std' | 'mini', shots: [{ x, y, made, color }], onTap(x, y), label } */
+  function court(opt) {
+    const o = opt || {};
+    const svg = el('svg', { class: 'court' + (o.onTap ? ' tappable' : ''), viewBox: `${-PAD} ${-PAD} ${C.W + 2 * PAD} ${C.D + 2 * PAD}`, role: o.onTap ? 'button' : 'img', 'aria-label': o.label || 'ハーフコート（ゴールが上）' });
+    svg.dataset.court = o.court === 'mini' ? 'mini' : 'std';
+    const half = C.pw / 2, L = C.bx - half, R = C.bx + half;
+    svg.append(
+      el('rect', { class: 'cf', x: 0, y: 0, width: C.W, height: C.D }),
+      el('rect', { class: 'cpaint', x: L, y: 0, width: C.pw, height: C.pd }),
+      line('cl', `M0 0H${C.W}V${C.D}H0Z`),                                          // ベースライン・サイドライン・センターライン
+      line('cl', `M${L} 0V${C.pd}H${R}V0`),                                         // ペイント
+      line('cl', `M${C.bx - C.ftR} ${C.pd}A${C.ftR} ${C.ftR} 0 0 0 ${C.bx + C.ftR} ${C.pd}`),     // フリースローサークル（外の半分）
+      line('cl dash', `M${C.bx - C.ftR} ${C.pd}A${C.ftR} ${C.ftR} 0 0 1 ${C.bx + C.ftR} ${C.pd}`),
+      line('cl', `M${C.bx - C.ftR} ${C.D}A${C.ftR} ${C.ftR} 0 0 1 ${C.bx + C.ftR} ${C.D}`),       // センターサークル（半分）
+      line('cl', `M${C.bx - C.ncR} 1.2V${C.by}A${C.ncR} ${C.ncR} 0 0 0 ${C.bx + C.ncR} ${C.by}V1.2`)  // ノーチャージの半円
+    );
+    if (o.court !== 'mini') {
+      const xl = C.c3, xr = C.W - C.c3;
+      svg.append(line('cl c3', `M${xl} 0V${C.y3}A${C.r3} ${C.r3} 0 0 0 ${xr} ${C.y3}V0`));
+    }
+    svg.append(
+      line('cl board', `M${C.bx - 0.9} 1.2H${C.bx + 0.9}`),                          // ボード（ベースラインから 1.2 m）
+      el('circle', { class: 'ring', cx: C.bx, cy: C.by, r: 0.225, 'vector-effect': 'non-scaling-stroke' }));
+    const marks = el('g', { class: 'marks' });
+    svg.append(marks);
+    svg.__marks = marks;
+    if (o.shots) setMarks(svg, o.shots);
+    if (o.onTap) svg.addEventListener('click', (e) => { const p = pos(svg, e.clientX, e.clientY); if (p) o.onTap(p.x, p.y); });
+    return svg;
+  }
+
+  /* 印：入った（made）は、チームの色の丸に濃いふち（白いユニフォームでも見えるように）・外れは ×（濃い色の下地の上にチームの色）。
+     暗い画面では、まわりに白い輪（halo）も付ける（黒・紺のユニフォームが、暗い床に沈まないように） */
+  function setMarks(svg, shots) {
+    const g = svg.__marks;
+    while (g.firstChild) g.firstChild.remove();
+    (shots || []).forEach((s) => {
+      const cx = s.x * C.W, cy = s.y * C.D, col = s.color || '#888';
+      if (s.made !== false) {
+        g.append(el('circle', { class: 'mk halo', cx, cy, r: 0.44 }), el('circle', { class: 'mk made', cx, cy, r: 0.34, fill: col, 'vector-effect': 'non-scaling-stroke' }));
+      } else {
+        const k = 0.28, d = `M${cx - k} ${cy - k}L${cx + k} ${cy + k}M${cx + k} ${cy - k}L${cx - k} ${cy + k}`;
+        g.append(el('path', { class: 'mk missu', d, 'vector-effect': 'non-scaling-stroke' }), el('path', { class: 'mk miss', d, stroke: col, 'vector-effect': 'non-scaling-stroke' }));
+      }
+    });
+  }
+
+  /* 画面の位置（clientX・clientY）→ 場所（0〜1・0.001 まで。コートの外は、いちばん近いコートの端） */
+  function pos(svg, cx, cy) {
+    let mx, my;
+    const m = svg.getScreenCTM && svg.getScreenCTM();
+    if (m && svg.createSVGPoint) {
+      const p = svg.createSVGPoint();
+      p.x = cx; p.y = cy;
+      const q = p.matrixTransform(m.inverse());
+      mx = q.x; my = q.y;
+    } else {
+      const r = svg.getBoundingClientRect();
+      if (!r.width || !r.height) return null;
+      mx = (cx - r.left) / r.width * (C.W + 2 * PAD) - PAD;
+      my = (cy - r.top) / r.height * (C.D + 2 * PAD) - PAD;
+    }
+    return { x: BT.locRound(mx / C.W), y: BT.locRound(my / C.D) };
+  }
+  /* 場所（0〜1）→ 画面の位置（テストと、印の確かめ用） */
+  function client(svg, x, y) {
+    const m = svg.getScreenCTM();
+    const p = svg.createSVGPoint();
+    p.x = x * C.W; p.y = y * C.D;
+    const q = p.matrixTransform(m);
+    return { x: q.x, y: q.y };
+  }
+
+  BT.shot = {
+    WAIT: 6000,          // 試合を見ながら記録するとき：これだけ押さなければ、場所の小窓を自動で閉じる（ミリ秒）
+    court, setMarks, pos, client
+  };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -2743,9 +2997,10 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
      uiRot：アプリごと横向きにする（90・270。画面の向きのロックをしたまま、横に倒して使う）/ camRot・camRotF：映像の向きの手直し（ふつう・アプリごと横向きのとき）
      camWipe：記録の画面に映すカメラの映像（ワイプ）の大きさ（'s' 小：上の帯の中 | 'm' 中 | 'l' 大 | 'x' 特大）
      btnMiss・btnFoul：選手の行に、シュートの失敗（2P・3P・FT の「×」）・ファウルのボタンも出す（ふだんは出さない）
-     btnAst・btnStl：アシスト・スティールのボタンも出す / rebSplit：リバを「Oリバ」「Dリバ」の2つに分ける（どれも、ふだんは出さない） */
+     btnAst・btnStl：アシスト・スティールのボタンも出す / rebSplit：リバを「Oリバ」「Dリバ」の2つに分ける（どれも、ふだんは出さない）
+     shotLoc：シュートを記録したあと、コートの図で場所も聞く（ふだんは聞かない）/ courtType：その図のコート（'std' 3P の線あり | 'mini' ミニバス） */
   function prefs() {
-    const p = Object.assign({ sound: false, theme: 'auto', names: true, unknown: true, camQuality: '720', camAudio: true, camOrient: 'land', uiRot: 0, camRot: 0, camRotF: null, camWipe: 'm', btnMiss: false, btnFoul: false, btnAst: false, btnStl: false, rebSplit: false }, readJSON(K.prefs) || {});
+    const p = Object.assign({ sound: false, theme: 'auto', names: true, unknown: true, camQuality: '720', camAudio: true, camOrient: 'land', uiRot: 0, camRot: 0, camRotF: null, camWipe: 'm', btnMiss: false, btnFoul: false, btnAst: false, btnStl: false, rebSplit: false, shotLoc: false, courtType: 'std' }, readJSON(K.prefs) || {});
     delete p.actions;        // 前の版の「ボタンの組み合わせ」（いまは、選手ごとのボタンに決まっている）
     return p;
   }
@@ -3113,6 +3368,325 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
   }
 
   BT.cloud = { key, showKey, setKey, normKey, newKey, push, flush, status, pending, list, get, del, on, enabled, state, KEYS: K };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* js/license.js */
+/* バスケ タップ記録 — 場面パック（購入コード・お試し 3 試合）
+   ・クラブが年 3万円で「場面パック」を買うと、購入コードが1つ届く（人数は数えない。クラブの端末なら何台でも使える）
+   ・場面パックで使えるのは、場面を見る・動画にする（'trim'）と、シュートの場所（'shot'）。記録・集計・CSV・クラウド・撮影は、ずっと無料
+   ・お試し：この端末で、はじめの 3 試合まで無料。パックの機能を最初に使った試合が数えられ、数えた試合は、ずっと使える
+     （数えるのは use() を呼んだとき。切り出しは、動画を付けたときに app.js が呼ぶ。画面を開いただけでは数えない）
+   ・デモの試合は、いつでも使えて、数えない
+   ・スイッチ MODE は、はじめは 'off'（売り始めるまで。off のあいだは、画面にも保存にも何も出ない）
+   ・確かめ方の正直なところ：これは端末の中の確認なので、詳しい人なら回避できる。クラブに気持ちよく払ってもらうための仕組みで、コピー防止（DRM）ではない
+   ・体育館は電波が弱いので、使う場面でネットを待たない。いちど確かめたコードは、期限まで端末の中の控えで通す（24 時間以上たって、つながっているときだけ、こっそり確かめ直す）
+   サーバー側：public.btap_codes と btap_code_check（cloud/license.sql。README の「場面パック」） */
+(function (root) {
+  'use strict';
+  const BT = root.BT || (root.BT = {});
+  const MODE = 'off';           // 売り始めるときに 'on' にする
+  const CONTACT = '';           // お申し込みの窓口（https:// か mailto:）。空のあいだは、ボタンを出さない
+  const URL_ = 'https://mtzhbiadzqjhvhzzdsbn.supabase.co';          // js/cloud.js と同じ
+  const ANON = 'sb_publishable_mq8nUqxVfGtnNHp5UCUtCA_9-x1xn7E';
+  const K = { mode: 'btap:licmode', license: 'btap:license', trial: 'btap:trial' };
+  const TRIAL_MAX = 3;
+  const DAY = 86400000;
+  const RECHECK = DAY;          // 確かめ直すのは 24 時間に 1 回まで
+  const WARN_DAYS = 30;         // 期限の 30 日前から知らせる
+  const CODE_RE = /^[2-9A-HJKMNP-Z]{12}$/;      // まぎらわしい文字（0 O 1 I L）は使わない
+  const MSG = {
+    format: 'コードの形がちがいます（12 文字。例：ABCD-EFGH-JKMN）。0・1・I・L・O は使いません',
+    none: 'このコードは見つかりません。もう一度、確かめてください',
+    expired: 'このコードは、期限が切れています',
+    revoked: 'このコードは、使えなくなっています。お申し込みの窓口へ',
+    net: 'サーバーにつながりませんでした。電波のあるところで、もう一度どうぞ'
+  };
+
+  function memStorage() { const m = {}; return { getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: (k) => { delete m[k]; } }; }
+  function domStorage() { try { return root.localStorage || null; } catch (e) { return null; } }
+  const normCode = (s) => String(s || '').toUpperCase().replace(/[\s\-ー－_]/g, '');
+  const showCode = (c) => normCode(c).replace(/(.{4})(?=.)/g, '$1-');
+  const two = (n) => String(n).padStart(2, '0');
+  const ymd = (ms) => { const d = new Date(ms); return `${d.getFullYear()}/${two(d.getMonth() + 1)}/${two(d.getDate())}`; };
+
+  /* env：{ storage, now, fetch, online, mode（MODE の代わり）} をさしかえられる（テスト用） */
+  function make(env) {
+    env = env || {};
+    const store = env.storage || domStorage() || memStorage();
+    const now = env.now || (() => Date.now());
+    const baseMode = env.mode || MODE;
+    const listeners = new Set();
+    let checking = false;
+
+    function readJSON(k) { try { const v = store.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+    function writeJSON(k, v) { try { store.setItem(k, JSON.stringify(v)); } catch (e) { /* いっぱい */ } }
+    function remove(k) { try { store.removeItem(k); } catch (e) { /* 無視 */ } }
+    function emit() { listeners.forEach((fn) => { try { fn(); } catch (e) { /* 無視 */ } }); }
+    const on = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
+
+    /* ---------- スイッチ ---------- */
+    function mode() {
+      let v = null;
+      try { v = store.getItem(K.mode); } catch (e) { v = null; }
+      return v === 'on' || v === 'off' ? v : baseMode;
+    }
+    const enabled = () => mode() === 'on';
+    /* ?lic=on / ?lic=off（見せるとき・テスト用）。off は印を外して、MODE にもどす。変えたら true */
+    function applySearch(search) {
+      const m = /[?&]lic=(on|off)\b/.exec(search || '');
+      if (!m) return false;
+      if (m[1] === 'on') { try { store.setItem(K.mode, 'on'); } catch (e) { /* 無視 */ } } else remove(K.mode);
+      emit();
+      return true;
+    }
+
+    /* ---------- 控え ---------- */
+    function license() {
+      const l = readJSON(K.license);
+      return l && typeof l === 'object' && l.code && Number.isFinite(l.expiresAt) ? l : null;
+    }
+    function trial() {
+      const t = readJSON(K.trial);
+      return Array.isArray(t) ? t.filter((x) => x && x.id).slice(0, TRIAL_MAX) : [];
+    }
+    const valid = (l) => !!(l && !l.revoked && l.expiresAt > now());
+
+    function status() {
+      const l = license(), t = trial(), n = now();
+      const licensed = valid(l);
+      return {
+        mode: mode(), licensed, club: l ? l.club || '' : '', expiresAt: l ? l.expiresAt : 0,
+        expired: !!(l && !l.revoked && l.expiresAt <= n), revoked: !!(l && l.revoked),
+        daysLeft: licensed ? Math.max(0, Math.ceil((l.expiresAt - n) / DAY)) : 0,
+        trialUsed: t.length, trialLeft: Math.max(0, TRIAL_MAX - t.length), trialGames: t
+      };
+    }
+
+    /* ---------- 使えるか ---------- */
+    const isDemo = (g) => !!((g && g.demo) || (BT.app && BT.app.S && BT.app.S.demoMode));
+    function label(g) {
+      const nm = (i) => (typeof BT.teamName === 'function' && g.teams ? BT.teamName(g, i) : '');
+      return [g.date || '', [nm(0), nm(1)].filter(Boolean).join(' vs ')].filter(Boolean).join(' ') || '試合';
+    }
+    function decide(game, commit) {
+      if (!enabled()) return true;
+      if (isDemo(game)) return true;
+      if (valid(license())) return true;
+      const t = trial();
+      if (game && game.id && t.some((x) => x.id === game.id)) return true;
+      if (t.length >= TRIAL_MAX) return false;
+      if (!commit) return true;
+      if (!game || !game.id) return false;
+      t.push({ id: game.id, at: now(), name: label(game) });
+      writeJSON(K.trial, t);
+      emit();
+      return true;
+    }
+    /* feature：'trim'・'shot'（いまは、どの機能も同じ場面パック） */
+    const can = (feature, game) => decide(game, false);
+    const use = (feature, game) => decide(game, true);
+
+    /* ---------- 購入コード ---------- */
+    async function rpc(code) {
+      const f = env.fetch || (typeof root.fetch === 'function' ? root.fetch.bind(root) : null);
+      if (!f) throw new Error('offline');
+      const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timer = setTimeout(() => { if (ctrl) ctrl.abort(); }, 12000);
+      try {
+        const r = await f(`${URL_}/rest/v1/rpc/btap_code_check`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: ANON, Authorization: 'Bearer ' + ANON },
+          body: JSON.stringify({ p_code: code }),
+          signal: ctrl ? ctrl.signal : undefined
+        });
+        if (!r.ok) throw new Error('http ' + r.status);
+        return await r.json();
+      } finally { clearTimeout(timer); }
+    }
+    /* → { ok: true, club, expiresAt } か { ok: false, error: 'format'|'none'|'expired'|'revoked'|'net', message } */
+    async function enter(input) {
+      const code = normCode(input);
+      const fail = (error) => ({ ok: false, error, message: MSG[error] || MSG.net });
+      if (!CODE_RE.test(code)) return fail('format');
+      let j;
+      try { j = await rpc(code); } catch (e) { return fail('net'); }
+      if (!j || typeof j !== 'object') return fail('net');
+      if (j.ok !== true) return fail(MSG[j.error] && j.error !== 'net' ? j.error : 'none');
+      const exp = Date.parse(j.expires_at);
+      if (!Number.isFinite(exp)) return fail('net');
+      if (exp <= now()) return fail('expired');
+      writeJSON(K.license, { code, club: String(j.club || ''), plan: String(j.plan || 'scene'), expiresAt: exp, checkedAt: now() });
+      emit();
+      return { ok: true, club: String(j.club || ''), expiresAt: exp };
+    }
+    /* 24 時間に 1 回、つながっているときだけ、こっそり確かめ直す。つながらないときは、控えのまま */
+    async function refresh() {
+      const l = license();
+      if (!l || l.revoked || checking) return status();
+      if (now() - (l.checkedAt || 0) < RECHECK) return status();
+      if (env.online ? !env.online() : (root.navigator && root.navigator.onLine === false)) return status();
+      checking = true;
+      try {
+        let j = null;
+        try { j = await rpc(l.code); } catch (e) { return status(); }
+        if (!j || typeof j !== 'object') return status();
+        const cur = license();
+        if (!cur || cur.code !== l.code) return status();      // 確かめているあいだに、コードが変わった
+        if (j.ok === true) {
+          const exp = Date.parse(j.expires_at);
+          if (Number.isFinite(exp)) writeJSON(K.license, Object.assign({}, cur, { club: String(j.club || cur.club), expiresAt: exp, checkedAt: now(), revoked: false }));
+        } else if (j.error === 'revoked' || j.error === 'none') {
+          writeJSON(K.license, Object.assign({}, cur, { revoked: true, expiresAt: Math.min(cur.expiresAt, now()), checkedAt: now() }));
+        } else if (j.error === 'expired') {
+          writeJSON(K.license, Object.assign({}, cur, { expiresAt: Math.min(cur.expiresAt, now()), checkedAt: now() }));
+        }
+        emit();
+        return status();
+      } finally { checking = false; }
+    }
+    function clear() { remove(K.license); emit(); }
+
+    return { MODE, CONTACT, TRIAL_MAX, MSG, isDemo, mode, enabled, applySearch, status, can, use, enter, refresh, clear, on, normCode, showCode, ymd, KEYS: K };
+  }
+
+  const lic = make();
+  lic.make = make;
+  BT.license = lic;
+
+  /* ---------- 画面（ブラウザのときだけ。スイッチが off のあいだは、何も出さない） ---------- */
+  const ui = {};
+  lic.ui = ui;
+  const hh = (...a) => BT.ui.h(...a);
+
+  /* 期限のひとこと（なければ ''） */
+  function expiryNote(s) {
+    if (s.revoked) return 'このコードは、使えなくなっています';
+    if (s.expired) return '期限が切れました';
+    if (s.licensed && s.daysLeft <= WARN_DAYS) return `あと ${s.daysLeft} 日で期限です`;
+    return '';
+  }
+  ui.expiryNote = expiryNote;
+  const clubLine = (s) => `${s.club ? s.club + '・' : ''}${ymd(s.expiresAt)} まで`;
+
+  /* 試合のページ：切り出しボタンの下の小さな一行 */
+  ui.line = function (game) {
+    if (!lic.enabled() || lic.isDemo(game)) return null;
+    const el = hh('p', { class: 'lic-line', id: 'licLine' });
+    const draw = () => {
+      const s = lic.status();
+      let txt, cls = '';
+      if (s.licensed) { txt = `🔑 場面パック：${clubLine(s)}`; const w = expiryNote(s); if (w) { txt += `（${w}）`; cls = ' warn'; } }
+      else {
+        const counted = s.trialGames.some((x) => x.id === game.id);
+        const w = s.expired || s.revoked ? expiryNote(s) + '。' : '';
+        if (counted) txt = w + 'お試し中の試合です';
+        else if (s.trialLeft > 0) txt = w + `お試し：あと ${s.trialLeft} 試合`;
+        else { txt = w + '🔒 場面パックが必要です'; cls = ' warn'; }
+      }
+      el.className = 'lic-line' + cls;
+      el.textContent = txt;
+    };
+    draw();
+    const off = lic.on(() => { if (!document.contains(el)) { if (el.dataset.seen) off(); return; } el.dataset.seen = '1'; draw(); });
+    setTimeout(() => { if (document.contains(el)) el.dataset.seen = '1'; }, 0);
+    return el;
+  };
+
+  /* 購入コードを入れる小窓。onDone：使えるようになったあと（ここから来たときは、続きへ） */
+  ui.codeSheet = function (onDone, onCancel) {
+    const inp = hh('input', { type: 'text', id: 'licCode', class: 'lic-input', placeholder: 'XXXX-XXXX-XXXX', autocomplete: 'off', autocapitalize: 'characters', autocorrect: 'off', spellcheck: 'false', inputmode: 'text', maxlength: '14', 'aria-label': '購入コード' });
+    const msg = hh('p', { class: 'lic-msg', id: 'licMsg', role: 'alert' });
+    const go = hh('button', { class: 'btn primary', id: 'licCheck' }, '確かめる');
+    let busy = false, done = false;
+    inp.addEventListener('input', () => {
+      const c = normCode(inp.value).replace(/[^2-9A-HJKMNP-Z]/g, '').slice(0, 12);
+      inp.value = showCode(c);
+      msg.textContent = '';
+    });
+    const submit = async () => {
+      if (busy) return;
+      busy = true; go.disabled = true; inp.disabled = true;
+      go.textContent = '確かめています…'; msg.className = 'lic-msg'; msg.textContent = '';
+      const r = await lic.enter(inp.value);
+      busy = false; go.disabled = false; inp.disabled = false; go.textContent = '確かめる';
+      if (!r.ok) { msg.className = 'lic-msg bad'; msg.textContent = r.message; inp.focus(); return; }
+      done = true;
+      s.close();
+      BT.ui.toast(`場面パックが使えるようになりました（${r.club ? r.club + '・' : ''}${ymd(r.expiresAt)} まで）`, 'ok', 5000);
+      if (onDone) onDone();
+    };
+    go.addEventListener('click', submit);
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+    const s = BT.ui.sheet({
+      title: '🔑 購入コードを入れる', cls: 'lic-sheet',
+      body: hh('div', { class: 'lic-body' },
+        hh('p', null, 'お申し込みのあとにお渡しした、12 文字のコードを入れてください。クラブの端末なら、何台でも同じコードで使えます。'),
+        inp, msg,
+        hh('p', { class: 'note' }, '大文字・小文字、「-」は、どちらでも大丈夫です。')),
+      foot: [hh('button', { class: 'btn', id: 'licCodeClose', onclick: () => s.close() }, 'やめる'), go],
+      onClose: (silent) => { if (!silent && !done && onCancel) onCancel(); }
+    });
+    setTimeout(() => { try { inp.focus(); } catch (e) { /* 無視 */ } }, 50);
+    return s;
+  };
+
+  /* 申し込みボタン（窓口が決まっていないときは、案内の文だけ） */
+  function contactEl() {
+    const c = lic.CONTACT;
+    if (!c) return hh('p', { class: 'note', id: 'licApplyNote' }, 'お申し込みは、ご案内した窓口へ');
+    return hh('a', { class: 'btn', id: 'licApply', href: c, target: '_blank', rel: 'noopener' }, '✉ お申し込み・お問い合わせ');
+  }
+
+  /* 場面パックが必要なとき。onDone：コードが通ったあとの続き（切り出しを開く） */
+  ui.paywall = function (game, onDone) {
+    const s0 = lic.status();
+    const games = s0.trialGames;
+    const s = BT.ui.sheet({
+      title: '場面パック（クラブで 年 3万円）', cls: 'lic-sheet paywall',
+      body: hh('div', { class: 'lic-body' },
+        s0.expired || s0.revoked ? hh('p', { class: 'lic-msg bad' }, expiryNote(s0) + '。続けるには、新しいコードを入れてください') : null,
+        hh('ul', { class: 'lic-list' },
+          hh('li', null, '🎬 記録した場面を、選手ごと・プレーごとに見られます'),
+          hh('li', null, '🎞 場面をつなげて、1本の動画にできます'),
+          hh('li', null, '📍 シュートの場所を記録して、場所ごとの数を見られます')),
+        hh('p', { class: 'lic-used' }, 'お試しの 3 試合を使いました'),
+        hh('ol', { class: 'lic-games', id: 'licGames' }, games.map((x) => hh('li', null, x.name || '試合'))),
+        hh('p', { class: 'note lic-free' }, '記録・集計・CSV の書き出し・クラウド・撮影は、これからもずっと無料です。人数はかぞえません（クラブで 1 つのコード）。'),
+        contactEl()),
+      foot: [hh('button', { class: 'btn', id: 'licClose', onclick: () => s.close() }, 'とじる'),
+        hh('button', { class: 'btn primary', id: 'licEnter', onclick: () => ui.codeSheet(onDone) }, '🔑 購入コードを入れる')]
+    });
+    return s;
+  };
+
+  /* 設定の一つ。reopen：コードを入れた・外したあとに、設定を開き直す */
+  ui.settings = function (reopen) {
+    const s = lic.status();
+    const note = expiryNote(s);
+    const body = [hh('span', null, '🔑 場面パック')];
+    if (s.licensed) body.push(hh('p', { class: 'lic-stat', id: 'licStat' }, `使えます：${clubLine(s)}`));
+    else body.push(hh('p', { class: 'lic-stat', id: 'licStat' }, s.trialLeft > 0 ? `お試し：あと ${s.trialLeft} 試合（使った試合 ${s.trialUsed} / ${lic.TRIAL_MAX}）` : 'お試しの 3 試合を使いました'));
+    if (note) body.push(hh('p', { class: 'lic-msg ' + (s.licensed && !s.expired ? 'warnc' : 'bad'), id: 'licNote' }, note));
+    body.push(hh('p', { class: 'note' }, '記録・集計・CSV・クラウド・撮影は、ずっと無料です。場面を見る・動画にする機能と、シュートの場所が、場面パックです（クラブで 年 3万円）。'));
+    const row = [hh('button', { class: 'btn small', id: 'licSetEnter', onclick: () => ui.codeSheet(reopen, reopen) }, '🔑 購入コードを入れる')];
+    if (s.club || s.licensed || s.expired || s.revoked) row.push(hh('button', { class: 'btn small', id: 'licSetClear', onclick: () => BT.ui.confirm('コードを外しますか？', 'この端末で場面パックが使えなくなります。コードは、あとでまた入れられます。', '外す', () => { lic.clear(); if (reopen) reopen(); }, true) }, 'コードを外す'));
+    body.push(hh('div', { class: 'row' }, row));
+    if (!s.licensed) body.push(contactEl());
+    return hh('section', { class: 'field', id: 'setLicense' }, body);
+  };
+
+  /* ---------- はじめ：?lic=on・off と、こっそり確かめ直し ---------- */
+  if (typeof location !== 'undefined' && root.document) {
+    try {
+      if (lic.applySearch(location.search)) {
+        const q = location.search.replace(/([?&])lic=(on|off)\b&?/, '$1').replace(/[?&]$/, '');
+        history.replaceState(null, '', location.pathname + q + location.hash);
+      }
+    } catch (e) { /* 無視 */ }
+    if (lic.enabled()) setTimeout(() => { lic.refresh().catch(() => {}); }, 3000);
+  }
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -5403,6 +5977,10 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     const g = S.game;
     if (!g) return;
     opts = opts || {};
+    // 場面パック（js/license.js。スイッチが off のあいだは、いつも通す）。
+    // 開くだけでは数えない：動画を付けたときに、その試合をお試しの 1 試合に数える（のぞいただけで枠が減らないように）
+    if (!BT.license.can('trim', g)) { BT.license.ui.paywall(g, () => openTrim(opts)); return; }
+    const saveTrim = () => { const T = BT.trim.state; if (T && T.vkey) BT.license.use('trim', g); save(); };
     save();
     if (camOn()) camClose();
     BT.ui.closeSheet(true);
@@ -5413,7 +5991,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     S.view = 'trim';
     S.L = null;
     BT.ui.keepAwake(false);
-    BT.trim.open({ game: g, save, back: () => go('game'), home: () => go('home'), file, vid: opts.vid || null });
+    BT.trim.open({ game: g, save: saveTrim, back: () => go('game'), home: () => go('home'), file, vid: opts.vid || null });
     root.scrollTo(0, 0);
   }
   function openGame(game) {
@@ -5617,6 +6195,8 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
         h('button', { class: 'btn primary huge', id: 'hubTrim', onclick: () => openTrim({}) }, g.trimmed ? '🎬 場面を見る・動画にする' : '🎬 動画を選んで、場面を切り出す'),
         cams.length ? h('div', { class: 'row' }, cams.map((v) => h('button', { class: 'btn', dataset: { camvid: v.vid }, onclick: () => openTrim({ vid: v.vid }) }, `📹 撮影した動画${v.n}で切り出す（時刻あわせなし）`))) : null);
     }
+    const licLine = next.querySelector('#hubTrim') ? BT.license.ui.line(g) : null;
+    if (licLine) next.append(licLine);
     V.append(
       h('header', { class: 'hbar' },
         h('button', { class: 'btn', id: 'hubHome', onclick: () => go('home') }, '🏠 ホーム'),
@@ -5998,12 +6578,14 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     const key = tm + ':' + no + ':' + type;
     if (S.lastTap.key === key && t0 - S.lastTap.at < 450) return;        // 二度押し（同じボタンを 0.45 秒以内）は1回に
     S.lastTap = { key, at: t0 };
-    BT.addEvent(S.game, { t: tAt != null ? tAt : elapsed(), type, team: tm, no });
+    const ev = BT.addEvent(S.game, { t: tAt != null ? tAt : elapsed(), type, team: tm, no });
     S.redo = [];
     save();
     flash(btn);
     feel(BT.TYPE[type].kind);
     updateLive(BT.TYPE[type].pts ? tm : null);
+    // シュートの場所：記録したあとで聞く（時刻は押した瞬間のまま。デモの台本の途中では聞かない）
+    if (shotLocOn() && !S.demoMode && BT.isLocShot(type)) askShotLoc(ev);
   }
 
   /* 表示を書き換える（bump：得点が動いたチーム） */
@@ -7396,6 +7978,86 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     });
   }
 
+  /* ---------- シュートの場所（設定でオンのとき。コートの図は js/shot.js） ----------
+     記録は先にすませ（時刻は押した瞬間で決まる）、そのあとで場所を聞く。「あとで」でも記録はなくならない。
+     試合を見ながら記録するときは、小窓が選手のボタンをふさぐので、BT.shot.WAIT（6 秒）押さなければ自動で閉じる。
+     動画を見ながら記録するときは閉じない（小窓を開いている間は、動画が止まっている） */
+  /* 設定でオン、かつ場面パックで使えるとき（お試しの試合・購入コード。js/license.js。スイッチが off のあいだは、いつも使える） */
+  function shotLocOn() { return !!S.prefs.shotLoc && BT.license.can('shot', S.game); }
+  const courtNow = () => (S.prefs.courtType === 'mini' ? 'mini' : 'std');
+  const shotWho = (g, e) => (e.no != null ? '#' + e.no : BT.teamName(g, e.team));
+  function setLoc(e, x, y) { e.x = BT.locRound(x); e.y = BT.locRound(y); }
+  function askShotLoc(ev) {
+    const g = S.game, d = BT.TYPE[ev.type], court = courtNow(), live = !rvMode();
+    let timer = 0;
+    const tapped = (x, y) => {
+      const e = BT.findEvent(g, ev.id);
+      s.close();
+      if (!e || S.game !== g) return;
+      setLoc(e, x, y);
+      BT.license.use('shot', g);          // 場所を付けた試合を、お試しの 1 試合に数える
+      g.court = court;
+      save();
+      say(`📍 ${BT.shotZone(e.x, e.y, court).label}`, 'ok', 2500);
+    };
+    const svg = BT.shot.court({ court, onTap: tapped, label: 'コートの図（ゴールが上）。打った場所を押す' });
+    const body = h('div', { class: 'shotpick' + (live ? ' timed' : ''), id: 'shotPick' },
+      h('div', { class: 'shotcourt' }, svg),
+      h('div', { class: 'shotside' },
+        h('p', { class: 'note' }, '打った場所を1回押してください（ゴールが上）'),
+        live ? h('div', { class: 'shotwait', 'aria-hidden': 'true' }, h('i', { style: { animationDuration: BT.shot.WAIT + 'ms' } })) : null,
+        h('button', { class: 'btn', id: 'shotLater', onclick: () => s.close() }, 'あとで')));
+    const s = BT.ui.sheet({ title: `${shotWho(g, ev)} ${d.label}：どこから？`, body, cls: 'shotsheet', onClose: () => clearTimeout(timer) });
+    if (live) timer = setTimeout(() => s.close(), BT.shot.WAIT);
+  }
+  /* 記録を直す：場所の欄（小さなコート。押すと場所を付ける・動かす） */
+  function locField(e, changed) {
+    const g = S.game, court = g.court ? BT.courtOf(g) : courtNow(), has = BT.hasLoc(e);
+    // 直したあとも、小窓の同じ所（場所の欄）が見えるように
+    const again = () => { const sb = $('.sheet-body'), y = sb ? sb.scrollTop : 0; changed(); const nb = $('.sheet-body'); if (nb) nb.scrollTop = y; };
+    const svg = BT.shot.court({ court, label: 'コートの図。押した所を、この記録の場所にする', shots: has ? [{ x: e.x, y: e.y, made: BT.TYPE[e.type].made, color: teamColor(e.team) }] : [],
+      onTap: (x, y) => { setLoc(e, x, y); BT.license.use('shot', g); if (!g.court) g.court = court; again(); } });
+    return h('div', { class: 'field locfield', id: 'evLoc' },
+      h('span', null, has ? `場所：📍 ${BT.shotZone(e.x, e.y, court).label}（押すと動かせます）` : '場所：まだありません（コートを押すと付けられます）'),
+      h('div', { class: 'locrow' }, h('div', { class: 'loccourt' }, svg),
+        has ? h('button', { class: 'btn small', id: 'btnLocClear', onclick: () => { delete e.x; delete e.y; again(); } }, '場所を消す') : null));
+  }
+  /* 集計：シュートの場所（チーム・選手で絞る。図と、ゾーンごとの表） */
+  function shotBlock(g) {
+    if (!BT.hasShotLoc(g)) return null;
+    if (!S.shotView || S.shotView.id !== g.id) S.shotView = { id: g.id, team: BT.shotStats(g, { team: 0 }).located || !BT.shotStats(g, { team: 1 }).located ? 0 : 1, no: null };
+    const V = S.shotView;
+    const box = h('section', { class: 'teamstat shotstats', id: 'shotStats' });
+    const draw = () => {
+      box.innerHTML = '';
+      const tm = V.team, color = g.teams[tm].color;
+      const all = BT.shotStats(g, { team: tm });
+      const nos = BT.sortNos(Array.from(new Set(all.shots.filter((x) => x.e.no != null).map((x) => x.e.no))));
+      if (V.no != null && !nos.includes(V.no)) V.no = null;
+      const r = V.no != null ? BT.shotStats(g, { team: tm, no: V.no }) : all;
+      const withA = BT.hasMisses(g);
+      const svg = BT.shot.court({ court: r.court, label: 'シュートの場所の図', shots: r.shots.map((x) => ({ x: x.x, y: x.y, made: x.made, color })) });
+      const tot = r.zones.reduce((a, z) => ({ made: a.made + z.made, att: a.att + z.att }), { made: 0, att: 0 });
+      const zrow = (z, cls) => h('tr', { class: (cls || '') + (z.att ? '' : ' zero'), dataset: z.id ? { zone: z.id } : {} }, h('th', null, z.label),
+        withA ? [h('td', { class: 'zm' }, `${z.made}/${z.att}`), h('td', { class: 'zp' }, BT.pct(z.made, z.att))] : h('td', { class: 'zm' }, String(z.made)));
+      box.append(
+        h('h3', null, '📍 シュートの場所'),
+        h('div', { class: 'row shotteams' }, [0, 1].map((t) => h('button', { class: 'btn small' + (t === tm ? ' on' : ''), dataset: { shotteam: t }, onclick: () => { V.team = t; V.no = null; draw(); } },
+          h('i', { class: 'chip', style: { background: g.teams[t].color } }), BT.teamName(g, t)))),
+        h('div', { class: 'row shotnos' },
+          h('button', { class: 'btn small' + (V.no == null ? ' on' : ''), dataset: { shotno: '' }, onclick: () => { V.no = null; draw(); } }, '全員'),
+          nos.map((no) => h('button', { class: 'btn small' + (V.no === no ? ' on' : ''), dataset: { shotno: no }, onclick: () => { V.no = no; draw(); } }, '#' + no))),
+        h('div', { class: 'shotgrid' },
+          h('div', { class: 'shotchart' }, svg),
+          h('table', { class: 'per zones', id: 'zoneTable' },
+            h('thead', null, h('tr', null, h('th', null, 'ゾーン'), withA ? [h('th', null, '成功/打った数'), h('th', null, '成功率')] : h('th', null, '成功'))),
+            h('tbody', null, r.zones.map((z) => zrow(z)), zrow({ label: '合計', made: tot.made, att: tot.att }, 'tot')))),
+        h('p', { class: 'note', id: 'shotNote' }, `場所あり ${r.located}本・場所なし ${r.unlocated}本。● 入った` + (withA ? '・× 外れ' : '') + '（場所なしのシュートは、図と表には入りません）。'));
+    };
+    draw();
+    return box;
+  }
+
   /* ---------- メニュー ---------- */
   function openMenu() {
     const g = S.game, rv = rvMode();
@@ -7438,7 +8100,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
         e.type === 'period' ? h('span', { class: 'lp' }, `── ${BT.periodLabel(e.period)} 開始 ──`) : [
           e.team == null ? h('i', { class: 'chip neutral' }) : h('i', { class: 'chip', style: { background: teamColor(e.team) } }),
           h('span', { class: 'lno' }, e.no != null ? '#' + e.no : '—'),
-          h('span', { class: 'llabel k-' + d.kind }, d.label + (d.pts ? ` +${d.pts}` : '')),
+          h('span', { class: 'llabel k-' + d.kind }, d.label + (d.pts ? ` +${d.pts}` : ''), BT.hasLoc(e) ? h('small', { class: 'lzone' }, '📍 ' + BT.shotZone(e.x, e.y, BT.courtOf(g)).label) : null),
           h('small', { class: 'lname' }, e.team == null ? 'チームなし' : e.no != null ? BT.playerName(g, e.team, e.no) : '番号なし')
         ]);
     };
@@ -7487,7 +8149,8 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
           BT.sortNos(players).map((no) => h('button', { class: 'btn small nobtn' + (e.no === no ? ' on' : ''), onclick: () => { e.no = no; changed(); } }, '#' + no)))));
       }
       body.append(h('div', { class: 'field' }, h('span', null, 'プレー'), h('div', { class: 'row typepick' },
-        BT.editTypes(e.type, rowTypes()).map((id) => { const d = BT.TYPE[id]; return h('button', { class: 'btn small k-' + d.kind + (e.type === id ? ' on' : ''), dataset: { etype: id }, onclick: () => { e.type = id; if (d.pts && e.team == null) e.team = 0; changed(); } }, d.label); }))));
+        BT.editTypes(e.type, rowTypes()).map((id) => { const d = BT.TYPE[id]; return h('button', { class: 'btn small k-' + d.kind + (e.type === id ? ' on' : ''), dataset: { etype: id }, onclick: () => { e.type = id; if (d.pts && e.team == null) e.team = 0; if (!BT.isLocShot(id)) { delete e.x; delete e.y; } changed(); } }, d.label); }))));
+      if (BT.isLocShot(e.type) && (shotLocOn() || BT.hasLoc(e))) body.append(locField(e, changed));
       if (e.team == null) body.append(h('p', { class: 'note' }, '「チームなし」は、画面の下のボタン（パスミス・★）で記録したものです。チーム・背番号を付けることもできます。'));
     }
     BT.ui.sheet({
@@ -7554,6 +8217,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
         [0, 1].map((tm) => h('section', { class: 'teamstat' },
           h('h3', null, h('i', { class: 'chip', style: { background: teamColor(tm) } }), BT.teamName(g, tm), h('small', null, ` 得点 ${t[tm].pts}` + (withA ? `・シュート成功率 ${fg(t[tm])}${t[tm].fta ? '・FT ' + BT.pct(t[tm].ftm, t[tm].fta) : ''}` : ''))),
           table(st[tm]))),
+        shotBlock(g),
         freeText ? h('section', { class: 'teamstat free' }, h('h3', null, h('i', { class: 'chip neutral' }), 'チームなし', h('small', null, '（画面の下のボタン）')), h('p', { class: 'freeline' }, freeText)) : null,
         h('p', { class: 'note' }, (withA ? '2P・3P・FT は「成功/打った数」。' + (split ? '' : 'リバウンドの（ ）は、うちオフェンスリバウンド（同じチームが外したシュートの、10 秒以内のリバウンド）。') : '2P・3P・FT は、入れた本数です（設定で「シュートの失敗」のボタンを出すと、成功率も出ます）。') + (split ? 'OR はオフェンスリバウンド・DR はディフェンスリバウンド（リバウンドは合計。分けずに「リバ」で記録した分は OR・DR には入りません' + (withA ? '。ただし、同じチームが外したシュートの 10 秒以内のリバは OR に数えます' : '') + '）。' : '') + (pf.size ? 'チームファウルは、ピリオドごとの数（5つ目からは赤。相手にフリースロー）。' : '') + '「番号なし」は「？」の行で記録したプレー、「チームなし」は画面の下のボタン（パスミス・★）で記録したものです（どちらも一覧から番号を付けられます）。'));
   }
@@ -7616,6 +8280,11 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
       off('btnAst', 'アシスト（得点につながったパス）も記録する', refresh),
       off('btnStl', 'スティールも記録する', refresh),
       off('btnFoul', 'ファウルも記録する（5つ目で赤くなります）', refresh)));
+    body.append(h('section', { class: 'field', id: 'setShotLoc' }, h('span', null, 'シュートの場所'),
+      off('shotLoc', '2P・3P を記録したあと、コートの図で打った場所も聞く → 集計に、場所ごとの数', refresh),
+      h('div', { class: 'row' }, [['std', 'ふつう：3P の線あり'], ['mini', 'ミニバス：3P の線なし']].map(([v, lab]) => h('button', { class: 'btn small' + ((p.courtType === 'mini' ? 'mini' : 'std') === v ? ' on' : ''), dataset: { court: v }, onclick: () => { p.courtType = v; savePrefs(); refresh(); openSettings(); } }, lab))),
+      h('p', { class: 'note' }, '試合を見ながら記録しているときは「あとで」で飛ばせます（6 秒押さなければ自動で閉じます。記録は残ります）。撮った動画を見ながら記録するときに、特に向いています。フリースローは聞きません。'),
+      BT.license.can('shot', S.game) ? null : h('p', { class: 'note warn', id: 'shotLocLock' }, '🔒 シュートの場所は、場面パックの機能です。お試しの 3 試合を使ったので、いまはオンにしても聞きません（この下の「🔑 場面パック」で、購入コードを入れられます）。')));
     body.append(h('section', { class: 'field' }, h('span', null, '記録の画面'),
       chk('names', '背番号の下に、選手の名前も出す（行の高さに余裕があるとき）', refresh),
       chk('unknown', '「？」の行を出す（だれか分からないときに、チームだけで記録する）', refresh),
@@ -7635,6 +8304,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
       h('div', { class: 'row' }, [['auto', '端末に合わせる'], ['light', '明るい'], ['dark', '暗い']].map(([v, lab]) => h('button', { class: 'btn small' + (p.theme === v ? ' on' : ''), onclick: () => { p.theme = v; savePrefs(); applyTheme(); openSettings(); } }, lab)))));
     body.append(h('p', { class: 'note' }, BT.ui.wakeSupported() ? (BT.ui.awake() ? '💡 記録の途中は、画面が自動で消えないようにしています。' : '💡 記録を始めると、画面が自動で消えないようにします。') : '💡 この端末では、画面が自動で消えるのを止められません。端末の「自動ロック」を長めにしてください。'));
     function refresh() { if (S.L) buildLive(); }
+    if (BT.license.enabled()) body.append(BT.license.ui.settings(openSettings));
     BT.ui.sheet({ title: '設定', body });
   }
 
@@ -7721,6 +8391,8 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
           h('li', null, '得点は、いま映っている時刻までの得点です。ピリオドは、動画をその始まりまで動かしてから「1Q」を押して決めます'),
           h('li', null, '動画の中身は保存しません。続きを記録するときは、同じ動画をもう一度選びます（見ていた所から始まります）'),
           h('li', null, 'キーボード：スペース 再生／一時停止・← → 5秒・, . 1コマ')),
+        h('h4', null, '📍 シュートの場所（設定）'),
+        h('p', null, '「設定」の「シュートの場所」をオンにすると、2P・3P を記録したあとにコートの図が出ます。打った場所を1回押すと、その記録に場所が付きます（「あとで」で飛ばしても、記録は残ります。試合を見ながら記録しているときは、6 秒で自動で閉じます）。場所は「記録の一覧」から付けたり、動かしたり、消したりできます。集計に、場所の図とゾーン（ゴール下・ペイント・ミドル・3P のコーナー／ウィング／トップ）ごとの数が出ます。ミニバスのコートを選ぶと、3P の線がなく、遠いシュートは「ロング」になります。'),
         h('h4', null, '☁️ 記録の保存'),
         h('ul', null,
           h('li', null, '記録は1つ押すたびに、この端末に保存し、クラウドにも送ります（記録の途中は数秒ごと。電波がないときは、つながったら送ります）'),
@@ -7795,7 +8467,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
 
   BT.app = { S, init, start, undo, redo, record, openMenu, openLog, openEdit, openStats, openExport, openSettings, openPeriod, openKeypad, endGame, reopen, newGame, go, resume, openCamera, camStart, camStop, camClose, camSplit, setUiRot, turnVideo, effRot, orientOK, setWipe,
     rvAttach, rvToggle, rvSeekTo, rvStep, rvNow, rvAdjust, openNote, openNotes, toggleRvInput, layoutLive,
-    setGame, openGame, openHub, openTrim, askTrim, renderGame, renderHome, toLive, toReview, save, rvMode, rvReady, elapsed, enterKey, help, deleteGame };
+    setGame, openGame, openHub, openTrim, askTrim, renderGame, renderHome, toLive, toReview, save, rvMode, rvReady, elapsed, enterKey, help, deleteGame, shotLocOn, askShotLoc };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }

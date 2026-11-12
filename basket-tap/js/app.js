@@ -86,6 +86,10 @@
     const g = S.game;
     if (!g) return;
     opts = opts || {};
+    // 場面パック（js/license.js。スイッチが off のあいだは、いつも通す）。
+    // 開くだけでは数えない：動画を付けたときに、その試合をお試しの 1 試合に数える（のぞいただけで枠が減らないように）
+    if (!BT.license.can('trim', g)) { BT.license.ui.paywall(g, () => openTrim(opts)); return; }
+    const saveTrim = () => { const T = BT.trim.state; if (T && T.vkey) BT.license.use('trim', g); save(); };
     save();
     if (camOn()) camClose();
     BT.ui.closeSheet(true);
@@ -96,7 +100,7 @@
     S.view = 'trim';
     S.L = null;
     BT.ui.keepAwake(false);
-    BT.trim.open({ game: g, save, back: () => go('game'), home: () => go('home'), file, vid: opts.vid || null });
+    BT.trim.open({ game: g, save: saveTrim, back: () => go('game'), home: () => go('home'), file, vid: opts.vid || null });
     root.scrollTo(0, 0);
   }
   function openGame(game) {
@@ -300,6 +304,8 @@
         h('button', { class: 'btn primary huge', id: 'hubTrim', onclick: () => openTrim({}) }, g.trimmed ? '🎬 場面を見る・動画にする' : '🎬 動画を選んで、場面を切り出す'),
         cams.length ? h('div', { class: 'row' }, cams.map((v) => h('button', { class: 'btn', dataset: { camvid: v.vid }, onclick: () => openTrim({ vid: v.vid }) }, `📹 撮影した動画${v.n}で切り出す（時刻あわせなし）`))) : null);
     }
+    const licLine = next.querySelector('#hubTrim') ? BT.license.ui.line(g) : null;
+    if (licLine) next.append(licLine);
     V.append(
       h('header', { class: 'hbar' },
         h('button', { class: 'btn', id: 'hubHome', onclick: () => go('home') }, '🏠 ホーム'),
@@ -681,12 +687,14 @@
     const key = tm + ':' + no + ':' + type;
     if (S.lastTap.key === key && t0 - S.lastTap.at < 450) return;        // 二度押し（同じボタンを 0.45 秒以内）は1回に
     S.lastTap = { key, at: t0 };
-    BT.addEvent(S.game, { t: tAt != null ? tAt : elapsed(), type, team: tm, no });
+    const ev = BT.addEvent(S.game, { t: tAt != null ? tAt : elapsed(), type, team: tm, no });
     S.redo = [];
     save();
     flash(btn);
     feel(BT.TYPE[type].kind);
     updateLive(BT.TYPE[type].pts ? tm : null);
+    // シュートの場所：記録したあとで聞く（時刻は押した瞬間のまま。デモの台本の途中では聞かない）
+    if (shotLocOn() && !S.demoMode && BT.isLocShot(type)) askShotLoc(ev);
   }
 
   /* 表示を書き換える（bump：得点が動いたチーム） */
@@ -2079,6 +2087,86 @@
     });
   }
 
+  /* ---------- シュートの場所（設定でオンのとき。コートの図は js/shot.js） ----------
+     記録は先にすませ（時刻は押した瞬間で決まる）、そのあとで場所を聞く。「あとで」でも記録はなくならない。
+     試合を見ながら記録するときは、小窓が選手のボタンをふさぐので、BT.shot.WAIT（6 秒）押さなければ自動で閉じる。
+     動画を見ながら記録するときは閉じない（小窓を開いている間は、動画が止まっている） */
+  /* 設定でオン、かつ場面パックで使えるとき（お試しの試合・購入コード。js/license.js。スイッチが off のあいだは、いつも使える） */
+  function shotLocOn() { return !!S.prefs.shotLoc && BT.license.can('shot', S.game); }
+  const courtNow = () => (S.prefs.courtType === 'mini' ? 'mini' : 'std');
+  const shotWho = (g, e) => (e.no != null ? '#' + e.no : BT.teamName(g, e.team));
+  function setLoc(e, x, y) { e.x = BT.locRound(x); e.y = BT.locRound(y); }
+  function askShotLoc(ev) {
+    const g = S.game, d = BT.TYPE[ev.type], court = courtNow(), live = !rvMode();
+    let timer = 0;
+    const tapped = (x, y) => {
+      const e = BT.findEvent(g, ev.id);
+      s.close();
+      if (!e || S.game !== g) return;
+      setLoc(e, x, y);
+      BT.license.use('shot', g);          // 場所を付けた試合を、お試しの 1 試合に数える
+      g.court = court;
+      save();
+      say(`📍 ${BT.shotZone(e.x, e.y, court).label}`, 'ok', 2500);
+    };
+    const svg = BT.shot.court({ court, onTap: tapped, label: 'コートの図（ゴールが上）。打った場所を押す' });
+    const body = h('div', { class: 'shotpick' + (live ? ' timed' : ''), id: 'shotPick' },
+      h('div', { class: 'shotcourt' }, svg),
+      h('div', { class: 'shotside' },
+        h('p', { class: 'note' }, '打った場所を1回押してください（ゴールが上）'),
+        live ? h('div', { class: 'shotwait', 'aria-hidden': 'true' }, h('i', { style: { animationDuration: BT.shot.WAIT + 'ms' } })) : null,
+        h('button', { class: 'btn', id: 'shotLater', onclick: () => s.close() }, 'あとで')));
+    const s = BT.ui.sheet({ title: `${shotWho(g, ev)} ${d.label}：どこから？`, body, cls: 'shotsheet', onClose: () => clearTimeout(timer) });
+    if (live) timer = setTimeout(() => s.close(), BT.shot.WAIT);
+  }
+  /* 記録を直す：場所の欄（小さなコート。押すと場所を付ける・動かす） */
+  function locField(e, changed) {
+    const g = S.game, court = g.court ? BT.courtOf(g) : courtNow(), has = BT.hasLoc(e);
+    // 直したあとも、小窓の同じ所（場所の欄）が見えるように
+    const again = () => { const sb = $('.sheet-body'), y = sb ? sb.scrollTop : 0; changed(); const nb = $('.sheet-body'); if (nb) nb.scrollTop = y; };
+    const svg = BT.shot.court({ court, label: 'コートの図。押した所を、この記録の場所にする', shots: has ? [{ x: e.x, y: e.y, made: BT.TYPE[e.type].made, color: teamColor(e.team) }] : [],
+      onTap: (x, y) => { setLoc(e, x, y); BT.license.use('shot', g); if (!g.court) g.court = court; again(); } });
+    return h('div', { class: 'field locfield', id: 'evLoc' },
+      h('span', null, has ? `場所：📍 ${BT.shotZone(e.x, e.y, court).label}（押すと動かせます）` : '場所：まだありません（コートを押すと付けられます）'),
+      h('div', { class: 'locrow' }, h('div', { class: 'loccourt' }, svg),
+        has ? h('button', { class: 'btn small', id: 'btnLocClear', onclick: () => { delete e.x; delete e.y; again(); } }, '場所を消す') : null));
+  }
+  /* 集計：シュートの場所（チーム・選手で絞る。図と、ゾーンごとの表） */
+  function shotBlock(g) {
+    if (!BT.hasShotLoc(g)) return null;
+    if (!S.shotView || S.shotView.id !== g.id) S.shotView = { id: g.id, team: BT.shotStats(g, { team: 0 }).located || !BT.shotStats(g, { team: 1 }).located ? 0 : 1, no: null };
+    const V = S.shotView;
+    const box = h('section', { class: 'teamstat shotstats', id: 'shotStats' });
+    const draw = () => {
+      box.innerHTML = '';
+      const tm = V.team, color = g.teams[tm].color;
+      const all = BT.shotStats(g, { team: tm });
+      const nos = BT.sortNos(Array.from(new Set(all.shots.filter((x) => x.e.no != null).map((x) => x.e.no))));
+      if (V.no != null && !nos.includes(V.no)) V.no = null;
+      const r = V.no != null ? BT.shotStats(g, { team: tm, no: V.no }) : all;
+      const withA = BT.hasMisses(g);
+      const svg = BT.shot.court({ court: r.court, label: 'シュートの場所の図', shots: r.shots.map((x) => ({ x: x.x, y: x.y, made: x.made, color })) });
+      const tot = r.zones.reduce((a, z) => ({ made: a.made + z.made, att: a.att + z.att }), { made: 0, att: 0 });
+      const zrow = (z, cls) => h('tr', { class: (cls || '') + (z.att ? '' : ' zero'), dataset: z.id ? { zone: z.id } : {} }, h('th', null, z.label),
+        withA ? [h('td', { class: 'zm' }, `${z.made}/${z.att}`), h('td', { class: 'zp' }, BT.pct(z.made, z.att))] : h('td', { class: 'zm' }, String(z.made)));
+      box.append(
+        h('h3', null, '📍 シュートの場所'),
+        h('div', { class: 'row shotteams' }, [0, 1].map((t) => h('button', { class: 'btn small' + (t === tm ? ' on' : ''), dataset: { shotteam: t }, onclick: () => { V.team = t; V.no = null; draw(); } },
+          h('i', { class: 'chip', style: { background: g.teams[t].color } }), BT.teamName(g, t)))),
+        h('div', { class: 'row shotnos' },
+          h('button', { class: 'btn small' + (V.no == null ? ' on' : ''), dataset: { shotno: '' }, onclick: () => { V.no = null; draw(); } }, '全員'),
+          nos.map((no) => h('button', { class: 'btn small' + (V.no === no ? ' on' : ''), dataset: { shotno: no }, onclick: () => { V.no = no; draw(); } }, '#' + no))),
+        h('div', { class: 'shotgrid' },
+          h('div', { class: 'shotchart' }, svg),
+          h('table', { class: 'per zones', id: 'zoneTable' },
+            h('thead', null, h('tr', null, h('th', null, 'ゾーン'), withA ? [h('th', null, '成功/打った数'), h('th', null, '成功率')] : h('th', null, '成功'))),
+            h('tbody', null, r.zones.map((z) => zrow(z)), zrow({ label: '合計', made: tot.made, att: tot.att }, 'tot')))),
+        h('p', { class: 'note', id: 'shotNote' }, `場所あり ${r.located}本・場所なし ${r.unlocated}本。● 入った` + (withA ? '・× 外れ' : '') + '（場所なしのシュートは、図と表には入りません）。'));
+    };
+    draw();
+    return box;
+  }
+
   /* ---------- メニュー ---------- */
   function openMenu() {
     const g = S.game, rv = rvMode();
@@ -2121,7 +2209,7 @@
         e.type === 'period' ? h('span', { class: 'lp' }, `── ${BT.periodLabel(e.period)} 開始 ──`) : [
           e.team == null ? h('i', { class: 'chip neutral' }) : h('i', { class: 'chip', style: { background: teamColor(e.team) } }),
           h('span', { class: 'lno' }, e.no != null ? '#' + e.no : '—'),
-          h('span', { class: 'llabel k-' + d.kind }, d.label + (d.pts ? ` +${d.pts}` : '')),
+          h('span', { class: 'llabel k-' + d.kind }, d.label + (d.pts ? ` +${d.pts}` : ''), BT.hasLoc(e) ? h('small', { class: 'lzone' }, '📍 ' + BT.shotZone(e.x, e.y, BT.courtOf(g)).label) : null),
           h('small', { class: 'lname' }, e.team == null ? 'チームなし' : e.no != null ? BT.playerName(g, e.team, e.no) : '番号なし')
         ]);
     };
@@ -2170,7 +2258,8 @@
           BT.sortNos(players).map((no) => h('button', { class: 'btn small nobtn' + (e.no === no ? ' on' : ''), onclick: () => { e.no = no; changed(); } }, '#' + no)))));
       }
       body.append(h('div', { class: 'field' }, h('span', null, 'プレー'), h('div', { class: 'row typepick' },
-        BT.editTypes(e.type, rowTypes()).map((id) => { const d = BT.TYPE[id]; return h('button', { class: 'btn small k-' + d.kind + (e.type === id ? ' on' : ''), dataset: { etype: id }, onclick: () => { e.type = id; if (d.pts && e.team == null) e.team = 0; changed(); } }, d.label); }))));
+        BT.editTypes(e.type, rowTypes()).map((id) => { const d = BT.TYPE[id]; return h('button', { class: 'btn small k-' + d.kind + (e.type === id ? ' on' : ''), dataset: { etype: id }, onclick: () => { e.type = id; if (d.pts && e.team == null) e.team = 0; if (!BT.isLocShot(id)) { delete e.x; delete e.y; } changed(); } }, d.label); }))));
+      if (BT.isLocShot(e.type) && (shotLocOn() || BT.hasLoc(e))) body.append(locField(e, changed));
       if (e.team == null) body.append(h('p', { class: 'note' }, '「チームなし」は、画面の下のボタン（パスミス・★）で記録したものです。チーム・背番号を付けることもできます。'));
     }
     BT.ui.sheet({
@@ -2237,6 +2326,7 @@
         [0, 1].map((tm) => h('section', { class: 'teamstat' },
           h('h3', null, h('i', { class: 'chip', style: { background: teamColor(tm) } }), BT.teamName(g, tm), h('small', null, ` 得点 ${t[tm].pts}` + (withA ? `・シュート成功率 ${fg(t[tm])}${t[tm].fta ? '・FT ' + BT.pct(t[tm].ftm, t[tm].fta) : ''}` : ''))),
           table(st[tm]))),
+        shotBlock(g),
         freeText ? h('section', { class: 'teamstat free' }, h('h3', null, h('i', { class: 'chip neutral' }), 'チームなし', h('small', null, '（画面の下のボタン）')), h('p', { class: 'freeline' }, freeText)) : null,
         h('p', { class: 'note' }, (withA ? '2P・3P・FT は「成功/打った数」。' + (split ? '' : 'リバウンドの（ ）は、うちオフェンスリバウンド（同じチームが外したシュートの、10 秒以内のリバウンド）。') : '2P・3P・FT は、入れた本数です（設定で「シュートの失敗」のボタンを出すと、成功率も出ます）。') + (split ? 'OR はオフェンスリバウンド・DR はディフェンスリバウンド（リバウンドは合計。分けずに「リバ」で記録した分は OR・DR には入りません' + (withA ? '。ただし、同じチームが外したシュートの 10 秒以内のリバは OR に数えます' : '') + '）。' : '') + (pf.size ? 'チームファウルは、ピリオドごとの数（5つ目からは赤。相手にフリースロー）。' : '') + '「番号なし」は「？」の行で記録したプレー、「チームなし」は画面の下のボタン（パスミス・★）で記録したものです（どちらも一覧から番号を付けられます）。'));
   }
@@ -2299,6 +2389,11 @@
       off('btnAst', 'アシスト（得点につながったパス）も記録する', refresh),
       off('btnStl', 'スティールも記録する', refresh),
       off('btnFoul', 'ファウルも記録する（5つ目で赤くなります）', refresh)));
+    body.append(h('section', { class: 'field', id: 'setShotLoc' }, h('span', null, 'シュートの場所'),
+      off('shotLoc', '2P・3P を記録したあと、コートの図で打った場所も聞く → 集計に、場所ごとの数', refresh),
+      h('div', { class: 'row' }, [['std', 'ふつう：3P の線あり'], ['mini', 'ミニバス：3P の線なし']].map(([v, lab]) => h('button', { class: 'btn small' + ((p.courtType === 'mini' ? 'mini' : 'std') === v ? ' on' : ''), dataset: { court: v }, onclick: () => { p.courtType = v; savePrefs(); refresh(); openSettings(); } }, lab))),
+      h('p', { class: 'note' }, '試合を見ながら記録しているときは「あとで」で飛ばせます（6 秒押さなければ自動で閉じます。記録は残ります）。撮った動画を見ながら記録するときに、特に向いています。フリースローは聞きません。'),
+      BT.license.can('shot', S.game) ? null : h('p', { class: 'note warn', id: 'shotLocLock' }, '🔒 シュートの場所は、場面パックの機能です。お試しの 3 試合を使ったので、いまはオンにしても聞きません（この下の「🔑 場面パック」で、購入コードを入れられます）。')));
     body.append(h('section', { class: 'field' }, h('span', null, '記録の画面'),
       chk('names', '背番号の下に、選手の名前も出す（行の高さに余裕があるとき）', refresh),
       chk('unknown', '「？」の行を出す（だれか分からないときに、チームだけで記録する）', refresh),
@@ -2318,6 +2413,7 @@
       h('div', { class: 'row' }, [['auto', '端末に合わせる'], ['light', '明るい'], ['dark', '暗い']].map(([v, lab]) => h('button', { class: 'btn small' + (p.theme === v ? ' on' : ''), onclick: () => { p.theme = v; savePrefs(); applyTheme(); openSettings(); } }, lab)))));
     body.append(h('p', { class: 'note' }, BT.ui.wakeSupported() ? (BT.ui.awake() ? '💡 記録の途中は、画面が自動で消えないようにしています。' : '💡 記録を始めると、画面が自動で消えないようにします。') : '💡 この端末では、画面が自動で消えるのを止められません。端末の「自動ロック」を長めにしてください。'));
     function refresh() { if (S.L) buildLive(); }
+    if (BT.license.enabled()) body.append(BT.license.ui.settings(openSettings));
     BT.ui.sheet({ title: '設定', body });
   }
 
@@ -2404,6 +2500,8 @@
           h('li', null, '得点は、いま映っている時刻までの得点です。ピリオドは、動画をその始まりまで動かしてから「1Q」を押して決めます'),
           h('li', null, '動画の中身は保存しません。続きを記録するときは、同じ動画をもう一度選びます（見ていた所から始まります）'),
           h('li', null, 'キーボード：スペース 再生／一時停止・← → 5秒・, . 1コマ')),
+        h('h4', null, '📍 シュートの場所（設定）'),
+        h('p', null, '「設定」の「シュートの場所」をオンにすると、2P・3P を記録したあとにコートの図が出ます。打った場所を1回押すと、その記録に場所が付きます（「あとで」で飛ばしても、記録は残ります。試合を見ながら記録しているときは、6 秒で自動で閉じます）。場所は「記録の一覧」から付けたり、動かしたり、消したりできます。集計に、場所の図とゾーン（ゴール下・ペイント・ミドル・3P のコーナー／ウィング／トップ）ごとの数が出ます。ミニバスのコートを選ぶと、3P の線がなく、遠いシュートは「ロング」になります。'),
         h('h4', null, '☁️ 記録の保存'),
         h('ul', null,
           h('li', null, '記録は1つ押すたびに、この端末に保存し、クラウドにも送ります（記録の途中は数秒ごと。電波がないときは、つながったら送ります）'),
@@ -2478,7 +2576,7 @@
 
   BT.app = { S, init, start, undo, redo, record, openMenu, openLog, openEdit, openStats, openExport, openSettings, openPeriod, openKeypad, endGame, reopen, newGame, go, resume, openCamera, camStart, camStop, camClose, camSplit, setUiRot, turnVideo, effRot, orientOK, setWipe,
     rvAttach, rvToggle, rvSeekTo, rvStep, rvNow, rvAdjust, openNote, openNotes, toggleRvInput, layoutLive,
-    setGame, openGame, openHub, openTrim, askTrim, renderGame, renderHome, toLive, toReview, save, rvMode, rvReady, elapsed, enterKey, help, deleteGame };
+    setGame, openGame, openHub, openTrim, askTrim, renderGame, renderHome, toLive, toReview, save, rvMode, rvReady, elapsed, enterKey, help, deleteGame, shotLocOn, askShotLoc };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   }
