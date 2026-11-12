@@ -2,9 +2,10 @@
    データ（BC）・人の動き（BC.motion）・成長（BC.grow）・動画チェック（BC.check）・ケガとテーピング（BC.aids・BC.tapes）を見て描く。
    タブ：#home（ホーム）・#practice（れんしゅう）・#check（チェック）・#log（きろく）・#more（もっと）
    ページ：#s/<技能 id>・#<項目 id>（d-… 練習メニュー・v-… 見るポイント・i-… なやみ・t-… 戦術）・#aid・#aid/<a-…>・#tape/<tp-…>・
-          #plan（プランをつくる）・#chat（コーチにそうだん）・#lib（ずかん）・#settings（せってい）・#hello（はじめての人）・#check/<種類>・#check/rec/<id>
+          #plan（プランをつくる）・#chat（コーチにそうだん）・#lib（ずかん）・#settings（せってい）・#hello（はじめての人）・#check/<種類>・#check/rec/<id>・
+          #focus（今週の これ1つ：のびしろ → 測る → 目標）・#focus/measure（測りなおす）・#focus/<きろくの id>（のびを見る）
    この端末に残すもの（localStorage）：プロフィール bc.me・やったこと bc.acts・動画チェック bc.checks・会話 bc.log・プラン bc.pl / bc.plans・
-     お気に入り bc.favs・見るポイントのチェック bc.vchk・きょうのメニューの長さ bc.menuMin */
+     お気に入り bc.favs・見るポイントのチェック bc.vchk・きょうのメニューの長さ bc.menuMin・今週の これ1つ bc.focus */
 (function () {
   const BC = window.BC;
   const G = BC.grow;
@@ -38,7 +39,7 @@
     calMonth: 0,
   };
   const checks = () => store.get('bc.checks', []);
-  const sum = () => G.summary(S.acts, Date.now(), checks());
+  const sum = () => G.summary(S.acts, Date.now(), checks(), { weekGoal: (S.me || {}).weekGoal });
   const saveLog = () => { S.log = S.log.slice(-60); store.set('bc.log', S.log); };
   const prof = () => S.me || {};
   const cond = () => ({ n: prof().n || 1, level: prof().level || null, place: prof().place || null });
@@ -208,7 +209,7 @@
     modal(`<div class="celebrate${reduceMotion() ? '' : ' pop'}">${confetti()}<h2 class="modal-h">やったね！</h2>${html}<div class="btns"><button type="button" class="btn primary big" data-act="modal-close">つづける</button></div></div>`);
   }
   const confetti = () => (reduceMotion() ? '' : `<div class="confetti" aria-hidden="true">${Array.from({ length: 18 }, (_, i) => `<i style="--i:${i};--x:${(i * 37) % 100}%"></i>`).join('')}</div>`);
-  const BADGE_COLOR = { first: 'ok', menu1: 'o', streak3: 'ball', streak7: 'ball', streak30: 'gold', drill10: 'o', drill50: 'gold', uniq10: 'ok', min300: 'o', check1: 'o', good5: 'gold', shooter: 'ball', handler: 'ball', defender: 'x', allround: 'gold', early: 'gold', lv5: 'ok', lv10: 'gold', kyu1: 'gold', kyu5: 'gold', quest1: 'o', quest5: 'gold' };
+  const BADGE_COLOR = { first: 'ok', menu1: 'o', streak3: 'ball', streak7: 'ball', streak30: 'gold', drill10: 'o', drill50: 'gold', uniq10: 'ok', min300: 'o', check1: 'o', good5: 'gold', shooter: 'ball', handler: 'ball', defender: 'x', allround: 'gold', early: 'gold', lv5: 'ok', lv10: 'gold', kyu1: 'gold', kyu5: 'gold', quest1: 'o', quest5: 'gold', focus1: 'ball', pb1: 'gold', reflect5: 'o', wk1: 'ok', wk4: 'gold' };
   const badgeIcon = (b, got) => `<span class="badge-ic c-${BADGE_COLOR[b.id] || 'ok'}${got ? '' : ' off'}">${ic(b.icon === 'list' ? 'list' : b.icon)}</span>`;
 
   /* ---------- 画面のわく ---------- */
@@ -229,8 +230,8 @@
     const c = document.getElementById('lv-chip');
     if (!c) return;
     const s = sum();
-    c.innerHTML = `<span class="num">Lv.${s.level}</span>${s.streak ? `<span class="lv-fire">${ic('fire')}<span class="num">${s.streak}</span></span>` : ''}`;
-    c.setAttribute('aria-label', `レベル ${s.level}・${s.streak}日れんぞく`);
+    c.innerHTML = `<span class="num">Lv.${s.level}</span>${s.week.n ? `<span class="lv-fire">${ic('fire')}<span class="num">${s.week.n}/${s.week.goal}</span></span>` : ''}`;
+    c.setAttribute('aria-label', `レベル ${s.level}・今週 ${s.week.n}日 練習（目標 ${s.week.goal}日）`);
   }
   function setTabMark(tab) {
     S.tab = tab;
@@ -288,7 +289,9 @@
   }
   function settingsExtra() {
     const th = document.documentElement.dataset.theme || '';
-    return `<section class="sec"><h2 class="sec-h">画面の色</h2><div class="pick">${[['', 'じどう'], ['light', 'あかるい'], ['dark', 'くらい']].map(([v, l]) => `<button type="button" class="pick-b" data-theme="${v}" aria-pressed="${th === v}">${l}</button>`).join('')}</div></section>
+    const wg = prof().weekGoal || 3;
+    return `<section class="sec"><h2 class="sec-h">1週間の 目標</h2><p class="small">「毎日」でなくて だいじょうぶ。1週間（月〜日）に 何日 練習するかを きめよう。休むのも 練習のうち。</p><div class="pick">${[2, 3, 4, 5].map((n) => `<button type="button" class="pick-b" data-weekgoal="${n}" aria-pressed="${wg === n}">${n}日</button>`).join('')}</div></section>
+      <section class="sec"><h2 class="sec-h">画面の色</h2><div class="pick">${[['', 'じどう'], ['light', 'あかるい'], ['dark', 'くらい']].map(([v, l]) => `<button type="button" class="pick-b" data-theme="${v}" aria-pressed="${th === v}">${l}</button>`).join('')}</div></section>
       <section class="sec"><h2 class="sec-h">データ</h2>
         <p class="small">きろく（経験値・バッジ・動画チェックの結果）は、この端末のブラウザの中にあります。機種を変えるときは「書き出す」で保存し、新しい端末で「読みこむ」をしてください。</p>
         <div class="btns"><button type="button" class="btn" data-act="export">${ic('save')}書き出す</button><label class="btn">${ic('copy')}読みこむ<input type="file" accept="application/json,.json" id="import-file" hidden></label></div>
@@ -312,7 +315,7 @@
 
   /* ---------- ホーム ---------- */
   const ROLE = { warm: 'じゅんび', main: 'メイン', game: 'ゲーム', cool: 'ストレッチ' };
-  const todayMenu = () => G.today(Object.assign({}, prof(), { n: prof().n || 1 }), S.menuMin, S.seed);
+  const todayMenu = () => G.today(Object.assign({}, prof(), { n: prof().n || 1, focus: BC.focusUI ? BC.focusUI.menuFocus() : null }), S.menuMin, S.seed);
   function commonIssues() {
     const goals = prof().goals || [];
     const pick = [];
@@ -320,28 +323,28 @@
     for (const id of ['i-shoot-miss', 'i-drb-stolen', 'i-def-beat', 'i-layup-miss', 'i-pass-steal', 'i-nerve', 'i-reb-lose', 'i-home']) if (!pick.includes(id)) pick.push(id);
     return items(pick).slice(0, 6);
   }
-  // ひとこと（せかさない・ほめる）
+  // ひとこと（せかさない・ほめる）。「毎日」ではなく「1週間で 目標の日数」をめやすに。休むのも 練習のうち
   function heroMsg(s) {
     const drills = S.acts.filter((a) => a.type === 'drill');
-    if (!drills.length) return 'まずは「きょうのメニュー」を 1つ やってみよう！';
+    if (!drills.length) return BC.focusUI && BC.focusUI.hasFocus() ? '今週の「これ1つ」が きまったね！ まずは 5分だけ やってみよう。' : 'まずは「きょうのメニュー」を 1つ やってみよう！';
+    const w = s.week;
     const today = G.day(Date.now());
     const last = drills[drills.length - 1];
     const daysAgo = Math.round((new Date(today).getTime() - new Date(G.day(last.at)).getTime()) / 86400000);
-    if (daysAgo === 0) return s.streak >= 3 ? `${s.streak}日れんぞく！ きょうも がんばったね。休むのも 練習のうち。` : 'きょうも がんばったね！ ゆっくり休むのも 練習のうち。';
-    if (s.streak >= 2) return `${s.streak}日れんぞく中！ きょうも ちょっとだけ やってみよう。`;
+    if (w.done) return w.streak >= 2 ? `今週の 目標（${w.goal}日）クリア！ ${w.streak}週つづけて。休むのも 練習のうち。` : `今週の 目標（${w.goal}日）クリア！ あとは すきなだけ。休むのも 練習のうち。`;
+    if (w.n === w.goal - 1) return daysAgo === 0 ? `きょうも がんばったね！ あと 1日で 今週の 目標。` : `あと 1日で 今週の 目標（${w.goal}日）。きょうは 10分だけでも どう？`;
+    if (daysAgo === 0) return `きょうも がんばったね！ 今週は ${w.n}日め。ゆっくり休むのも 練習のうち。`;
     if (daysAgo === 1) { const m = drills.filter((a) => G.day(a.at) === G.day(last.at)).reduce((t, a) => t + (a.min || 0), 0); return `きのうは ${m}分 練習したね。きょうは 10分から どう？`; }
-    return 'ひさしぶり！ 10分だけでも だいじょうぶ。';
+    return w.n ? `今週は ${w.n}日。10分だけでも だいじょうぶ。` : 'ひさしぶり！ 10分だけでも だいじょうぶ。';
   }
-  // 今週（月〜日）の練習した日
+  // 今週（月〜日）の練習した日と、週の目標
   function weekHTML(s) {
-    const now = new Date();
-    const dow = (now.getDay() + 6) % 7;
-    const n = [...Array(7).keys()].filter((i) => s.days.has(G.day(new Date(now.getFullYear(), now.getMonth(), now.getDate() - dow + i).getTime()))).length;
-    return `<div class="week" aria-label="今週 ${n}日 練習した">${'月火水木金土日'.split('').map((w, i) => {
-      const k = G.day(new Date(now.getFullYear(), now.getMonth(), now.getDate() - dow + i).getTime());
+    const w = s.week;
+    return `<div class="week" aria-label="今週 ${w.n}日 練習した（目標 ${w.goal}日）">${'月火水木金土日'.split('').map((wd, i) => {
+      const k = w.keys[i];
       const on = s.days.has(k);
-      return `<span class="wk${on ? ' on' : ''}${i === dow ? ' today' : ''}"><i>${on ? ic('check') : ''}</i><small>${w}</small></span>`;
-    }).join('')}<span class="wk-n">今週 <b class="num">${n}</b>日</span></div>`;
+      return `<span class="wk${on ? ' on' : ''}${i === w.today ? ' today' : ''}"><i>${on ? ic('check') : ''}</i><small>${wd}</small></span>`;
+    }).join('')}<span class="wk-goal${w.done ? ' done' : ''}">今週 <b class="num">${w.n}</b>/${w.goal}日${w.done ? ' ✓' : ''}${w.streak >= 2 ? `<span class="wk-streak">${w.streak}週つづけて クリア</span>` : ''}</span></div>`;
   }
   function renderHome() {
     const s = sum();
@@ -358,19 +361,21 @@
           <div class="hero-who"><p class="hero-hi">${hi}${name ? '、' + name : '！'}</p>
             <p class="hero-rank"><span class="lvl">Lv.<b class="num">${s.level}</b></span><span class="rank">${esc(s.rank)}</span></p>
             <p class="hero-msg">${esc(heroMsg(s))}</p></div>
-          <a class="streak${s.streak ? ' on' : ''}" href="#log">${ic('fire')}<b class="num">${s.streak}</b><small>日れんぞく</small></a>
+          <a class="streak${s.week.n ? ' on' : ''}" href="#log" aria-label="今週 ${s.week.n}日 練習（目標 ${s.week.goal}日）">${ic('fire')}<b class="num">${s.week.n}<i class="of">/${s.week.goal}</i></b><small>${s.week.done ? '週ゴール ✓' : '今週'}</small></a>
         </div>
         <div class="xpbar" role="progressbar" aria-valuemin="0" aria-valuemax="${s.prog.span}" aria-valuenow="${s.prog.cur}"><i style="width:${Math.round(s.prog.ratio * 100)}%"></i></div>
         <p class="xp-note">あと <b class="num">${s.prog.toNext}</b> XP で Lv.${s.level + 1}${s.today ? `<span>きょう <b class="num">+${s.today}</b> XP</span>` : ''}</p>
         ${weekHTML(s)}
       </section>
 
+      ${BC.focusUI ? BC.focusUI.homeHTML() : ''}
+
       <section class="card today${doneToday ? ' done' : ''}">
         <div class="today-h"><h2 class="sec-h">${ic('target')}きょうのメニュー</h2>
           <div class="seg seg-s" role="group" aria-label="時間">${[10, 15, 20, 30].map((m) => `<button type="button" data-menumin="${m}" aria-pressed="${S.menuMin === m}">${m}分</button>`).join('')}</div></div>
         ${doneToday ? `<p class="today-done">${ic('trophy')}きょうのメニュー クリア！ もう1回やっても OK。</p>` : ''}
-        <p class="today-skill">${skillArt(t.skill, 'today-art', 1)}<span><b>${esc(skillName(t.skill))}</b> を中心に <b class="num">${t.min}</b>分</span></p>
-        <ol class="today-list">${t.items.map((x) => { const d = get(x.id); return `<li><a class="today-item" href="#${d.id}">${drillArt(d)}<span class="ti-body"><b>${esc(d.name)}</b><small><span class="role r-${x.role}">${ROLE[x.role]}</span><span class="num">${x.min}</span>分</small></span>${ic('next', 'rc-go')}</a></li>`; }).join('')}</ol>
+        <p class="today-skill">${skillArt(t.skill, 'today-art', 1)}<span><b>${esc(skillName(t.skill))}</b> を中心に <b class="num">${t.min}</b>分${t.focus ? '（これ1つ）' : ''}</span></p>
+        <ol class="today-list">${t.items.map((x) => { const d = get(x.id); return `<li><a class="today-item" href="#${d.id}">${drillArt(d)}<span class="ti-body"><b>${esc(d.name)}</b><small><span class="role r-${x.role}">${ROLE[x.role]}</span>${x.focus ? '<span class="role r-focus">これ1つ</span>' : ''}<span class="num">${x.min}</span>分</small></span>${ic('next', 'rc-go')}</a></li>`; }).join('')}</ol>
         ${t.note ? `<p class="small">${esc(t.note)}</p>` : ''}
         <div class="btns"><button type="button" class="btn primary big" data-act="menu-start">${ic('play')}スタート</button><button type="button" class="btn" data-act="menu-shuffle">${ic('shuffle')}ほかのメニュー</button></div>
       </section>
@@ -639,8 +644,9 @@
         <div><b class="num">${s.days.size}</b><small>練習した日</small></div>
         <div><b class="num">${s.minutes}</b><small>練習した分</small></div>
         <div><b class="num">${s.drills}</b><small>やったメニュー</small></div>
-        <div><b class="num">${s.best}</b><small>いちばん長い れんぞく</small></div>
+        <div><b class="num">${s.week.weeks}</b><small>週ゴール達成</small></div>
       </section>
+      ${BC.focusUI ? BC.focusUI.logHTML() : ''}
       ${sec(`${ic('fire')}練習した日`, calendarHTML(s))}
       ${sec(`${ic('star')}わざのレベル`, sk.length ? `<div class="skill-bars">${sk.map((x) => { const xp = s.skills[x.id] || 0; const st = G.stars(xp); const nx = G.starNext(xp); return `<a class="sbar" href="#s/${x.id}"><span class="sbar-n">${esc(x.name)}</span>${stars(st, 5)}<span class="sbar-x num">${xp} XP</span><span class="sbar-b"><i style="width:${nx == null ? 100 : Math.round((100 * (xp - [0, 30, 80, 160, 300][st])) / ([30, 80, 160, 300, 500][st] - [0, 30, 80, 160, 300][st]))}%"></i></span></a>`; }).join('')}</div>` : '<p class="empty">練習メニューの「やった！」を押すと、ここに たまっていきます。</p>')}
       ${sec(`${ic('medal')}バッジ <small class="num">${bs.filter((b) => b.got).length} / ${bs.length}</small>`, `<div class="badges">${bs.map((b) => `<div class="badge${b.got ? ' got' : ''}">${badgeIcon(b, b.got)}<b>${esc(b.name)}</b><small>${esc(b.text)}</small></div>`).join('')}</div>`)}
@@ -949,7 +955,8 @@
       el.innerHTML = RUN.done ? `<div class="run-top"><span>おわり！</span><button type="button" class="icon-btn" data-run="end" aria-label="閉じる">${ic('close')}</button></div>
         <div class="run-body run-done">${confetti()}<p class="run-name">おつかれさま！</p><p class="run-sum"><b class="num">${RUN.items.length}</b>メニュー・<b class="num">${total}</b>分</p>
           <p>どうだった？</p>${rateButtons('run')}
-          <label class="field"><span class="field-l">ひとことメモ（なくてもOK）</span><input id="run-note" type="text" maxlength="60" placeholder="例：左手のドリブルが 前より できた"></label></div>`
+          <label class="field"><span class="field-l">ひとことメモ（なくてもOK）</span><input id="run-note" type="text" maxlength="60" placeholder="例：左手のドリブルが 前より できた"></label>
+          ${BC.focusUI ? BC.focusUI.reflectHTML(RUN.items.map((y) => (get(y.id).skills || [])[0])) : ''}</div>`
         : `<div class="run-top"><span>${esc(x.block || ROLE[x.role] || '')} ${RUN.i + 1} / ${RUN.items.length}</span><button type="button" class="icon-btn" data-run="stop" aria-label="タイマーを終わる">${ic('close')}</button></div>
         <div class="run-body">
           <p class="run-name">${esc(d.name)}</p>
@@ -994,9 +1001,11 @@
   function runFinish(rate) {
     if (!RUN) return;
     const note = ((document.getElementById('run-note') || {}).value || '').trim();
+    const reflect = BC.focusUI ? BC.focusUI.readReflect(document.querySelector('.run')) : null;
     const list = RUN.items.map((x) => { const d = get(x.id); return { type: 'drill', id: x.id, skill: (d.skills || [])[0], min: x.min, rate, xp: G.drillXP(x.min, rate) }; });
     if (note && list.length) list[list.length - 1].note = note;
     if (RUN.kind === 'menu' && !RUN.partial) list.push({ type: 'menu', id: 'today', skill: list[0] && list[0].skill, xp: G.XP.menu });
+    if (reflect && BC.focusUI) list.push(...BC.focusUI.saveReflect(reflect));
     runEnd();
     addActs(list);
     rerender();
@@ -1021,7 +1030,8 @@
     modal(`<h2 class="modal-h">やった！</h2><p class="center"><b>${esc(d.name)}</b></p>
       <label class="field"><span class="field-l">何分やった？</span><div class="seg" role="group">${[3, 5, 10, 15].map((m) => `<button type="button" data-rmin="${m}" aria-pressed="${m === Math.min(15, d.minutes || 5) || (m === 5 && ![3, 5, 10, 15].includes(Math.min(15, d.minutes || 5)))}">${m}分</button>`).join('')}</div></label>
       <p class="center">どうだった？</p>${rateButtons('drill', id)}
-      <label class="field"><span class="field-l">ひとことメモ（なくてもOK）</span><input id="rate-note" type="text" maxlength="60" placeholder="例：10回中 7回できた"></label>`);
+      <label class="field"><span class="field-l">ひとことメモ（なくてもOK）</span><input id="rate-note" type="text" maxlength="60" placeholder="例：10回中 7回できた"></label>
+      ${BC.focusUI ? BC.focusUI.reflectHTML([(d.skills || [])[0]]) : ''}`);
   }
   let toastT;
   function toast(msg, kind = '') {
@@ -1049,7 +1059,7 @@
       toast('書き出しました（ダウンロードを見てね）');
     } catch (e) { copy(text); }
   }
-  const KEYS = ['bc.me', 'bc.acts', 'bc.checks', 'bc.log', 'bc.pl', 'bc.plans', 'bc.favs', 'bc.vchk', 'bc.menuMin'];
+  const KEYS = ['bc.me', 'bc.acts', 'bc.checks', 'bc.log', 'bc.pl', 'bc.plans', 'bc.favs', 'bc.vchk', 'bc.menuMin', 'bc.focus'];
 
   /* ---------- チェック（動画分析は js/check.js） ---------- */
   const checkCtx = {
@@ -1074,11 +1084,28 @@
       if (s.streak >= 2) out.push({ type: 'streak', label: `${s.streak}日 れんぞくで 練習中` });
       const b = G.badges(s).filter((x) => x.got).pop();
       if (b) out.push({ type: 'badge', label: `バッジ「${b.name}」をとった` });
+      const fs = BC.focusUI && BC.focusUI.shareItem ? BC.focusUI.shareItem() : null;
+      if (fs) out.unshift(fs);
       const c = store.get('bc.checks', [])[0];
       if (c && c.score != null) out.push({ type: 'check', label: `動画チェック ${(BC.check && BC.check.MODES && BC.check.MODES[c.mode] || {}).name || ''} ${c.score}点` });
       return out;
     },
   };
+  // 今週の これ1つ（js/focus-ui.js）にわたすもの
+  const focusCtx = {
+    ic, store, hydrate: (el) => hydrate(el),
+    toast: (m, k) => toast(m, k), addActs: (list, opt) => addActs(list, opt),
+    prof: () => prof(), acts: () => S.acts, checks: () => checks(), log: () => S.log,
+    get, skillName, drillArt: (d) => drillArt(d), confetti: () => confetti(), copy: (t, m) => copy(t, m),
+    runStart: (list, kind) => runStart(list, kind),
+  };
+  function renderFocus(sub) {
+    const m = main();
+    m.className = 'page-focus';
+    setTabMark('home');
+    if (!BC.focusUI) { m.innerHTML = '<h1 class="page-h">これ1つ</h1><p>じゅんび中です。</p>'; return; }
+    BC.focusUI.render(m, sub);
+  }
   function renderClub(sub) {
     const m = main();
     m.className = 'page-club';
@@ -1132,6 +1159,7 @@
     else if (h === 'more') renderMore();
     else if (h === 'check' || h.startsWith('check/')) renderCheck(h.slice(6));
     else if (h === 'club' || h.startsWith('club/')) renderClub(h.slice(5));
+    else if (h === 'focus' || h.startsWith('focus/')) renderFocus(h.slice(6));
     else if (h === 'hello') renderHello(false);
     else if (h === 'settings') renderHello(true);
     else if (h === 'about') renderAbout();
@@ -1161,7 +1189,7 @@
 
   /* ---------- 操作 ---------- */
   document.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-act],[data-hello],[data-theme],[data-menumin],[data-dfilter],[data-vchk],[data-rate],[data-rmin],[data-tapestep],[data-cal],[data-libkind],[data-libskill],[data-say],[data-ask],[data-skill],[data-pl],[data-plc],[data-plthadd],[data-plthdel],[data-run]');
+    const t = e.target.closest('[data-act],[data-hello],[data-theme],[data-weekgoal],[data-menumin],[data-dfilter],[data-vchk],[data-rate],[data-rmin],[data-tapestep],[data-cal],[data-libkind],[data-libskill],[data-say],[data-ask],[data-skill],[data-pl],[data-plc],[data-plthadd],[data-plthdel],[data-run]');
     if (!t) return;
     const d = t.dataset;
     if (d.hello) {
@@ -1183,6 +1211,14 @@
       if (v) document.documentElement.dataset.theme = v; else delete document.documentElement.dataset.theme;
       store.set('bc.theme', v);
       document.querySelectorAll('[data-theme]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.theme === v));
+      return;
+    }
+    if (d.weekgoal) {
+      S.me = Object.assign({}, S.me || {}, { weekGoal: +d.weekgoal });
+      store.set('bc.me', S.me);
+      document.querySelectorAll('[data-weekgoal]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.weekgoal === d.weekgoal));
+      toast(`1週間の 目標を ${d.weekgoal}日に しました`);
+      refreshTop();
       return;
     }
     if (d.menumin) { S.menuMin = +d.menumin; store.set('bc.menuMin', S.menuMin); rerender(); return; }
@@ -1211,8 +1247,9 @@
       const sel = document.querySelector('.modal [data-rmin][aria-pressed="true"]');
       const min = sel ? +sel.dataset.rmin : dr.minutes || 5;
       const note = ((document.getElementById('rate-note') || {}).value || '').trim();
+      const reflect = BC.focusUI ? BC.focusUI.readReflect(document.querySelector('.modal')) : null;
       closeModal();
-      addActs([{ type: 'drill', id: dr.id, skill: (dr.skills || [])[0], min, rate: r, xp: G.drillXP(min, r), note: note || undefined }]);
+      addActs([{ type: 'drill', id: dr.id, skill: (dr.skills || [])[0], min, rate: r, xp: G.drillXP(min, r), note: note || undefined }].concat(reflect && BC.focusUI ? BC.focusUI.saveReflect(reflect) : []));
       rerender();
       return;
     }
@@ -1386,6 +1423,7 @@
   const th = store.get('bc.theme', '');
   if (th) document.documentElement.dataset.theme = th;
   shell();
+  if (BC.focusUI) BC.focusUI.init(focusCtx);
   route();
   // クラブのお知らせ：はじめと、アプリにもどってきたとき（2分に1回まで）
   if (BC.club) {

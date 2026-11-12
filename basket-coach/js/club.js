@@ -518,7 +518,7 @@
       ? `<div class="cl-cert" style="${kv(p.meta.color)}"><span class="cl-cert-k">${esc(p.meta.level || '')}</span><span><b>${esc(p.member.nickname)}さんが ${esc(kyuLabel({ name: p.meta.level || '' }, p.meta.track || ''))}に 合格！</b>${p.meta.comment ? `<small>${ic('whistle', 'inline')}${esc(p.meta.by || 'コーチ')}：${esc(p.meta.comment)}</small>` : ''}</span></div>`
       : p.kind === 'quest'
       ? `<div class="cl-cert quest"><span class="cl-cert-k">${ic('bolt')}</span><span><b>${esc(p.member.nickname)}さんが 自主練「${esc(p.meta.title || '')}」を クリア！</b><small>${esc(String(p.meta.target || ''))}${esc(p.meta.unit || '')} を ${esc(String(p.meta.times || ''))}回</small></span></div>`
-      : `${p.kind === 'share' ? `<p class="cl-share">${ic(p.meta.type === 'badge' ? 'medal' : p.meta.type === 'check' ? 'camera' : p.meta.type === 'streak' ? 'fire' : 'trophy')}<span>${esc(p.meta.label || '')}</span></p>` : ''}
+      : `${p.kind === 'share' ? `<p class="cl-share">${ic(p.meta.type === 'badge' ? 'medal' : p.meta.type === 'check' ? 'camera' : p.meta.type === 'streak' ? 'fire' : p.meta.type === 'focus' ? 'target' : 'trophy')}<span>${esc(p.meta.label || '')}</span></p>` : ''}
          ${p.body ? `<p class="cl-body">${esc(p.body)}</p>` : ''}${photoTag(p.photo_id)}`;
     return `<article class="card cl-post${p.kind === 'cert' || p.kind === 'quest' ? ' cert' : ''}" data-post="${p.id}">
       <header class="cl-post-h">${avatar(p.member)}<span class="cl-post-who"><b>${esc(p.member.nickname)}</b>${p.member.role === 'coach' ? '<span class="cl-st">コーチ</span>' : kyuBadge(p.member.kyu, 'small')}</span><span class="small">${esc(ago(p.created_at))}</span>${st}</header>
@@ -541,7 +541,7 @@
       <section class="card cl-compose">
         <label class="sr" for="cl-post">がんばったこと</label>
         <textarea id="cl-post" maxlength="140" rows="2" placeholder="${isCoach() ? 'クラブのみんなへ ひとこと' : 'きょう がんばったことを 書こう'}"></textarea>
-        ${shares.length ? `<div class="chips">${shares.map((s, i) => `<button type="button" class="chip" data-cl="share" data-i="${i}">${ic(s.type === 'badge' ? 'medal' : s.type === 'check' ? 'camera' : 'trophy', 'inline')}${esc(s.label)}</button>`).join('')}</div>` : ''}
+        ${shares.length ? `<div class="chips">${shares.map((s, i) => `<button type="button" class="chip" data-cl="share" data-i="${i}">${ic(s.type === 'badge' ? 'medal' : s.type === 'check' ? 'camera' : s.type === 'focus' ? 'target' : 'trophy', 'inline')}${esc(s.label)}</button>`).join('')}</div>` : ''}
         ${up ? `<div class="cl-preview"><img src="${up.url}" alt="えらんだ写真"><button type="button" class="btn" data-cl="unphoto">${ic('close')}はずす</button></div>` : ''}
         <div class="btns">${photos ? `<label class="btn">${ic('camera')}写真<input type="file" accept="image/*" id="cl-file" data-task="post" hidden></label>` : ''}<button type="button" class="btn primary" data-cl="post">${ic('plus')}のせる</button></div>
         <p class="small">${isCoach() ? '' : 'やさしい ことばで。わるぐち・リンク・電話番号は のせられません。'}${photos && !isCoach() && (c.settings || {}).review_photos !== false ? '写真つきは、コーチが見てから みんなに出ます。' : ''}${(c.settings || {}).review_posts ? '投稿は、コーチが見てから みんなに出ます。' : ''}</p>
@@ -1188,6 +1188,13 @@
   };
   C.badge = () => S.badge;
   C.session = () => S.sess;
+  // アプリの記録（{ type, label }）を、そのまま ひろばに のせる（「今週の これ1つ」の のびなど）
+  C.postShare = async (share) => {
+    if (!C.ready() || !S.sess) return { ok: false, error: 'auth' };
+    const j = await rpc('bg_post', { p_token: tok(), p_body: '', p_photo: '', p_mime: '', p_meta: { type: share.type, label: share.label } });
+    if (j && j.ok) S.feed = null;
+    return j;
+  };
 
   /* ---------- 操作 ---------- */
   document.addEventListener('click', async (e) => {
