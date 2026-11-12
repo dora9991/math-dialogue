@@ -45,6 +45,7 @@
     if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
     const meta = $('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', getComputedStyle(document.body).getPropertyValue('--bg').trim() || '#0b0f17');
+    if (S.L && S.L.rvBox) { rvColors(); rvDrawSeek(); }
   }
   function savePrefs() { BT.store.savePrefs(S.prefs); }
   function feel(kind) {
@@ -734,7 +735,7 @@
     } else if (ended) {
       L.cover.append(h('div', { class: 'cover-card' },
         h('b', { class: 'endtitle' }, rvMode() ? '記録を終えました' : '試合終了'),
-        h('div', { class: 'endscore' }, h('span', null, BT.teamName(g, 0)), h('b', null, `${sc[0]} − ${sc[1]}`), h('span', null, BT.teamName(g, 1))),
+        h('div', { class: 'endscore', id: 'endScore' }, h('span', null, BT.teamName(g, 0)), h('b', null, BT.score(g).join(' − ')), h('span', null, BT.teamName(g, 1))),
         h('button', { class: 'btn primary huge', id: 'btnToHub', onclick: () => go('game') }, '📄 試合のページへ（集計・切り出し・書き出し）'),
         h('div', { class: 'row center' },
           h('button', { class: 'btn', id: 'btnCoverHome', onclick: () => go('home') }, '🏠 ホームへ'),
@@ -875,7 +876,7 @@
     BT.ui.keepAwake(true);
     guard();
     updateLive();
-    say('続きを記録できます（時計は進んだまま）', 'ok', 4000);
+    say(rvMode() ? '続きを記録できます' : '続きを記録できます（時計は進んだまま）', 'ok', 4000);
   }
 
   /* 記録の途中で「戻る」（スワイプ・戻るボタン）で、うっかりページを離れないように */
@@ -902,6 +903,7 @@
   /* ---------- ピリオド ---------- */
   function openPeriod() {
     const g = S.game;
+    rvPause();
     const started = !!g.startedAt;
     const cur = started ? curPeriod() : (g.startPeriod || 1);
     const pick = (p) => {
@@ -1466,6 +1468,7 @@
      入力は2通り：選手ごとの行（ふつうの記録と同じ）か、「2P → 14番」（プレーと背番号を1つずつ選ぶ。どちらが先でもよい）。
      自動のときは、選手ごとの行が縦にすべらずに入るなら行、入らなければ「2P → 14番」 */
   const RV_RATES = [1, 0.5, 0.25, 2];
+  const PICK_KEEP = 20;          // 選びかけ（プレーか背番号の片方だけ押した）を覚えておく、動画の時刻の幅（秒）
   const FPS_STD = [24, 25, 30, 48, 50, 60, 90, 100, 120, 240];
   const NOTES = () => root.BS && root.BS.notes;
   function rvMode() { return !!(S.game && BT.isReview(S.game)); }
@@ -1480,8 +1483,11 @@
   /* 動画のファイルを1つ選んでもらう */
   function pickVideo(cb) {
     if (S.demoFile) { const f = S.demoFile; setTimeout(() => cb(f), 0); return; }      // デモ：見本の動画を使う（js/demo.js）
+    const stale = document.getElementById('rvFile');
+    if (stale) stale.remove();                 // 前に、選ばずにやめたもの
     const inp = h('input', { type: 'file', id: 'rvFile', accept: 'video/*,.mp4,.mov,.m4v,.webm', style: { display: 'none' } });
     inp.addEventListener('change', () => { const f = inp.files && inp.files[0]; inp.remove(); if (f) cb(f); });
+    inp.addEventListener('cancel', () => inp.remove());
     document.body.appendChild(inp);
     inp.click();
   }
@@ -1542,6 +1548,7 @@
     const plays = g.events.some((e) => e.type !== 'period');
     const same = !src.duration || !R.dur || Math.abs(src.duration - R.dur) <= Math.max(1.5, src.duration * 0.005);
     R.match = same || !plays;
+    if (!same && !plays) g.rvPos = 0;          // まだ記録がなくて、別の動画に替えた：前の動画で見ていた所は使わない（記録がある試合では、元の所を覚えたままにする）
     if (R.match) {
       Object.assign(src, { name: R.file.name, size: R.file.size || null, duration: Math.round(R.dur * 100) / 100 || null, w: el.videoWidth || null, h: el.videoHeight || null });
       const v = (g.videos || []).find((x) => x.file);
@@ -1579,6 +1586,15 @@
     if (el.paused || el.ended) { const p = el.play(); if (p && p.catch) p.catch(() => {}); } else el.pause();
   }
   function rvPause() { if (rvReady() && !S.rv.el.paused) S.rv.el.pause(); }
+  /* t 秒から再生する（ボタンを押した、その操作の中で呼ぶ） */
+  function rvPlayFrom(t) {
+    if (!rvReady()) return;
+    const el = S.rv.el;
+    el.currentTime = BT.clamp(t, 0, Math.max(0, (S.rv.dur || 0) - 0.05));
+    const p = el.play();
+    if (p && p.catch) p.catch(() => {});
+    rvSync();
+  }
   /* t 秒へ（動いたら resolve） */
   function rvSeekTo(t) {
     if (!rvReady()) return Promise.resolve();
@@ -1607,6 +1623,7 @@
     if (!R) return;
     R.rate = RV_RATES[(RV_RATES.indexOf(R.rate) + 1) % RV_RATES.length];
     R.el.playbackRate = R.rate;
+    if (R.ready && !R.el.paused) rvFpsProbe(R);          // （×1 以下に戻したら、コマ数を測る）
     rvSync();
   }
   /* 1秒のコマ数を測る（再生中のコマとコマの時刻の差のうち、いちばん小さいもの → よくあるコマ数に丸める） */
@@ -1618,6 +1635,8 @@
     R.fpsBest = R.fpsBest || Infinity;
     const cb = (t, meta) => {
       if (S.rv !== R) return;
+      // 速い再生（×2）では、映らないコマがあって差が大きく出るので、測らない（×1 以下で再生したときに測る）
+      if (el.playbackRate > 1) { R.fpsBusy = false; return; }
       if (last != null && meta.mediaTime > last + 1e-4) R.fpsBest = Math.min(R.fpsBest, meta.mediaTime - last);
       last = meta.mediaTime;
       if (R.fpsBest < 1) { const f = 1 / R.fpsBest; R.fps = FPS_STD.reduce((a, b) => (Math.abs(b - f) < Math.abs(a - f) ? b : a)); }
@@ -1670,25 +1689,32 @@
     L.stage.insertBefore(L.pick, L.cover);
     rvSeekEvents(L.rvSeek);
     rvMount();
-    const cs = getComputedStyle(document.body);
+    rvColors();
+    L.clock.title = '動画の時刻';
+  }
+  /* 位置のバーの色（画面の色に合わせる） */
+  function rvColors() {
+    const L = S.L, cs = getComputedStyle(document.body);
     L.rvCol = { track: cs.getPropertyValue('--line2').trim() || '#888', done: cs.getPropertyValue('--accent').trim() || '#2563eb', text: cs.getPropertyValue('--text').trim() || '#000' };
+    L.seekKey = '';
   }
   /* 押し続けると続けて（0.4 秒押したら、前の移動が終わるたびに次のコマへ） */
   function holdRepeat(btn, fn) {
-    let timer = 0, held = false, downAt = 0;
-    const stop = () => { held = false; clearTimeout(timer); };
+    let timer = 0, held = false, ptrAt = 0;
+    const stop = () => { if (held) ptrAt = Date.now(); held = false; clearTimeout(timer); };
     btn.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       e.preventDefault();
       held = true;
-      downAt = Date.now();
+      ptrAt = Date.now();
       fn();
       const rep = () => { if (!held) return; Promise.resolve(fn()).then(() => { if (held) timer = setTimeout(rep, 40); }); };
       timer = setTimeout(rep, 400);
     });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => btn.addEventListener(ev, stop));
-    // キーボード（Enter・スペース）で押したとき（指で押したあとの click は、もう動かしたので使わない。指の click も detail が 0 のことがある）
-    btn.addEventListener('click', () => { if (Date.now() - downAt > 1000) fn(); });
+    // キーボード（Enter・スペース）で押したとき。指・マウスで押したあとの click は、もう動かしたので使わない
+    // （指の click も detail が 0 のことがあるので、押した・離した時刻で見分ける。長押しして離したあとの click も）
+    btn.addEventListener('click', () => { if (Date.now() - ptrAt > 700) fn(); });
   }
   /* 位置のバー：指でなぞって動かす（なぞっている間は止める） */
   function rvSeekEvents(cv) {
@@ -1727,7 +1753,8 @@
     if (side) vw = Math.min(W * 0.6, (H - L.bar.offsetHeight - ctlH - 6) * ar);
     else vw = Math.min(W - 8, H * (H >= 900 ? 0.42 : 0.34) * ar);
     vw = Math.floor(Math.max(160, vw));
-    L.rvBox.style.width = side ? vw + 12 + 'px' : '';
+    // （横長の画面で縦長の動画：映像は細くても、下の操作のボタン 8 つが押せる幅は取る）
+    L.rvBox.style.width = side ? Math.max(vw + 12, Math.min(340, Math.floor(W * 0.6))) + 'px' : '';
     L.rvStage.style.width = vw + 'px';
     L.rvStage.style.height = Math.floor(vw / ar) + 'px';
     L.seekKey = '';
@@ -1770,8 +1797,16 @@
   function rvTick(force) {
     const L = S.L, g = S.game;
     if (!L || !L.rvBox || !g) return;
+    if (BT.ui.sheetOpen()) rvPause();          // 小窓を開いている間は、映像が隠れるので止めておく
     tickClock(force);
     const t = elapsed();
+    // 選びかけ（「2P → 番号は？」）のまま、動画が 20 秒より大きく動いたら、やめる（あとで押した番号と、くっつけて記録しないように）
+    const pk = S.rv && S.rv.pick;
+    if (pk && Math.abs(t - pk.t) > PICK_KEEP) {
+      S.rv.pick = null;
+      rvPickMarks();
+      say(`選びかけ（${pk.type ? pickTypeLabel(pk.type) : pk.no != null ? '#' + pk.no : '番号なし'}）をやめました：動画が ${PICK_KEEP} 秒より大きく動いたので`, 'warn', 4500);
+    }
     const sc = BT.score(g, t + 0.05), per = BT.periodAt(g, t);
     const key = sc.join('-') + '|' + per;
     if (force || key !== L.rvKey) {
@@ -1881,6 +1916,9 @@
     P.nos.innerHTML = '';
     const rows = rowsOf(tm);
     const teamOnly = rows.length === 1 && rows[0].no == null;
+    P.teamOnly = teamOnly;                     // 背番号のないチーム：プレーを押すだけで、チームの記録にする（番号のボタンは出さない）
+    P.nos.hidden = teamOnly;
+    P.sec.classList.toggle('teamonly', teamOnly);
     rows.forEach((r) => {
       const who = r.no != null ? `${r.no}番${r.name ? ' ' + r.name : ''}` : teamOnly ? 'チーム' : 'だれか（番号なし）';
       P.nos.append(h('button', { class: 'pn' + (r.no == null ? ' unk' : '') + (teamOnly ? ' teamonly' : ''), dataset: { pno: r.no == null ? '' : r.no }, 'aria-label': `${BT.teamName(S.game, tm)} ${who}` },
@@ -1907,6 +1945,12 @@
     const R = S.rv, p = R.pick;
     R.adj = null;                 // 時刻あわせの途中なら、やめる
     const val = isType ? b.dataset.ptype : b.dataset.pno === '' ? null : b.dataset.pno;
+    if (isType && S.L.pickT[tm].teamOnly) {          // 背番号のないチーム：すぐ記録
+      if (p && p.team === tm) R.pick = null;
+      record(tm, null, val, b);
+      rvPickMarks();
+      return;
+    }
     if (p && p.team === tm) {
       if (isType && p.no !== undefined) { R.pick = null; record(tm, p.no, val, b, p.t); flash(p.btn); rvPickMarks(); return; }
       if (isNo && p.type) { R.pick = null; record(tm, val, p.type, b, p.t); flash(p.btn); rvPickMarks(); return; }
@@ -1968,8 +2012,8 @@
   }
   function rvAdjDone() {
     const R = S.rv, e = R && BT.findEvent(S.game, R.adj);
-    R.adj = null;
-    if (!e) { renderLast(); return; }
+    if (R) R.adj = null;
+    if (!e || !rvReady()) { renderLast(); return; }
     e.t = rvNow();
     save();
     updateLive();
@@ -1997,7 +2041,7 @@
       h('div', { class: 'field' }, timeLab, old ? h('div', { class: 'row' },
         h('button', { class: 'btn small', onclick: () => { s.close(); rvSeekTo(d.t); } }, '🎬 この場面を見る'),
         rvReady() ? h('button', { class: 'btn small', id: 'btnNoteNow', onclick: () => { d.t = rvNow(); showTime(); } }, 'いまの映像の時刻にする') : null) : null),
-      h('div', { class: 'field' }, h('span', null, 'スタンプ（いくつでも）'), h('div', { class: 'stamps' }, stampBtns)),
+      h('div', { class: 'field' }, h('span', null, 'スタンプ（6つまで）'), h('div', { class: 'stamps' }, stampBtns)),
       h('label', { class: 'field' }, h('span', null, 'コメント（なくてもOK）'), text),
       h('div', { class: 'field' }, h('span', null, 'タグ'), h('div', { class: 'row tagrow' }, tagBtns)),
       h('div', { class: 'field' }, h('span', null, '出す長さ'), durBtns));
@@ -2038,6 +2082,7 @@
   /* ---------- メニュー ---------- */
   function openMenu() {
     const g = S.game, rv = rvMode();
+    rvPause();
     const plays = g.events.filter((e) => e.type !== 'period').length;
     const item = (icon, label, sub, fn, cls) => h('button', { class: 'mitem' + (cls ? ' ' + cls : ''), onclick: () => { s.close(); fn(); } }, h('span', { class: 'mi' }, icon), h('span', { class: 'mt' }, h('b', null, label), sub ? h('small', null, sub) : null));
     const s = BT.ui.sheet({
@@ -2096,6 +2141,7 @@
     const g = S.game;
     const e = BT.findEvent(g, id);
     if (!e) return;
+    rvPause();
     const changed = () => { save(); if (S.L) updateLive(); openEdit(id); };
     const nudge = (d) => h('button', { class: 'btn small', onclick: () => { e.t = Math.max(0, Math.round((e.t + d) * 10) / 10); changed(); } }, (d > 0 ? '+' : '−') + Math.abs(d) + '秒');
     const body = h('div', { class: 'edit' });
@@ -2103,7 +2149,7 @@
     // 動画を見ながら：その場面を見る・映像を見ながらコマ送りで時刻を合わせる・いまの映像の時刻にする
     if (rvMode() && rvReady()) {
       body.append(h('div', { class: 'row rvedit' },
-        h('button', { class: 'btn small', id: 'btnEvSee', onclick: () => { BT.ui.closeSheet(true); rvSeekTo(Math.max(0, e.t - 2)).then(() => rvToggle()); } }, '🎬 この場面を見る（2秒前から）'),
+        h('button', { class: 'btn small', id: 'btnEvSee', onclick: () => { BT.ui.closeSheet(true); rvPlayFrom(Math.max(0, e.t - 2)); } }, '🎬 この場面を見る（2秒前から）'),
         h('button', { class: 'btn small primary', id: 'btnEvAdj', onclick: () => rvAdjust(id) }, '📍 映像で時刻を合わせる（コマ送り）'),
         h('button', { class: 'btn small', id: 'btnEvNow', onclick: () => { e.t = rvNow(); changed(); } }, `いまの映像の時刻（${BT.fmtTime(rvNow(), true)}）にする`)));
     }
