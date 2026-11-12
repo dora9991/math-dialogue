@@ -1377,6 +1377,120 @@ fieldset.field { border: 0; padding: 0; margin: 0; min-width: 0; }
 .cl-form textarea { border: 2px solid var(--line-2); border-radius: 12px; background: var(--sheet); color: var(--ink); padding: 8px 12px; width: 100%; min-width: 0; font: inherit; font-size: 1rem; line-height: 1.5; resize: vertical; }
 .cl-form textarea:focus { border-color: var(--o); outline: none; }
 
+/* 「今週の これ1つ」の画面（js/focus-ui.js）。クラスは fc- で始まる。色・字は css/coach.css の :root の変数を使う（くらい表示もそのまま） */
+
+/* ---------- ホームのカード ---------- */
+.fc-home { gap: 10px; }
+.fc-home.cta-new { background: linear-gradient(150deg, var(--ball-soft), var(--sheet) 70%); }
+.fc-home.on { box-shadow: var(--shadow), inset 4px 0 0 var(--ball); }
+.fc-home-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fc-test { display: flex; flex-direction: column; gap: 2px; font-size: 1.1rem; line-height: 1.35; }
+.fc-test b { font-family: var(--font-round); font-weight: 800; }
+.fc-test small { color: var(--ink-2); font-size: var(--fs-s); font-weight: 700; }
+.fc-nums { display: flex; gap: 8px; }
+.fc-n { flex: 1; display: flex; flex-direction: column; background: var(--sheet-2); border-radius: 14px; padding: 6px 10px; min-width: 0; }
+.fc-n small { font-size: 0.7rem; color: var(--ink-2); font-weight: 700; }
+.fc-n b { font-size: 1.45rem; line-height: 1.2; white-space: nowrap; }
+.fc-n.now { background: var(--ok-soft); }
+.fc-n.now b { color: var(--ok); }
+.fc-n.goal { background: var(--ball-soft); }
+.fc-n.goal b { color: var(--ball); }
+.fc-bar2 { background: var(--line); height: 12px; }
+.fc-bar2 i { background: linear-gradient(90deg, var(--ball), #ffb56b); }
+.fc-cue { display: flex; gap: 6px; align-items: flex-start; background: var(--o-soft); color: var(--ink); border-radius: 12px; padding: 8px 12px; font-size: var(--fs-s); }
+.fc-cue .ic { color: var(--o); margin-top: 3px; }
+.fc-easy { display: flex; gap: 6px; align-items: flex-start; }
+.fc-pend { background: var(--warn-soft); border-radius: 12px; padding: 8px 12px; }
+
+/* ---------- のびしろを えらぶ ---------- */
+.fc-cands { display: flex; flex-direction: column; gap: 10px; }
+.fc-cand, .fc-row { display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--sheet); border: 2px solid var(--line); border-radius: 20px; padding: 12px 14px; min-height: 76px; color: var(--ink); }
+.fc-cand:active, .fc-row:active { transform: scale(0.985); }
+.fc-cand:hover, .fc-cand:focus-visible { border-color: var(--ball); }
+.fc-cand-ic { width: 52px; height: 52px; border-radius: 50%; background: var(--ball-soft); color: var(--ball); display: grid; place-items: center; }
+.fc-cand-ic .ic { width: 28px; height: 28px; }
+.fc-cand-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fc-cand-body b { font-family: var(--font-round); font-weight: 800; font-size: 1.1rem; line-height: 1.3; }
+.fc-cand-test { color: var(--ink-2); font-weight: 700; font-size: var(--fs-s); }
+.fc-why { display: flex; gap: 5px; align-items: flex-start; color: var(--o); font-size: var(--fs-xs); font-weight: 700; line-height: 1.5; }
+.fc-why .ic { margin-top: 2px; flex: none; }
+.fc-warn { margin: 0; }
+.fc-more > summary { cursor: pointer; font-weight: 700; color: var(--o); padding: 6px 0; }
+.fc-more .chips { margin-top: 8px; }
+.fc-row { grid-template-columns: 44px 1fr auto; }
+
+/* ---------- 測る ---------- */
+.fc-what { margin: 0; font-weight: 700; color: var(--ink-2); }
+.fc-how .steps { margin-top: 2px; }
+.fc-note { display: flex; gap: 6px; align-items: flex-start; color: var(--warn); font-weight: 700; }
+.fc-timer { align-items: center; text-align: center; gap: 8px; }
+.fc-clock { font-size: clamp(4.5rem, 26vw, 7.5rem); line-height: 1; color: var(--ball); letter-spacing: 0.02em; }
+.fc-timer[data-phase="ready"] .fc-clock { color: var(--warn); }
+.fc-timer[data-phase="end"] .fc-clock { color: var(--ok); }
+.fc-clock-l { margin: 0; color: var(--ink-2); font-weight: 700; }
+.fc-bar { width: 100%; height: 12px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.fc-bar i { display: block; height: 100%; width: 0; background: var(--ball); border-radius: 999px; transition: width 0.15s linear; }
+.fc-timer .btns { width: 100%; justify-content: center; }
+.fc-timer .btn[hidden], .fc-enter[hidden] { display: none; }
+.fc-enter { gap: 12px; }
+.fc-step { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.fc-step .ib { width: 52px; height: 52px; border-radius: 16px; }
+.fc-num { width: 6.2ch; min-width: 0; text-align: center; font-size: 2.2rem; line-height: 1.2; padding: 4px 6px; border: 2px solid var(--line-2); border-radius: 14px; background: var(--sheet); color: var(--ink); font-weight: 600; }
+.fc-num:focus { border-color: var(--o); outline: none; }
+.fc-unit { font-family: var(--font-round); font-weight: 800; color: var(--ink-2); }
+.fc-base { align-items: center; text-align: center; gap: 2px; background: var(--ball-soft); }
+.fc-big { margin: 0; font-size: 3.2rem; line-height: 1.15; color: var(--ball); }
+
+/* ---------- のびを見る ---------- */
+.fc-result { align-items: center; text-align: center; gap: 10px; position: relative; overflow: hidden; }
+.fc-result.pb { box-shadow: var(--shadow), 0 0 0 3px var(--gold); background: linear-gradient(160deg, #fff6d6, var(--sheet) 60%); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fc-result.pb { background: linear-gradient(160deg, #3a3210, var(--sheet) 60%); } }
+:root[data-theme="dark"] .fc-result.pb { background: linear-gradient(160deg, #3a3210, var(--sheet) 60%); }
+.fc-result.up { box-shadow: var(--shadow), inset 0 0 0 2px var(--ok); }
+.fc-arrow { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.fc-from { font-size: 1.7rem; color: var(--ink-3); }
+.fc-to { font-size: 3.4rem; line-height: 1.1; color: var(--ball); }
+.fc-to-i .ic { width: 30px; height: 30px; color: var(--ink-3); }
+.fc-gain { margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; font-family: var(--font-round); font-weight: 800; font-size: 1.15rem; }
+.fc-gain b { color: var(--ok); font-size: 1.4rem; }
+.fc-verdict { margin: 0; font-weight: 700; line-height: 1.6; max-width: 28em; }
+.fc-goal-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+.fc-goal-row .xpbar { flex: 1; }
+.fc-spark { width: 100%; height: 72px; color: var(--ball); overflow: visible; }
+.fc-spark circle { fill: var(--sheet); stroke: currentColor; stroke-width: 2.5; }
+.fc-spark circle.best { fill: var(--gold); stroke: var(--gold); }
+.fc-confetti { position: absolute; inset: 0; pointer-events: none; }
+.fc-stats { grid-template-columns: repeat(3, 1fr); }
+.fc-stats b { font-size: 1.5rem; }
+.fc-note-c { gap: 4px; padding: 12px 14px; }
+.fc-note-c p { margin: 0; }
+.fc-hist .cl-st { align-self: center; }
+.fc-bests { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px; }
+.fc-best { display: flex; flex-direction: column; background: var(--sheet); border-radius: 14px; padding: 8px 12px; box-shadow: var(--shadow); }
+.fc-best small { color: var(--ink-2); font-weight: 700; font-size: 0.72rem; }
+.fc-best b { font-size: 1.4rem; color: var(--ball); }
+
+/* ---------- 練習のあとの ふり返り ---------- */
+.fc-reflect { display: flex; flex-direction: column; gap: 8px; text-align: left; background: var(--sheet-2); border-radius: 16px; padding: 12px; border: 1.5px dashed var(--ball-line); }
+.fc-reflect-h { margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-family: var(--font-round); font-weight: 800; font-size: 1rem; }
+.fc-reflect-h .ic { color: var(--ball); }
+.fc-reflect-h small { color: var(--ink-3); font-size: 0.75rem; }
+.fc-q { margin: 2px 0 0; font-weight: 800; font-size: var(--fs-s); }
+.fc-q small { color: var(--ink-3); font-weight: 700; }
+.fc-reflect .chip { min-height: 38px; font-size: var(--fs-s); }
+.run-done .fc-reflect { color: var(--ink); }
+
+/* ---------- 週ゴール（ホーム） ---------- */
+.wk-goal { margin-left: auto; text-align: right; font-size: var(--fs-xs); font-weight: 700; line-height: 1.3; }
+.wk-goal b { font-size: 1.3rem; }
+.wk-goal.done { color: #ffd56b; }
+.wk-streak { display: block; font-size: 0.68rem; opacity: 0.9; }
+@media (max-width: 380px) { .fc-cand { grid-template-columns: 44px 1fr auto; padding: 10px; } .fc-cand-ic { width: 44px; height: 44px; } }
+
+.streak b .of { font-style: normal; font-size: 0.95rem; opacity: 0.8; margin-left: 1px; }
+.streak small { text-align: center; line-height: 1.25; }
+.role.r-focus { background: var(--ball); color: #fff; margin-left: 4px; }
+
 </style>
 </head>
 <body>
@@ -12758,6 +12872,124 @@ BC.tactic([
   },
 ]);
 
+/* ---- data/focus.js ---- */
+BC && (BC.currentFile = "data/focus.js");
+/* 「これ1つ」の測るテスト（30秒チャレンジ）。ひとりで・短い時間で・同じやり方で はかれる、自分の「いまの力」のものさし。
+   BC.FOCUS_TESTS の1つ：
+     id        'f-…'（ずっと同じ id。きろくは この id で つながる）
+     skill     技能 id（data/skills.js）
+     name      短い名前（画面の見出し）
+     what      なにを はかるか（「30秒で つけた回数」など。1行）
+     how       はかりかた（1つずつ。子どもが読む）
+     kind      'count'（決めた秒数のあいだの回数）・'time'（かかった時間。ストップウォッチ）・'hold'（つづけられた時間。ストップウォッチ）・'make'（N回中 いくつ）
+     secs      kind が 'count' のとき、タイマーの秒数
+     of        kind が 'make' のとき、全部で何回
+     unit      '回'・'本'・'秒'
+     better    'more'（多いほどよい）・'less'（少ないほどよい＝タイム）
+     drills    この力をのばす練習メニュー（d-…）。はじめのものが きょうのメニューの中心になる
+     cues      「つぎに 意識すること」の候補（短く）
+     place     'any'（家でもできる）・'hoop'（ゴールがいる）
+     note      気をつけること（なくてもよい）
+   やり方を変えると、前の記録と くらべられなくなる。変えるときは、新しい id で つくる。 */
+BC.FOCUS_TESTS = [
+  /* ---------- ドリブル ---------- */
+  { id: 'f-pound-r', skill: 'dribble', name: 'ポンドドリブル（右手）', what: '30秒で つけた回数', kind: 'count', secs: 30, unit: '回', better: 'more', place: 'any',
+    how: ['足を肩はばに開いて、ひざを曲げる', '右手だけで、ひざの高さに 強くつく（ボールは 見てもよい）', '30秒で なん回 つけたか 数える（声に出すか、おうちの人に 数えてもらう）'],
+    drills: ['d-pound', 'd-handling'], cues: ['指の腹で 強く', 'ひざを まげる', 'ボールを 見ない', 'リズムを そろえる'] },
+  { id: 'f-pound-l', skill: 'dribble', name: 'ポンドドリブル（左手）', what: '30秒で つけた回数', kind: 'count', secs: 30, unit: '回', better: 'more', place: 'any',
+    how: ['足を肩はばに開いて、ひざを曲げる', '左手だけで、ひざの高さに 強くつく', '30秒で なん回 つけたか 数える'],
+    drills: ['d-pound', 'd-2ball'], cues: ['左手の 指の腹で', 'ひざを まげる', '顔を 上げる', 'ゆっくりから 速く'] },
+  { id: 'f-cross', skill: 'dribble', name: 'クロスオーバー', what: '30秒で 左右に ついた回数', kind: 'count', secs: 30, unit: '回', better: 'more', place: 'any',
+    how: ['ひざを曲げて、体の前で ボールを 右手 → 左手 → 右手 … と ついて 移す', '1回 つくたびに 1回と 数える', '30秒で なん回か 数える'],
+    drills: ['d-moves', 'd-handling'], cues: ['体の前で 低く', 'ボールを 見ない', '手を すばやく', 'ひざを まげる'] },
+  { id: 'f-circle', skill: 'dribble', name: 'ボディサークル', what: '10周 まわる時間（少ないほどよい）', kind: 'time', unit: '秒', better: 'less', place: 'any',
+    how: ['ボールを 腰のまわりで まわす（落とさずに）', '10周 まわったら ストップ。落としたら やりなおし', 'スタートで ストップウォッチが 動くよ'],
+    drills: ['d-handling', 'd-pound'], cues: ['ボールを 見ない', '手首で まわす', 'リズムを そろえる', '落とさない'] },
+  { id: 'f-zigzag', skill: 'dribble', name: 'ジグザグドリブル', what: 'コーン（くつ）5本を 往復する時間', kind: 'time', unit: '秒', better: 'less', place: 'any',
+    how: ['くつ・ペットボトルなどを 2m ずつ はなして 5つ ならべる', 'ドリブルで ジグザグに 行って もどる（1往復）', 'ストップウォッチで 往復の時間を はかる'],
+    drills: ['d-zigzag', 'd-moves'], cues: ['体の前で 手をかえる', '低く 速く', '前を 見る', 'コーンの ちかくで チェンジ'],
+    note: 'まわりに 物や 人が いない 広い場所で。' },
+  { id: 'f-2ball', skill: 'dribble', name: '2ボール・ドリブル', what: '落とさずに つづけた時間', kind: 'hold', unit: '秒', better: 'more', place: 'any',
+    how: ['ボールを 2つ 持って、同時に つく', '1つ 落としたら ストップ（何秒 つづいたか）', 'ストップウォッチで はかる'],
+    drills: ['d-2ball', 'd-pound'], cues: ['2つの リズムを そろえる', 'ひざを まげる', '前を 見る', 'ゆっくりから'],
+    note: '音が ひびかない 場所で。' },
+
+  /* ---------- シュート ---------- */
+  { id: 'f-ft', skill: 'shoot', name: 'フリースロー', what: '10本中 入った数', kind: 'make', of: 10, unit: '本', better: 'more', place: 'hoop',
+    how: ['フリースローラインから 10本 打つ', '毎回 同じ ルーティン（ボールを つく・息をはく）で', '入った数を 数える'],
+    drills: ['d-ft', 'd-formshoot'], cues: ['同じ ルーティン', 'ひじを まっすぐ', 'さいごまで 手を のばす', 'ひざを つかう'] },
+  { id: 'f-form', skill: 'shoot', name: 'ゴール下フォームシュート', what: '10本中 入った数', kind: 'make', of: 10, unit: '本', better: 'more', place: 'hoop',
+    how: ['ゴールの すぐ近く（1〜2歩）から 片手で 打つ', 'ひじを まっすぐ 上へ。10本 打つ', '入った数を 数える'],
+    drills: ['d-formshoot', 'd-lyingshoot'], cues: ['ひじを まっすぐ', 'さいごまで 手を のばす', '手首を 返す', '高く 打つ'] },
+  { id: 'f-around', skill: 'shoot', name: '5か所シューティング', what: '15本中 入った数（5か所×3本）', kind: 'make', of: 15, unit: '本', better: 'more', place: 'hoop',
+    how: ['ゴールのまわり 5か所 から 3本ずつ 打つ', '合計 15本。入った数を 数える'],
+    drills: ['d-around', 'd-formshoot'], cues: ['どこでも 同じフォーム', 'ひざを つかう', 'ひじを まっすぐ', '打つ前に 足を そろえる'] },
+
+  /* ---------- フィニッシュ（レイアップ） ---------- */
+  { id: 'f-layup-r', skill: 'finish', name: 'レイアップ（右から）', what: '10本中 入った数', kind: 'make', of: 10, unit: '本', better: 'more', place: 'hoop',
+    how: ['右がわから ドリブルして レイアップ', '10本 打って、入った数を 数える'],
+    drills: ['d-layup-step', 'd-mikan'], cues: ['右・左の ステップ', '高く とぶ', 'ボードの 四角を ねらう', '最後まで 見る'] },
+  { id: 'f-layup-l', skill: 'finish', name: 'レイアップ（左から）', what: '10本中 入った数', kind: 'make', of: 10, unit: '本', better: 'more', place: 'hoop',
+    how: ['左がわから ドリブルして 左手で レイアップ', '10本 打って、入った数を 数える'],
+    drills: ['d-weakhand-layup', 'd-layup-step'], cues: ['左・右の ステップ', '左手で 打つ', 'ボードの 四角を ねらう', '高く とぶ'] },
+  { id: 'f-mikan', skill: 'finish', name: 'マイカンドリル', what: '30秒で 入った本数', kind: 'count', secs: 30, unit: '本', better: 'more', place: 'hoop',
+    how: ['ゴールの下で、右 → 左 → 右 … と 交互に レイアップ', '30秒で 入った本数を 数える'],
+    drills: ['d-mikan', 'd-layup-step'], cues: ['止まらず リズムよく', 'ボードを つかう', '手で ボールを 受ける', '高く とぶ'] },
+
+  /* ---------- パス ---------- */
+  { id: 'f-wallpass', skill: 'pass', name: 'かべパス', what: '30秒で パス・キャッチした回数', kind: 'count', secs: 30, unit: '回', better: 'more', place: 'any',
+    how: ['かべから 2〜3m はなれて 立つ', '両手で かべへ パス → とって → パス… をくり返す', '30秒で なん回 できたか 数える（落としたら そこから つづける）'],
+    drills: ['d-wallpass'], cues: ['親指を 下に', '両手で とる', 'ひじを のばして 出す', '足を 1歩 ふみこむ'],
+    note: 'かべや まどが こわれない 場所・やわらかい ボールで。' },
+  { id: 'f-wallaim', skill: 'pass', name: 'かべの まとあて', what: '10本中 まとに 当たった数', kind: 'make', of: 10, unit: '本', better: 'more', place: 'any',
+    how: ['かべに テープで まと（30cm）を つくる', '3m はなれて、チェストパスで まとを ねらう', '10本中 まとに 当たった数を 数える'],
+    drills: ['d-wallpass'], cues: ['まとを 見て 出す', 'ひじを のばす', '親指を 下に', '足を ふみこむ'],
+    note: 'かべや まどが こわれない 場所・やわらかい ボールで。' },
+
+  /* ---------- フットワーク ---------- */
+  { id: 'f-footfast', skill: 'foot', name: '足ぶみ（すばやく）', what: '10秒で 足を ついた回数', kind: 'count', secs: 10, unit: '回', better: 'more', place: 'any',
+    how: ['ひざを 軽く曲げて、その場で 左右の足を すばやく ふみかえる', '右足が ついた回数を 10秒間 数える'],
+    drills: ['d-ladder', 'd-reaction'], cues: ['つま先で かるく', 'ひざを まげる', 'うでも ふる', '地面から はなれすぎない'] },
+  { id: 'f-jumpstop', skill: 'foot', name: 'ジャンプストップ＆ピボット', what: '10回中 ブレずに できた数', kind: 'make', of: 10, unit: '回', better: 'more', place: 'any',
+    how: ['ボールを持って 走る → 両足で とまる（ジャンプストップ）', '軸足を 動かさずに ピボットで 前・うしろへ 回る', '足が ずれずに できた回数を 数える（10回中）'],
+    drills: ['d-jumpstop', 'd-triple'], cues: ['両足で 同時に', 'ひざを まげて とまる', '軸足を うごかさない', 'ボールを 体に 近く'] },
+
+  /* ---------- 1対1の攻め ---------- */
+  { id: 'f-drive', skill: 'attack', name: 'ドライブ → レイアップ', what: '10本中 入った数', kind: 'make', of: 10, unit: '本', better: 'more', place: 'hoop',
+    how: ['トリプルスレット（ボールを持って かまえる）から、ジャブステップ', '1〜2回 ドリブルして レイアップ', '10本 打って、入った数を 数える'],
+    drills: ['d-shotfake', 'd-triple'], cues: ['ジャブで 守りを ゆさぶる', '低く 速く', '1歩目を ひらく', 'さいごまで 見る'] },
+
+  /* ---------- 1対1の守り ---------- */
+  { id: 'f-slide', skill: 'defball', name: 'ディフェンス・スライド', what: '20秒で 横に すべった回数', kind: 'count', secs: 20, unit: '回', better: 'more', place: 'any',
+    how: ['3m はなして 線を 2本（またはコーン）', 'ひざを 曲げて、足を そろえずに 横に すべって 線を ふむ', '線に ついたら 1回と 数える（20秒間）'],
+    drills: ['d-stance', 'd-ladder'], cues: ['こしを 落とす', '足を クロスしない', '頭の 高さを かえない', '手を ひろげる'],
+    note: 'ゆかが すべらない 場所で。' },
+  { id: 'f-stance', skill: 'defball', name: 'ひくい かまえ', what: 'こしを 落として キープできた時間', kind: 'hold', unit: '秒', better: 'more', place: 'any',
+    how: ['ディフェンスの かまえ（ひざを曲げて こしを落とす）を とる', 'こしが 上がったら ストップ（何秒 キープできたか）', 'ストップウォッチで はかる'],
+    drills: ['d-stance', 'd-mirror'], cues: ['こしを 落とす', '背中を まっすぐ', '手を ひろげる', '足を 肩はばより 広く'],
+    note: 'ひざや こしが いたい日は むりしない。' },
+
+  /* ---------- リバウンド ---------- */
+  { id: 'f-wallreb', skill: 'rebound', name: 'かべジャンプキャッチ', what: '30秒で ジャンプして とった回数', kind: 'count', secs: 30, unit: '回', better: 'more', place: 'any',
+    how: ['かべに ボールを 高めに 投げる', 'はね返りを ジャンプして 空中で 両手で つかむ', '30秒で なん回 とれたか 数える'],
+    drills: ['d-tip', 'd-superman'], cues: ['ひざを まげて とぶ', '両手で つかむ', '高い所で とる', '着地で ひざを まげる'],
+    note: 'かべや まどが こわれない 場所で。' },
+
+  /* ---------- からだづくり ---------- */
+  { id: 'f-plank', skill: 'body', name: 'プランク', what: 'しせいを キープできた時間', kind: 'hold', unit: '秒', better: 'more', place: 'any',
+    how: ['ひじを ついて、あたまから かかとまで まっすぐに', 'おしりが 下がったり 上がったら ストップ', 'ストップウォッチで はかる'],
+    drills: ['d-core', 'd-dynamic'], cues: ['おなかに 力', 'おしりを 下げない', '息を とめない', '体を まっすぐ'],
+    note: 'こしが いたいときは やらない。' },
+  { id: 'f-squat', skill: 'body', name: 'スクワット', what: '30秒で できた回数', kind: 'count', secs: 30, unit: '回', better: 'more', place: 'any',
+    how: ['足を 肩はばに 開いて、おしりを うしろへ ひく', 'ひざが 足の指より 前に 出ないように しゃがんで 立つ', '30秒で なん回か 数える'],
+    drills: ['d-core', 'd-dynamic'], cues: ['ひざを 外へ', 'せなかを まっすぐ', 'かかとを ゆかに', '息を はきながら 立つ'],
+    note: 'ひざが いたい日は むりしない。' },
+  { id: 'f-onefoot', skill: 'body', name: '片足立ち', what: 'ふらつかずに 立てた時間（左右の 少ないほう）', kind: 'hold', unit: '秒', better: 'more', place: 'any',
+    how: ['平らな ゆかで、片足で 立つ（もう片足は 少し うかす）', 'うでを 広げても OK。ふらついたり 足が ついたら ストップ', '右と 左を はかって、少ないほうを 記録する'],
+    drills: ['d-landing', 'd-dynamic'], cues: ['ひざを やわらかく', '1点を 見る', 'おなかに 力', '足首を ぐらつかせない'],
+    note: 'ころばない よう、まわりに 物が ない場所で。' },
+];
+
 /* ---- js/court.js ---- */
 BC && (BC.currentFile = "js/court.js");
 /* 作戦図：コートと人と動きを SVG で描く。データの形は js/core.js の「作戦図」。
@@ -15072,7 +15304,8 @@ BC && (BC.currentFile = "js/grow.js");
 /* 成長のしくみ（BC.grow）：やったこと（acts）から、経験値（XP）・レベル・つづけた日数・バッジを計算する。DOM は使わない（tools/grow-test.cjs で検査）。
    acts（この端末の localStorage 'bc.acts'。古い順）：
      [{ at（ms）, type, id, skill, min（分）, rate（1 むずかしかった・2 まあまあ・3 できた）, xp, note }]
-     type：'drill'（練習メニューをやった）| 'menu'（きょうのメニューをやりきった）| 'check'（動画チェック）| 'view'（見るポイントを読んだ・チェックした）| 'aid'（ケガの手当てを読んだ）
+     type：'drill'（練習メニューをやった）| 'menu'（きょうのメニューをやりきった）| 'check'（動画チェック）| 'view'（見るポイントを読んだ・チェックした）| 'aid'（ケガの手当てを読んだ）|
+           'focus'（今週の これ1つ を きめて 測った）| 'try'（測りなおした）| 'pb'（自己ベスト）| 'reflect'（練習のあとの ふり返り）（js/focus.js・js/focus-ui.js）
    今日のメニュー（BC.grow.today）も、ここで作る（ひとりで・短い時間・苦手をまんべんなく）。 */
 (function (root) {
   const BC = (root.BC = root.BC || {});
@@ -15094,7 +15327,9 @@ BC && (BC.currentFile = "js/grow.js");
   G.starNext = (xp) => { const s = G.stars(xp); return s >= 5 ? null : STAR[s + 1] - xp; };
 
   // ふつうにもらえる経験値
-  G.XP = { drill: 10, menu: 20, check: 15, view: 5, aid: 2, pass: 10, kyu: 50, qlog: 5, quest: 30 }; // pass：クラブの課題に合格・kyu：級に合格・qlog：自主練を1回きろく・quest：自主練をクリア（js/club.js）
+  G.XP = { drill: 10, menu: 20, check: 15, view: 5, aid: 2, pass: 10, kyu: 50, qlog: 5, quest: 30, focus: 10, try: 10, pb: 20, reflect: 5 };
+  // pass：クラブの課題に合格・kyu：級に合格・qlog：自主練を1回きろく・quest：自主練をクリア（js/club.js）
+  // focus：これ1つを きめて 測った・try：測りなおした・pb：自己ベスト・reflect：ふり返り（js/focus-ui.js）
   // 練習メニューの経験値：時間とできた度合い（むずかしくても、やったら もらえる）
   G.drillXP = (min, rate) => Math.round(Math.max(5, Math.min(30, 6 + (min || 5) * 1.2)) + (rate === 3 ? 4 : rate === 1 ? 2 : 0));
 
@@ -15102,11 +15337,38 @@ BC && (BC.currentFile = "js/grow.js");
   const pad = (n) => String(n).padStart(2, '0');
   G.day = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
   const prevDay = (key) => { const [y, m, d] = key.split('-').map(Number); return G.day(new Date(y, m - 1, d - 1).getTime()); };
+  G.addDays = (key, n) => { const [y, m, d] = key.split('-').map(Number); return G.day(new Date(y, m - 1, d + n).getTime()); };
+  // その日（ms）がある週の 月曜の日づけ（週は 月〜日）
+  G.weekKey = (ms) => { const d = new Date(ms); const dow = (d.getDay() + 6) % 7; return G.day(new Date(d.getFullYear(), d.getMonth(), d.getDate() - dow).getTime()); };
+  G.weekOfDay = (key) => { const [y, m, d] = key.split('-').map(Number); return G.weekKey(new Date(y, m - 1, d).getTime()); };
+
+  /* ---------- 週のゴール ----------
+     「毎日」ではなく「1週間（月〜日）で goal 日（ふつう 3日）」を めやすにする。休むのも 練習のうち。
+     返す：{ goal, n（今週 練習した日）, done, keys（今週の7日）, today（きょうは 何番め 0〜6）, streak（つづけて 週ゴールを たっせいした週の数。今週が まだなら 先週から）, best, weeks（たっせいした週の数） } */
+  G.weekStats = function (days, now = Date.now(), goal = 3) {
+    const g = Math.max(1, Math.min(7, Math.round(goal) || 3));
+    const wk = G.weekKey(now);
+    const keys = [0, 1, 2, 3, 4, 5, 6].map((i) => G.addDays(wk, i));
+    const by = {};
+    for (const d of days) { const w = G.weekOfDay(d); by[w] = (by[w] || 0) + 1; }
+    const n = by[wk] || 0;
+    let streak = 0;
+    let k = n >= g ? wk : G.addDays(wk, -7);
+    while ((by[k] || 0) >= g) { streak++; k = G.addDays(k, -7); }
+    let best = 0;
+    for (const w of Object.keys(by)) {
+      if ((by[w] || 0) < g || (by[G.addDays(w, -7)] || 0) >= g) continue;
+      let c = 0, x = w;
+      while ((by[x] || 0) >= g) { c++; x = G.addDays(x, 7); }
+      best = Math.max(best, c);
+    }
+    return { goal: g, n, done: n >= g, keys, today: keys.indexOf(G.day(now)), streak, best, weeks: Object.values(by).filter((c) => c >= g).length };
+  };
 
   /* ---------- まとめ ----------
      返す：{ xp, level, rank, prog, skills: {技能 id: xp}, days: Set（練習した日）, streak（今日か昨日までつづいた日数）, best（いちばん長くつづいた日数）,
              count: {type: 回数}, drills（やったメニューの数）, uniq（ちがうメニューの数）, minutes, checks, goods（動画チェックの ◎ の数）, today（今日の xp）, todayMin } */
-  G.summary = function (acts, now = Date.now(), checks = []) {
+  G.summary = function (acts, now = Date.now(), checks = [], opt = {}) {
     const S = { xp: 0, skills: {}, days: new Set(), count: {}, drills: 0, uniq: 0, minutes: 0, checks: 0, goods: 0, today: 0, todayMin: 0, early: false, late: false, rated3: 0 };
     const ids = new Set();
     const todayKey = G.day(now);
@@ -15116,7 +15378,7 @@ BC && (BC.currentFile = "js/grow.js");
       if (a.skill) S.skills[a.skill] = (S.skills[a.skill] || 0) + xp;
       S.count[a.type] = (S.count[a.type] || 0) + 1;
       const k = G.day(a.at);
-      if (a.type === 'drill' || a.type === 'menu' || a.type === 'check') S.days.add(k);
+      if (a.type === 'drill' || a.type === 'menu' || a.type === 'check' || a.type === 'focus' || a.type === 'try') S.days.add(k);
       if (a.type === 'drill') { S.drills++; ids.add(a.id); S.minutes += a.min || 0; if (a.rate === 3) S.rated3++; }
       if (a.type === 'check') S.checks++;
       if (k === todayKey) { S.today += xp; if (a.type === 'drill') S.todayMin += a.min || 0; }
@@ -15144,6 +15406,7 @@ BC && (BC.currentFile = "js/grow.js");
     S.level = S.prog.level;
     S.rank = G.rank(S.level);
     S.allround = Object.values(S.skills).filter((x) => x >= 50).length;
+    S.week = G.weekStats(S.days, now, opt.weekGoal || 3);
     return S;
   };
 
@@ -15171,14 +15434,20 @@ BC && (BC.currentFile = "js/grow.js");
     { id: 'kyu5', name: '5つの級', text: 'クラブの級に 5つ合格した', icon: 'crown', test: (s) => (s.count.kyu || 0) >= 5 },
     { id: 'quest1', name: '自主練クリア', text: 'コーチの自主練を はじめてクリアした', icon: 'bolt', test: (s) => (s.count.quest || 0) >= 1 },
     { id: 'quest5', name: '自主練マスター', text: 'コーチの自主練を 5つクリアした', icon: 'fire', test: (s) => (s.count.quest || 0) >= 5 },
+    { id: 'focus1', name: 'これ1つ', text: '「今週の これ1つ」を きめて 30秒で 測った', icon: 'target', test: (s) => (s.count.focus || 0) >= 1 },
+    { id: 'pb1', name: '自己ベスト', text: '「これ1つ」で 自己ベストを だした', icon: 'star', test: (s) => (s.count.pb || 0) >= 1 },
+    { id: 'reflect5', name: 'ふり返り 5回', text: '練習のあとに ふり返りを 5回した', icon: 'pencil', test: (s) => (s.count.reflect || 0) >= 5 },
+    { id: 'wk1', name: '週ゴール', text: '1週間で 目標の日数だけ 練習した', icon: 'flag', test: (s) => s.week && s.week.weeks >= 1 },
+    { id: 'wk4', name: '週ゴール 4週', text: '4週つづけて 週ゴールを クリアした', icon: 'crown', test: (s) => s.week && s.week.best >= 4 },
   ];
   G.badges = (s) => G.BADGES.map((b) => Object.assign({}, b, { got: !!b.test(s) }));
   // 前のまとめ → 後のまとめ で、新しくとれたバッジ
   G.newBadges = (before, after) => G.BADGES.filter((b) => !b.test(before) && b.test(after));
 
   /* ---------- きょうのメニュー ----------
-     me：{ level, goals: [技能 id], place: 'any'|'hoop'|'', n }、min：だいたいの分（10・15・20・30）、seed：べつのメニューにするとき 1, 2, …
-     返す：{ skill（きょうの中心）, min, items: [{ id, min, role: 'warm'|'main'|'game'|'cool' }], note } */
+     me：{ level, goals: [技能 id], place: 'any'|'hoop'|'', n, focus }、min：だいたいの分（10・15・20・30）、seed：べつのメニューにするとき 1, 2, …
+       me.focus：今週の「これ1つ」（BC.focus.forMenu の返り値 { skill, test, drills, easy, cue }）。あれば、その技能が きょうの中心になり、その練習が メインの先頭に来る
+     返す：{ skill（きょうの中心）, min, items: [{ id, min, role: 'warm'|'main'|'game'|'cool', focus: true（これ1つの練習）}], note, focus: me.focus（あれば）} */
   const hash = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
   const rng = (seed) => () => { seed = (Math.imul(seed ^ (seed >>> 15), 2246822507) + 0x9e3779b9) >>> 0; return seed / 4294967296; };
   const shuffle = (xs, r) => { const a = xs.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -15189,23 +15458,34 @@ BC && (BC.currentFile = "js/grow.js");
     const fit = (d) => BC.fits(d, opt);
     const goals = (me.goals || []).filter((s) => BC.skillMap[s]);
     const pool = (goals.length ? goals : ['dribble', 'shoot', 'finish', 'defball']);
+    // これ1つ：条件に合う練習が あるときだけ
+    const fx = me.focus && BC.skillMap[me.focus.skill] ? me.focus : null;
+    const fdr = fx ? (fx.drills || []).map((id) => BC.get(id)).filter((d) => d && fit(d)) : [];
+    const fxOn = !!fdr.length;
+    const fxIds = new Set(fdr.map((d) => d.id));
     const r = rng(hash(G.day(now) + ':' + seed));
     // きょうの中心：目標を日がわりで（その技能で、条件に合う練習がないときは次へ）
     const dayN = Math.floor(new Date(now).setHours(0, 0, 0, 0) / 86400000);
     const order = pool.map((_, i) => pool[(dayN + seed + i) % pool.length]).concat(G.SOLO_SKILLS);
     const by = (s, phases) => BC.lists.drill.filter((d) => (d.skills || [])[0] === s && phases.includes(d.phase) && fit(d));
-    let skill = order.find((s) => by(s, ['skill', 'warmup']).length) || 'dribble';
-    const note = goals.length && !goals.includes(skill) ? `「${goals.map((g) => BC.skillMap[g].name).join('・')}」は、${n === 1 ? 'ひとりでできる' : '条件に合う'}練習が少ないので、きょうは「${BC.skillMap[skill].name}」にしました。` : '';
+    let skill = fxOn ? fx.skill : order.find((s) => by(s, ['skill', 'warmup']).length) || 'dribble';
+    const note = !fxOn && goals.length && !goals.includes(skill) ? `「${goals.map((g) => BC.skillMap[g].name).join('・')}」は、${n === 1 ? 'ひとりでできる' : '条件に合う'}練習が少ないので、きょうは「${BC.skillMap[skill].name}」にしました。` : '';
     const used = new Set();
     const items = [];
     const per = min <= 10 ? 3 : min <= 20 ? 5 : 6;
-    const add = (d, role, m) => { if (!d || used.has(d.id)) return false; used.add(d.id); items.push({ id: d.id, min: m, role }); return true; };
-    const warm = shuffle(BC.lists.drill.filter((d) => d.phase === 'warmup' && fit(d) && (d.intensity || 1) <= 2), r)
+    const add = (d, role, m) => { if (!d || used.has(d.id)) return false; used.add(d.id); items.push(Object.assign({ id: d.id, min: m, role }, fxIds.has(d.id) ? { focus: true } : {})); return true; };
+    const warm = shuffle(BC.lists.drill.filter((d) => d.phase === 'warmup' && fit(d) && (d.intensity || 1) <= 2 && !fxIds.has(d.id)), r)
       .sort((a, b) => ((b.skills || []).includes(skill) ? 1 : 0) - ((a.skills || []).includes(skill) ? 1 : 0));
     add(warm[0], 'warm', min <= 10 ? 2 : 3);
-    const main = shuffle(by(skill, ['skill']), r).concat(shuffle(by(skill, ['warmup']), r));
+    const main = fdr.concat(shuffle(by(skill, ['skill']), r), shuffle(by(skill, ['warmup']), r));
     let left = min - items.reduce((t, x) => t + x.min, 0) - (min >= 20 ? 3 : 0);
-    for (const d of main) { if (left < 3) break; const m = Math.min(per, left); if (add(d, 'main', m)) left -= m; if (items.filter((x) => x.role === 'main').length >= 3) break; }
+    for (const d of main) {
+      if (left < 3) break;
+      // これ1つの練習は、すこし長めに（むずかしかった が つづいたときは 短く・やさしく）
+      const m = Math.min(fxIds.has(d.id) ? (fx.easy ? per : per + 2) : per, left);
+      if (add(d, 'main', m)) left -= m;
+      if (items.filter((x) => x.role === 'main').length >= 3) break;
+    }
     // ひとりでできるゲーム（あれば）
     const game = shuffle(BC.lists.drill.filter((d) => d.phase === 'game' && fit(d) && (d.skills || []).includes(skill)), r)[0];
     if (game && left >= 3) { const m = Math.min(per, left); if (add(game, 'game', m)) left -= m; }
@@ -15221,7 +15501,342 @@ BC && (BC.currentFile = "js/grow.js");
     const total = items.reduce((t, x) => t + x.min, 0);
     const mainItem = items.find((x) => x.role === 'main');
     if (mainItem && total < min) mainItem.min += min - total;
-    return { skill, min: items.reduce((t, x) => t + x.min, 0), items, note };
+    const fnote = fxOn ? (fx.easy ? '「むずかしかった」が つづいたので、まず「かんたんにする」やり方から。できたら 少しずつ ふやそう。' : '今週の「これ1つ」の練習を いちばん 多くしました。') : '';
+    return { skill, min: items.reduce((t, x) => t + x.min, 0), items, note: fnote || note, focus: fxOn ? fx : null };
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ---- js/focus.js ---- */
+BC && (BC.currentFile = "js/focus.js");
+/* 「今週の これ1つ」（BC.focus）：きのうの自分を こえるための しくみ。DOM は使わない（tools/focus-test.cjs で検査）。
+   1週間（月〜日）に1周する：①のびしろを3つ出す → 1つえらぶ → 30秒チャレンジで「いまの自分」を測る（きじゅん）＋目標
+                              ②きょうのメニューが「これ1つ」中心になる → 練習のあとに ふり返り（できたこと・つぎに意識すること）
+                              ③もう一度 測って、きじゅんから どれだけ のびたか（自己ベストも）を見る
+   測るテストは data/focus.js（BC.FOCUS_TESTS）。
+   この端末に残すもの（localStorage 'bc.focus'）：
+     { v: 1, items: [ {
+         id, week（その週の月曜の日づけ 'YYYY-MM-DD'）, test（テストの id）, skill, goal（目標の数）, at（きめた時刻）,
+         tries: [ { at, v（測った数）, k: 'base'（きじゅん）| 'try'（測りなおし） } ],
+         notes: [ { at, good（できたこと）, next（つぎに意識すること） } ],
+         changed: true（その週のうちに べつの これ1つ に かえた）, closed: true（その週をおえた）
+     } ] }
+   「いまの自分」は ほかの人とくらべない。くらべる相手は、前の自分だけ。 */
+(function (root) {
+  const BC = (root.BC = root.BC || {});
+  const G = BC.grow;
+  const F = (BC.focus = {});
+
+  /* ---------- 週（月〜日）---------- */
+  F.addDays = G.addDays;
+  F.weekKey = G.weekKey;
+  F.weekDays = (ms) => { const k = G.weekKey(ms); return [0, 1, 2, 3, 4, 5, 6].map((i) => G.addDays(k, i)); };
+
+  /* ---------- 測るテスト ---------- */
+  F.tests = () => BC.FOCUS_TESTS || [];
+  F.test = (id) => F.tests().find((t) => t.id === id) || null;
+  // そのひとの 場所・人数・レベルで できるテスト（ゴールがいる/練習メニューが条件に合わない ものは はずす）
+  F.available = (t, me = {}) => {
+    if (!t) return false;
+    if (me.place === 'any' && t.place === 'hoop') return false;
+    const d = BC.get && BC.get((t.drills || [])[0]);
+    return !!d && BC.fits(d, { n: me.n || 1, level: me.level || null, place: me.place || null });
+  };
+  F.testsFor = (skill, me) => F.tests().filter((t) => t.skill === skill && F.available(t, me));
+
+  /* ---------- 数のあつかい ---------- */
+  const round1 = (x) => Math.round(x * 10) / 10;
+  // 差・のこりの言い方：「4回」「1.3秒」「2本」（「7/10本」の形にはしない）
+  const amount = (t, n) => `${round1(Math.abs(n))}${t.unit}`;
+  // 画面に出す形：「38回」「16.9秒」「7/10本」
+  F.fmt = (t, v) => {
+    if (v == null || !isFinite(v)) return '—';
+    if (t.kind === 'make') return `${v}/${t.of}${t.unit}`;
+    if (t.kind === 'time') return `${round1(v)}${t.unit}`;
+    return `${Math.round(v)}${t.unit}`;
+  };
+  F.step = (t) => (t.kind === 'time' ? 0.1 : 1);
+  F.clamp = (t, v) => {
+    let x = Number(v);
+    if (!isFinite(x)) x = 0;
+    x = Math.max(0, x);
+    if (t.kind === 'make') x = Math.min(t.of, Math.round(x));
+    else if (t.kind === 'time') x = round1(Math.min(x, 9999));
+    else x = Math.min(Math.round(x), 99999);
+    return x;
+  };
+  // 目標にとどいたか
+  F.meets = (t, goal, v) => v != null && goal != null && (t.better === 'less' ? v <= goal : v >= goal);
+  // 「のびた」の向きの差（正 ＝ のびた）
+  F.gain = (t, from, to) => (t.better === 'less' ? from - to : to - from);
+  // いまの数から、むりのない目標（だいたい +10%。少なくとも ひと目で わかる分）
+  F.suggestGoal = (t, base) => {
+    const b = Number(base) || 0;
+    if (t.kind === 'make') return Math.min(t.of, b + (b <= t.of / 2 ? 2 : 1));
+    if (t.kind === 'time') return b > 0 ? Math.max(0.5, round1(Math.min(b - 0.5, b * 0.95))) : 0.5;
+    const min = t.kind === 'hold' ? 5 : 2;
+    return Math.round(b + Math.max(min, Math.ceil(b * 0.1)));
+  };
+
+  /* ---------- きろく（state）---------- */
+  F.empty = () => ({ v: 1, items: [] });
+  // 読みこんだものを たしかめて、形をそろえる（ほかの端末から読みこんだものも）
+  F.load = (raw) => {
+    const out = F.empty();
+    const list = raw && Array.isArray(raw.items) ? raw.items : [];
+    for (const it of list.slice(-300)) {
+      const t = it && F.test(it.test);
+      if (!t || !/^\d{4}-\d{2}-\d{2}$/.test(it.week || '')) continue;
+      const tries = (Array.isArray(it.tries) ? it.tries : []).filter((x) => x && isFinite(x.v) && isFinite(x.at)).slice(-60)
+        .map((x) => ({ at: +x.at, v: F.clamp(t, x.v), k: x.k === 'base' ? 'base' : 'try' }));
+      if (!tries.length) continue;
+      const notes = (Array.isArray(it.notes) ? it.notes : []).filter((n) => n && isFinite(n.at)).slice(-60)
+        .map((n) => ({ at: +n.at, good: String(n.good || '').slice(0, 40), next: String(n.next || '').slice(0, 40) }));
+      out.items.push({ id: String(it.id || '').slice(0, 40) || 'fc' + out.items.length, week: it.week, test: t.id, skill: t.skill,
+        goal: F.clamp(t, it.goal), at: isFinite(it.at) ? +it.at : tries[0].at, tries, notes, changed: !!it.changed, closed: !!it.closed || !!it.changed });
+    }
+    return out;
+  };
+  const clone = (s) => ({ v: 1, items: s.items.map((x) => Object.assign({}, x, { tries: x.tries.slice(), notes: x.notes.slice() })) });
+  let seq = 0;
+  const newId = (now) => 'fc' + Math.floor(now).toString(36) + (seq++).toString(36);
+
+  F.item = (state, id) => state.items.find((x) => x.id === id) || null;
+  // この週の「これ1つ」（かえたものは のぞく）
+  F.current = (state, now = Date.now()) => {
+    const wk = F.weekKey(now);
+    for (let i = state.items.length - 1; i >= 0; i--) { const x = state.items[i]; if (x.week === wk && !x.changed) return x; }
+    return null;
+  };
+  // 前の週までで、測りなおしていない「これ1つ」（いちばん新しい1つ）
+  F.pending = (state, now = Date.now()) => {
+    const wk = F.weekKey(now);
+    for (let i = state.items.length - 1; i >= 0; i--) { const x = state.items[i]; if (x.week < wk && !x.changed && !x.closed && x.tries.length === 1) return x; }
+    return null;
+  };
+  F.history = (state) => state.items.slice().sort((a, b) => b.at - a.at);
+  // 前の「これ1つ」（そのテストの、いちばん新しい きろく）
+  F.lastFor = (state, testId, exceptId) => { for (let i = state.items.length - 1; i >= 0; i--) { const x = state.items[i]; if (x.test === testId && x.id !== exceptId && !x.changed) return x; } return null; };
+
+  // きじゅん（はじめの測定）と目標をきめて、今週の「これ1つ」を はじめる。この週に すでにあれば、かえた ことにして のこす
+  F.start = (state, o) => {
+    const t = F.test(o.test);
+    if (!t) return { state, item: null };
+    const now = o.now == null ? Date.now() : o.now;
+    const s = clone(state);
+    const wk = F.weekKey(now);
+    for (const x of s.items) if (x.week === wk && !x.changed) { x.changed = true; x.closed = true; }
+    const v = F.clamp(t, o.value);
+    const goal = F.clamp(t, o.goal == null ? F.suggestGoal(t, v) : o.goal);
+    const item = { id: o.id || newId(now), week: wk, test: t.id, skill: t.skill, goal, at: now, tries: [{ at: now, v, k: 'base' }], notes: [], changed: false, closed: false };
+    s.items.push(item);
+    s.items = s.items.slice(-300);
+    return { state: s, item };
+  };
+  // 測りなおす。自己ベスト（そのテストで、これまでで いちばんよい）なら pb。1回めの測定は pb にしない
+  F.addTry = (state, id, value, now = Date.now()) => {
+    const s = clone(state);
+    const item = F.item(s, id);
+    const t = item && F.test(item.test);
+    if (!item || !t) return { state, item: null };
+    const v = F.clamp(t, value);
+    const before = F.bestOf(s, t.id);
+    const had = s.items.some((x) => x.test === t.id && x.tries.length > 0);
+    item.tries.push({ at: now, v, k: item.tries.length ? 'try' : 'base' });
+    item.tries = item.tries.slice(-60);
+    const pb = had && before != null && F.gain(t, before, v) > 0;
+    return { state: s, item, pb, reached: F.meets(t, item.goal, v), gain: F.gain(t, item.tries[0].v, v) };
+  };
+  // 目標を直す
+  F.setGoal = (state, id, goal) => {
+    const s = clone(state);
+    const item = F.item(s, id);
+    const t = item && F.test(item.test);
+    if (item && t) item.goal = F.clamp(t, goal);
+    return s;
+  };
+  // ふり返り（1日1つ。同じ日は書きかえる）
+  F.addNote = (state, id, note, now = Date.now()) => {
+    const s = clone(state);
+    const item = F.item(s, id);
+    if (!item) return state;
+    const good = String(note.good || '').trim().slice(0, 40), next = String(note.next || '').trim().slice(0, 40);
+    if (!good && !next) return state;
+    const day = G.day(now);
+    item.notes = item.notes.filter((n) => G.day(n.at) !== day);
+    item.notes.push({ at: now, good, next });
+    item.notes = item.notes.slice(-60);
+    return s;
+  };
+  F.close = (state, id) => { const s = clone(state); const x = F.item(s, id); if (x) x.closed = true; return s; };
+  F.remove = (state, id) => { const s = clone(state); s.items = s.items.filter((x) => x.id !== id); return s; };
+
+  /* ---------- 見る ---------- */
+  // そのテストの 自己ベスト（いちばんよい数。まだなければ null）
+  F.bestOf = (state, testId) => {
+    const t = F.test(testId);
+    let best = null;
+    for (const x of state.items) if (x.test === testId) for (const y of x.tries) if (best == null || F.gain(t, best, y.v) > 0) best = y.v;
+    return best;
+  };
+  F.bests = (state) => {
+    const out = {};
+    for (const x of state.items) { const b = F.bestOf(state, x.test); if (b != null) out[x.test] = b; }
+    return out;
+  };
+  F.amount = amount;
+  F.summary = (item) => {
+    const t = F.test(item.test);
+    const base = item.tries[0].v, last = item.tries[item.tries.length - 1].v;
+    const gain = F.gain(t, base, last);
+    const span = F.gain(t, base, item.goal);
+    const ratio = item.tries.length < 2 ? 0 : span <= 0 ? (gain > 0 ? 1 : 0) : Math.max(0, Math.min(1, gain / span));
+    return { test: t, base, last, goal: item.goal, gain, ratio, reached: item.tries.length > 1 && F.meets(t, item.goal, last), tried: item.tries.length > 1, n: item.tries.length };
+  };
+  // 結果のひとこと（はげます。へっても、せめない）
+  F.verdict = (item, pb) => {
+    const m = F.summary(item);
+    if (!m.tried) return { key: 'base', text: 'ここが スタート。1週間で どれだけ のびるか、たのしみだね。' };
+    if (pb) return { key: 'pb', text: '自己ベスト！ 今までで いちばん いい きろくだよ。' };
+    if (m.reached) return { key: 'up', text: '目標に とどいた！ やったね。' };
+    if (m.gain > 0) return { key: 'up', text: 'のびたよ！ 前の自分を こえた。' };
+    if (m.gain === 0) return { key: 'same', text: 'おなじだった。きょうの体の調子や 場所でも かわるよ。つぎは どこを 意識する？' };
+    return { key: 'down', text: 'きょうは ちょっと へったね。でも だいじょうぶ。つかれや 場所でも かわるよ。' };
+  };
+  // おうちの人・コーチに見せる文
+  F.shareText = (item, pb) => {
+    const m = F.summary(item);
+    const t = m.test;
+    if (!m.tried) return `今週の「これ1つ」は「${t.name}」。いまは ${F.fmt(t, m.base)}（${t.what}）。目標は ${F.fmt(t, m.goal)}！`;
+    const diff = m.gain > 0 ? `（${m.last > m.base ? '+' : '−'}${amount(t, m.last - m.base)}）` : '';
+    return `今週の「これ1つ」：${t.name}（${t.what}）\n${F.fmt(t, m.base)} → ${F.fmt(t, m.last)}${diff}${pb ? ' 自己ベスト！' : m.reached ? ' 目標クリア！' : ''}`;
+  };
+  // ひろば（クラブ）に のせる ひとこと（60字まで）
+  F.clubLabel = (item, pb) => {
+    const m = F.summary(item);
+    const t = m.test;
+    const tail = pb ? '（自己ベスト！）' : m.reached ? '（目標クリア！）' : m.gain > 0 ? '（のびた！）' : '';
+    const body = m.tried ? `${F.fmt(t, m.base)} → ${F.fmt(t, m.last)}` : `${F.fmt(t, m.base)} から スタート`;
+    let name = t.name;
+    const max = 60 - body.length - tail.length - 4;
+    if (name.length > max) name = name.slice(0, Math.max(3, max - 1)) + '…';
+    return `「${name}」${body}${tail}`;
+  };
+  // 1週ぶんの 練習した日（その「これ1つ」と同じ技能の練習をした日）
+  F.practiceDays = (item, acts) => {
+    const days = new Set();
+    const wk = item.week, end = F.addDays(wk, 6);
+    for (const a of acts || []) {
+      if (a.skill !== item.skill || (a.type !== 'drill' && a.type !== 'try' && a.type !== 'focus')) continue;
+      const k = G.day(a.at);
+      if (k >= wk && k <= end) days.add(k);
+    }
+    return days;
+  };
+
+  /* ---------- のびしろを3つ出す ----------
+     ctx：{ me, acts, checks（動画チェックの きろく）, log（そうだんの会話）, state, now }
+     返す：[ { skill, test（テストの id）, reason（いちばん大きな理由）, reasons（理由の一覧）, score } ] 3つまで
+     見るもの：動画チェックの △・「むずかしかった」・そうだんした なやみ・ともくひょう・ごぶさた・先週の あと少し */
+  const CHECK_SKILL = { shoot: 'shoot', dribble: 'dribble', defense: 'defball', landing: 'body', free: 'body' };
+  const DAY = 86400000;
+  F.candidates = (ctx, max = 3) => {
+    const me = ctx.me || {}, acts = ctx.acts || [], now = ctx.now == null ? Date.now() : ctx.now, state = ctx.state || F.empty();
+    const pool = [];
+    for (const g of me.goals || []) if (!pool.includes(g)) pool.push(g);
+    for (const s of G.SOLO_SKILLS.concat(['pass'])) if (!pool.includes(s)) pool.push(s);
+    const skills = pool.filter((s) => F.testsFor(s, me).length);
+    const score = {}, why = {}, hint = {};
+    const add = (s, w, text, tag, h) => {
+      if (!skills.includes(s)) return;
+      score[s] = (score[s] || 0) + w;
+      (why[s] = why[s] || []).push({ w, text, tag });
+      if (h && !hint[s]) hint[s] = h;
+    };
+    // ① 動画チェックで △（30日いない・種類ごとに いちばん新しい1つ）
+    const seen = new Set();
+    for (const c of ctx.checks || []) {
+      if (!c || seen.has(c.mode) || !(now - c.at <= 30 * DAY)) continue;
+      seen.add(c.mode);
+      const sk = CHECK_SKILL[c.mode];
+      const bad = (c.metrics || []).filter((m) => m.status === 'bad');
+      if (!sk || !bad.length) continue;
+      const link = ((bad[0].links || []).find((x) => /^d-/.test(x))) || null;
+      add(sk, 5 + Math.min(2, bad.length - 1), `動画チェックで「${String(bad[0].label || '').replace(/^(攻め|守り)：/, '')}」が △ だったよ`, 'check', link);
+    }
+    // ② 「むずかしかった」（2週間）
+    const hard = {};
+    for (const a of acts) if (a.type === 'drill' && a.rate === 1 && now - a.at <= 14 * DAY && a.skill) hard[a.skill] = (hard[a.skill] || 0) + 1;
+    for (const [s, n] of Object.entries(hard)) if (n >= 2) add(s, 4 + Math.min(2, n - 2), `「むずかしかった」が ${n}回 あったよ`, 'hard');
+    // ③ そうだんした なやみ（さいごの3つ）
+    let k = 0;
+    for (let i = (ctx.log || []).length - 1; i >= 0 && k < 3; i--) {
+      const b = ctx.log[i].bot;
+      if (!b || b.type !== 'issue') continue;
+      k++;
+      const it = BC.get(b.id);
+      if (it && it.skill) add(it.skill, k === 1 ? 3 : 2, `「${it.title}」を そうだん したよ`, 'worry');
+    }
+    // ④ 目標・ごぶさた
+    const xp = (G.summary(acts, now, []) || {}).skills || {};
+    const lastAt = {};
+    for (const a of acts) if (a.type === 'drill' && a.skill) lastAt[a.skill] = Math.max(lastAt[a.skill] || 0, a.at);
+    for (const s of skills) {
+      const goal = (me.goals || []).includes(s);
+      if (goal && !(xp[s] > 0)) add(s, 3, 'ともくひょうに えらんだけど、まだ やっていないよ', 'idle');
+      else if (goal) add(s, 2, 'ともくひょうに えらんだよ', 'goal');
+      if (xp[s] > 0 && lastAt[s] && now - lastAt[s] >= 10 * DAY) add(s, 2, `${Math.floor((now - lastAt[s]) / DAY)}日 やっていないよ`, 'idle');
+    }
+    // ⑤ 先週の あと少し／もう たっせいした ものは しばらく休み
+    const prev = F.history(state).find((x) => !x.changed && x.week < F.weekKey(now));
+    if (prev && skills.includes(prev.skill)) {
+      const m = F.summary(prev);
+      if (m.tried && !m.reached && m.gain > 0) add(prev.skill, 3, `前の「${m.test.name}」は あと ${amount(m.test, m.goal - m.last)} で 目標だったよ`, 'again');
+      else if (m.reached) score[prev.skill] = (score[prev.skill] || 0) - 3;
+    }
+    // ⑥ まだ ためしていない技能（すこしだけ）
+    const tried = new Set(state.items.map((x) => x.skill));
+    for (const s of skills) if (!tried.has(s)) add(s, 1, 'まだ ためしていないよ', 'new');
+    // ⑦ なにも ないとき：はじめは ここから
+    const order = skills.slice().sort((a, b) => (score[b] || 0) - (score[a] || 0) || skills.indexOf(a) - skills.indexOf(b));
+    const out = [];
+    for (const s of order) {
+      if (out.length >= max) break;
+      const reasons = (why[s] || []).slice().sort((a, b) => b.w - a.w).map((x) => x.text);
+      out.push({ skill: s, test: F.pickTest(s, { me, state, hint: hint[s] }).id, reason: reasons[0] || 'まずは ここから', reasons: reasons.slice(0, 2), tag: ((why[s] || []).slice().sort((a, b) => b.w - a.w)[0] || {}).tag || 'start', score: score[s] || 0 });
+    }
+    return out;
+  };
+  // その技能で どのテストにするか：動画チェックの練習メニューに つながるもの → 前に測ったもの（まんてんなら つぎ）→ まだ測っていないもの
+  F.pickTest = (skill, o = {}) => {
+    const list = F.testsFor(skill, o.me);
+    if (!list.length) return null;
+    const state = o.state || F.empty();
+    if (o.hint) { const t = list.find((x) => x.drills.includes(o.hint)); if (t) return t; }
+    const last = F.history(state).find((x) => x.skill === skill && !x.changed);
+    if (last) {
+      const t = F.test(last.test);
+      const m = F.summary(last);
+      const maxed = t.kind === 'make' && m.last >= t.of;
+      if (!maxed && list.some((x) => x.id === t.id)) return t;
+    }
+    const used = new Set(state.items.filter((x) => x.skill === skill).map((x) => x.test));
+    return list.find((x) => !used.has(x.id)) || list[0];
+  };
+
+  /* ---------- きょうのメニューへ ----------
+     これ1つ中心の きょうのメニューに必要なもの。{ skill, test, drills（条件に合うもの）, easy（「むずかしかった」が つづいた）, cue（前の ふり返りの「つぎに 意識すること」） } */
+  F.forMenu = (state, acts, me = {}, now = Date.now()) => {
+    const item = F.current(state, now);
+    if (!item || item.closed) return null;
+    const t = F.test(item.test);
+    if (!t) return null;
+    const fit = (d) => BC.fits(d, { n: me.n || 1, level: me.level || null, place: me.place || null, strict: true });
+    const drills = t.drills.filter((id) => { const d = BC.get(id); return d && fit(d); });
+    if (!drills.length) return null;
+    const rated = (acts || []).filter((a) => a.type === 'drill' && a.skill === item.skill && now - a.at <= 7 * DAY).slice(-2);
+    const easy = rated.length >= 2 && rated.every((a) => a.rate === 1);
+    const lastNote = item.notes.slice().reverse().find((n) => n.next);
+    return { skill: item.skill, test: t.id, drills, easy, cue: lastNote ? lastNote.next : null, itemId: item.id };
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -19407,6 +20022,17 @@ BC && (BC.currentFile = "js/club.js");
   function go(hash) { if (location.hash.slice(1) === hash) rerender(); else location.hash = hash; }
 
   /* ---------- ログインしていない ---------- */
+  // クラブのサーバー（club/schema.sql）が まだ入っていないか（404）。クラブのページを ひらいたときだけ 1回しらべる
+  async function serverReady() {
+    if (S.ready == null) { const j = await rpc('bg_apply_info', { p_code: 'ZZZZZZZZ' }); S.ready = !(j && j.error === 'setup'); }
+    return S.ready;
+  }
+  function probeBanner() {
+    serverReady().then((ok) => {
+      const el = document.getElementById('cl-probe');
+      if (el && !ok) el.innerHTML = `<p class="cl-msg">${ic('warn')}<span>クラブの サーバーを じゅんびしています。コーチの じゅんびが おわるまで、クラブは まだ 使えません。ほかの機能（これ1つ・れんしゅう・チェック）は いつもどおり 使えます。</span></p>`;
+    });
+  }
   function welcomePage() {
     const msg = S.msg; S.msg = '';
     paint(`<section class="cl-hero">
@@ -19415,6 +20041,7 @@ BC && (BC.currentFile = "js/club.js");
         <p>コーチが つくった <b>級（きゅう）</b>に チャレンジ！ 写真をつけて送ると、コーチが見て「合格」を返してくれます。クラブの なかまと、がんばったことを 見せあって「いいね」できます。</p>
       </section>
       ${msg ? `<p class="cl-msg">${esc(msg)}</p>` : ''}
+      <div id="cl-probe"></div>
       <section class="card">
         <h2 class="sec-h">${ic('person')}子どもの ログイン</h2>
         <p class="small">コーチから もらった ログインカードを 見て 入れてね。</p>
@@ -19430,6 +20057,7 @@ BC && (BC.currentFile = "js/club.js");
         <div class="btns"><a class="btn" href="#club/coach">コーチとして ログイン</a><a class="btn" href="#club/create">クラブを つくる</a></div>
         <p class="small">子どものアカウントは、コーチがつくります（メールアドレスは いりません）。記録や写真は、クラブの中だけで見られます。</p>
       </section>`);
+    probeBanner();
   }
   function coachLoginPage() {
     paint(`${backLink('#club')}<h1 class="page-h">コーチの ログイン</h1>
@@ -19692,7 +20320,7 @@ BC && (BC.currentFile = "js/club.js");
       ? `<div class="cl-cert" style="${kv(p.meta.color)}"><span class="cl-cert-k">${esc(p.meta.level || '')}</span><span><b>${esc(p.member.nickname)}さんが ${esc(kyuLabel({ name: p.meta.level || '' }, p.meta.track || ''))}に 合格！</b>${p.meta.comment ? `<small>${ic('whistle', 'inline')}${esc(p.meta.by || 'コーチ')}：${esc(p.meta.comment)}</small>` : ''}</span></div>`
       : p.kind === 'quest'
       ? `<div class="cl-cert quest"><span class="cl-cert-k">${ic('bolt')}</span><span><b>${esc(p.member.nickname)}さんが 自主練「${esc(p.meta.title || '')}」を クリア！</b><small>${esc(String(p.meta.target || ''))}${esc(p.meta.unit || '')} を ${esc(String(p.meta.times || ''))}回</small></span></div>`
-      : `${p.kind === 'share' ? `<p class="cl-share">${ic(p.meta.type === 'badge' ? 'medal' : p.meta.type === 'check' ? 'camera' : p.meta.type === 'streak' ? 'fire' : 'trophy')}<span>${esc(p.meta.label || '')}</span></p>` : ''}
+      : `${p.kind === 'share' ? `<p class="cl-share">${ic(p.meta.type === 'badge' ? 'medal' : p.meta.type === 'check' ? 'camera' : p.meta.type === 'streak' ? 'fire' : p.meta.type === 'focus' ? 'target' : 'trophy')}<span>${esc(p.meta.label || '')}</span></p>` : ''}
          ${p.body ? `<p class="cl-body">${esc(p.body)}</p>` : ''}${photoTag(p.photo_id)}`;
     return `<article class="card cl-post${p.kind === 'cert' || p.kind === 'quest' ? ' cert' : ''}" data-post="${p.id}">
       <header class="cl-post-h">${avatar(p.member)}<span class="cl-post-who"><b>${esc(p.member.nickname)}</b>${p.member.role === 'coach' ? '<span class="cl-st">コーチ</span>' : kyuBadge(p.member.kyu, 'small')}</span><span class="small">${esc(ago(p.created_at))}</span>${st}</header>
@@ -19715,7 +20343,7 @@ BC && (BC.currentFile = "js/club.js");
       <section class="card cl-compose">
         <label class="sr" for="cl-post">がんばったこと</label>
         <textarea id="cl-post" maxlength="140" rows="2" placeholder="${isCoach() ? 'クラブのみんなへ ひとこと' : 'きょう がんばったことを 書こう'}"></textarea>
-        ${shares.length ? `<div class="chips">${shares.map((s, i) => `<button type="button" class="chip" data-cl="share" data-i="${i}">${ic(s.type === 'badge' ? 'medal' : s.type === 'check' ? 'camera' : 'trophy', 'inline')}${esc(s.label)}</button>`).join('')}</div>` : ''}
+        ${shares.length ? `<div class="chips">${shares.map((s, i) => `<button type="button" class="chip" data-cl="share" data-i="${i}">${ic(s.type === 'badge' ? 'medal' : s.type === 'check' ? 'camera' : s.type === 'focus' ? 'target' : 'trophy', 'inline')}${esc(s.label)}</button>`).join('')}</div>` : ''}
         ${up ? `<div class="cl-preview"><img src="${up.url}" alt="えらんだ写真"><button type="button" class="btn" data-cl="unphoto">${ic('close')}はずす</button></div>` : ''}
         <div class="btns">${photos ? `<label class="btn">${ic('camera')}写真<input type="file" accept="image/*" id="cl-file" data-task="post" hidden></label>` : ''}<button type="button" class="btn primary" data-cl="post">${ic('plus')}のせる</button></div>
         <p class="small">${isCoach() ? '' : 'やさしい ことばで。わるぐち・リンク・電話番号は のせられません。'}${photos && !isCoach() && (c.settings || {}).review_photos !== false ? '写真つきは、コーチが見てから みんなに出ます。' : ''}${(c.settings || {}).review_posts ? '投稿は、コーチが見てから みんなに出ます。' : ''}</p>
@@ -20362,6 +20990,13 @@ BC && (BC.currentFile = "js/club.js");
   };
   C.badge = () => S.badge;
   C.session = () => S.sess;
+  // アプリの記録（{ type, label }）を、そのまま ひろばに のせる（「今週の これ1つ」の のびなど）
+  C.postShare = async (share) => {
+    if (!C.ready() || !S.sess) return { ok: false, error: 'auth' };
+    const j = await rpc('bg_post', { p_token: tok(), p_body: '', p_photo: '', p_mime: '', p_meta: { type: share.type, label: share.label } });
+    if (j && j.ok) S.feed = null;
+    return j;
+  };
 
   /* ---------- 操作 ---------- */
   document.addEventListener('click', async (e) => {
@@ -20831,15 +21466,527 @@ BC && (BC.currentFile = "js/club.js");
   });
 })();
 
+/* ---- js/focus-ui.js ---- */
+BC && (BC.currentFile = "js/focus-ui.js");
+/* 「今週の これ1つ」の画面（BC.focusUI）。しくみは js/focus.js、測るテストは data/focus.js。
+   BC.focusUI.init(ctx)            … app.js が最初に1回（ctx：{ ic, esc, toast, modal, closeModal, addActs, sum, acts, checks, log, prof, drillArt, get, skillName, runStart, copy, rerender, confetti, store }）
+   BC.focusUI.render(el, sub)      … ページ #focus・#focus/<きろくの id>・#focus/pick・#focus/measure（el に描く）
+   BC.focusUI.homeHTML()           … ホームに出すカード
+   BC.focusUI.menuFocus()          … きょうのメニュー用（BC.focus.forMenu の返り値）
+   BC.focusUI.logHTML()            … きろくのページに出す「これ1つの のび」
+   BC.focusUI.reflectHTML(技能の一覧) / readReflect(root) / saveReflect(note) … 練習のあとの ふり返り（おわりの画面・やった！の画面に つける）
+   BC.focusUI.shareItem()          … ひろばに のせる ひとこと（なければ null）
+   ページの流れ（#focus）：1 のびしろを3つ出す → 2 30秒チャレンジで 測る → 3 目標をきめる → ホームへ
+   #focus/measure：測りなおし → のびを見る（#focus/<id>）。 */
+(function () {
+  const BC = window.BC;
+  const F = BC.focus;
+  const G = BC.grow;
+  const U = (BC.focusUI = {});
+  let X = {};
+  const KEY = 'bc.focus';
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const ic = (n, c) => (X.ic ? X.ic(n, c) : '');
+  const S = { state: null, el: null, flow: null, timer: null, audio: null, sub: '' };
+
+  U.init = (ctx) => { X = ctx || {}; S.state = F.load(X.store.get(KEY, null)); };
+  const save = () => X.store.set(KEY, S.state);
+  U.state = () => S.state || F.empty();
+  U.reload = () => { S.state = F.load(X.store.get(KEY, null)); };
+  const now = () => Date.now();
+  // 'YYYY-MM-DD' → '11/9'
+  const md = (k) => { const [, m, d] = String(k).split('-').map(Number); return `${m}/${d}`; };
+  // その週の「これ1つ」が、いま 自己ベスト（これまでで いちばんよく、きじゅんより のびている）か
+  const isPB = (item) => { const m = F.summary(item); return m.tried && m.gain > 0 && F.bestOf(S.state, item.test) === m.last; };
+  const me = () => (X.prof ? X.prof() : {}) || {};
+  const acts = () => (X.acts ? X.acts() : []);
+  const cur = () => F.current(S.state, now());
+  const skillName = (id) => (X.skillName ? X.skillName(id) : id);
+  const paint = (html) => { if (S.el) { S.el.innerHTML = html; if (X.hydrate) X.hydrate(S.el); } };
+  const back = (href, label) => `<a class="back-btn" href="${href}">${ic('back')}${esc(label || 'もどる')}</a>`;
+  const backStep = (to, label) => `<button type="button" class="back-btn" data-fc="back" data-to="${to}">${ic('back')}${esc(label || 'もどる')}</button>`;
+  const rerender = () => U.render(S.el, S.sub);
+
+  /* ---------- 小さな部品 ---------- */
+  const testIcon = (t) => (t.kind === 'time' || t.kind === 'hold' ? 'timer' : t.kind === 'make' ? 'hoop' : 'bolt');
+  // 数の言い方：「30秒で つけた回数」
+  const whatLine = (t) => `${esc(t.what)}${t.better === 'less' ? '（少ないほど いい）' : '（多いほど いい）'}`;
+  const fmt = (t, v) => esc(F.fmt(t, v));
+  const stepBtns = (id, t) => `<div class="fc-step"><button type="button" class="ib" data-fc="num" data-id="${id}" data-d="-1" aria-label="へらす">${ic('minus')}</button>
+    <input id="${id}" class="fc-num num" type="number" inputmode="${t.kind === 'time' ? 'decimal' : 'numeric'}" min="0" ${t.kind === 'make' ? `max="${t.of}"` : ''} step="${F.step(t)}" aria-label="数">
+    <button type="button" class="ib" data-fc="num" data-id="${id}" data-d="1" aria-label="ふやす">${ic('plus')}</button><span class="fc-unit">${t.kind === 'make' ? `/ ${t.of}${esc(t.unit)}` : esc(t.unit)}</span></div>`;
+  const numVal = (id, t) => { const el = document.getElementById(id); return el ? F.clamp(t, el.value) : 0; };
+  const setNum = (id, t, v) => { const el = document.getElementById(id); if (el) el.value = t.kind === 'time' ? F.clamp(t, v).toFixed(1) : String(F.clamp(t, v)); };
+
+  /* ---------- 測るタイマー（30秒チャレンジ・ストップウォッチ） ---------- */
+  function stopTimer() {
+    if (S.timer) { clearInterval(S.timer.id); S.timer = null; }
+    try { if (S.audio) S.audio.close(); } catch (e) { /* なし */ }
+    S.audio = null;
+  }
+  function beep(n = 2) {
+    try {
+      const ac = S.audio;
+      if (ac) for (let i = 0; i < n; i++) {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.frequency.value = 880; o.connect(g); g.connect(ac.destination);
+        const t0 = ac.currentTime + i * 0.22;
+        g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.3, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
+        o.start(t0); o.stop(t0 + 0.2);
+      }
+    } catch (e) { /* 音が出なくても進む */ }
+    try { if (navigator.vibrate) navigator.vibrate(n > 1 ? [150, 80, 150] : 100); } catch (e) { /* なし */ }
+  }
+  const clockEl = () => document.getElementById('fc-clock');
+  // kind 'count'：3・2・1 → secs 秒のカウントダウン → おわったら 数をきく。'time'/'hold'：ストップウォッチ
+  function startTimer(t) {
+    stopTimer();
+    try { S.audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { /* なし */ }
+    const T = { t0: Date.now(), phase: t.kind === 'count' ? 'ready' : 'run', t, done: false };
+    S.timer = T;
+    T.id = setInterval(() => tick(), 100);
+    paintTimer();
+  }
+  function tick() {
+    const T = S.timer;
+    if (!T) return;
+    const el = (Date.now() - T.t0) / 1000;
+    if (T.phase === 'ready') {
+      if (el >= 3) { T.phase = 'run'; T.t0 = Date.now(); beep(1); }
+    } else if (T.t.kind === 'count' && el >= T.t.secs) {
+      T.phase = 'end'; T.done = true; clearInterval(T.id); beep(2);
+    }
+    paintTimer();
+    if (T.phase === 'end') U.afterTimer();
+  }
+  function stopWatch() {
+    const T = S.timer;
+    if (!T || T.phase !== 'run') return;
+    const v = (Date.now() - T.t0) / 1000;
+    T.phase = 'end'; T.done = true; T.value = v; clearInterval(T.id); beep(1);
+    paintTimer();
+    U.afterTimer();
+  }
+  function paintTimer() {
+    const T = S.timer, c = clockEl();
+    if (!T || !c) return;
+    const el = (Date.now() - T.t0) / 1000;
+    const box = document.getElementById('fc-timer');
+    if (box) box.dataset.phase = T.phase;
+    if (T.phase === 'ready') c.textContent = String(Math.max(1, 3 - Math.floor(el)));
+    else if (T.t.kind === 'count') c.textContent = T.phase === 'end' ? '0' : String(Math.max(0, Math.ceil(T.t.secs - el)));
+    else c.textContent = (T.phase === 'end' ? T.value : el).toFixed(1);
+    const lab = document.getElementById('fc-clock-l');
+    if (lab) lab.textContent = T.phase === 'ready' ? 'よーい…' : T.phase === 'run' ? (T.t.kind === 'count' ? 'スタート！ 数えながら やろう' : 'はかっています…') : 'おしまい！';
+    const bar = document.getElementById('fc-bar');
+    if (bar) bar.style.width = T.t.kind === 'count' && T.phase !== 'ready' ? `${Math.min(100, (100 * el) / T.t.secs).toFixed(1)}%` : '0%';
+    const go = document.getElementById('fc-go');
+    if (go) go.hidden = T.phase !== 'idle';
+    const stop = document.getElementById('fc-stop');
+    if (stop) stop.hidden = !(T.phase === 'run' && T.t.kind !== 'count');
+    const cancel = document.getElementById('fc-cancel');
+    if (cancel) { cancel.hidden = false; cancel.textContent = T.phase === 'end' ? 'やりなおす' : 'やめる'; }
+  }
+  // タイマーが おわった → 数を入れる欄に（ストップウォッチは 自動で入る）
+  U.afterTimer = () => {
+    if (!S.flow || !S.timer) return;
+    const t = S.timer.t;
+    const box = document.getElementById('fc-enter');
+    if (box) box.hidden = false;
+    if (S.timer.value != null) setNum('fc-val', t, S.timer.value);
+    const go = document.getElementById('fc-go');
+    if (go) go.hidden = true;
+    const val = document.getElementById('fc-val');
+    if (val && t.kind !== 'time' && t.kind !== 'hold') { val.focus({ preventScroll: true }); val.select(); }
+  };
+
+  /* ---------- 流れ：のびしろ → 測る → 目標 ---------- */
+  function startFlow(opt = {}) {
+    stopTimer();
+    const cand = F.candidates({ me: me(), acts: acts(), checks: X.checks ? X.checks() : [], log: X.log ? X.log() : [], state: S.state, now: now() });
+    S.flow = { step: opt.test ? 'measure' : 'pick', cand, test: opt.test || null, value: null, goal: null, redo: opt.redo || null, more: false };
+  }
+  function pickStep() {
+    const f = S.flow;
+    const c = cur();
+    const skillsAll = [...new Set(F.tests().filter((t) => F.available(t, me())).map((t) => t.skill))];
+    const shown = new Set(f.cand.map((x) => x.skill));
+    const more = skillsAll.filter((s) => !shown.has(s));
+    const card = (x, i) => {
+      const t = F.test(x.test);
+      return `<button type="button" class="fc-cand" data-fc="cand" data-i="${i}">
+        <span class="fc-cand-ic">${ic(testIcon(t))}</span>
+        <span class="fc-cand-body"><b>${esc(skillName(x.skill))}</b><span class="fc-cand-test">${esc(t.name)}</span>
+          <span class="fc-why">${ic('bulb', 'inline')}${esc(x.reason)}</span></span>${ic('next', 'rc-go')}</button>`;
+    };
+    paint(`${back('#home', 'ホーム')}
+      <p class="eyebrow">${ic('target')}今週の これ1つ</p>
+      <h1 class="page-h">のびしろを さがそう</h1>
+      <p class="small">きょうまでの 練習・動画チェック・そうだんから、いま のばすと よさそうな所を 3つ 出したよ。<b>1つだけ</b> えらんで、30秒で 今の自分を 測ろう。くらべるのは「前の自分」だけ。</p>
+      ${c ? `<p class="cl-msg fc-warn">${ic('warn')}今週は すでに「${esc(F.test(c.test).name)}」を えらんでいます。えらびなおすと、前のは「かえた」として のこります。</p>` : ''}
+      <div class="fc-cands">${f.cand.map(card).join('')}</div>
+      ${more.length ? `<details class="fc-more"${f.more ? ' open' : ''}><summary>ほかの 技能から えらぶ</summary><div class="chips">${more.map((s) => `<button type="button" class="chip" data-fc="skill" data-s="${s}">${esc(skillName(s))}</button>`).join('')}</div></details>` : ''}`);
+  }
+  // 技能の中で どの測り方にするか
+  function skillTests(skill) {
+    const list = F.testsFor(skill, me());
+    const f = S.flow;
+    f.skillPick = skill;
+    paint(`${backStep('pick', 'のびしろ')}
+      <p class="eyebrow">${ic('target')}今週の これ1つ</p>
+      <h1 class="page-h">${esc(skillName(skill))}：どれで 測る？</h1>
+      <div class="rows">${list.map((t) => `<button type="button" class="row-card fc-row" data-fc="test" data-id="${t.id}"><span class="thumb art-ic">${ic(testIcon(t))}</span><span class="rc-body"><span class="rc-title">${esc(t.name)}</span><span class="rc-sub">${whatLine(t)}</span></span>${ic('next', 'rc-go')}</button>`).join('')}</div>`);
+  }
+  function measureStep() {
+    const f = S.flow;
+    const t = F.test(f.test);
+    const last = F.lastFor(S.state, t.id);
+    const redo = f.redo ? F.item(S.state, f.redo) : null;
+    const prevBest = F.bestOf(S.state, t.id);
+    paint(`${redo ? back('#home', 'ホーム') : backStep('pick', 'のびしろ')}
+      <p class="eyebrow">${ic(testIcon(t))}${redo ? '測りなおし' : '30秒チャレンジ'}・${esc(skillName(t.skill))}</p>
+      <h1 class="page-h">${esc(t.name)}</h1>
+      <p class="fc-what">${whatLine(t)}</p>
+      <section class="card fc-how"><h2 class="sec-h">${ic('list')}はかりかた</h2><ol class="steps">${t.how.map((x) => `<li><span>${esc(x)}</span></li>`).join('')}</ol>
+        ${t.note ? `<p class="small fc-note">${ic('warn', 'inline')}${esc(t.note)}</p>` : ''}
+        <p class="small">${ic('heart', 'inline')}いたい日・つかれている日は むりしないで、あとにしよう。</p></section>
+      ${redo ? `<p class="small">前の 数：<b class="num">${fmt(t, redo.tries[redo.tries.length - 1].v)}</b>${prevBest != null ? `・自己ベスト <b class="num">${fmt(t, prevBest)}</b>` : ''}</p>`
+        : last ? `<p class="small">前に 測った数：<b class="num">${fmt(t, F.summary(last).last)}</b></p>` : ''}
+      ${t.kind === 'make' ? '' : `<section class="card fc-timer" id="fc-timer" data-phase="idle">
+        <div class="fc-clock num" id="fc-clock" aria-live="off">${t.kind === 'count' ? t.secs : '0.0'}</div>
+        <p class="fc-clock-l" id="fc-clock-l">${t.kind === 'count' ? `${t.secs}秒の タイマー。おしまいの 音が なるよ` : 'スタートを 押すと はかりはじめます'}</p>
+        <div class="fc-bar"><i id="fc-bar"></i></div>
+        <div class="btns"><button type="button" class="btn primary big" id="fc-go" data-fc="go">${ic('play')}スタート</button>
+          <button type="button" class="btn primary big" id="fc-stop" data-fc="stop" hidden>${ic('pause')}ストップ</button>
+          <button type="button" class="btn" id="fc-cancel" data-fc="cancel" hidden>やめる</button></div></section>`}
+      <section class="card fc-enter" id="fc-enter" ${t.kind === 'make' ? '' : 'hidden'}>
+        <h2 class="sec-h">${ic('pencil')}${t.kind === 'make' ? `${t.of}${esc(t.unit)}中 いくつ？` : '数を 入れよう'}</h2>
+        ${stepBtns('fc-val', t)}
+        <p class="small">${t.kind === 'time' || t.kind === 'hold' ? 'ストップウォッチの 時間が 入ります（直してもOK）。' : '数えまちがえても だいじょうぶ。いちばん 近い数で。'}</p>
+        <button type="button" class="btn primary big" data-fc="measured">${ic('check')}これで きめる</button></section>
+      ${t.kind === 'make' ? '' : `<p class="center"><button type="button" class="link-btn" data-fc="manual">タイマーを つかわずに 数を入れる</button></p>`}`);
+    const el = document.getElementById('fc-val');
+    if (el) setNum('fc-val', t, f.value != null ? f.value : t.kind === 'make' ? Math.round(t.of / 2) : last ? F.summary(last).last : 0);
+  }
+  function goalStep() {
+    const f = S.flow;
+    const t = F.test(f.test);
+    const base = f.value;
+    if (f.goal == null) f.goal = F.suggestGoal(t, base);
+    const dr = t.drills.map((id) => (X.get ? X.get(id) : null)).filter(Boolean);
+    const maxed = t.kind === 'make' && base >= t.of;
+    paint(`${backStep('measure', 'はかりなおす')}
+      <p class="eyebrow">${ic('target')}今週の これ1つ・${esc(skillName(t.skill))}</p>
+      <h1 class="page-h">${esc(t.name)}</h1>
+      <section class="card fc-base"><p class="small">いまの 自分（きじゅん）</p><p class="fc-big num">${fmt(t, base)}</p><p class="small">${esc(t.what)}</p></section>
+      <section class="card"><h2 class="sec-h">${ic('flag')}1週間の 目標</h2>
+        ${maxed ? `<p class="cl-msg">${ic('star')}もう まん点だね！ むずかしい 測りかたに かえると、まだまだ のびるよ。</p>` : ''}
+        ${stepBtns('fc-goal', t)}
+        <p class="small">いまより ${t.better === 'less' ? '少し はやく' : '少し 多く'}。「むりなく 届く」くらいが ちょうどいい。あとで 直せるよ。</p></section>
+      <section class="card"><h2 class="sec-h">${ic('list')}この1週間の 練習</h2>
+        <p class="small">ホームの「きょうのメニュー」が、この練習を 中心に 組まれます。</p>
+        <div class="rows">${dr.map((d) => `<a class="row-card" href="#${d.id}">${X.drillArt ? X.drillArt(d) : ''}<span class="rc-body"><span class="rc-title">${esc(d.name)}</span><span class="rc-sub">${esc(d.aim || '')}</span></span>${ic('next', 'rc-go')}</a>`).join('')}</div></section>
+      <div class="btns"><button type="button" class="btn primary big" data-fc="decide">${ic('check')}この これ1つで いく！</button></div>`);
+    setNum('fc-goal', t, f.goal);
+  }
+
+  /* ---------- 決める・測りなおす ---------- */
+  function decide() {
+    const f = S.flow;
+    const t = F.test(f.test);
+    const goal = numVal('fc-goal', t);
+    const r = F.start(S.state, { test: t.id, value: f.value, goal, now: now() });
+    if (!r.item) return;
+    S.state = r.state;
+    save();
+    stopTimer();
+    S.flow = null;
+    location.hash = 'home';
+    if (X.addActs) X.addActs([{ type: 'focus', id: t.id, skill: t.skill, xp: G.XP.focus, v: f.value }]);
+  }
+  function retryMeasured() {
+    const f = S.flow;
+    const item = F.item(S.state, f.redo);
+    const t = F.test(item.test);
+    const r = F.addTry(S.state, item.id, f.value, now());
+    if (!r.item) return;
+    S.state = r.state;
+    save();
+    stopTimer();
+    const list = [{ type: 'try', id: t.id, skill: t.skill, xp: G.XP.try, v: f.value }];
+    if (r.pb) list.push({ type: 'pb', id: t.id, skill: t.skill, xp: G.XP.pb, v: f.value });
+    S.flow = null;
+    S.justPB = r.pb ? item.id : null;
+    location.hash = 'focus/' + item.id;
+    if (X.addActs) X.addActs(list);
+  }
+
+  /* ---------- のびを見る ---------- */
+  function spark(item) {
+    const t = F.test(item.test);
+    // その技能の このテストの ぜんぶの測定（古い順）
+    const pts = [];
+    for (const x of S.state.items) if (x.test === item.test) for (const y of x.tries) pts.push(y);
+    pts.sort((a, b) => a.at - b.at);
+    if (pts.length < 2) return '';
+    const vs = pts.map((p) => p.v), lo = Math.min(...vs), hi = Math.max(...vs), span = hi - lo || 1;
+    const W = 300, H = 72, pad = 8;
+    const xy = (p, i) => [pad + (i * (W - 2 * pad)) / (pts.length - 1), H - pad - ((p.v - lo) / span) * (H - 2 * pad)];
+    const line = pts.map((p, i) => xy(p, i).join(',')).join(' ');
+    const best = F.bestOf(S.state, item.test);
+    return `<svg class="fc-spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="これまでの 測定：${pts.map((p) => F.fmt(t, p.v)).join('、')}"><polyline points="${line}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      ${pts.map((p, i) => { const [x, y] = xy(p, i); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${p.v === best ? 5.5 : 3.5}" class="${p.v === best ? 'best' : ''}"/>`; }).join('')}</svg>`;
+  }
+  function resultPage(id) {
+    const item = F.item(S.state, id);
+    if (!item) { location.hash = 'home'; return; }
+    const m = F.summary(item), t = m.test;
+    const pb = S.justPB === item.id || isPB(item);
+    const v = F.verdict(item, pb);
+    const days = F.practiceDays(item, acts());
+    const isNow = cur() && cur().id === item.id;
+    const notes = item.notes.slice().reverse();
+    const tries = item.tries;
+    paint(`${back('#home', 'ホーム')}
+      <p class="eyebrow">${ic('target')}${esc(md(item.week))} の週の これ1つ・${esc(skillName(item.skill))}</p>
+      <h1 class="page-h">${esc(t.name)}</h1>
+      <section class="card fc-result ${v.key}">
+        ${pb ? `<div class="fc-confetti">${X.confetti ? X.confetti() : ''}</div>` : ''}
+        ${m.tried ? `<div class="fc-arrow"><span class="fc-from num">${fmt(t, m.base)}</span><span class="fc-to-i">${ic('next')}</span><span class="fc-to num">${fmt(t, m.last)}</span></div>
+          <p class="fc-gain">${m.gain > 0 ? `<b>${m.last > m.base ? '+' : '−'}${esc(F.amount(t, m.last - m.base))}</b> のびた！` : m.gain === 0 ? 'おなじ' : `${esc(F.amount(t, m.last - m.base))} ${m.last > m.base ? '多い' : '少ない'}`}${pb ? '<span class="cl-st pass">自己ベスト！</span>' : ''}${m.reached ? '<span class="cl-st pass">目標クリア</span>' : ''}</p>`
+          : `<div class="fc-arrow"><span class="fc-to num">${fmt(t, m.base)}</span></div><p class="fc-gain">いまの 自分（きじゅん）</p>`}
+        <p class="fc-verdict">${esc(v.text)}</p>
+        <div class="fc-goal-row"><span class="small">目標 <b class="num">${fmt(t, m.goal)}</b></span><span class="xpbar fc-bar2"><i style="width:${Math.round(m.ratio * 100)}%"></i></span></div>
+        ${spark(item)}
+      </section>
+      <section class="stats fc-stats"><div><b class="num">${days.size}</b><small>これ1つの 練習日</small></div><div><b class="num">${tries.length - 1}</b><small>測りなおし</small></div><div><b class="num">${fmt(t, F.bestOf(S.state, t.id))}</b><small>自己ベスト</small></div></section>
+      ${notes.length ? `<section class="sec"><h2 class="sec-h">${ic('pencil')}ふり返り</h2><div class="rows">${notes.map((n) => `<div class="card fc-note-c"><p class="small">${esc(md(G.day(n.at)))}</p>${n.good ? `<p>${ic('check', 'inline')}${esc(n.good)}</p>` : ''}${n.next ? `<p>${ic('flag', 'inline')}つぎは：${esc(n.next)}</p>` : ''}</div>`).join('')}</div></section>` : ''}
+      <div class="btns">
+        ${isNow && !item.closed ? `<button type="button" class="btn primary" data-fc="retest" data-id="${item.id}">${ic('timer')}もういちど 測る</button>` : ''}
+        <button type="button" class="btn" data-fc="share" data-id="${item.id}">${ic('copy')}コーチ・おうちの人に 見せる</button>
+        ${BC.club && BC.club.session && BC.club.session() ? `<button type="button" class="btn" data-fc="club" data-id="${item.id}">${ic('trophy')}ひろばに のせる</button>` : ''}
+      </div>
+      <div class="btns"><button type="button" class="btn big" data-fc="next" data-id="${item.id}">${ic('target')}つぎの これ1つを えらぶ</button>
+        ${item.tries.length > 1 || !isNow ? `<button type="button" class="btn" data-fc="again" data-id="${item.id}">${ic('shuffle')}同じ テストで つづける</button>` : ''}</div>
+      <p class="center"><button type="button" class="link-btn" data-fc="del" data-id="${item.id}">${S.armDel === item.id ? 'もう一度 押すと この きろくを 消します' : 'この きろくを 消す'}</button></p>`);
+    S.justPB = null;
+  }
+
+  /* ---------- ページ ---------- */
+  U.render = function (el, sub) {
+    S.el = el;
+    const fresh = !S.open;      // べつのページから 来たとき
+    S.open = true;
+    S.sub = sub || '';
+    if (!S.state) S.state = F.load(X.store.get(KEY, null));
+    if (!sub || sub === 'pick') {
+      if (fresh || !S.flow || S.flow.redo) startFlow();
+      const f = S.flow;
+      if (f.step === 'pick') return f.skillPick ? skillTests(f.skillPick) : pickStep();
+      return f.step === 'measure' ? measureStep() : goalStep();
+    }
+    if (sub === 'measure') {
+      const c = cur() || F.pending(S.state, now());
+      if (!c) { location.hash = 'focus'; return; }
+      if (fresh || !S.flow || S.flow.redo !== c.id) startFlow({ test: c.test, redo: c.id });
+      return measureStep();
+    }
+    return resultPage(sub);
+  };
+  const toStep = (step) => { S.flow.step = step; stopTimer(); rerender(); };
+
+  /* ---------- ホームのカード ---------- */
+  U.homeHTML = function () {
+    if (!S.state) S.state = F.load(X.store.get(KEY, null));
+    const c = cur();
+    const pend = F.pending(S.state, now());
+    if (!c) {
+      return `<section class="card fc-home cta-new">
+        <h2 class="sec-h">${ic('target')}今週の これ1つ</h2>
+        <p>1週間で <b>1つだけ</b>、「きのうの自分」を こえよう。のびしろを 3つ 出すよ。30秒で 今の自分を 測って、1週間後に もういちど。</p>
+        ${pend ? `<p class="small fc-pend">${ic('flag', 'inline')}先週：「${esc(F.test(pend.test).name)}」 ${fmt(F.test(pend.test), pend.tries[0].v)} から スタート。<a href="#focus/measure">測りなおして のびを見る</a></p>` : ''}
+        <div class="btns"><a class="btn primary big" href="#focus">${ic('next')}これ1つを きめる</a></div></section>`;
+    }
+    const m = F.summary(c), t = m.test;
+    const days = F.practiceDays(c, acts());
+    const fm = F.forMenu(S.state, acts(), me(), now());
+    const dl = Math.max(0, Math.round((Date.parse(F.addDays(c.week, 6) + 'T00:00:00') - Date.parse(G.day(now()) + 'T00:00:00')) / 86400000));
+    return `<section class="card fc-home on">
+      <div class="fc-home-h"><h2 class="sec-h">${ic('target')}今週の これ1つ</h2><a class="sec-more" href="#focus">かえる</a></div>
+      <p class="fc-test"><b>${esc(t.name)}</b><small>${esc(skillName(c.skill))}・${esc(t.what)}</small></p>
+      <div class="fc-nums"><span class="fc-n"><small>きじゅん</small><b class="num">${fmt(t, m.base)}</b></span>
+        ${m.tried ? `<span class="fc-n now"><small>いま</small><b class="num">${fmt(t, m.last)}</b></span>` : ''}
+        <span class="fc-n goal"><small>目標</small><b class="num">${fmt(t, m.goal)}</b></span></div>
+      <div class="xpbar fc-bar2" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(m.ratio * 100)}"><i style="width:${Math.round(m.ratio * 100)}%"></i></div>
+      <p class="small">${m.reached ? `${ic('check', 'inline')}目標に とどいた！ ` : ''}これ1つの 練習：<b class="num">${days.size}</b>日・のこり <b class="num">${dl}</b>日${dl === 0 ? '（きょうまで）' : ''}</p>
+      ${fm && fm.cue ? `<p class="fc-cue">${ic('flag', 'inline')}前の ふり返りから：<b>${esc(fm.cue)}</b></p>` : ''}
+      ${fm && fm.easy ? `<p class="small fc-easy">${ic('heart', 'inline')}「むずかしかった」が つづいたね。きょうは「かんたんにする」やり方から。</p>` : ''}
+      <div class="btns"><button type="button" class="btn primary" data-fc-home="five">${ic('play')}5分だけ これ1つ</button>
+        <a class="btn" href="#focus/measure">${ic('timer')}${m.tried ? 'もういちど 測る' : '測りなおす'}</a>
+        ${m.tried ? `<a class="btn" href="#focus/${c.id}">${ic('chart')}のびを見る</a>` : ''}</div></section>`;
+  };
+  // 5分だけ：これ1つの練習で 短い タイマー
+  function fiveMin() {
+    const c = cur();
+    const fm = c && F.forMenu(S.state, acts(), me(), now());
+    if (!fm) return;
+    const ids = fm.drills.slice(0, 2);
+    const list = ids.length > 1 ? [{ id: ids[0], min: 3, role: 'main', focus: true }, { id: ids[1], min: 2, role: 'main', focus: true }] : [{ id: ids[0], min: 5, role: 'main', focus: true }];
+    if (X.runStart) X.runStart(list, 'focus');
+  }
+  U.hasFocus = () => !!(S.state && cur());
+  U.menuFocus = () => F.forMenu(S.state || F.empty(), acts(), me(), now());
+
+  /* ---------- 練習のあとの ふり返り（おわりの画面・やった！の画面に つける） ---------- */
+  const GOOD = ['回数が ふえた', 'ミスが へった', '顔を 上げられた', 'リズムが よかった', 'さいごまで やりきった', 'フォームが きれいだった', '新しいことが できた', 'ていねいに できた'];
+  // skills：その練習の技能の一覧（これ1つの技能が ふくまれるときだけ 出す）。出さないときは ''
+  U.reflectHTML = function (skills) {
+    const c = S.state && cur();
+    if (!c || c.closed || (skills && !skills.includes(c.skill))) return '';
+    const t = F.test(c.test);
+    const done = c.notes.some((n) => G.day(n.at) === G.day(now()));
+    return `<section class="fc-reflect" data-fc-reflect="${c.id}">
+      <h3 class="fc-reflect-h">${ic('pencil')}ふり返り（30秒）<small>${esc(t.name)}</small></h3>${done ? '<p class="small">きょうの ふり返りは もう あるよ。かえると 書きかわります。</p>' : ''}
+      <p class="fc-q">できたことは？ <small>1つ</small></p>
+      <div class="chips" data-fc-good>${GOOD.map((x) => `<button type="button" class="chip" data-fc-chip="good" data-v="${esc(x)}" aria-pressed="false">${esc(x)}</button>`).join('')}</div>
+      <p class="fc-q">つぎに 意識することは？ <small>1つ</small></p>
+      <div class="chips" data-fc-next>${t.cues.map((x) => `<button type="button" class="chip" data-fc-chip="next" data-v="${esc(x)}" aria-pressed="false">${esc(x)}</button>`).join('')}</div>
+    </section>`;
+  };
+  U.readReflect = function (root) {
+    const out = { good: '', next: '' };
+    if (!root) return out;
+    for (const k of ['good', 'next']) { const b = root.querySelector(`[data-fc-chip="${k}"][aria-pressed="true"]`); if (b) out[k] = b.dataset.v; }
+    const box = root.querySelector('[data-fc-reflect]');
+    out.id = box ? box.dataset.fcReflect : null;
+    return out;
+  };
+  // 返り値：{ xp acts } 経験値の acts（なければ []）
+  U.saveReflect = function (note) {
+    if (!note || !note.id || (!note.good && !note.next)) return [];
+    const item = F.item(S.state, note.id);
+    if (!item) return [];
+    const had = item.notes.some((n) => G.day(n.at) === G.day(now()));
+    S.state = F.addNote(S.state, note.id, note, now());
+    save();
+    return had ? [] : [{ type: 'reflect', id: item.id, skill: item.skill, xp: G.XP.reflect }];
+  };
+
+  /* ---------- きろくのページ ---------- */
+  U.logHTML = function () {
+    if (!S.state) S.state = F.load(X.store.get(KEY, null));
+    const hist = F.history(S.state).filter((x) => !x.changed || x.tries.length > 1).slice(0, 6);
+    if (!hist.length) return `<section class="sec"><h2 class="sec-h">${ic('target')}これ1つの のび</h2><p class="empty">「今週の これ1つ」を きめて 30秒で 測ると、1週間ごとの のびが ここに たまります。</p><div class="btns"><a class="btn" href="#focus">${ic('next')}これ1つを きめる</a></div></section>`;
+    const bests = F.bests(S.state);
+    const row = (x) => {
+      const m = F.summary(x), t = m.test;
+      return `<a class="row-card fc-hist" href="#focus/${x.id}"><span class="thumb art-ic">${ic(testIcon(t))}</span><span class="rc-body"><span class="rc-title">${esc(t.name)}${x.changed ? ' <small>（かえた）</small>' : ''}</span>
+        <span class="rc-sub">${esc(md(x.week))}の週・${fmt(t, m.base)}${m.tried ? ` → <b>${fmt(t, m.last)}</b>` : ''}${m.reached ? '・目標クリア' : ''}</span></span>
+        ${m.tried ? `<span class="cl-st ${m.gain > 0 ? 'pass' : ''}">${m.gain > 0 ? (m.last > m.base ? '+' : '−') + esc(F.amount(t, m.last - m.base)) : m.gain === 0 ? 'おなじ' : '…'}</span>` : '<span class="cl-st">まだ</span>'}</a>`;
+    };
+    return `<section class="sec"><h2 class="sec-h">${ic('target')}これ1つの のび</h2>
+      <div class="rows">${hist.map(row).join('')}</div>
+      <details class="more"><summary>自己ベスト（${Object.keys(bests).length}）</summary><div class="fc-bests">${Object.entries(bests).map(([id, v]) => { const t = F.test(id); return `<span class="fc-best"><small>${esc(t.name)}</small><b class="num">${fmt(t, v)}</b></span>`; }).join('')}</div></details></section>`;
+  };
+
+  /* ---------- ひろばに のせる ひとこと ---------- */
+  U.shareItem = function () {
+    if (!S.state) S.state = F.load(X.store.get(KEY, null));
+    const h = F.history(S.state).find((x) => !x.changed);
+    if (!h) return null;
+    return { type: 'focus', label: F.clubLabel(h, isPB(h)) };
+  };
+
+  /* ---------- 操作 ---------- */
+  document.addEventListener('click', async (e) => {
+    const home = e.target.closest('[data-fc-home]');
+    if (home) { if (home.dataset.fcHome === 'five') fiveMin(); return; }
+    const chip = e.target.closest('[data-fc-chip]');
+    if (chip) {
+      const on = chip.getAttribute('aria-pressed') !== 'true';
+      chip.parentElement.querySelectorAll('[data-fc-chip]').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+      chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+      return;
+    }
+    const t = e.target.closest('[data-fc]');
+    if (!t || !S.el || !S.el.contains(t)) return;
+    const d = t.dataset;
+    const f = S.flow;
+    switch (d.fc) {
+      case 'back': f.skillPick = null; if (d.to === 'pick') f.value = null; toStep(d.to); break;
+      case 'cand': { const x = f.cand[+d.i]; f.test = x.test; f.skillPick = null; f.value = null; toStep('measure'); break; }
+      case 'skill': skillTests(d.s); break;
+      case 'test': f.test = d.id; f.skillPick = null; f.value = null; toStep('measure'); break;
+      case 'go': startTimer(F.test(f.test)); break;
+      case 'stop': stopWatch(); break;
+      case 'cancel': stopTimer(); measureStep(); break;
+      case 'manual': { stopTimer(); const box = document.getElementById('fc-enter'); if (box) { box.hidden = false; const el = document.getElementById('fc-val'); if (el) { el.focus({ preventScroll: true }); el.select(); } } break; }
+      case 'num': {
+        const id = d.id, tt = F.test(f.test);
+        const el = document.getElementById(id);
+        if (el && tt) setNum(id, tt, (Number(el.value) || 0) + +d.d * F.step(tt));
+        break;
+      }
+      case 'measured': {
+        const tt = F.test(f.test);
+        f.value = numVal('fc-val', tt);
+        if (f.redo) { retryMeasured(); break; }
+        f.goal = null;
+        toStep('goal');
+        break;
+      }
+      case 'decide': decide(); break;
+      case 'retest': S.open = true; startFlow({ test: F.item(S.state, d.id).test, redo: d.id }); location.hash = 'focus/measure'; break;
+      case 'next': S.open = true; startFlow(); location.hash = 'focus'; if (S.sub === '') rerender(); break;
+      case 'again': {
+        const it = F.item(S.state, d.id);
+        S.open = true;
+        startFlow({ test: it.test });
+        location.hash = 'focus';
+        if (S.sub === '') rerender();
+        break;
+      }
+      case 'share': {
+        const it = F.item(S.state, d.id);
+        const text = F.shareText(it, isPB(it)) + '\n（バスケ・グロウ）';
+        if (navigator.share) { try { await navigator.share({ text }); break; } catch (err) { if (err && err.name === 'AbortError') break; } }
+        if (X.copy) X.copy(text, 'コピーしました。LINE などに はりつけてね');
+        break;
+      }
+      case 'club': {
+        const it = F.item(S.state, d.id);
+        const item = { type: 'focus', label: F.clubLabel(it, isPB(it)) };
+        if (BC.club && BC.club.postShare) {
+          const j = await BC.club.postShare(item);
+          if (X.toast) X.toast(j && j.ok ? 'ひろばに のせたよ！' : 'のせられませんでした（クラブに ログインしているか たしかめてね）');
+        }
+        break;
+      }
+      case 'del': {
+        if (S.armDel !== d.id) { S.armDel = d.id; rerender(); break; }
+        S.armDel = null;
+        S.state = F.remove(S.state, d.id);
+        save();
+        location.hash = 'home';
+        break;
+      }
+      default: break;
+    }
+  });
+  // これ1つの ページを はなれたら、タイマーと 途中の流れを すてる
+  window.addEventListener('hashchange', () => { if (!/^#focus/.test(location.hash)) { stopTimer(); S.flow = null; S.open = false; } });
+})();
+
 /* ---- js/app.js ---- */
 BC && (BC.currentFile = "js/app.js");
 /* バスケ・グロウ：画面。小学生・中学生が、自分で使って上達するためのアプリ。
    データ（BC）・人の動き（BC.motion）・成長（BC.grow）・動画チェック（BC.check）・ケガとテーピング（BC.aids・BC.tapes）を見て描く。
    タブ：#home（ホーム）・#practice（れんしゅう）・#check（チェック）・#log（きろく）・#more（もっと）
    ページ：#s/<技能 id>・#<項目 id>（d-… 練習メニュー・v-… 見るポイント・i-… なやみ・t-… 戦術）・#aid・#aid/<a-…>・#tape/<tp-…>・
-          #plan（プランをつくる）・#chat（コーチにそうだん）・#lib（ずかん）・#settings（せってい）・#hello（はじめての人）・#check/<種類>・#check/rec/<id>
+          #plan（プランをつくる）・#chat（コーチにそうだん）・#lib（ずかん）・#settings（せってい）・#hello（はじめての人）・#check/<種類>・#check/rec/<id>・
+          #focus（今週の これ1つ：のびしろ → 測る → 目標）・#focus/measure（測りなおす）・#focus/<きろくの id>（のびを見る）
    この端末に残すもの（localStorage）：プロフィール bc.me・やったこと bc.acts・動画チェック bc.checks・会話 bc.log・プラン bc.pl / bc.plans・
-     お気に入り bc.favs・見るポイントのチェック bc.vchk・きょうのメニューの長さ bc.menuMin */
+     お気に入り bc.favs・見るポイントのチェック bc.vchk・きょうのメニューの長さ bc.menuMin・今週の これ1つ bc.focus */
 (function () {
   const BC = window.BC;
   const G = BC.grow;
@@ -20873,7 +22020,7 @@ BC && (BC.currentFile = "js/app.js");
     calMonth: 0,
   };
   const checks = () => store.get('bc.checks', []);
-  const sum = () => G.summary(S.acts, Date.now(), checks());
+  const sum = () => G.summary(S.acts, Date.now(), checks(), { weekGoal: (S.me || {}).weekGoal });
   const saveLog = () => { S.log = S.log.slice(-60); store.set('bc.log', S.log); };
   const prof = () => S.me || {};
   const cond = () => ({ n: prof().n || 1, level: prof().level || null, place: prof().place || null });
@@ -21043,7 +22190,7 @@ BC && (BC.currentFile = "js/app.js");
     modal(`<div class="celebrate${reduceMotion() ? '' : ' pop'}">${confetti()}<h2 class="modal-h">やったね！</h2>${html}<div class="btns"><button type="button" class="btn primary big" data-act="modal-close">つづける</button></div></div>`);
   }
   const confetti = () => (reduceMotion() ? '' : `<div class="confetti" aria-hidden="true">${Array.from({ length: 18 }, (_, i) => `<i style="--i:${i};--x:${(i * 37) % 100}%"></i>`).join('')}</div>`);
-  const BADGE_COLOR = { first: 'ok', menu1: 'o', streak3: 'ball', streak7: 'ball', streak30: 'gold', drill10: 'o', drill50: 'gold', uniq10: 'ok', min300: 'o', check1: 'o', good5: 'gold', shooter: 'ball', handler: 'ball', defender: 'x', allround: 'gold', early: 'gold', lv5: 'ok', lv10: 'gold', kyu1: 'gold', kyu5: 'gold', quest1: 'o', quest5: 'gold' };
+  const BADGE_COLOR = { first: 'ok', menu1: 'o', streak3: 'ball', streak7: 'ball', streak30: 'gold', drill10: 'o', drill50: 'gold', uniq10: 'ok', min300: 'o', check1: 'o', good5: 'gold', shooter: 'ball', handler: 'ball', defender: 'x', allround: 'gold', early: 'gold', lv5: 'ok', lv10: 'gold', kyu1: 'gold', kyu5: 'gold', quest1: 'o', quest5: 'gold', focus1: 'ball', pb1: 'gold', reflect5: 'o', wk1: 'ok', wk4: 'gold' };
   const badgeIcon = (b, got) => `<span class="badge-ic c-${BADGE_COLOR[b.id] || 'ok'}${got ? '' : ' off'}">${ic(b.icon === 'list' ? 'list' : b.icon)}</span>`;
 
   /* ---------- 画面のわく ---------- */
@@ -21064,8 +22211,8 @@ BC && (BC.currentFile = "js/app.js");
     const c = document.getElementById('lv-chip');
     if (!c) return;
     const s = sum();
-    c.innerHTML = `<span class="num">Lv.${s.level}</span>${s.streak ? `<span class="lv-fire">${ic('fire')}<span class="num">${s.streak}</span></span>` : ''}`;
-    c.setAttribute('aria-label', `レベル ${s.level}・${s.streak}日れんぞく`);
+    c.innerHTML = `<span class="num">Lv.${s.level}</span>${s.week.n ? `<span class="lv-fire">${ic('fire')}<span class="num">${s.week.n}/${s.week.goal}</span></span>` : ''}`;
+    c.setAttribute('aria-label', `レベル ${s.level}・今週 ${s.week.n}日 練習（目標 ${s.week.goal}日）`);
   }
   function setTabMark(tab) {
     S.tab = tab;
@@ -21123,7 +22270,9 @@ BC && (BC.currentFile = "js/app.js");
   }
   function settingsExtra() {
     const th = document.documentElement.dataset.theme || '';
-    return `<section class="sec"><h2 class="sec-h">画面の色</h2><div class="pick">${[['', 'じどう'], ['light', 'あかるい'], ['dark', 'くらい']].map(([v, l]) => `<button type="button" class="pick-b" data-theme="${v}" aria-pressed="${th === v}">${l}</button>`).join('')}</div></section>
+    const wg = prof().weekGoal || 3;
+    return `<section class="sec"><h2 class="sec-h">1週間の 目標</h2><p class="small">「毎日」でなくて だいじょうぶ。1週間（月〜日）に 何日 練習するかを きめよう。休むのも 練習のうち。</p><div class="pick">${[2, 3, 4, 5].map((n) => `<button type="button" class="pick-b" data-weekgoal="${n}" aria-pressed="${wg === n}">${n}日</button>`).join('')}</div></section>
+      <section class="sec"><h2 class="sec-h">画面の色</h2><div class="pick">${[['', 'じどう'], ['light', 'あかるい'], ['dark', 'くらい']].map(([v, l]) => `<button type="button" class="pick-b" data-theme="${v}" aria-pressed="${th === v}">${l}</button>`).join('')}</div></section>
       <section class="sec"><h2 class="sec-h">データ</h2>
         <p class="small">きろく（経験値・バッジ・動画チェックの結果）は、この端末のブラウザの中にあります。機種を変えるときは「書き出す」で保存し、新しい端末で「読みこむ」をしてください。</p>
         <div class="btns"><button type="button" class="btn" data-act="export">${ic('save')}書き出す</button><label class="btn">${ic('copy')}読みこむ<input type="file" accept="application/json,.json" id="import-file" hidden></label></div>
@@ -21147,7 +22296,7 @@ BC && (BC.currentFile = "js/app.js");
 
   /* ---------- ホーム ---------- */
   const ROLE = { warm: 'じゅんび', main: 'メイン', game: 'ゲーム', cool: 'ストレッチ' };
-  const todayMenu = () => G.today(Object.assign({}, prof(), { n: prof().n || 1 }), S.menuMin, S.seed);
+  const todayMenu = () => G.today(Object.assign({}, prof(), { n: prof().n || 1, focus: BC.focusUI ? BC.focusUI.menuFocus() : null }), S.menuMin, S.seed);
   function commonIssues() {
     const goals = prof().goals || [];
     const pick = [];
@@ -21155,28 +22304,28 @@ BC && (BC.currentFile = "js/app.js");
     for (const id of ['i-shoot-miss', 'i-drb-stolen', 'i-def-beat', 'i-layup-miss', 'i-pass-steal', 'i-nerve', 'i-reb-lose', 'i-home']) if (!pick.includes(id)) pick.push(id);
     return items(pick).slice(0, 6);
   }
-  // ひとこと（せかさない・ほめる）
+  // ひとこと（せかさない・ほめる）。「毎日」ではなく「1週間で 目標の日数」をめやすに。休むのも 練習のうち
   function heroMsg(s) {
     const drills = S.acts.filter((a) => a.type === 'drill');
-    if (!drills.length) return 'まずは「きょうのメニュー」を 1つ やってみよう！';
+    if (!drills.length) return BC.focusUI && BC.focusUI.hasFocus() ? '今週の「これ1つ」が きまったね！ まずは 5分だけ やってみよう。' : 'まずは「きょうのメニュー」を 1つ やってみよう！';
+    const w = s.week;
     const today = G.day(Date.now());
     const last = drills[drills.length - 1];
     const daysAgo = Math.round((new Date(today).getTime() - new Date(G.day(last.at)).getTime()) / 86400000);
-    if (daysAgo === 0) return s.streak >= 3 ? `${s.streak}日れんぞく！ きょうも がんばったね。休むのも 練習のうち。` : 'きょうも がんばったね！ ゆっくり休むのも 練習のうち。';
-    if (s.streak >= 2) return `${s.streak}日れんぞく中！ きょうも ちょっとだけ やってみよう。`;
+    if (w.done) return w.streak >= 2 ? `今週の 目標（${w.goal}日）クリア！ ${w.streak}週つづけて。休むのも 練習のうち。` : `今週の 目標（${w.goal}日）クリア！ あとは すきなだけ。休むのも 練習のうち。`;
+    if (w.n === w.goal - 1) return daysAgo === 0 ? `きょうも がんばったね！ あと 1日で 今週の 目標。` : `あと 1日で 今週の 目標（${w.goal}日）。きょうは 10分だけでも どう？`;
+    if (daysAgo === 0) return `きょうも がんばったね！ 今週は ${w.n}日め。ゆっくり休むのも 練習のうち。`;
     if (daysAgo === 1) { const m = drills.filter((a) => G.day(a.at) === G.day(last.at)).reduce((t, a) => t + (a.min || 0), 0); return `きのうは ${m}分 練習したね。きょうは 10分から どう？`; }
-    return 'ひさしぶり！ 10分だけでも だいじょうぶ。';
+    return w.n ? `今週は ${w.n}日。10分だけでも だいじょうぶ。` : 'ひさしぶり！ 10分だけでも だいじょうぶ。';
   }
-  // 今週（月〜日）の練習した日
+  // 今週（月〜日）の練習した日と、週の目標
   function weekHTML(s) {
-    const now = new Date();
-    const dow = (now.getDay() + 6) % 7;
-    const n = [...Array(7).keys()].filter((i) => s.days.has(G.day(new Date(now.getFullYear(), now.getMonth(), now.getDate() - dow + i).getTime()))).length;
-    return `<div class="week" aria-label="今週 ${n}日 練習した">${'月火水木金土日'.split('').map((w, i) => {
-      const k = G.day(new Date(now.getFullYear(), now.getMonth(), now.getDate() - dow + i).getTime());
+    const w = s.week;
+    return `<div class="week" aria-label="今週 ${w.n}日 練習した（目標 ${w.goal}日）">${'月火水木金土日'.split('').map((wd, i) => {
+      const k = w.keys[i];
       const on = s.days.has(k);
-      return `<span class="wk${on ? ' on' : ''}${i === dow ? ' today' : ''}"><i>${on ? ic('check') : ''}</i><small>${w}</small></span>`;
-    }).join('')}<span class="wk-n">今週 <b class="num">${n}</b>日</span></div>`;
+      return `<span class="wk${on ? ' on' : ''}${i === w.today ? ' today' : ''}"><i>${on ? ic('check') : ''}</i><small>${wd}</small></span>`;
+    }).join('')}<span class="wk-goal${w.done ? ' done' : ''}">今週 <b class="num">${w.n}</b>/${w.goal}日${w.done ? ' ✓' : ''}${w.streak >= 2 ? `<span class="wk-streak">${w.streak}週つづけて クリア</span>` : ''}</span></div>`;
   }
   function renderHome() {
     const s = sum();
@@ -21193,19 +22342,21 @@ BC && (BC.currentFile = "js/app.js");
           <div class="hero-who"><p class="hero-hi">${hi}${name ? '、' + name : '！'}</p>
             <p class="hero-rank"><span class="lvl">Lv.<b class="num">${s.level}</b></span><span class="rank">${esc(s.rank)}</span></p>
             <p class="hero-msg">${esc(heroMsg(s))}</p></div>
-          <a class="streak${s.streak ? ' on' : ''}" href="#log">${ic('fire')}<b class="num">${s.streak}</b><small>日れんぞく</small></a>
+          <a class="streak${s.week.n ? ' on' : ''}" href="#log" aria-label="今週 ${s.week.n}日 練習（目標 ${s.week.goal}日）">${ic('fire')}<b class="num">${s.week.n}<i class="of">/${s.week.goal}</i></b><small>${s.week.done ? '週ゴール ✓' : '今週'}</small></a>
         </div>
         <div class="xpbar" role="progressbar" aria-valuemin="0" aria-valuemax="${s.prog.span}" aria-valuenow="${s.prog.cur}"><i style="width:${Math.round(s.prog.ratio * 100)}%"></i></div>
         <p class="xp-note">あと <b class="num">${s.prog.toNext}</b> XP で Lv.${s.level + 1}${s.today ? `<span>きょう <b class="num">+${s.today}</b> XP</span>` : ''}</p>
         ${weekHTML(s)}
       </section>
 
+      ${BC.focusUI ? BC.focusUI.homeHTML() : ''}
+
       <section class="card today${doneToday ? ' done' : ''}">
         <div class="today-h"><h2 class="sec-h">${ic('target')}きょうのメニュー</h2>
           <div class="seg seg-s" role="group" aria-label="時間">${[10, 15, 20, 30].map((m) => `<button type="button" data-menumin="${m}" aria-pressed="${S.menuMin === m}">${m}分</button>`).join('')}</div></div>
         ${doneToday ? `<p class="today-done">${ic('trophy')}きょうのメニュー クリア！ もう1回やっても OK。</p>` : ''}
-        <p class="today-skill">${skillArt(t.skill, 'today-art', 1)}<span><b>${esc(skillName(t.skill))}</b> を中心に <b class="num">${t.min}</b>分</span></p>
-        <ol class="today-list">${t.items.map((x) => { const d = get(x.id); return `<li><a class="today-item" href="#${d.id}">${drillArt(d)}<span class="ti-body"><b>${esc(d.name)}</b><small><span class="role r-${x.role}">${ROLE[x.role]}</span><span class="num">${x.min}</span>分</small></span>${ic('next', 'rc-go')}</a></li>`; }).join('')}</ol>
+        <p class="today-skill">${skillArt(t.skill, 'today-art', 1)}<span><b>${esc(skillName(t.skill))}</b> を中心に <b class="num">${t.min}</b>分${t.focus ? '（これ1つ）' : ''}</span></p>
+        <ol class="today-list">${t.items.map((x) => { const d = get(x.id); return `<li><a class="today-item" href="#${d.id}">${drillArt(d)}<span class="ti-body"><b>${esc(d.name)}</b><small><span class="role r-${x.role}">${ROLE[x.role]}</span>${x.focus ? '<span class="role r-focus">これ1つ</span>' : ''}<span class="num">${x.min}</span>分</small></span>${ic('next', 'rc-go')}</a></li>`; }).join('')}</ol>
         ${t.note ? `<p class="small">${esc(t.note)}</p>` : ''}
         <div class="btns"><button type="button" class="btn primary big" data-act="menu-start">${ic('play')}スタート</button><button type="button" class="btn" data-act="menu-shuffle">${ic('shuffle')}ほかのメニュー</button></div>
       </section>
@@ -21474,8 +22625,9 @@ BC && (BC.currentFile = "js/app.js");
         <div><b class="num">${s.days.size}</b><small>練習した日</small></div>
         <div><b class="num">${s.minutes}</b><small>練習した分</small></div>
         <div><b class="num">${s.drills}</b><small>やったメニュー</small></div>
-        <div><b class="num">${s.best}</b><small>いちばん長い れんぞく</small></div>
+        <div><b class="num">${s.week.weeks}</b><small>週ゴール達成</small></div>
       </section>
+      ${BC.focusUI ? BC.focusUI.logHTML() : ''}
       ${sec(`${ic('fire')}練習した日`, calendarHTML(s))}
       ${sec(`${ic('star')}わざのレベル`, sk.length ? `<div class="skill-bars">${sk.map((x) => { const xp = s.skills[x.id] || 0; const st = G.stars(xp); const nx = G.starNext(xp); return `<a class="sbar" href="#s/${x.id}"><span class="sbar-n">${esc(x.name)}</span>${stars(st, 5)}<span class="sbar-x num">${xp} XP</span><span class="sbar-b"><i style="width:${nx == null ? 100 : Math.round((100 * (xp - [0, 30, 80, 160, 300][st])) / ([30, 80, 160, 300, 500][st] - [0, 30, 80, 160, 300][st]))}%"></i></span></a>`; }).join('')}</div>` : '<p class="empty">練習メニューの「やった！」を押すと、ここに たまっていきます。</p>')}
       ${sec(`${ic('medal')}バッジ <small class="num">${bs.filter((b) => b.got).length} / ${bs.length}</small>`, `<div class="badges">${bs.map((b) => `<div class="badge${b.got ? ' got' : ''}">${badgeIcon(b, b.got)}<b>${esc(b.name)}</b><small>${esc(b.text)}</small></div>`).join('')}</div>`)}
@@ -21784,7 +22936,8 @@ BC && (BC.currentFile = "js/app.js");
       el.innerHTML = RUN.done ? `<div class="run-top"><span>おわり！</span><button type="button" class="icon-btn" data-run="end" aria-label="閉じる">${ic('close')}</button></div>
         <div class="run-body run-done">${confetti()}<p class="run-name">おつかれさま！</p><p class="run-sum"><b class="num">${RUN.items.length}</b>メニュー・<b class="num">${total}</b>分</p>
           <p>どうだった？</p>${rateButtons('run')}
-          <label class="field"><span class="field-l">ひとことメモ（なくてもOK）</span><input id="run-note" type="text" maxlength="60" placeholder="例：左手のドリブルが 前より できた"></label></div>`
+          <label class="field"><span class="field-l">ひとことメモ（なくてもOK）</span><input id="run-note" type="text" maxlength="60" placeholder="例：左手のドリブルが 前より できた"></label>
+          ${BC.focusUI ? BC.focusUI.reflectHTML(RUN.items.map((y) => (get(y.id).skills || [])[0])) : ''}</div>`
         : `<div class="run-top"><span>${esc(x.block || ROLE[x.role] || '')} ${RUN.i + 1} / ${RUN.items.length}</span><button type="button" class="icon-btn" data-run="stop" aria-label="タイマーを終わる">${ic('close')}</button></div>
         <div class="run-body">
           <p class="run-name">${esc(d.name)}</p>
@@ -21829,9 +22982,11 @@ BC && (BC.currentFile = "js/app.js");
   function runFinish(rate) {
     if (!RUN) return;
     const note = ((document.getElementById('run-note') || {}).value || '').trim();
+    const reflect = BC.focusUI ? BC.focusUI.readReflect(document.querySelector('.run')) : null;
     const list = RUN.items.map((x) => { const d = get(x.id); return { type: 'drill', id: x.id, skill: (d.skills || [])[0], min: x.min, rate, xp: G.drillXP(x.min, rate) }; });
     if (note && list.length) list[list.length - 1].note = note;
     if (RUN.kind === 'menu' && !RUN.partial) list.push({ type: 'menu', id: 'today', skill: list[0] && list[0].skill, xp: G.XP.menu });
+    if (reflect && BC.focusUI) list.push(...BC.focusUI.saveReflect(reflect));
     runEnd();
     addActs(list);
     rerender();
@@ -21856,7 +23011,8 @@ BC && (BC.currentFile = "js/app.js");
     modal(`<h2 class="modal-h">やった！</h2><p class="center"><b>${esc(d.name)}</b></p>
       <label class="field"><span class="field-l">何分やった？</span><div class="seg" role="group">${[3, 5, 10, 15].map((m) => `<button type="button" data-rmin="${m}" aria-pressed="${m === Math.min(15, d.minutes || 5) || (m === 5 && ![3, 5, 10, 15].includes(Math.min(15, d.minutes || 5)))}">${m}分</button>`).join('')}</div></label>
       <p class="center">どうだった？</p>${rateButtons('drill', id)}
-      <label class="field"><span class="field-l">ひとことメモ（なくてもOK）</span><input id="rate-note" type="text" maxlength="60" placeholder="例：10回中 7回できた"></label>`);
+      <label class="field"><span class="field-l">ひとことメモ（なくてもOK）</span><input id="rate-note" type="text" maxlength="60" placeholder="例：10回中 7回できた"></label>
+      ${BC.focusUI ? BC.focusUI.reflectHTML([(d.skills || [])[0]]) : ''}`);
   }
   let toastT;
   function toast(msg, kind = '') {
@@ -21884,7 +23040,7 @@ BC && (BC.currentFile = "js/app.js");
       toast('書き出しました（ダウンロードを見てね）');
     } catch (e) { copy(text); }
   }
-  const KEYS = ['bc.me', 'bc.acts', 'bc.checks', 'bc.log', 'bc.pl', 'bc.plans', 'bc.favs', 'bc.vchk', 'bc.menuMin'];
+  const KEYS = ['bc.me', 'bc.acts', 'bc.checks', 'bc.log', 'bc.pl', 'bc.plans', 'bc.favs', 'bc.vchk', 'bc.menuMin', 'bc.focus'];
 
   /* ---------- チェック（動画分析は js/check.js） ---------- */
   const checkCtx = {
@@ -21909,11 +23065,28 @@ BC && (BC.currentFile = "js/app.js");
       if (s.streak >= 2) out.push({ type: 'streak', label: `${s.streak}日 れんぞくで 練習中` });
       const b = G.badges(s).filter((x) => x.got).pop();
       if (b) out.push({ type: 'badge', label: `バッジ「${b.name}」をとった` });
+      const fs = BC.focusUI && BC.focusUI.shareItem ? BC.focusUI.shareItem() : null;
+      if (fs) out.unshift(fs);
       const c = store.get('bc.checks', [])[0];
       if (c && c.score != null) out.push({ type: 'check', label: `動画チェック ${(BC.check && BC.check.MODES && BC.check.MODES[c.mode] || {}).name || ''} ${c.score}点` });
       return out;
     },
   };
+  // 今週の これ1つ（js/focus-ui.js）にわたすもの
+  const focusCtx = {
+    ic, store, hydrate: (el) => hydrate(el),
+    toast: (m, k) => toast(m, k), addActs: (list, opt) => addActs(list, opt),
+    prof: () => prof(), acts: () => S.acts, checks: () => checks(), log: () => S.log,
+    get, skillName, drillArt: (d) => drillArt(d), confetti: () => confetti(), copy: (t, m) => copy(t, m),
+    runStart: (list, kind) => runStart(list, kind),
+  };
+  function renderFocus(sub) {
+    const m = main();
+    m.className = 'page-focus';
+    setTabMark('home');
+    if (!BC.focusUI) { m.innerHTML = '<h1 class="page-h">これ1つ</h1><p>じゅんび中です。</p>'; return; }
+    BC.focusUI.render(m, sub);
+  }
   function renderClub(sub) {
     const m = main();
     m.className = 'page-club';
@@ -21967,6 +23140,7 @@ BC && (BC.currentFile = "js/app.js");
     else if (h === 'more') renderMore();
     else if (h === 'check' || h.startsWith('check/')) renderCheck(h.slice(6));
     else if (h === 'club' || h.startsWith('club/')) renderClub(h.slice(5));
+    else if (h === 'focus' || h.startsWith('focus/')) renderFocus(h.slice(6));
     else if (h === 'hello') renderHello(false);
     else if (h === 'settings') renderHello(true);
     else if (h === 'about') renderAbout();
@@ -21996,7 +23170,7 @@ BC && (BC.currentFile = "js/app.js");
 
   /* ---------- 操作 ---------- */
   document.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-act],[data-hello],[data-theme],[data-menumin],[data-dfilter],[data-vchk],[data-rate],[data-rmin],[data-tapestep],[data-cal],[data-libkind],[data-libskill],[data-say],[data-ask],[data-skill],[data-pl],[data-plc],[data-plthadd],[data-plthdel],[data-run]');
+    const t = e.target.closest('[data-act],[data-hello],[data-theme],[data-weekgoal],[data-menumin],[data-dfilter],[data-vchk],[data-rate],[data-rmin],[data-tapestep],[data-cal],[data-libkind],[data-libskill],[data-say],[data-ask],[data-skill],[data-pl],[data-plc],[data-plthadd],[data-plthdel],[data-run]');
     if (!t) return;
     const d = t.dataset;
     if (d.hello) {
@@ -22018,6 +23192,14 @@ BC && (BC.currentFile = "js/app.js");
       if (v) document.documentElement.dataset.theme = v; else delete document.documentElement.dataset.theme;
       store.set('bc.theme', v);
       document.querySelectorAll('[data-theme]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.theme === v));
+      return;
+    }
+    if (d.weekgoal) {
+      S.me = Object.assign({}, S.me || {}, { weekGoal: +d.weekgoal });
+      store.set('bc.me', S.me);
+      document.querySelectorAll('[data-weekgoal]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.weekgoal === d.weekgoal));
+      toast(`1週間の 目標を ${d.weekgoal}日に しました`);
+      refreshTop();
       return;
     }
     if (d.menumin) { S.menuMin = +d.menumin; store.set('bc.menuMin', S.menuMin); rerender(); return; }
@@ -22046,8 +23228,9 @@ BC && (BC.currentFile = "js/app.js");
       const sel = document.querySelector('.modal [data-rmin][aria-pressed="true"]');
       const min = sel ? +sel.dataset.rmin : dr.minutes || 5;
       const note = ((document.getElementById('rate-note') || {}).value || '').trim();
+      const reflect = BC.focusUI ? BC.focusUI.readReflect(document.querySelector('.modal')) : null;
       closeModal();
-      addActs([{ type: 'drill', id: dr.id, skill: (dr.skills || [])[0], min, rate: r, xp: G.drillXP(min, r), note: note || undefined }]);
+      addActs([{ type: 'drill', id: dr.id, skill: (dr.skills || [])[0], min, rate: r, xp: G.drillXP(min, r), note: note || undefined }].concat(reflect && BC.focusUI ? BC.focusUI.saveReflect(reflect) : []));
       rerender();
       return;
     }
@@ -22221,6 +23404,7 @@ BC && (BC.currentFile = "js/app.js");
   const th = store.get('bc.theme', '');
   if (th) document.documentElement.dataset.theme = th;
   shell();
+  if (BC.focusUI) BC.focusUI.init(focusCtx);
   route();
   // クラブのお知らせ：はじめと、アプリにもどってきたとき（2分に1回まで）
   if (BC.club) {

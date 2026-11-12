@@ -1204,7 +1204,7 @@ begin
   if m.id is null then return jsonb_build_object('error', 'auth'); end if;
   if not _bg_rate_hit('post:' || m.id, 20, interval '1 hour', interval '30 minutes') then return jsonb_build_object('error', 'locked'); end if;
   select * into c from bg_clubs where id = m.club_id;
-  if p_meta is not null and jsonb_typeof(p_meta) = 'object' and p_meta->>'type' in ('menu', 'badge', 'check', 'level', 'drill', 'streak') then
+  if p_meta is not null and jsonb_typeof(p_meta) = 'object' and p_meta->>'type' in ('menu', 'badge', 'check', 'level', 'drill', 'streak', 'focus') then
     v_meta := jsonb_build_object('type', p_meta->>'type', 'label', _bg_clean(p_meta->>'label', 60));
     v_err := _bg_ng(v_meta->>'label');
     if v_err is not null then return jsonb_build_object('error', v_err); end if;

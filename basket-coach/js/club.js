@@ -233,6 +233,17 @@
   function go(hash) { if (location.hash.slice(1) === hash) rerender(); else location.hash = hash; }
 
   /* ---------- ログインしていない ---------- */
+  // クラブのサーバー（club/schema.sql）が まだ入っていないか（404）。クラブのページを ひらいたときだけ 1回しらべる
+  async function serverReady() {
+    if (S.ready == null) { const j = await rpc('bg_apply_info', { p_code: 'ZZZZZZZZ' }); S.ready = !(j && j.error === 'setup'); }
+    return S.ready;
+  }
+  function probeBanner() {
+    serverReady().then((ok) => {
+      const el = document.getElementById('cl-probe');
+      if (el && !ok) el.innerHTML = `<p class="cl-msg">${ic('warn')}<span>クラブの サーバーを じゅんびしています。コーチの じゅんびが おわるまで、クラブは まだ 使えません。ほかの機能（これ1つ・れんしゅう・チェック）は いつもどおり 使えます。</span></p>`;
+    });
+  }
   function welcomePage() {
     const msg = S.msg; S.msg = '';
     paint(`<section class="cl-hero">
@@ -241,6 +252,7 @@
         <p>コーチが つくった <b>級（きゅう）</b>に チャレンジ！ 写真をつけて送ると、コーチが見て「合格」を返してくれます。クラブの なかまと、がんばったことを 見せあって「いいね」できます。</p>
       </section>
       ${msg ? `<p class="cl-msg">${esc(msg)}</p>` : ''}
+      <div id="cl-probe"></div>
       <section class="card">
         <h2 class="sec-h">${ic('person')}子どもの ログイン</h2>
         <p class="small">コーチから もらった ログインカードを 見て 入れてね。</p>
@@ -256,6 +268,7 @@
         <div class="btns"><a class="btn" href="#club/coach">コーチとして ログイン</a><a class="btn" href="#club/create">クラブを つくる</a></div>
         <p class="small">子どものアカウントは、コーチがつくります（メールアドレスは いりません）。記録や写真は、クラブの中だけで見られます。</p>
       </section>`);
+    probeBanner();
   }
   function coachLoginPage() {
     paint(`${backLink('#club')}<h1 class="page-h">コーチの ログイン</h1>
@@ -518,7 +531,7 @@
       ? `<div class="cl-cert" style="${kv(p.meta.color)}"><span class="cl-cert-k">${esc(p.meta.level || '')}</span><span><b>${esc(p.member.nickname)}さんが ${esc(kyuLabel({ name: p.meta.level || '' }, p.meta.track || ''))}に 合格！</b>${p.meta.comment ? `<small>${ic('whistle', 'inline')}${esc(p.meta.by || 'コーチ')}：${esc(p.meta.comment)}</small>` : ''}</span></div>`
       : p.kind === 'quest'
       ? `<div class="cl-cert quest"><span class="cl-cert-k">${ic('bolt')}</span><span><b>${esc(p.member.nickname)}さんが 自主練「${esc(p.meta.title || '')}」を クリア！</b><small>${esc(String(p.meta.target || ''))}${esc(p.meta.unit || '')} を ${esc(String(p.meta.times || ''))}回</small></span></div>`
-      : `${p.kind === 'share' ? `<p class="cl-share">${ic(p.meta.type === 'badge' ? 'medal' : p.meta.type === 'check' ? 'camera' : p.meta.type === 'streak' ? 'fire' : 'trophy')}<span>${esc(p.meta.label || '')}</span></p>` : ''}
+      : `${p.kind === 'share' ? `<p class="cl-share">${ic(p.meta.type === 'badge' ? 'medal' : p.meta.type === 'check' ? 'camera' : p.meta.type === 'streak' ? 'fire' : p.meta.type === 'focus' ? 'target' : 'trophy')}<span>${esc(p.meta.label || '')}</span></p>` : ''}
          ${p.body ? `<p class="cl-body">${esc(p.body)}</p>` : ''}${photoTag(p.photo_id)}`;
     return `<article class="card cl-post${p.kind === 'cert' || p.kind === 'quest' ? ' cert' : ''}" data-post="${p.id}">
       <header class="cl-post-h">${avatar(p.member)}<span class="cl-post-who"><b>${esc(p.member.nickname)}</b>${p.member.role === 'coach' ? '<span class="cl-st">コーチ</span>' : kyuBadge(p.member.kyu, 'small')}</span><span class="small">${esc(ago(p.created_at))}</span>${st}</header>
@@ -541,7 +554,7 @@
       <section class="card cl-compose">
         <label class="sr" for="cl-post">がんばったこと</label>
         <textarea id="cl-post" maxlength="140" rows="2" placeholder="${isCoach() ? 'クラブのみんなへ ひとこと' : 'きょう がんばったことを 書こう'}"></textarea>
-        ${shares.length ? `<div class="chips">${shares.map((s, i) => `<button type="button" class="chip" data-cl="share" data-i="${i}">${ic(s.type === 'badge' ? 'medal' : s.type === 'check' ? 'camera' : 'trophy', 'inline')}${esc(s.label)}</button>`).join('')}</div>` : ''}
+        ${shares.length ? `<div class="chips">${shares.map((s, i) => `<button type="button" class="chip" data-cl="share" data-i="${i}">${ic(s.type === 'badge' ? 'medal' : s.type === 'check' ? 'camera' : s.type === 'focus' ? 'target' : 'trophy', 'inline')}${esc(s.label)}</button>`).join('')}</div>` : ''}
         ${up ? `<div class="cl-preview"><img src="${up.url}" alt="えらんだ写真"><button type="button" class="btn" data-cl="unphoto">${ic('close')}はずす</button></div>` : ''}
         <div class="btns">${photos ? `<label class="btn">${ic('camera')}写真<input type="file" accept="image/*" id="cl-file" data-task="post" hidden></label>` : ''}<button type="button" class="btn primary" data-cl="post">${ic('plus')}のせる</button></div>
         <p class="small">${isCoach() ? '' : 'やさしい ことばで。わるぐち・リンク・電話番号は のせられません。'}${photos && !isCoach() && (c.settings || {}).review_photos !== false ? '写真つきは、コーチが見てから みんなに出ます。' : ''}${(c.settings || {}).review_posts ? '投稿は、コーチが見てから みんなに出ます。' : ''}</p>
@@ -1188,6 +1201,13 @@
   };
   C.badge = () => S.badge;
   C.session = () => S.sess;
+  // アプリの記録（{ type, label }）を、そのまま ひろばに のせる（「今週の これ1つ」の のびなど）
+  C.postShare = async (share) => {
+    if (!C.ready() || !S.sess) return { ok: false, error: 'auth' };
+    const j = await rpc('bg_post', { p_token: tok(), p_body: '', p_photo: '', p_mime: '', p_meta: { type: share.type, label: share.label } });
+    if (j && j.ok) S.feed = null;
+    return j;
+  };
 
   /* ---------- 操作 ---------- */
   document.addEventListener('click', async (e) => {

@@ -1,7 +1,8 @@
 /* 成長のしくみ（BC.grow）：やったこと（acts）から、経験値（XP）・レベル・つづけた日数・バッジを計算する。DOM は使わない（tools/grow-test.cjs で検査）。
    acts（この端末の localStorage 'bc.acts'。古い順）：
      [{ at（ms）, type, id, skill, min（分）, rate（1 むずかしかった・2 まあまあ・3 できた）, xp, note }]
-     type：'drill'（練習メニューをやった）| 'menu'（きょうのメニューをやりきった）| 'check'（動画チェック）| 'view'（見るポイントを読んだ・チェックした）| 'aid'（ケガの手当てを読んだ）
+     type：'drill'（練習メニューをやった）| 'menu'（きょうのメニューをやりきった）| 'check'（動画チェック）| 'view'（見るポイントを読んだ・チェックした）| 'aid'（ケガの手当てを読んだ）|
+           'focus'（今週の これ1つ を きめて 測った）| 'try'（測りなおした）| 'pb'（自己ベスト）| 'reflect'（練習のあとの ふり返り）（js/focus.js・js/focus-ui.js）
    今日のメニュー（BC.grow.today）も、ここで作る（ひとりで・短い時間・苦手をまんべんなく）。 */
 (function (root) {
   const BC = (root.BC = root.BC || {});
@@ -23,7 +24,9 @@
   G.starNext = (xp) => { const s = G.stars(xp); return s >= 5 ? null : STAR[s + 1] - xp; };
 
   // ふつうにもらえる経験値
-  G.XP = { drill: 10, menu: 20, check: 15, view: 5, aid: 2, pass: 10, kyu: 50, qlog: 5, quest: 30 }; // pass：クラブの課題に合格・kyu：級に合格・qlog：自主練を1回きろく・quest：自主練をクリア（js/club.js）
+  G.XP = { drill: 10, menu: 20, check: 15, view: 5, aid: 2, pass: 10, kyu: 50, qlog: 5, quest: 30, focus: 10, try: 10, pb: 20, reflect: 5 };
+  // pass：クラブの課題に合格・kyu：級に合格・qlog：自主練を1回きろく・quest：自主練をクリア（js/club.js）
+  // focus：これ1つを きめて 測った・try：測りなおした・pb：自己ベスト・reflect：ふり返り（js/focus-ui.js）
   // 練習メニューの経験値：時間とできた度合い（むずかしくても、やったら もらえる）
   G.drillXP = (min, rate) => Math.round(Math.max(5, Math.min(30, 6 + (min || 5) * 1.2)) + (rate === 3 ? 4 : rate === 1 ? 2 : 0));
 
@@ -31,11 +34,38 @@
   const pad = (n) => String(n).padStart(2, '0');
   G.day = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
   const prevDay = (key) => { const [y, m, d] = key.split('-').map(Number); return G.day(new Date(y, m - 1, d - 1).getTime()); };
+  G.addDays = (key, n) => { const [y, m, d] = key.split('-').map(Number); return G.day(new Date(y, m - 1, d + n).getTime()); };
+  // その日（ms）がある週の 月曜の日づけ（週は 月〜日）
+  G.weekKey = (ms) => { const d = new Date(ms); const dow = (d.getDay() + 6) % 7; return G.day(new Date(d.getFullYear(), d.getMonth(), d.getDate() - dow).getTime()); };
+  G.weekOfDay = (key) => { const [y, m, d] = key.split('-').map(Number); return G.weekKey(new Date(y, m - 1, d).getTime()); };
+
+  /* ---------- 週のゴール ----------
+     「毎日」ではなく「1週間（月〜日）で goal 日（ふつう 3日）」を めやすにする。休むのも 練習のうち。
+     返す：{ goal, n（今週 練習した日）, done, keys（今週の7日）, today（きょうは 何番め 0〜6）, streak（つづけて 週ゴールを たっせいした週の数。今週が まだなら 先週から）, best, weeks（たっせいした週の数） } */
+  G.weekStats = function (days, now = Date.now(), goal = 3) {
+    const g = Math.max(1, Math.min(7, Math.round(goal) || 3));
+    const wk = G.weekKey(now);
+    const keys = [0, 1, 2, 3, 4, 5, 6].map((i) => G.addDays(wk, i));
+    const by = {};
+    for (const d of days) { const w = G.weekOfDay(d); by[w] = (by[w] || 0) + 1; }
+    const n = by[wk] || 0;
+    let streak = 0;
+    let k = n >= g ? wk : G.addDays(wk, -7);
+    while ((by[k] || 0) >= g) { streak++; k = G.addDays(k, -7); }
+    let best = 0;
+    for (const w of Object.keys(by)) {
+      if ((by[w] || 0) < g || (by[G.addDays(w, -7)] || 0) >= g) continue;
+      let c = 0, x = w;
+      while ((by[x] || 0) >= g) { c++; x = G.addDays(x, 7); }
+      best = Math.max(best, c);
+    }
+    return { goal: g, n, done: n >= g, keys, today: keys.indexOf(G.day(now)), streak, best, weeks: Object.values(by).filter((c) => c >= g).length };
+  };
 
   /* ---------- まとめ ----------
      返す：{ xp, level, rank, prog, skills: {技能 id: xp}, days: Set（練習した日）, streak（今日か昨日までつづいた日数）, best（いちばん長くつづいた日数）,
              count: {type: 回数}, drills（やったメニューの数）, uniq（ちがうメニューの数）, minutes, checks, goods（動画チェックの ◎ の数）, today（今日の xp）, todayMin } */
-  G.summary = function (acts, now = Date.now(), checks = []) {
+  G.summary = function (acts, now = Date.now(), checks = [], opt = {}) {
     const S = { xp: 0, skills: {}, days: new Set(), count: {}, drills: 0, uniq: 0, minutes: 0, checks: 0, goods: 0, today: 0, todayMin: 0, early: false, late: false, rated3: 0 };
     const ids = new Set();
     const todayKey = G.day(now);
@@ -45,7 +75,7 @@
       if (a.skill) S.skills[a.skill] = (S.skills[a.skill] || 0) + xp;
       S.count[a.type] = (S.count[a.type] || 0) + 1;
       const k = G.day(a.at);
-      if (a.type === 'drill' || a.type === 'menu' || a.type === 'check') S.days.add(k);
+      if (a.type === 'drill' || a.type === 'menu' || a.type === 'check' || a.type === 'focus' || a.type === 'try') S.days.add(k);
       if (a.type === 'drill') { S.drills++; ids.add(a.id); S.minutes += a.min || 0; if (a.rate === 3) S.rated3++; }
       if (a.type === 'check') S.checks++;
       if (k === todayKey) { S.today += xp; if (a.type === 'drill') S.todayMin += a.min || 0; }
@@ -73,6 +103,7 @@
     S.level = S.prog.level;
     S.rank = G.rank(S.level);
     S.allround = Object.values(S.skills).filter((x) => x >= 50).length;
+    S.week = G.weekStats(S.days, now, opt.weekGoal || 3);
     return S;
   };
 
@@ -100,14 +131,20 @@
     { id: 'kyu5', name: '5つの級', text: 'クラブの級に 5つ合格した', icon: 'crown', test: (s) => (s.count.kyu || 0) >= 5 },
     { id: 'quest1', name: '自主練クリア', text: 'コーチの自主練を はじめてクリアした', icon: 'bolt', test: (s) => (s.count.quest || 0) >= 1 },
     { id: 'quest5', name: '自主練マスター', text: 'コーチの自主練を 5つクリアした', icon: 'fire', test: (s) => (s.count.quest || 0) >= 5 },
+    { id: 'focus1', name: 'これ1つ', text: '「今週の これ1つ」を きめて 30秒で 測った', icon: 'target', test: (s) => (s.count.focus || 0) >= 1 },
+    { id: 'pb1', name: '自己ベスト', text: '「これ1つ」で 自己ベストを だした', icon: 'star', test: (s) => (s.count.pb || 0) >= 1 },
+    { id: 'reflect5', name: 'ふり返り 5回', text: '練習のあとに ふり返りを 5回した', icon: 'pencil', test: (s) => (s.count.reflect || 0) >= 5 },
+    { id: 'wk1', name: '週ゴール', text: '1週間で 目標の日数だけ 練習した', icon: 'flag', test: (s) => s.week && s.week.weeks >= 1 },
+    { id: 'wk4', name: '週ゴール 4週', text: '4週つづけて 週ゴールを クリアした', icon: 'crown', test: (s) => s.week && s.week.best >= 4 },
   ];
   G.badges = (s) => G.BADGES.map((b) => Object.assign({}, b, { got: !!b.test(s) }));
   // 前のまとめ → 後のまとめ で、新しくとれたバッジ
   G.newBadges = (before, after) => G.BADGES.filter((b) => !b.test(before) && b.test(after));
 
   /* ---------- きょうのメニュー ----------
-     me：{ level, goals: [技能 id], place: 'any'|'hoop'|'', n }、min：だいたいの分（10・15・20・30）、seed：べつのメニューにするとき 1, 2, …
-     返す：{ skill（きょうの中心）, min, items: [{ id, min, role: 'warm'|'main'|'game'|'cool' }], note } */
+     me：{ level, goals: [技能 id], place: 'any'|'hoop'|'', n, focus }、min：だいたいの分（10・15・20・30）、seed：べつのメニューにするとき 1, 2, …
+       me.focus：今週の「これ1つ」（BC.focus.forMenu の返り値 { skill, test, drills, easy, cue }）。あれば、その技能が きょうの中心になり、その練習が メインの先頭に来る
+     返す：{ skill（きょうの中心）, min, items: [{ id, min, role: 'warm'|'main'|'game'|'cool', focus: true（これ1つの練習）}], note, focus: me.focus（あれば）} */
   const hash = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
   const rng = (seed) => () => { seed = (Math.imul(seed ^ (seed >>> 15), 2246822507) + 0x9e3779b9) >>> 0; return seed / 4294967296; };
   const shuffle = (xs, r) => { const a = xs.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -118,23 +155,34 @@
     const fit = (d) => BC.fits(d, opt);
     const goals = (me.goals || []).filter((s) => BC.skillMap[s]);
     const pool = (goals.length ? goals : ['dribble', 'shoot', 'finish', 'defball']);
+    // これ1つ：条件に合う練習が あるときだけ
+    const fx = me.focus && BC.skillMap[me.focus.skill] ? me.focus : null;
+    const fdr = fx ? (fx.drills || []).map((id) => BC.get(id)).filter((d) => d && fit(d)) : [];
+    const fxOn = !!fdr.length;
+    const fxIds = new Set(fdr.map((d) => d.id));
     const r = rng(hash(G.day(now) + ':' + seed));
     // きょうの中心：目標を日がわりで（その技能で、条件に合う練習がないときは次へ）
     const dayN = Math.floor(new Date(now).setHours(0, 0, 0, 0) / 86400000);
     const order = pool.map((_, i) => pool[(dayN + seed + i) % pool.length]).concat(G.SOLO_SKILLS);
     const by = (s, phases) => BC.lists.drill.filter((d) => (d.skills || [])[0] === s && phases.includes(d.phase) && fit(d));
-    let skill = order.find((s) => by(s, ['skill', 'warmup']).length) || 'dribble';
-    const note = goals.length && !goals.includes(skill) ? `「${goals.map((g) => BC.skillMap[g].name).join('・')}」は、${n === 1 ? 'ひとりでできる' : '条件に合う'}練習が少ないので、きょうは「${BC.skillMap[skill].name}」にしました。` : '';
+    let skill = fxOn ? fx.skill : order.find((s) => by(s, ['skill', 'warmup']).length) || 'dribble';
+    const note = !fxOn && goals.length && !goals.includes(skill) ? `「${goals.map((g) => BC.skillMap[g].name).join('・')}」は、${n === 1 ? 'ひとりでできる' : '条件に合う'}練習が少ないので、きょうは「${BC.skillMap[skill].name}」にしました。` : '';
     const used = new Set();
     const items = [];
     const per = min <= 10 ? 3 : min <= 20 ? 5 : 6;
-    const add = (d, role, m) => { if (!d || used.has(d.id)) return false; used.add(d.id); items.push({ id: d.id, min: m, role }); return true; };
-    const warm = shuffle(BC.lists.drill.filter((d) => d.phase === 'warmup' && fit(d) && (d.intensity || 1) <= 2), r)
+    const add = (d, role, m) => { if (!d || used.has(d.id)) return false; used.add(d.id); items.push(Object.assign({ id: d.id, min: m, role }, fxIds.has(d.id) ? { focus: true } : {})); return true; };
+    const warm = shuffle(BC.lists.drill.filter((d) => d.phase === 'warmup' && fit(d) && (d.intensity || 1) <= 2 && !fxIds.has(d.id)), r)
       .sort((a, b) => ((b.skills || []).includes(skill) ? 1 : 0) - ((a.skills || []).includes(skill) ? 1 : 0));
     add(warm[0], 'warm', min <= 10 ? 2 : 3);
-    const main = shuffle(by(skill, ['skill']), r).concat(shuffle(by(skill, ['warmup']), r));
+    const main = fdr.concat(shuffle(by(skill, ['skill']), r), shuffle(by(skill, ['warmup']), r));
     let left = min - items.reduce((t, x) => t + x.min, 0) - (min >= 20 ? 3 : 0);
-    for (const d of main) { if (left < 3) break; const m = Math.min(per, left); if (add(d, 'main', m)) left -= m; if (items.filter((x) => x.role === 'main').length >= 3) break; }
+    for (const d of main) {
+      if (left < 3) break;
+      // これ1つの練習は、すこし長めに（むずかしかった が つづいたときは 短く・やさしく）
+      const m = Math.min(fxIds.has(d.id) ? (fx.easy ? per : per + 2) : per, left);
+      if (add(d, 'main', m)) left -= m;
+      if (items.filter((x) => x.role === 'main').length >= 3) break;
+    }
     // ひとりでできるゲーム（あれば）
     const game = shuffle(BC.lists.drill.filter((d) => d.phase === 'game' && fit(d) && (d.skills || []).includes(skill)), r)[0];
     if (game && left >= 3) { const m = Math.min(per, left); if (add(game, 'game', m)) left -= m; }
@@ -150,6 +198,7 @@
     const total = items.reduce((t, x) => t + x.min, 0);
     const mainItem = items.find((x) => x.role === 'main');
     if (mainItem && total < min) mainItem.min += min - total;
-    return { skill, min: items.reduce((t, x) => t + x.min, 0), items, note };
+    const fnote = fxOn ? (fx.easy ? '「むずかしかった」が つづいたので、まず「かんたんにする」やり方から。できたら 少しずつ ふやそう。' : '今週の「これ1つ」の練習を いちばん 多くしました。') : '';
+    return { skill, min: items.reduce((t, x) => t + x.min, 0), items, note: fnote || note, focus: fxOn ? fx : null };
   };
 })(typeof window !== 'undefined' ? window : globalThis);

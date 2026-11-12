@@ -324,6 +324,28 @@ const ok = (c, m, x) => { if (c) { pass++; console.log('  ✓ ' + m); } else { f
     ok(true, 'コーチの いいねが 子どもにも見える');
     await shot(kid, 'feed-coach-react');
 
+    console.log('■ これ1つの のびを ひろばに のせる');
+    const fid = await kid.evaluate(() => {
+      const F = BC.focus;
+      let st = F.start(F.empty(), { test: 'f-pound-r', value: 38, goal: 42 }).state;
+      const id = st.items[0].id;
+      st = F.addTry(st, id, 44).state;
+      localStorage.setItem('bc.focus', JSON.stringify(st));
+      return id;
+    });
+    await kid.reload();
+    await go(kid, 'focus/' + fid);
+    await kid.waitForSelector('.fc-result');
+    ok(await kid.$('[data-fc="club"]'), 'クラブに ログインしていると「ひろばに のせる」が 出る');
+    await kid.click('[data-fc="club"]');
+    await kid.waitForFunction(() => /ひろばに のせたよ/.test((document.querySelector('.toast') || {}).textContent || ''));
+    await go(kid, 'club/feed');
+    await kid.waitForFunction(() => [...document.querySelectorAll('.cl-post')].some((p) => /ポンドドリブル（右手）」38回 → 44回/.test(p.innerText)));
+    ok(true, 'ひろばに「38回 → 44回」が のった');
+    await kid.waitForSelector('.cl-compose .chip');
+    ok(/ポンドドリブル/.test(await kid.$eval('.cl-compose .chips', (e) => e.innerText)), '書くところの おすすめ（アプリの記録）にも「これ1つ」が 出る');
+    await shot(kid, 'feed-focus');
+
     console.log('■ v2：予定と 参加の申し込み');
     await go(coach, 'club/event-new');
     await coach.waitForSelector('[data-clform="event"]');

@@ -84,7 +84,7 @@ const { chromium } = require('playwright');
   flushErrors(page, 'ホーム');
 
   // ページを全部ひらく
-  const pages = ['practice', 'check', 'log', 'more', 'plan', 'chat', 'lib', 'settings', 'about', 'aid', ...data.skills.map((s) => 's/' + s), ...data.aids.map((a) => 'aid/' + a), ...data.tapes.map((t) => 'tape/' + t)];
+  const pages = ['practice', 'check', 'log', 'more', 'plan', 'chat', 'lib', 'settings', 'about', 'aid', 'focus', ...data.skills.map((s) => 's/' + s), ...data.aids.map((a) => 'aid/' + a), ...data.tapes.map((t) => 'tape/' + t)];
   const all = quick ? pages.concat(data.ids.filter((_, i) => i % 15 === 0)) : pages.concat(data.ids);
   let n = 0;
   for (const h of all) {
@@ -134,8 +134,8 @@ const { chromium } = require('playwright');
   if (acts.filter((a) => a.type === 'drill').length !== 1 + menu.items.length) fail('きょうのメニュー：メニューの数だけ記録されない');
   await page.waitForTimeout(1100);
   if (await page.$('.modal')) await page.click('.modal button[data-act="modal-close"]');
-  const home2 = await page.evaluate(() => ({ done: !!document.querySelector('.today.done'), streak: (document.querySelector('.streak b') || {}).textContent }));
-  if (!home2.done || home2.streak !== '1') fail('ホーム：クリアの表示・れんぞくの日数 ' + JSON.stringify(home2));
+  const home2 = await page.evaluate(() => ({ done: !!document.querySelector('.today.done'), week: (document.querySelector('.streak b') || {}).textContent }));
+  if (!home2.done || home2.week !== '1/3') fail('ホーム：クリアの表示・今週の日数（1/3） ' + JSON.stringify(home2));
   await shot(page, 'k-home-after');
   // 見るポイントのチェック
   await go(page, 'v-drb-low');

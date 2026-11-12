@@ -323,6 +323,16 @@ const dayStr = (d) => d.toISOString().slice(0, 10);
     ok(r.club.apply_code === AC && r.club.apply_note.length > 0, 'コーチのホーム：申し込みのコード');
     ok(!('apply_code' in (await rpc('bg_home', { p_token: K1.tok })).club), '子どもには 申し込みのコードを返さない');
 
+    // ---------- ひろばに「今週の これ1つ」の のびを のせる（アプリの記録＝share）----------
+    const FOCUS = '「ポンドドリブル（右手）」38回 → 44回（自己ベスト！）';
+    r = await rpc('bg_post', { p_token: K2.tok, p_body: '', p_photo: '', p_mime: '', p_meta: { type: 'focus', label: FOCUS } });
+    ok(r.ok && r.status === 'shown', 'ひろばに「これ1つ」の のびを のせる', r);
+    r = await rpc('bg_feed', { p_token: K3.tok, p_before: null, p_limit: 30 });
+    const fp = r.posts.find((p) => p.meta && p.meta.type === 'focus');
+    ok(fp && fp.kind === 'share' && fp.meta.label === FOCUS, 'ひろばに 出る（share・ひとことそのまま）', fp);
+    ok((await rpc('bg_post', { p_token: K2.tok, p_body: '', p_photo: '', p_mime: '', p_meta: { type: 'focus', label: 'あいつ キモい' } })).error === 'ng_word', 'のびの ひとことも ことばの点検');
+    ok((await rpc('bg_post', { p_token: K2.tok, p_body: '', p_photo: '', p_mime: '', p_meta: { type: 'unknown', label: 'x' } })).error === 'empty', 'しらない種類の share は 空の投稿としてことわる');
+
     // ---------- メンバー・クラブを消すと のこらない／anon は さわれない ----------
     const before = await q1('select (select count(*) from bg_quest_logs where member_id = $1)::int as logs, (select count(*) from bg_entries where member_id = $1)::int as ent', [K1.id]);
     ok(before.logs > 0 && before.ent > 0, '消す前：けんたの記録と答え', before);
