@@ -372,10 +372,22 @@ a.btn { text-decoration: none; }
   .actions .btn { padding: 6px 10px; }
 }
 
+/* ほかのアプリ：場面の切り出しはタップ記録の中でもできる・入口（バスケ・グロウ）へ */
+.hubbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 6px 16px; background: var(--panel); border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+.hubbar .hb-text { flex: 1 1 280px; min-width: 0; }
+.hubbar .hb-text b { color: var(--text); }
+.hubbar .hb-link { color: var(--accent); text-decoration: none; font-weight: 700; white-space: nowrap; }
+@media (max-width: 520px) { .hubbar .hb-wide { display: none; } .hubbar { padding: 5px 12px; } }
+
 </style>
 </head>
 <body>
 <div id="app">
+  <nav class="hubbar" id="hubbar" aria-label="ほかのアプリ">
+    <span class="hb-text">✂️ 場面の切り出しは、<b>バスケ タップ記録</b>の中でもできます<span class="hb-wide">（記録から切り出しまで、1つのアプリで）</span>。</span>
+    <a class="hb-link" id="hbTap" href="https://dora9991.github.io/math-dialogue/basket-tap/">タップ記録を開く ›</a>
+    <a class="hb-link" id="hbGrow" href="https://dora9991.github.io/math-dialogue/basket-coach/#home">‹ バスケ・グロウ<span class="hb-wide">（入口）</span></a>
+  </nav>
   <header class="topbar">
     <div class="brand"><span class="logo" aria-hidden="true">🏀</span><div><b>バスケ得点クリップ</b><small>得点の場面を5秒ずつ・タップ記録の場面も</small></div></div>
     <div class="actions">
