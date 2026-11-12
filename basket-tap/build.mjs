@@ -1,7 +1,7 @@
 // バスケ タップ記録 — 公開用を作る: node basket-tap/build.mjs
 //   → public/basket-tap/index.html（CSS と JS を埋め込んだ1ファイル。ダブルクリックでも開ける）
 //     public/basket-tap/manifest.webmanifest・icons/（ホーム画面に追加したときのアイコン）・sw.js（オフラインでも開けるように）
-// 外部ライブラリなし・通信なし。
+// 外部ライブラリなし。通信は、記録をクラウド（Supabase）に残すときだけ（js/cloud.js）。
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -26,4 +26,7 @@ fs.writeFileSync(out, html);
 fs.copyFileSync(path.join(root, 'manifest.webmanifest'), path.join(outDir, 'manifest.webmanifest'));
 fs.copyFileSync(path.join(root, 'sw.js'), path.join(outDir, 'sw.js'));
 for (const f of fs.readdirSync(path.join(root, 'icons'))) if (f.endsWith('.png')) fs.copyFileSync(path.join(root, 'icons', f), path.join(outDir, 'icons', f));
-console.log(`public/basket-tap/index.html を作りました（${files} ファイルを埋め込み、${(fs.statSync(out).size / 1024).toFixed(0)} KB）＋ manifest・アイコン・sw.js`);
+// 使い方のデモの見本（動画と、起きたこと）
+fs.mkdirSync(path.join(outDir, 'demo'), { recursive: true });
+for (const f of fs.readdirSync(path.join(root, 'demo'))) if (/\.(mp4|json)$/.test(f)) fs.copyFileSync(path.join(root, 'demo', f), path.join(outDir, 'demo', f));
+console.log(`public/basket-tap/index.html を作りました（${files} ファイルを埋め込み、${(fs.statSync(out).size / 1024).toFixed(0)} KB）＋ manifest・アイコン・sw.js・デモの見本（demo/）`);

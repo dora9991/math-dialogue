@@ -102,7 +102,8 @@
     m.on('error', () => BS.ui.toast('この動画は、このブラウザでは再生できないようです（MP4・MOV をお試しください）', 'err', 7000));
     m.on('notice', (t) => BS.ui.toast(t, 'warn', 6000));
     document.body.classList.add('has-video');
-    if (attached && !S.quietAttach) BS.ui.toast('読み込んだタップ記録を、この動画に付けました。③ で時刻を合わせます', 'ok', 5000);
+    // （撮影しながら・動画を見ながら記録した試合は、このあと同じ動画だと分かれば、時刻が自動で合う）
+    if (attached && !S.quietAttach) BS.ui.toast(S.st.log && S.st.log.videos && S.st.log.videos.length ? '読み込んだタップ記録を、この動画に付けました' : '読み込んだタップ記録を、この動画に付けました。③ で時刻を合わせます', 'ok', 5000);
     else if (saved && saved.log) BS.ui.toast('前に読み込んだタップ記録と、時刻あわせを開きました（同じ動画です）', 'ok', 4000);
     else if (saved && saved.result) BS.ui.toast('前に解析した結果を開きました（同じ動画です）', 'ok', 4000);
     render(); drawTimeline(); updatePlayBtn();
@@ -142,20 +143,21 @@
   }
   /* 押し続けると続けて（0.4 秒押したら、前の移動が終わるたびに次のコマへ） */
   function holdRepeat(btn, fn) {
-    let timer = 0, held = false, downAt = 0;
-    const stop = () => { held = false; clearTimeout(timer); };
+    let timer = 0, held = false, ptrAt = 0;
+    const stop = () => { if (held) ptrAt = Date.now(); held = false; clearTimeout(timer); };
     btn.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       e.preventDefault();
       held = true;
-      downAt = Date.now();
+      ptrAt = Date.now();
       fn();
       const rep = () => { if (!held) return; Promise.resolve(fn()).then(() => { if (held) timer = setTimeout(rep, 40); }); };
       timer = setTimeout(rep, 400);
     });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => btn.addEventListener(ev, stop));
-    // キーボード（Enter・スペース）で押したとき（指で押したあとの click は、もう動かしたので使わない。指の click も detail が 0 のことがある）
-    btn.addEventListener('click', () => { if (Date.now() - downAt > 1000) fn(); });
+    // キーボード（Enter・スペース）で押したとき。指・マウスで押したあとの click は、もう動かしたので使わない
+    // （指の click も detail が 0 のことがあるので、押した・離した時刻で見分ける。長押しして離したあとの click も）
+    btn.addEventListener('click', () => { if (Date.now() - ptrAt > 700) fn(); });
   }
   /* 📷 写真：いまのコマを、そのままの大きさの JPEG に。iPhone・iPad は共有（「画像を保存」で写真アプリへ）、ほかはダウンロード。
      （Safari は、操作の直後でないと共有を開かないので、絵を作るところから共有まで、待たずに続けて行う） */

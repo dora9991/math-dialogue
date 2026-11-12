@@ -245,5 +245,212 @@ section('撮った動画を見ながら記録した試合（mode: video）・�
 }
 eq(BT.fmtTime(3725.46, true), '1:02:05.5', '時刻の書式（1時間以上・0.1 秒）');
 
+section('1本にまとめた版：切り出し・クラウド');
+{
+  // 切り出しの部品は、バスケ得点クリップのものを写して使う（直したら、両方に）
+  ['taplog', 'media', 'mp4', 'export'].forEach((f) => {
+    const a2 = fs.readFileSync(path.join(__dirname, '..', 'js', 'clip', f + '.js'), 'utf8').split('\n').slice(1).join('\n');
+    const b2 = fs.readFileSync(path.join(__dirname, '..', '..', 'basket-clips', 'js', f + '.js'), 'utf8');
+    ok(a2 === b2, `js/clip/${f}.js は basket-clips/js/${f}.js と同じ`);
+  });
+  // 切り出した印（試合の一覧の「✓ 切り出しずみ」・ホームの「✂️ 切り出し待ち」）
+  const g = BT.newGame({ now: T0, tz: 540 });
+  g.startedAt = T0; g.endedAt = T0 + 60000;
+  BT.addEvent(g, { t: 0, type: 'period', period: 1 });
+  BT.addEvent(g, { t: 12.3, type: 'fg2', team: 0, no: '7' });
+  ok(BT.summary(g).trim === false, '切り出す前は summary.trim が false');
+  g.trims = { 'game.mp4|123': { anchors: [{ t: 0, v: 3 }], how: 'manual', view: { teams: [true, true], groups: {}, players: [] }, off: {}, adds: [], win: { lead: 10, lag: 2, by: {} } } };
+  g.trimmed = true; g.trimLast = 'game.mp4|123';
+  ok(BT.summary(g).trim === true, '切り出したら summary.trim が true');
+  const back = BT.importData(JSON.parse(JSON.stringify(BT.exportData(g))));
+  eq([back.trimmed, back.trimLast, back.trims['game.mp4|123'].anchors], [true, 'game.mp4|123', [{ t: 0, v: 3 }]], '書き出して読み込んでも、時刻あわせ（trims）が残る');
+  const bad = BT.importData(Object.assign(JSON.parse(JSON.stringify(BT.exportData(g))), { trims: { x: 1, y: { anchors: 'no' } } }));
+  ok(!bad.trims && !bad.trimmed, '形の合わない trims は読み込まない');
+}
+section('シュートの場所（ゾーン・集計・書き出しと読み込み）');
+{
+  const at = (X, Y) => [X / 15, Y / 14];        // メートル → 0〜1（幅 15・奥行き 14）
+  const z = (X, Y, c) => BT.shotZone(...at(X, Y), c || 'std').label;
+  ok(Math.abs(BT.COURT.y3 - 2.99) < 0.01, 'コーナーのまっすぐな 3P の線は、ベースラインから約 2.99 m まで', BT.COURT.y3);
+  eq([z(7.5, 1.575), z(7.5, 2.7), z(6.5, 1.0)], ['ゴール下', 'ゴール下', 'ゴール下'], 'ゴールの真下・1.25 m の半円の中はゴール下');
+  eq([z(7.5, 5.8), z(9.95, 5.8), z(5.2, 3.0)], ['ペイント', 'ペイント', 'ペイント'], 'フリースローラインの真ん中・エルボー（ペイントの角）・ペイントの中は ペイント（線の上も中）');
+  eq([z(7.5, 6.2), z(10.4, 6.2), z(4.6, 6.2)], ['ミドル正面', 'ミドル右', 'ミドル左'], 'フリースローラインのすぐ後ろは正面・エルボーのすぐ外は左右');
+  eq([z(14.6, 0.5), z(0.4, 0.5), z(14.6, 2.9), z(0.4, 2.9)], ['3P 右コーナー', '3P 左コーナー', '3P 右コーナー', '3P 左コーナー'], '両方のコーナー（サイドラインから 0.9 m より外）は 3P コーナー');
+  eq([z(14.0, 0.5), z(1.0, 2.9)], ['ミドル右', 'ミドル左'], 'コーナーでも、0.9 m の線より内側はミドル');
+  eq([z(7.5, 1.575 + 6.70), z(7.5, 1.575 + 6.80)], ['ミドル正面', '3P トップ'], 'トップ：6.75 m のすぐ内側はミドル・すぐ外は 3P');
+  eq([z(7.5, 1.575 + 6.75)], ['ミドル正面'], '線の上（ちょうど 6.75 m）は 2P の側');
+  const r = 7.5, a45 = (s) => [7.5 + s * r * Math.SQRT1_2, 1.575 + r * Math.SQRT1_2];
+  eq([z(...a45(-1)), z(...a45(1))], ['3P 左ウィング', '3P 右ウィング'], '45° の向き・7.5 m は 3P 左／右ウィング');
+  eq([z(7.5, 13.9), z(0, 0), z(15, 14)], ['3P トップ', '3P 左コーナー', '3P 右ウィング'], 'センターラインの近く・コートの角も、どこかのゾーンになる');
+  // ミニバス：3P はない
+  const mini = BT.SHOT_ZONES('mini').map((x) => x.label);
+  ok(mini.length === 8 && !mini.some((l) => /3P/.test(l)) && mini.includes('ロング正面'), 'ミニバスのゾーン：3P がなく、ロング左／正面／右', mini);
+  eq([z(7.5, 1.575 + 6.80, 'mini'), z(14.6, 0.5, 'mini'), z(...a45(-1), 'mini'), z(7.5, 6.2, 'mini'), z(7.5, 2.0, 'mini')], ['ロング正面', 'ロング右', 'ロング左', 'ミドル正面', 'ゴール下'], 'ミニバス：6.75 m より遠いと ロング（コーナーも）');
+  eq(BT.SHOT_ZONES('std').map((x) => x.id), ['rim', 'paint', 'midL', 'midC', 'midR', 'c3L', 'w3L', 't3', 'w3R', 'c3R'], 'ふつうのゾーンの順（表の順）');
+  ok(BT.isLocShot('fg2') && BT.isLocShot('fg3x') && !BT.isLocShot('ft') && !BT.isLocShot('ftx') && !BT.isLocShot('reb'), '場所を聞くのは 2P・3P（成功・失敗）だけ。フリースローは聞かない');
+
+  // 集計
+  const gs = BT.newGame({ now: T0, tz: 540, teams: [{ name: 'A', players: [{ no: '4' }, { no: '7' }] }, { name: 'B' }] });
+  gs.startedAt = T0;
+  BT.addEvent(gs, { t: 0, type: 'period', period: 1 });
+  const put = (t, type, team, no, X, Y) => { const e = BT.addEvent(gs, { t, type, team, no }); if (X != null) [e.x, e.y] = at(X, Y).map(BT.locRound); return e; };
+  put(1, 'fg2', 0, '7', 7.5, 2.0);       // ゴール下 成功
+  put(2, 'fg2x', 0, '7', 7.5, 2.2);      // ゴール下 失敗
+  put(3, 'fg3', 0, '4', 14.6, 0.5);      // 右コーナー 成功
+  put(4, 'fg3x', 0, '4', 7.5, 9.0);      // トップ 失敗
+  put(5, 'fg2', 0, '4');                 // 場所なし
+  put(6, 'ft', 0, '4');                  // フリースロー（数えない）
+  put(7, 'fg2', 1, '9', 8, 4);           // 相手 ペイント
+  ok(BT.hasShotLoc(gs) && !BT.hasShotLoc(g), '場所のある試合か（hasShotLoc）');
+  const sA = BT.shotStats(gs, { team: 0 });
+  eq([sA.byZone.rim.made, sA.byZone.rim.att, sA.byZone.c3R.made, sA.byZone.c3R.att, sA.byZone.t3.made, sA.byZone.t3.att, sA.located, sA.unlocated], [1, 2, 1, 1, 0, 1, 4, 1], 'shotStats：自分のチーム（ゴール下 1/2・右コーナー 1/1・トップ 0/1・場所あり 4・なし 1）');
+  ok(sA.zones.length === 10 && sA.zones[0].id === 'rim' && sA.shots.length === 4 && sA.shots[0].zone.label === 'ゴール下' && sA.shots[1].made === false, 'zones は表の順・shots は場所のあるシュート（入ったか・ゾーン付き）');
+  const s4 = BT.shotStats(gs, { team: 0, no: '4' });
+  eq([s4.located, s4.unlocated, s4.byZone.rim.att], [2, 1, 0], 'shotStats：#4 だけ（場所あり 2・なし 1）');
+  const sB = BT.shotStats(gs, { team: 1 });
+  eq([sB.byZone.paint.made, sB.located], [1, 1], 'shotStats：相手（ペイント 1）');
+  eq(BT.shotStats(gs).located, 5, 'チームを決めなければ両方');
+  eq(BT.shotStats(gs, { court: 'mini' }).byZone.longC.att, 1, 'ミニバスのコートで数えると、トップの 3P は「ロング正面」');
+
+  // CSV：場所のある試合だけ、いちばん後ろに3つの列
+  const cs = BT.eventsCSV(gs).split('\r\n');
+  ok(cs[0].startsWith('No,時刻,スタートからの秒,ピリオド,チーム,背番号,名前,プレー,得点,Aの得点,Bの得点,場所X,場所Y,場所（ゾーン名）'), 'CSV：見出しのいちばん後ろに 場所X・場所Y・場所（ゾーン名）', cs[0]);
+  ok(cs.some((l) => l === '3,0:03,3,1Q,A,4,,3P成功,3,5,0,0.973,0.036,3P 右コーナー') && cs.some((l) => l === '5,0:05,5,1Q,A,4,,2P成功,2,7,0,,,'), 'CSV：場所のある記録は X・Y・ゾーン、ない記録は空', cs.slice(0, 8));
+  ok(BT.eventsCSV(g).split('\r\n')[0].endsWith('致遠館の得点,城南の得点'), '場所のない試合の CSV は、前と同じ（列を足さない）');
+
+  // 書き出しと読み込み
+  gs.court = 'std';
+  const exs = BT.exportData(gs);
+  const e3 = exs.events.find((e) => e.t === 3);
+  ok(e3.x === 0.973 && e3.y === 0.036 && exs.court === 'std', '書き出す JSON に x・y（とコートの種類）が残る', e3);
+  const gi = BT.importData(JSON.parse(JSON.stringify(exs)));
+  eq(BT.shotStats(gi, { team: 0 }).byZone.rim.att, 2, '読み込んでも場所が残る（集計が同じ）');
+  ok(gi.court === 'std', '読み込んでもコートの種類が残る');
+  const bad = BT.importData({ format: 'basket-tap', court: 'nba', teams: [{}, {}], events: [
+    { id: 'e1', t: 1, type: 'fg2', team: 0, x: 0.123456, y: 0.5 },
+    { id: 'e2', t: 2, type: 'ft', team: 0, x: 0.5, y: 0.1 },
+    { id: 'e3', t: 3, type: 'fg3', team: 0, x: 1.2, y: 0.5 },
+    { id: 'e4', t: 4, type: 'fg2x', team: 0, x: '0.5', y: 0.5 },
+    { id: 'e5', t: 5, type: 'reb', team: 0, x: 0.5, y: 0.5 },
+    { id: 'e6', t: 6, type: 'fg3x', team: 1, x: 0, y: 1 },
+    { id: 'e7', t: 7, type: 'fg2', team: 0, x: NaN, y: 0.5 }] });
+  const loc = bad.events.map((e) => (e.x === undefined && e.y === undefined ? '-' : `${e.x},${e.y}`));
+  eq(loc, ['0.123,0.5', '-', '-', '-', '-', '0,1', '-'], '読み込み：x・y は 2P・3P で 0〜1 の数のときだけ残す（0.001 にまるめる。フリースロー・リバ・範囲外・文字・NaN は捨てる）');
+  ok(bad.court === undefined, '知らないコートの種類は読み込まない');
+}
+
+section('設定のはじめ（シュートの場所）');
+{
+  const ctx = { console, Math, Date, JSON };
+  ctx.globalThis = ctx;
+  vm.createContext(ctx);
+  ['core.js', 'store.js'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', f), 'utf8'), ctx, { filename: f }));
+  const p = ctx.BT.store.prefs();
+  ok(p.shotLoc === false && p.courtType === 'std', 'shotLoc はオフ・courtType は std（ふつう）', { shotLoc: p.shotLoc, courtType: p.courtType });
+}
+{
+  // 合言葉（クラウド）：16 文字・まぎらわしい文字なし。「-」・小文字・空白を許す
+  const ctx = { console, Math, Date, JSON, Uint8Array, crypto: require('crypto').webcrypto };
+  ctx.globalThis = ctx;
+  vm.createContext(ctx);
+  ['core.js', 'store.js', 'cloud.js'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', f), 'utf8'), ctx, { filename: f }));
+  const C = ctx.BT.cloud;
+  const k = C.newKey();
+  ok(/^[2-9A-HJKMNP-Z]{16}$/.test(k), '新しい合言葉は 16 文字（0・1・I・L・O を使わない）', k);
+  eq(C.normKey(k.toLowerCase().replace(/(.{4})(?=.)/g, '$1-')), k, '小文字・「-」区切りで入れても同じ合言葉');
+  eq([C.normKey('ABCD'), C.normKey('ABCD-EFGH-JKMN-PQR1'), C.normKey('')], [null, null, null], '短い・使わない文字（1）・空は null');
+  eq(C.showKey('ABCDEFGHJKMNPQRS'), 'ABCD-EFGH-JKMN-PQRS', '見せるときは 4 文字ずつ「-」');
+}
+(async () => {
+  // 場面パック（js/license.js）：保存場所・時計・通信をさしかえて、使えるかの判定を確かめる
+  section('場面パック（購入コード・お試し 3 試合）');
+  const ctx = { console, Math, Date, JSON, Uint8Array, Promise, setTimeout, clearTimeout, crypto: require('crypto').webcrypto };
+  ctx.globalThis = ctx;
+  vm.createContext(ctx);
+  ['core.js', 'license.js'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', f), 'utf8'), ctx, { filename: f }));
+  const mem = () => { const m = {}; return { getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: (k) => { delete m[k]; }, m }; };
+  let clock = Date.UTC(2026, 10, 12);
+  const DAYMS = 86400000;
+  let reply = { ok: true, club: 'テストクラブ', plan: 'scene', expires_at: new Date(clock + 200 * DAYMS).toISOString() }, netDown = false, calls = 0;
+  const fakeFetch = async () => { calls++; if (netDown) throw new Error('down'); return { ok: true, json: async () => reply }; };
+  const mk = (mode) => { const st = mem(); return { st, L: ctx.BT.license.make({ storage: st, now: () => clock, fetch: fakeFetch, mode, online: () => true }) }; };
+  const G = (id) => ({ id, date: '2026-11-0' + id, teams: [{ name: 'A' }, { name: 'B' }], events: [] });
+
+  { // off：いつも通す・何も数えない・何も保存しない
+    const { st, L } = mk('off');
+    ok(L.MODE === 'off' && ctx.BT.license.MODE === 'off', 'MODE の初期値は off');
+    ok([1, 2, 3, 4, 5].every((i) => L.use('trim', G(i))) && L.can('shot', G(9)), 'off：何試合でも使える');
+    eq(Object.keys(st.m), [], 'off：何も保存しない（btap:trial もなし）');
+  }
+  { // on：お試し 3 試合
+    const { st, L } = mk('on');
+    ok(L.can('trim', G(1)) && Object.keys(st.m).length === 0, 'can は何も書かない（副作用なし）');
+    ok(L.use('trim', G(1)) && L.use('trim', G(2)) && L.use('trim', G(2)), '同じ試合をもう一度使っても、枠は減らない');
+    eq([L.status().trialUsed, L.status().trialLeft], [2, 1], '2 試合数えた・あと 1');
+    ok(L.use('shot', G(3)) && L.status().trialLeft === 0, '3 試合目まで通る（機能名はどれでも同じ）');
+    ok(!L.can('trim', G(4)) && !L.use('trim', G(4)), '4 試合目は通らない');
+    ok(L.use('trim', G(1)) && L.can('trim', G(3)), '数えた試合は、これからも通る');
+    ok(JSON.parse(st.m['btap:trial']).length === 3 && JSON.parse(st.m['btap:trial'])[0].name.includes('A vs B'), 'btap:trial は 3 件・名前に日付とチーム名');
+    ok(L.use('trim', Object.assign(G(5), { demo: true })) && L.status().trialUsed === 3, 'デモの試合は、いつも通り・数えない');
+    ok(!L.use('trim', null), '試合がないと、お試しでは通さない');
+  }
+  { // 購入コード
+    const { st, L } = mk('on');
+    [1, 2, 3].forEach((i) => L.use('trim', G(i)));
+    eq((await L.enter('abc')).error, 'format', '形がちがうコードは、通信せずに format');
+    eq((await L.enter('ABCD-EFGH-JKM1')).error, 'format', '0・1・I・L・O は format');
+    const c0 = calls;
+    reply = { ok: false, error: 'none' };
+    const r1 = await L.enter('abcd efgh jkmn');
+    ok(!r1.ok && r1.error === 'none' && /見つかりません/.test(r1.message) && calls === c0 + 1, 'ないコード：やさしい日本語で none', r1);
+    reply = { ok: false, error: 'revoked' }; eq((await L.enter('ABCDEFGHJKMN')).error, 'revoked', 'revoked');
+    reply = { ok: false, error: 'expired' }; eq((await L.enter('ABCDEFGHJKMN')).error, 'expired', 'expired');
+    netDown = true; const rn = await L.enter('ABCDEFGHJKMN'); netDown = false;
+    ok(!rn.ok && rn.error === 'net' && /つながりませんでした/.test(rn.message), '通信できないとき：net');
+    ok(!L.use('trim', G(4)) && !st.m['btap:license'], 'ここまでの失敗では、何も保存されず、4 試合目は通らない');
+    reply = { ok: true, club: 'テストクラブ', plan: 'scene', expires_at: new Date(clock + 200 * DAYMS).toISOString() };
+    const r2 = await L.enter('abcd-efgh-jkmn');
+    ok(r2.ok && r2.club === 'テストクラブ' && JSON.parse(st.m['btap:license']).code === 'ABCDEFGHJKMN', 'コードが通ると、正規化して保存');
+    ok(L.use('trim', G(4)) && L.use('trim', G(5)) && L.status().trialUsed === 3, '場面パックがあれば何試合でも通る（お試しの枠は使わない）');
+    const s = L.status();
+    eq([s.licensed, s.expired, s.daysLeft, s.club], [true, false, 200, 'テストクラブ'], 'status：club・daysLeft');
+    // 期限切れ：数えた試合だけ通る
+    clock += 201 * DAYMS;
+    const s2 = L.status();
+    ok(!s2.licensed && s2.expired && !L.can('trim', G(4)) && L.can('trim', G(1)), '期限が切れると、数えた試合だけ通る');
+    reply = { ok: true, club: 'X', plan: 'scene', expires_at: new Date(clock - DAYMS).toISOString() };
+    eq((await L.enter('ABCDEFGHJKMN')).error, 'expired', 'サーバーが期限前と言っても、期限が過ぎた日付なら expired');
+    L.clear();
+    ok(!st.m['btap:license'] && !L.status().licensed, 'clear で外れる');
+  }
+  { // refresh：24 時間・通信失敗・止められたコード
+    const { st, L } = mk('on');
+    reply = { ok: true, club: 'C', plan: 'scene', expires_at: new Date(clock + 100 * DAYMS).toISOString() };
+    [1, 2, 3].forEach((i) => L.use('trim', G(i)));      // お試しで数えた 3 試合
+    await L.enter('ABCDEFGHJKMN');
+    let c0 = calls; await L.refresh();
+    eq(calls, c0, '24 時間たつまでは、確かめ直さない');
+    clock += 2 * DAYMS; netDown = true; await L.refresh(); netDown = false;
+    ok(L.status().licensed && L.use('trim', G(1)), '通信できないときは、控えのコードのまま使える');
+    reply = { ok: true, club: 'C2', plan: 'scene', expires_at: new Date(clock + 365 * DAYMS).toISOString() };
+    await L.refresh();
+    ok(L.status().club === 'C2' && L.status().daysLeft === 365, '期限が延びたら、控えも延びる');
+    clock += 2 * DAYMS; reply = { ok: false, error: 'revoked' };
+    await L.refresh();
+    const sr = L.status();
+    ok(!sr.licensed && sr.revoked && !L.can('trim', G(7)) && L.can('trim', G(1)), '止められたコードは外れる（数えた試合は通る）');
+    const { L: L2 } = mk('on');
+    const c1 = calls; await L2.refresh(); eq(calls, c1, 'コードがなければ、通信しない');
+  }
+  { // 切りかえ
+    const { st, L } = mk('off');
+    ok(L.applySearch('?lic=on') && L.enabled() && st.m['btap:licmode'] === 'on', '?lic=on でオンになり、印が残る');
+    ok(L.applySearch('?x=1&lic=off') && !L.enabled() && !('btap:licmode' in st.m), '?lic=off で印を外す');
+    ok(!L.applySearch('?x=1') && !L.applySearch('?lic=maybe'), 'ほかの値は無視');
+    st.setItem('btap:licmode', 'on'); ok(L.mode() === 'on', 'btap:licmode = on');
+    st.setItem('btap:licmode', 'zzz'); ok(L.mode() === 'off', 'こわれた印は MODE にもどる');
+  }
+})().then(() => {
 console.log(`\n${pass} ok / ${fail} fail`);
 process.exit(fail ? 1 : 0);
+});
